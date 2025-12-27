@@ -290,7 +290,7 @@ while true; do
 
   if [[ $CABAL_STATUS -eq 0 ]]; then
     # 测试通过：让 iflow 增加测试用例（你原逻辑）
-    run_with_heartbeat iflow "给这个项目增加一些cabal test测试用例，不要超过10个，如果需要使用QuickCheck就使用QuickCheck think:high" --yolo || :
+    run_with_heartbeat iflow "给这个项目增加一些moon test测试用例，不要超过10个 think:high" --yolo || :
 
     git add .
     if git diff --cached --quiet; then
@@ -309,7 +309,7 @@ while true; do
 
   else
     echo "调用 iflow 修复..."
-    run_with_heartbeat iflow '解决cabal test --flags="-fast production" --test-show-details=direct显示的所有问题（除了warning），除非测试用例本身有编译错误，否则只修改测试用例以外的代码，debug时可通过加日志和打断点，尽量不要消耗大量CPU/内存资源 think:high' --yolo || :
+    run_with_heartbeat iflow '如果FANGAN.md里的特性都实现了(如果没有没有都实现就实现这些特性，给项目命名为Azimuth)就解决moon test显示的所有问题（除了warning），除非测试用例本身有编译错误，否则只修改测试用例以外的代码，debug时可通过加日志和打断点，尽量不要消耗大量CPU/内存资源 think:high' --yolo || :
   fi
 
   echo "🔁 回到第 1 步..."
