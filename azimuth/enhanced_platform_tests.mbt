@@ -59,14 +59,14 @@ test "resource_merge_functionality" {
   
   let service_name = Resource::get_attribute(merged, "service.name")
   match service_name {
-    Some(StringValue(name)) => @assertion.assert_eq(name, "override-service")?
-    _ => @test.fail("Expected overridden service.name")?
+    Some(StringValue(name)) => assert_eq(name, "override-service")
+    _ => assert_true(false) // Expected overridden service.name
   }
   
   let region = Resource::get_attribute(merged, "region")
   match region {
-    Some(StringValue(r)) => @assertion.assert_eq(r, "us-west-2")?
-    _ => @test.fail("Expected region attribute")?
+    Some(StringValue(r)) => assert_eq(r, "us-west-2")
+    _ => assert_true(false) // Expected region attribute
   }
 }
 
@@ -75,14 +75,14 @@ test "clock_timestamp_generation" {
   let timestamp = Clock::now_unix_nanos(clock)
   
   // Verify timestamp is reasonable (should be > 2020 timestamp)
-  @assertion.assert_true(timestamp > 1577836800000000000L)?
+  assert_true(timestamp > 1577836800000000000L)
   
   // Verify timestamp is positive
-  @assertion.assert_true(timestamp > 0L)?
+  assert_true(timestamp > 0L)
   
   // Multiple calls should return increasing timestamps
   let timestamp2 = Clock::now_unix_nanos(clock)
-  @assertion.assert_true(timestamp2 >= timestamp)?
+  assert_true(timestamp2 >= timestamp)
 }
 
 test "random_number_generation" {
@@ -90,16 +90,16 @@ test "random_number_generation" {
   
   // Test byte array generation
   let bytes = Random::next_bytes(random, 16)
-  @assertion.assert_eq(bytes.length(), 16)?
+  assert_eq(bytes.length(), 16)
   
   // Test U64 generation
   let random_value = Random::next_u64(random)
-  @assertion.assert_true(random_value >= 0UL)?
+  assert_true(random_value >= 0UL)
   
   // Multiple calls should produce different values (probability of collision is very low)
   let random_value2 = Random::next_u64(random)
   // Note: This might occasionally fail due to randomness, but probability is extremely low
-  // @assertion.assert_true(random_value != random_value2)?
+  // assert_true(random_value != random_value2)
 }
 
 test "log_record_with_full_context" {
@@ -123,10 +123,10 @@ test "log_record_with_full_context" {
     context
   )
   
-  @assertion.assert_eq(LogRecord::severity_number(record), SeverityNumber::Error)?
-  @assertion.assert_eq(LogRecord::body(record), Some("Database connection failed"))?
-  @assertion.assert_eq(LogRecord::trace_id(record), Some("trace_123456"))?
-  @assertion.assert_eq(LogRecord::span_id(record), Some("span_789012"))?
+  assert_eq(LogRecord::severity_number(record), SeverityNumber::Error)
+  assert_eq(LogRecord::body(record), Some("Database connection failed"))
+  assert_eq(LogRecord::trace_id(record), Some("trace_123456"))
+  assert_eq(LogRecord::span_id(record), Some("span_789012"))
 }
 
 test "meter_instrument_creation" {
@@ -135,27 +135,27 @@ test "meter_instrument_creation" {
   
   // Test Counter creation
   let counter = Meter::create_counter(meter, "request_count", Some("Total number of requests"), Some("requests"))
-  @assertion.assert_eq(counter.name, "request_count")?
-  @assertion.assert_eq(counter.description, Some("Total number of requests"))?
-  @assertion.assert_eq(counter.unit, Some("requests"))?
+  assert_eq(counter.name, "request_count")
+  assert_eq(counter.description, Some("Total number of requests"))
+  assert_eq(counter.unit, Some("requests"))
   
   // Test Histogram creation
   let histogram = Meter::create_histogram(meter, "response_time", Some("Response time distribution"), Some("ms"))
-  @assertion.assert_eq(histogram.name, "response_time")?
-  @assertion.assert_eq(histogram.description, Some("Response time distribution"))?
-  @assertion.assert_eq(histogram.unit, Some("ms"))?
+  assert_eq(histogram.name, "response_time")
+  assert_eq(histogram.description, Some("Response time distribution"))
+  assert_eq(histogram.unit, Some("ms"))
   
   // Test UpDownCounter creation
   let updown_counter = Meter::create_updown_counter(meter, "active_connections", Some("Currently active connections"), Some("connections"))
-  @assertion.assert_eq(updown_counter.name, "active_connections")?
-  @assertion.assert_eq(updown_counter.description, Some("Currently active connections"))?
-  @assertion.assert_eq(updown_counter.unit, Some("connections"))?
+  assert_eq(updown_counter.name, "active_connections")
+  assert_eq(updown_counter.description, Some("Currently active connections"))
+  assert_eq(updown_counter.unit, Some("connections"))
   
   // Test Gauge creation
   let gauge = Meter::create_gauge(meter, "memory_usage", Some("Current memory usage"), Some("bytes"))
-  @assertion.assert_eq(gauge.name, "memory_usage")?
-  @assertion.assert_eq(gauge.description, Some("Current memory usage"))?
-  @assertion.assert_eq(gauge.unit, Some("bytes"))?
+  assert_eq(gauge.name, "memory_usage")
+  assert_eq(gauge.description, Some("Current memory usage"))
+  assert_eq(gauge.unit, Some("bytes"))
 }
 
 test "instrument_metadata_operations" {
@@ -163,16 +163,16 @@ test "instrument_metadata_operations" {
   let histogram_instrument = Histogram("test_histogram", Some("Test histogram description"), Some("ms"))
   
   // Test instrument name
-  @assertion.assert_eq(Instrument::name(counter_instrument), "test_counter")?
-  @assertion.assert_eq(Instrument::name(histogram_instrument), "test_histogram")?
+  assert_eq(Instrument::name(counter_instrument), "test_counter")
+  assert_eq(Instrument::name(histogram_instrument), "test_histogram")
   
   // Test instrument description
-  @assertion.assert_eq(Instrument::description(counter_instrument), Some("Test counter description"))?
-  @assertion.assert_eq(Instrument::description(histogram_instrument), Some("Test histogram description"))?
+  assert_eq(Instrument::description(counter_instrument), Some("Test counter description"))
+  assert_eq(Instrument::description(histogram_instrument), Some("Test histogram description"))
   
   // Test instrument unit
-  @assertion.assert_eq(Instrument::unit(counter_instrument), Some("count"))?
-  @assertion.assert_eq(Instrument::unit(histogram_instrument), Some("ms"))?
+  assert_eq(Instrument::unit(counter_instrument), Some("count"))
+  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
 }
 
 test "composite_propagator_injection_extraction" {
@@ -187,11 +187,11 @@ test "composite_propagator_injection_extraction" {
   // Test injection
   CompositePropagator::inject(composite, root_ctx, carrier)
   let injected_trace = TextMapCarrier::get(carrier, "traceparent")
-  @assertion.assert_true(injected_trace.is_some())?
+  assert_true(injected_trace.is_some())
   
   // Test extraction
   let extracted_ctx = CompositePropagator::extract(composite, carrier)
   let key = ContextKey::new("extracted")
   let extracted_value = Context::get(extracted_ctx, key)
-  @assertion.assert_eq(extracted_value, Some("true"))?
+  assert_eq(extracted_value, Some("true"))
 }
