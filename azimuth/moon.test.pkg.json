@@ -8,6 +8,18 @@
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["azimuth.mbt", "additional_core_tests.mbt", "new_advanced_technical_tests.mbt"]
+    "test": [
+      "azimuth.mbt", 
+      "additional_core_tests.mbt", 
+      "new_advanced_technical_tests.mbt",
+      "resource_operations_test.mbt",
+      "context_advanced_operations_test.mbt",
+      "propagator_functionality_test.mbt",
+      "http_client_operations_test.mbt",
+      "log_record_comprehensive_test.mbt",
+      "cross_service_consistency_test.mbt",
+      "performance_stress_test.mbt",
+      "error_recovery_boundary_test.mbt"
+    ]
   }
 }
