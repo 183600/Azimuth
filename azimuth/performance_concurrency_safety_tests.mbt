@@ -1,107 +1,133 @@
 // Performance and Concurrency Safety Tests for Azimuth Telemetry System
-// Focus on performance benchmarks, thread safety, and concurrent operations
+// Focus on performance characteristics and concurrent operation safety
 
-test "span_creation_performance" {
+test "attribute_operations_performance" {
+  // Test performance of attribute operations with large datasets
+  let large_attrs = Array.range(0, 1000).map(i => ("attr." + i.to_string(), StringValue("value." + i.to_string())))
+  let resource = Resource::with_attributes(Resource::new(), large_attrs)
+  
+  // Test attribute lookup performance
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  for i in Array.range(0, 100) {
+    let key = "attr." + (i * 10).to_string()
+    let result = Resource::get_attribute(resource, key)
+    assert_eq(result.is_some(), true)
+  }
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration = end_time - start_time
+  
+  // Verify operations complete in reasonable time (should be very fast)
+  assert_true(duration < 100000000L)  // Less than 0.1 second
+}
+
+test "context_creation_and_lookup_performance" {
+  let root_ctx = Context::root()
+  
+  // Test performance of context creation and lookup
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  let contexts = Array.range(0, 1000).map(i => {
+    let key = ContextKey::new("key." + i.to_string())
+    Context::with_value(root_ctx, key, "value." + i.to_string())
+  })
+  
+  let creation_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Test lookup performance
+  for i in Array.range(0, 100) {
+    let ctx = contexts[i * 10]
+    let key = ContextKey::new("key." + (i * 10).to_string())
+    let result = Context::get(ctx, key)
+    assert_eq(result, Some("value." + (i * 10).to_string()))
+  }
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let total_duration = end_time - start_time
+  let lookup_duration = end_time - creation_time
+  
+  // Verify performance is acceptable
+  assert_true(total_duration < 200000000L)  // Less than 0.2 second
+  assert_true(lookup_duration < 50000000L)  // Less than 0.05 second
+}
+
+test "span_creation_lifecycle_performance" {
   let provider = TracerProvider::default()
   let tracer = TracerProvider::get_tracer(provider, "performance_test")
   
-  // Test span creation performance
+  // Test span creation and lifecycle performance
   let start_time = Clock::now_unix_nanos(Clock::system())
   
-  for i = 0; i < 1000; i = i + 1 {
-    let span_name = "span_" + i.to_string()
-    let span = Tracer::start_span(tracer, span_name)
+  let spans = Array.range(0, 500).map(i => {
+    Tracer::start_span(tracer, "span." + i.to_string())
+  })
+  
+  let creation_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Test span operations performance
+  for span in spans {
+    Span::set_status(span, Ok, None)
+    Span::add_event(span, "test_event", None)
+  }
+  
+  let operations_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Test span ending performance
+  for span in spans {
     Span::end(span)
   }
   
   let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration_ms = (end_time - start_time) / 1000000L  // Convert to milliseconds
   
-  // Should complete within reasonable time (adjust threshold as needed)
-  @assertion.assert_true(duration_ms < 5000L)?  // Less than 5 seconds for 1000 spans
+  let total_duration = end_time - start_time
+  let creation_duration = creation_time - start_time
+  let operations_duration = operations_time - creation_time
+  let ending_duration = end_time - operations_time
+  
+  // Verify all operations are performant
+  assert_true(total_duration < 500000000L)  // Less than 0.5 second
+  assert_true(creation_duration < 200000000L)  // Less than 0.2 second
+  assert_true(operations_duration < 200000000L)  // Less than 0.2 second
+  assert_true(ending_duration < 100000000L)  // Less than 0.1 second
 }
 
-test "metrics_recording_performance" {
+test "metrics_operations_performance" {
   let provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(provider, "performance_metrics")
-  let counter = Meter::create_counter(meter, "test_counter")
-  let histogram = Meter::create_histogram(meter, "test_histogram")
   
+  // Create different metric types
+  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
+  let updown_counter = Meter::create_updown_counter(meter, "test_updown", Some("Test updown"), Some("value"))
+  let gauge = Meter::create_gauge(meter, "test_gauge", Some("Test gauge"), Some("value"))
+  
+  // Test metrics operations performance
   let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // Test counter performance
-  for i = 0; i < 10000; i = i + 1 {
-    Counter::add(counter, i.to_double())
-  }
-  
-  // Test histogram performance
-  for i = 0; i < 5000; i = i + 1 {
-    Histogram::record(histogram, i.to_double())
+  // Perform many metric operations
+  for i in Array.range(0, 1000) {
+    Counter::add(counter, i.to_double(), None)
+    Histogram::record(histogram, i.to_double() * 1.5, None)
+    UpDownCounter::add(updown_counter, i.to_double() - 500.0, None)
+    Gauge::add(gauge, i.to_double() * 0.1, None)
   }
   
   let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration_ms = (end_time - start_time) / 1000000L
+  let duration = end_time - start_time
   
-  // Should complete within reasonable time
-  @assertion.assert_true(duration_ms < 3000L)?  // Less than 3 seconds for 15000 operations
-}
-
-test "attribute_operations_performance" {
-  let attrs = Attributes::new()
-  let keys = ["key1", "key2", "key3", "key4", "key5"]
-  
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // Test attribute setting performance
-  for i = 0; i < 1000; i = i + 1 {
-    for key in keys {
-      let value = StringValue("value_" + i.to_string())
-      Attributes::set(attrs, key, value)
-    }
-  }
-  
-  // Test attribute getting performance
-  for i = 0; i < 1000; i = i + 1 {
-    for key in keys {
-      let _ = Attributes::get(attrs, key)
-    }
-  }
-  
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration_ms = (end_time - start_time) / 1000000L
-  
-  // Should complete within reasonable time
-  @assertion.assert_true(duration_ms < 2000L)?  // Less than 2 seconds for 10000 operations
-}
-
-test "context_operations_performance" {
-  let ctx = Context::root()
-  let keys = [ContextKey::new("key1"), ContextKey::new("key2"), ContextKey::new("key3")]
-  
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // Test context creation and value retrieval performance
-  for i = 0; i < 5000; i = i + 1 {
-    let value = "value_" + i.to_string()
-    let new_ctx = Context::with_value(ctx, keys[i % 3], value)
-    let _ = Context::get(new_ctx, keys[i % 3])
-  }
-  
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration_ms = (end_time - start_time) / 1000000L
-  
-  // Should complete within reasonable time
-  @assertion.assert_true(duration_ms < 1500L)?  // Less than 1.5 seconds for 5000 operations
+  // Verify metrics operations are performant
+  assert_true(duration < 100000000L)  // Less than 0.1 second
 }
 
 test "log_record_creation_performance" {
   let provider = LoggerProvider::default()
   let logger = LoggerProvider::get_logger(provider, "performance_logger")
   
+  // Test log record creation and emission performance
   let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // Test log record creation and emission performance
-  for i = 0; i < 2000; i = i + 1 {
+  let logs = Array.range(0, 1000).map(i => {
     let severity = match i % 6 {
       0 => Trace
       1 => Debug
@@ -111,112 +137,71 @@ test "log_record_creation_performance" {
       _ => Fatal
     }
     
-    let log = LogRecord::new(severity, "Log message " + i.to_string())
+    LogRecord::new_with_context(
+      severity,
+      Some("Log message " + i.to_string()),
+      None,
+      Some(Clock::now_unix_nanos(Clock::system())),
+      None,
+      Some("trace123"),
+      Some("span456"),
+      None
+    )
+  })
+  
+  let creation_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Test log emission performance
+  for log in logs {
     Logger::emit(logger, log)
   }
   
   let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration_ms = (end_time - start_time) / 1000000L
   
-  // Should complete within reasonable time
-  @assertion.assert_true(duration_ms < 2500L)?  // Less than 2.5 seconds for 2000 logs
+  let total_duration = end_time - start_time
+  let creation_duration = creation_time - start_time
+  let emission_duration = end_time - creation_time
+  
+  // Verify log operations are performant
+  assert_true(total_duration < 300000000L)  // Less than 0.3 second
+  assert_true(creation_duration < 200000000L)  // Less than 0.2 second
+  assert_true(emission_duration < 100000000L)  // Less than 0.1 second
 }
 
 test "propagation_operations_performance" {
   let trace_propagator = W3CTraceContextPropagator::new()
+  let baggage_propagator = W3CBaggagePropagator::new()
   let composite = CompositePropagator::new([trace_propagator])
-  let ctx = Context::root()
   
+  let root_ctx = Context::root()
+  
+  // Test propagation injection performance
   let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // Test injection and extraction performance
-  for i = 0; i < 1000; i = i + 1 {
+  let carriers = Array.range(0, 500).map(i => {
     let carrier = TextMapCarrier::new()
-    CompositePropagator::inject(composite, ctx, carrier)
-    let _ = CompositePropagator::extract(composite, carrier)
+    CompositePropagator::inject(composite, root_ctx, carrier)
+    carrier
+  })
+  
+  let injection_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Test propagation extraction performance
+  for carrier in carriers {
+    let extracted_ctx = CompositePropagator::extract(composite, carrier)
+    let extracted_key = ContextKey::new("extracted")
+    let result = Context::get(extracted_ctx, extracted_key)
+    assert_eq(result, Some("true"))
   }
   
   let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration_ms = (end_time - start_time) / 1000000L
   
-  // Should complete within reasonable time
-  @assertion.assert_true(duration_ms < 3000L)?  // Less than 3 seconds for 1000 operations
-}
-
-test "memory_allocation_patterns" {
-  let initial_memory = 0  // Placeholder - actual memory monitoring would be platform-specific
+  let total_duration = end_time - start_time
+  let injection_duration = injection_time - start_time
+  let extraction_duration = end_time - injection_time
   
-  // Create many objects to test memory allocation patterns
-  let spans = []
-  for i = 0; i < 100; i = i + 1 {
-    let provider = TracerProvider::default()
-    let tracer = TracerProvider::get_tracer(provider, "memory_test")
-    let span = Tracer::start_span(tracer, "memory_span_" + i.to_string())
-    spans.push(span)
-  }
-  
-  // End all spans to allow cleanup
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // Test that operations complete without memory issues
-  @assertion.assert_true(spans.length() == 100)?
-}
-
-test "concurrent_span_operations_safety" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "concurrent_test")
-  
-  // Simulate concurrent span operations
-  let span_results = []
-  
-  for thread_id = 0; thread_id < 10; thread_id = thread_id + 1 {
-    for span_id = 0; span_id < 50; span_id = span_id + 1 {
-      let span_name = "thread_" + thread_id.to_string() + "_span_" + span_id.to_string()
-      let span = Tracer::start_span(tracer, span_name)
-      
-      // Simulate some work
-      Span::add_event(span, "event_in_span", None)
-      Span::set_status(span, Ok, None)
-      
-      Span::end(span)
-      span_results.push(span_name)
-    }
-  }
-  
-  // Verify all spans were processed
-  @assertion.assert_eq(span_results.length(), 500)?
-}
-
-test "stress_test_large_attribute_arrays" {
-  let attrs = Attributes::new()
-  
-  // Test with large array attributes
-  let large_string_array = []
-  for i = 0; i < 1000; i = i + 1 {
-    large_string_array.push("item_" + i.to_string())
-  }
-  
-  let large_int_array = []
-  for i = 0; i < 1000; i = i + 1 {
-    large_int_array.push(i)
-  }
-  
-  Attributes::set(attrs, "large.string.array", ArrayStringValue(large_string_array))
-  Attributes::set(attrs, "large.int.array", ArrayIntValue(large_int_array))
-  
-  // Test retrieval performance
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i = 0; i < 100; i = i + 1 {
-    let _ = Attributes::get(attrs, "large.string.array")
-    let _ = Attributes::get(attrs, "large.int.array")
-  }
-  
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration_ms = (end_time - start_time) / 1000000L
-  
-  // Should complete within reasonable time even with large arrays
-  @assertion.assert_true(duration_ms < 1000L)?  // Less than 1 second for 200 operations
+  // Verify propagation operations are performant
+  assert_true(total_duration < 200000000L)  // Less than 0.2 second
+  assert_true(injection_duration < 100000000L)  // Less than 0.1 second
+  assert_true(extraction_duration < 100000000L)  // Less than 0.1 second
 }

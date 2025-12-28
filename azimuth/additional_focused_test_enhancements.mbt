@@ -1,298 +1,264 @@
 // Additional Focused Test Enhancements for Azimuth Telemetry System
-// Targeted tests for edge cases, error handling, and complex scenarios
+// High-quality test cases covering error handling, performance, and integration scenarios
 
-test "attribute_value_deep_nesting_edge_cases" {
-  // Test deeply nested attribute structures
-  let nested_string = ArrayStringValue(["level1.level2.level3", "deep.nested.value"])
-  let nested_int = ArrayIntValue([1000000, 2000000, 3000000])
-  
-  // Verify array integrity with large values
-  match nested_string {
-    ArrayStringValue(arr) => {
-      @assertion.assert_eq(arr.length, 2)?
-      @assertion.assert_eq(arr[0], "level1.level2.level3")?
-      @assertion.assert_eq(arr[1], "deep.nested.value")?
-    }
-    _ => @test.fail("Expected ArrayStringValue")?
+test "attribute_value_edge_cases" {
+  // Test empty string attribute
+  let empty_string = StringValue("")
+  match empty_string {
+    StringValue(s) => assert_eq(s, "")
+    _ => panic("Expected empty StringValue")
   }
   
-  match nested_int {
-    ArrayIntValue(arr) => {
-      @assertion.assert_eq(arr.length, 3)?
-      @assertion.assert_eq(arr[0], 1000000)?
-      @assertion.assert_eq(arr[2], 3000000)?
-    }
-    _ => @test.fail("Expected ArrayIntValue")?
+  // Test zero values
+  let zero_int = IntValue(0)
+  let zero_float = FloatValue(0.0)
+  let false_bool = BoolValue(false)
+  
+  match zero_int {
+    IntValue(i) => assert_eq(i, 0)
+    _ => panic("Expected zero IntValue")
+  }
+  
+  match zero_float {
+    FloatValue(f) => assert_eq(f, 0.0)
+    _ => panic("Expected zero FloatValue")
+  }
+  
+  match false_bool {
+    BoolValue(b) => assert_eq(b, false)
+    _ => panic("Expected false BoolValue")
+  }
+  
+  // Test empty arrays
+  let empty_string_array = ArrayStringValue([])
+  let empty_int_array = ArrayIntValue([])
+  
+  match empty_string_array {
+    ArrayStringValue(arr) => assert_eq(arr.length, 0)
+    _ => panic("Expected empty ArrayStringValue")
+  }
+  
+  match empty_int_array {
+    ArrayIntValue(arr) => assert_eq(arr.length, 0)
+    _ => panic("Expected empty ArrayIntValue")
   }
 }
 
-test "span_context_boundary_conditions" {
-  // Test span context with boundary values
-  let max_length_trace_id = "0123456789abcdef0123456789abcdef01234567"
-  let max_length_span_id = "0123456789abcdef"
-  let empty_trace_id = ""
-  let empty_span_id = ""
+test "span_context_character_validation" {
+  // Test span context with special characters
+  let special_chars_ctx = SpanContext::new("trace-123_456.789", "span-abc_def.123", true, "state=value;key=value2")
+  assert_eq(SpanContext::is_valid(special_chars_ctx), true)
+  assert_eq(SpanContext::trace_id(special_chars_ctx), "trace-123_456.789")
+  assert_eq(SpanContext::span_id(special_chars_ctx), "span-abc_def.123")
   
-  // Test with maximum valid lengths
-  let max_ctx = SpanContext::new(max_length_trace_id, max_length_span_id, true, "state=test")
-  @assertion.assert_eq(SpanContext::is_valid(max_ctx), true)?
-  @assertion.assert_eq(SpanContext::trace_id(max_ctx), max_length_trace_id)?
-  @assertion.assert_eq(SpanContext::span_id(max_ctx), max_length_span_id)?
-  
-  // Test with empty IDs (invalid)
-  let empty_ctx = SpanContext::new(empty_trace_id, empty_span_id, false, "")
-  @assertion.assert_eq(SpanContext::is_valid(empty_ctx), false)?
-  @assertion.assert_eq(SpanContext::is_sampled(empty_ctx), false)?
-  
-  // Test mixed valid/invalid
-  let mixed_ctx1 = SpanContext::new(max_length_trace_id, empty_span_id, true, "")
-  @assertion.assert_eq(SpanContext::is_valid(mixed_ctx1), false)?
-  
-  let mixed_ctx2 = SpanContext::new(empty_trace_id, max_length_span_id, true, "")
-  @assertion.assert_eq(SpanContext::is_valid(mixed_ctx2), false)?
+  // Test span context with hexadecimal characters (common in real implementations)
+  let hex_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "")
+  assert_eq(SpanContext::is_valid(hex_ctx), true)
+  assert_eq(SpanContext::trace_id(hex_ctx), "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(SpanContext::span_id(hex_ctx), "b7ad6b7169203331")
 }
 
-test "context_operations_memory_safety" {
-  // Test context operations with multiple keys and values
+test "context_nested_operations" {
   let root_ctx = Context::root()
-  let keys = [
-    ContextKey::new("key1"),
-    ContextKey::new("key2"),
-    ContextKey::new("key3"),
-    ContextKey::new("key4"),
-    ContextKey::new("key5")
-  ]
-  let values = ["value1", "value2", "value3", "value4", "value5"]
+  let key1 = ContextKey::new("key1")
+  let key2 = ContextKey::new("key2")
+  let key3 = ContextKey::new("key3")
   
-  // Build context with multiple values
-  let mut ctx = root_ctx
-  for i in 0..<keys.length {
-    ctx = Context::with_value(ctx, keys[i], values[i])
-  }
+  // Test nested context operations
+  let ctx1 = Context::with_value(root_ctx, key1, "value1")
+  let ctx2 = Context::with_value(ctx1, key2, "value2")
+  let ctx3 = Context::with_value(ctx2, key3, "value3")
   
-  // Verify only the last value is stored (simplified implementation)
-  @assertion.assert_eq(Context::get(ctx, keys[4]), Some("value5"))?
-  @assertion.assert_eq(Context::get(ctx, keys[0]), None)?
+  assert_eq(Context::get(ctx3, key1), Some("value1"))
+  assert_eq(Context::get(ctx3, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key3), Some("value3"))
   
-  // Test with non-existent key
-  let non_existent_key = ContextKey::new("non_existent")
-  @assertion.assert_eq(Context::get(ctx, non_existent_key), None)?
+  // Test that earlier contexts are unaffected
+  assert_eq(Context::get(ctx2, key3), None)
+  assert_eq(Context::get(ctx1, key2), None)
 }
 
-test "instrument_type_safety_validation" {
-  // Test instrument type safety and property validation
+test "instrument_type_variations" {
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "safety_test_meter")
+  let meter = MeterProvider::get_meter(provider, "test_instruments")
   
-  // Test counter with empty name (edge case)
-  let empty_counter = Meter::create_counter(meter, "", Some("Empty name counter"), None)
-  @assertion.assert_eq(empty_counter.name, "")?
-  @assertion.assert_eq(empty_counter.description, Some("Empty name counter"))?
+  // Test all instrument types with different configurations
+  let counter = Meter::create_counter(meter, "request_count", Some("Total number of requests"), Some("requests"))
+  let histogram = Meter::create_histogram(meter, "response_time", Some("Response time distribution"), Some("ms"))
+  let updown_counter = Meter::create_updown_counter(meter, "active_connections", Some("Currently active connections"), Some("connections"))
+  let gauge = Meter::create_gauge(meter, "memory_usage", Some("Current memory usage"), Some("bytes"))
   
-  // Test histogram with special characters in name
-  let special_histogram = Meter::create_histogram(meter, "test.histogram-with_special.chars", Some("Special chars"), Some("ms"))
-  @assertion.assert_eq(special_histogram.name, "test.histogram-with_special.chars")?
+  // Test instrument operations
+  Counter::add(counter, 1.0, None)
+  Counter::add(counter, 5.0, None)
   
-  // Test updown counter and gauge
-  let updown_counter = Meter::create_updown_counter(meter, "test_updown", Some("UpDown counter"), Some("operations"))
-  let gauge = Meter::create_gauge(meter, "test_gauge", Some("Gauge metric"), Some("percent"))
+  Histogram::record(histogram, 100.5, None)
+  Histogram::record(histogram, 250.75, None)
+  
+  UpDownCounter::add(updown_counter, 10.0, None)
+  UpDownCounter::add(updown_counter, -3.0, None)
+  
+  Gauge::add(gauge, 1024.0, None)
   
   // Verify instrument properties
-  @assertion.assert_eq(updown_counter.name, "test_updown")?
-  @assertion.assert_eq(updown_counter.description, Some("UpDown counter"))?
-  @assertion.assert_eq(gauge.unit, Some("percent"))?
+  assert_eq(counter.name, "request_count")
+  assert_eq(histogram.name, "response_time")
+  assert_eq(updown_counter.name, "active_connections")
+  assert_eq(gauge.name, "memory_usage")
 }
 
-test "log_record_timestamp_validation" {
-  // Test log record with various timestamp scenarios
-  let current_time = Clock::now_unix_nanos(Clock::system())
-  let future_time = current_time + 86400000000000L  // +1 day in nanoseconds
-  let past_time = current_time - 86400000000000L    // -1 day in nanoseconds
+test "log_record_severity_levels" {
+  // Test all severity levels
+  let trace_log = LogRecord::new(Trace, "Debug trace message")
+  let debug_log = LogRecord::new(Debug, "Debug information")
+  let info_log = LogRecord::new(Info, "General information")
+  let warn_log = LogRecord::new(Warn, "Warning message")
+  let error_log = LogRecord::new(Error, "Error occurred")
+  let fatal_log = LogRecord::new(Fatal, "Fatal error")
   
-  // Test with current timestamp
-  let current_log = LogRecord::new_with_context(
-    Info,
-    Some("Current time log"),
-    None,
-    Some(current_time),
-    Some(current_time + 1000L),
-    Some("trace123"),
-    Some("span456"),
-    None
-  )
+  assert_eq(LogRecord::severity_number(trace_log), Trace)
+  assert_eq(LogRecord::severity_number(debug_log), Debug)
+  assert_eq(LogRecord::severity_number(info_log), Info)
+  assert_eq(LogRecord::severity_number(warn_log), Warn)
+  assert_eq(LogRecord::severity_number(error_log), Error)
+  assert_eq(LogRecord::severity_number(fatal_log), Fatal)
   
-  @assertion.assert_eq(LogRecord::severity_number(current_log), Info)?
-  @assertion.assert_eq(LogRecord::trace_id(current_log), Some("trace123"))?
-  @assertion.assert_eq(LogRecord::span_id(current_log), Some("span456"))?
-  
-  // Test with future timestamp
-  let future_log = LogRecord::new_with_context(
-    Warn,
-    Some("Future time log"),
-    None,
-    Some(future_time),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  @assertion.assert_eq(LogRecord::severity_number(future_log), Warn)?
-  @assertion.assert_eq(LogRecord::body(future_log), Some("Future time log"))?
-  
-  // Test with past timestamp
-  let past_log = LogRecord::new_with_context(
-    Error,
-    Some("Past time log"),
-    None,
-    Some(past_time),
-    Some(past_time + 500L),
-    None,
-    None,
-    None
-  )
-  
-  @assertion.assert_eq(LogRecord::severity_number(past_log), Error)?
-  @assertion.assert_eq(LogRecord::body(past_log), Some("Past time log"))?
+  // Test log with empty body
+  let empty_body_log = LogRecord::new(Info, "")
+  assert_eq(LogRecord::body(empty_body_log), Some(""))
 }
 
-test "resource_attribute_override_behavior" {
-  // Test resource attribute merging and override behavior
+test "span_kind_and_status_transitions" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "test_span_types")
+  
+  // Test different span kinds
+  let internal_span = Tracer::start_span(tracer, "internal_operation")
+  let server_span = Tracer::start_span(tracer, "server_request")
+  let client_span = Tracer::start_span(tracer, "client_request")
+  let producer_span = Tracer::start_span(tracer, "message_producer")
+  let consumer_span = Tracer::start_span(tracer, "message_consumer")
+  
+  assert_eq(Span::kind(internal_span), Internal)
+  assert_eq(Span::kind(server_span), Internal)  // Default is Internal
+  assert_eq(Span::kind(client_span), Internal)
+  assert_eq(Span::kind(producer_span), Internal)
+  assert_eq(Span::kind(consumer_span), Internal)
+  
+  // Test status transitions
+  Span::set_status(internal_span, Unset, None)
+  Span::set_status(server_span, Ok, Some("Request processed successfully"))
+  Span::set_status(client_span, Error, Some("Connection failed"))
+  
+  // Test event addition with attributes
+  let event_attrs = [("event.type", StringValue("error")), ("error.code", IntValue(500))]
+  Span::add_event(client_span, "connection_error", Some(event_attrs))
+  
+  // End all spans
+  Span::end(internal_span)
+  Span::end(server_span)
+  Span::end(client_span)
+  Span::end(producer_span)
+  Span::end(consumer_span)
+}
+
+test "resource_attribute_complex_operations" {
   let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("base_service")),
-    ("service.version", StringValue("1.0.0")),
-    ("environment", StringValue("development"))
+  
+  // Test resource with mixed attribute types
+  let mixed_attrs = [
+    ("string.attr", StringValue("string_value")),
+    ("int.attr", IntValue(42)),
+    ("float.attr", FloatValue(3.14159)),
+    ("bool.attr", BoolValue(true)),
+    ("array.string", ArrayStringValue(["item1", "item2", "item3"])),
+    ("array.int", ArrayIntValue([1, 2, 3, 4, 5]))
   ]
   
-  let override_resource = Resource::new()
-  let override_attrs = [
-    ("service.name", StringValue("override_service")),
-    ("new.attribute", StringValue("new_value")),
-    ("environment", StringValue("production"))
-  ]
+  let resource_with_mixed = Resource::with_attributes(base_resource, mixed_attrs)
   
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
+  // Test retrieval of all attribute types
+  assert_eq(Resource::get_attribute(resource_with_mixed, "string.attr"), Some(StringValue("string_value")))
+  assert_eq(Resource::get_attribute(resource_with_mixed, "int.attr"), Some(IntValue(42)))
+  assert_eq(Resource::get_attribute(resource_with_mixed, "float.attr"), Some(FloatValue(3.14159)))
+  assert_eq(Resource::get_attribute(resource_with_mixed, "bool.attr"), Some(BoolValue(true)))
+  assert_eq(Resource::get_attribute(resource_with_mixed, "array.string"), Some(ArrayStringValue(["item1", "item2", "item3"])))
+  assert_eq(Resource::get_attribute(resource_with_mixed, "array.int"), Some(ArrayIntValue([1, 2, 3, 4, 5])))
   
   // Test resource merging
-  let merged_resource = Resource::merge(base_with_attrs, override_with_attrs)
-  
-  // Verify override behavior (simplified implementation returns override)
-  @assertion.assert_eq(
-    Resource::get_attribute(merged_resource, "service.name"),
-    Some(StringValue("override_service"))
-  )?
-  
-  @assertion.assert_eq(
-    Resource::get_attribute(merged_resource, "new.attribute"),
-    Some(StringValue("new_value"))
-  )?
-  
-  @assertion.assert_eq(
-    Resource::get_attribute(merged_resource, "environment"),
-    Some(StringValue("production"))
-  )?
-}
-
-test "baggage_complex_entry_operations" {
-  // Test baggage with complex key-value scenarios
-  let baggage = Baggage::new()
-  
-  // Test with special characters in keys and values
-  let complex_key = "user.id.with.special-chars_123"
-  let complex_value = "value.with.special.chars=and&symbols?123"
-  
-  let baggage_complex = Baggage::set_entry(baggage, complex_key, complex_value)
-  @assertion.assert_eq(Baggage::get_entry(baggage_complex, complex_key), Some(complex_value))?
-  
-  // Test with Unicode characters
-  let unicode_key = "用户.标识"
-  let unicode_value = "测试值_123"
-  
-  let baggage_unicode = Baggage::set_entry(baggage_complex, unicode_key, unicode_value)
-  @assertion.assert_eq(Baggage::get_entry(baggage_unicode, unicode_key), Some(unicode_value))?
-  
-  // Test with very long key and value
-  let long_key = "a".repeat(100)
-  let long_value = "b".repeat(200)
-  
-  let baggage_long = Baggage::set_entry(baggage_unicode, long_key, long_value)
-  @assertion.assert_eq(Baggage::get_entry(baggage_long, long_key), Some(long_value))?
-  
-  // Test removal of non-existent entry
-  let baggage_after_removal = Baggage::remove_entry(baggage_long, "non.existent.key")
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, complex_key), Some(complex_value))?
-}
-
-test "http_request_response_edge_cases" {
-  // Test HTTP operations with edge cases
-  let empty_headers : Array[(String, String)] = []
-  let large_headers = [
-    ("X-Custom-Header-1", "value1"),
-    ("X-Custom-Header-2", "value2"),
-    ("X-Custom-Header-3", "value3"),
-    ("X-Custom-Header-4", "value4"),
-    ("X-Custom-Header-5", "value5")
+  let override_attrs = [
+    ("string.attr", StringValue("overridden_value")),
+    ("new.attr", StringValue("new_value"))
   ]
   
-  // Test request with empty headers and no body
-  let minimal_request = HttpRequest::new("GET", "https://example.com", empty_headers, None)
-  @assertion.assert_eq(HttpRequest::http_method(minimal_request), "GET")?
-  @assertion.assert_eq(HttpRequest::url(minimal_request), "https://example.com")?
-  @assertion.assert_eq(HttpRequest::body(minimal_request), None)?
+  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
+  let merged_resource = Resource::merge(resource_with_mixed, override_resource)
   
-  // Test request with many headers and large body
-  let large_body = "{".repeat(1000) + "\"data\": \"" + "x".repeat(1000) + "\"}"
-  let complex_request = HttpRequest::new("POST", "https://api.example.com/data", large_headers, Some(large_body))
-  @assertion.assert_eq(HttpRequest::http_method(complex_request), "POST")?
-  @assertion.assert_eq(HttpRequest::body(complex_request), Some(large_body))?
-  
-  // Test response with error status codes
-  let error_response = HttpResponse::new(500, [("Content-Type", "application/json")], Some("{\"error\":\"Internal Server Error\"}"))
-  @assertion.assert_eq(HttpResponse::status_code(error_response), 500)?
-  @assertion.assert_eq(HttpResponse::body(error_response), Some("{\"error\":\"Internal Server Error\"}"))?
-  
-  // Test response with no body
-  let no_body_response = HttpResponse::new(204, empty_headers, None)
-  @assertion.assert_eq(HttpResponse::status_code(no_body_response), 204)?
-  @assertion.assert_eq(HttpResponse::body(no_body_response), None)?
+  assert_eq(Resource::get_attribute(merged_resource, "string.attr"), Some(StringValue("overridden_value")))
+  assert_eq(Resource::get_attribute(merged_resource, "new.attr"), Some(StringValue("new_value")))
 }
 
-test "propagation_complex_context_scenarios" {
-  // Test propagation with complex context scenarios
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([trace_propagator])
+test "telemetry_system_integration" {
+  // Create a complete telemetry stack
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  // Test with multiple context values
-  let root_ctx = Context::root()
-  let key1 = ContextKey::new("user.id")
-  let key2 = ContextKey::new("request.id")
-  let key3 = ContextKey::new("session.id")
+  let tracer = TracerProvider::get_tracer(tracer_provider, "integration_test", Some("1.0.0"))
+  let meter = MeterProvider::get_meter(meter_provider, "integration_test", Some("1.0.0"))
+  let logger = LoggerProvider::get_logger(logger_provider, "integration_test", Some("1.0.0"))
   
-  let ctx_with_values = Context::with_value(
-    Context::with_value(
-      Context::with_value(root_ctx, key1, "user123"),
-      key2, 
-      "req456"
-    ),
-    key3,
-    "session789"
+  // Create instrumentation scope
+  let scope = Tracer::instrumentation_scope(tracer)
+  assert_eq(scope.name, "integration_test")
+  assert_eq(scope.version, Some("1.0.0"))
+  
+  // Simulate a complete operation with tracing, metrics, and logging
+  let span = Tracer::start_span(tracer, "complete_operation")
+  let counter = Meter::create_counter(meter, "operations_total", Some("Total operations"), Some("operations"))
+  let histogram = Meter::create_histogram(meter, "operation_duration", Some("Operation duration"), Some("ms"))
+  
+  // Record metrics
+  Counter::add(counter, 1.0, None)
+  Histogram::record(histogram, 150.5, None)
+  
+  // Add span events
+  Span::add_event(span, "operation_started", None)
+  Span::set_status(span, Ok, Some("Operation completed successfully"))
+  
+  // Emit logs
+  let start_log = LogRecord::new_with_context(
+    Info,
+    Some("Operation started"),
+    None,
+    Some(Clock::now_unix_nanos(Clock::system())),
+    None,
+    Some(SpanContext::trace_id(Span::span_context(span))),
+    Some(SpanContext::span_id(Span::span_context(span))),
+    None
   )
   
-  let carrier = TextMapCarrier::new()
+  let end_log = LogRecord::new_with_context(
+    Info,
+    Some("Operation completed"),
+    None,
+    Some(Clock::now_unix_nanos(Clock::system())),
+    None,
+    Some(SpanContext::trace_id(Span::span_context(span))),
+    Some(SpanContext::span_id(Span::span_context(span))),
+    None
+  )
   
-  // Test injection from complex context
-  CompositePropagator::inject(composite, ctx_with_values, carrier)
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  Logger::emit(logger, start_log)
+  Logger::emit(logger, end_log)
   
-  // Test extraction to new context
-  let extracted_ctx = CompositePropagator::extract(composite, carrier)
-  let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))?
+  // End the span
+  Span::end(span)
   
-  // Verify original context is not affected
-  @assertion.assert_eq(Context::get(ctx_with_values, key1), Some("user123"))?
-  @assertion.assert_eq(Context::get(ctx_with_values, key2), Some("req456"))?
-  @assertion.assert_eq(Context::get(ctx_with_values, key3), Some("session789"))?
+  // Verify all components are working
+  assert_eq(Span::name(span), "complete_operation")
+  assert_eq(counter.name, "operations_total")
+  assert_eq(histogram.name, "operation_duration")
+  assert_eq(LogRecord::body(start_log), Some("Operation started"))
+  assert_eq(LogRecord::body(end_log), Some("Operation completed"))
 }

@@ -1,0 +1,9 @@
+{
+  "packages": [
+    {
+      "root": "azimuth/independent_tests",
+      "rel": "",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/independent_tests/target/wasm-gc/debug/test/independent_tests.mi"
+    }
+  ]
+}
