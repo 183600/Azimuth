@@ -9,7 +9,7 @@
   },
   "test": {
     "test": [
-      "focused_comprehensive_tests.mbt"
+      "simple_high_quality_tests.mbt"
     ]
   }
 }

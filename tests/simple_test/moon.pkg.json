@@ -1,0 +1,15 @@
+{
+  "name": "simple-test",
+  "version": "0.1.0",
+  "description": "Simple test package for Azimuth telemetry system",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../azimuth"
+  },
+  "test": {
+    "test": [
+      "basic_tests.mbt"
+    ]
+  }
+}

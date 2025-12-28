@@ -1030,6 +1030,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_636f6e63757272656e63795f7361666574795f616476616e6365645f746573742e6d6274_5, ["并发Baggage操作安全性测试"]),
     6: (__test_636f6e63757272656e63795f7361666574795f616476616e6365645f746573742e6d6274_6, ["并发传播器操作安全性测试"]),
   },
+  "comprehensive_high_quality_tests.mbt": {
+  },
   "comprehensive_enhanced_tests.mbt": {
   },
   "complex_data_types_test.mbt": {

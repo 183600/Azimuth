@@ -132,6 +132,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_656467655f636173655f636f6d70726568656e736976655f74657374732e6d6274_6, ["empty and null handling"]),
     7: (__test_656467655f636173655f636f6d70726568656e736976655f74657374732e6d6274_7, ["large data handling"]),
   },
+  "comprehensive_high_quality_tests.mbt": {
+    0: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_0, ["attribute operations and type conversion"]),
+    1: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_1, ["span lifecycle and state management"]),
+    2: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_2, ["baggage propagation functionality"]),
+    3: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_3, ["composite propagator injection and extraction"]),
+    4: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_4, ["complete metrics functionality"]),
+    5: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_5, ["complete logging functionality"]),
+    6: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_6, ["resource merging and attribute management"]),
+    7: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_7, ["error handling and boundary conditions"]),
+    8: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_8, ["cross-module integration scenarios"]),
+    9: (__test_636f6d70726568656e736976655f686967685f7175616c6974795f74657374732e6d6274_9, ["comprehensive http client operations"]),
+  },
   "comprehensive_enhanced_tests.mbt": {
     0: (__test_636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_0, ["属性类型转换和边界条件测试"]),
     1: (__test_636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_1, ["Span状态转换和错误处理测试"]),
