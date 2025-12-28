@@ -111,5 +111,5 @@ jobs:
           else
             git commit -m "ci: ${RUN_HOURS}h batch update (run $GITHUB_RUN_ID)"
             # 使用 checkout 时注入的 PAT 远端凭据推送到 master
-            git push origin HEAD:master
+            git push origin HEAD:main
           fi
