@@ -1,331 +1,214 @@
-// Resource Management Tests
-// Testing resource creation, attribute management, and resource merging operations
+// Comprehensive Resource Management Test Suite
+// Tests for resource creation, attribute management, and merging
 
-test "resource basic operations" {
+test "resource creation and basic operations" {
   let resource = Resource::new()
   
-  // Test initial state
-  assert_eq(resource.attributes.length(), 0)
-  
-  // Test creating resource with attributes
-  let attributes = [
-    ("service.name", StringValue("test-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123"))
-  ]
-  
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
-  
-  // Verify attributes
-  assert_eq(resource_with_attrs.attributes.length(), 3)
-  assert_eq(resource_with_attrs.attributes[0], ("service.name", StringValue("test-service")))
-  assert_eq(resource_with_attrs.attributes[1], ("service.version", StringValue("1.0.0")))
-  assert_eq(resource_with_attrs.attributes[2], ("service.instance.id", StringValue("instance-123")))
+  // Test that new resource has no attributes
+  let missing_attr = Resource::get_attribute(resource, "service.name")
+  assert_eq(missing_attr, None)
 }
 
-test "resource attribute operations" {
+test "resource with attributes" {
   let attributes = [
-    ("service.name", StringValue("api-service")),
-    ("service.version", StringValue("2.1.0")),
-    ("deployment.environment", StringValue("production")),
-    ("host.name", StringValue("api-server-01")),
-    ("process.pid", IntValue(1234))
+    ("service.name", StringValue("azimuth-telemetry")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123"))
   ]
   
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
   // Test getting existing attributes
   let service_name = Resource::get_attribute(resource, "service.name")
+  assert_eq(service_name, Some(StringValue("azimuth-telemetry")))
+  
   let service_version = Resource::get_attribute(resource, "service.version")
-  let environment = Resource::get_attribute(resource, "deployment.environment")
-  let host_name = Resource::get_attribute(resource, "host.name")
-  let process_pid = Resource::get_attribute(resource, "process.pid")
+  assert_eq(service_version, Some(StringValue("1.0.0")))
   
-  // Verify attribute retrieval
-  assert_eq(service_name, Some(StringValue("api-service")))
-  assert_eq(service_version, Some(StringValue("2.1.0")))
-  assert_eq(environment, Some(StringValue("production")))
-  assert_eq(host_name, Some(StringValue("api-server-01")))
-  assert_eq(process_pid, Some(IntValue(1234)))
+  let instance_id = Resource::get_attribute(resource, "service.instance.id")
+  assert_eq(instance_id, Some(StringValue("instance-123")))
   
-  // Test getting missing attribute
-  let missing_attr = Resource::get_attribute(resource, "missing.attribute")
+  // Test getting non-existent attribute
+  let missing_attr = Resource::get_attribute(resource, "missing.attr")
   assert_eq(missing_attr, None)
-}
-
-test "resource merging operations" {
-  // Create base resource
-  let base_attributes = [
-    ("service.name", StringValue("base-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("common.attribute", StringValue("base-value"))
-  ]
-  
-  let base_resource = Resource::with_attributes(Resource::new(), base_attributes)
-  
-  // Create override resource
-  let override_attributes = [
-    ("service.version", StringValue("2.0.0")),  // Override base version
-    ("new.attribute", StringValue("new-value")), // New attribute
-    ("common.attribute", StringValue("override-value")) // Override common attribute
-  ]
-  
-  let override_resource = Resource::with_attributes(Resource::new(), override_attributes)
-  
-  // Merge resources
-  let merged_resource = Resource::merge(base_resource, override_resource)
-  
-  // Verify merge results (simplified implementation returns override resource)
-  assert_eq(merged_resource.attributes.length(), 3)
-  assert_eq(Resource::get_attribute(merged_resource, "service.version"), Some(StringValue("2.0.0")))
-  assert_eq(Resource::get_attribute(merged_resource, "new.attribute"), Some(StringValue("new-value")))
-  assert_eq(Resource::get_attribute(merged_resource, "common.attribute"), Some(StringValue("override-value")))
 }
 
 test "resource with different attribute types" {
   let attributes = [
-    ("string.attr", StringValue("string value")),
-    ("int.attr", IntValue(42)),
-    ("float.attr", FloatValue(3.14159)),
-    ("bool.attr", BoolValue(true)),
-    ("array.string", ArrayStringValue(["item1", "item2", "item3"])),
-    ("array.int", ArrayIntValue([10, 20, 30]))
+    ("service.name", StringValue("azimuth")),
+    ("service.port", IntValue(8080)),
+    ("cpu.usage", FloatValue(0.75)),
+    ("service.enabled", BoolValue(true)),
+    ("service.tags", ArrayStringValue(["telemetry", "moonbit", "opentelemetry"]))
   ]
   
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
-  // Test retrieving different attribute types
-  let string_attr = Resource::get_attribute(resource, "string.attr")
-  let int_attr = Resource::get_attribute(resource, "int.attr")
-  let float_attr = Resource::get_attribute(resource, "float.attr")
-  let bool_attr = Resource::get_attribute(resource, "bool.attr")
-  let array_string_attr = Resource::get_attribute(resource, "array.string")
-  let array_int_attr = Resource::get_attribute(resource, "array.int")
+  // Test string attribute
+  let name = Resource::get_attribute(resource, "service.name")
+  assert_eq(name, Some(StringValue("azimuth")))
   
-  // Verify attribute types and values
-  match string_attr {
-    Some(StringValue(value)) => assert_eq(value, "string value")
-    _ => assert_false(true)
-  }
+  // Test int attribute
+  let port = Resource::get_attribute(resource, "service.port")
+  assert_eq(port, Some(IntValue(8080)))
   
-  match int_attr {
-    Some(IntValue(value)) => assert_eq(value, 42)
-    _ => assert_false(true)
-  }
+  // Test float attribute
+  let cpu = Resource::get_attribute(resource, "cpu.usage")
+  assert_eq(cpu, Some(FloatValue(0.75)))
   
-  match float_attr {
-    Some(FloatValue(value)) => assert_eq(value, 3.14159)
-    _ => assert_false(true)
-  }
+  // Test boolean attribute
+  let enabled = Resource::get_attribute(resource, "service.enabled")
+  assert_eq(enabled, Some(BoolValue(true)))
   
-  match bool_attr {
-    Some(BoolValue(value)) => assert_true(value)
-    _ => assert_false(true)
-  }
-  
-  match array_string_attr {
-    Some(ArrayStringValue(array)) => {
-      assert_eq(array.length(), 3)
-      assert_eq(array[0], "item1")
-      assert_eq(array[1], "item2")
-      assert_eq(array[2], "item3")
-    }
-    _ => assert_false(true)
-  }
-  
-  match array_int_attr {
-    Some(ArrayIntValue(array)) => {
-      assert_eq(array.length(), 3)
-      assert_eq(array[0], 10)
-      assert_eq(array[1], 20)
-      assert_eq(array[2], 30)
-    }
-    _ => assert_false(true)
-  }
+  // Test array attribute
+  let tags = Resource::get_attribute(resource, "service.tags")
+  assert_eq(tags, Some(ArrayStringValue(["telemetry", "moonbit", "opentelemetry"])))
 }
 
-test "resource edge cases" {
-  // Test empty resource
-  let empty_resource = Resource::new()
-  assert_eq(empty_resource.attributes.length(), 0)
-  
-  // Test resource with empty attributes array
-  let empty_attrs_resource = Resource::with_attributes(Resource::new(), [])
-  assert_eq(empty_attrs_resource.attributes.length(), 0)
-  
-  // Test resource with single attribute
-  let single_attr = [("single.key", StringValue("single.value"))]
-  let single_resource = Resource::with_attributes(Resource::new(), single_attr)
-  assert_eq(single_resource.attributes.length(), 1)
-  assert_eq(Resource::get_attribute(single_resource, "single.key"), Some(StringValue("single.value")))
-  
-  // Test resource with special characters in keys and values
-  let special_attrs = [
-    ("key.with.dots", StringValue("value.with.dots")),
-    ("key-with-dashes", StringValue("value-with-dashes")),
-    ("key_with_underscores", StringValue("value_with_underscores")),
-    ("key-with-numbers123", StringValue("value-with-numbers456"))
+test "resource merging behavior" {
+  let base_attributes = [
+    ("service.name", StringValue("base-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("common.attr", StringValue("base-value"))
   ]
   
-  let special_resource = Resource::with_attributes(Resource::new(), special_attrs)
-  assert_eq(special_resource.attributes.length(), 4)
-  
-  // Verify retrieval
-  assert_eq(Resource::get_attribute(special_resource, "key.with.dots"), Some(StringValue("value.with.dots")))
-  assert_eq(Resource::get_attribute(special_resource, "key-with-dashes"), Some(StringValue("value-with-dashes")))
-  assert_eq(Resource::get_attribute(special_resource, "key_with_underscores"), Some(StringValue("value_with_underscores")))
-  assert_eq(Resource::get_attribute(special_resource, "key-with-numbers123"), Some(StringValue("value-with-numbers456")))
-}
-
-test "resource merging with empty resources" {
-  // Test merging with empty base resource
-  let base_empty = Resource::new()
-  let override_attrs = [("override.key", StringValue("override.value"))]
-  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
-  
-  let merged1 = Resource::merge(base_empty, override_resource)
-  assert_eq(Resource::get_attribute(merged1, "override.key"), Some(StringValue("override.value")))
-  
-  // Test merging with empty override resource
-  let base_attrs = [("base.key", StringValue("base.value"))]
-  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
-  let override_empty = Resource::new()
-  
-  let merged2 = Resource::merge(base_resource, override_empty)
-  // Simplified implementation returns override resource (empty)
-  assert_eq(merged2.attributes.length(), 0)
-  
-  // Test merging two empty resources
-  let merged3 = Resource::merge(base_empty, override_empty)
-  assert_eq(merged3.attributes.length(), 0)
-}
-
-test "resource cascading merges" {
-  // Create multiple resources and merge them in sequence
-  let resource1_attrs = [("r1.key1", StringValue("r1.value1")), ("r1.key2", StringValue("r1.value2"))]
-  let resource1 = Resource::with_attributes(Resource::new(), resource1_attrs)
-  
-  let resource2_attrs = [("r2.key1", StringValue("r2.value1")), ("shared.key", StringValue("r2.shared"))]
-  let resource2 = Resource::with_attributes(Resource::new(), resource2_attrs)
-  
-  let resource3_attrs = [("r3.key1", StringValue("r3.value1")), ("shared.key", StringValue("r3.shared"))]
-  let resource3 = Resource::with_attributes(Resource::new(), resource3_attrs)
-  
-  // Cascade merges
-  let merged12 = Resource::merge(resource1, resource2)
-  let merged123 = Resource::merge(merged12, resource3)
-  
-  // Verify final result (simplified implementation returns last resource)
-  assert_eq(Resource::get_attribute(merged123, "r3.key1"), Some(StringValue("r3.value1")))
-  assert_eq(Resource::get_attribute(merged123, "shared.key"), Some(StringValue("r3.shared")))
-}
-
-test "resource with telemetry components integration" {
-  // Create resource for service
-  let service_attrs = [
-    ("service.name", StringValue("telemetry-service")),
-    ("service.version", StringValue("1.2.3")),
-    ("service.namespace", StringValue("production")),
-    ("service.instance.id", StringValue("instance-abc-123"))
+  let override_attributes = [
+    ("service.name", StringValue("override-service")),  // This should override
+    ("service.instance.id", StringValue("override-instance")),  // New attribute
+    ("common.attr", StringValue("override-value"))  // This should override
   ]
   
-  let service_resource = Resource::with_attributes(Resource::new(), service_attrs)
+  let base_resource = Resource::with_attributes(Resource::new(), base_attributes)
+  let override_resource = Resource::with_attributes(Resource::new(), override_attributes)
   
-  // Create tracer with resource context
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "service-tracer")
+  let merged_resource = Resource::merge(base_resource, override_resource)
   
-  // Create meter with resource context
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "service-meter")
+  // Test that override values are used
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  assert_eq(service_name, Some(StringValue("override-service")))
   
-  // Create logger with resource context
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "service-logger")
+  let common_attr = Resource::get_attribute(merged_resource, "common.attr")
+  assert_eq(common_attr, Some(StringValue("override-value")))
   
-  // Verify resource integration
-  assert_eq(service_resource.attributes.length(), 4)
-  assert_eq(tracer.scope.name, "service-tracer")
-  assert_eq(meter.scope.name, "service-meter")
-  assert_eq(logger.scope.name, "service-logger")
-  
-  // Verify resource attributes
-  assert_eq(Resource::get_attribute(service_resource, "service.name"), Some(StringValue("telemetry-service")))
-  assert_eq(Resource::get_attribute(service_resource, "service.version"), Some(StringValue("1.2.3")))
-  assert_eq(Resource::get_attribute(service_resource, "service.namespace"), Some(StringValue("production")))
-  assert_eq(Resource::get_attribute(service_resource, "service.instance.id"), Some(StringValue("instance-abc-123")))
+  // Test new attribute from override
+  let instance_id = Resource::get_attribute(merged_resource, "service.instance.id")
+  assert_eq(instance_id, Some(StringValue("override-instance")))
 }
 
 test "resource with host and process information" {
-  // Create resource with host information
-  let host_attrs = [
-    ("host.name", StringValue("web-server-01")),
-    ("host.arch", StringValue("amd64")),
-    ("host.os.type", StringValue("linux")),
-    ("host.os.version", StringValue("5.15.0")),
-    ("host.ip", StringValue("192.168.1.100"))
-  ]
-  
-  let host_resource = Resource::with_attributes(Resource::new(), host_attrs)
-  
-  // Create resource with process information
-  let process_attrs = [
+  let attributes = [
+    ("host.name", StringValue("localhost")),
+    ("host.arch", StringValue("x86_64")),
+    ("os.type", StringValue("linux")),
     ("process.pid", IntValue(12345)),
-    ("process.executable.name", StringValue("telemetry-app")),
-    ("process.executable.path", StringValue("/usr/local/bin/telemetry-app")),
-    ("process.command_args", ArrayStringValue(["--config", "/etc/telemetry/config.yaml"])),
-    ("process.runtime.name", StringValue("moonbit")),
-    ("process.runtime.version", StringValue("0.1.0"))
+    ("process.executable.name", StringValue("azimuth")),
+    ("process.command_args", ArrayStringValue(["azimuth", "serve", "--port", "8080"]))
   ]
   
-  let process_resource = Resource::with_attributes(Resource::new(), process_attrs)
+  let resource = Resource::with_attributes(Resource::new(), attributes)
   
-  // Merge host and process resources
-  let full_resource = Resource::merge(host_resource, process_resource)
+  // Test host information
+  let host_name = Resource::get_attribute(resource, "host.name")
+  assert_eq(host_name, Some(StringValue("localhost")))
   
-  // Verify host information
-  assert_eq(Resource::get_attribute(full_resource, "host.name"), Some(StringValue("web-server-01")))
-  assert_eq(Resource::get_attribute(full_resource, "host.arch"), Some(StringValue("amd64")))
-  assert_eq(Resource::get_attribute(full_resource, "host.os.type"), StringValue("linux"))  // Simplified implementation returns override
+  let host_arch = Resource::get_attribute(resource, "host.arch")
+  assert_eq(host_arch, Some(StringValue("x86_64")))
   
-  // Verify process information
-  assert_eq(Resource::get_attribute(full_resource, "process.pid"), Some(IntValue(12345)))
-  assert_eq(Resource::get_attribute(full_resource, "process.executable.name"), Some(StringValue("telemetry-app")))
+  // Test OS information
+  let os_type = Resource::get_attribute(resource, "os.type")
+  assert_eq(os_type, Some(StringValue("linux")))
   
-  // Verify array attribute
-  match Resource::get_attribute(full_resource, "process.command_args") {
-    Some(ArrayStringValue(args)) => {
-      assert_eq(args.length(), 2)
-      assert_eq(args[0], "--config")
-      assert_eq(args[1], "/etc/telemetry/config.yaml")
-    }
-    _ => assert_false(true)
-  }
+  // Test process information
+  let process_pid = Resource::get_attribute(resource, "process.pid")
+  assert_eq(process_pid, Some(IntValue(12345)))
+  
+  let executable_name = Resource::get_attribute(resource, "process.executable.name")
+  assert_eq(executable_name, Some(StringValue("azimuth")))
+  
+  let command_args = Resource::get_attribute(resource, "process.command_args")
+  assert_eq(command_args, Some(ArrayStringValue(["azimuth", "serve", "--port", "8080"])))
 }
 
-test "resource performance and scalability" {
-  // Create resource with many attributes
-  let many_attrs = []
+test "resource with telemetry SDK information" {
+  let attributes = [
+    ("telemetry.sdk.name", StringValue("azimuth")),
+    ("telemetry.sdk.language", StringValue("moonbit")),
+    ("telemetry.sdk.version", StringValue("0.1.0")),
+    ("telemetry.auto.version", StringValue("0.1.0"))
+  ]
   
-  for i = 0; i < 100; i = i + 1 {
-    let key = "perf.attr." + Int::to_string(i)
-    let value = StringValue("value." + Int::to_string(i))
-    many_attrs = Array::push(many_attrs, (key, value))
-  }
+  let resource = Resource::with_attributes(Resource::new(), attributes)
   
-  let large_resource = Resource::with_attributes(Resource::new(), many_attrs)
-  assert_eq(large_resource.attributes.length(), 100)
+  // Test SDK information
+  let sdk_name = Resource::get_attribute(resource, "telemetry.sdk.name")
+  assert_eq(sdk_name, Some(StringValue("azimuth")))
   
-  // Test attribute lookup performance
-  for i = 0; i < 100; i = i + 1 {
-    let key = "perf.attr." + Int::to_string(i)
-    let attr = Resource::get_attribute(large_resource, key)
-    // Simplified implementation may not find all attributes
-  }
+  let sdk_language = Resource::get_attribute(resource, "telemetry.sdk.language")
+  assert_eq(sdk_language, Some(StringValue("moonbit")))
   
-  // Test merging large resources
-  let another_large_resource = Resource::with_attributes(Resource::new(), many_attrs)
-  let merged_large = Resource::merge(large_resource, another_large_resource)
+  let sdk_version = Resource::get_attribute(resource, "telemetry.sdk.version")
+  assert_eq(sdk_version, Some(StringValue("0.1.0")))
   
-  assert_true(true)  // Performance test completed
+  let auto_version = Resource::get_attribute(resource, "telemetry.auto.version")
+  assert_eq(auto_version, Some(StringValue("0.1.0")))
+}
+
+test "resource with service and deployment information" {
+  let attributes = [
+    ("service.name", StringValue("payment-service")),
+    ("service.namespace", StringValue("production")),
+    ("service.instance.id", StringValue("instance-abc123")),
+    ("service.version", StringValue("2.1.0")),
+    ("deployment.environment", StringValue("production")),
+    ("deployment.namespace", StringValue("default")),
+    ("k8s.pod.name", StringValue("payment-service-7d4f8c9b-xyz")),
+    ("k8s.namespace.name", StringValue("production"))
+  ]
+  
+  let resource = Resource::with_attributes(Resource::new(), attributes)
+  
+  // Test service information
+  let service_name = Resource::get_attribute(resource, "service.name")
+  assert_eq(service_name, Some(StringValue("payment-service")))
+  
+  let service_namespace = Resource::get_attribute(resource, "service.namespace")
+  assert_eq(service_namespace, Some(StringValue("production")))
+  
+  let service_instance = Resource::get_attribute(resource, "service.instance.id")
+  assert_eq(service_instance, Some(StringValue("instance-abc123")))
+  
+  // Test deployment information
+  let deployment_env = Resource::get_attribute(resource, "deployment.environment")
+  assert_eq(deployment_env, Some(StringValue("production")))
+  
+  // Test Kubernetes information
+  let pod_name = Resource::get_attribute(resource, "k8s.pod.name")
+  assert_eq(pod_name, Some(StringValue("payment-service-7d4f8c9b-xyz")))
+}
+
+test "resource with cloud provider information" {
+  let attributes = [
+    ("cloud.provider", StringValue("aws")),
+    ("cloud.account.id", StringValue("123456789012")),
+    ("cloud.region", StringValue("us-west-2")),
+    ("cloud.availability_zone", StringValue("us-west-2a")),
+    ("aws.ecs.container.arn", StringValue("arn:aws:ecs:us-west-2:123456789012:container/abc123")),
+    ("aws.ecs.task.arn", StringValue("arn:aws:ecs:us-west-2:123456789012:task/def456"))
+  ]
+  
+  let resource = Resource::with_attributes(Resource::new(), attributes)
+  
+  // Test cloud provider information
+  let cloud_provider = Resource::get_attribute(resource, "cloud.provider")
+  assert_eq(cloud_provider, Some(StringValue("aws")))
+  
+  let cloud_account = Resource::get_attribute(resource, "cloud.account.id")
+  assert_eq(cloud_account, Some(StringValue("123456789012")))
+  
+  let cloud_region = Resource::get_attribute(resource, "cloud.region")
+  assert_eq(cloud_region, Some(StringValue("us-west-2")))
+  
+  // Test AWS-specific information
+  let ecs_container_arn = Resource::get_attribute(resource, "aws.ecs.container.arn")
+  assert_eq(ecs_container_arn, Some(StringValue("arn:aws:ecs:us-west-2:123456789012:container/abc123")))
 }

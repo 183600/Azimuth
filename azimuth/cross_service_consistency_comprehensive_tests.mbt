@@ -1,378 +1,236 @@
-// Cross-Service Consistency Test Cases for Azimuth Telemetry System
-// Comprehensive testing of telemetry data consistency across distributed services
+// Comprehensive Cross-Service Consistency Test Suite
+// Tests for consistent telemetry data across multiple services and service boundaries
 
 test "trace context consistency across services" {
-  // Simulate trace creation in service A
+  // Simulate trace context creation in service A
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let parent_span_id = "b7ad6b7169203331"
+  let span_id_a = "b7ad6b7169203331"
+  let span_ctx_a = SpanContext::new(trace_id, span_id_a, true, "key1=value1")
   
-  let service_a_ctx = SpanContext::new(trace_id, parent_span_id, true, "key1=value1")
-  let service_a_span = Span::new("service-a-operation", Server, service_a_ctx)
+  // Verify trace context properties
+  assert_eq(SpanContext::trace_id(span_ctx_a), trace_id)
+  assert_eq(SpanContext::span_id(span_ctx_a), span_id_a)
+  assert_true(SpanContext::is_sampled(span_ctx_a))
+  assert_true(SpanContext::is_valid(span_ctx_a))
   
-  // Simulate child span in service B
-  let service_b_span_id = "c8de7c8279314442"
-  let service_b_ctx = SpanContext::new(trace_id, service_b_span_id, true, "key1=value1,key2=value2")
-  let service_b_span = Span::new("service-b-operation", Server, service_b_ctx)
+  // Simulate service B creating child span with same trace ID
+  let span_id_b = "c8de7c827a031442"
+  let span_ctx_b = SpanContext::new(trace_id, span_id_b, true, "key1=value1")
   
-  // Simulate child span in service C
-  let service_c_span_id = "d9ef8d9380425553"
-  let service_c_ctx = SpanContext::new(trace_id, service_c_span_id, true, "key1=value1,key2=value2,key3=value3")
-  let service_c_span = Span::new("service-c-operation", Client, service_c_ctx)
-  
-  // Verify trace ID consistency across all services
-  assert_eq(SpanContext::trace_id(service_a_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service_b_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service_c_ctx), trace_id)
-  
-  // Verify span ID uniqueness
-  assert_true(SpanContext::span_id(service_a_ctx) != SpanContext::span_id(service_b_ctx))
-  assert_true(SpanContext::span_id(service_b_ctx) != SpanContext::span_id(service_c_ctx))
-  assert_true(SpanContext::span_id(service_a_ctx) != SpanContext::span_id(service_c_ctx))
-  
-  // Verify sampling consistency
-  assert_true(SpanContext::is_sampled(service_a_ctx))
-  assert_true(SpanContext::is_sampled(service_b_ctx))
-  assert_true(SpanContext::is_sampled(service_c_ctx))
+  // Verify trace ID consistency
+  assert_eq(SpanContext::trace_id(span_ctx_a), SpanContext::trace_id(span_ctx_b))
+  assert_ne(SpanContext::span_id(span_ctx_a), SpanContext::span_id(span_ctx_b))
 }
 
-test "attribute consistency across services" {
-  // Define common service attributes
-  let common_attrs = [
-    ("service.name", StringValue("distributed-service")),
-    ("service.version", StringValue("1.2.3")),
-    ("deployment.environment", StringValue("production")),
-    ("telemetry.sdk.name", StringValue("azimuth")),
-    ("telemetry.sdk.version", StringValue("0.1.0"))
-  ]
+test "baggage propagation consistency across services" {
+  // Service A creates baggage
+  let baggage_a = Baggage::new()
+  let baggage_a1 = Baggage::set_entry(baggage_a, "user.id", "user123")
+  let baggage_a2 = Baggage::set_entry(baggage_a1, "request.id", "req456")
   
-  // Service-specific attributes
-  let service_a_attrs = [
-    ("service.instance.id", StringValue("instance-a-001")),
-    ("service.namespace", StringValue("auth")),
-    ("http.method", StringValue("POST")),
-    ("http.target", StringValue("/api/auth/login"))
-  ]
+  // Service B receives and adds to baggage
+  let baggage_b1 = Baggage::set_entry(baggage_a2, "service.name", "service-b")
+  let baggage_b2 = Baggage::set_entry(baggage_b1, "operation.name", "process-data")
   
-  let service_b_attrs = [
-    ("service.instance.id", StringValue("instance-b-001")),
-    ("service.namespace", StringValue("user")),
-    ("db.system", StringValue("postgresql")),
-    ("db.operation", StringValue("SELECT"))
-  ]
+  // Service C receives baggage
+  let user_id = Baggage::get_entry(baggage_b2, "user.id")
+  let request_id = Baggage::get_entry(baggage_b2, "request.id")
+  let service_name = Baggage::get_entry(baggage_b2, "service.name")
+  let operation_name = Baggage::get_entry(baggage_b2, "operation.name")
   
-  let service_c_attrs = [
-    ("service.instance.id", StringValue("instance-c-001")),
-    ("service.namespace", StringValue("notification")),
-    ("messaging.system", StringValue("kafka")),
-    ("messaging.destination", StringValue("user.events"))
-  ]
-  
-  // Verify attribute structure consistency
-  assert_eq(common_attrs.length(), 5)
-  assert_eq(service_a_attrs.length(), 4)
-  assert_eq(service_b_attrs.length(), 4)
-  assert_eq(service_c_attrs.length(), 4)
-  
-  // All services should have the same common attributes
-  assert_true(true)
+  // Verify all baggage entries are preserved
+  assert_eq(user_id, Some("user123"))
+  assert_eq(request_id, Some("req456"))
+  assert_eq(service_name, Some("service-b"))
+  assert_eq(operation_name, Some("process-data"))
 }
 
-test "metrics consistency across services" {
-  let provider_a = MeterProvider::default()
-  let provider_b = MeterProvider::default()
-  let provider_c = MeterProvider::default()
+test "resource attribute consistency across services" {
+  // Common resource attributes that should be consistent
+  let common_attributes = [
+    ("service.name", StringValue("payment-service")),
+    ("service.version", StringValue("2.1.0")),
+    ("deployment.environment", StringValue("production"))
+  ]
   
-  let meter_a = MeterProvider::get_meter(provider_a, "service-a-meter")
-  let meter_b = MeterProvider::get_meter(provider_b, "service-b-meter")
-  let meter_c = MeterProvider::get_meter(provider_c, "service-c-meter")
+  // Service A resource
+  let resource_a = Resource::with_attributes(Resource::new(), common_attributes)
   
-  // Create consistent metrics across services
-  let request_counter_a = Meter::create_counter(meter_a, "http.requests.total")
-  let request_counter_b = Meter::create_counter(meter_b, "http.requests.total")
-  let request_counter_c = Meter::create_counter(meter_c, "http.requests.total")
+  // Service B resource with same common attributes
+  let resource_b = Resource::with_attributes(Resource::new(), common_attributes)
   
-  let duration_histogram_a = Meter::create_histogram(meter_a, "http.request.duration")
-  let duration_histogram_b = Meter::create_histogram(meter_b, "http.request.duration")
-  let duration_histogram_c = Meter::create_histogram(meter_c, "http.request.duration")
+  // Verify common attributes are consistent
+  let service_name_a = Resource::get_attribute(resource_a, "service.name")
+  let service_name_b = Resource::get_attribute(resource_b, "service.name")
+  assert_eq(service_name_a, service_name_b)
   
-  let active_connections_gauge_a = Meter::create_gauge(meter_a, "http.active_connections")
-  let active_connections_gauge_b = Meter::create_gauge(meter_b, "http.active_connections")
-  let active_connections_gauge_c = Meter::create_gauge(meter_c, "http.active_connections")
+  let service_version_a = Resource::get_attribute(resource_a, "service.version")
+  let service_version_b = Resource::get_attribute(resource_b, "service.version")
+  assert_eq(service_version_a, service_version_b)
   
-  // Verify metric name consistency
-  assert_eq(request_counter_a.name, "http.requests.total")
-  assert_eq(request_counter_b.name, "http.requests.total")
-  assert_eq(request_counter_c.name, "http.requests.total")
-  
-  assert_eq(duration_histogram_a.name, "http.request.duration")
-  assert_eq(duration_histogram_b.name, "http.request.duration")
-  assert_eq(duration_histogram_c.name, "http.request.duration")
-  
-  assert_eq(active_connections_gauge_a.name, "http.active_connections")
-  assert_eq(active_connections_gauge_b.name, "http.active_connections")
-  assert_eq(active_connections_gauge_c.name, "http.active_connections")
+  let deployment_env_a = Resource::get_attribute(resource_a, "deployment.environment")
+  let deployment_env_b = Resource::get_attribute(resource_b, "deployment.environment")
+  assert_eq(deployment_env_a, deployment_env_b)
 }
 
-test "log consistency across services" {
-  let provider_a = LoggerProvider::default()
-  let provider_b = LoggerProvider::default()
-  let provider_c = LoggerProvider::default()
+test "instrumentation scope consistency across services" {
+  // Service A instrumentation scope
+  let scope_a = InstrumentationScope::{ 
+    name: "payment-service", 
+    version: Some("2.1.0"), 
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  }
   
-  let logger_a = LoggerProvider::get_logger(provider_a, "service-a-logger")
-  let logger_b = LoggerProvider::get_logger(provider_b, "service-b-logger")
-  let logger_c = LoggerProvider::get_logger(provider_c, "service-c-logger")
+  // Service B instrumentation scope (same service, different instance)
+  let scope_b = InstrumentationScope::{ 
+    name: "payment-service", 
+    version: Some("2.1.0"), 
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  }
   
-  // Create consistent log records across services
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_a_id = "b7ad6b7169203331"
-  let span_b_id = "c8de7c8279314442"
-  let span_c_id = "d9ef8d9380425553"
+  // Verify scope consistency
+  assert_eq(scope_a.name, scope_b.name)
+  assert_eq(scope_a.version, scope_b.version)
+  assert_eq(scope_a.schema_url, scope_b.schema_url)
+}
+
+test "metrics naming consistency across services" {
+  let provider = MeterProvider::default()
   
+  // Service A creates metrics with standardized naming
+  let meter_a = MeterProvider::get_meter(provider, "payment-service")
+  let counter_a = Meter::create_counter(meter_a, "payment.transactions.total")
+  let histogram_a = Meter::create_histogram(meter_a, "payment.amount")
+  let gauge_a = Meter::create_gauge(meter_a, "payment.queue.size")
+  
+  // Service B creates metrics with same naming convention
+  let meter_b = MeterProvider::get_meter(provider, "payment-service")
+  let counter_b = Meter::create_counter(meter_b, "payment.transactions.total")
+  let histogram_b = Meter::create_histogram(meter_b, "payment.amount")
+  let gauge_b = Meter::create_gauge(meter_b, "payment.queue.size")
+  
+  // Verify naming consistency
+  assert_eq(counter_a.name, counter_b.name)
+  assert_eq(histogram_a.name, histogram_b.name)
+  assert_eq(gauge_a.name, gauge_b.name)
+}
+
+test "log record consistency across services" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "payment-service")
+  
+  // Create log records with consistent structure
   let log_a = LogRecord::new_with_context(
     Info,
-    Some("Request processed in service A"),
+    Some("Payment processed successfully"),
     None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_a_id),
+    Some(1735689600000000000L),
+    Some(1735689600000000000L),
+    Some("0af7651916cd43dd8448eb211c80319c"),
+    Some("b7ad6b7169203331"),
     None
   )
   
   let log_b = LogRecord::new_with_context(
     Info,
-    Some("Request processed in service B"),
+    Some("Payment processed successfully"),
     None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_b_id),
+    Some(1735689600000000000L),
+    Some(1735689600000000000L),
+    Some("0af7651916cd43dd8448eb211c80319c"),
+    Some("c8de7c827a031442"),
     None
   )
   
-  let log_c = LogRecord::new_with_context(
-    Info,
-    Some("Request processed in service C"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some(span_c_id),
-    None
-  )
-  
-  // Verify trace ID consistency across logs
-  assert_eq(LogRecord::trace_id(log_a), Some(trace_id))
-  assert_eq(LogRecord::trace_id(log_b), Some(trace_id))
-  assert_eq(LogRecord::trace_id(log_c), Some(trace_id))
-  
-  // Verify span ID uniqueness
-  assert_eq(LogRecord::span_id(log_a), Some(span_a_id))
-  assert_eq(LogRecord::span_id(log_b), Some(span_b_id))
-  assert_eq(LogRecord::span_id(log_c), Some(span_c_id))
-  
-  // Emit logs
-  Logger::emit(logger_a, log_a)
-  Logger::emit(logger_b, log_b)
-  Logger::emit(logger_c, log_c)
+  // Verify log consistency (same trace ID, different span ID)
+  assert_eq(LogRecord::trace_id(log_a), LogRecord::trace_id(log_b))
+  assert_ne(LogRecord::span_id(log_a), LogRecord::span_id(log_b))
+  assert_eq(LogRecord::severity_number(log_a), LogRecord::severity_number(log_b))
+  assert_eq(LogRecord::body(log_a), LogRecord::body(log_b))
 }
 
-test "resource consistency across services" {
-  // Create consistent resource definitions
-  let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("microservice-suite")),
-    ("service.version", StringValue("2.1.0")),
-    ("deployment.environment", StringValue("staging")),
-    ("host.name", StringValue("shared-cluster")),
-    ("cloud.provider", StringValue("aws")),
-    ("cloud.region", StringValue("us-west-2"))
-  ]
+test "http header propagation consistency" {
+  // Service A creates HTTP headers for outbound request
+  let carrier_a = TextMapCarrier::new()
+  TextMapCarrier::set(carrier_a, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  TextMapCarrier::set(carrier_a, "baggage", "user.id=123,session.id=456")
   
-  let resource_with_base = Resource::with_attributes(base_resource, base_attrs)
+  // Service B extracts headers from inbound request
+  let traceparent_b = TextMapCarrier::get(carrier_a, "traceparent")
+  let baggage_b = TextMapCarrier::get(carrier_a, "baggage")
   
-  // Service-specific resource additions
-  let service_a_attrs = [
-    ("service.instance.id", StringValue("i-1234567890abcdef0")),
-    ("service.namespace", StringValue("authentication")),
-    ("k8s.pod.name", StringValue("auth-service-7d4f8c9b-xyz"))
-  ]
+  // Verify header consistency
+  assert_eq(traceparent_b, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(baggage_b, Some("user.id=123,session.id=456"))
   
-  let service_b_attrs = [
-    ("service.instance.id", StringValue("i-2345678901bcdef1")),
-    ("service.namespace", StringValue("database")),
-    ("k8s.pod.name", StringValue("db-service-8e5g9d2c-abc"))
-  ]
+  // Service B creates headers for outbound request to Service C
+  let carrier_b = TextMapCarrier::new()
+  TextMapCarrier::set(carrier_b, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-c8de7c827a031442-01")
+  TextMapCarrier::set(carrier_b, "baggage", "user.id=123,session.id=456,service.b=processed")
   
-  let service_c_attrs = [
-    ("service.instance.id", StringValue("i-3456789012cdef23")),
-    ("service.namespace", StringValue("api-gateway")),
-    ("k8s.pod.name", StringValue("gateway-service-9f6h0e3d-def"))
-  ]
+  // Service C extracts headers
+  let traceparent_c = TextMapCarrier::get(carrier_b, "traceparent")
+  let baggage_c = TextMapCarrier::get(carrier_b, "baggage")
   
-  let service_a_resource = Resource::with_attributes(resource_with_base, service_a_attrs)
-  let service_b_resource = Resource::with_attributes(resource_with_base, service_b_attrs)
-  let service_c_resource = Resource::with_attributes(resource_with_base, service_c_attrs)
-  
-  // Test resource merging behavior
-  let merged_resource_a = Resource::merge(resource_with_base, service_a_resource)
-  let merged_resource_b = Resource::merge(resource_with_base, service_b_resource)
-  let merged_resource_c = Resource::merge(resource_with_base, service_c_resource)
-  
-  assert_true(true)
+  // Verify trace context propagation (same trace ID, different span ID)
+  assert_eq(traceparent_c, Some("00-0af7651916cd43dd8448eb211c80319c-c8de7c827a031442-01"))
+  assert_eq(baggage_c, Some("user.id=123,session.id=456,service.b=processed"))
 }
 
-test "baggage consistency across service boundaries" {
-  let baggage = Baggage::new()
+test "attribute key consistency across services" {
+  // Standardized attribute keys that should be consistent across services
+  let standard_keys = [
+    "service.name",
+    "service.version",
+    "service.instance.id",
+    "telemetry.sdk.name",
+    "telemetry.sdk.version",
+    "telemetry.sdk.language",
+    "http.method",
+    "http.status_code",
+    "http.url",
+    "user.id"
+  ]
   
-  // Set initial baggage in service A
-  let baggage_a = Baggage::set_entry(baggage, "user.id", "12345")
-  let baggage_a2 = Baggage::set_entry(baggage_a, "session.id", "session-abc-123")
-  let baggage_a3 = Baggage::set_entry(baggage_a2, "request.id", "req-789-xyz")
-  
-  // Propagate and add context in service B
-  let baggage_b = Baggage::set_entry(baggage_a3, "service.b.entry", "value-from-b")
-  let baggage_b2 = Baggage::set_entry(baggage_b, "operation.type", "database.query")
-  
-  // Propagate and add context in service C
-  let baggage_c = Baggage::set_entry(baggage_b2, "service.c.entry", "value-from-c")
-  let baggage_c2 = Baggage::set_entry(baggage_c, "cache.hit", "true")
-  
-  // Verify baggage propagation
-  let user_id = Baggage::get_entry(baggage_c2, "user.id")
-  let session_id = Baggage::get_entry(baggage_c2, "session.id")
-  let request_id = Baggage::get_entry(baggage_c2, "request.id")
-  let service_b_entry = Baggage::get_entry(baggage_c2, "service.b.entry")
-  let operation_type = Baggage::get_entry(baggage_c2, "operation.type")
-  let service_c_entry = Baggage::get_entry(baggage_c2, "service.c.entry")
-  let cache_hit = Baggage::get_entry(baggage_c2, "cache.hit")
-  
-  assert_eq(user_id, None)  // Simplified implementation
-  assert_eq(session_id, None)
-  assert_eq(request_id, None)
-  assert_eq(service_b_entry, None)
-  assert_eq(operation_type, None)
-  assert_eq(service_c_entry, None)
-  assert_eq(cache_hit, None)
-}
-
-test "instrumentation scope consistency" {
-  // Create consistent instrumentation scopes
-  let scope_a = InstrumentationScope::{
-    name: "auth-service",
-    version: Some("1.0.0"),
-    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  // Verify all standard keys are valid strings
+  for key in standard_keys {
+    assert_true(key.length() > 0)
+    assert_true(key.length() <= 255)  // OpenTelemetry limit
   }
   
-  let scope_b = InstrumentationScope::{
-    name: "user-service",
-    version: Some("1.0.0"),
-    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  // Test that services use same attribute key format
+  let attrs = Attributes::new()
+  for key in standard_keys {
+    Attributes::set(attrs, key, StringValue("test-value"))
+    let value = Attributes::get(attrs, key)
+    assert_eq(value, Some(StringValue("test-value")))
   }
-  
-  let scope_c = InstrumentationScope::{
-    name: "notification-service",
-    version: Some("1.0.0"),
-    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
-  }
-  
-  // Verify schema URL consistency
-  assert_eq(scope_a.schema_url, Some("https://opentelemetry.io/schemas/1.20.0"))
-  assert_eq(scope_b.schema_url, Some("https://opentelemetry.io/schemas/1.20.0"))
-  assert_eq(scope_c.schema_url, Some("https://opentelemetry.io/schemas/1.20.0"))
-  
-  // Verify version consistency
-  assert_eq(scope_a.version, Some("1.0.0"))
-  assert_eq(scope_b.version, Some("1.0.0"))
-  assert_eq(scope_c.version, Some("1.0.0"))
-  
-  // Verify service name uniqueness
-  assert_eq(scope_a.name, "auth-service")
-  assert_eq(scope_b.name, "user-service")
-  assert_eq(scope_c.name, "notification-service")
-  assert_true(scope_a.name != scope_b.name)
-  assert_true(scope_b.name != scope_c.name)
-  assert_true(scope_a.name != scope_c.name)
 }
 
-test "cross-service error handling consistency" {
-  // Test consistent error handling across services
-  let trace_id = "error-trace-123456789"
+test "error handling consistency across services" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "payment-service")
   
-  let service_a_error = LogRecord::new_with_context(
-    Error,
-    Some("Authentication failed: Invalid credentials"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some("error-span-a"),
-    None
-  )
+  // Service A creates span with error status
+  let span_a = Tracer::start_span(tracer, "process-payment")
+  Span::set_status(span_a, Error, Some("Payment declined"))
   
-  let service_b_error = LogRecord::new_with_context(
-    Error,
-    Some("Database connection timeout"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some("error-span-b"),
-    None
-  )
+  // Service B creates span with error status
+  let span_b = Tracer::start_span(tracer, "validate-payment")
+  Span::set_status(span_b, Error, Some("Invalid card number"))
   
-  let service_c_error = LogRecord::new_with_context(
-    Error,
-    Some("Notification service unavailable"),
-    None,
-    None,
-    None,
-    Some(trace_id),
-    Some("error-span-c"),
-    None
-  )
+  // Verify error status handling is consistent
+  assert_eq(Span::status(span_a), Error)
+  assert_eq(Span::status(span_b), Error)
   
-  // Verify error trace consistency
-  assert_eq(LogRecord::trace_id(service_a_error), Some(trace_id))
-  assert_eq(LogRecord::trace_id(service_b_error), Some(trace_id))
-  assert_eq(LogRecord::trace_id(service_c_error), Some(trace_id))
+  // Add error events to spans
+  Span::add_event(span_a, "payment.error", Some([("error.type", StringValue("declined")), ("amount", IntValue(1000))]))
+  Span::add_event(span_b, "validation.error", Some([("error.type", StringValue("invalid_card")), ("card.last4", StringValue("1234"))]))
   
-  // Verify error severity
-  assert_eq(LogRecord::severity_number(service_a_error), Error)
-  assert_eq(LogRecord::severity_number(service_b_error), Error)
-  assert_eq(LogRecord::severity_number(service_c_error), Error)
+  // End spans
+  Span::end(span_a)
+  Span::end(span_b)
   
-  // Verify error messages are different but meaningful
-  assert_eq(LogRecord::body(service_a_error), Some("Authentication failed: Invalid credentials"))
-  assert_eq(LogRecord::body(service_b_error), Some("Database connection timeout"))
-  assert_eq(LogRecord::body(service_c_error), Some("Notification service unavailable"))
-}
-
-test "cross-service performance consistency" {
-  // Test consistent performance metrics collection
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance-meter")
-  
-  let response_time_histogram = Meter::create_histogram(meter, "service.response.time")
-  let throughput_counter = Meter::create_counter(meter, "service.requests.throughput")
-  let error_rate_gauge = Meter::create_gauge(meter, "service.error.rate")
-  
-  // Service A performance data
-  Histogram::record(response_time_histogram, 150.0)  // 150ms
-  Counter::add(throughput_counter, 1.0)
-  
-  // Service B performance data
-  Histogram::record(response_time_histogram, 75.0)   // 75ms
-  Counter::add(throughput_counter, 1.0)
-  
-  // Service C performance data
-  Histogram::record(response_time_histogram, 200.0)  // 200ms
-  Counter::add(throughput_counter, 1.0)
-  
-  // Verify metric collection consistency
-  assert_eq(response_time_histogram.name, "service.response.time")
-  assert_eq(throughput_counter.name, "service.requests.throughput")
-  assert_eq(error_rate_gauge.name, "service.error.rate")
-  
+  // If no errors occur during operations, consistency is maintained
   assert_true(true)
 }

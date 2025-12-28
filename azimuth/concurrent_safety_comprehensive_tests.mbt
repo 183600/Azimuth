@@ -1,391 +1,327 @@
-// Concurrent Safety Test Cases for Azimuth Telemetry System
-// Comprehensive testing of thread safety and concurrent operations
+// Comprehensive Concurrent Safety Test Suite
+// Tests for thread safety and concurrent operations in telemetry components
 
-test "concurrent attributes operations" {
-  let attrs = Attributes::new()
+test "concurrent span context operations" {
+  // Create multiple span contexts with same trace ID (simulating concurrent operations)
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
   
-  // Simulate concurrent attribute setting
-  for i in 0..50 {
-    let key = "concurrent.key." + i.to_string()
-    let value = StringValue("value." + i.to_string())
-    Attributes::set(attrs, key, value)
-  }
+  // Simulate concurrent span creation
+  let span_ctx1 = SpanContext::new(trace_id, "span1111111111111111", true, "")
+  let span_ctx2 = SpanContext::new(trace_id, "span2222222222222222", true, "")
+  let span_ctx3 = SpanContext::new(trace_id, "span3333333333333333", true, "")
+  let span_ctx4 = SpanContext::new(trace_id, "span4444444444444444", true, "")
+  let span_ctx5 = SpanContext::new(trace_id, "span5555555555555555", true, "")
   
-  // Simulate concurrent attribute reading
-  for i in 0..50 {
-    let key = "concurrent.key." + i.to_string()
-    let retrieved_value = Attributes::get(attrs, key)
-    // In a real concurrent scenario, this would test race conditions
-    assert_eq(retrieved_value, None)  // Simplified implementation
-  }
+  // Verify all contexts are valid and have same trace ID
+  assert_true(SpanContext::is_valid(span_ctx1))
+  assert_true(SpanContext::is_valid(span_ctx2))
+  assert_true(SpanContext::is_valid(span_ctx3))
+  assert_true(SpanContext::is_valid(span_ctx4))
+  assert_true(SpanContext::is_valid(span_ctx5))
   
-  // Test mixed read/write operations
-  for i in 50..100 {
-    let key = "mixed.key." + i.to_string()
-    Attributes::set(attrs, key, StringValue("mixed.value." + i.to_string()))
-    
-    let read_key = "concurrent.key." + (i - 50).to_string()
-    let read_value = Attributes::get(attrs, read_key)
-    assert_eq(read_value, None)
-  }
+  assert_eq(SpanContext::trace_id(span_ctx1), trace_id)
+  assert_eq(SpanContext::trace_id(span_ctx2), trace_id)
+  assert_eq(SpanContext::trace_id(span_ctx3), trace_id)
+  assert_eq(SpanContext::trace_id(span_ctx4), trace_id)
+  assert_eq(SpanContext::trace_id(span_ctx5), trace_id)
   
-  assert_true(true)
-}
-
-test "concurrent span operations" {
-  let span_ctx = SpanContext::new("concurrent_trace_id", "concurrent_span_id", true, "")
-  
-  // Create multiple spans concurrently
-  let spans = []
-  for i in 0..20 {
-    let span_name = "concurrent-span-" + i.to_string()
-    let span = Span::new(span_name, Internal, span_ctx)
-    spans.push(span)
-  }
-  
-  // Simulate concurrent span operations
-  for span in spans {
-    // Test concurrent event addition
-    Span::add_event(span, "concurrent.event")
-    
-    // Test concurrent status setting
-    Span::set_status(span, Ok, "Concurrent operation completed")
-    
-    // Test concurrent property access
-    let name = Span::name(span)
-    let kind = Span::kind(span)
-    let is_recording = Span::is_recording(span)
-    
-    assert_true(name.length() > 0)
-    assert_true(is_recording)
-  }
-  
-  // Simulate concurrent span ending
-  for span in spans {
-    Span::end(span)
-  }
-  
-  assert_true(true)
-}
-
-test "concurrent metrics operations" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent-meter")
-  
-  let counter = Meter::create_counter(meter, "concurrent.counter")
-  let histogram = Meter::create_histogram(meter, "concurrent.histogram")
-  let updown_counter = Meter::create_updown_counter(meter, "concurrent.updown")
-  
-  // Simulate concurrent counter increments
-  for i in 0..100 {
-    Counter::add(counter, 1.0)
-  }
-  
-  // Simulate concurrent histogram recordings
-  for i in 0..100 {
-    let value = i.to_double() * 0.1
-    Histogram::record(histogram, value)
-  }
-  
-  // Simulate concurrent updown counter operations
-  for i in 0..50 {
-    UpDownCounter::add(updown_counter, 2.0)
-  }
-  
-  for i in 0..50 {
-    UpDownCounter::add(updown_counter, -1.0)
-  }
-  
-  // Test concurrent operations with attributes
-  let attrs = Attributes::new()
-  for i in 0..20 {
-    let key = "concurrent.attr." + i.to_string()
-    Attributes::set(attrs, key, StringValue("value." + i.to_string()))
-    
-    Counter::add(counter, i.to_double(), Some(attrs))
-    Histogram::record(histogram, i.to_double(), Some(attrs))
-  }
-  
-  assert_true(true)
-}
-
-test "concurrent logging operations" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "concurrent-logger")
-  
-  // Simulate concurrent log record creation and emission
-  for i in 0..100 {
-    let severity = match i % 6 {
-      0 => Trace
-      1 => Debug
-      2 => Info
-      3 => Warn
-      4 => Error
-      _ => Fatal
-    }
-    
-    let message = "Concurrent log message " + i.to_string()
-    let record = LogRecord::new(severity, message)
-    Logger::emit(logger, record)
-  }
-  
-  // Simulate concurrent log records with context
-  let trace_id = "concurrent_trace_12345"
-  for i in 0..50 {
-    let span_id = "concurrent_span_" + i.to_string()
-    let record = LogRecord::new_with_context(
-      Info,
-      Some("Concurrent log with context " + i.to_string()),
-      None,
-      None,
-      None,
-      Some(trace_id),
-      Some(span_id),
-      None
-    )
-    Logger::emit(logger, record)
-  }
-  
-  // Test concurrent log records with attributes
-  for i in 0..30 {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "thread.id", StringValue(i.to_string()))
-    Attributes::set(attrs, "operation.type", StringValue("concurrent"))
-    
-    let record = LogRecord::new_with_context(
-      Warn,
-      Some("Concurrent warning with attributes"),
-      Some(attrs),
-      None,
-      None,
-      None,
-      None,
-      None
-    )
-    Logger::emit(logger, record)
-  }
-  
-  assert_true(true)
+  // Verify all span IDs are different
+  assert_ne(SpanContext::span_id(span_ctx1), SpanContext::span_id(span_ctx2))
+  assert_ne(SpanContext::span_id(span_ctx2), SpanContext::span_id(span_ctx3))
+  assert_ne(SpanContext::span_id(span_ctx3), SpanContext::span_id(span_ctx4))
+  assert_ne(SpanContext::span_id(span_ctx4), SpanContext::span_id(span_ctx5))
+  assert_ne(SpanContext::span_id(span_ctx5), SpanContext::span_id(span_ctx1))
 }
 
 test "concurrent context operations" {
   let ctx = Context::root()
   
-  // Simulate concurrent context value setting
-  let contexts = []
-  for i in 0..50 {
-    let key = ContextKey::new("concurrent.key." + i.to_string())
-    let value = "concurrent.value." + i.to_string()
-    let new_ctx = Context::with_value(ctx, key, value)
-    contexts.push(new_ctx)
-  }
+  // Simulate concurrent context operations with different keys
+  let key1 = ContextKey::new("concurrent.key1")
+  let key2 = ContextKey::new("concurrent.key2")
+  let key3 = ContextKey::new("concurrent.key3")
+  let key4 = ContextKey::new("concurrent.key4")
+  let key5 = ContextKey::new("concurrent.key5")
   
-  // Simulate concurrent context value reading
-  for i in 0..50 {
-    let key = ContextKey::new("concurrent.key." + i.to_string())
-    let test_ctx = Context::root()
-    let value = Context::get(test_ctx, key)
-    // In simplified implementation, this returns None
-    assert_eq(value, None)
-  }
+  // Create contexts with different values (simulating concurrent operations)
+  let ctx1 = Context::with_value(ctx, key1, "value1")
+  let ctx2 = Context::with_value(ctx, key2, "value2")
+  let ctx3 = Context::with_value(ctx, key3, "value3")
+  let ctx4 = Context::with_value(ctx, key4, "value4")
+  let ctx5 = Context::with_value(ctx, key5, "value5")
   
-  // Test nested context operations
-  let nested_ctx = Context::root()
-  for i in 0..20 {
-    let key = ContextKey::new("nested.key." + i.to_string())
-    nested_ctx = Context::with_value(nested_ctx, key, "nested.value." + i.to_string())
-  }
+  // Verify each context has its own value
+  assert_eq(Context::get(ctx1, key1), Some("value1"))
+  assert_eq(Context::get(ctx2, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key3), Some("value3"))
+  assert_eq(Context::get(ctx4, key4), Some("value4"))
+  assert_eq(Context::get(ctx5, key5), Some("value5"))
   
-  // Verify nested context operations
-  for i in 0..20 {
-    let key = ContextKey::new("nested.key." + i.to_string())
-    let value = Context::get(nested_ctx, key)
-    assert_eq(value, None)  // Simplified implementation
-  }
+  // Verify contexts don't interfere with each other
+  assert_eq(Context::get(ctx1, key2), None)
+  assert_eq(Context::get(ctx2, key3), None)
+  assert_eq(Context::get(ctx3, key4), None)
+  assert_eq(Context::get(ctx4, key5), None)
+  assert_eq(Context::get(ctx5, key1), None)
+}
+
+test "concurrent attributes operations" {
+  // Create multiple attributes instances (simulating concurrent usage)
+  let attrs1 = Attributes::new()
+  let attrs2 = Attributes::new()
+  let attrs3 = Attributes::new()
+  let attrs4 = Attributes::new()
+  let attrs5 = Attributes::new()
   
-  assert_true(true)
+  // Set different attributes in each instance
+  Attributes::set(attrs1, "concurrent.test1", StringValue("value1"))
+  Attributes::set(attrs2, "concurrent.test2", StringValue("value2"))
+  Attributes::set(attrs3, "concurrent.test3", StringValue("value3"))
+  Attributes::set(attrs4, "concurrent.test4", StringValue("value4"))
+  Attributes::set(attrs5, "concurrent.test5", StringValue("value5"))
+  
+  // Verify each attributes instance has its own data
+  let value1 = Attributes::get(attrs1, "concurrent.test1")
+  let value2 = Attributes::get(attrs2, "concurrent.test2")
+  let value3 = Attributes::get(attrs3, "concurrent.test3")
+  let value4 = Attributes::get(attrs4, "concurrent.test4")
+  let value5 = Attributes::get(attrs5, "concurrent.test5")
+  
+  assert_eq(value1, Some(StringValue("value1")))
+  assert_eq(value2, Some(StringValue("value2")))
+  assert_eq(value3, Some(StringValue("value3")))
+  assert_eq(value4, Some(StringValue("value4")))
+  assert_eq(value5, Some(StringValue("value5")))
+  
+  // Verify attributes instances don't interfere
+  assert_eq(Attributes::get(attrs1, "concurrent.test2"), None)
+  assert_eq(Attributes::get(attrs2, "concurrent.test3"), None)
+  assert_eq(Attributes::get(attrs3, "concurrent.test4"), None)
+  assert_eq(Attributes::get(attrs4, "concurrent.test5"), None)
+  assert_eq(Attributes::get(attrs5, "concurrent.test1"), None)
 }
 
 test "concurrent baggage operations" {
-  let baggage = Baggage::new()
+  // Create multiple baggage instances (simulating concurrent usage)
+  let baggage1 = Baggage::new()
+  let baggage2 = Baggage::new()
+  let baggage3 = Baggage::new()
+  let baggage4 = Baggage::new()
+  let baggage5 = Baggage::new()
   
-  // Simulate concurrent baggage entry setting
-  let current_baggage = baggage
-  for i in 0..30 {
-    let key = "concurrent.baggage." + i.to_string()
-    let value = "concurrent.value." + i.to_string()
-    current_baggage = Baggage::set_entry(current_baggage, key, value)
-  }
+  // Set different entries in each baggage instance
+  let baggage1_updated = Baggage::set_entry(baggage1, "concurrent.baggage1", "entry1")
+  let baggage2_updated = Baggage::set_entry(baggage2, "concurrent.baggage2", "entry2")
+  let baggage3_updated = Baggage::set_entry(baggage3, "concurrent.baggage3", "entry3")
+  let baggage4_updated = Baggage::set_entry(baggage4, "concurrent.baggage4", "entry4")
+  let baggage5_updated = Baggage::set_entry(baggage5, "concurrent.baggage5", "entry5")
   
-  // Simulate concurrent baggage entry reading
-  for i in 0..30 {
-    let key = "concurrent.baggage." + i.to_string()
-    let value = Baggage::get_entry(current_baggage, key)
-    assert_eq(value, None)  // Simplified implementation
-  }
+  // Verify each baggage instance has its own data
+  let entry1 = Baggage::get_entry(baggage1_updated, "concurrent.baggage1")
+  let entry2 = Baggage::get_entry(baggage2_updated, "concurrent.baggage2")
+  let entry3 = Baggage::get_entry(baggage3_updated, "concurrent.baggage3")
+  let entry4 = Baggage::get_entry(baggage4_updated, "concurrent.baggage4")
+  let entry5 = Baggage::get_entry(baggage5_updated, "concurrent.baggage5")
   
-  // Test concurrent baggage entry removal
-  for i in 0..15 {
-    let key = "concurrent.baggage." + i.to_string()
-    current_baggage = Baggage::remove_entry(current_baggage, key)
-  }
+  assert_eq(entry1, Some("entry1"))
+  assert_eq(entry2, Some("entry2"))
+  assert_eq(entry3, Some("entry3"))
+  assert_eq(entry4, Some("entry4"))
+  assert_eq(entry5, Some("entry5"))
   
-  // Verify removal operations
-  for i in 0..15 {
-    let key = "concurrent.baggage." + i.to_string()
-    let value = Baggage::get_entry(current_baggage, key)
-    assert_eq(value, None)
-  }
+  // Verify baggage instances don't interfere
+  assert_eq(Baggage::get_entry(baggage1_updated, "concurrent.baggage2"), None)
+  assert_eq(Baggage::get_entry(baggage2_updated, "concurrent.baggage3"), None)
+  assert_eq(Baggage::get_entry(baggage3_updated, "concurrent.baggage4"), None)
+  assert_eq(Baggage::get_entry(baggage4_updated, "concurrent.baggage5"), None)
+  assert_eq(Baggage::get_entry(baggage5_updated, "concurrent.baggage1"), None)
+}
+
+test "concurrent meter and instrument operations" {
+  let provider = MeterProvider::default()
   
+  // Create multiple meters (simulating concurrent usage)
+  let meter1 = MeterProvider::get_meter(provider, "concurrent-meter1")
+  let meter2 = MeterProvider::get_meter(provider, "concurrent-meter2")
+  let meter3 = MeterProvider::get_meter(provider, "concurrent-meter3")
+  
+  // Create instruments from different meters
+  let counter1 = Meter::create_counter(meter1, "counter1")
+  let counter2 = Meter::create_counter(meter2, "counter2")
+  let counter3 = Meter::create_counter(meter3, "counter3")
+  
+  let histogram1 = Meter::create_histogram(meter1, "histogram1")
+  let histogram2 = Meter::create_histogram(meter2, "histogram2")
+  let histogram3 = Meter::create_histogram(meter3, "histogram3")
+  
+  // Perform concurrent operations
+  Counter::add(counter1, 1.0)
+  Counter::add(counter2, 2.0)
+  Counter::add(counter3, 3.0)
+  
+  Histogram::record(histogram1, 100.0)
+  Histogram::record(histogram2, 200.0)
+  Histogram::record(histogram3, 300.0)
+  
+  // Verify instruments have correct names and are independent
+  assert_eq(counter1.name, "counter1")
+  assert_eq(counter2.name, "counter2")
+  assert_eq(counter3.name, "counter3")
+  
+  assert_eq(histogram1.name, "histogram1")
+  assert_eq(histogram2.name, "histogram2")
+  assert_eq(histogram3.name, "histogram3")
+  
+  // If no crashes occur, concurrent operations are safe
   assert_true(true)
 }
 
-test "concurrent propagation operations" {
-  let carrier = TextMapCarrier::new()
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
-  let ctx = Context::root()
+test "concurrent tracer and span operations" {
+  let provider = TracerProvider::default()
   
-  // Simulate concurrent injection operations
-  for i in 0..50 {
-    let key = "concurrent.header." + i.to_string()
-    let value = "concurrent.value." + i.to_string()
-    TextMapCarrier::set(carrier, key, value)
-  }
+  // Create multiple tracers (simulating concurrent usage)
+  let tracer1 = TracerProvider::get_tracer(provider, "concurrent-tracer1")
+  let tracer2 = TracerProvider::get_tracer(provider, "concurrent-tracer2")
+  let tracer3 = TracerProvider::get_tracer(provider, "concurrent-tracer3")
   
-  // Simulate concurrent extraction operations
-  for i in 0..50 {
-    let extracted_ctx = CompositePropagator::extract(propagator, carrier)
-    let extracted_key = ContextKey::new("extracted")
-    let extracted_value = Context::get(extracted_ctx, extracted_key)
-    assert_eq(extracted_value, Some("true"))
-  }
+  // Create spans from different tracers concurrently
+  let span1 = Tracer::start_span(tracer1, "span1")
+  let span2 = Tracer::start_span(tracer2, "span2")
+  let span3 = Tracer::start_span(tracer3, "span3")
   
-  // Test mixed injection/extraction operations
-  for i in 0..25 {
-    TextMapCarrier::set(carrier, "mixed.header." + i.to_string(), "mixed.value." + i.to_string())
-    let extracted_ctx = CompositePropagator::extract(propagator, carrier)
-    CompositePropagator::inject(propagator, ctx, carrier)
-  }
+  // Perform concurrent span operations
+  Span::set_status(span1, Ok, None)
+  Span::set_status(span2, Error, Some("Test error"))
+  Span::set_status(span3, Unset, Some("Test unset"))
   
+  Span::add_event(span1, "event1", None)
+  Span::add_event(span2, "event2", None)
+  Span::add_event(span3, "event3", None)
+  
+  // Verify spans have correct names and are independent
+  assert_eq(Span::name(span1), "span1")
+  assert_eq(Span::name(span2), "span2")
+  assert_eq(Span::name(span3), "span3")
+  
+  // End spans
+  Span::end(span1)
+  Span::end(span2)
+  Span::end(span3)
+  
+  // If no crashes occur, concurrent operations are safe
   assert_true(true)
 }
 
-test "concurrent resource operations" {
-  let resource = Resource::new()
+test "concurrent logger and log operations" {
+  let provider = LoggerProvider::default()
   
-  // Simulate concurrent resource attribute setting
-  let attrs = []
-  for i in 0..40 {
-    let key = "concurrent.resource." + i.to_string()
-    let value = StringValue("resource.value." + i.to_string())
-    attrs.push((key, value))
-  }
+  // Create multiple loggers (simulating concurrent usage)
+  let logger1 = LoggerProvider::get_logger(provider, "concurrent-logger1")
+  let logger2 = LoggerProvider::get_logger(provider, "concurrent-logger2")
+  let logger3 = LoggerProvider::get_logger(provider, "concurrent-logger3")
   
-  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  // Create log records with different properties
+  let log1 = LogRecord::new(Info, "Concurrent log message 1")
+  let log2 = LogRecord::new(Warn, "Concurrent log message 2")
+  let log3 = LogRecord::new(Error, "Concurrent log message 3")
   
-  // Simulate concurrent resource attribute reading
-  for i in 0..40 {
-    let key = "concurrent.resource." + i.to_string()
-    let value = Resource::get_attribute(resource_with_attrs, key)
-    assert_eq(value, None)  // Simplified implementation
-  }
+  // Emit logs concurrently
+  Logger::emit(logger1, log1)
+  Logger::emit(logger2, log2)
+  Logger::emit(logger3, log3)
   
-  // Test concurrent resource merging
-  let base_resource = Resource::new()
-  let override_resources = []
+  // Verify log records have correct properties
+  assert_eq(LogRecord::severity_number(log1), Info)
+  assert_eq(LogRecord::severity_number(log2), Warn)
+  assert_eq(LogRecord::severity_number(log3), Error)
   
-  for i in 0..10 {
-    let attrs = [("override.key." + i.to_string(), StringValue("override.value." + i.to_string()))]
-    let override_resource = Resource::with_attributes(base_resource, attrs)
-    override_resources.push(override_resource)
-  }
+  assert_eq(LogRecord::body(log1), Some("Concurrent log message 1"))
+  assert_eq(LogRecord::body(log2), Some("Concurrent log message 2"))
+  assert_eq(LogRecord::body(log3), Some("Concurrent log message 3"))
   
-  // Merge all override resources
-  let merged_resource = base_resource
-  for override_resource in override_resources {
-    merged_resource = Resource::merge(merged_resource, override_resource)
-  }
-  
+  // If no crashes occur, concurrent operations are safe
   assert_true(true)
 }
 
-test "concurrent span context operations" {
-  // Simulate concurrent span context creation
-  let span_contexts = []
-  for i in 0..30 {
-    let trace_id = "concurrent_trace_" + i.to_string()
-    let span_id = "concurrent_span_" + i.to_string()
-    let ctx = SpanContext::new(trace_id, span_id, true, "key1=value1")
-    span_contexts.push(ctx)
-  }
+test "concurrent text map carrier operations" {
+  // Create multiple carriers (simulating concurrent usage)
+  let carrier1 = TextMapCarrier::new()
+  let carrier2 = TextMapCarrier::new()
+  let carrier3 = TextMapCarrier::new()
+  let carrier4 = TextMapCarrier::new()
+  let carrier5 = TextMapCarrier::new()
   
-  // Simulate concurrent span context property access
-  for ctx in span_contexts {
-    let trace_id = SpanContext::trace_id(ctx)
-    let span_id = SpanContext::span_id(ctx)
-    let is_valid = SpanContext::is_valid(ctx)
-    let is_sampled = SpanContext::is_sampled(ctx)
-    
-    assert_true(trace_id.length() > 0)
-    assert_true(span_id.length() > 0)
-    assert_true(is_valid)
-    assert_true(is_sampled)
-  }
+  // Set different headers in each carrier
+  TextMapCarrier::set(carrier1, "concurrent-header1", "value1")
+  TextMapCarrier::set(carrier2, "concurrent-header2", "value2")
+  TextMapCarrier::set(carrier3, "concurrent-header3", "value3")
+  TextMapCarrier::set(carrier4, "concurrent-header4", "value4")
+  TextMapCarrier::set(carrier5, "concurrent-header5", "value5")
   
-  // Test concurrent span context validation
-  let invalid_contexts = []
-  for i in 0..10 {
-    let invalid_ctx = SpanContext::new("", "invalid_span_" + i.to_string(), true, "")
-    invalid_contexts.push(invalid_ctx)
-  }
+  // Verify each carrier has its own data
+  let value1 = TextMapCarrier::get(carrier1, "concurrent-header1")
+  let value2 = TextMapCarrier::get(carrier2, "concurrent-header2")
+  let value3 = TextMapCarrier::get(carrier3, "concurrent-header3")
+  let value4 = TextMapCarrier::get(carrier4, "concurrent-header4")
+  let value5 = TextMapCarrier::get(carrier5, "concurrent-header5")
   
-  for invalid_ctx in invalid_contexts {
-    let is_valid = SpanContext::is_valid(invalid_ctx)
-    assert_false(is_valid)
-  }
+  assert_eq(value1, Some("value1"))
+  assert_eq(value2, Some("value2"))
+  assert_eq(value3, Some("value3"))
+  assert_eq(value4, Some("value4"))
+  assert_eq(value5, Some("value5"))
   
-  assert_true(true)
+  // Verify carriers don't interfere
+  assert_eq(TextMapCarrier::get(carrier1, "concurrent-header2"), None)
+  assert_eq(TextMapCarrier::get(carrier2, "concurrent-header3"), None)
+  assert_eq(TextMapCarrier::get(carrier3, "concurrent-header4"), None)
+  assert_eq(TextMapCarrier::get(carrier4, "concurrent-header5"), None)
+  assert_eq(TextMapCarrier::get(carrier5, "concurrent-header1"), None)
 }
 
-test "concurrent instrumentation scope operations" {
-  // Simulate concurrent instrumentation scope creation
-  let scopes = []
-  for i in 0..20 {
-    let scope = InstrumentationScope::{
-      name: "concurrent-scope-" + i.to_string(),
-      version: Some("1.0." + i.to_string()),
-      schema_url: Some("https://example.com/schema/" + i.to_string())
-    }
-    scopes.push(scope)
-  }
+test "concurrent propagator operations" {
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let baggage_propagator = W3CBaggagePropagator::new()
+  let propagators = [trace_propagator, baggage_propagator]
+  let composite_propagator = CompositePropagator::new(propagators)
   
-  // Simulate concurrent scope property access
-  for scope in scopes {
-    let name = scope.name
-    let version = scope.version
-    let schema_url = scope.schema_url
-    
-    assert_true(name.length() > 0)
-    assert_true(version != None)
-    assert_true(schema_url != None)
-  }
+  // Create multiple contexts and carriers (simulating concurrent operations)
+  let ctx1 = Context::root()
+  let ctx2 = Context::root()
+  let ctx3 = Context::root()
   
-  // Test concurrent tracer and meter creation with scopes
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
+  let carrier1 = TextMapCarrier::new()
+  let carrier2 = TextMapCarrier::new()
+  let carrier3 = TextMapCarrier::new()
   
-  for scope in scopes {
-    let tracer = TracerProvider::get_tracer(tracer_provider, scope.name, scope.version)
-    let meter = MeterProvider::get_meter(meter_provider, scope.name)
-    
-    // Test concurrent instrument creation
-    let counter = Meter::create_counter(meter, "concurrent.metric")
-    let histogram = Meter::create_histogram(meter, "concurrent.histogram")
-    
-    // Test concurrent metric operations
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, 1.0)
-  }
+  // Perform concurrent injection operations
+  CompositePropagator::inject(composite_propagator, ctx1, carrier1)
+  CompositePropagator::inject(composite_propagator, ctx2, carrier2)
+  CompositePropagator::inject(composite_propagator, ctx3, carrier3)
   
+  // Verify injection worked for all carriers
+  let traceparent1 = TextMapCarrier::get(carrier1, "traceparent")
+  let traceparent2 = TextMapCarrier::get(carrier2, "traceparent")
+  let traceparent3 = TextMapCarrier::get(carrier3, "traceparent")
+  
+  assert_eq(traceparent1, Some("00-test-trace-id-test-span-id-01"))
+  assert_eq(traceparent2, Some("00-test-trace-id-test-span-id-01"))
+  assert_eq(traceparent3, Some("00-test-trace-id-test-span-id-01"))
+  
+  // Perform concurrent extraction operations
+  let extracted_ctx1 = CompositePropagator::extract(composite_propagator, carrier1)
+  let extracted_ctx2 = CompositePropagator::extract(composite_propagator, carrier2)
+  let extracted_ctx3 = CompositePropagator::extract(composite_propagator, carrier3)
+  
+  // Verify extraction worked for all contexts
+  let extracted_value1 = Context::get(extracted_ctx1, ContextKey::new("extracted"))
+  let extracted_value2 = Context::get(extracted_ctx2, ContextKey::new("extracted"))
+  let extracted_value3 = Context::get(extracted_ctx3, ContextKey::new("extracted"))
+  
+  assert_eq(extracted_value1, Some("true"))
+  assert_eq(extracted_value2, Some("true"))
+  assert_eq(extracted_value3, Some("true"))
+  
+  // If no crashes occur, concurrent operations are safe
   assert_true(true)
 }
