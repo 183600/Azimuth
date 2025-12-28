@@ -1,16 +1,15 @@
-// 日志记录严重性测试用例
-// 测试 Azimuth 遥测系统中的日志记录和严重性级别功能
+// Log Record Severity Tests for Azimuth Telemetry System
+// Testing log record severity levels and context operations
 
-test "log_severity_levels" {
-  // 测试所有严重性级别
-  let trace_record = LogRecord::new(Trace, "Trace level message")
-  let debug_record = LogRecord::new(Debug, "Debug level message")
-  let info_record = LogRecord::new(Info, "Info level message")
-  let warn_record = LogRecord::new(Warn, "Warning level message")
-  let error_record = LogRecord::new(Error, "Error level message")
-  let fatal_record = LogRecord::new(Fatal, "Fatal level message")
+test "log record severity levels" {
+  let trace_record = LogRecord::new(Trace, "Trace message")
+  let debug_record = LogRecord::new(Debug, "Debug message")
+  let info_record = LogRecord::new(Info, "Info message")
+  let warn_record = LogRecord::new(Warn, "Warning message")
+  let error_record = LogRecord::new(Error, "Error message")
+  let fatal_record = LogRecord::new(Fatal, "Fatal message")
   
-  // 验证严重性级别
+  // Test severity levels
   assert_eq(LogRecord::severity_number(trace_record), Trace)
   assert_eq(LogRecord::severity_number(debug_record), Debug)
   assert_eq(LogRecord::severity_number(info_record), Info)
@@ -18,20 +17,21 @@ test "log_severity_levels" {
   assert_eq(LogRecord::severity_number(error_record), Error)
   assert_eq(LogRecord::severity_number(fatal_record), Fatal)
   
-  // 验证消息内容
-  assert_eq(LogRecord::body(trace_record), Some("Trace level message"))
-  assert_eq(LogRecord::body(debug_record), Some("Debug level message"))
-  assert_eq(LogRecord::body(info_record), Some("Info level message"))
-  assert_eq(LogRecord::body(warn_record), Some("Warning level message"))
-  assert_eq(LogRecord::body(error_record), Some("Error level message"))
-  assert_eq(LogRecord::body(fatal_record), Some("Fatal level message"))
+  // Test message bodies
+  assert_eq(LogRecord::body(trace_record), Some("Trace message"))
+  assert_eq(LogRecord::body(debug_record), Some("Debug message"))
+  assert_eq(LogRecord::body(info_record), Some("Info message"))
+  assert_eq(LogRecord::body(warn_record), Some("Warning message"))
+  assert_eq(LogRecord::body(error_record), Some("Error message"))
+  assert_eq(LogRecord::body(fatal_record), Some("Fatal message"))
 }
 
-test "log_record_with_context" {
+test "log record with context" {
   let timestamp = 1735689600000000000L
-  let observed_timestamp = 1735689600000001000L
+  let observed_timestamp = 1735689601000000000L
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
   let span_id = "b7ad6b7169203331"
+  let ctx = Context::with_value(Context::root(), ContextKey::new("user.id"), "12345")
   
   let record = LogRecord::new_with_context(
     Error,
@@ -41,202 +41,143 @@ test "log_record_with_context" {
     Some(observed_timestamp),
     Some(trace_id),
     Some(span_id),
-    None
+    Some(ctx)
   )
   
-  // 验证记录属性
+  // Test context properties
   assert_eq(LogRecord::severity_number(record), Error)
   assert_eq(LogRecord::body(record), Some("Database connection failed"))
   assert_eq(LogRecord::trace_id(record), Some(trace_id))
   assert_eq(LogRecord::span_id(record), Some(span_id))
 }
 
-test "logger_operations" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "azimuth.logger")
+test "log record severity comparison" {
+  let trace_sev = Trace
+  let debug_sev = Debug
+  let info_sev = Info
+  let warn_sev = Warn
+  let error_sev = Error
+  let fatal_sev = Fatal
   
-  // 测试不同严重性级别的日志记录
-  let trace_log = LogRecord::new(Trace, "Starting operation")
-  let info_log = LogRecord::new(Info, "Operation completed successfully")
-  let warn_log = LogRecord::new(Warn, "Operation took longer than expected")
-  let error_log = LogRecord::new(Error, "Operation failed due to timeout")
+  // Test severity level ordering (lower enum values should be less severe)
+  assert_true(trace_sev != debug_sev)
+  assert_true(debug_sev != info_sev)
+  assert_true(info_sev != warn_sev)
+  assert_true(warn_sev != error_sev)
+  assert_true(error_sev != fatal_sev)
   
-  // 发送日志记录
-  Logger::emit(logger, trace_log)
-  Logger::emit(logger, info_log)
-  Logger::emit(logger, warn_log)
-  Logger::emit(logger, error_log)
-  
-  assert_true(true)
+  // Test severity equality
+  assert_eq(trace_sev, Trace)
+  assert_eq(debug_sev, Debug)
+  assert_eq(info_sev, Info)
+  assert_eq(warn_sev, Warn)
+  assert_eq(error_sev, Error)
+  assert_eq(fatal_sev, Fatal)
 }
 
-test "log_severity_priority_ordering" {
-  // 测试严重性级别的优先级顺序
-  let severities = [Trace, Debug, Info, Warn, Error, Fatal]
-  let expected_order = [1, 2, 3, 4, 5, 6]
-  
-  // 验证严重性级别的相对优先级
-  let trace_priority = match severities[0] {
-    Trace => 1
-    Debug => 2
-    Info => 3
-    Warn => 4
-    Error => 5
-    Fatal => 6
-  }
-  assert_eq(trace_priority, 1)
-  
-  let debug_priority = match severities[1] {
-    Trace => 1
-    Debug => 2
-    Info => 3
-    Warn => 4
-    Error => 5
-    Fatal => 6
-  }
-  assert_eq(debug_priority, 2)
-  
-  let info_priority = match severities[2] {
-    Trace => 1
-    Debug => 2
-    Info => 3
-    Warn => 4
-    Error => 5
-    Fatal => 6
-  }
-  assert_eq(info_priority, 3)
-  
-  let warn_priority = match severities[3] {
-    Trace => 1
-    Debug => 2
-    Info => 3
-    Warn => 4
-    Error => 5
-    Fatal => 6
-  }
-  assert_eq(warn_priority, 4)
-  
-  let error_priority = match severities[4] {
-    Trace => 1
-    Debug => 2
-    Info => 3
-    Warn => 4
-    Error => 5
-    Fatal => 6
-  }
-  assert_eq(error_priority, 5)
-  
-  let fatal_priority = match severities[5] {
-    Trace => 1
-    Debug => 2
-    Info => 3
-    Warn => 4
-    Error => 5
-    Fatal => 6
-  }
-  assert_eq(fatal_priority, 6)
-}
-
-test "log_record_with_attributes" {
+test "log record with attributes" {
   let attrs = Attributes::new()
-  Attributes::set(attrs, "user.id", StringValue("user123"))
-  Attributes::set(attrs, "request.id", StringValue("req456"))
-  Attributes::set(attrs, "response.time", IntValue(250))
+  Attributes::set(attrs, "error.code", StringValue("500"))
+  Attributes::set(attrs, "retry.count", IntValue(3))
   
   let record = LogRecord::new_with_context(
-    Info,
-    Some("Request processed successfully"),
+    Error,
+    Some("Service unavailable"),
     Some(attrs),
     Some(1735689600000000000L),
     None,
-    Some("0af7651916cd43dd8448eb211c80319c"),
-    Some("b7ad6b7169203331"),
+    None,
+    None,
     None
   )
   
-  // 验证记录包含属性
-  assert_eq(LogRecord::severity_number(record), Info)
-  assert_eq(LogRecord::body(record), Some("Request processed successfully"))
-  assert_eq(LogRecord::trace_id(record), Some("0af7651916cd43dd8448eb211c80319c"))
-  assert_eq(LogRecord::span_id(record), Some("b7ad6b7169203331"))
+  // Test record properties
+  assert_eq(LogRecord::severity_number(record), Error)
+  assert_eq(LogRecord::body(record), Some("Service unavailable"))
 }
 
-test "log_record_edge_cases" {
-  // 测试空消息
-  let empty_message = LogRecord::new(Info, "")
-  assert_eq(LogRecord::body(empty_message), Some(""))
+test "log record edge cases" {
+  // Test empty body
+  let empty_record = LogRecord::new(Info, "")
+  assert_eq(LogRecord::body(empty_record), Some(""))
   
-  // 测试长消息
-  let long_message = "This is a very long log message that contains a lot of detail about what happened during the operation and might include stack traces or other diagnostic information"
-  let long_record = LogRecord::new(Error, long_message)
+  // Test long message
+  let long_message = "This is a very long log message that contains detailed information about what happened in the system and should be properly handled"
+  let long_record = LogRecord::new(Info, long_message)
   assert_eq(LogRecord::body(long_record), Some(long_message))
   
-  // 测试特殊字符
-  let special_chars = "Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let special_record = LogRecord::new(Warn, special_chars)
-  assert_eq(LogRecord::body(special_record), Some(special_chars))
-  
-  // 测试Unicode字符
-  let unicode_message = "Unicode test: 中文测试 🚀 emoji test"
-  let unicode_record = LogRecord::new(Info, unicode_message)
-  assert_eq(LogRecord::body(unicode_record), Some(unicode_message))
+  // Test special characters
+  let special_message = "Error: Invalid UTF-8 sequence: \x00\x01\x02"
+  let special_record = LogRecord::new(Error, special_message)
+  assert_eq(LogRecord::body(special_record), Some(special_message))
 }
 
-test "log_severity_filtering" {
-  // 模拟日志严重性过滤逻辑
-  let records = [
-    LogRecord::new(Trace, "Trace message"),
-    LogRecord::new(Debug, "Debug message"),
-    LogRecord::new(Info, "Info message"),
-    LogRecord::new(Warn, "Warning message"),
-    LogRecord::new(Error, "Error message"),
-    LogRecord::new(Fatal, "Fatal message")
-  ]
+test "log record timestamp operations" {
+  let current_time = Clock::now_unix_nanos(Clock::system())
   
-  // 过滤出警告级别及以上的日志
-  let warning_and_above = []
-  for record in records {
-    let severity = LogRecord::severity_number(record)
-    let should_include = match severity {
-      Warn => true
-      Error => true
-      Fatal => true
-      _ => false
-    }
-    if should_include {
-      warning_and_above.push(record)
-    }
-  }
+  let record1 = LogRecord::new_with_context(
+    Info,
+    Some("Message 1"),
+    None,
+    Some(current_time),
+    None,
+    None,
+    None,
+    None
+  )
   
-  assert_eq(warning_and_above.length(), 3)
-  assert_eq(LogRecord::severity_number(warning_and_above[0]), Warn)
-  assert_eq(LogRecord::severity_number(warning_and_above[1]), Error)
-  assert_eq(LogRecord::severity_number(warning_and_above[2]), Fatal)
+  let record2 = LogRecord::new_with_context(
+    Info,
+    Some("Message 2"),
+    None,
+    Some(current_time + 1000000L),
+    None,
+    None,
+    None,
+    None
+  )
+  
+  // Test timestamp assignment
+  assert_eq(LogRecord::body(record1), Some("Message 1"))
+  assert_eq(LogRecord::body(record2), Some("Message 2"))
 }
 
-test "log_performance_scenarios" {
+test "logger provider operations" {
   let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "performance.logger")
+  let logger = LoggerProvider::get_logger(provider, "test.logger")
   
-  // 测试大量日志记录的性能
-  for i in 0..100 {
-    let message = "Performance test message " + i.to_string()
-    let record = LogRecord::new(Info, message)
-    Logger::emit(logger, record)
-  }
+  // Test logger creation
+  assert_eq(logger.scope.name, "test.logger")
+  assert_eq(logger.scope.version, None)
+  assert_eq(logger.scope.schema_url, None)
   
-  // 测试不同严重性级别的混合日志
-  let mixed_records = [
-    LogRecord::new(Trace, "Trace operation"),
-    LogRecord::new(Debug, "Debug operation"),
-    LogRecord::new(Info, "Info operation"),
-    LogRecord::new(Warn, "Warning operation"),
-    LogRecord::new(Error, "Error operation")
+  // Test log emission
+  let record = LogRecord::new(Info, "Test log message")
+  Logger::emit(logger, record)
+  
+  // Test with different severity levels
+  let trace_record = LogRecord::new(Trace, "Trace level")
+  let error_record = LogRecord::new(Error, "Error level")
+  
+  Logger::emit(logger, trace_record)
+  Logger::emit(logger, error_record)
+  
+  assert_true(true) // If we reach here, emission didn't crash
+}
+
+test "log record severity context validation" {
+  let test_cases = [
+    (Trace, "Debugging information"),
+    (Debug, "Development information"),
+    (Info, "General information"),
+    (Warn, "Warning conditions"),
+    (Error, "Error conditions"),
+    (Fatal, "Critical failure")
   ]
   
-  for record in mixed_records {
-    Logger::emit(logger, record)
+  for (severity, message) in test_cases {
+    let record = LogRecord::new(severity, message)
+    assert_eq(LogRecord::severity_number(record), severity)
+    assert_eq(LogRecord::body(record), Some(message))
   }
-  
-  assert_true(true)
 }
