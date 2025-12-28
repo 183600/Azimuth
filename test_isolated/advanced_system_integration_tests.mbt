@@ -34,11 +34,10 @@ test "内存管理和资源清理测试" {
   
   // 测试大量baggage条目
   let baggage = Baggage::new()
-  let updated_baggage = baggage
   for i = 0; i < 50; i = i + 1 {
     let key = "baggage." + i.to_string()
     let value = "baggage.value." + i.to_string()
-    updated_baggage = Baggage::set_entry(updated_baggage, key, value)
+    Baggage::set_entry(baggage, key, value)
   }
   
   assert_true(true)
@@ -77,7 +76,10 @@ test "数据序列化和完整性验证测试" {
   )
   
   // 验证数据完整性
-  assert_eq(LogRecord::severity_number(log_record), Error)
+  match LogRecord::severity_number(log_record) {
+    Error => assert_true(true)
+    _ => assert_true(false)
+  }
   assert_true(LogRecord::body(log_record) is Some)
   assert_true(LogRecord::trace_id(log_record) is Some)
   assert_true(LogRecord::span_id(log_record) is Some)
@@ -104,11 +106,8 @@ test "跨服务遥测传播完整流程测试" {
   
   // 服务A：创建初始追踪
   let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
-  let root_span = Tracer::start_span(service_a_tracer, "api.request")
-  Span::add_event(root_span, "request.received", Some([
-    ("service", StringValue("service-a")),
-    ("endpoint", StringValue("/api/process"))
-  ]))
+  let root_span = Tracer::start_span(service_a_tracer, "gateway.request")
+  Span::add_event(root_span, "request.received")
   
   // 创建传播上下文
   let ctx_a = Context::root()
@@ -124,10 +123,7 @@ test "跨服务遥测传播完整流程测试" {
   // 服务B：接收并处理追踪
   let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
   let service_b_span = Tracer::start_span(service_b_tracer, "database.query")
-  Span::add_event(service_b_span, "query.started", Some([
-    ("service", StringValue("service-b")),
-    ("query.type", StringValue("SELECT"))
-  ]))
+  Span::add_event(service_b_span, "query.started")
   
   // 服务B调用服务C
   let carrier_to_c = TextMapCarrier::new()
@@ -138,10 +134,7 @@ test "跨服务遥测传播完整流程测试" {
   // 服务C：最终处理
   let service_c_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-c")
   let service_c_span = Tracer::start_span(service_c_tracer, "cache.operation")
-  Span::add_event(service_c_span, "cache.hit", Some([
-    ("service", StringValue("service-c")),
-    ("cache.key", StringValue("user:12345"))
-  ]))
+  Span::add_event(service_c_span, "cache.hit")
   
   // 完成所有操作
   Span::set_status(service_c_span, Ok)
@@ -240,41 +233,31 @@ test "实时监控和仪表板数据聚合测试" {
   let meter = MeterProvider::get_meter(meter_provider, "realtime.monitor")
   
   // 创建各种指标
-  let request_counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
-  let response_histogram = Meter::create_histogram(meter, "http.response.time", Some("HTTP response time"), Some("ms"))
-  let error_counter = Meter::create_counter(meter, "http.errors.total", Some("Total HTTP errors"), Some("errors"))
-  let active_connections = UpDownCounter::{ 
-    name: "http.active.connections", 
-    description: Some("Active HTTP connections"), 
-    unit: Some("connections") 
-  }
+  let request_counter = Meter::create_counter(meter, "http.requests.total")
+  let response_histogram = Meter::create_histogram(meter, "http.response.time")
+  let error_counter = Meter::create_counter(meter, "http.errors.total")
   
   // 模拟实时数据流
   for i = 0; i < 20; i = i + 1 {
     // 记录请求
-    Counter::add(request_counter, 1.0, Some(Attributes::new()))
+    Counter::add(request_counter, 1.0)
     
     // 记录响应时间（模拟不同响应时间）
-    let response_time = 50.0 + (i.to_int() * 10.0) + (Random::next_u64(Random::system()).to_int() % 100).to_double()
-    Histogram::record(response_histogram, response_time, Some(Attributes::new()))
+    let response_time = 50.0 + (i.to_int() * 10.0).to_double() + (Random::next_u64(Random::system()) % 100).to_double()
+    Histogram::record(response_histogram, response_time)
     
     // 偶尔记录错误
     if i % 5 == 0 {
-      Counter::add(error_counter, 1.0, Some(Attributes::new()))
+      Counter::add(error_counter, 1.0)
     }
   }
-  
-  // 模拟连接数变化
-  Counter::add(Counter::{ name: "http.active.connections", description: None, unit: None }, 10.0)
-  Counter::add(Counter::{ name: "http.active.connections", description: None, unit: None }, -3.0)
-  Counter::add(Counter::{ name: "http.active.connections", description: None, unit: None }, 5.0)
   
   // 创建实时日志记录
   let logger = LoggerProvider::get_logger(LoggerProvider::default(), "realtime.logger")
   let current_time = Clock::now_unix_nanos(Clock::system())
   
   for i = 0; i < 10; i = i + 1 {
-    let log_level = if i % 3 == 0 { Error } else if i % 2 == 0 { Warn } else { Info }
+    let log_level = if i % 3 == 0 { SeverityNumber::Error } else if i % 2 == 0 { SeverityNumber::Warn } else { SeverityNumber::Info }
     let log_message = "实时监控事件 #" + i.to_string()
     let log_record = LogRecord::new_with_context(
       log_level,
@@ -297,10 +280,10 @@ test "高级指标聚合和统计分析测试" {
   let meter = MeterProvider::get_meter(meter_provider, "analytics.test")
   
   // 创建业务指标
-  let user_actions = Meter::create_counter(meter, "user.actions.total", Some("Total user actions"), Some("actions"))
-  let session_duration = Meter::create_histogram(meter, "user.session.duration", Some("User session duration"), Some("seconds"))
-  let page_views = Meter::create_counter(meter, "page.views.total", Some("Total page views"), Some("views"))
-  let conversion_rate = Meter::create_histogram(meter, "conversion.rate", Some("Conversion rate percentage"), Some("percent"))
+  let user_actions = Meter::create_counter(meter, "user.actions.total")
+  let session_duration = Meter::create_histogram(meter, "user.session.duration")
+  let page_views = Meter::create_counter(meter, "page.views.total")
+  let conversion_rate = Meter::create_histogram(meter, "conversion.rate")
   
   // 模拟用户行为数据
   let user_segments = ["premium", "standard", "basic"]
@@ -315,27 +298,27 @@ test "高级指标聚合和统计分析测试" {
     Attributes::set(attrs, "user.segment", StringValue(segment))
     Attributes::set(attrs, "action.type", StringValue(action))
     
-    Counter::add(user_actions, 1.0, Some(attrs))
+    Counter::add(user_actions, 1.0)
     
     if action == "view" {
-      Counter::add(page_views, 1.0, Some(attrs))
+      Counter::add(page_views, 1.0)
     }
     
     // 模拟会话时长（5-300秒）
     let duration = 5.0 + (Random::next_u64(Random::system()) % 295).to_double()
-    Histogram::record(session_duration, duration, Some(attrs))
+    Histogram::record(session_duration, duration)
     
     // 模拟转化率（0-100%）
     if action == "purchase" {
       let conversion = (Random::next_u64(Random::system()) % 100).to_double()
-      Histogram::record(conversion_rate, conversion, Some(attrs))
+      Histogram::record(conversion_rate, conversion)
     }
   }
   
   // 创建性能指标
-  let cpu_usage = Meter::create_histogram(meter, "system.cpu.usage", Some("CPU usage percentage"), Some("percent"))
-  let memory_usage = Meter::create_histogram(meter, "system.memory.usage", Some("Memory usage in MB"), Some("MB"))
-  let disk_io = Meter::create_counter(meter, "system.disk.io", Some("Disk I/O operations"), Some("operations"))
+  let cpu_usage = Meter::create_histogram(meter, "system.cpu.usage")
+  let memory_usage = Meter::create_histogram(meter, "system.memory.usage")
+  let disk_io = Meter::create_counter(meter, "system.disk.io")
   
   // 模拟系统性能数据
   for i = 0; i < 15; i = i + 1 {
@@ -343,9 +326,9 @@ test "高级指标聚合和统计分析测试" {
     let memory = 512.0 + (Random::next_u64(Random::system()) % 2048).to_double()
     let io_ops = (Random::next_u64(Random::system()) % 1000).to_double()
     
-    Histogram::record(cpu_usage, cpu, Some(Attributes::new()))
-    Histogram::record(memory_usage, memory, Some(Attributes::new()))
-    Counter::add(disk_io, io_ops, Some(Attributes::new()))
+    Histogram::record(cpu_usage, cpu)
+    Histogram::record(memory_usage, memory)
+    Counter::add(disk_io, io_ops)
   }
   
   assert_true(true)
@@ -354,77 +337,50 @@ test "高级指标聚合和统计分析测试" {
 test "分布式追踪复杂场景测试" {
   // 模拟复杂的分布式调用链
   
-  let tracer_provider = TracerProvider::default()
-  let gateway_tracer = TracerProvider::get_tracer(tracer_provider, "api.gateway")
-  let user_service_tracer = TracerProvider::get_tracer(tracer_provider, "user.service")
-  let order_service_tracer = TracerProvider::get_tracer(tracer_provider, "order.service")
-  let payment_service_tracer = TracerProvider::get_tracer(tracer_provider, "payment.service")
-  let inventory_service_tracer = TracerProvider::get_tracer(tracer_provider, "inventory.service")
+  let gateway_tracer = TracerProvider::get_tracer(TracerProvider::default(), "api.gateway")
+  let user_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "user.service")
+  let order_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "order.service")
+  let payment_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "payment.service")
+  let inventory_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "inventory.service")
   
   // API Gateway：接收请求
   let gateway_span = Tracer::start_span(gateway_tracer, "gateway.request")
   let gateway_trace_id = SpanContext::trace_id(Span::span_context(gateway_span))
-  Span::add_event(gateway_span, "request.authenticated", Some([
-    ("user.id", StringValue("user123")),
-    ("api.key", StringValue("key_abc123"))
-  ]))
+  Span::add_event(gateway_span, "request.authenticated")
   
   // 调用用户服务
   let user_span = Tracer::start_span(user_service_tracer, "user.get_profile")
-  Span::add_event(user_span, "database.query", Some([
-    ("table", StringValue("users")),
-    ("query.time", IntValue(25))
-  ]))
+  Span::add_event(user_span, "database.query")
   Span::set_status(user_span, Ok)
   Span::end(user_span)
   
   // 调用订单服务
   let order_span = Tracer::start_span(order_service_tracer, "order.create")
-  Span::add_event(order_span, "validation.started", Some([
-    ("order.total", StringValue("99.99")),
-    ("currency", StringValue("USD"))
-  ]))
+  Span::add_event(order_span, "validation.started")
   
   // 订单服务调用库存服务
   let inventory_span = Tracer::start_span(inventory_service_tracer, "inventory.check")
-  Span::add_event(inventory_span, "stock.checked", Some([
-    ("product.id", StringValue("prod456")),
-    ("quantity", IntValue(2)),
-    ("available", BoolValue(true))
-  ]))
+  Span::add_event(inventory_span, "stock.checked")
   Span::set_status(inventory_span, Ok)
   Span::end(inventory_span)
   
   // 订单服务调用支付服务
   let payment_span = Tracer::start_span(payment_service_tracer, "payment.process")
-  Span::add_event(payment_span, "payment.started", Some([
-    ("amount", StringValue("99.99")),
-    ("method", StringValue("credit_card")),
-    ("provider", StringValue("stripe"))
-  ]))
+  Span::add_event(payment_span, "payment.started")
   
   // 模拟支付处理延迟
-  Span::add_event(payment_span, "payment.authorized", Some([
-    ("transaction.id", StringValue("txn_789xyz")),
-    ("auth.code", StringValue("123456"))
-  ]))
+  Span::add_event(payment_span, "payment.authorized")
   
   Span::set_status(payment_span, Ok)
   Span::end(payment_span)
   
   // 完成订单
-  Span::add_event(order_span, "order.completed", Some([
-    ("order.id", StringValue("order_456")),
-    ("status", StringValue("confirmed"))
-  ]))
+  Span::add_event(order_span, "order.completed")
   Span::set_status(order_span, Ok)
   Span::end(order_span)
   
   // 完成网关请求
-  Span::add_event(gateway_span, "response.sent", Some([
-    ("status.code", IntValue(200)),
-    ("response.time", IntValue(350))
-  ]))
+  Span::add_event(gateway_span, "response.sent")
   Span::set_status(gateway_span, Ok)
   Span::end(gateway_span)
   
@@ -436,85 +392,63 @@ test "分布式追踪复杂场景测试" {
 test "故障恢复和容错机制测试" {
   // 测试各种故障场景下的系统恢复能力
   
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resilience.test")
+  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "resilience.test")
   
   // 模拟网络超时场景
   let timeout_span = Tracer::start_span(tracer, "network.request")
-  Span::add_event(timeout_span, "request.started", Some([
-    ("endpoint", StringValue("https://api.example.com/data")),
-    ("timeout", IntValue(5000))
-  ]))
+  Span::add_event(timeout_span, "request.started")
   
   // 模拟超时重试
   for attempt = 1; attempt <= 3; attempt = attempt + 1 {
-    Span::add_event(timeout_span, "retry.attempt", Some([
-      ("attempt.number", IntValue(attempt)),
-      ("reason", StringValue("timeout"))
-    ]))
+    Span::add_event(timeout_span, "retry.attempt")
   }
   
-  Span::set_status(timeout_span, Error, Some("Request timeout after 3 attempts"))
+  Span::set_status(timeout_span, Error)
   Span::end(timeout_span)
   
   // 模拟数据库连接失败
   let db_span = Tracer::start_span(tracer, "database.operation")
-  Span::add_event(db_span, "connection.failed", Some([
-    ("database", StringValue("primary.db")),
-    ("error.code", StringValue("CONN_TIMEOUT"))
-  ]))
+  Span::add_event(db_span, "connection.failed")
   
   // 模拟故障转移
-  Span::add_event(db_span, "failover.started", Some([
-    ("target", StringValue("backup.db")),
-    ("strategy", StringValue("automatic"))
-  ]))
+  Span::add_event(db_span, "failover.started")
   
-  Span::add_event(db_span, "connection.established", Some([
-    ("database", StringValue("backup.db")),
-    ("latency", IntValue(150))
-  ]))
+  Span::add_event(db_span, "connection.established")
   
-  Span::set_status(db_span, Ok, Some("Operation completed with failover"))
+  Span::set_status(db_span, Ok)
   Span::end(db_span)
   
   // 模拟部分服务降级
   let degradation_span = Tracer::start_span(tracer, "service.degradation")
-  Span::add_event(degradation_span, "circuit.breaker.opened", Some([
-    ("service", StringValue("recommendation.engine")),
-    ("failure.rate", StringValue("85%"))
-  ]))
+  Span::add_event(degradation_span, "circuit.breaker.opened")
   
   // 启用降级模式
-  Span::add_event(degradation_span, "degradation.activated", Some([
-    ("mode", StringValue("cache_only")),
-    ("cache.hit.rate", StringValue("95%"))
-  ]))
+  Span::add_event(degradation_span, "degradation.activated")
   
-  Span::set_status(degradation_span, Ok, Some("Service operating in degraded mode"))
+  Span::set_status(degradation_span, Ok)
   Span::end(degradation_span)
   
   // 测试指标收集在故障场景下的稳定性
   let meter_provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(meter_provider, "failure.metrics")
   
-  let failure_counter = Meter::create_counter(meter, "failures.total", Some("Total failures"), Some("count"))
-  let recovery_counter = Meter::create_counter(meter, "recoveries.total", Some("Total recoveries"), Some("count"))
-  let latency_histogram = Meter::create_histogram(meter, "recovery.latency", Some("Recovery latency"), Some("ms"))
+  let failure_counter = Meter::create_counter(meter, "failures.total")
+  let recovery_counter = Meter::create_counter(meter, "recoveries.total")
+  let latency_histogram = Meter::create_histogram(meter, "recovery.latency")
   
   // 记录故障和恢复指标
-  Counter::add(failure_counter, 5.0, Some(Attributes::new()))
-  Counter::add(recovery_counter, 4.0, Some(Attributes::new()))
-  Histogram::record(latency_histogram, 250.0, Some(Attributes::new()))
-  Histogram::record(latency_histogram, 150.0, Some(Attributes::new()))
-  Histogram::record(latency_histogram, 320.0, Some(Attributes::new()))
+  Counter::add(failure_counter, 5.0)
+  Counter::add(recovery_counter, 4.0)
+  Histogram::record(latency_histogram, 250.0)
+  Histogram::record(latency_histogram, 150.0)
+  Histogram::record(latency_histogram, 320.0)
   
   // 测试日志记录在故障情况下的表现
   let logger = LoggerProvider::get_logger(LoggerProvider::default(), "resilience.logger")
   
-  let error_log = LogRecord::new(Error, "Database connection pool exhausted")
-  let warning_log = LogRecord::new(Warn, "Circuit breaker opened for recommendation service")
-  let info_log = LogRecord::new(Info, "Failover to backup database completed successfully")
+  let error_log = LogRecord::new(SeverityNumber::Error, "Database connection pool exhausted")
+  let warning_log = LogRecord::new(SeverityNumber::Warn, "Circuit breaker opened for recommendation service")
+  let info_log = LogRecord::new(SeverityNumber::Info, "Failover to backup database completed successfully")
   
   Logger::emit(logger, error_log)
   Logger::emit(logger, warning_log)
