@@ -8,6 +8,6 @@
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["simple_validation_tests.mbt", "additional_feature_tests.mbt", "enhanced_test_cases.mbt", "integration_comprehensive_tests.mbt", "supplementary_tests.mbt", "../tests/azimuth/telemetry/enhanced_integration_tests.mbt", "new_comprehensive_tests.mbt", "advanced_telemetry_tests.mbt", "focused_enhanced_tests.mbt", "advanced_system_integration_tests.mbt", "additional_comprehensive_test_cases.mbt", "advanced_comprehensive_scenarios_tests.mbt", "advanced_enhanced_test_suite.mbt", "advanced_telemetry_integration_tests.mbt", "enhanced_azimuth_tests.mbt", "advanced_integration_tests.mbt", "enhanced_comprehensive_test_suite.mbt", "comprehensive_core_functionality_tests.mbt"]
+    "test": ["simple_validation_tests.mbt", "additional_feature_tests.mbt", "enhanced_test_cases.mbt", "integration_comprehensive_tests.mbt", "supplementary_tests.mbt", "../tests/azimuth/telemetry/enhanced_integration_tests.mbt", "new_comprehensive_tests.mbt", "advanced_telemetry_tests.mbt", "focused_enhanced_tests.mbt", "advanced_system_integration_tests.mbt", "additional_comprehensive_test_cases.mbt", "advanced_comprehensive_scenarios_tests.mbt", "advanced_enhanced_test_suite.mbt", "advanced_telemetry_integration_tests.mbt", "enhanced_azimuth_tests.mbt", "advanced_integration_tests.mbt", "enhanced_comprehensive_test_suite.mbt", "comprehensive_core_functionality_tests.mbt", "targeted_enhanced_tests.mbt"]
   }
 }
