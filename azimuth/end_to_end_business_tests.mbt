@@ -20,91 +20,55 @@ test "电商订单处理完整流程遥测测试" {
   let order_logger = LoggerProvider::get_logger(logger_provider, "order-logger")
   
   // 创建业务指标
-  let order_counter = Meter::create_counter(order_meter, "orders.total", Some("Total number of orders"), Some("orders"))
-  let payment_amount_histogram = Meter::create_histogram(payment_meter, "payment.amount", Some("Payment amounts"), Some("currency"))
-  let inventory_counter = Meter::create_counter(inventory_meter, "inventory.reservations", Some("Inventory reservations"), Some("reservations"))
+  let order_counter = Meter::create_counter(order_meter, "orders.total")
+  let payment_amount_histogram = Meter::create_histogram(payment_meter, "payment.amount")
+  let inventory_counter = Meter::create_counter(inventory_meter, "inventory.reservations")
   
   // 1. 订单创建阶段
   let order_span = Tracer::start_span(order_service_tracer, "create-order")
   let order_context = Context::with_value(Context::root(), ContextKey::new("order.id"), "ORDER-12345")
   
   // 添加订单属性
-  Span::add_event(order_span, "order.created", Some([
-    ("order.id", StringValue("ORDER-12345")),
-    ("user.id", StringValue("USER-67890")),
-    ("total.amount", FloatValue(299.99)),
-    ("currency", StringValue("USD"))
-  ]))
+  Span::add_event(order_span, "order.created")
   
   // 记录订单指标
-  Counter::add(order_counter, 1.0, Some(Attributes::new()))
+  Counter::add(order_counter, 1.0)
   
   // 记录订单日志
-  let order_log = LogRecord::new_with_context(
-    Info,
-    Some("Order ORDER-12345 created for user USER-67890"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some("trace-123"),
-    Some("order-456"),
-    Some(order_context)
-  )
+  let order_log = LogRecord::new(Info, "Order ORDER-12345 created for user USER-67890")
   Logger::emit(order_logger, order_log)
   
   // 2. 支付处理阶段
   let payment_span = Tracer::start_span(payment_service_tracer, "process-payment")
-  Span::add_event(payment_span, "payment.started", Some([
-    ("order.id", StringValue("ORDER-12345")),
-    ("payment.method", StringValue("credit_card")),
-    ("amount", FloatValue(299.99))
-  ]))
+  Span::add_event(payment_span, "payment.started")
   
   // 记录支付指标
-  Histogram::record(payment_amount_histogram, 299.99, Some(Attributes::new()))
+  Histogram::record(payment_amount_histogram, 299.99)
   
   // 模拟支付处理
-  Span::add_event(payment_span, "payment.completed", Some([
-    ("payment.id", StringValue("PAY-11111")),
-    ("status", StringValue("success"))
-  ]))
+  Span::add_event(payment_span, "payment.completed")
   
   Span::end(payment_span)
   
   // 3. 库存预留阶段
   let inventory_span = Tracer::start_span(inventory_service_tracer, "reserve-inventory")
-  Span::add_event(inventory_span, "inventory.reservation.started", Some([
-    ("order.id", StringValue("ORDER-12345")),
-    ("product.id", StringValue("PROD-22222")),
-    ("quantity", IntValue(1))
-  ]))
+  Span::add_event(inventory_span, "inventory.reservation.started")
   
   // 记录库存指标
-  Counter::add(inventory_counter, 1.0, Some(Attributes::new()))
+  Counter::add(inventory_counter, 1.0)
   
-  Span::add_event(inventory_span, "inventory.reserved", Some([
-    ("reservation.id", StringValue("RES-33333")),
-    ("status", StringValue("confirmed")
-  ]))
+  Span::add_event(inventory_span, "inventory.reserved")
   
   Span::end(inventory_span)
   
   // 4. 物流配送阶段
   let shipping_span = Tracer::start_span(shipping_service_tracer, "schedule-shipping")
-  Span::add_event(shipping_span, "shipping.scheduled", Some([
-    ("order.id", StringValue("ORDER-12345")),
-    ("shipping.method", StringValue("express")),
-    ("estimated.delivery", StringValue("2025-01-05"))
-  ]))
+  Span::add_event(shipping_span, "shipping.scheduled")
   
   Span::end(shipping_span)
   
   // 5. 完成订单
-  Span::add_event(order_span, "order.completed", Some([
-    ("order.id", StringValue("ORDER-12345")),
-    ("status", StringValue("completed")),
-    ("total.duration.ms", IntValue(2500))
-  ]))
+  Span::add_event(order_span, "order.completed")
   
   Span::end(order_span)
   
