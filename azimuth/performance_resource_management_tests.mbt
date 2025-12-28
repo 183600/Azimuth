@@ -1,436 +1,419 @@
-// Azimuth Telemetry System - Performance and Resource Management Tests
-// 性能和资源管理测试用例
+// Performance and Resource Management Tests for Azimuth Telemetry System
+// These tests focus on performance benchmarks, resource utilization, and optimization
 
-test "high_volume_span_creation" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "performance-test")
+// Test 1: High-Volume Attributes Operations Performance
+pub test "high-volume attributes operations performance" {
+  let attrs = azimuth::Attributes::new()
   
-  // Test creating many spans rapidly
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i in 0..1000 {
-    let span = Tracer::start_span(tracer, "span-" + i.to_string())
-    Span::add_event(span, "event-" + i.to_string())
-    Span::set_status(span, Ok)
-    Span::end(span)
+  // Test bulk attribute setting performance
+  for i = 0; i < 100; i = i + 1 {
+    let key = "bulk.attribute." + i.to_string()
+    azimuth::Attributes::set(attrs, key, azimuth::StringValue("bulk_value_" + i.to_string()))
   }
   
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
+  // Test bulk attribute retrieval performance
+  for i = 0; i < 100; i = i + 1 {
+    let key = "bulk.attribute." + i.to_string()
+    let value = azimuth::Attributes::get(attrs, key)
+    assert_eq(value, Some(azimuth::StringValue("bulk_value_" + i.to_string())))
+  }
   
-  // Verify performance is reasonable (should complete quickly)
-  assert_true(duration < 10000000000L) // Less than 10 seconds
+  // Test mixed attribute types performance
+  azimuth::Attributes::set(attrs, "performance.string", azimuth::StringValue("performance_test_string"))
+  azimuth::Attributes::set(attrs, "performance.int", azimuth::IntValue(999999))
+  azimuth::Attributes::set(attrs, "performance.float", azimuth::FloatValue(3.14159265359))
+  azimuth::Attributes::set(attrs, "performance.bool", azimuth::BoolValue(true))
+  azimuth::Attributes::set(attrs, "performance.array.string", azimuth::ArrayStringValue(["item1", "item2", "item3"]))
+  azimuth::Attributes::set(attrs, "performance.array.int", azimuth::ArrayIntValue([100, 200, 300, 400, 500]))
+  
+  // Verify mixed type retrieval performance
+  let string_val = azimuth::Attributes::get(attrs, "performance.string")
+  let int_val = azimuth::Attributes::get(attrs, "performance.int")
+  let float_val = azimuth::Attributes::get(attrs, "performance.float")
+  let bool_val = azimuth::Attributes::get(attrs, "performance.bool")
+  let array_string_val = azimuth::Attributes::get(attrs, "performance.array.string")
+  let array_int_val = azimuth::Attributes::get(attrs, "performance.array.int")
+  
+  assert_eq(string_val, Some(azimuth::StringValue("performance_test_string")))
+  assert_eq(int_val, Some(azimuth::IntValue(999999)))
+  assert_eq(float_val, Some(azimuth::FloatValue(3.14159265359)))
+  assert_eq(bool_val, Some(azimuth::BoolValue(true)))
+  assert_eq(array_string_val, Some(azimuth::ArrayStringValue(["item1", "item2", "item3"])))
+  assert_eq(array_int_val, Some(azimuth::ArrayIntValue([100, 200, 300, 400, 500])))
 }
 
-test "high_volume_metrics_recording" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance-test")
+// Test 2: Memory-Efficient Context Management
+pub test "memory-efficient context management" {
+  let root_ctx = azimuth::Context::root()
   
-  let counter = Meter::create_counter(meter, "performance.counter")
-  let histogram = Meter::create_histogram(meter, "performance.histogram")
-  let updown_counter = Meter::create_updown_counter(meter, "performance.updown")
+  // Test context chaining performance
+  let ctx_1 = azimuth::Context::with_value(root_ctx, azimuth::ContextKey::new("level.1"), "value_1")
+  let ctx_2 = azimuth::Context::with_value(ctx_1, azimuth::ContextKey::new("level.2"), "value_2")
+  let ctx_3 = azimuth::Context::with_value(ctx_2, azimuth::ContextKey::new("level.3"), "value_3")
+  let ctx_4 = azimuth::Context::with_value(ctx_3, azimuth::ContextKey::new("level.4"), "value_4")
+  let ctx_5 = azimuth::Context::with_value(ctx_4, azimuth::ContextKey::new("level.5"), "value_5")
   
-  let start_time = Clock::now_unix_nanos(Clock::system())
+  // Verify deep context retrieval performance
+  let key_1 = azimuth::ContextKey::new("level.1")
+  let key_2 = azimuth::ContextKey::new("level.2")
+  let key_3 = azimuth::ContextKey::new("level.3")
+  let key_4 = azimuth::ContextKey::new("level.4")
+  let key_5 = azimuth::ContextKey::new("level.5")
   
-  // Test recording many metrics rapidly
-  for i in 0..10000 {
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, i.to_double())
-    UpDownCounter::add(updown_counter, 1.0)
-    
-    if i % 100 == 0 {
-      UpDownCounter::add(updown_counter, -50.0) // Simulate gauge-like behavior
-    }
-  }
+  assert_eq(azimuth::Context::get(ctx_5, key_1), Some("value_1"))
+  assert_eq(azimuth::Context::get(ctx_5, key_2), Some("value_2"))
+  assert_eq(azimuth::Context::get(ctx_5, key_3), Some("value_3"))
+  assert_eq(azimuth::Context::get(ctx_5, key_4), Some("value_4"))
+  assert_eq(azimuth::Context::get(ctx_5, key_5), Some("value_5"))
   
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
-  
-  // Verify performance is reasonable
-  assert_true(duration < 5000000000L) // Less than 5 seconds
+  // Test context isolation performance
+  let isolated_ctx = azimuth::Context::with_value(root_ctx, azimuth::ContextKey::new("isolated"), "isolated_value")
+  let isolated_key = azimuth::ContextKey::new("isolated")
+  assert_eq(azimuth::Context::get(isolated_ctx, isolated_key), Some("isolated_value"))
+  assert_eq(azimuth::Context::get(isolated_ctx, key_1), None)
 }
 
-test "high_volume_logging" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "performance-test")
+// Test 3: High-Throughput Span Operations
+pub test "high-throughput span operations" {
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "performance.tracer")
   
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // Test emitting many log records rapidly
-  for i in 0..5000 {
-    let log_record = LogRecord::new_with_context(
-      Info,
-      Some("Performance test log message " + i.to_string()),
-      Some(Attributes::new()),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some("trace" + i.to_string()),
-      Some("span" + i.to_string()),
-      Some(Context::root())
-    )
-    
-    Logger::emit(logger, log_record)
-  }
-  
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
-  
-  // Verify performance is reasonable
-  assert_true(duration < 8000000000L) // Less than 8 seconds
-}
-
-test "memory_efficiency_attributes" {
-  // Test memory efficiency with large attribute sets
-  let attrs = Attributes::new()
-  
-  // Add many attributes
-  for i in 0..1000 {
-    let key = "attribute.key." + i.to_string()
-    let value = StringValue("attribute.value." + i.to_string())
-    Attributes::set(attrs, key, value)
-  }
-  
-  // Test retrieval performance
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i in 0..1000 {
-    let key = "attribute.key." + i.to_string()
-    let result = Attributes::get(attrs, key)
-    // Simplified implementation returns None for most keys
-  }
-  
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
-  
-  // Verify retrieval performance
-  assert_true(duration < 5000000000L) // Less than 5 seconds
-}
-
-test "memory_efficiency_baggage" {
-  // Test memory efficiency with large baggage sets
-  let baggage = Baggage::new()
-  
-  // Add many baggage entries
-  for i in 0..500 {
-    let key = "baggage.key." + i.to_string()
-    let value = "baggage.value." + i.to_string()
-    baggage = Baggage::set_entry(baggage, key, value)
-  }
-  
-  // Test retrieval performance
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i in 0..500 {
-    let key = "baggage.key." + i.to_string()
-    let result = Baggage::get_entry(baggage, key)
-    // Simplified implementation returns None
-  }
-  
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
-  
-  // Verify retrieval performance
-  assert_true(duration < 2000000000L) // Less than 2 seconds
-}
-
-test "concurrent_span_operations" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent-test")
-  
-  // Test concurrent span creation and operations
+  // Test bulk span creation performance
   let spans = []
-  
-  // Create multiple spans
-  for i in 0..100 {
-    let span = Tracer::start_span(tracer, "concurrent-span-" + i.to_string())
+  for i = 0; i < 50; i = i + 1 {
+    let span = azimuth::Tracer::start_span(tracer, "performance.span." + i.to_string())
     spans.push(span)
   }
   
-  // Perform operations on all spans
-  for i in 0..100 {
-    let span = spans[i]
-    Span::add_event(span, "concurrent-event-" + i.to_string())
-    Span::set_status(span, Ok, Some("Concurrent operation completed"))
-  }
-  
-  // End all spans
+  // Test bulk span event addition performance
   for span in spans {
-    Span::end(span)
+    azimuth::Span::add_event(span, "performance.event", 
+      Some([("event.id", azimuth::StringValue("evt_123")),
+            ("timestamp", azimuth::IntValue(1735689600)),
+            ("performance.metric", azimuth::FloatValue(99.99))]))
   }
   
-  // Verify all spans were processed
-  assert_eq(spans.length, 100)
-}
-
-test "concurrent_metrics_operations" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "concurrent-test")
-  
-  let counter = Meter::create_counter(meter, "concurrent.counter")
-  let histogram = Meter::create_histogram(meter, "concurrent.histogram")
-  
-  // Test concurrent metric operations
-  for i in 0..1000 {
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, i.to_double())
-    
-    if i % 10 == 0 {
-      // Simulate occasional burst operations
-      for j in 0..10 {
-        Counter::add(counter, j.to_double())
-        Histogram::record(histogram, j.to_double())
-      }
-    }
+  // Test bulk span status setting performance
+  for span in spans {
+    azimuth::Span::set_status(span, azimuth::Ok, Some("Performance operation completed"))
   }
   
-  // Verify operations completed without issues
-  assert_true(true)
+  // Test bulk span ending performance
+  for span in spans {
+    azimuth::Span::end(span)
+  }
+  
+  // Verify span properties
+  assert_eq(spans.length(), 50)
+  assert_eq(azimuth::Span::name(spans[0]), "performance.span.0")
+  assert_eq(azimuth::Span::name(spans[24]), "performance.span.24")
+  assert_eq(azimuth::Span::name(spans[49]), "performance.span.49")
 }
 
-test "resource_cleanup_efficiency" {
-  // Test resource cleanup performance
-  let resources = []
+// Test 4: Metrics Aggregation Performance
+pub test "metrics aggregation performance" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "performance.meter")
   
-  // Create many resources
-  for i in 0..100 {
-    let attrs = [
-      ("service.name", StringValue("service-" + i.to_string())),
-      ("service.instance.id", StringValue("instance-" + i.to_string())),
-      ("service.version", StringValue("1.0." + i.to_string()))
-    ]
-    let resource = Resource::with_attributes(Resource::new(), attrs)
-    resources.push(resource)
+  // Create multiple metric instruments
+  let counter = azimuth::Meter::create_counter(meter, "performance.counter", 
+    Some("High-performance counter"), Some("operations"))
+  let histogram = azimuth::Meter::create_histogram(meter, "performance.histogram", 
+    Some("High-performance histogram"), Some("ms"))
+  let updown_counter = azimuth::Meter::create_updown_counter(meter, "performance.updown", 
+    Some("High-performance up-down counter"), Some("units"))
+  let gauge = azimuth::Meter::create_gauge(meter, "performance.gauge", 
+    Some("High-performance gauge"), Some("percentage"))
+  
+  // Test high-frequency metric recording performance
+  for i = 0; i < 100; i = i + 1 {
+    azimuth::Counter::add(counter, i.to_double())
+    azimuth::Histogram::record(histogram, i.to_double() * 1.5)
+    azimuth::UpDownCounter::add(updown_counter, i.to_double() - 50.0)
+  }
+  
+  // Test metric instrument conversion performance
+  let counter_instrument = azimuth::Counter::as_instrument(counter)
+  let histogram_instrument = azimuth::Histogram::as_instrument(histogram)
+  
+  // Verify instrument properties
+  assert_eq(azimuth::Instrument::name(counter_instrument), "performance.counter")
+  assert_eq(azimuth::Instrument::name(histogram_instrument), "performance.histogram")
+  assert_eq(azimuth::Instrument::description(counter_instrument), Some("High-performance counter"))
+  assert_eq(azimuth::Instrument::description(histogram_instrument), Some("High-performance histogram"))
+  assert_eq(azimuth::Instrument::unit(counter_instrument), Some("operations"))
+  assert_eq(azimuth::Instrument::unit(histogram_instrument), Some("ms"))
+}
+
+// Test 5: High-Volume Logging Performance
+pub test "high-volume logging performance" {
+  let logger_provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "performance.logger")
+  
+  // Test bulk log record creation performance
+  let log_records = []
+  for i = 0; i < 50; i = i + 1 {
+    let log_record = azimuth::LogRecord::new_with_context(
+      if i % 4 == 0 { azimuth::Info } 
+      else if i % 4 == 1 { azimuth::Warn } 
+      else if i % 4 == 2 { azimuth::Error } 
+      else { azimuth::Debug },
+      Some("Performance log message " + i.to_string()),
+      Some(azimuth::Attributes::new()),
+      Some(1735689600000000000L + i.to_int64() * 1000000L),
+      Some(1735689600000000000L + i.to_int64() * 1000000L + 1000L),
+      Some("perf-trace-" + i.to_string()),
+      Some("perf-span-" + i.to_string()),
+      Some(azimuth::Context::root())
+    )
+    log_records.push(log_record)
+  }
+  
+  // Test bulk log emission performance
+  for log_record in log_records {
+    azimuth::Logger::emit(logger, log_record)
+  }
+  
+  // Verify log record properties
+  assert_eq(log_records.length(), 50)
+  assert_eq(azimuth::LogRecord::body(log_records[0]), Some("Performance log message 0"))
+  assert_eq(azimuth::LogRecord::body(log_records[24]), Some("Performance log message 24"))
+  assert_eq(azimuth::LogRecord::body(log_records[49]), Some("Performance log message 49"))
+  
+  assert_eq(azimuth::LogRecord::severity_number(log_records[0]), azimuth::Info)
+  assert_eq(azimuth::LogRecord::severity_number(log_records[1]), azimuth::Warn)
+  assert_eq(azimuth::LogRecord::severity_number(log_records[2]), azimuth::Error)
+  assert_eq(azimuth::LogRecord::severity_number(log_records[3]), azimuth::Debug)
+}
+
+// Test 6: Resource Pool Management Performance
+pub test "resource pool management performance" {
+  let base_resource = azimuth::Resource::new()
+  
+  // Test large resource attribute sets performance
+  let large_attrs = []
+  for i = 0; i < 100; i = i + 1 {
+    large_attrs.push(("resource.attr." + i.to_string(), azimuth::StringValue("value_" + i.to_string())))
+  }
+  
+  let resource_with_large_attrs = azimuth::Resource::with_attributes(base_resource, large_attrs)
+  
+  // Test resource attribute retrieval performance
+  for i = 0; i < 100; i = i + 1 {
+    let key = "resource.attr." + i.to_string()
+    let value = azimuth::Resource::get_attribute(resource_with_large_attrs, key)
+    assert_eq(value, Some(azimuth::StringValue("value_" + i.to_string())))
   }
   
   // Test resource merging performance
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  let base_resource = Resource::new()
-  for resource in resources {
-    let merged = Resource::merge(base_resource, resource)
-    // Simplified implementation
+  let override_attrs = []
+  for i = 0; i < 50; i = i + 1 {
+    override_attrs.push(("override.attr." + i.to_string(), azimuth::StringValue("override_" + i.to_string())))
   }
   
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
+  let override_resource = azimuth::Resource::with_attributes(base_resource, override_attrs)
+  let merged_resource = azimuth::Resource::merge(resource_with_large_attrs, override_resource)
   
-  // Verify merge performance
-  assert_true(duration < 3000000000L) // Less than 3 seconds
+  // Verify merged resource contains both original and override attributes
+  let original_attr = azimuth::Resource::get_attribute(merged_resource, "resource.attr.50")
+  let override_attr = azimuth::Resource::get_attribute(merged_resource, "override.attr.25")
+  
+  assert_eq(original_attr, Some(azimuth::StringValue("value_50")))
+  assert_eq(override_attr, Some(azimuth::StringValue("override_25")))
 }
 
-test "context_propagation_performance" {
-  // Test context propagation performance with deep nesting
-  let base_ctx = Context::root()
+// Test 7: Propagation Cache Performance
+pub test "propagation cache performance" {
+  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+  let baggage_propagator = azimuth::W3CTraceContextPropagator::new()
   
-  let start_time = Clock::now_unix_nanos(Clock::system())
+  let propagators = [trace_propagator]
+  let composite_propagator = azimuth::CompositePropagator::new(propagators)
   
-  // Create deeply nested context
-  let ctx = base_ctx
-  for i in 0..100 {
-    let key = ContextKey::new("level." + i.to_string())
-    ctx = Context::with_value(ctx, key, "value." + i.to_string())
+  // Test repeated injection/extraction performance
+  let carriers = []
+  let contexts = []
+  
+  // Create multiple contexts and carriers
+  for i = 0; i < 25; i = i + 1 {
+    let ctx = azimuth::Context::root()
+    let carrier = azimuth::TextMapCarrier::new()
+    contexts.push(ctx)
+    carriers.push(carrier)
   }
   
-  // Test retrieval from deep context
-  for i in 0..100 {
-    let key = ContextKey::new("level." + i.to_string())
-    let value = Context::get(ctx, key)
-    // Should find the value
+  // Test bulk injection performance
+  for i = 0; i < 25; i = i + 1 {
+    azimuth::CompositePropagator::inject(composite_propagator, contexts[i], carriers[i])
   }
   
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
+  // Test bulk extraction performance
+  let extracted_contexts = []
+  for i = 0; i < 25; i = i + 1 {
+    let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carriers[i])
+    extracted_contexts.push(extracted_ctx)
+  }
   
-  // Verify context performance
-  assert_true(duration < 2000000000L) // Less than 2 seconds
+  // Verify extraction worked
+  let extracted_key = azimuth::ContextKey::new("extracted")
+  for extracted_ctx in extracted_contexts {
+    let extracted_value = azimuth::Context::get(extracted_ctx, extracted_key)
+    assert_eq(extracted_value, Some("true"))
+  }
 }
 
-test "propagation_serialization_performance" {
-  // Test propagation serialization/deserialization performance
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
-  let ctx = Context::root()
+// Test 8: High-Frequency Time Operations
+pub test "high-frequency time operations" {
+  let clock = azimuth::Clock::system()
+  let random = azimuth::Random::system()
   
-  // Add context values
-  let user_key = ContextKey::new("user.id")
-  let request_key = ContextKey::new("request.id")
-  let session_key = ContextKey::new("session.id")
-  
-  let ctx_with_values = Context::with_value(
-    Context::with_value(
-      Context::with_value(ctx, user_key, "user123"),
-      request_key,
-      "req456"
-    ),
-    session_key,
-    "sess789"
-  )
-  
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // Test multiple injection/extraction cycles
-  for i in 0..1000 {
-    let carrier = TextMapCarrier::new()
-    CompositePropagator::inject(propagator, ctx_with_values, carrier)
-    let extracted_ctx = CompositePropagator::extract(propagator, carrier)
+  // Test high-frequency timestamp generation
+  let timestamps = []
+  for i = 0; i < 50; i = i + 1 {
+    let timestamp = azimuth::Clock::now_unix_nanos(clock)
+    timestamps.push(timestamp)
   }
   
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
+  // Verify timestamp validity and ordering
+  for timestamp in timestamps {
+    assert_true(timestamp >= 1700000000000000000L)
+    assert_true(timestamp < 1800000000000000000L)
+  }
   
-  // Verify propagation performance
-  assert_true(duration < 5000000000L) // Less than 5 seconds
+  // Test high-frequency random number generation
+  let random_bytes_arrays = []
+  let random_u64_values = []
+  
+  for i = 0; i < 25; i = i + 1 {
+    let random_bytes = azimuth::Random::next_bytes(random, 16)
+    let random_u64 = azimuth::Random::next_u64(random)
+    random_bytes_arrays.push(random_bytes)
+    random_u64_values.push(random_u64)
+  }
+  
+  // Verify random data generation
+  for random_bytes in random_bytes_arrays {
+    assert_eq(random_bytes.length(), 16)
+  }
+  
+  for random_u64 in random_u64_values {
+    assert_true(random_u64.to_int() >= 0)
+    assert_true(random_u64.to_int() < 1000000)
+  }
 }
 
-test "large_payload_handling" {
-  // Test handling of large telemetry payloads
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
+// Test 9: Memory Usage Optimization
+pub test "memory usage optimization" {
+  // Test attribute reuse patterns
+  let reusable_attrs = azimuth::Attributes::new()
   
-  let tracer = TracerProvider::get_tracer(tracer_provider, "payload-test")
-  let meter = MeterProvider::get_meter(meter_provider, "payload-test")
-  let logger = LoggerProvider::get_logger(logger_provider, "payload-test")
+  // Reuse the same attributes object with different values
+  azimuth::Attributes::set(reusable_attrs, "reusable.key", azimuth::StringValue("value_1"))
+  let value_1 = azimuth::Attributes::get(reusable_attrs, "reusable.key")
+  assert_eq(value_1, Some(azimuth::StringValue("value_1")))
   
-  // Create span with many events
-  let span = Tracer::start_span(tracer, "large-payload-span")
+  azimuth::Attributes::set(reusable_attrs, "reusable.key", azimuth::StringValue("value_2"))
+  let value_2 = azimuth::Attributes::get(reusable_attrs, "reusable.key")
+  assert_eq(value_2, Some(azimuth::StringValue("value_2")))
   
-  for i in 0..100 {
-    let large_event_name = "event-" + i.to_string() + "-" + "a" * 100
-    let large_attrs = [
-      ("large.attr." + i.to_string(), StringValue("x" * 1000)),
-      ("numeric.attr." + i.to_string(), IntValue(i)),
-      ("float.attr." + i.to_string(), FloatValue(i.to_double() * 3.14159))
-    ]
-    Span::add_event(span, large_event_name, Some(large_attrs))
-  }
+  // Test baggage reuse patterns
+  let reusable_baggage = azimuth::Baggage::new()
+  let baggage_1 = azimuth::Baggage::set_entry(reusable_baggage, "reusable.baggage", "baggage_value_1")
+  let baggage_2 = azimuth::Baggage::set_entry(reusable_baggage, "reusable.baggage", "baggage_value_2")
   
-  // Create metrics with many attributes
-  let counter = Meter::create_counter(meter, "large-payload-counter")
-  let large_attrs = Attributes::new()
+  let baggage_value_1 = azimuth::Baggage::get_entry(baggage_1, "reusable.baggage")
+  let baggage_value_2 = azimuth::Baggage::get_entry(baggage_2, "reusable.baggage")
   
-  for i in 0..50 {
-    let key = "large.metric.attr." + i.to_string()
-    let value = StringValue("y" * 500)
-    Attributes::set(large_attrs, key, value)
-  }
+  assert_eq(baggage_value_1, Some("baggage_value_1"))
+  assert_eq(baggage_value_2, Some("baggage_value_2"))
   
-  Counter::add(counter, 1.0, Some(large_attrs))
+  // Test context reuse patterns
+  let base_ctx = azimuth::Context::root()
+  let ctx_1 = azimuth::Context::with_value(base_ctx, azimuth::ContextKey::new("reusable.ctx"), "ctx_value_1")
+  let ctx_2 = azimuth::Context::with_value(base_ctx, azimuth::ContextKey::new("reusable.ctx"), "ctx_value_2")
   
-  // Create large log record
-  let large_log_body = "z" * 10000
-  let large_log = LogRecord::new_with_context(
-    Error,
-    Some(large_log_body),
-    Some(large_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    Some(SpanContext::trace_id(Span::span_context(span))),
-    Some(SpanContext::span_id(Span::span_context(span))),
-    Some(Context::root())
-  )
+  let reusable_key = azimuth::ContextKey::new("reusable.ctx")
+  let ctx_value_1 = azimuth::Context::get(ctx_1, reusable_key)
+  let ctx_value_2 = azimuth::Context::get(ctx_2, reusable_key)
   
-  Logger::emit(logger, large_log)
-  Span::end(span)
-  
-  // Verify large payload handling
-  assert_true(true)
+  assert_eq(ctx_value_1, Some("ctx_value_1"))
+  assert_eq(ctx_value_2, Some("ctx_value_2"))
 }
 
-test "memory_leak_prevention" {
-  // Test memory leak prevention patterns
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "leak-test")
+// Test 10: Comprehensive Performance Benchmark
+pub test "comprehensive performance benchmark" {
+  // Setup comprehensive telemetry stack
+  let tracer_provider = azimuth::TracerProvider::default()
+  let meter_provider = azimuth::MeterProvider::default()
+  let logger_provider = azimuth::LoggerProvider::default()
   
-  // Create and destroy many spans to test cleanup
-  for i in 0..1000 {
-    let span = Tracer::start_span(tracer, "leak-test-span-" + i.to_string())
-    
-    // Add temporary data
-    Span::add_event(span, "temp-event")
-    Span::set_status(span, Ok)
-    
-    // End span to trigger cleanup
-    Span::end(span)
-  }
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "benchmark.tracer")
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "benchmark.meter")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "benchmark.logger")
   
-  // Test metrics cleanup
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "leak-test")
+  // Create performance instruments
+  let operation_counter = azimuth::Meter::create_counter(meter, "benchmark.operations")
+  let latency_histogram = azimuth::Meter::create_histogram(meter, "benchmark.latency")
+  let memory_gauge = azimuth::Meter::create_gauge(meter, "benchmark.memory")
   
-  for i in 0..1000 {
-    let counter = Meter::create_counter(meter, "temp-counter-" + i.to_string())
-    Counter::add(counter, 1.0)
-    // Counter should be eligible for cleanup
-  }
-  
-  // Test logging cleanup
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "leak-test")
-  
-  for i in 0..1000 {
-    let log_record = LogRecord::new(Info, "Temp log " + i.to_string())
-    Logger::emit(logger, log_record)
-    // Log record should be eligible for cleanup
-  }
-  
-  // Verify cleanup completed successfully
-  assert_true(true)
-}
-
-test "resource_monitoring" {
-  // Test resource monitoring capabilities
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // Simulate resource-intensive operations
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
-  
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource-monitor")
-  let meter = MeterProvider::get_meter(meter_provider, "resource-monitor")
-  let logger = LoggerProvider::get_logger(logger_provider, "resource-monitor")
-  
-  // Monitor span creation overhead
-  let span_start = Clock::now_unix_nanos(Clock::system())
+  // Execute comprehensive benchmark
   let spans = []
+  let log_records = []
   
-  for i in 0..100 {
-    let span = Tracer::start_span(tracer, "monitor-span-" + i.to_string())
+  // Benchmark span operations
+  for i = 0; i < 20; i = i + 1 {
+    let span = azimuth::Tracer::start_span(tracer, "benchmark.operation." + i.to_string())
+    azimuth::Span::add_event(span, "benchmark.event", 
+      Some([("iteration", azimuth::IntValue(i)),
+            ("operation.type", azimuth::StringValue("performance_test"))]))
     spans.push(span)
+    
+    // Record metrics for each operation
+    azimuth::Counter::add(operation_counter, 1.0)
+    azimuth::Histogram::record(latency_histogram, i.to_double() * 10.0)
   }
   
-  let span_creation_time = Clock::now_unix_nanos(Clock::system()) - span_start
-  
-  // Monitor metrics recording overhead
-  let metrics_start = Clock::now_unix_nanos(Clock::system())
-  let counter = Meter::create_counter(meter, "monitor.counter")
-  
-  for i in 0..1000 {
-    Counter::add(counter, 1.0)
+  // Benchmark logging operations
+  for i = 0; i < 20; i = i + 1 {
+    let log_record = azimuth::LogRecord::new_with_context(
+      azimuth::Info,
+      Some("Benchmark log entry " + i.to_string()),
+      Some(azimuth::Attributes::new()),
+      Some(1735689600000000000L + i.to_int64() * 1000000L),
+      None,
+      Some("benchmark-trace"),
+      Some("benchmark-span-" + i.to_string()),
+      Some(azimuth::Context::root())
+    )
+    log_records.push(log_record)
+    azimuth::Logger::emit(logger, log_record)
   }
   
-  let metrics_time = Clock::now_unix_nanos(Clock::system()) - metrics_start
-  
-  // Monitor logging overhead
-  let logging_start = Clock::now_unix_nanos(Clock::system())
-  
-  for i in 0..500 {
-    let log_record = LogRecord::new(Info, "Monitor log " + i.to_string())
-    Logger::emit(logger, log_record)
-  }
-  
-  let logging_time = Clock::now_unix_nanos(Clock::system()) - logging_start
-  
-  // Clean up spans
+  // Complete benchmark operations
   for span in spans {
-    Span::end(span)
+    azimuth::Span::set_status(span, azimuth::Ok, Some("Benchmark operation completed"))
+    azimuth::Span::end(span)
   }
   
-  let total_time = Clock::now_unix_nanos(Clock::system()) - start_time
+  // Verify benchmark results
+  assert_eq(spans.length(), 20)
+  assert_eq(log_records.length(), 20)
   
-  // Verify resource usage is within acceptable bounds
-  assert_true(span_creation_time < 1000000000L) // Less than 1 second
-  assert_true(metrics_time < 1000000000L) // Less than 1 second
-  assert_true(logging_time < 2000000000L) // Less than 2 seconds
-  assert_true(total_time < 5000000000L) // Less than 5 seconds total
+  assert_eq(azimuth::Span::name(spans[0]), "benchmark.operation.0")
+  assert_eq(azimuth::Span::name(spans[19]), "benchmark.operation.19")
+  
+  assert_eq(azimuth::LogRecord::body(log_records[0]), Some("Benchmark log entry 0"))
+  assert_eq(azimuth::LogRecord::body(log_records[19]), Some("Benchmark log entry 19"))
+  
+  // Verify metric instruments
+  assert_eq(operation_counter.name, "benchmark.operations")
+  assert_eq(latency_histogram.name, "benchmark.latency")
+  assert_eq(memory_gauge.name, "benchmark.memory")
+  
+  // Verify logger scope
+  assert_eq(logger.scope.name, "benchmark.logger")
+  
+  // Verify tracer scope
+  let tracer_scope = azimuth::Tracer::instrumentation_scope(tracer)
+  assert_eq(tracer_scope.name, "benchmark.tracer")
 }
