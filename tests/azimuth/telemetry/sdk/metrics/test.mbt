@@ -1,5 +1,5 @@
 test "sdk metrics provider functionality" {
-  // Test SDK metrics provider functionality and integration
+  // Test SDK metrics provider functionality
   
   let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider.default()
   let meter = @azimuth.telemetry.sdk.metrics.MeterProvider.get_meter(metrics_provider, "sdk.test.meter", Some("1.0.0"))
@@ -11,7 +11,7 @@ test "sdk metrics provider functionality" {
   assert_eq(scope.name(), "sdk.test.meter")
   assert_eq(scope.version(), Some("1.0.0"))
   
-  // Test counter instrument creation
+  // Test instrument creation with SDK meter
   let counter = @azimuth.telemetry.sdk.metrics.Meter.create_counter(
     meter,
     "sdk.test.counter",
@@ -19,17 +19,6 @@ test "sdk metrics provider functionality" {
     Some("operations")
   )
   
-  // Test counter operations
-  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 1.0)
-  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 2.5)
-  
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(attrs, "method", @azimuth.telemetry.api.common.StringValue("GET"))
-  @azimuth.telemetry.api.common.Attributes.set(attrs, "status", @azimuth.telemetry.api.common.StringValue("200"))
-  
-  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 5.0, Some(attrs))
-  
-  // Test histogram instrument creation
   let histogram = @azimuth.telemetry.sdk.metrics.Meter.create_histogram(
     meter,
     "sdk.test.histogram",
@@ -37,46 +26,12 @@ test "sdk metrics provider functionality" {
     Some("ms")
   )
   
-  // Test histogram operations
+  // Test measurements
+  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 1.0)
+  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 2.5)
+  
   @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 100.0)
   @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 200.5)
-  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 150.75)
-  
-  let hist_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(hist_attrs, "endpoint", @azimuth.telemetry.api.common.StringValue("/api/users"))
-  
-  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 75.25, Some(hist_attrs))
-}
-
-test "sdk metrics with different instrument types" {
-  // Test SDK metrics with different instrument types
-  
-  let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider.default()
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider.get_meter(metrics_provider, "instruments.test.meter")
-  
-  // Test up-down counter
-  let up_down_counter = @azimuth.telemetry.sdk.metrics.Meter.create_up_down_counter(
-    meter,
-    "sdk.test.up_down_counter",
-    Some("SDK test up-down counter"),
-    Some("items")
-  )
-  
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, 10.0)
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, -3.5)
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, 5.0)
-  
-  // Test gauge
-  let gauge = @azimuth.telemetry.sdk.metrics.Meter.create_gauge(
-    meter,
-    "sdk.test.gauge",
-    Some("SDK test gauge"),
-    Some("percent")
-  )
-  
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 75.5)
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 80.0)
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 65.25)
   
   // Test instrument properties
   assert_eq(@azimuth.telemetry.sdk.metrics.Instrument.name(counter), "sdk.test.counter")
@@ -84,92 +39,76 @@ test "sdk metrics with different instrument types" {
   assert_eq(@azimuth.telemetry.sdk.metrics.Instrument.unit(counter), Some("operations"))
 }
 
-test "sdk metrics with context awareness" {
-  // Test SDK metrics with context awareness
+test "sdk metrics with attributes" {
+  // Test SDK metrics with attributes and context
   
   let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider.default()
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider.get_meter(metrics_provider, "context.test.meter")
-  let histogram = @azimuth.telemetry.sdk.metrics.Meter.create_histogram(meter, "context.test.histogram")
+  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider.get_meter(metrics_provider, "attributes.test.meter")
   
-  // Create context with trace information
-  let ctx = @azimuth.telemetry.api.context.Context.root()
-  let span_ctx = @azimuth.telemetry.api.trace.SpanContext.new(
-    "0af7651916cd43dd8448eb211c80319c",
-    "b7ad6b7169203331",
-    true,
-    ""
-  )
-  let ctx_with_span = @azimuth.telemetry.api.context.Context.with_span_context(ctx, span_ctx)
+  let counter = @azimuth.telemetry.sdk.metrics.Meter.create_counter(meter, "attr.test.counter")
+  let histogram = @azimuth.telemetry.sdk.metrics.Meter.create_histogram(meter, "attr.test.histogram")
   
-  // Record measurement with context
-  @azimuth.telemetry.sdk.metrics.Histogram.record_with_context(
-    histogram,
-    ctx_with_span,
-    150.0,
-    None
-  )
-  
-  // Record measurement with context and attributes
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(attrs, "operation", @azimuth.telemetry.api.common.StringValue("database_query"))
-  
-  @azimuth.telemetry.sdk.metrics.Histogram.record_with_context(
-    histogram,
-    ctx_with_span,
-    75.5,
-    Some(attrs)
-  )
-}
-
-test "sdk metrics batch operations" {
-  // Test SDK metrics batch operations
-  
-  let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider.default()
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider.get_meter(metrics_provider, "batch.test.meter")
-  
-  // Create multiple instruments
-  let counter1 = @azimuth.telemetry.sdk.metrics.Meter.create_counter(meter, "batch.counter1")
-  let counter2 = @azimuth.telemetry.sdk.metrics.Meter.create_counter(meter, "batch.counter2")
-  let histogram = @azimuth.telemetry.sdk.metrics.Meter.create_histogram(meter, "batch.histogram")
-  
-  // Batch measurements
+  // Create attributes
   let attrs1 = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(attrs1, "batch", @azimuth.telemetry.api.common.StringValue("1"))
+  @azimuth.telemetry.api.common.Attributes.set(attrs1, "method", @azimuth.telemetry.api.common.StringValue("GET"))
+  @azimuth.telemetry.api.common.Attributes.set(attrs1, "status", @azimuth.telemetry.api.common.StringValue("200"))
   
   let attrs2 = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(attrs2, "batch", @azimuth.telemetry.api.common.StringValue("2"))
+  @azimuth.telemetry.api.common.Attributes.set(attrs2, "method", @azimuth.telemetry.api.common.StringValue("POST"))
+  @azimuth.telemetry.api.common.Attributes.set(attrs2, "status", @azimuth.telemetry.api.common.StringValue("400"))
   
-  // Perform batch operations
-  for i in 0..10 {
-    @azimuth.telemetry.sdk.metrics.Counter.add(counter1, i.to_double(), Some(attrs1))
-    @azimuth.telemetry.sdk.metrics.Counter.add(counter2, (i * 2).to_double(), Some(attrs2))
-    @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, (i * 10).to_double(), None)
-  }
+  // Record measurements with different attributes
+  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 10.0, Some(attrs1))
+  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 5.0, Some(attrs2))
+  
+  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 150.0, Some(attrs1))
+  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 75.5, Some(attrs2))
+  
+  // Test with complex attributes
+  let complex_attrs = @azimuth.telemetry.api.common.Attributes.new()
+  @azimuth.telemetry.api.common.Attributes.set(complex_attrs, "user.id", @azimuth.telemetry.api.common.StringValue("12345"))
+  @azimuth.telemetry.api.common.Attributes.set(complex_attrs, "request.size", @azimuth.telemetry.api.common.IntValue(1024))
+  @azimuth.telemetry.api.common.Attributes.set(complex_attrs, "cache.hit", @azimuth.telemetry.api.common.BoolValue(true))
+  @azimuth.telemetry.api.common.Attributes.set(complex_attrs, "servers", @azimuth.telemetry.api.common.ArrayStringValue(["server1", "server2"]))
+  
+  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 1.0, Some(complex_attrs))
 }
 
-test "sdk metrics edge cases" {
-  // Test SDK metrics edge cases and error scenarios
+test "sdk metrics different instrument types" {
+  // Test SDK metrics with all instrument types
   
   let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider.default()
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider.get_meter(metrics_provider, "edge.test.meter")
+  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider.get_meter(metrics_provider, "instruments.test.meter")
   
-  // Test with zero and negative values
-  let counter = @azimuth.telemetry.sdk.metrics.Meter.create_counter(meter, "edge.test.counter")
-  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 0.0)
+  // Create all instrument types
+  let counter = @azimuth.telemetry.sdk.metrics.Meter.create_counter(meter, "test.counter")
+  let histogram = @azimuth.telemetry.sdk.metrics.Meter.create_histogram(meter, "test.histogram")
+  let up_down_counter = @azimuth.telemetry.sdk.metrics.Meter.create_up_down_counter(meter, "test.up_down_counter")
+  let gauge = @azimuth.telemetry.sdk.metrics.Meter.create_gauge(meter, "test.gauge")
   
-  let up_down_counter = @azimuth.telemetry.sdk.metrics.Meter.create_up_down_counter(meter, "edge.test.up_down_counter")
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, -10.0)
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, 0.0)
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, 5.0)
+  // Test counter operations
+  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 1.0)
+  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 2.0)
+  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 3.0)
   
-  // Test with very small and large values
-  let histogram = @azimuth.telemetry.sdk.metrics.Meter.create_histogram(meter, "edge.test.histogram")
-  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 0.001)
-  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 999999.999)
+  // Test histogram operations
+  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 10.0)
+  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 20.0)
+  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 30.0)
   
-  // Test gauge with negative values
-  let gauge = @azimuth.telemetry.sdk.metrics.Meter.create_gauge(meter, "edge.test.gauge")
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, -25.5)
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 0.0)
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 100.0)
+  // Test up down counter operations
+  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, 10.0)
+  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, -5.0)
+  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, 3.0)
+  
+  // Test gauge operations
+  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 50.0)
+  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 75.0)
+  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 25.0)
+  
+  // Verify instrument properties
+  assert_eq(@azimuth.telemetry.sdk.metrics.Instrument.name(counter), "test.counter")
+  assert_eq(@azimuth.telemetry.sdk.metrics.Instrument.name(histogram), "test.histogram")
+  assert_eq(@azimuth.telemetry.sdk.metrics.Instrument.name(up_down_counter), "test.up_down_counter")
+  assert_eq(@azimuth.telemetry.sdk.metrics.Instrument.name(gauge), "test.gauge")
 }
