@@ -565,3 +565,17 @@ pub fn Resource::merge(base : Resource, override_ : Resource) -> Resource {
   // Simplified implementation - just return override resource
   override_
 }
+
+// Additional Meter implementations for UpDownCounter and Gauge
+pub fn Meter::create_updown_counter(meter : Meter, name : String, description? : Option[String] = None, unit? : Option[String] = None) -> UpDownCounter {
+  UpDownCounter::{ name, description, unit }
+}
+
+pub fn Meter::create_gauge(meter : Meter, name : String, description? : Option[String] = None, unit? : Option[String] = None) -> Gauge {
+  Gauge::{ name, description, unit }
+}
+
+pub fn UpDownCounter::add(counter : UpDownCounter, value : Double, attributes? : Option[Attributes] = None) -> Unit {
+  // Simplified implementation
+  ()
+}
