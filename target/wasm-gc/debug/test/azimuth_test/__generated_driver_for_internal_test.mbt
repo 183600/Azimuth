@@ -57,6 +57,16 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "new_focused_test_suite.mbt": {
+    0: (__test_6e65775f666f63757365645f746573745f73756974652e6d6274_0, ["baggage propagation across service boundaries"]),
+    1: (__test_6e65775f666f63757365645f746573745f73756974652e6d6274_1, ["span lifecycle management with nested operations"]),
+    2: (__test_6e65775f666f63757365645f746573745f73756974652e6d6274_2, ["attribute value type conversion and validation"]),
+    3: (__test_6e65775f666f63757365645f746573745f73756974652e6d6274_3, ["time series temporal operations"]),
+    4: (__test_6e65775f666f63757365645f746573745f73756974652e6d6274_4, ["concurrent resource management"]),
+    5: (__test_6e65775f666f63757365645f746573745f73756974652e6d6274_5, ["data serialization integrity"]),
+    6: (__test_6e65775f666f63757365645f746573745f73756974652e6d6274_6, ["cross service consistency validation"]),
+    7: (__test_6e65775f666f63757365645f746573745f73756974652e6d6274_7, ["instrumentation scope and hierarchy"]),
+  },
   "new_enhanced_tests.mbt": {
     0: (__test_6e65775f656e68616e6365645f74657374732e6d6274_0, ["complex attributes operations"]),
     1: (__test_6e65775f656e68616e6365645f74657374732e6d6274_1, ["concurrency safety"]),

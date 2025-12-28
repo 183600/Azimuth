@@ -34,6 +34,19 @@
             "Release",
             "Debug"
           ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_test/new_focused_test_suite.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
         }
       },
       "wbtest-files": {},
