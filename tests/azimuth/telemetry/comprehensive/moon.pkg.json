@@ -8,6 +8,6 @@
     "azimuth": "local:../../../azimuth"
   },
   "test": {
-    "test": ["comprehensive_test.mbt"]
+    "test": ["comprehensive_test.mbt", "../../advanced_coverage_tests.mbt", "../../edge_case_tests.mbt"]
   }
 }
