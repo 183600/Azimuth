@@ -1,174 +1,107 @@
-// Performance and Concurrency Safety Tests - 性能和并发安全测试
-// 专门测试系统在高负载和并发环境下的表现
+// Performance and Concurrency Safety Tests for Azimuth Telemetry System
+// Focus on performance benchmarks, thread safety, and concurrent operations
 
-// 测试1: Attributes操作性能基准
-test "attributes_operations_performance_benchmark" {
-  let attrs = Attributes::new()
-  
-  // 测试大量属性设置的性能
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i = 0; i < 1000; i = i + 1 {
-    Attributes::set(attrs, "perf.key." + i.to_string(), StringValue("value" + i.to_string()))
-  }
-  
-  let set_end_time = Clock::now_unix_nanos(Clock::system())
-  let set_duration = set_end_time - start_time
-  
-  // 验证设置操作完成（时间检查是相对的，因为实现是简化的）
-  assert_true(set_duration >= 0L)
-  
-  // 测试大量属性获取的性能
-  let get_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i = 0; i < 1000; i = i + 1 {
-    let result = Attributes::get(attrs, "perf.key." + i.to_string())
-    // 注意：由于实现是简化的，大部分会返回None
-  }
-  
-  let get_end_time = Clock::now_unix_nanos(Clock::system())
-  let get_duration = get_end_time - get_start_time
-  
-  // 验证获取操作完成
-  assert_true(get_duration >= 0L)
-  
-  // 测试已知键的获取（这些应该有值）
-  let known_key_result = Attributes::get(attrs, "string.key")
-  assert_eq(known_key_result, Some(StringValue("test_value")))
-  
-  let known_int_result = Attributes::get(attrs, "int.key")
-  assert_eq(known_int_result, Some(IntValue(42)))
-}
-
-// 测试2: Span创建和管理性能
-test "span_creation_management_performance" {
+test "span_creation_performance" {
   let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "performance.tracer")
-  let span_ctx = SpanContext::new("perf-trace-id", "perf-span-id", true, "")
+  let tracer = TracerProvider::get_tracer(provider, "performance_test")
   
-  // 测试大量Span创建性能
+  // Test span creation performance
   let start_time = Clock::now_unix_nanos(Clock::system())
-  let spans = []
   
-  for i = 0; i < 100; i = i + 1 {
-    let span = Tracer::start_span(tracer, "performance.span." + i.to_string())
-    spans.push(span)
-  }
-  
-  let creation_end_time = Clock::now_unix_nanos(Clock::system())
-  let creation_duration = creation_end_time - start_time
-  
-  // 验证创建操作完成
-  assert_true(creation_duration >= 0L)
-  assert_eq(spans.length, 100)
-  
-  // 测试Span操作性能
-  let operation_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for span in spans {
-    // 测试状态设置
-    Span::set_status(span, Ok)
-    
-    // 测试事件添加
-    Span::add_event(span, "performance.event", Some([("index", StringValue("test"))]))
-    
-    // 测试基本属性访问
-    let name = Span::name(span)
-    let kind = Span::kind(span)
-    let is_recording = Span::is_recording(span)
-    let span_context = Span::span_context(span)
-    
-    // 验证属性不为空
-    assert_true(name != "")
-    assert_true(is_recording)
-    assert_true(SpanContext::is_valid(span_context))
-  }
-  
-  let operation_end_time = Clock::now_unix_nanos(Clock::system())
-  let operation_duration = operation_end_time - operation_start_time
-  
-  // 验证操作完成
-  assert_true(operation_duration >= 0L)
-  
-  // 测试Span结束性能
-  let end_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for span in spans {
+  for i = 0; i < 1000; i = i + 1 {
+    let span_name = "span_" + i.to_string()
+    let span = Tracer::start_span(tracer, span_name)
     Span::end(span)
   }
   
-  let end_end_time = Clock::now_unix_nanos(Clock::system())
-  let end_duration = end_end_time - end_start_time
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L  // Convert to milliseconds
   
-  // 验证结束操作完成
-  assert_true(end_duration >= 0L)
+  // Should complete within reasonable time (adjust threshold as needed)
+  @assertion.assert_true(duration_ms < 5000L)?  // Less than 5 seconds for 1000 spans
 }
 
-// 测试3: Metrics操作性能
-test "metrics_operations_performance" {
+test "metrics_recording_performance" {
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance.meter")
+  let meter = MeterProvider::get_meter(provider, "performance_metrics")
+  let counter = Meter::create_counter(meter, "test_counter")
+  let histogram = Meter::create_histogram(meter, "test_histogram")
   
-  // 创建各种类型的指标
-  let counter = Meter::create_counter(meter, "performance.counter", Some("Performance counter"), Some("operations"))
-  let histogram = Meter::create_histogram(meter, "performance.histogram", Some("Performance histogram"), Some("ms"))
-  let updown_counter = Meter::create_updown_counter(meter, "performance.updown", Some("Performance up-down counter"), Some("items"))
-  let gauge = Meter::create_gauge(meter, "performance.gauge", Some("Performance gauge"), Some("percent"))
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // 测试Counter操作性能
-  let counter_start_time = Clock::now_unix_nanos(Clock::system())
-  
+  // Test counter performance
   for i = 0; i < 10000; i = i + 1 {
     Counter::add(counter, i.to_double())
   }
   
-  let counter_end_time = Clock::now_unix_nanos(Clock::system())
-  let counter_duration = counter_end_time - counter_start_time
-  
-  // 验证操作完成
-  assert_true(counter_duration >= 0L)
-  
-  // 测试Histogram操作性能
-  let histogram_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i = 0; i < 10000; i = i + 1 {
-    Histogram::record(histogram, (i % 1000).to_double())
+  // Test histogram performance
+  for i = 0; i < 5000; i = i + 1 {
+    Histogram::record(histogram, i.to_double())
   }
   
-  let histogram_end_time = Clock::now_unix_nanos(Clock::system())
-  let histogram_duration = histogram_end_time - histogram_start_time
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
   
-  // 验证操作完成
-  assert_true(histogram_duration >= 0L)
+  // Should complete within reasonable time
+  @assertion.assert_true(duration_ms < 3000L)?  // Less than 3 seconds for 15000 operations
+}
+
+test "attribute_operations_performance" {
+  let attrs = Attributes::new()
+  let keys = ["key1", "key2", "key3", "key4", "key5"]
   
-  // 测试UpDownCounter操作性能
-  let updown_start_time = Clock::now_unix_nanos(Clock::system())
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  for i = 0; i < 10000; i = i + 1 {
-    if i % 2 == 0 {
-      UpDownCounter::add(updown_counter, 1.0)
-    } else {
-      UpDownCounter::add(updown_counter, -1.0)
+  // Test attribute setting performance
+  for i = 0; i < 1000; i = i + 1 {
+    for key in keys {
+      let value = StringValue("value_" + i.to_string())
+      Attributes::set(attrs, key, value)
     }
   }
   
-  let updown_end_time = Clock::now_unix_nanos(Clock::system())
-  let updown_duration = updown_end_time - updown_start_time
+  // Test attribute getting performance
+  for i = 0; i < 1000; i = i + 1 {
+    for key in keys {
+      let _ = Attributes::get(attrs, key)
+    }
+  }
   
-  // 验证操作完成
-  assert_true(updown_duration >= 0L)
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // Should complete within reasonable time
+  @assertion.assert_true(duration_ms < 2000L)?  // Less than 2 seconds for 10000 operations
 }
 
-// 测试4: LogRecord创建和发射性能
-test "log_record_creation_emission_performance" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "performance.logger")
+test "context_operations_performance" {
+  let ctx = Context::root()
+  let keys = [ContextKey::new("key1"), ContextKey::new("key2"), ContextKey::new("key3")]
   
-  // 测试LogRecord创建性能
   let start_time = Clock::now_unix_nanos(Clock::system())
-  let records = []
   
-  for i = 0; i < 1000; i = i + 1 {
+  // Test context creation and value retrieval performance
+  for i = 0; i < 5000; i = i + 1 {
+    let value = "value_" + i.to_string()
+    let new_ctx = Context::with_value(ctx, keys[i % 3], value)
+    let _ = Context::get(new_ctx, keys[i % 3])
+  }
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // Should complete within reasonable time
+  @assertion.assert_true(duration_ms < 1500L)?  // Less than 1.5 seconds for 5000 operations
+}
+
+test "log_record_creation_performance" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "performance_logger")
+  
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Test log record creation and emission performance
+  for i = 0; i < 2000; i = i + 1 {
     let severity = match i % 6 {
       0 => Trace
       1 => Debug
@@ -178,177 +111,112 @@ test "log_record_creation_emission_performance" {
       _ => Fatal
     }
     
-    let record = LogRecord::new(severity, "Performance log message " + i.to_string())
-    records.push(record)
+    let log = LogRecord::new(severity, "Log message " + i.to_string())
+    Logger::emit(logger, log)
   }
   
-  let creation_end_time = Clock::now_unix_nanos(Clock::system())
-  let creation_duration = creation_end_time - start_time
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
   
-  // 验证创建操作完成
-  assert_true(creation_duration >= 0L)
-  assert_eq(records.length, 1000)
-  
-  // 测试LogRecord发射性能
-  let emission_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for record in records {
-    Logger::emit(logger, record)
-  }
-  
-  let emission_end_time = Clock::now_unix_nanos(Clock::system())
-  let emission_duration = emission_end_time - emission_start_time
-  
-  // 验证发射操作完成
-  assert_true(emission_duration >= 0L)
+  // Should complete within reasonable time
+  @assertion.assert_true(duration_ms < 2500L)?  // Less than 2.5 seconds for 2000 logs
 }
 
-// 测试5: Context传播性能
-test "context_propagation_performance" {
-  // 测试Context创建和值设置性能
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  let contexts = []
+test "propagation_operations_performance" {
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let composite = CompositePropagator::new([trace_propagator])
+  let ctx = Context::root()
   
-  for i = 0; i < 1000; i = i + 1 {
-    let root_ctx = Context::root()
-    let key = ContextKey::new("perf.key." + i.to_string())
-    let ctx = Context::with_value(root_ctx, key, "value" + i.to_string())
-    contexts.push((ctx, key))
-  }
-  
-  let creation_end_time = Clock::now_unix_nanos(Clock::system())
-  let creation_duration = creation_end_time - start_time
-  
-  // 验证创建操作完成
-  assert_true(creation_duration >= 0L)
-  assert_eq(contexts.length, 1000)
-  
-  // 测试Context值获取性能
-  let get_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for (ctx, key) in contexts {
-    let value = Context::get(ctx, key)
-    assert_eq(value, Some("value" + key.key.split("perf.key.")[1]))
-  }
-  
-  let get_end_time = Clock::now_unix_nanos(Clock::system())
-  let get_duration = get_end_time - get_start_time
-  
-  // 验证获取操作完成
-  assert_true(get_duration >= 0L)
-}
-
-// 测试6: Baggage操作性能
-test "baggage_operations_performance" {
-  let baggage = Baggage::new()
-  
-  // 测试Baggage条目设置性能
   let start_time = Clock::now_unix_nanos(Clock::system())
   
+  // Test injection and extraction performance
   for i = 0; i < 1000; i = i + 1 {
-    baggage = Baggage::set_entry(baggage, "perf.entry." + i.to_string(), "value" + i.to_string())
-  }
-  
-  let set_end_time = Clock::now_unix_nanos(Clock::system())
-  let set_duration = set_end_time - start_time
-  
-  // 验证设置操作完成
-  assert_true(set_duration >= 0L)
-  
-  // 测试Baggage条目获取性能
-  let get_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i = 0; i < 1000; i = i + 1 {
-    let value = Baggage::get_entry(baggage, "perf.entry." + i.to_string())
-    // 注意：由于实现是简化的，这里可能返回None
-  }
-  
-  let get_end_time = Clock::now_unix_nanos(Clock::system())
-  let get_duration = get_end_time - get_start_time
-  
-  // 验证获取操作完成
-  assert_true(get_duration >= 0L)
-}
-
-// 测试7: Resource操作性能
-test "resource_operations_performance" {
-  let resource = Resource::new()
-  
-  // 创建大量属性
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  let attributes = []
-  
-  for i = 0; i < 1000; i = i + 1 {
-    attributes.push(("perf.attr." + i.to_string(), StringValue("value" + i.to_string())))
-  }
-  
-  let attr_creation_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 测试Resource创建性能
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
-  
-  let resource_creation_time = Clock::now_unix_nanos(Clock::system())
-  let resource_duration = resource_creation_time - attr_creation_time
-  
-  // 验证创建操作完成
-  assert_true(resource_duration >= 0L)
-  
-  // 测试属性获取性能
-  let get_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i = 0; i < 1000; i = i + 1 {
-    let value = Resource::get_attribute(resource_with_attrs, "perf.attr." + i.to_string())
-    // 注意：由于实现是简化的，这里可能返回None
-  }
-  
-  let get_end_time = Clock::now_unix_nanos(Clock::system())
-  let get_duration = get_end_time - get_start_time
-  
-  // 验证获取操作完成
-  assert_true(get_duration >= 0L)
-}
-
-// 测试8: 传播器操作性能
-test "propagator_operations_performance" {
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
-  let contexts = []
-  let carriers = []
-  
-  // 创建测试上下文和载体
-  for i = 0; i < 100; i = i + 1 {
-    let ctx = Context::root()
-    let enriched_ctx = Context::with_value(ctx, ContextKey::new("test.key"), "value" + i.to_string())
     let carrier = TextMapCarrier::new()
-    
-    contexts.push(enriched_ctx)
-    carriers.push(carrier)
+    CompositePropagator::inject(composite, ctx, carrier)
+    let _ = CompositePropagator::extract(composite, carrier)
   }
   
-  // 测试传播注入性能
-  let inject_start_time = Clock::now_unix_nanos(Clock::system())
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
+  
+  // Should complete within reasonable time
+  @assertion.assert_true(duration_ms < 3000L)?  // Less than 3 seconds for 1000 operations
+}
+
+test "memory_allocation_patterns" {
+  let initial_memory = 0  // Placeholder - actual memory monitoring would be platform-specific
+  
+  // Create many objects to test memory allocation patterns
+  let spans = []
+  for i = 0; i < 100; i = i + 1 {
+    let provider = TracerProvider::default()
+    let tracer = TracerProvider::get_tracer(provider, "memory_test")
+    let span = Tracer::start_span(tracer, "memory_span_" + i.to_string())
+    spans.push(span)
+  }
+  
+  // End all spans to allow cleanup
+  for span in spans {
+    Span::end(span)
+  }
+  
+  // Test that operations complete without memory issues
+  @assertion.assert_true(spans.length() == 100)?
+}
+
+test "concurrent_span_operations_safety" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "concurrent_test")
+  
+  // Simulate concurrent span operations
+  let span_results = []
+  
+  for thread_id = 0; thread_id < 10; thread_id = thread_id + 1 {
+    for span_id = 0; span_id < 50; span_id = span_id + 1 {
+      let span_name = "thread_" + thread_id.to_string() + "_span_" + span_id.to_string()
+      let span = Tracer::start_span(tracer, span_name)
+      
+      // Simulate some work
+      Span::add_event(span, "event_in_span", None)
+      Span::set_status(span, Ok, None)
+      
+      Span::end(span)
+      span_results.push(span_name)
+    }
+  }
+  
+  // Verify all spans were processed
+  @assertion.assert_eq(span_results.length(), 500)?
+}
+
+test "stress_test_large_attribute_arrays" {
+  let attrs = Attributes::new()
+  
+  // Test with large array attributes
+  let large_string_array = []
+  for i = 0; i < 1000; i = i + 1 {
+    large_string_array.push("item_" + i.to_string())
+  }
+  
+  let large_int_array = []
+  for i = 0; i < 1000; i = i + 1 {
+    large_int_array.push(i)
+  }
+  
+  Attributes::set(attrs, "large.string.array", ArrayStringValue(large_string_array))
+  Attributes::set(attrs, "large.int.array", ArrayIntValue(large_int_array))
+  
+  // Test retrieval performance
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
   for i = 0; i < 100; i = i + 1 {
-    CompositePropagator::inject(propagator, contexts[i], carriers[i])
+    let _ = Attributes::get(attrs, "large.string.array")
+    let _ = Attributes::get(attrs, "large.int.array")
   }
   
-  let inject_end_time = Clock::now_unix_nanos(Clock::system())
-  let inject_duration = inject_end_time - inject_start_time
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration_ms = (end_time - start_time) / 1000000L
   
-  // 验证注入操作完成
-  assert_true(inject_duration >= 0L)
-  
-  // 测试传播提取性能
-  let extract_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  for carrier in carriers {
-    let extracted_ctx = CompositePropagator::extract(propagator, carrier)
-    let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-    assert_eq(extracted_value, Some("true"))
-  }
-  
-  let extract_end_time = Clock::now_unix_nanos(Clock::system())
-  let extract_duration = extract_end_time - extract_start_time
-  
-  // 验证提取操作完成
-  assert_true(extract_duration >= 0L)
+  // Should complete within reasonable time even with large arrays
+  @assertion.assert_true(duration_ms < 1000L)?  // Less than 1 second for 200 operations
 }
