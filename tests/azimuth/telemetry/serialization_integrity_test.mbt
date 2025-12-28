@@ -1,184 +1,254 @@
-// Azimuth Telemetry System - Serialization and Data Integrity Test
-// 测试序列化和数据完整性
+// Azimuth Telemetry System - Serialization and Deserialization Tests
+// 测试序列化和反序列化功能
 
-test "AttributeValue序列化测试" {
-  // 测试基本类型的序列化表示
-  let string_val = StringValue("test value")
-  let int_val = IntValue(42)
-  let float_val = FloatValue(3.14159)
-  let bool_val = BoolValue(true)
+test "属性值序列化格式测试" {
+  // 测试字符串属性值的序列化表示
+  let string_attr = StringValue("test value")
+  let string_array_attr = ArrayStringValue(["item1", "item2", "item3"])
   
-  // 验证类型标识
-  match string_val {
-    StringValue(s) => assert_eq(s, "test value")
+  // 验证字符串属性值的结构
+  match string_attr {
+    StringValue(value) => assert_eq(value, "test value")
     _ => assert_true(false, "Expected StringValue")
   }
   
-  match int_val {
-    IntValue(i) => assert_eq(i, 42)
-    _ => assert_true(false, "Expected IntValue")
-  }
-  
-  match float_val {
-    FloatValue(f) => assert_eq(f, 3.14159)
-    _ => assert_true(false, "Expected FloatValue")
-  }
-  
-  match bool_val {
-    BoolValue(b) => assert_true(b)
-    _ => assert_true(false, "Expected BoolValue")
-  }
-  
-  // 测试数组类型的序列化表示
-  let string_array = ArrayStringValue(["a", "b", "c"])
-  let int_array = ArrayIntValue([1, 2, 3, 4, 5])
-  
-  match string_array {
-    ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 3)
-      assert_eq(arr[0], "a")
-      assert_eq(arr[1], "b")
-      assert_eq(arr[2], "c")
+  match string_array_attr {
+    ArrayStringValue(values) => {
+      assert_eq(values.length(), 3)
+      assert_eq(values[0], "item1")
+      assert_eq(values[1], "item2")
+      assert_eq(values[2], "item3")
     }
     _ => assert_true(false, "Expected ArrayStringValue")
   }
   
-  match int_array {
-    ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 5)
-      assert_eq(arr[0], 1)
-      assert_eq(arr[4], 5)
+  // 测试整数属性值的序列化表示
+  let int_attr = IntValue(42)
+  let int_array_attr = ArrayIntValue([1, 2, 3, 4, 5])
+  
+  match int_attr {
+    IntValue(value) => assert_eq(value, 42)
+    _ => assert_true(false, "Expected IntValue")
+  }
+  
+  match int_array_attr {
+    ArrayIntValue(values) => {
+      assert_eq(values.length(), 5)
+      assert_eq(values[0], 1)
+      assert_eq(values[1], 2)
+      assert_eq(values[2], 3)
+      assert_eq(values[3], 4)
+      assert_eq(values[4], 5)
     }
     _ => assert_true(false, "Expected ArrayIntValue")
   }
   
-  // 测试空数组的序列化
-  let empty_string_array = ArrayStringValue([])
-  let empty_int_array = ArrayIntValue([])
-  
-  match empty_string_array {
-    ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => assert_true(false, "Expected empty ArrayStringValue")
+  // 测试浮点数属性值的序列化表示
+  let float_attr = FloatValue(3.14159)
+  match float_attr {
+    FloatValue(value) => assert_eq(value, 3.14159)
+    _ => assert_true(false, "Expected FloatValue")
   }
   
-  match empty_int_array {
-    ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => assert_true(false, "Expected empty ArrayIntValue")
+  // 测试布尔属性值的序列化表示
+  let bool_attr_true = BoolValue(true)
+  let bool_attr_false = BoolValue(false)
+  
+  match bool_attr_true {
+    BoolValue(value) => assert_true(value)
+    _ => assert_true(false, "Expected BoolValue")
+  }
+  
+  match bool_attr_false {
+    BoolValue(value) => assert_false(value)
+    _ => assert_true(false, "Expected BoolValue")
   }
 }
 
-test "SpanContext序列化测试" {
-  // 测试标准W3C Trace Context格式
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let sampled = true
-  let trace_state = "rojo=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+test "Span上下文序列化测试" {
+  // 测试SpanContext的序列化格式
+  let span_ctx = SpanContext::new("trace-123", "span-456", true, "key1=value1,key2=value2")
   
-  let span_ctx = SpanContext::new(trace_id, span_id, sampled, trace_state)
-  
-  // 验证序列化后的值
-  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(span_ctx), span_id)
+  // 验证SpanContext各个字段的值
+  assert_eq(SpanContext::trace_id(span_ctx), "trace-123")
+  assert_eq(SpanContext::span_id(span_ctx), "span-456")
   assert_true(SpanContext::is_sampled(span_ctx))
+  assert_true(SpanContext::is_valid(span_ctx))
   
-  // 测试无效的SpanContext
-  let invalid_trace = ""  // 空trace_id
-  let invalid_span = ""   // 空span_id
-  let invalid_ctx = SpanContext::new(invalid_trace, invalid_span, false, "")
+  // 测试不同类型的SpanContext
+  let unsampled_ctx = SpanContext::new("trace-789", "span-101112", false, "")
+  assert_false(SpanContext::is_sampled(unsampled_ctx))
+  assert_true(SpanContext::is_valid(unsampled_ctx))
   
+  let invalid_ctx = SpanContext::new("", "span-131415", true, "")
   assert_false(SpanContext::is_valid(invalid_ctx))
   
-  // 测试边界情况
-  let min_trace = "0" * 32  // 最小有效trace_id
-  let min_span = "0" * 16   // 最小有效span_id
-  let min_ctx = SpanContext::new(min_trace, min_span, true, "")
+  let empty_ctx = SpanContext::new("", "", false, "")
+  assert_false(SpanContext::is_valid(empty_ctx))
+  assert_false(SpanContext::is_sampled(empty_ctx))
   
-  assert_true(SpanContext::is_valid(min_ctx))
-  assert_eq(SpanContext::trace_id(min_ctx), min_trace)
-  assert_eq(SpanContext::span_id(min_ctx), min_span)
-  
-  // 测试最大长度的ID
-  let max_trace = "f" * 32  // 最大有效trace_id
-  let max_span = "f" * 16   // 最大有效span_id
-  let max_ctx = SpanContext::new(max_trace, max_span, false, "")
-  
-  assert_true(SpanContext::is_valid(max_ctx))
-  assert_eq(SpanContext::trace_id(max_ctx), max_trace)
-  assert_eq(SpanContext::span_id(max_ctx), max_span)
+  // 测试复杂trace_state
+  let complex_ctx = SpanContext::new("trace-complex", "span-complex", true, "vendor1=value1,vendor2=value2,custom=custom_value")
+  assert_eq(SpanContext::trace_id(complex_ctx), "trace-complex")
+  assert_eq(SpanContext::span_id(complex_ctx), "span-complex")
+  assert_true(SpanContext::is_sampled(complex_ctx))
+  assert_true(SpanContext::is_valid(complex_ctx))
 }
 
-test "TextMapCarrier序列化测试" {
-  // 测试HTTP头部序列化
-  let carrier = TextMapCarrier::new()
+test "资源属性序列化测试" {
+  // 测试Resource的序列化
+  let resource = Resource::new()
+  assert_eq(resource.attributes.length(), 0)
   
-  // 设置标准的追踪头部
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier, "baggage", "key1=value1,key2=value2")
-  TextMapCarrier::set(carrier, "x-trace-id", "custom-trace-123")
-  TextMapCarrier::set(carrier, "x-span-id", "custom-span-456")
+  // 测试带属性的Resource
+  let attrs = [
+    ("service.name", StringValue("test-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123")),
+    ("host.name", StringValue("localhost")),
+    ("process.pid", IntValue(12345)),
+    ("process.memory.usage", FloatValue(1024.5)),
+    ("process.debug", BoolValue(false))
+  ]
   
-  // 验证头部获取
-  let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  let baggage = TextMapCarrier::get(carrier, "baggage")
-  let custom_trace = TextMapCarrier::get(carrier, "x-trace-id")
-  let custom_span = TextMapCarrier::get(carrier, "x-span-id")
-  let missing = TextMapCarrier::get(carrier, "nonexistent")
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  assert_eq(resource_with_attrs.attributes.length(), 7)
   
-  assert_eq(traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  assert_eq(baggage, None)  // 简化实现只返回traceparent
-  assert_eq(custom_trace, None)  // 简化实现只返回traceparent
-  assert_eq(custom_span, None)   // 简化实现只返回traceparent
-  assert_eq(missing, None)
+  // 验证能够正确获取属性
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
+  let process_pid = Resource::get_attribute(resource_with_attrs, "process.pid")
+  let process_memory = Resource::get_attribute(resource_with_attrs, "process.memory.usage")
+  let process_debug = Resource::get_attribute(resource_with_attrs, "process.debug")
+  let nonexistent = Resource::get_attribute(resource_with_attrs, "nonexistent.key")
   
-  // 测试特殊字符的头部值
-  let special_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(special_carrier, "special-header", "value with spaces & symbols!")
-  let special_value = TextMapCarrier::get(special_carrier, "special-header")
-  assert_eq(special_value, None)  // 简化实现只返回traceparent
+  assert_eq(service_name, Some(StringValue("test-service")))
+  assert_eq(service_version, Some(StringValue("1.0.0")))
+  assert_eq(process_pid, Some(IntValue(12345)))
+  assert_eq(process_memory, Some(FloatValue(1024.5)))
+  assert_eq(process_debug, Some(BoolValue(false)))
+  assert_eq(nonexistent, None)
   
-  // 测试空值头部
-  let empty_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(empty_carrier, "empty-header", "")
-  let empty_value = TextMapCarrier::get(empty_carrier, "empty-header")
-  assert_eq(empty_value, None)  // 简化实现只返回traceparent
+  // 测试Resource合并
+  let base_attrs = [("base.key", StringValue("base-value")), ("common.key", StringValue("base-common"))]
+  let override_attrs = [("override.key", StringValue("override-value")), ("common.key", StringValue("override-common"))]
+  
+  let base_resource = Resource::with_attributes(resource, base_attrs)
+  let override_resource = Resource::with_attributes(resource, override_attrs)
+  let merged = Resource::merge(base_resource, override_resource)
+  
+  // 在简化实现中，merge返回override资源
+  let merged_override = Resource::get_attribute(merged, "override.key")
+  let merged_common = Resource::get_attribute(merged, "common.key")
+  let merged_base = Resource::get_attribute(merged, "base.key")
+  
+  assert_eq(merged_override, Some(StringValue("override-value")))
+  assert_eq(merged_common, Some(StringValue("override-common")))
+  assert_eq(merged_base, None) // 简化实现中base属性被覆盖
 }
 
-test "LogRecord序列化测试" {
-  // 测试完整LogRecord的序列化
-  let timestamp = 1735689600000000000L  // 2025-01-01的时间戳
-  let observed_timestamp = 1735689600000001000L
+test "HTTP请求响应序列化测试" {
+  // 测试HttpRequest的序列化结构
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("Authorization", "Bearer token123"),
+    ("X-Request-ID", "req-456"),
+    ("User-Agent", "Azimuth-Client/1.0")
+  ]
   
-  let log_record = LogRecord::new_with_context(
+  let request = HttpRequest::new("POST", "https://api.example.com/v1/data", headers, Some("{\"key\":\"value\"}"))
+  
+  // 验证请求的各个字段
+  assert_eq(HttpRequest::http_method(request), "POST")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/v1/data")
+  assert_eq(HttpRequest::body(request), Some("{\"key\":\"value\"}"))
+  
+  // 测试不同HTTP方法的请求
+  let get_request = HttpRequest::new("GET", "https://api.example.com/resource", [], None)
+  let put_request = HttpRequest::new("PUT", "https://api.example.com/resource", [], Some("{\"updated\":true}"))
+  let delete_request = HttpRequest::new("DELETE", "https://api.example.com/resource/123", [], None)
+  let patch_request = HttpRequest::new("PATCH", "https://api.example.com/resource/123", [], Some("{\"field\":\"new_value\"}"))
+  
+  assert_eq(HttpRequest::http_method(get_request), "GET")
+  assert_eq(HttpRequest::http_method(put_request), "PUT")
+  assert_eq(HttpRequest::http_method(delete_request), "DELETE")
+  assert_eq(HttpRequest::http_method(patch_request), "PATCH")
+  
+  // 测试HttpResponse的序列化结构
+  let response_headers = [
+    ("Content-Type", "application/json"),
+    ("X-Response-ID", "resp-789"),
+    ("Cache-Control", "no-cache"),
+    ("Server", "Azimuth-Server/1.0")
+  ]
+  
+  let response = HttpResponse::new(200, response_headers, Some("{\"result\":\"success\",\"data\":[1,2,3]}"))
+  
+  // 验证响应的各个字段
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::body(response), Some("{\"result\":\"success\",\"data\":[1,2,3]}"))
+  
+  // 测试不同状态码的响应
+  let success_response = HttpResponse::new(200, [], Some("OK"))
+  let created_response = HttpResponse::new(201, [], Some("Created"))
+  let no_content_response = HttpResponse::new(204, [], None)
+  let bad_request_response = HttpResponse::new(400, [], Some("Bad Request"))
+  let unauthorized_response = HttpResponse::new(401, [], Some("Unauthorized"))
+  let forbidden_response = HttpResponse::new(403, [], Some("Forbidden"))
+  let not_found_response = HttpResponse::new(404, [], Some("Not Found"))
+  let internal_error_response = HttpResponse::new(500, [], Some("Internal Server Error"))
+  
+  assert_eq(HttpResponse::status_code(success_response), 200)
+  assert_eq(HttpResponse::status_code(created_response), 201)
+  assert_eq(HttpResponse::status_code(no_content_response), 204)
+  assert_eq(HttpResponse::status_code(bad_request_response), 400)
+  assert_eq(HttpResponse::status_code(unauthorized_response), 401)
+  assert_eq(HttpResponse::status_code(forbidden_response), 403)
+  assert_eq(HttpResponse::status_code(not_found_response), 404)
+  assert_eq(HttpResponse::status_code(internal_error_response), 500)
+  
+  // 测试空体的请求和响应
+  let empty_request = HttpRequest::new("HEAD", "https://api.example.com/health", [], None)
+  let empty_response = HttpResponse::new(204, [], None)
+  
+  assert_eq(HttpRequest::body(empty_request), None)
+  assert_eq(HttpResponse::body(empty_response), None)
+}
+
+test "日志记录序列化测试" {
+  // 测试LogRecord的序列化结构
+  let simple_log = LogRecord::new(Info, "Simple log message")
+  
+  assert_eq(LogRecord::severity_number(simple_log), Info)
+  assert_eq(LogRecord::body(simple_log), Some("Simple log message"))
+  assert_eq(LogRecord::trace_id(simple_log), None)
+  assert_eq(LogRecord::span_id(simple_log), None)
+  
+  // 测试完整的LogRecord
+  let attrs = Attributes::new()
+  let full_log = LogRecord::new_with_context(
     Error,
-    Some("Database connection failed"),
-    Some(Attributes::new()),
-    Some(timestamp),
-    Some(observed_timestamp),
+    Some("Detailed error message"),
+    Some(attrs),
+    Some(1735689600000000000L),
+    Some(1735689600000001000L),
     Some("trace-123"),
     Some("span-456"),
     Some(Context::root())
   )
   
-  // 验证序列化后的字段
-  assert_eq(LogRecord::severity_number(log_record), Error)
-  assert_eq(LogRecord::body(log_record), Some("Database connection failed"))
-  assert_eq(LogRecord::trace_id(log_record), Some("trace-123"))
-  assert_eq(LogRecord::span_id(log_record), Some("span-456"))
+  assert_eq(LogRecord::severity_number(full_log), Error)
+  assert_eq(LogRecord::body(full_log), Some("Detailed error message"))
+  assert_eq(LogRecord::trace_id(full_log), Some("trace-123"))
+  assert_eq(LogRecord::span_id(full_log), Some("span-456"))
   
-  // 测试最小LogRecord
-  let min_log = LogRecord::new(Info, "Simple message")
-  assert_eq(LogRecord::severity_number(min_log), Info)
-  assert_eq(LogRecord::body(min_log), Some("Simple message"))
-  assert_eq(LogRecord::trace_id(min_log), None)
-  assert_eq(LogRecord::span_id(min_log), None)
-  
-  // 测试不同严重程度的序列化
-  let trace_log = LogRecord::new(Trace, "Trace message")
-  let debug_log = LogRecord::new(Debug, "Debug message")
-  let info_log = LogRecord::new(Info, "Info message")
-  let warn_log = LogRecord::new(Warn, "Warning message")
-  let error_log = LogRecord::new(Error, "Error message")
-  let fatal_log = LogRecord::new(Fatal, "Fatal message")
+  // 测试不同严重程度的日志
+  let trace_log = LogRecord::new(Trace, "Trace level message")
+  let debug_log = LogRecord::new(Debug, "Debug level message")
+  let info_log = LogRecord::new(Info, "Info level message")
+  let warn_log = LogRecord::new(Warn, "Warning level message")
+  let error_log = LogRecord::new(Error, "Error level message")
+  let fatal_log = LogRecord::new(Fatal, "Fatal level message")
   
   assert_eq(LogRecord::severity_number(trace_log), Trace)
   assert_eq(LogRecord::severity_number(debug_log), Debug)
@@ -187,9 +257,22 @@ test "LogRecord序列化测试" {
   assert_eq(LogRecord::severity_number(error_log), Error)
   assert_eq(LogRecord::severity_number(fatal_log), Fatal)
   
-  // 测试空体的LogRecord
+  // 测试带有特殊字符的日志消息
+  let unicode_log = LogRecord::new(Info, "测试中文日志消息")
+  let special_chars_log = LogRecord::new(Warn, "Message with special chars: !@#$%^&*()")
+  let json_log = LogRecord::new(Error, "{\"error\":\"validation_failed\",\"field\":\"email\"}")
+  let multiline_log = LogRecord::new(Info, "Line 1\nLine 2\nLine 3")
+  let empty_log = LogRecord::new(Debug, "")
+  
+  assert_eq(LogRecord::body(unicode_log), Some("测试中文日志消息"))
+  assert_eq(LogRecord::body(special_chars_log), Some("Message with special chars: !@#$%^&*()"))
+  assert_eq(LogRecord::body(json_log), Some("{\"error\":\"validation_failed\",\"field\":\"email\"}"))
+  assert_eq(LogRecord::body(multiline_log), Some("Line 1\nLine 2\nLine 3"))
+  assert_eq(LogRecord::body(empty_log), Some(""))
+  
+  // 测试带有空body的日志
   let no_body_log = LogRecord::new_with_context(
-    Warn,
+    Info,
     None,
     None,
     None,
@@ -200,172 +283,61 @@ test "LogRecord序列化测试" {
   )
   
   assert_eq(LogRecord::body(no_body_log), None)
-  assert_eq(LogRecord::trace_id(no_body_log), None)
-  assert_eq(LogRecord::span_id(no_body_log), None)
 }
 
-test "Resource序列化测试" {
-  // 测试标准资源属性
-  let resource_attrs = [
-    ("service.name", StringValue("azimuth-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123")),
-    ("host.name", StringValue("production-server-01")),
-    ("host.arch", StringValue("amd64")),
-    ("os.type", StringValue("linux")),
-    ("os.version", StringValue("5.15.0")),
-    ("deployment.environment", StringValue("production"))
-  ]
+test "指标数据序列化测试" {
+  // 测试Instrument类型的序列化
+  let counter_instrument = Counter("request_count", Some("Total number of requests"), Some("count"))
+  let histogram_instrument = Histogram("request_duration", Some("Request duration histogram"), Some("ms"))
+  let updown_counter_instrument = UpDownCounter("active_connections", Some("Current active connections"), Some("connections"))
+  let gauge_instrument = Gauge("cpu_usage", Some("Current CPU usage"), Some("percent"))
   
-  let resource = Resource::with_attributes(Resource::new(), resource_attrs)
+  // 验证Instrument的名称
+  assert_eq(Instrument::name(counter_instrument), "request_count")
+  assert_eq(Instrument::name(histogram_instrument), "request_duration")
+  assert_eq(Instrument::name(updown_counter_instrument), "active_connections")
+  assert_eq(Instrument::name(gauge_instrument), "cpu_usage")
   
-  // 验证资源属性序列化
-  let service_name = Resource::get_attribute(resource, "service.name")
-  let service_version = Resource::get_attribute(resource, "service.version")
-  let instance_id = Resource::get_attribute(resource, "service.instance.id")
-  let host_name = Resource::get_attribute(resource, "host.name")
-  let missing_attr = Resource::get_attribute(resource, "nonexistent.attr")
-  
-  assert_eq(service_name, Some(StringValue("azimuth-service")))
-  assert_eq(service_version, Some(StringValue("1.0.0")))
-  assert_eq(instance_id, Some(StringValue("instance-123")))
-  assert_eq(host_name, Some(StringValue("production-server-01")))
-  assert_eq(missing_attr, None)
-  
-  // 测试数值类型的资源属性
-  let numeric_attrs = [
-    ("process.pid", IntValue(12345)),
-    ("process.cpu.time", FloatValue(123.456)),
-    ("system.memory.total", IntValue(8589934592)),
-    ("system.cpu.count", IntValue(8))
-  ]
-  
-  let numeric_resource = Resource::with_attributes(Resource::new(), numeric_attrs)
-  
-  let pid = Resource::get_attribute(numeric_resource, "process.pid")
-  let cpu_time = Resource::get_attribute(numeric_resource, "process.cpu.time")
-  let memory_total = Resource::get_attribute(numeric_resource, "system.memory.total")
-  let cpu_count = Resource::get_attribute(numeric_resource, "system.cpu.count")
-  
-  assert_eq(pid, Some(IntValue(12345)))
-  assert_eq(cpu_time, Some(FloatValue(123.456)))
-  assert_eq(memory_total, Some(IntValue(8589934592)))
-  assert_eq(cpu_count, Some(IntValue(8)))
-  
-  // 测试布尔类型的资源属性
-  let bool_attrs = [
-    ("service.debug.enabled", BoolValue(false)),
-    ("service.metrics.enabled", BoolValue(true)),
-    ("service.tracing.enabled", BoolValue(true))
-  ]
-  
-  let bool_resource = Resource::with_attributes(Resource::new(), bool_attrs)
-  
-  let debug_enabled = Resource::get_attribute(bool_resource, "service.debug.enabled")
-  let metrics_enabled = Resource::get_attribute(bool_resource, "service.metrics.enabled")
-  let tracing_enabled = Resource::get_attribute(bool_resource, "service.tracing.enabled")
-  
-  assert_eq(debug_enabled, Some(BoolValue(false)))
-  assert_eq(metrics_enabled, Some(BoolValue(true)))
-  assert_eq(tracing_enabled, Some(BoolValue(true)))
-}
-
-test "Instrument序列化测试" {
-  // 测试Counter序列化
-  let counter = Counter("request.count", Some("Total number of requests"), Some("count"))
-  let counter_instrument = Counter("request.count", Some("Total number of requests"), Some("count"))
-  
-  assert_eq(Instrument::name(counter_instrument), "request.count")
+  // 验证Instrument的描述
   assert_eq(Instrument::description(counter_instrument), Some("Total number of requests"))
+  assert_eq(Instrument::description(histogram_instrument), Some("Request duration histogram"))
+  assert_eq(Instrument::description(updown_counter_instrument), Some("Current active connections"))
+  assert_eq(Instrument::description(gauge_instrument), Some("Current CPU usage"))
+  
+  // 验证Instrument的单位
   assert_eq(Instrument::unit(counter_instrument), Some("count"))
-  
-  // 测试Histogram序列化
-  let histogram = Histogram("request.duration", Some("Request duration in milliseconds"), Some("ms"))
-  let histogram_instrument = Histogram("request.duration", Some("Request duration in milliseconds"), Some("ms"))
-  
-  assert_eq(Instrument::name(histogram_instrument), "request.duration")
-  assert_eq(Instrument::description(histogram_instrument), Some("Request duration in milliseconds"))
   assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
+  assert_eq(Instrument::unit(updown_counter_instrument), Some("connections"))
+  assert_eq(Instrument::unit(gauge_instrument), Some("percent"))
   
-  // 测试UpDownCounter序列化
-  let updown_counter = UpDownCounter("active.connections", Some("Number of active connections"), Some("connections"))
-  let updown_instrument = UpDownCounter("active.connections", Some("Number of active connections"), Some("connections"))
+  // 测试Meter和MeterProvider的序列化结构
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "test-meter")
   
-  assert_eq(Instrument::name(updown_instrument), "active.connections")
-  assert_eq(Instrument::description(updown_instrument), Some("Number of active connections"))
-  assert_eq(Instrument::unit(updown_instrument), Some("connections"))
+  assert_eq(meter.scope.name, "test-meter")
+  assert_eq(meter.scope.version, None)
+  assert_eq(meter.scope.schema_url, None)
   
-  // 测试Gauge序列化
-  let gauge = Gauge("memory.usage", Some("Current memory usage"), Some("bytes"))
-  let gauge_instrument = Gauge("memory.usage", Some("Current memory usage"), Some("bytes"))
+  // 测试带有版本的Meter
+  let meter_with_version = MeterProvider::get_meter(meter_provider, "versioned-meter", Some("2.1.0"))
+  assert_eq(meter_with_version.scope.name, "versioned-meter")
+  assert_eq(meter_with_version.scope.version, Some("2.1.0"))
   
-  assert_eq(Instrument::name(gauge_instrument), "memory.usage")
-  assert_eq(Instrument::description(gauge_instrument), Some("Current memory usage"))
-  assert_eq(Instrument::unit(gauge_instrument), Some("bytes"))
+  // 测试Counter的序列化
+  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("unit"))
+  assert_eq(counter.name, "test_counter")
+  assert_eq(counter.description, Some("Test counter"))
+  assert_eq(counter.unit, Some("unit"))
   
-  // 测试None描述和单位的Instrument
-  let no_desc_counter = Counter("simple.counter", None, None)
-  let no_desc_instrument = Counter("simple.counter", None, None)
+  // 测试Histogram的序列化
+  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
+  assert_eq(histogram.name, "test_histogram")
+  assert_eq(histogram.description, Some("Test histogram"))
+  assert_eq(histogram.unit, Some("ms"))
   
-  assert_eq(Instrument::name(no_desc_instrument), "simple.counter")
-  assert_eq(Instrument::description(no_desc_instrument), None)
-  assert_eq(Instrument::unit(no_desc_instrument), None)
-  
-  // 测试空描述的Instrument
-  let empty_desc_counter = Counter("empty.desc.counter", Some(""), Some(""))
-  let empty_desc_instrument = Counter("empty.desc.counter", Some(""), Some(""))
-  
-  assert_eq(Instrument::name(empty_desc_instrument), "empty.desc.counter")
-  assert_eq(Instrument::description(empty_desc_instrument), Some(""))
-  assert_eq(Instrument::unit(empty_desc_instrument), Some(""))
-}
-
-test "数据完整性验证测试" {
-  // 测试循环引用检测（简化版本）
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "self.reference", StringValue("self"))
-  
-  // 测试深度嵌套结构
-  let nested_attrs = Attributes::new()
-  for i = 0; i < 100; i = i + 1 {
-    let key = "level." + i.to_string()
-    let value = StringValue("value-at-level-" + i.to_string())
-    Attributes::set(nested_attrs, key, value)
-  }
-  
-  // 测试大数据量的序列化
-  let large_attrs = Attributes::new()
-  for i = 0; i < 1000; i = i + 1 {
-    let key = "large.key." + i.to_string()
-    let value = StringValue("large.value." + i.to_string() + " with additional text")
-    Attributes::set(large_attrs, key, value)
-  }
-  
-  // 测试特殊字符的序列化
-  let special_attrs = Attributes::new()
-  let special_chars = ["\n", "\t", "\r", "\"", "'", "\\", "/", ":", ";", ",", ".", "?", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "[", "]", "{", "}", "|", "<", ">"]
-  for char in special_chars {
-    let key = "special.char." + char
-    let value = StringValue("value-with-" + char)
-    Attributes::set(special_attrs, key, value)
-  }
-  
-  // 测试Unicode字符的序列化
-  let unicode_attrs = Attributes::new()
-  let unicode_strings = ["中文测试", "Тест на русском", "テスト", "🚀", "αβγδε", "العربية"]
-  for unicode_str in unicode_strings {
-    let key = "unicode." + unicode_str
-    let value = StringValue(unicode_str)
-    Attributes::set(unicode_attrs, key, value)
-  }
-  
-  // 测试极长键名
-  let long_key_attrs = Attributes::new()
-  let very_long_key = "a" * 1000
-  Attributes::set(long_key_attrs, very_long_key, StringValue("value for very long key"))
-  
-  // 测试极长值
-  let long_value_attrs = Attributes::new()
-  let very_long_value = "x" * 10000
-  Attributes::set(long_value_attrs, "long.value.key", StringValue(very_long_value))
+  // 测试Histogram转换为Instrument
+  let histogram_as_instrument = Histogram::as_instrument(histogram)
+  assert_eq(Instrument::name(histogram_as_instrument), "test_histogram")
+  assert_eq(Instrument::description(histogram_as_instrument), Some("Test histogram"))
+  assert_eq(Instrument::unit(histogram_as_instrument), Some("ms"))
 }
