@@ -482,6 +482,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_6, ["memory allocation and garbage collection performance"]),
     7: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_7, ["end-to-end telemetry workflow performance"]),
   },
+  "new_basic_tests.mbt": {
+  },
   "multilingual_test.mbt": {
     0: (__test_6d756c74696c696e6775616c5f746573742e6d6274_0, ["中文字符处理测试"]),
     1: (__test_6d756c74696c696e6775616c5f746573742e6d6274_1, ["多语言日志消息测试"]),

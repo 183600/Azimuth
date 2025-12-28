@@ -82,6 +82,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_706572666f726d616e63655f7265736f757263655f74657374732e6d6274_4, ["时间性能基准测试"]),
     5: (__test_706572666f726d616e63655f7265736f757263655f74657374732e6d6274_5, ["缓存和优化策略测试"]),
   },
+  "new_basic_tests.mbt": {
+    0: (__test_6e65775f62617369635f74657374732e6d6274_0, ["basic test for new functionality"]),
+  },
   "focused_comprehensive_tests.mbt": {
     0: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_0, ["error handling and boundary conditions"]),
     1: (__test_666f63757365645f636f6d70726568656e736976655f74657374732e6d6274_1, ["performance and memory management"]),

@@ -1,15 +1,16 @@
 {
-  "name": "focused-tests",
+  "name": "azimuth/telemetry/tests",
   "version": "0.1.0",
-  "description": "Focused comprehensive test cases for Azimuth telemetry system covering error handling, performance, integration, security, i18n, concurrency, resource management, configuration, and network resilience",
+  "description": "Test cases for Azimuth telemetry system",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {
-    "azimuth": "local:../../azimuth"
+    "azimuth": "local:../../../azimuth",
+    "moonbitlang/core/assertion": "*"
   },
   "test": {
     "test": [
-      "simple_high_quality_tests.mbt"
+      "new_basic_tests.mbt"
     ]
   }
 }
