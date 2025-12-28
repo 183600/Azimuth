@@ -1,0 +1,13 @@
+{
+  "name": "extended-tests",
+  "version": "0.1.0",
+  "description": "Extended integration and error recovery tests for Azimuth telemetry",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../../azimuth"
+  },
+  "test": {
+    "test": ["comprehensive_test.mbt", "integration_test.mbt", "error_recovery_test.mbt"]
+  }
+}
