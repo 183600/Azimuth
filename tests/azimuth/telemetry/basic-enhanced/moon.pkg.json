@@ -1,0 +1,11 @@
+{
+  "name": "basic-enhanced-tests",
+  "version": "0.1.0",
+  "description": "Basic enhanced test cases for fundamental functionality validation",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {},
+  "test": {
+    "test": ["basic_enhanced_test.mbt"]
+  }
+}

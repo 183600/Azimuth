@@ -57,16 +57,6 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "supplementary_enhanced_test.mbt": {
-    0: (__test_737570706c656d656e746172795f656e68616e6365645f746573742e6d6274_0, ["错误边界和异常恢复测试"]),
-    1: (__test_737570706c656d656e746172795f656e68616e6365645f746573742e6d6274_1, ["跨组件集成测试"]),
-    2: (__test_737570706c656d656e746172795f656e68616e6365645f746573742e6d6274_2, ["性能压力测试"]),
-    3: (__test_737570706c656d656e746172795f656e68616e6365645f746573742e6d6274_3, ["数据一致性测试"]),
-    4: (__test_737570706c656d656e746172795f656e68616e6365645f746573742e6d6274_4, ["序列化和格式转换测试"]),
-    5: (__test_737570706c656d656e746172795f656e68616e6365645f746573742e6d6274_5, ["平台兼容性测试"]),
-    6: (__test_737570706c656d656e746172795f656e68616e6365645f746573742e6d6274_6, ["资源管理和生命周期测试"]),
-    7: (__test_737570706c656d656e746172795f656e68616e6365645f746573742e6d6274_7, ["并发和线程安全模拟测试"]),
-  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
@@ -143,7 +133,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/tests/azimuth/telemetry/comprehensive-enhanced\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/tests/azimuth/telemetry/basic-enhanced\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
