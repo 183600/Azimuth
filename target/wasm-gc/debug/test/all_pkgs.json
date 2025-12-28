@@ -2,8 +2,8 @@
   "packages": [
     {
       "root": "azimuth/telemetry",
-      "rel": "temp_test",
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/temp_test/temp_test.mi"
+      "rel": "simple_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/simple_test/simple_test.mi"
     },
     {
       "root": "azimuth/telemetry",
