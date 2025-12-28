@@ -1,277 +1,312 @@
-// 复合指标操作测试 - 测试Counter、Histogram、Gauge等不同类型指标
-// Composite Metrics Operations Test - Testing different metric types like Counter, Histogram, Gauge
+// Multi-Instrument Type Integration Test Suite for Azimuth Telemetry System
+// This file contains comprehensive test cases for integration of different instrument types
 
-test "Counter指标基础操作测试" {
-  // 创建Meter和Counter
+test "counter and histogram integration" {
+  // Create meter and instruments
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test-service")
-  let counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
+  let meter = MeterProvider::get_meter(provider, "integration-test-meter")
   
-  // 验证Counter属性
-  assert_eq(counter.name, "http.requests.total")
-  assert_eq(counter.description, Some("Total HTTP requests"))
-  assert_eq(counter.unit, Some("count"))
+  // Create counter for request counting
+  let request_counter = Meter::create_counter(meter, "http.requests.total")
   
-  // 测试Counter累加操作
-  Counter::add(counter, 1.0)
-  Counter::add(counter, 5.0)
-  Counter::add(counter, 10.5)
-  Counter::add(counter, 0.0)  // 测试零值
-  Counter::add(counter, -2.0) // 测试负值（某些实现可能不支持）
+  // Create histogram for request duration
+  let duration_histogram = Meter::create_histogram(meter, "http.request.duration")
   
-  // 验证操作成功（简化实现中无法获取实际值）
-  assert_true(true)
-}
-
-test "Counter指标带属性操作测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "payment-service")
-  let counter = Meter::create_counter(meter, "transactions.amount")
-  
-  // 创建属性集合
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "transaction.type", StringValue("payment"))
-  Attributes::set(attrs, "currency", StringValue("USD"))
-  Attributes::set(attrs, "status", StringValue("success"))
-  
-  // 带属性累加
-  Counter::add(counter, 99.99, Some(attrs))
-  Counter::add(counter, 149.50, Some(attrs))
-  
-  // 创建不同属性集合
-  let failure_attrs = Attributes::new()
-  Attributes::set(failure_attrs, "transaction.type", StringValue("payment"))
-  Attributes::set(failure_attrs, "currency", StringValue("USD"))
-  Attributes::set(failure_attrs, "status", StringValue("failed"))
-  
-  Counter::add(counter, 25.00, Some(failure_attrs))
-  
-  // 验证操作成功
-  assert_true(true)
-}
-
-test "Histogram指标基础操作测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "api-service")
-  let histogram = Meter::create_histogram(meter, "http.request.duration", Some("HTTP request duration"), Some("ms"))
-  
-  // 验证Histogram属性
-  assert_eq(histogram.name, "http.request.duration")
-  assert_eq(histogram.description, Some("HTTP request duration"))
-  assert_eq(histogram.unit, Some("ms"))
-  
-  // 测试Histogram记录操作
-  Histogram::record(histogram, 45.2)    // 45.2ms
-  Histogram::record(histogram, 128.7)   // 128.7ms
-  Histogram::record(histogram, 23.1)    // 23.1ms
-  Histogram::record(histogram, 256.4)   // 256.4ms
-  Histogram::record(histogram, 89.6)    // 89.6ms
-  
-  // 测试边界值
-  Histogram::record(histogram, 0.0)     // 最小值
-  Histogram::record(histogram, 9999.9)  // 大值
-  
-  // 验证操作成功
-  assert_true(true)
-}
-
-test "Histogram指标分布特性测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "database-service")
-  let response_time_histogram = Meter::create_histogram(meter, "db.query.time")
-  
-  // 模拟不同查询响应时间的分布
-  let fast_queries = [5.2, 8.1, 12.3, 9.7, 6.8]  // 快速查询 (< 10ms)
-  let medium_queries = [45.6, 78.2, 123.4, 89.1, 156.7]  // 中等查询 (10-200ms)
-  let slow_queries = [345.2, 567.8, 423.1, 789.3, 612.5]  // 慢查询 (> 200ms)
-  
-  // 记录快速查询
-  for time in fast_queries {
-    Histogram::record(response_time_histogram, time)
-  }
-  
-  // 记录中等查询
-  for time in medium_queries {
-    Histogram::record(response_time_histogram, time)
-  }
-  
-  // 记录慢查询
-  for time in slow_queries {
-    Histogram::record(response_time_histogram, time)
-  }
-  
-  // 验证操作成功
-  assert_true(true)
-}
-
-test "UpDownCounter指标操作测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "queue-service")
-  let updown_counter = Meter::create_updown_counter(meter, "queue.size", Some("Current queue size"), Some("items"))
-  
-  // 验证UpDownCounter属性
-  assert_eq(updown_counter.name, "queue.size")
-  assert_eq(updown_counter.description, Some("Current queue size"))
-  assert_eq(updown_counter.unit, Some("items"))
-  
-  // 模拟队列大小变化
-  UpDownCounter::add(updown_counter, 10.0)  // 队列增加10个项目
-  UpDownCounter::add(updown_counter, 5.0)   // 队列增加5个项目
-  UpDownCounter::add(updown_counter, -3.0)  // 队列处理3个项目
-  UpDownCounter::add(updown_counter, -2.0)  // 队列处理2个项目
-  UpDownCounter::add(updown_counter, 8.0)   // 队列增加8个项目
-  
-  // 测试边界情况
-  UpDownCounter::add(updown_counter, 0.0)   // 无变化
-  UpDownCounter::add(updown_counter, -20.0) // 尝试清空队列（可能允许负值）
-  
-  // 验证操作成功
-  assert_true(true)
-}
-
-test "Gauge指标操作测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "system-service")
-  let memory_gauge = Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("bytes"))
-  
-  // 验证Gauge属性
-  assert_eq(memory_gauge.name, "memory.usage")
-  assert_eq(memory_gauge.description, Some("Memory usage"))
-  assert_eq(memory_gauge.unit, Some("bytes"))
-  
-  // 模拟内存使用情况变化
-  UpDownCounter::add(memory_gauge, 1024.0 * 1024.0 * 100.0)  // 100MB
-  UpDownCounter::add(memory_gauge, 1024.0 * 1024.0 * 50.0)   // 增加50MB
-  UpDownCounter::add(memory_gauge, -1024.0 * 1024.0 * 25.0)  // 减少25MB
-  
-  // 创建CPU使用率Gauge
-  let cpu_gauge = Meter::create_gauge(meter, "cpu.usage", Some("CPU usage percentage"), Some("percent"))
-  UpDownCounter::add(cpu_gauge, 25.5)   // 25.5%
-  UpDownCounter::add(cpu_gauge, 15.3)   // 增加15.3%
-  UpDownCounter::add(cpu_gauge, -5.8)   // 减少5.8%
-  
-  // 验证操作成功
-  assert_true(true)
-}
-
-test "多指标组合操作测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "web-server")
-  
-  // 创建多种类型的指标
-  let request_counter = Meter::create_counter(meter, "http.requests")
-  let response_histogram = Meter::create_histogram(meter, "http.response.time")
-  let active_connections_gauge = Meter::create_gauge(meter, "http.active.connections")
-  let error_counter = Meter::create_counter(meter, "http.errors")
-  
-  // 模拟Web服务器操作
-  for i in 0..10 {
-    // 新请求到达
+  // Simulate HTTP request processing
+  for i = 0; i < 10; i = i + 1 {
+    // Increment request counter
     Counter::add(request_counter, 1.0)
-    UpDownCounter::add(active_connections_gauge, 1.0)
     
-    // 模拟处理时间
-    let response_time = 50.0 + (i * 10.0).to_double()
-    Histogram::record(response_histogram, response_time)
-    
-    // 模拟一些请求出错
-    if i % 3 == 0 {
-      Counter::add(error_counter, 1.0)
-    }
-    
-    // 请求完成
-    UpDownCounter::add(active_connections_gauge, -1.0)
+    // Record request duration (simulated varying durations)
+    let duration = 50.0 + (i.to_int() * 10.0) + (i.to_int() * 5.0)
+    Histogram::record(duration_histogram, duration)
   }
   
-  // 验证操作成功
-  assert_true(true)
+  // Verify instrument properties
+  assert_eq(request_counter.name, "http.requests.total")
+  assert_eq(duration_histogram.name, "http.request.duration")
+  
+  // Test instrument conversion to generic Instrument type
+  let counter_instrument = Counter(request_counter.name, request_counter.description, request_counter.unit)
+  let histogram_instrument = Histogram::as_instrument(duration_histogram)
+  
+  assert_eq(Instrument::name(counter_instrument), "http.requests.total")
+  assert_eq(Instrument::name(histogram_instrument), "http.request.duration")
+  
+  // Test instrument metadata
+  assert_eq(Instrument::description(counter_instrument), request_counter.description)
+  assert_eq(Instrument::unit(counter_instrument), request_counter.unit)
 }
 
-test "指标Instrument类型操作测试" {
+test "up-down counter and gauge integration" {
+  // Create meter and instruments
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test-service")
+  let meter = MeterProvider::get_meter(provider, "resource-monitoring-meter")
   
-  // 创建不同类型的Instrument
-  let counter_instrument = Counter("test.counter", Some("Test counter"), Some("unit"))
-  let histogram_instrument = Histogram("test.histogram", Some("Test histogram"), Some("ms"))
-  let updown_counter_instrument = UpDownCounter("test.updown", Some("Test updown"), Some("count"))
-  let gauge_instrument = Gauge("test.gauge", Some("Test gauge"), Some("percent"))
+  // Create up-down counter for active connections
+  let active_connections = Meter::create_updown_counter(meter, "server.active_connections")
   
-  // 测试Instrument名称
-  assert_eq(Instrument::name(counter_instrument), "test.counter")
-  assert_eq(Instrument::name(histogram_instrument), "test.histogram")
-  assert_eq(Instrument::name(updown_counter_instrument), "test.updown")
-  assert_eq(Instrument::name(gauge_instrument), "test.gauge")
+  // Create gauge for memory usage
+  let memory_usage = Meter::create_gauge(meter, "server.memory_usage")
   
-  // 测试Instrument描述
-  assert_eq(Instrument::description(counter_instrument), Some("Test counter"))
-  assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))
-  assert_eq(Instrument::description(updown_counter_instrument), Some("Test updown"))
-  assert_eq(Instrument::description(gauge_instrument), Some("Test gauge"))
+  // Simulate server lifecycle
+  // Start with some initial connections
+  UpDownCounter::add(active_connections, 5.0)
   
-  // 测试Instrument单位
-  assert_eq(Instrument::unit(counter_instrument), Some("unit"))
-  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
-  assert_eq(Instrument::unit(updown_counter_instrument), Some("count"))
-  assert_eq(Instrument::unit(gauge_instrument), Some("percent"))
+  // Simulate connection changes
+  UpDownCounter::add(active_connections, 3.0)  // +3 connections
+  UpDownCounter::add(active_connections, -1.0) // -1 connection
+  UpDownCounter::add(active_connections, 2.0)  // +2 connections
+  
+  // Simulate memory usage changes
+  // Note: Gauge operations would depend on implementation
+  // In a real implementation, we might have a Gauge::set() method
+  
+  // Verify instrument properties
+  assert_eq(active_connections.name, "server.active_connections")
+  assert_eq(memory_usage.name, "server.memory_usage")
+  
+  // Test instrument metadata
+  assert_eq(Instrument::name(UpDownCounter(active_connections.name, active_connections.description, active_connections.unit)), "server.active_connections")
+  assert_eq(Instrument::name(Gauge(memory_usage.name, memory_usage.description, memory_usage.unit)), "server.memory_usage")
 }
 
-test "指标属性和标签组合测试" {
+test "multi-instrument scenario with attributes" {
+  // Create meter
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "multi-tenant-service")
-  let request_counter = Meter::create_counter(meter, "api.requests")
+  let meter = MeterProvider::get_meter(provider, "multi-instrument-meter")
   
-  // 创建不同租户的属性
-  let tenant_a_attrs = Attributes::new()
-  Attributes::set(tenant_a_attrs, "tenant.id", StringValue("tenant-a"))
-  Attributes::set(tenant_a_attrs, "api.version", StringValue("v1"))
-  Attributes::set(tenant_a_attrs, "region", StringValue("us-east"))
+  // Create various instruments
+  let api_counter = Meter::create_counter(meter, "api.requests")
+  let db_histogram = Meter::create_histogram(meter, "db.query.duration")
+  let cache_updown = Meter::create_updown_counter(meter, "cache.items")
+  let cpu_gauge = Meter::create_gauge(meter, "system.cpu.usage")
   
-  let tenant_b_attrs = Attributes::new()
-  Attributes::set(tenant_b_attrs, "tenant.id", StringValue("tenant-b"))
-  Attributes::set(tenant_b_attrs, "api.version", StringValue("v2"))
-  Attributes::set(tenant_b_attrs, "region", StringValue("eu-west"))
+  // Create attributes for different operations
+  let api_attrs = Attributes::new()
+  Attributes::set(api_attrs, "endpoint", StringValue("/api/users"))
+  Attributes::set(api_attrs, "method", StringValue("GET"))
+  Attributes::set(api_attrs, "status", StringValue("200"))
   
-  // 模拟不同租户的请求
-  Counter::add(request_counter, 100.0, Some(tenant_a_attrs))  // 租户A的100个请求
-  Counter::add(request_counter, 75.0, Some(tenant_b_attrs))   // 租户B的75个请求
+  let db_attrs = Attributes::new()
+  Attributes::set(db_attrs, "operation", StringValue("SELECT"))
+  Attributes::set(db_attrs, "table", StringValue("users"))
   
-  // 创建错误计数器
-  let error_counter = Meter::create_counter(meter, "api.errors")
-  Counter::add(error_counter, 5.0, Some(tenant_a_attrs))     // 租户A的5个错误
-  Counter::add(error_counter, 3.0, Some(tenant_b_attrs))     // 租户B的3个错误
+  let cache_attrs = Attributes::new()
+  Attributes::set(cache_attrs, "cache.type", StringValue("redis"))
   
-  // 创建延迟直方图
-  let latency_histogram = Meter::create_histogram(meter, "api.latency")
-  Histogram::record(latency_histogram, 120.5, Some(tenant_a_attrs))  // 租户A的延迟
-  Histogram::record(latency_histogram, 98.3, Some(tenant_b_attrs))    // 租户B的延迟
+  // Record metrics with attributes
+  Counter::add(api_counter, 1.0, Some(api_attrs))
+  Histogram::record(db_histogram, 25.5, Some(db_attrs))
+  UpDownCounter::add(cache_updown, 10.0, Some(cache_attrs))
   
-  // 验证操作成功
-  assert_true(true)
+  // Update attributes and record more metrics
+  Attributes::set(api_attrs, "status", StringValue("404"))
+  Counter::add(api_counter, 1.0, Some(api_attrs))
+  
+  Attributes::set(db_attrs, "operation", StringValue("INSERT"))
+  Histogram::record(db_histogram, 45.2, Some(db_attrs))
+  
+  UpDownCounter::add(cache_updown, -3.0, Some(cache_attrs))
+  
+  // Verify all instruments have correct names
+  assert_eq(api_counter.name, "api.requests")
+  assert_eq(db_histogram.name, "db.query.duration")
+  assert_eq(cache_updown.name, "cache.items")
+  assert_eq(cpu_gauge.name, "system.cpu.usage")
 }
 
-test "指标边界条件和异常处理测试" {
+test "instrument factory integration" {
+  // Create multiple meters for different services
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "edge-case-service")
   
-  // 测试空名称指标
-  let empty_name_counter = Meter::create_counter(meter, "")
-  assert_eq(empty_name_counter.name, "")
+  let auth_meter = MeterProvider::get_meter(provider, "auth-service")
+  let user_meter = MeterProvider::get_meter(provider, "user-service")
+  let payment_meter = MeterProvider::get_meter(provider, "payment-service")
   
-  // 测试特殊字符名称
-  let special_name_histogram = Meter::create_histogram(meter, "metric.with.special-chars_123")
-  assert_eq(special_name_histogram.name, "metric.with.special-chars_123")
+  // Create instruments for each service
+  let auth_counter = Meter::create_counter(auth_meter, "auth.attempts")
+  let auth_histogram = Meter::create_histogram(auth_meter, "auth.duration")
   
-  // 测试极值
-  let counter = Meter::create_counter(meter, "extreme.values")
-  Counter::add(counter, 999999999.9)     // 大数值
-  Counter::add(counter, 0.000001)        // 小数值
-  Counter::add(counter, -999999999.9)    // 大负数
+  let user_counter = Meter::create_counter(user_meter, "user.operations")
+  let user_updown = Meter::create_updown_counter(user_meter, "user.sessions")
   
-  let histogram = Meter::create_histogram(meter, "extreme.histogram")
-  Histogram::record(histogram, 0.0)           // 最小值
-  Histogram::record(histogram, 999999999.9)    // 最大值
+  let payment_counter = Meter::create_counter(payment_meter, "payment.transactions")
+  let payment_histogram = Meter::create_histogram(payment_meter, "payment.amount")
+  let payment_gauge = Meter::create_gauge(payment_meter, "payment.queue.size")
   
-  // 验证操作成功
-  assert_true(true)
+  // Record metrics for each service
+  Counter::add(auth_counter, 1.0)
+  Histogram::record(auth_histogram, 100.0)
+  
+  Counter::add(user_counter, 1.0)
+  UpDownCounter::add(user_updown, 1.0)
+  
+  Counter::add(payment_counter, 1.0)
+  Histogram::record(payment_histogram, 99.99)
+  
+  // Verify instrument isolation by service
+  assert_eq(auth_counter.name, "auth.attempts")
+  assert_eq(user_counter.name, "user.operations")
+  assert_eq(payment_counter.name, "payment.transactions")
+  
+  // Verify instrument types are correct
+  assert_eq(Instrument::name(Counter(auth_counter.name, auth_counter.description, auth_counter.unit)), "auth.attempts")
+  assert_eq(Instrument::name(Histogram(auth_histogram.name, auth_histogram.description, auth_histogram.unit)), "auth.duration")
+  assert_eq(Instrument::name(UpDownCounter(user_updown.name, user_updown.description, user_updown.unit)), "user.sessions")
+  assert_eq(Instrument::name(Gauge(payment_gauge.name, payment_gauge.description, payment_gauge.unit)), "payment.queue.size")
+}
+
+test "instrument performance and scalability" {
+  // Create meter
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "performance-test-meter")
+  
+  // Create multiple instruments
+  let counters = Array::new[Counter]()
+  let histograms = Array::new[Histogram]()
+  let updown_counters = Array::new[UpDownCounter]()
+  let gauges = Array::new[Gauge]()
+  
+  // Create many instruments
+  for i = 0; i < 100; i = i + 1 {
+    counters.push(Meter::create_counter(meter, "counter." + i.to_string()))
+    histograms.push(Meter::create_histogram(meter, "histogram." + i.to_string()))
+    updown_counters.push(Meter::create_updown_counter(meter, "updown." + i.to_string()))
+    gauges.push(Meter::create_gauge(meter, "gauge." + i.to_string()))
+  }
+  
+  // Record metrics on all instruments
+  for i = 0; i < 100; i = i + 1 {
+    Counter::add(counters[i], i.to_int().to_double())
+    Histogram::record(histograms[i], i.to_int().to_double() * 2.0)
+    UpDownCounter::add(updown_counters[i], i.to_int().to_double() - 50.0)
+  }
+  
+  // Verify instrument names
+  assert_eq(counters[0].name, "counter.0")
+  assert_eq(histograms[50].name, "histogram.50")
+  assert_eq(updown_counters[99].name, "updown.99")
+  assert_eq(gauges[25].name, "gauge.25")
+  
+  // Test instrument access patterns
+  let first_counter = counters[0]
+  let last_histogram = histograms[99]
+  let middle_updown = updown_counters[50]
+  let random_gauge = gauges[75]
+  
+  assert_eq(first_counter.name, "counter.0")
+  assert_eq(last_histogram.name, "histogram.99")
+  assert_eq(middle_updown.name, "updown.50")
+  assert_eq(random_gauge.name, "gauge.75")
+}
+
+test "instrument error handling and edge cases" {
+  // Create meter
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "edge-case-meter")
+  
+  // Create instruments with edge case names
+  let empty_counter = Meter::create_counter(meter, "")
+  let long_histogram = Meter::create_histogram(meter, "very.long.histogram.name." + "x".repeat(100))
+  let special_updown = Meter::create_updown_counter(meter, "special-chars-!@#$%^&*()")
+  let unicode_gauge = Meter::create_gauge(meter, "unicode-gauge-测试")
+  
+  // Test operations with edge case values
+  Counter::add(empty_counter, 0.0)
+  Counter::add(empty_counter, -1.0)
+  Counter::add(empty_counter, 1.7976931348623157e+308)  // Max double
+  
+  Histogram::record(long_histogram, 0.0)
+  Histogram::record(long_histogram, -1.0)
+  Histogram::record(long_histogram, 1.0 / 0.0)  // Infinity
+  Histogram::record(long_histogram, 0.0 / 0.0)  // NaN
+  
+  UpDownCounter::add(special_updown, 1.7976931348623157e+308)  // Max double
+  UpDownCounter::add(special_updown, -1.7976931348623157e+308)  // Min double
+  
+  // Verify instrument names are preserved
+  assert_eq(empty_counter.name, "")
+  assert_eq(long_histogram.name, "very.long.histogram.name." + "x".repeat(100))
+  assert_eq(special_updown.name, "special-chars-!@#$%^&*()")
+  assert_eq(unicode_gauge.name, "unicode-gauge-测试")
+  
+  // Test instrument with attributes containing edge cases
+  let edge_attrs = Attributes::new()
+  Attributes::set(edge_attrs, "", StringValue("empty_key"))
+  Attributes::set(edge_attrs, "empty.value", StringValue(""))
+  Attributes::set(edge_attrs, "unicode.value", StringValue("测试"))
+  Attributes::set(edge_attrs, "emoji.value", StringValue("🚀"))
+  
+  Counter::add(empty_counter, 1.0, Some(edge_attrs))
+  Histogram::record(long_histogram, 100.0, Some(edge_attrs))
+  UpDownCounter::add(special_updown, 5.0, Some(edge_attrs))
+}
+
+test "instrument integration with telemetry context" {
+  // Create comprehensive telemetry scenario
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "telemetry-integration-meter")
+  
+  // Create instruments
+  let request_counter = Meter::create_counter(meter, "http.requests")
+  let duration_histogram = Meter::create_histogram(meter, "http.duration")
+  let active_gauge = Meter::create_gauge(meter, "http.active")
+  
+  // Create span context for correlation
+  let trace_id = "telemetry_trace_1234567890abcdef"
+  let span_id = "telemetry_span_1111222233334444"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  let span = Span::new("telemetry-operation", Server, span_ctx)
+  
+  // Create context with telemetry data
+  let ctx = Context::root()
+  let telemetry_ctx = Context::with_value(ctx, ContextKey::new("telemetry.context"), trace_id + ":" + span_id)
+  
+  // Create attributes with telemetry context
+  let telemetry_attrs = Attributes::new()
+  Attributes::set(telemetry_attrs, "trace.id", StringValue(trace_id))
+  Attributes::set(telemetry_attrs, "span.id", StringValue(span_id))
+  Attributes::set(telemetry_attrs, "operation.name", StringValue("telemetry-operation"))
+  
+  // Add span events for instrument operations
+  Span::add_event(span, "metrics.recorded", Some([
+    ("metric.type", StringValue("counter")),
+    ("metric.name", StringValue("http.requests"))
+  ]))
+  
+  // Record metrics with telemetry context
+  Counter::add(request_counter, 1.0, Some(telemetry_attrs))
+  Histogram::record(duration_histogram, 150.0, Some(telemetry_attrs))
+  
+  Span::add_event(span, "metrics.recorded", Some([
+    ("metric.type", StringValue("histogram")),
+    ("metric.name", StringValue("http.duration"))
+  ]))
+  
+  // Create log record correlated with metrics
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "telemetry-logger")
+  
+  let metrics_log = LogRecord::new_with_context(
+    Info,
+    Some("Metrics recorded with telemetry context"),
+    Some(telemetry_attrs),
+    Some(1735689600000000000L),
+    Some(1735689600000000000L),
+    Some(trace_id),
+    Some(span_id),
+    Some(telemetry_ctx)
+  )
+  
+  Logger::emit(logger, metrics_log)
+  
+  // Verify correlation
+  assert_eq(SpanContext::trace_id(span.span_context), trace_id)
+  assert_eq(LogRecord::trace_id(metrics_log), Some(trace_id))
+  assert_eq(request_counter.name, "http.requests")
+  assert_eq(duration_histogram.name, "http.duration")
+  
+  // End span
+  Span::end(span)
 }

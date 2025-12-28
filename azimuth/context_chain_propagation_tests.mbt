@@ -1,257 +1,333 @@
-// 上下文链传播测试用例
-// 测试Context在多层服务调用中的链式传播和累积
+// Context Chain Propagation Test Suite for Azimuth Telemetry System
+// This file contains comprehensive test cases for context chain propagation scenarios
 
-test "context_chain_linear_propagation" {
-  // 测试线性上下文链传播
+test "basic context chain propagation" {
+  // Create root context
+  let root_ctx = Context::root()
   
-  // 根上下文
-  let root_context = Context::root()
+  // Create first level context
+  let key1 = ContextKey::new("chain.level1")
+  let ctx1 = Context::with_value(root_ctx, key1, "level1_value")
   
-  // 第一层服务添加上下文
-  let service1_key = ContextKey::new("service1.trace")
-  let context1 = Context::with_value(root_context, service1_key, "service1_value")
+  // Create second level context
+  let key2 = ContextKey::new("chain.level2")
+  let ctx2 = Context::with_value(ctx1, key2, "level2_value")
   
-  // 第二层服务添加上下文
-  let service2_key = ContextKey::new("service2.trace")
-  let context2 = Context::with_value(context1, service2_key, "service2_value")
+  // Create third level context
+  let key3 = ContextKey::new("chain.level3")
+  let ctx3 = Context::with_value(ctx2, key3, "level3_value")
   
-  // 第三层服务添加上下文
-  let service3_key = ContextKey::new("service3.trace")
-  let final_context = Context::with_value(context2, service3_key, "service3_value")
+  // Test value retrieval at different levels
+  let level1_from_ctx1 = Context::get(ctx1, key1)
+  let level2_from_ctx2 = Context::get(ctx2, key2)
+  let level3_from_ctx3 = Context::get(ctx3, key3)
   
-  // 验证上下文链（由于简化实现，可能只能获取到最后一个值）
-  let service1_value = Context::get(final_context, service1_key)
-  let service2_value = Context::get(final_context, service2_key)
-  let service3_value = Context::get(final_context, service3_key)
+  assert_eq(level1_from_ctx1, Some("level1_value"))
+  assert_eq(level2_from_ctx2, Some("level2_value"))
+  assert_eq(level3_from_ctx3, Some("level3_value"))
   
-  // 至少应该有一个值存在
-  assert_true(service1_value.is_some() || service2_value.is_some() || service3_value.is_some())
+  // Test inheritance in chain
+  let level1_from_ctx2 = Context::get(ctx2, key1)
+  let level2_from_ctx3 = Context::get(ctx3, key2)
+  let level1_from_ctx3 = Context::get(ctx3, key1)
+  
+  assert_eq(level1_from_ctx2, Some("level1_value"))
+  assert_eq(level2_from_ctx3, Some("level2_value"))
+  assert_eq(level1_from_ctx3, Some("level1_value"))
 }
 
-test "context_chain_branching_propagation" {
-  // 测试分支上下文传播
+test "context chain with key overriding" {
+  // Create base context
+  let base_ctx = Context::root()
+  let shared_key = ContextKey::new("shared.key")
+  let base_ctx_with_shared = Context::with_value(base_ctx, shared_key, "base_value")
   
-  // 根上下文
-  let root_context = Context::root()
-  let base_key = ContextKey::new("base.context")
-  let base_context = Context::with_value(root_context, base_key, "base_value")
+  // Create first override
+  let ctx1 = Context::with_value(base_ctx_with_shared, shared_key, "override1_value")
+  let unique_key1 = ContextKey::new("unique.key1")
+  let ctx1_with_unique = Context::with_value(ctx1, unique_key1, "unique1_value")
   
-  // 分支A
-  let branch_a_key = ContextKey::new("branch.a")
-  let context_a = Context::with_value(base_context, branch_a_key, "branch_a_value")
+  // Create second override
+  let ctx2 = Context::with_value(ctx1_with_unique, shared_key, "override2_value")
+  let unique_key2 = ContextKey::new("unique.key2")
+  let ctx2_with_unique = Context::with_value(ctx2, unique_key2, "unique2_value")
   
-  // 分支B
-  let branch_b_key = ContextKey::new("branch.b")
-  let context_b = Context::with_value(base_context, branch_b_key, "branch_b_value")
+  // Create third override
+  let ctx3 = Context::with_value(ctx2_with_unique, shared_key, "override3_value")
+  let unique_key3 = ContextKey::new("unique.key3")
+  let ctx3_with_unique = Context::with_value(ctx3, unique_key3, "unique3_value")
   
-  // 验证分支上下文
-  let base_value_a = Context::get(context_a, base_key)
-  let branch_a_value = Context::get(context_a, branch_a_key)
+  // Test key overriding behavior
+  let shared_from_base = Context::get(base_ctx_with_shared, shared_key)
+  let shared_from_ctx1 = Context::get(ctx1_with_unique, shared_key)
+  let shared_from_ctx2 = Context::get(ctx2_with_unique, shared_key)
+  let shared_from_ctx3 = Context::get(ctx3_with_unique, shared_key)
   
-  let base_value_b = Context::get(context_b, base_key)
-  let branch_b_value = Context::get(context_b, branch_b_key)
+  assert_eq(shared_from_base, Some("base_value"))
+  assert_eq(shared_from_ctx1, Some("override1_value"))
+  assert_eq(shared_from_ctx2, Some("override2_value"))
+  assert_eq(shared_from_ctx3, Some("override3_value"))
   
-  // 验证值存在
-  assert_true(base_value_a.is_some() || branch_a_value.is_some())
-  assert_true(base_value_b.is_some() || branch_b_value.is_some())
+  // Test unique keys are preserved
+  let unique1_from_ctx1 = Context::get(ctx1_with_unique, unique_key1)
+  let unique1_from_ctx2 = Context::get(ctx2_with_unique, unique_key1)
+  let unique1_from_ctx3 = Context::get(ctx3_with_unique, unique_key1)
+  
+  let unique2_from_ctx2 = Context::get(ctx2_with_unique, unique_key2)
+  let unique2_from_ctx3 = Context::get(ctx3_with_unique, unique_key2)
+  
+  let unique3_from_ctx3 = Context::get(ctx3_with_unique, unique_key3)
+  
+  assert_eq(unique1_from_ctx1, Some("unique1_value"))
+  assert_eq(unique1_from_ctx2, Some("unique1_value"))
+  assert_eq(unique1_from_ctx3, Some("unique1_value"))
+  
+  assert_eq(unique2_from_ctx2, Some("unique2_value"))
+  assert_eq(unique2_from_ctx3, Some("unique2_value"))
+  
+  assert_eq(unique3_from_ctx3, Some("unique3_value"))
 }
 
-test "context_chain_with_span_context" {
-  // 测试包含SpanContext的上下文链
-  let span_context = SpanContext::new("trace123", "span456", true, "key1=value1")
+test "context chain with baggage propagation" {
+  // Create root context with baggage
+  let root_ctx = Context::root()
+  let baggage_key = ContextKey::new("baggage")
+  let root_with_baggage = Context::with_value(root_ctx, baggage_key, "user.id=123,session.id=456")
   
-  // 创建包含追踪信息的上下文链
-  let root_context = Context::root()
-  let trace_key = ContextKey::new("trace.context")
-  let trace_context = Context::with_value(root_context, trace_key, "trace_value")
-  
-  let operation_key = ContextKey::new("operation.id")
-  let operation_context = Context::with_value(trace_context, operation_key, "op123")
-  
-  let user_key = ContextKey::new("user.id")
-  let final_context = Context::with_value(operation_context, user_key, "user456")
-  
-  // 验证SpanContext信息
-  assert_eq(SpanContext::trace_id(span_context), "trace123")
-  assert_eq(SpanContext::span_id(span_context), "span456")
-  assert_true(SpanContext::is_sampled(span_context))
-  
-  // 验证上下文链
-  let trace_value = Context::get(final_context, trace_key)
-  let operation_value = Context::get(final_context, operation_key)
-  let user_value = Context::get(final_context, user_key)
-  
-  assert_true(trace_value.is_some() || operation_value.is_some() || user_value.is_some())
-}
-
-test "context_chain_with_baggage" {
-  // 测试包含Baggage的上下文链
-  let baggage = Baggage::new()
-  
-  // 在上下文链中传递baggage
-  let root_context = Context::root()
-  let baggage_key = ContextKey::new("baggage.data")
-  let context_with_baggage = Context::with_value(root_context, baggage_key, "baggage_value")
-  
-  // 添加更多上下文信息
-  let request_key = ContextKey::new("request.id")
-  let request_context = Context::with_value(context_with_baggage, request_key, "req789")
-  
-  let session_key = ContextKey::new("session.id")
-  let final_context = Context::with_value(request_context, session_key, "session123")
-  
-  // 验证baggage操作
-  let baggage_with_entry = Baggage::set_entry(baggage, "user.id", "user123")
-  let user_id = Baggage::get_entry(baggage_with_entry, "user.id")
-  assert_eq(user_id, Some("user123"))
-  
-  // 验证上下文链
-  let baggage_value = Context::get(final_context, baggage_key)
-  let request_value = Context::get(final_context, request_key)
-  let session_value = Context::get(final_context, session_key)
-  
-  assert_true(baggage_value.is_some() || request_value.is_some() || session_value.is_some())
-}
-
-test "context_chain_with_attributes" {
-  // 测试包含属性的上下文链
-  let attributes = Attributes::new()
-  
-  // 创建包含属性的上下文链
-  let root_context = Context::root()
-  let attr_key = ContextKey::new("attr.context")
-  let attr_context = Context::with_value(root_context, attr_key, "attr_value")
-  
+  // Create service context with additional baggage
   let service_key = ContextKey::new("service.name")
-  let service_context = Context::with_value(attr_context, service_key, "azimuth-service")
+  let service_ctx = Context::with_value(root_with_baggage, service_key, "auth-service")
+  let service_with_baggage = Context::with_value(service_ctx, baggage_key, "user.id=123,session.id=456,operation=authenticate")
   
-  let version_key = ContextKey::new("service.version")
-  let final_context = Context::with_value(service_context, version_key, "1.0.0")
+  // Create operation context
+  let operation_key = ContextKey::new("operation.name")
+  let operation_ctx = Context::with_value(service_with_baggage, operation_key, "validate-token")
+  let operation_with_baggage = Context::with_value(operation_ctx, baggage_key, "user.id=123,session.id=456,operation=authenticate,step=validation")
   
-  // 验证属性操作
-  Attributes::set(attributes, "string.key", StringValue("test_value"))
-  Attributes::set(attributes, "int.key", IntValue(42))
+  // Test baggage propagation through chain
+  let baggage_from_root = Context::get(root_with_baggage, baggage_key)
+  let baggage_from_service = Context::get(service_with_baggage, baggage_key)
+  let baggage_from_operation = Context::get(operation_with_baggage, baggage_key)
   
-  let string_value = Attributes::get(attributes, "string.key")
-  let int_value = Attributes::get(attributes, "int.key")
+  assert_eq(baggage_from_root, Some("user.id=123,session.id=456"))
+  assert_eq(baggage_from_service, Some("user.id=123,session.id=456,operation=authenticate"))
+  assert_eq(baggage_from_operation, Some("user.id=123,session.id=456,operation=authenticate,step=validation"))
   
-  assert_eq(string_value, Some(StringValue("test_value")))
-  assert_eq(int_value, Some(IntValue(42)))
+  // Test context inheritance
+  let service_from_operation = Context::get(operation_with_baggage, service_key)
+  let operation_from_operation = Context::get(operation_with_baggage, operation_key)
   
-  // 验证上下文链
-  let attr_value = Context::get(final_context, attr_key)
-  let service_value = Context::get(final_context, service_key)
-  let version_value = Context::get(final_context, version_key)
-  
-  assert_true(attr_value.is_some() || service_value.is_some() || version_value.is_some())
+  assert_eq(service_from_operation, Some("auth-service"))
+  assert_eq(operation_from_operation, Some("validate-token"))
 }
 
-test "context_chain_error_propagation" {
-  // 测试错误在上下文链中的传播
-  let root_context = Context::root()
+test "context chain with trace propagation" {
+  // Create trace context
+  let trace_id = "chain_trace_1234567890abcdef"
+  let span_id = "chain_span_1111222233334444"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "env=production")
   
-  // 正常操作添加上下文
-  let normal_key = ContextKey::new("normal.operation")
-  let normal_context = Context::with_value(root_context, normal_key, "normal_value")
+  // Create root context with trace
+  let root_ctx = Context::root()
+  let trace_key = ContextKey::new("trace.context")
+  let root_with_trace = Context::with_value(root_ctx, trace_key, trace_id + ":" + span_id)
   
-  // 错误操作添加上下文
-  let error_key = ContextKey::new("error.operation")
-  let error_context = Context::with_value(normal_context, error_key, "error_value")
-  
-  // 恢复操作添加上下文
-  let recovery_key = ContextKey::new("recovery.operation")
-  let final_context = Context::with_value(error_context, recovery_key, "recovery_value")
-  
-  // 验证错误上下文传播
-  let normal_value = Context::get(final_context, normal_key)
-  let error_value = Context::get(final_context, error_key)
-  let recovery_value = Context::get(final_context, recovery_key)
-  
-  assert_true(normal_value.is_some() || error_value.is_some() || recovery_value.is_some())
-}
-
-test "context_chain_with_http_headers" {
-  // 测试通过HTTP头部的上下文链传播
-  let carrier = TextMapCarrier::new()
-  
-  // 模拟多层服务调用的头部传播
-  TextMapCarrier::set(carrier, "x-service-1", "service1_value")
-  TextMapCarrier::set(carrier, "x-service-2", "service2_value")
-  TextMapCarrier::set(carrier, "x-service-3", "service3_value")
-  TextMapCarrier::set(carrier, "traceparent", "00-trace123-span456-01")
-  
-  // 创建对应的上下文链
-  let root_context = Context::root()
-  let service1_key = ContextKey::new("x-service-1")
-  let context1 = Context::with_value(root_context, service1_key, "service1_value")
-  
-  let service2_key = ContextKey::new("x-service-2")
-  let context2 = Context::with_value(context1, service2_key, "service2_value")
-  
-  let service3_key = ContextKey::new("x-service-3")
-  let final_context = Context::with_value(context2, service3_key, "service3_value")
-  
-  // 验证头部传播
-  let service1_header = TextMapCarrier::get(carrier, "x-service-1")
-  let service2_header = TextMapCarrier::get(carrier, "x-service-2")
-  let service3_header = TextMapCarrier::get(carrier, "x-service-3")
-  let trace_header = TextMapCarrier::get(carrier, "traceparent")
-  
-  assert_eq(service1_header, Some("service1_value"))
-  assert_eq(trace_header, Some("00-trace123-span456-01"))
-  
-  // 验证上下文链
-  let service1_value = Context::get(final_context, service1_key)
-  let service2_value = Context::get(final_context, service2_key)
-  let service3_value = Context::get(final_context, service3_key)
-  
-  assert_true(service1_value.is_some() || service2_value.is_some() || service3_value.is_some())
-}
-
-test "context_chain_depth_scenarios" {
-  // 测试深层上下文链场景
-  let mut current_context = Context::root()
-  
-  // 创建10层深的上下文链
-  for i in range(0, 10) {
-    let key = ContextKey::new("level." + i.to_string())
-    current_context = Context::with_value(current_context, key, "value_" + i.to_string())
-  }
-  
-  // 验证深层上下文链中的值
-  let level0_value = Context::get(current_context, ContextKey::new("level.0"))
-  let level5_value = Context::get(current_context, ContextKey::new("level.5"))
-  let level9_value = Context::get(current_context, ContextKey::new("level.9"))
-  
-  // 由于简化实现，可能只能获取到最后一个值
-  assert_true(level0_value.is_some() || level5_value.is_some() || level9_value.is_some())
-}
-
-test "context_chain_with_composite_propagator" {
-  // 测试使用复合传播器的上下文链
-  let propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([propagator])
-  
-  // 创建上下文链
-  let root_context = Context::root()
-  let chain_key = ContextKey::new("chain.context")
-  let chain_context = Context::with_value(root_context, chain_key, "chain_value")
-  
+  // Create service context
   let service_key = ContextKey::new("service.context")
-  let service_context = Context::with_value(chain_context, service_key, "service_value")
+  let service_ctx = Context::with_value(root_with_trace, service_key, "api-gateway")
+  let service_with_trace = Context::with_value(service_ctx, trace_key, trace_id + ":" + span_id + ":service=api-gateway")
   
-  // 使用复合传播器注入和提取
+  // Create downstream context
+  let downstream_key = ContextKey::new("downstream.context")
+  let downstream_ctx = Context::with_value(service_with_trace, downstream_key, "user-service")
+  let downstream_with_trace = Context::with_value(downstream_ctx, trace_key, trace_id + ":" + span_id + ":service=api-gateway:downstream=user-service")
+  
+  // Test trace propagation
+  let trace_from_root = Context::get(root_with_trace, trace_key)
+  let trace_from_service = Context::get(service_with_trace, trace_key)
+  let trace_from_downstream = Context::get(downstream_with_trace, trace_key)
+  
+  assert_eq(trace_from_root, Some("chain_trace_1234567890abcdef:chain_span_1111222233334444"))
+  assert_eq(trace_from_service, Some("chain_trace_1234567890abcdef:chain_span_1111222233334444:service=api-gateway"))
+  assert_eq(trace_from_downstream, Some("chain_trace_1234567890abcdef:chain_span_1111222233334444:service=api-gateway:downstream=user-service"))
+  
+  // Test context chain integrity
+  let service_from_downstream = Context::get(downstream_with_trace, service_key)
+  let downstream_from_downstream = Context::get(downstream_with_trace, downstream_key)
+  
+  assert_eq(service_from_downstream, Some("api-gateway"))
+  assert_eq(downstream_from_downstream, Some("user-service"))
+}
+
+test "context chain with complex data types" {
+  // Create context with complex data
+  let root_ctx = Context::root()
+  
+  // Add JSON-like data
+  let json_key = ContextKey::new("json.data")
+  let json_value = "{\"user\":{\"id\":123,\"name\":\"test\"},\"settings\":{\"theme\":\"dark\",\"lang\":\"en\"}}"
+  let ctx_with_json = Context::with_value(root_ctx, json_key, json_value)
+  
+  // Add array-like data
+  let array_key = ContextKey::new("array.data")
+  let array_value = "[\"item1\",\"item2\",\"item3\"]"
+  let ctx_with_array = Context::with_value(ctx_with_json, array_key, array_value)
+  
+  // Add numeric data
+  let numeric_key = ContextKey::new("numeric.data")
+  let numeric_value = "42.5"
+  let ctx_with_numeric = Context::with_value(ctx_with_array, numeric_key, numeric_value)
+  
+  // Add boolean data
+  let bool_key = ContextKey::new("bool.data")
+  let bool_value = "true"
+  let ctx_with_bool = Context::with_value(ctx_with_numeric, bool_key, bool_value)
+  
+  // Test complex data retrieval
+  let json_result = Context::get(ctx_with_bool, json_key)
+  let array_result = Context::get(ctx_with_bool, array_key)
+  let numeric_result = Context::get(ctx_with_bool, numeric_key)
+  let bool_result = Context::get(ctx_with_bool, bool_key)
+  
+  assert_eq(json_result, Some("{\"user\":{\"id\":123,\"name\":\"test\"},\"settings\":{\"theme\":\"dark\",\"lang\":\"en\"}}"))
+  assert_eq(array_result, Some("[\"item1\",\"item2\",\"item3\"]"))
+  assert_eq(numeric_result, Some("42.5"))
+  assert_eq(bool_result, Some("true"))
+  
+  // Test partial context access
+  let json_from_array = Context::get(ctx_with_array, json_key)
+  let array_from_numeric = Context::get(ctx_with_numeric, array_key)
+  let numeric_from_bool = Context::get(ctx_with_bool, numeric_key)
+  
+  assert_eq(json_from_array, Some("{\"user\":{\"id\":123,\"name\":\"test\"},\"settings\":{\"theme\":\"dark\",\"lang\":\"en\"}}"))
+  assert_eq(array_from_numeric, Some("[\"item1\",\"item2\",\"item3\"]"))
+  assert_eq(numeric_from_bool, Some("42.5"))
+}
+
+test "context chain with error handling" {
+  // Create context chain with error conditions
+  let root_ctx = Context::root()
+  
+  // Test with empty key
+  let empty_key = ContextKey::new("")
+  let ctx_with_empty = Context::with_value(root_ctx, empty_key, "empty_key_value")
+  let empty_result = Context::get(ctx_with_empty, empty_key)
+  assert_eq(empty_result, Some("empty_key_value"))
+  
+  // Test with empty value
+  let normal_key = ContextKey::new("normal.key")
+  let ctx_with_empty_value = Context::with_value(root_ctx, normal_key, "")
+  let empty_value_result = Context::get(ctx_with_empty_value, normal_key)
+  assert_eq(empty_value_result, Some(""))
+  
+  // Test with special characters
+  let special_key = ContextKey::new("special.key!@#$%^&*()")
+  let ctx_with_special = Context::with_value(root_ctx, special_key, "special_value")
+  let special_result = Context::get(ctx_with_special, special_key)
+  assert_eq(special_result, Some("special_value"))
+  
+  // Test with very long key and value
+  let long_key = ContextKey::new("very.long.key." + "x".repeat(100))
+  let long_value = "very.long.value." + "y".repeat(100)
+  let ctx_with_long = Context::with_value(root_ctx, long_key, long_value)
+  let long_result = Context::get(ctx_with_long, long_key)
+  assert_eq(long_result, Some("very.long.value." + "y".repeat(100)))
+  
+  // Test with unicode characters
+  let unicode_key = ContextKey::new("unicode.key.测试")
+  let unicode_value = "unicode_value_测试"
+  let ctx_with_unicode = Context::with_value(root_ctx, unicode_key, unicode_value)
+  let unicode_result = Context::get(ctx_with_unicode, unicode_key)
+  assert_eq(unicode_result, Some("unicode_value_测试"))
+  
+  // Test chain with error conditions
+  let error_chain_ctx = Context::with_value(ctx_with_empty, normal_key, "chain_value")
+  let chain_empty_result = Context::get(error_chain_ctx, empty_key)
+  let chain_normal_result = Context::get(error_chain_ctx, normal_key)
+  
+  assert_eq(chain_empty_result, Some("empty_key_value"))
+  assert_eq(chain_normal_result, Some("chain_value"))
+}
+
+test "context chain with propagation carriers" {
+  // Create context chain with carrier-based propagation
+  let root_ctx = Context::root()
+  
+  // Create carrier for propagation
   let carrier = TextMapCarrier::new()
-  CompositePropagator::inject(composite, service_context, carrier)
+  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
   
-  let extracted_context = CompositePropagator::extract(composite, carrier)
-  let extracted_value = Context::get(extracted_context, ContextKey::new("extracted"))
+  // Add context values
+  let ctx1 = Context::with_value(root_ctx, ContextKey::new("user.id"), "user123")
+  let ctx2 = Context::with_value(ctx1, ContextKey::new("session.id"), "session456")
+  let ctx3 = Context::with_value(ctx2, ContextKey::new("request.id"), "req789")
   
+  // Inject context into carrier
+  CompositePropagator::inject(propagator, ctx3, carrier)
+  
+  // Extract context in new context chain
+  let extracted_ctx = CompositePropagator::extract(propagator, carrier)
+  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
   assert_eq(extracted_value, Some("true"))
   
-  // 验证原始上下文链
-  let chain_value = Context::get(service_context, chain_key)
-  let service_value = Context::get(service_context, service_key)
+  // Build new context chain from extracted context
+  let new_ctx1 = Context::with_value(extracted_ctx, ContextKey::new("service.name"), "new-service")
+  let new_ctx2 = Context::with_value(new_ctx1, ContextKey::new("operation.name"), "new-operation")
+  let new_ctx3 = Context::with_value(new_ctx2, ContextKey::new("correlation.id"), "corr123")
   
-  assert_true(chain_value.is_some() || service_value.is_some())
+  // Test new context chain
+  let new_service = Context::get(new_ctx3, ContextKey::new("service.name"))
+  let new_operation = Context::get(new_ctx3, ContextKey::new("operation.name"))
+  let new_correlation = Context::get(new_ctx3, ContextKey::new("correlation.id"))
+  let new_extracted = Context::get(new_ctx3, ContextKey::new("extracted"))
+  
+  assert_eq(new_service, Some("new-service"))
+  assert_eq(new_operation, Some("new-operation"))
+  assert_eq(new_correlation, Some("corr123"))
+  assert_eq(new_extracted, Some("true"))
+  
+  // Test round-trip propagation
+  let carrier2 = TextMapCarrier::new()
+  CompositePropagator::inject(propagator, new_ctx3, carrier2)
+  let extracted_ctx2 = CompositePropagator::extract(propagator, carrier2)
+  let extracted_value2 = Context::get(extracted_ctx2, ContextKey::new("extracted"))
+  assert_eq(extracted_value2, Some("true"))
+}
+
+test "context chain performance with deep nesting" {
+  // Create deeply nested context chain
+  let ctx = Context::root()
+  
+  // Create 100-level deep context chain
+  for i = 0; i < 100; i = i + 1 {
+    let key = ContextKey::new("level." + i.to_string())
+    ctx = Context::with_value(ctx, key, "value_at_level_" + i.to_string())
+  }
+  
+  // Test retrieval from different levels
+  let level_0 = Context::get(ctx, ContextKey::new("level.0"))
+  let level_25 = Context::get(ctx, ContextKey::new("level.25"))
+  let level_50 = Context::get(ctx, ContextKey::new("level.50"))
+  let level_75 = Context::get(ctx, ContextKey::new("level.75"))
+  let level_99 = Context::get(ctx, ContextKey::new("level.99"))
+  
+  assert_eq(level_0, Some("value_at_level_0"))
+  assert_eq(level_25, Some("value_at_level_25"))
+  assert_eq(level_50, Some("value_at_level_50"))
+  assert_eq(level_75, Some("value_at_level_75"))
+  assert_eq(level_99, Some("value_at_level_99"))
+  
+  // Test missing key from deep chain
+  let missing_level = Context::get(ctx, ContextKey::new("level.100"))
+  assert_eq(missing_level, None)
+  
+  // Test context modification in deep chain
+  let modification_key = ContextKey::new("deep.modification")
+  let modified_ctx = Context::with_value(ctx, modification_key, "modified_at_deep_level")
+  let modification_result = Context::get(modified_ctx, modification_key)
+  assert_eq(modification_result, Some("modified_at_deep_level"))
+  
+  // Test that original values are still accessible
+  let level_after_modification = Context::get(modified_ctx, ContextKey::new("level.50"))
+  assert_eq(level_after_modification, Some("value_at_level_50"))
 }
