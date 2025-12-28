@@ -1,0 +1,15 @@
+{
+  "name": "focused-tests",
+  "version": "0.1.0",
+  "description": "Focused comprehensive test cases for Azimuth telemetry system covering error handling, performance, integration, security, i18n, concurrency, resource management, configuration, and network resilience",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../azimuth"
+  },
+  "test": {
+    "test": [
+      "focused_comprehensive_tests.mbt"
+    ]
+  }
+}
