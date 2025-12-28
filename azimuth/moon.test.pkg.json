@@ -6,6 +6,6 @@
   "source": ["."],
   "deps": {},
   "test": {
-    "test": ["azimuth.mbt", "advanced_system_integration_tests.mbt"]
+    "test": ["azimuth.mbt", "advanced_system_integration_tests.mbt", "new_focused_tests.mbt"]
   }
 }
