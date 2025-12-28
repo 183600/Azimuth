@@ -164,20 +164,55 @@ test "log_severity_levels" {
   let fatal_log = LogRecord::new(Fatal, "Fatal message")
   
   // Verify severity levels
-  @assertion.assert_eq(LogRecord::severity_number(trace_log), Trace)?
-  @assertion.assert_eq(LogRecord::severity_number(debug_log), Debug)?
-  @assertion.assert_eq(LogRecord::severity_number(info_log), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(warn_log), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(error_log), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(fatal_log), Fatal)?
+  assert_eq(LogRecord::severity_number(trace_log), Trace)
+  assert_eq(LogRecord::severity_number(debug_log), Debug)
+  assert_eq(LogRecord::severity_number(info_log), Info)
+  assert_eq(LogRecord::severity_number(warn_log), Warn)
+  assert_eq(LogRecord::severity_number(error_log), Error)
+  assert_eq(LogRecord::severity_number(fatal_log), Fatal)
   
   // Verify log bodies
-  @assertion.assert_eq(LogRecord::body(trace_log), Some("Trace message"))?
-  @assertion.assert_eq(LogRecord::body(debug_log), Some("Debug message"))?
-  @assertion.assert_eq(LogRecord::body(info_log), Some("Info message"))?
-  @assertion.assert_eq(LogRecord::body(warn_log), Some("Warning message"))?
-  @assertion.assert_eq(LogRecord::body(error_log), Some("Error message"))?
-  @assertion.assert_eq(LogRecord::body(fatal_log), Some("Fatal message"))?
+  let trace_body = LogRecord::body(trace_log)
+  assert_true(trace_body is Some)
+  match trace_body {
+    Some(body) => assert_eq(body, "Trace message")
+    _ => assert_true(false)
+  }
+  
+  let debug_body = LogRecord::body(debug_log)
+  assert_true(debug_body is Some)
+  match debug_body {
+    Some(body) => assert_eq(body, "Debug message")
+    _ => assert_true(false)
+  }
+  
+  let info_body = LogRecord::body(info_log)
+  assert_true(info_body is Some)
+  match info_body {
+    Some(body) => assert_eq(body, "Info message")
+    _ => assert_true(false)
+  }
+  
+  let warn_body = LogRecord::body(warn_log)
+  assert_true(warn_body is Some)
+  match warn_body {
+    Some(body) => assert_eq(body, "Warning message")
+    _ => assert_true(false)
+  }
+  
+  let error_body = LogRecord::body(error_log)
+  assert_true(error_body is Some)
+  match error_body {
+    Some(body) => assert_eq(body, "Error message")
+    _ => assert_true(false)
+  }
+  
+  let fatal_body = LogRecord::body(fatal_log)
+  assert_true(fatal_body is Some)
+  match fatal_body {
+    Some(body) => assert_eq(body, "Fatal message")
+    _ => assert_true(false)
+  }
   
   // Emit logs
   Logger::emit(logger, trace_log)
