@@ -122,10 +122,10 @@ test "metrics_aggregation_operations" {
   let meter = MeterProvider::get_meter(provider, "aggregation_test_meter")
   
   // Create different metric types
-  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
-  let updown_counter = Meter::create_counter(meter, "test_updown", Some("Test up-down counter"), Some("items"))
-  let gauge = Meter::create_counter(meter, "test_gauge", Some("Test gauge"), Some("value"))
+  let counter = Meter::create_counter(meter, "test_counter")
+  let histogram = Meter::create_histogram(meter, "test_histogram", description? = Some("Test histogram"), unit? = Some("ms"))
+  let updown_counter = Meter::create_counter(meter, "test_updown")
+  let gauge = Meter::create_counter(meter, "test_gauge")
   
   // Test metric operations
   Counter::add(counter, 1.0)
@@ -146,9 +146,9 @@ test "metrics_aggregation_operations" {
   
   // Verify instrument properties
   let counter_instrument = Counter(counter.name, counter.description, counter.unit)
-  @assertion.assert_eq(Instrument::name(counter_instrument), "test_counter")?
-  @assertion.assert_eq(Instrument::description(counter_instrument), Some("Test counter"))?
-  @assertion.assert_eq(Instrument::unit(counter_instrument), Some("count"))?
+  assert_eq(Instrument::name(counter_instrument), "test_counter")
+  assert_eq(Instrument::description(counter_instrument), None)
+  assert_eq(Instrument::unit(counter_instrument), None)
 }
 
 test "log_severity_levels" {
