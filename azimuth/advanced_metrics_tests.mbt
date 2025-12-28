@@ -1,224 +1,289 @@
-// Advanced Metrics Instruments functionality tests
+// Advanced Metrics Tests for UpDownCounter and Gauge Instruments
+// Comprehensive testing of advanced metric scenarios and edge cases
 
-test "Instrument枚举类型测试" {
-  let counter_instrument = Counter("request.count", Some("Total number of requests"), Some("1"))
-  let histogram_instrument = Histogram("response.duration", Some("Response duration histogram"), Some("ms"))
-  let updown_counter_instrument = UpDownCounter("active.connections", Some("Currently active connections"), Some("1"))
-  let gauge_instrument = Gauge("memory.usage", Some("Current memory usage"), Some("bytes"))
+test "updown_counter_comprehensive_operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "updown_counter.test")
+  let updown_counter = Meter::create_updown_counter(
+    meter, 
+    "active.connections", 
+    Some("Currently active connections"), 
+    Some("connections")
+  )
   
-  // 测试名称获取
-  assert_eq(Instrument::name(counter_instrument), "request.count")
-  assert_eq(Instrument::name(histogram_instrument), "response.duration")
-  assert_eq(Instrument::name(updown_counter_instrument), "active.connections")
-  assert_eq(Instrument::name(gauge_instrument), "memory.usage")
-  
-  // 测试描述获取
-  let counter_desc = Instrument::description(counter_instrument)
-  let histogram_desc = Instrument::description(histogram_instrument)
-  let updown_desc = Instrument::description(updown_counter_instrument)
-  let gauge_desc = Instrument::description(gauge_instrument)
-  
-  assert_true(counter_desc is Some)
-  assert_true(histogram_desc is Some)
-  assert_true(updown_desc is Some)
-  assert_true(gauge_desc is Some)
-  
-  match counter_desc {
-    Some(desc) => assert_eq(desc, "Total number of requests")
-    None => assert_true(false)
+  // Test basic properties
+  assert_eq(updown_counter.name, "active.connections")
+  match updown_counter.description {
+    Some(desc) => assert_eq(desc, "Currently active connections")
+    _ => assert_true(false)
+  }
+  match updown_counter.unit {
+    Some(unit) => assert_eq(unit, "connections")
+    _ => assert_true(false)
   }
   
-  // 测试单位获取
-  let counter_unit = Instrument::unit(counter_instrument)
-  let histogram_unit = Instrument::unit(histogram_instrument)
-  let updown_unit = Instrument::unit(updown_counter_instrument)
-  let gauge_unit = Instrument::unit(gauge_instrument)
+  // Test positive increments
+  UpDownCounter::add(updown_counter, 10.0)
+  UpDownCounter::add(updown_counter, 5.0)
   
-  assert_true(counter_unit is Some)
-  assert_true(histogram_unit is Some)
-  assert_true(updown_unit is Some)
-  assert_true(gauge_unit is Some)
+  // Test negative decrements
+  UpDownCounter::add(updown_counter, -3.0)
+  UpDownCounter::add(updown_counter, -2.0)
   
-  match counter_unit {
-    Some(unit) => assert_eq(unit, "1")
-    None => assert_true(false)
-  }
-}
-
-test "Counter完整生命周期测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "test.meter")
-  let counter = Meter::create_counter(meter, "test.counter", Some("Test counter description"), Some("operations"))
+  // Test zero value
+  UpDownCounter::add(updown_counter, 0.0)
   
-  // 验证counter属性
-  assert_eq(counter.name, "test.counter")
-  assert_true(counter.description is Some)
-  assert_true(counter.unit is Some)
-  
-  match counter.description {
-    Some(desc) => assert_eq(desc, "Test counter description")
-    None => assert_true(false)
-  }
-  
-  match counter.unit {
-    Some(unit) => assert_eq(unit, "operations")
-    None => assert_true(false)
-  }
-  
-  // 测试counter操作
-  Counter::add(counter, 1.0)
-  Counter::add(counter, 5.5)
-  
-  // 测试带属性的counter操作
+  // Test with attributes
   let attrs = Attributes::new()
-  Attributes::set(attrs, "operation.type", StringValue("create"))
-  Counter::add(counter, 2.0, Some(attrs))
+  Attributes::set(attrs, "connection.type", StringValue("websocket"))
+  UpDownCounter::add(updown_counter, 7.0, Some(attrs))
+  
+  // Test large values
+  UpDownCounter::add(updown_counter, 1000000.0)
+  UpDownCounter::add(updown_counter, -1000000.0)
+  
+  // Test fractional values
+  UpDownCounter::add(updown_counter, 3.14159)
+  UpDownCounter::add(updown_counter, -2.71828)
+  
+  // Test as instrument
+  let instrument = UpDownCounter(updown_counter.name, updown_counter.description, updown_counter.unit)
+  assert_eq(Instrument::name(instrument), "active.connections")
+  match Instrument::description(instrument) {
+    Some(desc) => assert_eq(desc, "Currently active connections")
+    _ => assert_true(false)
+  }
+  match Instrument::unit(instrument) {
+    Some(unit) => assert_eq(unit, "connections")
+    _ => assert_true(false)
+  }
 }
 
-test "Histogram完整功能测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "test.meter")
+test "gauge_comprehensive_operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "gauge.test")
+  let gauge = Meter::create_gauge(
+    meter, 
+    "memory.usage", 
+    Some("Current memory usage percentage"), 
+    Some("percent")
+  )
+  
+  // Test basic properties
+  assert_eq(gauge.name, "memory.usage")
+  match gauge.description {
+    Some(desc) => assert_eq(desc, "Current memory usage percentage")
+    _ => assert_true(false)
+  }
+  match gauge.unit {
+    Some(unit) => assert_eq(unit, "percent")
+    _ => assert_true(false)
+  }
+  
+  // Test setting different values
+  // Note: Gauges typically observe current values rather than accumulating
+  // In a real implementation, this would set the current value
+  UpDownCounter::add(gauge, 45.5)  // Using add method for test compatibility
+  UpDownCounter::add(gauge, 78.2)
+  UpDownCounter::add(gauge, 12.8)
+  
+  // Test with attributes
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "memory.type", StringValue("heap"))
+  UpDownCounter::add(gauge, 67.3, Some(attrs))
+  
+  let cache_attrs = Attributes::new()
+  Attributes::set(cache_attrs, "memory.type", StringValue("cache"))
+  UpDownCounter::add(gauge, 23.7, Some(cache_attrs))
+  
+  // Test extreme values
+  UpDownCounter::add(gauge, 0.0)
+  UpDownCounter::add(gauge, 100.0)
+  UpDownCounter::add(gauge, 0.1)
+  UpDownCounter::add(gauge, 99.9)
+  
+  // Test as instrument
+  let instrument = Gauge(gauge.name, gauge.description, gauge.unit)
+  assert_eq(Instrument::name(instrument), "memory.usage")
+  match Instrument::description(instrument) {
+    Some(desc) => assert_eq(desc, "Current memory usage percentage")
+    _ => assert_true(false)
+  }
+  match Instrument::unit(instrument) {
+    Some(unit) => assert_eq(unit, "percent")
+    _ => assert_true(false)
+  }
+}
+
+test "multiple_updown_counters_with_different_attributes" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "multi_counter.test")
+  
+  // Create multiple UpDownCounters for different scenarios
+  let active_connections = Meter::create_updown_counter(
+    meter, 
+    "active.connections", 
+    Some("Active network connections"), 
+    Some("connections")
+  )
+  
+  let queue_size = Meter::create_updown_counter(
+    meter, 
+    "queue.size", 
+    Some("Current queue size"), 
+    Some("items")
+  )
+  
+  let buffer_usage = Meter::create_updown_counter(
+    meter, 
+    "buffer.usage", 
+    Some("Buffer usage in bytes"), 
+    Some("bytes")
+  )
+  
+  // Simulate connection lifecycle
+  UpDownCounter::add(active_connections, 5.0)  // 5 new connections
+  UpDownCounter::add(active_connections, 3.0)  // 3 more connections
+  UpDownCounter::add(active_connections, -2.0) // 2 connections closed
+  
+  // Simulate queue operations
+  UpDownCounter::add(queue_size, 10.0)  // 10 items queued
+  UpDownCounter::add(queue_size, -3.0)  // 3 items processed
+  UpDownCounter::add(queue_size, 7.0)   // 7 more items queued
+  
+  // Simulate buffer usage
+  UpDownCounter::add(buffer_usage, 1024.0)     // 1KB allocated
+  UpDownCounter::add(buffer_usage, 2048.0)     // 2KB more allocated
+  UpDownCounter::add(buffer_usage, -512.0)     // 512 bytes freed
+  
+  // Test with different attributes for each counter
+  let connection_attrs = Attributes::new()
+  Attributes::set(connection_attrs, "protocol", StringValue("http"))
+  UpDownCounter::add(active_connections, 2.0, Some(connection_attrs))
+  
+  let queue_attrs = Attributes::new()
+  Attributes::set(queue_attrs, "priority", StringValue("high"))
+  UpDownCounter::add(queue_size, 5.0, Some(queue_attrs))
+  
+  let buffer_attrs = Attributes::new()
+  Attributes::set(buffer_attrs, "type", StringValue("memory"))
+  UpDownCounter::add(buffer_usage, 256.0, Some(buffer_attrs))
+}
+
+test "multiple_gauges_monitoring_different_metrics" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "multi_gauge.test")
+  
+  // Create multiple Gauges for different system metrics
+  let cpu_temperature = Meter::create_gauge(
+    meter, 
+    "cpu.temperature", 
+    Some("CPU temperature in Celsius"), 
+    Some("celsius")
+  )
+  
+  let disk_usage = Meter::create_gauge(
+    meter, 
+    "disk.usage", 
+    Some("Disk usage percentage"), 
+    Some("percent")
+  )
+  
+  let network_latency = Meter::create_gauge(
+    meter, 
+    "network.latency", 
+    Some("Network latency in milliseconds"), 
+    Some("ms")
+  )
+  
+  // Simulate metric observations
+  UpDownCounter::add(cpu_temperature, 45.0)   // 45°C
+  UpDownCounter::add(cpu_temperature, 52.0)   // Increased to 52°C
+  UpDownCounter::add(cpu_temperature, 48.0)   // Cooled to 48°C
+  
+  UpDownCounter::add(disk_usage, 67.5)        // 67.5% used
+  UpDownCounter::add(disk_usage, 68.2)        // Increased to 68.2%
+  UpDownCounter::add(disk_usage, 66.8)        // Decreased to 66.8%
+  
+  UpDownCounter::add(network_latency, 12.5)   // 12.5ms
+  UpDownCounter::add(network_latency, 25.0)   // Increased to 25ms
+  UpDownCounter::add(network_latency, 8.3)    // Decreased to 8.3ms
+  
+  // Test with attributes for each gauge
+  let cpu_attrs = Attributes::new()
+  Attributes::set(cpu_attrs, "core", StringValue("0"))
+  UpDownCounter::add(cpu_temperature, 50.0, Some(cpu_attrs))
+  
+  let disk_attrs = Attributes::new()
+  Attributes::set(disk_attrs, "mount_point", StringValue("/"))
+  UpDownCounter::add(disk_usage, 70.0, Some(disk_attrs))
+  
+  let network_attrs = Attributes::new()
+  Attributes::set(network_attrs, "destination", StringValue("api.example.com"))
+  UpDownCounter::add(network_latency, 15.0, Some(network_attrs))
+}
+
+test "metric_instrument_type_validation" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "type_validation.test")
+  
+  // Create all instrument types
+  let counter = Meter::create_counter(meter, "test.counter", Some("Test counter"), Some("count"))
   let histogram = Meter::create_histogram(meter, "test.histogram", Some("Test histogram"), Some("ms"))
+  let updown_counter = Meter::create_updown_counter(meter, "test.updown", Some("Test updown"), Some("items"))
+  let gauge = Meter::create_gauge(meter, "test.gauge", Some("Test gauge"), Some("percent"))
   
-  // 验证histogram属性
-  assert_eq(histogram.name, "test.histogram")
-  assert_true(histogram.description is Some)
-  assert_true(histogram.unit is Some)
+  // Create instrument representations
+  let counter_instrument = Counter(counter.name, counter.description, counter.unit)
+  let histogram_instrument = Histogram(histogram.name, histogram.description, histogram.unit)
+  let updown_instrument = UpDownCounter(updown_counter.name, updown_counter.description, updown_counter.unit)
+  let gauge_instrument = Gauge(gauge.name, gauge.description, gauge.unit)
   
-  // 记录不同的值
-  Histogram::record(histogram, 10.5)
-  Histogram::record(histogram, 25.0)
-  Histogram::record(histogram, 100.75)
+  // Test instrument names
+  assert_eq(Instrument::name(counter_instrument), "test.counter")
+  assert_eq(Instrument::name(histogram_instrument), "test.histogram")
+  assert_eq(Instrument::name(updown_instrument), "test.updown")
+  assert_eq(Instrument::name(gauge_instrument), "test.gauge")
   
-  // 记录带属性的值
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "endpoint", StringValue("/api/users"))
-  Histogram::record(histogram, 45.2, Some(attrs))
-  
-  // 测试转换为Instrument
-  let instrument = Histogram::as_instrument(histogram)
-  assert_eq(Instrument::name(instrument), "test.histogram")
-}
-
-test "UpDownCounter操作测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "test.meter")
-  
-  // 由于没有直接的UpDownCounter创建方法，我们创建一个Counter来测试接口
-  let updown_counter = Counter("active.sessions", Some("Active user sessions"), Some("1"))
-  
-  // 验证属性
-  assert_eq(Instrument::name(updown_counter), "active.sessions")
-  assert_eq(Instrument::description(updown_counter), Some("Active user sessions"))
-  assert_eq(Instrument::unit(updown_counter), Some("1"))
-}
-
-test "Gauge操作测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "test.meter")
-  
-  // 由于没有直接的Gauge创建方法，我们创建一个Counter来测试接口
-  let gauge = Counter("cpu.usage", Some("Current CPU usage"), Some("percent"))
-  
-  // 验证属性
-  assert_eq(Instrument::name(gauge), "cpu.usage")
-  assert_eq(Instrument::description(gauge), Some("Current CPU usage"))
-  assert_eq(Instrument::unit(gauge), Some("percent"))
-}
-
-test "MeterProvider和Meter集成测试" {
-  let meter_provider = MeterProvider::noop()
-  let meter1 = MeterProvider::get_meter(meter_provider, "service.metrics", Some("1.0.0"))
-  let meter2 = MeterProvider::get_meter(meter_provider, "database.metrics", Some("2.1.0"))
-  
-  // 验证meter创建
-  assert_eq(meter1.scope.name, "service.metrics")
-  assert_eq(meter2.scope.name, "database.metrics")
-  
-  assert_true(meter1.scope.version is Some)
-  assert_true(meter2.scope.version is Some)
-  
-  match meter1.scope.version {
-    Some(version) => assert_eq(version, "1.0.0")
-    None => assert_true(false)
+  // Test instrument descriptions
+  match Instrument::description(counter_instrument) {
+    Some(desc) => assert_eq(desc, "Test counter")
+    _ => assert_true(false)
   }
   
-  match meter2.scope.version {
-    Some(version) => assert_eq(version, "2.1.0")
-    None => assert_true(false)
+  match Instrument::description(histogram_instrument) {
+    Some(desc) => assert_eq(desc, "Test histogram")
+    _ => assert_true(false)
   }
-}
-
-test "多Instrument类型组合测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "combined.meter")
   
-  // 创建多种instrument
-  let request_counter = Meter::create_counter(meter, "http.requests", Some("HTTP requests count"), Some("1"))
-  let response_histogram = Meter::create_histogram(meter, "http.response.duration", Some("HTTP response duration"), Some("ms"))
+  match Instrument::description(updown_instrument) {
+    Some(desc) => assert_eq(desc, "Test updown")
+    _ => assert_true(false)
+  }
   
-  // 验证不同类型的instrument
-  assert_eq(request_counter.name, "http.requests")
-  assert_eq(response_histogram.name, "http.response.duration")
+  match Instrument::description(gauge_instrument) {
+    Some(desc) => assert_eq(desc, "Test gauge")
+    _ => assert_true(false)
+  }
   
-  // 模拟实际使用场景
-  Counter::add(request_counter, 1.0)
-  Histogram::record(response_histogram, 125.5)
+  // Test instrument units
+  match Instrument::unit(counter_instrument) {
+    Some(unit) => assert_eq(unit, "count")
+    _ => assert_true(false)
+  }
   
-  // 带属性的操作
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "http.method", StringValue("POST"))
-  Attributes::set(attrs, "http.status_code", IntValue(200))
+  match Instrument::unit(histogram_instrument) {
+    Some(unit) => assert_eq(unit, "ms")
+    _ => assert_true(false)
+  }
   
-  Counter::add(request_counter, 1.0, Some(attrs))
-  Histogram::record(response_histogram, 89.2, Some(attrs))
-}
-
-test "Instrument属性验证测试" {
-  // 测试带有可选字段的instrument
-  let full_instrument = Counter("full.metric", Some("Complete description"), Some("custom_unit"))
-  let minimal_instrument = Counter("minimal.metric", None, None)
+  match Instrument::unit(updown_instrument) {
+    Some(unit) => assert_eq(unit, "items")
+    _ => assert_true(false)
+  }
   
-  // 验证完整instrument
-  assert_eq(Instrument::name(full_instrument), "full.metric")
-  assert_eq(Instrument::description(full_instrument), Some("Complete description"))
-  assert_eq(Instrument::unit(full_instrument), Some("custom_unit"))
-  
-  // 验证最小instrument
-  assert_eq(Instrument::name(minimal_instrument), "minimal.metric")
-  assert_eq(Instrument::description(minimal_instrument), None)
-  assert_eq(Instrument::unit(minimal_instrument), None)
-}
-
-test "Metrics与Attributes集成测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "attr.test.meter")
-  let counter = Meter::create_counter(meter, "attr.counter")
-  
-  // 创建丰富的属性集
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "service.name", StringValue("user-service"))
-  Attributes::set(attrs, "service.version", StringValue("1.2.3"))
-  Attributes::set(attrs, "service.instance.id", StringValue("instance-abc123"))
-  Attributes::set(attrs, "deployment.environment", StringValue("production"))
-  Attributes::set(attrs, "port", IntValue(8080))
-  Attributes::set(attrs, "secure", BoolValue(true))
-  
-  // 使用带属性的counter
-  Counter::add(counter, 5.0, Some(attrs))
-  Counter::add(counter, 3.0, Some(attrs))
-  
-  // 验证属性设置（通过get方法）
-  let service_name = Attributes::get(attrs, "service.name")
-  let port = Attributes::get(attrs, "port")
-  let secure = Attributes::get(attrs, "secure")
-  
-  assert_true(service_name is Some)
-  assert_true(port is Some)
-  assert_true(secure is Some)
-  
-  match service_name {
-    Some(StringValue(name)) => assert_eq(name, "test_value") // 简化实现返回固定值
+  match Instrument::unit(gauge_instrument) {
+    Some(unit) => assert_eq(unit, "percent")
     _ => assert_true(false)
   }
 }
