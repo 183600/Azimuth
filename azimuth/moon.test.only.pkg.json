@@ -1,13 +1,13 @@
 {
-  "name": "azimuth",
+  "name": "azimuth-test-only",
   "version": "0.1.0",
-  "description": "Azimuth telemetry system test package - Only new tests",
+  "description": "Test only package for new focused test enhancements",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["advanced_feature_tests.mbt"]
+    "test": ["new_focused_test_enhancements.mbt"]
   }
 }
