@@ -78,12 +78,18 @@ test "Span生命周期和状态管理测试" {
   assert_true(SpanContext::is_valid(span_ctx))
   assert_true(SpanContext::is_sampled(span_ctx))
   
-  // 测试span状态转换
-  assert_eq(Span::status(span), Unset)
+  // 测试span状态转换（使用模式匹配而不是assert_eq）
+  match Span::status(span) {
+    Unset => assert_true(true) // 预期状态为Unset
+    _ => assert_true(false)
+  }
   
   // 设置状态为OK
   Span::set_status(span, Ok, "Operation completed successfully")
-  assert_eq(Span::status(span), Unset) // 简化实现返回Unset
+  match Span::status(span) {
+    Unset => assert_true(true) // 简化实现返回Unset
+    _ => assert_true(false)
+  }
   
   // 添加事件
   Span::add_event(span, "operation.start", Some([("operation.type", StringValue("test"))]))
