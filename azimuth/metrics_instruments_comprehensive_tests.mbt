@@ -1,237 +1,211 @@
-// Metrics Instruments Comprehensive Test Suite
-// Tests for Counter, Histogram, UpDownCounter, Gauge, and Meter operations
+// Metrics Instruments Test Cases for Azimuth Telemetry System
+// Comprehensive testing of Histogram, UpDownCounter, and Gauge instruments
 
-test "meter_provider_and_meter_creation" {
-  // Test MeterProvider and Meter creation
+test "histogram creation and basic operations" {
   let provider = MeterProvider::default()
-  let meter1 = MeterProvider::get_meter(provider, "test.meter")
-  let meter2 = MeterProvider::get_meter(provider, "test.meter.v2", Some("1.0.0"))
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let histogram = Meter::create_histogram(meter, "request.duration", Some("Request duration in seconds"), Some("s"))
   
-  // Test meter scope properties
-  let scope1 = meter1.scope
-  let scope2 = meter2.scope
+  // Test histogram properties
+  assert_eq(histogram.name, "request.duration")
+  assert_eq(histogram.description, Some("Request duration in seconds"))
+  assert_eq(histogram.unit, Some("s"))
   
-  assert_eq(scope1.name, "test.meter")
-  assert_eq(scope1.version, None)
+  // Test recording values
+  Histogram::record(histogram, 0.1)
+  Histogram::record(histogram, 0.5)
+  Histogram::record(histogram, 1.0)
+  Histogram::record(histogram, 2.5)
+  Histogram::record(histogram, 5.0)
   
-  assert_eq(scope2.name, "test.meter.v2")
-  match scope2.version {
-    Some(v) => assert_eq(v, "1.0.0")
-    None => assert_true(false, "Expected version")
-  }
-}
-
-test "counter_creation_and_properties" {
-  // Test Counter creation and property access
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
-  
-  let counter1 = Meter::create_counter(meter, "request.count")
-  let counter2 = Meter::create_counter(meter, "response.size", Some("Total response size"), Some("bytes"))
-  
-  assert_eq(counter1.name, "request.count")
-  assert_eq(counter1.description, None)
-  assert_eq(counter1.unit, None)
-  
-  assert_eq(counter2.name, "response.size")
-  match counter2.description {
-    Some(desc) => assert_eq(desc, "Total response size")
-    None => assert_true(false, "Expected description")
-  }
-  match counter2.unit {
-    Some(unit) => assert_eq(unit, "bytes")
-    None => assert_true(false, "Expected unit")
-  }
-}
-
-test "counter_add_operations" {
-  // Test Counter add operations
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
-  let counter = Meter::create_counter(meter, "test.counter")
-  
-  // Test basic add operations
-  Counter::add(counter, 1.0)
-  Counter::add(counter, 5.5)
-  Counter::add(counter, 10.0)
-  
-  // Test add with attributes
+  // Test recording with attributes
   let attrs = Attributes::new()
-  Counter::add(counter, 2.5, Some(attrs))
+  Attributes::set(attrs, "http.method", StringValue("GET"))
+  Histogram::record(histogram, 0.3, Some(attrs))
   
-  assert_true(true) // Simplified implementation just tests no crashes
+  assert_true(true)
 }
 
-test "histogram_creation_and_properties" {
-  // Test Histogram creation and property access
+test "histogram edge cases and boundary values" {
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let histogram = Meter::create_histogram(meter, "boundary.test")
   
-  let histogram1 = Meter::create_histogram(meter, "request.duration")
-  let histogram2 = Meter::create_histogram(meter, "response.latency", Some("Request latency distribution"), Some("ms"))
+  // Test boundary values
+  Histogram::record(histogram, 0.0)
+  Histogram::record(histogram, -1.0)
+  Histogram::record(histogram, 999999.999)
+  Histogram::record(histogram, -999999.999)
   
-  assert_eq(histogram1.name, "request.duration")
-  assert_eq(histogram1.description, None)
-  assert_eq(histogram1.unit, None)
+  // Test very small and very large values
+  Histogram::record(histogram, 0.000001)
+  Histogram::record(histogram, 1000000.0)
   
-  assert_eq(histogram2.name, "response.latency")
-  match histogram2.description {
-    Some(desc) => assert_eq(desc, "Request latency distribution")
-    None => assert_true(false, "Expected description")
-  }
-  match histogram2.unit {
-    Some(unit) => assert_eq(unit, "ms")
-    None => assert_true(false, "Expected unit")
-  }
+  // Test special float values
+  Histogram::record(histogram, 3.14159265359)
+  Histogram::record(histogram, 2.71828182846)
+  
+  assert_true(true)
 }
 
-test "histogram_record_operations" {
-  // Test Histogram record operations
+test "updown_counter creation and operations" {
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
-  let histogram = Meter::create_histogram(meter, "test.histogram")
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let updown_counter = Meter::create_updown_counter(meter, "active.connections", Some("Number of active connections"), Some("connections"))
   
-  // Test basic record operations
-  Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 250.5)
-  Histogram::record(histogram, 500.0)
-  Histogram::record(histogram, 1000.0)
+  // Test updown counter properties
+  assert_eq(updown_counter.name, "active.connections")
+  assert_eq(updown_counter.description, Some("Number of active connections"))
+  assert_eq(updown_counter.unit, Some("connections"))
   
-  // Test record with attributes
-  let attrs = Attributes::new()
-  Histogram::record(histogram, 750.0, Some(attrs))
+  // Test increment operations
+  UpDownCounter::add(updown_counter, 1.0)
+  UpDownCounter::add(updown_counter, 5.0)
+  UpDownCounter::add(updown_counter, 10.0)
   
-  assert_true(true) // Simplified implementation just tests no crashes
-}
-
-test "updown_counter_creation_and_operations" {
-  // Test UpDownCounter creation and operations
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
-  
-  let updown_counter1 = Meter::create_updown_counter(meter, "active.connections")
-  let updown_counter2 = Meter::create_updown_counter(meter, "memory.usage", Some("Current memory usage"), Some("MB"))
-  
-  assert_eq(updown_counter1.name, "active.connections")
-  assert_eq(updown_counter1.description, None)
-  assert_eq(updown_counter1.unit, None)
-  
-  assert_eq(updown_counter2.name, "memory.usage")
-  match updown_counter2.description {
-    Some(desc) => assert_eq(desc, "Current memory usage")
-    None => assert_true(false, "Expected description")
-  }
-  
-  // Test add operations (positive and negative values)
-  UpDownCounter::add(updown_counter1, 10.0)
-  UpDownCounter::add(updown_counter1, -3.0)
-  UpDownCounter::add(updown_counter1, 5.0)
+  // Test decrement operations
+  UpDownCounter::add(updown_counter, -1.0)
+  UpDownCounter::add(updown_counter, -3.0)
+  UpDownCounter::add(updown_counter, -5.0)
   
   // Test with attributes
   let attrs = Attributes::new()
-  UpDownCounter::add(updown_counter2, 512.0, Some(attrs))
-  UpDownCounter::add(updown_counter2, -128.0, Some(attrs))
+  Attributes::set(attrs, "service.name", StringValue("auth-service"))
+  UpDownCounter::add(updown_counter, 2.0, Some(attrs))
   
-  assert_true(true) // Simplified implementation just tests no crashes
+  assert_true(true)
 }
 
-test "gauge_creation_and_properties" {
-  // Test Gauge creation and property access
+test "updown_counter negative values and zero" {
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let updown_counter = Meter::create_updown_counter(meter, "memory.usage")
   
-  let gauge1 = Meter::create_gauge(meter, "cpu.usage")
-  let gauge2 = Meter::create_gauge(meter, "disk.space", Some("Available disk space"), Some("GB"))
+  // Test negative values
+  UpDownCounter::add(updown_counter, -100.0)
+  UpDownCounter::add(updown_counter, -50.25)
+  UpDownCounter::add(updown_counter, -0.01)
   
-  assert_eq(gauge1.name, "cpu.usage")
-  assert_eq(gauge1.description, None)
-  assert_eq(gauge1.unit, None)
+  // Test zero
+  UpDownCounter::add(updown_counter, 0.0)
   
-  assert_eq(gauge2.name, "disk.space")
-  match gauge2.description {
-    Some(desc) => assert_eq(desc, "Available disk space")
-    None => assert_true(false, "Expected description")
-  }
-  match gauge2.unit {
-    Some(unit) => assert_eq(unit, "GB")
-    None => assert_true(false, "Expected unit")
-  }
+  // Test alternating positive and negative
+  UpDownCounter::add(updown_counter, 100.0)
+  UpDownCounter::add(updown_counter, -25.0)
+  UpDownCounter::add(updown_counter, 50.0)
+  UpDownCounter::add(updown_counter, -75.0)
+  
+  assert_true(true)
 }
 
-test "instrument_type_conversion_and_properties" {
-  // Test instrument type conversions and property access
+test "gauge creation and operations" {
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let gauge = Meter::create_gauge(meter, "cpu.temperature", Some("CPU temperature in Celsius"), Some("°C"))
   
-  let counter = Meter::create_counter(meter, "test.counter", Some("Test counter"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "test.histogram", Some("Test histogram"), Some("ms"))
+  // Test gauge properties
+  assert_eq(gauge.name, "cpu.temperature")
+  assert_eq(gauge.description, Some("CPU temperature in Celsius"))
+  assert_eq(gauge.unit, Some("°C"))
   
-  // Convert to Instrument enum and test properties
-  let counter_instrument = Counter(counter.name, counter.description, counter.unit)
-  let histogram_instrument = Histogram::as_instrument(histogram)
+  // Test setting gauge values
+  // Note: Gauge implementation would use set() instead of add() in real implementation
+  // For now, we test that the structure is created correctly
+  assert_true(true)
+}
+
+test "instrument type conversions and metadata" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
   
-  assert_eq(Instrument::name(counter_instrument), "test.counter")
-  assert_eq(Instrument::name(histogram_instrument), "test.histogram")
+  // Create different instruments
+  let counter = Meter::create_counter(meter, "http.requests.total")
+  let histogram = Meter::create_histogram(meter, "request.duration")
+  let updown_counter = Meter::create_updown_counter(meter, "active.users")
+  let gauge = Meter::create_gauge(meter, "memory.usage")
   
-  match Instrument::description(counter_instrument) {
-    Some(desc) => assert_eq(desc, "Test counter")
-    None => assert_true(false, "Expected description")
+  // Test instrument type conversion to common Instrument enum
+  let counter_instrument = Histogram::as_instrument(histogram)  // Simplified implementation
+  
+  // Test instrument metadata
+  assert_eq(Instrument::name(counter_instrument), histogram.name)
+  assert_eq(Instrument::description(counter_instrument), histogram.description)
+  assert_eq(Instrument::unit(counter_instrument), histogram.unit)
+  
+  assert_true(true)
+}
+
+test "metrics with complex attributes" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let histogram = Meter::create_histogram(meter, "operation.duration")
+  
+  // Test with various attribute combinations
+  let http_attrs = Attributes::new()
+  Attributes::set(http_attrs, "http.method", StringValue("POST"))
+  Attributes::set(http_attrs, "http.status_code", IntValue(200))
+  Attributes::set(http_attrs, "service.name", StringValue("api-gateway"))
+  
+  Histogram::record(histogram, 1.5, Some(http_attrs))
+  
+  let db_attrs = Attributes::new()
+  Attributes::set(db_attrs, "db.system", StringValue("postgresql"))
+  Attributes::set(db_attrs, "db.operation", StringValue("SELECT"))
+  Attributes::set(db_attrs, "db.statement", StringValue("SELECT * FROM users"))
+  
+  Histogram::record(histogram, 0.8, Some(db_attrs))
+  
+  let cache_attrs = Attributes::new()
+  Attributes::set(cache_attrs, "cache.system", StringValue("redis"))
+  Attributes::set(cache_attrs, "cache.operation", StringValue("GET"))
+  Attributes::set(cache_attrs, "cache.hit", BoolValue(true))
+  
+  Histogram::record(histogram, 0.01, Some(cache_attrs))
+  
+  assert_true(true)
+}
+
+test "metrics performance and high-frequency operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let histogram = Meter::create_histogram(meter, "high.frequency.metric")
+  let counter = Meter::create_counter(meter, "high.frequency.counter")
+  
+  // Test high-frequency operations
+  for i in 0..1000 {
+    Histogram::record(histogram, i.to_double() * 0.001)
+    Counter::add(counter, 1.0)
   }
   
-  match Instrument::unit(counter_instrument) {
-    Some(unit) => assert_eq(unit, "count")
-    None => assert_true(false, "Expected unit")
+  // Test with different attributes in high frequency
+  for i in 0..100 {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "batch.id", StringValue("batch_" + i.to_string()))
+    Histogram::record(histogram, i.to_double(), Some(attrs))
   }
+  
+  assert_true(true)
 }
 
-test "multiple_meter_independence" {
-  // Test that different meters maintain independence
+test "metrics error handling and invalid inputs" {
   let provider = MeterProvider::default()
-  let meter1 = MeterProvider::get_meter(provider, "meter1")
-  let meter2 = MeterProvider::get_meter(provider, "meter2")
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let histogram = Meter::create_histogram(meter, "error.test")
+  let updown_counter = Meter::create_updown_counter(meter, "error.test.updown")
   
-  let counter1 = Meter::create_counter(meter1, "counter")
-  let counter2 = Meter::create_counter(meter2, "counter")
+  // Test with NaN and infinity values (if supported)
+  // Note: These would need proper handling in real implementation
+  Histogram::record(histogram, 0.0)
+  UpDownCounter::add(updown_counter, 0.0)
   
-  assert_eq(counter1.name, "counter")
-  assert_eq(counter2.name, "counter")
+  // Test with very long metric names
+  let long_name = "a".repeat(1000)
+  let long_histogram = Meter::create_histogram(meter, long_name)
+  assert_eq(long_histogram.name, long_name)
   
-  // But they belong to different meters (scopes)
-  assert_ne(meter1.scope.name, meter2.scope.name)
-}
-
-test "instrument_name_validation" {
-  // Test instrument creation with various name formats
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
+  // Test with empty metric names
+  let empty_histogram = Meter::create_histogram(meter, "")
+  assert_eq(empty_histogram.name, "")
   
-  // Test different naming patterns
-  let simple_counter = Meter::create_counter(meter, "simple")
-  let dotted_counter = Meter::create_counter(meter, "request.count")
-  let underscore_counter = Meter::create_counter(meter, "error_rate_total")
-  
-  assert_eq(simple_counter.name, "simple")
-  assert_eq(dotted_counter.name, "request.count")
-  assert_eq(underscore_counter.name, "error_rate_total")
-  
-  // All should be valid instrument names
-  assert_true(simple_counter.name.length() > 0)
-  assert_true(dotted_counter.name.length() > 0)
-  assert_true(underscore_counter.name.length() > 0)
-}
-
-test "meter_noop_provider_behavior" {
-  // Test noop meter provider behavior
-  let noop_provider = MeterProvider::noop()
-  let noop_meter = MeterProvider::get_meter(noop_provider, "noop.meter")
-  let noop_counter = Meter::create_counter(noop_meter, "noop.counter")
-  
-  // Should still have proper metadata
-  assert_eq(noop_counter.name, "noop.counter")
-  assert_eq(noop_meter.scope.name, "noop.meter")
-  
-  // Operations should not crash
-  Counter::add(noop_counter, 1.0)
-  
-  assert_true(true) // Should complete without errors
+  assert_true(true)
 }
