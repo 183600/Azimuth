@@ -55,21 +55,46 @@ jobs:
         run: |
           test -n "$IFLOW_API_KEY" || { echo "Missing IFLOW_API_KEY secret"; exit 1; }
 
-      - name: Setup Haskell (GHC + Cabal)
-        uses: haskell-actions/setup@v2
-        with:
-          ghc-version: 'latest'
-          cabal-version: 'latest'
+      # ==================== MoonBit（替换 Haskell/Cabal） ====================
 
-      - name: Cache cabal store
+      - name: Cache MoonBit toolchain & build outputs
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cabal
-            dist-newstyle
-          key: cabal-${{ runner.os }}-${{ hashFiles('**/*.cabal','cabal.project*') }}
+            ~/.moon
+            target
+          key: moonbit-${{ runner.os }}-${{ hashFiles('**/moon.mod.json','**/moon.pkg.json') }}
           restore-keys: |
-            cabal-${{ runner.os }}-
+            moonbit-${{ runner.os }}-
+
+      - name: Setup MoonBit (moon toolchain)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # 确保 PATH 里有默认安装目录（MoonBit toolchain 默认在 ~/.moon/bin）
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+          # 若已从 cache 恢复且 moon 已存在，就不重复安装
+          if command -v moon >/dev/null 2>&1; then
+            moon version || true
+            exit 0
+          fi
+
+          # 官方安装方式：安装 MoonBit CLI/toolchain
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+
+          # 再验证一次（新 PATH 会在后续 step 生效；这里也尽量直接跑一次）
+          export PATH="$HOME/.moon/bin:$PATH"
+          moon version
+
+      - name: Pre-install MoonBit dependencies (optional but recommended)
+        shell: bash
+        run: |
+          set -e
+          moon install
+
+      # ==================== 继续沿用你的 loop（文件名不改） ====================
 
       - name: Make loop script executable
         run: |
