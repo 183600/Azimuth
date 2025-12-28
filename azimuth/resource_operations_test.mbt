@@ -1,7 +1,7 @@
 test "Resource operations comprehensive test" {
   // Test resource creation and attribute operations
   let resource = Resource::new()
-  @assertion.assert_eq(resource.attributes.length, 0)?
+  assert_eq(resource.attributes.length, 0)
   
   // Test resource with attributes
   let attributes = [
@@ -15,24 +15,24 @@ test "Resource operations comprehensive test" {
   ]
   
   let resource_with_attrs = Resource::with_attributes(resource, attributes)
-  @assertion.assert_eq(resource_with_attrs.attributes.length, 7)?
+  assert_eq(resource_with_attrs.attributes.length, 7)
   
   // Test attribute retrieval
   let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
-  @assertion.assert_eq(service_name?, StringValue("azimuth-service"))?
+  assert_eq(service_name, Some(StringValue("azimuth-service")))
   
   let process_pid = Resource::get_attribute(resource_with_attrs, "process.pid")
-  @assertion.assert_eq(process_pid?, IntValue(12345))?
+  assert_eq(process_pid, Some(IntValue(12345)))
   
   let cpu_percent = Resource::get_attribute(resource_with_attrs, "process.cpu.percent")
-  @assertion.assert_eq(cpu_percent?, FloatValue(75.5))?
+  assert_eq(cpu_percent, Some(FloatValue(75.5)))
   
   let debug_enabled = Resource::get_attribute(resource_with_attrs, "process.debug.enabled")
-  @assertion.assert_eq(debug_enabled?, BoolValue(true))?
+  assert_eq(debug_enabled, Some(BoolValue(true)))
   
   // Test non-existent attribute
   let non_existent = Resource::get_attribute(resource_with_attrs, "non.existent.key")
-  @assertion.assert_eq(non_existent, None)?
+  assert_eq(non_existent, None)
   
   // Test resource merging
   let override_attrs = [
@@ -44,10 +44,10 @@ test "Resource operations comprehensive test" {
   
   // Verify merge results (simplified implementation returns override)
   let merged_service_name = Resource::get_attribute(merged_resource, "service.name")
-  @assertion.assert_eq(merged_service_name?, StringValue("updated-service"))?
+  assert_eq(merged_service_name, Some(StringValue("updated-service")))
   
   let new_attr = Resource::get_attribute(merged_resource, "new.attribute")
-  @assertion.assert_eq(new_attr?, StringValue("new-value"))?
+  assert_eq(new_attr, Some(StringValue("new-value")))
 }
 
 test "Resource attribute type validation test" {
