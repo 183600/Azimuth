@@ -75,7 +75,11 @@ test "SpanContext有效性测试" {
 test "LogRecord创建和属性测试" {
   // 创建基本LogRecord
   let log_record = LogRecord::new(Info, "Test log message")
-  assert_eq(LogRecord::severity_number(log_record), Info)
+  // 使用模式匹配而不是assert_eq，因为SeverityNumber没有实现Eq
+  match LogRecord::severity_number(log_record) {
+    Info => assert_true(true)
+    _ => assert_true(false)
+  }
   
   match LogRecord::body(log_record) {
     Some(body) => assert_eq(body, "Test log message")
@@ -89,16 +93,21 @@ test "LogRecord创建和属性测试" {
   
   let detailed_log = LogRecord::new_with_context(
     Error,
-    Some("Detailed error message"),
-    Some(attrs),
-    Some(timestamp),
+    "Detailed error message",
+    attrs,
+    timestamp,
     None,
-    Some("trace123"),
-    Some("span456"),
-    Some(ctx)
+    "trace123",
+    "span456",
+    ctx
   )
   
-  assert_eq(LogRecord::severity_number(detailed_log), Error)
+  // 使用模式匹配而不是assert_eq
+  match LogRecord::severity_number(detailed_log) {
+    Error => assert_true(true)
+    _ => assert_true(false)
+  }
+  
   match LogRecord::body(detailed_log) {
     Some(body) => assert_eq(body, "Detailed error message")
     _ => assert_true(false)
