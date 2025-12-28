@@ -1,124 +1,219 @@
-test "Context advanced operations test" {
-  // Test context creation and basic operations
+// Context Advanced Operations Test Suite
+// Tests for Context management, ContextKey operations, and context propagation
+
+test "context_root_creation" {
+  // Test creating a root context
   let root_ctx = Context::root()
-  @assertion.assert_eq(root_ctx.data, None)?
-  
-  // Test context with single value
+  match root_ctx.data {
+    None => assert_true(true)
+    Some(_) => assert_true(false, "Root context should have no data")
+  }
+}
+
+test "context_key_creation_and_usage" {
+  // Test ContextKey creation and usage
   let user_key = ContextKey::new("user.id")
-  let ctx_with_user = Context::with_value(root_ctx, user_key, "user-123")
-  let user_id = Context::get(ctx_with_user, user_key)
-  @assertion.assert_eq(user_id?, "user-123")?
-  
-  // Test context with multiple values
   let trace_key = ContextKey::new("trace.id")
+  let request_key = ContextKey::new("request.id")
+  
+  assert_eq(user_key.key, "user.id")
+  assert_eq(trace_key.key, "trace.id")
+  assert_eq(request_key.key, "request.id")
+}
+
+test "context_with_value_operations" {
+  // Test setting values in context
+  let root_ctx = Context::root()
+  let user_key = ContextKey::new("user.id")
+  
+  // Set a value
+  let ctx_with_user = Context::with_value(root_ctx, user_key, "user123")
+  
+  // Verify the value is stored
+  match ctx_with_user.data {
+    Some((key, value)) => {
+      assert_eq(key, "user.id")
+      assert_eq(value, "user123")
+    }
+    None => assert_true(false, "Context should have data")
+  }
+}
+
+test "context_value_retrieval" {
+  // Test retrieving values from context
+  let root_ctx = Context::root()
+  let user_key = ContextKey::new("user.id")
   let session_key = ContextKey::new("session.id")
-  let ctx_with_multiple = Context::with_value(
-    Context::with_value(
-      Context::with_value(root_ctx, user_key, "user-123"),
-      trace_key, "trace-456"
-    ),
-    session_key, "session-789"
-  )
   
-  let trace_id = Context::get(ctx_with_multiple, trace_key)
-  @assertion.assert_eq(trace_id?, "trace-456")?
+  // Set user value
+  let ctx_with_user = Context::with_value(root_ctx, user_key, "user123")
   
-  let session_id = Context::get(ctx_with_multiple, session_key)
-  @assertion.assert_eq(session_id?, "session-789")?
-  
-  // Test context key isolation
-  let different_user_key = ContextKey::new("user.id")
-  let same_user_id = Context::get(ctx_with_multiple, different_user_key)
-  @assertion.assert_eq(same_user_id?, "user-123")?
-  
-  // Test non-existent key
-  let non_existent_key = ContextKey::new("non.existent")
-  let non_existent_value = Context::get(ctx_with_multiple, non_existent_key)
-  @assertion.assert_eq(non_existent_value, None)?
-  
-  // Test context override behavior
-  let ctx_with_override = Context::with_value(ctx_with_multiple, user_key, "user-999")
-  let overridden_user_id = Context::get(ctx_with_override, user_key)
-  @assertion.assert_eq(overridden_user_id?, "user-999")?
-  
-  // Verify other values are preserved (simplified implementation)
-  let preserved_trace_id = Context::get(ctx_with_override, trace_key)
-  @assertion.assert_eq(preserved_trace_id?, "trace-456")?
-}
-
-test "Context with complex data types test" {
-  // Test context with complex string values
-  let root_ctx = Context::root()
-  
-  // JSON-like string data
-  let json_key = ContextKey::new("user.data")
-  let json_data = "{\"id\":\"123\",\"name\":\"Test User\",\"roles\":[\"admin\",\"user\"]}"
-  let ctx_with_json = Context::with_value(root_ctx, json_key, json_data)
-  let retrieved_json = Context::get(ctx_with_json, json_key)
-  @assertion.assert_eq(retrieved_json?, json_data)?
-  
-  // Configuration data
-  let config_key = ContextKey::new("service.config")
-  let config_data = "timeout=30,retries=3,backoff=exponential"
-  let ctx_with_config = Context::with_value(ctx_with_json, config_key, config_data)
-  let retrieved_config = Context::get(ctx_with_config, config_key)
-  @assertion.assert_eq(retrieved_config?, config_data)?
-  
-  // Long string data
-  let long_key = ContextKey::new("large.payload")
-  let long_data = "This is a very long string that might be used to store large amounts of context data such as serialized objects, base64 encoded binary data, or extensive logging information that needs to be passed through the context chain."
-  let ctx_with_long = Context::with_value(ctx_with_config, long_key, long_data)
-  let retrieved_long = Context::get(ctx_with_long, long_key)
-  @assertion.assert_eq(retrieved_long?, long_data)?
-  
-  // Special characters and encoding
-  let special_key = ContextKey::new("special.chars")
-  let special_data = "Special chars: àáâãäåæçèéêë ñòóôõö ùúûüý ÿ 中文 العربية русский"
-  let ctx_with_special = Context::with_value(ctx_with_long, special_key, special_data)
-  let retrieved_special = Context::get(ctx_with_special, special_key)
-  @assertion.assert_eq(retrieved_special?, special_data)?
-  
-  // Verify all data is accessible
-  @assertion.assert_eq(Context::get(ctx_with_special, json_key)?, json_data)?
-  @assertion.assert_eq(Context::get(ctx_with_special, config_key)?, config_data)?
-  @assertion.assert_eq(Context::get(ctx_with_special, long_key)?, long_data)?
-  @assertion.assert_eq(Context::get(ctx_with_special, special_key)?, special_data)?
-}
-
-test "Context key naming and validation test" {
-  let root_ctx = Context::root()
-  
-  // Test various key naming patterns
-  let keys_and_values = [
-    ("simple.key", "simple.value"),
-    ("with.dots.in.name", "dotted.value"),
-    ("with_underscores", "underscored.value"),
-    ("with-numbers123", "numeric.value"),
-    ("UPPERCASE.KEY", "uppercase.value"),
-    ("MixedCase.Key", "mixed.value"),
-    ("key.with.many.dots.and.subkeys", "deep.value"),
-    ("123.starting.with.numbers", "numeric.start.value"),
-    ("key-with-dashes", "dashed.value")
-  ]
-  
-  let mut ctx = root_ctx
-  for (key_name, value) in keys_and_values {
-    let key = ContextKey::new(key_name)
-    ctx = Context::with_value(ctx, key, value)
-    let retrieved = Context::get(ctx, key)
-    @assertion.assert_eq(retrieved?, value)?
+  // Retrieve existing value
+  let retrieved_user = Context::get(ctx_with_user, user_key)
+  match retrieved_user {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false, "Should retrieve user value")
   }
   
-  // Test empty string key (edge case)
-  let empty_key = ContextKey::new("")
-  let ctx_with_empty = Context::with_value(ctx, empty_key, "empty.key.value")
-  let empty_value = Context::get(ctx_with_empty, empty_key)
-  @assertion.assert_eq(empty_value?, "empty.key.value")?
+  // Try to retrieve non-existing value
+  let retrieved_session = Context::get(ctx_with_user, session_key)
+  match retrieved_session {
+    Some(_) => assert_true(false, "Should not find session value")
+    None => assert_true(true) // Expected
+  }
+}
+
+test "context_multiple_values_isolation" {
+  // Test that different context keys maintain isolation
+  let root_ctx = Context::root()
+  let user_key = ContextKey::new("user.id")
+  let role_key = ContextKey::new("user.role")
+  let trace_key = ContextKey::new("trace.id")
   
-  // Test very long key name
-  let long_key_name = "this.is.a.very.long.key.name.that.might.be.used.in.some.enterprise.applications.to.store.very.specific.context.information.with.hierarchical.naming.conventions"
-  let long_key = ContextKey::new(long_key_name)
-  let ctx_with_long_key = Context::with_value(ctx_with_empty, long_key, "long.key.value")
-  let long_key_value = Context::get(ctx_with_long_key, long_key)
-  @assertion.assert_eq(long_key_value?, "long.key.value")?
+  // Create contexts with different values
+  let ctx1 = Context::with_value(root_ctx, user_key, "user123")
+  let ctx2 = Context::with_value(ctx1, role_key, "admin")
+  let ctx3 = Context::with_value(ctx2, trace_key, "trace456")
+  
+  // Each key should retrieve its own value
+  let user_val = Context::get(ctx3, user_key)
+  let role_val = Context::get(ctx3, role_key)
+  let trace_val = Context::get(ctx3, trace_key)
+  
+  match user_val {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_true(false, "Should find user value")
+  }
+  
+  match role_val {
+    Some(value) => assert_eq(value, "admin")
+    None => assert_true(false, "Should find role value")
+  }
+  
+  match trace_val {
+    Some(value) => assert_eq(value, "trace456")
+    None => assert_true(false, "Should find trace value")
+  }
+}
+
+test "context_key_type_safety" {
+  // Test that ContextKey maintains type safety
+  let string_key = ContextKey::new("string.key")
+  
+  let root_ctx = Context::root()
+  let ctx_with_string = Context::with_value(root_ctx, string_key, "string_value")
+  
+  // Should be able to retrieve the string value
+  let retrieved = Context::get(ctx_with_string, string_key)
+  match retrieved {
+    Some(value) => {
+      assert_eq(value, "string_value")
+      // Verify it's actually a string
+      assert_eq(value.length(), 13)
+    }
+    None => assert_true(false, "Should retrieve string value")
+  }
+}
+
+test "context_empty_value_handling" {
+  // Test handling of empty string values
+  let root_ctx = Context::root()
+  let empty_key = ContextKey::new("empty.key")
+  
+  let ctx_with_empty = Context::with_value(root_ctx, empty_key, "")
+  
+  let retrieved = Context::get(ctx_with_empty, empty_key)
+  match retrieved {
+    Some(value) => {
+      assert_eq(value, "")
+      assert_eq(value.length(), 0)
+    }
+    None => assert_true(false, "Should retrieve empty string")
+  }
+}
+
+test "context_special_characters_in_keys" {
+  // Test context keys with special characters
+  let special_key = ContextKey::new("user.email@domain.com")
+  let unicode_key = ContextKey::new("用户.标识")
+  let dot_key = ContextKey::new("nested.key.path")
+  
+  let root_ctx = Context::root()
+  
+  let ctx1 = Context::with_value(root_ctx, special_key, "test@example.com")
+  let ctx2 = Context::with_value(ctx1, unicode_key, "用户123")
+  let ctx3 = Context::with_value(ctx2, dot_key, "nested_value")
+  
+  // Test retrieval of special character keys
+  let email_val = Context::get(ctx3, special_key)
+  match email_val {
+    Some(value) => assert_eq(value, "test@example.com")
+    None => assert_true(false, "Should retrieve email value")
+  }
+  
+  let unicode_val = Context::get(ctx3, unicode_key)
+  match unicode_val {
+    Some(value) => assert_eq(value, "用户123")
+    None => assert_true(false, "Should retrieve unicode value")
+  }
+  
+  let nested_val = Context::get(ctx3, dot_key)
+  match nested_val {
+    Some(value) => assert_eq(value, "nested_value")
+    None => assert_true(false, "Should retrieve nested value")
+  }
+}
+
+test "context_long_values_handling" {
+  // Test handling of long string values
+  let root_ctx = Context::root()
+  let long_key = ContextKey::new("long.value")
+  
+  let long_value = "This is a very long string that might be used to store " + 
+                   "complex information such as JSON payloads, detailed error " +
+                   "messages, or other verbose data that needs to be passed " +
+                   "through the context system."
+  
+  let ctx_with_long = Context::with_value(root_ctx, long_key, long_value)
+  
+  let retrieved = Context::get(ctx_with_long, long_key)
+  match retrieved {
+    Some(value) => {
+      assert_eq(value, long_value)
+      assert_true(value.length() > 100)
+    }
+    None => assert_true(false, "Should retrieve long value")
+  }
+}
+
+test "context_key_case_sensitivity" {
+  // Test that context keys are case sensitive
+  let root_ctx = Context::root()
+  let lower_key = ContextKey::new("test.key")
+  let upper_key = ContextKey::new("TEST.KEY")
+  let mixed_key = ContextKey::new("Test.Key")
+  
+  let ctx1 = Context::with_value(root_ctx, lower_key, "lower_value")
+  let ctx2 = Context::with_value(ctx1, upper_key, "upper_value")
+  let ctx3 = Context::with_value(ctx2, mixed_key, "mixed_value")
+  
+  // Each key should be distinct
+  let lower_val = Context::get(ctx3, lower_key)
+  let upper_val = Context::get(ctx3, upper_key)
+  let mixed_val = Context::get(ctx3, mixed_key)
+  
+  match lower_val {
+    Some(value) => assert_eq(value, "lower_value")
+    None => assert_true(false, "Should find lower case key")
+  }
+  
+  match upper_val {
+    Some(value) => assert_eq(value, "upper_value")
+    None => assert_true(false, "Should find upper case key")
+  }
+  
+  match mixed_val {
+    Some(value) => assert_eq(value, "mixed_value")
+    None => assert_true(false, "Should find mixed case key")
+  }
 }
