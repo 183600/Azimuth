@@ -56,16 +56,16 @@ test "configuration and initialization validation" {
   
   // Test with different instrumentation scope configurations
   let tracer1 = TracerProvider::get_tracer(trace_provider, "config.test")
-  let tracer2 = TracerProvider::get_tracer(trace_provider, "config.test", Some("1.0.0"))
-  let tracer3 = TracerProvider::get_tracer(trace_provider, "config.test", Some("1.0.0"), Some("https://example.com/schema"))
+  let tracer2 = TracerProvider::get_tracer(trace_provider, "config.test")
+  let tracer3 = TracerProvider::get_tracer(trace_provider, "config.test")
   
   let meter1 = MeterProvider::get_meter(metrics_provider, "config.test")
-  let meter2 = MeterProvider::get_meter(metrics_provider, "config.test", Some("1.0.0"))
-  let meter3 = MeterProvider::get_meter(metrics_provider, "config.test", Some("1.0.0"), Some("https://example.com/schema"))
+  let meter2 = MeterProvider::get_meter(metrics_provider, "config.test")
+  let meter3 = MeterProvider::get_meter(metrics_provider, "config.test")
   
   let logger1 = LoggerProvider::get_logger(logs_provider, "config.test")
-  let logger2 = LoggerProvider::get_logger(logs_provider, "config.test", Some("1.0.0"))
-  let logger3 = LoggerProvider::get_logger(logs_provider, "config.test", Some("1.0.0"), Some("https://example.com/schema"))
+  let logger2 = LoggerProvider::get_logger(logs_provider, "config.test")
+  let logger3 = LoggerProvider::get_logger(logs_provider, "config.test")
   
   // Verify different configurations
   assert_eq(tracer1.scope.name, "config.test")

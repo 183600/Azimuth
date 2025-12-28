@@ -57,15 +57,7 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "validation_tests.mbt": {
-    0: (__test_76616c69646174696f6e5f74657374732e6d6274_0, ["基本属性操作测试"]),
-    1: (__test_76616c69646174696f6e5f74657374732e6d6274_1, ["SpanContext基本操作测试"]),
-    2: (__test_76616c69646174696f6e5f74657374732e6d6274_2, ["Context和Baggage操作测试"]),
-    3: (__test_76616c69646174696f6e5f74657374732e6d6274_3, ["Span和Tracer操作测试"]),
-    4: (__test_76616c69646174696f6e5f74657374732e6d6274_4, ["指标和Meter操作测试"]),
-    5: (__test_76616c69646174696f6e5f74657374732e6d6274_5, ["日志和Logger操作测试"]),
-    6: (__test_76616c69646174696f6e5f74657374732e6d6274_6, ["Resource和TextMapCarrier操作测试"]),
-    7: (__test_76616c69646174696f6e5f74657374732e6d6274_7, ["传播器和平台服务测试"]),
+  "test.mbt": {
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
@@ -143,7 +135,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/tests/azimuth/telemetry/new-tests\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/tests/azimuth/telemetry/validation\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }

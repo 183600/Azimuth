@@ -54,7 +54,7 @@ test "resource operations with invalid attributes" {
   let resource = Resource::new()
   
   // Test with empty attributes array
-  let empty_attrs = [] : Array[(String, AttributeValue)]
+  let empty_attrs : Array[(String, AttributeValue)]
   let resource_with_empty = Resource::with_attributes(resource, empty_attrs)
   
   let empty_result = Resource::get_attribute(resource_with_empty, "any.key")
@@ -91,9 +91,9 @@ test "span operations in error states" {
   let span = Tracer::start_span(tracer, "error.span")
   
   // Test multiple status changes
-  Span::set_status(span, Ok)
+  Span::set_status(span, Ok, None)
   Span::set_status(span, Error, Some("Error message"))
-  Span::set_status(span, Unset)
+  Span::set_status(span, Unset, None)
   Span::set_status(span, Error, Some("Another error"))
   
   // Test adding events with problematic attributes
@@ -110,7 +110,7 @@ test "span operations in error states" {
   Span::end(span)
   
   // Test operations after span end
-  Span::add_event(span, "after_end_event")
+  Span::add_event(span, "after_end_event", None)
   Span::set_status(span, Ok, Some("After end"))
   
   // Test passes if no exceptions are thrown
@@ -257,7 +257,7 @@ test "baggage operations with edge cases" {
 
 test "http operations with error scenarios" {
   // Test HTTP requests with problematic data
-  let empty_headers = [] : Array[(String, String)]
+  let empty_headers : Array[(String, String)]
   let invalid_headers = [
     ("", "empty_header"),
     ("invalid-header!@#", "invalid_value"),

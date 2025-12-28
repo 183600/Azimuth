@@ -123,7 +123,7 @@ pub test "resource edge cases" {
   assert_eq(long_key_value, None)  // Simplified implementation
   
   // Test with empty attributes array
-  let empty_attrs = [] : Array[(String, AttributeValue)]
+  let empty_attrs : Array[(String, AttributeValue)]
   let resource_with_empty_attrs = Resource::with_attributes(resource_with_long, empty_attrs)
   assert_eq(resource_with_empty_attrs.attributes.length, 0)
 }

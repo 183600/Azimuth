@@ -43,8 +43,8 @@ test "concurrent context operations" {
   let root_ctx = Context::root()
   
   // Create multiple contexts with different keys
-  let contexts = [] : Array[Context]
-  let keys = [] : Array[ContextKey[String]]
+  let contexts : Array[Context]
+  let keys : Array[ContextKey[String]]
   
   for i = 0; i < 50; i = i + 1 {
     let key = ContextKey::new("concurrent.key." + i.to_string())
@@ -83,7 +83,7 @@ test "concurrent span operations" {
   let tracer = TracerProvider::get_tracer(provider, "concurrent.test")
   
   // Create multiple spans
-  let spans = [] : Array[Span]
+  let spans : Array[Span]
   
   for i = 0; i < 20; i = i + 1 {
     let span = Tracer::start_span(tracer, "concurrent.span." + i.to_string())
@@ -119,8 +119,8 @@ test "concurrent metrics operations" {
   let meter = MeterProvider::get_meter(provider, "concurrent.metrics")
   
   // Create multiple instruments
-  let counters = [] : Array[Counter]
-  let histograms = [] : Array[Histogram]
+  let counters : Array[Counter]
+  let histograms : Array[Histogram]
   
   for i = 0; i < 10; i = i + 1 {
     let counter = Meter::create_counter(meter, "concurrent.counter." + i.to_string())
@@ -133,7 +133,7 @@ test "concurrent metrics operations" {
   for i = 0; i < counters.length(); i = i + 1 {
     let counter = counters[i]
     for j = 0; j < 10; j = j + 1 {
-      Counter::add(counter, j.to_double())
+      Counter::add(counter, j.to_double(), None)
     }
   }
   
@@ -141,7 +141,7 @@ test "concurrent metrics operations" {
   for i = 0; i < histograms.length(); i = i + 1 {
     let histogram = histograms[i]
     for j = 0; j < 10; j = j + 1 {
-      Histogram::record(histogram, j.to_double() * 0.1)
+      Histogram::record(histogram, j.to_double() * 0.1, None)
     }
   }
   
@@ -154,7 +154,7 @@ test "concurrent logging operations" {
   let logger = LoggerProvider::get_logger(provider, "concurrent.logger")
   
   // Create multiple log records
-  let records = [] : Array[LogRecord]
+  let records : Array[LogRecord]
   
   for i = 0; i < 50; i = i + 1 {
     let severity = match i % 6 {
@@ -176,7 +176,7 @@ test "concurrent logging operations" {
   }
   
   // Create records with full context
-  let detailed_records = [] : Array[LogRecord]
+  let detailed_records : Array[LogRecord]
   
   for i = 0; i < 20; i = i + 1 {
     let record = LogRecord::new_with_context(
@@ -207,8 +207,8 @@ test "concurrent propagation operations" {
   let composite = CompositePropagator::new([trace_propagator])
   
   // Create multiple carriers
-  let carriers = [] : Array[TextMapCarrier]
-  let contexts = [] : Array[Context]
+  let carriers : Array[TextMapCarrier]
+  let contexts : Array[Context]
   
   for i = 0; i < 10; i = i + 1 {
     let carrier = TextMapCarrier::new()
@@ -228,7 +228,7 @@ test "concurrent propagation operations" {
   }
   
   // Extract all contexts
-  let extracted_contexts = [] : Array[Context]
+  let extracted_contexts : Array[Context]
   
   for i = 0; i < carriers.length(); i = i + 1 {
     let carrier = carriers[i]
@@ -251,7 +251,7 @@ test "concurrent propagation operations" {
 
 test "concurrent resource operations" {
   // Create multiple resources
-  let resources = [] : Array[Resource]
+  let resources : Array[Resource]
   
   for i = 0; i < 10; i = i + 1 {
     let resource = Resource::new()
@@ -289,7 +289,7 @@ test "concurrent resource operations" {
 
 test "concurrent baggage operations" {
   // Create multiple baggage instances
-  let baggage_instances = [] : Array[Baggage]
+  let baggage_instances : Array[Baggage]
   
   for i = 0; i < 10; i = i + 1 {
     let baggage = Baggage::new()
@@ -328,7 +328,7 @@ test "concurrent baggage operations" {
 
 test "concurrent http operations" {
   // Create multiple HTTP requests
-  let requests = [] : Array[HttpRequest]
+  let requests : Array[HttpRequest]
   
   for i = 0; i < 10; i = i + 1 {
     let headers = [
@@ -341,7 +341,7 @@ test "concurrent http operations" {
   }
   
   // Create multiple HTTP responses
-  let responses = [] : Array[HttpResponse]
+  let responses : Array[HttpResponse]
   
   for i = 0; i < responses.length(); i = i + 1 {
     let headers = [

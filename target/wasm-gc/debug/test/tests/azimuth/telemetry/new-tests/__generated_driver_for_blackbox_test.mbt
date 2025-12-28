@@ -57,63 +57,7 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "span_state_transition_test.mbt": {
-    0: (__test_7370616e5f73746174655f7472616e736974696f6e5f746573742e6d6274_0, ["span creation and initial state"]),
-    1: (__test_7370616e5f73746174655f7472616e736974696f6e5f746573742e6d6274_1, ["span status transitions"]),
-    2: (__test_7370616e5f73746174655f7472616e736974696f6e5f746573742e6d6274_2, ["span event management"]),
-    3: (__test_7370616e5f73746174655f7472616e736974696f6e5f746573742e6d6274_3, ["span lifecycle management"]),
-    4: (__test_7370616e5f73746174655f7472616e736974696f6e5f746573742e6d6274_4, ["span context operations"]),
-    5: (__test_7370616e5f73746174655f7472616e736974696f6e5f746573742e6d6274_5, ["span with tracer operations"]),
-    6: (__test_7370616e5f73746174655f7472616e736974696f6e5f746573742e6d6274_6, ["span error handling and recovery"]),
-    7: (__test_7370616e5f73746174655f7472616e736974696f6e5f746573742e6d6274_7, ["span concurrent operations"]),
-  },
-  "performance_concurrency_stress_test.mbt": {
-    0: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_0, ["high volume attributes operations"]),
-    1: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_1, ["massive span creation and management"]),
-    2: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_2, ["high frequency metrics operations"]),
-    3: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_3, ["intensive logging operations"]),
-    4: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_4, ["concurrent context operations"]),
-    5: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_5, ["high volume baggage operations"]),
-    6: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_6, ["stress test text map carrier operations"]),
-    7: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_7, ["memory stress test with resource operations"]),
-    8: (__test_706572666f726d616e63655f636f6e63757272656e63795f7374726573735f746573742e6d6274_8, ["propagation stress test"]),
-  },
-  "data_serialization_format_test.mbt": {
-    0: (__test_646174615f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_0, ["attribute value JSON serialization"]),
-    1: (__test_646174615f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_1, ["span context serialization formats"]),
-    2: (__test_646174615f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_2, ["log record serialization"]),
-    3: (__test_646174615f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_3, ["metric data serialization"]),
-    4: (__test_646174615f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_4, ["resource serialization"]),
-    5: (__test_646174615f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_5, ["baggage serialization formats"]),
-    6: (__test_646174615f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_6, ["text map carrier HTTP header serialization"]),
-    7: (__test_646174615f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_7, ["http request response serialization"]),
-  },
-  "cross_component_integration_test.mbt": {
-    0: (__test_63726f73735f636f6d706f6e656e745f696e746567726174696f6e5f746573742e6d6274_0, ["trace to metrics integration"]),
-    1: (__test_63726f73735f636f6d706f6e656e745f696e746567726174696f6e5f746573742e6d6274_1, ["logging with trace context integration"]),
-    2: (__test_63726f73735f636f6d706f6e656e745f696e746567726174696f6e5f746573742e6d6274_2, ["propagation with baggage and context integration"]),
-    3: (__test_63726f73735f636f6d706f6e656e745f696e746567726174696f6e5f746573742e6d6274_3, ["metrics with resource attributes integration"]),
-    4: (__test_63726f73735f636f6d706f6e656e745f696e746567726174696f6e5f746573742e6d6274_4, ["end to end telemetry flow integration"]),
-  },
-  "attribute_type_conversion_test.mbt": {
-    0: (__test_6174747269627574655f747970655f636f6e76657273696f6e5f746573742e6d6274_0, ["attribute_value type conversion to string"]),
-    1: (__test_6174747269627574655f747970655f636f6e76657273696f6e5f746573742e6d6274_1, ["attribute_value numeric conversion"]),
-    2: (__test_6174747269627574655f747970655f636f6e76657273696f6e5f746573742e6d6274_2, ["attribute_value boolean conversion"]),
-    3: (__test_6174747269627574655f747970655f636f6e76657273696f6e5f746573742e6d6274_3, ["attribute_value array conversion"]),
-    4: (__test_6174747269627574655f747970655f636f6e76657273696f6e5f746573742e6d6274_4, ["attribute_value null and empty handling"]),
-    5: (__test_6174747269627574655f747970655f636f6e76657273696f6e5f746573742e6d6274_5, ["attribute_value complex conversion scenarios"]),
-    6: (__test_6174747269627574655f747970655f636f6e76657273696f6e5f746573742e6d6274_6, ["attribute_value overflow and precision handling"]),
-    7: (__test_6174747269627574655f747970655f636f6e76657273696f6e5f746573742e6d6274_7, ["attribute_value serialization conversion"]),
-  },
-  "advanced_error_boundary_test.mbt": {
-    0: (__test_616476616e6365645f6572726f725f626f756e646172795f746573742e6d6274_0, ["context key boundary conditions"]),
-    1: (__test_616476616e6365645f6572726f725f626f756e646172795f746573742e6d6274_1, ["span context validation edge cases"]),
-    2: (__test_616476616e6365645f6572726f725f626f756e646172795f746573742e6d6274_2, ["attributes extreme boundary conditions"]),
-    3: (__test_616476616e6365645f6572726f725f626f756e646172795f746573742e6d6274_3, ["baggage boundary and error conditions"]),
-    4: (__test_616476616e6365645f6572726f725f626f756e646172795f746573742e6d6274_4, ["text map carrier boundary conditions"]),
-    5: (__test_616476616e6365645f6572726f725f626f756e646172795f746573742e6d6274_5, ["metrics instrument boundary conditions"]),
-    6: (__test_616476616e6365645f6572726f725f626f756e646172795f746573742e6d6274_6, ["logging boundary and error conditions"]),
-    7: (__test_616476616e6365645f6572726f725f626f756e646172795f746573742e6d6274_7, ["resource management boundary conditions"]),
+  "validation_tests.mbt": {
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
