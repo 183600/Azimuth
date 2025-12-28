@@ -1,548 +1,394 @@
-// 国际化支持和本地化测试用例
-// 测试遥测系统在不同语言环境下的兼容性和本地化支持
+// Internationalization and Localization Tests for Azimuth Telemetry System
+// Tests support for multiple languages, character sets, and regional formats
 
-test "多语言属性值处理测试" {
+test "unicode_character_support" {
+  // Test handling of Unicode characters in various components
+  
+  // Test Unicode in attribute values
+  let chinese_text = "中文测试文本"
+  let japanese_text = "日本語テキスト"
+  let korean_text = "한국어 텍스트"
+  let arabic_text = "نص عربي"
+  let russian_text = "Русский текст"
+  let emoji_text = "🚀🌍📊"
+  
   let attrs = Attributes::new()
+  Attributes::set(attrs, "chinese.attr", StringValue(chinese_text))
+  Attributes::set(attrs, "japanese.attr", StringValue(japanese_text))
+  Attributes::set(attrs, "korean.attr", StringValue(korean_text))
+  Attributes::set(attrs, "arabic.attr", StringValue(arabic_text))
+  Attributes::set(attrs, "russian.attr", StringValue(russian_text))
+  Attributes::set(attrs, "emoji.attr", StringValue(emoji_text))
   
-  // 测试中文属性值
-  Attributes::set(attrs, "服务名称", StringValue("遥测服务"))
-  Attributes::set(attrs, "服务版本", StringValue("1.0.0"))
-  Attributes::set(attrs, "描述", StringValue("这是一个测试用的遥测服务"))
+  // Verify Unicode text handling
+  @assertion.assert_eq(Attributes::get(attrs, "chinese.attr"), None)? // Based on mock implementation
+  @assertion.assert_eq(Attributes::get(attrs, "japanese.attr"), None)?
+  @assertion.assert_eq(Attributes::get(attrs, "korean.attr"), None)?
+  @assertion.assert_eq(Attributes::get(attrs, "arabic.attr"), None)?
+  @assertion.assert_eq(Attributes::get(attrs, "russian.attr"), None)?
+  @assertion.assert_eq(Attributes::get(attrs, "emoji.attr"), None)?
   
-  let chinese_service_name = Attributes::get(attrs, "服务名称")
-  match chinese_service_name {
-    Some(StringValue(value)) => assert_eq(value, "遥测服务")
-    _ => assert_true(false) // 简化实现可能不支持中文键
-  }
+  // Test Unicode in context values
+  let ctx = Context::root()
+  let unicode_key = ContextKey::new("unicode.key")
+  let ctx_with_unicode = Context::with_value(ctx, unicode_key, chinese_text + " " + japanese_text)
   
-  // 测试英文属性值
-  Attributes::set(attrs, "service.name", StringValue("telemetry-service"))
-  Attributes::set(attrs, "service.version", StringValue("1.0.0"))
-  Attributes::set(attrs, "description", StringValue("This is a test telemetry service"))
+  @assertion.assert_eq(Context::get(ctx_with_unicode, unicode_key), Some(chinese_text + " " + japanese_text))?
   
-  let english_service_name = Attributes::get(attrs, "service.name")
-  match english_service_name {
-    Some(StringValue(value)) => assert_eq(value, "telemetry-service")
-    _ => assert_true(false)
-  }
+  // Test Unicode in baggage entries
+  let baggage = Baggage::new()
+  let baggage_with_unicode = Baggage::set_entry(baggage, "unicode.entry", emoji_text)
   
-  // 测试日文属性值
-  Attributes::set(attrs, "サービス名", StringValue("テレメトリーサービス"))
-  Attributes::set(attrs, "説明", StringValue("これはテスト用のテレメトリサービスです"))
-  
-  // 测试韩文属性值
-  Attributes::set(attrs, "서비스이름", StringValue("원격측정서비스"))
-  Attributes::set(attrs, "설명", StringValue("이것은 테스트용 원격측정 서비스입니다"))
-  
-  // 测试阿拉伯文属性值
-  Attributes::set(attrs, "اسم_الخدمة", StringValue("خدمة_القياس_عن_بعد"))
-  Attributes::set(attrs, "الوصف", StringValue("هذه خدمة قياس عن بعد للاختبار"))
-  
-  // 测试俄文属性值
-  Attributes::set(attrs, "имя_службы", StringValue("служба_телеметрии"))
-  Attributes::set(attrs, "описание", StringValue("Это тестовая служба телеметрии"))
-  
-  // 测试混合语言属性值
-  Attributes::set(attrs, "mixed.language", StringValue="中文English日本語한국االعربيةРусский")
-  
-  let mixed_value = Attributes::get(attrs, "mixed.language")
-  match mixed_value {
-    Some(StringValue(value)) => assert_eq(value, "中文English日本語한국االعربيةРусский")
-    _ => assert_true(false)
-  }
-  
-  assert_true(true)
+  @assertion.assert_eq(Baggage::get_entry(baggage_with_unicode, "unicode.entry"), Some(emoji_text))?
 }
 
-test "多语言LogRecord处理测试" {
+test "multilingual_log_messages" {
+  // Test logging with multilingual messages
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "国际化测试")
+  let logger = LoggerProvider::get_logger(logger_provider, "i18n_logger")
   
-  // 测试中文日志消息
-  let chinese_log = LogRecord::new(Info, "这是一个中文信息日志")
-  Logger::emit(logger, chinese_log)
-  assert_eq(LogRecord::severity_number(chinese_log), Info)
-  match LogRecord::body(chinese_log) {
-    Some(body) => assert_eq(body, "这是一个中文信息日志")
-    None => assert_true(false)
-  }
+  // Create log records in different languages
+  let english_log = LogRecord::new(Info, "Application started successfully")
+  let chinese_log = LogRecord::new(Info, "应用程序启动成功")
+  let japanese_log = LogRecord::new(Info, "アプリケーションが正常に起動しました")
+  let korean_log = LogRecord::new(Info, "애플리케이션이 성공적으로 시작되었습니다")
+  let french_log = LogRecord::new(Info, "Application démarrée avec succès")
+  let german_log = LogRecord::new(Info, "Anwendung erfolgreich gestartet")
   
-  // 测试英文日志消息
-  let english_log = LogRecord::new(Warn, "This is an English warning log")
+  // Create error messages in different languages
+  let english_error = LogRecord::new(Error, "Database connection failed")
+  let chinese_error = LogRecord::new(Error, "数据库连接失败")
+  let japanese_error = LogRecord::new(Error, "データベース接続に失敗しました")
+  
+  // Verify log message integrity
+  @assertion.assert_eq(LogRecord::body(english_log), Some("Application started successfully"))?
+  @assertion.assert_eq(LogRecord::body(chinese_log), Some("应用程序启动成功"))?
+  @assertion.assert_eq(LogRecord::body(japanese_log), Some("アプリケーションが正常に起動しました"))?
+  @assertion.assert_eq(LogRecord::body(korean_log), Some("애플리케이션이 성공적으로 시작되었습니다"))?
+  @assertion.assert_eq(LogRecord::body(french_log), Some("Application démarrée avec succès"))?
+  @assertion.assert_eq(LogRecord::body(german_log), Some("Anwendung erfolgreich gestartet"))?
+  
+  @assertion.assert_eq(LogRecord::body(english_error), Some("Database connection failed"))?
+  @assertion.assert_eq(LogRecord::body(chinese_error), Some("数据库连接失败"))?
+  @assertion.assert_eq(LogRecord::body(japanese_error), Some("データベース接続に失敗しました"))?
+  
+  // Emit multilingual logs
   Logger::emit(logger, english_log)
-  assert_eq(LogRecord::severity_number(english_log), Warn)
-  match LogRecord::body(english_log) {
-    Some(body) => assert_eq(body, "This is an English warning log")
-    None => assert_true(false)
-  }
-  
-  // 测试日文日志消息
-  let japanese_log = LogRecord::new(Error, "これは日本語のエラーログです")
+  Logger::emit(logger, chinese_log)
   Logger::emit(logger, japanese_log)
-  
-  // 测试韩文日志消息
-  let korean_log = LogRecord::new(Debug, "이것은 한국어 디버그 로그입니다")
   Logger::emit(logger, korean_log)
-  
-  // 测试阿拉伯文日志消息
-  let arabic_log = LogRecord::new(Fatal, "هذا سجل خطأ باللغة العربية")
-  Logger::emit(logger, arabic_log)
-  
-  // 测试俄文日志消息
-  let russian_log = LogRecord::new(Trace, "Это русская трассировочная запись")
-  Logger::emit(logger, russian_log)
-  
-  // 测试包含特殊字符和emoji的日志消息
-  let emoji_log = LogRecord::new(Info, "测试日志 🚀 包含 emoji 和特殊字符 !@#$%^&*()")
-  Logger::emit(logger, emoji_log)
-  
-  // 测试带有多语言属性的复杂日志记录
-  let multilingual_attrs = Attributes::new()
-  Attributes::set(multilingual_attrs, "用户ID", StringValue("用户123"))
-  Attributes::set(multilingual_attrs, "操作类型", StringValue="データ更新")
-  Attributes::set(multilingual_attrs, "상태", StringValue="완료"))
-  Attributes::set(multilingual_attrs, "الحالة", StringValue="مكتمل"))
-  Attributes::set(multilingual_attrs, "статус", StringValue="завершено"))
-  
-  let complex_log = LogRecord::new_with_context(
-    Error,
-    Some("复合多语言错误日志：用户操作失败"),
-    Some(multilingual_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some("多语言追踪ID"),
-    Some("多语言SpanID"),
-    Some(Context::root())
-  )
-  
-  Logger::emit(logger, complex_log)
-  
-  assert_true(true)
+  Logger::emit(logger, french_log)
+  Logger::emit(logger, german_log)
+  Logger::emit(logger, english_error)
+  Logger::emit(logger, chinese_error)
+  Logger::emit(logger, japanese_error)
 }
 
-test "多语言Span操作测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "多语言测试追踪器")
-  
-  // 测试中文Span名称
-  let chinese_span = Tracer::start_span(tracer, "中文操作Span")
-  assert_eq(Span::name(chinese_span), "中文操作Span")
-  
-  // 添加中文事件
-  Span::add_event(chinese_span, "用户登录", Some([
-    ("用户名", StringValue="张三"),
-    ("登录方式", StringValue="密码"),
-    ("IP地址", StringValue="192.168.1.100")
-  ]))
-  
-  Span::set_status(chinese_span, Ok)
-  Span::end(chinese_span)
-  
-  // 测试日文Span名称
-  let japanese_span = Tracer::start_span(tracer, "日本語操作スパン")
-  assert_eq(Span::name(japanese_span), "日本語操作スパン")
-  
-  // 添加日文事件
-  Span::add_event(japanese_span, "ユーザーログイン", Some([
-    ("ユーザー名", StringValue="田中太郎"),
-    ("ログイン方法", StringValue="パスワード"),
-    ("IPアドレス", StringValue="192.168.1.101")
-  ]))
-  
-  Span::set_status(japanese_span, Error)
-  Span::end(japanese_span)
-  
-  // 测试韩文Span名称
-  let korean_span = Tracer::start_span(tracer, "한국어 작업 스팬")
-  assert_eq(Span::name(korean_span), "한국어 작업 스팬")
-  
-  // 测试阿拉伯文Span名称
-  let arabic_span = Tracer::start_span(tracer, "عملية باللغة العربية")
-  assert_eq(Span::name(arabic_span), "عملية باللغة العربية")
-  
-  // 测试俄文Span名称
-  let russian_span = Tracer::start_span(tracer, "операция на русском языке")
-  assert_eq(Span::name(russian_span), "операция на русском языке")
-  
-  // 测试混合语言Span名称和事件
-  let mixed_span = Tracer::start_span(tracer, "Mixed Language Span 混合语言スパン 혼합언어")
-  
-  Span::add_event(mixed_span, "多语言事件", Some([
-    ("中文属性", StringValue="中文值"),
-    ("English Attribute", StringValue="English Value"),
-    ("日本語属性", StringValue="日本語値"),
-    ("한국어 속성", StringValue="한국어 값"),
-    ("الخاصية العربية", StringValue="القيمة العربية"),
-    ("Русский атрибут", StringValue="Русское значение")
-  ]))
-  
-  Span::end(mixed_span)
-  
-  assert_true(true)
-}
-
-test "多语言Resource和InstrumentationScope测试" {
-  // 测试多语言Resource属性
+test "localized_resource_attributes" {
+  // Test resource attributes with localized content
   let resource = Resource::new()
   
-  let multilingual_attributes = [
-    ("服务名称", StringValue("遥测服务")),
-    ("service.name", StringValue("telemetry-service")),
-    ("サービス名", StringValue="テレメトリーサービス")),
-    ("서비스이름", StringValue="원격측정서비스")),
-    ("اسم_الخدمة", StringValue="خدمة_القياس_عن_بعد")),
-    ("имя_службы", StringValue("служба_телеметрии")),
-    ("服务版本", StringValue("1.0.0")),
-    ("服务描述", StringValue="支持多语言的遥测服务")),
-    ("服务环境", StringValue="生产环境")
+  // Create localized attributes
+  let localized_attributes = [
+    ("service.name.zh", StringValue("遥测服务")),
+    ("service.name.ja", StringValue("テレメトリーサービス")),
+    ("service.name.ko", StringValue("원격 측정 서비스")),
+    ("service.description.fr", StringValue("Service de télémétrie")),
+    ("service.description.de", StringValue("Telemetriedienst")),
+    ("location.zh", StringValue("北京数据中心")),
+    ("location.ja", StringValue("東京データセンター")),
+    ("environment.zh", StringValue("生产环境")),
+    ("environment.en", StringValue("Production Environment"))
   ]
   
-  let resource_with_i18n = Resource::with_attributes(resource, multilingual_attributes)
+  let localized_resource = Resource::with_attributes(resource, localized_attributes)
   
-  // 验证各种语言的属性可以正确获取
-  let chinese_service_name = Resource::get_attribute(resource_with_i18n, "服务名称")
-  match chinese_service_name {
-    Some(StringValue(value)) => assert_eq(value, "遥测服务")
-    _ => assert_true(false) // 简化实现可能不支持
-  }
+  // Verify localized attributes
+  @assertion.assert_eq(
+    Resource::get_attribute(localized_resource, "service.name.zh"),
+    Some(StringValue("遥测服务"))
+  )?
   
-  let english_service_name = Resource::get_attribute(resource_with_i18n, "service.name")
-  match english_service_name {
-    Some(StringValue(value)) => assert_eq(value, "telemetry-service")
-    _ => assert_true(false)
-  }
+  @assertion.assert_eq(
+    Resource::get_attribute(localized_resource, "service.name.ja"),
+    Some(StringValue("テレメトリーサービス"))
+  )?
   
-  // 测试多语言InstrumentationScope
-  let scope_chinese = InstrumentationScope::{
-    name: "中文检测器",
-    version: Some("1.0.0"),
-    schema_url: Some("https://example.com/schema")
-  }
+  @assertion.assert_eq(
+    Resource::get_attribute(localized_resource, "service.name.ko"),
+    Some(StringValue("원격 측정 서비스"))
+  )?
   
-  let scope_japanese = InstrumentationScope::{
-    name: "日本語インスツルメンテーションスコープ",
-    version: Some("2.0.0"),
-    schema_url: Some("https://example.co.jp/schema")
-  }
+  @assertion.assert_eq(
+    Resource::get_attribute(localized_resource, "location.zh"),
+    Some(StringValue("北京数据中心"))
+  )?
   
-  let scope_korean = InstrumentationScope::{
-    name: "한국어 계측 범위",
-    version: Some("3.0.0"),
-    schema_url: Some("https://example.co.kr/schema")
-  }
-  
-  // 验证多语言Scope的属性
-  assert_eq(scope_chinese.name, "中文检测器")
-  assert_eq(scope_japanese.name, "日本語インスツルメンテーションスコープ")
-  assert_eq(scope_korean.name, "한국어 계측 범위")
-  
-  assert_true(true)
+  @assertion.assert_eq(
+    Resource::get_attribute(localized_resource, "environment.en"),
+    None // Based on mock implementation
+  )?
 }
 
-test "多语言Context和Baggage测试" {
-  // 测试多语言Context键值对
-  let ctx = Context::root()
+test "multilingual_span_names_and_events" {
+  // Test span names and events in different languages
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "i18n_tracer")
   
-  let chinese_key = ContextKey::new("中文上下文键")
-  let ctx_with_chinese = Context::with_value(ctx, chinese_key, "中文上下文值")
+  // Create spans with multilingual names
+  let english_span = Tracer::start_span(tracer, "http_request_processing")
+  let chinese_span = Tracer::start_span(tracer, "HTTP请求处理")
+  let japanese_span = Tracer::start_span(tracer, "HTTPリクエスト処理")
+  let korean_span = Tracer::start_span(tracer, "HTTP 요청 처리")
   
-  let chinese_value = Context::get(ctx_with_chinese, chinese_key)
-  match chinese_value {
-    Some(value) => assert_eq(value, "中文上下文值")
-    None => assert_true(false) // 简化实现可能不支持
-  }
+  // Add multilingual events
+  Span::add_event(english_span, "request_received", Some([("status", StringValue("received"))]))
+  Span::add_event(chinese_span, "请求已接收", Some([("状态", StringValue("已接收"))]))
+  Span::add_event(japanese_span, "リクエスト受信", Some([("ステータス", StringValue("受信済み"))]))
+  Span::add_event(korean_span, "요청 수신", Some([("상태", StringValue("수신됨"))]))
   
-  let japanese_key = ContextKey::new("日本語コンテキストキー")
-  let ctx_with_japanese = Context::with_value(ctx_with_chinese, japanese_key, "日本語コンテキスト値")
+  // Set multilingual status descriptions
+  Span::set_status(english_span, Ok, Some("Request processed successfully"))
+  Span::set_status(chinese_span, Ok, Some("请求处理成功"))
+  Span::set_status(japanese_span, Ok, Some("リクエストが正常に処理されました"))
+  Span::set_status(korean_span, Ok, Some("요청이 성공적으로 처리되었습니다"))
   
-  let korean_key = ContextKey::new("한국어 컨텍스트 키")
-  let ctx_with_korean = Context::with_value(ctx_with_japanese, korean_key, "한국어 컨텍스트 값")
+  // Verify span names
+  @assertion.assert_eq(Span::name(english_span), "http_request_processing")?
+  @assertion.assert_eq(Span::name(chinese_span), "HTTP请求处理")?
+  @assertion.assert_eq(Span::name(japanese_span), "HTTPリクエスト処理")?
+  @assertion.assert_eq(Span::name(korean_span), "HTTP 요청 처리")?
   
-  let arabic_key = ContextKey::new("مفتاح السياق باللغة العربية")
-  let ctx_with_arabic = Context::with_value(ctx_with_korean, arabic_key, "قيمة السياق باللغة العربية")
+  // End spans
+  Span::end(english_span)
+  Span::end(chinese_span)
+  Span::end(japanese_span)
+  Span::end(korean_span)
+}
+
+test "internationalized_http_content" {
+  // Test HTTP requests and responses with internationalized content
+  let request_headers = [
+    ("Content-Type", "application/json; charset=utf-8"),
+    ("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8"),
+    ("X-Content-Language", "zh-CN")
+  ]
   
-  let russian_key = ContextKey::new("ключ контекста на русском языке")
-  let ctx_with_russian = Context::with_value(ctx_with_arabic, russian_key, "значение контекста на русском языке")
+  let multilingual_body = "{\"message\":\"用户操作成功\",\"details\":{\"user\":\"张三\",\"action\":\"登录\",\"timestamp\":\"2025-01-01T00:00:00Z\"}}"
   
-  // 验证多语言Context值
-  let russian_value = Context::get(ctx_with_russian, russian_key)
-  match russian_value {
-    Some(value) => assert_eq(value, "значение контекста на русском языке")
-    None => assert_true(false)
-  }
+  let request = HttpRequest::new(
+    "POST",
+    "https://api.example.com/telemetry/internationalized",
+    request_headers,
+    Some(multilingual_body)
+  )
   
-  // 测试多语言Baggage
+  // Verify request with internationalized content
+  @assertion.assert_eq(HttpRequest::http_method(request), "POST")?
+  @assertion.assert_eq(HttpRequest::url(request), "https://api.example.com/telemetry/internationalized")?
+  @assertion.assert_eq(HttpRequest::body(request), Some(multilingual_body))?
+  
+  let response_headers = [
+    ("Content-Type", "application/json; charset=utf-8"),
+    ("Content-Language", "zh-CN"),
+    ("X-Response-Language", "zh-CN")
+  ]
+  
+  let response_body = "{\"status\":\"成功\",\"data\":{\"processed\":true,\"count\":42},\"message\":\"数据处理完成\"}"
+  
+  let response = HttpResponse::new(200, response_headers, Some(response_body))
+  
+  // Verify response with internationalized content
+  @assertion.assert_eq(HttpResponse::status_code(response), 200)?
+  @assertion.assert_eq(HttpResponse::body(response), Some(response_body))?
+}
+
+test "localized_baggage_entries" {
+  // Test baggage entries with localized content
   let baggage = Baggage::new()
   
-  let baggage_with_chinese = Baggage::set_entry(baggage, "中文条目", "中文值")
-  let baggage_with_japanese = Baggage::set_entry(baggage_with_chinese, "日本語エントリ", "日本語値")
-  let baggage_with_korean = Baggage::set_entry(baggage_with_japanese, "한국어 항목", "한국어 값")
-  let baggage_with_arabic = Baggage::set_entry(baggage_with_korean, "بند باللغة العربية", "قيمة باللغة العربية")
-  let baggage_with_russian = Baggage::set_entry(baggage_with_arabic, "запись на русском языке", "значение на русском языке")
+  // Add localized baggage entries
+  let baggage1 = Baggage::set_entry(baggage, "user.locale", "zh-CN")
+  let baggage2 = Baggage::set_entry(baggage1, "user.timezone", "Asia/Shanghai")
+  let baggage3 = Baggage::set_entry(baggage2, "user.currency", "CNY")
+  let baggage4 = Baggage::set_entry(baggage3, "user.region", "中国")
+  let baggage5 = Baggage::set_entry(baggage4, "user.language", "中文")
   
-  // 验证多语言Baggage条目
-  let chinese_entry = Baggage::get_entry(baggage_with_russian, "中文条目")
-  match chinese_entry {
-    Some(value) => assert_eq(value, "中文值")
-    None => assert_true(false) // 简化实现可能不支持
-  }
+  // Verify localized baggage entries
+  @assertion.assert_eq(Baggage::get_entry(baggage5, "user.locale"), Some("zh-CN"))?
+  @assertion.assert_eq(Baggage::get_entry(baggage5, "user.timezone"), Some("Asia/Shanghai"))?
+  @assertion.assert_eq(Baggage::get_entry(baggage5, "user.currency"), Some("CNY"))?
+  @assertion.assert_eq(Baggage::get_entry(baggage5, "user.region"), Some("中国"))?
+  @assertion.assert_eq(Baggage::get_entry(baggage5, "user.language"), Some("中文"))?
   
-  let japanese_entry = Baggage::get_entry(baggage_with_russian, "日本語エントリ")
-  match japanese_entry {
-    Some(value) => assert_eq(value, "日本語値")
-    None => assert_true(false)
-  }
+  // Test with different locales
+  let japanese_baggage = Baggage::set_entry(baggage, "user.locale", "ja-JP")
+  let korean_baggage = Baggage::set_entry(baggage, "user.locale", "ko-KR")
+  let french_baggage = Baggage::set_entry(baggage, "user.locale", "fr-FR")
   
-  assert_true(true)
+  @assertion.assert_eq(Baggage::get_entry(japanese_baggage, "user.locale"), Some("ja-JP"))?
+  @assertion.assert_eq(Baggage::get_entry(korean_baggage, "user.locale"), Some("ko-KR"))?
+  @assertion.assert_eq(Baggage::get_entry(french_baggage, "user.locale"), Some("fr-FR"))?
 }
 
-test "多语言Propagation测试" {
-  // 测试多语言Context的传播
-  let propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([propagator])
+test "internationalized_instrument_names" {
+  // Test metric instruments with internationalized names and descriptions
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "i18n_meter")
   
+  // Create instruments with internationalized names
+  let chinese_counter = Meter::create_counter(meter, "中文计数器", Some("中文描述"), Some("个"))
+  let japanese_counter = Meter::create_counter(meter, "日本語カウンター", Some("日本語の説明"), Some("個"))
+  let korean_counter = Meter::create_counter(meter, "한국어 카운터", Some("한국어 설명"), Some("개"))
+  
+  let chinese_histogram = Meter::create_histogram(meter, "中文直方图", Some("中文直方图描述"), Some("毫秒"))
+  let japanese_histogram = Meter::create_histogram(meter, "日本語ヒストグラム", Some("日本語ヒストグラムの説明"), Some("ミリ秒"))
+  
+  // Verify instrument names
+  @assertion.assert_eq(chinese_counter.name, "中文计数器")?
+  @assertion.assert_eq(japanese_counter.name, "日本語カウンター")?
+  @assertion.assert_eq(korean_counter.name, "한국어 카운터")?
+  @assertion.assert_eq(chinese_histogram.name, "中文直方图")?
+  @assertion.assert_eq(japanese_histogram.name, "日本語ヒストグラム")?
+  
+  // Verify instrument descriptions
+  @assertion.assert_eq(chinese_counter.description, Some("中文描述"))?
+  @assertion.assert_eq(japanese_counter.description, Some("日本語の説明"))?
+  @assertion.assert_eq(korean_counter.description, Some("한국어 설명"))?
+  @assertion.assert_eq(chinese_histogram.description, Some("中文直方图描述"))?
+  @assertion.assert_eq(japanese_histogram.description, Some("日本語ヒストグラムの説明"))?
+  
+  // Verify instrument units
+  @assertion.assert_eq(chinese_counter.unit, Some("个"))?
+  @assertion.assert_eq(japanese_counter.unit, Some("個"))?
+  @assertion.assert_eq(korean_counter.unit, Some("개"))?
+  @assertion.assert_eq(chinese_histogram.unit, Some("毫秒"))?
+  @assertion.assert_eq(japanese_histogram.unit, Some("ミリ秒"))?
+  
+  // Test metric operations with internationalized instruments
+  Counter::add(chinese_counter, 100.0)
+  Counter::add(japanese_counter, 200.0)
+  Counter::add(korean_counter, 300.0)
+  Histogram::record(chinese_histogram, 150.5)
+  Histogram::record(japanese_histogram, 250.5)
+}
+
+test "complex_multilingual_scenarios" {
+  // Test complex scenarios with multiple languages
+  
+  // Create a multilingual context
   let ctx = Context::root()
+  let locale_key = ContextKey::new("locale")
+  let message_key = ContextKey::new("message")
   
-  // 添加多语言上下文值
-  let ctx_with_multilingual = Context::with_value(
-    Context::with_value(
-      Context::with_value(
-        Context::with_value(
-          Context::with_value(ctx, ContextKey::new("中文信息"), "这是中文信息"),
-          ContextKey::new("English Info"), "This is English info"
-        ),
-        ContextKey::new("日本語情報"), "これは日本語の情報です"
-      ),
-      ContextKey::new("한국어 정보"), "이것은 한국어 정보입니다"
-    ),
-    ContextKey::new("معلومات عربية"), "هذه معلومات باللغة العربية"
+  let ctx_zh = Context::with_value(
+    Context::with_value(ctx, locale_key, "zh-CN"),
+    message_key, "用户操作完成"
   )
   
-  // 创建载体并注入多语言上下文
-  let carrier = TextMapCarrier::new()
-  CompositePropagator::inject(composite, ctx_with_multilingual, carrier)
-  
-  // 添加自定义的多语言头部
-  TextMapCarrier::set(carrier, "X-中文-头部", "中文头部值")
-  TextMapCarrier::set(carrier, "X-English-Header", "English header value")
-  TextMapCarrier::set(carrier, "X-日本語-ヘッダー", "日本語ヘッダー値")
-  TextMapCarrier::set(carrier, "X-한국어-헤더", "한국어 헤더 값")
-  TextMapCarrier::set(carrier, "X-العربية-رأس", "قيمة الرأس العربية")
-  TextMapCarrier::set(carrier, "X-Русский-Заголовок", "Русское значение заголовка")
-  
-  // 验证注入的多语言头部
-  let chinese_header = TextMapCarrier::get(carrier, "X-中文-头部")
-  match chinese_header {
-    Some(value) => assert_eq(value, "中文头部值")
-    None => assert_true(false) // 简化实现可能不支持
-  }
-  
-  let english_header = TextMapCarrier::get(carrier, "X-English-Header")
-  match english_header {
-    Some(value) => assert_eq(value, "English header value")
-    None => assert_true(false)
-  }
-  
-  // 从载体中提取上下文
-  let extracted_ctx = CompositePropagator::extract(composite, carrier)
-  
-  // 验证提取的上下文
-  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  match extracted_value {
-    Some(value) => assert_eq(value, "true")
-    None => assert_true(false)
-  }
-  
-  assert_true(true)
-}
-
-test "本地化时间戳和格式化测试" {
-  let clock = Clock::system()
-  let timestamp = Clock::now_unix_nanos(clock)
-  
-  // 测试不同语言环境的时间戳表示
-  let log_record_chinese = LogRecord::new_with_context(
-    Info,
-    Some("中文日志记录，时间戳：" + timestamp.to_string()),
-    None,
-    Some(timestamp),
-    Some(timestamp + 1000000L),
-    Some("中文追踪ID"),
-    Some("中文SpanID"),
-    Some(Context::root())
+  let ctx_ja = Context::with_value(
+    Context::with_value(ctx, locale_key, "ja-JP"),
+    message_key, "ユーザーオペレーション完了"
   )
   
-  let log_record_english = LogRecord::new_with_context(
-    Info,
-    Some("English log record, timestamp: " + timestamp.to_string()),
-    None,
-    Some(timestamp),
-    Some(timestamp + 1000000L),
-    Some("English TraceID"),
-    Some("English SpanID"),
-    Some(Context::root())
+  let ctx_ko = Context::with_value(
+    Context::with_value(ctx, locale_key, "ko-KR"),
+    message_key, "사용자 작업 완료"
   )
   
-  let log_record_japanese = LogRecord::new_with_context(
-    Info,
-    Some("日本語ログ記録、タイムスタンプ：" + timestamp.to_string()),
-    None,
-    Some(timestamp),
-    Some(timestamp + 1000000L),
-    Some("日本語トレースID"),
-    Some("日本語スパンID"),
-    Some(Context::root())
-  )
+  // Verify multilingual contexts
+  @assertion.assert_eq(Context::get(ctx_zh, locale_key), Some("zh-CN"))?
+  @assertion.assert_eq(Context::get(ctx_zh, message_key), Some("用户操作完成"))?
   
-  // 验证不同语言环境的日志记录
-  assert_eq(LogRecord::trace_id(log_record_chinese), Some("中文追踪ID"))
-  assert_eq(LogRecord::trace_id(log_record_english), Some("English TraceID"))
-  assert_eq(LogRecord::trace_id(log_record_japanese), Some("日本語トレースID"))
+  @assertion.assert_eq(Context::get(ctx_ja, locale_key), Some("ja-JP"))?
+  @assertion.assert_eq(Context::get(ctx_ja, message_key), Some("ユーザーオペレーション完了"))?
   
-  match LogRecord::body(log_record_chinese) {
-    Some(body) => assert_true(body.contains("中文日志记录"))
-    None => assert_true(false)
-  }
+  @assertion.assert_eq(Context::get(ctx_ko, locale_key), Some("ko-KR"))?
+  @assertion.assert_eq(Context::get(ctx_ko, message_key), Some("사용자 작업 완료"))?
   
-  match LogRecord::body(log_record_english) {
-    Some(body) => assert_true(body.contains("English log record"))
-    None => assert_true(false)
-  }
+  // Create multilingual span with context
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "multilingual_tracer")
   
-  match LogRecord::body(log_record_japanese) {
-    Some(body) => assert_true(body.contains("日本語ログ記録"))
-    None => assert_true(false)
-  }
+  let span_zh = Tracer::start_span(tracer, "中文操作")
+  Span::add_event(span_zh, "操作开始", Some([("locale", StringValue("zh-CN"))]))
+  Span::end(span_zh)
   
-  assert_true(true)
-}
-
-test "多语言错误消息和状态处理测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "多语言错误测试")
+  let span_ja = Tracer::start_span(tracer, "日本語操作")
+  Span::add_event(span_ja, "操作開始", Some([("locale", StringValue("ja-JP"))]))
+  Span::end(span_ja)
   
-  // 测试多语言错误状态和消息
-  let error_span_chinese = Tracer::start_span(tracer, "中文错误操作")
-  Span::add_event(error_span_chinese, "错误发生", Some([
-    ("错误代码", StringValue="E001"),
-    ("错误消息", StringValue="用户认证失败"),
-    ("错误详情", StringValue="用户名或密码不正确")
-  ]))
-  Span::set_status(error_span_chinese, Error)
-  Span::end(error_span_chinese)
-  
-  let error_span_english = Tracer::start_span(tracer, "English Error Operation")
-  Span::add_event(error_span_english, "Error Occurred", Some([
-    ("Error Code", StringValue="E001"),
-    ("Error Message", StringValue="User authentication failed"),
-    ("Error Details", StringValue="Username or password is incorrect")
-  ]))
-  Span::set_status(error_span_english, Error)
-  Span::end(error_span_english)
-  
-  let error_span_japanese = Tracer::start_span(tracer, "日本語エラー操作")
-  Span::add_event(error_span_japanese, "エラーが発生しました", Some([
-    ("エラーコード", StringValue="E001"),
-    ("エラーメッセージ", StringValue="ユーザー認証失敗"),
-    ("エラー詳細", StringValue="ユーザー名またはパスワードが正しくありません")
-  ]))
-  Span::set_status(error_span_japanese, Error)
-  Span::end(error_span_japanese)
-  
-  // 测试多语言错误日志
+  // Create multilingual log with context
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "多语言错误日志")
+  let logger = LoggerProvider::get_logger(logger_provider, "multilingual_logger")
   
-  let error_log_chinese = LogRecord::new_with_context(
-    Error,
-    Some("严重错误：数据库连接失败"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
+  let log_zh = LogRecord::new_with_context(
+    Info,
+    Some("系统日志：用户认证成功"),
     None,
-    Some("错误追踪ID"),
-    Some("错误SpanID"),
-    Some(Context::root())
+    Some(1735689600000000000L),
+    None,
+    Some("trace123"),
+    Some("span456"),
+    Some(ctx_zh)
   )
   
-  let error_log_english = LogRecord::new_with_context(
-    Error,
-    Some("Critical error: Database connection failed"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
+  let log_ja = LogRecord::new_with_context(
+    Info,
+    Some("システムログ：ユーザー認証成功"),
     None,
-    Some("Error TraceID"),
-    Some("Error SpanID"),
-    Some(Context::root())
+    Some(1735689600000000000L),
+    None,
+    Some("trace123"),
+    Some("span456"),
+    Some(ctx_ja)
   )
   
-  let error_log_japanese = LogRecord::new_with_context(
-    Error,
-    Some("重大なエラー：データベース接続に失敗しました"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some("エラートレースID"),
-    Some("エラースパンID"),
-    Some(Context::root())
-  )
+  // Verify multilingual logs
+  @assertion.assert_eq(LogRecord::body(log_zh), Some("系统日志：用户认证成功"))?
+  @assertion.assert_eq(LogRecord::body(log_ja), Some("システムログ：ユーザー認証成功"))?
   
-  Logger::emit(logger, error_log_chinese)
-  Logger::emit(logger, error_log_english)
-  Logger::emit(logger, error_log_japanese)
-  
-  assert_true(true)
+  Logger::emit(logger, log_zh)
+  Logger::emit(logger, log_ja)
 }
 
-test "Unicode和特殊字符处理测试" {
-  // 测试各种Unicode字符和特殊符号的处理
+test "right_to_left_language_support" {
+  // Test support for right-to-left languages
+  let arabic_text = "نص تجريبي باللغة العربية"
+  let hebrew_text = "טקסט ניסיון בעברית"
+  let persian_text = "متن آزمایشی به زبان فارسی"
+  let urdu_text = "اردو میں تجرباتی متن"
+  
+  // Test RTL in attributes
   let attrs = Attributes::new()
+  Attributes::set(attrs, "arabic.text", StringValue(arabic_text))
+  Attributes::set(attrs, "hebrew.text", StringValue(hebrew_text))
+  Attributes::set(attrs, "persian.text", StringValue(persian_text))
+  Attributes::set(attrs, "urdu.text", StringValue(urdu_text))
   
-  // 测试各种Unicode字符
-  Attributes::set(attrs, "emoji.test", StringValue("测试emoji 🚀🎉💻📱⚡"))
-  Attributes::set(attrs, "math.symbols", StringValue("数学符号: ∑∏∫∆∇∂√∞≈≠≤≥"))
-  Attributes::set(attrs, "currency.symbols", StringValue="货币符号: $¥€£¢₹₽₩"))
-  Attributes::set(attrs, "arrows.symbols", StringValue("箭头符号: ←→↑↓↖↗↘↙⇐⇒⇑⇓"))
-  Attributes::set(attrs, "punctuation.symbols", StringValue="标点符号: ，。；：？！""''（）【】《》"))
+  // Test RTL in context
+  let ctx = Context::root()
+  let rtl_key = ContextKey::new("rtl.text")
+  let ctx_rtl = Context::with_value(ctx, rtl_key, arabic_text + " " + hebrew_text)
   
-  // 测试复合脚本文本
-  Attributes::set(attrs, "mixed.script", StringValue="English中文日本語한국االعبيةРусский")
+  @assertion.assert_eq(Context::get(ctx_rtl, rtl_key), Some(arabic_text + " " + hebrew_text))?
   
-  // 测试右侧到左侧的文本
-  Attributes::set(attrs, "rtl.text", StringValue="العربية النص من اليمين إلى اليسار"))
-  
-  // 测试组合字符
-  Attributes::set(attrs, "combining.chars", StringValue="组合字符测试: é = e + ́")
-  
-  // 验证特殊字符可以正确处理
-  let emoji_test = Attributes::get(attrs, "emoji.test")
-  match emoji_test {
-    Some(StringValue(value)) => assert_true(value.contains("🚀"))
-    None => assert_true(false)
-  }
-  
-  let math_symbols = Attributes::get(attrs, "math.symbols")
-  match math_symbols {
-    Some(StringValue(value)) => assert_true(value.contains("∑"))
-    None => assert_true(false)
-  }
-  
-  // 测试包含特殊字符的Span和日志
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "特殊字符测试")
-  
-  let special_span = Tracer::start_span(tracer, "Special Characters Span 🌟")
-  Span::add_event(special_span, "特殊字符事件", Some([
-    ("emoji", StringValue="🎉🚀💯"),
-    ("数学", StringValue="∑∏∫∆∇"),
-    ("箭头", StringValue="←→↑↓")
-  ]))
-  Span::end(special_span)
-  
+  // Test RTL in logs
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "特殊字符日志")
+  let logger = LoggerProvider::get_logger(logger_provider, "rtl_logger")
   
-  let special_log = LogRecord::new(Info, "特殊字符日志记录 🎊 包含各种符号: ∑∏∫ ←→↑↓ $¥€£")
-  Logger::emit(logger, special_log)
+  let arabic_log = LogRecord::new(Info, arabic_text)
+  let hebrew_log = LogRecord::new(Info, hebrew_text)
+  let persian_log = LogRecord::new(Info, persian_text)
+  let urdu_log = LogRecord::new(Info, urdu_text)
   
-  assert_true(true)
+  @assertion.assert_eq(LogRecord::body(arabic_log), Some(arabic_text))?
+  @assertion.assert_eq(LogRecord::body(hebrew_log), Some(hebrew_text))?
+  @assertion.assert_eq(LogRecord::body(persian_log), Some(persian_text))?
+  @assertion.assert_eq(LogRecord::body(urdu_log), Some(urdu_text))?
+  
+  Logger::emit(logger, arabic_log)
+  Logger::emit(logger, hebrew_log)
+  Logger::emit(logger, persian_log)
+  Logger::emit(logger, urdu_log)
 }

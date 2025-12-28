@@ -1,780 +1,521 @@
-// Real-time Dashboard Tests
-// 实时仪表板测试，测试实时数据流处理和仪表板功能
+// Realtime Dashboard Tests for Azimuth Telemetry System
+// Tests real-time data processing and dashboard functionality
 
-test "实时仪表板基本数据流测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "dashboard.tracer")
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "dashboard.logger")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "dashboard.meter")
+test "realtime_metrics_streaming" {
+  // Test real-time metrics streaming and processing
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "realtime_dashboard_meter")
   
-  // 模拟实时数据流
+  // Create real-time metrics instruments
+  let request_rate = Meter::create_counter(meter, "requests_per_second", Some("Request rate per second"), Some("requests/s"))
+  let response_time = Meter::create_histogram(meter, "response_time_ms", Some("Response time distribution"), Some("ms"))
+  let error_rate = Meter::create_counter(meter, "errors_per_second", Some("Error rate per second"), Some("errors/s"))
+  let active_users = Meter::create_gauge(meter, "active_users", Some("Currently active users"), Some("users"))
+  let memory_usage = Meter::create_updown_counter(meter, "memory_usage_mb", Some("Memory usage in MB"), Some("MB"))
+  
+  // Simulate real-time metric updates
   let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // 创建仪表板指标
-  let request_counter = Meter::create_counter(meter, "dashboard.requests.total")
-  let response_time_histogram = Meter::create_histogram(meter, "dashboard.response.time")
-  let active_users_gauge = Meter::create_gauge(meter, "dashboard.active.users")
-  let error_rate_gauge = Meter::create_gauge(meter, "dashboard.error.rate")
-  
-  // 模拟实时请求处理
-  for i in 0..100 {
-    let request_span = Tracer::start_span(tracer, "dashboard.request." + i.to_string())
+  // Simulate 1 second of real-time data
+  for i = 0; i < 100; i = i + 1 {
+    Counter::add(request_rate, 1.0)
+    Histogram::record(response_time, @unwrap_int_as_double(50 + (i % 100)))
     
-    // 记录请求开始
-    Span::add_event(request_span, "request.started", Some([
-      ("request.id", StringValue("req-" + i.to_string())),
-      ("user.id", StringValue("user-" + (i % 10).to_string())),
-      ("endpoint", StringValue("/api/dashboard/data"))
-    ]))
-    
-    // 模拟处理时间
-    let processing_time = 50.0 + (i.to_float() * 2.0) // 50-248ms
-    Histogram::record(response_time_histogram, processing_time, Some(Attributes::with_attributes(Attributes::new(), [
-      ("endpoint", StringValue("/api/dashboard/data")),
-      ("method", StringValue("GET"))
-    ])))
-    
-    // 记录请求计数
-    Counter::add(request_counter, 1.0, Some(Attributes::with_attributes(Attributes::new(), [
-      ("endpoint", StringValue("/api/dashboard/data")),
-      ("status.code", IntValue(if i % 20 == 0 { 500 } else { 200 }))
-    ])))
-    
-    // 模拟错误
-    if i % 20 == 0 {
-      Span::set_status(request_span, Error)
-      Span::add_event(request_span, "error.occurred", Some([
-        ("error.type", StringValue("InternalError")),
-        ("error.message", StringValue("Dashboard data processing failed"))
-      ]))
-      
-      let error_log = LogRecord::new_with_context(
-        Error,
-        Some("Dashboard request failed"),
-        Some(Attributes::with_attributes(Attributes::new(), [
-          ("request.id", StringValue("req-" + i.to_string())),
-          ("error.type", StringValue("InternalError")),
-          ("processing.time.ms", IntValue(processing_time.to_int()))
-        ])),
-        Some(Clock::now_unix_nanos(Clock::system())),
-        None,
-        Some(SpanContext::trace_id(Span::span_context(request_span))),
-        Some(SpanContext::span_id(Span::span_context(request_span))),
-        None
-      )
-      
-      Logger::emit(logger, error_log)
-    } else {
-      Span::set_status(request_span, Ok)
+    // Simulate occasional errors
+    if i % 10 == 0 {
+      Counter::add(error_rate, 1.0)
     }
     
-    Span::end(request_span)
+    // Simulate memory usage changes
+    if i % 5 == 0 {
+      UpDownCounter::add(memory_usage, 10.0)
+    } else {
+      UpDownCounter::add(memory_usage, -2.0)
+    }
   }
   
-  // 更新活跃用户数
-  let active_users = 42 + (Random::next_u64(Random::system()) % 20).to_int() // 42-61个活跃用户
-  // 注意：简化实现中Gauge可能不支持设置值
-  
-  // 更新错误率
-  let error_rate = 5.0 // 5%错误率
-  // 注意：简化实现中Gauge可能不支持设置值
+  // Update active users gauge
+  UpDownCounter::add(memory_usage, 500.0) // Simulate initial active users
   
   let end_time = Clock::now_unix_nanos(Clock::system())
-  let total_duration = end_time - start_time
+  let duration = end_time - start_time
   
-  // 验证数据流处理完成
-  assert_true(total_duration > 0L)
-  assert_true(total_duration < 10000000000L) // 小于10秒
+  // Verify real-time processing performance
+  @assertion.assert_true(duration < 10000000L)? // Less than 10ms for 100 operations
   
-  // 创建仪表板摘要日志
-  let summary_log = LogRecord::new_with_context(
-    Info,
-    Some("Dashboard real-time data processing summary"),
-    Some(Attributes::with_attributes(Attributes::new(), [
-      ("total.requests", IntValue(100)),
-      ("error.count", IntValue(5)), // 100个请求中有5个错误
-      ("processing.duration.ms", IntValue((total_duration / 1000000L).to_int())),
-      ("avg.response.time.ms", FloatValue(149.0)), // 平均处理时间
-      ("active.users", IntValue(active_users)),
-      ("error.rate.percent", FloatValue(error_rate))
-    ])),
-    Some(end_time),
-    None,
-    None,
-    None,
-    None
-  )
+  // Verify instrument integrity
+  @assertion.assert_eq(request_rate.name, "requests_per_second")?
+  @assertion.assert_eq(response_time.name, "response_time_ms")?
+  @assertion.assert_eq(error_rate.name, "errors_per_second")?
+  @assertion.assert_eq(active_users.name, "active_users")?
+  @assertion.assert_eq(memory_usage.name, "memory_usage_mb")?
   
-  Logger::emit(logger, summary_log)
-  
-  assert_true(true) // 如果没有崩溃则测试通过
+  @assertion.assert_eq(request_rate.description, Some("Request rate per second"))?
+  @assertion.assert_eq(response_time.description, Some("Response time distribution"))?
+  @assertion.assert_eq(error_rate.description, Some("Error rate per second"))?
+  @assertion.assert_eq(active_users.description, Some("Currently active users"))?
+  @assertion.assert_eq(memory_usage.description, Some("Memory usage in MB"))?
 }
 
-test "仪表板实时指标聚合测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "aggregation.test")
-  
-  // 创建各种类型的指标
-  let request_counter = Meter::create_counter(meter, "requests.total")
-  let response_histogram = Meter::create_histogram(meter, "response.time.ms")
-  let cpu_gauge = Meter::create_gauge(meter, "system.cpu.percent")
-  let memory_gauge = Meter::create_gauge(meter, "system.memory.percent")
-  let active_connections = Meter::create_updown_counter(meter, "connections.active")
-  
-  // 模拟不同时间窗口的数据聚合
-  let time_windows = ["1m", "5m", "15m", "1h", "24h"]
-  
-  for window in time_windows {
-    // 为每个时间窗口生成数据
-    let window_start = Clock::now_unix_nanos(Clock::system())
-    
-    for i in 0..50 {
-      // 生成不同类型的请求
-      let endpoints = ["/api/users", "/api/orders", "/api/products", "/api/dashboard"]
-      let endpoint = endpoints[i % endpoints.length()]
-      
-      let response_time = match endpoint {
-        "/api/users" => 25.0 + (Random::next_u64(Random::system()) % 50).to_float()
-        "/api/orders" => 100.0 + (Random::next_u64(Random::system()) % 200).to_float()
-        "/api/products" => 50.0 + (Random::next_u64(Random::system()) % 100).to_float()
-        "/api/dashboard" => 200.0 + (Random::next_u64(Random::system()) % 300).to_float()
-        _ => 100.0
-      }
-      
-      // 记录指标
-      Counter::add(request_counter, 1.0, Some(Attributes::with_attributes(Attributes::new(), [
-        ("endpoint", StringValue(endpoint)),
-        ("method", StringValue("GET")),
-        ("time.window", StringValue(window))
-      ])))
-      
-      Histogram::record(response_histogram, response_time, Some(Attributes::with_attributes(Attributes::new(), [
-        ("endpoint", StringValue(endpoint)),
-        ("time.window", StringValue(window))
-      ])))
-      
-      // 模拟连接数变化
-      if i % 3 == 0 {
-        UpDownCounter::add(active_connections, 1.0, Some(Attributes::with_attributes(Attributes::new(), [
-          ("time.window", StringValue(window))
-        ])))
-      } else if i % 7 == 0 {
-        UpDownCounter::add(active_connections, -1.0, Some(Attributes::with_attributes(Attributes::new(), [
-          ("time.window", StringValue(window))
-        ])))
-      }
-    }
-    
-    // 更新系统指标
-    let cpu_usage = 20.0 + (Random::next_u64(Random::system()) % 60).to_float() // 20-80%
-    let memory_usage = 30.0 + (Random::next_u64(Random::system()) % 50).to_float() // 30-80%
-    
-    // 注意：简化实现中Gauge可能不支持设置值
-    // 这里只是调用接口模拟仪表板数据更新
-    
-    let window_end = Clock::now_unix_nanos(Clock::system())
-    let window_duration = window_end - window_start
-    
-    // 记录窗口聚合结果
-    let logger_provider = LoggerProvider::default()
-    let logger = LoggerProvider::get_logger(logger_provider, "aggregation.logger")
-    
-    let aggregation_log = LogRecord::new_with_context(
-      Info,
-      Some("Dashboard aggregation for window: " + window),
-      Some(Attributes::with_attributes(Attributes::new(), [
-        ("time.window", StringValue(window)),
-        ("total.requests", IntValue(50)),
-        ("window.duration.ms", IntValue((window_duration / 1000000L).to_int())),
-        ("cpu.usage.percent", FloatValue(cpu_usage)),
-        ("memory.usage.percent", FloatValue(memory_usage))
-      ])),
-      Some(window_end),
-      None,
-      None,
-      None,
-      None
-    )
-    
-    Logger::emit(logger, aggregation_log)
-  }
-  
-  assert_true(true) // 如果没有崩溃则测试通过
-}
-
-test "仪表板实时告警测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "alert.tracer")
+test "realtime_log_streaming" {
+  // Test real-time log streaming and processing
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "alert.logger")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "alert.meter")
+  let logger = LoggerProvider::get_logger(logger_provider, "realtime_dashboard_logger")
   
-  // 创建告警相关指标
-  let error_counter = Meter::create_counter(meter, "errors.total")
-  let latency_histogram = Meter::create_histogram(meter, "latency.ms")
-  let threshold_gauge = Meter::create_gauge(meter, "alert.threshold")
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // 定义告警阈值
-  let error_threshold = 10 // 错误数阈值
-  let latency_threshold = 1000.0 // 延迟阈值（毫秒）
-  
-  // 模拟触发告警的场景
-  let alert_scenarios = [
-    ("high.error.rate", "Error rate exceeded threshold"),
-    ("high.latency", "Response latency exceeded threshold"),
-    ("service.down", "Service is not responding"),
-    ("resource.exhaustion", "System resources exhausted"),
-    ("anomaly.detected", "Unusual pattern detected")
-  ]
-  
-  for scenario in alert_scenarios {
-    let scenario_name = scenario.0
-    let scenario_description = scenario.1
+  // Simulate real-time log stream
+  for i = 0; i < 50; i = i + 1 {
+    let timestamp = 1735689600000000000L + @unwrap_int_as_i64(i * 1000000L) // 1ms intervals
     
-    let alert_span = Tracer::start_span(tracer, "alert." + scenario_name)
-    
-    // 模拟告警触发条件
-    match scenario_name {
-      "high.error.rate" => {
-        // 生成大量错误
-        for i in 0..15 {
-          Counter::add(error_counter, 1.0, Some(Attributes::with_attributes(Attributes::new(), [
-            ("error.type", StringValue("ValidationError")),
-            ("alert.scenario", StringValue(scenario_name))
-          ])))
-        }
-        
-        Span::set_status(alert_span, Error)
-        Span::add_event(alert_span, "alert.triggered", Some([
-          ("alert.type", StringValue("error_rate")),
-          ("error.count", IntValue(15)),
-          ("error.threshold", IntValue(error_threshold))
-        ]))
-      }
-      "high.latency" => {
-        // 生成高延迟
-        for i in 0..5 {
-          let high_latency = 1200.0 + (i.to_float() * 100.0)
-          Histogram::record(latency_histogram, high_latency, Some(Attributes::with_attributes(Attributes::new(), [
-            ("endpoint", StringValue("/api/slow")),
-            ("alert.scenario", StringValue(scenario_name))
-          ])))
-        }
-        
-        Span::set_status(alert_span, Error)
-        Span::add_event(alert_span, "alert.triggered", Some([
-          ("alert.type", StringValue("latency")),
-          ("avg.latency.ms", FloatValue(1350.0)),
-          ("latency.threshold", FloatValue(latency_threshold))
-        ]))
-      }
-      "service.down" => {
-        Span::set_status(alert_span, Error)
-        Span::add_event(alert_span, "alert.triggered", Some([
-          ("alert.type", StringValue("service_down")),
-          ("service.name", StringValue("critical-service")),
-          ("health.check", StringValue("failed"))
-        ]))
-      }
-      "resource.exhaustion" => {
-        Span::set_status(alert_span, Error)
-        Span::add_event(alert_span, "alert.triggered", Some([
-          ("alert.type", StringValue("resource_exhaustion")),
-          ("resource.type", StringValue("memory")),
-          ("usage.percent", FloatValue(95.5))
-        ]))
-      }
-      "anomaly.detected" => {
-        Span::set_status(alert_span, Error)
-        Span::add_event(alert_span, "alert.triggered", Some([
-          ("alert.type", StringValue("anomaly")),
-          ("anomaly.score", FloatValue(0.95)),
-          ("baseline.deviation", FloatValue(3.5))
-        ]))
-      }
-      _ => assert_true(true)
+    // Create different types of log messages
+    let log = match i % 5 {
+      0 => LogRecord::new_with_context(
+        Info,
+        Some("User login: user" + @unwrap_int_as_string(i)),
+        None,
+        Some(timestamp),
+        None,
+        Some("realtime_trace"),
+        Some("realtime_span"),
+        None
+      )
+      1 => LogRecord::new_with_context(
+        Warn,
+        Some("High memory usage detected"),
+        None,
+        Some(timestamp),
+        None,
+        Some("realtime_trace"),
+        Some("realtime_span"),
+        None
+      )
+      2 => LogRecord::new_with_context(
+        Error,
+        Some("Database connection timeout"),
+        None,
+        Some(timestamp),
+        None,
+        Some("realtime_trace"),
+        Some("realtime_span"),
+        None
+      )
+      3 => LogRecord::new_with_context(
+        Debug,
+        Some("Processing request: req" + @unwrap_int_as_string(i)),
+        None,
+        Some(timestamp),
+        None,
+        Some("realtime_trace"),
+        Some("realtime_span"),
+        None
+      )
+      _ => LogRecord::new_with_context(
+        Info,
+        Some("Background task completed"),
+        None,
+        Some(timestamp),
+        None,
+        Some("realtime_trace"),
+        Some("realtime_span"),
+        None
+      )
     }
     
-    // 记录告警日志
-    let alert_log = LogRecord::new_with_context(
-      Error,
-      Some("Dashboard alert: " + scenario_description),
-      Some(Attributes::with_attributes(Attributes::new(), [
-        ("alert.scenario", StringValue(scenario_name)),
-        ("alert.severity", StringValue("critical")),
-        ("alert.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string())),
-        ("dashboard.component", StringValue("realtime_monitor"))
-      ])),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(Span::span_context(alert_span))),
-      Some(SpanContext::span_id(Span::span_context(alert_span))),
-      None
-    )
-    
-    Logger::emit(logger, alert_log)
-    
-    // 模拟告警恢复
-    Span::set_status(alert_span, Ok)
-    Span::add_event(alert_span, "alert.resolved", Some([
-      ("alert.resolution.time", StringValue(Clock::now_unix_nanos(Clock::system()).to_string())),
-      ("alert.duration.ms", IntValue(5000))
-    ]))
-    
-    let recovery_log = LogRecord::new_with_context(
-      Info,
-      Some("Dashboard alert resolved: " + scenario_description),
-      Some(Attributes::with_attributes(Attributes::new(), [
-        ("alert.scenario", StringValue(scenario_name)),
-        ("alert.status", StringValue("resolved")),
-        ("resolution.strategy", StringValue("automatic"))
-      ])),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(Span::span_context(alert_span))),
-      Some(SpanContext::span_id(Span::span_context(alert_span))),
-      None
-    )
-    
-    Logger::emit(logger, recovery_log)
-    
-    Span::end(alert_span)
+    Logger::emit(logger, log)
   }
   
-  assert_true(true) // 如果没有崩溃则测试通过
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration = end_time - start_time
+  
+  // Verify real-time log processing performance
+  @assertion.assert_true(duration < 5000000L)? // Less than 5ms for 50 log operations
 }
 
-test "仪表板多维度数据分析测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "multidimension.test")
+test "realtime_span_monitoring" {
+  // Test real-time span monitoring and lifecycle tracking
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "realtime_dashboard_tracer")
   
-  // 创建多维度指标
-  let request_counter = Meter::create_counter(meter, "requests.multidimension")
-  let latency_histogram = Meter::create_histogram(meter, "latency.multidimension")
+  let active_spans = []
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // 定义数据维度
-  let dimensions = [
-    ("endpoint", ["/api/users", "/api/orders", "/api/products", "/api/dashboard"]),
-    ("method", ["GET", "POST", "PUT", "DELETE"]),
-    ("region", ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"]),
-    ("user.tier", ["free", "basic", "premium", "enterprise"]),
-    ("status", ["success", "error", "timeout"])
-  ]
-  
-  // 生成多维度数据
-  for i in 0..200 {
-    let endpoint = dimensions[0].1[i % dimensions[0].1.length()]
-    let method = dimensions[1].1[i % dimensions[1].1.length()]
-    let region = dimensions[2].1[i % dimensions[2].1.length()]
-    let user_tier = dimensions[3].1[i % dimensions[3].1.length()]
-    let status = if i % 10 == 0 { "error" } else if i % 20 == 0 { "timeout" } else { "success" }
+  // Create and monitor spans in real-time
+  for i = 0; i < 20; i = i + 1 {
+    let span = Tracer::start_span(tracer, "realtime_operation_" + @unwrap_int_as_string(i))
     
-    // 记录多维度请求计数
-    Counter::add(request_counter, 1.0, Some(Attributes::with_attributes(Attributes::new(), [
-      ("endpoint", StringValue(endpoint)),
-      ("method", StringValue(method)),
-      ("region", StringValue(region)),
-      ("user.tier", StringValue(user_tier)),
-      ("status", StringValue(status))
-    ])))
+    // Add real-time events
+    Span::add_event(span, "operation_started", Some([("timestamp", StringValue(@unwrap_int_as_string(1735689600 + i)))]))
     
-    // 记录多维度延迟数据
-    let base_latency = match endpoint {
-      "/api/users" => 50.0
-      "/api/orders" => 150.0
-      "/api/products" => 100.0
-      "/api/dashboard" => 300.0
-      _ => 100.0
+    // Simulate processing time
+    if i % 3 == 0 {
+      Span::add_event(span, "checkpoint_reached", Some([("checkpoint", StringValue("mid"))]))
     }
     
-    let region_factor = match region {
-      "us-east-1" => 1.0
-      "us-west-2" => 1.2
-      "eu-west-1" => 1.5
-      "ap-southeast-1" => 2.0
-      _ => 1.0
-    }
-    
-    let tier_factor = match user_tier {
-      "free" => 2.0
-      "basic" => 1.5
-      "premium" => 1.0
-      "enterprise" => 0.8
-      _ => 1.0
-    }
-    
-    let latency = base_latency * region_factor * tier_factor + (Random::next_u64(Random::system()) % 50).to_float()
-    
-    Histogram::record(latency_histogram, latency, Some(Attributes::with_attributes(Attributes::new(), [
-      ("endpoint", StringValue(endpoint)),
-      ("method", StringValue(method)),
-      ("region", StringValue(region)),
-      ("user.tier", StringValue(user_tier))
-    ])))
-  }
-  
-  // 模拟多维度数据分析
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "multidimension.logger")
-  
-  // 按端点分析
-  for endpoint in dimensions[0].1 {
-    let endpoint_log = LogRecord::new_with_context(
-      Info,
-      Some("Dashboard analysis by endpoint: " + endpoint),
-      Some(Attributes::with_attributes(Attributes::new(), [
-        ("analysis.dimension", StringValue("endpoint")),
-        ("dimension.value", StringValue(endpoint)),
-        ("total.requests", IntValue(50)), // 200个请求均匀分布在4个端点
-        ("analysis.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
-      ])),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      None,
-      None,
-      None
-    )
-    
-    Logger::emit(logger, endpoint_log)
-  }
-  
-  // 按用户等级分析
-  for tier in dimensions[3].1 {
-    let tier_log = LogRecord::new_with_context(
-      Info,
-      Some("Dashboard analysis by user tier: " + tier),
-      Some(Attributes::with_attributes(Attributes::new(), [
-        ("analysis.dimension", StringValue("user_tier")),
-        ("dimension.value", StringValue(tier)),
-        ("total.requests", IntValue(50)), // 200个请求均匀分布在4个等级
-        ("avg.latency.factor", StringValue(match tier {
-          "free" => "2.0"
-          "basic" => "1.5"
-          "premium" => "1.0"
-          "enterprise" => "0.8"
-          _ => "1.0"
-        }))
-      ])),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      None,
-      None,
-      None
-    )
-    
-    Logger::emit(logger, tier_log)
-  }
-  
-  // 按地区分析
-  for region in dimensions[2].1 {
-    let region_log = LogRecord::new_with_context(
-      Info,
-      Some("Dashboard analysis by region: " + region),
-      Some(Attributes::with_attributes(Attributes::new(), [
-        ("analysis.dimension", StringValue("region")),
-        ("dimension.value", StringValue(region)),
-        ("total.requests", IntValue(50)), // 200个请求均匀分布在4个地区
-        ("latency.factor", StringValue(match region {
-          "us-east-1" => "1.0"
-          "us-west-2" => "1.2"
-          "eu-west-1" => "1.5"
-          "ap-southeast-1" => "2.0"
-          _ => "1.0"
-        }))
-      ])),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      None,
-      None,
-      None
-    )
-    
-    Logger::emit(logger, region_log)
-  }
-  
-  assert_true(true) // 如果没有崩溃则测试通过
-}
-
-test "仪表板实时性能监控测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.tracer")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.meter")
-  
-  // 创建性能监控指标
-  let cpu_usage = Meter::create_gauge(meter, "system.cpu.usage")
-  let memory_usage = Meter::create_gauge(meter, "system.memory.usage")
-  let disk_io = Meter::create_counter(meter, "system.disk.io")
-  let network_io = Meter::create_counter(meter, "system.network.io")
-  let gc_time = Meter::create_histogram(meter, "runtime.gc.time")
-  
-  // 模拟实时性能监控
-  let monitoring_duration = 100 // 模拟100个时间点
-  let performance_spans = []
-  
-  for i in 0..monitoring_duration {
-    let performance_span = Tracer::start_span(tracer, "performance.monitoring." + i.to_string())
-    
-    // 模拟CPU使用率变化
-    let cpu_value = 20.0 + (i.to_float() * 0.5) + (Random::next_u64(Random::system()) % 20).to_float()
-    // 注意：简化实现中Gauge可能不支持设置值
-    
-    // 模拟内存使用率变化
-    let memory_value = 30.0 + (i.to_float() * 0.3) + (Random::next_u64(Random::system()) % 15).to_float()
-    // 注意：简化实现中Gauge可能不支持设置值
-    
-    // 模拟磁盘I/O
-    let disk_read_bytes = 1024 * (Random::next_u64(Random::system()) % 100).to_int()
-    let disk_write_bytes = 1024 * (Random::next_u64(Random::system()) % 50).to_int()
-    
-    Counter::add(disk_io, (disk_read_bytes + disk_write_bytes).to_float(), Some(Attributes::with_attributes(Attributes::new(), [
-      ("operation", StringValue("read")),
-      ("monitoring.point", IntValue(i))
-    ])))
-    
-    // 模拟网络I/O
-    let network_sent_bytes = 512 * (Random::next_u64(Random::system()) % 200).to_int()
-    let network_recv_bytes = 512 * (Random::next_u64(Random::system()) % 150).to_int()
-    
-    Counter::add(network_io, (network_sent_bytes + network_recv_bytes).to_float(), Some(Attributes::with_attributes(Attributes::new(), [
-      ("direction", StringValue("outbound")),
-      ("monitoring.point", IntValue(i))
-    ])))
-    
-    // 模拟GC时间
-    if i % 10 == 0 {
-      let gc_duration = 5.0 + (Random::next_u64(Random::system()) % 20).to_float()
-      Histogram::record(gc_time, gc_duration, Some(Attributes::with_attributes(Attributes::new(), [
-        ("gc.type", StringValue("major")),
-        ("monitoring.point", IntValue(i))
-      ])))
-      
-      Span::add_event(performance_span, "gc.occurred", Some([
-        ("gc.duration.ms", FloatValue(gc_duration)),
-        ("gc.type", StringValue("major"))
-      ]))
-    }
-    
-    // 记录性能监控事件
-    Span::add_event(performance_span, "performance.snapshot", Some([
-      ("monitoring.point", IntValue(i)),
-      ("cpu.usage.percent", FloatValue(cpu_value)),
-      ("memory.usage.percent", FloatValue(memory_value)),
-      ("disk.read.bytes", IntValue(disk_read_bytes)),
-      ("disk.write.bytes", IntValue(disk_write_bytes)),
-      ("network.sent.bytes", IntValue(network_sent_bytes)),
-      ("network.recv.bytes", IntValue(network_recv_bytes))
-    ]))
-    
-    // 模拟性能告警
-    if cpu_value > 80.0 {
-      Span::set_status(performance_span, Error)
-      Span::add_event(performance_span, "performance.alert", Some([
-        ("alert.type", StringValue("high_cpu")),
-        ("cpu.usage.percent", FloatValue(cpu_value)),
-        ("alert.threshold", FloatValue(80.0))
-      ]))
-    } else if memory_value > 85.0 {
-      Span::set_status(performance_span, Error)
-      Span::add_event(performance_span, "performance.alert", Some([
-        ("alert.type", StringValue("high_memory")),
-        ("memory.usage.percent", FloatValue(memory_value)),
-        ("alert.threshold", FloatValue(85.0))
-      ]))
+    // Set status based on operation outcome
+    if i % 7 == 0 {
+      Span::set_status(span, Error, Some("Operation failed"))
     } else {
-      Span::set_status(performance_span, Ok)
+      Span::set_status(span, Ok, Some("Operation completed"))
     }
     
-    Span::end(performance_span)
-    performance_spans.push(performance_span)
+    // Add to active spans list
+    active_spans = Array::push(active_spans, span)
+    
+    // Simulate ending some spans immediately
+    if i % 2 == 0 {
+      Span::end(span)
+    }
   }
   
-  // 记录性能监控摘要
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "performance.logger")
+  // End remaining spans
+  for span in active_spans {
+    Span::end(span)
+  }
   
-  let summary_log = LogRecord::new_with_context(
-    Info,
-    Some("Dashboard performance monitoring summary"),
-    Some(Attributes::with_attributes(Attributes::new(), [
-      ("monitoring.duration.points", IntValue(monitoring_duration)),
-      ("avg.cpu.usage", FloatValue(45.5)), // 近似平均值
-      ("avg.memory.usage", FloatValue(38.2)), // 近似平均值
-      ("total.disk.io.mb", IntValue(768)), // 近似总I/O
-      ("total.network.io.mb", IntValue(896)), // 近似总I/O
-      ("gc.events.count", IntValue(10)),
-      ("performance.alerts.count", IntValue(25)) // 近似告警数
-    ])),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    None,
-    None,
-    None
-  )
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration = end_time - start_time
   
-  Logger::emit(logger, summary_log)
+  // Verify real-time span processing performance
+  @assertion.assert_true(duration < 8000000L)? // Less than 8ms for 20 spans
   
-  assert_eq(performance_spans.length(), monitoring_duration)
-  assert_true(true) // 如果没有崩溃则测试通过
+  // Verify span integrity
+  @assertion.assert_eq(active_spans.length, 20)?
+  @assertion.assert_eq(Span::name(active_spans[0]), "realtime_operation_0")?
+  @assertion.assert_eq(Span::name(active_spans[19]), "realtime_operation_19")?
 }
 
-test "仪表板实时数据可视化测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "visualization.meter")
+test "realtime_dashboard_aggregations" {
+  // Test real-time dashboard data aggregations
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "realtime_aggregation_meter")
+  
+  // Create aggregation instruments
+  let total_requests = Meter::create_counter(meter, "total_requests")
+  let success_rate = Meter::create_histogram(meter, "success_rate_percentage")
+  let latency_p95 = Meter::create_histogram(meter, "latency_p95_ms")
+  let throughput = Meter::create_counter(meter, "throughput_ops_per_second")
+  
+  // Simulate real-time aggregation calculations
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  let total_success = 0
+  let total_operations = 0
+  let latency_values = []
+  
+  for i = 0; i < 200; i = i + 1 {
+    // Simulate request processing
+    Counter::add(total_requests, 1.0)
+    Counter::add(throughput, 1.0)
+    
+    // Simulate success/failure
+    let is_success = i % 8 != 0 // 87.5% success rate
+    let success_percentage = if is_success { 100.0 } else { 0.0 }
+    Histogram::record(success_rate, success_percentage)
+    
+    // Simulate latency measurements
+    let latency = @unwrap_int_as_double(20 + (i % 200)) // 20-220ms range
+    Histogram::record(latency_p95, latency)
+    latency_values = Array::push(latency_values, latency)
+    
+    if is_success {
+      total_success = total_success + 1
+    }
+    total_operations = total_operations + 1
+  }
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration = end_time - start_time
+  
+  // Verify aggregation performance
+  @assertion.assert_true(duration < 15000000L)? // Less than 15ms for 200 operations
+  
+  // Verify aggregation results
+  @assertion.assert_eq(total_operations, 200)?
+  @assertion.assert_true(total_success > 150)? // Should be around 175
+  
+  // Verify instrument integrity
+  @assertion.assert_eq(total_requests.name, "total_requests")?
+  @assertion.assert_eq(success_rate.name, "success_rate_percentage")?
+  @assertion.assert_eq(latency_p95.name, "latency_p95_ms")?
+  @assertion.assert_eq(throughput.name, "throughput_ops_per_second")?
+}
+
+test "realtime_alert_processing" {
+  // Test real-time alert processing and threshold monitoring
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "realtime_alert_meter")
+  
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "visualization.logger")
+  let alert_logger = LoggerProvider::get_logger(logger_provider, "realtime_alert_logger")
   
-  // 创建可视化相关指标
-  let chart_data_counter = Meter::create_counter(meter, "chart.data.points")
-  let render_time_histogram = Meter::create_histogram(meter, "chart.render.time")
-  let widget_load_gauge = Meter::create_gauge(meter, "dashboard.widget.load")
+  // Create alert monitoring instruments
+  let cpu_usage = Meter::create_gauge(meter, "cpu_usage_percentage")
+  let memory_usage = Meter::create_gauge(meter, "memory_usage_percentage")
+  let error_count = Meter::create_counter(meter, "error_count_total")
+  let response_time = Meter::create_histogram(meter, "response_time_ms")
   
-  // 模拟各种图表类型的数据生成
-  let chart_types = [
-    ("line.chart", "时间序列折线图"),
-    ("bar.chart", "柱状图"),
-    ("pie.chart", "饼图"),
-    ("heatmap", "热力图"),
-    ("gauge.chart", "仪表盘"),
-    ("scatter.plot", "散点图")
-  ]
+  let alert_triggered = []
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  for chart_type in chart_types {
-    let chart_name = chart_type.0
-    let chart_description = chart_type.1
-    
-    // 为每种图表生成数据
-    let data_points = match chart_name {
-      "line.chart" => 100
-      "bar.chart" => 20
-      "pie.chart" => 8
-      "heatmap" => 64
-      "gauge.chart" => 1
-      "scatter.plot" => 50
-      _ => 30
+  // Simulate real-time monitoring with alert conditions
+  for i = 0; i < 100; i = i + 1 {
+    // Simulate CPU usage with occasional spikes
+    let cpu_value = @unwrap_int_as_double(30 + (i % 80)) // 30-110% range
+    if cpu_value > 90.0 {
+      let alert_log = LogRecord::new_with_context(
+        Warn,
+        Some("ALERT: High CPU usage detected: " + @unwrap_float_as_string(cpu_value) + "%"),
+        None,
+        Some(1735689600000000000L + @unwrap_int_as_i64(i)),
+        None,
+        Some("alert_trace"),
+        Some("alert_span"),
+        None
+      )
+      Logger::emit(alert_logger, alert_log)
+      alert_triggered = Array::push(alert_triggered, "high_cpu")
     }
     
-    let render_start = Clock::now_unix_nanos(Clock::system())
-    
-    // 记录图表数据点
-    for i in 0..data_points {
-      Counter::add(chart_data_counter, 1.0, Some(Attributes::with_attributes(Attributes::new(), [
-        ("chart.type", StringValue(chart_name)),
-        ("data.series", StringValue("series_" + (i % 5).to_string())),
-        ("point.index", IntValue(i))
-      ])))
+    // Simulate memory usage with gradual increase
+    let memory_value = @unwrap_int_as_double(40 + (i / 2)) // 40-90% range
+    if memory_value > 85.0 {
+      let alert_log = LogRecord::new_with_context(
+        Warn,
+        Some("ALERT: High memory usage detected: " + @unwrap_float_as_string(memory_value) + "%"),
+        None,
+        Some(1735689600000000000L + @unwrap_int_as_i64(i)),
+        None,
+        Some("alert_trace"),
+        Some("alert_span"),
+        None
+      )
+      Logger::emit(alert_logger, alert_log)
+      alert_triggered = Array::push(alert_triggered, "high_memory")
     }
     
-    // 模拟图表渲染时间
-    let render_time = match chart_name {
-      "line.chart" => 50.0 + (Random::next_u64(Random::system()) % 100).to_float()
-      "bar.chart" => 30.0 + (Random::next_u64(Random::system()) % 80).to_float()
-      "pie.chart" => 25.0 + (Random::next_u64(Random::system()) % 50).to_float()
-      "heatmap" => 150.0 + (Random::next_u64(Random::system()) % 200).to_float()
-      "gauge.chart" => 15.0 + (Random::next_u64(Random::system()) % 30).to_float()
-      "scatter.plot" => 80.0 + (Random::next_u64(Random::system()) % 120).to_float()
-      _ => 50.0
+    // Simulate response time with occasional slow requests
+    let response_time_value = @unwrap_int_as_double(50 + (i % 300)) // 50-350ms range
+    Histogram::record(response_time, response_time_value)
+    
+    if response_time_value > 300.0 {
+      let alert_log = LogRecord::new_with_context(
+        Error,
+        Some("ALERT: Slow response time detected: " + @unwrap_float_as_string(response_time_value) + "ms"),
+        None,
+        Some(1735689600000000000L + @unwrap_int_as_i64(i)),
+        None,
+        Some("alert_trace"),
+        Some("alert_span"),
+        None
+      )
+      Logger::emit(alert_logger, alert_log)
+      alert_triggered = Array::push(alert_triggered, "slow_response")
+      Counter::add(error_count, 1.0)
     }
     
-    Histogram::record(render_time_histogram, render_time, Some(Attributes::with_attributes(Attributes::new(), [
-      ("chart.type", StringValue(chart_name)),
-      ("data.points", IntValue(data_points))
-    ])))
-    
-    let render_end = Clock::now_unix_nanos(Clock::system())
-    let actual_render_time = (render_end - render_start) / 1000000L // 转换为毫秒
-    
-    // 记录图表渲染日志
-    let chart_log = LogRecord::new_with_context(
-      Info,
-      Some("Dashboard chart rendered: " + chart_description),
-      Some(Attributes::with_attributes(Attributes::new(), [
-        ("chart.type", StringValue(chart_name)),
-        ("chart.description", StringValue(chart_description)),
-        ("data.points", IntValue(data_points)),
-        ("render.time.ms", FloatValue(render_time)),
-        ("actual.render.time.ms", IntValue(actual_render_time.to_int())),
-        ("dashboard.refresh", BoolValue(true))
-      ])),
-      Some(render_end),
-      None,
-      None,
-      None,
-      None
-    )
-    
-    Logger::emit(logger, chart_log)
+    // Simulate periodic errors
+    if i % 15 == 0 {
+      Counter::add(error_count, 1.0)
+      let alert_log = LogRecord::new_with_context(
+        Error,
+        Some("ALERT: Error detected in operation " + @unwrap_int_as_string(i)),
+        None,
+        Some(1735689600000000000L + @unwrap_int_as_i64(i)),
+        None,
+        Some("alert_trace"),
+        Some("alert_span"),
+        None
+      )
+      Logger::emit(alert_logger, alert_log)
+      alert_triggered = Array::push(alert_triggered, "operation_error")
+    }
   }
   
-  // 模拟仪表板小部件加载
-  let widget_types = [
-    ("metric.card", "指标卡片"),
-    ("table.widget", "数据表格"),
-    ("map.visualization", "地图可视化"),
-    ("timeline.widget", "时间线组件"),
-    ("filter.panel", "筛选面板")
-  ]
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration = end_time - start_time
   
-  for widget_type in widget_types {
-    let widget_name = widget_type.0
-    let widget_description = widget_type.1
+  // Verify alert processing performance
+  @assertion.assert_true(duration < 20000000L)? // Less than 20ms for 100 monitoring cycles
+  
+  // Verify alert triggers
+  @assertion.assert_true(alert_triggered.length > 0)?
+  @assertion.assert_true(alert_triggered.length < 50)? // Should not trigger too many false alerts
+  
+  // Verify instrument integrity
+  @assertion.assert_eq(cpu_usage.name, "cpu_usage_percentage")?
+  @assertion.assert_eq(memory_usage.name, "memory_usage_percentage")?
+  @assertion.assert_eq(error_count.name, "error_count_total")?
+  @assertion.assert_eq(response_time.name, "response_time_ms")?
+}
+
+test "realtime_data_pipeline" {
+  // Test complete real-time data pipeline processing
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "realtime_pipeline_meter")
+  
+  let logger_provider = LoggerProvider::default()
+  let pipeline_logger = LoggerProvider::get_logger(logger_provider, "realtime_pipeline_logger")
+  
+  let tracer = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer, "realtime_pipeline_tracer")
+  
+  // Create pipeline instruments
+  let pipeline_input = Meter::create_counter(meter, "pipeline_input_total")
+  let pipeline_output = Meter::create_counter(meter, "pipeline_output_total")
+  let pipeline_latency = Meter::create_histogram(meter, "pipeline_latency_ms")
+  let pipeline_errors = Meter::create_counter(meter, "pipeline_errors_total")
+  
+  let processed_items = []
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Simulate real-time data pipeline processing
+  for i = 0; i < 75; i = i + 1 {
+    let pipeline_start = Clock::now_unix_nanos(Clock::system())
     
-    // 模拟小部件加载时间
-    let load_time = match widget_name {
-      "metric.card" => 20.0 + (Random::next_u64(Random::system()) % 30).to_float()
-      "table.widget" => 100.0 + (Random::next_u64(Random::system()) % 150).to_float()
-      "map.visualization" => 300.0 + (Random::next_u64(Random::system()) % 200).to_float()
-      "timeline.widget" => 80.0 + (Random::next_u64(Random::system()) % 100).to_float()
-      "filter.panel" => 40.0 + (Random::next_u64(Random::system()) % 60).to_float()
-      _ => 50.0
+    // Step 1: Input processing
+    Counter::add(pipeline_input, 1.0)
+    
+    // Step 2: Create processing span
+    let span = Tracer::start_span(tracer, "pipeline_process_" + @unwrap_int_as_string(i))
+    Span::add_event(span, "processing_started", Some([("item_id", StringValue(@unwrap_int_as_string(i)))]))
+    
+    // Step 3: Processing logic with occasional errors
+    let processing_success = i % 10 != 0 // 90% success rate
+    
+    if processing_success {
+      // Log successful processing
+      let process_log = LogRecord::new_with_context(
+        Info,
+        Some("Pipeline processing item " + @unwrap_int_as_string(i) + " successful"),
+        None,
+        Some(1735689600000000000L + @unwrap_int_as_i64(i)),
+        None,
+        Some("pipeline_trace"),
+        Some("pipeline_span"),
+        None
+      )
+      Logger::emit(pipeline_logger, process_log)
+      
+      processed_items = Array::push(processed_items, i)
+      Counter::add(pipeline_output, 1.0)
+      
+      Span::set_status(span, Ok, Some("Processing completed successfully"))
+    } else {
+      // Log processing error
+      let error_log = LogRecord::new_with_context(
+        Error,
+        Some("Pipeline processing item " + @unwrap_int_as_string(i) + " failed"),
+        None,
+        Some(1735689600000000000L + @unwrap_int_as_i64(i)),
+        None,
+        Some("pipeline_trace"),
+        Some("pipeline_span"),
+        None
+      )
+      Logger::emit(pipeline_logger, error_log)
+      
+      Counter::add(pipeline_errors, 1.0)
+      Span::set_status(span, Error, Some("Processing failed"))
     }
     
-    // 注意：简化实现中Gauge可能不支持设置值
-    // 这里只是调用接口模拟小部件加载
+    // Step 4: Complete processing
+    Span::add_event(span, "processing_completed", None)
+    Span::end(span)
     
-    // 记录小部件加载日志
-    let widget_log = LogRecord::new_with_context(
-      Info,
-      Some("Dashboard widget loaded: " + widget_description),
-      Some(Attributes::with_attributes(Attributes::new(), [
-        ("widget.type", StringValue(widget_name)),
-        ("widget.description", StringValue(widget_description)),
-        ("load.time.ms", FloatValue(load_time)),
-        ("widget.status", StringValue("loaded"))
-      ])),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      None,
-      None,
-      None
-    )
-    
-    Logger::emit(logger, widget_log)
+    let pipeline_end = Clock::now_unix_nanos(Clock::system())
+    let pipeline_duration = (pipeline_end - pipeline_start) / 1000000L // Convert to milliseconds
+    Histogram::record(pipeline_latency, @unwrap_i64_as_double(pipeline_duration))
   }
   
-  // 记录仪表板整体性能
-  let dashboard_summary_log = LogRecord::new_with_context(
-    Info,
-    Some("Dashboard real-time visualization summary"),
-    Some(Attributes::with_attributes(Attributes::new(), [
-      ("total.charts", IntValue(chart_types.length())),
-      ("total.widgets", IntValue(widget_types.length())),
-      ("total.data.points", IntValue(239)), // 100+20+8+64+1+50
-      ("avg.render.time.ms", FloatValue(68.5)), // 近似平均值
-      ("dashboard.load.time.ms", IntValue(2500)),
-      ("dashboard.status", StringValue("operational"))
-    ])),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    None,
-    None,
-    None
-  )
+  let total_end_time = Clock::now_unix_nanos(Clock::system())
+  let total_duration = total_end_time - start_time
   
-  Logger::emit(logger, dashboard_summary_log)
+  // Verify pipeline performance
+  @assertion.assert_true(total_duration < 25000000L)? // Less than 25ms for 75 items
   
-  assert_true(true) // 如果没有崩溃则测试通过
+  // Verify pipeline results
+  @assertion.assert_eq(processed_items.length, 67)? // Should be 67 out of 75 (90% success rate)
+  
+  // Verify instrument integrity
+  @assertion.assert_eq(pipeline_input.name, "pipeline_input_total")?
+  @assertion.assert_eq(pipeline_output.name, "pipeline_output_total")?
+  @assertion.assert_eq(pipeline_latency.name, "pipeline_latency_ms")?
+  @assertion.assert_eq(pipeline_errors.name, "pipeline_errors_total")?
+}
+
+test "realtime_dashboard_updates" {
+  // Test real-time dashboard update mechanisms
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "realtime_dashboard_meter")
+  
+  // Simulate dashboard metrics that would be updated in real-time
+  let dashboard_metrics = [
+    ("active_sessions", Meter::create_gauge(meter, "active_sessions")),
+    ("cpu_load", Meter::create_gauge(meter, "cpu_load_percentage")),
+    ("memory_pressure", Meter::create_gauge(meter, "memory_pressure_percentage")),
+    ("network_throughput", Meter::create_counter(meter, "network_throughput_mbps")),
+    ("disk_io", Meter::create_histogram(meter, "disk_io_ops_per_sec")),
+    ("error_rate", Meter::create_counter(meter, "error_rate_per_min"))
+  ]
+  
+  let update_count = 0
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Simulate real-time dashboard updates
+  for update_cycle = 0; update_cycle < 25; update_cycle = update_cycle + 1 {
+    // Update each metric in the dashboard
+    for (metric_name, instrument) in dashboard_metrics {
+      match metric_name {
+        "active_sessions" => {
+          // Simulate session count changes
+          let session_count = @unwrap_int_as_double(100 + (update_cycle % 50))
+          // Note: In real implementation, this would update gauge value
+        }
+        "cpu_load" => {
+          // Simulate CPU load variations
+          let cpu_value = @unwrap_int_as_double(20 + (update_cycle % 60))
+          // Note: In real implementation, this would update gauge value
+        }
+        "memory_pressure" => {
+          // Simulate memory pressure changes
+          let memory_value = @unwrap_int_as_double(30 + (update_cycle % 40))
+          // Note: In real implementation, this would update gauge value
+        }
+        "network_throughput" => {
+          // Simulate network throughput accumulation
+          Counter::add(instrument, @unwrap_int_as_double(10 + (update_cycle % 20)))
+        }
+        "disk_io" => {
+          // Simulate disk I/O operations
+          Histogram::record(instrument, @unwrap_int_as_double(50 + (update_cycle % 100)))
+        }
+        "error_rate" => {
+          // Simulate error rate accumulation
+          if update_cycle % 8 == 0 {
+            Counter::add(instrument, 1.0)
+          }
+        }
+        _ => ()
+      }
+    }
+    
+    update_count = update_count + 1
+    
+    // Simulate dashboard refresh interval (in real implementation)
+    // This would trigger UI updates, cache refreshes, etc.
+  }
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let duration = end_time - start_time
+  
+  // Verify dashboard update performance
+  @assertion.assert_true(duration < 10000000L)? // Less than 10ms for 25 update cycles
+  @assertion.assert_eq(update_count, 25)?
+  
+  // Verify all dashboard metrics are properly configured
+  for (metric_name, instrument) in dashboard_metrics {
+    @assertion.assert_true(instrument.name.length > 0)?
+    @assertion.assert_eq(instrument.name, metric_name)?
+  }
 }
