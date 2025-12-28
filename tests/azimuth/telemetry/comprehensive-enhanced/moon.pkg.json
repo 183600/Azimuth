@@ -1,0 +1,13 @@
+{
+  "name": "comprehensive-enhanced-tests",
+  "version": "0.1.0",
+  "description": "Comprehensive enhanced test cases for Azimuth telemetry system covering error boundaries, integration, performance, and concurrency",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../../azimuth"
+  },
+  "test": {
+    "test": ["comprehensive_enhanced_test.mbt"]
+  }
+}
