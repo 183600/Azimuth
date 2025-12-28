@@ -4,19 +4,34 @@
 test "SpanKind类型转换测试" {
   // 测试所有SpanKind类型的正确性
   let internal_span = Span::new("internal", Internal, SpanContext::new("trace1", "span1", true, ""))
-  assert_eq(Span::kind(internal_span), Internal)
+  match Span::kind(internal_span) {
+    Internal => assert_true(true)
+    _ => assert_true(false)
+  }
   
   let server_span = Span::new("server", Server, SpanContext::new("trace2", "span2", true, ""))
-  assert_eq(Span::kind(server_span), Server)
+  match Span::kind(server_span) {
+    Server => assert_true(true)
+    _ => assert_true(false)
+  }
   
   let client_span = Span::new("client", Client, SpanContext::new("trace3", "span3", true, ""))
-  assert_eq(Span::kind(client_span), Client)
+  match Span::kind(client_span) {
+    Client => assert_true(true)
+    _ => assert_true(false)
+  }
   
   let producer_span = Span::new("producer", Producer, SpanContext::new("trace4", "span4", true, ""))
-  assert_eq(Span::kind(producer_span), Producer)
+  match Span::kind(producer_span) {
+    Producer => assert_true(true)
+    _ => assert_true(false)
+  }
   
   let consumer_span = Span::new("consumer", Consumer, SpanContext::new("trace5", "span5", true, ""))
-  assert_eq(Span::kind(consumer_span), Consumer)
+  match Span::kind(consumer_span) {
+    Consumer => assert_true(true)
+    _ => assert_true(false)
+  }
 }
 
 test "StatusCode状态转换测试" {
@@ -24,15 +39,24 @@ test "StatusCode状态转换测试" {
   let span = Span::new("test", Internal, SpanContext::new("trace", "span", true, ""))
   
   // 初始状态应该是Unset
-  assert_eq(Span::status(span), Unset)
+  match Span::status(span) {
+    Unset => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // 设置为Ok状态
-  Span::set_status(span, Ok, "Operation completed successfully")
-  assert_eq(Span::status(span), Unset) // 简化实现中返回Unset
+  Span::set_status(span, Ok)
+  match Span::status(span) {
+    Unset => assert_true(true) // 简化实现中返回Unset
+    _ => assert_true(false)
+  }
   
   // 设置为Error状态
-  Span::set_status(span, Error, "Operation failed")
-  assert_eq(Span::status(span), Unset) // 简化实现中返回Unset
+  Span::set_status(span, Error)
+  match Span::status(span) {
+    Unset => assert_true(true) // 简化实现中返回Unset
+    _ => assert_true(false)
+  }
 }
 
 test "AttributeValue类型转换测试" {
