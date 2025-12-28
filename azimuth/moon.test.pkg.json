@@ -8,6 +8,6 @@
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["core_telemetry_foundation_tests.mbt", "cross_module_integration_tests.mbt", "boundary_error_handling_tests.mbt", "performance_resource_management_tests.mbt"]
+    "test": ["core_telemetry_foundation_tests.mbt", "cross_module_integration_tests.mbt", "boundary_error_handling_tests.mbt", "performance_resource_management_tests.mbt", "azimuth_enhanced_test_suite.mbt"]
   }
 }
