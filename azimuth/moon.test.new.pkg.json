@@ -1,13 +1,13 @@
 {
-  "name": "azimuth-test",
+  "name": "azimuth",
   "version": "0.1.0",
-  "description": "Test configuration for new test files",
+  "description": "Azimuth telemetry system main package - New Tests Only",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["advanced_metrics_operations_tests.mbt", "complex_propagation_scenarios_tests.mbt", "error_boundary_conditions_tests.mbt", "cross_service_consistency_tests.mbt", "resource_management_tests.mbt", "internationalization_comprehensive_tests.mbt", "end_to_end_business_workflow_tests.mbt"]
+    "test": ["attributes_operations_comprehensive_tests.mbt", "span_context_lifecycle_tests.mbt", "metrics_instruments_comprehensive_tests.mbt", "log_record_severity_context_tests.mbt", "propagation_baggage_comprehensive_tests.mbt", "http_client_network_operations_tests.mbt", "resource_attributes_operations_tests.mbt", "realtime_dashboard_streaming_tests.mbt"]
   }
 }
