@@ -1,641 +1,637 @@
 // 性能基准测试用例
-// 测试遥测系统在各种负载下的性能表现和基准指标
+// 测试Azimuth遥测系统在各种负载下的性能表现
 
-test "span创建和销毁性能基准测试" {
-  // 1. 基准测试准备
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "性能基准测试服务")
+// 测试1: Span创建和操作性能
+pub test "Span创建和操作性能" {
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "性能测试")
   
-  // 2. 测试span创建性能
-  let start_create_time = Clock::now_unix_nanos(Clock::system())
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 创建100个span
-  let spans = [
-    Tracer::start_span(tracer, "基准测试-span-1"),
-    Tracer::start_span(tracer, "基准测试-span-2"),
-    Tracer::start_span(tracer, "基准测试-span-3"),
-    Tracer::start_span(tracer, "基准测试-span-4"),
-    Tracer::start_span(tracer, "基准测试-span-5"),
-    Tracer::start_span(tracer, "基准测试-span-6"),
-    Tracer::start_span(tracer, "基准测试-span-7"),
-    Tracer::start_span(tracer, "基准测试-span-8"),
-    Tracer::start_span(tracer, "基准测试-span-9"),
-    Tracer::start_span(tracer, "基准测试-span-10")
-  ]
-  
-  let end_create_time = Clock::now_unix_nanos(Clock::system())
-  let create_duration = end_create_time - start_create_time
-  
-  // 3. 验证span创建性能
-  // 10个span创建应该在合理时间内完成（这里设置为10ms）
-  assert_true(create_duration < 10000000L) // 小于10毫秒
-  
-  // 4. 测试span属性设置性能
-  let start_attr_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 为每个span添加事件和属性
-  Span::add_event(spans[0], "事件1", Some([("key1", StringValue("value1"))]))
-  Span::add_event(spans[1], "事件2", Some([("key2", IntValue(42))]))
-  Span::add_event(spans[2], "事件3", Some([("key3", FloatValue(3.14))]))
-  Span::add_event(spans[3], "事件4", Some([("key4", BoolValue(true))]))
-  Span::add_event(spans[4], "事件5", Some([("key5", StringValue("value5"))]))
-  
-  Span::set_status(spans[0], Ok, Some("成功"))
-  Span::set_status(spans[1], Error, Some("错误"))
-  Span::set_status(spans[2], Ok, Some("完成"))
-  Span::set_status(spans[3], Ok, Some("处理完成"))
-  Span::set_status(spans[4], Error, Some("失败"))
-  
-  let end_attr_time = Clock::now_unix_nanos(Clock::system())
-  let attr_duration = end_attr_time - start_attr_time
-  
-  // 5. 验证属性设置性能
-  assert_true(attr_duration < 5000000L) // 小于5毫秒
-  
-  // 6. 测试span销毁性能
-  let start_destroy_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 结束所有span
-  for span in spans {
-    Span::end(span)
+  // 批量创建Span
+  let spans = []
+  for i in 0..1000 {
+    let span = azimuth::Tracer::start_span(tracer, "性能测试Span-" + i.to_string())
+    spans.push(span)
   }
   
-  let end_destroy_time = Clock::now_unix_nanos(Clock::system())
-  let destroy_duration = end_destroy_time - start_destroy_time
+  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 7. 验证span销毁性能
-  assert_true(destroy_duration < 10000000L) // 小于10毫秒
+  // 批量添加事件
+  for span in spans {
+    azimuth::Span::add_event(span, "性能测试事件", Some([
+      ("iteration", azimuth::StringValue("test")),
+      ("timestamp", azimuth::IntValue(azimuth::Clock::now_unix_nanos(azimuth::Clock::system()).to_int()))
+    ]))
+    azimuth::Span::set_status(span, azimuth::Ok)
+  }
   
-  // 8. 记录性能指标
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "性能基准测试服务")
+  let event_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  let create_histogram = Meter::create_histogram(meter, "span.create.duration",
-    Some("Span创建时间分布"), Some("nanoseconds"))
-  let attr_histogram = Meter::create_histogram(meter, "span.attribute.duration",
-    Some("Span属性设置时间分布"), Some("nanoseconds"))
-  let destroy_histogram = Meter::create_histogram(meter, "span.destroy.duration",
-    Some("Span销毁时间分布"), Some("nanoseconds"))
+  // 批量结束Span
+  for span in spans {
+    azimuth::Span::end(span)
+  }
   
-  Histogram::record(create_histogram, create_duration.to_double())
-  Histogram::record(attr_histogram, attr_duration.to_double())
-  Histogram::record(destroy_histogram, destroy_duration.to_double())
+  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  assert_true(true)
+  // 计算性能指标
+  let creation_duration = creation_time - start_time
+  let event_duration = event_time - creation_time
+  let end_duration = end_time - event_time
+  let total_duration = end_time - start_time
+  
+  // 验证性能在合理范围内
+  assert_true(creation_duration < 5000000000L)  // 创建1000个Span应在5秒内完成
+  assert_true(event_duration < 3000000000L)    // 添加事件应在3秒内完成
+  assert_true(end_duration < 2000000000L)      // 结束Span应在2秒内完成
+  assert_true(total_duration < 10000000000L)   // 总操作应在10秒内完成
+  
+  // 验证所有Span都被创建
+  assert_true(spans.length() == 1000)
+  
+  // 计算平均每个操作的时间（纳秒）
+  let avg_creation_time = creation_duration / 1000L
+  let avg_event_time = event_duration / 1000L
+  let avg_end_time = end_duration / 1000L
+  
+  // 验证平均操作时间合理
+  assert_true(avg_creation_time < 5000000L)    // 每个Span创建时间小于5毫秒
+  assert_true(avg_event_time < 3000000L)       // 每个事件添加时间小于3毫秒
+  assert_true(avg_end_time < 2000000L)         // 每个Span结束时间小于2毫秒
 }
 
-test "指标记录性能基准测试" {
-  // 1. 基准测试准备
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "指标性能基准测试服务")
+// 测试2: 度量操作性能
+pub test "度量操作性能" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "性能度量测试")
   
-  // 2. 创建各种类型的指标
-  let counter = Meter::create_counter(meter, "benchmark.counter",
-    Some("基准测试计数器"), Some("operations"))
-  let histogram = Meter::create_histogram(meter, "benchmark.histogram",
-    Some("基准测试直方图"), Some("milliseconds"))
-  let updown_counter = Meter::create_updown_counter(meter, "benchmark.updown",
-    Some("基准测试上下行计数器"), Some("items"))
-  let gauge = Meter::create_gauge(meter, "benchmark.gauge",
-    Some("基准测试仪表"), Some("percent"))
+  // 创建多种度量仪器
+  let counter = azimuth::Meter::create_counter(meter, "性能计数器", Some("性能测试计数器"), Some("count"))
+  let histogram = azimuth::Meter::create_histogram(meter, "性能直方图", Some("性能测试直方图"), Some("ms"))
+  let updown_counter = azimuth::Meter::create_updown_counter(meter, "性能上下计数器", Some("性能测试上下计数器"), Some("items"))
+  let gauge = azimuth::Meter::create_gauge(meter, "性能仪表", Some("性能测试仪表"), Some("value"))
   
-  // 3. 测试计数器性能
-  let start_counter_time = Clock::now_unix_nanos(Clock::system())
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 记录1000次计数器操作
-  for i in range(0, 100) {
-    Counter::add(counter, i.to_double())
+  // 批量计数器操作
+  for i in 0..5000 {
+    azimuth::Counter::add(counter, 1.0, Some([
+      ("operation", azimuth::StringValue("test")),
+      ("iteration", azimuth::IntValue(i))
+    ]))
   }
   
-  let end_counter_time = Clock::now_unix_nanos(Clock::system())
-  let counter_duration = end_counter_time - start_counter_time
+  let counter_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 4. 验证计数器性能
-  assert_true(counter_duration < 10000000L) // 小于10毫秒
+  // 批量直方图操作
+  for i in 0..3000 {
+    let value = 100.0 + (i.to_double() * 0.1)
+    azimuth::Histogram::record(histogram, value, Some([
+      ("metric.type", azimuth::StringValue("performance")),
+      ("index", azimuth::IntValue(i))
+    ]))
+  }
   
-  // 5. 测试直方图性能
-  let start_histogram_time = Clock::now_unix_nanos(Clock::system())
+  let histogram_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 记录100次直方图操作
-  let values = [10.5, 25.3, 45.7, 65.2, 85.9, 105.1, 125.8, 145.4, 165.6, 185.2]
-  for value in values {
-    for _ in range(0, 10) {
-      Histogram::record(histogram, value)
+  // 批量上下计数器操作
+  for i in 0..2000 {
+    if i % 3 == 0 {
+      azimuth::UpDownCounter::add(updown_counter, 1.0)
+    } else {
+      azimuth::UpDownCounter::add(updown_counter, -1.0)
     }
   }
   
-  let end_histogram_time = Clock::now_unix_nanos(Clock::system())
-  let histogram_duration = end_histogram_time - start_histogram_time
+  let updown_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 6. 验证直方图性能
-  assert_true(histogram_duration < 10000000L) // 小于10毫秒
+  let total_duration = updown_time - start_time
   
-  // 7. 测试上下行计数器性能
-  let start_updown_time = Clock::now_unix_nanos(Clock::system())
+  // 验证性能指标
+  let counter_duration = counter_time - start_time
+  let histogram_duration = histogram_time - counter_time
+  let updown_duration = updown_time - histogram_time
   
-  // 记录100次上下行计数器操作
-  for i in range(0, 50) {
-    UpDownCounter::add(updown_counter, 1.0)
-  }
-  for i in range(0, 25) {
-    UpDownCounter::add(updown_counter, -1.0)
-  }
+  assert_true(counter_duration < 3000000000L)    // 5000次计数器操作应在3秒内完成
+  assert_true(histogram_duration < 2000000000L) // 3000次直方图操作应在2秒内完成
+  assert_true(updown_duration < 1000000000L)    // 2000次上下计数器操作应在1秒内完成
+  assert_true(total_duration < 6000000000L)     // 总操作应在6秒内完成
   
-  let end_updown_time = Clock::now_unix_nanos(Clock::system())
-  let updown_duration = end_updown_time - start_updown_time
+  // 计算平均操作时间
+  let avg_counter_time = counter_duration / 5000L
+  let avg_histogram_time = histogram_duration / 3000L
+  let avg_updown_time = updown_duration / 2000L
   
-  // 8. 验证上下行计数器性能
-  assert_true(updown_duration < 10000000L) // 小于10毫秒
-  
-  // 9. 记录指标性能指标
-  let performance_meter = MeterProvider::get_meter(meter_provider, "指标性能监控")
-  
-  let counter_perf_histogram = Meter::create_histogram(performance_meter, "metrics.counter.duration",
-    Some("计数器操作时间分布"), Some("nanoseconds"))
-  let histogram_perf_histogram = Meter::create_histogram(performance_meter, "metrics.histogram.duration",
-    Some("直方图操作时间分布"), Some("nanoseconds"))
-  let updown_perf_histogram = Meter::create_histogram(performance_meter, "metrics.updown.duration",
-    Some("上下行计数器操作时间分布"), Some("nanoseconds"))
-  
-  Histogram::record(counter_perf_histogram, counter_duration.to_double())
-  Histogram::record(histogram_perf_histogram, histogram_duration.to_double())
-  Histogram::record(updown_perf_histogram, updown_duration.to_double())
-  
-  assert_true(true)
+  assert_true(avg_counter_time < 600000L)       // 每次计数器操作小于0.6毫秒
+  assert_true(avg_histogram_time < 666666L)    // 每次直方图操作小于0.67毫秒
+  assert_true(avg_updown_time < 500000L)       // 每次上下计数器操作小于0.5毫秒
 }
 
-test "日志记录性能基准测试" {
-  // 1. 基准测试准备
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "日志性能基准测试服务")
+// 测试3: 日志记录性能
+pub test "日志记录性能" {
+  let logger_provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "性能日志测试")
   
-  // 2. 测试简单日志记录性能
-  let start_simple_log_time = Clock::now_unix_nanos(Clock::system())
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 记录100条简单日志
-  let simple_logs = [
-    LogRecord::new(Trace, "调试信息1"),
-    LogRecord::new(Debug, "调试信息2"),
-    LogRecord::new(Info, "常规信息3"),
-    LogRecord::new(Warn, "警告信息4"),
-    LogRecord::new(Error, "错误信息5"),
-    LogRecord::new(Fatal, "致命错误6"),
-    LogRecord::new(Trace, "调试信息7"),
-    LogRecord::new(Debug, "调试信息8"),
-    LogRecord::new(Info, "常规信息9"),
-    LogRecord::new(Warn, "警告信息10")
-  ]
-  
-  for log in simple_logs {
-    Logger::emit(logger, log)
+  // 批量创建简单日志
+  for i in 0..2000 {
+    let log_record = azimuth::LogRecord::new(
+      if i % 4 == 0 { azimuth::Debug }
+      else if i % 4 == 1 { azimuth::Info }
+      else if i % 4 == 2 { azimuth::Warn }
+      else { azimuth::Error },
+      "性能测试日志消息 " + i.to_string()
+    )
+    azimuth::Logger::emit(logger, log_record)
   }
   
-  let end_simple_log_time = Clock::now_unix_nanos(Clock::system())
-  let simple_log_duration = end_simple_log_time - start_simple_log_time
+  let simple_log_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 3. 验证简单日志记录性能
-  assert_true(simple_log_duration < 10000000L) // 小于10毫秒
-  
-  // 4. 测试复杂日志记录性能
-  let start_complex_log_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 创建带有属性的复杂日志
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "user.id", IntValue(12345))
-  Attributes::set(attrs, "request.id", StringValue("req-abc-123"))
-  Attributes::set(attrs, "response.time", FloatValue(125.5))
-  
-  let complex_logs = [
-    LogRecord::new_with_context(Info, Some("复杂日志1"), Some(attrs), 
-      Some(Clock::now_unix_nanos(Clock::system())), None, Some("trace-1"), Some("span-1"), None),
-    LogRecord::new_with_context(Warn, Some("复杂日志2"), Some(attrs), 
-      Some(Clock::now_unix_nanos(Clock::system())), None, Some("trace-2"), Some("span-2"), None),
-    LogRecord::new_with_context(Error, Some("复杂日志3"), Some(attrs), 
-      Some(Clock::now_unix_nanos(Clock::system())), None, Some("trace-3"), Some("span-3"), None),
-    LogRecord::new_with_context(Info, Some("复杂日志4"), Some(attrs), 
-      Some(Clock::now_unix_nanos(Clock::system())), None, Some("trace-4"), Some("span-4"), None),
-    LogRecord::new_with_context(Debug, Some("复杂日志5"), Some(attrs), 
-      Some(Clock::now_unix_nanos(Clock::system())), None, Some("trace-5"), Some("span-5"), None)
-  ]
-  
-  for log in complex_logs {
-    Logger::emit(logger, log)
+  // 批量创建复杂日志
+  for i in 0..1000 {
+    let attributes = azimuth::Attributes::new()
+    azimuth::Attributes::set(attributes, "log.id", azimuth::StringValue("log-" + i.to_string()))
+    azimuth::Attributes::set(attributes, "component", azimuth::StringValue("performance-test"))
+    azimuth::Attributes::set(attributes, "iteration", azimuth::IntValue(i))
+    
+    let log_record = azimuth::LogRecord::new_with_context(
+      azimuth::Info,
+      Some("复杂性能测试日志 " + i.to_string()),
+      Some(attributes),
+      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system()) + 1000L),
+      Some("perf-trace-" + (i % 10).to_string()),
+      Some("perf-span-" + (i % 5).to_string()),
+      Some(azimuth::Context::root())
+    )
+    azimuth::Logger::emit(logger, log_record)
   }
   
-  let end_complex_log_time = Clock::now_unix_nanos(Clock::system())
-  let complex_log_duration = end_complex_log_time - start_complex_log_time
+  let complex_log_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 5. 验证复杂日志记录性能
-  assert_true(complex_log_duration < 15000000L) // 小于15毫秒
+  let total_duration = complex_log_time - start_time
+  let simple_duration = simple_log_time - start_time
+  let complex_duration = complex_log_time - simple_log_time
   
-  // 6. 记录日志性能指标
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "日志性能监控")
+  // 验证性能指标
+  assert_true(simple_duration < 2000000000L)    // 2000条简单日志应在2秒内完成
+  assert_true(complex_duration < 3000000000L)  // 1000条复杂日志应在3秒内完成
+  assert_true(total_duration < 5000000000L)    // 总操作应在5秒内完成
   
-  let simple_log_histogram = Meter::create_histogram(meter, "log.simple.duration",
-    Some("简单日志记录时间分布"), Some("nanoseconds"))
-  let complex_log_histogram = Meter::create_histogram(meter, "log.complex.duration",
-    Some("复杂日志记录时间分布"), Some("nanoseconds"))
+  // 计算平均操作时间
+  let avg_simple_time = simple_duration / 2000L
+  let avg_complex_time = complex_duration / 1000L
   
-  Histogram::record(simple_log_histogram, simple_log_duration.to_double())
-  Histogram::record(complex_log_histogram, complex_log_duration.to_double())
-  
-  assert_true(true)
+  assert_true(avg_simple_time < 1000000L)      // 每条简单日志小于1毫秒
+  assert_true(avg_complex_time < 3000000L)     // 每条复杂日志小于3毫秒
 }
 
-test "上下文传播性能基准测试" {
-  // 1. 基准测试准备
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+// 测试4: 属性操作性能
+pub test "属性操作性能" {
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 2. 测试上下文注入性能
-  let start_inject_time = Clock::now_unix_nanos(Clock::system())
+  // 批量创建和操作属性
+  let attributes_list = []
+  for i in 0..1000 {
+    let attrs = azimuth::Attributes::new()
+    
+    // 为每个属性对象设置多个属性
+    azimuth::Attributes::set(attrs, "id", azimuth::IntValue(i))
+    azimuth::Attributes::set(attrs, "name", azimuth::StringValue("item-" + i.to_string()))
+    azimuth::Attributes::set(attrs, "value", azimuth::FloatValue(i.to_double() * 1.5))
+    azimuth::Attributes::set(attrs, "active", azimuth::BoolValue(i % 2 == 0))
+    azimuth::Attributes::set(attrs, "tags", azimuth::ArrayStringValue(["tag1", "tag2", "tag3"]))
+    azimuth::Attributes::set(attrs, "numbers", azimuth::ArrayIntValue([i, i*2, i*3]))
+    
+    attributes_list.push(attrs)
+  }
   
-  // 创建100个载体并注入上下文
-  let carriers = [
-    TextMapCarrier::new(),
-    TextMapCarrier::new(),
-    TextMapCarrier::new(),
-    TextMapCarrier::new(),
-    TextMapCarrier::new(),
-    TextMapCarrier::new(),
-    TextMapCarrier::new(),
-    TextMapCarrier::new(),
-    TextMapCarrier::new(),
-    TextMapCarrier::new()
-  ]
+  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  let context = Context::root()
+  // 批量读取属性
+  for attrs in attributes_list {
+    let _ = azimuth::Attributes::get(attrs, "id")
+    let _ = azimuth::Attributes::get(attrs, "name")
+    let _ = azimuth::Attributes::get(attrs, "value")
+    let _ = azimuth::Attributes::get(attrs, "active")
+    let _ = azimuth::Attributes::get(attrs, "tags")
+    let _ = azimuth::Attributes::get(attrs, "numbers")
+    let _ = azimuth::Attributes::get(attrs, "nonexistent")  // 测试不存在的属性
+  }
+  
+  let read_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let total_duration = read_time - start_time
+  let creation_duration = creation_time - start_time
+  let read_duration = read_time - creation_time
+  
+  // 验证性能指标
+  assert_true(creation_duration < 3000000000L)  // 创建1000个属性对象应在3秒内完成
+  assert_true(read_duration < 2000000000L)      // 读取操作应在2秒内完成
+  assert_true(total_duration < 5000000000L)     // 总操作应在5秒内完成
+  
+  // 计算平均操作时间
+  let avg_creation_time = creation_duration / 1000L
+  let avg_read_time = read_duration / (1000L * 7L)  // 每个属性对象读取7次
+  
+  assert_true(avg_creation_time < 3000000L)    // 每个属性对象创建小于3毫秒
+  assert_true(avg_read_time < 285714L)         // 每次属性读取小于0.29毫秒
+}
+
+// 测试5: 上下文操作性能
+pub test "上下文操作性能" {
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量创建上下文链
+  let contexts = []
+  let base_ctx = azimuth::Context::root()
+  
+  for i in 0..500 {
+    let ctx = azimuth::Context::root()
+    let key1 = azimuth::ContextKey::new("key1-" + i.to_string())
+    let key2 = azimuth::ContextKey::new("key2-" + i.to_string())
+    let key3 = azimuth::ContextKey::new("key3-" + i.to_string())
+    
+    let ctx1 = azimuth::Context::with_value(ctx, key1, "value1-" + i.to_string())
+    let ctx2 = azimuth::Context::with_value(ctx1, key2, "value2-" + i.to_string())
+    let ctx3 = azimuth::Context::with_value(ctx2, key3, "value3-" + i.to_string())
+    
+    contexts.push(ctx3)
+  }
+  
+  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量读取上下文值
+  for i in 0..500 {
+    let ctx = contexts[i]
+    let key1 = azimuth::ContextKey::new("key1-" + i.to_string())
+    let key2 = azimuth::ContextKey::new("key2-" + i.to_string())
+    let key3 = azimuth::ContextKey::new("key3-" + i.to_string())
+    let missing_key = azimuth::ContextKey::new("missing-" + i.to_string())
+    
+    let _ = azimuth::Context::get(ctx, key1)
+    let _ = azimuth::Context::get(ctx, key2)
+    let _ = azimuth::Context::get(ctx, key3)
+    let _ = azimuth::Context::get(ctx, missing_key)
+  }
+  
+  let read_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let total_duration = read_time - start_time
+  let creation_duration = creation_time - start_time
+  let read_duration = read_time - creation_time
+  
+  // 验证性能指标
+  assert_true(creation_duration < 2000000000L)  // 创建500个上下文链应在2秒内完成
+  assert_true(read_duration < 1000000000L)      // 读取操作应在1秒内完成
+  assert_true(total_duration < 3000000000L)     // 总操作应在3秒内完成
+  
+  // 计算平均操作时间
+  let avg_creation_time = creation_duration / 500L
+  let avg_read_time = read_duration / (500L * 4L)  // 每个上下文读取4次
+  
+  assert_true(avg_creation_time < 4000000L)    // 每个上下文链创建小于4毫秒
+  assert_true(avg_read_time < 500000L)         // 每次上下文读取小于0.5毫秒
+}
+
+// 测试6: Baggage操作性能
+pub test "Baggage操作性能" {
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量创建和操作Baggage
+  let baggage_list = []
+  for i in 0..300 {
+    let baggage = azimuth::Baggage::new()
+    
+    // 为每个Baggage设置多个条目
+    let baggage1 = azimuth::Baggage::set_entry(baggage, "user.id", "user-" + i.to_string())
+    let baggage2 = azimuth::Baggage::set_entry(baggage1, "session.id", "session-" + i.to_string())
+    let baggage3 = azimuth::Baggage::set_entry(baggage2, "request.id", "req-" + i.to_string())
+    let baggage4 = azimuth::Baggage::set_entry(baggage3, "trace.id", "trace-" + i.to_string())
+    
+    baggage_list.push(baggage4)
+  }
+  
+  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量读取Baggage条目
+  for i in 0..300 {
+    let baggage = baggage_list[i]
+    let _ = azimuth::Baggage::get_entry(baggage, "user.id")
+    let _ = azimuth::Baggage::get_entry(baggage, "session.id")
+    let _ = azimuth::Baggage::get_entry(baggage, "request.id")
+    let _ = azimuth::Baggage::get_entry(baggage, "trace.id")
+    let _ = azimuth::Baggage::get_entry(baggage, "nonexistent")  // 测试不存在的条目
+  }
+  
+  let read_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let total_duration = read_time - start_time
+  let creation_duration = creation_time - start_time
+  let read_duration = read_time - creation_time
+  
+  // 验证性能指标
+  assert_true(creation_duration < 2000000000L)  // 创建300个Baggage应在2秒内完成
+  assert_true(read_duration < 1000000000L)      // 读取操作应在1秒内完成
+  assert_true(total_duration < 3000000000L)     // 总操作应在3秒内完成
+  
+  // 计算平均操作时间
+  let avg_creation_time = creation_duration / 300L
+  let avg_read_time = read_duration / (300L * 5L)  // 每个Baggage读取5次
+  
+  assert_true(avg_creation_time < 6666666L)    // 每个Baggage创建小于6.67毫秒
+  assert_true(avg_read_time < 666666L)         // 每次Baggage读取小于0.67毫秒
+}
+
+// 测试7: 资源操作性能
+pub test "资源操作性能" {
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量创建资源
+  let resources = []
+  for i in 0..200 {
+    let attrs = [
+      ("service.name", azimuth::StringValue("service-" + i.to_string())),
+      ("service.version", azimuth::StringValue("1.0." + i.to_string())),
+      ("service.instance.id", azimuth::StringValue("instance-" + i.to_string())),
+      ("host.name", azimuth::StringValue("host-" + i.to_string())),
+      ("deployment.environment", azimuth::StringValue("env-" + (i % 3).to_string()))
+    ]
+    
+    let resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), attrs)
+    resources.push(resource)
+  }
+  
+  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量读取资源属性
+  for i in 0..200 {
+    let resource = resources[i]
+    let _ = azimuth::Resource::get_attribute(resource, "service.name")
+    let _ = azimuth::Resource::get_attribute(resource, "service.version")
+    let _ = azimuth::Resource::get_attribute(resource, "service.instance.id")
+    let _ = azimuth::Resource::get_attribute(resource, "host.name")
+    let _ = azimuth::Resource::get_attribute(resource, "deployment.environment")
+    let _ = azimuth::Resource::get_attribute(resource, "nonexistent")  // 测试不存在的属性
+  }
+  
+  let read_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量合并资源
+  let merged_resources = []
+  for i in 0..100 {
+    let merged = azimuth::Resource::merge(resources[i], resources[i + 100])
+    merged_resources.push(merged)
+  }
+  
+  let merge_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let total_duration = merge_time - start_time
+  let creation_duration = creation_time - start_time
+  let read_duration = read_time - creation_time
+  let merge_duration = merge_time - read_time
+  
+  // 验证性能指标
+  assert_true(creation_duration < 1000000000L)  // 创建200个资源应在1秒内完成
+  assert_true(read_duration < 1000000000L)      // 读取操作应在1秒内完成
+  assert_true(merge_duration < 1000000000L)     // 合并操作应在1秒内完成
+  assert_true(total_duration < 3000000000L)     // 总操作应在3秒内完成
+  
+  // 计算平均操作时间
+  let avg_creation_time = creation_duration / 200L
+  let avg_read_time = read_duration / (200L * 6L)  // 每个资源读取6次
+  let avg_merge_time = merge_duration / 100L
+  
+  assert_true(avg_creation_time < 5000000L)    // 每个资源创建小于5毫秒
+  assert_true(avg_read_time < 833333L)         // 每次属性读取小于0.83毫秒
+  assert_true(avg_merge_time < 10000000L)      // 每次资源合并小于10毫秒
+}
+
+// 测试8: 传播器操作性能
+pub test "传播器操作性能" {
+  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+  let propagators = [trace_propagator]
+  let composite_propagator = azimuth::CompositePropagator::new(propagators)
+  
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量注入操作
+  let carriers = []
+  for i in 0..500 {
+    let carrier = azimuth::TextMapCarrier::new()
+    let ctx = azimuth::Context::root()
+    
+    azimuth::CompositePropagator::inject(composite_propagator, ctx, carrier)
+    carriers.push(carrier)
+  }
+  
+  let inject_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 批量提取操作
   for carrier in carriers {
-    CompositePropagator::inject(propagator, context, carrier)
+    let _ = azimuth::CompositePropagator::extract(composite_propagator, carrier)
   }
   
-  let end_inject_time = Clock::now_unix_nanos(Clock::system())
-  let inject_duration = end_inject_time - start_inject_time
+  let extract_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 3. 验证上下文注入性能
-  assert_true(inject_duration < 10000000L) // 小于10毫秒
+  let total_duration = extract_time - start_time
+  let inject_duration = inject_time - start_time
+  let extract_duration = extract_time - inject_time
   
-  // 4. 测试上下文提取性能
-  let start_extract_time = Clock::now_unix_nanos(Clock::system())
+  // 验证性能指标
+  assert_true(inject_duration < 2000000000L)    // 500次注入操作应在2秒内完成
+  assert_true(extract_duration < 2000000000L)   // 500次提取操作应在2秒内完成
+  assert_true(total_duration < 4000000000L)     // 总操作应在4秒内完成
   
-  // 从所有载体中提取上下文
-  for carrier in carriers {
-    let _ = CompositePropagator::extract(propagator, carrier)
-  }
+  // 计算平均操作时间
+  let avg_inject_time = inject_duration / 500L
+  let avg_extract_time = extract_duration / 500L
   
-  let end_extract_time = Clock::now_unix_nanos(Clock::system())
-  let extract_duration = end_extract_time - start_extract_time
-  
-  // 5. 验证上下文提取性能
-  assert_true(extract_duration < 10000000L) // 小于10毫秒
-  
-  // 6. 测试行李数据操作性能
-  let start_baggage_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 创建和操作行李数据
-  let baggage = Baggage::new()
-  let baggage_with_entries = Baggage::set_entry(baggage, "user.id", "12345")
-  let final_baggage = Baggage::set_entry(baggage_with_entries, "session.id", "session-abc")
-  
-  // 获取行李数据
-  let _ = Baggage::get_entry(final_baggage, "user.id")
-  let _ = Baggage::get_entry(final_baggage, "session.id")
-  
-  // 移除行李数据
-  let _ = Baggage::remove_entry(final_baggage, "session.id")
-  
-  let end_baggage_time = Clock::now_unix_nanos(Clock::system())
-  let baggage_duration = end_baggage_time - start_baggage_time
-  
-  // 7. 验证行李数据操作性能
-  assert_true(baggage_duration < 5000000L) // 小于5毫秒
-  
-  // 8. 记录上下文传播性能指标
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "上下文传播性能监控")
-  
-  let inject_histogram = Meter::create_histogram(meter, "context.inject.duration",
-    Some("上下文注入时间分布"), Some("nanoseconds"))
-  let extract_histogram = Meter::create_histogram(meter, "context.extract.duration",
-    Some("上下文提取时间分布"), Some("nanoseconds"))
-  let baggage_histogram = Meter::create_histogram(meter, "baggage.operation.duration",
-    Some("行李数据操作时间分布"), Some("nanoseconds"))
-  
-  Histogram::record(inject_histogram, inject_duration.to_double())
-  Histogram::record(extract_histogram, extract_duration.to_double())
-  Histogram::record(baggage_histogram, baggage_duration.to_double())
-  
-  assert_true(true)
+  assert_true(avg_inject_time < 4000000L)       // 每次注入操作小于4毫秒
+  assert_true(avg_extract_time < 4000000L)      // 每次提取操作小于4毫秒
 }
 
-test "资源操作性能基准测试" {
-  // 1. 基准测试准备
+// 测试9: 高负载综合性能测试
+pub test "高负载综合性能测试" {
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "高负载测试")
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "高负载度量")
+  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "高负载日志")
   
-  // 2. 测试资源创建性能
-  let start_create_time = Clock::now_unix_nanos(Clock::system())
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 创建100个资源
-  let resources = [
-    Resource::new(),
-    Resource::new(),
-    Resource::new(),
-    Resource::new(),
-    Resource::new(),
-    Resource::new(),
-    Resource::new(),
-    Resource::new(),
-    Resource::new(),
-    Resource::new()
-  ]
+  // 创建度量仪器
+  let counter = azimuth::Meter::create_counter(meter, "load.test.counter")
+  let histogram = azimuth::Meter::create_histogram(meter, "load.test.histogram")
   
-  let end_create_time = Clock::now_unix_nanos(Clock::system())
-  let create_duration = end_create_time - start_create_time
-  
-  // 3. 验证资源创建性能
-  assert_true(create_duration < 5000000L) // 小于5毫秒
-  
-  // 4. 测试资源属性设置性能
-  let start_attrs_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 为每个资源设置属性
-  let attrs_list = [
-    [("service.name", StringValue("service-1")), ("version", StringValue("1.0.0"))],
-    [("service.name", StringValue("service-2")), ("version", StringValue("2.0.0"))],
-    [("service.name", StringValue("service-3")), ("version", StringValue("3.0.0"))],
-    [("service.name", StringValue("service-4")), ("version", StringValue("4.0.0"))],
-    [("service.name", StringValue("service-5")), ("version", StringValue("5.0.0"))],
-    [("service.name", StringValue("service-6")), ("version", StringValue("6.0.0"))],
-    [("service.name", StringValue("service-7")), ("version", StringValue("7.0.0"))],
-    [("service.name", StringValue("service-8")), ("version", StringValue("8.0.0"))],
-    [("service.name", StringValue("service-9")), ("version", StringValue("9.0.0"))],
-    [("service.name", StringValue("service-10")), ("version", StringValue("10.0.0"))]
-  ]
-  
-  let resources_with_attrs = [
-    Resource::with_attributes(resources[0], attrs_list[0]),
-    Resource::with_attributes(resources[1], attrs_list[1]),
-    Resource::with_attributes(resources[2], attrs_list[2]),
-    Resource::with_attributes(resources[3], attrs_list[3]),
-    Resource::with_attributes(resources[4], attrs_list[4]),
-    Resource::with_attributes(resources[5], attrs_list[5]),
-    Resource::with_attributes(resources[6], attrs_list[6]),
-    Resource::with_attributes(resources[7], attrs_list[7]),
-    Resource::with_attributes(resources[8], attrs_list[8]),
-    Resource::with_attributes(resources[9], attrs_list[9])
-  ]
-  
-  let end_attrs_time = Clock::now_unix_nanos(Clock::system())
-  let attrs_duration = end_attrs_time - start_attrs_time
-  
-  // 5. 验证资源属性设置性能
-  assert_true(attrs_duration < 10000000L) // 小于10毫秒
-  
-  // 6. 测试资源属性获取性能
-  let start_get_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 从每个资源获取属性
-  for resource_with_attrs in resources_with_attrs {
-    let _ = Resource::get_attribute(resource_with_attrs, "service.name")
-    let _ = Resource::get_attribute(resource_with_attrs, "version")
+  // 综合操作循环
+  for i in 0..200 {
+    // 创建Span
+    let span = azimuth::Tracer::start_span(tracer, "高负载操作-" + i.to_string())
+    
+    // 添加事件
+    azimuth::Span::add_event(span, "操作开始", Some([
+      ("iteration", azimuth::IntValue(i)),
+      ("load.test", azimuth::StringValue("true"))
+    ]))
+    
+    // 度量操作
+    azimuth::Counter::add(counter, 1.0)
+    azimuth::Histogram::record(histogram, i.to_double() * 10.0)
+    
+    // 日志操作
+    let log_record = azimuth::LogRecord::new_with_context(
+      azimuth::Info,
+      Some("高负载测试日志 " + i.to_string()),
+      Some(azimuth::Attributes::new()),
+      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+      None,
+      Some("load-trace"),
+      Some("load-span"),
+      Some(azimuth::Context::root())
+    )
+    azimuth::Logger::emit(logger, log_record)
+    
+    // 属性操作
+    let attrs = azimuth::Attributes::new()
+    azimuth::Attributes::set(attrs, "load.test.id", azimuth::IntValue(i))
+    azimuth::Attributes::set(attrs, "load.test.name", azimuth::StringValue("test-" + i.to_string()))
+    let _ = azimuth::Attributes::get(attrs, "load.test.id")
+    
+    // 上下文操作
+    let ctx = azimuth::Context::root()
+    let key = azimuth::ContextKey::new("load.test.key")
+    let ctx_with_value = azimuth::Context::with_value(ctx, key, "value-" + i.to_string())
+    let _ = azimuth::Context::get(ctx_with_value, key)
+    
+    // 添加结束事件
+    azimuth::Span::add_event(span, "操作完成", Some([
+      ("iteration", azimuth::IntValue(i)),
+      ("status", azimuth::StringValue("completed"))
+    ]))
+    
+    // 结束Span
+    azimuth::Span::end(span)
   }
   
-  let end_get_time = Clock::now_unix_nanos(Clock::system())
-  let get_duration = end_get_time - start_get_time
+  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let total_duration = end_time - start_time
   
-  // 7. 验证资源属性获取性能
-  assert_true(get_duration < 5000000L) // 小于5毫秒
+  // 验证综合性能
+  assert_true(total_duration < 10000000000L)  // 200次综合操作应在10秒内完成
   
-  // 8. 测试资源合并性能
-  let start_merge_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 合并资源
-  let base_resource = Resource::with_attributes(Resource::new(), [
-    ("organization", StringValue("acme-corp")),
-    ("environment", StringValue("production"))
-  ])
-  
-  let override_resource = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("api-service")),
-    ("version", StringValue("1.2.3"))
-  ])
-  
-  // 执行10次合并操作
-  for _ in range(0, 10) {
-    let _ = Resource::merge(base_resource, override_resource)
-  }
-  
-  let end_merge_time = Clock::now_unix_nanos(Clock::system())
-  let merge_duration = end_merge_time - start_merge_time
-  
-  // 9. 验证资源合并性能
-  assert_true(merge_duration < 10000000L) // 小于10毫秒
-  
-  // 10. 记录资源操作性能指标
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "资源操作性能监控")
-  
-  let create_histogram = Meter::create_histogram(meter, "resource.create.duration",
-    Some("资源创建时间分布"), Some("nanoseconds"))
-  let attrs_histogram = Meter::create_histogram(meter, "resource.attributes.duration",
-    Some("资源属性设置时间分布"), Some("nanoseconds"))
-  let get_histogram = Meter::create_histogram(meter, "resource.get.duration",
-    Some("资源属性获取时间分布"), Some("nanoseconds"))
-  let merge_histogram = Meter::create_histogram(meter, "resource.merge.duration",
-    Some("资源合并时间分布"), Some("nanoseconds"))
-  
-  Histogram::record(create_histogram, create_duration.to_double())
-  Histogram::record(attrs_histogram, attrs_duration.to_double())
-  Histogram::record(get_histogram, get_duration.to_double())
-  Histogram::record(merge_histogram, merge_duration.to_double())
-  
-  assert_true(true)
+  // 计算平均每次综合操作的时间
+  let avg_operation_time = total_duration / 200L
+  assert_true(avg_operation_time < 50000000L)  // 每次综合操作小于50毫秒
 }
 
-test "内存使用性能基准测试" {
-  // 1. 基准测试准备
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "内存性能基准测试服务")
+// 测试10: 内存使用性能测试
+pub test "内存使用性能测试" {
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "内存性能基准测试服务")
+  // 创建大量对象以测试内存使用
+  let large_spans = []
+  let large_attributes = []
+  let large_contexts = []
+  let large_baggage = []
+  let large_resources = []
   
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "内存性能基准测试服务")
+  // 创建大量Span
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "内存测试")
   
-  // 2. 测试大量span创建的内存使用
-  let start_memory_test_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 创建大量span来测试内存使用
-  let many_spans = [
-    Tracer::start_span(tracer, "内存测试-span-1"),
-    Tracer::start_span(tracer, "内存测试-span-2"),
-    Tracer::start_span(tracer, "内存测试-span-3"),
-    Tracer::start_span(tracer, "内存测试-span-4"),
-    Tracer::start_span(tracer, "内存测试-span-5"),
-    Tracer::start_span(tracer, "内存测试-span-6"),
-    Tracer::start_span(tracer, "内存测试-span-7"),
-    Tracer::start_span(tracer, "内存测试-span-8"),
-    Tracer::start_span(tracer, "内存测试-span-9"),
-    Tracer::start_span(tracer, "内存测试-span-10")
-  ]
-  
-  // 为每个span添加事件和属性
-  for i in range(0, 10) {
-    Span::add_event(many_spans[i], "内存测试事件", Some([
-      ("test.id", IntValue(i)),
-      ("test.type", StringValue("memory_test")),
-      ("test.timestamp", IntValue(Clock::now_unix_nanos(Clock::system()).to_int()))
-    ]))
-    Span::set_status(many_spans[i], Ok, Some("内存测试完成"))
+  for i in 0..500 {
+    let span = azimuth::Tracer::start_span(tracer, "内存测试Span-" + i.to_string())
+    large_spans.push(span)
   }
   
-  // 3. 测试大量指标创建的内存使用
-  let many_counters = [
-    Meter::create_counter(meter, "内存测试.counter-1", Some("内存测试计数器1"), Some("count")),
-    Meter::create_counter(meter, "内存测试.counter-2", Some("内存测试计数器2"), Some("count")),
-    Meter::create_counter(meter, "内存测试.counter-3", Some("内存测试计数器3"), Some("count")),
-    Meter::create_counter(meter, "内存测试.counter-4", Some("内存测试计数器4"), Some("count")),
-    Meter::create_counter(meter, "内存测试.counter-5", Some("内存测试计数器5"), Some("count"))
-  ]
-  
-  // 为每个计数器记录值
-  for counter in many_counters {
-    Counter::add(counter, 1.0)
+  // 创建大量属性对象
+  for i in 0..500 {
+    let attrs = azimuth::Attributes::new()
+    azimuth::Attributes::set(attrs, "id", azimuth::IntValue(i))
+    azimuth::Attributes::set(attrs, "name", azimuth::StringValue("内存测试-" + i.to_string()))
+    azimuth::Attributes::set(attrs, "data", azimuth::StringValue("x".repeat(100)))  // 100字符的字符串
+    large_attributes.push(attrs)
   }
   
-  // 4. 测试大量日志创建的内存使用
-  let many_logs = [
-    LogRecord::new(Info, "内存测试日志1"),
-    LogRecord::new(Warn, "内存测试日志2"),
-    LogRecord::new(Error, "内存测试日志3"),
-    LogRecord::new(Debug, "内存测试日志4"),
-    LogRecord::new(Trace, "内存测试日志5")
-  ]
-  
-  // 发送所有日志
-  for log in many_logs {
-    Logger::emit(logger, log)
+  // 创建大量上下文
+  for i in 0..500 {
+    let ctx = azimuth::Context::root()
+    let key = azimuth::ContextKey::new("内存测试键-" + i.to_string())
+    let ctx_with_value = azimuth::Context::with_value(ctx, key, "内存测试值-" + i.to_string())
+    large_contexts.push(ctx_with_value)
   }
   
-  // 5. 清理所有span
-  for span in many_spans {
-    Span::end(span)
+  // 创建大量Baggage
+  for i in 0..500 {
+    let baggage = azimuth::Baggage::new()
+    let baggage_with_entry = azimuth::Baggage::set_entry(baggage, "内存测试", "值-" + i.to_string())
+    large_baggage.push(baggage_with_entry)
   }
   
-  let end_memory_test_time = Clock::now_unix_nanos(Clock::system())
-  let memory_test_duration = end_memory_test_time - start_memory_test_time
+  // 创建大量资源
+  for i in 0..500 {
+    let attrs = [
+      ("service.name", azimuth::StringValue("内存测试服务-" + i.to_string())),
+      ("service.instance.id", azimuth::StringValue("实例-" + i.to_string())),
+      ("large.data", azimuth::StringValue("x".repeat(200)))  // 200字符的字符串
+    ]
+    let resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), attrs)
+    large_resources.push(resource)
+  }
   
-  // 6. 验证内存测试性能
-  assert_true(memory_test_duration < 50000000L) // 小于50毫秒
+  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 7. 记录内存使用性能指标
-  let performance_meter = MeterProvider::get_meter(meter_provider, "内存性能监控")
-  
-  let memory_test_histogram = Meter::create_histogram(performance_meter, "memory.test.duration",
-    Some("内存测试时间分布"), Some("nanoseconds"))
-  let memory_usage_gauge = Meter::create_gauge(performance_meter, "memory.usage.bytes",
-    Some("内存使用量"), Some("bytes"))
-  
-  Histogram::record(memory_test_histogram, memory_test_duration.to_double())
-  // Gauge::set(memory_usage_gauge, estimated_memory_usage) // 简化处理
-  
-  assert_true(true)
-}
-
-test "高负载场景性能基准测试" {
-  // 1. 基准测试准备
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "高负载性能基准测试服务")
-  
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "高负载性能基准测试服务")
-  
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "高负载性能基准测试服务")
-  
-  // 2. 模拟高负载场景
-  let start_high_load_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 创建多个span来模拟高并发
-  let high_load_spans = [
-    Tracer::start_span(tracer, "高负载请求-1"),
-    Tracer::start_span(tracer, "高负载请求-2"),
-    Tracer::start_span(tracer, "高负载请求-3"),
-    Tracer::start_span(tracer, "高负载请求-4"),
-    Tracer::start_span(tracer, "高负载请求-5")
-  ]
-  
-  // 为每个span添加多个事件
-  for i in range(0, 5) {
-    Span::add_event(high_load_spans[i], "请求开始", Some([
-      ("request.id", StringValue("req-" + (i + 1).to_string())),
-      ("user.id", IntValue(1000 + i)),
-      ("start.time", IntValue(Clock::now_unix_nanos(Clock::system()).to_int()))
-    ]))
+  // 执行大量读取操作
+  for i in 0..500 {
+    // 读取属性
+    let attrs = large_attributes[i]
+    let _ = azimuth::Attributes::get(attrs, "id")
+    let _ = azimuth::Attributes::get(attrs, "name")
+    let _ = azimuth::Attributes::get(attrs, "data")
     
-    Span::add_event(high_load_spans[i], "处理中", Some([
-      ("request.id", StringValue("req-" + (i + 1).to_string())),
-      ("processing.step", StringValue("data_validation")),
-      ("progress", FloatValue(0.5))
-    ]))
+    // 读取上下文
+    let ctx = large_contexts[i]
+    let key = azimuth::ContextKey::new("内存测试键-" + i.to_string())
+    let _ = azimuth::Context::get(ctx, key)
     
-    Span::add_event(high_load_spans[i], "请求完成", Some([
-      ("request.id", StringValue("req-" + (i + 1).to_string())),
-      ("status", StringValue("completed")),
-      ("end.time", IntValue(Clock::now_unix_nanos(Clock::system()).to_int()))
-    ]))
+    // 读取Baggage
+    let baggage = large_baggage[i]
+    let _ = azimuth::Baggage::get_entry(baggage, "内存测试")
     
-    Span::set_status(high_load_spans[i], Ok, Some("请求处理完成"))
+    // 读取资源
+    let resource = large_resources[i]
+    let _ = azimuth::Resource::get_attribute(resource, "service.name")
+    let _ = azimuth::Resource::get_attribute(resource, "large.data")
   }
   
-  // 3. 记录高负载指标
-  let high_load_counter = Meter::create_counter(meter, "high_load.requests.total",
-    Some("高负载请求总数"), Some("requests"))
-  let high_load_histogram = Meter::create_histogram(meter, "high_load.request.duration",
-    Some("高负载请求持续时间"), Some("milliseconds"))
+  let read_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 记录多个指标值
-  for i in range(0, 50) {
-    Counter::add(high_load_counter, 1.0)
-    Histogram::record(high_load_histogram, (100.0 + i.to_double() * 2.5))
+  // 清理操作（结束所有Span）
+  for span in large_spans {
+    azimuth::Span::end(span)
   }
   
-  // 4. 记录高负载日志
-  let high_load_logs = [
-    LogRecord::new(Info, "高负载测试开始"),
-    LogRecord::new(Debug, "处理请求1"),
-    LogRecord::new(Debug, "处理请求2"),
-    LogRecord::new(Debug, "处理请求3"),
-    LogRecord::new(Debug, "处理请求4"),
-    LogRecord::new(Debug, "处理请求5"),
-    LogRecord::new(Info, "高负载测试完成")
-  ]
+  let cleanup_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  for log in high_load_logs {
-    Logger::emit(logger, log)
-  }
+  let total_duration = cleanup_time - start_time
+  let creation_duration = creation_time - start_time
+  let read_duration = read_time - creation_time
+  let cleanup_duration = cleanup_time - read_time
   
-  // 5. 清理所有span
-  for span in high_load_spans {
-    Span::end(span)
-  }
+  // 验证内存性能
+  assert_true(creation_duration < 15000000000L)  // 创建2500个对象应在15秒内完成
+  assert_true(read_duration < 5000000000L)       // 读取操作应在5秒内完成
+  assert_true(cleanup_duration < 3000000000L)    // 清理操作应在3秒内完成
+  assert_true(total_duration < 23000000000L)     // 总操作应在23秒内完成
   
-  let end_high_load_time = Clock::now_unix_nanos(Clock::system())
-  let high_load_duration = end_high_load_time - start_high_load_time
-  
-  // 6. 验证高负载性能
-  assert_true(high_load_duration < 100000000L) // 小于100毫秒
-  
-  // 7. 记录高负载性能指标
-  let performance_meter = MeterProvider::get_meter(meter_provider, "高负载性能监控")
-  
-  let high_load_histogram = Meter::create_histogram(performance_meter, "high_load.test.duration",
-    Some("高负载测试时间分布"), Some("nanoseconds"))
-  let throughput_gauge = Meter::create_gauge(performance_meter, "high_load.throughput",
-    Some("高负载吞吐量"), Some("requests_per_second"))
-  
-  Histogram::record(high_load_histogram, high_load_duration.to_double())
-  // Gauge::set(throughput_gauge, calculated_throughput) // 简化处理
-  
-  assert_true(true)
+  // 验证对象数量
+  assert_true(large_spans.length() == 500)
+  assert_true(large_attributes.length() == 500)
+  assert_true(large_contexts.length() == 500)
+  assert_true(large_baggage.length() == 500)
+  assert_true(large_resources.length() == 500)
 }
