@@ -1,733 +1,290 @@
-// Internationalization and Globalization Tests for Azimuth Telemetry System
-// These tests focus on multi-language support, locale handling, and cultural adaptations
+// 国际化配置测试用例
+// 测试遥测系统的国际化和本地化支持
 
-// Test 1: Multi-Language Attribute Support
-pub test "multi-language attribute support" {
-  let attrs = azimuth::Attributes::new()
+test "internationalization_attribute_values" {
+  // 测试多语言属性值
+  let base_resource = Resource::new()
   
-  // Test attributes with different languages
-  azimuth::Attributes::set(attrs, "error.message.en", azimuth::StringValue("Database connection failed"))
-  azimuth::Attributes::set(attrs, "error.message.zh", azimuth::StringValue("数据库连接失败"))
-  azimuth::Attributes::set(attrs, "error.message.ja", azimuth::StringValue("データベース接続に失敗しました"))
-  azimuth::Attributes::set(attrs, "error.message.es", azimuth::StringValue("Error de conexión a la base de datos"))
-  azimuth::Attributes::set(attrs, "error.message.fr", azimuth::StringValue("Échec de la connexion à la base de données"))
-  azimuth::Attributes::set(attrs, "error.message.de", azimuth::StringValue("Datenbankverbindung fehlgeschlagen"))
-  azimuth::Attributes::set(attrs, "error.message.ko", azimuth::StringValue("데이터베이스 연결 실패"))
-  azimuth::Attributes::set(attrs, "error.message.ru", azimuth::StringValue("Ошибка подключения к базе данных"))
-  
-  // Test retrieval of different language versions
-  let error_en = azimuth::Attributes::get(attrs, "error.message.en")
-  let error_zh = azimuth::Attributes::get(attrs, "error.message.zh")
-  let error_ja = azimuth::Attributes::get(attrs, "error.message.ja")
-  let error_es = azimuth::Attributes::get(attrs, "error.message.es")
-  let error_fr = azimuth::Attributes::get(attrs, "error.message.fr")
-  let error_de = azimuth::Attributes::get(attrs, "error.message.de")
-  let error_ko = azimuth::Attributes::get(attrs, "error.message.ko")
-  let error_ru = azimuth::Attributes::get(attrs, "error.message.ru")
-  
-  assert_eq(error_en, Some(azimuth::StringValue("Database connection failed")))
-  assert_eq(error_zh, Some(azimuth::StringValue("数据库连接失败")))
-  assert_eq(error_ja, Some(azimuth::StringValue("データベース接続に失敗しました")))
-  assert_eq(error_es, Some(azimuth::StringValue("Error de conexión a la base de datos")))
-  assert_eq(error_fr, Some(azimuth::StringValue("Échec de la connexion à la base de données")))
-  assert_eq(error_de, Some(azimuth::StringValue("Datenbankverbindung fehlgeschlagen")))
-  assert_eq(error_ko, Some(azimuth::StringValue("데이터베이스 연결 실패")))
-  assert_eq(error_ru, Some(azimuth::StringValue("Ошибка подключения к базе данных")))
-  
-  // Test service names in different languages
-  azimuth::Attributes::set(attrs, "service.name.en", azimuth::StringValue("Payment Processing Service"))
-  azimuth::Attributes::set(attrs, "service.name.zh", azimuth::StringValue("支付处理服务"))
-  azimuth::Attributes::set(attrs, "service.name.ja", azimuth::StringValue("決済処理サービス"))
-  azimuth::Attributes::set(attrs, "service.name.es", azimuth::StringValue("Servicio de procesamiento de pagos"))
-  
-  let service_en = azimuth::Attributes::get(attrs, "service.name.en")
-  let service_zh = azimuth::Attributes::get(attrs, "service.name.zh")
-  let service_ja = azimuth::Attributes::get(attrs, "service.name.ja")
-  let service_es = azimuth::Attributes::get(attrs, "service.name.es")
-  
-  assert_eq(service_en, Some(azimuth::StringValue("Payment Processing Service")))
-  assert_eq(service_zh, Some(azimuth::StringValue("支付处理服务")))
-  assert_eq(service_ja, Some(azimuth::StringValue("決済処理サービス")))
-  assert_eq(service_es, Some(azimuth::StringValue("Servicio de procesamiento de pagos")))
-}
-
-// Test 2: Locale-Specific Resource Attributes
-pub test "locale-specific resource attributes" {
-  let base_resource = azimuth::Resource::new()
-  
-  // Create locale-specific resource attributes
-  let en_attrs = [
-    ("service.name", azimuth::StringValue("User Authentication Service")),
-    ("service.description", azimuth::StringValue("Handles user authentication and authorization")),
-    ("service.region", azimuth::StringValue("us-west-2")),
-    ("service.language", azimuth::StringValue("en-US")),
-    ("service.timezone", azimuth::StringValue("America/Los_Angeles"))
+  // 添加中文属性
+  let chinese_attrs = [
+    ("service.name", StringValue("用户服务")),
+    ("service.description", StringValue("处理用户认证和授权的核心服务")),
+    ("service.owner", StringValue("开发团队A")),
+    ("region", StringValue("亚太地区"))
   ]
+  let resource_with_chinese = Resource::with_attributes(base_resource, chinese_attrs)
   
-  let zh_attrs = [
-    ("service.name", azimuth::StringValue("用户认证服务")),
-    ("service.description", azimuth::StringValue("处理用户认证和授权")),
-    ("service.region", azimuth::StringValue("ap-northeast-1")),
-    ("service.language", azimuth::StringValue("zh-CN")),
-    ("service.timezone", azimuth::StringValue("Asia/Shanghai"))
+  // 添加英文属性
+  let english_attrs = [
+    ("service.name.en", StringValue("User Service")),
+    ("service.description.en", StringValue("Core service handling user authentication and authorization")),
+    ("service.owner.en", StringValue("Development Team A")),
+    ("region.en", StringValue("Asia-Pacific"))
   ]
+  let resource_with_english = Resource::with_attributes(resource_with_chinese, english_attrs)
   
-  let ja_attrs = [
-    ("service.name", azimuth::StringValue("ユーザー認証サービス")),
-    ("service.description", azimuth::StringValue("ユーザー認証と認可を処理します")),
-    ("service.region", azimuth::StringValue("ap-northeast-1")),
-    ("service.language", azimuth::StringValue("ja-JP")),
-    ("service.timezone", azimuth::StringValue("Asia/Tokyo"))
-  ]
+  // 验证中文属性
+  let service_name_cn = Resource::get_attribute(resource_with_english, "service.name")
+  let service_desc_cn = Resource::get_attribute(resource_with_english, "service.description")
+  let service_owner_cn = Resource::get_attribute(resource_with_english, "service.owner")
+  let region_cn = Resource::get_attribute(resource_with_english, "region")
   
-  let es_attrs = [
-    ("service.name", azimuth::StringValue("Servicio de Autenticación de Usuario")),
-    ("service.description", azimuth::StringValue("Maneja la autenticación y autorización de usuarios")),
-    ("service.region", azimuth::StringValue("sa-east-1")),
-    ("service.language", azimuth::StringValue("es-ES")),
-    ("service.timezone", azimuth::StringValue("Europe/Madrid"))
-  ]
+  assert_eq(service_name_cn, Some(StringValue("用户服务")))
+  assert_eq(service_desc_cn, Some(StringValue("处理用户认证和授权的核心服务")))
+  assert_eq(service_owner_cn, Some(StringValue("开发团队A")))
+  assert_eq(region_cn, Some(StringValue("亚太地区")))
   
-  // Create locale-specific resources
-  let en_resource = azimuth::Resource::with_attributes(base_resource, en_attrs)
-  let zh_resource = azimuth::Resource::with_attributes(base_resource, zh_attrs)
-  let ja_resource = azimuth::Resource::with_attributes(base_resource, ja_attrs)
-  let es_resource = azimuth::Resource::with_attributes(base_resource, es_attrs)
+  // 验证英文属性
+  let service_name_en = Resource::get_attribute(resource_with_english, "service.name.en")
+  let service_desc_en = Resource::get_attribute(resource_with_english, "service.description.en")
+  let service_owner_en = Resource::get_attribute(resource_with_english, "service.owner.en")
+  let region_en = Resource::get_attribute(resource_with_english, "region.en")
   
-  // Verify locale-specific attributes
-  let en_name = azimuth::Resource::get_attribute(en_resource, "service.name")
-  let zh_name = azimuth::Resource::get_attribute(zh_resource, "service.name")
-  let ja_name = azimuth::Resource::get_attribute(ja_resource, "service.name")
-  let es_name = azimuth::Resource::get_attribute(es_resource, "service.name")
-  
-  assert_eq(en_name, Some(azimuth::StringValue("User Authentication Service")))
-  assert_eq(zh_name, Some(azimuth::StringValue("用户认证服务")))
-  assert_eq(ja_name, Some(azimuth::StringValue("ユーザー認証サービス")))
-  assert_eq(es_name, Some(azimuth::StringValue("Servicio de Autenticación de Usuario")))
-  
-  let en_language = azimuth::Resource::get_attribute(en_resource, "service.language")
-  let zh_language = azimuth::Resource::get_attribute(zh_resource, "service.language")
-  let ja_language = azimuth::Resource::get_attribute(ja_resource, "service.language")
-  let es_language = azimuth::Resource::get_attribute(es_resource, "service.language")
-  
-  assert_eq(en_language, Some(azimuth::StringValue("en-US")))
-  assert_eq(zh_language, Some(azimuth::StringValue("zh-CN")))
-  assert_eq(ja_language, Some(azimuth::StringValue("ja-JP")))
-  assert_eq(es_language, Some(azimuth::StringValue("es-ES")))
-  
-  let en_timezone = azimuth::Resource::get_attribute(en_resource, "service.timezone")
-  let zh_timezone = azimuth::Resource::get_attribute(zh_resource, "service.timezone")
-  let ja_timezone = azimuth::Resource::get_attribute(ja_resource, "service.timezone")
-  let es_timezone = azimuth::Resource::get_attribute(es_resource, "service.timezone")
-  
-  assert_eq(en_timezone, Some(azimuth::StringValue("America/Los_Angeles")))
-  assert_eq(zh_timezone, Some(azimuth::StringValue("Asia/Shanghai")))
-  assert_eq(ja_timezone, Some(azimuth::StringValue("Asia/Tokyo")))
-  assert_eq(es_timezone, Some(azimuth::StringValue("Europe/Madrid")))
+  assert_eq(service_name_en, Some(StringValue("User Service")))
+  assert_eq(service_desc_en, Some(StringValue("Core service handling user authentication and authorization")))
+  assert_eq(service_owner_en, Some(StringValue("Development Team A")))
+  assert_eq(region_en, Some(StringValue("Asia-Pacific")))
 }
 
-// Test 3: Multi-Language Log Messages
-pub test "multi-language log messages" {
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "internationalization.logger")
+test "internationalization_log_messages" {
+  // 测试多语言日志消息
+  let clock = Clock::system()
+  let timestamp = Clock::now_unix_nanos(clock)
   
-  // Create log records in different languages
-  let en_log = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("User login successful for user ID: 12345"),
-    Some(azimuth::Attributes::new()),
-    Some(1735689600000000000L),
+  // 创建中文日志记录
+  let chinese_log = LogRecord::new_with_context(
+    Info,
+    Some("用户登录成功"),
+    Some(Attributes::{ values: [
+      ("user.id", StringValue("用户123")),
+      ("login.method", StringValue("密码认证")),
+      ("location", StringValue("北京"))
+    ]}),
+    Some(timestamp),
     None,
-    Some("trace-intl-001"),
-    Some("span-intl-001"),
-    Some(azimuth::Context::root())
+    Some("trace_001"),
+    Some("span_001"),
+    None
   )
   
-  let zh_log = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("用户登录成功，用户ID：12345"),
-    Some(azimuth::Attributes::new()),
-    Some(1735689600000000000L),
+  // 创建英文日志记录
+  let english_log = LogRecord::new_with_context(
+    Info,
+    Some("User login successful"),
+    Some(Attributes::{ values: [
+      ("user.id", StringValue("user123")),
+      ("login.method", StringValue("password_auth")),
+      ("location", StringValue("Beijing"))
+    ]}),
+    Some(timestamp + 1000000L),
     None,
-    Some("trace-intl-001"),
-    Some("span-intl-002"),
-    Some(azimuth::Context::root())
+    Some("trace_001"),
+    Some("span_001"),
+    None
   )
   
-  let ja_log = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("ユーザーID: 12345のログインが成功しました"),
-    Some(azimuth::Attributes::new()),
-    Some(1735689600000000000L),
+  // 验证中文日志
+  assert_eq(LogRecord::body(chinese_log), Some("用户登录成功"))
+  match chinese_log.attributes {
+    Some(attrs) => {
+      let user_id = Attributes::get(attrs, "user.id")
+      let login_method = Attributes::get(attrs, "login.method")
+      let location = Attributes::get(attrs, "location")
+      
+      assert_eq(user_id, Some(StringValue("用户123")))
+      assert_eq(login_method, Some(StringValue("密码认证")))
+      assert_eq(location, Some(StringValue("北京")))
+    }
+    None => assert_false(true, "Expected attributes in Chinese log")
+  }
+  
+  // 验证英文日志
+  assert_eq(LogRecord::body(english_log), Some("User login successful"))
+  match english_log.attributes {
+    Some(attrs) => {
+      let user_id = Attributes::get(attrs, "user.id")
+      let login_method = Attributes::get(attrs, "login.method")
+      let location = Attributes::get(attrs, "location")
+      
+      assert_eq(user_id, Some(StringValue("user123")))
+      assert_eq(login_method, Some(StringValue("password_auth")))
+      assert_eq(location, Some(StringValue("Beijing")))
+    }
+    None => assert_false(true, "Expected attributes in English log")
+  }
+}
+
+test "internationalization_span_names" {
+  // 测试多语言span名称
+  let trace_id = "internationalization_trace"
+  
+  // 创建中文span
+  let chinese_span_ctx = SpanContext::new(trace_id, "chinese_span", true, "")
+  let chinese_span = Span::new("用户认证流程", Server, chinese_span_ctx)
+  
+  // 创建英文span
+  let english_span_ctx = SpanContext::new(trace_id, "english_span", true, "")
+  let english_span = Span::new("User Authentication Flow", Server, english_span_ctx)
+  
+  // 验证span名称
+  assert_eq(Span::name(chinese_span), "用户认证流程")
+  assert_eq(Span::name(english_span), "User Authentication Flow")
+  
+  // 验证span类型
+  assert_eq(Span::kind(chinese_span), Server)
+  assert_eq(Span::kind(english_span), Server)
+  
+  // 验证span上下文
+  assert_eq(SpanContext::trace_id(chinese_span_ctx), trace_id)
+  assert_eq(SpanContext::trace_id(english_span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(chinese_span_ctx), "chinese_span")
+  assert_eq(SpanContext::span_id(english_span_ctx), "english_span")
+}
+
+test "internationalization_error_messages" {
+  // 测试多语言错误消息
+  let clock = Clock::system()
+  let timestamp = Clock::now_unix_nanos(clock)
+  
+  // 创建中文错误日志
+  let chinese_error = LogRecord::new_with_context(
+    Error,
+    Some("数据库连接失败"),
+    Some(Attributes::{ values: [
+      ("error.code", StringValue("DB_CONN_001")),
+      ("error.message", StringValue("无法连接到数据库服务器")),
+      ("retry.count", IntValue(3)),
+      ("error.severity", StringValue("严重"))
+    ]}),
+    Some(timestamp),
     None,
-    Some("trace-intl-001"),
-    Some("span-intl-003"),
-    Some(azimuth::Context::root())
+    Some("trace_error_001"),
+    Some("span_error_001"),
+    None
   )
   
-  let es_log = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("Inicio de sesión exitoso para el usuario ID: 12345"),
-    Some(azimuth::Attributes::new()),
-    Some(1735689600000000000L),
+  // 创建英文错误日志
+  let english_error = LogRecord::new_with_context(
+    Error,
+    Some("Database connection failed"),
+    Some(Attributes::{ values: [
+      ("error.code", StringValue("DB_CONN_001")),
+      ("error.message", StringValue("Unable to connect to database server")),
+      ("retry.count", IntValue(3)),
+      ("error.severity", StringValue("Critical"))
+    ]}),
+    Some(timestamp + 1000000L),
     None,
-    Some("trace-intl-001"),
-    Some("span-intl-004"),
-    Some(azimuth::Context::root())
+    Some("trace_error_001"),
+    Some("span_error_001"),
+    None
   )
   
-  // Create error logs in different languages
-  let en_error_log = azimuth::LogRecord::new_with_context(
-    azimuth::Error,
-    Some("Payment processing failed: Invalid credit card number"),
-    Some(azimuth::Attributes::new()),
-    Some(1735689600000000001L),
-    None,
-    Some("trace-intl-002"),
-    Some("span-intl-005"),
-    Some(azimuth::Context::root())
-  )
+  // 验证中文错误
+  assert_eq(LogRecord::severity_number(chinese_error), Error)
+  assert_eq(LogRecord::body(chinese_error), Some("数据库连接失败"))
+  match chinese_error.attributes {
+    Some(attrs) => {
+      let error_code = Attributes::get(attrs, "error.code")
+      let error_message = Attributes::get(attrs, "error.message")
+      let retry_count = Attributes::get(attrs, "retry.count")
+      let error_severity = Attributes::get(attrs, "error.severity")
+      
+      assert_eq(error_code, Some(StringValue("DB_CONN_001")))
+      assert_eq(error_message, Some(StringValue("无法连接到数据库服务器")))
+      assert_eq(retry_count, Some(IntValue(3)))
+      assert_eq(error_severity, Some(StringValue("严重")))
+    }
+    None => assert_false(true, "Expected attributes in Chinese error log")
+  }
   
-  let zh_error_log = azimuth::LogRecord::new_with_context(
-    azimuth::Error,
-    Some("支付处理失败：信用卡号码无效"),
-    Some(azimuth::Attributes::new()),
-    Some(1735689600000000001L),
-    None,
-    Some("trace-intl-002"),
-    Some("span-intl-006"),
-    Some(azimuth::Context::root())
-  )
-  
-  // Emit all internationalized logs
-  azimuth::Logger::emit(logger, en_log)
-  azimuth::Logger::emit(logger, zh_log)
-  azimuth::Logger::emit(logger, ja_log)
-  azimuth::Logger::emit(logger, es_log)
-  azimuth::Logger::emit(logger, en_error_log)
-  azimuth::Logger::emit(logger, zh_error_log)
-  
-  // Verify log message content
-  assert_eq(azimuth::LogRecord::body(en_log), Some("User login successful for user ID: 12345"))
-  assert_eq(azimuth::LogRecord::body(zh_log), Some("用户登录成功，用户ID：12345"))
-  assert_eq(azimuth::LogRecord::body(ja_log), Some("ユーザーID: 12345のログインが成功しました"))
-  assert_eq(azimuth::LogRecord::body(es_log), Some("Inicio de sesión exitoso para el usuario ID: 12345"))
-  
-  assert_eq(azimuth::LogRecord::body(en_error_log), Some("Payment processing failed: Invalid credit card number"))
-  assert_eq(azimuth::LogRecord::body(zh_error_log), Some("支付处理失败：信用卡号码无效"))
-  
-  // Verify log severity
-  assert_eq(azimuth::LogRecord::severity_number(en_log), azimuth::Info)
-  assert_eq(azimuth::LogRecord::severity_number(zh_log), azimuth::Info)
-  assert_eq(azimuth::LogRecord::severity_number(ja_log), azimuth::Info)
-  assert_eq(azimuth::LogRecord::severity_number(es_log), azimuth::Info)
-  assert_eq(azimuth::LogRecord::severity_number(en_error_log), azimuth::Error)
-  assert_eq(azimuth::LogRecord::severity_number(zh_error_log), azimuth::Error)
+  // 验证英文错误
+  assert_eq(LogRecord::severity_number(english_error), Error)
+  assert_eq(LogRecord::body(english_error), Some("Database connection failed"))
+  match english_error.attributes {
+    Some(attrs) => {
+      let error_code = Attributes::get(attrs, "error.code")
+      let error_message = Attributes::get(attrs, "error.message")
+      let retry_count = Attributes::get(attrs, "retry.count")
+      let error_severity = Attributes::get(attrs, "error.severity")
+      
+      assert_eq(error_code, Some(StringValue("DB_CONN_001")))
+      assert_eq(error_message, Some(StringValue("Unable to connect to database server")))
+      assert_eq(retry_count, Some(IntValue(3)))
+      assert_eq(error_severity, Some(StringValue("Critical")))
+    }
+    None => assert_false(true, "Expected attributes in English error log")
+  }
 }
 
-// Test 4: Internationalized Span Names and Events
-pub test "internationalized span names and events" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "internationalization.tracer")
+test "internationalization_metrics_names" {
+  // 测试多语言指标名称
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "国际化仪表板")
   
-  // Create spans with internationalized names
-  let en_span = azimuth::Tracer::start_span(tracer, "Process User Payment")
-  let zh_span = azimuth::Tracer::start_span(tracer, "处理用户支付")
-  let ja_span = azimuth::Tracer::start_span(tracer, "ユーザー決済処理")
-  let es_span = azimuth::Tracer::start_span(tracer, "Procesar Pago del Usuario")
+  // 创建中文指标
+  let chinese_counter = Meter::create_counter(meter, "请求总数")
+  let chinese_histogram = Meter::create_histogram(meter, "响应时间")
+  let chinese_gauge = Meter::create_gauge(meter, "活跃用户数")
   
-  // Add internationalized events
-  azimuth::Span::add_event(en_span, "Payment validation started", 
-    Some([("step", azimuth::StringValue("validation")),
-          ("language", azimuth::StringValue("en"))]))
+  // 创建英文指标
+  let english_meter = MeterProvider::get_meter(provider, "Internationalization Dashboard")
+  let english_counter = Meter::create_counter(english_meter, "request.total")
+  let english_histogram = Meter::create_histogram(english_meter, "response.duration")
+  let english_gauge = Meter::create_gauge(english_meter, "active.users")
   
-  azimuth::Span::add_event(zh_span, "支付验证开始", 
-    Some([("step", azimuth::StringValue("validation")),
-          ("language", azimuth::StringValue("zh"))]))
+  // 验证中文指标名称
+  assert_eq(chinese_counter.name, "请求总数")
+  assert_eq(chinese_histogram.name, "响应时间")
+  assert_eq(chinese_gauge.name, "活跃用户数")
   
-  azimuth::Span::add_event(ja_span, "決済検証開始", 
-    Some([("step", azimuth::StringValue("validation")),
-          ("language", azimuth::StringValue("ja"))]))
+  // 验证英文指标名称
+  assert_eq(english_counter.name, "request.total")
+  assert_eq(english_histogram.name, "response.duration")
+  assert_eq(english_gauge.name, "active.users")
   
-  azimuth::Span::add_event(es_span, "Validación de pago iniciada", 
-    Some([("step", azimuth::StringValue("validation")),
-          ("language", azimuth::StringValue("es"))]))
+  // 记录一些指标值
+  Counter::add(chinese_counter, 100.0)
+  Histogram::record(chinese_histogram, 250.0)
   
-  // Add more internationalized events
-  azimuth::Span::add_event(en_span, "Payment processed successfully", 
-    Some([("step", azimuth::StringValue("completion")),
-          ("language", azimuth::StringValue("en")),
-          ("result", azimuth::StringValue("success"))]))
+  Counter::add(english_counter, 150.0)
+  Histogram::record(english_histogram, 300.0)
   
-  azimuth::Span::add_event(zh_span, "支付处理成功", 
-    Some([("step", azimuth::StringValue("completion")),
-          ("language", azimuth::StringValue("zh")),
-          ("result", azimuth::StringValue("success"))]))
+  // 验证instrument类型
+  let chinese_counter_instrument = Counter(chinese_counter.name, chinese_counter.description, chinese_counter.unit)
+  let english_counter_instrument = Counter(english_counter.name, english_counter.description, english_counter.unit)
   
-  azimuth::Span::add_event(ja_span, "決済処理が正常に完了", 
-    Some([("step", azimuth::StringValue("completion")),
-          ("language", azimuth::StringValue("ja")),
-          ("result", azimuth::StringValue("success"))]))
-  
-  azimuth::Span::add_event(es_span, "Pago procesado exitosamente", 
-    Some([("step", azimuth::StringValue("completion")),
-          ("language", azimuth::StringValue("es")),
-          ("result", azimuth::StringValue("success"))]))
-  
-  // Set internationalized status messages
-  azimuth::Span::set_status(en_span, azimuth::Ok, Some("Payment processing completed successfully"))
-  azimuth::Span::set_status(zh_span, azimuth::Ok, Some("支付处理成功完成"))
-  azimuth::Span::set_status(ja_span, azimuth::Ok, Some("決済処理が正常に完了しました"))
-  azimuth::Span::set_status(es_span, azimuth::Ok, Some("Procesamiento de pago completado exitosamente"))
-  
-  // Verify span names
-  assert_eq(azimuth::Span::name(en_span), "Process User Payment")
-  assert_eq(azimuth::Span::name(zh_span), "处理用户支付")
-  assert_eq(azimuth::Span::name(ja_span), "ユーザー決済処理")
-  assert_eq(azimuth::Span::name(es_span), "Procesar Pago del Usuario")
-  
-  // Complete spans
-  azimuth::Span::end(en_span)
-  azimuth::Span::end(zh_span)
-  azimuth::Span::end(ja_span)
-  azimuth::Span::end(es_span)
+  assert_eq(Instrument::name(chinese_counter_instrument), "请求总数")
+  assert_eq(Instrument::name(english_counter_instrument), "request.total")
 }
 
-// Test 5: Internationalized Metrics and Labels
-pub test "internationalized metrics and labels" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "internationalization.meter")
+test "internationalization_baggage_entries" {
+  // 测试多语言baggage条目
+  let baggage = Baggage::new()
   
-  // Create metrics with internationalized descriptions
-  let en_counter = azimuth::Meter::create_counter(meter, "user.login.attempts", 
-    Some("Total number of user login attempts"), Some("attempts"))
-  let zh_counter = azimuth::Meter::create_counter(meter, "user.login.attempts", 
-    Some("用户登录尝试总次数"), Some("次数"))
-  let ja_counter = azimuth::Meter::create_counter(meter, "user.login.attempts", 
-    Some("ユーザーログイン試行総数"), Some("回"))
-  let es_counter = azimuth::Meter::create_counter(meter, "user.login.attempts", 
-    Some("Número total de intentos de inicio de sesión de usuario"), Some("intentos"))
+  // 添加中文baggage条目
+  let baggage_with_cn = Baggage::set_entry(baggage, "用户角色", "管理员")
+  let baggage_with_cn2 = Baggage::set_entry(baggage_with_cn, "请求来源", "移动应用")
   
-  let en_histogram = azimuth::Meter::create_histogram(meter, "response.time", 
-    Some("Response time in milliseconds"), Some("ms"))
-  let zh_histogram = azimuth::Meter::create_histogram(meter, "response.time", 
-    Some("响应时间（毫秒）"), Some("毫秒"))
-  let ja_histogram = azimuth::Meter::create_histogram(meter, "response.time", 
-    Some("応答時間（ミリ秒）"), Some("ミリ秒"))
-  let es_histogram = azimuth::Meter::create_histogram(meter, "response.time", 
-    Some("Tiempo de respuesta en milisegundos"), Some("ms"))
+  // 添加英文baggage条目
+  let baggage_with_en = Baggage::set_entry(baggage_with_cn2, "user.role", "administrator")
+  let baggage_final = Baggage::set_entry(baggage_with_en, "request.source", "mobile_app")
   
-  // Record metrics with internationalized context
-  azimuth::Counter::add(en_counter, 1.0)
-  azimuth::Counter::add(zh_counter, 1.0)
-  azimuth::Counter::add(ja_counter, 1.0)
-  azimuth::Counter::add(es_counter, 1.0)
+  // 验证中文baggage条目
+  let user_role_cn = Baggage::get_entry(baggage_final, "用户角色")
+  let request_source_cn = Baggage::get_entry(baggage_final, "请求来源")
   
-  azimuth::Histogram::record(en_histogram, 150.0)
-  azimuth::Histogram::record(zh_histogram, 150.0)
-  azimuth::Histogram::record(ja_histogram, 150.0)
-  azimuth::Histogram::record(es_histogram, 150.0)
+  assert_eq(user_role_cn, Some("管理员"))
+  assert_eq(request_source_cn, Some("移动应用"))
   
-  // Verify metric descriptions
-  let en_counter_instrument = azimuth::Counter::as_instrument(en_counter)
-  let zh_counter_instrument = azimuth::Counter::as_instrument(zh_counter)
-  let ja_counter_instrument = azimuth::Counter::as_instrument(ja_counter)
-  let es_counter_instrument = azimuth::Counter::as_instrument(es_counter)
+  // 验证英文baggage条目
+  let user_role_en = Baggage::get_entry(baggage_final, "user.role")
+  let request_source_en = Baggage::get_entry(baggage_final, "request.source")
   
-  assert_eq(azimuth::Instrument::description(en_counter_instrument), Some("Total number of user login attempts"))
-  assert_eq(azimuth::Instrument::description(zh_counter_instrument), Some("用户登录尝试总次数"))
-  assert_eq(azimuth::Instrument::description(ja_counter_instrument), Some("ユーザーログイン試行総数"))
-  assert_eq(azimuth::Instrument::description(es_counter_instrument), Some("Número total de intentos de inicio de sesión de usuario"))
+  assert_eq(user_role_en, Some("administrator"))
+  assert_eq(request_source_en, Some("mobile_app"))
   
-  let en_histogram_instrument = azimuth::Histogram::as_instrument(en_histogram)
-  let zh_histogram_instrument = azimuth::Histogram::as_instrument(zh_histogram)
-  let ja_histogram_instrument = azimuth::Histogram::as_instrument(ja_histogram)
-  let es_histogram_instrument = azimuth::Histogram::as_instrument(es_histogram)
-  
-  assert_eq(azimuth::Instrument::description(en_histogram_instrument), Some("Response time in milliseconds"))
-  assert_eq(azimuth::Instrument::description(zh_histogram_instrument), Some("响应时间（毫秒）"))
-  assert_eq(azimuth::Instrument::description(ja_histogram_instrument), Some("応答時間（ミリ秒）"))
-  assert_eq(azimuth::Instrument::description(es_histogram_instrument), Some("Tiempo de respuesta en milisegundos"))
-  
-  // Verify metric units
-  assert_eq(azimuth::Instrument::unit(en_counter_instrument), Some("attempts"))
-  assert_eq(azimuth::Instrument::unit(zh_counter_instrument), Some("次数"))
-  assert_eq(azimuth::Instrument::unit(ja_counter_instrument), Some("回"))
-  assert_eq(azimuth::Instrument::unit(es_counter_instrument), Some("intentos"))
-  
-  assert_eq(azimuth::Instrument::unit(en_histogram_instrument), Some("ms"))
-  assert_eq(azimuth::Instrument::unit(zh_histogram_instrument), Some("毫秒"))
-  assert_eq(azimuth::Instrument::unit(ja_histogram_instrument), Some("ミリ秒"))
-  assert_eq(azimuth::Instrument::unit(es_histogram_instrument), Some("ms"))
-}
-
-// Test 6: Cross-Cultural Date and Time Formatting
-pub test "cross-cultural date and time formatting" {
-  let clock = azimuth::Clock::system()
-  let base_timestamp = azimuth::Clock::now_unix_nanos(clock)
-  
-  // Create attributes with different date/time formats
-  let attrs = azimuth::Attributes::new()
-  
-  // ISO 8601 format (international standard)
-  azimuth::Attributes::set(attrs, "timestamp.iso8601", 
-    azimuth::StringValue("2025-01-28T10:30:00.000Z"))
-  
-  // US format
-  azimuth::Attributes::set(attrs, "timestamp.us", 
-    azimuth::StringValue("01/28/2025 10:30:00 AM"))
-  
-  // Chinese format
-  azimuth::Attributes::set(attrs, "timestamp.zh", 
-    azimuth::StringValue("2025年01月28日 10:30:00"))
-  
-  // Japanese format
-  azimuth::Attributes::set(attrs, "timestamp.ja", 
-    azimuth::StringValue("2025年01月28日 10時30分00秒"))
-  
-  // Spanish format
-  azimuth::Attributes::set(attrs, "timestamp.es", 
-    azimuth::StringValue("28/01/2025 10:30:00"))
-  
-  // German format
-  azimuth::Attributes::set(attrs, "timestamp.de", 
-    azimuth::StringValue("28.01.2025 10:30:00"))
-  
-  // French format
-  azimuth::Attributes::set(attrs, "timestamp.fr", 
-    azimuth::StringValue("28/01/2025 10:30:00"))
-  
-  // Korean format
-  azimuth::Attributes::set(attrs, "timestamp.ko", 
-    azimuth::StringValue("2025년 01월 28일 10:30:00"))
-  
-  // Russian format
-  azimuth::Attributes::set(attrs, "timestamp.ru", 
-    azimuth::StringValue("28.01.2025 10:30:00"))
-  
-  // Verify date/time format attributes
-  let iso8601_timestamp = azimuth::Attributes::get(attrs, "timestamp.iso8601")
-  let us_timestamp = azimuth::Attributes::get(attrs, "timestamp.us")
-  let zh_timestamp = azimuth::Attributes::get(attrs, "timestamp.zh")
-  let ja_timestamp = azimuth::Attributes::get(attrs, "timestamp.ja")
-  let es_timestamp = azimuth::Attributes::get(attrs, "timestamp.es")
-  let de_timestamp = azimuth::Attributes::get(attrs, "timestamp.de")
-  let fr_timestamp = azimuth::Attributes::get(attrs, "timestamp.fr")
-  let ko_timestamp = azimuth::Attributes::get(attrs, "timestamp.ko")
-  let ru_timestamp = azimuth::Attributes::get(attrs, "timestamp.ru")
-  
-  assert_eq(iso8601_timestamp, Some(azimuth::StringValue("2025-01-28T10:30:00.000Z")))
-  assert_eq(us_timestamp, Some(azimuth::StringValue("01/28/2025 10:30:00 AM")))
-  assert_eq(zh_timestamp, Some(azimuth::StringValue("2025年01月28日 10:30:00")))
-  assert_eq(ja_timestamp, Some(azimuth::StringValue("2025年01月28日 10時30分00秒")))
-  assert_eq(es_timestamp, Some(azimuth::StringValue("28/01/2025 10:30:00")))
-  assert_eq(de_timestamp, Some(azimuth::StringValue("28.01.2025 10:30:00")))
-  assert_eq(fr_timestamp, Some(azimuth::StringValue("28/01/2025 10:30:00")))
-  assert_eq(ko_timestamp, Some(azimuth::StringValue("2025년 01월 28일 10:30:00")))
-  assert_eq(ru_timestamp, Some(azimuth::StringValue("28.01.2025 10:30:00")))
-  
-  // Test timezone-specific attributes
-  let timezone_attrs = [
-    ("timezone.utc", azimuth::StringValue("UTC+00:00")),
-    ("timezone.est", azimuth::StringValue("UTC-05:00")),
-    ("timezone.pst", azimuth::StringValue("UTC-08:00")),
-    ("timezone.cst", azimuth::StringValue("UTC+08:00")),
-    ("timezone.jst", azimuth::StringValue("UTC+09:00")),
-    ("timezone.cet", azimuth::StringValue("UTC+01:00")),
-    ("timezone.kst", azimuth::StringValue("UTC+09:00")),
-    ("timezone.msk", azimuth::StringValue("UTC+03:00"))
-  ]
-  
-  let timezone_resource = azimuth::Resource::new()
-  let timezone_resource_final = azimuth::Resource::with_attributes(timezone_resource, timezone_attrs)
-  
-  // Verify timezone attributes
-  let utc_timezone = azimuth::Resource::get_attribute(timezone_resource_final, "timezone.utc")
-  let est_timezone = azimuth::Resource::get_attribute(timezone_resource_final, "timezone.est")
-  let pst_timezone = azimuth::Resource::get_attribute(timezone_resource_final, "timezone.pst")
-  let cst_timezone = azimuth::Resource::get_attribute(timezone_resource_final, "timezone.cst")
-  let jst_timezone = azimuth::Resource::get_attribute(timezone_resource_final, "timezone.jst")
-  let cet_timezone = azimuth::Resource::get_attribute(timezone_resource_final, "timezone.cet")
-  let kst_timezone = azimuth::Resource::get_attribute(timezone_resource_final, "timezone.kst")
-  let msk_timezone = azimuth::Resource::get_attribute(timezone_resource_final, "timezone.msk")
-  
-  assert_eq(utc_timezone, Some(azimuth::StringValue("UTC+00:00")))
-  assert_eq(est_timezone, Some(azimuth::StringValue("UTC-05:00")))
-  assert_eq(pst_timezone, Some(azimuth::StringValue("UTC-08:00")))
-  assert_eq(cst_timezone, Some(azimuth::StringValue("UTC+08:00")))
-  assert_eq(jst_timezone, Some(azimuth::StringValue("UTC+09:00")))
-  assert_eq(cet_timezone, Some(azimuth::StringValue("UTC+01:00")))
-  assert_eq(kst_timezone, Some(azimuth::StringValue("UTC+09:00")))
-  assert_eq(msk_timezone, Some(azimuth::StringValue("UTC+03:00")))
-}
-
-// Test 7: Internationalized Currency and Number Formatting
-pub test "internationalized currency and number formatting" {
-  let attrs = azimuth::Attributes::new()
-  
-  // Test currency formatting in different locales
-  azimuth::Attributes::set(attrs, "amount.en_US", azimuth::StringValue("$1,234.56"))
-  azimuth::Attributes::set(attrs, "amount.en_GB", azimuth::StringValue("£1,234.56"))
-  azimuth::Attributes::set(attrs, "amount.zh_CN", azimuth::StringValue("¥1,234.56"))
-  azimuth::Attributes::set(attrs, "amount.ja_JP", azimuth::StringValue("¥1,234"))
-  azimuth::Attributes::set(attrs, "amount.es_ES", azimuth::StringValue("1.234,56 €"))
-  azimuth::Attributes::set(attrs, "amount.de_DE", azimuth::StringValue("1.234,56 €"))
-  azimuth::Attributes::set(attrs, "amount.fr_FR", azimuth::StringValue("1 234,56 €"))
-  azimuth::Attributes::set(attrs, "amount.ko_KR", azimuth::StringValue("₩1,235"))
-  azimuth::Attributes::set(attrs, "amount.ru_RU", azimuth::StringValue("1 234,56 ₽"))
-  
-  // Test number formatting in different locales
-  azimuth::Attributes::set(attrs, "number.en_US", azimuth::StringValue("1,234,567.89"))
-  azimuth::Attributes::set(attrs, "number.zh_CN", azimuth::StringValue("1,234,567.89"))
-  azimuth::Attributes::set(attrs, "number.ja_JP", azimuth::StringValue("1,234,567.89"))
-  azimuth::Attributes::set(attrs, "number.es_ES", azimuth::StringValue("1.234.567,89"))
-  azimuth::Attributes::set(attrs, "number.de_DE", azimuth::StringValue("1.234.567,89"))
-  azimuth::Attributes::set(attrs, "number.fr_FR", azimuth::StringValue("1 234 567,89"))
-  azimuth::Attributes::set(attrs, "number.ko_KR", azimuth::StringValue("1,234,567.89"))
-  azimuth::Attributes::set(attrs, "number.ru_RU", azimuth::StringValue("1 234 567,89"))
-  
-  // Test percentage formatting
-  azimuth::Attributes::set(attrs, "percentage.en_US", azimuth::StringValue("12.34%"))
-  azimuth::Attributes::set(attrs, "percentage.zh_CN", azimuth::StringValue("12.34%"))
-  azimuth::Attributes::set(attrs, "percentage.ja_JP", azimuth::StringValue("12.34%"))
-  azimuth::Attributes::set(attrs, "percentage.es_ES", azimuth::StringValue("12,34 %"))
-  azimuth::Attributes::set(attrs, "percentage.de_DE", azimuth::StringValue("12,34 %"))
-  azimuth::Attributes::set(attrs, "percentage.fr_FR", azimuth::StringValue("12,34 %"))
-  azimuth::Attributes::set(attrs, "percentage.ko_KR", azimuth::StringValue("12.34%"))
-  azimuth::Attributes::set(attrs, "percentage.ru_RU", azimuth::StringValue("12,34 %"))
-  
-  // Verify currency formatting
-  let amount_us = azimuth::Attributes::get(attrs, "amount.en_US")
-  let amount_gb = azimuth::Attributes::get(attrs, "amount.en_GB")
-  let amount_cn = azimuth::Attributes::get(attrs, "amount.zh_CN")
-  let amount_jp = azimuth::Attributes::get(attrs, "amount.ja_JP")
-  let amount_es = azimuth::Attributes::get(attrs, "amount.es_ES")
-  let amount_de = azimuth::Attributes::get(attrs, "amount.de_DE")
-  let amount_fr = azimuth::Attributes::get(attrs, "amount.fr_FR")
-  let amount_ko = azimuth::Attributes::get(attrs, "amount.ko_KR")
-  let amount_ru = azimuth::Attributes::get(attrs, "amount.ru_RU")
-  
-  assert_eq(amount_us, Some(azimuth::StringValue("$1,234.56")))
-  assert_eq(amount_gb, Some(azimuth::StringValue("£1,234.56")))
-  assert_eq(amount_cn, Some(azimuth::StringValue("¥1,234.56")))
-  assert_eq(amount_jp, Some(azimuth::StringValue("¥1,234")))
-  assert_eq(amount_es, Some(azimuth::StringValue("1.234,56 €")))
-  assert_eq(amount_de, Some(azimuth::StringValue("1.234,56 €")))
-  assert_eq(amount_fr, Some(azimuth::StringValue("1 234,56 €")))
-  assert_eq(amount_ko, Some(azimuth::StringValue("₩1,235")))
-  assert_eq(amount_ru, Some(azimuth::StringValue("1 234,56 ₽")))
-  
-  // Verify number formatting
-  let number_us = azimuth::Attributes::get(attrs, "number.en_US")
-  let number_es = azimuth::Attributes::get(attrs, "number.es_ES")
-  let number_fr = azimuth::Attributes::get(attrs, "number.fr_FR")
-  
-  assert_eq(number_us, Some(azimuth::StringValue("1,234,567.89")))
-  assert_eq(number_es, Some(azimuth::StringValue("1.234.567,89")))
-  assert_eq(number_fr, Some(azimuth::StringValue("1 234 567,89")))
-  
-  // Verify percentage formatting
-  let percentage_us = azimuth::Attributes::get(attrs, "percentage.en_US")
-  let percentage_es = azimuth::Attributes::get(attrs, "percentage.es_ES")
-  let percentage_fr = azimuth::Attributes::get(attrs, "percentage.fr_FR")
-  
-  assert_eq(percentage_us, Some(azimuth::StringValue("12.34%")))
-  assert_eq(percentage_es, Some(azimuth::StringValue("12,34 %")))
-  assert_eq(percentage_fr, Some(azimuth::StringValue("12,34 %")))
-}
-
-// Test 8: Internationalized Error Messages and Status Codes
-pub test "internationalized error messages and status codes" {
-  let attrs = azimuth::Attributes::new()
-  
-  // Test error messages in different languages
-  azimuth::Attributes::set(attrs, "error.auth.failed.en", azimuth::StringValue("Authentication failed: Invalid credentials"))
-  azimuth::Attributes::set(attrs, "error.auth.failed.zh", azimuth::StringValue("认证失败：凭据无效"))
-  azimuth::Attributes::set(attrs, "error.auth.failed.ja", azimuth::StringValue("認証失敗：資格情報が無効です"))
-  azimuth::Attributes::set(attrs, "error.auth.failed.es", azimuth::StringValue("Autenticación fallida: Credenciales inválidas"))
-  azimuth::Attributes::set(attrs, "error.auth.failed.fr", azimuth::StringValue("Échec de l'authentification: Identifiants invalides"))
-  azimuth::Attributes::set(attrs, "error.auth.failed.de", azimuth::StringValue("Authentifizierung fehlgeschlagen: Ungültige Anmeldeinformationen"))
-  azimuth::Attributes::set(attrs, "error.auth.failed.ko", azimuth::StringValue("인증 실패: 자격 증명이 유효하지 않습니다"))
-  azimuth::Attributes::set(attrs, "error.auth.failed.ru", azimuth::StringValue("Ошибка аутентификации: Недействительные учетные данные"))
-  
-  // Test validation error messages
-  azimuth::Attributes::set(attrs, "error.validation.required.en", azimuth::StringValue("Required field cannot be empty"))
-  azimuth::Attributes::set(attrs, "error.validation.required.zh", azimuth::StringValue("必填字段不能为空"))
-  azimuth::Attributes::set(attrs, "error.validation.required.ja", azimuth::StringValue("必須フィールドは空にできません"))
-  azimuth::Attributes::set(attrs, "error.validation.required.es", azimuth::StringValue("El campo requerido no puede estar vacío"))
-  azimuth::Attributes::set(attrs, "error.validation.required.fr", azimuth::StringValue("Le champ obligatoire ne peut pas être vide"))
-  azimuth::Attributes::set(attrs, "error.validation.required.de", azimuth::StringValue("Erforderliches Feld darf nicht leer sein"))
-  azimuth::Attributes::set(attrs, "error.validation.required.ko", azimuth::StringValue("필수 필드는 비워둘 수 없습니다"))
-  azimuth::Attributes::set(attrs, "error.validation.required.ru", azimuth::StringValue("Обязательное поле не может быть пустым"))
-  
-  // Test success messages
-  azimuth::Attributes::set(attrs, "success.operation.en", azimuth::StringValue("Operation completed successfully"))
-  azimuth::Attributes::set(attrs, "success.operation.zh", azimuth::StringValue("操作成功完成"))
-  azimuth::Attributes::set(attrs, "success.operation.ja", azimuth::StringValue("操作が正常に完了しました"))
-  azimuth::Attributes::set(attrs, "success.operation.es", azimuth::StringValue("Operación completada exitosamente"))
-  azimuth::Attributes::set(attrs, "success.operation.fr", azimuth::StringValue("Opération terminée avec succès"))
-  azimuth::Attributes::set(attrs, "success.operation.de", azimuth::StringValue("Vorgang erfolgreich abgeschlossen"))
-  azimuth::Attributes::set(attrs, "success.operation.ko", azimuth::StringValue("작업이 성공적으로 완료되었습니다"))
-  azimuth::Attributes::set(attrs, "success.operation.ru", azimuth::StringValue("Операция успешно завершена"))
-  
-  // Verify error messages
-  let auth_failed_en = azimuth::Attributes::get(attrs, "error.auth.failed.en")
-  let auth_failed_zh = azimuth::Attributes::get(attrs, "error.auth.failed.zh")
-  let auth_failed_ja = azimuth::Attributes::get(attrs, "error.auth.failed.ja")
-  let auth_failed_es = azimuth::Attributes::get(attrs, "error.auth.failed.es")
-  
-  assert_eq(auth_failed_en, Some(azimuth::StringValue("Authentication failed: Invalid credentials")))
-  assert_eq(auth_failed_zh, Some(azimuth::StringValue("认证失败：凭据无效")))
-  assert_eq(auth_failed_ja, Some(azimuth::StringValue("認証失敗：資格情報が無効です")))
-  assert_eq(auth_failed_es, Some(azimuth::StringValue("Autenticación fallida: Credenciales inválidas")))
-  
-  // Verify validation messages
-  let validation_required_en = azimuth::Attributes::get(attrs, "error.validation.required.en")
-  let validation_required_zh = azimuth::Attributes::get(attrs, "error.validation.required.zh")
-  let validation_required_ja = azimuth::Attributes::get(attrs, "error.validation.required.ja")
-  let validation_required_fr = azimuth::Attributes::get(attrs, "error.validation.required.fr")
-  
-  assert_eq(validation_required_en, Some(azimuth::StringValue("Required field cannot be empty")))
-  assert_eq(validation_required_zh, Some(azimuth::StringValue("必填字段不能为空")))
-  assert_eq(validation_required_ja, Some(azimuth::StringValue("必須フィールドは空にできません")))
-  assert_eq(validation_required_fr, Some(azimuth::StringValue("Le champ obligatoire ne peut pas être vide")))
-  
-  // Verify success messages
-  let success_en = azimuth::Attributes::get(attrs, "success.operation.en")
-  let success_zh = azimuth::Attributes::get(attrs, "success.operation.zh")
-  let success_ja = azimuth::Attributes::get(attrs, "success.operation.ja")
-  let success_ko = azimuth::Attributes::get(attrs, "success.operation.ko")
-  
-  assert_eq(success_en, Some(azimuth::StringValue("Operation completed successfully")))
-  assert_eq(success_zh, Some(azimuth::StringValue("操作成功完成")))
-  assert_eq(success_ja, Some(azimuth::StringValue("操作が正常に完了しました")))
-  assert_eq(success_ko, Some(azimuth::StringValue("작업이 성공적으로 완료되었습니다")))
-}
-
-// Test 9: Internationalized Baggage Propagation
-pub test "internationalized baggage propagation" {
-  let baggage = azimuth::Baggage::new()
-  
-  // Test baggage entries with internationalized content
-  let baggage_with_en = azimuth::Baggage::set_entry(baggage, "user.locale", "en-US")
-  let baggage_with_zh = azimuth::Baggage::set_entry(baggage_with_en, "user.timezone", "Asia/Shanghai")
-  let baggage_with_ja = azimuth::Baggage::set_entry(baggage_with_zh, "user.currency", "JPY")
-  let baggage_with_es = azimuth::Baggage::set_entry(baggage_with_ja, "user.region", "es-ES")
-  let baggage_with_content = azimuth::Baggage::set_entry(baggage_with_es, "content.language", "es")
-  
-  // Test baggage with localized values
-  let localized_baggage = azimuth::Baggage::new()
-  let localized_with_greeting = azimuth::Baggage::set_entry(localized_baggage, "greeting.en", "Hello")
-  let localized_with_greeting_zh = azimuth::Baggage::set_entry(localized_with_greeting, "greeting.zh", "你好")
-  let localized_with_greeting_ja = azimuth::Baggage::set_entry(localized_with_greeting_zh, "greeting.ja", "こんにちは")
-  let localized_with_greeting_es = azimuth::Baggage::set_entry(localized_with_greeting_ja, "greeting.es", "Hola")
-  let localized_with_greeting_fr = azimuth::Baggage::set_entry(localized_with_greeting_es, "greeting.fr", "Bonjour")
-  let localized_final = azimuth::Baggage::set_entry(localized_with_greeting_fr, "greeting.de", "Hallo")
-  
-  // Verify baggage entries
-  let user_locale = azimuth::Baggage::get_entry(baggage_with_content, "user.locale")
-  let user_timezone = azimuth::Baggage::get_entry(baggage_with_content, "user.timezone")
-  let user_currency = azimuth::Baggage::get_entry(baggage_with_content, "user.currency")
-  let user_region = azimuth::Baggage::get_entry(baggage_with_content, "user.region")
-  let content_language = azimuth::Baggage::get_entry(baggage_with_content, "content.language")
-  
-  assert_eq(user_locale, Some("en-US"))
-  assert_eq(user_timezone, Some("Asia/Shanghai"))
-  assert_eq(user_currency, Some("JPY"))
-  assert_eq(user_region, Some("es-ES"))
-  assert_eq(content_language, Some("es"))
-  
-  // Verify localized greetings
-  let greeting_en = azimuth::Baggage::get_entry(localized_final, "greeting.en")
-  let greeting_zh = azimuth::Baggage::get_entry(localized_final, "greeting.zh")
-  let greeting_ja = azimuth::Baggage::get_entry(localized_final, "greeting.ja")
-  let greeting_es = azimuth::Baggage::get_entry(localized_final, "greeting.es")
-  let greeting_fr = azimuth::Baggage::get_entry(localized_final, "greeting.fr")
-  let greeting_de = azimuth::Baggage::get_entry(localized_final, "greeting.de")
-  
-  assert_eq(greeting_en, Some("Hello"))
-  assert_eq(greeting_zh, Some("你好"))
-  assert_eq(greeting_ja, Some("こんにちは"))
-  assert_eq(greeting_es, Some("Hola"))
-  assert_eq(greeting_fr, Some("Bonjour"))
-  assert_eq(greeting_de, Some("Hallo"))
-}
-
-// Test 10: Comprehensive Internationalization Integration
-pub test "comprehensive internationalization integration" {
-  // Setup internationalized telemetry stack
-  let i18n_resource = azimuth::Resource::new()
-  let i18n_attrs = [
-    ("service.name.en", azimuth::StringValue("International Payment Service")),
-    ("service.name.zh", azimuth::StringValue("国际支付服务")),
-    ("service.name.ja", azimuth::StringValue("国際決済サービス")),
-    ("service.name.es", azimuth::StringValue("Servicio de Pagos Internacional")),
-    ("service.region", azimuth::StringValue("global")),
-    ("service.supported_locales", azimuth::ArrayStringValue(["en-US", "zh-CN", "ja-JP", "es-ES", "fr-FR", "de-DE", "ko-KR", "ru-RU"]))
-  ]
-  let i18n_resource_final = azimuth::Resource::with_attributes(i18n_resource, i18n_attrs)
-  
-  // Initialize internationalized components
-  let tracer_provider = azimuth::TracerProvider::default()
-  let meter_provider = azimuth::MeterProvider::default()
-  let logger_provider = azimuth::LoggerProvider::default()
-  
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "i18n.tracer")
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "i18n.meter")
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "i18n.logger")
-  
-  // Create internationalized span
-  let i18n_span = azimuth::Tracer::start_span(tracer, "Process International Payment")
-  azimuth::Span::add_event(i18n_span, "Payment validation started", 
-    Some([("locale", azimuth::StringValue("en-US")),
-          ("currency", azimuth::StringValue("USD")),
-          ("amount", azimuth::FloatValue(299.99))]))
-  
-  // Create internationalized metrics
-  let payment_counter = azimuth::Meter::create_counter(meter, "international.payments", 
-    Some("Total international payments processed"), Some("payments"))
-  let currency_histogram = azimuth::Meter::create_histogram(meter, "payment.amount.by_currency", 
-    Some("Payment amount distribution by currency"), Some("local_currency"))
-  
-  // Record internationalized metrics
-  azimuth::Counter::add(payment_counter, 1.0)
-  azimuth::Histogram::record(currency_histogram, 299.99)
-  
-  // Create internationalized log
-  let i18n_log = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("International payment processed successfully: $299.99 USD"),
-    Some(azimuth::Attributes::new()),
-    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-    None,
-    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(i18n_span))),
-    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(i18n_span))),
-    Some(azimuth::Context::root())
-  )
-  
-  azimuth::Logger::emit(logger, i18n_log)
-  
-  // Complete internationalized operations
-  azimuth::Span::set_status(i18n_span, azimuth::Ok, Some("International payment processed successfully"))
-  azimuth::Span::end(i18n_span)
-  
-  // Verify internationalization integration
-  let service_name_en = azimuth::Resource::get_attribute(i18n_resource_final, "service.name.en")
-  let service_name_zh = azimuth::Resource::get_attribute(i18n_resource_final, "service.name.zh")
-  let service_name_ja = azimuth::Resource::get_attribute(i18n_resource_final, "service.name.ja")
-  let service_name_es = azimuth::Resource::get_attribute(i18n_resource_final, "service.name.es")
-  
-  assert_eq(service_name_en, Some(azimuth::StringValue("International Payment Service")))
-  assert_eq(service_name_zh, Some(azimuth::StringValue("国际支付服务")))
-  assert_eq(service_name_ja, Some(azimuth::StringValue("国際決済サービス")))
-  assert_eq(service_name_es, Some(azimuth::StringValue("Servicio de Pagos Internacional")))
-  
-  let supported_locales = azimuth::Resource::get_attribute(i18n_resource_final, "service.supported_locales")
-  assert_eq(supported_locales, Some(azimuth::ArrayStringValue(["en-US", "zh-CN", "ja-JP", "es-ES", "fr-FR", "de-DE", "ko-KR", "ru-RU"])))
-  
-  // Verify telemetry components
-  assert_eq(azimuth::Span::name(i18n_span), "Process International Payment")
-  assert_eq(payment_counter.name, "international.payments")
-  assert_eq(logger.scope.name, "i18n.logger")
-  assert_eq(azimuth::LogRecord::body(i18n_log), Some("International payment processed successfully: $299.99 USD"))
+  // 验证不存在的条目
+  let missing_entry = Baggage::get_entry(baggage_final, "不存在的条目")
+  assert_eq(missing_entry, None)
 }

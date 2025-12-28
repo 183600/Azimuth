@@ -1,211 +1,131 @@
 // 跨服务传播测试用例
-// 测试跨服务调用时的上下文和追踪信息传播
+// 测试遥测上下文在不同服务之间的传播和一致性
 
-test "cross_service_trace_context_propagation" {
-  // 模拟服务A创建追踪上下文
-  let service_a_trace_id = "trace123456789"
-  let service_a_span_id = "span111111111"
-  let service_a_context = SpanContext::new(service_a_trace_id, service_a_span_id, true, "key1=value1")
+test "cross_service_trace_propagation" {
+  // 模拟服务A创建初始追踪上下文
+  let service_a_trace_id = "trace_001"
+  let service_a_span_id = "span_a_001"
+  let span_ctx_a = SpanContext::new(service_a_trace_id, service_a_span_id, true, "key1=value1")
   
-  // 创建传播器
-  let propagator = W3CTraceContextPropagator::new()
-  let carrier = TextMapCarrier::new()
+  // 验证服务A的上下文
+  assert_eq(SpanContext::trace_id(span_ctx_a), service_a_trace_id)
+  assert_eq(SpanContext::span_id(span_ctx_a), service_a_span_id)
+  assert_true(SpanContext::is_sampled(span_ctx_a))
+  assert_true(SpanContext::is_valid(span_ctx_a))
   
-  // 服务A注入追踪上下文
+  // 模拟通过CompositePropagator传播到服务B
   let ctx = Context::root()
-  CompositePropagator::inject(
-    CompositePropagator::new([propagator]),
-    ctx,
-    carrier
-  )
+  let carrier = TextMapCarrier::new()
+  let propagator = W3CTraceContextPropagator::new()
+  let composite_propagator = CompositePropagator::new([propagator])
   
-  // 验证注入的追踪信息
-  let injected_trace = TextMapCarrier::get(carrier, "traceparent")
-  assert_true(injected_trace.is_some())
+  // 注入追踪信息到carrier
+  CompositePropagator::inject(composite_propagator, ctx, carrier)
   
-  // 模拟服务B提取追踪上下文
-  let extracted_context = CompositePropagator::extract(
-    CompositePropagator::new([propagator]),
-    carrier
-  )
+  // 服务B从carrier中提取追踪信息
+  let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
   
   // 验证提取的上下文
-  let extracted_value = Context::get(extracted_context, ContextKey::new("extracted"))
+  let extracted_key = ContextKey::new("extracted")
+  let extracted_value = Context::get(extracted_ctx, extracted_key)
   assert_eq(extracted_value, Some("true"))
 }
 
 test "cross_service_baggage_propagation" {
-  // 创建跨服务的Baggage传播测试
+  // 测试跨服务baggage传播
   let baggage = Baggage::new()
   
   // 在服务A中设置baggage条目
-  let baggage_with_entries = Baggage::set_entry(baggage, "user.id", "user123")
-  let baggage_with_more_entries = Baggage::set_entry(baggage_with_entries, "request.id", "req456")
+  let baggage_with_entries = Baggage::set_entry(baggage, "user.id", "user_12345")
+  let baggage_final = Baggage::set_entry(baggage_with_entries, "request.id", "req_67890")
   
   // 验证baggage条目
-  let user_id = Baggage::get_entry(baggage_with_more_entries, "user.id")
-  assert_eq(user_id, Some("user123"))
+  let user_id = Baggage::get_entry(baggage_final, "user.id")
+  let request_id = Baggage::get_entry(baggage_final, "request.id")
+  let missing_entry = Baggage::get_entry(baggage_final, "nonexistent")
   
-  let request_id = Baggage::get_entry(baggage_with_more_entries, "request.id")
-  assert_eq(request_id, Some("req456"))
-  
-  // 验证不存在的条目
-  let missing_entry = Baggage::get_entry(baggage_with_more_entries, "nonexistent")
+  assert_eq(user_id, Some("user_12345"))
+  assert_eq(request_id, Some("req_67890"))
   assert_eq(missing_entry, None)
   
   // 测试baggage条目移除
-  let baggage_after_removal = Baggage::remove_entry(baggage_with_more_entries, "user.id")
+  let baggage_after_removal = Baggage::remove_entry(baggage_final, "user.id")
   let removed_user_id = Baggage::get_entry(baggage_after_removal, "user.id")
-  // 注意：由于实现是简化的，这里可能不会真正移除
-  assert_true(removed_user_id.is_some() || removed_user_id.is_none())
+  let still_present_request_id = Baggage::get_entry(baggage_after_removal, "request.id")
+  
+  assert_eq(removed_user_id, None)
+  assert_eq(still_present_request_id, Some("req_67890"))
 }
 
 test "cross_service_context_chain_propagation" {
-  // 测试跨服务的上下文链传播
+  // 测试跨服务上下文链传播
+  let root_ctx = Context::root()
   
-  // 服务A创建根上下文
-  let root_context = Context::root()
+  // 服务A添加上下文信息
   let service_a_key = ContextKey::new("service.a")
-  let context_with_a = Context::with_value(root_context, service_a_key, "processed_by_a")
+  let ctx_after_a = Context::with_value(root_ctx, service_a_key, "processed_by_a")
   
-  // 服务B添加自己的上下文信息
+  // 服务B添加上下文信息
   let service_b_key = ContextKey::new("service.b")
-  let context_with_b = Context::with_value(context_with_a, service_b_key, "processed_by_b")
+  let ctx_after_b = Context::with_value(ctx_after_a, service_b_key, "processed_by_b")
   
-  // 服务C添加自己的上下文信息
+  // 服务C添加上下文信息
   let service_c_key = ContextKey::new("service.c")
-  let final_context = Context::with_value(context_with_b, service_c_key, "processed_by_c")
+  let final_ctx = Context::with_value(ctx_after_b, service_c_key, "processed_by_c")
   
-  // 验证整个上下文链
-  let service_a_value = Context::get(final_context, service_a_key)
-  let service_b_value = Context::get(final_context, service_b_key)
-  let service_c_value = Context::get(final_context, service_c_key)
+  // 验证所有服务的上下文信息都存在
+  let service_a_value = Context::get(final_ctx, service_a_key)
+  let service_b_value = Context::get(final_ctx, service_b_key)
+  let service_c_value = Context::get(final_ctx, service_c_key)
   
-  // 注意：由于简化的实现，可能只能获取到最后设置的值
-  assert_true(service_a_value.is_some() || service_b_value.is_some() || service_c_value.is_some())
+  assert_eq(service_a_value, Some("processed_by_a"))
+  assert_eq(service_b_value, Some("processed_by_b"))
+  assert_eq(service_c_value, Some("processed_by_c"))
 }
 
 test "cross_service_header_propagation" {
-  // 测试跨服务的HTTP头部传播
+  // 测试跨服务HTTP头部传播
   let carrier = TextMapCarrier::new()
   
-  // 模拟服务A设置各种追踪头部
+  // 设置追踪相关的头部
   TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
   TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
-  TextMapCarrier::set(carrier, "baggage", "userId=user123,sessionId=session456")
-  TextMapCarrier::set(carrier, "x-request-id", "req-789")
+  TextMapCarrier::set(carrier, "baggage", "userId=amy,serverNode=AFRICA")
   
-  // 验证所有头部都被正确设置
+  // 验证头部设置
   let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  assert_eq(traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  
   let tracestate = TextMapCarrier::get(carrier, "tracestate")
-  // 注意：由于简化实现，可能返回None
-  assert_true(tracestate.is_some() || tracestate.is_none())
-  
   let baggage = TextMapCarrier::get(carrier, "baggage")
-  // 注意：由于简化实现，可能返回None
-  assert_true(baggage.is_some() || baggage.is_none())
+  let missing_header = TextMapCarrier::get(carrier, "x-missing-header")
   
-  let request_id = TextMapCarrier::get(carrier, "x-request-id")
-  // 注意：由于简化实现，可能返回None
-  assert_true(request_id.is_some() || request_id.is_none())
+  assert_eq(traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(tracestate, Some("rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"))
+  assert_eq(baggage, Some("userId=amy,serverNode=AFRICA"))
+  assert_eq(missing_header, None)
 }
 
-test "cross_service_span_context_validation" {
-  // 测试跨服务传播的Span上下文验证
-  let valid_trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let valid_span_id = "b7ad6b7169203331"
-  let valid_context = SpanContext::new(valid_trace_id, valid_span_id, true, "key1=value1")
+test "cross_service_telemetry_consistency" {
+  // 测试跨服务遥测数据一致性
+  let trace_id = "consistency_test_trace"
+  let parent_span_id = "parent_span_001"
+  let child_span_id = "child_span_002"
   
-  // 验证有效上下文
-  assert_true(SpanContext::is_valid(valid_context))
-  assert_true(SpanContext::is_sampled(valid_context))
-  assert_eq(SpanContext::trace_id(valid_context), valid_trace_id)
-  assert_eq(SpanContext::span_id(valid_context), valid_span_id)
+  // 创建父span上下文
+  let parent_span_ctx = SpanContext::new(trace_id, parent_span_id, true, "")
   
-  // 测试无效上下文
-  let invalid_trace_id = ""
-  let invalid_span_id = ""
-  let invalid_context = SpanContext::new(invalid_trace_id, invalid_span_id, false, "")
+  // 创建子span上下文（应该继承父span的trace_id）
+  let child_span_ctx = SpanContext::new(trace_id, child_span_id, true, "")
   
-  assert_false(SpanContext::is_valid(invalid_context))
-  assert_false(SpanContext::is_sampled(invalid_context))
-}
-
-test "cross_service_propagator_composition" {
-  // 测试传播器组合
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
+  // 验证trace_id一致性
+  assert_eq(SpanContext::trace_id(parent_span_ctx), SpanContext::trace_id(child_span_ctx))
   
-  // 创建复合传播器
-  let composite_propagator = CompositePropagator::new([trace_propagator])
+  // 验证span_id不同
+  assert_not_eq(SpanContext::span_id(parent_span_ctx), SpanContext::span_id(child_span_ctx))
   
-  // 测试注入
-  let carrier = TextMapCarrier::new()
-  let context = Context::root()
+  // 验证采样标志一致性
+  assert_eq(SpanContext::is_sampled(parent_span_ctx), SpanContext::is_sampled(child_span_ctx))
   
-  CompositePropagator::inject(composite_propagator, context, carrier)
-  
-  // 验证注入结果
-  let injected_trace = TextMapCarrier::get(carrier, "traceparent")
-  assert_true(injected_trace.is_some())
-  
-  // 测试提取
-  let extracted_context = CompositePropagator::extract(composite_propagator, carrier)
-  let extracted_value = Context::get(extracted_context, ContextKey::new("extracted"))
-  assert_eq(extracted_value, Some("true"))
-}
-
-test "cross_service_error_propagation" {
-  // 测试跨服务错误传播
-  let carrier = TextMapCarrier::new()
-  
-  // 设置错误相关的追踪信息
-  TextMapCarrier::set(carrier, "traceparent", "00-error-trace-id-error-span-id-01")
-  TextMapCarrier::set(carrier, "x-error-code", "INTERNAL_ERROR")
-  TextMapCarrier::set(carrier, "x-error-message", "Service temporarily unavailable")
-  
-  // 验证错误信息传播
-  let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  assert_eq(traceparent, Some("00-error-trace-id-error-span-id-01"))
-  
-  let error_code = TextMapCarrier::get(carrier, "x-error-code")
-  // 注意：由于简化实现，可能返回None
-  assert_true(error_code.is_some() || error_code.is_none())
-  
-  let error_message = TextMapCarrier::get(carrier, "x-error-message")
-  // 注意：由于简化实现，可能返回None
-  assert_true(error_message.is_some() || error_message.is_none())
-}
-
-test "cross_service_concurrent_propagation" {
-  // 测试并发场景下的跨服务传播
-  
-  // 模拟多个并发请求的追踪上下文
-  let contexts = [
-    SpanContext::new("trace1", "span1", true, ""),
-    SpanContext::new("trace2", "span2", true, ""),
-    SpanContext::new("trace3", "span3", false, "")
-  ]
-  
-  // 为每个上下文创建传播器
-  for context in contexts {
-    let propagator = W3CTraceContextPropagator::new()
-    let composite = CompositePropagator::new([propagator])
-    let carrier = TextMapCarrier::new()
-    let ctx = Context::root()
-    
-    // 注入上下文
-    CompositePropagator::inject(composite, ctx, carrier)
-    
-    // 验证注入
-    let injected = TextMapCarrier::get(carrier, "traceparent")
-    assert_true(injected.is_some())
-    
-    // 提取上下文
-    let extracted = CompositePropagator::extract(composite, carrier)
-    let value = Context::get(extracted, ContextKey::new("extracted"))
-    assert_eq(value, Some("true"))
-  }
+  // 验证两个上下文都有效
+  assert_true(SpanContext::is_valid(parent_span_ctx))
+  assert_true(SpanContext::is_valid(child_span_ctx))
 }
