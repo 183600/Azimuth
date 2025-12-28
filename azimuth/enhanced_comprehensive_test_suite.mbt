@@ -34,7 +34,7 @@ test "error_handling_and_recovery" {
 test "boundary_conditions_and_extreme_values" {
   // Test with empty strings and null values
   let empty_attrs = Attributes::new()
-  @assertion.assert_eq(Attributes::get(empty_attrs, "non.existent.key"), None)?
+  assert_eq(Attributes::get(empty_attrs, "non.existent.key"), None)
   
   // Test with maximum values
   let max_int_attr = IntValue(2147483647)
@@ -46,8 +46,8 @@ test "boundary_conditions_and_extreme_values" {
   let long_string_attr = StringValue(long_string)
   
   match long_string_attr {
-    StringValue(s) => @assertion.assert_eq(@string.length(s), 1000)?
-    _ => @test.fail("Expected StringValue with long string")?
+    StringValue(s) => assert_eq(@string.length(s), 1000)
+    _ => @test.fail("Expected StringValue with long string")
   }
   
   // Test context with extreme key lengths
@@ -56,16 +56,16 @@ test "boundary_conditions_and_extreme_values" {
   let root_ctx = Context::root()
   let ctx_with_long_key = Context::with_value(root_ctx, long_key_ctx, "test_value")
   
-  @assertion.assert_eq(Context::get(ctx_with_long_key, long_key_ctx), Some("test_value"))?
+  assert_eq(Context::get(ctx_with_long_key, long_key_ctx), Some("test_value"))
   
   // Test span context with edge case IDs
   let edge_trace_id = "0" * 32
   let edge_span_id = "f" * 16
   let edge_ctx = SpanContext::new(edge_trace_id, edge_span_id, true, "")
   
-  @assertion.assert_eq(SpanContext::trace_id(edge_ctx), edge_trace_id)?
-  @assertion.assert_eq(SpanContext::span_id(edge_ctx), edge_span_id)?
-  @assertion.assert_eq(SpanContext::is_valid(edge_ctx), true)?
+  assert_eq(SpanContext::trace_id(edge_ctx), edge_trace_id)
+  assert_eq(SpanContext::span_id(edge_ctx), edge_span_id)
+  assert_eq(SpanContext::is_valid(edge_ctx), true)
 }
 
 test "performance_and_large_data_handling" {
