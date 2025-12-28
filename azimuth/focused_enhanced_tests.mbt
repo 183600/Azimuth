@@ -98,17 +98,20 @@ test "LogRecord与Trace关联完整性测试" {
   // 创建与Trace关联的LogRecord
   let trace_log = LogRecord::new_with_context(
     Info,
-    Some("Operation completed successfully"),
-    Some(Attributes::new()),
-    Some(1735689600000000000L), // timestamp
-    Some(1735689600000001000L), // observed_timestamp
-    Some(trace_id),
-    Some(span_id),
-    Some(Context::root())
+    "Operation completed successfully",
+    Attributes::new(),
+    1735689600000000000L, // timestamp
+    1735689600000001000L, // observed_timestamp
+    trace_id,
+    span_id,
+    Context::root()
   )
   
-  // 验证LogRecord的Trace关联信息
-  assert_eq(LogRecord::severity_number(trace_log), Info)
+  // 验证LogRecord的Trace关联信息（使用模式匹配）
+  match LogRecord::severity_number(trace_log) {
+    Info => assert_true(true)
+    _ => assert_true(false)
+  }
   assert_eq(LogRecord::body(trace_log), Some("Operation completed successfully"))
   assert_eq(LogRecord::trace_id(trace_log), Some(trace_id))
   assert_eq(LogRecord::span_id(trace_log), Some(span_id))
@@ -116,16 +119,19 @@ test "LogRecord与Trace关联完整性测试" {
   // 创建不同严重级别的LogRecord
   let error_log = LogRecord::new_with_context(
     Error,
-    Some("Database connection failed"),
-    Some(Attributes::new()),
-    Some(1735689600000002000L),
-    Some(1735689600000003000L),
-    Some(trace_id),
-    Some("different_span_id"),
-    Some(Context::root())
+    "Database connection failed",
+    Attributes::new(),
+    1735689600000002000L,
+    1735689600000003000L,
+    trace_id,
+    "different_span_id",
+    Context::root()
   )
   
-  assert_eq(LogRecord::severity_number(error_log), Error)
+  match LogRecord::severity_number(error_log) {
+    Error => assert_true(true)
+    _ => assert_true(false)
+  }
   assert_eq(LogRecord::body(error_log), Some("Database connection failed"))
   
   // 发送日志记录
