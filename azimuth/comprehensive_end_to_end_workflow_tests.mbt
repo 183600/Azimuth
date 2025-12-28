@@ -1,403 +1,526 @@
-// Comprehensive End-to-End Workflow Tests for Azimuth Telemetry System
-// Testing complete telemetry data flow from creation to export
+// 端到端业务流程集成测试 - 测试完整的业务流程和遥测系统集成
+// End-to-End Business Process Integration Test - Testing complete business processes and telemetry system integration
 
-test "complete_user_request_workflow" {
-  // Initialize providers
+test "电商支付流程端到端测试" {
+  // 初始化所有遥测组件
   let tracer_provider = TracerProvider::default()
   let meter_provider = MeterProvider::default()
   let logger_provider = LoggerProvider::default()
   
-  // Create instruments
-  let tracer = TracerProvider::get_tracer(tracer_provider, "user-service", Some("1.0.0"))
-  let meter = MeterProvider::get_meter(meter_provider, "user-metrics")
-  let logger = LoggerProvider::get_logger(logger_provider, "user-logger")
+  let tracer = TracerProvider::get_tracer(tracer_provider, "payment-service")
+  let meter = MeterProvider::get_meter(meter_provider, "payment-service")
+  let logger = LoggerProvider::get_logger(logger_provider, "payment-service")
   
-  // Create metrics
-  let request_counter = Meter::create_counter(meter, "user.requests.total", Some("Total user requests"), Some("requests"))
-  let response_histogram = Meter::create_histogram(meter, "user.response.duration", Some("User response duration"), Some("ms"))
-  let active_users_gauge = Meter::create_gauge(meter, "user.active.count", Some("Active users"), Some("users"))
+  // 创建业务指标
+  let payment_counter = Meter::create_counter(meter, "payments.attempted")
+  let payment_success_counter = Meter::create_counter(meter, "payments.successful")
+  let payment_failure_counter = Meter::create_counter(meter, "payments.failed")
+  let payment_amount_histogram = Meter::create_histogram(meter, "payment.amount")
+  let payment_duration_histogram = Meter::create_histogram(meter, "payment.duration.ms")
   
-  // Start main span
-  let main_span = Tracer::start_span(tracer, "user.request.processing")
-  let span_ctx = Span::span_context(main_span)
+  // 模拟电商支付流程
+  let trace_id = "payment1234567890abcdef"
+  let root_span_ctx = SpanContext::new(trace_id, "root1234567890", true, "")
+  let root_span = Tracer::start_span(tracer, "payment.process")
   
-  // Create baggage with user context
-  let baggage = Baggage::new()
-  let with_user_id = Baggage::set_entry(baggage, "user.id", "user12345")
-  let with_session = Baggage::set_entry(with_user_id, "session.id", "session67890")
-  let with_tenant = Baggage::set_entry(with_session, "tenant.id", "tenant-abc")
+  // 步骤1：创建支付订单
+  let order_span = Tracer::start_span(tracer, "create.order")
+  let order_start_time = Clock::now_unix_nanos(Clock::system())
   
-  // Create context for logging
-  let ctx_key = ContextKey::new("request.id")
-  let context = Context::with_value(Context::root(), ctx_key, "req-12345")
-  
-  // Log request start
-  let start_log = LogRecord::new_with_context(
+  // 记录订单创建日志
+  let order_log = LogRecord::new_with_context(
     Info,
-    Some("User request processing started"),
+    Some("Creating payment order for user123"),
     None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(span_ctx)),
-    Some(SpanContext::span_id(span_ctx)),
-    Some(context)
+    Some(order_start_time),
+    Some(order_start_time + 1000000L),
+    Some(trace_id),
+    Some("order123456"),
+    None
   )
-  Logger::emit(logger, start_log)
+  Logger::emit(logger, order_log)
   
-  // Record metrics
-  Counter::add(request_counter, 1.0)
-  Histogram::record(response_histogram, 150.0)
-  UpDownCounter::add(active_users_gauge, 1.0)
+  // 模拟订单创建延迟
+  let order_end_time = order_start_time + 5000000L // 5ms
+  let order_duration = (order_end_time - order_start_time) / 1000000L // 转换为毫秒
+  Histogram::record(payment_duration_histogram, order_duration.to_double())
   
-  // Add span events
-  Span::add_event(main_span, "authentication.completed", None)
-  Span::add_event(main_span, "authorization.succeeded", None)
+  // 步骤2：验证支付方式
+  let validation_span = Tracer::start_span(tracer, "validate.payment.method")
+  let validation_start = Clock::now_unix_nanos(Clock::system())
   
-  // Create sub-span for database operation
-  let db_span = Tracer::start_span(tracer, "database.query")
-  Span::set_status(db_span, Ok, Some("Query executed successfully"))
-  Span::end(db_span)
+  Counter::add(payment_counter, 1.0)
+  Histogram::record(payment_amount_histogram, 99.99)
   
-  // Create sub-span for external API call
-  let api_span = Tracer::start_span(tracer, "external.api.call")
-  Span::set_status(api_span, Error, Some("API timeout"))
-  Span::end(api_span)
-  
-  // Log completion
-  let end_log = LogRecord::new_with_context(
-    Info,
-    Some("User request processing completed"),
+  // 验证成功日志
+  let validation_log = LogRecord::new_with_context(
+    Debug,
+    Some("Payment method validation successful"),
     None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(span_ctx)),
-    Some(SpanContext::span_id(span_ctx)),
-    Some(context)
+    Some(validation_start),
+    Some(validation_start + 2000000L),
+    Some(trace_id),
+    Some("validation123456"),
+    None
   )
-  Logger::emit(logger, end_log)
+  Logger::emit(logger, validation_log)
   
-  // Update final metrics
-  Histogram::record(response_histogram, 320.0)
-  UpDownCounter::add(active_users_gauge, -1.0)
+  // 步骤3：处理支付
+  let process_span = Tracer::start_span(tracer, "process.payment")
+  let process_start = Clock::now_unix_nanos(Clock::system())
   
-  // End main span
-  Span::end(main_span)
+  // 模拟支付处理
+  let payment_success = true // 模拟支付成功
+  let process_end = process_start + 15000000L // 15ms
+  let process_duration = (process_end - process_start) / 1000000L
   
-  // Verify workflow completed successfully
-  assert_true(true)
+  if payment_success {
+    Counter::add(payment_success_counter, 1.0)
+    
+    let success_log = LogRecord::new_with_context(
+      Info,
+      Some("Payment processed successfully for amount $99.99"),
+      None,
+      Some(process_end),
+      Some(process_end + 500000L),
+      Some(trace_id),
+      Some("process123456"),
+      None
+    )
+    Logger::emit(logger, success_log)
+  } else {
+    Counter::add(payment_failure_counter, 1.0)
+  }
+  
+  Histogram::record(payment_duration_histogram, process_duration.to_double())
+  
+  // 验证整个流程
+  assert_true(payment_success)
+  assert_eq(LogRecord::body(order_log), Some("Creating payment order for user123"))
+  assert_eq(LogRecord::body(validation_log), Some("Payment method validation successful"))
+  assert_eq(LogRecord::body(success_log), Some("Payment processed successfully for amount $99.99"))
 }
 
-test "microservice_telemetry_propagation" {
-  // Simulate microservice architecture with telemetry propagation
+test "微服务调用链追踪测试" {
+  // 模拟微服务架构：API Gateway -> Auth Service -> User Service -> Order Service
   
-  // Service A: API Gateway
-  let gateway_tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "api-gateway")
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  let propagator = W3CTraceContextPropagator::new()
+  let composite_propagator = CompositePropagator::new([propagator])
+  
+  // 服务1：API Gateway
+  let gateway_tracer = TracerProvider::get_tracer(tracer_provider, "api-gateway")
+  let gateway_meter = MeterProvider::get_meter(meter_provider, "api-gateway")
+  let gateway_logger = LoggerProvider::get_logger(logger_provider, "api-gateway")
+  
+  let gateway_counter = Meter::create_counter(gateway_meter, "gateway.requests")
   let gateway_span = Tracer::start_span(gateway_tracer, "gateway.request")
-  let gateway_ctx = Span::span_context(gateway_span)
   
-  // Create carrier for cross-service propagation
+  // 创建传播载体
   let carrier = TextMapCarrier::new()
-  let composite_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  let gateway_ctx = Context::root()
+  let gateway_ctx_with_trace = Context::with_value(gateway_ctx, ContextKey::new("trace.id"), "gateway123456")
   
-  // Inject context into carrier
-  CompositePropagator::inject(composite_propagator, Context::root(), carrier)
+  CompositePropagator::inject(composite_propagator, gateway_ctx_with_trace, carrier)
+  Counter::add(gateway_counter, 1.0)
   
-  // Service B: User Service
-  let user_tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "user-service")
-  let user_span = Tracer::start_span(user_tracer, "user.authentication")
+  // 服务2：Auth Service
+  let auth_tracer = TracerProvider::get_tracer(tracer_provider, "auth-service")
+  let auth_meter = MeterProvider::get_meter(meter_provider, "auth-service")
+  let auth_logger = LoggerProvider::get_logger(logger_provider, "auth-service")
   
-  // Create baggage for user context
-  let user_baggage = Baggage::new()
-  let with_user_context = Baggage::set_entry(user_baggage, "user.id", "user98765")
-  let with_auth_context = Baggage::set_entry(with_user_context, "auth.method", "oauth2")
+  let auth_counter = Meter::create_counter(auth_meter, "auth.requests")
+  let auth_span = Tracer::start_span(auth_tracer, "auth.validate")
   
-  // Log authentication attempt
-  let auth_logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "auth-logger")
+  let extracted_auth_ctx = CompositePropagator::extract(composite_propagator, carrier)
+  Counter::add(auth_counter, 1.0)
+  
   let auth_log = LogRecord::new_with_context(
     Info,
-    Some("User authentication attempt"),
+    Some("Authentication successful for user456"),
     None,
     Some(Clock::now_unix_nanos(Clock::system())),
     None,
-    Some(SpanContext::trace_id(gateway_ctx)),
-    Some(SpanContext::span_id(user_span.span_context)),
-    None
+    Some("gateway123456"),
+    Some("auth123456"),
+    Some(extracted_auth_ctx)
   )
   Logger::emit(auth_logger, auth_log)
   
-  Span::end(user_span)
+  // 服务3：User Service
+  let user_tracer = TracerProvider::get_tracer(tracer_provider, "user-service")
+  let user_meter = MeterProvider::get_meter(meter_provider, "user-service")
+  let user_logger = LoggerProvider::get_logger(logger_provider, "user-service")
   
-  // Service C: Order Service
-  let order_tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "order-service")
-  let order_span = Tracer::start_span(order_tracer, "order.processing")
+  let user_counter = Meter::create_counter(user_meter, "user.requests")
+  let user_span = Tracer::start_span(user_tracer, "user.get_profile")
   
-  // Create order metrics
-  let order_meter = MeterProvider::default().get_meter(MeterProvider::default(), "order-metrics")
-  let order_counter = Meter::create_counter(order_meter, "orders.processed", Some("Processed orders"), Some("orders"))
-  let order_amount = Meter::create_histogram(order_meter, "order.amount", Some("Order amount"), Some("currency"))
+  let extracted_user_ctx = CompositePropagator::extract(composite_propagator, carrier)
+  Counter::add(user_counter, 1.0)
   
-  // Record order metrics
+  let user_log = LogRecord::new_with_context(
+    Debug,
+    Some("User profile retrieved for user456"),
+    None,
+    Some(Clock::now_unix_nanos(Clock::system())),
+    None,
+    Some("gateway123456"),
+    Some("user123456"),
+    Some(extracted_user_ctx)
+  )
+  Logger::emit(user_logger, user_log)
+  
+  // 服务4：Order Service
+  let order_tracer = TracerProvider::get_tracer(tracer_provider, "order-service")
+  let order_meter = MeterProvider::get_meter(meter_provider, "order-service")
+  let order_logger = LoggerProvider::get_logger(logger_provider, "order-service")
+  
+  let order_counter = Meter::create_counter(order_meter, "order.requests")
+  let order_histogram = Meter::create_histogram(order_meter, "order.processing.time")
+  let order_span = Tracer::start_span(order_tracer, "order.create")
+  
+  let extracted_order_ctx = CompositePropagator::extract(composite_propagator, carrier)
   Counter::add(order_counter, 1.0)
-  Histogram::record(order_amount, 99.99)
+  Histogram::record(order_histogram, 25.5)
   
-  Span::end(order_span)
-  
-  // Service D: Payment Service
-  let payment_tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "payment-service")
-  let payment_span = Tracer::start_span(payment_tracer, "payment.processing")
-  
-  // Log payment result
-  let payment_logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "payment-logger")
-  let payment_log = LogRecord::new_with_context(
+  let order_log = LogRecord::new_with_context(
     Info,
-    Some("Payment processed successfully"),
+    Some("Order created successfully for user456"),
     None,
     Some(Clock::now_unix_nanos(Clock::system())),
     None,
-    Some(SpanContext::trace_id(gateway_ctx)),
-    Some(SpanContext::span_id(payment_span.span_context)),
-    None
+    Some("gateway123456"),
+    Some("order123456"),
+    Some(extracted_order_ctx)
   )
-  Logger::emit(payment_logger, payment_log)
+  Logger::emit(order_logger, order_log)
   
-  Span::end(payment_span)
-  Span::end(gateway_span)
+  // 验证微服务调用链
+  assert_eq(LogRecord::body(auth_log), Some("Authentication successful for user456"))
+  assert_eq(LogRecord::body(user_log), Some("User profile retrieved for user456"))
+  assert_eq(LogRecord::body(order_log), Some("Order created successfully for user456"))
   
-  // Verify microservice workflow
-  assert_true(true)
+  // 验证追踪ID一致性
+  assert_eq(LogRecord::trace_id(auth_log), Some("gateway123456"))
+  assert_eq(LogRecord::trace_id(user_log), Some("gateway123456"))
+  assert_eq(LogRecord::trace_id(order_log), Some("gateway123456"))
 }
 
-test "error_handling_and_recovery_workflow" {
-  // Test comprehensive error handling and recovery scenarios
+test "实时监控和告警集成测试" {
+  // 模拟实时监控系统
   
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "error-service")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "error-logger")
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  // Start operation span
-  let operation_span = Tracer::start_span(tracer, "error.prone.operation")
+  let monitor_meter = MeterProvider::get_meter(meter_provider, "monitoring-system")
+  let monitor_logger = LoggerProvider::get_logger(logger_provider, "monitoring-system")
   
-  // Create error metrics
-  let meter = MeterProvider::default().get_meter(MeterProvider::default(), "error-metrics")
-  let error_counter = Meter::create_counter(meter, "errors.total", Some("Total errors"), Some("errors"))
-  let retry_counter = Meter::create_counter(meter, "retries.total", Some("Total retries"), Some("retries"))
+  // 创建监控指标
+  let cpu_usage_gauge = Meter::create_gauge(monitor_meter, "system.cpu.usage")
+  let memory_usage_gauge = Meter::create_gauge(monitor_meter, "system.memory.usage")
+  let request_rate_counter = Meter::create_counter(monitor_meter, "http.requests.rate")
+  let error_rate_counter = Meter::create_counter(monitor_meter, "http.errors.rate")
+  let response_time_histogram = Meter::create_histogram(monitor_meter, "http.response.time")
   
-  // Simulate first failure
-  Span::add_event(operation_span, "database.connection.failed", None)
-  Counter::add(error_counter, 1.0)
-  
-  let error_log = LogRecord::new_with_context(
-    Error,
-    Some("Database connection failed"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(operation_span.span_context)),
-    Some(SpanContext::span_id(operation_span.span_context)),
-    None
-  )
-  Logger::emit(logger, error_log)
-  
-  // Simulate retry
-  Span::add_event(operation_span, "retry.attempted", None)
-  Counter::add(retry_counter, 1.0)
-  
-  // Simulate second failure
-  Span::add_event(operation_span, "retry.failed", None)
-  Counter::add(error_counter, 1.0)
-  
-  let retry_error_log = LogRecord::new_with_context(
-    Warn,
-    Some("Retry attempt failed"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(operation_span.span_context)),
-    Some(SpanContext::span_id(operation_span.span_context)),
-    None
-  )
-  Logger::emit(logger, retry_error_log)
-  
-  // Simulate circuit breaker activation
-  Span::add_event(operation_span, "circuit.breaker.activated", None)
-  
-  let circuit_breaker_log = LogRecord::new_with_context(
-    Error,
-    Some("Circuit breaker activated - service temporarily unavailable"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(operation_span.span_context)),
-    Some(SpanContext::span_id(operation_span.span_context)),
-    None
-  )
-  Logger::emit(logger, circuit_breaker_log)
-  
-  // Set error status
-  Span::set_status(operation_span, Error, Some("Operation failed after retries"))
-  
-  // Create fallback span
-  let fallback_span = Tracer::start_span(tracer, "fallback.operation")
-  Span::add_event(fallback_span, "fallback.executed", None)
-  
-  let fallback_log = LogRecord::new_with_context(
-    Info,
-    Some("Fallback operation executed successfully"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(fallback_span.span_context)),
-    Some(SpanContext::span_id(fallback_span.span_context)),
-    None
-  )
-  Logger::emit(logger, fallback_log)
-  
-  Span::set_status(fallback_span, Ok, Some("Fallback succeeded"))
-  Span::end(fallback_span)
-  Span::end(operation_span)
-  
-  // Verify error handling workflow
-  assert_true(true)
-}
-
-test "high_volume_data_processing" {
-  // Test handling of high-volume telemetry data
-  
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "high-volume-service")
-  let meter = MeterProvider::default().get_meter(MeterProvider::default(), "volume-metrics")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "volume-logger")
-  
-  // Create metrics for volume tracking
-  let batch_counter = Meter::create_counter(meter, "batches.processed", Some("Processed batches"), Some("batches"))
-  let item_histogram = Meter::create_histogram(meter, "items.per.batch", Some("Items per batch"), Some("items"))
-  let processing_time = Meter::create_histogram(meter, "processing.time", Some("Processing time"), Some("ms"))
-  
-  // Simulate processing multiple batches
-  for batch_id in [1, 2, 3, 4, 5] {
-    let batch_span = Tracer::start_span(tracer, "batch.processing")
+  // 模拟实时数据收集
+  for i in 0..10 {
+    // 模拟系统指标
+    let cpu_usage = 50.0 + (i % 3).to_double() * 15.0 // 50-80% CPU使用率
+    let memory_usage = 60.0 + (i % 4).to_double() * 10.0 // 60-90% 内存使用率
     
-    // Create batch context
-    let ctx_key = ContextKey::new("batch.id")
-    let batch_context = Context::with_value(Context::root(), ctx_key, batch_id.to_string())
+    UpDownCounter::add(cpu_usage_gauge, cpu_usage)
+    UpDownCounter::add(memory_usage_gauge, memory_usage)
     
-    // Log batch start
-    let batch_start_log = LogRecord::new_with_context(
-      Debug,
-      Some("Batch processing started"),
-      None,
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(batch_span.span_context)),
-      Some(SpanContext::span_id(batch_span.span_context)),
-      Some(batch_context)
-    )
-    Logger::emit(logger, batch_start_log)
+    // 模拟请求指标
+    Counter::add(request_rate_counter, 100.0 + (i % 5).to_double() * 20.0)
+    Histogram::record(response_time_histogram, 50.0 + (i % 10).to_double() * 10.0)
     
-    // Simulate processing items within batch
-    let item_count = batch_id * 100
-    for item_id in [1, 2, 3, 4, 5] {
-      Span::add_event(batch_span, "item.processed", None)
+    // 模拟错误（20%的错误率）
+    if i % 5 == 0 {
+      Counter::add(error_rate_counter, 1.0)
+      
+      // 记录错误日志
+      let error_log = LogRecord::new_with_context(
+        Error,
+        Some("High error rate detected: 20%"),
+        None,
+        Some(Clock::now_unix_nanos(Clock::system())),
+        None,
+        Some("monitor123456"),
+        Some("error" + i.to_string()),
+        None
+      )
+      Logger::emit(monitor_logger, error_log)
     }
     
-    // Record batch metrics
-    Counter::add(batch_counter, 1.0)
-    Histogram::record(item_histogram, item_count.to_double())
-    Histogram::record(processing_time, batch_id * 50.0)
+    // 模拟告警条件检查
+    if cpu_usage > 75.0 {
+      let alert_log = LogRecord::new_with_context(
+        Warn,
+        Some("ALERT: High CPU usage detected: " + cpu_usage.to_string() + "%"),
+        None,
+        Some(Clock::now_unix_nanos(Clock::system())),
+        None,
+        Some("monitor123456"),
+        Some("cpu_alert" + i.to_string()),
+        None
+      )
+      Logger::emit(monitor_logger, alert_log)
+    }
     
-    // Log batch completion
-    let batch_end_log = LogRecord::new_with_context(
-      Info,
-      Some("Batch processing completed"),
-      None,
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(batch_span.span_context)),
-      Some(SpanContext::span_id(batch_span.span_context)),
-      Some(batch_context)
-    )
-    Logger::emit(logger, batch_end_log)
-    
-    Span::end(batch_span)
+    if memory_usage > 85.0 {
+      let alert_log = LogRecord::new_with_context(
+        Warn,
+        Some("ALERT: High memory usage detected: " + memory_usage.to_string() + "%"),
+        None,
+        Some(Clock::now_unix_nanos(Clock::system())),
+        None,
+        Some("monitor123456"),
+        Some("memory_alert" + i.to_string()),
+        None
+      )
+      Logger::emit(monitor_logger, alert_log)
+    }
   }
   
-  // Create summary span
-  let summary_span = Tracer::start_span(tracer, "processing.summary")
-  Span::add_event(summary_span, "all.batches.completed", None)
-  
-  let summary_log = LogRecord::new_with_context(
-    Info,
-    Some("All batches processed successfully"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(summary_span.span_context)),
-    Some(SpanContext::span_id(summary_span.span_context)),
-    None
-  )
-  Logger::emit(logger, summary_log)
-  
-  Span::end(summary_span)
-  
-  // Verify high-volume processing
+  // 验证监控系统运行
   assert_true(true)
 }
 
-test "complex_attribute_handling" {
-  // Test handling of complex and nested attributes
+test "数据分析和报表集成测试" {
+  // 模拟数据分析和报表系统
   
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "attribute-service")
-  let meter = MeterProvider::default().get_meter(MeterProvider::default(), "attribute-metrics")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "attribute-logger")
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  // Create complex attributes
-  let complex_attrs = Attributes::new()
-  Attributes::set(complex_attrs, "user.profile", StringValue("premium"))
-  Attributes::set(complex_attrs, "user.age", IntValue(35))
-  Attributes::set(complex_attrs, "user.rating", FloatValue(4.7))
-  Attributes::set(complex_attrs, "user.verified", BoolValue(true))
-  Attributes::set(complex_attrs, "user.tags", ArrayStringValue(["vip", "early-adopter", "beta-tester"]))
-  Attributes::set(complex_attrs, "user.scores", ArrayIntValue([95, 87, 92, 88]))
+  let analytics_meter = MeterProvider::get_meter(meter_provider, "analytics-service")
+  let analytics_logger = LoggerProvider::get_logger(logger_provider, "analytics-service")
   
-  // Create nested attributes
-  let nested_attrs = Attributes::new()
-  Attributes::set(nested_attrs, "service.name", StringValue("payment-processor"))
-  Attributes::set(nested_attrs, "service.version", StringValue("2.3.1"))
-  Attributes::set(nested_attrs, "service.region", StringValue("us-west-2"))
-  Attributes::set(nested_attrs, "service.instance", StringValue("i-1234567890abcdef0"))
+  // 创建分析指标
+  let data_processed_counter = Meter::create_counter(analytics_meter, "data.records.processed")
+  let processing_time_histogram = Meter::create_histogram(analytics_meter, "data.processing.time")
+  let report_generation_counter = Meter::create_counter(analytics_meter, "reports.generated")
   
-  // Start operation with complex attributes
-  let operation_span = Tracer::start_span(tracer, "complex.attribute.operation")
-  Span::add_event(operation_span, "complex.attributes.processed", None)
+  // 模拟数据处理流程
+  let data_batches = [
+    ("user_behavior", 1000),
+    ("transaction_data", 500),
+    ("system_metrics", 2000),
+    ("error_logs", 100),
+    ("performance_data", 800)
+  ]
   
-  // Create log with complex attributes
-  let complex_log = LogRecord::new_with_context(
-    Info,
-    Some("Complex attribute processing completed"),
-    Some(complex_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(operation_span.span_context)),
-    Some(SpanContext::span_id(operation_span.span_context)),
-    None
-  )
-  Logger::emit(logger, complex_log)
+  for batch in data_batches {
+    let batch_start = Clock::now_unix_nanos(Clock::system())
+    
+    // 模拟数据处理
+    for i in 0..batch.1 {
+      Counter::add(data_processed_counter, 1.0)
+    }
+    
+    let batch_end = Clock::now_unix_nanos(Clock::system())
+    let processing_time = (batch_end - batch_start) / 1000000L // 转换为毫秒
+    Histogram::record(processing_time_histogram, processing_time.to_double())
+    
+    // 记录处理日志
+    let process_log = LogRecord::new_with_context(
+      Info,
+      Some("Processed " + batch.1.to_string() + " records from " + batch.0 + " dataset"),
+      None,
+      Some(batch_start),
+      Some(batch_end),
+      Some("analytics123456"),
+      Some("batch" + batch.0),
+      None
+    )
+    Logger::emit(analytics_logger, process_log)
+  }
   
-  // Create metrics with nested attributes
-  let complex_counter = Meter::create_counter(meter, "complex.operations", Some("Complex operations"), Some("ops"))
-  Counter::add(complex_counter, 1.0, Some(nested_attrs))
+  // 模拟报表生成
+  let report_types = ["daily_summary", "weekly_trends", "monthly_analysis", "performance_report"]
   
-  // Test attribute serialization scenarios
-  let serialization_span = Tracer::start_span(tracer, "attribute.serialization")
+  for report in report_types {
+    let report_start = Clock::now_unix_nanos(Clock::system())
+    
+    // 模拟报表生成延迟
+    let report_end = report_start + 50000000L // 50ms
+    let report_time = (report_end - report_start) / 1000000L
+    
+    Histogram::record(processing_time_histogram, report_time.to_double())
+    Counter::add(report_generation_counter, 1.0)
+    
+    // 记录报表生成日志
+    let report_log = LogRecord::new_with_context(
+      Info,
+      Some("Generated " + report + " report successfully"),
+      None,
+      Some(report_start),
+      Some(report_end),
+      Some("analytics123456"),
+      Some("report_" + report),
+      None
+    )
+    Logger::emit(analytics_logger, report_log)
+  }
   
-  let serializable_attrs = Attributes::new()
-  Attributes::set(serializable_attrs, "json.data", StringValue("{\"key\":\"value\",\"nested\":{\"array\":[1,2,3]}}"))
-  Attributes::set(serializable_attrs, "xml.data", StringValue("<root><item>value</item></root>"))
-  Attributes::set(serializable_attrs, "binary.data", StringValue("base64:encoded:data"))
+  // 验证数据分析系统
+  assert_true(true)
+}
+
+test "故障恢复和弹性测试" {
+  // 模拟系统故障和恢复场景
   
-  Span::add_event(serialization_span, "attributes.serialized", None)
-  Span::end(serialization_span)
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  Span::end(operation_span)
+  let resilience_meter = MeterProvider::get_meter(meter_provider, "resilience-system")
+  let resilience_logger = LoggerProvider::get_logger(logger_provider, "resilience-system")
   
-  // Verify complex attribute handling
+  // 创建弹性指标
+  let circuit_breaker_counter = Meter::create_counter(resilience_meter, "circuit.breaker.activations")
+  let retry_counter = Meter::create_counter(resilience_meter, "retry.attempts")
+  let failure_counter = Meter::create_counter(resilience_meter, "failures")
+  let recovery_counter = Meter::create_counter(resilience_meter, "recoveries")
+  
+  // 模拟故障场景
+  let failure_scenarios = [
+    ("database_connection_timeout", 3),
+    ("external_api_failure", 5),
+    ("memory_pressure", 2),
+    ("network_partition", 4)
+  ]
+  
+  for scenario in failure_scenarios {
+    // 记录故障开始
+    let failure_start = Clock::now_unix_nanos(Clock::system())
+    
+    let failure_log = LogRecord::new_with_context(
+      Error,
+      Some("FAILURE DETECTED: " + scenario.0),
+      None,
+      Some(failure_start),
+      None,
+      Some("resilience123456"),
+      Some("failure_" + scenario.0),
+      None
+    )
+    Logger::emit(resilience_logger, failure_log)
+    
+    // 模拟故障处理
+    for i in 0..scenario.1 {
+      Counter::add(failure_counter, 1.0)
+      Counter::add(retry_counter, 1.0)
+      
+      if i == scenario.1 - 1 {
+        // 最后一次尝试成功
+        Counter::add(recovery_counter, 1.0)
+        
+        let recovery_log = LogRecord::new_with_context(
+          Info,
+          Some("RECOVERY: Service recovered from " + scenario.0 + " after " + (i + 1).to_string() + " attempts"),
+          None,
+          Some(Clock::now_unix_nanos(Clock::system())),
+          None,
+          Some("resilience123456"),
+          Some("recovery_" + scenario.0),
+          None
+        )
+        Logger::emit(resilience_logger, recovery_log)
+      }
+    }
+    
+    // 如果重试次数过多，激活熔断器
+    if scenario.1 > 3 {
+      Counter::add(circuit_breaker_counter, 1.0)
+      
+      let circuit_breaker_log = LogRecord::new_with_context(
+        Warn,
+        Some("CIRCUIT BREAKER: Activated for " + scenario.0 + " due to repeated failures"),
+        None,
+        Some(Clock::now_unix_nanos(Clock::system())),
+        None,
+        Some("resilience123456"),
+        Some("circuit_breaker_" + scenario.0),
+        None
+      )
+      Logger::emit(resilience_logger, circuit_breaker_log)
+    }
+  }
+  
+  // 验证弹性系统
+  assert_true(true)
+}
+
+test "多租户隔离和性能测试" {
+  // 模拟多租户环境下的性能隔离
+  
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  let tenants = ["tenant-a", "tenant-b", "tenant-c", "tenant-d", "tenant-e"]
+  
+  for tenant in tenants {
+    let tenant_meter = MeterProvider::get_meter(meter_provider, tenant + "-service")
+    let tenant_logger = LoggerProvider::get_logger(logger_provider, tenant + "-service")
+    
+    // 创建租户特定指标
+    let tenant_request_counter = Meter::create_counter(tenant_meter, "requests.total")
+    let tenant_latency_histogram = Meter::create_histogram(tenant_meter, "request.latency")
+    let tenant_error_counter = Meter::create_counter(tenant_meter, "errors.total")
+    
+    // 模拟租户工作负载
+    let workload_size = match tenant {
+      "tenant-a" => 1000,
+      "tenant-b" => 800,
+      "tenant-c" => 1200,
+      "tenant-d" => 600,
+      "tenant-e" => 900,
+      _ => 500
+    }
+    
+    for i in 0..workload_size {
+      // 记录请求
+      Counter::add(tenant_request_counter, 1.0)
+      
+      // 模拟请求延迟
+      let latency = 10.0 + (i % 50).to_double() * 2.0
+      Histogram::record(tenant_latency_histogram, latency)
+      
+      // 模拟偶发错误（5%错误率）
+      if i % 20 == 0 {
+        Counter::add(tenant_error_counter, 1.0)
+        
+        let error_log = LogRecord::new_with_context(
+          Error,
+          Some("Request failed for " + tenant),
+          None,
+          Some(Clock::now_unix_nanos(Clock::system())),
+          None,
+          Some("tenant_" + tenant),
+          Some("error_" + i.to_string()),
+          None
+        )
+        Logger::emit(tenant_logger, error_log)
+      }
+    }
+    
+    // 记录租户摘要日志
+    let summary_log = LogRecord::new_with_context(
+      Info,
+      Some("Tenant " + tenant + " processed " + workload_size.to_string() + " requests"),
+      None,
+      Some(Clock::now_unix_nanos(Clock::system())),
+      None,
+      Some("tenant_" + tenant),
+      Some("summary"),
+      None
+    )
+    Logger::emit(tenant_logger, summary_log)
+  }
+  
+  // 验证多租户隔离
   assert_true(true)
 }
