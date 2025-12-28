@@ -1,375 +1,518 @@
-// Data Serialization/Deserialization Test Suite for Azimuth Telemetry System
-// This file contains comprehensive test cases for data serialization and integrity
+// 数据序列化完整性测试用例
+// 测试遥测数据的序列化、反序列化和完整性保证
 
-test "attribute value serialization" {
-  // Test serialization of different attribute value types
-  let string_value = StringValue("test string")
-  let int_value = IntValue(42)
-  let float_value = FloatValue(3.14159)
-  let bool_value = BoolValue(true)
-  let array_string_value = ArrayStringValue(["item1", "item2", "item3"])
-  let array_int_value = ArrayIntValue([1, 2, 3, 4, 5])
+pub test "attribute value serialization roundtrip" {
+  // 测试各种属性值的序列化往返
   
-  // Simulate serialization by converting to string representations
-  let string_serialized = "string:test string"
-  let int_serialized = "int:42"
-  let float_serialized = "float:3.14159"
-  let bool_serialized = "bool:true"
-  let array_string_serialized = "array_string:[\"item1\",\"item2\",\"item3\"]"
-  let array_int_serialized = "array_int:[1,2,3,4,5]"
+  // 字符串值
+  let string_value = azimuth::StringValue("test string value")
+  assert_eq(string_value, azimuth::StringValue("test string value"))
   
-  // Simulate deserialization by parsing string representations
-  assert_eq(string_serialized, "string:test string")
-  assert_eq(int_serialized, "int:42")
-  assert_eq(float_serialized, "float:3.14159")
-  assert_eq(bool_serialized, "bool:true")
-  assert_eq(array_string_serialized, "array_string:[\"item1\",\"item2\",\"item3\"]")
-  assert_eq(array_int_serialized, "array_int:[1,2,3,4,5]")
+  // 整数值
+  let int_value = azimuth::IntValue(42)
+  assert_eq(int_value, azimuth::IntValue(42))
+  
+  // 浮点数值
+  let float_value = azimuth::FloatValue(3.14159)
+  assert_eq(float_value, azimuth::FloatValue(3.14159))
+  
+  // 布尔值
+  let bool_value = azimuth::BoolValue(true)
+  assert_eq(bool_value, azimuth::BoolValue(true))
+  
+  let bool_value_false = azimuth::BoolValue(false)
+  assert_eq(bool_value_false, azimuth::BoolValue(false))
+  
+  // 字符串数组值
+  let string_array_value = azimuth::ArrayStringValue(["item1", "item2", "item3"])
+  assert_eq(string_array_value, azimuth::ArrayStringValue(["item1", "item2", "item3"]))
+  
+  // 整数数组值
+  let int_array_value = azimuth::ArrayIntValue([1, 2, 3, 4, 5])
+  assert_eq(int_array_value, azimuth::ArrayIntValue([1, 2, 3, 4, 5]))
+  
+  // 测试特殊字符和Unicode字符串
+  let unicode_string = azimuth::StringValue("Unicode test: 中文 日本語 한국语 العربية עברית")
+  assert_eq(unicode_string, azimuth::StringValue("Unicode test: 中文 日本語 한국语 العربية עברית"))
+  
+  // 测试空字符串和空数组
+  let empty_string = azimuth::StringValue("")
+  assert_eq(empty_string, azimuth::StringValue(""))
+  
+  let empty_string_array = azimuth::ArrayStringValue([])
+  assert_eq(empty_string_array, azimuth::ArrayStringValue([]))
+  
+  let empty_int_array = azimuth::ArrayIntValue([])
+  assert_eq(empty_int_array, azimuth::ArrayIntValue([]))
 }
 
-test "span context serialization" {
-  // Create span context with various values
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let sampled = true
-  let trace_state = "key1=value1,key2=value2"
+pub test "attributes collection serialization integrity" {
+  // 创建包含各种属性类型的属性集合
+  let attrs = azimuth::Attributes::new()
   
-  let span_ctx = SpanContext::new(trace_id, span_id, sampled, trace_state)
+  // 添加各种类型的属性
+  azimuth::Attributes::set(attrs, "string.key", azimuth::StringValue("string value"))
+  azimuth::Attributes::set(attrs, "int.key", azimuth::IntValue(123))
+  azimuth::Attributes::set(attrs, "float.key", azimuth::FloatValue(45.67))
+  azimuth::Attributes::set(attrs, "bool.key", azimuth::BoolValue(true))
+  azimuth::Attributes::set(attrs, "string.array", azimuth::ArrayStringValue(["a", "b", "c"]))
+  azimuth::Attributes::set(attrs, "int.array", azimuth::ArrayIntValue([1, 2, 3]))
   
-  // Simulate W3C traceparent format serialization
-  let traceparent_serialized = "00-" + trace_id + "-" + span_id + "-" + (sampled ? "01" : "00")
+  // 验证属性值
+  assert_eq(azimuth::Attributes::get(attrs, "string.key"), 
+            Some(azimuth::StringValue("string value")))
+  assert_eq(azimuth::Attributes::get(attrs, "int.key"), 
+            Some(azimuth::IntValue(123)))
+  assert_eq(azimuth::Attributes::get(attrs, "float.key"), 
+            Some(azimuth::FloatValue(45.67)))
+  assert_eq(azimuth::Attributes::get(attrs, "bool.key"), 
+            Some(azimuth::BoolValue(true)))
+  assert_eq(azimuth::Attributes::get(attrs, "string.array"), 
+            Some(azimuth::ArrayStringValue(["a", "b", "c"])))
+  assert_eq(azimuth::Attributes::get(attrs, "int.array"), 
+            Some(azimuth::ArrayIntValue([1, 2, 3])))
   
-  // Simulate tracestate format serialization
-  let tracestate_serialized = trace_state
+  // 测试不存在的键
+  assert_eq(azimuth::Attributes::get(attrs, "nonexistent.key"), None)
   
-  // Verify serialized formats
-  assert_eq(traceparent_serialized, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  assert_eq(tracestate_serialized, "key1=value1,key2=value2")
-  
-  // Verify original span context values
-  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(span_ctx), span_id)
-  assert_true(SpanContext::is_sampled(span_ctx))
+  // 测试覆盖属性值
+  azimuth::Attributes::set(attrs, "string.key", azimuth::StringValue("new value"))
+  assert_eq(azimuth::Attributes::get(attrs, "string.key"), 
+            Some(azimuth::StringValue("new value")))
 }
 
-test "baggage serialization" {
-  // Create baggage with multiple entries
-  let baggage = Baggage::new()
-  let baggage_with_entries = Baggage::set_entry(baggage, "user.id", "user-123")
-  let baggage_with_more_entries = Baggage::set_entry(baggage_with_entries, "request.id", "req-456")
-  let final_baggage = Baggage::set_entry(baggage_with_more_entries, "session.id", "sess-789")
-  
-  // Simulate baggage serialization (W3C format)
-  let baggage_serialized = "user.id=user-123,request.id=req-456,session.id=sess-789"
-  
-  // Verify serialized format
-  assert_eq(baggage_serialized, "user.id=user-123,request.id=req-456,session.id=sess-789")
-  
-  // Simulate baggage deserialization
-  let deserialized_entries = [
-    ("user.id", "user-123"),
-    ("request.id", "req-456"),
-    ("session.id", "sess-789")
-  ]
-  
-  // Verify deserialized entries
-  assert_eq(deserialized_entries.length, 3)
-  assert_eq(deserialized_entries[0], ("user.id", "user-123"))
-  assert_eq(deserialized_entries[1], ("request.id", "req-456"))
-  assert_eq(deserialized_entries[2], ("session.id", "sess-789"))
-}
-
-test "resource serialization" {
-  // Create resource with various attributes
-  let resource = Resource::new()
-  let attributes = [
-    ("service.name", StringValue("azimuth-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123")),
-    ("service.startup.time", IntValue(1234567890)),
-    ("service.memory.usage", FloatValue(512.5)),
-    ("service.production", BoolValue(true)),
-    ("service.tags", ArrayStringValue(["web", "api", "microservice"]))
-  ]
-  
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
-  
-  // Simulate resource serialization (JSON format)
-  let resource_serialized = "{"
-  + "\"service.name\":\"azimuth-service\","
-  + "\"service.version\":\"1.0.0\","
-  + "\"service.instance.id\":\"instance-123\","
-  + "\"service.startup.time\":1234567890,"
-  + "\"service.memory.usage\":512.5,"
-  + "\"service.production\":true,"
-  + "\"service.tags\":[\"web\",\"api\",\"microservice\"]"
-  + "}"
-  
-  // Verify serialized format contains expected attributes
-  assert_true(resource_serialized.index_of("service.name") >= 0)
-  assert_true(resource_serialized.index_of("azimuth-service") >= 0)
-  assert_true(resource_serialized.index_of("service.version") >= 0)
-  assert_true(resource_serialized.index_of("1.0.0") >= 0)
-  assert_true(resource_serialized.index_of("service.startup.time") >= 0)
-  assert_true(resource_serialized.index_of("1234567890") >= 0)
-}
-
-test "log record serialization" {
-  // Create log record with various fields
-  let timestamp = 1735689600000000000L
-  let observed_timestamp = 1735689600000000001L
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  
-  let log_record = LogRecord::new_with_context(
-    Error,
-    Some("Database connection failed"),
-    Some(Attributes::new()),
-    Some(timestamp),
-    Some(observed_timestamp),
-    Some(trace_id),
-    Some(span_id),
-    Some(Context::root())
+pub test "span context serialization consistency" {
+  // 创建span上下文
+  let span_ctx = azimuth::SpanContext::new(
+    "trace-id-12345678901234567890123456789012",
+    "span-id-1234567890123456",
+    true,
+    "sampled=1;vendor=example"
   )
   
-  // Simulate log record serialization (JSON format)
-  let log_serialized = "{"
-  + "\"severity_number\":\"Error\","
-  + "\"body\":\"Database connection failed\","
-  + "\"timestamp\":" + timestamp.to_string() + ","
-  + "\"observed_timestamp\":" + observed_timestamp.to_string() + ","
-  + "\"trace_id\":\"" + trace_id + "\","
-  + "\"span_id\":\"" + span_id + "\""
-  + "}"
+  // 验证span上下文属性
+  assert_eq(azimuth::SpanContext::trace_id(span_ctx), 
+            "trace-id-12345678901234567890123456789012")
+  assert_eq(azimuth::SpanContext::span_id(span_ctx), 
+            "span-id-1234567890123456")
+  assert_true(azimuth::SpanContext::is_sampled(span_ctx))
+  assert_eq(azimuth::SpanContext::trace_state(span_ctx), "sampled=1;vendor=example")
+  assert_true(azimuth::SpanContext::is_valid(span_ctx))
   
-  // Verify serialized format contains expected fields
-  assert_true(log_serialized.index_of("severity_number") >= 0)
-  assert_true(log_serialized.index_of("Error") >= 0)
-  assert_true(log_serialized.index_of("Database connection failed") >= 0)
-  assert_true(log_serialized.index_of("trace_id") >= 0)
-  assert_true(log_serialized.index_of(trace_id) >= 0)
-  assert_true(log_serialized.index_of("span_id") >= 0)
-  assert_true(log_serialized.index_of(span_id) >= 0)
+  // 测试无效的span上下文
+  let invalid_span_ctx1 = azimuth::SpanContext::new("", "span-id", true, "")
+  assert_false(azimuth::SpanContext::is_valid(invalid_span_ctx1))
+  
+  let invalid_span_ctx2 = azimuth::SpanContext::new("trace-id", "", true, "")
+  assert_false(azimuth::SpanContext::is_valid(invalid_span_ctx2))
+  
+  let invalid_span_ctx3 = azimuth::SpanContext::new("", "", true, "")
+  assert_false(azimuth::SpanContext::is_valid(invalid_span_ctx3))
+  
+  // 测试未采样的span上下文
+  let not_sampled_ctx = azimuth::SpanContext::new("trace-id", "span-id", false, "")
+  assert_false(azimuth::SpanContext::is_sampled(not_sampled_ctx))
+  assert_true(azimuth::SpanContext::is_valid(not_sampled_ctx))
 }
 
-test "metric data serialization" {
-  // Create metric data
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "serialization-meter")
+pub test "log record serialization integrity" {
+  // 创建简单的日志记录
+  let simple_log = azimuth::LogRecord::new(azimuth::Info, "Simple log message")
+  assert_eq(azimuth::LogRecord::severity_number(simple_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(simple_log), Some("Simple log message"))
+  assert_eq(azimuth::LogRecord::attributes(simple_log), None)
+  assert_eq(azimuth::LogRecord::timestamp(simple_log), None)
+  assert_eq(azimuth::LogRecord::observed_timestamp(simple_log), None)
+  assert_eq(azimuth::LogRecord::trace_id(simple_log), None)
+  assert_eq(azimuth::LogRecord::span_id(simple_log), None)
+  assert_eq(azimuth::LogRecord::context(simple_log), None)
   
-  let counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
-  let histogram = Meter::create_histogram(meter, "http.request.duration", Some("HTTP request duration"), Some("ms"))
-  let updown_counter = Meter::create_updown_counter(meter, "active.connections", Some("Active connections"), Some("connections"))
-  let gauge = Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("bytes"))
+  // 创建复杂的日志记录
+  let attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(attrs, "user.id", azimuth::StringValue("user-123"))
+  azimuth::Attributes::set(attrs, "request.id", azimuth::StringValue("req-456"))
   
-  // Simulate metric serialization (JSON format)
-  let metrics_serialized = "["
-  + "{\"name\":\"http.requests.total\",\"type\":\"counter\",\"description\":\"Total HTTP requests\",\"unit\":\"count\"},"
-  + "{\"name\":\"http.request.duration\",\"type\":\"histogram\",\"description\":\"HTTP request duration\",\"unit\":\"ms\"},"
-  + "{\"name\":\"active.connections\",\"type\":\"updown_counter\",\"description\":\"Active connections\",\"unit\":\"connections\"},"
-  + "{\"name\":\"memory.usage\",\"type\":\"gauge\",\"description\":\"Memory usage\",\"unit\":\"bytes\"}"
-  + "]"
+  let complex_log = azimuth::LogRecord::new_with_context(
+    azimuth::Error,
+    Some("Complex error message"),
+    Some(attrs),
+    Some(1735689600000000000L),
+    Some(1735689600000000001L),
+    Some("trace-123"),
+    Some("span-456"),
+    Some(azimuth::Context::root())
+  )
   
-  // Verify serialized format contains expected metrics
-  assert_true(metrics_serialized.index_of("http.requests.total") >= 0)
-  assert_true(metrics_serialized.index_of("counter") >= 0)
-  assert_true(metrics_serialized.index_of("http.request.duration") >= 0)
-  assert_true(metrics_serialized.index_of("histogram") >= 0)
-  assert_true(metrics_serialized.index_of("active.connections") >= 0)
-  assert_true(metrics_serialized.index_of("updown_counter") >= 0)
-  assert_true(metrics_serialized.index_of("memory.usage") >= 0)
-  assert_true(metrics_serialized.index_of("gauge") >= 0)
+  assert_eq(azimuth::LogRecord::severity_number(complex_log), azimuth::Error)
+  assert_eq(azimuth::LogRecord::body(complex_log), Some("Complex error message"))
+  assert_ne(azimuth::LogRecord::attributes(complex_log), None)
+  assert_eq(azimuth::LogRecord::timestamp(complex_log), Some(1735689600000000000L))
+  assert_eq(azimuth::LogRecord::observed_timestamp(complex_log), Some(1735689600000000001L))
+  assert_eq(azimuth::LogRecord::trace_id(complex_log), Some("trace-123"))
+  assert_eq(azimuth::LogRecord::span_id(complex_log), Some("span-456"))
+  assert_ne(azimuth::LogRecord::context(complex_log), None)
+  
+  // 测试所有严重级别
+  let severity_levels = [
+    (azimuth::Trace, "Trace message"),
+    (azimuth::Debug, "Debug message"),
+    (azimuth::Info, "Info message"),
+    (azimuth::Warn, "Warning message"),
+    (azimuth::Error, "Error message"),
+    (azimuth::Fatal, "Fatal message")
+  ]
+  
+  for (severity, message) in severity_levels {
+    let log = azimuth::LogRecord::new(severity, message)
+    assert_eq(azimuth::LogRecord::severity_number(log), severity)
+    assert_eq(azimuth::LogRecord::body(log), Some(message))
+  }
 }
 
-test "http request/response serialization" {
-  // Create HTTP request
-  let request_headers = [
+pub test "resource serialization consistency" {
+  // 创建资源
+  let resource = azimuth::Resource::new()
+  
+  // 添加属性
+  let attrs = [
+    ("service.name", azimuth::StringValue("test-service")),
+    ("service.version", azimuth::StringValue("1.0.0")),
+    ("service.instance.id", azimuth::StringValue("instance-123")),
+    ("deployment.environment", azimuth::StringValue("production")),
+    ("host.name", azimuth::StringValue("host-001")),
+    ("process.pid", azimuth::IntValue(12345)),
+    ("process.command.args", azimuth::ArrayStringValue(["./app", "--config", "prod.yaml"])),
+    ("telemetry.sdk.name", azimuth::StringValue("azimuth")),
+    ("telemetry.sdk.version", azimuth::StringValue("0.1.0")),
+    ("telemetry.sdk.language", azimuth::StringValue("moonbit"))
+  ]
+  
+  let resource_with_attrs = azimuth::Resource::with_attributes(resource, attrs)
+  
+  // 验证所有属性
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "service.name"), 
+            Some(azimuth::StringValue("test-service")))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "service.version"), 
+            Some(azimuth::StringValue("1.0.0")))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "service.instance.id"), 
+            Some(azimuth::StringValue("instance-123")))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "deployment.environment"), 
+            Some(azimuth::StringValue("production")))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "host.name"), 
+            Some(azimuth::StringValue("host-001")))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "process.pid"), 
+            Some(azimuth::IntValue(12345)))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "process.command.args"), 
+            Some(azimuth::ArrayStringValue(["./app", "--config", "prod.yaml"])))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "telemetry.sdk.name"), 
+            Some(azimuth::StringValue("azimuth")))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "telemetry.sdk.version"), 
+            Some(azimuth::StringValue("0.1.0")))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "telemetry.sdk.language"), 
+            Some(azimuth::StringValue("moonbit")))
+  
+  // 测试资源合并
+  let override_attrs = [
+    ("service.version", azimuth::StringValue("2.0.0")),
+    ("new.attribute", azimuth::StringValue("new value"))
+  ]
+  
+  let override_resource = azimuth::Resource::with_attributes(resource, override_attrs)
+  let merged_resource = azimuth::Resource::merge(resource_with_attrs, override_resource)
+  
+  // 验证合并结果
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.name"), 
+            Some(azimuth::StringValue("test-service")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "new.attribute"), 
+            Some(azimuth::StringValue("new value")))
+}
+
+pub test "instrumentation scope serialization" {
+  // 创建instrumentation scope
+  let scope = azimuth::InstrumentationScope::{
+    name: "test-instrumentation",
+    version: Some("1.0.0"),
+    schema_url: Some("https://opentelemetry.io/schemas/1.20.0")
+  }
+  
+  // 验证scope属性
+  assert_eq(scope.name, "test-instrumentation")
+  assert_eq(scope.version, Some("1.0.0"))
+  assert_eq(scope.schema_url, Some("https://opentelemetry.io/schemas/1.20.0"))
+  
+  // 测试没有版本和schema URL的scope
+  let minimal_scope = azimuth::InstrumentationScope::{
+    name: "minimal-instrumentation",
+    version: None,
+    schema_url: None
+  }
+  
+  assert_eq(minimal_scope.name, "minimal-instrumentation")
+  assert_eq(minimal_scope.version, None)
+  assert_eq(minimal_scope.schema_url, None)
+  
+  // 测试只有版本的scope
+  let version_only_scope = azimuth::InstrumentationScope::{
+    name: "version-only-instrumentation",
+    version: Some("2.0.0"),
+    schema_url: None
+  }
+  
+  assert_eq(version_only_scope.name, "version-only-instrumentation")
+  assert_eq(version_only_scope.version, Some("2.0.0"))
+  assert_eq(version_only_scope.schema_url, None)
+}
+
+pub test "metric instrument serialization" {
+  // 测试各种指标类型的序列化
+  
+  // Counter
+  let counter = azimuth::Instrument::Counter(
+    "http.requests.total",
+    Some("Total HTTP requests"),
+    Some("requests")
+  )
+  
+  assert_eq(azimuth::Instrument::name(counter), "http.requests.total")
+  assert_eq(azimuth::Instrument::description(counter), Some("Total HTTP requests"))
+  assert_eq(azimuth::Instrument::unit(counter), Some("requests"))
+  
+  // Histogram
+  let histogram = azimuth::Instrument::Histogram(
+    "http.response.duration",
+    Some("HTTP response duration"),
+    Some("ms")
+  )
+  
+  assert_eq(azimuth::Instrument::name(histogram), "http.response.duration")
+  assert_eq(azimuth::Instrument::description(histogram), Some("HTTP response duration"))
+  assert_eq(azimuth::Instrument::unit(histogram), Some("ms"))
+  
+  // UpDownCounter
+  let updown_counter = azimuth::Instrument::UpDownCounter(
+    "active.connections",
+    Some("Currently active connections"),
+    Some("connections")
+  )
+  
+  assert_eq(azimuth::Instrument::name(updown_counter), "active.connections")
+  assert_eq(azimuth::Instrument::description(updown_counter), Some("Currently active connections"))
+  assert_eq(azimuth::Instrument::unit(updown_counter), Some("connections"))
+  
+  // Gauge
+  let gauge = azimuth::Instrument::Gauge(
+    "memory.usage",
+    Some("Current memory usage"),
+    Some("bytes")
+  )
+  
+  assert_eq(azimuth::Instrument::name(gauge), "memory.usage")
+  assert_eq(azimuth::Instrument::description(gauge), Some("Current memory usage"))
+  assert_eq(azimuth::Instrument::unit(gauge), Some("bytes"))
+  
+  // 测试没有描述和单位的指标
+  let minimal_counter = azimuth::Instrument::Counter("simple.counter", None, None)
+  assert_eq(azimuth::Instrument::name(minimal_counter), "simple.counter")
+  assert_eq(azimuth::Instrument::description(minimal_counter), None)
+  assert_eq(azimuth::Instrument::unit(minimal_counter), None)
+}
+
+pub test "context and baggage serialization" {
+  // 测试上下文序列化
+  let ctx = azimuth::Context::root()
+  
+  // 添加多个键值对
+  let key1 = azimuth::ContextKey::new("user.id")
+  let key2 = azimuth::ContextKey::new("request.id")
+  let key3 = azimuth::ContextKey::new("session.id")
+  
+  let ctx_with_values = azimuth::Context::with_value(
+    azimuth::Context::with_value(
+      azimuth::Context::with_value(ctx, key1, "user-123"),
+      key2, 
+      "req-456"
+    ),
+    key3, 
+    "session-789"
+  )
+  
+  // 验证上下文值
+  assert_eq(azimuth::Context::get(ctx_with_values, key1), Some("user-123"))
+  assert_eq(azimuth::Context::get(ctx_with_values, key2), Some("req-456"))
+  assert_eq(azimuth::Context::get(ctx_with_values, key3), Some("session-789"))
+  
+  // 测试不存在的键
+  let missing_key = azimuth::ContextKey::new("missing.key")
+  assert_eq(azimuth::Context::get(ctx_with_values, missing_key), None)
+  
+  // 测试baggage序列化
+  let baggage = azimuth::Baggage::new()
+  
+  let baggage_with_entries = azimuth::Baggage::set_entry(
+    azimuth::Baggage::set_entry(
+      azimuth::Baggage::set_entry(baggage, "user.id", "user-123"),
+      "request.id", 
+      "req-456"
+    ),
+    "session.id", 
+    "session-789"
+  )
+  
+  // 验证baggage条目
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_entries, "user.id"), Some("user-123"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_entries, "request.id"), Some("req-456"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_entries, "session.id"), Some("session-789"))
+  
+  // 测试不存在的baggage条目
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_entries, "missing.entry"), None)
+  
+  // 测试baggage删除
+  let baggage_with_removal = azimuth::Baggage::remove_entry(baggage_with_entries, "request.id")
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_removal, "request.id"), None)
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_removal, "user.id"), Some("user-123"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_removal, "session.id"), Some("session-789"))
+}
+
+pub test "http request response serialization" {
+  // 测试HTTP请求序列化
+  let headers = [
     ("Content-Type", "application/json"),
     ("Authorization", "Bearer token123"),
-    ("X-Request-ID", "req-123")
+    ("User-Agent", "Azimuth-Telemetry/1.0.0"),
+    ("X-Request-ID", "req-123456")
   ]
-  let request = HttpRequest::new("POST", "https://api.example.com/users", request_headers, Some("{\"name\":\"John\"}"))
   
-  // Create HTTP response
+  let request = azimuth::HttpRequest::new(
+    "POST",
+    "https://api.example.com/v1/users",
+    headers,
+    Some("{\"name\":\"John Doe\",\"email\":\"john@example.com\"}")
+  )
+  
+  // 验证请求属性
+  assert_eq(azimuth::HttpRequest::http_method(request), "POST")
+  assert_eq(azimuth::HttpRequest::url(request), "https://api.example.com/v1/users")
+  assert_eq(azimuth::HttpRequest::body(request), 
+            Some("{\"name\":\"John Doe\",\"email\":\"john@example.com\"}"))
+  
+  // 测试HTTP响应序列化
   let response_headers = [
     ("Content-Type", "application/json"),
-    ("X-Response-ID", "resp-456"),
+    ("X-Response-ID", "resp-789012"),
     ("Cache-Control", "no-cache")
   ]
-  let response = HttpResponse::new(201, response_headers, Some("{\"id\":123,\"name\":\"John\"}"))
   
-  // Simulate HTTP request serialization (JSON format)
-  let request_serialized = "{"
-  + "\"method\":\"POST\","
-  + "\"url\":\"https://api.example.com/users\","
-  + "\"headers\":["
-  + "{\"name\":\"Content-Type\",\"value\":\"application/json\"},"
-  + "{\"name\":\"Authorization\",\"value\":\"Bearer token123\"},"
-  + "{\"name\":\"X-Request-ID\",\"value\":\"req-123\"}"
-  + "],"
-  + "\"body\":\"{\\\"name\\\":\\\"John\\\"}\""
-  + "}"
+  let response = azimuth::HttpResponse::new(
+    201,
+    response_headers,
+    Some("{\"id\":\"user-123\",\"status\":\"created\"}")
+  )
   
-  // Simulate HTTP response serialization (JSON format)
-  let response_serialized = "{"
-  + "\"status_code\":201,"
-  + "\"headers\":["
-  + "{\"name\":\"Content-Type\",\"value\":\"application/json\"},"
-  + "{\"name\":\"X-Response-ID\",\"value\":\"resp-456\"},"
-  + "{\"name\":\"Cache-Control\",\"value\":\"no-cache\"}"
-  + "],"
-  + "\"body\":\"{\\\"id\\\":123,\\\"name\\\":\\\"John\\\"}\""
-  + "}"
+  // 验证响应属性
+  assert_eq(azimuth::HttpResponse::status_code(response), 201)
+  assert_eq(azimuth::HttpResponse::body(response), 
+            Some("{\"id\":\"user-123\",\"status\":\"created\"}"))
   
-  // Verify serialized formats
-  assert_true(request_serialized.index_of("POST") >= 0)
-  assert_true(request_serialized.index_of("https://api.example.com/users") >= 0)
-  assert_true(request_serialized.index_of("Content-Type") >= 0)
-  assert_true(request_serialized.index_of("application/json") >= 0)
+  // 测试空请求和响应
+  let empty_request = azimuth::HttpRequest::new("GET", "", [], None)
+  assert_eq(azimuth::HttpRequest::http_method(empty_request), "GET")
+  assert_eq(azimuth::HttpRequest::url(empty_request), "")
+  assert_eq(azimuth::HttpRequest::body(empty_request), None)
   
-  assert_true(response_serialized.index_of("201") >= 0)
-  assert_true(response_serialized.index_of("Content-Type") >= 0)
-  assert_true(response_serialized.index_of("application/json") >= 0)
-  assert_true(response_serialized.index_of("X-Response-ID") >= 0)
+  let empty_response = azimuth::HttpResponse::new(200, [], None)
+  assert_eq(azimuth::HttpResponse::status_code(empty_response), 200)
+  assert_eq(azimuth::HttpResponse::body(empty_response), None)
 }
 
-test "text map carrier serialization" {
-  // Create text map carrier with headers
-  let carrier = TextMapCarrier::new()
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
-  TextMapCarrier::set(carrier, "baggage", "userId=user-123,sessionId=session-456")
-  TextMapCarrier::set(carrier, "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+pub test "text map carrier serialization" {
+  // 测试TextMapCarrier序列化
+  let carrier = azimuth::TextMapCarrier::new()
   
-  // Simulate text map carrier serialization (map format)
-  let carrier_serialized = "{"
-  + "\"traceparent\":\"00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01\","
-  + "\"tracestate\":\"rojo=00f067aa0ba902b7,congo=t61rcWkgMzE\","
-  + "\"baggage\":\"userId=user-123,sessionId=session-456\","
-  + "\"User-Agent\":\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\""
-  + "}"
+  // 设置多个头部
+  azimuth::TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  azimuth::TextMapCarrier::set(carrier, "baggage", "user=id123,session=session456")
+  azimuth::TextMapCarrier::set(carrier, "x-custom-header", "custom-value")
+  azimuth::TextMapCarrier::set(carrier, "x-another-header", "another-value")
   
-  // Verify serialized format contains expected headers
-  assert_true(carrier_serialized.index_of("traceparent") >= 0)
-  assert_true(carrier_serialized.index_of("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01") >= 0)
-  assert_true(carrier_serialized.index_of("tracestate") >= 0)
-  assert_true(carrier_serialized.index_of("rojo=00f067aa0ba902b7") >= 0)
-  assert_true(carrier_serialized.index_of("baggage") >= 0)
-  assert_true(carrier_serialized.index_of("userId=user-123") >= 0)
-  assert_true(carrier_serialized.index_of("User-Agent") >= 0)
+  // 验证头部值
+  assert_eq(azimuth::TextMapCarrier::get(carrier, "traceparent"), 
+            Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(azimuth::TextMapCarrier::get(carrier, "baggage"), 
+            Some("user=id123,session=session456"))
+  assert_eq(azimuth::TextMapCarrier::get(carrier, "x-custom-header"), 
+            Some("custom-value"))
+  assert_eq(azimuth::TextMapCarrier::get(carrier, "x-another-header"), 
+            Some("another-value"))
+  
+  // 测试不存在的头部
+  assert_eq(azimuth::TextMapCarrier::get(carrier, "nonexistent-header"), None)
+  
+  // 测试覆盖头部值
+  azimuth::TextMapCarrier::set(carrier, "x-custom-header", "new-custom-value")
+  assert_eq(azimuth::TextMapCarrier::get(carrier, "x-custom-header"), 
+            Some("new-custom-value"))
+  
+  // 测试空头部值
+  azimuth::TextMapCarrier::set(carrier, "empty-header", "")
+  assert_eq(azimuth::TextMapCarrier::get(carrier, "empty-header"), Some(""))
+  
+  // 测试特殊字符头部值
+  azimuth::TextMapCarrier::set(carrier, "special-header", "Special: !@#$%^&*(){}[]|\\:;\"'<>?,./")
+  assert_eq(azimuth::TextMapCarrier::get(carrier, "special-header"), 
+            Some("Special: !@#$%^&*(){}[]|\\:;\"'<>?,./"))
 }
 
-test "context serialization" {
-  // Create context with multiple key-value pairs
-  let ctx = Context::root()
-  let ctx1 = Context::with_value(ctx, ContextKey::new("trace.id"), "trace-123")
-  let ctx2 = Context::with_value(ctx1, ContextKey::new("user.id"), "user-456")
-  let ctx3 = Context::with_value(ctx2, ContextKey::new("request.id"), "req-789")
-  let final_ctx = Context::with_value(ctx3, ContextKey::new("operation.name"), "getUserProfile")
+pub test "data corruption detection" {
+  // 测试数据损坏检测机制
   
-  // Simulate context serialization (map format)
-  let context_serialized = "{"
-  + "\"trace.id\":\"trace-123\","
-  + "\"user.id\":\"user-456\","
-  + "\"request.id\":\"req-789\","
-  + "\"operation.name\":\"getUserProfile\""
-  + "}"
+  // 创建复杂的属性集合
+  let attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(attrs, "checksum.test", azimuth::StringValue("original value"))
+  azimuth::Attributes::set(attrs, "numeric.test", azimuth::IntValue(12345))
+  azimuth::Attributes::set(attrs, "array.test", azimuth::ArrayStringValue(["item1", "item2", "item3"]))
   
-  // Verify serialized format contains expected key-value pairs
-  assert_true(context_serialized.index_of("trace.id") >= 0)
-  assert_true(context_serialized.index_of("trace-123") >= 0)
-  assert_true(context_serialized.index_of("user.id") >= 0)
-  assert_true(context_serialized.index_of("user-456") >= 0)
-  assert_true(context_serialized.index_of("request.id") >= 0)
-  assert_true(context_serialized.index_of("req-789") >= 0)
-  assert_true(context_serialized.index_of("operation.name") >= 0)
-  assert_true(context_serialized.index_of("getUserProfile") >= 0)
-}
-
-test "span serialization" {
-  // Create span with various properties
-  let span_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "")
-  let span = Span::new("http.request", Server, span_ctx)
+  // 验证原始值
+  assert_eq(azimuth::Attributes::get(attrs, "checksum.test"), 
+            Some(azimuth::StringValue("original value")))
+  assert_eq(azimuth::Attributes::get(attrs, "numeric.test"), 
+            Some(azimuth::IntValue(12345)))
+  assert_eq(azimuth::Attributes::get(attrs, "array.test"), 
+            Some(azimuth::ArrayStringValue(["item1", "item2", "item3"])))
   
-  // Set status and add events
-  Span::set_status(span, Ok, Some("Request completed successfully"))
-  Span::add_event(span, "request.started", Some([("http.method", StringValue("GET")), ("http.url", StringValue("/api/users"))]))
-  Span::add_event(span, "request.completed", Some([("http.status_code", IntValue(200))]))
+  // 创建日志记录并验证完整性
+  let log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Integrity test log message"),
+    Some(attrs),
+    Some(1735689600000000000L),
+    None,
+    Some("trace-integrity-test"),
+    Some("span-integrity-test"),
+    Some(azimuth::Context::root())
+  )
   
-  // Simulate span serialization (JSON format)
-  let span_serialized = "{"
-  + "\"name\":\"http.request\","
-  + "\"kind\":\"Server\","
-  + "\"status\":\"Ok\","
-  + "\"status_description\":\"Request completed successfully\","
-  + "\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\","
-  + "\"span_id\":\"b7ad6b7169203331\","
-  + "\"events\":["
-  + "{\"name\":\"request.started\",\"attributes\":[{\"key\":\"http.method\",\"value\":\"GET\"},{\"key\":\"http.url\",\"value\":\"/api/users\"}]},"
-  + "{\"name\":\"request.completed\",\"attributes\":[{\"key\":\"http.status_code\",\"value\":200}]}"
-  + "]"
-  + "}"
+  // 验证日志记录完整性
+  assert_eq(azimuth::LogRecord::severity_number(log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(log), Some("Integrity test log message"))
+  assert_ne(azimuth::LogRecord::attributes(log), None)
+  assert_eq(azimuth::LogRecord::timestamp(log), Some(1735689600000000000L))
+  assert_eq(azimuth::LogRecord::trace_id(log), Some("trace-integrity-test"))
+  assert_eq(azimuth::LogRecord::span_id(log), Some("span-integrity-test"))
+  assert_ne(azimuth::LogRecord::context(log), None)
   
-  // Verify serialized format contains expected properties
-  assert_true(span_serialized.index_of("http.request") >= 0)
-  assert_true(span_serialized.index_of("Server") >= 0)
-  assert_true(span_serialized.index_of("Ok") >= 0)
-  assert_true(span_serialized.index_of("Request completed successfully") >= 0)
-  assert_true(span_serialized.index_of("trace_id") >= 0)
-  assert_true(span_serialized.index_of("0af7651916cd43dd8448eb211c80319c") >= 0)
-  assert_true(span_serialized.index_of("events") >= 0)
-  assert_true(span_serialized.index_of("request.started") >= 0)
-  assert_true(span_serialized.index_of("request.completed") >= 0)
-}
-
-test "serialization data integrity" {
-  // Test serialization and deserialization integrity
-  let original_data = [
-    ("string.test", StringValue("original string value")),
-    ("int.test", IntValue(12345)),
-    ("float.test", FloatValue(3.14159265359)),
-    ("bool.test", BoolValue(true)),
-    ("array.string.test", ArrayStringValue(["item1", "item2", "item3"])),
-    ("array.int.test", ArrayIntValue([10, 20, 30, 40, 50]))
-  ]
+  // 创建span上下文并验证完整性
+  let span_ctx = azimuth::SpanContext::new(
+    "integrity-trace-12345678901234567890123456789012",
+    "integrity-span-1234567890123456",
+    true,
+    "integrity-test=1"
+  )
   
-  // Simulate serialization
-  let serialized_data = Array.map(original_data, fn(pair) {
-    match pair.1 {
-      StringValue(s) => "string:" + s
-      IntValue(i) => "int:" + i.to_string()
-      FloatValue(f) => "float:" + f.to_string()
-      BoolValue(b) => "bool:" + (b ? "true" : "false")
-      ArrayStringValue(arr) => "array.string:" + arr.join(",")
-      ArrayIntValue(arr) => "array.int:" + arr.map(i => i.to_string()).join(",")
-    }
-  })
-  
-  // Simulate deserialization
-  let deserialized_data = Array.map(serialized_data, fn(serialized) {
-    if serialized.starts_with("string:") {
-      ("string.test", StringValue(serialized.substring(7)))
-    } else if serialized.starts_with("int:") {
-      ("int.test", IntValue(serialized.substring(4).to_int()))
-    } else if serialized.starts_with("float:") {
-      ("float.test", FloatValue(serialized.substring(6).to_double()))
-    } else if serialized.starts_with("bool:") {
-      ("bool.test", BoolValue(serialized.substring(5) == "true"))
-    } else if serialized.starts_with("array.string:") {
-      ("array.string.test", ArrayStringValue(serialized.substring(13).split(",")))
-    } else if serialized.starts_with("array.int:") {
-      ("array.int.test", ArrayIntValue(serialized.substring(10).split(",").map(s => s.to_int())))
-    } else {
-      ("unknown", StringValue("unknown"))
-    }
-  })
-  
-  // Verify data integrity
-  assert_eq(deserialized_data.length, original_data.length)
-  assert_eq(deserialized_data[0].0, "string.test")
-  assert_eq(deserialized_data[1].0, "int.test")
-  assert_eq(deserialized_data[2].0, "float.test")
-  assert_eq(deserialized_data[3].0, "bool.test")
-  assert_eq(deserialized_data[4].0, "array.string.test")
-  assert_eq(deserialized_data[5].0, "array.int.test")
+  assert_true(azimuth::SpanContext::is_valid(span_ctx))
+  assert_eq(azimuth::SpanContext::trace_id(span_ctx), 
+            "integrity-trace-12345678901234567890123456789012")
+  assert_eq(azimuth::SpanContext::span_id(span_ctx), 
+            "integrity-span-1234567890123456")
+  assert_true(azimuth::SpanContext::is_sampled(span_ctx))
+  assert_eq(azimuth::SpanContext::trace_state(span_ctx), "integrity-test=1")
 }

@@ -1,459 +1,619 @@
-// Azimuth高级系统集成测试
-// 专注于内存管理、数据完整性、跨服务传播、配置管理、实时监控等高级功能
+// 高级系统综合测试用例
+// 测试整个遥测系统的综合功能和端到端集成
 
-test "内存管理和资源清理测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "memory.test")
+pub test "end-to-end telemetry workflow" {
+  // 完整的端到端遥测工作流测试
   
-  // 创建大量span测试内存管理
-  let active_spans = []
-  for i = 0; i < 50; i = i + 1 {
-    let span = Tracer::start_span(tracer, "memory.span." + i.to_string())
-    active_spans.push(span)
-    
-    // 为每个span添加事件
-    Span::add_event(span, "event." + i.to_string())
-  }
+  // 1. 初始化所有组件
+  let tracer_provider = azimuth::TracerProvider::default()
+  let meter_provider = azimuth::MeterProvider::default()
+  let logger_provider = azimuth::LoggerProvider::default()
   
-  // 批量结束span，测试资源清理
-  for span in active_spans {
-    Span::set_status(span, Ok)
-    Span::end(span)
-  }
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "e2e-test-service")
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "e2e-test-metrics")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "e2e-test-logger")
   
-  // 验证所有span都能正常结束，没有内存泄漏
-  assert_true(true)
-  
-  // 测试大量属性创建和清理
-  let attrs = Attributes::new()
-  for i = 0; i < 100; i = i + 1 {
-    let key = "attr." + i.to_string()
-    let value = StringValue("value." + i.to_string())
-    Attributes::set(attrs, key, value)
-  }
-  
-  // 测试大量baggage条目
-  let baggage = Baggage::new()
-  for i = 0; i < 50; i = i + 1 {
-    let key = "baggage." + i.to_string()
-    let value = "baggage.value." + i.to_string()
-    ignore(Baggage::set_entry(baggage, key, value))
-  }
-  
-  assert_true(true)
-}
-
-test "数据序列化和完整性验证测试" {
-  // 创建复杂的遥测数据结构
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.test")
-  let span = Tracer::start_span(tracer, "data.serialization")
-  
-  // 添加复杂的属性数据
-  let complex_attrs = [
-    ("string.data", StringValue("复杂字符串数据with特殊字符!@#$%^&*()")),
-    ("integer.data", IntValue(2147483647)),
-    ("float.data", FloatValue(3.14159265359)),
-    ("boolean.data", BoolValue(true)),
-    ("array.string", ArrayStringValue(["item1", "item2", "item3", "复杂项"])),
-    ("array.int", ArrayIntValue([1, 2, 3, 100, 200, 300]))
+  // 2. 创建资源
+  let resource = azimuth::Resource::new()
+  let resource_attrs = [
+    ("service.name", azimuth::StringValue("e2e-test-service")),
+    ("service.version", azimuth::StringValue("1.0.0")),
+    ("service.instance.id", azimuth::StringValue("e2e-instance-123")),
+    ("environment", azimuth::StringValue("test")),
+    ("test.suite", azimuth::StringValue("end-to-end"))
   ]
+  let service_resource = azimuth::Resource::with_attributes(resource, resource_attrs)
   
-  for attr in complex_attrs {
-    Attributes::set(Attributes::new(), attr.0, attr.1)
-  }
+  // 验证资源属性
+  assert_eq(azimuth::Resource::get_attribute(service_resource, "service.name"), 
+            Some(azimuth::StringValue("e2e-test-service")))
+  assert_eq(azimuth::Resource::get_attribute(service_resource, "service.version"), 
+            Some(azimuth::StringValue("1.0.0")))
   
-  // 创建复杂的日志记录
-  let log_record = LogRecord::new_with_context(
-    Error,
-    Some("序列化测试日志消息"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    Some(Clock::now_unix_nanos(Clock::system()) + 1000L),
-    Some("0af7651916cd43dd8448eb211c80319c"),
-    Some("b7ad6b7169203331"),
-    Some(Context::root())
+  // 3. 创建根span
+  let root_span = azimuth::Tracer::start_span(tracer, "e2e-workflow")
+  let root_span_ctx = azimuth::Span::span_context(root_span)
+  
+  // 验证根span
+  assert_eq(azimuth::Span::name(root_span), "e2e-workflow")
+  assert_true(azimuth::SpanContext::is_valid(root_span_ctx))
+  
+  // 4. 添加span事件
+  azimuth::Span::add_event(root_span, "Workflow started")
+  azimuth::Span::add_event(root_span, "Initializing components")
+  
+  // 5. 创建子span
+  let child_span = azimuth::Tracer::start_span(tracer, "data-processing")
+  azimuth::Span::add_event(child_span, "Data processing started")
+  azimuth::Span::add_event(child_span, "Data validation completed")
+  azimuth::Span::add_event(child_span, "Data transformation completed")
+  azimuth::Span::set_status(child_span, azimuth::Ok)
+  azimuth::Span::end(child_span)
+  
+  // 6. 创建指标
+  let request_counter = azimuth::Meter::create_counter(
+    meter, 
+    "e2e.requests.total",
+    Some("Total E2E requests"),
+    Some("requests")
   )
   
-  // 验证数据完整性
-  match LogRecord::severity_number(log_record) {
-    Error => assert_true(true)
-    _ => assert_true(false)
-  }
-  assert_true(LogRecord::body(log_record) is Some)
-  assert_true(LogRecord::trace_id(log_record) is Some)
-  assert_true(LogRecord::span_id(log_record) is Some)
-  
-  // 测试SpanContext数据完整性
-  let span_ctx = SpanContext::new(
-    "0af7651916cd43dd8448eb211c80319c",
-    "b7ad6b7169203331", 
-    true,
-    "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+  let duration_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "e2e.duration",
+    Some("E2E operation duration"),
+    Some("ms")
   )
   
-  assert_eq(SpanContext::trace_id(span_ctx), "0af7651916cd43dd8448eb211c80319c")
-  assert_eq(SpanContext::span_id(span_ctx), "b7ad6b7169203331")
-  assert_true(SpanContext::is_valid(span_ctx))
-  assert_true(SpanContext::is_sampled(span_ctx))
+  let active_operations_gauge = azimuth::Meter::create_gauge(
+    meter, 
+    "e2e.active_operations",
+    Some("Currently active E2E operations"),
+    Some("operations")
+  )
   
-  Span::end(span)
-  assert_true(true)
+  // 记录指标
+  azimuth::Counter::add(request_counter, 1.0)
+  azimuth::Histogram::record(duration_histogram, 250.0)
+  
+  // 验证指标
+  assert_eq(request_counter.name, "e2e.requests.total")
+  assert_eq(duration_histogram.name, "e2e.duration")
+  assert_eq(active_operations_gauge.name, "e2e.active_operations")
+  
+  // 7. 创建和发射日志
+  let log_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(log_attrs, "workflow.id", azimuth::StringValue("workflow-123"))
+  azimuth::Attributes::set(log_attrs, "workflow.status", azimuth::StringValue("in_progress"))
+  azimuth::Attributes::set(log_attrs, "processing.steps", azimuth::IntValue(3))
+  azimuth::Attributes::set(log_attrs, "processing.duration_ms", azimuth::IntValue(250))
+  
+  let workflow_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("E2E workflow progressing normally"),
+    Some(log_attrs),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(root_span_ctx)),
+    Some(azimuth::SpanContext::span_id(root_span_ctx)),
+    Some(azimuth::Context::root())
+  )
+  
+  // 验证日志记录
+  assert_eq(azimuth::LogRecord::severity_number(workflow_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(workflow_log), Some("E2E workflow progressing normally"))
+  assert_eq(azimuth::LogRecord::trace_id(workflow_log), 
+            Some(azimuth::SpanContext::trace_id(root_span_ctx)))
+  
+  // 发射日志
+  azimuth::Logger::emit(logger, workflow_log)
+  
+  // 8. 完成根span
+  azimuth::Span::add_event(root_span, "Workflow completed successfully")
+  azimuth::Span::set_status(root_span, azimuth::Ok)
+  azimuth::Span::end(root_span)
+  
+  // 9. 创建完成日志
+  let completion_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(completion_attrs, "workflow.id", azimuth::StringValue("workflow-123"))
+  azimuth::Attributes::set(completion_attrs, "workflow.status", azimuth::StringValue("completed"))
+  azimuth::Attributes::set(completion_attrs, "total.duration_ms", azimuth::IntValue(300))
+  azimuth::Attributes::set(completion_attrs, "total.spans", azimuth::IntValue(2))
+  
+  let completion_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("E2E workflow completed successfully"),
+    Some(completion_attrs),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(root_span_ctx)),
+    Some(azimuth::SpanContext::span_id(root_span_ctx)),
+    Some(azimuth::Context::root())
+  )
+  
+  // 验证完成日志
+  assert_eq(azimuth::LogRecord::body(completion_log), Some("E2E workflow completed successfully"))
+  
+  // 发射完成日志
+  azimuth::Logger::emit(logger, completion_log)
 }
 
-test "跨服务遥测传播完整流程测试" {
-  // 模拟微服务架构中的遥测传播
+pub test "telemetry system resilience and recovery" {
+  // 测试遥测系统的弹性和恢复能力
   
-  // 服务A：创建初始追踪
-  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
-  let root_span = Tracer::start_span(service_a_tracer, "gateway.request")
-  Span::add_event(root_span, "request.received")
+  let tracer_provider = azimuth::TracerProvider::default()
+  let meter_provider = azimuth::MeterProvider::default()
+  let logger_provider = azimuth::LoggerProvider::default()
   
-  // 创建传播上下文
-  let ctx_a = Context::root()
-  let correlation_key = ContextKey::new("correlation.id")
-  let ctx_with_correlation = Context::with_value(ctx_a, correlation_key, "corr-12345")
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "resilience-test-service")
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "resilience-test-metrics")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "resilience-test-logger")
   
-  // 创建HTTP载体模拟服务间调用
-  let carrier_to_b = TextMapCarrier::new()
-  TextMapCarrier::set(carrier_to_b, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier_to_b, "baggage", "user.id=12345,session.id=session67890")
-  TextMapCarrier::set(carrier_to_b, "x-correlation-id", "corr-12345")
+  // 模拟正常操作
+  let normal_span = azimuth::Tracer::start_span(tracer, "normal-operation")
+  azimuth::Span::add_event(normal_span, "Normal operation started")
+  azimuth::Span::add_event(normal_span, "Normal operation completed")
+  azimuth::Span::set_status(normal_span, azimuth::Ok)
+  azimuth::Span::end(normal_span)
   
-  // 服务B：接收并处理追踪
-  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
-  let service_b_span = Tracer::start_span(service_b_tracer, "database.query")
-  Span::add_event(service_b_span, "query.started")
+  // 模拟错误条件
+  let error_span = azimuth::Tracer::start_span(tracer, "error-operation")
+  azimuth::Span::add_event(error_span, "Error operation started")
+  azimuth::Span::add_event(error_span, "Error condition detected")
+  azimuth::Span::set_status(error_span, azimuth::Error, Some("Simulated error for testing"))
+  azimuth::Span::end(error_span)
   
-  // 服务B调用服务C
-  let carrier_to_c = TextMapCarrier::new()
-  TextMapCarrier::set(carrier_to_c, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-c7ad6b7169203331-01")
-  TextMapCarrier::set(carrier_to_c, "baggage", "user.id=12345,session.id=session67890,db.query=true")
-  TextMapCarrier::set(carrier_to_c, "x-correlation-id", "corr-12345")
+  // 创建错误日志
+  let error_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(error_attrs, "error.type", azimuth::StringValue("SimulatedError"))
+  azimuth::Attributes::set(error_attrs, "error.severity", azimuth::StringValue("medium"))
+  azimuth::Attributes::set(error_attrs, "error.recoverable", azimuth::BoolValue(true))
+  azimuth::Attributes::set(error_attrs, "error.retry_count", azimuth::IntValue(3))
   
-  // 服务C：最终处理
-  let service_c_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-c")
-  let service_c_span = Tracer::start_span(service_c_tracer, "cache.operation")
-  Span::add_event(service_c_span, "cache.hit")
+  let error_log = azimuth::LogRecord::new_with_context(
+    azimuth::Error,
+    Some("Simulated error for resilience testing"),
+    Some(error_attrs),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some("resilience-error-trace"),
+    Some("resilience-error-span"),
+    Some(azimuth::Context::root())
+  )
   
-  // 完成所有操作
-  Span::set_status(service_c_span, Ok)
-  Span::end(service_c_span)
+  // 验证错误日志
+  assert_eq(azimuth::LogRecord::severity_number(error_log), azimuth::Error)
+  assert_eq(azimuth::LogRecord::body(error_log), Some("Simulated error for resilience testing"))
   
-  Span::set_status(service_b_span, Ok)
-  Span::end(service_b_span)
+  // 发射错误日志
+  azimuth::Logger::emit(logger, error_log)
   
-  Span::set_status(root_span, Ok)
-  Span::end(root_span)
+  // 模拟恢复操作
+  let recovery_span = azimuth::Tracer::start_span(tracer, "recovery-operation")
+  azimuth::Span::add_event(recovery_span, "Recovery operation started")
+  azimuth::Span::add_event(recovery_span, "System recovered successfully")
+  azimuth::Span::set_status(recovery_span, azimuth::Ok)
+  azimuth::Span::end(recovery_span)
   
-  // 验证传播数据完整性
-  let trace_from_b = TextMapCarrier::get(carrier_to_b, "traceparent")
-  let trace_from_c = TextMapCarrier::get(carrier_to_c, "traceparent")
+  // 创建恢复日志
+  let recovery_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(recovery_attrs, "recovery.action", azimuth::StringValue("automatic_recovery"))
+  azimuth::Attributes::set(recovery_attrs, "recovery.duration_ms", azimuth::IntValue(150))
+  azimuth::Attributes::set(recovery_attrs, "recovery.success", azimuth::BoolValue(true))
   
-  assert_true(trace_from_b is Some)
-  assert_true(trace_from_c is Some)
-  assert_true(true)
+  let recovery_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("System recovered from simulated error"),
+    Some(recovery_attrs),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some("resilience-recovery-trace"),
+    Some("resilience-recovery-span"),
+    Some(azimuth::Context::root())
+  )
+  
+  // 验证恢复日志
+  assert_eq(azimuth::LogRecord::severity_number(recovery_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(recovery_log), Some("System recovered from simulated error"))
+  
+  // 发射恢复日志
+  azimuth::Logger::emit(logger, recovery_log)
+  
+  // 创建弹性指标
+  let error_counter = azimuth::Meter::create_counter(
+    meter, 
+    "resilience.errors.total",
+    Some("Total errors encountered"),
+    Some("errors")
+  )
+  
+  let recovery_counter = azimuth::Meter::create_counter(
+    meter, 
+    "resilience.recoveries.total",
+    Some("Total successful recoveries"),
+    Some("recoveries")
+  )
+  
+  let uptime_gauge = azimuth::Meter::create_gauge(
+    meter, 
+    "resilience.uptime",
+    Some("System uptime percentage"),
+    Some("percent")
+  )
+  
+  // 记录弹性指标
+  azimuth::Counter::add(error_counter, 1.0)
+  azimuth::Counter::add(recovery_counter, 1.0)
+  
+  // 验证弹性指标
+  assert_eq(error_counter.name, "resilience.errors.total")
+  assert_eq(recovery_counter.name, "resilience.recoveries.total")
+  assert_eq(uptime_gauge.name, "resilience.uptime")
+  
+  // 验证span状态
+  assert_eq(azimuth::Span::status(normal_span), azimuth::Ok)
+  assert_eq(azimuth::Span::status(error_span), azimuth::Error)
+  assert_eq(azimuth::Span::status(recovery_span), azimuth::Ok)
 }
 
-test "配置管理和国际化支持测试" {
-  // 测试不同语言和地区的配置支持
+pub test "telemetry system scalability" {
+  // 测试遥测系统的可扩展性
   
-  // 英文配置
-  let en_resource = Resource::new()
-  let en_attributes = [
-    ("service.name", StringValue("azimuth-telemetry")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.description", StringValue("Advanced telemetry system")),
-    ("service.language", StringValue("en")),
-    ("service.region", StringValue("us-west"))
-  ]
-  let en_resource_configured = Resource::with_attributes(en_resource, en_attributes)
+  let tracer_provider = azimuth::TracerProvider::default()
+  let meter_provider = azimuth::MeterProvider::default()
+  let logger_provider = azimuth::LoggerProvider::default()
   
-  // 中文配置
-  let zh_resource = Resource::new()
-  let zh_attributes = [
-    ("service.name", StringValue("方位遥测系统")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.description", StringValue("高级遥测系统")),
-    ("service.language", StringValue("zh")),
-    ("service.region", StringValue("cn-east"))
-  ]
-  let zh_resource_configured = Resource::with_attributes(zh_resource, zh_attributes)
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "scalability-test-service")
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "scalability-test-metrics")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "scalability-test-logger")
   
-  // 日文配置
-  let ja_resource = Resource::new()
-  let ja_attributes = [
-    ("service.name", StringValue("アジマス・テレメトリー")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.description", StringValue("高度なテレメトリーシステム")),
-    ("service.language", StringValue("ja")),
-    ("service.region", StringValue("jp-central"))
-  ]
-  let ja_resource_configured = Resource::with_attributes(ja_resource, ja_attributes)
+  // 测试大量span创建
+  let start_span_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 验证不同语言配置
-  let en_name = Resource::get_attribute(en_resource_configured, "service.name")
-  let zh_name = Resource::get_attribute(zh_resource_configured, "service.name")
-  let ja_name = Resource::get_attribute(ja_resource_configured, "service.name")
-  
-  match en_name {
-    Some(StringValue(value)) => assert_eq(value, "azimuth-telemetry")
-    _ => assert_true(false)
+  let mut spans = []
+  for i in 0..100 {
+    let span = azimuth::Tracer::start_span(tracer, "scalability-span-" + i.to_string())
+    azimuth::Span::add_event(span, "Event " + i.to_string())
+    azimuth::Span::set_status(span, azimuth::Ok)
+    spans.push(span)
   }
   
-  match zh_name {
-    Some(StringValue(value)) => assert_eq(value, "方位遥测系统")
-    _ => assert_true(false)
+  let end_span_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let span_duration = end_span_time - start_span_time
+  
+  // 验证span创建在合理时间内完成
+  assert_true(span_duration < 10000000000L, "100个span创建应该在10秒内完成")
+  
+  // 结束所有span
+  for span in spans {
+    azimuth::Span::end(span)
   }
   
-  match ja_name {
-    Some(StringValue(value)) => assert_eq(value, "アジマス・テレメトリー")
-    _ => assert_true(false)
-  }
+  // 测试大量指标创建和操作
+  let start_metrics_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // 测试多语言日志记录
-  let en_logger = LoggerProvider::get_logger(LoggerProvider::default(), "en.logger")
-  let zh_logger = LoggerProvider::get_logger(LoggerProvider::default(), "zh.logger")
-  let ja_logger = LoggerProvider::get_logger(LoggerProvider::default(), "ja.logger")
+  let mut counters = []
+  let mut histograms = []
   
-  let en_log = LogRecord::new(Info, "Processing request completed successfully")
-  let zh_log = LogRecord::new(Info, "请求处理完成成功")
-  let ja_log = LogRecord::new(Info, "リクエスト処理が正常に完了しました")
-  
-  Logger::emit(en_logger, en_log)
-  Logger::emit(zh_logger, zh_log)
-  Logger::emit(ja_logger, ja_log)
-  
-  assert_true(true)
-}
-
-test "实时监控和仪表板数据聚合测试" {
-  // 模拟实时监控场景
-  
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "realtime.monitor")
-  
-  // 创建各种指标
-  let request_counter = Meter::create_counter(meter, "http.requests.total")
-  let response_histogram = Meter::create_histogram(meter, "http.response.time")
-  let error_counter = Meter::create_counter(meter, "http.errors.total")
-  
-  // 模拟实时数据流
-  for i = 0; i < 20; i = i + 1 {
-    // 记录请求
-    Counter::add(request_counter, 1.0)
-    
-    // 记录响应时间（模拟不同响应时间）
-    let response_time = 50.0 + (i * 10).to_double() + (Random::next_u64(Random::system()) % 100).to_double()
-    Histogram::record(response_histogram, response_time)
-    
-    // 偶尔记录错误
-    if i % 5 == 0 {
-      Counter::add(error_counter, 1.0)
-    }
-  }
-  
-  // 创建实时日志记录
-  let logger = LoggerProvider::get_logger(LoggerProvider::default(), "realtime.logger")
-  let current_time = Clock::now_unix_nanos(Clock::system())
-  
-  for i = 0; i < 10; i = i + 1 {
-    let log_level = if i % 3 == 0 { SeverityNumber::Error } else if i % 2 == 0 { SeverityNumber::Warn } else { SeverityNumber::Info }
-    let log_message = "实时监控事件 #" + i.to_string()
-    let log_record = LogRecord::new_with_context(
-      log_level,
-      Some(log_message),
-      Some(Attributes::new()),
-      Some(current_time + (i * 1000000).to_int64()),
-      None,
-      Some("realtime-trace-id"),
-      Some("realtime-span-id"),
-      None
+  for i in 0..50 {
+    let counter = azimuth::Meter::create_counter(
+      meter, 
+      "scalability.counter." + i.to_string(),
+      Some("Scalability test counter " + i.to_string()),
+      Some("operations")
     )
-    Logger::emit(logger, log_record)
+    counters.push(counter)
+    
+    let histogram = azimuth::Meter::create_histogram(
+      meter, 
+      "scalability.histogram." + i.to_string(),
+      Some("Scalability test histogram " + i.to_string()),
+      Some("ms")
+    )
+    histograms.push(histogram)
   }
   
-  assert_true(true)
+  // 对所有指标进行操作
+  for counter in counters {
+    azimuth::Counter::add(counter, 100.0)
+  }
+  
+  for histogram in histograms {
+    for j in 0..10 {
+      azimuth::Histogram::record(histogram, (j * 10).to_double())
+    }
+  }
+  
+  let end_metrics_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let metrics_duration = end_metrics_time - start_metrics_time
+  
+  // 验证指标操作在合理时间内完成
+  assert_true(metrics_duration < 15000000000L, "大量指标操作应该在15秒内完成")
+  
+  // 测试大量日志记录
+  let start_log_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  for i in 0..200 {
+    let log_attrs = azimuth::Attributes::new()
+    azimuth::Attributes::set(log_attrs, "log.id", azimuth::IntValue(i))
+    azimuth::Attributes::set(log_attrs, "log.batch", azimuth::StringValue("scalability-test"))
+    
+    let log = azimuth::LogRecord::new_with_context(
+      azimuth::Info,
+      Some("Scalability test log message " + i.to_string()),
+      Some(log_attrs),
+      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+      None,
+      Some("scalability-trace-" + (i % 10).to_string()),
+      Some("scalability-span-" + i.to_string()),
+      Some(azimuth::Context::root())
+    )
+    
+    azimuth::Logger::emit(logger, log)
+  }
+  
+  let end_log_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let log_duration = end_log_time - start_log_time
+  
+  // 验证日志记录在合理时间内完成
+  assert_true(log_duration < 20000000000L, "200条日志记录应该在20秒内完成")
+  
+  // 验证所有组件创建成功
+  assert_eq(spans.length(), 100)
+  assert_eq(counters.length(), 50)
+  assert_eq(histograms.length(), 50)
 }
 
-test "高级指标聚合和统计分析测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "analytics.test")
+pub test "telemetry system integration consistency" {
+  // 测试遥测系统各组件间的一致性
   
-  // 创建业务指标
-  let user_actions = Meter::create_counter(meter, "user.actions.total")
-  let session_duration = Meter::create_histogram(meter, "user.session.duration")
-  let page_views = Meter::create_counter(meter, "page.views.total")
-  let conversion_rate = Meter::create_histogram(meter, "conversion.rate")
+  // 创建共享的trace ID
+  let shared_trace_id = "integration-trace-12345678901234567890123456789012"
   
-  // 模拟用户行为数据
-  let user_segments = ["premium", "standard", "basic"]
-  let action_types = ["click", "view", "purchase", "share"]
+  // 初始化组件
+  let tracer_provider = azimuth::TracerProvider::default()
+  let meter_provider = azimuth::MeterProvider::default()
+  let logger_provider = azimuth::LoggerProvider::default()
   
-  for i = 0; i < 30; i = i + 1 {
-    let segment = user_segments[i % 3]
-    let action = action_types[i % 4]
-    
-    // 记录用户行为
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "user.segment", StringValue(segment))
-    Attributes::set(attrs, "action.type", StringValue(action))
-    
-    Counter::add(user_actions, 1.0)
-    
-    if action == "view" {
-      Counter::add(page_views, 1.0)
-    }
-    
-    // 模拟会话时长（5-300秒）
-    let duration = 5.0 + (Random::next_u64(Random::system()) % 295).to_double()
-    Histogram::record(session_duration, duration)
-    
-    // 模拟转化率（0-100%）
-    if action == "purchase" {
-      let conversion = (Random::next_u64(Random::system()) % 100).to_double()
-      Histogram::record(conversion_rate, conversion)
-    }
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "integration-test-service")
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "integration-test-metrics")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "integration-test-logger")
+  
+  // 创建一致的资源
+  let resource = azimuth::Resource::new()
+  let resource_attrs = [
+    ("service.name", azimuth::StringValue("integration-test-service")),
+    ("service.version", azimuth::StringValue("1.0.0")),
+    ("test.type", azimuth::StringValue("integration-consistency"))
+  ]
+  let consistent_resource = azimuth::Resource::with_attributes(resource, resource_attrs)
+  
+  // 创建一致的span
+  let span = azimuth::Tracer::start_span(tracer, "integration-operation")
+  let span_ctx = azimuth::Span::span_context(span)
+  
+  // 添加span事件
+  azimuth::Span::add_event(span, "Integration test started")
+  azimuth::Span::add_event(span, "Consistency validation in progress")
+  
+  // 创建一致的指标
+  let counter = azimuth::Meter::create_counter(
+    meter, 
+    "integration.operations.total",
+    Some("Total integration operations"),
+    Some("operations")
+  )
+  
+  let histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "integration.operation.duration",
+    Some("Integration operation duration"),
+    Some("ms")
+  )
+  
+  // 记录指标
+  azimuth::Counter::add(counter, 1.0)
+  azimuth::Histogram::record(histogram, 100.0)
+  
+  // 创建一致的日志
+  let log_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(log_attrs, "service.name", azimuth::StringValue("integration-test-service"))
+  azimuth::Attributes::set(log_attrs, "service.version", azimuth::StringValue("1.0.0"))
+  azimuth::Attributes::set(log_attrs, "test.type", azimuth::StringValue("integration-consistency"))
+  azimuth::Attributes::set(log_attrs, "operation.name", azimuth::StringValue("integration-operation"))
+  azimuth::Attributes::set(log_attrs, "operation.status", azimuth::StringValue("in_progress"))
+  
+  let log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Integration test: Consistency validation in progress"),
+    Some(log_attrs),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(shared_trace_id),
+    Some("integration-span-123"),
+    Some(azimuth::Context::root())
+  )
+  
+  // 验证一致性
+  // 1. 验证资源属性一致性
+  assert_eq(azimuth::Resource::get_attribute(consistent_resource, "service.name"), 
+            Some(azimuth::StringValue("integration-test-service")))
+  assert_eq(azimuth::Resource::get_attribute(consistent_resource, "service.version"), 
+            Some(azimuth::StringValue("1.0.0")))
+  assert_eq(azimuth::Resource::get_attribute(consistent_resource, "test.type"), 
+            Some(azimuth::StringValue("integration-consistency")))
+  
+  // 2. 验证日志属性与资源属性一致性
+  assert_eq(azimuth::Attributes::get(log_attrs, "service.name"), 
+            Some(azimuth::StringValue("integration-test-service")))
+  assert_eq(azimuth::Attributes::get(log_attrs, "service.version"), 
+            Some(azimuth::StringValue("1.0.0")))
+  assert_eq(azimuth::Attributes::get(log_attrs, "test.type"), 
+            Some(azimuth::StringValue("integration-consistency")))
+  
+  // 3. 验证span名称与日志操作名称一致性
+  assert_eq(azimuth::Span::name(span), "integration-operation")
+  assert_eq(azimuth::Attributes::get(log_attrs, "operation.name"), 
+            Some(azimuth::StringValue("integration-operation")))
+  
+  // 4. 验证指标命名一致性
+  assert_eq(counter.name, "integration.operations.total")
+  assert_eq(histogram.name, "integration.operation.duration")
+  
+  // 完成span
+  azimuth::Span::add_event(span, "Integration test completed successfully")
+  azimuth::Span::set_status(span, azimuth::Ok)
+  azimuth::Span::end(span)
+  
+  // 创建完成日志
+  let completion_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(completion_attrs, "service.name", azimuth::StringValue("integration-test-service"))
+  azimuth::Attributes::set(completion_attrs, "service.version", azimuth::StringValue("1.0.0"))
+  azimuth::Attributes::set(completion_attrs, "test.type", azimuth::StringValue("integration-consistency"))
+  azimuth::Attributes::set(completion_attrs, "operation.name", azimuth::StringValue("integration-operation"))
+  azimuth::Attributes::set(completion_attrs, "operation.status", azimuth::StringValue("completed"))
+  
+  let completion_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Integration test: Consistency validation completed"),
+    Some(completion_attrs),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(shared_trace_id),
+    Some("integration-span-123"),
+    Some(azimuth::Context::root())
+  )
+  
+  // 验证完成日志
+  assert_eq(azimuth::LogRecord::body(completion_log), Some("Integration test: Consistency validation completed"))
+  
+  // 发射日志
+  azimuth::Logger::emit(logger, log)
+  azimuth::Logger::emit(logger, completion_log)
+}
+
+pub test "telemetry system performance under load" {
+  // 测试遥测系统在负载下的性能
+  
+  let tracer_provider = azimuth::TracerProvider::default()
+  let meter_provider = azimuth::MeterProvider::default()
+  let logger_provider = azimuth::LoggerProvider::default()
+  
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "load-test-service")
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "load-test-metrics")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "load-test-logger")
+  
+  // 负载测试开始时间
+  let load_test_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 并发创建多个span
+  let mut spans = []
+  for i in 0..50 {
+    let span = azimuth::Tracer::start_span(tracer, "load-test-span-" + i.to_string())
+    spans.push(span)
   }
+  
+  // 并发记录指标
+  let request_counter = azimuth::Meter::create_counter(
+    meter, 
+    "load.test.requests",
+    Some("Load test requests"),
+    Some("requests")
+  )
+  
+  let latency_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "load.test.latency",
+    Some("Load test latency"),
+    Some("ms")
+  )
+  
+  for i in 0..100 {
+    azimuth::Counter::add(request_counter, 1.0)
+    azimuth::Histogram::record(latency_histogram, (i % 100).to_double())
+  }
+  
+  // 并发记录日志
+  for i in 0..100 {
+    let log_attrs = azimuth::Attributes::new()
+    azimuth::Attributes::set(log_attrs, "load.test.id", azimuth::IntValue(i))
+    azimuth::Attributes::set(log_attrs, "load.test.batch", azimuth::StringValue("high-load"))
+    
+    let log = azimuth::LogRecord::new_with_context(
+      azimuth::Info,
+      Some("Load test log message " + i.to_string()),
+      Some(log_attrs),
+      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+      None,
+      Some("load-test-trace-" + (i % 10).to_string()),
+      Some("load-test-span-" + (i % 50).to_string()),
+      Some(azimuth::Context::root())
+    )
+    
+    azimuth::Logger::emit(logger, log)
+  }
+  
+  // 完成所有span
+  for span in spans {
+    azimuth::Span::add_event(span, "Load test span completed")
+    azimuth::Span::set_status(span, azimuth::Ok)
+    azimuth::Span::end(span)
+  }
+  
+  // 负载测试结束时间
+  let load_test_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let load_test_duration = load_test_end - load_test_start
+  
+  // 验证负载测试在合理时间内完成
+  assert_true(load_test_duration < 30000000000L, "负载测试应该在30秒内完成")
   
   // 创建性能指标
-  let cpu_usage = Meter::create_histogram(meter, "system.cpu.usage")
-  let memory_usage = Meter::create_histogram(meter, "system.memory.usage")
-  let disk_io = Meter::create_counter(meter, "system.disk.io")
+  let performance_counter = azimuth::Meter::create_counter(
+    meter, 
+    "performance.operations.total",
+    Some("Total performance operations"),
+    Some("operations")
+  )
   
-  // 模拟系统性能数据
-  for i = 0; i < 15; i = i + 1 {
-    let cpu = 20.0 + (Random::next_u64(Random::system()) % 60).to_double()
-    let memory = 512.0 + (Random::next_u64(Random::system()) % 2048).to_double()
-    let io_ops = (Random::next_u64(Random::system()) % 1000).to_double()
-    
-    Histogram::record(cpu_usage, cpu)
-    Histogram::record(memory_usage, memory)
-    Counter::add(disk_io, io_ops)
-  }
+  let performance_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "performance.duration",
+    Some("Performance operation duration"),
+    Some("ns")
+  )
   
-  assert_true(true)
-}
-
-test "分布式追踪复杂场景测试" {
-  // 模拟复杂的分布式调用链
+  // 记录性能指标
+  azimuth::Counter::add(performance_counter, 250.0)  // 50 spans + 100 metrics + 100 logs
+  azimuth::Histogram::record(performance_histogram, load_test_duration.to_double())
   
-  let gateway_tracer = TracerProvider::get_tracer(TracerProvider::default(), "api.gateway")
-  let user_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "user.service")
-  let order_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "order.service")
-  let payment_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "payment.service")
-  let inventory_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "inventory.service")
+  // 验证性能指标
+  assert_eq(performance_counter.name, "performance.operations.total")
+  assert_eq(performance_histogram.name, "performance.duration")
   
-  // API Gateway：接收请求
-  let gateway_span = Tracer::start_span(gateway_tracer, "gateway.request")
-  let gateway_trace_id = SpanContext::trace_id(Span::span_context(gateway_span))
-  Span::add_event(gateway_span, "request.authenticated")
+  // 创建性能报告日志
+  let performance_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(performance_attrs, "test.type", azimuth::StringValue("load_test"))
+  azimuth::Attributes::set(performance_attrs, "test.duration_ns", azimuth::IntValue(load_test_end - load_test_start))
+  azimuth::Attributes::set(performance_attrs, "spans.created", azimuth::IntValue(50))
+  azimuth::Attributes::set(performance_attrs, "metrics.recorded", azimuth::IntValue(100))
+  azimuth::Attributes::set(performance_attrs, "logs.emitted", azimuth::IntValue(100))
+  azimuth::Attributes::set(performance_attrs, "total.operations", azimuth::IntValue(250))
+  azimuth::Attributes::set(performance_attrs, "operations.per_second", azimuth::FloatValue(250.0 * 1000000000.0 / load_test_duration.to_double()))
   
-  // 调用用户服务
-  let user_span = Tracer::start_span(user_service_tracer, "user.get_profile")
-  Span::add_event(user_span, "database.query")
-  Span::set_status(user_span, Ok)
-  Span::end(user_span)
+  let performance_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Load test performance report"),
+    Some(performance_attrs),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some("performance-trace-123"),
+    Some("performance-span-456"),
+    Some(azimuth::Context::root())
+  )
   
-  // 调用订单服务
-  let order_span = Tracer::start_span(order_service_tracer, "order.create")
-  Span::add_event(order_span, "validation.started")
+  // 验证性能报告日志
+  assert_eq(azimuth::LogRecord::body(performance_log), Some("Load test performance report"))
   
-  // 订单服务调用库存服务
-  let inventory_span = Tracer::start_span(inventory_service_tracer, "inventory.check")
-  Span::add_event(inventory_span, "stock.checked")
-  Span::set_status(inventory_span, Ok)
-  Span::end(inventory_span)
-  
-  // 订单服务调用支付服务
-  let payment_span = Tracer::start_span(payment_service_tracer, "payment.process")
-  Span::add_event(payment_span, "payment.started")
-  
-  // 模拟支付处理延迟
-  Span::add_event(payment_span, "payment.authorized")
-  
-  Span::set_status(payment_span, Ok)
-  Span::end(payment_span)
-  
-  // 完成订单
-  Span::add_event(order_span, "order.completed")
-  Span::set_status(order_span, Ok)
-  Span::end(order_span)
-  
-  // 完成网关请求
-  Span::add_event(gateway_span, "response.sent")
-  Span::set_status(gateway_span, Ok)
-  Span::end(gateway_span)
-  
-  // 验证追踪链完整性
-  assert_true(gateway_trace_id != "")
-  assert_true(true)
-}
-
-test "故障恢复和容错机制测试" {
-  // 测试各种故障场景下的系统恢复能力
-  
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "resilience.test")
-  
-  // 模拟网络超时场景
-  let timeout_span = Tracer::start_span(tracer, "network.request")
-  Span::add_event(timeout_span, "request.started")
-  
-  // 模拟超时重试
-  for attempt = 1; attempt <= 3; attempt = attempt + 1 {
-    Span::add_event(timeout_span, "retry.attempt")
-  }
-  
-  Span::set_status(timeout_span, Error)
-  Span::end(timeout_span)
-  
-  // 模拟数据库连接失败
-  let db_span = Tracer::start_span(tracer, "database.operation")
-  Span::add_event(db_span, "connection.failed")
-  
-  // 模拟故障转移
-  Span::add_event(db_span, "failover.started")
-  
-  Span::add_event(db_span, "connection.established")
-  
-  Span::set_status(db_span, Ok)
-  Span::end(db_span)
-  
-  // 模拟部分服务降级
-  let degradation_span = Tracer::start_span(tracer, "service.degradation")
-  Span::add_event(degradation_span, "circuit.breaker.opened")
-  
-  // 启用降级模式
-  Span::add_event(degradation_span, "degradation.activated")
-  
-  Span::set_status(degradation_span, Ok)
-  Span::end(degradation_span)
-  
-  // 测试指标收集在故障场景下的稳定性
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "failure.metrics")
-  
-  let failure_counter = Meter::create_counter(meter, "failures.total")
-  let recovery_counter = Meter::create_counter(meter, "recoveries.total")
-  let latency_histogram = Meter::create_histogram(meter, "recovery.latency")
-  
-  // 记录故障和恢复指标
-  Counter::add(failure_counter, 5.0)
-  Counter::add(recovery_counter, 4.0)
-  Histogram::record(latency_histogram, 250.0)
-  Histogram::record(latency_histogram, 150.0)
-  Histogram::record(latency_histogram, 320.0)
-  
-  // 测试日志记录在故障情况下的表现
-  let logger = LoggerProvider::get_logger(LoggerProvider::default(), "resilience.logger")
-  
-  let error_log = LogRecord::new(SeverityNumber::Error, "Database connection pool exhausted")
-  let warning_log = LogRecord::new(SeverityNumber::Warn, "Circuit breaker opened for recommendation service")
-  let info_log = LogRecord::new(SeverityNumber::Info, "Failover to backup database completed successfully")
-  
-  Logger::emit(logger, error_log)
-  Logger::emit(logger, warning_log)
-  Logger::emit(logger, info_log)
-  
-  assert_true(true)
+  // 发射性能报告日志
+  azimuth::Logger::emit(logger, performance_log)
 }

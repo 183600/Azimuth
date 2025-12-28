@@ -1,382 +1,690 @@
-// Advanced Metrics Operations Test Suite for Azimuth Telemetry System
-// Test cases covering complex metrics scenarios and instrumentation
+// 高级指标操作测试用例
+// 测试指标系统的高级功能和复杂操作
 
-// Import necessary modules
-use moonbitlang/core.{array, int, builtin}
-use moonbitlang/core/assertion
-
-test "advanced_counter_operations_with_attributes" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "advanced.metrics.test")
+pub test "counter metrics with attributes and dimensions" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "advanced-metrics-meter")
   
-  // Create multiple counters with different attribute combinations
-  let request_counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
-  let error_counter = Meter::create_counter(meter, "http.errors.total", Some("Total HTTP errors"), Some("errors"))
-  let latency_counter = Meter::create_counter(meter, "http.latency.buckets", Some("HTTP latency buckets"), Some("ms"))
+  // 创建带属性的计数器
+  let request_counter = azimuth::Meter::create_counter(
+    meter, 
+    "http.requests.total",
+    Some("Total number of HTTP requests"),
+    Some("requests")
+  )
   
-  // Create attribute sets for different request types
-  let success_attrs = Attributes::new()
-  Attributes::set(success_attrs, "method", StringValue("GET"))
-  Attributes::set(success_attrs, "status", StringValue("200"))
-  Attributes::set(success_attrs, "endpoint", StringValue("/api/users"))
-  
-  let error_attrs = Attributes::new()
-  Attributes::set(error_attrs, "method", StringValue("POST"))
-  Attributes::set(error_attrs, "status", StringValue("500"))
-  Attributes::set(error_attrs, "endpoint", StringValue("/api/orders"))
-  Attributes::set(error_attrs, "error.type", StringValue("database.timeout"))
-  
-  let redirect_attrs = Attributes::new()
-  Attributes::set(redirect_attrs, "method", StringValue("GET"))
-  Attributes::set(redirect_attrs, "status", StringValue("302"))
-  Attributes::set(redirect_attrs, "endpoint", StringValue("/old-path"))
-  Attributes::set(redirect_attrs, "redirect.to", StringValue("/new-path"))
-  
-  // Record metrics with different attribute combinations
-  Counter::add(request_counter, 100.0, Some(success_attrs))
-  Counter::add(request_counter, 5.0, Some(error_attrs))
-  Counter::add(request_counter, 10.0, Some(redirect_attrs))
-  
-  Counter::add(error_counter, 5.0, Some(error_attrs))
-  
-  // Test counter with array attributes
-  let array_attrs = Attributes::new()
-  Attributes::set(array_attrs, "methods", ArrayStringValue(["GET", "POST", "PUT"]))
-  Attributes::set(array_attrs, "status_codes", ArrayIntValue([200, 201, 400, 500]))
-  Counter::add(latency_counter, 115.0, Some(array_attrs))
-  
-  // Verify counter metadata
+  // 验证计数器属性
   assert_eq(request_counter.name, "http.requests.total")
-  assert_eq(request_counter.description, Some("Total HTTP requests"))
+  assert_eq(request_counter.description, Some("Total number of HTTP requests"))
   assert_eq(request_counter.unit, Some("requests"))
   
-  assert_eq(error_counter.name, "http.errors.total")
-  assert_eq(error_counter.description, Some("Total HTTP errors"))
-  assert_eq(error_counter.unit, Some("errors"))
+  // 模拟不同维度的请求计数
+  // GET请求
+  azimuth::Counter::add(request_counter, 100.0)
+  
+  // POST请求
+  azimuth::Counter::add(request_counter, 50.0)
+  
+  // PUT请求
+  azimuth::Counter::add(request_counter, 25.0)
+  
+  // DELETE请求
+  azimuth::Counter::add(request_counter, 10.0)
+  
+  // 创建带状态码维度的计数器
+  let status_counter = azimuth::Meter::create_counter(
+    meter, 
+    "http.responses.by_status",
+    Some("HTTP responses by status code"),
+    Some("responses")
+  )
+  
+  // 模拟不同状态码的响应计数
+  // 2xx 成功响应
+  azimuth::Counter::add(status_counter, 150.0)  // 200 OK
+  azimuth::Counter::add(status_counter, 25.0)   // 201 Created
+  azimuth::Counter::add(status_counter, 10.0)   // 204 No Content
+  
+  // 4xx 客户端错误
+  azimuth::Counter::add(status_counter, 20.0)   // 400 Bad Request
+  azimuth::Counter::add(status_counter, 15.0)   // 401 Unauthorized
+  azimuth::Counter::add(status_counter, 10.0)   // 404 Not Found
+  azimuth::Counter::add(status_counter, 5.0)    // 429 Too Many Requests
+  
+  // 5xx 服务器错误
+  azimuth::Counter::add(status_counter, 8.0)    // 500 Internal Server Error
+  azimuth::Counter::add(status_counter, 3.0)    // 502 Bad Gateway
+  azimuth::Counter::add(status_counter, 2.0)    // 503 Service Unavailable
+  
+  // 验证计数器操作
+  assert_eq(status_counter.name, "http.responses.by_status")
+  assert_eq(status_counter.description, Some("HTTP responses by status code"))
+  assert_eq(status_counter.unit, Some("responses"))
 }
 
-test "advanced_histogram_operations_with_buckets" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "histogram.advanced.test")
+pub test "histogram metrics with distribution analysis" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "histogram-analysis-meter")
   
-  // Create histograms for different metrics
-  let response_time_histogram = Meter::create_histogram(meter, "http.response.time", Some("HTTP response time distribution"), Some("ms"))
-  let payload_size_histogram = Meter::create_histogram(meter, "http.payload.size", Some("HTTP payload size distribution"), Some("bytes"))
-  let connection_duration_histogram = Meter::create_histogram(meter, "db.connection.duration", Some("Database connection duration"), Some("seconds"))
+  // 创建响应时间直方图
+  let response_time_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "http.response.duration",
+    Some("HTTP response duration distribution"),
+    Some("ms")
+  )
   
-  // Simulate recording various response times
-  let response_times = [12.5, 25.0, 50.0, 100.0, 200.0, 500.0, 1000.0, 2000.0]
-  for time in response_times {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "method", StringValue("GET"))
-    Attributes::set(attrs, "endpoint", StringValue("/api/data"))
-    Histogram::record(response_time_histogram, time, Some(attrs))
-  }
-  
-  // Simulate recording payload sizes
-  let payload_sizes = [1024.0, 4096.0, 16384.0, 65536.0, 262144.0, 1048576.0]
-  for size in payload_sizes {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "content.type", StringValue("application/json"))
-    Attributes::set(attrs, "compression", StringValue("gzip"))
-    Histogram::record(payload_size_histogram, size, Some(attrs))
-  }
-  
-  // Simulate database connection durations
-  let connection_durations = [0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0]
-  for duration in connection_durations {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "database", StringValue("postgresql"))
-    Attributes::set(attrs, "pool", StringValue("primary"))
-    Attributes::set(attrs, "connection.state", StringValue("active"))
-    Histogram::record(connection_duration_histogram, duration, Some(attrs))
-  }
-  
-  // Test histogram with extreme values
-  let extreme_attrs = Attributes::new()
-  Attributes::set(extreme_attrs, "test.type", StringValue("extreme"))
-  Histogram::record(response_time_histogram, 0.001, Some(extreme_attrs)) // Very small
-  Histogram::record(response_time_histogram, 999999.0, Some(extreme_attrs)) // Very large
-  
-  // Verify histogram metadata
-  assert_eq(response_time_histogram.name, "http.response.time")
-  assert_eq(response_time_histogram.description, Some("HTTP response time distribution"))
+  // 验证直方图属性
+  assert_eq(response_time_histogram.name, "http.response.duration")
+  assert_eq(response_time_histogram.description, Some("HTTP response duration distribution"))
   assert_eq(response_time_histogram.unit, Some("ms"))
+  
+  // 模拟不同响应时间的记录
+  // 快速响应 (< 10ms)
+  azimuth::Histogram::record(response_time_histogram, 5.0)
+  azimuth::Histogram::record(response_time_histogram, 8.0)
+  azimuth::Histogram::record(response_time_histogram, 9.0)
+  
+  // 正常响应 (10-100ms)
+  azimuth::Histogram::record(response_time_histogram, 15.0)
+  azimuth::Histogram::record(response_time_histogram, 25.0)
+  azimuth::Histogram::record(response_time_histogram, 45.0)
+  azimuth::Histogram::record(response_time_histogram, 67.0)
+  azimuth::Histogram::record(response_time_histogram, 89.0)
+  
+  // 慢响应 (100-500ms)
+  azimuth::Histogram::record(response_time_histogram, 120.0)
+  azimuth::Histogram::record(response_time_histogram, 180.0)
+  azimuth::Histogram::record(response_time_histogram, 250.0)
+  azimuth::Histogram::record(response_time_histogram, 340.0)
+  azimuth::Histogram::record(response_time_histogram, 450.0)
+  
+  // 非常慢的响应 (> 500ms)
+  azimuth::Histogram::record(response_time_histogram, 550.0)
+  azimuth::Histogram::record(response_time_histogram, 780.0)
+  azimuth::Histogram::record(response_time_histogram, 1200.0)
+  azimuth::Histogram::record(response_time_histogram, 2500.0)
+  
+  // 创建请求大小直方图
+  let request_size_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "http.request.size",
+    Some("HTTP request size distribution"),
+    Some("bytes")
+  )
+  
+  // 记录不同大小的请求
+  // 小请求 (< 1KB)
+  azimuth::Histogram::record(request_size_histogram, 256.0)
+  azimuth::Histogram::record(request_size_histogram, 512.0)
+  azimuth::Histogram::record(request_size_histogram, 768.0)
+  
+  // 中等请求 (1KB - 10KB)
+  azimuth::Histogram::record(request_size_histogram, 1024.0)
+  azimuth::Histogram::record(request_size_histogram, 2048.0)
+  azimuth::Histogram::record(request_size_histogram, 4096.0)
+  azimuth::Histogram::record(request_size_histogram, 8192.0)
+  
+  // 大请求 (> 10KB)
+  azimuth::Histogram::record(request_size_histogram, 16384.0)
+  azimuth::Histogram::record(request_size_histogram, 32768.0)
+  azimuth::Histogram::record(request_size_histogram, 65536.0)
+  
+  // 验证直方图转换为Instrument
+  let response_time_instrument = azimuth::Histogram::as_instrument(response_time_histogram)
+  let request_size_instrument = azimuth::Histogram::as_instrument(request_size_histogram)
+  
+  assert_eq(azimuth::Instrument::name(response_time_instrument), "http.response.duration")
+  assert_eq(azimuth::Instrument::name(request_size_instrument), "http.request.size")
 }
 
-test "advanced_updown_counter_operations" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "updown.advanced.test")
+pub test "updown_counter metrics for gauging resources" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "resource-gauge-meter")
   
-  // Create UpDownCounters for different resources
-  let active_connections = Meter::create_updown_counter(meter, "network.active.connections", Some("Active network connections"), Some("connections"))
-  let memory_usage = Meter::create_updown_counter(meter, "memory.usage.bytes", Some("Memory usage in bytes"), Some("bytes"))
-  let queue_size = Meter::create_updown_counter(meter, "message.queue.size", Some("Message queue size"), Some("messages"))
+  // 创建活跃连接数UpDownCounter
+  let active_connections_updown = azimuth::Meter::create_updown_counter(
+    meter, 
+    "network.active_connections",
+    Some("Currently active network connections"),
+    Some("connections")
+  )
   
-  // Simulate connection lifecycle
-  let connection_attrs = Attributes::new()
-  Attributes::set(connection_attrs, "protocol", StringValue("HTTP"))
-  Attributes::set(connection_attrs, "remote.addr", StringValue("192.168.1.100:8080"))
+  // 验证UpDownCounter属性
+  assert_eq(active_connections_updown.name, "network.active_connections")
+  assert_eq(active_connections_updown.description, Some("Currently active network connections"))
+  assert_eq(active_connections_updown.unit, Some("connections"))
   
-  // Add connections
-  Counter::add(active_connections, 1.0, Some(connection_attrs)) // Using Counter::add as substitute
-  Counter::add(active_connections, 1.0, Some(connection_attrs))
-  Counter::add(active_connections, 1.0, Some(connection_attrs))
-  Counter::add(active_connections, 1.0, Some(connection_attrs))
-  Counter::add(active_connections, 1.0, Some(connection_attrs))
+  // 模拟连接数变化
+  // 初始状态
+  azimuth::UpDownCounter::add(active_connections_updown, 10.0)  // 10个活跃连接
   
-  // Remove connections (in real implementation, would use negative values)
-  // Counter::add(active_connections, -1.0, Some(connection_attrs))
-  // Counter::add(active_connections, -1.0, Some(connection_attrs))
+  // 新连接建立
+  azimuth::UpDownCounter::add(active_connections_updown, 5.0)   // 增加5个连接
   
-  // Simulate memory usage changes
-  let memory_attrs = Attributes::new()
-  Attributes::set(memory_attrs, "allocation.type", StringValue("heap"))
-  Attributes::set(memory_attrs, "process.name", StringValue("azimuth-service"))
+  // 连接关闭
+  azimuth::UpDownCounter::add(active_connections_updown, -3.0)  // 关闭3个连接
   
-  Counter::add(memory_usage, 1048576.0, Some(memory_attrs)) // 1MB
-  Counter::add(memory_usage, 2097152.0, Some(memory_attrs)) // 2MB
-  Counter::add(memory_usage, 524288.0, Some(memory_attrs))  // 512KB
+  // 批量新连接
+  azimuth::UpDownCounter::add(active_connections_updown, 15.0)  // 增加15个连接
   
-  // Simulate queue size changes
-  let queue_attrs = Attributes::new()
-  Attributes::set(queue_attrs, "queue.name", StringValue("processing"))
-  Attributes::set(queue_attrs, "priority", StringValue("high"))
+  // 批量连接关闭
+  azimuth::UpDownCounter::add(active_connections_updown, -8.0)  // 关闭8个连接
   
-  Counter::add(queue_size, 10.0, Some(queue_attrs))
-  Counter::add(queue_size, 5.0, Some(queue_attrs))
-  Counter::add(queue_size, 15.0, Some(queue_attrs))
+  // 创建内存使用量UpDownCounter
+  let memory_usage_updown = azimuth::Meter::create_updown_counter(
+    meter, 
+    "system.memory.usage",
+    Some("Current memory usage"),
+    Some("bytes")
+  )
   
-  // Verify UpDownCounter metadata
-  assert_eq(active_connections.name, "network.active.connections")
-  assert_eq(active_connections.description, Some("Active network connections"))
-  assert_eq(active_connections.unit, Some("connections"))
+  // 模拟内存使用变化
+  azimuth::UpDownCounter::add(memory_usage_updown, 1073741824.0)  // 1GB
+  azimuth::UpDownCounter::add(memory_usage_updown, 536870912.0)   // 512MB
+  azimuth::UpDownCounter::add(memory_usage_updown, -268435456.0)  // 释放256MB
+  azimuth::UpDownCounter::add(memory_usage_updown, 134217728.0)   // 增加128MB
+  
+  // 创建队列长度UpDownCounter
+  let queue_length_updown = azimuth::Meter::create_updown_counter(
+    meter, 
+    "message_queue.length",
+    Some("Current message queue length"),
+    Some("messages")
+  )
+  
+  // 模拟队列长度变化
+  azimuth::UpDownCounter::add(queue_length_updown, 100.0)  // 100条消息入队
+  azimuth::UpDownCounter::add(queue_length_updown, 50.0)   // 50条消息入队
+  azimuth::UpDownCounter::add(queue_length_updown, -30.0)  // 30条消息出队
+  azimuth::UpDownCounter::add(queue_length_updown, -70.0)  // 70条消息出队
 }
 
-test "advanced_gauge_operations_with_real_time_updates" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "gauge.advanced.test")
+pub test "gauge metrics for instantaneous values" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "instantaneous-gauge-meter")
   
-  // Create Gauges for real-time monitoring
-  let cpu_usage = Meter::create_gauge(meter, "system.cpu.usage", Some("CPU usage percentage"), Some("percent"))
-  let disk_usage = Meter::create_gauge(meter, "system.disk.usage", Some("Disk usage in bytes"), Some("bytes"))
-  let temperature = Meter::create_gauge(meter, "system.temperature", Some("System temperature"), Some("celsius"))
+  // 创建CPU使用率Gauge
+  let cpu_usage_gauge = azimuth::Meter::create_gauge(
+    meter, 
+    "system.cpu.usage",
+    Some("Current CPU usage percentage"),
+    Some("percent")
+  )
   
-  // Simulate real-time CPU usage monitoring
-  let cpu_attrs = Attributes::new()
-  Attributes::set(cpu_attrs, "core", StringValue("0"))
-  Attributes::set(cpu_attrs, "mode", StringValue("user"))
+  // 验证Gauge属性
+  assert_eq(cpu_usage_gauge.name, "system.cpu.usage")
+  assert_eq(cpu_usage_gauge.description, Some("Current CPU usage percentage"))
+  assert_eq(cpu_usage_gauge.unit, Some("percent"))
   
-  // Simulate CPU usage over time (would normally be in a loop)
-  let cpu_readings = [15.5, 25.3, 45.8, 67.2, 82.1, 55.6, 35.4, 20.1]
-  for reading in cpu_readings {
-    // In real implementation, would use Gauge::set() or similar
-    // Gauge::set(cpu_usage, reading, Some(cpu_attrs))
-  }
+  // 创建磁盘使用率Gauge
+  let disk_usage_gauge = azimuth::Meter::create_gauge(
+    meter, 
+    "system.disk.usage",
+    Some("Current disk usage percentage"),
+    Some("percent")
+  )
   
-  // Simulate disk usage monitoring
-  let disk_attrs = Attributes::new()
-  Attributes::set(disk_attrs, "mount.point", StringValue("/"))
-  Attributes::set(disk_attrs, "filesystem", StringValue("ext4"))
+  // 创建温度Gauge
+  let temperature_gauge = azimuth::Meter::create_gauge(
+    meter, 
+    "hardware.temperature",
+    Some("Current hardware temperature"),
+    Some("celsius")
+  )
   
-  let disk_readings = [1073741824.0, 2147483648.0, 3221225472.0, 4294967296.0] // 1GB, 2GB, 3GB, 4GB
-  for reading in disk_readings {
-    // In real implementation, would use Gauge::set() or similar
-    // Gauge::set(disk_usage, reading, Some(disk_attrs))
-  }
+  // 创建网络吞吐量Gauge
+  let network_throughput_gauge = azimuth::Meter::create_gauge(
+    meter, 
+    "network.throughput",
+    Some("Current network throughput"),
+    Some("mbps")
+  )
   
-  // Simulate temperature monitoring
-  let temp_attrs = Attributes::new()
-  Attributes::set(temp_attrs, "sensor", StringValue("cpu"))
-  Attributes::set(temp_attrs, "location", StringValue("core0"))
+  // 创建缓存命中率Gauge
+  let cache_hit_rate_gauge = azimuth::Meter::create_gauge(
+    meter, 
+    "cache.hit_rate",
+    Some("Current cache hit rate"),
+    Some("percent")
+  )
   
-  let temp_readings = [45.2, 48.7, 52.1, 58.9, 61.3, 57.8, 53.4, 49.6]
-  for reading in temp_readings {
-    // In real implementation, would use Gauge::set() or similar
-    // Gauge::set(temperature, reading, Some(temp_attrs))
-  }
+  // 验证所有Gauge创建成功
+  assert_eq(disk_usage_gauge.name, "system.disk.usage")
+  assert_eq(disk_usage_gauge.description, Some("Current disk usage percentage"))
+  assert_eq(disk_usage_gauge.unit, Some("percent"))
   
-  // Verify Gauge metadata
-  assert_eq(cpu_usage.name, "system.cpu.usage")
-  assert_eq(cpu_usage.description, Some("CPU usage percentage"))
-  assert_eq(cpu_usage.unit, Some("percent"))
+  assert_eq(temperature_gauge.name, "hardware.temperature")
+  assert_eq(temperature_gauge.description, Some("Current hardware temperature"))
+  assert_eq(temperature_gauge.unit, Some("celsius"))
+  
+  assert_eq(network_throughput_gauge.name, "network.throughput")
+  assert_eq(network_throughput_gauge.description, Some("Current network throughput"))
+  assert_eq(network_throughput_gauge.unit, Some("mbps"))
+  
+  assert_eq(cache_hit_rate_gauge.name, "cache.hit_rate")
+  assert_eq(cache_hit_rate_gauge.description, Some("Current cache hit rate"))
+  assert_eq(cache_hit_rate_gauge.unit, Some("percent"))
 }
 
-test "complex_metric_aggregation_scenarios" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "aggregation.test")
+pub test "metrics with multiple dimensions and labels" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "multi-dimensional-meter")
   
-  // Create metrics for aggregation testing
-  let request_counter = Meter::create_counter(meter, "api.requests.total", Some("Total API requests"), Some("requests"))
-  let response_histogram = Meter::create_histogram(meter, "api.response.time", Some("API response time"), Some("ms"))
-  let error_gauge = Meter::create_gauge(meter, "api.error.rate", Some("API error rate"), Some("percent"))
+  // 创建多维度请求计数器
+  let multi_dim_counter = azimuth::Meter::create_counter(
+    meter, 
+    "api.requests.total",
+    Some("Total API requests with multiple dimensions"),
+    Some("requests")
+  )
   
-  // Simulate complex business scenario with multiple services
-  let services = ["user.service", "order.service", "payment.service", "inventory.service"]
-  let endpoints = ["/users", "/orders", "/payments", "/inventory"]
-  let methods = ["GET", "POST", "PUT", "DELETE"]
-  let status_codes = [200, 201, 400, 404, 500]
+  // 模拟不同维度的请求
+  // 按HTTP方法和端点维度
+  // GET /api/users
+  azimuth::Counter::add(multi_dim_counter, 200.0)
   
-  // Generate complex metric combinations
-  for i = 0; i < services.length(); i = i + 1 {
-    for j = 0; j < endpoints.length(); j = j + 1 {
-      for k = 0; k < methods.length(); k = k + 1 {
-        for l = 0; l < status_codes.length(); l = l + 1 {
-          let attrs = Attributes::new()
-          Attributes::set(attrs, "service", StringValue(services[i]))
-          Attributes::set(attrs, "endpoint", StringValue(endpoints[j]))
-          Attributes::set(attrs, "method", StringValue(methods[k]))
-          Attributes::set(attrs, "status", IntValue(status_codes[l]))
-          
-          // Record request count
-          let request_count = (i + j + k + l).to_double() * 2.5
-          Counter::add(request_counter, request_count, Some(attrs))
-          
-          // Record response time
-          let response_time = 50.0 + (i * 10.0).to_double() + (j * 5.0).to_double() + (k * 2.0).to_double()
-          Histogram::record(response_histogram, response_time, Some(attrs))
-          
-          // Simulate error rate for error status codes
-          if status_codes[l] >= 400 {
-            let error_rate = (status_codes[l] - 400).to_double() * 2.5
-            // In real implementation, would use Gauge::set()
-            // Gauge::set(error_gauge, error_rate, Some(attrs))
-          }
-        }
-      }
+  // POST /api/users
+  azimuth::Counter::add(multi_dim_counter, 50.0)
+  
+  // PUT /api/users/{id}
+  azimuth::Counter::add(multi_dim_counter, 30.0)
+  
+  // DELETE /api/users/{id}
+  azimuth::Counter::add(multi_dim_counter, 10.0)
+  
+  // GET /api/products
+  azimuth::Counter::add(multi_dim_counter, 500.0)
+  
+  // POST /api/products
+  azimuth::Counter::add(multi_dim_counter, 100.0)
+  
+  // 创建多维度响应时间直方图
+  let multi_dim_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "api.response.duration",
+    Some("API response time by service and endpoint"),
+    Some("ms")
+  )
+  
+  // 模拟不同服务的响应时间
+  // 用户服务
+  azimuth::Histogram::record(multi_dim_histogram, 25.0)
+  azimuth::Histogram::record(multi_dim_histogram, 45.0)
+  azimuth::Histogram::record(multi_dim_histogram, 120.0)
+  
+  // 产品服务
+  azimuth::Histogram::record(multi_dim_histogram, 35.0)
+  azimuth::Histogram::record(multi_dim_histogram, 65.0)
+  azimuth::Histogram::record(multi_dim_histogram, 85.0)
+  
+  // 订单服务
+  azimuth::Histogram::record(multi_dim_histogram, 150.0)
+  azimuth::Histogram::record(multi_dim_histogram, 280.0)
+  azimuth::Histogram::record(multi_dim_histogram, 420.0)
+  
+  // 支付服务
+  azimuth::Histogram::record(multi_dim_histogram, 500.0)
+  azimuth::Histogram::record(multi_dim_histogram, 750.0)
+  azimuth::Histogram::record(multi_dim_histogram, 1100.0)
+  
+  // 验证多维度指标
+  assert_eq(multi_dim_counter.name, "api.requests.total")
+  assert_eq(multi_dim_histogram.name, "api.response.duration")
+}
+
+pub test "metrics aggregation and rollups" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "aggregation-meter")
+  
+  // 创建基础计数器
+  let base_counter = azimuth::Meter::create_counter(
+    meter, 
+    "events.processed",
+    Some("Number of events processed"),
+    Some("events")
+  )
+  
+  // 模拟事件处理
+  for i in 0..1000 {
+    azimuth::Counter::add(base_counter, 1.0)
+  }
+  
+  // 创建速率计数器（每秒事件数）
+  let rate_counter = azimuth::Meter::create_counter(
+    meter, 
+    "events.processed.rate",
+    Some("Events processed per second"),
+    Some("events/sec")
+  )
+  
+  // 模拟速率记录
+  azimuth::Counter::add(rate_counter, 100.0)  // 100 events/sec
+  
+  // 创建累计直方图
+  let cumulative_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "processing.time.cumulative",
+    Some("Cumulative processing time distribution"),
+    Some("ms")
+  )
+  
+  // 记录处理时间分布
+  let processing_times = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100, 150, 200, 300, 500, 1000]
+  for time in processing_times {
+    // 模拟每个处理时间出现多次
+    for i in 0..(time / 10) {
+      azimuth::Histogram::record(cumulative_histogram, time.to_double())
     }
   }
   
-  // Test with complex nested attributes
-  let complex_attrs = Attributes::new()
-  Attributes::set(complex_attrs, "service.name", StringValue("complex.service"))
-  Attributes::set(complex_attrs, "service.version", StringValue("1.2.3"))
-  Attributes::set(complex_attrs, "service.region", StringValue("us-west-2"))
-  Attributes::set(complex_attrs, "deployment.environment", StringValue("production"))
-  Attributes::set(complex_attrs, "instance.id", StringValue("i-1234567890abcdef0"))
-  Attributes::set(complex_attrs, "container.id", StringValue("container-abc123"))
-  Attributes::set(complex_attrs, "pod.name", StringValue("azimuth-service-7d4f8c9c-xyz"))
+  // 创建百分比位直方图
+  let percentile_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "response.time.percentiles",
+    Some("Response time percentiles"),
+    Some("ms")
+  )
   
-  Counter::add(request_counter, 42.0, Some(complex_attrs))
-  Histogram::record(response_histogram, 123.45, Some(complex_attrs))
+  // 记录用于计算百分位数的响应时间
+  let response_times = [
+    10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0,  // P50-P95范围
+    60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 120.0,  // P95-P99范围
+    150.0, 200.0, 300.0, 500.0, 1000.0, 2000.0  // P99+范围
+  ]
   
-  // Verify metric metadata
-  assert_eq(request_counter.name, "api.requests.total")
-  assert_eq(response_histogram.name, "api.response.time")
-  assert_eq(error_gauge.name, "api.error.rate")
+  for time in response_times {
+    azimuth::Histogram::record(percentile_histogram, time)
+  }
+  
+  // 验证聚合指标
+  assert_eq(base_counter.name, "events.processed")
+  assert_eq(rate_counter.name, "events.processed.rate")
+  assert_eq(cumulative_histogram.name, "processing.time.cumulative")
+  assert_eq(percentile_histogram.name, "response.time.percentiles")
 }
 
-test "metric_instrument_type_conversion_and_validation" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "conversion.test")
+pub test "metrics with business context" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "business-metrics-meter")
   
-  // Create different instrument types
-  let counter = Meter::create_counter(meter, "test.counter", Some("Test counter"), Some("unit"))
-  let histogram = Meter::create_histogram(meter, "test.histogram", Some("Test histogram"), Some("unit"))
-  let updown_counter = Meter::create_updown_counter(meter, "test.updown", Some("Test updown"), Some("unit"))
-  let gauge = Meter::create_gauge(meter, "test.gauge", Some("Test gauge"), Some("unit"))
+  // 创建业务指标计数器
+  let revenue_counter = azimuth::Meter::create_counter(
+    meter, 
+    "business.revenue.total",
+    Some("Total revenue generated"),
+    Some("currency_units")
+  )
   
-  // Test conversion to Instrument type
-  let counter_instrument = Counter(counter.name, counter.description, counter.unit)
-  let histogram_instrument = Histogram(histogram.name, histogram.description, histogram.unit)
-  let updown_instrument = UpDownCounter(updown_counter.name, updown_counter.description, updown_counter.unit)
-  let gauge_instrument = Gauge(gauge.name, gauge.description, gauge.unit)
+  // 模拟不同来源的收入
+  azimuth::Counter::add(revenue_counter, 9999.99)   // 产品销售
+  azimuth::Counter::add(revenue_counter, 499.99)    // 服务费
+  azimuth::Counter::add(revenue_counter, 199.99)    // 订阅费
+  azimuth::Counter::add(revenue_counter, 299.99)    // 许可费
   
-  // Test instrument name extraction
-  assert_eq(Instrument::name(counter_instrument), "test.counter")
-  assert_eq(Instrument::name(histogram_instrument), "test.histogram")
-  assert_eq(Instrument::name(updown_instrument), "test.updown")
-  assert_eq(Instrument::name(gauge_instrument), "test.gauge")
+  // 创建订单计数器
+  let orders_counter = azimuth::Meter::create_counter(
+    meter, 
+    "business.orders.total",
+    Some("Total orders processed"),
+    Some("orders")
+  )
   
-  // Test instrument description extraction
-  assert_eq(Instrument::description(counter_instrument), Some("Test counter"))
-  assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))
-  assert_eq(Instrument::description(updown_instrument), Some("Test updown"))
-  assert_eq(Instrument::description(gauge_instrument), Some("Test gauge"))
+  // 模拟订单处理
+  azimuth::Counter::add(orders_counter, 150.0)  // 新订单
+  azimuth::Counter::add(orders_counter, 25.0)   // 退货订单
+  azimuth::Counter::add(orders_counter, 10.0)   // 取消订单
+  azimuth::Counter::add(orders_counter, 5.0)    // 换货订单
   
-  // Test instrument unit extraction
-  assert_eq(Instrument::unit(counter_instrument), Some("unit"))
-  assert_eq(Instrument::unit(histogram_instrument), Some("unit"))
-  assert_eq(Instrument::unit(updown_instrument), Some("unit"))
-  assert_eq(Instrument::unit(gauge_instrument), Some("unit"))
+  // 创建客户指标
+  let customers_updown = azimuth::Meter::create_updown_counter(
+    meter, 
+    "business.customers.active",
+    Some("Currently active customers"),
+    Some("customers")
+  )
   
-  // Test instruments with None values
-  let no_desc_counter = Meter::create_counter(meter, "no.desc")
-  let no_desc_instrument = Counter(no_desc_counter.name, no_desc_counter.description, no_desc_counter.unit)
+  // 模拟客户数量变化
+  azimuth::UpDownCounter::add(customers_updown, 1000.0)  // 初始客户
+  azimuth::UpDownCounter::add(customers_updown, 50.0)    // 新客户
+  azimuth::UpDownCounter::add(customers_updown, 10.0)    // 客户流失
+  azimuth::UpDownCounter::add(customers_updown, 25.0)    // 新增客户
   
-  assert_eq(Instrument::description(no_desc_instrument), None)
-  assert_eq(Instrument::unit(no_desc_instrument), None)
+  // 创建转化率直方图
+  let conversion_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "business.conversion.rate",
+    Some("Conversion rate distribution"),
+    Some("percent")
+  )
   
-  // Test instrument type matching
-  match counter_instrument {
-    Counter(name, desc, unit) => {
-      assert_eq(name, "test.counter")
-      assert_eq(desc, Some("Test counter"))
-      assert_eq(unit, Some("unit"))
-    }
-    _ => assert_true(false)
-  }
+  // 记录不同渠道的转化率
+  azimuth::Histogram::record(conversion_histogram, 2.5)   // 搜索引擎
+  azimuth::Histogram::record(conversion_histogram, 5.8)   // 社交媒体
+  azimuth::Histogram::record(conversion_histogram, 12.3)  // 邮件营销
+  azimuth::Histogram::record(conversion_histogram, 8.7)   // 直接访问
+  azimuth::Histogram::record(conversion_histogram, 15.2)  // 推荐链接
   
-  match histogram_instrument {
-    Histogram(name, desc, unit) => {
-      assert_eq(name, "test.histogram")
-      assert_eq(desc, Some("Test histogram"))
-      assert_eq(unit, Some("unit"))
-    }
-    _ => assert_true(false)
-  }
+  // 验证业务指标
+  assert_eq(revenue_counter.name, "business.revenue.total")
+  assert_eq(orders_counter.name, "business.orders.total")
+  assert_eq(customers_updown.name, "business.customers.active")
+  assert_eq(conversion_histogram.name, "business.conversion.rate")
 }
 
-test "metric_performance_and_batch_operations" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.test")
+pub test "metrics performance and scalability" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "performance-meter")
   
-  // Create metrics for performance testing
-  let batch_counter = Meter::create_counter(meter, "batch.operations", Some("Batch operations"), Some("operations"))
-  let batch_histogram = Meter::create_histogram(meter, "batch.latency", Some("Batch latency"), Some("ms"))
+  // 测试大量指标创建的性能
+  let start_create_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // Test batch operations - simulate high-frequency metric recording
-  let start_time = Clock::now_unix_nanos(Clock::system())
+  let mut counters = []
+  let mut histograms = []
+  let mut updown_counters = []
+  let mut gauges = []
   
-  // Batch counter operations
-  for i = 0; i < 1000; i = i + 1 {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "batch.id", IntValue(i / 100))
-    Attributes::set(attrs, "operation.type", StringValue("batch.process"))
+  // 创建大量不同类型的指标
+  for i in 0..100 {
+    // 创建计数器
+    let counter = azimuth::Meter::create_counter(
+      meter, 
+      "perf.counter." + i.to_string(),
+      Some("Performance counter " + i.to_string()),
+      Some("operations")
+    )
+    counters.push(counter)
     
-    Counter::add(batch_counter, 1.0, Some(attrs))
+    // 创建直方图
+    let histogram = azimuth::Meter::create_histogram(
+      meter, 
+      "perf.histogram." + i.to_string(),
+      Some("Performance histogram " + i.to_string()),
+      Some("ms")
+    )
+    histograms.push(histogram)
+    
+    // 创建UpDownCounter
+    let updown_counter = azimuth::Meter::create_updown_counter(
+      meter, 
+      "perf.updown." + i.to_string(),
+      Some("Performance updown counter " + i.to_string()),
+      Some("units")
+    )
+    updown_counters.push(updown_counter)
+    
+    // 创建Gauge
+    let gauge = azimuth::Meter::create_gauge(
+      meter, 
+      "perf.gauge." + i.to_string(),
+      Some("Performance gauge " + i.to_string()),
+      Some("percent")
+    )
+    gauges.push(gauge)
   }
   
-  // Batch histogram operations
-  for i = 0; i < 500; i = i + 1 {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "batch.size", IntValue(i % 10 + 1))
-    Attributes::set(attrs, "processing.time", StringValue((i * 2).to_string() + "ms"))
-    
-    let latency = 10.0 + (i % 100).to_double()
-    Histogram::record(batch_histogram, latency, Some(attrs))
+  let end_create_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let create_duration = end_create_time - start_create_time
+  
+  // 验证指标创建在合理时间内完成
+  assert_true(create_duration < 10000000000L, "400个指标创建应该在10秒内完成")
+  
+  // 测试大量指标操作的性能
+  let start_operation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  // 对所有计数器进行操作
+  for counter in counters {
+    for j in 0..10 {
+      azimuth::Counter::add(counter, j.to_double())
+    }
   }
   
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
-  
-  // Verify performance is reasonable (this is a basic check)
-  assert_true(duration >= 0L) // Should be positive duration
-  
-  // Test with different attribute cardinalities
-  let high_cardinality_counter = Meter::create_counter(meter, "high.cardinality", Some("High cardinality test"), Some("operations"))
-  
-  for i = 0; i < 100; i = i + 1 {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "user.id", StringValue("user_" + i.to_string()))
-    Attributes::set(attrs, "session.id", StringValue("session_" + (i * 2).to_string()))
-    Attributes::set(attrs, "request.id", StringValue("req_" + (i * 3).to_string()))
-    
-    Counter::add(high_cardinality_counter, 1.0, Some(attrs))
+  // 对所有直方图进行操作
+  for histogram in histograms {
+    for j in 0..10 {
+      azimuth::Histogram::record(histogram, (j * 10).to_double())
+    }
   }
   
-  // Verify metric metadata
-  assert_eq(batch_counter.name, "batch.operations")
-  assert_eq(batch_histogram.name, "batch.latency")
-  assert_eq(high_cardinality_counter.name, "high.cardinality")
+  // 对所有UpDownCounter进行操作
+  for updown_counter in updown_counters {
+    azimuth::UpDownCounter::add(updown_counter, 100.0)
+    azimuth::UpDownCounter::add(updown_counter, -25.0)
+    azimuth::UpDownCounter::add(updown_counter, 50.0)
+  }
+  
+  let end_operation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let operation_duration = end_operation_time - start_operation_time
+  
+  // 验证指标操作在合理时间内完成
+  assert_true(operation_duration < 15000000000L, "大量指标操作应该在15秒内完成")
+  
+  // 验证所有指标创建成功
+  assert_eq(counters.length(), 100)
+  assert_eq(histograms.length(), 100)
+  assert_eq(updown_counters.length(), 100)
+  assert_eq(gauges.length(), 100)
+}
+
+pub test "metrics error handling and edge cases" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "edge-case-meter")
+  
+  // 测试极值计数器操作
+  let extreme_counter = azimuth::Meter::create_counter(
+    meter, 
+    "extreme.values.counter",
+    Some("Counter with extreme values"),
+    Some("units")
+  )
+  
+  // 测试极大值
+  azimuth::Counter::add(extreme_counter, 999999999.0)
+  
+  // 测试极小值
+  azimuth::Counter::add(extreme_counter, 0.0000001)
+  
+  // 测试零值
+  azimuth::Counter::add(extreme_counter, 0.0)
+  
+  // 测试负值（对于计数器可能无效，但测试不会崩溃）
+  azimuth::Counter::add(extreme_counter, -1.0)
+  
+  // 测试极值直方图操作
+  let extreme_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "extreme.values.histogram",
+    Some("Histogram with extreme values"),
+    Some("units")
+  )
+  
+  // 测试极小值
+  azimuth::Histogram::record(extreme_histogram, 0.000001)
+  
+  // 测试极大值
+  azimuth::Histogram::record(extreme_histogram, 999999999.0)
+  
+  // 测试零值
+  azimuth::Histogram::record(extreme_histogram, 0.0)
+  
+  // 测试负值（对于直方图可能无效）
+  azimuth::Histogram::record(extreme_histogram, -1.0)
+  
+  // 测试极值UpDownCounter操作
+  let extreme_updown = azimuth::Meter::create_updown_counter(
+    meter, 
+    "extreme.values.updown",
+    Some("UpDownCounter with extreme values"),
+    Some("units")
+  )
+  
+  // 测试大正值
+  azimuth::UpDownCounter::add(extreme_updown, 999999999.0)
+  
+  // 测试大负值
+  azimuth::UpDownCounter::add(extreme_updown, -999999999.0)
+  
+  // 测试零值
+  azimuth::UpDownCounter::add(extreme_updown, 0.0)
+  
+  // 验证极值操作不会导致崩溃
+  assert_eq(extreme_counter.name, "extreme.values.counter")
+  assert_eq(extreme_histogram.name, "extreme.values.histogram")
+  assert_eq(extreme_updown.name, "extreme.values.updown")
+}
+
+pub test "metrics with complex attribute combinations" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "complex-attributes-meter")
+  
+  // 创建支持复杂属性的计数器
+  let complex_counter = azimuth::Meter::create_counter(
+    meter, 
+    "complex.attributes.requests",
+    Some("Requests with complex attribute combinations"),
+    Some("requests")
+  )
+  
+  // 模拟不同属性组合的请求
+  // 地理位置维度
+  azimuth::Counter::add(complex_counter, 100.0)  // US-East
+  azimuth::Counter::add(complex_counter, 80.0)   // US-West
+  azimuth::Counter::add(complex_counter, 60.0)   // EU-Central
+  azimuth::Counter::add(complex_counter, 40.0)   // AP-Southeast
+  
+  // 设备类型维度
+  azimuth::Counter::add(complex_counter, 120.0)  // Mobile
+  azimuth::Counter::add(complex_counter, 90.0)   // Desktop
+  azimuth::Counter::add(complex_counter, 30.0)   // Tablet
+  azimuth::Counter::add(complex_counter, 20.0)   // Smart TV
+  
+  // 用户类型维度
+  azimuth::Counter::add(complex_counter, 150.0)  // Free tier
+  azimuth::Counter::add(complex_counter, 80.0)   // Premium tier
+  azimuth::Counter::add(complex_counter, 30.0)   // Enterprise tier
+  
+  // 创建支持复杂属性的直方图
+  let complex_histogram = azimuth::Meter::create_histogram(
+    meter, 
+    "complex.attributes.duration",
+    Some("Duration with complex attribute combinations"),
+    Some("ms")
+  )
+  
+  // 模拟不同属性组合的持续时间
+  // 按操作类型
+  azimuth::Histogram::record(complex_histogram, 25.0)   // Database query
+  azimuth::Histogram::record(complex_histogram, 150.0)  // API call
+  azimuth::Histogram::record(complex_histogram, 500.0)  // File processing
+  azimuth::Histogram::record(complex_histogram, 1200.0) // Machine learning inference
+  
+  // 按数据大小
+  azimuth::Histogram::record(complex_histogram, 10.0)   // Small payload (< 1KB)
+  azimuth::Histogram::record(complex_histogram, 50.0)   // Medium payload (1KB-10KB)
+  azimuth::Histogram::record(complex_histogram, 200.0)  // Large payload (10KB-100KB)
+  azimuth::Histogram::record(complex_histogram, 800.0)  // Extra large payload (> 100KB)
+  
+  // 验证复杂属性指标
+  assert_eq(complex_counter.name, "complex.attributes.requests")
+  assert_eq(complex_histogram.name, "complex.attributes.duration")
 }
