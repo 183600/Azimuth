@@ -1,6 +1,10 @@
 // Advanced Metrics Operations Test Suite for Azimuth Telemetry System
 // Test cases covering complex metrics scenarios and instrumentation
 
+// Import necessary modules
+use moonbitlang/core.{array, int, builtin}
+use moonbitlang/core/assertion
+
 test "advanced_counter_operations_with_attributes" {
   let meter_provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(meter_provider, "advanced.metrics.test")
