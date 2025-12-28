@@ -1,0 +1,13 @@
+{
+  "name": "working_tests",
+  "version": "0.1.0",
+  "description": "Working test suite for Azimuth",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["working_tests.mbt"]
+  }
+}
