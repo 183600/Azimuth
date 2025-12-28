@@ -32,6 +32,11 @@
     },
     {
       "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry/high_quality",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/tests/azimuth/telemetry/high_quality/high_quality.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "working_tests",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/working_tests/working_tests.mi"
     }

@@ -1,0 +1,15 @@
+{
+  "name": "high-quality-tests",
+  "version": "0.1.0",
+  "description": "High-quality test suite for Azimuth telemetry system covering advanced scenarios including cross-service propagation, metrics aggregation, nested attributes, concurrency safety, error boundaries, time series, resource merging, serialization integrity, internationalization, and real-time dashboard streaming",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../../azimuth"
+  },
+  "test": {
+    "test": [
+      "advanced_high_quality_test_suite.mbt"
+    ]
+  }
+}

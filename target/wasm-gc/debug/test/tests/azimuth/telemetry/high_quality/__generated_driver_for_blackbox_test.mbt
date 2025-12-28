@@ -57,27 +57,6 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "simple_moonbit_tests.mbt": {
-    0: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_0, ["attributes basic operations"]),
-    1: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_1, ["span context validation"]),
-    2: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_2, ["context value operations"]),
-    3: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_3, ["metrics counter operations"]),
-    4: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_4, ["log record creation"]),
-  },
-  "high_quality_tests.mbt": {
-    0: (__test_686967685f7175616c6974795f74657374732e6d6274_0, ["span context advanced validation"]),
-    1: (__test_686967685f7175616c6974795f74657374732e6d6274_1, ["context value chain operations"]),
-    2: (__test_686967685f7175616c6974795f74657374732e6d6274_2, ["metrics instrument creation cascade"]),
-    3: (__test_686967685f7175616c6974795f74657374732e6d6274_3, ["attribute value type spectrum"]),
-    4: (__test_686967685f7175616c6974795f74657374732e6d6274_4, ["resource attribute hierarchy"]),
-    5: (__test_686967685f7175616c6974795f74657374732e6d6274_5, ["log record severity progression"]),
-    6: (__test_686967685f7175616c6974795f74657374732e6d6274_6, ["baggage entry lifecycle"]),
-    7: (__test_686967685f7175616c6974795f74657374732e6d6274_7, ["text map carrier operations"]),
-    8: (__test_686967685f7175616c6974795f74657374732e6d6274_8, ["http client request response cycle"]),
-    9: (__test_686967685f7175616c6974795f74657374732e6d6274_9, ["clock random temporal sequence"]),
-  },
-  "azimuth.mbt": {
-  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
@@ -154,7 +133,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/simple_test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/tests/azimuth/telemetry/high_quality\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
