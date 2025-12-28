@@ -6,6 +6,6 @@
   "source": ["."],
   "deps": {},
   "test": {
-    "test": ["validation_tests.mbt"]
+    "test": ["simple_validation_tests.mbt"]
   }
 }

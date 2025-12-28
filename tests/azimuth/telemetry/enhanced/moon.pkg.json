@@ -1,0 +1,13 @@
+{
+  "name": "enhanced-core-tests",
+  "version": "0.1.0",
+  "description": "Enhanced core functionality tests for Azimuth telemetry system",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../../azimuth"
+  },
+  "test": {
+    "test": ["test.mbt"]
+  }
+}
