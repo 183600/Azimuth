@@ -1,0 +1,10 @@
+{
+  "name": "azimuth/telemetry",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "repository": "https://github.com/183600/Azimuth",
+  "license": "MIT",
+  "description": "OpenTelemetry-style telemetry suite for MoonBit with Trace/Metrics/Logs support",
+  "keywords": ["telemetry", "opentelemetry", "tracing", "metrics", "logs"],
+  "authors": ["Azimuth Team"]
+}
