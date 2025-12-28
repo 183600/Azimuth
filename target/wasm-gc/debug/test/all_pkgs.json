@@ -2,6 +2,11 @@
   "packages": [
     {
       "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry/advanced",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/tests/azimuth/telemetry/advanced/advanced.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "tests/azimuth/telemetry/comprehensive",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/tests/azimuth/telemetry/comprehensive/comprehensive.mi"
     },

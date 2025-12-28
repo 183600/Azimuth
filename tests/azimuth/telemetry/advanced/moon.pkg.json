@@ -1,0 +1,21 @@
+{
+  "name": "advanced-tests",
+  "version": "0.1.0",
+  "description": "Advanced test cases for Azimuth telemetry system covering boundary conditions, performance, data integrity, cross-service propagation, real-world scenarios, multilingual support, and platform compatibility",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../../azimuth"
+  },
+  "test": {
+    "test": [
+      "../boundary_conditions_test.mbt",
+      "../performance_test.mbt",
+      "../data_integrity_test.mbt",
+      "../cross_service_propagation_test.mbt",
+      "../real_world_scenarios_test.mbt",
+      "../multilingual_test.mbt",
+      "../platform_compatibility_test.mbt"
+    ]
+  }
+}

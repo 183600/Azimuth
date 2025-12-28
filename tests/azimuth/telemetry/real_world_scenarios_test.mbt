@@ -1,710 +1,483 @@
-// 真实世界场景测试
-// Real world scenarios tests for Azimuth telemetry system
+// Azimuth Telemetry System - 复杂场景集成测试用例
+// 测试系统在复杂真实场景中的综合表现
 
-test "Web应用用户会话跟踪测试" {
-  // 测试Web应用中用户会话的完整跟踪
+test "电商订单处理流程集成测试" {
+  // 模拟完整的电商订单处理流程
   
-  // 初始化遥测提供者
-  let trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider::default()
-  let logs_provider = @azimuth.telemetry.sdk.logs.LoggerProvider::default()
+  // 1. 用户服务 - 用户登录
+  let user_tracer_provider = TracerProvider::default()
+  let user_tracer = TracerProvider::get_tracer(user_tracer_provider, "user-service")
+  let login_span = Tracer::start_span(user_tracer, "user-login")
+  Span::set_attribute(login_span, "user.id", "user-12345")
+  Span::set_attribute(login_span, "login.method", "password")
   
-  // 创建仪器
-  let tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(trace_provider, "web.application")
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider::get_meter(metrics_provider, "web.application")
-  let logger = @azimuth.telemetry.sdk.logs.LoggerProvider::get_logger(logs_provider, "web.application")
+  // 记录用户登录指标
+  let user_meter_provider = MeterProvider::default()
+  let user_meter = MeterProvider::get_meter(user_meter_provider, "user-service")
+  let login_counter = Meter::create_counter(user_meter, "user_logins_total", Some("Total user logins"), Some("count"))
+  Counter::add(login_counter, 1.0)
   
-  // 创建指标
-  let request_counter = @azimuth.telemetry.sdk.metrics.Meter::create_counter(
-    meter,
-    "http.requests.total",
-    Some("Total HTTP requests"),
-    Some("requests")
-  )
-  
-  let response_time_histogram = @azimuth.telemetry.sdk.metrics.Meter::create_histogram(
-    meter,
-    "http.request.duration",
-    Some("HTTP request duration"),
-    Some("ms")
-  )
-  
-  let active_users_gauge = @azimuth.telemetry.sdk.metrics.Meter::create_gauge(
-    meter,
-    "users.active",
-    Some("Number of active users"),
-    Some("users")
-  )
-  
-  // 模拟用户会话开始
-  let session_start_time = @azimuth.telemetry.sdk.platform.time.Clock::now_unix_nanos(@azimuth.telemetry.sdk.platform.time.Clock::system())
-  
-  let (session_ctx, session_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, "user.session")
-  @azimuth.telemetry.api.trace.Span::set_attribute(session_span, "user.id", @azimuth.telemetry.api.common.StringValue("user-12345"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(session_span, "session.id", @azimuth.telemetry.api.common.StringValue("session-abcdef"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(session_span, "user.agent", @azimuth.telemetry.api.common.StringValue("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(session_span, "ip.address", @azimuth.telemetry.api.common.StringValue("192.168.1.100"))
-  
-  @azimuth.telemetry.api.trace.Span::add_event(session_span, "session.started", None, None)
-  
-  // 记录活跃用户
-  @azimuth.telemetry.sdk.metrics.Gauge::record(active_users_gauge, 1250.0)
-  
-  // 模拟用户登录
-  let (login_ctx, login_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, session_ctx, "user.login")
-  
-  let login_start = @azimuth.telemetry.sdk.platform.time.Clock::now_unix_nanos(@azimuth.telemetry.sdk.platform.time.Clock::system())
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(login_span, "login.method", @azimuth.telemetry.api.common.StringValue("email"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(login_span, "login.email", @azimuth.telemetry.api.common.StringValue("user@example.com"))
-  @azimuth.telemetry.api.trace.Span::add_event(login_span, "login.started", None, None)
-  
-  // 模拟数据库查询
-  let (db_ctx, db_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, login_ctx, "database.query")
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.statement", @azimuth.telemetry.api.common.StringValue("SELECT * FROM users WHERE email = ?"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.type", @azimuth.telemetry.api.common.StringValue("postgresql"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.connection.pool", @azimuth.telemetry.api.common.StringValue("primary"))
-  
-  // 模拟查询延迟
-  let query_duration = 25.5
-  @azimuth.telemetry.sdk.metrics.Histogram::record(response_time_histogram, query_duration, Some([
-    ("operation", @azimuth.telemetry.api.common.StringValue("database.query")),
-    ("table", @azimuth.telemetry.api.common.StringValue("users"))
-  ]))
-  
-  @azimuth.telemetry.api.trace.Span::end(db_span)
-  
-  // 模拟密码验证
-  @azimuth.telemetry.api.trace.Span::add_event(login_span, "password.verification.started", None, None)
-  
-  // 记录登录请求
-  @azimuth.telemetry.sdk.metrics.Counter::add(request_counter, 1.0, Some([
-    ("endpoint", @azimuth.telemetry.api.common.StringValue("/api/login")),
-    ("method", @azimuth.telemetry.api.common.StringValue("POST"))
-  ]))
-  
-  let login_end = @azimuth.telemetry.sdk.platform.time.Clock::now_unix_nanos(@azimuth.telemetry.sdk.platform.time.Clock::system())
-  let login_duration = (login_end - login_start).to_double() / 1000000.0  // Convert to milliseconds
-  
-  @azimuth.telemetry.sdk.metrics.Histogram::record(response_time_histogram, login_duration, Some([
-    ("endpoint", @azimuth.telemetry.api.common.StringValue("/api/login")),
-    ("method", @azimuth.telemetry.api.common.StringValue("POST"))
-  ]))
-  
-  @azimuth.telemetry.api.trace.Span::add_event(login_span, "login.completed", None, None)
-  @azimuth.telemetry.api.trace.Span::set_status(login_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Login successful"))
-  @azimuth.telemetry.api.trace.Span::end(login_span)
-  
-  // 记录登录成功日志
-  let login_log = @azimuth.telemetry.api.logs.LogRecord::new(
-    @azimuth.telemetry.api.logs.Info,
-    "User login successful",
-    Some([
-      ("user.id", @azimuth.telemetry.api.common.StringValue("user-12345")),
-      ("session.id", @azimuth.telemetry.api.common.StringValue("session-abcdef")),
-      ("login.method", @azimuth.telemetry.api.common.StringValue("email"))
-    ]),
-    Some(login_end),
+  // 记录登录日志
+  let user_logger_provider = LoggerProvider::default()
+  let user_logger = LoggerProvider::get_logger(user_logger_provider, "user-service")
+  let login_log = LogRecord::new_with_context(
+    Info,
+    Some("User logged in successfully"),
+    Some(Attributes::new()),
+    Some(Clock::now_unix_nanos(Clock::system())),
     None,
-    Some(@azimuth.telemetry.api.trace.SpanContext::trace_id(@azimuth.telemetry.api.trace.Span::span_context(session_span))),
-    Some(@azimuth.telemetry.api.trace.SpanContext::span_id(@azimuth.telemetry.api.trace.Span::span_context(login_span))),
-    Some(login_ctx)
+    Some(SpanContext::trace_id(Span::span_context(login_span))),
+    Some(SpanContext::span_id(Span::span_context(login_span))),
+    Some(Context::root())
   )
+  Logger::emit(user_logger, login_log)
   
-  @azimuth.telemetry.sdk.logs.Logger::emit(logger, login_log)
+  // 2. 商品服务 - 浏览商品
+  let product_tracer_provider = TracerProvider::default()
+  let product_tracer = TracerProvider::get_tracer(product_tracer_provider, "product-service")
+  let browse_span = Tracer::start_span(product_tracer, "browse-products")
+  Span::set_attribute(browse_span, "category", "electronics")
+  Span::set_attribute(browse_span, "page.size", "20")
   
-  // 模拟用户浏览页面
-  let pages = ["/dashboard", "/profile", "/settings", "/reports"]
-  let page_spans = []
+  // 记录商品浏览指标
+  let product_meter = MeterProvider::get_meter(user_meter_provider, "product-service")
+  let browse_counter = Meter::create_counter(product_meter, "product_browses_total", Some("Total product browses"), Some("count"))
+  Counter::add(browse_counter, 1.0)
   
-  for page in pages {
-    let (page_ctx, page_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, session_ctx, "page.view")
-    @azimuth.telemetry.api.trace.Span::set_attribute(page_span, "page.url", @azimuth.telemetry.api.common.StringValue(page))
-    @azimuth.telemetry.api.trace.Span::set_attribute(page_span, "page.load.time", @azimuth.telemetry.api.common.FloatValue(150.5))
-    
-    // 记录页面浏览请求
-    @azimuth.telemetry.sdk.metrics.Counter::add(request_counter, 1.0, Some([
-      ("endpoint", @azimuth.telemetry.api.common.StringValue(page)),
-      ("method", @azimuth.telemetry.api.common.StringValue("GET"))
-    ]))
-    
-    page_spans = page_spans @ [(page_ctx, page_span)]
-  }
+  // 3. 购物车服务 - 添加商品到购物车
+  let cart_tracer_provider = TracerProvider::default()
+  let cart_tracer = TracerProvider::get_tracer(cart_tracer_provider, "cart-service")
+  let add_to_cart_span = Tracer::start_span(cart_tracer, "add-to-cart")
+  Span::set_attribute(add_to_cart_span, "product.id", "prod-67890")
+  Span::set_attribute(add_to_cart_span, "quantity", "2")
+  Span::set_attribute(add_to_cart_span, "price", "299.99")
   
-  // 结束所有页面浏览Span
-  for (_, page_span) in page_spans {
-    @azimuth.telemetry.api.trace.Span::end(page_span)
-  }
+  // 记录购物车指标
+  let cart_meter = MeterProvider::get_meter(user_meter_provider, "cart-service")
+  let cart_counter = Meter::create_counter(cart_meter, "items_added_to_cart_total", Some("Total items added to cart"), Some("count"))
+  Counter::add(cart_counter, 2.0)
   
-  // 模拟用户登出
-  let (logout_ctx, logout_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, session_ctx, "user.logout")
-  @azimuth.telemetry.api.trace.Span::set_attribute(logout_span, "logout.reason", @azimuth.telemetry.api.common.StringValue("user.initiated"))
+  // 4. 订单服务 - 创建订单
+  let order_tracer_provider = TracerProvider::default()
+  let order_tracer = TracerProvider::get_tracer(order_tracer_provider, "order-service")
+  let create_order_span = Tracer::start_span(order_tracer, "create-order")
+  Span::set_attribute(create_order_span, "order.id", "order-11111")
+  Span::set_attribute(create_order_span, "total.amount", "599.98")
+  Span::set_attribute(create_order_span, "payment.method", "credit_card")
   
-  @azimuth.telemetry.api.trace.Span::add_event(logout_span, "logout.started", None, None)
+  // 记录订单指标
+  let order_meter = MeterProvider::get_meter(user_meter_provider, "order-service")
+  let order_counter = Meter::create_counter(order_meter, "orders_created_total", Some("Total orders created"), Some("count"))
+  let order_amount_histogram = Meter::create_histogram(order_meter, "order_amount", Some("Order amount"), Some("usd"))
+  Counter::add(order_counter, 1.0)
+  Histogram::record(order_amount_histogram, 599.98)
   
-  // 记录登出请求
-  @azimuth.telemetry.sdk.metrics.Counter::add(request_counter, 1.0, Some([
-    ("endpoint", @azimuth.telemetry.api.common.StringValue("/api/logout")),
-    ("method", @azimuth.telemetry.api.common.StringValue("POST"))
+  // 5. 支付服务 - 处理支付
+  let payment_tracer_provider = TracerProvider::default()
+  let payment_tracer = TracerProvider::get_tracer(payment_tracer_provider, "payment-service")
+  let process_payment_span = Tracer::start_span(payment_tracer, "process-payment")
+  Span::set_attribute(process_payment_span, "payment.id", "pay-22222")
+  Span::set_attribute(process_payment_span, "payment.status", "success")
+  Span::set_attribute(process_payment_span, "processing.time", "1500")
+  
+  // 记录支付指标
+  let payment_meter = MeterProvider::get_meter(user_meter_provider, "payment-service")
+  let payment_counter = Meter::create_counter(payment_meter, "payments_processed_total", Some("Total payments processed"), Some("count"))
+  let payment_duration_histogram = Meter::create_histogram(payment_meter, "payment_processing_duration", Some("Payment processing duration"), Some("ms"))
+  Counter::add(payment_counter, 1.0)
+  Histogram::record(payment_duration_histogram, 1500.0)
+  
+  // 6. 物流服务 - 安排发货
+  let shipping_tracer_provider = TracerProvider::default()
+  let shipping_tracer = TracerProvider::get_tracer(shipping_tracer_provider, "shipping-service")
+  let arrange_shipping_span = Tracer::start_span(shipping_tracer, "arrange-shipping")
+  Span::set_attribute(arrange_shipping_span, "shipping.id", "ship-33333")
+  Span::set_attribute(arrange_shipping_span, "carrier", "fedex")
+  Span::set_attribute(arrange_shipping_span, "estimated.delivery", "2025-01-05")
+  
+  // 记录物流指标
+  let shipping_meter = MeterProvider::get_meter(user_meter_provider, "shipping-service")
+  let shipping_counter = Meter::create_counter(shipping_meter, "shipments_arranged_total", Some("Total shipments arranged"), Some("count"))
+  Counter::add(shipping_counter, 1.0)
+  
+  // 7. 通知服务 - 发送确认邮件
+  let notification_tracer_provider = TracerProvider::default()
+  let notification_tracer = TracerProvider::get_tracer(notification_tracer_provider, "notification-service")
+  let send_email_span = Tracer::start_span(notification_tracer, "send-order-confirmation")
+  Span::set_attribute(send_email_span, "notification.id", "notif-44444")
+  Span::set_attribute(send_email_span, "notification.type", "email")
+  Span::set_attribute(send_email_span, "recipient", "user@example.com")
+  
+  // 记录通知指标
+  let notification_meter = MeterProvider::get_meter(user_meter_provider, "notification-service")
+  let notification_counter = Meter::create_counter(notification_meter, "notifications_sent_total", Some("Total notifications sent"), Some("count"))
+  Counter::add(notification_counter, 1.0)
+  
+  // 验证所有服务和组件正常工作
+  assert_eq(Span::name(login_span), "user-login")
+  assert_eq(Span::name(browse_span), "browse-products")
+  assert_eq(Span::name(add_to_cart_span), "add-to-cart")
+  assert_eq(Span::name(create_order_span), "create-order")
+  assert_eq(Span::name(process_payment_span), "process-payment")
+  assert_eq(Span::name(arrange_shipping_span), "arrange-shipping")
+  assert_eq(Span::name(send_email_span), "send-order-confirmation")
+  
+  // 结束所有Span
+  Span::end(send_email_span)
+  Span::end(arrange_shipping_span)
+  Span::end(process_payment_span)
+  Span::end(create_order_span)
+  Span::end(add_to_cart_span)
+  Span::end(browse_span)
+  Span::end(login_span)
+}
+
+test "微服务错误处理和恢复集成测试" {
+  // 模拟微服务中的错误处理和恢复场景
+  
+  // 1. API Gateway - 接收请求
+  let gateway_tracer_provider = TracerProvider::default()
+  let gateway_tracer = TracerProvider::get_tracer(gateway_tracer_provider, "api-gateway")
+  let gateway_span = Tracer::start_span(gateway_tracer, "gateway-request")
+  Span::set_attribute(gateway_span, "request.path", "/api/orders")
+  Span::set_attribute(gateway_span, "request.method", "POST")
+  Span::set_attribute(gateway_span, "user.id", "user-12345")
+  
+  // 2. 订单服务 - 处理订单创建（遇到错误）
+  let order_tracer_provider = TracerProvider::default()
+  let order_tracer = TracerProvider::get_tracer(order_tracer_provider, "order-service")
+  let order_span = Tracer::start_span(order_tracer, "create-order")
+  Span::set_attribute(order_span, "order.id", "order-error-123")
+  
+  // 模拟库存不足错误
+  Span::add_event(order_span, "inventory_check_failed", Some([
+    ("product.id", StringValue("prod-67890")),
+    ("requested.quantity", StringValue("5")),
+    ("available.quantity", StringValue("2"))
   ]))
   
-  @azimuth.telemetry.api.trace.Span::add_event(logout_span, "logout.completed", None, None)
-  @azimuth.telemetry.api.trace.Span::set_status(logout_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Logout successful"))
-  @azimuth.telemetry.api.trace.Span::end(logout_span)
+  Span::set_status(order_span, Error, Some("Insufficient inventory"))
   
-  // 更新活跃用户数
-  @azimuth.telemetry.sdk.metrics.Gauge::record(active_users_gauge, 1249.0)
+  // 记录错误指标
+  let order_meter_provider = MeterProvider::default()
+  let order_meter = MeterProvider::get_meter(order_meter_provider, "order-service")
+  let error_counter = Meter::create_counter(order_meter, "order_errors_total", Some("Total order errors"), Some("count"))
+  Counter::add(error_counter, 1.0)
   
-  // 结束会话Span
-  let session_end_time = @azimuth.telemetry.sdk.platform.time.Clock::now_unix_nanos(@azimuth.telemetry.sdk.platform.time.Clock::system())
-  let session_duration = (session_end_time - session_start_time).to_double() / 1000000000.0  // Convert to seconds
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(session_span, "session.duration", @azimuth.telemetry.api.common.FloatValue(session_duration))
-  @azimuth.telemetry.api.trace.Span::add_event(session_span, "session.ended", None, None)
-  @azimuth.telemetry.api.trace.Span::set_status(session_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Session completed"))
-  @azimuth.telemetry.api.trace.Span::end(session_span)
-  
-  // 记录会话结束日志
-  let session_log = @azimuth.telemetry.api.logs.LogRecord::new(
-    @azimuth.telemetry.api.logs.Info,
-    "User session completed",
-    Some([
-      ("user.id", @azimuth.telemetry.api.common.StringValue("user-12345")),
-      ("session.id", @azimuth.telemetry.api.common.StringValue("session-abcdef")),
-      ("session.duration", @azimuth.telemetry.api.common.FloatValue(session_duration))
-    ]),
-    Some(session_end_time),
+  // 记录错误日志
+  let order_logger_provider = LoggerProvider::default()
+  let order_logger = LoggerProvider::get_logger(order_logger_provider, "order-service")
+  let error_log = LogRecord::new_with_context(
+    Error,
+    Some("Order creation failed due to insufficient inventory"),
+    Some(Attributes::new()),
+    Some(Clock::now_unix_nanos(Clock::system())),
     None,
-    Some(@azimuth.telemetry.api.trace.SpanContext::trace_id(@azimuth.telemetry.api.trace.Span::span_context(session_span))),
-    Some(@azimuth.telemetry.api.trace.SpanContext::span_id(@azimuth.telemetry.api.trace.Span::span_context(session_span))),
-    Some(session_ctx)
+    Some(SpanContext::trace_id(Span::span_context(order_span))),
+    Some(SpanContext::span_id(Span::span_context(order_span))),
+    Some(Context::root())
   )
+  Logger::emit(order_logger, error_log)
   
-  @azimuth.telemetry.sdk.logs.Logger::emit(logger, session_log)
-}
-
-test "微服务架构调用链测试" {
-  // 测试微服务架构中的调用链跟踪
+  // 3. 重试机制 - 尝试恢复
+  let retry_span = Tracer::start_span(order_tracer, "order-retry")
+  Span::set_attribute(retry_span, "retry.count", "1")
+  Span::set_attribute(retry_span, "retry.strategy", "exponential_backoff")
   
-  // 初始化各服务的遥测提供者
-  let api_trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let api_tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(api_trace_provider, "api.gateway")
-  
-  let user_trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let user_tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(user_trace_provider, "user.service")
-  
-  let order_trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let order_tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(order_trace_provider, "order.service")
-  
-  let payment_trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let payment_tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(payment_trace_provider, "payment.service")
-  
-  let notification_trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let notification_tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(notification_trace_provider, "notification.service")
-  
-  // API网关接收请求
-  let (api_ctx, api_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(api_tracer, "api.request.processing")
-  @azimuth.telemetry.api.trace.Span::set_attribute(api_span, "http.method", @azimuth.telemetry.api.common.StringValue("POST"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(api_span, "http.url", @azimuth.telemetry.api.common.StringValue("/api/v1/orders"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(api_span, "user.id", @azimuth.telemetry.api.common.StringValue("user-12345"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(api_span, "request.id", @azimuth.telemetry.api.common.StringValue("req-abc123"))
-  
-  // 创建传播器
-  let propagator = @azimuth.telemetry.api.propagation.CompositePropagator::new([
-    @azimuth.telemetry.api.propagation.W3CTraceContextPropagator::new()
-  ])
-  
-  // API网关调用用户服务
-  let user_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier::new()
-  @azimuth.telemetry.api.propagation.CompositePropagator::inject(propagator, api_ctx, user_carrier)
-  
-  let user_extracted_ctx = @azimuth.telemetry.api.propagation.CompositePropagator::extract(propagator, user_carrier)
-  let (user_ctx, user_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(user_tracer, user_extracted_ctx, "user.validation")
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(user_span, "service.name", @azimuth.telemetry.api.common.StringValue("user.service"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(user_span, "operation", @azimuth.telemetry.api.common.StringValue("validate.user"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(user_span, "user.id", @azimuth.telemetry.api.common.StringValue("user-12345"))
-  
-  // 用户服务数据库查询
-  let (user_db_ctx, user_db_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(user_tracer, user_ctx, "database.query")
-  @azimuth.telemetry.api.trace.Span::set_attribute(user_db_span, "db.statement", @azimuth.telemetry.api.common.StringValue("SELECT * FROM users WHERE id = ?"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(user_db_span, "db.type", @azimuth.telemetry.api.common.StringValue("postgresql"))
-  @azimuth.telemetry.api.trace.Span::end(user_db_span)
-  
-  @azimuth.telemetry.api.trace.Span::set_status(user_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("User validated"))
-  @azimuth.telemetry.api.trace.Span::end(user_span)
-  
-  // API网关调用订单服务
-  let order_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier::new()
-  @azimuth.telemetry.api.propagation.CompositePropagator::inject(propagator, api_ctx, order_carrier)
-  
-  let order_extracted_ctx = @azimuth.telemetry.api.propagation.CompositePropagator::extract(propagator, order_carrier)
-  let (order_ctx, order_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(order_tracer, order_extracted_ctx, "order.creation")
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(order_span, "service.name", @azimuth.telemetry.api.common.StringValue("order.service"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(order_span, "operation", @azimuth.telemetry.api.common.StringValue("create.order"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(order_span, "order.items", @azimuth.telemetry.api.common.IntValue(3))
-  @azimuth.telemetry.api.trace.Span::set_attribute(order_span, "order.total", @azimuth.telemetry.api.common.FloatValue(299.99))
-  
-  // 订单服务数据库操作
-  let (order_db_ctx, order_db_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(order_tracer, order_ctx, "database.transaction")
-  @azimuth.telemetry.api.trace.Span::set_attribute(order_db_span, "db.operation", @azimuth.telemetry.api.common.StringValue("INSERT INTO orders"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(order_db_span, "db.type", @azimuth.telemetry.api.common.StringValue("postgresql"))
-  
-  // 库存检查
-  let (inventory_ctx, inventory_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(order_tracer, order_db_ctx, "inventory.check")
-  @azimuth.telemetry.api.trace.Span::set_attribute(inventory_span, "operation", @azimuth.telemetry.api.common.StringValue("check.stock"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(inventory_span, "product.id", @azimuth.telemetry.api.common.StringValue("prod-123"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(inventory_span, "quantity", @azimuth.telemetry.api.common.IntValue(3))
-  @azimuth.telemetry.api.trace.Span::end(inventory_span)
-  
-  @azimuth.telemetry.api.trace.Span::end(order_db_span)
-  
-  // 订单服务调用支付服务
-  let payment_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier::new()
-  @azimuth.telemetry.api.propagation.CompositePropagator::inject(propagator, order_ctx, payment_carrier)
-  
-  let payment_extracted_ctx = @azimuth.telemetry.api.propagation.CompositePropagator::extract(propagator, payment_carrier)
-  let (payment_ctx, payment_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(payment_tracer, payment_extracted_ctx, "payment.processing")
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(payment_span, "service.name", @azimuth.telemetry.api.common.StringValue("payment.service"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(payment_span, "operation", @azimuth.telemetry.api.common.StringValue("process.payment"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(payment_span, "payment.amount", @azimuth.telemetry.api.common.FloatValue(299.99))
-  @azimuth.telemetry.api.trace.Span::set_attribute(payment_span, "payment.method", @azimuth.telemetry.api.common.StringValue("credit_card"))
-  
-  // 支付网关调用
-  let (gateway_ctx, gateway_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(payment_tracer, payment_ctx, "payment.gateway.call")
-  @azimuth.telemetry.api.trace.Span::set_attribute(gateway_span, "gateway.provider", @azimuth.telemetry.api.common.StringValue("stripe"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(gateway_span, "gateway.api.version", @azimuth.telemetry.api.common.StringValue("v3"))
-  @azimuth.telemetry.api.trace.Span::end(gateway_span)
-  
-  @azimuth.telemetry.api.trace.Span::set_status(payment_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Payment processed"))
-  @azimuth.telemetry.api.trace.Span::end(payment_span)
-  
-  @azimuth.telemetry.api.trace.Span::set_status(order_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Order created"))
-  @azimuth.telemetry.api.trace.Span::end(order_span)
-  
-  // API网关调用通知服务
-  let notification_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier::new()
-  @azimuth.telemetry.api.propagation.CompositePropagator::inject(propagator, api_ctx, notification_carrier)
-  
-  let notification_extracted_ctx = @azimuth.telemetry.api.propagation.CompositePropagator::extract(propagator, notification_carrier)
-  let (notification_ctx, notification_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(notification_tracer, notification_extracted_ctx, "notification.sending")
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(notification_span, "service.name", @azimuth.telemetry.api.common.StringValue("notification.service"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(notification_span, "operation", @azimuth.telemetry.api.common.StringValue("send.confirmation"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(notification_span, "notification.type", @azimuth.telemetry.api.common.StringValue("email"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(notification_span, "notification.recipient", @azimuth.telemetry.api.common.StringValue("user@example.com"))
-  
-  // 邮件服务调用
-  let (email_ctx, email_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(notification_tracer, notification_ctx, "email.service.call")
-  @azimuth.telemetry.api.trace.Span::set_attribute(email_span, "email.provider", @azimuth.telemetry.api.common.StringValue("sendgrid"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(email_span, "email.template", @azimuth.telemetry.api.common.StringValue("order_confirmation"))
-  @azimuth.telemetry.api.trace.Span::end(email_span)
-  
-  @azimuth.telemetry.api.trace.Span::set_status(notification_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Notification sent"))
-  @azimuth.telemetry.api.trace.Span::end(notification_span)
-  
-  // API网关完成请求处理
-  @azimuth.telemetry.api.trace.Span::set_status(api_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Request processed successfully"))
-  @azimuth.telemetry.api.trace.Span::end(api_span)
-}
-
-test "数据库操作监控测试" {
-  // 测试数据库操作的详细监控
-  
-  let trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider::default()
-  let logs_provider = @azimuth.telemetry.sdk.logs.LoggerProvider::default()
-  
-  let tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(trace_provider, "database.service")
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider::get_meter(metrics_provider, "database.service")
-  let logger = @azimuth.telemetry.sdk.logs.LoggerProvider::get_logger(logs_provider, "database.service")
-  
-  // 创建数据库相关指标
-  let query_counter = @azimuth.telemetry.sdk.metrics.Meter::create_counter(
-    meter,
-    "database.queries.total",
-    Some("Total database queries"),
-    Some("queries")
-  )
-  
-  let query_duration_histogram = @azimuth.telemetry.sdk.metrics.Meter::create_histogram(
-    meter,
-    "database.query.duration",
-    Some("Database query duration"),
-    Some("ms")
-  )
-  
-  let connection_pool_gauge = @azimuth.telemetry.sdk.metrics.Meter::create_gauge(
-    meter,
-    "database.connection.pool.active",
-    Some("Active database connections"),
-    Some("connections")
-  )
-  
-  // 模拟数据库连接池状态
-  @azimuth.telemetry.sdk.metrics.Gauge::record(connection_pool_gauge, 15.0)
-  
-  // 模拟复杂查询操作
-  let (db_ctx, db_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, "database.complex.query")
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.system", @azimuth.telemetry.api.common.StringValue("postgresql"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.connection.string", @azimuth.telemetry.api.common.StringValue("postgresql://localhost:5432/myapp"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.user", @azimuth.telemetry.api.common.StringValue("app_user"))
-  
-  let query_start = @azimuth.telemetry.sdk.platform.time.Clock::now_unix_nanos(@azimuth.telemetry.sdk.platform.time.Clock::system())
-  
-  // 模拟复杂SQL查询
-  let complex_query = "
-    SELECT u.id, u.name, u.email, COUNT(o.id) as order_count, SUM(o.total) as total_spent
-    FROM users u
-    LEFT JOIN orders o ON u.id = o.user_id
-    WHERE u.created_at >= '2024-01-01' AND u.status = 'active'
-    GROUP BY u.id, u.name, u.email
-    HAVING COUNT(o.id) > 5
-    ORDER BY total_spent DESC
-    LIMIT 100
-  "
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.statement", @azimuth.telemetry.api.common.StringValue(complex_query))
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.operation", @azimuth.telemetry.api.common.StringValue("SELECT"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.tables", @azimuth.telemetry.api.common.ArrayStringValue(["users", "orders"]))
-  
-  // 模拟查询执行
-  @azimuth.telemetry.api.trace.Span::add_event(db_span, "query.execution.started", None, None)
-  
-  // 记录查询指标
-  @azimuth.telemetry.sdk.metrics.Counter::add(query_counter, 1.0, Some([
-    ("operation", @azimuth.telemetry.api.common.StringValue("SELECT")),
-    ("table", @azimuth.telemetry.api.common.StringValue("users")),
-    ("complexity", @azimuth.telemetry.api.common.StringValue("complex"))
+  // 模拟重试仍然失败
+  Span::add_event(retry_span, "retry_failed", Some([
+    ("error.type", StringValue("inventory_insufficient")),
+    ("retry.delay", StringValue("1000"))
   ]))
   
-  let query_end = @azimuth.telemetry.sdk.platform.time.Clock::now_unix_nanos(@azimuth.telemetry.sdk.platform.time.Clock::system())
-  let query_duration = (query_end - query_start).to_double() / 1000000.0  // Convert to milliseconds
+  Span::set_status(retry_span, Error, Some("Retry attempts exhausted"))
   
-  @azimuth.telemetry.sdk.metrics.Histogram::record(query_duration_histogram, query_duration, Some([
-    ("operation", @azimuth.telemetry.api.common.StringValue("SELECT")),
-    ("table", @azimuth.telemetry.api.common.StringValue("users"))
-  ]))
+  // 记录重试指标
+  let retry_counter = Meter::create_counter(order_meter, "order_retries_total", Some("Total order retries"), Some("count"))
+  Counter::add(retry_counter, 1.0)
   
-  @azimuth.telemetry.api.trace.Span::set_attribute(db_span, "db.duration_ms", @azimuth.telemetry.api.common.FloatValue(query_duration))
-  @azimuth.telemetry.api.trace.Span::add_event(db_span, "query.execution.completed", Some([
-    ("rows.returned", @azimuth.telemetry.api.common.IntValue(87))
-  ]), None)
+  // 4. 降级处理 - 提供备选方案
+  let fallback_span = Tracer::start_span(order_tracer, "order-fallback")
+  Span::set_attribute(fallback_span, "fallback.strategy", "partial_order")
+  Span::set_attribute(fallback_span, "adjusted.quantity", "2")
   
-  @azimuth.telemetry.api.trace.Span::end(db_span)
+  // 降级成功
+  Span::set_status(fallback_span, Ok, Some("Order created with adjusted quantity"))
   
-  // 模拟事务操作
-  let (tx_ctx, tx_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, "database.transaction")
+  // 记录降级指标
+  let fallback_counter = Meter::create_counter(order_meter, "order_fallbacks_total", Some("Total order fallbacks"), Some("count"))
+  Counter::add(fallback_counter, 1.0)
   
-  @azimuth.telemetry.api.trace.Span::set_attribute(tx_span, "db.operation", @azimuth.telemetry.api.common.StringValue("TRANSACTION"))
-  @azimuth.telemetry.api.trace.Span::add_event(tx_span, "transaction.started", None, None)
-  
-  // 事务中的多个操作
-  let operations = [
-    ("INSERT", "orders", "INSERT INTO orders (user_id, total, status) VALUES (?, ?, ?)"),
-    ("UPDATE", "inventory", "UPDATE inventory SET quantity = quantity - ? WHERE product_id = ?"),
-    ("INSERT", "order_items", "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)")
-  ]
-  
-  for (op_type, table, statement) in operations {
-    let (op_ctx, op_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, tx_ctx, "database.operation")
-    
-    @azimuth.telemetry.api.trace.Span::set_attribute(op_span, "db.operation", @azimuth.telemetry.api.common.StringValue(op_type))
-    @azimuth.telemetry.api.trace.Span::set_attribute(op_span, "db.statement", @azimuth.telemetry.api.common.StringValue(statement))
-    @azimuth.telemetry.api.trace.Span::set_attribute(op_span, "db.table", @azimuth.telemetry.api.common.StringValue(table))
-    
-    // 记录操作指标
-    @azimuth.telemetry.sdk.metrics.Counter::add(query_counter, 1.0, Some([
-      ("operation", @azimuth.telemetry.api.common.StringValue(op_type)),
-      ("table", @azimuth.telemetry.api.common.StringValue(table))
-    ]))
-    
-    @azimuth.telemetry.sdk.metrics.Histogram::record(query_duration_histogram, 5.5, Some([
-      ("operation", @azimuth.telemetry.api.common.StringValue(op_type)),
-      ("table", @azimuth.telemetry.api.common.StringValue(table))
-    ]))
-    
-    @azimuth.telemetry.api.trace.Span::end(op_span)
-  }
-  
-  // 事务提交
-  @azimuth.telemetry.api.trace.Span::add_event(tx_span, "transaction.commit", None, None)
-  @azimuth.telemetry.api.trace.Span::set_status(tx_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Transaction committed"))
-  @azimuth.telemetry.api.trace.Span::end(tx_span)
-  
-  // 模拟慢查询检测
-  let (slow_query_ctx, slow_query_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, "database.slow.query")
-  
-  @azimuth.telemetry.api.trace.Span::set_attribute(slow_query_span, "db.operation", @azimuth.telemetry.api.common.StringValue("SELECT"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(slow_query_span, "db.statement", @azimuth.telemetry.api.common.StringValue("SELECT * FROM large_table WHERE complex_condition = ?"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(slow_query_span, "db.duration_ms", @azimuth.telemetry.api.common.FloatValue(2500.75))
-  
-  // 记录慢查询指标
-  @azimuth.telemetry.sdk.metrics.Histogram::record(query_duration_histogram, 2500.75, Some([
-    ("operation", @azimuth.telemetry.api.common.StringValue("SELECT")),
-    ("table", @azimuth.telemetry.api.common.StringValue("large_table")),
-    ("performance", @azimuth.telemetry.api.common.StringValue("slow"))
-  ]))
-  
-  @azimuth.telemetry.api.trace.Span::add_event(slow_query_span, "slow.query.detected", Some([
-    ("threshold_ms", @azimuth.telemetry.api.common.IntValue(1000))
-  ]), None)
-  
-  // 记录慢查询日志
-  let slow_query_log = @azimuth.telemetry.api.logs.LogRecord::new(
-    @azimuth.telemetry.api.logs.Warn,
-    "Slow query detected and logged",
-    Some([
-      ("query.duration_ms", @azimuth.telemetry.api.common.FloatValue(2500.75)),
-      ("query.table", @azimuth.telemetry.api.common.StringValue("large_table")),
-      ("threshold_ms", @azimuth.telemetry.api.common.IntValue(1000))
-    ]),
-    Some(@azimuth.telemetry.sdk.platform.time.Clock::now_unix_nanos(@azimuth.telemetry.sdk.platform.time.Clock::system())),
+  // 记录降级日志
+  let fallback_log = LogRecord::new_with_context(
+    Warn,
+    Some("Order created with fallback strategy due to inventory constraints"),
+    Some(Attributes::new()),
+    Some(Clock::now_unix_nanos(Clock::system())),
     None,
-    Some(@azimuth.telemetry.api.trace.SpanContext::trace_id(@azimuth.telemetry.api.trace.Span::span_context(slow_query_span))),
-    Some(@azimuth.telemetry.api.trace.SpanContext::span_id(@azimuth.telemetry.api.trace.Span::span_context(slow_query_span))),
-    Some(slow_query_ctx)
+    Some(SpanContext::trace_id(Span::span_context(fallback_span))),
+    Some(SpanContext::span_id(Span::span_context(fallback_span))),
+    Some(Context::root())
   )
+  Logger::emit(order_logger, fallback_log)
   
-  @azimuth.telemetry.sdk.logs.Logger::emit(logger, slow_query_log)
-  @azimuth.telemetry.api.trace.Span::end(slow_query_span)
+  // 5. 通知服务 - 发送降级通知
+  let notification_tracer_provider = TracerProvider::default()
+  let notification_tracer = TracerProvider::get_tracer(notification_tracer_provider, "notification-service")
+  let notification_span = Tracer::start_span(notification_tracer, "send-fallback-notification")
+  Span::set_attribute(notification_span, "notification.type", "email")
+  Span::set_attribute(notification_span, "notification.reason", "order_adjustment")
   
-  // 更新连接池状态
-  @azimuth.telemetry.sdk.metrics.Gauge::record(connection_pool_gauge, 12.0)
+  // 验证错误处理流程
+  assert_eq(Span::status(order_span), Error)
+  assert_eq(Span::status(retry_span), Error)
+  assert_eq(Span::status(fallback_span), Ok)
+  
+  // 结束所有Span
+  Span::end(notification_span)
+  Span::end(fallback_span)
+  Span::end(retry_span)
+  Span::end(order_span)
+  Span::end(gateway_span)
 }
 
-test "缓存系统监控测试" {
-  // 测试缓存系统的监控
+test "实时数据处理管道集成测试" {
+  // 模拟实时数据处理管道
   
-  let trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider::default()
+  // 1. 数据采集服务
+  let ingest_tracer_provider = TracerProvider::default()
+  let ingest_tracer = TracerProvider::get_tracer(ingest_tracer_provider, "data-ingestion")
+  let ingest_span = Tracer::start_span(ingest_tracer, "ingest-events")
+  Span::set_attribute(ingest_span, "source", "iot-sensors")
+  Span::set_attribute(ingest_span, "batch.size", "1000")
+  Span::set_attribute(ingest_span, "data.format", "json")
   
-  let tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(trace_provider, "cache.service")
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider::get_meter(metrics_provider, "cache.service")
+  // 记录采集指标
+  let ingest_meter_provider = MeterProvider::default()
+  let ingest_meter = MeterProvider::get_meter(ingest_meter_provider, "data-ingestion")
+  let events_counter = Meter::create_counter(ingest_meter, "events_ingested_total", Some("Total events ingested"), Some("count"))
+  let data_size_histogram = Meter::create_histogram(ingest_meter, "ingested_data_size", Some("Ingested data size"), Some("bytes"))
+  Counter::add(events_counter, 1000.0)
+  Histogram::record(data_size_histogram, 2048000.0) // 2MB
   
-  // 创建缓存相关指标
-  let cache_hit_counter = @azimuth.telemetry.sdk.metrics.Meter::create_counter(
-    meter,
-    "cache.hits.total",
-    Some("Total cache hits"),
-    Some("hits"
-  ))
+  // 2. 数据验证服务
+  let validation_tracer_provider = TracerProvider::default()
+  let validation_tracer = TracerProvider::get_tracer(validation_tracer_provider, "data-validation")
+  let validation_span = Tracer::start_span(validation_tracer, "validate-events")
+  Span::set_attribute(validation_span, "validation.rules", "schema,format,range")
+  Span::set_attribute(validation_span, "valid.events", "950")
+  Span::set_attribute(validation_span, "invalid.events", "50")
   
-  let cache_miss_counter = @azimuth.telemetry.sdk.metrics.Meter::create_counter(
-    meter,
-    "cache.misses.total",
-    Some("Total cache misses"),
-    Some("misses")
-  )
+  // 记录验证指标
+  let validation_meter = MeterProvider::get_meter(ingest_meter_provider, "data-validation")
+  let validation_counter = Meter::create_counter(validation_meter, "events_validated_total", Some("Total events validated"), Some("count"))
+  let invalid_counter = Meter::create_counter(validation_meter, "invalid_events_total", Some("Total invalid events"), Some("count"))
+  Counter::add(validation_counter, 1000.0)
+  Counter::add(invalid_counter, 50.0)
   
-  let cache_operation_histogram = @azimuth.telemetry.sdk.metrics.Meter::create_histogram(
-    meter,
-    "cache.operation.duration",
-    Some("Cache operation duration"),
-    Some("ms")
-  )
+  // 3. 数据转换服务
+  let transform_tracer_provider = TracerProvider::default()
+  let transform_tracer = TracerProvider::get_tracer(transform_tracer_provider, "data-transformation")
+  let transform_span = Tracer::start_span(transform_tracer, "transform-events")
+  Span::set_attribute(transform_span, "transformation.type", "enrichment")
+  Span::set_attribute(transform_span, "enrichment.fields", "location,device_type,user_segment")
   
-  let cache_size_gauge = @azimuth.telemetry.sdk.metrics.Meter::create_gauge(
-    meter,
-    "cache.size",
-    Some("Cache size"),
-    Some("items")
-  )
+  // 记录转换指标
+  let transform_meter = MeterProvider::get_meter(ingest_meter_provider, "data-transformation")
+  let transform_counter = Meter::create_counter(transform_meter, "events_transformed_total", Some("Total events transformed"), Some("count"))
+  let transform_duration_histogram = Meter::create_histogram(transform_meter, "transformation_duration", Some("Transformation duration"), Some("ms"))
+  Counter::add(transform_counter, 950.0)
+  Histogram::record(transform_duration_histogram, 250.0)
   
-  // 模拟缓存操作
-  let cache_operations = [
-    ("user.profile.12345", "hit"),
-    ("user.profile.67890", "miss"),
-    ("product.catalog.abc", "hit"),
-    ("product.catalog.def", "hit"),
-    ("order.details.456", "miss"),
-    ("user.preferences.789", "hit"),
-    ("product.search.laptop", "miss"),
-    ("user.session.111", "hit")
-  ]
+  // 4. 数据聚合服务
+  let aggregation_tracer_provider = TracerProvider::default()
+  let aggregation_tracer = TracerProvider::get_tracer(aggregation_tracer_provider, "data-aggregation")
+  let aggregation_span = Tracer::start_span(aggregation_tracer, "aggregate-events")
+  Span::set_attribute(aggregation_span, "aggregation.window", "1m")
+  Span::set_attribute(aggregation_span, "aggregation.keys", "user_id,device_type,location")
+  Span::set_attribute(aggregation_span, "aggregated.metrics", "count,sum,avg,max,min")
   
-  for (key, result) in cache_operations {
-    let (cache_ctx, cache_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, "cache.operation")
-    
-    @azimuth.telemetry.api.trace.Span::set_attribute(cache_span, "cache.key", @azimuth.telemetry.api.common.StringValue(key))
-    @azimuth.telemetry.api.trace.Span::set_attribute(cache_span, "cache.operation", @azimuth.telemetry.api.common.StringValue("GET"))
-    @azimuth.telemetry.api.trace.Span::set_attribute(cache_span, "cache.result", @azimuth.telemetry.api.common.StringValue(result))
-    
-    // 记录操作指标
-    let operation_duration = match result {
-      "hit" => 2.5
-      "miss" => 15.8
-      _ => 5.0
-    }
-    
-    @azimuth.telemetry.sdk.metrics.Histogram::record(cache_operation_histogram, operation_duration, Some([
-      ("operation", @azimuth.telemetry.api.common.StringValue("GET")),
-      ("result", @azimuth.telemetry.api.common.StringValue(result))
-    ]))
-    
-    if result == "hit" {
-      @azimuth.telemetry.sdk.metrics.Counter::add(cache_hit_counter, 1.0, Some([
-        ("cache.key", @azimuth.telemetry.api.common.StringValue(key))
-      ]))
-    } else {
-      @azimuth.telemetry.sdk.metrics.Counter::add(cache_miss_counter, 1.0, Some([
-        ("cache.key", @azimuth.telemetry.api.common.StringValue(key))
-      ]))
-    }
-    
-    @azimuth.telemetry.api.trace.Span::end(cache_span)
-  }
+  // 记录聚合指标
+  let aggregation_meter = MeterProvider::get_meter(ingest_meter_provider, "data-aggregation")
+  let aggregation_counter = Meter::create_counter(aggregation_meter, "events_aggregated_total", Some("Total events aggregated"), Some("count"))
+  Counter::add(aggregation_counter, 950.0)
   
-  // 模拟缓存写入操作
-  let write_operations = [
-    ("user.profile.12345", "SET"),
-    ("product.catalog.def", "SET"),
-    ("order.details.456", "SET"),
-    ("product.search.laptop", "SET")
-  ]
+  // 5. 数据存储服务
+  let storage_tracer_provider = TracerProvider::default()
+  let storage_tracer = TracerProvider::get_tracer(storage_tracer_provider, "data-storage")
+  let storage_span = Tracer::start_span(storage_tracer, "store-aggregated-data")
+  Span::set_attribute(storage_span, "storage.type", "timeseries_db")
+  Span::set_attribute(storage_span, "table.name", "aggregated_metrics")
+  Span::set_attribute(storage_span, "records.stored", "50")
   
-  for (key, operation) in write_operations {
-    let (write_ctx, write_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, "cache.operation")
-    
-    @azimuth.telemetry.api.trace.Span::set_attribute(write_span, "cache.key", @azimuth.telemetry.api.common.StringValue(key))
-    @azimuth.telemetry.api.trace.Span::set_attribute(write_span, "cache.operation", @azimuth.telemetry.api.common.StringValue(operation))
-    @azimuth.telemetry.api.trace.Span::set_attribute(write_span, "cache.ttl", @azimuth.telemetry.api.common.IntValue(3600))
-    
-    @azimuth.telemetry.sdk.metrics.Histogram::record(cache_operation_histogram, 8.2, Some([
-      ("operation", @azimuth.telemetry.api.common.StringValue(operation))
-    ]))
-    
-    @azimuth.telemetry.api.trace.Span::end(write_span)
-  }
+  // 记录存储指标
+  let storage_meter = MeterProvider::get_meter(ingest_meter_provider, "data-storage")
+  let storage_counter = Meter::create_counter(storage_meter, "records_stored_total", Some("Total records stored"), Some("count"))
+  let storage_duration_histogram = Meter::create_histogram(storage_meter, "storage_duration", Some("Storage duration"), Some("ms"))
+  Counter::add(storage_counter, 50.0)
+  Histogram::record(storage_duration_histogram, 120.0)
   
-  // 更新缓存大小
-  @azimuth.telemetry.sdk.metrics.Gauge::record(cache_size_gauge, 1250.0)
+  // 6. 实时通知服务
+  let alert_tracer_provider = TracerProvider::default()
+  let alert_tracer = TracerProvider::get_tracer(alert_tracer_provider, "alert-service")
+  let alert_span = Tracer::start_span(alert_tracer, "check-alerts")
+  Span::set_attribute(alert_span, "alert.rules.checked", "10")
+  Span::set_attribute(alert_span, "alerts.triggered", "2")
   
-  // 模拟缓存清理操作
-  let (eviction_ctx, eviction_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, "cache.eviction")
+  // 记录告警指标
+  let alert_meter = MeterProvider::get_meter(ingest_meter_provider, "alert-service")
+  let alert_counter = Meter::create_counter(alert_meter, "alerts_triggered_total", Some("Total alerts triggered"), Some("count"))
+  Counter::add(alert_counter, 2.0)
   
-  @azimuth.telemetry.api.trace.Span::set_attribute(eviction_span, "cache.operation", @azimuth.telemetry.api.common.StringValue("EVICTION"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(eviction_span, "cache.eviction.policy", @azimuth.telemetry.api.common.StringValue("LRU"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(eviction_span, "cache.evicted.count", @azimuth.telemetry.api.common.IntValue(150))
+  // 验证数据处理管道
+  assert_eq(Span::name(ingest_span), "ingest-events")
+  assert_eq(Span::name(validation_span), "validate-events")
+  assert_eq(Span::name(transform_span), "transform-events")
+  assert_eq(Span::name(aggregation_span), "aggregate-events")
+  assert_eq(Span::name(storage_span), "store-aggregated-data")
+  assert_eq(Span::name(alert_span), "check-alerts")
   
-  @azimuth.telemetry.api.trace.Span::add_event(eviction_span, "cache.eviction.completed", None, None)
-  @azimuth.telemetry.api.trace.Span::end(eviction_span)
-  
-  // 更新缓存大小
-  @azimuth.telemetry.sdk.metrics.Gauge::record(cache_size_gauge, 1100.0)
+  // 结束所有Span
+  Span::end(alert_span)
+  Span::end(storage_span)
+  Span::end(aggregation_span)
+  Span::end(transform_span)
+  Span::end(validation_span)
+  Span::end(ingest_span)
 }
 
-test "实时数据流处理监控测试" {
-  // 测试实时数据流处理的监控
+test "多租户SaaS平台集成测试" {
+  // 模拟多租户SaaS平台的遥测数据收集
   
-  let trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider::default()
-  let metrics_provider = @azimuth.telemetry.sdk.metrics.MeterProvider::default()
+  // 租户A的操作
+  let tenant_a_tracer_provider = TracerProvider::default()
+  let tenant_a_tracer = TracerProvider::get_tracer(tenant_a_tracer_provider, "tenant-a-service")
+  let tenant_a_span = Tracer::start_span(tenant_a_tracer, "tenant-operation")
+  Span::set_attribute(tenant_a_span, "tenant.id", "tenant-abc-123")
+  Span::set_attribute(tenant_a_span, "tenant.plan", "enterprise")
+  Span::set_attribute(tenant_a_span, "operation.type", "data-export")
   
-  let tracer = @azimuth.telemetry.sdk.trace.TracerProvider::get_tracer(trace_provider, "stream.processor")
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider::get_meter(metrics_provider, "stream.processor")
+  // 租户A的指标
+  let tenant_a_meter_provider = MeterProvider::default()
+  let tenant_a_meter = MeterProvider::get_meter(tenant_a_meter_provider, "tenant-a-service")
+  let tenant_a_counter = Meter::create_counter(tenant_a_meter, "tenant_operations_total", Some("Total tenant operations"), Some("count"))
+  Counter::add(tenant_a_counter, 1.0)
   
-  // 创建流处理相关指标
-  let messages_processed_counter = @azimuth.telemetry.sdk.metrics.Meter::create_counter(
-    meter,
-    "stream.messages.processed.total",
-    Some("Total messages processed"),
-    Some("messages")
-  )
+  // 租户B的操作
+  let tenant_b_tracer_provider = TracerProvider::default()
+  let tenant_b_tracer = TracerProvider::get_tracer(tenant_b_tracer_provider, "tenant-b-service")
+  let tenant_b_span = Tracer::start_span(tenant_b_tracer, "tenant-operation")
+  Span::set_attribute(tenant_b_span, "tenant.id", "tenant-xyz-789")
+  Span::set_attribute(tenant_b_span, "tenant.plan", "starter")
+  Span::set_attribute(tenant_b_span, "operation.type", "report-generation")
   
-  let processing_time_histogram = @azimuth.telemetry.sdk.metrics.Meter::create_histogram(
-    meter,
-    "stream.processing.duration",
-    Some("Message processing duration"),
-    Some("ms")
-  )
+  // 租户B的指标
+  let tenant_b_meter_provider = MeterProvider::default()
+  let tenant_b_meter = MeterProvider::get_meter(tenant_b_meter_provider, "tenant-b-service")
+  let tenant_b_counter = Meter::create_counter(tenant_b_meter, "tenant_operations_total", Some("Total tenant operations"), Some("count"))
+  Counter::add(tenant_b_counter, 1.0)
   
-  let throughput_gauge = @azimuth.telemetry.sdk.metrics.Meter::create_gauge(
-    meter,
-    "stream.throughput",
-    Some("Current throughput"),
-    Some("messages/sec")
-  )
+  // 平台级别的聚合
+  let platform_tracer_provider = TracerProvider::default()
+  let platform_tracer = TracerProvider::get_tracer(platform_tracer_provider, "platform-service")
+  let platform_span = Tracer::start_span(platform_tracer, "platform-metrics-aggregation")
+  Span::set_attribute(platform_span, "total.tenants", "2")
+  Span::set_attribute(platform_span, "total.operations", "2")
+  Span::set_attribute(platform_span, "aggregation.period", "1m")
   
-  let lag_gauge = @azimuth.telemetry.sdk.metrics.Meter::create_gauge(
-    meter,
-    "stream.lag",
-    Some("Stream processing lag"),
-    Some("messages")
-  )
+  // 平台指标
+  let platform_meter_provider = MeterProvider::default()
+  let platform_meter = MeterProvider::get_meter(platform_meter_provider, "platform-service")
+  let platform_counter = Meter::create_counter(platform_meter, "platform_operations_total", Some("Total platform operations"), Some("count"))
+  let tenant_histogram = Meter::create_histogram(platform_meter, "tenant_operation_duration", Some("Tenant operation duration"), Some("ms"))
+  Counter::add(platform_counter, 2.0)
+  Histogram::record(tenant_histogram, 500.0) // 租户A操作耗时
+  Histogram::record(tenant_histogram, 300.0) // 租户B操作耗时
   
-  // 模拟流处理会话
-  let (stream_ctx, stream_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, "stream.processing.session")
+  // 验证多租户隔离
+  assert_eq(Span::get_attribute(tenant_a_span, "tenant.id"), Some(StringValue("tenant-abc-123")))
+  assert_eq(Span::get_attribute(tenant_b_span, "tenant.id"), Some(StringValue("tenant-xyz-789")))
   
-  @azimuth.telemetry.api.trace.Span::set_attribute(stream_span, "stream.topic", @azimuth.telemetry.api.common.StringValue("user.events"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(stream_span, "stream.consumer.group", @azimuth.telemetry.api.common.StringValue("analytics.processors"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(stream_span, "stream.partition", @azimuth.telemetry.api.common.IntValue(3))
+  // 结束所有Span
+  Span::end(platform_span)
+  Span::end(tenant_b_span)
+  Span::end(tenant_a_span)
+}
+
+test "混合云环境集成测试" {
+  // 模拟混合云环境中的遥测数据收集
   
-  // 模拟处理多条消息
-  for i in 0..100 {
-    let (message_ctx, message_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, stream_ctx, "message.processing")
-    
-    @azimuth.telemetry.api.trace.Span::set_attribute(message_span, "message.id", @azimuth.telemetry.api.common.StringValue("msg-" + i.to_string()))
-    @azimuth.telemetry.api.trace.Span::set_attribute(message_span, "message.type", @azimuth.telemetry.api.common.StringValue("user.activity"))
-    @azimuth.telemetry.api.trace.Span::set_attribute(message_span, "message.timestamp", @azimuth.telemetry.api.common.IntValue(1700000000 + i))
-    
-    // 模拟消息处理时间
-    let processing_time = match i % 10 {
-      0 => 50.5  // 偶尔有慢消息
-      _ => 5.2   // 大部分消息处理很快
-    }
-    
-    @azimuth.telemetry.sdk.metrics.Histogram::record(processing_time_histogram, processing_time, Some([
-      ("message.type", @azimuth.telemetry.api.common.StringValue("user.activity"))
-    ]))
-    
-    @azimuth.telemetry.sdk.metrics.Counter::add(messages_processed_counter, 1.0, Some([
-      ("message.type", @azimuth.telemetry.api.common.StringValue("user.activity")),
-      ("partition", @azimuth.telemetry.api.common.StringValue("3"))
-    ]))
-    
-    // 模拟消息处理步骤
-    let steps = ["deserialization", "validation", "transformation", "enrichment", "aggregation"]
-    
-    for step in steps {
-      let (step_ctx, step_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, message_ctx, "processing.step")
-      
-      @azimuth.telemetry.api.trace.Span::set_attribute(step_span, "step.name", @azimuth.telemetry.api.common.StringValue(step))
-      @azimuth.telemetry.api.trace.Span::set_attribute(step_span, "step.duration_ms", @azimuth.telemetry.api.common.FloatValue(processing_time / 5.0))
-      
-      @azimuth.telemetry.api.trace.Span::end(step_span)
-    }
-    
-    @azimuth.telemetry.api.trace.Span::end(message_span)
-  }
+  // 本地数据中心服务
+  let onprem_tracer_provider = TracerProvider::default()
+  let onprem_tracer = TracerProvider::get_tracer(onprem_tracer_provider, "onprem-service")
+  let onprem_span = Tracer::start_span(onprem_tracer, "onprem-operation")
+  Span::set_attribute(onprem_span, "deployment.location", "onprem")
+  Span::set_attribute(onprem_span, "datacenter", "dc-west-1")
+  Span::set_attribute(onprem_span, "operation.type", "database-query")
   
-  // 更新吞吐量和延迟指标
-  @azimuth.telemetry.sdk.metrics.Gauge::record(throughput_gauge, 1250.5)
-  @azimuth.telemetry.sdk.metrics.Gauge::record(lag_gauge, 25.0)
+  // 本地指标
+  let onprem_meter_provider = MeterProvider::default()
+  let onprem_meter = MeterProvider::get_meter(onprem_meter_provider, "onprem-service")
+  let onprem_counter = Meter::create_counter(onprem_meter, "onprem_operations_total", Some("Total onprem operations"), Some("count"))
+  Counter::add(onprem_counter, 1.0)
   
-  // 模拟流处理错误
-  let (error_ctx, error_span) = @azimuth.telemetry.sdk.trace.Tracer::start_span(tracer, stream_ctx, "message.processing.error")
+  // 云服务A - AWS
+  let aws_tracer_provider = TracerProvider::default()
+  let aws_tracer = TracerProvider::get_tracer(aws_tracer_provider, "aws-service")
+  let aws_span = Tracer::start_span(aws_tracer, "cloud-operation")
+  Span::set_attribute(aws_span, "deployment.location", "cloud")
+  Span::set_attribute(aws_span, "cloud.provider", "aws")
+  Span::set_attribute(aws_span, "region", "us-west-2")
+  Span::set_attribute(aws_span, "operation.type", "api-call")
   
-  @azimuth.telemetry.api.trace.Span::set_attribute(error_span, "message.id", @azimuth.telemetry.api.common.StringValue("msg-corrupted"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(error_span, "error.type", @azimuth.telemetry.api.common.StringValue("deserialization.error"))
-  @azimuth.telemetry.api.trace.Span::set_attribute(error_span, "error.message", @azimuth.telemetry.api.common.StringValue("Invalid JSON format"))
+  // AWS指标
+  let aws_meter_provider = MeterProvider::default()
+  let aws_meter = MeterProvider::get_meter(aws_meter_provider, "aws-service")
+  let aws_counter = Meter::create_counter(aws_meter, "aws_operations_total", Some("Total AWS operations"), Some("count"))
+  Counter::add(aws_counter, 1.0)
   
-  @azimuth.telemetry.api.trace.Span::record_exception(
-    error_span,
-    "Failed to process message due to invalid format",
-    Some("StreamProcessingException"),
-    Some("at stream.processor.process_message()\n  at handle_message()"),
-    None
-  )
+  // 云服务B - Azure
+  let azure_tracer_provider = TracerProvider::default()
+  let azure_tracer = TracerProvider::get_tracer(azure_tracer_provider, "azure-service")
+  let azure_span = Tracer::start_span(azure_tracer, "cloud-operation")
+  Span::set_attribute(azure_span, "deployment.location", "cloud")
+  Span::set_attribute(azure_span, "cloud.provider", "azure")
+  Span::set_attribute(azure_span, "region", "eastus")
+  Span::set_attribute(azure_span, "operation.type", "storage-operation")
   
-  @azimuth.telemetry.api.trace.Span::set_status(error_span, @azimuth.telemetry.api.trace.StatusCode.Error, Some("Message processing failed"))
-  @azimuth.telemetry.api.trace.Span::end(error_span)
+  // Azure指标
+  let azure_meter_provider = MeterProvider::default()
+  let azure_meter = MeterProvider::get_meter(azure_meter_provider, "azure-service")
+  let azure_counter = Meter::create_counter(azure_meter, "azure_operations_total", Some("Total Azure operations"), Some("count"))
+  Counter::add(azure_counter, 1.0)
   
-  // 模拟流处理会话结束
-  @azimuth.telemetry.api.trace.Span::set_attribute(stream_span, "messages.processed", @azimuth.telemetry.api.common.IntValue(101))
-  @azimuth.telemetry.api.trace.Span::set_attribute(stream_span, "processing.duration_ms", @azimuth.telemetry.api.common.FloatValue(8500.75))
-  @azimuth.telemetry.api.trace.Span::set_status(stream_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Stream processing session completed"))
-  @azimuth.telemetry.api.trace.Span::end(stream_span)
+  // 混合云管理平台
+  let hybrid_tracer_provider = TracerProvider::default()
+  let hybrid_tracer = TracerProvider::get_tracer(hybrid_tracer_provider, "hybrid-platform")
+  let hybrid_span = Tracer::start_span(hybrid_tracer, "hybrid-orchestration")
+  Span::set_attribute(hybrid_span, "total.environments", "3")
+  Span::set_attribute(hybrid_span, "onprem.services", "1")
+  Span::set_attribute(hybrid_span, "cloud.services", "2")
+  Span::set_attribute(hybrid_span, "cloud.providers", "aws,azure")
+  
+  // 混合云指标
+  let hybrid_meter_provider = MeterProvider::default()
+  let hybrid_meter = MeterProvider::get_meter(hybrid_meter_provider, "hybrid-platform")
+  let hybrid_counter = Meter::create_counter(hybrid_meter, "hybrid_operations_total", Some("Total hybrid operations"), Some("count"))
+  let cross_cloud_histogram = Meter::create_histogram(hybrid_meter, "cross_cloud_latency", Some("Cross-cloud latency"), Some("ms"))
+  Counter::add(hybrid_counter, 3.0)
+  Histogram::record(cross_cloud_histogram, 25.0)  // 本地到AWS延迟
+  Histogram::record(cross_cloud_histogram, 35.0)  // 本地到Azure延迟
+  Histogram::record(cross_cloud_histogram, 45.0)  // AWS到Azure延迟
+  
+  // 验证混合云环境
+  assert_eq(Span::get_attribute(onprem_span, "deployment.location"), Some(StringValue("onprem")))
+  assert_eq(Span::get_attribute(aws_span, "deployment.location"), Some(StringValue("cloud")))
+  assert_eq(Span::get_attribute(azure_span, "deployment.location"), Some(StringValue("cloud")))
+  
+  // 结束所有Span
+  Span::end(hybrid_span)
+  Span::end(azure_span)
+  Span::end(aws_span)
+  Span::end(onprem_span)
 }
