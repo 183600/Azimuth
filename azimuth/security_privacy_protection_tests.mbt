@@ -1,541 +1,412 @@
-// Security and Privacy Protection Tests for Azimuth Telemetry System
-// Testing secure handling of sensitive data and privacy compliance
+// 安全性和隐私保护测试用例
+// 测试Azimuth遥测系统的数据加密、敏感信息过滤、访问控制等安全功能
 
-test "sensitive_data_sanitization" {
-  // Test sanitization of sensitive data in telemetry
+test "sensitive_data_filtering" {
+  // 测试敏感数据过滤功能
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "security-test")
   
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "security-sanitization-service")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "security-sanitization-logger")
-  
-  // Create operation with sensitive data
-  let span = Tracer::start_span(tracer, "sensitive.data.operation")
-  
-  // Test sensitive data scenarios
-  let sensitive_scenarios = [
-    ("user.email", "user@example.com"),
-    ("user.phone", "+1-555-123-4567"),
-    ("user.ssn", "123-45-6789"),
-    ("credit.card", "4111-1111-1111-1111"),
-    ("api.key", "sk_test_4242424242424242"),
-    ("password", "SuperSecretPassword123!"),
-    ("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"),
-    ("secret", "my_secret_value_12345")
+  // 配置敏感数据过滤器
+  let sensitive_patterns = [
+    "password",
+    "token",
+    "secret",
+    "key",
+    "credential",
+    "auth",
+    "api_key",
+    "private"
   ]
   
-  for (field_name, sensitive_value) in sensitive_scenarios {
-    // Create attributes with sensitive data (should be sanitized)
-    let sensitive_attrs = Attributes::new()
-    Attributes::set(sensitive_attrs, field_name, StringValue(sensitive_value))
-    Attributes::set(sensitive_attrs, field_name + ".sanitized", StringValue("[REDACTED]"))
-    Attributes::set(sensitive_attrs, field_name + ".hash", StringValue("hash_" + sensitive_value.length.to_string()))
-    
-    // Add event indicating sanitization
-    Span::add_event(span, "sensitive.data.sanitized", None)
-    
-    // Create log with sanitized data
-    let sanitization_log = LogRecord::new_with_context(
-      Info,
-      Some("Sensitive data field " + field_name + " has been sanitized"),
-      Some(sensitive_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(span.span_context)),
-      Some(SpanContext::span_id(span.span_context)),
-      None
-    )
-    Logger::emit(logger, sanitization_log)
-  }
+  let filter_config = DataFilterConfig::new(
+    sensitive_patterns,
+    Some("***REDACTED***"),
+    Some(true)  // enable_strict_filtering
+  )
   
-  // Test PII detection and masking
-  let pii_patterns = [
-    ("email.address", "john.doe@company.com"),
-    ("ip.address", "192.168.1.100"),
-    ("mac.address", "00:1B:44:11:3A:B7"),
-    ("postal.code", "90210-1234"),
-    ("driver.license", "D1234567"),
-    ("passport.number", "X12345678")
-  ]
+  TracerProvider::set_data_filter(tracer_provider, filter_config)
   
-  for (pii_type, pii_value) in pii_patterns {
-    let pii_attrs = Attributes::new()
-    Attributes::set(pii_attrs, pii_type, StringValue("[MASKED]"))
-    Attributes::set(pii_attrs, pii_type + ".category", StringValue("PII"))
-    Attributes::set(pii_attrs, pii_type + ".retention", StringValue("30.days"))
-    
-    let pii_log = LogRecord::new_with_context(
-      Warn,
-      Some("PII data detected and masked for " + pii_type),
-      Some(pii_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(span.span_context)),
-      Some(SpanContext::span_id(span.span_context)),
-      None
-    )
-    Logger::emit(logger, pii_log)
-  }
+  // 创建包含敏感信息的Span
+  let span = Tracer::start_span(tracer, "sensitive-data-test")
+  
+  // 测试敏感属性过滤
+  Span::set_attribute(span, "username", StringValue("john.doe"))
+  Span::set_attribute(span, "password", StringValue("supersecret123"))
+  Span::set_attribute(span, "api_token", StringValue("sk-1234567890abcdef"))
+  Span::set_attribute(span, "session_id", StringValue("sess_abc123"))
+  
+  // 测试敏感事件数据过滤
+  Span::add_event(span, "user.login", Some([
+    ("username", StringValue("john.doe")),
+    ("password", StringValue("supersecret123")),
+    ("ip_address", StringValue("192.168.1.100"))
+  ]))
+  
+  // 验证敏感数据被过滤
+  let filtered_attributes = Span::get_filtered_attributes(span)
+  let username_found = filtered_attributes.any(fn(attr) {
+    attr.0 == "username" && attr.1 == StringValue("john.doe")
+  })
+  let password_filtered = filtered_attributes.any(fn(attr) {
+    attr.0 == "password" && attr.1 == StringValue("***REDACTED***")
+  })
+  let token_filtered = filtered_attributes.any(fn(attr) {
+    attr.0 == "api_token" && attr.1 == StringValue("***REDACTED***")
+  })
+  
+  assert_true(username_found)  // 非敏感数据应保留
+  assert_true(password_filtered)  // 敏感数据应被过滤
+  assert_true(token_filtered)  // 敏感数据应被过滤
   
   Span::end(span)
-  
-  // Verify sensitive data sanitization
-  assert_true(true)
 }
 
-test "access_control_and_authorization" {
-  // Test access control and authorization in telemetry operations
+test "data_encryption_at_rest" {
+  // 测试静态数据加密
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "encryption-test")
   
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "access-control-service")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "access-control-logger")
+  // 配置加密设置
+  let encryption_config = EncryptionConfig::new(
+    "AES-256-GCM",
+    Some("base64-encoded-encryption-key-32-bytes-long-"),
+    Some(true),  // enable_compression
+    Some("v1")   // key_version
+  )
   
-  // Create access control scenarios
-  let access_scenarios = [
-    ("admin.user", "full.access", ["read", "write", "delete", "admin"]),
-    ("power.user", "extended.access", ["read", "write"]),
-    ("regular.user", "basic.access", ["read"]),
-    ("guest.user", "limited.access", ["read.public"]),
-    ("service.account", "service.access", ["read", "write.service"])
-  ]
+  LoggerProvider::set_encryption_config(logger_provider, encryption_config)
   
-  for (user_type, access_level, permissions) in access_scenarios {
-    let access_span = Tracer::start_span(tracer, "access.control.check")
-    
-    // Create access control attributes
-    let access_attrs = Attributes::new()
-    Attributes::set(access_attrs, "user.type", StringValue(user_type))
-    Attributes::set(access_attrs, "access.level", StringValue(access_level))
-    Attributes::set(access_attrs, "permission.count", IntValue(permissions.length))
-    Attributes::set(access_attrs, "access.granted", BoolValue(true))
-    
-    // Log access control check
-    let access_log = LogRecord::new_with_context(
-      Info,
-      Some("Access control check completed for " + user_type),
-      Some(access_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(access_span.span_context)),
-      Some(SpanContext::span_id(access_span.span_context)),
-      None
-    )
-    Logger::emit(logger, access_log)
-    
-    // Test individual permissions
-    for permission in permissions {
-      let perm_attrs = Attributes::new()
-      Attributes::set(perm_attrs, "user.type", StringValue(user_type))
-      Attributes::set(perm_attrs, "permission", StringValue(permission))
-      Attributes::set(perm_attrs, "permission.valid", BoolValue(true))
-      
-      Span::add_event(access_span, "permission.verified", None)
-    }
-    
-    Span::end(access_span)
-  }
-  
-  // Test access denial scenarios
-  let denial_scenarios = [
-    ("unauthenticated.user", "authentication.required"),
-    ("expired.token", "token.expired"),
-    ("insufficient.privileges", "privilege.insufficient"),
-    ("blocked.user", "account.suspended"),
-    ("rate.limited", "rate.limit.exceeded")
-  ]
-  
-  for (user_type, denial_reason) in denial_scenarios {
-    let denial_span = Tracer::start_span(tracer, "access.denied")
-    
-    let denial_attrs = Attributes::new()
-    Attributes::set(denial_attrs, "user.type", StringValue(user_type))
-    Attributes::set(denial_attrs, "denial.reason", StringValue(denial_reason))
-    Attributes::set(denial_attrs, "access.granted", BoolValue(false))
-    Attributes::set(denial_attrs, "security.event", StringValue("access.denied"))
-    
-    let denial_log = LogRecord::new_with_context(
-      Warn,
-      Some("Access denied for " + user_type + ": " + denial_reason),
-      Some(denial_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(denial_span.span_context)),
-      Some(SpanContext::span_id(denial_span.span_context)),
-      None
-    )
-    Logger::emit(logger, denial_log)
-    
-    Span::set_status(denial_span, Error, Some(denial_reason))
-    Span::end(denial_span)
-  }
-  
-  // Verify access control and authorization
-  assert_true(true)
-}
-
-test "data_encryption_and_protection" {
-  // Test data encryption and protection mechanisms
-  
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "encryption-service")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "encryption-logger")
-  
-  // Create encryption scenarios
-  let encryption_scenarios = [
-    ("data.at.rest", "AES-256-GCM"),
-    ("data.in.transit", "TLS-1.3"),
-    ("data.in.memory", "memory.protection"),
-    ("key.management", "HSM.based"),
-    ("certificate.validation", "X.509.chain")
-  ]
-  
-  for (data_type, encryption_method) in encryption_scenarios {
-    let encryption_span = Tracer::start_span(tracer, "encryption." + data_type.replace(".", "_"))
-    
-    // Create encryption attributes
-    let encryption_attrs = Attributes::new()
-    Attributes::set(encryption_attrs, "data.type", StringValue(data_type))
-    Attributes::set(encryption_attrs, "encryption.method", StringValue(encryption_method))
-    Attributes::set(encryption_attrs, "encryption.status", StringValue("active"))
-    Attributes::set(encryption_attrs, "key.rotation.required", BoolValue(false))
-    
-    // Log encryption operation
-    let encryption_log = LogRecord::new_with_context(
-      Info,
-      Some("Encryption operation completed for " + data_type),
-      Some(encryption_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(encryption_span.span_context)),
-      Some(SpanContext::span_id(encryption_span.span_context)),
-      None
-    )
-    Logger::emit(logger, encryption_log)
-    
-    // Add encryption events
-    Span::add_event(encryption_span, "encryption.key.generated", None)
-    Span::add_event(encryption_span, "encryption.data.protected", None)
-    
-    Span::set_status(encryption_span, Ok, Some("Encryption successful"))
-    Span::end(encryption_span)
-  }
-  
-  // Test key rotation scenarios
-  let key_rotation_span = Tracer::start_span(tracer, "key.rotation.operation")
-  
-  let rotation_attrs = Attributes::new()
-  Attributes::set(rotation_attrs, "rotation.type", StringValue("scheduled"))
-  Attributes::set(rotation_attrs, "key.algorithm", StringValue("RSA-4096"))
-  Attributes::set(rotation_attrs, "rotation.status", StringValue("in.progress"))
-  
-  let rotation_log = LogRecord::new_with_context(
-    Info,
-    Some("Key rotation operation initiated"),
-    Some(rotation_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
+  // 创建包含敏感信息的日志记录
+  let sensitive_log_data = LogRecord::new_with_context(
+    Warn,
+    Some("Security audit log with sensitive information"),
+    Some(Attributes::from_array([
+      ("user_id", StringValue("user_12345")),
+      ("social_security_number", StringValue("123-45-6789")),
+      ("credit_card", StringValue("4532-1234-5678-9012")),
+      ("medical_record", StringValue("MRN001234567")),
+      ("timestamp", IntValue(Clock::now_unix_nanos(Clock::system())))
+    ])),
     None,
-    Some(SpanContext::trace_id(key_rotation_span.span_context)),
-    Some(SpanContext::span_id(key_rotation_span.span_context)),
+    None,
+    None,
     None
   )
-  Logger::emit(logger, rotation_log)
   
-  // Key rotation steps
-  let rotation_steps = ["old.key.deprecated", "new.key.generated", "data.reencrypted", "clients.updated", "old.key.destroyed"]
+  // 加密日志数据
+  let encrypted_log = Logger::encrypt_log_record(logger, sensitive_log_data)
+  assert_true(encrypted_log.is_encrypted)
+  assert_not_eq(encrypted_log.encrypted_data, "")
   
-  for step in rotation_steps {
-    Span::add_event(key_rotation_span, "key.rotation." + step, None)
-  }
+  // 解密日志数据
+  let decrypted_log = Logger::decrypt_log_record(logger, encrypted_log)
+  assert_true(decrypted_log.is_some)
   
-  // Update final status
-  let final_rotation_attrs = Attributes::new()
-  Attributes::set(final_rotation_attrs, "rotation.type", StringValue("scheduled"))
-  Attributes::set(final_rotation_attrs, "rotation.status", StringValue("completed"))
-  Attributes::set(final_rotation_attrs, "rotation.duration", IntValue(300))
+  let decrypted_record = decrypted_log.unwrap()
+  assert_eq(LogRecord::severity_number(decrypted_record), Warn)
+  assert_eq(LogRecord::body(decrypted_record), Some("Security audit log with sensitive information"))
   
-  let completion_log = LogRecord::new_with_context(
-    Info,
-    Some("Key rotation operation completed successfully"),
-    Some(final_rotation_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(key_rotation_span.span_context)),
-    Some(SpanContext::span_id(key_rotation_span.span_context)),
-    None
-  )
-  Logger::emit(logger, completion_log)
-  
-  Span::set_status(key_rotation_span, Ok, Some("Key rotation completed"))
-  Span::end(key_rotation_span)
-  
-  // Verify data encryption and protection
-  assert_true(true)
+  // 验证敏感数据在解密后正确恢复
+  let decrypted_attributes = LogRecord::attributes(decrypted_record)
+  let ssn_found = decrypted_attributes.any(fn(attr) {
+    attr.0 == "social_security_number" && attr.1 == StringValue("123-45-6789")
+  })
+  assert_true(ssn_found)
 }
 
-test "privacy_compliance_gdpr" {
-  // Test GDPR compliance scenarios
+test "access_control_authorization" {
+  // 测试访问控制和授权
+  let tracer_provider = TracerProvider::default()
   
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "gdpr-compliance-service")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "gdpr-compliance-logger")
-  
-  // GDPR data subject rights scenarios
-  let gdpr_rights = [
-    ("right.to.access", "data.subject.request"),
-    ("right.to.rectification", "data.correction.request"),
-    ("right.to.erasure", "right.to.be.forgotten"),
-    ("right.to.portability", "data.export.request"),
-    ("right.to.restrict", "processing.limitation"),
-    ("right.to.object", "processing.objection")
+  // 配置访问控制策略
+  let access_policies = [
+    AccessPolicy::new(
+      "admin-role",
+      ["read", "write", "delete", "configure"],
+      ["spans", "metrics", "logs", "config"]
+    ),
+    AccessPolicy::new(
+      "analyst-role", 
+      ["read"],
+      ["spans", "metrics"]
+    ),
+    AccessPolicy::new(
+      "service-role",
+      ["write"],
+      ["spans", "logs"]
+    )
   ]
   
-  for (right_name, request_type) in gdpr_rights {
-    let gdpr_span = Tracer::start_span(tracer, "gdpr." + right_name.replace(".", "_"))
-    
-    // Create GDPR attributes
-    let gdpr_attrs = Attributes::new()
-    Attributes::set(gdpr_attrs, "gdpr.right", StringValue(right_name))
-    Attributes::set(gdpr_attrs, "request.type", StringValue(request_type))
-    Attributes::set(gdpr_attrs, "compliance.region", StringValue("EU"))
-    Attributes::set(gdpr_attrs, "data.processing.lawful.basis", StringValue("consent"))
-    Attributes::set(gdpr_attrs, "retention.period", StringValue("7.years"))
-    
-    // Log GDPR operation
-    let gdpr_log = LogRecord::new_with_context(
-      Info,
-      Some("GDPR compliance operation: " + right_name),
-      Some(gdpr_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(gdpr_span.span_context)),
-      Some(SpanContext::span_id(gdpr_span.span_context)),
-      None
-    )
-    Logger::emit(logger, gdpr_log)
-    
-    // Add GDPR compliance events
-    Span::add_event(gdpr_span, "gdpr.request.received", None)
-    Span::add_event(gdpr_span, "identity.verified", None)
-    Span::add_event(gdpr_span, "data.located", None)
-    Span::add_event(gdpr_span, "compliance.check.completed", None)
-    
-    Span::set_status(gdpr_span, Ok, Some("GDPR compliance verified"))
-    Span::end(gdpr_span)
-  }
+  let access_control = AccessControl::new(access_policies)
+  TracerProvider::set_access_control(tracer_provider, access_control)
   
-  // Test consent management
-  let consent_span = Tracer::start_span(tracer, "consent.management")
+  // 测试不同角色的访问权限
+  let admin_context = SecurityContext::new("admin-user", ["admin-role"])
+  let analyst_context = SecurityContext::new("analyst-user", ["analyst-role"])
+  let service_context = SecurityContext::new("service-account", ["service-role"])
   
-  let consent_attrs = Attributes::new()
-  Attributes::set(consent_attrs, "consent.id", StringValue("consent_12345"))
-  Attributes::set(consent_attrs, "consent.type", StringValue("explicit"))
-  Attributes::set(consent.attrs, "consent.status", StringValue("active"))
-  Attributes::set(consent_attrs, "consent.purpose", StringValue("analytics"))
-  Attributes::set(consent_attrs, "consent.granted", StringValue("2024-01-01T00:00:00Z"))
-  Attributes::set(consent_attrs, "consent.expires", StringValue("2025-01-01T00:00:00Z"))
+  // 测试管理员权限
+  let admin_can_read_spans = AccessControl::can_read(access_control, admin_context, "spans")
+  let admin_can_delete_config = AccessControl::can_delete(access_control, admin_context, "config")
+  assert_true(admin_can_read_spans)
+  assert_true(admin_can_delete_config)
   
-  let consent_log = LogRecord::new_with_context(
-    Info,
-    Some("Consent management operation completed"),
-    Some(consent_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(consent_span.span_context)),
-    Some(SpanContext::span_id(consent_span.span_context)),
-    None
-  )
-  Logger::emit(logger, consent_log)
+  // 测试分析师权限
+  let analyst_can_read_spans = AccessControl::can_read(access_control, analyst_context, "spans")
+  let analyst_can_write_spans = AccessControl::can_write(access_control, analyst_context, "spans")
+  let analyst_can_read_logs = AccessControl::can_read(access_control, analyst_context, "logs")
   
-  Span::add_event(consent_span, "consent.recorded", None)
-  Span::add_event(consent_span, "consent.audit.logged", None)
+  assert_true(analyst_can_read_spans)
+  assert_false(analyst_can_write_spans)
+  assert_false(analyst_can_read_logs)
   
-  Span::set_status(consent_span, Ok, Some("Consent managed"))
-  Span::end(consent_span)
+  // 测试服务账户权限
+  let service_can_write_spans = AccessControl::can_write(access_control, service_context, "spans")
+  let service_can_read_metrics = AccessControl::can_read(access_control, service_context, "metrics")
+  let service_can_configure = AccessControl::can_configure(access_control, service_context, "config")
   
-  // Verify GDPR compliance
-  assert_true(true)
+  assert_true(service_can_write_spans)
+  assert_false(service_can_read_metrics)
+  assert_false(service_can_configure)
 }
 
-test "audit_logging_and_traceability" {
-  // Test comprehensive audit logging and traceability
+test "data_retention_and_purging" {
+  // 测试数据保留和清理策略
+  let meter_provider = MeterProvider::default()
   
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "audit-logging-service")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "audit-logging-logger")
-  
-  // Create audit scenarios
-  let audit_scenarios = [
-    ("user.login", "authentication.success"),
-    ("data.access", "sensitive.data.viewed"),
-    ("permission.change", "authorization.modified"),
-    ("config.update", "system.configuration.changed"),
-    ("export.request", "data.export.initiated"),
-    ("admin.action", "privileged.operation.executed")
+  // 配置数据保留策略
+  let retention_policies = [
+    RetentionPolicy::new("spans", 30, Some(DAYS)),      // 30天
+    RetentionPolicy::new("metrics", 90, Some(DAYS)),    // 90天
+    RetentionPolicy::new("logs", 7, Some(DAYS)),        // 7天
+    RetentionPolicy::new("debug", 1, Some(DAYS))        // 1天
   ]
   
-  for (audit_type, audit_action) in audit_scenarios {
-    let audit_span = Tracer::start_span(tracer, "audit." + audit_type.replace(".", "_"))
-    
-    // Create comprehensive audit attributes
-    let audit_attrs = Attributes::new()
-    Attributes::set(audit_attrs, "audit.type", StringValue(audit_type))
-    Attributes::set(audit_attrs, "audit.action", StringValue(audit_action))
-    Attributes::set(audit_attrs, "audit.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
-    Attributes::set(audit_attrs, "audit.user", StringValue("user_audit_123"))
-    Attributes::set(audit_attrs, "audit.session", StringValue("session_audit_456"))
-    Attributes::set(audit_attrs, "audit.source.ip", StringValue("10.0.0.100"))
-    Attributes::set(audit_attrs, "audit.user.agent", StringValue("AuditClient/1.0"))
-    Attributes::set(audit_attrs, "audit.result", StringValue("success"))
-    Attributes::set(audit_attrs, "audit.risk.level", StringValue("low"))
-    Attributes::set(audit_attrs, "audit.compliance", StringValue("sox.gdpr.hipaa"))
-    
-    // Create detailed audit log
-    let audit_log = LogRecord::new_with_context(
-      Info,
-      Some("Audit event: " + audit_type + " - " + audit_action),
-      Some(audit_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(audit_span.span_context)),
-      Some(SpanContext::span_id(audit_span.span_context)),
-      None
-    )
-    Logger::emit(logger, audit_log)
-    
-    // Add audit trail events
-    Span::add_event(audit_span, "audit.event.started", None)
-    Span::add_event(audit_span, "audit.authorization.checked", None)
-    Span::add_event(audit_span, "audit.action.executed", None)
-    Span::add_event(audit_span, "audit.result.recorded", None)
-    Span::add_event(audit_span, "audit.trail.created", None)
-    
-    Span::set_status(audit_span, Ok, Some("Audit completed"))
-    Span::end(audit_span)
-  }
+  let retention_manager = RetentionManager::new(retention_policies)
+  MeterProvider::set_retention_manager(meter_provider, retention_manager)
   
-  // Test audit log integrity
-  let integrity_span = Tracer::start_span(tracer, "audit.integrity.verification")
+  // 创建不同时间的数据
+  let current_time = Clock::now_unix_nanos(Clock::system())
+  let day_in_nanos = 24 * 60 * 60 * 1000000000L
   
-  let integrity_attrs = Attributes::new()
-  Attributes::set(integrity_attrs, "integrity.check", StringValue("cryptographic.hash"))
-  Attributes::set(integrity_attrs, "hash.algorithm", StringValue("SHA-256"))
-  Attributes::set(integrity_attrs, "integrity.status", StringValue("verified"))
-  Attributes::set(integrity_attrs, "tamper.evidence", StringValue("none"))
+  // 模拟老数据（40天前）
+  let old_span_time = current_time - (40 * day_in_nanos)
+  let old_span = create_test_span_with_timestamp("old-span", old_span_time)
   
-  let integrity_log = LogRecord::new_with_context(
-    Info,
-    Some("Audit log integrity verification completed"),
-    Some(integrity_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(integrity_span.span_context)),
-    Some(SpanContext::span_id(integrity_span.span_context)),
-    None
-  )
-  Logger::emit(logger, integrity_log)
+  // 模拟较新的数据（10天前）
+  let recent_span_time = current_time - (10 * day_in_nanos)
+  let recent_span = create_test_span_with_timestamp("recent-span", recent_span_time)
   
-  Span::add_event(integrity_span, "integrity.hash.generated", None)
-  Span::add_event(integrity_span, "integrity.signature.verified", None)
+  // 模拟非常老的日志数据（8天前）
+  let old_log_time = current_time - (8 * day_in_nanos)
+  let old_log = create_test_log_with_timestamp("old-log", old_log_time)
   
-  Span::set_status(integrity_span, Ok, Some("Integrity verified"))
-  Span::end(integrity_span)
+  // 执行数据清理
+  let purge_result = RetentionManager::purge_expired_data(retention_manager, current_time)
   
-  // Verify audit logging and traceability
-  assert_true(true)
+  // 验证清理结果
+  assert_true(purge_result.spans_purged > 0)  // 老的Span应该被清理
+  assert_true(purge_result.logs_purged > 0)   // 老的日志应该被清理
+  assert_eq(purge_result.metrics_purged, 0)   // 度量数据应该还在保留期内
+  
+  // 验证数据确实被清理
+  let old_span_exists = check_span_exists(old_span)
+  let recent_span_exists = check_span_exists(recent_span)
+  let old_log_exists = check_log_exists(old_log)
+  
+  assert_false(old_span_exists)     // 老Span应该不存在
+  assert_true(recent_span_exists)   // 新Span应该存在
+  assert_false(old_log_exists)      // 老日志应该不存在
 }
 
-test "security_incident_response" {
-  // Test security incident response and handling
+test "audit_logging_and_compliance" {
+  // 测试审计日志和合规性
+  let tracer_provider = TracerProvider::default()
+  let audit_logger = AuditLogger::new()
   
-  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "security-incident-service")
-  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "security-incident-logger")
+  // 配置审计策略
+  let audit_config = AuditConfig::new(
+    [READ_SENSITIVE, WRITE_CONFIG, DELETE_DATA, ACCESS_DENIED],
+    Some(true),  // include_user_context
+    Some(true),  // include_timestamp
+    Some(true),  // include_ip_address
+    Some(365)    // retain_audit_logs_days
+  )
   
-  // Create security incident scenarios
-  let incident_scenarios = [
-    ("suspicious.login", "potential.breach"),
-    ("data.exfiltration", "security.breach"),
-    ("unauthorized.access", "security.violation"),
-    ("malware.detected", "security.threat"),
-    ("ddos.attack", "service.denial"),
-    ("credential.leak", "security.incident")
-  ]
+  AuditLogger::configure(audit_logger, audit_config)
   
-  for (incident_type, incident_category) in incident_scenarios {
-    let incident_span = Tracer::start_span(tracer, "security.incident." + incident_type.replace(".", "_"))
-    
-    // Create incident attributes
-    let incident_attrs = Attributes::new()
-    Attributes::set(incident_attrs, "incident.type", StringValue(incident_type))
-    Attributes::set(incident_attrs, "incident.category", StringValue(incident_category))
-    Attributes::set(incident_attrs, "incident.severity", StringValue("high"))
-    Attributes::set(incident_attrs, "incident.status", StringValue("investigating"))
-    Attributes::set(incident_attrs, "incident.id", StringValue("INC-" + Clock::now_unix_nanos(Clock::system()).to_string()))
-    Attributes::set(incident_attrs, "incident.source", StringValue("security.monitoring"))
-    Attributes::set(incident_attrs, "incident.affected.systems", StringValue("auth.service,user.database"))
-    Attributes::set(incident_attrs, "incident.response.team", StringValue("CSIRT"))
-    
-    // Log incident detection
-    let incident_log = LogRecord::new_with_context(
-      Error,
-      Some("Security incident detected: " + incident_type),
-      Some(incident_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(incident_span.span_context)),
-      Some(SpanContext::span_id(incident_span.span_context)),
-      None
-    )
-    Logger::emit(logger, incident_log)
-    
-    // Incident response phases
-    let response_phases = [
-      ("incident.detected", "security.alert.triggered"),
-      ("initial.assessment", "impact.evaluation.started"),
-      ("containment.initiated", "isolation.measures.applied"),
-      ("investigation.started", "forensic.analysis.begun"),
-      ("remediation.in.progress", "security.controls.enhanced"),
-      ("recovery.initiated", "systems.being.restored"),
-      ("post.incident.review", "lessons.learned.documented")
-    ]
-    
-    for (phase, action) in response_phases {
-      Span::add_event(incident_span, "incident.phase." + phase.replace(".", "_"), None)
-      
-      let phase_attrs = Attributes::new()
-      Attributes::set(phase_attrs, "incident.phase", StringValue(phase))
-      Attributes::set(phase_attrs, "incident.action", StringValue(action))
-      Attributes::set(phase_attrs, "incident.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
-      
-      let phase_log = LogRecord::new_with_context(
-        Warn,
-        Some("Security incident phase: " + phase),
-        Some(phase_attrs),
-        Some(Clock::now_unix_nanos(Clock::system())),
-        None,
-        Some(SpanContext::trace_id(incident_span.span_context)),
-        Some(SpanContext::span_id(incident_span.span_context)),
-        None
-      )
-      Logger::emit(logger, phase_log)
-    }
-    
-    // Update final incident status
-    let final_attrs = Attributes::new()
-    Attributes::set(final_attrs, "incident.type", StringValue(incident_type))
-    Attributes::set(final_attrs, "incident.status", StringValue("resolved"))
-    Attributes::set(final_attrs, "incident.duration", IntValue(3600))
-    Attributes::set(final_attrs, "incident.impact", StringValue("minimal"))
-    
-    let resolution_log = LogRecord::new_with_context(
-      Info,
-      Some("Security incident resolved: " + incident_type),
-      Some(final_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(incident_span.span_context)),
-      Some(SpanContext::span_id(incident_span.span_context)),
-      None
-    )
-    Logger::emit(logger, resolution_log)
-    
-    Span::set_status(incident_span, Ok, Some("Incident resolved"))
-    Span::end(incident_span)
-  }
+  // 模拟各种需要审计的操作
+  let admin_context = SecurityContext::new("admin-user", ["admin-role"])
+  let user_context = SecurityContext::new("regular-user", ["user-role"])
   
-  // Verify security incident response
-  assert_true(true)
+  // 审计敏感数据访问
+  let sensitive_data_access = AuditEvent::new(
+    READ_SENSITIVE,
+    admin_context,
+    "spans",
+    Some("Accessed sensitive span data for user_12345"),
+    Some("192.168.1.100")
+  )
+  AuditLogger::log_event(audit_logger, sensitive_data_access)
+  
+  // 审计配置修改
+  let config_change = AuditEvent::new(
+    WRITE_CONFIG,
+    admin_context,
+    "tracer_config",
+    Some("Modified sampling rate from 0.1 to 0.05"),
+    Some("192.168.1.100")
+  )
+  AuditLogger::log_event(audit_logger, config_change)
+  
+  // 审计访问拒绝
+  let access_denied = AuditEvent::new(
+    ACCESS_DENIED,
+    user_context,
+    "admin_config",
+    Some("Attempted to access admin configuration without permission"),
+    Some("192.168.1.101")
+  )
+  AuditLogger::log_event(audit_logger, access_denied)
+  
+  // 验证审计日志
+  let audit_logs = AuditLogger::get_logs(audit_logger, 100)  # 获取最近100条审计日志
+  assert_true(audit_logs.length >= 3)
+  
+  // 验证审计日志内容
+  let has_sensitive_access = audit_logs.any(fn(log) {
+    log.event_type == READ_SENSITIVE && log.user_id == "admin-user"
+  })
+  let has_config_change = audit_logs.any(fn(log) {
+    log.event_type == WRITE_CONFIG && log.resource_type == "tracer_config"
+  })
+  let has_access_denied = audit_logs.any(fn(log) {
+    log.event_type == ACCESS_DENIED && log.user_id == "regular-user"
+  })
+  
+  assert_true(has_sensitive_access)
+  assert_true(has_config_change)
+  assert_true(has_access_denied)
+}
+
+test "gdpr_data_subject_rights" {
+  // 测试GDPR数据主体权利
+  let data_protection_manager = DataProtectionManager::new()
+  
+  // 创建测试用户数据
+  let user_id = "gdpr-test-user-12345"
+  let user_telemetry_data = create_user_telemetry_data(user_id, [
+    ("spans", create_test_spans_for_user(user_id, 50)),
+    ("metrics", create_test_metrics_for_user(user_id, 25)),
+    ("logs", create_test_logs_for_user(user_id, 100))
+  ])
+  
+  // 验证数据存在
+  let data_exists_before = DataProtectionManager::user_data_exists(data_protection_manager, user_id)
+  assert_true(data_exists_before)
+  
+  // 测试数据可携带性（Right to Data Portability）
+  let portable_data = DataProtectionManager::export_user_data(data_protection_manager, user_id)
+  assert_true(portable_data.is_some)
+  
+  let exported_data = portable_data.unwrap()
+  assert_true(exported_data.spans.length > 0)
+  assert_true(exported_data.metrics.length > 0)
+  assert_true(exported_data.logs.length > 0)
+  
+  // 验证导出格式符合标准（JSON格式，包含必要字段）
+  let export_is_valid_json = is_valid_json(exported_data.to_json())
+  assert_true(export_is_valid_json)
+  
+  let contains_required_fields = exported_data.to_json().contains("user_id") &&
+                                 exported_data.to_json().contains("export_timestamp") &&
+                                 exported_data.to_json().contains("data_types")
+  assert_true(contains_required_fields)
+  
+  // 测试被遗忘权（Right to be Forgotten）
+  let deletion_request = DataDeletionRequest::new(
+    user_id,
+    "User requested data deletion under GDPR Article 17",
+    Some("gdpr-request-12345")
+  )
+  
+  let deletion_result = DataProtectionManager::delete_user_data(data_protection_manager, deletion_request)
+  assert_true(deletion_result.success)
+  assert_eq(deletion_result.records_deleted, 175)  # 50 + 25 + 100
+  
+  // 验证数据已被删除
+  let data_exists_after = DataProtectionManager::user_data_exists(data_protection_manager, user_id)
+  assert_false(data_exists_after)
+  
+  // 测试删除确认
+  let deletion_confirmation = DataProtectionManager::get_deletion_confirmation(data_protection_manager, "gdpr-request-12345")
+  assert_true(deletion_confirmation.is_some)
+  
+  let confirmation = deletion_confirmation.unwrap()
+  assert_eq(confirmation.user_id, user_id)
+  assert_eq(confirmation.request_id, "gdpr-request-12345")
+  assert_true(confirmation.deletion_timestamp > 0L)
+}
+
+test "secure_communication_channels" {
+  // 测试安全通信通道
+  let tracer_provider = TracerProvider::default()
+  
+  // 配置安全通信设置
+  let tls_config = TLSConfig::new(
+    Some("/path/to/ca.crt"),
+    Some("/path/to/client.crt"),
+    Some("/path/to/client.key"),
+    Some("TLSv1.3"),
+    Some(true)  // verify_certificates
+  )
+  
+  let communication_config = SecureCommunicationConfig::new(
+    Some(tls_config),
+    Some(true),  // enable_mutual_tls
+    Some("AES-256-GCM"),  // encryption_algorithm
+    Some(3600)  # session_timeout_seconds
+  )
+  
+  TracerProvider::set_secure_communication(tracer_provider, communication_config)
+  
+  // 测试安全连接建立
+  let secure_client = SecureClient::new(communication_config)
+  let connection_result = SecureClient::connect(secure_client, "telemetry.example.com", 4317)
+  
+  assert_true(connection_result.success)
+  assert_true(connection_result.encrypted)
+  assert_true(connection_result.verified)
+  
+  // 测试数据传输加密
+  let test_data = "sensitive telemetry data to be encrypted"
+  let encrypted_data = SecureClient::encrypt(secure_client, test_data)
+  assert_not_eq(encrypted_data, test_data)
+  assert_true(encrypted_data.length > 0)
+  
+  // 测试数据解密
+  let decrypted_data = SecureClient::decrypt(secure_client, encrypted_data)
+  assert_eq(decrypted_data, test_data)
+  
+  // 测试证书验证
+  let certificate_validation = SecureClient::validate_certificate(secure_client, "/path/to/server.crt")
+  assert_true(certificate_validation.is_valid)
+  assert_true(certificate_validation.not_expired)
+  assert_true(certificate_validation.trusted)
+  
+  // 测试会话管理
+  let session_id = SecureClient::get_session_id(secure_client)
+  assert_true(session_id.length > 0)
+  
+  let session_is_active = SecureClient::is_session_active(secure_client)
+  assert_true(session_is_active)
+  
+  // 测试会话超时
+  SecureClient::simulate_session_timeout(secure_client)
+  let session_active_after_timeout = SecureClient::is_session_active(secure_client)
+  assert_false(session_active_after_timeout)
+  
+  // 测试会话恢复
+  let session_recovery = SecureClient::recover_session(secure_client)
+  assert_true(session_recovery.success)
 }
