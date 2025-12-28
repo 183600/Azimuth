@@ -92,7 +92,21 @@
         }
       },
       "wbtest-files": {},
-      "test-files": {},
+      "test-files": {
+        "/home/runner/work/Azimuth/Azimuth/practical_test/simple_practical_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        }
+      },
       "mbt-md-files": {},
       "deps": [],
       "wbtest-deps": [],
