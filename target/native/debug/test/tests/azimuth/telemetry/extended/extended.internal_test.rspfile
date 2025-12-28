@@ -1,0 +1,9 @@
+-I/home/runner/.moon/include
+-L/home/runner/.moon/lib
+-g
+-DMOONBIT_NATIVE_NO_SYS_HEADER
+-fPIC
+-DMOONBIT_USE_SHARED_RUNTIME
+/home/runner/work/Azimuth/Azimuth/target/native/debug/test/libruntime.so
+-run
+/home/runner/work/Azimuth/Azimuth/target/native/debug/test/tests/azimuth/telemetry/extended/extended.internal_test.c
