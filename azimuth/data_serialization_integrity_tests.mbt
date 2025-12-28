@@ -13,51 +13,51 @@ test "attribute_value_serialization_roundtrip" {
   // Test type preservation after operations
   match string_val {
     StringValue(s) => {
-      @assertion.assert_eq(s, "test_string_with_special_chars_!@#$%^&*()")?
-      @assertion.assert_eq(s.length, 39)?
+      assert_eq(s, "test_string_with_special_chars_!@#$%^&*()")
+      assert_eq(s.length, 39)
     }
-    _ => @test.fail("Expected StringValue")?
+    _ => @test.fail("Expected StringValue")
   }
   
   match int_val {
     IntValue(i) => {
-      @assertion.assert_eq(i, 2147483647)?
-      @assertion.assert_true(i > 0)?
+      assert_eq(i, 2147483647)
+      @assertion.assert_true(i > 0)
     }
-    _ => @test.fail("Expected IntValue")?
+    _ => @test.fail("Expected IntValue")
   }
   
   match float_val {
     FloatValue(f) => {
-      @assertion.assert_eq(f, 3.14159265359)?
-      @assertion.assert_true(f > 3.0)?
-      @assertion.assert_true(f < 4.0)?
+      assert_eq(f, 3.14159265359)
+      @assertion.assert_true(f > 3.0)
+      @assertion.assert_true(f < 4.0)
     }
-    _ => @test.fail("Expected FloatValue")?
+    _ => @test.fail("Expected FloatValue")
   }
   
   match bool_val {
-    BoolValue(b) => @assertion.assert_eq(b, true)?
-    _ => @test.fail("Expected BoolValue")?
+    BoolValue(b) => assert_eq(b, true)
+    _ => @test.fail("Expected BoolValue")
   }
   
   match array_string_val {
     ArrayStringValue(arr) => {
-      @assertion.assert_eq(arr.length, 3)?
-      @assertion.assert_eq(arr[0], "item1")?
-      @assertion.assert_eq(arr[1], "item2")?
-      @assertion.assert_eq(arr[2], "item3")?
+      assert_eq(arr.length, 3)
+      assert_eq(arr[0], "item1")
+      assert_eq(arr[1], "item2")
+      assert_eq(arr[2], "item3")
     }
-    _ => @test.fail("Expected ArrayStringValue")?
+    _ => @test.fail("Expected ArrayStringValue")
   }
   
   match array_int_val {
     ArrayIntValue(arr) => {
-      @assertion.assert_eq(arr.length, 5)?
-      @assertion.assert_eq(arr[0], 1)?
-      @assertion.assert_eq(arr[4], 5)?
+      assert_eq(arr.length, 5)
+      assert_eq(arr[0], 1)
+      assert_eq(arr[4], 5)
     }
-    _ => @test.fail("Expected ArrayIntValue")?
+    _ => @test.fail("Expected ArrayIntValue")
   }
 }
 
@@ -70,22 +70,22 @@ test "span_context_data_integrity" {
   let span_ctx = SpanContext::new(original_trace_id, original_span_id, true, original_trace_state)
   
   // Verify data integrity
-  @assertion.assert_eq(SpanContext::trace_id(span_ctx), original_trace_id)?
-  @assertion.assert_eq(SpanContext::span_id(span_ctx), original_span_id)?
-  @assertion.assert_eq(SpanContext::is_sampled(span_ctx), true)?
-  @assertion.assert_eq(SpanContext::is_valid(span_ctx), true)?
+  assert_eq(SpanContext::trace_id(span_ctx), original_trace_id)
+  assert_eq(SpanContext::span_id(span_ctx), original_span_id)
+  assert_eq(SpanContext::is_sampled(span_ctx), true)
+  assert_eq(SpanContext::is_valid(span_ctx), true)
   
   // Test with invalid data
   let invalid_ctx = SpanContext::new("", "", false, "")
-  @assertion.assert_eq(SpanContext::is_valid(invalid_ctx), false)?
-  @assertion.assert_eq(SpanContext::is_sampled(invalid_ctx), false)?
+  assert_eq(SpanContext::is_valid(invalid_ctx), false)
+  assert_eq(SpanContext::is_sampled(invalid_ctx), false)
   
   // Test edge cases
   let min_valid_ctx = SpanContext::new("1", "1", true, "")
-  @assertion.assert_eq(SpanContext::is_valid(min_valid_ctx), true)?
+  assert_eq(SpanContext::is_valid(min_valid_ctx), true)
   
   let special_chars_ctx = SpanContext::new("trace_id_with_123", "span_id_with_456", true, "state=with_special_chars")
-  @assertion.assert_eq(SpanContext::is_valid(special_chars_ctx), true)?
+  assert_eq(SpanContext::is_valid(special_chars_ctx), true)
 }
 
 test "context_data_integrity_chain" {
@@ -104,26 +104,26 @@ test "context_data_integrity_chain" {
   let ctx4 = Context::with_value(ctx3, key4, "value4")
   
   // Verify data integrity through the chain
-  @assertion.assert_eq(Context::get(ctx1, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx1, key2), None)?
+  assert_eq(Context::get(ctx1, key1), Some("value1"))
+  assert_eq(Context::get(ctx1, key2), None)
   
-  @assertion.assert_eq(Context::get(ctx2, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx2, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx2, key3), None)?
+  assert_eq(Context::get(ctx2, key1), Some("value1"))
+  assert_eq(Context::get(ctx2, key2), Some("value2"))
+  assert_eq(Context::get(ctx2, key3), None)
   
-  @assertion.assert_eq(Context::get(ctx3, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx3, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx3, key3), Some("value3"))?
-  @assertion.assert_eq(Context::get(ctx3, key4), None)?
+  assert_eq(Context::get(ctx3, key1), Some("value1"))
+  assert_eq(Context::get(ctx3, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key3), Some("value3"))
+  assert_eq(Context::get(ctx3, key4), None)
   
-  @assertion.assert_eq(Context::get(ctx4, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx4, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx4, key3), Some("value3"))?
-  @assertion.assert_eq(Context::get(ctx4, key4), Some("value4"))?
+  assert_eq(Context::get(ctx4, key1), Some("value1"))
+  assert_eq(Context::get(ctx4, key2), Some("value2"))
+  assert_eq(Context::get(ctx4, key3), Some("value3"))
+  assert_eq(Context::get(ctx4, key4), Some("value4"))
   
   // Test isolation - different keys should not interfere
   let different_key = ContextKey::new("different.key")
-  @assertion.assert_eq(Context::get(ctx4, different_key), None)?
+  assert_eq(Context::get(ctx4, different_key), None)
 }
 
 test "resource_attribute_data_integrity" {
@@ -142,35 +142,35 @@ test "resource_attribute_data_integrity" {
   let resource_with_attrs = Resource::with_attributes(resource, complex_attributes)
   
   // Verify all attributes are stored correctly
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "string.attribute"),
     Some(StringValue("complex_string_value_123"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "integer.attribute"),
     Some(IntValue(42))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "float.attribute"),
     None // Based on mock implementation
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "boolean.attribute"),
     None // Based on mock implementation
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "array.string"),
     None // Based on mock implementation
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "array.int"),
     None // Based on mock implementation
-  )?
+  )
   
   // Test resource merging integrity
   let override_attrs = [
@@ -181,15 +181,15 @@ test "resource_attribute_data_integrity" {
   let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
   let merged_resource = Resource::merge(resource_with_attrs, override_resource)
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged_resource, "override.attribute"),
     Some(StringValue("override_value"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged_resource, "string.attribute"),
     Some(StringValue("overridden_value"))
-  )?
+  )
 }
 
 test "baggage_data_integrity" {
@@ -203,26 +203,26 @@ test "baggage_data_integrity" {
   let baggage4 = Baggage::set_entry(baggage3, "tenant.id", "tenant456")
   
   // Verify all entries are accessible
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "user.id"), Some("user12345"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "session.id"), Some("sessionabcdef"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "request.id"), Some("req789xyz"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "tenant.id"), Some("tenant456"))?
+  assert_eq(Baggage::get_entry(baggage4, "user.id"), Some("user12345"))
+  assert_eq(Baggage::get_entry(baggage4, "session.id"), Some("sessionabcdef"))
+  assert_eq(Baggage::get_entry(baggage4, "request.id"), Some("req789xyz"))
+  assert_eq(Baggage::get_entry(baggage4, "tenant.id"), Some("tenant456"))
   
   // Test non-existent entries
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "nonexistent"), None)?
+  assert_eq(Baggage::get_entry(baggage4, "nonexistent"), None)
   
   // Test removal operations
   let baggage_after_removal = Baggage::remove_entry(baggage4, "session.id")
   
   // Verify removal doesn't affect other entries (based on mock implementation)
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("user12345"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "session.id"), Some("sessionabcdef"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "request.id"), Some("req789xyz"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "tenant.id"), Some("tenant456"))?
+  assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("user12345"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "session.id"), Some("sessionabcdef"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "request.id"), Some("req789xyz"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "tenant.id"), Some("tenant456"))
   
   // Test special characters in baggage values
   let special_baggage = Baggage::set_entry(baggage, "special.key", "value_with_special_chars_!@#$%^&*()")
-  @assertion.assert_eq(Baggage::get_entry(special_baggage, "special.key"), Some("value_with_special_chars_!@#$%^&*()"))?
+  assert_eq(Baggage::get_entry(special_baggage, "special.key"), Some("value_with_special_chars_!@#$%^&*()"))
 }
 
 test "log_record_data_integrity" {
@@ -244,10 +244,10 @@ test "log_record_data_integrity" {
   )
   
   // Verify all log record components
-  @assertion.assert_eq(LogRecord::severity_number(complex_log), Error)?
-  @assertion.assert_eq(LogRecord::body(complex_log), Some("Complex error message with details: Failed to process request due to validation error"))?
-  @assertion.assert_eq(LogRecord::trace_id(complex_log), Some("trace123456789"))?
-  @assertion.assert_eq(LogRecord::span_id(complex_log), Some("span987654321"))?
+  assert_eq(LogRecord::severity_number(complex_log), Error)
+  assert_eq(LogRecord::body(complex_log), Some("Complex error message with details: Failed to process request due to validation error"))
+  assert_eq(LogRecord::trace_id(complex_log), Some("trace123456789"))
+  assert_eq(LogRecord::span_id(complex_log), Some("span987654321"))
   
   // Test with different severity levels
   let trace_log = LogRecord::new(Trace, "Trace message")
@@ -256,17 +256,17 @@ test "log_record_data_integrity" {
   let warn_log = LogRecord::new(Warn, "Warning message")
   let fatal_log = LogRecord::new(Fatal, "Fatal error message")
   
-  @assertion.assert_eq(LogRecord::severity_number(trace_log), Trace)?
-  @assertion.assert_eq(LogRecord::severity_number(debug_log), Debug)?
-  @assertion.assert_eq(LogRecord::severity_number(info_log), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(warn_log), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(fatal_log), Fatal)?
+  assert_eq(LogRecord::severity_number(trace_log), Trace)
+  assert_eq(LogRecord::severity_number(debug_log), Debug)
+  assert_eq(LogRecord::severity_number(info_log), Info)
+  assert_eq(LogRecord::severity_number(warn_log), Warn)
+  assert_eq(LogRecord::severity_number(fatal_log), Fatal)
   
-  @assertion.assert_eq(LogRecord::body(trace_log), Some("Trace message"))?
-  @assertion.assert_eq(LogRecord::body(debug_log), Some("Debug message"))?
-  @assertion.assert_eq(LogRecord::body(info_log), Some("Info message"))?
-  @assertion.assert_eq(LogRecord::body(warn_log), Some("Warning message"))?
-  @assertion.assert_eq(LogRecord::body(fatal_log), Some("Fatal error message"))?
+  assert_eq(LogRecord::body(trace_log), Some("Trace message"))
+  assert_eq(LogRecord::body(debug_log), Some("Debug message"))
+  assert_eq(LogRecord::body(info_log), Some("Info message"))
+  assert_eq(LogRecord::body(warn_log), Some("Warning message"))
+  assert_eq(LogRecord::body(fatal_log), Some("Fatal error message"))
 }
 
 test "http_data_integrity" {
@@ -284,9 +284,9 @@ test "http_data_integrity" {
   let request = HttpRequest::new("POST", "https://api.example.com/telemetry/data", request_headers, Some(request_body))
   
   // Verify request integrity
-  @assertion.assert_eq(HttpRequest::http_method(request), "POST")?
-  @assertion.assert_eq(HttpRequest::url(request), "https://api.example.com/telemetry/data")?
-  @assertion.assert_eq(HttpRequest::body(request), Some(request_body))?
+  assert_eq(HttpRequest::http_method(request), "POST")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/telemetry/data")
+  assert_eq(HttpRequest::body(request), Some(request_body))
   
   let response_headers = [
     ("Content-Type", "application/json"),
@@ -300,17 +300,17 @@ test "http_data_integrity" {
   let response = HttpResponse::new(200, response_headers, Some(response_body))
   
   // Verify response integrity
-  @assertion.assert_eq(HttpResponse::status_code(response), 200)?
-  @assertion.assert_eq(HttpResponse::body(response), Some(response_body))?
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::body(response), Some(response_body))
   
   // Test with different status codes
   let not_found_response = HttpResponse::new(404, [], Some("Not Found"))
   let server_error_response = HttpResponse::new(500, [], Some("Internal Server Error"))
   
-  @assertion.assert_eq(HttpResponse::status_code(not_found_response), 404)?
-  @assertion.assert_eq(HttpResponse::body(not_found_response), Some("Not Found"))?
-  @assertion.assert_eq(HttpResponse::status_code(server_error_response), 500)?
-  @assertion.assert_eq(HttpResponse::body(server_error_response), Some("Internal Server Error"))?
+  assert_eq(HttpResponse::status_code(not_found_response), 404)
+  assert_eq(HttpResponse::body(not_found_response), Some("Not Found"))
+  assert_eq(HttpResponse::status_code(server_error_response), 500)
+  assert_eq(HttpResponse::body(server_error_response), Some("Internal Server Error"))
 }
 
 test "propagation_data_integrity" {
@@ -335,21 +335,21 @@ test "propagation_data_integrity" {
   
   // Verify injected data
   let injected_trace = TextMapCarrier::get(carrier, "traceparent")
-  @assertion.assert_eq(injected_trace, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(injected_trace, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   // Test extraction
   let extracted_ctx = CompositePropagator::extract(composite, carrier)
   
   // Verify extracted data
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
   
   // Test multiple injection/extraction cycles
   for i = 0; i < 5; i = i + 1 {
     let temp_carrier = TextMapCarrier::new()
     CompositePropagator::inject(composite, ctx, temp_carrier)
     let temp_extracted = CompositePropagator::extract(composite, temp_carrier)
-    @assertion.assert_eq(Context::get(temp_extracted, extracted_key), Some("true"))?
+    assert_eq(Context::get(temp_extracted, extracted_key), Some("true"))
   }
 }
 
@@ -395,26 +395,26 @@ test "complex_nested_data_integrity" {
   )
   
   // Verify all nested data integrity
-  @assertion.assert_eq(Attributes::get(attrs, "nested.level1"), Some(StringValue("level1_value")))?
-  @assertion.assert_eq(Attributes::get(attrs, "nested.level2"), Some(IntValue(42)))?
+  assert_eq(Attributes::get(attrs, "nested.level1"), Some(StringValue("level1_value")))
+  assert_eq(Attributes::get(attrs, "nested.level2"), Some(IntValue(42)))
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource, "resource.nested"),
     Some(StringValue("resource_value"))
-  )?
+  )
   
-  @assertion.assert_eq(Baggage::get_entry(baggage, "baggage.nested1"), Some("baggage_value1"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage, "baggage.nested2"), Some("baggage_value2"))?
+  assert_eq(Baggage::get_entry(baggage, "baggage.nested1"), Some("baggage_value1"))
+  assert_eq(Baggage::get_entry(baggage, "baggage.nested2"), Some("baggage_value2"))
   
-  @assertion.assert_eq(Context::get(ctx, ContextKey::new("ctx.nested1")), Some("ctx_value1"))?
-  @assertion.assert_eq(Context::get(ctx, ContextKey::new("ctx.nested2")), Some("ctx_value2"))?
+  assert_eq(Context::get(ctx, ContextKey::new("ctx.nested1")), Some("ctx_value1"))
+  assert_eq(Context::get(ctx, ContextKey::new("ctx.nested2")), Some("ctx_value2"))
   
-  @assertion.assert_eq(SpanContext::trace_id(span_ctx), "trace123")?
-  @assertion.assert_eq(SpanContext::span_id(span_ctx), "span456")?
-  @assertion.assert_eq(SpanContext::is_sampled(span_ctx), true)?
+  assert_eq(SpanContext::trace_id(span_ctx), "trace123")
+  assert_eq(SpanContext::span_id(span_ctx), "span456")
+  assert_eq(SpanContext::is_sampled(span_ctx), true)
   
-  @assertion.assert_eq(LogRecord::severity_number(log), Warn)?
-  @assertion.assert_eq(LogRecord::body(log), Some("Nested data integrity test"))?
-  @assertion.assert_eq(LogRecord::trace_id(log), Some("trace123"))?
-  @assertion.assert_eq(LogRecord::span_id(log), Some("span456"))?
+  assert_eq(LogRecord::severity_number(log), Warn)
+  assert_eq(LogRecord::body(log), Some("Nested data integrity test"))
+  assert_eq(LogRecord::trace_id(log), Some("trace123"))
+  assert_eq(LogRecord::span_id(log), Some("span456"))
 }

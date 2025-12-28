@@ -11,11 +11,11 @@ test "attribute_value_serialization_integrity" {
   match original_string {
     StringValue(s) => {
       match string_after_roundtrip {
-        StringValue(s2) => @assertion.assert_eq(s, s2)?
-        _ => @test.fail("String integrity check failed")?
+        StringValue(s2) => assert_eq(s, s2)
+        _ => @test.fail("String integrity check failed")
       }
     }
-    _ => @test.fail("Expected StringValue")?
+    _ => @test.fail("Expected StringValue")
   }
   
   // Test IntValue serialization integrity
@@ -25,11 +25,11 @@ test "attribute_value_serialization_integrity" {
   match original_int {
     IntValue(i) => {
       match int_after_roundtrip {
-        IntValue(i2) => @assertion.assert_eq(i, i2)?
-        _ => @test.fail("Int integrity check failed")?
+        IntValue(i2) => assert_eq(i, i2)
+        _ => @test.fail("Int integrity check failed")
       }
     }
-    _ => @test.fail("Expected IntValue")?
+    _ => @test.fail("Expected IntValue")
   }
   
   // Test FloatValue serialization integrity
@@ -39,11 +39,11 @@ test "attribute_value_serialization_integrity" {
   match original_float {
     FloatValue(f) => {
       match float_after_roundtrip {
-        FloatValue(f2) => @assertion.assert_eq(f, f2)?
-        _ => @test.fail("Float integrity check failed")?
+        FloatValue(f2) => assert_eq(f, f2)
+        _ => @test.fail("Float integrity check failed")
       }
     }
-    _ => @test.fail("Expected FloatValue")?
+    _ => @test.fail("Expected FloatValue")
   }
   
   // Test BoolValue serialization integrity
@@ -53,11 +53,11 @@ test "attribute_value_serialization_integrity" {
   match original_bool {
     BoolValue(b) => {
       match bool_after_roundtrip {
-        BoolValue(b2) => @assertion.assert_eq(b, b2)?
-        _ => @test.fail("Bool integrity check failed")?
+        BoolValue(b2) => assert_eq(b, b2)
+        _ => @test.fail("Bool integrity check failed")
       }
     }
-    _ => @test.fail("Expected BoolValue")?
+    _ => @test.fail("Expected BoolValue")
   }
   
   // Test ArrayStringValue serialization integrity
@@ -68,15 +68,15 @@ test "attribute_value_serialization_integrity" {
     ArrayStringValue(arr) => {
       match string_array_after_roundtrip {
         ArrayStringValue(arr2) => {
-          @assertion.assert_eq(arr.length, arr2.length)?
+          assert_eq(arr.length, arr2.length)
           for i in 0..<arr.length {
-            @assertion.assert_eq(arr[i], arr2[i])?
+            assert_eq(arr[i], arr2[i])
           }
         }
-        _ => @test.fail("ArrayString integrity check failed")?
+        _ => @test.fail("ArrayString integrity check failed")
       }
     }
-    _ => @test.fail("Expected ArrayStringValue")?
+    _ => @test.fail("Expected ArrayStringValue")
   }
   
   // Test ArrayIntValue serialization integrity
@@ -87,15 +87,15 @@ test "attribute_value_serialization_integrity" {
     ArrayIntValue(arr) => {
       match int_array_after_roundtrip {
         ArrayIntValue(arr2) => {
-          @assertion.assert_eq(arr.length, arr2.length)?
+          assert_eq(arr.length, arr2.length)
           for i in 0..<arr.length {
-            @assertion.assert_eq(arr[i], arr2[i])?
+            assert_eq(arr[i], arr2[i])
           }
         }
-        _ => @test.fail("ArrayInt integrity check failed")?
+        _ => @test.fail("ArrayInt integrity check failed")
       }
     }
-    _ => @test.fail("Expected ArrayIntValue")?
+    _ => @test.fail("Expected ArrayIntValue")
   }
 }
 
@@ -113,10 +113,10 @@ test "span_context_serialization_integrity" {
   let reconstructed_ctx = SpanContext::new(serialized_trace_id, serialized_span_id, serialized_sampled, "key1=value1,key2=value2")
   
   // Verify integrity
-  @assertion.assert_eq(SpanContext::trace_id(original_ctx), SpanContext::trace_id(reconstructed_ctx))?
-  @assertion.assert_eq(SpanContext::span_id(original_ctx), SpanContext::span_id(reconstructed_ctx))?
-  @assertion.assert_eq(SpanContext::is_sampled(original_ctx), SpanContext::is_sampled(reconstructed_ctx))?
-  @assertion.assert_eq(SpanContext::is_valid(original_ctx), SpanContext::is_valid(reconstructed_ctx))?
+  assert_eq(SpanContext::trace_id(original_ctx), SpanContext::trace_id(reconstructed_ctx))
+  assert_eq(SpanContext::span_id(original_ctx), SpanContext::span_id(reconstructed_ctx))
+  assert_eq(SpanContext::is_sampled(original_ctx), SpanContext::is_sampled(reconstructed_ctx))
+  assert_eq(SpanContext::is_valid(original_ctx), SpanContext::is_valid(reconstructed_ctx))
   
   // Test invalid span context
   let invalid_original_ctx = SpanContext::new("", "", false, "")
@@ -126,8 +126,8 @@ test "span_context_serialization_integrity" {
   
   let invalid_reconstructed_ctx = SpanContext::new(invalid_serialized_trace_id, invalid_serialized_span_id, invalid_serialized_sampled, "")
   
-  @assertion.assert_eq(SpanContext::is_valid(invalid_original_ctx), SpanContext::is_valid(invalid_reconstructed_ctx))?
-  @assertion.assert_eq(SpanContext::is_sampled(invalid_original_ctx), SpanContext::is_sampled(invalid_reconstructed_ctx))?
+  assert_eq(SpanContext::is_valid(invalid_original_ctx), SpanContext::is_valid(invalid_reconstructed_ctx))
+  assert_eq(SpanContext::is_sampled(invalid_original_ctx), SpanContext::is_sampled(invalid_reconstructed_ctx))
 }
 
 test "resource_attributes_serialization_integrity" {
@@ -166,35 +166,35 @@ test "resource_attributes_serialization_integrity" {
   let reconstructed_resource = Resource::with_attributes(Resource::new(), reconstructed_attrs)
   
   // Verify integrity
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(original_resource, "string.key"),
     Resource::get_attribute(reconstructed_resource, "string.key")
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(original_resource, "int.key"),
     Resource::get_attribute(reconstructed_resource, "int.key")
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(original_resource, "float.key"),
     Resource::get_attribute(reconstructed_resource, "float.key")
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(original_resource, "bool.key"),
     Resource::get_attribute(reconstructed_resource, "bool.key")
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(original_resource, "array.string.key"),
     Resource::get_attribute(reconstructed_resource, "array.string.key")
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(original_resource, "array.int.key"),
     Resource::get_attribute(reconstructed_resource, "array.int.key")
-  )?
+  )
 }
 
 test "log_record_serialization_integrity" {
@@ -211,8 +211,8 @@ test "log_record_serialization_integrity" {
   let reconstructed_log = LogRecord::new(serialized_severity, serialized_body.unwrap())
   
   // Verify integrity
-  @assertion.assert_eq(LogRecord::severity_number(original_log), LogRecord::severity_number(reconstructed_log))?
-  @assertion.assert_eq(LogRecord::body(original_log), LogRecord::body(reconstructed_log))?
+  assert_eq(LogRecord::severity_number(original_log), LogRecord::severity_number(reconstructed_log))
+  assert_eq(LogRecord::body(original_log), LogRecord::body(reconstructed_log))
   
   // Test full context log record
   let full_original_log = LogRecord::new_with_context(
@@ -247,10 +247,10 @@ test "log_record_serialization_integrity" {
   )
   
   // Verify full integrity
-  @assertion.assert_eq(LogRecord::severity_number(full_original_log), LogRecord::severity_number(full_reconstructed_log))?
-  @assertion.assert_eq(LogRecord::body(full_original_log), LogRecord::body(full_reconstructed_log))?
-  @assertion.assert_eq(LogRecord::trace_id(full_original_log), LogRecord::trace_id(full_reconstructed_log))?
-  @assertion.assert_eq(LogRecord::span_id(full_original_log), LogRecord::span_id(full_reconstructed_log))?
+  assert_eq(LogRecord::severity_number(full_original_log), LogRecord::severity_number(full_reconstructed_log))
+  assert_eq(LogRecord::body(full_original_log), LogRecord::body(full_reconstructed_log))
+  assert_eq(LogRecord::trace_id(full_original_log), LogRecord::trace_id(full_reconstructed_log))
+  assert_eq(LogRecord::span_id(full_original_log), LogRecord::span_id(full_reconstructed_log))
 }
 
 test "baggage_serialization_integrity" {
@@ -279,30 +279,30 @@ test "baggage_serialization_integrity" {
   let reconstructed_with_entry3 = Baggage::set_entry(reconstructed_with_entry2, "key3", serialized_value3.unwrap())
   
   // Verify integrity
-  @assertion.assert_eq(
+  assert_eq(
     Baggage::get_entry(baggage_with_entries, "key1"),
     Baggage::get_entry(reconstructed_with_entry3, "key1")
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Baggage::get_entry(baggage_with_entries, "key2"),
     Baggage::get_entry(reconstructed_with_entry3, "key2")
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Baggage::get_entry(baggage_with_entries, "key3"),
     Baggage::get_entry(reconstructed_with_entry3, "key3")
-  )?
+  )
   
   // Test with special characters
   let special_baggage = Baggage::set_entry(Baggage::new(), "special.key@123", "special.value@456")
   let special_serialized = Baggage::get_entry(special_baggage, "special.key@123")
   let special_reconstructed = Baggage::set_entry(Baggage::new(), "special.key@123", special_serialized.unwrap())
   
-  @assertion.assert_eq(
+  assert_eq(
     Baggage::get_entry(special_baggage, "special.key@123"),
     Baggage::get_entry(special_reconstructed, "special.key@123")
-  )?
+  )
 }
 
 test "context_serialization_integrity" {
@@ -337,9 +337,9 @@ test "context_serialization_integrity" {
   )
   
   // Verify integrity
-  @assertion.assert_eq(Context::get(original_ctx, key1), Context::get(reconstructed_ctx, key1))?
-  @assertion.assert_eq(Context::get(original_ctx, key2), Context::get(reconstructed_ctx, key2))?
-  @assertion.assert_eq(Context::get(original_ctx, key3), Context::get(reconstructed_ctx, key3))?
+  assert_eq(Context::get(original_ctx, key1), Context::get(reconstructed_ctx, key1))
+  assert_eq(Context::get(original_ctx, key2), Context::get(reconstructed_ctx, key2))
+  assert_eq(Context::get(original_ctx, key3), Context::get(reconstructed_ctx, key3))
   
   // Test with empty values
   let empty_key = ContextKey::new("empty_key")
@@ -347,7 +347,7 @@ test "context_serialization_integrity" {
   let empty_serialized = Context::get(ctx_with_empty, empty_key)
   let empty_reconstructed = Context::with_value(Context::root(), empty_key, empty_serialized.unwrap())
   
-  @assertion.assert_eq(Context::get(ctx_with_empty, empty_key), Context::get(empty_reconstructed, empty_key))?
+  assert_eq(Context::get(ctx_with_empty, empty_key), Context::get(empty_reconstructed, empty_key))
 }
 
 test "instrumentation_scope_serialization_integrity" {
@@ -372,9 +372,9 @@ test "instrumentation_scope_serialization_integrity" {
   }
   
   // Verify integrity
-  @assertion.assert_eq(original_scope.name, reconstructed_scope.name)?
-  @assertion.assert_eq(original_scope.version, reconstructed_scope.version)?
-  @assertion.assert_eq(original_scope.schema_url, reconstructed_scope.schema_url)?
+  assert_eq(original_scope.name, reconstructed_scope.name)
+  assert_eq(original_scope.version, reconstructed_scope.version)
+  assert_eq(original_scope.schema_url, reconstructed_scope.schema_url)
   
   // Test with optional fields
   let minimal_scope = InstrumentationScope::{
@@ -393,9 +393,9 @@ test "instrumentation_scope_serialization_integrity" {
     schema_url: minimal_serialized_schema_url
   }
   
-  @assertion.assert_eq(minimal_scope.name, minimal_reconstructed_scope.name)?
-  @assertion.assert_eq(minimal_scope.version, minimal_reconstructed_scope.version)?
-  @assertion.assert_eq(minimal_scope.schema_url, minimal_reconstructed_scope.schema_url)?
+  assert_eq(minimal_scope.name, minimal_reconstructed_scope.name)
+  assert_eq(minimal_scope.version, minimal_reconstructed_scope.version)
+  assert_eq(minimal_scope.schema_url, minimal_reconstructed_scope.schema_url)
 }
 
 test "text_map_carrier_serialization_integrity" {
@@ -420,16 +420,16 @@ test "text_map_carrier_serialization_integrity" {
   // but we can verify the original carrier contains the expected values
   
   // Verify integrity of readable headers
-  @assertion.assert_eq(TextMapCarrier::get(original_carrier, "header1"), serialized_header1)?
-  @assertion.assert_eq(TextMapCarrier::get(original_carrier, "header2"), serialized_header2)?
-  @assertion.assert_eq(TextMapCarrier::get(original_carrier, "traceparent"), serialized_traceparent)?
+  assert_eq(TextMapCarrier::get(original_carrier, "header1"), serialized_header1)
+  assert_eq(TextMapCarrier::get(original_carrier, "header2"), serialized_header2)
+  assert_eq(TextMapCarrier::get(original_carrier, "traceparent"), serialized_traceparent)
   
   // Test with special characters
   let special_carrier = TextMapCarrier::new()
   TextMapCarrier::set(special_carrier, "special-header@123", "special-value@456")
   
   let special_serialized = TextMapCarrier::get(special_carrier, "special-header@123")
-  @assertion.assert_eq(TextMapCarrier::get(special_carrier, "special-header@123"), special_serialized)?
+  assert_eq(TextMapCarrier::get(special_carrier, "special-header@123"), special_serialized)
 }
 
 test "complex_telemetry_data_integrity" {
@@ -499,19 +499,19 @@ test "complex_telemetry_data_integrity" {
   let serialized_baggage_session = Baggage::get_entry(complex_baggage, "test.session")
   
   // Verify integrity by checking all serialized values match original
-  @assertion.assert_eq(serialized_span_name, "complex-integrity-span")?
-  @assertion.assert_eq(serialized_span_trace_id, SpanContext::trace_id(span_ctx))?
-  @assertion.assert_eq(serialized_span_span_id, SpanContext::span_id(span_ctx))?
-  @assertion.assert_eq(serialized_log_severity, Warn)?
-  @assertion.assert_eq(serialized_log_body, Some("Complex integrity test log"))?
-  @assertion.assert_eq(serialized_log_trace_id, Some(SpanContext::trace_id(span_ctx)))?
-  @assertion.assert_eq(serialized_log_span_id, Some(SpanContext::span_id(span_ctx)))?
-  @assertion.assert_eq(serialized_resource_name, Some(StringValue("integrity-test-service")))?
-  @assertion.assert_eq(serialized_resource_version, Some(StringValue("1.0.0")))?
-  @assertion.assert_eq(serialized_resource_instance, Some(StringValue("instance-123")))?
-  @assertion.assert_eq(serialized_resource_complex, Some(BoolValue(true)))?
-  @assertion.assert_eq(serialized_baggage_user, Some("user123"))?
-  @assertion.assert_eq(serialized_baggage_session, Some("session456"))?
+  assert_eq(serialized_span_name, "complex-integrity-span")
+  assert_eq(serialized_span_trace_id, SpanContext::trace_id(span_ctx))
+  assert_eq(serialized_span_span_id, SpanContext::span_id(span_ctx))
+  assert_eq(serialized_log_severity, Warn)
+  assert_eq(serialized_log_body, Some("Complex integrity test log"))
+  assert_eq(serialized_log_trace_id, Some(SpanContext::trace_id(span_ctx)))
+  assert_eq(serialized_log_span_id, Some(SpanContext::span_id(span_ctx)))
+  assert_eq(serialized_resource_name, Some(StringValue("integrity-test-service")))
+  assert_eq(serialized_resource_version, Some(StringValue("1.0.0")))
+  assert_eq(serialized_resource_instance, Some(StringValue("instance-123")))
+  assert_eq(serialized_resource_complex, Some(BoolValue(true)))
+  assert_eq(serialized_baggage_user, Some("user123"))
+  assert_eq(serialized_baggage_session, Some("session456"))
   
   // End the span
   Span::end(span)
@@ -528,26 +528,26 @@ test "data_corruption_detection" {
     StringValue(s) => {
       match corrupted_string {
         StringValue(s2) => {
-          @assertion.assert_eq(s, "original_value")?
-          @assertion.assert_eq(s2, "corrupted_value")?
+          assert_eq(s, "original_value")
+          assert_eq(s2, "corrupted_value")
           @assertion.assert_ne(s, s2)? // Detect corruption
         }
-        _ => @test.fail("Expected StringValue")?
+        _ => @test.fail("Expected StringValue")
       }
     }
-    _ => @test.fail("Expected StringValue")?
+    _ => @test.fail("Expected StringValue")
   }
   
   // Test span context corruption detection
   let original_ctx = SpanContext::new("original_trace", "original_span", true, "state=1")
   let corrupted_ctx = SpanContext::new("corrupted_trace", "corrupted_span", false, "state=2")
   
-  @assertion.assert_eq(SpanContext::trace_id(original_ctx), "original_trace")?
-  @assertion.assert_eq(SpanContext::trace_id(corrupted_ctx), "corrupted_trace")?
+  assert_eq(SpanContext::trace_id(original_ctx), "original_trace")
+  assert_eq(SpanContext::trace_id(corrupted_ctx), "corrupted_trace")
   @assertion.assert_ne(SpanContext::trace_id(original_ctx), SpanContext::trace_id(corrupted_ctx))? // Detect corruption
   
-  @assertion.assert_eq(SpanContext::span_id(original_ctx), "original_span")?
-  @assertion.assert_eq(SpanContext::span_id(corrupted_ctx), "corrupted_span")?
+  assert_eq(SpanContext::span_id(original_ctx), "original_span")
+  assert_eq(SpanContext::span_id(corrupted_ctx), "corrupted_span")
   @assertion.assert_ne(SpanContext::span_id(original_ctx), SpanContext::span_id(corrupted_ctx))? // Detect corruption
   
   // Test resource attribute corruption detection
@@ -557,8 +557,8 @@ test "data_corruption_detection" {
   let original_attr = Resource::get_attribute(original_resource, "test.key")
   let corrupted_attr = Resource::get_attribute(corrupted_resource, "test.key")
   
-  @assertion.assert_eq(original_attr, Some(StringValue("original")))?
-  @assertion.assert_eq(corrupted_attr, Some(StringValue("corrupted")))?
+  assert_eq(original_attr, Some(StringValue("original")))
+  assert_eq(corrupted_attr, Some(StringValue("corrupted")))
   @assertion.assert_ne(original_attr, corrupted_attr)? // Detect corruption
   
   // Test baggage corruption detection
@@ -568,7 +568,7 @@ test "data_corruption_detection" {
   let original_entry = Baggage::get_entry(original_baggage, "test.key")
   let corrupted_entry = Baggage::get_entry(corrupted_baggage, "test.key")
   
-  @assertion.assert_eq(original_entry, Some("original"))?
-  @assertion.assert_eq(corrupted_entry, Some("corrupted"))?
+  assert_eq(original_entry, Some("original"))
+  assert_eq(corrupted_entry, Some("corrupted"))
   @assertion.assert_ne(original_entry, corrupted_entry)? // Detect corruption
 }

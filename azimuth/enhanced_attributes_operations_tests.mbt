@@ -5,21 +5,21 @@ test "attributes_creation_and_basic_operations" {
   let attrs = Attributes::new()
   
   // Test initial state
-  @assertion.assert_eq(attrs.values.length(), 0)?
+  assert_eq(attrs.values.length(), 0)
   
   // Test setting string attribute
   Attributes::set(attrs, "string.key", StringValue("test_value"))
   let string_value = Attributes::get(attrs, "string.key")
-  @assertion.assert_eq(string_value, Some(StringValue("test_value")))?
+  assert_eq(string_value, Some(StringValue("test_value")))
   
   // Test setting int attribute
   Attributes::set(attrs, "int.key", IntValue(42))
   let int_value = Attributes::get(attrs, "int.key")
-  @assertion.assert_eq(int_value, Some(IntValue(42)))?
+  assert_eq(int_value, Some(IntValue(42)))
   
   // Test missing key
   let missing_value = Attributes::get(attrs, "missing.key")
-  @assertion.assert_eq(missing_value, None)?
+  assert_eq(missing_value, None)
 }
 
 test "attributes_with_different_value_types" {
@@ -28,22 +28,22 @@ test "attributes_with_different_value_types" {
   // Test string value
   Attributes::set(attrs, "service.name", StringValue("test-service"))
   let string_val = Attributes::get(attrs, "service.name")
-  @assertion.assert_eq(string_val, Some(StringValue("test-service")))?
+  assert_eq(string_val, Some(StringValue("test-service")))
   
   // Test int value
   Attributes::set(attrs, "port.number", IntValue(8080))
   let int_val = Attributes::get(attrs, "port.number")
-  @assertion.assert_eq(int_val, Some(IntValue(8080)))?
+  assert_eq(int_val, Some(IntValue(8080)))
   
   // Test float value
   Attributes::set(attrs, "cpu.usage", FloatValue(75.5))
   let float_val = Attributes::get(attrs, "cpu.usage")
-  @assertion.assert_eq(float_val, Some(FloatValue(75.5)))?
+  assert_eq(float_val, Some(FloatValue(75.5)))
   
   // Test boolean value
   Attributes::set(attrs, "service.enabled", BoolValue(true))
   let bool_val = Attributes::get(attrs, "service.enabled")
-  @assertion.assert_eq(bool_val, Some(BoolValue(true)))?
+  assert_eq(bool_val, Some(BoolValue(true)))
 }
 
 test "attributes_with_array_values" {
@@ -53,13 +53,13 @@ test "attributes_with_array_values" {
   let string_array = Array[String]::from(["item1", "item2", "item3"])
   Attributes::set(attrs, "string.array", ArrayStringValue(string_array))
   let string_array_val = Attributes::get(attrs, "string.array")
-  @assertion.assert_eq(string_array_val, Some(ArrayStringValue(string_array)))?
+  assert_eq(string_array_val, Some(ArrayStringValue(string_array)))
   
   // Test int array
   let int_array = Array[Int]::from([1, 2, 3, 4, 5])
   Attributes::set(attrs, "int.array", ArrayIntValue(int_array))
   let int_array_val = Attributes::get(attrs, "int.array")
-  @assertion.assert_eq(int_array_val, Some(ArrayIntValue(int_array)))?
+  assert_eq(int_array_val, Some(ArrayIntValue(int_array)))
 }
 
 test "attributes_overwrite_behavior" {
@@ -69,17 +69,17 @@ test "attributes_overwrite_behavior" {
   // Set initial value
   Attributes::set(attrs, key, StringValue("initial_value"))
   let initial_val = Attributes::get(attrs, key)
-  @assertion.assert_eq(initial_val, Some(StringValue("initial_value")))?
+  assert_eq(initial_val, Some(StringValue("initial_value")))
   
   // Overwrite with different type
   Attributes::set(attrs, key, IntValue(123))
   let int_val = Attributes::get(attrs, key)
-  @assertion.assert_eq(int_val, Some(IntValue(123)))?
+  assert_eq(int_val, Some(IntValue(123)))
   
   // Overwrite again with another type
   Attributes::set(attrs, key, BoolValue(false))
   let bool_val = Attributes::get(attrs, key)
-  @assertion.assert_eq(bool_val, Some(BoolValue(false)))?
+  assert_eq(bool_val, Some(BoolValue(false)))
 }
 
 test "attributes_with_special_characters_in_keys" {
@@ -97,10 +97,10 @@ test "attributes_with_special_characters_in_keys" {
   let underscore_val = Attributes::get(attrs, "underscore_key")
   let namespaced_val = Attributes::get(attrs, "namespace.subnamespace.key")
   
-  @assertion.assert_eq(dotted_val, Some(StringValue("dotted_value")))?
-  @assertion.assert_eq(hyphenated_val, Some(StringValue("hyphenated_value")))?
-  @assertion.assert_eq(underscore_val, Some(StringValue("underscore_value")))?
-  @assertion.assert_eq(namespaced_val, Some(StringValue("namespaced_value")))?
+  assert_eq(dotted_val, Some(StringValue("dotted_value")))
+  assert_eq(hyphenated_val, Some(StringValue("hyphenated_value")))
+  assert_eq(underscore_val, Some(StringValue("underscore_value")))
+  assert_eq(namespaced_val, Some(StringValue("namespaced_value")))
 }
 
 test "attributes_with_special_characters_in_values" {
@@ -120,11 +120,11 @@ test "attributes_with_special_characters_in_values" {
   let url_val = Attributes::get(attrs, "url.encoded")
   let base64_val = Attributes::get(attrs, "base64.value")
   
-  @assertion.assert_eq(special_val, Some(StringValue("special!@#$%^&*()")))?
-  @assertion.assert_eq(unicode_val, Some(StringValue("测试中文")))?
-  @assertion.assert_eq(json_val, Some(StringValue("{\"key\":\"value\",\"number\":123}")))?
-  @assertion.assert_eq(url_val, Some(StringValue("Hello%20World%21")))?
-  @assertion.assert_eq(base64_val, Some(StringValue("SGVsbG8gV29ybGQh")))?
+  assert_eq(special_val, Some(StringValue("special!@#$%^&*()")))
+  assert_eq(unicode_val, Some(StringValue("测试中文")))
+  assert_eq(json_val, Some(StringValue("{\"key\":\"value\",\"number\":123}")))
+  assert_eq(url_val, Some(StringValue("Hello%20World%21")))
+  assert_eq(base64_val, Some(StringValue("SGVsbG8gV29ybGQh")))
 }
 
 test "attributes_with_numeric_edge_cases" {
@@ -148,13 +148,13 @@ test "attributes_with_numeric_edge_cases" {
   let negative_float = Attributes::get(attrs, "negative.float")
   let zero_float = Attributes::get(attrs, "zero.float")
   
-  @assertion.assert_eq(zero_int, Some(IntValue(0)))?
-  @assertion.assert_eq(negative_int, Some(IntValue(-42)))?
-  @assertion.assert_eq(large_int, Some(IntValue(2147483647)))?
-  @assertion.assert_eq(small_float, Some(FloatValue(0.000001)))?
-  @assertion.assert_eq(large_float, Some(FloatValue(999999.999)))?
-  @assertion.assert_eq(negative_float, Some(FloatValue(-273.15)))?
-  @assertion.assert_eq(zero_float, Some(FloatValue(0.0)))?
+  assert_eq(zero_int, Some(IntValue(0)))
+  assert_eq(negative_int, Some(IntValue(-42)))
+  assert_eq(large_int, Some(IntValue(2147483647)))
+  assert_eq(small_float, Some(FloatValue(0.000001)))
+  assert_eq(large_float, Some(FloatValue(999999.999)))
+  assert_eq(negative_float, Some(FloatValue(-273.15)))
+  assert_eq(zero_float, Some(FloatValue(0.0)))
 }
 
 test "attributes_with_empty_and_null_values" {
@@ -163,7 +163,7 @@ test "attributes_with_empty_and_null_values" {
   // Test empty string
   Attributes::set(attrs, "empty.string", StringValue(""))
   let empty_string = Attributes::get(attrs, "empty.string")
-  @assertion.assert_eq(empty_string, Some(StringValue("")))?
+  assert_eq(empty_string, Some(StringValue("")))
   
   // Test empty arrays
   let empty_string_array = Array[String]::from([])
@@ -174,8 +174,8 @@ test "attributes_with_empty_and_null_values" {
   let empty_string_array_val = Attributes::get(attrs, "empty.string.array")
   let empty_int_array_val = Attributes::get(attrs, "empty.int.array")
   
-  @assertion.assert_eq(empty_string_array_val, Some(ArrayStringValue(empty_string_array)))?
-  @assertion.assert_eq(empty_int_array_val, Some(ArrayIntValue(empty_int_array)))?
+  assert_eq(empty_string_array_val, Some(ArrayStringValue(empty_string_array)))
+  assert_eq(empty_int_array_val, Some(ArrayIntValue(empty_int_array)))
 }
 
 test "attributes_with_common_telemetry_keys" {
@@ -199,12 +199,12 @@ test "attributes_with_common_telemetry_keys" {
   Attributes::set(attrs, "db.operation", StringValue("SELECT"))
   
   // Test retrieval of common attributes
-  @assertion.assert_eq(Attributes::get(attrs, "service.name"), Some(StringValue("payment-service")))?
-  @assertion.assert_eq(Attributes::get(attrs, "service.version"), Some(StringValue("1.2.3")))?
-  @assertion.assert_eq(Attributes::get(attrs, "telemetry.sdk.name"), Some(StringValue("opentelemetry")))?
-  @assertion.assert_eq(Attributes::get(attrs, "http.method"), Some(StringValue("GET")))?
-  @assertion.assert_eq(Attributes::get(attrs, "http.status_code"), Some(IntValue(200)))?
-  @assertion.assert_eq(Attributes::get(attrs, "db.system"), Some(StringValue("postgresql")))?
+  assert_eq(Attributes::get(attrs, "service.name"), Some(StringValue("payment-service")))
+  assert_eq(Attributes::get(attrs, "service.version"), Some(StringValue("1.2.3")))
+  assert_eq(Attributes::get(attrs, "telemetry.sdk.name"), Some(StringValue("opentelemetry")))
+  assert_eq(Attributes::get(attrs, "http.method"), Some(StringValue("GET")))
+  assert_eq(Attributes::get(attrs, "http.status_code"), Some(IntValue(200)))
+  assert_eq(Attributes::get(attrs, "db.system"), Some(StringValue("postgresql")))
 }
 
 test "attributes_with_complex_array_operations" {
@@ -224,26 +224,26 @@ test "attributes_with_complex_array_operations" {
   let response_sizes_val = Attributes::get(attrs, "response.sizes")
   let edge_cases_val = Attributes::get(attrs, "edge.cases")
   
-  @assertion.assert_eq(tags_val, Some(ArrayStringValue(string_array)))?
-  @assertion.assert_eq(response_sizes_val, Some(ArrayIntValue(int_array)))?
-  @assertion.assert_eq(edge_cases_val, Some(ArrayIntValue(mixed_int_array)))?
+  assert_eq(tags_val, Some(ArrayStringValue(string_array)))
+  assert_eq(response_sizes_val, Some(ArrayIntValue(int_array)))
+  assert_eq(edge_cases_val, Some(ArrayIntValue(mixed_int_array)))
   
   // Test array contents (first and last elements)
   match tags_val {
     Some(ArrayStringValue(arr)) => {
-      @assertion.assert_eq(arr.length(), 4)?
-      @assertion.assert_eq(arr[0], "tag1")?
-      @assertion.assert_eq(arr[3], "special-tag")?
+      assert_eq(arr.length(), 4)
+      assert_eq(arr[0], "tag1")
+      assert_eq(arr[3], "special-tag")
     }
-    _ => @assertion.assert_true(false)?
+    _ => @assertion.assert_true(false)
   }
   
   match response_sizes_val {
     Some(ArrayIntValue(arr)) => {
-      @assertion.assert_eq(arr.length(), 5)?
-      @assertion.assert_eq(arr[0], 100)?
-      @assertion.assert_eq(arr[4], 500)?
+      assert_eq(arr.length(), 5)
+      assert_eq(arr[0], 100)
+      assert_eq(arr[4], 500)
     }
-    _ => @assertion.assert_true(false)?
+    _ => @assertion.assert_true(false)
   }
 }

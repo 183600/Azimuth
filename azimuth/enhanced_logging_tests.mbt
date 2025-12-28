@@ -6,10 +6,10 @@ test "log_record_creation_and_basic_properties" {
   let log_record = LogRecord::new(Info, "Test log message")
   
   // Test basic properties
-  @assertion.assert_eq(LogRecord::severity_number(log_record), Info)?
-  @assertion.assert_eq(LogRecord::body(log_record), Some("Test log message"))?
-  @assertion.assert_eq(LogRecord::trace_id(log_record), None)?
-  @assertion.assert_eq(LogRecord::span_id(log_record), None)?
+  assert_eq(LogRecord::severity_number(log_record), Info)
+  assert_eq(LogRecord::body(log_record), Some("Test log message"))
+  assert_eq(LogRecord::trace_id(log_record), None)
+  assert_eq(LogRecord::span_id(log_record), None)
 }
 
 test "log_record_with_different_severity_levels" {
@@ -22,20 +22,20 @@ test "log_record_with_different_severity_levels" {
   let fatal_log = LogRecord::new(Fatal, "Fatal message")
   
   // Test severity levels
-  @assertion.assert_eq(LogRecord::severity_number(trace_log), Trace)?
-  @assertion.assert_eq(LogRecord::severity_number(debug_log), Debug)?
-  @assertion.assert_eq(LogRecord::severity_number(info_log), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(warn_log), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(error_log), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(fatal_log), Fatal)?
+  assert_eq(LogRecord::severity_number(trace_log), Trace)
+  assert_eq(LogRecord::severity_number(debug_log), Debug)
+  assert_eq(LogRecord::severity_number(info_log), Info)
+  assert_eq(LogRecord::severity_number(warn_log), Warn)
+  assert_eq(LogRecord::severity_number(error_log), Error)
+  assert_eq(LogRecord::severity_number(fatal_log), Fatal)
   
   // Test bodies
-  @assertion.assert_eq(LogRecord::body(trace_log), Some("Trace message"))?
-  @assertion.assert_eq(LogRecord::body(debug_log), Some("Debug message"))?
-  @assertion.assert_eq(LogRecord::body(info_log), Some("Info message"))?
-  @assertion.assert_eq(LogRecord::body(warn_log), Some("Warning message"))?
-  @assertion.assert_eq(LogRecord::body(error_log), Some("Error message"))?
-  @assertion.assert_eq(LogRecord::body(fatal_log), Some("Fatal message"))?
+  assert_eq(LogRecord::body(trace_log), Some("Trace message"))
+  assert_eq(LogRecord::body(debug_log), Some("Debug message"))
+  assert_eq(LogRecord::body(info_log), Some("Info message"))
+  assert_eq(LogRecord::body(warn_log), Some("Warning message"))
+  assert_eq(LogRecord::body(error_log), Some("Error message"))
+  assert_eq(LogRecord::body(fatal_log), Some("Fatal message"))
 }
 
 test "log_record_with_full_context" {
@@ -60,10 +60,10 @@ test "log_record_with_full_context" {
   )
   
   // Test all properties
-  @assertion.assert_eq(LogRecord::severity_number(log_record), Error)?
-  @assertion.assert_eq(LogRecord::body(log_record), Some("Critical error occurred"))?
-  @assertion.assert_eq(LogRecord::trace_id(log_record), Some(trace_id))?
-  @assertion.assert_eq(LogRecord::span_id(log_record), Some(span_id))?
+  assert_eq(LogRecord::severity_number(log_record), Error)
+  assert_eq(LogRecord::body(log_record), Some("Critical error occurred"))
+  assert_eq(LogRecord::trace_id(log_record), Some(trace_id))
+  assert_eq(LogRecord::span_id(log_record), Some(span_id))
 }
 
 test "logger_creation_and_operations" {
@@ -72,9 +72,9 @@ test "logger_creation_and_operations" {
   
   // Test logger scope
   let scope = logger.scope
-  @assertion.assert_eq(scope.name, "test-logger")?
-  @assertion.assert_eq(scope.version, None)?
-  @assertion.assert_eq(scope.schema_url, None)?
+  assert_eq(scope.name, "test-logger")
+  assert_eq(scope.version, None)
+  assert_eq(scope.schema_url, None)
   
   // Test log emission
   let info_log = LogRecord::new(Info, "Info message")
@@ -84,7 +84,7 @@ test "logger_creation_and_operations" {
   Logger::emit(logger, error_log)
   
   // All operations should complete without errors
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "logger_with_version_and_schema" {
@@ -93,9 +93,9 @@ test "logger_with_version_and_schema" {
   
   // Test logger scope with version
   let scope = logger.scope
-  @assertion.assert_eq(scope.name, "service-logger")?
-  @assertion.assert_eq(scope.version, Some("1.2.3"))?
-  @assertion.assert_eq(scope.schema_url, None)?
+  assert_eq(scope.name, "service-logger")
+  assert_eq(scope.version, Some("1.2.3"))
+  assert_eq(scope.schema_url, None)
   
   // Test log emission with different severities
   let trace_log = LogRecord::new(Trace, "Trace level message")
@@ -107,7 +107,7 @@ test "logger_with_version_and_schema" {
   Logger::emit(logger, warn_log)
   
   // All operations should complete without errors
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "noop_logger_operations" {
@@ -116,14 +116,14 @@ test "noop_logger_operations" {
   
   // Test noop logger scope
   let scope = logger.scope
-  @assertion.assert_eq(scope.name, "noop-logger")?
+  assert_eq(scope.name, "noop-logger")
   
   // Test log emission with noop logger
   let log_record = LogRecord::new(Error, "This should be ignored")
   Logger::emit(logger, log_record)
   
   // All operations should complete without errors
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "log_record_with_attributes" {
@@ -146,8 +146,8 @@ test "log_record_with_attributes" {
   )
   
   // Test log record properties
-  @assertion.assert_eq(LogRecord::severity_number(log_record), Error)?
-  @assertion.assert_eq(LogRecord::body(log_record), Some("Request failed"))?
+  assert_eq(LogRecord::severity_number(log_record), Error)
+  assert_eq(LogRecord::body(log_record), Some("Request failed"))
 }
 
 test "log_record_timestamp_operations" {
@@ -190,17 +190,17 @@ test "log_record_timestamp_operations" {
   )
   
   // Test log record properties
-  @assertion.assert_eq(LogRecord::severity_number(log1), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(log2), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(log3), Error)?
+  assert_eq(LogRecord::severity_number(log1), Info)
+  assert_eq(LogRecord::severity_number(log2), Warn)
+  assert_eq(LogRecord::severity_number(log3), Error)
   
-  @assertion.assert_eq(LogRecord::body(log1), Some("Message 1"))?
-  @assertion.assert_eq(LogRecord::body(log2), Some("Message 2"))?
-  @assertion.assert_eq(LogRecord::body(log3), Some("Message 3"))?
+  assert_eq(LogRecord::body(log1), Some("Message 1"))
+  assert_eq(LogRecord::body(log2), Some("Message 2"))
+  assert_eq(LogRecord::body(log3), Some("Message 3"))
   
-  @assertion.assert_eq(LogRecord::trace_id(log1), None)?
-  @assertion.assert_eq(LogRecord::trace_id(log2), None)?
-  @assertion.assert_eq(LogRecord::trace_id(log3), Some("trace123"))?
+  assert_eq(LogRecord::trace_id(log1), None)
+  assert_eq(LogRecord::trace_id(log2), None)
+  assert_eq(LogRecord::trace_id(log3), Some("trace123"))
 }
 
 test "multiple_logger_operations" {
@@ -222,11 +222,11 @@ test "multiple_logger_operations" {
   Logger::emit(logger3, cache_log)
   
   // Test logger scopes
-  @assertion.assert_eq(logger1.scope.name, "auth-service")?
-  @assertion.assert_eq(logger2.scope.name, "db-service")?
-  @assertion.assert_eq(logger2.scope.version, Some("2.1.0"))?
-  @assertion.assert_eq(logger3.scope.name, "cache-service")?
+  assert_eq(logger1.scope.name, "auth-service")
+  assert_eq(logger2.scope.name, "db-service")
+  assert_eq(logger2.scope.version, Some("2.1.0"))
+  assert_eq(logger3.scope.name, "cache-service")
   
   // All operations should complete without errors
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }

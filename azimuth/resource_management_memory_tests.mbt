@@ -22,9 +22,9 @@ test "span_lifecycle_resource_management" {
   Span::set_status(span3, Ok, Some("Completed"))
   
   // Verify spans are active
-  @assertion.assert_eq(Span::is_recording(span1), true)?
-  @assertion.assert_eq(Span::is_recording(span2), true)?
-  @assertion.assert_eq(Span::is_recording(span3), true)?
+  assert_eq(Span::is_recording(span1), true)
+  assert_eq(Span::is_recording(span2), true)
+  assert_eq(Span::is_recording(span3), true)
   
   // End spans to trigger resource cleanup
   Span::end(span1)
@@ -32,9 +32,9 @@ test "span_lifecycle_resource_management" {
   Span::end(span3)
   
   // Verify span data is still accessible after ending
-  @assertion.assert_eq(Span::name(span1), "resource_span_1")?
-  @assertion.assert_eq(Span::name(span2), "resource_span_2")?
-  @assertion.assert_eq(Span::name(span3), "resource_span_3")?
+  assert_eq(Span::name(span1), "resource_span_1")
+  assert_eq(Span::name(span2), "resource_span_2")
+  assert_eq(Span::name(span3), "resource_span_3")
 }
 
 test "meter_provider_resource_management" {
@@ -62,13 +62,13 @@ test "meter_provider_resource_management" {
   Histogram::record(histogram2, 250.5)
   
   // Verify instrument integrity
-  @assertion.assert_eq(counter1.name, "resource_counter_1")?
-  @assertion.assert_eq(counter2.name, "resource_counter_2")?
-  @assertion.assert_eq(histogram1.name, "resource_histogram_1")?
-  @assertion.assert_eq(updown_counter1.name, "resource_updown_counter_1")?
-  @assertion.assert_eq(gauge1.name, "resource_gauge_1")?
-  @assertion.assert_eq(counter3.name, "resource_counter_3")?
-  @assertion.assert_eq(histogram2.name, "resource_histogram_2")?
+  assert_eq(counter1.name, "resource_counter_1")
+  assert_eq(counter2.name, "resource_counter_2")
+  assert_eq(histogram1.name, "resource_histogram_1")
+  assert_eq(updown_counter1.name, "resource_updown_counter_1")
+  assert_eq(gauge1.name, "resource_gauge_1")
+  assert_eq(counter3.name, "resource_counter_3")
+  assert_eq(histogram2.name, "resource_histogram_2")
 }
 
 test "logger_provider_resource_management" {
@@ -106,11 +106,11 @@ test "logger_provider_resource_management" {
   Logger::emit(logger1, complex_log)
   
   // Verify log record integrity
-  @assertion.assert_eq(LogRecord::body(log1), Some("Resource test log 1"))?
-  @assertion.assert_eq(LogRecord::body(log2), Some("Resource test log 2"))?
-  @assertion.assert_eq(LogRecord::body(log3), Some("Resource test log 3"))?
-  @assertion.assert_eq(LogRecord::body(log4), Some("Resource test log 4"))?
-  @assertion.assert_eq(LogRecord::body(complex_log), Some("Complex resource test log"))?
+  assert_eq(LogRecord::body(log1), Some("Resource test log 1"))
+  assert_eq(LogRecord::body(log2), Some("Resource test log 2"))
+  assert_eq(LogRecord::body(log3), Some("Resource test log 3"))
+  assert_eq(LogRecord::body(log4), Some("Resource test log 4"))
+  assert_eq(LogRecord::body(complex_log), Some("Complex resource test log"))
 }
 
 test "context_resource_cleanup" {
@@ -127,22 +127,22 @@ test "context_resource_cleanup" {
   let ctx3 = Context::with_value(ctx2, key3, "resource_value_3")
   
   // Verify context chain
-  @assertion.assert_eq(Context::get(ctx1, key1), Some("resource_value_1"))?
-  @assertion.assert_eq(Context::get(ctx2, key1), Some("resource_value_1"))?
-  @assertion.assert_eq(Context::get(ctx2, key2), Some("resource_value_2"))?
-  @assertion.assert_eq(Context::get(ctx3, key1), Some("resource_value_1"))?
-  @assertion.assert_eq(Context::get(ctx3, key2), Some("resource_value_2"))?
-  @assertion.assert_eq(Context::get(ctx3, key3), Some("resource_value_3"))?
+  assert_eq(Context::get(ctx1, key1), Some("resource_value_1"))
+  assert_eq(Context::get(ctx2, key1), Some("resource_value_1"))
+  assert_eq(Context::get(ctx2, key2), Some("resource_value_2"))
+  assert_eq(Context::get(ctx3, key1), Some("resource_value_1"))
+  assert_eq(Context::get(ctx3, key2), Some("resource_value_2"))
+  assert_eq(Context::get(ctx3, key3), Some("resource_value_3"))
   
   // Test context isolation
   let isolated_ctx = Context::with_value(root_ctx, key1, "isolated_value")
-  @assertion.assert_eq(Context::get(isolated_ctx, key1), Some("isolated_value"))?
-  @assertion.assert_eq(Context::get(isolated_ctx, key2), None)?
+  assert_eq(Context::get(isolated_ctx, key1), Some("isolated_value"))
+  assert_eq(Context::get(isolated_ctx, key2), None)
   
   // Root context should remain clean
-  @assertion.assert_eq(Context::get(root_ctx, key1), None)?
-  @assertion.assert_eq(Context::get(root_ctx, key2), None)?
-  @assertion.assert_eq(Context::get(root_ctx, key3), None)?
+  assert_eq(Context::get(root_ctx, key1), None)
+  assert_eq(Context::get(root_ctx, key2), None)
+  assert_eq(Context::get(root_ctx, key3), None)
 }
 
 test "resource_attribute_management" {
@@ -176,31 +176,31 @@ test "resource_attribute_management" {
   let merged_resource = Resource::merge(resource1_with_attrs, resource2_with_attrs)
   
   // Verify resource isolation
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource1_with_attrs, "service.name"),
     Some(StringValue("resource_service_1"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource2_with_attrs, "service.name"),
     Some(StringValue("resource_service_2"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged_resource, "service.name"),
     Some(StringValue("resource_service_2"))
-  )?
+  )
   
   // Verify all attributes are accessible
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource1_with_attrs, "process.id"),
     Some(IntValue(12345))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource2_with_attrs, "process.id"),
     Some(IntValue(67890))
-  )?
+  )
 }
 
 test "baggage_resource_management" {
@@ -226,23 +226,23 @@ test "baggage_resource_management" {
   )
   
   // Test baggage entry access
-  @assertion.assert_eq(Baggage::get_entry(baggage1_with_entries, "user.id"), Some("user123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage1_with_entries, "session.id"), Some("session456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage1_with_entries, "request.id"), Some("request789"))?
+  assert_eq(Baggage::get_entry(baggage1_with_entries, "user.id"), Some("user123"))
+  assert_eq(Baggage::get_entry(baggage1_with_entries, "session.id"), Some("session456"))
+  assert_eq(Baggage::get_entry(baggage1_with_entries, "request.id"), Some("request789"))
   
-  @assertion.assert_eq(Baggage::get_entry(baggage2_with_entries, "tenant.id"), Some("tenant123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage2_with_entries, "correlation.id"), Some("corr456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage2_with_entries, "trace.id"), Some("trace789"))?
+  assert_eq(Baggage::get_entry(baggage2_with_entries, "tenant.id"), Some("tenant123"))
+  assert_eq(Baggage::get_entry(baggage2_with_entries, "correlation.id"), Some("corr456"))
+  assert_eq(Baggage::get_entry(baggage2_with_entries, "trace.id"), Some("trace789"))
   
   // Test baggage isolation
-  @assertion.assert_eq(Baggage::get_entry(baggage1_with_entries, "tenant.id"), None)?
-  @assertion.assert_eq(Baggage::get_entry(baggage2_with_entries, "user.id"), None)?
+  assert_eq(Baggage::get_entry(baggage1_with_entries, "tenant.id"), None)
+  assert_eq(Baggage::get_entry(baggage2_with_entries, "user.id"), None)
   
   // Test removal operations
   let baggage_after_removal = Baggage::remove_entry(baggage1_with_entries, "session.id")
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("user123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "session.id"), Some("session456"))? // Based on mock
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "request.id"), Some("request789"))?
+  assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("user123"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "session.id"), Some("session456"))? // Based on mock
+  assert_eq(Baggage::get_entry(baggage_after_removal, "request.id"), Some("request789"))
 }
 
 test "propagation_resource_cleanup" {
@@ -266,9 +266,9 @@ test "propagation_resource_cleanup" {
   let trace2 = TextMapCarrier::get(carrier2, "traceparent")
   let trace3 = TextMapCarrier::get(carrier3, "traceparent")
   
-  @assertion.assert_eq(trace1, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(trace2, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(trace3, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(trace1, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(trace2, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(trace3, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   // Perform extraction operations
   let extracted_ctx1 = CompositePropagator::extract(composite, carrier1)
@@ -277,9 +277,9 @@ test "propagation_resource_cleanup" {
   
   // Verify extraction results
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))
 }
 
 test "http_client_resource_management" {
@@ -302,18 +302,18 @@ test "http_client_resource_management" {
   let response3 = HttpResponse::new(500, [("Content-Type", "text/plain")], Some("internal error"))
   
   // Verify request isolation
-  @assertion.assert_eq(HttpRequest::http_method(request1), "GET")?
-  @assertion.assert_eq(HttpRequest::http_method(request2), "POST")?
-  @assertion.assert_eq(HttpRequest::http_method(request3), "PUT")?
+  assert_eq(HttpRequest::http_method(request1), "GET")
+  assert_eq(HttpRequest::http_method(request2), "POST")
+  assert_eq(HttpRequest::http_method(request3), "PUT")
   
-  @assertion.assert_eq(HttpRequest::url(request1), "https://api1.example.com")?
-  @assertion.assert_eq(HttpRequest::url(request2), "https://api2.example.com")?
-  @assertion.assert_eq(HttpRequest::url(request3), "https://api3.example.com")?
+  assert_eq(HttpRequest::url(request1), "https://api1.example.com")
+  assert_eq(HttpRequest::url(request2), "https://api2.example.com")
+  assert_eq(HttpRequest::url(request3), "https://api3.example.com")
   
   // Verify response isolation
-  @assertion.assert_eq(HttpResponse::status_code(response1), 200)?
-  @assertion.assert_eq(HttpResponse::status_code(response2), 404)?
-  @assertion.assert_eq(HttpResponse::status_code(response3), 500)?
+  assert_eq(HttpResponse::status_code(response1), 200)
+  assert_eq(HttpResponse::status_code(response2), 404)
+  assert_eq(HttpResponse::status_code(response3), 500)
 }
 
 test "memory_efficiency_large_operations" {
@@ -335,9 +335,9 @@ test "memory_efficiency_large_operations" {
   }
   
   // Verify all spans are properly managed
-  @assertion.assert_eq(spans.length, 10)?
-  @assertion.assert_eq(Span::name(spans[0]), "memory_test_span_0")?
-  @assertion.assert_eq(Span::name(spans[9]), "memory_test_span_9")?
+  assert_eq(spans.length, 10)
+  assert_eq(Span::name(spans[0]), "memory_test_span_0")
+  assert_eq(Span::name(spans[9]), "memory_test_span_9")
 }
 
 test "resource_monitoring_metrics" {
@@ -365,18 +365,18 @@ test "resource_monitoring_metrics" {
   Histogram::record(response_time, 50.0)
   
   // Verify instrument integrity
-  @assertion.assert_eq(memory_usage.name, "memory.usage")?
-  @assertion.assert_eq(cpu_usage.name, "cpu.usage")?
-  @assertion.assert_eq(active_connections.name, "active.connections")?
-  @assertion.assert_eq(response_time.name, "response.time")?
+  assert_eq(memory_usage.name, "memory.usage")
+  assert_eq(cpu_usage.name, "cpu.usage")
+  assert_eq(active_connections.name, "active.connections")
+  assert_eq(response_time.name, "response.time")
   
-  @assertion.assert_eq(memory_usage.description, Some("Memory usage in bytes"))?
-  @assertion.assert_eq(cpu_usage.description, Some("CPU usage percentage"))?
-  @assertion.assert_eq(active_connections.description, Some("Number of active connections"))?
-  @assertion.assert_eq(response_time.description, Some("Response time distribution"))?
+  assert_eq(memory_usage.description, Some("Memory usage in bytes"))
+  assert_eq(cpu_usage.description, Some("CPU usage percentage"))
+  assert_eq(active_connections.description, Some("Number of active connections"))
+  assert_eq(response_time.description, Some("Response time distribution"))
   
-  @assertion.assert_eq(memory_usage.unit, Some("bytes"))?
-  @assertion.assert_eq(cpu_usage.unit, Some("%"))?
-  @assertion.assert_eq(active_connections.unit, Some("connections"))?
-  @assertion.assert_eq(response_time.unit, Some("ms"))?
+  assert_eq(memory_usage.unit, Some("bytes"))
+  assert_eq(cpu_usage.unit, Some("%"))
+  assert_eq(active_connections.unit, Some("connections"))
+  assert_eq(response_time.unit, Some("ms"))
 }

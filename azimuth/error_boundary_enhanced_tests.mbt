@@ -8,18 +8,18 @@ test "null_empty_values_handling" {
   // Test empty string attribute
   Attributes::set(attrs, "empty.key", StringValue(""))
   let empty_result = Attributes::get(attrs, "empty.key")
-  @assertion.assert_eq(empty_result, None)?
+  assert_eq(empty_result, None)
   
   // Test non-existent key
   let non_existent = Attributes::get(attrs, "non.existent.key")
-  @assertion.assert_eq(non_existent, None)?
+  assert_eq(non_existent, None)
   
   // Test context with empty values
   let root_ctx = Context::root()
   let empty_key = ContextKey::new("")
   let ctx_with_empty = Context::with_value(root_ctx, empty_key, "")
   let empty_value = Context::get(ctx_with_empty, empty_key)
-  @assertion.assert_eq(empty_value, Some(""))?
+  assert_eq(empty_value, Some(""))
 }
 
 test "extreme_values_handling" {
@@ -37,22 +37,22 @@ test "extreme_values_handling" {
   Attributes::set(attrs, "min.float", min_float)
   
   // Verify values are stored correctly (simplified test)
-  @assertion.assert_eq(Attributes::get(attrs, "max.int"), None)?
-  @assertion.assert_eq(Attributes::get(attrs, "min.int"), Some(IntValue(42)))? // Based on mock implementation
+  assert_eq(Attributes::get(attrs, "max.int"), None)
+  assert_eq(Attributes::get(attrs, "min.int"), Some(IntValue(42)))? // Based on mock implementation
 }
 
 test "malformed_data_structures" {
   // Test handling of malformed span contexts
   let malformed_ctx1 = SpanContext::new("invalid_trace", "invalid_span", true, "")
-  @assertion.assert_eq(SpanContext::is_valid(malformed_ctx1), false)?
+  assert_eq(SpanContext::is_valid(malformed_ctx1), false)
   
   let malformed_ctx2 = SpanContext::new("123", "456", true, "")
-  @assertion.assert_eq(SpanContext::is_valid(malformed_ctx2), false)?
+  assert_eq(SpanContext::is_valid(malformed_ctx2), false)
   
   // Test empty trace parent extraction
   let carrier = TextMapCarrier::new()
   let result = TextMapCarrier::get(carrier, "traceparent")
-  @assertion.assert_eq(result, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(result, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
 }
 
 test "resource_exhaustion_boundary" {
@@ -75,9 +75,9 @@ test "resource_exhaustion_boundary" {
   Histogram::record(histogram2, 200.5)
   
   // Verify system remains stable
-  @assertion.assert_eq(counter1.name, "counter1")?
-  @assertion.assert_eq(counter2.name, "counter2")?
-  @assertion.assert_eq(histogram1.name, "histogram1")?
+  assert_eq(counter1.name, "counter1")
+  assert_eq(counter2.name, "counter2")
+  assert_eq(histogram1.name, "histogram1")
 }
 
 test "concurrent_modification_safety" {
@@ -90,13 +90,13 @@ test "concurrent_modification_safety" {
   let baggage3 = Baggage::set_entry(baggage, "key3", "value3")
   
   // Test retrieval after modifications
-  @assertion.assert_eq(Baggage::get_entry(baggage1, "key1"), Some("value1"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage2, "key2"), Some("value2"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "key3"), Some("value3"))?
+  assert_eq(Baggage::get_entry(baggage1, "key1"), Some("value1"))
+  assert_eq(Baggage::get_entry(baggage2, "key2"), Some("value2"))
+  assert_eq(Baggage::get_entry(baggage3, "key3"), Some("value3"))
   
   // Test removal operations
   let baggage_after_removal = Baggage::remove_entry(baggage1, "key1")
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "key1"), Some("value1"))?
+  assert_eq(Baggage::get_entry(baggage_after_removal, "key1"), Some("value1"))
 }
 
 test "network_failure_simulation" {
@@ -108,15 +108,15 @@ test "network_failure_simulation" {
   let request1 = HttpRequest::new("GET", "", invalid_headers, None)
   let request2 = HttpRequest::new("POST", "invalid-url", [], Some(""))
   
-  @assertion.assert_eq(HttpRequest::http_method(request1), "GET")?
-  @assertion.assert_eq(HttpRequest::url(request1), "")?
-  @assertion.assert_eq(HttpRequest::http_method(request2), "POST")?
-  @assertion.assert_eq(HttpRequest::url(request2), "invalid-url")?
+  assert_eq(HttpRequest::http_method(request1), "GET")
+  assert_eq(HttpRequest::url(request1), "")
+  assert_eq(HttpRequest::http_method(request2), "POST")
+  assert_eq(HttpRequest::url(request2), "invalid-url")
   
   // Test response handling with error codes
   let error_response = HttpResponse::new(500, [], Some("Internal Server Error"))
-  @assertion.assert_eq(HttpResponse::status_code(error_response), 500)?
-  @assertion.assert_eq(HttpResponse::body(error_response), Some("Internal Server Error"))?
+  assert_eq(HttpResponse::status_code(error_response), 500)
+  assert_eq(HttpResponse::body(error_response), Some("Internal Server Error"))
 }
 
 test "memory_leak_prevention" {
@@ -139,9 +139,9 @@ test "memory_leak_prevention" {
   Span::end(span3)
   
   // Verify spans are properly ended
-  @assertion.assert_eq(Span::name(span1), "span1")?
-  @assertion.assert_eq(Span::name(span2), "span2")?
-  @assertion.assert_eq(Span::name(span3), "span3")?
+  assert_eq(Span::name(span1), "span1")
+  assert_eq(Span::name(span2), "span2")
+  assert_eq(Span::name(span3), "span3")
 }
 
 test "cascading_failure_containment" {
@@ -160,10 +160,10 @@ test "cascading_failure_containment" {
   Logger::emit(logger, log3)
   
   // Verify log records maintain integrity
-  @assertion.assert_eq(LogRecord::severity_number(log1), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(log2), Fatal)?
-  @assertion.assert_eq(LogRecord::severity_number(log3), Warn)?
-  @assertion.assert_eq(LogRecord::body(log1), Some("First error"))?
-  @assertion.assert_eq(LogRecord::body(log2), Some("Critical failure"))?
-  @assertion.assert_eq(LogRecord::body(log3), Some("Warning condition"))?
+  assert_eq(LogRecord::severity_number(log1), Error)
+  assert_eq(LogRecord::severity_number(log2), Fatal)
+  assert_eq(LogRecord::severity_number(log3), Warn)
+  assert_eq(LogRecord::body(log1), Some("First error"))
+  assert_eq(LogRecord::body(log2), Some("Critical failure"))
+  assert_eq(LogRecord::body(log3), Some("Warning condition"))
 }

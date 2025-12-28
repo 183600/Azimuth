@@ -5,14 +5,14 @@ test "w3c_trace_context_propagator_creation" {
   let propagator = W3CTraceContextPropagator::new()
   
   // Test propagator creation - in simplified implementation, just verify it doesn't crash
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "w3c_baggage_propagator_creation" {
   let propagator = W3CBaggagePropagator::new()
   
   // Test propagator creation - in simplified implementation, just verify it doesn't crash
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "composite_propagator_creation" {
@@ -23,7 +23,7 @@ test "composite_propagator_creation" {
   let composite_propagator = CompositePropagator::new(propagators)
   
   // Test composite propagator creation
-  @assertion.assert_eq(composite_propagator.propagators.length(), 2)?
+  assert_eq(composite_propagator.propagators.length(), 2)
 }
 
 test "composite_propagator_inject_operations" {
@@ -41,7 +41,7 @@ test "composite_propagator_inject_operations" {
   
   // Verify injection result
   let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  @assertion.assert_eq(traceparent, Some("00-test-trace-id-test-span-id-01"))?
+  assert_eq(traceparent, Some("00-test-trace-id-test-span-id-01"))
 }
 
 test "composite_propagator_extract_operations" {
@@ -59,7 +59,7 @@ test "composite_propagator_extract_operations" {
   
   // Verify extraction result
   let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  @assertion.assert_eq(extracted_value, Some("true"))?
+  assert_eq(extracted_value, Some("true"))
 }
 
 test "composite_propagator_with_empty_propagators" {
@@ -74,7 +74,7 @@ test "composite_propagator_with_empty_propagators" {
   let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
   
   // All operations should complete without errors
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "composite_propagator_with_single_propagator" {
@@ -88,12 +88,12 @@ test "composite_propagator_with_single_propagator" {
   // Test inject with single propagator
   CompositePropagator::inject(composite_propagator, ctx, carrier)
   let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  @assertion.assert_eq(traceparent, Some("00-test-trace-id-test-span-id-01"))?
+  assert_eq(traceparent, Some("00-test-trace-id-test-span-id-01"))
   
   // Test extract with single propagator
   let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
   let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  @assertion.assert_eq(extracted_value, Some("true"))?
+  assert_eq(extracted_value, Some("true"))
 }
 
 test "composite_propagator_with_multiple_propagators" {
@@ -114,7 +114,7 @@ test "composite_propagator_with_multiple_propagators" {
   let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
   
   // All operations should complete without errors
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "propagator_with_context_chain" {
@@ -137,12 +137,12 @@ test "propagator_with_context_chain" {
   
   // Verify injection
   let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  @assertion.assert_eq(traceparent, Some("00-test-trace-id-test-span-id-01"))?
+  assert_eq(traceparent, Some("00-test-trace-id-test-span-id-01"))
   
   // Test extract
   let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
   let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  @assertion.assert_eq(extracted_value, Some("true"))?
+  assert_eq(extracted_value, Some("true"))
 }
 
 test "propagator_with_multiple_carrier_operations" {
@@ -168,9 +168,9 @@ test "propagator_with_multiple_carrier_operations" {
   CompositePropagator::inject(composite_propagator, ctx, carrier3)
   
   // Verify all carriers have traceparent
-  @assertion.assert_eq(TextMapCarrier::get(carrier1, "traceparent"), Some("00-test-trace-id-test-span-id-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(carrier2, "traceparent"), Some("00-test-trace-id-test-span-id-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(carrier3, "traceparent"), Some("00-test-trace-id-test-span-id-01"))?
+  assert_eq(TextMapCarrier::get(carrier1, "traceparent"), Some("00-test-trace-id-test-span-id-01"))
+  assert_eq(TextMapCarrier::get(carrier2, "traceparent"), Some("00-test-trace-id-test-span-id-01"))
+  assert_eq(TextMapCarrier::get(carrier3, "traceparent"), Some("00-test-trace-id-test-span-id-01"))
   
   // Test extract from multiple carriers
   let extracted_ctx1 = CompositePropagator::extract(composite_propagator, carrier1)
@@ -178,9 +178,9 @@ test "propagator_with_multiple_carrier_operations" {
   let extracted_ctx3 = CompositePropagator::extract(composite_propagator, carrier3)
   
   // Verify extractions
-  @assertion.assert_eq(Context::get(extracted_ctx1, ContextKey::new("extracted")), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx2, ContextKey::new("extracted")), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx3, ContextKey::new("extracted")), Some("true"))?
+  assert_eq(Context::get(extracted_ctx1, ContextKey::new("extracted")), Some("true"))
+  assert_eq(Context::get(extracted_ctx2, ContextKey::new("extracted")), Some("true"))
+  assert_eq(Context::get(extracted_ctx3, ContextKey::new("extracted")), Some("true"))
 }
 
 test "propagator_round_trip_scenario" {
@@ -210,10 +210,10 @@ test "propagator_round_trip_scenario" {
   
   // Verify round-trip operations
   let final_value = Context::get(final_ctx, ContextKey::new("extracted"))
-  @assertion.assert_eq(final_value, Some("true"))?
+  assert_eq(final_value, Some("true"))
   
   let final_traceparent = TextMapCarrier::get(new_carrier, "traceparent")
-  @assertion.assert_eq(final_traceparent, Some("00-test-trace-id-test-span-id-01"))?
+  assert_eq(final_traceparent, Some("00-test-trace-id-test-span-id-01"))
 }
 
 test "propagator_with_complex_trace_contexts" {
@@ -237,9 +237,9 @@ test "propagator_with_complex_trace_contexts" {
   let extracted_ctx3 = CompositePropagator::extract(composite_propagator, carrier3)
   
   // All extractions should succeed
-  @assertion.assert_eq(Context::get(extracted_ctx1, ContextKey::new("extracted")), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx2, ContextKey::new("extracted")), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx3, ContextKey::new("extracted")), Some("true"))?
+  assert_eq(Context::get(extracted_ctx1, ContextKey::new("extracted")), Some("true"))
+  assert_eq(Context::get(extracted_ctx2, ContextKey::new("extracted")), Some("true"))
+  assert_eq(Context::get(extracted_ctx3, ContextKey::new("extracted")), Some("true"))
   
   // Test inject after extraction
   let new_carrier1 = TextMapCarrier::new()
@@ -251,7 +251,7 @@ test "propagator_with_complex_trace_contexts" {
   CompositePropagator::inject(composite_propagator, extracted_ctx3, new_carrier3)
   
   // Verify all injections
-  @assertion.assert_eq(TextMapCarrier::get(new_carrier1, "traceparent"), Some("00-test-trace-id-test-span-id-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(new_carrier2, "traceparent"), Some("00-test-trace-id-test-span-id-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(new_carrier3, "traceparent"), Some("00-test-trace-id-test-span-id-01"))?
+  assert_eq(TextMapCarrier::get(new_carrier1, "traceparent"), Some("00-test-trace-id-test-span-id-01"))
+  assert_eq(TextMapCarrier::get(new_carrier2, "traceparent"), Some("00-test-trace-id-test-span-id-01"))
+  assert_eq(TextMapCarrier::get(new_carrier3, "traceparent"), Some("00-test-trace-id-test-span-id-01"))
 }

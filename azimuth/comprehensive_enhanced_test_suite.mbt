@@ -9,20 +9,20 @@ test "attribute_value_deep_nesting" {
   // Verify nested array preservation
   match nested_string {
     ArrayStringValue(arr) => {
-      @assertion.assert_eq(arr.length(), 5)?
-      @assertion.assert_eq(arr[0], "level1")?
-      @assertion.assert_eq(arr[4], "level5")?
+      assert_eq(arr.length(), 5)
+      assert_eq(arr[0], "level1")
+      assert_eq(arr[4], "level5")
     }
-    _ => @test.fail("Expected ArrayStringValue")?
+    _ => @test.fail("Expected ArrayStringValue")
   }
   
   match nested_int {
     ArrayIntValue(arr) => {
-      @assertion.assert_eq(arr.length(), 5)?
-      @assertion.assert_eq(arr[0], 1)?
-      @assertion.assert_eq(arr[4], 10000)?
+      assert_eq(arr.length(), 5)
+      assert_eq(arr[0], 1)
+      assert_eq(arr[4], 10000)
     }
-    _ => @test.fail("Expected ArrayIntValue")?
+    _ => @test.fail("Expected ArrayIntValue")
   }
 }
 
@@ -32,8 +32,8 @@ test "span_lifecycle_events" {
   let span = Tracer::start_span(tracer, "lifecycle_span")
   
   // Test initial state
-  @assertion.assert_eq(Span::is_recording(span), true)?
-  @assertion.assert_eq(Span::status(span), Unset)?
+  assert_eq(Span::is_recording(span), true)
+  assert_eq(Span::status(span), Unset)
   
   // Test status transitions
   Span::set_status(span, Ok, Some("Started successfully"))
@@ -59,13 +59,13 @@ test "context_advanced_operations" {
   let ctx3 = Context::with_value(ctx2, key3, "value3")
   
   // Verify all values are accessible
-  @assertion.assert_eq(Context::get(ctx3, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx3, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx3, key3), Some("value3"))?
+  assert_eq(Context::get(ctx3, key1), Some("value1"))
+  assert_eq(Context::get(ctx3, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key3), Some("value3"))
   
   // Test non-existent key
   let non_existent = ContextKey::new("non_existent")
-  @assertion.assert_eq(Context::get(ctx3, non_existent), None)?
+  assert_eq(Context::get(ctx3, non_existent), None)
 }
 
 test "clock_random_advanced_tests" {
@@ -77,15 +77,15 @@ test "clock_random_advanced_tests" {
   let timestamp2 = Clock::now_unix_nanos(clock)
   
   // Timestamps should be reasonable (in nanoseconds since epoch)
-  @assertion.assert_eq(timestamp1 > 0L, true)?
-  @assertion.assert_eq(timestamp2 >= timestamp1, true)?
+  assert_eq(timestamp1 > 0L, true)
+  assert_eq(timestamp2 >= timestamp1, true)
   
   // Test random generation
   let random_bytes = Random::next_bytes(random, 16)
   let random_u64 = Random::next_u64(random)
   
-  @assertion.assert_eq(random_bytes.length(), 16)?
-  @assertion.assert_eq(random_u64 > 0UL, true)?
+  assert_eq(random_bytes.length(), 16)
+  assert_eq(random_u64 > 0UL, true)
 }
 
 test "instrumentation_scope_detailed" {
@@ -96,9 +96,9 @@ test "instrumentation_scope_detailed" {
     schema_url: Some("https://example.com/schema") 
   }
   
-  @assertion.assert_eq(scope1.name, "test.instrument")?
-  @assertion.assert_eq(scope1.version, Some("1.2.3"))?
-  @assertion.assert_eq(scope1.schema_url, Some("https://example.com/schema"))?
+  assert_eq(scope1.name, "test.instrument")
+  assert_eq(scope1.version, Some("1.2.3"))
+  assert_eq(scope1.schema_url, Some("https://example.com/schema"))
   
   // Test instrumentation scope with minimal details
   let scope2 = InstrumentationScope::{ 
@@ -107,9 +107,9 @@ test "instrumentation_scope_detailed" {
     schema_url: None 
   }
   
-  @assertion.assert_eq(scope2.name, "minimal.instrument")?
-  @assertion.assert_eq(scope2.version, None)?
-  @assertion.assert_eq(scope2.schema_url, None)?
+  assert_eq(scope2.name, "minimal.instrument")
+  assert_eq(scope2.version, None)
+  assert_eq(scope2.schema_url, None)
 }
 
 test "resource_advanced_tests" {
@@ -128,20 +128,20 @@ test "resource_advanced_tests" {
   let resource_with_mixed = Resource::with_attributes(base_resource, mixed_attributes)
   
   // Test retrieval of different attribute types
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_mixed, "string.attr"),
     Some(StringValue("string_value"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_mixed, "int.attr"),
     Some(IntValue(42))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_mixed, "float.attr"),
     Some(FloatValue(3.14159))
-  )?
+  )
   
   // Test resource merging
   let override_resource = Resource::with_attributes(Resource::new(), [
@@ -150,10 +150,10 @@ test "resource_advanced_tests" {
   ])
   
   let merged = Resource::merge(resource_with_mixed, override_resource)
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged, "new.attr"),
     Some(StringValue("new_value"))
-  )?
+  )
 }
 
 test "log_severity_context_tests" {
@@ -169,7 +169,7 @@ test "log_severity_context_tests" {
     let expected_name = severity_names[i]
     
     let log_record = LogRecord::new(severity, "Test message for {expected_name}")
-    @assertion.assert_eq(LogRecord::severity_number(log_record), severity)?
+    assert_eq(LogRecord::severity_number(log_record), severity)
     
     Logger::emit(logger, log_record)
   }
@@ -187,8 +187,8 @@ test "log_severity_context_tests" {
     Some(ctx)
   )
   
-  @assertion.assert_eq(LogRecord::trace_id(contextual_log), Some("trace-789"))?
-  @assertion.assert_eq(LogRecord::span_id(contextual_log), Some("span-456"))?
+  assert_eq(LogRecord::trace_id(contextual_log), Some("trace-789"))
+  assert_eq(LogRecord::span_id(contextual_log), Some("span-456"))
 }
 
 test "meter_instruments_comprehensive" {
@@ -212,13 +212,13 @@ test "meter_instruments_comprehensive" {
   UpDownCounter::add(updown_counter, -5.0, Some(Attributes::new()))
   
   // Test instrument properties
-  @assertion.assert_eq(counter.name, "test_counter")?
-  @assertion.assert_eq(counter.description, Some("Test counter"))?
-  @assertion.assert_eq(counter.unit, Some("count"))?
+  assert_eq(counter.name, "test_counter")
+  assert_eq(counter.description, Some("Test counter"))
+  assert_eq(counter.unit, Some("count"))
   
-  @assertion.assert_eq(histogram.name, "test_histogram")?
-  @assertion.assert_eq(histogram.description, Some("Test histogram"))?
-  @assertion.assert_eq(histogram.unit, Some("ms"))?
+  assert_eq(histogram.name, "test_histogram")
+  assert_eq(histogram.description, Some("Test histogram"))
+  assert_eq(histogram.unit, Some("ms"))
 }
 
 test "composite_propagator_advanced" {
@@ -242,7 +242,7 @@ test "composite_propagator_advanced" {
   
   // Verify extraction preserves context structure
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
 }
 
 test "http_client_network_tests" {
@@ -255,9 +255,9 @@ test "http_client_network_tests" {
     let headers = [("User-Agent", "azimuth-test/1.0")]
     let request = HttpRequest::new(method, "https://api.example.com/test", headers, None)
     
-    @assertion.assert_eq(HttpRequest::http_method(request), method)?
-    @assertion.assert_eq(HttpRequest::url(request), "https://api.example.com/test")?
-    @assertion.assert_eq(HttpRequest::body(request), None)?
+    assert_eq(HttpRequest::http_method(request), method)
+    assert_eq(HttpRequest::url(request), "https://api.example.com/test")
+    assert_eq(HttpRequest::body(request), None)
   }
   
   // Test request/response with bodies
@@ -281,9 +281,9 @@ test "http_client_network_tests" {
     Some("Not Found")
   )
   
-  @assertion.assert_eq(HttpResponse::status_code(success_response), 200)?
-  @assertion.assert_eq(HttpResponse::body(success_response), Some("{\"success\": true}"))?
+  assert_eq(HttpResponse::status_code(success_response), 200)
+  assert_eq(HttpResponse::body(success_response), Some("{\"success\": true}"))
   
-  @assertion.assert_eq(HttpResponse::status_code(error_response), 404)?
-  @assertion.assert_eq(HttpResponse::body(error_response), Some("Not Found"))?
+  assert_eq(HttpResponse::status_code(error_response), 404)
+  assert_eq(HttpResponse::body(error_response), Some("Not Found"))
 }

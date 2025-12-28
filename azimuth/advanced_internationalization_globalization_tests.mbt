@@ -38,43 +38,43 @@ test "multilingual_attribute_values" {
   
   // Verify all character sets are preserved
   match chinese_attr {
-    StringValue(s) => @assertion.assert_eq(s, chinese_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, chinese_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match japanese_attr {
-    StringValue(s) => @assertion.assert_eq(s, japanese_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, japanese_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match korean_attr {
-    StringValue(s) => @assertion.assert_eq(s, korean_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, korean_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match arabic_attr {
-    StringValue(s) => @assertion.assert_eq(s, arabic_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, arabic_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match hebrew_attr {
-    StringValue(s) => @assertion.assert_eq(s, hebrew_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, hebrew_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match russian_attr {
-    StringValue(s) => @assertion.assert_eq(s, russian_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, russian_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match hindi_attr {
-    StringValue(s) => @assertion.assert_eq(s, hindi_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, hindi_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match thai_attr {
-    StringValue(s) => @assertion.assert_eq(s, thai_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, thai_text)
+    _ => @test.fail("Expected StringValue")
   }
 }
 
@@ -100,38 +100,38 @@ test "emoji_and_symbol_support" {
   
   // Verify emoji preservation
   match faces_attr {
-    StringValue(s) => @assertion.assert_eq(s, faces_emoji)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, faces_emoji)
+    _ => @test.fail("Expected StringValue")
   }
   
   match animals_attr {
-    StringValue(s) => @assertion.assert_eq(s, animals_emoji)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, animals_emoji)
+    _ => @test.fail("Expected StringValue")
   }
   
   match food_attr {
-    StringValue(s) => @assertion.assert_eq(s, food_emoji)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, food_emoji)
+    _ => @test.fail("Expected StringValue")
   }
   
   match activities_attr {
-    StringValue(s) => @assertion.assert_eq(s, activities_emoji)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, activities_emoji)
+    _ => @test.fail("Expected StringValue")
   }
   
   match objects_attr {
-    StringValue(s) => @assertion.assert_eq(s, objects_emoji)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, objects_emoji)
+    _ => @test.fail("Expected StringValue")
   }
   
   match symbols_attr {
-    StringValue(s) => @assertion.assert_eq(s, symbols_emoji)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, symbols_emoji)
+    _ => @test.fail("Expected StringValue")
   }
   
   match flags_attr {
-    StringValue(s) => @assertion.assert_eq(s, flags_emoji)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, flags_emoji)
+    _ => @test.fail("Expected StringValue")
   }
   
   // Test mathematical symbols
@@ -139,8 +139,8 @@ test "emoji_and_symbol_support" {
   let math_attr = StringValue(math_symbols)
   
   match math_attr {
-    StringValue(s) => @assertion.assert_eq(s, math_symbols)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, math_symbols)
+    _ => @test.fail("Expected StringValue")
   }
   
   // Test currency symbols
@@ -148,8 +148,8 @@ test "emoji_and_symbol_support" {
   let currency_attr = StringValue(currency_symbols)
   
   match currency_attr {
-    StringValue(s) => @assertion.assert_eq(s, currency_symbols)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, currency_symbols)
+    _ => @test.fail("Expected StringValue")
   }
 }
 
@@ -190,53 +190,53 @@ test "right_to_left_text_support" {
   
   // Verify RTL text preservation
   match arabic_mixed_attr {
-    StringValue(s) => @assertion.assert_eq(s, arabic_mixed)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, arabic_mixed)
+    _ => @test.fail("Expected StringValue")
   }
   
   match arabic_numbers_attr {
-    StringValue(s) => @assertion.assert_eq(s, arabic_numbers)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, arabic_numbers)
+    _ => @test.fail("Expected StringValue")
   }
   
   match arabic_with_english_attr {
-    StringValue(s) => @assertion.assert_eq(s, arabic_with_english)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, arabic_with_english)
+    _ => @test.fail("Expected StringValue")
   }
   
   match hebrew_mixed_attr {
-    StringValue(s) => @assertion.assert_eq(s, hebrew_mixed)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, hebrew_mixed)
+    _ => @test.fail("Expected StringValue")
   }
   
   match hebrew_numbers_attr {
-    StringValue(s) => @assertion.assert_eq(s, hebrew_numbers)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, hebrew_numbers)
+    _ => @test.fail("Expected StringValue")
   }
   
   match hebrew_with_english_attr {
-    StringValue(s) => @assertion.assert_eq(s, hebrew_with_english)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, hebrew_with_english)
+    _ => @test.fail("Expected StringValue")
   }
   
   match persian_text_attr {
-    StringValue(s) => @assertion.assert_eq(s, persian_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, persian_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match persian_numbers_attr {
-    StringValue(s) => @assertion.assert_eq(s, persian_numbers)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, persian_numbers)
+    _ => @test.fail("Expected StringValue")
   }
   
   match urdu_text_attr {
-    StringValue(s) => @assertion.assert_eq(s, urdu_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, urdu_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match urdu_numbers_attr {
-    StringValue(s) => @assertion.assert_eq(s, urdu_numbers)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, urdu_numbers)
+    _ => @test.fail("Expected StringValue")
   }
 }
 
@@ -259,16 +259,16 @@ test "localized_logging_messages" {
   let hindi_log = LogRecord::new(Info, "उपयोगकर्ता लॉगिन सफल")
   
   // Verify all log messages are preserved
-  @assertion.assert_eq(LogRecord::body(english_log), Some("User login successful"))?
-  @assertion.assert_eq(LogRecord::body(spanish_log), Some("Inicio de sesión de usuario exitoso"))?
-  @assertion.assert_eq(LogRecord::body(french_log), Some("Connexion utilisateur réussie"))?
-  @assertion.assert_eq(LogRecord::body(german_log), Some("Benutzeranmeldung erfolgreich"))?
-  @assertion.assert_eq(LogRecord::body(chinese_log), Some("用户登录成功"))?
-  @assertion.assert_eq(LogRecord::body(japanese_log), Some("ユーザーログイン成功"))?
-  @assertion.assert_eq(LogRecord::body(korean_log), Some("사용자 로그인 성공"))?
-  @assertion.assert_eq(LogRecord::body(arabic_log), Some("تسجيل دخول المستخدم بنجاح"))?
-  @assertion.assert_eq(LogRecord::body(russian_log), Some("Вход пользователя выполнен успешно"))?
-  @assertion.assert_eq(LogRecord::body(hindi_log), Some("उपयोगकर्ता लॉगिन सफल"))?
+  assert_eq(LogRecord::body(english_log), Some("User login successful"))
+  assert_eq(LogRecord::body(spanish_log), Some("Inicio de sesión de usuario exitoso"))
+  assert_eq(LogRecord::body(french_log), Some("Connexion utilisateur réussie"))
+  assert_eq(LogRecord::body(german_log), Some("Benutzeranmeldung erfolgreich"))
+  assert_eq(LogRecord::body(chinese_log), Some("用户登录成功"))
+  assert_eq(LogRecord::body(japanese_log), Some("ユーザーログイン成功"))
+  assert_eq(LogRecord::body(korean_log), Some("사용자 로그인 성공"))
+  assert_eq(LogRecord::body(arabic_log), Some("تسجيل دخول المستخدم بنجاح"))
+  assert_eq(LogRecord::body(russian_log), Some("Вход пользователя выполнен успешно"))
+  assert_eq(LogRecord::body(hindi_log), Some("उपयोगकर्ता लॉगिन सफल"))
   
   // Test error messages in different languages
   let english_error = LogRecord::new(Error, "Database connection failed")
@@ -277,17 +277,17 @@ test "localized_logging_messages" {
   let chinese_error = LogRecord::new(Error, "数据库连接失败")
   let arabic_error = LogRecord::new(Error, "فشل الاتصال بقاعدة البيانات")
   
-  @assertion.assert_eq(LogRecord::severity_number(english_error), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(spanish_error), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(french_error), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(chinese_error), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(arabic_error), Error)?
+  assert_eq(LogRecord::severity_number(english_error), Error)
+  assert_eq(LogRecord::severity_number(spanish_error), Error)
+  assert_eq(LogRecord::severity_number(french_error), Error)
+  assert_eq(LogRecord::severity_number(chinese_error), Error)
+  assert_eq(LogRecord::severity_number(arabic_error), Error)
   
-  @assertion.assert_eq(LogRecord::body(english_error), Some("Database connection failed"))?
-  @assertion.assert_eq(LogRecord::body(spanish_error), Some("Error de conexión a la base de datos"))?
-  @assertion.assert_eq(LogRecord::body(french_error), Some("Échec de connexion à la base de données"))?
-  @assertion.assert_eq(LogRecord::body(chinese_error), Some("数据库连接失败"))?
-  @assertion.assert_eq(LogRecord::body(arabic_error), Some("فشل الاتصال بقاعدة البيانات"))?
+  assert_eq(LogRecord::body(english_error), Some("Database connection failed"))
+  assert_eq(LogRecord::body(spanish_error), Some("Error de conexión a la base de datos"))
+  assert_eq(LogRecord::body(french_error), Some("Échec de connexion à la base de données"))
+  assert_eq(LogRecord::body(chinese_error), Some("数据库连接失败"))
+  assert_eq(LogRecord::body(arabic_error), Some("فشل الاتصال بقاعدة البيانات"))
 }
 
 test "localized_span_names" {
@@ -308,15 +308,15 @@ test "localized_span_names" {
   let russian_span = Tracer::start_span(tracer, "Обработка HTTP-запроса")
   
   // Verify all span names are preserved
-  @assertion.assert_eq(Span::name(english_span), "HTTP Request Processing")?
-  @assertion.assert_eq(Span::name(spanish_span), "Procesamiento de Solicitud HTTP")?
-  @assertion.assert_eq(Span::name(french_span), "Traitement de la Requête HTTP")?
-  @assertion.assert_eq(Span::name(german_span), "HTTP-Anfrageverarbeitung")?
-  @assertion.assert_eq(Span::name(chinese_span), "HTTP 请求处理")?
-  @assertion.assert_eq(Span::name(japanese_span), "HTTP リクエスト処理")?
-  @assertion.assert_eq(Span::name(korean_span), "HTTP 요청 처리")?
-  @assertion.assert_eq(Span::name(arabic_span), "معالجة طلب HTTP")?
-  @assertion.assert_eq(Span::name(russian_span), "Обработка HTTP-запроса")?
+  assert_eq(Span::name(english_span), "HTTP Request Processing")
+  assert_eq(Span::name(spanish_span), "Procesamiento de Solicitud HTTP")
+  assert_eq(Span::name(french_span), "Traitement de la Requête HTTP")
+  assert_eq(Span::name(german_span), "HTTP-Anfrageverarbeitung")
+  assert_eq(Span::name(chinese_span), "HTTP 请求处理")
+  assert_eq(Span::name(japanese_span), "HTTP リクエスト処理")
+  assert_eq(Span::name(korean_span), "HTTP 요청 처리")
+  assert_eq(Span::name(arabic_span), "معالجة طلب HTTP")
+  assert_eq(Span::name(russian_span), "Обработка HTTP-запроса")
   
   // Test span events with localized messages
   Span::add_event(english_span, "Request received", None)
@@ -358,37 +358,37 @@ test "localized_metric_names" {
   let arabic_counter = Meter::create_counter(meter, "إجمالي_طلبات_http", Some("إجمالي طلبات HTTP"), Some("عدد"))
   
   // Verify all metric names and descriptions are preserved
-  @assertion.assert_eq(english_counter.name, "http_requests_total")?
-  @assertion.assert_eq(english_counter.description, Some("Total HTTP requests"))?
-  @assertion.assert_eq(english_counter.unit, Some("count"))?
+  assert_eq(english_counter.name, "http_requests_total")
+  assert_eq(english_counter.description, Some("Total HTTP requests"))
+  assert_eq(english_counter.unit, Some("count"))
   
-  @assertion.assert_eq(spanish_counter.name, "solicitudes_http_total")?
-  @assertion.assert_eq(spanish_counter.description, Some("Total de solicitudes HTTP"))?
-  @assertion.assert_eq(spanish_counter.unit, Some("conteo"))?
+  assert_eq(spanish_counter.name, "solicitudes_http_total")
+  assert_eq(spanish_counter.description, Some("Total de solicitudes HTTP"))
+  assert_eq(spanish_counter.unit, Some("conteo"))
   
-  @assertion.assert_eq(french_counter.name, "requetes_http_total")?
-  @assertion.assert_eq(french_counter.description, Some("Total des requêtes HTTP"))?
-  @assertion.assert_eq(french_counter.unit, Some("compte"))?
+  assert_eq(french_counter.name, "requetes_http_total")
+  assert_eq(french_counter.description, Some("Total des requêtes HTTP"))
+  assert_eq(french_counter.unit, Some("compte"))
   
-  @assertion.assert_eq(german_counter.name, "http_anfragen_gesamt")?
-  @assertion.assert_eq(german_counter.description, Some("Gesamtzahl der HTTP-Anfragen"))?
-  @assertion.assert_eq(german_counter.unit, Some("anzahl"))?
+  assert_eq(german_counter.name, "http_anfragen_gesamt")
+  assert_eq(german_counter.description, Some("Gesamtzahl der HTTP-Anfragen"))
+  assert_eq(german_counter.unit, Some("anzahl"))
   
-  @assertion.assert_eq(chinese_counter.name, "http_请求总数")?
-  @assertion.assert_eq(chinese_counter.description, Some("HTTP 请求总数"))?
-  @assertion.assert_eq(chinese_counter.unit, Some("计数"))?
+  assert_eq(chinese_counter.name, "http_请求总数")
+  assert_eq(chinese_counter.description, Some("HTTP 请求总数"))
+  assert_eq(chinese_counter.unit, Some("计数"))
   
-  @assertion.assert_eq(japanese_counter.name, "httpリクエスト合計")?
-  @assertion.assert_eq(japanese_counter.description, Some("HTTPリクエスト合計"))?
-  @assertion.assert_eq(japanese_counter.unit, Some("カウント"))?
+  assert_eq(japanese_counter.name, "httpリクエスト合計")
+  assert_eq(japanese_counter.description, Some("HTTPリクエスト合計"))
+  assert_eq(japanese_counter.unit, Some("カウント"))
   
-  @assertion.assert_eq(korean_counter.name, "http_요청_총계")?
-  @assertion.assert_eq(korean_counter.description, Some("HTTP 요청 총계"))?
-  @assertion.assert_eq(korean_counter.unit, Some("개수"))?
+  assert_eq(korean_counter.name, "http_요청_총계")
+  assert_eq(korean_counter.description, Some("HTTP 요청 총계"))
+  assert_eq(korean_counter.unit, Some("개수"))
   
-  @assertion.assert_eq(arabic_counter.name, "إجمالي_طلبات_http")?
-  @assertion.assert_eq(arabic_counter.description, Some("إجمالي طلبات HTTP"))?
-  @assertion.assert_eq(arabic_counter.unit, Some("عدد"))?
+  assert_eq(arabic_counter.name, "إجمالي_طلبات_http")
+  assert_eq(arabic_counter.description, Some("إجمالي طلبات HTTP"))
+  assert_eq(arabic_counter.unit, Some("عدد"))
   
   // Test metric recording
   Counter::add(english_counter, 100.0)
@@ -454,26 +454,26 @@ test "localized_resource_attributes" {
   let localized_resource = Resource::with_attributes(resource, localized_attrs)
   
   // Verify all localized attributes are preserved
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.en"), Some(StringValue("User Service")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.es"), Some(StringValue("Servicio de Usuario")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.fr"), Some(StringValue("Service Utilisateur")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.de"), Some(StringValue("Benutzerservice")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.zh"), Some(StringValue("用户服务")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.ja"), Some(StringValue("ユーザーサービス")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.ko"), Some(StringValue("사용자 서비스")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.ar"), Some(StringValue("خدمة المستخدم")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.ru"), Some(StringValue("Сервис пользователей")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "service.name.hi"), Some(StringValue("उपयोगकर्ता सेवा")))?
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.en"), Some(StringValue("User Service")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.es"), Some(StringValue("Servicio de Usuario")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.fr"), Some(StringValue("Service Utilisateur")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.de"), Some(StringValue("Benutzerservice")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.zh"), Some(StringValue("用户服务")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.ja"), Some(StringValue("ユーザーサービス")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.ko"), Some(StringValue("사용자 서비스")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.ar"), Some(StringValue("خدمة المستخدم")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.ru"), Some(StringValue("Сервис пользователей")))
+  assert_eq(Resource::get_attribute(localized_resource, "service.name.hi"), Some(StringValue("उपयोगकर्ता सेवा")))
   
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "deployment.region.zh"), Some(StringValue("美国东部")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "deployment.region.ja"), Some(StringValue("米国東部")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "deployment.region.ko"), Some(StringValue("미국 동부")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "deployment.region.ar"), Some(StringValue("الشرق الأمريكي")))?
+  assert_eq(Resource::get_attribute(localized_resource, "deployment.region.zh"), Some(StringValue("美国东部")))
+  assert_eq(Resource::get_attribute(localized_resource, "deployment.region.ja"), Some(StringValue("米国東部")))
+  assert_eq(Resource::get_attribute(localized_resource, "deployment.region.ko"), Some(StringValue("미국 동부")))
+  assert_eq(Resource::get_attribute(localized_resource, "deployment.region.ar"), Some(StringValue("الشرق الأمريكي")))
   
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "environment.zh"), Some(StringValue("生产")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "environment.ja"), Some(StringValue("本番")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "environment.ko"), Some(StringValue("프로덕션")))?
-  @assertion.assert_eq(Resource::get_attribute(localized_resource, "environment.ar"), Some(StringValue("الإنتاج")))?
+  assert_eq(Resource::get_attribute(localized_resource, "environment.zh"), Some(StringValue("生产")))
+  assert_eq(Resource::get_attribute(localized_resource, "environment.ja"), Some(StringValue("本番")))
+  assert_eq(Resource::get_attribute(localized_resource, "environment.ko"), Some(StringValue("프로덕션")))
+  assert_eq(Resource::get_attribute(localized_resource, "environment.ar"), Some(StringValue("الإنتاج")))
 }
 
 test "localized_baggage_entries" {
@@ -497,17 +497,17 @@ test "localized_baggage_entries" {
   let final_baggage = Baggage::set_entry(baggage_with_hi, "request.purpose.zh", "用户验证")
   
   // Verify all localized baggage entries are preserved
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.en"), Some("administrator"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.es"), Some("administrador"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.fr"), Some("administrateur"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.de"), Some("Administrator"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.zh"), Some("管理员"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.ja"), Some("管理者"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.ko"), Some("관리자"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.ar"), Some("مدير"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.ru"), Some("администратор"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "user.role.hi"), Some("व्यवस्थापक"))?
-  @assertion.assert_eq(Baggage::get_entry(final_baggage, "request.purpose.zh"), Some("用户验证"))?
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.en"), Some("administrator"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.es"), Some("administrador"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.fr"), Some("administrateur"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.de"), Some("Administrator"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.zh"), Some("管理员"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.ja"), Some("管理者"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.ko"), Some("관리자"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.ar"), Some("مدير"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.ru"), Some("администратор"))
+  assert_eq(Baggage::get_entry(final_baggage, "user.role.hi"), Some("व्यवस्थापक"))
+  assert_eq(Baggage::get_entry(final_baggage, "request.purpose.zh"), Some("用户验证"))
 }
 
 test "locale_specific_formatting" {
@@ -567,22 +567,22 @@ test "locale_specific_formatting" {
   let currency_resource = Resource::with_attributes(number_resource, currency_attrs)
   
   // Verify all locale-specific formats are preserved
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "timestamp.us"), Some(us_date_format))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "timestamp.eu"), Some(eu_date_format))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "timestamp.iso"), Some(iso_date_format))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "timestamp.zh"), Some(chinese_date_format))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "timestamp.ja"), Some(japanese_date_format))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "timestamp.ko"), Some(korean_date_format))?
+  assert_eq(Resource::get_attribute(currency_resource, "timestamp.us"), Some(us_date_format))
+  assert_eq(Resource::get_attribute(currency_resource, "timestamp.eu"), Some(eu_date_format))
+  assert_eq(Resource::get_attribute(currency_resource, "timestamp.iso"), Some(iso_date_format))
+  assert_eq(Resource::get_attribute(currency_resource, "timestamp.zh"), Some(chinese_date_format))
+  assert_eq(Resource::get_attribute(currency_resource, "timestamp.ja"), Some(japanese_date_format))
+  assert_eq(Resource::get_attribute(currency_resource, "timestamp.ko"), Some(korean_date_format))
   
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "amount.us"), Some(us_number_format))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "amount.eu"), Some(eu_number_format))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "amount.in"), Some(indian_number_format))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "amount.zh"), Some(chinese_number_format))?
+  assert_eq(Resource::get_attribute(currency_resource, "amount.us"), Some(us_number_format))
+  assert_eq(Resource::get_attribute(currency_resource, "amount.eu"), Some(eu_number_format))
+  assert_eq(Resource::get_attribute(currency_resource, "amount.in"), Some(indian_number_format))
+  assert_eq(Resource::get_attribute(currency_resource, "amount.zh"), Some(chinese_number_format))
   
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "price.us"), Some(us_currency))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "price.eu"), Some(eu_currency))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "price.uk"), Some(uk_currency))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "price.jp"), Some(japanese_currency))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "price.cn"), Some(chinese_currency))?
-  @assertion.assert_eq(Resource::get_attribute(currency_resource, "price.kr"), Some(korean_currency))?
+  assert_eq(Resource::get_attribute(currency_resource, "price.us"), Some(us_currency))
+  assert_eq(Resource::get_attribute(currency_resource, "price.eu"), Some(eu_currency))
+  assert_eq(Resource::get_attribute(currency_resource, "price.uk"), Some(uk_currency))
+  assert_eq(Resource::get_attribute(currency_resource, "price.jp"), Some(japanese_currency))
+  assert_eq(Resource::get_attribute(currency_resource, "price.cn"), Some(chinese_currency))
+  assert_eq(Resource::get_attribute(currency_resource, "price.kr"), Some(korean_currency))
 }

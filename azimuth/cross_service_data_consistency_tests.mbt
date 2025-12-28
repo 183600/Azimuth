@@ -15,7 +15,7 @@ test "trace_context_across_services" {
   
   // Verify Service A injection
   let trace_from_a = TextMapCarrier::get(service_a_carrier, "traceparent")
-  @assertion.assert_eq(trace_from_a, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(trace_from_a, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   // Service B: Extracts trace context from Service A
   let service_b_ctx = CompositePropagator::extract(composite, service_a_carrier)
@@ -31,7 +31,7 @@ test "trace_context_across_services" {
   
   // Verify Service B propagation
   let trace_from_b = TextMapCarrier::get(service_b_carrier, "traceparent")
-  @assertion.assert_eq(trace_from_b, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(trace_from_b, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   // Service C: Extracts trace context from Service B
   let service_c_ctx = CompositePropagator::extract(composite, service_b_carrier)
@@ -43,8 +43,8 @@ test "trace_context_across_services" {
   
   // Verify trace consistency across services
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(service_b_ctx, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(service_c_ctx, extracted_key), Some("true"))?
+  assert_eq(Context::get(service_b_ctx, extracted_key), Some("true"))
+  assert_eq(Context::get(service_c_ctx, extracted_key), Some("true"))
 }
 
 test "baggage_propagation_across_services" {
@@ -70,12 +70,12 @@ test "baggage_propagation_across_services" {
   let service_c_final = Baggage::set_entry(service_c_baggage, "trace.id", "trace123")
   
   // Verify baggage propagation across services
-  @assertion.assert_eq(Baggage::get_entry(service_c_final, "user.id"), Some("12345"))?
-  @assertion.assert_eq(Baggage::get_entry(service_c_final, "session.id"), Some("abcdef"))?
-  @assertion.assert_eq(Baggage::get_entry(service_c_final, "tenant.id"), Some("tenant123"))?
-  @assertion.assert_eq(Baggage::get_entry(service_c_final, "request.id"), Some("req789"))?
-  @assertion.assert_eq(Baggage::get_entry(service_c_final, "correlation.id"), Some("corr456"))?
-  @assertion.assert_eq(Baggage::get_entry(service_c_final, "trace.id"), Some("trace123"))?
+  assert_eq(Baggage::get_entry(service_c_final, "user.id"), Some("12345"))
+  assert_eq(Baggage::get_entry(service_c_final, "session.id"), Some("abcdef"))
+  assert_eq(Baggage::get_entry(service_c_final, "tenant.id"), Some("tenant123"))
+  assert_eq(Baggage::get_entry(service_c_final, "request.id"), Some("req789"))
+  assert_eq(Baggage::get_entry(service_c_final, "correlation.id"), Some("corr456"))
+  assert_eq(Baggage::get_entry(service_c_final, "trace.id"), Some("trace123"))
 }
 
 test "cross_service_span_continuity" {
@@ -110,18 +110,18 @@ test "cross_service_span_continuity" {
   Span::set_status(span_c, Ok, Some("Service C completed"))
   
   // Verify span continuity
-  @assertion.assert_eq(Span::name(span_a), "service_a_operation")?
-  @assertion.assert_eq(Span::name(span_b), "service_b_operation")?
-  @assertion.assert_eq(Span::name(span_c), "service_c_operation")?
+  assert_eq(Span::name(span_a), "service_a_operation")
+  assert_eq(Span::name(span_b), "service_b_operation")
+  assert_eq(Span::name(span_c), "service_c_operation")
   
-  @assertion.assert_eq(Span::is_recording(span_a), true)?
-  @assertion.assert_eq(Span::is_recording(span_b), true)?
-  @assertion.assert_eq(Span::is_recording(span_c), true)?
+  assert_eq(Span::is_recording(span_a), true)
+  assert_eq(Span::is_recording(span_b), true)
+  assert_eq(Span::is_recording(span_c), true)
   
   // Verify span contexts
-  @assertion.assert_eq(SpanContext::is_valid(span_a_ctx), true)?
-  @assertion.assert_eq(SpanContext::is_valid(span_b_ctx), true)?
-  @assertion.assert_eq(SpanContext::is_valid(span_c_ctx), true)?
+  assert_eq(SpanContext::is_valid(span_a_ctx), true)
+  assert_eq(SpanContext::is_valid(span_b_ctx), true)
+  assert_eq(SpanContext::is_valid(span_c_ctx), true)
   
   // End spans in reverse order
   Span::end(span_c)
@@ -167,16 +167,16 @@ test "cross_service_metrics_aggregation" {
   Histogram::record(histogram_c, 130.0)
   
   // Verify metric instrument integrity
-  @assertion.assert_eq(counter_a.name, "requests_total")?
-  @assertion.assert_eq(counter_b.name, "requests_total")?
-  @assertion.assert_eq(counter_c.name, "requests_total")?
+  assert_eq(counter_a.name, "requests_total")
+  assert_eq(counter_b.name, "requests_total")
+  assert_eq(counter_c.name, "requests_total")
   
-  @assertion.assert_eq(histogram_a.name, "request_duration")?
-  @assertion.assert_eq(histogram_b.name, "request_duration")?
-  @assertion.assert_eq(histogram_c.name, "request_duration")?
+  assert_eq(histogram_a.name, "request_duration")
+  assert_eq(histogram_b.name, "request_duration")
+  assert_eq(histogram_c.name, "request_duration")
   
-  @assertion.assert_eq(gauge_a.name, "active_connections")?
-  @assertion.assert_eq(updown_b.name, "queue_size")?
+  assert_eq(gauge_a.name, "active_connections")
+  assert_eq(updown_b.name, "queue_size")
 }
 
 test "cross_service_log_correlation" {
@@ -262,19 +262,19 @@ test "cross_service_log_correlation" {
   )
   
   // Verify log correlation
-  @assertion.assert_eq(LogRecord::trace_id(log_a1), Some(trace_id))?
-  @assertion.assert_eq(LogRecord::trace_id(log_a2), Some(trace_id))?
-  @assertion.assert_eq(LogRecord::trace_id(log_b1), Some(trace_id))?
-  @assertion.assert_eq(LogRecord::trace_id(log_b2), Some(trace_id))?
-  @assertion.assert_eq(LogRecord::trace_id(log_c1), Some(trace_id))?
-  @assertion.assert_eq(LogRecord::trace_id(log_c2), Some(trace_id))?
+  assert_eq(LogRecord::trace_id(log_a1), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_a2), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_b1), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_b2), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_c1), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_c2), Some(trace_id))
   
-  @assertion.assert_eq(LogRecord::span_id(log_a1), Some(span_a_id))?
-  @assertion.assert_eq(LogRecord::span_id(log_a2), Some(span_a_id))?
-  @assertion.assert_eq(LogRecord::span_id(log_b1), Some(span_b_id))?
-  @assertion.assert_eq(LogRecord::span_id(log_b2), Some(span_b_id))?
-  @assertion.assert_eq(LogRecord::span_id(log_c1), Some(span_c_id))?
-  @assertion.assert_eq(LogRecord::span_id(log_c2), Some(span_c_id))?
+  assert_eq(LogRecord::span_id(log_a1), Some(span_a_id))
+  assert_eq(LogRecord::span_id(log_a2), Some(span_a_id))
+  assert_eq(LogRecord::span_id(log_b1), Some(span_b_id))
+  assert_eq(LogRecord::span_id(log_b2), Some(span_b_id))
+  assert_eq(LogRecord::span_id(log_c1), Some(span_c_id))
+  assert_eq(LogRecord::span_id(log_c2), Some(span_c_id))
   
   // Emit correlated logs
   Logger::emit(logger_a, log_a1)
@@ -321,40 +321,40 @@ test "cross_service_resource_consistency" {
   let service_c_with_attrs = Resource::with_attributes(service_c_resource, service_c_attributes)
   
   // Verify base resource consistency
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(service_a_with_attrs, "service.name"),
     Some(StringValue("unified_service"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(service_a_with_attrs, "service.version"),
     Some(StringValue("1.0.0"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(service_a_with_attrs, "deployment.environment"),
     None // Based on mock implementation
-  )?
+  )
   
   // Verify service-specific attributes
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(service_b_with_attrs, "service.instance.id"),
     Some(StringValue("instance-b-123"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(service_c_with_attrs, "service.instance.id"),
     Some(StringValue("instance-c-789"))
-  )?
+  )
   
   // Test resource merging for unified view
   let unified_resource = Resource::merge(service_a_with_attrs, service_b_with_attrs)
   let final_resource = Resource::merge(unified_resource, service_c_with_attrs)
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(final_resource, "service.instance.id"),
     Some(StringValue("instance-c-789"))
-  )?
+  )
 }
 
 test "cross_service_error_propagation" {
@@ -417,13 +417,13 @@ test "cross_service_error_propagation" {
   )
   
   // Verify error propagation
-  @assertion.assert_eq(Span::name(span_a), "service_a_error_operation")?
-  @assertion.assert_eq(Span::name(span_b), "service_b_error_handling")?
-  @assertion.assert_eq(Span::name(span_c), "service_c_fallback")?
+  assert_eq(Span::name(span_a), "service_a_error_operation")
+  assert_eq(Span::name(span_b), "service_b_error_handling")
+  assert_eq(Span::name(span_c), "service_c_fallback")
   
-  @assertion.assert_eq(LogRecord::trace_id(error_log_a), Some("error_trace123"))?
-  @assertion.assert_eq(LogRecord::trace_id(error_log_b), Some("error_trace123"))?
-  @assertion.assert_eq(LogRecord::trace_id(warn_log_c), Some("error_trace123"))?
+  assert_eq(LogRecord::trace_id(error_log_a), Some("error_trace123"))
+  assert_eq(LogRecord::trace_id(error_log_b), Some("error_trace123"))
+  assert_eq(LogRecord::trace_id(warn_log_c), Some("error_trace123"))
   
   // End spans
   Span::end(span_c)
@@ -476,20 +476,20 @@ test "cross_service_performance_tracking" {
   Counter::add(error_rate_c, 5.0)
   
   // Verify performance instruments
-  @assertion.assert_eq(latency_a.name, "request_latency_ms")?
-  @assertion.assert_eq(latency_b.name, "request_latency_ms")?
-  @assertion.assert_eq(latency_c.name, "request_latency_ms")?
+  assert_eq(latency_a.name, "request_latency_ms")
+  assert_eq(latency_b.name, "request_latency_ms")
+  assert_eq(latency_c.name, "request_latency_ms")
   
-  @assertion.assert_eq(throughput_a.name, "requests_processed")?
-  @assertion.assert_eq(throughput_b.name, "requests_processed")?
-  @assertion.assert_eq(throughput_c.name, "requests_processed")?
+  assert_eq(throughput_a.name, "requests_processed")
+  assert_eq(throughput_b.name, "requests_processed")
+  assert_eq(throughput_c.name, "requests_processed")
   
-  @assertion.assert_eq(queue_size_b.name, "queue_size")?
-  @assertion.assert_eq(error_rate_c.name, "errors_total")?
+  assert_eq(queue_size_b.name, "queue_size")
+  assert_eq(error_rate_c.name, "errors_total")
   
   // Verify instrument descriptions and units
-  @assertion.assert_eq(latency_a.description, None)?
-  @assertion.assert_eq(throughput_a.description, None)?
-  @assertion.assert_eq(queue_size_b.description, None)?
-  @assertion.assert_eq(error_rate_c.description, None)?
+  assert_eq(latency_a.description, None)
+  assert_eq(throughput_a.description, None)
+  assert_eq(queue_size_b.description, None)
+  assert_eq(error_rate_c.description, None)
 }

@@ -29,15 +29,15 @@ test "distributed_trace_context_integrity" {
   let service_a_trace = TextMapCarrier::get(service_a_carrier, "traceparent")
   let service_b_trace = TextMapCarrier::get(service_b_carrier, "traceparent")
   
-  @assertion.assert_eq(gateway_trace, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(service_a_trace, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(service_b_trace, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(gateway_trace, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(service_a_trace, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(service_b_trace, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   // Verify context extraction works consistently
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(service_a_ctx, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(service_b_ctx, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(service_c_ctx, extracted_key), Some("true"))?
+  assert_eq(Context::get(service_a_ctx, extracted_key), Some("true"))
+  assert_eq(Context::get(service_b_ctx, extracted_key), Some("true"))
+  assert_eq(Context::get(service_c_ctx, extracted_key), Some("true"))
 }
 
 test "baggage_propagation_across_service_boundaries" {
@@ -61,15 +61,15 @@ test "baggage_propagation_across_service_boundaries" {
   let request_id = Baggage::get_entry(baggage_with_tenant, "request.id")
   let tenant_id = Baggage::get_entry(baggage_with_tenant, "tenant.id")
   
-  @assertion.assert_eq(user_id, Some("user123"))?
-  @assertion.assert_eq(session_id, Some("session456"))?
-  @assertion.assert_eq(request_id, Some("req789"))?
-  @assertion.assert_eq(tenant_id, Some("tenant001"))?
+  assert_eq(user_id, Some("user123"))
+  assert_eq(session_id, Some("session456"))
+  assert_eq(request_id, Some("req789"))
+  assert_eq(tenant_id, Some("tenant001"))
   
   // Test baggage removal
   let baggage_after_removal = Baggage::remove_entry(baggage_with_tenant, "session.id")
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "session.id"), Some("session456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("user123"))?
+  assert_eq(Baggage::get_entry(baggage_after_removal, "session.id"), Some("session456"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("user123"))
 }
 
 test "cross_service_metrics_correlation" {
@@ -91,13 +91,13 @@ test "cross_service_metrics_correlation" {
   let updown_counter_c = Meter::create_updown_counter(meter_service_c, "queue_size", Some("Queue size"), Some("items"))
   
   // Verify metric creation and properties
-  @assertion.assert_eq(counter_a.name, "requests_processed")?
-  @assertion.assert_eq(counter_a.description, Some("Total requests processed"))?
-  @assertion.assert_eq(counter_a.unit, Some("count"))?
+  assert_eq(counter_a.name, "requests_processed")
+  assert_eq(counter_a.description, Some("Total requests processed"))
+  assert_eq(counter_a.unit, Some("count"))
   
-  @assertion.assert_eq(histogram_a.name, "request_duration")?
-  @assertion.assert_eq(gauge_b.name, "active_connections")?
-  @assertion.assert_eq(updown_counter_c.name, "queue_size")?
+  assert_eq(histogram_a.name, "request_duration")
+  assert_eq(gauge_b.name, "active_connections")
+  assert_eq(updown_counter_c.name, "queue_size")
   
   // Test metric operations
   Counter::add(counter_a, 10.0)
@@ -109,8 +109,8 @@ test "cross_service_metrics_correlation" {
   let counter_instrument = Counter(counter_a.name, counter_a.description, counter_a.unit)
   let histogram_instrument = Histogram(histogram_a.name, histogram_a.description, histogram_a.unit)
   
-  @assertion.assert_eq(Instrument::name(counter_instrument), "requests_processed")?
-  @assertion.assert_eq(Instrument::description(histogram_instrument), Some("Request duration"))?
+  assert_eq(Instrument::name(counter_instrument), "requests_processed")
+  assert_eq(Instrument::description(histogram_instrument), Some("Request duration"))
 }
 
 test "distributed_logging_correlation" {
@@ -163,23 +163,23 @@ test "distributed_logging_correlation" {
   )
   
   // Verify log correlation through trace ID
-  @assertion.assert_eq(LogRecord::trace_id(log_a), Some(trace_id))?
-  @assertion.assert_eq(LogRecord::trace_id(log_b), Some(trace_id))?
-  @assertion.assert_eq(LogRecord::trace_id(log_c), Some(trace_id))?
+  assert_eq(LogRecord::trace_id(log_a), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_b), Some(trace_id))
+  assert_eq(LogRecord::trace_id(log_c), Some(trace_id))
   
   // Verify individual span IDs
-  @assertion.assert_eq(LogRecord::span_id(log_a), Some(span_id_a))?
-  @assertion.assert_eq(LogRecord::span_id(log_b), Some(span_id_b))?
-  @assertion.assert_eq(LogRecord::span_id(log_c), Some(span_id_c))?
+  assert_eq(LogRecord::span_id(log_a), Some(span_id_a))
+  assert_eq(LogRecord::span_id(log_b), Some(span_id_b))
+  assert_eq(LogRecord::span_id(log_c), Some(span_id_c))
   
   // Verify log severity and body
-  @assertion.assert_eq(LogRecord::severity_number(log_a), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(log_b), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(log_c), Warn)?
+  assert_eq(LogRecord::severity_number(log_a), Info)
+  assert_eq(LogRecord::severity_number(log_b), Info)
+  assert_eq(LogRecord::severity_number(log_c), Warn)
   
-  @assertion.assert_eq(LogRecord::body(log_a), Some("Processing request in Service A"))?
-  @assertion.assert_eq(LogRecord::body(log_b), Some("Processing request in Service B"))?
-  @assertion.assert_eq(LogRecord::body(log_c), Some("Warning in Service C"))?
+  assert_eq(LogRecord::body(log_a), Some("Processing request in Service A"))
+  assert_eq(LogRecord::body(log_b), Some("Processing request in Service B"))
+  assert_eq(LogRecord::body(log_c), Some("Warning in Service C"))
 }
 
 test "resource_attributes_consistency" {
@@ -210,21 +210,21 @@ test "resource_attributes_consistency" {
   let service_c_host = Resource::get_attribute(service_c_resource, "host.name")
   
   // Verify resource attribute consistency
-  @assertion.assert_eq(service_a_name, Some(StringValue("unified-service")))?
-  @assertion.assert_eq(service_a_version, Some(StringValue("2.1.0")))?
-  @assertion.assert_eq(service_b_instance, Some(StringValue("instance-abc123")))?
-  @assertion.assert_eq(service_b_env, Some(StringValue("production")))?
-  @assertion.assert_eq(service_c_host, Some(StringValue("web-server-01")))?
+  assert_eq(service_a_name, Some(StringValue("unified-service")))
+  assert_eq(service_a_version, Some(StringValue("2.1.0")))
+  assert_eq(service_b_instance, Some(StringValue("instance-abc123")))
+  assert_eq(service_b_env, Some(StringValue("production")))
+  assert_eq(service_c_host, Some(StringValue("web-server-01")))
   
   // Test resource merging
   let additional_attrs = [("custom.attribute", StringValue("custom-value"))]
   let additional_resource = Resource::with_attributes(Resource::new(), additional_attrs)
   let merged_resource = Resource::merge(unified_resource, additional_resource)
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged_resource, "custom.attribute"),
     Some(StringValue("custom-value"))
-  )?
+  )
 }
 
 test "span_hierarchy_across_services" {
@@ -238,34 +238,34 @@ test "span_hierarchy_across_services" {
   let root_span_ctx = SpanContext::new("root_trace_789", "root_span_123", true, "key1=value1")
   let root_span = Span::new("root-operation", Server, root_span_ctx)
   
-  @assertion.assert_eq(Span::name(root_span), "root-operation")?
-  @assertion.assert_eq(Span::kind(root_span), Server)?
-  @assertion.assert_eq(Span::is_recording(root_span), true)?
+  assert_eq(Span::name(root_span), "root-operation")
+  assert_eq(Span::kind(root_span), Server)
+  assert_eq(Span::is_recording(root_span), true)
   
   // Service B: Creates child span
   let child_span_ctx = SpanContext::new("root_trace_789", "child_span_456", true, "key1=value1,key2=value2")
   let child_span = Span::new("child-operation", Client, child_span_ctx)
   
-  @assertion.assert_eq(Span::name(child_span), "child-operation")?
-  @assertion.assert_eq(Span::kind(child_span), Client)?
-  @assertion.assert_eq(SpanContext::trace_id(Span::span_context(child_span)), "root_trace_789")?
+  assert_eq(Span::name(child_span), "child-operation")
+  assert_eq(Span::kind(child_span), Client)
+  assert_eq(SpanContext::trace_id(Span::span_context(child_span)), "root_trace_789")
   
   // Service C: Creates grandchild span
   let grandchild_span_ctx = SpanContext::new("root_trace_789", "grandchild_span_789", true, "key1=value1,key2=value2,key3=value3")
   let grandchild_span = Span::new("grandchild-operation", Internal, grandchild_span_ctx)
   
-  @assertion.assert_eq(Span::name(grandchild_span), "grandchild-operation")?
-  @assertion.assert_eq(Span::kind(grandchild_span), Internal)?
-  @assertion.assert_eq(SpanContext::trace_id(Span::span_context(grandchild_span)), "root_trace_789")?
+  assert_eq(Span::name(grandchild_span), "grandchild-operation")
+  assert_eq(Span::kind(grandchild_span), Internal)
+  assert_eq(SpanContext::trace_id(Span::span_context(grandchild_span)), "root_trace_789")
   
   // Verify span context relationships
-  @assertion.assert_eq(SpanContext::trace_id(root_span_ctx), "root_trace_789")?
-  @assertion.assert_eq(SpanContext::trace_id(child_span_ctx), "root_trace_789")?
-  @assertion.assert_eq(SpanContext::trace_id(grandchild_span_ctx), "root_trace_789")?
+  assert_eq(SpanContext::trace_id(root_span_ctx), "root_trace_789")
+  assert_eq(SpanContext::trace_id(child_span_ctx), "root_trace_789")
+  assert_eq(SpanContext::trace_id(grandchild_span_ctx), "root_trace_789")
   
-  @assertion.assert_eq(SpanContext::span_id(root_span_ctx), "root_span_123")?
-  @assertion.assert_eq(SpanContext::span_id(child_span_ctx), "child_span_456")?
-  @assertion.assert_eq(SpanContext::span_id(grandchild_span_ctx), "grandchild_span_789")?
+  assert_eq(SpanContext::span_id(root_span_ctx), "root_span_123")
+  assert_eq(SpanContext::span_id(child_span_ctx), "child_span_456")
+  assert_eq(SpanContext::span_id(grandchild_span_ctx), "grandchild_span_789")
   
   // Test span operations
   Span::set_status(root_span, Ok, Some("Root operation completed"))
@@ -336,15 +336,15 @@ test "error_propagation_across_services" {
   Span::end(error_span_c)
   
   // Verify error correlation and trace consistency
-  @assertion.assert_eq(LogRecord::trace_id(error_log_a), Some("error_trace_001"))?
-  @assertion.assert_eq(LogRecord::trace_id(error_log_b), Some("error_trace_001"))?
-  @assertion.assert_eq(LogRecord::trace_id(error_log_c), Some("error_trace_001"))?
+  assert_eq(LogRecord::trace_id(error_log_a), Some("error_trace_001"))
+  assert_eq(LogRecord::trace_id(error_log_b), Some("error_trace_001"))
+  assert_eq(LogRecord::trace_id(error_log_c), Some("error_trace_001"))
   
-  @assertion.assert_eq(LogRecord::severity_number(error_log_a), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(error_log_b), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(error_log_c), Warn)?
+  assert_eq(LogRecord::severity_number(error_log_a), Error)
+  assert_eq(LogRecord::severity_number(error_log_b), Error)
+  assert_eq(LogRecord::severity_number(error_log_c), Warn)
   
-  @assertion.assert_eq(Span::status(error_span_a), Error)?
-  @assertion.assert_eq(Span::status(error_span_b), Error)?
-  @assertion.assert_eq(Span::status(error_span_c), Ok)?
+  assert_eq(Span::status(error_span_a), Error)
+  assert_eq(Span::status(error_span_b), Error)
+  assert_eq(Span::status(error_span_c), Ok)
 }

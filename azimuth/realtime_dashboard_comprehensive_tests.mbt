@@ -44,17 +44,17 @@ test "realtime_metrics_streaming" {
   @assertion.assert_true(duration < 10000000L)? // Less than 10ms for 100 operations
   
   // Verify instrument integrity
-  @assertion.assert_eq(request_rate.name, "requests_per_second")?
-  @assertion.assert_eq(response_time.name, "response_time_ms")?
-  @assertion.assert_eq(error_rate.name, "errors_per_second")?
-  @assertion.assert_eq(active_users.name, "active_users")?
-  @assertion.assert_eq(memory_usage.name, "memory_usage_mb")?
+  assert_eq(request_rate.name, "requests_per_second")
+  assert_eq(response_time.name, "response_time_ms")
+  assert_eq(error_rate.name, "errors_per_second")
+  assert_eq(active_users.name, "active_users")
+  assert_eq(memory_usage.name, "memory_usage_mb")
   
-  @assertion.assert_eq(request_rate.description, Some("Request rate per second"))?
-  @assertion.assert_eq(response_time.description, Some("Response time distribution"))?
-  @assertion.assert_eq(error_rate.description, Some("Error rate per second"))?
-  @assertion.assert_eq(active_users.description, Some("Currently active users"))?
-  @assertion.assert_eq(memory_usage.description, Some("Memory usage in MB"))?
+  assert_eq(request_rate.description, Some("Request rate per second"))
+  assert_eq(response_time.description, Some("Response time distribution"))
+  assert_eq(error_rate.description, Some("Error rate per second"))
+  assert_eq(active_users.description, Some("Currently active users"))
+  assert_eq(memory_usage.description, Some("Memory usage in MB"))
 }
 
 test "realtime_log_streaming" {
@@ -180,9 +180,9 @@ test "realtime_span_monitoring" {
   @assertion.assert_true(duration < 8000000L)? // Less than 8ms for 20 spans
   
   // Verify span integrity
-  @assertion.assert_eq(active_spans.length, 20)?
-  @assertion.assert_eq(Span::name(active_spans[0]), "realtime_operation_0")?
-  @assertion.assert_eq(Span::name(active_spans[19]), "realtime_operation_19")?
+  assert_eq(active_spans.length, 20)
+  assert_eq(Span::name(active_spans[0]), "realtime_operation_0")
+  assert_eq(Span::name(active_spans[19]), "realtime_operation_19")
 }
 
 test "realtime_dashboard_aggregations" {
@@ -231,14 +231,14 @@ test "realtime_dashboard_aggregations" {
   @assertion.assert_true(duration < 15000000L)? // Less than 15ms for 200 operations
   
   // Verify aggregation results
-  @assertion.assert_eq(total_operations, 200)?
+  assert_eq(total_operations, 200)
   @assertion.assert_true(total_success > 150)? // Should be around 175
   
   // Verify instrument integrity
-  @assertion.assert_eq(total_requests.name, "total_requests")?
-  @assertion.assert_eq(success_rate.name, "success_rate_percentage")?
-  @assertion.assert_eq(latency_p95.name, "latency_p95_ms")?
-  @assertion.assert_eq(throughput.name, "throughput_ops_per_second")?
+  assert_eq(total_requests.name, "total_requests")
+  assert_eq(success_rate.name, "success_rate_percentage")
+  assert_eq(latency_p95.name, "latency_p95_ms")
+  assert_eq(throughput.name, "throughput_ops_per_second")
 }
 
 test "realtime_alert_processing" {
@@ -339,14 +339,14 @@ test "realtime_alert_processing" {
   @assertion.assert_true(duration < 20000000L)? // Less than 20ms for 100 monitoring cycles
   
   // Verify alert triggers
-  @assertion.assert_true(alert_triggered.length > 0)?
+  @assertion.assert_true(alert_triggered.length > 0)
   @assertion.assert_true(alert_triggered.length < 50)? // Should not trigger too many false alerts
   
   // Verify instrument integrity
-  @assertion.assert_eq(cpu_usage.name, "cpu_usage_percentage")?
-  @assertion.assert_eq(memory_usage.name, "memory_usage_percentage")?
-  @assertion.assert_eq(error_count.name, "error_count_total")?
-  @assertion.assert_eq(response_time.name, "response_time_ms")?
+  assert_eq(cpu_usage.name, "cpu_usage_percentage")
+  assert_eq(memory_usage.name, "memory_usage_percentage")
+  assert_eq(error_count.name, "error_count_total")
+  assert_eq(response_time.name, "response_time_ms")
 }
 
 test "realtime_data_pipeline" {
@@ -435,13 +435,13 @@ test "realtime_data_pipeline" {
   @assertion.assert_true(total_duration < 25000000L)? // Less than 25ms for 75 items
   
   // Verify pipeline results
-  @assertion.assert_eq(processed_items.length, 67)? // Should be 67 out of 75 (90% success rate)
+  assert_eq(processed_items.length, 67)? // Should be 67 out of 75 (90% success rate)
   
   // Verify instrument integrity
-  @assertion.assert_eq(pipeline_input.name, "pipeline_input_total")?
-  @assertion.assert_eq(pipeline_output.name, "pipeline_output_total")?
-  @assertion.assert_eq(pipeline_latency.name, "pipeline_latency_ms")?
-  @assertion.assert_eq(pipeline_errors.name, "pipeline_errors_total")?
+  assert_eq(pipeline_input.name, "pipeline_input_total")
+  assert_eq(pipeline_output.name, "pipeline_output_total")
+  assert_eq(pipeline_latency.name, "pipeline_latency_ms")
+  assert_eq(pipeline_errors.name, "pipeline_errors_total")
 }
 
 test "realtime_dashboard_updates" {
@@ -511,11 +511,11 @@ test "realtime_dashboard_updates" {
   
   // Verify dashboard update performance
   @assertion.assert_true(duration < 10000000L)? // Less than 10ms for 25 update cycles
-  @assertion.assert_eq(update_count, 25)?
+  assert_eq(update_count, 25)
   
   // Verify all dashboard metrics are properly configured
   for (metric_name, instrument) in dashboard_metrics {
-    @assertion.assert_true(instrument.name.length > 0)?
-    @assertion.assert_eq(instrument.name, metric_name)?
+    @assertion.assert_true(instrument.name.length > 0)
+    assert_eq(instrument.name, metric_name)
   }
 }

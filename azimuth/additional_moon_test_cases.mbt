@@ -11,8 +11,8 @@ test "empty_string_attributes_handling" {
   // Test getting empty string attribute
   let result = Attributes::get(attrs, "")
   match result {
-    Some(StringValue(s)) => @assertion.assert_eq(s, "")?
-    _ => @test.fail("Expected empty string value")?
+    Some(StringValue(s)) => assert_eq(s, "")
+    _ => @test.fail("Expected empty string value")
   }
 }
 
@@ -51,13 +51,13 @@ test "maximum_values_handling" {
   
   // Verify values are preserved
   match max_int {
-    IntValue(i) => @assertion.assert_eq(i, 2147483647)?
-    _ => @test.fail("Expected max int value")?
+    IntValue(i) => assert_eq(i, 2147483647)
+    _ => @test.fail("Expected max int value")
   }
   
   match min_int {
-    IntValue(i) => @assertion.assert_eq(i, -2147483648)?
-    _ => @test.fail("Expected min int value")?
+    IntValue(i) => assert_eq(i, -2147483648)
+    _ => @test.fail("Expected min int value")
   }
 }
 
@@ -65,15 +65,15 @@ test "maximum_values_handling" {
 test "invalid_span_context_handling" {
   // Test with invalid trace ID format
   let invalid_trace_ctx = SpanContext::new("invalid", "span456", true, "")
-  @assertion.assert_eq(SpanContext::is_valid(invalid_trace_ctx), false)?
+  assert_eq(SpanContext::is_valid(invalid_trace_ctx), false)
   
   // Test with invalid span ID format
   let invalid_span_ctx = SpanContext::new("trace123", "invalid", true, "")
-  @assertion.assert_eq(SpanContext::is_valid(invalid_span_ctx), false)?
+  assert_eq(SpanContext::is_valid(invalid_span_ctx), false)
   
   // Test with null-like values
   let null_ctx = SpanContext::new("", "", false, "")
-  @assertion.assert_eq(SpanContext::is_valid(null_ctx), false)?
+  assert_eq(SpanContext::is_valid(null_ctx), false)
 }
 
 test "context_key_collision_handling" {
@@ -92,7 +92,7 @@ test "context_key_collision_handling" {
   let result2 = Context::get(ctx2, key2)
   
   // Both should return the same value since keys are identical
-  @assertion.assert_eq(result1, result2)?
+  assert_eq(result1, result2)
 }
 
 // Performance tests
@@ -111,9 +111,9 @@ test "large_attribute_set_performance" {
   let result2 = Attributes::get(attrs, "attr3")
   let result3 = Attributes::get(attrs, "attr5")
   
-  @assertion.assert_eq(result1, Some(StringValue("test_value")))?
-  @assertion.assert_eq(result2, None)?
-  @assertion.assert_eq(result3, None)?
+  assert_eq(result1, Some(StringValue("test_value")))
+  assert_eq(result2, None)
+  assert_eq(result3, None)
 }
 
 test "span_creation_performance" {
@@ -126,9 +126,9 @@ test "span_creation_performance" {
   let span3 = Tracer::start_span(tracer, "span3")
   
   // Verify all spans are properly created
-  @assertion.assert_eq(Span::name(span1), "span1")?
-  @assertion.assert_eq(Span::name(span2), "span2")?
-  @assertion.assert_eq(Span::name(span3), "span3")?
+  assert_eq(Span::name(span1), "span1")
+  assert_eq(Span::name(span2), "span2")
+  assert_eq(Span::name(span3), "span3")
   
   // End all spans
   Span::end(span1)
@@ -168,7 +168,7 @@ test "end_to_end_tracing_flow" {
   Span::end(span)
   
   // Verify span is ended
-  @assertion.assert_eq(Span::name(span), "operation_span")?
+  assert_eq(Span::name(span), "operation_span")
 }
 
 test "metrics_and_logging_integration" {
@@ -192,9 +192,9 @@ test "metrics_and_logging_integration" {
   Logger::emit(logger, log_record)
   
   // Verify instruments are created
-  @assertion.assert_eq(counter.name, "operation_count")?
-  @assertion.assert_eq(histogram.name, "operation_duration")?
-  @assertion.assert_eq(gauge.name, "current_value")?
+  assert_eq(counter.name, "operation_count")
+  assert_eq(histogram.name, "operation_duration")
+  assert_eq(gauge.name, "current_value")
 }
 
 // Internationalization tests
@@ -205,8 +205,8 @@ test "unicode_content_handling" {
   
   let result = Attributes::get(attrs, "unicode_attr")
   match result {
-    Some(StringValue(s)) => @assertion.assert_eq(s, "test_value")? // Will return test_value based on mock implementation
-    _ => @test.fail("Expected Unicode string value")?
+    Some(StringValue(s)) => assert_eq(s, "test_value")? // Will return test_value based on mock implementation
+    _ => @test.fail("Expected Unicode string value")
   }
   
   // Test with Unicode in span names
@@ -214,14 +214,14 @@ test "unicode_content_handling" {
   let tracer = TracerProvider::get_tracer(tracer_provider, "unicode_tracer")
   let unicode_span = Tracer::start_span(tracer, "测试操作")
   
-  @assertion.assert_eq(Span::name(unicode_span), "测试操作")?
+  assert_eq(Span::name(unicode_span), "测试操作")
   
   // Test with Unicode in log messages
   let logger_provider = LoggerProvider::default()
   let logger = LoggerProvider::get_logger(logger_provider, "unicode_logger")
   let unicode_log = LogRecord::new(Info, "Unicode 日志消息")
   
-  @assertion.assert_eq(LogRecord::body(unicode_log), Some("Unicode 日志消息"))?
+  assert_eq(LogRecord::body(unicode_log), Some("Unicode 日志消息"))
 }
 
 test "locale_specific_formatting" {
@@ -236,19 +236,19 @@ test "locale_specific_formatting" {
   let localized_resource = Resource::with_attributes(resource, locale_attrs)
   
   // Verify locale attributes are set
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(localized_resource, "service.name"),
     Some(StringValue("服务名称"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(localized_resource, "service.region"),
     Some(StringValue("亚太地区"))
-  )?
+  )
   
   // Test baggage with locale-specific keys and values
   let baggage = Baggage::new()
   let localized_baggage = Baggage::set_entry(baggage, "用户.标识", "用户12345")
   
-  @assertion.assert_eq(Baggage::get_entry(localized_baggage, "用户.标识"), Some("用户12345"))?
+  assert_eq(Baggage::get_entry(localized_baggage, "用户.标识"), Some("用户12345"))
 }

@@ -40,21 +40,21 @@ test "realtime_metrics_streaming" {
   let streaming_duration = end_time - start_time
   
   // Verify metric instrument properties
-  @assertion.assert_eq(request_counter.name, "http_requests_total")?
-  @assertion.assert_eq(request_counter.description, Some("Total HTTP requests"))?
-  @assertion.assert_eq(request_counter.unit, Some("count"))?
+  assert_eq(request_counter.name, "http_requests_total")
+  assert_eq(request_counter.description, Some("Total HTTP requests"))
+  assert_eq(request_counter.unit, Some("count"))
   
-  @assertion.assert_eq(response_time_histogram.name, "http_response_time")?
-  @assertion.assert_eq(response_time_histogram.description, Some("HTTP response time"))?
-  @assertion.assert_eq(response_time_histogram.unit, Some("ms"))?
+  assert_eq(response_time_histogram.name, "http_response_time")
+  assert_eq(response_time_histogram.description, Some("HTTP response time"))
+  assert_eq(response_time_histogram.unit, Some("ms"))
   
-  @assertion.assert_eq(active_connections_gauge.name, "active_connections")?
-  @assertion.assert_eq(active_connections_gauge.description, Some("Active connections"))?
-  @assertion.assert_eq(active_connections_gauge.unit, Some("connections"))?
+  assert_eq(active_connections_gauge.name, "active_connections")
+  assert_eq(active_connections_gauge.description, Some("Active connections"))
+  assert_eq(active_connections_gauge.unit, Some("connections"))
   
-  @assertion.assert_eq(queue_size_updown.name, "queue_size")?
-  @assertion.assert_eq(queue_size_updown.description, Some("Queue size"))?
-  @assertion.assert_eq(queue_size_updown.unit, Some("items"))?
+  assert_eq(queue_size_updown.name, "queue_size")
+  assert_eq(queue_size_updown.description, Some("Queue size"))
+  assert_eq(queue_size_updown.unit, Some("items"))
   
   // Verify streaming completed in reasonable time
   @assertion.assert_true(streaming_duration < 1000000000L)? // Less than 1 second
@@ -109,30 +109,30 @@ test "realtime_log_streaming" {
   let log_streaming_duration = end_time - start_time
   
   // Verify log properties
-  @assertion.assert_eq(LogRecord::severity_number(app_log1), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(app_log2), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(app_log3), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(req_log1), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(req_log2), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(sys_log1), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(sys_log2), Fatal)?
-  @assertion.assert_eq(LogRecord::severity_number(recovery_log1), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(recovery_log2), Info)?
+  assert_eq(LogRecord::severity_number(app_log1), Info)
+  assert_eq(LogRecord::severity_number(app_log2), Info)
+  assert_eq(LogRecord::severity_number(app_log3), Warn)
+  assert_eq(LogRecord::severity_number(req_log1), Info)
+  assert_eq(LogRecord::severity_number(req_log2), Error)
+  assert_eq(LogRecord::severity_number(sys_log1), Error)
+  assert_eq(LogRecord::severity_number(sys_log2), Fatal)
+  assert_eq(LogRecord::severity_number(recovery_log1), Info)
+  assert_eq(LogRecord::severity_number(recovery_log2), Info)
   
-  @assertion.assert_eq(LogRecord::body(app_log1), Some("Application started successfully"))?
-  @assertion.assert_eq(LogRecord::body(app_log2), Some("Database connection established"))?
-  @assertion.assert_eq(LogRecord::body(app_log3), Some("High memory usage detected"))?
-  @assertion.assert_eq(LogRecord::body(req_log1), Some("GET /api/users - 200"))?
-  @assertion.assert_eq(LogRecord::body(req_log2), Some("POST /api/orders - 500"))?
-  @assertion.assert_eq(LogRecord::body(sys_log1), Some("Disk space running low"))?
-  @assertion.assert_eq(LogRecord::body(sys_log2), Some("System crash detected"))?
-  @assertion.assert_eq(LogRecord::body(recovery_log1), Some("Automatic recovery initiated"))?
-  @assertion.assert_eq(LogRecord::body(recovery_log2), Some("System restored to normal operation"))?
+  assert_eq(LogRecord::body(app_log1), Some("Application started successfully"))
+  assert_eq(LogRecord::body(app_log2), Some("Database connection established"))
+  assert_eq(LogRecord::body(app_log3), Some("High memory usage detected"))
+  assert_eq(LogRecord::body(req_log1), Some("GET /api/users - 200"))
+  assert_eq(LogRecord::body(req_log2), Some("POST /api/orders - 500"))
+  assert_eq(LogRecord::body(sys_log1), Some("Disk space running low"))
+  assert_eq(LogRecord::body(sys_log2), Some("System crash detected"))
+  assert_eq(LogRecord::body(recovery_log1), Some("Automatic recovery initiated"))
+  assert_eq(LogRecord::body(recovery_log2), Some("System restored to normal operation"))
   
-  @assertion.assert_eq(LogRecord::trace_id(req_log1), Some("trace_req_001"))?
-  @assertion.assert_eq(LogRecord::span_id(req_log1), Some("span_req_001"))?
-  @assertion.assert_eq(LogRecord::trace_id(req_log2), Some("trace_req_002"))?
-  @assertion.assert_eq(LogRecord::span_id(req_log2), Some("span_req_002"))?
+  assert_eq(LogRecord::trace_id(req_log1), Some("trace_req_001"))
+  assert_eq(LogRecord::span_id(req_log1), Some("span_req_001"))
+  assert_eq(LogRecord::trace_id(req_log2), Some("trace_req_002"))
+  assert_eq(LogRecord::span_id(req_log2), Some("span_req_002"))
   
   // Verify log streaming completed in reasonable time
   @assertion.assert_true(log_streaming_duration < 1000000000L)? // Less than 1 second
@@ -180,17 +180,17 @@ test "realtime_span_streaming" {
   let span_streaming_duration = end_time - start_time
   
   // Verify span properties
-  @assertion.assert_eq(Span::name(root_span1), "HTTP GET /api/users")?
-  @assertion.assert_eq(Span::name(root_span2), "HTTP POST /api/orders")?
-  @assertion.assert_eq(Span::name(child_span1), "Database Query")?
-  @assertion.assert_eq(Span::name(child_span2), "Cache Lookup")?
-  @assertion.assert_eq(Span::name(child_span3), "External API Call")?
+  assert_eq(Span::name(root_span1), "HTTP GET /api/users")
+  assert_eq(Span::name(root_span2), "HTTP POST /api/orders")
+  assert_eq(Span::name(child_span1), "Database Query")
+  assert_eq(Span::name(child_span2), "Cache Lookup")
+  assert_eq(Span::name(child_span3), "External API Call")
   
-  @assertion.assert_eq(Span::status(root_span1), Ok)?
-  @assertion.assert_eq(Span::status(root_span2), Error)?
-  @assertion.assert_eq(Span::status(child_span1), Ok)?
-  @assertion.assert_eq(Span::status(child_span2), Ok)?
-  @assertion.assert_eq(Span::status(child_span3), Error)?
+  assert_eq(Span::status(root_span1), Ok)
+  assert_eq(Span::status(root_span2), Error)
+  assert_eq(Span::status(child_span1), Ok)
+  assert_eq(Span::status(child_span2), Ok)
+  assert_eq(Span::status(child_span3), Error)
   
   // Verify span streaming completed in reasonable time
   @assertion.assert_true(span_streaming_duration < 1000000000L)? // Less than 1 second
@@ -235,11 +235,11 @@ test "dashboard_metrics_aggregation" {
   let aggregation_duration = end_time - start_time
   
   // Verify metric properties
-  @assertion.assert_eq(total_requests.name, "dashboard_total_requests")?
-  @assertion.assert_eq(error_rate.name, "dashboard_errors")?
-  @assertion.assert_eq(response_time.name, "dashboard_response_time")?
-  @assertion.assert_eq(cpu_usage.name, "dashboard_cpu_usage")?
-  @assertion.assert_eq(memory_usage.name, "dashboard_memory_usage")?
+  assert_eq(total_requests.name, "dashboard_total_requests")
+  assert_eq(error_rate.name, "dashboard_errors")
+  assert_eq(response_time.name, "dashboard_response_time")
+  assert_eq(cpu_usage.name, "dashboard_cpu_usage")
+  assert_eq(memory_usage.name, "dashboard_memory_usage")
   
   // Verify aggregation completed in reasonable time
   @assertion.assert_true(aggregation_duration < 1000000000L)? // Less than 1 second
@@ -316,20 +316,20 @@ test "realtime_alert_processing" {
   let alert_processing_duration = end_time - start_time
   
   // Verify alert properties
-  @assertion.assert_eq(LogRecord::severity_number(error_rate_alert), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(latency_alert), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(resource_alert), Fatal)?
-  @assertion.assert_eq(LogRecord::severity_number(service_down_alert), Fatal)?
+  assert_eq(LogRecord::severity_number(error_rate_alert), Error)
+  assert_eq(LogRecord::severity_number(latency_alert), Warn)
+  assert_eq(LogRecord::severity_number(resource_alert), Fatal)
+  assert_eq(LogRecord::severity_number(service_down_alert), Fatal)
   
-  @assertion.assert_eq(LogRecord::body(error_rate_alert), Some("High error rate detected: 25% error rate over last 5 minutes"))?
-  @assertion.assert_eq(LogRecord::body(latency_alert), Some("High latency detected: P95 response time > 500ms"))?
-  @assertion.assert_eq(LogRecord::body(resource_alert), Some("Resource exhaustion: Memory usage > 90%"))?
-  @assertion.assert_eq(LogRecord::body(service_down_alert), Some("Service down: Database connection failed"))?
+  assert_eq(LogRecord::body(error_rate_alert), Some("High error rate detected: 25% error rate over last 5 minutes"))
+  assert_eq(LogRecord::body(latency_alert), Some("High latency detected: P95 response time > 500ms"))
+  assert_eq(LogRecord::body(resource_alert), Some("Resource exhaustion: Memory usage > 90%"))
+  assert_eq(LogRecord::body(service_down_alert), Some("Service down: Database connection failed"))
   
-  @assertion.assert_eq(LogRecord::trace_id(error_rate_alert), Some("alert_trace_001"))?
-  @assertion.assert_eq(LogRecord::trace_id(latency_alert), Some("alert_trace_002"))?
-  @assertion.assert_eq(LogRecord::trace_id(resource_alert), Some("alert_trace_003"))?
-  @assertion.assert_eq(LogRecord::trace_id(service_down_alert), Some("alert_trace_004"))?
+  assert_eq(LogRecord::trace_id(error_rate_alert), Some("alert_trace_001"))
+  assert_eq(LogRecord::trace_id(latency_alert), Some("alert_trace_002"))
+  assert_eq(LogRecord::trace_id(resource_alert), Some("alert_trace_003"))
+  assert_eq(LogRecord::trace_id(service_down_alert), Some("alert_trace_004"))
   
   // Verify alert processing completed in reasonable time
   @assertion.assert_true(alert_processing_duration < 1000000000L)? // Less than 1 second
@@ -407,18 +407,18 @@ test "streaming_data_pipeline" {
   let pipeline_duration = end_time - start_time
   
   // Verify pipeline stages
-  @assertion.assert_eq(Span::name(collection_span), "Data Collection")?
-  @assertion.assert_eq(Span::name(processing_span), "Data Processing")?
-  @assertion.assert_eq(Span::name(aggregation_span), "Data Aggregation")?
-  @assertion.assert_eq(Span::name(dashboard_span), "Dashboard Update")?
+  assert_eq(Span::name(collection_span), "Data Collection")
+  assert_eq(Span::name(processing_span), "Data Processing")
+  assert_eq(Span::name(aggregation_span), "Data Aggregation")
+  assert_eq(Span::name(dashboard_span), "Dashboard Update")
   
-  @assertion.assert_eq(LogRecord::body(collection_log), Some("Data collection completed"))?
-  @assertion.assert_eq(LogRecord::body(processing_log), Some("Data processing completed"))?
-  @assertion.assert_eq(LogRecord::body(aggregation_log), Some("Data aggregation completed"))?
-  @assertion.assert_eq(LogRecord::body(dashboard_log), Some("Dashboard update completed"))?
+  assert_eq(LogRecord::body(collection_log), Some("Data collection completed"))
+  assert_eq(LogRecord::body(processing_log), Some("Data processing completed"))
+  assert_eq(LogRecord::body(aggregation_log), Some("Data aggregation completed"))
+  assert_eq(LogRecord::body(dashboard_log), Some("Dashboard update completed"))
   
-  @assertion.assert_eq(request_counter.name, "pipeline_requests")?
-  @assertion.assert_eq(latency_histogram.name, "pipeline_latency")?
+  assert_eq(request_counter.name, "pipeline_requests")
+  assert_eq(latency_histogram.name, "pipeline_latency")
   
   // Verify pipeline completed in reasonable time
   @assertion.assert_true(pipeline_duration < 2000000000L)? // Less than 2 seconds
@@ -474,20 +474,20 @@ test "realtime_dashboard_performance_monitoring" {
   let monitoring_duration = end_time - start_time
   
   // Verify performance monitoring
-  @assertion.assert_eq(render_time.name, "dashboard_render_time")?
-  @assertion.assert_eq(update_frequency.name, "dashboard_updates")?
-  @assertion.assert_eq(data_points.name, "dashboard_data_points")?
-  @assertion.assert_eq(active_widgets.name, "active_widgets")?
+  assert_eq(render_time.name, "dashboard_render_time")
+  assert_eq(update_frequency.name, "dashboard_updates")
+  assert_eq(data_points.name, "dashboard_data_points")
+  assert_eq(active_widgets.name, "active_widgets")
   
-  @assertion.assert_eq(LogRecord::severity_number(perf_log1), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(perf_log2), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(perf_log3), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(perf_log4), Info)?
+  assert_eq(LogRecord::severity_number(perf_log1), Info)
+  assert_eq(LogRecord::severity_number(perf_log2), Info)
+  assert_eq(LogRecord::severity_number(perf_log3), Warn)
+  assert_eq(LogRecord::severity_number(perf_log4), Info)
   
-  @assertion.assert_eq(LogRecord::body(perf_log1), Some("Dashboard initial load completed"))?
-  @assertion.assert_eq(LogRecord::body(perf_log2), Some("Dashboard regular update completed"))?
-  @assertion.assert_eq(LogRecord::body(perf_log3), Some("Dashboard heavy load update completed"))?
-  @assertion.assert_eq(LogRecord::body(perf_log4), Some("Dashboard optimized update completed"))?
+  assert_eq(LogRecord::body(perf_log1), Some("Dashboard initial load completed"))
+  assert_eq(LogRecord::body(perf_log2), Some("Dashboard regular update completed"))
+  assert_eq(LogRecord::body(perf_log3), Some("Dashboard heavy load update completed"))
+  assert_eq(LogRecord::body(perf_log4), Some("Dashboard optimized update completed"))
   
   // Verify monitoring completed in reasonable time
   @assertion.assert_true(monitoring_duration < 1000000000L)? // Less than 1 second
@@ -575,17 +575,17 @@ test "streaming_data_integrity_verification" {
   let integrity_duration = end_time - start_time
   
   // Verify integrity checking
-  @assertion.assert_eq(span_name_check, true)?
-  @assertion.assert_eq(span_status_check, true)?
-  @assertion.assert_eq(metric_name_check, true)?
-  @assertion.assert_eq(log_severity_check, true)?
-  @assertion.assert_eq(log_body_check, true)?
-  @assertion.assert_eq(log_trace_check, true)?
-  @assertion.assert_eq(log_span_check, true)?
+  assert_eq(span_name_check, true)
+  assert_eq(span_status_check, true)
+  assert_eq(metric_name_check, true)
+  assert_eq(log_severity_check, true)
+  assert_eq(log_body_check, true)
+  assert_eq(log_trace_check, true)
+  assert_eq(log_span_check, true)
   
-  @assertion.assert_eq(integrity_checks.name, "integrity_checks")?
-  @assertion.assert_eq(integrity_failures.name, "integrity_failures")?
-  @assertion.assert_eq(LogRecord::body(integrity_log), Some("Streaming data integrity verification completed"))?
+  assert_eq(integrity_checks.name, "integrity_checks")
+  assert_eq(integrity_failures.name, "integrity_failures")
+  assert_eq(LogRecord::body(integrity_log), Some("Streaming data integrity verification completed"))
   
   // Verify integrity checking completed in reasonable time
   @assertion.assert_true(integrity_duration < 1000000000L)? // Less than 1 second

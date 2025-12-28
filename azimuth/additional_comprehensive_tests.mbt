@@ -241,18 +241,18 @@ test "resource_merge_operations" {
   let merged = Resource::merge(base_with_attrs, override_with_attrs)
   
   // In simplified implementation, override resource takes precedence
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged, "service.name"),
     Some(StringValue("override_service"))
-  )?
-  @assertion.assert_eq(
+  )
+  assert_eq(
     Resource::get_attribute(merged, "service.instance.id"),
     Some(StringValue("instance-123"))
-  )?
-  @assertion.assert_eq(
+  )
+  assert_eq(
     Resource::get_attribute(merged, "region"),
     Some(StringValue("us-west-2"))
-  )?
+  )
 }
 
 test "composite_propagator_operations" {
@@ -269,10 +269,10 @@ test "composite_propagator_operations" {
   // Test extraction with composite propagator
   let extracted_ctx = CompositePropagator::extract(composite, carrier)
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
   
   // Test that original context is unchanged
-  @assertion.assert_eq(Context::get(root_ctx, extracted_key), None)?
+  assert_eq(Context::get(root_ctx, extracted_key), None)
 }
 
 test "http_client_error_handling" {
@@ -280,19 +280,19 @@ test "http_client_error_handling" {
   let empty_headers : Array[(String, String)] = []
   let request = HttpRequest::new("GET", "https://api.example.com", empty_headers, None)
   
-  @assertion.assert_eq(HttpRequest::http_method(request), "GET")?
-  @assertion.assert_eq(HttpRequest::url(request), "https://api.example.com")?
-  @assertion.assert_eq(HttpRequest::body(request), None)?
+  assert_eq(HttpRequest::http_method(request), "GET")
+  assert_eq(HttpRequest::url(request), "https://api.example.com")
+  assert_eq(HttpRequest::body(request), None)
   
   // Test response with error status codes
   let not_found_response = HttpResponse::new(404, empty_headers, Some("Not Found"))
   let server_error_response = HttpResponse::new(500, empty_headers, Some("Internal Server Error"))
   
-  @assertion.assert_eq(HttpResponse::status_code(not_found_response), 404)?
-  @assertion.assert_eq(HttpResponse::body(not_found_response), Some("Not Found"))?
+  assert_eq(HttpResponse::status_code(not_found_response), 404)
+  assert_eq(HttpResponse::body(not_found_response), Some("Not Found"))
   
-  @assertion.assert_eq(HttpResponse::status_code(server_error_response), 500)?
-  @assertion.assert_eq(HttpResponse::body(server_error_response), Some("Internal Server Error"))?
+  assert_eq(HttpResponse::status_code(server_error_response), 500)
+  assert_eq(HttpResponse::body(server_error_response), Some("Internal Server Error"))
 }
 
 test "clock_and_random_operations" {
@@ -301,18 +301,18 @@ test "clock_and_random_operations" {
   let timestamp = Clock::now_unix_nanos(clock)
   
   // Verify timestamp is reasonable (should be around 2025)
-  @assertion.assert_eq(timestamp, 1735689600000000000L)?
+  assert_eq(timestamp, 1735689600000000000L)
   
   // Test random operations
   let random = Random::system()
   
   // Test random bytes generation
   let random_bytes = Random::next_bytes(random, 16)
-  @assertion.assert_eq(random_bytes.length, 16)?
+  assert_eq(random_bytes.length, 16)
   
   // Test random u64 generation
   let random_u64 = Random::next_u64(random)
-  @assertion.assert_eq(random_u64, 12345UL)?
+  assert_eq(random_u64, 12345UL)
 }
 
 test "telemetry_system_integration" {
@@ -328,7 +328,7 @@ test "telemetry_system_integration" {
   
   // Create span
   let span = Tracer::start_span(tracer, "integration_span")
-  @assertion.assert_eq(Span::name(span), "integration_span")?
+  assert_eq(Span::name(span), "integration_span")
   
   // Create metrics
   let counter = Meter::create_counter(meter, "integration_counter")
@@ -346,6 +346,6 @@ test "telemetry_system_integration" {
   Span::end(span)
   
   // Verify all components are working together
-  @assertion.assert_eq(Span::is_recording(span), true)?  // Simplified implementation
-  @assertion.assert_eq(LogRecord::body(log), Some("Integration test log"))?
+  assert_eq(Span::is_recording(span), true)?  // Simplified implementation
+  assert_eq(LogRecord::body(log), Some("Integration test log"))
 }

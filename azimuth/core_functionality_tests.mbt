@@ -12,38 +12,38 @@ test "attribute_value_type_conversion" {
   
   // Verify type preservation
   match string_val {
-    StringValue(s) => @assertion.assert_eq(s, "test_string")?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, "test_string")
+    _ => @test.fail("Expected StringValue")
   }
   
   match int_val {
-    IntValue(i) => @assertion.assert_eq(i, 42)?
-    _ => @test.fail("Expected IntValue")?
+    IntValue(i) => assert_eq(i, 42)
+    _ => @test.fail("Expected IntValue")
   }
   
   match float_val {
-    FloatValue(f) => @assertion.assert_eq(f, 3.14)?
-    _ => @test.fail("Expected FloatValue")?
+    FloatValue(f) => assert_eq(f, 3.14)
+    _ => @test.fail("Expected FloatValue")
   }
   
   match bool_val {
-    BoolValue(b) => @assertion.assert_eq(b, true)?
-    _ => @test.fail("Expected BoolValue")?
+    BoolValue(b) => assert_eq(b, true)
+    _ => @test.fail("Expected BoolValue")
   }
 }
 
 test "span_context_validation" {
   // Test valid span context
   let valid_ctx = SpanContext::new("trace123", "span456", true, "state=1")
-  @assertion.assert_eq(SpanContext::trace_id(valid_ctx), "trace123")?
-  @assertion.assert_eq(SpanContext::span_id(valid_ctx), "span456")?
-  @assertion.assert_eq(SpanContext::is_sampled(valid_ctx), true)?
-  @assertion.assert_eq(SpanContext::is_valid(valid_ctx), true)?
+  assert_eq(SpanContext::trace_id(valid_ctx), "trace123")
+  assert_eq(SpanContext::span_id(valid_ctx), "span456")
+  assert_eq(SpanContext::is_sampled(valid_ctx), true)
+  assert_eq(SpanContext::is_valid(valid_ctx), true)
   
   // Test invalid span context (empty IDs)
   let invalid_ctx = SpanContext::new("", "", false, "")
-  @assertion.assert_eq(SpanContext::is_valid(invalid_ctx), false)?
-  @assertion.assert_eq(SpanContext::is_sampled(invalid_ctx), false)?
+  assert_eq(SpanContext::is_valid(invalid_ctx), false)
+  assert_eq(SpanContext::is_sampled(invalid_ctx), false)
 }
 
 test "context_value_operations" {
@@ -52,14 +52,14 @@ test "context_value_operations" {
   
   // Test context with value
   let ctx_with_value = Context::with_value(root_ctx, test_key, "test_value")
-  @assertion.assert_eq(Context::get(ctx_with_value, test_key), Some("test_value"))?
+  assert_eq(Context::get(ctx_with_value, test_key), Some("test_value"))
   
   // Test context without value
   let empty_key = ContextKey::new("empty_key")
-  @assertion.assert_eq(Context::get(ctx_with_value, empty_key), None)?
+  assert_eq(Context::get(ctx_with_value, empty_key), None)
   
   // Test root context
-  @assertion.assert_eq(Context::get(root_ctx, test_key), None)?
+  assert_eq(Context::get(root_ctx, test_key), None)
 }
 
 test "instrument_creation_and_properties" {
@@ -70,24 +70,24 @@ test "instrument_creation_and_properties" {
   let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
   let counter_instrument = Counter(counter.name, counter.description, counter.unit)
   
-  @assertion.assert_eq(Instrument::name(counter_instrument), "test_counter")?
-  @assertion.assert_eq(Instrument::description(counter_instrument), Some("Test counter"))?
-  @assertion.assert_eq(Instrument::unit(counter_instrument), Some("count"))?
+  assert_eq(Instrument::name(counter_instrument), "test_counter")
+  assert_eq(Instrument::description(counter_instrument), Some("Test counter"))
+  assert_eq(Instrument::unit(counter_instrument), Some("count"))
   
   // Test histogram instrument
   let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
   let histogram_instrument = Histogram(histogram.name, histogram.description, histogram.unit)
   
-  @assertion.assert_eq(Instrument::name(histogram_instrument), "test_histogram")?
-  @assertion.assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))?
-  @assertion.assert_eq(Instrument::unit(histogram_instrument), Some("ms"))?
+  assert_eq(Instrument::name(histogram_instrument), "test_histogram")
+  assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))
+  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
 }
 
 test "log_record_creation_and_accessors" {
   // Test basic log record
   let basic_log = LogRecord::new(Info, "Test log message")
-  @assertion.assert_eq(LogRecord::severity_number(basic_log), Info)?
-  @assertion.assert_eq(LogRecord::body(basic_log), Some("Test log message"))?
+  assert_eq(LogRecord::severity_number(basic_log), Info)
+  assert_eq(LogRecord::body(basic_log), Some("Test log message"))
   
   // Test log record with full context
   let full_log = LogRecord::new_with_context(
@@ -101,10 +101,10 @@ test "log_record_creation_and_accessors" {
     None
   )
   
-  @assertion.assert_eq(LogRecord::severity_number(full_log), Error)?
-  @assertion.assert_eq(LogRecord::body(full_log), Some("Error message"))?
-  @assertion.assert_eq(LogRecord::trace_id(full_log), Some("trace123"))?
-  @assertion.assert_eq(LogRecord::span_id(full_log), Some("span456"))?
+  assert_eq(LogRecord::severity_number(full_log), Error)
+  assert_eq(LogRecord::body(full_log), Some("Error message"))
+  assert_eq(LogRecord::trace_id(full_log), Some("trace123"))
+  assert_eq(LogRecord::span_id(full_log), Some("span456"))
 }
 
 test "span_lifecycle_operations" {
@@ -114,9 +114,9 @@ test "span_lifecycle_operations" {
   
   // Test span creation
   let span = Tracer::start_span(tracer, "test_span")
-  @assertion.assert_eq(Span::name(span), "test_span")?
-  @assertion.assert_eq(Span::kind(span), Internal)?
-  @assertion.assert_eq(Span::is_recording(span), true)?
+  assert_eq(Span::name(span), "test_span")
+  assert_eq(Span::kind(span), Internal)
+  assert_eq(Span::is_recording(span), true)
   
   // Test span operations
   Span::set_status(span, Ok, Some("Operation completed"))
@@ -137,21 +137,21 @@ test "resource_attribute_management" {
   let resource_with_attrs = Resource::with_attributes(resource, attributes)
   
   // Test attribute retrieval
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "service.name"),
     Some(StringValue("test_service"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "service.version"),
     Some(StringValue("1.0.0"))
-  )?
+  )
   
   // Test non-existent attribute
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource_with_attrs, "non.existent"),
     None
-  )?
+  )
 }
 
 test "baggage_operations" {
@@ -159,14 +159,14 @@ test "baggage_operations" {
   
   // Test baggage entry operations
   let baggage_with_entry = Baggage::set_entry(baggage, "user.id", "12345")
-  @assertion.assert_eq(Baggage::get_entry(baggage_with_entry, "user.id"), Some("12345"))?
+  assert_eq(Baggage::get_entry(baggage_with_entry, "user.id"), Some("12345"))
   
   // Test non-existent entry
-  @assertion.assert_eq(Baggage::get_entry(baggage_with_entry, "non.existent"), None)?
+  assert_eq(Baggage::get_entry(baggage_with_entry, "non.existent"), None)
   
   // Test entry removal
   let baggage_after_removal = Baggage::remove_entry(baggage_with_entry, "user.id")
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("12345"))?
+  assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("12345"))
 }
 
 test "http_client_operations" {
@@ -174,16 +174,16 @@ test "http_client_operations" {
   let headers = [("Content-Type", "application/json"), ("Authorization", "Bearer token123")]
   let request = HttpRequest::new("POST", "https://api.example.com/data", headers, Some("{\"key\":\"value\"}"))
   
-  @assertion.assert_eq(HttpRequest::http_method(request), "POST")?
-  @assertion.assert_eq(HttpRequest::url(request), "https://api.example.com/data")?
-  @assertion.assert_eq(HttpRequest::body(request), Some("{\"key\":\"value\"}"))?
+  assert_eq(HttpRequest::http_method(request), "POST")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
+  assert_eq(HttpRequest::body(request), Some("{\"key\":\"value\"}"))
   
   // Test HTTP response creation
   let response_headers = [("Content-Type", "application/json")]
   let response = HttpResponse::new(200, response_headers, Some("{\"result\":\"success\"}"))
   
-  @assertion.assert_eq(HttpResponse::status_code(response), 200)?
-  @assertion.assert_eq(HttpResponse::body(response), Some("{\"result\":\"success\"}"))?
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::body(response), Some("{\"result\":\"success\"}"))
 }
 
 test "propagation_context_injection_extraction" {
@@ -196,10 +196,10 @@ test "propagation_context_injection_extraction" {
   
   // Test injection
   CompositePropagator::inject(composite, root_ctx, carrier)
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   // Test extraction
   let extracted_ctx = CompositePropagator::extract(composite, carrier)
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
 }

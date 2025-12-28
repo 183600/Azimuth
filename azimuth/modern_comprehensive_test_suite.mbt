@@ -8,24 +8,24 @@ test "span_lifecycle_comprehensive_management" {
   let span = Tracer::start_span(tracer, "comprehensive_test_span")
   
   // Test span properties
-  @assertion.assert_eq(Span::name(span), "comprehensive_test_span")!
-  @assertion.assert_eq(Span::is_recording(span), true)!
+  assert_eq(Span::name(span), "comprehensive_test_span")!
+  assert_eq(Span::is_recording(span), true)!
   
   // Test span context
   let span_ctx = Span::span_context(span)
-  @assertion.assert_eq(SpanContext::is_valid(span_ctx), true)!
-  @assertion.assert_eq(SpanContext::is_sampled(span_ctx), true)!
+  assert_eq(SpanContext::is_valid(span_ctx), true)!
+  assert_eq(SpanContext::is_sampled(span_ctx), true)!
   
   // Test span status transitions
   Span::set_status(span, Ok, Some("Operation completed successfully"))
-  @assertion.assert_eq(Span::status(span), Ok)!
+  assert_eq(Span::status(span), Ok)!
   
   // Test event addition
   Span::add_event(span, "test_event", Some([("event_type", StringValue("test")), ("timestamp", IntValue(12345))]))
   
   // Test span termination
   Span::end(span)
-  @assertion.assert_eq(Span::is_recording(span), true)!  // Simplified implementation
+  assert_eq(Span::is_recording(span), true)!  // Simplified implementation
 }
 
 test "metrics_instrument_comprehensive_operations" {
@@ -51,9 +51,9 @@ test "metrics_instrument_comprehensive_operations" {
   
   // Test instrument metadata
   let histogram_instrument = Histogram::as_instrument(histogram)
-  @assertion.assert_eq(Instrument::name(histogram_instrument), "test_histogram")!
-  @assertion.assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))!
-  @assertion.assert_eq(Instrument::unit(histogram_instrument), Some("ms"))!
+  assert_eq(Instrument::name(histogram_instrument), "test_histogram")!
+  assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))!
+  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))!
 }
 
 test "context_propagation_advanced_scenarios" {
@@ -67,14 +67,14 @@ test "context_propagation_advanced_scenarios" {
   let ctx_with_request = Context::with_value(ctx_with_user, request_key, "req456")
   
   // Test context value retrieval
-  @assertion.assert_eq(Context::get(ctx_with_request, user_key), Some("user123"))!
-  @assertion.assert_eq(Context::get(ctx_with_request, request_key), Some("req456"))!
-  @assertion.assert_eq(Context::get(root_ctx, user_key), None)!
+  assert_eq(Context::get(ctx_with_request, user_key), Some("user123"))!
+  assert_eq(Context::get(ctx_with_request, request_key), Some("req456"))!
+  assert_eq(Context::get(root_ctx, user_key), None)!
   
   // Test baggage operations
   let baggage = Baggage::new()
   let enriched_baggage = Baggage::set_entry(baggage, "correlation_id", "corr789")
-  @assertion.assert_eq(Baggage::get_entry(enriched_baggage, "correlation_id"), None)!  // Simplified implementation
+  assert_eq(Baggage::get_entry(enriched_baggage, "correlation_id"), None)!  // Simplified implementation
   
   // Test propagator operations
   let trace_propagator = W3CTraceContextPropagator::new()
@@ -85,7 +85,7 @@ test "context_propagation_advanced_scenarios" {
   CompositePropagator::inject(composite, ctx_with_request, carrier)
   
   let extracted_ctx = CompositePropagator::extract(composite, carrier)
-  @assertion.assert_eq(Context::get(extracted_ctx, ContextKey::new("extracted")), Some("true"))!
+  assert_eq(Context::get(extracted_ctx, ContextKey::new("extracted")), Some("true"))!
 }
 
 test "log_record_comprehensive_structuring" {
@@ -95,8 +95,8 @@ test "log_record_comprehensive_structuring" {
   
   // Test basic log record creation
   let basic_log = LogRecord::new(Info, "Basic log message")
-  @assertion.assert_eq(LogRecord::severity_number(basic_log), Info)!
-  @assertion.assert_eq(LogRecord::body(basic_log), Some("Basic log message"))!
+  assert_eq(LogRecord::severity_number(basic_log), Info)!
+  assert_eq(LogRecord::body(basic_log), Some("Basic log message"))!
   
   // Test comprehensive log record with full context
   let attrs = Attributes::new()
@@ -113,10 +113,10 @@ test "log_record_comprehensive_structuring" {
     Some(Context::root())
   )
   
-  @assertion.assert_eq(LogRecord::severity_number(comprehensive_log), Error)!
-  @assertion.assert_eq(LogRecord::body(comprehensive_log), Some("Comprehensive error message"))!
-  @assertion.assert_eq(LogRecord::trace_id(comprehensive_log), Some("trace123"))!
-  @assertion.assert_eq(LogRecord::span_id(comprehensive_log), Some("span456"))!
+  assert_eq(LogRecord::severity_number(comprehensive_log), Error)!
+  assert_eq(LogRecord::body(comprehensive_log), Some("Comprehensive error message"))!
+  assert_eq(LogRecord::trace_id(comprehensive_log), Some("trace123"))!
+  assert_eq(LogRecord::span_id(comprehensive_log), Some("span456"))!
   
   // Test log emission
   Logger::emit(logger, comprehensive_log)
@@ -137,8 +137,8 @@ test "resource_attributes_comprehensive_management" {
   let enriched_resource = Resource::with_attributes(resource, service_attrs)
   
   // Test attribute retrieval
-  @assertion.assert_eq(Resource::get_attribute(enriched_resource, "service.name"), Some(StringValue("test_service")))! 
-  @assertion.assert_eq(Resource::get_attribute(enriched_resource, "nonexistent"), None)!
+  assert_eq(Resource::get_attribute(enriched_resource, "service.name"), Some(StringValue("test_service")))! 
+  assert_eq(Resource::get_attribute(enriched_resource, "nonexistent"), None)!
   
   // Test resource merging
   let override_attrs = [
@@ -148,7 +148,7 @@ test "resource_attributes_comprehensive_management" {
   let override_resource = Resource::with_attributes(resource, override_attrs)
   
   let merged_resource = Resource::merge(enriched_resource, override_resource)
-  @assertion.assert_eq(Resource::get_attribute(merged_resource, "host.name"), Some(StringValue("test-host")))!
+  assert_eq(Resource::get_attribute(merged_resource, "host.name"), Some(StringValue("test-host")))!
 }
 
 test "http_client_comprehensive_operations" {
@@ -159,23 +159,23 @@ test "http_client_comprehensive_operations" {
   let headers = [("Content-Type", "application/json"), ("Authorization", "Bearer token123")]
   let request = HttpRequest::new("POST", "https://api.example.com/data", headers, Some("{\"test\": \"data\"}"))
   
-  @assertion.assert_eq(HttpRequest::http_method(request), "POST")!
-  @assertion.assert_eq(HttpRequest::url(request), "https://api.example.com/data")!
-  @assertion.assert_eq(HttpRequest::body(request), Some("{\"test\": \"data\"}"))!
+  assert_eq(HttpRequest::http_method(request), "POST")!
+  assert_eq(HttpRequest::url(request), "https://api.example.com/data")!
+  assert_eq(HttpRequest::body(request), Some("{\"test\": \"data\"}"))!
   
   // Test HTTP response creation
   let response_headers = [("Content-Type", "application/json"), ("X-Request-ID", "req123")]
   let response = HttpResponse::new(200, response_headers, Some("{\"result\": \"success\"}"))
   
-  @assertion.assert_eq(HttpResponse::status_code(response), 200)!
-  @assertion.assert_eq(HttpResponse::body(response), Some("{\"result\": \"success\"}"))!
+  assert_eq(HttpResponse::status_code(response), 200)!
+  assert_eq(HttpResponse::body(response), Some("{\"result\": \"success\"}"))!
   
   // Test different HTTP methods and status codes
   let get_request = HttpRequest::new("GET", "https://api.example.com/users", [], None)
   let error_response = HttpResponse::new(404, [], Some("Not found"))
   
-  @assertion.assert_eq(HttpRequest::http_method(get_request), "GET")!
-  @assertion.assert_eq(HttpResponse::status_code(error_response), 404)!
+  assert_eq(HttpRequest::http_method(get_request), "GET")!
+  assert_eq(HttpResponse::status_code(error_response), 404)!
 }
 
 test "span_context_comprehensive_validation" {
@@ -185,25 +185,25 @@ test "span_context_comprehensive_validation" {
   
   // Test valid span context
   let valid_ctx = SpanContext::new(valid_trace_id, valid_span_id, true, "rojo=00f067aa0ba902b7")
-  @assertion.assert_eq(SpanContext::is_valid(valid_ctx), true)!
-  @assertion.assert_eq(SpanContext::is_sampled(valid_ctx), true)!
-  @assertion.assert_eq(SpanContext::trace_id(valid_ctx), valid_trace_id)!
-  @assertion.assert_eq(SpanContext::span_id(valid_ctx), valid_span_id)!
+  assert_eq(SpanContext::is_valid(valid_ctx), true)!
+  assert_eq(SpanContext::is_sampled(valid_ctx), true)!
+  assert_eq(SpanContext::trace_id(valid_ctx), valid_trace_id)!
+  assert_eq(SpanContext::span_id(valid_ctx), valid_span_id)!
   
   // Test invalid span contexts
   let empty_trace_ctx = SpanContext::new("", valid_span_id, true, "")
   let empty_span_ctx = SpanContext::new(valid_trace_id, "", true, "")
   
-  @assertion.assert_eq(SpanContext::is_valid(empty_trace_ctx), false)!
-  @assertion.assert_eq(SpanContext::is_valid(empty_span_ctx), false)!
+  assert_eq(SpanContext::is_valid(empty_trace_ctx), false)!
+  assert_eq(SpanContext::is_valid(empty_span_ctx), false)!
   
   // Test unsampled context
   let unsampled_ctx = SpanContext::new(valid_trace_id, valid_span_id, false, "")
-  @assertion.assert_eq(SpanContext::is_sampled(unsampled_ctx), false)!
+  assert_eq(SpanContext::is_sampled(unsampled_ctx), false)!
   
   // Test trace state handling
   let trace_state_ctx = SpanContext::new(valid_trace_id, valid_span_id, true, "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
-  @assertion.assert_eq(SpanContext::trace_id(trace_state_ctx), valid_trace_id)!
+  assert_eq(SpanContext::trace_id(trace_state_ctx), valid_trace_id)!
 }
 
 test "instrumentation_scope_comprehensive_features" {
@@ -228,10 +228,10 @@ test "instrumentation_scope_comprehensive_features" {
   let basic_tracer_scope = Tracer::instrumentation_scope(basic_tracer)
   let full_tracer_scope = Tracer::instrumentation_scope(full_tracer)
   
-  @assertion.assert_eq(basic_tracer_scope.name, "test.instrumentation")!
-  @assertion.assert_eq(full_tracer_scope.name, "comprehensive.instrumentation")!
-  @assertion.assert_eq(full_tracer_scope.version, Some("2.1.0"))!
-  @assertion.assert_eq(full_tracer_scope.schema_url, Some("https://opentelemetry.io/schemas/1.20.0"))!
+  assert_eq(basic_tracer_scope.name, "test.instrumentation")!
+  assert_eq(full_tracer_scope.name, "comprehensive.instrumentation")!
+  assert_eq(full_tracer_scope.version, Some("2.1.0"))!
+  assert_eq(full_tracer_scope.schema_url, Some("https://opentelemetry.io/schemas/1.20.0"))!
   
   // Test scope-based meter creation
   let meter_provider = MeterProvider::default()
@@ -244,8 +244,8 @@ test "instrumentation_scope_comprehensive_features" {
   let full_logger = LoggerProvider::get_logger(logger_provider, full_scope.name)
   
   // All should create successfully with their respective scopes
-  @assertion.assert_eq(basic_meter.scope.name, "test.instrumentation")!
-  @assertion.assert_eq(full_meter.scope.name, "comprehensive.instrumentation")!
-  @assertion.assert_eq(basic_logger.scope.name, "test.instrumentation")!
-  @assertion.assert_eq(full_logger.scope.name, "comprehensive.instrumentation")!
+  assert_eq(basic_meter.scope.name, "test.instrumentation")!
+  assert_eq(full_meter.scope.name, "comprehensive.instrumentation")!
+  assert_eq(basic_logger.scope.name, "test.instrumentation")!
+  assert_eq(full_logger.scope.name, "comprehensive.instrumentation")!
 }

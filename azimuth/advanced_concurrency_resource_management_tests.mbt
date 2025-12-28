@@ -14,18 +14,18 @@ test "concurrent_span_creation_and_cleanup" {
   let span5 = Tracer::start_span(tracer, "concurrent-span-5")
   
   // Verify all spans are properly created
-  @assertion.assert_eq(Span::name(span1), "concurrent-span-1")?
-  @assertion.assert_eq(Span::name(span2), "concurrent-span-2")?
-  @assertion.assert_eq(Span::name(span3), "concurrent-span-3")?
-  @assertion.assert_eq(Span::name(span4), "concurrent-span-4")?
-  @assertion.assert_eq(Span::name(span5), "concurrent-span-5")?
+  assert_eq(Span::name(span1), "concurrent-span-1")
+  assert_eq(Span::name(span2), "concurrent-span-2")
+  assert_eq(Span::name(span3), "concurrent-span-3")
+  assert_eq(Span::name(span4), "concurrent-span-4")
+  assert_eq(Span::name(span5), "concurrent-span-5")
   
   // Verify all spans are recording
-  @assertion.assert_eq(Span::is_recording(span1), true)?
-  @assertion.assert_eq(Span::is_recording(span2), true)?
-  @assertion.assert_eq(Span::is_recording(span3), true)?
-  @assertion.assert_eq(Span::is_recording(span4), true)?
-  @assertion.assert_eq(Span::is_recording(span5), true)?
+  assert_eq(Span::is_recording(span1), true)
+  assert_eq(Span::is_recording(span2), true)
+  assert_eq(Span::is_recording(span3), true)
+  assert_eq(Span::is_recording(span4), true)
+  assert_eq(Span::is_recording(span5), true)
   
   // Add events to spans concurrently
   Span::add_event(span1, "event-1", None)
@@ -78,18 +78,18 @@ test "concurrent_metrics_recording" {
   UpDownCounter::add(updown_counter1, 250.0)
   
   // Verify metric instrument properties
-  @assertion.assert_eq(counter1.name, "requests_total_1")?
-  @assertion.assert_eq(counter2.name, "requests_total_2")?
-  @assertion.assert_eq(histogram1.name, "duration_ms_1")?
-  @assertion.assert_eq(histogram2.name, "duration_ms_2")?
-  @assertion.assert_eq(gauge1.name, "active_connections_1")?
-  @assertion.assert_eq(updown_counter1.name, "queue_size_1")?
+  assert_eq(counter1.name, "requests_total_1")
+  assert_eq(counter2.name, "requests_total_2")
+  assert_eq(histogram1.name, "duration_ms_1")
+  assert_eq(histogram2.name, "duration_ms_2")
+  assert_eq(gauge1.name, "active_connections_1")
+  assert_eq(updown_counter1.name, "queue_size_1")
   
   // Verify instrument metadata
-  @assertion.assert_eq(counter1.description, Some("Total requests 1"))?
-  @assertion.assert_eq(histogram1.unit, Some("ms"))?
-  @assertion.assert_eq(gauge1.description, Some("Active connections 1"))?
-  @assertion.assert_eq(updown_counter1.unit, Some("items"))?
+  assert_eq(counter1.description, Some("Total requests 1"))
+  assert_eq(histogram1.unit, Some("ms"))
+  assert_eq(gauge1.description, Some("Active connections 1"))
+  assert_eq(updown_counter1.unit, Some("items"))
 }
 
 test "concurrent_logging_operations" {
@@ -129,27 +129,27 @@ test "concurrent_logging_operations" {
   )
   
   // Verify log record properties
-  @assertion.assert_eq(LogRecord::severity_number(log1), Trace)?
-  @assertion.assert_eq(LogRecord::severity_number(log2), Debug)?
-  @assertion.assert_eq(LogRecord::severity_number(log3), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(log4), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(log5), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(log6), Fatal)?
+  assert_eq(LogRecord::severity_number(log1), Trace)
+  assert_eq(LogRecord::severity_number(log2), Debug)
+  assert_eq(LogRecord::severity_number(log3), Info)
+  assert_eq(LogRecord::severity_number(log4), Warn)
+  assert_eq(LogRecord::severity_number(log5), Error)
+  assert_eq(LogRecord::severity_number(log6), Fatal)
   
-  @assertion.assert_eq(LogRecord::body(log1), Some("Trace message 1"))?
-  @assertion.assert_eq(LogRecord::body(log2), Some("Debug message 2"))?
-  @assertion.assert_eq(LogRecord::body(log3), Some("Info message 3"))?
-  @assertion.assert_eq(LogRecord::body(log4), Some("Warning message 4"))?
-  @assertion.assert_eq(LogRecord::body(log5), Some("Error message 5"))?
-  @assertion.assert_eq(LogRecord::body(log6), Some("Fatal message 6"))?
+  assert_eq(LogRecord::body(log1), Some("Trace message 1"))
+  assert_eq(LogRecord::body(log2), Some("Debug message 2"))
+  assert_eq(LogRecord::body(log3), Some("Info message 3"))
+  assert_eq(LogRecord::body(log4), Some("Warning message 4"))
+  assert_eq(LogRecord::body(log5), Some("Error message 5"))
+  assert_eq(LogRecord::body(log6), Some("Fatal message 6"))
   
   // Verify contextual log properties
-  @assertion.assert_eq(LogRecord::body(log_with_context1), Some("Contextual log 1"))?
-  @assertion.assert_eq(LogRecord::body(log_with_context2), Some("Contextual error 2"))?
-  @assertion.assert_eq(LogRecord::trace_id(log_with_context1), Some("trace_concurrent_1"))?
-  @assertion.assert_eq(LogRecord::trace_id(log_with_context2), Some("trace_concurrent_2"))?
-  @assertion.assert_eq(LogRecord::span_id(log_with_context1), Some("span_concurrent_1"))?
-  @assertion.assert_eq(LogRecord::span_id(log_with_context2), Some("span_concurrent_2"))?
+  assert_eq(LogRecord::body(log_with_context1), Some("Contextual log 1"))
+  assert_eq(LogRecord::body(log_with_context2), Some("Contextual error 2"))
+  assert_eq(LogRecord::trace_id(log_with_context1), Some("trace_concurrent_1"))
+  assert_eq(LogRecord::trace_id(log_with_context2), Some("trace_concurrent_2"))
+  assert_eq(LogRecord::span_id(log_with_context1), Some("span_concurrent_1"))
+  assert_eq(LogRecord::span_id(log_with_context2), Some("span_concurrent_2"))
 }
 
 test "concurrent_context_operations" {
@@ -171,27 +171,27 @@ test "concurrent_context_operations" {
   let ctx5 = Context::with_value(ctx4, key5, "value5")
   
   // Verify context values are preserved
-  @assertion.assert_eq(Context::get(ctx1, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx2, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx2, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx3, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx3, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx3, key3), Some("value3"))?
-  @assertion.assert_eq(Context::get(ctx4, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx4, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx4, key3), Some("value3"))?
-  @assertion.assert_eq(Context::get(ctx4, key4), Some("value4"))?
-  @assertion.assert_eq(Context::get(ctx5, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx5, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx5, key3), Some("value3"))?
-  @assertion.assert_eq(Context::get(ctx5, key4), Some("value4"))?
-  @assertion.assert_eq(Context::get(ctx5, key5), Some("value5"))?
+  assert_eq(Context::get(ctx1, key1), Some("value1"))
+  assert_eq(Context::get(ctx2, key1), Some("value1"))
+  assert_eq(Context::get(ctx2, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key1), Some("value1"))
+  assert_eq(Context::get(ctx3, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key3), Some("value3"))
+  assert_eq(Context::get(ctx4, key1), Some("value1"))
+  assert_eq(Context::get(ctx4, key2), Some("value2"))
+  assert_eq(Context::get(ctx4, key3), Some("value3"))
+  assert_eq(Context::get(ctx4, key4), Some("value4"))
+  assert_eq(Context::get(ctx5, key1), Some("value1"))
+  assert_eq(Context::get(ctx5, key2), Some("value2"))
+  assert_eq(Context::get(ctx5, key3), Some("value3"))
+  assert_eq(Context::get(ctx5, key4), Some("value4"))
+  assert_eq(Context::get(ctx5, key5), Some("value5"))
   
   // Test non-existent keys
   let non_existent_key = ContextKey::new("non_existent")
-  @assertion.assert_eq(Context::get(root_ctx, non_existent_key), None)?
-  @assertion.assert_eq(Context::get(ctx1, non_existent_key), None)?
-  @assertion.assert_eq(Context::get(ctx5, non_existent_key), None)?
+  assert_eq(Context::get(root_ctx, non_existent_key), None)
+  assert_eq(Context::get(ctx1, non_existent_key), None)
+  assert_eq(Context::get(ctx5, non_existent_key), None)
 }
 
 test "concurrent_baggage_operations" {
@@ -206,29 +206,29 @@ test "concurrent_baggage_operations" {
   let baggage5 = Baggage::set_entry(baggage4, "correlation.id", "corr000")
   
   // Verify baggage entries are preserved
-  @assertion.assert_eq(Baggage::get_entry(baggage1, "user.id"), Some("user123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage2, "user.id"), Some("user123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage2, "session.id"), Some("session456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "user.id"), Some("user123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "session.id"), Some("session456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "request.id"), Some("req789"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "user.id"), Some("user123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "session.id"), Some("session456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "request.id"), Some("req789"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "tenant.id"), Some("tenant001"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "user.id"), Some("user123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "session.id"), Some("session456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "request.id"), Some("req789"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "tenant.id"), Some("tenant001"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "correlation.id"), Some("corr000"))?
+  assert_eq(Baggage::get_entry(baggage1, "user.id"), Some("user123"))
+  assert_eq(Baggage::get_entry(baggage2, "user.id"), Some("user123"))
+  assert_eq(Baggage::get_entry(baggage2, "session.id"), Some("session456"))
+  assert_eq(Baggage::get_entry(baggage3, "user.id"), Some("user123"))
+  assert_eq(Baggage::get_entry(baggage3, "session.id"), Some("session456"))
+  assert_eq(Baggage::get_entry(baggage3, "request.id"), Some("req789"))
+  assert_eq(Baggage::get_entry(baggage4, "user.id"), Some("user123"))
+  assert_eq(Baggage::get_entry(baggage4, "session.id"), Some("session456"))
+  assert_eq(Baggage::get_entry(baggage4, "request.id"), Some("req789"))
+  assert_eq(Baggage::get_entry(baggage4, "tenant.id"), Some("tenant001"))
+  assert_eq(Baggage::get_entry(baggage5, "user.id"), Some("user123"))
+  assert_eq(Baggage::get_entry(baggage5, "session.id"), Some("session456"))
+  assert_eq(Baggage::get_entry(baggage5, "request.id"), Some("req789"))
+  assert_eq(Baggage::get_entry(baggage5, "tenant.id"), Some("tenant001"))
+  assert_eq(Baggage::get_entry(baggage5, "correlation.id"), Some("corr000"))
   
   // Test baggage removal
   let baggage_after_removal = Baggage::remove_entry(baggage5, "session.id")
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "session.id"), Some("session456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("user123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "request.id"), Some("req789"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "tenant.id"), Some("tenant001"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal, "correlation.id"), Some("corr000"))?
+  assert_eq(Baggage::get_entry(baggage_after_removal, "session.id"), Some("session456"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("user123"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "request.id"), Some("req789"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "tenant.id"), Some("tenant001"))
+  assert_eq(Baggage::get_entry(baggage_after_removal, "correlation.id"), Some("corr000"))
 }
 
 test "concurrent_resource_management" {
@@ -259,17 +259,17 @@ test "concurrent_resource_management" {
   let resource3 = Resource::with_attributes(base_resource, service_attrs3)
   
   // Verify resource attributes are correctly set
-  @assertion.assert_eq(Resource::get_attribute(resource1, "service.name"), Some(StringValue("service-1")))?
-  @assertion.assert_eq(Resource::get_attribute(resource1, "service.version"), Some(StringValue("1.0.0")))?
-  @assertion.assert_eq(Resource::get_attribute(resource1, "service.instance.id"), Some(StringValue("instance-001")))?
+  assert_eq(Resource::get_attribute(resource1, "service.name"), Some(StringValue("service-1")))
+  assert_eq(Resource::get_attribute(resource1, "service.version"), Some(StringValue("1.0.0")))
+  assert_eq(Resource::get_attribute(resource1, "service.instance.id"), Some(StringValue("instance-001")))
   
-  @assertion.assert_eq(Resource::get_attribute(resource2, "service.name"), Some(StringValue("service-2")))?
-  @assertion.assert_eq(Resource::get_attribute(resource2, "service.version"), Some(StringValue("2.0.0")))?
-  @assertion.assert_eq(Resource::get_attribute(resource2, "service.instance.id"), Some(StringValue("instance-002")))?
+  assert_eq(Resource::get_attribute(resource2, "service.name"), Some(StringValue("service-2")))
+  assert_eq(Resource::get_attribute(resource2, "service.version"), Some(StringValue("2.0.0")))
+  assert_eq(Resource::get_attribute(resource2, "service.instance.id"), Some(StringValue("instance-002")))
   
-  @assertion.assert_eq(Resource::get_attribute(resource3, "service.name"), Some(StringValue("service-3")))?
-  @assertion.assert_eq(Resource::get_attribute(resource3, "service.version"), Some(StringValue("3.0.0")))?
-  @assertion.assert_eq(Resource::get_attribute(resource3, "service.instance.id"), Some(StringValue("instance-003")))?
+  assert_eq(Resource::get_attribute(resource3, "service.name"), Some(StringValue("service-3")))
+  assert_eq(Resource::get_attribute(resource3, "service.version"), Some(StringValue("3.0.0")))
+  assert_eq(Resource::get_attribute(resource3, "service.instance.id"), Some(StringValue("instance-003")))
   
   // Test resource merging
   let additional_attrs = [("deployment.environment", StringValue("production"))]
@@ -279,14 +279,14 @@ test "concurrent_resource_management" {
   let merged2 = Resource::merge(resource2, additional_resource)
   let merged3 = Resource::merge(resource3, additional_resource)
   
-  @assertion.assert_eq(Resource::get_attribute(merged1, "deployment.environment"), Some(StringValue("production")))?
-  @assertion.assert_eq(Resource::get_attribute(merged2, "deployment.environment"), Some(StringValue("production")))?
-  @assertion.assert_eq(Resource::get_attribute(merged3, "deployment.environment"), Some(StringValue("production")))?
+  assert_eq(Resource::get_attribute(merged1, "deployment.environment"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(merged2, "deployment.environment"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(merged3, "deployment.environment"), Some(StringValue("production")))
   
   // Verify original attributes are preserved
-  @assertion.assert_eq(Resource::get_attribute(merged1, "service.name"), Some(StringValue("service-1")))?
-  @assertion.assert_eq(Resource::get_attribute(merged2, "service.name"), Some(StringValue("service-2")))?
-  @assertion.assert_eq(Resource::get_attribute(merged3, "service.name"), Some(StringValue("service-3")))?
+  assert_eq(Resource::get_attribute(merged1, "service.name"), Some(StringValue("service-1")))
+  assert_eq(Resource::get_attribute(merged2, "service.name"), Some(StringValue("service-2")))
+  assert_eq(Resource::get_attribute(merged3, "service.name"), Some(StringValue("service-3")))
 }
 
 test "concurrent_propagation_operations" {
@@ -317,11 +317,11 @@ test "concurrent_propagation_operations" {
   CompositePropagator::inject(composite, ctx5, carrier5)
   
   // Verify injection worked for all carriers
-  @assertion.assert_eq(TextMapCarrier::get(carrier1, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(carrier2, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(carrier3, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(carrier4, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(carrier5, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(TextMapCarrier::get(carrier1, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(TextMapCarrier::get(carrier2, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(TextMapCarrier::get(carrier3, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(TextMapCarrier::get(carrier4, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(TextMapCarrier::get(carrier5, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   // Extract contexts from carriers
   let extracted_ctx1 = CompositePropagator::extract(composite, carrier1)
@@ -332,11 +332,11 @@ test "concurrent_propagation_operations" {
   
   // Verify extraction worked
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx4, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx5, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx4, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx5, extracted_key), Some("true"))
 }
 
 test "memory_efficiency_under_load" {
@@ -388,31 +388,31 @@ test "memory_efficiency_under_load" {
   let resource_a3 = Resource::with_attributes(Resource::new(), resource_attrs3)
   
   // Verify all objects are properly created and accessible
-  @assertion.assert_eq(Span::name(span_a1), "memory-span-1")?
-  @assertion.assert_eq(Span::name(span_a2), "memory-span-2")?
-  @assertion.assert_eq(Span::name(span_a3), "memory-span-3")?
-  @assertion.assert_eq(Span::name(span_a4), "memory-span-4")?
-  @assertion.assert_eq(Span::name(span_a5), "memory-span-5")?
+  assert_eq(Span::name(span_a1), "memory-span-1")
+  assert_eq(Span::name(span_a2), "memory-span-2")
+  assert_eq(Span::name(span_a3), "memory-span-3")
+  assert_eq(Span::name(span_a4), "memory-span-4")
+  assert_eq(Span::name(span_a5), "memory-span-5")
   
-  @assertion.assert_eq(counter_a.name, "memory-counter")?
-  @assertion.assert_eq(histogram_a.name, "memory-histogram")?
-  @assertion.assert_eq(gauge_a.name, "memory-gauge")?
+  assert_eq(counter_a.name, "memory-counter")
+  assert_eq(histogram_a.name, "memory-histogram")
+  assert_eq(gauge_a.name, "memory-gauge")
   
-  @assertion.assert_eq(LogRecord::body(log_a1), Some("Memory test log 1"))?
-  @assertion.assert_eq(LogRecord::body(log_a2), Some("Memory test log 2"))?
-  @assertion.assert_eq(LogRecord::body(log_a3), Some("Memory test log 3"))?
+  assert_eq(LogRecord::body(log_a1), Some("Memory test log 1"))
+  assert_eq(LogRecord::body(log_a2), Some("Memory test log 2"))
+  assert_eq(LogRecord::body(log_a3), Some("Memory test log 3"))
   
-  @assertion.assert_eq(Context::get(ctx_a1, ContextKey::new("memory_key_1")), Some("memory_value_1"))?
-  @assertion.assert_eq(Context::get(ctx_a2, ContextKey::new("memory_key_2")), Some("memory_value_2"))?
-  @assertion.assert_eq(Context::get(ctx_a3, ContextKey::new("memory_key_3")), Some("memory_value_3"))?
+  assert_eq(Context::get(ctx_a1, ContextKey::new("memory_key_1")), Some("memory_value_1"))
+  assert_eq(Context::get(ctx_a2, ContextKey::new("memory_key_2")), Some("memory_value_2"))
+  assert_eq(Context::get(ctx_a3, ContextKey::new("memory_key_3")), Some("memory_value_3"))
   
-  @assertion.assert_eq(Baggage::get_entry(baggage_a1, "memory.baggage.1"), Some("baggage_value_1"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_a2, "memory.baggage.2"), Some("baggage_value_2"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_a3, "memory.baggage.3"), Some("baggage_value_3"))?
+  assert_eq(Baggage::get_entry(baggage_a1, "memory.baggage.1"), Some("baggage_value_1"))
+  assert_eq(Baggage::get_entry(baggage_a2, "memory.baggage.2"), Some("baggage_value_2"))
+  assert_eq(Baggage::get_entry(baggage_a3, "memory.baggage.3"), Some("baggage_value_3"))
   
-  @assertion.assert_eq(Resource::get_attribute(resource_a1, "memory.test"), Some(StringValue("resource-1")))?
-  @assertion.assert_eq(Resource::get_attribute(resource_a2, "memory.test"), Some(StringValue("resource-2")))?
-  @assertion.assert_eq(Resource::get_attribute(resource_a3, "memory.test"), Some(StringValue("resource-3")))?
+  assert_eq(Resource::get_attribute(resource_a1, "memory.test"), Some(StringValue("resource-1")))
+  assert_eq(Resource::get_attribute(resource_a2, "memory.test"), Some(StringValue("resource-2")))
+  assert_eq(Resource::get_attribute(resource_a3, "memory.test"), Some(StringValue("resource-3")))
   
   // Clean up all spans
   Span::end(span_a1)

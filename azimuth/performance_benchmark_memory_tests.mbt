@@ -19,11 +19,11 @@ test "span_creation_performance" {
   let duration = end_time - start_time
   
   // Verify all spans are created correctly
-  @assertion.assert_eq(Span::name(span1), "perf_span_1")?
-  @assertion.assert_eq(Span::name(span2), "perf_span_2")?
-  @assertion.assert_eq(Span::name(span3), "perf_span_3")?
-  @assertion.assert_eq(Span::name(span4), "perf_span_4")?
-  @assertion.assert_eq(Span::name(span5), "perf_span_5")?
+  assert_eq(Span::name(span1), "perf_span_1")
+  assert_eq(Span::name(span2), "perf_span_2")
+  assert_eq(Span::name(span3), "perf_span_3")
+  assert_eq(Span::name(span4), "perf_span_4")
+  assert_eq(Span::name(span5), "perf_span_5")
   
   // Performance assertion - should complete within reasonable time
   @assertion.assert_true(duration < 1000000L)? // Less than 1ms
@@ -60,9 +60,9 @@ test "metrics_throughput_performance" {
   @assertion.assert_true(duration < 5000000L)? // Less than 5ms
   
   // Verify metric integrity
-  @assertion.assert_eq(counter.name, "throughput_counter")?
-  @assertion.assert_eq(histogram.name, "throughput_histogram")?
-  @assertion.assert_eq(updown_counter.name, "throughput_updown")?
+  assert_eq(counter.name, "throughput_counter")
+  assert_eq(histogram.name, "throughput_histogram")
+  assert_eq(updown_counter.name, "throughput_updown")
 }
 
 test "context_operations_performance" {
@@ -96,11 +96,11 @@ test "context_operations_performance" {
   let duration = end_time - start_time
   
   // Verify context operations
-  @assertion.assert_eq(val1, Some("value1"))?
-  @assertion.assert_eq(val2, Some("value2"))?
-  @assertion.assert_eq(val3, Some("value3"))?
-  @assertion.assert_eq(val4, Some("value4"))?
-  @assertion.assert_eq(val5, Some("value5"))?
+  assert_eq(val1, Some("value1"))
+  assert_eq(val2, Some("value2"))
+  assert_eq(val3, Some("value3"))
+  assert_eq(val4, Some("value4"))
+  assert_eq(val5, Some("value5"))
   
   // Performance assertion
   @assertion.assert_true(duration < 1000000L)? // Less than 1ms
@@ -130,11 +130,11 @@ test "attribute_operations_performance" {
   let duration = end_time - start_time
   
   // Verify attribute operations
-  @assertion.assert_eq(string_val, Some(StringValue("test_value")))?
-  @assertion.assert_eq(int_val, Some(IntValue(42)))?
-  @assertion.assert_eq(float_val, None)? // Based on mock implementation
-  @assertion.assert_eq(bool_val, None)? // Based on mock implementation
-  @assertion.assert_eq(array_val, None)? // Based on mock implementation
+  assert_eq(string_val, Some(StringValue("test_value")))
+  assert_eq(int_val, Some(IntValue(42)))
+  assert_eq(float_val, None)? // Based on mock implementation
+  assert_eq(bool_val, None)? // Based on mock implementation
+  assert_eq(array_val, None)? // Based on mock implementation
   
   // Performance assertion
   @assertion.assert_true(duration < 1000000L)? // Less than 1ms
@@ -166,10 +166,10 @@ test "propagation_performance" {
   
   // Verify propagation operations
   let trace_value = TextMapCarrier::get(carrier, "traceparent")
-  @assertion.assert_eq(trace_value, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(trace_value, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
   
   // Performance assertion - 10 injection/extraction cycles
   @assertion.assert_true(duration < 5000000L)? // Less than 5ms
@@ -231,11 +231,11 @@ test "baggage_performance" {
   let duration = end_time - start_time
   
   // Verify baggage operations
-  @assertion.assert_eq(user_id, Some("12345"))?
-  @assertion.assert_eq(session_id, Some("abcdef"))?
-  @assertion.assert_eq(request_id, Some("xyz789"))?
-  @assertion.assert_eq(tenant_id, Some("tenant123"))?
-  @assertion.assert_eq(correlation_id, Some("corr456"))?
+  assert_eq(user_id, Some("12345"))
+  assert_eq(session_id, Some("abcdef"))
+  assert_eq(request_id, Some("xyz789"))
+  assert_eq(tenant_id, Some("tenant123"))
+  assert_eq(correlation_id, Some("corr456"))
   
   // Performance assertion
   @assertion.assert_true(duration < 2000000L)? // Less than 2ms
@@ -280,15 +280,15 @@ test "resource_operations_performance" {
   let duration = end_time - start_time
   
   // Verify resource operations
-  @assertion.assert_eq(service_name, Some(StringValue("performance_service")))?
-  @assertion.assert_eq(service_version, Some(StringValue("1.0.0")))?
-  @assertion.assert_eq(instance_id, Some(StringValue("perf-instance-123")))?
-  @assertion.assert_eq(environment, Some(StringValue("test")))?
-  @assertion.assert_eq(host_name, Some(StringValue("test-host")))?
-  @assertion.assert_eq(process_id, Some(IntValue(12345)))?
+  assert_eq(service_name, Some(StringValue("performance_service")))
+  assert_eq(service_version, Some(StringValue("1.0.0")))
+  assert_eq(instance_id, Some(StringValue("perf-instance-123")))
+  assert_eq(environment, Some(StringValue("test")))
+  assert_eq(host_name, Some(StringValue("test-host")))
+  assert_eq(process_id, Some(IntValue(12345)))
   
   let merged_service_name = Resource::get_attribute(merged_resource, "service.name")
-  @assertion.assert_eq(merged_service_name, Some(StringValue("override_service")))?
+  assert_eq(merged_service_name, Some(StringValue("override_service")))
   
   // Performance assertion
   @assertion.assert_true(duration < 3000000L)? // Less than 3ms
@@ -364,11 +364,11 @@ test "large_data_handling_performance" {
   let retrieved_value2 = Context::get(ctx_with_values, key2)
   let retrieved_value3 = Context::get(ctx_with_values, key3)
   
-  @assertion.assert_eq(retrieved_array, None)? // Based on mock implementation
-  @assertion.assert_eq(retrieved_string, None)? // Based on mock implementation
-  @assertion.assert_eq(retrieved_value1, Some(large_value1))?
-  @assertion.assert_eq(retrieved_value2, Some(large_value2))?
-  @assertion.assert_eq(retrieved_value3, Some(large_value3))?
+  assert_eq(retrieved_array, None)? // Based on mock implementation
+  assert_eq(retrieved_string, None)? // Based on mock implementation
+  assert_eq(retrieved_value1, Some(large_value1))
+  assert_eq(retrieved_value2, Some(large_value2))
+  assert_eq(retrieved_value3, Some(large_value3))
   
   // Performance assertion - large data operations
   @assertion.assert_true(duration < 3000000L)? // Less than 3ms

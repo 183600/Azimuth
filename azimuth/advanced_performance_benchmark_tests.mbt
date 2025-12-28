@@ -25,28 +25,28 @@ test "span_creation_performance_benchmark" {
   let creation_duration = end_time - start_time
   
   // Verify all spans are created correctly
-  @assertion.assert_eq(Span::name(span1), "benchmark-span-1")?
-  @assertion.assert_eq(Span::name(span2), "benchmark-span-2")?
-  @assertion.assert_eq(Span::name(span3), "benchmark-span-3")?
-  @assertion.assert_eq(Span::name(span4), "benchmark-span-4")?
-  @assertion.assert_eq(Span::name(span5), "benchmark-span-5")?
-  @assertion.assert_eq(Span::name(span6), "benchmark-span-6")?
-  @assertion.assert_eq(Span::name(span7), "benchmark-span-7")?
-  @assertion.assert_eq(Span::name(span8), "benchmark-span-8")?
-  @assertion.assert_eq(Span::name(span9), "benchmark-span-9")?
-  @assertion.assert_eq(Span::name(span10), "benchmark-span-10")?
+  assert_eq(Span::name(span1), "benchmark-span-1")
+  assert_eq(Span::name(span2), "benchmark-span-2")
+  assert_eq(Span::name(span3), "benchmark-span-3")
+  assert_eq(Span::name(span4), "benchmark-span-4")
+  assert_eq(Span::name(span5), "benchmark-span-5")
+  assert_eq(Span::name(span6), "benchmark-span-6")
+  assert_eq(Span::name(span7), "benchmark-span-7")
+  assert_eq(Span::name(span8), "benchmark-span-8")
+  assert_eq(Span::name(span9), "benchmark-span-9")
+  assert_eq(Span::name(span10), "benchmark-span-10")
   
   // Verify all spans are recording
-  @assertion.assert_eq(Span::is_recording(span1), true)?
-  @assertion.assert_eq(Span::is_recording(span2), true)?
-  @assertion.assert_eq(Span::is_recording(span3), true)?
-  @assertion.assert_eq(Span::is_recording(span4), true)?
-  @assertion.assert_eq(Span::is_recording(span5), true)?
-  @assertion.assert_eq(Span::is_recording(span6), true)?
-  @assertion.assert_eq(Span::is_recording(span7), true)?
-  @assertion.assert_eq(Span::is_recording(span8), true)?
-  @assertion.assert_eq(Span::is_recording(span9), true)?
-  @assertion.assert_eq(Span::is_recording(span10), true)?
+  assert_eq(Span::is_recording(span1), true)
+  assert_eq(Span::is_recording(span2), true)
+  assert_eq(Span::is_recording(span3), true)
+  assert_eq(Span::is_recording(span4), true)
+  assert_eq(Span::is_recording(span5), true)
+  assert_eq(Span::is_recording(span6), true)
+  assert_eq(Span::is_recording(span7), true)
+  assert_eq(Span::is_recording(span8), true)
+  assert_eq(Span::is_recording(span9), true)
+  assert_eq(Span::is_recording(span10), true)
   
   // End all spans
   Span::end(span1)
@@ -101,21 +101,21 @@ test "metrics_recording_performance_benchmark" {
   let recording_duration = end_time - start_time
   
   // Verify metric instrument properties
-  @assertion.assert_eq(counter.name, "benchmark_counter")?
-  @assertion.assert_eq(counter.description, Some("Benchmark counter"))?
-  @assertion.assert_eq(counter.unit, Some("count"))?
+  assert_eq(counter.name, "benchmark_counter")
+  assert_eq(counter.description, Some("Benchmark counter"))
+  assert_eq(counter.unit, Some("count"))
   
-  @assertion.assert_eq(histogram.name, "benchmark_histogram")?
-  @assertion.assert_eq(histogram.description, Some("Benchmark histogram"))?
-  @assertion.assert_eq(histogram.unit, Some("ms"))?
+  assert_eq(histogram.name, "benchmark_histogram")
+  assert_eq(histogram.description, Some("Benchmark histogram"))
+  assert_eq(histogram.unit, Some("ms"))
   
-  @assertion.assert_eq(gauge.name, "benchmark_gauge")?
-  @assertion.assert_eq(gauge.description, Some("Benchmark gauge"))?
-  @assertion.assert_eq(gauge.unit, Some("items"))?
+  assert_eq(gauge.name, "benchmark_gauge")
+  assert_eq(gauge.description, Some("Benchmark gauge"))
+  assert_eq(gauge.unit, Some("items"))
   
-  @assertion.assert_eq(updown_counter.name, "benchmark_updown")?
-  @assertion.assert_eq(updown_counter.description, Some("Benchmark updown counter"))?
-  @assertion.assert_eq(updown_counter.unit, Some("items"))?
+  assert_eq(updown_counter.name, "benchmark_updown")
+  assert_eq(updown_counter.description, Some("Benchmark updown counter"))
+  assert_eq(updown_counter.unit, Some("items"))
   
   // Performance assertion - recording should complete in reasonable time
   @assertion.assert_true(recording_duration < 1000000000L)? // Less than 1 second
@@ -186,27 +186,27 @@ test "logging_performance_benchmark" {
   let logging_duration = end_time - start_time
   
   // Verify log record properties
-  @assertion.assert_eq(LogRecord::severity_number(log1), Trace)?
-  @assertion.assert_eq(LogRecord::severity_number(log2), Debug)?
-  @assertion.assert_eq(LogRecord::severity_number(log3), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(log4), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(log5), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(log6), Fatal)?
+  assert_eq(LogRecord::severity_number(log1), Trace)
+  assert_eq(LogRecord::severity_number(log2), Debug)
+  assert_eq(LogRecord::severity_number(log3), Info)
+  assert_eq(LogRecord::severity_number(log4), Warn)
+  assert_eq(LogRecord::severity_number(log5), Error)
+  assert_eq(LogRecord::severity_number(log6), Fatal)
   
-  @assertion.assert_eq(LogRecord::body(log1), Some("Trace message 1"))?
-  @assertion.assert_eq(LogRecord::body(log2), Some("Debug message 2"))?
-  @assertion.assert_eq(LogRecord::body(log3), Some("Info message 3"))?
-  @assertion.assert_eq(LogRecord::body(log4), Some("Warning message 4"))?
-  @assertion.assert_eq(LogRecord::body(log5), Some("Error message 5"))?
-  @assertion.assert_eq(LogRecord::body(log6), Some("Fatal message 6"))?
+  assert_eq(LogRecord::body(log1), Some("Trace message 1"))
+  assert_eq(LogRecord::body(log2), Some("Debug message 2"))
+  assert_eq(LogRecord::body(log3), Some("Info message 3"))
+  assert_eq(LogRecord::body(log4), Some("Warning message 4"))
+  assert_eq(LogRecord::body(log5), Some("Error message 5"))
+  assert_eq(LogRecord::body(log6), Some("Fatal message 6"))
   
-  @assertion.assert_eq(LogRecord::body(log7), Some("Contextual log 7"))?
-  @assertion.assert_eq(LogRecord::trace_id(log7), Some("trace_perf_7"))?
-  @assertion.assert_eq(LogRecord::span_id(log7), Some("span_perf_7"))?
+  assert_eq(LogRecord::body(log7), Some("Contextual log 7"))
+  assert_eq(LogRecord::trace_id(log7), Some("trace_perf_7"))
+  assert_eq(LogRecord::span_id(log7), Some("span_perf_7"))
   
-  @assertion.assert_eq(LogRecord::body(log8), Some("Contextual error 8"))?
-  @assertion.assert_eq(LogRecord::trace_id(log8), Some("trace_perf_8"))?
-  @assertion.assert_eq(LogRecord::span_id(log8), Some("span_perf_8"))?
+  assert_eq(LogRecord::body(log8), Some("Contextual error 8"))
+  assert_eq(LogRecord::trace_id(log8), Some("trace_perf_8"))
+  assert_eq(LogRecord::span_id(log8), Some("span_perf_8"))
   
   // Performance assertion - logging should complete in reasonable time
   @assertion.assert_true(logging_duration < 1000000000L)? // Less than 1 second
@@ -244,11 +244,11 @@ test "context_operations_performance_benchmark" {
   let context_duration = end_time - start_time
   
   // Verify context values
-  @assertion.assert_eq(val1, Some("value1"))?
-  @assertion.assert_eq(val2, Some("value2"))?
-  @assertion.assert_eq(val3, Some("value3"))?
-  @assertion.assert_eq(val4, Some("value4"))?
-  @assertion.assert_eq(val5, Some("value5"))?
+  assert_eq(val1, Some("value1"))
+  assert_eq(val2, Some("value2"))
+  assert_eq(val3, Some("value3"))
+  assert_eq(val4, Some("value4"))
+  assert_eq(val5, Some("value5"))
   
   // Performance assertion - context operations should complete in reasonable time
   @assertion.assert_true(context_duration < 1000000000L)? // Less than 1 second
@@ -294,11 +294,11 @@ test "propagation_performance_benchmark" {
   
   // Verify propagation worked
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx4, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx5, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx4, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx5, extracted_key), Some("true"))
   
   // Performance assertion - propagation operations should complete in reasonable time
   @assertion.assert_true(propagation_duration < 1000000000L)? // Less than 1 second
@@ -377,12 +377,12 @@ test "memory_allocation_benchmark" {
   let allocation_duration = end_time - start_time
   
   // Verify all objects are properly created
-  @assertion.assert_eq(spans.length, 5)?
-  @assertion.assert_eq(counters.length, 5)?
-  @assertion.assert_eq(logs.length, 5)?
-  @assertion.assert_eq(contexts.length, 5)?
-  @assertion.assert_eq(baggages.length, 5)?
-  @assertion.assert_eq(resources.length, 5)?
+  assert_eq(spans.length, 5)
+  assert_eq(counters.length, 5)
+  assert_eq(logs.length, 5)
+  assert_eq(contexts.length, 5)
+  assert_eq(baggages.length, 5)
+  assert_eq(resources.length, 5)
   
   // Clean up all spans
   Span::end(spans[0])
@@ -436,16 +436,16 @@ test "resource_cleanup_performance_benchmark" {
   let cleanup_duration = end_time - start_time
   
   // Verify spans are properly ended
-  @assertion.assert_eq(Span::name(span1), "cleanup-span-1")?
-  @assertion.assert_eq(Span::name(span2), "cleanup-span-2")?
-  @assertion.assert_eq(Span::name(span3), "cleanup-span-3")?
-  @assertion.assert_eq(Span::name(span4), "cleanup-span-4")?
-  @assertion.assert_eq(Span::name(span5), "cleanup-span-5")?
-  @assertion.assert_eq(Span::name(span6), "cleanup-span-6")?
-  @assertion.assert_eq(Span::name(span7), "cleanup-span-7")?
-  @assertion.assert_eq(Span::name(span8), "cleanup-span-8")?
-  @assertion.assert_eq(Span::name(span9), "cleanup-span-9")?
-  @assertion.assert_eq(Span::name(span10), "cleanup-span-10")?
+  assert_eq(Span::name(span1), "cleanup-span-1")
+  assert_eq(Span::name(span2), "cleanup-span-2")
+  assert_eq(Span::name(span3), "cleanup-span-3")
+  assert_eq(Span::name(span4), "cleanup-span-4")
+  assert_eq(Span::name(span5), "cleanup-span-5")
+  assert_eq(Span::name(span6), "cleanup-span-6")
+  assert_eq(Span::name(span7), "cleanup-span-7")
+  assert_eq(Span::name(span8), "cleanup-span-8")
+  assert_eq(Span::name(span9), "cleanup-span-9")
+  assert_eq(Span::name(span10), "cleanup-span-10")
   
   // Performance assertion - cleanup should complete in reasonable time
   @assertion.assert_true(cleanup_duration < 1000000000L)? // Less than 1 second
@@ -509,29 +509,29 @@ test "concurrent_operations_performance_benchmark" {
   let concurrent_duration = end_time - start_time
   
   // Verify all operations completed successfully
-  @assertion.assert_eq(Span::name(span_a), "concurrent-span-a")?
-  @assertion.assert_eq(Span::name(span_b), "concurrent-span-b")?
-  @assertion.assert_eq(Span::name(span_c), "concurrent-span-c")?
+  assert_eq(Span::name(span_a), "concurrent-span-a")
+  assert_eq(Span::name(span_b), "concurrent-span-b")
+  assert_eq(Span::name(span_c), "concurrent-span-c")
   
-  @assertion.assert_eq(counter.name, "concurrent_counter")?
-  @assertion.assert_eq(histogram.name, "concurrent_histogram")?
-  @assertion.assert_eq(gauge.name, "concurrent_gauge")?
+  assert_eq(counter.name, "concurrent_counter")
+  assert_eq(histogram.name, "concurrent_histogram")
+  assert_eq(gauge.name, "concurrent_gauge")
   
-  @assertion.assert_eq(LogRecord::body(log_a), Some("Concurrent log A"))?
-  @assertion.assert_eq(LogRecord::body(log_b), Some("Concurrent log B"))?
-  @assertion.assert_eq(LogRecord::body(log_c), Some("Concurrent log C"))?
+  assert_eq(LogRecord::body(log_a), Some("Concurrent log A"))
+  assert_eq(LogRecord::body(log_b), Some("Concurrent log B"))
+  assert_eq(LogRecord::body(log_c), Some("Concurrent log C"))
   
-  @assertion.assert_eq(Context::get(ctx_a, ContextKey::new("concurrent_a")), Some("value_a"))?
-  @assertion.assert_eq(Context::get(ctx_b, ContextKey::new("concurrent_b")), Some("value_b"))?
-  @assertion.assert_eq(Context::get(ctx_c, ContextKey::new("concurrent_c")), Some("value_c"))?
+  assert_eq(Context::get(ctx_a, ContextKey::new("concurrent_a")), Some("value_a"))
+  assert_eq(Context::get(ctx_b, ContextKey::new("concurrent_b")), Some("value_b"))
+  assert_eq(Context::get(ctx_c, ContextKey::new("concurrent_c")), Some("value_c"))
   
-  @assertion.assert_eq(Baggage::get_entry(baggage_a, "concurrent.baggage.a"), Some("value_a"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_b, "concurrent.baggage.b"), Some("value_b"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_c, "concurrent.baggage.c"), Some("value_c"))?
+  assert_eq(Baggage::get_entry(baggage_a, "concurrent.baggage.a"), Some("value_a"))
+  assert_eq(Baggage::get_entry(baggage_b, "concurrent.baggage.b"), Some("value_b"))
+  assert_eq(Baggage::get_entry(baggage_c, "concurrent.baggage.c"), Some("value_c"))
   
-  @assertion.assert_eq(Resource::get_attribute(resource_a, "concurrent.test"), Some(StringValue("resource-a")))?
-  @assertion.assert_eq(Resource::get_attribute(resource_b, "concurrent.test"), Some(StringValue("resource-b")))?
-  @assertion.assert_eq(Resource::get_attribute(resource_c, "concurrent.test"), Some(StringValue("resource-c")))?
+  assert_eq(Resource::get_attribute(resource_a, "concurrent.test"), Some(StringValue("resource-a")))
+  assert_eq(Resource::get_attribute(resource_b, "concurrent.test"), Some(StringValue("resource-b")))
+  assert_eq(Resource::get_attribute(resource_c, "concurrent.test"), Some(StringValue("resource-c")))
   
   // Performance assertion - concurrent operations should complete in reasonable time
   @assertion.assert_true(concurrent_duration < 1500000000L)? // Less than 1.5 seconds
@@ -589,23 +589,23 @@ test "large_data_handling_performance_benchmark" {
   
   // Verify large data handling
   match large_string_attr {
-    StringValue(s) => @assertion.assert_eq(s, large_text)?
-    _ => @test.fail("Expected StringValue")?
+    StringValue(s) => assert_eq(s, large_text)
+    _ => @test.fail("Expected StringValue")
   }
   
   match large_string_array {
-    ArrayStringValue(arr) => @assertion.assert_eq(arr.length, 10)?
-    _ => @test.fail("Expected ArrayStringValue")?
+    ArrayStringValue(arr) => assert_eq(arr.length, 10)
+    _ => @test.fail("Expected ArrayStringValue")
   }
   
   match large_int_array {
-    ArrayIntValue(arr) => @assertion.assert_eq(arr.length, 10)?
-    _ => @test.fail("Expected ArrayIntValue")?
+    ArrayIntValue(arr) => assert_eq(arr.length, 10)
+    _ => @test.fail("Expected ArrayIntValue")
   }
   
-  @assertion.assert_eq(Resource::get_attribute(large_resource, "large.text.attribute"), Some(large_string_attr))?
-  @assertion.assert_eq(LogRecord::body(large_log), Some(large_text))?
-  @assertion.assert_eq(Baggage::get_entry(large_baggage, "large.baggage.key"), Some(large_text))?
+  assert_eq(Resource::get_attribute(large_resource, "large.text.attribute"), Some(large_string_attr))
+  assert_eq(LogRecord::body(large_log), Some(large_text))
+  assert_eq(Baggage::get_entry(large_baggage, "large.baggage.key"), Some(large_text))
   
   // Performance assertion - large data operations should complete in reasonable time
   @assertion.assert_true(large_data_duration < 2000000000L)? // Less than 2 seconds

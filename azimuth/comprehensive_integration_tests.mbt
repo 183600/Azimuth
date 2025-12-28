@@ -14,8 +14,8 @@ test "end_to_end_tracing_and_logging_integration" {
   let span = Tracer::start_span(tracer, "integration-operation")
   
   // Test span properties
-  @assertion.assert_eq(Span::name(span), "integration-operation")?
-  @assertion.assert_true(Span::is_recording(span))?
+  assert_eq(Span::name(span), "integration-operation")
+  @assertion.assert_true(Span::is_recording(span))
   
   // Add events to span
   Span::add_event(span, "operation.started")
@@ -56,7 +56,7 @@ test "end_to_end_tracing_and_logging_integration" {
   Span::end(span)
   
   // All operations should complete without errors
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "metrics_with_attributes_integration" {
@@ -84,16 +84,16 @@ test "metrics_with_attributes_integration" {
   Gauge::record(gauge, 75.2, Some(attrs))
   
   // Test instrument properties
-  @assertion.assert_eq(counter.name, "http.requests.total")?
-  @assertion.assert_eq(histogram.name, "http.request.duration")?
-  @assertion.assert_eq(updown_counter.name, "active.connections")?
-  @assertion.assert_eq(gauge.name, "cpu.usage")?
+  assert_eq(counter.name, "http.requests.total")
+  assert_eq(histogram.name, "http.request.duration")
+  assert_eq(updown_counter.name, "active.connections")
+  assert_eq(gauge.name, "cpu.usage")
   
   // Test attribute retrieval
-  @assertion.assert_eq(Attributes::get(attrs, "service.name"), Some(StringValue("integration-service")))?
-  @assertion.assert_eq(Attributes::get(attrs, "http.method"), Some(StringValue("GET")))?
-  @assertion.assert_eq(Attributes::get(attrs, "http.status_code"), Some(IntValue(200)))?
-  @assertion.assert_eq(Attributes::get(attrs, "endpoint"), Some(StringValue("/api/test")))?
+  assert_eq(Attributes::get(attrs, "service.name"), Some(StringValue("integration-service")))
+  assert_eq(Attributes::get(attrs, "http.method"), Some(StringValue("GET")))
+  assert_eq(Attributes::get(attrs, "http.status_code"), Some(IntValue(200)))
+  assert_eq(Attributes::get(attrs, "endpoint"), Some(StringValue("/api/test")))
 }
 
 test "context_propagation_with_baggage_integration" {
@@ -122,16 +122,16 @@ test "context_propagation_with_baggage_integration" {
   let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
   
   // Test baggage operations
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "user.id"), Some("user-123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "session.id"), Some("session-456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "request.id"), Some("req-789"))?
+  assert_eq(Baggage::get_entry(baggage3, "user.id"), Some("user-123"))
+  assert_eq(Baggage::get_entry(baggage3, "session.id"), Some("session-456"))
+  assert_eq(Baggage::get_entry(baggage3, "request.id"), Some("req-789"))
   
   // Test context operations
-  @assertion.assert_eq(Context::get(ctx_with_baggage, ContextKey::new("baggage")), Some("user-id=user-123,session-id=session-456"))?
-  @assertion.assert_eq(Context::get(extracted_ctx, ContextKey::new("extracted")), Some("true"))?
+  assert_eq(Context::get(ctx_with_baggage, ContextKey::new("baggage")), Some("user-id=user-123,session-id=session-456"))
+  assert_eq(Context::get(extracted_ctx, ContextKey::new("extracted")), Some("true"))
   
   // Test carrier operations
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-test-trace-id-test-span-id-01"))?
+  assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-test-trace-id-test-span-id-01"))
 }
 
 test "resource_with_telemetry_integration" {
@@ -170,14 +170,14 @@ test "resource_with_telemetry_integration" {
   Logger::emit(logger, log_record)
   
   // Test resource attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "service.name"), Some(StringValue("integration-service")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "service.version"), Some(StringValue("1.0.0")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "deployment.environment"), Some(StringValue("testing")))?
+  assert_eq(Resource::get_attribute(resource, "service.name"), Some(StringValue("integration-service")))
+  assert_eq(Resource::get_attribute(resource, "service.version"), Some(StringValue("1.0.0")))
+  assert_eq(Resource::get_attribute(resource, "deployment.environment"), Some(StringValue("testing")))
   
   // Test telemetry operations
-  @assertion.assert_eq(Span::name(span), "resource-aware-operation")?
-  @assertion.assert_eq(counter.name, "resource.operations.total")?
-  @assertion.assert_eq(LogRecord::severity_number(log_record), Info)?
+  assert_eq(Span::name(span), "resource-aware-operation")
+  assert_eq(counter.name, "resource.operations.total")
+  assert_eq(LogRecord::severity_number(log_record), Info)
 }
 
 test "http_client_with_telemetry_integration" {
@@ -206,16 +206,16 @@ test "http_client_with_telemetry_integration" {
   let response = HttpResponse::new(200, response_headers, Some("{\"result\": \"success\"}"))
   
   // Test HTTP operations
-  @assertion.assert_eq(HttpRequest::http_method(request), "GET")?
-  @assertion.assert_eq(HttpRequest::url(request), "https://api.example.com/test")?
-  @assertion.assert_eq(HttpRequest::body(request), Some("{\"test\": \"data\"}"))?
+  assert_eq(HttpRequest::http_method(request), "GET")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/test")
+  assert_eq(HttpRequest::body(request), Some("{\"test\": \"data\"}"))
   
-  @assertion.assert_eq(HttpResponse::status_code(response), 200)?
-  @assertion.assert_eq(HttpResponse::body(response), Some("{\"result\": \"success\"}"))?
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::body(response), Some("{\"result\": \"success\"}"))
   
   // Test span operations
-  @assertion.assert_eq(Span::name(span), "http.request")?
-  @assertion.assert_true(Span::is_recording(span))?
+  assert_eq(Span::name(span), "http.request")
+  @assertion.assert_true(Span::is_recording(span))
   
   Span::end(span)
 }
@@ -255,16 +255,16 @@ test "clock_and_random_with_telemetry_integration" {
   let span_ctx = SpanContext::new(trace_id, span_id, true, "")
   
   // Test operations
-  @assertion.assert_true(timestamp > 0L)?
-  @assertion.assert_eq(random_bytes.length(), 0)?  // Simplified implementation
-  @assertion.assert_eq(random_u64, 12345UL)?  // Simplified implementation
+  @assertion.assert_true(timestamp > 0L)
+  assert_eq(random_bytes.length(), 0)?  // Simplified implementation
+  assert_eq(random_u64, 12345UL)?  // Simplified implementation
   
-  @assertion.assert_eq(LogRecord::severity_number(log_record), Info)?
-  @assertion.assert_eq(LogRecord::body(log_record), Some("Timestamped log message"))?
+  assert_eq(LogRecord::severity_number(log_record), Info)
+  assert_eq(LogRecord::body(log_record), Some("Timestamped log message"))
   
-  @assertion.assert_eq(SpanContext::trace_id(span_ctx), trace_id)?
-  @assertion.assert_eq(SpanContext::span_id(span_ctx), span_id)?
-  @assertion.assert_true(SpanContext::is_valid(span_ctx))?
+  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(span_ctx), span_id)
+  @assertion.assert_true(SpanContext::is_valid(span_ctx))
 }
 
 test "complex_service_to_service_scenario" {
@@ -340,18 +340,18 @@ test "complex_service_to_service_scenario" {
   Span::end(span_a)
   
   // Test final state
-  @assertion.assert_eq(Context::get(ctx_c, ContextKey::new("service.a")), Some("processing"))?
-  @assertion.assert_eq(Context::get(ctx_c, ContextKey::new("service.b")), Some("processing"))?
-  @assertion.assert_eq(Context::get(ctx_c, ContextKey::new("service.c")), Some("processing"))?
+  assert_eq(Context::get(ctx_c, ContextKey::new("service.a")), Some("processing"))
+  assert_eq(Context::get(ctx_c, ContextKey::new("service.b")), Some("processing"))
+  assert_eq(Context::get(ctx_c, ContextKey::new("service.c")), Some("processing"))
   
-  @assertion.assert_eq(Baggage::get_entry(baggage_c, "user.id"), Some("user-123"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_c, "correlation.id"), Some("corr-456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_c, "service.b.entry"), Some("intermediate"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_c, "service.c.entry"), Some("final"))?
+  assert_eq(Baggage::get_entry(baggage_c, "user.id"), Some("user-123"))
+  assert_eq(Baggage::get_entry(baggage_c, "correlation.id"), Some("corr-456"))
+  assert_eq(Baggage::get_entry(baggage_c, "service.b.entry"), Some("intermediate"))
+  assert_eq(Baggage::get_entry(baggage_c, "service.c.entry"), Some("final"))
   
-  @assertion.assert_eq(Span::name(span_a), "service-a.operation")?
-  @assertion.assert_eq(Span::name(span_b), "service-b.operation")?
-  @assertion.assert_eq(Span::name(span_c), "service-c.operation")?
+  assert_eq(Span::name(span_a), "service-a.operation")
+  assert_eq(Span::name(span_b), "service-b.operation")
+  assert_eq(Span::name(span_c), "service-c.operation")
 }
 
 test "error_handling_and_recovery_scenario" {
@@ -408,9 +408,9 @@ test "error_handling_and_recovery_scenario" {
   Span::end(span)
   
   // Test error handling
-  @assertion.assert_eq(Span::name(span), "error-prone-operation")?
-  @assertion.assert_eq(error_counter.name, "operation.errors")?
-  @assertion.assert_eq(success_counter.name, "operation.successes")?
-  @assertion.assert_eq(LogRecord::severity_number(error_log), Error)?
-  @assertion.assert_eq(LogRecord::severity_number(recovery_log), Info)?
+  assert_eq(Span::name(span), "error-prone-operation")
+  assert_eq(error_counter.name, "operation.errors")
+  assert_eq(success_counter.name, "operation.successes")
+  assert_eq(LogRecord::severity_number(error_log), Error)
+  assert_eq(LogRecord::severity_number(recovery_log), Info)
 }

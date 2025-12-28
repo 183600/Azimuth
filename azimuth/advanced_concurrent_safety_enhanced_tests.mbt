@@ -14,17 +14,17 @@ test "concurrent_context_access" {
   let ctx3 = Context::with_value(ctx2, key3, "value3")
   
   // Verify data integrity under concurrent access
-  @assertion.assert_eq(Context::get(ctx1, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx2, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx2, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx3, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx3, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx3, key3), Some("value3"))?
+  assert_eq(Context::get(ctx1, key1), Some("value1"))
+  assert_eq(Context::get(ctx2, key1), Some("value1"))
+  assert_eq(Context::get(ctx2, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key1), Some("value1"))
+  assert_eq(Context::get(ctx3, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key3), Some("value3"))
   
   // Test isolation - different contexts should not interfere
   let isolated_ctx = Context::with_value(root_ctx, key1, "isolated_value")
-  @assertion.assert_eq(Context::get(isolated_ctx, key1), Some("isolated_value"))?
-  @assertion.assert_eq(Context::get(isolated_ctx, key2), None)?
+  assert_eq(Context::get(isolated_ctx, key1), Some("isolated_value"))
+  assert_eq(Context::get(isolated_ctx, key2), None)
 }
 
 test "concurrent_span_operations" {
@@ -47,12 +47,12 @@ test "concurrent_span_operations" {
   Span::add_event(span3, "event3", Some([("key3", StringValue("value3"))]))
   
   // Verify span isolation and data integrity
-  @assertion.assert_eq(Span::name(span1), "concurrent_span1")?
-  @assertion.assert_eq(Span::name(span2), "concurrent_span2")?
-  @assertion.assert_eq(Span::name(span3), "concurrent_span3")?
-  @assertion.assert_eq(Span::is_recording(span1), true)?
-  @assertion.assert_eq(Span::is_recording(span2), true)?
-  @assertion.assert_eq(Span::is_recording(span3), true)?
+  assert_eq(Span::name(span1), "concurrent_span1")
+  assert_eq(Span::name(span2), "concurrent_span2")
+  assert_eq(Span::name(span3), "concurrent_span3")
+  assert_eq(Span::is_recording(span1), true)
+  assert_eq(Span::is_recording(span2), true)
+  assert_eq(Span::is_recording(span3), true)
   
   // End spans concurrently
   Span::end(span1)
@@ -89,11 +89,11 @@ test "concurrent_metrics_collection" {
   UpDownCounter::add(updown_counter1, 15.0)
   
   // Verify instrument integrity
-  @assertion.assert_eq(counter1.name, "concurrent_counter1")?
-  @assertion.assert_eq(counter2.name, "concurrent_counter2")?
-  @assertion.assert_eq(histogram1.name, "concurrent_histogram1")?
-  @assertion.assert_eq(updown_counter1.name, "concurrent_updown1")?
-  @assertion.assert_eq(gauge1.name, "concurrent_gauge1")?
+  assert_eq(counter1.name, "concurrent_counter1")
+  assert_eq(counter2.name, "concurrent_counter2")
+  assert_eq(histogram1.name, "concurrent_histogram1")
+  assert_eq(updown_counter1.name, "concurrent_updown1")
+  assert_eq(gauge1.name, "concurrent_gauge1")
 }
 
 test "concurrent_baggage_operations" {
@@ -110,18 +110,18 @@ test "concurrent_baggage_operations" {
   let session_id = Baggage::get_entry(baggage3, "session.id")
   let request_id = Baggage::get_entry(baggage3, "request.id")
   
-  @assertion.assert_eq(user_id, Some("12345"))?
-  @assertion.assert_eq(session_id, Some("abcdef"))?
-  @assertion.assert_eq(request_id, Some("xyz789"))?
+  assert_eq(user_id, Some("12345"))
+  assert_eq(session_id, Some("abcdef"))
+  assert_eq(request_id, Some("xyz789"))
   
   // Test concurrent removal operations
   let baggage_after_removal1 = Baggage::remove_entry(baggage3, "user.id")
   let baggage_after_removal2 = Baggage::remove_entry(baggage3, "session.id")
   
   // Verify removal doesn't affect other entries
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal1, "user.id"), Some("12345"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal1, "session.id"), Some("abcdef"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_after_removal1, "request.id"), Some("xyz789"))?
+  assert_eq(Baggage::get_entry(baggage_after_removal1, "user.id"), Some("12345"))
+  assert_eq(Baggage::get_entry(baggage_after_removal1, "session.id"), Some("abcdef"))
+  assert_eq(Baggage::get_entry(baggage_after_removal1, "request.id"), Some("xyz789"))
 }
 
 test "concurrent_resource_management" {
@@ -149,20 +149,20 @@ test "concurrent_resource_management" {
   let merged_resource = Resource::merge(resource1_with_attrs, resource2_with_attrs)
   
   // Verify resource isolation
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource1_with_attrs, "service.name"),
     Some(StringValue("service1"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource2_with_attrs, "service.name"),
     Some(StringValue("service2"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged_resource, "service.name"),
     Some(StringValue("service2"))
-  )?
+  )
 }
 
 test "concurrent_propagation_operations" {
@@ -186,9 +186,9 @@ test "concurrent_propagation_operations" {
   let trace2 = TextMapCarrier::get(carrier2, "traceparent")
   let trace3 = TextMapCarrier::get(carrier3, "traceparent")
   
-  @assertion.assert_eq(trace1, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(trace2, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(trace3, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
+  assert_eq(trace1, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(trace2, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(trace3, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
   
   // Concurrent extraction operations
   let extracted_ctx1 = CompositePropagator::extract(composite, carrier1)
@@ -196,9 +196,9 @@ test "concurrent_propagation_operations" {
   let extracted_ctx3 = CompositePropagator::extract(composite, carrier3)
   
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))?
-  @assertion.assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))
+  assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))
 }
 
 test "concurrent_logging_operations" {
@@ -248,12 +248,12 @@ test "concurrent_logging_operations" {
   Logger::emit(logger3, log3)
   
   // Verify log record integrity
-  @assertion.assert_eq(LogRecord::severity_number(log1), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(log2), Warn)?
-  @assertion.assert_eq(LogRecord::severity_number(log3), Error)?
-  @assertion.assert_eq(LogRecord::body(log1), Some("Concurrent log 1"))?
-  @assertion.assert_eq(LogRecord::body(log2), Some("Concurrent log 2"))?
-  @assertion.assert_eq(LogRecord::body(log3), Some("Concurrent log 3"))?
+  assert_eq(LogRecord::severity_number(log1), Info)
+  assert_eq(LogRecord::severity_number(log2), Warn)
+  assert_eq(LogRecord::severity_number(log3), Error)
+  assert_eq(LogRecord::body(log1), Some("Concurrent log 1"))
+  assert_eq(LogRecord::body(log2), Some("Concurrent log 2"))
+  assert_eq(LogRecord::body(log3), Some("Concurrent log 3"))
 }
 
 test "concurrent_http_operations" {
@@ -277,16 +277,16 @@ test "concurrent_http_operations" {
   let response3 = HttpResponse::new(500, [("Content-Type", "text/plain")], Some("internal error"))
   
   // Verify request isolation
-  @assertion.assert_eq(HttpRequest::http_method(request1), "GET")?
-  @assertion.assert_eq(HttpRequest::http_method(request2), "POST")?
-  @assertion.assert_eq(HttpRequest::http_method(request3), "PUT")?
+  assert_eq(HttpRequest::http_method(request1), "GET")
+  assert_eq(HttpRequest::http_method(request2), "POST")
+  assert_eq(HttpRequest::http_method(request3), "PUT")
   
-  @assertion.assert_eq(HttpRequest::url(request1), "https://api1.example.com")?
-  @assertion.assert_eq(HttpRequest::url(request2), "https://api2.example.com")?
-  @assertion.assert_eq(HttpRequest::url(request3), "https://api3.example.com")?
+  assert_eq(HttpRequest::url(request1), "https://api1.example.com")
+  assert_eq(HttpRequest::url(request2), "https://api2.example.com")
+  assert_eq(HttpRequest::url(request3), "https://api3.example.com")
   
   // Verify response isolation
-  @assertion.assert_eq(HttpResponse::status_code(response1), 200)?
-  @assertion.assert_eq(HttpResponse::status_code(response2), 404)?
-  @assertion.assert_eq(HttpResponse::status_code(response3), 500)?
+  assert_eq(HttpResponse::status_code(response1), 200)
+  assert_eq(HttpResponse::status_code(response2), 404)
+  assert_eq(HttpResponse::status_code(response3), 500)
 }

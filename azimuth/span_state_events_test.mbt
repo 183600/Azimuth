@@ -6,33 +6,33 @@ test "span_creation_with_different_kinds" {
   
   // Test Internal span
   let internal_span = Span::new("internal-operation", Internal, span_ctx)
-  @assertion.assert_eq(Span::name(internal_span), "internal-operation")?
-  @assertion.assert_eq(Span::kind(internal_span), Internal)?
-  @assertion.assert_eq(Span::is_recording(internal_span), true)?
+  assert_eq(Span::name(internal_span), "internal-operation")
+  assert_eq(Span::kind(internal_span), Internal)
+  assert_eq(Span::is_recording(internal_span), true)
   
   // Test Server span
   let server_span = Span::new("server-operation", Server, span_ctx)
-  @assertion.assert_eq(Span::name(server_span), "server-operation")?
-  @assertion.assert_eq(Span::kind(server_span), Server)?
-  @assertion.assert_eq(Span::is_recording(server_span), true)?
+  assert_eq(Span::name(server_span), "server-operation")
+  assert_eq(Span::kind(server_span), Server)
+  assert_eq(Span::is_recording(server_span), true)
   
   // Test Client span
   let client_span = Span::new("client-operation", Client, span_ctx)
-  @assertion.assert_eq(Span::name(client_span), "client-operation")?
-  @assertion.assert_eq(Span::kind(client_span), Client)?
-  @assertion.assert_eq(Span::is_recording(client_span), true)?
+  assert_eq(Span::name(client_span), "client-operation")
+  assert_eq(Span::kind(client_span), Client)
+  assert_eq(Span::is_recording(client_span), true)
   
   // Test Producer span
   let producer_span = Span::new("producer-operation", Producer, span_ctx)
-  @assertion.assert_eq(Span::name(producer_span), "producer-operation")?
-  @assertion.assert_eq(Span::kind(producer_span), Producer)?
-  @assertion.assert_eq(Span::is_recording(producer_span), true)?
+  assert_eq(Span::name(producer_span), "producer-operation")
+  assert_eq(Span::kind(producer_span), Producer)
+  assert_eq(Span::is_recording(producer_span), true)
   
   // Test Consumer span
   let consumer_span = Span::new("consumer-operation", Consumer, span_ctx)
-  @assertion.assert_eq(Span::name(consumer_span), "consumer-operation")?
-  @assertion.assert_eq(Span::kind(consumer_span), Consumer)?
-  @assertion.assert_eq(Span::is_recording(consumer_span), true)?
+  assert_eq(Span::name(consumer_span), "consumer-operation")
+  assert_eq(Span::kind(consumer_span), Consumer)
+  assert_eq(Span::is_recording(consumer_span), true)
 }
 
 test "span_status_management" {
@@ -40,19 +40,19 @@ test "span_status_management" {
   let span = Span::new("test-span", Internal, span_ctx)
   
   // Test initial status
-  @assertion.assert_eq(Span::status(span), Unset)?
+  assert_eq(Span::status(span), Unset)
   
   // Test setting Ok status
   Span::set_status(span, Ok, Some("Operation completed successfully"))
-  @assertion.assert_eq(Span::status(span), Ok)?
+  assert_eq(Span::status(span), Ok)
   
   // Test setting Error status
   Span::set_status(span, Error, Some("Operation failed with error"))
-  @assertion.assert_eq(Span::status(span), Error)?
+  assert_eq(Span::status(span), Error)
   
   // Test setting Unset status
   Span::set_status(span, Unset, None)
-  @assertion.assert_eq(Span::status(span), Unset)?
+  assert_eq(Span::status(span), Unset)
 }
 
 test "span_event_addition" {
@@ -75,7 +75,7 @@ test "span_event_addition" {
   Span::add_event(span, "cache.miss", Some([("cache.key", StringValue("user:12345"))]))
   
   // Verify span is still recording after events
-  @assertion.assert_eq(Span::is_recording(span), true)?
+  assert_eq(Span::is_recording(span), true)
 }
 
 test "span_lifecycle_transitions" {
@@ -83,13 +83,13 @@ test "span_lifecycle_transitions" {
   let span = Span::new("lifecycle-test", Internal, span_ctx)
   
   // Test initial state
-  @assertion.assert_eq(Span::is_recording(span), true)?
-  @assertion.assert_eq(Span::name(span), "lifecycle-test")?
+  assert_eq(Span::is_recording(span), true)
+  assert_eq(Span::name(span), "lifecycle-test")
   
   // Test operations during recording
   Span::set_status(span, Ok, Some("In progress"))
   Span::add_event(span, "milestone1", None)
-  @assertion.assert_eq(Span::is_recording(span), true)?
+  assert_eq(Span::is_recording(span), true)
   
   // Test span ending
   Span::end(span)
@@ -103,18 +103,18 @@ test "span_context_operations" {
   
   // Test accessing span context
   let retrieved_ctx = Span::span_context(span)
-  @assertion.assert_eq(SpanContext::trace_id(retrieved_ctx), "trace123")?
-  @assertion.assert_eq(SpanContext::span_id(retrieved_ctx), "span456")?
-  @assertion.assert_eq(SpanContext::is_sampled(retrieved_ctx), true)?
+  assert_eq(SpanContext::trace_id(retrieved_ctx), "trace123")
+  assert_eq(SpanContext::span_id(retrieved_ctx), "span456")
+  assert_eq(SpanContext::is_sampled(retrieved_ctx), true)
   
   // Test context validity
-  @assertion.assert_eq(SpanContext::is_valid(retrieved_ctx), true)?
+  assert_eq(SpanContext::is_valid(retrieved_ctx), true)
   
   // Test context with empty IDs
   let empty_ctx = SpanContext::new("", "", false, "")
   let empty_span = Span::new("empty-context", Internal, empty_ctx)
   let retrieved_empty_ctx = Span::span_context(empty_span)
-  @assertion.assert_eq(SpanContext::is_valid(retrieved_empty_ctx), false)?
+  assert_eq(SpanContext::is_valid(retrieved_empty_ctx), false)
 }
 
 test "span_with_complex_attributes" {
@@ -135,7 +135,7 @@ test "span_with_complex_attributes" {
   Span::add_event(span, "complex.event", Some(complex_attributes))
   Span::set_status(span, Ok, Some("Complex operation completed"))
   
-  @assertion.assert_eq(Span::is_recording(span), true)?
+  assert_eq(Span::is_recording(span), true)
 }
 
 test "span_error_handling_scenarios" {
@@ -144,7 +144,7 @@ test "span_error_handling_scenarios" {
   
   // Test error status with description
   Span::set_status(span, Error, Some("Database connection failed"))
-  @assertion.assert_eq(Span::status(span), Error)?
+  assert_eq(Span::status(span), Error)
   
   // Test error events
   let error_attributes = [
@@ -164,7 +164,7 @@ test "span_error_handling_scenarios" {
   
   // Final status
   Span::set_status(span, Ok, Some("Error recovered successfully"))
-  @assertion.assert_eq(Span::status(span), Ok)?
+  assert_eq(Span::status(span), Ok)
 }
 
 test "span_timing_and_duration" {
@@ -236,14 +236,14 @@ test "span_with_different_sampling_decisions" {
   // Test span with sampling enabled
   let sampled_ctx = SpanContext::new("trace123", "span456", true, "")
   let sampled_span = Span::new("sampled-span", Internal, sampled_ctx)
-  @assertion.assert_eq(SpanContext::is_sampled(Span::span_context(sampled_span)), true)?
+  assert_eq(SpanContext::is_sampled(Span::span_context(sampled_span)), true)
   
   // Test span with sampling disabled
   let not_sampled_ctx = SpanContext::new("trace789", "span012", false, "")
   let not_sampled_span = Span::new("not-sampled-span", Internal, not_sampled_ctx)
-  @assertion.assert_eq(SpanContext::is_sampled(Span::span_context(not_sampled_span)), false)?
+  assert_eq(SpanContext::is_sampled(Span::span_context(not_sampled_span)), false)
   
   // Both spans should still be recordable
-  @assertion.assert_eq(Span::is_recording(sampled_span), true)?
-  @assertion.assert_eq(Span::is_recording(not_sampled_span), true)?
+  assert_eq(Span::is_recording(sampled_span), true)
+  assert_eq(Span::is_recording(not_sampled_span), true)
 }

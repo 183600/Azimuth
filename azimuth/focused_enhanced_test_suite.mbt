@@ -9,7 +9,7 @@ test "error_boundary_handling" {
   
   // Test setting error status
   Span::set_status(span, Error, Some("Simulated error for testing"))
-  @assertion.assert_eq(Span::status(span), Error)
+  assert_eq(Span::status(span), Error)
   
   // Test span with error context
   let error_attrs = [("error.type", StringValue("ValidationError")), ("error.message", StringValue("Invalid input"))]
@@ -28,8 +28,8 @@ test "error_boundary_handling" {
     Some("error_span_id"),
     None
   )
-  @assertion.assert_eq(LogRecord::severity_number(error_log), Error)
-  @assertion.assert_eq(LogRecord::trace_id(error_log), Some("error_trace_id"))
+  assert_eq(LogRecord::severity_number(error_log), Error)
+  assert_eq(LogRecord::trace_id(error_log), Some("error_trace_id"))
 }
 
 test "attribute_boundary_conditions" {
@@ -58,8 +58,8 @@ test "attribute_boundary_conditions" {
   Attributes::set(attrs, "empty.int.array", ArrayIntValue([]))
   
   // Verify retrieval of boundary values
-  @assertion.assert_eq(Attributes::get(attrs, "max.int"), Some(IntValue(2147483647)))?
-  @assertion.assert_eq(Attributes::get(attrs, "true.value"), Some(BoolValue(true)))?
+  assert_eq(Attributes::get(attrs, "max.int"), Some(IntValue(2147483647)))
+  assert_eq(Attributes::get(attrs, "true.value"), Some(BoolValue(true)))
 }
 
 test "data_serialization_integrity" {
@@ -74,23 +74,23 @@ test "data_serialization_integrity" {
   let resource = Resource::with_attributes(Resource::new(), complex_attrs)
   
   // Test resource attribute retrieval integrity
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource, "unicode.text"),
     Some(StringValue("测试中文 🌟 العربية"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource, "timestamp.value"),
     Some(IntValue(1735689600000000000L))
-  )?
+  )
   
   // Test baggage with special characters
   let baggage = Baggage::new()
   let baggage_with_special = Baggage::set_entry(baggage, "special.key", "special=value&with=separators")
-  @assertion.assert_eq(
+  assert_eq(
     Baggage::get_entry(baggage_with_special, "special.key"),
     Some("special=value&with=separators")
-  )?
+  )
 }
 
 test "resource_lifecycle_management" {
@@ -112,15 +112,15 @@ test "resource_lifecycle_management" {
   let merged_resource = Resource::merge(resource_with_base, override_resource)
   
   // Verify merge behavior (override should win)
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged_resource, "service.name"),
     Some(StringValue("override-service"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(merged_resource, "environment"),
     Some(StringValue("production"))
-  )?
+  )
 }
 
 test "clock_and_random_operations" {
@@ -130,23 +130,23 @@ test "clock_and_random_operations" {
   let timestamp2 = Clock::now_unix_nanos(system_clock)
   
   // Verify timestamp is reasonable (should be around 2025)
-  @assertion.assert_eq(timestamp1, 1735689600000000000L)?
-  @assertion.assert_eq(timestamp2, 1735689600000000000L)?
+  assert_eq(timestamp1, 1735689600000000000L)
+  assert_eq(timestamp2, 1735689600000000000L)
   
   // Test random operations
   let system_random = Random::system()
   
   // Test random bytes generation
   let random_bytes = Random::next_bytes(system_random, 16)
-  @assertion.assert_eq(random_bytes.length, 16)?
+  assert_eq(random_bytes.length, 16)
   
   // Test random u64 generation
   let random_u64 = Random::next_u64(system_random)
-  @assertion.assert_eq(random_u64, 12345UL)?
+  assert_eq(random_u64, 12345UL)
   
   // Test multiple calls for consistency
   let random_u64_2 = Random::next_u64(system_random)
-  @assertion.assert_eq(random_u64_2, 12345UL)?
+  assert_eq(random_u64_2, 12345UL)
 }
 
 test "cross_service_context_propagation" {
@@ -167,7 +167,7 @@ test "cross_service_context_propagation" {
   
   // Verify injected data
   let injected_trace = TextMapCarrier::get(outbound_carrier, "traceparent")
-  @assertion.assert_eq(injected_trace, Some("00-test-trace-id-test-span-id-01"))?
+  assert_eq(injected_trace, Some("00-test-trace-id-test-span-id-01"))
   
   // Simulate service boundary - extract context
   let inbound_carrier = outbound_carrier
@@ -175,7 +175,7 @@ test "cross_service_context_propagation" {
   
   // Verify extraction worked
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))?
+  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
 }
 
 test "network_exception_handling" {
@@ -191,9 +191,9 @@ test "network_exception_handling" {
   
   // Test GET request
   let get_request = HttpRequest::new("GET", "https://api.example.com/health", headers, None)
-  @assertion.assert_eq(HttpRequest::http_method(get_request), "GET")?
-  @assertion.assert_eq(HttpRequest::url(get_request), "https://api.example.com/health")?
-  @assertion.assert_eq(HttpRequest::body(get_request), None)?
+  assert_eq(HttpRequest::http_method(get_request), "GET")
+  assert_eq(HttpRequest::url(get_request), "https://api.example.com/health")
+  assert_eq(HttpRequest::body(get_request), None)
   
   // Test POST request with body
   let post_request = HttpRequest::new(
@@ -202,17 +202,17 @@ test "network_exception_handling" {
     headers, 
     Some("{\"metrics\":[{\"name\":\"counter\",\"value\":42}]")
   )
-  @assertion.assert_eq(HttpRequest::http_method(post_request), "POST")?
-  @assertion.assert_eq(HttpRequest::body(post_request), Some("{\"metrics\":[{\"name\":\"counter\",\"value\":42}]")?
+  assert_eq(HttpRequest::http_method(post_request), "POST")
+  assert_eq(HttpRequest::body(post_request), Some("{\"metrics\":[{\"name\":\"counter\",\"value\":42}]")
   
   // Test various response scenarios
   let success_response = HttpResponse::new(200, [("Content-Type", "application/json")], Some("{\"status\":\"ok\"}"))
-  @assertion.assert_eq(HttpResponse::status_code(success_response), 200)?
-  @assertion.assert_eq(HttpResponse::body(success_response), Some("{\"status\":\"ok\"}")?
+  assert_eq(HttpResponse::status_code(success_response), 200)
+  assert_eq(HttpResponse::body(success_response), Some("{\"status\":\"ok\"}")
   
   let error_response = HttpResponse::new(500, [("Content-Type", "text/plain")], Some("Internal Server Error"))
-  @assertion.assert_eq(HttpResponse::status_code(error_response), 500)?
-  @assertion.assert_eq(HttpResponse::body(error_response), Some("Internal Server Error"))?
+  assert_eq(HttpResponse::status_code(error_response), 500)
+  assert_eq(HttpResponse::body(error_response), Some("Internal Server Error"))
 }
 
 test "performance_benchmark_operations" {
@@ -235,7 +235,7 @@ test "performance_benchmark_operations" {
   let duration = end_time - start_time
   
   // Verify reasonable performance (should complete quickly)
-  @assertion.assert_eq(duration, 0L)?  // Simplified for testing
+  assert_eq(duration, 0L)?  // Simplified for testing
   
   // Benchmark metric operations
   let meter_provider = MeterProvider::default()
@@ -253,7 +253,7 @@ test "performance_benchmark_operations" {
   let metric_duration = metric_end - metric_start
   
   // Verify metric operation performance
-  @assertion.assert_eq(metric_duration, 0L)?  // Simplified for testing
+  assert_eq(metric_duration, 0L)?  // Simplified for testing
 }
 
 test "internationalization_support" {
@@ -270,37 +270,37 @@ test "internationalization_support" {
   let resource = Resource::with_attributes(Resource::new(), unicode_attrs)
   
   // Verify Unicode attribute handling
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource, "chinese.name"),
     Some(StringValue("张三"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource, "arabic.name"),
     Some(StringValue("أحمد"))
-  )?
+  )
   
-  @assertion.assert_eq(
+  assert_eq(
     Resource::get_attribute(resource, "emoji.test"),
     Some(StringValue("🚀 🌟 📊"))
-  )?
+  )
   
   // Test Unicode in log messages
   let unicode_log = LogRecord::new(Info, "系统日志：用户操作完成 📈")
-  @assertion.assert_eq(LogRecord::body(unicode_log), Some("系统日志：用户操作完成 📈"))?
+  assert_eq(LogRecord::body(unicode_log), Some("系统日志：用户操作完成 📈"))
   
   // Test Unicode in baggage
   let baggage = Baggage::new()
   let unicode_baggage = Baggage::set_entry(baggage, "user.locale", "zh-CN")
-  @assertion.assert_eq(Baggage::get_entry(unicode_baggage, "user.locale"), Some("zh-CN"))?
+  assert_eq(Baggage::get_entry(unicode_baggage, "user.locale"), Some("zh-CN"))
   
   // Test span names with Unicode
   let tracer = TracerProvider::get_tracer(TracerProvider::default(), "i18n_tracer")
   let unicode_span = Tracer::start_span(tracer, "中文操作跨度")
-  @assertion.assert_eq(Span::name(unicode_span), "中文操作跨度")?
+  assert_eq(Span::name(unicode_span), "中文操作跨度")
   
   // Test context with Unicode keys and values
   let unicode_ctx_key = ContextKey::new("用户标识")
   let ctx_with_unicode = Context::with_value(Context::root(), unicode_ctx_key, "用户123")
-  @assertion.assert_eq(Context::get(ctx_with_unicode, unicode_ctx_key), Some("用户123"))?
+  assert_eq(Context::get(ctx_with_unicode, unicode_ctx_key), Some("用户123"))
 }

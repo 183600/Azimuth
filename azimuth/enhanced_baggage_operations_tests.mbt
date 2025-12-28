@@ -5,16 +5,16 @@ test "baggage_creation_and_basic_operations" {
   let baggage = Baggage::new()
   
   // Test initial state
-  @assertion.assert_eq(baggage.entries.length(), 0)?
+  assert_eq(baggage.entries.length(), 0)
   
   // Test setting entries
   let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
   let user_id = Baggage::get_entry(updated_baggage, "user.id")
-  @assertion.assert_eq(user_id, Some("12345"))?
+  assert_eq(user_id, Some("12345"))
   
   // Test missing entry
   let missing_entry = Baggage::get_entry(baggage, "missing.key")
-  @assertion.assert_eq(missing_entry, None)?
+  assert_eq(missing_entry, None)
 }
 
 test "baggage_multiple_entries_operations" {
@@ -30,13 +30,13 @@ test "baggage_multiple_entries_operations" {
   let session_id = Baggage::get_entry(baggage3, "session.id")
   let request_id = Baggage::get_entry(baggage3, "request.id")
   
-  @assertion.assert_eq(user_id, Some("12345"))?
-  @assertion.assert_eq(session_id, Some("abcdef"))?
-  @assertion.assert_eq(request_id, Some("request-123"))?
+  assert_eq(user_id, Some("12345"))
+  assert_eq(session_id, Some("abcdef"))
+  assert_eq(request_id, Some("request-123"))
   
   // Test missing entry
   let missing = Baggage::get_entry(baggage3, "missing.key")
-  @assertion.assert_eq(missing, None)?
+  assert_eq(missing, None)
 }
 
 test "baggage_overwrite_behavior" {
@@ -46,17 +46,17 @@ test "baggage_overwrite_behavior" {
   // Set initial value
   let baggage1 = Baggage::set_entry(baggage, key, "initial_value")
   let initial_val = Baggage::get_entry(baggage1, key)
-  @assertion.assert_eq(initial_val, Some("initial_value"))?
+  assert_eq(initial_val, Some("initial_value"))
   
   // Overwrite with new value
   let baggage2 = Baggage::set_entry(baggage1, key, "new_value")
   let new_val = Baggage::get_entry(baggage2, key)
-  @assertion.assert_eq(new_val, Some("new_value"))?
+  assert_eq(new_val, Some("new_value"))
   
   // Overwrite again
   let baggage3 = Baggage::set_entry(baggage2, key, "final_value")
   let final_val = Baggage::get_entry(baggage3, key)
-  @assertion.assert_eq(final_val, Some("final_value"))?
+  assert_eq(final_val, Some("final_value"))
 }
 
 test "baggage_remove_operations" {
@@ -68,17 +68,17 @@ test "baggage_remove_operations" {
   let baggage3 = Baggage::set_entry(baggage2, "also.keep", "value3")
   
   // Verify all entries exist
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "keep.me"), Some("value1"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "remove.me"), Some("value2"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "also.keep"), Some("value3"))?
+  assert_eq(Baggage::get_entry(baggage3, "keep.me"), Some("value1"))
+  assert_eq(Baggage::get_entry(baggage3, "remove.me"), Some("value2"))
+  assert_eq(Baggage::get_entry(baggage3, "also.keep"), Some("value3"))
   
   // Remove entry
   let baggage4 = Baggage::remove_entry(baggage3, "remove.me")
   
   // Test removal
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "keep.me"), Some("value1"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "remove.me"), None)?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "also.keep"), Some("value3"))?
+  assert_eq(Baggage::get_entry(baggage4, "keep.me"), Some("value1"))
+  assert_eq(Baggage::get_entry(baggage4, "remove.me"), None)
+  assert_eq(Baggage::get_entry(baggage4, "also.keep"), Some("value3"))
 }
 
 test "baggage_with_special_characters_in_keys" {
@@ -91,10 +91,10 @@ test "baggage_with_special_characters_in_keys" {
   let baggage4 = Baggage::set_entry(baggage3, "namespace.subnamespace.key", "namespaced_value")
   
   // Test retrieval
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "dotted.key"), Some("dotted_value"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "hyphenated-key"), Some("hyphenated_value"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "underscore_key"), Some("underscore_value"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage4, "namespace.subnamespace.key"), Some("namespaced_value"))?
+  assert_eq(Baggage::get_entry(baggage4, "dotted.key"), Some("dotted_value"))
+  assert_eq(Baggage::get_entry(baggage4, "hyphenated-key"), Some("hyphenated_value"))
+  assert_eq(Baggage::get_entry(baggage4, "underscore_key"), Some("underscore_value"))
+  assert_eq(Baggage::get_entry(baggage4, "namespace.subnamespace.key"), Some("namespaced_value"))
 }
 
 test "baggage_with_special_characters_in_values" {
@@ -108,11 +108,11 @@ test "baggage_with_special_characters_in_values" {
   let baggage5 = Baggage::set_entry(baggage4, "base64.value", "SGVsbG8gV29ybGQ=")
   
   // Test retrieval
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "special.chars"), Some("special!@#$%^&*()"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "unicode.chars"), Some("测试中文"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "json.value"), Some("{\"key\":\"value\"}"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "url.encoded"), Some("Hello%20World"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "base64.value"), Some("SGVsbG8gV29ybGQ="))?
+  assert_eq(Baggage::get_entry(baggage5, "special.chars"), Some("special!@#$%^&*()"))
+  assert_eq(Baggage::get_entry(baggage5, "unicode.chars"), Some("测试中文"))
+  assert_eq(Baggage::get_entry(baggage5, "json.value"), Some("{\"key\":\"value\"}"))
+  assert_eq(Baggage::get_entry(baggage5, "url.encoded"), Some("Hello%20World"))
+  assert_eq(Baggage::get_entry(baggage5, "base64.value"), Some("SGVsbG8gV29ybGQ="))
 }
 
 test "baggage_with_empty_values" {
@@ -121,17 +121,17 @@ test "baggage_with_empty_values" {
   // Test empty string value
   let baggage1 = Baggage::set_entry(baggage, "empty.value", "")
   let empty_val = Baggage::get_entry(baggage1, "empty.value")
-  @assertion.assert_eq(empty_val, Some(""))?
+  assert_eq(empty_val, Some(""))
   
   // Test with whitespace-only values
   let baggage2 = Baggage::set_entry(baggage1, "whitespace.value", "   ")
   let whitespace_val = Baggage::get_entry(baggage2, "whitespace.value")
-  @assertion.assert_eq(whitespace_val, Some("   "))?
+  assert_eq(whitespace_val, Some("   "))
   
   // Test with tab and newline characters
   let baggage3 = Baggage::set_entry(baggage2, "control.chars", "value\twith\ncontrol")
   let control_val = Baggage::get_entry(baggage3, "control.chars")
-  @assertion.assert_eq(control_val, Some("value\twith\ncontrol"))?
+  assert_eq(control_val, Some("value\twith\ncontrol"))
 }
 
 test "baggage_with_common_telemetry_entries" {
@@ -146,12 +146,12 @@ test "baggage_with_common_telemetry_entries" {
   let baggage6 = Baggage::set_entry(baggage5, "trace.chain", "service-a->service-b->service-c")
   
   // Test retrieval of common telemetry entries
-  @assertion.assert_eq(Baggage::get_entry(baggage6, "user.id"), Some("user-12345"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage6, "session.id"), Some("session-abcdef"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage6, "request.id"), Some("req-67890"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage6, "correlation.id"), Some("corr-11111"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage6, "tenant.id"), Some("tenant-999"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage6, "trace.chain"), Some("service-a->service-b->service-c"))?
+  assert_eq(Baggage::get_entry(baggage6, "user.id"), Some("user-12345"))
+  assert_eq(Baggage::get_entry(baggage6, "session.id"), Some("session-abcdef"))
+  assert_eq(Baggage::get_entry(baggage6, "request.id"), Some("req-67890"))
+  assert_eq(Baggage::get_entry(baggage6, "correlation.id"), Some("corr-11111"))
+  assert_eq(Baggage::get_entry(baggage6, "tenant.id"), Some("tenant-999"))
+  assert_eq(Baggage::get_entry(baggage6, "trace.chain"), Some("service-a->service-b->service-c"))
 }
 
 test "baggage_with_numeric_values_as_strings" {
@@ -165,11 +165,11 @@ test "baggage_with_numeric_values_as_strings" {
   let baggage5 = Baggage::set_entry(baggage4, "priority", "5")
   
   // Test retrieval
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "port"), Some("8080"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "timeout"), Some("30.5"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "retry.count"), Some("3"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "version"), Some("1.2.3"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage5, "priority"), Some("5"))?
+  assert_eq(Baggage::get_entry(baggage5, "port"), Some("8080"))
+  assert_eq(Baggage::get_entry(baggage5, "timeout"), Some("30.5"))
+  assert_eq(Baggage::get_entry(baggage5, "retry.count"), Some("3"))
+  assert_eq(Baggage::get_entry(baggage5, "version"), Some("1.2.3"))
+  assert_eq(Baggage::get_entry(baggage5, "priority"), Some("5"))
 }
 
 test "baggage_complex_service_chain_scenario" {
@@ -193,13 +193,13 @@ test "baggage_complex_service_chain_scenario" {
   let baggage_d1 = Baggage::set_entry(baggage_d, "service.d.entry", "from-service-d")
   
   // Test final state
-  @assertion.assert_eq(Baggage::get_entry(baggage_d1, "service.a.entry"), Some("from-service-a"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_d1, "service.b.entry"), Some("from-service-b"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_d1, "service.c.entry"), Some("from-service-c"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_d1, "service.d.entry"), Some("from-service-d"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_d1, "user.id"), Some("user-123-updated"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_d1, "session.id"), Some("session-456"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage_d1, "request.id"), Some("req-789"))?
+  assert_eq(Baggage::get_entry(baggage_d1, "service.a.entry"), Some("from-service-a"))
+  assert_eq(Baggage::get_entry(baggage_d1, "service.b.entry"), Some("from-service-b"))
+  assert_eq(Baggage::get_entry(baggage_d1, "service.c.entry"), Some("from-service-c"))
+  assert_eq(Baggage::get_entry(baggage_d1, "service.d.entry"), Some("from-service-d"))
+  assert_eq(Baggage::get_entry(baggage_d1, "user.id"), Some("user-123-updated"))
+  assert_eq(Baggage::get_entry(baggage_d1, "session.id"), Some("session-456"))
+  assert_eq(Baggage::get_entry(baggage_d1, "request.id"), Some("req-789"))
 }
 
 test "baggage_remove_and_add_operations" {
@@ -211,9 +211,9 @@ test "baggage_remove_and_add_operations" {
   let baggage3 = Baggage::set_entry(baggage2, "another.temp", "also-remove")
   
   // Verify all entries exist
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "temp.value"), Some("should-be-removed"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "keep.value"), Some("should-be-kept"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage3, "another.temp"), Some("also-remove"))?
+  assert_eq(Baggage::get_entry(baggage3, "temp.value"), Some("should-be-removed"))
+  assert_eq(Baggage::get_entry(baggage3, "keep.value"), Some("should-be-kept"))
+  assert_eq(Baggage::get_entry(baggage3, "another.temp"), Some("also-remove"))
   
   // Remove temporary entries
   let baggage4 = Baggage::remove_entry(baggage3, "temp.value")
@@ -224,9 +224,9 @@ test "baggage_remove_and_add_operations" {
   let baggage7 = Baggage::set_entry(baggage6, "another.new", "also-new")
   
   // Test final state
-  @assertion.assert_eq(Baggage::get_entry(baggage7, "temp.value"), None)?
-  @assertion.assert_eq(Baggage::get_entry(baggage7, "keep.value"), Some("should-be-kept"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage7, "another.temp"), None)?
-  @assertion.assert_eq(Baggage::get_entry(baggage7, "new.value"), Some("newly-added"))?
-  @assertion.assert_eq(Baggage::get_entry(baggage7, "another.new"), Some("also-new"))?
+  assert_eq(Baggage::get_entry(baggage7, "temp.value"), None)
+  assert_eq(Baggage::get_entry(baggage7, "keep.value"), Some("should-be-kept"))
+  assert_eq(Baggage::get_entry(baggage7, "another.temp"), None)
+  assert_eq(Baggage::get_entry(baggage7, "new.value"), Some("newly-added"))
+  assert_eq(Baggage::get_entry(baggage7, "another.new"), Some("also-new"))
 }

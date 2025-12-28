@@ -5,11 +5,11 @@ test "resource_creation_and_basic_operations" {
   let resource = Resource::new()
   
   // Test initial state
-  @assertion.assert_eq(resource.attributes.length(), 0)?
+  assert_eq(resource.attributes.length(), 0)
   
   // Test getting non-existent attribute
   let missing_attr = Resource::get_attribute(resource, "missing.key")
-  @assertion.assert_eq(missing_attr, None)?
+  assert_eq(missing_attr, None)
 }
 
 test "resource_with_attributes_creation" {
@@ -22,15 +22,15 @@ test "resource_with_attributes_creation" {
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
   // Test resource attributes
-  @assertion.assert_eq(resource.attributes.length(), 3)?
+  assert_eq(resource.attributes.length(), 3)
   
   let service_name = Resource::get_attribute(resource, "service.name")
   let service_version = Resource::get_attribute(resource, "service.version")
   let service_instance = Resource::get_attribute(resource, "service.instance.id")
   
-  @assertion.assert_eq(service_name, Some(StringValue("test-service")))?
-  @assertion.assert_eq(service_version, Some(StringValue("1.0.0")))?
-  @assertion.assert_eq(service_instance, Some(StringValue("instance-123")))?
+  assert_eq(service_name, Some(StringValue("test-service")))
+  assert_eq(service_version, Some(StringValue("1.0.0")))
+  assert_eq(service_instance, Some(StringValue("instance-123")))
 }
 
 test "resource_with_different_attribute_types" {
@@ -46,12 +46,12 @@ test "resource_with_different_attribute_types" {
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
   // Test different attribute types
-  @assertion.assert_eq(Resource::get_attribute(resource, "string.attr"), Some(StringValue("string_value")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "int.attr"), Some(IntValue(42)))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "float.attr"), Some(FloatValue(3.14)))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "bool.attr"), Some(BoolValue(true)))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "string.array"), Some(ArrayStringValue(Array[String]::from(["item1", "item2"]))))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "int.array"), Some(ArrayIntValue(Array[Int]::from([1, 2, 3]))))?
+  assert_eq(Resource::get_attribute(resource, "string.attr"), Some(StringValue("string_value")))
+  assert_eq(Resource::get_attribute(resource, "int.attr"), Some(IntValue(42)))
+  assert_eq(Resource::get_attribute(resource, "float.attr"), Some(FloatValue(3.14)))
+  assert_eq(Resource::get_attribute(resource, "bool.attr"), Some(BoolValue(true)))
+  assert_eq(Resource::get_attribute(resource, "string.array"), Some(ArrayStringValue(Array[String]::from(["item1", "item2"]))))
+  assert_eq(Resource::get_attribute(resource, "int.array"), Some(ArrayIntValue(Array[Int]::from([1, 2, 3]))))
 }
 
 test "resource_merge_operations" {
@@ -79,10 +79,10 @@ test "resource_merge_operations" {
   let merged_override_only = Resource::get_attribute(merged_resource, "override.only")
   let merged_base_only = Resource::get_attribute(merged_resource, "base.only")
   
-  @assertion.assert_eq(merged_service_name, Some(StringValue("override-service")))?
-  @assertion.assert_eq(merged_service_version, Some(StringValue("2.0.0")))?
-  @assertion.assert_eq(merged_override_only, Some(StringValue("override-value")))?
-  @assertion.assert_eq(merged_base_only, None)?  // Simplified implementation
+  assert_eq(merged_service_name, Some(StringValue("override-service")))
+  assert_eq(merged_service_version, Some(StringValue("2.0.0")))
+  assert_eq(merged_override_only, Some(StringValue("override-value")))
+  assert_eq(merged_base_only, None)?  // Simplified implementation
 }
 
 test "resource_with_common_opentelemetry_attributes" {
@@ -116,28 +116,28 @@ test "resource_with_common_opentelemetry_attributes" {
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
   // Test service attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "service.name"), Some(StringValue("payment-service")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "service.version"), Some(StringValue("1.2.3")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "service.instance.id"), Some(StringValue("instance-abc123")))?
+  assert_eq(Resource::get_attribute(resource, "service.name"), Some(StringValue("payment-service")))
+  assert_eq(Resource::get_attribute(resource, "service.version"), Some(StringValue("1.2.3")))
+  assert_eq(Resource::get_attribute(resource, "service.instance.id"), Some(StringValue("instance-abc123")))
   
   // Test telemetry SDK attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "telemetry.sdk.name"), Some(StringValue("opentelemetry")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "telemetry.sdk.language"), Some(StringValue("moonbit")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "telemetry.sdk.version"), Some(StringValue("1.0.0")))?
+  assert_eq(Resource::get_attribute(resource, "telemetry.sdk.name"), Some(StringValue("opentelemetry")))
+  assert_eq(Resource::get_attribute(resource, "telemetry.sdk.language"), Some(StringValue("moonbit")))
+  assert_eq(Resource::get_attribute(resource, "telemetry.sdk.version"), Some(StringValue("1.0.0")))
   
   // Test host attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "host.name"), Some(StringValue("prod-server-01")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "host.id"), Some(StringValue("host-id-456")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "host.type"), Some(StringValue("virtual_machine")))?
+  assert_eq(Resource::get_attribute(resource, "host.name"), Some(StringValue("prod-server-01")))
+  assert_eq(Resource::get_attribute(resource, "host.id"), Some(StringValue("host-id-456")))
+  assert_eq(Resource::get_attribute(resource, "host.type"), Some(StringValue("virtual_machine")))
   
   // Test process attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "process.pid"), Some(IntValue(12345)))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "process.executable.name"), Some(StringValue("payment-service")))?
+  assert_eq(Resource::get_attribute(resource, "process.pid"), Some(IntValue(12345)))
+  assert_eq(Resource::get_attribute(resource, "process.executable.name"), Some(StringValue("payment-service")))
   
   // Test container attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "container.name"), Some(StringValue("payment-container")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "container.id"), Some(StringValue("container-id-789")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "container.image.name"), Some(StringValue("payment-service:1.2.3")))?
+  assert_eq(Resource::get_attribute(resource, "container.name"), Some(StringValue("payment-container")))
+  assert_eq(Resource::get_attribute(resource, "container.id"), Some(StringValue("container-id-789")))
+  assert_eq(Resource::get_attribute(resource, "container.image.name"), Some(StringValue("payment-service:1.2.3")))
 }
 
 test "resource_with_cloud_provider_attributes" {
@@ -159,17 +159,17 @@ test "resource_with_cloud_provider_attributes" {
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
   // Test cloud provider attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "cloud.provider"), Some(StringValue("aws")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "cloud.account.id"), Some(StringValue("123456789012")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "cloud.region"), Some(StringValue("us-west-2")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "cloud.availability_zone"), Some(StringValue("us-west-2a")))?
+  assert_eq(Resource::get_attribute(resource, "cloud.provider"), Some(StringValue("aws")))
+  assert_eq(Resource::get_attribute(resource, "cloud.account.id"), Some(StringValue("123456789012")))
+  assert_eq(Resource::get_attribute(resource, "cloud.region"), Some(StringValue("us-west-2")))
+  assert_eq(Resource::get_attribute(resource, "cloud.availability_zone"), Some(StringValue("us-west-2a")))
   
   // Test AWS specific attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "aws.ecs.container.arn"), Some(StringValue("arn:aws:ecs:us-west-2:123456789012:container/abc123")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "aws.ecs.cluster.arn"), Some(StringValue("arn:aws:ecs:us-west-2:123456789012:cluster/payment-cluster")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "aws.ecs.task.arn"), Some(StringValue("arn:aws:ecs:us-west-2:123456789012:task/def456")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "aws.ecs.task.family"), Some(StringValue("payment-service")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "aws.ecs.task.revision"), Some(StringValue("23")))?
+  assert_eq(Resource::get_attribute(resource, "aws.ecs.container.arn"), Some(StringValue("arn:aws:ecs:us-west-2:123456789012:container/abc123")))
+  assert_eq(Resource::get_attribute(resource, "aws.ecs.cluster.arn"), Some(StringValue("arn:aws:ecs:us-west-2:123456789012:cluster/payment-cluster")))
+  assert_eq(Resource::get_attribute(resource, "aws.ecs.task.arn"), Some(StringValue("arn:aws:ecs:us-west-2:123456789012:task/def456")))
+  assert_eq(Resource::get_attribute(resource, "aws.ecs.task.family"), Some(StringValue("payment-service")))
+  assert_eq(Resource::get_attribute(resource, "aws.ecs.task.revision"), Some(StringValue("23")))
 }
 
 test "resource_with_deployment_environment_attributes" {
@@ -191,17 +191,17 @@ test "resource_with_deployment_environment_attributes" {
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
   // Test deployment environment attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "deployment.environment"), Some(StringValue("production")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "deployment.environment.name"), Some(StringValue("prod")))?
+  assert_eq(Resource::get_attribute(resource, "deployment.environment"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(resource, "deployment.environment.name"), Some(StringValue("prod")))
   
   // Test K8s attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "k8s.namespace.name"), Some(StringValue("payment")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "k8s.pod.name"), Some(StringValue("payment-service-7d4f8c9b-123")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "k8s.pod.uid"), Some(StringValue("pod-uid-456")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "k8s.deployment.name"), Some(StringValue("payment-service")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "k8s.replicaset.name"), Some(StringValue("payment-service-7d4f8c9b")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "k8s.node.name"), Some(StringValue("worker-node-01")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "k8s.cluster.name"), Some(StringValue("production-cluster")))?
+  assert_eq(Resource::get_attribute(resource, "k8s.namespace.name"), Some(StringValue("payment")))
+  assert_eq(Resource::get_attribute(resource, "k8s.pod.name"), Some(StringValue("payment-service-7d4f8c9b-123")))
+  assert_eq(Resource::get_attribute(resource, "k8s.pod.uid"), Some(StringValue("pod-uid-456")))
+  assert_eq(Resource::get_attribute(resource, "k8s.deployment.name"), Some(StringValue("payment-service")))
+  assert_eq(Resource::get_attribute(resource, "k8s.replicaset.name"), Some(StringValue("payment-service-7d4f8c9b")))
+  assert_eq(Resource::get_attribute(resource, "k8s.node.name"), Some(StringValue("worker-node-01")))
+  assert_eq(Resource::get_attribute(resource, "k8s.cluster.name"), Some(StringValue("production-cluster")))
 }
 
 test "resource_with_web_engine_attributes" {
@@ -226,20 +226,20 @@ test "resource_with_web_engine_attributes" {
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
   // Test web engine attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "webengine.name"), Some(StringValue("nginx")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "webengine.version"), Some(StringValue("1.20.1")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "webengine.description"), Some(StringValue("Nginx web server")))?
+  assert_eq(Resource::get_attribute(resource, "webengine.name"), Some(StringValue("nginx")))
+  assert_eq(Resource::get_attribute(resource, "webengine.version"), Some(StringValue("1.20.1")))
+  assert_eq(Resource::get_attribute(resource, "webengine.description"), Some(StringValue("Nginx web server")))
   
   // Test OS attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "os.type"), Some(StringValue("linux")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "os.description"), Some(StringValue("Ubuntu 20.04 LTS")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "os.name"), Some(StringValue("Ubuntu")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "os.version"), Some(StringValue("20.04")))?
+  assert_eq(Resource::get_attribute(resource, "os.type"), Some(StringValue("linux")))
+  assert_eq(Resource::get_attribute(resource, "os.description"), Some(StringValue("Ubuntu 20.04 LTS")))
+  assert_eq(Resource::get_attribute(resource, "os.name"), Some(StringValue("Ubuntu")))
+  assert_eq(Resource::get_attribute(resource, "os.version"), Some(StringValue("20.04")))
   
   // Test device attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "device.id"), Some(StringValue("device-123")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "device.model.identifier"), Some(StringValue("t3.large")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "device.model.name"), Some(StringValue("EC2 t3.large instance")))?
+  assert_eq(Resource::get_attribute(resource, "device.id"), Some(StringValue("device-123")))
+  assert_eq(Resource::get_attribute(resource, "device.model.identifier"), Some(StringValue("t3.large")))
+  assert_eq(Resource::get_attribute(resource, "device.model.name"), Some(StringValue("EC2 t3.large instance")))
 }
 
 test "resource_with_custom_attributes" {
@@ -269,25 +269,25 @@ test "resource_with_custom_attributes" {
   let resource = Resource::with_attributes(Resource::new(), attributes)
   
   // Test custom business attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "business.unit"), Some(StringValue("payments")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "cost.center"), Some(StringValue("engineering")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "application.owner"), Some(StringValue("platform-team")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "support.contact"), Some(StringValue("platform-support@company.com")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "sla.tier"), Some(StringValue("critical")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "data.classification"), Some(StringValue("sensitive")))?
+  assert_eq(Resource::get_attribute(resource, "business.unit"), Some(StringValue("payments")))
+  assert_eq(Resource::get_attribute(resource, "cost.center"), Some(StringValue("engineering")))
+  assert_eq(Resource::get_attribute(resource, "application.owner"), Some(StringValue("platform-team")))
+  assert_eq(Resource::get_attribute(resource, "support.contact"), Some(StringValue("platform-support@company.com")))
+  assert_eq(Resource::get_attribute(resource, "sla.tier"), Some(StringValue("critical")))
+  assert_eq(Resource::get_attribute(resource, "data.classification"), Some(StringValue("sensitive")))
   
   // Test custom technical attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "framework.name"), Some(StringValue("moonbit-web")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "framework.version"), Some(StringValue("2.1.0")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "cache.backend"), Some(StringValue("redis")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "database.backend"), Some(StringValue("postgresql")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "message.queue"), Some(StringValue("kafka")))?
+  assert_eq(Resource::get_attribute(resource, "framework.name"), Some(StringValue("moonbit-web")))
+  assert_eq(Resource::get_attribute(resource, "framework.version"), Some(StringValue("2.1.0")))
+  assert_eq(Resource::get_attribute(resource, "cache.backend"), Some(StringValue("redis")))
+  assert_eq(Resource::get_attribute(resource, "database.backend"), Some(StringValue("postgresql")))
+  assert_eq(Resource::get_attribute(resource, "message.queue"), Some(StringValue("kafka")))
   
   // Test custom monitoring attributes
-  @assertion.assert_eq(Resource::get_attribute(resource, "metrics.endpoint"), Some(StringValue("/metrics")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "health.check.endpoint"), Some(StringValue("/health")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "log.level"), Some(StringValue("INFO")))?
-  @assertion.assert_eq(Resource::get_attribute(resource, "trace.sample.rate"), Some(FloatValue(0.1)))?
+  assert_eq(Resource::get_attribute(resource, "metrics.endpoint"), Some(StringValue("/metrics")))
+  assert_eq(Resource::get_attribute(resource, "health.check.endpoint"), Some(StringValue("/health")))
+  assert_eq(Resource::get_attribute(resource, "log.level"), Some(StringValue("INFO")))
+  assert_eq(Resource::get_attribute(resource, "trace.sample.rate"), Some(FloatValue(0.1)))
 }
 
 test "resource_multiple_merge_operations" {
@@ -324,10 +324,10 @@ test "resource_multiple_merge_operations" {
   
   // Test final resource contains attributes from all sources
   // In simplified implementation, last resource takes precedence
-  @assertion.assert_eq(Resource::get_attribute(final_resource, "business.unit"), Some(StringValue("security")))?
-  @assertion.assert_eq(Resource::get_attribute(final_resource, "sla.tier"), Some(StringValue("critical")))?
-  @assertion.assert_eq(Resource::get_attribute(final_resource, "cloud.provider"), Some(StringValue("gcp")))?
-  @assertion.assert_eq(Resource::get_attribute(final_resource, "cloud.region"), Some(StringValue("us-central1")))?
-  @assertion.assert_eq(Resource::get_attribute(final_resource, "host.name"), None)?  // Simplified implementation
-  @assertion.assert_eq(Resource::get_attribute(final_resource, "service.name"), None)?  // Simplified implementation
+  assert_eq(Resource::get_attribute(final_resource, "business.unit"), Some(StringValue("security")))
+  assert_eq(Resource::get_attribute(final_resource, "sla.tier"), Some(StringValue("critical")))
+  assert_eq(Resource::get_attribute(final_resource, "cloud.provider"), Some(StringValue("gcp")))
+  assert_eq(Resource::get_attribute(final_resource, "cloud.region"), Some(StringValue("us-central1")))
+  assert_eq(Resource::get_attribute(final_resource, "host.name"), None)?  // Simplified implementation
+  assert_eq(Resource::get_attribute(final_resource, "service.name"), None)?  // Simplified implementation
 }

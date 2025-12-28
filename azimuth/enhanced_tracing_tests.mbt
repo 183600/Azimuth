@@ -9,14 +9,14 @@ test "span_creation_and_basic_properties" {
   let span = Tracer::start_span(tracer, "test-operation")
   
   // Test basic span properties
-  @assertion.assert_eq(Span::name(span), "test-operation")?
-  @assertion.assert_eq(Span::kind(span), Internal)?
-  @assertion.assert_true(Span::is_recording(span))?
+  assert_eq(Span::name(span), "test-operation")
+  assert_eq(Span::kind(span), Internal)
+  @assertion.assert_true(Span::is_recording(span))
   
   // Test span context
   let span_ctx = Span::span_context(span)
-  @assertion.assert_true(SpanContext::is_valid(span_ctx))?
-  @assertion.assert_true(SpanContext::is_sampled(span_ctx))?
+  @assertion.assert_true(SpanContext::is_valid(span_ctx))
+  @assertion.assert_true(SpanContext::is_sampled(span_ctx))
 }
 
 test "span_with_different_kinds" {
@@ -29,14 +29,14 @@ test "span_with_different_kinds" {
   let client_span = Tracer::start_span(tracer, "client-operation")
   
   // Test span kinds
-  @assertion.assert_eq(Span::kind(internal_span), Internal)?
-  @assertion.assert_eq(Span::kind(server_span), Internal)?  // Simplified implementation
-  @assertion.assert_eq(Span::kind(client_span), Internal)?  // Simplified implementation
+  assert_eq(Span::kind(internal_span), Internal)
+  assert_eq(Span::kind(server_span), Internal)?  // Simplified implementation
+  assert_eq(Span::kind(client_span), Internal)?  // Simplified implementation
   
   // All spans should be recording
-  @assertion.assert_true(Span::is_recording(internal_span))?
-  @assertion.assert_true(Span::is_recording(server_span))?
-  @assertion.assert_true(Span::is_recording(client_span))?
+  @assertion.assert_true(Span::is_recording(internal_span))
+  @assertion.assert_true(Span::is_recording(server_span))
+  @assertion.assert_true(Span::is_recording(client_span))
 }
 
 test "span_status_operations" {
@@ -45,19 +45,19 @@ test "span_status_operations" {
   let span = Tracer::start_span(tracer, "test-operation")
   
   // Test initial status
-  @assertion.assert_eq(Span::status(span), Unset)?
+  assert_eq(Span::status(span), Unset)
   
   // Test setting status to Ok
   Span::set_status(span, Ok)
-  @assertion.assert_eq(Span::status(span), Unset)?  // Simplified implementation
+  assert_eq(Span::status(span), Unset)?  // Simplified implementation
   
   // Test setting status to Error with description
   Span::set_status(span, Error, Some("Operation failed"))
-  @assertion.assert_eq(Span::status(span), Unset)?  // Simplified implementation
+  assert_eq(Span::status(span), Unset)?  // Simplified implementation
   
   // Test setting status back to Unset
   Span::set_status(span, Unset)
-  @assertion.assert_eq(Span::status(span), Unset)?
+  assert_eq(Span::status(span), Unset)
 }
 
 test "span_event_operations" {
@@ -74,7 +74,7 @@ test "span_event_operations" {
   Span::add_event(span, "event3", Some(attributes))
   
   // All operations should complete without errors
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "span_lifecycle_operations" {
@@ -83,14 +83,14 @@ test "span_lifecycle_operations" {
   let span = Tracer::start_span(tracer, "test-operation")
   
   // Test span is initially recording
-  @assertion.assert_true(Span::is_recording(span))?
+  @assertion.assert_true(Span::is_recording(span))
   
   // Test ending span
   Span::end(span)
   
   // In simplified implementation, span remains recording
   // In real implementation, this would change recording state
-  @assertion.assert_true(true)?
+  @assertion.assert_true(true)
 }
 
 test "tracer_instrumentation_scope" {
@@ -102,13 +102,13 @@ test "tracer_instrumentation_scope" {
   let scope1 = Tracer::instrumentation_scope(tracer1)
   let scope2 = Tracer::instrumentation_scope(tracer2)
   
-  @assertion.assert_eq(scope1.name, "tracer1")?
-  @assertion.assert_eq(scope1.version, None)?
-  @assertion.assert_eq(scope1.schema_url, None)?
+  assert_eq(scope1.name, "tracer1")
+  assert_eq(scope1.version, None)
+  assert_eq(scope1.schema_url, None)
   
-  @assertion.assert_eq(scope2.name, "tracer2")?
-  @assertion.assert_eq(scope2.version, Some("1.0.0"))?
-  @assertion.assert_eq(scope2.schema_url, None)?
+  assert_eq(scope2.name, "tracer2")
+  assert_eq(scope2.version, Some("1.0.0"))
+  assert_eq(scope2.schema_url, None)
 }
 
 test "span_context_trace_operations" {
@@ -117,15 +117,15 @@ test "span_context_trace_operations" {
   let span_ctx = SpanContext::new(trace_id, span_id, true, "key1=value1,key2=value2")
   
   // Test trace ID operations
-  @assertion.assert_eq(SpanContext::trace_id(span_ctx), trace_id)?
-  @assertion.assert_eq(SpanContext::span_id(span_ctx), span_id)?
-  @assertion.assert_true(SpanContext::is_sampled(span_ctx))?
-  @assertion.assert_true(SpanContext::is_valid(span_ctx))?
+  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(span_ctx), span_id)
+  @assertion.assert_true(SpanContext::is_sampled(span_ctx))
+  @assertion.assert_true(SpanContext::is_valid(span_ctx))
   
   // Test with invalid context
   let invalid_ctx = SpanContext::new("", "", false, "")
-  @assertion.assert_false(SpanContext::is_valid(invalid_ctx))?
-  @assertion.assert_false(SpanContext::is_sampled(invalid_ctx))?
+  @assertion.assert_false(SpanContext::is_valid(invalid_ctx))
+  @assertion.assert_false(SpanContext::is_sampled(invalid_ctx))
 }
 
 test "multiple_tracer_operations" {
@@ -142,12 +142,12 @@ test "multiple_tracer_operations" {
   let span3 = Tracer::start_span(tracer3, "operation-c")
   
   // Test all spans have correct names
-  @assertion.assert_eq(Span::name(span1), "operation-a")?
-  @assertion.assert_eq(Span::name(span2), "operation-b")?
-  @assertion.assert_eq(Span::name(span3), "operation-c")?
+  assert_eq(Span::name(span1), "operation-a")
+  assert_eq(Span::name(span2), "operation-b")
+  assert_eq(Span::name(span3), "operation-c")
   
   // Test all spans are recording
-  @assertion.assert_true(Span::is_recording(span1))?
-  @assertion.assert_true(Span::is_recording(span2))?
-  @assertion.assert_true(Span::is_recording(span3))?
+  @assertion.assert_true(Span::is_recording(span1))
+  @assertion.assert_true(Span::is_recording(span2))
+  @assertion.assert_true(Span::is_recording(span3))
 }

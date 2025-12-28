@@ -10,16 +10,16 @@ test "clock_and_random_interaction" {
   let timestamp2 = Clock::now_unix_nanos(clock)
   
   // Verify timestamps are reasonable (should be for year 2025)
-  @assertion.assert_eq(timestamp1 > 1700000000000000000L, true)?
-  @assertion.assert_eq(timestamp2 > 1700000000000000000L, true)?
+  assert_eq(timestamp1 > 1700000000000000000L, true)
+  assert_eq(timestamp2 > 1700000000000000000L, true)
   
   // Test random bytes generation
   let random_bytes = Random::next_bytes(random, 8)
-  @assertion.assert_eq(random_bytes.length(), 8)?
+  assert_eq(random_bytes.length(), 8)
   
   // Test random u64 generation
   let random_u64 = Random::next_u64(random)
-  @assertion.assert_eq(random_u64 > 0UL, true)?
+  assert_eq(random_u64 > 0UL, true)
 }
 
 test "span_kind_and_status_code_boundary_cases" {
@@ -30,20 +30,20 @@ test "span_kind_and_status_code_boundary_cases" {
   let producer_span = Span::new("producer", Producer, SpanContext::new("trace4", "span4", true, ""))
   let consumer_span = Span::new("consumer", Consumer, SpanContext::new("trace5", "span5", true, ""))
   
-  @assertion.assert_eq(Span::kind(internal_span), Internal)?
-  @assertion.assert_eq(Span::kind(server_span), Server)?
-  @assertion.assert_eq(Span::kind(client_span), Client)?
-  @assertion.assert_eq(Span::kind(producer_span), Producer)?
-  @assertion.assert_eq(Span::kind(consumer_span), Consumer)?
+  assert_eq(Span::kind(internal_span), Internal)
+  assert_eq(Span::kind(server_span), Server)
+  assert_eq(Span::kind(client_span), Client)
+  assert_eq(Span::kind(producer_span), Producer)
+  assert_eq(Span::kind(consumer_span), Consumer)
   
   // Test status code setting and retrieval
   Span::set_status(internal_span, Unset)
   Span::set_status(server_span, Ok)
   Span::set_status(client_span, Error)
   
-  @assertion.assert_eq(Span::status(internal_span), Unset)?
-  @assertion.assert_eq(Span::status(server_span), Unset)?  // Simplified implementation returns Unset
-  @assertion.assert_eq(Span::status(client_span), Unset)?  // Simplified implementation returns Unset
+  assert_eq(Span::status(internal_span), Unset)
+  assert_eq(Span::status(server_span), Unset)?  // Simplified implementation returns Unset
+  assert_eq(Span::status(client_span), Unset)?  // Simplified implementation returns Unset
 }
 
 test "attribute_value_complex_nesting" {
@@ -54,22 +54,22 @@ test "attribute_value_complex_nesting" {
   // Test array string value pattern matching
   match string_array {
     ArrayStringValue(arr) => {
-      @assertion.assert_eq(arr.length(), 3)?
-      @assertion.assert_eq(arr[0], "item1")?
-      @assertion.assert_eq(arr[1], "item2")?
-      @assertion.assert_eq(arr[2], "item3")?
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], "item1")
+      assert_eq(arr[1], "item2")
+      assert_eq(arr[2], "item3")
     }
-    _ => @test.fail("Expected ArrayStringValue")?
+    _ => @test.fail("Expected ArrayStringValue")
   }
   
   // Test array int value pattern matching
   match int_array {
     ArrayIntValue(arr) => {
-      @assertion.assert_eq(arr.length(), 5)?
-      @assertion.assert_eq(arr[0], 1)?
-      @assertion.assert_eq(arr[4], 5)?
+      assert_eq(arr.length(), 5)
+      assert_eq(arr[0], 1)
+      assert_eq(arr[4], 5)
     }
-    _ => @test.fail("Expected ArrayIntValue")?
+    _ => @test.fail("Expected ArrayIntValue")
   }
   
   // Test mixed attribute value types in operations
@@ -79,9 +79,9 @@ test "attribute_value_complex_nesting" {
   Attributes::set(attrs, "float.key", FloatValue(3.14159))
   Attributes::set(attrs, "bool.key", BoolValue(true))
   
-  @assertion.assert_eq(Attributes::get(attrs, "string.key"), Some(StringValue("test_value")))?  // Simplified implementation
-  @assertion.assert_eq(Attributes::get(attrs, "int.key"), Some(IntValue(42)))?
-  @assertion.assert_eq(Attributes::get(attrs, "nonexistent.key"), None)?
+  assert_eq(Attributes::get(attrs, "string.key"), Some(StringValue("test_value")))?  // Simplified implementation
+  assert_eq(Attributes::get(attrs, "int.key"), Some(IntValue(42)))
+  assert_eq(Attributes::get(attrs, "nonexistent.key"), None)
 }
 
 test "context_chained_operations" {
@@ -96,22 +96,22 @@ test "context_chained_operations" {
   let ctx3 = Context::with_value(ctx2, key3, "value3")
   
   // Verify each context level
-  @assertion.assert_eq(Context::get(ctx1, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx1, key2), None)?
-  @assertion.assert_eq(Context::get(ctx1, key3), None)?
+  assert_eq(Context::get(ctx1, key1), Some("value1"))
+  assert_eq(Context::get(ctx1, key2), None)
+  assert_eq(Context::get(ctx1, key3), None)
   
-  @assertion.assert_eq(Context::get(ctx2, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx2, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx2, key3), None)?
+  assert_eq(Context::get(ctx2, key1), Some("value1"))
+  assert_eq(Context::get(ctx2, key2), Some("value2"))
+  assert_eq(Context::get(ctx2, key3), None)
   
-  @assertion.assert_eq(Context::get(ctx3, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx3, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx3, key3), Some("value3"))?
+  assert_eq(Context::get(ctx3, key1), Some("value1"))
+  assert_eq(Context::get(ctx3, key2), Some("value2"))
+  assert_eq(Context::get(ctx3, key3), Some("value3"))
   
   // Test root context remains unchanged
-  @assertion.assert_eq(Context::get(root, key1), None)?
-  @assertion.assert_eq(Context::get(root, key2), None)?
-  @assertion.assert_eq(Context::get(root, key3), None)?
+  assert_eq(Context::get(root, key1), None)
+  assert_eq(Context::get(root, key2), None)
+  assert_eq(Context::get(root, key3), None)
 }
 
 test "resource_merge_operations" {
@@ -138,11 +138,11 @@ test "resource_merge_operations" {
   let merged = Resource::merge(base_with_attrs, override_with_attrs)
   
   // Verify merged attributes (simplified implementation returns override)
-  @assertion.assert_eq(Resource::get_attribute(merged, "service.name"), None)?  // Simplified implementation
-  @assertion.assert_eq(Resource::get_attribute(merged, "service.version"), Some(StringValue("2.0.0")))?
-  @assertion.assert_eq(Resource::get_attribute(merged, "deployment.environment"), None)?
-  @assertion.assert_eq(Resource::get_attribute(merged, "service.instance.id"), Some(StringValue("instance-456")))?
-  @assertion.assert_eq(Resource::get_attribute(merged, "feature.flag"), Some(StringValue("enabled")))?
+  assert_eq(Resource::get_attribute(merged, "service.name"), None)?  // Simplified implementation
+  assert_eq(Resource::get_attribute(merged, "service.version"), Some(StringValue("2.0.0")))
+  assert_eq(Resource::get_attribute(merged, "deployment.environment"), None)
+  assert_eq(Resource::get_attribute(merged, "service.instance.id"), Some(StringValue("instance-456")))
+  assert_eq(Resource::get_attribute(merged, "feature.flag"), Some(StringValue("enabled")))
 }
 
 test "text_map_carrier_multiple_headers" {
@@ -155,15 +155,15 @@ test "text_map_carrier_multiple_headers" {
   TextMapCarrier::set(carrier, "x-custom-header", "custom-value")
   
   // Test header retrieval
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))?
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "tracestate"), None)?  // Simplified implementation
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "baggage"), None)?  // Simplified implementation
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "x-custom-header"), None)?  // Simplified implementation
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "nonexistent"), None)?
+  assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(TextMapCarrier::get(carrier, "tracestate"), None)?  // Simplified implementation
+  assert_eq(TextMapCarrier::get(carrier, "baggage"), None)?  // Simplified implementation
+  assert_eq(TextMapCarrier::get(carrier, "x-custom-header"), None)?  // Simplified implementation
+  assert_eq(TextMapCarrier::get(carrier, "nonexistent"), None)
   
   // Test case sensitivity
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "Traceparent"), None)?  // Should be case sensitive
-  @assertion.assert_eq(TextMapCarrier::get(carrier, "TRACEPARENT"), None)?  // Should be case sensitive
+  assert_eq(TextMapCarrier::get(carrier, "Traceparent"), None)?  // Should be case sensitive
+  assert_eq(TextMapCarrier::get(carrier, "TRACEPARENT"), None)?  // Should be case sensitive
 }
 
 test "instrument_type_conversions" {
@@ -183,22 +183,22 @@ test "instrument_type_conversions" {
   let gauge_instrument = Gauge(gauge.name, gauge.description, gauge.unit)
   
   // Test instrument name access
-  @assertion.assert_eq(Instrument::name(counter_instrument), "test.counter")?
-  @assertion.assert_eq(Instrument::name(histogram_instrument), "test.histogram")?
-  @assertion.assert_eq(Instrument::name(updown_instrument), "test.updown")?
-  @assertion.assert_eq(Instrument::name(gauge_instrument), "test.gauge")?
+  assert_eq(Instrument::name(counter_instrument), "test.counter")
+  assert_eq(Instrument::name(histogram_instrument), "test.histogram")
+  assert_eq(Instrument::name(updown_instrument), "test.updown")
+  assert_eq(Instrument::name(gauge_instrument), "test.gauge")
   
   // Test instrument description access
-  @assertion.assert_eq(Instrument::description(counter_instrument), Some("Test counter"))?
-  @assertion.assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))?
-  @assertion.assert_eq(Instrument::description(updown_instrument), Some("Test updown counter"))?
-  @assertion.assert_eq(Instrument::description(gauge_instrument), Some("Test gauge"))?
+  assert_eq(Instrument::description(counter_instrument), Some("Test counter"))
+  assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))
+  assert_eq(Instrument::description(updown_instrument), Some("Test updown counter"))
+  assert_eq(Instrument::description(gauge_instrument), Some("Test gauge"))
   
   // Test instrument unit access
-  @assertion.assert_eq(Instrument::unit(counter_instrument), Some("count"))?
-  @assertion.assert_eq(Instrument::unit(histogram_instrument), Some("ms"))?
-  @assertion.assert_eq(Instrument::unit(updown_instrument), Some("count"))?
-  @assertion.assert_eq(Instrument::unit(gauge_instrument), Some("percent"))?
+  assert_eq(Instrument::unit(counter_instrument), Some("count"))
+  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
+  assert_eq(Instrument::unit(updown_instrument), Some("count"))
+  assert_eq(Instrument::unit(gauge_instrument), Some("percent"))
 }
 
 test "log_record_timestamp_operations" {
@@ -217,16 +217,16 @@ test "log_record_timestamp_operations" {
     None
   )
   
-  @assertion.assert_eq(LogRecord::severity_number(log_with_timestamps), Warn)?
-  @assertion.assert_eq(LogRecord::body(log_with_timestamps), Some("Warning with timestamps"))?
-  @assertion.assert_eq(LogRecord::trace_id(log_with_timestamps), Some("trace789"))?
-  @assertion.assert_eq(LogRecord::span_id(log_with_timestamps), Some("span012"))?
+  assert_eq(LogRecord::severity_number(log_with_timestamps), Warn)
+  assert_eq(LogRecord::body(log_with_timestamps), Some("Warning with timestamps"))
+  assert_eq(LogRecord::trace_id(log_with_timestamps), Some("trace789"))
+  assert_eq(LogRecord::span_id(log_with_timestamps), Some("span012"))
   
   // Test log record without timestamps
   let log_without_timestamps = LogRecord::new(Error, "Error without explicit timestamps")
   
-  @assertion.assert_eq(LogRecord::severity_number(log_without_timestamps), Error)?
-  @assertion.assert_eq(LogRecord::body(log_without_timestamps), Some("Error without explicit timestamps"))?
-  @assertion.assert_eq(LogRecord::trace_id(log_without_timestamps), None)?
-  @assertion.assert_eq(LogRecord::span_id(log_without_timestamps), None)?
+  assert_eq(LogRecord::severity_number(log_without_timestamps), Error)
+  assert_eq(LogRecord::body(log_without_timestamps), Some("Error without explicit timestamps"))
+  assert_eq(LogRecord::trace_id(log_without_timestamps), None)
+  assert_eq(LogRecord::span_id(log_without_timestamps), None)
 }
