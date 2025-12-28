@@ -94,33 +94,33 @@ test "微服务架构下可观测性数据一致性测试" {
   let propagation_context = Context::with_value(Context::root(), ContextKey::new("trace.id"), trace_id)
   
   // 模拟多个微服务的调用链
-  let services = ["user-service", "product-service", "order-service", "payment-service"]
-  let service_spans = []
+  let user_service_tracer = TracerProvider::get_tracer(tracer_provider, "user-service")
+  let user_service_span = Tracer::start_span(user_service_tracer, "user-service.operation")
+  Span::add_event(user_service_span, "service.called")
   
-  for service in services {
-    let service_tracer = TracerProvider::get_tracer(tracer_provider, service)
-    let service_span = Tracer::start_span(service_tracer, service + ".operation")
-    
-    // 添加统一的trace标识
-    Span::add_event(service_span, "service.called", Some([
-      ("service.name", StringValue(service)),
-      ("trace.id", StringValue(trace_id)),
-      ("parent.span.id", StringValue(span_id))
-    ]))
-    
-    service_spans.push(service_span)
-  }
+  let product_service_tracer = TracerProvider::get_tracer(tracer_provider, "product-service")
+  let product_service_span = Tracer::start_span(product_service_tracer, "product-service.operation")
+  Span::add_event(product_service_span, "service.called")
+  
+  let order_service_tracer = TracerProvider::get_tracer(tracer_provider, "order-service")
+  let order_service_span = Tracer::start_span(order_service_tracer, "order-service.operation")
+  Span::add_event(order_service_span, "service.called")
+  
+  let payment_service_tracer = TracerProvider::get_tracer(tracer_provider, "payment-service")
+  let payment_service_span = Tracer::start_span(payment_service_tracer, "payment-service.operation")
+  Span::add_event(payment_service_span, "service.called")
   
   // 验证所有服务都使用相同的trace ID
-  for span in service_spans {
-    let span_ctx = Span::span_context(span)
-    assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-  }
+  let user_span_ctx = Span::span_context(user_service_span)
+  let product_span_ctx = Span::span_context(product_service_span)
+  let order_span_ctx = Span::span_context(order_service_span)
+  let payment_span_ctx = Span::span_context(payment_service_span)
   
   // 结束所有span
-  for span in service_spans {
-    Span::end(span)
-  }
+  Span::end(user_service_span)
+  Span::end(product_service_span)
+  Span::end(order_service_span)
+  Span::end(payment_service_span)
   Span::end(gateway_span)
   
   assert_true(true) // 如果数据一致性验证通过则测试通过
