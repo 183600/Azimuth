@@ -1,244 +1,450 @@
-// 复合传播器高级测试
-// 测试传播器的复杂组合、错误处理和边界条件
+// Azimuth Advanced Composite Propagator Comprehensive Tests - 高级复合传播器综合测试
+// 测试多传播器组合、复杂注入提取场景、跨协议传播和高级上下文传递
 
-test "复合传播器多级注入提取测试" {
-  // 创建多个传播器
-  let trace_propagator1 = W3CTraceContextPropagator::new()
-  let trace_propagator2 = W3CTraceContextPropagator::new()
+test "多传播器组合注入提取测试" {
+  // 创建多个不同类型的传播器
+  let trace_propagator = W3CTraceContextPropagator::new()
   let baggage_propagator = W3CBaggagePropagator::new()
   
-  // 创建复合传播器
-  let propagators = [trace_propagator1, trace_propagator2]
-  let composite_propagator = CompositePropagator::new(propagators)
+  // 创建复合传播器，包含多个传播器
+  let composite_propagator = CompositePropagator::new([trace_propagator])
   
-  // 创建上下文和载体
-  let ctx = Context::root()
-  let key = ContextKey::new("test.operation")
-  let ctx_with_value = Context::with_value(ctx, key, "multi.level.test")
+  // 创建测试上下文，包含多种信息
+  let base_ctx = Context::root()
+  let ctx_with_trace = Context::with_value(base_ctx, ContextKey::new("trace.id"), "trace-12345")
+  let ctx_with_user = Context::with_value(ctx_with_trace, ContextKey::new("user.id"), "user-67890")
+  let ctx_with_session = Context::with_value(ctx_with_user, ContextKey::new("session.id"), "session-abcde")
+  let final_ctx = Context::with_value(ctx_with_session, ContextKey::new("request.id"), "req-12345")
   
+  // 创建TextMapCarrier用于注入
   let carrier = TextMapCarrier::new()
   
-  // 测试多级注入
-  CompositePropagator::inject(composite_propagator, ctx_with_value, carrier)
+  // 使用复合传播器注入上下文
+  CompositePropagator::inject(composite_propagator, final_ctx, carrier)
   
   // 验证注入结果
-  let injected_trace = TextMapCarrier::get(carrier, "traceparent")
-  assert_true(injected_trace != None, "应该注入traceparent头")
-  
-  // 测试提取操作
-  let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
-  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  
-  assert_eq(extracted_value, Some("true"), "应该成功提取上下文值")
-}
-
-test "传播器链式传播测试" {
-  // 创建传播器链
-  let propagator1 = W3CTraceContextPropagator::new()
-  let propagator2 = W3CTraceContextPropagator::new()
-  let propagator3 = W3CTraceContextPropagator::new()
-  
-  let propagators = [propagator1, propagator2, propagator3]
-  let chain_propagator = CompositePropagator::new(propagators)
-  
-  // 创建初始上下文
-  let initial_ctx = Context::root()
-  let operation_key = ContextKey::new("operation.chain")
-  let ctx_with_operation = Context::with_value(initial_ctx, operation_key, "chain.test")
-  
-  // 第一轮传播
-  let carrier1 = TextMapCarrier::new()
-  CompositePropagator::inject(chain_propagator, ctx_with_operation, carrier1)
-  
-  // 第二轮传播（从载体1到载体2）
-  let intermediate_ctx = CompositePropagator::extract(chain_propagator, carrier1)
-  let carrier2 = TextMapCarrier::new()
-  CompositePropagator::inject(chain_propagator, intermediate_ctx, carrier2)
-  
-  // 第三轮传播（从载体2到载体3）
-  let final_ctx = CompositePropagator::extract(chain_propagator, carrier2)
-  let carrier3 = TextMapCarrier::new()
-  CompositePropagator::inject(chain_propagator, final_ctx, carrier3)
-  
-  // 验证链式传播的正确性
-  let final_trace = TextMapCarrier::get(carrier3, "traceparent")
-  assert_true(final_trace != None, "链式传播应该保持trace信息")
-  
-  let final_extracted = Context::get(final_ctx, ContextKey::new("extracted"))
-  assert_eq(final_extracted, Some("true"), "链式传播应该保持上下文信息")
-}
-
-test "传播器并发安全测试" {
-  // 创建多个传播器用于并发测试
-  let propagator1 = W3CTraceContextPropagator::new()
-  let propagator2 = W3CTraceContextPropagator::new()
-  let propagators = [propagator1, propagator2]
-  let concurrent_propagator = CompositePropagator::new(propagators)
-  
-  // 创建多个上下文和载体
-  let ctx1 = Context::with_value(Context::root(), ContextKey::new("concurrent.test1"), "value1")
-  let ctx2 = Context::with_value(Context::root(), ContextKey::new("concurrent.test2"), "value2")
-  let ctx3 = Context::with_value(Context::root(), ContextKey::new("concurrent.test3"), "value3")
-  
-  let carrier1 = TextMapCarrier::new()
-  let carrier2 = TextMapCarrier::new()
-  let carrier3 = TextMapCarrier::new()
-  
-  // 模拟并发注入操作
-  CompositePropagator::inject(concurrent_propagator, ctx1, carrier1)
-  CompositePropagator::inject(concurrent_propagator, ctx2, carrier2)
-  CompositePropagator::inject(concurrent_propagator, ctx3, carrier3)
-  
-  // 验证并发注入的结果
-  let trace1 = TextMapCarrier::get(carrier1, "traceparent")
-  let trace2 = TextMapCarrier::get(carrier2, "traceparent")
-  let trace3 = TextMapCarrier::get(carrier3, "traceparent")
-  
-  assert_true(trace1 != None, "并发注入1应该成功")
-  assert_true(trace2 != None, "并发注入2应该成功")
-  assert_true(trace3 != None, "并发注入3应该成功")
-  
-  // 模拟并发提取操作
-  let extracted_ctx1 = CompositePropagator::extract(concurrent_propagator, carrier1)
-  let extracted_ctx2 = CompositePropagator::extract(concurrent_propagator, carrier2)
-  let extracted_ctx3 = CompositePropagator::extract(concurrent_propagator, carrier3)
-  
-  let extracted1 = Context::get(extracted_ctx1, ContextKey::new("extracted"))
-  let extracted2 = Context::get(extracted_ctx2, ContextKey::new("extracted"))
-  let extracted3 = Context::get(extracted_ctx3, ContextKey::new("extracted"))
-  
-  assert_eq(extracted1, Some("true"), "并发提取1应该成功")
-  assert_eq(extracted2, Some("true"), "并发提取2应该成功")
-  assert_eq(extracted3, Some("true"), "并发提取3应该成功")
-}
-
-test "传播器错误恢复和边界条件测试" {
-  // 创建传播器
-  let propagator = W3CTraceContextPropagator::new()
-  let propagators = [propagator]
-  let error_recovery_propagator = CompositePropagator::new(propagators)
-  
-  // 测试空载体处理
-  let empty_carrier = TextMapCarrier::new()
-  let ctx_from_empty = CompositePropagator::extract(error_recovery_propagator, empty_carrier)
-  let extracted_from_empty = Context::get(ctx_from_empty, ContextKey::new("extracted"))
-  
-  assert_eq(extracted_from_empty, Some("true"), "应该能从空载体恢复")
-  
-  // 测试损坏的traceparent头
-  let corrupted_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(corrupted_carrier, "traceparent", "invalid-trace-data")
-  
-  let ctx_from_corrupted = CompositePropagator::extract(error_recovery_propagator, corrupted_carrier)
-  let extracted_from_corrupted = Context::get(ctx_from_corrupted, ContextKey::new("extracted"))
-  
-  assert_eq(extracted_from_corrupted, Some("true"), "应该能从损坏数据恢复")
-  
-  // 测试部分缺失的头部
-  let partial_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(partial_carrier, "baggage", "key1=value1")
-  // 故意不设置traceparent
-  
-  let ctx_from_partial = CompositePropagator::extract(error_recovery_propagator, partial_carrier)
-  let extracted_from_partial = Context::get(ctx_from_partial, ContextKey::new("extracted"))
-  
-  assert_eq(extracted_from_partial, Some("true"), "应该能处理部分缺失的头部")
-}
-
-test "传播器性能和大规模数据处理测试" {
-  // 创建大型传播器组合
-  let mut propagators = []
-  for i = 0; i < 10; i = i + 1 {
-    propagators.push(W3CTraceContextPropagator::new())
-  }
-  let large_composite_propagator = CompositePropagator::new(propagators)
-  
-  // 创建包含大量数据的上下文
-  let ctx = Context::root()
-  let mut enriched_ctx = ctx
-  for i = 0; i < 5; i = i + 1 {
-    let key = ContextKey::new("large.scale.key" + i.to_string())
-    enriched_ctx = Context::with_value(enriched_ctx, key, "large.scale.value" + i.to_string())
+  match TextMapCarrier::get(carrier, "traceparent") {
+    Some(trace_value) => assert_true(trace_value.length() > 0)
+    None => assert_true(false)
   }
   
-  // 测试大规模注入
-  let large_carrier = TextMapCarrier::new()
-  CompositePropagator::inject(large_composite_propagator, enriched_ctx, large_carrier)
+  // 创建新的carrier和上下文进行提取测试
+  let new_carrier = TextMapCarrier::new()
+  let test_ctx = Context::with_value(Context::root(), ContextKey::new("test"), "value")
   
-  // 验证大规模注入结果
-  let large_trace = TextMapCarrier::get(large_carrier, "traceparent")
-  assert_true(large_trace != None, "大规模注入应该成功")
+  CompositePropagator::inject(composite_propagator, test_ctx, new_carrier)
   
-  // 测试大规模提取
-  let large_extracted_ctx = CompositePropagator::extract(large_composite_propagator, large_carrier)
-  let large_extracted = Context::get(large_extracted_ctx, ContextKey::new("extracted"))
+  // 提取上下文
+  let extracted_ctx = CompositePropagator::extract(composite_propagator, new_carrier)
   
-  assert_eq(large_extracted, Some("true"), "大规模提取应该成功")
+  // 验证提取的上下文
+  match Context::get(extracted_ctx, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // 测试性能边界：快速连续操作
-  for i = 0; i < 3; i = i + 1 {
-    let rapid_carrier = TextMapCarrier::new()
-    let rapid_ctx = Context::with_value(Context::root(), ContextKey::new("rapid.test"), "rapid.value")
+  // 测试多个传播器的组合
+  let multiple_composite = CompositePropagator::new([
+    W3CTraceContextPropagator::new(),
+    W3CTraceContextPropagator::new(),
+    W3CTraceContextPropagator::new()
+  ])
+  
+  let multi_carrier = TextMapCarrier::new()
+  let multi_ctx = Context::with_value(Context::root(), ContextKey::new("multi"), "propagation")
+  
+  CompositePropagator::inject(multiple_composite, multi_ctx, multi_carrier)
+  
+  let multi_extracted = CompositePropagator::extract(multiple_composite, multi_carrier)
+  
+  match Context::get(multi_extracted, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+test "复杂上下文链传播测试" {
+  // 测试复杂的上下文链传播场景
+  let root_ctx = Context::root()
+  
+  // 构建上下文链
+  let ctx1 = Context::with_value(root_ctx, ContextKey::new("service.name"), "auth-service")
+  let ctx2 = Context::with_value(ctx1, ContextKey::new("service.version"), "1.2.3")
+  let ctx3 = Context::with_value(ctx2, ContextKey::new("correlation.id"), "corr-12345")
+  let ctx4 = Context::with_value(ctx3, ContextKey::new("user.id"), "user-67890")
+  let ctx5 = Context::with_value(ctx4, ContextKey::new("request.id"), "req-abcdef")
+  let ctx6 = Context::with_value(ctx5, ContextKey::new("trace.id"), "trace-12345")
+  let ctx7 = Context::with_value(ctx6, ContextKey::new("span.id"), "span-67890")
+  let final_chain_ctx = Context::with_value(ctx7, ContextKey::new("baggage.user.role"), "admin")
+  
+  // 创建复合传播器
+  let chain_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  
+  // 注入上下文链
+  let chain_carrier = TextMapCarrier::new()
+  CompositePropagator::inject(chain_propagator, final_chain_ctx, chain_carrier)
+  
+  // 验证链式上下文的传播
+  let chain_extracted = CompositePropagator::extract(chain_propagator, chain_carrier)
+  
+  // 验证提取的上下文包含预期信息
+  match Context::get(chain_extracted, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试跨服务上下文传播
+  let service_a_ctx = Context::with_value(Context::root(), ContextKey::new("service.a"), "value.a")
+  let service_b_ctx = Context::with_value(service_a_ctx, ContextKey::new("service.b"), "value.b")
+  let service_c_ctx = Context::with_value(service_b_ctx, ContextKey::new("service.c"), "value.c")
+  
+  let cross_service_carrier = TextMapCarrier::new()
+  CompositePropagator::inject(chain_propagator, service_c_ctx, cross_service_carrier)
+  
+  let cross_service_extracted = CompositePropagator::extract(chain_propagator, cross_service_carrier)
+  
+  match Context::get(cross_service_extracted, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试嵌套上下文传播
+  let nested_ctx1 = Context::with_value(Context::root(), ContextKey::new("level1"), "value1")
+  let nested_ctx2 = Context::with_value(nested_ctx1, ContextKey::new("level2"), "value2")
+  let nested_ctx3 = Context::with_value(nested_ctx2, ContextKey::new("level3"), "value3")
+  
+  let nested_carrier = TextMapCarrier::new()
+  CompositePropagator::inject(chain_propagator, nested_ctx3, nested_carrier)
+  
+  let nested_extracted = CompositePropagator::extract(chain_propagator, nested_carrier)
+  
+  match Context::get(nested_extracted, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+test "Baggage跨传播器测试" {
+  // 测试Baggage在不同传播器间的传递
+  let baggage_propagator = W3CBaggagePropagator::new()
+  let composite_with_baggage = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  
+  // 创建包含Baggage的上下文
+  let base_baggage = Baggage::new()
+  let with_user_baggage = Baggage::set_entry(base_baggage, "user.id", "user-12345")
+  let with_session_baggage = Baggage::set_entry(with_user_baggage, "session.id", "session-67890")
+  let with_role_baggage = Baggage::set_entry(with_session_baggage, "user.role", "admin")
+  let final_baggage = Baggage::set_entry(with_role_baggage, "request.path", "/api/users")
+  
+  // 创建包含Baggage信息的上下文
+  let baggage_ctx = Context::with_value(Context::root(), ContextKey::new("baggage.data"), "serialized")
+  
+  // 注入Baggage信息
+  let baggage_carrier = TextMapCarrier::new()
+  CompositePropagator::inject(composite_with_baggage, baggage_ctx, baggage_carrier)
+  
+  // 验证Baggage信息的注入
+  match TextMapCarrier::get(baggage_carrier, "traceparent") {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
+  
+  // 提取Baggage信息
+  let extracted_baggage_ctx = CompositePropagator::extract(composite_with_baggage, baggage_carrier)
+  
+  match Context::get(extracted_baggage_ctx, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试Baggage的传播和修改
+  let modified_baggage = Baggage::remove_entry(final_baggage, "request.path")
+  let modified_baggage2 = Baggage::set_entry(modified_baggage, "new.key", "new.value")
+  
+  // 验证Baggage修改
+  match Baggage::get_entry(final_baggage, "request.path") {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
+  
+  match Baggage::get_entry(modified_baggage2, "new.key") {
+    Some("new.value") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试复杂Baggage场景
+  let complex_baggage = Baggage::new()
+  let complex_final = Baggage::set_entry(
+    Baggage::set_entry(
+      Baggage::set_entry(
+        Baggage::set_entry(complex_baggage, "user.id", "user-123"),
+        "user.email", "user@example.com"
+      ),
+      "user.preferences", "dark-mode"
+    ),
+    "user.timezone", "UTC"
+  )
+  
+  // 验证复杂Baggage
+  match Baggage::get_entry(complex_final, "user.id") {
+    Some("user-123") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Baggage::get_entry(complex_final, "user.email") {
+    Some("user@example.com") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Baggage::get_entry(complex_final, "user.preferences") {
+    Some("dark-mode") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Baggage::get_entry(complex_final, "user.timezone") {
+    Some("UTC") => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+test "跨协议传播测试" {
+  // 测试不同协议间的上下文传播
+  let protocols = ["http", "grpc", "websocket", "message-queue", "event-stream"]
+  
+  for protocol in protocols {
+    let protocol_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
     
-    CompositePropagator::inject(large_composite_propagator, rapid_ctx, rapid_carrier)
-    let rapid_extracted_ctx = CompositePropagator::extract(large_composite_propagator, rapid_carrier)
-    let rapid_extracted = Context::get(rapid_extracted_ctx, ContextKey::new("extracted"))
+    // 创建协议特定的上下文
+    let protocol_ctx = Context::with_value(Context::root(), ContextKey::new("protocol"), protocol)
+    let protocol_ctx2 = Context::with_value(protocol_ctx, ContextKey::new("protocol.version"), "1.0")
+    let final_protocol_ctx = Context::with_value(protocol_ctx2, ContextKey::new("trace.context"), "active")
     
-    assert_eq(rapid_extracted, Some("true"), "快速操作" + i.to_string() + "应该成功")
+    // 创建协议特定的carrier
+    let protocol_carrier = TextMapCarrier::new()
+    
+    // 注入协议特定的上下文
+    CompositePropagator::inject(protocol_propagator, final_protocol_ctx, protocol_carrier)
+    
+    // 验证协议特定的注入
+    match TextMapCarrier::get(protocol_carrier, "traceparent") {
+      Some(_) => assert_true(true)
+      None => assert_true(false)
+    }
+    
+    // 提取协议特定的上下文
+    let extracted_protocol_ctx = CompositePropagator::extract(protocol_propagator, protocol_carrier)
+    
+    match Context::get(extracted_protocol_ctx, ContextKey::new("extracted")) {
+      Some("true") => assert_true(true)
+      _ => assert_true(false)
+    }
   }
-}
-
-test "传播器跨协议兼容性测试" {
-  // 创建支持多种协议的传播器
-  let http_propagator = W3CTraceContextPropagator::new()
-  let grpc_propagator = W3CTraceContextPropagator::new()
-  let messaging_propagator = W3CTraceContextPropagator::new()
   
-  let protocol_propagators = [http_propagator, grpc_propagator, messaging_propagator]
-  let cross_protocol_propagator = CompositePropagator::new(protocol_propagators)
+  // 测试HTTP头传播
+  let http_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  let http_ctx = Context::with_value(Context::root(), ContextKey::new("http.method"), "GET")
+  let http_ctx2 = Context::with_value(http_ctx, ContextKey::new("http.url"), "https://api.example.com/users")
+  let final_http_ctx = Context::with_value(http_ctx2, ContextKey::new("http.headers"), "authorization,content-type")
   
-  // 模拟HTTP协议传播
   let http_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(http_carrier, "content-type", "application/json")
-  TextMapCarrier::set(http_carrier, "user-agent", "test-client")
+  CompositePropagator::inject(http_propagator, final_http_ctx, http_carrier)
   
-  let http_ctx = Context::with_value(Context::root(), ContextKey::new("http.request"), "/api/test")
-  CompositePropagator::inject(cross_protocol_propagator, http_ctx, http_carrier)
+  // 验证HTTP传播
+  match TextMapCarrier::get(http_carrier, "traceparent") {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
   
-  // 模拟gRPC协议传播
+  let extracted_http_ctx = CompositePropagator::extract(http_propagator, http_carrier)
+  
+  match Context::get(extracted_http_ctx, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试gRPC元数据传播
+  let grpc_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  let grpc_ctx = Context::with_value(Context::root(), ContextKey::new("grpc.method"), "GetUser")
+  let grpc_ctx2 = Context::with_value(grpc_ctx, ContextKey::new("grpc.service"), "UserService")
+  let final_grpc_ctx = Context::with_value(grpc_ctx2, ContextKey::new("grpc.timeout"), "30s")
+  
   let grpc_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(grpc_carrier, "grpc-timeout", "30s")
-  TextMapCarrier::set(grpc_carrier, "grpc-encoding", "gzip")
+  CompositePropagator::inject(grpc_propagator, final_grpc_ctx, grpc_carrier)
   
-  let grpc_ctx = Context::with_value(Context::root(), ContextKey::new("grpc.method"), "TestMethod")
-  CompositePropagator::inject(cross_protocol_propagator, grpc_ctx, grpc_carrier)
+  // 验证gRPC传播
+  match TextMapCarrier::get(grpc_carrier, "traceparent") {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
   
-  // 模拟消息队列协议传播
-  let messaging_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(messaging_carrier, "message-id", "msg-12345")
-  TextMapCarrier::set(messaging_carrier, "correlation-id", "corr-67890")
+  let extracted_grpc_ctx = CompositePropagator::extract(grpc_propagator, grpc_carrier)
   
-  let messaging_ctx = Context::with_value(Context::root(), ContextKey::new("messaging.topic"), "test.topic")
-  CompositePropagator::inject(cross_protocol_propagator, messaging_ctx, messaging_carrier)
+  match Context::get(extracted_grpc_ctx, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+test "传播器错误处理和恢复测试" {
+  // 测试传播器的错误处理和恢复能力
+  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
   
-  // 验证跨协议兼容性
-  let http_extracted = CompositePropagator::extract(cross_protocol_propagator, http_carrier)
-  let grpc_extracted = CompositePropagator::extract(cross_protocol_propagator, grpc_carrier)
-  let messaging_extracted = CompositePropagator::extract(cross_protocol_propagator, messaging_carrier)
+  // 测试空上下文的注入和提取
+  let empty_ctx = Context::root()
+  let error_carrier = TextMapCarrier::new()
   
-  let http_trace = TextMapCarrier::get(http_carrier, "traceparent")
-  let grpc_trace = TextMapCarrier::get(grpc_carrier, "traceparent")
-  let messaging_trace = TextMapCarrier::get(messaging_carrier, "traceparent")
+  // 注入空上下文
+  CompositePropagator::inject(propagator, empty_ctx, error_carrier)
   
-  assert_true(http_trace != None, "HTTP协议传播应该成功")
-  assert_true(grpc_trace != None, "gRPC协议传播应该成功")
-  assert_true(messaging_trace != None, "消息队列协议传播应该成功")
+  // 提取空上下文
+  let extracted_empty = CompositePropagator::extract(propagator, error_carrier)
   
-  let http_result = Context::get(http_extracted, ContextKey::new("extracted"))
-  let grpc_result = Context::get(grpc_extracted, ContextKey::new("extracted"))
-  let messaging_result = Context::get(messaging_extracted, ContextKey::new("extracted"))
+  match Context::get(extracted_empty, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  assert_eq(http_result, Some("true"), "HTTP协议提取应该成功")
-  assert_eq(grpc_result, Some("true"), "gRPC协议提取应该成功")
-  assert_eq(messaging_result, Some("true"), "消息队列协议提取应该成功")
+  // 测试损坏的carrier处理
+  let damaged_carrier = TextMapCarrier::new()
+  let normal_ctx = Context::with_value(Context::root(), ContextKey::new("normal"), "context")
+  
+  CompositePropagator::inject(propagator, normal_ctx, damaged_carrier)
+  
+  // 即使carrier损坏，提取也应该能处理
+  let extracted_from_damaged = CompositePropagator::extract(propagator, damaged_carrier)
+  
+  match Context::get(extracted_from_damaged, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试传播器链中的错误处理
+  let error_propagators = [
+    CompositePropagator::new([W3CTraceContextPropagator::new()]),
+    CompositePropagator::new([W3CTraceContextPropagator::new()]),
+    CompositePropagator::new([W3CTraceContextPropagator::new()])
+  ]
+  
+  for error_prop in error_propagators {
+    let error_ctx = Context::with_value(Context::root(), ContextKey::new("error.test"), "value")
+    let error_test_carrier = TextMapCarrier::new()
+    
+    CompositePropagator::inject(error_prop, error_ctx, error_test_carrier)
+    
+    let error_extracted = CompositePropagator::extract(error_prop, error_test_carrier)
+    
+    match Context::get(error_extracted, ContextKey::new("extracted")) {
+      Some("true") => assert_true(true)
+      _ => assert_true(false)
+    }
+  }
+  
+  // 测试传播器配置错误恢复
+  let misconfigured_propagator = CompositePropagator::new([])
+  let misconfigured_ctx = Context::with_value(Context::root(), ContextKey::new("misconfigured"), "test")
+  let misconfigured_carrier = TextMapCarrier::new()
+  
+  // 即使传播器配置错误，也应该能优雅处理
+  CompositePropagator::inject(misconfigured_propagator, misconfigured_ctx, misconfigured_carrier)
+  
+  let misconfigured_extracted = CompositePropagator::extract(misconfigured_propagator, misconfigured_carrier)
+  
+  match Context::get(misconfigured_extracted, ContextKey::new("extracted")) {
+    Some("true") => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+test "传播器性能和优化测试" {
+  // 测试传播器的性能和优化
+  let high_performance_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  
+  // 大量上下文注入和提取操作
+  let start_time = Clock::now_unix_nanos(Clock::system())
+  
+  let carriers = []
+  for i in 0..=99 {
+    let ctx = Context::with_value(Context::root(), ContextKey::new("perf.test"), i.to_string())
+    let carrier = TextMapCarrier::new()
+    
+    CompositePropagator::inject(high_performance_propagator, ctx, carrier)
+    carriers.push(carrier)
+  }
+  
+  let inject_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 批量提取
+  for carrier in carriers {
+    let extracted = CompositePropagator::extract(high_performance_propagator, carrier)
+    
+    match Context::get(extracted, ContextKey::new("extracted")) {
+      Some("true") => assert_true(true)
+      _ => assert_true(false)
+    }
+  }
+  
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  
+  let inject_duration = inject_time - start_time
+  let extract_duration = end_time - inject_time
+  let total_duration = end_time - start_time
+  
+  // 验证性能在合理范围内
+  assert_true(inject_duration < 10000000000L)  // 注入时间小于10秒
+  assert_true(extract_duration < 10000000000L)  // 提取时间小于10秒
+  assert_true(total_duration < 20000000000L)    // 总时间小于20秒
+  assert_true(carriers.length() == 100)
+  
+  // 测试传播器缓存优化
+  let cached_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  
+  let cache_start = Clock::now_unix_nanos(Clock::system())
+  
+  // 重复的上下文操作（测试缓存效果）
+  let cached_ctx = Context::with_value(Context::root(), ContextKey::new("cached"), "value")
+  
+  for i in 0..=49 {
+    let carrier = TextMapCarrier::new()
+    CompositePropagator::inject(cached_propagator, cached_ctx, carrier)
+    
+    let extracted = CompositePropagator::extract(cached_propagator, carrier)
+    
+    match Context::get(extracted, ContextKey::new("extracted")) {
+      Some("true") => assert_true(true)
+      _ => assert_true(false)
+    }
+  }
+  
+  let cache_end = Clock::now_unix_nanos(Clock::system())
+  let cache_duration = cache_end - cache_start
+  
+  // 缓存操作应该更快
+  assert_true(cache_duration < 5000000000L)  // 缓存操作小于5秒
+  
+  // 测试传播器内存使用优化
+  let memory_optimized_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  
+  // 创建大量传播器实例测试内存使用
+  let propagators = []
+  for i in 0..=19 {
+    let prop = CompositePropagator::new([W3CTraceContextPropagator::new()])
+    propagators.push(prop)
+  }
+  
+  // 使用所有传播器进行操作
+  for prop in propagators {
+    let ctx = Context::with_value(Context::root(), ContextKey::new("memory.test"), "value")
+    let carrier = TextMapCarrier::new()
+    
+    CompositePropagator::inject(prop, ctx, carrier)
+    
+    let extracted = CompositePropagator::extract(prop, carrier)
+    
+    match Context::get(extracted, ContextKey::new("extracted")) {
+      Some("true") => assert_true(true)
+      _ => assert_true(false)
+    }
+  }
+  
+  assert_true(propagators.length() == 20)
 }

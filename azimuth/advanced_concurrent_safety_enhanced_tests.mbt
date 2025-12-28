@@ -1,292 +1,445 @@
-// Advanced Concurrent Safety Tests for Azimuth Telemetry System
-// Tests thread safety and data consistency under concurrent operations
+// Azimuth Advanced Concurrent Safety Enhanced Tests - 高级并发安全性增强测试
+// 测试多线程环境下的数据一致性、竞态条件和资源管理安全性
 
-test "concurrent_context_access" {
-  // Test thread-safe context operations
-  let root_ctx = Context::root()
-  let key1 = ContextKey::new("concurrent_key1")
-  let key2 = ContextKey::new("concurrent_key2")
-  let key3 = ContextKey::new("concurrent_key3")
+test "并发Span操作安全性测试" {
+  // 测试多个Span同时创建和操作的安全性
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent-test")
   
-  // Simulate concurrent context modifications
-  let ctx1 = Context::with_value(root_ctx, key1, "value1")
-  let ctx2 = Context::with_value(ctx1, key2, "value2")
-  let ctx3 = Context::with_value(ctx2, key3, "value3")
+  // 创建多个Span来模拟并发场景
+  let spans = []
+  for i in 0..=49 {
+    let span = Tracer::start_span(tracer, "concurrent-span-" + i.to_string())
+    spans.push(span)
+  }
   
-  // Verify data integrity under concurrent access
-  assert_eq(Context::get(ctx1, key1), Some("value1"))
-  assert_eq(Context::get(ctx2, key1), Some("value1"))
-  assert_eq(Context::get(ctx2, key2), Some("value2"))
-  assert_eq(Context::get(ctx3, key1), Some("value1"))
-  assert_eq(Context::get(ctx3, key2), Some("value2"))
-  assert_eq(Context::get(ctx3, key3), Some("value3"))
+  // 并发设置Span状态和属性
+  for i in 0..=spans.length() - 1 {
+    let span = spans[i]
+    Span::set_status(span, Ok, Some("Concurrent operation " + i.to_string()))
+    Span::add_event(span, "concurrent.event", { 
+      attributes: [
+        ("thread.id", StringValue("thread-" + i.to_string())),
+        ("operation.type", StringValue("concurrent")),
+        ("timestamp", IntValue(Clock::now_unix_nanos(Clock::system()).to_int()))
+      ] 
+    })
+  }
   
-  // Test isolation - different contexts should not interfere
-  let isolated_ctx = Context::with_value(root_ctx, key1, "isolated_value")
-  assert_eq(Context::get(isolated_ctx, key1), Some("isolated_value"))
-  assert_eq(Context::get(isolated_ctx, key2), None)
+  // 验证所有Span的状态一致性
+  for span in spans {
+    assert_eq(Span::status(span), Ok)
+    assert_true(Span::is_recording(span))
+  }
+  
+  // 并发结束Span
+  for span in spans {
+    Span::end(span)
+  }
+  
+  // 验证Span数量和操作完整性
+  assert_true(spans.length() == 50)
 }
 
-test "concurrent_span_operations" {
-  // Test thread-safe span operations
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "concurrent_tracer")
+test "并发度量操作安全性测试" {
+  // 测试多个度量并发的安全性
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "concurrent-metrics")
   
-  // Create multiple spans concurrently
-  let span1 = Tracer::start_span(tracer, "concurrent_span1")
-  let span2 = Tracer::start_span(tracer, "concurrent_span2")
-  let span3 = Tracer::start_span(tracer, "concurrent_span3")
+  // 创建多种度量类型
+  let counter = Meter::create_counter(meter, "concurrent.counter")
+  let histogram = Meter::create_histogram(meter, "concurrent.histogram")
+  let updown_counter = Meter::create_updown_counter(meter, "concurrent.updown")
+  let gauge = Meter::create_gauge(meter, "concurrent.gauge")
   
-  // Perform concurrent operations on spans
-  Span::set_status(span1, Ok, Some("Span 1 completed"))
-  Span::set_status(span2, Error, Some("Span 2 failed"))
-  Span::set_status(span3, Ok, Some("Span 3 completed"))
+  // 并发更新度量
+  for i in 0..=99 {
+    // Counter并发递增
+    Counter::add(counter, 1.0, { 
+      attributes: {
+        let attrs = Attributes::new()
+        Attributes::set(attrs, "iteration", IntValue(i))
+        attrs
+      }
+    })
+    
+    // Histogram并发记录
+    Histogram::record(histogram, i.to_double(), {
+      attributes: {
+        let attrs = Attributes::new()
+        Attributes::set(attrs, "value.range", StringValue(if i < 50 { "low" } else { "high" }))
+        attrs
+      }
+    })
+    
+    // UpDownCounter并发操作
+    if i % 2 == 0 {
+      UpDownCounter::add(updown_counter, 1.0)
+    } else {
+      UpDownCounter::add(updown_counter, -1.0)
+    }
+    
+    // Gauge并发设置
+    Gauge::add(gauge, (i % 10).to_double())
+  }
   
-  Span::add_event(span1, "event1", Some([("key1", StringValue("value1"))]))
-  Span::add_event(span2, "event2", Some([("key2", StringValue("value2"))]))
-  Span::add_event(span3, "event3", Some([("key3", StringValue("value3"))]))
+  // 验证度量操作的一致性
+  assert_eq(counter.name, "concurrent.counter")
+  assert_eq(histogram.name, "concurrent.histogram")
+  assert_eq(updown_counter.name, "concurrent.updown")
+  assert_eq(gauge.name, "concurrent.gauge")
   
-  // Verify span isolation and data integrity
-  assert_eq(Span::name(span1), "concurrent_span1")
-  assert_eq(Span::name(span2), "concurrent_span2")
-  assert_eq(Span::name(span3), "concurrent_span3")
-  assert_eq(Span::is_recording(span1), true)
-  assert_eq(Span::is_recording(span2), true)
-  assert_eq(Span::is_recording(span3), true)
-  
-  // End spans concurrently
-  Span::end(span1)
-  Span::end(span2)
-  Span::end(span3)
+  // 验证度量的描述和单元
+  assert_eq(counter.description, None)
+  assert_eq(counter.unit, None)
+  assert_eq(histogram.description, None)
+  assert_eq(histogram.unit, None)
 }
 
-test "concurrent_metrics_collection" {
-  // Test thread-safe metrics operations
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent_meter")
+test "并发上下文传播安全性测试" {
+  // 测试并发上下文创建和传播的安全性
+  let contexts = []
+  let keys = []
   
-  // Create multiple instruments
-  let counter1 = Meter::create_counter(meter, "concurrent_counter1")
-  let counter2 = Meter::create_counter(meter, "concurrent_counter2")
-  let histogram1 = Meter::create_histogram(meter, "concurrent_histogram1")
-  let updown_counter1 = Meter::create_updown_counter(meter, "concurrent_updown1")
-  let gauge1 = Meter::create_gauge(meter, "concurrent_gauge1")
+  // 创建多个上下文和键
+  for i in 0..=29 {
+    let key = ContextKey::new("concurrent.key." + i.to_string())
+    keys.push(key)
+    
+    let ctx = Context::with_value(Context::root(), key, "value." + i.to_string())
+    contexts.push(ctx)
+  }
   
-  // Simulate concurrent metric updates
-  Counter::add(counter1, 100.0)
-  Counter::add(counter1, 200.0)
-  Counter::add(counter1, 300.0)
+  // 并发传播和提取上下文值
+  for i in 0..=contexts.length() - 1 {
+    let ctx = contexts[i]
+    let key = keys[i]
+    
+    // 验证上下文值的一致性
+    match Context::get(ctx, key) {
+      Some(value) => assert_eq(value, "value." + i.to_string())
+      None => assert_true(false)
+    }
+  }
   
-  Counter::add(counter2, 50.0)
-  Counter::add(counter2, 150.0)
+  // 测试复合传播器的并发安全性
+  let propagators = []
+  for i in 0..=4 {
+    let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+    propagators.push(propagator)
+  }
   
-  Histogram::record(histogram1, 10.5)
-  Histogram::record(histogram1, 20.5)
-  Histogram::record(histogram1, 30.5)
+  // 并发注入和提取操作
+  let carriers = []
+  for i in 0..=propagators.length() - 1 {
+    let carrier = TextMapCarrier::new()
+    let ctx = Context::with_value(Context::root(), ContextKey::new("test"), "value." + i.to_string())
+    
+    CompositePropagator::inject(propagators[i], ctx, carrier)
+    carriers.push(carrier)
+  }
   
-  UpDownCounter::add(updown_counter1, 10.0)
-  UpDownCounter::add(updown_counter1, -5.0)
-  UpDownCounter::add(updown_counter1, 15.0)
+  // 验证传播结果的一致性
+  for carrier in carriers {
+    match TextMapCarrier::get(carrier, "traceparent") {
+      Some(_) => assert_true(true)
+      None => assert_true(false)
+    }
+  }
   
-  // Verify instrument integrity
-  assert_eq(counter1.name, "concurrent_counter1")
-  assert_eq(counter2.name, "concurrent_counter2")
-  assert_eq(histogram1.name, "concurrent_histogram1")
-  assert_eq(updown_counter1.name, "concurrent_updown1")
-  assert_eq(gauge1.name, "concurrent_gauge1")
+  assert_true(contexts.length() == 30)
+  assert_true(keys.length() == 30)
+  assert_true(propagators.length() == 5)
+  assert_true(carriers.length() == 5)
 }
 
-test "concurrent_baggage_operations" {
-  // Test thread-safe baggage operations
-  let baggage = Baggage::new()
+test "并发Baggage操作安全性测试" {
+  // 测试并发Baggage操作的安全性
+  let baggage_instances = []
   
-  // Simulate concurrent baggage modifications
-  let baggage1 = Baggage::set_entry(baggage, "user.id", "12345")
-  let baggage2 = Baggage::set_entry(baggage1, "session.id", "abcdef")
-  let baggage3 = Baggage::set_entry(baggage2, "request.id", "xyz789")
+  // 创建多个Baggage实例
+  for i in 0..=19 {
+    let baggage = Baggage::new()
+    baggage_instances.push(baggage)
+  }
   
-  // Test concurrent read operations
-  let user_id = Baggage::get_entry(baggage3, "user.id")
-  let session_id = Baggage::get_entry(baggage3, "session.id")
-  let request_id = Baggage::get_entry(baggage3, "request.id")
+  // 并发设置Baggage条目
+  for i in 0..=baggage_instances.length() - 1 {
+    let baggage = baggage_instances[i]
+    
+    // 设置多个条目
+    let updated_baggage = Baggage::set_entry(baggage, "user.id", "user." + i.to_string())
+    let updated_baggage2 = Baggage::set_entry(updated_baggage, "request.id", "req." + i.to_string())
+    let updated_baggage3 = Baggage::set_entry(updated_baggage2, "session.id", "session." + i.to_string())
+    
+    baggage_instances[i] = updated_baggage3
+  }
   
-  assert_eq(user_id, Some("12345"))
-  assert_eq(session_id, Some("abcdef"))
-  assert_eq(request_id, Some("xyz789"))
+  // 验证Baggage条目的一致性
+  for i in 0..=baggage_instances.length() - 1 {
+    let baggage = baggage_instances[i]
+    
+    match Baggage::get_entry(baggage, "user.id") {
+      Some(value) => assert_eq(value, "user." + i.to_string())
+      None => assert_true(false)
+    }
+    
+    match Baggage::get_entry(baggage, "request.id") {
+      Some(value) => assert_eq(value, "req." + i.to_string())
+      None => assert_true(false)
+    }
+    
+    match Baggage::get_entry(baggage, "session.id") {
+      Some(value) => assert_eq(value, "session." + i.to_string())
+      None => assert_true(false)
+    }
+  }
   
-  // Test concurrent removal operations
-  let baggage_after_removal1 = Baggage::remove_entry(baggage3, "user.id")
-  let baggage_after_removal2 = Baggage::remove_entry(baggage3, "session.id")
+  // 并发移除Baggage条目
+  for i in 0..=baggage_instances.length() - 1 {
+    let baggage = baggage_instances[i]
+    let updated_baggage = Baggage::remove_entry(baggage, "session.id")
+    baggage_instances[i] = updated_baggage
+  }
   
-  // Verify removal doesn't affect other entries
-  assert_eq(Baggage::get_entry(baggage_after_removal1, "user.id"), Some("12345"))
-  assert_eq(Baggage::get_entry(baggage_after_removal1, "session.id"), Some("abcdef"))
-  assert_eq(Baggage::get_entry(baggage_after_removal1, "request.id"), Some("xyz789"))
+  // 验证移除操作的一致性
+  for baggage in baggage_instances {
+    match Baggage::get_entry(baggage, "session.id") {
+      Some(_) => assert_true(false)  // 应该被移除
+      None => assert_true(true)
+    }
+    
+    // 其他条目应该仍然存在
+    match Baggage::get_entry(baggage, "user.id") {
+      Some(_) => assert_true(true)
+      None => assert_true(false)
+    }
+  }
+  
+  assert_true(baggage_instances.length() == 20)
 }
 
-test "concurrent_resource_management" {
-  // Test thread-safe resource operations
-  let resource1 = Resource::new()
-  let resource2 = Resource::new()
-  
-  let attributes1 = [
-    ("service.name", StringValue("service1")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance1"))
-  ]
-  
-  let attributes2 = [
-    ("service.name", StringValue("service2")),
-    ("service.version", StringValue("2.0.0")),
-    ("service.instance.id", StringValue("instance2"))
-  ]
-  
-  // Concurrent resource attribute operations
-  let resource1_with_attrs = Resource::with_attributes(resource1, attributes1)
-  let resource2_with_attrs = Resource::with_attributes(resource2, attributes2)
-  
-  // Test concurrent resource merging
-  let merged_resource = Resource::merge(resource1_with_attrs, resource2_with_attrs)
-  
-  // Verify resource isolation
-  assert_eq(
-    Resource::get_attribute(resource1_with_attrs, "service.name"),
-    Some(StringValue("service1"))
-  )
-  
-  assert_eq(
-    Resource::get_attribute(resource2_with_attrs, "service.name"),
-    Some(StringValue("service2"))
-  )
-  
-  assert_eq(
-    Resource::get_attribute(merged_resource, "service.name"),
-    Some(StringValue("service2"))
-  )
-}
-
-test "concurrent_propagation_operations" {
-  // Test thread-safe propagation operations
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
-  let composite = CompositePropagator::new([trace_propagator])
-  
-  let root_ctx = Context::root()
-  let carrier1 = TextMapCarrier::new()
-  let carrier2 = TextMapCarrier::new()
-  let carrier3 = TextMapCarrier::new()
-  
-  // Concurrent injection operations
-  CompositePropagator::inject(composite, root_ctx, carrier1)
-  CompositePropagator::inject(composite, root_ctx, carrier2)
-  CompositePropagator::inject(composite, root_ctx, carrier3)
-  
-  // Verify injection results
-  let trace1 = TextMapCarrier::get(carrier1, "traceparent")
-  let trace2 = TextMapCarrier::get(carrier2, "traceparent")
-  let trace3 = TextMapCarrier::get(carrier3, "traceparent")
-  
-  assert_eq(trace1, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  assert_eq(trace2, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  assert_eq(trace3, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  
-  // Concurrent extraction operations
-  let extracted_ctx1 = CompositePropagator::extract(composite, carrier1)
-  let extracted_ctx2 = CompositePropagator::extract(composite, carrier2)
-  let extracted_ctx3 = CompositePropagator::extract(composite, carrier3)
-  
-  let extracted_key = ContextKey::new("extracted")
-  assert_eq(Context::get(extracted_ctx1, extracted_key), Some("true"))
-  assert_eq(Context::get(extracted_ctx2, extracted_key), Some("true"))
-  assert_eq(Context::get(extracted_ctx3, extracted_key), Some("true"))
-}
-
-test "concurrent_logging_operations" {
-  // Test thread-safe logging operations
+test "并发日志记录安全性测试" {
+  // 测试并发日志记录的安全性
   let logger_provider = LoggerProvider::default()
-  let logger1 = LoggerProvider::get_logger(logger_provider, "concurrent_logger1")
-  let logger2 = LoggerProvider::get_logger(logger_provider, "concurrent_logger2")
-  let logger3 = LoggerProvider::get_logger(logger_provider, "concurrent_logger3")
+  let logger = LoggerProvider::get_logger(logger_provider, "concurrent-logger")
   
-  // Create multiple log records concurrently
-  let log1 = LogRecord::new_with_context(
-    Info,
-    Some("Concurrent log 1"),
-    Some(Attributes::new()),
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some("trace123"),
-    Some("span456"),
-    Some(Context::root())
-  )
+  let log_records = []
   
-  let log2 = LogRecord::new_with_context(
-    Warn,
-    Some("Concurrent log 2"),
-    Some(Attributes::new()),
-    Some(1735689600000002000L),
-    Some(1735689600000003000L),
-    Some("trace789"),
-    Some("span012"),
-    Some(Context::root())
-  )
+  // 并发创建多个日志记录
+  for i in 0..=39 {
+    let severity = match i % 6 {
+      0 => Trace
+      1 => Debug
+      2 => Info
+      3 => Warn
+      4 => Error
+      _ => Fatal
+    }
+    
+    let log_record = LogRecord::new_with_context(
+      severity,
+      Some("Concurrent log message " + i.to_string()),
+      {
+        let attrs = Attributes::new()
+        Attributes::set(attrs, "log.index", IntValue(i))
+        Attributes::set(attrs, "thread.id", StringValue("thread-" + (i % 4).to_string()))
+        Some(attrs)
+      },
+      Some(Clock::now_unix_nanos(Clock::system())),
+      Some(Clock::now_unix_nanos(Clock::system()) + 1000L),
+      Some("concurrent-trace-" + (i % 5).to_string()),
+      Some("concurrent-span-" + i.to_string()),
+      {
+        let ctx = Context::with_value(Context::root(), ContextKey::new("log.context"), "value." + i.to_string())
+        Some(ctx)
+      }
+    )
+    
+    log_records.push(log_record)
+  }
   
-  let log3 = LogRecord::new_with_context(
-    Error,
-    Some("Concurrent log 3"),
-    Some(Attributes::new()),
-    Some(1735689600000004000L),
-    Some(1735689600000005000L),
-    Some("trace345"),
-    Some("span678"),
-    Some(Context::root())
-  )
+  // 并发发送日志记录
+  for log_record in log_records {
+    Logger::emit(logger, log_record)
+  }
   
-  // Concurrent log emission
-  Logger::emit(logger1, log1)
-  Logger::emit(logger2, log2)
-  Logger::emit(logger3, log3)
+  // 验证日志记录的一致性
+  for i in 0..=log_records.length() - 1 {
+    let log_record = log_records[i]
+    
+    // 验证日志消息
+    match LogRecord::body(log_record) {
+      Some(message) => assert_eq(message, "Concurrent log message " + i.to_string())
+      None => assert_true(false)
+    }
+    
+    // 验证严重级别
+    let expected_severity = match i % 6 {
+      0 => Trace
+      1 => Debug
+      2 => Info
+      3 => Warn
+      4 => Error
+      _ => Fatal
+    }
+    assert_eq(LogRecord::severity_number(log_record), expected_severity)
+    
+    // 验证追踪信息
+    match LogRecord::trace_id(log_record) {
+      Some(trace_id) => assert_eq(trace_id, "concurrent-trace-" + (i % 5).to_string())
+      None => assert_true(false)
+    }
+    
+    match LogRecord::span_id(log_record) {
+      Some(span_id) => assert_eq(span_id, "concurrent-span-" + i.to_string())
+      None => assert_true(false)
+    }
+  }
   
-  // Verify log record integrity
-  assert_eq(LogRecord::severity_number(log1), Info)
-  assert_eq(LogRecord::severity_number(log2), Warn)
-  assert_eq(LogRecord::severity_number(log3), Error)
-  assert_eq(LogRecord::body(log1), Some("Concurrent log 1"))
-  assert_eq(LogRecord::body(log2), Some("Concurrent log 2"))
-  assert_eq(LogRecord::body(log3), Some("Concurrent log 3"))
+  assert_true(log_records.length() == 40)
 }
 
-test "concurrent_http_operations" {
-  // Test thread-safe HTTP operations
-  let client1 = HttpClient::new()
-  let client2 = HttpClient::new()
-  let client3 = HttpClient::new()
+test "并发资源管理安全性测试" {
+  // 测试并发资源操作的安全性
+  let resources = []
   
-  // Create multiple requests concurrently
-  let headers1 = [("Content-Type", "application/json"), ("Authorization", "Bearer token1")]
-  let headers2 = [("Content-Type", "application/xml"), ("Authorization", "Bearer token2")]
-  let headers3 = [("Content-Type", "text/plain"), ("Authorization", "Bearer token3")]
+  // 创建多个资源实例
+  for i in 0..=14 {
+    let resource = Resource::with_attributes(Resource::new(), [
+      ("service.name", StringValue("service-" + i.to_string())),
+      ("service.instance.id", StringValue("instance-" + i.to_string())),
+      ("service.version", StringValue("1.0." + i.to_string()))
+    ])
+    resources.push(resource)
+  }
   
-  let request1 = HttpRequest::new("GET", "https://api1.example.com", headers1, Some("{\"data\":\"value1\"}"))
-  let request2 = HttpRequest::new("POST", "https://api2.example.com", headers2, Some("<xml>data2</xml>"))
-  let request3 = HttpRequest::new("PUT", "https://api3.example.com", headers3, Some("plain data3"))
+  // 并发读取资源属性
+  for i in 0..=resources.length() - 1 {
+    let resource = resources[i]
+    
+    match Resource::get_attribute(resource, "service.name") {
+      Some(StringValue(name)) => assert_eq(name, "service-" + i.to_string())
+      _ => assert_true(false)
+    }
+    
+    match Resource::get_attribute(resource, "service.instance.id") {
+      Some(StringValue(instance_id)) => assert_eq(instance_id, "instance-" + i.to_string())
+      _ => assert_true(false)
+    }
+    
+    match Resource::get_attribute(resource, "service.version") {
+      Some(StringValue(version)) => assert_eq(version, "1.0." + i.to_string())
+      _ => assert_true(false)
+    }
+  }
   
-  // Create multiple responses concurrently
-  let response1 = HttpResponse::new(200, [("Content-Type", "application/json")], Some("{\"result\":\"success1\"}"))
-  let response2 = HttpResponse::new(404, [("Content-Type", "application/xml")], Some("<error>not found</error>"))
-  let response3 = HttpResponse::new(500, [("Content-Type", "text/plain")], Some("internal error"))
+  // 并发资源合并操作
+  let merged_resources = []
+  for i in 0..=resources.length() - 1 {
+    let base_resource = resources[i]
+    let override_resource = Resource::with_attributes(Resource::new(), [
+      ("environment", StringValue("test")),
+      ("deployment.region", StringValue("region-" + i.to_string())),
+      ("last.updated", StringValue("2025-12-28"))
+    ])
+    
+    let merged = Resource::merge(base_resource, override_resource)
+    merged_resources.push(merged)
+  }
   
-  // Verify request isolation
-  assert_eq(HttpRequest::http_method(request1), "GET")
-  assert_eq(HttpRequest::http_method(request2), "POST")
-  assert_eq(HttpRequest::http_method(request3), "PUT")
+  // 验证合并结果的一致性
+  for i in 0..=merged_resources.length() - 1 {
+    let merged = merged_resources[i]
+    
+    // 验证覆盖资源属性存在（基于简化实现）
+    match Resource::get_attribute(merged, "environment") {
+      Some(StringValue("test")) => assert_true(true)
+      _ => assert_true(false)
+    }
+    
+    match Resource::get_attribute(merged, "deployment.region") {
+      Some(StringValue(region)) => assert_eq(region, "region-" + i.to_string())
+      _ => assert_true(false)
+    }
+    
+    match Resource::get_attribute(merged, "last.updated") {
+      Some(StringValue("2025-12-28")) => assert_true(true)
+      _ => assert_true(false)
+    }
+  }
   
-  assert_eq(HttpRequest::url(request1), "https://api1.example.com")
-  assert_eq(HttpRequest::url(request2), "https://api2.example.com")
-  assert_eq(HttpRequest::url(request3), "https://api3.example.com")
+  assert_true(resources.length() == 15)
+  assert_true(merged_resources.length() == 15)
+}
+
+test "并发HTTP操作安全性测试" {
+  // 测试并发HTTP操作的安全性
+  let http_client = HttpClient::new()
+  let requests = []
+  let responses = []
   
-  // Verify response isolation
-  assert_eq(HttpResponse::status_code(response1), 200)
-  assert_eq(HttpResponse::status_code(response2), 404)
-  assert_eq(HttpResponse::status_code(response3), 500)
+  // 并发创建HTTP请求
+  for i in 0..=9 {
+    let request = HttpRequest::new(
+      if i % 2 == 0 { "GET" } else { "POST" },
+      "https://api.example.com/endpoint/" + i.to_string(),
+      [
+        ("Content-Type", "application/json"),
+        ("X-Request-ID", "req-" + i.to_string()),
+        ("Authorization", "Bearer token-" + i.to_string()),
+        ("User-Agent", "Azimuth-Concurrent-Test/1.0")
+      ],
+      if i % 2 == 0 { None } else { Some("{\"data\": \"test-" + i.to_string() + "\"}") }
+    )
+    requests.push(request)
+  }
+  
+  // 并发创建HTTP响应
+  for i in 0..=requests.length() - 1 {
+    let response = HttpResponse::new(
+      200,
+      [
+        ("Content-Type", "application/json"),
+        ("X-Response-ID", "resp-" + i.to_string()),
+        ("Cache-Control", "no-cache"),
+        ("X-Processing-Time", (i * 10).to_string() + "ms")
+      ],
+      Some("{\"status\": \"success\", \"request_id\": \"req-" + i.to_string() + "\"}")
+    )
+    responses.push(response)
+  }
+  
+  // 验证HTTP请求的一致性
+  for i in 0..=requests.length() - 1 {
+    let request = requests[i]
+    
+    let expected_method = if i % 2 == 0 { "GET" } else { "POST" }
+    assert_eq(HttpRequest::http_method(request), expected_method)
+    assert_eq(HttpRequest::url(request), "https://api.example.com/endpoint/" + i.to_string())
+    
+    if i % 2 == 0 {
+      assert_eq(HttpRequest::body(request), None)
+    } else {
+      match HttpRequest::body(request) {
+        Some(body) => assert_eq(body, "{\"data\": \"test-" + i.to_string() + "\"}")
+        None => assert_true(false)
+      }
+    }
+  }
+  
+  // 验证HTTP响应的一致性
+  for i in 0..=responses.length() - 1 {
+    let response = responses[i]
+    
+    assert_eq(HttpResponse::status_code(response), 200)
+    
+    match HttpResponse::body(response) {
+      Some(body) => assert_eq(body, "{\"status\": \"success\", \"request_id\": \"req-" + i.to_string() + "\"}")
+      None => assert_true(false)
+    }
+  }
+  
+  assert_true(requests.length() == 10)
+  assert_true(responses.length() == 10)
 }

@@ -1,329 +1,645 @@
-// Resource Management and Merge Strategy Test Suite for Azimuth Telemetry System
-// This file contains comprehensive test cases for resource operations and merge strategies
+// Azimuth Advanced Resource Merge Strategy Comprehensive Tests - 高级资源合并策略综合测试
+// 测试资源合并、优先级处理、冲突解决和动态资源配置管理
 
-test "resource creation and basic operations" {
-  // Create empty resource
-  let empty_resource = Resource::new()
-  assert_eq(empty_resource.attributes.length(), 0)
-  
-  // Create resource with single attribute
-  let single_attrs = [("service.name", StringValue("test-service"))]
-  let single_resource = Resource::with_attributes(empty_resource, single_attrs)
-  
-  // Create resource with multiple attributes
-  let multiple_attrs = [
-    ("service.name", StringValue("multi-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("deployment.environment", StringValue("test"))
-  ]
-  let multi_resource = Resource::with_attributes(empty_resource, multiple_attrs)
-  
-  // Test attribute retrieval
-  let service_name = Resource::get_attribute(multi_resource, "service.name")
-  let service_version = Resource::get_attribute(multi_resource, "service.version")
-  let deployment_env = Resource::get_attribute(multi_resource, "deployment.environment")
-  let missing_attr = Resource::get_attribute(multi_resource, "missing.attribute")
-  
-  // Based on simplified implementation, these would be None
-  assert_eq(service_name, None)
-  assert_eq(service_version, None)
-  assert_eq(deployment_env, None)
-  assert_eq(missing_attr, None)
-  
-  // Test resource with different attribute types
-  let typed_attrs = [
-    ("string.attr", StringValue("string_value")),
-    ("int.attr", IntValue(42)),
-    ("float.attr", FloatValue(3.14159)),
-    ("bool.attr", BoolValue(true)),
-    ("array.string", ArrayStringValue(["item1", "item2"])),
-    ("array.int", ArrayIntValue([1, 2, 3]))
-  ]
-  let typed_resource = Resource::with_attributes(empty_resource, typed_attrs)
-  
-  // Test retrieval of typed attributes
-  let string_attr = Resource::get_attribute(typed_resource, "string.attr")
-  let int_attr = Resource::get_attribute(typed_resource, "int.attr")
-  let float_attr = Resource::get_attribute(typed_resource, "float.attr")
-  let bool_attr = Resource::get_attribute(typed_resource, "bool.attr")
-  
-  assert_eq(string_attr, None)
-  assert_eq(int_attr, None)
-  assert_eq(float_attr, None)
-  assert_eq(bool_attr, None)
-}
-
-test "resource merge strategies with conflicting attributes" {
-  // Create base resource
-  let base_attrs = [
+test "基础资源合并策略测试" {
+  // 测试基础资源合并功能
+  let base_resource = Resource::with_attributes(Resource::new(), [
     ("service.name", StringValue("base-service")),
     ("service.version", StringValue("1.0.0")),
-    ("deployment.environment", StringValue("development")),
-    ("base.only.attr", StringValue("base_value"))
-  ]
-  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
+    ("service.instance.id", StringValue("base-instance-123")),
+    ("environment", StringValue("development")),
+    ("host.name", StringValue("base-host"))
+  ])
   
-  // Create override resource with conflicts
-  let override_attrs = [
-    ("service.name", StringValue("override-service")),  // Conflicts with base
-    ("service.version", StringValue("2.0.0")),          // Conflicts with base
-    ("override.only.attr", StringValue("override_value"))
-  ]
-  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
+  let override_resource = Resource::with_attributes(Resource::new(), [
+    ("service.version", StringValue("2.0.0")),
+    ("service.instance.id", StringValue("override-instance-456")),
+    ("environment", StringValue("production")),
+    ("deployment.region", StringValue("us-west-2")),
+    ("host.name", StringValue("override-host"))
+  ])
   
-  // Test merge operation (base simplified implementation returns override)
+  // 执行资源合并
   let merged_resource = Resource::merge(base_resource, override_resource)
   
-  // Test retrieval from merged resource
-  let merged_service_name = Resource::get_attribute(merged_resource, "service.name")
-  let merged_service_version = Resource::get_attribute(merged_resource, "service.version")
-  let merged_deployment_env = Resource::get_attribute(merged_resource, "deployment.environment")
-  let merged_base_only = Resource::get_attribute(merged_resource, "base.only.attr")
-  let merged_override_only = Resource::get_attribute(merged_resource, "override.only.attr")
+  // 验证合并结果（基于简化实现，override_resource覆盖base_resource）
+  match Resource::get_attribute(merged_resource, "service.version") {
+    Some(StringValue("2.0.0")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // Based on simplified implementation, merged resource returns override
-  assert_eq(merged_service_name, None)
-  assert_eq(merged_service_version, None)
-  assert_eq(merged_deployment_env, None)
-  assert_eq(merged_base_only, None)
-  assert_eq(merged_override_only, None)
+  match Resource::get_attribute(merged_resource, "service.instance.id") {
+    Some(StringValue("override-instance-456")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(merged_resource, "environment") {
+    Some(StringValue("production")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(merged_resource, "deployment.region") {
+    Some(StringValue("us-west-2")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(merged_resource, "host.name") {
+    Some(StringValue("override-host")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试空资源合并
+  let empty_resource = Resource::new()
+  let non_empty_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("non-empty-service")),
+    ("service.version", StringValue("1.0.0"))
+  ])
+  
+  let merged_with_empty = Resource::merge(empty_resource, non_empty_resource)
+  
+  match Resource::get_attribute(merged_with_empty, "service.name") {
+    Some(StringValue("non-empty-service")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(merged_with_empty, "service.version") {
+    Some(StringValue("1.0.0")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试相同资源合并
+  let same_resource_merged = Resource::merge(non_empty_resource, non_empty_resource)
+  
+  match Resource::get_attribute(same_resource_merged, "service.name") {
+    Some(StringValue("non-empty-service")) => assert_true(true)
+    _ => assert_true(false)
+  }
 }
 
-test "resource merge with different attribute types" {
-  // Create resource with string attributes
-  let string_resource = Resource::with_attributes(Resource::new(), [
-    ("shared.key", StringValue("string_value")),
-    ("string.only", StringValue("string_only_value"))
+test "多级资源合并链测试" {
+  // 测试多级资源合并链
+  let level1_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("level1-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("environment", StringValue("level1-env")),
+    ("level1.attr", StringValue("level1-value"))
   ])
   
-  // Create resource with int attributes
-  let int_resource = Resource::with_attributes(Resource::new(), [
-    ("shared.key", IntValue(42)),                    // Type conflict
-    ("int.only", IntValue(123))
+  let level2_resource = Resource::with_attributes(Resource::new(), [
+    ("service.version", StringValue("2.0.0")),
+    ("environment", StringValue("level2-env")),
+    ("level2.attr", StringValue("level2-value")),
+    ("level2.only", StringValue("level2-only-value"))
   ])
   
-  // Create resource with float attributes
-  let float_resource = Resource::with_attributes(Resource::new(), [
-    ("shared.key", FloatValue(3.14159)),             // Type conflict
-    ("float.only", FloatValue(2.71828))
+  let level3_resource = Resource::with_attributes(Resource::new(), [
+    ("service.version", StringValue("3.0.0")),
+    ("level3.attr", StringValue("level3-value")),
+    ("level3.only", StringValue("level3-only-value"))
   ])
   
-  // Test merging different types
-  let string_int_merged = Resource::merge(string_resource, int_resource)
-  let int_float_merged = Resource::merge(int_resource, float_resource)
-  let string_float_merged = Resource::merge(string_resource, float_resource)
+  // 执行多级合并
+  let level1_2_merged = Resource::merge(level1_resource, level2_resource)
+  let final_merged = Resource::merge(level1_2_merged, level3_resource)
   
-  // Test retrieval from merged resources
-  let string_int_shared = Resource::get_attribute(string_int_merged, "shared.key")
-  let int_float_shared = Resource::get_attribute(int_float_merged, "shared.key")
-  let string_float_shared = Resource::get_attribute(string_float_merged, "shared.key")
+  // 验证最终合并结果
+  match Resource::get_attribute(final_merged, "service.name") {
+    Some(StringValue("level1-service")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  let string_int_string_only = Resource::get_attribute(string_int_merged, "string.only")
-  let int_float_int_only = Resource::get_attribute(int_float_merged, "int.only")
-  let string_float_float_only = Resource::get_attribute(string_float_merged, "float.only")
+  match Resource::get_attribute(final_merged, "service.version") {
+    Some(StringValue("3.0.0")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // Based on simplified implementation, all would be None
-  assert_eq(string_int_shared, None)
-  assert_eq(int_float_shared, None)
-  assert_eq(string_float_shared, None)
+  match Resource::get_attribute(final_merged, "environment") {
+    Some(StringValue("level2-env")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  assert_eq(string_int_string_only, None)
-  assert_eq(int_float_int_only, None)
-  assert_eq(string_float_float_only, None)
+  match Resource::get_attribute(final_merged, "level1.attr") {
+    Some(StringValue("level1-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(final_merged, "level2.attr") {
+    Some(StringValue("level2-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(final_merged, "level3.attr") {
+    Some(StringValue("level3-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(final_merged, "level2.only") {
+    Some(StringValue("level2-only-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(final_merged, "level3.only") {
+    Some(StringValue("level3-only-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试更复杂的合并链
+  let chain_resources = []
+  for i in 0..=4 {
+    let resource = Resource::with_attributes(Resource::new(), [
+      ("chain.level", StringValue("level-" + i.to_string())),
+      ("chain.value", StringValue("value-" + i.to_string())),
+      ("unique.attr." + i.to_string(), StringValue("unique-" + i.to_string()))
+    ])
+    chain_resources.push(resource)
+  }
+  
+  // 执行链式合并
+  let chain_result = Resource::merge(chain_resources[0], chain_resources[1])
+  chain_result = Resource::merge(chain_result, chain_resources[2])
+  chain_result = Resource::merge(chain_result, chain_resources[3])
+  chain_result = Resource::merge(chain_result, chain_resources[4])
+  
+  // 验证链式合并结果
+  match Resource::get_attribute(chain_result, "chain.level") {
+    Some(StringValue("level-4")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(chain_result, "chain.value") {
+    Some(StringValue("value-4")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(chain_result, "unique.attr.4") {
+    Some(StringValue("unique-4")) => assert_true(true)
+    _ => assert_true(false)
+  }
 }
 
-test "resource merge with complex nested attributes" {
-  // Create resource with array attributes
-  let array_resource = Resource::with_attributes(Resource::new(), [
-    ("string.array", ArrayStringValue(["item1", "item2", "item3"])),
-    ("int.array", ArrayIntValue([1, 2, 3, 4, 5])),
-    ("mixed.array", StringValue("not_array_value"))
+test "资源合并优先级和冲突解决测试" {
+  // 测试资源合并的优先级处理
+  let high_priority_resource = Resource::with_attributes(Resource::new(), [
+    ("priority.level", StringValue("high")),
+    ("service.name", StringValue("high-priority-service")),
+    ("critical.attr", StringValue("high-critical")),
+    ("high.only", StringValue("high-only-value"))
   ])
   
-  // Create resource with special character attributes
-  let special_resource = Resource::with_attributes(Resource::new(), [
-    ("unicode.key.测试", StringValue("unicode_value")),
-    ("emoji.key.🚀", StringValue("emoji_value")),
-    ("special.chars!@#$%", StringValue("special_chars_value")),
-    ("string.array", StringValue("overridden_array_value"))  // Override array with string
+  let medium_priority_resource = Resource::with_attributes(Resource::new(), [
+    ("priority.level", StringValue("medium")),
+    ("service.name", StringValue("medium-priority-service")),
+    ("critical.attr", StringValue("medium-critical")),
+    ("medium.only", StringValue("medium-only-value"))
   ])
   
-  // Test merging complex attributes
-  let complex_merged = Resource::merge(array_resource, special_resource)
+  let low_priority_resource = Resource::with_attributes(Resource::new(), [
+    ("priority.level", StringValue("low")),
+    ("service.name", StringValue("low-priority-service")),
+    ("critical.attr", StringValue("low-critical")),
+    ("low.only", StringValue("low-only-value"))
+  ])
   
-  // Test retrieval from complex merged resource
-  let unicode_result = Resource::get_attribute(complex_merged, "unicode.key.测试")
-  let emoji_result = Resource::get_attribute(complex_merged, "emoji.key.🚀")
-  let special_chars_result = Resource::get_attribute(complex_merged, "special.chars!@#$%")
-  let string_array_result = Resource::get_attribute(complex_merged, "string.array")
-  let int_array_result = Resource::get_attribute(complex_merged, "int.array")
+  // 按优先级顺序合并
+  let medium_low_merged = Resource::merge(low_priority_resource, medium_priority_resource)
+  let final_priority_merged = Resource::merge(medium_low_merged, high_priority_resource)
   
-  // Based on simplified implementation, all would be None
-  assert_eq(unicode_result, None)
-  assert_eq(emoji_result, None)
-  assert_eq(special_chars_result, None)
-  assert_eq(string_array_result, None)
-  assert_eq(int_array_result, None)
+  // 验证高优先级资源获胜
+  match Resource::get_attribute(final_priority_merged, "priority.level") {
+    Some(StringValue("high")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(final_priority_merged, "service.name") {
+    Some(StringValue("high-priority-service")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(final_priority_merged, "critical.attr") {
+    Some(StringValue("high-critical")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(final_priority_merged, "high.only") {
+    Some(StringValue("high-only-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试冲突解决策略
+  let conflict_resource_a = Resource::with_attributes(Resource::new(), [
+    ("conflict.test", StringValue("value-a")),
+    ("shared.attr", StringValue("shared-a")),
+    ("unique.a", StringValue("unique-a-value"))
+  ])
+  
+  let conflict_resource_b = Resource::with_attributes(Resource::new(), [
+    ("conflict.test", StringValue("value-b")),
+    ("shared.attr", StringValue("shared-b")),
+    ("unique.b", StringValue("unique-b-value"))
+  ])
+  
+  // 测试A覆盖B的合并
+  let a_over_b = Resource::merge(conflict_resource_b, conflict_resource_a)
+  
+  match Resource::get_attribute(a_over_b, "conflict.test") {
+    Some(StringValue("value-a")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(a_over_b, "shared.attr") {
+    Some(StringValue("shared-a")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试B覆盖A的合并
+  let b_over_a = Resource::merge(conflict_resource_a, conflict_resource_b)
+  
+  match Resource::get_attribute(b_over_a, "conflict.test") {
+    Some(StringValue("value-b")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(b_over_a, "shared.attr") {
+    Some(StringValue("shared-b")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试部分冲突解决
+  let partial_conflict_a = Resource::with_attributes(Resource::new(), [
+    ("no.conflict", StringValue("safe-value")),
+    ("partial.conflict", StringValue("partial-a")),
+    ("full.conflict", StringValue("full-a"))
+  ])
+  
+  let partial_conflict_b = Resource::with_attributes(Resource::new(), [
+    ("no.conflict", StringValue("safe-value")),
+    ("partial.conflict", StringValue("partial-b")),
+    ("full.conflict", StringValue("full-b"))
+  ])
+  
+  let partial_merged = Resource::merge(partial_conflict_a, partial_conflict_b)
+  
+  // 测试相同值不冲突的情况
+  match Resource::get_attribute(partial_merged, "no.conflict") {
+    Some(StringValue("safe-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试不同值冲突的解决
+  match Resource::get_attribute(partial_merged, "partial.conflict") {
+    Some(StringValue("partial-b")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(partial_merged, "full.conflict") {
+    Some(StringValue("full-b")) => assert_true(true)
+    _ => assert_true(false)
+  }
 }
 
-test "resource merge chain and precedence" {
-  // Create chain of resources
-  let resource1 = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("service-v1")),
-    ("common.attr", StringValue("value-v1")),
-    ("r1.only", StringValue("r1_value"))
+test "动态资源配置和更新测试" {
+  // 测试动态资源配置
+  let initial_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("dynamic-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("config.source", StringValue("static")),
+    ("last.update", StringValue("2025-01-01T00:00:00Z"))
   ])
   
-  let resource2 = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("service-v2")),
-    ("common.attr", StringValue("value-v2")),
-    ("r2.only", StringValue("r2_value"))
+  // 模拟动态更新1
+  let update1_resource = Resource::with_attributes(Resource::new(), [
+    ("service.version", StringValue("1.1.0")),
+    ("config.source", StringValue("dynamic")),
+    ("last.update", StringValue("2025-06-15T12:00:00Z")),
+    ("update.reason", StringValue("bug-fix"))
   ])
   
-  let resource3 = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("service-v3")),
-    ("common.attr", StringValue("value-v3")),
-    ("r3.only", StringValue("r3_value"))
+  let updated1 = Resource::merge(initial_resource, update1_resource)
+  
+  // 验证第一次更新
+  match Resource::get_attribute(updated1, "service.name") {
+    Some(StringValue("dynamic-service")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(updated1, "service.version") {
+    Some(StringValue("1.1.0")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(updated1, "config.source") {
+    Some(StringValue("dynamic")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(updated1, "last.update") {
+    Some(StringValue("2025-06-15T12:00:00Z")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(updated1, "update.reason") {
+    Some(StringValue("bug-fix")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 模拟动态更新2
+  let update2_resource = Resource::with_attributes(Resource::new(), [
+    ("service.version", StringValue("2.0.0")),
+    ("last.update", StringValue("2025-12-28T00:00:00Z")),
+    ("update.reason", StringValue("major-release")),
+    ("breaking.change", StringValue("true"))
   ])
   
-  // Test different merge orders
-  let merge_1_2_3 = Resource::merge(Resource::merge(resource1, resource2), resource3)
-  let merge_3_2_1 = Resource::merge(Resource::merge(resource3, resource2), resource1)
-  let merge_2_1_3 = Resource::merge(Resource::merge(resource2, resource1), resource3)
+  let updated2 = Resource::merge(updated1, update2_resource)
   
-  // Test precedence in different merge orders
-  let service_name_1_2_3 = Resource::get_attribute(merge_1_2_3, "service.name")
-  let service_name_3_2_1 = Resource::get_attribute(merge_3_2_1, "service.name")
-  let service_name_2_1_3 = Resource::get_attribute(merge_2_1_3, "service.name")
+  // 验证第二次更新
+  match Resource::get_attribute(updated2, "service.version") {
+    Some(StringValue("2.0.0")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  let common_attr_1_2_3 = Resource::get_attribute(merge_1_2_3, "common.attr")
-  let common_attr_3_2_1 = Resource::get_attribute(merge_3_2_1, "common.attr")
-  let common_attr_2_1_3 = Resource::get_attribute(merge_2_1_3, "common.attr")
+  match Resource::get_attribute(updated2, "last.update") {
+    Some(StringValue("2025-12-28T00:00:00Z")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // Based on simplified implementation, last resource in merge wins
-  assert_eq(service_name_1_2_3, None)
-  assert_eq(service_name_3_2_1, None)
-  assert_eq(service_name_2_1_3, None)
+  match Resource::get_attribute(updated2, "update.reason") {
+    Some(StringValue("major-release")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  assert_eq(common_attr_1_2_3, None)
-  assert_eq(common_attr_3_2_1, None)
-  assert_eq(common_attr_2_1_3, None)
+  match Resource::get_attribute(updated2, "breaking.change") {
+    Some(StringValue("true")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // Test unique attributes preservation
-  let r1_only_1_2_3 = Resource::get_attribute(merge_1_2_3, "r1.only")
-  let r2_only_1_2_3 = Resource::get_attribute(merge_1_2_3, "r2.only")
-  let r3_only_1_2_3 = Resource::get_attribute(merge_1_2_3, "r3.only")
-  
-  assert_eq(r1_only_1_2_3, None)
-  assert_eq(r2_only_1_2_3, None)
-  assert_eq(r3_only_1_2_3, None)
-}
-
-test "resource merge with edge cases" {
-  // Test merging empty resources
-  let empty_resource1 = Resource::new()
-  let empty_resource2 = Resource::new()
-  let empty_merged = Resource::merge(empty_resource1, empty_resource2)
-  
-  // Test merging empty with non-empty
-  let non_empty_attrs = [("service.name", StringValue("non-empty-service"))]
-  let non_empty_resource = Resource::with_attributes(Resource::new(), non_empty_attrs)
-  
-  let empty_with_non_empty = Resource::merge(empty_resource1, non_empty_resource)
-  let non_empty_with_empty = Resource::merge(non_empty_resource, empty_resource1)
-  
-  // Test retrieval from empty merges
-  let empty_merged_service = Resource::get_attribute(empty_merged, "service.name")
-  let empty_with_non_empty_service = Resource::get_attribute(empty_with_non_empty, "service.name")
-  let non_empty_with_empty_service = Resource::get_attribute(non_empty_with_empty, "service.name")
-  
-  assert_eq(empty_merged_service, None)
-  assert_eq(empty_with_non_empty_service, None)
-  assert_eq(non_empty_with_empty_service, None)
-  
-  // Test merging with very long keys and values
-  let long_key = "very.long.key." + "x".repeat(1000)
-  let long_value = StringValue("very.long.value." + "y".repeat(1000))
-  let long_attrs = [(long_key, long_value)]
-  let long_resource = Resource::with_attributes(Resource::new(), long_attrs)
-  
-  let long_merged = Resource::merge(empty_resource1, long_resource)
-  let long_result = Resource::get_attribute(long_merged, long_key)
-  assert_eq(long_result, None)
-  
-  // Test merging with special characters
-  let special_attrs = [
-    ("", StringValue("empty_key_value")),
-    ("null.key", StringValue("null_value")),
-    ("undefined.key", StringValue("undefined_value")),
-    ("nan.key", FloatValue(0.0 / 0.0)),
-    ("infinity.key", FloatValue(1.0 / 0.0))
+  // 测试批量动态更新
+  let batch_updates = [
+    Resource::with_attributes(Resource::new(), [
+      ("batch.attr.1", StringValue("batch-value-1")),
+      ("batch.common", StringValue("common-1"))
+    ]),
+    Resource::with_attributes(Resource::new(), [
+      ("batch.attr.2", StringValue("batch-value-2")),
+      ("batch.common", StringValue("common-2"))
+    ]),
+    Resource::with_attributes(Resource::new(), [
+      ("batch.attr.3", StringValue("batch-value-3")),
+      ("batch.common", StringValue("common-3"))
+    ])
   ]
-  let special_resource = Resource::with_attributes(Resource::new(), special_attrs)
-  let special_merged = Resource::merge(empty_resource1, special_resource)
   
-  let empty_key_result = Resource::get_attribute(special_merged, "")
-  let null_key_result = Resource::get_attribute(special_merged, "null.key")
-  let undefined_key_result = Resource::get_attribute(special_merged, "undefined.key")
-  let nan_key_result = Resource::get_attribute(special_merged, "nan.key")
-  let infinity_key_result = Resource::get_attribute(special_merged, "infinity.key")
+  // 执行批量更新
+  let batch_result = Resource::merge(initial_resource, batch_updates[0])
+  batch_result = Resource::merge(batch_result, batch_updates[1])
+  batch_result = Resource::merge(batch_result, batch_updates[2])
   
-  assert_eq(empty_key_result, None)
-  assert_eq(null_key_result, None)
-  assert_eq(undefined_key_result, None)
-  assert_eq(nan_key_result, None)
-  assert_eq(infinity_key_result, None)
+  // 验证批量更新结果
+  match Resource::get_attribute(batch_result, "batch.attr.1") {
+    Some(StringValue("batch-value-1")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(batch_result, "batch.attr.2") {
+    Some(StringValue("batch-value-2")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(batch_result, "batch.attr.3") {
+    Some(StringValue("batch-value-3")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(batch_result, "batch.common") {
+    Some(StringValue("common-3")) => assert_true(true)
+    _ => assert_true(false)
+  }
 }
 
-test "resource merge performance with large datasets" {
-  // Create large resource with many attributes
-  let large_attrs = Array::new[(String, AttributeValue)]()
-  for i = 0; i < 1000; i = i + 1 {
-    large_attrs.push(("large.attr." + i.to_string(), StringValue("large_value_" + i.to_string())))
-  }
-  let large_resource = Resource::with_attributes(Resource::new(), large_attrs)
+test "资源合并性能和内存优化测试" {
+  // 测试资源合并的性能
+  let large_base_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("large-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("environment", StringValue("test"))
+  ])
   
-  // Create another large resource with overlapping attributes
-  let large_attrs2 = Array::new[(String, AttributeValue)]()
-  for i = 500; i < 1500; i = i + 1 {
-    large_attrs2.push(("large.attr." + i.to_string(), StringValue("overridden_value_" + i.to_string())))
-  }
-  let large_resource2 = Resource::with_attributes(Resource::new(), large_attrs2)
+  // 添加大量属性
+  let base_with_attrs = Resource::with_attributes(large_base_resource, [
+    ("large.attr.1", StringValue("value-1")),
+    ("large.attr.2", StringValue("value-2")),
+    ("large.attr.3", StringValue("value-3")),
+    ("large.attr.4", StringValue("value-4")),
+    ("large.attr.5", StringValue("value-5"))
+  ])
   
-  // Test merge performance
-  let large_merged = Resource::merge(large_resource, large_resource2)
+  let start_time = Clock::now_unix_nanos(Clock::system())
   
-  // Test retrieval of various attributes
-  let early_attr = Resource::get_attribute(large_merged, "large.attr.100")
-  let middle_attr = Resource::get_attribute(large_merged, "large.attr.750")
-  let late_attr = Resource::get_attribute(large_merged, "large.attr.1200")
-  let missing_attr = Resource::get_attribute(large_merged, "large.attr.2000")
-  
-  // Based on simplified implementation, all would be None
-  assert_eq(early_attr, None)
-  assert_eq(middle_attr, None)
-  assert_eq(late_attr, None)
-  assert_eq(missing_attr, None)
-  
-  // Test merge with many small resources
-  let many_resources = Array::new[Resource]()
-  for i = 0; i < 100; i = i + 1 {
-    let small_attrs = [("small.attr." + i.to_string(), StringValue("small_value_" + i.to_string()))]
-    many_resources.push(Resource::with_attributes(Resource::new(), small_attrs))
+  // 执行大量合并操作
+  let merged_resources = []
+  for i in 0..=49 {
+    let override_resource = Resource::with_attributes(Resource::new(), [
+      ("override.attr." + i.to_string(), StringValue("override-value-" + i.to_string())),
+      ("service.version", StringValue("1." + i.to_string() + ".0"))
+    ])
+    
+    let merged = Resource::merge(base_with_attrs, override_resource)
+    merged_resources.push(merged)
   }
   
-  // Merge all small resources
-  let many_merged = Resource::new()
-  for resource in many_resources {
-    many_merged = Resource::merge(many_merged, resource)
+  let end_time = Clock::now_unix_nanos(Clock::system())
+  let merge_duration = end_time - start_time
+  
+  // 验证性能
+  assert_true(merge_duration < 10000000000L)  // 小于10秒
+  assert_true(merged_resources.length() == 50)
+  
+  // 验证合并结果
+  for i in 0..=merged_resources.length() - 1 {
+    let merged = merged_resources[i]
+    
+    match Resource::get_attribute(merged, "service.name") {
+      Some(StringValue("large-service")) => assert_true(true)
+      _ => assert_true(false)
+    }
+    
+    match Resource::get_attribute(merged, "service.version") {
+      Some(StringValue("1." + i.to_string() + ".0")) => assert_true(true)
+      _ => assert_true(false)
+    }
+    
+    match Resource::get_attribute(merged, "override.attr." + i.to_string()) {
+      Some(StringValue("override-value-" + i.to_string())) => assert_true(true)
+      _ => assert_true(false)
+    }
   }
   
-  // Test retrieval from many merged resources
-  let small_attr_10 = Resource::get_attribute(many_merged, "small.attr.10")
-  let small_attr_50 = Resource::get_attribute(many_merged, "small.attr.50")
-  let small_attr_90 = Resource::get_attribute(many_merged, "small.attr.90")
+  // 测试内存优化的资源合并
+  let memory_start = Clock::now_unix_nanos(Clock::system())
   
-  assert_eq(small_attr_10, None)
-  assert_eq(small_attr_50, None)
-  assert_eq(small_attr_90, None)
+  let memory_optimized_resources = []
+  for i in 0..=19 {
+    let resource_a = Resource::with_attributes(Resource::new(), [
+      ("memory.test." + i.to_string(), StringValue("memory-value-" + i.to_string())),
+      ("common.attr", StringValue("common-" + i.to_string()))
+    ])
+    
+    let resource_b = Resource::with_attributes(Resource::new(), [
+      ("memory.override." + i.to_string(), StringValue("override-" + i.to_string())),
+      ("common.attr", StringValue("overridden-" + i.to_string()))
+    ])
+    
+    let memory_merged = Resource::merge(resource_a, resource_b)
+    memory_optimized_resources.push(memory_merged)
+  }
+  
+  let memory_end = Clock::now_unix_nanos(Clock::system())
+  let memory_duration = memory_end - memory_start
+  
+  // 验证内存优化性能
+  assert_true(memory_duration < 5000000000L)  // 小于5秒
+  assert_true(memory_optimized_resources.length() == 20)
+  
+  // 验证内存优化结果
+  for i in 0..=memory_optimized_resources.length() - 1 {
+    let optimized = memory_optimized_resources[i]
+    
+    match Resource::get_attribute(optimized, "memory.test." + i.to_string()) {
+      Some(StringValue("memory-value-" + i.to_string())) => assert_true(true)
+      _ => assert_true(false)
+    }
+    
+    match Resource::get_attribute(optimized, "memory.override." + i.to_string()) {
+      Some(StringValue("override-" + i.to_string())) => assert_true(true)
+      _ => assert_true(false)
+    }
+    
+    match Resource::get_attribute(optimized, "common.attr") {
+      Some(StringValue("overridden-" + i.to_string())) => assert_true(true)
+      _ => assert_true(false)
+    }
+  }
+}
+
+test "资源合并边界条件和错误处理测试" {
+  // 测试资源合并的边界条件
+  let minimal_resource_a = Resource::with_attributes(Resource::new(), [
+    ("single.attr", StringValue("single-value"))
+  ])
+  
+  let minimal_resource_b = Resource::with_attributes(Resource::new(), [
+    ("another.attr", StringValue("another-value"))
+  ])
+  
+  // 测试最小资源合并
+  let minimal_merged = Resource::merge(minimal_resource_a, minimal_resource_b)
+  
+  match Resource::get_attribute(minimal_merged, "single.attr") {
+    Some(StringValue("single-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(minimal_merged, "another.attr") {
+    Some(StringValue("another-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试空字符串属性
+  let empty_string_resource = Resource::with_attributes(Resource::new(), [
+    ("empty.string", StringValue("")),
+    ("normal.string", StringValue("normal-value"))
+  ])
+  
+  let empty_merged = Resource::merge(minimal_resource_a, empty_string_resource)
+  
+  match Resource::get_attribute(empty_merged, "empty.string") {
+    Some(StringValue("")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(empty_merged, "normal.string") {
+    Some(StringValue("normal-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试特殊字符属性
+  let special_chars_resource = Resource::with_attributes(Resource::new(), [
+    ("special.chars", StringValue("!@#$%^&*()_+-=[]{}|;':\",./<>?")),
+    ("unicode.chars", StringValue("测试中文🚀emoji")),
+    ("newline.chars", StringValue("line1\nline2\rline3"))
+  ])
+  
+  let special_merged = Resource::merge(minimal_resource_a, special_chars_resource)
+  
+  match Resource::get_attribute(special_merged, "special.chars") {
+    Some(StringValue("!@#$%^&*()_+-=[]{}|;':\",./<>?")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(special_merged, "unicode.chars") {
+    Some(StringValue("测试中文🚀emoji")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(special_merged, "newline.chars") {
+    Some(StringValue("line1\nline2\rline3")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试极长属性名和值
+  let very_long_key = "this.is.a.very.long.attribute.name.that.tests.the.boundary.conditions.of.the.resource.merge.system"
+  let very_long_value = "this.is.a.very.long.attribute.value.that.tests.the.boundary.conditions.of.the.resource.merge.system".repeat(10)
+  
+  let long_resource = Resource::with_attributes(Resource::new(), [
+    (very_long_key, StringValue(very_long_value))
+  ])
+  
+  let long_merged = Resource::merge(minimal_resource_a, long_resource)
+  
+  match Resource::get_attribute(long_merged, very_long_key) {
+    Some(StringValue(value)) => assert_eq(value, very_long_value)
+    _ => assert_true(false)
+  }
+  
+  // 测试相同资源重复合并
+  let same_resource = Resource::with_attributes(Resource::new(), [
+    ("same.attr", StringValue("same-value")),
+    ("another.same", StringValue("another-same-value"))
+  ])
+  
+  let same_merged_once = Resource::merge(same_resource, same_resource)
+  let same_merged_twice = Resource::merge(same_merged_once, same_resource)
+  
+  match Resource::get_attribute(same_merged_twice, "same.attr") {
+    Some(StringValue("same-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(same_merged_twice, "another.same") {
+    Some(StringValue("another-same-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 测试循环合并（理论上不应该发生，但测试健壮性）
+  let resource_x = Resource::with_attributes(Resource::new(), [
+    ("x.attr", StringValue("x-value"))
+  ])
+  
+  let resource_y = Resource::with_attributes(Resource::new(), [
+    ("y.attr", StringValue("y-value"))
+  ])
+  
+  let xy_merged = Resource::merge(resource_x, resource_y)
+  let yx_merged = Resource::merge(resource_y, resource_x)
+  let xy_yx_merged = Resource::merge(xy_merged, yx_merged)
+  
+  match Resource::get_attribute(xy_yx_merged, "x.attr") {
+    Some(StringValue("x-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(xy_yx_merged, "y.attr") {
+    Some(StringValue("y-value")) => assert_true(true)
+    _ => assert_true(false)
+  }
 }
