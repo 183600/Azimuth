@@ -1,13 +1,13 @@
 {
   "name": "simple_test",
   "version": "0.1.0",
-  "description": "Simple test package for Azimuth telemetry",
+  "description": "Simple test package for Azimuth telemetry system",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["high_quality_tests.mbt", "simple_moonbit_tests.mbt", "azimuth.mbt"]
+    "test": ["basic_test.mbt"]
   }
 }
