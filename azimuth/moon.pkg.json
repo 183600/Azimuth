@@ -6,6 +6,6 @@
   "source": ["."],
   "deps": {},
   "test": {
-    "test": ["simple_validation_tests.mbt", "additional_feature_tests.mbt", "enhanced_test_cases.mbt", "integration_comprehensive_tests.mbt", "supplementary_tests.mbt", "../tests/azimuth/telemetry/enhanced_integration_tests.mbt"]
+    "test": ["simple_validation_tests.mbt", "additional_feature_tests.mbt", "enhanced_test_cases.mbt", "integration_comprehensive_tests.mbt", "supplementary_tests.mbt", "../tests/azimuth/telemetry/enhanced_integration_tests.mbt", "new_comprehensive_tests.mbt"]
   }
 }
