@@ -324,3 +324,221 @@ test "system integration and compatibility" {
   ]
   assert_eq(mixed_data.length(), 6)
 }
+
+test "advanced string operations" {
+  // Test advanced string operations and edge cases
+  
+  // Test string concatenation with various types
+  let str1 = "Hello"
+  let str2 = "World"
+  let num = 42
+  let combined = str1 + " " + str2 + " " + num.to_string()
+  assert_eq(combined, "Hello World 42")
+  
+  // Test string length calculations
+  let empty_string = ""
+  let single_char = "a"
+  let long_string = "a".repeat(100)
+  let unicode_string = "test"
+  
+  assert_eq(empty_string.length(), 0)
+  assert_eq(single_char.length(), 1)
+  assert_eq(long_string.length(), 100)
+  assert_eq(unicode_string.length(), 4)
+  
+  // Test string indexing (returns UInt16)
+  let test_string = "abcdefghijklmnopqrstuvwxyz"
+  assert_eq(test_string[0], 'a')
+  assert_eq(test_string[25], 'z')
+  assert_eq(test_string.length(), 26)
+  
+  // Test string with special characters
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  assert_eq(special_chars.length(), 29)
+  
+  // Test string contains and starts/ends with
+  assert_true(test_string.has_prefix("abc"))
+  assert_true(test_string.has_suffix("xyz"))
+  assert_true(test_string.contains("mnop"))
+  assert_false(test_string.contains("zzz"))
+}
+
+test "advanced array operations" {
+  // Test advanced array operations and edge cases
+  
+  // Test array creation and manipulation
+  let empty_array : Array[Int] = []
+  let int_array = [1, 2, 3, 4, 5]
+  let string_array = ["a", "b", "c", "d", "e"]
+  let double_array = [1.0, 2.0, 3.0, 4.0, 5.0]
+  
+  assert_eq(empty_array.length(), 0)
+  assert_eq(int_array.length(), 5)
+  assert_eq(string_array.length(), 5)
+  assert_eq(double_array.length(), 5)
+  
+  // Test array operations
+  let test_array = [1, 2, 3, 4, 5, 6]
+  assert_eq(test_array.length(), 6)
+  assert_eq(test_array[0], 1)
+  assert_eq(test_array[5], 6)
+  
+  // Test array bounds
+  assert_eq(test_array.length(), 6)
+  assert_true(test_array.length() > 0)
+  
+  // Test array indexing and bounds
+  assert_eq(int_array[0], 1)
+  assert_eq(int_array[4], 5)
+  assert_eq(string_array[0], "a")
+  assert_eq(string_array[4], "e")
+  
+  // Test array with large numbers
+  let large_numbers = [2147483647, -2147483648, 1000000, -1000000]
+  assert_eq(large_numbers.length(), 4)
+  assert_eq(large_numbers[0], 2147483647)
+  assert_eq(large_numbers[1], -2147483648)
+  
+  // Test array iteration
+  let mut sum = 0
+  for i in int_array {
+    sum = sum + i
+  }
+  assert_eq(sum, 15)  // 1+2+3+4+5 = 15
+  
+  // Test array contains (manual implementation)
+  let mut contains_three = false
+  for i in int_array {
+    if i == 3 {
+      contains_three = true
+    }
+  }
+  assert_true(contains_three)
+  
+  // Test array reverse iteration
+  let mut reverse_sum = 0
+  reverse_sum = reverse_sum + int_array[4]  // 5
+  reverse_sum = reverse_sum + int_array[3]  // 4
+  reverse_sum = reverse_sum + int_array[2]  // 3
+  reverse_sum = reverse_sum + int_array[1]  // 2
+  reverse_sum = reverse_sum + int_array[0]  // 1
+  assert_eq(reverse_sum, 15)
+}
+
+test "advanced numeric operations" {
+  // Test advanced numeric operations and edge cases
+  
+  // Test integer operations
+  let int_max = 2147483647
+  let int_min = -2147483648
+  let int_zero = 0
+  
+  assert_eq(int_zero * int_max, 0)
+  assert_eq(int_zero * int_min, 0)
+  
+  // Test floating point operations
+  let float_max = 999999.999
+  let float_min = -999999.999
+  let float_zero = 0.0
+  let float_small = 0.000001
+  
+  assert_eq(float_max + float_min, 0.0)
+  assert_eq(float_zero * float_max, 0.0)
+  assert_eq(float_small * 1000000.0, 1.0)
+  
+  // Test division edge cases
+  assert_eq(10 / 3, 3)  // Integer division
+  assert_eq(10.0 / 3.0, 3.3333333333333335)  // Float division
+  
+  // Test modulo operations
+  assert_eq(10 % 3, 1)
+  assert_eq(-10 % 3, -1)
+  assert_eq(10 % -3, 1)
+  
+  // Test multiplication and addition
+  assert_eq(2 * 5, 10)
+  assert_eq(3 * 7, 21)
+  assert_eq(10 + 20, 30)
+  assert_eq(-5 + 10, 5)
+  
+  // Test subtraction
+  assert_eq(10 - 5, 5)
+  assert_eq(5 - 10, -5)
+  assert_eq(-5 - (-10), 5)
+  
+  // Test numeric comparisons
+  assert_true(1.0 < 2.0)
+  assert_true(2.0 > 1.0)
+  assert_true(1.0 <= 1.0)
+  assert_true(1.0 >= 1.0)
+  assert_true(1.0 == 1.0)
+  assert_true(1.0 != 2.0)
+  
+  // Test negative numbers
+  let neg_int = -42
+  let neg_double = -3.14
+  assert_eq(neg_int + 42, 0)
+  assert_eq(neg_double + 3.14, 0.0)
+  
+  // Test absolute values (manual implementation)
+  let test_neg = -100
+  let abs_value = if test_neg < 0 { -test_neg } else { test_neg }
+  assert_eq(abs_value, 100)
+}
+
+test "advanced boolean operations" {
+  // Test advanced boolean operations and truthiness
+  
+  // Test basic boolean operations
+  assert_true(true && true)
+  assert_false(true && false)
+  assert_false(false && false)
+  
+  assert_true(true || true)
+  assert_true(true || false)
+  assert_false(false || false)
+  
+  assert_true(!false)
+  assert_false(!true)
+  
+  // Test boolean comparisons
+  assert_true(true == true)
+  assert_false(true == false)
+  assert_true(true != false)
+  
+  // Test complex boolean expressions with explicit parentheses
+  let a = true
+  let b = false
+  let c = true
+  
+  assert_true((a && b) || c)  // (true && false) || true = false || true = true
+  assert_true(a || (b && c))  // true || (false && true) = true || false = true
+  assert_false((!a) && (!b) && (!c))  // false && true && false = false
+  
+  // Test boolean in conditional logic
+  let result = if a { "true" } else { "false" }
+  assert_eq(result, "true")
+  
+  let result2 = if b { "true" } else { "false" }
+  assert_eq(result2, "false")
+  
+  // Test boolean truthiness in different contexts
+  let bool_array = [true, false, true, false]
+  let mut true_count = 0
+  for bool_val in bool_array {
+    if bool_val {
+      true_count = true_count + 1
+    }
+  }
+  assert_eq(true_count, 2)
+  
+  // Test boolean negation chains
+  assert_true(!(!true))
+  assert_false(!(!false))
+  assert_true(!(!(!(!true))))
+  
+  // Test boolean with numeric comparisons
+  assert_true((5 > 3) == true)
+  assert_true((2 < 1) == false)
+  assert_true((10 == 10) == true)
+}

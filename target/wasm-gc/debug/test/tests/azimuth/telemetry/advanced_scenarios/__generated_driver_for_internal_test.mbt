@@ -57,22 +57,6 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "comprehensive_test.mbt": {
-    0: (__test_636f6d70726568656e736976655f746573742e6d6274_0, ["basic telemetry functionality"]),
-    1: (__test_636f6d70726568656e736976655f746573742e6d6274_1, ["numeric comparisons and edge cases"]),
-    2: (__test_636f6d70726568656e736976655f746573742e6d6274_2, ["string manipulation and edge cases"]),
-    3: (__test_636f6d70726568656e736976655f746573742e6d6274_3, ["array manipulation and edge cases"]),
-    4: (__test_636f6d70726568656e736976655f746573742e6d6274_4, ["option type comprehensive testing"]),
-    5: (__test_636f6d70726568656e736976655f746573742e6d6274_5, ["type conversion and compatibility"]),
-    6: (__test_636f6d70726568656e736976655f746573742e6d6274_6, ["complex data structures"]),
-    7: (__test_636f6d70726568656e736976655f746573742e6d6274_7, ["error handling and edge cases"]),
-    8: (__test_636f6d70726568656e736976655f746573742e6d6274_8, ["performance and efficiency"]),
-    9: (__test_636f6d70726568656e736976655f746573742e6d6274_9, ["system integration and compatibility"]),
-    10: (__test_636f6d70726568656e736976655f746573742e6d6274_10, ["advanced string operations"]),
-    11: (__test_636f6d70726568656e736976655f746573742e6d6274_11, ["advanced array operations"]),
-    12: (__test_636f6d70726568656e736976655f746573742e6d6274_12, ["advanced numeric operations"]),
-    13: (__test_636f6d70726568656e736976655f746573742e6d6274_13, ["advanced boolean operations"]),
-  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
@@ -149,7 +133,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/tests/azimuth/telemetry/comprehensive\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/tests/azimuth/telemetry/advanced_scenarios\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
