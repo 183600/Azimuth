@@ -1,317 +1,254 @@
-// Cross Service Consistency Tests for Azimuth Telemetry System
-// Testing telemetry data consistency across distributed services
-
-test "cross service trace context consistency" {
-  // Service A creates trace
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_a_id = "b7ad6b7169203331"
-  let span_a_ctx = SpanContext::new(trace_id, span_a_id, true, "key1=value1")
+// Test file for cross-service consistency
+test "trace context propagation consistency" {
+  // Create initial span context
+  let original_ctx = SpanContext::new("trace-1234567890abcdef", "span-1111111111111111", true, "key1=value1,key2=value2")
   
-  // Service B creates child span
-  let span_b_id = "c8ad6b7169203332"
-  let span_b_ctx = SpanContext::new(trace_id, span_b_id, true, "key1=value1,key2=value2")
+  // Test trace ID consistency
+  assert_eq(SpanContext::trace_id(original_ctx), "trace-1234567890abcdef")
+  assert_eq(SpanContext::span_id(original_ctx), "span-1111111111111111")
+  assert_true(SpanContext::is_sampled(original_ctx))
+  assert_eq(original_ctx.trace_state, "key1=value1,key2=value2")
   
-  // Service C creates another child span
-  let span_c_id = "d9ad6b7169203333"
-  let span_c_ctx = SpanContext::new(trace_id, span_c_id, true, "key1=value1,key2=value2,key3=value3")
+  // Create child span context (simulating cross-service propagation)
+  let child_ctx = SpanContext::new("trace-1234567890abcdef", "span-2222222222222222", true, "key1=value1,key2=value2")
   
-  // Test trace consistency
-  assert_eq(SpanContext::trace_id(span_a_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(span_b_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(span_c_ctx), trace_id)
+  // Verify trace ID consistency across services
+  assert_eq(SpanContext::trace_id(original_ctx), SpanContext::trace_id(child_ctx))
+  assert_true(SpanContext::trace_id(original_ctx) == "trace-1234567890abcdef")
   
-  // Test span uniqueness
-  assert_true(SpanContext::span_id(span_a_ctx) != SpanContext::span_id(span_b_ctx))
-  assert_true(SpanContext::span_id(span_b_ctx) != SpanContext::span_id(span_c_ctx))
-  assert_true(SpanContext::span_id(span_a_ctx) != SpanContext::span_id(span_c_ctx))
+  // Verify different span IDs
+  assert_true(SpanContext::span_id(original_ctx) != SpanContext::span_id(child_ctx))
   
-  // Test all spans are valid
-  assert_true(SpanContext::is_valid(span_a_ctx))
-  assert_true(SpanContext::is_valid(span_b_ctx))
-  assert_true(SpanContext::is_valid(span_c_ctx))
+  // Verify sampling consistency
+  assert_eq(SpanContext::is_sampled(original_ctx), SpanContext::is_sampled(child_ctx))
 }
 
-test "cross service baggage consistency" {
-  // Service A creates baggage
-  let baggage_a = Baggage::new()
-  let baggage_a_with_user = Baggage::set_entry(baggage_a, "user.id", "user_123")
-  let baggage_a_final = Baggage::set_entry(baggage_a_with_user, "tenant.id", "tenant_456")
+test "baggage propagation consistency" {
+  // Create initial baggage
+  let baggage = Baggage::new()
+  let baggage_with_data = Baggage::set_entry(baggage, "user.id", "user-12345")
+  let baggage_with_more_data = Baggage::set_entry(baggage_with_data, "request.id", "req-67890")
   
-  // Service B adds more baggage
-  let baggage_b = Baggage::set_entry(baggage_a_final, "service.name", "service_B")
-  let baggage_b_final = Baggage::set_entry(baggage_b, "request.id", "req_abc")
+  // Test baggage consistency
+  let user_id = Baggage::get_entry(baggage_with_more_data, "user.id")
+  assert_true(user_id.is_some(), "Should find user.id in baggage")
+  assert_eq(user_id.unwrap(), "user-12345")
   
-  // Service C adds more baggage
-  let baggage_c = Baggage::set_entry(baggage_b_final, "operation.name", "process_data")
-  let baggage_c_final = Baggage::set_entry(baggage_c, "version", "1.0.0")
+  let request_id = Baggage::get_entry(baggage_with_more_data, "request.id")
+  assert_true(request_id.is_some(), "Should find request.id in baggage")
+  assert_eq(request_id.unwrap(), "req-67890")
   
-  // Test baggage consistency across services
-  let user_id_a = Baggage::get_entry(baggage_a_final, "user.id")
-  let user_id_b = Baggage::get_entry(baggage_b_final, "user.id")
-  let user_id_c = Baggage::get_entry(baggage_c_final, "user.id")
+  // Simulate cross-service baggage propagation
+  let propagated_baggage = Baggage::set_entry(baggage_with_more_data, "service.name", "service-B")
   
-  let tenant_id_a = Baggage::get_entry(baggage_a_final, "tenant.id")
-  let tenant_id_b = Baggage::get_entry(baggage_b_final, "tenant.id")
-  let tenant_id_c = Baggage::get_entry(baggage_c_final, "tenant.id")
+  // Verify original baggage entries are preserved
+  let propagated_user_id = Baggage::get_entry(propagated_baggage, "user.id")
+  assert_eq(propagated_user_id.unwrap(), "user-12345")
   
-  // All should be consistent (None in simplified implementation)
-  assert_eq(user_id_a, user_id_b)
-  assert_eq(user_id_b, user_id_c)
-  assert_eq(tenant_id_a, tenant_id_b)
-  assert_eq(tenant_id_b, tenant_id_c)
+  let propagated_request_id = Baggage::get_entry(propagated_baggage, "request.id")
+  assert_eq(propagated_request_id.unwrap(), "req-67890")
+  
+  // Verify new baggage entry
+  let service_name = Baggage::get_entry(propagated_baggage, "service.name")
+  assert_true(service_name.is_some(), "Should find service.name in propagated baggage")
+  assert_eq(service_name.unwrap(), "service-B")
 }
 
-test "cross service metrics consistency" {
-  // Service A creates metrics
-  let provider_a = MeterProvider::default()
-  let meter_a = MeterProvider::get_meter(provider_a, "service.A")
-  let counter_a = Meter::create_counter(meter_a, "http.requests.total")
+test "context propagation across services" {
+  // Create root context
+  let root_ctx = Context::root()
   
-  // Service B creates metrics with same name
-  let provider_b = MeterProvider::default()
-  let meter_b = MeterProvider::get_meter(provider_b, "service.B")
-  let counter_b = Meter::create_counter(meter_b, "http.requests.total")
+  // Add correlation data
+  let correlation_key = ContextKey::new("correlation.id")
+  let ctx_with_correlation = Context::with_value(root_ctx, correlation_key, "corr-123456789")
   
-  // Service C creates metrics with same name
-  let provider_c = MeterProvider::default()
-  let meter_c = MeterProvider::get_meter(provider_c, "service.C")
-  let counter_c = Meter::create_counter(meter_c, "http.requests.total")
+  // Add user context
+  let user_key = ContextKey::new("user.context")
+  let ctx_with_user = Context::with_value(ctx_with_correlation, user_key, "premium-user")
   
-  // Test metric name consistency
-  assert_eq(counter_a.name, counter_b.name)
-  assert_eq(counter_b.name, counter_c.name)
-  assert_eq(counter_a.name, "http.requests.total")
+  // Simulate context propagation to service A
+  let service_a_key = ContextKey::new("service.a.timestamp")
+  let ctx_service_a = Context::with_value(ctx_with_user, service_a_key, "2025-01-01T12:00:00Z")
   
-  // Test metric operations
-  Counter::add(counter_a, 10.0)
-  Counter::add(counter_b, 20.0)
-  Counter::add(counter_c, 15.0)
+  // Verify original context is preserved in service A
+  let correlation_in_a = Context::get(ctx_service_a, correlation_key)
+  assert_eq(correlation_in_a.unwrap(), "corr-123456789")
   
-  assert_true(true) // Operations should succeed
+  let user_in_a = Context::get(ctx_service_a, user_key)
+  assert_eq(user_in_a.unwrap(), "premium-user")
+  
+  // Simulate context propagation to service B
+  let service_b_key = ContextKey::new("service.b.operation")
+  let ctx_service_b = Context::with_value(ctx_service_a, service_b_key, "data-processing")
+  
+  // Verify all context is preserved in service B
+  let correlation_in_b = Context::get(ctx_service_b, correlation_key)
+  assert_eq(correlation_in_b.unwrap(), "corr-123456789")
+  
+  let user_in_b = Context::get(ctx_service_b, user_key)
+  assert_eq(user_in_b.unwrap(), "premium-user")
+  
+  let timestamp_in_b = Context::get(ctx_service_b, service_a_key)
+  assert_eq(timestamp_in_b.unwrap(), "2025-01-01T12:00:00Z")
+  
+  let operation_in_b = Context::get(ctx_service_b, service_b_key)
+  assert_eq(operation_in_b.unwrap(), "data-processing")
 }
 
-test "cross service log consistency" {
-  // Service A creates logger
-  let provider_a = LoggerProvider::default()
-  let logger_a = LoggerProvider::get_logger(provider_a, "service.A")
+test "text map carrier consistency" {
+  // Create carrier with trace context
+  let carrier = TextMapCarrier::new()
+  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
+  TextMapCarrier::set(carrier, "baggage", "userId=amy,userType=admin")
   
-  // Service B creates logger
-  let provider_b = LoggerProvider::default()
-  let logger_b = LoggerProvider::get_logger(provider_b, "service.B")
+  // Verify carrier consistency
+  let traceparent = TextMapCarrier::get(carrier, "traceparent")
+  assert_true(traceparent.is_some(), "Should find traceparent")
+  assert_eq(traceparent.unwrap(), "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
   
-  // Service C creates logger
-  let provider_c = LoggerProvider::default()
-  let logger_c = LoggerProvider::get_logger(provider_c, "service.C")
+  let tracestate = TextMapCarrier::get(carrier, "tracestate")
+  assert_true(tracestate.is_some(), "Should find tracestate")
+  assert_eq(tracestate.unwrap(), "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
   
-  // Create consistent log records
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
+  let baggage = TextMapCarrier::get(carrier, "baggage")
+  assert_true(baggage.is_some(), "Should find baggage")
+  assert_eq(baggage.unwrap(), "userId=amy,userType=admin")
   
-  let record_a = LogRecord::new_with_context(
-    Info,
-    Some("Service A processing request"),
-    None,
-    Some(1735689600000000000L),
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
+  // Simulate propagation with additional headers
+  TextMapCarrier::set(carrier, "x-service-name", "service-A")
+  TextMapCarrier::set(carrier, "x-request-id", "req-123456789")
   
-  let record_b = LogRecord::new_with_context(
-    Info,
-    Some("Service B processing request"),
-    None,
-    Some(1735689600000000000L),
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
+  // Verify original headers are preserved
+  let original_traceparent = TextMapCarrier::get(carrier, "traceparent")
+  assert_eq(original_traceparent.unwrap(), "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
   
-  let record_c = LogRecord::new_with_context(
-    Info,
-    Some("Service C processing request"),
-    None,
-    Some(1735689600000000000L),
-    None,
-    Some(trace_id),
-    Some(span_id),
-    None
-  )
+  // Verify new headers
+  let service_name = TextMapCarrier::get(carrier, "x-service-name")
+  assert_true(service_name.is_some(), "Should find service name")
+  assert_eq(service_name.unwrap(), "service-A")
   
-  // Test log consistency
-  assert_eq(LogRecord::trace_id(record_a), Some(trace_id))
-  assert_eq(LogRecord::trace_id(record_b), Some(trace_id))
-  assert_eq(LogRecord::trace_id(record_c), Some(trace_id))
-  
-  assert_eq(LogRecord::span_id(record_a), Some(span_id))
-  assert_eq(LogRecord::span_id(record_b), Some(span_id))
-  assert_eq(LogRecord::span_id(record_c), Some(span_id))
-  
-  assert_eq(LogRecord::severity_number(record_a), Info)
-  assert_eq(LogRecord::severity_number(record_b), Info)
-  assert_eq(LogRecord::severity_number(record_c), Info)
-  
-  // Emit logs
-  Logger::emit(logger_a, record_a)
-  Logger::emit(logger_b, record_b)
-  Logger::emit(logger_c, record_c)
-  
-  assert_true(true) // Operations should succeed
+  let request_id = TextMapCarrier::get(carrier, "x-request-id")
+  assert_true(request_id.is_some(), "Should find request ID")
+  assert_eq(request_id.unwrap(), "req-123456789")
 }
 
-test "cross service resource consistency" {
-  // Service A creates resource
-  let resource_a = Resource::new()
-  let resource_a_attrs = [
-    ("service.name", StringValue("service.A")),
-    ("service.version", StringValue("1.0.0")),
+test "resource consistency across services" {
+  // Create base resource
+  let base_attrs = [
+    ("service.name", StringValue("api-gateway")),
+    ("service.version", StringValue("1.2.3")),
+    ("service.instance.id", StringValue("instance-abc123")),
     ("deployment.environment", StringValue("production"))
   ]
-  let resource_a_final = Resource::with_attributes(resource_a, resource_a_attrs)
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
   
-  // Service B creates resource with common attributes
-  let resource_b = Resource::new()
-  let resource_b_attrs = [
-    ("service.name", StringValue("service.B")),
-    ("service.version", StringValue("1.0.0")),
-    ("deployment.environment", StringValue("production"))
+  // Create service-specific resource
+  let service_attrs = [
+    ("service.name", StringValue("user-service")),
+    ("service.version", StringValue("2.1.0")),
+    ("service.instance.id", StringValue("instance-def456")),
+    ("database.type", StringValue("postgresql"))
   ]
-  let resource_b_final = Resource::with_attributes(resource_b, resource_b_attrs)
+  let service_resource = Resource::with_attributes(Resource::new(), service_attrs)
   
-  // Service C creates resource with common attributes
-  let resource_c = Resource::new()
-  let resource_c_attrs = [
-    ("service.name", StringValue("service.C")),
-    ("service.version", StringValue("1.0.0")),
-    ("deployment.environment", StringValue("production"))
-  ]
-  let resource_c_final = Resource::with_attributes(resource_c, resource_c_attrs)
+  // Test resource consistency
+  let base_service_name = Resource::get_attribute(base_resource, "service.name")
+  match base_service_name {
+    Some(StringValue(name)) => assert_eq(name, "api-gateway")
+    _ => assert_true(false, "Expected StringValue for service name")
+  }
   
-  // Test common resource attributes
-  let version_a = Resource::get_attribute(resource_a_final, "service.version")
-  let version_b = Resource::get_attribute(resource_b_final, "service.version")
-  let version_c = Resource::get_attribute(resource_c_final, "service.version")
+  let service_service_name = Resource::get_attribute(service_resource, "service.name")
+  match service_service_name {
+    Some(StringValue(name)) => assert_eq(name, "user-service")
+    _ => assert_true(false, "Expected StringValue for service name")
+  }
   
-  let env_a = Resource::get_attribute(resource_a_final, "deployment.environment")
-  let env_b = Resource::get_attribute(resource_b_final, "deployment.environment")
-  let env_c = Resource::get_attribute(resource_c_final, "deployment.environment")
+  // Test resource merging
+  let merged = Resource::merge(base_resource, service_resource)
   
-  // All should be consistent (None in simplified implementation)
-  assert_eq(version_a, version_b)
-  assert_eq(version_b, version_c)
-  assert_eq(env_a, env_b)
-  assert_eq(env_b, env_c)
-}
-
-test "cross service propagation consistency" {
-  // Create propagators for each service
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite_a = CompositePropagator::new([trace_propagator])
-  let composite_b = CompositePropagator::new([trace_propagator])
-  let composite_c = CompositePropagator::new([trace_propagator])
+  // Verify merged resource takes service resource attributes
+  let merged_service_name = Resource::get_attribute(merged, "service.name")
+  match merged_service_name {
+    Some(StringValue(name)) => assert_eq(name, "user-service")
+    _ => assert_true(false, "Expected merged service name")
+  }
   
-  // Service A creates context
-  let ctx_a = Context::with_value(Context::root(), ContextKey::new("user.id"), "12345")
-  let carrier_a = TextMapCarrier::new()
-  
-  // Service A injects context
-  CompositePropagator::inject(composite_a, ctx_a, carrier_a)
-  
-  // Service B extracts context
-  let ctx_b = CompositePropagator::extract(composite_b, carrier_a)
-  let carrier_b = TextMapCarrier::new()
-  
-  // Service B injects context
-  CompositePropagator::inject(composite_b, ctx_b, carrier_b)
-  
-  // Service C extracts context
-  let ctx_c = CompositePropagator::extract(composite_c, carrier_b)
-  
-  // Test propagation consistency
-  let extracted_a = Context::get(ctx_a, ContextKey::new("user.id"))
-  let extracted_b = Context::get(ctx_b, ContextKey::new("extracted"))
-  let extracted_c = Context::get(ctx_c, ContextKey::new("extracted"))
-  
-  assert_eq(extracted_a, Some("12345"))
-  assert_eq(extracted_b, Some("true"))
-  assert_eq(extracted_c, Some("true"))
-}
-
-test "cross service data serialization consistency" {
-  // Test consistent attribute serialization
-  let attributes = [
-    ("string.key", StringValue("test_value")),
-    ("int.key", IntValue(42)),
-    ("float.key", FloatValue(3.14)),
-    ("bool.key", BoolValue(true)),
-    ("array.string", ArrayStringValue(["item1", "item2"])),
-    ("array.int", ArrayIntValue([1, 2, 3]))
-  ]
-  
-  // Create resources with same attributes in different services
-  let resource_a = Resource::with_attributes(Resource::new(), attributes)
-  let resource_b = Resource::with_attributes(Resource::new(), attributes)
-  let resource_c = Resource::with_attributes(Resource::new(), attributes)
-  
-  // Test attribute consistency
-  for (key, expected_value) in attributes {
-    let value_a = Resource::get_attribute(resource_a, key)
-    let value_b = Resource::get_attribute(resource_b, key)
-    let value_c = Resource::get_attribute(resource_c, key)
-    
-    // All should be None in simplified implementation, but consistent
-    assert_eq(value_a, value_b)
-    assert_eq(value_b, value_c)
+  let merged_version = Resource::get_attribute(merged, "service.version")
+  match merged_version {
+    Some(StringValue(version)) => assert_eq(version, "2.1.0")
+    _ => assert_true(false, "Expected merged version")
   }
 }
 
-test "cross service temporal consistency" {
-  // Test consistent timestamp handling
-  let clock = Clock::system()
-  let base_timestamp = Clock::now_unix_nanos(clock)
+test "instrumentation scope consistency" {
+  // Create consistent instrumentation scopes
+  let scope1 = InstrumentationScope::{
+    name: "user-service",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/schemas/user-service")
+  }
   
-  // Service A creates log with timestamp
-  let record_a = LogRecord::new_with_context(
-    Info,
-    Some("Service A event"),
-    None,
-    Some(base_timestamp),
-    Some(base_timestamp + 1000000L),
-    None,
-    None,
-    None
-  )
+  let scope2 = InstrumentationScope::{
+    name: "user-service",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/schemas/user-service")
+  }
   
-  // Service B creates log with slightly later timestamp
-  let record_b = LogRecord::new_with_context(
-    Info,
-    Some("Service B event"),
-    None,
-    Some(base_timestamp + 5000000L),
-    Some(base_timestamp + 6000000L),
-    None,
-    None,
-    None
-  )
+  let scope3 = InstrumentationScope::{
+    name: "order-service",
+    version: Some("2.0.0"),
+    schema_url: Some("https://example.com/schemas/order-service")
+  }
   
-  // Service C creates log with even later timestamp
-  let record_c = LogRecord::new_with_context(
-    Info,
-    Some("Service C event"),
-    None,
-    Some(base_timestamp + 10000000L),
-    Some(base_timestamp + 11000000L),
-    None,
-    None,
-    None
-  )
+  // Test scope consistency
+  assert_eq(scope1.name, scope2.name)
+  assert_eq(scope1.version, scope2.version)
+  assert_eq(scope1.schema_url, scope2.schema_url)
   
-  // Test temporal ordering
-  assert_eq(LogRecord::body(record_a), Some("Service A event"))
-  assert_eq(LogRecord::body(record_b), Some("Service B event"))
-  assert_eq(LogRecord::body(record_c), Some("Service C event"))
+  // Test scope differences
+  assert_true(scope1.name != scope3.name)
+  assert_true(scope1.version != scope3.version)
+  assert_true(scope1.schema_url != scope3.schema_url)
+}
+
+test "cross-service telemetry consistency" {
+  // Simulate cross-service telemetry scenario
   
-  assert_true(true) // Timestamps should be reasonable
+  // Service A: Create span context
+  let trace_id = "trace-cross-service-123"
+  let service_a_span_id = "span-service-a-456"
+  let span_ctx_a = SpanContext::new(trace_id, service_a_span_id, true, "service=a")
+  
+  // Service A: Create tracer and span
+  let provider_a = TracerProvider::default()
+  let tracer_a = TracerProvider::get_tracer(provider_a, "service-a")
+  let span_a = Tracer::start_span(tracer_a, "service-a-operation")
+  
+  // Service B: Propagate trace context
+  let service_b_span_id = "span-service-b-789"
+  let span_ctx_b = SpanContext::new(trace_id, service_b_span_id, true, "service=a,service=b")
+  
+  // Service B: Create tracer and span
+  let provider_b = TracerProvider::default()
+  let tracer_b = TracerProvider::get_tracer(provider_b, "service-b")
+  let span_b = Tracer::start_span(tracer_b, "service-b-operation")
+  
+  // Verify trace consistency
+  assert_eq(SpanContext::trace_id(span_ctx_a), SpanContext::trace_id(span_ctx_b))
+  assert_true(SpanContext::trace_id(span_ctx_a) == trace_id)
+  
+  // Verify different span IDs
+  assert_true(SpanContext::span_id(span_ctx_a) != SpanContext::span_id(span_ctx_b))
+  
+  // Verify sampling consistency
+  assert_eq(SpanContext::is_sampled(span_ctx_a), SpanContext::is_sampled(span_ctx_b))
+  
+  // Verify span names
+  assert_eq(Span::name(span_a), "service-a-operation")
+  assert_eq(Span::name(span_b), "service-b-operation")
+  
+  // Cross-service scenario should maintain consistency
+  assert_true(true, "Cross-service telemetry consistency should be maintained")
 }

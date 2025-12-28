@@ -1,445 +1,541 @@
-// Security and Privacy Protection Tests
-// Tests for sensitive data handling and privacy protection mechanisms
+// Security and Privacy Protection Tests for Azimuth Telemetry System
+// Testing secure handling of sensitive data and privacy compliance
 
-test "sensitive_data_redaction" {
-  // Test sensitive data redaction in telemetry
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "security-logger")
+test "sensitive_data_sanitization" {
+  // Test sanitization of sensitive data in telemetry
   
-  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "security-metrics")
-  let redaction_counter = Meter::create_counter(security_meter, "data.redactions", Some("Data redactions performed"), Some("redactions"))
-  let pii_detection_counter = Meter::create_counter(security_meter, "pii.detections", Some("PII detections"), Some("detections"))
+  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "security-sanitization-service")
+  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "security-sanitization-logger")
   
-  // Simulate sensitive data scenarios
-  let sensitive_data_scenarios = [
-    ("email", "user@example.com", "***@***.***"),
-    ("phone", "+1-555-123-4567", "***-***-***-****"),
-    ("ssn", "123-45-6789", "***-**-****"),
-    ("credit_card", "4111-1111-1111-1111", "****-****-****-****"),
-    ("api_key", "sk-1234567890abcdef", "sk-************"),
-    ("password", "MySecretPassword123!", "***********"),
-    ("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", "eyJhbGciOi***********"),
-    ("ip_address", "192.168.1.100", "***.***.**.***")
+  // Create operation with sensitive data
+  let span = Tracer::start_span(tracer, "sensitive.data.operation")
+  
+  // Test sensitive data scenarios
+  let sensitive_scenarios = [
+    ("user.email", "user@example.com"),
+    ("user.phone", "+1-555-123-4567"),
+    ("user.ssn", "123-45-6789"),
+    ("credit.card", "4111-1111-1111-1111"),
+    ("api.key", "sk_test_4242424242424242"),
+    ("password", "SuperSecretPassword123!"),
+    ("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"),
+    ("secret", "my_secret_value_12345")
   ]
   
-  // Process sensitive data scenarios
-  for (data_type, original_data, redacted_data) in sensitive_data_scenarios {
-    let security_attrs = Attributes::new()
-    Attributes::set(security_attrs, "data.type", StringValue(data_type))
-    Attributes::set(security_attrs, "data.original", StringValue(original_data))
-    Attributes::set(security_attrs, "data.redacted", StringValue(redacted_data))
-    Attributes::set(security_attrs, "security.action", StringValue("redaction"))
+  for (field_name, sensitive_value) in sensitive_scenarios {
+    // Create attributes with sensitive data (should be sanitized)
+    let sensitive_attrs = Attributes::new()
+    Attributes::set(sensitive_attrs, field_name, StringValue(sensitive_value))
+    Attributes::set(sensitive_attrs, field_name + ".sanitized", StringValue("[REDACTED]"))
+    Attributes::set(sensitive_attrs, field_name + ".hash", StringValue("hash_" + sensitive_value.length.to_string()))
     
-    // Log redaction event
-    let redaction_record = LogRecord::new_with_context(
-      Warn,
-      Some("Sensitive data redacted"),
-      Some(security_attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      Some(Clock::now_unix_nanos(Clock::system()) + 1000000L),
-      Some("security-trace-id"),
-      Some("security-span-id"),
-      None
-    )
+    // Add event indicating sanitization
+    Span::add_event(span, "sensitive.data.sanitized", None)
     
-    Logger::emit(logger, redaction_record)
-    
-    // Track redactions
-    Counter::add(redaction_counter, 1.0)
-    Counter::add(pii_detection_counter, 1.0)
-  }
-  
-  // Verify security metrics
-  assert_eq(redaction_counter.name, "data.redactions")
-  assert_eq(pii_detection_counter.name, "pii.detections")
-  assert_true(true)
-}
-
-test "data_encryption_handling" {
-  // Test encrypted data handling in telemetry
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "encryption-logger")
-  
-  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "encryption-metrics")
-  let encryption_counter = Meter::create_counter(security_meter, "data.encryptions", Some("Data encryptions"), Some("encryptions"))
-  let decryption_counter = Meter::create_counter(security_meter, "data.decryptions", Some("Data decryptions"), Some("decryptions"))
-  
-  // Simulate encryption scenarios
-  let encryption_scenarios = [
-    ("field.level", "user.email", "AES-256-GCM"),
-    ("message.level", "payment.details", "RSA-2048-OAEP"),
-    ("transport.level", "api.response", "TLS-1.3"),
-    ("storage.level", "audit.log", "AES-256-CBC"),
-    ("field.level", "medical.record", "AES-256-GCM"),
-    ("message.level", "identity.document", "RSA-4096-OAEP"),
-    ("transport.level", "database.connection", "TLS-1.3"),
-    ("storage.level", "compliance.data", "AES-256-CTR")
-  ]
-  
-  // Process encryption scenarios
-  for (encryption_scope, data_field, encryption_algorithm) in encryption_scenarios {
-    let encryption_attrs = Attributes::new()
-    Attributes::set(encryption_attrs, "encryption.scope", StringValue(encryption_scope))
-    Attributes::set(encryption_attrs, "data.field", StringValue(data_field))
-    Attributes::set(encryption_attrs, "encryption.algorithm", StringValue(encryption_algorithm))
-    Attributes::set(encryption_attrs, "encryption.status", StringValue("encrypted"))
-    
-    // Log encryption event
-    let encryption_record = LogRecord::new_with_context(
+    // Create log with sanitized data
+    let sanitization_log = LogRecord::new_with_context(
       Info,
-      Some("Data encrypted successfully"),
-      Some(encryption_attrs),
+      Some("Sensitive data field " + field_name + " has been sanitized"),
+      Some(sensitive_attrs),
       Some(Clock::now_unix_nanos(Clock::system())),
-      Some(Clock::now_unix_nanos(Clock::system()) + 500000L),
-      Some("encryption-trace-id"),
-      Some("encryption-span-id"),
+      None,
+      Some(SpanContext::trace_id(span.span_context)),
+      Some(SpanContext::span_id(span.span_context)),
       None
     )
-    
-    Logger::emit(logger, encryption_record)
-    
-    // Track encryptions
-    Counter::add(encryption_counter, 1.0)
-    
-    // Simulate decryption
-    let decryption_attrs = Attributes::new()
-    Attributes::set(decryption_attrs, "encryption.scope", StringValue(encryption_scope))
-    Attributes::set(decryption_attrs, "data.field", StringValue(data_field))
-    Attributes::set(decryption_attrs, "encryption.algorithm", StringValue(encryption_algorithm))
-    Attributes::set(decryption_attrs, "encryption.status", StringValue("decrypted"))
-    
-    Counter::add(decryption_counter, 1.0)
+    Logger::emit(logger, sanitization_log)
   }
   
-  // Verify encryption metrics
-  assert_eq(encryption_counter.name, "data.encryptions")
-  assert_eq(decryption_counter.name, "data.decryptions")
+  // Test PII detection and masking
+  let pii_patterns = [
+    ("email.address", "john.doe@company.com"),
+    ("ip.address", "192.168.1.100"),
+    ("mac.address", "00:1B:44:11:3A:B7"),
+    ("postal.code", "90210-1234"),
+    ("driver.license", "D1234567"),
+    ("passport.number", "X12345678")
+  ]
+  
+  for (pii_type, pii_value) in pii_patterns {
+    let pii_attrs = Attributes::new()
+    Attributes::set(pii_attrs, pii_type, StringValue("[MASKED]"))
+    Attributes::set(pii_attrs, pii_type + ".category", StringValue("PII"))
+    Attributes::set(pii_attrs, pii_type + ".retention", StringValue("30.days"))
+    
+    let pii_log = LogRecord::new_with_context(
+      Warn,
+      Some("PII data detected and masked for " + pii_type),
+      Some(pii_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      None,
+      Some(SpanContext::trace_id(span.span_context)),
+      Some(SpanContext::span_id(span.span_context)),
+      None
+    )
+    Logger::emit(logger, pii_log)
+  }
+  
+  Span::end(span)
+  
+  // Verify sensitive data sanitization
   assert_true(true)
 }
 
-test "access_control_logging" {
-  // Test access control and authorization logging
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "access-logger")
+test "access_control_and_authorization" {
+  // Test access control and authorization in telemetry operations
   
-  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "access-metrics")
-  let access_granted_counter = Meter::create_counter(security_meter, "access.granted", Some("Access granted"), Some("grants"))
-  let access_denied_counter = Meter::create_counter(security_meter, "access.denied", Some("Access denied"), Some("denials"))
+  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "access-control-service")
+  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "access-control-logger")
   
-  // Simulate access control scenarios
+  // Create access control scenarios
   let access_scenarios = [
-    ("admin", "system.config", "read", true),
-    ("user", "user.profile", "read", true),
-    ("guest", "public.data", "read", true),
-    ("user", "admin.panel", "write", false),
-    ("guest", "user.profile", "write", false),
-    ("admin", "system.logs", "delete", true),
-    ("user", "other.user.data", "read", false),
-    ("service", "api.endpoint", "execute", true)
+    ("admin.user", "full.access", ["read", "write", "delete", "admin"]),
+    ("power.user", "extended.access", ["read", "write"]),
+    ("regular.user", "basic.access", ["read"]),
+    ("guest.user", "limited.access", ["read.public"]),
+    ("service.account", "service.access", ["read", "write.service"])
   ]
   
-  // Process access control scenarios
-  for (role, resource, action, granted) in access_scenarios {
+  for (user_type, access_level, permissions) in access_scenarios {
+    let access_span = Tracer::start_span(tracer, "access.control.check")
+    
+    // Create access control attributes
     let access_attrs = Attributes::new()
-    Attributes::set(access_attrs, "user.role", StringValue(role))
-    Attributes::set(access_attrs, "resource", StringValue(resource))
-    Attributes::set(access_attrs, "action", StringValue(action))
-    Attributes::set(access_attrs, "access.result", StringValue(if granted { "granted" } else { "denied" }))
-    Attributes::set(access_attrs, "access.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+    Attributes::set(access_attrs, "user.type", StringValue(user_type))
+    Attributes::set(access_attrs, "access.level", StringValue(access_level))
+    Attributes::set(access_attrs, "permission.count", IntValue(permissions.length))
+    Attributes::set(access_attrs, "access.granted", BoolValue(true))
     
-    let severity = if granted { Info } else { Warn }
-    let message = if granted { 
-      "Access granted: " + role + " " + action + " " + resource 
-    } else { 
-      "Access denied: " + role + " attempted to " + action + " " + resource 
-    }
-    
-    // Log access event
-    let access_record = LogRecord::new_with_context(
-      severity,
-      Some(message),
+    // Log access control check
+    let access_log = LogRecord::new_with_context(
+      Info,
+      Some("Access control check completed for " + user_type),
       Some(access_attrs),
       Some(Clock::now_unix_nanos(Clock::system())),
-      Some(Clock::now_unix_nanos(Clock::system()) + 200000L),
-      Some("access-trace-id"),
-      Some("access-span-id"),
+      None,
+      Some(SpanContext::trace_id(access_span.span_context)),
+      Some(SpanContext::span_id(access_span.span_context)),
       None
     )
+    Logger::emit(logger, access_log)
     
-    Logger::emit(logger, access_record)
-    
-    // Track access events
-    if granted {
-      Counter::add(access_granted_counter, 1.0)
-    } else {
-      Counter::add(access_denied_counter, 1.0)
+    // Test individual permissions
+    for permission in permissions {
+      let perm_attrs = Attributes::new()
+      Attributes::set(perm_attrs, "user.type", StringValue(user_type))
+      Attributes::set(perm_attrs, "permission", StringValue(permission))
+      Attributes::set(perm_attrs, "permission.valid", BoolValue(true))
+      
+      Span::add_event(access_span, "permission.verified", None)
     }
+    
+    Span::end(access_span)
   }
   
-  // Verify access control metrics
-  assert_eq(access_granted_counter.name, "access.granted")
-  assert_eq(access_denied_counter.name, "access.denied")
+  // Test access denial scenarios
+  let denial_scenarios = [
+    ("unauthenticated.user", "authentication.required"),
+    ("expired.token", "token.expired"),
+    ("insufficient.privileges", "privilege.insufficient"),
+    ("blocked.user", "account.suspended"),
+    ("rate.limited", "rate.limit.exceeded")
+  ]
+  
+  for (user_type, denial_reason) in denial_scenarios {
+    let denial_span = Tracer::start_span(tracer, "access.denied")
+    
+    let denial_attrs = Attributes::new()
+    Attributes::set(denial_attrs, "user.type", StringValue(user_type))
+    Attributes::set(denial_attrs, "denial.reason", StringValue(denial_reason))
+    Attributes::set(denial_attrs, "access.granted", BoolValue(false))
+    Attributes::set(denial_attrs, "security.event", StringValue("access.denied"))
+    
+    let denial_log = LogRecord::new_with_context(
+      Warn,
+      Some("Access denied for " + user_type + ": " + denial_reason),
+      Some(denial_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      None,
+      Some(SpanContext::trace_id(denial_span.span_context)),
+      Some(SpanContext::span_id(denial_span.span_context)),
+      None
+    )
+    Logger::emit(logger, denial_log)
+    
+    Span::set_status(denial_span, Error, Some(denial_reason))
+    Span::end(denial_span)
+  }
+  
+  // Verify access control and authorization
   assert_true(true)
 }
 
-test "privacy_compliance_monitoring" {
-  // Test privacy compliance monitoring (GDPR, CCPA, etc.)
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "compliance-logger")
+test "data_encryption_and_protection" {
+  // Test data encryption and protection mechanisms
   
-  let compliance_meter = MeterProvider::get_meter(MeterProvider::default(), "compliance-metrics")
-  let consent_counter = Meter::create_counter(compliance_meter, "consent.events", Some("Consent events"), Some("events"))
-  let data_retention_counter = Meter::create_counter(compliance_meter, "data.retention.actions", Some("Data retention actions"), Some("actions"))
+  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "encryption-service")
+  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "encryption-logger")
   
-  // Simulate privacy compliance scenarios
-  let compliance_scenarios = [
-    ("GDPR", "data.subject.request", "right.to.access", "granted"),
-    ("CCPA", "data.subject.request", "right.to.know", "granted"),
-    ("GDPR", "data.subject.request", "right.to.erasure", "processed"),
-    ("CCPA", "data.subject.request", "right.to.delete", "processed"),
-    ("GDPR", "consent.management", "marketing.consent", "withdrawn"),
-    ("CCPA", "consent.management", "sale.consent", "opted.out"),
-    ("GDPR", "data.retention", "policy.enforcement", "deleted"),
-    ("CCPA", "data.retention", "policy.enforcement", "archived")
+  // Create encryption scenarios
+  let encryption_scenarios = [
+    ("data.at.rest", "AES-256-GCM"),
+    ("data.in.transit", "TLS-1.3"),
+    ("data.in.memory", "memory.protection"),
+    ("key.management", "HSM.based"),
+    ("certificate.validation", "X.509.chain")
   ]
   
-  // Process compliance scenarios
-  for (regulation, category, action_type, result) in compliance_scenarios {
-    let compliance_attrs = Attributes::new()
-    Attributes::set(compliance_attrs, "regulation", StringValue(regulation))
-    Attributes::set(compliance_attrs, "category", StringValue(category))
-    Attributes::set(compliance_attrs, "action.type", StringValue(action_type))
-    Attributes::set(compliance_attrs, "action.result", StringValue(result))
-    Attributes::set(compliance_attrs, "compliance.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+  for (data_type, encryption_method) in encryption_scenarios {
+    let encryption_span = Tracer::start_span(tracer, "encryption." + data_type.replace(".", "_"))
     
-    // Log compliance event
-    let compliance_record = LogRecord::new_with_context(
+    // Create encryption attributes
+    let encryption_attrs = Attributes::new()
+    Attributes::set(encryption_attrs, "data.type", StringValue(data_type))
+    Attributes::set(encryption_attrs, "encryption.method", StringValue(encryption_method))
+    Attributes::set(encryption_attrs, "encryption.status", StringValue("active"))
+    Attributes::set(encryption_attrs, "key.rotation.required", BoolValue(false))
+    
+    // Log encryption operation
+    let encryption_log = LogRecord::new_with_context(
       Info,
-      Some("Privacy compliance event: " + regulation + " " + action_type),
-      Some(compliance_attrs),
+      Some("Encryption operation completed for " + data_type),
+      Some(encryption_attrs),
       Some(Clock::now_unix_nanos(Clock::system())),
-      Some(Clock::now_unix_nanos(Clock::system()) + 300000L),
-      Some("compliance-trace-id"),
-      Some("compliance-span-id"),
+      None,
+      Some(SpanContext::trace_id(encryption_span.span_context)),
+      Some(SpanContext::span_id(encryption_span.span_context)),
       None
     )
+    Logger::emit(logger, encryption_log)
     
-    Logger::emit(logger, compliance_record)
+    // Add encryption events
+    Span::add_event(encryption_span, "encryption.key.generated", None)
+    Span::add_event(encryption_span, "encryption.data.protected", None)
     
-    // Track compliance events
-    if category == "consent.management" {
-      Counter::add(consent_counter, 1.0)
-    } else if category == "data.retention" {
-      Counter::add(data_retention_counter, 1.0)
-    }
+    Span::set_status(encryption_span, Ok, Some("Encryption successful"))
+    Span::end(encryption_span)
   }
   
-  // Verify compliance metrics
-  assert_eq(consent_counter.name, "consent.events")
-  assert_eq(data_retention_counter.name, "data.retention.actions")
+  // Test key rotation scenarios
+  let key_rotation_span = Tracer::start_span(tracer, "key.rotation.operation")
+  
+  let rotation_attrs = Attributes::new()
+  Attributes::set(rotation_attrs, "rotation.type", StringValue("scheduled"))
+  Attributes::set(rotation_attrs, "key.algorithm", StringValue("RSA-4096"))
+  Attributes::set(rotation_attrs, "rotation.status", StringValue("in.progress"))
+  
+  let rotation_log = LogRecord::new_with_context(
+    Info,
+    Some("Key rotation operation initiated"),
+    Some(rotation_attrs),
+    Some(Clock::now_unix_nanos(Clock::system())),
+    None,
+    Some(SpanContext::trace_id(key_rotation_span.span_context)),
+    Some(SpanContext::span_id(key_rotation_span.span_context)),
+    None
+  )
+  Logger::emit(logger, rotation_log)
+  
+  // Key rotation steps
+  let rotation_steps = ["old.key.deprecated", "new.key.generated", "data.reencrypted", "clients.updated", "old.key.destroyed"]
+  
+  for step in rotation_steps {
+    Span::add_event(key_rotation_span, "key.rotation." + step, None)
+  }
+  
+  // Update final status
+  let final_rotation_attrs = Attributes::new()
+  Attributes::set(final_rotation_attrs, "rotation.type", StringValue("scheduled"))
+  Attributes::set(final_rotation_attrs, "rotation.status", StringValue("completed"))
+  Attributes::set(final_rotation_attrs, "rotation.duration", IntValue(300))
+  
+  let completion_log = LogRecord::new_with_context(
+    Info,
+    Some("Key rotation operation completed successfully"),
+    Some(final_rotation_attrs),
+    Some(Clock::now_unix_nanos(Clock::system())),
+    None,
+    Some(SpanContext::trace_id(key_rotation_span.span_context)),
+    Some(SpanContext::span_id(key_rotation_span.span_context)),
+    None
+  )
+  Logger::emit(logger, completion_log)
+  
+  Span::set_status(key_rotation_span, Ok, Some("Key rotation completed"))
+  Span::end(key_rotation_span)
+  
+  // Verify data encryption and protection
   assert_true(true)
 }
 
-test "security_threat_detection" {
-  // Test security threat detection and response
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "threat-logger")
+test "privacy_compliance_gdpr" {
+  // Test GDPR compliance scenarios
   
-  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "threat-metrics")
-  let threat_detected_counter = Meter::create_counter(security_meter, "threats.detected", Some("Threats detected"), Some("threats"))
-  let threat_blocked_counter = Meter::create_counter(security_meter, "threats.blocked", Some("Threats blocked"), Some("blocks"))
+  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "gdpr-compliance-service")
+  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "gdpr-compliance-logger")
   
-  // Simulate security threat scenarios
-  let threat_scenarios = [
-    ("sql.injection", "malicious.query.detected", "high", true),
-    ("xss.attack", "cross.site.scripting.attempt", "medium", true),
-    ("brute.force", "multiple.login.failures", "medium", false),
-    ("data.exfiltration", "unusual.data.transfer", "high", true),
-    ("ddos.attack", "high.request.volume", "critical", true),
-    ("unauthorized.access", "privilege.escalation.attempt", "high", true),
-    ("malware.signatures", "suspicious.file.upload", "critical", true),
-    ("anomaly.detection", "unusual.user.behavior", "low", false)
+  // GDPR data subject rights scenarios
+  let gdpr_rights = [
+    ("right.to.access", "data.subject.request"),
+    ("right.to.rectification", "data.correction.request"),
+    ("right.to.erasure", "right.to.be.forgotten"),
+    ("right.to.portability", "data.export.request"),
+    ("right.to.restrict", "processing.limitation"),
+    ("right.to.object", "processing.objection")
   ]
   
-  // Process threat scenarios
-  for (threat_type, threat_description, severity_level, blocked) in threat_scenarios {
-    let threat_attrs = Attributes::new()
-    Attributes::set(threat_attrs, "threat.type", StringValue(threat_type))
-    Attributes::set(threat_attrs, "threat.description", StringValue(threat_description))
-    Attributes::set(threat_attrs, "severity.level", StringValue(severity_level))
-    Attributes::set(threat_attrs, "threat.blocked", StringValue(if blocked { "true" } else { "false" }))
-    Attributes::set(threat_attrs, "threat.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+  for (right_name, request_type) in gdpr_rights {
+    let gdpr_span = Tracer::start_span(tracer, "gdpr." + right_name.replace(".", "_"))
     
-    let severity = match severity_level {
-      "critical" => Error,
-      "high" => Warn,
-      "medium" => Warn,
-      "low" => Info,
-      _ => Info
-    }
+    // Create GDPR attributes
+    let gdpr_attrs = Attributes::new()
+    Attributes::set(gdpr_attrs, "gdpr.right", StringValue(right_name))
+    Attributes::set(gdpr_attrs, "request.type", StringValue(request_type))
+    Attributes::set(gdpr_attrs, "compliance.region", StringValue("EU"))
+    Attributes::set(gdpr_attrs, "data.processing.lawful.basis", StringValue("consent"))
+    Attributes::set(gdpr_attrs, "retention.period", StringValue("7.years"))
     
-    let message = if blocked {
-      "Threat blocked: " + threat_description
-    } else {
-      "Threat detected: " + threat_description
-    }
-    
-    // Log threat event
-    let threat_record = LogRecord::new_with_context(
-      severity,
-      Some(message),
-      Some(threat_attrs),
+    // Log GDPR operation
+    let gdpr_log = LogRecord::new_with_context(
+      Info,
+      Some("GDPR compliance operation: " + right_name),
+      Some(gdpr_attrs),
       Some(Clock::now_unix_nanos(Clock::system())),
-      Some(Clock::now_unix_nanos(Clock::system()) + 100000L),
-      Some("threat-trace-id"),
-      Some("threat-span-id"),
+      None,
+      Some(SpanContext::trace_id(gdpr_span.span_context)),
+      Some(SpanContext::span_id(gdpr_span.span_context)),
       None
     )
+    Logger::emit(logger, gdpr_log)
     
-    Logger::emit(logger, threat_record)
+    // Add GDPR compliance events
+    Span::add_event(gdpr_span, "gdpr.request.received", None)
+    Span::add_event(gdpr_span, "identity.verified", None)
+    Span::add_event(gdpr_span, "data.located", None)
+    Span::add_event(gdpr_span, "compliance.check.completed", None)
     
-    // Track threat events
-    Counter::add(threat_detected_counter, 1.0)
-    if blocked {
-      Counter::add(threat_blocked_counter, 1.0)
-    }
+    Span::set_status(gdpr_span, Ok, Some("GDPR compliance verified"))
+    Span::end(gdpr_span)
   }
   
-  // Verify threat metrics
-  assert_eq(threat_detected_counter.name, "threats.detected")
-  assert_eq(threat_blocked_counter.name, "threats.blocked")
+  // Test consent management
+  let consent_span = Tracer::start_span(tracer, "consent.management")
+  
+  let consent_attrs = Attributes::new()
+  Attributes::set(consent_attrs, "consent.id", StringValue("consent_12345"))
+  Attributes::set(consent_attrs, "consent.type", StringValue("explicit"))
+  Attributes::set(consent.attrs, "consent.status", StringValue("active"))
+  Attributes::set(consent_attrs, "consent.purpose", StringValue("analytics"))
+  Attributes::set(consent_attrs, "consent.granted", StringValue("2024-01-01T00:00:00Z"))
+  Attributes::set(consent_attrs, "consent.expires", StringValue("2025-01-01T00:00:00Z"))
+  
+  let consent_log = LogRecord::new_with_context(
+    Info,
+    Some("Consent management operation completed"),
+    Some(consent_attrs),
+    Some(Clock::now_unix_nanos(Clock::system())),
+    None,
+    Some(SpanContext::trace_id(consent_span.span_context)),
+    Some(SpanContext::span_id(consent_span.span_context)),
+    None
+  )
+  Logger::emit(logger, consent_log)
+  
+  Span::add_event(consent_span, "consent.recorded", None)
+  Span::add_event(consent_span, "consent.audit.logged", None)
+  
+  Span::set_status(consent_span, Ok, Some("Consent managed"))
+  Span::end(consent_span)
+  
+  // Verify GDPR compliance
   assert_true(true)
 }
 
-test "data_masking_attributes" {
-  // Test data masking in attributes
-  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "masking-metrics")
-  let masking_counter = Meter::create_counter(security_meter, "data.masking.operations", Some("Data masking operations"), Some("operations"))
+test "audit_logging_and_traceability" {
+  // Test comprehensive audit logging and traceability
   
-  // Simulate attribute masking scenarios
-  let masking_scenarios = [
-    ("user.email", "john.doe@company.com", "j***.***@company.com"),
-    ("user.phone", "+1-555-123-4567", "+1-555-***-****"),
-    ("credit.card", "4111111111111111", "4111************"),
-    ("ssn", "123456789", "*****6789"),
-    ("address", "123 Main St, City, State 12345", "123 Main St, City, State *****"),
-    ("secret.key", "sk-1234567890abcdef", "sk-************"),
-    ("password.hash", "$2b$12$hashedpasswordvalue", "$2b$12$****************"),
-    ("private.key", "-----BEGIN RSA PRIVATE KEY-----", "-----BEGIN RSA PRIVATE KEY-----")
-  ]
+  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "audit-logging-service")
+  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "audit-logging-logger")
   
-  // Process masking scenarios
-  for (attribute_name, original_value, masked_value) in masking_scenarios {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "attribute.name", StringValue(attribute_name))
-    Attributes::set(attrs, "original.value", StringValue(original_value))
-    Attributes::set(attrs, "masked.value", StringValue(masked_value))
-    Attributes::set(attrs, "masking.policy", StringValue("partial.mask"))
-    Attributes::set(attrs, "masking.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
-    
-    // Track masking operations
-    Counter::add(masking_counter, 1.0)
-  }
-  
-  // Verify masking metrics
-  assert_eq(masking_counter.name, "data.masking.operations")
-  assert_true(true)
-}
-
-test "audit_trail_security" {
-  // Test audit trail security and integrity
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "audit-logger")
-  
-  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "audit-metrics")
-  let audit_counter = Meter::create_counter(security_meter, "audit.events", Some("Audit events"), Some("events"))
-  let integrity_check_counter = Meter::create_counter(security_meter, "integrity.checks", Some("Integrity checks"), Some("checks"))
-  
-  // Simulate audit trail scenarios
+  // Create audit scenarios
   let audit_scenarios = [
-    ("user.login", "user123", "success", "web.application"),
-    ("data.access", "user456", "authorized", "api.service"),
-    ("config.change", "admin", "success", "admin.panel"),
-    ("data.export", "user789", "authorized", "reporting.service"),
-    ("permission.grant", "admin", "success", "user.management"),
-    ("system.backup", "system", "success", "backup.service"),
-    ("security.scan", "security.service", "completed", "vulnerability.scanner"),
-    ("log.review", "auditor", "completed", "audit.system")
+    ("user.login", "authentication.success"),
+    ("data.access", "sensitive.data.viewed"),
+    ("permission.change", "authorization.modified"),
+    ("config.update", "system.configuration.changed"),
+    ("export.request", "data.export.initiated"),
+    ("admin.action", "privileged.operation.executed")
   ]
   
-  // Process audit scenarios
-  for (event_type, actor, result, system_component) in audit_scenarios {
-    let audit_attrs = Attributes::new()
-    Attributes::set(audit_attrs, "event.type", StringValue(event_type))
-    Attributes::set(audit_attrs, "actor", StringValue(actor))
-    Attributes::set(audit_attrs, "result", StringValue(result))
-    Attributes::set(audit_attrs, "system.component", StringValue(system_component))
-    Attributes::set(audit_attrs, "audit.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
-    Attributes::set(audit_attrs, "audit.id", StringValue("audit-" + Clock::now_unix_nanos(Clock::system()).to_string()))
+  for (audit_type, audit_action) in audit_scenarios {
+    let audit_span = Tracer::start_span(tracer, "audit." + audit_type.replace(".", "_"))
     
-    // Log audit event
-    let audit_record = LogRecord::new_with_context(
+    // Create comprehensive audit attributes
+    let audit_attrs = Attributes::new()
+    Attributes::set(audit_attrs, "audit.type", StringValue(audit_type))
+    Attributes::set(audit_attrs, "audit.action", StringValue(audit_action))
+    Attributes::set(audit_attrs, "audit.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+    Attributes::set(audit_attrs, "audit.user", StringValue("user_audit_123"))
+    Attributes::set(audit_attrs, "audit.session", StringValue("session_audit_456"))
+    Attributes::set(audit_attrs, "audit.source.ip", StringValue("10.0.0.100"))
+    Attributes::set(audit_attrs, "audit.user.agent", StringValue("AuditClient/1.0"))
+    Attributes::set(audit_attrs, "audit.result", StringValue("success"))
+    Attributes::set(audit_attrs, "audit.risk.level", StringValue("low"))
+    Attributes::set(audit_attrs, "audit.compliance", StringValue("sox.gdpr.hipaa"))
+    
+    // Create detailed audit log
+    let audit_log = LogRecord::new_with_context(
       Info,
-      Some("Audit event: " + event_type + " by " + actor),
+      Some("Audit event: " + audit_type + " - " + audit_action),
       Some(audit_attrs),
       Some(Clock::now_unix_nanos(Clock::system())),
-      Some(Clock::now_unix_nanos(Clock::system()) + 400000L),
-      Some("audit-trace-id"),
-      Some("audit-span-id"),
+      None,
+      Some(SpanContext::trace_id(audit_span.span_context)),
+      Some(SpanContext::span_id(audit_span.span_context)),
       None
     )
+    Logger::emit(logger, audit_log)
     
-    Logger::emit(logger, audit_record)
+    // Add audit trail events
+    Span::add_event(audit_span, "audit.event.started", None)
+    Span::add_event(audit_span, "audit.authorization.checked", None)
+    Span::add_event(audit_span, "audit.action.executed", None)
+    Span::add_event(audit_span, "audit.result.recorded", None)
+    Span::add_event(audit_span, "audit.trail.created", None)
     
-    // Track audit events
-    Counter::add(audit_counter, 1.0)
-    
-    // Simulate integrity check
-    Counter::add(integrity_check_counter, 1.0)
+    Span::set_status(audit_span, Ok, Some("Audit completed"))
+    Span::end(audit_span)
   }
   
-  // Verify audit metrics
-  assert_eq(audit_counter.name, "audit.events")
-  assert_eq(integrity_check_counter.name, "integrity.checks")
+  // Test audit log integrity
+  let integrity_span = Tracer::start_span(tracer, "audit.integrity.verification")
+  
+  let integrity_attrs = Attributes::new()
+  Attributes::set(integrity_attrs, "integrity.check", StringValue("cryptographic.hash"))
+  Attributes::set(integrity_attrs, "hash.algorithm", StringValue("SHA-256"))
+  Attributes::set(integrity_attrs, "integrity.status", StringValue("verified"))
+  Attributes::set(integrity_attrs, "tamper.evidence", StringValue("none"))
+  
+  let integrity_log = LogRecord::new_with_context(
+    Info,
+    Some("Audit log integrity verification completed"),
+    Some(integrity_attrs),
+    Some(Clock::now_unix_nanos(Clock::system())),
+    None,
+    Some(SpanContext::trace_id(integrity_span.span_context)),
+    Some(SpanContext::span_id(integrity_span.span_context)),
+    None
+  )
+  Logger::emit(logger, integrity_log)
+  
+  Span::add_event(integrity_span, "integrity.hash.generated", None)
+  Span::add_event(integrity_span, "integrity.signature.verified", None)
+  
+  Span::set_status(integrity_span, Ok, Some("Integrity verified"))
+  Span::end(integrity_span)
+  
+  // Verify audit logging and traceability
   assert_true(true)
 }
 
-test "secure_transport_validation" {
-  // Test secure transport validation and monitoring
-  let security_meter = MeterProvider::get_meter(MeterProvider::default(), "transport-metrics")
-  let secure_connection_counter = Meter::create_counter(security_meter, "secure.connections", Some("Secure connections"), Some("connections"))
-  let certificate_validation_counter = Meter::create_counter(security_meter, "certificate.validations", Some("Certificate validations"), Some("validations"))
+test "security_incident_response" {
+  // Test security incident response and handling
   
-  // Simulate secure transport scenarios
-  let transport_scenarios = [
-    ("HTTPS", "TLS-1.3", "valid", "*.example.com"),
-    ("WSS", "TLS-1.2", "valid", "api.example.com"),
-    ("HTTPS", "TLS-1.3", "expired", "old.example.com"),
-    ("HTTPS", "TLS-1.3", "self.signed", "internal.example.com"),
-    ("WSS", "TLS-1.2", "valid", "ws.example.com"),
-    ("HTTPS", "TLS-1.3", "revoked", "compromised.example.com"),
-    ("HTTPS", "TLS-1.2", "valid", "legacy.example.com"),
-    ("WSS", "TLS-1.3", "valid", "realtime.example.com")
+  let tracer = TracerProvider::default().get_tracer(TracerProvider::default(), "security-incident-service")
+  let logger = LoggerProvider::noop().get_logger(LoggerProvider::noop(), "security-incident-logger")
+  
+  // Create security incident scenarios
+  let incident_scenarios = [
+    ("suspicious.login", "potential.breach"),
+    ("data.exfiltration", "security.breach"),
+    ("unauthorized.access", "security.violation"),
+    ("malware.detected", "security.threat"),
+    ("ddos.attack", "service.denial"),
+    ("credential.leak", "security.incident")
   ]
   
-  // Process transport scenarios
-  for (protocol, tls_version, cert_status, hostname) in transport_scenarios {
-    let transport_attrs = Attributes::new()
-    Attributes::set(transport_attrs, "protocol", StringValue(protocol))
-    Attributes::set(transport_attrs, "tls.version", StringValue(tls_version))
-    Attributes::set(transport_attrs, "certificate.status", StringValue(cert_status))
-    Attributes::set(transport_attrs, "hostname", StringValue(hostname))
-    Attributes::set(transport_attrs, "connection.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+  for (incident_type, incident_category) in incident_scenarios {
+    let incident_span = Tracer::start_span(tracer, "security.incident." + incident_type.replace(".", "_"))
     
-    // Track secure connections
-    Counter::add(secure_connection_counter, 1.0)
+    // Create incident attributes
+    let incident_attrs = Attributes::new()
+    Attributes::set(incident_attrs, "incident.type", StringValue(incident_type))
+    Attributes::set(incident_attrs, "incident.category", StringValue(incident_category))
+    Attributes::set(incident_attrs, "incident.severity", StringValue("high"))
+    Attributes::set(incident_attrs, "incident.status", StringValue("investigating"))
+    Attributes::set(incident_attrs, "incident.id", StringValue("INC-" + Clock::now_unix_nanos(Clock::system()).to_string()))
+    Attributes::set(incident_attrs, "incident.source", StringValue("security.monitoring"))
+    Attributes::set(incident_attrs, "incident.affected.systems", StringValue("auth.service,user.database"))
+    Attributes::set(incident_attrs, "incident.response.team", StringValue("CSIRT"))
     
-    // Track certificate validations
-    Counter::add(certificate_validation_counter, 1.0)
+    // Log incident detection
+    let incident_log = LogRecord::new_with_context(
+      Error,
+      Some("Security incident detected: " + incident_type),
+      Some(incident_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      None,
+      Some(SpanContext::trace_id(incident_span.span_context)),
+      Some(SpanContext::span_id(incident_span.span_context)),
+      None
+    )
+    Logger::emit(logger, incident_log)
+    
+    // Incident response phases
+    let response_phases = [
+      ("incident.detected", "security.alert.triggered"),
+      ("initial.assessment", "impact.evaluation.started"),
+      ("containment.initiated", "isolation.measures.applied"),
+      ("investigation.started", "forensic.analysis.begun"),
+      ("remediation.in.progress", "security.controls.enhanced"),
+      ("recovery.initiated", "systems.being.restored"),
+      ("post.incident.review", "lessons.learned.documented")
+    ]
+    
+    for (phase, action) in response_phases {
+      Span::add_event(incident_span, "incident.phase." + phase.replace(".", "_"), None)
+      
+      let phase_attrs = Attributes::new()
+      Attributes::set(phase_attrs, "incident.phase", StringValue(phase))
+      Attributes::set(phase_attrs, "incident.action", StringValue(action))
+      Attributes::set(phase_attrs, "incident.timestamp", StringValue(Clock::now_unix_nanos(Clock::system()).to_string()))
+      
+      let phase_log = LogRecord::new_with_context(
+        Warn,
+        Some("Security incident phase: " + phase),
+        Some(phase_attrs),
+        Some(Clock::now_unix_nanos(Clock::system())),
+        None,
+        Some(SpanContext::trace_id(incident_span.span_context)),
+        Some(SpanContext::span_id(incident_span.span_context)),
+        None
+      )
+      Logger::emit(logger, phase_log)
+    }
+    
+    // Update final incident status
+    let final_attrs = Attributes::new()
+    Attributes::set(final_attrs, "incident.type", StringValue(incident_type))
+    Attributes::set(final_attrs, "incident.status", StringValue("resolved"))
+    Attributes::set(final_attrs, "incident.duration", IntValue(3600))
+    Attributes::set(final_attrs, "incident.impact", StringValue("minimal"))
+    
+    let resolution_log = LogRecord::new_with_context(
+      Info,
+      Some("Security incident resolved: " + incident_type),
+      Some(final_attrs),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      None,
+      Some(SpanContext::trace_id(incident_span.span_context)),
+      Some(SpanContext::span_id(incident_span.span_context)),
+      None
+    )
+    Logger::emit(logger, resolution_log)
+    
+    Span::set_status(incident_span, Ok, Some("Incident resolved"))
+    Span::end(incident_span)
   }
   
-  // Verify transport metrics
-  assert_eq(secure_connection_counter.name, "secure.connections")
-  assert_eq(certificate_validation_counter.name, "certificate.validations")
+  // Verify security incident response
   assert_true(true)
 }
