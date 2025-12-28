@@ -57,6 +57,12 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "test.mbt": {
+    0: (__test_746573742e6d6274_0, ["comprehensive telemetry workflow"]),
+    1: (__test_746573742e6d6274_1, ["telemetry context propagation across multiple operations"]),
+    2: (__test_746573742e6d6274_2, ["telemetry with complex attribute scenarios"]),
+    3: (__test_746573742e6d6274_3, ["telemetry system resilience and recovery"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
