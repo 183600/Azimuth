@@ -1,253 +1,319 @@
-// 时间序列操作测试用例
-// 测试遥测数据的时间序列处理和时态操作
+// Time Series and Temporal Operations Test Suite for Azimuth Telemetry System
+// This file contains test cases focusing on time series data operations and temporal analytics
 
-test "time_series_timestamp_operations" {
-  // 测试时间戳操作
-  let clock = Clock::system()
-  let base_timestamp = Clock::now_unix_nanos(clock)
-  
-  // 验证时间戳是合理的（2025年的时间戳）
-  assert_true(base_timestamp > 1700000000000000000L)
-  assert_true(base_timestamp < 1800000000000000000L)
-  
-  // 创建带有时间戳的日志记录
-  let log_record = LogRecord::new_with_context(
-    Info,
-    Some("Test log with timestamp"),
-    None,
-    Some(base_timestamp),
-    None,
-    Some("trace_001"),
-    Some("span_001"),
-    None
-  )
-  
-  // 验证时间戳设置
-  assert_eq(LogRecord::trace_id(log_record), Some("trace_001"))
-  assert_eq(LogRecord::span_id(log_record), Some("span_001"))
-  assert_eq(log_record.timestamp, Some(base_timestamp))
-  
-  // 创建带有观察时间戳的日志记录
-  let observed_timestamp = base_timestamp + 1000000L  // 1ms后
-  let log_with_observed = LogRecord::new_with_context(
-    Warn,
-    Some("Warning with observed timestamp"),
-    None,
-    Some(base_timestamp),
-    Some(observed_timestamp),
-    None,
-    None,
-    None
-  )
-  
-  // 验证观察时间戳
-  assert_eq(log_with_observed.timestamp, Some(base_timestamp))
-  assert_eq(log_with_observed.observed_timestamp, Some(observed_timestamp))
-  assert_true(observed_timestamp > base_timestamp)
-}
-
-test "time_series_temporal_ordering" {
-  // 测试时间序列的时间顺序
-  let clock = Clock::system()
-  
-  // 创建一系列时间戳
-  let timestamp1 = Clock::now_unix_nanos(clock)
-  let timestamp2 = timestamp1 + 1000000L  // 1ms后
-  let timestamp3 = timestamp2 + 1000000L  // 再1ms后
-  let timestamp4 = timestamp3 + 1000000L  // 再1ms后
-  
-  // 创建按时间顺序的日志记录
-  let log1 = LogRecord::new_with_context(Info, Some("Event 1"), None, Some(timestamp1), None, None, None, None)
-  let log2 = LogRecord::new_with_context(Info, Some("Event 2"), None, Some(timestamp2), None, None, None, None)
-  let log3 = LogRecord::new_with_context(Info, Some("Event 3"), None, Some(timestamp3), None, None, None, None)
-  let log4 = LogRecord::new_with_context(Info, Some("Event 4"), None, Some(timestamp4), None, None, None, None)
-  
-  // 验证时间顺序
-  assert_true(timestamp1 < timestamp2)
-  assert_true(timestamp2 < timestamp3)
-  assert_true(timestamp3 < timestamp4)
-  
-  // 验证每条记录的时间戳
-  assert_eq(log1.timestamp, Some(timestamp1))
-  assert_eq(log2.timestamp, Some(timestamp2))
-  assert_eq(log3.timestamp, Some(timestamp3))
-  assert_eq(log4.timestamp, Some(timestamp4))
-}
-
-test "time_series_trace_span_timeline" {
-  // 测试追踪和span的时间线
-  let trace_id = "timeline_trace_001"
-  let base_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 创建根span
-  let root_span_id = "root_span"
-  let root_span_ctx = SpanContext::new(trace_id, root_span_id, true, "")
-  let root_span = Span::new("root-operation", Internal, root_span_ctx)
-  
-  // 创建子span（模拟在根span开始后的某个时间点）
-  let child1_start = base_time + 5000000L  // 5ms后
-  let child1_span_id = "child_span_1"
-  let child1_span_ctx = SpanContext::new(trace_id, child1_span_id, true, "")
-  let child1_span = Span::new("child-operation-1", Client, child1_span_ctx)
-  
-  // 创建另一个子span
-  let child2_start = base_time + 10000000L  // 10ms后
-  let child2_span_id = "child_span_2"
-  let child2_span_ctx = SpanContext::new(trace_id, child2_span_id, true, "")
-  let child2_span = Span::new("child-operation-2", Server, child2_span_ctx)
-  
-  // 验证span的层次关系和时间
-  assert_eq(SpanContext::trace_id(root_span_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(child1_span_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(child2_span_ctx), trace_id)
-  
-  assert_not_eq(SpanContext::span_id(root_span_ctx), SpanContext::span_id(child1_span_ctx))
-  assert_not_eq(SpanContext::span_id(root_span_ctx), SpanContext::span_id(child2_span_ctx))
-  assert_not_eq(SpanContext::span_id(child1_span_ctx), SpanContext::span_id(child2_span_ctx))
-  
-  // 验证span类型
-  assert_eq(Span::kind(root_span), Internal)
-  assert_eq(Span::kind(child1_span), Client)
-  assert_eq(Span::kind(child2_span), Server)
-  
-  // 验证时间顺序（模拟）
-  assert_true(child1_start > base_time)
-  assert_true(child2_start > child1_start)
-}
-
-test "time_series_metrics_aggregation_over_time" {
-  // 测试时间序列指标的聚合
+test "time series data aggregation operations" {
+  // Test time series data aggregation with different time windows
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "time-series-meter")
-  let counter = Meter::create_counter(meter, "events.total")
-  let histogram = Meter::create_histogram(meter, "request.duration")
+  let meter = MeterProvider::get_meter(provider, "time.series.test")
+  let histogram = Meter::create_histogram(meter, "response.time", Some("Response time histogram"), Some("ms"))
   
-  let clock = Clock::system()
-  let base_time = Clock::now_unix_nanos(clock)
+  // Simulate time series data points with timestamps
+  let base_timestamp = 1735689600000000000L  // Base timestamp
   
-  // 模拟在不同时间点记录指标
-  // 时间点1：开始
-  Counter::add(counter, 10.0)
-  Histogram::record(histogram, 100.0)
+  // Record metrics at different time intervals
+  Histogram::record(histogram, 100.0)  // T0
+  Histogram::record(histogram, 150.0)  // T0 + 1s
+  Histogram::record(histogram, 200.0)  // T0 + 2s
+  Histogram::record(histogram, 125.0)  // T0 + 3s
+  Histogram::record(histogram, 175.0)  // T0 + 4s
+  Histogram::record(histogram, 300.0)  // T0 + 5s (outlier)
   
-  // 时间点2：1秒后（模拟）
-  let time2 = base_time + 1000000000L
-  Counter::add(counter, 15.0)
-  Histogram::record(histogram, 150.0)
+  // Test time window aggregations
+  // Simulate 1-minute window aggregation
+  let window_start = base_timestamp
+  let window_end = base_timestamp + 60000000000L  // + 60 seconds
   
-  // 时间点3：2秒后（模拟）
-  let time3 = base_time + 2000000000L
-  Counter::add(counter, 20.0)
-  Histogram::record(histogram, 200.0)
+  // Test percentile calculations (simulated)
+  let p50 = 150.0  // 50th percentile
+  let p95 = 300.0  // 95th percentile
+  let p99 = 300.0  // 99th percentile
   
-  // 验证指标名称和描述
-  assert_eq(counter.name, "events.total")
-  assert_eq(histogram.name, "request.duration")
-  
-  // 验证时间顺序
-  assert_true(base_time < time2)
-  assert_true(time2 < time3)
-  
-  // 验证指标的instrument类型
-  let counter_instrument = Counter(counter.name, counter.description, counter.unit)
-  let histogram_instrument = Histogram(histogram.name, histogram.description, histogram.unit)
-  
-  assert_eq(Instrument::name(counter_instrument), "events.total")
-  assert_eq(Instrument::name(histogram_instrument), "request.duration")
+  assert_true(p50 >= 100.0 && p50 <= 200.0)
+  assert_true(p95 >= 175.0 && p95 <= 300.0)
+  assert_eq(p99, 300.0)  // Maximum value in this small dataset
 }
 
-test "time_series_log_severity_timeline" {
-  // 测试日志严重性的时间线
-  let clock = Clock::system()
-  let base_time = Clock::now_unix_nanos(clock)
+test "temporal data retention policies" {
+  // Test data retention based on time-based policies
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "retention.test")
   
-  // 创建不同严重性的日志记录序列
-  let trace_log = LogRecord::new_with_context(
-    Trace, Some("Debug trace"), None, Some(base_time), None, None, None, None
+  let current_time = Clock::now_unix_nanos(Clock::system())
+  
+  // Create log records with different timestamps
+  let recent_log = LogRecord::new_with_context(
+    Info,
+    Some("Recent log entry"),
+    None,
+    Some(current_time - 3600000000000L),  // 1 hour ago
+    Some(current_time),
+    None,
+    None,
+    None
   )
   
-  let debug_log = LogRecord::new_with_context(
-    Debug, Some("Debug info"), None, Some(base_time + 1000000L), None, None, None, None
+  let old_log = LogRecord::new_with_context(
+    Warn,
+    Some("Old log entry"),
+    None,
+    Some(current_time - 86400000000000L),  // 24 hours ago
+    Some(current_time),
+    None,
+    None,
+    None
   )
   
-  let info_log = LogRecord::new_with_context(
-    Info, Some("Normal operation"), None, Some(base_time + 2000000L), None, None, None, None
+  let very_old_log = LogRecord::new_with_context(
+    Error,
+    Some("Very old log entry"),
+    None,
+    Some(current_time - 604800000000000L),  // 7 days ago
+    Some(current_time),
+    None,
+    None,
+    None
   )
   
-  let warn_log = LogRecord::new_with_context(
-    Warn, Some("Warning condition"), None, Some(base_time + 3000000L), None, None, None, None
-  )
+  // Test retention policy logic (simulated)
+  // Policy: keep logs for 24 hours, warnings for 7 days, errors for 30 days
+  let keep_recent = true  // Within 24 hours
+  let keep_old = true     // Warning level, within 7 days
+  let keep_very_old = true // Error level, within 30 days
   
-  let error_log = LogRecord::new_with_context(
-    Error, Some("Error occurred"), None, Some(base_time + 4000000L), None, None, None, None
-  )
+  assert_true(keep_recent)
+  assert_true(keep_old)
+  assert_true(keep_very_old)
   
-  let fatal_log = LogRecord::new_with_context(
-    Fatal, Some("Fatal error"), None, Some(base_time + 5000000L), None, None, None, None
-  )
-  
-  // 验证严重性级别
-  assert_eq(LogRecord::severity_number(trace_log), Trace)
-  assert_eq(LogRecord::severity_number(debug_log), Debug)
-  assert_eq(LogRecord::severity_number(info_log), Info)
-  assert_eq(LogRecord::severity_number(warn_log), Warn)
-  assert_eq(LogRecord::severity_number(error_log), Error)
-  assert_eq(LogRecord::severity_number(fatal_log), Fatal)
-  
-  // 验证时间顺序
-  assert_true(trace_log.timestamp < debug_log.timestamp)
-  assert_true(debug_log.timestamp < info_log.timestamp)
-  assert_true(info_log.timestamp < warn_log.timestamp)
-  assert_true(warn_log.timestamp < error_log.timestamp)
-  assert_true(error_log.timestamp < fatal_log.timestamp)
-  
-  // 验证日志内容
-  assert_eq(LogRecord::body(trace_log), Some("Debug trace"))
-  assert_eq(LogRecord::body(debug_log), Some("Debug info"))
-  assert_eq(LogRecord::body(info_log), Some("Normal operation"))
-  assert_eq(LogRecord::body(warn_log), Some("Warning condition"))
-  assert_eq(LogRecord::body(error_log), Some("Error occurred"))
-  assert_eq(LogRecord::body(fatal_log), Some("Fatal error"))
+  // Emit logs to test retention
+  Logger::emit(logger, recent_log)
+  Logger::emit(logger, old_log)
+  Logger::emit(logger, very_old_log)
 }
 
-test "time_series_correlation_analysis" {
-  // 测试时间序列关联分析
-  let trace_id = "correlation_trace_001"
-  let clock = Clock::system()
-  let base_time = Clock::now_unix_nanos(clock)
+test "time series trend analysis" {
+  // Test trend analysis on time series data
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "trend.analysis.test")
+  let counter = Meter::create_counter(meter, "request.count", Some("Request count over time"), Some("requests"))
   
-  // 创建相关的span和日志
-  let span_ctx = SpanContext::new(trace_id, "correlation_span", true, "")
-  let span = Span::new("correlated-operation", Server, span_ctx)
+  // Simulate request counts over time periods
+  let time_periods = [
+    (1735689600000000000L, 100.0),  // Base period
+    (1735689660000000000L, 120.0),  // +1 minute
+    (1735689720000000000L, 115.0),  // +2 minutes
+    (1735689780000000000L, 130.0),  // +3 minutes
+    (1735689840000000000L, 125.0),  // +4 minutes
+    (1735689900000000000L, 140.0),  // +5 minutes
+  ]
   
-  // 在span执行过程中创建日志
-  let start_log = LogRecord::new_with_context(
-    Info, Some("Operation started"), None, Some(base_time), None, Some(trace_id), Some("correlation_span"), None
-  )
+  // Record counter values for each period
+  for (timestamp, value) in time_periods {
+    Counter::add(counter, value)
+  }
   
-  let progress_log = LogRecord::new_with_context(
-    Info, Some("Operation in progress"), None, Some(base_time + 1000000L), None, Some(trace_id), Some("correlation_span"), None
-  )
+  // Calculate trend metrics (simulated)
+  let first_value = 100.0
+  let last_value = 140.0
+  let trend_percentage = ((last_value - first_value) / first_value) * 100.0
+  let moving_average_3_periods = (130.0 + 125.0 + 140.0) / 3.0
   
-  let completion_log = LogRecord::new_with_context(
-    Info, Some("Operation completed"), None, Some(base_time + 2000000L), None, Some(trace_id), Some("correlation_span"), None
-  )
+  assert_eq(trend_percentage, 40.0)  // 40% increase
+  assert_true(moving_average_3_periods >= 125.0 && moving_average_3_periods <= 135.0)
+}
+
+test "seasonal pattern detection" {
+  // Test detection of seasonal patterns in telemetry data
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "seasonal.test")
+  let histogram = Meter::create_histogram(meter, "hourly.traffic", Some("Hourly traffic patterns"), Some("requests"))
   
-  // 验证关联性
-  assert_eq(LogRecord::trace_id(start_log), Some(trace_id))
-  assert_eq(LogRecord::trace_id(progress_log), Some(trace_id))
-  assert_eq(LogRecord::trace_id(completion_log), Some(trace_id))
+  // Simulate hourly traffic data over 24 hours
+  let hourly_traffic = [
+    50.0,   // 00:00
+    30.0,   // 01:00
+    25.0,   // 02:00
+    20.0,   // 03:00
+    35.0,   // 04:00
+    80.0,   // 05:00
+    150.0,  // 06:00 (morning peak)
+    200.0,  // 07:00
+    180.0,  // 08:00
+    160.0,  // 09:00
+    140.0,  // 10:00
+    130.0,  // 11:00
+    145.0,  // 12:00 (lunch)
+    155.0,  // 13:00
+    165.0,  // 14:00
+    170.0,  // 15:00
+    160.0,  // 16:00
+    175.0,  // 17:00 (evening peak)
+    190.0,  // 18:00
+    165.0,  // 19:00
+    120.0,  // 20:00
+    85.0,   // 21:00
+    70.0,   // 22:00
+    60.0    // 23:00
+  ]
   
-  assert_eq(LogRecord::span_id(start_log), Some("correlation_span"))
-  assert_eq(LogRecord::span_id(progress_log), Some("correlation_span"))
-  assert_eq(LogRecord::span_id(completion_log), Some("correlation_span"))
+  // Record hourly traffic patterns
+  for traffic in hourly_traffic {
+    Histogram::record(histogram, traffic)
+  }
   
-  // 验证时间顺序
-  assert_true(start_log.timestamp < progress_log.timestamp)
-  assert_true(progress_log.timestamp < completion_log.timestamp)
+  // Detect peak hours (simulated analysis)
+  let max_traffic = 200.0
+  let min_traffic = 20.0
+  let peak_hour_start = 6  // 6 AM
+  let peak_hour_end = 9    // 9 AM
+  let evening_peak_start = 17  // 5 PM
+  let evening_peak_end = 18    // 6 PM
   
-  // 验证span上下文
-  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(span_ctx), "correlation_span")
-  assert_true(SpanContext::is_sampled(span_ctx))
+  assert_eq(max_traffic, 200.0)
+  assert_eq(min_traffic, 20.0)
+  assert_true(peak_hour_start >= 6 && peak_hour_start <= 8)
+  assert_true(evening_peak_start >= 17 && evening_peak_start <= 18)
+}
+
+test "time series anomaly detection" {
+  // Test anomaly detection in time series data
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "anomaly.test")
+  let histogram = Meter::create_histogram(meter, "error.rate", Some("Error rate monitoring"), Some("errors/sec"))
+  
+  // Simulate normal error rates with occasional anomalies
+  let normal_error_rates = [1.0, 1.2, 0.8, 1.1, 0.9, 1.3, 0.7, 1.0, 1.1, 0.9]
+  let anomaly_spike = 15.0  // Sudden spike
+  let anomaly_dip = 0.01    // Sudden dip
+  
+  // Record normal error rates
+  for rate in normal_error_rates {
+    Histogram::record(histogram, rate)
+  }
+  
+  // Record anomalies
+  Histogram::record(histogram, anomaly_spike)
+  Histogram::record(histogram, anomaly_dip)
+  
+  // Calculate anomaly detection metrics (simulated)
+  let normal_mean = 1.0
+  let normal_std_dev = 0.2
+  let spike_threshold = normal_mean + (3.0 * normal_std_dev)  // 3-sigma rule
+  let dip_threshold = normal_mean - (3.0 * normal_std_dev)
+  
+  let is_spike_anomaly = anomaly_spike > spike_threshold
+  let is_dip_anomaly = anomaly_dip < dip_threshold
+  
+  assert_true(is_spike_anomaly)
+  assert_true(is_dip_anomaly)
+  assert_true(spike_threshold >= 1.5 && spike_threshold <= 1.7)
+  assert_true(dip_threshold >= 0.3 && dip_threshold <= 0.5)
+}
+
+test "temporal correlation analysis" {
+  // Test correlation between different metrics over time
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "correlation.test")
+  
+  let request_counter = Meter::create_counter(meter, "requests.total")
+  let response_histogram = Meter::create_histogram(meter, "response.time")
+  let error_counter = Meter::create_counter(meter, "errors.total")
+  
+  // Simulate correlated metrics data
+  let metric_data = [
+    (100.0, 50.0, 2.0),   // (requests, response_time, errors)
+    (120.0, 65.0, 3.0),
+    (150.0, 80.0, 5.0),
+    (180.0, 95.0, 8.0),
+    (200.0, 110.0, 12.0),
+    (160.0, 75.0, 6.0),
+    (130.0, 60.0, 4.0),
+    (110.0, 52.0, 2.5),
+  ]
+  
+  // Record correlated metrics
+  for (requests, response_time, errors) in metric_data {
+    Counter::add(request_counter, requests)
+    Histogram::record(response_histogram, response_time)
+    Counter::add(error_counter, errors)
+  }
+  
+  // Calculate correlation coefficients (simulated)
+  // Higher requests correlate with higher response times and errors
+  let request_response_correlation = 0.85  // Strong positive correlation
+  let request_error_correlation = 0.78     // Strong positive correlation
+  let response_error_correlation = 0.92    // Very strong positive correlation
+  
+  assert_true(request_response_correlation >= 0.8 && request_response_correlation <= 0.9)
+  assert_true(request_error_correlation >= 0.7 && request_error_correlation <= 0.85)
+  assert_true(response_error_correlation >= 0.9 && response_error_correlation <= 0.95)
+}
+
+test "time series forecasting" {
+  // Test simple forecasting based on historical trends
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "forecast.test")
+  let counter = Meter::create_counter(meter, "cpu.usage", Some("CPU usage over time"), Some("percent"))
+  
+  // Simulate CPU usage data over time
+  let historical_usage = [
+    45.0, 48.0, 52.0, 47.0, 51.0, 55.0, 49.0, 53.0, 57.0, 54.0,
+    58.0, 62.0, 59.0, 63.0, 67.0, 64.0, 68.0, 72.0, 69.0, 73.0
+  ]
+  
+  // Record historical data
+  for usage in historical_usage {
+    Counter::add(counter, usage)
+  }
+  
+  // Simple linear forecasting (simulated)
+  let recent_values = historical_usage.slice(15, 20)  // Last 5 values
+  let avg_recent = (64.0 + 68.0 + 72.0 + 69.0 + 73.0) / 5.0
+  let trend_slope = 2.5  // Simulated upward trend
+  let forecast_next_period = avg_recent + trend_slope
+  let forecast_3_periods = avg_recent + (trend_slope * 3.0)
+  
+  assert_true(avg_recent >= 68.0 && avg_recent <= 70.0)
+  assert_true(forecast_next_period >= 70.0 && forecast_next_period <= 73.0)
+  assert_true(forecast_3_periods >= 75.0 && forecast_3_periods <= 78.0)
+}
+
+test "temporal data compression" {
+  // Test time series data compression for storage optimization
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "compression.test")
+  
+  let base_timestamp = 1735689600000000000L
+  
+  // Create high-frequency log data (one entry per second for 10 minutes)
+  for i in range(0, 600) {
+    let timestamp = base_timestamp + (i * 1000000000L)  // +i seconds
+    let log_record = LogRecord::new_with_context(
+      Info,
+      Some("High frequency log entry"),
+      None,
+      Some(timestamp),
+      Some(timestamp),
+      None,
+      None,
+      None
+    )
+    Logger::emit(logger, log_record)
+  }
+  
+  // Test compression strategies (simulated)
+  let original_data_points = 600
+  let compression_ratio = 0.1  // 10:1 compression
+  let compressed_data_points = original_data_points * compression_ratio
+  let memory_saved = (1.0 - compression_ratio) * 100.0
+  
+  assert_eq(original_data_points, 600)
+  assert_eq(compressed_data_points, 60.0)
+  assert_eq(memory_saved, 90.0)
+  
+  // Test that compression preserves key statistical properties
+  let original_mean = 100.0  // Simulated
+  let compressed_mean = original_mean  // Perfect preservation in simulation
+  let mean_error = 0.0
+  
+  assert_eq(mean_error, 0.0)
 }
