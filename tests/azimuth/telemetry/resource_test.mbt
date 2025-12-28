@@ -1,29 +1,29 @@
 test "resource creation and basic properties" {
   // Test resource creation
-  let resource = @azimuth.Resource::new()
+  let resource = Resource::new()
   
   // Initially should have no attributes
-  let test_attr = @azimuth.Resource::get_attribute(resource, "nonexistent")
+  let test_attr = Resource::get_attribute(resource, "nonexistent")
   assert_eq(test_attr, None)
 }
 
 test "resource with attributes" {
   // Test resource creation with attributes
-  let resource = @azimuth.Resource::new()
+  let resource = Resource::new()
   let attributes = [
-    ("service.name", @azimuth.StringValue("test-service")),
-    ("service.version", @azimuth.StringValue("1.0.0")),
-    ("service.instance.id", @azimuth.StringValue("instance-123")),
-    ("host.name", @azimuth.StringValue("localhost"))
+    ("service.name", StringValue("test-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123")),
+    ("host.name", StringValue("localhost"))
   ]
   
-  let resource_with_attrs = @azimuth.Resource::with_attributes(resource, attributes)
+  let resource_with_attrs = Resource::with_attributes(resource, attributes)
   
   // Test attribute retrieval
-  let service_name = @azimuth.Resource::get_attribute(resource_with_attrs, "service.name")
-  let service_version = @azimuth.Resource::get_attribute(resource_with_attrs, "service.version")
-  let instance_id = @azimuth.Resource::get_attribute(resource_with_attrs, "service.instance.id")
-  let host_name = @azimuth.Resource::get_attribute(resource_with_attrs, "host.name")
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
+  let instance_id = Resource::get_attribute(resource_with_attrs, "service.instance.id")
+  let host_name = Resource::get_attribute(resource_with_attrs, "host.name")
   
   // Note: simplified implementation returns None
   assert_eq(service_name, None)
@@ -34,17 +34,17 @@ test "resource with attributes" {
 
 test "resource with different attribute types" {
   // Test resource with different attribute value types
-  let resource = @azimuth.Resource::new()
+  let resource = Resource::new()
   let mixed_attributes = [
-    ("string.attr", @azimuth.StringValue("string value")),
-    ("int.attr", @azimuth.IntValue(42)),
-    ("float.attr", @azimuth.FloatValue(3.14)),
-    ("bool.attr", @azimuth.BoolValue(true)),
-    ("array.string", @azimuth.ArrayStringValue(["a", "b", "c"])),
-    ("array.int", @azimuth.ArrayIntValue([1, 2, 3]))
+    ("string.attr", StringValue("string value")),
+    ("int.attr", IntValue(42)),
+    ("float.attr", FloatValue(3.14)),
+    ("bool.attr", BoolValue(true)),
+    ("array.string", ArrayStringValue(["a", "b", "c"])),
+    ("array.int", ArrayIntValue([1, 2, 3]))
   ]
   
-  let resource_with_mixed = @azimuth.Resource::with_attributes(resource, mixed_attributes)
+  let resource_with_mixed = Resource::with_attributes(resource, mixed_attributes)
   
   // Test passes if no exceptions are thrown during creation
   assert_true(true)
@@ -52,22 +52,22 @@ test "resource with different attribute types" {
 
 test "resource merge functionality" {
   // Test resource merging
-  let base_resource = @azimuth.Resource::new()
+  let base_resource = Resource::new()
   let base_attrs = [
-    ("base.attr1", @azimuth.StringValue("base-value1")),
-    ("base.attr2", @azimuth.StringValue("base-value2"))
+    ("base.attr1", StringValue("base-value1")),
+    ("base.attr2", StringValue("base-value2"))
   ]
-  let base_with_attrs = @azimuth.Resource::with_attributes(base_resource, base_attrs)
+  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
   
-  let override_resource = @azimuth.Resource::new()
+  let override_resource = Resource::new()
   let override_attrs = [
-    ("override.attr1", @azimuth.StringValue("override-value1")),
-    ("override.attr2", @azimuth.StringValue("override-value2"))
+    ("override.attr1", StringValue("override-value1")),
+    ("override.attr2", StringValue("override-value2"))
   ]
-  let override_with_attrs = @azimuth.Resource::with_attributes(override_resource, override_attrs)
+  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
   
   // Merge resources
-  let merged = @azimuth.Resource::merge(base_with_attrs, override_with_attrs)
+  let merged = Resource::merge(base_with_attrs, override_with_attrs)
   
   // Test passes if merge doesn't throw exceptions
   assert_true(true)
@@ -75,26 +75,26 @@ test "resource merge functionality" {
 
 test "resource with empty attributes array" {
   // Test resource with empty attributes array
-  let resource = @azimuth.Resource::new()
-  let empty_attrs : Array[(String, @azimuth.AttributeValue)] = []
-  let resource_with_empty = @azimuth.Resource::with_attributes(resource, empty_attrs)
+  let resource = Resource::new()
+  let empty_attrs : Array[(String, AttributeValue)] = []
+  let resource_with_empty = Resource::with_attributes(resource, empty_attrs)
   
   // Should still work without attributes
-  let test_attr = @azimuth.Resource::get_attribute(resource_with_empty, "any.key")
+  let test_attr = Resource::get_attribute(resource_with_empty, "any.key")
   assert_eq(test_attr, None)
 }
 
 test "resource with special characters in attribute names" {
   // Test resource with special characters in attribute names
-  let resource = @azimuth.Resource::new()
+  let resource = Resource::new()
   let special_attrs = [
-    ("attr.with.dots", @azimuth.StringValue("dot-value")),
-    ("attr_with_underscores", @azimuth.StringValue("underscore-value")),
-    ("attr-with-hyphens", @azimuth.StringValue("hyphen-value")),
-    ("attr.with.numbers123", @azimuth.StringValue("number-value"))
+    ("attr.with.dots", StringValue("dot-value")),
+    ("attr_with_underscores", StringValue("underscore-value")),
+    ("attr-with-hyphens", StringValue("hyphen-value")),
+    ("attr.with.numbers123", StringValue("number-value"))
   ]
   
-  let resource_with_special = @azimuth.Resource::with_attributes(resource, special_attrs)
+  let resource_with_special = Resource::with_attributes(resource, special_attrs)
   
   // Test passes if creation succeeds
   assert_true(true)
@@ -102,13 +102,13 @@ test "resource with special characters in attribute names" {
 
 test "resource with long attribute values" {
   // Test resource with long attribute values
-  let resource = @azimuth.Resource::new()
+  let resource = Resource::new()
   let long_value = "This is a very long attribute value that might be used for descriptions or other lengthy text content in telemetry systems"
   let long_attrs = [
-    ("long.description", @azimuth.StringValue(long_value))
+    ("long.description", StringValue(long_value))
   ]
   
-  let resource_with_long = @azimuth.Resource::with_attributes(resource, long_attrs)
+  let resource_with_long = Resource::with_attributes(resource, long_attrs)
   
   // Test passes if creation succeeds
   assert_true(true)
@@ -116,14 +116,14 @@ test "resource with long attribute values" {
 
 test "resource with unicode attributes" {
   // Test resource with unicode attribute values
-  let resource = @azimuth.Resource::new()
+  let resource = Resource::new()
   let unicode_attrs = [
-    ("unicode.test", @azimuth.StringValue("中文测试")),
-    ("emoji.test", @azimuth.StringValue("🚀 telemetry")),
-    ("mixed.test", @azimuth.StringValue("Mixed: 中文 🎯 emoji"))
+    ("unicode.test", StringValue("中文测试")),
+    ("emoji.test", StringValue("🚀 telemetry")),
+    ("mixed.test", StringValue("Mixed: 中文 🎯 emoji"))
   ]
   
-  let resource_with_unicode = @azimuth.Resource::with_attributes(resource, unicode_attrs)
+  let resource_with_unicode = Resource::with_attributes(resource, unicode_attrs)
   
   // Test passes if creation succeeds
   assert_true(true)

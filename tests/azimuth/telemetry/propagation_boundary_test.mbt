@@ -3,95 +3,95 @@
 
 test "traceparent header parsing edge cases" {
   // 测试traceparent头部解析的边界情况
-  let propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
-  let carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
+  let propagator = telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let carrier = telemetry.api.propagation.TextMapCarrier.new()
   
   // 测试有效的traceparent格式
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  let ctx1 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
-  assert_true(ctx1 != @azimuth.telemetry.api.context.Context.root())
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  let ctx1 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  assert_true(ctx1 != telemetry.api.context.Context.root())
   
   // 测试不同版本的traceparent
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "ff-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  let ctx2 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "ff-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  let ctx2 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试无效的traceparent格式
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "invalid-format")
-  let ctx3 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "invalid-format")
+  let ctx3 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试空traceparent
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "")
-  let ctx4 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "")
+  let ctx4 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试缺少字段的traceparent
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c")
-  let ctx5 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c")
+  let ctx5 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试包含无效字符的traceparent
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-zg7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  let ctx6 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-zg7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  let ctx6 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   assert_true(true)
 }
 
 test "baggage header parsing edge cases" {
   // 测试baggage头部解析的边界情况
-  let propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
-  let carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
+  let propagator = telemetry.api.propagation.W3CBaggagePropagator.new()
+  let carrier = telemetry.api.propagation.TextMapCarrier.new()
   
   // 测试有效的baggage格式
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key1=value1,key2=value2")
-  let ctx1 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key1=value1,key2=value2")
+  let ctx1 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试带属性的baggage
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key1=value1;prop1=val1,key2=value2;prop2=val2")
-  let ctx2 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key1=value1;prop1=val1,key2=value2;prop2=val2")
+  let ctx2 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试空baggage
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "")
-  let ctx3 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "")
+  let ctx3 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试单个baggage项
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "singlekey=singlevalue")
-  let ctx4 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "singlekey=singlevalue")
+  let ctx4 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试包含特殊字符的baggage
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key with spaces=value with spaces")
-  let ctx5 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key with spaces=value with spaces")
+  let ctx5 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试包含URL编码字符的baggage
-  @azimuth.telemetry.api.propagation.TextMapPropagator.set(carrier, "baggage", "encoded%20key=encoded%20value")
-  let ctx6 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapPropagator.set(carrier, "baggage", "encoded%20key=encoded%20value")
+  let ctx6 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试格式错误的baggage
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key1=value1,key2")
-  let ctx7 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key1=value1,key2")
+  let ctx7 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   assert_true(true)
 }
 
 test "composite propagator with multiple propagators" {
   // 测试复合传播器的多个传播器组合
-  let trace_propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
-  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
-  let composite = @azimuth.telemetry.api.propagation.CompositePropagator.new([trace_propagator, baggage_propagator])
+  let trace_propagator = telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let baggage_propagator = telemetry.api.propagation.W3CBaggagePropagator.new()
+  let composite = telemetry.api.propagation.CompositePropagator.new([trace_propagator, baggage_propagator])
   
-  let carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
+  let carrier = telemetry.api.propagation.TextMapCarrier.new()
   
   // 设置多个头部
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "user.id=12345,session.id=abcdef")
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "user.id=12345,session.id=abcdef")
   
   // 提取上下文
-  let ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(composite, carrier)
+  let ctx = telemetry.api.propagation.TextMapPropagator.extract(composite, carrier)
   
   // 注入到新的carrier
-  let new_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
-  @azimuth.telemetry.api.propagation.TextMapPropagator.inject(composite, ctx, new_carrier)
+  let new_carrier = telemetry.api.propagation.TextMapCarrier.new()
+  telemetry.api.propagation.TextMapPropagator.inject(composite, ctx, new_carrier)
   
   // 验证注入的头部
-  let injected_traceparent = @azimuth.telemetry.api.propagation.TextMapCarrier.get(new_carrier, "traceparent")
-  let injected_baggage = @azimuth.telemetry.api.propagation.TextMapCarrier.get(new_carrier, "baggage")
+  let injected_traceparent = telemetry.api.propagation.TextMapCarrier.get(new_carrier, "traceparent")
+  let injected_baggage = telemetry.api.propagation.TextMapCarrier.get(new_carrier, "baggage")
   
   assert_true(injected_traceparent != None)
   assert_true(injected_baggage != None)
@@ -99,30 +99,30 @@ test "composite propagator with multiple propagators" {
 
 test "propagation with empty and null carriers" {
   // 测试空和null载体的传播
-  let propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let propagator = telemetry.api.propagation.W3CTraceContextPropagator.new()
   
   // 测试空载体
-  let empty_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
-  let ctx1 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, empty_carrier)
-  assert_eq(ctx1, @azimuth.telemetry.api.context.Context.root())
+  let empty_carrier = telemetry.api.propagation.TextMapCarrier.new()
+  let ctx1 = telemetry.api.propagation.TextMapPropagator.extract(propagator, empty_carrier)
+  assert_eq(ctx1, telemetry.api.context.Context.root())
   
   // 测试向空载体注入
-  let root_ctx = @azimuth.telemetry.api.context.Context.root()
-  @azimuth.telemetry.api.propagation.TextMapPropagator.inject(propagator, root_ctx, empty_carrier)
+  let root_ctx = telemetry.api.context.Context.root()
+  telemetry.api.propagation.TextMapPropagator.inject(propagator, root_ctx, empty_carrier)
   
   // 测试包含无关头部的载体
-  let unrelated_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(unrelated_carrier, "content-type", "application/json")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(unrelated_carrier, "authorization", "Bearer token123")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(unrelated_carrier, "x-custom-header", "custom-value")
+  let unrelated_carrier = telemetry.api.propagation.TextMapCarrier.new()
+  telemetry.api.propagation.TextMapCarrier.set(unrelated_carrier, "content-type", "application/json")
+  telemetry.api.propagation.TextMapCarrier.set(unrelated_carrier, "authorization", "Bearer token123")
+  telemetry.api.propagation.TextMapCarrier.set(unrelated_carrier, "x-custom-header", "custom-value")
   
-  let ctx2 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, unrelated_carrier)
-  assert_eq(ctx2, @azimuth.telemetry.api.context.Context.root())
+  let ctx2 = telemetry.api.propagation.TextMapPropagator.extract(propagator, unrelated_carrier)
+  assert_eq(ctx2, telemetry.api.context.Context.root())
   
   // 注入后应该保留原有头部
-  @azimuth.telemetry.api.propagation.TextMapPropagator.inject(propagator, root_ctx, unrelated_carrier)
-  let content_type = @azimuth.telemetry.api.propagation.TextMapCarrier.get(unrelated_carrier, "content-type")
-  let authorization = @azimuth.telemetry.api.propagation.TextMapCarrier.get(unrelated_carrier, "authorization")
+  telemetry.api.propagation.TextMapPropagator.inject(propagator, root_ctx, unrelated_carrier)
+  let content_type = telemetry.api.propagation.TextMapCarrier.get(unrelated_carrier, "content-type")
+  let authorization = telemetry.api.propagation.TextMapCarrier.get(unrelated_carrier, "authorization")
   
   assert_eq(content_type, Some("application/json"))
   assert_eq(authorization, Some("Bearer token123"))
@@ -130,23 +130,23 @@ test "propagation with empty and null carriers" {
 
 test "propagation with extremely long headers" {
   // 测试极长头部的传播
-  let propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
-  let carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
+  let propagator = telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let carrier = telemetry.api.propagation.TextMapCarrier.new()
   
   // 创建极长的traceparent（虽然实际不会这么长，但测试边界情况）
   let long_trace_id = "0af7651916cd43dd8448eb211c80319c".repeat(10) // 320个字符
   let long_span_id = "b7ad6b7169203331".repeat(4) // 64个字符
   let long_traceparent = "00-${long_trace_id.take(64)}-${long_span_id.take(16)}-01"
   
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", long_traceparent)
-  let ctx1 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", long_traceparent)
+  let ctx1 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
   // 测试极长的baggage
-  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
+  let baggage_propagator = telemetry.api.propagation.W3CBaggagePropagator.new()
   let long_baggage_value = "v".repeat(1000)
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "long.key=${long_baggage_value}")
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "long.key=${long_baggage_value}")
   
-  let ctx2 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
+  let ctx2 = telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
   
   // 测试多个baggage项
   let many_baggage_items = ""
@@ -155,47 +155,47 @@ test "propagation with extremely long headers" {
   }
   many_baggage_items = many_baggage_items.take(many_baggage_items.length() - 1) // 移除最后的逗号
   
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", many_baggage_items)
-  let ctx3 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", many_baggage_items)
+  let ctx3 = telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
   
   assert_true(true)
 }
 
 test "propagation with case sensitivity" {
   // 测试传播器对大小写的敏感性
-  let propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
-  let carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
+  let propagator = telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let carrier = telemetry.api.propagation.TextMapCarrier.new()
   
   // 测试不同大小写的头部名称
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "TRACEPARENT", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "TraceParent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "TRACEPARENT", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "TraceParent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
   
-  let ctx1 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+  let ctx1 = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
   
-  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key1=value1")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "BAGGAGE", "key2=value2")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "Baggage", "key3=value3")
+  let baggage_propagator = telemetry.api.propagation.W3CBaggagePropagator.new()
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "key1=value1")
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "BAGGAGE", "key2=value2")
+  telemetry.api.propagation.TextMapCarrier.set(carrier, "Baggage", "key3=value3")
   
-  let ctx2 = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
+  let ctx2 = telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
   
   // 测试注入时的大小写
-  let new_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
-  @azimuth.telemetry.api.propagation.TextMapPropagator.inject(propagator, ctx1, new_carrier)
-  @azimuth.telemetry.api.propagation.TextMapPropagator.inject(baggage_propagator, ctx2, new_carrier)
+  let new_carrier = telemetry.api.propagation.TextMapCarrier.new()
+  telemetry.api.propagation.TextMapPropagator.inject(propagator, ctx1, new_carrier)
+  telemetry.api.propagation.TextMapPropagator.inject(baggage_propagator, ctx2, new_carrier)
   
   // 检查注入的头部名称
-  let injected_traceparent = @azimuth.telemetry.api.propagation.TextMapCarrier.get(new_carrier, "traceparent")
-  let injected_baggage = @azimuth.telemetry.api.propagation.TextMapCarrier.get(new_carrier, "baggage")
+  let injected_traceparent = telemetry.api.propagation.TextMapCarrier.get(new_carrier, "traceparent")
+  let injected_baggage = telemetry.api.propagation.TextMapCarrier.get(new_carrier, "baggage")
   
   assert_true(true)
 }
 
 test "propagation with malformed data" {
   // 测试格式错误数据的传播
-  let propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
-  let carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
+  let propagator = telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let carrier = telemetry.api.propagation.TextMapCarrier.new()
   
   // 测试各种格式错误的traceparent
   let malformed_traceparents = [
@@ -212,13 +212,13 @@ test "propagation with malformed data" {
   ]
   
   for malformed in malformed_traceparents {
-    @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", malformed)
-    let ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
+    telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", malformed)
+    let ctx = telemetry.api.propagation.TextMapPropagator.extract(propagator, carrier)
     // 应该优雅处理，不崩溃
   }
   
   // 测试格式错误的baggage
-  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
+  let baggage_propagator = telemetry.api.propagation.W3CBaggagePropagator.new()
   let malformed_baggages = [
     "key", // 缺少值
     "=value", // 缺少键
@@ -232,8 +232,8 @@ test "propagation with malformed data" {
   ]
   
   for malformed in malformed_baggages {
-    @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", malformed)
-    let ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
+    telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", malformed)
+    let ctx = telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
     // 应该优雅处理，不崩溃
   }
   
@@ -242,8 +242,8 @@ test "propagation with malformed data" {
 
 test "propagation with special characters and encoding" {
   // 测试特殊字符和编码的传播
-  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
-  let carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
+  let baggage_propagator = telemetry.api.propagation.W3CBaggagePropagator.new()
+  let carrier = telemetry.api.propagation.TextMapCarrier.new()
   
   // 测试包含特殊字符的baggage
   let special_char_baggages = [
@@ -273,12 +273,12 @@ newlines",
   ]
   
   for baggage in special_char_baggages {
-    @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", baggage)
-    let ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
+    telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", baggage)
+    let ctx = telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, carrier)
     
     // 测试注入
-    let new_carrier = @azimuth.telemetry.api.propagation.TextMapCarrier.new()
-    @azimuth.telemetry.api.propagation.TextMapPropagator.inject(baggage_propagator, ctx, new_carrier)
+    let new_carrier = telemetry.api.propagation.TextMapCarrier.new()
+    telemetry.api.propagation.TextMapPropagator.inject(baggage_propagator, ctx, new_carrier)
   }
   
   assert_true(true)

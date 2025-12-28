@@ -3,8 +3,8 @@
 
 test "cross platform timestamp handling" {
   // 测试跨平台时间戳处理
-  let clock = @azimuth.Clock::system()
-  let timestamp = @azimuth.Clock::now_unix_nanos(clock)
+  let clock = Clock::system()
+  let timestamp = Clock::now_unix_nanos(clock)
   
   // 验证时间戳格式符合Unix纳秒时间戳标准
   assert_true(timestamp > 0L)
@@ -19,11 +19,11 @@ test "cross platform timestamp handling" {
   
   // 测试多次调用的一致性
   let timestamps = [
-    @azimuth.Clock::now_unix_nanos(clock),
-    @azimuth.Clock::now_unix_nanos(clock),
-    @azimuth.Clock::now_unix_nanos(clock),
-    @azimuth.Clock::now_unix_nanos(clock),
-    @azimuth.Clock::now_unix_nanos(clock)
+    Clock::now_unix_nanos(clock),
+    Clock::now_unix_nanos(clock),
+    Clock::now_unix_nanos(clock),
+    Clock::now_unix_nanos(clock),
+    Clock::now_unix_nanos(clock)
   ]
   
   // 在简化实现中，所有时间戳应该相同
@@ -32,8 +32,8 @@ test "cross platform timestamp handling" {
   }
   
   // 测试不同时钟实例
-  let clock2 = @azimuth.Clock::system()
-  let timestamp2 = @azimuth.Clock::now_unix_nanos(clock2)
+  let clock2 = Clock::system()
+  let timestamp2 = Clock::now_unix_nanos(clock2)
   
   // 在简化实现中，不同实例应该返回相同时间戳
   assert_eq(timestamp, timestamp2)
@@ -41,13 +41,13 @@ test "cross platform timestamp handling" {
 
 test "platform independent random generation" {
   // 测试平台无关的随机数生成
-  let random = @azimuth.Random::system()
+  let random = Random::system()
   
   // 测试不同长度的随机字节生成
   let test_lengths = [0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
   
   for length in test_lengths {
-    let bytes = @azimuth.Random::next_bytes(random, length)
+    let bytes = Random::next_bytes(random, length)
     assert_eq(bytes.length(), length)
     
     // 验证所有字节都在有效范围内（0-255）
@@ -58,11 +58,11 @@ test "platform independent random generation" {
   
   // 测试UInt64随机数生成的平台兼容性
   let u64_values = [
-    @azimuth.Random::next_u64(random),
-    @azimuth.Random::next_u64(random),
-    @azimuth.Random::next_u64(random),
-    @azimuth.Random::next_u64(random),
-    @azimuth.Random::next_u64(random)
+    Random::next_u64(random),
+    Random::next_u64(random),
+    Random::next_u64(random),
+    Random::next_u64(random),
+    Random::next_u64(random)
   ]
   
   // 验证所有值都是有效的UInt64
@@ -77,8 +77,8 @@ test "platform independent random generation" {
   }
   
   // 测试不同随机数生成器实例
-  let random2 = @azimuth.Random::system()
-  let u64_from_random2 = @azimuth.Random::next_u64(random2)
+  let random2 = Random::system()
+  let u64_from_random2 = Random::next_u64(random2)
   
   // 在简化实现中，不同实例应该返回相同值
   assert_eq(u64_values[0], u64_from_random2)
@@ -86,7 +86,7 @@ test "platform independent random generation" {
 
 test "unicode and internationalization support" {
   // 测试Unicode和国际化支持
-  let attrs = @azimuth.Attributes::new()
+  let attrs = Attributes::new()
   
   // 测试各种Unicode字符
   let unicode_strings = [
@@ -104,44 +104,44 @@ test "unicode and internationalization support" {
   
   // 测试属性值的Unicode支持
   for unicode_str in unicode_strings {
-    @azimuth.Attributes::set(attrs, "unicode.key", @azimuth.StringValue(unicode_str))
+    Attributes::set(attrs, "unicode.key", StringValue(unicode_str))
     // 简化实现只返回预定义值
   }
   
   // 测试span名称的Unicode支持
-  let tracer_provider = @azimuth.TracerProvider::default()
-  let tracer = @azimuth.TracerProvider::get_tracer(tracer_provider, "unicode.test")
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "unicode.test")
   
   for unicode_name in unicode_strings {
-    let span = @azimuth.Tracer::start_span(tracer, unicode_name)
-    assert_eq(@azimuth.Span::name(span), unicode_name)
-    @azimuth.Span::end(span)
+    let span = Tracer::start_span(tracer, unicode_name)
+    assert_eq(Span::name(span), unicode_name)
+    Span::end(span)
   }
   
   // 测试日志消息的Unicode支持
-  let logger_provider = @azimuth.LoggerProvider::default()
-  let logger = @azimuth.LoggerProvider::get_logger(logger_provider, "unicode.logger")
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "unicode.logger")
   
   for unicode_msg in unicode_strings {
-    let log_record = @azimuth.LogRecord::new(@azimuth.Info, unicode_msg)
-    assert_eq(@azimuth.LogRecord::body(log_record), Some(unicode_msg))
-    @azimuth.Logger::emit(logger, log_record)
+    let log_record = LogRecord::new(Info, unicode_msg)
+    assert_eq(LogRecord::body(log_record), Some(unicode_msg))
+    Logger::emit(logger, log_record)
   }
   
   // 测试资源属性的Unicode支持
-  let resource = @azimuth.Resource::new()
+  let resource = Resource::new()
   let unicode_attrs = [
-    for unicode_str in unicode_strings : ("unicode.attr", @azimuth.StringValue(unicode_str))
+    for unicode_str in unicode_strings : ("unicode.attr", StringValue(unicode_str))
   ]
   
-  let unicode_resource = @azimuth.Resource::with_attributes(resource, unicode_attrs)
-  let first_attr = @azimuth.Resource::get_attribute(unicode_resource, "unicode.attr")
-  assert_eq(first_attr, Some(@azimuth.StringValue(unicode_strings[0])))
+  let unicode_resource = Resource::with_attributes(resource, unicode_attrs)
+  let first_attr = Resource::get_attribute(unicode_resource, "unicode.attr")
+  assert_eq(first_attr, Some(StringValue(unicode_strings[0])))
 }
 
 test "cross platform HTTP compatibility" {
   // 测试跨平台HTTP兼容性
-  let client = @azimuth.HttpClient::new()
+  let client = HttpClient::new()
   
   // 测试各种URL格式
   let url_formats = [
@@ -156,8 +156,8 @@ test "cross platform HTTP compatibility" {
   ]
   
   for url in url_formats {
-    let request = @azimuth.HttpRequest::new("GET", url, [], None)
-    assert_eq(@azimuth.HttpRequest::url(request), url)
+    let request = HttpRequest::new("GET", url, [], None)
+    assert_eq(HttpRequest::url(request), url)
   }
   
   // 测试各种HTTP方法和header
@@ -173,9 +173,9 @@ test "cross platform HTTP compatibility" {
   
   for method in http_methods {
     for headers in header_values {
-      let request = @azimuth.HttpRequest::new(method, "https://api.example.com", headers, Some("测试body"))
-      assert_eq(@azimuth.HttpRequest::http_method(request), method)
-      assert_eq(@azimuth.HttpRequest::body(request), Some("测试body"))
+      let request = HttpRequest::new(method, "https://api.example.com", headers, Some("测试body"))
+      assert_eq(HttpRequest::http_method(request), method)
+      assert_eq(HttpRequest::body(request), Some("测试body"))
     }
   }
   
@@ -191,9 +191,9 @@ test "cross platform HTTP compatibility" {
   
   for status in status_codes {
     for body in response_bodies {
-      let response = @azimuth.HttpResponse::new(status, [], body)
-      assert_eq(@azimuth.HttpResponse::status_code(response), status)
-      assert_eq(@azimuth.HttpResponse::body(response), body)
+      let response = HttpResponse::new(status, [], body)
+      assert_eq(HttpResponse::status_code(response), status)
+      assert_eq(HttpResponse::body(response), body)
     }
   }
 }
@@ -206,24 +206,24 @@ test "platform independent data serialization" {
   let test_bools = [true, false]
   
   // 测试属性值的跨平台一致性
-  let attrs = @azimuth.Attributes::new()
+  let attrs = Attributes::new()
   
   for int_val in test_ints {
-    @azimuth.Attributes::set(attrs, "int.key", @azimuth.IntValue(int_val))
-    let retrieved = @azimuth.Attributes::get(attrs, "int.key")
+    Attributes::set(attrs, "int.key", IntValue(int_val))
+    let retrieved = Attributes::get(attrs, "int.key")
     match retrieved {
-      Some(@azimuth.IntValue(retrieved_int)) => assert_eq(retrieved_int, 42) // 简化实现返回固定值
+      Some(IntValue(retrieved_int)) => assert_eq(retrieved_int, 42) // 简化实现返回固定值
       _ => ()
     }
   }
   
   for float_val in test_floats {
-    @azimuth.Attributes::set(attrs, "float.key", @azimuth.FloatValue(float_val))
+    Attributes::set(attrs, "float.key", FloatValue(float_val))
     // 简化实现不支持float值获取
   }
   
   for bool_val in test_bools {
-    @azimuth.Attributes::set(attrs, "bool.key", @azimuth.BoolValue(bool_val))
+    Attributes::set(attrs, "bool.key", BoolValue(bool_val))
     // 简化实现不支持bool值获取
   }
   
@@ -243,11 +243,11 @@ test "platform independent data serialization" {
   ]
   
   for string_array in string_arrays {
-    @azimuth.Attributes::set(attrs, "array.string", @azimuth.ArrayStringValue(string_array))
+    Attributes::set(attrs, "array.string", ArrayStringValue(string_array))
   }
   
   for int_array in int_arrays {
-    @azimuth.Attributes::set(attrs, "array.int", @azimuth.ArrayIntValue(int_array))
+    Attributes::set(attrs, "array.int", ArrayIntValue(int_array))
   }
   
   // 测试时间戳的跨平台一致性
@@ -259,8 +259,8 @@ test "platform independent data serialization" {
   ]
   
   for timestamp in timestamps {
-    let log_record = @azimuth.LogRecord::new_with_context(
-      @azimuth.Info,
+    let log_record = LogRecord::new_with_context(
+      Info,
       Some("Timestamp test"),
       None,
       Some(timestamp),
@@ -276,15 +276,15 @@ test "platform independent data serialization" {
 
 test "endian and architecture compatibility" {
   // 测试字节序和架构兼容性
-  let random = @azimuth.Random::system()
+  let random = Random::system()
   
   // 测试随机字节生成的字节序无关性
   let byte_arrays = [
-    @azimuth.Random::next_bytes(random, 1),
-    @azimuth.Random::next_bytes(random, 2),
-    @azimuth.Random::next_bytes(random, 4),
-    @azimuth.Random::next_bytes(random, 8),
-    @azimuth.Random::next_bytes(random, 16)
+    Random::next_bytes(random, 1),
+    Random::next_bytes(random, 2),
+    Random::next_bytes(random, 4),
+    Random::next_bytes(random, 8),
+    Random::next_bytes(random, 16)
   ]
   
   // 验证所有字节数组都有正确的长度
@@ -295,9 +295,9 @@ test "endian and architecture compatibility" {
   
   // 测试UInt64的字节序兼容性
   let u64_values = [
-    @azimuth.Random::next_u64(random),
-    @azimuth.Random::next_u64(random),
-    @azimuth.Random::next_u64(random)
+    Random::next_u64(random),
+    Random::next_u64(random),
+    Random::next_u64(random)
   ]
   
   // 验证所有值都在有效UInt64范围内
@@ -308,22 +308,22 @@ test "endian and architecture compatibility" {
   
   // 测试数值类型的跨平台一致性
   let test_values = [
-    @azimuth.IntValue(0),
-    @azimuth.IntValue(1),
-    @azimuth.IntValue(-1),
-    @azimuth.IntValue(2147483647),
-    @azimuth.IntValue(-2147483648),
-    @azimuth.FloatValue(0.0),
-    @azimuth.FloatValue(1.0),
-    @azimuth.FloatValue(-1.0),
-    @azimuth.FloatValue(3.14159),
-    @azimuth.BoolValue(true),
-    @azimuth.BoolValue(false)
+    IntValue(0),
+    IntValue(1),
+    IntValue(-1),
+    IntValue(2147483647),
+    IntValue(-2147483648),
+    FloatValue(0.0),
+    FloatValue(1.0),
+    FloatValue(-1.0),
+    FloatValue(3.14159),
+    BoolValue(true),
+    BoolValue(false)
   ]
   
-  let attrs = @azimuth.Attributes::new()
+  let attrs = Attributes::new()
   for (i, value) in test_values.enumerate() {
-    @azimuth.Attributes::set(attrs, "test.key" + i.to_string(), value)
+    Attributes::set(attrs, "test.key" + i.to_string(), value)
   }
   
   // 所有操作应该成功完成，不依赖字节序
@@ -332,15 +332,15 @@ test "endian and architecture compatibility" {
 
 test "timezone and locale compatibility" {
   // 测试时区和区域设置兼容性
-  let clock = @azimuth.Clock::system()
-  let timestamp = @azimuth.Clock::now_unix_nanos(clock)
+  let clock = Clock::system()
+  let timestamp = Clock::now_unix_nanos(clock)
   
   // Unix时间戳应该是时区无关的
   assert_true(timestamp > 0L)
   
   // 测试不同时区的表示（虽然系统内部使用UTC）
-  let logger_provider = @azimuth.LoggerProvider::default()
-  let logger = @azimuth.LoggerProvider::get_logger(logger_provider, "timezone.test")
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "timezone.test")
   
   // 创建包含时区信息的日志
   let timezone_logs = [
@@ -352,9 +352,9 @@ test "timezone and locale compatibility" {
   ]
   
   for log_msg in timezone_logs {
-    let log_record = @azimuth.LogRecord::new(@azimuth.Info, log_msg)
-    assert_eq(@azimuth.LogRecord::body(log_record), Some(log_msg))
-    @azimuth.Logger::emit(logger, log_record)
+    let log_record = LogRecord::new(Info, log_msg)
+    assert_eq(LogRecord::body(log_record), Some(log_msg))
+    Logger::emit(logger, log_record)
   }
   
   // 测试区域设置相关的字符串处理
@@ -367,8 +367,8 @@ test "timezone and locale compatibility" {
   ]
   
   for locale_str in locale_strings {
-    let attrs = @azimuth.Attributes::new()
-    @azimuth.Attributes::set(attrs, "locale.number", @azimuth.StringValue(locale_str))
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "locale.number", StringValue(locale_str))
     
     // 测试区域设置字符串不会导致错误
     assert_true(true)
@@ -386,8 +386,8 @@ test "timezone and locale compatibility" {
   ]
   
   for date_str in date_formats {
-    let log_record = @azimuth.LogRecord::new(@azimuth.Info, "Date: " + date_str)
-    @azimuth.Logger::emit(logger, log_record)
+    let log_record = LogRecord::new(Info, "Date: " + date_str)
+    Logger::emit(logger, log_record)
   }
 }
 
@@ -397,34 +397,34 @@ test "platform specific limits and constraints" {
   let very_long_string = "a".repeat(10000)
   let extremely_long_string = "test".repeat(25000)
   
-  let attrs = @azimuth.Attributes::new()
-  @azimuth.Attributes::set(attrs, "long.key", @azimuth.StringValue(very_long_string))
-  @azimuth.Attributes::set(attrs, "extreme.key", @azimuth.StringValue(extremely_long_string))
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "long.key", StringValue(very_long_string))
+  Attributes::set(attrs, "extreme.key", StringValue(extremely_long_string))
   
   // 测试span名称长度限制
-  let tracer_provider = @azimuth.TracerProvider::default()
-  let tracer = @azimuth.TracerProvider::get_tracer(tracer_provider, "limits.test")
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "limits.test")
   
   let long_span_name = "span_name_" + "x".repeat(1000)
-  let span = @azimuth.Tracer::start_span(tracer, long_span_name)
-  assert_eq(@azimuth.Span::name(span), long_span_name)
-  @azimuth.Span::end(span)
+  let span = Tracer::start_span(tracer, long_span_name)
+  assert_eq(Span::name(span), long_span_name)
+  Span::end(span)
   
   // 测试日志消息长度限制
-  let logger_provider = @azimuth.LoggerProvider::default()
-  let logger = @azimuth.LoggerProvider::get_logger(logger_provider, "limits.test")
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "limits.test")
   
   let long_log_message = "Log message: " + "data".repeat(5000)
-  let log_record = @azimuth.LogRecord::new(@azimuth.Info, long_log_message)
-  assert_eq(@azimuth.LogRecord::body(log_record), Some(long_log_message))
-  @azimuth.Logger::emit(logger, log_record)
+  let log_record = LogRecord::new(Info, long_log_message)
+  assert_eq(LogRecord::body(log_record), Some(long_log_message))
+  Logger::emit(logger, log_record)
   
   // 测试数值范围限制
   let max_int64 = 9223372036854775807L
   let min_int64 = -9223372036854775808L
   
-  let log_with_max_timestamp = @azimuth.LogRecord::new_with_context(
-    @azimuth.Info,
+  let log_with_max_timestamp = LogRecord::new_with_context(
+    Info,
     Some("Max timestamp test"),
     None,
     Some(max_int64),
@@ -434,8 +434,8 @@ test "platform specific limits and constraints" {
     None
   )
   
-  let log_with_min_timestamp = @azimuth.LogRecord::new_with_context(
-    @azimuth.Info,
+  let log_with_min_timestamp = LogRecord::new_with_context(
+    Info,
     Some("Min timestamp test"),
     None,
     Some(min_int64),
@@ -445,28 +445,28 @@ test "platform specific limits and constraints" {
     None
   )
   
-  @azimuth.Logger::emit(logger, log_with_max_timestamp)
-  @azimuth.Logger::emit(logger, log_with_min_timestamp)
+  Logger::emit(logger, log_with_max_timestamp)
+  Logger::emit(logger, log_with_min_timestamp)
   
   // 测试数组大小限制
-  let random = @azimuth.Random::system()
-  let large_byte_array = @azimuth.Random::next_bytes(random, 10000)
+  let random = Random::system()
+  let large_byte_array = Random::next_bytes(random, 10000)
   assert_eq(large_byte_array.length(), 10000)
   
-  let very_large_byte_array = @azimuth.Random::next_bytes(random, 100000)
+  let very_large_byte_array = Random::next_bytes(random, 100000)
   assert_eq(very_large_byte_array.length(), 100000)
   
   // 测试属性数量限制
   let many_attrs = [
-    for i in 0..1000 : ("attr" + i.to_string(), @azimuth.StringValue("value" + i.to_string()))
+    for i in 0..1000 : ("attr" + i.to_string(), StringValue("value" + i.to_string()))
   ]
   
-  let resource_with_many_attrs = @azimuth.Resource::with_attributes(@azimuth.Resource::new(), many_attrs)
-  let first_attr = @azimuth.Resource::get_attribute(resource_with_many_attrs, "attr0")
-  let last_attr = @azimuth.Resource::get_attribute(resource_with_many_attrs, "attr999")
+  let resource_with_many_attrs = Resource::with_attributes(Resource::new(), many_attrs)
+  let first_attr = Resource::get_attribute(resource_with_many_attrs, "attr0")
+  let last_attr = Resource::get_attribute(resource_with_many_attrs, "attr999")
   
-  assert_eq(first_attr, Some(@azimuth.StringValue("value0")))
-  assert_eq(last_attr, Some(@azimuth.StringValue("value999")))
+  assert_eq(first_attr, Some(StringValue("value0")))
+  assert_eq(last_attr, Some(StringValue("value999")))
   
   // 所有操作应该在平台限制内成功完成
   assert_true(true)

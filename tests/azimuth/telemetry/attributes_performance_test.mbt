@@ -3,16 +3,16 @@
 
 test "attributes creation and destruction performance" {
   // 测试属性创建和销毁的性能
-  let start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   // 创建大量属性集合
   let attributes_list = []
   for i = 0; i < 1000; i = i + 1 {
-    let attrs = @azimuth.telemetry.api.common.Attributes.new()
+    let attrs = telemetry.api.common.Attributes.new()
     attributes_list.push(attrs)
   }
   
-  let creation_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let creation_time = telemetry.sdk.platform.time.now_unix_nanos()
   let creation_duration = creation_time - start_time
   
   // 验证创建时间在合理范围内（这里只是确保不崩溃）
@@ -34,18 +34,18 @@ test "attributes creation and destruction performance" {
 
 test "attributes setting and getting performance" {
   // 测试属性设置和获取的性能
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  let attrs = telemetry.api.common.Attributes.new()
   
-  let start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   // 设置大量属性
   for i = 0; i < 10000; i = i + 1 {
     let key = "perf.key.${i}"
-    let value = @azimuth.telemetry.api.common.StringValue("perf.value.${i}")
-    @azimuth.telemetry.api.common.Attributes.set(attrs, key, value)
+    let value = telemetry.api.common.StringValue("perf.value.${i}")
+    telemetry.api.common.Attributes.set(attrs, key, value)
   }
   
-  let set_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let set_time = telemetry.sdk.platform.time.now_unix_nanos()
   let set_duration = set_time - start_time
   
   // 验证设置时间
@@ -53,15 +53,15 @@ test "attributes setting and getting performance" {
   assert_eq(attrs.values.length(), 10000)
   
   // 获取大量属性
-  let get_start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   for i = 0; i < 10000; i = i + 1 {
     let key = "perf.key.${i}"
-    let value = @azimuth.telemetry.api.common.Attributes.get(attrs, key)
+    let value = telemetry.api.common.Attributes.get(attrs, key)
     assert_true(value != None)
   }
   
-  let get_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_time = telemetry.sdk.platform.time.now_unix_nanos()
   let get_duration = get_time - get_start_time
   
   // 验证获取时间
@@ -70,9 +70,9 @@ test "attributes setting and getting performance" {
 
 test "attributes with different value types performance" {
   // 测试不同值类型的属性性能
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  let attrs = telemetry.api.common.Attributes.new()
   
-  let start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   // 设置不同类型的值
   for i = 0; i < 2000; i = i + 1 {
@@ -82,19 +82,19 @@ test "attributes with different value types performance" {
     let bool_key = "bool.key.${i}"
     let array_key = "array.key.${i}"
     
-    @azimuth.telemetry.api.common.Attributes.set(attrs, string_key, 
-      @azimuth.telemetry.api.common.StringValue("string.value.${i}"))
-    @azimuth.telemetry.api.common.Attributes.set(attrs, int_key, 
-      @azimuth.telemetry.api.common.IntValue(i))
-    @azimuth.telemetry.api.common.Attributes.set(attrs, float_key, 
-      @azimuth.telemetry.api.common.FloatValue(i.to_float() * 1.5))
-    @azimuth.telemetry.api.common.Attributes.set(attrs, bool_key, 
-      @azimuth.telemetry.api.common.BoolValue(i % 2 == 0))
-    @azimuth.telemetry.api.common.Attributes.set(attrs, array_key, 
-      @azimuth.telemetry.api.common.ArrayStringValue(["item1", "item2", "item3"]))
+    telemetry.api.common.Attributes.set(attrs, string_key, 
+      telemetry.api.common.StringValue("string.value.${i}"))
+    telemetry.api.common.Attributes.set(attrs, int_key, 
+      telemetry.api.common.IntValue(i))
+    telemetry.api.common.Attributes.set(attrs, float_key, 
+      telemetry.api.common.FloatValue(i.to_float() * 1.5))
+    telemetry.api.common.Attributes.set(attrs, bool_key, 
+      telemetry.api.common.BoolValue(i % 2 == 0))
+    telemetry.api.common.Attributes.set(attrs, array_key, 
+      telemetry.api.common.ArrayStringValue(["item1", "item2", "item3"]))
   }
   
-  let set_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let set_time = telemetry.sdk.platform.time.now_unix_nanos()
   let set_duration = set_time - start_time
   
   // 验证设置时间
@@ -102,7 +102,7 @@ test "attributes with different value types performance" {
   assert_eq(attrs.values.length(), 10000) // 2000 * 5 types
   
   // 获取不同类型的值
-  let get_start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   for i = 0; i < 2000; i = i + 1 {
     let string_key = "string.key.${i}"
@@ -111,11 +111,11 @@ test "attributes with different value types performance" {
     let bool_key = "bool.key.${i}"
     let array_key = "array.key.${i}"
     
-    let string_value = @azimuth.telemetry.api.common.Attributes.get(attrs, string_key)
-    let int_value = @azimuth.telemetry.api.common.Attributes.get(attrs, int_key)
-    let float_value = @azimuth.telemetry.api.common.Attributes.get(attrs, float_key)
-    let bool_value = @azimuth.telemetry.api.common.Attributes.get(attrs, bool_key)
-    let array_value = @azimuth.telemetry.api.common.Attributes.get(attrs, array_key)
+    let string_value = telemetry.api.common.Attributes.get(attrs, string_key)
+    let int_value = telemetry.api.common.Attributes.get(attrs, int_key)
+    let float_value = telemetry.api.common.Attributes.get(attrs, float_key)
+    let bool_value = telemetry.api.common.Attributes.get(attrs, bool_key)
+    let array_value = telemetry.api.common.Attributes.get(attrs, array_key)
     
     assert_true(string_value != None)
     assert_true(int_value != None)
@@ -124,7 +124,7 @@ test "attributes with different value types performance" {
     assert_true(array_value != None)
   }
   
-  let get_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_time = telemetry.sdk.platform.time.now_unix_nanos()
   let get_duration = get_time - get_start_time
   
   // 验证获取时间
@@ -133,9 +133,9 @@ test "attributes with different value types performance" {
 
 test "attributes with long keys and values performance" {
   // 测试长键和值的属性性能
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  let attrs = telemetry.api.common.Attributes.new()
   
-  let start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   // 创建长键和值
   let long_key_prefix = "very.long.attribute.name.that.could.potentially.cause.performance.issues."
@@ -145,11 +145,11 @@ test "attributes with long keys and values performance" {
     let long_key = long_key_prefix + i.to_string()
     let long_value = long_value_prefix + i.to_string()
     
-    @azimuth.telemetry.api.common.Attributes.set(attrs, long_key, 
-      @azimuth.telemetry.api.common.StringValue(long_value))
+    telemetry.api.common.Attributes.set(attrs, long_key, 
+      telemetry.api.common.StringValue(long_value))
   }
   
-  let set_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let set_time = telemetry.sdk.platform.time.now_unix_nanos()
   let set_duration = set_time - start_time
   
   // 验证设置时间
@@ -157,15 +157,15 @@ test "attributes with long keys and values performance" {
   assert_eq(attrs.values.length(), 1000)
   
   // 获取长键和值
-  let get_start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   for i = 0; i < 1000; i = i + 1 {
     let long_key = long_key_prefix + i.to_string()
-    let value = @azimuth.telemetry.api.common.Attributes.get(attrs, long_key)
+    let value = telemetry.api.common.Attributes.get(attrs, long_key)
     assert_true(value != None)
   }
   
-  let get_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_time = telemetry.sdk.platform.time.now_unix_nanos()
   let get_duration = get_time - get_start_time
   
   // 验证获取时间
@@ -174,9 +174,9 @@ test "attributes with long keys and values performance" {
 
 test "attributes with special characters performance" {
   // 测试包含特殊字符的属性性能
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  let attrs = telemetry.api.common.Attributes.new()
   
-  let start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   // 包含特殊字符的键
   let special_keys = [
@@ -210,11 +210,11 @@ test "attributes with special characters performance" {
   
   for i = 0; i < special_keys.length(); i = i + 1 {
     let key = special_keys[i]
-    let value = @azimuth.telemetry.api.common.StringValue("value.for.${key}")
-    @azimuth.telemetry.api.common.Attributes.set(attrs, key, value)
+    let value = telemetry.api.common.StringValue("value.for.${key}")
+    telemetry.api.common.Attributes.set(attrs, key, value)
   }
   
-  let set_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let set_time = telemetry.sdk.platform.time.now_unix_nanos()
   let set_duration = set_time - start_time
   
   // 验证设置时间
@@ -222,15 +222,15 @@ test "attributes with special characters performance" {
   assert_eq(attrs.values.length(), special_keys.length())
   
   // 获取包含特殊字符的键
-  let get_start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   for i = 0; i < special_keys.length(); i = i + 1 {
     let key = special_keys[i]
-    let value = @azimuth.telemetry.api.common.Attributes.get(attrs, key)
+    let value = telemetry.api.common.Attributes.get(attrs, key)
     assert_true(value != None)
   }
   
-  let get_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_time = telemetry.sdk.platform.time.now_unix_nanos()
   let get_duration = get_time - get_start_time
   
   // 验证获取时间
@@ -239,18 +239,18 @@ test "attributes with special characters performance" {
 
 test "attributes overwrite performance" {
   // 测试属性覆盖的性能
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  let attrs = telemetry.api.common.Attributes.new()
   
-  let start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   // 重复设置相同的键（覆盖）
   for i = 0; i < 10000; i = i + 1 {
     let key = "overwrite.key"
-    let value = @azimuth.telemetry.api.common.StringValue("value.${i}")
-    @azimuth.telemetry.api.common.Attributes.set(attrs, key, value)
+    let value = telemetry.api.common.StringValue("value.${i}")
+    telemetry.api.common.Attributes.set(attrs, key, value)
   }
   
-  let set_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let set_time = telemetry.sdk.platform.time.now_unix_nanos()
   let set_duration = set_time - start_time
   
   // 验证设置时间
@@ -259,15 +259,15 @@ test "attributes overwrite performance" {
   assert_eq(attrs.values.length(), 1)
   
   // 多次获取相同的键
-  let get_start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   for i = 0; i < 10000; i = i + 1 {
     let key = "overwrite.key"
-    let value = @azimuth.telemetry.api.common.Attributes.get(attrs, key)
+    let value = telemetry.api.common.Attributes.get(attrs, key)
     assert_true(value != None)
   }
   
-  let get_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_time = telemetry.sdk.platform.time.now_unix_nanos()
   let get_duration = get_time - get_start_time
   
   // 验证获取时间
@@ -276,9 +276,9 @@ test "attributes overwrite performance" {
 
 test "attributes with array values performance" {
   // 测试数组值的属性性能
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  let attrs = telemetry.api.common.Attributes.new()
   
-  let start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   // 设置数组值
   for i = 0; i < 1000; i = i + 1 {
@@ -290,11 +290,11 @@ test "attributes with array values performance" {
       array_value.push("array.item.${i}.${j}")
     }
     
-    @azimuth.telemetry.api.common.Attributes.set(attrs, key, 
-      @azimuth.telemetry.api.common.ArrayStringValue(array_value))
+    telemetry.api.common.Attributes.set(attrs, key, 
+      telemetry.api.common.ArrayStringValue(array_value))
   }
   
-  let set_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let set_time = telemetry.sdk.platform.time.now_unix_nanos()
   let set_duration = set_time - start_time
   
   // 验证设置时间
@@ -302,15 +302,15 @@ test "attributes with array values performance" {
   assert_eq(attrs.values.length(), 1000)
   
   // 获取数组值
-  let get_start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   for i = 0; i < 1000; i = i + 1 {
     let key = "array.key.${i}"
-    let value = @azimuth.telemetry.api.common.Attributes.get(attrs, key)
+    let value = telemetry.api.common.Attributes.get(attrs, key)
     assert_true(value != None)
   }
   
-  let get_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let get_time = telemetry.sdk.platform.time.now_unix_nanos()
   let get_duration = get_time - get_start_time
   
   // 验证获取时间
@@ -321,19 +321,19 @@ test "attributes memory usage efficiency" {
   // 测试属性内存使用效率
   let initial_memory = 1000000 // 假设的初始内存
   
-  let start_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let start_time = telemetry.sdk.platform.time.now_unix_nanos()
   
   // 创建大量属性集合并立即释放
   for batch = 0; batch < 10; batch = batch + 1 {
     let batch_attrs = []
     
     for i = 0; i < 1000; i = i + 1 {
-      let attrs = @azimuth.telemetry.api.common.Attributes.new()
+      let attrs = telemetry.api.common.Attributes.new()
       
       for j = 0; j < 10; j = j + 1 {
         let key = "batch${batch}.attr${i}.${j}"
-        let value = @azimuth.telemetry.api.common.StringValue("value${batch}.${i}.${j}")
-        @azimuth.telemetry.api.common.Attributes.set(attrs, key, value)
+        let value = telemetry.api.common.StringValue("value${batch}.${i}.${j}")
+        telemetry.api.common.Attributes.set(attrs, key, value)
       }
       
       batch_attrs.push(attrs)
@@ -349,7 +349,7 @@ test "attributes memory usage efficiency" {
     // batch_attrs超出作用域，应该被垃圾回收
   }
   
-  let end_time = @azimuth.telemetry.sdk.platform.time.now_unix_nanos()
+  let end_time = telemetry.sdk.platform.time.now_unix_nanos()
   let total_duration = end_time - start_time
   
   // 验证总时间

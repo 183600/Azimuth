@@ -3,47 +3,47 @@
 
 test "composite propagator creation and configuration" {
   // 测试复合传播器的创建和配置
-  let trace_propagator = @azimuth.W3CTraceContextPropagator::new()
-  let baggage_propagator = @azimuth.W3CBaggagePropagator::new()
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let baggage_propagator = W3CBaggagePropagator::new()
   
   // 创建包含单个传播器的复合传播器
-  let single_propagator = @azimuth.CompositePropagator::new([trace_propagator])
+  let single_propagator = CompositePropagator::new([trace_propagator])
   
   // 创建包含多个传播器的复合传播器
-  let multiple_propagators = @azimuth.CompositePropagator::new([trace_propagator, baggage_propagator])
+  let multiple_propagators = CompositePropagator::new([trace_propagator, baggage_propagator])
   
   // 验证传播器创建成功（通过执行操作来验证）
-  let carrier = @azimuth.TextMapCarrier::new()
-  let context = @azimuth.Context::root()
+  let carrier = TextMapCarrier::new()
+  let context = Context::root()
   
   // 测试注入操作不会抛出异常
-  @azimuth.CompositePropagator::inject(single_propagator, context, carrier)
-  @azimuth.CompositePropagator::inject(multiple_propagators, context, carrier)
+  CompositePropagator::inject(single_propagator, context, carrier)
+  CompositePropagator::inject(multiple_propagators, context, carrier)
   
   // 测试提取操作不会抛出异常
-  let extracted_context1 = @azimuth.CompositePropagator::extract(single_propagator, carrier)
-  let extracted_context2 = @azimuth.CompositePropagator::extract(multiple_propagators, carrier)
+  let extracted_context1 = CompositePropagator::extract(single_propagator, carrier)
+  let extracted_context2 = CompositePropagator::extract(multiple_propagators, carrier)
   
   // 验证上下文被正确提取（简化实现返回特定上下文）
-  let extracted_value = @azimuth.Context::get(extracted_context1, @azimuth.ContextKey::new("extracted"))
+  let extracted_value = Context::get(extracted_context1, ContextKey::new("extracted"))
   assert_eq(extracted_value, Some("true"))
 }
 
 test "text map carrier complex operations" {
   // 测试TextMapCarrier的复杂操作
-  let carrier = @azimuth.TextMapCarrier::new()
+  let carrier = TextMapCarrier::new()
   
   // 设置多个头部
-  @azimuth.TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  @azimuth.TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
-  @azimuth.TextMapCarrier::set(carrier, "baggage", "userId=user123,sessionId=session456")
-  @azimuth.TextMapCarrier::set(carrier, "custom-header", "custom-value")
-  @azimuth.TextMapCarrier::set(carrier, "x-request-id", "req-789012")
+  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  TextMapCarrier::set(carrier, "tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
+  TextMapCarrier::set(carrier, "baggage", "userId=user123,sessionId=session456")
+  TextMapCarrier::set(carrier, "custom-header", "custom-value")
+  TextMapCarrier::set(carrier, "x-request-id", "req-789012")
   
   // 获取已知的头部
-  let traceparent = @azimuth.TextMapCarrier::get(carrier, "traceparent")
-  let baggage = @azimuth.TextMapCarrier::get(carrier, "baggage")
-  let request_id = @azimuth.TextMapCarrier::get(carrier, "x-request-id")
+  let traceparent = TextMapCarrier::get(carrier, "traceparent")
+  let baggage = TextMapCarrier::get(carrier, "baggage")
+  let request_id = TextMapCarrier::get(carrier, "x-request-id")
   
   // 验证已知的头部值（简化实现返回预定义值）
   assert_eq(traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
@@ -51,41 +51,41 @@ test "text map carrier complex operations" {
   assert_eq(request_id, None)  // 简化实现
   
   // 验证不存在的头部
-  let non_existent = @azimuth.TextMapCarrier::get(carrier, "non-existent-header")
+  let non_existent = TextMapCarrier::get(carrier, "non-existent-header")
   assert_eq(non_existent, None)
 }
 
 test "propagation with empty and null values" {
   // 测试传播中的空值和null值处理
-  let carrier = @azimuth.TextMapCarrier::new()
-  let context = @azimuth.Context::root()
+  let carrier = TextMapCarrier::new()
+  let context = Context::root()
   
   // 设置空字符串头部
-  @azimuth.TextMapCarrier::set(carrier, "empty.header", "")
-  @azimuth.TextMapCarrier::set(carrier, "normal.header", "normal-value")
+  TextMapCarrier::set(carrier, "empty.header", "")
+  TextMapCarrier::set(carrier, "normal.header", "normal-value")
   
   // 验证空字符串头部
-  let empty_header = @azimuth.TextMapCarrier::get(carrier, "empty.header")
-  let normal_header = @azimuth.TextMapCarrier::get(carrier, "normal.header")
+  let empty_header = TextMapCarrier::get(carrier, "empty.header")
+  let normal_header = TextMapCarrier::get(carrier, "normal.header")
   
   assert_eq(empty_header, None)  // 简化实现
   assert_eq(normal_header, None)  // 简化实现
   
   // 测试在空carrier上执行传播操作
-  let empty_carrier = @azimuth.TextMapCarrier::new()
-  let extracted_from_empty = @azimuth.CompositePropagator::extract(
-    @azimuth.CompositePropagator::new([@azimuth.W3CTraceContextPropagator::new()]),
+  let empty_carrier = TextMapCarrier::new()
+  let extracted_from_empty = CompositePropagator::extract(
+    CompositePropagator::new([W3CTraceContextPropagator::new()]),
     empty_carrier
   )
   
   // 验证从空carrier提取的上下文
-  let extracted_value = @azimuth.Context::get(extracted_from_empty, @azimuth.ContextKey::new("extracted"))
+  let extracted_value = Context::get(extracted_from_empty, ContextKey::new("extracted"))
   assert_eq(extracted_value, Some("true"))
 }
 
 test "propagation header format validation" {
   // 测试传播头部格式的验证
-  let carrier = @azimuth.TextMapCarrier::new()
+  let carrier = TextMapCarrier::new()
   
   // 设置各种格式的traceparent头部
   let valid_traceparents = [
@@ -103,22 +103,22 @@ test "propagation header format validation" {
   
   // 测试有效的traceparent格式
   for valid_tp in valid_traceparents {
-    @azimuth.TextMapCarrier::set(carrier, "traceparent", valid_tp)
-    let retrieved = @azimuth.TextMapCarrier::get(carrier, "traceparent")
+    TextMapCarrier::set(carrier, "traceparent", valid_tp)
+    let retrieved = TextMapCarrier::get(carrier, "traceparent")
     // 简化实现只返回特定值，所以这里只验证操作不抛出异常
   }
   
   // 测试无效的traceparent格式
   for invalid_tp in invalid_traceparents {
-    @azimuth.TextMapCarrier::set(carrier, "traceparent", invalid_tp)
-    let retrieved = @azimuth.TextMapCarrier::get(carrier, "traceparent")
+    TextMapCarrier::set(carrier, "traceparent", invalid_tp)
+    let retrieved = TextMapCarrier::get(carrier, "traceparent")
     // 简化实现只返回特定值，所以这里只验证操作不抛出异常
   }
 }
 
 test "propagation with special characters" {
   // 测试包含特殊字符的传播头部
-  let carrier = @azimuth.TextMapCarrier::new()
+  let carrier = TextMapCarrier::new()
   
   // 设置包含特殊字符的头部
   let special_headers = [
@@ -132,92 +132,92 @@ test "propagation with special characters" {
   ]
   
   for (key, value) in special_headers {
-    @azimuth.TextMapCarrier::set(carrier, key, value)
+    TextMapCarrier::set(carrier, key, value)
   }
   
   // 验证头部设置和获取
   for (key, expected_value) in special_headers {
-    let actual_value = @azimuth.TextMapCarrier::get(carrier, key)
+    let actual_value = TextMapCarrier::get(carrier, key)
     // 简化实现只对特定键返回值，所以这里主要验证操作不抛出异常
   }
 }
 
 test "propagation cross-service scenario" {
   // 测试跨服务传播场景
-  let carrier = @azimuth.TextMapCarrier::new()
+  let carrier = TextMapCarrier::new()
   
   // 模拟服务A设置传播信息
-  let service_a_context = @azimuth.Context::with_value(
-    @azimuth.Context::root(),
-    @azimuth.ContextKey::new("service.a.trace.id"),
+  let service_a_context = Context::with_value(
+    Context::root(),
+    ContextKey::new("service.a.trace.id"),
     "trace-from-service-a"
   )
   
-  let propagator = @azimuth.CompositePropagator::new([
-    @azimuth.W3CTraceContextPropagator::new(),
-    @azimuth.W3CBaggagePropagator::new()
+  let propagator = CompositePropagator::new([
+    W3CTraceContextPropagator::new(),
+    W3CBaggagePropagator::new()
   ])
   
   // 服务A注入传播信息
-  @azimuth.CompositePropagator::inject(propagator, service_a_context, carrier)
+  CompositePropagator::inject(propagator, service_a_context, carrier)
   
   // 模拟服务B提取传播信息
-  let service_b_context = @azimuth.CompositePropagator::extract(propagator, carrier)
+  let service_b_context = CompositePropagator::extract(propagator, carrier)
   
   // 验证传播信息（简化实现返回上下文）
-  let extracted_value = @azimuth.Context::get(service_b_context, @azimuth.ContextKey::new("extracted"))
+  let extracted_value = Context::get(service_b_context, ContextKey::new("extracted"))
   assert_eq(extracted_value, Some("true"))
   
   // 服务B添加自己的上下文信息
-  let service_b_enhanced_context = @azimuth.Context::with_value(
+  let service_b_enhanced_context = Context::with_value(
     service_b_context,
-    @azimuth.ContextKey::new("service.b.operation"),
+    ContextKey::new("service.b.operation"),
     "process-request"
   )
   
   // 服务B重新注入传播信息
-  let carrier_b = @azimuth.TextMapCarrier::new()
-  @azimuth.CompositePropagator::inject(propagator, service_b_enhanced_context, carrier_b)
+  let carrier_b = TextMapCarrier::new()
+  CompositePropagator::inject(propagator, service_b_enhanced_context, carrier_b)
   
   // 模拟服务C提取传播信息
-  let service_c_context = @azimuth.CompositePropagator::extract(propagator, carrier_b)
-  let extracted_value_c = @azimuth.Context::get(service_c_context, @azimuth.ContextKey::new("extracted"))
+  let service_c_context = CompositePropagator::extract(propagator, carrier_b)
+  let extracted_value_c = Context::get(service_c_context, ContextKey::new("extracted"))
   assert_eq(extracted_value_c, Some("true"))
 }
 
 test "propagation error handling and recovery" {
   // 测试传播过程中的错误处理和恢复
-  let carrier = @azimuth.TextMapCarrier::new()
-  let context = @azimuth.Context::root()
+  let carrier = TextMapCarrier::new()
+  let context = Context::root()
   
   // 创建传播器
-  let propagator = @azimuth.CompositePropagator::new([@azimuth.W3CTraceContextPropagator::new()])
+  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
   
   // 测试在正常情况下的传播
-  @azimuth.CompositePropagator::inject(propagator, context, carrier)
-  let extracted_normal = @azimuth.CompositePropagator::extract(propagator, carrier)
+  CompositePropagator::inject(propagator, context, carrier)
+  let extracted_normal = CompositePropagator::extract(propagator, carrier)
   
   // 验证正常传播的结果
-  let normal_value = @azimuth.Context::get(extracted_normal, @azimuth.ContextKey::new("extracted"))
+  let normal_value = Context::get(extracted_normal, ContextKey::new("extracted"))
   assert_eq(normal_value, Some("true"))
   
   // 测试在损坏的carrier上的传播
-  let corrupted_carrier = @azimuth.TextMapCarrier::new()
-  @azimuth.TextMapCarrier::set(corrupted_carrier, "traceparent", "corrupted-data")
+  let corrupted_carrier = TextMapCarrier::new()
+  TextMapCarrier::set(corrupted_carrier, "traceparent", "corrupted-data")
   
   // 尝试从损坏的carrier提取
-  let extracted_from_corrupted = @azimuth.CompositePropagator::extract(propagator, corrupted_carrier)
+  let extracted_from_corrupted = CompositePropagator::extract(propagator, corrupted_carrier)
   
   // 验证错误处理（应该仍然返回有效的上下文）
-  let corrupted_value = @azimuth.Context::get(extracted_from_corrupted, @azimuth.ContextKey::new("extracted"))
+  let corrupted_value = Context::get(extracted_from_corrupted, ContextKey::new("extracted"))
   assert_eq(corrupted_value, Some("true"))
   
   // 测试传播器的恢复能力
-  let recovery_carrier = @azimuth.TextMapCarrier::new()
-  @azimuth.CompositePropagator::inject(propagator, extracted_from_corrupted, recovery_carrier)
+  let recovery_carrier = TextMapCarrier::new()
+  CompositePropagator::inject(propagator, extracted_from_corrupted, recovery_carrier)
   
   // 验证恢复后的传播仍然有效
-  let recovered_context = @azimuth.CompositePropagator::extract(propagator, recovery_carrier)
-  let recovered_value = @azimuth.Context::get(recovered_context, @azimuth.ContextKey::new("extracted"))
+  let recovered_context = CompositePropagator::extract(propagator, recovery_carrier)
+  let recovered_value = Context::get(recovered_context, ContextKey::new("extracted"))
   assert_eq(recovered_value, Some("true"))
 }
