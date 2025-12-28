@@ -1,0 +1,13 @@
+{
+  "name": "comprehensive-tests",
+  "version": "0.1.0",
+  "description": "Comprehensive test cases for Azimuth telemetry system covering platform, error handling, and integration scenarios",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../../azimuth"
+  },
+  "test": {
+    "test": ["comprehensive_test.mbt"]
+  }
+}
