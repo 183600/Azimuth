@@ -221,7 +221,7 @@ test "时钟和随机数生成测试" {
 test "HTTP客户端请求响应测试" {
   // 创建HTTP请求
   let headers = [("Content-Type", "application/json"), ("User-Agent", "azimuth-telemetry/1.0")]
-  let request = HttpRequest::new("POST", "https://api.example.com/telemetry", headers, Some("{\"test\": \"data\"}"))
+  let request = HttpRequest::new("POST", "https://api.example.com/telemetry", headers)
   
   // 验证请求属性
   assert_eq(HttpRequest::http_method(request), "POST")
@@ -229,12 +229,12 @@ test "HTTP客户端请求响应测试" {
   
   match HttpRequest::body(request) {
     Some(body) => assert_eq(body, "{\"test\": \"data\"}")
-    _ => assert_true(false)
+    _ => assert_true(false) // 简化实现可能返回None
   }
   
   // 创建HTTP响应
   let response_headers = [("Content-Type", "application/json"), ("X-Request-ID", "req-123")]
-  let response = HttpResponse::new(200, response_headers, Some("{\"status\": \"success\"}"))
+  let response = HttpResponse::new(200, response_headers)
   
   // 验证响应属性
   assert_eq(HttpResponse::status_code(response), 200)
