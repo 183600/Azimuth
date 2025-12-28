@@ -186,3 +186,99 @@ test "属性值类型转换测试" {
     _ => assert_true(false)
   }
 }
+
+test "SpanContext有效性验证测试" {
+  // 测试有效的SpanContext
+  let valid_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "rojo=00f067aa0ba902b7")
+  
+  assert_eq(SpanContext::trace_id(valid_ctx), "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(SpanContext::span_id(valid_ctx), "b7ad6b7169203331")
+  assert_true(SpanContext::is_valid(valid_ctx))
+  assert_true(SpanContext::is_sampled(valid_ctx))
+  
+  // 测试无效的SpanContext（空trace_id）
+  let invalid_trace_ctx = SpanContext::new("", "b7ad6b7169203331", true, "")
+  assert_false(SpanContext::is_valid(invalid_trace_ctx))
+  assert_eq(SpanContext::trace_id(invalid_trace_ctx), "")
+  assert_eq(SpanContext::span_id(invalid_trace_ctx), "b7ad6b7169203331")
+  
+  // 测试无效的SpanContext（空span_id）
+  let invalid_span_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "", true, "")
+  assert_false(SpanContext::is_valid(invalid_span_ctx))
+  assert_eq(SpanContext::trace_id(invalid_span_ctx), "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(SpanContext::span_id(invalid_span_ctx), "")
+  
+  // 测试未采样的SpanContext
+  let not_sampled_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", false, "")
+  assert_true(SpanContext::is_valid(not_sampled_ctx))
+  assert_false(SpanContext::is_sampled(not_sampled_ctx))
+  
+  // 测试两者都为空的情况
+  let both_empty_ctx = SpanContext::new("", "", false, "")
+  assert_false(SpanContext::is_valid(both_empty_ctx))
+  assert_false(SpanContext::is_sampled(both_empty_ctx))
+}
+
+test "LogRecord严重性级别测试" {
+  // 测试不同严重性级别的LogRecord
+  let trace_record = LogRecord::new(Trace, "Trace level message")
+  assert_eq(LogRecord::severity_number(trace_record), Trace)
+  match LogRecord::body(trace_record) {
+    Some(body) => assert_eq(body, "Trace level message")
+    None => assert_true(false)
+  }
+  
+  let debug_record = LogRecord::new(Debug, "Debug level message")
+  assert_eq(LogRecord::severity_number(debug_record), Debug)
+  match LogRecord::body(debug_record) {
+    Some(body) => assert_eq(body, "Debug level message")
+    None => assert_true(false)
+  }
+  
+  let info_record = LogRecord::new(Info, "Info level message")
+  assert_eq(LogRecord::severity_number(info_record), Info)
+  match LogRecord::body(info_record) {
+    Some(body) => assert_eq(body, "Info level message")
+    None => assert_true(false)
+  }
+  
+  let warn_record = LogRecord::new(Warn, "Warning level message")
+  assert_eq(LogRecord::severity_number(warn_record), Warn)
+  match LogRecord::body(warn_record) {
+    Some(body) => assert_eq(body, "Warning level message")
+    None => assert_true(false)
+  }
+  
+  let error_record = LogRecord::new(Error, "Error level message")
+  assert_eq(LogRecord::severity_number(error_record), Error)
+  match LogRecord::body(error_record) {
+    Some(body) => assert_eq(body, "Error level message")
+    None => assert_true(false)
+  }
+  
+  let fatal_record = LogRecord::new(Fatal, "Fatal level message")
+  assert_eq(LogRecord::severity_number(fatal_record), Fatal)
+  match LogRecord::body(fatal_record) {
+    Some(body) => assert_eq(body, "Fatal level message")
+    None => assert_true(false)
+  }
+  
+  // 测试带有上下文和属性的LogRecord
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "user.id", StringValue("12345"))
+  
+  let complex_record = LogRecord::new_with_context(
+    Error,
+    Some("Complex error message"),
+    Some(attrs),
+    Some(1735689600000000000L),
+    Some(1735689600000000001L),
+    Some("0af7651916cd43dd8448eb211c80319c"),
+    Some("b7ad6b7169203331"),
+    Some(Context::root())
+  )
+  
+  assert_eq(LogRecord::severity_number(complex_record), Error)
+  assert_eq(LogRecord::trace_id(complex_record), Some("0af7651916cd43dd8448eb211c80319c"))
+  assert_eq(LogRecord::span_id(complex_record), Some("b7ad6b7169203331"))
+}
