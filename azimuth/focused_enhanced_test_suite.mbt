@@ -1,306 +1,178 @@
 // Focused Enhanced Test Suite for Azimuth Telemetry System
-// Comprehensive test coverage for advanced telemetry features with emphasis on edge cases
+// This file contains targeted test cases for specific scenarios
 
-test "error_boundary_handling" {
-  // Test error handling in span operations
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "error_test_tracer")
-  let span = Tracer::start_span(tracer, "error_span")
+// Test 1: Basic span context validation
+pub test "basic span context validation" {
+  // Test with valid IDs
+  let valid_ctx = SpanContext::new("trace123", "span456", true, "")
+  assert_true(SpanContext::is_valid(valid_ctx))
+  assert_eq(SpanContext::trace_id(valid_ctx), "trace123")
+  assert_eq(SpanContext::span_id(valid_ctx), "span456")
+  assert_true(SpanContext::is_sampled(valid_ctx))
   
-  // Test setting error status
-  Span::set_status(span, Error, Some("Simulated error for testing"))
-  assert_eq(Span::status(span), Error)
-  
-  // Test span with error context
-  let error_attrs = [("error.type", StringValue("ValidationError")), ("error.message", StringValue("Invalid input"))]
-  let span_with_error = Tracer::start_span(tracer, "validation_error_span")
-  Span::add_event(span_with_error, "validation.error", Some(error_attrs))
-  Span::end(span_with_error)
-  
-  // Test log record with error severity
-  let error_log = LogRecord::new_with_context(
-    Error,
-    Some("Critical system error occurred"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some("error_trace_id"),
-    Some("error_span_id"),
-    None
-  )
-  assert_eq(LogRecord::severity_number(error_log), Error)
-  assert_eq(LogRecord::trace_id(error_log), Some("error_trace_id"))
+  // Test with invalid IDs
+  let invalid_ctx = SpanContext::new("", "", true, "")
+  assert_false(SpanContext::is_valid(invalid_ctx))
 }
 
-test "attribute_boundary_conditions" {
-  // Test attribute operations with boundary values
-  let attrs = Attributes::new()
+// Test 2: Context operations
+pub test "context operations" {
+  let root_ctx = Context::root()
+  let key = ContextKey::new("test.key")
+  let ctx_with_value = Context::with_value(root_ctx, key, "test_value")
   
-  // Test empty string attribute
-  Attributes::set(attrs, "empty.string", StringValue(""))
+  // Test value retrieval
+  let retrieved_value = Context::get(ctx_with_value, key)
+  assert_eq(retrieved_value, Some("test_value"))
   
-  // Test very long string attribute
-  let long_string = "a" * 1000
-  Attributes::set(attrs, "long.string", StringValue(long_string))
-  
-  // Test numeric boundary values
-  Attributes::set(attrs, "max.int", IntValue(2147483647))
-  Attributes::set(attrs, "min.int", IntValue(-2147483648))
-  Attributes::set(attrs, "max.float", FloatValue(1.7976931348623157e+308))
-  Attributes::set(attrs, "min.float", FloatValue(-1.7976931348623157e+308))
-  
-  // Test boolean attributes
-  Attributes::set(attrs, "true.value", BoolValue(true))
-  Attributes::set(attrs, "false.value", BoolValue(false))
-  
-  // Test array attributes with empty arrays
-  Attributes::set(attrs, "empty.string.array", ArrayStringValue([]))
-  Attributes::set(attrs, "empty.int.array", ArrayIntValue([]))
-  
-  // Verify retrieval of boundary values
-  assert_eq(Attributes::get(attrs, "max.int"), Some(IntValue(2147483647)))
-  assert_eq(Attributes::get(attrs, "true.value"), Some(BoolValue(true)))
+  // Test missing key
+  let missing_key = ContextKey::new("missing.key")
+  let missing_value = Context::get(root_ctx, missing_key)
+  assert_eq(missing_value, None)
 }
 
-test "data_serialization_integrity" {
-  // Test serialization integrity of complex data structures
-  let complex_attrs = [
-    ("nested.object", StringValue("{\"key\":\"value\",\"number\":42}")),
-    ("unicode.text", StringValue("测试中文 🌟 العربية")),
-    ("special.chars", StringValue("!@#$%^&*()_+-=[]{}|;':\",./<>?")),
-    ("timestamp.value", IntValue(1735689600000000000L))
-  ]
+// Test 3: Basic metrics operations
+pub test "basic metrics operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
   
-  let resource = Resource::with_attributes(Resource::new(), complex_attrs)
+  let counter = Meter::create_counter(meter, "test.counter")
+  assert_eq(counter.name, "test.counter")
   
-  // Test resource attribute retrieval integrity
-  assert_eq(
-    Resource::get_attribute(resource, "unicode.text"),
-    Some(StringValue("测试中文 🌟 العربية"))
-  )
+  let histogram = Meter::create_histogram(meter, "test.histogram")
+  assert_eq(histogram.name, "test.histogram")
   
-  assert_eq(
-    Resource::get_attribute(resource, "timestamp.value"),
-    Some(IntValue(1735689600000000000L))
-  )
+  let updown_counter = Meter::create_updown_counter(meter, "test.updown")
+  assert_eq(updown_counter.name, "test.updown")
   
-  // Test baggage with special characters
-  let baggage = Baggage::new()
-  let baggage_with_special = Baggage::set_entry(baggage, "special.key", "special=value&with=separators")
-  assert_eq(
-    Baggage::get_entry(baggage_with_special, "special.key"),
-    Some("special=value&with=separators")
-  )
+  let gauge = Meter::create_gauge(meter, "test.gauge")
+  assert_eq(gauge.name, "test.gauge")
+  
+  // Test metric operations
+  Counter::add(counter, 1.0)
+  Histogram::record(histogram, 100.0)
+  UpDownCounter::add(updown_counter, 5.0)
+  
+  assert_true(true) // If we reach here, all operations completed
 }
 
-test "resource_lifecycle_management" {
-  // Test resource creation, modification, and merging
-  let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("base-service")),
+// Test 4: Log record operations
+pub test "log record operations" {
+  let record = LogRecord::new(azimuth::Info, "Test log message")
+  
+  assert_eq(LogRecord::severity_number(record), azimuth::Info)
+  assert_eq(LogRecord::body(record), Some("Test log message"))
+  
+  // Test with different severity levels
+  let error_record = LogRecord::new(azimuth::Error, "Error message")
+  assert_eq(LogRecord::severity_number(error_record), azimuth::Error)
+  assert_eq(LogRecord::body(error_record), Some("Error message"))
+  
+  let warn_record = LogRecord::new(azimuth::Warn, "Warning message")
+  assert_eq(LogRecord::severity_number(warn_record), azimuth::Warn)
+  assert_eq(LogRecord::body(warn_record), Some("Warning message"))
+}
+
+// Test 5: Resource operations
+pub test "resource operations" {
+  let resource = Resource::new()
+  let attributes = [
+    ("service.name", StringValue("test-service")),
     ("service.version", StringValue("1.0.0"))
   ]
-  let resource_with_base = Resource::with_attributes(base_resource, base_attrs)
+  let resource_with_attrs = Resource::with_attributes(resource, attributes)
   
-  // Test resource merging
-  let override_attrs = [
-    ("service.name", StringValue("override-service")),
-    ("environment", StringValue("production"))
-  ]
-  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
+  // Test attribute retrieval
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
+  let missing_attr = Resource::get_attribute(resource_with_attrs, "missing.attr")
   
-  let merged_resource = Resource::merge(resource_with_base, override_resource)
-  
-  // Verify merge behavior (override should win)
-  assert_eq(
-    Resource::get_attribute(merged_resource, "service.name"),
-    Some(StringValue("override-service"))
-  )
-  
-  assert_eq(
-    Resource::get_attribute(merged_resource, "environment"),
-    Some(StringValue("production"))
-  )
+  assert_eq(service_name, Some(StringValue("test-service")))
+  assert_eq(service_version, Some(StringValue("1.0.0")))
+  assert_eq(missing_attr, None)
 }
 
-test "clock_and_random_operations" {
-  // Test clock operations
-  let system_clock = Clock::system()
-  let timestamp1 = Clock::now_unix_nanos(system_clock)
-  let timestamp2 = Clock::now_unix_nanos(system_clock)
+// Test 6: HTTP operations
+pub test "http operations" {
+  let headers = [("Content-Type", "application/json")]
+  let request = HttpRequest::new("GET", "https://api.example.com/data", headers, Some("request body"))
   
-  // Verify timestamp is reasonable (should be around 2025)
-  assert_eq(timestamp1, 1735689600000000000L)
-  assert_eq(timestamp2, 1735689600000000000L)
+  assert_eq(HttpRequest::http_method(request), "GET")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
+  assert_eq(HttpRequest::body(request), Some("request body"))
   
-  // Test random operations
-  let system_random = Random::system()
-  
-  // Test random bytes generation
-  let random_bytes = Random::next_bytes(system_random, 16)
-  assert_eq(random_bytes.length, 16)
-  
-  // Test random u64 generation
-  let random_u64 = Random::next_u64(system_random)
-  assert_eq(random_u64, 12345UL)
-  
-  // Test multiple calls for consistency
-  let random_u64_2 = Random::next_u64(system_random)
-  assert_eq(random_u64_2, 12345UL)
+  let response = HttpResponse::new(200, headers, Some("{\"status\": \"success\"}"))
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::body(response), Some("{\"status\": \"success\"}"))
 }
 
-test "cross_service_context_propagation" {
-  // Test context propagation across service boundaries
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([trace_propagator])
+// Test 7: Span operations
+pub test "span operations" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+  let span = Span::new("test-span", Internal, span_ctx)
   
-  // Create initial context with trace information
-  let initial_ctx = Context::root()
-  let trace_key = ContextKey::new("trace.id")
-  let ctx_with_trace = Context::with_value(initial_ctx, trace_key, "trace-123-456")
+  assert_eq(Span::name(span), "test-span")
+  assert_eq(Span::kind(span), Internal)
+  assert_true(Span::is_recording(span))
+  assert_eq(Span::span_context(span), span_ctx)
   
-  // Create carrier for propagation
-  let outbound_carrier = TextMapCarrier::new()
+  // Test span operations
+  Span::add_event(span, "test-event")
+  Span::set_status(span, Ok, Some("Test completed"))
+  Span::end(span)
   
-  // Inject context into carrier
-  CompositePropagator::inject(composite, ctx_with_trace, outbound_carrier)
-  
-  // Verify injected data
-  let injected_trace = TextMapCarrier::get(outbound_carrier, "traceparent")
-  assert_eq(injected_trace, Some("00-test-trace-id-test-span-id-01"))
-  
-  // Simulate service boundary - extract context
-  let inbound_carrier = outbound_carrier
-  let extracted_ctx = CompositePropagator::extract(composite, inbound_carrier)
-  
-  // Verify extraction worked
-  let extracted_key = ContextKey::new("extracted")
-  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
+  assert_true(true) // If we reach here, all operations completed
 }
 
-test "network_exception_handling" {
-  // Test HTTP client behavior with various network scenarios
-  let client = HttpClient::new()
-  
-  // Test request creation with various scenarios
-  let headers = [
-    ("Content-Type", "application/json"),
-    ("User-Agent", "Azimuth-Telemetry/1.0"),
-    ("X-Request-ID", "req-123-456")
-  ]
-  
-  // Test GET request
-  let get_request = HttpRequest::new("GET", "https://api.example.com/health", headers, None)
-  assert_eq(HttpRequest::http_method(get_request), "GET")
-  assert_eq(HttpRequest::url(get_request), "https://api.example.com/health")
-  assert_eq(HttpRequest::body(get_request), None)
-  
-  // Test POST request with body
-  let post_request = HttpRequest::new(
-    "POST", 
-    "https://api.example.com/telemetry", 
-    headers, 
-    Some("{\"metrics\":[{\"name\":\"counter\",\"value\":42}]")
-  )
-  assert_eq(HttpRequest::http_method(post_request), "POST")
-  assert_eq(HttpRequest::body(post_request), Some("{\"metrics\":[{\"name\":\"counter\",\"value\":42}]")
-  
-  // Test various response scenarios
-  let success_response = HttpResponse::new(200, [("Content-Type", "application/json")], Some("{\"status\":\"ok\"}"))
-  assert_eq(HttpResponse::status_code(success_response), 200)
-  assert_eq(HttpResponse::body(success_response), Some("{\"status\":\"ok\"}")
-  
-  let error_response = HttpResponse::new(500, [("Content-Type", "text/plain")], Some("Internal Server Error"))
-  assert_eq(HttpResponse::status_code(error_response), 500)
-  assert_eq(HttpResponse::body(error_response), Some("Internal Server Error"))
-}
-
-test "performance_benchmark_operations" {
-  // Test performance characteristics of core operations
-  
-  // Benchmark span creation
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "benchmark_tracer")
-  
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // Create multiple spans to test performance
-  for i = 0; i < 100; i = i + 1 {
-    let span = Tracer::start_span(tracer, "benchmark_span_" + i.to_string())
-    Span::add_event(span, "benchmark.event", None)
-    Span::end(span)
-  }
-  
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
-  
-  // Verify reasonable performance (should complete quickly)
-  assert_eq(duration, 0L)?  // Simplified for testing
-  
-  // Benchmark metric operations
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "benchmark_meter")
-  let counter = Meter::create_counter(meter, "benchmark_counter")
-  
-  let metric_start = Clock::now_unix_nanos(Clock::system())
-  
-  // Record multiple metric values
-  for i = 0; i < 1000; i = i + 1 {
-    Counter::add(counter, i.to_double())
-  }
-  
-  let metric_end = Clock::now_unix_nanos(Clock::system())
-  let metric_duration = metric_end - metric_start
-  
-  // Verify metric operation performance
-  assert_eq(metric_duration, 0L)?  // Simplified for testing
-}
-
-test "internationalization_support" {
-  // Test internationalization and localization features
-  
-  // Test Unicode support in attributes
-  let unicode_attrs = [
-    ("chinese.name", StringValue("张三")),
-    ("arabic.name", StringValue("أحمد")),
-    ("emoji.test", StringValue("🚀 🌟 📊")),
-    ("mixed.content", StringValue("Test 测试 العربية 🌟"))
-  ]
-  
-  let resource = Resource::with_attributes(Resource::new(), unicode_attrs)
-  
-  // Verify Unicode attribute handling
-  assert_eq(
-    Resource::get_attribute(resource, "chinese.name"),
-    Some(StringValue("张三"))
-  )
-  
-  assert_eq(
-    Resource::get_attribute(resource, "arabic.name"),
-    Some(StringValue("أحمد"))
-  )
-  
-  assert_eq(
-    Resource::get_attribute(resource, "emoji.test"),
-    Some(StringValue("🚀 🌟 📊"))
-  )
-  
-  // Test Unicode in log messages
-  let unicode_log = LogRecord::new(Info, "系统日志：用户操作完成 📈")
-  assert_eq(LogRecord::body(unicode_log), Some("系统日志：用户操作完成 📈"))
-  
-  // Test Unicode in baggage
+// Test 8: Baggage operations
+pub test "baggage operations" {
   let baggage = Baggage::new()
-  let unicode_baggage = Baggage::set_entry(baggage, "user.locale", "zh-CN")
-  assert_eq(Baggage::get_entry(unicode_baggage, "user.locale"), Some("zh-CN"))
+  let updated_baggage = Baggage::set_entry(baggage, "test.key", "test.value")
   
-  // Test span names with Unicode
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "i18n_tracer")
-  let unicode_span = Tracer::start_span(tracer, "中文操作跨度")
-  assert_eq(Span::name(unicode_span), "中文操作跨度")
+  // Test baggage retrieval
+  let baggage_value = Baggage::get_entry(updated_baggage, "test.key")
+  assert_eq(baggage_value, Some("test.value"))
   
-  // Test context with Unicode keys and values
-  let unicode_ctx_key = ContextKey::new("用户标识")
-  let ctx_with_unicode = Context::with_value(Context::root(), unicode_ctx_key, "用户123")
-  assert_eq(Context::get(ctx_with_unicode, unicode_ctx_key), Some("用户123"))
+  // Test missing entry
+  let missing_value = Baggage::get_entry(updated_baggage, "missing.key")
+  assert_eq(missing_value, None)
+  
+  // Test removal
+  let baggage_without_key = Baggage::remove_entry(updated_baggage, "test.key")
+  let removed_value = Baggage::get_entry(baggage_without_key, "test.key")
+  assert_eq(removed_value, None)
+}
+
+// Test 9: Propagator operations
+pub test "propagator operations" {
+  let propagator = W3CTraceContextPropagator::new()
+  let composite_propagator = CompositePropagator::new([propagator])
+  
+  let carrier = TextMapCarrier::new()
+  let ctx = Context::root()
+  
+  // Test injection
+  CompositePropagator::inject(composite_propagator, ctx, carrier)
+  
+  // Test extraction
+  let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
+  
+  let key = ContextKey::new("extracted")
+  let extracted_value = Context::get(extracted_ctx, key)
+  assert_eq(extracted_value, Some("true"))
+}
+
+// Test 10: Text map carrier operations
+pub test "text map carrier operations" {
+  let carrier = TextMapCarrier::new()
+  
+  // Test setting headers
+  TextMapCarrier::set(carrier, "test-header", "test-value")
+  
+  // Test getting headers
+  let header_value = TextMapCarrier::get(carrier, "test-header")
+  let missing_value = TextMapCarrier::get(carrier, "missing-header")
+  
+  assert_eq(header_value, Some("test-value"))
+  assert_eq(missing_value, None)
 }

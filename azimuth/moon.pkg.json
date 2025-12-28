@@ -8,6 +8,6 @@
     "moonbitlang/core/assertion": "*"
   },
 "test": {
-    "test": ["new_basic_tests.mbt", "new_enhanced_tests.mbt", "enhanced_telemetry_coverage_tests.mbt", "practical_telemetry_tests.mbt"]
+    "test": ["new_basic_tests.mbt", "new_enhanced_tests.mbt", "enhanced_telemetry_coverage_tests.mbt", "practical_telemetry_tests.mbt", "focused_enhanced_test_suite.mbt"]
   }
 }
