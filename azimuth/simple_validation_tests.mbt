@@ -108,17 +108,29 @@ test "SpanKind和StatusCode测试" {
   
   // 测试不同类型的SpanKind
   let server_span = Tracer::start_span(tracer, "server.span")
-  assert_eq(Span::kind(server_span), Internal) // 默认是Internal
+  // 使用模式匹配检查SpanKind
+  match Span::kind(server_span) {
+    Internal => assert_true(true) // 默认是Internal
+    _ => assert_true(false)
+  }
   
   let client_span = Tracer::start_span(tracer, "client.span")
   assert_eq(Span::name(client_span), "client.span")
   
   // 测试状态码设置
   Span::set_status(server_span, Ok)
-  assert_eq(Span::status(server_span), Unset) // 简化实现总是返回Unset
+  // 使用模式匹配检查StatusCode
+  match Span::status(server_span) {
+    Unset => assert_true(true) // 简化实现总是返回Unset
+    _ => assert_true(false)
+  }
   
-  Span::set_status(client_span, Error, "Some error occurred")
-  assert_eq(Span::status(client_span), Unset) // 简化实现总是返回Unset
+  Span::set_status(client_span, Error) // 移除第三个参数
+  // 使用模式匹配检查StatusCode
+  match Span::status(client_span) {
+    Unset => assert_true(true) // 简化实现总是返回Unset
+    _ => assert_true(false)
+  }
   
   // 验证span可以正常结束
   Span::end(server_span)
