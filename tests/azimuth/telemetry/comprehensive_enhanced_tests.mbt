@@ -337,7 +337,11 @@ test "复杂属性和嵌套结构测试" {
   
   // 验证复杂Span操作
   assert_eq(Span::name(complex_span), "complex-operation")
-  assert_eq(Span::kind(complex_span), Server)
+  // 使用模式匹配检查SpanKind
+  match Span::kind(complex_span) {
+    Server => assert_true(true)
+    _ => assert_true(false)
+  }
   assert_true(Span::is_recording(complex_span))
 }
 
@@ -602,7 +606,11 @@ test "数据完整性验证测试" {
   
   // 验证Span的基本数据完整性
   assert_eq(Span::name(span), "integrity-operation")
-  assert_eq(Span::kind(span), Server)
+  // 使用模式匹配检查SpanKind
+  match Span::kind(span) {
+    Server => assert_true(true)
+    _ => assert_true(false)
+  }
   assert_true(Span::is_recording(span))
   assert_eq(SpanContext::trace_id(span_ctx), "integrity-trace")
   assert_eq(SpanContext::span_id(span_ctx), "integrity-span")
@@ -623,7 +631,11 @@ test "数据完整性验证测试" {
   
   // 测试Span状态的数据完整性
   Span::set_status(span, Ok, Some("Operation completed with data integrity verified"))
-  assert_eq(Span::status(span), Unset) // 简化实现中返回固定值
+  // 使用模式匹配检查StatusCode
+  match Span::status(span) {
+    Unset => assert_true(true)
+    _ => assert_true(false)
+  } // 简化实现中返回固定值
   
   // 测试属性数据完整性
   let attrs = Attributes::new()
