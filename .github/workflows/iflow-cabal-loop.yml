@@ -88,12 +88,6 @@ jobs:
           export PATH="$HOME/.moon/bin:$PATH"
           moon version
 
-      - name: Pre-install MoonBit dependencies (optional but recommended)
-        shell: bash
-        run: |
-          set -e
-          moon install
-
       # ==================== 继续沿用你的 loop（文件名不改） ====================
 
       - name: Make loop script executable
