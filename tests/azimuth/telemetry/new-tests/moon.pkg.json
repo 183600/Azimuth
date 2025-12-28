@@ -1,0 +1,20 @@
+{
+  "name": "new-tests",
+  "version": "0.1.0",
+  "description": "New test cases for Azimuth telemetry system covering advanced scenarios",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "azimuth": "local:../../../azimuth"
+  },
+  "test": {
+    "test": [
+      "attribute_type_conversion_test.mbt",
+      "span_state_transition_test.mbt", 
+      "advanced_error_boundary_test.mbt",
+      "performance_concurrency_stress_test.mbt",
+      "data_serialization_format_test.mbt",
+      "cross_component_integration_test.mbt"
+    ]
+  }
+}
