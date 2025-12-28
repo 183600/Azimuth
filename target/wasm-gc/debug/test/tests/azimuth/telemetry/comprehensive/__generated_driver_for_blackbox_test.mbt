@@ -57,8 +57,6 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "test.mbt": {
-  },
   "comprehensive_test.mbt": {
     0: (__test_636f6d70726568656e736976655f746573742e6d6274_0, ["basic telemetry functionality"]),
     1: (__test_636f6d70726568656e736976655f746573742e6d6274_1, ["numeric comparisons and edge cases"]),
