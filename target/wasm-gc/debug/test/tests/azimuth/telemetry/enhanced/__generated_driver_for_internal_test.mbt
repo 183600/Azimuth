@@ -64,6 +64,20 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_746573742e6d6274_3, ["enhanced array operations test"]),
     4: (__test_746573742e6d6274_4, ["enhanced option type test"]),
   },
+  "azimuth_enhanced_test_suite.mbt": {
+    0: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_0, ["attributes operations with string and int values"]),
+    1: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_1, ["baggage operations with entry management"]),
+    2: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_2, ["span and tracer lifecycle management"]),
+    3: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_3, ["context propagation operations"]),
+    4: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_4, ["resource attribute management"]),
+    5: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_5, ["histogram and counter operations"]),
+    6: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_6, ["instrumentation scope configuration"]),
+    7: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_7, ["error boundary conditions and edge cases"]),
+    8: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_8, ["log record operations"]),
+    9: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_9, ["cross-service telemetry integration"]),
+  },
+  "azimuth.mbt": {
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
