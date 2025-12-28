@@ -10,14 +10,38 @@ test "attributes_complex_operations" {
   Attributes::set(attrs, "float.key", FloatValue(3.14159))
   Attributes::set(attrs, "bool.key", BoolValue(true))
   
-  // Test retrieval of different types
-  @assertion.assert_eq(Attributes::get(attrs, "string.key"), Some(StringValue("test_value")))?
-  @assertion.assert_eq(Attributes::get(attrs, "int.key"), Some(IntValue(42)))?
-  @assertion.assert_eq(Attributes::get(attrs, "float.key"), Some(FloatValue(3.14159)))?
-  @assertion.assert_eq(Attributes::get(attrs, "bool.key"), Some(BoolValue(true)))?
+  // Test retrieval of different types using pattern matching
+  let string_result = Attributes::get(attrs, "string.key")
+  assert_true(string_result is Some)
+  match string_result {
+    Some(StringValue(value)) => assert_eq(value, "test_value")
+    _ => assert_true(false)
+  }
+  
+  let int_result = Attributes::get(attrs, "int.key")
+  assert_true(int_result is Some)
+  match int_result {
+    Some(IntValue(value)) => assert_eq(value, 42)
+    _ => assert_true(false)
+  }
+  
+  let float_result = Attributes::get(attrs, "float.key")
+  assert_true(float_result is Some)
+  match float_result {
+    Some(FloatValue(value)) => assert_eq(value, 3.14159)
+    _ => assert_true(false)
+  }
+  
+  let bool_result = Attributes::get(attrs, "bool.key")
+  assert_true(bool_result is Some)
+  match bool_result {
+    Some(BoolValue(value)) => assert_eq(value, true)
+    _ => assert_true(false)
+  }
   
   // Test non-existent key
-  @assertion.assert_eq(Attributes::get(attrs, "non.existent.key"), None)?
+  let none_result = Attributes::get(attrs, "non.existent.key")
+  assert_true(none_result is None)
 }
 
 test "context_nested_operations" {
@@ -32,13 +56,33 @@ test "context_nested_operations" {
   let ctx3 = Context::with_value(ctx2, key3, "value3")
   
   // Test value retrieval from nested context
-  @assertion.assert_eq(Context::get(ctx3, key1), Some("value1"))?
-  @assertion.assert_eq(Context::get(ctx3, key2), Some("value2"))?
-  @assertion.assert_eq(Context::get(ctx3, key3), Some("value3"))?
+  let value1 = Context::get(ctx3, key1)
+  assert_true(value1 is Some)
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    _ => assert_true(false)
+  }
+  
+  let value2 = Context::get(ctx3, key2)
+  assert_true(value2 is Some)
+  match value2 {
+    Some(v) => assert_eq(v, "value2")
+    _ => assert_true(false)
+  }
+  
+  let value3 = Context::get(ctx3, key3)
+  assert_true(value3 is Some)
+  match value3 {
+    Some(v) => assert_eq(v, "value3")
+    _ => assert_true(false)
+  }
   
   // Test that earlier contexts are unaffected
-  @assertion.assert_eq(Context::get(ctx1, key2), None)?
-  @assertion.assert_eq(Context::get(ctx2, key3), None)?
+  let none1 = Context::get(ctx1, key2)
+  assert_true(none1 is None)
+  
+  let none2 = Context::get(ctx2, key3)
+  assert_true(none2 is None)
 }
 
 test "span_status_management" {
@@ -47,18 +91,30 @@ test "span_status_management" {
   let span = Tracer::start_span(tracer, "status_test_span")
   
   // Test initial status
-  @assertion.assert_eq(Span::status(span), Unset)?
+  let initial_status = Span::status(span)
+  match initial_status {
+    Unset => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // Test setting OK status
   Span::set_status(span, Ok)
-  @assertion.assert_eq(Span::status(span), Unset)?  // Simplified implementation
+  let ok_status = Span::status(span)
+  match ok_status {
+    Unset => assert_true(true)  // Simplified implementation
+    _ => assert_true(false)
+  }
   
   // Test setting Error status with description
-  Span::set_status(span, Error, Some("Operation failed"))
-  @assertion.assert_eq(Span::status(span), Unset)?  // Simplified implementation
+  Span::set_status(span, Error, description? = Some("Operation failed"))
+  let error_status = Span::status(span)
+  match error_status {
+    Unset => assert_true(true)  // Simplified implementation
+    _ => assert_true(false)
+  }
   
   // Test span is still recording after status changes
-  @assertion.assert_eq(Span::is_recording(span), true)?
+  assert_true(Span::is_recording(span))
 }
 
 test "metrics_aggregation_operations" {
