@@ -309,6 +309,8 @@ while true; do
       git commit -m "测试通过" || :
     fi
 
+git push --force
+
     # ==================== 自动 bump + 发布 ====================
     # 条件：测试通过 + 日志无 error + 7天内无新 release
     if [[ $HAS_ERROR -eq 0 ]]; then
