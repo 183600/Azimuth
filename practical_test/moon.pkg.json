@@ -1,0 +1,13 @@
+{
+  "name": "practical_test",
+  "version": "0.1.0",
+  "description": "Practical telemetry test package",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["azimuth.mbt", "simple_practical_test.mbt"]
+  }
+}

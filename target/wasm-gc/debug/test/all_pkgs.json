@@ -7,6 +7,11 @@
     },
     {
       "root": "azimuth/telemetry",
+      "rel": "practical_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/practical_test/practical_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "simple_test",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/simple_test/simple_test.mi"
     },
