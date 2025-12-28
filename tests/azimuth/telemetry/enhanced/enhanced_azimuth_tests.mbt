@@ -329,3 +329,171 @@ test "error boundary handling and resilience" {
   
   assert_true(true) // All error boundary tests pass
 }
+
+// Additional focused test cases for Azimuth Telemetry System
+
+test "attribute value type operations" {
+  let string_attr = StringValue("test_value")
+  let int_attr = IntValue(42)
+  let bool_attr = BoolValue(true)
+  
+  // Test attribute creation and type matching
+  match string_attr {
+    StringValue(v) => assert_eq(v, "test_value")
+    _ => assert_true(false)
+  }
+  
+  match int_attr {
+    IntValue(v) => assert_eq(v, 42)
+    _ => assert_true(false)
+  }
+  
+  match bool_attr {
+    BoolValue(v) => assert_true(v)
+    _ => assert_true(false)
+  }
+}
+
+test "resource attributes management" {
+  let resource = Resource::new()
+  let attrs = [("service.name", StringValue("azimuth-service")), 
+               ("service.version", StringValue("1.0.0"))]
+  
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
+  let missing_attr = Resource::get_attribute(resource_with_attrs, "missing.attribute")
+  
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "azimuth-service")
+    _ => assert_true(false)
+  }
+  
+  match service_version {
+    Some(StringValue(version)) => assert_eq(version, "1.0.0")
+    _ => assert_true(false)
+  }
+  
+  // Test missing attribute returns None
+  match missing_attr {
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
+}
+
+test "span lifecycle management" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "key=value")
+  let span = Span::new("test-span", Internal, span_ctx)
+  
+  // Test span properties
+  assert_eq(Span::name(span), "test-span")
+  assert_true(Span::is_recording(span))
+  
+  let retrieved_ctx = Span::span_context(span)
+  assert_eq(SpanContext::trace_id(retrieved_ctx), "trace123")
+  assert_eq(SpanContext::span_id(retrieved_ctx), "span456")
+  assert_true(SpanContext::is_sampled(retrieved_ctx))
+  
+  // Test span operations
+  Span::set_status(span, Unset)
+  Span::add_event(span, "event1")
+  
+  // End the span
+  Span::end(span)
+  assert_true(true)
+}
+
+test "metrics instruments creation" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  
+  // Test Counter
+  let counter = Meter::create_counter(meter, "http.requests")
+  assert_eq(counter.name, "http.requests")
+  
+  Counter::add(counter, 10.0)
+  Counter::add(counter, 5.0)
+  
+  // Test Histogram
+  let histogram = Meter::create_histogram(meter, "http.request.duration")
+  assert_eq(histogram.name, "http.request.duration")
+  
+  Histogram::record(histogram, 150.5)
+  Histogram::record(histogram, 200.0)
+  
+  // Test UpDownCounter
+  let updown_counter = Meter::create_updown_counter(meter, "active.connections")
+  assert_eq(updown_counter.name, "active.connections")
+  
+  UpDownCounter::add(updown_counter, 5.0)
+  UpDownCounter::add(updown_counter, -2.0)
+  
+  // Test Gauge
+  let gauge = Meter::create_gauge(meter, "memory.usage")
+  assert_eq(gauge.name, "memory.usage")
+  
+  assert_true(true)
+}
+
+test "log record severity and context" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "test-logger")
+  
+  // Test different severity levels
+  let trace_record = LogRecord::new(Trace, "Debug trace message")
+  let info_record = LogRecord::new(Info, "Information message")
+  let warn_record = LogRecord::new(Warn, "Warning message")
+  let error_record = LogRecord::new(Error, "Error message")
+  
+  // Test severity levels by pattern matching
+  match LogRecord::severity_number(trace_record) {
+    Trace => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match LogRecord::severity_number(info_record) {
+    Info => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match LogRecord::severity_number(warn_record) {
+    Warn => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match LogRecord::severity_number(error_record) {
+    Error => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  assert_eq(LogRecord::body(trace_record), Some("Debug trace message"))
+  assert_eq(LogRecord::body(error_record), Some("Error message"))
+  
+  // Emit the log record
+  Logger::emit(logger, error_record)
+  assert_true(true)
+}
+
+test "http client complete request-response cycle" {
+  let client = HttpClient::new()
+  
+  // Create request with basic data
+  let headers = [("Content-Type", "application/json")]
+  let request = HttpRequest::new("GET", "https://api.example.com/users", headers)
+  
+  // Verify request properties
+  assert_eq(HttpRequest::http_method(request), "GET")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/users")
+  assert_eq(HttpRequest::body(request), None)
+  
+  // Simulate response
+  let response_headers = [("Content-Type", "application/json")]
+  let response = HttpResponse::new(200, response_headers)
+  
+  // Verify response properties
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::body(response), None)
+  
+  assert_true(true)
+}
