@@ -138,3 +138,51 @@ test "SpanKind和StatusCode测试" {
   
   assert_true(true) // 如果没有崩溃则测试通过
 }
+
+test "属性值类型转换测试" {
+  let attrs = Attributes::new()
+  
+  // 测试字符串属性
+  Attributes::set(attrs, "string.key", StringValue("test_value"))
+  let string_result = Attributes::get(attrs, "string.key")
+  match string_result {
+    Some(StringValue(value)) => assert_eq(value, "test_value")
+    _ => assert_true(false)
+  }
+  
+  // 测试整数属性
+  Attributes::set(attrs, "int.key", IntValue(42))
+  let int_result = Attributes::get(attrs, "int.key")
+  match int_result {
+    Some(IntValue(value)) => assert_eq(value, 42)
+    _ => assert_true(false)
+  }
+  
+  // 测试浮点数属性
+  Attributes::set(attrs, "float.key", FloatValue(3.14))
+  let float_result = Attributes::get(attrs, "float.key")
+  match float_result {
+    Some(FloatValue(value)) => assert_eq(value, 3.14)
+    _ => assert_true(false)
+  }
+  
+  // 测试布尔属性
+  Attributes::set(attrs, "bool.key", BoolValue(true))
+  let bool_result = Attributes::get(attrs, "bool.key")
+  match bool_result {
+    Some(BoolValue(value)) => assert_eq(value, true)
+    _ => assert_true(false)
+  }
+  
+  // 测试数组属性
+  Attributes::set(attrs, "array.string.key", ArrayStringValue(["item1", "item2"]))
+  let array_result = Attributes::get(attrs, "array.string.key")
+  match array_result {
+    Some(ArrayStringValue(values)) => {
+      assert_eq(values.length(), 2)
+      assert_eq(values[0], "item1")
+      assert_eq(values[1], "item2")
+    }
+    _ => assert_true(false)
+  }
+}

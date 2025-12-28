@@ -243,13 +243,31 @@ test "SeverityNumber enumeration test" {
   let error_record = @azimuth.LogRecord::new(error_severity, "Error message")
   let fatal_record = @azimuth.LogRecord::new(fatal_severity, "Fatal message")
   
-  // Verify severity levels are correctly set
-  assert_eq(@azimuth.LogRecord::severity_number(trace_record), trace_severity)
-  assert_eq(@azimuth.LogRecord::severity_number(debug_record), debug_severity)
-  assert_eq(@azimuth.LogRecord::severity_number(info_record), info_severity)
-  assert_eq(@azimuth.LogRecord::severity_number(warn_record), warn_severity)
-  assert_eq(@azimuth.LogRecord::severity_number(error_record), error_severity)
-  assert_eq(@azimuth.LogRecord::severity_number(fatal_record), fatal_severity)
+  // Verify severity levels are correctly set using pattern matching
+  match @azimuth.LogRecord::severity_number(trace_record) {
+    @azimuth.Trace => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.LogRecord::severity_number(debug_record) {
+    @azimuth.Debug => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.LogRecord::severity_number(info_record) {
+    @azimuth.Info => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.LogRecord::severity_number(warn_record) {
+    @azimuth.Warn => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.LogRecord::severity_number(error_record) {
+    @azimuth.Error => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.LogRecord::severity_number(fatal_record) {
+    @azimuth.Fatal => assert_true(true)
+    _ => assert_true(false)
+  }
 }
 
 test "SpanKind enumeration test" {
@@ -260,12 +278,27 @@ test "SpanKind enumeration test" {
   let producer_span = @azimuth.Span::new("producer-operation", @azimuth.Producer, @azimuth.SpanContext::new("trace4", "span4", true, ""))
   let consumer_span = @azimuth.Span::new("consumer-operation", @azimuth.Consumer, @azimuth.SpanContext::new("trace5", "span5", true, ""))
   
-  // Test span kind properties
-  assert_eq(@azimuth.Span::kind(internal_span), @azimuth.Internal)
-  assert_eq(@azimuth.Span::kind(server_span), @azimuth.Server)
-  assert_eq(@azimuth.Span::kind(client_span), @azimuth.Client)
-  assert_eq(@azimuth.Span::kind(producer_span), @azimuth.Producer)
-  assert_eq(@azimuth.Span::kind(consumer_span), @azimuth.Consumer)
+  // Test span kind properties using pattern matching
+  match @azimuth.Span::kind(internal_span) {
+    @azimuth.Internal => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.Span::kind(server_span) {
+    @azimuth.Server => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.Span::kind(client_span) {
+    @azimuth.Client => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.Span::kind(producer_span) {
+    @azimuth.Producer => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.Span::kind(consumer_span) {
+    @azimuth.Consumer => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // Test span name properties
   assert_eq(@azimuth.Span::name(internal_span), "internal-operation")
@@ -295,12 +328,21 @@ test "StatusCode enumeration test" {
   // Set different status codes
   @azimuth.Span::set_status(unset_span, @azimuth.Unset)
   @azimuth.Span::set_status(ok_span, @azimuth.Ok)
-  @azimuth.Span::set_status(error_span, @azimuth.Error, "Something went wrong")
+  @azimuth.Span::set_status(error_span, @azimuth.Error) // 移除第三个参数
   
-  // Test status code retrieval (simplified implementation returns Unset)
-  assert_eq(@azimuth.Span::status(unset_span), @azimuth.Unset)
-  assert_eq(@azimuth.Span::status(ok_span), @azimuth.Unset)  // Simplified implementation
-  assert_eq(@azimuth.Span::status(error_span), @azimuth.Unset)  // Simplified implementation
+  // Test status code retrieval using pattern matching (simplified implementation returns Unset)
+  match @azimuth.Span::status(unset_span) {
+    @azimuth.Unset => assert_true(true)
+    _ => assert_true(false)
+  }
+  match @azimuth.Span::status(ok_span) {
+    @azimuth.Unset => assert_true(true)  // Simplified implementation
+    _ => assert_true(false)
+  }
+  match @azimuth.Span::status(error_span) {
+    @azimuth.Unset => assert_true(true)  // Simplified implementation
+    _ => assert_true(false)
+  }
   
   // Test span event addition with different status codes
   @azimuth.Span::add_event(unset_span, "unset-event")
