@@ -72,11 +72,11 @@ test "Span Kind 行为差异测试" {
   assert_true(Span::is_recording(consumer_span))
   
   // 为不同类型的Span设置不同状态（使用命名参数）
-  Span::set_status(internal_span, Ok, "Internal operation completed")
-  Span::set_status(server_span, Ok, "Request processed successfully")
-  Span::set_status(client_span, Error, "Client request failed")
-  Span::set_status(producer_span, Ok, "Event produced")
-  Span::set_status(consumer_span, Ok, "Event consumed")
+  Span::set_status(internal_span, Ok, description? = "Internal operation completed")
+  Span::set_status(server_span, Ok, description? = "Request processed successfully")
+  Span::set_status(client_span, Error, description? = "Client request failed")
+  Span::set_status(producer_span, Ok, description? = "Event produced")
+  Span::set_status(consumer_span, Ok, description? = "Event consumed")
   
   // 结束所有Span
   Span::end(internal_span)
@@ -98,13 +98,13 @@ test "LogRecord与Trace关联完整性测试" {
   // 创建与Trace关联的LogRecord
   let trace_log = LogRecord::new_with_context(
     Info,
-    "Operation completed successfully",
-    Attributes::new(),
-    1735689600000000000L, // timestamp
-    1735689600000001000L, // observed_timestamp
-    trace_id,
-    span_id,
-    Context::root()
+    Some("Operation completed successfully"),
+    Some(Attributes::new()),
+    Some(1735689600000000000L), // timestamp
+    Some(1735689600000001000L), // observed_timestamp
+    Some(trace_id),
+    Some(span_id),
+    Some(Context::root())
   )
   
   // 验证LogRecord的Trace关联信息（使用模式匹配）
@@ -119,13 +119,13 @@ test "LogRecord与Trace关联完整性测试" {
   // 创建不同严重级别的LogRecord
   let error_log = LogRecord::new_with_context(
     Error,
-    "Database connection failed",
-    Attributes::new(),
-    1735689600000002000L,
-    1735689600000003000L,
-    trace_id,
-    "different_span_id",
-    Context::root()
+    Some("Database connection failed"),
+    Some(Attributes::new()),
+    Some(1735689600000002000L),
+    Some(1735689600000003000L),
+    Some(trace_id),
+    Some("different_span_id"),
+    Some(Context::root())
   )
   
   match LogRecord::severity_number(error_log) {
@@ -173,19 +173,19 @@ test "Resource层次化管理和合并策略测试" {
   // 验证合并后的资源包含所有层级的属性（使用模式匹配）
   let service_name = Resource::get_attribute(final_resource, "service.name")
   match service_name {
-    Some(StringValue("azimuth-service")) => assert_true(true)
+    Some(StringValue(value)) if value == "azimuth-service" => assert_true(true)
     _ => assert_true(false)
   }
   
   let instance_id = Resource::get_attribute(final_resource, "service.instance.id")
   match instance_id {
-    Some(StringValue("instance-12345")) => assert_true(true)
+    Some(StringValue(value)) if value == "instance-12345" => assert_true(true)
     _ => assert_true(false)
   }
   
   let request_id = Resource::get_attribute(final_resource, "request.id")
   match request_id {
-    Some(StringValue("req-abc-123")) => assert_true(true)
+    Some(StringValue(value)) if value == "req-abc-123" => assert_true(true)
     _ => assert_true(false)
   }
   
@@ -293,19 +293,19 @@ test "多度量类型组合使用场景测试" {
   let attrs = Attributes::new()
   
   // 记录请求计数（使用命名参数）
-  Counter::add(request_counter, 1.0, attributes=Some(attrs))
-  Counter::add(request_counter, 1.0, attributes=Some(attrs))
+  Counter::add(request_counter, 1.0, attributes? = Some(attrs))
+  Counter::add(request_counter, 1.0, attributes? = Some(attrs))
   
   // 记录响应时间（使用命名参数）
-  Histogram::record(response_histogram, 150.5, attributes=Some(attrs))
-  Histogram::record(response_histogram, 200.3, attributes=Some(attrs))
-  Histogram::record(response_histogram, 95.7, attributes=Some(attrs))
+  Histogram::record(response_histogram, 150.5, attributes? = Some(attrs))
+  Histogram::record(response_histogram, 200.3, attributes? = Some(attrs))
+  Histogram::record(response_histogram, 95.7, attributes? = Some(attrs))
   
   // 测试通过表示没有崩溃
   assert_true(true)
 }
 
-// 测试8: HTTP Client与遥测集成测试
+// 测试8: HTTP Client与遥测集成基础测试
 test "HTTP Client与遥测集成基础测试" {
   // 创建HTTP客户端
   let http_client = HttpClient::new()
@@ -350,14 +350,14 @@ test "HTTP Client与遥测集成基础测试" {
   let tracer = TracerProvider::get_tracer(tracer_provider, "http.client")
   let span = Tracer::start_span(tracer, "HTTP POST")
   
-  // 为Span添加HTTP相关属性
-  Span::add_event(span, "http.request.started", Some([
+  // 为Span添加HTTP相关属性（使用命名参数）
+  Span::add_event(span, "http.request.started", attributes? = Some([
     ("http.method", StringValue("POST")),
     ("http.url", StringValue("https://api.example.com/telemetry")),
     ("http.status_code", IntValue(200))
   ]))
   
-  Span::set_status(span, Ok, Some("HTTP request completed successfully"))
+  Span::set_status(span, Ok, "HTTP request completed successfully")
   Span::end(span)
   
   // 测试通过表示集成没有问题

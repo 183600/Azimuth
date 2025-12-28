@@ -1,7 +1,7 @@
 {
   "name": "azimuth-test",
   "version": "0.1.0",
-  "description": "Azimuth telemetry system test package",
+  "description": "Azimuth telemetry system isolated test package",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {},
