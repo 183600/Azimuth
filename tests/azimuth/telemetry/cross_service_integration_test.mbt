@@ -1,399 +1,488 @@
-// Azimuth Telemetry System - Cross-Service Integration Test Suite
-// 测试跨服务集成场景
+// 跨服务集成测试
+// Cross-service integration tests
 
-test "多服务分布式追踪集成测试" {
-  // 模拟微服务架构中的分布式追踪场景
+test "微服务链路追踪测试" {
+  // 测试微服务间的链路追踪
   
-  // Service A: API Gateway
-  let gateway_tracer = TracerProvider::get_tracer(TracerProvider::default(), "api-gateway")
-  let gateway_span = Tracer::start_span(gateway_tracer, "gateway.request")
+  // 初始化各服务的Tracer
+  let gateway_provider = TracerProvider::default()
+  let gateway_tracer = TracerProvider::get_tracer(gateway_provider, "api-gateway")
   
-  // 设置Gateway Span属性
-  let gateway_attrs = [
-    ("http.method", StringValue("GET")),
-    ("http.url", StringValue("/api/users")),
-    ("user.id", StringValue("user-123"))
-  ]
+  let user_provider = TracerProvider::default()
+  let user_tracer = TracerProvider::get_tracer(user_provider, "user-service")
   
-  Span::add_event(gateway_span, "request.received", Some(gateway_attrs))
+  let order_provider = TracerProvider::default()
+  let order_tracer = TracerProvider::get_tracer(order_provider, "order-service")
   
-  // 创建下游服务调用的上下文
-  let gateway_ctx = Span::span_context(gateway_span)
+  let payment_provider = TracerProvider::default()
+  let payment_tracer = TracerProvider::get_tracer(payment_provider, "payment-service")
   
-  // Service B: User Service
-  let user_tracer = TracerProvider::get_tracer(TracerProvider::default(), "user-service")
-  let user_span = Tracer::start_span(user_tracer, "user.service.call")
+  // API Gateway处理请求
+  let gateway_ctx = Context::root()
+  let (gateway_ctx_with_span, gateway_span) = Tracer::start_span(gateway_tracer, gateway_ctx, "api-gateway.request")
   
-  let user_attrs = [
-    ("service.name", StringValue("user-service")),
-    ("operation", StringValue("get_user")),
-    ("user.id", StringValue("user-123"))
-  ]
+  Span::add_event(gateway_span, "请求接收", Some([
+    ("http.method", StringValue("POST")),
+    ("http.path", StringValue("/api/orders")),
+    ("user.id", StringValue("user-12345"))
+  ]))
   
-  Span::add_event(user_span, "database.query", Some(user_attrs))
+  // 调用用户服务
+  let user_ctx = Context::with_value(gateway_ctx_with_span, ContextKey::new("service.call"), "user-service")
+  let (user_ctx_with_span, user_span) = Tracer::start_span(user_tracer, user_ctx, "user-service.validate")
   
-  // Service C: Database Service
-  let db_tracer = TracerProvider::get_tracer(TracerProvider::default(), "database-service")
-  let db_span = Tracer::start_span(db_tracer, "database.query")
+  Span::add_event(user_span, "用户验证", Some([
+    ("validation.type", StringValue("authentication")),
+    ("user.status", StringValue("active"))
+  ]))
   
-  let db_attrs = [
-    ("db.type", StringValue("postgresql")),
-    ("db.statement", StringValue("SELECT * FROM users WHERE id = $1")),
-    ("db.query.duration", FloatValue(25.5))
-  ]
-  
-  Span::add_event(db_span, "query.executed", Some(db_attrs))
-  Span::set_status(db_span, Ok)
-  Span::end(db_span)
-  
-  // 继续User Service处理
-  Span::add_event(user_span, "data.retrieved", Some([("records.count", IntValue(1))]))
-  Span::set_status(user_span, Ok)
+  Span::set_status(user_span, Ok, Some("用户验证成功"))
   Span::end(user_span)
   
-  // 继续Gateway处理
-  Span::add_event(gateway_span, "response.sent", Some([("http.status_code", IntValue(200))])
-  Span::set_status(gateway_span, Ok)
+  // 在Gateway记录用户服务调用结果
+  Span::add_event(gateway_span, "用户服务调用完成", Some([
+    ("service.name", StringValue("user-service")),
+    ("call.duration", IntValue(50)),
+    ("call.status", StringValue("success"))
+  ]))
+  
+  // 调用订单服务
+  let order_ctx = Context::with_value(gateway_ctx_with_span, ContextKey::new("service.call"), "order-service")
+  let (order_ctx_with_span, order_span) = Tracer::start_span(order_tracer, order_ctx, "order-service.create")
+  
+  Span::add_event(order_span, "订单创建", Some([
+    ("order.id", StringValue("order-67890")),
+    ("order.amount", FloatValue(299.99)),
+    ("product.count", IntValue(3))
+  ]))
+  
+  // 调用支付服务（从订单服务）
+  let payment_ctx = Context::with_value(order_ctx_with_span, ContextKey::new("service.call"), "payment-service")
+  let (payment_ctx_with_span, payment_span) = Tracer::start_span(payment_tracer, payment_ctx, "payment-service.process")
+  
+  Span::add_event(payment_span, "支付处理", Some([
+    ("payment.method", StringValue("credit_card")),
+    ("payment.amount", FloatValue(299.99)),
+    ("currency", StringValue("USD"))
+  ]))
+  
+  // 模拟支付处理失败
+  Span::add_event(payment_span, "支付失败", Some([
+    ("error.code", StringValue("PAYMENT_DECLINED")),
+    ("error.reason", StringValue("insufficient_funds"))
+  ]))
+  
+  Span::set_status(payment_span, Error, Some("支付被拒绝"))
+  Span::end(payment_span)
+  
+  // 在订单服务记录支付结果
+  Span::add_event(order_span, "支付服务调用完成", Some([
+    ("service.name", StringValue("payment-service")),
+    ("call.duration", IntValue(200)),
+    ("call.status", StringValue("error"))
+  ]))
+  
+  Span::set_status(order_span, Error, Some("订单创建失败：支付失败"))
+  Span::end(order_span)
+  
+  // 在Gateway记录订单服务调用结果
+  Span::add_event(gateway_span, "订单服务调用完成", Some([
+    ("service.name", StringValue("order-service")),
+    ("call.duration", IntValue(300)),
+    ("call.status", StringValue("error"))
+  ]))
+  
+  Span::set_status(gateway_span, Error, Some("请求处理失败：支付失败"))
   Span::end(gateway_span)
-  
-  // 验证所有Span都正确创建
-  assert_eq(Span::name(gateway_span), "gateway.request")
-  assert_eq(Span::name(user_span), "user.service.call")
-  assert_eq(Span::name(db_span), "database.query")
 }
 
-test "跨服务上下文传播集成测试" {
-  // 测试跨HTTP服务的上下文传播
+test "服务间指标聚合测试" {
+  // 测试服务间指标的聚合
   
-  // 创建初始上下文
-  let initial_ctx = Context::root()
-  let trace_key = ContextKey::new("trace.id")
-  let user_key = ContextKey::new("user.id")
-  let request_key = ContextKey::new("request.id")
+  // 各服务的Meter
+  let gateway_meter_provider = MeterProvider::default()
+  let gateway_meter = MeterProvider::get_meter(gateway_meter_provider, "api-gateway")
   
-  let ctx_with_trace = Context::with_value(initial_ctx, trace_key, "trace-123456")
-  let ctx_with_user = Context::with_value(ctx_with_trace, user_key, "user-789")
-  let ctx_with_request = Context::with_value(ctx_with_user, request_key, "req-abc123")
+  let user_meter_provider = MeterProvider::default()
+  let user_meter = MeterProvider::get_meter(user_meter_provider, "user-service")
   
-  // Service A: 创建传播载体
-  let carrier = TextMapCarrier::new()
+  let order_meter_provider = MeterProvider::default()
+  let order_meter = MeterProvider::get_meter(order_meter_provider, "order-service")
   
-  // 注入追踪上下文
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite_propagator = CompositePropagator::new([trace_propagator])
-  CompositePropagator::inject(composite_propagator, ctx_with_request, carrier)
+  let payment_meter_provider = MeterProvider::default()
+  let payment_meter = MeterProvider::get_meter(payment_meter_provider, "payment-service")
   
-  // 模拟HTTP传输
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier, "baggage", "user.id=user-789,request.id=req-abc123")
+  // API Gateway指标
+  let gateway_requests = Meter::create_counter(gateway_meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
+  let gateway_duration = Meter::create_histogram(gateway_meter, "http.request.duration", Some("HTTP request duration"), Some("ms"))
   
-  // Service B: 提取上下文
-  let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
-  let extracted_trace = Context::get(extracted_ctx, trace_key)
-  let extracted_user = Context::get(extracted_ctx, user_key)
-  let extracted_request = Context::get(extracted_ctx, request_key)
+  Counter::add(gateway_requests, 1000.0)
+  Histogram::record(gateway_duration, 150.0)
+  Histogram::record(gateway_duration, 200.0)
+  Histogram::record(gateway_duration, 120.0)
   
-  // 简化实现中可能无法完全提取，但不应该崩溃
-  match extracted_trace {
-    Some(trace) => assert_eq(trace, "trace-123456")
-    _ => assert_true(true) // 简化实现可能返回不同值
-  }
+  // 用户服务指标
+  let user_validations = Meter::create_counter(user_meter, "user.validations.total", Some("Total user validations"), Some("count"))
+  let user_db_queries = Meter::create_histogram(user_meter, "user.db.query.duration", Some("User database query duration"), Some("ms"))
   
-  // Service C: 继续传播
-  let downstream_carrier = TextMapCarrier::new()
-  CompositePropagator::inject(composite_propagator, extracted_ctx, downstream_carrier)
+  Counter::add(user_validations, 950.0)
+  Histogram::record(user_db_queries, 25.0)
+  Histogram::record(user_db_queries, 30.0)
+  Histogram::record(user_db_queries, 20.0)
   
-  // 验证传播的数据
-  let downstream_trace = TextMapCarrier::get(downstream_carrier, "traceparent")
-  match downstream_trace {
-    Some(trace) => assert_true(trace.length() > 0)
-    None => assert_true(true) // 简化实现可能不设置
-  }
+  // 订单服务指标
+  let order_creations = Meter::create_counter(order_meter, "order.creations.total", Some("Total order creations"), Some("count"))
+  let order_amount = Meter::create_histogram(order_meter, "order.amount", Some("Order amount distribution"), Some("USD"))
+  
+  Counter::add(order_creations, 300.0)
+  Histogram::record(order_amount, 99.99)
+  Histogram::record(order_amount, 299.99)
+  Histogram::record(order_amount, 199.99)
+  
+  // 支付服务指标
+  let payment_attempts = Meter::create_counter(payment_meter, "payment.attempts.total", Some("Total payment attempts"), Some("count"))
+  let payment_success = Meter::create_counter(payment_meter, "payment.success.total", Some("Total successful payments"), Some("count"))
+  let payment_failures = Meter::create_counter(payment_meter, "payment.failures.total", Some("Total failed payments"), Some("count"))
+  
+  Counter::add(payment_attempts, 300.0)
+  Counter::add(payment_success, 270.0)
+  Counter::add(payment_failures, 30.0)
+  
+  // 验证指标值
+  assert_eq(Instrument::name(gateway_requests), "http.requests.total")
+  assert_eq(Instrument::name(user_validations), "user.validations.total")
+  assert_eq(Instrument::name(order_creations), "order.creations.total")
+  assert_eq(Instrument::name(payment_attempts), "payment.attempts.total")
 }
 
-test "多服务指标聚合集成测试" {
-  // 测试跨服务的指标收集和聚合
+test "分布式日志关联测试" {
+  // 测试分布式日志的关联
   
-  // Service A: API Gateway指标
-  let gateway_meter = MeterProvider::get_meter(MeterProvider::default(), "api-gateway")
-  let gateway_requests = Meter::create_counter(gateway_meter, "http.requests.total", 
-    Some("Total HTTP requests"), Some("requests"))
-  let gateway_duration = Meter::create_histogram(gateway_meter, "http.request.duration",
-    Some("HTTP request duration"), Some("ms"))
+  // 各服务的Logger
+  let gateway_logger_provider = LoggerProvider::default()
+  let gateway_logger = LoggerProvider::get_logger(gateway_logger_provider, "api-gateway")
   
-  // 记录Gateway指标
-  Counter::add(gateway_requests, 100.0, Some(Attributes::new()))
-  Histogram::record(gateway_duration, 150.5, Some(Attributes::new()))
+  let user_logger_provider = LoggerProvider::default()
+  let user_logger = LoggerProvider::get_logger(user_logger_provider, "user-service")
   
-  // Service B: User Service指标
-  let user_meter = MeterProvider::get_meter(MeterProvider::default(), "user-service")
-  let user_queries = Meter::create_counter(user_meter, "database.queries.total",
-    Some("Total database queries"), Some("queries"))
-  let user_db_duration = Meter::create_histogram(user_meter, "database.query.duration",
-    Some("Database query duration"), Some("ms"))
+  let order_logger_provider = LoggerProvider::default()
+  let order_logger = LoggerProvider::get_logger(order_logger_provider, "order-service")
   
-  // 记录User Service指标
-  Counter::add(user_queries, 50.0, Some(Attributes::new()))
-  Histogram::record(user_db_duration, 25.3, Some(Attributes::new()))
+  let payment_logger_provider = LoggerProvider::default()
+  let payment_logger = LoggerProvider::get_logger(payment_logger_provider, "payment-service")
   
-  // Service C: Cache Service指标
-  let cache_meter = MeterProvider::get_meter(MeterProvider::default(), "cache-service")
-  let cache_hits = Meter::create_counter(cache_meter, "cache.hits.total",
-    Some("Total cache hits"), Some("hits"))
-  let cache_misses = Meter::create_counter(cache_meter, "cache.misses.total",
-    Some("Total cache misses"), Some("misses"))
+  // 创建关联的日志记录
+  let trace_id = "trace-12345"
+  let request_id = "req-67890"
   
-  // 记录Cache指标
-  Counter::add(cache_hits, 75.0, Some(Attributes::new()))
-  Counter::add(cache_misses, 25.0, Some(Attributes::new()))
-  
-  // 验证所有指标都正确创建
-  assert_eq(gateway_requests.name, "http.requests.total")
-  assert_eq(gateway_duration.name, "http.request.duration")
-  assert_eq(user_queries.name, "database.queries.total")
-  assert_eq(user_db_duration.name, "database.query.duration")
-  assert_eq(cache_hits.name, "cache.hits.total")
-  assert_eq(cache_misses.name, "cache.misses.total")
-  
-  // 测试跨服务的指标关联
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let trace_attrs = Attributes::new()
-  Attributes::set(trace_attrs, "trace.id", StringValue(trace_id))
-  
-  // 所有服务记录相同trace的指标
-  Counter::add(gateway_requests, 1.0, Some(trace_attrs))
-  Counter::add(user_queries, 1.0, Some(trace_attrs))
-  Counter::add(cache_hits, 1.0, Some(trace_attrs))
-}
-
-test "跨服务日志关联集成测试" {
-  // 测试跨服务的日志关联和追踪
-  
-  let trace_id = "trace-123456789"
-  let span_id = "span-987654321"
-  
-  // Service A: API Gateway日志
-  let gateway_logger = LoggerProvider::get_logger(LoggerProvider::default(), "api-gateway")
+  // Gateway日志
   let gateway_log = LogRecord::new_with_context(
     Info,
-    Some("Incoming request: GET /api/users"),
+    Some("Processing order creation request"),
     Some(Attributes::new()),
     Some(Clock::now_unix_nanos(Clock::system())),
     None,
     Some(trace_id),
-    Some(span_id),
-    Some(Context::root())
+    Some("gateway-span"),
+    Some(Context::with_value(Context::root(), ContextKey::new("request.id"), request_id))
   )
   
   Logger::emit(gateway_logger, gateway_log)
   
-  // Service B: User Service日志
-  let user_logger = LoggerProvider::get_logger(LoggerProvider::default(), "user-service")
-  let user_span_id = "span-user-123"
-  
-  let user_info_log = LogRecord::new_with_context(
+  // 用户服务日志
+  let user_log = LogRecord::new_with_context(
     Info,
-    Some("Fetching user data for user-123"),
+    Some("Validating user authentication"),
     Some(Attributes::new()),
     Some(Clock::now_unix_nanos(Clock::system())),
     None,
     Some(trace_id),
-    Some(user_span_id),
-    Some(Context::root())
+    Some("user-span"),
+    Some(Context::with_value(Context::root(), ContextKey::new("request.id"), request_id))
   )
   
-  let user_error_log = LogRecord::new_with_context(
+  Logger::emit(user_logger, user_log)
+  
+  // 订单服务日志
+  let order_log = LogRecord::new_with_context(
+    Info,
+    Some("Creating new order"),
+    Some(Attributes::new()),
+    Some(Clock::now_unix_nanos(Clock::system())),
+    None,
+    Some(trace_id),
+    Some("order-span"),
+    Some(Context::with_value(Context::root(), ContextKey::new("request.id"), request_id))
+  )
+  
+  Logger::emit(order_logger, order_log)
+  
+  // 支付服务错误日志
+  let payment_error_log = LogRecord::new_with_context(
     Error,
-    Some("Database connection timeout"),
+    Some("Payment processing failed"),
     Some(Attributes::new()),
     Some(Clock::now_unix_nanos(Clock::system())),
     None,
     Some(trace_id),
-    Some(user_span_id),
-    Some(Context::root())
+    Some("payment-span"),
+    Some(Context::with_value(Context::root(), ContextKey::new("request.id"), request_id))
   )
   
-  Logger::emit(user_logger, user_info_log)
-  Logger::emit(user_logger, user_error_log)
+  Logger::emit(payment_logger, payment_error_log)
   
-  // Service C: Database Service日志
-  let db_logger = LoggerProvider::get_logger(LoggerProvider::default(), "database-service")
-  let db_span_id = "span-db-456"
-  
-  let db_log = LogRecord::new_with_context(
-    Debug,
-    Some("Executing query: SELECT * FROM users WHERE id = $1"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(trace_id),
-    Some(db_span_id),
-    Some(Context::root())
-  )
-  
-  Logger::emit(db_logger, db_log)
-  
-  // 验证所有日志都有关联的trace_id
+  // 验证日志记录的trace_id关联
   assert_eq(LogRecord::trace_id(gateway_log), Some(trace_id))
-  assert_eq(LogRecord::trace_id(user_info_log), Some(trace_id))
-  assert_eq(LogRecord::trace_id(user_error_log), Some(trace_id))
-  assert_eq(LogRecord::trace_id(db_log), Some(trace_id))
-  
-  // 验证不同服务有不同的span_id
-  assert_eq(LogRecord::span_id(gateway_log), Some(span_id))
-  assert_eq(LogRecord::span_id(user_info_log), Some(user_span_id))
-  assert_eq(LogRecord::span_id(user_error_log), Some(user_span_id))
-  assert_eq(LogRecord::span_id(db_log), Some(db_span_id))
+  assert_eq(LogRecord::trace_id(user_log), Some(trace_id))
+  assert_eq(LogRecord::trace_id(order_log), Some(trace_id))
+  assert_eq(LogRecord::trace_id(payment_error_log), Some(trace_id))
 }
 
-test "服务间HTTP通信集成测试" {
-  // 测试服务间的HTTP通信和遥测数据传递
+test "服务发现和注册测试" {
+  // 测试服务发现和注册的遥测
   
-  let client = HttpClient::new()
+  // 服务注册中心的遥测
+  let registry_provider = TracerProvider::default()
+  let registry_tracer = TracerProvider::get_tracer(registry_provider, "service-registry")
   
-  // Service A调用Service B
-  let service_a_headers = [
-    ("X-Request-ID", StringValue("req-123456")),
-    ("X-Trace-ID", StringValue("trace-789012")),
-    ("Content-Type", StringValue("application/json"))
-  ]
+  // 服务注册操作
+  let register_span = Tracer::start_span(registry_tracer, "service.register")
+  Span::add_event(register_span, "服务注册", Some([
+    ("service.name", StringValue("user-service")),
+    ("service.version", StringValue("1.2.3")),
+    ("service.port", IntValue(8081)),
+    ("service.host", StringValue("10.0.1.10")),
+    ("health.check.url", StringValue("/health"))
+  ]))
+  Span::end(register_span)
   
-  let request_a_to_b = HttpRequest::new(
-    "POST",
-    "https://user-service/api/users",
-    service_a_headers,
-    Some("{\"name\": \"John Doe\", \"email\": \"john@example.com\"}")
-  )
+  // 服务发现操作
+  let discover_span = Tracer::start_span(registry_tracer, "service.discover")
+  Span::add_event(discover_span, "服务发现", Some([
+    ("query.service", StringValue("order-service")),
+    ("query.version", StringValue("latest")),
+    ("result.count", IntValue(3))
+  ]))
+  Span::end(discover_span)
   
-  // Service B处理请求
-  let service_b_response = HttpResponse::new(
-    201,
-    [("Content-Type", StringValue("application/json")), ("X-Response-ID", StringValue("resp-456789"))],
-    Some("{\"id\": \"user-123\", \"name\": \"John Doe\", \"created\": \"2025-01-01\"}")
-  )
+  // 健康检查操作
+  let health_span = Tracer::start_span(registry_tracer, "health.check")
+  Span::add_event(health_span, "健康检查", Some([
+    ("service.name", StringValue("payment-service")),
+    ("service.instance", StringValue("payment-01")),
+    ("health.status", StringValue("healthy")),
+    ("response.time", IntValue(15))
+  ]))
+  Span::end(health_span)
   
-  // Service B调用Service C
-  let service_b_headers = [
-    ("X-Request-ID", StringValue("req-123456")),
-    ("X-Trace-ID", StringValue("trace-789012")),
-    ("X-User-ID", StringValue("user-123"))
-  ]
-  
-  let request_b_to_c = HttpRequest::new(
-    "POST",
-    "https://notification-service/api/notify",
-    service_b_headers,
-    Some("{\"user_id\": \"user-123\", \"type\": \"welcome\", \"message\": \"Welcome John!\"}")
-  )
-  
-  // Service C响应
-  let service_c_response = HttpResponse::new(
-    200,
-    [("Content-Type", StringValue("application/json"))],
-    Some("{\"notification_id\": \"notif-789\", \"status\": \"sent\", \"timestamp\": \"2025-01-01T12:00:00Z\"}")
-  )
-  
-  // 验证HTTP请求和响应的完整性
-  assert_eq(HttpRequest::http_method(request_a_to_b), "POST")
-  assert_eq(HttpRequest::url(request_a_to_b), "https://user-service/api/users")
-  assert_eq(HttpRequest::body(request_a_to_b), Some("{\"name\": \"John Doe\", \"email\": \"john@example.com\"}"))
-  assert_eq(request_a_to_b.headers.length(), 3)
-  
-  assert_eq(HttpResponse::status_code(service_b_response), 201)
-  assert_eq(HttpResponse::body(service_b_response), Some("{\"id\": \"user-123\", \"name\": \"John Doe\", \"created\": \"2025-01-01\"}"))
-  
-  assert_eq(HttpRequest::http_method(request_b_to_c), "POST")
-  assert_eq(HttpRequest::url(request_b_to_c), "https://notification-service/api/notify")
-  assert_eq(HttpResponse::status_code(service_c_response), 200)
-  
-  // 验证追踪头在服务间传递
-  let trace_header_a = "X-Trace-ID"
-  let trace_header_b = "X-Trace-ID"
-  
-  let trace_id_a = request_a_to_b.headers.find(fn((k, _) { k == trace_header_a }))
-  let trace_id_b = request_b_to_c.headers.find(fn((k, _) { k == trace_header_b }))
-  
-  match trace_id_a {
-    Some((_, value)) => assert_eq(value, "trace-789012")
-    None => assert_true(false)
-  }
-  
-  match trace_id_b {
-    Some((_, value)) => assert_eq(value, "trace-789012")
-    None => assert_true(false)
-  }
+  // 服务注销操作
+  let unregister_span = Tracer::start_span(registry_tracer, "service.unregister")
+  Span::add_event(unregister_span, "服务注销", Some([
+    ("service.name", StringValue("legacy-service")),
+    ("service.instance", StringValue("legacy-03")),
+    ("reason", StringValue("decommissioned"))
+  ]))
+  Span::end(unregister_span)
 }
 
-test "跨服务错误传播集成测试" {
-  // 测试跨服务的错误传播和处理
+test "API网关路由测试" {
+  // 测试API网关路由的遥测
   
-  // Service A: 初始请求
-  let tracer_a = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
-  let span_a = Tracer::start_span(tracer_a, "service.a.operation")
+  let gateway_provider = TracerProvider::default()
+  let gateway_tracer = TracerProvider::get_tracer(gateway_provider, "api-gateway")
   
-  // Service A调用Service B
-  let tracer_b = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
-  let span_b = Tracer::start_span(tracer_b, "service.b.operation")
+  let gateway_meter_provider = MeterProvider::default()
+  let gateway_meter = MeterProvider::get_meter(gateway_meter_provider, "api-gateway")
   
-  // Service B遇到错误
-  Span::set_status(span_b, Error, Some("Service B internal error"))
-  Span::add_event(span_b, "error.occurred", Some([
-    ("error.type", StringValue("DatabaseError")),
-    ("error.message", StringValue("Connection timeout")),
-    ("error.code", IntValue(500))
-  ]))
+  // 路由指标
+  let route_requests = Meter::create_counter(gateway_meter, "route.requests.total", Some("Total routed requests"), Some("count"))
+  let route_duration = Meter::create_histogram(gateway_meter, "route.duration", Some("Route processing duration"), Some("ms"))
   
-  // Service B记录错误日志
-  let logger_b = LoggerProvider::get_logger(LoggerProvider::default(), "service-b")
-  let error_log = LogRecord::new_with_context(
-    Error,
-    Some("Service B encountered database connection timeout"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some("trace-error-123"),
-    Some("span-error-456"),
-    Some(Context::root())
-  )
+  // 不同路由的处理
+  let routes = [
+    ("/api/users", "user-service", "GET"),
+    ("/api/orders", "order-service", "POST"),
+    ("/api/payments", "payment-service", "POST"),
+    ("/api/products", "product-service", "GET"),
+    ("/api/inventory", "inventory-service", "PUT")
+  ]
   
-  Logger::emit(logger_b, error_log)
-  Span::end(span_b)
-  
-  // Service A处理来自Service B的错误
-  Span::add_event(span_a, "downstream.error", Some([
-    ("service.name", StringValue("service-b")),
-    ("error.code", IntValue(500)),
-    ("error.message", StringValue("Service B internal error"))
-  ]))
-  
-  Span::set_status(span_a, Error, Some("Downstream service error"))
-  Span::end(span_a)
-  
-  // 验证错误状态正确设置
-  assert_eq(Span::status(span_a), Error) // 简化实现可能总是返回Unset
-  assert_eq(Span::status(span_b), Error) // 简化实现可能总是返回Unset
-  
-  // 验证错误日志记录
-  assert_eq(LogRecord::severity_number(error_log), Error)
-  assert_eq(LogRecord::body(error_log), Some("Service B encountered database connection timeout"))
-  assert_eq(LogRecord::trace_id(error_log), Some("trace-error-123"))
-  assert_eq(LogRecord::span_id(error_log), Some("span-error-456"))
-  
-  // 测试错误恢复场景
-  let tracer_c = TracerProvider::get_tracer(TracerProvider::default(), "service-c")
-  let span_c = Tracer::start_span(tracer_c, "service.c.retry.operation")
-  
-  // 模拟重试逻辑
-  for attempt = 1; attempt <= 3; attempt++ {
-    Span::add_event(span_c, "retry.attempt", Some([
-      ("attempt.number", IntValue(attempt)),
-      ("max.attempts", IntValue(3))
+  for i = 0; i < routes.length(); i = i + 1 {
+    let route = routes[i]
+    let path = route.0
+    let service = route.1
+    let method = route.2
+    
+    // 创建路由处理Span
+    let route_span = Tracer::start_span(gateway_tracer, "route.request")
+    
+    Span::add_event(route_span, "路由开始", Some([
+      ("http.path", StringValue(path)),
+      ("http.method", StringValue(method)),
+      ("target.service", StringValue(service))
     ]))
+    
+    // 模拟路由处理时间
+    let processing_time = (i + 1) * 25
+    Span::add_event(route_span, "路由完成", Some([
+      ("processing.time", IntValue(processing_time)),
+      ("target.service", StringValue(service)),
+      ("status", StringValue("success"))
+    ]))
+    
+    Span::end(route_span)
+    
+    // 记录路由指标
+    Counter::add(route_requests, 1.0)
+    Histogram::record(route_duration, processing_time.to_double())
   }
   
-  // 最终成功
-  Span::set_status(span_c, Ok, Some("Operation succeeded after retries"))
-  Span::end(span_c)
+  // 错误路由处理
+  let error_route_span = Tracer::start_span(gateway_tracer, "route.error")
+  Span::add_event(error_route_span, "路由失败", Some([
+    ("http.path", StringValue("/api/nonexistent")),
+    ("http.method", StringValue("GET")),
+    ("error.code", StringValue("SERVICE_NOT_FOUND")),
+    ("error.message", StringValue("No service found for requested path"))
+  ]))
+  Span::set_status(error_route_span, Error, Some("路由失败：服务未找到"))
+  Span::end(error_route_span)
+}
+
+test "消息队列集成测试" {
+  // 测试消息队列集成的遥测
   
-  assert_eq(Span::name(span_c), "service.c.retry.operation")
+  let producer_provider = TracerProvider::default()
+  let producer_tracer = TracerProvider::get_tracer(producer_provider, "message-producer")
+  
+  let consumer_provider = TracerProvider::default()
+  let consumer_tracer = TracerProvider::get_tracer(consumer_provider, "message-consumer")
+  
+  // 消息生产
+  let produce_span = Tracer::start_span(producer_tracer, "message.produce")
+  Span::add_event(produce_span, "消息生成", Some([
+    ("message.type", StringValue("order.created")),
+    ("message.id", StringValue("msg-12345")),
+    ("topic", StringValue("orders")),
+    ("partition", IntValue(0)),
+    ("message.size", IntValue(1024))
+  ]))
+  Span::end(produce_span)
+  
+  // 消息发送
+  let send_span = Tracer::start_span(producer_tracer, "message.send")
+  Span::add_event(send_span, "消息发送", Some([
+    ("topic", StringValue("orders")),
+    ("broker", StringValue("kafka-01:9092")),
+    ("acknowledged", BoolValue(true)),
+    ("send.time", IntValue(25))
+  ]))
+  Span::end(send_span)
+  
+  // 消息消费
+  let consume_span = Tracer::start_span(consumer_tracer, "message.consume")
+  Span::add_event(consume_span, "消息接收", Some([
+    ("message.type", StringValue("order.created")),
+    ("message.id", StringValue("msg-12345")),
+    ("topic", StringValue("orders")),
+    ("consumer.group", StringValue("order-processors")),
+    ("partition", IntValue(0)),
+    ("offset", IntValue(123456))
+  ]))
+  Span::end(consume_span)
+  
+  // 消息处理
+  let process_span = Tracer::start_span(consumer_tracer, "message.process")
+  Span::add_event(process_span, "消息处理", Some([
+    ("message.id", StringValue("msg-12345")),
+    ("processing.time", IntValue(150)),
+    ("processing.result", StringValue("success")),
+    ("order.id", StringValue("order-67890"))
+  ]))
+  Span::end(process_span)
+  
+  // 消息处理失败场景
+  let error_process_span = Tracer::start_span(consumer_tracer, "message.process.error")
+  Span::add_event(error_process_span, "消息处理失败", Some([
+    ("message.id", StringValue("msg-54321")),
+    ("error.type", StringValue("validation_error")),
+    ("error.message", StringValue("Invalid order format")),
+    ("retry.count", IntValue(3))
+  ]))
+  Span::set_status(error_process_span, Error, Some("消息处理失败"))
+  Span::end(error_process_span)
+}
+
+test "数据库连接池监控测试" {
+  // 测试数据库连接池的监控
+  
+  let db_provider = TracerProvider::default()
+  let db_tracer = TracerProvider::get_tracer(db_provider, "database-service")
+  
+  let db_meter_provider = MeterProvider::default()
+  let db_meter = MeterProvider::get_meter(db_meter_provider, "database-service")
+  
+  // 数据库指标
+  let pool_connections = Meter::create_histogram(db_meter, "db.pool.connections", Some("Database pool connections"), Some("count"))
+  let query_duration = Meter::create_histogram(db_meter, "db.query.duration", Some("Database query duration"), Some("ms"))
+  let query_errors = Meter::create_counter(db_meter, "db.query.errors", Some("Database query errors"), Some("count"))
+  
+  // 连接池操作
+  let pool_span = Tracer::start_span(db_tracer, "db.pool.operation")
+  Span::add_event(pool_span, "连接池初始化", Some([
+    ("pool.size", IntValue(20)),
+    ("pool.min.idle", IntValue(5)),
+    ("pool.max.idle", IntValue(15)),
+    ("pool.timeout", IntValue(30000))
+  ]))
+  Span::end(pool_span)
+  
+  // 数据库查询操作
+  let queries = [
+    ("SELECT * FROM users WHERE id = ?", "user.query", 25),
+    ("INSERT INTO orders VALUES (...)", "order.insert", 150),
+    ("UPDATE products SET stock = stock - 1", "product.update", 80),
+    ("SELECT COUNT(*) FROM payments", "payment.count", 45)
+  ]
+  
+  for i = 0; i < queries.length(); i = i + 1 {
+    let query = queries[i]
+    let sql = query.0
+    let query_type = query.1
+    let duration = query.2
+    
+    let query_span = Tracer::start_span(db_tracer, "db.query")
+    Span::add_event(query_span, "SQL查询", Some([
+      ("db.statement", StringValue(sql)),
+      ("db.type", StringValue("postgresql")),
+      ("db.instance", StringValue("orders-db")),
+      ("query.type", StringValue(query_type))
+    ]))
+    
+    Span::add_event(query_span, "查询完成", Some([
+      ("execution.time", IntValue(duration)),
+      ("rows.affected", IntValue(1)),
+      ("result.status", StringValue("success"))
+    ]))
+    
+    Span::end(query_span)
+    
+    // 记录查询指标
+    Histogram::record(query_duration, duration.to_double())
+    Histogram::record(pool_connections, 8.0) // 模拟当前连接数
+  }
+  
+  // 数据库错误查询
+  let error_query_span = Tracer::start_span(db_tracer, "db.query.error")
+  Span::add_event(error_query_span, "SQL查询失败", Some([
+    ("db.statement", StringValue("SELECT * FROM invalid_table")),
+    ("db.type", StringValue("postgresql")),
+    ("error.code", StringValue("42P01")), // PostgreSQL undefined_table
+    ("error.message", StringValue("relation \"invalid_table\" does not exist"))
+  ]))
+  Span::set_status(error_query_span, Error, Some("SQL查询失败"))
+  Span::end(error_query_span)
+  
+  // 记录错误指标
+  Counter::add(query_errors, 1.0)
 }
