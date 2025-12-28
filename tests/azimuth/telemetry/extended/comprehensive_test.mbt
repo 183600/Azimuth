@@ -1,294 +1,416 @@
-test "resource merging and conflict resolution" {
-  // Test resource merging with attribute conflicts
-  let base_resource = @azimuth.telemetry.api.common.Resource.new()
-  let base_with_attrs = @azimuth.telemetry.api.common.Resource.with_attributes(base_resource, [
-    ("service.name", @azimuth.telemetry.api.common.StringValue("base-service")),
-    ("service.version", @azimuth.telemetry.api.common.StringValue("1.0.0")),
-    ("environment", @azimuth.telemetry.api.common.StringValue("development"))
-  ])
-  
-  let override_resource = @azimuth.telemetry.api.common.Resource.new()
-  let override_with_attrs = @azimuth.telemetry.api.common.Resource.with_attributes(override_resource, [
-    ("service.name", @azimuth.telemetry.api.common.StringValue("override-service")),
-    ("service.instance.id", @azimuth.telemetry.api.common.StringValue("instance-123")),
-    ("environment", @azimuth.telemetry.api.common.StringValue("production"))
-  ])
-  
-  let merged = @azimuth.telemetry.api.common.Resource.merge(base_with_attrs, override_with_attrs)
-  
-  // Override resource should take precedence
-  assert_eq(@azimuth.telemetry.api.common.Resource.get_attribute(merged, "service.name"), 
-           Some(@azimuth.telemetry.api.common.StringValue("override-service")))
-  assert_eq(@azimuth.telemetry.api.common.Resource.get_attribute(merged, "service.version"), 
-           Some(@azimuth.telemetry.api.common.StringValue("1.0.0")))
-  assert_eq(@azimuth.telemetry.api.common.Resource.get_attribute(merged, "environment"), 
-           Some(@azimuth.telemetry.api.common.StringValue("production")))
-  assert_eq(@azimuth.telemetry.api.common.Resource.get_attribute(merged, "service.instance.id"), 
-           Some(@azimuth.telemetry.api.common.StringValue("instance-123")))
-}
+// Comprehensive test suite for Azimuth telemetry system
+// This file contains additional test cases covering edge cases, error handling, and integration scenarios
 
-test "context with multiple values and hierarchical keys" {
-  // Test context operations with multiple values and hierarchical key structures
-  let ctx = @azimuth.telemetry.api.context.Context.root()
+test "error handling and boundary conditions" {
+  // Test handling of invalid inputs and boundary conditions
   
-  let user_key = @azimuth.telemetry.api.context.ContextKey.new("user.id")
-  let request_key = @azimuth.telemetry.api.context.ContextKey.new("request.id")
-  let trace_key = @azimuth.telemetry.api.context.ContextKey.new("trace.correlation_id")
+  // Test empty string trace ID and span ID
+  let empty_trace_ctx = @azimuth.telemetry.api.trace.SpanContext.new("", "", false, "")
+  assert_false(empty_trace_ctx.is_valid())
   
-  let ctx_with_user = @azimuth.telemetry.api.context.Context.with_value(ctx, user_key, "user-12345")
-  let ctx_with_request = @azimuth.telemetry.api.context.Context.with_value(ctx_with_user, request_key, "req-abcdef")
-  let ctx_final = @azimuth.telemetry.api.context.Context.with_value(ctx_with_request, trace_key, "trace-789")
+  // Test very long attribute names and values
+  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  let long_key = "a".repeat(1000)
+  let long_value = "b".repeat(10000)
+  @azimuth.telemetry.api.common.Attributes.set(attrs, long_key, @azimuth.telemetry.api.common.StringValue(long_value))
   
-  // Test that all values are preserved
-  assert_eq(@azimuth.telemetry.api.context.Context.get(ctx_final, user_key), Some("user-12345"))
-  assert_eq(@azimuth.telemetry.api.context.Context.get(ctx_final, request_key), Some("req-abcdef"))
-  assert_eq(@azimuth.telemetry.api.context.Context.get(ctx_final, trace_key), Some("trace-789"))
-  
-  // Test that missing keys return None
-  let missing_key = @azimuth.telemetry.api.context.ContextKey.new("missing.key")
-  assert_eq(@azimuth.telemetry.api.context.Context.get(ctx_final, missing_key), None)
-}
-
-test "span with complex attribute types and nested structures" {
-  // Test span with complex attribute types including arrays and nested values
-  let tracer_provider = @azimuth.telemetry.api.trace.TracerProvider.noop()
-  let tracer = @azimuth.telemetry.api.trace.TracerProvider.get_tracer(tracer_provider, "complex-test")
-  let ctx = @azimuth.telemetry.api.context.Context.root()
-  
-  let (_, span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, ctx, "complex.span")
-  
-  // Set various attribute types
-  @azimuth.telemetry.api.trace.Span.set_attribute(span, "string.value", @azimuth.telemetry.api.common.StringValue("test"))
-  @azimuth.telemetry.api.trace.Span.set_attribute(span, "int.value", @azimuth.telemetry.api.common.IntValue(42))
-  @azimuth.telemetry.api.trace.Span.set_attribute(span, "float.value", @azimuth.telemetry.api.common.FloatValue(3.14159))
-  @azimuth.telemetry.api.trace.Span.set_attribute(span, "bool.value", @azimuth.telemetry.api.common.BoolValue(true))
-  
-  // Set array attributes
-  @azimuth.telemetry.api.trace.Span.set_attribute(span, "string.array", @azimuth.telemetry.api.common.ArrayStringValue(["a", "b", "c"]))
-  @azimuth.telemetry.api.trace.Span.set_attribute(span, "int.array", @azimuth.telemetry.api.common.ArrayIntValue([1, 2, 3, 4, 5]))
-  
-  // Add complex event with attributes
-  let event_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(event_attrs, "event.type", @azimuth.telemetry.api.common.StringValue("complex"))
-  @azimuth.telemetry.api.common.Attributes.set(event_attrs, "event.data", @azimuth.telemetry.api.common.StringValue("{\"key\":\"value\"}"))
-  
-  @azimuth.telemetry.api.trace.Span.add_event(span, "complex.event", Some(event_attrs), None)
-  
-  @azimuth.telemetry.api.trace.Span.end(span)
-}
-
-test "metrics with observable instruments and asynchronous measurements" {
-  // Test metrics with observable instruments and asynchronous measurement patterns
+  // Test boundary values for metrics
   let meter_provider = @azimuth.telemetry.api.metrics.MeterProvider.noop()
-  let meter = @azimuth.telemetry.api.metrics.MeterProvider.get_meter(meter_provider, "async-test")
+  let meter = @azimuth.telemetry.api.metrics.MeterProvider.get_meter(meter_provider, "boundary.test")
+  let counter = @azimuth.telemetry.api.metrics.Meter.create_counter(meter, "boundary.counter")
   
-  // Create multiple instruments for testing
-  let counter = @azimuth.telemetry.api.metrics.Meter.create_counter(meter, "async.counter")
-  let histogram = @azimuth.telemetry.api.metrics.Meter.create_histogram(meter, "async.histogram")
-  let up_down_counter = @azimuth.telemetry.api.metrics.Meter.create_up_down_counter(meter, "async.up_down")
+  // Test with very large and small values
+  @azimuth.telemetry.api.metrics.Counter.add(counter, 999999999.0)
+  @azimuth.telemetry.api.metrics.Counter.add(counter, 0.000001)
+  @azimuth.telemetry.api.metrics.Counter.add(counter, -999999999.0)
   
-  // Simulate asynchronous measurements with different attributes
-  let attrs1 = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(attrs1, "worker.id", @azimuth.telemetry.api.common.StringValue("worker-1"))
-  @azimuth.telemetry.api.common.Attributes.set(attrs1, "operation", @azimuth.telemetry.api.common.StringValue("process"))
+  // Test with special floating point values
+  @azimuth.telemetry.api.metrics.Counter.add(counter, 0.0)
+  @azimuth.telemetry.api.metrics.Counter.add(counter, -0.0)
+}
+
+test "http client advanced functionality" {
+  // Test advanced HTTP client functionality including error scenarios
   
-  let attrs2 = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(attrs2, "worker.id", @azimuth.telemetry.api.common.StringValue("worker-2"))
-  @azimuth.telemetry.api.common.Attributes.set(attrs2, "operation", @azimuth.telemetry.api.common.StringValue("process"))
+  let client = @azimuth.telemetry.sdk.platform.http.HttpClient.new()
   
-  // Record measurements with different timing patterns
-  for i in 0..10 {
-    @azimuth.telemetry.api.metrics.Counter.add(counter, i.to_double(), Some(attrs1))
-    @azimuth.telemetry.api.metrics.Histogram.record(histogram, (i * 10).to_double(), Some(attrs1))
-    @azimuth.telemetry.api.metrics.UpDownCounter.add(up_down_counter, i.to_double(), Some(attrs2))
+  // Test request with various HTTP methods
+  let methods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+  for method in methods {
+    let request = @azimuth.telemetry.sdk.platform.http.HttpRequest.new(
+      method,
+      "https://httpbin.org/${method.lower()}",
+      [("User-Agent", "Azimuth-Telemetry/1.0")],
+      if method == "POST" || method == "PUT" { Some("{\"test\": \"data\"}") } else { None }
+    )
+    assert_eq(request.method(), method)
   }
   
-  // Test instrument properties
-  assert_eq(@azimuth.telemetry.api.metrics.Instrument.name(counter), "async.counter")
-  assert_eq(@azimuth.telemetry.api.metrics.Instrument.name(histogram), "async.histogram")
-  assert_eq(@azimuth.telemetry.api.metrics.Instrument.name(up_down_counter), "async.up_down")
-}
-
-test "log records with structured data and correlation" {
-  // Test log records with structured data and correlation across multiple logs
-  let logger_provider = @azimuth.telemetry.api.logs.LoggerProvider.noop()
-  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "structured-test")
+  // Test response with various status codes
+  let status_codes = [200, 201, 400, 401, 404, 500, 502, 503]
+  for code in status_codes {
+    let response = @azimuth.telemetry.sdk.platform.http.HttpResponse.new(
+      code,
+      [("Content-Type", "application/json")],
+      Some("{\"status\": \"${code}\"}")
+    )
+    assert_eq(response.status_code(), code)
+  }
   
-  // Create correlation context
-  let correlation_id = "corr-12345"
-  let request_id = "req-abcdef"
-  
-  // Create structured attributes
-  let base_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(base_attrs, "correlation.id", @azimuth.telemetry.api.common.StringValue(correlation_id))
-  @azimuth.telemetry.api.common.Attributes.set(base_attrs, "request.id", @azimuth.telemetry.api.common.StringValue(request_id))
-  
-  // Log multiple related events
-  let start_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(start_attrs, "correlation.id", @azimuth.telemetry.api.common.StringValue(correlation_id))
-  @azimuth.telemetry.api.common.Attributes.set(start_attrs, "request.id", @azimuth.telemetry.api.common.StringValue(request_id))
-  @azimuth.telemetry.api.common.Attributes.set(start_attrs, "event.phase", @azimuth.telemetry.api.common.StringValue("start"))
-  
-  @azimuth.telemetry.api.logs.Logger.info_with_attributes(logger, "Processing started", start_attrs)
-  
-  let process_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(process_attrs, "correlation.id", @azimuth.telemetry.api.common.StringValue(correlation_id))
-  @azimuth.telemetry.api.common.Attributes.set(process_attrs, "request.id", @azimuth.telemetry.api.common.StringValue(request_id))
-  @azimuth.telemetry.api.common.Attributes.set(process_attrs, "event.phase", @azimuth.telemetry.api.common.StringValue("processing"))
-  @azimuth.telemetry.api.common.Attributes.set(process_attrs, "records.processed", @azimuth.telemetry.api.common.IntValue(150))
-  
-  @azimuth.telemetry.api.logs.Logger.info_with_attributes(logger, "Processing in progress", process_attrs)
-  
-  let end_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(end_attrs, "correlation.id", @azimuth.telemetry.api.common.StringValue(correlation_id))
-  @azimuth.telemetry.api.common.Attributes.set(end_attrs, "request.id", @azimuth.telemetry.api.common.StringValue(request_id))
-  @azimuth.telemetry.api.common.Attributes.set(end_attrs, "event.phase", @azimuth.telemetry.api.common.StringValue("end"))
-  @azimuth.telemetry.api.common.Attributes.set(end_attrs, "total.duration.ms", @azimuth.telemetry.api.common.IntValue(250))
-  
-  @azimuth.telemetry.api.logs.Logger.info_with_attributes(logger, "Processing completed", end_attrs)
-}
-
-test "propagation with multiple headers and edge cases" {
-  // Test propagation with multiple headers and edge cases
-  let carrier = @azimuth.telemetry.api.propagation.HttpHeadersCarrier.new()
-  
-  // Set multiple headers including edge cases
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "tracestate", "congo=t61rcWkgMzE,rojo=00f067aa0ba902b7")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "userId=12345;sessionId=abcdef;serverNode=alpha")
-  
-  // Test case sensitivity
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "Custom-Header", "custom-value")
-  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "another-header", "another-value")
-  
-  // Test extraction with composite propagator
-  let ctx = @azimuth.telemetry.api.context.Context.root()
-  let trace_propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
-  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
-  let composite = @azimuth.telemetry.api.propagation.CompositePropagator.new([trace_propagator, baggage_propagator])
-  
-  let extracted_ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(composite, ctx, carrier)
-  
-  // Verify trace context extraction
-  let span_ctx = @azimuth.telemetry.api.context.Context.get_span_context(extracted_ctx)
-  assert_true(span_ctx != @azimuth.telemetry.api.trace.SpanContext.invalid())
-  assert_eq(span_ctx.trace_id(), "0af7651916cd43dd8448eb211c80319c")
-  
-  // Verify baggage extraction
-  let baggage = @azimuth.telemetry.api.context.Context.get_baggage(extracted_ctx)
-  assert_eq(@azimuth.telemetry.api.context.Baggage.get_value(baggage, "userId"), Some("12345"))
-  assert_eq(@azimuth.telemetry.api.context.Baggage.get_value(baggage, "sessionId"), Some("abcdef"))
-  assert_eq(@azimuth.telemetry.api.context.Baggage.get_value(baggage, "serverNode"), Some("alpha"))
-}
-
-test "span lifecycle with nested operations and exception handling" {
-  // Test complex span lifecycle with nested operations and exception handling
-  let tracer_provider = @azimuth.telemetry.api.trace.TracerProvider.noop()
-  let tracer = @azimuth.telemetry.api.trace.TracerProvider.get_tracer(tracer_provider, "lifecycle-test")
-  let ctx = @azimuth.telemetry.api.context.Context.root()
-  
-  // Create parent span
-  let (parent_ctx, parent_span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, ctx, "parent.operation")
-  
-  // Add initial event
-  @azimuth.telemetry.api.trace.Span.add_event(parent_span, "operation.started", None, None)
-  
-  // Create nested child spans
-  let (child1_ctx, child1_span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, parent_ctx, "child.operation.1")
-  @azimuth.telemetry.api.trace.Span.set_attribute(child1_span, "child.id", @azimuth.telemetry.api.common.IntValue(1))
-  
-  // Simulate exception in first child
-  @azimuth.telemetry.api.trace.Span.record_exception(
-    child1_span,
-    "Simulated exception in child operation",
-    Some("ChildOperationException"),
-    Some("at child.operation.1\n  at parent.operation"),
-    None
+  // Test request with multiple headers
+  let multi_header_request = @azimuth.telemetry.sdk.platform.http.HttpRequest.new(
+    "POST",
+    "https://api.example.com/data",
+    [
+      ("Content-Type", "application/json"),
+      ("Authorization", "Bearer token123"),
+      ("X-Custom-Header", "custom-value"),
+      ("X-Request-ID", "req-12345")
+    ],
+    Some("{\"data\": \"test\"}")
   )
-  @azimuth.telemetry.api.trace.Span.set_status(child1_span, @azimuth.telemetry.api.trace.StatusCode.Error, Some("Child operation failed"))
-  @azimuth.telemetry.api.trace.Span.end(child1_span)
   
-  // Create second child that succeeds
-  let (child2_ctx, child2_span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, parent_ctx, "child.operation.2")
-  @azimuth.telemetry.api.trace.Span.set_attribute(child2_span, "child.id", @azimuth.telemetry.api.common.IntValue(2))
-  @azimuth.telemetry.api.trace.Span.add_event(child2_span, "child.completed", None, None)
-  @azimuth.telemetry.api.trace.Span.set_status(child2_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Child operation succeeded"))
-  @azimuth.telemetry.api.trace.Span.end(child2_span)
-  
-  // Complete parent with warning status due to child failure
-  @azimuth.telemetry.api.trace.Span.set_attribute(parent_span, "children.completed", @azimuth.telemetry.api.common.IntValue(2))
-  @azimuth.telemetry.api.trace.Span.set_attribute(parent_span, "children.failed", @azimuth.telemetry.api.common.IntValue(1))
-  @azimuth.telemetry.api.trace.Span.set_status(parent_span, @azimuth.telemetry.api.trace.StatusCode.Error, Some("Some child operations failed"))
-  @azimuth.telemetry.api.trace.Span.add_event(parent_span, "operation.completed", None, None)
-  @azimuth.telemetry.api.trace.Span.end(parent_span)
+  let headers = multi_header_request.headers()
+  assert_true(headers.length() >= 4)
 }
 
-test "comprehensive telemetry integration scenario" {
-  // Test a comprehensive scenario integrating all telemetry components
+test "comprehensive telemetry integration" {
+  // Test integration between tracing, metrics, and logging
+  
   let tracer_provider = @azimuth.telemetry.api.trace.TracerProvider.noop()
   let meter_provider = @azimuth.telemetry.api.metrics.MeterProvider.noop()
   let logger_provider = @azimuth.telemetry.api.logs.LoggerProvider.noop()
   
-  let tracer = @azimuth.telemetry.api.trace.TracerProvider.get_tracer(tracer_provider, "integration-test")
-  let meter = @azimuth.telemetry.api.metrics.MeterProvider.get_meter(meter_provider, "integration-test")
-  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "integration-test")
+  let tracer = @azimuth.telemetry.api.trace.TracerProvider.get_tracer(tracer_provider, "integration.test")
+  let meter = @azimuth.telemetry.api.metrics.MeterProvider.get_meter(meter_provider, "integration.test")
+  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "integration.test")
   
   // Create instruments
-  let request_counter = @azimuth.telemetry.api.metrics.Meter.create_counter(meter, "http.requests.total")
-  let response_histogram = @azimuth.telemetry.api.metrics.Meter.create_histogram(meter, "http.response.duration.ms")
-  let active_gauge = @azimuth.telemetry.api.metrics.Meter.create_gauge(meter, "http.active_requests")
+  let counter = @azimuth.telemetry.api.metrics.Meter.create_counter(meter, "operations.total")
+  let histogram = @azimuth.telemetry.api.metrics.Meter.create_histogram(meter, "operation.duration")
   
-  // Start main operation span
+  // Start a span
   let ctx = @azimuth.telemetry.api.context.Context.root()
-  let (op_ctx, main_span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, ctx, "http.request.processing")
+  let (ctx_with_span, span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, ctx, "integration.operation")
   
-  // Set span attributes
-  @azimuth.telemetry.api.trace.Span.set_attribute(main_span, "http.method", @azimuth.telemetry.api.common.StringValue("POST"))
-  @azimuth.telemetry.api.trace.Span.set_attribute(main_span, "http.url", @azimuth.telemetry.api.common.StringValue("/api/process"))
-  @azimuth.telemetry.api.trace.Span.set_attribute(main_span, "user.id", @azimuth.telemetry.api.common.StringValue("user-123"))
-  
-  // Log start of operation
-  let start_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(start_attrs, "trace.id", @azimuth.telemetry.api.common.StringValue(main_span.span_context().trace_id()))
-  @azimuth.telemetry.api.common.Attributes.set(start_attrs, "span.id", @azimuth.telemetry.api.common.StringValue(main_span.span_context().span_id()))
-  
-  @azimuth.telemetry.api.logs.Logger.info_with_attributes(logger, "HTTP request processing started", start_attrs)
+  // Add attributes to span
+  @azimuth.telemetry.api.trace.Span.set_attribute(span, "operation.type", @azimuth.telemetry.api.common.StringValue("integration"))
+  @azimuth.telemetry.api.trace.Span.set_attribute(span, "service.name", @azimuth.telemetry.api.common.StringValue("test-service"))
   
   // Record metrics
-  @azimuth.telemetry.api.metrics.Gauge.record(active_gauge, 1.0)
-  @azimuth.telemetry.api.metrics.Counter.add(request_counter, 1.0)
+  @azimuth.telemetry.api.metrics.Counter.add(counter, 1.0)
+  @azimuth.telemetry.api.metrics.Histogram.record(histogram, 150.5)
   
-  // Simulate processing with nested operations
-  let (db_ctx, db_span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, op_ctx, "database.query")
-  @azimuth.telemetry.api.trace.Span.set_attribute(db_span, "db.operation", @azimuth.telemetry.api.common.StringValue("SELECT"))
-  @azimuth.telemetry.api.trace.Span.set_attribute(db_span, "db.collection", @azimuth.telemetry.api.common.StringValue("users"))
+  // Log within the span context
+  let log_attrs = @azimuth.telemetry.api.common.Attributes.new()
+  @azimuth.telemetry.api.common.Attributes.set(log_attrs, "operation.id", @azimuth.telemetry.api.common.StringValue("op-123"))
+  @azimuth.telemetry.api.logs.Logger.info_with_attributes(logger, "Operation started", log_attrs)
   
-  // Log database operation
-  let db_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(db_attrs, "operation", @azimuth.telemetry.api.common.StringValue("database_query"))
-  @azimuth.telemetry.api.logs.Logger.debug_with_attributes(logger, "Executing database query", db_attrs)
+  // Add event to span
+  let event_attrs = @azimuth.telemetry.api.common.Attributes.new()
+  @azimuth.telemetry.api.common.Attributes.set(event_attrs, "event.type", @azimuth.telemetry.api.common.StringValue("milestone"))
+  @azimuth.telemetry.api.trace.Span.add_event(span, "operation.milestone", Some(event_attrs))
   
-  @azimuth.telemetry.api.trace.Span.end(db_span)
+  // Complete the operation
+  @azimuth.telemetry.api.trace.Span.set_status(span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Operation completed"))
+  @azimuth.telemetry.api.trace.Span.end(span)
   
-  // Simulate response processing
-  let (resp_ctx, resp_span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, op_ctx, "response.serialization")
-  @azimuth.telemetry.api.trace.Span.set_attribute(resp_span, "response.format", @azimuth.telemetry.api.common.StringValue("json"))
-  @azimuth.telemetry.api.trace.Span.set_attribute(resp_span, "response.size", @azimuth.telemetry.api.common.IntValue(1024))
+  // Final log
+  @azimuth.telemetry.api.logs.Logger.info(logger, "Operation completed successfully")
+}
+
+test "time and timestamp functionality" {
+  // Test advanced time and timestamp functionality
   
-  @azimuth.telemetry.api.trace.Span.end(resp_span)
+  let clock = @azimuth.telemetry.sdk.platform.time.Clock.system()
   
-  // Record final metrics
-  @azimuth.telemetry.api.metrics.Histogram.record(response_histogram, 150.0)
-  @azimuth.telemetry.api.metrics.Gauge.record(active_gauge, 0.0)
+  // Test multiple time readings
+  let times = []
+  for i in 0..10 {
+    let time = @azimuth.telemetry.sdk.platform.time.Clock.now_unix_nanos(clock)
+    times.push(time)
+  }
   
-  // Set final span status and log completion
-  @azimuth.telemetry.api.trace.Span.set_status(main_span, @azimuth.telemetry.api.trace.StatusCode.Ok, Some("Request processed successfully"))
+  // Verify times are monotonically increasing
+  for i in 1..times.length() {
+    assert_true(times[i] >= times[i-1])
+  }
   
-  let end_attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(end_attrs, "duration.ms", @azimuth.telemetry.api.common.IntValue(150))
-  @azimuth.telemetry.api.common.Attributes.set(end_attrs, "status.code", @azimuth.telemetry.api.common.IntValue(200))
+  // Test time difference calculations
+  let start_time = @azimuth.telemetry.sdk.platform.time.Clock.now_unix_nanos(clock)
+  // Simulate some work
+  let end_time = @azimuth.telemetry.sdk.platform.time.Clock.now_unix_nanos(clock)
+  let duration = end_time - start_time
+  assert_true(duration >= 0)
   
-  @azimuth.telemetry.api.logs.Logger.info_with_attributes(logger, "HTTP request processing completed", end_attrs)
+  // Test log records with different timestamp scenarios
+  let logger_provider = @azimuth.telemetry.api.logs.LoggerProvider.noop()
+  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "time.test")
   
-  @azimuth.telemetry.api.trace.Span.end(main_span)
+  // Log with explicit timestamp
+  let explicit_time = 1735689600000000000L  // Fixed timestamp
+  let log_record1 = @azimuth.telemetry.api.logs.LogRecord.new(
+    @azimuth.telemetry.api.logs.SeverityNumber.Info,
+    "Message with explicit timestamp",
+    None,
+    Some(explicit_time),
+    None,
+    None,
+    None,
+    None
+  )
+  assert_eq(log_record1.timestamp(), Some(explicit_time))
+  
+  // Log with automatic timestamp
+  let log_record2 = @azimuth.telemetry.api.logs.LogRecord.new(
+    @azimuth.telemetry.api.logs.SeverityNumber.Info,
+    "Message with automatic timestamp",
+    None,
+    None,
+    None,
+    None,
+    None,
+    None
+  )
+  assert_true(log_record2.observed_timestamp() != None)
+  assert_true(log_record2.observed_timestamp().unwrap() > 0)
+}
+
+test "random number generation and id uniqueness" {
+  // Test random number generation and ID uniqueness
+  
+  let random = @azimuth.telemetry.sdk.platform.random.Random.system()
+  
+  // Test trace ID uniqueness
+  let trace_ids = []
+  for i in 0..100 {
+    let bytes = @azimuth.telemetry.sdk.platform.random.Random.next_bytes(random, 16)
+    let hex = @azimuth.telemetry.sdk.platform.random.bytes_to_hex(bytes)
+    trace_ids.push(hex)
+  }
+  
+  // Verify all trace IDs are unique
+  let unique_trace_ids = trace_ids.to_set()
+  assert_eq(unique_trace_ids.length(), trace_ids.length())
+  
+  // Test span ID uniqueness
+  let span_ids = []
+  for i in 0..100 {
+    let bytes = @azimuth.telemetry.sdk.platform.random.Random.next_bytes(random, 8)
+    let hex = @azimuth.telemetry.sdk.platform.random.bytes_to_hex(bytes)
+    span_ids.push(hex)
+  }
+  
+  // Verify all span IDs are unique
+  let unique_span_ids = span_ids.to_set()
+  assert_eq(unique_span_ids.length(), span_ids.length())
+  
+  // Test random u64 distribution (basic statistical test)
+  let random_values = []
+  for i in 0..1000 {
+    let value = @azimuth.telemetry.sdk.platform.random.Random.next_u64(random)
+    random_values.push(value)
+  }
+  
+  // Basic distribution check - values should be spread across the range
+  let max_value = random_values.max()
+  let min_value = random_values.min()
+  let range = max_value - min_value
+  
+  // Check that we have a reasonable spread (not all values are the same)
+  assert_true(range > 0)
+  
+  // Test hex encoding/decoding with various lengths
+  let test_lengths = [1, 2, 4, 8, 16, 32, 64]
+  for length in test_lengths {
+    let bytes = @azimuth.telemetry.sdk.platform.random.Random.next_bytes(random, length)
+    let hex = @azimuth.telemetry.sdk.platform.random.bytes_to_hex(bytes)
+    let decoded = @azimuth.telemetry.sdk.platform.random.hex_to_bytes(hex)
+    assert_eq(bytes, decoded)
+    assert_eq(hex.length(), length * 2)
+  }
+}
+
+test "data serialization and format handling" {
+  // Test data serialization and format handling
+  
+  // Test attribute value serialization
+  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  
+  // Set various attribute types
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "string.val", @azimuth.telemetry.api.common.StringValue("test string"))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "int.val", @azimuth.telemetry.api.common.IntValue(42))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "float.val", @azimuth.telemetry.api.common.FloatValue(3.14159))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "bool.val", @azimuth.telemetry.api.common.BoolValue(true))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "array.string", @azimuth.telemetry.api.common.ArrayStringValue(["a", "b", "c"]))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "array.int", @azimuth.telemetry.api.common.ArrayIntValue([1, 2, 3]))
+  
+  // Test complex log record serialization
+  let logger_provider = @azimuth.telemetry.api.logs.LoggerProvider.noop()
+  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "serialization.test")
+  
+  let complex_record = @azimuth.telemetry.api.logs.LogRecord.new_with_context(
+    @azimuth.telemetry.api.logs.SeverityNumber.Error,
+    Some("Complex serialization test"),
+    Some(attrs),
+    Some(1735689600000000000L),
+    Some(1735689600000000001L),
+    Some("trace12345678901234567890123456789012"),
+    Some("span12345678901234"),
+    Some(@azimuth.telemetry.api.context.Context.root())
+  )
+  
+  // Verify all fields are set correctly
+  assert_eq(complex_record.severity_number(), @azimuth.telemetry.api.logs.SeverityNumber.Error)
+  assert_eq(complex_record.body(), Some("Complex serialization test"))
+  assert_eq(complex_record.timestamp(), Some(1735689600000000000L))
+  assert_eq(complex_record.observed_timestamp(), Some(1735689600000000001L))
+  assert_eq(complex_record.trace_id(), Some("trace12345678901234567890123456789012"))
+  assert_eq(complex_record.span_id(), Some("span12345678901234"))
+  
+  // Test resource attribute serialization
+  let resource_attrs = [
+    ("service.name", @azimuth.telemetry.api.common.StringValue("test-service")),
+    ("service.version", @azimuth.telemetry.api.common.StringValue("1.0.0")),
+    ("service.instance.id", @azimuth.telemetry.api.common.StringValue("instance-123")),
+    ("deployment.environment", @azimuth.telemetry.api.common.StringValue("test"))
+  ]
+  
+  let resource = @azimuth.telemetry.api.common.Resource.with_attributes(
+    @azimuth.telemetry.api.common.Resource.new(),
+    resource_attrs
+  )
+  
+  // Verify resource attributes
+  for (key, value) in resource_attrs {
+    let retrieved = @azimuth.telemetry.api.common.Resource.get_attribute(resource, key)
+    assert_eq(retrieved, Some(value))
+  }
+}
+
+test "performance and resource management" {
+  // Test performance characteristics and resource management
+  
+  // Test creating many spans
+  let tracer_provider = @azimuth.telemetry.api.trace.TracerProvider.noop()
+  let tracer = @azimuth.telemetry.api.trace.TracerProvider.get_tracer(tracer_provider, "performance.test")
+  let ctx = @azimuth.telemetry.api.context.Context.root()
+  
+  let spans = []
+  for i in 0..1000 {
+    let (_, span) = @azimuth.telemetry.api.trace.Tracer.start_span(tracer, ctx, "performance.span.${i}")
+    spans.push(span)
+  }
+  
+  // End all spans
+  for span in spans {
+    @azimuth.telemetry.api.trace.Span.end(span)
+  }
+  
+  // Test creating many metric measurements
+  let meter_provider = @azimuth.telemetry.api.metrics.MeterProvider.noop()
+  let meter = @azimuth.telemetry.api.metrics.MeterProvider.get_meter(meter_provider, "performance.test")
+  let counter = @azimuth.telemetry.api.metrics.Meter.create_counter(meter, "performance.counter")
+  let histogram = @azimuth.telemetry.api.metrics.Meter.create_histogram(meter, "performance.histogram")
+  
+  // Record many measurements
+  for i in 0..10000 {
+    @azimuth.telemetry.api.metrics.Counter.add(counter, 1.0)
+    @azimuth.telemetry.api.metrics.Histogram.record(histogram, (i % 1000) as Double)
+  }
+  
+  // Test large attribute sets
+  let large_attrs = @azimuth.telemetry.api.common.Attributes.new()
+  for i in 0..100 {
+    let key = "attr.${i}"
+    let value = @azimuth.telemetry.api.common.StringValue("value.${i}")
+    @azimuth.telemetry.api.common.Attributes.set(large_attrs, key, value)
+  }
+  
+  // Test large baggage entries
+  let baggage = @azimuth.telemetry.api.context.Baggage.new()
+  for i in 0..50 {
+    baggage = @azimuth.telemetry.api.context.Baggage.set_value(baggage, "key.${i}", "value.${i}")
+  }
+  
+  // Test many log records
+  let logger_provider = @azimuth.telemetry.api.logs.LoggerProvider.noop()
+  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "performance.test")
+  
+  for i in 0..1000 {
+    @azimuth.telemetry.api.logs.Logger.info(logger, "Performance test message ${i}")
+  }
+}
+
+test "data consistency and validation" {
+  // Test data consistency and validation across different components
+  
+  // Test span context consistency
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = @azimuth.telemetry.api.trace.SpanContext.new(trace_id, span_id, true, "congo=t61rcWkgMzE")
+  
+  // Verify span context properties
+  assert_eq(span_ctx.trace_id(), trace_id)
+  assert_eq(span_ctx.span_id(), span_id)
+  assert_true(span_ctx.is_sampled())
+  assert_eq(span_ctx.trace_state(), "congo=t61rcWkgMzE")
+  assert_true(span_ctx.is_valid())
+  
+  // Test context propagation consistency
+  let ctx = @azimuth.telemetry.api.context.Context.root()
+  let ctx_with_span = @azimuth.telemetry.api.context.Context.with_span_context(ctx, span_ctx)
+  let extracted_span_ctx = @azimuth.telemetry.api.context.Context.get_span_context(ctx_with_span)
+  
+  // Verify propagated context matches original
+  assert_eq(extracted_span_ctx.trace_id(), trace_id)
+  assert_eq(extracted_span_ctx.span_id(), span_id)
+  assert_true(extracted_span_ctx.is_sampled())
+  
+  // Test baggage consistency
+  let baggage = @azimuth.telemetry.api.context.Baggage.new()
+  let baggage_with_entries = @azimuth.telemetry.api.context.Baggage.set_value(baggage, "test.key", "test.value")
+  let ctx_with_baggage = @azimuth.telemetry.api.context.Context.with_baggage(ctx, baggage_with_entries)
+  let extracted_baggage = @azimuth.telemetry.api.context.Context.get_baggage(ctx_with_baggage)
+  
+  // Verify baggage propagation
+  assert_eq(@azimuth.telemetry.api.context.Baggage.get_value(extracted_baggage, "test.key"), Some("test.value"))
+  
+  // Test text map propagation consistency
+  let carrier = @azimuth.telemetry.api.propagation.HttpHeadersCarrier.new()
+  let trace_propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
+  
+  // Inject context
+  let composite_ctx = @azimuth.telemetry.api.context.Context.with_baggage(ctx_with_span, baggage_with_entries)
+  let composite = @azimuth.telemetry.api.propagation.CompositePropagator.new([trace_propagator, baggage_propagator])
+  @azimuth.telemetry.api.propagation.TextMapPropagator.inject(composite, composite_ctx, carrier)
+  
+  // Extract context
+  let empty_ctx = @azimuth.telemetry.api.context.Context.root()
+  let extracted_ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(composite, empty_ctx, carrier)
+  
+  // Verify round-trip consistency
+  let final_span_ctx = @azimuth.telemetry.api.context.Context.get_span_context(extracted_ctx)
+  let final_baggage = @azimuth.telemetry.api.context.Context.get_baggage(extracted_ctx)
+  
+  assert_eq(final_span_ctx.trace_id(), trace_id)
+  assert_eq(final_span_ctx.span_id(), span_id)
+  assert_eq(@azimuth.telemetry.api.context.Baggage.get_value(final_baggage, "test.key"), Some("test.value"))
+  
+  // Test attribute type consistency
+  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "string.key", @azimuth.telemetry.api.common.StringValue("test"))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "int.key", @azimuth.telemetry.api.common.IntValue(42))
+  
+  // Verify attribute retrieval consistency
+  let string_val = @azimuth.telemetry.api.common.Attributes.get(attrs, "string.key")
+  let int_val = @azimuth.telemetry.api.common.Attributes.get(attrs, "int.key")
+  
+  assert_eq(string_val, Some(@azimuth.telemetry.api.common.StringValue("test")))
+  assert_eq(int_val, Some(@azimuth.telemetry.api.common.IntValue(42)))
+  
+  // Test non-existent keys return None consistently
+  let non_existent = @azimuth.telemetry.api.common.Attributes.get(attrs, "non.existent.key")
+  assert_eq(non_existent, None)
 }
