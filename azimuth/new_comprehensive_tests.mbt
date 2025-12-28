@@ -93,13 +93,13 @@ test "LogRecord创建和属性测试" {
   
   let detailed_log = LogRecord::new_with_context(
     Error,
-    "Detailed error message",
-    attrs,
-    timestamp,
+    Some("Detailed error message"),
+    Some(attrs),
+    Some(timestamp),
     None,
-    "trace123",
-    "span456",
-    ctx
+    Some("trace123"),
+    Some("span456"),
+    Some(ctx)
   )
   
   // 使用模式匹配而不是assert_eq
