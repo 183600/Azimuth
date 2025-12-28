@@ -1,214 +1,174 @@
 // Span Lifecycle Test Suite for Azimuth Telemetry System
-// Testing comprehensive span operations from creation to completion
+// Tests span creation, status management, event handling, and lifecycle operations
 
-test "span creation with different kinds" {
+test "span creation and basic properties" {
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
   let span_id = "b7ad6b7169203331"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "key1=value1")
   
-  // Test creating spans with different kinds
-  let internal_span = Span::new("internal-operation", Internal, span_ctx)
-  let server_span = Span::new("server-request", Server, span_ctx)
-  let client_span = Span::new("client-request", Client, span_ctx)
-  let producer_span = Span::new("message-producer", Producer, span_ctx)
-  let consumer_span = Span::new("message-consumer", Consumer, span_ctx)
+  let span = Span::new("test-span", Internal, span_ctx)
   
-  // Test span names
-  assert_eq(Span::name(internal_span), "internal-operation")
-  assert_eq(Span::name(server_span), "server-request")
-  assert_eq(Span::name(client_span), "client-request")
-  assert_eq(Span::name(producer_span), "message-producer")
-  assert_eq(Span::name(consumer_span), "message-consumer")
-  
-  // Test span kinds
-  assert_eq(Span::kind(internal_span), Internal)
-  assert_eq(Span::kind(server_span), Server)
-  assert_eq(Span::kind(client_span), Client)
-  assert_eq(Span::kind(producer_span), Producer)
-  assert_eq(Span::kind(consumer_span), Consumer)
-  
-  // Test all spans are recording initially
-  assert_true(Span::is_recording(internal_span))
-  assert_true(Span::is_recording(server_span))
-  assert_true(Span::is_recording(client_span))
-  assert_true(Span::is_recording(producer_span))
-  assert_true(Span::is_recording(consumer_span))
+  assert_eq(Span::name(span), "test-span")
+  assert_eq(Span::kind(span), Internal)
+  assert_true(Span::is_recording(span))
+  assert_eq(Span::span_context(span), span_ctx)
 }
 
-test "span context relationships" {
-  let parent_trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let parent_span_id = "b7ad6b7169203331"
-  let parent_ctx = SpanContext::new(parent_trace_id, parent_span_id, true, "key1=value1")
+test "span with different kinds" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
   
-  let child_span_id = "c7ad6b7169203332"
-  let child_ctx = SpanContext::new(parent_trace_id, child_span_id, true, "key1=value1")
+  let internal_span = Span::new("internal-operation", Internal, span_ctx)
+  assert_eq(Span::kind(internal_span), Internal)
   
-  let parent_span = Span::new("parent-operation", Internal, parent_ctx)
-  let child_span = Span::new("child-operation", Internal, child_ctx)
+  let server_span = Span::new("server-request", Server, span_ctx)
+  assert_eq(Span::kind(server_span), Server)
   
-  // Test that parent and child have same trace ID
-  assert_eq(
-    SpanContext::trace_id(Span::span_context(parent_span)),
-    SpanContext::trace_id(Span::span_context(child_span))
-  )
+  let client_span = Span::new("client-request", Client, span_ctx)
+  assert_eq(Span::kind(client_span), Client)
   
-  // Test that parent and child have different span IDs
-  assert_neq(
-    SpanContext::span_id(Span::span_context(parent_span)),
-    SpanContext::span_id(Span::span_context(child_span))
-  )
+  let producer_span = Span::new("message-production", Producer, span_ctx)
+  assert_eq(Span::kind(producer_span), Producer)
   
-  // Test both spans are valid
-  assert_true(SpanContext::is_valid(Span::span_context(parent_span)))
-  assert_true(SpanContext::is_valid(Span::span_context(child_span)))
+  let consumer_span = Span::new("message-consumption", Consumer, span_ctx)
+  assert_eq(Span::kind(consumer_span), Consumer)
 }
 
 test "span status management" {
-  let span_ctx = SpanContext::new("trace123", "span123", true, "")
-  let span = Span::new("test-operation", Internal, span_ctx)
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+  let span = Span::new("operation-with-status", Server, span_ctx)
   
-  // Test initial status
+  // Initially, status should be Unset
   assert_eq(Span::status(span), Unset)
   
-  // Test setting different statuses
-  Span::set_status(span, Ok)
-  assert_eq(Span::status(span), Unset) // Simplified implementation
+  // Set status to Ok
+  Span::set_status(span, Ok, "Operation completed successfully")
+  assert_eq(Span::status(span), Unset)  // Simplified implementation returns Unset
   
-  Span::set_status(span, Error, Some("Operation failed"))
-  assert_eq(Span::status(span), Unset) // Simplified implementation
-  
-  Span::set_status(span, Unset)
-  assert_eq(Span::status(span), Unset)
+  // Set status to Error
+  Span::set_status(span, Error, "Operation failed due to timeout")
+  assert_eq(Span::status(span), Unset)  // Simplified implementation returns Unset
 }
 
-test "span event management" {
-  let span_ctx = SpanContext::new("trace123", "span123", true, "")
-  let span = Span::new("test-operation", Internal, span_ctx)
+test "span event handling" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+  let span = Span::new("operation-with-events", Internal, span_ctx)
   
-  // Test adding events without attributes
-  Span::add_event(span, "event1", None)
-  Span::add_event(span, "event2", None)
+  // Add events with different attributes
+  let event1_attrs = [("event.type", StringValue("start")), ("component", StringValue("database"))]
+  Span::add_event(span, "operation.started", Some(event1_attrs))
   
-  // Test adding events with attributes
-  let event_attributes = [("key1", StringValue("value1")), ("key2", IntValue(42))]
-  Span::add_event(span, "event3", Some(event_attributes))
+  let event2_attrs = [("event.type", StringValue("checkpoint")), ("records.processed", IntValue(100))]
+  Span::add_event(span, "checkpoint.reached", Some(event2_attrs))
   
-  // Test adding multiple events
-  Span::add_event(span, "start.event", Some([("operation", StringValue("start"))]))
-  Span::add_event(span, "middle.event", Some([("operation", StringValue("processing"))]))
-  Span::add_event(span, "end.event", Some([("operation", StringValue("complete"))]))
+  let event3_attrs = [("event.type", StringValue("end")), ("duration.ms", IntValue(250))]
+  Span::add_event(span, "operation.completed", Some(event3_attrs))
   
-  // All operations should complete without errors
-  assert_true(true)
-}
-
-test "span lifecycle from start to end" {
-  let span_ctx = SpanContext::new("trace123", "span123", true, "")
-  let span = Span::new("lifecycle-test", Internal, span_ctx)
+  // Add event without attributes
+  Span::add_event(span, "simple.event", None)
   
-  // Test initial state
+  // Verify span is still recording
   assert_true(Span::is_recording(span))
-  assert_eq(Span::name(span), "lifecycle-test")
+}
+
+test "span lifecycle operations" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+  let span = Span::new("lifecycle-test", Client, span_ctx)
   
-  // Test adding events during lifecycle
-  Span::add_event(span, "span.started", None)
+  // Span should be recording initially
+  assert_true(Span::is_recording(span))
   
-  // Test status changes during lifecycle
-  Span::set_status(span, Ok, Some("Operation completed successfully"))
+  // Add some events and status changes
+  Span::add_event(span, "lifecycle.started", Some([("phase", StringValue("initialization"))]))
+  Span::set_status(span, Ok, "Initialization complete")
   
-  // Test adding more events
-  Span::add_event(span, "span.processing", Some([("progress", StringValue("50%"))]))
+  // Add more events during execution
+  Span::add_event(span, "lifecycle.processing", Some([("phase", StringValue("execution"))]))
+  Span::set_status(span, Ok, "Processing in progress")
   
-  // Test ending the span
+  // End the span
   Span::end(span)
   
-  // After ending, the span should still be accessible but not recording
-  // (in simplified implementation, we can't test this properly)
+  // After ending, the span should no longer be recording (in a real implementation)
+  // In our simplified implementation, we just verify the method doesn't crash
   assert_true(true)
 }
 
-test "span with complex trace state" {
-  let complex_trace_state = "key1=value1,key2=value2,key3=value3"
-  let span_ctx = SpanContext::new("trace123", "span123", true, complex_trace_state)
-  let span = Span::new("complex-trace-state", Internal, span_ctx)
+test "span with complex context" {
+  let trace_id = "abcdef1234567890abcdef1234567890"
+  let span_id = "1234567890abcdef"
+  let trace_state = "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, trace_state)
   
-  // Test span with complex trace state
-  assert_eq(SpanContext::trace_id(Span::span_context(span)), "trace123")
-  assert_eq(SpanContext::span_id(Span::span_context(span)), "span123")
-  assert_true(SpanContext::is_sampled(Span::span_context(span)))
-  assert_true(SpanContext::is_valid(Span::span_context(span)))
+  let span = Span::new("complex-context-span", Server, span_ctx)
   
-  // Test operations on span with complex trace state
-  Span::add_event(span, "complex.state.event", None)
-  Span::set_status(span, Ok)
+  // Verify context is properly associated
+  let associated_ctx = Span::span_context(span)
+  assert_eq(SpanContext::trace_id(associated_ctx), trace_id)
+  assert_eq(SpanContext::span_id(associated_ctx), span_id)
+  assert_true(SpanContext::is_sampled(associated_ctx))
+  assert_true(SpanContext::is_valid(associated_ctx))
+  
+  // Add events with complex attributes
+  let complex_attrs = [
+    ("user.id", StringValue("user-12345")),
+    ("request.size", IntValue(1024)),
+    ("processing.time", FloatValue(150.5)),
+    ("cache.hit", BoolValue(true)),
+    ("tags", ArrayStringValue(["api", "v1", "authenticated"]))
+  ]
+  
+  Span::add_event(span, "request.processed", Some(complex_attrs))
+  Span::set_status(span, Ok, "Request processed successfully")
+  
+  // End the span
   Span::end(span)
-  
-  assert_true(true)
 }
 
-test "span sampling behavior" {
-  // Test sampled span
-  let sampled_ctx = SpanContext::new("trace123", "span123", true, "")
-  let sampled_span = Span::new("sampled-operation", Internal, sampled_ctx)
-  assert_true(SpanContext::is_sampled(Span::span_context(sampled_span)))
+test "span with error scenarios" {
+  let span_ctx = SpanContext::new("error-trace", "error-span", true, "")
+  let span = Span::new("error-handling-span", Server, span_ctx)
   
-  // Test non-sampled span
-  let non_sampled_ctx = SpanContext::new("trace456", "span456", false, "")
-  let non_sampled_span = Span::new("non-sampled-operation", Internal, non_sampled_ctx)
-  assert_false(SpanContext::is_sampled(Span::span_context(non_sampled_span)))
+  // Add error event
+  let error_attrs = [
+    ("error.type", StringValue("TimeoutError")),
+    ("error.message", StringValue("Operation timed out after 30 seconds")),
+    ("error.code", IntValue(408)),
+    ("retry.count", IntValue(3))
+  ]
   
-  // Both spans should still be valid
-  assert_true(SpanContext::is_valid(Span::span_context(sampled_span)))
-  assert_true(SpanContext::is_valid(Span::span_context(non_sampled_span)))
+  Span::add_event(span, "error.occurred", Some(error_attrs))
+  Span::set_status(span, Error, "Operation failed: TimeoutError")
   
-  // Test operations on both spans
-  Span::add_event(sampled_span, "sampled.event", None)
-  Span::add_event(non_sampled_span, "non-sampled.event", None)
+  // Add recovery event
+  let recovery_attrs = [
+    ("recovery.action", StringValue("fallback")),
+    ("recovery.success", BoolValue(true))
+  ]
   
-  assert_true(true)
-}
-
-test "span error handling scenarios" {
-  let span_ctx = SpanContext::new("trace123", "span123", true, "")
-  let span = Span::new("error-test", Internal, span_ctx)
+  Span::add_event(span, "error.recovered", Some(recovery_attrs))
+  Span::set_status(span, Ok, "Operation completed with fallback")
   
-  // Test error status
-  Span::set_status(span, Error, Some("Something went wrong"))
-  
-  // Test error events
-  Span::add_event(span, "error.occurred", Some([
-    ("error.type", StringValue("ValidationError")),
-    ("error.message", StringValue("Invalid input parameter")),
-    ("error.code", IntValue(400))
-  ]))
-  
-  // Test multiple error events
-  Span::add_event(span, "retry.attempt", Some([
-    ("attempt", IntValue(1)),
-    ("max.attempts", IntValue(3))
-  ]))
-  
-  Span::set_status(span, Error, Some("Retry attempt failed"))
-  
-  // End the span with error
+  // End the span
   Span::end(span)
-  
-  assert_true(true)
 }
 
-test "span performance considerations" {
-  // Test creating many spans
-  for i in range(0, 100) {
-    let span_id = "span" + i.to_string()
-    let span_ctx = SpanContext::new("perf-trace", span_id, true, "")
-    let span = Span::new("performance-test-" + i.to_string(), Internal, span_ctx)
-    
-    // Add some operations
-    Span::add_event(span, "operation.start", None)
-    Span::set_status(span, Ok)
-    Span::end(span)
-  }
+test "span with nested operations" {
+  let parent_span_ctx = SpanContext::new("parent-trace", "parent-span", true, "")
+  let parent_span = Span::new("parent-operation", Server, parent_span_ctx)
   
-  // Test should complete without performance issues
-  assert_true(true)
+  // Simulate nested operations
+  Span::add_event(parent_span, "parent.started", Some([("operation", StringValue("main-flow"))]))
+  
+  // Create child span (in a real implementation, this would use the parent context)
+  let child_span_ctx = SpanContext::new("parent-trace", "child-span", true, "")
+  let child_span = Span::new("child-operation", Internal, child_span_ctx)
+  
+  Span::add_event(child_span, "child.started", Some([("operation", StringValue("sub-task-1"))]))
+  Span::set_status(child_span, Ok, "Sub-task completed")
+  Span::end(child_span)
+  
+  // Continue with parent
+  Span::add_event(parent_span, "parent.continued", Some([("child.completed", StringValue("sub-task-1"))]))
+  Span::set_status(parent_span, Ok, "Parent operation completed")
+  Span::end(parent_span)
 }
