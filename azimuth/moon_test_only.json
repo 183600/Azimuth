@@ -1,0 +1,11 @@
+{
+  "name": "azimuth",
+  "version": "0.1.0",
+  "description": "Azimuth telemetry system main package",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {},
+  "test": {
+    "test": ["simple_validation_tests.mbt", "additional_comprehensive_test_cases.mbt"]
+  }
+}

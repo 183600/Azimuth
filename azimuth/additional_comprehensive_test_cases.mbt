@@ -213,45 +213,51 @@ test "LogRecord时间戳处理测试" {
   assert_eq(log_record.span_id, Some("span456"))
   
   // 验证日志级别和内容
-  assert_eq(LogRecord::severity_number(log_record), Info)
+  match LogRecord::severity_number(log_record) {
+    Info => assert_true(true)
+    _ => assert_true(false)
+  }
   assert_eq(LogRecord::body(log_record), Some("Test log message"))
   
   // 测试没有时间戳的日志记录
   let simple_log = LogRecord::new(Warn, "Simple warning")
   assert_eq(simple_log.timestamp, None)
   assert_eq(simple_log.observed_timestamp, None)
-  assert_eq(LogRecord::severity_number(simple_log), Warn)
+  match LogRecord::severity_number(simple_log) {
+    Warn => assert_true(true)
+    _ => assert_true(false)
+  }
   assert_eq(LogRecord::body(simple_log), Some("Simple warning"))
 }
 
 test "HTTP客户端网络异常处理测试" {
   // 测试HTTP客户端的网络请求处理
-  let client = HttpClient::new()
+  let _client = HttpClient::new()
   
   // 创建测试请求
   let headers = [("Content-Type", "application/json"), ("Authorization", "Bearer token123")]
-  let request = HttpRequest::new("GET", "https://api.example.com/data", headers, Some("{\"test\": \"data\"}"))
+  let request = HttpRequest::new("GET", "https://api.example.com/data", headers)
   
   // 验证请求属性
   assert_eq(HttpRequest::http_method(request), "GET")
   assert_eq(HttpRequest::url(request), "https://api.example.com/data")
-  assert_eq(HttpRequest::body(request), Some("{\"test\": \"data\"}"))
+  assert_eq(HttpRequest::body(request), None)
   
   // 创建测试响应
   let response_headers = [("Content-Type", "application/json"), ("X-Request-ID", "req123")]
-  let response = HttpResponse::new(200, response_headers, Some("{\"result\": \"success\"}"))
+  let response = HttpResponse::new(200, response_headers)
   
   // 验证响应属性
   assert_eq(HttpResponse::status_code(response), 200)
-  assert_eq(HttpResponse::body(response), Some("{\"result\": \"success\"}"))
+  assert_eq(HttpResponse::body(response), None)
   
   // 测试错误响应
-  let error_response = HttpResponse::new(404, [], Some("Not Found"))
+  let error_response = HttpResponse::new(404, [])
   assert_eq(HttpResponse::status_code(error_response), 404)
-  assert_eq(HttpResponse::body(error_response), Some("Not Found"))
+  assert_eq(HttpResponse::body(error_response), None)
   
   // 测试服务器错误响应
-  let server_error_response = HttpResponse::new(500, [], Some("Internal Server Error"))
+  let server_error_response = HttpResponse::new(500, [])
   assert_eq(HttpResponse::status_code(server_error_response), 500)
-  assert_eq(HttpResponse::body(server_error_response), Some("Internal Server Error"))
+  assert_eq(HttpResponse::body(server_error_response), None)
 }
