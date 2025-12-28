@@ -17,8 +17,8 @@ test "span_kind_enum_test" {
   assert_eq(consumer_span, Consumer)
   
   // 验证不同枚举值不相等
-  assert_not_eq(internal_span, server_span)
-  assert_not_eq(client_span, producer_span)
+  assert_true(internal_span != server_span)
+  assert_true(client_span != producer_span)
 }
 
 test "status_code_enum_test" {
