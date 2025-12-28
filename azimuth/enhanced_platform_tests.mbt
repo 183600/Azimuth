@@ -28,18 +28,18 @@ test "resource_attribute_management" {
   
   let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
   match service_name {
-    Some(StringValue(name)) => @assertion.assert_eq(name, "azimuth-service")?
-    _ => @test.fail("Expected service.name attribute")?
+    Some(StringValue(name)) => assert_eq(name, "azimuth-service")
+    _ => assert_true(false) // Expected service.name attribute
   }
   
   let process_id = Resource::get_attribute(resource_with_attrs, "process.id")
   match process_id {
-    Some(IntValue(pid)) => @assertion.assert_eq(pid, 12345)?
-    _ => @test.fail("Expected process.id attribute")?
+    Some(IntValue(pid)) => assert_eq(pid, 12345)
+    _ => assert_true(false) // Expected process.id attribute
   }
   
   let missing_attr = Resource::get_attribute(resource_with_attrs, "nonexistent")
-  @assertion.assert_eq(missing_attr, None)?
+  assert_eq(missing_attr, None)
 }
 
 test "resource_merge_functionality" {
