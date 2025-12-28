@@ -1,205 +1,214 @@
-// Comprehensive Baggage Propagation Test Suite
-// Tests for baggage creation, entry management, and propagation across service boundaries
+// Baggage Propagation Specialized Test Suite for Azimuth Telemetry System
+// This file contains specialized test cases for baggage propagation functionality
 
-test "baggage creation and basic operations" {
+test "baggage basic operations" {
+  // Test basic baggage operations
   let baggage = Baggage::new()
   
-  // Test that new baggage has no entries
-  let missing_entry = Baggage::get_entry(baggage, "user.id")
+  // Test setting entries
+  let baggage_with_key1 = Baggage::set_entry(baggage, "user.id", "12345")
+  let baggage_with_key2 = Baggage::set_entry(baggage_with_key1, "request.id", "req-67890")
+  let baggage_with_key3 = Baggage::set_entry(baggage_with_key2, "service.version", "1.2.3")
+  
+  // Test getting entries
+  let user_id = Baggage::get_entry(baggage_with_key3, "user.id")
+  let request_id = Baggage::get_entry(baggage_with_key3, "request.id")
+  let service_version = Baggage::get_entry(baggage_with_key3, "service.version")
+  let missing_entry = Baggage::get_entry(baggage_with_key3, "missing.key")
+  
+  // Verify entries
+  assert_eq(user_id, Some("12345"))
+  assert_eq(request_id, Some("req-67890"))
+  assert_eq(service_version, Some("1.2.3"))
   assert_eq(missing_entry, None)
-}
-
-test "baggage entry setting and getting" {
-  let baggage = Baggage::new()
-  
-  // Set a single entry
-  let updated_baggage = Baggage::set_entry(baggage, "user.id", "user123")
-  
-  // Get the entry
-  let user_id = Baggage::get_entry(updated_baggage, "user.id")
-  assert_eq(user_id, Some("user123"))
-  
-  // Test getting non-existent entry
-  let missing_entry = Baggage::get_entry(updated_baggage, "session.id")
-  assert_eq(missing_entry, None)
-}
-
-test "baggage with multiple entries" {
-  let baggage = Baggage::new()
-  
-  // Set multiple entries
-  let baggage1 = Baggage::set_entry(baggage, "user.id", "user123")
-  let baggage2 = Baggage::set_entry(baggage1, "session.id", "session456")
-  let baggage3 = Baggage::set_entry(baggage2, "request.id", "req789")
-  
-  // Verify all entries exist
-  let user_id = Baggage::get_entry(baggage3, "user.id")
-  assert_eq(user_id, Some("user123"))
-  
-  let session_id = Baggage::get_entry(baggage3, "session.id")
-  assert_eq(session_id, Some("session456"))
-  
-  let request_id = Baggage::get_entry(baggage3, "request.id")
-  assert_eq(request_id, Some("req789"))
 }
 
 test "baggage entry removal" {
+  // Test baggage entry removal functionality
   let baggage = Baggage::new()
   
   // Set multiple entries
-  let baggage1 = Baggage::set_entry(baggage, "user.id", "user123")
-  let baggage2 = Baggage::set_entry(baggage1, "session.id", "session456")
-  let baggage3 = Baggage::set_entry(baggage2, "request.id", "req789")
+  let baggage_with_entries = Baggage::set_entry(
+    Baggage::set_entry(
+      Baggage::set_entry(baggage, "key1", "value1"),
+      "key2", 
+      "value2"
+    ),
+    "key3", 
+    "value3"
+  )
+  
+  // Verify all entries exist
+  assert_eq(Baggage::get_entry(baggage_with_entries, "key1"), Some("value1"))
+  assert_eq(Baggage::get_entry(baggage_with_entries, "key2"), Some("value2"))
+  assert_eq(Baggage::get_entry(baggage_with_entries, "key3"), Some("value3"))
   
   // Remove an entry
-  let baggage_after_removal = Baggage::remove_entry(baggage3, "session.id")
+  let baggage_without_key2 = Baggage::remove_entry(baggage_with_entries, "key2")
   
-  // Verify entry is removed
-  let removed_entry = Baggage::get_entry(baggage_after_removal, "session.id")
-  assert_eq(removed_entry, None)
-  
-  // Verify other entries still exist
-  let user_id = Baggage::get_entry(baggage_after_removal, "user.id")
-  assert_eq(user_id, Some("user123"))
-  
-  let request_id = Baggage::get_entry(baggage_after_removal, "request.id")
-  assert_eq(request_id, Some("req789"))
+  // Verify removal
+  assert_eq(Baggage::get_entry(baggage_without_key2, "key1"), Some("value1"))
+  assert_eq(Baggage::get_entry(baggage_without_key2, "key2"), None)
+  assert_eq(Baggage::get_entry(baggage_without_key2, "key3"), Some("value3"))
 }
 
-test "baggage with user context information" {
+test "baggage propagation with context" {
+  // Test baggage propagation through context
+  let ctx = Context::root()
   let baggage = Baggage::new()
   
-  // Set user-related baggage
-  let baggage1 = Baggage::set_entry(baggage, "user.id", "user123")
-  let baggage2 = Baggage::set_entry(baggage1, "user.role", "admin")
-  let baggage3 = Baggage::set_entry(baggage2, "user.tenant", "tenant456")
-  let baggage4 = Baggage::set_entry(baggage3, "user.locale", "en-US")
+  // Create baggage with entries
+  let baggage_with_data = Baggage::set_entry(
+    Baggage::set_entry(baggage, "correlation.id", "corr-12345"),
+    "trace.flags", "01"
+  )
   
-  // Verify user context
-  let user_id = Baggage::get_entry(baggage4, "user.id")
-  assert_eq(user_id, Some("user123"))
+  // Store baggage in context
+  let baggage_key = ContextKey::new("baggage")
+  let ctx_with_baggage = Context::with_value(ctx, baggage_key, "correlation.id=corr-12345,trace.flags=01")
   
-  let user_role = Baggage::get_entry(baggage4, "user.role")
-  assert_eq(user_role, Some("admin"))
+  // Retrieve baggage from context
+  let retrieved_baggage_str = Context::get(ctx_with_baggage, baggage_key)
+  assert_eq(retrieved_baggage_str, Some("correlation.id=corr-12345,trace.flags=01"))
   
-  let user_tenant = Baggage::get_entry(baggage4, "user.tenant")
-  assert_eq(user_tenant, Some("tenant456"))
-  
-  let user_locale = Baggage::get_entry(baggage4, "user.locale")
-  assert_eq(user_locale, Some("en-US"))
+  // Test individual baggage entries
+  assert_eq(Baggage::get_entry(baggage_with_data, "correlation.id"), Some("corr-12345"))
+  assert_eq(Baggage::get_entry(baggage_with_data, "trace.flags"), Some("01"))
 }
 
-test "baggage with request tracing information" {
+test "baggage with special characters" {
+  // Test baggage operations with special characters and encoding
   let baggage = Baggage::new()
   
-  // Set request tracing baggage
-  let baggage1 = Baggage::set_entry(baggage, "correlation.id", "corr-123-abc")
-  let baggage2 = Baggage::set_entry(baggage1, "request.source", "web-frontend")
-  let baggage3 = Baggage::set_entry(baggage2, "request.version", "v1.2.3")
-  let baggage4 = Baggage::set_entry(baggage3, "request.priority", "high")
-  
-  // Verify request tracing context
-  let correlation_id = Baggage::get_entry(baggage4, "correlation.id")
-  assert_eq(correlation_id, Some("corr-123-abc"))
-  
-  let request_source = Baggage::get_entry(baggage4, "request.source")
-  assert_eq(request_source, Some("web-frontend"))
-  
-  let request_version = Baggage::get_entry(baggage4, "request.version")
-  assert_eq(request_version, Some("v1.2.3"))
-  
-  let request_priority = Baggage::get_entry(baggage4, "request.priority")
-  assert_eq(request_priority, Some("high"))
-}
-
-test "baggage with business context" {
-  let baggage = Baggage::new()
-  
-  // Set business context baggage
-  let baggage1 = Baggage::set_entry(baggage, "business.transaction.id", "txn-789-xyz")
-  let baggage2 = Baggage::set_entry(baggage1, "business.product.id", "prod-456")
-  let baggage3 = Baggage::set_entry(baggage2, "business.customer.segment", "enterprise")
-  let baggage4 = Baggage::set_entry(baggage3, "business.region", "us-west")
-  
-  // Verify business context
-  let transaction_id = Baggage::get_entry(baggage4, "business.transaction.id")
-  assert_eq(transaction_id, Some("txn-789-xyz"))
-  
-  let product_id = Baggage::get_entry(baggage4, "business.product.id")
-  assert_eq(product_id, Some("prod-456"))
-  
-  let customer_segment = Baggage::get_entry(baggage4, "business.customer.segment")
-  assert_eq(customer_segment, Some("enterprise"))
-  
-  let region = Baggage::get_entry(baggage4, "business.region")
-  assert_eq(region, Some("us-west"))
-}
-
-test "baggage with technical context" {
-  let baggage = Baggage::new()
-  
-  // Set technical context baggage
-  let baggage1 = Baggage::set_entry(baggage, "tech.service.version", "2.1.0")
-  let baggage2 = Baggage::set_entry(baggage1, "tech.deployment.id", "deploy-abc123")
-  let baggage3 = Baggage::set_entry(baggage2, "tech.feature.flags", "featureA,featureB")
-  let baggage4 = Baggage::set_entry(baggage3, "tech.experiment.id", "exp-456")
-  
-  // Verify technical context
-  let service_version = Baggage::get_entry(baggage4, "tech.service.version")
-  assert_eq(service_version, Some("2.1.0"))
-  
-  let deployment_id = Baggage::get_entry(baggage4, "tech.deployment.id")
-  assert_eq(deployment_id, Some("deploy-abc123"))
-  
-  let feature_flags = Baggage::get_entry(baggage4, "tech.feature.flags")
-  assert_eq(feature_flags, Some("featureA,featureB"))
-  
-  let experiment_id = Baggage::get_entry(baggage4, "tech.experiment.id")
-  assert_eq(experiment_id, Some("exp-456"))
-}
-
-test "baggage with special characters and encoding" {
-  let baggage = Baggage::new()
-  
-  // Set entries with special characters
-  let baggage1 = Baggage::set_entry(baggage, "user.email", "user@example.com")
-  let baggage2 = Baggage::set_entry(baggage1, "request.path", "/api/v1/users/123")
-  let baggage3 = Baggage::set_entry(baggage2, "query.params", "sort=name&filter=active")
-  let baggage4 = Baggage::set_entry(baggage3, "unicode.value", "遥测系统")
+  // Test entries with special characters
+  let baggage_with_special = Baggage::set_entry(baggage, "user.email", "test@example.com")
+  let baggage_with_space = Baggage::set_entry(baggage_with_special, "user.name", "John Doe")
+  let baggage_with_unicode = Baggage::set_entry(baggage_with_space, "message", "测试消息")
+  let baggage_with_emoji = Baggage::set_entry(baggage_with_unicode, "status", "🚀 active")
   
   // Verify special character handling
-  let user_email = Baggage::get_entry(baggage4, "user.email")
-  assert_eq(user_email, Some("user@example.com"))
-  
-  let request_path = Baggage::get_entry(baggage4, "request.path")
-  assert_eq(request_path, Some("/api/v1/users/123"))
-  
-  let query_params = Baggage::get_entry(baggage4, "query.params")
-  assert_eq(query_params, Some("sort=name&filter=active"))
-  
-  let unicode_value = Baggage::get_entry(baggage4, "unicode.value")
-  assert_eq(unicode_value, Some("遥测系统"))
+  assert_eq(Baggage::get_entry(baggage_with_emoji, "user.email"), Some("test@example.com"))
+  assert_eq(Baggage::get_entry(baggage_with_emoji, "user.name"), Some("John Doe"))
+  assert_eq(Baggage::get_entry(baggage_with_emoji, "message"), Some("测试消息"))
+  assert_eq(Baggage::get_entry(baggage_with_emoji, "status"), Some("🚀 active"))
 }
 
-test "baggage with empty and edge case values" {
+test "baggage cross service propagation" {
+  // Test baggage propagation across service boundaries
   let baggage = Baggage::new()
   
-  // Set entries with edge case values
-  let baggage1 = Baggage::set_entry(baggage, "empty.string", "")
-  let baggage2 = Baggage::set_entry(baggage1, "zero.string", "0")
-  let baggage3 = Baggage::set_entry(baggage2, "space.only", " ")
-  let baggage4 = Baggage::set_entry(baggage3, "long.value", "this-is-a-very-long-value-that-might-be-used-in-some-edge-cases-to-test-how-the-baggage-system-handles-long-strings")
+  // Service A sets baggage
+  let service_a_baggage = Baggage::set_entry(
+    Baggage::set_entry(
+      Baggage::set_entry(baggage, "service.a.id", "svc-a-001"),
+      "user.session", "sess-12345"
+    ),
+    "request.start", "2025-12-28T10:00:00Z"
+  )
   
-  // Verify edge case handling
-  let empty_string = Baggage::get_entry(baggage4, "empty.string")
-  assert_eq(empty_string, Some(""))
+  // Service B adds to baggage
+  let service_b_baggage = Baggage::set_entry(
+    service_a_baggage,
+    "service.b.id", "svc-b-002"
+  )
   
-  let zero_string = Baggage::get_entry(baggage4, "zero.string")
-  assert_eq(zero_string, Some("0"))
+  // Service C adds to baggage
+  let service_c_baggage = Baggage::set_entry(
+    service_b_baggage,
+    "service.c.id", "svc-c-003"
+  )
   
-  let space_only = Baggage::get_entry(baggage4, "space.only")
-  assert_eq(space_only, Some(" "))
+  // Verify all service entries are preserved
+  assert_eq(Baggage::get_entry(service_c_baggage, "service.a.id"), Some("svc-a-001"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "user.session"), Some("sess-12345"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "request.start"), Some("2025-12-28T10:00:00Z"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "service.b.id"), Some("svc-b-002"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "service.c.id"), Some("svc-c-003"))
+}
+
+test "baggage size limits and boundary conditions" {
+  // Test baggage size limits and boundary conditions
+  let baggage = Baggage::new()
   
-  let long_value = Baggage::get_entry(baggage4, "long.value")
-  assert_eq(long_value, Some("this-is-a-very-long-value-that-might-be-used-in-some-edge-cases-to-test-how-the-baggage-system-handles-long-strings"))
+  // Test empty baggage
+  let empty_entry = Baggage::get_entry(baggage, "any.key")
+  assert_eq(empty_entry, None)
+  
+  // Test very long keys and values
+  let very_long_key = "this.is.a.very.long.key.name.that.exceeds.normal.limits.and.tests.boundary.conditions"
+  let very_long_value = "this.is.a.very.long.value.that.exceeds.normal.limits.and.tests.boundary.conditions.for.baggage.values"
+  let baggage_with_long = Baggage::set_entry(baggage, very_long_key, very_long_value)
+  
+  assert_eq(Baggage::get_entry(baggage_with_long, very_long_key), Some(very_long_value))
+  
+  // Test empty key and value
+  let baggage_with_empty_key = Baggage::set_entry(baggage, "", "empty.key.test")
+  let baggage_with_empty_value = Baggage::set_entry(baggage_with_empty_key, "empty.value.test", "")
+  
+  assert_eq(Baggage::get_entry(baggage_with_empty_value, ""), Some("empty.key.test"))
+  assert_eq(Baggage::get_entry(baggage_with_empty_value, "empty.value.test"), Some(""))
+}
+
+test "baggage concurrent operations" {
+  // Test concurrent baggage operations
+  let baggage = Baggage::new()
+  
+  // Simulate concurrent baggage modifications
+  let baggage1 = Baggage::set_entry(baggage, "concurrent.key1", "value1")
+  let baggage2 = Baggage::set_entry(baggage, "concurrent.key2", "value2")
+  let baggage3 = Baggage::set_entry(baggage, "concurrent.key3", "value3")
+  
+  // Merge baggage from different operations (simplified simulation)
+  let merged_baggage = Baggage::set_entry(
+    Baggage::set_entry(
+      Baggage::set_entry(baggage1, "concurrent.key2", "value2"),
+      "concurrent.key3", 
+      "value3"
+    ),
+    "concurrent.key4", 
+    "value4"
+  )
+  
+  // Verify merged baggage
+  assert_eq(Baggage::get_entry(merged_baggage, "concurrent.key1"), Some("value1"))
+  assert_eq(Baggage::get_entry(merged_baggage, "concurrent.key2"), Some("value2"))
+  assert_eq(Baggage::get_entry(merged_baggage, "concurrent.key3"), Some("value3"))
+  assert_eq(Baggage::get_entry(merged_baggage, "concurrent.key4"), Some("value4"))
+}
+
+test "baggage integration with tracing" {
+  // Test baggage integration with tracing system
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "baggage.test")
+  
+  // Create span with baggage
+  let span = Tracer::start_span(tracer, "baggage.integration.test")
+  let span_context = Span::span_context(span)
+  
+  // Create baggage with trace context
+  let baggage = Baggage::new()
+  let baggage_with_trace = Baggage::set_entry(
+    Baggage::set_entry(
+      baggage, 
+      "trace.id", 
+      SpanContext::trace_id(span_context)
+    ),
+    "span.id", 
+    SpanContext::span_id(span_context)
+  )
+  
+  // Add business context to baggage
+  let baggage_with_business = Baggage::set_entry(
+    baggage_with_trace,
+    "business.transaction.id",
+    "txn-12345"
+  )
+  
+  // Verify baggage contains trace context
+  assert_eq(Baggage::get_entry(baggage_with_business, "trace.id"), Some(SpanContext::trace_id(span_context)))
+  assert_eq(Baggage::get_entry(baggage_with_business, "span.id"), Some(SpanContext::span_id(span_context)))
+  assert_eq(Baggage::get_entry(baggage_with_business, "business.transaction.id"), Some("txn-12345"))
+  
+  // End span
+  Span::end(span)
 }

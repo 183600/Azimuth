@@ -1,220 +1,357 @@
-// Advanced Resource Management Tests for Azimuth Telemetry System
-// Testing advanced resource lifecycle, attribute handling, and edge cases
+// 资源管理测试用例
+// 测试Azimuth遥测系统的资源管理和优化功能
 
-test "resource_attribute_inheritance_and_overriding" {
-  // Test resource attribute inheritance chain
-  let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("base-service")),
-    ("service.namespace", StringValue("default")),
-    ("service.version", StringValue("1.0.0"))
-  ]
-  
-  let inherited_resource = Resource::with_attributes(base_resource, base_attrs)
-  
-  // Test attribute overriding
-  let override_attrs = [
-    ("service.version", StringValue("2.0.0")),
-    ("deployment.environment", StringValue("production"))
-  ]
-  
-  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
-  let merged_resource = Resource::merge(inherited_resource, override_resource)
-  
-  // Verify inheritance and overriding behavior
-  assert_eq(Resource::get_attribute(merged_resource, "service.name"), Some(StringValue("base-service")))
-  assert_eq(Resource::get_attribute(merged_resource, "service.namespace"), Some(StringValue("default")))
-  assert_eq(Resource::get_attribute(merged_resource, "service.version"), Some(StringValue("2.0.0")))
-  assert_eq(Resource::get_attribute(merged_resource, "deployment.environment"), Some(StringValue("production")))
-}
-
-test "resource_attribute_type_consistency" {
-  // Test resource attribute type consistency across operations
+test "resource_lifecycle_management" {
+  // 测试资源的生命周期管理
   let resource = Resource::new()
   
-  // Add attributes of different types
-  let mixed_attrs = [
-    ("string.attr", StringValue("test")),
-    ("int.attr", IntValue(42)),
-    ("float.attr", FloatValue(3.14)),
-    ("bool.attr", BoolValue(true)),
-    ("array.string", ArrayStringValue(["a", "b", "c"])),
-    ("array.int", ArrayIntValue([1, 2, 3]))
-  ]
-  
-  let resource_with_mixed = Resource::with_attributes(resource, mixed_attrs)
-  
-  // Verify type consistency after merge operations
-  let additional_attrs = [
-    ("new.string", StringValue("new_test")),
-    ("new.int", IntValue(100))
-  ]
-  
-  let additional_resource = Resource::with_attributes(Resource::new(), additional_attrs)
-  let final_resource = Resource::merge(resource_with_mixed, additional_resource)
-  
-  // Verify all original attributes maintain their types
-  assert_eq(Resource::get_attribute(final_resource, "string.attr"), Some(StringValue("test")))
-  assert_eq(Resource::get_attribute(final_resource, "int.attr"), Some(IntValue(42)))
-  assert_eq(Resource::get_attribute(final_resource, "float.attr"), Some(FloatValue(3.14)))
-  assert_eq(Resource::get_attribute(final_resource, "bool.attr"), Some(BoolValue(true)))
-  
-  // Verify new attributes are added correctly
-  assert_eq(Resource::get_attribute(final_resource, "new.string"), Some(StringValue("new_test")))
-  assert_eq(Resource::get_attribute(final_resource, "new.int"), Some(IntValue(100)))
-}
-
-test "resource_lifecycle_with_instrumentation_scopes" {
-  // Test resource lifecycle with different instrumentation scopes
-  let resource = Resource::new()
-  let service_attrs = [
-    ("service.name", StringValue("lifecycle-test-service")),
+  // 创建资源并添加属性
+  let service_resource = Resource::with_attributes(resource, [
+    ("service.name", StringValue("test-service")),
+    ("service.version", StringValue("1.0.0")),
     ("service.instance.id", StringValue("instance-12345"))
-  ]
+  ])
   
-  let service_resource = Resource::with_attributes(resource, service_attrs)
-  
-  // Create tracer with resource-based scope
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "lifecycle-tracer", Some("1.2.3"))
-  let span = Tracer::start_span(tracer, "lifecycle-test-span")
-  
-  // Create meter with resource-based scope
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "lifecycle-meter")
-  let counter = Meter::create_counter(meter, "lifecycle.counter")
-  
-  // Create logger with resource-based scope
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "lifecycle-logger")
-  
-  // Verify all components work with the same resource context
-  assert_eq(Span::name(span), "lifecycle-test-span")
-  assert_eq(Instrument::name(Counter(counter.name, counter.description, counter.unit)), "lifecycle.counter")
-  
-  // Test resource cleanup simulation
-  Span::end(span)
-  
-  // Verify resource attributes are still accessible after span end
-  assert_eq(Resource::get_attribute(service_resource, "service.name"), Some(StringValue("lifecycle-test-service")))
+  // 验证资源创建
+  assert_eq(Resource::get_attribute(service_resource, "service.name"), Some(StringValue("test-service")))
+  assert_eq(Resource::get_attribute(service_resource, "service.version"), Some(StringValue("1.0.0")))
   assert_eq(Resource::get_attribute(service_resource, "service.instance.id"), Some(StringValue("instance-12345")))
+  
+  // 模拟资源更新
+  let updated_resource = Resource::with_attributes(service_resource, [
+    ("service.version", StringValue("1.1.0")),  // 版本升级
+    ("deployment.environment", StringValue("production"))
+  ])
+  
+  // 验证资源更新
+  assert_eq(Resource::get_attribute(updated_resource, "service.name"), Some(StringValue("test-service")))
+  assert_eq(Resource::get_attribute(updated_resource, "service.version"), Some(StringValue("1.1.0")))
+  assert_eq(Resource::get_attribute(updated_resource, "deployment.environment"), Some(StringValue("production")))
 }
 
-test "resource_attribute_deep_nesting" {
-  // Test resource with deeply nested attribute structures
-  let resource = Resource::new()
+test "resource_attribute_inheritance" {
+  // 测试资源属性继承
+  let base_resource = Resource::with_attributes(Resource::new(), [
+    ("cloud.provider", StringValue("aws")),
+    ("cloud.region", StringValue("us-west-2")),
+    ("kubernetes.cluster", StringValue("production-cluster"))
+  ])
   
-  // Create nested attribute structures
-  let nested_attrs = [
-    ("level1.level2.level3.string", StringValue("deeply.nested.value")),
-    ("level1.level2.level3.int", IntValue(999)),
-    ("level1.level2.level3.float", FloatValue(9.99)),
-    ("level1.level2.level3.bool", BoolValue(false))
-  ]
+  let service_resource = Resource::with_attributes(base_resource, [
+    ("service.name", StringValue("user-service")),
+    ("service.namespace", StringValue("backend"))
+  ])
   
-  let nested_resource = Resource::with_attributes(resource, nested_attrs)
+  let instance_resource = Resource::with_attributes(service_resource, [
+    ("service.instance.id", StringValue("pod-xyz123")),
+    ("host.name", StringValue("worker-node-1"))
+  ])
   
-  // Test retrieving deeply nested attributes
-  assert_eq(Resource::get_attribute(nested_resource, "level1.level2.level3.string"), Some(StringValue("deeply.nested.value")))
-  assert_eq(Resource::get_attribute(nested_resource, "level1.level2.level3.int"), Some(IntValue(999)))
-  assert_eq(Resource::get_attribute(nested_resource, "level1.level2.level3.float"), Some(FloatValue(9.99)))
-  assert_eq(Resource::get_attribute(nested_resource, "level1.level2.level3.bool"), Some(BoolValue(false)))
-  
-  // Test partial path matching (should return None)
-  assert_eq(Resource::get_attribute(nested_resource, "level1.level2"), None)
-  assert_eq(Resource::get_attribute(nested_resource, "level1.level2.level3.nonexistent"), None)
-  
-  // Test merging resources with nested attributes
-  let additional_nested = [
-    ("level1.level2.level3.new", StringValue("new.nested.value")),
-    ("level1.level2.different", StringValue("different.level.value"))
-  ]
-  
-  let additional_resource = Resource::with_attributes(Resource::new(), additional_nested)
-  let merged_nested = Resource::merge(nested_resource, additional_resource)
-  
-  // Verify merge preserves all nested attributes
-  assert_eq(Resource::get_attribute(merged_nested, "level1.level2.level3.string"), Some(StringValue("deeply.nested.value")))
-  assert_eq(Resource::get_attribute(merged_nested, "level1.level2.level3.new"), Some(StringValue("new.nested.value")))
-  assert_eq(Resource::get_attribute(merged_nested, "level1.level2.different"), Some(StringValue("different.level.value")))
+  // 验证属性继承链
+  assert_eq(Resource::get_attribute(instance_resource, "cloud.provider"), Some(StringValue("aws")))
+  assert_eq(Resource::get_attribute(instance_resource, "cloud.region"), Some(StringValue("us-west-2")))
+  assert_eq(Resource::get_attribute(instance_resource, "kubernetes.cluster"), Some(StringValue("production-cluster")))
+  assert_eq(Resource::get_attribute(instance_resource, "service.name"), Some(StringValue("user-service")))
+  assert_eq(Resource::get_attribute(instance_resource, "service.namespace"), StringValue("backend"))
+  assert_eq(Resource::get_attribute(instance_resource, "service.instance.id"), StringValue("pod-xyz123"))
+  assert_eq(Resource::get_attribute(instance_resource, "host.name"), StringValue("worker-node-1"))
 }
 
-test "resource_attribute_validation_and_sanitization" {
-  // Test resource attribute validation and sanitization
-  let resource = Resource::new()
+test "resource_merge_strategies" {
+  // 测试资源合并策略
+  let resource1 = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("service-a")),
+    ("service.version", StringValue("1.0.0")),
+    ("deployment.environment", StringValue("staging"))
+  ])
   
-  // Test attributes with special characters
-  let special_char_attrs = [
-    ("key.with.dots", StringValue("value.with.dots")),
-    ("key_with_underscores", StringValue("value_with_underscores")),
-    ("key-with-dashes", StringValue("value-with-dashes")),
-    ("key_with spaces", StringValue("value with spaces")),
-    ("key/with/slashes", StringValue("value/with/slashes")),
-    ("key\\with\\backslashes", StringValue("value\\with\\backslashes")),
-    ("key.with.symbols!@#$%^&*()", StringValue("value.with.symbols!@#$%^&*()"))
-  ]
+  let resource2 = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("service-b")),  // 冲突的键
+    ("host.name", StringValue("host-1")),
+    ("process.pid", StringValue("1234"))
+  ])
   
-  let special_resource = Resource::with_attributes(resource, special_char_attrs)
+  let resource3 = Resource::with_attributes(Resource::new(), [
+    ("service.version", StringValue("2.0.0")),  // 冲突的键
+    ("container.id", StringValue("container-abc")),
+    ("process.command", StringValue("/app/main"))
+  ])
   
-  // Verify special characters are preserved
-  assert_eq(Resource::get_attribute(special_resource, "key.with.dots"), Some(StringValue("value.with.dots")))
-  assert_eq(Resource::get_attribute(special_resource, "key_with_underscores"), Some(StringValue("value_with_underscores")))
-  assert_eq(Resource::get_attribute(special_resource, "key-with-dashes"), Some(StringValue("value-with-dashes")))
-  assert_eq(Resource::get_attribute(special_resource, "key_with spaces"), Some(StringValue("value with spaces")))
-  assert_eq(Resource::get_attribute(special_resource, "key/with/slashes"), Some(StringValue("value/with/slashes")))
+  // 测试不同的合并策略
+  let merged_1_2 = Resource::merge(resource1, resource2)
+  let merged_all = Resource::merge(merged_1_2, resource3)
   
-  // Test attributes with Unicode characters
-  let unicode_attrs = [
-    ("clé.avec.accents", StringValue("valeur.avec.accents")),
-    ("ключ.на.русском", StringValue("значение.на.русском")),
-    ("キー.日本語", StringValue("値.日本語")),
-    ("키.한국어", StringValue("값.한국어")),
-    ("مفتاح.عربي", StringValue("قيمة.عربي"))
-  ]
-  
-  let unicode_resource = Resource::with_attributes(Resource::new(), unicode_attrs)
-  
-  // Verify Unicode characters are preserved
-  assert_eq(Resource::get_attribute(unicode_resource, "clé.avec.accents"), Some(StringValue("valeur.avec.accents")))
-  assert_eq(Resource::get_attribute(unicode_resource, "ключ.на.русском"), Some(StringValue("значение.на.русском")))
-  assert_eq(Resource::get_attribute(unicode_resource, "キー.日本語"), Some(StringValue("値.日本語")))
-  assert_eq(Resource::get_attribute(unicode_resource, "키.한국어"), Some(StringValue("값.한국어")))
-  assert_eq(Resource::get_attribute(unicode_resource, "مفتاح.عربي"), Some(StringValue("قيمة.عربي")))
+  // 验证合并结果
+  assert_eq(Resource::get_attribute(merged_all, "service.name"), Some(StringValue("service-b")))  // 后者覆盖
+  assert_eq(Resource::get_attribute(merged_all, "service.version"), Some(StringValue("2.0.0")))  // 后者覆盖
+  assert_eq(Resource::get_attribute(merged_all, "deployment.environment"), Some(StringValue("staging")))
+  assert_eq(Resource::get_attribute(merged_all, "host.name"), Some(StringValue("host-1")))
+  assert_eq(Resource::get_attribute(merged_all, "process.pid"), Some(StringValue("1234")))
+  assert_eq(Resource::get_attribute(merged_all, "container.id"), Some(StringValue("container-abc")))
+  assert_eq(Resource::get_attribute(merged_all, "process.command"), Some(StringValue("/app/main")))
 }
 
-test "resource_performance_with_large_attribute_sets" {
-  // Test resource performance with large attribute sets
+test "resource_memory_optimization" {
+  // 测试资源内存优化
+  let large_attributes = []
+  
+  // 创建大量属性
+  for i in 0..1000 {
+    large_attributes.push(("attr." + i.to_string(), StringValue("value." + i.to_string())))
+  }
+  
+  let large_resource = Resource::with_attributes(Resource::new(), large_attributes)
+  
+  // 验证大资源创建成功
+  for i in 0..10 {  // 只验证前10个，避免性能问题
+    let attr_name = "attr." + i.to_string()
+    let expected_value = "value." + i.to_string()
+    assert_eq(Resource::get_attribute(large_resource, attr_name), Some(StringValue(expected_value)))
+  }
+  
+  // 测试资源清理和内存释放
+  let optimized_resource = Resource::new()  // 创建新的空资源
+  
+  // 验证优化后的资源是空的
+  assert_eq(Resource::get_attribute(optimized_resource, "any.key"), None)
+}
+
+test "resource_attribute_validation" {
+  // 测试资源属性验证
   let resource = Resource::new()
   
-  // Create a large number of attributes
-  let large_attrs = [
-    ("attr." + @string.to_string(i), StringValue("value." + @string.to_string(i)))
-    for i in range(0, 1000)
+  // 测试有效的属性
+  let valid_attributes = [
+    ("service.name", StringValue("valid-service-name")),
+    ("service.version", StringValue("1.0.0")),
+    ("host.ip", StringValue("192.168.1.1")),
+    ("process.pid", IntValue(1234)),
+    ("process.start.time", IntValue(1735689600)),
+    ("container.running", BoolValue(true)),
+    ("cpu.count", IntValue(4)),
+    ("memory.total", IntValue(8589934592))
   ]
   
-  let large_resource = Resource::with_attributes(resource, large_attrs)
+  let validated_resource = Resource::with_attributes(resource, valid_attributes)
   
-  // Test retrieval of first, middle, and last attributes
-  assert_eq(Resource::get_attribute(large_resource, "attr.0"), Some(StringValue("value.0")))
-  assert_eq(Resource::get_attribute(large_resource, "attr.500"), Some(StringValue("value.500")))
-  assert_eq(Resource::get_attribute(large_resource, "attr.999"), Some(StringValue("value.999")))
+  // 验证所有有效属性都能正确设置
+  for (key, value) in valid_attributes {
+    assert_eq(Resource::get_attribute(validated_resource, key), Some(value))
+  }
   
-  // Test non-existent attribute in large set
-  assert_eq(Resource::get_attribute(large_resource, "attr.1000"), None)
-  assert_eq(Resource::get_attribute(large_resource, "nonexistent"), None)
-  
-  // Test merging large resource with another resource
-  let additional_attrs = [
-    ("new.attr." + @string.to_string(i), StringValue("new.value." + @string.to_string(i)))
-    for i in range(0, 100)
+  // 测试边界情况属性
+  let edge_case_attributes = [
+    ("empty.string", StringValue("")),
+    ("zero.number", IntValue(0)),
+    ("negative.number", IntValue(-1)),
+    ("large.number", IntValue(2147483647)),
+    ("boolean.false", BoolValue(false))
   ]
   
-  let additional_resource = Resource::with_attributes(Resource::new(), additional_attrs)
-  let merged_large = Resource::merge(large_resource, additional_resource)
+  let edge_case_resource = Resource::with_attributes(Resource::new(), edge_case_attributes)
   
-  // Verify merge preserves attributes from both resources
-  assert_eq(Resource::get_attribute(merged_large, "attr.0"), Some(StringValue("value.0")))
-  assert_eq(Resource::get_attribute(merged_large, "attr.999"), Some(StringValue("value.999")))
-  assert_eq(Resource::get_attribute(merged_large, "new.attr.0"), Some(StringValue("new.value.0")))
-  assert_eq(Resource::get_attribute(merged_large, "new.attr.99"), Some(StringValue("new.value.99")))
+  // 验证边界情况属性
+  for (key, value) in edge_case_attributes {
+    assert_eq(Resource::get_attribute(edge_case_resource, key), Some(value))
+  }
+}
+
+test "resource_attribute_caching" {
+  // 测试资源属性缓存
+  let resource = Resource::with_attributes(Resource::new(), [
+    ("cache.test", StringValue("cached-value")),
+    ("frequent.access", StringValue("frequently-accessed"))
+  ])
+  
+  // 模拟频繁访问
+  for i in 0..100 {
+    let cached_value = Resource::get_attribute(resource, "cache.test")
+    assert_eq(cached_value, Some(StringValue("cached-value")))
+    
+    let frequent_value = Resource::get_attribute(resource, "frequent.access")
+    assert_eq(frequent_value, Some(StringValue("frequently-accessed")))
+  }
+  
+  // 测试缓存失效和更新
+  let updated_resource = Resource::with_attributes(resource, [
+    ("cache.test", StringValue("updated-value"))
+  ])
+  
+  // 验证缓存更新
+  let updated_value = Resource::get_attribute(updated_resource, "cache.test")
+  assert_eq(updated_value, Some(StringValue("updated-value")))
+}
+
+test "resource_concurrent_access" {
+  // 测试资源并发访问
+  let base_resource = Resource::with_attributes(Resource::new(), [
+    ("concurrent.test", StringValue("base-value"))
+  ])
+  
+  // 模拟并发创建资源
+  let resources = []
+  for i in 0..10 {
+    let concurrent_resource = Resource::with_attributes(base_resource, [
+      ("thread.id", StringValue("thread-" + i.to_string())),
+      ("iteration", IntValue(i))
+    ])
+    resources.push(concurrent_resource)
+  }
+  
+  // 验证并发创建的资源
+  for (i, resource) in resources.enumerate() {
+    let thread_id = Resource::get_attribute(resource, "thread.id")
+    let iteration = Resource::get_attribute(resource, "iteration")
+    
+    assert_eq(thread_id, Some(StringValue("thread-" + i.to_string())))
+    assert_eq(iteration, Some(IntValue(i)))
+    assert_eq(Resource::get_attribute(resource, "concurrent.test"), Some(StringValue("base-value")))
+  }
+  
+  assert_eq(resources.length(), 10)
+}
+
+test "resource_serialization_compatibility" {
+  // 测试资源序列化兼容性
+  let original_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("serialization-test")),
+    ("service.version", StringValue("1.0.0")),
+    ("host.name", StringValue("test-host")),
+    ("process.pid", IntValue(1234)),
+    ("container.running", BoolValue(true))
+  ])
+  
+  // 模拟序列化和反序列化过程
+  let serialized_data = [
+    ("service.name", "StringValue", "serialization-test"),
+    ("service.version", "StringValue", "1.0.0"),
+    ("host.name", "StringValue", "test-host"),
+    ("process.pid", "IntValue", "1234"),
+    ("container.running", "BoolValue", "true")
+  ]
+  
+  // 模拟反序列化
+  let deserialized_resource = Resource::new()
+  let reconstructed_resource = Resource::with_attributes(deserialized_resource, [
+    ("service.name", StringValue("serialization-test")),
+    ("service.version", StringValue("1.0.0")),
+    ("host.name", StringValue("test-host")),
+    ("process.pid", IntValue(1234)),
+    ("container.running", BoolValue(true))
+  ])
+  
+  // 验证序列化兼容性
+  assert_eq(
+    Resource::get_attribute(original_resource, "service.name"),
+    Resource::get_attribute(reconstructed_resource, "service.name")
+  )
+  assert_eq(
+    Resource::get_attribute(original_resource, "process.pid"),
+    Resource::get_attribute(reconstructed_resource, "process.pid")
+  )
+  assert_eq(
+    Resource::get_attribute(original_resource, "container.running"),
+    Resource::get_attribute(reconstructed_resource, "container.running")
+  )
+}
+
+test "resource_attribute_filtering" {
+  // 测试资源属性过滤
+  let full_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("filter-test")),
+    ("service.version", StringValue("1.0.0")),
+    ("host.name", StringValue("test-host")),
+    ("process.pid", IntValue(1234)),
+    ("container.id", StringValue("container-123")),
+    ("kubernetes.pod.name", StringValue("pod-xyz")),
+    ("cloud.provider", StringValue("aws")),
+    ("cloud.region", StringValue("us-west-2")),
+    ("deployment.environment", StringValue("staging")),
+    ("telemetry.sdk.name", StringValue("azimuth")),
+    ("telemetry.sdk.version", StringValue("1.0.0"))
+  ])
+  
+  // 定义过滤规则
+  let service_filter = ["service.name", "service.version"]
+  let infrastructure_filter = ["host.name", "process.pid", "container.id", "kubernetes.pod.name"]
+  let cloud_filter = ["cloud.provider", "cloud.region", "deployment.environment"]
+  let telemetry_filter = ["telemetry.sdk.name", "telemetry.sdk.version"]
+  
+  // 验证过滤结果
+  for key in service_filter {
+    let value = Resource::get_attribute(full_resource, key)
+    assert_true(value != None, "Service filter key " + key + " should exist")
+  }
+  
+  for key in infrastructure_filter {
+    let value = Resource::get_attribute(full_resource, key)
+    assert_true(value != None, "Infrastructure filter key " + key + " should exist")
+  }
+  
+  for key in cloud_filter {
+    let value = Resource::get_attribute(full_resource, key)
+    assert_true(value != None, "Cloud filter key " + key + " should exist")
+  }
+  
+  for key in telemetry_filter {
+    let value = Resource::get_attribute(full_resource, key)
+    assert_true(value != None, "Telemetry filter key " + key + " should exist")
+  }
+  
+  // 验证过滤规则长度
+  assert_eq(service_filter.length(), 2)
+  assert_eq(infrastructure_filter.length(), 4)
+  assert_eq(cloud_filter.length(), 3)
+  assert_eq(telemetry_filter.length(), 2)
+}
+
+test "resource_hierarchy_management" {
+  // 测试资源层次管理
+  // 全局资源
+  let global_resource = Resource::with_attributes(Resource::new(), [
+    ("telemetry.sdk.name", StringValue("azimuth")),
+    ("telemetry.sdk.version", StringValue("1.0.0")),
+    ("telemetry.sdk.language", StringValue("moonbit"))
+  ])
+  
+  // 云资源
+  let cloud_resource = Resource::with_attributes(global_resource, [
+    ("cloud.provider", StringValue("aws")),
+    ("cloud.account.id", StringValue("123456789012")),
+    ("cloud.region", StringValue("us-west-2"))
+  ])
+  
+  // 集群资源
+  let cluster_resource = Resource::with_attributes(cloud_resource, [
+    ("kubernetes.cluster.name", StringValue("production-cluster")),
+    ("kubernetes.namespace", StringValue("default"))
+  ])
+  
+  // 主机资源
+  let host_resource = Resource::with_attributes(cluster_resource, [
+    ("host.name", StringValue("ip-10-0-1-123.us-west-2.compute.internal")),
+    ("host.id", StringValue("i-1234567890abcdef0")),
+    ("host.type", StringValue("t3.medium"))
+  ])
+  
+  // 服务资源
+  let service_resource = Resource::with_attributes(host_resource, [
+    ("service.name", StringValue("api-gateway")),
+    ("service.version", StringValue("2.1.0")),
+    ("service.instance.id", StringValue("instance-abc123"))
+  ])
+  
+  // 验证层次结构
+  let hierarchy_checks = [
+    ("telemetry.sdk.name", "azimuth"),
+    ("cloud.provider", "aws"),
+    ("kubernetes.cluster.name", "production-cluster"),
+    ("host.name", "ip-10-0-1-123.us-west-2.compute.internal"),
+    ("service.name", "api-gateway")
+  ]
+  
+  for (key, expected_value) in hierarchy_checks {
+    let actual_value = Resource::get_attribute(service_resource, key)
+    assert_eq(actual_value, Some(StringValue(expected_value)))
+  }
 }

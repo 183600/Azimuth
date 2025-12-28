@@ -1,514 +1,276 @@
-// Configuration Management and Dynamic Update Tests for Azimuth Telemetry System
-// Testing configuration management and dynamic update capabilities
+// Configuration Management and Dynamic Updates Test Suite for Azimuth Telemetry System
+// This file contains test cases for configuration management and dynamic updates
 
-test "telemetry configuration validation" {
-  let provider = TracerProvider::default()
+test "basic configuration loading" {
+  // Test basic configuration loading and validation
+  let tracer_provider = TracerProvider::default()
   let meter_provider = MeterProvider::default()
   let logger_provider = LoggerProvider::default()
   
-  // Test configuration validation for different components
-  let tracer = TracerProvider::get_tracer(provider, "config-validation-tracer")
-  let meter = MeterProvider::get_meter(meter_provider, "config-validation-meter")
-  let logger = LoggerProvider::get_logger(logger_provider, "config-validation-logger")
+  // Create telemetry components with configuration
+  let tracer = TracerProvider::get_tracer(tracer_provider, "config.test.service")
+  let meter = MeterProvider::get_meter(meter_provider, "config.test.metrics")
+  let logger = LoggerProvider::get_logger(logger_provider, "config.test.logs")
   
-  // Validate tracer configuration
+  // Verify components are created with default configuration
   let tracer_scope = Tracer::instrumentation_scope(tracer)
-  assert_eq(tracer_scope.name, "config-validation-tracer")
+  let meter_scope = meter.scope
+  let logger_scope = logger.scope
+  
+  assert_eq(tracer_scope.name, "config.test.service")
+  assert_eq(meter_scope.name, "config.test.metrics")
+  assert_eq(logger_scope.name, "config.test.logs")
+  
+  // Verify default configuration values
   assert_eq(tracer_scope.version, None)
+  assert_eq(meter_scope.version, None)
+  assert_eq(logger_scope.version, None)
+  
+  assert_eq(tracer_scope.schema_url, None)
+  assert_eq(meter_scope.schema_url, None)
+  assert_eq(logger_scope.schema_url, None)
+}
+
+test "instrumentation scope configuration" {
+  // Test detailed instrumentation scope configuration
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  // Create components with detailed scope configuration
+  let tracer_with_version = TracerProvider::get_tracer(tracer_provider, "versioned.service", Some("1.2.3"))
+  let meter_with_schema = MeterProvider::get_meter(meter_provider, "schema.service", Some("2.0.0"), Some("https://example.com/schema/v1"))
+  let logger_with_full = LoggerProvider::get_logger(logger_provider, "full.service", Some("3.4.5"), Some("https://example.com/schema/v2"))
+  
+  // Verify detailed configuration
+  let tracer_scope = Tracer::instrumentation_scope(tracer_with_version)
+  let meter_scope = meter_with_schema.scope
+  let logger_scope = logger_with_full.scope
+  
+  assert_eq(tracer_scope.name, "versioned.service")
+  assert_eq(tracer_scope.version, Some("1.2.3"))
   assert_eq(tracer_scope.schema_url, None)
   
-  // Validate meter configuration
-  assert_eq(meter.scope.name, "config-validation-meter")
+  assert_eq(meter_scope.name, "schema.service")
+  assert_eq(meter_scope.version, Some("2.0.0"))
+  assert_eq(meter_scope.schema_url, Some("https://example.com/schema/v1"))
   
-  // Validate logger configuration
-  assert_eq(logger.scope.name, "config-validation-logger")
-  
-  // Test configuration with explicit parameters
-  let configured_tracer = TracerProvider::get_tracer(provider, "configured-tracer", Some("2.1.0"))
-  let configured_scope = Tracer::instrumentation_scope(configured_tracer)
-  assert_eq(configured_scope.name, "configured-tracer")
-  assert_eq(configured_scope.version, Some("2.1.0"))
-  
-  assert_true(true)
+  assert_eq(logger_scope.name, "full.service")
+  assert_eq(logger_scope.version, Some("3.4.5"))
+  assert_eq(logger_scope.schema_url, Some("https://example.com/schema/v2"))
 }
 
-test "dynamic sampling configuration" {
+test "metric instrument configuration" {
+  // Test metric instrument configuration options
   let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "sampling-config")
+  let meter = MeterProvider::get_meter(meter_provider, "instrument.config.test")
   
-  let sampling_decision_counter = Meter::create_counter(meter, "sampling.decisions")
-  let sampling_rate_gauge = Meter::create_gauge(meter, "sampling.rate")
+  // Create instruments with various configurations
+  let counter_full = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
+  let histogram_minimal = Meter::create_histogram(meter, "response.time")
+  let updown_counter_desc = Meter::create_updown_counter(meter, "active.users", Some("Currently active users"))
+  let gauge_full = Meter::create_gauge(meter, "memory.usage", Some("Memory usage percentage"), Some("percent"))
   
-  // Test different sampling configurations
-  let sampling_rates = [0.1, 0.25, 0.5, 0.75, 1.0]
+  // Verify counter configuration
+  assert_eq(counter_full.name, "http.requests.total")
+  assert_eq(counter_full.description, Some("Total HTTP requests"))
+  assert_eq(counter_full.unit, Some("requests"))
   
-  for rate in sampling_rates {
-    // Update sampling rate
-    Gauge::record(sampling_rate_gauge, rate, Some([
-      ("config.type", StringValue("dynamic_sampling")),
-      ("rate.value", FloatValue(rate))
-    ]))
-    
-    // Simulate sampling decisions
-    let decision_count = 1000
-    let sampled_count = (decision_count.to_float() * rate).to_int()
-    
-    for i = 0; i < decision_count; i = i + 1 {
-      let is_sampled = i < sampled_count
-      
-      Counter::add(sampling_decision_counter, 1.0, Some([
-        ("sampling.rate", FloatValue(rate)),
-        ("decision", StringValue(if is_sampled { "sampled" } else { "not_sampled" })),
-        ("config.version", StringValue("dynamic"))
-      ]))
-    }
-  }
+  // Verify histogram configuration (minimal)
+  assert_eq(histogram_minimal.name, "response.time")
+  assert_eq(histogram_minimal.description, None)
+  assert_eq(histogram_minimal.unit, None)
   
-  assert_true(true)
+  // Verify up-down counter configuration
+  assert_eq(updown_counter_desc.name, "active.users")
+  assert_eq(updown_counter_desc.description, Some("Currently active users"))
+  assert_eq(updown_counter_desc.unit, None)
+  
+  // Verify gauge configuration
+  assert_eq(gauge_full.name, "memory.usage")
+  assert_eq(gauge_full.description, Some("Memory usage percentage"))
+  assert_eq(gauge_full.unit, Some("percent"))
 }
 
-test "dynamic metric configuration updates" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "dynamic-metrics")
-  
-  // Test dynamic metric creation with different configurations
-  let metric_configs = [
-    ("basic.counter", "counter", None, None),
-    ("detailed.histogram", "histogram", Some("Detailed histogram description"), Some("ms")),
-    ("unit.gauge", "gauge", None, Some("percent")),
-    ("updown.counter", "updown_counter", Some("UpDown counter with description"), Some("count"))
-  ]
-  
-  for (name, metric_type, description, unit) in metric_configs {
-    match metric_type {
-      "counter" => {
-        let counter = Meter::create_counter(meter, name, description, unit)
-        Counter::add(counter, 10.0, Some([
-          ("metric.config", StringValue("dynamic")),
-          ("config.type", StringValue("counter"))
-        ]))
-      }
-      "histogram" => {
-        let histogram = Meter::create_histogram(meter, name, description, unit)
-        Histogram::record(histogram, 100.0, Some([
-          ("metric.config", StringValue("dynamic")),
-          ("config.type", StringValue("histogram"))
-        ]))
-      }
-      "gauge" => {
-        let gauge = Meter::create_gauge(meter, name, description, unit)
-        Gauge::record(gauge, 75.0, Some([
-          ("metric.config", StringValue("dynamic")),
-          ("config.type", StringValue("gauge"))
-        ]))
-      }
-      "updown_counter" => {
-        let updown_counter = Meter::create_updown_counter(meter, name, description, unit)
-        UpDownCounter::add(updown_counter, 5.0, Some([
-          ("metric.config", StringValue("dynamic")),
-          ("config.type", StringValue("updown_counter"))
-        ]))
-      }
-      _ => {}
-    }
-  }
-  
-  assert_true(true)
-}
-
-test "dynamic logging configuration" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "dynamic-logger")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "logging-config")
-  
-  let config_change_counter = Meter::create_counter(meter, "log.config.changes")
-  let log_level_gauge = Meter::create_gauge(meter, "log.level")
-  
-  // Test dynamic log level configuration
-  let log_levels = [Trace, Debug, Info, Warn, Error, Fatal]
-  
-  for level in log_levels {
-    // Update log level configuration
-    Gauge::record(log_level_gauge, level as Int, Some([
-      ("config.type", StringValue("dynamic_log_level")),
-      ("level.name", StringValue(level.to_string()))
-    ]))
-    
-    Counter::add(config_change_counter, 1.0, Some([
-      ("new.level", StringValue(level.to_string())),
-      ("config.source", StringValue("dynamic_update"))
-    ]))
-    
-    // Test logging at current level
-    let record = LogRecord::new_with_context(
-      level,
-      Some("Dynamic log level test - " + level.to_string()),
-      Some([
-        ("log.level", StringValue(level.to_string())),
-        ("config.version", StringValue("dynamic"))
-      ]),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some("dynamic-config-trace"),
-      Some("dynamic-config-span"),
-      None
-    )
-    
-    Logger::emit(logger, record)
-  }
-  
-  assert_true(true)
-}
-
-test "resource configuration management" {
-  let base_resource = Resource::new()
-  
-  // Test dynamic resource attribute configuration
-  let resource_configs = [
-    ("service.name", "dynamic-service"),
-    ("service.version", "2.0.0"),
-    ("service.instance.id", "dynamic-instance-123"),
-    ("deployment.environment", "production"),
-    ("host.name", "dynamic-host"),
-    ("telemetry.sdk.name", "azimuth"),
-    ("telemetry.sdk.version", "0.1.0"),
-    ("telemetry.auto.instrumentation", "true")
-  ]
-  
-  let configured_resource = Resource::with_attributes(base_resource, resource_configs)
-  
-  // Validate resource configuration
-  for (key, expected_value) in resource_configs {
-    let retrieved_value = Resource::get_attribute(configured_resource, key)
-    assert_true(retrieved_value != None)
-  }
-  
-  // Test dynamic resource configuration update
-  let updated_configs = [
-    ("service.version", "2.1.0"), // Update existing
-    ("deployment.region", "us-west-2"), // Add new
-    ("feature.flags", "new_ui,experimental") // Add new
-  ]
-  
-  let updated_resource = Resource::with_attributes(configured_resource, updated_configs)
-  
-  // Validate updated configuration
-  let updated_version = Resource::get_attribute(updated_resource, "service.version")
-  let new_region = Resource::get_attribute(updated_resource, "deployment.region")
-  let new_flags = Resource::get_attribute(updated_resource, "feature.flags")
-  
-  assert_true(updated_version != None)
-  assert_true(new_region != None)
-  assert_true(new_flags != None)
-  
-  assert_true(true)
-}
-
-test "propagation configuration management" {
-  let carrier = TextMapCarrier::new()
-  let propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([propagator])
-  
-  // Test different propagation configurations
-  let propagation_configs = [
-    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("baggage", "user.id=12345,session.id=session-abc"),
-    ("x-request-id", "req-xyz789"),
-    ("x-correlation-id", "corr-def456")
-  ]
-  
-  // Configure carrier with different headers
-  for (header_name, header_value) in propagation_configs {
-    TextMapCarrier::set(carrier, header_name, header_value)
-  }
-  
-  // Test extraction with configured carrier
-  let ctx = CompositePropagator::extract(composite, carrier)
-  
-  // Test injection with custom configuration
-  let custom_carrier = TextMapCarrier::new()
-  CompositePropagator::inject(composite, ctx, custom_carrier)
-  
-  // Validate propagation configuration
-  let traceparent = TextMapCarrier::get(custom_carrier, "traceparent")
-  assert_true(traceparent != None)
-  
-  assert_true(true)
-}
-
-test "context configuration management" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "context-config")
-  
-  let context_operation_counter = Meter::create_counter(meter, "context.operations")
-  
-  // Test dynamic context configuration
-  let root_ctx = Context::root()
-  let configured_ctx = root_ctx
-  
-  let context_configs = [
-    ("operation.id", "dynamic-op-123"),
-    ("user.id", "dynamic-user-456"),
-    ("session.id", "dynamic-session-789"),
-    ("request.id", "dynamic-req-abc"),
-    ("correlation.id", "dynamic-corr-def")
-  ]
-  
-  // Configure context with dynamic values
-  for (key_name, key_value) in context_configs {
-    let key = ContextKey::new(key_name)
-    configured_ctx = Context::with_value(configured_ctx, key, key_value)
-    
-    Counter::add(context_operation_counter, 1.0, Some([
-      ("operation", StringValue("context_set")),
-      ("key", StringValue(key_name)),
-      ("config.type", StringValue("dynamic"))
-    ]))
-  }
-  
-  // Validate context configuration
-  for (key_name, expected_value) in context_configs {
-    let key = ContextKey::new(key_name)
-    let retrieved_value = Context::get(configured_ctx, key)
-    assert_eq(retrieved_value, Some(expected_value))
-    
-    Counter::add(context_operation_counter, 1.0, Some([
-      ("operation", StringValue("context_get")),
-      ("key", StringValue(key_name)),
-      ("config.type", StringValue("dynamic"))
-    ]))
-  }
-  
-  assert_true(true)
-}
-
-test "baggage configuration management" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "baggage-config")
-  
-  let baggage_operation_counter = Meter::create_counter(meter, "baggage.operations")
-  
-  // Test dynamic baggage configuration
-  let baggage = Baggage::new()
-  let configured_baggage = baggage
-  
-  let baggage_configs = [
-    ("user.id", "baggage-user-123"),
-    ("session.type", "authenticated"),
-    ("client.version", "2.0.0"),
-    ("feature.flags", "new_ui,experimental_api"),
-    ("request.source", "mobile_app")
-  ]
-  
-  // Configure baggage with dynamic values
-  for (key, value) in baggage_configs {
-    configured_baggage = Baggage::set_entry(configured_baggage, key, value)
-    
-    Counter::add(baggage_operation_counter, 1.0, Some([
-      ("operation", StringValue("baggage_set")),
-      ("key", StringValue(key)),
-      ("config.type", StringValue("dynamic"))
-    ]))
-  }
-  
-  // Validate baggage configuration
-  for (key, expected_value) in baggage_configs {
-    let retrieved_value = Baggage::get_entry(configured_baggage, key)
-    assert_true(retrieved_value != None)
-    
-    Counter::add(baggage_operation_counter, 1.0, Some([
-      ("operation", StringValue("baggage_get")),
-      ("key", StringValue(key)),
-      ("config.type", StringValue("dynamic"))
-    ]))
-  }
-  
-  // Test baggage configuration update (removal)
-  let updated_baggage = Baggage::remove_entry(configured_baggage, "feature.flags")
-  let removed_value = Baggage::get_entry(updated_baggage, "feature.flags")
-  
-  Counter::add(baggage_operation_counter, 1.0, Some([
-    ("operation", StringValue("baggage_remove")),
-    ("key", StringValue("feature.flags")),
-    ("config.type", StringValue("dynamic"))
-  ]))
-  
-  assert_true(true)
-}
-
-test "configuration change propagation" {
+test "dynamic configuration updates" {
+  // Test dynamic configuration updates during runtime
   let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "config-propagation")
   let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "config-propagation")
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "config-propagation")
-  
-  let config_change_span = Tracer::start_span(tracer, "configuration-change-propagation")
-  
-  // Simulate configuration change
-  let config_change_counter = Meter::create_counter(meter, "config.changes")
-  let config_version_gauge = Meter::create_gauge(meter, "config.version")
   
   // Initial configuration
-  Gauge::record(config_version_gauge, 1.0, Some([
-    ("component", StringValue("telemetry")),
-    ("config.type", StringValue("initial"))
-  ]))
+  let initial_tracer = TracerProvider::get_tracer(tracer_provider, "dynamic.service", Some("1.0.0"))
+  let initial_meter = MeterProvider::get_meter(meter_provider, "dynamic.metrics", Some("1.0.0"))
   
-  Counter::add(config_change_counter, 1.0, Some([
-    ("change.type", StringValue("initialization")),
-    ("component", StringValue("telemetry"))
-  ]))
+  // Create instruments with initial configuration
+  let initial_counter = Meter::create_counter(initial_meter, "initial.counter", Some("Initial description"), Some("initial.unit"))
   
-  Span::add_event(config_change_span, "config.initialized", Some([
-    ("config.version", FloatValue(1.0)),
-    ("component", StringValue("telemetry"))
-  ]))
+  // Simulate configuration update (create new components with updated config)
+  let updated_tracer = TracerProvider::get_tracer(tracer_provider, "dynamic.service", Some("2.0.0"))
+  let updated_meter = MeterProvider::get_meter(meter_provider, "dynamic.metrics", Some("2.0.0"))
   
-  // Configuration update 1
-  Gauge::record(config_version_gauge, 2.0, Some([
-    ("component", StringValue("telemetry")),
-    ("config.type", StringValue("update"))
-  ]))
+  // Create instruments with updated configuration
+  let updated_counter = Meter::create_counter(updated_meter, "updated.counter", Some("Updated description"), Some("updated.unit"))
   
-  Counter::add(config_change_counter, 1.0, Some([
-    ("change.type", StringValue("update")),
-    ("component", StringValue("telemetry")),
-    ("from.version", FloatValue(1.0)),
-    ("to.version", FloatValue(2.0))
-  ]))
+  // Verify both configurations coexist
+  let initial_scope = Tracer::instrumentation_scope(initial_tracer)
+  let updated_scope = Tracer::instrumentation_scope(updated_tracer)
   
-  Span::add_event(config_change_span, "config.updated", Some([
-    ("config.version", FloatValue(2.0)),
-    ("update.type", StringValue("dynamic"))
-  ]))
+  assert_eq(initial_scope.name, "dynamic.service")
+  assert_eq(initial_scope.version, Some("1.0.0"))
   
-  // Configuration update 2
-  Gauge::record(config_version_gauge, 3.0, Some([
-    ("component", StringValue("telemetry")),
-    ("config.type", StringValue("update"))
-  ]))
+  assert_eq(updated_scope.name, "dynamic.service")
+  assert_eq(updated_scope.version, Some("2.0.0"))
   
-  Counter::add(config_change_counter, 1.0, Some([
-    ("change.type", StringValue("update")),
-    ("component", StringValue("telemetry")),
-    ("from.version", FloatValue(2.0)),
-    ("to.version", FloatValue(3.0))
-  ]))
+  // Verify instrument configurations
+  assert_eq(initial_counter.name, "initial.counter")
+  assert_eq(initial_counter.description, Some("Initial description"))
+  assert_eq(initial_counter.unit, Some("initial.unit"))
   
-  Span::add_event(config_change_span, "config.updated", Some([
-    ("config.version", FloatValue(3.0)),
-    ("update.type", StringValue("dynamic"))
-  ]))
-  
-  // Log configuration changes
-  let config_log = LogRecord::new_with_context(
-    Info,
-    Some("Configuration changes propagated successfully"),
-    Some([
-      ("config.changes", IntValue(3)),
-      ("final.version", FloatValue(3.0)),
-      ("propagation.status", StringValue("success"))
-    ]),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some("config-propagation-trace"),
-    Some("config-propagation-span"),
-    None
-  )
-  
-  Logger::emit(logger, config_log)
-  
-  Span::set_status(config_change_span, Ok, Some("Configuration changes propagated"))
-  Span::end(config_change_span)
-  
-  assert_true(true)
+  assert_eq(updated_counter.name, "updated.counter")
+  assert_eq(updated_counter.description, Some("Updated description"))
+  assert_eq(updated_counter.unit, Some("updated.unit"))
 }
 
 test "configuration validation and error handling" {
+  // Test configuration validation and error handling
   let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "config-validation")
   let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "config-validation")
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "config-validation")
   
-  let validation_span = Tracer::start_span(tracer, "configuration-validation")
-  let validation_error_counter = Meter::create_counter(meter, "config.validation.errors")
+  // Test with empty names (should still work but may be logged as warning)
+  let empty_tracer = TracerProvider::get_tracer(tracer_provider, "")
+  let empty_meter = MeterProvider::get_meter(meter_provider, "")
+  let empty_logger = LoggerProvider::get_logger(logger_provider, "")
   
-  // Test invalid configuration scenarios
-  let invalid_configs = [
-    ("empty.name", ""),
-    ("null.version", None),
-    ("invalid.sampling.rate", -1.0),
-    ("invalid.log.level", "invalid_level")
-  ]
+  // Verify empty names are handled
+  let empty_tracer_scope = Tracer::instrumentation_scope(empty_tracer)
+  let empty_meter_scope = empty_meter.scope
+  let empty_logger_scope = empty_logger.scope
   
-  for (config_type, config_value) in invalid_configs {
-    Span::add_event(validation_span, "config.validation.failed", Some([
-      ("config.type", StringValue(config_type)),
-      ("validation.result", StringValue("failed")),
-      ("error.handling", StringValue("graceful_degradation"))
-    ]))
-    
-    Counter::add(validation_error_counter, 1.0, Some([
-      ("config.type", StringValue(config_type)),
-      ("error.severity", StringValue("medium"))
-    ]))
-    
-    // Log validation failure
-    let error_log = LogRecord::new_with_context(
-      Warn,
-      Some("Configuration validation failed for " + config_type),
-      Some([
-        ("config.type", StringValue(config_type)),
-        ("validation.result", StringValue("failed")),
-        ("fallback.enabled", BoolValue(true))
-      ]),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some("config-validation-trace"),
-      Some("config-validation-span"),
-      None
-    )
-    
-    Logger::emit(logger, error_log)
-  }
+  assert_eq(empty_tracer_scope.name, "")
+  assert_eq(empty_meter_scope.name, "")
+  assert_eq(empty_logger_scope.name, "")
   
-  // Test configuration recovery
-  Span::add_event(validation_span, "config.recovery.initiated", Some([
-    ("recovery.strategy", StringValue("fallback_to_defaults")),
-    ("recovery.status", StringValue("in_progress"))
-  ]))
+  // Test with very long names
+  let very_long_name = "this.is.a.very.long.service.name.that.exceeds.normal.limits.and.tests.validation.boundaries"
+  let long_tracer = TracerProvider::get_tracer(tracer_provider, very_long_name)
+  let long_meter = MeterProvider::get_meter(meter_provider, very_long_name)
+  let long_logger = LoggerProvider::get_logger(logger_provider, very_long_name)
   
-  // Simulate successful recovery
-  Span::add_event(validation_span, "config.recovery.completed", Some([
-    ("recovery.strategy", StringValue("fallback_to_defaults")),
-    ("recovery.status", StringValue("success")),
-    ("default.config.applied", BoolValue(true))
-  ]))
+  // Verify long names are handled
+  let long_tracer_scope = Tracer::instrumentation_scope(long_tracer)
+  let long_meter_scope = long_meter.scope
+  let long_logger_scope = long_logger.scope
   
-  let recovery_log = LogRecord::new_with_context(
-    Info,
-    Some("Configuration recovery completed successfully"),
-    Some([
-      ("recovery.strategy", StringValue("fallback_to_defaults")),
-      ("errors.recovered", IntValue(invalid_configs.length())),
-      ("system.status", StringValue("operational"))
-    ]),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some("config-validation-trace"),
-    Some("config-validation-span"),
-    None
-  )
+  assert_eq(long_tracer_scope.name, very_long_name)
+  assert_eq(long_meter_scope.name, very_long_name)
+  assert_eq(long_logger_scope.name, very_long_name)
+}
+
+test "environment-based configuration" {
+  // Test environment-based configuration loading
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  Logger::emit(logger, recovery_log)
+  // Simulate different environment configurations
+  let dev_tracer = TracerProvider::get_tracer(tracer_provider, "dev.service", Some("dev-1.0.0"))
+  let staging_meter = MeterProvider::get_meter(meter_provider, "staging.metrics", Some("staging-1.0.0"))
+  let prod_logger = LoggerProvider::get_logger(logger_provider, "prod.logs", Some("prod-1.0.0"))
   
-  Span::set_status(validation_span, Ok, Some("Configuration validation completed with recovery"))
-  Span::end(validation_span)
+  // Environment-specific instrument configurations
+  let dev_counter = Meter::create_counter(dev_tracer.meter, "dev.requests", Some("Development request counter"), Some("count"))
+  let staging_histogram = Meter::create_histogram(staging_meter, "staging.latency", Some("Staging latency histogram"), Some("ms"))
+  let prod_gauge = Meter::create_gauge(prod_logger.meter, "prod.memory", Some("Production memory gauge"), Some("bytes"))
   
-  assert_true(true)
+  // Verify environment-specific configurations
+  let dev_scope = Tracer::instrumentation_scope(dev_tracer)
+  let staging_scope = staging_meter.scope
+  let prod_scope = prod_logger.scope
+  
+  assert_eq(dev_scope.name, "dev.service")
+  assert_eq(dev_scope.version, Some("dev-1.0.0"))
+  
+  assert_eq(staging_scope.name, "staging.metrics")
+  assert_eq(staging_scope.version, Some("staging-1.0.0"))
+  
+  assert_eq(prod_scope.name, "prod.logs")
+  assert_eq(prod_scope.version, Some("prod-1.0.0"))
+  
+  // Verify instrument configurations reflect environment
+  assert_eq(dev_counter.description, Some("Development request counter"))
+  assert_eq(staging_histogram.description, Some("Staging latency histogram"))
+  assert_eq(prod_gauge.description, Some("Production memory gauge"))
+}
+
+test "configuration inheritance and overrides" {
+  // Test configuration inheritance and override mechanisms
+  let tracer_provider = TracerProvider::default()
+  
+  // Base configuration
+  let base_tracer = TracerProvider::get_tracer(tracer_provider, "base.service", Some("1.0.0"), Some("https://base.example.com/schema"))
+  
+  // Inherited configuration with partial override
+  let inherited_tracer = TracerProvider::get_tracer(tracer_provider, "base.service", Some("2.0.0")) // Version override
+  
+  // Complete override
+  let override_tracer = TracerProvider::get_tracer(tracer_provider, "override.service", Some("3.0.0"), Some("https://override.example.com/schema"))
+  
+  // Verify configurations
+  let base_scope = Tracer::instrumentation_scope(base_tracer)
+  let inherited_scope = Tracer::instrumentation_scope(inherited_tracer)
+  let override_scope = Tracer::instrumentation_scope(override_tracer)
+  
+  assert_eq(base_scope.name, "base.service")
+  assert_eq(base_scope.version, Some("1.0.0"))
+  assert_eq(base_scope.schema_url, Some("https://base.example.com/schema"))
+  
+  assert_eq(inherited_scope.name, "base.service")
+  assert_eq(inherited_scope.version, Some("2.0.0"))
+  assert_eq(inherited_scope.schema_url, None) // Not overridden, defaults to None
+  
+  assert_eq(override_scope.name, "override.service")
+  assert_eq(override_scope.version, Some("3.0.0"))
+  assert_eq(override_scope.schema_url, Some("https://override.example.com/schema"))
+}
+
+test "configuration hot reload simulation" {
+  // Test configuration hot reload simulation
+  let meter_provider = MeterProvider::default()
+  
+  // Initial configuration
+  let initial_meter = MeterProvider::get_meter(meter_provider, "hotreload.service", Some("1.0.0"))
+  let initial_counter = Meter::create_counter(initial_meter, "config.counter", Some("Initial config"), Some("initial"))
+  
+  // Simulate hot reload - create new meter with same name but different version
+  let reloaded_meter = MeterProvider::get_meter(meter_provider, "hotreload.service", Some("1.1.0"))
+  let reloaded_counter = Meter::create_counter(reloaded_meter, "config.counter", Some("Reloaded config"), Some("reloaded"))
+  
+  // Simulate another hot reload
+  let final_meter = MeterProvider::get_meter(meter_provider, "hotreload.service", Some("1.2.0"))
+  let final_counter = Meter::create_counter(final_meter, "config.counter", Some("Final config"), Some("final"))
+  
+  // Verify all configurations exist simultaneously
+  let initial_scope = initial_meter.scope
+  let reloaded_scope = reloaded_meter.scope
+  let final_scope = final_meter.scope
+  
+  assert_eq(initial_scope.name, "hotreload.service")
+  assert_eq(initial_scope.version, Some("1.0.0"))
+  
+  assert_eq(reloaded_scope.name, "hotreload.service")
+  assert_eq(reloaded_scope.version, Some("1.1.0"))
+  
+  assert_eq(final_scope.name, "hotreload.service")
+  assert_eq(final_scope.version, Some("1.2.0"))
+  
+  // Verify instrument configurations
+  assert_eq(initial_counter.description, Some("Initial config"))
+  assert_eq(initial_counter.unit, Some("initial"))
+  
+  assert_eq(reloaded_counter.description, Some("Reloaded config"))
+  assert_eq(reloaded_counter.unit, Some("reloaded"))
+  
+  assert_eq(final_counter.description, Some("Final config"))
+  assert_eq(final_counter.unit, Some("final"))
 }

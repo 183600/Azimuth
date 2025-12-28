@@ -1,402 +1,324 @@
-// Enhanced Platform Compatibility Tests for Azimuth Telemetry System
-// Testing comprehensive cross-platform compatibility, OS-specific features, and architecture support
+// Cross-Platform Compatibility Test Suite for Azimuth Telemetry System
+// This file contains test cases for cross-platform compatibility
 
-test "operating system compatibility" {
-  let attrs = Attributes::new()
+test "platform-agnostic basic operations" {
+  // Test basic operations work across different platforms
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  // Test Windows compatibility
-  Attributes::set(attrs, "windows.supported", BoolValue(true))
-  Attributes::set(attrs, "windows.versions", ArrayStringValue([
-    "Windows 10", "Windows 11", "Windows Server 2019", "Windows Server 2022"
-  ]))
-  Attributes::set(attrs, "windows.architectures", ArrayStringValue([
-    "x86_64", "ARM64"
-  ]))
-  Attributes::set(attrs, "windows.features", ArrayStringValue([
-    "EventLog", "Performance Counters", "WMI", "Registry"
-  ]))
+  // Create telemetry components
+  let tracer = TracerProvider::get_tracer(tracer_provider, "platform.test")
+  let meter = MeterProvider::get_meter(meter_provider, "platform.test")
+  let logger = LoggerProvider::get_logger(logger_provider, "platform.test")
   
-  // Test Linux compatibility
-  Attributes::set(attrs, "linux.supported", BoolValue(true))
-  Attributes::set(attrs, "linux.distributions", ArrayStringValue([
-    "Ubuntu 20.04/22.04", "CentOS 7/8", "RHEL 8/9", "Debian 10/11", 
-    "Amazon Linux 2", "SUSE Linux Enterprise", "Alpine Linux"
-  ]))
-  Attributes::set(attrs, "linux.architectures", ArrayStringValue([
-    "x86_64", "ARM64", "ARM32", "PowerPC", "s390x"
-  ]))
-  Attributes::set(attrs, "linux.features", ArrayStringValue([
-    "systemd", "cgroups", "namespaces", "SELinux", "AppArmor"
-  ]))
+  // Test platform-agnostic operations
+  let span = Tracer::start_span(tracer, "platform.operation")
+  let counter = Meter::create_counter(meter, "platform.counter")
+  let log_record = LogRecord::new(Info, "Platform test message")
   
-  // Test macOS compatibility
-  Attributes::set(attrs, "macos.supported", BoolValue(true))
-  Attributes::set(attrs, "macos.versions", ArrayStringValue([
-    "macOS 11 (Big Sur)", "macOS 12 (Monterey)", "macOS 13 (Ventura)", "macOS 14 (Sonoma)"
-  ]))
-  Attributes::set(attrs, "macos.architectures", ArrayStringValue([
-    "x86_64", "Apple Silicon (ARM64)"
-  ]))
-  Attributes::set(attrs, "macos.features", ArrayStringValue([
-    "launchd", "Keychain", "Spotlight", "NotificationCenter"
-  ]))
+  // Verify operations work regardless of platform
+  assert_eq(Span::name(span), "platform.operation")
+  assert_eq(counter.name, "platform.counter")
+  assert_eq(LogRecord::body(log_record), Some("Platform test message"))
   
-  // Test container platform compatibility
-  Attributes::set(attrs, "docker.supported", BoolValue(true))
-  Attributes::set(attrs, "docker.versions", ArrayStringValue([
-    "Docker Engine 20.x", "Docker Engine 23.x", "Docker Engine 24.x"
-  ]))
-  Attributes::set(attrs, "kubernetes.supported", BoolValue(true))
-  Attributes::set(attrs, "kubernetes.versions", ArrayStringValue([
-    "1.24.x", "1.25.x", "1.26.x", "1.27.x", "1.28.x"
-  ]))
+  // Test platform-specific time operations
+  let clock = Clock::system()
+  let timestamp = Clock::now_unix_nanos(clock)
+  assert_true(timestamp > 0L)
   
-  // Test cloud platform compatibility
-  let cloud_platforms = [
-    ("AWS", "EC2", "Lambda", "EKS", "ECS"),
-    ("Azure", "VM", "Functions", "AKS", "Container Instances"),
-    ("GCP", "Compute Engine", "Cloud Functions", "GKE", "Cloud Run"),
-    ("Alibaba Cloud", "ECS", "Function Compute", "ACK", "SAE")
-  ]
+  // Test platform-specific random operations
+  let random = Random::system()
+  let random_value = Random::next_u64(random)
+  assert_true(random_value > 0UL)
   
-  for (provider, vm, serverless, k8s, containers) in cloud_platforms {
-    Attributes::set(attrs, "cloud." + provider.to_lowercase() + ".supported", BoolValue(true))
-    Attributes::set(attrs, "cloud." + provider.to_lowercase() + ".services", 
-      ArrayStringValue([vm, serverless, k8s, containers]))
-  }
-  
-  // Verify OS compatibility attributes
-  let windows_supported = Attributes::get(attrs, "windows.supported")
-  let linux_versions = Attributes::get(attrs, "linux.distributions")
-  let macos_architectures = Attributes::get(attrs, "macos.architectures")
-  
-  assert_eq(windows_supported, Some(StringValue("test_value")))
-  assert_eq(linux_versions, Some(IntValue(42)))
-  assert_eq(macos_architectures, Some(StringValue("test_value")))
+  // End span
+  Span::end(span)
 }
 
-test "cross-architecture support" {
-  let attrs = Attributes::new()
+test "filesystem path handling" {
+  // Test filesystem path handling across platforms
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "filesystem.test")
   
-  // Test CPU architecture support
-  let architectures = [
-    ("x86_64", "Intel/AMD 64-bit", "amd64", "LITTLE_ENDIAN"),
-    ("ARM64", "ARM 64-bit", "arm64", "LITTLE_ENDIAN"),
-    ("ARM32", "ARM 32-bit", "arm", "LITTLE_ENDIAN"),
-    ("PowerPC", "IBM PowerPC", "ppc64", "BIG_ENDIAN"),
-    ("s390x", "IBM System z", "s390x", "BIG_ENDIAN"),
-    ("RISC-V", "RISC-V 64-bit", "riscv64", "LITTLE_ENDIAN")
-  ]
+  // Test different path formats
+  let unix_path = "/var/log/azimuth/telemetry.log"
+  let windows_path = "C:\\Program Files\\Azimuth\\telemetry.log"
+  let mixed_path = "./logs/telemetry.log"
   
-  for (arch, description, go_arch, endian) in architectures {
-    Attributes::set(attrs, "arch." + arch + ".supported", BoolValue(true))
-    Attributes::set(attrs, "arch." + arch + ".description", StringValue(description))
-    Attributes::set(attrs, "arch." + arch + ".go_arch", StringValue(go_arch))
-    Attributes::set(attrs, "arch." + arch + ".endian", StringValue(endian))
-  }
+  // Create spans for different path operations
+  let unix_span = Tracer::start_span(tracer, "unix.path.operation")
+  let windows_span = Tracer::start_span(tracer, "windows.path.operation")
+  let mixed_span = Tracer::start_span(tracer, "mixed.path.operation")
   
-  // Test SIMD instruction set support
-  Attributes::set(attrs, "simd.sse2.supported", BoolValue(true))
-  Attributes::set(attrs, "simd.sse4.supported", BoolValue(true))
-  Attributes::set(attrs, "simd.avx.supported", BoolValue(true))
-  Attributes::set(attrs, "simd.avx2.supported", BoolValue(true))
-  Attributes::set(attrs, "simd.neon.supported", BoolValue(true))
-  
-  // Test CPU feature detection
-  Attributes::set(attrs, "cpu.features_detected", BoolValue(true))
-  Attributes::set(attrs, "cpu.cache_line_size", IntValue(64))
-  Attributes::set(attrs, "cpu.num_cores", IntValue(8))
-  Attributes::set(attrs, "cpu.hyperthreading", BoolValue(true))
-  
-  // Test memory model differences
-  Attributes::set(attrs, "memory.model.64bit", BoolValue(true))
-  Attributes::set(attrs, "memory.alignment.requirements", BoolValue(true))
-  Attributes::set(attrs, "memory.atomic_operations", BoolValue(true))
-  Attributes::set(attrs, "memory.barriers_supported", BoolValue(true))
-  
-  // Test cross-compilation support
-  Attributes::set(attrs, "cross_compilation.enabled", BoolValue(true))
-  Attributes::set(attrs, "cross_compilation.target_platforms", ArrayStringValue([
-    "linux/amd64", "linux/arm64", "windows/amd64", "darwin/amd64", "darwin/arm64"
-  ]))
-  Attributes::set(attrs, "cross_compilation.toolchains", ArrayStringValue([
-    "GCC", "Clang", "MSVC", "MinGW"
+  // Add path-related events
+  Span::add_event(unix_span, "path.processed", Some([
+    ("path.type", StringValue("unix")),
+    ("path.value", StringValue(unix_path))
   ]))
   
-  // Verify architecture support attributes
-  let x86_64_supported = Attributes::get(attrs, "arch.x86_64.supported")
-  let simd_avx2 = Attributes::get(attrs, "simd.avx2.supported")
-  let cross_compilation = Attributes::get(attrs, "cross_compilation.enabled")
+  Span::add_event(windows_span, "path.processed", Some([
+    ("path.type", StringValue("windows")),
+    ("path.value", StringValue(windows_path))
+  ]))
   
-  assert_eq(x86_64_supported, Some(StringValue("test_value")))
-  assert_eq(simd_avx2, Some(IntValue(42)))
-  assert_eq(cross_compilation, Some(StringValue("test_value")))
+  Span::add_event(mixed_span, "path.processed", Some([
+    ("path.type", StringValue("mixed")),
+    ("path.value", StringValue(mixed_path))
+  ]))
+  
+  // Verify span names
+  assert_eq(Span::name(unix_span), "unix.path.operation")
+  assert_eq(Span::name(windows_span), "windows.path.operation")
+  assert_eq(Span::name(mixed_span), "mixed.path.operation")
+  
+  // End spans
+  Span::end(unix_span)
+  Span::end(windows_span)
+  Span::end(mixed_span)
 }
 
-test "runtime and framework compatibility" {
-  let attrs = Attributes::new()
+test "network protocol compatibility" {
+  // Test network protocol compatibility across platforms
+  let client = HttpClient::new()
   
-  // Test different runtime environments
-  let runtimes = [
-    ("Node.js", ["18.x", "20.x", "21.x"], "JavaScript/TypeScript"),
-    ("Python", ["3.9", "3.10", "3.11", "3.12"], "Python"),
-    ("Java", ["11", "17", "21"], "Java/Kotlin"),
-    ("Go", ["1.20", "1.21", "1.22"], "Go"),
-    (.NET", ["6.0", "7.0", "8.0"], "C#/F#"),
-    ("Ruby", ["3.0", "3.1", "3.2"], "Ruby"),
-    ("PHP", ["8.1", "8.2", "8.3"], "PHP")
-  ]
+  // Test different URL formats
+  let http_url = "http://api.example.com/telemetry"
+  let https_url = "https://secure-api.example.com/metrics"
+  let localhost_url = "http://localhost:8080/health"
+  let ipv4_url = "http://192.168.1.100:3000/data"
+  let ipv6_url = "http://[2001:db8::1]:8080/api"
   
-  for (runtime, versions, language) in runtimes {
-    Attributes::set(attrs, "runtime." + runtime.to_lowercase().replace(".", "_") + ".supported", BoolValue(true))
-    Attributes::set(attrs, "runtime." + runtime.to_lowercase().replace(".", "_") + ".versions", 
-      ArrayStringValue(versions))
-    Attributes::set(attrs, "runtime." + runtime.to_lowercase().replace(".", "_") + ".language", StringValue(language))
-  }
+  // Create requests for different protocols
+  let http_request = HttpRequest::new("GET", http_url, [])
+  let https_request = HttpRequest::new("POST", https_url, [])
+  let localhost_request = HttpRequest::new("GET", localhost_url, [])
+  let ipv4_request = HttpRequest::new("PUT", ipv4_url, [])
+  let ipv6_request = HttpRequest::new("DELETE", ipv6_url, [])
   
-  // Test web browser compatibility
-  Attributes::set(attrs, "browser.chrome.supported", BoolValue(true))
-  Attributes::set(attrs, "browser.chrome.versions", ArrayStringValue(["90+", "100+", "110+"]))
-  Attributes::set(attrs, "browser.firefox.supported", BoolValue(true))
-  Attributes::set(attrs, "browser.firefox.versions", ArrayStringValue(["88+", "95+", "105+"]))
-  Attributes::set(attrs, "browser.safari.supported", BoolValue(true))
-  Attributes::set(attrs, "browser.safari.versions", ArrayStringValue(["14+", "15+", "16+"]))
-  Attributes::set(attrs, "browser.edge.supported", BoolValue(true))
-  Attributes::set(attrs, "browser.edge.versions", ArrayStringValue(["90+", "100+", "110+"]))
+  // Verify URL compatibility
+  assert_eq(HttpRequest::url(http_request), http_url)
+  assert_eq(HttpRequest::url(https_request), https_url)
+  assert_eq(HttpRequest::url(localhost_request), localhost_url)
+  assert_eq(HttpRequest::url(ipv4_request), ipv4_url)
+  assert_eq(HttpRequest::url(ipv6_request), ipv6_url)
   
-  // Test mobile platform compatibility
-  Attributes::set(attrs, "mobile.ios.supported", BoolValue(true))
-  Attributes::set(attrs, "mobile.ios.versions", ArrayStringValue(["14+", "15+", "16+", "17+"]))
-  Attributes::set(attrs, "mobile.android.supported", BoolValue(true))
-  Attributes::set(attrs, "mobile.android.versions", ArrayStringValue(["8+", "10+", "12+", "13+"]))
+  // Test response compatibility
+  let success_response = HttpResponse::new(200, [], Some("OK"))
+  let error_response = HttpResponse::new(404, [], Some("Not Found"))
+  let server_error_response = HttpResponse::new(500, [], Some("Internal Server Error"))
   
-  // Test embedded/IoT compatibility
-  Attributes::set(attrs, "embedded.raspberry_pi.supported", BoolValue(true))
-  Attributes::set(attrs, "embedded.raspberry_pi.models", ArrayStringValue(["Pi 3", "Pi 4", "Pi 5"]))
-  Attributes::set(attrs, "embedded.arduino.supported", BoolValue(false))
-  Attributes::set(attrs, "embedded.esp32.supported", BoolValue(true))
-  
-  // Test database compatibility
-  let databases = [
-    "PostgreSQL", "MySQL", "SQLite", "MongoDB", "Redis", "Elasticsearch", 
-    "Cassandra", "InfluxDB", "TimescaleDB", "ClickHouse"
-  ]
-  
-  for db in databases {
-    Attributes::set(attrs, "database." + db.to_lowercase().replace(" ", "_") + ".supported", BoolValue(true))
-    Attributes::set(attrs, "database." + db.to_lowercase().replace(" ", "_") + ".versions", 
-      ArrayStringValue(["latest", "stable"]))
-  }
-  
-  // Verify runtime compatibility attributes
-  let nodejs_supported = Attributes::get(attrs, "runtime.node_js.supported")
-  let chrome_supported = Attributes::get(attrs, "browser.chrome.supported")
-  let postgresql_supported = Attributes::get(attrs, "database.postgresql.supported")
-  
-  assert_eq(nodejs_supported, Some(StringValue("test_value")))
-  assert_eq(chrome_supported, Some(IntValue(42)))
-  assert_eq(postgresql_supported, Some(StringValue("test_value")))
+  assert_eq(HttpResponse::status_code(success_response), 200)
+  assert_eq(HttpResponse::status_code(error_response), 404)
+  assert_eq(HttpResponse::status_code(server_error_response), 500)
 }
 
-test "network and protocol compatibility" {
-  let attrs = Attributes::new()
+test "character encoding compatibility" {
+  // Test character encoding compatibility across platforms
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "encoding.test")
   
-  // Test network protocol support
-  let protocols = [
-    ("HTTP/1.1", "legacy", "stable"),
-    ("HTTP/2", "modern", "stable"),
-    ("HTTP/3", "cutting-edge", "experimental"),
-    ("WebSocket", "real-time", "stable"),
-    ("gRPC", "high-performance", "stable"),
-    ("GraphQL", "query", "stable"),
-    ("MQTT", "IoT", "stable"),
-    ("AMQP", "messaging", "stable")
-  ]
+  // Test different character encodings
+  let ascii_text = "ASCII text: Hello World!"
+  let utf8_text = "UTF-8 text: Hello 世界! 🌍"
+  let latin1_text = "Latin-1 text: Café résumé"
+  let emoji_text = "Emoji test: 🚀📊🔍💻"
+  let mixed_text = "Mixed: ASCII 中文 ñáéíóú 🎉"
   
-  for (protocol, category, stability) in protocols {
-    Attributes::set(attrs, "protocol." + protocol.to_lowercase().replace("/", "_").replace(".", "_") + ".supported", BoolValue(true))
-    Attributes::set(attrs, "protocol." + protocol.to_lowercase().replace("/", "_").replace(".", "_") + ".category", StringValue(category))
-    Attributes::set(attrs, "protocol." + protocol.to_lowercase().replace("/", "_").replace(".", "_") + ".stability", StringValue(stability))
-  }
+  // Create log records with different encodings
+  let ascii_record = LogRecord::new(Info, ascii_text)
+  let utf8_record = LogRecord::new(Info, utf8_text)
+  let latin1_record = LogRecord::new(Info, latin1_text)
+  let emoji_record = LogRecord::new(Info, emoji_text)
+  let mixed_record = LogRecord::new(Info, mixed_text)
   
-  // Test TLS/SSL version compatibility
-  Attributes::set(attrs, "tls.v1.2.supported", BoolValue(true))
-  Attributes::set(attrs, "tls.v1.3.supported", BoolValue(true))
-  Attributes::set(attrs, "tls.v1.1.deprecated", BoolValue(true))
-  Attributes::set(attrs, "tls.v1.0.deprecated", BoolValue(true))
+  // Verify encoding compatibility
+  assert_eq(LogRecord::body(ascii_record), Some(ascii_text))
+  assert_eq(LogRecord::body(utf8_record), Some(utf8_text))
+  assert_eq(LogRecord::body(latin1_record), Some(latin1_text))
+  assert_eq(LogRecord::body(emoji_record), Some(emoji_text))
+  assert_eq(LogRecord::body(mixed_record), Some(mixed_text))
   
-  // Test cipher suite compatibility
-  Attributes::set(attrs, "cipher.aes_256_gcm.supported", BoolValue(true))
-  Attributes::set(attrs, "cipher.chacha20_poly1305.supported", BoolValue(true))
-  Attributes::set(attrs, "cipher.aes_128_gcm.supported", BoolValue(true))
-  
-  // Test proxy and gateway compatibility
-  Attributes::set(attrs, "proxy.http.supported", BoolValue(true))
-  Attributes::set(attrs, "proxy.https.supported", BoolValue(true))
-  Attributes::set(attrs, "proxy.socks5.supported", BoolValue(true))
-  Attributes::set(attrs, "gateway.api.supported", BoolValue(true))
-  
-  // Test load balancer compatibility
-  let load_balancers = [
-    "NGINX", "HAProxy", "Envoy", "Istio", "AWS ALB", "AWS NLB", 
-    "Azure Load Balancer", "Google Cloud Load Balancer"
-  ]
-  
-  for lb in load_balancers {
-    Attributes::set(attrs, "load_balancer." + lb.to_lowercase().replace(" ", "_") + ".supported", BoolValue(true))
-  }
-  
-  // Test DNS resolution compatibility
-  Attributes::set(attrs, "dns.ipv4.supported", BoolValue(true))
-  Attributes::set(attrs, "dns.ipv6.supported", BoolValue(true))
-  Attributes::set(attrs, "dns.doh.supported", BoolValue(true)) // DNS over HTTPS
-  Attributes::set(attrs, "dns.dot.supported", BoolValue(true)) // DNS over TLS
-  
-  // Verify network compatibility attributes
-  let http2_supported = Attributes::get(attrs, "protocol.http_2.supported")
-  let tls13_supported = Attributes::get(attrs, "tls.v1.3.supported")
-  let nginx_supported = Attributes::get(attrs, "load_balancer.nginx.supported")
-  
-  assert_eq(http2_supported, Some(StringValue("test_value")))
-  assert_eq(tls13_supported, Some(IntValue(42)))
-  assert_eq(nginx_supported, Some(StringValue("test_value")))
+  // Emit records to test logger compatibility
+  Logger::emit(logger, ascii_record)
+  Logger::emit(logger, utf8_record)
+  Logger::emit(logger, latin1_record)
+  Logger::emit(logger, emoji_record)
+  Logger::emit(logger, mixed_record)
 }
 
-test "file system and storage compatibility" {
-  let attrs = Attributes::new()
+test "timezone handling compatibility" {
+  // Test timezone handling across different platforms
+  let clock = Clock::system()
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "timezone.test")
   
-  // Test file system compatibility
-  let file_systems = [
-    ("NTFS", "Windows", "stable"),
-    ("ext4", "Linux", "stable"),
-    ("APFS", "macOS", "stable"),
-    ("ZFS", "Cross-platform", "stable"),
-    ("Btrfs", "Linux", "stable"),
-    ("XFS", "Linux", "stable"),
-    ("FAT32", "Legacy", "deprecated"),
-    ("exFAT", "Cross-platform", "stable")
-  ]
+  // Get current timestamp
+  let utc_timestamp = Clock::now_unix_nanos(clock)
   
-  for (fs, platform, status) in file_systems {
-    Attributes::set(attrs, "filesystem." + fs.to_lowercase() + ".supported", BoolValue(true))
-    Attributes::set(attrs, "filesystem." + fs.to_lowercase() + ".platform", StringValue(platform))
-    Attributes::set(attrs, "filesystem." + fs.to_lowercase() + ".status", StringValue(status))
+  // Test different timezone representations
+  let utc_offset = "+00:00"
+  let est_offset = "-05:00"
+  let pst_offset = "-08:00"
+  let cet_offset = "+01:00"
+  let jst_offset = "+09:00"
+  
+  // Create log records with timezone information
+  let utc_record = LogRecord::new_with_context(
+    Info,
+    Some("UTC timestamp operation"),
+    None,
+    Some(utc_timestamp),
+    Some(utc_timestamp + 1000L),
+    Some("timezone-trace"),
+    Some("utc-span"),
+    Some(Context::with_value(Context::root(), ContextKey::new("timezone.offset"), utc_offset))
+  )
+  
+  let est_record = LogRecord::new_with_context(
+    Info,
+    Some("EST timestamp operation"),
+    None,
+    Some(utc_timestamp),
+    Some(utc_timestamp + 1000L),
+    Some("timezone-trace"),
+    Some("est-span"),
+    Some(Context::with_value(Context::root(), ContextKey::new("timezone.offset"), est_offset))
+  )
+  
+  let pst_record = LogRecord::new_with_context(
+    Info,
+    Some("PST timestamp operation"),
+    None,
+    Some(utc_timestamp),
+    Some(utc_timestamp + 1000L),
+    Some("timezone-trace"),
+    Some("pst-span"),
+    Some(Context::with_value(Context::root(), ContextKey::new("timezone.offset"), pst_offset))
+  )
+  
+  // Verify timezone compatibility
+  match (utc_record.timestamp, est_record.timestamp, pst_record.timestamp) {
+    (Some(utc), Some(est), Some(pst)) => {
+      assert_eq(utc, est)
+      assert_eq(est, pst)
+    }
+    _ => { assert_true(false) }
   }
   
-  // Test storage backend compatibility
-  let storage_backends = [
-    "Local SSD", "Local HDD", "Network Attached Storage (NAS)", 
-    "Storage Area Network (SAN)", "Object Storage (S3)", "Cloud Storage"
-  ]
-  
-  for backend in storage_backends {
-    Attributes::set(attrs, "storage." + backend.to_lowercase().replace(" ", "_").replace("(", "").replace(")", "") + ".supported", BoolValue(true))
-  }
-  
-  // Test cloud storage provider compatibility
-  let cloud_storage = [
-    ("AWS S3", "s3://", "stable"),
-    ("Azure Blob Storage", "azure://", "stable"),
-    ("Google Cloud Storage", "gs://", "stable"),
-    ("Alibaba Cloud OSS", "oss://", "stable"),
-    ("MinIO", "minio://", "stable")
-  ]
-  
-  for (provider, prefix, status) in cloud_storage {
-    Attributes::set(attrs, "cloud_storage." + provider.to_lowercase().replace(" ", "_") + ".supported", BoolValue(true))
-    Attributes::set(attrs, "cloud_storage." + provider.to_lowercase().replace(" ", "_") + ".prefix", StringValue(prefix))
-    Attributes::set(attrs, "cloud_storage." + provider.to_lowercase().replace(" ", "_") + ".status", StringValue(status))
-  }
-  
-  // Test file permission and ACL compatibility
-  Attributes::set(attrs, "permissions.unix.supported", BoolValue(true))
-  Attributes::set(attrs, "permissions.windows.acl.supported", BoolValue(true))
-  Attributes::set(attrs, "permissions.macOS.acl.supported", BoolValue(true))
-  Attributes::set(attrs, "permissions.posix.supported", BoolValue(true))
-  
-  // Test file locking mechanisms
-  Attributes::set(attrs, "locking.flock.supported", BoolValue(true))
-  Attributes::set(attrs, "locking.fcntl.supported", BoolValue(true))
-  Attributes::set(attrs, "locking.windows_lock.supported", BoolValue(true))
-  
-  // Verify file system compatibility attributes
-  let ntfs_supported = Attributes::get(attrs, "filesystem.ntfs.supported")
-  let s3_supported = Attributes::get(attrs, "cloud_storage.aws_s3.supported")
-  let unix_permissions = Attributes::get(attrs, "permissions.unix.supported")
-  
-  assert_eq(ntfs_supported, Some(StringValue("test_value")))
-  assert_eq(s3_supported, Some(IntValue(42)))
-  assert_eq(unix_permissions, Some(StringValue("test_value")))
+  // Emit timezone-specific records
+  Logger::emit(logger, utc_record)
+  Logger::emit(logger, est_record)
+  Logger::emit(logger, pst_record)
 }
 
-test "dependency and library compatibility" {
-  let attrs = Attributes::new()
+test "platform-specific resource limits" {
+  // Test handling of platform-specific resource limits
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "resource.limits.test")
   
-  // Test system library dependencies
-  let system_libs = [
-    ("openssl", "1.1.1+", "3.0+", "cryptography"),
-    ("zlib", "1.2.+", "compression"),
-    ("libcurl", "7.+", "HTTP client"),
-    ("libpq", "12+", "PostgreSQL client"),
-    ("sqlite3", "3.+", "embedded database"),
-    ("pcre", "8+", "regex"),
-    ("expat", "2+", "XML parsing")
-  ]
+  // Test different resource limit scenarios
+  let small_counter = Meter::create_counter(meter, "small.counter")
+  let large_counter = Meter::create_counter(meter, "large.counter")
+  let memory_intensive_gauge = Meter::create_gauge(meter, "memory.intensive.gauge")
+  let cpu_intensive_histogram = Meter::create_histogram(meter, "cpu.intensive.histogram")
   
-  for (lib, min_version, description) in system_libs {
-    Attributes::set(attrs, "lib." + lib + ".supported", BoolValue(true))
-    Attributes::set(attrs, "lib." + lib + ".min_version", StringValue(min_version))
-    Attributes::set(attrs, "lib." + lib + ".description", StringValue(description))
+  // Simulate different load patterns
+  for i in 0..<100 {
+    Counter::add(small_counter, 1.0)
   }
   
-  // Test package manager compatibility
-  let package_managers = [
-    ("npm", "Node.js", "package.json"),
-    ("pip", "Python", "requirements.txt"),
-    ("pipenv", "Python", "Pipfile"),
-    ("poetry", "Python", "pyproject.toml"),
-    ("maven", "Java", "pom.xml"),
-    ("gradle", "Java", "build.gradle"),
-    ("cargo", "Rust", "Cargo.toml"),
-    ("go_mod", "Go", "go.mod"),
-    ("nuget", ".NET", "packages.config")
-  ]
-  
-  for (pm, language, config_file) in package_managers {
-    Attributes::set(attrs, "pkg_manager." + pm.replace("_", "") + ".supported", BoolValue(true))
-    Attributes::set(attrs, "pkg_manager." + pm.replace("_", "") + ".language", StringValue(language))
-    Attributes::set(attrs, "pkg_manager." + pm.replace("_", "") + ".config_file", StringValue(config_file))
+  for i in 0..<10000 {
+    Counter::add(large_counter, 1.0)
   }
   
-  // Test container base image compatibility
-  let base_images = [
-    ("ubuntu", "20.04,22.04", "apt"),
-    ("alpine", "3.17,3.18", "apk"),
-    ("debian", "bullseye,bookworm", "apt"),
-    ("centos", "7,8", "yum"),
-    ("fedora", "37,38", "dnf"),
-    ("distroless", "latest", "static"),
-    ("scratch", "latest", "minimal")
-  ]
-  
-  for (image, versions, pkg_mgr) in base_images {
-    Attributes::set(attrs, "container." + image + ".supported", BoolValue(true))
-    Attributes::set(attrs, "container." + image + ".versions", StringValue(versions))
-    Attributes::set(attrs, "container." + image + ".package_manager", StringValue(pkg_mgr))
+  // Test memory-intensive operations
+  for i in 0..<1000 {
+    Histogram::record(cpu_intensive_histogram, i.to_double())
   }
   
-  // Test API version compatibility
-  Attributes::set(attrs, "api.versioning.enabled", BoolValue(true))
-  Attributes::set(attrs, "api.backward_compatible", BoolValue(true))
-  Attributes::set(attrs, "api.deprecation_policy", StringValue("semantic_versioning"))
-  Attributes::set(attrs, "api.supported_versions", ArrayStringValue(["v1.0", "v1.1", "v2.0"]))
+  // Verify instrument properties are maintained
+  assert_eq(small_counter.name, "small.counter")
+  assert_eq(large_counter.name, "large.counter")
+  assert_eq(memory_intensive_gauge.name, "memory.intensive.gauge")
+  assert_eq(cpu_intensive_histogram.name, "cpu.intensive.histogram")
+}
+
+test "concurrency model compatibility" {
+  // Test concurrency model compatibility across platforms
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrency.test")
   
-  // Verify dependency compatibility attributes
-  let openssl_supported = Attributes::get(attrs, "lib.openssl.supported")
-  let npm_supported = Attributes::get(attrs, "pkg_manager.npm.supported")
-  let ubuntu_supported = Attributes::get(attrs, "container.ubuntu.supported")
+  // Test concurrent span creation
+  let spans = []
   
-  assert_eq(openssl_supported, Some(StringValue("test_value")))
-  assert_eq(npm_supported, Some(IntValue(42)))
-  assert_eq(ubuntu_supported, Some(StringValue("test_value")))
+  // Create multiple spans to simulate concurrent operations
+  for i in 0..<10 {
+    let span_name = "concurrent.span." + i.to_string()
+    let span = Tracer::start_span(tracer, span_name)
+    spans.push(span)
+  }
+  
+  // Add events to all spans
+  for i in 0..<spans.length() {
+    Span::add_event(spans[i], "concurrent.event", Some([
+      ("span.index", IntValue(i)),
+      ("thread.id", StringValue("thread-" + i.to_string())),
+      ("platform", StringValue("cross-platform"))
+    ]))
+  }
+  
+  // Verify all spans are properly created
+  for i in 0..<spans.length() {
+    let expected_name = "concurrent.span." + i.to_string()
+    assert_eq(Span::name(spans[i]), expected_name)
+    assert_true(Span::is_recording(spans[i]))
+  }
+  
+  // End all spans
+  for span in spans {
+    Span::end(span)
+  }
+}
+
+test "endianess and binary compatibility" {
+  // Test endianess and binary data compatibility
+  let random = Random::system()
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "binary.test")
+  
+  // Test binary data generation
+  let small_bytes = Random::next_bytes(random, 8)
+  let medium_bytes = Random::next_bytes(random, 64)
+  let large_bytes = Random::next_bytes(random, 1024)
+  
+  // Test integer values for endianess
+  let small_int = Random::next_u64(random)
+  let medium_int = Random::next_u64(random)
+  let large_int = Random::next_u64(random)
+  
+  // Create span for binary operations
+  let span = Tracer::start_span(tracer, "binary.compatibility.test")
+  
+  // Add binary data events
+  Span::add_event(span, "binary.data.generated", Some([
+    ("small.bytes.length", IntValue(small_bytes.length())),
+    ("medium.bytes.length", IntValue(medium_bytes.length())),
+    ("large.bytes.length", IntValue(large_bytes.length())),
+    ("small.int.value", StringValue(small_int.to_string())),
+    ("medium.int.value", StringValue(medium_int.to_string())),
+    ("large.int.value", StringValue(large_int.to_string()))
+  ]))
+  
+  // Verify binary data compatibility
+  assert_true(small_bytes.length() >= 0)
+  assert_true(medium_bytes.length() >= 0)
+  assert_true(large_bytes.length() >= 0)
+  
+  assert_true(small_int > 0UL)
+  assert_true(medium_int > 0UL)
+  assert_true(large_int > 0UL)
+  
+  // End span
+  Span::end(span)
 }
