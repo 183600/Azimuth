@@ -279,8 +279,9 @@ test "多度量类型组合使用场景测试" {
   // 创建不同类型的度量工具
   let request_counter = Meter::create_counter(meter, "http.requests.total")
   let response_histogram = Meter::create_histogram(meter, "http.response.duration")
-  let active_connections = Meter::create_gauge(meter, "http.active_connections")
-  let error_counter = Meter::create_updown_counter(meter, "http.errors.total")
+  // 注意：Meter类型没有create_gauge和create_updown_counter方法
+  // let active_connections = Meter::create_gauge(meter, "http.active_connections")
+  // let error_counter = Meter::create_updown_counter(meter, "http.errors.total")
   
   // 验证度量工具创建
   assert_eq(Instrument::name(Counter("http.requests.total", None, None)), "http.requests.total")
@@ -291,21 +292,14 @@ test "多度量类型组合使用场景测试" {
   // 模拟度量操作
   let attrs = Attributes::new()
   
-  // 记录请求计数
-  Counter::add(request_counter, 1.0, Some(attrs))
-  Counter::add(request_counter, 1.0, Some(attrs))
+  // 记录请求计数（使用命名参数）
+  Counter::add(request_counter, 1.0, attributes=Some(attrs))
+  Counter::add(request_counter, 1.0, attributes=Some(attrs))
   
-  // 记录响应时间
-  Histogram::record(response_histogram, 150.5, Some(attrs))
-  Histogram::record(response_histogram, 200.3, Some(attrs))
-  Histogram::record(response_histogram, 95.7, Some(attrs))
-  
-  // 模拟活跃连接数（Gauge类型）
-  // 注意：简化实现中没有Gauge的set方法
-  // Gauge::set(active_connections, 42.0, Some(attrs))
-  
-  // 记录错误计数
-  // UpDownCounter::add(error_counter, 1.0, Some(attrs))
+  // 记录响应时间（使用命名参数）
+  Histogram::record(response_histogram, 150.5, attributes=Some(attrs))
+  Histogram::record(response_histogram, 200.3, attributes=Some(attrs))
+  Histogram::record(response_histogram, 95.7, attributes=Some(attrs))
   
   // 测试通过表示没有崩溃
   assert_true(true)
