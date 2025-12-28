@@ -60,7 +60,7 @@ test "Resource attribute type validation test" {
   ]
   let resource_with_strings = Resource::with_attributes(resource, string_array_attrs)
   let tags = Resource::get_attribute(resource_with_strings, "service.tags")
-  @assertion.assert_eq(tags?, ArrayStringValue(["tag1", "tag2", "tag3"]))?
+  assert_eq(tags, Some(ArrayStringValue(["tag1", "tag2", "tag3"])))
   
   // Int array attributes
   let int_array_attrs = [
@@ -68,7 +68,7 @@ test "Resource attribute type validation test" {
   ]
   let resource_with_ints = Resource::with_attributes(resource_with_strings, int_array_attrs)
   let ports = Resource::get_attribute(resource_with_ints, "service.ports")
-  @assertion.assert_eq(ports?, ArrayIntValue([8080, 8081, 8082]))?
+  assert_eq(ports, Some(ArrayIntValue([8080, 8081, 8082])))
   
   // Mixed attribute types in single resource
   let mixed_attrs = [
@@ -80,13 +80,13 @@ test "Resource attribute type validation test" {
     ("int.array", ArrayIntValue([1, 2, 3]))
   ]
   let mixed_resource = Resource::with_attributes(Resource::new(), mixed_attrs)
-  @assertion.assert_eq(mixed_resource.attributes.length, 6)?
+  assert_eq(mixed_resource.attributes.length, 6)
   
   // Verify each attribute type
-  @assertion.assert_eq(Resource::get_attribute(mixed_resource, "string.attr")?, StringValue("test"))?
-  @assertion.assert_eq(Resource::get_attribute(mixed_resource, "int.attr")?, IntValue(42))?
-  @assertion.assert_eq(Resource::get_attribute(mixed_resource, "float.attr")?, FloatValue(3.14))?
-  @assertion.assert_eq(Resource::get_attribute(mixed_resource, "bool.attr")?, BoolValue(true))?
-  @assertion.assert_eq(Resource::get_attribute(mixed_resource, "string.array")?, ArrayStringValue(["a", "b"]))?
-  @assertion.assert_eq(Resource::get_attribute(mixed_resource, "int.array")?, ArrayIntValue([1, 2, 3]))?
+  assert_eq(Resource::get_attribute(mixed_resource, "string.attr"), Some(StringValue("test")))
+  assert_eq(Resource::get_attribute(mixed_resource, "int.attr"), Some(IntValue(42)))
+  assert_eq(Resource::get_attribute(mixed_resource, "float.attr"), Some(FloatValue(3.14)))
+  assert_eq(Resource::get_attribute(mixed_resource, "bool.attr"), Some(BoolValue(true)))
+  assert_eq(Resource::get_attribute(mixed_resource, "string.array"), Some(ArrayStringValue(["a", "b"])))
+  assert_eq(Resource::get_attribute(mixed_resource, "int.array"), Some(ArrayIntValue([1, 2, 3])))
 }
