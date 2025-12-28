@@ -37,7 +37,7 @@ test "内存管理和资源清理测试" {
   for i = 0; i < 50; i = i + 1 {
     let key = "baggage." + i.to_string()
     let value = "baggage.value." + i.to_string()
-    Baggage::set_entry(baggage, key, value)
+    ignore(Baggage::set_entry(baggage, key, value))
   }
   
   assert_true(true)
@@ -214,6 +214,7 @@ test "配置管理和国际化支持测试" {
   // 测试多语言日志记录
   let en_logger = LoggerProvider::get_logger(LoggerProvider::default(), "en.logger")
   let zh_logger = LoggerProvider::get_logger(LoggerProvider::default(), "zh.logger")
+  let ja_logger = LoggerProvider::get_logger(LoggerProvider::default(), "ja.logger")
   
   let en_log = LogRecord::new(Info, "Processing request completed successfully")
   let zh_log = LogRecord::new(Info, "请求处理完成成功")
@@ -243,7 +244,7 @@ test "实时监控和仪表板数据聚合测试" {
     Counter::add(request_counter, 1.0)
     
     // 记录响应时间（模拟不同响应时间）
-    let response_time = 50.0 + (i.to_int() * 10.0).to_double() + (Random::next_u64(Random::system()) % 100).to_double()
+    let response_time = 50.0 + (i.to_int() * 10).to_double() + (Random::next_u64(Random::system()) % 100).to_double()
     Histogram::record(response_histogram, response_time)
     
     // 偶尔记录错误
@@ -263,7 +264,7 @@ test "实时监控和仪表板数据聚合测试" {
       log_level,
       Some(log_message),
       Some(Attributes::new()),
-      Some(current_time + (i * 1000000L).to_int64()),
+      Some(current_time + (i.to_int() * 1000000).to_int64()),
       None,
       Some("realtime-trace-id"),
       Some("realtime-span-id"),
