@@ -8,11 +8,11 @@ test "error_handling_and_recovery" {
   
   // Test span with invalid context
   let invalid_span_ctx = SpanContext::new("", "", false, "")
-  @assertion.assert_eq(SpanContext::is_valid(invalid_span_ctx), false)?
+  assert_eq(SpanContext::is_valid(invalid_span_ctx), false)
   
   // Test span creation with error recovery
   let span = Tracer::start_span(tracer, "error_test_span")
-  Span::set_status(span, Error, Some("Simulated error condition"))
+  Span::set_status(span, Error)
   
   // Test log record with error severity
   let error_log = LogRecord::new_with_context(
@@ -26,9 +26,9 @@ test "error_handling_and_recovery" {
     None
   )
   
-  @assertion.assert_eq(LogRecord::severity_number(error_log), Error)?
-  @assertion.assert_eq(LogRecord::body(error_log), Some("Critical system error"))?
-  @assertion.assert_eq(LogRecord::trace_id(error_log), Some("error_trace_id"))?
+  assert_eq(LogRecord::severity_number(error_log), Error)
+  assert_eq(LogRecord::body(error_log), Some("Critical system error"))
+  assert_eq(LogRecord::trace_id(error_log), Some("error_trace_id"))
 }
 
 test "boundary_conditions_and_extreme_values" {
