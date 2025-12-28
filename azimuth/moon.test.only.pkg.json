@@ -8,6 +8,6 @@
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["comprehensive_integration_tests.mbt"]
+    "test": ["advanced_feature_tests.mbt"]
   }
 }
