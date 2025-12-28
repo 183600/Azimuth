@@ -151,3 +151,59 @@ test "composite propagator" {
   assert_eq(extracted_span_ctx.trace_id(), "0af7651916cd43dd8448eb211c80319c")
   assert_eq(@azimuth.telemetry.api.context.Baggage.get_value(extracted_baggage, "userId"), Some("12345"))
 }
+
+test "propagation with invalid headers" {
+  // Test extraction with invalid or malformed headers
+  let carrier = @azimuth.telemetry.api.propagation.HttpHeadersCarrier.new()
+  
+  // Set invalid traceparent header
+  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "traceparent", "invalid-header")
+  @azimuth.telemetry.api.propagation.TextMapCarrier.set(carrier, "baggage", "invalid=baggage=format=extra=equals")
+  
+  let ctx = @azimuth.telemetry.api.context.Context.root()
+  let trace_propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
+  
+  // Should handle invalid headers gracefully
+  let extracted_ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(trace_propagator, ctx, carrier)
+  let span_ctx = @azimuth.telemetry.api.context.Context.get_span_context(extracted_ctx)
+  
+  // Invalid traceparent should result in invalid span context
+  assert_false(span_ctx.is_valid())
+  
+  // Test baggage extraction with invalid format
+  let extracted_baggage_ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(baggage_propagator, ctx, carrier)
+  let extracted_baggage = @azimuth.telemetry.api.context.Context.get_baggage(extracted_baggage_ctx)
+  
+  // Should handle invalid baggage gracefully
+  let user_id = @azimuth.telemetry.api.context.Baggage.get_value(extracted_baggage, "invalid")
+  assert_eq(user_id, None)
+}
+
+test "propagation with empty context" {
+  // Test injection and extraction with empty context
+  let empty_ctx = @azimuth.telemetry.api.context.Context.root()
+  let carrier = @azimuth.telemetry.api.propagation.HttpHeadersCarrier.new()
+  
+  let trace_propagator = @azimuth.telemetry.api.propagation.W3CTraceContextPropagator.new()
+  let baggage_propagator = @azimuth.telemetry.api.propagation.W3CBaggagePropagator.new()
+  
+  // Inject empty context - should not add headers
+  @azimuth.telemetry.api.propagation.TextMapPropagator.inject(trace_propagator, empty_ctx, carrier)
+  @azimuth.telemetry.api.propagation.TextMapPropagator.inject(baggage_propagator, empty_ctx, carrier)
+  
+  let traceparent = @azimuth.telemetry.api.propagation.TextMapCarrier.get(carrier, "traceparent")
+  let baggage_header = @azimuth.telemetry.api.propagation.TextMapCarrier.get(carrier, "baggage")
+  
+  // Should not have traceparent or baggage headers for empty context
+  assert_eq(traceparent, None)
+  assert_eq(baggage_header, None)
+  
+  // Extract from empty carrier
+  let empty_carrier = @azimuth.telemetry.api.propagation.HttpHeadersCarrier.new()
+  let extracted_ctx = @azimuth.telemetry.api.propagation.TextMapPropagator.extract(trace_propagator, empty_ctx, empty_carrier)
+  let span_ctx = @azimuth.telemetry.api.context.Context.get_span_context(extracted_ctx)
+  
+  // Should result in invalid span context
+  assert_false(span_ctx.is_valid())
+}

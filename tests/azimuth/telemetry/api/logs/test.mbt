@@ -255,3 +255,69 @@ test "log record with exception" {
   assert_eq(@azimuth.telemetry.api.common.Attributes.get(attrs_map, "exception.message"), 
            Some(@azimuth.telemetry.api.common.StringValue("Connection timeout")))
 }
+
+test "logger provider default creation" {
+  // Test default logger provider creation
+  let logger_provider = @azimuth.telemetry.api.logs.LoggerProvider.default()
+  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "default.test.logger")
+  
+  // Test that logger can be created and has correct scope
+  let scope = @azimuth.telemetry.api.logs.Logger.instrumentation_scope(logger)
+  assert_eq(scope.name(), "default.test.logger")
+  assert_eq(scope.version(), None)
+  assert_eq(scope.schema_url(), None)
+}
+
+test "log record with empty body" {
+  // Test log record creation with empty body
+  let logger_provider = @azimuth.telemetry.api.logs.LoggerProvider.noop()
+  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "test.logger")
+  
+  // Create log record with empty body
+  let log_record = @azimuth.telemetry.api.logs.LogRecord.new(
+    @azimuth.telemetry.api.logs.SeverityNumber.Info,
+    "",
+    None,
+    None,
+    None,
+    None,
+    None,
+    None
+  )
+  
+  assert_eq(log_record.severity_number(), @azimuth.telemetry.api.logs.SeverityNumber.Info)
+  assert_eq(log_record.body(), Some(""))
+}
+
+test "log record complex attribute types" {
+  // Test log record with complex attribute types
+  let logger_provider = @azimuth.telemetry.api.logs.LoggerProvider.noop()
+  let logger = @azimuth.telemetry.api.logs.LoggerProvider.get_logger(logger_provider, "test.logger")
+  
+  // Create attributes with different value types
+  let attrs = @azimuth.telemetry.api.common.Attributes.new()
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "string.value", @azimuth.telemetry.api.common.StringValue("test"))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "int.value", @azimuth.telemetry.api.common.IntValue(42))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "float.value", @azimuth.telemetry.api.common.FloatValue(3.14))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "bool.value", @azimuth.telemetry.api.common.BoolValue(true))
+  @azimuth.telemetry.api.common.Attributes.set(attrs, "array.string", @azimuth.telemetry.api.common.ArrayStringValue(["a", "b", "c"]))
+  
+  // Create log record with complex attributes
+  let log_record = @azimuth.telemetry.api.logs.LogRecord.new_with_context(
+    @azimuth.telemetry.api.logs.SeverityNumber.Debug,
+    Some("Complex attribute test"),
+    Some(attrs),
+    Some(1735689600000000000L),  // fixed timestamp
+    Some(1735689600000000001L),  // fixed observed timestamp
+    Some("trace123"),
+    Some("span456"),
+    Some(@azimuth.telemetry.api.context.Context.root())
+  )
+  
+  assert_eq(log_record.severity_number(), @azimuth.telemetry.api.logs.SeverityNumber.Debug)
+  assert_eq(log_record.body(), Some("Complex attribute test"))
+  assert_eq(log_record.timestamp(), Some(1735689600000000000L))
+  assert_eq(log_record.observed_timestamp(), Some(1735689600000000001L))
+  assert_eq(log_record.trace_id(), Some("trace123"))
+  assert_eq(log_record.span_id(), Some("span456"))
+}

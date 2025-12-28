@@ -60,3 +60,52 @@ test "common attribute array handling" {
   assert_eq(string_array, Some(@azimuth.telemetry.api.common.ArrayStringValue(["a", "b", "c"])))
   assert_eq(int_array, Some(@azimuth.telemetry.api.common.ArrayIntValue([1, 2, 3])))
 }
+
+test "resource merge functionality" {
+  // Test resource merging with different attributes
+  let base_resource = @azimuth.telemetry.api.common.Resource.with_attributes(
+    @azimuth.telemetry.api.common.Resource.new(),
+    [
+      ("base.attr1", @azimuth.telemetry.api.common.StringValue("base_value1")),
+      ("common.attr", @azimuth.telemetry.api.common.StringValue("base_common"))
+    ]
+  )
+  
+  let override_resource = @azimuth.telemetry.api.common.Resource.with_attributes(
+    @azimuth.telemetry.api.common.Resource.new(),
+    [
+      ("override.attr1", @azimuth.telemetry.api.common.StringValue("override_value1")),
+      ("common.attr", @azimuth.telemetry.api.common.StringValue("override_common"))
+    ]
+  )
+  
+  let merged_resource = @azimuth.telemetry.api.common.Resource.merge(base_resource, override_resource)
+  
+  // After merge, we should get the override resource's attributes
+  let override_attr = @azimuth.telemetry.api.common.Resource.get_attribute(merged_resource, "override.attr1")
+  let common_attr = @azimuth.telemetry.api.common.Resource.get_attribute(merged_resource, "common.attr")
+  let base_attr = @azimuth.telemetry.api.common.Resource.get_attribute(merged_resource, "base.attr1")
+  
+  assert_eq(override_attr, Some(@azimuth.telemetry.api.common.StringValue("override_value1")))
+  assert_eq(common_attr, Some(@azimuth.telemetry.api.common.StringValue("override_common")))
+  // Base attribute should not exist in simplified merge implementation
+  assert_eq(base_attr, None)
+}
+
+test "instrumentation scope edge cases" {
+  // Test instrumentation scope with optional values
+  let scope_with_minimal = @azimuth.telemetry.api.common.InstrumentationScope.new("minimal.scope", None, None)
+  assert_eq(scope_with_minimal.name(), "minimal.scope")
+  assert_eq(scope_with_minimal.version(), None)
+  assert_eq(scope_with_minimal.schema_url(), None)
+  
+  let scope_with_version_only = @azimuth.telemetry.api.common.InstrumentationScope.new("version.scope", Some("2.0.0"), None)
+  assert_eq(scope_with_version_only.name(), "version.scope")
+  assert_eq(scope_with_version_only.version(), Some("2.0.0"))
+  assert_eq(scope_with_version_only.schema_url(), None)
+  
+  let scope_with_schema_only = @azimuth.telemetry.api.common.InstrumentationScope.new("schema.scope", None, Some("https://example.com/schema/v1"))
+  assert_eq(scope_with_schema_only.name(), "schema.scope")
+  assert_eq(scope_with_schema_only.version(), None)
+  assert_eq(scope_with_schema_only.schema_url(), Some("https://example.com/schema/v1"))
+}

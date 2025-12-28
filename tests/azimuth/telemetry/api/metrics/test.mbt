@@ -205,3 +205,78 @@ test "measurement context awareness" {
     Some(attrs)
   )
 }
+
+test "meter provider default creation" {
+  // Test default meter provider creation
+  let meter_provider = @azimuth.telemetry.api.metrics.MeterProvider.default()
+  let meter = @azimuth.telemetry.api.metrics.MeterProvider.get_meter(meter_provider, "default.test.meter")
+  
+  // Test that meter can be created and has correct scope
+  let scope = @azimuth.telemetry.api.metrics.Meter.instrumentation_scope(meter)
+  assert_eq(scope.name(), "default.test.meter")
+  assert_eq(scope.version(), None)
+  assert_eq(scope.schema_url(), None)
+}
+
+test "instrument creation with minimal options" {
+  // Test instrument creation with minimal parameters
+  let meter_provider = @azimuth.telemetry.api.metrics.MeterProvider.noop()
+  let meter = @azimuth.telemetry.api.metrics.MeterProvider.get_meter(meter_provider, "minimal.test.meter")
+  
+  // Create instruments without description and unit
+  let counter = @azimuth.telemetry.api.metrics.Meter.create_counter(meter, "minimal.counter")
+  let histogram = @azimuth.telemetry.api.metrics.Meter.create_histogram(meter, "minimal.histogram")
+  let up_down_counter = @azimuth.telemetry.api.metrics.Meter.create_up_down_counter(meter, "minimal.up_down_counter")
+  let gauge = @azimuth.telemetry.api.metrics.Meter.create_gauge(meter, "minimal.gauge")
+  
+  // Test instrument properties
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.name(counter), "minimal.counter")
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.description(counter), None)
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.unit(counter), None)
+  
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.name(histogram), "minimal.histogram")
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.description(histogram), None)
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.unit(histogram), None)
+  
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.name(up_down_counter), "minimal.up_down_counter")
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.description(up_down_counter), None)
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.unit(up_down_counter), None)
+  
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.name(gauge), "minimal.gauge")
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.description(gauge), None)
+  assert_eq(@azimuth.telemetry.api.metrics.Instrument.unit(gauge), None)
+  
+  // Test operations on minimal instruments
+  @azimuth.telemetry.api.metrics.Counter.add(counter, 1.0)
+  @azimuth.telemetry.api.metrics.Histogram.record(histogram, 100.0)
+  @azimuth.telemetry.api.metrics.UpDownCounter.add(up_down_counter, 5.0)
+  @azimuth.telemetry.api.metrics.Gauge.record(gauge, 50.0)
+}
+
+test "negative and zero measurements" {
+  // Test handling of negative and zero measurements
+  let meter_provider = @azimuth.telemetry.api.metrics.MeterProvider.noop()
+  let meter = @azimuth.telemetry.api.metrics.MeterProvider.get_meter(meter_provider, "boundary.test.meter")
+  
+  // Test counter with zero value
+  let counter = @azimuth.telemetry.api.metrics.Meter.create_counter(meter, "zero.test.counter")
+  @azimuth.telemetry.api.metrics.Counter.add(counter, 0.0)
+  
+  // Test up down counter with negative values
+  let up_down_counter = @azimuth.telemetry.api.metrics.Meter.create_up_down_counter(meter, "negative.test.up_down_counter")
+  @azimuth.telemetry.api.metrics.UpDownCounter.add(up_down_counter, -10.0)
+  @azimuth.telemetry.api.metrics.UpDownCounter.add(up_down_counter, 0.0)
+  @azimuth.telemetry.api.metrics.UpDownCounter.add(up_down_counter, 5.0)
+  
+  // Test histogram with zero and small values
+  let histogram = @azimuth.telemetry.api.metrics.Meter.create_histogram(meter, "small.test.histogram")
+  @azimuth.telemetry.api.metrics.Histogram.record(histogram, 0.0)
+  @azimuth.telemetry.api.metrics.Histogram.record(histogram, 0.001)
+  @azimuth.telemetry.api.metrics.Histogram.record(histogram, 0.1)
+  
+  // Test gauge with zero and negative values
+  let gauge = @azimuth.telemetry.api.metrics.Meter.create_gauge(meter, "boundary.test.gauge")
+  @azimuth.telemetry.api.metrics.Gauge.record(gauge, 0.0)
+  @azimuth.telemetry.api.metrics.Gauge.record(gauge, -25.5)
+  @azimuth.telemetry.api.metrics.Gauge.record(gauge, 100.0)
+}
