@@ -57,20 +57,20 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "simple_test.mbt": {
-    0: (__test_73696d706c655f746573742e6d6274_0, ["basic arithmetic test"]),
-    1: (__test_73696d706c655f746573742e6d6274_1, ["boolean operations"]),
-    2: (__test_73696d706c655f746573742e6d6274_2, ["string operations"]),
-    3: (__test_73696d706c655f746573742e6d6274_3, ["array operations"]),
-    4: (__test_73696d706c655f746573742e6d6274_4, ["option type operations"]),
-    5: (__test_73696d706c655f746573742e6d6274_5, ["span context creation and validation"]),
-    6: (__test_73696d706c655f746573742e6d6274_6, ["span context validation edge cases"]),
-    7: (__test_73696d706c655f746573742e6d6274_7, ["span creation"]),
-    8: (__test_73696d706c655f746573742e6d6274_8, ["metrics creation"]),
-    9: (__test_73696d706c655f746573742e6d6274_9, ["text map carrier operations"]),
-    10: (__test_73696d706c655f746573742e6d6274_10, ["http operations"]),
-    11: (__test_73696d706c655f746573742e6d6274_11, ["resource operations"]),
-    12: (__test_73696d706c655f746573742e6d6274_12, ["context operations"]),
+  "core_test.mbt": {
+    0: (__test_636f72655f746573742e6d6274_0, ["basic arithmetic test"]),
+    1: (__test_636f72655f746573742e6d6274_1, ["boolean operations"]),
+    2: (__test_636f72655f746573742e6d6274_2, ["string operations"]),
+    3: (__test_636f72655f746573742e6d6274_3, ["array operations"]),
+    4: (__test_636f72655f746573742e6d6274_4, ["option type operations"]),
+    5: (__test_636f72655f746573742e6d6274_5, ["span context creation and validation"]),
+    6: (__test_636f72655f746573742e6d6274_6, ["span context validation edge cases"]),
+    7: (__test_636f72655f746573742e6d6274_7, ["metrics creation"]),
+    8: (__test_636f72655f746573742e6d6274_8, ["text map carrier operations"]),
+    9: (__test_636f72655f746573742e6d6274_9, ["http operations"]),
+    10: (__test_636f72655f746573742e6d6274_10, ["resource operations"]),
+    11: (__test_636f72655f746573742e6d6274_11, ["context operations"]),
+    12: (__test_636f72655f746573742e6d6274_12, ["clock and random operations"]),
   },
   "azimuth.mbt": {
   },
