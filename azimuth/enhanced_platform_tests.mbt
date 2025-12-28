@@ -6,13 +6,13 @@ test "http_client_request_response_cycle" {
   let headers = [("Content-Type", "application/json"), ("User-Agent", "azimuth/1.0")]
   let request = HttpRequest::new("GET", "https://api.example.com/telemetry", headers, Some("{\"test\": \"data\"}"))
   
-  @assertion.assert_eq(HttpRequest::http_method(request), "GET")?
-  @assertion.assert_eq(HttpRequest::url(request), "https://api.example.com/telemetry")?
-  @assertion.assert_eq(HttpRequest::body(request), Some("{\"test\": \"data\"}"))?
+  assert_eq(HttpRequest::http_method(request), "GET")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/telemetry")
+  assert_eq(HttpRequest::body(request), Some("{\"test\": \"data\"}"))
   
   let response = HttpResponse::new(200, [("Content-Type", "application/json")], Some("{\"status\": \"success\"}"))
-  @assertion.assert_eq(HttpResponse::status_code(response), 200)?
-  @assertion.assert_eq(HttpResponse::body(response), Some("{\"status\": \"success\"}"))?
+  assert_eq(HttpResponse::status_code(response), 200)
+  assert_eq(HttpResponse::body(response), Some("{\"status\": \"success\"}"))
 }
 
 test "resource_attribute_management" {
