@@ -282,3 +282,57 @@ test "LogRecord严重性级别测试" {
   assert_eq(LogRecord::trace_id(complex_record), Some("0af7651916cd43dd8448eb211c80319c"))
   assert_eq(LogRecord::span_id(complex_record), Some("b7ad6b7169203331"))
 }
+
+test "Instrument类型和元数据测试" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "test.meter")
+  
+  // 测试Counter Instrument
+  let counter = Meter::create_counter(meter, "request.count", Some("Total number of requests"), Some("requests"))
+  assert_eq(counter.name, "request.count")
+  assert_eq(counter.description, Some("Total number of requests"))
+  assert_eq(counter.unit, Some("requests"))
+  
+  let counter_instrument = Histogram::as_instrument(Histogram::{ 
+    name: "request.count", 
+    description: Some("Total number of requests"), 
+    unit: Some("requests") 
+  })
+  assert_eq(Instrument::name(counter_instrument), "request.count")
+  assert_eq(Instrument::description(counter_instrument), Some("Total number of requests"))
+  assert_eq(Instrument::unit(counter_instrument), Some("requests"))
+  
+  // 测试Histogram Instrument
+  let histogram = Meter::create_histogram(meter, "response.time", Some("Response time in milliseconds"), Some("ms"))
+  assert_eq(histogram.name, "response.time")
+  assert_eq(histogram.description, Some("Response time in milliseconds"))
+  assert_eq(histogram.unit, Some("ms"))
+  
+  // 测试UpDownCounter Instrument
+  let updown_counter = UpDownCounter::{ 
+    name: "active.connections", 
+    description: Some("Number of active connections"), 
+    unit: Some("connections") 
+  }
+  let updown_instrument = Counter(updown_counter.name, updown_counter.description, updown_counter.unit)
+  assert_eq(Instrument::name(updown_instrument), "active.connections")
+  assert_eq(Instrument::description(updown_instrument), Some("Number of active connections"))
+  assert_eq(Instrument::unit(updown_instrument), Some("connections"))
+  
+  // 测试Gauge Instrument
+  let gauge = Gauge::{ 
+    name: "memory.usage", 
+    description: Some("Current memory usage"), 
+    unit: Some("bytes") 
+  }
+  let gauge_instrument = Histogram(gauge.name, gauge.description, gauge.unit)
+  assert_eq(Instrument::name(gauge_instrument), "memory.usage")
+  assert_eq(Instrument::description(gauge_instrument), Some("Current memory usage"))
+  assert_eq(Instrument::unit(gauge_instrument), Some("bytes"))
+  
+  // 测试没有描述和单位的Instrument
+  let simple_counter = Meter::create_counter(meter, "simple.counter")
+  assert_eq(simple_counter.name, "simple.counter")
+  assert_eq(simple_counter.description, None)
+  assert_eq(simple_counter.unit, None)
+}
