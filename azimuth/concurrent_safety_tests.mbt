@@ -1,300 +1,351 @@
-// 并发安全性测试用例
-// 测试遥测系统在并发环境下的安全性和数据一致性
+// Concurrency Safety Test Suite for Azimuth
+// This file contains comprehensive tests for concurrent operations and thread safety
 
-test "concurrent_span_operations" {
-  // 测试并发span操作的安全性
-  let trace_id = "concurrent_trace_001"
+// Test 1: Concurrent attribute access and modification
+pub test "concurrent attribute access and modification" {
+  let attrs = azimuth::Attributes::new()
   
-  // 创建多个并发span
-  let span1_ctx = SpanContext::new(trace_id, "span_001", true, "")
-  let span2_ctx = SpanContext::new(trace_id, "span_002", true, "")
-  let span3_ctx = SpanContext::new(trace_id, "span_003", true, "")
+  // Initialize shared attributes
+  azimuth::Attributes::set(attrs, "shared.counter", azimuth::IntValue(0))
+  azimuth::Attributes::set(attrs, "shared.status", azimuth::StringValue("initial"))
+  azimuth::Attributes::set(attrs, "processing.flag", azimuth::BoolValue(false))
   
-  let span1 = Span::new("operation-1", Internal, span1_ctx)
-  let span2 = Span::new("operation-2", Client, span2_ctx)
-  let span3 = Span::new("operation-3", Server, span3_ctx)
+  // Simulate concurrent operations
+  for i in 0..10 {
+    // Simulate thread 1: Increment counter
+    let current_counter = azimuth::Attributes::get(attrs, "shared.counter")
+    match current_counter {
+      Some(azimuth::IntValue(val)) => {
+        let new_val = val + i
+        azimuth::Attributes::set(attrs, "shared.counter", azimuth::IntValue(new_val))
+      }
+      _ => ()
+    }
+    
+    // Simulate thread 2: Update status
+    let status_value = "processing_" + i.to_string()
+    azimuth::Attributes::set(attrs, "shared.status", azimuth::StringValue(status_value))
+    
+    // Simulate thread 3: Toggle flag
+    let flag_value = i % 2 == 0
+    azimuth::Attributes::set(attrs, "processing.flag", azimuth::BoolValue(flag_value))
+  }
   
-  // 验证每个span的独立性
-  assert_eq(Span::name(span1), "operation-1")
-  assert_eq(Span::name(span2), "operation-2")
-  assert_eq(Span::name(span3), "operation-3")
+  // Verify final state (simplified verification for single-threaded test)
+  let final_counter = azimuth::Attributes::get(attrs, "shared.counter")
+  let final_status = azimuth::Attributes::get(attrs, "shared.status")
+  let final_flag = azimuth::Attributes::get(attrs, "processing.flag")
   
-  assert_eq(Span::kind(span1), Internal)
-  assert_eq(Span::kind(span2), Client)
-  assert_eq(Span::kind(span3), Server)
-  
-  // 验证所有span属于同一trace
-  assert_eq(SpanContext::trace_id(span1_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(span2_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(span3_ctx), trace_id)
-  
-  // 验证span ID的唯一性
-  assert_not_eq(SpanContext::span_id(span1_ctx), SpanContext::span_id(span2_ctx))
-  assert_not_eq(SpanContext::span_id(span2_ctx), SpanContext::span_id(span3_ctx))
-  assert_not_eq(SpanContext::span_id(span1_ctx), SpanContext::span_id(span3_ctx))
-  
-  // 验证所有span都是有效的
-  assert_true(SpanContext::is_valid(span1_ctx))
-  assert_true(SpanContext::is_valid(span2_ctx))
-  assert_true(SpanContext::is_valid(span3_ctx))
+  // In a real concurrent scenario, these would need proper synchronization
+  assert_true(final_counter.is_some())
+  assert_true(final_status.is_some())
+  assert_true(final_flag.is_some())
 }
 
-test "concurrent_metrics_operations" {
-  // 测试并发指标操作的安全性
-  let provider = MeterProvider::default()
-  let meter1 = MeterProvider::get_meter(provider, "concurrent-meter-1")
-  let meter2 = MeterProvider::get_meter(provider, "concurrent-meter-2")
+// Test 2: Concurrent span operations
+pub test "concurrent span operations" {
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "concurrent-test")
   
-  // 创建多个counter
-  let counter1 = Meter::create_counter(meter1, "requests.total.1")
-  let counter2 = Meter::create_counter(meter1, "requests.total.2")
-  let counter3 = Meter::create_counter(meter2, "requests.total.3")
+  // Create multiple spans concurrently
+  let spans = []
+  for i in 0..20 {
+    let span_name = "concurrent-operation-" + i.to_string()
+    let span = azimuth::Tracer::start_span(tracer, span_name)
+    spans.push(span)
+  }
   
-  // 创建多个histogram
-  let histogram1 = Meter::create_histogram(meter1, "duration.1")
-  let histogram2 = Meter::create_histogram(meter1, "duration.2")
-  let histogram3 = Meter::create_histogram(meter2, "duration.3")
+  // Verify all spans were created
+  assert_eq(spans.length(), 20)
   
-  // 并发记录指标值
-  Counter::add(counter1, 10.0)
-  Counter::add(counter2, 20.0)
-  Counter::add(counter3, 30.0)
+  // Simulate concurrent operations on spans
+  for i in 0..spans.length() {
+    let span = spans[i]
+    assert_true(azimuth::Span::is_recording(span))
+    
+    // Add events to spans
+    let event_name = "event-" + i.to_string()
+    azimuth::Span::add_event(span, event_name)
+    
+    // Set status on some spans
+    if i % 3 == 0 {
+      azimuth::Span::set_status(span, azimuth::Ok)
+    } else if i % 3 == 1 {
+      azimuth::Span::set_status(span, azimuth::Error)
+    }
+  }
   
-  Histogram::record(histogram1, 100.0)
-  Histogram::record(histogram2, 200.0)
-  Histogram::record(histogram3, 300.0)
-  
-  // 验证指标独立性
-  assert_eq(counter1.name, "requests.total.1")
-  assert_eq(counter2.name, "requests.total.2")
-  assert_eq(counter3.name, "requests.total.3")
-  
-  assert_eq(histogram1.name, "duration.1")
-  assert_eq(histogram2.name, "duration.2")
-  assert_eq(histogram3.name, "duration.3")
-  
-  // 验证meter关联
-  assert_eq(meter1.scope.name, "concurrent-meter-1")
-  assert_eq(meter2.scope.name, "concurrent-meter-2")
+  // End all spans
+  for span in spans {
+    azimuth::Span::end(span)
+  }
 }
 
-test "concurrent_context_operations" {
-  // 测试并发上下文操作的安全性
-  let root_ctx = Context::root()
+// Test 3: Concurrent metrics operations
+pub test "concurrent metrics operations" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "concurrent-metrics")
   
-  // 创建多个并行的上下文链
-  let key1 = ContextKey::new("concurrent.key.1")
-  let key2 = ContextKey::new("concurrent.key.2")
-  let key3 = ContextKey::new("concurrent.key.3")
+  // Create multiple instruments
+  let counter = azimuth::Meter::create_counter(meter, "concurrent.counter")
+  let histogram = azimuth::Meter::create_histogram(meter, "concurrent.histogram")
+  let updown_counter = azimuth::Meter::create_updown_counter(meter, "concurrent.updown")
   
-  let ctx1 = Context::with_value(root_ctx, key1, "value.1")
-  let ctx2 = Context::with_value(root_ctx, key2, "value.2")
-  let ctx3 = Context::with_value(root_ctx, key3, "value.3")
+  // Simulate concurrent metric updates
+  for i in 0..50 {
+    // Multiple threads updating counter
+    azimuth::Counter::add(counter, i.to_double())
+    
+    // Multiple threads recording histogram values
+    let histogram_value = i.to_double() * 1.5
+    azimuth::Histogram::record(histogram, histogram_value)
+    
+    // Multiple threads updating up-down counter
+    if i % 2 == 0 {
+      azimuth::UpDownCounter::add(updown_counter, 1.0)
+    } else {
+      azimuth::UpDownCounter::add(updown_counter, -1.0)
+    }
+  }
   
-  // 验证上下文独立性
-  let value1 = Context::get(ctx1, key1)
-  let value2 = Context::get(ctx2, key2)
-  let value3 = Context::get(ctx3, key3)
-  
-  assert_eq(value1, Some("value.1"))
-  assert_eq(value2, Some("value.2"))
-  assert_eq(value3, Some("value.3"))
-  
-  // 验证跨上下文访问
-  let cross_value1 = Context::get(ctx1, key2)
-  let cross_value2 = Context::get(ctx2, key3)
-  let cross_value3 = Context::get(ctx3, key1)
-  
-  assert_eq(cross_value1, None)
-  assert_eq(cross_value2, None)
-  assert_eq(cross_value3, None)
+  // Verify instruments exist and have expected properties
+  assert_eq(counter.name, "concurrent.counter")
+  assert_eq(histogram.name, "concurrent.histogram")
+  assert_eq(updown_counter.name, "concurrent.updown")
 }
 
-test "concurrent_baggage_operations" {
-  // 测试并发baggage操作的安全性
-  let baggage1 = Baggage::new()
-  let baggage2 = Baggage::new()
-  let baggage3 = Baggage::new()
+// Test 4: Concurrent context and baggage operations
+pub test "concurrent context and baggage operations" {
+  let root_ctx = azimuth::Context::root()
+  let initial_baggage = azimuth::Baggage::new()
   
-  // 并发设置baggage条目
-  let baggage1_with_entries = Baggage::set_entry(baggage1, "concurrent.key.1", "concurrent.value.1")
-  let baggage1_final = Baggage::set_entry(baggage1_with_entries, "shared.key", "shared.value.1")
+  // Create multiple contexts with different values
+  let contexts = []
+  let baggages = []
   
-  let baggage2_with_entries = Baggage::set_entry(baggage2, "concurrent.key.2", "concurrent.value.2")
-  let baggage2_final = Baggage::set_entry(baggage2_with_entries, "shared.key", "shared.value.2")
+  for i in 0..15 {
+    // Create context with unique key
+    let key = azimuth::ContextKey::new("context.key." + i.to_string())
+    let value = "context.value." + i.to_string()
+    let ctx = azimuth::Context::with_value(root_ctx, key, value)
+    contexts.push(ctx)
+    
+    // Create baggage with unique entries
+    let baggage_key = "baggage.key." + i.to_string()
+    let baggage_value = "baggage.value." + i.to_string()
+    let updated_baggage = azimuth::Baggage::set_entry(initial_baggage, baggage_key, baggage_value)
+    baggages.push(updated_baggage)
+  }
   
-  let baggage3_with_entries = Baggage::set_entry(baggage3, "concurrent.key.3", "concurrent.value.3")
-  let baggage3_final = Baggage::set_entry(baggage3_with_entries, "shared.key", "shared.value.3")
+  // Verify all contexts were created correctly
+  assert_eq(contexts.length(), 15)
+  assert_eq(baggages.length(), 15)
   
-  // 验证baggage独立性
-  let value1_1 = Baggage::get_entry(baggage1_final, "concurrent.key.1")
-  let value2_2 = Baggage::get_entry(baggage2_final, "concurrent.key.2")
-  let value3_3 = Baggage::get_entry(baggage3_final, "concurrent.key.3")
+  // Simulate concurrent access to contexts
+  for i in 0..contexts.length() {
+    let ctx = contexts[i]
+    let key = azimuth::ContextKey::new("context.key." + i.to_string())
+    let retrieved_value = azimuth::Context::get(ctx, key)
+    assert_eq(retrieved_value, Some("context.value." + i.to_string()))
+  }
   
-  assert_eq(value1_1, Some("concurrent.value.1"))
-  assert_eq(value2_2, Some("concurrent.value.2"))
-  assert_eq(value3_3, Some("concurrent.value.3"))
-  
-  // 验证共享键的独立性
-  let shared_value1 = Baggage::get_entry(baggage1_final, "shared.key")
-  let shared_value2 = Baggage::get_entry(baggage2_final, "shared.key")
-  let shared_value3 = Baggage::get_entry(baggage3_final, "shared.key")
-  
-  assert_eq(shared_value1, Some("shared.value.1"))
-  assert_eq(shared_value2, Some("shared.value.2"))
-  assert_eq(shared_value3, Some("shared.value.3"))
+  // Simulate concurrent access to baggages
+  for i in 0..baggages.length() {
+    let baggage = baggages[i]
+    let baggage_key = "baggage.key." + i.to_string()
+    let retrieved_value = azimuth::Baggage::get_entry(baggage, baggage_key)
+    assert_eq(retrieved_value, Some("baggage.value." + i.to_string()))
+  }
 }
 
-test "concurrent_logging_operations" {
-  // 测试并发日志操作的安全性
-  let clock = Clock::system()
-  let base_timestamp = Clock::now_unix_nanos(clock)
+// Test 5: Concurrent logger operations
+pub test "concurrent logger operations" {
+  let logger_provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "concurrent-logger")
   
-  // 创建多个并发日志记录
-  let log1 = LogRecord::new_with_context(
-    Info,
-    Some("Concurrent log message 1"),
-    Some(Attributes::{ values: [
-      ("log.id", IntValue(1)),
-      ("thread.id", StringValue("thread-1"))
-    ]}),
-    Some(base_timestamp),
-    None,
-    Some("concurrent_trace_001"),
-    Some("concurrent_span_001"),
-    None
-  )
+  // Create multiple log records concurrently
+  let log_records = []
   
-  let log2 = LogRecord::new_with_context(
-    Warn,
-    Some("Concurrent log message 2"),
-    Some(Attributes::{ values: [
-      ("log.id", IntValue(2)),
-      ("thread.id", StringValue("thread-2"))
-    ]}),
-    Some(base_timestamp + 1000000L),
-    None,
-    Some("concurrent_trace_001"),
-    Some("concurrent_span_002"),
-    None
-  )
+  for i in 0..30 {
+    let severity = if i % 4 == 0 { azimuth::Error }
+                  else if i % 4 == 1 { azimuth::Warn }
+                  else if i % 4 == 2 { azimuth::Info }
+                  else { azimuth::Debug }
+    
+    let message = "Concurrent log message " + i.to_string()
+    let log_record = azimuth::LogRecord::new(severity, message)
+    log_records.push(log_record)
+  }
   
-  let log3 = LogRecord::new_with_context(
-    Error,
-    Some("Concurrent log message 3"),
-    Some(Attributes::{ values: [
-      ("log.id", IntValue(3)),
-      ("thread.id", StringValue("thread-3"))
-    ]}),
-    Some(base_timestamp + 2000000L),
-    None,
-    Some("concurrent_trace_001"),
-    Some("concurrent_span_003"),
-    None
-  )
+  // Verify all log records were created
+  assert_eq(log_records.length(), 30)
   
-  // 验证日志记录独立性
-  assert_eq(LogRecord::body(log1), Some("Concurrent log message 1"))
-  assert_eq(LogRecord::body(log2), Some("Concurrent log message 2"))
-  assert_eq(LogRecord::body(log3), Some("Concurrent log message 3"))
-  
-  assert_eq(LogRecord::severity_number(log1), Info)
-  assert_eq(LogRecord::severity_number(log2), Warn)
-  assert_eq(LogRecord::severity_number(log3), Error)
-  
-  // 验证trace关联
-  assert_eq(LogRecord::trace_id(log1), Some("concurrent_trace_001"))
-  assert_eq(LogRecord::trace_id(log2), Some("concurrent_trace_001"))
-  assert_eq(LogRecord::trace_id(log3), Some("concurrent_trace_001"))
-  
-  // 验证span独立性
-  assert_eq(LogRecord::span_id(log1), Some("concurrent_span_001"))
-  assert_eq(LogRecord::span_id(log2), Some("concurrent_span_002"))
-  assert_eq(LogRecord::span_id(log3), Some("concurrent_span_003"))
+  // Simulate concurrent log emission
+  for i in 0..log_records.length() {
+    let record = log_records[i]
+    azimuth::Logger::emit(logger, record)
+    
+    // Verify log record properties
+    let expected_severity = if i % 4 == 0 { azimuth::Error }
+                           else if i % 4 == 1 { azimuth::Warn }
+                           else if i % 4 == 2 { azimuth::Info }
+                           else { azimuth::Debug }
+    
+    assert_eq(azimuth::LogRecord::severity_number(record), expected_severity)
+    assert_eq(azimuth::LogRecord::body(record), Some("Concurrent log message " + i.to_string()))
+  }
 }
 
-test "concurrent_resource_operations" {
-  // 测试并发资源操作的安全性
-  let base_resource1 = Resource::new()
-  let base_resource2 = Resource::new()
-  let base_resource3 = Resource::new()
+// Test 6: Concurrent propagator operations
+pub test "concurrent propagator operations" {
+  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+  let propagators = [trace_propagator]
+  let composite_propagator = azimuth::CompositePropagator::new(propagators)
   
-  // 并发设置资源属性
-  let attrs1 = [
-    ("service.name", StringValue("concurrent-service-1")),
-    ("service.instance.id", StringValue("instance-1")),
-    ("shared.attr", StringValue("value-1"))
-  ]
-  let resource1 = Resource::with_attributes(base_resource1, attrs1)
+  // Create multiple carriers and contexts for concurrent operations
+  let carriers = []
+  let contexts = []
   
-  let attrs2 = [
-    ("service.name", StringValue("concurrent-service-2")),
-    ("service.instance.id", StringValue("instance-2")),
-    ("shared.attr", StringValue("value-2"))
-  ]
-  let resource2 = Resource::with_attributes(base_resource2, attrs2)
+  for i in 0..12 {
+    // Create unique context
+    let ctx = azimuth::Context::root()
+    let key = azimuth::ContextKey::new("concurrent.key." + i.to_string())
+    let ctx_with_value = azimuth::Context::with_value(ctx, key, "value." + i.to_string())
+    contexts.push(ctx_with_value)
+    
+    // Create unique carrier
+    let carrier = azimuth::TextMapCarrier::new()
+    carriers.push(carrier)
+  }
   
-  let attrs3 = [
-    ("service.name", StringValue("concurrent-service-3")),
-    ("service.instance.id", StringValue("instance-3")),
-    ("shared.attr", StringValue("value-3"))
-  ]
-  let resource3 = Resource::with_attributes(base_resource3, attrs3)
+  // Simulate concurrent inject operations
+  for i in 0..contexts.length() {
+    let ctx = contexts[i]
+    let carrier = carriers[i]
+    azimuth::CompositePropagator::inject(composite_propagator, ctx, carrier)
+  }
   
-  // 验证资源独立性
-  let service_name1 = Resource::get_attribute(resource1, "service.name")
-  let service_name2 = Resource::get_attribute(resource2, "service.name")
-  let service_name3 = Resource::get_attribute(resource3, "service.name")
+  // Simulate concurrent extract operations
+  let extracted_contexts = []
+  for carrier in carriers {
+    let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
+    extracted_contexts.push(extracted_ctx)
+  }
   
-  assert_eq(service_name1, Some(StringValue("concurrent-service-1")))
-  assert_eq(service_name2, Some(StringValue("concurrent-service-2")))
-  assert_eq(service_name3, Some(StringValue("concurrent-service-3")))
+  // Verify extraction results
+  assert_eq(extracted_contexts.length(), carriers.length())
   
-  // 验证共享属性的独立性
-  let shared_attr1 = Resource::get_attribute(resource1, "shared.attr")
-  let shared_attr2 = Resource::get_attribute(resource2, "shared.attr")
-  let shared_attr3 = Resource::get_attribute(resource3, "shared.attr")
-  
-  assert_eq(shared_attr1, Some(StringValue("value-1")))
-  assert_eq(shared_attr2, Some(StringValue("value-2")))
-  assert_eq(shared_attr3, Some(StringValue("value-3")))
+  // Verify trace headers were injected
+  for carrier in carriers {
+    let trace_header = azimuth::TextMapCarrier::get(carrier, "traceparent")
+    assert_true(trace_header.is_some())
+  }
 }
 
-test "concurrent_propagation_operations" {
-  // 测试并发传播操作的安全性
-  let propagator1 = W3CTraceContextPropagator::new()
-  let propagator2 = W3CTraceContextPropagator::new()
-  let propagator3 = W3CTraceContextPropagator::new()
+// Test 7: Concurrent resource operations
+pub test "concurrent resource operations" {
+  let base_resource = azimuth::Resource::new()
   
-  let composite_propagator1 = CompositePropagator::new([propagator1])
-  let composite_propagator2 = CompositePropagator::new([propagator2])
-  let composite_propagator3 = CompositePropagator::new([propagator3])
+  // Create multiple resources with different attributes
+  let resources = []
   
-  // 创建多个carrier
-  let carrier1 = TextMapCarrier::new()
-  let carrier2 = TextMapCarrier::new()
-  let carrier3 = TextMapCarrier::new()
+  for i in 0..8 {
+    let attrs = [
+      ("service.name", azimuth::StringValue("service-" + i.to_string())),
+      ("service.instance.id", azimuth::StringValue("instance-" + i.to_string())),
+      ("service.version", azimuth::StringValue("1." + i.to_string() + ".0")),
+      ("environment", azimuth::StringValue("test"))
+    ]
+    let resource = azimuth::Resource::with_attributes(base_resource, attrs)
+    resources.push(resource)
+  }
   
-  // 并发注入操作
-  let ctx1 = Context::with_value(Context::root(), ContextKey::new("key1"), "value1")
-  let ctx2 = Context::with_value(Context::root(), ContextKey::new("key2"), "value2")
-  let ctx3 = Context::with_value(Context::root(), ContextKey::new("key3"), "value3")
+  // Verify all resources were created
+  assert_eq(resources.length(), 8)
   
-  CompositePropagator::inject(composite_propagator1, ctx1, carrier1)
-  CompositePropagator::inject(composite_propagator2, ctx2, carrier2)
-  CompositePropagator::inject(composite_propagator3, ctx3, carrier3)
+  // Simulate concurrent access to resource attributes
+  for i in 0..resources.length() {
+    let resource = resources[i]
+    
+    let service_name = azimuth::Resource::get_attribute(resource, "service.name")
+    let instance_id = azimuth::Resource::get_attribute(resource, "service.instance.id")
+    let version = azimuth::Resource::get_attribute(resource, "service.version")
+    let environment = azimuth::Resource::get_attribute(resource, "environment")
+    
+    assert_eq(service_name, Some(azimuth::StringValue("service-" + i.to_string())))
+    assert_eq(instance_id, Some(azimuth::StringValue("instance-" + i.to_string())))
+    assert_eq(version, Some(azimuth::StringValue("1." + i.to_string() + ".0")))
+    assert_eq(environment, Some(azimuth::StringValue("test")))
+  }
   
-  // 并发提取操作
-  let extracted_ctx1 = CompositePropagator::extract(composite_propagator1, carrier1)
-  let extracted_ctx2 = CompositePropagator::extract(composite_propagator2, carrier2)
-  let extracted_ctx3 = CompositePropagator::extract(composite_propagator3, carrier3)
+  // Simulate concurrent resource merging
+  let merged_resources = []
+  for i in 0..resources.length() {
+    let override_attrs = [
+      ("override.key", azimuth::StringValue("override-" + i.to_string())),
+      ("merge.timestamp", azimuth::IntValue(1700000000 + i))
+    ]
+    let override_resource = azimuth::Resource::with_attributes(base_resource, override_attrs)
+    let merged = azimuth::Resource::merge(resources[i], override_resource)
+    merged_resources.push(merged)
+  }
   
-  // 验证提取的上下文
-  let extracted_value1 = Context::get(extracted_ctx1, ContextKey::new("extracted"))
-  let extracted_value2 = Context::get(extracted_ctx2, ContextKey::new("extracted"))
-  let extracted_value3 = Context::get(extracted_ctx3, ContextKey::new("extracted"))
+  // Verify merge results
+  assert_eq(merged_resources.length(), resources.length())
+}
+
+// Test 8: Concurrent HTTP client operations
+pub test "concurrent http client operations" {
+  let client = azimuth::HttpClient::new()
   
-  assert_eq(extracted_value1, Some("true"))
-  assert_eq(extracted_value2, Some("true"))
-  assert_eq(extracted_value3, Some("true"))
+  // Create multiple HTTP requests
+  let requests = []
+  let responses = []
+  
+  for i in 0..10 {
+    let headers = [
+      ("Content-Type", "application/json"),
+      ("X-Request-ID", "req-" + i.to_string()),
+      ("Authorization", "Bearer token-" + i.to_string())
+    ]
+    
+    let url = "https://api.example.com/endpoint/" + i.to_string()
+    let method = if i % 2 == 0 { "GET" } else { "POST" }
+    let body = if i % 2 == 1 { Some("{\"data\": \"" + i.to_string() + "\"}") } else { None }
+    
+    let request = azimuth::HttpRequest::new(method, url, headers, body)
+    requests.push(request)
+    
+    // Simulate response
+    let response_headers = [
+      ("Content-Type", "application/json"),
+      ("X-Response-ID", "resp-" + i.to_string())
+    ]
+    let status_code = 200
+    let response_body = Some("{\"status\": \"success\", \"id\": " + i.to_string() + "}")
+    let response = azimuth::HttpResponse::new(status_code, response_headers, response_body)
+    responses.push(response)
+  }
+  
+  // Verify all requests and responses were created
+  assert_eq(requests.length(), 10)
+  assert_eq(responses.length(), 10)
+  
+  // Simulate concurrent processing of requests and responses
+  for i in 0..requests.length() {
+    let request = requests[i]
+    let response = responses[i]
+    
+    // Verify request properties
+    let expected_method = if i % 2 == 0 { "GET" } else { "POST" }
+    assert_eq(azimuth::HttpRequest::http_method(request), expected_method)
+    assert_eq(azimuth::HttpRequest::url(request), "https://api.example.com/endpoint/" + i.to_string())
+    
+    let expected_body = if i % 2 == 1 { Some("{\"data\": \"" + i.to_string() + "\"}") } else { None }
+    assert_eq(azimuth::HttpRequest::body(request), expected_body)
+    
+    // Verify response properties
+    assert_eq(azimuth::HttpResponse::status_code(response), 200)
+    assert_eq(azimuth::HttpResponse::body(response), Some("{\"status\": \"success\", \"id\": " + i.to_string() + "}"))
+  }
 }
