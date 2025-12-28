@@ -42,12 +42,27 @@ test "Span Kind 行为差异测试" {
   let producer_span = Tracer::start_span(tracer, "producer.event")
   let consumer_span = Tracer::start_span(tracer, "consumer.event")
   
-  // 验证Span Kind设置正确
-  assert_eq(Span::kind(internal_span), Internal)
-  assert_eq(Span::kind(server_span), Server)
-  assert_eq(Span::kind(client_span), Client)
-  assert_eq(Span::kind(producer_span), Producer)
-  assert_eq(Span::kind(consumer_span), Consumer)
+  // 验证Span Kind设置正确（使用模式匹配而不是assert_eq）
+  match Span::kind(internal_span) {
+    Internal => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Span::kind(server_span) {
+    Server => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Span::kind(client_span) {
+    Client => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Span::kind(producer_span) {
+    Producer => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Span::kind(consumer_span) {
+    Consumer => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // 验证所有Span都是可记录状态
   assert_true(Span::is_recording(internal_span))
@@ -56,12 +71,12 @@ test "Span Kind 行为差异测试" {
   assert_true(Span::is_recording(producer_span))
   assert_true(Span::is_recording(consumer_span))
   
-  // 为不同类型的Span设置不同状态
-  Span::set_status(internal_span, Ok, Some("Internal operation completed"))
-  Span::set_status(server_span, Ok, Some("Request processed successfully"))
-  Span::set_status(client_span, Error, Some("Client request failed"))
-  Span::set_status(producer_span, Ok, Some("Event produced"))
-  Span::set_status(consumer_span, Ok, Some("Event consumed"))
+  // 为不同类型的Span设置不同状态（使用命名参数）
+  Span::set_status(internal_span, Ok, "Internal operation completed")
+  Span::set_status(server_span, Ok, "Request processed successfully")
+  Span::set_status(client_span, Error, "Client request failed")
+  Span::set_status(producer_span, Ok, "Event produced")
+  Span::set_status(consumer_span, Ok, "Event consumed")
   
   // 结束所有Span
   Span::end(internal_span)
