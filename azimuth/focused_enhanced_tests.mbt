@@ -170,14 +170,24 @@ test "Resource层次化管理和合并策略测试" {
   let merged_service_instance = Resource::merge(service_resource, instance_resource)
   let final_resource = Resource::merge(merged_service_instance, request_resource)
   
-  // 验证合并后的资源包含所有层级的属性
+  // 验证合并后的资源包含所有层级的属性（使用模式匹配）
   let service_name = Resource::get_attribute(final_resource, "service.name")
-  let instance_id = Resource::get_attribute(final_resource, "service.instance.id")
-  let request_id = Resource::get_attribute(final_resource, "request.id")
+  match service_name {
+    Some(StringValue("azimuth-service")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  assert_eq(service_name, Some(StringValue("azimuth-service")))
-  assert_eq(instance_id, Some(StringValue("instance-12345")))
-  assert_eq(request_id, Some(StringValue("req-abc-123")))
+  let instance_id = Resource::get_attribute(final_resource, "service.instance.id")
+  match instance_id {
+    Some(StringValue("instance-12345")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  let request_id = Resource::get_attribute(final_resource, "request.id")
+  match request_id {
+    Some(StringValue("req-abc-123")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // 验证不存在的属性返回None
   let non_existent = Resource::get_attribute(final_resource, "non.existent.key")
