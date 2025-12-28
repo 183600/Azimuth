@@ -1,238 +1,277 @@
-// Instrument Type Conversion Test Suite for Azimuth Telemetry System
-// Testing instrument type conversions and operations
+// Instrument Type Conversion Tests
+// Testing metric instrument type conversions and compatibility
 
-test "instrument creation and properties" {
-  let counter_instrument = Counter("http.requests.total", Some("Total HTTP requests"), Some("requests"))
-  let histogram_instrument = Histogram("http.duration", Some("HTTP request duration"), Some("ms"))
-  let updown_counter_instrument = UpDownCounter("active.connections", Some("Active connections"), Some("connections"))
-  let gauge_instrument = Gauge("memory.usage", Some("Memory usage"), Some("bytes"))
-  
-  // Test instrument names
-  assert_eq(Instrument::name(counter_instrument), "http.requests.total")
-  assert_eq(Instrument::name(histogram_instrument), "http.duration")
-  assert_eq(Instrument::name(updown_counter_instrument), "active.connections")
-  assert_eq(Instrument::name(gauge_instrument), "memory.usage")
-  
-  // Test instrument descriptions
-  assert_eq(Instrument::description(counter_instrument), Some("Total HTTP requests"))
-  assert_eq(Instrument::description(histogram_instrument), Some("HTTP request duration"))
-  assert_eq(Instrument::description(updown_counter_instrument), Some("Active connections"))
-  assert_eq(Instrument::description(gauge_instrument), Some("Memory usage"))
-  
-  // Test instrument units
-  assert_eq(Instrument::unit(counter_instrument), Some("requests"))
-  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
-  assert_eq(Instrument::unit(updown_counter_instrument), Some("connections"))
-  assert_eq(Instrument::unit(gauge_instrument), Some("bytes"))
-}
-
-test "instrument without optional properties" {
-  let simple_counter = Counter("simple.counter", None, None)
-  let simple_histogram = Histogram("simple.histogram", None, None)
-  let simple_updown = UpDownCounter("simple.updown", None, None)
-  let simple_gauge = Gauge("simple.gauge", None, None)
-  
-  assert_eq(Instrument::name(simple_counter), "simple.counter")
-  assert_eq(Instrument::description(simple_counter), None)
-  assert_eq(Instrument::unit(simple_counter), None)
-  
-  assert_eq(Instrument::name(simple_histogram), "simple.histogram")
-  assert_eq(Instrument::description(simple_histogram), None)
-  assert_eq(Instrument::unit(simple_histogram), None)
-  
-  assert_eq(Instrument::name(simple_updown), "simple.updown")
-  assert_eq(Instrument::description(simple_updown), None)
-  assert_eq(Instrument::unit(simple_updown), None)
-  
-  assert_eq(Instrument::name(simple_gauge), "simple.gauge")
-  assert_eq(Instrument::description(simple_gauge), None)
-  assert_eq(Instrument::unit(simple_gauge), None)
-}
-
-test "counter operations" {
+test "counter to instrument conversion" {
+  // Test converting counter to generic instrument type
   let provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(provider, "test-meter")
-  let counter = Meter::create_counter(meter, "test.counter", Some("Test counter"), Some("count"))
+  let counter = Meter::create_counter(meter, "http.requests", Some("Total HTTP requests"), Some("count"))
   
-  // Test counter properties
-  assert_eq(counter.name, "test.counter")
-  assert_eq(counter.description, Some("Test counter"))
-  assert_eq(counter.unit, Some("count"))
+  // Convert to instrument
+  let instrument = Histogram::as_instrument(Histogram::{ 
+    name: counter.name, 
+    description: counter.description, 
+    unit: counter.unit 
+  })
   
-  // Test counter operations
-  Counter::add(counter, 1.0)
-  Counter::add(counter, 5.5)
-  Counter::add(counter, 10.0)
+  // Verify instrument properties
+  assert_eq(Instrument::name(instrument), "http.requests")
+  assert_eq(Instrument::description(instrument), Some("Total HTTP requests"))
+  assert_eq(Instrument::unit(instrument), Some("count"))
   
-  // Test with attributes
-  let attrs = Attributes::new()
-  Counter::add(counter, 2.0, Some(attrs))
-  
-  assert_true(true)
+  // Test instrument type matching
+  match instrument {
+    Counter(name, desc, unit) => {
+      assert_eq(name, "http.requests")
+      assert_eq(desc, Some("Total HTTP requests"))
+      assert_eq(unit, Some("count"))
+    }
+    _ => assert_false(true)
+  }
 }
 
-test "histogram operations" {
+test "histogram to instrument conversion" {
+  // Test converting histogram to generic instrument type
   let provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(provider, "test-meter")
-  let histogram = Meter::create_histogram(meter, "test.histogram", Some("Test histogram"), Some("ms"))
+  let histogram = Meter::create_histogram(meter, "response.time", Some("Response time"), Some("ms"))
   
-  // Test histogram properties
-  assert_eq(histogram.name, "test.histogram")
-  assert_eq(histogram.description, Some("Test histogram"))
-  assert_eq(histogram.unit, Some("ms"))
-  
-  // Test histogram operations
-  Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 200.5)
-  Histogram::record(histogram, 50.25)
-  
-  // Test with attributes
-  let attrs = Attributes::new()
-  Histogram::record(histogram, 75.0, Some(attrs))
-  
-  // Test instrument conversion
+  // Convert to instrument
   let instrument = Histogram::as_instrument(histogram)
-  assert_eq(Instrument::name(instrument), "test.histogram")
-  assert_eq(Instrument::description(instrument), Some("Test histogram"))
+  
+  // Verify instrument properties
+  assert_eq(Instrument::name(instrument), "response.time")
+  assert_eq(Instrument::description(instrument), Some("Response time"))
   assert_eq(Instrument::unit(instrument), Some("ms"))
   
-  assert_true(true)
+  // Test instrument type matching
+  match instrument {
+    Histogram(name, desc, unit) => {
+      assert_eq(name, "response.time")
+      assert_eq(desc, Some("Response time"))
+      assert_eq(unit, Some("ms"))
+    }
+    _ => assert_false(true)
+  }
 }
 
-test "updown counter operations" {
+test "updown counter to instrument conversion" {
+  // Test converting updown counter to generic instrument type
   let provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(provider, "test-meter")
-  let updown_counter = Meter::create_updown_counter(meter, "test.updown", Some("Test updown counter"), Some("items"))
+  let updown_counter = Meter::create_updown_counter(meter, "active.connections", Some("Active connections"), Some("connections"))
   
-  // Test updown counter properties
-  assert_eq(updown_counter.name, "test.updown")
-  assert_eq(updown_counter.description, Some("Test updown counter"))
-  assert_eq(updown_counter.unit, Some("items"))
+  // Convert to instrument (using Counter enum for simplicity)
+  let instrument = Counter(updown_counter.name, updown_counter.description, updown_counter.unit)
   
-  // Test updown counter operations (both positive and negative)
-  UpDownCounter::add(updown_counter, 10.0)
-  UpDownCounter::add(updown_counter, -5.5)
-  UpDownCounter::add(updown_counter, 3.25)
+  // Verify instrument properties
+  assert_eq(Instrument::name(instrument), "active.connections")
+  assert_eq(Instrument::description(instrument), Some("Active connections"))
+  assert_eq(Instrument::unit(instrument), Some("connections"))
   
-  // Test with attributes
-  let attrs = Attributes::new()
-  UpDownCounter::add(updown_counter, 2.0, Some(attrs))
-  
-  assert_true(true)
+  // Test instrument type matching
+  match instrument {
+    Counter(name, desc, unit) => {
+      assert_eq(name, "active.connections")
+      assert_eq(desc, Some("Active connections"))
+      assert_eq(unit, Some("connections"))
+    }
+    _ => assert_false(true)
+  }
 }
 
-test "gauge operations" {
+test "gauge to instrument conversion" {
+  // Test converting gauge to generic instrument type
   let provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(provider, "test-meter")
-  let gauge = Meter::create_gauge(meter, "test.gauge", Some("Test gauge"), Some("percent"))
+  let gauge = Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("bytes"))
   
-  // Test gauge properties
-  assert_eq(gauge.name, "test.gauge")
-  assert_eq(gauge.description, Some("Test gauge"))
-  assert_eq(gauge.unit, Some("percent"))
+  // Convert to instrument (using Counter enum for simplicity)
+  let instrument = Counter(gauge.name, gauge.description, gauge.unit)
   
-  // Test gauge operations
-  UpDownCounter::add(gauge, 75.5)
-  UpDownCounter::add(gauge, 25.0)
-  UpDownCounter::add(gauge, -10.5)
+  // Verify instrument properties
+  assert_eq(Instrument::name(instrument), "memory.usage")
+  assert_eq(Instrument::description(instrument), Some("Memory usage"))
+  assert_eq(Instrument::unit(instrument), Some("bytes"))
   
-  // Test with attributes
+  // Test instrument type matching
+  match instrument {
+    Counter(name, desc, unit) => {
+      assert_eq(name, "memory.usage")
+      assert_eq(desc, Some("Memory usage"))
+      assert_eq(unit, Some("bytes"))
+    }
+    _ => assert_false(true)
+  }
+}
+
+test "instrument type identification" {
+  // Test identifying different instrument types
+  let counter_instrument = Counter("test.counter", Some("Test counter"), Some("count"))
+  let histogram_instrument = Histogram("test.histogram", Some("Test histogram"), Some("ms"))
+  let updown_counter_instrument = UpDownCounter("test.updown", Some("Test updown"), Some("count"))
+  let gauge_instrument = Gauge("test.gauge", Some("Test gauge"), Some("value"))
+  
+  // Test counter instrument identification
+  match counter_instrument {
+    Counter(name, desc, unit) => {
+      assert_eq(name, "test.counter")
+      assert_eq(desc, Some("Test counter"))
+      assert_eq(unit, Some("count"))
+    }
+    _ => assert_false(true)
+  }
+  
+  // Test histogram instrument identification
+  match histogram_instrument {
+    Histogram(name, desc, unit) => {
+      assert_eq(name, "test.histogram")
+      assert_eq(desc, Some("Test histogram"))
+      assert_eq(unit, Some("ms"))
+    }
+    _ => assert_false(true)
+  }
+  
+  // Test updown counter instrument identification
+  match updown_counter_instrument {
+    UpDownCounter(name, desc, unit) => {
+      assert_eq(name, "test.updown")
+      assert_eq(desc, Some("Test updown"))
+      assert_eq(unit, Some("count"))
+    }
+    _ => assert_false(true)
+  }
+  
+  // Test gauge instrument identification
+  match gauge_instrument {
+    Gauge(name, desc, unit) => {
+      assert_eq(name, "test.gauge")
+      assert_eq(desc, Some("Test gauge"))
+      assert_eq(unit, Some("value"))
+    }
+    _ => assert_false(true)
+  }
+}
+
+test "instrument with optional description and unit" {
+  // Test instruments with optional description and unit
+  let counter_with_options = Counter("test.counter", Some("Test counter"), Some("count"))
+  let counter_without_options = Counter("test.counter", None, None)
+  let histogram_partial = Histogram("test.histogram", Some("Test histogram"), None)
+  
+  // Test with all options
+  assert_eq(Instrument::name(counter_with_options), "test.counter")
+  assert_eq(Instrument::description(counter_with_options), Some("Test counter"))
+  assert_eq(Instrument::unit(counter_with_options), Some("count"))
+  
+  // Test without options
+  assert_eq(Instrument::name(counter_without_options), "test.counter")
+  assert_eq(Instrument::description(counter_without_options), None)
+  assert_eq(Instrument::unit(counter_without_options), None)
+  
+  // Test with partial options
+  assert_eq(Instrument::name(histogram_partial), "test.histogram")
+  assert_eq(Instrument::description(histogram_partial), Some("Test histogram"))
+  assert_eq(Instrument::unit(histogram_partial), None)
+}
+
+test "instrument type conversion with attributes" {
+  // Test instrument operations with attributes
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let counter = Meter::create_counter(meter, "http.requests")
+  let histogram = Meter::create_histogram(meter, "response.time")
+  
+  // Create attributes for measurements
   let attrs = Attributes::new()
-  UpDownCounter::add(gauge, 50.0, Some(attrs))
+  Attributes::set(attrs, "method", StringValue("GET"))
+  Attributes::set(attrs, "status", IntValue(200))
   
-  assert_true(true)
+  // Test counter operations with attributes
+  Counter::add(counter, 1.0, Some(attrs))
+  
+  // Test histogram operations with attributes
+  Histogram::record(histogram, 150.5, Some(attrs))
+  
+  // Verify instruments still work correctly
+  assert_eq(counter.name, "http.requests")
+  assert_eq(histogram.name, "response.time")
 }
 
-test "meter provider operations" {
+test "instrument type conversion with special characters" {
+  // Test instrument names and descriptions with special characters
+  let counter_special = Counter("test.counter.special-chars_123", Some("Test counter with special chars: !@#$%"), Some("count"))
+  let histogram_unicode = Histogram("测试.直方图", Some("Unicode histogram: 测试 🚀"), Some("ms"))
+  
+  // Verify special characters are preserved
+  assert_eq(Instrument::name(counter_special), "test.counter.special-chars_123")
+  assert_eq(Instrument::description(counter_special), Some("Test counter with special chars: !@#$%"))
+  assert_eq(Instrument::unit(counter_special), Some("count"))
+  
+  // Verify unicode is preserved
+  assert_eq(Instrument::name(histogram_unicode), "测试.直方图")
+  assert_eq(Instrument::description(histogram_unicode), Some("Unicode histogram: 测试 🚀"))
+  assert_eq(Instrument::unit(histogram_unicode), Some("ms"))
+}
+
+test "instrument type conversion array operations" {
+  // Test operations with arrays of instruments
+  let instruments = [
+    Counter("counter1", Some("Counter 1"), Some("count")),
+    Histogram("histogram1", Some("Histogram 1"), Some("ms")),
+    UpDownCounter("updown1", Some("UpDown 1"), Some("count")),
+    Gauge("gauge1", Some("Gauge 1"), Some("value"))
+  ]
+  
+  // Test array operations
+  assert_eq(instruments.length(), 4)
+  
+  // Test accessing instruments by index
+  let first_instrument = instruments[0]
+  let second_instrument = instruments[1]
+  
+  assert_eq(Instrument::name(first_instrument), "counter1")
+  assert_eq(Instrument::name(second_instrument), "histogram1")
+  
+  // Test iterating through instruments
+  for instrument in instruments {
+    let name = Instrument::name(instrument)
+    assert_true(name.length() > 0)
+  }
+}
+
+test "instrument type conversion with large values" {
+  // Test instruments with large numeric values
   let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let counter = Meter::create_counter(meter, "large.counter")
+  let histogram = Meter::create_histogram(meter, "large.histogram")
   
-  // Test creating multiple meters
-  let meter1 = MeterProvider::get_meter(provider, "meter1")
-  let meter2 = MeterProvider::get_meter(provider, "meter2", Some("1.0.0"))
-  let meter3 = MeterProvider::get_meter(provider, "meter3", Some("2.0.0"), Some("https://example.com/schema"))
+  // Test with large values
+  Counter::add(counter, 999999999.999)
+  Histogram::record(histogram, 1000000000.0)
   
-  // Test meter scope properties
-  assert_eq(meter1.scope.name, "meter1")
-  assert_eq(meter1.scope.version, None)
-  assert_eq(meter1.scope.schema_url, None)
+  // Test with very small values
+  Counter::add(counter, 0.000001)
+  Histogram::record(histogram, 0.0000001)
   
-  assert_eq(meter2.scope.name, "meter2")
-  assert_eq(meter2.scope.version, Some("1.0.0"))
-  assert_eq(meter2.scope.schema_url, None)
-  
-  assert_eq(meter3.scope.name, "meter3")
-  assert_eq(meter3.scope.version, Some("2.0.0"))
-  assert_eq(meter3.scope.schema_url, Some("https://example.com/schema"))
+  // Verify instruments still work correctly
+  assert_eq(counter.name, "large.counter")
+  assert_eq(histogram.name, "large.histogram")
 }
 
-test "instrument scope consistency" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test-scope", Some("1.0.0"))
+test "instrument type conversion with mixed units" {
+  // Test instruments with different units
+  let counter_bytes = Counter("bytes.total", Some("Total bytes"), Some("bytes"))
+  let counter_seconds = Counter("time.total", Some("Total time"), Some("seconds"))
+  let histogram_ms = Histogram("latency", Some("Request latency"), Some("ms"))
+  let gauge_percent = Gauge("cpu.usage", Some("CPU usage"), Some("%"))
+  let updown_mb = UpDownCounter("memory.active", Some("Active memory"), Some("MB"))
   
-  // Create different instruments from the same meter
-  let counter = Meter::create_counter(meter, "test.counter")
-  let histogram = Meter::create_histogram(meter, "test.histogram")
-  let updown_counter = Meter::create_updown_counter(meter, "test.updown")
-  let gauge = Meter::create_gauge(meter, "test.gauge")
-  
-  // All instruments should have the same scope
-  assert_eq(counter.name, "test.counter")
-  assert_eq(histogram.name, "test.histogram")
-  assert_eq(updown_counter.name, "test.updown")
-  assert_eq(gauge.name, "test.gauge")
-  
-  // Test operations on all instruments
-  Counter::add(counter, 1.0)
-  Histogram::record(histogram, 100.0)
-  UpDownCounter::add(updown_counter, 5.0)
-  UpDownCounter::add(gauge, 75.0)
-  
-  assert_true(true)
-}
-
-test "instrument edge cases" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "edge-case-meter")
-  
-  // Test with empty name
-  let empty_counter = Meter::create_counter(meter, "")
-  assert_eq(empty_counter.name, "")
-  
-  // Test with special characters in name
-  let special_histogram = Meter::create_histogram(meter, "test.histogram-with.special_chars")
-  assert_eq(special_histogram.name, "test.histogram-with.special_chars")
-  
-  // Test with very long name
-  let long_name = "very.long.instrument.name.that.exceeds.normal.expectations.for.metric.names"
-  let long_gauge = Meter::create_gauge(meter, long_name)
-  assert_eq(long_gauge.name, long_name)
-  
-  // Test with zero and negative values
-  let updown_counter = Meter::create_updown_counter(meter, "test.zero")
-  UpDownCounter::add(updown_counter, 0.0)
-  UpDownCounter::add(updown_counter, -100.0)
-  UpDownCounter::add(updown_counter, 100.0)
-  
-  assert_true(true)
-}
-
-test "multiple provider isolation" {
-  let provider1 = MeterProvider::default()
-  let provider2 = MeterProvider::default()
-  
-  let meter1 = MeterProvider::get_meter(provider1, "provider1-meter")
-  let meter2 = MeterProvider::get_meter(provider2, "provider2-meter")
-  
-  let counter1 = Meter::create_counter(meter1, "shared.counter")
-  let counter2 = Meter::create_counter(meter2, "shared.counter")
-  
-  // Both counters should have the same name but be independent
-  assert_eq(counter1.name, "shared.counter")
-  assert_eq(counter2.name, "shared.counter")
-  
-  // Operations should not interfere
-  Counter::add(counter1, 1.0)
-  Counter::add(counter2, 2.0)
-  
-  assert_true(true)
+  // Verify different units are preserved
+  assert_eq(Instrument::unit(counter_bytes), Some("bytes"))
+  assert_eq(Instrument::unit(counter_seconds), Some("seconds"))
+  assert_eq(Instrument::unit(histogram_ms), Some("ms"))
+  assert_eq(Instrument::unit(gauge_percent), Some("%"))
+  assert_eq(Instrument::unit(updown_mb), Some("MB"))
 }

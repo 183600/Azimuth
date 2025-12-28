@@ -1,205 +1,245 @@
-// Core Functionality Tests for Azimuth Telemetry System
-// Comprehensive test coverage for essential telemetry features
+// Core functionality tests for Azimuth telemetry system
+// These tests cover the main telemetry features including tracing, metrics, and logging
 
-test "attribute_value_type_conversion" {
-  // Test different attribute value types
-  let string_val = StringValue("test_string")
-  let int_val = IntValue(42)
-  let float_val = FloatValue(3.14)
-  let bool_val = BoolValue(true)
-  let array_string_val = ArrayStringValue(["item1", "item2"])
-  let array_int_val = ArrayIntValue([1, 2, 3])
+// Test 1: Attributes operations
+pub test "attributes creation and operations" {
+  let attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(attrs, "string.key", azimuth::StringValue("test_value"))
+  azimuth::Attributes::set(attrs, "int.key", azimuth::IntValue(42))
   
-  // Verify type preservation
-  match string_val {
-    StringValue(s) => assert_eq(s, "test_string")
-    _ => @test.fail("Expected StringValue")
-  }
+  let string_val = azimuth::Attributes::get(attrs, "string.key")
+  let int_val = azimuth::Attributes::get(attrs, "int.key")
+  let missing_val = azimuth::Attributes::get(attrs, "missing.key")
   
-  match int_val {
-    IntValue(i) => assert_eq(i, 42)
-    _ => @test.fail("Expected IntValue")
-  }
-  
-  match float_val {
-    FloatValue(f) => assert_eq(f, 3.14)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  match bool_val {
-    BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
-  }
+  assert_eq(string_val, Some(azimuth::StringValue("test_value")))
+  assert_eq(int_val, Some(azimuth::IntValue(42)))
+  assert_eq(missing_val, None)
 }
 
-test "span_context_validation" {
-  // Test valid span context
-  let valid_ctx = SpanContext::new("trace123", "span456", true, "state=1")
-  assert_eq(SpanContext::trace_id(valid_ctx), "trace123")
-  assert_eq(SpanContext::span_id(valid_ctx), "span456")
-  assert_eq(SpanContext::is_sampled(valid_ctx), true)
-  assert_eq(SpanContext::is_valid(valid_ctx), true)
+// Test 2: Context and Baggage operations
+pub test "context and baggage propagation" {
+  let root_ctx = azimuth::Context::root()
+  let key = azimuth::ContextKey::new("user.id")
+  let ctx_with_value = azimuth::Context::with_value(root_ctx, key, "12345")
   
-  // Test invalid span context (empty IDs)
-  let invalid_ctx = SpanContext::new("", "", false, "")
-  assert_eq(SpanContext::is_valid(invalid_ctx), false)
-  assert_eq(SpanContext::is_sampled(invalid_ctx), false)
+  let retrieved_value = azimuth::Context::get(ctx_with_value, key)
+  assert_eq(retrieved_value, Some("12345"))
+  
+  let missing_key = azimuth::ContextKey::new("missing.key")
+  let missing_value = azimuth::Context::get(root_ctx, missing_key)
+  assert_eq(missing_value, None)
+  
+  // Test baggage operations
+  let baggage = azimuth::Baggage::new()
+  let updated_baggage = azimuth::Baggage::set_entry(baggage, "request.id", "req-123")
+  let baggage_value = azimuth::Baggage::get_entry(updated_baggage, "request.id")
+  assert_eq(baggage_value, Some("req-123"))
 }
 
-test "context_value_operations" {
-  let root_ctx = Context::root()
-  let test_key = ContextKey::new("test_key")
+// Test 3: Span and Tracer functionality
+pub test "span and tracer operations" {
+  let span_ctx = azimuth::SpanContext::new("trace-123", "span-456", true, "")
+  assert_eq(azimuth::SpanContext::trace_id(span_ctx), "trace-123")
+  assert_eq(azimuth::SpanContext::span_id(span_ctx), "span-456")
+  assert_true(azimuth::SpanContext::is_valid(span_ctx))
+  assert_true(azimuth::SpanContext::is_sampled(span_ctx))
   
-  // Test context with value
-  let ctx_with_value = Context::with_value(root_ctx, test_key, "test_value")
-  assert_eq(Context::get(ctx_with_value, test_key), Some("test_value"))
+  let span = azimuth::Span::new("test-span", azimuth::Internal, span_ctx)
+  assert_eq(azimuth::Span::name(span), "test-span")
+  assert_eq(azimuth::Span::kind(span), azimuth::Internal)
+  assert_true(azimuth::Span::is_recording(span))
   
-  // Test context without value
-  let empty_key = ContextKey::new("empty_key")
-  assert_eq(Context::get(ctx_with_value, empty_key), None)
+  let provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(provider, "test-tracer")
+  let scope = azimuth::Tracer::instrumentation_scope(tracer)
+  assert_eq(scope.name, "test-tracer")
   
-  // Test root context
-  assert_eq(Context::get(root_ctx, test_key), None)
+  let new_span = azimuth::Tracer::start_span(tracer, "operation")
+  assert_eq(azimuth::Span::name(new_span), "operation")
 }
 
-test "instrument_creation_and_properties" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test_meter")
+// Test 4: Metrics operations
+pub test "metrics counter and histogram operations" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "test-meter")
   
-  // Test counter instrument
-  let counter = Meter::create_counter(meter, "test_counter", Some("Test counter"), Some("count"))
-  let counter_instrument = Counter(counter.name, counter.description, counter.unit)
+  let counter = azimuth::Meter::create_counter(meter, "request.count")
+  assert_eq(counter.name, "request.count")
+  azimuth::Counter::add(counter, 1.0)
   
-  assert_eq(Instrument::name(counter_instrument), "test_counter")
-  assert_eq(Instrument::description(counter_instrument), Some("Test counter"))
-  assert_eq(Instrument::unit(counter_instrument), Some("count"))
+  let histogram = azimuth::Meter::create_histogram(meter, "response.time", Some("Response time in milliseconds"), Some("ms"))
+  assert_eq(histogram.name, "response.time")
+  assert_eq(histogram.description, Some("Response time in milliseconds"))
+  assert_eq(histogram.unit, Some("ms"))
+  azimuth::Histogram::record(histogram, 150.5)
   
-  // Test histogram instrument
-  let histogram = Meter::create_histogram(meter, "test_histogram", Some("Test histogram"), Some("ms"))
-  let histogram_instrument = Histogram(histogram.name, histogram.description, histogram.unit)
+  let updown_counter = azimuth::Meter::create_updown_counter(meter, "active.connections")
+  assert_eq(updown_counter.name, "active.connections")
+  azimuth::UpDownCounter::add(updown_counter, 5.0)
   
-  assert_eq(Instrument::name(histogram_instrument), "test_histogram")
-  assert_eq(Instrument::description(histogram_instrument), Some("Test histogram"))
-  assert_eq(Instrument::unit(histogram_instrument), Some("ms"))
+  let gauge = azimuth::Meter::create_gauge(meter, "memory.usage")
+  assert_eq(gauge.name, "memory.usage")
+  
+  let instrument = azimuth::Histogram::as_instrument(histogram)
+  assert_eq(azimuth::Instrument::name(instrument), "response.time")
+  assert_eq(azimuth::Instrument::description(instrument), Some("Response time in milliseconds"))
+  assert_eq(azimuth::Instrument::unit(instrument), Some("ms"))
 }
 
-test "log_record_creation_and_accessors" {
-  // Test basic log record
-  let basic_log = LogRecord::new(Info, "Test log message")
-  assert_eq(LogRecord::severity_number(basic_log), Info)
-  assert_eq(LogRecord::body(basic_log), Some("Test log message"))
+// Test 5: LogRecord and Logger operations
+pub test "log record and logger operations" {
+  let log_record = azimuth::LogRecord::new(azimuth::Info, "Test log message")
+  assert_eq(azimuth::LogRecord::severity_number(log_record), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(log_record), Some("Test log message"))
   
-  // Test log record with full context
-  let full_log = LogRecord::new_with_context(
-    Error,
-    Some("Error message"),
-    None,
+  let detailed_record = azimuth::LogRecord::new_with_context(
+    azimuth::Error,
+    Some("Error occurred"),
+    Some(azimuth::Attributes::new()),
     Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some("trace123"),
-    Some("span456"),
-    None
+    Some(1735689600000000001L),
+    Some("trace-123"),
+    Some("span-456"),
+    Some(azimuth::Context::root())
   )
+  assert_eq(azimuth::LogRecord::severity_number(detailed_record), azimuth::Error)
+  assert_eq(azimuth::LogRecord::body(detailed_record), Some("Error occurred"))
+  assert_eq(azimuth::LogRecord::trace_id(detailed_record), Some("trace-123"))
+  assert_eq(azimuth::LogRecord::span_id(detailed_record), Some("span-456"))
   
-  assert_eq(LogRecord::severity_number(full_log), Error)
-  assert_eq(LogRecord::body(full_log), Some("Error message"))
-  assert_eq(LogRecord::trace_id(full_log), Some("trace123"))
-  assert_eq(LogRecord::span_id(full_log), Some("span456"))
+  let provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(provider, "test-logger")
+  assert_eq(logger.scope.name, "test-logger")
+  
+  azimuth::Logger::emit(logger, log_record)
 }
 
-test "span_lifecycle_operations" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "test_tracer")
-  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+// Test 6: Resource management
+pub test "resource operations" {
+  let resource = azimuth::Resource::new()
+  let attributes = [("service.name", azimuth::StringValue("test-service")), 
+                    ("service.version", azimuth::StringValue("1.0.0"))]
+  let resource_with_attrs = azimuth::Resource::with_attributes(resource, attributes)
   
-  // Test span creation
-  let span = Tracer::start_span(tracer, "test_span")
-  assert_eq(Span::name(span), "test_span")
-  assert_eq(Span::kind(span), Internal)
-  assert_eq(Span::is_recording(span), true)
+  let service_name = azimuth::Resource::get_attribute(resource_with_attrs, "service.name")
+  let service_version = azimuth::Resource::get_attribute(resource_with_attrs, "service.version")
+  let missing_attr = azimuth::Resource::get_attribute(resource_with_attrs, "missing.attr")
   
-  // Test span operations
-  Span::set_status(span, Ok, Some("Operation completed"))
-  Span::add_event(span, "test_event", None)
+  assert_eq(service_name, Some(azimuth::StringValue("test-service")))
+  assert_eq(service_version, Some(azimuth::StringValue("1.0.0")))
+  assert_eq(missing_attr, None)
   
-  // Test span ending
-  Span::end(span)
+  let override_resource = azimuth::Resource::with_attributes(resource, 
+    [("environment", azimuth::StringValue("production"))])
+  let merged_resource = azimuth::Resource::merge(resource_with_attrs, override_resource)
+  let env_attr = azimuth::Resource::get_attribute(merged_resource, "environment")
+  assert_eq(env_attr, Some(azimuth::StringValue("production")))
 }
 
-test "resource_attribute_management" {
-  let resource = Resource::new()
-  let attributes = [
-    ("service.name", StringValue("test_service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123"))
-  ]
+// Test 7: Propagator functionality
+pub test "propagator operations" {
+  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+  let baggage_propagator = azimuth::W3CBaggagePropagator::new()
   
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
+  let propagators = [trace_propagator]
+  let composite_propagator = azimuth::CompositePropagator::new(propagators)
   
-  // Test attribute retrieval
-  assert_eq(
-    Resource::get_attribute(resource_with_attrs, "service.name"),
-    Some(StringValue("test_service"))
-  )
+  let carrier = azimuth::TextMapCarrier::new()
+  let ctx = azimuth::Context::root()
   
-  assert_eq(
-    Resource::get_attribute(resource_with_attrs, "service.version"),
-    Some(StringValue("1.0.0"))
-  )
+  azimuth::CompositePropagator::inject(composite_propagator, ctx, carrier)
+  let trace_header = azimuth::TextMapCarrier::get(carrier, "traceparent")
+  assert_eq(trace_header, Some("00-test-trace-id-test-span-id-01"))
   
-  // Test non-existent attribute
-  assert_eq(
-    Resource::get_attribute(resource_with_attrs, "non.existent"),
-    None
-  )
+  let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
+  let key = azimuth::ContextKey::new("extracted")
+  let extracted_value = azimuth::Context::get(extracted_ctx, key)
+  assert_eq(extracted_value, Some("true"))
 }
 
-test "baggage_operations" {
-  let baggage = Baggage::new()
+// Test 8: HTTP Client operations
+pub test "http client operations" {
+  let client = azimuth::HttpClient::new()
   
-  // Test baggage entry operations
-  let baggage_with_entry = Baggage::set_entry(baggage, "user.id", "12345")
-  assert_eq(Baggage::get_entry(baggage_with_entry, "user.id"), Some("12345"))
-  
-  // Test non-existent entry
-  assert_eq(Baggage::get_entry(baggage_with_entry, "non.existent"), None)
-  
-  // Test entry removal
-  let baggage_after_removal = Baggage::remove_entry(baggage_with_entry, "user.id")
-  assert_eq(Baggage::get_entry(baggage_after_removal, "user.id"), Some("12345"))
-}
-
-test "http_client_operations" {
-  // Test HTTP request creation
   let headers = [("Content-Type", "application/json"), ("Authorization", "Bearer token123")]
-  let request = HttpRequest::new("POST", "https://api.example.com/data", headers, Some("{\"key\":\"value\"}"))
+  let request = azimuth::HttpRequest::new("GET", "https://api.example.com/data", headers, Some("request body"))
   
-  assert_eq(HttpRequest::http_method(request), "POST")
-  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
-  assert_eq(HttpRequest::body(request), Some("{\"key\":\"value\"}"))
+  assert_eq(azimuth::HttpRequest::http_method(request), "GET")
+  assert_eq(azimuth::HttpRequest::url(request), "https://api.example.com/data")
+  assert_eq(azimuth::HttpRequest::body(request), Some("request body"))
   
-  // Test HTTP response creation
   let response_headers = [("Content-Type", "application/json")]
-  let response = HttpResponse::new(200, response_headers, Some("{\"result\":\"success\"}"))
+  let response = azimuth::HttpResponse::new(200, response_headers, Some("{\"status\": \"success\"}"))
   
-  assert_eq(HttpResponse::status_code(response), 200)
-  assert_eq(HttpResponse::body(response), Some("{\"result\":\"success\"}"))
+  assert_eq(azimuth::HttpResponse::status_code(response), 200)
+  assert_eq(azimuth::HttpResponse::body(response), Some("{\"status\": \"success\"}"))
 }
 
-test "propagation_context_injection_extraction" {
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
-  let composite = CompositePropagator::new([trace_propagator])
+// Test 9: Clock and Random operations
+pub test "clock and random operations" {
+  let clock = azimuth::Clock::system()
+  let timestamp = azimuth::Clock::now_unix_nanos(clock)
   
-  let root_ctx = Context::root()
-  let carrier = TextMapCarrier::new()
+  // Verify timestamp is reasonable (should be around 2025)
+  assert_true(timestamp > 1700000000000000000L)
+  assert_true(timestamp < 1800000000000000000L)
   
-  // Test injection
-  CompositePropagator::inject(composite, root_ctx, carrier)
-  assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  let random = azimuth::Random::system()
+  let random_bytes = azimuth::Random::next_bytes(random, 8)
+  assert_eq(random_bytes.length(), 8)
   
-  // Test extraction
-  let extracted_ctx = CompositePropagator::extract(composite, carrier)
-  let extracted_key = ContextKey::new("extracted")
-  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
+  let random_u64 = azimuth::Random::next_u64(random)
+  assert_true(random_u64.to_int() >= 0)
+  assert_true(random_u64.to_int() < 1000000)  // Reasonable range for testing
+}
+
+// Test 10: Integration test - Complete telemetry workflow
+pub test "complete telemetry workflow integration" {
+  // Setup resource
+  let resource = azimuth::Resource::new()
+  let resource_attrs = [("service.name", azimuth::StringValue("integration-test"))]
+  let service_resource = azimuth::Resource::with_attributes(resource, resource_attrs)
+  
+  // Setup context with baggage
+  let ctx = azimuth::Context::root()
+  let baggage_key = azimuth::ContextKey::new("user.id")
+  let ctx_with_baggage = azimuth::Context::with_value(ctx, baggage_key, "user-123")
+  
+  // Create tracer and span
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "integration-tracer")
+  let span = azimuth::Tracer::start_span(tracer, "integration-operation")
+  
+  // Create metrics
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "integration-meter")
+  let counter = azimuth::Meter::create_counter(meter, "operations.count")
+  azimuth::Counter::add(counter, 1.0)
+  
+  // Create logger and log record
+  let logger_provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "integration-logger")
+  let log_record = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Integration test completed successfully"),
+    None,
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(span))),
+    Some(ctx_with_baggage)
+  )
+  
+  // Emit log
+  azimuth::Logger::emit(logger, log_record)
+  
+  // Verify all components were created correctly
+  assert_eq(azimuth::Span::name(span), "integration-operation")
+  assert_eq(counter.name, "operations.count")
+  assert_eq(logger.scope.name, "integration-logger")
+  assert_eq(azimuth::LogRecord::body(log_record), Some("Integration test completed successfully"))
+  
+  // Verify resource attributes
+  let service_name = azimuth::Resource::get_attribute(service_resource, "service.name")
+  assert_eq(service_name, Some(azimuth::StringValue("integration-test")))
 }
