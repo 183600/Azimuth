@@ -244,7 +244,7 @@ test "实时监控和仪表板数据聚合测试" {
     Counter::add(request_counter, 1.0)
     
     // 记录响应时间（模拟不同响应时间）
-    let response_time = 50.0 + (i.to_int() * 10).to_double() + (Random::next_u64(Random::system()) % 100).to_double()
+    let response_time = 50.0 + (i * 10).to_double() + (Random::next_u64(Random::system()) % 100).to_double()
     Histogram::record(response_histogram, response_time)
     
     // 偶尔记录错误
@@ -264,7 +264,7 @@ test "实时监控和仪表板数据聚合测试" {
       log_level,
       Some(log_message),
       Some(Attributes::new()),
-      Some(current_time + (i.to_int() * 1000000).to_int64()),
+      Some(current_time + (i * 1000000).to_int64()),
       None,
       Some("realtime-trace-id"),
       Some("realtime-span-id"),

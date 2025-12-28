@@ -1,11 +1,11 @@
 {
-  "name": "azimuth-test",
+  "name": "azimuth",
   "version": "0.1.0",
-  "description": "Azimuth telemetry system test package",
+  "description": "Azimuth telemetry system main package",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {},
   "test": {
-    "test": ["azimuth.mbt", "advanced_system_integration_tests.mbt"]
+    "test": ["simple_validation_tests.mbt", "additional_feature_tests.mbt", "enhanced_test_cases.mbt", "integration_comprehensive_tests.mbt", "supplementary_tests.mbt", "../tests/azimuth/telemetry/enhanced_integration_tests.mbt", "new_comprehensive_tests.mbt", "advanced_telemetry_tests.mbt", "focused_enhanced_tests.mbt", "advanced_system_integration_tests.mbt"]
   }
 }
