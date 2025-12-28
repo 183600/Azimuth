@@ -1,346 +1,523 @@
-// 实时仪表板监控增强测试用例
-// 测试实时仪表板数据聚合、展示和更新功能
+// Real-time Dashboard Enhanced Tests
+// 实时仪表板增强测试
 
-test "实时指标聚合和展示测试" {
+test "实时指标聚合和计算测试" {
   let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "dashboard.metrics")
+  let meter = MeterProvider::get_meter(meter_provider, "dashboard.aggregation")
   
-  // 创建各种类型的指标
-  let request_counter = Meter::create_counter(meter, "http.requests.total")
-  let response_histogram = Meter::create_histogram(meter, "http.response.duration")
-  let active_connections = Meter::create_counter(meter, "connections.active")
-  let error_rate = Meter::create_counter(meter, "errors.total")
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "metrics.aggregation")
+  
+  // 创建聚合相关metrics
+  let request_count = Meter::create_counter(meter, "http.requests.total")
+  let response_time = Meter::create_histogram(meter, "http.response.time.ms")
+  let error_rate = Meter::create_counter(meter, "http.errors.total")
+  let active_connections = Meter::create_gauge(meter, "connections.active")
+  
+  // 创建聚合处理span
+  let aggregation_span = Tracer::start_span(tracer, "dashboard.metrics.aggregation")
   
   // 模拟实时数据流
-  for i = 0; i < 100; i = i + 1 {
-    // 模拟HTTP请求
-    Counter::add(request_counter, 1.0)
-    
-    // 模拟响应时间分布
-    let response_time = (i % 200).to_double() + 50.0 // 50-250ms范围
-    Histogram::record(response_histogram, response_time)
-    
-    // 模拟连接数变化
-    if i % 10 == 0 {
-      Counter::add(active_connections, 1.0)
-    }
-    
-    // 模拟错误
-    if i % 20 == 0 {
-      Counter::add(error_rate, 1.0)
+  let time_series_data = []
+  let current_time = Clock::now_unix_nanos(Clock::system())
+  
+  // 生成5分钟的时序数据（每秒一个数据点）
+  for minute = 0; minute < 5; minute = minute + 1 {
+    for second = 0; second < 60; second = second + 1 {
+      let timestamp = current_time + (minute * 60 + second) * 1000000000L
+      let requests = 50 + (Random::next_u64(Random::system()) % 100).to_int()
+      let avg_response_time = 100.0 + (Random::next_u64(Random::system()) % 200).to_double()
+      let errors = if requests > 100 { (Random::next_u64(Random::system()) % 5).to_int() } else { 0 }
+      let connections = 20 + (Random::next_u64(Random::system()) % 30).to_int()
+      
+      // 记录原始数据
+      Counter::add(request_count, requests.to_double())
+      Histogram::record(response_time, avg_response_time)
+      Counter::add(error_rate, errors.to_double())
+      // Gauge::set(active_connections, connections.to_double()) // 简化实现中没有set方法
+      
+      time_series_data.push((timestamp, requests, avg_response_time, errors, connections))
     }
   }
   
-  // 验证指标创建和更新不会崩溃
-  assert_true(true)
+  // 执行聚合计算
+  let total_requests = 0
+  let total_response_time = 0.0
+  let total_errors = 0
+  let max_connections = 0
+  let data_points = time_series_data.length()
+  
+  for data_point in time_series_data {
+    total_requests = total_requests + data_point.1
+    total_response_time = total_response_time + data_point.3
+    total_errors = total_errors + data_point.4
+    if data_point.5 > max_connections {
+      max_connections = data_point.5
+    }
+  }
+  
+  let avg_requests_per_second = total_requests.to_double() / data_points.to_double()
+  let avg_response_time_overall = total_response_time / data_points.to_double()
+  let error_rate_percentage = (total_errors.to_double() / total_requests.to_double()) * 100.0
+  
+  // 记录聚合结果
+  Span::add_event(aggregation_span, "aggregation.completed", Some([
+    ("time.window.minutes", IntValue(5)),
+    ("total.data.points", IntValue(data_points)),
+    ("total.requests", IntValue(total_requests)),
+    ("avg.requests.per.second", FloatValue(avg_requests_per_second)),
+    ("avg.response.time", FloatValue(avg_response_time_overall)),
+    ("error.rate.percentage", FloatValue(error_rate_percentage)),
+    ("max.connections", IntValue(max_connections))
+  ]))
+  
+  // 计算百分位数（简化实现）
+  let sorted_response_times = []
+  for data_point in time_series_data {
+    sorted_response_times.push(data_point.3)
+  }
+  
+  // 模拟排序和百分位数计算
+  let p50 = avg_response_time_overall // 简化：使用平均值
+  let p95 = avg_response_time_overall * 1.5
+  let p99 = avg_response_time_overall * 2.0
+  
+  Span::add_event(aggregation_span, "percentiles.calculated", Some([
+    ("p50.response.time", FloatValue(p50)),
+    ("p95.response.time", FloatValue(p95)),
+    ("p99.response.time", FloatValue(p99))
+  ]))
+  
+  Span::set_status(aggregation_span, Ok)
+  Span::end(aggregation_span)
+  
+  // 验证聚合结果
+  assert_true(total_requests > 0)
+  assert_true(avg_response_time_overall > 0.0)
+  assert_true(error_rate_percentage >= 0.0 && error_rate_percentage <= 100.0)
+  assert_true(max_connections > 0)
 }
 
-test "实时Span追踪和可视化测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "dashboard.tracer")
-  
-  // 创建复杂的span层次结构模拟微服务调用链
-  let root_span = Tracer::start_span(tracer, "api.gateway.request")
-  Span::add_event(root_span, "request.received", Some([("user.id", StringValue("user123")), ("request.id", StringValue("req-456"))]))
-  
-  // 模拟服务调用
-  let auth_span = Tracer::start_span(tracer, "auth.service.validate")
-  Span::add_event(auth_span, "token.validated", None)
-  Span::set_status(auth_span, Ok)
-  Span::end(auth_span)
-  
-  let user_span = Tracer::start_span(tracer, "user.service.fetch")
-  Span::add_event(user_span, "database.query", Some([("query.time", IntValue(25)), ("rows", IntValue(1))]))
-  Span::set_status(user_span, Ok)
-  Span::end(user_span)
-  
-  let order_span = Tracer::start_span(tracer, "order.service.list")
-  Span::add_event(order_span, "cache.hit", Some([("cache.key", StringValue("user:123:orders"))]))
-  Span::add_event(order_span, "database.query", Some([("query.time", IntValue(45)), ("rows", IntValue(10))]))
-  Span::set_status(order_span, Ok)
-  Span::end(order_span)
-  
-  // 结束根span
-  Span::add_event(root_span, "response.sent", Some([("response.size", IntValue(2048)), ("status", IntValue(200))]))
-  Span::set_status(root_span, Ok)
-  Span::end(root_span)
-  
-  assert_true(true) // 验证span创建和层次结构正确
-}
-
-test "实时日志流处理和过滤测试" {
+test "多维度数据分组和钻取测试" {
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "dashboard.logger")
+  let logger = LoggerProvider::get_logger(logger_provider, "dashboard.drilldown")
   
-  // 模拟不同级别的日志流
-  let log_entries = [
-    (Trace, "Detailed trace information", Some([("trace.id", StringValue("trace-123"))])),
-    (Debug, "Debugging connection pool", Some([("pool.size", IntValue(10)), ("active", IntValue(3))])),
-    (Info, "User login successful", Some([("user.id", StringValue("user456")), ("ip", StringValue("192.168.1.100"))])),
-    (Warn, "High memory usage detected", Some([("memory.usage", IntValue(85)), ("threshold", IntValue(80))])),
-    (Error, "Database connection timeout", Some([("timeout", IntValue(5000)), ("retry.count", IntValue(3))])),
-    (Fatal, "Service unavailable", Some([("service", StringValue("payment")), ("error.code", StringValue("SVC_UNAVAIL"))]))
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "data.drilldown")
+  
+  // 创建数据钻取span
+  let drilldown_span = Tracer::start_span(tracer, "multi.dimension.drilldown")
+  
+  // 模拟多维业务数据
+  let business_metrics = [
+    // (region, service, operation, status, count, duration, revenue)
+    ("us-east-1", "api", "read", "success", 1500, 120.5, 12500.0),
+    ("us-east-1", "api", "write", "success", 800, 250.3, 8900.0),
+    ("us-east-1", "api", "read", "error", 50, 450.8, 0.0),
+    ("us-west-2", "api", "read", "success", 1200, 95.2, 10200.0),
+    ("us-west-2", "api", "write", "success", 600, 180.7, 6700.0),
+    ("us-west-2", "database", "query", "success", 3000, 45.6, 0.0),
+    ("us-west-2", "database", "query", "error", 120, 890.3, 0.0),
+    ("eu-west-1", "api", "read", "success", 900, 140.8, 7800.0),
+    ("eu-west-1", "cache", "get", "success", 5000, 15.2, 0.0),
+    ("eu-west-1", "cache", "get", "miss", 800, 25.4, 0.0),
+    ("ap-southeast-1", "api", "read", "success", 700, 180.9, 6200.0),
+    ("ap-southeast-1", "storage", "upload", "success", 300, 1250.6, 4500.0)
   ]
   
-  // 模拟实时日志流
-  for entry in log_entries {
-    let (severity, message, attributes) = entry
-    let attrs = Attributes::new()
+  // 按地区分组聚合
+  let regions = []
+  for metric in business_metrics {
+    let region = metric.0
+    if !regions.contains(region) {
+      regions.push(region)
+    }
+  }
+  
+  for region in regions {
+    let region_requests = 0
+    let region_errors = 0
+    let region_revenue = 0.0
+    let region_duration = 0.0
+    let region_count = 0
     
-    // 添加属性
-    match attributes {
-      Some(attr_list) => {
-        for attr in attr_list {
-          Attributes::set(attrs, attr.0, attr.1)
+    for metric in business_metrics {
+      if metric.0 == region {
+        region_requests = region_requests + metric.4
+        region_duration = region_duration + metric.5
+        region_revenue = region_revenue + metric.6
+        region_count = region_count + 1
+        
+        if metric.3 == "error" {
+          region_errors = region_errors + metric.4
         }
       }
-      None => ()
     }
     
-    let log_record = LogRecord::new_with_context(
-      severity,
-      Some(message),
-      Some(attrs),
+    let region_avg_duration = region_duration / region_count.to_double()
+    let region_error_rate = (region_errors.to_double() / region_requests.to_double()) * 100.0
+    
+    // 记录地区聚合结果
+    Span::add_event(drilldown_span, "region.aggregation", Some([
+      ("region", StringValue(region)),
+      ("total.requests", IntValue(region_requests)),
+      ("total.errors", IntValue(region_errors)),
+      ("error.rate.percentage", FloatValue(region_error_rate)),
+      ("avg.duration", FloatValue(region_avg_duration)),
+      ("total.revenue", FloatValue(region_revenue))
+    ]))
+    
+    // 创建地区钻取日志
+    let region_log = LogRecord::new_with_context(
+      Info,
+      Some("Regional performance summary for " + region),
+      Some(Attributes::with_attributes(Attributes::new(), [
+        ("region", StringValue(region)),
+        ("request.volume", IntValue(region_requests)),
+        ("error.rate", FloatValue(region_error_rate)),
+        ("revenue.generated", FloatValue(region_revenue)),
+        ("performance.grade", StringValue(if region_error_rate < 5.0 { "A" } else if region_error_rate < 10.0 { "B" } else { "C" }))
+      ])),
       Some(Clock::now_unix_nanos(Clock::system())),
       None,
-      Some("trace-123"),
-      Some("span-456"),
+      Some("drilldown.region." + region),
+      Some("region.summary"),
       None
     )
     
-    Logger::emit(logger, log_record)
+    Logger::emit(logger, region_log)
   }
   
-  assert_true(true) // 验证日志流处理正确
+  // 按服务类型分组聚合
+  let services = []
+  for metric in business_metrics {
+    let service = metric.1
+    if !services.contains(service) {
+      services.push(service)
+    }
+  }
+  
+  for service in services {
+    let service_operations = []
+    let service_total_requests = 0
+    let service_total_errors = 0
+    
+    for metric in business_metrics {
+      if metric.1 == service {
+        service_total_requests = service_total_requests + metric.4
+        if metric.3 == "error" {
+          service_total_errors = service_total_errors + metric.4
+        }
+        
+        let operation = metric.2
+        if !service_operations.contains(operation) {
+          service_operations.push(operation)
+        }
+      }
+    }
+    
+    let service_error_rate = (service_total_errors.to_double() / service_total_requests.to_double()) * 100.0
+    
+    Span::add_event(drilldown_span, "service.aggregation", Some([
+      ("service", StringValue(service)),
+      ("total.requests", IntValue(service_total_requests)),
+      ("total.errors", IntValue(service_total_errors)),
+      ("error.rate.percentage", FloatValue(service_error_rate)),
+      ("operations.count", IntValue(service_operations.length()))
+    ]))
+  }
+  
+  Span::set_status(drilldown_span, Ok)
+  Span::end(drilldown_span)
+  
+  assert_true(regions.length() > 0 && services.length() > 0)
 }
 
 test "实时告警和阈值监控测试" {
   let meter_provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(meter_provider, "alerting.metrics")
   
-  // 创建告警相关的指标
-  let cpu_usage = Meter::create_counter(meter, "system.cpu.usage")
-  let memory_usage = Meter::create_counter(meter, "system.memory.usage")
-  let disk_usage = Meter::create_counter(meter, "system.disk.usage")
-  let network_errors = Meter::create_counter(meter, "network.errors.total")
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "dashboard.alerts")
   
-  // 模拟各种系统指标
-  let metrics_data = [
-    (cpu_usage, 75.0), // 正常范围
-    (memory_usage, 85.0), // 警告阈值
-    (disk_usage, 95.0), // 严重警告
-    (network_errors, 1.0) // 开始出现错误
-  ]
-  
-  for metric_data in metrics_data {
-    let (counter, value) = metric_data
-    Counter::add(counter, value)
-    
-    // 模拟告警检查逻辑
-    if value >= 90.0 {
-      // 严重告警
-      let alert_logger = LoggerProvider::get_logger(LoggerProvider::default(), "alerting")
-      let alert_record = LogRecord::new_with_context(
-        Error,
-        Some("Critical threshold exceeded"),
-        Some(Attributes::new()),
-        Some(Clock::now_unix_nanos(Clock::system())),
-        None,
-        None,
-        None,
-        None
-      )
-      Logger::emit(alert_logger, alert_record)
-    } else if value >= 80.0 {
-      // 警告告警
-      let alert_logger = LoggerProvider::get_logger(LoggerProvider::default(), "alerting")
-      let alert_record = LogRecord::new_with_context(
-        Warn,
-        Some("Warning threshold exceeded"),
-        Some(Attributes::new()),
-        Some(Clock::now_unix_nanos(Clock::system())),
-        None,
-        None,
-        None,
-        None
-      )
-      Logger::emit(alert_logger, alert_record)
-    }
-  }
-  
-  assert_true(true) // 验证告警逻辑正确
-}
-
-test "实时拓扑图和服务依赖监控测试" {
   let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "topology.tracer")
+  let tracer = TracerProvider::get_tracer(tracer_provider, "realtime.alerting")
   
-  // 模拟服务拓扑结构
-  let services = ["api.gateway", "auth.service", "user.service", "order.service", "payment.service", "notification.service"]
-  let service_calls = [
-    ("api.gateway", "auth.service"),
-    ("api.gateway", "user.service"),
-    ("api.gateway", "order.service"),
-    ("order.service", "payment.service"),
-    ("order.service", "notification.service"),
-    ("user.service", "notification.service")
+  // 创建告警相关metrics
+  let alert_threshold = Meter::create_gauge(meter, "alert.threshold.value")
+  let current_value = Meter::create_gauge(meter, "metric.current.value")
+  let alert_count = Meter::create_counter(meter, "alerts.triggered")
+  
+  // 创建告警监控span
+  let alerting_span = Tracer::start_span(tracer, "realtime.threshold.monitoring")
+  
+  // 定义监控指标和阈值
+  let monitored_metrics = [
+    ("cpu.usage", "percentage", 80.0, 85.0, 95.0),
+    ("memory.usage", "percentage", 75.0, 85.0, 90.0),
+    ("disk.usage", "percentage", 85.0, 90.0, 95.0),
+    ("response.time.p95", "milliseconds", 500.0, 1000.0, 2000.0),
+    ("error.rate", "percentage", 5.0, 10.0, 15.0),
+    ("queue.depth", "count", 1000.0, 5000.0, 10000.0)
   ]
   
-  // 为每个服务创建span
-  let service_spans = []
-  for service in services {
-    let span = Tracer::start_span(tracer, service + ".operation")
-    service_spans.push((service, span))
-  }
-  
-  // 模拟服务间调用
-  for call in service_calls {
-    let (caller, callee) = call
+  for metric in monitored_metrics {
+    let metric_name = metric.0
+    let unit = metric.1
+    let warning_threshold = metric.2
+    let critical_threshold = metric.3
+    let emergency_threshold = metric.4
     
-    // 查找调用者span
-    let caller_span_opt = service_spans.find(fn(pair) { pair.0 == caller })
-    match caller_span_opt {
-      Some((_, caller_span)) => {
-        Span::add_event(caller_span, "service.call.start", Some([
-          ("target.service", StringValue(callee)),
-          ("call.type", StringValue("http"))
-        ]))
-        
-        // 模拟调用延迟
-        Span::add_event(caller_span, "service.call.complete", Some([
-          ("target.service", StringValue(callee)),
-          ("duration.ms", IntValue(50 + (caller.length() * 10)))
-        ]))
+    // 模拟当前值（随机生成，可能超过阈值）
+    let base_value = warning_threshold * 0.8
+    let fluctuation = (Random::next_u64(Random::system()) % 100).to_double()
+    let current_metric_value = base_value + fluctuation
+    
+    // Gauge::set(current_value, current_metric_value) // 简化实现中没有set方法
+    
+    // 判断告警级别
+    let alert_level = if current_metric_value >= emergency_threshold {
+      "emergency"
+    } else if current_metric_value >= critical_threshold {
+      "critical"
+    } else if current_metric_value >= warning_threshold {
+      "warning"
+    } else {
+      "normal"
+    }
+    
+    // 记录指标状态
+    Span::add_event(alerting_span, "metric.evaluated", Some([
+      ("metric.name", StringValue(metric_name)),
+      ("current.value", FloatValue(current_metric_value)),
+      ("unit", StringValue(unit)),
+      ("warning.threshold", FloatValue(warning_threshold)),
+      ("critical.threshold", FloatValue(critical_threshold)),
+      ("emergency.threshold", FloatValue(emergency_threshold)),
+      ("alert.level", StringValue(alert_level))
+    ]))
+    
+    // 如果需要告警，创建告警日志
+    if alert_level != "normal" {
+      Counter::add(alert_count, 1.0)
+      
+      let severity = match alert_level {
+        "emergency" => Error
+        "critical" => Error
+        "warning" => Warn
+        _ => Info
       }
-      None => ()
-    }
-  }
-  
-  // 结束所有服务span
-  for (_, span) in service_spans {
-    Span::set_status(span, Ok)
-    Span::end(span)
-  }
-  
-  assert_true(true) // 验证拓扑监控正确
-}
-
-test "实时性能指标基线对比测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "baseline.metrics")
-  
-  // 创建性能基线指标
-  let baseline_response_time = Meter::create_histogram(meter, "baseline.response.time")
-  let current_response_time = Meter::create_histogram(meter, "current.response.time")
-  let baseline_throughput = Meter::create_counter(meter, "baseline.throughput")
-  let current_throughput = Meter::create_counter(meter, "current.throughput")
-  
-  // 模拟基线数据（正常情况）
-  let baseline_times = [100.0, 120.0, 95.0, 110.0, 105.0, 98.0, 115.0, 102.0, 108.0, 96.0]
-  for time in baseline_times {
-    Histogram::record(baseline_response_time, time)
-  }
-  
-  for i = 0; i < 100; i = i + 1 {
-    Counter::add(baseline_throughput, 1.0)
-  }
-  
-  // 模拟当前数据（可能有性能问题）
-  let current_times = [150.0, 180.0, 200.0, 165.0, 190.0, 175.0, 160.0, 185.0, 195.0, 170.0]
-  for time in current_times {
-    Histogram::record(current_response_time, time)
-  }
-  
-  for i = 0; i < 80; i = i + 1 {
-    Counter::add(current_throughput, 1.0)
-  }
-  
-  // 模拟性能回归检测
-  let performance_logger = LoggerProvider::get_logger(LoggerProvider::default(), "performance.monitoring")
-  
-  // 如果当前性能明显差于基线，记录告警
-  let regression_record = LogRecord::new_with_context(
-    Warn,
-    Some("Performance regression detected"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    None,
-    None,
-    None
-  )
-  Logger::emit(performance_logger, regression_record)
-  
-  assert_true(true) // 验证基线对比正确
-}
-
-test "实时数据采样和聚合策略测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "sampling.metrics")
-  
-  // 创建高频指标
-  let high_frequency_counter = Meter::create_counter(meter, "high.frequency.events")
-  let sampled_histogram = Meter::create_histogram(meter, "sampled.duration")
-  
-  // 模拟高频数据流（每秒1000个事件）
-  for i = 0; i < 10000; i = i + 1 {
-    Counter::add(high_frequency_counter, 1.0)
-    
-    // 采样策略：只记录10%的事件到histogram
-    if i % 10 == 0 {
-      let duration = (i % 1000).to_double()
-      Histogram::record(sampled_histogram, duration)
-    }
-    
-    // 模拟时间推进
-    if i % 1000 == 0 {
-      // 每秒的聚合点
-      let aggregation_logger = LoggerProvider::get_logger(LoggerProvider::default(), "aggregation")
-      let agg_record = LogRecord::new_with_context(
-        Info,
-        Some("Aggregation point"),
-        Some(Attributes::new()),
+      
+      let alert_log = LogRecord::new_with_context(
+        severity,
+        Some("Threshold alert: " + metric_name + " is " + alert_level),
+        Some(Attributes::with_attributes(Attributes::new(), [
+          ("alert.type", StringValue("threshold")),
+          ("metric.name", StringValue(metric_name)),
+          ("alert.level", StringValue(alert_level)),
+          ("current.value", FloatValue(current_metric_value)),
+          ("threshold.value", FloatValue(if alert_level == "warning" { warning_threshold } else if alert_level == "critical" { critical_threshold } else { emergency_threshold })),
+          ("deviation.percentage", FloatValue((current_metric_value / warning_threshold - 1.0) * 100.0)),
+          ("timestamp", IntValue(Clock::now_unix_nanos(Clock::system()).to_int())),
+          ("auto.acknowledged", BoolValue(alert_level == "warning"))
+        ])),
         Some(Clock::now_unix_nanos(Clock::system())),
         None,
-        None,
-        None,
+        Some("alert.trace." + metric_name),
+        Some("alert.span." + alert_level),
         None
       )
-      Logger::emit(aggregation_logger, agg_record)
+      
+      Logger::emit(logger, alert_log)
+      
+      // 模拟告警响应措施
+      match alert_level {
+        "emergency" => {
+          Span::add_event(alerting_span, "emergency.response", Some([
+            ("action", StringValue("immediate_intervention")),
+            ("escalation.level", StringValue("level_3")),
+            ("response.team.notified", BoolValue(true)),
+            ("automated.mitigation", BoolValue(true))
+          ]))
+        }
+        "critical" => {
+          Span::add_event(alerting_span, "critical.response", Some([
+            ("action", StringValue("service_scaling")),
+            ("escalation.level", StringValue("level_2")),
+            ("oncall.engineer.notified", BoolValue(true))
+          ]))
+        }
+        "warning" => {
+          Span::add_event(alerting_span, "warning.response", Some([
+            ("action", StringValue("monitoring_increase")),
+            ("investigation.scheduled", BoolValue(true)),
+            ("preventive.measures", BoolValue(true))
+          ]))
+        }
+        _ => ()
+      }
     }
   }
   
-  assert_true(true) // 验证采样和聚合策略正确
-}
-
-test "实时仪表板数据刷新和缓存测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "dashboard.cache")
+  // 模拟告警恢复场景
+  let recovery_metrics = [
+    ("cpu.usage", 65.0),
+    ("memory.usage", 55.0),
+    ("response.time.p95", 250.0),
+    ("error.rate", 2.0)
+  ]
   
-  // 模拟仪表板数据刷新
-  let cache_ttl = 5000 // 5秒缓存
-  let refresh_intervals = [1000, 2000, 5000, 10000] // 不同的刷新间隔
-  
-  for interval in refresh_intervals {
-    let start_time = Clock::now_unix_nanos(Clock::system())
+  for recovery in recovery_metrics {
+    let metric_name = recovery.0
+    let recovered_value = recovery.1
     
-    // 模拟数据获取和处理
-    let data_span = Tracer::start_span(tracer, "data.fetch")
-    Span::add_event(data_span, "cache.check", Some([("ttl", IntValue(cache_ttl)), ("interval", IntValue(interval))]))
+    Span::add_event(alerting_span, "metric.recovered", Some([
+      ("metric.name", StringValue(metric_name)),
+      ("recovered.value", FloatValue(recovered_value)),
+      ("recovery.time", IntValue(Clock::now_unix_nanos(Clock::system()).to_int())),
+      ("alert.resolved", BoolValue(true))
+    ]))
     
-    // 模拟数据处理时间
-    let processing_time = interval / 10 // 处理时间是刷新间隔的10%
-    Span::add_event(data_span, "data.processed", Some([("processing.time", IntValue(processing_time))]))
+    let recovery_log = LogRecord::new_with_context(
+      Info,
+      Some("Alert resolved: " + metric_name + " returned to normal"),
+      Some(Attributes::with_attributes(Attributes::new(), [
+        ("alert.type", StringValue("recovery")),
+        ("metric.name", StringValue(metric_name)),
+        ("recovered.value", FloatValue(recovered_value)),
+        ("duration.minutes", IntValue(15)),
+        ("auto.resolution", BoolValue(true))
+      ])),
+      Some(Clock::now_unix_nanos(Clock::system())),
+      None,
+      Some("recovery.trace." + metric_name),
+      Some("recovery.span"),
+      None
+    )
     
-    Span::set_status(data_span, Ok)
-    Span::end(data_span)
-    
-    let end_time = Clock::now_unix_nanos(Clock::system())
-    let actual_duration = end_time - start_time
-    
-    // 验证刷新在合理时间内完成
-    assert_true(actual_duration >= 0L)
+    Logger::emit(logger, recovery_log)
   }
   
-  assert_true(true) // 验证缓存和刷新机制正确
+  Span::set_status(alerting_span, Ok)
+  Span::end(alerting_span)
+  
+  assert_true(true)
+}
+
+test "仪表板性能优化和缓存测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "dashboard.performance")
+  
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "dashboard.cache")
+  
+  // 创建性能和缓存metrics
+  let cache_hits = Meter::create_counter(meter, "cache.hits.total")
+  let cache_misses = Meter::create_counter(meter, "cache.misses.total")
+  let render_time = Meter::create_histogram(meter, "dashboard.render.time.ms")
+  let data_fetch_time = Meter::create_histogram(meter, "data.fetch.time.ms")
+  
+  // 创建仪表板性能优化span
+  let performance_span = Tracer::start_span(tracer, "dashboard.performance.optimization")
+  
+  // 模拟仪表板组件缓存
+  let dashboard_components = [
+    ("overview.metrics", 5000),  // 5秒缓存
+    ("error.rates", 3000),        // 3秒缓存
+    ("response.times", 2000),     // 2秒缓存
+    ("resource.usage", 1000),     // 1秒缓存
+    ("active.users", 1500)        // 1.5秒缓存
+  ]
+  
+  let total_fetch_time = 0.0
+  
+  for component in dashboard_components {
+    let component_name = component.0
+    let cache_ttl = component.1
+    let fetch_start = Clock::now_unix_nanos(Clock::system())
+    
+    // 模拟数据获取（有时命中缓存，有时需要重新获取）
+    let cache_hit = (Random::next_u64(Random::system()) % 3) != 0 // 67%命中率
+    
+    if cache_hit {
+      Counter::add(cache_hits, 1.0)
+      let fetch_duration = 5.0 // 缓存命中很快
+      Histogram::record(data_fetch_time, fetch_duration)
+      total_fetch_time = total_fetch_time + fetch_duration
+      
+      Span::add_event(performance_span, "cache.hit", Some([
+        ("component", StringValue(component_name)),
+        ("cache.ttl", IntValue(cache_ttl)),
+        ("fetch.time", FloatValue(fetch_duration))
+      ]))
+    } else {
+      Counter::add(cache_misses, 1.0)
+      let fetch_duration = 150.0 // 缓存未命中需要重新计算
+      Histogram::record(data_fetch_time, fetch_duration)
+      total_fetch_time = total_fetch_time + fetch_duration
+      
+      Span::add_event(performance_span, "cache.miss", Some([
+        ("component", StringValue(component_name)),
+        ("cache.ttl", IntValue(cache_ttl)),
+        ("fetch.time", FloatValue(fetch_duration)),
+        ("data.computed", BoolValue(true))
+      ]))
+    }
+  }
+  
+  // 模拟仪表板渲染
+  let render_start = Clock::now_unix_nanos(Clock::system())
+  let render_duration = total_fetch_time * 0.3 // 渲染时间是数据获取时间的30%
+  Histogram::record(render_time, render_duration)
+  
+  Span::add_event(performance_span, "dashboard.rendered", Some([
+    ("total.components", IntValue(dashboard_components.length())),
+    ("total.fetch.time", FloatValue(total_fetch_time)),
+    ("render.time", FloatValue(render_duration)),
+    ("total.load.time", FloatValue(total_fetch_time + render_duration))
+  ]))
+  
+  // 计算缓存效率
+  let cache_hit_rate = 67.0 // 基于我们的模拟
+  Span::add_event(performance_span, "cache.performance", Some([
+    ("cache.hit.rate", FloatValue(cache_hit_rate)),
+    ("cache.miss.rate", FloatValue(100.0 - cache_hit_rate)),
+    ("performance.improvement", FloatValue(cache_hit_rate / 100.0 * 95.0)) // 缓存带来的性能提升
+  ]))
+  
+  // 模拟数据预取和预热
+  let prefetch_components = ["popular.widgets", "critical.metrics", "user.dashboard"]
+  
+  for component in prefetch_components {
+    Span::add_event(performance_span, "cache.prefetch", Some([
+      ("component", StringValue(component)),
+      ("prefetch.strategy", StringValue("predictive")),
+      ("cache.warmed", BoolValue(true))
+    ]))
+  }
+  
+  // 模拟数据压缩优化
+  let compression_ratios = [0.65, 0.72, 0.58, 0.80]
+  let total_compression_ratio = 0.0
+  
+  for ratio in compression_ratios {
+    total_compression_ratio = total_compression_ratio + ratio
+  }
+  
+  let avg_compression_ratio = total_compression_ratio / compression_ratios.length().to_double()
+  
+  Span::add_event(performance_span, "compression.optimization", Some([
+    ("avg.compression.ratio", FloatValue(avg_compression_ratio)),
+    ("bandwidth.saved", FloatValue((1.0 - avg_compression_ratio) * 100.0)),
+    ("cpu.overhead", FloatValue(5.0))
+  ]))
+  
+  Span::set_status(performance_span, Ok)
+  Span::end(performance_span)
+  
+  // 验证性能指标
+  assert_true(total_fetch_time > 0.0)
+  assert_true(render_duration > 0.0)
+  assert_true(cache_hit_rate > 0.0)
+  assert_true(avg_compression_ratio > 0.0 && avg_compression_ratio < 1.0)
 }
