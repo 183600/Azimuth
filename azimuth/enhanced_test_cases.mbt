@@ -35,22 +35,22 @@ test "data_integrity_serialization" {
   let resource_with_complex_attrs = Resource::with_attributes(resource, complex_attrs)
   
   // Verify each complex attribute can be retrieved correctly
-  @assertion.assert_eq(
+  @test.assert_eq(
     Resource::get_attribute(resource_with_complex_attrs, "string.array"),
     Some(ArrayStringValue(["value1", "value2", "value3"]))
   )?
   
-  @assertion.assert_eq(
+  @test.assert_eq(
     Resource::get_attribute(resource_with_complex_attrs, "int.array"),
     Some(ArrayIntValue([100, 200, 300]))
   )?
   
-  @assertion.assert_eq(
+  @test.assert_eq(
     Resource::get_attribute(resource_with_complex_attrs, "nested.string"),
     Some(StringValue("complex.value.with.dots"))
   )?
   
-  @assertion.assert_eq(
+  @test.assert_eq(
     Resource::get_attribute(resource_with_complex_attrs, "large.int"),
     Some(IntValue(2147483647))
   )?
@@ -61,12 +61,12 @@ test "complex_attribute_operations" {
   let attrs = Attributes::new()
   
   // Test getting known keys
-  @assertion.assert_eq(Attributes::get(attrs, "string.key"), Some(StringValue("test_value")))?
-  @assertion.assert_eq(Attributes::get(attrs, "int.key"), Some(IntValue(42)))?
+  @test.assert_eq(Attributes::get(attrs, "string.key"), Some(StringValue("test_value")))?
+  @test.assert_eq(Attributes::get(attrs, "int.key"), Some(IntValue(42)))?
   
   // Test getting unknown keys
-  @assertion.assert_eq(Attributes::get(attrs, "unknown.key"), None)?
-  @assertion.assert_eq(Attributes::get(attrs, ""), None)?
+  @test.assert_eq(Attributes::get(attrs, "unknown.key"), None)?
+  @test.assert_eq(Attributes::get(attrs, ""), None)?
   
   // Test setting attributes (simplified implementation)
   Attributes::set(attrs, "test.new.key", StringValue("new_value"))
@@ -92,13 +92,13 @@ test "metrics_aggregation_scenarios" {
   UpDownCounter::add(updown_counter, -3.0, None)
   
   // Verify instrument properties
-  @assertion.assert_eq(counter.name, "request_counter")?
-  @assertion.assert_eq(counter.description, Some("Total requests"))?
-  @assertion.assert_eq(counter.unit, Some("requests"))?
+  @test.assert_eq(counter.name, "request_counter")?
+  @test.assert_eq(counter.description, Some("Total requests"))?
+  @test.assert_eq(counter.unit, Some("requests"))?
   
-  @assertion.assert_eq(histogram.name, "response_time")?
-  @assertion.assert_eq(histogram.description, Some("Response time distribution"))?
-  @assertion.assert_eq(histogram.unit, Some("ms"))?
+  @test.assert_eq(histogram.name, "response_time")?
+  @test.assert_eq(histogram.description, Some("Response time distribution"))?
+  @test.assert_eq(histogram.unit, Some("ms"))?
 }
 
 test "cross_service_propagation_integrity" {
@@ -127,7 +127,7 @@ test "cross_service_propagation_integrity" {
   // Verify propagation chain integrity
   let final_ctx = CompositePropagator::extract(composite_propagator, carrier_b_to_c)
   let extracted_key = ContextKey::new("extracted")
-  @assertion.assert_eq(Context::get(final_ctx, extracted_key), Some("true"))?
+  @test.assert_eq(Context::get(final_ctx, extracted_key), Some("true"))?
 }
 
 test "realtime_data_processing" {
@@ -141,12 +141,12 @@ test "realtime_data_processing" {
     let span = Tracer::start_span(tracer, span_name)
     
     // Simulate span operations
-    Span::set_status(span, Ok, Some("Processed in realtime"))
+    Span::set_status(span, Ok, "Operation completed")
     Span::add_event(span, "processing_event", None)
     
     // Verify span properties during high-frequency operations
-    @assertion.assert_eq(Span::name(span), span_name)?
-    @assertion.assert_eq(Span::is_recording(span), true)?
+    @test.assert_eq(Span::name(span), span_name)?
+    @test.assert_eq(Span::is_recording(span), true)?
     
     Span::end(span)
   }
@@ -168,8 +168,8 @@ test "realtime_data_processing" {
     )
     
     Logger::emit(logger, log_record)
-    @assertion.assert_eq(LogRecord::severity_number(log_record), Info)?
-    @assertion.assert_eq(LogRecord::trace_id(log_record), Some("realtime_trace_" + i.to_string()))?
+    @test.assert_eq(LogRecord::severity_number(log_record), Info)?
+    @test.assert_eq(LogRecord::trace_id(log_record), Some("realtime_trace_" + i.to_string()))?
   }
 }
 
@@ -199,12 +199,12 @@ test "resource_merge_and_override_behavior" {
   let merged_resource = Resource::merge(base_resource_with_attrs, override_resource_with_attrs)
   
   // Verify override behavior (simplified implementation returns override)
-  @assertion.assert_eq(
+  @test.assert_eq(
     Resource::get_attribute(merged_resource, "service.version"),
     Some(StringValue("2.0.0"))
   )?
   
-  @assertion.assert_eq(
+  @test.assert_eq(
     Resource::get_attribute(merged_resource, "service.instance.id"),
     Some(StringValue("instance-456"))
   )?
@@ -228,10 +228,10 @@ test "context_chaining_operations" {
   let final_ctx = Context::with_value(ctx3, key4, "metadata-value")
   
   // Verify context chaining - only last value should be accessible in simplified implementation
-  @assertion.assert_eq(Context::get(final_ctx, key4), Some("metadata-value"))?
-  @assertion.assert_eq(Context::get(final_ctx, key1), None)?  // Simplified implementation limitation
-  @assertion.assert_eq(Context::get(final_ctx, key2), None)?
-  @assertion.assert_eq(Context::get(final_ctx, key3), None)?
+  @test.assert_eq(Context::get(final_ctx, key4), Some("metadata-value"))?
+  @test.assert_eq(Context::get(final_ctx, key1), None)?  // Simplified implementation limitation
+  @test.assert_eq(Context::get(final_ctx, key2), None)?
+  @test.assert_eq(Context::get(final_ctx, key3), None)?
 }
 
 test "exception_recovery_and_resilience" {
@@ -241,14 +241,14 @@ test "exception_recovery_and_resilience" {
   
   // Test span operations with invalid data
   let span_with_empty_name = Tracer::start_span(tracer, "")
-  @assertion.assert_eq(Span::name(span_with_empty_name), "")?
+  @test.assert_eq(Span::name(span_with_empty_name), "")?
   
   let span_with_special_chars = Tracer::start_span(tracer, "span.with.special.chars.123")
-  @assertion.assert_eq(Span::name(span_with_special_chars), "span.with.special.chars.123")?
+  @test.assert_eq(Span::name(span_with_special_chars), "span.with.special.chars.123")?
   
   // Test error status handling
-  Span::set_status(span_with_empty_name, Error, Some("Empty span name error"))
-  Span::set_status(span_with_special_chars, Error, Some("Special characters test"))
+  Span::set_status(span_with_empty_name, Error, "Empty span name error")
+  Span::set_status(span_with_special_chars, Error, "Special characters test")
   
   // Test log records with edge cases
   let empty_log = LogRecord::new_with_context(
@@ -262,13 +262,13 @@ test "exception_recovery_and_resilience" {
     None
   )
   
-  @assertion.assert_eq(LogRecord::severity_number(empty_log), Warn)?
-  @assertion.assert_eq(LogRecord::body(empty_log), None)?
+  @test.assert_eq(LogRecord::severity_number(empty_log), Warn)?
+  @test.assert_eq(LogRecord::body(empty_log), None)?
   
   // Test log with maximum severity
   let fatal_log = LogRecord::new(Fatal, "Fatal error occurred")
-  @assertion.assert_eq(LogRecord::severity_number(fatal_log), Fatal)?
-  @assertion.assert_eq(LogRecord::body(fatal_log), Some("Fatal error occurred"))?
+  @test.assert_eq(LogRecord::severity_number(fatal_log), Fatal)?
+  @test.assert_eq(LogRecord::body(fatal_log), Some("Fatal error occurred"))?
 }
 
 test "performance_benchmark_operations" {
@@ -303,12 +303,12 @@ test "performance_benchmark_operations" {
   for i in 0..<25 {
     let ctx = Context::with_value(root_ctx, test_key, "value_" + i.to_string())
     let retrieved = Context::get(ctx, test_key)
-    @assertion.assert_eq(retrieved, Some("value_" + i.to_string()))?
+    @test.assert_eq(retrieved, Some("value_" + i.to_string()))?
   }
   
   let end_time = Clock::now_unix_nanos(Clock::system())
   let duration = end_time - start_time
   
   // Verify operations completed within reasonable time (very loose threshold)
-  @assertion.assert_true(duration < 10000000000L)?  // Less than 10 seconds
+  @test.assert_true(duration < 10000000000L)?  // Less than 10 seconds
 }
