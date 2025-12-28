@@ -4,7 +4,9 @@
   "description": "Azimuth telemetry system test package",
   "target": "wasm-gc",
   "source": ["."],
-  "deps": {},
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
   "test": {
     "test": ["azimuth.mbt", "additional_core_tests.mbt"]
   }
