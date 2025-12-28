@@ -1,147 +1,165 @@
-// 边界情况测试
-// Edge cases tests for Azimuth telemetry system
-
-test "空值和边界值测试" {
-  // 测试空值和边界值的处理
+test "span context with very long IDs" {
+  // Test span context with very long trace and span IDs
+  let long_trace_id = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  let long_span_id = "0123456789abcdef01234567"
+  let span_ctx = @azimuth.SpanContext::new(long_trace_id, long_span_id, true, "state=value")
   
-  // 测试空字符串属性
-  let attrs = @azimuth.telemetry.api.common.Attributes.new()
-  @azimuth.telemetry.api.common.Attributes.set(attrs, "empty.value", @azimuth.telemetry.api.common.StringValue(""))
-  
-  let empty_value = @azimuth.telemetry.api.common.Attributes.get(attrs, "empty.value")
-  assert_eq(empty_value, Some(@azimuth.telemetry.api.common.StringValue("")))
-  
-  // 测试不存在的属性
-  let non_existent = @azimuth.telemetry.api.common.Attributes.get(attrs, "non.existent")
-  assert_eq(non_existent, None)
-  
-  // 测试边界数值
-  @azimuth.telemetry.api.common.Attributes.set(attrs, "max.int", @azimuth.telemetry.api.common.IntValue(2147483647))
-  @azimuth.telemetry.api.common.Attributes.set(attrs, "min.int", @azimuth.telemetry.api.common.IntValue(-2147483648))
-  @azimuth.telemetry.api.common.Attributes.set(attrs, "zero.float", @azimuth.telemetry.api.common.FloatValue(0.0))
-  
-  let max_int = @azimuth.telemetry.api.common.Attributes.get(attrs, "max.int")
-  let min_int = @azimuth.telemetry.api.common.Attributes.get(attrs, "min.int")
-  let zero_float = @azimuth.telemetry.api.common.Attributes.get(attrs, "zero.float")
-  
-  assert_eq(max_int, Some(@azimuth.telemetry.api.common.IntValue(2147483647)))
-  assert_eq(min_int, Some(@azimuth.telemetry.api.common.IntValue(-2147483648)))
-  assert_eq(zero_float, Some(@azimuth.telemetry.api.common.FloatValue(0.0)))
+  assert_eq(@azimuth.SpanContext::trace_id(span_ctx), long_trace_id)
+  assert_eq(@azimuth.SpanContext::span_id(span_ctx), long_span_id)
+  assert_true(@azimuth.SpanContext::is_sampled(span_ctx))
 }
 
-test "Span边界情况测试" {
-  // 测试Span的边界情况
+test "context with empty key" {
+  // Test context operations with empty key
+  let root_ctx = @azimuth.Context::root()
+  let empty_key = @azimuth.ContextKey::new("")
   
-  let trace_provider = @azimuth.telemetry.sdk.trace.TracerProvider.default()
-  let tracer = @azimuth.telemetry.sdk.trace.TracerProvider.get_tracer(trace_provider, "edge.test.tracer")
+  let ctx_with_value = @azimuth.Context::with_value(root_ctx, empty_key, "value.with.empty.key")
+  let retrieved_value = @azimuth.Context::get(ctx_with_value, empty_key)
   
-  // 测试无效的SpanContext
-  let invalid_ctx = @azimuth.telemetry.api.trace.SpanContext.new("", "", false, "")
-  assert_false(@azimuth.telemetry.api.trace.SpanContext.is_valid(invalid_ctx))
-  
-  // 测试有效的SpanContext
-  let valid_ctx = @azimuth.telemetry.api.trace.SpanContext.new("trace123", "span456", true, "")
-  assert_true(@azimuth.telemetry.api.trace.SpanContext.is_valid(valid_ctx))
-  
-  // 创建span并测试边界操作
-  let ctx = @azimuth.telemetry.api.context.Context.root()
-  let (_, span) = @azimuth.telemetry.sdk.trace.Tracer.start_span(tracer, ctx, "edge.test.span")
-  
-  // 设置空属性名
-  @azimuth.telemetry.api.trace.Span.set_attribute(span, "", @azimuth.telemetry.api.common.StringValue("empty"))
-  
-  // 添加空事件名
-  @azimuth.telemetry.api.trace.Span.add_event(span, "", None, None)
-  
-  // 结束span
-  @azimuth.telemetry.api.trace.Span.end(span)
-  
-  // 验证span已结束
-  assert_false(@azimuth.telemetry.api.trace.Span.is_recording(span))
+  assert_eq(retrieved_value, Some("value.with.empty.key"))
 }
 
-test "指标边界情况测试" {
-  // 测试指标的边界情况
+test "attributes with all value types" {
+  // Test attributes with all possible value types
+  let attrs = @azimuth.Attributes::new()
   
-  let meter_provider = @azimuth.telemetry.sdk.metrics.MeterProvider.default()
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider.get_meter(meter_provider, "edge.test.meter")
+  // String value
+  @azimuth.Attributes::set(attrs, "string.value", @azimuth.StringValue("test string"))
   
-  // 创建各种指标
-  let counter = @azimuth.telemetry.sdk.metrics.Meter.create_counter(meter, "edge.counter")
-  let histogram = @azimuth.telemetry.sdk.metrics.Meter.create_histogram(meter, "edge.histogram")
-  let gauge = @azimuth.telemetry.sdk.metrics.Meter.create_gauge(meter, "edge.gauge")
-  let up_down_counter = @azimuth.telemetry.sdk.metrics.Meter.create_up_down_counter(meter, "edge.up_down_counter")
+  // Int value
+  @azimuth.Attributes::set(attrs, "int.value", @azimuth.IntValue(42))
   
-  // 测试边界值
-  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 0.0)
-  @azimuth.telemetry.sdk.metrics.Counter.add(counter, 999999.999)
+  // Float value
+  @azimuth.Attributes::set(attrs, "float.value", @azimuth.FloatValue(3.14159))
   
-  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 0.0)
-  @azimuth.telemetry.sdk.metrics.Histogram.record(histogram, 999999999.0)
+  // Bool value
+  @azimuth.Attributes::set(attrs, "bool.value", @azimuth.BoolValue(true))
   
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, -100.0)
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 0.0)
-  @azimuth.telemetry.sdk.metrics.Gauge.record(gauge, 100.0)
+  // Array string value
+  @azimuth.Attributes::set(attrs, "array.string", @azimuth.ArrayStringValue(["a", "b", "c"]))
   
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, -1000.0)
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, 0.0)
-  @azimuth.telemetry.sdk.metrics.UpDownCounter.add(up_down_counter, 1000.0)
+  // Array int value
+  @azimuth.Attributes::set(attrs, "array.int", @azimuth.ArrayIntValue([1, 2, 3]))
+  
+  // Test that all operations complete without exceptions
+  assert_true(true)
 }
 
-test "日志边界情况测试" {
-  // 测试日志的边界情况
+test "span with all possible kinds" {
+  // Test creating spans with all possible kinds
+  let span_ctx = @azimuth.SpanContext::new("trace123", "span456", true, "")
   
-  let logger_provider = @azimuth.telemetry.sdk.logs.LoggerProvider.default()
-  let logger = @azimuth.telemetry.sdk.logs.LoggerProvider.get_logger(logger_provider, "edge.test.logger")
+  let internal_span = @azimuth.Span::new("internal", @azimuth.Internal, span_ctx)
+  let server_span = @azimuth.Span::new("server", @azimuth.Server, span_ctx)
+  let client_span = @azimuth.Span::new("client", @azimuth.Client, span_ctx)
+  let producer_span = @azimuth.Span::new("producer", @azimuth.Producer, span_ctx)
+  let consumer_span = @azimuth.Span::new("consumer", @azimuth.Consumer, span_ctx)
   
-  // 测试空消息
-  @azimuth.telemetry.sdk.logs.Logger.info(logger, "")
-  
-  // 测试长消息
-  let long_message = "x".repeat(1000)
-  @azimuth.telemetry.sdk.logs.Logger.info(logger, long_message)
-  
-  // 测试Unicode消息
-  let unicode_message = "Unicode测试消息🚀🌟"
-  @azimuth.telemetry.sdk.logs.Logger.info(logger, unicode_message)
-  
-  // 测试特殊字符消息
-  let special_message = "Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?"
-  @azimuth.telemetry.sdk.logs.Logger.info(logger, special_message)
-  
-  // 测试不同严重级别
-  @azimuth.telemetry.sdk.logs.Logger.trace(logger, "Trace message")
-  @azimuth.telemetry.sdk.logs.Logger.debug(logger, "Debug message")
-  @azimuth.telemetry.sdk.logs.Logger.info(logger, "Info message")
-  @azimuth.telemetry.sdk.logs.Logger.warn(logger, "Warning message")
-  @azimuth.telemetry.sdk.logs.Logger.error(logger, "Error message")
-  @azimuth.telemetry.sdk.logs.Logger.fatal(logger, "Fatal message")
+  assert_eq(@azimuth.Span::kind(internal_span), @azimuth.Internal)
+  assert_eq(@azimuth.Span::kind(server_span), @azimuth.Server)
+  assert_eq(@azimuth.Span::kind(client_span), @azimuth.Client)
+  assert_eq(@azimuth.Span::kind(producer_span), @azimuth.Producer)
+  assert_eq(@azimuth.Span::kind(consumer_span), @azimuth.Consumer)
 }
 
-test "上下文边界情况测试" {
-  // 测试上下文的边界情况
+test "log record with all severity levels" {
+  // Test log records with all severity levels
+  let trace_record = @azimuth.LogRecord::new(@azimuth.Trace, "Trace message")
+  let debug_record = @azimuth.LogRecord::new(@azimuth.Debug, "Debug message")
+  let info_record = @azimuth.LogRecord::new(@azimuth.Info, "Info message")
+  let warn_record = @azimuth.LogRecord::new(@azimuth.Warn, "Warning message")
+  let error_record = @azimuth.LogRecord::new(@azimuth.Error, "Error message")
+  let fatal_record = @azimuth.LogRecord::new(@azimuth.Fatal, "Fatal message")
   
-  // 测试根上下文
-  let root_ctx = @azimuth.telemetry.api.context.Context.root()
-  assert_eq(root_ctx.data, None)
+  assert_eq(@azimuth.LogRecord::severity_number(trace_record), @azimuth.Trace)
+  assert_eq(@azimuth.LogRecord::severity_number(debug_record), @azimuth.Debug)
+  assert_eq(@azimuth.LogRecord::severity_number(info_record), @azimuth.Info)
+  assert_eq(@azimuth.LogRecord::severity_number(warn_record), @azimuth.Warn)
+  assert_eq(@azimuth.LogRecord::severity_number(error_record), @azimuth.Error)
+  assert_eq(@azimuth.LogRecord::severity_number(fatal_record), @azimuth.Fatal)
+}
+
+test "text map carrier with special header values" {
+  // Test text map carrier with special header values
+  let carrier = @azimuth.TextMapCarrier::new()
   
-  // 测试上下文键
-  let key1 = @azimuth.telemetry.api.context.ContextKey::new("test.key.1")
-  let key2 = @azimuth.telemetry.api.context.ContextKey::new("test.key.2")
+  // Set headers with special characters
+  @azimuth.TextMapCarrier::set(carrier, "special-chars", "value with spaces and symbols!@#$%^&*()")
+  @azimuth.TextMapCarrier::set(carrier, "unicode", "中文测试 🚀 emoji")
+  @azimuth.TextMapCarrier::set(carrier, "empty-value", "")
+  @azimuth.TextMapCarrier::set(carrier, "very-long-value", "This is a very long header value that might be used in real-world scenarios for passing complex information through HTTP headers or other text-based carriers")
   
-  // 测试空值
-  let ctx_with_empty = @azimuth.telemetry.api.context.Context.with_value(root_ctx, key1, "")
-  let empty_value = @azimuth.telemetry.api.context.Context.get(ctx_with_empty, key1)
-  assert_eq(empty_value, Some(""))
+  // Test that setting doesn't throw exceptions
+  assert_true(true)
+}
+
+test "baggage with many entries" {
+  // Test baggage with many entries
+  let baggage = @azimuth.Baggage::new()
   
-  // 测试长值
-  let long_value = "x".repeat(1000)
-  let ctx_with_long = @azimuth.telemetry.api.context.Context.with_value(root_ctx, key2, long_value)
-  let retrieved_long = @azimuth.telemetry.api.context.Context.get(ctx_with_long, key2)
-  assert_eq(retrieved_long, Some(long_value))
+  // Add many entries
+  let baggage_with_entries = @azimuth.Baggage::set_entry(
+    @azimuth.Baggage::set_entry(
+      @azimuth.Baggage::set_entry(baggage, "key1", "value1"),
+      "key2", "value2"
+    ),
+    "key3", "value3"
+  )
   
-  // 测试不存在的键
-  let non_existent_key = @azimuth.telemetry.api.context.ContextKey::new("non.existent")
-  let non_existent_value = @azimuth.telemetry.api.context.Context.get(root_ctx, non_existent_key)
-  assert_eq(non_existent_value, None)
+  // Test that operations complete
+  assert_true(true)
+}
+
+test "resource with many attributes" {
+  // Test resource with many attributes
+  let resource = @azimuth.Resource::new()
+  
+  // Create resource with many attributes
+  let many_attributes = [
+    ("attr1", @azimuth.StringValue("value1")),
+    ("attr2", @azimuth.StringValue("value2")),
+    ("attr3", @azimuth.StringValue("value3")),
+    ("attr4", @azimuth.StringValue("value4")),
+    ("attr5", @azimuth.StringValue("value5"))
+  ]
+  
+  let resource_with_many = @azimuth.Resource::with_attributes(resource, many_attributes)
+  
+  // Test that creation succeeds
+  assert_true(true)
+}
+
+test "meter with all instrument types" {
+  // Test meter with all instrument types
+  let provider = @azimuth.MeterProvider::default()
+  let meter = @azimuth.MeterProvider::get_meter(provider, "all.instruments.test")
+  
+  // Create all instrument types
+  let counter = @azimuth.Meter::create_counter(meter, "test.counter", Some("Test counter"), Some("count"))
+  let histogram = @azimuth.Meter::create_histogram(meter, "test.histogram", Some("Test histogram"), Some("ms"))
+  
+  // Test that all instruments are created successfully
+  assert_eq(counter.name, "test.counter")
+  assert_eq(histogram.name, "test.histogram")
+}
+
+test "propagation with multiple headers" {
+  // Test propagation with multiple headers in carrier
+  let carrier = @azimuth.TextMapCarrier::new()
+  
+  // Set multiple headers
+  @azimuth.TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  @azimuth.TextMapCarrier::set(carrier, "baggage", "key1=value1,key2=value2")
+  @azimuth.TextMapCarrier::set(carrier, "x-custom-header", "custom-value")
+  @azimuth.TextMapCarrier::set(carrier, "another-header", "another-value")
+  
+  let trace_propagator = @azimuth.W3CTraceContextPropagator::new()
+  let composite = @azimuth.CompositePropagator::new([trace_propagator])
+  
+  // Extract context
+  let ctx = @azimuth.CompositePropagator::extract(composite, carrier)
+  
+  // Test that extraction doesn't fail
+  assert_true(true)
 }

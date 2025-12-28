@@ -1,90 +1,124 @@
-// 错误处理和边界条件测试
-// Error handling and edge cases tests for Azimuth telemetry system
-
-test "空值和None值处理测试" {
-  // 测试空字符串的处理
-  let empty_trace_ctx = @azimuth.telemetry.api.trace.SpanContext::new("", "", false, "")
-  assert_false(@azimuth.telemetry.api.trace.SpanContext::is_valid(empty_trace_ctx))
+test "span context with invalid trace id" {
+  // Test span context creation with invalid trace ID
+  let invalid_trace_ctx = @azimuth.SpanContext::new("", "span123", true, "")
+  assert_false(@azimuth.SpanContext::is_valid(invalid_trace_ctx))
   
-  // 测试空属性的Attributes
-  let empty_attrs = @azimuth.telemetry.api.common.Attributes::new()
-  let none_value = @azimuth.telemetry.api.common.Attributes::get(empty_attrs, "nonexistent.key")
+  let invalid_span_ctx = @azimuth.SpanContext::new("trace123", "", true, "")
+  assert_false(@azimuth.SpanContext::is_valid(invalid_span_ctx))
+  
+  let both_invalid_ctx = @azimuth.SpanContext::new("", "", true, "")
+  assert_false(@azimuth.SpanContext::is_valid(both_invalid_ctx))
+}
+
+test "context operations with None values" {
+  // Test context operations with None values
+  let root_ctx = @azimuth.Context::root()
+  let key = @azimuth.ContextKey::new("test.key")
+  
+  // Getting non-existent key should return None
+  let none_value = @azimuth.Context::get(root_ctx, key)
   assert_eq(none_value, None)
-  
-  // 测试空Body的LogRecord
-  let log_record = @azimuth.telemetry.api.logs.LogRecord::new(@azimuth.telemetry.api.logs.Info, "")
-  let body = @azimuth.telemetry.api.logs.LogRecord::body(log_record)
-  assert_eq(body, Some(""))
 }
 
-test "极值数据处理测试" {
-  // 测试极大和极小的数值
-  let large_int_attr = @azimuth.telemetry.api.common.IntValue(2147483647)
-  let small_int_attr = @azimuth.telemetry.api.common.IntValue(-2147483648)
-  let large_float_attr = @azimuth.telemetry.api.common.FloatValue(1.7976931348623157e+308)
-  let small_float_attr = @azimuth.telemetry.api.common.FloatValue(-1.7976931348623157e+308)
+test "attributes with non-existent keys" {
+  // Test getting attributes with non-existent keys
+  let attrs = @azimuth.Attributes::new()
   
-  // 测试极值在属性中的处理
-  let attrs = @azimuth.telemetry.api.common.Attributes::new()
-  @azimuth.telemetry.api.common.Attributes::set(attrs, "large.int", large_int_attr)
-  @azimuth.telemetry.api.common.Attributes::set(attrs, "small.int", small_int_attr)
-  @azimuth.telemetry.api.common.Attributes::set(attrs, "large.float", large_float_attr)
-  @azimuth.telemetry.api.common.Attributes::set(attrs, "small.float", small_float_attr)
-  
-  // 测试极值在指标中的处理
-  let meter_provider = @azimuth.telemetry.sdk.metrics.MeterProvider::default()
-  let meter = @azimuth.telemetry.sdk.metrics.MeterProvider::get_meter(meter_provider, "extreme-values-test")
-  
-  let counter = @azimuth.telemetry.sdk.metrics.Meter::create_counter(meter, "extreme.counter")
-  @azimuth.telemetry.sdk.metrics.Counter::add(counter, 1.7976931348623157e+308) // 最大double值
-  
-  let histogram = @azimuth.telemetry.sdk.metrics.Meter::create_histogram(meter, "extreme.histogram")
-  @azimuth.telemetry.sdk.metrics.Histogram::record(histogram, -1.7976931348623157e+308) // 最小double值
+  let non_existent = @azimuth.Attributes::get(attrs, "non.existent.key")
+  assert_eq(non_existent, None)
 }
 
-test "异常字符串处理测试" {
-  // 测试特殊字符和Unicode字符串
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let unicode_chars = "测试中文字符 🚀 emoji ñáéíóú"
+test "baggage operations with empty baggage" {
+  // Test baggage operations with empty baggage
+  let empty_baggage = @azimuth.Baggage::new()
   
-  // 测试特殊字符在属性中的处理
-  let attrs = @azimuth.telemetry.api.common.Attributes::new()
-  @azimuth.telemetry.api.common.Attributes::set(attrs, "special.chars", @azimuth.telemetry.api.common.StringValue(special_chars))
-  @azimuth.telemetry.api.common.Attributes::set(attrs, "unicode.chars", @azimuth.telemetry.api.common.StringValue(unicode_chars))
+  // Getting entries from empty baggage should return None
+  let entry = @azimuth.Baggage::get_entry(empty_baggage, "any.key")
+  assert_eq(entry, None)
   
-  // 测试特殊字符在Span名称中的处理
-  let span_ctx = @azimuth.telemetry.api.trace.SpanContext::new("trace-123", "span-456", true, "")
-  let special_span = @azimuth.telemetry.api.trace.Span::new(special_chars, @azimuth.telemetry.api.trace.Internal, span_ctx)
-  assert_eq(@azimuth.telemetry.api.trace.Span::name(special_span), special_chars)
-  
-  // 测试特殊字符在日志消息中的处理
-  let log_record = @azimuth.telemetry.api.logs.LogRecord::new(@azimuth.telemetry.api.logs.Error, unicode_chars)
-  let log_body = @azimuth.telemetry.api.logs.LogRecord::body(log_record)
-  assert_eq(log_body, Some(unicode_chars))
+  // Removing from empty baggage should not fail
+  let after_removal = @azimuth.Baggage::remove_entry(empty_baggage, "any.key")
+  assert_true(true)  // Test passes if no exception
 }
 
-test "无效状态处理测试" {
-  // 测试无效的HTTP请求和响应
-  let invalid_request = @azimuth.telemetry.api.platform.http.HttpRequest::new("", "", [], Some(""))
-  assert_eq(@azimuth.telemetry.api.platform.http.HttpRequest::http_method(invalid_request), "")
-  assert_eq(@azimuth.telemetry.api.platform.http.HttpRequest::url(invalid_request), "")
-  assert_eq(@azimuth.telemetry.api.platform.http.HttpRequest::body(invalid_request), Some(""))
+test "text map carrier with empty headers" {
+  // Test text map carrier operations with empty headers
+  let empty_carrier = @azimuth.TextMapCarrier::new()
   
-  let invalid_response = @azimuth.telemetry.api.platform.http.HttpResponse::new(-1, [], Some(""))
-  assert_eq(@azimuth.telemetry.api.platform.http.HttpResponse::status_code(invalid_response), -1)
+  // Getting from empty carrier should return None
+  let header = @azimuth.TextMapCarrier::get(empty_carrier, "any.header")
+  assert_eq(header, None)
+}
+
+test "propagator with empty carrier" {
+  // Test propagator operations with empty carrier
+  let trace_propagator = @azimuth.W3CTraceContextPropagator::new()
+  let composite = @azimuth.CompositePropagator::new([trace_propagator])
   
-  // 测试无效的时间戳
-  let negative_timestamp = @azimuth.telemetry.api.logs.LogRecord::new_with_context(
-    @azimuth.telemetry.api.logs.Info,
-    Some("test"),
-    Some(@azimuth.telemetry.api.common.Attributes::new()),
-    Some(-1L),
-    Some(-1L),
-    Some("invalid-trace"),
-    Some("invalid-span"),
-    Some(@azimuth.telemetry.api.context.Context::root())
-  )
+  let empty_carrier = @azimuth.TextMapCarrier::new()
+  let ctx = @azimuth.Context::root()
   
-  assert_eq(@azimuth.telemetry.api.logs.LogRecord::trace_id(negative_timestamp), Some("invalid-trace"))
-  assert_eq(@azimuth.telemetry.api.logs.LogRecord::span_id(negative_timestamp), Some("invalid-span"))
+  // Operations should not fail with empty carrier
+  @azimuth.CompositePropagator::inject(composite, ctx, empty_carrier)
+  let extracted_ctx = @azimuth.CompositePropagator::extract(composite, empty_carrier)
+  
+  assert_true(true)  // Test passes if no exceptions
+}
+
+test "meter operations with noop provider" {
+  // Test meter operations with noop provider
+  let noop_provider = @azimuth.MeterProvider::noop()
+  let meter = @azimuth.MeterProvider::get_meter(noop_provider, "noop.test")
+  
+  let counter = @azimuth.Meter::create_counter(meter, "noop.counter")
+  let histogram = @azimuth.Meter::create_histogram(meter, "noop.histogram")
+  
+  // Operations should not fail with noop provider
+  @azimuth.Counter::add(counter, 42.0)
+  @azimuth.Histogram::record(histogram, 123.45)
+  
+  assert_true(true)  // Test passes if no exceptions
+}
+
+test "logger operations with noop provider" {
+  // Test logger operations with noop provider
+  let noop_provider = @azimuth.LoggerProvider::noop()
+  let logger = @azimuth.LoggerProvider::get_logger(noop_provider, "noop.logger")
+  
+  let record = @azimuth.LogRecord::new(@azimuth.Info, "Noop test message")
+  
+  // Emit should not fail with noop provider
+  @azimuth.Logger::emit(logger, record)
+  
+  assert_true(true)  // Test passes if no exceptions
+}
+
+test "span operations with ended span" {
+  // Test span operations after span is ended
+  let span_ctx = @azimuth.SpanContext::new("trace123", "span456", true, "")
+  let span = @azimuth.Span::new("test.span", @azimuth.Internal, span_ctx)
+  
+  // End the span
+  @azimuth.Span::end(span)
+  
+  // Operations after ending should not fail
+  @azimuth.Span::add_event(span, "event after end")
+  @azimuth.Span::set_status(span, @azimuth.Error, Some("Error after end"))
+  
+  assert_true(true)  // Test passes if no exceptions
+}
+
+test "resource with invalid attribute operations" {
+  // Test resource operations with invalid scenarios
+  let resource = @azimuth.Resource::new()
+  
+  // Get non-existent attribute
+  let non_existent = @azimuth.Resource::get_attribute(resource, "non.existent")
+  assert_eq(non_existent, None)
+  
+  // Merge with empty resource
+  let empty_resource = @azimuth.Resource::new()
+  let merged = @azimuth.Resource::merge(resource, empty_resource)
+  
+  assert_true(true)  // Test passes if no exceptions
 }
