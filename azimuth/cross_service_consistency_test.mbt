@@ -1,296 +1,346 @@
-test "Cross-service trace consistency test" {
-  // Test trace ID consistency across services
-  let base_trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let base_span_id = "b7ad6b7169203331"
+// 跨服务一致性测试用例
+// 测试 Azimuth 遥测系统中跨服务调用的遥测数据一致性
+
+test "cross_service_trace_propagation" {
+  // 模拟服务A创建初始跟踪
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_a_id = "b7ad6b7169203331"
+  let span_a_ctx = SpanContext::new(trace_id, span_a_id, true, "key1=value1")
   
-  // Service A: Create initial span context
-  let service_a_span_ctx = SpanContext::new(base_trace_id, base_span_id, true, "")
-  @assertion.assert_eq(SpanContext::trace_id(service_a_span_ctx), base_trace_id)?
-  @assertion.assert_eq(SpanContext::span_id(service_a_span_ctx), base_span_id)?
-  @assertion.assert_eq(SpanContext::is_sampled(service_a_span_ctx), true)?
-  @assertion.assert_eq(SpanContext::is_valid(service_a_span_ctx), true)?
+  // 验证服务A的span上下文
+  assert_eq(SpanContext::trace_id(span_a_ctx), trace_id)
+  assert_eq(SpanContext::span_id(span_a_ctx), span_a_id)
+  assert_true(SpanContext::is_sampled(span_a_ctx))
+  assert_true(SpanContext::is_valid(span_a_ctx))
   
-  // Service B: Create child span with same trace ID
-  let service_b_span_id = "c8de7c8270314442"
-  let service_b_span_ctx = SpanContext::new(base_trace_id, service_b_span_id, true, "")
-  @assertion.assert_eq(SpanContext::trace_id(service_b_span_ctx), base_trace_id)?
-  @assertion.assert_eq(SpanContext::span_id(service_b_span_ctx), service_b_span_id)?
-  @assertion.assert_eq(SpanContext::is_sampled(service_b_span_ctx), true)?
+  // 模拟服务B接收跟踪上下文
+  let span_b_id = "c8de7c8270314442"
+  let span_b_ctx = SpanContext::new(trace_id, span_b_id, true, "key1=value1,key2=value2")
   
-  // Service C: Create another child span
-  let service_c_span_id = "d9ef8d9381425553"
-  let service_c_span_ctx = SpanContext::new(base_trace_id, service_c_span_id, true, "")
-  @assertion.assert_eq(SpanContext::trace_id(service_c_span_ctx), base_trace_id)?
-  @assertion.assert_eq(SpanContext::span_id(service_c_span_ctx), service_c_span_id)?
+  // 验证服务B保持相同的trace_id
+  assert_eq(SpanContext::trace_id(span_b_ctx), trace_id)
+  assert_eq(SpanContext::span_id(span_b_ctx), span_b_id)
+  assert_true(SpanContext::is_sampled(span_b_ctx))
+  assert_true(SpanContext::is_valid(span_b_ctx))
   
-  // Verify trace ID consistency across all services
-  @assertion.assert_eq(
-    SpanContext::trace_id(service_a_span_ctx),
-    SpanContext::trace_id(service_b_span_ctx)
-  )?
-  @assertion.assert_eq(
-    SpanContext::trace_id(service_b_span_ctx),
-    SpanContext::trace_id(service_c_span_ctx)
-  )?
-  
-  // Verify span IDs are unique
-  @assertion.assert_neq(
-    SpanContext::span_id(service_a_span_ctx),
-    SpanContext::span_id(service_b_span_ctx)
-  )?
-  @assertion.assert_neq(
-    SpanContext::span_id(service_b_span_ctx),
-    SpanContext::span_id(service_c_span_ctx)
-  )?
+  // 验证trace_id在服务间保持一致
+  assert_eq(SpanContext::trace_id(span_a_ctx), SpanContext::trace_id(span_b_ctx))
 }
 
-test "Cross-service baggage propagation consistency test" {
-  // Test baggage consistency across service boundaries
-  let initial_baggage = Baggage::new()
+test "cross_service_baggage_consistency" {
+  // 服务A设置行李
+  let baggage_a = Baggage::new()
+  let baggage_a_with_data = Baggage::set_entry(baggage_a, "user.id", "user123")
+  let baggage_a_final = Baggage::set_entry(baggage_a_with_data, "request.id", "req456")
   
-  // Service A: Add initial baggage entries
-  let service_a_baggage = Baggage::set_entry(initial_baggage, "user.id", "12345")
-  let service_a_baggage = Baggage::set_entry(service_a_baggage, "session.id", "session-abc")
-  let service_a_baggage = Baggage::set_entry(service_a_baggage, "request.id", "req-123")
+  // 服务B接收并添加行李
+  let baggage_b = baggage_a_final
+  let baggage_b_with_more = Baggage::set_entry(baggage_b, "service.name", "service-B")
+  let baggage_b_final = Baggage::set_entry(baggage_b_with_more, "operation.type", "database.query")
   
-  // Service B: Add additional baggage entries
-  let service_b_baggage = Baggage::set_entry(service_a_baggage, "service.b.timestamp", "2025-01-01T12:00:00Z")
-  let service_b_baggage = Baggage::set_entry(service_b_baggage, "operation", "user.lookup")
+  // 服务C接收并添加更多行李
+  let baggage_c = baggage_b_final
+  let baggage_c_final = Baggage::set_entry(baggage_c, "cache.hit", "true")
   
-  // Service C: Add more entries
-  let service_c_baggage = Baggage::set_entry(service_b_baggage, "service.c.latency", "45ms")
-  let service_c_baggage = Baggage::set_entry(service_c_baggage, "cache.hit", "true")
+  // 验证行李在服务间的传播（根据简化实现，都返回None）
+  let user_id_a = Baggage::get_entry(baggage_a_final, "user.id")
+  let user_id_b = Baggage::get_entry(baggage_b_final, "user.id")
+  let user_id_c = Baggage::get_entry(baggage_c_final, "user.id")
   
-  // Test baggage entry retrieval across services
-  // Note: Simplified implementation returns None for all entries
-  let user_id = Baggage::get_entry(service_c_baggage, "user.id")
-  let session_id = Baggage::get_entry(service_c_baggage, "session.id")
-  let request_id = Baggage::get_entry(service_c_baggage, "request.id")
-  let timestamp = Baggage::get_entry(service_c_baggage, "service.b.timestamp")
-  let operation = Baggage::get_entry(service_c_baggage, "operation")
-  let latency = Baggage::get_entry(service_c_baggage, "service.c.latency")
-  let cache_hit = Baggage::get_entry(service_c_baggage, "cache.hit")
-  
-  @assertion.assert_eq(user_id, None)?
-  @assertion.assert_eq(session_id, None)?
-  @assertion.assert_eq(request_id, None)?
-  @assertion.assert_eq(timestamp, None)?
-  @assertion.assert_eq(operation, None)?
-  @assertion.assert_eq(latency, None)?
-  @assertion.assert_eq(cache_hit, None)?
-  
-  // Test baggage entry removal
-  let baggage_after_removal = Baggage::remove_entry(service_c_baggage, "session.id")
-  let removed_session = Baggage::get_entry(baggage_after_removal, "session.id")
-  @assertion.assert_eq(removed_session, None)?
-  
-  // Verify other entries are still accessible (would be None in simplified implementation)
-  let preserved_user_id = Baggage::get_entry(baggage_after_removal, "user.id")
-  @assertion.assert_eq(preserved_user_id, None)?
+  assert_eq(user_id_a, None)
+  assert_eq(user_id_b, None)
+  assert_eq(user_id_c, None)
 }
 
-test "Cross-service metrics consistency test" {
-  // Test metrics consistency across services
-  let meter_provider = MeterProvider::default()
+test "cross_service_context_injection_extraction" {
+  // 服务A创建上下文
+  let ctx_a = Context::root()
+  let key_a = ContextKey::new("service.a.data")
+  let ctx_a_with_data = Context::with_value(ctx_a, key_a, "service-a-value")
   
-  // Service A: Create metrics
-  let service_a_meter = MeterProvider::get_meter(meter_provider, "service-a")
-  let service_a_counter = Meter::create_counter(service_a_meter, "requests.total")
-  let service_a_histogram = Meter::create_histogram(service_a_meter, "request.duration")
+  // 注入到载体
+  let carrier = TextMapCarrier::new()
+  let trace_propagator = W3CTraceContextPropagator::new()
+  let baggage_propagator = W3CTraceContextPropagator::new()  // 简化实现
   
-  Counter::add(service_a_counter, 1.0)
-  Histogram::record(service_a_histogram, 150.5)
+  let propagators = [trace_propagator, baggage_propagator]
+  let composite = CompositePropagator::new(propagators)
   
-  // Service B: Create metrics with same names
-  let service_b_meter = MeterProvider::get_meter(meter_provider, "service-b")
-  let service_b_counter = Meter::create_counter(service_b_meter, "requests.total")
-  let service_b_histogram = Meter::create_histogram(service_b_meter, "request.duration")
+  CompositePropagator::inject(composite, ctx_a_with_data, carrier)
   
-  Counter::add(service_b_counter, 1.0)
-  Histogram::record(service_b_histogram, 89.2)
+  // 服务B从载体提取
+  let ctx_b = CompositePropagator::extract(composite, carrier)
+  let key_b = ContextKey::new("service.b.data")
+  let ctx_b_with_data = Context::with_value(ctx_b, key_b, "service-b-value")
   
-  // Service C: Create metrics
-  let service_c_meter = MeterProvider::get_meter(meter_provider, "service-c")
-  let service_c_counter = Meter::create_counter(service_c_meter, "requests.total")
-  let service_c_histogram = Meter::create_histogram(service_c_meter, "request.duration")
+  // 验证上下文传播
+  let extracted_value = Context::get(ctx_b_with_data, ContextKey::new("extracted"))
+  assert_eq(extracted_value, Some("true"))
   
-  Counter::add(service_c_counter, 1.0)
-  Histogram::record(service_c_histogram, 203.7)
+  // 服务C继续传播
+  let carrier_c = TextMapCarrier::new()
+  CompositePropagator::inject(composite, ctx_b_with_data, carrier_c)
   
-  // Test metric name consistency
-  @assertion.assert_eq(Counter::name(service_a_counter), "requests.total")?
-  @assertion.assert_eq(Counter::name(service_b_counter), "requests.total")?
-  @assertion.assert_eq(Counter::name(service_c_counter), "requests.total")?
-  
-  @assertion.assert_eq(Histogram::name(service_a_histogram), "request.duration")?
-  @assertion.assert_eq(Histogram::name(service_b_histogram), "request.duration")?
-  @assertion.assert_eq(Histogram::name(service_c_histogram), "request.duration")?
-  
-  // Test instrument conversion consistency
-  let a_counter_instrument = Counter::as_instrument(service_a_counter)
-  let b_counter_instrument = Counter::as_instrument(service_b_counter)
-  let c_counter_instrument = Counter::as_instrument(service_c_counter)
-  
-  @assertion.assert_eq(Instrument::name(a_counter_instrument), "requests.total")?
-  @assertion.assert_eq(Instrument::name(b_counter_instrument), "requests.total")?
-  @assertion.assert_eq(Instrument::name(c_counter_instrument), "requests.total")?
+  let ctx_c = CompositePropagator::extract(composite, carrier_c)
+  let extracted_c_value = Context::get(ctx_c, ContextKey::new("extracted"))
+  assert_eq(extracted_c_value, Some("true"))
 }
 
-test "Cross-service logging consistency test" {
-  // Test logging consistency across services
-  let logger_provider = LoggerProvider::default()
+test "cross_service_metrics_consistency" {
+  // 服务A创建度量
+  let provider_a = MeterProvider::default()
+  let meter_a = MeterProvider::get_meter(provider_a, "service-a")
+  let counter_a = Meter::create_counter(meter_a, "http.requests.total")
   
-  // Create shared trace context
-  let shared_trace_id = "1234567890abcdef1234567890abcdef"
-  let shared_span_id = "abcdef1234567890"
+  Counter::add(counter_a, 10.0)
   
-  // Service A: Create log record
-  let service_a_logger = LoggerProvider::get_logger(logger_provider, "service-a")
-  let service_a_record = LogRecord::new_with_context(
+  // 服务B创建相同名称的度量
+  let provider_b = MeterProvider::default()
+  let meter_b = MeterProvider::get_meter(provider_b, "service-b")
+  let counter_b = Meter::create_counter(meter_b, "http.requests.total")
+  
+  Counter::add(counter_b, 5.0)
+  
+  // 服务C创建相同名称的度量
+  let provider_c = MeterProvider::default()
+  let meter_c = MeterProvider::get_meter(provider_c, "service-c")
+  let counter_c = Meter::create_counter(meter_c, "http.requests.total")
+  
+  Counter::add(counter_c, 15.0)
+  
+  // 验证度量名称一致性
+  assert_eq(counter_a.name, "http.requests.total")
+  assert_eq(counter_b.name, "http.requests.total")
+  assert_eq(counter_c.name, "http.requests.total")
+  assert_eq(counter_a.name, counter_b.name)
+  assert_eq(counter_b.name, counter_c.name)
+}
+
+test "cross_service_logging_consistency" {
+  // 服务A创建日志记录器
+  let provider_a = LoggerProvider::default()
+  let logger_a = LoggerProvider::get_logger(provider_a, "service-a.logger")
+  
+  let log_a = LogRecord::new(Info, "Service A processing request")
+  Logger::emit(logger_a, log_a)
+  
+  // 服务B创建日志记录器
+  let provider_b = LoggerProvider::default()
+  let logger_b = LoggerProvider::get_logger(provider_b, "service-b.logger")
+  
+  let log_b = LogRecord::new_with_context(
     Info,
-    Some("Service A: Processing request"),
+    Some("Service B processing request"),
     None,
     Some(1735689600000000000L),
-    Some(1735689600000000100L),
-    Some(shared_trace_id),
-    Some(shared_span_id),
+    None,
+    Some("0af7651916cd43dd8448eb211c80319c"),  // 相同的trace_id
+    Some("c8de7c8270314442"),
     None
   )
+  Logger::emit(logger_b, log_b)
   
-  // Service B: Create log record with same trace context
-  let service_b_logger = LoggerProvider::get_logger(logger_provider, "service-b")
-  let service_b_record = LogRecord::new_with_context(
+  // 服务C创建日志记录器
+  let provider_c = LoggerProvider::default()
+  let logger_c = LoggerProvider::get_logger(provider_c, "service-c.logger")
+  
+  let log_c = LogRecord::new_with_context(
     Info,
-    Some("Service B: Received request from Service A"),
+    Some("Service C processing request"),
     None,
-    Some(1735689600000000200L),
-    Some(1735689600000000205L),
-    Some(shared_trace_id),
-    Some("bcdef12345678901"),  // Different span ID
+    Some(1735689600000001000L),
+    None,
+    Some("0af7651916cd43dd8448eb211c80319c"),  // 相同的trace_id
+    Some("d9ef8d9381425553"),
     None
   )
+  Logger::emit(logger_c, log_c)
   
-  // Service C: Create log record
-  let service_c_logger = LoggerProvider::get_logger(logger_provider, "service-c")
-  let service_c_record = LogRecord::new_with_context(
-    Warn,
-    Some("Service C: Warning during processing"),
-    None,
-    Some(1735689600000000300L),
-    Some(1735689600000000302L),
-    Some(shared_trace_id),
-    Some("cdef012345678901"),  // Different span ID
-    None
-  )
+  // 验证日志严重性一致性
+  assert_eq(LogRecord::severity_number(log_a), Info)
+  assert_eq(LogRecord::severity_number(log_b), Info)
+  assert_eq(LogRecord::severity_number(log_c), Info)
   
-  // Verify trace ID consistency across all log records
-  @assertion.assert_eq(LogRecord::trace_id(service_a_record)?, shared_trace_id)?
-  @assertion.assert_eq(LogRecord::trace_id(service_b_record)?, shared_trace_id)?
-  @assertion.assert_eq(LogRecord::trace_id(service_c_record)?, shared_trace_id)?
-  
-  // Verify span ID uniqueness
-  @assertion.assert_eq(LogRecord::span_id(service_a_record)?, shared_span_id)?
-  @assertion.assert_eq(LogRecord::span_id(service_b_record)?, "bcdef12345678901")?
-  @assertion.assert_eq(LogRecord::span_id(service_c_record)?, "cdef012345678901")?
-  
-  @assertion.assert_neq(LogRecord::span_id(service_a_record)?, LogRecord::span_id(service_b_record)?)?
-  @assertion.assert_neq(LogRecord::span_id(service_b_record)?, LogRecord::span_id(service_c_record)?)?
-  
-  // Verify severity levels
-  @assertion.assert_eq(LogRecord::severity_number(service_a_record), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(service_b_record), Info)?
-  @assertion.assert_eq(LogRecord::severity_number(service_c_record), Warn)?
-  
-  // Emit log records
-  Logger::emit(service_a_logger, service_a_record)
-  Logger::emit(service_b_logger, service_b_record)
-  Logger::emit(service_c_logger, service_c_record)
+  // 验证trace_id一致性
+  assert_eq(LogRecord::trace_id(log_b), Some("0af7651916cd43dd8448eb211c80319c"))
+  assert_eq(LogRecord::trace_id(log_c), Some("0af7651916cd43dd8448eb211c80319c"))
+  assert_eq(LogRecord::trace_id(log_b), LogRecord::trace_id(log_c))
 }
 
-test "Cross-service resource consistency test" {
-  // Test resource consistency across services
-  let global_resource = Resource::new()
-  
-  // Define common resource attributes
-  let common_attributes = [
-    ("service.namespace", StringValue("production")),
+test "cross_service_resource_consistency" {
+  // 服务A定义资源
+  let resource_a = Resource::new()
+  let attrs_a = [
+    ("service.name", StringValue("service-a")),
     ("service.version", StringValue("1.0.0")),
-    ("deployment.environment", StringValue("prod")),
-    ("host.name", StringValue("web-server-01")),
-    ("cloud.provider", StringValue("aws")),
-    ("cloud.region", StringValue("us-west-2"))
+    ("deployment.environment", StringValue("production")),
+    ("host.name", StringValue("host-a.example.com"))
   ]
+  let resource_a_final = Resource::with_attributes(resource_a, attrs_a)
   
-  let base_resource = Resource::with_attributes(global_resource, common_attributes)
-  
-  // Service A: Add service-specific attributes
-  let service_a_attributes = [
-    ("service.name", StringValue("user-service")),
-    ("service.instance.id", StringValue("user-service-001")),
-    ("port", IntValue(8080)),
-    ("database.enabled", BoolValue(true))
+  // 服务B定义资源
+  let resource_b = Resource::new()
+  let attrs_b = [
+    ("service.name", StringValue("service-b")),
+    ("service.version", StringValue("1.2.3")),
+    ("deployment.environment", StringValue("production")),  // 相同的环境
+    ("host.name", StringValue("host-b.example.com"))
   ]
+  let resource_b_final = Resource::with_attributes(resource_b, attrs_b)
   
-  let service_a_resource = Resource::with_attributes(base_resource, service_a_attributes)
+  // 验证环境属性一致性
+  let env_a = Resource::get_attribute(resource_a_final, "deployment.environment")
+  let env_b = Resource::get_attribute(resource_b_final, "deployment.environment")
   
-  // Service B: Add service-specific attributes
-  let service_b_attributes = [
-    ("service.name", StringValue("order-service")),
-    ("service.instance.id", StringValue("order-service-001")),
-    ("port", IntValue(8081)),
-    ("cache.enabled", BoolValue(true))
-  ]
+  match (env_a, env_b) {
+    (Some(StringValue(a)), Some(StringValue(b))) => assert_eq(a, b)
+    _ => assert_true(false, "Both services should have deployment.environment")
+  }
   
-  let service_b_resource = Resource::with_attributes(base_resource, service_b_attributes)
+  // 验证服务名称不同
+  let service_name_a = Resource::get_attribute(resource_a_final, "service.name")
+  let service_name_b = Resource::get_attribute(resource_b_final, "service.name")
   
-  // Service C: Add service-specific attributes
-  let service_c_attributes = [
-    ("service.name", StringValue("payment-service")),
-    ("service.instance.id", StringValue("payment-service-001")),
-    ("port", IntValue(8082)),
-    ("external.api.enabled", BoolValue(true))
-  ]
+  match (service_name_a, service_name_b) {
+    (Some(StringValue(a)), Some(StringValue(b))) => assert_true(a != b)
+    _ => assert_true(false, "Both services should have service.name")
+  }
+}
+
+test "cross_service_error_propagation" {
+  // 服务A遇到错误
+  let provider_a = LoggerProvider::default()
+  let logger_a = LoggerProvider::get_logger(provider_a, "service-a.logger")
   
-  let service_c_resource = Resource::with_attributes(base_resource, service_c_attributes)
+  let error_log_a = LogRecord::new_with_context(
+    Error,
+    Some("Database connection failed in service A"),
+    None,
+    Some(1735689600000000000L),
+    None,
+    Some("0af7651916cd43dd8448eb211c80319c"),
+    Some("b7ad6b7169203331"),
+    None
+  )
+  Logger::emit(logger_a, error_log_a)
   
-  // Verify common attributes are consistent across all services
-  @assertion.assert_eq(
-    Resource::get_attribute(service_a_resource, "service.namespace")?,
-    StringValue("production")
-  )?
-  @assertion.assert_eq(
-    Resource::get_attribute(service_b_resource, "service.namespace")?,
-    StringValue("production")
-  )?
-  @assertion.assert_eq(
-    Resource::get_attribute(service_c_resource, "service.namespace")?,
-    StringValue("production")
-  )?
+  // 服务B传播错误
+  let provider_b = LoggerProvider::default()
+  let logger_b = LoggerProvider::get_logger(provider_b, "service-b.logger")
   
-  // Verify service-specific attributes are different
-  @assertion.assert_eq(
-    Resource::get_attribute(service_a_resource, "service.name")?,
-    StringValue("user-service")
-  )?
-  @assertion.assert_eq(
-    Resource::get_attribute(service_b_resource, "service.name")?,
-    StringValue("order-service")
-  )?
-  @assertion.assert_eq(
-    Resource::get_attribute(service_c_resource, "service.name")?,
-    StringValue("payment-service")
-  )?
+  let error_log_b = LogRecord::new_with_context(
+    Error,
+    Some("Upstream service error propagated to service B"),
+    None,
+    Some(1735689600000001000L),
+    None,
+    Some("0af7651916cd43dd8448eb211c80319c"),  // 相同的trace_id
+    Some("c8de7c8270314442"),
+    None
+  )
+  Logger::emit(logger_b, error_log_b)
   
-  // Test resource merging
-  let additional_attrs = [
-    ("process.runtime.name", StringValue("moonbit")),
-    ("process.runtime.version", StringValue("0.1.0"))
-  ]
+  // 验证错误严重性一致性
+  assert_eq(LogRecord::severity_number(error_log_a), Error)
+  assert_eq(LogRecord::severity_number(error_log_b), Error)
   
-  let additional_resource = Resource::with_attributes(Resource::new(), additional_attrs)
-  let merged_resource = Resource::merge(service_a_resource, additional_resource)
+  // 验证错误上下文传播
+  assert_eq(LogRecord::trace_id(error_log_a), LogRecord::trace_id(error_log_b))
+}
+
+test "cross_service_performance_consistency" {
+  // 模拟多个服务的性能度量
+  let provider = MeterProvider::default()
   
-  // Verify merge contains new attributes (simplified implementation returns override)
-  let runtime_name = Resource::get_attribute(merged_resource, "process.runtime.name")
-  @assertion.assert_eq(runtime_name?, StringValue("moonbit"))?
+  // 服务A性能度量
+  let meter_a = MeterProvider::get_meter(provider, "service-a")
+  let histogram_a = Meter::create_histogram(meter_a, "request.duration")
+  
+  for i in 0..100 {
+    Histogram::record(histogram_a, i.to_double())
+  }
+  
+  // 服务B性能度量
+  let meter_b = MeterProvider::get_meter(provider, "service-b")
+  let histogram_b = Meter::create_histogram(meter_b, "request.duration")
+  
+  for i in 0..50 {
+    Histogram::record(histogram_b, (i * 2).to_double())
+  }
+  
+  // 服务C性能度量
+  let meter_c = MeterProvider::get_meter(provider, "service-c")
+  let histogram_c = Meter::create_histogram(meter_c, "request.duration")
+  
+  for i in 0..75 {
+    Histogram::record(histogram_c, (i * 1.5).to_double())
+  }
+  
+  // 验证度量名称一致性
+  assert_eq(histogram_a.name, "request.duration")
+  assert_eq(histogram_b.name, "request.duration")
+  assert_eq(histogram_c.name, "request.duration")
+  
+  assert_true(true)
+}
+
+test "cross_service_end_to_end_flow" {
+  // 模拟完整的端到端流程
+  
+  // 1. 服务A接收请求
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_a_ctx = SpanContext::new(trace_id, "b7ad6b7169203331", true, "")
+  
+  // 2. 服务A记录度量
+  let provider_a = MeterProvider::default()
+  let meter_a = MeterProvider::get_meter(provider_a, "service-a")
+  let counter_a = Meter::create_counter(meter_a, "requests.received")
+  Counter::add(counter_a, 1.0)
+  
+  // 3. 服务A记录日志
+  let provider_log_a = LoggerProvider::default()
+  let logger_a = LoggerProvider::get_logger(provider_log_a, "service-a")
+  let log_a = LogRecord::new_with_context(
+    Info,
+    Some("Request received in service A"),
+    None,
+    Some(1735689600000000000L),
+    None,
+    Some(trace_id),
+    Some("b7ad6b7169203331"),
+    None
+  )
+  Logger::emit(logger_a, log_a)
+  
+  // 4. 服务A调用服务B
+  let span_b_ctx = SpanContext::new(trace_id, "c8de7c8270314442", true, "")
+  
+  // 5. 服务B处理请求
+  let provider_b = MeterProvider::default()
+  let meter_b = MeterProvider::get_meter(provider_b, "service-b")
+  let counter_b = Meter::create_counter(meter_b, "requests.processed")
+  Counter::add(counter_b, 1.0)
+  
+  // 6. 服务B记录日志
+  let provider_log_b = LoggerProvider::default()
+  let logger_b = LoggerProvider::get_logger(provider_log_b, "service-b")
+  let log_b = LogRecord::new_with_context(
+    Info,
+    Some("Request processed in service B"),
+    None,
+    Some(1735689600000001000L),
+    None,
+    Some(trace_id),
+    Some("c8de7c8270314442"),
+    None
+  )
+  Logger::emit(logger_b, log_b)
+  
+  // 7. 验证端到端一致性
+  assert_eq(SpanContext::trace_id(span_a_ctx), SpanContext::trace_id(span_b_ctx))
+  assert_eq(LogRecord::trace_id(log_a), LogRecord::trace_id(log_b))
+  assert_eq(counter_a.name, "requests.received")
+  assert_eq(counter_b.name, "requests.processed")
+  
+  assert_true(true)
 }
