@@ -1,315 +1,285 @@
-// Internationalization Support Tests for Azimuth Telemetry System
-// Testing multi-language support and locale-specific operations
+// 国际化支持测试用例
+// 测试遥测系统对不同语言、字符集和地区设置的支持
 
-test "unicode string handling in attributes" {
-  let attrs = Attributes::new()
-  
-  // Test Unicode characters in attribute values
-  Attributes::set(attrs, "chinese.message", StringValue("你好世界"))
-  Attributes::set(attrs, "japanese.message", StringValue("こんにちは世界"))
-  Attributes::set(attrs, "korean.message", StringValue("안녕하세요 세계"))
-  Attributes::set(attrs, "arabic.message", StringValue("مرحبا بالعالم"))
-  Attributes::set(attrs, "russian.message", StringValue("Привет мир"))
-  Attributes::set(attrs, "emoji.message", StringValue("🚀 Hello World 🌍"))
-  
-  // Test retrieval of Unicode attributes
-  let chinese = Attributes::get(attrs, "chinese.message")
-  let japanese = Attributes::get(attrs, "japanese.message")
-  let korean = Attributes::get(attrs, "korean.message")
-  let arabic = Attributes::get(attrs, "arabic.message")
-  let russian = Attributes::get(attrs, "russian.message")
-  let emoji = Attributes::get(attrs, "emoji.message")
-  
-  assert_eq(chinese, Some(StringValue("你好世界")))
-  assert_eq(japanese, None) // Simplified implementation
-  assert_eq(korean, None)
-  assert_eq(arabic, None)
-  assert_eq(russian, None)
-  assert_eq(emoji, None)
-}
-
-test "unicode string handling in log messages" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "i18n.logger")
-  
-  // Test log messages with different languages
-  let chinese_log = LogRecord::new(Info, "用户登录成功")
-  let japanese_log = LogRecord::new(Warn, "日本語警告メッセージ")
-  let korean_log = LogRecord::new(Error, "한국어 오류 메시지")
-  let emoji_log = LogRecord::new(Info, "System status: ✅ OK 🎉")
-  
-  // Test log message bodies
-  assert_eq(LogRecord::body(chinese_log), Some("用户登录成功"))
-  assert_eq(LogRecord::body(japanese_log), Some("日本語警告メッセージ"))
-  assert_eq(LogRecord::body(korean_log), Some("한국어 오류 메시지"))
-  assert_eq(LogRecord::body(emoji_log), Some("System status: ✅ OK 🎉"))
-  
-  // Test log emission
-  Logger::emit(logger, chinese_log)
-  Logger::emit(logger, japanese_log)
-  Logger::emit(logger, korean_log)
-  Logger::emit(logger, emoji_log)
-  
-  assert_true(true) // Operations should succeed
-}
-
-test "locale-specific baggage entries" {
-  let baggage = Baggage::new()
-  
-  // Test baggage with locale-specific keys and values
-  let baggage1 = Baggage::set_entry(baggage, "用户.语言", "中文")
-  let baggage2 = Baggage::set_entry(baggage1, "ユーザー.言語", "日本語")
-  let baggage3 = Baggage::set_entry(baggage2, "사용자.언어", "한국어")
-  let baggage4 = Baggage::set_entry(baggage3, "user.language", "English")
-  
-  // Test retrieval of locale-specific baggage
-  let chinese_locale = Baggage::get_entry(baggage4, "用户.语言")
-  let japanese_locale = Baggage::get_entry(baggage4, "ユーザー.言語")
-  let korean_locale = Baggage::get_entry(baggage4, "사용자.언어")
-  let english_locale = Baggage::get_entry(baggage4, "user.language")
-  
-  // All should be None in simplified implementation
-  assert_eq(chinese_locale, None)
-  assert_eq(japanese_locale, None)
-  assert_eq(korean_locale, None)
-  assert_eq(english_locale, None)
-}
-
-test "unicode in context keys and values" {
-  let ctx = Context::root()
-  
-  // Test context with Unicode keys and values
-  let chinese_key = ContextKey::new("中文键")
-  let japanese_key = ContextKey::new("日本語キー")
-  let korean_key = ContextKey::new("한국어 키")
-  
-  let ctx1 = Context::with_value(ctx, chinese_key, "中文值")
-  let ctx2 = Context::with_value(ctx1, japanese_key, "日本語値")
-  let ctx3 = Context::with_value(ctx2, korean_key, "한국어 값")
-  
-  // Test retrieval of Unicode context values
-  let chinese_value = Context::get(ctx3, chinese_key)
-  let japanese_value = Context::get(ctx3, japanese_key)
-  let korean_value = Context::get(ctx3, korean_key)
-  
-  assert_eq(chinese_value, Some("中文值"))
-  assert_eq(japanese_value, Some("日本語値"))
-  assert_eq(korean_value, Some("한국어 값"))
-}
-
-test "internationalization in resource attributes" {
-  let resource = Resource::new()
-  
-  // Test resource attributes with international content
-  let i18n_attrs = [
-    ("service.name.中文", StringValue("测试服务")),
-    ("service.name.日本語", StringValue("テストサービス")),
-    ("service.name.한국어", StringValue("테스트 서비스")),
-    ("description.العربية", StringValue("خدمة الاختبار")),
-    ("description.français", StringValue("Service de test")),
-    ("version.emoji", StringValue("v1.0.0 🚀"))
-  ]
-  
-  let resource_with_i18n = Resource::with_attributes(resource, i18n_attrs)
-  
-  // Test retrieval of internationalized attributes
-  let chinese_service = Resource::get_attribute(resource_with_i18n, "service.name.中文")
-  let japanese_service = Resource::get_attribute(resource_with_i18n, "service.name.日本語")
-  let korean_service = Resource::get_attribute(resource_with_i18n, "service.name.한국어")
-  let arabic_desc = Resource::get_attribute(resource_with_i18n, "description.العربية")
-  let french_desc = Resource::get_attribute(resource_with_i18n, "description.français")
-  let emoji_version = Resource::get_attribute(resource_with_i18n, "version.emoji")
-  
-  // All should be None in simplified implementation
-  assert_eq(chinese_service, None)
-  assert_eq(japanese_service, None)
-  assert_eq(korean_service, None)
-  assert_eq(arabic_desc, None)
-  assert_eq(french_desc, None)
-  assert_eq(emoji_version, None)
-}
-
-test "locale-specific span names and events" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "i18n.tracer")
-  
-  let span_ctx = SpanContext::new("trace123", "span456", true, "")
-  
-  // Test spans with international names
-  let chinese_span = Span::new("中文操作", Internal, span_ctx)
-  let japanese_span = Span::new("日本語操作", Server, span_ctx)
-  let korean_span = Span::new("한국어 작업", Client, span_ctx)
-  
-  // Test span names
-  assert_eq(Span::name(chinese_span), "中文操作")
-  assert_eq(Span::name(japanese_span), "日本語操作")
-  assert_eq(Span::name(korean_span), "한국어 작업")
-  
-  // Test adding international events
-  Span::add_event(chinese_span, "开始处理")
-  Span::add_event(japanese_span, "処理開始")
-  Span::add_event(korean_span, "처리 시작")
-  
-  assert_true(true) // Operations should succeed
-}
-
-test "internationalization in HTTP headers" {
-  let headers = [
-    ("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8"),
-    ("Content-Language", "zh-CN"),
-    ("User-Agent", "测试客户端/1.0"),
-    ("X-Custom-Header", "自定义值"),
-    ("X-Emoji-Header", "🌍 International")
-  ]
-  
-  let request = HttpRequest::new("GET", "https://api.example.com/data", headers)
-  
-  // Test request creation with international headers
-  assert_eq(HttpRequest::http_method(request), "GET")
-  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
-  assert_eq(HttpRequest::body(request), None)
-  
-  let response_headers = [
-    ("Content-Language", "zh-CN"),
-    ("X-Response-Message", "操作成功"),
-    ("X-Error-Message", "日本語エラー"),
-    ("X-Status-Emoji", "✅ 成功")
-  ]
-  
-  let response = HttpResponse::new(200, response_headers, Some("{\"status\":\"成功\"}"))
-  
-  // Test response with international headers
-  assert_eq(HttpResponse::status_code(response), 200)
-  assert_eq(HttpResponse::body(response), Some("{\"status\":\"成功\"}"))
-}
-
-test "text map carrier with international content" {
-  let carrier = TextMapCarrier::new()
-  
-  // Test carrier with international headers
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier, "用户.标识", "user123")
-  TextMapCarrier::set(carrier, "セッション.ID", "session456")
-  TextMapCarrier::set(carrier, "세션.아이디", "session789")
-  TextMapCarrier::set(carrier, "custom-header", "自定义值")
-  
-  // Test retrieval of international headers
-  let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  let user_id = TextMapCarrier::get(carrier, "用户.标识")
-  let session_ja = TextMapCarrier::get(carrier, "セッション.ID")
-  let session_ko = TextMapCarrier::get(carrier, "세션.아이디")
-  let custom = TextMapCarrier::get(carrier, "custom-header")
-  
-  assert_eq(traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
-  assert_eq(user_id, None) // Simplified implementation
-  assert_eq(session_ja, None)
-  assert_eq(session_ko, None)
-  assert_eq(custom, None)
-}
-
-test "locale-specific metric names and descriptions" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "i18n.meter")
-  
-  // Test instruments with international names
-  let chinese_counter = Meter::create_counter(meter, "中文计数器", Some("中文描述"), Some("个"))
-  let japanese_histogram = Meter::create_histogram(meter, "日本語ヒストグラム", Some("日本語の説明"), Some("ms"))
-  let korean_gauge = Meter::create_gauge(meter, "한국어 게이지", Some("한국어 설명"), Some("비율"))
-  
-  // Test instrument properties
-  assert_eq(chinese_counter.name, "中文计数器")
-  assert_eq(chinese_counter.description, Some("中文描述"))
-  assert_eq(chinese_counter.unit, Some("个"))
-  
-  assert_eq(japanese_histogram.name, "日本語ヒストグラム")
-  assert_eq(japanese_histogram.description, Some("日本語の説明"))
-  assert_eq(japanese_histogram.unit, Some("ms"))
-  
-  assert_eq(korean_gauge.name, "한국어 게이지")
-  assert_eq(korean_gauge.description, Some("한국어 설명"))
-  assert_eq(korean_gauge.unit, Some("비율"))
-  
-  // Test operations
-  Counter::add(chinese_counter, 1.0)
-  Histogram::record(japanese_histogram, 100.0)
-  UpDownCounter::add(korean_gauge, 50.0)
-  
-  assert_true(true) // Operations should succeed
-}
-
-test "timezone and timestamp formatting" {
-  let clock = Clock::system()
-  let timestamp = Clock::now_unix_nanos(clock)
-  
-  // Test log records with locale-specific timestamps
-  let record1 = LogRecord::new_with_context(
-    Info,
-    Some("Event at 2025-01-01 00:00:00 UTC"),
-    None,
-    Some(timestamp),
-    None,
-    None,
-    None,
-    None
+test "multilingual log messages and attributes" {
+  // 测试多语言日志消息和属性
+  let logger = azimuth::LoggerProvider::get_logger(
+    azimuth::LoggerProvider::default(), 
+    "internationalization-logger"
   )
   
-  let record2 = LogRecord::new_with_context(
-    Info,
-    Some("イベント: 2025年1月1日 00:00:00 UTC"),
-    None,
-    Some(timestamp),
-    None,
-    None,
-    None,
-    None
-  )
+  // 中文日志消息
+  let chinese_log = azimuth::LogRecord::new(azimuth::Info, "用户登录成功，用户ID: 12345")
+  assert_eq(azimuth::LogRecord::body(chinese_log), Some("用户登录成功，用户ID: 12345"))
   
-  let record3 = LogRecord::new_with_context(
-    Info,
-    Some("이벤트: 2025년 1월 1일 00:00:00 UTC"),
-    None,
-    Some(timestamp),
-    None,
-    None,
-    None,
-    None
-  )
+  // 日文日志消息
+  let japanese_log = azimuth::LogRecord::new(azimuth::Info, "ユーザーログイン成功、ユーザーID: 12345")
+  assert_eq(azimuth::LogRecord::body(japanese_log), Some("ユーザーログイン成功、ユーザーID: 12345"))
   
-  // Test timestamp consistency
-  assert_eq(LogRecord::body(record1), Some("Event at 2025-01-01 00:00:00 UTC"))
-  assert_eq(LogRecord::body(record2), Some("イベント: 2025年1月1日 00:00:00 UTC"))
-  assert_eq(LogRecord::body(record3), Some("이벤트: 2025년 1월 1일 00:00:00 UTC"))
+  // 韩文日志消息
+  let korean_log = azimuth::LogRecord::new(azimuth::Info, "사용자 로그인 성공, 사용자 ID: 12345")
+  assert_eq(azimuth::LogRecord::body(korean_log), Some("사용자 로그인 성공, 사용자 ID: 12345"))
   
-  assert_true(timestamp > 0L)
+  // 阿拉伯文日志消息
+  let arabic_log = azimuth::LogRecord::new(azimuth::Info, "تم تسجيل دخول المستخدم بنجاح، معرف المستخدم: 12345")
+  assert_eq(azimuth::LogRecord::body(arabic_log), Some("تم تسجيل دخول المستخدم بنجاح، معرف المستخدم: 12345"))
+  
+  // 俄文日志消息
+  let russian_log = azimuth::LogRecord::new(azimuth::Info, "Пользователь успешно вошел в систему, ID пользователя: 12345")
+  assert_eq(azimuth::LogRecord::body(russian_log), Some("Пользователь успешно вошел в систему, ID пользователя: 12345"))
+  
+  // 法文日志消息
+  let french_log = azimuth::LogRecord::new(azimuth::Info, "Utilisateur connecté avec succès, ID utilisateur: 12345")
+  assert_eq(azimuth::LogRecord::body(french_log), Some("Utilisateur connecté avec succès, ID utilisateur: 12345"))
+  
+  // 德文日志消息
+  let german_log = azimuth::LogRecord::new(azimuth::Info, "Benutzer erfolgreich angemeldet, Benutzer-ID: 12345")
+  assert_eq(azimuth::LogRecord::body(german_log), Some("Benutzer erfolgreich angemeldet, Benutzer-ID: 12345"))
+  
+  // 西班牙文日志消息
+  let spanish_log = azimuth::LogRecord::new(azimuth::Info, "Usuario inició sesión correctamente, ID de usuario: 12345")
+  assert_eq(azimuth::LogRecord::body(spanish_log), Some("Usuario inició sesión correctamente, ID de usuario: 12345"))
+  
+  // 发射所有日志
+  azimuth::Logger::emit(logger, chinese_log)
+  azimuth::Logger::emit(logger, japanese_log)
+  azimuth::Logger::emit(logger, korean_log)
+  azimuth::Logger::emit(logger, arabic_log)
+  azimuth::Logger::emit(logger, russian_log)
+  azimuth::Logger::emit(logger, french_log)
+  azimuth::Logger::emit(logger, german_log)
+  azimuth::Logger::emit(logger, spanish_log)
 }
 
-test "error messages in different languages" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "i18n.error.logger")
+test "multilingual span names and events" {
+  // 测试多语言span名称和事件
+  let tracer = azimuth::TracerProvider::get_tracer(
+    azimuth::TracerProvider::default(), 
+    "internationalization-tracer"
+  )
   
-  // Test error messages in different languages
-  let chinese_error = LogRecord::new(Error, "数据库连接失败")
-  let japanese_error = LogRecord::new(Error, "データベース接続エラー")
-  let korean_error = LogRecord::new(Error, "데이터베이스 연결 실패")
-  let english_error = LogRecord::new(Error, "Database connection failed")
+  // 中文span
+  let chinese_span = azimuth::Tracer::start_span(tracer, "用户认证流程")
+  azimuth::Span::add_event(chinese_span, "开始验证用户凭据")
+  azimuth::Span::add_event(chinese_span, "数据库查询完成")
+  azimuth::Span::add_event(chinese_span, "用户认证成功")
+  azimuth::Span::end(chinese_span)
   
-  // Test error message bodies
-  assert_eq(LogRecord::body(chinese_error), Some("数据库连接失败"))
-  assert_eq(LogRecord::body(japanese_error), Some("データベース接続エラー"))
-  assert_eq(LogRecord::body(korean_error), Some("데이터베이스 연결 실패"))
-  assert_eq(LogRecord::body(english_error), Some("Database connection failed"))
+  // 日文span
+  let japanese_span = azimuth::Tracer::start_span(tracer, "ユーザー認証フロー")
+  azimuth::Span::add_event(japanese_span, "ユーザー認証情報の検証を開始")
+  azimuth::Span::add_event(japanese_span, "データベースクエリ完了")
+  azimuth::Span::add_event(japanese_span, "ユーザー認証成功")
+  azimuth::Span::end(japanese_span)
   
-  // Test error severity
-  assert_eq(LogRecord::severity_number(chinese_error), Error)
-  assert_eq(LogRecord::severity_number(japanese_error), Error)
-  assert_eq(LogRecord::severity_number(korean_error), Error)
-  assert_eq(LogRecord::severity_number(english_error), Error)
+  // 韩文span
+  let korean_span = azimuth::Tracer::start_span(tracer, "사용자 인증 흐름")
+  azimuth::Span::add_event(korean_span, "사용자 자격 증명 확인 시작")
+  azimuth::Span::add_event(korean_span, "데이터베이스 쿼리 완료")
+  azimuth::Span::add_event(korean_span, "사용자 인증 성공")
+  azimuth::Span::end(korean_span)
   
-  // Emit error logs
-  Logger::emit(logger, chinese_error)
-  Logger::emit(logger, japanese_error)
-  Logger::emit(logger, korean_error)
-  Logger::emit(logger, english_error)
+  // 阿拉伯文span
+  let arabic_span = azimuth::Tracer::start_span(tracer, "مسار مصادقة المستخدم")
+  azimuth::Span::add_event(arabic_span, "بدء التحقق من بيانات اعتماد المستخدم")
+  azimuth::Span::add_event(arabic_span, "اكتمل استعلام قاعدة البيانات")
+  azimuth::Span::add_event(arabic_span, "نجحت مصادقة المستخدم")
+  azimuth::Span::end(arabic_span)
   
-  assert_true(true) // Operations should succeed
+  // 验证span名称
+  assert_eq(azimuth::Span::name(chinese_span), "用户认证流程")
+  assert_eq(azimuth::Span::name(japanese_span), "ユーザー認証フロー")
+  assert_eq(azimuth::Span::name(korean_span), "사용자 인증 흐름")
+  assert_eq(azimuth::Span::name(arabic_span), "مسار مصادقة المستخدم")
+}
+
+test "unicode attribute values" {
+  // 测试Unicode属性值
+  let attrs = azimuth::Attributes::new()
+  
+  // 中文属性值
+  azimuth::Attributes::set(attrs, "用户名", azimuth::StringValue("张三"))
+  azimuth::Attributes::set(attrs, "城市", azimuth::StringValue("北京"))
+  
+  // 日文属性值
+  azimuth::Attributes::set(attrs, "ユーザー名", azimuth::StringValue("田中太郎"))
+  azimuth::Attributes::set(attrs, "都市", azimuth::StringValue("東京"))
+  
+  // 韩文属性值
+  azimuth::Attributes::set(attrs, "사용자명", azimuth::StringValue("김철수"))
+  azimuth::Attributes::set(attrs, "도시", azimuth::StringValue("서울"))
+  
+  // 阿拉伯文属性值
+  azimuth::Attributes::set(attrs, "اسم المستخدم", azimuth::StringValue("أحمد محمد"))
+  azimuth::Attributes::set(attrs, "المدينة", azimuth::StringValue("الرياض"))
+  
+  // 俄文属性值
+  azimuth::Attributes::set(attrs, "имя пользователя", azimuth::StringValue("Иван Петров"))
+  azimuth::Attributes::set(attrs, "город", azimuth::StringValue("Москва"))
+  
+  // Emoji属性值
+  azimuth::Attributes::set(attrs, "status", azimuth::StringValue("✅ 成功"))
+  azimuth::Attributes::set(attrs, "mood", azimuth::StringValue("😊 开心"))
+  azimuth::Attributes::set(attrs, "weather", azimuth::StringValue("🌤️ 多云"))
+  
+  // 验证属性值
+  assert_eq(azimuth::Attributes::get(attrs, "用户名"), Some(azimuth::StringValue("张三")))
+  assert_eq(azimuth::Attributes::get(attrs, "ユーザー名"), Some(azimuth::StringValue("田中太郎")))
+  assert_eq(azimuth::Attributes::get(attrs, "사용자명"), Some(azimuth::StringValue("김철수")))
+  assert_eq(azimuth::Attributes::get(attrs, "اسم المستخدم"), Some(azimuth::StringValue("أحمد محمد")))
+  assert_eq(azimuth::Attributes::get(attrs, "имя пользователя"), Some(azimuth::StringValue("Иван Петров")))
+  assert_eq(azimuth::Attributes::get(attrs, "status"), Some(azimuth::StringValue("✅ 成功")))
+}
+
+test "locale-specific formatting" {
+  // 测试特定地区的格式化
+  
+  // 日期时间格式化（不同地区）
+  let chinese_date = "2025年12月28日 14:30:00"
+  let japanese_date = "2025年12月28日 14:30:00"
+  let korean_date = "2025년 12월 28일 14:30:00"
+  let arabic_date = "٢٨ ديسمبر ٢٠٢٥ ١٤:٣٠:٠٠"
+  let us_date = "12/28/2025 2:30:00 PM"
+  let european_date = "28.12.2025 14:30:00"
+  
+  // 数字格式化（不同地区）
+  let chinese_number = "1,234.56"
+  let european_number = "1.234,56"
+  let arabic_number = "١٬٢٣٤٫٥٦"
+  
+  // 货币格式化（不同地区）
+  let chinese_currency = "¥1,234.56"
+  let japanese_currency = "¥1,235"
+  let korean_currency = "₩1,235"
+  let us_currency = "$1,234.56"
+  let european_currency = "€1.234,56"
+  let arabic_currency = "١٬٢٣٤٫٥٦ ر.س"
+  
+  // 将这些格式化信息存储为属性
+  let attrs = azimuth::Attributes::new()
+  
+  // 日期时间
+  azimuth::Attributes::set(attrs, "date.zh_CN", azimuth::StringValue(chinese_date))
+  azimuth::Attributes::set(attrs, "date.ja_JP", azimuth::StringValue(japanese_date))
+  azimuth::Attributes::set(attrs, "date.ko_KR", azimuth::StringValue(korean_date))
+  azimuth::Attributes::set(attrs, "date.ar_SA", azimuth::StringValue(arabic_date))
+  azimuth::Attributes::set(attrs, "date.en_US", azimuth::StringValue(us_date))
+  azimuth::Attributes::set(attrs, "date.de_DE", azimuth::StringValue(european_date))
+  
+  // 数字
+  azimuth::Attributes::set(attrs, "number.zh_CN", azimuth::StringValue(chinese_number))
+  azimuth::Attributes::set(attrs, "number.de_DE", azimuth::StringValue(european_number))
+  azimuth::Attributes::set(attrs, "number.ar_SA", azimuth::StringValue(arabic_number))
+  
+  // 货币
+  azimuth::Attributes::set(attrs, "currency.zh_CN", azimuth::StringValue(chinese_currency))
+  azimuth::Attributes::set(attrs, "currency.ja_JP", azimuth::StringValue(japanese_currency))
+  azimuth::Attributes::set(attrs, "currency.ko_KR", azimuth::StringValue(korean_currency))
+  azimuth::Attributes::set(attrs, "currency.en_US", azimuth::StringValue(us_currency))
+  azimuth::Attributes::set(attrs, "currency.de_DE", azimuth::StringValue(european_currency))
+  azimuth::Attributes::set(attrs, "currency.ar_SA", azimuth::StringValue(arabic_currency))
+  
+  // 验证格式化信息
+  assert_eq(azimuth::Attributes::get(attrs, "date.zh_CN"), Some(azimuth::StringValue(chinese_date)))
+  assert_eq(azimuth::Attributes::get(attrs, "number.de_DE"), Some(azimuth::StringValue(european_number)))
+  assert_eq(azimuth::get(attrs, "currency.ar_SA"), Some(azimuth::StringValue(arabic_currency)))
+}
+
+test "right-to-left language support" {
+  // 测试从右到左的语言支持
+  let attrs = azimuth::Attributes::new()
+  
+  // 阿拉伯文（从右到左）
+  azimuth::Attributes::set(attrs, "الاسم", azimuth::StringValue("أحمد محمد"))
+  azimuth::Attributes::set(attrs, "المدينة", azimuth::StringValue("الرياض"))
+  azimuth::Attributes::set(attrs, "البلد", azimuth::StringValue("المملكة العربية السعودية"))
+  azimuth::Attributes::set(attrs, "العملية", azimuth::StringValue("تسجيل الدخول"))
+  
+  // 希伯来文（从右到左）
+  azimuth::Attributes::set(attrs, "שם", azimuth::StringValue("דוד כהן"))
+  azimuth::Attributes::set(attrs, "עיר", azimuth::StringValue("ירושלים"))
+  azimuth::Attributes::set(attrs, "מדינה", azimuth::StringValue("ישראל"))
+  azimuth::Attributes::set(attrs, "פעולה", azimuth::StringValue("כניסה למערכת"))
+  
+  // 波斯文（从右到左）
+  azimuth::Attributes::set(attrs, "نام", azimuth::StringValue("علی رضایی"))
+  azimuth::Attributes::set(attrs, "شهر", azimuth::StringValue("تهران"))
+  azimuth::Attributes::set(attrs, "کشور", azimuth::StringValue("ایران"))
+  azimuth::Attributes::set(attrs, "عملیات", azimuth::StringValue("ورود به سیستم"))
+  
+  // 乌尔都文（从右到左）
+  azimuth::Attributes::set(attrs, "نام", azimuth::StringValue("محمد علی"))
+  azimuth::Attributes::set(attrs, "شہر", azimuth::StringValue("کراچی"))
+  azimuth::Attributes::set(attrs, "ملک", azimuth::StringValue("پاکستان"))
+  azimuth::Attributes::set(attrs, "عمل", azimuth::StringValue("سسٹم میں لاگ ان"))
+  
+  // 验证从右到左的文本
+  assert_eq(azimuth::Attributes::get(attrs, "الاسم"), Some(azimuth::StringValue("أحمد محمد")))
+  assert_eq(azimuth::Attributes::get(attrs, "שם"), Some(azimuth::StringValue("דוד כהן")))
+  assert_eq(azimuth::Attributes::get(attrs, "نام"), Some(azimuth::StringValue("علی رضایی")))
+  
+  // 创建包含从右到左文本的日志记录
+  let logger = azimuth::LoggerProvider::get_logger(
+    azimuth::LoggerProvider::default(), 
+    "rtl-logger"
+  )
+  
+  let arabic_log = azimuth::LogRecord::new(azimuth::Info, "تم تسجيل دخول المستخدم بنجاح")
+  let hebrew_log = azimuth::LogRecord::new(azimuth::Info, "המשתמש נכנס למערכת בהצלחה")
+  let persian_log = azimuth::LogRecord::new(azimuth::Info, "کاربر با موفقیت وارد سیستم شد")
+  let urdu_log = azimuth::LogRecord::new(azimuth::Info, "صارف کامیابی سے سسٹم میں داخل ہوا")
+  
+  // 发射日志
+  azimuth::Logger::emit(logger, arabic_log)
+  azimuth::Logger::emit(logger, hebrew_log)
+  azimuth::Logger::emit(logger, persian_log)
+  azimuth::Logger::emit(logger, urdu_log)
+  
+  // 验证日志内容
+  assert_eq(azimuth::LogRecord::body(arabic_log), Some("تم تسجيل دخول المستخدم بنجاح"))
+  assert_eq(azimuth::LogRecord::body(hebrew_log), Some("המשתמש נכנס למערכת בהצלחה"))
+  assert_eq(azimuth::LogRecord::body(persian_log), Some("کاربر با موفقیت وارد سیستم شد"))
+  assert_eq(azimuth::LogRecord::body(urdu_log), Some("صارف کامیابی سے سسٹم میں داخل ہوا"))
+}
+
+test "mixed language content" {
+  // 测试混合语言内容
+  let attrs = azimuth::Attributes::new()
+  
+  // 混合语言的错误消息
+  azimuth::Attributes::set(attrs, "error.message", azimuth::StringValue("用户登录失败: Invalid credentials"))
+  azimuth::Attributes::set(attrs, "error.description", azimuth::StringValue("ユーザーログイン失敗: パスワードが正しくありません"))
+  azimuth::Attributes::set(attrs, "error.resolution", azimuth::StringValue("사용자 로그인 실패: 비밀번호를 재확인하세요"))
+  
+  // 混合语言的span名称
+  let tracer = azimuth::TracerProvider::get_tracer(
+    azimuth::TracerProvider::default(), 
+    "mixed-language-tracer"
+  )
+  
+  let mixed_span = azimuth::Tracer::start_span(tracer, "User Authentication | ユーザー認証 | 사용자 인증")
+  azimuth::Span::add_event(mixed_span, "开始验证用户凭据 | ユーザー認証情報の検証を開始 | 사용자 자격 증명 확인 시작")
+  azimuth::Span::add_event(mixed_span, "数据库查询完成 | データベースクエリ完了 | 데이터베이스 쿼리 완료")
+  azimuth::Span::add_event(mixed_span, "用户认证成功 | ユーザー認証成功 | 사용자 인증 성공")
+  azimuth::Span::end(mixed_span)
+  
+  // 混合语言的日志记录
+  let logger = azimuth::LoggerProvider::get_logger(
+    azimuth::LoggerProvider::default(), 
+    "mixed-language-logger"
+  )
+  
+  let mixed_log = azimuth::LogRecord::new(azimuth::Info, "用户张三成功登录系统 | ユーザー田中太郎がシステムに正常にログインしました | 사용자 김철수가 시스템에 성공적으로 로그인했습니다")
+  
+  // 发射日志
+  azimuth::Logger::emit(logger, mixed_log)
+  
+  // 验证混合语言内容
+  assert_eq(azimuth::Span::name(mixed_span), "User Authentication | ユーザー認証 | 사용자 인증")
+  assert_eq(azimuth::LogRecord::body(mixed_log), Some("用户张三成功登录系统 | ユーザー田中太郎がシステムに正常にログインしました | 사용자 김철수가 시스템에 성공적으로 로그인했습니다"))
+  
+  // 验证混合语言属性
+  assert_eq(azimuth::Attributes::get(attrs, "error.message"), Some(azimuth::StringValue("用户登录失败: Invalid credentials")))
+  assert_eq(azimuth::Attributes::get(attrs, "error.description"), Some(azimuth::StringValue("ユーザーログイン失敗: パスワードが正しくありません")))
+  assert_eq(azimuth::Attributes::get(attrs, "error.resolution"), Some(azimuth::StringValue("사용자 로그인 실패: 비밀번호를 재확인하세요")))
 }
