@@ -9,7 +9,8 @@
   },
   "test": {
     "test": [
-      "basic_tests.mbt"
+      "basic_tests.mbt",
+      "advanced_quality_tests.mbt"
     ]
   }
 }

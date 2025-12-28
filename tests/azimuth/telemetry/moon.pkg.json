@@ -10,7 +10,7 @@
   },
   "test": {
     "test": [
-      "new_basic_tests.mbt"
+      "advanced_quality_test_suite.mbt"
     ]
   }
 }

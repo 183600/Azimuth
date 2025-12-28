@@ -776,6 +776,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "edge_case_tests.mbt": {
   },
+  "edge_case_enhanced_tests.mbt": {
+  },
   "edge_case_comprehensive_tests.mbt": {
   },
   "data_serialization_integrity_validation_test.mbt": {
@@ -1124,6 +1126,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_6174747269627574655f76616c75655f74797065735f746573742e6d6274_1, ["属性边界值和特殊值测试"]),
     2: (__test_6174747269627574655f76616c75655f74797065735f746573742e6d6274_2, ["属性数组操作和验证测试"]),
     3: (__test_6174747269627574655f76616c75655f74797065735f746573742e6d6274_3, ["属性值一致性验证测试"]),
+  },
+  "advanced_quality_test_suite.mbt": {
   },
   "advanced_integration_test.mbt": {
     0: (__test_616476616e6365645f696e746567726174696f6e5f746573742e6d6274_0, ["完整遥测流程集成测试"]),

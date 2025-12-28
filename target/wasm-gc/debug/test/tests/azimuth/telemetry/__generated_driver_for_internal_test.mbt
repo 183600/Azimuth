@@ -125,6 +125,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_656467655f636173655f74657374732e6d6274_2, ["configuration and initialization validation"]),
     3: (__test_656467655f636173655f74657374732e6d6274_3, ["span lifecycle edge cases"]),
   },
+  "edge_case_enhanced_tests.mbt": {
+    0: (__test_656467655f636173655f656e68616e6365645f74657374732e6d6274_0, ["attributes edge cases with special characters"]),
+    1: (__test_656467655f636173655f656e68616e6365645f74657374732e6d6274_1, ["span lifecycle management"]),
+    2: (__test_656467655f636173655f656e68616e6365645f74657374732e6d6274_2, ["context chain propagation"]),
+    3: (__test_656467655f636173655f656e68616e6365645f74657374732e6d6274_3, ["resource attribute merging"]),
+    4: (__test_656467655f636173655f656e68616e6365645f74657374732e6d6274_4, ["advanced metrics scenarios"]),
+    5: (__test_656467655f636173655f656e68616e6365645f74657374732e6d6274_5, ["comprehensive log record"]),
+    6: (__test_656467655f636173655f656e68616e6365645f74657374732e6d6274_6, ["http client request response cycle"]),
+    7: (__test_656467655f636173655f656e68616e6365645f74657374732e6d6274_7, ["system utilities integration"]),
+  },
   "edge_case_comprehensive_tests.mbt": {
     0: (__test_656467655f636173655f636f6d70726568656e736976655f74657374732e6d6274_0, ["severity number enumeration values"]),
     1: (__test_656467655f636173655f636f6d70726568656e736976655f74657374732e6d6274_1, ["span kind enumeration values"]),
@@ -178,6 +188,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f636f72655f656e68616e6365645f74657374732e6d6274_7, ["propagation and baggage functionality"]),
     8: (__test_617a696d7574685f636f72655f656e68616e6365645f74657374732e6d6274_8, ["resource management"]),
     9: (__test_617a696d7574685f636f72655f656e68616e6365645f74657374732e6d6274_9, ["http client functionality"]),
+  },
+  "advanced_quality_test_suite.mbt": {
+    0: (__test_616476616e6365645f7175616c6974795f746573745f73756974652e6d6274_0, ["time series temporal operations"]),
+    1: (__test_616476616e6365645f7175616c6974795f746573745f73756974652e6d6274_1, ["batch log processing efficiency"]),
+    2: (__test_616476616e6365645f7175616c6974795f746573745f73756974652e6d6274_2, ["data integrity validation across operations"]),
+    3: (__test_616476616e6365645f7175616c6974795f746573745f73756974652e6d6274_3, ["memory management and resource cleanup"]),
+    4: (__test_616476616e6365645f7175616c6974795f746573745f73756974652e6d6274_4, ["dynamic configuration management"]),
+    5: (__test_616476616e6365645f7175616c6974795f746573745f73756974652e6d6274_5, ["error boundary and resilience patterns"]),
+    6: (__test_616476616e6365645f7175616c6974795f746573745f73756974652e6d6274_6, ["performance benchmark operations"]),
+    7: (__test_616476616e6365645f7175616c6974795f746573745f73756974652e6d6274_7, ["high concurrency stress scenarios"]),
   },
   "advanced_coverage_tests.mbt": {
     0: (__test_616476616e6365645f636f7665726167655f74657374732e6d6274_0, ["error handling with invalid span contexts"]),
