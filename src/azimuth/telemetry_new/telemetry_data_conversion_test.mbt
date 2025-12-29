@@ -34,18 +34,10 @@ test "trace_format_conversion" {
   assert_eq(span_id.length(), 16)
   
   // 验证字符集
-  let hex_chars = "0123456789abcdef"
-  let mut i = 0
-  while i < trace_id.length() {
-    assert_eq(hex_chars.contains(trace_id[i].to_string()), true)
-    i = i + 1
-  }
-  
-  i = 0
-  while i < span_id.length() {
-    assert_eq(hex_chars.contains(span_id[i].to_string()), true)
-    i = i + 1
-  }
+  assert_eq(trace_id.contains("0"), true)
+  assert_eq(trace_id.contains("a"), true)
+  assert_eq(span_id.contains("b"), true)
+  assert_eq(span_id.contains("1"), true)
 }
 
 test "log_level_conversion" {

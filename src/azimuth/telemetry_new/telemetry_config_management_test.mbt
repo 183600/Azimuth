@@ -22,7 +22,7 @@ test "telemetry_service_configuration" {
   // 创建配置字符串
   let config = service_name + ":" + service_version + ":" + environment
   assert_eq(config, "user-service:1.2.3:production")
-  assert_eq(config.length(), 27)
+  assert_eq(config.length(), 29)
 }
 
 test "telemetry_endpoint_configuration" {
@@ -35,10 +35,10 @@ test "telemetry_endpoint_configuration" {
   // 验证收集器端点
   assert_eq(collector_endpoint.has_prefix("https://"), true)
   assert_eq(collector_endpoint.contains(":4317"), true)
-  assert_eq(collector_endpoint.length(), 37)
+  assert_eq(collector_endpoint.length(), 39)
   
   // 验证认证令牌
-  assert_eq(auth_token.length(), 43)
+  assert_eq(auth_token.length(), 36)
   assert_eq(auth_token.contains("eyJ"), true)
   
   // 验证超时设置

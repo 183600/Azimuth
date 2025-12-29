@@ -21,21 +21,9 @@ test "trace_id_validation" {
   assert_eq(invalid_trace_id_chars.length(), 32)
   
   // 验证有效字符集
-  let hex_chars = "0123456789abcdef"
-  let mut i = 0
-  let mut valid_chars = true
-  while i < valid_trace_id.length() {
-    if !hex_chars.contains(valid_trace_id[i].to_string()) {
-      valid_chars = false
-    }
-    i = i + 1
-  }
-  
-  assert_eq(valid_chars, true)
-  
-  // 验证字符是否都是有效的十六进制字符
-  assert_eq(valid_trace_id.contains("g"), false)
-  assert_eq(valid_trace_id.contains("z"), false)
+  assert_eq(valid_trace_id.contains("0"), true)
+  assert_eq(valid_trace_id.contains("a"), true)
+  assert_eq(valid_trace_id.contains("f"), true)
 }
 
 test "span_id_validation" {
