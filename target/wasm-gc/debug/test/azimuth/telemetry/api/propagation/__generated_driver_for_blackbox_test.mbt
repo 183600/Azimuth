@@ -101,9 +101,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     10: (__test_70726f7061676174696f6e5f62617369635f746573742e6d6274_10, ["propagation_integration_with_context_and_baggage"]),
   },
   "propagation_advanced_test.mbt": {
-    0: (__test_70726f7061676174696f6e5f616476616e6365645f746573742e6d6274_0, ["composite_propagator_multiple_injectors"]),
+    0: (__test_70726f7061676174696f6e5f616476616e6365645f746573742e6d6274_0, ["composite_propagator_multiple_injections"]),
     1: (__test_70726f7061676174696f6e5f616476616e6365645f746573742e6d6274_1, ["map_carrier_complex_operations"]),
-    2: (__test_70726f7061676174696f6e5f616476616e6365645f746573742e6d6274_2, ["propagation_edge_cases"]),
   },
   "propagation.mbt": {
   },

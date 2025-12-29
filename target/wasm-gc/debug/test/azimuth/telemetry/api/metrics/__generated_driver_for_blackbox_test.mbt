@@ -61,6 +61,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     0: (__test_6d6574726963735f746573742e6d6274_0, ["meter_and_instruments"]),
     1: (__test_6d6574726963735f746573742e6d6274_1, ["measurement_with_various_attributes"]),
   },
+  "metrics_performance_test.mbt": {
+    0: (__test_6d6574726963735f706572666f726d616e63655f746573742e6d6274_0, ["metrics_high_frequency_operations"]),
+    1: (__test_6d6574726963735f706572666f726d616e63655f746573742e6d6274_1, ["metrics_memory_allocation_patterns"]),
+    2: (__test_6d6574726963735f706572666f726d616e63655f746573742e6d6274_2, ["metrics_complex_attributes_performance"]),
+    3: (__test_6d6574726963735f706572666f726d616e63655f746573742e6d6274_3, ["metrics_concurrent_operations_safety"]),
+    4: (__test_6d6574726963735f706572666f726d616e63655f746573742e6d6274_4, ["metrics_resource_cleanup"]),
+    5: (__test_6d6574726963735f706572666f726d616e63655f746573742e6d6274_5, ["metrics_measurement_precision"]),
+  },
   "metrics_edge_cases_test.mbt": {
     0: (__test_6d6574726963735f656467655f63617365735f746573742e6d6274_0, ["metrics_boundary_conditions"]),
     1: (__test_6d6574726963735f656467655f63617365735f746573742e6d6274_1, ["metrics_error_conditions"]),

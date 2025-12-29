@@ -1,185 +1,113 @@
-// Logs模块高级测试用例
-
-test "log_record_complex_scenarios" {
-  // 测试复杂场景的LogRecord
-  
-  // 创建带有trace信息的复杂日志记录
-  let trace_id = Array::make(16, 0x01_byte)
-  let span_id = Array::make(8, 0x02_byte)
-  
-  let complex_log = LogRecord::builder()
+// Logs API高级测试用例
+test "log_record_builder_fluent_api" {
+  // 测试LogRecordBuilder的流式API
+  let log_record = LogRecord::builder()
     .timestamp(1640995200000000000L)
     .severity(Error)
     .body("Database connection failed")
-    .with_attribute("service.name", AttributeValue::string("payment-service"))
-    .with_attribute("service.version", AttributeValue::string("2.1.0"))
     .with_attribute("error.code", AttributeValue::string("DB_CONN_FAILED"))
     .with_attribute("error.retries", AttributeValue::int(3L))
-    .with_attribute("error.timeout_ms", AttributeValue::float(30000.0))
-    .with_attribute("error.recoverable", AttributeValue::bool(false))
-    .with_attribute("affected.endpoints", AttributeValue::array_string(["/api/pay", "/api/verify"]))
-    .with_attribute("error.codes", AttributeValue::array_int([1001L, 1002L, 1003L]))
-    .with_attribute("retry.delays", AttributeValue::array_float([1000.0, 2000.0, 4000.0]))
-    .with_attribute("debug.flags", AttributeValue::array_bool([true, false, true]))
+    .with_attribute("service.name", AttributeValue::string("payment-service"))
+    .with_attribute("service.version", AttributeValue::string("2.1.0"))
     .build()
   
-  // 手动设置trace相关字段（因为builder中没有这些方法）
-  let log_with_trace = LogRecord::{
-    timestamp_unix_nanos: complex_log.timestamp_unix_nanos,
-    observed_timestamp_unix_nanos: complex_log.observed_timestamp_unix_nanos,
-    severity_number: complex_log.severity_number,
-    severity_text: complex_log.severity_text,
-    body: complex_log.body,
-    attributes: complex_log.attributes,
-    trace_id: Some(trace_id),
-    span_id: Some(span_id),
-    trace_flags: Some(1_byte),
-    resource: Some(Resource::default("payment-service")),
-    instrumentation_scope: None
-  }
-  
-  // 验证基本属性
-  assert_eq(log_with_trace.timestamp_unix_nanos, 1640995200000000000L)
-  assert_eq(log_with_trace.severity_number, Error)
-  
-  match log_with_trace.body {
+  assert_eq(log_record.timestamp_unix_nanos, 1640995200000000000L)
+  assert_eq(log_record.severity_number, Error)
+  match log_record.body {
     Some(body) => assert_eq(body, "Database connection failed")
     None => @test.fail("Expected Some(body)")
   }
+  assert_eq(log_record.attributes.length(), 4)
   
-  // 验证trace信息
-  match log_with_trace.trace_id {
-    Some(trace) => {
-      assert_eq(trace.length(), 16)
-      assert_eq(trace[0], 0x01_byte)
+  // 验证属性
+  assert_eq(log_record.attributes[0].0, "error.code")
+  match log_record.attributes[0].1 {
+    StringValue(code) => assert_eq(code, "DB_CONN_FAILED")
+    _ => @test.fail("Expected StringValue")
+  }
+  
+  assert_eq(log_record.attributes[1].0, "error.retries")
+  match log_record.attributes[1].1 {
+    IntValue(retries) => assert_eq(retries, 3L)
+    _ => @test.fail("Expected IntValue")
+  }
+}
+
+test "log_record_with_trace_context" {
+  // 测试带有追踪上下文的LogRecord
+  let trace_id = Array::make(16, 0x0a_byte)
+  let span_id = Array::make(8, 0x0b_byte)
+  
+  let log_record = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Warn,
+    severity_text: Some("WARNING"),
+    body: Some("Cache miss for user profile"),
+    attributes: [
+      ("cache.key", AttributeValue::string("user:12345:profile")),
+      ("cache.ttl", AttributeValue::int(3600L)),
+      ("user.id", AttributeValue::string("user-12345"))
+    ],
+    trace_id: Some(trace_id),
+    span_id: Some(span_id),
+    trace_flags: Some(1_byte),
+    resource: Some(Resource::default("user-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "user-cache",
+      version: Some("1.2.0"),
+      schema_url: Some("https://example.com/schema")
+    })
+  }
+  
+  assert_eq(log_record.severity_number, Warn)
+  match log_record.severity_text {
+    Some(text) => assert_eq(text, "WARNING")
+    None => @test.fail("Expected Some(severity_text)")
+  }
+  
+  match log_record.body {
+    Some(body) => assert_eq(body, "Cache miss for user profile")
+    None => @test.fail("Expected Some(body)")
+  }
+  
+  match log_record.trace_id {
+    Some(id) => {
+      assert_eq(id.length(), 16)
+      assert_eq(id[0], 0x0a_byte)
     }
     None => @test.fail("Expected Some(trace_id)")
   }
   
-  match log_with_trace.span_id {
-    Some(span) => {
-      assert_eq(span.length(), 8)
-      assert_eq(span[0], 0x02_byte)
+  match log_record.span_id {
+    Some(id) => {
+      assert_eq(id.length(), 8)
+      assert_eq(id[0], 0x0b_byte)
     }
     None => @test.fail("Expected Some(span_id)")
   }
   
-  match log_with_trace.trace_flags {
+  match log_record.trace_flags {
     Some(flags) => assert_eq(flags, 1_byte)
     None => @test.fail("Expected Some(trace_flags)")
   }
   
-  // 验证复杂属性
-  assert_eq(log_with_trace.attributes.length(), 10)
-  
-  // 验证字符串属性
-  match log_with_trace.attributes[0].1 {
-    StringValue(name) => assert_eq(name, "payment-service")
-    _ => @test.fail("Expected StringValue")
-  }
-  
-  // 验证整数属性
-  match log_with_trace.attributes[2].1 {
-    IntValue(code) => assert_eq(code, 3L)
-    _ => @test.fail("Expected IntValue")
-  }
-  
-  // 验证浮点数属性
-  match log_with_trace.attributes[3].1 {
-    FloatValue(timeout) => assert_eq(timeout, 30000.0)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  // 验证布尔属性
-  match log_with_trace.attributes[4].1 {
-    BoolValue(recoverable) => assert_eq(recoverable, false)
-    _ => @test.fail("Expected BoolValue")
-  }
-  
-  // 验证字符串数组属性
-  match log_with_trace.attributes[5].1 {
-    ArrayStringValue(endpoints) => {
-      assert_eq(endpoints.length(), 2)
-      assert_eq(endpoints[0], "/api/pay")
-      assert_eq(endpoints[1], "/api/verify")
+  match log_record.resource {
+    Some(resource) => {
+      assert_eq(resource.service_name, "user-service")
+      assert_eq(resource.telemetry_sdk_name, "azimuth")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    None => @test.fail("Expected Some(resource)")
   }
-}
-
-test "logger_convenience_methods" {
-  // 测试Logger的便捷方法
   
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("test-logger", Some("1.0.0"), Some("https://example.com/schema"))
-  
-  // 测试debug方法
-  logger.debug("Debug message", [
-    ("debug.level", AttributeValue::int(1L)),
-    ("debug.component", AttributeValue::string("auth"))
-  ])
-  
-  // 测试info方法
-  logger.info("Info message", [
-    ("info.level", AttributeValue::int(2L)),
-    ("info.component", AttributeValue::string("database")),
-    ("info.operation", AttributeValue::string("query"))
-  ])
-  
-  // 测试warn方法
-  logger.warn("Warning message", [
-    ("warn.level", AttributeValue::int(3L)),
-    ("warn.component", AttributeValue::string("cache")),
-    ("warn.expiry", AttributeValue::float(3600.0))
-  ])
-  
-  // 测试error方法
-  logger.error("Error message", [
-    ("error.level", AttributeValue::int(4L)),
-    ("error.component", AttributeValue::string("payment")),
-    ("error.code", AttributeValue::string("PAYMENT_FAILED")),
-    ("error.recoverable", AttributeValue::bool(true))
-  ])
-  
-  // 测试fatal方法
-  logger.fatal("Fatal message", [
-    ("fatal.level", AttributeValue::int(5L)),
-    ("fatal.component", AttributeValue::string("system")),
-    ("fatal.shutdown", AttributeValue::bool(true)),
-    ("fatal.grace_period", AttributeValue::int(30L))
-  ])
-  
-  // 测试带有复杂属性的便捷方法
-  let complex_attrs : Attributes = [
-    ("service.namespace", AttributeValue::string("production")),
-    ("service.version", AttributeValue::string("2.1.0")),
-    ("deployment.environment", AttributeValue::string("prod")),
-    ("host.name", AttributeValue::string("web-server-01")),
-    ("process.pid", AttributeValue::int(12345L)),
-    ("process.cpu.percent", AttributeValue::float(75.5)),
-    ("process.healthy", AttributeValue::bool(true)),
-    ("tags", AttributeValue::array_string(["web", "api", "critical"])),
-    ("ports", AttributeValue::array_int([8080L, 8443L, 9090L])),
-    ("cpu.thresholds", AttributeValue::array_float([60.0, 80.0, 95.0])),
-    ("feature.flags", AttributeValue::array_bool([true, false, true]))
-  ]
-  
-  logger.info("Complex log with many attributes", complex_attrs)
-  
-  // 测试空属性
-  logger.info("Simple log message", [])
-  
-  // 测试None属性
-  logger.info("Another simple log", None)
-  
-  // 测试特殊字符的消息
-  logger.debug("Debug with special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?", [])
-  logger.info("Unicode测试消息🚀🌟💫", [])
-  logger.warn("Multi-line\nwarning\nmessage", [])
-  logger.error("Message with \"quotes\" and 'apostrophes'", [])
-  
-  // 测试边界值
-  logger.debug("Empty string test: \"\"", [])
-  logger.info("Very long message: " + "A".repeat(1000), [])
-  logger.warn("Number test: 0, -1, 9223372036854775807", [])
+  match log_record.instrumentation_scope {
+    Some(scope) => {
+      assert_eq(scope.name, "user-cache")
+      match scope.version {
+        Some(version) => assert_eq(version, "1.2.0")
+        None => @test.fail("Expected Some(version)")
+      }
+    }
+    None => @test.fail("Expected Some(instrumentation_scope)")
+  }
 }

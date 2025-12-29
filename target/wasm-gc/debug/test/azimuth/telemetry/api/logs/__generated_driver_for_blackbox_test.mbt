@@ -102,8 +102,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     9: (__test_6c6f67735f62617369635f746573742e6d6274_9, ["log_record_edge_cases_and_special_values"]),
   },
   "logs_advanced_test.mbt": {
-    0: (__test_6c6f67735f616476616e6365645f746573742e6d6274_0, ["log_record_complex_scenarios"]),
-    1: (__test_6c6f67735f616476616e6365645f746573742e6d6274_1, ["logger_convenience_methods"]),
+    0: (__test_6c6f67735f616476616e6365645f746573742e6d6274_0, ["log_record_builder_fluent_api"]),
+    1: (__test_6c6f67735f616476616e6365645f746573742e6d6274_1, ["log_record_with_trace_context"]),
   },
   "logs.mbt": {
   },
