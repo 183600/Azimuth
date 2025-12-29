@@ -70,6 +70,7 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     9: (__test_70726f7061676174696f6e5f746573742e6d6274_9, ["composite_propagator_creation"]),
     10: (__test_70726f7061676174696f6e5f746573742e6d6274_10, ["composite_propagator_inject"]),
     11: (__test_70726f7061676174696f6e5f746573742e6d6274_11, ["composite_propagator_extract"]),
+    12: (__test_70726f7061676174696f6e5f746573742e6d6274_12, ["map_carrier_comprehensive_operations"]),
   },
   "propagation.mbt": {
   },

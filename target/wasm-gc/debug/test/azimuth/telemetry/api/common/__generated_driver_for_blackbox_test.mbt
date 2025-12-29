@@ -62,6 +62,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_636f6d6d6f6e5f746573742e6d6274_1, ["common_resource_default_creation"]),
     2: (__test_636f6d6d6f6e5f746573742e6d6274_2, ["common_resource_with_version"]),
     3: (__test_636f6d6d6f6e5f746573742e6d6274_3, ["common_attributes_empty"]),
+    4: (__test_636f6d6d6f6e5f746573742e6d6274_4, ["common_resource_with_attributes"]),
+    5: (__test_636f6d6d6f6e5f746573742e6d6274_5, ["common_instrumentation_scope_creation"]),
   },
   "common.mbt": {
   },

@@ -65,6 +65,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_636f6e746578745f746573742e6d6274_4, ["baggage_with_entry_and_get"]),
     5: (__test_636f6e746578745f746573742e6d6274_5, ["baggage_multiple_entries"]),
     6: (__test_636f6e746578745f746573742e6d6274_6, ["context_key_creation"]),
+    7: (__test_636f6e746578745f746573742e6d6274_7, ["context_chained_operations"]),
+    8: (__test_636f6e746578745f746573742e6d6274_8, ["baggage_complex_operations"]),
   },
   "context.mbt": {
   },

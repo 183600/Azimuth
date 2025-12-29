@@ -8,8 +8,8 @@ pub trait TextMapCarrier {
 }
 
 pub trait TextMapPropagator {
-  inject(self : TextMapPropagator, ctx : Context, carrier : TextMapCarrier) -> Unit
-  extract(self : TextMapPropagator, ctx : Context, carrier : TextMapCarrier) -> Context
+  inject(ctx : context.Context, carrier : TextMapCarrier) -> Unit
+  extract(ctx : context.Context, carrier : TextMapCarrier) -> context.Context
 }
 
 // W3C TraceContext Propagator
@@ -26,21 +26,19 @@ pub struct TraceContextHeader {
 pub const TRACE_PARENT_HEADER : String = "traceparent"
 pub const TRACE_STATE_HEADER : String = "tracestate"
 
-impl W3CTraceContextPropagator with TextMapPropagator {
-  inject(self : W3CTraceContextPropagator, ctx : Context, carrier : TextMapCarrier) -> Unit {
-    // 简化实现：在实际实现中需要从Context中提取SpanContext
-    let trace_parent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
-    carrier.set(TRACE_PARENT_HEADER, trace_parent)
-  }
-  
-  extract(self : W3CTraceContextPropagator, ctx : Context, carrier : TextMapCarrier) -> Context {
-    match carrier.get(TRACE_PARENT_HEADER) {
-      Some(_trace_parent) => {
-        // 简化实现：在实际实现中需要解析traceparent并更新Context
-        ctx
-      }
-      None => ctx
+pub fn W3CTraceContextPropagator::inject(ctx : context.Context, carrier : TextMapCarrier) -> Unit {
+  // 简化实现：在实际实现中需要从Context中提取SpanContext
+  let trace_parent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+  carrier.set(TRACE_PARENT_HEADER, trace_parent)
+}
+
+pub fn W3CTraceContextPropagator::extract(ctx : context.Context, carrier : TextMapCarrier) -> context.Context {
+  match carrier.get(TRACE_PARENT_HEADER) {
+    Some(_trace_parent) => {
+      // 简化实现：在实际实现中需要解析traceparent并更新Context
+      ctx
     }
+    None => ctx
   }
 }
 
@@ -50,21 +48,19 @@ pub struct W3CBaggagePropagator {
 
 pub const BAGGAGE_HEADER : String = "baggage"
 
-impl W3CBaggagePropagator with TextMapPropagator {
-  inject(self : W3CBaggagePropagator, ctx : Context, carrier : TextMapCarrier) -> Unit {
-    // 简化实现：在实际实现中需要从Context中提取Baggage
-    let baggage_value = "key1=value1,key2=value2"
-    carrier.set(BAGGAGE_HEADER, baggage_value)
-  }
-  
-  extract(self : W3CBaggagePropagator, ctx : Context, carrier : TextMapCarrier) -> Context {
-    match carrier.get(BAGGAGE_HEADER) {
-      Some(_baggage_header) => {
-        // 简化实现：在实际实现中需要解析baggage header并更新Context
-        ctx
-      }
-      None => ctx
+pub fn W3CBaggagePropagator::inject(ctx : context.Context, carrier : TextMapCarrier) -> Unit {
+  // 简化实现：在实际实现中需要从Context中提取Baggage
+  let baggage_value = "key1=value1,key2=value2"
+  carrier.set(BAGGAGE_HEADER, baggage_value)
+}
+
+pub fn W3CBaggagePropagator::extract(ctx : context.Context, carrier : TextMapCarrier) -> context.Context {
+  match carrier.get(BAGGAGE_HEADER) {
+    Some(_baggage_header) => {
+      // 简化实现：在实际实现中需要解析baggage header并更新Context
+      ctx
     }
+    None => ctx
   }
 }
 
@@ -79,20 +75,24 @@ impl CompositePropagator {
   }
 }
 
-impl CompositePropagator with TextMapPropagator {
-  inject(self : CompositePropagator, ctx : Context, carrier : TextMapCarrier) -> Unit {
-    for propagator in self.propagators {
-      propagator.inject(ctx, carrier)
-    }
+pub fn CompositePropagator::inject(ctx : context.Context, carrier : TextMapCarrier) -> Unit {
+  let mut index = 0
+  while index < self.propagators.length() {
+    let propagator = self.propagators[index]
+    propagator.inject(ctx, carrier)
+    index = index + 1
   }
-  
-  extract(self : CompositePropagator, ctx : Context, carrier : TextMapCarrier) -> Context {
-    let mut current_ctx = ctx
-    for propagator in self.propagators {
-      current_ctx = propagator.extract(current_ctx, carrier)
-    }
-    current_ctx
+}
+
+pub fn CompositePropagator::extract(ctx : context.Context, carrier : TextMapCarrier) -> context.Context {
+  let mut current_ctx = ctx
+  let mut index = 0
+  while index < self.propagators.length() {
+    let propagator = self.propagators[index]
+    current_ctx = propagator.extract(current_ctx, carrier)
+    index = index + 1
   }
+  current_ctx
 }
 
 // Map-based TextMapCarrier implementation
@@ -105,35 +105,37 @@ impl MapCarrier {
     MapCarrier::{ data: [] }
   }
   
-  pub fn from_map(data : Array[(String, String)]) -> MapCarrier {
+  pub fn MapCarrier::from_map(data : Array[(String, String)]) -> MapCarrier {
     MapCarrier::{ data }
-  }
-  
-  pub fn to_map(self : MapCarrier) -> Array[(String, String)] {
+  }  
+  pub fn MapCarrier::to_map(self : MapCarrier) -> Array[(String, String)] {
     self.data
+  }}
+
+pub fn MapCarrier::get(self : MapCarrier, key : String) -> String? {
+  let mut index = 0
+  while index < self.data.length() {
+    let (k, v) = self.data[index]
+    if k == key {
+      return Some(v)
+    }
+    index = index + 1
   }
+  None
 }
 
-impl MapCarrier with TextMapCarrier {
-  get(self : MapCarrier, key : String) -> String? {
-    for (k, v) in self.data {
-      if k == key {
-        return Some(v)
-      }
-    }
-    None
+pub fn MapCarrier::set(self : MapCarrier, key : String, value : String) -> Unit {
+  // 注意：这里是简化实现，实际应该返回新的MapCarrier
+  // 因为MoonBit的Array是不可变的
+}
+
+pub fn MapCarrier::keys(self : MapCarrier) -> Array[String] {
+  let mut keys = []
+  let mut index = 0
+  while index < self.data.length() {
+    let (k, _) = self.data[index]
+    keys = keys.push(k)
+    index = index + 1
   }
-  
-  set(self : MapCarrier, key : String, value : String) -> Unit {
-    // 注意：这里是简化实现，实际应该返回新的MapCarrier
-    // 因为MoonBit的Array是不可变的
-  }
-  
-  keys(self : MapCarrier) -> Array[String] {
-    let mut keys = []
-    for (k, _) in self.data {
-      keys = keys.push(k)
-    }
-    keys
-  }
+  keys
 }

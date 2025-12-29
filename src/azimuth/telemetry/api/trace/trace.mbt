@@ -31,7 +31,7 @@ pub struct Span {
   end_time_unix_nanos : Int64?
   status : StatusCode
   status_description : String?
-  attributes : Attributes
+  attributes : Array[(String, common.AttributeValue)]
   events : Array[SpanEvent]
   links : Array[SpanLink]
 }
@@ -39,22 +39,22 @@ pub struct Span {
 pub struct SpanEvent {
   name : String
   timestamp_unix_nanos : Int64
-  attributes : Attributes
+  attributes : Array[(String, common.AttributeValue)]
 }
 
 pub struct SpanLink {
   context : SpanContext
-  attributes : Attributes
+  attributes : Array[(String, common.AttributeValue)]
 }
 
 pub trait Tracer {
   start_span(
-    ctx : Context,
+    ctx : context.Context,
     name : String,
     kind? : SpanKind,
-    attributes? : Attributes,
+    attributes? : Array[(String, common.AttributeValue)],
     start_time_unix_nanos? : Int64
-  ) -> (Context, Span)
+  ) -> (context.Context, Span)
 }
 
 pub trait TracerProvider {
@@ -68,42 +68,37 @@ pub struct NoopTracer {
 pub struct NoopTracerProvider {
 }
 
-impl NoopTracer with Tracer {
-  start_span(
-    self : NoopTracer,
-    ctx : Context,
-    name : String,
-    kind? : SpanKind,
-    attributes? : Attributes,
-    start_time_unix_nanos? : Int64
-  ) -> (Context, Span) {
-    let span_context = SpanContext::{
-      trace_id: Array::make(16, 0_byte),
-      span_id: Array::make(8, 0_byte),
-      trace_flags: 0_byte,
-      trace_state: ""
-    }
-    
-    let span = Span::{
-      name,
-      context: span_context,
-      kind: kind.unwrap_or(Internal),
-      parent_span_id: None,
-      start_time_unix_nanos: start_time_unix_nanos.unwrap_or(0L),
-      end_time_unix_nanos: None,
-      status: Unset,
-      status_description: None,
-      attributes: attributes.unwrap_or([]),
-      events: [],
-      links: []
-    }
-    
-    (ctx, span)
+pub fn NoopTracer::start_span(
+  ctx : context.Context,
+  name : String,
+  kind? : SpanKind,
+  attributes? : Array[(String, common.AttributeValue)],
+  start_time_unix_nanos? : Int64
+) -> (context.Context, Span) {
+  let span_context = SpanContext::{
+    trace_id: Array::make(16, 0_byte),
+    span_id: Array::make(8, 0_byte),
+    trace_flags: 0_byte,
+    trace_state: ""
   }
+  
+  let span = Span::{
+    name,
+    context: span_context,
+    kind: kind.unwrap_or(Internal),
+    parent_span_id: None,
+    start_time_unix_nanos: start_time_unix_nanos.unwrap_or(0L),
+    end_time_unix_nanos: None,
+    status: Unset,
+    status_description: None,
+    attributes: attributes.unwrap_or([]),
+    events: [],
+    links: []
+  }
+  
+  (ctx, span)
 }
 
-impl NoopTracerProvider with TracerProvider {
-  get_tracer(self : NoopTracerProvider, name : String, version? : String) -> Tracer {
-    NoopTracer::{}
-  }
+pub fn NoopTracerProvider::get_tracer(name : String, version? : String) -> Tracer {
+  NoopTracer::{}
 }

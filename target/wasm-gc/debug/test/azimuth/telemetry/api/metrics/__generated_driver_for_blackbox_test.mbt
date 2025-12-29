@@ -67,6 +67,7 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_6d6574726963735f746573742e6d6274_6, ["noop_meter_create_instruments"]),
     7: (__test_6d6574726963735f746573742e6d6274_7, ["noop_meter_provider_get_meter"]),
     8: (__test_6d6574726963735f746573742e6d6274_8, ["measurement_with_multiple_attributes"]),
+    9: (__test_6d6574726963735f746573742e6d6274_9, ["meter_comprehensive_instrument_creation"]),
   },
   "metrics.mbt": {
   },
