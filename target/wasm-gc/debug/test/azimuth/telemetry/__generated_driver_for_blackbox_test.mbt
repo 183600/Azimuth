@@ -73,8 +73,6 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_74656c656d657472795f746573742e6d6274_4, ["telemetry_attribute_operations"]),
     5: (__test_74656c656d657472795f746573742e6d6274_5, ["telemetry_resource_metadata"]),
   },
-  "telemetry_new_tests.mbt": {
-  },
   "telemetry_integration_test.mbt": {
     0: (__test_74656c656d657472795f696e746567726174696f6e5f746573742e6d6274_0, ["trace_context_integration"]),
     1: (__test_74656c656d657472795f696e746567726174696f6e5f746573742e6d6274_1, ["context_baggage_integration"]),
@@ -102,12 +100,34 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_74656c656d657472795f6572726f725f68616e646c696e675f746573742e6d6274_6, ["integration_error_scenarios"]),
     7: (__test_74656c656d657472795f6572726f725f68616e646c696e675f746573742e6d6274_7, ["memory_and_resource_exhaustion_scenarios"]),
   },
+  "special_scenarios_test.mbt": {
+    0: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_0, ["chained_span_operations"]),
+    1: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_1, ["complex_attribute_scenarios"]),
+    2: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_2, ["context_propagation_complex_flow"]),
+    3: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_3, ["baggage_complex_scenarios"]),
+    4: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_4, ["multi_propagator_complex_scenario"]),
+    5: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_5, ["log_record_complex_building"]),
+    6: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_6, ["metrics_complex_scenarios"]),
+  },
   "serialization_test.mbt": {
     0: (__test_73657269616c697a6174696f6e5f746573742e6d6274_0, ["span_context_serialization"]),
     1: (__test_73657269616c697a6174696f6e5f746573742e6d6274_1, ["attribute_value_serialization"]),
     2: (__test_73657269616c697a6174696f6e5f746573742e6d6274_2, ["log_record_serialization"]),
     3: (__test_73657269616c697a6174696f6e5f746573742e6d6274_3, ["resource_serialization"]),
     4: (__test_73657269616c697a6174696f6e5f746573742e6d6274_4, ["baggage_serialization"]),
+  },
+  "serialization_format_test.mbt": {
+    0: (__test_73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_0, ["attribute_value_serialization_scenarios"]),
+    1: (__test_73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_1, ["span_context_format_validation"]),
+    2: (__test_73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_2, ["log_record_format_standards"]),
+    3: (__test_73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_3, ["carrier_header_format_compliance"]),
+    4: (__test_73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_4, ["resource_and_instrumentation_format_standards"]),
+  },
+  "real_world_usage_test.mbt": {
+    0: (__test_7265616c5f776f726c645f75736167655f746573742e6d6274_0, ["web_request_tracing_scenario"]),
+    1: (__test_7265616c5f776f726c645f75736167655f746573742e6d6274_1, ["microservice_communication_scenario"]),
+    2: (__test_7265616c5f776f726c645f75736167655f746573742e6d6274_2, ["batch_processing_scenario"]),
+    3: (__test_7265616c5f776f726c645f75736167655f746573742e6d6274_3, ["error_handling_scenario"]),
   },
   "real_world_scenario_test.mbt": {
     0: (__test_7265616c5f776f726c645f7363656e6172696f5f746573742e6d6274_0, ["microservices_telemetry_pipeline"]),
@@ -174,11 +194,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_5, ["cross_platform_error_handling"]),
   },
   "cross_module_integration_test.mbt": {
-    0: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_0, ["context_and_trace_integration"]),
-    1: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_1, ["metrics_and_attributes_integration"]),
-    2: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_2, ["logs_with_trace_context_integration"]),
-    3: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_3, ["propagation_with_context_integration"]),
-    4: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_4, ["resource_and_instrumentation_scope_integration"]),
+    0: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_0, ["trace_metrics_integration"]),
+    1: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_1, ["trace_logs_integration"]),
+    2: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_2, ["context_propagation_integration"]),
+    3: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_3, ["metrics_logs_resource_integration"]),
   },
   "configuration_validation_test.mbt": {
     0: (__test_636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_0, ["service_name_validation"]),

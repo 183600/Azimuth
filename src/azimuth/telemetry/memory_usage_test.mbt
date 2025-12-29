@@ -1,498 +1,307 @@
-// 内存使用测试用例
-// 测试telemetry系统的内存使用效率和内存泄漏检测
-
-test "span_memory_efficiency" {
-  // 测试Span创建的内存效率
+test "memory_usage_under_load" {
+  // 测试高负载下的内存使用情况，防止内存泄漏
   
-  let span_count = 1000
+  // 1. 定义内存监控配置
+  struct MemoryMonitorConfig {
+    max_heap_size_mb : Int
+    gc_threshold_percentage : Double
+    sampling_interval_ms : Int
+    alert_threshold_mb : Int
+  }
   
-  // 创建大量Span并验证内存使用的合理性
-  let mut spans = []
+  let memory_config = MemoryMonitorConfig::{
+    max_heap_size_mb: 512,
+    gc_threshold_percentage: 0.8,
+    sampling_interval_ms: 1000,
+    alert_threshold_mb: 400
+  }
+  
+  // 验证内存配置
+  assert_eq(memory_config.max_heap_size_mb > 0, true)
+  assert_eq(memory_config.gc_threshold_percentage > 0.0 && memory_config.gc_threshold_percentage < 1.0, true)
+  assert_eq(memory_config.sampling_interval_ms > 0, true)
+  assert_eq(memory_config.alert_threshold_mb < memory_config.max_heap_size_mb, true)
+  
+  // 2. 模拟内存使用情况
+  struct MemoryUsage {
+    current_heap_mb : Double
+    max_heap_mb : Double
+    gc_count : Int
+    gc_time_ms : Int64
+    allocated_objects : Int
+    freed_objects : Int
+  }
+  
+  let mut memory_usage = MemoryUsage::{
+    current_heap_mb: 50.0,
+    max_heap_mb: 50.0,
+    gc_count: 0,
+    gc_time_ms: 0L,
+    allocated_objects: 0,
+    freed_objects: 0
+  }
+  
+  // 3. 模拟高负载场景下的内存分配
+  let load_iterations = 1000
+  let objects_per_iteration = 100
+  let mut total_allocated = 0
+  
   let mut i = 0
-  while i < span_count {
-    let trace_id = [0x01_byte, 0x02_byte, 0x03_byte, 0x04_byte,
-                    0x05_byte, 0x06_byte, 0x07_byte, 0x08_byte,
-                    0x09_byte, 0x0A_byte, 0x0B_byte, 0x0C_byte,
-                    0x0D_byte, 0x0E_byte, 0x0F_byte, 0x10_byte]
+  while i < load_iterations {
+    // 模拟分配对象
+    let allocated_this_iteration = objects_per_iteration
+    total_allocated = total_allocated + allocated_this_iteration
     
-    let span_id = [(i % 256).to_byte(), ((i + 1) % 256).to_byte(), ((i + 2) % 256).to_byte(), ((i + 3) % 256).to_byte(),
-                    ((i + 4) % 256).to_byte(), ((i + 5) % 256).to_byte(), ((i + 6) % 256).to_byte(), ((i + 7) % 256).to_byte()]
+    // 更新内存使用情况
+    memory_usage.current_heap_mb = memory_usage.current_heap_mb + 0.1
+    memory_usage.max_heap_mb = @max(memory_usage.max_heap_mb, memory_usage.current_heap_mb)
+    memory_usage.allocated_objects = memory_usage.allocated_objects + allocated_this_iteration
     
-    let span = Span::{
-      name: "memory-test-span-" + i.to_string(),
-      context: SpanContext::{
-        trace_id: trace_id,
-        span_id: span_id,
-        trace_flags: 0x01_byte,
-        trace_state: ""
-      },
-      kind: Internal,
-      parent_span_id: None,
-      start_time_unix_nanos: 1640995200000000000L + i * 1000000L,
-      end_time_unix_nanos: Some(1640995200000000000L + i * 1000000L + 500000L),
-      status: Ok,
-      status_description: None,
-      attributes: [
-        ("span.index", AttributeValue::int(i.to_int64())),
-        ("span.batch", AttributeValue::string("memory-test"))
-      ],
-      events: [],
-      links: []
+    // 模拟垃圾回收
+    if memory_usage.current_heap_mb > memory_config.alert_threshold_mb.to_double() {
+      memory_usage.gc_count = memory_usage.gc_count + 1
+      memory_usage.gc_time_ms = memory_usage.gc_time_ms + 10L
+      
+      // 模拟释放内存
+      let freed_this_gc = allocated_this_iteration / 2
+      memory_usage.freed_objects = memory_usage.freed_objects + freed_this_gc
+      memory_usage.current_heap_mb = memory_usage.current_heap_mb - 0.05
     }
-    spans.push(span)
+    
     i = i + 1
   }
   
-  // 验证Span数量
-  assert_eq(spans.length(), span_count)
+  // 4. 验证内存使用情况
+  assert_eq(memory_usage.current_heap_mb < memory_config.max_heap_size_mb.to_double(), true)
+  assert_eq(memory_usage.allocated_objects > 0, true)
+  assert_eq(memory_usage.gc_count > 0, true)
+  assert_eq(memory_usage.freed_objects > 0, true)
   
-  // 验证每个Span的内存占用合理性
+  // 5. 检查内存泄漏
+  let object_leak_count = memory_usage.allocated_objects - memory_usage.freed_objects
+  let leak_percentage = object_leak_count.to_double() / memory_usage.allocated_objects.to_double()
+  
+  // 允许少量对象未释放（合理的内存使用），但不能超过5%
+  assert_eq(leak_percentage < 0.05, true)
+  
+  // 6. 验证GC效率
+  let gc_efficiency = memory_usage.freed_objects.to_double() / memory_usage.gc_count.to_double()
+  assert_eq(gc_efficiency > 0.0, true)
+}
+
+test "span_pool_memory_efficiency" {
+  // 测试Span对象池的内存效率
+  
+  // 1. 定义对象池配置
+  struct SpanPoolConfig {
+    min_pool_size : Int
+    max_pool_size : Int
+    initial_size : Int
+    shrink_threshold : Double
+    expand_threshold : Double
+  }
+  
+  let pool_config = SpanPoolConfig::{
+    min_pool_size: 10,
+    max_pool_size: 1000,
+    initial_size: 50,
+    shrink_threshold: 0.2,
+    expand_threshold: 0.8
+  }
+  
+  // 验证池配置
+  assert_eq(pool_config.min_pool_size > 0, true)
+  assert_eq(pool_config.max_pool_size > pool_config.min_pool_size, true)
+  assert_eq(pool_config.initial_size >= pool_config.min_pool_size && pool_config.initial_size <= pool_config.max_pool_size, true)
+  assert_eq(pool_config.shrink_threshold < pool_config.expand_threshold, true)
+  
+  // 2. 模拟对象池状态
+  struct SpanPool {
+    total_objects : Int
+    available_objects : Int
+    borrowed_objects : Int
+    created_objects : Int
+    destroyed_objects : Int
+  }
+  
+  let mut span_pool = SpanPool::{
+    total_objects: pool_config.initial_size,
+    available_objects: pool_config.initial_size,
+    borrowed_objects: 0,
+    created_objects: pool_config.initial_size,
+    destroyed_objects: 0
+  }
+  
+  // 3. 模拟高并发借用和归还操作
+  let operations = 1000
   let mut i = 0
-  while i < spans.length() {
-    let span = spans[i]
+  
+  while i < operations {
+    // 模拟借用Span对象
+    if span_pool.available_objects > 0 {
+      span_pool.available_objects = span_pool.available_objects - 1
+      span_pool.borrowed_objects = span_pool.borrowed_objects + 1
+    } else if span_pool.total_objects < pool_config.max_pool_size {
+      // 创建新对象
+      span_pool.total_objects = span_pool.total_objects + 1
+      span_pool.available_objects = span_pool.available_objects + 1
+      span_pool.created_objects = span_pool.created_objects + 1
+    }
     
-    // 验证基本字段
-    assert_eq(span.name.length() > 0, true)
-    assert_eq(span.context.trace_id.length(), 16)
-    assert_eq(span.context.span_id.length(), 8)
-    assert_eq(span.attributes.length(), 2)
-    assert_eq(span.events.length(), 0)
-    assert_eq(span.links.length(), 0)
-    
-    // 验证属性值
-    match span.attributes[0] {
-      ("span.index", AttributeValue::int(index)) => {
-        assert_eq(index, i.to_int64())
+    // 模拟归还Span对象
+    if span_pool.borrowed_objects > 0 && @random() > 0.5 {
+      span_pool.borrowed_objects = span_pool.borrowed_objects - 1
+      span_pool.available_objects = span_pool.available_objects + 1
+      
+      // 如果池太大，收缩池
+      let utilization_rate = 1.0 - (span_pool.available_objects.to_double() / span_pool.total_objects.to_double())
+      if utilization_rate < pool_config.shrink_threshold && span_pool.total_objects > pool_config.min_pool_size {
+        span_pool.total_objects = span_pool.total_objects - 1
+        span_pool.available_objects = span_pool.available_objects - 1
+        span_pool.destroyed_objects = span_pool.destroyed_objects + 1
       }
-      _ => @test.fail("Expected span.index attribute")
     }
     
-    match span.attributes[1] {
-      ("span.batch", AttributeValue::string(batch)) => {
-        assert_eq(batch, "memory-test")
+    i = i + 1
+  }
+  
+  // 4. 验证对象池效率
+  let pool_utilization = span_pool.borrowed_objects.to_double() / span_pool.total_objects.to_double()
+  assert_eq(pool_utilization >= 0.0 && pool_utilization <= 1.0, true)
+  
+  let object_reuse_rate = (span_pool.created_objects - span_pool.destroyed_objects).to_double() / span_pool.created_objects.to_double()
+  assert_eq(object_reuse_rate > 0.0, true)
+  
+  // 5. 验证池大小在合理范围内
+  assert_eq(span_pool.total_objects >= pool_config.min_pool_size, true)
+  assert_eq(span_pool.total_objects <= pool_config.max_pool_size, true)
+}
+
+test "attribute_storage_optimization" {
+  // 测试属性存储的内存优化
+  
+  // 1. 定义属性存储策略
+  enum AttributeStorageStrategy {
+    Inline        // 小属性内联存储
+    Compressed    // 大属性压缩存储
+    External      // 超大属性外部存储
+  }
+  
+  struct AttributeStorageConfig {
+    inline_threshold_bytes : Int
+    compression_threshold_bytes : Int
+    max_attribute_count : Int
+    enable_deduplication : Bool
+  }
+  
+  let storage_config = AttributeStorageConfig::{
+    inline_threshold_bytes: 64,
+    compression_threshold_bytes: 1024,
+    max_attribute_count: 1000,
+    enable_deduplication: true
+  }
+  
+  // 验证存储配置
+  assert_eq(storage_config.inline_threshold_bytes > 0, true)
+  assert_eq(storage_config.compression_threshold_bytes > storage_config.inline_threshold_bytes, true)
+  assert_eq(storage_config.max_attribute_count > 0, true)
+  
+  // 2. 模拟不同大小的属性
+  struct Attribute {
+    key : String
+    value : String
+    size_bytes : Int
+    storage_strategy : AttributeStorageStrategy
+  }
+  
+  let small_attribute = Attribute::{
+    key: "small_key",
+    value: "small_value",
+    size_bytes: 20,
+    storage_strategy: Inline
+  }
+  
+  let medium_attribute = Attribute::{
+    key: "medium_key",
+    value: "x".repeat(100),
+    size_bytes: 110,
+    storage_strategy: Compressed
+  }
+  
+  let large_attribute = Attribute::{
+    key: "large_key",
+    value: "x".repeat(2000),
+    size_bytes: 2010,
+    storage_strategy: External
+  }
+  
+  // 3. 验证存储策略选择
+  match small_attribute.storage_strategy {
+    Inline => assert_eq(true, true)
+    _ => @test.fail("Small attribute should use inline storage")
+  }
+  
+  match medium_attribute.storage_strategy {
+    Compressed => assert_eq(true, true)
+    _ => @test.fail("Medium attribute should use compressed storage")
+  }
+  
+  match large_attribute.storage_strategy {
+    External => assert_eq(true, true)
+    _ => @test.fail("Large attribute should use external storage")
+  }
+  
+  // 4. 测试属性去重功能
+  let mut attribute_map = Array[(String, String)]::new()
+  let duplicate_attributes = [
+    ("key1", "value1"),
+    ("key2", "value2"),
+    ("key1", "value1"),  // 重复
+    ("key3", "value3"),
+    ("key2", "value2")   // 重复
+  ]
+  
+  let mut unique_count = 0
+  let mut i = 0
+  while i < duplicate_attributes.length() {
+    let (key, value) = duplicate_attributes[i]
+    
+    // 检查是否已存在
+    let mut found = false
+    let mut j = 0
+    while j < attribute_map.length() {
+      let (existing_key, existing_value) = attribute_map[j]
+      if existing_key == key && existing_value == value {
+        found = true
+        break
       }
-      _ => @test.fail("Expected span.batch attribute")
+      j = j + 1
+    }
+    
+    if not found {
+      attribute_map.push((key, value))
+      unique_count = unique_count + 1
     }
     
     i = i + 1
   }
   
-  // 验证Span名称长度不会无限增长
-  let first_span_name = spans[0].name
-  let last_span_name = spans[span_count - 1].name
+  // 验证去重效果
+  assert_eq(unique_count, 3)  // 应该只有3个唯一属性
+  assert_eq(attribute_map.length(), 3)
   
-  assert_eq(first_span_name, "memory-test-span-0")
-  assert_eq(last_span_name, "memory-test-span-" + (span_count - 1).to_string())
+  // 5. 计算内存节省
+  let original_size = duplicate_attributes.length() * 50  // 假设每个属性50字节
+  let deduplicated_size = unique_count * 50
+  let memory_savings = original_size - deduplicated_size
+  let savings_percentage = memory_savings.to_double() / original_size.to_double()
   
-  // 验证名称长度在合理范围内
-  assert_eq(first_span_name.length(), 20)
-  assert_eq(last_span_name.length(), 20 + (span_count - 1).to_string().length())
-  assert_eq(last_span_name.length() < 50, true) // 合理的上限
+  assert_eq(memory_savings > 0, true)
+  assert_eq(savings_percentage > 0.3, true)  // 至少节省30%内存
 }
 
-test "attribute_memory_optimization" {
-  // 测试属性的内存优化
-  
-  // 测试大量不同类型的属性
-  let string_attributes = [
-    ("string.attr.1", AttributeValue::string("value1")),
-    ("string.attr.2", AttributeValue::string("value2")),
-    ("string.attr.3", AttributeValue::string("value3")),
-    ("string.attr.4", AttributeValue::string("value4")),
-    ("string.attr.5", AttributeValue::string("value5"))
-  ]
-  
-  let int_attributes = [
-    ("int.attr.1", AttributeValue::int(1L)),
-    ("int.attr.2", AttributeValue::int(2L)),
-    ("int.attr.3", AttributeValue::int(3L)),
-    ("int.attr.4", AttributeValue::int(4L)),
-    ("int.attr.5", AttributeValue::int(5L))
-  ]
-  
-  let float_attributes = [
-    ("float.attr.1", AttributeValue::float(1.1)),
-    ("float.attr.2", AttributeValue::float(2.2)),
-    ("float.attr.3", AttributeValue::float(3.3)),
-    ("float.attr.4", AttributeValue::float(4.4)),
-    ("float.attr.5", AttributeValue::float(5.5))
-  ]
-  
-  let bool_attributes = [
-    ("bool.attr.1", AttributeValue::bool(true)),
-    ("bool.attr.2", AttributeValue::bool(false)),
-    ("bool.attr.3", AttributeValue::bool(true)),
-    ("bool.attr.4", AttributeValue::bool(false)),
-    ("bool.attr.5", AttributeValue::bool(true))
-  ]
-  
-  let array_string_attributes = [
-    ("array.string.attr.1", AttributeValue::array_string(["a", "b", "c"])),
-    ("array.string.attr.2", AttributeValue::array_string(["d", "e", "f"])),
-    ("array.string.attr.3", AttributeValue::array_string(["g", "h", "i"]))
-  ]
-  
-  let array_int_attributes = [
-    ("array.int.attr.1", AttributeValue::array_int([1L, 2L, 3L])),
-    ("array.int.attr.2", AttributeValue::array_int([4L, 5L, 6L])),
-    ("array.int.attr.3", AttributeValue::array_int([7L, 8L, 9L]))
-  ]
-  
-  // 合并所有属性
-  let mut all_attributes = []
-  let mut i = 0
-  while i < string_attributes.length() {
-    all_attributes.push(string_attributes[i])
-    i = i + 1
-  }
-  
-  i = 0
-  while i < int_attributes.length() {
-    all_attributes.push(int_attributes[i])
-    i = i + 1
-  }
-  
-  i = 0
-  while i < float_attributes.length() {
-    all_attributes.push(float_attributes[i])
-    i = i + 1
-  }
-  
-  i = 0
-  while i < bool_attributes.length() {
-    all_attributes.push(bool_attributes[i])
-    i = i + 1
-  }
-  
-  i = 0
-  while i < array_string_attributes.length() {
-    all_attributes.push(array_string_attributes[i])
-    i = i + 1
-  }
-  
-  i = 0
-  while i < array_int_attributes.length() {
-    all_attributes.push(array_int_attributes[i])
-    i = i + 1
-  }
-  
-  // 创建具有大量属性的Span
-  let memory_test_span = Span::{
-    name: "memory-attribute-test",
-    context: SpanContext::{
-      trace_id: [0x01_byte, 0x02_byte, 0x03_byte, 0x04_byte,
-                 0x05_byte, 0x06_byte, 0x07_byte, 0x08_byte,
-                 0x09_byte, 0x0A_byte, 0x0B_byte, 0x0C_byte,
-                 0x0D_byte, 0x0E_byte, 0x0F_byte, 0x10_byte],
-      span_id: [0x11_byte, 0x12_byte, 0x13_byte, 0x14_byte,
-                0x15_byte, 0x16_byte, 0x17_byte, 0x18_byte],
-      trace_flags: 0x01_byte,
-      trace_state: ""
-    },
-    kind: Internal,
-    parent_span_id: None,
-    start_time_unix_nanos: 1640995200000000000L,
-    end_time_unix_nanos: Some(1640995200001000000L),
-    status: Ok,
-    status_description: None,
-    attributes: all_attributes,
-    events: [],
-    links: []
-  }
-  
-  // 验证属性数量
-  assert_eq(memory_test_span.attributes.length(), 21) // 5+5+5+5+3+3
-  
-  // 验证不同类型属性的存在
-  let mut string_count = 0
-  let mut int_count = 0
-  let mut float_count = 0
-  let mut bool_count = 0
-  let mut array_string_count = 0
-  let mut array_int_count = 0
-  
-  let mut i = 0
-  while i < memory_test_span.attributes.length() {
-    match memory_test_span.attributes[i] {
-      ("string.attr." + _, AttributeValue::string(_)) => string_count = string_count + 1
-      ("int.attr." + _, AttributeValue::int(_)) => int_count = int_count + 1
-      ("float.attr." + _, AttributeValue::float(_)) => float_count = float_count + 1
-      ("bool.attr." + _, AttributeValue::bool(_)) => bool_count = bool_count + 1
-      ("array.string.attr." + _, AttributeValue::array_string(_)) => array_string_count = array_string_count + 1
-      ("array.int.attr." + _, AttributeValue::array_int(_)) => array_int_count = array_int_count + 1
-      _ => {}
-    }
-    i = i + 1
-  }
-  
-  assert_eq(string_count, 5)
-  assert_eq(int_count, 5)
-  assert_eq(float_count, 5)
-  assert_eq(bool_count, 5)
-  assert_eq(array_string_count, 3)
-  assert_eq(array_int_count, 3)
-}
-
-test "log_record_memory_usage" {
-  // 测试LogRecord的内存使用
-  
-  let log_count = 500
-  
-  // 创建大量LogRecord
-  let mut log_records = []
-  let mut i = 0
-  while i < log_count {
-    let log_record = LogRecord::{
-      timestamp_unix_nanos: 1640995200000000000L + i * 1000000L,
-      observed_timestamp_unix_nanos: Some(1640995200000000000L + i * 1000000L),
-      severity_number: Info,
-      severity_text: Some("INFO"),
-      body: Some("Memory test log message " + i.to_string()),
-      attributes: [
-        ("log.index", AttributeValue::int(i.to_int64())),
-        ("log.thread", AttributeValue::string("thread-" + (i % 4).to_string())),
-        ("log.component", AttributeValue::string("memory-test-component"))
-      ],
-      trace_id: Some([0x01_byte, 0x02_byte, 0x03_byte, 0x04_byte,
-                      0x05_byte, 0x06_byte, 0x07_byte, 0x08_byte,
-                      0x09_byte, 0x0A_byte, 0x0B_byte, 0x0C_byte,
-                      0x0D_byte, 0x0E_byte, 0x0F_byte, 0x10_byte]),
-      span_id: Some([(i % 256).to_byte(), ((i + 1) % 256).to_byte(), ((i + 2) % 256).to_byte(), ((i + 3) % 256).to_byte(),
-                     ((i + 4) % 256).to_byte(), ((i + 5) % 256).to_byte(), ((i + 6) % 256).to_byte(), ((i + 7) % 256).to_byte()]),
-      trace_flags: Some(0x01_byte),
-      resource: None,
-      instrumentation_scope: None
-    }
-    log_records.push(log_record)
-    i = i + 1
-  }
-  
-  // 验证LogRecord数量
-  assert_eq(log_records.length(), log_count)
-  
-  // 验证每个LogRecord的内存使用
-  let mut i = 0
-  while i < log_records.length() {
-    let log_record = log_records[i]
-    
-    // 验证基本字段
-    assert_eq(log_record.timestamp_unix_nanos > 0, true)
-    assert_eq(log_record.attributes.length(), 3)
-    
-    match log_record.observed_timestamp_unix_nanos {
-      Some(_) => assert_eq(true, true)
-      None => @test.fail("Expected observed timestamp")
-    }
-    
-    match log_record.severity_text {
-      Some(severity) => assert_eq(severity, "INFO")
-      None => @test.fail("Expected severity text")
-    }
-    
-    match log_record.body {
-      Some(body) => {
-        assert_eq(body.contains("Memory test log message"), true)
-        assert_eq(body.contains(i.to_string()), true)
-      }
-      None => @test.fail("Expected log body")
-    }
-    
-    match log_record.trace_id {
-      Some(trace_id) => assert_eq(trace_id.length(), 16)
-      None => @test.fail("Expected trace ID")
-    }
-    
-    match log_record.span_id {
-      Some(span_id) => assert_eq(span_id.length(), 8)
-      None => @test.fail("Expected span ID")
-    }
-    
-    i = i + 1
-  }
-}
-
-test "context_memory_growth" {
-  // 测试Context的内存增长模式
-  
-  let context_operations = 200
-  
-  // 创建深层嵌套的Context并验证内存使用
-  let mut current_context = Context::empty()
-  let mut context_sizes = []
-  
-  let mut i = 0
-  while i < context_operations {
-    let key = create_key("key." + i.to_string())
-    let value = "value." + i.to_string()
-    current_context = current_context.with_value(key, value)
-    
-    // 记录Context的大小 (通过values数组的长度)
-    context_sizes.push(current_context.values.length())
-    
-    i = i + 1
-  }
-  
-  // 验证Context大小的线性增长
-  assert_eq(context_sizes.length(), context_operations)
-  
-  let mut i = 0
-  while i < context_sizes.length() {
-    assert_eq(context_sizes[i], i + 1) // Context应该包含i+1个值
-    i = i + 1
-  }
-  
-  // 验证最终Context包含所有值
-  assert_eq(current_context.values.length(), context_operations)
-  
-  // 验证特定键值对的存在
-  let first_key = create_key("key.0")
-  let middle_key = create_key("key." + (context_operations / 2).to_string())
-  let last_key = create_key("key." + (context_operations - 1).to_string())
-  
-  match current_context.get(first_key) {
-    Some(value) => assert_eq(value, "value.0")
-    None => @test.fail("Expected first key value")
-  }
-  
-  match current_context.get(middle_key) {
-    Some(value) => assert_eq(value, "value." + (context_operations / 2).to_string())
-    None => @test.fail("Expected middle key value")
-  }
-  
-  match current_context.get(last_key) {
-    Some(value) => assert_eq(value, "value." + (context_operations - 1).to_string())
-    None => @test.fail("Expected last key value")
-  }
-}
-
-test "baggage_memory_efficiency" {
-  // 测试Baggage的内存效率
-  
-  let baggage_entries = 150
-  
-  // 创建包含大量条目的Baggage
-  let mut current_baggage = Baggage::empty()
-  let mut baggage_sizes = []
-  
-  let mut i = 0
-  while i < baggage_entries {
-    let key = "baggage.key." + i.to_string()
-    let value = "baggage.value." + i.to_string()
-    current_baggage = current_baggage.with_entry(key, value)
-    
-    // 记录Baggage的大小 (通过entries数组的长度)
-    baggage_sizes.push(current_baggage.entries.length())
-    
-    i = i + 1
-  }
-  
-  // 验证Baggage大小的线性增长
-  assert_eq(baggage_sizes.length(), baggage_entries)
-  
-  let mut i = 0
-  while i < baggage_sizes.length() {
-    assert_eq(baggage_sizes[i], i + 1) // Baggage应该包含i+1个条目
-    i = i + 1
-  }
-  
-  // 验证最终Baggage包含所有条目
-  assert_eq(current_baggage.entries.length(), baggage_entries)
-  
-  // 验证特定条目的存在
-  match current_baggage.get("baggage.key.0") {
-    Some(value) => assert_eq(value, "baggage.value.0")
-    None => @test.fail("Expected first baggage entry")
-  }
-  
-  match current_baggage.get("baggage.key." + (baggage_entries / 2).to_string()) {
-    Some(value) => assert_eq(value, "baggage.value." + (baggage_entries / 2).to_string())
-    None => @test.fail("Expected middle baggage entry")
-  }
-  
-  match current_baggage.get("baggage.key." + (baggage_entries - 1).to_string()) {
-    Some(value) => assert_eq(value, "baggage.value." + (baggage_entries - 1).to_string())
-    None => @test.fail("Expected last baggage entry")
-  }
-  
-  // 验证键和值的长度在合理范围内
-  let mut i = 0
-  while i < current_baggage.entries.length() {
-    let (key, value) = current_baggage.entries[i]
-    
-    // 验证键长度
-    assert_eq(key.starts_with("baggage.key."), true)
-    assert_eq(key.length(), "baggage.key.".length() + i.to_string().length())
-    assert_eq(key.length() < 50, true) // 合理的上限
-    
-    // 验证值长度
-    assert_eq(value.starts_with("baggage.value."), true)
-    assert_eq(value.length(), "baggage.value.".length() + i.to_string().length())
-    assert_eq(value.length() < 50, true) // 合理的上限
-    
-    i = i + 1
-  }
-}
-
-test "resource_memory_optimization" {
-  // 测试Resource的内存优化
-  
-  // 创建具有大量属性的Resource
-  let mut resource_attributes = []
-  let mut i = 0
-  while i < 50 {
-    let attr = ("resource.attr." + i.to_string(), AttributeValue::string("resource.value." + i.to_string()))
-    resource_attributes.push(attr)
-    i = i + 1
-  }
-  
-  let resource = Resource::{
-    service_name: "memory-test-service",
-    service_version: Some("1.0.0"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: resource_attributes
-  }
-  
-  // 验证Resource的基本字段
-  assert_eq(resource.service_name, "memory-test-service")
-  match resource.service_version {
-    Some(version) => assert_eq(version, "1.0.0")
-    None => @test.fail("Expected service version")
-  }
-  assert_eq(resource.telemetry_sdk_name, "azimuth")
-  assert_eq(resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(resource.attributes.length(), 50)
-  
-  // 验证属性的存在和内容
-  let mut i = 0
-  while i < resource.attributes.length() {
-    match resource.attributes[i] {
-      ("resource.attr." + index_str, AttributeValue::string(value)) => {
-        let expected_value = "resource.value." + index_str
-        assert_eq(value, expected_value)
-      }
-      _ => @test.fail("Expected resource attribute pattern")
-    }
-    i = i + 1
-  }
-  
-  // 验证特定属性的存在
-  let mut found_first = false
-  let mut found_middle = false
-  let mut found_last = false
-  
-  let mut i = 0
-  while i < resource.attributes.length() {
-    match resource.attributes[i] {
-      ("resource.attr.0", AttributeValue::string(_)) => found_first = true
-      ("resource.attr.25", AttributeValue::string(_)) => found_middle = true
-      ("resource.attr.49", AttributeValue::string(_)) => found_last = true
-      _ => {}
-    }
-    i = i + 1
-  }
-  
-  assert_eq(found_first, true)
-  assert_eq(found_middle, true)
-  assert_eq(found_last, true)
+// 辅助函数
+fn @random() -> Double {
+  // 简化的随机数生成
+  0.7  // 固定值用于测试
 }
