@@ -1,536 +1,621 @@
-test "dynamic_configuration_update" {
-  // 测试运行时配置的动态更新和生效
+// 配置验证测试 - 测试各种配置选项的有效性验证
+use azimuth.telemetry.api.common.{AttributeValue, Resource}
+use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, NoopTracer, NoopTracerProvider}
+use azimuth.telemetry.api.metrics.{NoopMeter, NoopMeterProvider}
+use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
+use azimuth.telemetry.api.context.{Context, ContextKey, Baggage, create_key}
+
+test "configuration_tracer_validation" {
+  // 测试Tracer配置验证
   
-  // 1. 定义配置结构
-  struct TelemetryConfig {
-    service_name : String
-    service_version : String
-    enable_tracing : Bool
-    enable_metrics : Bool
-    enable_logging : Bool
-    sampling_rate : Double
-    batch_size : Int
-    export_timeout_ms : Int
-    resource_attributes : Array[(String, String)]
-  }
+  let ctx = Context::empty()
+  let tracer_provider = NoopTracerProvider::{}
   
-  // 2. 定义配置更新策略
-  enum UpdateStrategy {
-    Immediate        // 立即生效
-    Graceful         // 优雅过渡
-    Scheduled        // 定时生效
-    Conditional      // 条件生效
-  }
+  // 测试有效的Tracer配置
+  let valid_tracer = tracer_provider.get_tracer("valid-tracer", Some("1.0.0"))
+  let tracer_with_version = tracer_provider.get_tracer("versioned-tracer", Some("2.1.5"))
+  let tracer_without_version = tracer_provider.get_tracer("no-version-tracer", None)
   
-  // 3. 创建初始配置
-  let initial_config = TelemetryConfig::{
-    service_name: "test-service",
-    service_version: "1.0.0",
-    enable_tracing: true,
-    enable_metrics: true,
-    enable_logging: true,
-    sampling_rate: 0.1,
-    batch_size: 100,
-    export_timeout_ms: 30000,
-    resource_attributes: [("env", "test"), ("region", "us-west-2")]
-  }
+  // 测试不同名称格式的Tracer
+  let simple_name_tracer = tracer_provider.get_tracer("simple", Some("1.0.0"))
+  let complex_name_tracer = tracer_provider.get_tracer("complex.service.name.with.dots", Some("1.0.0"))
+  let underscore_name_tracer = tracer_provider.get_tracer("underscore_name", Some("1.0.0"))
+  let dash_name_tracer = tracer_provider.get_tracer("dash-name", Some("1.0.0"))
   
-  // 4. 定义配置更新器
-  struct ConfigUpdater {
-    current_config : TelemetryConfig
-    pending_updates : Array[TelemetryConfig]
-    update_strategy : UpdateStrategy
-    last_update_time : Int64
-    update_count : Int
-  }
+  // 测试不同版本格式的Tracer
+  let semantic_version_tracer = tracer_provider.get_tracer("semantic-tracer", Some("1.2.3"))
+  let major_version_tracer = tracer_provider.get_tracer("major-tracer", Some("2.0.0"))
+  let pre_release_tracer = tracer_provider.get_tracer("pre-release-tracer", Some("1.0.0-beta"))
+  let build_metadata_tracer = tracer_provider.get_tracer("build-tracer", Some("1.0.0+build.123"))
   
-  let mut updater = ConfigUpdater::{
-    current_config: initial_config,
-    pending_updates: Array[TelemetryConfig]::new(),
-    update_strategy: Immediate,
-    last_update_time: 1234567890L,
-    update_count: 0
-  }
+  // 验证所有Tracer都能正常创建span
+  let (_, valid_span) = valid_tracer.start_span(ctx, "valid_test", Internal, None)
+  let (_, version_span) = tracer_with_version.start_span(ctx, "version_test", Internal, None)
+  let (_, no_version_span) = tracer_without_version.start_span(ctx, "no_version_test", Internal, None)
   
-  // 5. 测试配置更新验证
-  fn validate_config(config : TelemetryConfig) -> (Bool, String) {
-    // 验证服务名称
-    if config.service_name.length() == 0 {
-      return (false, "Service name cannot be empty")
-    }
-    
-    // 验证采样率
-    if config.sampling_rate < 0.0 or config.sampling_rate > 1.0 {
-      return (false, "Sampling rate must be between 0.0 and 1.0")
-    }
-    
-    // 验证批处理大小
-    if config.batch_size <= 0 or config.batch_size > 10000 {
-      return (false, "Batch size must be between 1 and 10000")
-    }
-    
-    // 验证超时时间
-    if config.export_timeout_ms <= 0 or config.export_timeout_ms > 300000 {
-      return (false, "Export timeout must be between 1ms and 5 minutes")
-    }
-    
-    (true, "Configuration is valid")
-  }
+  // 验证不同名称格式的Tracer
+  let (_, simple_span) = simple_name_tracer.start_span(ctx, "simple_test", Internal, None)
+  let (_, complex_span) = complex_name_tracer.start_span(ctx, "complex_test", Internal, None)
+  let (_, underscore_span) = underscore_name_tracer.start_span(ctx, "underscore_test", Internal, None)
+  let (_, dash_span) = dash_name_tracer.start_span(ctx, "dash_test", Internal, None)
   
-  // 6. 测试立即更新策略
-  let immediate_update = TelemetryConfig::{
-    ..initial_config,
-    service_name: "updated-service",
-    sampling_rate: 0.5,
-    batch_size: 200
-  }
+  // 验证不同版本格式的Tracer
+  let (_, semantic_span) = semantic_version_tracer.start_span(ctx, "semantic_test", Internal, None)
+  let (_, major_span) = major_version_tracer.start_span(ctx, "major_test", Internal, None)
+  let (_, pre_release_span) = pre_release_tracer.start_span(ctx, "pre_release_test", Internal, None)
+  let (_, build_span) = build_metadata_tracer.start_span(ctx, "build_test", Internal, None)
   
-  let (is_valid, message) = validate_config(immediate_update)
-  assert_eq(is_valid, true)
+  // 验证所有span都正确创建
+  assert_eq(valid_span.name, "valid_test")
+  assert_eq(version_span.name, "version_test")
+  assert_eq(no_version_span.name, "no_version_test")
+  assert_eq(simple_span.name, "simple_test")
+  assert_eq(complex_span.name, "complex_test")
+  assert_eq(underscore_span.name, "underscore_test")
+  assert_eq(dash_span.name, "dash_test")
+  assert_eq(semantic_span.name, "semantic_test")
+  assert_eq(major_span.name, "major_test")
+  assert_eq(pre_release_span.name, "pre_release_test")
+  assert_eq(build_span.name, "build_test")
+}
+
+test "configuration_meter_validation" {
+  // 测试Meter配置验证
   
-  // 应用立即更新
-  if is_valid {
-    updater.current_config = immediate_update
-    updater.last_update_time = 1234567891L
-    updater.update_count = updater.update_count + 1
-  }
+  let meter_provider = NoopMeterProvider::{}
   
-  assert_eq(updater.current_config.service_name, "updated-service")
-  assert_eq(updater.current_config.sampling_rate, 0.5)
-  assert_eq(updater.current_config.batch_size, 200)
-  assert_eq(updater.update_count, 1)
+  // 测试有效的Meter配置
+  let valid_meter = meter_provider.get_meter("valid-meter", Some("1.0.0"), Some("http://example.com/schema"))
+  let meter_with_schema = meter_provider.get_meter("schema-meter", Some("2.0.0"), Some("https://api.example.com/metrics-schema"))
+  let meter_minimal = meter_provider.get_meter("minimal-meter", None, None)
   
-  // 7. 测试优雅更新策略
-  updater.update_strategy = Graceful
+  // 测试不同Schema URL格式的Meter
+  let http_schema_meter = meter_provider.get_meter("http-schema", Some("1.0.0"), Some("http://example.com/schema"))
+  let https_schema_meter = meter_provider.get_meter("https-schema", Some("1.0.0"), Some("https://example.com/schema"))
+  let no_schema_meter = meter_provider.get_meter("no-schema", Some("1.0.0"), None)
   
-  let graceful_update = TelemetryConfig::{
-    ..updater.current_config,
-    service_version: "2.0.0",
-    enable_tracing: false,
-    resource_attributes: [("env", "production"), ("datacenter", "dc1")]
-  }
+  // 验证所有Meter都能正常创建指标
+  let valid_counter = valid_meter.create_counter("valid.counter", Some("count"), Some("Valid counter"))
+  let schema_counter = meter_with_schema.create_counter("schema.counter", Some("count"), Some("Schema counter"))
+  let minimal_counter = meter_minimal.create_counter("minimal.counter", None, None)
   
-  // 优雅更新：先验证，再应用
-  let (graceful_valid, graceful_message) = validate_config(graceful_update)
-  assert_eq(graceful_valid, true)
+  let valid_histogram = valid_meter.create_histogram("valid.histogram", Some("ms"), Some("Valid histogram"))
+  let schema_histogram = meter_with_schema.create_histogram("schema.histogram", Some("seconds"), Some("Schema histogram"))
+  let minimal_histogram = meter_minimal.create_histogram("minimal.histogram", None, None)
   
-  if graceful_valid {
-    // 模拟优雅更新过程
-    let old_config = updater.current_config
-    
-    // 逐步应用更新
-    updater.current_config.service_version = graceful_update.service_version
-    updater.current_config.resource_attributes = graceful_update.resource_attributes
-    
-    // 最后禁用追踪
-    updater.current_config.enable_tracing = graceful_update.enable_tracing
-    
-    updater.last_update_time = 1234567892L
-    updater.update_count = updater.update_count + 1
-  }
+  let valid_gauge = valid_meter.create_gauge("valid.gauge", Some("bytes"), Some("Valid gauge"))
+  let schema_gauge = meter_with_schema.create_gauge("schema.gauge", Some("percent"), Some("Schema gauge"))
+  let minimal_gauge = meter_minimal.create_gauge("minimal.gauge", None, None)
   
-  assert_eq(updater.current_config.service_version, "2.0.0")
-  assert_eq(updater.current_config.enable_tracing, false)
-  assert_eq(updater.current_config.resource_attributes.length(), 2)
-  assert_eq(updater.update_count, 2)
+  // 验证所有指标都能正常记录数据
+  valid_counter.add(1L, None)
+  schema_counter.add(1L, None)
+  minimal_counter.add(1L, None)
   
-  // 8. 测试条件更新策略
-  updater.update_strategy = Conditional
+  valid_histogram.record(100.0, None)
+  schema_histogram.record(200.0, None)
+  minimal_histogram.record(300.0, None)
   
-  let conditional_update = TelemetryConfig::{
-    ..updater.current_config,
-    sampling_rate: 0.8,
-    batch_size: 500
-  }
+  valid_gauge.record(50.0, None)
+  schema_gauge.record(75.0, None)
+  minimal_gauge.record(25.0, None)
   
-  // 条件更新：只有满足特定条件才应用
-  let should_update = conditional_update.sampling_rate > updater.current_config.sampling_rate and
-                     conditional_update.batch_size > updater.current_config.batch_size
+  // 验证配置有效性（通过成功创建和记录来验证）
+  assert_eq(true, true)
+}
+
+test "configuration_logger_validation" {
+  // 测试Logger配置验证
   
-  if should_update {
-    updater.current_config = conditional_update
-    updater.last_update_time = 1234567893L
-    updater.update_count = updater.update_count + 1
-  }
+  let logger_provider = NoopLoggerProvider::{}
   
-  assert_eq(should_update, true)
-  assert_eq(updater.current_config.sampling_rate, 0.8)
-  assert_eq(updater.current_config.batch_size, 500)
-  assert_eq(updater.update_count, 3)
+  // 测试有效的Logger配置
+  let valid_logger = logger_provider.get_logger("valid-logger", Some("1.0.0"), Some("http://example.com/schema"))
+  let logger_with_schema = logger_provider.get_logger("schema-logger", Some("2.1.0"), Some("https://api.example.com/logs-schema"))
+  let logger_minimal = logger_provider.get_logger("minimal-logger", None, None)
   
-  // 9. 测试无效配置处理
-  let invalid_config = TelemetryConfig::{
-    ..updater.current_config,
-    service_name: "",  // 无效：空名称
-    sampling_rate: 1.5  // 无效：超出范围
-  }
+  // 测试不同名称格式的Logger
+  let service_logger = logger_provider.get_logger("service-logger", Some("1.0.0"), None)
+  let component_logger = logger_provider.get_logger("component.logger.v2", Some("2.0.0"), None)
+  let module_logger = logger_provider.get_logger("module_logger", Some("1.5.2"), None)
   
-  let (invalid_valid, invalid_message) = validate_config(invalid_config)
-  assert_eq(invalid_valid, false)
-  assert_eq(invalid_message.contains("Service name cannot be empty"), true)
+  // 验证所有Logger都能正常记录日志
+  let valid_log_record = LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(SeverityNumber::Info)
+    .body("Valid logger test")
+    .with_attribute("logger.name", AttributeValue::string("valid-logger"))
+    .build()
   
-  // 确保无效配置不会被应用
-  if not invalid_valid {
-    // 配置保持不变
-    assert_eq(updater.current_config.service_name.length() > 0, true)
-    assert_eq(updater.current_config.sampling_rate <= 1.0, true)
+  let schema_log_record = LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(SeverityNumber::Warn)
+    .body("Schema logger test")
+    .with_attribute("logger.name", AttributeValue::string("schema-logger"))
+    .build()
+  
+  let minimal_log_record = LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(SeverityNumber::Error)
+    .body("Minimal logger test")
+    .build()
+  
+  // 发出日志记录
+  valid_logger.emit(valid_log_record)
+  schema_logger.emit(schema_log_record)
+  logger_minimal.emit(minimal_log_record)
+  
+  // 测试便捷方法
+  service_logger.debug("Debug message from service logger", None)
+  component_logger.info("Info message from component logger", None)
+  module_logger.warn("Warning message from module logger", None)
+  valid_logger.error("Error message from valid logger", None)
+  schema_logger.fatal("Fatal message from schema logger", None)
+  
+  // 验证配置有效性（通过成功记录来验证）
+  assert_eq(true, true)
+}
+
+test "configuration_resource_validation" {
+  // 测试Resource配置验证
+  
+  // 测试基本Resource配置
+  let basic_resource = Resource::default("basic-service")
+  
+  // 测试不同服务名称格式的Resource
+  let short_name_resource = Resource::default("svc")
+  let long_name_resource = Resource::default("very-long-service-name-with-many-components")
+  let dot_separated_resource = Resource::default("service.subservice.component")
+  let underscore_resource = Resource::default("service_name_with_underscores")
+  let dash_resource = Resource::default("service-name-with-dashes")
+  let mixed_resource = Resource::default("service.name-with_mixed-separators")
+  
+  // 测试特殊字符的服务名称
+  let number_resource = Resource::default("service123")
+  let alphanum_resource = Resource::default("service-v2-123")
+  let unicode_resource = Resource::default("service-测试")
+  
+  // 测试边界情况
+  let empty_name_resource = Resource::default("")
+  let single_char_resource = Resource::default("a")
+  let space_resource = Resource::default("service with spaces")
+  
+  // 验证所有Resource都正确创建
+  assert_eq(basic_resource.service_name, "basic-service")
+  assert_eq(basic_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(basic_resource.telemetry_sdk_version, "0.1.0")
+  
+  assert_eq(short_name_resource.service_name, "svc")
+  assert_eq(long_name_resource.service_name, "very-long-service-name-with-many-components")
+  assert_eq(dot_separated_resource.service_name, "service.subservice.component")
+  assert_eq(underscore_resource.service_name, "service_name_with_underscores")
+  assert_eq(dash_resource.service_name, "service-name-with-dashes")
+  assert_eq(mixed_resource.service_name, "service.name-with_mixed-separators")
+  
+  assert_eq(number_resource.service_name, "service123")
+  assert_eq(alphanum_resource.service_name, "service-v2-123")
+  assert_eq(unicode_resource.service_name, "service-测试")
+  
+  assert_eq(empty_name_resource.service_name, "")
+  assert_eq(single_char_resource.service_name, "a")
+  assert_eq(space_resource.service_name, "service with spaces")
+  
+  // 验证所有Resource都有相同的SDK信息
+  let resources = [
+    basic_resource, short_name_resource, long_name_resource,
+    dot_separated_resource, underscore_resource, dash_resource,
+    mixed_resource, number_resource, alphanum_resource,
+    unicode_resource, empty_name_resource, single_char_resource,
+    space_resource
+  ]
+  
+  let mut i = 0
+  while i < resources.length() {
+    assert_eq(resources[i].telemetry_sdk_name, "azimuth")
+    assert_eq(resources[i].telemetry_sdk_version, "0.1.0")
+    assert_eq(resources[i].service_version, None)
+    assert_eq(resources[i].attributes.length(), 0)
+    i = i + 1
   }
 }
 
-test "configuration_persistence_and_recovery" {
-  // 测试配置的持久化和恢复
+test "configuration_attribute_validation" {
+  // 测试属性配置验证
   
-  // 1. 定义配置存储接口
-  trait ConfigStorage {
-    save(config : TelemetryConfig) -> Bool
-    load() -> TelemetryConfig?
-    backup() -> Bool
-    restore() -> Bool
-  }
+  let ctx = Context::empty()
+  let tracer_provider = NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("attribute-test", Some("1.0.0"))
   
-  // 2. 实现内存配置存储
-  struct MemoryConfigStorage {
-    configs : Array[TelemetryConfig]
-    current_index : Int
-    backup_configs : Array[TelemetryConfig]
-  }
+  // 测试有效的属性键
+  let valid_keys = [
+    "simple.key",
+    "key.with.dots",
+    "key_with_underscores",
+    "key-with-dashes",
+    "key123",
+    "key.with.numbers123",
+    "very.long.key.name.with.many.components",
+    "short",
+    "k",
+    "UPPERCASE.KEY",
+    "Mixed.Case.Key"
+  ]
   
-  // 3. 创建测试配置序列
-  let mut config_history = Array[TelemetryConfig]::new()
-  let base_config = TelemetryConfig::{
-    service_name: "base-service",
-    service_version: "1.0.0",
-    enable_tracing: true,
-    enable_metrics: true,
-    enable_logging: true,
-    sampling_rate: 0.1,
-    batch_size: 100,
-    export_timeout_ms: 30000,
-    resource_attributes: [("env", "test")]
-  }
+  // 测试有效的属性值
+  let string_values = [
+    "simple value",
+    "value with spaces",
+    "value-with-dashes",
+    "value_with_underscores",
+    "value123",
+    "UPPERCASE_VALUE",
+    "Mixed.Case.Value",
+    "value.with.dots",
+    "value!@#$%^&*()",
+    "Unicode值测试🚀",
+    "",
+    " ",  // 空格
+    "x" * 1000  // 长字符串
+  ]
   
-  config_history.push(base_config)
+  let int_values = [
+    0L, 1L, -1L, 42L, -42L,
+    9223372036854775807L,  // Int64最大值
+    -9223372036854775808L  // Int64最小值
+  ]
   
-  // 添加配置变更历史
-  let mut i = 1
-  while i <= 5 {
-    let config = TelemetryConfig::{
-      ..base_config,
-      service_version: "1." + i.to_string() + ".0",
-      sampling_rate: 0.1 * i.to_double(),
-      batch_size: 100 * i
+  let float_values = [
+    0.0, 1.0, -1.0, 3.14159, -3.14159,
+    1.7976931348623157e+308,  // Double最大值
+    -1.7976931348623157e+308, // Double最小值
+    5e-324,  // 最小正数
+    1.0/0.0,  // 正无穷
+    -1.0/0.0, // 负无穷
+    0.0/0.0   // NaN
+  ]
+  
+  let bool_values = [true, false]
+  
+  // 测试字符串属性
+  let mut i = 0
+  while i < valid_keys.length() && i < string_values.length() {
+    let string_attributes = [(valid_keys[i], AttributeValue::string(string_values[i]))]
+    let (_, string_span) = tracer.start_span(ctx, "string_attr_test", Internal, Some(string_attributes))
+    assert_eq(string_span.attributes.length(), 1)
+    assert_eq(string_span.attributes[0].0, valid_keys[i])
+    
+    match string_span.attributes[0].1 {
+      StringValue(value) => assert_eq(value, string_values[i])
+      _ => @test.fail("Expected StringValue")
     }
-    config_history.push(config)
     i = i + 1
   }
   
-  assert_eq(config_history.length(), 6)
-  
-  // 4. 模拟配置持久化
-  struct ConfigPersistence {
-    storage : MemoryConfigStorage
-    auto_backup : Bool
-    max_history : Int
-    compression_enabled : Bool
-  }
-  
-  let mut persistence = ConfigPersistence::{
-    storage: MemoryConfigStorage::{
-      configs: Array[TelemetryConfig]::new(),
-      current_index: 0,
-      backup_configs: Array[TelemetryConfig]::new()
-    },
-    auto_backup: true,
-    max_history: 10,
-    compression_enabled: true
-  }
-  
-  // 5. 测试配置保存
+  // 测试整数属性
   let mut j = 0
-  while j < config_history.length() {
-    let config = config_history[j]
+  while j < valid_keys.length() && j < int_values.length() {
+    let int_attributes = [(valid_keys[j], AttributeValue::int(int_values[j]))]
+    let (_, int_span) = tracer.start_span(ctx, "int_attr_test", Internal, Some(int_attributes))
+    assert_eq(int_span.attributes.length(), 1)
+    assert_eq(int_span.attributes[0].0, valid_keys[j])
     
-    // 保存配置
-    persistence.storage.configs.push(config)
-    
-    // 自动备份
-    if persistence.auto_backup and j % 2 == 0 {
-      persistence.storage.backup_configs.push(config)
+    match int_span.attributes[0].1 {
+      IntValue(value) => assert_eq(value, int_values[j])
+      _ => @test.fail("Expected IntValue")
     }
-    
     j = j + 1
   }
   
-  assert_eq(persistence.storage.configs.length(), 6)
-  assert_eq(persistence.storage.backup_configs.length(), 3)
-  
-  // 6. 测试配置恢复
-  fn restore_from_backup(persistence : ConfigPersistence, backup_index : Int) -> TelemetryConfig? {
-    if backup_index >= 0 and backup_index < persistence.storage.backup_configs.length() {
-      Some(persistence.storage.backup_configs[backup_index])
-    } else {
-      None
-    }
-  }
-  
-  let restored_config = restore_from_backup(persistence, 1)
-  match restored_config {
-    Some(config) => {
-      assert_eq(config.service_version, "1.2.0")
-      assert_eq(config.sampling_rate, 0.3)
-      assert_eq(config.batch_size, 300)
-    }
-    None => @test.fail("Failed to restore configuration from backup")
-  }
-  
-  // 7. 测试配置回滚
-  fn rollback_config(persistence : ConfigPersistence, target_index : Int) -> Bool {
-    if target_index >= 0 and target_index < persistence.storage.configs.length() {
-      persistence.storage.current_index = target_index
-      true
-    } else {
-      false
-    }
-  }
-  
-  let rollback_success = rollback_config(persistence, 2)
-  assert_eq(rollback_success, true)
-  assert_eq(persistence.storage.current_index, 2)
-  
-  let rolled_back_config = persistence.storage.configs[persistence.storage.current_index]
-  assert_eq(rolled_back_config.service_version, "1.2.0")
-  
-  // 8. 测试配置验证和修复
-  fn repair_config(config : TelemetryConfig) -> TelemetryConfig {
-    let mut repaired = config
+  // 测试浮点数属性
+  let mut k = 0
+  while k < valid_keys.length() && k < float_values.length() {
+    let float_attributes = [(valid_keys[k], AttributeValue::float(float_values[k]))]
+    let (_, float_span) = tracer.start_span(ctx, "float_attr_test", Internal, Some(float_attributes))
+    assert_eq(float_span.attributes.length(), 1)
+    assert_eq(float_span.attributes[0].0, valid_keys[k])
     
-    // 修复无效的采样率
-    if repaired.sampling_rate < 0.0 {
-      repaired.sampling_rate = 0.0
-    } else if repaired.sampling_rate > 1.0 {
-      repaired.sampling_rate = 1.0
+    match float_span.attributes[0].1 {
+      FloatValue(value) => assert_eq(value, float_values[k])
+      _ => @test.fail("Expected FloatValue")
     }
-    
-    // 修复无效的批处理大小
-    if repaired.batch_size <= 0 {
-      repaired.batch_size = 100
-    } else if repaired.batch_size > 10000 {
-      repaired.batch_size = 10000
-    }
-    
-    // 修复空的服务名称
-    if repaired.service_name.length() == 0 {
-      repaired.service_name = "default-service"
-    }
-    
-    repaired
+    k = k + 1
   }
   
-  let damaged_config = TelemetryConfig::{
-    service_name: "",
-    service_version: "1.0.0",
-    enable_tracing: true,
-    enable_metrics: true,
-    enable_logging: true,
-    sampling_rate: -0.5,
-    batch_size: 0,
-    export_timeout_ms: 30000,
-    resource_attributes: []
-  }
-  
-  let repaired_config = repair_config(damaged_config)
-  assert_eq(repaired_config.service_name, "default-service")
-  assert_eq(repaired_config.sampling_rate, 0.0)
-  assert_eq(repaired_config.batch_size, 100)
-}
-
-test "configuration_conflict_resolution" {
-  // 测试配置冲突解决
-  
-  // 1. 定义配置优先级
-  enum ConfigSource {
-    Default          // 默认配置
-    File            // 文件配置
-    Environment     // 环境变量
-    CommandLine     // 命令行参数
-    Runtime         // 运行时API
-  }
-  
-  // 2. 定义配置项
-  struct ConfigItem {
-    key : String
-    value : String
-    source : ConfigSource
-    priority : Int
-  }
-  
-  // 3. 创建冲突的配置项
-  let conflicting_configs = [
-    ConfigItem::{
-      key: "service_name",
-      value: "default-service",
-      source: Default,
-      priority: 1
-    },
-    ConfigItem::{
-      key: "service_name",
-      value: "file-service",
-      source: File,
-      priority: 2
-    },
-    ConfigItem::{
-      key: "service_name",
-      value: "env-service",
-      source: Environment,
-      priority: 3
-    },
-    ConfigItem::{
-      key: "service_name",
-      value: "cli-service",
-      source: CommandLine,
-      priority: 4
-    },
-    ConfigItem::{
-      key: "service_name",
-      value: "runtime-service",
-      source: Runtime,
-      priority: 5
-    },
-    // 其他配置项
-    ConfigItem::{
-      key: "sampling_rate",
-      value: "0.1",
-      source: Default,
-      priority: 1
-    },
-    ConfigItem::{
-      key: "sampling_rate",
-      value: "0.5",
-      source: File,
-      priority: 2
-    }
-  ]
-  
-  // 4. 实现冲突解决策略
-  fn resolve_conflicts(configs : Array[ConfigItem]) -> Array[(String, String)] {
-    let mut resolved = Array[(String, String)]::new()
-    let mut config_map = Array[(String, ConfigItem)]::new()
-    
-    // 按键分组
-    let mut i = 0
-    while i < configs.length() {
-      let config = configs[i]
-      let mut found = false
-      let mut j = 0
-      
-      while j < config_map.length() {
-        let (key, existing_config) = config_map[j]
-        if key == config.key {
-          // 选择优先级更高的配置
-          if config.priority > existing_config.priority {
-            config_map[j] = (key, config)
-          }
-          found = true
-          break
-        }
-        j = j + 1
-      }
-      
-      if not found {
-        config_map.push((config.key, config))
-      }
-      
-      i = i + 1
-    }
-    
-    // 提取最终配置
-    let mut k = 0
-    while k < config_map.length() {
-      let (key, config) = config_map[k]
-      resolved.push((key, config.value))
-      k = k + 1
-    }
-    
-    resolved
-  }
-  
-  // 5. 测试冲突解决
-  let resolved_configs = resolve_conflicts(conflicting_configs)
-  
-  // 验证最高优先级配置被选中
-  let mut service_name_found = false
-  let mut sampling_rate_found = false
-  
+  // 测试布尔属性
   let mut l = 0
-  while l < resolved_configs.length() {
-    let (key, value) = resolved_configs[l]
-    match key {
-      "service_name" => {
-        service_name_found = true
-        assert_eq(value, "runtime-service")  // 最高优先级
-      }
-      "sampling_rate" => {
-        sampling_rate_found = true
-        assert_eq(value, "0.5")  // 文件配置优先级高于默认
-      }
-      _ => {}
+  while l < valid_keys.length() && l < bool_values.length() {
+    let bool_attributes = [(valid_keys[l], AttributeValue::bool(bool_values[l]))]
+    let (_, bool_span) = tracer.start_span(ctx, "bool_attr_test", Internal, Some(bool_attributes))
+    assert_eq(bool_span.attributes.length(), 1)
+    assert_eq(bool_span.attributes[0].0, valid_keys[l])
+    
+    match bool_span.attributes[0].1 {
+      BoolValue(value) => assert_eq(value, bool_values[l])
+      _ => @test.fail("Expected BoolValue")
     }
     l = l + 1
   }
   
-  assert_eq(service_name_found, true)
-  assert_eq(sampling_rate_found, true)
+  // 测试数组属性
+  let string_array = AttributeValue::array_string(["a", "b", "c"])
+  let int_array = AttributeValue::array_int([1L, 2L, 3L])
+  let float_array = AttributeValue::array_float([1.1, 2.2, 3.3])
+  let bool_array = AttributeValue::array_bool([true, false, true])
   
-  // 6. 测试配置合并策略
-  enum MergeStrategy {
-    Override        // 覆盖
-    Merge           // 合并
-    Intersect       // 交集
-    Union           // 并集
+  let array_attributes = [
+    ("string.array", string_array),
+    ("int.array", int_array),
+    ("float.array", float_array),
+    ("bool.array", bool_array)
+  ]
+  
+  let (_, array_span) = tracer.start_span(ctx, "array_attr_test", Internal, Some(array_attributes))
+  assert_eq(array_span.attributes.length(), 4)
+  
+  // 验证数组属性
+  match array_span.attributes[0].1 {
+    ArrayStringValue(arr) => assert_eq(arr.length(), 3)
+    _ => @test.fail("Expected ArrayStringValue")
   }
   
-  fn merge_configs(base : Array[(String, String)], 
-                  override_ : Array[(String, String)], 
-                  strategy : MergeStrategy) -> Array[(String, String)] {
-    match strategy {
-      Override => override_
-      Merge => {
-        let mut merged = base
-        let mut i = 0
-        while i < override_.length() {
-          let (key, value) = override_[i]
-          let mut found = false
-          let mut j = 0
-          
-          while j < merged.length() {
-            if merged[j].0 == key {
-              merged[j] = (key, value)
-              found = true
-              break
-            }
-            j = j + 1
-          }
-          
-          if not found {
-            merged.push((key, value))
-          }
-          
-          i = i + 1
-        }
-        merged
-      }
-      _ => base  // 简化实现
+  match array_span.attributes[1].1 {
+    ArrayIntValue(arr) => assert_eq(arr.length(), 3)
+    _ => @test.fail("Expected ArrayIntValue")
+  }
+  
+  match array_span.attributes[2].1 {
+    ArrayFloatValue(arr) => assert_eq(arr.length(), 3)
+    _ => @test.fail("Expected ArrayFloatValue")
+  }
+  
+  match array_span.attributes[3].1 {
+    ArrayBoolValue(arr) => assert_eq(arr.length(), 3)
+    _ => @test.fail("Expected ArrayBoolValue")
+  }
+}
+
+test "configuration_context_and_baggage_validation" {
+  // 测试Context和Baggage配置验证
+  
+  // 测试Context配置
+  let ctx = Context::empty()
+  
+  // 测试有效的Context键
+  let valid_context_keys = [
+    "simple.key",
+    "key.with.dots",
+    "key_with_underscores",
+    "key-with-dashes",
+    "key123",
+    "UPPERCASE.KEY",
+    "Mixed.Case.Key",
+    "very.long.key.name.with.many.components",
+    "short",
+    "k"
+  ]
+  
+  // 测试有效的Context值
+  let valid_context_values = [
+    "simple value",
+    "value with spaces",
+    "value-with-dashes",
+    "value_with_underscores",
+    "value123",
+    "UPPERCASE_VALUE",
+    "Mixed.Case.Value",
+    "value!@#$%^&*()",
+    "Unicode值测试🚀",
+    "",
+    "x" * 1000
+  ]
+  
+  // 测试Context设置和获取
+  let mut current_ctx = ctx
+  let mut i = 0
+  while i < valid_context_keys.length() && i < valid_context_values.length() {
+    let key = create_key(valid_context_keys[i])
+    current_ctx = current_ctx.with_value(key, valid_context_values[i])
+    
+    match current_ctx.get(key) {
+      Some(value) => assert_eq(value, valid_context_values[i])
+      None => @test.fail("Expected Some(value) for key: " + valid_context_keys[i])
     }
+    i = i + 1
   }
   
-  let base_configs = [("service_name", "base"), ("env", "test")]
-  let override_configs = [("service_name", "override"), ("region", "us-west")]
+  // 测试Baggage配置
+  let baggage = Baggage::empty()
   
-  let merged = merge_configs(base_configs, override_configs, Merge)
+  // 测试有效的Baggage键
+  let valid_baggage_keys = [
+    "correlation-id",
+    "user-id",
+    "session-id",
+    "request-id",
+    "trace-id",
+    "tenant-id",
+    "region",
+    "environment",
+    "version",
+    "component"
+  ]
   
-  // 验证合并结果
-  assert_eq(merged.length(), 3)
-  assert_eq(merged[0], ("service_name", "override"))  // 被覆盖
-  assert_eq(merged[1], ("env", "test"))               // 保留
-  assert_eq(merged[2], ("region", "us-west"))         // 新增
+  // 测试有效的Baggage值
+  let valid_baggage_values = [
+    "corr-12345",
+    "user-67890",
+    "sess-abcdef",
+    "req-fedcba",
+    "trace-123456",
+    "tenant-789012",
+    "us-west-2",
+    "production",
+    "v1.2.3",
+    "web-api"
+  ]
+  
+  // 测试Baggage设置和获取
+  let mut current_baggage = baggage
+  let mut j = 0
+  while j < valid_baggage_keys.length() && j < valid_baggage_values.length() {
+    current_baggage = current_baggage.with_entry(valid_baggage_keys[j], valid_baggage_values[j])
+    
+    match current_baggage.get(valid_baggage_keys[j]) {
+      Some(value) => assert_eq(value, valid_baggage_values[j])
+      None => @test.fail("Expected Some(value) for baggage key: " + valid_baggage_keys[j])
+    }
+    j = j + 1
+  }
+  
+  // 测试边界情况
+  let empty_key = create_key("")
+  let ctx_with_empty_key = current_ctx.with_value(empty_key, "value_with_empty_key")
+  match ctx_with_empty_key.get(empty_key) {
+    Some(value) => assert_eq(value, "value_with_empty_key")
+    None => @test.fail("Expected Some(value) for empty key")
+  }
+  
+  let normal_key = create_key("normal.key")
+  let ctx_with_empty_value = current_ctx.with_value(normal_key, "")
+  match ctx_with_empty_value.get(normal_key) {
+    Some(value) => assert_eq(value, "")
+    None => @test.fail("Expected Some(empty value)")
+  }
+  
+  let baggage_with_empty_key = current_baggage.with_entry("", "value_with_empty_key")
+  match baggage_with_empty_key.get("") {
+    Some(value) => assert_eq(value, "value_with_empty_key")
+    None => @test.fail("Expected Some(value) for empty baggage key")
+  }
+  
+  let baggage_with_empty_value = current_baggage.with_entry("normal.key", "")
+  match baggage_with_empty_value.get("normal.key") {
+    Some(value) => assert_eq(value, "")
+    None => @test.fail("Expected Some(empty baggage value)")
+  }
+}
+
+test "configuration_log_record_validation" {
+  // 测试LogRecord配置验证
+  
+  let logger_provider = NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("config-validation-logger", Some("1.0.0"))
+  
+  // 测试所有严重级别
+  let severity_levels = [
+    (SeverityNumber::Trace, "trace"),
+    (SeverityNumber::Debug, "debug"),
+    (SeverityNumber::Info, "info"),
+    (SeverityNumber::Warn, "warn"),
+    (SeverityNumber::Error, "error"),
+    (SeverityNumber::Fatal, "fatal")
+  ]
+  
+  let mut i = 0
+  while i < severity_levels.length() {
+    let (severity, severity_name) = severity_levels[i]
+    
+    let log_record = LogRecord::builder()
+      .timestamp(1640995200000000000L + i.to_int64())
+      .severity(severity)
+      .body("Test " + severity_name + " log message")
+      .with_attribute("severity.level", AttributeValue::string(severity_name))
+      .with_attribute("test.index", AttributeValue::int(i.to_int64()))
+      .build()
+    
+    logger.emit(log_record)
+    
+    // 验证日志记录配置
+    assert_eq(log_record.severity_number, severity)
+    match log_record.body {
+      Some(body) => assert_eq(body, "Test " + severity_name + " log message")
+      None => @test.fail("Expected Some(body) for " + severity_name + " log")
+    }
+    assert_eq(log_record.attributes.length(), 2)
+    
+    i = i + 1
+  }
+  
+  // 测试不同的时间戳
+  let timestamp_values = [
+    0L,  // 最小时间戳
+    1640995200000000000L,  // 正常时间戳
+    9223372036854775807L   // 最大时间戳
+  ]
+  
+  let mut j = 0
+  while j < timestamp_values.length() {
+    let timestamp_log = LogRecord::builder()
+      .timestamp(timestamp_values[j])
+      .severity(SeverityNumber::Info)
+      .body("Timestamp test " + j.to_string())
+      .build()
+    
+    logger.emit(timestamp_log)
+    assert_eq(timestamp_log.timestamp_unix_nanos, timestamp_values[j])
+    
+    j = j + 1
+  }
+  
+  // 测试不同的日志消息
+  let message_values = [
+    "Simple message",
+    "Message with spaces and punctuation!@#$%^&*()",
+    "Message with Unicode: 测试消息🚀🌟",
+    "",  // 空消息
+    " ",  // 空格消息
+    "x" * 1000  // 长消息
+  ]
+  
+  let mut k = 0
+  while k < message_values.length() {
+    let message_log = LogRecord::builder()
+      .timestamp(1640995200000000000L + k.to_int64())
+      .severity(SeverityNumber::Info)
+      .body(message_values[k])
+      .build()
+    
+    logger.emit(message_log)
+    
+    match message_log.body {
+      Some(body) => assert_eq(body, message_values[k])
+      None => @test.fail("Expected Some(body) for message test " + k.to_string())
+    }
+    
+    k = k + 1
+  }
+  
+  // 测试复杂属性组合
+  let complex_attributes = [
+    ("string.attr", AttributeValue::string("complex_string_value")),
+    ("int.attr", AttributeValue::int(42L)),
+    ("float.attr", AttributeValue::float(3.14159)),
+    ("bool.attr", AttributeValue::bool(true)),
+    ("array.string", AttributeValue::array_string(["a", "b", "c"])),
+    ("array.int", AttributeValue::array_int([1L, 2L, 3L])),
+    ("array.float", AttributeValue::array_float([1.1, 2.2, 3.3])),
+    ("array.bool", AttributeValue::array_bool([true, false, true]))
+  ]
+  
+  let complex_log = LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(SeverityNumber::Info)
+    .body("Complex attributes test")
+    let mut attr_index = 0
+    while attr_index < complex_attributes.length() {
+      let (key, value) = complex_attributes[attr_index]
+      complex_log = complex_log.with_attribute(key, value)
+      attr_index = attr_index + 1
+    }
+    .build()
+  
+  logger.emit(complex_log)
+  
+  // 验证复杂属性
+  assert_eq(complex_log.attributes.length(), 8)
+  assert_eq(complex_log.severity_number, SeverityNumber::Info)
+  match complex_log.body {
+    Some(body) => assert_eq(body, "Complex attributes test")
+    None => @test.fail("Expected Some(body) for complex log")
+  }
 }

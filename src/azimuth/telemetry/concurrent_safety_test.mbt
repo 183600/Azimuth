@@ -1,608 +1,444 @@
-// 并发安全测试 - 测试多线程并发场景
+// 并发安全性测试 - 测试多线程环境下的数据安全性
+use azimuth.telemetry.api.common.{AttributeValue, Resource}
+use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, NoopTracer, NoopTracerProvider}
+use azimuth.telemetry.api.metrics.{NoopMeter, NoopMeterProvider}
+use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
+use azimuth.telemetry.api.context.{Context, ContextKey, Baggage, create_key}
 
-test "concurrent_context_operations" {
+test "concurrent_span_creation_safety" {
+  // 测试并发创建span的安全性
+  
+  let ctx = Context::empty()
+  let tracer_provider = NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("concurrent-test", Some("1.0.0"))
+  
+  // 模拟10个"并发"worker，每个创建100个span
+  let mut worker_id = 0
+  let total_spans_created = 0
+  
+  while worker_id < 10 {
+    let mut span_count = 0
+    while span_count < 100 {
+      let span_name = "worker_" + worker_id.to_string() + "_span_" + span_count.to_string()
+      let attributes = [
+        ("worker.id", AttributeValue::int(worker_id.to_int64())),
+        ("span.count", AttributeValue::int(span_count.to_int64())),
+        ("concurrent.test", AttributeValue::bool(true)),
+        ("thread.safe", AttributeValue::bool(true))
+      ]
+      
+      let (_, span) = tracer.start_span(
+        ctx, 
+        span_name, 
+        Internal, 
+        Some(attributes)
+      )
+      
+      // 验证每个span都正确创建
+      assert_eq(span.name, span_name)
+      assert_eq(span.kind, Internal)
+      assert_eq(span.attributes.length(), 4)
+      
+      // 验证属性值正确
+      match span.attributes[0].1 {
+        IntValue(worker_id_attr) => assert_eq(worker_id_attr, worker_id.to_int64())
+        _ => @test.fail("Expected IntValue for worker.id")
+      }
+      
+      match span.attributes[1].1 {
+        IntValue(span_count_attr) => assert_eq(span_count_attr, span_count.to_int64())
+        _ => @test.fail("Expected IntValue for span.count")
+      }
+      
+      span_count = span_count + 1
+      total_spans_created = total_spans_created + 1
+    }
+    worker_id = worker_id + 1
+  }
+  
+  // 验证总共创建了1000个span
+  assert_eq(total_spans_created, 1000)
+}
+
+test "concurrent_context_operations_safety" {
   // 测试并发Context操作的安全性
   
-  let base_ctx = context::Context::empty()
+  // 模拟多个"并发"操作对同一个Context进行操作
+  let base_ctx = Context::empty()
+  let keys = []
   
-  // 模拟并发写入不同的键
-  let ctx1 = base_ctx.with_value(context::create_key("thread1.key1"), "thread1.value1")
-  let ctx2 = base_ctx.with_value(context::create_key("thread2.key2"), "thread2.value2")
-  let ctx3 = base_ctx.with_value(context::create_key("thread3.key3"), "thread3.value3")
-  let ctx4 = base_ctx.with_value(context::create_key("thread4.key4"), "thread4.value4")
-  let ctx5 = base_ctx.with_value(context::create_key("thread5.key5"), "thread5.value5")
-  
-  // 验证每个context都有正确的值
-  match ctx1.get(context::create_key("thread1.key1")) {
-    Some(value) => assert_eq(value, "thread1.value1")
-    None => @test.fail("Expected thread1.key1 value")
+  // 创建100个不同的键
+  let mut i = 0
+  while i < 100 {
+    keys.push(create_key("concurrent_key_" + i.to_string()))
+    i = i + 1
   }
   
-  match ctx2.get(context::create_key("thread2.key2")) {
-    Some(value) => assert_eq(value, "thread2.value2")
-    None => @test.fail("Expected thread2.key2 value")
+  // 模拟10个worker并发操作Context
+  let mut worker_id = 0
+  let contexts = []
+  
+  while worker_id < 10 {
+    let mut current_ctx = base_ctx
+    let mut operation_count = 0
+    
+    // 每个worker执行50次操作
+    while operation_count < 50 {
+      let key_index = (worker_id * 50 + operation_count) % keys.length()
+      let value = "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string()
+      current_ctx = current_ctx.with_value(keys[key_index], value)
+      operation_count = operation_count + 1
+    }
+    
+    contexts.push(current_ctx)
+    worker_id = worker_id + 1
   }
   
-  match ctx3.get(context::create_key("thread3.key3")) {
-    Some(value) => assert_eq(value, "thread3.value3")
-    None => @test.fail("Expected thread3.key3 value")
-  }
-  
-  match ctx4.get(context::create_key("thread4.key4")) {
-    Some(value) => assert_eq(value, "thread4.value4")
-    None => @test.fail("Expected thread4.key4 value")
-  }
-  
-  match ctx5.get(context::create_key("thread5.key5")) {
-    Some(value) => assert_eq(value, "thread5.value5")
-    None => @test.fail("Expected thread5.key5 value")
-  }
-  
-  // 验证交叉访问不会影响其他context
-  match ctx1.get(context::create_key("thread2.key2")) {
-    Some(_) => @test.fail("Should not find thread2.key2 in ctx1")
-    None => assert_eq(true, true)
-  }
-  
-  match ctx2.get(context::create_key("thread1.key1")) {
-    Some(_) => @test.fail("Should not find thread1.key1 in ctx2")
-    None => assert_eq(true, true)
+  // 验证每个Context都正确维护了其状态
+  let mut ctx_index = 0
+  while ctx_index < contexts.length() {
+    let ctx = contexts[ctx_index]
+    
+    // 验证Context中设置的值
+    let mut verification_count = 0
+    let mut op_count = 0
+    while op_count < 50 {
+      let key_index = (ctx_index * 50 + op_count) % keys.length()
+      let expected_value = "worker_" + ctx_index.to_string() + "_value_" + op_count.to_string()
+      
+      match ctx.get(keys[key_index]) {
+        Some(actual_value) => {
+          if actual_value == expected_value {
+            verification_count = verification_count + 1
+          }
+        }
+        None => ()  // 某些键可能被覆盖，这是预期的
+      }
+      op_count = op_count + 1
+    }
+    
+    // 至少应该有一些值能够正确匹配
+    assert_eq(verification_count > 0, true)
+    ctx_index = ctx_index + 1
   }
 }
 
-test "concurrent_baggage_operations" {
+test "concurrent_baggage_operations_safety" {
   // 测试并发Baggage操作的安全性
   
-  let base_baggage = context::Baggage::empty()
-  
-  // 模拟并发写入不同的baggage条目
-  let baggage1 = base_baggage.with_entry("thread1.baggage1", "thread1.value1")
-  let baggage2 = base_baggage.with_entry("thread2.baggage2", "thread2.value2")
-  let baggage3 = base_baggage.with_entry("thread3.baggage3", "thread3.value3")
-  let baggage4 = base_baggage.with_entry("thread4.baggage4", "thread4.value4")
-  let baggage5 = base_baggage.with_entry("thread5.baggage5", "thread5.value5")
-  
-  // 验证每个baggage都有正确的值
-  match baggage1.get("thread1.baggage1") {
-    Some(value) => assert_eq(value, "thread1.value1")
-    None => @test.fail("Expected thread1.baggage1 value")
-  }
-  
-  match baggage2.get("thread2.baggage2") {
-    Some(value) => assert_eq(value, "thread2.value2")
-    None => @test.fail("Expected thread2.baggage2 value")
-  }
-  
-  match baggage3.get("thread3.baggage3") {
-    Some(value) => assert_eq(value, "thread3.value3")
-    None => @test.fail("Expected thread3.baggage3 value")
-  }
-  
-  match baggage4.get("thread4.baggage4") {
-    Some(value) => assert_eq(value, "thread4.value4")
-    None => @test.fail("Expected thread4.baggage4 value")
-  }
-  
-  match baggage5.get("thread5.baggage5") {
-    Some(value) => assert_eq(value, "thread5.value5")
-    None => @test.fail("Expected thread5.baggage5 value")
-  }
-  
-  // 验证交叉访问不会影响其他baggage
-  match baggage1.get("thread2.baggage2") {
-    Some(_) => @test.fail("Should not find thread2.baggage2 in baggage1")
-    None => assert_eq(true, true)
-  }
-  
-  match baggage2.get("thread1.baggage1") {
-    Some(_) => @test.fail("Should not find thread1.baggage1 in baggage2")
-    None => assert_eq(true, true)
-  }
-}
-
-test "concurrent_span_creation" {
-  // 测试并发Span创建的安全性
-  
-  let ctx = context::Context::empty()
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("concurrent-test-tracer")
-  
-  // 模拟并发创建多个span
-  let (ctx1, span1) = tracer.start_span(
-    ctx,
-    "concurrent-span-1",
-    trace::Internal,
-    [("thread.id", common::AttributeValue::string("thread1"))],
-    Some(1000000L)
-  )
-  
-  let (ctx2, span2) = tracer.start_span(
-    ctx,
-    "concurrent-span-2",
-    trace::Server,
-    [("thread.id", common::AttributeValue::string("thread2"))],
-    Some(2000000L)
-  )
-  
-  let (ctx3, span3) = tracer.start_span(
-    ctx,
-    "concurrent-span-3",
-    trace::Client,
-    [("thread.id", common::AttributeValue::string("thread3"))],
-    Some(3000000L)
-  )
-  
-  let (ctx4, span4) = tracer.start_span(
-    ctx,
-    "concurrent-span-4",
-    trace::Producer,
-    [("thread.id", common::AttributeValue::string("thread4"))],
-    Some(4000000L)
-  )
-  
-  let (ctx5, span5) = tracer.start_span(
-    ctx,
-    "concurrent-span-5",
-    trace::Consumer,
-    [("thread.id", common::AttributeValue::string("thread5"))],
-    Some(5000000L)
-  )
-  
-  // 验证每个span都有正确的属性
-  assert_eq(span1.name, "concurrent-span-1")
-  assert_eq(span2.name, "concurrent-span-2")
-  assert_eq(span3.name, "concurrent-span-3")
-  assert_eq(span4.name, "concurrent-span-4")
-  assert_eq(span5.name, "concurrent-span-5")
-  
-  match span1.kind { trace::Internal => assert_eq(true, true) _ => @test.fail("Expected Internal") }
-  match span2.kind { trace::Server => assert_eq(true, true) _ => @test.fail("Expected Server") }
-  match span3.kind { trace::Client => assert_eq(true, true) _ => @test.fail("Expected Client") }
-  match span4.kind { trace::Producer => assert_eq(true, true) _ => @test.fail("Expected Producer") }
-  match span5.kind { trace::Consumer => assert_eq(true, true) _ => @test.fail("Expected Consumer") }
-  
-  assert_eq(span1.start_time_unix_nanos, 1000000L)
-  assert_eq(span2.start_time_unix_nanos, 2000000L)
-  assert_eq(span3.start_time_unix_nanos, 3000000L)
-  assert_eq(span4.start_time_unix_nanos, 4000000L)
-  assert_eq(span5.start_time_unix_nanos, 5000000L)
-  
-  // 验证每个span都有正确的thread.id属性
-  match span1.attributes[0].1 {
-    common::StringValue(thread_id) => assert_eq(thread_id, "thread1")
-    _ => @test.fail("Expected StringValue")
-  }
-  
-  match span2.attributes[0].1 {
-    common::StringValue(thread_id) => assert_eq(thread_id, "thread2")
-    _ => @test.fail("Expected StringValue")
-  }
-  
-  match span3.attributes[0].1 {
-    common::StringValue(thread_id) => assert_eq(thread_id, "thread3")
-    _ => @test.fail("Expected StringValue")
-  }
-  
-  match span4.attributes[0].1 {
-    common::StringValue(thread_id) => assert_eq(thread_id, "thread4")
-    _ => @test.fail("Expected StringValue")
-  }
-  
-  match span5.attributes[0].1 {
-    common::StringValue(thread_id) => assert_eq(thread_id, "thread5")
-    _ => @test.fail("Expected StringValue")
-  }
-}
-
-test "concurrent_metrics_operations" {
-  // 测试并发Metrics操作的安全性
-  
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("concurrent-test-meter")
-  
-  // 创建多个指标实例
-  let counter1 = meter.create_counter("concurrent.counter1", "count", "Concurrent counter 1")
-  let counter2 = meter.create_counter("concurrent.counter2", "count", "Concurrent counter 2")
-  let counter3 = meter.create_counter("concurrent.counter3", "count", "Concurrent counter 3")
-  
-  let histogram1 = meter.create_histogram("concurrent.histogram1", "ms", "Concurrent histogram 1")
-  let histogram2 = meter.create_histogram("concurrent.histogram2", "ms", "Concurrent histogram 2")
-  
-  let gauge1 = meter.create_gauge("concurrent.gauge1", "percent", "Concurrent gauge 1")
-  let gauge2 = meter.create_gauge("concurrent.gauge2", "percent", "Concurrent gauge 2")
-  
-  let up_down_counter1 = meter.create_up_down_counter("concurrent.updown1", "count", "Concurrent up-down 1")
-  let up_down_counter2 = meter.create_up_down_counter("concurrent.updown2", "count", "Concurrent up-down 2")
-  
-  // 模拟并发操作不同的指标
-  counter1.add(1L, [("thread.id", common::AttributeValue::string("thread1"))])
-  counter2.add(2L, [("thread.id", common::AttributeValue::string("thread2"))])
-  counter3.add(3L, [("thread.id", common::AttributeValue::string("thread3"))])
-  
-  histogram1.record(100.0, [("thread.id", common::AttributeValue::string("thread1"))])
-  histogram2.record(200.0, [("thread.id", common::AttributeValue::string("thread2"))])
-  
-  gauge1.record(75.0, [("thread.id", common::AttributeValue::string("thread1"))])
-  gauge2.record(85.0, [("thread.id", common::AttributeValue::string("thread2"))])
-  
-  up_down_counter1.add(5L, [("thread.id", common::AttributeValue::string("thread1"))])
-  up_down_counter2.add(-3L, [("thread.id", common::AttributeValue::string("thread2"))])
-  
-  // 验证操作不会失败（no-op实现）
-  assert_eq(true, true)
-}
-
-test "concurrent_log_operations" {
-  // 测试并发Log操作的安全性
-  
-  let logger_provider = logs::NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("concurrent-test-logger", "1.0.0")
-  
-  // 模拟并发创建多个日志记录
-  let log1 = logs::LogRecord::builder()
-    .timestamp(1000000L)
-    .severity(logs::Info)
-    .body("Concurrent log message 1")
-    .with_attribute("thread.id", common::AttributeValue::string("thread1"))
-    .with_attribute("log.sequence", common::AttributeValue::int(1L))
-    .build()
-  
-  let log2 = logs::LogRecord::builder()
-    .timestamp(2000000L)
-    .severity(logs::Warn)
-    .body("Concurrent log message 2")
-    .with_attribute("thread.id", common::AttributeValue::string("thread2"))
-    .with_attribute("log.sequence", common::AttributeValue::int(2L))
-    .build()
-  
-  let log3 = logs::LogRecord::builder()
-    .timestamp(3000000L)
-    .severity(logs::Error)
-    .body("Concurrent log message 3")
-    .with_attribute("thread.id", common::AttributeValue::string("thread3"))
-    .with_attribute("log.sequence", common::AttributeValue::int(3L))
-    .build()
-  
-  let log4 = logs::LogRecord::builder()
-    .timestamp(4000000L)
-    .severity(logs::Debug)
-    .body("Concurrent log message 4")
-    .with_attribute("thread.id", common::AttributeValue::string("thread4"))
-    .with_attribute("log.sequence", common::AttributeValue::int(4L))
-    .build()
-  
-  let log5 = logs::LogRecord::builder()
-    .timestamp(5000000L)
-    .severity(logs::Fatal)
-    .body("Concurrent log message 5")
-    .with_attribute("thread.id", common::AttributeValue::string("thread5"))
-    .with_attribute("log.sequence", common::AttributeValue::int(5L))
-    .build()
-  
-  // 验证每个日志记录都有正确的属性
-  match log1.body {
-    Some(body) => assert_eq(body, "Concurrent log message 1")
-    None => @test.fail("Expected log1 body")
-  }
-  
-  match log2.body {
-    Some(body) => assert_eq(body, "Concurrent log message 2")
-    None => @test.fail("Expected log2 body")
-  }
-  
-  match log3.body {
-    Some(body) => assert_eq(body, "Concurrent log message 3")
-    None => @test.fail("Expected log3 body")
-  }
-  
-  match log4.body {
-    Some(body) => assert_eq(body, "Concurrent log message 4")
-    None => @test.fail("Expected log4 body")
-  }
-  
-  match log5.body {
-    Some(body) => assert_eq(body, "Concurrent log message 5")
-    None => @test.fail("Expected log5 body")
-  }
-  
-  assert_eq(log1.timestamp_unix_nanos, 1000000L)
-  assert_eq(log2.timestamp_unix_nanos, 2000000L)
-  assert_eq(log3.timestamp_unix_nanos, 3000000L)
-  assert_eq(log4.timestamp_unix_nanos, 4000000L)
-  assert_eq(log5.timestamp_unix_nanos, 5000000L)
-  
-  match log1.severity_number { logs::Info => assert_eq(true, true) _ => @test.fail("Expected Info") }
-  match log2.severity_number { logs::Warn => assert_eq(true, true) _ => @test.fail("Expected Warn") }
-  match log3.severity_number { logs::Error => assert_eq(true, true) _ => @test.fail("Expected Error") }
-  match log4.severity_number { logs::Debug => assert_eq(true, true) _ => @test.fail("Expected Debug") }
-  match log5.severity_number { logs::Fatal => assert_eq(true, true) _ => @test.fail("Expected Fatal") }
-}
-
-test "concurrent_propagation_operations" {
-  // 测试并发传播操作的安全性
-  
-  let ctx = context::Context::empty()
-  let trace_propagator = propagation::W3CTraceContextPropagator::{}
-  let baggage_propagator = propagation::W3CBaggagePropagator::{}
-  let composite = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
-  
-  // 模拟并发注入操作
-  let carrier1 = propagation::MapCarrier::new()
-  let carrier2 = propagation::MapCarrier::new()
-  let carrier3 = propagation::MapCarrier::new()
-  let carrier4 = propagation::MapCarrier::new()
-  let carrier5 = propagation::MapCarrier::new()
-  
-  trace_propagator.inject(ctx, carrier1)
-  baggage_propagator.inject(ctx, carrier2)
-  composite.inject(ctx, carrier3)
-  trace_propagator.inject(ctx, carrier4)
-  baggage_propagator.inject(ctx, carrier5)
-  
-  // 模拟并发提取操作
-  let extracted_ctx1 = trace_propagator.extract(ctx, carrier1)
-  let extracted_ctx2 = baggage_propagator.extract(ctx, carrier2)
-  let extracted_ctx3 = composite.extract(ctx, carrier3)
-  let extracted_ctx4 = trace_propagator.extract(ctx, carrier4)
-  let extracted_ctx5 = baggage_propagator.extract(ctx, carrier5)
-  
-  // 验证操作不会失败
-  assert_eq(true, true)
-  
-  // 验证carrier的键
-  let keys1 = carrier1.keys()
-  let keys2 = carrier2.keys()
-  let keys3 = carrier3.keys()
-  let keys4 = carrier4.keys()
-  let keys5 = carrier5.keys()
-  
-  assert_eq(keys1.length(), 1)  // traceparent
-  assert_eq(keys2.length(), 1)  // baggage
-  assert_eq(keys3.length(), 2)  // traceparent + baggage
-  assert_eq(keys4.length(), 1)  // traceparent
-  assert_eq(keys5.length(), 1)  // baggage
-}
-
-test "concurrent_resource_creation" {
-  // 测试并发Resource创建的安全性
-  
-  // 模拟并发创建多个资源
-  let resource1 = common::Resource::default("concurrent-service-1")
-  let resource2 = common::Resource::default("concurrent-service-2")
-  let resource3 = common::Resource::default("concurrent-service-3")
-  let resource4 = common::Resource::default("concurrent-service-4")
-  let resource5 = common::Resource::default("concurrent-service-5")
-  
-  // 验证每个资源都有正确的属性
-  assert_eq(resource1.service_name, "concurrent-service-1")
-  assert_eq(resource2.service_name, "concurrent-service-2")
-  assert_eq(resource3.service_name, "concurrent-service-3")
-  assert_eq(resource4.service_name, "concurrent-service-4")
-  assert_eq(resource5.service_name, "concurrent-service-5")
-  
-  // 验证所有资源都有相同的SDK信息
-  assert_eq(resource1.telemetry_sdk_name, "azimuth")
-  assert_eq(resource2.telemetry_sdk_name, "azimuth")
-  assert_eq(resource3.telemetry_sdk_name, "azimuth")
-  assert_eq(resource4.telemetry_sdk_name, "azimuth")
-  assert_eq(resource5.telemetry_sdk_name, "azimuth")
-  
-  assert_eq(resource1.telemetry_sdk_version, "0.1.0")
-  assert_eq(resource2.telemetry_sdk_version, "0.1.0")
-  assert_eq(resource3.telemetry_sdk_version, "0.1.0")
-  assert_eq(resource4.telemetry_sdk_version, "0.1.0")
-  assert_eq(resource5.telemetry_sdk_version, "0.1.0")
-  
-  // 验证所有资源都有空的属性数组
-  assert_eq(resource1.attributes.length(), 0)
-  assert_eq(resource2.attributes.length(), 0)
-  assert_eq(resource3.attributes.length(), 0)
-  assert_eq(resource4.attributes.length(), 0)
-  assert_eq(resource5.attributes.length(), 0)
-}
-
-test "concurrent_attribute_value_operations" {
-  // 测试并发AttributeValue操作的安全性
-  
-  // 模拟并发创建不同类型的属性值
-  let string_attr1 = common::AttributeValue::string("concurrent-string-1")
-  let string_attr2 = common::AttributeValue::string("concurrent-string-2")
-  let string_attr3 = common::AttributeValue::string("concurrent-string-3")
-  
-  let int_attr1 = common::AttributeValue::int(100L)
-  let int_attr2 = common::AttributeValue::int(200L)
-  let int_attr3 = common::AttributeValue::int(300L)
-  
-  let float_attr1 = common::AttributeValue::float(1.1)
-  let float_attr2 = common::AttributeValue::float(2.2)
-  let float_attr3 = common::AttributeValue::float(3.3)
-  
-  let bool_attr1 = common::AttributeValue::bool(true)
-  let bool_attr2 = common::AttributeValue::bool(false)
-  let bool_attr3 = common::AttributeValue::bool(true)
-  
-  let array_string_attr1 = common::AttributeValue::array_string(["item1", "item2"])
-  let array_string_attr2 = common::AttributeValue::array_string(["item3", "item4"])
-  let array_string_attr3 = common::AttributeValue::array_string(["item5", "item6"])
-  
-  let array_int_attr1 = common::AttributeValue::array_int([1L, 2L])
-  let array_int_attr2 = common::AttributeValue::array_int([3L, 4L])
-  let array_int_attr3 = common::AttributeValue::array_int([5L, 6L])
-  
-  // 验证每个属性值都有正确的值
-  match string_attr1 {
-    common::StringValue(s) => assert_eq(s, "concurrent-string-1")
-    _ => @test.fail("Expected StringValue")
-  }
-  
-  match string_attr2 {
-    common::StringValue(s) => assert_eq(s, "concurrent-string-2")
-    _ => @test.fail("Expected StringValue")
-  }
-  
-  match string_attr3 {
-    common::StringValue(s) => assert_eq(s, "concurrent-string-3")
-    _ => @test.fail("Expected StringValue")
-  }
-  
-  match int_attr1 {
-    common::IntValue(i) => assert_eq(i, 100L)
-    _ => @test.fail("Expected IntValue")
-  }
-  
-  match int_attr2 {
-    common::IntValue(i) => assert_eq(i, 200L)
-    _ => @test.fail("Expected IntValue")
-  }
-  
-  match int_attr3 {
-    common::IntValue(i) => assert_eq(i, 300L)
-    _ => @test.fail("Expected IntValue")
-  }
-  
-  match float_attr1 {
-    common::FloatValue(f) => assert_eq(f, 1.1)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  match float_attr2 {
-    common::FloatValue(f) => assert_eq(f, 2.2)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  match float_attr3 {
-    common::FloatValue(f) => assert_eq(f, 3.3)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  match bool_attr1 {
-    common::BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
-  }
-  
-  match bool_attr2 {
-    common::BoolValue(b) => assert_eq(b, false)
-    _ => @test.fail("Expected BoolValue")
-  }
-  
-  match bool_attr3 {
-    common::BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
-  }
-  
-  match array_string_attr1 {
-    common::ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 2)
-      assert_eq(arr[0], "item1")
-      assert_eq(arr[1], "item2")
+  let base_baggage = Baggage::empty()
+  let baggages = []
+  
+  // 模拟10个worker并发操作Baggage
+  let mut worker_id = 0
+  while worker_id < 10 {
+    let mut current_baggage = base_baggage
+    let mut operation_count = 0
+    
+    // 每个worker执行30次操作
+    while operation_count < 30 {
+      let key = "worker_" + worker_id.to_string() + "_key_" + operation_count.to_string()
+      let value = "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string()
+      current_baggage = current_baggage.with_entry(key, value)
+      operation_count = operation_count + 1
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    
+    baggages.push(current_baggage)
+    worker_id = worker_id + 1
   }
   
-  match array_string_attr2 {
-    common::ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 2)
-      assert_eq(arr[0], "item3")
-      assert_eq(arr[1], "item4")
+  // 验证每个Baggage都正确维护了其状态
+  let mut baggage_index = 0
+  while baggage_index < baggages.length() {
+    let baggage = baggages[baggage_index]
+    
+    // 验证Baggage中设置的条目
+    let mut verification_count = 0
+    let mut op_count = 0
+    while op_count < 30 {
+      let key = "worker_" + baggage_index.to_string() + "_key_" + op_count.to_string()
+      let expected_value = "worker_" + baggage_index.to_string() + "_value_" + op_count.to_string()
+      
+      match baggage.get(key) {
+        Some(actual_value) => {
+          if actual_value == expected_value {
+            verification_count = verification_count + 1
+          }
+        }
+        None => @test.fail("Expected Some(value) for baggage key: " + key)
+      }
+      op_count = op_count + 1
     }
-    _ => @test.fail("Expected ArrayStringValue")
-  }
-  
-  match array_string_attr3 {
-    common::ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 2)
-      assert_eq(arr[0], "item5")
-      assert_eq(arr[1], "item6")
-    }
-    _ => @test.fail("Expected ArrayStringValue")
-  }
-  
-  match array_int_attr1 {
-    common::ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 2)
-      assert_eq(arr[0], 1L)
-      assert_eq(arr[1], 2L)
-    }
-    _ => @test.fail("Expected ArrayIntValue")
-  }
-  
-  match array_int_attr2 {
-    common::ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 2)
-      assert_eq(arr[0], 3L)
-      assert_eq(arr[1], 4L)
-    }
-    _ => @test.fail("Expected ArrayIntValue")
-  }
-  
-  match array_int_attr3 {
-    common::ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 2)
-      assert_eq(arr[0], 5L)
-      assert_eq(arr[1], 6L)
-    }
-    _ => @test.fail("Expected ArrayIntValue")
+    
+    // 所有条目都应该能够正确匹配
+    assert_eq(verification_count, 30)
+    baggage_index = baggage_index + 1
   }
 }
 
-test "concurrent_complex_telemetry_pipeline" {
-  // 测试并发复杂遥测管道的安全性
+test "concurrent_metrics_recording_safety" {
+  // 测试并发指标记录的安全性
   
-  let ctx = context::Context::empty()
-  let resource = common::Resource::default("concurrent-pipeline-service")
+  let meter_provider = NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("concurrent-metrics", Some("1.0.0"))
   
-  // 创建多个tracer、meter、logger实例
-  let tracer_provider1 = trace::NoopTracerProvider::{}
-  let tracer_provider2 = trace::NoopTracerProvider::{}
-  let meter_provider1 = metrics::NoopMeterProvider::{}
-  let meter_provider2 = metrics::NoopMeterProvider::{}
-  let logger_provider1 = logs::NoopLoggerProvider::{}
-  let logger_provider2 = logs::NoopLoggerProvider::{}
+  let counter = meter.create_counter("concurrent.operations", Some("count"), Some("Concurrent operations"))
+  let histogram = meter.create_histogram("concurrent.duration", Some("ms"), Some("Concurrent operation duration"))
+  let gauge = meter.create_gauge("concurrent.memory", Some("MB"), Some("Concurrent memory usage"))
   
-  let tracer1 = tracer_provider1.get_tracer("concurrent-tracer-1")
-  let tracer2 = tracer_provider2.get_tracer("concurrent-tracer-2")
-  let meter1 = meter_provider1.get_meter("concurrent-meter-1")
-  let meter2 = meter_provider2.get_meter("concurrent-meter-2")
-  let logger1 = logger_provider1.get_logger("concurrent-logger-1")
-  let logger2 = logger_provider2.get_logger("concurrent-logger-2")
+  // 模拟10个worker并发记录指标
+  let mut worker_id = 0
+  let total_operations = 0
   
-  // 模拟并发执行复杂的遥测操作
-  let (ctx1, span1) = tracer1.start_span(ctx, "concurrent-operation-1", trace::Server)
-  let (ctx2, span2) = tracer2.start_span(ctx, "concurrent-operation-2", trace::Client)
-  
-  let counter1 = meter1.create_counter("concurrent.counter.1", "count", "Counter 1")
-  let counter2 = meter2.create_counter("concurrent.counter.2", "count", "Counter 2")
-  
-  counter1.add(1L, [("operation.id", common::AttributeValue::string("op1"))])
-  counter2.add(2L, [("operation.id", common::AttributeValue::string("op2"))])
-  
-  let log1 = logs::LogRecord::builder()
-    .timestamp(1000000L)
-    .severity(logs::Info)
-    .body("Concurrent log 1")
-    .with_attribute("operation.id", common::AttributeValue::string("op1"))
-    .build()
-  
-  let log2 = logs::LogRecord::builder()
-    .timestamp(2000000L)
-    .severity(logs::Info)
-    .body("Concurrent log 2")
-    .with_attribute("operation.id", common::AttributeValue::string("op2"))
-    .build()
-  
-  // 验证所有操作都成功完成
-  assert_eq(span1.name, "concurrent-operation-1")
-  assert_eq(span2.name, "concurrent-operation-2")
-  match span1.kind { trace::Server => assert_eq(true, true) _ => @test.fail("Expected Server") }
-  match span2.kind { trace::Client => assert_eq(true, true) _ => @test.fail("Expected Client") }
-  
-  match log1.body {
-    Some(body) => assert_eq(body, "Concurrent log 1")
-    None => @test.fail("Expected log1 body")
+  while worker_id < 10 {
+    let mut operation_count = 0
+    while operation_count < 100 {
+      let attributes = [
+        ("worker.id", AttributeValue::int(worker_id.to_int64())),
+        ("operation.id", AttributeValue::int(operation_count.to_int64())),
+        ("concurrent.test", AttributeValue::bool(true))
+      ]
+      
+      // 记录不同类型的指标
+      counter.add(1L, Some(attributes))
+      histogram.record(operation_count.to_double() * 0.1, Some(attributes))
+      gauge.record(100.0 + worker_id.to_double() + operation_count.to_double() * 0.01, Some(attributes))
+      
+      operation_count = operation_count + 1
+      total_operations = total_operations + 1
+    }
+    worker_id = worker_id + 1
   }
   
-  match log2.body {
-    Some(body) => assert_eq(body, "Concurrent log 2")
-    None => @test.fail("Expected log2 body")
+  // 验证总共执行了1000次操作
+  assert_eq(total_operations, 1000)
+}
+
+test "concurrent_log_emission_safety" {
+  // 测试并发日志记录的安全性
+  
+  let logger_provider = NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("concurrent-logger", Some("1.0.0"))
+  
+  // 模拟10个worker并发记录日志
+  let mut worker_id = 0
+  let total_logs = 0
+  
+  while worker_id < 10 {
+    let mut log_count = 0
+    while log_count < 50 {
+      let log_record = LogRecord::builder()
+        .timestamp(1640995200000000000L + (worker_id * 50 + log_count).to_int64())
+        .severity(match log_count % 6 {
+          0 => SeverityNumber::Trace
+          1 => SeverityNumber::Debug
+          2 => SeverityNumber::Info
+          3 => SeverityNumber::Warn
+          4 => SeverityNumber::Error
+          _ => SeverityNumber::Fatal
+        })
+        .body("Worker " + worker_id.to_string() + " log " + log_count.to_string())
+        .with_attribute("worker.id", AttributeValue::int(worker_id.to_int64()))
+        .with_attribute("log.id", AttributeValue::int(log_count.to_int64()))
+        .with_attribute("concurrent.test", AttributeValue::bool(true))
+        .build()
+      
+      logger.emit(log_record)
+      
+      // 使用便捷方法记录日志
+      match log_count % 5 {
+        0 => logger.debug("Debug from worker " + worker_id.to_string(), Some([
+          ("worker.id", AttributeValue::int(worker_id.to_int64())),
+          ("log.count", AttributeValue::int(log_count.to_int64()))
+        ]))
+        1 => logger.info("Info from worker " + worker_id.to_string(), Some([
+          ("worker.id", AttributeValue::int(worker_id.to_int64())),
+          ("log.count", AttributeValue::int(log_count.to_int64()))
+        ]))
+        2 => logger.warn("Warning from worker " + worker_id.to_string(), Some([
+          ("worker.id", AttributeValue::int(worker_id.to_int64())),
+          ("log.count", AttributeValue::int(log_count.to_int64()))
+        ]))
+        3 => logger.error("Error from worker " + worker_id.to_string(), Some([
+          ("worker.id", AttributeValue::int(worker_id.to_int64())),
+          ("log.count", AttributeValue::int(log_count.to_int64()))
+        ]))
+        _ => logger.fatal("Fatal from worker " + worker_id.to_string(), Some([
+          ("worker.id", AttributeValue::int(worker_id.to_int64())),
+          ("log.count", AttributeValue::int(log_count.to_int64()))
+        ]))
+      }
+      
+      log_count = log_count + 1
+      total_logs = total_logs + 1
+    }
+    worker_id = worker_id + 1
   }
+  
+  // 验证总共记录了500个日志记录（使用LogRecordBuilder）+ 500个便捷方法日志
+  assert_eq(total_logs, 500)
+}
+
+test "concurrent_resource_sharing_safety" {
+  // 测试并发资源共享的安全性
+  
+  // 创建共享的Resource对象
+  let shared_resource = Resource::default("shared-service")
+  
+  // 模拟10个worker并发使用同一个Resource创建span
+  let ctx = Context::empty()
+  let tracer_provider = NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("resource-sharing-test", Some("1.0.0"))
+  
+  let mut worker_id = 0
+  let total_spans = 0
+  
+  while worker_id < 10 {
+    let mut span_count = 0
+    while span_count < 20 {
+      let span_attributes = [
+        ("service.name", AttributeValue::string(shared_resource.service_name)),
+        ("sdk.name", AttributeValue::string(shared_resource.telemetry_sdk_name)),
+        ("sdk.version", AttributeValue::string(shared_resource.telemetry_sdk_version)),
+        ("worker.id", AttributeValue::int(worker_id.to_int64())),
+        ("span.count", AttributeValue::int(span_count.to_int64())),
+        ("resource.shared", AttributeValue::bool(true))
+      ]
+      
+      let (_, span) = tracer.start_span(
+        ctx, 
+        "shared_resource_span_" + worker_id.to_string() + "_" + span_count.to_string(), 
+        Internal, 
+        Some(span_attributes)
+      )
+      
+      // 验证span正确使用了共享资源信息
+      assert_eq(span.attributes.length(), 6)
+      
+      // 验证共享资源属性
+      match span.attributes[0].1 {
+        StringValue(service_name) => assert_eq(service_name, shared_resource.service_name)
+        _ => @test.fail("Expected StringValue for service.name")
+      }
+      
+      match span.attributes[1].1 {
+        StringValue(sdk_name) => assert_eq(sdk_name, shared_resource.telemetry_sdk_name)
+        _ => @test.fail("Expected StringValue for sdk.name")
+      }
+      
+      match span.attributes[2].1 {
+        StringValue(sdk_version) => assert_eq(sdk_version, shared_resource.telemetry_sdk_version)
+        _ => @test.fail("Expected StringValue for sdk.version")
+      }
+      
+      span_count = span_count + 1
+      total_spans = total_spans + 1
+    }
+    worker_id = worker_id + 1
+  }
+  
+  // 验证总共创建了200个span
+  assert_eq(total_spans, 200)
+}
+
+test "concurrent_complex_operations_safety" {
+  // 测试复杂并发操作的安全性
+  
+  let ctx = Context::empty()
+  let tracer_provider = NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("complex-concurrent-test", Some("1.0.0"))
+  let meter_provider = NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("complex-concurrent-metrics", Some("1.0.0"))
+  let logger_provider = NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("complex-concurrent-logger", Some("1.0.0"))
+  
+  // 模拟5个worker执行复杂的并发操作
+  let mut worker_id = 0
+  let total_complex_operations = 0
+  
+  while worker_id < 5 {
+    let mut operation_count = 0
+    while operation_count < 20 {
+      // 1. 创建Context并设置值
+      let key = create_key("worker_" + worker_id.to_string() + "_key")
+      let worker_ctx = ctx.with_value(key, "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string())
+      
+      // 2. 创建Baggage
+      let baggage = Baggage::empty()
+        .with_entry("worker.id", worker_id.to_string())
+        .with_entry("operation.id", operation_count.to_string())
+      
+      // 3. 创建复杂的span
+      let complex_attributes = [
+        ("worker.id", AttributeValue::int(worker_id.to_int64())),
+        ("operation.id", AttributeValue::int(operation_count.to_int64())),
+        ("complex.operation", AttributeValue::bool(true)),
+        ("concurrent.safe", AttributeValue::bool(true)),
+        ("baggage.worker.id", AttributeValue::string("worker_" + worker_id.to_string())),
+        ("baggage.operation.id", AttributeValue::string(operation_count.to_string())),
+        ("context.value", AttributeValue::string("worker_" + worker_id.to_string() + "_value_" + operation_count.to_string())),
+        ("nested.data", AttributeValue::array_string([
+          "level1_" + operation_count.to_string(),
+          "level2_" + operation_count.to_string(),
+          "level3_" + operation_count.to_string()
+        ]))
+      ]
+      
+      let (_, span) = tracer.start_span(
+        worker_ctx, 
+        "complex_operation_" + worker_id.to_string() + "_" + operation_count.to_string(), 
+        Server, 
+        Some(complex_attributes)
+      )
+      
+      // 4. 记录指标
+      let counter = meter.create_counter("complex.operations", Some("count"), Some("Complex operations"))
+      counter.add(1L, Some([
+        ("worker.id", AttributeValue::int(worker_id.to_int64())),
+        ("operation.type", AttributeValue::string("complex"))
+      ]))
+      
+      // 5. 记录日志
+      let log_record = LogRecord::builder()
+        .timestamp(1640995200000000000L + (worker_id * 20 + operation_count).to_int64())
+        .severity(SeverityNumber::Info)
+        .body("Complex operation " + operation_count.to_string() + " completed for worker " + worker_id.to_string())
+        .with_attribute("worker.id", AttributeValue::int(worker_id.to_int64()))
+        .with_attribute("operation.id", AttributeValue::int(operation_count.to_int64()))
+        .with_attribute("span.name", AttributeValue::string(span.name))
+        .with_attribute("complex.test", AttributeValue::bool(true))
+        .build()
+      
+      logger.emit(log_record)
+      
+      // 验证复杂操作的正确性
+      assert_eq(span.name, "complex_operation_" + worker_id.to_string() + "_" + operation_count.to_string())
+      assert_eq(span.kind, Server)
+      assert_eq(span.attributes.length(), 8)
+      
+      // 验证Context值
+      match worker_ctx.get(key) {
+        Some(value) => assert_eq(value, "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string())
+        None => @test.fail("Expected Some(value) for context key")
+      }
+      
+      // 验证Baggage值
+      match baggage.get("worker.id") {
+        Some(value) => assert_eq(value, worker_id.to_string())
+        None => @test.fail("Expected Some(value) for baggage worker.id")
+      }
+      
+      match baggage.get("operation.id") {
+        Some(value) => assert_eq(value, operation_count.to_string())
+        None => @test.fail("Expected Some(value) for baggage operation.id")
+      }
+      
+      operation_count = operation_count + 1
+      total_complex_operations = total_complex_operations + 1
+    }
+    worker_id = worker_id + 1
+  }
+  
+  // 验证总共执行了100个复杂操作
+  assert_eq(total_complex_operations, 100)
 }

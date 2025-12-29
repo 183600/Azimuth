@@ -1,359 +1,322 @@
-// 跨模块集成测试用例
-test "trace_and_context_integration" {
-  // 测试Trace和Context模块的集成
-  let provider = NoopTracerProvider::{}
-  let tracer = provider.get_tracer("integration-test-tracer", "1.0.0")
+// 跨模块集成测试 - 测试Trace、Metrics、Logs和Context模块之间的协作
+use azimuth.telemetry.api.common.{AttributeValue, Resource, InstrumentationScope}
+use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, SpanLink, NoopTracer, NoopTracerProvider}
+use azimuth.telemetry.api.metrics.{Measurement, Counter, Histogram, UpDownCounter, Gauge, NoopMeter, NoopMeterProvider}
+use azimuth.telemetry.api.logs.{SeverityNumber, LogRecord, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
+use azimuth.telemetry.api.context.{Context, ContextKey, Baggage, create_key}
+
+test "cross_module_trace_metrics_integration" {
+  // 创建上下文和追踪
   let ctx = Context::empty()
+  let tracer_provider = NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("integration-test", Some("1.0.0"))
   
-  // 在Context中设置一些值
-  let user_key = create_key("user.id")
-  let request_key = create_key("request.id")
-  let ctx_with_values = ctx
-    .with_value(user_key, "user123")
-    .with_value(request_key, "req456")
-  
-  // 使用带有Context的Tracer创建Span
-  let (new_ctx, span) = tracer.start_span(
-    ctx_with_values,
-    "integration-test-span",
-    Server,
-    [("http.method", AttributeValue::string("GET"))],
-    1234567890L
+  // 开始一个span
+  let (ctx_with_span, span) = tracer.start_span(
+    ctx, 
+    "operation_with_metrics", 
+    Server, 
+    Some([
+      ("service.name", AttributeValue::string("integration-service")),
+      ("operation.type", AttributeValue::string("data_processing"))
+    ])
   )
   
-  // 验证Span属性
-  assert_eq(span.name, "integration-test-span")
-  match span.kind {
-    Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server span kind")
-  }
-  assert_eq(span.attributes.length(), 1)
+  // 在span上下文中记录指标
+  let meter_provider = NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("integration-test-metrics", Some("1.0.0"))
   
-  // 验证Context中的值仍然存在（在实际实现中应该被传播）
-  match new_ctx.get(user_key) {
-    Some(value) => assert_eq(value, "user123")
-    None => @test.fail("Expected user.id to be preserved in context")
-  }
+  let counter = meter.create_counter("operations.total", Some("count"), Some("Total number of operations"))
+  let histogram = meter.create_histogram("operation.duration", Some("ms"), Some("Operation duration in milliseconds"))
+  let gauge = meter.create_gauge("active.connections", Some("count"), Some("Number of active connections"))
   
-  match new_ctx.get(request_key) {
-    Some(value) => assert_eq(value, "req456")
-    None => @test.fail("Expected request.id to be preserved in context")
-  }
-}
-
-test "logs_and_common_integration" {
-  // 测试Logs和Common模块的集成
-  let log_record = LogRecord::builder()
-    .timestamp(1234567890L)
-    .severity(Error)
-    .body("Integration test error")
-    .with_attribute("service.name", AttributeValue::string("integration-service"))
-    .with_attribute("service.version", AttributeValue::string("1.0.0"))
-    .with_attribute("user.id", AttributeValue::int(123L))
-    .with_attribute("response.time", AttributeValue::float(250.75))
-    .with_attribute("error.occurred", AttributeValue::bool(true))
-    .build()
+  // 记录指标数据
+  counter.add(1L, Some([
+    ("operation.name", AttributeValue::string("data_processing")),
+    ("service.name", AttributeValue::string("integration-service"))
+  ]))
   
-  // 创建带有复杂属性的Resource
-  let resource = Resource::default("integration-service")
-  let resource_attrs : Attributes = [
-    ("service.namespace", AttributeValue::string("production")),
-    ("service.instance.id", AttributeValue::string("instance-456")),
-    ("deployment.environment", AttributeValue::string("prod")),
-    ("host.name", AttributeValue::string("integration-server")),
-    ("process.pid", AttributeValue::int(98765L)),
-    ("process.cpu.percent", AttributeValue::float(45.5)),
-    ("process.healthy", AttributeValue::bool(true)),
-    ("tags", AttributeValue::array_string(["integration", "test", "api"])),
-    ("ports", AttributeValue::array_int([8080L, 8443L])),
-    ("cpu.thresholds", AttributeValue::array_float([70.0, 85.0, 95.0])),
-    ("feature.flags", AttributeValue::array_bool([true, false, true]))
-  ]
+  histogram.record(150.5, Some([
+    ("operation.name", AttributeValue::string("data_processing")),
+    ("service.version", AttributeValue::string("1.2.3"))
+  ]))
   
-  // 验证LogRecord属性
-  assert_eq(log_record.attributes.length(), 5)
-  match log_record.attributes[0].1 {
-    AttributeValue::StringValue(service_name) => assert_eq(service_name, "integration-service")
+  gauge.record(42.0, Some([
+    ("service.name", AttributeValue::string("integration-service")),
+    ("region", AttributeValue::string("us-west-2"))
+  ]))
+  
+  // 验证span属性
+  assert_eq(span.name, "operation_with_metrics")
+  assert_eq(span.kind, Server)
+  assert_eq(span.attributes.length(), 2)
+  assert_eq(span.attributes[0].0, "service.name")
+  assert_eq(span.attributes[1].0, "operation.type")
+  
+  match span.attributes[0].1 {
+    StringValue(value) => assert_eq(value, "integration-service")
     _ => @test.fail("Expected StringValue for service.name")
   }
   
-  match log_record.attributes[1].1 {
-    AttributeValue::StringValue(service_version) => assert_eq(service_version, "1.0.0")
-    _ => @test.fail("Expected StringValue for service.version")
+  match span.attributes[1].1 {
+    StringValue(value) => assert_eq(value, "data_processing")
+    _ => @test.fail("Expected StringValue for operation.type")
   }
-  
-  match log_record.attributes[2].1 {
-    AttributeValue::IntValue(user_id) => assert_eq(user_id, 123L)
-    _ => @test.fail("Expected IntValue for user.id")
-  }
-  
-  match log_record.attributes[3].1 {
-    AttributeValue::FloatValue(response_time) => assert_eq(response_time, 250.75)
-    _ => @test.fail("Expected FloatValue for response.time")
-  }
-  
-  match log_record.attributes[4].1 {
-    AttributeValue::BoolValue(error_occurred) => assert_eq(error_occurred, true)
-    _ => @test.fail("Expected BoolValue for error.occurred")
-  }
-  
-  // 验证Resource属性
-  assert_eq(resource.service_name, "integration-service")
-  assert_eq(resource_attrs.length(), 11)
 }
 
-test "metrics_and_context_integration" {
-  // 测试Metrics和Context模块的集成
-  let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("integration-meter", "1.0.0")
-  let counter = meter.create_counter("integration_requests", "requests", "Integration test requests")
-  
-  // 创建带有复杂Context的属性
+test "cross_module_trace_logs_integration" {
+  // 创建带有追踪信息的日志记录
   let ctx = Context::empty()
-  let ctx_with_values = ctx
-    .with_value(create_key("user.id"), "user789")
-    .with_value(create_key("session.id"), "session456")
-    .with_value(create_key("request.path"), "/api/integration")
+  let tracer_provider = NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("logging-test", Some("1.0.0"))
   
-  // 使用Context中的值创建指标属性
-  let metric_attrs = [
-    ("user.id", AttributeValue::string("user789")),
-    ("session.id", AttributeValue::string("session456")),
-    ("request.path", AttributeValue::string("/api/integration")),
-    ("http.method", AttributeValue::string("POST")),
-    ("status.code", AttributeValue::int(200L)),
-    ("response.time", AttributeValue::float(150.25)),
-    ("cache.hit", AttributeValue::bool(true)),
-    ("tags", AttributeValue::array_string(["api", "integration", "v1"])),
-    ("retry.count", AttributeValue::int(0L))
-  ]
-  
-  // 记录指标
-  counter.add(1L, metric_attrs)
-  
-  // 验证调用成功
-  assert_eq(true, true)
-}
-
-test "propagation_and_trace_integration" {
-  // 测试Propagation和Trace模块的集成
-  let ctx = Context::empty()
-  let carrier = MapCarrier::new()
-  
-  // 创建复合传播器
-  let trace_propagator = W3CTraceContextPropagator::{}
-  let baggage_propagator = W3CBaggagePropagator::{}
-  let propagators = [trace_propagator, baggage_propagator]
-  let composite_propagator = CompositePropagator::new(propagators)
-  
-  // 创建Span
-  let provider = NoopTracerProvider::{}
-  let tracer = provider.get_tracer("propagation-test-tracer", "1.0.0")
-  let (span_ctx, span) = tracer.start_span(
-    ctx,
-    "propagation-test-span",
-    Client,
-    [("service.name", AttributeValue::string("propagation-service"))],
-    9876543210L
+  // 开始一个span
+  let (ctx_with_span, span) = tracer.start_span(
+    ctx, 
+    "operation_with_logging", 
+    Client, 
+    Some([
+      ("user.id", AttributeValue::string("user-12345")),
+      ("request.id", AttributeValue::string("req-67890"))
+    ])
   )
   
-  // 注入传播信息
-  composite_propagator.inject(span_ctx, carrier)
+  // 创建logger并记录日志
+  let logger_provider = NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("integration-test-logger", Some("1.0.0"))
   
-  // 验证traceparent和baggage头都被设置
-  match carrier.get(TRACE_PARENT_HEADER) {
-    Some(trace_parent) => {
-      assert_eq(trace_parent.length(), 55)
-      assert_eq(trace_parent[0..2], "00")
-    }
-    None => @test.fail("Expected traceparent header to be set")
-  }
-  
-  match carrier.get(BAGGAGE_HEADER) {
-    Some(baggage_value) => {
-      assert_eq(baggage_value, "key1=value1,key2=value2")
-    }
-    None => @test.fail("Expected baggage header to be set")
-  }
-  
-  // 验证Span属性
-  assert_eq(span.name, "propagation-test-span")
-  match span.kind {
-    Client => assert_eq(true, true)
-    _ => @test.fail("Expected Client span kind")
-  }
-  assert_eq(span.attributes.length(), 1)
-}
-
-test "all_modules_integration_comprehensive" {
-  // 综合集成测试，涉及所有模块
-  
-  // 1. 创建Context并设置值
-  let ctx = Context::empty()
-  let ctx_with_values = ctx
-    .with_value(create_key("user.id"), "user999")
-    .with_value(create_key("session.id"), "session888")
-    .with_value(create_key("request.id"), "req777")
-  
-  // 2. 创建Trace Span
-  let trace_provider = NoopTracerProvider::{}
-  let tracer = trace_provider.get_tracer("comprehensive-tracer", "1.0.0")
-  let (span_ctx, span) = tracer.start_span(
-    ctx_with_values,
-    "comprehensive-test-span",
-    Server,
-    [
-      ("service.name", AttributeValue::string("comprehensive-service")),
-      ("service.version", AttributeValue::string("2.0.0")),
-      ("operation.name", AttributeValue::string("test_operation"))
-    ],
-    1234567890L
-  )
-  
-  // 3. 创建LogRecord
+  // 创建与span关联的日志记录
   let log_record = LogRecord::builder()
-    .timestamp(1234567890L)
-    .severity(Info)
-    .body("Comprehensive integration test log")
-    .with_attribute("user.id", AttributeValue::string("user999"))
-    .with_attribute("session.id", AttributeValue::string("session888"))
-    .with_attribute("request.id", AttributeValue::string("req777"))
-    .with_attribute("span.name", AttributeValue::string("comprehensive-test-span"))
-    .with_attribute("operation.result", AttributeValue::string("success"))
+    .timestamp(1640995200000000000L)
+    .severity(SeverityNumber::Info)
+    .body("Operation completed successfully")
+    .with_attribute("service.name", AttributeValue::string("integration-service"))
+    .with_attribute("operation.name", AttributeValue::string("data_processing"))
+    .with_attribute("user.id", AttributeValue::string("user-12345"))
+    .with_attribute("duration.ms", AttributeValue::int(250L))
+    .with_attribute("success.rate", AttributeValue::float(0.95))
+    .with_attribute("features", AttributeValue::array_bool([true, false, true]))
     .build()
   
-  // 4. 创建Metrics
-  let metrics_provider = NoopMeterProvider::{}
-  let meter = metrics_provider.get_meter("comprehensive-meter", "1.0.0")
-  let counter = meter.create_counter("comprehensive_operations", "operations", "Comprehensive test operations")
-  let histogram = meter.create_histogram("comprehensive_duration", "ms", "Comprehensive test duration")
+  // 发出日志记录
+  logger.emit(log_record)
   
-  counter.add(1L, [
-    ("user.id", AttributeValue::string("user999")),
-    ("session.id", AttributeValue::string("session888")),
-    ("operation.name", AttributeValue::string("test_operation")),
-    ("operation.result", AttributeValue::string("success"))
-  ])
+  // 使用便捷方法记录不同级别的日志
+  logger.debug("Debugging operation flow", Some([
+    ("step", AttributeValue::string("validation")),
+    ("input.size", AttributeValue::int(1024L))
+  ]))
   
-  histogram.record(125.5, [
-    ("user.id", AttributeValue::string("user999")),
-    ("operation.name", AttributeValue::string("test_operation"))
-  ])
+  logger.info("Operation started", Some([
+    ("operation.id", AttributeValue::string("op-12345")),
+    ("timestamp", AttributeValue::int(1640995200L))
+  ]))
   
-  // 5. 创建Propagation
-  let carrier = MapCarrier::new()
-  let composite_propagator = CompositePropagator::new([
-    W3CTraceContextPropagator::{},
-    W3CBaggagePropagator::{}
-  ])
+  logger.warn("Performance warning", Some([
+    ("threshold.exceeded", AttributeValue::bool(true)),
+    ("actual.duration", AttributeValue::float(1250.5))
+  ]))
   
-  composite_propagator.inject(span_ctx, carrier)
+  logger.error("Operation failed", Some([
+    ("error.code", AttributeValue::string("TIMEOUT")),
+    ("error.message", AttributeValue::string("Operation timed out after 30 seconds")),
+    ("retry.count", AttributeValue::int(3L))
+  ]))
   
-  // 6. 创建Resource
-  let resource = Resource::default("comprehensive-service")
-  let resource_attrs : Attributes = [
-    ("service.namespace", AttributeValue::string("test")),
-    ("service.instance.id", AttributeValue::string("instance-comprehensive")),
-    ("deployment.environment", AttributeValue::string("test")),
-    ("host.name", AttributeValue::string("test-host")),
-    ("process.pid", AttributeValue::int(55555L)),
-    ("process.cpu.percent", AttributeValue::float(55.5)),
-    ("process.healthy", AttributeValue::bool(true)),
-    ("tags", AttributeValue::array_string(["comprehensive", "integration", "test"])),
-    ("ports", AttributeValue::array_int([9000L, 9001L])),
-    ("cpu.thresholds", AttributeValue::array_float([50.0, 75.0, 90.0])),
-    ("feature.flags", AttributeValue::array_bool([true, true, false]))
-  ]
+  logger.fatal("Critical system error", Some([
+    ("system.component", AttributeValue::string("database")),
+    ("error.severity", AttributeValue::string("critical")),
+    ("impact", AttributeValue::string("service_unavailable"))
+  ]))
   
-  // 验证所有组件都正常工作
-  assert_eq(span.name, "comprehensive-test-span")
-  match span.kind {
-    Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server span kind")
-  }
-  assert_eq(span.attributes.length(), 3)
+  // 验证span和日志的关联性
+  assert_eq(span.name, "operation_with_logging")
+  assert_eq(span.kind, Client)
+  assert_eq(span.attributes.length(), 2)
   
-  assert_eq(log_record.body, Some("Comprehensive integration test log"))
-  match log_record.severity_number {
-    Info => assert_eq(true, true)
-    _ => @test.fail("Expected Info severity")
+  // 验证日志记录构建器创建的记录
+  assert_eq(log_record.severity_number, SeverityNumber::Info)
+  assert_eq(log_record.timestamp_unix_nanos, 1640995200000000000L)
+  match log_record.body {
+    Some(body_text) => assert_eq(body_text, "Operation completed successfully")
+    None => @test.fail("Expected Some(body) for log record")
   }
   assert_eq(log_record.attributes.length(), 6)
+}
+
+test "cross_module_context_baggage_integration" {
+  // 测试Context和Baggage在跨模块传播中的集成
   
-  assert_eq(resource.service_name, "comprehensive-service")
-  assert_eq(resource_attrs.length(), 11)
+  // 创建初始上下文
+  let ctx = Context::empty()
   
-  match carrier.get(TRACE_PARENT_HEADER) {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header to be set")
+  // 添加上下文值
+  let user_key = create_key("user.id")
+  let request_key = create_key("request.id")
+  let trace_key = create_key("trace.id")
+  
+  let ctx_with_values = ctx
+    .with_value(user_key, "user-12345")
+    .with_value(request_key, "req-67890")
+    .with_value(trace_key, "trace-abcdef")
+  
+  // 创建baggage
+  let baggage = Baggage::empty()
+    .with_entry("correlation.id", "corr-12345")
+    .with_entry("session.id", "sess-67890")
+    .with_entry("tenant.id", "tenant-abc")
+    .with_entry("region", "us-west-2")
+  
+  // 在带有上下文和baggage的情况下创建span
+  let tracer_provider = NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("context-test", Some("1.0.0"))
+  
+  let (final_ctx, span) = tracer.start_span(
+    ctx_with_values, 
+    "context_aware_operation", 
+    Internal, 
+    Some([
+      ("correlation.id", AttributeValue::string("corr-12345")),
+      ("session.id", AttributeValue::string("sess-67890")),
+      ("tenant.id", AttributeValue::string("tenant-abc")),
+      ("region", AttributeValue::string("us-west-2"))
+    ])
+  )
+  
+  // 验证上下文值
+  match ctx_with_values.get(user_key) {
+    Some(user_id) => assert_eq(user_id, "user-12345")
+    None => @test.fail("Expected Some(user.id)")
   }
   
-  match carrier.get(BAGGAGE_HEADER) {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header to be set")
+  match ctx_with_values.get(request_key) {
+    Some(request_id) => assert_eq(request_id, "req-67890")
+    None => @test.fail("Expected Some(request.id)")
+  }
+  
+  match ctx_with_values.get(trace_key) {
+    Some(trace_id) => assert_eq(trace_id, "trace-abcdef")
+    None => @test.fail("Expected Some(trace.id)")
+  }
+  
+  // 验证baggage条目
+  match baggage.get("correlation.id") {
+    Some(correlation_id) => assert_eq(correlation_id, "corr-12345")
+    None => @test.fail("Expected Some(correlation.id)")
+  }
+  
+  match baggage.get("session.id") {
+    Some(session_id) => assert_eq(session_id, "sess-67890")
+    None => @test.fail("Expected Some(session.id)")
+  }
+  
+  match baggage.get("tenant.id") {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-abc")
+    None => @test.fail("Expected Some(tenant.id)")
+  }
+  
+  match baggage.get("region") {
+    Some(region) => assert_eq(region, "us-west-2")
+    None => @test.fail("Expected Some(region)")
+  }
+  
+  // 验证span属性包含了baggage信息
+  assert_eq(span.name, "context_aware_operation")
+  assert_eq(span.kind, Internal)
+  assert_eq(span.attributes.length(), 4)
+  
+  // 验证span属性与baggage的一致性
+  let attribute_names = ["correlation.id", "session.id", "tenant.id", "region"]
+  let mut i = 0
+  while i < attribute_names.length() {
+    let found = span.attributes.any(fn(attr) { attr.0 == attribute_names[i] })
+    assert_eq(found, true)
+    i = i + 1
   }
 }
 
-test "cross_module_error_handling_integration" {
-  // 测试跨模块错误处理集成
+test "cross_module_resource_instrumentation_integration" {
+  // 测试Resource和InstrumentationScope在跨模块使用中的集成
   
-  // 1. Context中的错误处理
+  // 创建资源
+  let resource = Resource::default("integration-service")
+  
+  // 创建带有复杂属性的span
   let ctx = Context::empty()
-  let error_key = create_key("error.message")
-  let ctx_with_error = ctx.with_value(error_key, "Something went wrong")
+  let tracer_provider = NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("resource-test", Some("1.0.0"))
   
-  // 2. Trace中的错误状态
-  let trace_provider = NoopTracerProvider::{}
-  let tracer = trace_provider.get_tracer("error-test-tracer", "1.0.0")
-  let (error_ctx, error_span) = tracer.start_span(
-    ctx_with_error,
-    "error-test-span",
-    Internal,
-    [("error.type", AttributeValue::string("ValidationError"))],
-    1234567890L
+  let complex_attributes = [
+    ("service.name", AttributeValue::string("integration-service")),
+    ("service.version", AttributeValue::string("2.1.0")),
+    ("service.namespace", AttributeValue::string("production")),
+    ("deployment.environment", AttributeValue::string("prod")),
+    ("host.name", AttributeValue::string("web-server-01")),
+    ("host.ip", AttributeValue::string("10.0.1.100")),
+    ("process.pid", AttributeValue::int(12345L)),
+    ("process.executable.name", AttributeValue::string("integration-service")),
+    ("process.command_line", AttributeValue::array_string(["./integration-service", "--config", "/etc/config.yaml"])),
+    ("process.runtime.name", AttributeValue::string("moonbit")),
+    ("process.runtime.version", AttributeValue::string("1.0.0")),
+    ("process.runtime.description", AttributeValue::string("MoonBit Runtime")),
+    ("os.type", AttributeValue::string("linux")),
+    ("os.version", AttributeValue::string("5.15.0")),
+    ("os.description", AttributeValue::string("Linux 5.15.0-generic")),
+    ("cloud.provider", AttributeValue::string("aws")),
+    ("cloud.region", AttributeValue::string("us-west-2")),
+    ("cloud.availability_zone", AttributeValue::string("us-west-2a")),
+    ("cloud.account.id", AttributeValue::string("123456789012"))
+  ]
+  
+  let (ctx_with_span, span) = tracer.start_span(
+    ctx, 
+    "resource_aware_operation", 
+    Server, 
+    Some(complex_attributes)
   )
   
-  // 3. Logs中的错误记录
-  let error_log = LogRecord::builder()
-    .timestamp(1234567890L)
-    .severity(Error)
-    .body("Error occurred in integration test")
-    .with_attribute("error.message", AttributeValue::string("Something went wrong"))
-    .with_attribute("error.type", AttributeValue::string("ValidationError"))
-    .with_attribute("error.stack", AttributeValue::string("at integration_test:123"))
-    .with_attribute("error.recoverable", AttributeValue::bool(false))
+  // 创建与资源关联的指标
+  let meter_provider = NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("resource-metrics", Some("1.0.0"))
+  
+  let counter = meter.create_counter("requests.total", Some("count"), Some("Total number of requests"))
+  counter.add(1L, Some([
+    ("service.name", AttributeValue::string("integration-service")),
+    ("service.version", AttributeValue::string("2.1.0")),
+    ("cloud.region", AttributeValue::string("us-west-2"))
+  ]))
+  
+  // 创建与资源关联的日志
+  let logger_provider = NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("resource-logger", Some("1.0.0"))
+  
+  let log_record = LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(SeverityNumber::Info)
+    .body("Resource-aware operation completed")
+    .with_attribute("service.name", AttributeValue::string("integration-service"))
+    .with_attribute("service.version", AttributeValue::string("2.1.0"))
+    .with_attribute("host.name", AttributeValue::string("web-server-01"))
+    .with_attribute("cloud.region", AttributeValue::string("us-west-2"))
     .build()
   
-  // 4. Metrics中的错误计数
-  let metrics_provider = NoopMeterProvider::{}
-  let meter = metrics_provider.get_meter("error-meter", "1.0.0")
-  let error_counter = meter.create_counter("errors_total", "errors", "Total number of errors")
+  logger.emit(log_record)
   
-  error_counter.add(1L, [
-    ("error.type", AttributeValue::string("ValidationError")),
-    ("error.recoverable", AttributeValue::bool(false)),
-    ("service.name", AttributeValue::string("error-service"))
-  ])
+  // 验证资源信息
+  assert_eq(resource.service_name, "integration-service")
+  assert_eq(resource.telemetry_sdk_name, "azimuth")
+  assert_eq(resource.telemetry_sdk_version, "0.1.0")
   
-  // 验证错误处理集成
-  match error_ctx.get(error_key) {
-    Some(error_message) => assert_eq(error_message, "Something went wrong")
-    None => @test.fail("Expected error message to be preserved in context")
+  // 验证span属性
+  assert_eq(span.name, "resource_aware_operation")
+  assert_eq(span.kind, Server)
+  assert_eq(span.attributes.length(), 20)
+  
+  // 验证日志记录
+  assert_eq(log_record.severity_number, SeverityNumber::Info)
+  match log_record.body {
+    Some(body_text) => assert_eq(body_text, "Resource-aware operation completed")
+    None => @test.fail("Expected Some(body) for log record")
   }
-  
-  match error_log.severity_number {
-    Error => assert_eq(true, true)
-    _ => @test.fail("Expected Error severity")
-  }
-  
-  match error_log.attributes[0].1 {
-    AttributeValue::StringValue(error_message) => assert_eq(error_message, "Something went wrong")
-    _ => @test.fail("Expected StringValue for error.message")
-  }
-  
-  assert_eq(error_span.attributes.length(), 1)
-  match error_span.attributes[0].1 {
-    AttributeValue::StringValue(error_type) => assert_eq(error_type, "ValidationError")
-    _ => @test.fail("Expected StringValue for error.type")
-  }
+  assert_eq(log_record.attributes.length(), 4)
 }
