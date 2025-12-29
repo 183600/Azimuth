@@ -5,7 +5,7 @@ test "baggage_basic_operations" {
   // 测试Baggage的基本操作
   
   // 创建空Baggage
-  let empty_baggage = context::Baggage::empty()
+  let empty_baggage = Baggage::empty()
   assert_eq(empty_baggage.entries.length(), 0)
   
   // 测试在空Baggage中获取值

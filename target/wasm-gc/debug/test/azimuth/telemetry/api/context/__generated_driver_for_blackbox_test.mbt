@@ -57,6 +57,9 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "simple_test.mbt": {
+    0: (__test_73696d706c655f746573742e6d6274_0, ["context_simple_test"]),
+  },
   "context_test.mbt": {
     0: (__test_636f6e746578745f746573742e6d6274_0, ["context_multiple_values"]),
     1: (__test_636f6e746578745f746573742e6d6274_1, ["baggage_multiple_entries"]),
