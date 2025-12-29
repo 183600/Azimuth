@@ -150,6 +150,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_7, ["span_timing_lifecycle"]),
     8: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_8, ["span_complex_lifecycle_scenarios"]),
   },
+  "span_lifecycle_state_comprehensive_test.mbt": {
+    0: (__test_7370616e5f6c6966656379636c655f73746174655f636f6d70726568656e736976655f746573742e6d6274_0, ["Span lifecycle and state management test"]),
+  },
   "span_lifecycle_advanced_test.mbt": {
     0: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_0, ["span_lifecycle_state_management"]),
     1: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_1, ["span_status_transitions"]),

@@ -164,6 +164,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_696e737472756d656e745f74797065735f636f6d70726568656e736976655f746573742e6d6274_6, ["measurement_struct_validation"]),
     7: (__test_696e737472756d656e745f74797065735f636f6d70726568656e736976655f746573742e6d6274_7, ["instrument_type_enum_validation"]),
   },
+  "instrument_types_comprehensive_enhanced_test.mbt": {
+    0: (__test_696e737472756d656e745f74797065735f636f6d70726568656e736976655f656e68616e6365645f746573742e6d6274_0, ["Metrics instrument types comprehensive test"]),
+  },
   "instrument_types_advanced_test.mbt": {
     0: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_0, ["metrics_counter_instrument_operations"]),
     1: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_1, ["metrics_histogram_instrument_operations"]),

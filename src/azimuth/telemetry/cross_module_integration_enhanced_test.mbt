@@ -1,388 +1,369 @@
-// 跨模块集成增强测试 - 验证遥测系统各模块间的协同工作
-
-use azimuth.telemetry.api.common.{AttributeValue, Attributes, Resource, InstrumentationScope}
-use azimuth.telemetry.api.trace.{SpanKind, StatusCode, Span}
-use azimuth.telemetry.api.metrics.{MetricType, Instrument, Measurement}
-use azimuth.telemetry.api.logs.{LogRecord, Severity, Logger}
-use azimuth.telemetry.api.context.{Context, Baggage, ContextKey}
-use azimuth.telemetry.api.propagation.{TextMapPropagator, Propagator}
-
-test "trace_metrics_logs_integration" {
-  // 测试追踪、指标和日志三大模块的集成
+test "Cross-module integration comprehensive test" {
+  // 测试Common模块与其他模块的集成
   
-  // 创建共享资源
-  let resource = Resource::default("integration-test-service")
-  assert_eq(resource.service_name, "integration-test-service")
+  // 创建共享的Resource和InstrumentationScope
+  let shared_resource = common::Resource::default("integrated-service")
+  shared_resource.service_version = Some("2.1.0")
+  shared_resource.attributes = [
+    ("env", common::AttributeValue::string("production")),
+    ("region", common::AttributeValue::string("us-east")),
+    ("instance_id", common::AttributeValue::int(67890L))
+  ]
   
-  // 创建检测范围
-  let scope = InstrumentationScope::{
-    name: "integration-scope",
-    version: Some("1.0.0"),
-    schema_url: None
+  let shared_scope = common::InstrumentationScope{
+    name: "integrated-scope",
+    version: Some("1.5.2"),
+    schema_url: Some("https://example.com/telemetry/schema/v1")
   }
   
-  // 1. 创建Span并记录指标
-  let trace_id = "trace_123456789"
-  let span_id = "span_987654321"
-  let parent_span = Span::{
+  // 测试Logs模块与Common模块的集成
+  let log_record = logs::LogRecord::builder()
+    .timestamp(1640995200000000000L)  // 2022-01-01 00:00:00 UTC
+    .severity(logs::Info)
+    .body("Application started successfully")
+    .with_attribute("service_name", common::AttributeValue::string(shared_resource.service_name))
+    .with_attribute("service_version", common::AttributeValue::string(shared_resource.service_version.unwrap_or("unknown")))
+    .with_attribute("scope_name", common::AttributeValue::string(shared_scope.name))
+    .with_attribute("scope_version", common::AttributeValue::string(shared_scope.version.unwrap_or("unknown")))
+    .build()
+  
+  // 手动设置resource和instrumentation_scope
+  let mut integrated_log = log_record
+  integrated_log.resource = shared_resource
+  integrated_log.instrumentation_scope = shared_scope
+  
+  // 验证日志记录的集成
+  match integrated_log.resource {
+    Some(resource) => {
+      assert_eq(resource.service_name, "integrated-service")
+      match resource.service_version {
+        Some(version) => assert_eq(version, "2.1.0")
+        None => @test.fail("Expected service version to be Some")
+      }
+      assert_eq(resource.attributes.length(), 3)
+    }
+    None => @test.fail("Expected resource to be Some")
+  }
+  
+  match integrated_log.instrumentation_scope {
+    Some(scope) => {
+      assert_eq(scope.name, "integrated-scope")
+      match scope.version {
+        Some(version) => assert_eq(version, "1.5.2")
+        None => @test.fail("Expected scope version to be Some")
+      }
+    }
+    None => @test.fail("Expected instrumentation_scope to be Some")
+  }
+  
+  // 测试Trace模块与Common模块的集成
+  let trace_id = [1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte, 8_byte,
+                  9_byte, 10_byte, 11_byte, 12_byte, 13_byte, 14_byte, 15_byte, 16_byte]
+  let span_id = [1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte, 8_byte]
+  let span_context = trace::SpanContext{
     trace_id: trace_id,
     span_id: span_id,
+    trace_flags: 1_byte,
+    trace_state: "azimuth=1"
+  }
+  
+  let span = trace::Span{
+    name: "integrated-operation",
+    context: span_context,
+    kind: trace::Server,
     parent_span_id: None,
-    name: "http_request",
-    kind: SpanKind::Server,
-    start_time: 1640995200L,
-    end_time: None,
-    status: StatusCode::Unset,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200500000000L),
+    status: trace::Ok,
+    status_description: Some("Operation completed successfully"),
     attributes: [
-      ("http.method", AttributeValue::string("GET")),
-      ("http.url", AttributeValue::string("/api/users")),
-      ("http.scheme", AttributeValue::string("https"))
+      ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+      ("service_version", common::AttributeValue::string(shared_resource.service_version.unwrap_or("unknown"))),
+      ("scope_name", common::AttributeValue::string(shared_scope.name)),
+      ("env", common::AttributeValue::string("production")),
+      ("region", common::AttributeValue::string("us-east")),
+      ("duration_ms", common::AttributeValue::float(50.0))
     ],
     events: [],
     links: []
   }
   
-  // 2. 在Span执行过程中记录指标
-  let request_duration = Instrument::counter(
-    "http_request_duration_ms",
-    "HTTP request duration in milliseconds",
-    "ms"
+  // 验证span的集成
+  assert_eq(span.attributes.length(), 6)
+  let service_name_attr = span.attributes[0]
+  match service_name_attr.1 {
+    common::StringValue(name) => assert_eq(name, "integrated-service")
+    _ => @test.fail("Expected StringValue for service_name")
+  }
+  
+  // 测试Metrics模块与Common模块的集成
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter(shared_scope.name, shared_scope.version, shared_scope.schema_url)
+  
+  let request_counter = meter.create_counter(
+    "http_requests_total", 
+    Some("requests"), 
+    Some("Total number of HTTP requests")
   )
   
-  let duration_measurement = Measurement::{
-    instrument: request_duration,
-    value: 125.5,
-    attributes: [
-      ("http.method", AttributeValue::string("GET")),
-      ("http.status_code", AttributeValue::int(200L)),
-      ("service.name", AttributeValue::string(resource.service_name))
-    ],
-    time: 1640995325L
+  let response_histogram = meter.create_histogram(
+    "http_response_duration_seconds",
+    Some("seconds"),
+    Some("HTTP request response duration in seconds")
+  )
+  
+  let active_connections_gauge = meter.create_gauge(
+    "http_active_connections",
+    Some("connections"),
+    Some("Current number of active HTTP connections")
+  )
+  
+  // 使用带有共享属性的指标
+  request_counter.add(1L, [
+    ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+    ("method", common::AttributeValue::string("GET")),
+    ("status", common::AttributeValue::string("200")),
+    ("env", common::AttributeValue::string("production"))
+  ])
+  
+  response_histogram.record(0.045, [
+    ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+    ("endpoint", common::AttributeValue::string("/api/users")),
+    ("method", common::AttributeValue::string("GET"))
+  ])
+  
+  active_connections_gauge.record(25.0, [
+    ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+    ("instance_id", common::AttributeValue::int(67890L))
+  ])
+  
+  // 测试跨模块的复杂场景：一个完整的请求处理流程
+  
+  // 1. 创建请求span
+  let request_trace_id = [10_byte, 20_byte, 30_byte, 40_byte, 50_byte, 60_byte, 70_byte, 80_byte,
+                         90_byte, 100_byte, 110_byte, 120_byte, 130_byte, 140_byte, 150_byte, 160_byte]
+  let request_span_id = [10_byte, 20_byte, 30_byte, 40_byte, 50_byte, 60_byte, 70_byte, 80_byte]
+  let request_context = trace::SpanContext{
+    trace_id: request_trace_id,
+    span_id: request_span_id,
+    trace_flags: 1_byte,
+    trace_state: ""
   }
   
-  // 3. 在Span执行过程中记录日志
-  let log_record = LogRecord::{
-    timestamp: 1640995280L,
-    observed_timestamp: Some(1640995281L),
-    severity: Some(Severity::Info),
-    severity_text: Some("INFO"),
-    body: Some("HTTP request processed successfully"),
-    attributes: [
-      ("trace_id", AttributeValue::string(trace_id)),
-      ("span_id", AttributeValue::string(span_id)),
-      ("user.id", AttributeValue::string("user_123")),
-      ("request.duration_ms", AttributeValue::float(125.5))
-    ],
-    flags: 0,
-    trace_id: Some(trace_id),
-    span_id: Some(span_id),
-    trace_flags: Some(1)
-  }
-  
-  // 4. 验证集成数据一致性
-  assert_eq(parent_span.trace_id, trace_id)
-  assert_eq(log_record.trace_id, Some(trace_id))
-  
-  // 验证Span属性与日志属性的一致性
-  let span_http_method = parent_span.attributes[0]
-  match span_http_method.1 {
-    StringValue(method) => assert_eq(method, "GET")
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证指标属性与Span属性的关联
-  let metric_method = duration_measurement.attributes[0]
-  match metric_method.1 {
-    StringValue(method) => assert_eq(method, "GET")
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证时间戳的递增性
-  assert_eq(parent_span.start_time < log_record.timestamp, true)
-  assert_eq(log_record.timestamp < duration_measurement.time, true)
-}
-
-test "context_propagation_across_modules" {
-  // 测试上下文在多个模块间的传播
-  
-  // 1. 创建根上下文
-  let root_context = Context::current()
-  let trace_id_key = ContextKey::new("trace_id")
-  let user_id_key = ContextKey::new("user_id")
-  
-  // 2. 在上下文中设置追踪信息
-  let trace_context = root_context.with_value(trace_id_key, "trace_ctx_12345")
-  let user_context = trace_context.with_value(user_id_key, "user_ctx_67890")
-  
-  // 3. 创建Baggage并传播
-  let baggage = Baggage::empty()
-  let enriched_baggage = baggage
-    .with("request.id", "req_123")
-    .with("session.id", "sess_456")
-    .with("tenant.id", "tenant_789")
-  
-  // 4. 在Span中使用传播的上下文
-  let propagated_span = Span::{
-    trace_id: "trace_ctx_12345",
-    span_id: "span_propagated",
+  let request_span = trace::Span{
+    name: "HTTP GET /api/data",
+    context: request_context,
+    kind: trace::Server,
     parent_span_id: None,
-    name: "propagated_operation",
-    kind: SpanKind::Internal,
-    start_time: 1640995400L,
-    end_time: None,
-    status: StatusCode::Unset,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: None,  // 还在进行中
+    status: trace::Unset,
+    status_description: None,
     attributes: [
-      ("user.id", AttributeValue::string("user_ctx_67890")),
-      ("request.id", AttributeValue::string("req_123")),
-      ("session.id", AttributeValue::string("sess_456")),
-      ("tenant.id", AttributeValue::string("tenant_789"))
+      ("http.method", common::AttributeValue::string("GET")),
+      ("http.url", common::AttributeValue::string("/api/data")),
+      ("http.user_agent", common::AttributeValue::string("Azimuth-Client/1.0")),
+      ("net.host.name", common::AttributeValue::string("api.example.com")),
+      ("service_name", common::AttributeValue::string(shared_resource.service_name))
     ],
     events: [],
     links: []
   }
   
-  // 5. 在日志中使用传播的上下文
-  let context_log = LogRecord::{
-    timestamp: 1640995450L,
-    observed_timestamp: Some(1640995451L),
-    severity: Some(Severity::Debug),
-    severity_text: Some("DEBUG"),
-    body: Some("Context propagated successfully across modules"),
+  // 2. 记录请求开始日志
+  let request_start_log = logs::LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(logs::Info)
+    .body("Request started")
+    .with_attribute("trace_id", common::AttributeValue::array_string(request_trace_id.map(fn(b) { b.to_string() })))
+    .with_attribute("span_id", common::AttributeValue::array_string(request_span_id.map(fn(b) { b.to_string() })))
+    .with_attribute("http.method", common::AttributeValue::string("GET"))
+    .with_attribute("http.url", common::AttributeValue::string("/api/data"))
+    .build()
+  
+  let mut request_start_log_integrated = request_start_log
+  request_start_log_integrated.resource = shared_resource
+  request_start_log_integrated.instrumentation_scope = shared_scope
+  
+  // 3. 记录请求指标
+  let api_requests_counter = meter.create_counter("api_requests_total", Some("requests"), Some("Total API requests"))
+  api_requests_counter.add(1L, [
+    ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+    ("http.method", common::AttributeValue::string("GET")),
+    ("http.route", common::AttributeValue::string("/api/data")),
+    ("env", common::AttributeValue::string("production"))
+  ])
+  
+  // 4. 模拟处理过程中的事件
+  let db_query_event = trace::SpanEvent{
+    name: "database.query",
+    timestamp_unix_nanos: 1640995200100000000L,
     attributes: [
-      ("trace.id", AttributeValue::string("trace_ctx_12345")),
-      ("user.id", AttributeValue::string("user_ctx_67890")),
-      ("baggage.request.id", AttributeValue::string("req_123")),
-      ("baggage.session.id", AttributeValue::string("sess_456")),
-      ("baggage.tenant.id", AttributeValue::string("tenant_789"))
-    ],
-    flags: 0,
-    trace_id: Some("trace_ctx_12345"),
-    span_id: Some("span_propagated"),
-    trace_flags: Some(1)
-  }
-  
-  // 6. 验证上下文传播的一致性
-  assert_eq(propagated_span.trace_id, "trace_ctx_12345")
-  assert_eq(context_log.trace_id, Some("trace_ctx_12345"))
-  
-  // 验证Baggage信息在Span和日志中的一致性
-  let span_tenant = propagated_span.attributes[3]
-  match span_tenant.1 {
-    StringValue(tenant) => assert_eq(tenant, "tenant_789")
-    _ => assert_eq(false, true)
-  }
-  
-  let log_tenant = context_log.attributes[4]
-  match log_tenant.1 {
-    StringValue(tenant) => assert_eq(tenant, "tenant_789")
-    _ => assert_eq(false, true)
-  }
-}
-
-test "error_propagation_across_modules" {
-  // 测试错误在多个模块间的传播和处理
-  
-  // 1. 在Span中记录错误
-  let error_span = Span::{
-    trace_id: "error_trace_123",
-    span_id: "error_span_456",
-    parent_span_id: None,
-    name: "failing_operation",
-    kind: SpanKind::Client,
-    start_time: 1640995500L,
-    end_time: Some(1640995600L),
-    status: StatusCode::Error,
-    attributes: [
-      ("error.type", AttributeValue::string("connection_timeout")),
-      ("error.message", AttributeValue::string("Failed to connect to external service")),
-      ("error.retry_count", AttributeValue::int(3L)),
-      ("error.final_attempt", AttributeValue::bool(true))
-    ],
-    events: [
-      ("exception", 1640995550L, [
-        ("exception.type", AttributeValue::string("TimeoutException")),
-        ("exception.message", AttributeValue::string("Connection timeout after 30 seconds")),
-        ("exception.stacktrace", AttributeValue::string("at com.example.Service.connect(Service.java:123)"))
-      ])
-    ],
-    links: []
-  }
-  
-  // 2. 在指标中记录错误率
-  let error_counter = Instrument::counter(
-    "operation_errors_total",
-    "Total number of operation errors",
-    "count"
-  )
-  
-  let error_measurement = Measurement::{
-    instrument: error_counter,
-    value: 1.0,
-    attributes: [
-      ("operation.name", AttributeValue::string("failing_operation")),
-      ("error.type", AttributeValue::string("connection_timeout")),
-      ("service.name", AttributeValue::string("error-prone-service"))
-    ],
-    time: 1640995600L
-  }
-  
-  // 3. 在日志中记录错误详情
-  let error_log = LogRecord::{
-    timestamp: 1640995600L,
-    observed_timestamp: Some(1640995601L),
-    severity: Some(Severity::Error),
-    severity_text: Some("ERROR"),
-    body: Some("Operation failed after 3 retry attempts"),
-    attributes: [
-      ("trace_id", AttributeValue::string("error_trace_123")),
-      ("span_id", AttributeValue::string("error_span_456")),
-      ("error.type", AttributeValue::string("connection_timeout")),
-      ("error.message", AttributeValue::string("Failed to connect to external service")),
-      ("error.retry_count", AttributeValue::int(3L)),
-      ("error.duration_ms", AttributeValue::float(100.0)),
-      ("operation.status", AttributeValue::string("failed"))
-    ],
-    flags: 0,
-    trace_id: Some("error_trace_123"),
-    span_id: Some("error_span_456"),
-    trace_flags: Some(1)
-  }
-  
-  // 4. 验证错误信息在模块间的一致性
-  assert_eq(error_span.status, StatusCode::Error)
-  assert_eq(error_log.severity, Some(Severity::Error))
-  
-  // 验证错误类型的一致性
-  let span_error_type = error_span.attributes[0]
-  match span_error_type.1 {
-    StringValue(error_type) => assert_eq(error_type, "connection_timeout")
-    _ => assert_eq(false, true)
-  }
-  
-  let metric_error_type = error_measurement.attributes[1]
-  match metric_error_type.1 {
-    StringValue(error_type) => assert_eq(error_type, "connection_timeout")
-    _ => assert_eq(false, true)
-  }
-  
-  let log_error_type = error_log.attributes[2]
-  match log_error_type.1 {
-    StringValue(error_type) => assert_eq(error_type, "connection_timeout")
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证时间线的一致性
-  assert_eq(error_span.start_time < error_span.end_time.unwrap(), true)
-  assert_eq(error_span.end_time.unwrap() <= error_log.timestamp, true)
-  assert_eq(error_log.timestamp, error_measurement.time)
-}
-
-test "resource_metadata_consistency" {
-  // 测试资源元数据在各个模块间的一致性
-  
-  // 1. 创建带完整元数据的资源
-  let detailed_resource = Resource::{
-    service_name: "detailed-service",
-    service_version: Some("2.1.0"),
-    service_namespace: Some("production"),
-    service_instance_id: Some("instance-abc123"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    telemetry_sdk_language: "moonbit",
-    attributes: [
-      ("service.environment", AttributeValue::string("production")),
-      ("service.region", AttributeValue::string("us-west-2")),
-      ("service.zone", AttributeValue::string("us-west-2a")),
-      ("deployment.color", AttributeValue::string("blue")),
-      ("k8s.pod.name", AttributeValue::string("detailed-service-7f8d9c2d")),
-      ("k8s.namespace", AttributeValue::string("default"))
+      ("db.statement", common::AttributeValue::string("SELECT * FROM data WHERE active = true")),
+      ("db.type", common::AttributeValue::string("postgresql")),
+      ("db.duration_ms", common::AttributeValue::float(25.5))
     ]
   }
   
-  // 2. 在Span中使用资源元数据
-  let resource_span = Span::{
-    trace_id: "resource_trace_123",
-    span_id: "resource_span_456",
+  // 5. 记录处理过程中的日志
+  let processing_log = logs::LogRecord::builder()
+    .timestamp(1640995200150000000L)
+    .severity(logs::Debug)
+    .body("Processing database query results")
+    .with_attribute("query_duration_ms", common::AttributeValue::float(25.5))
+    .with_attribute("result_count", common::AttributeValue::int(150L))
+    .build()
+  
+  let mut processing_log_integrated = processing_log
+  processing_log_integrated.resource = shared_resource
+  processing_log_integrated.instrumentation_scope = shared_scope
+  
+  // 6. 记录处理指标
+  let db_query_histogram = meter.create_histogram("db_query_duration_seconds", Some("seconds"), Some("Database query duration"))
+  db_query_histogram.record(0.0255, [
+    ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+    ("db.type", common::AttributeValue::string("postgresql")),
+    ("operation", common::AttributeValue::string("SELECT"))
+  ])
+  
+  // 7. 完成请求
+  let mut completed_request_span = request_span
+  completed_request_span.end_time_unix_nanos = Some(1640995200450000000L)
+  completed_request_span.status = trace::Ok
+  completed_request_span.status_description = Some("Request completed successfully")
+  completed_request_span.events = [db_query_event]
+  completed_request_span.attributes = completed_request_span.attributes + [
+    ("http.status_code", common::AttributeValue::int(200L)),
+    ("http.response_content_length", common::AttributeValue::int(2048L))
+  ]
+  
+  // 8. 记录完成日志
+  let completion_log = logs::LogRecord::builder()
+    .timestamp(1640995200450000000L)
+    .severity(logs::Info)
+    .body("Request completed successfully")
+    .with_attribute("http.status_code", common::AttributeValue::int(200L))
+    .with_attribute("duration_ms", common::AttributeValue::float(45.0))
+    .with_attribute("response_size", common::AttributeValue::int(2048L))
+    .build()
+  
+  let mut completion_log_integrated = completion_log
+  completion_log_integrated.resource = shared_resource
+  completion_log_integrated.instrumentation_scope = shared_scope
+  
+  // 9. 记录最终指标
+  let request_duration_histogram = meter.create_histogram("http_request_duration_seconds", Some("seconds"), Some("HTTP request duration"))
+  request_duration_histogram.record(0.045, [
+    ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+    ("http.method", common::AttributeValue::string("GET")),
+    ("http.route", common::AttributeValue::string("/api/data")),
+    ("http.status_code", common::AttributeValue::int(200L))
+  ])
+  
+  let response_size_histogram = meter.create_histogram("http_response_size_bytes", Some("bytes"), Some("HTTP response size"))
+  response_size_histogram.record(2048.0, [
+    ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+    ("http.method", common::AttributeValue::string("GET")),
+    ("http.route", common::AttributeValue::string("/api/data"))
+  ])
+  
+  // 验证完整的集成场景
+  assert_eq(completed_request_span.end_time_unix_nanos, Some(1640995200450000000L))
+  assert_eq(completed_request_span.status, trace::Ok)
+  assert_eq(completed_request_span.events.length(), 1)
+  assert_eq(completed_request_span.attributes.length(), 8)  // 原始5个 + 3个新增
+  
+  match completion_log_integrated.resource {
+    Some(resource) => assert_eq(resource.service_name, "integrated-service")
+    None => @test.fail("Expected resource to be Some")
+  }
+  
+  // 测试错误场景的集成
+  let error_span = trace::Span{
+    name: "HTTP POST /api/error",
+    context: trace::SpanContext{
+      trace_id: [255_byte, 254_byte, 253_byte, 252_byte, 251_byte, 250_byte, 249_byte, 248_byte,
+                 247_byte, 246_byte, 245_byte, 244_byte, 243_byte, 242_byte, 241_byte, 240_byte],
+      span_id: [255_byte, 254_byte, 253_byte, 252_byte, 251_byte, 250_byte, 249_byte, 248_byte],
+      trace_flags: 1_byte,
+      trace_state: ""
+    },
+    kind: trace::Server,
     parent_span_id: None,
-    name: "resource_aware_operation",
-    kind: SpanKind::Server,
-    start_time: 1640995700L,
-    end_time: None,
-    status: StatusCode::Unset,
+    start_time_unix_nanos: 1640995300000000000L,
+    end_time_unix_nanos: Some(1640995300050000000L),
+    status: trace::Error,
+    status_description: Some("Internal server error"),
     attributes: [
-      ("service.name", AttributeValue::string(detailed_resource.service_name)),
-      ("service.version", AttributeValue::string(detailed_resource.service_version.unwrap())),
-      ("service.namespace", AttributeValue::string(detailed_resource.service_namespace.unwrap())),
-      ("service.instance.id", AttributeValue::string(detailed_resource.service_instance_id.unwrap())),
-      ("service.environment", AttributeValue::string("production")),
-      ("service.region", AttributeValue::string("us-west-2"))
+      ("http.method", common::AttributeValue::string("POST")),
+      ("http.url", common::AttributeValue::string("/api/error")),
+      ("http.status_code", common::AttributeValue::int(500L)),
+      ("error.type", common::AttributeValue::string("DatabaseError")),
+      ("service_name", common::AttributeValue::string(shared_resource.service_name))
     ],
-    events: [],
+    events: [
+      trace::SpanEvent{
+        name: "exception",
+        timestamp_unix_nanos: 1640995300030000000L,
+        attributes: [
+          ("exception.type", common::AttributeValue::string("DatabaseError")),
+          ("exception.message", common::AttributeValue::string("Connection timeout")),
+          ("exception.stacktrace", common::AttributeValue::string("at Database.query (db.js:123)"))
+        ]
+      }
+    ],
     links: []
   }
   
-  // 3. 在指标中使用资源元数据
-  let resource_metric = Measurement::{
-    instrument: Instrument::counter("resource_operations_total", "Total operations with resource metadata", "count"),
-    value: 1.0,
-    attributes: [
-      ("service.name", AttributeValue::string(detailed_resource.service_name)),
-      ("service.version", AttributeValue::string(detailed_resource.service_version.unwrap())),
-      ("service.namespace", AttributeValue::string(detailed_resource.service_namespace.unwrap())),
-      ("service.instance.id", AttributeValue::string(detailed_resource.service_instance_id.unwrap())),
-      ("k8s.pod.name", AttributeValue::string("detailed-service-7f8d9c2d"))
-    ],
-    time: 1640995750L
+  let error_log = logs::LogRecord::builder()
+    .timestamp(1640995300030000000L)
+    .severity(logs::Error)
+    .body("Database connection timeout")
+    .with_attribute("error.type", common::AttributeValue::string("DatabaseError"))
+    .with_attribute("error.message", common::AttributeValue::string("Connection timeout"))
+    .with_attribute("http.status_code", common::AttributeValue::int(500L))
+    .build()
+  
+  let mut error_log_integrated = error_log
+  error_log_integrated.resource = shared_resource
+  error_log_integrated.instrumentation_scope = shared_scope
+  
+  let error_counter = meter.create_counter("http_errors_total", Some("errors"), Some("Total HTTP errors"))
+  error_counter.add(1L, [
+    ("service_name", common::AttributeValue::string(shared_resource.service_name)),
+    ("http.method", common::AttributeValue::string("POST")),
+    ("http.status_code", common::AttributeValue::int(500L)),
+    ("error.type", common::AttributeValue::string("DatabaseError"))
+  ])
+  
+  // 验证错误场景
+  assert_eq(error_span.status, trace::Error)
+  assert_eq(error_span.events.length(), 1)
+  match error_log_integrated.resource {
+    Some(resource) => assert_eq(resource.service_name, "integrated-service")
+    None => @test.fail("Expected resource to be Some")
   }
   
-  // 4. 在日志中使用资源元数据
-  let resource_log = LogRecord::{
-    timestamp: 1640995800L,
-    observed_timestamp: Some(1640995801L),
-    severity: Some(Severity::Info),
-    severity_text: Some("INFO"),
-    body: Some("Operation completed with full resource context"),
-    attributes: [
-      ("service.name", AttributeValue::string(detailed_resource.service_name)),
-      ("service.version", AttributeValue::string(detailed_resource.service_version.unwrap())),
-      ("service.namespace", AttributeValue::string(detailed_resource.service_namespace.unwrap())),
-      ("service.instance.id", AttributeValue::string(detailed_resource.service_instance_id.unwrap())),
-      ("k8s.namespace", AttributeValue::string("default")),
-      ("deployment.color", AttributeValue::string("blue"))
-    ],
-    flags: 0,
-    trace_id: Some("resource_trace_123"),
-    span_id: Some("resource_span_456"),
-    trace_flags: Some(1)
+  // 测试跨模块的边界条件
+  let empty_resource = common::Resource::default("")
+  let empty_scope = common::InstrumentationScope{ name: "", version: None, schema_url: None }
+  
+  let boundary_log = logs::LogRecord::builder()
+    .severity(logs::Info)
+    .body("Boundary test")
+    .build()
+  
+  let mut boundary_log_integrated = boundary_log
+  boundary_log_integrated.resource = empty_resource
+  boundary_log_integrated.instrumentation_scope = empty_scope
+  
+  match boundary_log_integrated.resource {
+    Some(resource) => assert_eq(resource.service_name, "")
+    None => @test.fail("Expected resource to be Some")
   }
   
-  // 5. 验证资源元数据的一致性
-  assert_eq(detailed_resource.service_name, "detailed-service")
-  assert_eq(detailed_resource.service_version, Some("2.1.0"))
-  
-  // 验证服务名称在所有模块中的一致性
-  let span_service_name = resource_span.attributes[0]
-  match span_service_name.1 {
-    StringValue(name) => assert_eq(name, "detailed-service")
-    _ => assert_eq(false, true)
-  }
-  
-  let metric_service_name = resource_metric.attributes[0]
-  match metric_service_name.1 {
-    StringValue(name) => assert_eq(name, "detailed-service")
-    _ => assert_eq(false, true)
-  }
-  
-  let log_service_name = resource_log.attributes[0]
-  match log_service_name.1 {
-    StringValue(name) => assert_eq(name, "detailed-service")
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证K8s元数据的一致性
-  let log_k8s_namespace = resource_log.attributes[5]
-  match log_k8s_namespace.1 {
-    StringValue(namespace) => assert_eq(namespace, "default")
-    _ => assert_eq(false, true)
+  match boundary_log_integrated.instrumentation_scope {
+    Some(scope) => assert_eq(scope.name, "")
+    None => @test.fail("Expected instrumentation_scope to be Some")
   }
 }
