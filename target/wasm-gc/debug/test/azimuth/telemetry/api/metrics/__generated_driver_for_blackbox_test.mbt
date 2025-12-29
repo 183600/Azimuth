@@ -83,6 +83,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     10: (__test_6d6574726963735f62617369635f746573742e6d6274_10, ["meter_provider_and_meter_lifecycle"]),
     11: (__test_6d6574726963735f62617369635f746573742e6d6274_11, ["instrument_error_scenarios_and_edge_cases"]),
   },
+  "metrics_advanced_test.mbt": {
+    0: (__test_6d6574726963735f616476616e6365645f746573742e6d6274_0, ["measurement_complex_attributes"]),
+    1: (__test_6d6574726963735f616476616e6365645f746573742e6d6274_1, ["instrument_type_coverage"]),
+  },
   "metrics.mbt": {
   },
   "instrument_types_test.mbt": {
