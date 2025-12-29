@@ -1,6 +1,15 @@
 // 时间同步测试用例
 // 测试遥测系统的时间同步和时间戳管理
 
+// 导入必要的类型
+use azimuth.telemetry.api.common.{Resource, InstrumentationScope, AttributeValue, Attributes}
+use azimuth.telemetry.api.context.{Context, create_key}
+use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber}
+use azimuth.telemetry.api.trace.{Span, SpanContext, SpanKind, StatusCode, SpanEvent, NoopTracer}
+use azimuth.telemetry.api.metrics.{NoopMeterProvider}
+use azimuth.telemetry.api.propagation.{W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator, MapCarrier}
+use azimuth.telemetry.api.context.{Baggage}
+
 test "timestamp_precision_and_format" {
   // 测试时间戳精度和格式
   

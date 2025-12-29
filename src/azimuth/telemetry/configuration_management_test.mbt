@@ -1,6 +1,15 @@
 // 配置管理和动态更新测试用例
 // 测试遥测系统的配置管理和动态更新能力
 
+// 导入必要的类型
+use azimuth.telemetry.api.common.{Resource, InstrumentationScope, AttributeValue, Attributes}
+use azimuth.telemetry.api.context.{Context, create_key}
+use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber}
+use azimuth.telemetry.api.trace.{Span, SpanContext, SpanKind, StatusCode, NoopTracer}
+use azimuth.telemetry.api.metrics.{NoopMeterProvider}
+use azimuth.telemetry.api.propagation.{W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator, MapCarrier}
+use azimuth.telemetry.api.context.{Baggage}
+
 test "resource_configuration_management" {
   // 测试Resource的配置管理
   

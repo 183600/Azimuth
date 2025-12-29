@@ -1,6 +1,16 @@
 // 资源生命周期管理测试用例
 // 测试遥测系统资源的创建、使用和销毁
 
+// 导入必要的类型
+use azimuth.telemetry.api.common.{Resource, InstrumentationScope, AttributeValue, Attributes}
+use azimuth.telemetry.api.context.{Context, create_key}
+use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber, LogRecordBuilder}
+use azimuth.telemetry.api.trace.{Span, SpanContext, SpanKind, StatusCode, SpanEvent, NoopTracer}
+use azimuth.telemetry.api.metrics.{NoopMeterProvider}
+use azimuth.telemetry.api.propagation.{W3CTraceContextPropagator, W3CBaggagePropagator, CompositePropagator, MapCarrier}
+use azimuth.telemetry.api.context.{Baggage}
+use azimuth.telemetry.api.logs
+
 test "resource_lifecycle_management" {
   // 测试Resource的生命周期管理
   

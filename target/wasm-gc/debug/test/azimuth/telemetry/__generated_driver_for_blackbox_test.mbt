@@ -428,11 +428,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_7265616c5f776f726c645f7363656e6172696f5f746573742e6d6274_2, ["iot_device_data_processing"]),
   },
   "real_time_performance_test.mbt": {
-    0: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_0, ["performance_monitoring_high_throughput"]),
-    1: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_1, ["performance_monitoring_latency_analysis"]),
-    2: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_2, ["performance_monitoring_memory_pressure"]),
-    3: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_3, ["performance_monitoring_concurrent_load"]),
-    4: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_4, ["performance_monitoring_resource_saturation"]),
+    0: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_0, ["real_time_metrics_collection"]),
+    1: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_1, ["performance_alerting"]),
+    2: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_2, ["performance_benchmarking"]),
+    3: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_3, ["real_time_dashboard_metrics"]),
+    4: (__test_7265616c5f74696d655f706572666f726d616e63655f746573742e6d6274_4, ["performance_trend_analysis"]),
   },
   "performance_stress_test.mbt": {
     0: (__test_706572666f726d616e63655f7374726573735f746573742e6d6274_0, ["high_concurrency_span_creation"]),
