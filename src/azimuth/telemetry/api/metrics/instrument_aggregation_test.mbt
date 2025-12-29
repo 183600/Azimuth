@@ -1,433 +1,387 @@
-// Metrics各种InstrumentType聚合测试用例
-// 测试不同InstrumentType的聚合功能和复杂场景
+// API Metrics模块的指标聚合测试
 
-test "instrument_type_counter_aggregation" {
-  // 测试Counter类型指标的聚合
+test "instrument_types_creation" {
+  // 测试各种仪器类型的创建
   
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", Some("1.0.0"))
+  // 测试Counter
+  let counter = metrics::NoopCounter::{}
+  counter.add(10L, [])
+  counter.add(5L, [("operation.type", common::AttributeValue::string("read"))])
+  
+  // 测试Histogram
+  let histogram = metrics::NoopHistogram::{}
+  histogram.record(1.5, [])
+  histogram.record(2.7, [("http.method", common::AttributeValue::string("GET"))])
+  
+  // 测试UpDownCounter
+  let up_down_counter = metrics::NoopUpDownCounter::{}
+  up_down_counter.add(3L, [])
+  up_down_counter.add(-2L, [("queue.type", common::AttributeValue::string("priority"))])
+  
+  // 测试Gauge
+  let gauge = metrics::NoopGauge::{}
+  gauge.record(42.0, [])
+  gauge.record(15.7, [("metric.type", common::AttributeValue::string("temperature"))])
+}
+
+test "meter_instrument_creation" {
+  // 测试Meter创建各种仪器
+  
+  let meter = metrics::NoopMeter::{}
   
   // 创建Counter
-  let counter = meter.create_counter("http.requests.total", Some("requests"), Some("Total HTTP requests"))
-  
-  // 测试Counter的基本操作
-  counter.add(1L, Some([("http.method", AttributeValue::string("GET"))]))
-  counter.add(2L, Some([("http.method", AttributeValue::string("POST"))]))
-  counter.add(3L, Some([("http.method", AttributeValue::string("GET"))]))
-  counter.add(5L, Some([("http.method", AttributeValue::string("PUT"))]))
-  counter.add(10L, Some([("http.method", AttributeValue::string("GET"))]))
-  
-  // 验证Counter类型
-  assert_eq(true, true)  // Noop实现中无法验证实际聚合
-  
-  // 测试负值处理（Counter通常不允许负值）
-  counter.add(-1L, Some([("http.method", AttributeValue::string("DELETE"))]))
-  
-  // 测试零值
-  counter.add(0L, Some([("http.method", AttributeValue::string("OPTIONS"))]))
-  
-  // 测试大值
-  counter.add(9223372036854775807L, Some([("http.method", AttributeValue::string("PATCH"))]))
-  
-  // 测试复杂属性
-  let complex_attributes = [
-    ("http.method", AttributeValue::string("GET")),
-    ("http.status_code", AttributeValue::int(200L)),
-    ("http.route", AttributeValue::string("/api/users")),
-    ("service.name", AttributeValue::string("api-gateway")),
-    ("service.version", AttributeValue::string("2.1.0")),
-    ("deployment.environment", AttributeValue::string("production"))
-  ]
-  
-  counter.add(100L, Some(complex_attributes))
-}
-
-test "instrument_type_histogram_aggregation" {
-  // 测试Histogram类型指标的聚合
-  
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", Some("1.0.0"))
+  let counter1 = meter.create_counter("http_requests_total", None, None)
+  let counter2 = meter.create_counter("http_requests_total", Some("count"), None)
+  let counter3 = meter.create_counter("http_requests_total", None, Some("Total HTTP requests"))
+  let counter4 = meter.create_counter("http_requests_total", Some("count"), Some("Total HTTP requests"))
   
   // 创建Histogram
-  let histogram = meter.create_histogram("http.request.duration", Some("ms"), Some("HTTP request duration"))
-  
-  // 测试Histogram的基本操作
-  histogram.record(100.0, Some([("http.method", AttributeValue::string("GET"))]))
-  histogram.record(200.5, Some([("http.method", AttributeValue::string("POST"))]))
-  histogram.record(50.25, Some([("http.method", AttributeValue::string("GET"))]))
-  histogram.record(1000.0, Some([("http.method", AttributeValue::string("PUT"))]))
-  histogram.record(75.75, Some([("http.method", AttributeValue::string("GET"))]))
-  
-  // 测试边界值
-  histogram.record(0.0, Some([("http.method", AttributeValue::string("DELETE"))]))
-  histogram.record(-1.0, Some([("http.method", AttributeValue::string("OPTIONS"))]))  // 负值
-  histogram.record(1.7976931348623157e+308, Some([("http.method", AttributeValue::string("PATCH"))]))  // 最大值
-  
-  // 测试特殊浮点值
-  histogram.record(1.0/0.0, Some([("http.method", AttributeValue::string("HEAD"))]))  // 正无穷
-  histogram.record(-1.0/0.0, Some([("http.method", AttributeValue::string("TRACE"))]))  // 负无穷
-  histogram.record(0.0/0.0, Some([("http.method", AttributeValue::string("CONNECT"))]))  // NaN
-  
-  // 测试科学计数法
-  histogram.record(1.23e-10, Some([("http.method", AttributeValue::string("CUSTOM1"))]))
-  histogram.record(1.23e+20, Some([("http.method", AttributeValue::string("CUSTOM2"))]))
-  
-  // 测试复杂属性
-  let complex_attributes = [
-    ("http.method", AttributeValue::string("GET")),
-    ("http.status_code", AttributeValue::int(200L)),
-    ("http.route", AttributeValue::string("/api/data")),
-    ("user.id", AttributeValue::string("user-123")),
-    ("session.id", AttributeValue::string("session-456")),
-    ("request.size", AttributeValue::int(1024L)),
-    ("response.size", AttributeValue::int(2048L))
-  ]
-  
-  histogram.record(150.5, Some(complex_attributes))
-}
-
-test "instrument_type_up_down_counter_aggregation" {
-  // 测试UpDownCounter类型指标的聚合
-  
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", Some("1.0.0"))
+  let histogram1 = meter.create_histogram("http_request_duration", None, None)
+  let histogram2 = meter.create_histogram("http_request_duration", Some("seconds"), None)
+  let histogram3 = meter.create_histogram("http_request_duration", None, Some("HTTP request duration"))
+  let histogram4 = meter.create_histogram("http_request_duration", Some("seconds"), Some("HTTP request duration"))
   
   // 创建UpDownCounter
-  let up_down_counter = meter.create_up_down_counter("active.connections", Some("connections"), Some("Active connections"))
-  
-  // 测试UpDownCounter的基本操作（允许负值）
-  up_down_counter.add(10L, Some([("connection.type", AttributeValue::string("http"))]))
-  up_down_counter.add(-5L, Some([("connection.type", AttributeValue::string("http"))]))
-  up_down_counter.add(3L, Some([("connection.type", AttributeValue::string("websocket"))]))
-  up_down_counter.add(-2L, Some([("connection.type", AttributeValue::string("websocket"))]))
-  
-  // 测试零值
-  up_down_counter.add(0L, Some([("connection.type", AttributeValue::string("grpc"))]))
-  
-  // 测试极值
-  up_down_counter.add(9223372036854775807L, Some([("connection.type", AttributeValue::string("tcp"))]))
-  up_down_counter.add(-9223372036854775808L, Some([("connection.type", AttributeValue::string("udp"))]))
-  
-  // 测试复杂场景
-  let complex_attributes = [
-    ("connection.type", AttributeValue::string("http")),
-    ("connection.state", AttributeValue::string("active")),
-    ("client.ip", AttributeValue::string("192.168.1.100")),
-    ("client.user_agent", AttributeValue::string("Mozilla/5.0")),
-    ("server.endpoint", AttributeValue::string("/api/long-polling")),
-    ("connection.duration", AttributeValue::int(30000L))
-  ]
-  
-  up_down_counter.add(1L, Some(complex_attributes))
-  up_down_counter.add(-1L, Some(complex_attributes))
-}
-
-test "instrument_type_gauge_aggregation" {
-  // 测试Gauge类型指标的聚合
-  
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", Some("1.0.0"))
+  let up_down_counter1 = meter.create_up_down_counter("active_connections", None, None)
+  let up_down_counter2 = meter.create_up_down_counter("active_connections", Some("connections"), None)
+  let up_down_counter3 = meter.create_up_down_counter("active_connections", None, Some("Active network connections"))
+  let up_down_counter4 = meter.create_up_down_counter("active_connections", Some("connections"), Some("Active network connections"))
   
   // 创建Gauge
-  let gauge = meter.create_gauge("memory.usage", Some("bytes"), Some("Memory usage"))
+  let gauge1 = meter.create_gauge("cpu_usage", None, None)
+  let gauge2 = meter.create_gauge("cpu_usage", Some("percent"), None)
+  let gauge3 = meter.create_gauge("cpu_usage", None, Some("Current CPU usage percentage"))
+  let gauge4 = meter.create_gauge("cpu_usage", Some("percent"), Some("Current CPU usage percentage"))
   
-  // 测试Gauge的基本操作
-  gauge.record(1024.0, Some([("memory.type", AttributeValue::string("heap"))]))
-  gauge.record(2048.5, Some([("memory.type", AttributeValue::string("stack"))]))
-  gauge.record(512.25, Some([("memory.type", AttributeValue::string("heap"))]))
-  gauge.record(4096.0, Some([("memory.type", AttributeValue::string("native"))]))
+  // 验证所有仪器都可以调用方法而不崩溃
+  counter1.add(1L, [])
+  counter2.add(2L, [("method", common::AttributeValue::string("GET"))])
   
-  // 测试边界值
-  gauge.record(0.0, Some([("memory.type", AttributeValue::string("code_cache"))]))
-  gauge.record(-1.0, Some([("memory.type", AttributeValue::string("free"))]))  // 负值可能表示释放
-  gauge.record(1.7976931348623157e+308, Some([("memory.type", AttributeValue::string("total_available"))]))
+  histogram1.record(1.0, [])
+  histogram2.record(2.5, [("status", common::AttributeValue::int(200L))])
   
-  // 测试特殊浮点值
-  gauge.record(1.0/0.0, Some([("memory.type", AttributeValue::string("unlimited"))))
-  gauge.record(0.0/0.0, Some([("memory.type", AttributeValue::string("unknown"))))
+  up_down_counter1.add(1L, [])
+  up_down_counter2.add(-1L, [("connection.type", common::AttributeValue::string("tcp"))])
   
-  // 测试复杂属性
-  let complex_attributes = [
-    ("memory.type", AttributeValue::string("heap")),
-    ("memory.pool", AttributeValue::string("eden")),
-    ("process.id", AttributeValue::int(12345L)),
-    ("process.name", AttributeValue::string("java")),
-    ("container.id", AttributeValue::string("container-abc123")),
-    ("node.name", AttributeValue::string("worker-node-1")),
-    ("availability.zone", AttributeValue::string("us-west-2a"))
-  ]
-  
-  gauge.record(8192.0, Some(complex_attributes))
+  gauge1.record(50.0, [])
+  gauge2.record(75.5, [("core", common::AttributeValue::int(0L))])
 }
 
-test "instrument_type_observable_counter_aggregation" {
-  // 测试ObservableCounter类型指标的聚合
+test "meter_provider_functionality" {
+  // 测试MeterProvider的功能
   
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", Some("1.0.0"))
+  let provider = metrics::NoopMeterProvider::{}
   
-  // 注意：在当前实现中，ObservableCounter的创建方法与Counter相同
-  // 在实际实现中，ObservableCounter应该有不同的创建方法
-  let observable_counter = meter.create_counter("cache.hits.total", Some("hits"), Some("Total cache hits"))
+  // 创建不同配置的Meter
+  let meter1 = provider.get_meter("test.meter", None, None)
+  let meter2 = provider.get_meter("test.meter", Some("1.0.0"), None)
+  let meter3 = provider.get_meter("test.meter", None, Some("https://example.com/schema"))
+  let meter4 = provider.get_meter("test.meter", Some("1.0.0"), Some("https://example.com/schema"))
   
-  // ObservableCounter通常通过回调函数提供值，这里我们测试基本结构
-  observable_counter.add(100L, Some([("cache.type", AttributeValue::string("redis"))]))
-  observable_counter.add(200L, Some([("cache.type", AttributeValue::string("memcached"))]))
+  // 验证所有Meter都可以创建仪器
+  let counter1 = meter1.create_counter("test.counter", None, None)
+  let histogram2 = meter2.create_histogram("test.histogram", None, None)
+  let up_down_counter3 = meter3.create_up_down_counter("test.up_down_counter", None, None)
+  let gauge4 = meter4.create_gauge("test.gauge", None, None)
   
-  // 测试复杂场景
-  let complex_attributes = [
-    ("cache.type", AttributeValue::string("redis")),
-    ("cache.cluster", AttributeValue::string("cluster-1")),
-    ("cache.node", AttributeValue::string("redis-node-1")),
-    ("cache.shard", AttributeValue::int(0L)),
-    ("cache.key.pattern", AttributeValue::string("user:*")),
-    ("cache.ttl", AttributeValue::int(3600L))
-  ]
-  
-  observable_counter.add(500L, Some(complex_attributes))
+  // 验证所有仪器都可以调用方法而不崩溃
+  counter1.add(10L, [])
+  histogram2.record(1.5, [])
+  up_down_counter3.add(5L, [])
+  gauge4.record(25.0, [])
 }
 
-test "instrument_type_observable_gauge_aggregation" {
-  // 测试ObservableGauge类型指标的聚合
+test "measurement_creation_and_validation" {
+  // 测试Measurement的创建和验证
   
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", Some("1.0.0"))
-  
-  // 注意：在当前实现中，ObservableGauge的创建方法与Gauge相同
-  let observable_gauge = meter.create_gauge("cpu.usage", Some("percent"), Some("CPU usage percentage"))
-  
-  // 测试不同类型的CPU使用率
-  observable_gauge.record(75.5, Some([("cpu.core", AttributeValue::int(0L))]))
-  observable_gauge.record(80.0, Some([("cpu.core", AttributeValue::int(1L))]))
-  observable_gauge.record(60.25, Some([("cpu.core", AttributeValue::int(2L))]))
-  observable_gauge.record(90.75, Some([("cpu.core", AttributeValue::int(3L))]))
-  
-  // 测试边界值
-  observable_gauge.record(0.0, Some([("cpu.core", AttributeValue::int(4L))]))
-  observable_gauge.record(100.0, Some([("cpu.core", AttributeValue::int(5L))]))
-  observable_gauge.record(150.0, Some([("cpu.core", AttributeValue::int(6L))]))  // 超过100%
-  
-  // 测试复杂属性
-  let complex_attributes = [
-    ("cpu.core", AttributeValue::int(7L)),
-    ("cpu.mode", AttributeValue::string("user")),
-    ("process.name", AttributeValue::string("web-server")),
-    ("process.id", AttributeValue::int(12345L)),
-    ("container.name", AttributeValue::string("web-server-container")),
-    ("k8s.pod.name", AttributeValue::string("web-server-pod-abc123")),
-    ("k8s.namespace", AttributeValue::string("production"))
-  ]
-  
-  observable_gauge.record(85.5, Some(complex_attributes))
-}
-
-test "instrument_type_observable_up_down_counter_aggregation" {
-  // 测试ObservableUpDownCounter类型指标的聚合
-  
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", Some("1.0.0"))
-  
-  // 注意：在当前实现中，ObservableUpDownCounter的创建方法与UpDownCounter相同
-  let observable_up_down_counter = meter.create_up_down_counter("queue.size", Some("messages"), Some("Queue size"))
-  
-  // 测试队列大小变化
-  observable_up_down_counter.add(100L, Some([("queue.name", AttributeValue::string("priority"))]))
-  observable_up_down_counter.add(-20L, Some([("queue.name", AttributeValue::string("priority"))]))
-  observable_up_down_counter.add(50L, Some([("queue.name", AttributeValue::string("normal"))]))
-  observable_up_down_counter.add(-10L, Some([("queue.name", AttributeValue::string("normal"))]))
-  
-  // 测试复杂场景
-  let complex_attributes = [
-    ("queue.name", AttributeValue::string("bulk")),
-    ("queue.priority", AttributeValue::string("low")),
-    ("queue.type", AttributeValue::string("fifo")),
-    ("consumer.group", AttributeValue::string("processor-1")),
-    ("partition.id", AttributeValue::int(0L)),
-    ("broker.name", AttributeValue::string("kafka-broker-1")),
-    ("topic.name", AttributeValue::string("events"))
-  ]
-  
-  observable_up_down_counter.add(1000L, Some(complex_attributes))
-  observable_up_down_counter.add(-200L, Some(complex_attributes))
-}
-
-test "metrics_complex_aggregation_scenarios" {
-  // 测试指标的复杂聚合场景
-  
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("complex-meter", Some("2.0.0"))
-  
-  // 创建多种类型的指标
-  let request_counter = meter.create_counter("http.requests.total", Some("requests"), Some("Total HTTP requests"))
-  let request_duration = meter.create_histogram("http.request.duration", Some("ms"), Some("HTTP request duration"))
-  let active_connections = meter.create_up_down_counter("active.connections", Some("connections"), Some("Active connections"))
-  let memory_usage = meter.create_gauge("memory.usage", Some("bytes"), Some("Memory usage"))
-  
-  // 模拟复杂的业务场景
-  
-  // 场景1：处理HTTP请求
-  let base_attributes = [
-    ("service.name", AttributeValue::string("api-gateway")),
-    ("service.version", AttributeValue::string("2.1.0")),
-    ("deployment.environment", AttributeValue::string("production")),
-    ("k8s.pod.name", AttributeValue::string("api-gateway-7d4b8c9f-abc")),
-    ("k8s.namespace", AttributeValue::string("default"))
-  ]
-  
-  // 处理不同类型的请求
-  let get_attributes = base_attributes + [
-    ("http.method", AttributeValue::string("GET")),
-    ("http.route", AttributeValue::string("/api/users")),
-    ("http.status_code", AttributeValue::int(200L))
-  ]
-  
-  let post_attributes = base_attributes + [
-    ("http.method", AttributeValue::string("POST")),
-    ("http.route", AttributeValue::string("/api/users")),
-    ("http.status_code", AttributeValue::int(201L))
-  ]
-  
-  let error_attributes = base_attributes + [
-    ("http.method", AttributeValue::string("GET")),
-    ("http.route", AttributeValue::string("/api/nonexistent")),
-    ("http.status_code", AttributeValue::int(404L))
-  ]
-  
-  // 记录指标
-  request_counter.add(1L, Some(get_attributes))
-  request_duration.record(150.0, Some(get_attributes))
-  active_connections.add(1L, Some(get_attributes))
-  memory_usage.record(1024.0, Some(get_attributes))
-  
-  request_counter.add(1L, Some(post_attributes))
-  request_duration.record(300.0, Some(post_attributes))
-  active_connections.add(1L, Some(post_attributes))
-  memory_usage.record(2048.0, Some(post_attributes))
-  
-  request_counter.add(1L, Some(error_attributes))
-  request_duration.record(50.0, Some(error_attributes))
-  active_connections.add(1L, Some(error_attributes))
-  memory_usage.record(512.0, Some(error_attributes))
-  
-  // 模拟连接关闭
-  active_connections.add(-1L, Some(get_attributes))
-  active_connections.add(-1L, Some(post_attributes))
-  active_connections.add(-1L, Some(error_attributes))
-  
-  // 场景2：批处理操作
-  let batch_attributes = [
-    ("job.name", AttributeValue::string("daily-report")),
-    ("job.type", AttributeValue::string("batch")),
-    ("job.id", AttributeValue::string("batch-12345")),
-    ("worker.id", AttributeValue::string("worker-1"))
-  ]
-  
-  request_counter.add(1000L, Some(batch_attributes))
-  request_duration.record(5000.0, Some(batch_attributes))
-  active_connections.add(10L, Some(batch_attributes))
-  memory_usage.record(10240.0, Some(batch_attributes))
-  
-  // 批处理完成
-  active_connections.add(-10L, Some(batch_attributes))
-  memory_usage.record(0.0, Some(batch_attributes))
-  
-  // 场景3：错误恢复
-  let error_recovery_attributes = [
-    ("error.type", AttributeValue::string("DatabaseException")),
-    ("error.severity", AttributeValue::string("high")),
-    ("retry.count", AttributeValue::int(3L)),
-    ("recovery.action", AttributeValue::string("circuit-breaker-open"))
-  ]
-  
-  request_counter.add(-5L, Some(error_recovery_attributes))  // 回滚失败的请求
-  active_connections.add(-2L, Some(error_recovery_attributes))  // 关闭异常连接
-  memory_usage.record(-2048.0, Some(error_recovery_attributes))  // 释放内存
-}
-
-test "metrics_performance_aggregation" {
-  // 测试指标的性能聚合场景
-  
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("performance-meter", Some("1.0.0"))
-  
-  let counter = meter.create_counter("performance.counter", Some("ops"), Some("Performance counter"))
-  let histogram = meter.create_histogram("performance.histogram", Some("ms"), Some("Performance histogram"))
-  let gauge = meter.create_gauge("performance.gauge", Some("units"), Some("Performance gauge"))
-  
-  // 测试大量指标的聚合
-  let mut i = 0
-  while i < 1000 {
-    let attributes = [
-      ("iteration", AttributeValue::int(i.to_int64())),
-      ("batch", AttributeValue::int((i / 100).to_int64())),
-      ("worker", AttributeValue::int((i % 10).to_int64()))
-    ]
-    
-    counter.add(1L, Some(attributes))
-    histogram.record(i.to_double(), Some(attributes))
-    gauge.record(i.to_double() * 1.5, Some(attributes))
-    
-    i = i + 1
+  // 创建基本Measurement
+  let measurement1 = metrics::Measurement::{
+    value: 42.0,
+    attributes: []
   }
   
-  // 测试不同属性组合的聚合
-  let mut j = 0
-  while j < 100 {
-    let complex_attributes = [
-      ("service.name", AttributeValue::string("service-" + (j % 10).to_string())),
-      ("service.version", AttributeValue::string((j / 10 + 1).to_string() + ".0.0")),
-      ("environment", AttributeValue::string(if j % 2 == 0 { "prod" } else { "staging" })),
-      ("region", AttributeValue::string(["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"][j % 4])),
-      ("instance.id", AttributeValue::string("instance-" + j.to_string()))
+  assert_eq(measurement1.value, 42.0)
+  assert_eq(measurement1.attributes.length(), 0)
+  
+  // 创建带属性的Measurement
+  let measurement2 = metrics::Measurement::{
+    value: 123.45,
+    attributes: [
+      ("attribute1", common::AttributeValue::string("value1")),
+      ("attribute2", common::AttributeValue::int(42L)),
+      ("attribute3", common::AttributeValue::bool(true)),
+      ("attribute4", common::AttributeValue::float(3.14))
     ]
-    
-    counter.add(j.to_int64(), Some(complex_attributes))
-    histogram.record(j.to_double() * 10.0, Some(complex_attributes))
-    gauge.record(j.to_double() * 0.5, Some(complex_attributes))
-    
-    j = j + 1
+  }
+  
+  assert_eq(measurement2.value, 123.45)
+  assert_eq(measurement2.attributes.length(), 4)
+  
+  // 验证属性
+  assert_eq(measurement2.attributes[0].0, "attribute1")
+  match measurement2.attributes[0].1 {
+    common::StringValue(s) => assert_eq(s, "value1")
+    _ => assert_eq(false, true)  // 不应该到达这里
+  }
+  
+  assert_eq(measurement2.attributes[1].0, "attribute2")
+  match measurement2.attributes[1].1 {
+    common::IntValue(i) => assert_eq(i, 42L)
+    _ => assert_eq(false, true)  // 不应该到达这里
+  }
+  
+  assert_eq(measurement2.attributes[2].0, "attribute3")
+  match measurement2.attributes[2].1 {
+    common::BoolValue(b) => assert_eq(b, true)
+    _ => assert_eq(false, true)  // 不应该到达这里
+  }
+  
+  assert_eq(measurement2.attributes[3].0, "attribute4")
+  match measurement2.attributes[3].1 {
+    common::FloatValue(f) => assert_eq(f, 3.14)
+    _ => assert_eq(false, true)  // 不应该到达这里
   }
 }
 
-test "metrics_edge_cases_aggregation" {
-  // 测试指标的边界情况聚合
+test "measurement_with_array_attributes" {
+  // 测试带有数组属性的Measurement
   
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("edge-case-meter", Some("1.0.0"))
+  // 创建带有数组属性的Measurement
+  let measurement = metrics::Measurement::{
+    value: 100.0,
+    attributes: [
+      ("string.array", common::AttributeValue::array_string(["GET", "POST", "PUT"])),
+      ("int.array", common::AttributeValue::array_int([200L, 404L, 500L])),
+      ("float.array", common::AttributeValue::array_float([1.1, 2.2, 3.3])),
+      ("bool.array", common::AttributeValue::array_bool([true, false, true]))
+    ]
+  }
   
-  let counter = meter.create_counter("edge.counter", Some("ops"), Some("Edge case counter"))
-  let histogram = meter.create_histogram("edge.histogram", Some("ms"), Some("Edge case histogram"))
-  let gauge = meter.create_gauge("edge.gauge", Some("units"), Some("Edge case gauge"))
+  assert_eq(measurement.value, 100.0)
+  assert_eq(measurement.attributes.length(), 4)
   
-  // 测试极值
-  counter.add(9223372036854775807L, Some([("value.type", AttributeValue::string("max"))]))
-  counter.add(-9223372036854775808L, Some([("value.type", AttributeValue::string("min"))]))
-  counter.add(0L, Some([("value.type", AttributeValue::string("zero"))]))
+  // 验证字符串数组属性
+  assert_eq(measurement.attributes[0].0, "string.array")
+  match measurement.attributes[0].1 {
+    common::ArrayStringValue(arr) => {
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], "GET")
+      assert_eq(arr[1], "POST")
+      assert_eq(arr[2], "PUT")
+    }
+    _ => assert_eq(false, true)  // 不应该到达这里
+  }
   
-  histogram.record(1.7976931348623157e+308, Some([("value.type", AttributeValue::string("max.float"))]))
-  histogram.record(-1.7976931348623157e+308, Some([("value.type", AttributeValue::string("min.float"))]))
-  histogram.record(0.0, Some([("value.type", AttributeValue::string("zero.float"))]))
-  histogram.record(1.0/0.0, Some([("value.type", AttributeValue::string("infinity"))]))
-  histogram.record(0.0/0.0, Some([("value.type", AttributeValue::string("nan"))]))
+  // 验证整数数组属性
+  assert_eq(measurement.attributes[1].0, "int.array")
+  match measurement.attributes[1].1 {
+    common::ArrayIntValue(arr) => {
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], 200L)
+      assert_eq(arr[1], 404L)
+      assert_eq(arr[2], 500L)
+    }
+    _ => assert_eq(false, true)  // 不应该到达这里
+  }
   
-  gauge.record(1.7976931348623157e+308, Some([("value.type", AttributeValue::string("gauge.max"))]))
-  gauge.record(-1.7976931348623157e+308, Some([("value.type", AttributeValue::string("gauge.min"))]))
-  gauge.record(0.0, Some([("value.type", AttributeValue::string("gauge.zero"))]))
+  // 验证浮点数数组属性
+  assert_eq(measurement.attributes[2].0, "float.array")
+  match measurement.attributes[2].1 {
+    common::ArrayFloatValue(arr) => {
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], 1.1)
+      assert_eq(arr[1], 2.2)
+      assert_eq(arr[2], 3.3)
+    }
+    _ => assert_eq(false, true)  // 不应该到达这里
+  }
   
-  // 测试特殊属性值
-  let special_attributes = [
-    ("empty.string", AttributeValue::string("")),
-    ("special.chars", AttributeValue::string("!@#$%^&*()")),
-    ("unicode", AttributeValue::string("测试🚀")),
-    ("very.long.key.name.that.exceeds.normal.limits.and.contains.many.words", AttributeValue::string("long.value"))
-  ]
+  // 验证布尔数组属性
+  assert_eq(measurement.attributes[3].0, "bool.array")
+  match measurement.attributes[3].1 {
+    common::ArrayBoolValue(arr) => {
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], true)
+      assert_eq(arr[1], false)
+      assert_eq(arr[2], true)
+    }
+    _ => assert_eq(false, true)  // 不应该到达这里
+  }
+}
+
+test "counter_with_various_attributes" {
+  // 测试带有各种属性的Counter
   
-  counter.add(1L, Some(special_attributes))
-  histogram.record(100.0, Some(special_attributes))
-  gauge.record(50.0, Some(special_attributes))
+  let counter = metrics::NoopCounter::{}
   
-  // 测试空属性数组
-  counter.add(1L, None)
-  histogram.record(100.0, None)
-  gauge.record(50.0, None)
+  // 基本属性
+  counter.add(1L, [
+    ("http.method", common::AttributeValue::string("GET"))
+  ])
+  
+  // 多个属性
+  counter.add(2L, [
+    ("http.method", common::AttributeValue::string("POST")),
+    ("http.status_code", common::AttributeValue::int(201L)),
+    ("http.success", common::AttributeValue::bool(true))
+  ])
+  
+  // 数组属性
+  counter.add(3L, [
+    ("http.methods", common::AttributeValue::array_string(["GET", "POST"])),
+    ("status.codes", common::AttributeValue::array_int([200L, 201L]))
+  ])
+  
+  // 复杂属性组合
+  counter.add(4L, [
+    ("service.name", common::AttributeValue::string("api-service")),
+    ("service.version", common::AttributeValue::string("1.2.3")),
+    ("service.instance.id", common::AttributeValue::string("instance-123")),
+    ("deployment.environment", common::AttributeValue::string("production")),
+    ("feature.flags", common::AttributeValue::array_bool([true, false])),
+    ("response.times", common::AttributeValue::array_float([1.1, 2.2, 3.3]))
+  ])
+}
+
+test "histogram_with_various_values" {
+  // 测试带有各种值的Histogram
+  
+  let histogram = metrics::NoopHistogram::{}
+  
+  // 整数值
+  histogram.record(1.0, [])
+  histogram.record(2.0, [])
+  histogram.record(3.0, [])
+  
+  // 浮点值
+  histogram.record(1.5, [])
+  histogram.record(2.7, [])
+  histogram.record(3.14, [])
+  
+  // 带属性的值
+  histogram.record(1.1, [
+    ("http.method", common::AttributeValue::string("GET"))
+  ])
+  
+  histogram.record(2.2, [
+    ("http.method", common::AttributeValue::string("POST")),
+    ("http.status_code", common::AttributeValue::int(200L))
+  ])
+  
+  // 极值
+  histogram.record(0.001, [])
+  histogram.record(999999.999, [])
+  
+  // 负值（如果允许）
+  histogram.record(-1.0, [
+    ("test.negative", common::AttributeValue::bool(true))
+  ])
+}
+
+test "up_down_counter_with_positive_and_negative" {
+  // 测试UpDownCounter的正负值
+  
+  let up_down_counter = metrics::NoopUpDownCounter::{}
+  
+  // 正值
+  up_down_counter.add(10L, [])
+  up_down_counter.add(5L, [("operation", common::AttributeValue::string("increment"))])
+  
+  // 负值
+  up_down_counter.add(-3L, [])
+  up_down_counter.add(-7L, [("operation", common::AttributeValue::string("decrement"))])
+  
+  // 零值
+  up_down_counter.add(0L, [])
+  
+  // 交替增减
+  up_down_counter.add(15L, [("type", common::AttributeValue::string("batch"))])
+  up_down_counter.add(-5L, [("type", common::AttributeValue::string("batch"))])
+  up_down_counter.add(3L, [("type", common::AttributeValue::string("batch"))])
+  
+  // 带复杂属性的值
+  up_down_counter.add(1L, [
+    ("queue.name", common::AttributeValue::string("priority-queue")),
+    ("queue.size", common::AttributeValue::int(100L)),
+    ("queue.capacity", common::AttributeValue::int(1000L)),
+    ("queue.full", common::AttributeValue::bool(false))
+  ])
+}
+
+test "gauge_with_fluctuating_values" {
+  // 测试Gauge的波动值
+  
+  let gauge = metrics::NoopGauge::{}
+  
+  // 递增序列
+  gauge.record(10.0, [])
+  gauge.record(15.0, [])
+  gauge.record(20.0, [])
+  
+  // 递减序列
+  gauge.record(18.0, [])
+  gauge.record(12.0, [])
+  gauge.record(5.0, [])
+  
+  // 波动序列
+  gauge.record(25.0, [])
+  gauge.record(8.0, [])
+  gauge.record(30.0, [])
+  gauge.record(2.0, [])
+  
+  // 带属性的值
+  gauge.record(50.0, [
+    ("metric.type", common::AttributeValue::string("cpu")),
+    ("metric.unit", common::AttributeValue::string("percent"))
+  ])
+  
+  gauge.record(75.5, [
+    ("metric.type", common::AttributeValue::string("memory")),
+    ("metric.unit", common::AttributeValue::string("percent"))
+  ])
+  
+  gauge.record(1024.0, [
+    ("metric.type", common::AttributeValue::string("disk")),
+    ("metric.unit", common::AttributeValue::string("megabytes"))
+  ])
+  
+  // 带数组属性的值
+  gauge.record(60.0, [
+    ("server.names", common::AttributeValue::array_string(["server1", "server2"])),
+    ("core.ids", common::AttributeValue::array_int([0L, 1L, 2L, 3L]))
+  ])
+}
+
+test "instrument_type_enum_validation" {
+  // 测试InstrumentType枚举的验证
+  
+  // 验证所有仪器类型
+  let counter_type = metrics::Counter
+  let histogram_type = metrics::Histogram
+  let up_down_counter_type = metrics::UpDownCounter
+  let gauge_type = metrics::Gauge
+  let observable_counter_type = metrics::ObservableCounter
+  let observable_gauge_type = metrics::ObservableGauge
+  let observable_up_down_counter_type = metrics::ObservableUpDownCounter
+  
+  // 由于MoonBit的枚举特性，我们可以通过模式匹配来验证类型
+  let validate_type = fn(t : metrics::InstrumentType) -> String {
+    match t {
+      Counter => "Counter"
+      Histogram => "Histogram"
+      UpDownCounter => "UpDownCounter"
+      Gauge => "Gauge"
+      ObservableCounter => "ObservableCounter"
+      ObservableGauge => "ObservableGauge"
+      ObservableUpDownCounter => "ObservableUpDownCounter"
+    }
+  }
+  
+  assert_eq(validate_type(counter_type), "Counter")
+  assert_eq(validate_type(histogram_type), "Histogram")
+  assert_eq(validate_type(up_down_counter_type), "UpDownCounter")
+  assert_eq(validate_type(gauge_type), "Gauge")
+  assert_eq(validate_type(observable_counter_type), "ObservableCounter")
+  assert_eq(validate_type(observable_gauge_type), "ObservableGauge")
+  assert_eq(validate_type(observable_up_down_counter_type), "ObservableUpDownCounter")
 }

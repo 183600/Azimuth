@@ -113,6 +113,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "logs.mbt": {
   },
+  "logger_functionality_test.mbt": {
+    0: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_0, ["log_record_builder_basic"]),
+    1: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_1, ["log_record_builder_with_attributes"]),
+    2: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_2, ["log_record_severity_levels"]),
+    3: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_3, ["log_record_complex_attributes"]),
+    4: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_4, ["noop_logger_functionality"]),
+    5: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_5, ["noop_logger_provider_functionality"]),
+    6: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_6, ["log_record_with_trace_context"]),
+    7: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_7, ["log_record_with_resource_and_scope"]),
+  },
   "logger_convenience_test.mbt": {
     0: (__test_6c6f676765725f636f6e76656e69656e63655f746573742e6d6274_0, ["logger_convenience_methods"]),
   },
