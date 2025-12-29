@@ -66,7 +66,7 @@ test "resource_lifecycle_complex" {
       IntValue(v) => assert_eq(v >= 0L, true)
       FloatValue(v) => assert_eq(v >= 0.0, true)
       BoolValue(b) => assert_eq(b == true || b == false, true)
-      _ => @test.fail("Unexpected attribute type")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -102,30 +102,30 @@ test "resource_lifecycle_context" {
   // 3. Context资源使用
   match context_with_values.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected value for key1")
+    None => @test.fail("Test failed")
   }
   
   match context_with_values.get(key2) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected value for key2")
+    None => @test.fail("Test failed")
   }
   
   match context_with_values.get(key3) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected value for key3")
+    None => @test.fail("Test failed")
   }
   
   // 4. Context资源复制和共享
   let context_copy = context_with_values
   match context_copy.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected value for key1 in copy")
+    None => @test.fail("Test failed")
   }
   
   // 5. Context资源释放（模拟）
   let cleared_context = Context::empty()
   match cleared_context.get(key1) {
-    Some(_) => @test.fail("Expected None for cleared context")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -282,7 +282,7 @@ test "resource_lifecycle_propagation" {
   // 6. 验证传播资源
   match extracted_context.get(key) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted context value")
+    None => @test.fail("Test failed")
   }
   
   // 7. 传播资源清理（模拟）
@@ -290,7 +290,7 @@ test "resource_lifecycle_propagation" {
   let empty_extracted_context = propagator.extract(Context::empty(), empty_carrier)
   
   match empty_extracted_context.get(key) {
-    Some(_) => @test.fail("Expected None for empty carrier")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -339,7 +339,7 @@ test "resource_lifecycle_memory_management" {
     let context = contexts[l]
     match context.get(key) {
       Some(value) => assert_eq(value, "memory.test.value." + l.to_string())
-      None => @test.fail("Expected value for memory.test.key")
+      None => @test.fail("Test failed")
     }
     l = l + 1
   }
@@ -379,7 +379,7 @@ test "resource_lifecycle_error_handling" {
   
   match context_with_invalid.get(invalid_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected value for empty key")
+    None => @test.fail("Test failed")
   }
   
   // 4. 资源恢复
@@ -393,6 +393,6 @@ test "resource_lifecycle_error_handling" {
   
   match recovered_context_with_data.get(recovery_key) {
     Some(value) => assert_eq(value, "recovered.value")
-    None => @test.fail("Expected recovered value")
+    None => @test.fail("Test failed")
   }
 }

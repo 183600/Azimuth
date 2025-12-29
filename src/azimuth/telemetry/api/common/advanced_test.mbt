@@ -65,25 +65,25 @@ test "resource_complex_attributes_and_validation" {
   // 验证字符串属性
   match advanced_attrs[0].1 {
     StringValue(namespace) => assert_eq(namespace, "production")
-    _ => @test.fail("Expected StringValue for namespace")
+    _ => @test.fail("Test failed")
   }
   
   // 验证整数属性
   match advanced_attrs[8].1 {
     IntValue(pid) => assert_eq(pid, 12345L)
-    _ => @test.fail("Expected IntValue for pid")
+    _ => @test.fail("Test failed")
   }
   
   // 验证浮点数属性
   match advanced_attrs[12].1 {
     FloatValue(cpu_percent) => assert_eq(cpu_percent, 75.5)
-    _ => @test.fail("Expected FloatValue for cpu_percent")
+    _ => @test.fail("Test failed")
   }
   
   // 验证布尔属性
   match advanced_attrs[17].1 {
     BoolValue(healthy) => assert_eq(healthy, true)
-    _ => @test.fail("Expected BoolValue for healthy")
+    _ => @test.fail("Test failed")
   }
   
   // 验证字符串数组属性
@@ -95,7 +95,7 @@ test "resource_complex_attributes_and_validation" {
       assert_eq(tags[2], "payment")
       assert_eq(tags[3], "critical")
     }
-    _ => @test.fail("Expected ArrayStringValue for tags")
+    _ => @test.fail("Test failed")
   }
   
   // 验证整数数组属性
@@ -107,7 +107,7 @@ test "resource_complex_attributes_and_validation" {
       assert_eq(ports[2], 9090L)
       assert_eq(ports[3], 3000L)
     }
-    _ => @test.fail("Expected ArrayIntValue for ports")
+    _ => @test.fail("Test failed")
   }
   
   // 验证浮点数数组属性
@@ -118,7 +118,7 @@ test "resource_complex_attributes_and_validation" {
       assert_eq(thresholds[1], 80.0)
       assert_eq(thresholds[2], 95.0)
     }
-    _ => @test.fail("Expected ArrayFloatValue for thresholds")
+    _ => @test.fail("Test failed")
   }
   
   // 验证布尔数组属性
@@ -131,7 +131,7 @@ test "resource_complex_attributes_and_validation" {
       assert_eq(flags[3], true)
       assert_eq(flags[4], false)
     }
-    _ => @test.fail("Expected ArrayBoolValue for flags")
+    _ => @test.fail("Test failed")
   }
   
   // 验证Unicode属性
@@ -141,7 +141,7 @@ test "resource_complex_attributes_and_validation" {
       assert_eq(unicode_name.contains("🚀"), true)
       assert_eq(unicode_name.contains("💰"), true)
     }
-    _ => @test.fail("Expected StringValue for unicode name")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -163,47 +163,47 @@ test "attribute_value_edge_cases_and_type_safety" {
   // 验证极值
   match max_int {
     IntValue(value) => assert_eq(value, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue for max int")
+    _ => @test.fail("Test failed")
   }
   
   match min_int {
     IntValue(value) => assert_eq(value, -9223372036854775808L)
-    _ => @test.fail("Expected IntValue for min int")
+    _ => @test.fail("Test failed")
   }
   
   match zero_int {
     IntValue(value) => assert_eq(value, 0L)
-    _ => @test.fail("Expected IntValue for zero int")
+    _ => @test.fail("Test failed")
   }
   
   match max_float {
     FloatValue(value) => assert_eq(value > 1.0e+308, true)
-    _ => @test.fail("Expected FloatValue for max float")
+    _ => @test.fail("Test failed")
   }
   
   match min_float {
     FloatValue(value) => assert_eq(value < -1.0e+308, true)
-    _ => @test.fail("Expected FloatValue for min float")
+    _ => @test.fail("Test failed")
   }
   
   match inf_float {
     FloatValue(value) => assert_eq(value > 1.0e+100, true)  // 检查是否为无穷大
-    _ => @test.fail("Expected FloatValue for infinity")
+    _ => @test.fail("Test failed")
   }
   
   match neg_inf_float {
     FloatValue(value) => assert_eq(value < -1.0e+100, true)  // 检查是否为负无穷大
-    _ => @test.fail("Expected FloatValue for negative infinity")
+    _ => @test.fail("Test failed")
   }
   
   match nan_float {
     FloatValue(value) => assert_eq(true, true)  // NaN的特殊检查
-    _ => @test.fail("Expected FloatValue for NaN")
+    _ => @test.fail("Test failed")
   }
   
   match zero_float {
     FloatValue(value) => assert_eq(value, 0.0)
-    _ => @test.fail("Expected FloatValue for zero float")
+    _ => @test.fail("Test failed")
   }
   
   // 测试空数组和单元素数组
@@ -220,22 +220,22 @@ test "attribute_value_edge_cases_and_type_safety" {
   // 验证空数组
   match empty_string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_int_array {
     ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_float_array {
     ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_bool_array {
     ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证单元素数组
@@ -244,7 +244,7 @@ test "attribute_value_edge_cases_and_type_safety" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], "single")
     }
-    _ => @test.fail("Expected single element ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match single_int_array {
@@ -252,7 +252,7 @@ test "attribute_value_edge_cases_and_type_safety" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], 42L)
     }
-    _ => @test.fail("Expected single element ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match single_float_array {
@@ -260,7 +260,7 @@ test "attribute_value_edge_cases_and_type_safety" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], 3.14)
     }
-    _ => @test.fail("Expected single element ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match single_bool_array {
@@ -268,7 +268,7 @@ test "attribute_value_edge_cases_and_type_safety" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], true)
     }
-    _ => @test.fail("Expected single element ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试特殊字符串值
@@ -280,17 +280,17 @@ test "attribute_value_edge_cases_and_type_safety" {
   
   match empty_string {
     StringValue(value) => assert_eq(value, "")
-    _ => @test.fail("Expected empty string")
+    _ => @test.fail("Test failed")
   }
   
   match space_string {
     StringValue(value) => assert_eq(value, "   ")
-    _ => @test.fail("Expected space string")
+    _ => @test.fail("Test failed")
   }
   
   match special_chars_string {
     StringValue(value) => assert_eq(value.contains("!@#$%^&*()"), true)
-    _ => @test.fail("Expected special chars string")
+    _ => @test.fail("Test failed")
   }
   
   match unicode_string {
@@ -299,11 +299,11 @@ test "attribute_value_edge_cases_and_type_safety" {
       assert_eq(value.contains("🚀"), true)
       assert_eq(value.contains("\n"), true)
     }
-    _ => @test.fail("Expected unicode string")
+    _ => @test.fail("Test failed")
   }
   
   match very_long_string {
     StringValue(value) => assert_eq(value.length(), 10000)
-    _ => @test.fail("Expected very long string")
+    _ => @test.fail("Test failed")
   }
 }

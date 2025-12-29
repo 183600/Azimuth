@@ -128,11 +128,11 @@ test "environment_variable_loading" {
   // 解析头部字符串
   let parse_headers = fn(headers_str: String) -> Array[(String, String)] {
     let headers = []
-    let pairs = headers_str.split(",")
+    let pairs = headers_str",".split_to_string()
     let mut i = 0
     while i < pairs.length() {
       let pair = pairs[i]
-      let key_value = pair.split("=")
+      let key_value = pair"=".split_to_string()
       if key_value.length() == 2 {
         headers.push((key_value[0].trim(), key_value[1].trim()))
       }
@@ -244,17 +244,17 @@ test "environment_variable_loading" {
   
   match config.service_name {
     Some(name) => assert_eq(name, "payment-service")
-    None => @test.fail("Expected Some(service_name)")
+    None => @test.fail("Test failed")
   }
   
   match config.service_version {
     Some(version) => assert_eq(version, "2.1.0")
-    None => @test.fail("Expected Some(service_version)")
+    None => @test.fail("Test failed")
   }
   
   match config.endpoint {
     Some(endpoint) => assert_eq(endpoint, "http://otel-collector:4318")
-    None => @test.fail("Expected Some(endpoint)")
+    None => @test.fail("Test failed")
   }
   
   assert_eq(config.headers.length(), 2)
@@ -263,34 +263,34 @@ test "environment_variable_loading" {
   
   match config.batch_size {
     Some(size) => assert_eq(size, 1024)
-    None => @test.fail("Expected Some(batch_size)")
+    None => @test.fail("Test failed")
   }
   
   match config.timeout {
     Some(timeout) => assert_eq(timeout, 30000)
-    None => @test.fail("Expected Some(timeout)")
+    None => @test.fail("Test failed")
   }
   
   match config.enable_compression {
     Some(compression) => assert_eq(compression, true)
-    None => @test.fail("Expected Some(enable_compression)")
+    None => @test.fail("Test failed")
   }
   
   match config.log_level {
     Some(level) => assert_eq(level, "INFO")
-    None => @test.fail("Expected Some(log_level)")
+    None => @test.fail("Test failed")
   }
   
   match config.export_interval {
     Some(interval) => assert_eq(interval, 5000)
-    None => @test.fail("Expected Some(export_interval)")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的环境变量
   let nonexistent_env = get_env_var("NONEXISTENT_VAR")
   assert_eq(nonexistent_env.exists, false)
   match nonexistent_env.value {
-    Some(_) => @test.fail("Expected None for nonexistent env var")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -418,7 +418,7 @@ exporter:
         }
       }
       _ => {
-        @test.fail("Unknown YAML config file")
+        @test.fail("Test failed")
         ParsedConfig{
           telemetry: TelemetryConfig{ enabled: false, sampling_rate: 0.0, log_level: "", metrics_enabled: false, tracing_enabled: false },
           service: ServiceConfig{ name: "", version: "", namespace: "", environment: "", instance_id: "" },
@@ -462,7 +462,7 @@ exporter:
         }
       }
       _ => {
-        @test.fail("Unknown JSON config file")
+        @test.fail("Test failed")
         ParsedConfig{
           telemetry: TelemetryConfig{ enabled: false, sampling_rate: 0.0, log_level: "", metrics_enabled: false, tracing_enabled: false },
           service: ServiceConfig{ name: "", version: "", namespace: "", environment: "", instance_id: "" },
@@ -615,14 +615,14 @@ test "configuration_validation" {
       }
       "^[0-9]+\\.[0-9]+\\.[0-9]+$" => {
         // 简化实现：检查版本号格式
-        let parts = value.split(".")
+        let parts = value".".split_to_string()
         parts.length() == 3 && 
         parts[0].to_int() >= 0 &&
         parts[1].to_int() >= 0 &&
         parts[2].to_int() >= 0
       }
       "^https?://.+" => {
-        value.starts_with("http://") || value.starts_with("https://")
+        value.has_prefix("http://") || value.has_prefix("https://")
       }
       _ => true
     }

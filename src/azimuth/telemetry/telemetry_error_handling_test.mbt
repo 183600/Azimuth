@@ -10,7 +10,7 @@ test "error_handling_invalid_inputs" {
   
   match ctx_with_empty_key.get(empty_key) {
     Some(value) => assert_eq(value, "value.for.empty.key")
-    None => @test.fail("Should handle empty key gracefully")
+    None => @test.fail("Test failed")
   }
   
   // 测试空字符串值
@@ -19,7 +19,7 @@ test "error_handling_invalid_inputs" {
   
   match ctx_with_empty_value.get(normal_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Should handle empty value gracefully")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符键
@@ -28,7 +28,7 @@ test "error_handling_invalid_inputs" {
   
   match ctx_with_special_key.get(special_key) {
     Some(value) => assert_eq(value, "special.value")
-    None => @test.fail("Should handle special characters in key")
+    None => @test.fail("Test failed")
   }
   
   // 测试非常长的键
@@ -38,7 +38,7 @@ test "error_handling_invalid_inputs" {
   
   match ctx_with_long_key.get(long_key) {
     Some(value) => assert_eq(value, "long.key.value")
-    None => @test.fail("Should handle long key names")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -64,17 +64,17 @@ test "error_handling_boundary_values" {
   // 验证边界值处理
   match ctx_with_boundary_values.get(max_key) {
     Some(value) => assert_eq(value, "9223372036854775807")
-    None => @test.fail("Should handle max int value")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_boundary_values.get(min_key) {
     Some(value) => assert_eq(value, "-9223372036854775808")
-    None => @test.fail("Should handle min int value")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_boundary_values.get(zero_key) {
     Some(value) => assert_eq(value, "0")
-    None => @test.fail("Should handle zero value")
+    None => @test.fail("Test failed")
   }
   
   // 测试浮点数边界
@@ -94,12 +94,12 @@ test "error_handling_boundary_values" {
   // 验证浮点边界值处理
   match ctx_with_float_boundary.get(inf_key) {
     Some(value) => assert_eq(value.length() > 0, true)
-    None => @test.fail("Should handle infinity value")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_float_boundary.get(nan_key) {
     Some(value) => assert_eq(value.length() > 0, true)
-    None => @test.fail("Should handle NaN value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -136,7 +136,7 @@ test "error_handling_corrupted_data" {
         // 验证数据长度匹配
         assert_eq(value.length(), corrupted_str.length())
       }
-      None => @test.fail("Should handle corrupted string data")
+      None => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -148,7 +148,7 @@ test "error_handling_corrupted_data" {
   
   match baggage_with_corrupted.get("corrupted.key") {
     Some(value) => assert_eq(value, "\0\0\0")
-    None => @test.fail("Should handle corrupted baggage data")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -175,7 +175,7 @@ test "error_handling_resource_constraints" {
       assert_eq(value.contains("value.50"), true)
       assert_eq(value.contains("additional.data"), true)
     }
-    None => @test.fail("Should handle large datasets")
+    None => @test.fail("Test failed")
   }
   
   // 测试baggage的大数据处理
@@ -196,7 +196,7 @@ test "error_handling_resource_constraints" {
       assert_eq(value.contains("baggage.value.25"), true)
       assert_eq(value.contains("extra.data"), true)
     }
-    None => @test.fail("Should handle large baggage datasets")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -218,17 +218,17 @@ test "error_handling_concurrent_access" {
   // 验证上下文隔离
   match ctx1_with_value.get(shared_key) {
     Some(value) => assert_eq(value, "value.from.ctx1")
-    None => @test.fail("Expected value from ctx1")
+    None => @test.fail("Test failed")
   }
   
   match ctx2_with_value.get(shared_key) {
     Some(value) => assert_eq(value, "value.from.ctx2")
-    None => @test.fail("Expected value from ctx2")
+    None => @test.fail("Test failed")
   }
   
   match ctx3_with_value.get(shared_key) {
     Some(value) => assert_eq(value, "value.from.ctx3")
-    None => @test.fail("Expected value from ctx3")
+    None => @test.fail("Test failed")
   }
   
   // 测试baggage的并发访问
@@ -240,12 +240,12 @@ test "error_handling_concurrent_access" {
   
   match baggage1_with_entry.get("concurrent.baggage.key") {
     Some(value) => assert_eq(value, "baggage.value.1")
-    None => @test.fail("Expected baggage value from baggage1")
+    None => @test.fail("Test failed")
   }
   
   match baggage2_with_entry.get("concurrent.baggage.key") {
     Some(value) => assert_eq(value, "baggage.value.2")
-    None => @test.fail("Expected baggage value from baggage2")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -267,7 +267,7 @@ test "error_handling_recovery_scenarios" {
   // 验证正常数据不受问题数据影响
   match ctx_with_problem.get(normal_key) {
     Some(value) => assert_eq(value, "normal.value")
-    None => @test.fail("Normal data should be preserved")
+    None => @test.fail("Test failed")
   }
   
   // 验证问题数据可以处理
@@ -276,7 +276,7 @@ test "error_handling_recovery_scenarios" {
       assert_eq(value.contains("null character"), true)
       assert_eq(value.contains("newlines"), true)
     }
-    None => @test.fail("Should be able to handle problem data")
+    None => @test.fail("Test failed")
   }
   
   // 测试数据恢复
@@ -286,17 +286,17 @@ test "error_handling_recovery_scenarios" {
   // 验证所有数据都存在
   match ctx_with_recovery.get(normal_key) {
     Some(value) => assert_eq(value, "normal.value")
-    None => @test.fail("Normal data should persist after recovery")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_recovery.get(problem_key) {
     Some(value) => assert_eq(value.contains("null character"), true)
-    None => @test.fail("Problem data should persist after recovery")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_recovery.get(recovery_key) {
     Some(value) => assert_eq(value, "recovered.value")
-    None => @test.fail("Recovery data should be available")
+    None => @test.fail("Test failed")
   }
   
   // 测试baggage恢复
@@ -308,11 +308,11 @@ test "error_handling_recovery_scenarios" {
   // 验证baggage恢复
   match baggage_with_recovery.get("normal.baggage.key") {
     Some(value) => assert_eq(value, "normal.baggage.value")
-    None => @test.fail("Normal baggage should persist")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_recovery.get("recovery.baggage.key") {
     Some(value) => assert_eq(value, "recovered.baggage.value")
-    None => @test.fail("Recovery baggage should be available")
+    None => @test.fail("Test failed")
   }
 }

@@ -13,7 +13,7 @@ test "attribute_value_type_safety_and_conversion" {
       // 测试字符串长度边界
       assert_eq(s.length(), 11)
     }
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match int_val {
@@ -24,7 +24,7 @@ test "attribute_value_type_safety_and_conversion" {
       assert_eq(i >= 123L, true)
       assert_eq(i <= 123L, true)
     }
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match float_val {
@@ -34,7 +34,7 @@ test "attribute_value_type_safety_and_conversion" {
       assert_eq(f > 45.0, true)
       assert_eq(f < 46.0, true)
     }
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match bool_val {
@@ -44,7 +44,7 @@ test "attribute_value_type_safety_and_conversion" {
       assert_eq(b && true, true)
       assert_eq(b || false, true)
     }
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -72,7 +72,7 @@ test "attribute_value_array_type_safety" {
         i = i + 1
       }
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试整数数组
@@ -88,7 +88,7 @@ test "attribute_value_array_type_safety" {
       }
       assert_eq(sum, 15L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试浮点数数组
@@ -106,7 +106,7 @@ test "attribute_value_array_type_safety" {
       assert_eq(avg > 2.0, true)
       assert_eq(avg < 2.3, true)
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试布尔数组
@@ -128,7 +128,7 @@ test "attribute_value_array_type_safety" {
       assert_eq(true_count, 2)
       assert_eq(false_count, 2)
     }
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -142,17 +142,17 @@ test "attribute_value_edge_cases_and_limits" {
   
   match max_int {
     IntValue(i) => assert_eq(i, 9223372036854775807L)
-    _ => @test.fail("Expected max IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match min_int {
     IntValue(i) => assert_eq(i, -9223372036854775808L)
-    _ => @test.fail("Expected min IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match zero_int {
     IntValue(i) => assert_eq(i, 0L)
-    _ => @test.fail("Expected zero IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试特殊浮点值
@@ -168,7 +168,7 @@ test "attribute_value_edge_cases_and_limits" {
       assert_eq(f > 0.0, true)
       assert_eq(f > 1.0e308, true)
     }
-    _ => @test.fail("Expected infinity FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match neg_inf_float {
@@ -177,7 +177,7 @@ test "attribute_value_edge_cases_and_limits" {
       assert_eq(f < 0.0, true)
       assert_eq(f < -1.0e308, true)
     }
-    _ => @test.fail("Expected negative infinity FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match nan_float {
@@ -185,7 +185,7 @@ test "attribute_value_edge_cases_and_limits" {
       // NaN不等于任何值，包括自身
       assert_eq(f != f, true)
     }
-    _ => @test.fail("Expected NaN FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试空数组
@@ -196,22 +196,22 @@ test "attribute_value_edge_cases_and_limits" {
   
   match empty_string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_int_array {
     ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_float_array {
     ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_bool_array {
     ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -230,7 +230,7 @@ test "attribute_value_complex_scenarios" {
       assert_eq(s[0], "!")
       assert_eq(s[28], "?")
     }
-    _ => @test.fail("Expected special chars StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match unicode_chars {
@@ -239,7 +239,7 @@ test "attribute_value_complex_scenarios" {
       assert_eq(s[0:6], "测试中文")
       assert_eq(s[6], "🚀")
     }
-    _ => @test.fail("Expected unicode StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match whitespace {
@@ -250,7 +250,7 @@ test "attribute_value_complex_scenarios" {
       assert_eq(s[4], "\n")
       assert_eq(s[5], "\r")
     }
-    _ => @test.fail("Expected whitespace StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match very_long_string {
@@ -259,12 +259,12 @@ test "attribute_value_complex_scenarios" {
       assert_eq(s[0], "a")
       assert_eq(s[9999], "a")
     }
-    _ => @test.fail("Expected very long StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试大型数组
-  let large_int_array = AttributeValue::array_int(Array::make(1000, 42L))
-  let large_string_array = AttributeValue::array_string(Array::make(100, "test"))
+  let large_int_array = AttributeValue::array_int([for i = 0; i < 1000; i = i + 1].map(fn(_) { 42L }))
+  let large_string_array = AttributeValue::array_string([for i = 0; i < 100; i = i + 1].map(fn(_) { "test" }))
   
   match large_int_array {
     ArrayIntValue(arr) => {
@@ -272,7 +272,7 @@ test "attribute_value_complex_scenarios" {
       assert_eq(arr[0], 42L)
       assert_eq(arr[999], 42L)
     }
-    _ => @test.fail("Expected large ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match large_string_array {
@@ -281,7 +281,7 @@ test "attribute_value_complex_scenarios" {
       assert_eq(arr[0], "test")
       assert_eq(arr[99], "test")
     }
-    _ => @test.fail("Expected large ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -309,25 +309,25 @@ test "attribute_value_type_consistency" {
       "string.key" => {
         match value {
           StringValue(s) => assert_eq(s, "string_value")
-          _ => @test.fail("Expected StringValue for string.key")
+          _ => @test.fail("Test failed")
         }
       }
       "int.key" => {
         match value {
           IntValue(i) => assert_eq(i, 42L)
-          _ => @test.fail("Expected IntValue for int.key")
+          _ => @test.fail("Test failed")
         }
       }
       "float.key" => {
         match value {
           FloatValue(f) => assert_eq(f, 3.14)
-          _ => @test.fail("Expected FloatValue for float.key")
+          _ => @test.fail("Test failed")
         }
       }
       "bool.key" => {
         match value {
           BoolValue(b) => assert_eq(b, true)
-          _ => @test.fail("Expected BoolValue for bool.key")
+          _ => @test.fail("Test failed")
         }
       }
       "string_array.key" => {
@@ -338,7 +338,7 @@ test "attribute_value_type_consistency" {
             assert_eq(arr[1], "b")
             assert_eq(arr[2], "c")
           }
-          _ => @test.fail("Expected ArrayStringValue for string_array.key")
+          _ => @test.fail("Test failed")
         }
       }
       "int_array.key" => {
@@ -349,7 +349,7 @@ test "attribute_value_type_consistency" {
             assert_eq(arr[1], 2L)
             assert_eq(arr[2], 3L)
           }
-          _ => @test.fail("Expected ArrayIntValue for int_array.key")
+          _ => @test.fail("Test failed")
         }
       }
       "float_array.key" => {
@@ -360,7 +360,7 @@ test "attribute_value_type_consistency" {
             assert_eq(arr[1], 2.2)
             assert_eq(arr[2], 3.3)
           }
-          _ => @test.fail("Expected ArrayFloatValue for float_array.key")
+          _ => @test.fail("Test failed")
         }
       }
       "bool_array.key" => {
@@ -371,7 +371,7 @@ test "attribute_value_type_consistency" {
             assert_eq(arr[1], false)
             assert_eq(arr[2], true)
           }
-          _ => @test.fail("Expected ArrayBoolValue for bool_array.key")
+          _ => @test.fail("Test failed")
         }
       }
       _ => @test.fail("Unexpected key: " + key)
@@ -397,12 +397,12 @@ test "attribute_value_performance_considerations" {
   // 验证第一个和最后一个属性
   match large_attributes[0].1 {
     IntValue(val) => assert_eq(val, 0L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match large_attributes[999].1 {
     IntValue(val) => assert_eq(val, 999L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试大型字符串数组的处理
@@ -421,6 +421,6 @@ test "attribute_value_performance_considerations" {
       assert_eq(arr[0], "string_0")
       assert_eq(arr[99], "string_99")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }

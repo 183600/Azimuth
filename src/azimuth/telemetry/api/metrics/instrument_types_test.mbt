@@ -37,7 +37,7 @@ test "instrument_type_all_values" {
   // 验证属性
   match counter_measurement.attributes[0].1 {
     AttributeValue::StringValue(s) => assert_eq(s, "counter")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -92,22 +92,22 @@ test "measurement_with_various_attribute_types" {
   // 验证各种属性类型
   match measurement.attributes[0].1 {
     AttributeValue::StringValue(s) => assert_eq(s, "test")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match measurement.attributes[1].1 {
     AttributeValue::IntValue(i) => assert_eq(i, 42L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match measurement.attributes[2].1 {
     AttributeValue::FloatValue(f) => assert_eq(f, 3.14)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match measurement.attributes[3].1 {
     AttributeValue::BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match measurement.attributes[4].1 {
@@ -115,7 +115,7 @@ test "measurement_with_various_attribute_types" {
       assert_eq(arr.length(), 3)
       assert_eq(arr[0], "a")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }
 

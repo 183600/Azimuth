@@ -6,8 +6,8 @@ test "span_kind_all_values" {
   let internal_span = Span::{
     name: "internal-operation",
     context: SpanContext::{
-      trace_id: Array::make(16, 0_byte),
-      span_id: Array::make(8, 1_byte),
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte }),
       trace_flags: 0_byte,
       trace_state: ""
     },
@@ -30,27 +30,27 @@ test "span_kind_all_values" {
   // 验证每种SpanKind
   match internal_span.kind {
     Internal => assert_eq(true, true)
-    _ => @test.fail("Expected Internal")
+    _ => @test.fail("Test failed")
   }
   
   match server_span.kind {
     Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server")
+    _ => @test.fail("Test failed")
   }
   
   match client_span.kind {
     Client => assert_eq(true, true)
-    _ => @test.fail("Expected Client")
+    _ => @test.fail("Test failed")
   }
   
   match producer_span.kind {
     Producer => assert_eq(true, true)
-    _ => @test.fail("Expected Producer")
+    _ => @test.fail("Test failed")
   }
   
   match consumer_span.kind {
     Consumer => assert_eq(true, true)
-    _ => @test.fail("Expected Consumer")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -59,8 +59,8 @@ test "status_code_all_values" {
   let unset_span = Span::{
     name: "unset-span",
     context: SpanContext::{
-      trace_id: Array::make(16, 0_byte),
-      span_id: Array::make(8, 1_byte),
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte }),
       trace_flags: 0_byte,
       trace_state: ""
     },
@@ -81,31 +81,31 @@ test "status_code_all_values" {
   // 验证每种StatusCode
   match unset_span.status {
     Unset => assert_eq(true, true)
-    _ => @test.fail("Expected Unset")
+    _ => @test.fail("Test failed")
   }
   
   match ok_span.status {
     Ok => assert_eq(true, true)
-    _ => @test.fail("Expected Ok")
+    _ => @test.fail("Test failed")
   }
   
   match error_span.status {
     Error => assert_eq(true, true)
-    _ => @test.fail("Expected Error")
+    _ => @test.fail("Test failed")
   }
   
   // 验证错误状态描述
   match error_span.status_description {
     Some(desc) => assert_eq(desc, "Something went wrong")
-    None => @test.fail("Expected Some(description)")
+    None => @test.fail("Test failed")
   }
 }
 
 test "span_with_all_enum_combinations" {
   // 测试SpanKind和StatusCode的组合
   let base_context = SpanContext::{
-    trace_id: Array::make(16, 0_byte),
-    span_id: Array::make(8, 1_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte }),
     trace_flags: 1_byte,
     trace_state: "key1=value1"
   }
@@ -136,7 +136,7 @@ test "span_with_all_enum_combinations" {
       name: "test-span-" + i.to_string(),
       context: base_context,
       kind: kind,
-      parent_span_id: Some(Array::make(8, (i + 1).to_byte())),
+      parent_span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { (i + 1 }).to_byte())),
       start_time_unix_nanos: 1234567890L + i.to_int64(),
       end_time_unix_nanos: Some(1234567890L + i.to_int64() + 1000L),
       status: status,

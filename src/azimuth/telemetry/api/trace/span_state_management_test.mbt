@@ -58,7 +58,7 @@ test "span_lifecycle_state_transitions" {
   assert_eq(started_span.state, Started)
   match started_span.start_time {
     Some(time) => assert_eq(time, start_time)
-    None => @test.fail("Expected start time to be set")
+    None => @test.fail("Test failed")
   }
   
   let in_progress_span = transition_state(started_span, InProgress, start_time + 1000L)
@@ -69,7 +69,7 @@ test "span_lifecycle_state_transitions" {
   assert_eq(finished_span.status, Ok)
   match finished_span.end_time {
     Some(time) => assert_eq(time, end_time)
-    None => @test.fail("Expected end time to be set")
+    None => @test.fail("Test failed")
   }
   
   // 测试错误状态转换
@@ -111,14 +111,14 @@ test "span_status_management" {
   assert_eq(ok_span.status, Ok)
   match ok_span.status_description {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Expected None for status description")
+    Some(_) => @test.fail("Test failed")
   }
   
   let error_span = set_status(span, Error, Some("Database connection failed"))
   assert_eq(error_span.status, Error)
   match error_span.status_description {
     Some(desc) => assert_eq(desc, "Database connection failed")
-    None => @test.fail("Expected Some for status description")
+    None => @test.fail("Test failed")
   }
   
   // 测试状态优先级
@@ -323,21 +323,21 @@ test "span_attribute_management" {
         found_method = true
         match value {
           StringValue(method) => assert_eq(method, "GET")
-          _ => @test.fail("Expected StringValue for http.method")
+          _ => @test.fail("Test failed")
         }
       }
       "http.status_code" => {
         found_status = true
         match value {
           IntValue(status) => assert_eq(status, 200L)
-          _ => @test.fail("Expected IntValue for http.status_code")
+          _ => @test.fail("Test failed")
         }
       }
       "user.id" => {
         found_user = true
         match value {
           StringValue(user_id) => assert_eq(user_id, "12345")
-          _ => @test.fail("Expected StringValue for user.id")
+          _ => @test.fail("Test failed")
         }
       }
       _ => @test.fail("Unexpected attribute key: " + key)
@@ -361,7 +361,7 @@ test "span_attribute_management" {
       found_updated = true
       match value {
         IntValue(status) => assert_eq(status, 404L)
-        _ => @test.fail("Expected IntValue for updated http.status_code")
+        _ => @test.fail("Test failed")
       }
     }
     j = j + 1
@@ -448,7 +448,7 @@ test "span_parent_child_relationships" {
       }
       assert_eq(matches, true)
     }
-    None => @test.fail("Expected parent_span_id for child span")
+    None => @test.fail("Test failed")
   }
   
   match child2.parent_span_id {
@@ -463,7 +463,7 @@ test "span_parent_child_relationships" {
       }
       assert_eq(matches, true)
     }
-    None => @test.fail("Expected parent_span_id for child span")
+    None => @test.fail("Test failed")
   }
   
   // 验证子Span的trace_id与父Span相同
@@ -537,7 +537,7 @@ test "span_parent_child_relationships" {
       }
       assert_eq(matches, true)
     }
-    None => @test.fail("Expected parent_span_id for grandchild span")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -581,25 +581,25 @@ test "span_timing_and_duration" {
   assert_eq(span.start_time_unix_nanos, start_time)
   match span.end_time_unix_nanos {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Expected None for end_time")
+    Some(_) => @test.fail("Test failed")
   }
   
   let finished_span = end_span(span, end_time)
   match finished_span.end_time_unix_nanos {
     Some(time) => assert_eq(time, end_time)
-    None => @test.fail("Expected Some for end_time")
+    None => @test.fail("Test failed")
   }
   
   // 计算持续时间
   match duration(finished_span) {
     Some(dur) => assert_eq(dur, 1000000000L)  // 1秒 = 10^9纳秒
-    None => @test.fail("Expected Some for duration")
+    None => @test.fail("Test failed")
   }
   
   // 测试未结束Span的持续时间
   match duration(span) {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Expected None for unfinished span duration")
+    Some(_) => @test.fail("Test failed")
   }
   
   // 测试时间转换函数
@@ -619,7 +619,7 @@ test "span_timing_and_duration" {
       assert_eq(duration_ms, 1000.0)
       assert_eq(duration_s, 1.0)
     }
-    None => @test.fail("Expected Some for duration")
+    None => @test.fail("Test failed")
   }
   
   // 测试多个Span的时间比较
@@ -642,12 +642,12 @@ test "span_timing_and_duration" {
               assert_eq(dur2 < dur3, true)
               assert_eq(dur1 < dur3, true)
             }
-            None => @test.fail("Expected Some for span3 duration")
+            None => @test.fail("Test failed")
           }
         }
-        None => @test.fail("Expected Some for span2 duration")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected Some for span1 duration")
+    None => @test.fail("Test failed")
   }
 }

@@ -55,7 +55,7 @@ test "native_platform_time_functions" {
   assert_eq(realtime_result.time_spec.seconds, 1640995200L)
   assert_eq(realtime_result.time_spec.nanoseconds, 123456789L)
   match realtime_result.error_code {
-    Some(_) => @test.fail("Expected None for successful call")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -70,7 +70,7 @@ test "native_platform_time_functions" {
   assert_eq(error_result.success, false)
   match error_result.error_code {
     Some(code) => assert_eq(code, 22)
-    None => @test.fail("Expected Some(error_code)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -173,7 +173,7 @@ test "native_platform_network_sockets" {
   assert_eq(tcp_result.success, true)
   match tcp_result.socket_fd {
     Some(fd) => assert_eq(fd, 5)
-    None => @test.fail("Expected Some(socket_fd)")
+    None => @test.fail("Test failed")
   }
   
   // 测试UDP socket创建
@@ -181,7 +181,7 @@ test "native_platform_network_sockets" {
   assert_eq(udp_result.success, true)
   match udp_result.socket_fd {
     Some(fd) => assert_eq(fd, 6)
-    None => @test.fail("Expected Some(socket_fd)")
+    None => @test.fail("Test failed")
   }
   
   // 测试不支持的socket类型
@@ -189,7 +189,7 @@ test "native_platform_network_sockets" {
   assert_eq(unsupported_result.success, false)
   match unsupported_result.error_code {
     Some(code) => assert_eq(code, 97)
-    None => @test.fail("Expected Some(error_code)")
+    None => @test.fail("Test failed")
   }
   
   // 测试TCP连接到OTLP端点
@@ -208,7 +208,7 @@ test "native_platform_network_sockets" {
   assert_eq(udp_connect.connected, false)
   match udp_connect.error_code {
     Some(code) => assert_eq(code, 111)
-    None => @test.fail("Expected Some(error_code)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -352,7 +352,7 @@ test "native_platform_file_operations" {
       assert_eq(info.is_regular_file, true)
       assert_eq(info.is_directory, false)
     }
-    None => @test.fail("Expected Some(file_info)")
+    None => @test.fail("Test failed")
   }
   
   // 测试读取硬件信息文件
@@ -363,7 +363,7 @@ test "native_platform_file_operations" {
       assert_eq(info.size, 256L)
       assert_eq(info.is_regular_file, true)
     }
-    None => @test.fail("Expected Some(file_info)")
+    None => @test.fail("Test failed")
   }
   
   // 测试读取OS信息文件
@@ -374,7 +374,7 @@ test "native_platform_file_operations" {
       assert_eq(info.size, 1024L)
       assert_eq(info.is_regular_file, true)
     }
-    None => @test.fail("Expected Some(file_info)")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的文件
@@ -382,7 +382,7 @@ test "native_platform_file_operations" {
   assert_eq(nonexistent.success, false)
   match nonexistent.error_code {
     Some(code) => assert_eq(code, 2) // ENOENT
-    None => @test.fail("Expected Some(error_code)")
+    None => @test.fail("Test failed")
   }
   
   // 测试写入到stdout
@@ -391,7 +391,7 @@ test "native_platform_file_operations" {
   assert_eq(stdout_write.success, true)
   match stdout_write.bytes_written {
     Some(bytes) => assert_eq(bytes, test_data.length())
-    None => @test.fail("Expected Some(bytes_written)")
+    None => @test.fail("Test failed")
   }
   
   // 测试无效文件描述符
@@ -399,7 +399,7 @@ test "native_platform_file_operations" {
   assert_eq(invalid_write.success, false)
   match invalid_write.error_code {
     Some(code) => assert_eq(code, 9) // EBADF
-    None => @test.fail("Expected Some(error_code)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -483,7 +483,7 @@ test "native_platform_memory_management" {
       assert_eq(info.process_memory, 134217728UL)
       assert_eq(info.page_size, 4096)
     }
-    None => @test.fail("Expected Some(memory_info)")
+    None => @test.fail("Test failed")
   }
   
   // 测试正常内存分配
@@ -491,11 +491,11 @@ test "native_platform_memory_management" {
   assert_eq(small_alloc.success, true)
   match small_alloc.pointer {
     Some(ptr) => assert_eq(ptr, 0x7f1234567890)
-    None => @test.fail("Expected Some(pointer)")
+    None => @test.fail("Test failed")
   }
   match small_alloc.size {
     Some(size) => assert_eq(size, 1024)
-    None => @test.fail("Expected Some(size)")
+    None => @test.fail("Test failed")
   }
   
   // 测试大内存分配失败
@@ -503,7 +503,7 @@ test "native_platform_memory_management" {
   assert_eq(large_alloc.success, false)
   match large_alloc.error_code {
     Some(code) => assert_eq(code, 12) // ENOMEM
-    None => @test.fail("Expected Some(error_code)")
+    None => @test.fail("Test failed")
   }
   
   // 测试无效大小分配
@@ -511,6 +511,6 @@ test "native_platform_memory_management" {
   assert_eq(invalid_alloc.success, false)
   match invalid_alloc.error_code {
     Some(code) => assert_eq(code, 22) // EINVAL
-    None => @test.fail("Expected Some(error_code)")
+    None => @test.fail("Test failed")
   }
 }

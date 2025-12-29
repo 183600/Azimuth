@@ -2,13 +2,13 @@
 test "span_context_creation_and_validation" {
   // 测试SpanContext的基本创建和验证
   
-  let trace_id = Array::make(16, 0_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
   trace_id[0] = 0x0a_byte
   trace_id[1] = 0xf7_byte
   trace_id[2] = 0x65_byte
   trace_id[3] = 0x19_byte
   
-  let span_id = Array::make(8, 0_byte)
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   span_id[0] = 0xb7_byte
   span_id[1] = 0xad_byte
   span_id[2] = 0x6b_byte
@@ -45,7 +45,7 @@ test "span_context_with_noop_tracer" {
   assert_eq(span.name, "test-span")
   match span.kind {
     Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server span kind")
+    _ => @test.fail("Test failed")
   }
   
   // 验证SpanContext
@@ -59,16 +59,16 @@ test "span_context_with_noop_tracer" {
   assert_eq(span.attributes[0].0, "http.method")
   match span.attributes[0].1 {
     StringValue(value) => assert_eq(value, "GET")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
 test "span_lifecycle_with_events_and_links" {
   // 测试Span的生命周期，包括事件和链接
   
-  let trace_id = Array::make(16, 0x01_byte)
-  let span_id = Array::make(8, 0x02_byte)
-  let parent_span_id = Array::make(8, 0x03_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte })
+  let parent_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x03_byte })
   
   let span_context = SpanContext::{
     trace_id: trace_id,
@@ -78,8 +78,8 @@ test "span_lifecycle_with_events_and_links" {
   }
   
   let linked_context = SpanContext::{
-    trace_id: Array::make(16, 0x04_byte),
-    span_id: Array::make(8, 0x05_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x04_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x05_byte }),
     trace_flags: 0x00_byte,
     trace_state: ""
   }
@@ -127,20 +127,20 @@ test "span_lifecycle_with_events_and_links" {
   assert_eq(span.name, "lifecycle-test")
   match span.kind {
     Client => assert_eq(true, true)
-    _ => @test.fail("Expected Client span kind")
+    _ => @test.fail("Test failed")
   }
   
   // 验证时间戳
   assert_eq(span.start_time_unix_nanos, 1234567890L)
   match span.end_time_unix_nanos {
     Some(end_time) => assert_eq(end_time, 1234567990L)
-    None => @test.fail("Expected end time")
+    None => @test.fail("Test failed")
   }
   
   // 验证状态
   match span.status {
     Ok => assert_eq(true, true)
-    _ => @test.fail("Expected Ok status")
+    _ => @test.fail("Test failed")
   }
   
   // 验证属性
@@ -171,7 +171,7 @@ test "span_kind_and_status_enums" {
   ).1
   match internal_span.kind {
     Internal => assert_eq(true, true)
-    _ => @test.fail("Expected Internal")
+    _ => @test.fail("Test failed")
   }
   
   let server_span = NoopTracer::start_span(
@@ -179,7 +179,7 @@ test "span_kind_and_status_enums" {
   ).1
   match server_span.kind {
     Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server")
+    _ => @test.fail("Test failed")
   }
   
   let client_span = NoopTracer::start_span(
@@ -187,7 +187,7 @@ test "span_kind_and_status_enums" {
   ).1
   match client_span.kind {
     Client => assert_eq(true, true)
-    _ => @test.fail("Expected Client")
+    _ => @test.fail("Test failed")
   }
   
   let producer_span = NoopTracer::start_span(
@@ -195,7 +195,7 @@ test "span_kind_and_status_enums" {
   ).1
   match producer_span.kind {
     Producer => assert_eq(true, true)
-    _ => @test.fail("Expected Producer")
+    _ => @test.fail("Test failed")
   }
   
   let consumer_span = NoopTracer::start_span(
@@ -203,7 +203,7 @@ test "span_kind_and_status_enums" {
   ).1
   match consumer_span.kind {
     Consumer => assert_eq(true, true)
-    _ => @test.fail("Expected Consumer")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -212,16 +212,16 @@ test "span_context_trace_flags_and_state" {
   
   // 测试不同的trace_flags
   let sampled_context = SpanContext::{
-    trace_id: Array::make(16, 0x01_byte),
-    span_id: Array::make(8, 0x02_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte }),
     trace_flags: 0x01_byte, // 采样标志
     trace_state: ""
   }
   assert_eq(sampled_context.trace_flags, 0x01_byte)
   
   let unsampled_context = SpanContext::{
-    trace_id: Array::make(16, 0x01_byte),
-    span_id: Array::make(8, 0x02_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte }),
     trace_flags: 0x00_byte, // 未采样
     trace_state: ""
   }
@@ -230,8 +230,8 @@ test "span_context_trace_flags_and_state" {
   // 测试复杂的trace_state
   let complex_trace_state = "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE,custom=value"
   let complex_context = SpanContext::{
-    trace_id: Array::make(16, 0x01_byte),
-    span_id: Array::make(8, 0x02_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte }),
     trace_flags: 0x01_byte,
     trace_state: complex_trace_state
   }
@@ -241,7 +241,7 @@ test "span_context_trace_flags_and_state" {
   assert_eq(complex_context.trace_state.contains("custom"), true)
   
   // 验证trace_state格式
-  let state_parts = complex_trace_state.split(",")
+  let state_parts = complex_trace_state",".split_to_string()
   assert_eq(state_parts.length(), 3)
   assert_eq(state_parts[0].has_prefix("rojo="), true)
   assert_eq(state_parts[1].has_prefix("congo="), true)

@@ -13,14 +13,14 @@ test "error_handling_null_values" {
   let empty_string_attr = AttributeValue::string("")
   match empty_string_attr {
     StringValue(s) => assert_eq(s, "")
-    _ => @test.fail("Expected StringValue with empty string")
+    _ => @test.fail("Test failed")
   }
   
   // 2. 测试空数组
   let empty_string_array = AttributeValue::array_string([])
   match empty_string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue with empty array")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 测试Resource的空值处理
@@ -32,7 +32,7 @@ test "error_handling_null_values" {
   let empty_context = Context::empty()
   let non_existent_key = create_key("non.existent.key")
   match empty_context.get(non_existent_key) {
-    Some(_) => @test.fail("Expected None for non-existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -43,7 +43,7 @@ test "error_handling_null_values" {
     .build()
   
   match log_record_with_none.body {
-    Some(_) => @test.fail("Expected None for body")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -55,42 +55,42 @@ test "error_handling_extreme_values" {
   let max_int = AttributeValue::int(9223372036854775807L)
   match max_int {
     IntValue(v) => assert_eq(v, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue with max value")
+    _ => @test.fail("Test failed")
   }
   
   // 2. 测试极小整数值
   let min_int = AttributeValue::int(-9223372036854775808L)
   match min_int {
     IntValue(v) => assert_eq(v, -9223372036854775808L)
-    _ => @test.fail("Expected IntValue with min value")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 测试极大浮点数值
   let max_float = AttributeValue::float(1.7976931348623157e+308)
   match max_float {
     FloatValue(v) => assert_eq(v > 1.0e+308, true)
-    _ => @test.fail("Expected FloatValue with max value")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 测试极小浮点数值
   let min_float = AttributeValue::float(-1.7976931348623157e+308)
   match min_float {
     FloatValue(v) => assert_eq(v < -1.0e+308, true)
-    _ => @test.fail("Expected FloatValue with min value")
+    _ => @test.fail("Test failed")
   }
   
   // 5. 测试无穷大
   let infinity = AttributeValue::float(1.0/0.0)
   match infinity {
     FloatValue(v) => assert_eq(v > 1.0e+308, true)
-    _ => @test.fail("Expected FloatValue with infinity")
+    _ => @test.fail("Test failed")
   }
   
   // 6. 测试NaN
   let nan = AttributeValue::float(0.0/0.0)
   match nan {
     FloatValue(v) => assert_eq(v != v, true)  // NaN不等于自身
-    _ => @test.fail("Expected FloatValue with NaN")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -119,7 +119,7 @@ test "error_handling_invalid_operations" {
   let long_string_attr = AttributeValue::string(long_string)
   match long_string_attr {
     StringValue(s) => assert_eq(s.length(), 10000)
-    _ => @test.fail("Expected StringValue with long string")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 测试超长属性名
@@ -141,7 +141,7 @@ test "error_handling_unicode_and_special_characters" {
   let unicode_attr = AttributeValue::string(unicode_string)
   match unicode_attr {
     StringValue(s) => assert_eq(s, unicode_string)
-    _ => @test.fail("Expected StringValue with Unicode")
+    _ => @test.fail("Test failed")
   }
   
   // 2. 测试特殊控制字符
@@ -149,7 +149,7 @@ test "error_handling_unicode_and_special_characters" {
   let control_chars_attr = AttributeValue::string(control_chars)
   match control_chars_attr {
     StringValue(s) => assert_eq(s, control_chars)
-    _ => @test.fail("Expected StringValue with control characters")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 测试JSON特殊字符
@@ -157,7 +157,7 @@ test "error_handling_unicode_and_special_characters" {
   let json_chars_attr = AttributeValue::string(json_chars)
   match json_chars_attr {
     StringValue(s) => assert_eq(s, json_chars)
-    _ => @test.fail("Expected StringValue with JSON special characters")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 测试零宽字符
@@ -165,7 +165,7 @@ test "error_handling_unicode_and_special_characters" {
   let zero_width_chars_attr = AttributeValue::string(zero_width_chars)
   match zero_width_chars_attr {
     StringValue(s) => assert_eq(s, zero_width_chars)
-    _ => @test.fail("Expected StringValue with zero-width characters")
+    _ => @test.fail("Test failed")
   }
   
   // 5. 测试包含特殊字符的服务名
@@ -212,7 +212,7 @@ test "error_handling_memory_pressure" {
   let first_key = create_key("key.0")
   match ctx.get(first_key) {
     Some(value) => assert_eq(value, "value.0")
-    None => @test.fail("Expected value for key.0")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -246,7 +246,7 @@ test "error_handling_concurrent_access" {
     
     match ctx.get(key) {
       Some(value) => assert_eq(value.length() > 0, true)
-      None => @test.fail("Expected value for concurrent.key")
+      None => @test.fail("Test failed")
     }
     
     j = j + 1
@@ -301,7 +301,7 @@ test "error_handling_recovery_scenarios" {
   
   match recovered_context.get(key) {
     Some(value) => assert_eq(value, "original.value")
-    None => @test.fail("Expected recovered context value")
+    None => @test.fail("Test failed")
   }
   
   // 3. 测试传播恢复
@@ -315,6 +315,6 @@ test "error_handling_recovery_scenarios" {
   // 验证恢复
   match extracted_context.get(key) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted context value")
+    None => @test.fail("Test failed")
   }
 }

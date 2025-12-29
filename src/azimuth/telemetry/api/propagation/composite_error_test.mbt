@@ -166,17 +166,17 @@ test "composite_propagator_context_corruption" {
   // 验证原始上下文没有被损坏
   match complex_ctx.get(key1) {
     Some(value) => assert_eq(value, "trace-12345678901234567890123456789012")
-    None => @test.fail("Expected Some(trace.id)")
+    None => @test.fail("Test failed")
   }
   
   match complex_ctx.get(key2) {
     Some(value) => assert_eq(value, "span-1234567890123456")
-    None => @test.fail("Expected Some(span.id)")
+    None => @test.fail("Test failed")
   }
   
   match complex_ctx.get(key3) {
     Some(value) => assert_eq(value, "corr-abcdef1234567890")
-    None => @test.fail("Expected Some(correlation.id)")
+    None => @test.fail("Test failed")
   }
 }
 

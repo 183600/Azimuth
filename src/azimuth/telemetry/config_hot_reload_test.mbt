@@ -146,7 +146,7 @@ test "dynamic_configuration_update" {
         }
       }
       EndpointURL => {
-        if not (new_value.starts_with("http://") or new_value.starts_with("https://")) {
+        if not (new_value.has_prefix("http://") or new_value.has_prefix("https://")) {
           return (false, "Endpoint URL must start with http:// or https://")
         }
       }
@@ -838,7 +838,7 @@ fn matches_regex(text : String, regex : String) -> Bool {
     }
     return true
   } else if regex == "^https?://.*" {
-    return text.starts_with("http://") or text.starts_with("https://")
+    return text.has_prefix("http://") or text.has_prefix("https://")
   }
   
   true  // 默认匹配

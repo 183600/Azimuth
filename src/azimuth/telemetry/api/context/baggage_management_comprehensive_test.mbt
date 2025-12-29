@@ -14,12 +14,12 @@ test "baggage_basic_operations" {
   // 获取条目
   match baggage1.get("user-id") {
     Some(value) => assert_eq(value, "12345")
-    None => @test.fail("Expected to find user-id in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键
   match baggage1.get("non-existent") {
-    Some(_) => @test.fail("Expected None for non-existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -40,27 +40,27 @@ test "baggage_multiple_entries" {
   // 验证所有条目都存在
   match baggage.get("user-id") {
     Some(value) => assert_eq(value, "12345")
-    None => @test.fail("Expected to find user-id")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("session-id") {
     Some(value) => assert_eq(value, "abcdef-67890")
-    None => @test.fail("Expected to find session-id")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("request-id") {
     Some(value) => assert_eq(value, "req-123456")
-    None => @test.fail("Expected to find request-id")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("trace-origin") {
     Some(value) => assert_eq(value, "frontend")
-    None => @test.fail("Expected to find trace-origin")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("environment") {
     Some(value) => assert_eq(value, "production")
-    None => @test.fail("Expected to find environment")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -80,42 +80,42 @@ test "baggage_key_value_variations" {
   // 验证所有变体
   match baggage.get("empty-value") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected to find empty-value")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("spaces") {
     Some(value) => assert_eq(value, "value with spaces")
-    None => @test.fail("Expected to find spaces")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("special-chars") {
     Some(value) => assert_eq(value, "!@#$%^&*()")
-    None => @test.fail("Expected to find special-chars")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("unicode") {
     Some(value) => assert_eq(value, "测试值🚀")
-    None => @test.fail("Expected to find unicode")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("numbers") {
     Some(value) => assert_eq(value, "1234567890")
-    None => @test.fail("Expected to find numbers")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("mixed") {
     Some(value) => assert_eq(value, "abc123!@#")
-    None => @test.fail("Expected to find mixed")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("long-key") {
     Some(value) => assert_eq(value, "this-is-a-very-long-value-with-lots-of-content-and-details")
-    None => @test.fail("Expected to find long-key")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("long-value") {
     Some(value) => assert_eq(value, "this-is-a-very-long-value-with-lots-of-content-and-details")
-    None => @test.fail("Expected to find long-value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -141,17 +141,17 @@ test "context_with_baggage_integration" {
   // 验证Context值
   match context.get(user_key) {
     Some(value) => assert_eq(value, "user-12345")
-    None => @test.fail("Expected to find user-id in context")
+    None => @test.fail("Test failed")
   }
   
   match context.get(session_key) {
     Some(value) => assert_eq(value, "session-abcdef")
-    None => @test.fail("Expected to find session-id in context")
+    None => @test.fail("Test failed")
   }
   
   match context.get(trace_key) {
     Some(value) => assert_eq(value, "trace-123456789")
-    None => @test.fail("Expected to find trace-id in context")
+    None => @test.fail("Test failed")
   }
   
   // 验证Baggage条目
@@ -159,17 +159,17 @@ test "context_with_baggage_integration" {
   
   match baggage.get("baggage-user") {
     Some(value) => assert_eq(value, "baggage-user-123")
-    None => @test.fail("Expected to find baggage-user")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("baggage-session") {
     Some(value) => assert_eq(value, "baggage-session-456")
-    None => @test.fail("Expected to find baggage-session")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("baggage-env") {
     Some(value) => assert_eq(value, "staging")
-    None => @test.fail("Expected to find baggage-env")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -187,22 +187,22 @@ test "baggage_case_sensitivity" {
   
   match baggage.get("User-ID") {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected to find User-ID")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("user-id") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected to find user-id")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("USER-ID") {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected to find USER-ID")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("user-Id") {
     Some(value) => assert_eq(value, "value4")
-    None => @test.fail("Expected to find user-Id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -213,21 +213,21 @@ test "baggage_edge_cases" {
   let baggage1 = Baggage::empty().with_entry("", "empty-key-value")
   match baggage1.get("") {
     Some(value) => assert_eq(value, "empty-key-value")
-    None => @test.fail("Expected to find empty key")
+    None => @test.fail("Test failed")
   }
   
   // 测试只包含空格的键
   let baggage2 = baggage1.with_entry("   ", "spaces-key")
   match baggage2.get("   ") {
     Some(value) => assert_eq(value, "spaces-key")
-    None => @test.fail("Expected to find spaces key")
+    None => @test.fail("Test failed")
   }
   
   // 测试只包含特殊字符的键
   let baggage3 = baggage2.with_entry("!@#$%", "special-chars-key")
   match baggage3.get("!@#$%") {
     Some(value) => assert_eq(value, "special-chars-key")
-    None => @test.fail("Expected to find special chars key")
+    None => @test.fail("Test failed")
   }
   
   // 测试非常长的键和值
@@ -237,7 +237,7 @@ test "baggage_edge_cases" {
   
   match baggage4.get(long_key) {
     Some(value) => assert_eq(value, long_value)
-    None => @test.fail("Expected to find long key")
+    None => @test.fail("Test failed")
   }
   
   // 验证总条目数
@@ -267,32 +267,32 @@ test "context_key_creation_and_usage" {
   // 验证所有值
   match context.get(simple_key) {
     Some(value) => assert_eq(value, "simple-value")
-    None => @test.fail("Expected to find simple key")
+    None => @test.fail("Test failed")
   }
   
   match context.get(complex_key) {
     Some(value) => assert_eq(value, "complex-value")
-    None => @test.fail("Expected to find complex key")
+    None => @test.fail("Test failed")
   }
   
   match context.get(spaced_key) {
     Some(value) => assert_eq(value, "spaced-value")
-    None => @test.fail("Expected to find spaced key")
+    None => @test.fail("Test failed")
   }
   
   match context.get(unicode_key) {
     Some(value) => assert_eq(value, "unicode-value")
-    None => @test.fail("Expected to find unicode key")
+    None => @test.fail("Test failed")
   }
   
   match context.get(special_key) {
     Some(value) => assert_eq(value, "special-value")
-    None => @test.fail("Expected to find special key")
+    None => @test.fail("Test failed")
   }
   
   match context.get(empty_key) {
     Some(value) => assert_eq(value, "empty-key-value")
-    None => @test.fail("Expected to find empty key")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -316,27 +316,27 @@ test "baggage_large_scale_operations" {
   // 验证特定条目
   match baggage.get("key-0") {
     Some(value) => assert_eq(value, "value-0")
-    None => @test.fail("Expected to find key-0")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("key-50") {
     Some(value) => assert_eq(value, "value-50")
-    None => @test.fail("Expected to find key-50")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("key-99") {
     Some(value) => assert_eq(value, "value-99")
-    None => @test.fail("Expected to find key-99")
+    None => @test.fail("Test failed")
   }
   
   // 验证不存在的条目
   match baggage.get("key-100") {
-    Some(_) => @test.fail("Expected None for key-100")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match baggage.get("non-existent") {
-    Some(_) => @test.fail("Expected None for non-existent")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }

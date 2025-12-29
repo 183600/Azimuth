@@ -100,8 +100,8 @@ test "span_context_creation_performance" {
   // 测试SpanContext创建的性能
   let mut i = 0
   while i < 1000 {
-    let trace_id = Array::make(16, (i % 256).to_byte())
-    let span_id = Array::make(8, ((i * 2) % 256).to_byte())
+    let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { (i % 256 }).to_byte())
+    let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { ((i * 2 }) % 256).to_byte())
     let trace_flags = (i % 8).to_byte()
     let trace_state = "trace-state-" + i.to_string()
     
@@ -157,8 +157,8 @@ test "span_link_creation_performance" {
   // 测试SpanLink创建的性能
   let mut i = 0
   while i < 1000 {
-    let linked_trace_id = Array::make(16, ((i + 1) % 256).to_byte())
-    let linked_span_id = Array::make(8, ((i + 2) % 256).to_byte())
+    let linked_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { ((i + 1 }) % 256).to_byte())
+    let linked_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { ((i + 2 }) % 256).to_byte())
     let linked_trace_state = "linked-trace-state-" + i.to_string()
     
     let linked_span_context = SpanContext::{
@@ -197,9 +197,9 @@ test "span_with_all_components_performance" {
   let mut i = 0
   while i < 100 {
     // 创建复杂的SpanContext
-    let trace_id = Array::make(16, ((i * 3) % 256).to_byte())
-    let span_id = Array::make(8, ((i * 5) % 256).to_byte())
-    let parent_span_id = Array::make(8, ((i * 7) % 256).to_byte())
+    let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { ((i * 3 }) % 256).to_byte())
+    let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { ((i * 5 }) % 256).to_byte())
+    let parent_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { ((i * 7 }) % 256).to_byte())
     
     let span_context = SpanContext::{
       trace_id,
@@ -240,8 +240,8 @@ test "span_with_all_components_performance" {
     let links : Array[SpanLink] = [
       SpanLink::{
         context: SpanContext::{
-          trace_id: Array::make(16, ((i + 10) % 256).to_byte()),
-          span_id: Array::make(8, ((i + 11) % 256).to_byte()),
+          trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { ((i + 10 }) % 256).to_byte()),
+          span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { ((i + 11 }) % 256).to_byte()),
           trace_flags: 1_byte,
           trace_state: "linked-state-1-" + i.to_string()
         },
@@ -252,8 +252,8 @@ test "span_with_all_components_performance" {
       },
       SpanLink::{
         context: SpanContext::{
-          trace_id: Array::make(16, ((i + 20) % 256).to_byte()),
-          span_id: Array::make(8, ((i + 21) % 256).to_byte()),
+          trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { ((i + 20 }) % 256).to_byte()),
+          span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { ((i + 21 }) % 256).to_byte()),
           trace_flags: 1_byte,
           trace_state: "linked-state-2-" + i.to_string()
         },

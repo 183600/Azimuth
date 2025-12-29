@@ -51,19 +51,19 @@ test "metrics_counter_aggregation" {
                 post_requests = post_requests + value
               }
             }
-            _ => @test.fail("Expected StringValue for method attribute")
+            _ => @test.fail("Test failed")
           }
         }
         "status" => {
           match attr_value {
             StringValue(status) => {
-              if status.starts_with("2") {
+              if status.has_prefix("2") {
                 success_requests = success_requests + value
-              } else if status.starts_with("4") || status.starts_with("5") {
+              } else if status.has_prefix("4") || status.has_prefix("5") {
                 error_requests = error_requests + value
               }
             }
-            _ => @test.fail("Expected StringValue for status attribute")
+            _ => @test.fail("Test failed")
           }
         }
         _ => @test.fail("Unexpected attribute key: " + key)
@@ -435,7 +435,7 @@ test "metrics_multi_dimensional_aggregation" {
                 payment_count = payment_count + 1L
               }
             }
-            _ => @test.fail("Expected StringValue for service dimension")
+            _ => @test.fail("Test failed")
           }
         }
         "region" => {
@@ -449,7 +449,7 @@ test "metrics_multi_dimensional_aggregation" {
                 us_west_count = us_west_count + 1L
               }
             }
-            _ => @test.fail("Expected StringValue for region dimension")
+            _ => @test.fail("Test failed")
           }
         }
         "method" => {
@@ -463,7 +463,7 @@ test "metrics_multi_dimensional_aggregation" {
                 post_count = post_count + 1L
               }
             }
-            _ => @test.fail("Expected StringValue for method dimension")
+            _ => @test.fail("Test failed")
           }
         }
         _ => @test.fail("Unexpected dimension: " + dim_name)

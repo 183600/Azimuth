@@ -386,7 +386,7 @@ test "data_retention_and_expiry" {
     if should_anonymize {
       let anonymized_record = anonymize_data(record)
       match anonymized_record.user_id {
-        Some(_) => @test.fail("Expected None for user_id after anonymization")
+        Some(_) => @test.fail("Test failed")
         None => assert_eq(true, true)
       }
       assert_eq(anonymized_record.data.contains("user-***"), true)
@@ -683,7 +683,7 @@ fn is_credit_card(text : String) -> Bool {
 
 fn is_ip_address(text : String) -> Bool {
   // 简化的IPv4检测
-  let parts = text.split(".")
+  let parts = text".".split_to_string()
   if parts.length() == 4 {
     let mut i = 0
     while i < parts.length() {
@@ -704,12 +704,12 @@ fn is_address(text : String) -> Bool {
 }
 
 fn mask_email(email : String, config : PIIDetectionConfig) -> String {
-  let parts = email.split("@")
+  let parts = email"@".split_to_string()
   if parts.length() == 2 {
     let username = parts[0]
     let domain = parts[1]
     let masked_username = mask_string(username, 1, username.length() - 1)
-    let domain_parts = domain.split(".")
+    let domain_parts = domain".".split_to_string()
     if domain_parts.length() >= 2 {
       let masked_domain = mask_string(domain_parts[0], 1, domain_parts[0].length() - 1)
       let extension = domain_parts[domain_parts.length() - 1]
@@ -742,7 +742,7 @@ fn mask_credit_card(card : String, config : PIIDetectionConfig) -> String {
 }
 
 fn mask_ip_address(ip : String, config : PIIDetectionConfig) -> String {
-  let parts = ip.split(".")
+  let parts = ip".".split_to_string()
   if parts.length() == 4 {
     return parts[0] + "." + parts[1] + "." + parts[2] + ".***"
   }
@@ -750,7 +750,7 @@ fn mask_ip_address(ip : String, config : PIIDetectionConfig) -> String {
 }
 
 fn mask_address(address : String, config : PIIDetectionConfig) -> String {
-  let words = address.split(" ")
+  let words = address" ".split_to_string()
   let masked_words = []
   let mut i = 0
   while i < words.length() {

@@ -116,12 +116,12 @@ test "composite_propagator_with_context_data" {
   // 验证原始上下文数据仍然存在
   match ctx_with_data.get(key1) {
     Some(v) => assert_eq(v, "value1")
-    None => @test.fail("Expected value1")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_data.get(key2) {
     Some(v) => assert_eq(v, "value2")
-    None => @test.fail("Expected value2")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -151,17 +151,17 @@ test "composite_propagator_with_baggage_data" {
   // 验证Baggage数据
   match baggage.get("user.id") {
     Some(v) => assert_eq(v, "user-123")
-    None => @test.fail("Expected user.id")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("request.id") {
     Some(v) => assert_eq(v, "req-456")
-    None => @test.fail("Expected request.id")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("trace.id") {
     Some(v) => assert_eq(v, "trace-789")
-    None => @test.fail("Expected trace.id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -197,23 +197,23 @@ test "composite_propagator_map_carrier_integration" {
   // 验证预存数据仍然可以访问
   match carrier.get("existing.header1") {
     Some(v) => assert_eq(v, "value1")
-    None => @test.fail("Expected existing.header1")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("existing.header2") {
     Some(v) => assert_eq(v, "value2")
-    None => @test.fail("Expected existing.header2")
+    None => @test.fail("Test failed")
   }
   
   // 验证传播相关的头部
   match carrier.get("traceparent") {
     Some(_) => assert_eq(true, true)  // 存在即可
-    None => @test.fail("Expected traceparent")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("baggage") {
     Some(_) => assert_eq(true, true)  // 存在即可
-    None => @test.fail("Expected baggage")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -364,28 +364,28 @@ test "composite_propagator_complex_scenario" {
   // 验证原始上下文数据
   match ctx.get(key1) {
     Some(v) => assert_eq(v, "req-12345")
-    None => @test.fail("Expected req-12345")
+    None => @test.fail("Test failed")
   }
   
   match ctx.get(key2) {
     Some(v) => assert_eq(v, "user-67890")
-    None => @test.fail("Expected user-67890")
+    None => @test.fail("Test failed")
   }
   
   match ctx.get(key3) {
     Some(v) => assert_eq(v, "process-data")
-    None => @test.fail("Expected process-data")
+    None => @test.fail("Test failed")
   }
   
   // 验证Baggage数据
   match baggage.get("service.name") {
     Some(v) => assert_eq(v, "api-gateway")
-    None => @test.fail("Expected api-gateway")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("trace.sampled") {
     Some(v) => assert_eq(v, "true")
-    None => @test.fail("Expected true")
+    None => @test.fail("Test failed")
   }
   
   // 验证carrier中的所有数据
@@ -394,33 +394,33 @@ test "composite_propagator_complex_scenario" {
   // 验证预存头部仍然存在
   match carrier.get("authorization") {
     Some(v) => assert_eq(v, "Bearer token123")
-    None => @test.fail("Expected authorization")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("content-type") {
     Some(v) => assert_eq(v, "application/json")
-    None => @test.fail("Expected content-type")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("x-request-id") {
     Some(v) => assert_eq(v, "ext-req-123")
-    None => @test.fail("Expected x-request-id")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("x-custom-header") {
     Some(v) => assert_eq(v, "custom-value")
-    None => @test.fail("Expected x-custom-header")
+    None => @test.fail("Test failed")
   }
   
   // 验证传播头部存在
   match carrier.get("traceparent") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("baggage") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage")
+    None => @test.fail("Test failed")
   }
   
   // 验证键的数量（预存4个 + 传播2个）

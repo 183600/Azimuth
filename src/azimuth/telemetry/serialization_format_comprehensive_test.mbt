@@ -22,10 +22,10 @@ test "serialization_attribute_values" {
   let bool_serialized = "bool:true"
   
   // 验证序列化格式
-  assert_eq(string_serialized.starts_with("string:"), true)
-  assert_eq(int_serialized.starts_with("int:"), true)
-  assert_eq(float_serialized.starts_with("float:"), true)
-  assert_eq(bool_serialized.starts_with("bool:"), true)
+  assert_eq(string_serialized.has_prefix("string:"), true)
+  assert_eq(int_serialized.has_prefix("int:"), true)
+  assert_eq(float_serialized.has_prefix("float:"), true)
+  assert_eq(bool_serialized.has_prefix("bool:"), true)
   
   // 2. 测试数组类型的序列化
   let string_array = AttributeValue::array_string(["a", "b", "c"])
@@ -40,10 +40,10 @@ test "serialization_attribute_values" {
   let bool_array_serialized = "array_bool:[true,false,true]"
   
   // 验证数组序列化格式
-  assert_eq(string_array_serialized.starts_with("array_string:"), true)
-  assert_eq(int_array_serialized.starts_with("array_int:"), true)
-  assert_eq(float_array_serialized.starts_with("array_float:"), true)
-  assert_eq(bool_array_serialized.starts_with("array_bool:"), true)
+  assert_eq(string_array_serialized.has_prefix("array_string:"), true)
+  assert_eq(int_array_serialized.has_prefix("array_int:"), true)
+  assert_eq(float_array_serialized.has_prefix("array_float:"), true)
+  assert_eq(bool_array_serialized.has_prefix("array_bool:"), true)
   
   // 3. 测试特殊值的序列化
   let empty_string = AttributeValue::string("")
@@ -58,11 +58,11 @@ test "serialization_attribute_values" {
   assert_eq(negative_int, IntValue(-1L))
   match infinity_float {
     FloatValue(v) => assert_eq(v > 1.0e+308, true)
-    _ => @test.fail("Expected FloatValue with infinity")
+    _ => @test.fail("Test failed")
   }
   match nan_float {
     FloatValue(v) => assert_eq(v != v, true)
-    _ => @test.fail("Expected FloatValue with NaN")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -207,17 +207,17 @@ test "serialization_context" {
   // 3. 测试Context的反序列化
   match context_with_values.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected value for key1")
+    None => @test.fail("Test failed")
   }
   
   match context_with_values.get(key2) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected value for key2")
+    None => @test.fail("Test failed")
   }
   
   match context_with_values.get(key3) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected value for key3")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -226,8 +226,8 @@ test "serialization_span_context" {
   
   // 1. 测试基本SpanContext序列化
   let span_context = SpanContext::{
-    trace_id: Array::make(16, 0_byte),
-    span_id: Array::make(8, 0_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
     trace_flags: 0_byte,
     trace_state: ""
   }
@@ -242,8 +242,8 @@ test "serialization_span_context" {
   assert_eq(span_context_serialized.contains("-"), true)
   
   // 2. 测试带有值的SpanContext序列化
-  let trace_id_with_value = Array::make(16, 1_byte)
-  let span_id_with_value = Array::make(8, 1_byte)
+  let trace_id_with_value = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id_with_value = [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte })
   let span_context_with_values = SpanContext::{
     trace_id: trace_id_with_value,
     span_id: span_id_with_value,
@@ -274,10 +274,10 @@ test "serialization_propagation_headers" {
   
   // 验证traceparent头格式
   assert_eq(traceparent_header.length(), 55)  // 2 + 1 + 32 + 1 + 16 + 1 + 2
-  assert_eq(traceparent_header.split("-").length(), 4)
+  assert_eq(traceparent_header"-".split_to_string().length(), 4)
   
   // 解析traceparent头
-  let parts = traceparent_header.split("-")
+  let parts = traceparent_header"-".split_to_string()
   let version = parts[0]
   let trace_id = parts[1]
   let span_id = parts[2]
@@ -297,13 +297,13 @@ test "serialization_propagation_headers" {
   assert_eq(baggage_header.contains("key3=value3"), true)
   
   // 解析baggage头
-  let baggage_entries = baggage_header.split(",")
+  let baggage_entries = baggage_header",".split_to_string()
   
   // 验证解析结果
   assert_eq(baggage_entries.length(), 3)
-  assert_eq(baggage_entries[0].starts_with("key1="), true)
-  assert_eq(baggage_entries[1].starts_with("key2="), true)
-  assert_eq(baggage_entries[2].starts_with("key3="), true)
+  assert_eq(baggage_entries[0].has_prefix("key1="), true)
+  assert_eq(baggage_entries[1].has_prefix("key2="), true)
+  assert_eq(baggage_entries[2].has_prefix("key3="), true)
 }
 
 test "serialization_measurement" {
@@ -365,7 +365,7 @@ test "serialization_measurement" {
       IntValue(_) => found_int_attr = true
       BoolValue(_) => found_bool_attr = true
       ArrayStringValue(_) => found_array_attr = true
-      _ => @test.fail("Unexpected attribute type")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -429,11 +429,11 @@ test "serialization_compatibility" {
   // 验证数值类型兼容性
   match int_attr {
     IntValue(v) => assert_eq(v, 42L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match float_attr {
     FloatValue(v) => assert_eq(v, 42.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
 }

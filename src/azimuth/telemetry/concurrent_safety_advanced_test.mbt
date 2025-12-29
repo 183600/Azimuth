@@ -59,17 +59,17 @@ test "concurrent_safety_context_operations" {
     
     match ctx.get(key1) {
       Some(value) => assert_eq(value, "value1-" + j.to_string())
-      None => @test.fail("Expected value for key1")
+      None => @test.fail("Test failed")
     }
     
     match ctx.get(key2) {
       Some(value) => assert_eq(value, "value2-" + j.to_string())
-      None => @test.fail("Expected value for key2")
+      None => @test.fail("Test failed")
     }
     
     match ctx.get(key3) {
       Some(value) => assert_eq(value, "value3-" + j.to_string())
-      None => @test.fail("Expected value for key3")
+      None => @test.fail("Test failed")
     }
     
     j = j + 1
@@ -93,7 +93,7 @@ test "concurrent_safety_attribute_operations" {
   while j < attributes.length() {
     match attributes[j] {
       StringValue(value) => assert_eq(value, "concurrent-value-" + j.to_string())
-      _ => @test.fail("Expected StringValue")
+      _ => @test.fail("Test failed")
     }
     j = j + 1
   }
@@ -116,17 +116,17 @@ test "concurrent_safety_attribute_operations" {
   while l < int_attrs.length() {
     match int_attrs[l] {
       IntValue(value) => assert_eq(value, l.to_int64())
-      _ => @test.fail("Expected IntValue")
+      _ => @test.fail("Test failed")
     }
     
     match float_attrs[l] {
       FloatValue(value) => assert_eq(value, l.to_double())
-      _ => @test.fail("Expected FloatValue")
+      _ => @test.fail("Test failed")
     }
     
     match bool_attrs[l] {
       BoolValue(value) => assert_eq(value, l % 2 == 0)
-      _ => @test.fail("Expected BoolValue")
+      _ => @test.fail("Test failed")
     }
     
     l = l + 1
@@ -177,7 +177,7 @@ test "concurrent_safety_log_record_creation" {
               assert_eq(v, j.to_int64())
               found_thread_id = true
             }
-            _ => @test.fail("Expected IntValue for thread.id")
+            _ => @test.fail("Test failed")
           }
         }
         "message.id" => {
@@ -186,7 +186,7 @@ test "concurrent_safety_log_record_creation" {
               assert_eq(v, "msg-" + j.to_string())
               found_message_id = true
             }
-            _ => @test.fail("Expected StringValue for message.id")
+            _ => @test.fail("Test failed")
           }
         }
         "timestamp" => {
@@ -195,7 +195,7 @@ test "concurrent_safety_log_record_creation" {
               assert_eq(v, (j * 1000).to_int64())
               found_timestamp = true
             }
-            _ => @test.fail("Expected IntValue for timestamp")
+            _ => @test.fail("Test failed")
           }
         }
         _ => @test.fail("Unexpected attribute key: " + key)
@@ -336,7 +336,7 @@ test "concurrent_safety_propagation_operations" {
     // 验证提取的上下文
     match extracted_ctx.get(key) {
       Some(_) => assert_eq(true, true)
-      None => @test.fail("Expected extracted context value")
+      None => @test.fail("Test failed")
     }
     
     j = j + 1
@@ -349,7 +349,7 @@ test "concurrent_safety_propagation_operations" {
     
     match ctx.get(key) {
       Some(value) => assert_eq(value, "concurrent-value-" + k.to_string())
-      None => @test.fail("Expected original context value")
+      None => @test.fail("Test failed")
     }
     
     k = k + 1
@@ -402,7 +402,7 @@ test "concurrent_safety_mixed_operations" {
     assert_eq(log_record.body.unwrap_or(""), "Mixed operation " + i.to_string())
     match extracted_ctx.get(key) {
       Some(_) => assert_eq(true, true)
-      None => @test.fail("Expected extracted context value")
+      None => @test.fail("Test failed")
     }
     
     i = i + 1

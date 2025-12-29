@@ -130,8 +130,8 @@ test "span_events_and_links_management" {
   
   // 创建Span链接
   let linked_context = trace::SpanContext::{
-    trace_id: Array::make(16, 1_byte),
-    span_id: Array::make(8, 2_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte }),
     trace_flags: 1_byte,
     trace_state: "key1=value1,key2=value2"
   }
@@ -211,7 +211,7 @@ test "span_hierarchy_and_parent_relationships" {
   }
   
   // 创建具有明确父SpanID的子Span
-  let parent_span_id = Array::make(8, 42_byte)
+  let parent_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 42_byte })
   let child_with_explicit_parent = tracer.start_span(
     parent_ctx,
     "child-with-explicit-parent"

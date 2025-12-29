@@ -185,17 +185,17 @@ test "baggage_serialization" {
   // 验证单个条目的序列化
   match baggage_with_entries.get("baggage1") {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected baggage1 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_entries.get("baggage2") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected baggage2 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_entries.get("baggage3") {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected baggage3 value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -251,7 +251,7 @@ test "log_record_serialization" {
       0 => assert_eq(attr_serialized, "attr1=string:value1")
       1 => assert_eq(attr_serialized, "attr2=int:42")
       2 => assert_eq(attr_serialized, "attr3=bool:true")
-      _ => @test.fail("Unexpected attribute index")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -343,34 +343,34 @@ test "propagation_format_serialization" {
   match carrier.get(propagation::TRACE_PARENT_HEADER) {
     Some(trace_parent) => {
       // 验证traceparent格式: version-trace_id-span_id-trace_flags
-      let parts = trace_parent.split("-")
+      let parts = trace_parent"-".split_to_string()
       assert_eq(parts.length(), 4)
       assert_eq(parts[0], "00")  // version
       assert_eq(parts[1].length(), 32)  // trace_id (16 bytes = 32 hex chars)
       assert_eq(parts[2].length(), 16)  // span_id (8 bytes = 16 hex chars)
       assert_eq(parts[3], "01")  // trace_flags
     }
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   // 验证baggage格式
   match carrier.get(propagation::BAGGAGE_HEADER) {
     Some(baggage) => {
       // 验证baggage格式: key1=value1,key2=value2
-      let entries = baggage.split(",")
+      let entries = baggage",".split_to_string()
       assert_eq(entries.length(), 2)
       
-      let entry1_parts = entries[0].split("=")
+      let entry1_parts = entries[0]"=".split_to_string()
       assert_eq(entry1_parts.length(), 2)
       assert_eq(entry1_parts[0], "key1")
       assert_eq(entry1_parts[1], "value1")
       
-      let entry2_parts = entries[1].split("=")
+      let entry2_parts = entries[1]"=".split_to_string()
       assert_eq(entry2_parts.length(), 2)
       assert_eq(entry2_parts[0], "key2")
       assert_eq(entry2_parts[1], "value2")
     }
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
 }
 

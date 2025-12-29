@@ -161,8 +161,8 @@ test "log_record_builder_trace_context_integration" {
   let builder = logs::LogRecord::builder()
   
   // 创建追踪ID和Span ID
-  let trace_id = Array::make(16, 1_byte)
-  let span_id = Array::make(8, 2_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte })
   let trace_flags = Some(1_byte)
   
   // 创建带有追踪上下文的日志记录

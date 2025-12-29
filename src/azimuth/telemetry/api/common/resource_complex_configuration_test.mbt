@@ -155,7 +155,7 @@ test "resource_attributes_configuration" {
             assert_eq(name, "attribute-test-service")
             found_service_name = true
           }
-          _ => @test.fail("Expected StringValue for service.name")
+          _ => @test.fail("Test failed")
         }
       }
       "process.pid" => {
@@ -164,7 +164,7 @@ test "resource_attributes_configuration" {
             assert_eq(pid, 12345L)
             found_process_pid = true
           }
-          _ => @test.fail("Expected IntValue for process.pid")
+          _ => @test.fail("Test failed")
         }
       }
       "process.cpu.percent" => {
@@ -173,7 +173,7 @@ test "resource_attributes_configuration" {
             assert_eq(cpu, 75.5)
             found_process_cpu_percent = true
           }
-          _ => @test.fail("Expected FloatValue for process.cpu.percent")
+          _ => @test.fail("Test failed")
         }
       }
       "process.healthy" => {
@@ -182,7 +182,7 @@ test "resource_attributes_configuration" {
             assert_eq(healthy, true)
             found_process_healthy = true
           }
-          _ => @test.fail("Expected BoolValue for process.healthy")
+          _ => @test.fail("Test failed")
         }
       }
       "service.tags" => {
@@ -193,7 +193,7 @@ test "resource_attributes_configuration" {
             assert_eq(tags[3], "production")
             found_service_tags = true
           }
-          _ => @test.fail("Expected ArrayStringValue for service.tags")
+          _ => @test.fail("Test failed")
         }
       }
       "service.ports" => {
@@ -204,7 +204,7 @@ test "resource_attributes_configuration" {
             assert_eq(ports[3], 9091L)
             found_service_ports = true
           }
-          _ => @test.fail("Expected ArrayIntValue for service.ports")
+          _ => @test.fail("Test failed")
         }
       }
       "service.thresholds" => {
@@ -215,7 +215,7 @@ test "resource_attributes_configuration" {
             assert_eq(thresholds[3], 99.0)
             found_service_thresholds = true
           }
-          _ => @test.fail("Expected ArrayFloatValue for service.thresholds")
+          _ => @test.fail("Test failed")
         }
       }
       "service.features" => {
@@ -226,7 +226,7 @@ test "resource_attributes_configuration" {
             assert_eq(features[4], true)
             found_service_features = true
           }
-          _ => @test.fail("Expected ArrayBoolValue for service.features")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性
@@ -264,7 +264,7 @@ test "resource_edge_cases_configuration" {
   let unicode_string_attr = AttributeValue::string("测试中文🚀Unicode")
   
   let empty_array_attr = AttributeValue::array_string([])
-  let large_array_attr = AttributeValue::array_string(Array::make(1000, "item"))
+  let large_array_attr = AttributeValue::array_string([for i = 0; i < 1000; i = i + 1].map(fn(_) { "item" }))
   
   // 创建包含边界值的Resource
   let edge_resource = Resource::default("edge-case-service")
@@ -289,27 +289,27 @@ test "resource_edge_cases_configuration" {
   // 验证极值
   match edge_attributes[0].1 {  // max.int.value
     IntValue(val) => assert_eq(val, 9223372036854775807L)
-    _ => @test.fail("Expected max IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match edge_attributes[1].1 {  // min.int.value
     IntValue(val) => assert_eq(val, -9223372036854775808L)
-    _ => @test.fail("Expected min IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match edge_attributes[7].1 {  // empty.string
     StringValue(s) => assert_eq(s, "")
-    _ => @test.fail("Expected empty StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match edge_attributes[8].1 {  // very.long.string
     StringValue(s) => assert_eq(s.length(), 10000)
-    _ => @test.fail("Expected very long StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match edge_attributes[11].1 {  // large.array
     ArrayStringValue(arr) => assert_eq(arr.length(), 1000)
-    _ => @test.fail("Expected large ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -386,22 +386,22 @@ test "resource_multi_environment_configuration" {
   // 验证环境特定的属性值
   match dev_attributes[2].1 {  // deployment.environment
     StringValue(env) => assert_eq(env, "development")
-    _ => @test.fail("Expected development environment")
+    _ => @test.fail("Test failed")
   }
   
   match test_attributes[2].1 {  // deployment.environment
     StringValue(env) => assert_eq(env, "testing")
-    _ => @test.fail("Expected testing environment")
+    _ => @test.fail("Test failed")
   }
   
   match staging_attributes[2].1 {  // deployment.environment
     StringValue(env) => assert_eq(env, "staging")
-    _ => @test.fail("Expected staging environment")
+    _ => @test.fail("Test failed")
   }
   
   match prod_attributes[2].1 {  // deployment.environment
     StringValue(env) => assert_eq(env, "production")
-    _ => @test.fail("Expected production environment")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -504,12 +504,12 @@ test "resource_microservices_configuration" {
   // 验证服务类型
   match gateway_attributes[1].1 {  // service.type
     StringValue(service_type) => assert_eq(service_type, "gateway")
-    _ => @test.fail("Expected gateway service type")
+    _ => @test.fail("Test failed")
   }
   
   match user_service_attributes[1].1 {  // service.type
     StringValue(service_type) => assert_eq(service_type, "microservice")
-    _ => @test.fail("Expected microservice service type")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -581,16 +581,16 @@ test "resource_performance_configuration" {
   // 验证性能特定属性
   match hpc_attributes[6].1 {  // gpu.count
     IntValue(gpu_count) => assert_eq(gpu_count, 8L)
-    _ => @test.fail("Expected GPU count")
+    _ => @test.fail("Test failed")
   }
   
   match latency_critical_attributes[6].1 {  // network.latency.target
     FloatValue(latency) => assert_eq(latency, 0.001)
-    _ => @test.fail("Expected network latency target")
+    _ => @test.fail("Test failed")
   }
   
   match batch_attributes[6].1 {  // batch.max.concurrent.jobs
     IntValue(max_jobs) => assert_eq(max_jobs, 100L)
-    _ => @test.fail("Expected max concurrent jobs")
+    _ => @test.fail("Test failed")
   }
 }

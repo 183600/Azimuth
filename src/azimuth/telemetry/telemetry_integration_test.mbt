@@ -30,12 +30,12 @@ test "integration_common_context_logs" {
   
   match ctx_with_trace.get(trace_key) {
     Some(value) => assert_eq(value, "trace-123456")
-    None => @test.fail("Expected trace ID")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_trace.get(span_key) {
     Some(value) => assert_eq(value, "span-789012")
-    None => @test.fail("Expected span ID")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -59,17 +59,17 @@ test "integration_context_baggage" {
   // 验证上下文和baggage的独立性和关联性
   match ctx_with_trace.get(trace_key) {
     Some(value) => assert_eq(value.contains("integration"), true)
-    None => @test.fail("Expected trace ID")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_metadata.get("user.id") {
     Some(value) => assert_eq(value.contains("integration"), true)
-    None => @test.fail("Expected user ID")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_metadata.get("request.id") {
     Some(value) => assert_eq(value.contains("integration"), true)
-    None => @test.fail("Expected request ID")
+    None => @test.fail("Test failed")
   }
   
   // 测试集成场景：从baggage中提取信息到context
@@ -81,10 +81,10 @@ test "integration_context_baggage" {
       
       match ctx_with_user.get(user_key) {
         Some(ctx_user_id) => assert_eq(ctx_user_id, user_id)
-        None => @test.fail("Expected user ID in context")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected user ID from baggage")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -204,13 +204,13 @@ test "integration_full_telemetry_pipeline" {
   // 验证上下文数据
   match ctx_with_data.get(trace_key) {
     Some(value) => assert_eq(value.contains("pipeline"), true)
-    None => @test.fail("Expected trace ID")
+    None => @test.fail("Test failed")
   }
   
   // 验证baggage数据
   match baggage_with_data.get("request.id") {
     Some(value) => assert_eq(value.contains("pipeline"), true)
-    None => @test.fail("Expected request ID")
+    None => @test.fail("Test failed")
   }
   
   // 验证属性数据
@@ -282,17 +282,17 @@ test "integration_error_propagation" {
   // 验证错误信息传播
   match error_ctx.get(error_key) {
     Some(value) => assert_eq(value, "ValidationError")
-    None => @test.fail("Expected error type")
+    None => @test.fail("Test failed")
   }
   
   match error_ctx.get(error_message_key) {
     Some(value) => assert_eq(value, "Invalid input parameter")
-    None => @test.fail("Expected error message")
+    None => @test.fail("Test failed")
   }
   
   match error_baggage.get("error.code") {
     Some(value) => assert_eq(value, "400")
-    None => @test.fail("Expected error code")
+    None => @test.fail("Test failed")
   }
   
   // 测试错误恢复场景
@@ -301,12 +301,12 @@ test "integration_error_propagation" {
   
   match recovery_ctx.get(recovery_key) {
     Some(value) => assert_eq(value, "true")
-    None => @test.fail("Expected recovery flag")
+    None => @test.fail("Test failed")
   }
   
   // 验证原始错误信息仍然存在
   match recovery_ctx.get(error_key) {
     Some(value) => assert_eq(value, "ValidationError")
-    None => @test.fail("Expected original error type after recovery")
+    None => @test.fail("Test failed")
   }
 }

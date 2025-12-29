@@ -21,17 +21,17 @@ test "exporter_basic_configuration" {
   // 验证导出器类型
   match noop_exporter {
     Noop => assert_eq(true, true)
-    _ => @test.fail("Expected Noop exporter")
+    _ => @test.fail("Test failed")
   }
   
   match memory_exporter {
     InMemory => assert_eq(true, true)
-    _ => @test.fail("Expected InMemory exporter")
+    _ => @test.fail("Test failed")
   }
   
   match otlp_exporter {
     OTLP => assert_eq(true, true)
-    _ => @test.fail("Expected OTLP exporter")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -59,10 +59,10 @@ test "exporter_endpoint_configuration" {
   let jaeger_endpoint = "http://jaeger:14268/api/traces"
   let prometheus_endpoint = "http://prometheus:9090/metrics"
   
-  assert_eq(otlp_endpoint.starts_with("http://"), true)
+  assert_eq(otlp_endpoint.has_prefix("http://"), true)
   assert_eq(jaeger_endpoint.contains("jaeger"), true)
   assert_eq(prometheus_endpoint.contains("prometheus"), true)
-  assert_eq(prometheus_endpoint.ends_with("/metrics"), true)
+  assert_eq(prometheus_endpoint.has_suffix("/metrics"), true)
 }
 
 test "exporter_batch_configuration" {

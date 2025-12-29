@@ -12,12 +12,12 @@ test "instrumentation_scope_creation" {
   
   match scope_version {
     Some(version) => assert_eq(version, "1.0.0")
-    None => @test.fail("Expected Some(version)")
+    None => @test.fail("Test failed")
   }
   
   match scope_schema {
     Some(schema) => assert_eq(schema, "http://example.com/schema")
-    None => @test.fail("Expected Some(schema)")
+    None => @test.fail("Test failed")
   }
   
   // 测试空值情况
@@ -28,12 +28,12 @@ test "instrumentation_scope_creation" {
   assert_eq(empty_scope_name, "")
   
   match empty_scope_version {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match empty_scope_schema {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   

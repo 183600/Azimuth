@@ -51,22 +51,22 @@ test "measurement_complex_attributes" {
   // 验证各种属性类型
   match measurement.attributes[0].1 {
     StringValue(user_id) => assert_eq(user_id, "user-12345")
-    _ => @test.fail("Expected StringValue for user.id")
+    _ => @test.fail("Test failed")
   }
   
   match measurement.attributes[2].1 {
     IntValue(status) => assert_eq(status, 200L)
-    _ => @test.fail("Expected IntValue for response.status")
+    _ => @test.fail("Test failed")
   }
   
   match measurement.attributes[4].1 {
     FloatValue(cpu) => assert_eq(cpu, 75.5)
-    _ => @test.fail("Expected FloatValue for cpu.usage")
+    _ => @test.fail("Test failed")
   }
   
   match measurement.attributes[6].1 {
     BoolValue(cache_hit) => assert_eq(cache_hit, true)
-    _ => @test.fail("Expected BoolValue for cache.hit")
+    _ => @test.fail("Test failed")
   }
   
   match measurement.attributes[7].1 {
@@ -76,7 +76,7 @@ test "measurement_complex_attributes" {
       assert_eq(tags[1], "auth")
       assert_eq(tags[2], "critical")
     }
-    _ => @test.fail("Expected ArrayStringValue for tags")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -206,27 +206,27 @@ test "measurement_edge_cases_and_special_values" {
   // 验证极值属性
   match max_measurement.attributes[0].1 {
     IntValue(max_int) => assert_eq(max_int, 9223372036854775807L)
-    _ => @test.fail("Expected max int value")
+    _ => @test.fail("Test failed")
   }
   
   match max_measurement.attributes[1].1 {
     IntValue(min_int) => assert_eq(min_int, -9223372036854775808L)
-    _ => @test.fail("Expected min int value")
+    _ => @test.fail("Test failed")
   }
   
   match min_measurement.attributes[0].1 {
     IntValue(zero) => assert_eq(zero, 0L)
-    _ => @test.fail("Expected zero int value")
+    _ => @test.fail("Test failed")
   }
   
   match min_measurement.attributes[1].1 {
     StringValue(empty_str) => assert_eq(empty_str, "")
-    _ => @test.fail("Expected empty string")
+    _ => @test.fail("Test failed")
   }
   
   match min_measurement.attributes[2].1 {
     ArrayStringValue(empty_arr) => assert_eq(empty_arr.length(), 0)
-    _ => @test.fail("Expected empty array")
+    _ => @test.fail("Test failed")
   }
 }
 

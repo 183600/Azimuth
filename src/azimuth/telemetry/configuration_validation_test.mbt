@@ -286,7 +286,7 @@ test "configuration_attribute_validation" {
     
     match string_span.attributes[0].1 {
       StringValue(value) => assert_eq(value, string_values[i])
-      _ => @test.fail("Expected StringValue")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -301,7 +301,7 @@ test "configuration_attribute_validation" {
     
     match int_span.attributes[0].1 {
       IntValue(value) => assert_eq(value, int_values[j])
-      _ => @test.fail("Expected IntValue")
+      _ => @test.fail("Test failed")
     }
     j = j + 1
   }
@@ -316,7 +316,7 @@ test "configuration_attribute_validation" {
     
     match float_span.attributes[0].1 {
       FloatValue(value) => assert_eq(value, float_values[k])
-      _ => @test.fail("Expected FloatValue")
+      _ => @test.fail("Test failed")
     }
     k = k + 1
   }
@@ -331,7 +331,7 @@ test "configuration_attribute_validation" {
     
     match bool_span.attributes[0].1 {
       BoolValue(value) => assert_eq(value, bool_values[l])
-      _ => @test.fail("Expected BoolValue")
+      _ => @test.fail("Test failed")
     }
     l = l + 1
   }
@@ -355,22 +355,22 @@ test "configuration_attribute_validation" {
   // 验证数组属性
   match array_span.attributes[0].1 {
     ArrayStringValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match array_span.attributes[1].1 {
     ArrayIntValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match array_span.attributes[2].1 {
     ArrayFloatValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match array_span.attributes[3].1 {
     ArrayBoolValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -472,26 +472,26 @@ test "configuration_context_and_baggage_validation" {
   let ctx_with_empty_key = current_ctx.with_value(empty_key, "value_with_empty_key")
   match ctx_with_empty_key.get(empty_key) {
     Some(value) => assert_eq(value, "value_with_empty_key")
-    None => @test.fail("Expected Some(value) for empty key")
+    None => @test.fail("Test failed")
   }
   
   let normal_key = create_key("normal.key")
   let ctx_with_empty_value = current_ctx.with_value(normal_key, "")
   match ctx_with_empty_value.get(normal_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some(empty value)")
+    None => @test.fail("Test failed")
   }
   
   let baggage_with_empty_key = current_baggage.with_entry("", "value_with_empty_key")
   match baggage_with_empty_key.get("") {
     Some(value) => assert_eq(value, "value_with_empty_key")
-    None => @test.fail("Expected Some(value) for empty baggage key")
+    None => @test.fail("Test failed")
   }
   
   let baggage_with_empty_value = current_baggage.with_entry("normal.key", "")
   match baggage_with_empty_value.get("normal.key") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some(empty baggage value)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -616,6 +616,6 @@ test "configuration_log_record_validation" {
   assert_eq(complex_log.severity_number, SeverityNumber::Info)
   match complex_log.body {
     Some(body) => assert_eq(body, "Complex attributes test")
-    None => @test.fail("Expected Some(body) for complex log")
+    None => @test.fail("Test failed")
   }
 }

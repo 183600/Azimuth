@@ -7,21 +7,21 @@ test "context_key_collision_and_overwrite" {
   let context1 = context.with_value(key, "value1")
   match context1.get(key) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected value1")
+    None => @test.fail("Test failed")
   }
   
   // 第二次设置相同键的值（应该覆盖）
   let context2 = context1.with_value(key, "value2")
   match context2.get(key) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected value2 (overwritten)")
+    None => @test.fail("Test failed")
   }
   
   // 再次设置不同值
   let context3 = context2.with_value(key, "value3")
   match context3.get(key) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected value3 (overwritten again)")
+    None => @test.fail("Test failed")
   }
   
   // 验证覆盖不会影响其他键
@@ -30,12 +30,12 @@ test "context_key_collision_and_overwrite" {
   
   match context4.get(key) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected value3 to persist")
+    None => @test.fail("Test failed")
   }
   
   match context4.get(other_key) {
     Some(value) => assert_eq(value, "other.value")
-    None => @test.fail("Expected other.value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -46,21 +46,21 @@ test "baggage_key_collision_and_overwrite" {
   let baggage1 = baggage.with_entry("test.key", "value1")
   match baggage1.get("test.key") {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected value1 in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 第二次设置相同键的值（应该覆盖）
   let baggage2 = baggage1.with_entry("test.key", "value2")
   match baggage2.get("test.key") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected value2 (overwritten) in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 再次设置不同值
   let baggage3 = baggage2.with_entry("test.key", "value3")
   match baggage3.get("test.key") {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected value3 (overwritten again) in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 验证覆盖不会影响其他键
@@ -68,12 +68,12 @@ test "baggage_key_collision_and_overwrite" {
   
   match baggage4.get("test.key") {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected value3 to persist in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage4.get("other.key") {
     Some(value) => assert_eq(value, "other.value")
-    None => @test.fail("Expected other.value in baggage")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -103,28 +103,28 @@ test "context_baggage_cross_integration" {
   // 验证Context中的所有数据
   match context_with_baggage.get(metadata_key) {
     Some(value) => assert_eq(value, "service.name=auth-service,service.version=1.2.3")
-    None => @test.fail("Expected metadata in context")
+    None => @test.fail("Test failed")
   }
   
   match context_with_baggage.get(baggage_key) {
     Some(value) => assert_eq(value, baggage_string)
-    None => @test.fail("Expected baggage data in context")
+    None => @test.fail("Test failed")
   }
   
   // 验证Baggage中的数据
   match baggage_with_request.get("user.id") {
     Some(value) => assert_eq(value, "user-12345")
-    None => @test.fail("Expected user.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_request.get("session.id") {
     Some(value) => assert_eq(value, "sess-abcdef")
-    None => @test.fail("Expected session.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_request.get("request.id") {
     Some(value) => assert_eq(value, "req-67890")
-    None => @test.fail("Expected request.id in baggage")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -135,41 +135,7 @@ test "context_with_complex_nested_structures" {
   
   // 存储JSON风格的嵌套数据（作为字符串）
   let complex_key = create_key("complex.data")
-  let complex_data = """{
-    "user": {
-      "id": "user-12345",
-      "profile": {
-        "name": "John Doe",
-        "email": "john@example.com",
-        "preferences": {
-          "theme": "dark",
-          "language": "en",
-          "notifications": {
-            "email": true,
-            "push": false,
-            "sms": true
-          }
-        }
-      }
-    },
-    "session": {
-      "id": "sess-abcdef",
-      "created_at": "2023-01-01T00:00:00Z",
-      "expires_at": "2023-01-01T24:00:00Z",
-      "metadata": {
-        "ip_address": "192.168.1.100",
-        "user_agent": "Mozilla/5.0...",
-        "location": {
-          "country": "US",
-          "city": "New York",
-          "coordinates": {
-            "lat": 40.7128,
-            "lng": -74.0060
-          }
-        }
-      }
-    }
-  }"""
+  let complex_data = "{\"user\":{\"id\":\"user-12345\",\"profile\":{\"name\":\"John Doe\",\"email\":\"john@example.com\"}}}"
   
   let context_with_complex = context.with_value(complex_key, complex_data)
   
@@ -185,7 +151,7 @@ test "context_with_complex_nested_structures" {
       assert_eq(value.contains("\"location\": {"), true)
       assert_eq(value.contains("\"coordinates\": {"), true)
     }
-    None => @test.fail("Expected complex data in context")
+    None => @test.fail("Test failed")
   }
   
   // 存储其他类型的复杂数据
@@ -196,7 +162,7 @@ test "context_with_complex_nested_structures" {
   
   match context_with_array.get(array_key) {
     Some(value) => assert_eq(value, array_data)
-    None => @test.fail("Expected array data in context")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -209,12 +175,12 @@ test "baggage_with_http_header_simulation" {
   let http_baggage_header = "key1=value1;key2=value2;key3=value3"
   
   // 简单解析（在实际实现中会更复杂）
-  let entries = http_baggage_header.split(";")
+  let entries = http_baggage_header";".split_to_string()
   let mut baggage = Baggage::empty()
   let mut i = 0
   while i < entries.length() {
     let entry = entries[i]
-    let parts = entry.split("=")
+    let parts = entry"=".split_to_string()
     if parts.length() == 2 {
       baggage = baggage.with_entry(parts[0], parts[1])
     }
@@ -224,28 +190,28 @@ test "baggage_with_http_header_simulation" {
   // 验证解析结果
   match baggage.get("key1") {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected key1=value1")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("key2") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected key2=value2")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("key3") {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected key3=value3")
+    None => @test.fail("Test failed")
   }
   
   // 模拟复杂的HTTP baggage头（包含属性）
   let complex_http_header = "user.id=user123;vendor.name=acme;vendor.version=1.0;transaction.id=tx456"
   
-  let entries = complex_http_header.split(";")
+  let entries = complex_http_header";".split_to_string()
   let mut complex_baggage = Baggage::empty()
   let mut i = 0
   while i < entries.length() {
     let entry = entries[i]
-    let parts = entry.split("=")
+    let parts = entry"=".split_to_string()
     if parts.length() == 2 {
       complex_baggage = complex_baggage.with_entry(parts[0], parts[1])
     }
@@ -255,22 +221,22 @@ test "baggage_with_http_header_simulation" {
   // 验证复杂baggage
   match complex_baggage.get("user.id") {
     Some(value) => assert_eq(value, "user123")
-    None => @test.fail("Expected user.id=user123")
+    None => @test.fail("Test failed")
   }
   
   match complex_baggage.get("vendor.name") {
     Some(value) => assert_eq(value, "acme")
-    None => @test.fail("Expected vendor.name=acme")
+    None => @test.fail("Test failed")
   }
   
   match complex_baggage.get("vendor.version") {
     Some(value) => assert_eq(value, "1.0")
-    None => @test.fail("Expected vendor.version=1.0")
+    None => @test.fail("Test failed")
   }
   
   match complex_baggage.get("transaction.id") {
     Some(value) => assert_eq(value, "tx456")
-    None => @test.fail("Expected transaction.id=tx456")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -292,32 +258,32 @@ test "context_baggage_concurrent_operations_simulation" {
   // 验证独立性
   match context1.get(create_key("thread1")) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected thread1 value")
+    None => @test.fail("Test failed")
   }
   
   match context2.get(create_key("thread2")) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected thread2 value")
+    None => @test.fail("Test failed")
   }
   
   match context3.get(create_key("thread3")) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected thread3 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage1.get("process1") {
     Some(value) => assert_eq(value, "proc1")
-    None => @test.fail("Expected process1 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("process2") {
     Some(value) => assert_eq(value, "proc2")
-    None => @test.fail("Expected process2 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("process3") {
     Some(value) => assert_eq(value, "proc3")
-    None => @test.fail("Expected process3 value")
+    None => @test.fail("Test failed")
   }
   
   // 模拟合并操作
@@ -334,12 +300,12 @@ test "context_baggage_concurrent_operations_simulation" {
   // 验证合并结果
   match merged_context.get(create_key("merged")) {
     Some(value) => assert_eq(value, "true")
-    None => @test.fail("Expected merged flag in context")
+    None => @test.fail("Test failed")
   }
   
   match merged_baggage.get("merged") {
     Some(value) => assert_eq(value, "true")
-    None => @test.fail("Expected merged flag in baggage")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -353,13 +319,13 @@ test "context_baggage_error_handling_and_recovery" {
   let empty_key_context = context.with_value(create_key(""), "empty.key.value")
   match empty_key_context.get(create_key("")) {
     Some(value) => assert_eq(value, "empty.key.value")
-    None => @test.fail("Expected empty key to work")
+    None => @test.fail("Test failed")
   }
   
   let empty_key_baggage = baggage.with_entry("", "empty.baggage.value")
   match empty_key_baggage.get("") {
     Some(value) => assert_eq(value, "empty.baggage.value")
-    None => @test.fail("Expected empty baggage key to work")
+    None => @test.fail("Test failed")
   }
   
   // 测试空值处理
@@ -367,13 +333,13 @@ test "context_baggage_error_handling_and_recovery" {
   let null_value_context = context.with_value(null_key, "")
   match null_value_context.get(null_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty string value")
+    None => @test.fail("Test failed")
   }
   
   let null_value_baggage = baggage.with_entry("null.baggage.key", "")
   match null_value_baggage.get("null.baggage.key") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty baggage value")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符处理
@@ -383,13 +349,13 @@ test "context_baggage_error_handling_and_recovery" {
   let special_context = context.with_value(special_key, special_chars)
   match special_context.get(special_key) {
     Some(value) => assert_eq(value, special_chars)
-    None => @test.fail("Expected special characters in context")
+    None => @test.fail("Test failed")
   }
   
   let special_baggage = baggage.with_entry("special.baggage.key", special_chars)
   match special_baggage.get("special.baggage.key") {
     Some(value) => assert_eq(value, special_chars)
-    None => @test.fail("Expected special characters in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 测试超长字符串处理
@@ -399,12 +365,12 @@ test "context_baggage_error_handling_and_recovery" {
   let long_context = context.with_value(long_key, long_string)
   match long_context.get(long_key) {
     Some(value) => assert_eq(value.length(), 100000)
-    None => @test.fail("Expected long string in context")
+    None => @test.fail("Test failed")
   }
   
   let long_baggage = baggage.with_entry("long.baggage.key", long_string)
   match long_baggage.get("long.baggage.key") {
     Some(value) => assert_eq(value.length(), 100000)
-    None => @test.fail("Expected long string in baggage")
+    None => @test.fail("Test failed")
   }
 }

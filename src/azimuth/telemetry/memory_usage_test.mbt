@@ -238,17 +238,17 @@ test "attribute_storage_optimization" {
   // 3. 验证存储策略选择
   match small_attribute.storage_strategy {
     Inline => assert_eq(true, true)
-    _ => @test.fail("Small attribute should use inline storage")
+    _ => @test.fail("Test failed")
   }
   
   match medium_attribute.storage_strategy {
     Compressed => assert_eq(true, true)
-    _ => @test.fail("Medium attribute should use compressed storage")
+    _ => @test.fail("Test failed")
   }
   
   match large_attribute.storage_strategy {
     External => assert_eq(true, true)
-    _ => @test.fail("Large attribute should use external storage")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 测试属性去重功能

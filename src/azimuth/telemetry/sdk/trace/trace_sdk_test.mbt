@@ -37,12 +37,12 @@ test "span_lifecycle_management" {
   let status = Created
   match status {
     Created => assert_eq(true, true)
-    _ => @test.fail("Expected Created status")
+    _ => @test.fail("Test failed")
   }
   
   let updated_status = Started
   match updated_status {
     Started => assert_eq(true, true)
-    _ => @test.fail("Expected Started status")
+    _ => @test.fail("Test failed")
   }
 }

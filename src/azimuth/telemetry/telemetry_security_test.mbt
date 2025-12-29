@@ -103,12 +103,12 @@ test "security_sensitive_data_filtering" {
   // 验证过滤结果
   match filtered_ctx.get(create_key("password")) {
     Some(value) => assert_eq(value, "[REDACTED]")
-    None => @test.fail("Expected filtered password")
+    None => @test.fail("Test failed")
   }
   
   match filtered_ctx.get(create_key("service.name")) {
     Some(value) => assert_eq(value, "payment-service")
-    None => @test.fail("Expected normal service name")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -172,7 +172,7 @@ test "security_input_validation" {
         assert_eq(value.contains("DROP TABLE"), false)
         assert_eq(value.contains("../"), false)
       }
-      None => @test.fail("Should handle malicious input")
+      None => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -187,7 +187,7 @@ test "security_input_validation" {
     
     match ctx_with_truncated.get(safe_key) {
       Some(value) => assert_eq(value, "truncated.key.value")
-      None => @test.fail("Should handle truncated key")
+      None => @test.fail("Test failed")
     }
   }
   
@@ -199,7 +199,7 @@ test "security_input_validation" {
     
     match ctx_with_truncated_value.get(safe_key) {
       Some(value) => assert_eq(value.length(), max_value_length)
-      None => @test.fail("Should handle truncated value")
+      None => @test.fail("Test failed")
     }
   }
   
@@ -208,7 +208,7 @@ test "security_input_validation" {
   
   match baggage_with_sanitized.get("sanitized.key") {
     Some(value) => assert_eq(value.contains("&lt;script&gt;"), true)
-    None => @test.fail("Should sanitize baggage input")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -292,7 +292,7 @@ test "security_data_encryption" {
       let decrypted_value = decrypt(value)
       assert_eq(decrypted_value, "user@example.com")
     }
-    None => @test.fail("Should store encrypted data")
+    None => @test.fail("Test failed")
   }
   
   match encrypted_ctx.get(create_key("credit.card.number")) {
@@ -301,7 +301,7 @@ test "security_data_encryption" {
       let decrypted_value = decrypt(value)
       assert_eq(decrypted_value, "4111111111111111")
     }
-    None => @test.fail("Should store encrypted credit card")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -560,6 +560,6 @@ test "security_audit_logging" {
       assert_eq(value.contains("sensitive_ops:3"), true)
       assert_eq(value.contains("auth_failures:1"), true)
     }
-    None => @test.fail("Should store audit summary")
+    None => @test.fail("Test failed")
   }
 }

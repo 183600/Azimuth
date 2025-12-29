@@ -71,17 +71,17 @@ test "resource_with_comprehensive_attributes" {
   // 验证具体属性值
   match string_attrs[0].1 {
     StringValue(s) => assert_eq(s, "production")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match numeric_attrs[2].1 {
     FloatValue(f) => assert_eq(f, 75.5)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match bool_attrs[1].1 {
     BoolValue(b) => assert_eq(b, false)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match array_attrs[0].1 {
@@ -90,7 +90,7 @@ test "resource_with_comprehensive_attributes" {
       assert_eq(arr[0], "web")
       assert_eq(arr[3], "production")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -234,17 +234,17 @@ test "instrumentation_scope_comprehensive_scenarios" {
   // 验证具体属性值
   match web_attrs[0].1 {
     StringValue(s) => assert_eq(s, "web-server")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match db_attrs[2].1 {
     StringValue(s) => assert_eq(s, "postgresql")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match messaging_attrs[2].1 {
     StringValue(s) => assert_eq(s, "kafka")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -266,12 +266,12 @@ test "resource_and_attributes_performance_considerations" {
   // 验证特定索引的属性
   match large_attrs[0].1 {
     StringValue(s) => assert_eq(s, "value.0")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match large_attrs[99].1 {
     StringValue(s) => assert_eq(s, "value.99")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试混合类型的大量属性
@@ -296,21 +296,21 @@ test "resource_and_attributes_performance_considerations" {
   // 验证混合类型的属性
   match mixed_attrs[0].1 {
     StringValue(s) => assert_eq(s, "value.0")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match mixed_attrs[1].1 {
     IntValue(i) => assert_eq(i, 0L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match mixed_attrs[2].1 {
     FloatValue(f) => assert_eq(f, 0.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match mixed_attrs[3].1 {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
 }

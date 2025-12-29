@@ -35,8 +35,8 @@ test "span_context_creation_and_properties" {
   // 测试Span上下文创建和属性
   
   let span_context = SpanContext::{
-    trace_id: Array::make(16, 1_byte),
-    span_id: Array::make(8, 2_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte }),
     trace_flags: 1_byte,
     trace_state: "key1=value1,key2=value2"
   }
@@ -98,8 +98,8 @@ test "span_link_creation_and_properties" {
   // 测试Span链接创建和属性
   
   let linked_context = SpanContext::{
-    trace_id: Array::make(16, 3_byte),
-    span_id: Array::make(8, 4_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 3_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 4_byte }),
     trace_flags: 0_byte,
     trace_state: ""
   }

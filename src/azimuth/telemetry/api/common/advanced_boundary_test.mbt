@@ -6,14 +6,14 @@ test "attribute_value_extreme_edge_cases" {
   let max_int = AttributeValue::int(9223372036854775807L)
   match max_int {
     IntValue(value) => assert_eq(value, 9223372036854775807L)
-    _ => @test.fail("Expected max Int64 value")
+    _ => @test.fail("Test failed")
   }
   
   // 极小Int64值
   let min_int = AttributeValue::int(-9223372036854775808L)
   match min_int {
     IntValue(value) => assert_eq(value, -9223372036854775808L)
-    _ => @test.fail("Expected min Int64 value")
+    _ => @test.fail("Test failed")
   }
   
   // 边界Int64值
@@ -27,7 +27,7 @@ test "attribute_value_extreme_edge_cases" {
     let attr = AttributeValue::int(boundary_ints[i])
     match attr {
       IntValue(value) => assert_eq(value, boundary_ints[i])
-      _ => @test.fail("Expected boundary int value")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -36,13 +36,13 @@ test "attribute_value_extreme_edge_cases" {
   let max_double = AttributeValue::float(1.7976931348623157e+308)
   match max_double {
     FloatValue(value) => assert_eq(value, 1.7976931348623157e+308)
-    _ => @test.fail("Expected max Double value")
+    _ => @test.fail("Test failed")
   }
   
   let min_double = AttributeValue::float(-1.7976931348623157e+308)
   match min_double {
     FloatValue(value) => assert_eq(value, -1.7976931348623157e+308)
-    _ => @test.fail("Expected min Double value")
+    _ => @test.fail("Test failed")
   }
   
   // 特殊Double值
@@ -52,12 +52,12 @@ test "attribute_value_extreme_edge_cases" {
   
   match infinity {
     FloatValue(value) => assert_eq(value, 1.0/0.0)
-    _ => @test.fail("Expected infinity")
+    _ => @test.fail("Test failed")
   }
   
   match neg_infinity {
     FloatValue(value) => assert_eq(value, -1.0/0.0)
-    _ => @test.fail("Expected negative infinity")
+    _ => @test.fail("Test failed")
   }
   
   match nan {
@@ -65,14 +65,14 @@ test "attribute_value_extreme_edge_cases" {
       // NaN的比较需要特殊处理
       assert_eq(value != value, true)  // NaN != NaN 是true
     }
-    _ => @test.fail("Expected NaN")
+    _ => @test.fail("Test failed")
   }
   
   // 极小Double值
   let tiny_double = AttributeValue::float(1.0e-308)
   match tiny_double {
     FloatValue(value) => assert_eq(value, 1.0e-308)
-    _ => @test.fail("Expected tiny double value")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -87,22 +87,22 @@ test "attribute_value_array_edge_cases" {
   
   match empty_string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty string array")
+    _ => @test.fail("Test failed")
   }
   
   match empty_int_array {
     ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty int array")
+    _ => @test.fail("Test failed")
   }
   
   match empty_float_array {
     ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty float array")
+    _ => @test.fail("Test failed")
   }
   
   match empty_bool_array {
     ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected empty bool array")
+    _ => @test.fail("Test failed")
   }
   
   // 单元素数组
@@ -116,7 +116,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], "single")
     }
-    _ => @test.fail("Expected single string array")
+    _ => @test.fail("Test failed")
   }
   
   match single_int_array {
@@ -124,7 +124,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], 42L)
     }
-    _ => @test.fail("Expected single int array")
+    _ => @test.fail("Test failed")
   }
   
   match single_float_array {
@@ -132,7 +132,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], 3.14)
     }
-    _ => @test.fail("Expected single float array")
+    _ => @test.fail("Test failed")
   }
   
   match single_bool_array {
@@ -140,7 +140,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], true)
     }
-    _ => @test.fail("Expected single bool array")
+    _ => @test.fail("Test failed")
   }
   
   // 大数组
@@ -169,7 +169,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr[0], "item0")
       assert_eq(arr[999], "item999")
     }
-    _ => @test.fail("Expected large string array")
+    _ => @test.fail("Test failed")
   }
   
   match large_int_array {
@@ -178,7 +178,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr[0], 0L)
       assert_eq(arr[999], 999L)
     }
-    _ => @test.fail("Expected large int array")
+    _ => @test.fail("Test failed")
   }
   
   match large_float_array {
@@ -187,7 +187,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr[0], 0.5)
       assert_eq(arr[999], 999.5)
     }
-    _ => @test.fail("Expected large float array")
+    _ => @test.fail("Test failed")
   }
   
   match large_bool_array {
@@ -196,7 +196,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr[0], true)
       assert_eq(arr[999], false)
     }
-    _ => @test.fail("Expected large bool array")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -281,11 +281,11 @@ test "instrumentation_scope_edge_cases" {
   assert_eq(basic_scope.name, "basic-scope")
   match basic_scope.version {
     Some(v) => assert_eq(v, "1.0.0")
-    None => @test.fail("Expected version")
+    None => @test.fail("Test failed")
   }
   match basic_scope.schema_url {
     Some(url) => assert_eq(url, "https://example.com/schema")
-    None => @test.fail("Expected schema URL")
+    None => @test.fail("Test failed")
   }
   
   // 测试各种边界情况
@@ -329,22 +329,22 @@ test "attributes_complex_operations" {
   // 验证各种属性类型
   match complex_attributes[0].1 {
     StringValue(value) => assert_eq(value, "value1")
-    _ => @test.fail("Expected string value")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[2].1 {
     IntValue(value) => assert_eq(value, 42L)
-    _ => @test.fail("Expected int value")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[4].1 {
     FloatValue(value) => assert_eq(value, 3.14)
-    _ => @test.fail("Expected float value")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[6].1 {
     BoolValue(value) => assert_eq(value, true)
-    _ => @test.fail("Expected bool value")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[8].1 {
@@ -354,7 +354,7 @@ test "attributes_complex_operations" {
       assert_eq(arr[1], "item2")
       assert_eq(arr[2], "item3")
     }
-    _ => @test.fail("Expected string array")
+    _ => @test.fail("Test failed")
   }
   
   // 测试边界情况的键名
@@ -382,7 +382,7 @@ test "attributes_complex_operations" {
         assert_eq(key.length() > 0, true)
         assert_eq(str_val.length() > 0, true)
       }
-      _ => @test.fail("Expected string value for edge case")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }

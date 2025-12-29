@@ -16,11 +16,11 @@ test "log_record_builder_basic_workflow" {
   assert_eq(log_record.timestamp_unix_nanos, 1234567890L)
   match log_record.severity_number {
     Info => assert_eq(true, true)
-    _ => @test.fail("Expected Info severity")
+    _ => @test.fail("Test failed")
   }
   match log_record.body {
     Some(message) => assert_eq(message, "Test log message")
-    None => @test.fail("Expected body message")
+    None => @test.fail("Test failed")
   }
   
   // 验证默认值
@@ -59,17 +59,17 @@ test "log_record_builder_with_attributes" {
   // 验证属性值
   match log_record.attributes[0].1 {
     IntValue(code) => assert_eq(code, 500L)
-    _ => @test.fail("Expected IntValue for error.code")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[1].1 {
     StringValue(message) => assert_eq(message, "Internal server error")
-    _ => @test.fail("Expected StringValue for error.message")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[2].1 {
     IntValue(user_id) => assert_eq(user_id, 12345L)
-    _ => @test.fail("Expected IntValue for user.id")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -101,22 +101,22 @@ test "log_record_builder_with_complex_attributes" {
   // 验证各种属性类型
   match log_record.attributes[0].1 {
     StringValue(s) => assert_eq(s, "test string")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[1].1 {
     IntValue(i) => assert_eq(i, 42L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[2].1 {
     FloatValue(f) => assert_eq(f, 3.14159)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[3].1 {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[4].1 {
@@ -126,15 +126,15 @@ test "log_record_builder_with_complex_attributes" {
       assert_eq(arr[1], "b")
       assert_eq(arr[2], "c")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
 test "log_record_builder_with_trace_context" {
   // 测试LogRecordBuilder添加追踪上下文
   
-  let trace_id = Array::make(16, 0x01_byte)
-  let span_id = Array::make(8, 0x02_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte })
   
   let builder = LogRecord::builder()
     .timestamp(1234567890L)
@@ -152,12 +152,12 @@ test "log_record_builder_with_trace_context" {
   // 验证其他字段设置正确
   match log_record.severity_number {
     Debug => assert_eq(true, true)
-    _ => @test.fail("Expected Debug severity")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.body {
     Some(message) => assert_eq(message, "Debug log with trace context")
-    None => @test.fail("Expected body message")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -206,32 +206,32 @@ test "log_record_builder_all_severity_levels" {
   // 验证所有严重性级别
   match trace_record.severity_number {
     Trace => assert_eq(true, true)
-    _ => @test.fail("Expected Trace severity")
+    _ => @test.fail("Test failed")
   }
   
   match debug_record.severity_number {
     Debug => assert_eq(true, true)
-    _ => @test.fail("Expected Debug severity")
+    _ => @test.fail("Test failed")
   }
   
   match info_record.severity_number {
     Info => assert_eq(true, true)
-    _ => @test.fail("Expected Info severity")
+    _ => @test.fail("Test failed")
   }
   
   match warn_record.severity_number {
     Warn => assert_eq(true, true)
-    _ => @test.fail("Expected Warn severity")
+    _ => @test.fail("Test failed")
   }
   
   match error_record.severity_number {
     Error => assert_eq(true, true)
-    _ => @test.fail("Expected Error severity")
+    _ => @test.fail("Test failed")
   }
   
   match fatal_record.severity_number {
     Fatal => assert_eq(true, true)
-    _ => @test.fail("Expected Fatal severity")
+    _ => @test.fail("Test failed")
   }
   
   // 验证时间戳递增
@@ -262,12 +262,12 @@ test "log_record_builder_chaining_operations" {
   
   match log_record.severity_number {
     Info => assert_eq(true, true)
-    _ => @test.fail("Expected Info severity")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.body {
     Some(message) => assert_eq(message, "Chained operations test")
-    None => @test.fail("Expected body message")
+    None => @test.fail("Test failed")
   }
   
   // 验证所有属性
@@ -299,7 +299,7 @@ test "log_record_builder_edge_cases" {
   
   match empty_body_record.body {
     Some(message) => assert_eq(message, "")
-    None => @test.fail("Expected empty body message")
+    None => @test.fail("Test failed")
   }
   
   // 测试零时间戳
@@ -355,7 +355,7 @@ test "log_record_builder_default_values" {
   
   match minimal_record.severity_number {
     Info => assert_eq(true, true) // 默认严重性级别
-    _ => @test.fail("Expected default Info severity")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(minimal_record.severity_text, None)

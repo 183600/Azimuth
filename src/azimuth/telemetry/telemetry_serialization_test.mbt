@@ -147,7 +147,7 @@ test "serialization_complex_structures" {
   assert_eq(serialized.contains("&"), true)  // 确保有分隔符
   
   // 计算键值对数量
-  let pairs = serialized.split("&")
+  let pairs = serialized"&".split_to_string()
   assert_eq(pairs.length(), telemetry_data.length())
 }
 
@@ -175,13 +175,13 @@ test "serialization_deserialization_roundtrip" {
   }
   
   // 反序列化
-  let deserialized_pairs = serialized.split(";")
+  let deserialized_pairs = serialized";".split_to_string()
   let mut roundtrip_success = true
   
   let mut j = 0
   while j < deserialized_pairs.length() {
     let pair = deserialized_pairs[j]
-    let parts = pair.split(":")
+    let parts = pair":".split_to_string()
     if parts.length() == 2 {
       let key = parts[0]
       let value = parts[1]

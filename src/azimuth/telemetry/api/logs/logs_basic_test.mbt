@@ -41,12 +41,12 @@ test "log_record_builder" {
   
   match log_record.severity_number {
     Some(severity) => assert_eq(severity, Info)
-    None => @test.fail("Expected Some(severity)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.body {
     Some(body) => assert_eq(body, "Test log message")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   
   assert_eq(log_record.attributes.length(), 2)
@@ -118,8 +118,8 @@ test "log_record_complex_scenarios" {
     schema_url: None
   }
   
-  let trace_id = Array::make(16, 1_byte)
-  let span_id = Array::make(8, 1_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte })
   
   let complex_attributes = [
     ("user.id", AttributeValue::string("user-123")),
@@ -163,29 +163,29 @@ test "log_record_complex_scenarios" {
   assert_eq(full_log_record.timestamp_unix_nanos, 1640995200000000000L)
   match full_log_record.observed_timestamp_unix_nanos {
     Some(timestamp) => assert_eq(timestamp, 1640995200000000150L)
-    None => @test.fail("Expected Some(timestamp)")
+    None => @test.fail("Test failed")
   }
   assert_eq(full_log_record.severity_number, Error)
   match full_log_record.severity_text {
     Some(text) => assert_eq(text, "DATABASE_ERROR")
-    None => @test.fail("Expected Some(text)")
+    None => @test.fail("Test failed")
   }
   match full_log_record.body {
     Some(body) => assert_eq(body, "Failed to connect to database after 3 retries")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   assert_eq(full_log_record.attributes.length(), 2)
   match full_log_record.trace_id {
     Some(id) => assert_eq(id.length(), 16)
-    None => @test.fail("Expected Some(trace_id)")
+    None => @test.fail("Test failed")
   }
   match full_log_record.span_id {
     Some(id) => assert_eq(id.length(), 8)
-    None => @test.fail("Expected Some(span_id)")
+    None => @test.fail("Test failed")
   }
   match full_log_record.trace_flags {
     Some(flags) => assert_eq(flags, 1_byte)
-    None => @test.fail("Expected Some(trace_flags)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -229,7 +229,7 @@ test "severity_number_comparison_and_ordering" {
   assert_eq(custom_error_log.severity_number, Error)
   match custom_error_log.severity_text {
     Some(text) => assert_eq(text, "CUSTOM_ERROR")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -241,8 +241,8 @@ test "log_record_builder_with_all_fields" {
     schema_url: None
   }
   
-  let trace_id = Array::make(16, 1_byte)
-  let span_id = Array::make(8, 2_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte })
   
   // 使用builder创建包含所有字段的LogRecord
   let log_record = LogRecord::builder()
@@ -282,16 +282,16 @@ test "log_record_builder_with_all_fields" {
   assert_eq(full_log_record.timestamp_unix_nanos, 1640995200000000000L)
   match full_log_record.observed_timestamp_unix_nanos {
     Some(timestamp) => assert_eq(timestamp, 1640995200000000100L)
-    None => @test.fail("Expected Some(observed_timestamp)")
+    None => @test.fail("Test failed")
   }
   assert_eq(full_log_record.severity_number, Error)
   match full_log_record.severity_text {
     Some(text) => assert_eq(text, "DATABASE_ERROR")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   match full_log_record.body {
     Some(body) => assert_eq(body, "Database connection failed")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   assert_eq(full_log_record.attributes.length(), 5)
   
@@ -301,7 +301,7 @@ test "log_record_builder_with_all_fields" {
       assert_eq(id.length(), 16)
       assert_eq(id[0], 1_byte)
     }
-    None => @test.fail("Expected Some(trace_id)")
+    None => @test.fail("Test failed")
   }
   
   match full_log_record.span_id {
@@ -309,23 +309,23 @@ test "log_record_builder_with_all_fields" {
       assert_eq(id.length(), 8)
       assert_eq(id[0], 2_byte)
     }
-    None => @test.fail("Expected Some(span_id)")
+    None => @test.fail("Test failed")
   }
   
   match full_log_record.trace_flags {
     Some(flags) => assert_eq(flags, 1_byte)
-    None => @test.fail("Expected Some(trace_flags)")
+    None => @test.fail("Test failed")
   }
   
   // 验证resource和instrumentation_scope
   match full_log_record.resource {
     Some(res) => assert_eq(res.service_name, "test-service")
-    None => @test.fail("Expected Some(resource)")
+    None => @test.fail("Test failed")
   }
   
   match full_log_record.instrumentation_scope {
     Some(scope) => assert_eq(scope.name, "test-logger")
-    None => @test.fail("Expected Some(instrumentation_scope)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -370,25 +370,25 @@ test "log_record_with_complex_attributes" {
   // 验证字符串属性
   match log_record.attributes[0].1 {
     StringValue(user_id) => assert_eq(user_id, "user-12345")
-    _ => @test.fail("Expected StringValue for user.id")
+    _ => @test.fail("Test failed")
   }
   
   // 验证整数属性
   match log_record.attributes[5].1 {
     IntValue(status) => assert_eq(status, 500L)
-    _ => @test.fail("Expected IntValue for response.status")
+    _ => @test.fail("Test failed")
   }
   
   // 验证浮点数属性
   match log_record.attributes[8].1 {
     FloatValue(cpu) => assert_eq(cpu, 75.5)
-    _ => @test.fail("Expected FloatValue for cpu.usage")
+    _ => @test.fail("Test failed")
   }
   
   // 验证布尔属性
   match log_record.attributes[10].1 {
     BoolValue(cache_hit) => assert_eq(cache_hit, false)
-    _ => @test.fail("Expected BoolValue for cache.hit")
+    _ => @test.fail("Test failed")
   }
   
   // 验证数组属性
@@ -400,7 +400,7 @@ test "log_record_with_complex_attributes" {
       assert_eq(tags[2], "auth")
       assert_eq(tags[3], "database")
     }
-    _ => @test.fail("Expected ArrayStringValue for tags")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[13].1 {
@@ -411,7 +411,7 @@ test "log_record_with_complex_attributes" {
       assert_eq(status_codes[2], 401L)
       assert_eq(status_codes[3], 500L)
     }
-    _ => @test.fail("Expected ArrayIntValue for status.codes")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[14].1 {
@@ -421,7 +421,7 @@ test "log_record_with_complex_attributes" {
       assert_eq(percentiles[1], 0.95)
       assert_eq(percentiles[2], 0.99)
     }
-    _ => @test.fail("Expected ArrayFloatValue for latency.percentiles")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[15].1 {
@@ -432,7 +432,7 @@ test "log_record_with_complex_attributes" {
       assert_eq(flags[2], true)
       assert_eq(flags[3], true)
     }
-    _ => @test.fail("Expected ArrayBoolValue for feature.flags")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -456,11 +456,11 @@ test "log_record_edge_cases_and_special_values" {
   
   assert_eq(empty_log.timestamp_unix_nanos, 0L)
   match empty_log.severity_text {
-    Some(_) => @test.fail("Expected None for severity_text")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   match empty_log.body {
-    Some(_) => @test.fail("Expected None for body")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   assert_eq(empty_log.attributes.length(), 0)
@@ -486,8 +486,8 @@ test "log_record_edge_cases_and_special_values" {
       ("nan.float", AttributeValue::float(0.0/0.0)),
       ("empty.array", AttributeValue::array_string([]))
     ],
-    trace_id: Some(Array::make(16, 0_byte)),
-    span_id: Some(Array::make(8, 0_byte)),
+    trace_id: Some([for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })),
+    span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })),
     trace_flags: Some(0_byte),
     resource: Some(Resource::default("")),
     instrumentation_scope: Some(InstrumentationScope::{
@@ -500,15 +500,15 @@ test "log_record_edge_cases_and_special_values" {
   assert_eq(extreme_log.timestamp_unix_nanos, max_timestamp)
   match extreme_log.observed_timestamp_unix_nanos {
     Some(timestamp) => assert_eq(timestamp, min_timestamp)
-    None => @test.fail("Expected Some(min_timestamp)")
+    None => @test.fail("Test failed")
   }
   assert_eq(extreme_log.severity_number, Fatal)
   match extreme_log.severity_text {
     Some(text) => assert_eq(text, "")
-    None => @test.fail("Expected Some(empty text)")
+    None => @test.fail("Test failed")
   }
   match extreme_log.body {
     Some(body) => assert_eq(body, "")
-    None => @test.fail("Expected Some(empty body)")
+    None => @test.fail("Test failed")
   }
 }

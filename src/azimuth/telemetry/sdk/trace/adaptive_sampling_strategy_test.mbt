@@ -200,7 +200,7 @@ test "attribute_based_sampling_decisions" {
   let pattern_matches = fn(value: String, pattern: String) -> Bool {
     if pattern.contains("|") {
       // 处理或模式
-      let alternatives = pattern.split("|")
+      let alternatives = pattern"|".split_to_string()
       let mut i = 0
       while i < alternatives.length() {
         let alt = alternatives[i]
@@ -214,7 +214,7 @@ test "attribute_based_sampling_decisions" {
         } else if alt.contains(".*") {
           // 处理通配符（简化）
           let prefix = alt.substring(0, alt.length() - 2)
-          if value.starts_with(prefix) {
+          if value.has_prefix(prefix) {
             return true
           }
         } else if value == alt {
@@ -225,7 +225,7 @@ test "attribute_based_sampling_decisions" {
       false
     } else if pattern.contains(".*") {
       let prefix = pattern.substring(0, pattern.length() - 2)
-      value.starts_with(prefix)
+      value.has_prefix(prefix)
     } else {
       value == pattern
     }

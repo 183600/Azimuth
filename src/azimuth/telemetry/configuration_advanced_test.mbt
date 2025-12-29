@@ -169,7 +169,7 @@ test "environment_variable_configuration" {
   
   match env_config.telemetry_endpoint {
     Some(endpoint) => {
-      assert_eq(endpoint.starts_with("https://"), true)
+      assert_eq(endpoint.has_prefix("https://"), true)
       assert_eq(endpoint.contains(":4317"), true)
     }
     None => assert_eq(false, true)
@@ -194,13 +194,13 @@ test "environment_variable_configuration" {
   
   // 测试环境变量解析
   let parse_headers = fn(header_str: String) -> Array<(String, String)> {
-    let pairs = header_str.split(",")
+    let pairs = header_str",".split_to_string()
     let mut result = Array::empty<(String, String)>()
     
     let mut i = 0
     while i < pairs.length() {
       let pair = pairs[i]
-      let key_value = pair.split("=")
+      let key_value = pair"=".split_to_string()
       if key_value.length() == 2 {
         result.push((key_value[0].trim(), key_value[1].trim()))
       }
@@ -347,7 +347,7 @@ test "configuration_validation_and_constraints" {
           }
         } else if pattern == "^https?://.+" {
           // 简单URL验证
-          if !config.value.starts_with("http://") && !config.value.starts_with("https://") {
+          if !config.value.has_prefix("http://") && !config.value.has_prefix("https://") {
             return false
           }
         }
@@ -630,7 +630,7 @@ test "configuration_export_and_import" {
   
   // 模拟配置反序列化
   let deserialize_config = fn(serialized_str: String) -> SerializedConfig {
-    let lines = serialized_str.split("\n")
+    let lines = serialized_str"\n".split_to_string()
     let mut configs = Array::empty<(String, String, String)>()
     let mut metadata = Array::empty<(String, String)>()
     let mut version = ""
@@ -641,21 +641,21 @@ test "configuration_export_and_import" {
     while i < lines.length() {
       let line = lines[i].trim()
       
-      if line.starts_with("version=") {
+      if line.has_prefix("version=") {
         version = line.substring(8)
-      } else if line.starts_with("timestamp=") {
+      } else if line.has_prefix("timestamp=") {
         timestamp = line.substring(10).to_int64()
       } else if line == "configs:" {
         current_section = "configs"
       } else if line == "metadata:" {
         current_section = "metadata"
-      } else if line.starts_with("  ") && current_section == "configs" {
+      } else if line.has_prefix("  ") && current_section == "configs" {
         let config_line = line.substring(2)
-        let parts = config_line.split("=")
+        let parts = config_line"=".split_to_string()
         if parts.length() >= 2 {
           let key = parts[0]
           let rest = config_line.substring(key.length() + 1)
-          let value_parts = rest.split(" [source=")
+          let value_parts = rest" [source=".split_to_string()
           if value_parts.length() >= 2 {
             let value = value_parts[0]
             let source_with_bracket = value_parts[1]
@@ -663,9 +663,9 @@ test "configuration_export_and_import" {
             configs.push((key, value, source))
           }
         }
-      } else if line.starts_with("  ") && current_section == "metadata" {
+      } else if line.has_prefix("  ") && current_section == "metadata" {
         let meta_line = line.substring(2)
-        let parts = meta_line.split("=")
+        let parts = meta_line"=".split_to_string()
         if parts.length() >= 2 {
           let key = parts[0]
           let value = meta_line.substring(key.length() + 1)

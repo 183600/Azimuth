@@ -22,22 +22,22 @@ test "api_backward_compatibility" {
   // 验证所有属性类型仍然可用
   match string_attr {
     StringValue(s) => assert_eq(s, "test")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match int_attr {
     IntValue(i) => assert_eq(i, 42L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match float_attr {
     FloatValue(f) => assert_eq(f, 3.14)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match bool_attr {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 测试Context API的向后兼容性
@@ -47,7 +47,7 @@ test "api_backward_compatibility" {
   
   match ctx_with_value.get(key) {
     Some(value) => assert_eq(value, "test-value")
-    None => @test.fail("Expected test-key value")
+    None => @test.fail("Test failed")
   }
   
   // 4. 测试Baggage API的向后兼容性
@@ -56,7 +56,7 @@ test "api_backward_compatibility" {
   
   match baggage_with_entry.get("test-entry") {
     Some(value) => assert_eq(value, "test-value")
-    None => @test.fail("Expected test-entry value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -79,22 +79,22 @@ test "version_specific_features" {
   // 验证数组类型可用
   match string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match int_array {
     ArrayIntValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match float_array {
     ArrayFloatValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match bool_array {
     ArrayBoolValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 测试LogRecordBuilder的所有功能
@@ -108,12 +108,12 @@ test "version_specific_features" {
   // 验证LogRecordBuilder功能完整
   match log_record.body {
     Some(body) => assert_eq(body, "Version test log")
-    None => @test.fail("Expected log body")
+    None => @test.fail("Test failed")
   }
   
   match log_record.severity_number {
     logs::Info => assert_eq(true, true)
-    _ => @test.fail("Expected Info severity")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(log_record.attributes.length(), 1)
@@ -155,15 +155,15 @@ test "cross_version_interoperability" {
   let (v2_ctx, v2_span) = tracer.start_span(ctx, "v2-span", trace::Server)
   
   // 验证所有SpanKind仍然可用
-  match v1_span.kind { trace::Internal => assert_eq(true, true) _ => @test.fail("Expected Internal") }
-  match v2_span.kind { trace::Server => assert_eq(true, true) _ => @test.fail("Expected Server") }
+  match v1_span.kind { trace::Internal => assert_eq(true, true) _ => @test.fail("Test failed") }
+  match v2_span.kind { trace::Server => assert_eq(true, true) _ => @test.fail("Test failed") }
   
   // 4. 测试不同版本的SeverityNumber兼容性
   let v1_log = logs::LogRecord::builder().severity(logs::Info).build()
   let v2_log = logs::LogRecord::builder().severity(logs::Warn).build()
   
-  match v1_log.severity_number { logs::Info => assert_eq(true, true) _ => @test.fail("Expected Info") }
-  match v2_log.severity_number { logs::Warn => assert_eq(true, true) _ => @test.fail("Expected Warn") }
+  match v1_log.severity_number { logs::Info => assert_eq(true, true) _ => @test.fail("Test failed") }
+  match v2_log.severity_number { logs::Warn => assert_eq(true, true) _ => @test.fail("Test failed") }
 }
 
 test "deprecation_compatibility" {
@@ -185,22 +185,22 @@ test "deprecation_compatibility" {
   // 验证旧的属性类型仍然可用
   match legacy_string {
     StringValue(s) => assert_eq(s, "legacy")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match legacy_int {
     IntValue(i) => assert_eq(i, 42L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match legacy_float {
     FloatValue(f) => assert_eq(f, 3.14)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match legacy_bool {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 测试可能弃用的API调用
@@ -210,7 +210,7 @@ test "deprecation_compatibility" {
   
   match ctx_with_legacy.get(key) {
     Some(value) => assert_eq(value, "legacy-value")
-    None => @test.fail("Expected legacy-key value")
+    None => @test.fail("Test failed")
   }
   
   // 4. 测试可能弃用的传播格式
@@ -221,7 +221,7 @@ test "deprecation_compatibility" {
   
   match carrier.get(propagation::TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -274,10 +274,10 @@ test "future_compatibility" {
   
   // 5. 测试数组类型扩展性
   let large_arrays = [
-    AttributeValue::array_string(Array::make(1000, "item")),
-    AttributeValue::array_int(Array::make(1000, 1L)),
-    AttributeValue::array_float(Array::make(1000, 1.0)),
-    AttributeValue::array_bool(Array::make(1000, true))
+    AttributeValue::array_string([for i = 0; i < 1000; i = i + 1].map(fn(_) { "item" })),
+    AttributeValue::array_int([for i = 0; i < 1000; i = i + 1].map(fn(_) { 1L })),
+    AttributeValue::array_float([for i = 0; i < 1000; i = i + 1].map(fn(_) { 1.0 })),
+    AttributeValue::array_bool([for i = 0; i < 1000; i = i + 1].map(fn(_) { true }))
   ]
   
   // 验证数组可以处理大量数据（为未来扩展做准备）
@@ -288,7 +288,7 @@ test "future_compatibility" {
       ArrayIntValue(arr) => assert_eq(arr.length(), 1000)
       ArrayFloatValue(arr) => assert_eq(arr.length(), 1000)
       ArrayBoolValue(arr) => assert_eq(arr.length(), 1000)
-      _ => @test.fail("Expected array type")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -375,7 +375,7 @@ test "data_format_compatibility" {
   while i < string_values.length() {
     match string_values[i] {
       StringValue(s) => assert_eq(s.length() > 0, true)
-      _ => @test.fail("Expected StringValue")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -402,7 +402,7 @@ test "data_format_compatibility" {
     match numeric_values[i] {
       IntValue(_) => assert_eq(true, true)
       FloatValue(_) => assert_eq(true, true)
-      _ => @test.fail("Expected numeric value")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -431,7 +431,7 @@ test "data_format_compatibility" {
       ArrayIntValue(_) => assert_eq(true, true)
       ArrayFloatValue(_) => assert_eq(true, true)
       ArrayBoolValue(_) => assert_eq(true, true)
-      _ => @test.fail("Expected array value")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }

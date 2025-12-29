@@ -180,17 +180,17 @@ test "context_propagation_performance" {
   
   func simulate_context_extraction(headers : String, context_depth : Int) -> Int {
     // 模拟上下文提取过程
-    let parts = headers.split("|")
+    let parts = headers"|".split_to_string()
     let traceparent = parts[0]
     let baggage = if parts.length() > 1 { parts[1] } else { "" }
     
     // 模拟解析traceparent
-    let traceparent_parts = traceparent.split("-")
+    let traceparent_parts = traceparent"-".split_to_string()
     let trace_id = traceparent_parts[1]
     let span_id = traceparent_parts[2]
     
     // 模拟解析baggage
-    let baggage_items = baggage.split(",")
+    let baggage_items = baggage",".split_to_string()
     let extracted_count = baggage_items.length()
     
     // 验证提取的深度

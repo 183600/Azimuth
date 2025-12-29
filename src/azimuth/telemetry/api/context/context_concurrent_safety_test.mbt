@@ -32,37 +32,37 @@ test "context_concurrent_creation_and_access" {
   // 验证每个Context都有正确的值
   match enriched_ctx1.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected Some(value1)")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx2.get(key2) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected Some(value2)")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx3.get(key3) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected Some(value3)")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx4.get(key4) {
     Some(value) => assert_eq(value, "value4")
-    None => @test.fail("Expected Some(value4)")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx5.get(key5) {
     Some(value) => assert_eq(value, "value5")
-    None => @test.fail("Expected Some(value5)")
+    None => @test.fail("Test failed")
   }
   
   // 验证Context之间没有相互影响
   match enriched_ctx1.get(key2) {
-    Some(_) => @test.fail("Expected None for key2 in ctx1")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match enriched_ctx2.get(key1) {
-    Some(_) => @test.fail("Expected None for key1 in ctx2")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -136,17 +136,17 @@ test "context_concurrent_chained_operations" {
   
   match branch1_ctx.get(create_key("branch1.key")) {
     Some(value) => assert_eq(value, "branch1.value")
-    None => @test.fail("Expected branch1.value")
+    None => @test.fail("Test failed")
   }
   
   match branch2_ctx.get(create_key("branch2.key")) {
     Some(value) => assert_eq(value, "branch2.value")
-    None => @test.fail("Expected branch2.value")
+    None => @test.fail("Test failed")
   }
   
   match branch3_ctx.get(create_key("branch3.key")) {
     Some(value) => assert_eq(value, "branch3.value")
-    None => @test.fail("Expected branch3.value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -177,48 +177,48 @@ test "context_concurrent_baggage_operations" {
   // 验证Context中的值
   match enriched_ctx.get(context_key1) {
     Some(value) => assert_eq(value, "trace-12345678901234567890123456789012")
-    None => @test.fail("Expected trace.id")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx.get(context_key2) {
     Some(value) => assert_eq(value, "span-1234567890123456")
-    None => @test.fail("Expected span.id")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx.get(context_key3) {
     Some(value) => assert_eq(value, "user-123456789")
-    None => @test.fail("Expected user.id")
+    None => @test.fail("Test failed")
   }
   
   // 验证Baggage中的值
   match enriched_baggage.get("user.id") {
     Some(value) => assert_eq(value, "user-123456789")
-    None => @test.fail("Expected user.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage.get("session.id") {
     Some(value) => assert_eq(value, "session-abcdef123456")
-    None => @test.fail("Expected session.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage.get("request.id") {
     Some(value) => assert_eq(value, "req-1234567890abcdef")
-    None => @test.fail("Expected request.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage.get("correlation.id") {
     Some(value) => assert_eq(value, "corr-abcdef1234567890")
-    None => @test.fail("Expected correlation.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage.get("service.name") {
     Some(value) => assert_eq(value, "user-service")
-    None => @test.fail("Expected service.name in baggage")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage.get("deployment.env") {
     Some(value) => assert_eq(value, "production")
-    None => @test.fail("Expected deployment.env in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 验证Context和Baggage的独立性
@@ -263,65 +263,65 @@ test "context_concurrent_complex_scenarios" {
   // 验证分支独立性
   match branch_a.get(create_key("branch")) {
     Some(value) => assert_eq(value, "A")
-    None => @test.fail("Expected branch A")
+    None => @test.fail("Test failed")
   }
   
   match branch_b.get(create_key("branch")) {
     Some(value) => assert_eq(value, "B")
-    None => @test.fail("Expected branch B")
+    None => @test.fail("Test failed")
   }
   
   match branch_c.get(create_key("branch")) {
     Some(value) => assert_eq(value, "C")
-    None => @test.fail("Expected branch C")
+    None => @test.fail("Test failed")
   }
   
   // 验证子分支
   match branch_a_1.get(create_key("sub_branch")) {
     Some(value) => assert_eq(value, "A1")
-    None => @test.fail("Expected sub_branch A1")
+    None => @test.fail("Test failed")
   }
   
   match branch_b_2.get(create_key("sub_branch")) {
     Some(value) => assert_eq(value, "B2")
-    None => @test.fail("Expected sub_branch B2")
+    None => @test.fail("Test failed")
   }
   
   // 验证复杂分支
   match complex_branch_a_1.get(create_key("trace.id")) {
     Some(value) => assert_eq(value, "trace-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-    None => @test.fail("Expected trace.id for complex branch A1")
+    None => @test.fail("Test failed")
   }
   
   match complex_branch_a_1.get(create_key("operation.name")) {
     Some(value) => assert_eq(value, "operation.A1")
-    None => @test.fail("Expected operation.name for complex branch A1")
+    None => @test.fail("Test failed")
   }
   
   match complex_branch_b_2.get(create_key("trace.id")) {
     Some(value) => assert_eq(value, "trace-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
-    None => @test.fail("Expected trace.id for complex branch B2")
+    None => @test.fail("Test failed")
   }
   
   match complex_branch_b_2.get(create_key("operation.name")) {
     Some(value) => assert_eq(value, "operation.B2")
-    None => @test.fail("Expected operation.name for complex branch B2")
+    None => @test.fail("Test failed")
   }
   
   // 验证分支之间的隔离
   match branch_a.get(create_key("sub_branch")) {
-    Some(_) => @test.fail("Expected None for sub_branch in branch_a")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match complex_branch_a_1.get(create_key("service.name")) {
     Some(value) => assert_eq(value, "service-A1")
-    None => @test.fail("Expected service.name for complex branch A1")
+    None => @test.fail("Test failed")
   }
   
   match complex_branch_b_2.get(create_key("service.name")) {
     Some(value) => assert_eq(value, "service-B2")
-    None => @test.fail("Expected service.name for complex branch B2")
+    None => @test.fail("Test failed")
   }
   
   // 验证Context大小
@@ -353,22 +353,22 @@ test "context_concurrent_large_scale_operations" {
   // 验证特定键的值
   match ctx.get(create_key("key.0")) {
     Some(value) => assert_eq(value, "value.0")
-    None => @test.fail("Expected value.0")
+    None => @test.fail("Test failed")
   }
   
   match ctx.get(create_key("key.999")) {
     Some(value) => assert_eq(value, "value.999")
-    None => @test.fail("Expected value.999")
+    None => @test.fail("Test failed")
   }
   
   match ctx.get(create_key("key.500")) {
     Some(value) => assert_eq(value, "value.500")
-    None => @test.fail("Expected value.500")
+    None => @test.fail("Test failed")
   }
   
   // 验证不存在的键
   match ctx.get(create_key("nonexistent")) {
-    Some(_) => @test.fail("Expected None for nonexistent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -385,33 +385,33 @@ test "context_concurrent_large_scale_operations" {
   // 验证大型分支仍然包含原始数据
   match large_branch1.get(create_key("key.100")) {
     Some(value) => assert_eq(value, "value.100")
-    None => @test.fail("Expected value.100 in large branch")
+    None => @test.fail("Test failed")
   }
   
   match large_branch2.get(create_key("key.200")) {
     Some(value) => assert_eq(value, "value.200")
-    None => @test.fail("Expected value.200 in large branch")
+    None => @test.fail("Test failed")
   }
   
   match large_branch3.get(create_key("key.300")) {
     Some(value) => assert_eq(value, "value.300")
-    None => @test.fail("Expected value.300 in large branch")
+    None => @test.fail("Test failed")
   }
   
   // 验证分支特定值
   match large_branch1.get(create_key("branch")) {
     Some(value) => assert_eq(value, "large1")
-    None => @test.fail("Expected large1")
+    None => @test.fail("Test failed")
   }
   
   match large_branch2.get(create_key("branch")) {
     Some(value) => assert_eq(value, "large2")
-    None => @test.fail("Expected large2")
+    None => @test.fail("Test failed")
   }
   
   match large_branch3.get(create_key("branch")) {
     Some(value) => assert_eq(value, "large3")
-    None => @test.fail("Expected large3")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -540,33 +540,33 @@ test "context_concurrent_baggage_isolation" {
   // 验证Context和Baggage的隔离
   match enriched_ctx.get(ctx_key) {
     Some(value) => assert_eq(value, "context.value")
-    None => @test.fail("Expected context.value")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage.get(baggage_key) {
     Some(value) => assert_eq(value, "baggage.value")
-    None => @test.fail("Expected baggage.value")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx.get(create_key("context.only")) {
     Some(value) => assert_eq(value, "context.only.value")
-    None => @test.fail("Expected context.only.value")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage.get("baggage.only") {
     Some(value) => assert_eq(value, "baggage.only.value")
-    None => @test.fail("Expected baggage.only.value")
+    None => @test.fail("Test failed")
   }
   
   // 验证Context中没有baggage的值
   match enriched_ctx.get(create_key("baggage.only")) {
-    Some(_) => @test.fail("Expected None for baggage.only in context")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   // 验证Baggage中没有context的值
   match enriched_baggage.get("context.only") {
-    Some(_) => @test.fail("Expected None for context.only in baggage")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -590,31 +590,31 @@ test "context_concurrent_baggage_isolation" {
   // 验证Baggage实例之间的隔离
   match enriched_baggage1.get("shared.key") {
     Some(value) => assert_eq(value, "baggage1.value")
-    None => @test.fail("Expected baggage1.value")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage2.get("shared.key") {
     Some(value) => assert_eq(value, "baggage2.value")
-    None => @test.fail("Expected baggage2.value")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage3.get("shared.key") {
     Some(value) => assert_eq(value, "baggage3.value")
-    None => @test.fail("Expected baggage3.value")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage1.get("baggage1.only") {
     Some(value) => assert_eq(value, "baggage1.only.value")
-    None => @test.fail("Expected baggage1.only.value")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage2.get("baggage2.only") {
     Some(value) => assert_eq(value, "baggage2.only.value")
-    None => @test.fail("Expected baggage2.only.value")
+    None => @test.fail("Test failed")
   }
   
   match enriched_baggage3.get("baggage3.only") {
     Some(value) => assert_eq(value, "baggage3.only.value")
-    None => @test.fail("Expected baggage3.only.value")
+    None => @test.fail("Test failed")
   }
 }

@@ -267,7 +267,7 @@ test "measurement_struct_validation" {
   // 验证各种属性类型
   match measurement2.attributes[5].1 {
     FloatValue(cpu_percent) => assert_eq(cpu_percent, 75.5)
-    _ => @test.fail("Expected FloatValue for cpu.percent")
+    _ => @test.fail("Test failed")
   }
   
   match measurement2.attributes[7].1 {
@@ -276,7 +276,7 @@ test "measurement_struct_validation" {
       assert_eq(tags[0], "web")
       assert_eq(tags[2], "payment")
     }
-    _ => @test.fail("Expected ArrayStringValue for tags")
+    _ => @test.fail("Test failed")
   }
 }
 

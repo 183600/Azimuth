@@ -33,22 +33,22 @@ test "resource_and_attributes_integration" {
   // 验证特定属性
   match complex_attributes[0].1 {
     StringValue(service_name) => assert_eq(service_name, "integration-test-service")
-    _ => @test.fail("Expected StringValue for service.name")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[5].1 {
     IntValue(pid) => assert_eq(pid, 12345L)
-    _ => @test.fail("Expected IntValue for process.pid")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[6].1 {
     FloatValue(cpu_percent) => assert_eq(cpu_percent, 75.5)
-    _ => @test.fail("Expected FloatValue for process.cpu.percent")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[7].1 {
     BoolValue(healthy) => assert_eq(healthy, true)
-    _ => @test.fail("Expected BoolValue for process.healthy")
+    _ => @test.fail("Test failed")
   }
   
   // 验证数组属性
@@ -59,7 +59,7 @@ test "resource_and_attributes_integration" {
       assert_eq(tags[1], "integration")
       assert_eq(tags[2], "test")
     }
-    _ => @test.fail("Expected ArrayStringValue for tags")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[9].1 {
@@ -69,7 +69,7 @@ test "resource_and_attributes_integration" {
       assert_eq(status_codes[1], 201L)
       assert_eq(status_codes[2], 400L)
     }
-    _ => @test.fail("Expected ArrayIntValue for status.codes")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -112,24 +112,24 @@ test "attribute_complex_integration" {
   assert_eq(http_attributes.length(), 5)
   match http_attributes[0].1 {
     StringValue(method) => assert_eq(method, "POST")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match http_attributes[2].1 {
     IntValue(status_code) => assert_eq(status_code, 200L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证用户属性
   assert_eq(user_attributes.length(), 5)
   match user_attributes[2].1 {
     IntValue(age) => assert_eq(age, 30L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match user_attributes[3].1 {
     BoolValue(active) => assert_eq(active, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match user_attributes[4].1 {
@@ -138,14 +138,14 @@ test "attribute_complex_integration" {
       assert_eq(tags[0], "vip")
       assert_eq(tags[1], "early_adopter")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证支付属性
   assert_eq(payment_attributes.length(), 5)
   match payment_attributes[1].1 {
     FloatValue(amount) => assert_eq(amount, 99.99)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match payment_attributes[4].1 {
@@ -154,19 +154,19 @@ test "attribute_complex_integration" {
       assert_eq(methods[0], "credit_card")
       assert_eq(methods[1], "paypal")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证性能属性
   assert_eq(performance_attributes.length(), 5)
   match performance_attributes[0].1 {
     IntValue(duration) => assert_eq(duration, 500L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match performance_attributes[1].1 {
     FloatValue(cpu) => assert_eq(cpu, 75.5)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match performance_attributes[4].1 {
@@ -176,7 +176,7 @@ test "attribute_complex_integration" {
       assert_eq(sizes[1], 400L)
       assert_eq(sizes[2], 800L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试属性合并
@@ -226,7 +226,7 @@ test "attribute_complex_integration" {
           assert_eq(method, "POST")
           found_http_method = true
         }
-        _ => @test.fail("Expected StringValue for http.method")
+        _ => @test.fail("Test failed")
       }
     }
     
@@ -236,7 +236,7 @@ test "attribute_complex_integration" {
           assert_eq(user_id, "user-12345")
           found_user_id = true
         }
-        _ => @test.fail("Expected StringValue for user.id")
+        _ => @test.fail("Test failed")
       }
     }
     
@@ -246,7 +246,7 @@ test "attribute_complex_integration" {
           assert_eq(amount, 99.99)
           found_payment_amount = true
         }
-        _ => @test.fail("Expected FloatValue for payment.amount")
+        _ => @test.fail("Test failed")
       }
     }
     
@@ -256,7 +256,7 @@ test "attribute_complex_integration" {
           assert_eq(duration, 500L)
           found_duration = true
         }
-        _ => @test.fail("Expected IntValue for duration.ms")
+        _ => @test.fail("Test failed")
       }
     }
     
@@ -318,34 +318,34 @@ test "attribute_type_comprehensive_integration" {
   // 验证字符串属性
   match comprehensive_attributes[0].1 {
     StringValue(value) => assert_eq(value, "simple string")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[1].1 {
     StringValue(value) => assert_eq(value, "")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[3].1 {
     StringValue(value) => assert_eq(value, "Unicode测试🚀")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证整数属性
   match comprehensive_attributes[5].1 {
     IntValue(value) => assert_eq(value, 0L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[8].1 {
     IntValue(value) => assert_eq(value, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证浮点数属性
   match comprehensive_attributes[10].1 {
     FloatValue(value) => assert_eq(value, 0.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[12].1 {
@@ -354,18 +354,18 @@ test "attribute_type_comprehensive_integration" {
       // NaN检测在不同的浮点数实现中可能有所不同
       assert_eq(true, true)  // 如果能匹配到FloatValue，测试就通过
     }
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证布尔属性
   match comprehensive_attributes[15].1 {
     BoolValue(value) => assert_eq(value, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[16].1 {
     BoolValue(value) => assert_eq(value, false)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证数组属性
@@ -376,7 +376,7 @@ test "attribute_type_comprehensive_integration" {
       assert_eq(arr[1], "b")
       assert_eq(arr[2], "c")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[18].1 {
@@ -386,7 +386,7 @@ test "attribute_type_comprehensive_integration" {
       assert_eq(arr[1], 2L)
       assert_eq(arr[2], 3L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[19].1 {
@@ -396,7 +396,7 @@ test "attribute_type_comprehensive_integration" {
       assert_eq(arr[1], 2.2)
       assert_eq(arr[2], 3.3)
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[20].1 {
@@ -406,11 +406,11 @@ test "attribute_type_comprehensive_integration" {
       assert_eq(arr[1], false)
       assert_eq(arr[2], true)
     }
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[21].1 {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }

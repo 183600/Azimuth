@@ -171,10 +171,10 @@ test "trace_module_error_handling" {
   assert_eq(events_span.events[1].name.length(), 1000)
   
   // 测试SpanContext的边界条件
-  let zero_trace_id = Array::make(16, 0_byte)
-  let max_trace_id = Array::make(16, 255_byte)
-  let zero_span_id = Array::make(8, 0_byte)
-  let max_span_id = Array::make(8, 255_byte)
+  let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let max_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 255_byte })
+  let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
+  let max_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 255_byte })
   
   let zero_context = trace::SpanContext::{
     trace_id: zero_trace_id,
@@ -327,10 +327,10 @@ test "logs_module_error_handling" {
   assert_eq(complex_log.attributes.length(), 8)
   
   // 测试追踪上下文的边界条件
-  let zero_trace_id = Array::make(16, 0_byte)
-  let max_trace_id = Array::make(16, 255_byte)
-  let zero_span_id = Array::make(8, 0_byte)
-  let max_span_id = Array::make(8, 255_byte)
+  let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let max_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 255_byte })
+  let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
+  let max_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 255_byte })
   
   let log_with_zero_trace = logs::LogRecord::{
     ..complex_log,

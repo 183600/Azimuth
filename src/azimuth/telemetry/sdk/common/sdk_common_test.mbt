@@ -43,17 +43,17 @@ test "sdk_resource_management" {
   // 验证资源状态
   match resource1.status {
     Active => assert_eq(true, true)
-    _ => @test.fail("Expected Active status")
+    _ => @test.fail("Test failed")
   }
   
   match resource2.status {
     Inactive => assert_eq(true, true)
-    _ => @test.fail("Expected Inactive status")
+    _ => @test.fail("Test failed")
   }
   
   match resource3.status {
     Error => assert_eq(true, true)
-    _ => @test.fail("Expected Error status")
+    _ => @test.fail("Test failed")
   }
   
   // 验证资源时间戳
@@ -62,7 +62,7 @@ test "sdk_resource_management" {
   assert_eq(resource3.created_at < resource3.last_used, true)
   
   // 验证资源ID格式
-  assert_eq(resource1.id.starts_with("resource-"), true)
+  assert_eq(resource1.id.has_prefix("resource-"), true)
   assert_eq(resource2.id.length(), 12)
   assert_eq(resource3.id.contains("003"), true)
 }
@@ -110,7 +110,7 @@ test "sdk_configuration_management" {
   assert_eq(default_config.service_name, "default-service")
   match default_config.service_version {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Expected None for default version")
+    Some(_) => @test.fail("Test failed")
   }
   assert_eq(default_config.timeout_ms, 30000L)
   assert_eq(default_config.enable_metrics, true)
@@ -119,11 +119,11 @@ test "sdk_configuration_management" {
   assert_eq(custom_config.service_name, "custom-service")
   match custom_config.service_version {
     Some(version) => assert_eq(version, "2.1.0")
-    None => @test.fail("Expected Some(version)")
+    None => @test.fail("Test failed")
   }
   match custom_config.endpoint {
     Some(endpoint) => assert_eq(endpoint, "http://localhost:4317")
-    None => @test.fail("Expected Some(endpoint)")
+    None => @test.fail("Test failed")
   }
   assert_eq(custom_config.timeout_ms, 60000L)
   assert_eq(custom_config.enable_metrics, false)

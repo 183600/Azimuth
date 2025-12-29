@@ -152,7 +152,7 @@ test "telemetry_trace_context_serialization" {
   assert_eq(trace_state_header.contains(","), true)
   
   // 验证兼容性解析
-  let header_parts = trace_header.split("-")
+  let header_parts = trace_header"-".split_to_string()
   assert_eq(header_parts.length(), 3)
   assert_eq(header_parts[0].length(), 32) // trace_id
   assert_eq(header_parts[1].length(), 16) // span_id

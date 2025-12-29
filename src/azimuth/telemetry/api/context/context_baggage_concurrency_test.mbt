@@ -17,32 +17,32 @@ test "context_basic_concurrent_access" {
   // 验证每个Context的独立性
   match ctx1.get(key1) {
     Some(v) => assert_eq(v, "value1")
-    None => @test.fail("Expected value1")
+    None => @test.fail("Test failed")
   }
   
   match ctx2.get(key2) {
     Some(v) => assert_eq(v, "value2")
-    None => @test.fail("Expected value2")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(key3) {
     Some(v) => assert_eq(v, "value3")
-    None => @test.fail("Expected value3")
+    None => @test.fail("Test failed")
   }
   
   // 验证交叉访问（应该返回None）
   match ctx1.get(key2) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx2.get(key3) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx3.get(key1) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -63,27 +63,27 @@ test "context_chained_operations_isolation" {
   // 验证链式访问
   match ctx3.get(key1) {
     Some(v) => assert_eq(v, "base1")
-    None => @test.fail("Expected base1")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(key2) {
     Some(v) => assert_eq(v, "base2")
-    None => @test.fail("Expected base2")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(key3) {
     Some(v) => assert_eq(v, "base3")
-    None => @test.fail("Expected base3")
+    None => @test.fail("Test failed")
   }
   
   // 验证早期Context不包含后期添加的值
   match ctx1.get(key2) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx2.get(key3) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -94,23 +94,23 @@ test "context_chained_operations_isolation" {
   // 验证分支独立性
   match branch1.get(key1) {
     Some(v) => assert_eq(v, "branch1")
-    None => @test.fail("Expected branch1")
+    None => @test.fail("Test failed")
   }
   
   match branch2.get(key2) {
     Some(v) => assert_eq(v, "branch2")
-    None => @test.fail("Expected branch2")
+    None => @test.fail("Test failed")
   }
   
   // 验证分支不影响原始Context
   match ctx2.get(key1) {
     Some(v) => assert_eq(v, "base1")
-    None => @test.fail("Expected base1")
+    None => @test.fail("Test failed")
   }
   
   match ctx2.get(key2) {
     Some(v) => assert_eq(v, "base2")
-    None => @test.fail("Expected base2")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -127,32 +127,32 @@ test "baggage_basic_concurrent_access" {
   // 验证每个Baggage的独立性
   match baggage1.get("user.id") {
     Some(v) => assert_eq(v, "user-123")
-    None => @test.fail("Expected user-123")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("request.id") {
     Some(v) => assert_eq(v, "req-456")
-    None => @test.fail("Expected req-456")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("session.id") {
     Some(v) => assert_eq(v, "session-789")
-    None => @test.fail("Expected session-789")
+    None => @test.fail("Test failed")
   }
   
   // 验证交叉访问（应该返回None）
   match baggage1.get("request.id") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match baggage2.get("session.id") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match baggage3.get("user.id") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -170,27 +170,27 @@ test "baggage_chained_operations_isolation" {
   // 验证链式访问
   match baggage3.get("service.name") {
     Some(v) => assert_eq(v, "web-server")
-    None => @test.fail("Expected web-server")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("service.version") {
     Some(v) => assert_eq(v, "1.0.0")
-    None => @test.fail("Expected 1.0.0")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("deployment.environment") {
     Some(v) => assert_eq(v, "production")
-    None => @test.fail("Expected production")
+    None => @test.fail("Test failed")
   }
   
   // 验证早期Baggage不包含后期添加的值
   match baggage1.get("service.version") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match baggage2.get("deployment.environment") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -201,23 +201,23 @@ test "baggage_chained_operations_isolation" {
   // 验证分支独立性
   match branch1.get("service.name") {
     Some(v) => assert_eq(v, "api-gateway")
-    None => @test.fail("Expected api-gateway")
+    None => @test.fail("Test failed")
   }
   
   match branch2.get("service.version") {
     Some(v) => assert_eq(v, "2.0.0")
-    None => @test.fail("Expected 2.0.0")
+    None => @test.fail("Test failed")
   }
   
   // 验证分支不影响原始Baggage
   match baggage2.get("service.name") {
     Some(v) => assert_eq(v, "web-server")
-    None => @test.fail("Expected web-server")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("service.version") {
     Some(v) => assert_eq(v, "1.0.0")
-    None => @test.fail("Expected 1.0.0")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -298,22 +298,22 @@ test "context_complex_concurrent_scenarios" {
   
   // 验证交叉访问返回None
   match ctx1.get(keys[2]) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx2.get(keys[4]) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx3.get(keys[6]) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx4.get(keys[0]) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -347,62 +347,62 @@ test "baggage_complex_concurrent_scenarios" {
   // 验证每个分支的独立性
   match baggage1.get("user.id") {
     Some(v) => assert_eq(v, "user-123")
-    None => @test.fail("Expected user-123")
+    None => @test.fail("Test failed")
   }
   
   match baggage1.get("user.role") {
     Some(v) => assert_eq(v, "admin")
-    None => @test.fail("Expected admin")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("request.method") {
     Some(v) => assert_eq(v, "GET")
-    None => @test.fail("Expected GET")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("request.path") {
     Some(v) => assert_eq(v, "/api/users")
-    None => @test.fail("Expected /api/users")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("service.name") {
     Some(v) => assert_eq(v, "api-gateway")
-    None => @test.fail("Expected api-gateway")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("service.version") {
     Some(v) => assert_eq(v, "2.1.0")
-    None => @test.fail("Expected 2.1.0")
+    None => @test.fail("Test failed")
   }
   
   match baggage4.get("trace.id") {
     Some(v) => assert_eq(v, "trace-789")
-    None => @test.fail("Expected trace-789")
+    None => @test.fail("Test failed")
   }
   
   match baggage4.get("trace.sampled") {
     Some(v) => assert_eq(v, "true")
-    None => @test.fail("Expected true")
+    None => @test.fail("Test failed")
   }
   
   // 验证交叉访问返回None
   match baggage1.get("request.id") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match baggage2.get("service.name") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match baggage3.get("trace.id") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match baggage4.get("user.id") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -439,42 +439,42 @@ test "context_and_baggage_integration_concurrency" {
   // 验证Context和Baggage的独立性
   match ctx1.get(ctx_key1) {
     Some(v) => assert_eq(v, "op-123")
-    None => @test.fail("Expected op-123")
+    None => @test.fail("Test failed")
   }
   
   match baggage1.get("user.id") {
     Some(v) => assert_eq(v, "user-111")
-    None => @test.fail("Expected user-111")
+    None => @test.fail("Test failed")
   }
   
   match ctx2.get(ctx_key2) {
     Some(v) => assert_eq(v, "corr-456")
-    None => @test.fail("Expected corr-456")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("service.name") {
     Some(v) => assert_eq(v, "service-222")
-    None => @test.fail("Expected service-222")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(ctx_key3) {
     Some(v) => assert_eq(v, "tenant-789")
-    None => @test.fail("Expected tenant-789")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("environment") {
     Some(v) => assert_eq(v, "env-333")
-    None => @test.fail("Expected env-333")
+    None => @test.fail("Test failed")
   }
   
   // 验证交叉独立性
   match ctx1.get(ctx_key2) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match baggage1.get("service.name") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -490,7 +490,7 @@ test "context_edge_cases_concurrency" {
   
   match ctx_empty_key.get(empty_key) {
     Some(v) => assert_eq(v, "empty.key.value")
-    None => @test.fail("Expected empty.key.value")
+    None => @test.fail("Test failed")
   }
   
   let normal_key = create_key("normal.key")
@@ -498,7 +498,7 @@ test "context_edge_cases_concurrency" {
   
   match ctx_empty_value.get(normal_key) {
     Some(v) => assert_eq(v, "")
-    None => @test.fail("Expected empty string")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符键和值
@@ -507,7 +507,7 @@ test "context_edge_cases_concurrency" {
   
   match ctx_special.get(special_key) {
     Some(v) => assert_eq(v, "special.value!@#$%")
-    None => @test.fail("Expected special value")
+    None => @test.fail("Test failed")
   }
   
   // 测试Unicode键和值
@@ -516,7 +516,7 @@ test "context_edge_cases_concurrency" {
   
   match ctx_unicode.get(unicode_key) {
     Some(v) => assert_eq(v, "测试值🌟💫")
-    None => @test.fail("Expected unicode value")
+    None => @test.fail("Test failed")
   }
   
   // 测试长键和值
@@ -527,32 +527,32 @@ test "context_edge_cases_concurrency" {
   
   match ctx_long.get(long_key) {
     Some(v) => assert_eq(v, long_value)
-    None => @test.fail("Expected long value")
+    None => @test.fail("Test failed")
   }
   
   // 验证所有边界情况Context的独立性
   match base_ctx.get(empty_key) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match base_ctx.get(normal_key) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match base_ctx.get(special_key) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match base_ctx.get(unicode_key) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match base_ctx.get(long_key) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -567,14 +567,14 @@ test "baggage_edge_cases_concurrency" {
   
   match baggage_empty_key.get("") {
     Some(v) => assert_eq(v, "empty.key.value")
-    None => @test.fail("Expected empty.key.value")
+    None => @test.fail("Test failed")
   }
   
   let baggage_empty_value = base_baggage.with_entry("empty.value", "")
   
   match baggage_empty_value.get("empty.value") {
     Some(v) => assert_eq(v, "")
-    None => @test.fail("Expected empty string")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符键和值
@@ -582,7 +582,7 @@ test "baggage_edge_cases_concurrency" {
   
   match baggage_special.get("!@#$%^&*()") {
     Some(v) => assert_eq(v, "special.value!@#$%")
-    None => @test.fail("Expected special value")
+    None => @test.fail("Test failed")
   }
   
   // 测试Unicode键和值
@@ -590,7 +590,7 @@ test "baggage_edge_cases_concurrency" {
   
   match baggage_unicode.get("测试键🚀") {
     Some(v) => assert_eq(v, "测试值🌟💫")
-    None => @test.fail("Expected unicode value")
+    None => @test.fail("Test failed")
   }
   
   // 测试长键和值
@@ -600,32 +600,32 @@ test "baggage_edge_cases_concurrency" {
   
   match baggage_long.get(long_key_name) {
     Some(v) => assert_eq(v, long_value)
-    None => @test.fail("Expected long value")
+    None => @test.fail("Test failed")
   }
   
   // 验证所有边界情况Baggage的独立性
   match base_baggage.get("") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match base_baggage.get("empty.value") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match base_baggage.get("!@#$%^&*()") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match base_baggage.get("测试键🚀") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match base_baggage.get(long_key_name) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -659,52 +659,52 @@ test "context_and_baggage_mixed_concurrency" {
   // 验证所有组合的独立性
   match complex_ctx1.get(create_key("request.id")) {
     Some(v) => assert_eq(v, "req-111")
-    None => @test.fail("Expected req-111")
+    None => @test.fail("Test failed")
   }
   
   match complex_ctx1.get(create_key("session.id")) {
     Some(v) => assert_eq(v, "session-111")
-    None => @test.fail("Expected session-111")
+    None => @test.fail("Test failed")
   }
   
   match complex_baggage1.get("user.id") {
     Some(v) => assert_eq(v, "user-111")
-    None => @test.fail("Expected user-111")
+    None => @test.fail("Test failed")
   }
   
   match complex_baggage1.get("tenant.id") {
     Some(v) => assert_eq(v, "tenant-111")
-    None => @test.fail("Expected tenant-111")
+    None => @test.fail("Test failed")
   }
   
   // 验证交叉独立性
   match complex_ctx1.get(create_key("operation.name")) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match complex_baggage1.get("service.name") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match complex_ctx2.get(create_key("request.id")) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match complex_baggage2.get("user.id") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match complex_ctx3.get(create_key("session.id")) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match complex_baggage3.get("tenant.id") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }

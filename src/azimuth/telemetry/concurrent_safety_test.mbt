@@ -42,12 +42,12 @@ test "concurrent_span_creation_safety" {
       // 验证属性值正确
       match span.attributes[0].1 {
         IntValue(worker_id_attr) => assert_eq(worker_id_attr, worker_id.to_int64())
-        _ => @test.fail("Expected IntValue for worker.id")
+        _ => @test.fail("Test failed")
       }
       
       match span.attributes[1].1 {
         IntValue(span_count_attr) => assert_eq(span_count_attr, span_count.to_int64())
-        _ => @test.fail("Expected IntValue for span.count")
+        _ => @test.fail("Test failed")
       }
       
       span_count = span_count + 1
@@ -318,17 +318,17 @@ test "concurrent_resource_sharing_safety" {
       // 验证共享资源属性
       match span.attributes[0].1 {
         StringValue(service_name) => assert_eq(service_name, shared_resource.service_name)
-        _ => @test.fail("Expected StringValue for service.name")
+        _ => @test.fail("Test failed")
       }
       
       match span.attributes[1].1 {
         StringValue(sdk_name) => assert_eq(sdk_name, shared_resource.telemetry_sdk_name)
-        _ => @test.fail("Expected StringValue for sdk.name")
+        _ => @test.fail("Test failed")
       }
       
       match span.attributes[2].1 {
         StringValue(sdk_version) => assert_eq(sdk_version, shared_resource.telemetry_sdk_version)
-        _ => @test.fail("Expected StringValue for sdk.version")
+        _ => @test.fail("Test failed")
       }
       
       span_count = span_count + 1
@@ -419,18 +419,18 @@ test "concurrent_complex_operations_safety" {
       // 验证Context值
       match worker_ctx.get(key) {
         Some(value) => assert_eq(value, "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string())
-        None => @test.fail("Expected Some(value) for context key")
+        None => @test.fail("Test failed")
       }
       
       // 验证Baggage值
       match baggage.get("worker.id") {
         Some(value) => assert_eq(value, worker_id.to_string())
-        None => @test.fail("Expected Some(value) for baggage worker.id")
+        None => @test.fail("Test failed")
       }
       
       match baggage.get("operation.id") {
         Some(value) => assert_eq(value, operation_count.to_string())
-        None => @test.fail("Expected Some(value) for baggage operation.id")
+        None => @test.fail("Test failed")
       }
       
       operation_count = operation_count + 1

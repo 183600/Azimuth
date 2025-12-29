@@ -2,8 +2,8 @@
 test "trace_logs_integration" {
   // 测试Trace和Logs API的集成
   
-  let trace_id = Array::make(16, 0x01_byte)
-  let span_id = Array::make(8, 0x02_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte })
   
   // 创建Span
   let span_context = SpanContext::{
@@ -46,7 +46,7 @@ test "trace_logs_integration" {
   assert_eq(span.name, "api-request")
   match log_record.attributes[0].1 {
     StringValue(span_name) => assert_eq(span_name, "api-request")
-    _ => @test.fail("Expected StringValue for span.name")
+    _ => @test.fail("Test failed")
   }
   
   // 验证时间戳顺序
@@ -66,7 +66,7 @@ test "trace_logs_integration" {
           assert_eq(method, "GET")
           found_method = true
         }
-        _ => @test.fail("Expected StringValue for http.method")
+        _ => @test.fail("Test failed")
       }
     }
     if key == "http.url" {
@@ -75,7 +75,7 @@ test "trace_logs_integration" {
           assert_eq(url, "/api/users")
           found_url = true
         }
-        _ => @test.fail("Expected StringValue for http.url")
+        _ => @test.fail("Test failed")
       }
     }
     i = i + 1
@@ -262,30 +262,30 @@ test "context_propagation_integration" {
   // 验证Context值仍然存在
   match extracted_ctx.get(user_key) {
     Some(value) => assert_eq(value, "user-12345")
-    None => @test.fail("Expected to find user-id in extracted context")
+    None => @test.fail("Test failed")
   }
   
   match extracted_ctx.get(session_key) {
     Some(value) => assert_eq(value, "session-abcdef")
-    None => @test.fail("Expected to find session-id in extracted context")
+    None => @test.fail("Test failed")
   }
   
   // 验证Span属性
   assert_eq(span.name, "service-operation")
   match span.kind {
     Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server span kind")
+    _ => @test.fail("Test failed")
   }
   
   // 验证传播的头部
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -316,8 +316,8 @@ test "resource_metadata_integration" {
   let span = Span::{
     name: "user-authentication",
     context: SpanContext::{
-      trace_id: Array::make(16, 0x01_byte),
-      span_id: Array::make(8, 0x02_byte),
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte }),
       trace_flags: 0x01_byte,
       trace_state: ""
     },
@@ -361,7 +361,7 @@ test "resource_metadata_integration" {
     if key == "service.name" {
       match value {
         StringValue(name) => log_service_name = name
-        _ => @test.fail("Expected StringValue for service.name")
+        _ => @test.fail("Test failed")
       }
     }
     i = i + 1
@@ -373,7 +373,7 @@ test "resource_metadata_integration" {
     if key == "service.name" {
       match value {
         StringValue(name) => span_service_name = name
-        _ => @test.fail("Expected StringValue for service.name")
+        _ => @test.fail("Test failed")
       }
     }
     j = j + 1
@@ -486,12 +486,12 @@ test "end_to_end_telemetry_flow" {
   // 验证传播的头部
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 验证LogRecord中的关联信息
@@ -507,7 +507,7 @@ test "end_to_end_telemetry_flow" {
           assert_eq(name, "process-order")
           found_span_name = true
         }
-        _ => @test.fail("Expected StringValue for span.name")
+        _ => @test.fail("Test failed")
       }
     }
     if key == "user.id" {
@@ -516,7 +516,7 @@ test "end_to_end_telemetry_flow" {
           assert_eq(user_id, "12345")
           found_user_id = true
         }
-        _ => @test.fail("Expected StringValue for user.id")
+        _ => @test.fail("Test failed")
       }
     }
     if key == "order.id" {
@@ -525,7 +525,7 @@ test "end_to_end_telemetry_flow" {
           assert_eq(order_id, "order-12345")
           found_order_id = true
         }
-        _ => @test.fail("Expected StringValue for order.id")
+        _ => @test.fail("Test failed")
       }
     }
     i = i + 1

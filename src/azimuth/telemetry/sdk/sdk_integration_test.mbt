@@ -303,7 +303,7 @@ test "sdk_configuration_and_initialization" {
       errors.push("service_name cannot be empty")
     }
     
-    if !config.endpoint.starts_with("http://") && !config.endpoint.starts_with("https://") {
+    if !config.endpoint.has_prefix("http://") && !config.endpoint.has_prefix("https://") {
       errors.push("endpoint must be a valid HTTP/HTTPS URL")
     }
     

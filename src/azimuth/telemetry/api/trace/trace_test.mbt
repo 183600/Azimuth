@@ -14,14 +14,14 @@ test "span_creation_and_attributes" {
   assert_eq(span.name, "test-span")
   match span.kind {
     Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server span kind")
+    _ => @test.fail("Test failed")
   }
   assert_eq(span.start_time_unix_nanos, 1234567890L)
   assert_eq(span.attributes.length(), 1)
   
   match span.status {
     Unset => assert_eq(true, true)
-    _ => @test.fail("Expected Unset status")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -56,8 +56,8 @@ test "span_events_and_links_creation" {
   }
   
   let link_context = SpanContext::{
-    trace_id: Array::make(16, 0_byte),
-    span_id: Array::make(8, 1_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte }),
     trace_flags: 0_byte,
     trace_state: ""
   }
@@ -74,7 +74,7 @@ test "span_events_and_links_creation" {
   // 验证event属性
   match event.attributes[0].1 {
     AttributeValue::StringValue(msg) => assert_eq(msg, "Something went wrong")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(link.context.span_id[0], 1_byte)
@@ -83,6 +83,6 @@ test "span_events_and_links_creation" {
   // 验证link属性
   match link.attributes[0].1 {
     AttributeValue::StringValue(link_type) => assert_eq(link_type, "parent")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }

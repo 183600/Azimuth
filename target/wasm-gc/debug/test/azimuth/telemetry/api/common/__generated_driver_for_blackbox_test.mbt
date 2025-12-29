@@ -177,9 +177,7 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_1, ["attribute_value_numeric_conversion"]),
     2: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_2, ["attribute_value_boolean_conversion"]),
     3: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_3, ["attribute_value_array_conversion"]),
-    4: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_4, ["resource_creation_and_default"]),
-    5: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_5, ["instrumentation_scope_creation"]),
-    6: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_6, ["attributes_operations"]),
+    4: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_4, ["attribute_value_edge_cases"]),
   },
   "attribute_value_boundary_test.mbt": {
     0: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_0, ["attribute_value_string_boundary_cases"]),

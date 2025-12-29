@@ -28,12 +28,12 @@ test "composite_propagator_error_handling" {
   // 验证carrier中有预期的header
   match carrier.get("traceparent") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("baggage") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 测试正常提取

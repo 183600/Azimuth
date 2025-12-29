@@ -62,6 +62,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_74726163655f746573742e6d6274_1, ["span_context_details"]),
     2: (__test_74726163655f746573742e6d6274_2, ["span_events_and_links_creation"]),
   },
+  "trace_lifecycle_test.mbt": {
+    0: (__test_74726163655f6c6966656379636c655f746573742e6d6274_0, ["span_context_creation_and_validation"]),
+    1: (__test_74726163655f6c6966656379636c655f746573742e6d6274_1, ["span_kinds_and_status_codes"]),
+    2: (__test_74726163655f6c6966656379636c655f746573742e6d6274_2, ["span_creation_and_lifecycle"]),
+    3: (__test_74726163655f6c6966656379636c655f746573742e6d6274_3, ["span_with_parent_relationship"]),
+    4: (__test_74726163655f6c6966656379636c655f746573742e6d6274_4, ["span_with_attributes"]),
+    5: (__test_74726163655f6c6966656379636c655f746573742e6d6274_5, ["span_with_events"]),
+    6: (__test_74726163655f6c6966656379636c655f746573742e6d6274_6, ["span_with_links"]),
+    7: (__test_74726163655f6c6966656379636c655f746573742e6d6274_7, ["tracer_functionality"]),
+    8: (__test_74726163655f6c6966656379636c655f746573742e6d6274_8, ["tracer_provider_functionality"]),
+    9: (__test_74726163655f6c6966656379636c655f746573742e6d6274_9, ["span_status_transitions"]),
+  },
   "trace_edge_cases_test.mbt": {
     0: (__test_74726163655f656467655f63617365735f746573742e6d6274_0, ["trace_span_context_validation"]),
     1: (__test_74726163655f656467655f63617365735f746573742e6d6274_1, ["trace_span_lifecycle_edge_cases"]),

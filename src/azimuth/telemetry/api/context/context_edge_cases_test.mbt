@@ -128,8 +128,8 @@ test "context_value_edge_cases" {
     let is_very_long = value.length() > 5000
     let has_control_chars = value.contains("\n") || value.contains("\t") || value.contains("\r")
     let has_path_separator = value.contains("/")
-    let looks_like_json = value.starts_with("{") && value.ends_with("}") || 
-                          value.starts_with("[") && value.ends_with("]")
+    let looks_like_json = value.has_prefix("{") && value.has_suffix("}") || 
+                          value.has_prefix("[") && value.has_suffix("]")
     let looks_like_number = value.length() > 0 && 
                            (value[0] >= '0' && value[0] <= '9' || value[0] == '-')
     let contains_xss = value.contains("<script") || value.contains("alert(")
@@ -165,7 +165,7 @@ test "context_value_edge_cases" {
     }
     
     if looks_like_json {
-      assert_eq(value.starts_with("{") || value.starts_with("["), true)
+      assert_eq(value.has_prefix("{") || value.has_prefix("["), true)
     }
     
     if looks_like_number {
@@ -222,7 +222,7 @@ test "context_chain_operations_edge_cases" {
     Some(value) => {
       assert_eq(value, "overridden_value")
     }
-    None => @test.fail("Expected Some(overridden_value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试空context的操作
@@ -236,13 +236,13 @@ test "context_chain_operations_edge_cases" {
     Some(value) => {
       assert_eq(value, "")
     }
-    None => @test.fail("Expected Some(empty_value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试获取不存在的key
   let non_existent_key = create_key("non_existent_key")
   match ctx.get(non_existent_key) {
-    Some(_) => @test.fail("Expected None for non-existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   

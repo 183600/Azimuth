@@ -192,12 +192,12 @@ test "web_request_processing_scenario" {
   
   match start_log.body {
     Some(body) => assert_eq(body, "Started processing HTTP request")
-    None => @test.fail("Expected log body")
+    None => @test.fail("Test failed")
   }
   
   match end_log.body {
     Some(body) => assert_eq(body, "HTTP request completed successfully")
-    None => @test.fail("Expected log body")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -356,12 +356,12 @@ test "microservice_communication_scenario" {
   
   match service_b_log.body {
     Some(body) => assert_eq(body, "Inventory validation completed successfully")
-    None => @test.fail("Expected service B log body")
+    None => @test.fail("Test failed")
   }
   
   match service_c_log.body {
     Some(body) => assert_eq(body, "Reservation check completed")
-    None => @test.fail("Expected service C log body")
+    None => @test.fail("Test failed")
   }
 }
 

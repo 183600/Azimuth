@@ -474,7 +474,7 @@ test "sampling_attributes_and_tags" {
     // 规则2：高优先级用户
     match attributes.user_id {
       Some(user_id) => {
-        if user_id.starts_with("premium_") {
+        if user_id.has_prefix("premium_") {
           matched_rules.push("premium_user")
           confidence = confidence + 0.6
         }
@@ -655,8 +655,8 @@ test "sampling_performance_optimization" {
     
     // 模拟早期退出优化
     let early_exit_conditions = [
-      trace_id.starts_with("00000000"),  // 特定前缀快速决策
-      trace_id.starts_with("ffffffff"),
+      trace_id.has_prefix("00000000"),  // 特定前缀快速决策
+      trace_id.has_prefix("ffffffff"),
       trace_id.length() < 16
     ]
     

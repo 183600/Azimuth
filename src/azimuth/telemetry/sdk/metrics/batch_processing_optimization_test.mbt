@@ -222,7 +222,7 @@ test "scheduled_delay_optimization" {
       assert_eq(config.batch_size >= 100 && config.batch_size <= 1000, true,
         "Optimal batch size should be in reasonable range")
     }
-    None => @test.fail("Should find an optimal configuration")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -358,7 +358,7 @@ test "queue_size_optimization" {
       assert_eq(config.max_queue_size >= base_batch_size * 2, true,
         "Queue should be at least 2x batch size for zero drops")
     }
-    None => @test.fail("Should find a queue configuration with zero drops")
+    None => @test.fail("Test failed")
   }
   
   match most_efficient_config {
@@ -366,7 +366,7 @@ test "queue_size_optimization" {
       assert_eq(config.max_queue_size >= base_batch_size, true,
         "Most efficient config should have reasonable queue size")
     }
-    None => @test.fail("Should find a most efficient configuration")
+    None => @test.fail("Test failed")
   }
 }
 

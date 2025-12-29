@@ -9,12 +9,12 @@ test "context_multiple_values" {
   
   match ctx_with_values.get(key1) {
     Some(value) => assert_eq(value, "test-value-1")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_values.get(key2) {
     Some(value) => assert_eq(value, "test-value-2")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -28,22 +28,22 @@ test "baggage_multiple_entries" {
   
   match baggage3.get("user.id") {
     Some(value) => assert_eq(value, "12345")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("session.id") {
     Some(value) => assert_eq(value, "abcdef")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("request.id") {
     Some(value) => assert_eq(value, "xyz789")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键
   match baggage3.get("non.existent") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }

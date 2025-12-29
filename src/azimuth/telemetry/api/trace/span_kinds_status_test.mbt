@@ -13,27 +13,27 @@ test "span_kinds_and_status_codes" {
   // 验证SpanKind
   match internal_span.kind {
     Internal => assert_eq(true, true)
-    _ => @test.fail("Expected Internal span kind")
+    _ => @test.fail("Test failed")
   }
   
   match server_span.kind {
     Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server span kind")
+    _ => @test.fail("Test failed")
   }
   
   match client_span.kind {
     Client => assert_eq(true, true)
-    _ => @test.fail("Expected Client span kind")
+    _ => @test.fail("Test failed")
   }
   
   match producer_span.kind {
     Producer => assert_eq(true, true)
-    _ => @test.fail("Expected Producer span kind")
+    _ => @test.fail("Test failed")
   }
   
   match consumer_span.kind {
     Consumer => assert_eq(true, true)
-    _ => @test.fail("Expected Consumer span kind")
+    _ => @test.fail("Test failed")
   }
   
   // 验证span名称和时间
@@ -54,11 +54,11 @@ test "span_kinds_and_status_codes" {
   
   match internal_span.status {
     Unset => assert_eq(true, true)
-    _ => @test.fail("Expected Unset status")
+    _ => @test.fail("Test failed")
   }
   
   match internal_span.status_description {
-    Some(_) => @test.fail("Expected None for status description")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -90,32 +90,32 @@ test "span_kinds_and_status_codes" {
   // 验证各种属性类型
   match attr_span.attributes[0].1 {
     AttributeValue::StringValue(method) => assert_eq(method, "GET")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match attr_span.attributes[1].1 {
     AttributeValue::IntValue(status) => assert_eq(status, 200L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match attr_span.attributes[2].1 {
     AttributeValue::StringValue(url) => assert_eq(url, "https://example.com/api")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match attr_span.attributes[3].1 {
     AttributeValue::StringValue(user_id) => assert_eq(user_id, "user123")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match attr_span.attributes[4].1 {
     AttributeValue::FloatValue(duration) => assert_eq(duration, 123.45)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match attr_span.attributes[5].1 {
     AttributeValue::BoolValue(cache_hit) => assert_eq(cache_hit, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match attr_span.attributes[6].1 {
@@ -125,7 +125,7 @@ test "span_kinds_and_status_codes" {
       assert_eq(tags[1], "v1")
       assert_eq(tags[2], "public")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试特殊字符和Unicode的span名称
@@ -152,6 +152,6 @@ test "span_kinds_and_status_codes" {
   
   match unicode_span.attributes[0].1 {
     AttributeValue::StringValue(unicode_val) => assert_eq(unicode_val, "测试值🎉")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }

@@ -21,7 +21,7 @@ test "data_integrity_attribute_consistency" {
       assert_eq(value, "consistency-test")
       assert_eq(value.length(), 17)
     }
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match int_attr {
@@ -29,7 +29,7 @@ test "data_integrity_attribute_consistency" {
       assert_eq(value, 42L)
       assert_eq(value > 0L, true)
     }
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match float_attr {
@@ -37,7 +37,7 @@ test "data_integrity_attribute_consistency" {
       assert_eq(value > 3.0 && value < 4.0, true)
       assert_eq(value != 0.0, true)
     }
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match bool_attr {
@@ -45,7 +45,7 @@ test "data_integrity_attribute_consistency" {
       assert_eq(value, true)
       assert_eq(value != false, true)
     }
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 2. 数组属性类型一致性
@@ -62,7 +62,7 @@ test "data_integrity_attribute_consistency" {
       assert_eq(values[1], "b")
       assert_eq(values[2], "c")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match int_array {
@@ -72,7 +72,7 @@ test "data_integrity_attribute_consistency" {
       assert_eq(values[1], 2L)
       assert_eq(values[2], 3L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match float_array {
@@ -82,7 +82,7 @@ test "data_integrity_attribute_consistency" {
       assert_eq(values[1], 2.2)
       assert_eq(values[2], 3.3)
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match bool_array {
@@ -92,7 +92,7 @@ test "data_integrity_attribute_consistency" {
       assert_eq(values[1], false)
       assert_eq(values[2], true)
     }
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -151,7 +151,7 @@ test "data_integrity_resource_consistency" {
         assert_eq(b == true || b == false, true)
         assert_eq(key.contains("."), true)
       }
-      _ => @test.fail("Unexpected attribute type")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -178,17 +178,17 @@ test "data_integrity_context_consistency" {
   // 验证Context值一致性
   match context_with_values.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected value for key1")
+    None => @test.fail("Test failed")
   }
   
   match context_with_values.get(key2) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected value for key2")
+    None => @test.fail("Test failed")
   }
   
   match context_with_values.get(key3) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected value for key3")
+    None => @test.fail("Test failed")
   }
   
   // 3. Context链式操作一致性
@@ -199,7 +199,7 @@ test "data_integrity_context_consistency" {
   
   match chained_context.get(key1) {
     Some(value) => assert_eq(value, "chained1")
-    None => @test.fail("Expected chained value for key1")
+    None => @test.fail("Test failed")
   }
   
   // 4. Context独立性一致性
@@ -208,12 +208,12 @@ test "data_integrity_context_consistency" {
   
   match independent_context1.get(key1) {
     Some(value) => assert_eq(value, "independent1")
-    None => @test.fail("Expected independent value 1")
+    None => @test.fail("Test failed")
   }
   
   match independent_context2.get(key1) {
     Some(value) => assert_eq(value, "independent2")
-    None => @test.fail("Expected independent value 2")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -271,7 +271,7 @@ test "data_integrity_log_record_consistency" {
             assert_eq(v, "ConsistencyError")
             found_error_type = true
           }
-          _ => @test.fail("Expected StringValue for error.type")
+          _ => @test.fail("Test failed")
         }
       }
       "error.code" => {
@@ -280,7 +280,7 @@ test "data_integrity_log_record_consistency" {
             assert_eq(v, 500L)
             found_error_code = true
           }
-          _ => @test.fail("Expected IntValue for error.code")
+          _ => @test.fail("Test failed")
         }
       }
       "error.retryable" => {
@@ -289,7 +289,7 @@ test "data_integrity_log_record_consistency" {
             assert_eq(v, false)
             found_retryable = true
           }
-          _ => @test.fail("Expected BoolValue for error.retryable")
+          _ => @test.fail("Test failed")
         }
       }
       "error.timestamp" => {
@@ -298,7 +298,7 @@ test "data_integrity_log_record_consistency" {
             assert_eq(v, 1234567890L)
             found_timestamp = true
           }
-          _ => @test.fail("Expected IntValue for error.timestamp")
+          _ => @test.fail("Test failed")
         }
       }
       _ => @test.fail("Unexpected attribute key: " + key)
@@ -371,7 +371,7 @@ test "data_integrity_measurement_consistency" {
       ArrayFloatValue(_) => float_array_count = float_array_count + 1
       ArrayIntValue(_) => int_array_count = int_array_count + 1
       ArrayBoolValue(_) => bool_array_count = bool_array_count + 1
-      _ => @test.fail("Unexpected attribute type")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -392,8 +392,8 @@ test "data_integrity_span_context_consistency" {
   
   // 1. 基本SpanContext一致性
   let span_context = SpanContext::{
-    trace_id: Array::make(16, 0_byte),
-    span_id: Array::make(8, 0_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
     trace_flags: 0_byte,
     trace_state: ""
   }
@@ -404,8 +404,8 @@ test "data_integrity_span_context_consistency" {
   assert_eq(span_context.trace_state, "")
   
   // 2. 带值的SpanContext一致性
-  let trace_id_with_value = Array::make(16, 1_byte)
-  let span_id_with_value = Array::make(8, 1_byte)
+  let trace_id_with_value = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id_with_value = [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte })
   let span_context_with_values = SpanContext::{
     trace_id: trace_id_with_value,
     span_id: span_id_with_value,
@@ -444,7 +444,7 @@ test "data_integrity_propagation_consistency" {
   // 验证传播一致性
   match extracted_context.get(key) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted context value")
+    None => @test.fail("Test failed")
   }
   
   // 2. 复杂传播一致性
@@ -461,17 +461,17 @@ test "data_integrity_propagation_consistency" {
   // 验证复杂传播一致性
   match complex_extracted_context.get(create_key("key1")) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted key1 value")
+    None => @test.fail("Test failed")
   }
   
   match complex_extracted_context.get(create_key("key2")) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted key2 value")
+    None => @test.fail("Test failed")
   }
   
   match complex_extracted_context.get(create_key("key3")) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted key3 value")
+    None => @test.fail("Test failed")
   }
   
   // 3. 传播链式一致性
@@ -487,17 +487,17 @@ test "data_integrity_propagation_consistency" {
   // 验证链式传播一致性
   match chained_extracted_context.get(create_key("chain1")) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted chain1 value")
+    None => @test.fail("Test failed")
   }
   
   match chained_extracted_context.get(create_key("chain2")) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted chain2 value")
+    None => @test.fail("Test failed")
   }
   
   match chained_extracted_context.get(create_key("chain3")) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted chain3 value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -530,7 +530,7 @@ test "data_integrity_cross_module_consistency" {
             assert_eq(v, resource.service_name)
             found_service_name = true
           }
-          _ => @test.fail("Expected StringValue for service.name")
+          _ => @test.fail("Test failed")
         }
       }
       "sdk.name" => {
@@ -539,7 +539,7 @@ test "data_integrity_cross_module_consistency" {
             assert_eq(v, resource.telemetry_sdk_name)
             found_sdk_name = true
           }
-          _ => @test.fail("Expected StringValue for sdk.name")
+          _ => @test.fail("Test failed")
         }
       }
       "sdk.version" => {
@@ -548,7 +548,7 @@ test "data_integrity_cross_module_consistency" {
             assert_eq(v, resource.telemetry_sdk_version)
             found_sdk_version = true
           }
-          _ => @test.fail("Expected StringValue for sdk.version")
+          _ => @test.fail("Test failed")
         }
       }
       _ => @test.fail("Unexpected attribute key: " + key)
@@ -581,7 +581,7 @@ test "data_integrity_cross_module_consistency" {
   
   match context_with_data.get(context_key) {
     Some(value) => assert_eq(value, "cross.module.value")
-    None => @test.fail("Expected context value")
+    None => @test.fail("Test failed")
   }
   
   // 3. 传播与Measurement一致性
@@ -602,6 +602,6 @@ test "data_integrity_cross_module_consistency" {
   // 验证传播与Measurement一致性
   match extracted_context.get(context_key) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected extracted context value")
+    None => @test.fail("Test failed")
   }
 }

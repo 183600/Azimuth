@@ -53,29 +53,29 @@ test "context_resource_cleanup" {
   // 2. 验证context链式创建
   match ctx3.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected key1 value")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(key2) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected key2 value")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(key3) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected key3 value")
+    None => @test.fail("Test failed")
   }
   
   // 3. 验证原始context不受影响
   match ctx.get(key1) {
-    Some(_) => @test.fail("Should not find key1 in original context")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   // 4. 模拟context清理（创建新的空context）
   let cleaned_ctx = context::Context::empty()
   match cleaned_ctx.get(key1) {
-    Some(_) => @test.fail("Should not find key1 in cleaned context")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -93,29 +93,29 @@ test "baggage_resource_management" {
   // 2. 验证baggage条目
   match baggage3.get("entry1") {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected entry1 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("entry2") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected entry2 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("entry3") {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected entry3 value")
+    None => @test.fail("Test failed")
   }
   
   // 3. 验证原始baggage不受影响
   match baggage.get("entry1") {
-    Some(_) => @test.fail("Should not find entry1 in original baggage")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   // 4. 模拟baggage清理
   let cleaned_baggage = context::Baggage::empty()
   match cleaned_baggage.get("entry1") {
-    Some(_) => @test.fail("Should not find entry1 in cleaned baggage")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -148,17 +148,17 @@ test "log_record_resource_management" {
   // 2. 验证日志记录创建
   match log1.body {
     Some(body) => assert_eq(body, "Log message 1")
-    None => @test.fail("Expected log1 body")
+    None => @test.fail("Test failed")
   }
   
   match log2.body {
     Some(body) => assert_eq(body, "Log message 2")
-    None => @test.fail("Expected log2 body")
+    None => @test.fail("Test failed")
   }
   
   match log3.body {
     Some(body) => assert_eq(body, "Log message 3")
-    None => @test.fail("Expected log3 body")
+    None => @test.fail("Test failed")
   }
   
   // 3. 验证日志记录属性
@@ -176,7 +176,7 @@ test "log_record_resource_management" {
     // 模拟日志处理
     match log.body {
       Some(_) => assert_eq(true, true)  // 处理成功
-      None => @test.fail("Log should have body")
+      None => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -190,7 +190,7 @@ test "log_record_resource_management" {
   
   match new_log.body {
     Some(body) => assert_eq(body, "New log message")
-    None => @test.fail("Expected new log body")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -211,9 +211,9 @@ test "span_resource_management" {
   assert_eq(span2.name, "span-2")
   assert_eq(span3.name, "span-3")
   
-  match span1.kind { trace::Internal => assert_eq(true, true) _ => @test.fail("Expected Internal") }
-  match span2.kind { trace::Server => assert_eq(true, true) _ => @test.fail("Expected Server") }
-  match span3.kind { trace::Client => assert_eq(true, true) _ => @test.fail("Expected Client") }
+  match span1.kind { trace::Internal => assert_eq(true, true) _ => @test.fail("Test failed") }
+  match span2.kind { trace::Server => assert_eq(true, true) _ => @test.fail("Test failed") }
+  match span3.kind { trace::Client => assert_eq(true, true) _ => @test.fail("Test failed") }
   
   // 3. 验证span上下文独立性
   assert_eq(span1.context.trace_id.length(), 16)
@@ -238,7 +238,7 @@ test "span_resource_management" {
   // 5. 创建新的span验证资源可用性
   let (new_ctx, new_span) = tracer.start_span(ctx, "new-span", trace::Producer)
   assert_eq(new_span.name, "new-span")
-  match new_span.kind { trace::Producer => assert_eq(true, true) _ => @test.fail("Expected Producer") }
+  match new_span.kind { trace::Producer => assert_eq(true, true) _ => @test.fail("Test failed") }
 }
 
 test "metrics_resource_management" {
@@ -306,22 +306,22 @@ test "propagation_resource_management" {
   // 2. 验证carrier内容
   match carrier1.get(propagation::TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header in carrier1")
+    None => @test.fail("Test failed")
   }
   
   match carrier2.get(propagation::BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header in carrier2")
+    None => @test.fail("Test failed")
   }
   
   match carrier3.get(propagation::TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header in carrier3")
+    None => @test.fail("Test failed")
   }
   
   match carrier3.get(propagation::BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header in carrier3")
+    None => @test.fail("Test failed")
   }
   
   // 3. 提取传播信息
@@ -339,12 +339,12 @@ test "propagation_resource_management" {
   
   match new_carrier.get(propagation::TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header in new carrier")
+    None => @test.fail("Test failed")
   }
   
   match new_carrier.get(propagation::BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header in new carrier")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -452,15 +452,15 @@ test "large_scale_resource_management" {
   assert_eq(new_resource.service_name, "resource-after-cleanup")
   match new_ctx.get(context::create_key("new-key")) {
     Some(value) => assert_eq(value, "new-value")
-    None => @test.fail("Expected new-key value")
+    None => @test.fail("Test failed")
   }
   match new_baggage.get("new-entry") {
     Some(value) => assert_eq(value, "new-value")
-    None => @test.fail("Expected new-entry value")
+    None => @test.fail("Test failed")
   }
   match new_log.body {
     Some(body) => assert_eq(body, "New log")
-    None => @test.fail("Expected new log body")
+    None => @test.fail("Test failed")
   }
   assert_eq(new_span.name, "new-span")
 }
@@ -483,17 +483,17 @@ test "memory_efficiency_test" {
   // 2. 测试大对象的创建和销毁
   let large_string = "x" * 100000
   let large_attr = AttributeValue::string(large_string)
-  let large_array = AttributeValue::array_string(Array::make(10000, "large-array-item"))
+  let large_array = AttributeValue::array_string([for i = 0; i < 10000; i = i + 1].map(fn(_) { "large-array-item" }))
   
   // 验证大对象创建成功
   match large_attr {
     StringValue(s) => assert_eq(s.length(), 100000)
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match large_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 10000)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 测试复杂嵌套结构的创建和销毁
@@ -524,6 +524,6 @@ test "memory_efficiency_test" {
   
   match cleanup_ctx_with_value.get(cleanup_key) {
     Some(value) => assert_eq(value, "cleanup-value")
-    None => @test.fail("Expected cleanup-key value")
+    None => @test.fail("Test failed")
   }
 }

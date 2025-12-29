@@ -17,17 +17,17 @@ test "baggage_basic_operations" {
   // 获取条目
   match baggage2.get("user.id") {
     Some(value) => assert_eq(value, "12345")
-    None => @test.fail("Expected Some value for user.id")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("request.id") {
     Some(value) => assert_eq(value, "req-67890")
-    None => @test.fail("Expected Some value for request.id")
+    None => @test.fail("Test failed")
   }
   
   // 获取不存在的条目
   match baggage2.get("nonexistent.key") {
-    Some(_) => @test.fail("Expected None for nonexistent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -84,12 +84,12 @@ test "baggage_edge_cases" {
   
   match baggage1.get("") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some value for empty key")
+    None => @test.fail("Test failed")
   }
   
   match baggage1.get("empty.value") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some value for empty.value")
+    None => @test.fail("Test failed")
   }
   
   // 特殊字符
@@ -103,12 +103,12 @@ test "baggage_edge_cases" {
   
   match baggage2.get("special.chars") {
     Some(value) => assert_eq(value, "!@#$%^&*()")
-    None => @test.fail("Expected Some value for special.chars")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("unicode.test") {
     Some(value) => assert_eq(value, "测试中文🚀")
-    None => @test.fail("Expected Some value for unicode.test")
+    None => @test.fail("Test failed")
   }
   
   // 长字符串
@@ -119,7 +119,7 @@ test "baggage_edge_cases" {
   assert_eq(baggage3.entries.length(), 1)
   match baggage3.get(long_key) {
     Some(value) => assert_eq(value, long_value)
-    None => @test.fail("Expected Some value for long key")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -143,7 +143,7 @@ test "context_with_baggage_integration" {
       assert_eq(stored_baggage.contains("request.id=456"), true)
       assert_eq(stored_baggage.contains("service.name=api"), true)
     }
-    None => @test.fail("Expected Some baggage value")
+    None => @test.fail("Test failed")
   }
   
   // 测试多个context值
@@ -157,17 +157,17 @@ test "context_with_baggage_integration" {
   // 验证所有值都存在
   match ctx_full.get(baggage_key) {
     Some(value) => assert_eq(value, "user.id=123,request.id=456,service.name=api")
-    None => @test.fail("Expected Some baggage value")
+    None => @test.fail("Test failed")
   }
   
   match ctx_full.get(trace_id_key) {
     Some(value) => assert_eq(value, "0af7651916cd43dd8448eb211c80319c")
-    None => @test.fail("Expected Some trace_id value")
+    None => @test.fail("Test failed")
   }
   
   match ctx_full.get(span_id_key) {
     Some(value) => assert_eq(value, "b7ad6b7169203331")
-    None => @test.fail("Expected Some span_id value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -196,22 +196,22 @@ test "context_key_creation_and_usage" {
   // 验证所有值都能正确获取
   match ctx4.get(string_key) {
     Some(value) => assert_eq(value, "string value")
-    None => @test.fail("Expected Some value for string_key")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(numeric_key) {
     Some(value) => assert_eq(value, "numeric value 123")
-    None => @test.fail("Expected Some value for numeric_key")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(special_key) {
     Some(value) => assert_eq(value, "special value !@#$%")
-    None => @test.fail("Expected Some value for special_key")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(unicode_key) {
     Some(value) => assert_eq(value, "unicode 值 测试 🚀")
-    None => @test.fail("Expected Some value for unicode_key")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -225,21 +225,21 @@ test "context_value_overwrite_behavior" {
   let ctx1 = ctx.with_value(key, "initial_value")
   match ctx1.get(key) {
     Some(value) => assert_eq(value, "initial_value")
-    None => @test.fail("Expected Some value")
+    None => @test.fail("Test failed")
   }
   
   // 覆盖值
   let ctx2 = ctx1.with_value(key, "overwritten_value")
   match ctx2.get(key) {
     Some(value) => assert_eq(value, "overwritten_value")
-    None => @test.fail("Expected Some value")
+    None => @test.fail("Test failed")
   }
   
   // 再次覆盖
   let ctx3 = ctx2.with_value(key, "final_value")
   match ctx3.get(key) {
     Some(value) => assert_eq(value, "final_value")
-    None => @test.fail("Expected Some value")
+    None => @test.fail("Test failed")
   }
   
   // 验证context中值的数量
@@ -263,17 +263,17 @@ test "context_multiple_keys_isolation" {
   // 验证每个键都能获取到正确的值
   match ctx_final.get(key1) {
     Some(value) => assert_eq(value, "value.one")
-    None => @test.fail("Expected Some value for key1")
+    None => @test.fail("Test failed")
   }
   
   match ctx_final.get(key2) {
     Some(value) => assert_eq(value, "value.two")
-    None => @test.fail("Expected Some value for key2")
+    None => @test.fail("Test failed")
   }
   
   match ctx_final.get(key3) {
     Some(value) => assert_eq(value, "value.three")
-    None => @test.fail("Expected Some value for key3")
+    None => @test.fail("Test failed")
   }
   
   // 验证context中值的总数

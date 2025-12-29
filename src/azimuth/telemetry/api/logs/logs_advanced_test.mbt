@@ -15,7 +15,7 @@ test "log_record_builder_fluent_api" {
   assert_eq(log_record.severity_number, Error)
   match log_record.body {
     Some(body) => assert_eq(body, "Database connection failed")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   assert_eq(log_record.attributes.length(), 4)
   
@@ -23,20 +23,20 @@ test "log_record_builder_fluent_api" {
   assert_eq(log_record.attributes[0].0, "error.code")
   match log_record.attributes[0].1 {
     StringValue(code) => assert_eq(code, "DB_CONN_FAILED")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(log_record.attributes[1].0, "error.retries")
   match log_record.attributes[1].1 {
     IntValue(retries) => assert_eq(retries, 3L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
 }
 
 test "log_record_with_trace_context" {
   // 测试带有追踪上下文的LogRecord
-  let trace_id = Array::make(16, 0x0a_byte)
-  let span_id = Array::make(8, 0x0b_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x0a_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x0b_byte })
   
   let log_record = LogRecord::{
     timestamp_unix_nanos: 1640995200000000000L,
@@ -63,12 +63,12 @@ test "log_record_with_trace_context" {
   assert_eq(log_record.severity_number, Warn)
   match log_record.severity_text {
     Some(text) => assert_eq(text, "WARNING")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.body {
     Some(body) => assert_eq(body, "Cache miss for user profile")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.trace_id {
@@ -76,7 +76,7 @@ test "log_record_with_trace_context" {
       assert_eq(id.length(), 16)
       assert_eq(id[0], 0x0a_byte)
     }
-    None => @test.fail("Expected Some(trace_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.span_id {
@@ -84,12 +84,12 @@ test "log_record_with_trace_context" {
       assert_eq(id.length(), 8)
       assert_eq(id[0], 0x0b_byte)
     }
-    None => @test.fail("Expected Some(span_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.trace_flags {
     Some(flags) => assert_eq(flags, 1_byte)
-    None => @test.fail("Expected Some(trace_flags)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.resource {
@@ -97,7 +97,7 @@ test "log_record_with_trace_context" {
       assert_eq(resource.service_name, "user-service")
       assert_eq(resource.telemetry_sdk_name, "azimuth")
     }
-    None => @test.fail("Expected Some(resource)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.instrumentation_scope {
@@ -105,9 +105,9 @@ test "log_record_with_trace_context" {
       assert_eq(scope.name, "user-cache")
       match scope.version {
         Some(version) => assert_eq(version, "1.2.0")
-        None => @test.fail("Expected Some(version)")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected Some(instrumentation_scope)")
+    None => @test.fail("Test failed")
   }
 }

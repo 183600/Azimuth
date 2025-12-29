@@ -24,7 +24,7 @@ test "platform_compatibility_basic_types" {
       assert_eq(s, ascii_string)
       assert_eq(s.length(), 24)
     }
-    _ => @test.fail("Expected StringValue for ASCII")
+    _ => @test.fail("Test failed")
   }
   
   match unicode_attr {
@@ -32,7 +32,7 @@ test "platform_compatibility_basic_types" {
       assert_eq(s, unicode_string)
       assert_eq(s.length(), 19)
     }
-    _ => @test.fail("Expected StringValue for Unicode")
+    _ => @test.fail("Test failed")
   }
   
   match mixed_attr {
@@ -40,7 +40,7 @@ test "platform_compatibility_basic_types" {
       assert_eq(s, mixed_string)
       assert_eq(s.length(), 39)
     }
-    _ => @test.fail("Expected StringValue for mixed")
+    _ => @test.fail("Test failed")
   }
   
   // 2. 数值兼容性测试
@@ -57,42 +57,42 @@ test "platform_compatibility_basic_types" {
   // 验证数值兼容性
   match positive_int {
     IntValue(v) => assert_eq(v, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue for positive")
+    _ => @test.fail("Test failed")
   }
   
   match negative_int {
     IntValue(v) => assert_eq(v, -9223372036854775808L)
-    _ => @test.fail("Expected IntValue for negative")
+    _ => @test.fail("Test failed")
   }
   
   match zero_int {
     IntValue(v) => assert_eq(v, 0L)
-    _ => @test.fail("Expected IntValue for zero")
+    _ => @test.fail("Test failed")
   }
   
   match positive_float {
     FloatValue(v) => assert_eq(v > 1.0e+308, true)
-    _ => @test.fail("Expected FloatValue for positive")
+    _ => @test.fail("Test failed")
   }
   
   match negative_float {
     FloatValue(v) => assert_eq(v < -1.0e+308, true)
-    _ => @test.fail("Expected FloatValue for negative")
+    _ => @test.fail("Test failed")
   }
   
   match zero_float {
     FloatValue(v) => assert_eq(v, 0.0)
-    _ => @test.fail("Expected FloatValue for zero")
+    _ => @test.fail("Test failed")
   }
   
   match nan_float {
     FloatValue(v) => assert_eq(v != v, true)
-    _ => @test.fail("Expected FloatValue for NaN")
+    _ => @test.fail("Test failed")
   }
   
   match infinity_float {
     FloatValue(v) => assert_eq(v > 1.0e+308, true)
-    _ => @test.fail("Expected FloatValue for infinity")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 布尔兼容性测试
@@ -101,12 +101,12 @@ test "platform_compatibility_basic_types" {
   
   match true_attr {
     BoolValue(v) => assert_eq(v, true)
-    _ => @test.fail("Expected BoolValue for true")
+    _ => @test.fail("Test failed")
   }
   
   match false_attr {
     BoolValue(v) => assert_eq(v, false)
-    _ => @test.fail("Expected BoolValue for false")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -133,7 +133,7 @@ test "platform_compatibility_array_types" {
       assert_eq(arr[4], "")
       assert_eq(arr[5], "Mixed: Hello 世界 🌍")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 2. 整数数组兼容性
@@ -158,7 +158,7 @@ test "platform_compatibility_array_types" {
       assert_eq(arr[5], 42L)
       assert_eq(arr[6], -42L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 浮点数数组兼容性
@@ -189,7 +189,7 @@ test "platform_compatibility_array_types" {
       assert_eq(arr[8] != arr[8], true)  // NaN check
       assert_eq(arr[9] > 1.0e+308, true)  // Infinity check
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 布尔数组兼容性
@@ -212,7 +212,7 @@ test "platform_compatibility_array_types" {
       assert_eq(arr[4], false)
       assert_eq(arr[5], true)
     }
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -269,17 +269,17 @@ test "platform_compatibility_context" {
   
   match special_context.get(special_key) {
     Some(value) => assert_eq(value, "special!@#$%^&*()_+-=[]{}|;':\",./<>?")
-    None => @test.fail("Expected value for special key")
+    None => @test.fail("Test failed")
   }
   
   match special_context.get(unicode_key) {
     Some(value) => assert_eq(value, "Unicode值测试📝")
-    None => @test.fail("Expected value for Unicode key")
+    None => @test.fail("Test failed")
   }
   
   match special_context.get(empty_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected value for empty key")
+    None => @test.fail("Test failed")
   }
   
   // 3. 长键值Context兼容性
@@ -289,7 +289,7 @@ test "platform_compatibility_context" {
   
   match long_context.get(long_key) {
     Some(value) => assert_eq(value.length(), 10000)
-    None => @test.fail("Expected value for long key")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -485,8 +485,8 @@ test "platform_compatibility_endianness" {
   // 测试字节序兼容性
   
   // 1. SpanContext字节序兼容性
-  let trace_id = Array::make(16, 0_byte)
-  let span_id = Array::make(8, 0_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   
   // 设置特定字节值测试字节序
   let mut i = 0

@@ -56,7 +56,7 @@ test "http_request_header_handling" {
       assert_eq(token.has_prefix("Bearer "), true)
       assert_eq(token.length() > 7, true)
     }
-    None => @test.fail("Expected authorization token")
+    None => @test.fail("Test failed")
   }
   
   match auth_headers.x_forwarded_for {
@@ -65,7 +65,7 @@ test "http_request_header_handling" {
       assert_eq(forwarded.contains("192.168.1.100"), true)
       assert_eq(forwarded.contains("10.0.0.1"), true)
     }
-    None => @test.fail("Expected x-forwarded-for header")
+    None => @test.fail("Test failed")
   }
   
   // 验证自定义头信息
@@ -121,7 +121,7 @@ test "http_response_status_code_handling" {
       assert_eq(body.has_prefix("{"), true)
       assert_eq(body.has_suffix("}"), true)
     }
-    None => @test.fail("Expected response body")
+    None => @test.fail("Test failed")
   }
   
   // 创建错误响应
@@ -148,7 +148,7 @@ test "http_response_status_code_handling" {
       assert_eq(body.contains("error"), true)
       assert_eq(body.contains("500"), true)
     }
-    None => @test.fail("Expected error response body")
+    None => @test.fail("Test failed")
   }
   
   // 测试状态码分类

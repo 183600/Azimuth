@@ -17,7 +17,7 @@ test "attribute_value_error_recovery" {
       let overflow_add = i + 1L  // 在实际系统中可能溢出，但这里应该优雅处理
       assert_eq(overflow_add, -9223372036854775808L)  // 溢出回绕
     }
-    _ => @test.fail("Expected max int")
+    _ => @test.fail("Test failed")
   }
   
   match min_int {
@@ -27,7 +27,7 @@ test "attribute_value_error_recovery" {
       let underflow_add = i - 1L  // 在实际系统中可能下溢，但这里应该优雅处理
       assert_eq(underflow_add, 9223372036854775807L)  // 下溢回绕
     }
-    _ => @test.fail("Expected min int")
+    _ => @test.fail("Test failed")
   }
   
   // 验证特殊浮点值
@@ -41,7 +41,7 @@ test "attribute_value_error_recovery" {
       let inf_div = f / f
       assert_eq(inf_div != inf_div, true)  // 无穷大除以无穷大是NaN
     }
-    _ => @test.fail("Expected infinity float")
+    _ => @test.fail("Test failed")
   }
   
   match nan_float {
@@ -54,12 +54,12 @@ test "attribute_value_error_recovery" {
       let nan_mult = f * 0.0
       assert_eq(nan_mult != nan_mult, true)  // NaN乘以任何数仍是NaN
     }
-    _ => @test.fail("Expected NaN float")
+    _ => @test.fail("Test failed")
   }
   
   // 测试空数组和大型数组
   let empty_array = AttributeValue::array_string([])
-  let large_array = AttributeValue::array_string(Array::make(10000, "item"))
+  let large_array = AttributeValue::array_string([for i = 0; i < 10000; i = i + 1].map(fn(_) { "item" }))
   
   match empty_array {
     ArrayStringValue(arr) => {
@@ -70,7 +70,7 @@ test "attribute_value_error_recovery" {
         assert_eq(false, true)  // 不应该到达这里
       }
     }
-    _ => @test.fail("Expected empty array")
+    _ => @test.fail("Test failed")
   }
   
   match large_array {
@@ -88,7 +88,7 @@ test "attribute_value_error_recovery" {
         assert_eq(first_item, "item")
       }
     }
-    _ => @test.fail("Expected large array")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -108,18 +108,18 @@ test "context_error_recovery" {
   // 验证空键值对
   match ctx_with_empty_key.get(empty_key) {
     Some(value) => assert_eq(value, "empty.key.value")
-    None => @test.fail("Expected value for empty key")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_normal_key.get(normal_key) {
     Some(value) => assert_eq(value, "normal.key.value")
-    None => @test.fail("Expected value for normal key")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键访问
   let nonexistent_key = create_key("nonexistent.key")
   match ctx_with_normal_key.get(nonexistent_key) {
-    Some(_) => @test.fail("Expected None for nonexistent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)  // 正确返回None
   }
   
@@ -160,17 +160,17 @@ test "context_error_recovery" {
   // 验证链式操作的结果
   match chain_ctx.get(create_key("chain.key.0")) {
     Some(value) => assert_eq(value, "chain.value.0")
-    None => @test.fail("Expected chain value 0")
+    None => @test.fail("Test failed")
   }
   
   match chain_ctx.get(create_key("chain.key.999")) {
     Some(value) => assert_eq(value, "chain.value.999")
-    None => @test.fail("Expected chain value 999")
+    None => @test.fail("Test failed")
   }
   
   match chain_ctx.get(create_key("chain.key.500")) {
     Some(value) => assert_eq(value, "chain.value.500")
-    None => @test.fail("Expected chain value 500")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -186,17 +186,17 @@ test "baggage_error_recovery" {
   // 验证空键值对
   match empty_baggage.get("") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty value for empty key")
+    None => @test.fail("Test failed")
   }
   
   match normal_baggage.get("normal.key") {
     Some(value) => assert_eq(value, "normal.value")
-    None => @test.fail("Expected normal value")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键访问
   match normal_baggage.get("nonexistent.key") {
-    Some(_) => @test.fail("Expected None for nonexistent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)  // 正确返回None
   }
   
@@ -234,7 +234,7 @@ test "baggage_error_recovery" {
   // 验证重复键的处理（应该保留最后一个值）
   match duplicate_baggage.get("duplicate.key") {
     Some(value) => assert_eq(value, "third.value")
-    None => @test.fail("Expected third value for duplicate key")
+    None => @test.fail("Test failed")
   }
   
   // 测试大量条目
@@ -248,12 +248,12 @@ test "baggage_error_recovery" {
   // 验证大量条目的访问
   match large_baggage.get("large.key.0") {
     Some(value) => assert_eq(value, "large.value.0")
-    None => @test.fail("Expected large value 0")
+    None => @test.fail("Test failed")
   }
   
   match large_baggage.get("large.key.999") {
     Some(value) => assert_eq(value, "large.value.999")
-    None => @test.fail("Expected large value 999")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -472,7 +472,7 @@ test "log_record_error_recovery" {
     ("nan.float", AttributeValue::float(0.0/0.0)),
     ("false.bool", AttributeValue::bool(false)),
     ("empty.array", AttributeValue::array_string([])),
-    ("large.array", AttributeValue::array_string(Array::make(1000, "item")))
+    ("large.array", AttributeValue::array_string([for i = 0; i < 1000; i = i + 1].map(fn(_) { "item" })))
   ]
   
   let special_attr_log = LogRecord::{
@@ -482,8 +482,8 @@ test "log_record_error_recovery" {
     severity_text: Some("WARN"),
     body: Some("Special attributes log"),
     attributes: special_log_attributes,
-    trace_id: Some(Array::make(16, 0xFF_byte)),
-    span_id: Some(Array::make(8, 0xEE_byte)),
+    trace_id: Some([for i = 0; i < 16; i = i + 1].map(fn(_) { 0xFF_byte })),
+    span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0xEE_byte })),
     trace_flags: Some(0x01_byte),
     resource: Some(Resource::default("test-service")),
     instrumentation_scope: None
@@ -755,8 +755,8 @@ test "comprehensive_error_recovery" {
       ("empty.array", AttributeValue::array_string([])),
       ("unicode.string", AttributeValue::string("测试中文🚀"))
     ],
-    trace_id: Some(Array::make(16, 0xFF_byte)),  // 最大trace_id
-    span_id: Some(Array::make(8, 0xFF_byte)),  // 最大span_id
+    trace_id: Some([for i = 0; i < 16; i = i + 1].map(fn(_) { 0xFF_byte })),  // 最大trace_id
+    span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0xFF_byte })),  // 最大span_id
     trace_flags: Some(0xFF_byte),  // 最大trace_flags
     resource: Some(Resource::default("complex!@#$%^&*()service测试中文")),  // 特殊字符服务名
     instrumentation_scope: None
@@ -801,19 +801,19 @@ test "comprehensive_error_recovery" {
   assert_eq(complex_log_record.severity_number, Fatal)
   match complex_log_record.body {
     Some(body) => assert_eq(body, "Complex!@#$%^&*()log测试中文")
-    None => @test.fail("Expected complex body")
+    None => @test.fail("Test failed")
   }
   assert_eq(complex_log_record.attributes.length(), 8)
   
   // 验证复杂Context仍然可以正常工作
   match complex_ctx.get(create_key("")) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty key value")
+    None => @test.fail("Test failed")
   }
   
   match complex_ctx.get(create_key("测试中文")) {
     Some(value) => assert_eq(value, "测试中文值")
-    None => @test.fail("Expected Chinese key value")
+    None => @test.fail("Test failed")
   }
   
   // 验证错误恢复成功

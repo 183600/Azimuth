@@ -195,10 +195,10 @@ test "attributes_operations_performance" {
   }
   
   // 测试数组属性
-  let string_array = Array::make(100, "array_item")
-  let int_array = Array::make(100, 42L)
-  let float_array = Array::make(100, 3.14)
-  let bool_array = Array::make(100, true)
+  let string_array = [for i = 0; i < 100; i = i + 1].map(fn(_) { "array_item" })
+  let int_array = [for i = 0; i < 100; i = i + 1].map(fn(_) { 42L })
+  let float_array = [for i = 0; i < 100; i = i + 1].map(fn(_) { 3.14 })
+  let bool_array = [for i = 0; i < 100; i = i + 1].map(fn(_) { true })
   
   large_attrs.push(("string_array", AttributeValue::array_string(string_array)))
   large_attrs.push(("int_array", AttributeValue::array_int(int_array)))

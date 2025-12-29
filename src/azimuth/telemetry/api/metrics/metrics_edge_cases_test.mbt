@@ -36,19 +36,19 @@ test "metrics_boundary_conditions" {
   assert_eq(counter_attrs_max.length(), 2)
   match counter_attrs_max[0].1 {
     IntValue(value) => assert_eq(value, max_int64)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(counter_attrs_min.length(), 2)
   match counter_attrs_min[0].1 {
     IntValue(value) => assert_eq(value, min_int64)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(counter_attrs_zero.length(), 2)
   match counter_attrs_zero[0].1 {
     IntValue(value) => assert_eq(value, zero_int64)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试Histogram的极值
@@ -81,19 +81,19 @@ test "metrics_boundary_conditions" {
   assert_eq(histogram_attrs_max.length(), 2)
   match histogram_attrs_max[0].1 {
     FloatValue(value) => assert_eq(value, max_double)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(histogram_attrs_min.length(), 2)
   match histogram_attrs_min[0].1 {
     FloatValue(value) => assert_eq(value, min_double)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(histogram_attrs_zero.length(), 2)
   match histogram_attrs_zero[0].1 {
     FloatValue(value) => assert_eq(value, zero_double)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(histogram_attrs_inf.length(), 2)
@@ -102,7 +102,7 @@ test "metrics_boundary_conditions" {
       // 对于infinity，我们只验证类型而不验证具体值
       assert_eq(true, true)
     }
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(histogram_attrs_nan.length(), 2)
@@ -111,7 +111,7 @@ test "metrics_boundary_conditions" {
       // 对于NaN，我们只验证类型而不验证具体值
       assert_eq(true, true)
     }
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -138,7 +138,7 @@ test "metrics_error_conditions" {
                         !invalid_name.contains(" ") &&
                         !invalid_name.contains("@") &&
                         !invalid_name.contains("#") &&
-                        !invalid_name.starts_with("0") &&
+                        !invalid_name.has_prefix("0") &&
                         invalid_name.length() <= 255 &&
                         !invalid_name.contains("\n") &&
                         !invalid_name.contains("\t") &&
@@ -166,7 +166,7 @@ test "metrics_error_conditions" {
                         !valid_name.contains(" ") &&
                         !valid_name.contains("@") &&
                         !valid_name.contains("#") &&
-                        !valid_name.starts_with("0") &&
+                        !valid_name.has_prefix("0") &&
                         valid_name.length() <= 255 &&
                         !valid_name.contains("\n") &&
                         !valid_name.contains("\t") &&
@@ -184,12 +184,12 @@ test "metrics_error_conditions" {
   // 验证空值属性
   match empty_string_attr.1 {
     StringValue(value) => assert_eq(value, "")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_array_attr.1 {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试属性键的边界情况

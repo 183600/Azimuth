@@ -13,23 +13,23 @@ test "context_complex_operations" {
   // 验证所有值都存在
   match context3.get(key1) {
     Some(value) => assert_eq(value, "user-12345")
-    None => @test.fail("Expected user.id value")
+    None => @test.fail("Test failed")
   }
   
   match context3.get(key2) {
     Some(value) => assert_eq(value, "req-67890")
-    None => @test.fail("Expected request.id value")
+    None => @test.fail("Test failed")
   }
   
   match context3.get(key3) {
     Some(value) => assert_eq(value, "sess-abcdef")
-    None => @test.fail("Expected session.id value")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键
   let missing_key = create_key("missing.key")
   match context3.get(missing_key) {
-    Some(_) => @test.fail("Expected None for missing key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -43,7 +43,7 @@ test "context_with_unicode_and_special_characters" {
   
   match context_with_unicode.get(unicode_key) {
     Some(value) => assert_eq(value, "用户-12345")
-    None => @test.fail("Expected Unicode value")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符键值
@@ -52,7 +52,7 @@ test "context_with_unicode_and_special_characters" {
   
   match context_with_special.get(special_key) {
     Some(value) => assert_eq(value, "value!@#$%^&*()")
-    None => @test.fail("Expected special characters value")
+    None => @test.fail("Test failed")
   }
   
   // 测试emoji
@@ -61,7 +61,7 @@ test "context_with_unicode_and_special_characters" {
   
   match context_with_emoji.get(emoji_key) {
     Some(value) => assert_eq(value, "🔥fire")
-    None => @test.fail("Expected emoji value")
+    None => @test.fail("Test failed")
   }
   
   // 测试空字符串
@@ -70,7 +70,7 @@ test "context_with_unicode_and_special_characters" {
   
   match context_with_empty.get(empty_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty string value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -87,32 +87,32 @@ test "baggage_complex_operations" {
   // 验证所有条目
   match baggage5.get("user.id") {
     Some(value) => assert_eq(value, "user-12345")
-    None => @test.fail("Expected user.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage5.get("request.id") {
     Some(value) => assert_eq(value, "req-67890")
-    None => @test.fail("Expected request.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage5.get("session.id") {
     Some(value) => assert_eq(value, "sess-abcdef")
-    None => @test.fail("Expected session.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage5.get("trace.id") {
     Some(value) => assert_eq(value, "trace-123456789")
-    None => @test.fail("Expected trace.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage5.get("service.name") {
     Some(value) => assert_eq(value, "auth-service")
-    None => @test.fail("Expected service.name in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键
   match baggage5.get("missing.key") {
-    Some(_) => @test.fail("Expected None for missing baggage key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -135,12 +135,12 @@ test "context_and_baggage_integration" {
   // 验证Context和Baggage的独立性
   match context_with_span.get(trace_key) {
     Some(value) => assert_eq(value, "trace-123456789")
-    None => @test.fail("Expected trace.id in context")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_session.get("user.id") {
     Some(value) => assert_eq(value, "user-12345")
-    None => @test.fail("Expected user.id in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 测试复杂场景：Context存储Baggage信息
@@ -155,12 +155,12 @@ test "context_and_baggage_integration" {
       assert_eq(value, "user.id=user-12345,session.id=sess-abcdef")
       
       // 模拟解析baggage字符串
-      let parts = value.split(",")
+      let parts = value",".split_to_string()
       assert_eq(parts.length(), 2)
       assert_eq(parts[0], "user.id=user-12345")
       assert_eq(parts[1], "session.id=sess-abcdef")
     }
-    None => @test.fail("Expected baggage string in context")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -174,7 +174,7 @@ test "context_edge_cases_and_boundary_conditions" {
   let context_with_empty_key = empty_context.with_value(empty_key, "")
   match context_with_empty_key.get(empty_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty string value")
+    None => @test.fail("Test failed")
   }
   
   // 长字符串测试
@@ -184,7 +184,7 @@ test "context_edge_cases_and_boundary_conditions" {
   let context_with_long = context_with_empty_key.with_value(long_key, long_string)
   match context_with_long.get(long_key) {
     Some(value) => assert_eq(value, long_string)
-    None => @test.fail("Expected long string value")
+    None => @test.fail("Test failed")
   }
   
   // 特殊字符测试
@@ -194,7 +194,7 @@ test "context_edge_cases_and_boundary_conditions" {
   let context_with_special = context_with_long.with_value(special_key, special_chars)
   match context_with_special.get(special_key) {
     Some(value) => assert_eq(value, special_chars)
-    None => @test.fail("Expected special characters value")
+    None => @test.fail("Test failed")
   }
   
   // Unicode测试
@@ -204,7 +204,7 @@ test "context_edge_cases_and_boundary_conditions" {
   let context_with_unicode = context_with_special.with_value(unicode_key, unicode_string)
   match context_with_unicode.get(unicode_key) {
     Some(value) => assert_eq(value, unicode_string)
-    None => @test.fail("Expected unicode string value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -217,7 +217,7 @@ test "baggage_edge_cases_and_boundary_conditions" {
   let baggage_with_empty_key = empty_baggage.with_entry("", "")
   match baggage_with_empty_key.get("") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty string value for empty key")
+    None => @test.fail("Test failed")
   }
   
   // 长字符串测试
@@ -227,7 +227,7 @@ test "baggage_edge_cases_and_boundary_conditions" {
   let baggage_with_long = baggage_with_empty_key.with_entry(long_key, long_value)
   match baggage_with_long.get(long_key) {
     Some(value) => assert_eq(value, long_value)
-    None => @test.fail("Expected long string value")
+    None => @test.fail("Test failed")
   }
   
   // 特殊字符测试
@@ -237,7 +237,7 @@ test "baggage_edge_cases_and_boundary_conditions" {
   let baggage_with_special = baggage_with_long.with_entry(special_key, special_value)
   match baggage_with_special.get(special_key) {
     Some(value) => assert_eq(value, special_value)
-    None => @test.fail("Expected special characters value")
+    None => @test.fail("Test failed")
   }
   
   // Unicode测试
@@ -247,7 +247,7 @@ test "baggage_edge_cases_and_boundary_conditions" {
   let baggage_with_unicode = baggage_with_special.with_entry(unicode_key, unicode_value)
   match baggage_with_unicode.get(unicode_key) {
     Some(value) => assert_eq(value, unicode_value)
-    None => @test.fail("Expected unicode value")
+    None => @test.fail("Test failed")
   }
   
   // 包含等号和逗号的值（这些是baggage的特殊字符）
@@ -257,7 +257,7 @@ test "baggage_edge_cases_and_boundary_conditions" {
   let baggage_with_complex = baggage_with_unicode.with_entry(complex_key, complex_value)
   match baggage_with_complex.get(complex_key) {
     Some(value) => assert_eq(value, complex_value)
-    None => @test.fail("Expected complex value with special characters")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -278,22 +278,22 @@ test "context_performance_and_large_scale" {
   // 验证随机访问
   match context.get(create_key("key0")) {
     Some(value) => assert_eq(value, "value0")
-    None => @test.fail("Expected value0")
+    None => @test.fail("Test failed")
   }
   
   match context.get(create_key("key500")) {
     Some(value) => assert_eq(value, "value500")
-    None => @test.fail("Expected value500")
+    None => @test.fail("Test failed")
   }
   
   match context.get(create_key("key999")) {
     Some(value) => assert_eq(value, "value999")
-    None => @test.fail("Expected value999")
+    None => @test.fail("Test failed")
   }
   
   // 验证不存在的键
   match context.get(create_key("key1000")) {
-    Some(_) => @test.fail("Expected None for key1000")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -314,22 +314,22 @@ test "baggage_performance_and_large_scale" {
   // 验证随机访问
   match baggage.get("key0") {
     Some(value) => assert_eq(value, "value0")
-    None => @test.fail("Expected value0 in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("key500") {
     Some(value) => assert_eq(value, "value500")
-    None => @test.fail("Expected value500 in baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("key999") {
     Some(value) => assert_eq(value, "value999")
-    None => @test.fail("Expected value999 in baggage")
+    None => @test.fail("Test failed")
   }
   
   // 验证不存在的键
   match baggage.get("key1000") {
-    Some(_) => @test.fail("Expected None for key1000 in baggage")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }

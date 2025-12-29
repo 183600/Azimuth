@@ -7,14 +7,14 @@ test "context_basic_operations" {
   let retrieved_value = ctx_with_value.get(key)
   match retrieved_value {
     Some(value) => assert_eq(value, "test_value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键
   let non_existent_key = create_key("non_existent")
   let non_existent_value = ctx_with_value.get(non_existent_key)
   match non_existent_value {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -26,13 +26,13 @@ test "baggage_basic_operations" {
   let retrieved_value = baggage_with_entry.get("test_key")
   match retrieved_value {
     Some(value) => assert_eq(value, "test_value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键
   let non_existent_value = baggage_with_entry.get("non_existent")
   match non_existent_value {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -44,7 +44,7 @@ test "context_key_creation" {
   assert_eq(key1.name, "key1")
   assert_eq(key2.name, "key2")
   if key1.name == key2.name {
-    @test.fail("Expected key1.name != key2.name")
+    @test.fail("Test failed")
   }
 }
 
@@ -62,30 +62,30 @@ test "context_multiple_values_and_overwrites" {
   // 验证所有值都存在
   match ctx3.get(key1) {
     Some(value) => assert_eq(value, "user-123")
-    None => @test.fail("Expected Some(value) for user.id")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(key2) {
     Some(value) => assert_eq(value, "req-456")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(key3) {
     Some(value) => assert_eq(value, "token-abc")
-    None => @test.fail("Expected Some(value) for session.token")
+    None => @test.fail("Test failed")
   }
   
   // 测试覆盖现有值
   let ctx4 = ctx3.with_value(key1, "user-789")
   match ctx4.get(key1) {
     Some(value) => assert_eq(value, "user-789")
-    None => @test.fail("Expected Some(value) for updated user.id")
+    None => @test.fail("Test failed")
   }
   
   // 验证其他值不受影响
   match ctx4.get(key2) {
     Some(value) => assert_eq(value, "req-456")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -98,7 +98,7 @@ test "context_empty_and_special_values" {
   let ctx_with_empty = ctx.with_value(empty_key, "")
   match ctx_with_empty.get(empty_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some(empty string)")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符值
@@ -106,7 +106,7 @@ test "context_empty_and_special_values" {
   let ctx_with_special = ctx_with_empty.with_value(special_key, special_value)
   match ctx_with_special.get(special_key) {
     Some(value) => assert_eq(value, special_value)
-    None => @test.fail("Expected Some(special string)")
+    None => @test.fail("Test failed")
   }
   
   // 测试长字符串值
@@ -115,7 +115,7 @@ test "context_empty_and_special_values" {
   let ctx_with_long = ctx_with_special.with_value(long_key, long_value)
   match ctx_with_long.get(long_key) {
     Some(value) => assert_eq(value, long_value)
-    None => @test.fail("Expected Some(long string)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -131,35 +131,35 @@ test "baggage_multiple_entries_and_overwrites" {
   // 验证所有条目都存在
   match baggage4.get("user.id") {
     Some(value) => assert_eq(value, "12345")
-    None => @test.fail("Expected Some(value) for user.id")
+    None => @test.fail("Test failed")
   }
   
   match baggage4.get("request.id") {
     Some(value) => assert_eq(value, "67890")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
   
   match baggage4.get("session.id") {
     Some(value) => assert_eq(value, "abcdef")
-    None => @test.fail("Expected Some(value) for session.id")
+    None => @test.fail("Test failed")
   }
   
   match baggage4.get("trace.id") {
     Some(value) => assert_eq(value, "1234567890")
-    None => @test.fail("Expected Some(value) for trace.id")
+    None => @test.fail("Test failed")
   }
   
   // 测试覆盖现有条目
   let baggage5 = baggage4.with_entry("user.id", "54321")
   match baggage5.get("user.id") {
     Some(value) => assert_eq(value, "54321")
-    None => @test.fail("Expected Some(value) for updated user.id")
+    None => @test.fail("Test failed")
   }
   
   // 验证其他条目不受影响
   match baggage5.get("request.id") {
     Some(value) => assert_eq(value, "67890")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -182,22 +182,22 @@ test "context_and_baggage_integration" {
   // 验证context和baggage中的值
   match ctx_with_values.get(trace_key) {
     Some(value) => assert_eq(value, "trace-123")
-    None => @test.fail("Expected Some(value) for trace.id")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_values.get(span_key) {
     Some(value) => assert_eq(value, "span-456")
-    None => @test.fail("Expected Some(value) for span.id")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_entries.get("user.id") {
     Some(value) => assert_eq(value, "user-789")
-    None => @test.fail("Expected Some(value) for user.id")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_entries.get("correlation.id") {
     Some(value) => assert_eq(value, "corr-012")
-    None => @test.fail("Expected Some(value) for correlation.id")
+    None => @test.fail("Test failed")
   }
   
   // 测试空值和特殊键名
@@ -208,7 +208,7 @@ test "context_and_baggage_integration" {
   
   match special_ctx.get(create_key("")) {
     Some(value) => assert_eq(value, "empty.key.value")
-    None => @test.fail("Expected Some(value) for empty key")
+    None => @test.fail("Test failed")
   }
   
   let special_baggage = baggage_with_entries
@@ -218,6 +218,6 @@ test "context_and_baggage_integration" {
   
   match special_baggage.get("") {
     Some(value) => assert_eq(value, "empty.entry.value")
-    None => @test.fail("Expected Some(value) for empty entry")
+    None => @test.fail("Test failed")
   }
 }

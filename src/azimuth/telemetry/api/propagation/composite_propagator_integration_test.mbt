@@ -16,7 +16,7 @@ test "w3c_trace_context_propagator_basic" {
       assert_eq(trace_parent.length(), 55) // "00-" + 32 chars + "-" + 16 chars + "-01"
       assert_eq(trace_parent.has_suffix("-01"), true)
     }
-    None => @test.fail("Expected traceparent header to be set")
+    None => @test.fail("Test failed")
   }
   
   // 测试提取
@@ -41,7 +41,7 @@ test "w3c_baggage_propagator_basic" {
       assert_eq(baggage_value.contains("key2=value2"), true)
       assert_eq(baggage_value.contains(","), true)
     }
-    None => @test.fail("Expected baggage header to be set")
+    None => @test.fail("Test failed")
   }
   
   // 测试提取
@@ -66,11 +66,11 @@ test "composite_propagator_single" {
   // 验证只有traceparent头部被设置
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
-    Some(_) => @test.fail("Did not expect baggage header")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -100,7 +100,7 @@ test "composite_propagator_multiple" {
       assert_eq(trace_parent.has_prefix("00-"), true)
       assert_eq(trace_parent.length(), 55)
     }
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
@@ -108,7 +108,7 @@ test "composite_propagator_multiple" {
       assert_eq(baggage_value.contains("key1=value1"), true)
       assert_eq(baggage_value.contains("key2=value2"), true)
     }
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 测试提取
@@ -139,20 +139,20 @@ test "composite_propagator_order_independence" {
     Some(trace_parent1) => {
       match carrier2.get(TRACE_PARENT_HEADER) {
         Some(trace_parent2) => assert_eq(trace_parent1, trace_parent2)
-        None => @test.fail("Expected traceparent header in carrier2")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected traceparent header in carrier1")
+    None => @test.fail("Test failed")
   }
   
   match carrier1.get(BAGGAGE_HEADER) {
     Some(baggage1) => {
       match carrier2.get(BAGGAGE_HEADER) {
         Some(baggage2) => assert_eq(baggage1, baggage2)
-        None => @test.fail("Expected baggage header in carrier2")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected baggage header in carrier1")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -168,17 +168,17 @@ test "map_carrier_operations" {
   // 测试获取现有键
   match carrier.get("existing-key") {
     Some(value) => assert_eq(value, "existing-value")
-    None => @test.fail("Expected to find existing-key")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("another-key") {
     Some(value) => assert_eq(value, "another-value")
-    None => @test.fail("Expected to find another-key")
+    None => @test.fail("Test failed")
   }
   
   // 测试获取不存在的键
   match carrier.get("non-existent") {
-    Some(_) => @test.fail("Did not expect to find non-existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -217,12 +217,12 @@ test "composite_propagator_with_empty_carrier" {
   // 验证注入后的carrier包含头部
   match empty_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header after injection")
+    None => @test.fail("Test failed")
   }
   
   match empty_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header after injection")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -249,12 +249,12 @@ test "composite_propagator_with_preexisting_data" {
   // 验证预存数据仍然存在
   match carrier.get("custom-header") {
     Some(value) => assert_eq(value, "custom-value")
-    None => @test.fail("Expected custom-header to still exist")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("another-header") {
     Some(value) => assert_eq(value, "another-value")
-    None => @test.fail("Expected another-header to still exist")
+    None => @test.fail("Test failed")
   }
   
   // 测试注入（可能会覆盖现有的头部）
@@ -295,7 +295,7 @@ test "composite_propagator_large_scale" {
       assert_eq(trace_parent.has_prefix("00-"), true)
       assert_eq(trace_parent.length(), 55)
     }
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
@@ -303,7 +303,7 @@ test "composite_propagator_large_scale" {
       assert_eq(baggage_value.contains("key1=value1"), true)
       assert_eq(baggage_value.contains("key2=value2"), true)
     }
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 测试提取
@@ -339,11 +339,11 @@ test "propagator_error_handling" {
   // 验证注入后的数据
   match empty_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match empty_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
 }

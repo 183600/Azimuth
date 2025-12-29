@@ -35,7 +35,7 @@ test "sdk_logger_provider_lifecycle" {
   assert_eq(provider.name, "default-logger-provider")
   match provider.state {
     Uninitialized => assert_eq(true, true)
-    _ => @test.fail("Expected Uninitialized state")
+    _ => @test.fail("Test failed")
   }
   assert_eq(provider.logger_count, 0L)
   assert_eq(provider.shutdown_timeout_ms, 30000L)
@@ -47,7 +47,7 @@ test "sdk_logger_provider_lifecycle" {
   
   match initializing_provider.state {
     Initializing => assert_eq(true, true)
-    _ => @test.fail("Expected Initializing state")
+    _ => @test.fail("Test failed")
   }
   
   // 模拟状态转换：Initializing -> Active
@@ -57,7 +57,7 @@ test "sdk_logger_provider_lifecycle" {
   
   match active_provider.state {
     Active => assert_eq(true, true)
-    _ => @test.fail("Expected Active state")
+    _ => @test.fail("Test failed")
   }
   assert_eq(active_provider.logger_count, 5L)
   
@@ -68,7 +68,7 @@ test "sdk_logger_provider_lifecycle" {
   
   match stopping_provider.state {
     Stopping => assert_eq(true, true)
-    _ => @test.fail("Expected Stopping state")
+    _ => @test.fail("Test failed")
   }
   
   // 模拟状态转换：Stopping -> Stopped
@@ -78,7 +78,7 @@ test "sdk_logger_provider_lifecycle" {
   
   match stopped_provider.state {
     Stopped => assert_eq(true, true)
-    _ => @test.fail("Expected Stopped state")
+    _ => @test.fail("Test failed")
   }
   assert_eq(stopped_provider.logger_count, 0L)
   
@@ -170,7 +170,7 @@ test "sdk_log_record_processor" {
   // 验证初始状态
   match status.state {
     Idle => assert_eq(true, true)
-    _ => @test.fail("Expected Idle state")
+    _ => @test.fail("Test failed")
   }
   assert_eq(status.queue_size, 0L)
   assert_eq(status.processed_count, 0L)
@@ -190,7 +190,7 @@ test "sdk_log_record_processor" {
   
   match status.state {
     Processing => assert_eq(true, true)
-    _ => @test.fail("Expected Processing state")
+    _ => @test.fail("Test failed")
   }
   
   // 模拟处理完成
@@ -204,7 +204,7 @@ test "sdk_log_record_processor" {
   
   match status.state {
     Idle => assert_eq(true, true)
-    _ => @test.fail("Expected Idle state")
+    _ => @test.fail("Test failed")
   }
   assert_eq(status.queue_size, 0L)
   assert_eq(status.processed_count, 100L)

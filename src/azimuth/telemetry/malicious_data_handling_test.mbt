@@ -24,7 +24,7 @@ test "malicious_string_input_handling" {
         // 验证字符串原样存储，不执行SQL
         assert_eq(s, malicious_string)
       }
-      _ => @test.fail("Expected StringValue")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -50,7 +50,7 @@ test "malicious_string_input_handling" {
         // 验证XSS字符串原样存储，不执行脚本
         assert_eq(s, xss_string)
       }
-      _ => @test.fail("Expected StringValue")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -76,7 +76,7 @@ test "malicious_string_input_handling" {
         // 验证路径遍历字符串原样存储，不访问文件系统
         assert_eq(s, path_string)
       }
-      _ => @test.fail("Expected StringValue")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -104,7 +104,7 @@ test "malicious_numeric_input_handling" {
         // 验证数值原样存储
         assert_eq(v, overflow_value)
       }
-      _ => @test.fail("Expected IntValue")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -130,14 +130,14 @@ test "malicious_numeric_input_handling" {
         // 验证浮点数值原样存储
         assert_eq(v, special_float)
       }
-      _ => @test.fail("Expected FloatValue")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
   
   // 3. 测试极大数组值
-  let large_int_array = AttributeValue::array_int(Array::make(10000, 9223372036854775807L))
-  let large_float_array = AttributeValue::array_float(Array::make(10000, 1.7976931348623157e+308))
+  let large_int_array = AttributeValue::array_int([for i = 0; i < 10000; i = i + 1].map(fn(_) { 9223372036854775807L }))
+  let large_float_array = AttributeValue::array_float([for i = 0; i < 10000; i = i + 1].map(fn(_) { 1.7976931348623157e+308 }))
   
   // 验证大数组被安全处理
   match large_int_array {
@@ -145,7 +145,7 @@ test "malicious_numeric_input_handling" {
       assert_eq(arr.length(), 10000)
       assert_eq(arr[0], 9223372036854775807L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match large_float_array {
@@ -153,7 +153,7 @@ test "malicious_numeric_input_handling" {
       assert_eq(arr.length(), 10000)
       assert_eq(arr[0], 1.7976931348623157e+308)
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -186,7 +186,7 @@ test "malicious_context_input_handling" {
         // 验证值可以正确检索
         assert_eq(value, safe_value)
       }
-      None => @test.fail("Expected value for malicious key")
+      None => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -215,7 +215,7 @@ test "malicious_context_input_handling" {
         // 验证恶意值原样存储
         assert_eq(value, malicious_value)
       }
-      None => @test.fail("Expected malicious value")
+      None => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -237,7 +237,7 @@ test "malicious_context_input_handling" {
     let expected_value = "many_entries_value_" + i.to_string()
     match ctx_with_many_entries.get(key) {
       Some(value) => assert_eq(value, expected_value)
-      None => @test.fail("Expected value for many entries key")
+      None => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -271,7 +271,7 @@ test "malicious_baggage_input_handling" {
         // 验证值可以正确检索
         assert_eq(value, safe_value)
       }
-      None => @test.fail("Expected value for malicious baggage key")
+      None => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -299,7 +299,7 @@ test "malicious_baggage_input_handling" {
         // 验证恶意值原样存储
         assert_eq(value, malicious_value)
       }
-      None => @test.fail("Expected malicious baggage value")
+      None => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -321,7 +321,7 @@ test "malicious_baggage_input_handling" {
     let expected_value = "many_entries_value_" + i.to_string()
     match baggage_with_many_entries.get(key) {
       Some(value) => assert_eq(value, expected_value)
-      None => @test.fail("Expected value for many baggage entries")
+      None => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -356,7 +356,7 @@ test "malicious_log_input_handling" {
         // 验证恶意消息原样存储
         assert_eq(body, malicious_body)
       }
-      None => @test.fail("Expected malicious log body")
+      None => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -584,15 +584,15 @@ test "denial_of_service_protection" {
   
   match large_attr {
     StringValue(s) => assert_eq(s.length(), 1000000)
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 2. 测试极大数组输入
-  let extremely_large_array = AttributeValue::array_string(Array::make(100000, "large-array-item"))
+  let extremely_large_array = AttributeValue::array_string([for i = 0; i < 100000; i = i + 1].map(fn(_) { "large-array-item" }))
   
   match extremely_large_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 100000)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 测试极深的嵌套结构
@@ -609,7 +609,7 @@ test "denial_of_service_protection" {
   let deep_key = context::create_key("deep_key_9999")
   match deeply_nested_ctx.get(deep_key) {
     Some(value) => assert_eq(value, "deep_value_9999")
-    None => @test.fail("Expected deep value")
+    None => @test.fail("Test failed")
   }
   
   // 4. 测试极大量的属性
@@ -641,6 +641,6 @@ test "denial_of_service_protection" {
   // 验证大量baggage条目被安全处理
   match extremely_large_baggage.get("extreme_entry_24999") {
     Some(value) => assert_eq(value, "extreme_value_24999")
-    None => @test.fail("Expected extreme baggage value")
+    None => @test.fail("Test failed")
   }
 }

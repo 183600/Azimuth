@@ -28,8 +28,8 @@ test "trace_span_context_validation" {
   assert_eq(valid_span_context.trace_state.contains("congo="), true)
   
   // 测试全零的trace_id（无效）
-  let zero_trace_id = Array::make(16, 0x00_byte)
-  let zero_span_id = Array::make(8, 0x00_byte)
+  let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x00_byte })
+  let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x00_byte })
   
   let zero_trace_context = SpanContext::{
     trace_id: zero_trace_id,
@@ -146,7 +146,7 @@ test "trace_span_lifecycle_edge_cases" {
       assert_eq(end > start_time, true)
       assert_eq(end - start_time, 1L)
     }
-    None => @test.fail("Expected Some(end_time)")
+    None => @test.fail("Test failed")
   }
   
   // 测试没有结束时间的Span（仍在进行中）
@@ -175,13 +175,13 @@ test "trace_span_lifecycle_edge_cases" {
   
   // 验证进行中的Span
   match ongoing_span.end_time_unix_nanos {
-    Some(_) => @test.fail("Expected None for ongoing span")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ongoing_span.status {
     Unset => assert_eq(true, true)
-    _ => @test.fail("Expected Unset status for ongoing span")
+    _ => @test.fail("Test failed")
   }
   
   // 测试带有大量事件的Span
@@ -261,12 +261,12 @@ test "trace_span_lifecycle_edge_cases" {
   // 验证错误Span
   match error_span.status {
     Error => assert_eq(true, true)
-    _ => @test.fail("Expected Error status")
+    _ => @test.fail("Test failed")
   }
   
   match error_span.status_description {
     Some(description) => assert_eq(description, "Database connection failed")
-    None => @test.fail("Expected Some(status_description)")
+    None => @test.fail("Test failed")
   }
   
   assert_eq(error_span.attributes.length(), 2)

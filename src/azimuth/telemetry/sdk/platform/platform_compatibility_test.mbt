@@ -521,22 +521,22 @@ test "platform_network_compatibility" {
   // 验证代理配置
   match linux_network.proxy_config {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Linux should not have proxy config")
+    Some(_) => @test.fail("Test failed")
   }
   
   match windows_network.proxy_config {
     Some(proxy) => assert_eq(proxy, "http://proxy.company.com:8080")
-    None => @test.fail("Windows should have proxy config")
+    None => @test.fail("Test failed")
   }
   
   match macos_network.proxy_config {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("macOS should not have proxy config")
+    Some(_) => @test.fail("Test failed")
   }
   
   // IP地址验证函数
   fn is_valid_ipv4(address : String) -> Bool {
-    let parts = address.split(".")
+    let parts = address".".split_to_string()
     if parts.length() != 4 {
       return false
     }

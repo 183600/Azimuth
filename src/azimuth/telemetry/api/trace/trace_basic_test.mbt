@@ -24,7 +24,7 @@ test "span_with_attributes" {
   
   match span.attributes[0].1 {
     StringValue(value) => assert_eq(value, "value1")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -58,8 +58,8 @@ test "tracer_provider" {
 }
 
 test "span_context_properties" {
-  let trace_id = Array::make(16, 0_byte)
-  let span_id = Array::make(8, 0_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   
   let span_context = SpanContext::{
     trace_id,
@@ -106,8 +106,8 @@ test "span_events_and_links" {
   }
   
   // 创建span链接
-  let linked_trace_id = Array::make(16, 1_byte)
-  let linked_span_id = Array::make(8, 1_byte)
+  let linked_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let linked_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte })
   let linked_context = SpanContext::{
     trace_id: linked_trace_id,
     span_id: linked_span_id,
@@ -129,7 +129,7 @@ test "span_events_and_links" {
   
   match span_event.attributes[0].1 {
     StringValue(value) => assert_eq(value, "timeout")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证链接属性
@@ -141,7 +141,7 @@ test "span_events_and_links" {
   
   match span_link.attributes[0].1 {
     StringValue(value) => assert_eq(value, "parent")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -149,9 +149,9 @@ test "span_with_complete_information" {
   let ctx = Context::empty()
   
   // 创建完整的SpanContext
-  let trace_id = Array::make(16, 0x0a_byte)
-  let span_id = Array::make(8, 0x0b_byte)
-  let parent_span_id = Array::make(8, 0x0c_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x0a_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x0b_byte })
+  let parent_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x0c_byte })
   
   let span_context = SpanContext::{
     trace_id,
@@ -210,8 +210,8 @@ test "span_with_complete_information" {
   let links = [
     SpanLink::{
       context: SpanContext::{
-        trace_id: Array::make(16, 0x01_byte),
-        span_id: Array::make(8, 0x02_byte),
+        trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte }),
+        span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte }),
         trace_flags: 1_byte,
         trace_state: ""
       },
@@ -222,8 +222,8 @@ test "span_with_complete_information" {
     },
     SpanLink::{
       context: SpanContext::{
-        trace_id: Array::make(16, 0x03_byte),
-        span_id: Array::make(8, 0x04_byte),
+        trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x03_byte }),
+        span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x04_byte }),
         trace_flags: 0_byte,
         trace_state: "key=value"
       },
@@ -257,12 +257,12 @@ test "span_with_complete_information" {
   
   match complete_span.end_time_unix_nanos {
     Some(end_time) => assert_eq(end_time, 1640995200000000500L)
-    None => @test.fail("Expected Some(end_time)")
+    None => @test.fail("Test failed")
   }
   
   match complete_span.status_description {
     Some(description) => assert_eq(description, "Payment processed successfully")
-    None => @test.fail("Expected Some(status_description)")
+    None => @test.fail("Test failed")
   }
   
   match complete_span.parent_span_id {
@@ -270,7 +270,7 @@ test "span_with_complete_information" {
       assert_eq(parent_id.length(), 8)
       assert_eq(parent_id[0], 0x0c_byte)
     }
-    None => @test.fail("Expected Some(parent_span_id)")
+    None => @test.fail("Test failed")
   }
   
   // 验证上下文
@@ -298,8 +298,8 @@ test "span_context_edge_cases_and_special_values" {
   // 测试边界情况和特殊值的SpanContext
   
   // 全零的trace_id和span_id
-  let zero_trace_id = Array::make(16, 0_byte)
-  let zero_span_id = Array::make(8, 0_byte)
+  let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   
   let zero_context = SpanContext::{
     trace_id: zero_trace_id,
@@ -309,8 +309,8 @@ test "span_context_edge_cases_and_special_values" {
   }
   
   // 全1的trace_id和span_id
-  let max_trace_id = Array::make(16, 0xff_byte)
-  let max_span_id = Array::make(8, 0xff_byte)
+  let max_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0xff_byte })
+  let max_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0xff_byte })
   
   let max_context = SpanContext::{
     trace_id: max_trace_id,
@@ -360,8 +360,8 @@ test "span_context_edge_cases_and_special_values" {
   // 测试复杂的trace_state
   let complex_trace_state = "key1=value1,key2=value2;prop1=val1,key3=value3;prop1=val1;prop2=val2"
   let complex_context = SpanContext::{
-    trace_id: Array::make(16, 0x12_byte),
-    span_id: Array::make(8, 0x34_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x12_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x34_byte }),
     trace_flags: 1_byte,
     trace_state: complex_trace_state
   }
@@ -371,8 +371,8 @@ test "span_context_edge_cases_and_special_values" {
   
   // 测试空trace_state
   let empty_state_context = SpanContext::{
-    trace_id: Array::make(16, 0x56_byte),
-    span_id: Array::make(8, 0x78_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x56_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x78_byte }),
     trace_flags: 0_byte,
     trace_state: ""
   }
@@ -392,7 +392,7 @@ test "span_status_and_lifecycle" {
   assert_eq(span.kind, Client)
   assert_eq(span.status, Unset)
   match span.status_description {
-    Some(_) => @test.fail("Expected None for status_description")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -400,8 +400,8 @@ test "span_status_and_lifecycle" {
   let unset_span = Span::{
     name: "unset_span",
     context: SpanContext::{
-      trace_id: Array::make(16, 0_byte),
-      span_id: Array::make(8, 0_byte),
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
       trace_flags: 0_byte,
       trace_state: ""
     },
@@ -419,8 +419,8 @@ test "span_status_and_lifecycle" {
   let ok_span = Span::{
     name: "ok_span",
     context: SpanContext::{
-      trace_id: Array::make(16, 0_byte),
-      span_id: Array::make(8, 0_byte),
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
       trace_flags: 0_byte,
       trace_state: ""
     },
@@ -438,8 +438,8 @@ test "span_status_and_lifecycle" {
   let error_span = Span::{
     name: "error_span",
     context: SpanContext::{
-      trace_id: Array::make(16, 0_byte),
-      span_id: Array::make(8, 0_byte),
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
       trace_flags: 0_byte,
       trace_state: ""
     },
@@ -469,32 +469,32 @@ test "span_status_and_lifecycle" {
   // 验证不同状态的span
   assert_eq(unset_span.status, Unset)
   match unset_span.status_description {
-    Some(_) => @test.fail("Expected None for unset span status_description")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   match unset_span.end_time_unix_nanos {
-    Some(_) => @test.fail("Expected None for unset span end_time")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   assert_eq(ok_span.status, Ok)
   match ok_span.status_description {
     Some(description) => assert_eq(description, "Operation completed successfully")
-    None => @test.fail("Expected Some(status_description)")
+    None => @test.fail("Test failed")
   }
   match ok_span.end_time_unix_nanos {
     Some(end_time) => assert_eq(end_time, 2000L)
-    None => @test.fail("Expected Some(end_time)")
+    None => @test.fail("Test failed")
   }
   
   assert_eq(error_span.status, Error)
   match error_span.status_description {
     Some(description) => assert_eq(description, "Database connection failed")
-    None => @test.fail("Expected Some(status_description)")
+    None => @test.fail("Test failed")
   }
   match error_span.end_time_unix_nanos {
     Some(end_time) => assert_eq(end_time, 1500L)
-    None => @test.fail("Expected Some(end_time)")
+    None => @test.fail("Test failed")
   }
   assert_eq(error_span.attributes.length(), 2)
   assert_eq(error_span.events.length(), 1)

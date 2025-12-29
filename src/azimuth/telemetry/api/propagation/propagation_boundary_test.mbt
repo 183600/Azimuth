@@ -14,12 +14,12 @@ test "propagator_boundary_conditions" {
   
   match empty_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header in empty carrier")
+    None => @test.fail("Test failed")
   }
   
   match empty_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header in empty carrier")
+    None => @test.fail("Test failed")
   }
   
   // extract从空carrier
@@ -197,12 +197,12 @@ test "composite_propagator_boundary_conditions" {
   
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent from single propagator")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage from single propagator")
+    None => @test.fail("Test failed")
   }
   
   // 重复的propagator类型
@@ -218,12 +218,12 @@ test "composite_propagator_boundary_conditions" {
   
   match duplicate_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent from duplicate propagators")
+    None => @test.fail("Test failed")
   }
   
   match duplicate_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage from duplicate propagators")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -234,7 +234,7 @@ test "map_carrier_boundary_conditions" {
   let empty_carrier = MapCarrier::from_map([])
   
   match empty_carrier.get("any.key") {
-    Some(_) => @test.fail("Expected None from empty carrier")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -246,11 +246,11 @@ test "map_carrier_boundary_conditions" {
   
   match single_carrier.get("single.key") {
     Some(value) => assert_eq(value, "single.value")
-    None => @test.fail("Expected value from single entry carrier")
+    None => @test.fail("Test failed")
   }
   
   match single_carrier.get("missing.key") {
-    Some(_) => @test.fail("Expected None for missing key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -267,7 +267,7 @@ test "map_carrier_boundary_conditions" {
   
   match duplicate_keys_carrier.get("duplicate.key") {
     Some(value) => assert_eq(value, "value3")  // 最后一个值
-    None => @test.fail("Expected last value for duplicate key")
+    None => @test.fail("Test failed")
   }
   
   // 空键和空值
@@ -279,12 +279,12 @@ test "map_carrier_boundary_conditions" {
   
   match empty_key_value_carrier.get("") {
     Some(value) => assert_eq(value, "")  // 最后一个空键的值
-    None => @test.fail("Expected value for empty key")
+    None => @test.fail("Test failed")
   }
   
   match empty_key_value_carrier.get("empty.value.key") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty value")
+    None => @test.fail("Test failed")
   }
   
   // 长键和长值
@@ -298,12 +298,12 @@ test "map_carrier_boundary_conditions" {
   
   match long_carrier.get(long_key) {
     Some(value) => assert_eq(value, long_value)
-    None => @test.fail("Expected long value")
+    None => @test.fail("Test failed")
   }
   
   match long_carrier.get("normal.key") {
     Some(value) => assert_eq(value, "normal.value")
-    None => @test.fail("Expected normal value")
+    None => @test.fail("Test failed")
   }
   
   // Unicode和特殊字符
@@ -315,17 +315,17 @@ test "map_carrier_boundary_conditions" {
   
   match unicode_carrier.get("Unicode键🚀") {
     Some(value) => assert_eq(value, "Unicode值🔥")
-    None => @test.fail("Expected unicode value")
+    None => @test.fail("Test failed")
   }
   
   match unicode_carrier.get("special!@#$%") {
     Some(value) => assert_eq(value, "value!@#$%")
-    None => @test.fail("Expected special characters value")
+    None => @test.fail("Test failed")
   }
   
   match unicode_carrier.get("spaces and\ttabs\n") {
     Some(value) => assert_eq(value, "value with\tspaces\n")
-    None => @test.fail("Expected value with spaces and tabs")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -423,12 +423,12 @@ test "propagation_error_recovery" {
   // 验证原有headers仍然存在
   match mixed_carrier.get("custom.header1") {
     Some(value) => assert_eq(value, "custom.value1")
-    None => @test.fail("Expected custom header1 to persist")
+    None => @test.fail("Test failed")
   }
   
   match mixed_carrier.get("custom.header2") {
     Some(value) => assert_eq(value, "custom.value2")
-    None => @test.fail("Expected custom header2 to persist")
+    None => @test.fail("Test failed")
   }
   
   assert_eq(true, true)

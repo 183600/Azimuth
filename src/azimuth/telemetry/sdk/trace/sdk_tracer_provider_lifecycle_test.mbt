@@ -31,13 +31,13 @@ test "sdk_tracer_provider_lifecycle" {
   state = Initialized
   match state {
     Initialized => assert_eq(true, true)
-    _ => @test.fail("Provider should be initialized")
+    _ => @test.fail("Test failed")
   }
   
   state = Active
   match state {
     Active => assert_eq(true, true)
-    _ => @test.fail("Provider should be active")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 测试资源管理
@@ -51,7 +51,7 @@ test "sdk_tracer_provider_lifecycle" {
   state = Shutdown
   match state {
     Shutdown => assert_eq(true, true)
-    _ => @test.fail("Provider should be shutdown")
+    _ => @test.fail("Test failed")
   }
   
   // 6. 验证关闭后的行为
@@ -99,8 +99,8 @@ test "sdk_tracer_configuration_validation" {
   let valid_version = "1.2.3"
   let invalid_version = "not.a.version"
   
-  assert_eq(valid_version.split('.').length(), 3)
-  assert_eq(invalid_version.split('.').length(), 3)
+  assert_eq(valid_version'.'.split_to_string().length(), 3)
+  assert_eq(invalid_version'.'.split_to_string().length(), 3)
 }
 
 test "sdk_span_processor_integration" {
@@ -147,7 +147,7 @@ test "sdk_span_processor_integration" {
   let processor_type = Batch
   match processor_type {
     Batch => assert_eq(true, true)
-    _ => @test.fail("Expected Batch processor type")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 测试处理器生命周期
@@ -167,6 +167,6 @@ test "sdk_span_processor_integration" {
   
   match processor_state {
     Stopped => assert_eq(true, true)
-    _ => @test.fail("Processor should be stopped")
+    _ => @test.fail("Test failed")
   }
 }

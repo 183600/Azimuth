@@ -19,16 +19,16 @@ test "span_creation_basic" {
   assert_eq(span.name, "basic-span")
   match span.kind {
     Internal => assert_eq(true, true)
-    _ => @test.fail("Expected Internal span kind")
+    _ => @test.fail("Test failed")
   }
   assert_eq(span.start_time_unix_nanos, 1234567890L)
   match span.end_time_unix_nanos {
     None => assert_eq(true, true) // Span还未结束
-    Some(_) => @test.fail("Expected None for end_time")
+    Some(_) => @test.fail("Test failed")
   }
   match span.status {
     Unset => assert_eq(true, true)
-    _ => @test.fail("Expected Unset status")
+    _ => @test.fail("Test failed")
   }
   assert_eq(span.attributes.length(), 1)
 }
@@ -61,7 +61,7 @@ test "span_with_parent_context" {
   assert_eq(parent_span.name, "parent-span")
   match parent_span.parent_span_id {
     None => assert_eq(true, true) // 父Span没有父Span ID
-    Some(_) => @test.fail("Expected None for parent_span_id")
+    Some(_) => @test.fail("Test failed")
   }
   
   // 验证子Span（在简化实现中，可能没有实际的父子关系）
@@ -118,7 +118,7 @@ test "span_lifecycle_with_events" {
   // 验证事件属性
   match span_with_events.events[0].attributes[0].1 {
     AttributeValue::StringValue(error_type) => assert_eq(error_type, "exception")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -130,15 +130,15 @@ test "span_lifecycle_with_links" {
   
   // 创建链接的上下文
   let linked_context1 = SpanContext::{
-    trace_id: Array::make(16, 1_byte),
-    span_id: Array::make(8, 1_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte }),
     trace_flags: 1_byte,
     trace_state: "key1=value1"
   }
   
   let linked_context2 = SpanContext::{
-    trace_id: Array::make(16, 2_byte),
-    span_id: Array::make(8, 2_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 2_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte }),
     trace_flags: 0_byte,
     trace_state: "key2=value2"
   }
@@ -176,7 +176,7 @@ test "span_lifecycle_with_links" {
   // 验证链接属性
   match span_with_links.links[0].attributes[0].1 {
     AttributeValue::StringValue(link_type) => assert_eq(link_type, "causality")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -197,7 +197,7 @@ test "span_status_transitions" {
   // 初始状态
   match span.status {
     Unset => assert_eq(true, true)
-    _ => @test.fail("Expected Unset status")
+    _ => @test.fail("Test failed")
   }
   
   // 转换到Ok状态
@@ -209,12 +209,12 @@ test "span_status_transitions" {
   
   match ok_span.status {
     Ok => assert_eq(true, true)
-    _ => @test.fail("Expected Ok status")
+    _ => @test.fail("Test failed")
   }
   
   match ok_span.end_time_unix_nanos {
     Some(end_time) => assert_eq(end_time, 1234567950L)
-    None => @test.fail("Expected Some(end_time)")
+    None => @test.fail("Test failed")
   }
   
   // 转换到Error状态
@@ -227,12 +227,12 @@ test "span_status_transitions" {
   
   match error_span.status {
     Error => assert_eq(true, true)
-    _ => @test.fail("Expected Error status")
+    _ => @test.fail("Test failed")
   }
   
   match error_span.status_description {
     Some(desc) => assert_eq(desc, "Operation failed")
-    None => @test.fail("Expected Some(status_description)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -272,8 +272,8 @@ test "span_comprehensive_lifecycle" {
   
   // 3. 添加链接
   let linked_context = SpanContext::{
-    trace_id: Array::make(16, 42_byte),
-    span_id: Array::make(8, 24_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 42_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 24_byte }),
     trace_flags: 1_byte,
     trace_state: "batch.id=12345"
   }
@@ -302,20 +302,20 @@ test "span_comprehensive_lifecycle" {
   assert_eq(completed_span.name, "comprehensive-span")
   match completed_span.kind {
     Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server span kind")
+    _ => @test.fail("Test failed")
   }
   assert_eq(completed_span.start_time_unix_nanos, 1234567890L)
   match completed_span.end_time_unix_nanos {
     Some(end_time) => assert_eq(end_time, 1234567950L)
-    None => @test.fail("Expected Some(end_time)")
+    None => @test.fail("Test failed")
   }
   match completed_span.status {
     Ok => assert_eq(true, true)
-    _ => @test.fail("Expected Ok status")
+    _ => @test.fail("Test failed")
   }
   match completed_span.status_description {
     Some(desc) => assert_eq(desc, "Operation completed successfully")
-    None => @test.fail("Expected Some(status_description)")
+    None => @test.fail("Test failed")
   }
   assert_eq(completed_span.attributes.length(), 2)
   assert_eq(completed_span.events.length(), 2)
@@ -330,7 +330,7 @@ test "span_comprehensive_lifecycle" {
       let duration = end_time - completed_span.start_time_unix_nanos
       assert_eq(duration, 60L) // 1234567950 - 1234567890 = 60
     }
-    None => @test.fail("Expected Some(end_time)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -364,13 +364,13 @@ test "span_with_different_kinds_lifecycle" {
       _ if i == 2 && kind == Client => assert_eq(true, true),
       _ if i == 3 && kind == Producer => assert_eq(true, true),
       _ if i == 4 && kind == Consumer => assert_eq(true, true),
-      _ => @test.fail("Unexpected span kind")
+      _ => @test.fail("Test failed")
     }
     
     // 验证属性
     match span.attributes[0].1 {
       AttributeValue::StringValue(name) => assert_eq(name, kind_name)
-      _ => @test.fail("Expected StringValue")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1

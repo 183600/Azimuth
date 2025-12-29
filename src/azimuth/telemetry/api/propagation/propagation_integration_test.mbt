@@ -16,14 +16,14 @@ test "end_to_end_trace_propagation" {
   match carrier_a.get(TRACE_PARENT_HEADER) {
     Some(trace_parent) => {
       // 验证格式
-      let parts = trace_parent.split("-")
+      let parts = trace_parent"-".split_to_string()
       assert_eq(parts.length(), 4)
       assert_eq(parts[0], "00")  // 版本
       assert_eq(parts[1].length(), 32)  // trace_id
       assert_eq(parts[2].length(), 16)  // span_id
       assert_eq(parts[3].length(), 2)   // trace_flags
     }
-    None => @test.fail("Expected traceparent header to be injected")
+    None => @test.fail("Test failed")
   }
   
   // 模拟服务B接收请求并提取trace信息
@@ -42,18 +42,18 @@ test "end_to_end_trace_propagation" {
   // 验证trace信息继续传播
   match carrier_b.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent to continue propagating")
+    None => @test.fail("Test failed")
   }
   
   // 验证原有headers保持不变
   match carrier_b.get("authorization") {
     Some(value) => assert_eq(value, "Bearer token123")
-    None => @test.fail("Expected authorization header to persist")
+    None => @test.fail("Test failed")
   }
   
   match carrier_b.get("content-type") {
     Some(value) => assert_eq(value, "application/json")
-    None => @test.fail("Expected content-type header to persist")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -86,7 +86,7 @@ test "end_to_end_baggage_propagation" {
       assert_eq(baggage_value.contains("session.id=sess-abcdef"), true)
       assert_eq(baggage_value.contains("request.id=req-67890"), true)
     }
-    None => @test.fail("Expected baggage header to be injected")
+    None => @test.fail("Test failed")
   }
   
   // 模拟API网关接收请求
@@ -106,7 +106,7 @@ test "end_to_end_baggage_propagation" {
   // 验证baggage信息继续传播
   match gateway_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage to continue propagating")
+    None => @test.fail("Test failed")
   }
   
   // 模拟后端服务接收请求
@@ -115,7 +115,7 @@ test "end_to_end_baggage_propagation" {
   
   // 后端服务处理完成后，验证所有信息都正确传播
   match backend_context.get(create_key("client.info")) {
-    Some(_) => @test.fail("Client info should not be in baggage context")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -146,12 +146,12 @@ test "composite_propagator_real_world_scenario" {
   // 验证客户端注入
   match client_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent from client")
+    None => @test.fail("Test failed")
   }
   
   match client_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage from client")
+    None => @test.fail("Test failed")
   }
   
   // 2. API网关接收并增强
@@ -204,23 +204,23 @@ test "composite_propagator_real_world_scenario" {
   // 验证整个调用链的传播
   match user_service_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent to propagate through entire chain")
+    None => @test.fail("Test failed")
   }
   
   match user_service_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage to propagate through entire chain")
+    None => @test.fail("Test failed")
   }
   
   // 验证业务headers保持不变
   match user_service_carrier.get("x-service-operation") {
     Some(value) => assert_eq(value, "get_profile")
-    None => @test.fail("Expected service operation header")
+    None => @test.fail("Test failed")
   }
   
   match user_service_carrier.get("x-cache-status") {
     Some(value) => assert_eq(value, "miss")
-    None => @test.fail("Expected cache status header")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -285,12 +285,12 @@ test "cross_service_context_correlation" {
   // 验证trace和baggage都正确传播
   match final_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent in final correlation")
+    None => @test.fail("Test failed")
   }
   
   match final_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage in final correlation")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -334,10 +334,10 @@ test "propagation_with_context_isolation" {
           assert_eq(trace1.length(), 55)
           assert_eq(trace2.length(), 55)
         }
-        None => @test.fail("Expected traceparent for request2")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected traceparent for request1")
+    None => @test.fail("Test failed")
   }
   
   // 模拟服务处理请求1
@@ -355,23 +355,23 @@ test "propagation_with_context_isolation" {
   // 验证两个服务上下文是隔离的
   match service1_context.get(create_key("user.id")) {
     Some(user_id) => assert_eq(user_id, "user-A")
-    None => @test.fail("Expected user-A in service1 context")
+    None => @test.fail("Test failed")
   }
   
   match service2_context.get(create_key("user.id")) {
     Some(user_id) => assert_eq(user_id, "user-B")
-    None => @test.fail("Expected user-B in service2 context")
+    None => @test.fail("Test failed")
   }
   
   // 验证服务增强的上下文也是独立的
   match service1_enhanced.get(create_key("processing.start")) {
     Some(start_time) => assert_eq(start_time, "2023-01-01T12:00:00Z")
-    None => @test.fail("Expected processing start for service1")
+    None => @test.fail("Test failed")
   }
   
   match service2_enhanced.get(create_key("processing.start")) {
     Some(start_time) => assert_eq(start_time, "2023-01-01T12:00:01Z")
-    None => @test.fail("Expected processing start for service2")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -402,7 +402,7 @@ test "propagation_with_header_conflicts" {
       assert_eq(new_traceparent.length(), 55)
       assert_eq(new_traceparent.contains("existingtraceid"), false)
     }
-    None => @test.fail("Expected traceparent to be set")
+    None => @test.fail("Test failed")
   }
   
   match existing_carrier.get(BAGGAGE_HEADER) {
@@ -411,13 +411,13 @@ test "propagation_with_header_conflicts" {
       assert_eq(new_baggage.contains("key1=value1"), true)
       assert_eq(new_baggage.contains("existing.key"), false)
     }
-    None => @test.fail("Expected baggage to be set")
+    None => @test.fail("Test failed")
   }
   
   // 验证自定义headers保持不变
   match existing_carrier.get("custom.header") {
     Some(value) => assert_eq(value, "custom.value")
-    None => @test.fail("Expected custom header to persist")
+    None => @test.fail("Test failed")
   }
   
   // 测试extract时的冲突处理
@@ -454,9 +454,9 @@ test "propagation_with_header_conflicts" {
           assert_eq(first.length(), 55)
           assert_eq(second.length(), 55)
         }
-        None => @test.fail("Expected second traceparent")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected first traceparent")
+    None => @test.fail("Test failed")
   }
 }

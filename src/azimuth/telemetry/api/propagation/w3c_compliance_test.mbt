@@ -17,7 +17,7 @@ test "w3c_trace_context_propagator_inject" {
       assert_eq(trace_parent[35], '-') // Separator
       assert_eq(trace_parent[52], '-') // Separator
     }
-    None => @test.fail("Expected traceparent header to be set")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -62,7 +62,7 @@ test "w3c_baggage_propagator_inject" {
       // 验证baggage格式: key1=value1,key2=value2
       assert_eq(baggage_value, "key1=value1,key2=value2")
     }
-    None => @test.fail("Expected baggage header to be set")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -109,12 +109,12 @@ test "composite_propagator_multiple_propagators" {
   // 验证两个头都被设置
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header to be set")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header to be set")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -150,22 +150,22 @@ test "map_carrier_basic_operations" {
   // 测试get操作
   match carrier.get("key1") {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected key1 to be found")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("key2") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected key2 to be found")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("traceparent") {
     Some(value) => assert_eq(value, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-    None => @test.fail("Expected traceparent to be found")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键
   match carrier.get("nonexistent") {
-    Some(_) => @test.fail("Expected nonexistent key to return None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -183,7 +183,7 @@ test "map_carrier_edge_cases" {
   assert_eq(empty_carrier.keys().length(), 0)
   
   match empty_carrier.get("anykey") {
-    Some(_) => @test.fail("Expected empty carrier to return None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -197,17 +197,17 @@ test "map_carrier_edge_cases" {
   
   match special_carrier.get("special/key/with/special.chars") {
     Some(value) => assert_eq(value, "特殊值!@#$%^&*()")
-    None => @test.fail("Expected special key to be found")
+    None => @test.fail("Test failed")
   }
   
   match special_carrier.get("Unicode键测试🚀") {
     Some(value) => assert_eq(value, "Unicode值测试🌟")
-    None => @test.fail("Expected Unicode key to be found")
+    None => @test.fail("Test failed")
   }
   
   match special_carrier.get("") {
     Some(value) => assert_eq(value, "空键值")
-    None => @test.fail("Expected empty key to be found")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -222,7 +222,7 @@ test "w3c_trace_context_header_format_validation" {
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(trace_parent) => {
       // 验证格式: version-trace_id-span_id-trace_flags
-      let parts = trace_parent.split("-")
+      let parts = trace_parent"-".split_to_string()
       assert_eq(parts.length(), 4)
       
       // 验证版本部分
@@ -238,7 +238,7 @@ test "w3c_trace_context_header_format_validation" {
       // 验证trace_flags部分（2个hex字符）
       assert_eq(parts[3].length(), 2)
     }
-    None => @test.fail("Expected traceparent header to be set")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -253,21 +253,21 @@ test "w3c_baggage_header_format_validation" {
   match carrier.get(BAGGAGE_HEADER) {
     Some(baggage_value) => {
       // 验证格式: key1=value1,key2=value2
-      let entries = baggage_value.split(",")
+      let entries = baggage_value",".split_to_string()
       assert_eq(entries.length(), 2)
       
       // 验证第一个条目
-      let entry1_parts = entries[0].split("=")
+      let entry1_parts = entries[0]"=".split_to_string()
       assert_eq(entry1_parts.length(), 2)
       assert_eq(entry1_parts[0], "key1")
       assert_eq(entry1_parts[1], "value1")
       
       // 验证第二个条目
-      let entry2_parts = entries[1].split("=")
+      let entry2_parts = entries[1]"=".split_to_string()
       assert_eq(entry2_parts.length(), 2)
       assert_eq(entry2_parts[0], "key2")
       assert_eq(entry2_parts[1], "value2")
     }
-    None => @test.fail("Expected baggage header to be set")
+    None => @test.fail("Test failed")
   }
 }

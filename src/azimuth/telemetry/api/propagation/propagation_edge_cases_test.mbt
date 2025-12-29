@@ -41,7 +41,7 @@ test "propagation_header_edge_cases" {
     // 验证头的基本属性
     let is_empty = header.length() == 0
     let is_whitespace_only = header.trim().length() == 0 && header.length() > 0
-    let has_correct_parts = header.split("-").length() >= 4
+    let has_correct_parts = header"-".split_to_string().length() >= 4
     let has_correct_length = header.length() == 55
     let has_valid_format = header.match_regex("^[0-9a-fA-F]{2}-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-[0-9a-fA-F]{2}$")
     
@@ -54,7 +54,7 @@ test "propagation_header_edge_cases" {
     }
     
     if has_correct_parts {
-      assert_eq(header.split("-").length() >= 4, true)
+      assert_eq(header"-".split_to_string().length() >= 4, true)
     }
     
     if has_correct_length {

@@ -29,17 +29,17 @@ test "edge_cases_extreme_string_lengths" {
   // 验证极端字符串处理
   match ctx_with_extreme_strings.get(empty_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Should handle empty string")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_extreme_strings.get(single_key) {
     Some(value) => assert_eq(value, "a")
-    None => @test.fail("Should handle single character string")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_extreme_strings.get(long_key) {
     Some(value) => assert_eq(value.length() > 200, true)
-    None => @test.fail("Should handle long string")
+    None => @test.fail("Test failed")
   }
   
   // 测试极端键名长度
@@ -49,7 +49,7 @@ test "edge_cases_extreme_string_lengths" {
   
   match ctx_with_extreme_key.get(extreme_key) {
     Some(value) => assert_eq(value, "extreme.key.value")
-    None => @test.fail("Should handle extremely long key name")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -84,22 +84,22 @@ test "edge_cases_special_characters" {
   // 验证特殊字符处理
   match ctx_with_special.get(control_key) {
     Some(value) => assert_eq(value, control_chars)
-    None => @test.fail("Should handle control characters")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_special.get(punctuation_key) {
     Some(value) => assert_eq(value, punctuation)
-    None => @test.fail("Should handle punctuation")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_special.get(unicode_key) {
     Some(value) => assert_eq(value, unicode_chars)
-    None => @test.fail("Should handle unicode characters")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_special.get(mixed_key) {
     Some(value) => assert_eq(value, mixed_special)
-    None => @test.fail("Should handle mixed special characters")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符键名
@@ -109,7 +109,7 @@ test "edge_cases_special_characters" {
   
   match ctx_with_special_key.get(special_key) {
     Some(value) => assert_eq(value, "special.key.value")
-    None => @test.fail("Should handle special characters in key name")
+    None => @test.fail("Test failed")
   }
   
   // 测试baggage中的特殊字符
@@ -121,17 +121,17 @@ test "edge_cases_special_characters" {
   
   match baggage_with_special.get("special.key") {
     Some(value) => assert_eq(value, "special\0value!@#$%")
-    None => @test.fail("Should handle special characters in baggage value")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_special.get("unicode.key") {
     Some(value) => assert_eq(value, "测试值🚀")
-    None => @test.fail("Should handle unicode in baggage value")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_special.get("") {
     Some(value) => assert_eq(value, "empty.key.value")
-    None => @test.fail("Should handle empty key in baggage")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -180,27 +180,27 @@ test "edge_cases_numeric_boundaries" {
   // 验证边界数值处理
   match ctx_with_boundaries.get(max_int_key) {
     Some(value) => assert_eq(value, "9223372036854775807")
-    None => @test.fail("Should handle max int64")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_boundaries.get(min_int_key) {
     Some(value) => assert_eq(value, "-9223372036854775808")
-    None => @test.fail("Should handle min int64")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_boundaries.get(zero_key) {
     Some(value) => assert_eq(value, "0")
-    None => @test.fail("Should handle zero")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_boundaries.get(inf_key) {
     Some(value) => assert_eq(value.length() > 0, true)
-    None => @test.fail("Should handle infinity")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_boundaries.get(nan_key) {
     Some(value) => assert_eq(value.length() > 0, true)
-    None => @test.fail("Should handle NaN")
+    None => @test.fail("Test failed")
   }
   
   // 测试数值运算边界
@@ -324,17 +324,17 @@ test "edge_cases_context_chaining" {
   
   match chained_ctx.get(first_key) {
     Some(value) => assert_eq(value, "chained.value.0")
-    None => @test.fail("Should handle long chaining - first key")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(last_key) {
     Some(value) => assert_eq(value, "chained.value.49")
-    None => @test.fail("Should handle long chaining - last key")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(middle_key) {
     Some(value) => assert_eq(value, "chained.value.25")
-    None => @test.fail("Should handle long chaining - middle key")
+    None => @test.fail("Test failed")
   }
   
   // 测试键覆盖链式操作
@@ -351,7 +351,7 @@ test "edge_cases_context_chaining" {
   // 验证最终覆盖值
   match override_ctx.get(override_key) {
     Some(value) => assert_eq(value, "override.value.9")
-    None => @test.fail("Should handle key overriding in chaining")
+    None => @test.fail("Test failed")
   }
   
   // 测试混合链式操作（不同键名）
@@ -371,12 +371,12 @@ test "edge_cases_context_chaining" {
   // 验证混合链式操作
   match mixed_ctx.get(create_key("mixed.string.10")) {
     Some(value) => assert_eq(value, "string.value.10")
-    None => @test.fail("Should handle mixed chaining - string")
+    None => @test.fail("Test failed")
   }
   
   match mixed_ctx.get(create_key("mixed.int.15")) {
     Some(value) => assert_eq(value, "15")
-    None => @test.fail("Should handle mixed chaining - int")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -419,7 +419,7 @@ test "edge_cases_memory_pressure" {
   
   match verification_ctx.get(test_key) {
     Some(value) => assert_eq(value, expected_value)
-    None => @test.fail("Should maintain data integrity under memory pressure")
+    None => @test.fail("Test failed")
   }
   
   // 测试baggage内存压力
@@ -455,7 +455,7 @@ test "edge_cases_memory_pressure" {
   let verification_baggage = baggages_with_data[5]
   match verification_baggage.get("baggage.memory.5.3") {
     Some(value) => assert_eq(value, "baggage.value.5.3.with.extra.memory.data")
-    None => @test.fail("Should maintain baggage data integrity under memory pressure")
+    None => @test.fail("Test failed")
   }
   
   // 验证对象计数

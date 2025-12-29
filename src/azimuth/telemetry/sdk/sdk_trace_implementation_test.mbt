@@ -168,11 +168,11 @@ test "sdk_trace_span_attributes_and_events" {
   assert_eq(span_with_complex_attrs.attributes.length(), 3)
   match span_with_complex_attrs.attributes[0].1 {
     StringValue(s) => assert_eq(s, "GET")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   match span_with_complex_attrs.attributes[1].1 {
     IntValue(i) => assert_eq(i, 200L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   match span_with_complex_attrs.attributes[2].1 {
     ArrayStringValue(arr) => {
@@ -180,7 +180,7 @@ test "sdk_trace_span_attributes_and_events" {
       assert_eq(arr[0], "admin")
       assert_eq(arr[1], "user")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试事件添加
@@ -251,7 +251,7 @@ test "sdk_trace_context_propagation" {
     }
     
     // 解析traceparent: 00-trace_id-span_id-trace_flags
-    let parts = traceparent.split("-")
+    let parts = traceparent"-".split_to_string()
     if parts.length() != 4 {
       return None
     }
@@ -288,7 +288,7 @@ test "sdk_trace_context_propagation" {
       assert_eq(ctx.trace_flags, original_context.trace_flags)
       assert_eq(ctx.trace_state, original_context.trace_state)
     }
-    None => @test.fail("Expected Some(TraceContext)")
+    None => @test.fail("Test failed")
   }
   
   // 测试空carrier
@@ -296,7 +296,7 @@ test "sdk_trace_context_propagation" {
   let empty_context = extract_context(empty_carrier)
   
   match empty_context {
-    Some(_) => @test.fail("Expected None for empty carrier")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }

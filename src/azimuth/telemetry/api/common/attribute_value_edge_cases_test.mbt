@@ -8,42 +8,42 @@ test "attribute_value_extreme_string_values" {
   let empty_string = AttributeValue::string("")
   match empty_string {
     StringValue(s) => assert_eq(s, "")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 单字符字符串
   let single_char = AttributeValue::string("a")
   match single_char {
     StringValue(s) => assert_eq(s, "a")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 包含特殊字符的字符串
   let special_chars = AttributeValue::string("!@#$%^&*()_+-=[]{}|;':\",./<>?")
   match special_chars {
     StringValue(s) => assert_eq(s, "!@#$%^&*()_+-=[]{}|;':\",./<>?")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // Unicode字符串
   let unicode = AttributeValue::string("测试中文 🚀 ñáéíóú")
   match unicode {
     StringValue(s) => assert_eq(s, "测试中文 🚀 ñáéíóú")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 包含空格的字符串
   let spaces = AttributeValue::string("   leading and trailing spaces   ")
   match spaces {
     StringValue(s) => assert_eq(s, "   leading and trailing spaces   ")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 包含换行符的字符串
   let newlines = AttributeValue::string("line1\nline2\r\nline3")
   match newlines {
     StringValue(s) => assert_eq(s, "line1\nline2\r\nline3")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -55,11 +55,11 @@ test "attribute_value_extreme_numeric_values" {
   let zero_float = AttributeValue::float(0.0)
   match zero_int {
     IntValue(i) => assert_eq(i, 0L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   match zero_float {
     FloatValue(f) => assert_eq(f, 0.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 极大值
@@ -67,11 +67,11 @@ test "attribute_value_extreme_numeric_values" {
   let max_float = AttributeValue::float(1.7976931348623157e+308) // Double最大值
   match max_int {
     IntValue(i) => assert_eq(i, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   match max_float {
     FloatValue(f) => assert_eq(f, 1.7976931348623157e+308)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 极小值
@@ -79,11 +79,11 @@ test "attribute_value_extreme_numeric_values" {
   let min_float = AttributeValue::float(-1.7976931348623157e+308) // Double最小值
   match min_int {
     IntValue(i) => assert_eq(i, -9223372036854775808L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   match min_float {
     FloatValue(f) => assert_eq(f, -1.7976931348623157e+308)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 特殊浮点值
@@ -93,22 +93,22 @@ test "attribute_value_extreme_numeric_values" {
   
   match infinity {
     FloatValue(f) => assert_eq(f, 1.0/0.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   match neg_infinity {
     FloatValue(f) => assert_eq(f, -1.0/0.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   match nan {
     FloatValue(f) => assert_eq(f, 0.0/0.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 极小浮点数
   let tiny_float = AttributeValue::float(1.0e-308)
   match tiny_float {
     FloatValue(f) => assert_eq(f, 1.0e-308)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -123,19 +123,19 @@ test "attribute_value_array_edge_cases" {
   
   match empty_string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   match empty_int_array {
     ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   match empty_float_array {
     ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   match empty_bool_array {
     ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 单元素数组
@@ -149,14 +149,14 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], "single")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   match single_int_array {
     ArrayIntValue(arr) => {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], 42L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 包含特殊值的数组
@@ -172,7 +172,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr[1], " ")
       assert_eq(arr[2], "\n\t")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match special_float_array {
@@ -184,7 +184,7 @@ test "attribute_value_array_edge_cases" {
       assert_eq(arr[3], -1.0/0.0)
       assert_eq(arr[4], 0.0/0.0)
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -296,7 +296,7 @@ test "attribute_value_nested_structures" {
       assert_eq(s.contains("42"), true)
       assert_eq(s.contains("[1, 2, 3]"), true)
     }
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // XML字符串
@@ -307,14 +307,14 @@ test "attribute_value_nested_structures" {
       assert_eq(s.contains("<child"), true)
       assert_eq(s.contains("attribute=\"value\""), true)
     }
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // Base64编码的数据
   let base64_string = AttributeValue::string("SGVsbG8gV29ybGQ=") // "Hello World"的Base64编码
   match base64_string {
     StringValue(s) => assert_eq(s, "SGVsbG8gV29ybGQ=")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // CSV字符串
@@ -324,7 +324,7 @@ test "attribute_value_nested_structures" {
       assert_eq(s.contains("name,age,city"), true)
       assert_eq(s.contains("John,30"), true)
     }
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -336,7 +336,7 @@ test "attribute_value_large_data_handling" {
   let large_string = AttributeValue::string(large_string_content)
   match large_string {
     StringValue(s) => assert_eq(s.length(), 1000)
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 大数组
@@ -349,7 +349,7 @@ test "attribute_value_large_data_handling" {
   let large_array = AttributeValue::array_string(large_string_array)
   match large_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 100)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 数值精度测试
@@ -360,6 +360,6 @@ test "attribute_value_large_data_handling" {
       assert_eq(f > 3.14, true)
       assert_eq(f < 3.15, true)
     }
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
 }

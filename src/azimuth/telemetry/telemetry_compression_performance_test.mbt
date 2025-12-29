@@ -290,7 +290,7 @@ fn compress_temporal_logs(logs : Array[String]) -> Array[String] {
     let mut compressed_log = log
     // 如果时间戳是连续的，使用差分编码
     if log.has_prefix("timestamp:") {
-      let current_timestamp = log.split(",")[0].replace("timestamp:", "")
+      let current_timestamp = log",".split_to_string()[0].replace("timestamp:", "")
       if last_timestamp != "" {
         // 简化时间戳表示
         compressed_log = compressed_log.replace(current_timestamp, "t+1")

@@ -165,7 +165,7 @@ test "telemetry_context_propagation_flow" {
       assert_eq(trace_parent.has_prefix("00-"), true)
       assert_eq(trace_parent.length(), 55) // 标准traceparent长度
     }
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match outbound_carrier.get("baggage") {
@@ -174,7 +174,7 @@ test "telemetry_context_propagation_flow" {
       assert_eq(baggage.contains("request.id=67890"), true)
       assert_eq(baggage.contains("session.id=abcdef"), true)
     }
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 6. 模拟服务端的Extract

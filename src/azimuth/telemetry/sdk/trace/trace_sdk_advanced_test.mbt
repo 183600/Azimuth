@@ -88,8 +88,8 @@ test "span_processor_batch_operations" {
       events: [],
       links: [],
       context: api::trace::SpanContext{
-        trace_id: Array::make(16, i.to_byte()),
-        span_id: Array::make(8, i.to_byte()),
+        trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { i.to_byte( })),
+        span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { i.to_byte( })),
         trace_flags: 1_byte,
         trace_state: ""
       },
@@ -201,8 +201,8 @@ test "sdk_context_propagation_advanced" {
   }
   
   let original_context = ContextPropagation{
-    trace_id: Array::make(16, 0x42_byte),
-    span_id: Array::make(8, 0x24_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x42_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x24_byte }),
     trace_flags: 0x01_byte,
     trace_state: "key1=value1,key2=value2",
     baggage: [
@@ -247,7 +247,7 @@ test "sdk_context_propagation_advanced" {
   // 验证carrier
   assert_eq(carrier.headers.length(), 5)  // 1 traceparent + 1 tracestate + 3 baggage
   assert_eq(carrier.headers[0].0, "traceparent")
-  assert_eq(carrier.headers[0].1.starts_with("00-"), true)
+  assert_eq(carrier.headers[0].1.has_prefix("00-"), true)
   assert_eq(carrier.headers[1].0, "tracestate")
   assert_eq(carrier.headers[1].1, "key1=value1,key2=value2")
   
@@ -263,7 +263,7 @@ test "sdk_context_propagation_advanced" {
   let extracted_traceparent = carrier.headers.find(fn(h) { h.0 == "traceparent" })
   match extracted_traceparent {
     Some(header) => {
-      let parts = header.1.split("-")
+      let parts = header.1"-".split_to_string()
       assert_eq(parts.length(), 4)
       assert_eq(parts[0], "00")
       assert_eq(parts[1].length(), 32)  // 16 bytes * 2 hex chars

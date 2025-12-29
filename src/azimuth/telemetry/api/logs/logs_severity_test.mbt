@@ -36,43 +36,43 @@ test "severity_number_all_values" {
   // 验证每种严重性级别
   match trace_log.severity_number {
     Trace => assert_eq(true, true)
-    _ => @test.fail("Expected Trace severity")
+    _ => @test.fail("Test failed")
   }
   
   match debug_log.severity_number {
     Debug => assert_eq(true, true)
-    _ => @test.fail("Expected Debug severity")
+    _ => @test.fail("Test failed")
   }
   
   match info_log.severity_number {
     Info => assert_eq(true, true)
-    _ => @test.fail("Expected Info severity")
+    _ => @test.fail("Test failed")
   }
   
   match warn_log.severity_number {
     Warn => assert_eq(true, true)
-    _ => @test.fail("Expected Warn severity")
+    _ => @test.fail("Test failed")
   }
   
   match error_log.severity_number {
     Error => assert_eq(true, true)
-    _ => @test.fail("Expected Error severity")
+    _ => @test.fail("Test failed")
   }
   
   match fatal_log.severity_number {
     Fatal => assert_eq(true, true)
-    _ => @test.fail("Expected Fatal severity")
+    _ => @test.fail("Test failed")
   }
   
   // 验证body内容
   match trace_log.body {
     Some(body) => assert_eq(body, "Trace message")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   
   match fatal_log.body {
     Some(body) => assert_eq(body, "Fatal message")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -107,13 +107,13 @@ test "log_record_with_all_severity_and_attributes" {
     // 验证严重性文本
     match log_record.severity_text {
       Some(text) => assert_eq(text, severity_text)
-      None => @test.fail("Expected Some(severity_text)")
+      None => @test.fail("Test failed")
     }
     
     // 验证body
     match log_record.body {
       Some(body) => assert_eq(body, "Message with severity " + severity_text)
-      None => @test.fail("Expected Some(body)")
+      None => @test.fail("Test failed")
     }
     
     // 验证属性数量
@@ -163,7 +163,7 @@ test "log_record_with_trace_and_span_context" {
       assert_eq(id[0], 1_byte)
       assert_eq(id[15], 16_byte)
     }
-    None => @test.fail("Expected Some(trace_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_with_trace.span_id {
@@ -172,12 +172,12 @@ test "log_record_with_trace_and_span_context" {
       assert_eq(id[0], 1_byte)
       assert_eq(id[7], 8_byte)
     }
-    None => @test.fail("Expected Some(span_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_with_trace.trace_flags {
     Some(flags) => assert_eq(flags, 1_byte)
-    None => @test.fail("Expected Some(trace_flags)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -208,7 +208,7 @@ test "log_record_with_resource_and_instrumentation_scope" {
   assert_eq(log_record.timestamp_unix_nanos, 1234567890L)
   match log_record.observed_timestamp_unix_nanos {
     Some(observed) => assert_eq(observed, 1234567895L)
-    None => @test.fail("Expected Some(observed_timestamp)")
+    None => @test.fail("Test failed")
   }
   
   // 验证资源和仪器范围
@@ -217,7 +217,7 @@ test "log_record_with_resource_and_instrumentation_scope" {
       assert_eq(res.service_name, "test-service")
       assert_eq(res.telemetry_sdk_name, "azimuth")
     }
-    None => @test.fail("Expected Some(resource)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.instrumentation_scope {
@@ -225,10 +225,10 @@ test "log_record_with_resource_and_instrumentation_scope" {
       assert_eq(scope.name, "test-logger")
       match scope.version {
         Some(version) => assert_eq(version, "1.0.0")
-        None => @test.fail("Expected Some(version)")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected Some(instrumentation_scope)")
+    None => @test.fail("Test failed")
   }
 }
 

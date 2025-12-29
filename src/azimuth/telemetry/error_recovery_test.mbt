@@ -195,7 +195,7 @@ test "attribute_error_recovery" {
       found_empty_key = true
     } else if key == "empty.value" && value == "" {
       found_empty_value = true
-    } else if key.starts_with("very.long.key.") {
+    } else if key.has_prefix("very.long.key.") {
       found_long_key = true
     } else if key == "special.chars.key" && value.contains("\n") {
       found_special_chars = true

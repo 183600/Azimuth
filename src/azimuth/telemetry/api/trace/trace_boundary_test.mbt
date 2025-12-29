@@ -10,12 +10,12 @@ test "span_context_validation" {
   assert_eq(valid_span_id.length(), 8)
   
   // 测试全零的trace_id（无效）
-  let zero_trace_id = Array::make(16, 0_byte)
+  let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
   let is_zero_trace = zero_trace_id.all(fn(x) { x == 0_byte })
   assert_eq(is_zero_trace, true)
   
   // 测试全零的span_id（无效）
-  let zero_span_id = Array::make(8, 0_byte)
+  let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   let is_zero_span = zero_span_id.all(fn(x) { x == 0_byte })
   assert_eq(is_zero_span, true)
   
@@ -57,12 +57,12 @@ test "span_attributes_edge_cases" {
   // 验证空字符串属性
   match special_attrs[0].1 {
     AttributeValue::StringValue(s) => assert_eq(s, "")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证Unicode属性
   match special_attrs[2].1 {
     AttributeValue::StringValue(s) => assert_eq(s.contains("测试"), true)
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }

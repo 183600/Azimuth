@@ -9,7 +9,7 @@ test "log_record_edge_cases" {
   
   match empty_body_log.body {
     Some(body) => assert_eq(body, "")
-    None => @test.fail("Expected Some(empty string)")
+    None => @test.fail("Test failed")
   }
   
   // 测试None body
@@ -18,7 +18,7 @@ test "log_record_edge_cases" {
     .build()
   
   match none_body_log.body {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -31,7 +31,7 @@ test "log_record_edge_cases" {
   
   match long_body_log.body {
     Some(body) => assert_eq(body.length(), 1000)
-    None => @test.fail("Expected Some(long body)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -51,7 +51,7 @@ test "log_record_with_special_characters" {
       assert_eq(body.contains("!@#$%^&*()"), true)
       assert_eq(body.length(), 38)
     }
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   
   assert_eq(special_chars_log.attributes.length(), 3)
@@ -62,6 +62,6 @@ test "log_record_with_special_characters" {
       assert_eq(unicode.contains("测试"), true)
       assert_eq(unicode.contains("🚀"), true)
     }
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }

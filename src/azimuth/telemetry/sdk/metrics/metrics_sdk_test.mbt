@@ -32,21 +32,21 @@ test "metric_instrument_types" {
   
   match counter_type {
     Counter => assert_eq(true, true)
-    _ => @test.fail("Expected Counter type")
+    _ => @test.fail("Test failed")
   }
   
   match histogram_type {
     Histogram => assert_eq(true, true)
-    _ => @test.fail("Expected Histogram type")
+    _ => @test.fail("Test failed")
   }
   
   match gauge_type {
     Gauge => assert_eq(true, true)
-    _ => @test.fail("Expected Gauge type")
+    _ => @test.fail("Test failed")
   }
   
   match up_down_counter_type {
     UpDownCounter => assert_eq(true, true)
-    _ => @test.fail("Expected UpDownCounter type")
+    _ => @test.fail("Test failed")
   }
 }

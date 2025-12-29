@@ -8,28 +8,28 @@ test "attribute_value_type_conversions" {
   let string_attr = AttributeValue::string("test_value")
   match string_attr {
     StringValue(_) => assert_eq(true, true)
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 整数值测试
   let int_attr = AttributeValue::int(42L)
   match int_attr {
     IntValue(_) => assert_eq(true, true)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 浮点值测试
   let float_attr = AttributeValue::float(3.14)
   match float_attr {
     FloatValue(_) => assert_eq(true, true)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 布尔值测试
   let bool_attr = AttributeValue::bool(true)
   match bool_attr {
     BoolValue(_) => assert_eq(true, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 数组值测试
@@ -37,7 +37,7 @@ test "attribute_value_type_conversions" {
   let array_attr = AttributeValue::array_string(string_array)
   match array_attr {
     ArrayStringValue(_) => assert_eq(true, true)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 属性对创建
@@ -76,7 +76,7 @@ test "resource_structure_and_defaults" {
   assert_eq(attrs.length(), 2)
   match attrs[0].1 {
     StringValue(s) => assert_eq(s, "production")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -91,8 +91,8 @@ test "span_kinds_and_status_codes" {
   let consumer_span = Consumer
   
   // 创建不同类型的span上下文
-  let trace_id = Array::make(16, 1_byte)
-  let span_id = Array::make(8, 2_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte })
   
   let span_context = SpanContext::{
     trace_id,
@@ -112,7 +112,7 @@ test "span_kinds_and_status_codes" {
   assert_eq(span3.status, Error)
   match span3.status_description {
     Some(desc) => assert_eq(desc, "Connection timeout")
-    None => @test.fail("Expected Some(status_description)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -143,7 +143,7 @@ test "instrument_types_and_metrics" {
   assert_eq(measurements[0].value, 100.0)
   match measurements[1].attributes[0].1 {
     StringValue(s) => assert_eq(s, "POST")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试仪器类型数组
@@ -172,7 +172,7 @@ test "severity_numbers_and_logging" {
   assert_eq(log_record1.severity_number, Trace)
   match log_record2.severity_text {
     Some(text) => assert_eq(text, "INFO")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   assert_eq(log_record3.severity_number, Error)
   assert_eq(log_record3.attributes.length(), 1)
@@ -196,11 +196,11 @@ test "context_and_baggage_operations" {
   // 验证上下文值
   match ctx_with_both.get(user_id_key) {
     Some(value) => assert_eq(value, "user123")
-    None => @test.fail("Expected Some(value) for user_id")
+    None => @test.fail("Test failed")
   }
   match ctx_with_both.get(request_id_key) {
     Some(value) => assert_eq(value, "req456")
-    None => @test.fail("Expected Some(value) for request_id")
+    None => @test.fail("Test failed")
   }
   assert_eq(ctx_with_both.values.length(), 2)
   
@@ -214,11 +214,11 @@ test "context_and_baggage_operations" {
   // 验证baggage条目
   match baggage_with_multiple.get("correlation_id") {
     Some(value) => assert_eq(value, "corr789")
-    None => @test.fail("Expected Some(value) for correlation_id")
+    None => @test.fail("Test failed")
   }
   match baggage_with_multiple.get("session_id") {
     Some(value) => assert_eq(value, "sess101")
-    None => @test.fail("Expected Some(value) for session_id")
+    None => @test.fail("Test failed")
   }
   assert_eq(baggage_with_multiple.entries.length(), 2)
 }
@@ -238,14 +238,14 @@ test "text_map_carrier_implementation" {
   // 测试get操作
   match map_carrier.get("traceparent") {
     Some(value) => assert_eq(value, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-    None => @test.fail("Expected Some(value) for traceparent")
+    None => @test.fail("Test failed")
   }
   match map_carrier.get("baggage") {
     Some(value) => assert_eq(value, "key1=value1,key2=value2")
-    None => @test.fail("Expected Some(value) for baggage")
+    None => @test.fail("Test failed")
   }
   match map_carrier.get("nonexistent") {
-    Some(_) => @test.fail("Expected None for nonexistent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -291,13 +291,13 @@ test "log_record_builder_pattern" {
   assert_eq(log_record.severity_number, Error)
   match log_record.body {
     Some(body) => assert_eq(body, "Payment processing failed")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   assert_eq(log_record.attributes.length(), 2)
   assert_eq(log_record.attributes[0].0, "error_code")
   match log_record.attributes[1].1 {
     StringValue(s) => assert_eq(s, "pay123")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试默认值
@@ -305,7 +305,7 @@ test "log_record_builder_pattern" {
   assert_eq(minimal_log.timestamp_unix_nanos, 0L)
   assert_eq(minimal_log.severity_number, Info)
   match minimal_log.body {
-    Some(_) => @test.fail("Expected None for body")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   assert_eq(minimal_log.attributes.length(), 0)
@@ -326,8 +326,8 @@ test "cross_module_integration" {
   
   // 创建span上下文
   let span_context = SpanContext::{
-    trace_id: Array::make(16, 10_byte),
-    span_id: Array::make(8, 20_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 10_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 20_byte }),
     trace_flags: 1_byte,
     trace_state: ""
   }
@@ -375,21 +375,21 @@ test "cross_module_integration" {
   assert_eq(resource.service_name, "integration-test")
   match ctx.get(user_key) {
     Some(value) => assert_eq(value, "user456")
-    None => @test.fail("Expected Some(value) for user_id")
+    None => @test.fail("Test failed")
   }
   match baggage.get("trace_id") {
     Some(value) => assert_eq(value, "trace789")
-    None => @test.fail("Expected Some(value) for trace_id")
+    None => @test.fail("Test failed")
   }
   assert_eq(span.name, "integration_span")
   assert_eq(span.attributes.length(), 2)
   match log_record.body {
     Some(body) => assert_eq(body, "Request processed successfully")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   match log_record.resource {
     Some(res) => assert_eq(res.service_name, "integration-test")
-    None => @test.fail("Expected Some(resource)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -402,12 +402,12 @@ test "error_handling_and_edge_cases" {
   
   match empty_string_attr {
     StringValue(s) => assert_eq(s, "")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match special_chars_attr {
     StringValue(s) => assert_eq(s, "特殊字符&symbols=@#$")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试极值
@@ -422,12 +422,12 @@ test "error_handling_and_edge_cases" {
   
   match empty_string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_int_array {
     ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试包含None的Resource
@@ -452,15 +452,15 @@ test "error_handling_and_edge_cases" {
   
   // 验证边界情况处理
   match log_record_with_none.body {
-    Some(_) => @test.fail("Expected None for body")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   match log_record_with_none.observed_timestamp_unix_nanos {
-    Some(_) => @test.fail("Expected None for observed_timestamp")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   match log_record_with_none.resource {
-    Some(_) => @test.fail("Expected None for resource")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -468,14 +468,14 @@ test "error_handling_and_edge_cases" {
   let empty_ctx = Context::empty()
   let non_existent_key = create_key("non_existent")
   match empty_ctx.get(non_existent_key) {
-    Some(_) => @test.fail("Expected None for non_existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   // 测试空baggage中的条目查找
   let empty_baggage = Baggage::empty()
   match empty_baggage.get("non_existent") {
-    Some(_) => @test.fail("Expected None for non_existent entry")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }

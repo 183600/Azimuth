@@ -306,8 +306,8 @@ test "log_record_with_trace_context" {
   // 测试带有追踪上下文的日志记录
   
   // 创建模拟的trace_id和span_id
-  let trace_id = Array::make(16, 1_byte)  // 16字节的trace_id
-  let span_id = Array::make(8, 2_byte)    // 8字节的span_id
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })  // 16字节的trace_id
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte })    // 8字节的span_id
   let trace_flags = 1_byte
   
   // 创建带有追踪上下文的LogRecord

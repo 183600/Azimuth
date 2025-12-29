@@ -94,22 +94,22 @@ test "compatibility_attribute_value_types" {
   // 验证传统类型仍然工作
   match legacy_string {
     StringValue(s) => assert_eq(s, "legacy.value")
-    _ => @test.fail("Legacy string type should work")
+    _ => @test.fail("Test failed")
   }
   
   match legacy_int {
     IntValue(i) => assert_eq(i, 42L)
-    _ => @test.fail("Legacy int type should work")
+    _ => @test.fail("Test failed")
   }
   
   match legacy_float {
     FloatValue(f) => assert_eq(f, 3.14)
-    _ => @test.fail("Legacy float type should work")
+    _ => @test.fail("Test failed")
   }
   
   match legacy_bool {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Legacy bool type should work")
+    _ => @test.fail("Test failed")
   }
   
   // 验证新类型工作
@@ -119,7 +119,7 @@ test "compatibility_attribute_value_types" {
       assert_eq(arr[0], "item1")
       assert_eq(arr[2], "item3")
     }
-    _ => @test.fail("Modern string array type should work")
+    _ => @test.fail("Test failed")
   }
   
   match modern_int_array {
@@ -128,7 +128,7 @@ test "compatibility_attribute_value_types" {
       assert_eq(arr[0], 1L)
       assert_eq(arr[3], 4L)
     }
-    _ => @test.fail("Modern int array type should work")
+    _ => @test.fail("Test failed")
   }
   
   // 测试类型兼容性：混合使用新旧类型
@@ -144,12 +144,12 @@ test "compatibility_attribute_value_types" {
   // 验证混合属性访问
   match mixed_attrs[0].1 {
     StringValue(s) => assert_eq(s, "legacy.value")
-    _ => @test.fail("Mixed attributes should preserve legacy types")
+    _ => @test.fail("Test failed")
   }
   
   match mixed_attrs[2].1 {
     ArrayStringValue(arr) => assert_eq(arr.length(), 3)
-    _ => @test.fail("Mixed attributes should preserve modern types")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -164,7 +164,7 @@ test "compatibility_context_api_evolution" {
   // 验证传统API仍然工作
   match ctx_with_legacy.get(legacy_key) {
     Some(value) => assert_eq(value, "legacy.value")
-    None => @test.fail("Legacy context API should work")
+    None => @test.fail("Test failed")
   }
   
   // 新式API使用方式（模拟）
@@ -174,13 +174,13 @@ test "compatibility_context_api_evolution" {
   // 验证新式API工作
   match ctx_with_modern.get(modern_key) {
     Some(value) => assert_eq(value, "modern.value")
-    None => @test.fail("Modern context API should work")
+    None => @test.fail("Test failed")
   }
   
   // 验证向后兼容：传统数据仍然可访问
   match ctx_with_modern.get(legacy_key) {
     Some(value) => assert_eq(value, "legacy.value")
-    None => @test.fail("Backward compatibility: legacy data should be accessible")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊键名的兼容性
@@ -235,18 +235,18 @@ test "compatibility_baggage_format_changes" {
   // 验证传统格式工作
   match legacy_with_data.get("legacy.key1") {
     Some(value) => assert_eq(value, "legacy.value1")
-    None => @test.fail("Legacy baggage format should work")
+    None => @test.fail("Test failed")
   }
   
   // 验证新式格式工作
   match modern_with_data.get("modern.namespace.key1") {
     Some(value) => assert_eq(value, "modern.value1")
-    None => @test.fail("Modern baggage format should work")
+    None => @test.fail("Test failed")
   }
   
   match modern_with_data.get("unicode.key.测试") {
     Some(value) => assert_eq(value, "unicode.value.🚀")
-    None => @test.fail("Unicode baggage format should work")
+    None => @test.fail("Test failed")
   }
   
   // 测试格式混合使用
@@ -257,12 +257,12 @@ test "compatibility_baggage_format_changes" {
   // 验证混合格式兼容性
   match mixed_baggage.get("legacy.key1") {
     Some(value) => assert_eq(value, "legacy.value1")
-    None => @test.fail("Mixed format should preserve legacy entries")
+    None => @test.fail("Test failed")
   }
   
   match mixed_baggage.get("modern.mixed.key") {
     Some(value) => assert_eq(value, "mixed.value")
-    None => @test.fail("Mixed format should support modern entries")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -322,9 +322,9 @@ test "compatibility_serialization_formats" {
   assert_eq(modern_serialized.has_suffix("}"), true)
   
   // 测试格式兼容性：两种格式都能解析基本数据
-  let legacy_pairs = legacy_serialized.split(",")
+  let legacy_pairs = legacy_serialized",".split_to_string()
   let modern_content = modern_serialized.slice(1, modern_serialized.length() - 1)  // 去掉大括号
-  let modern_pairs = modern_content.split(",")
+  let modern_pairs = modern_content",".split_to_string()
   
   assert_eq(legacy_pairs.length(), 3)
   assert_eq(modern_pairs.length(), 5)

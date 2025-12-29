@@ -128,31 +128,31 @@ test "measurement_creation_and_properties" {
   assert_eq(complex_measurement.attributes[0].0, "method")
   match complex_measurement.attributes[0].1 {
     StringValue(method) => assert_eq(method, "GET")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(complex_measurement.attributes[1].0, "endpoint")
   match complex_measurement.attributes[1].1 {
     StringValue(endpoint) => assert_eq(endpoint, "/api/users")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(complex_measurement.attributes[2].0, "status_code")
   match complex_measurement.attributes[2].1 {
     IntValue(code) => assert_eq(code, 200L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(complex_measurement.attributes[3].0, "duration_ms")
   match complex_measurement.attributes[3].1 {
     FloatValue(duration) => assert_eq(duration, 123.4)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(complex_measurement.attributes[4].0, "cache_hit")
   match complex_measurement.attributes[4].1 {
     BoolValue(hit) => assert_eq(hit, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证数组属性
@@ -164,7 +164,7 @@ test "measurement_creation_and_properties" {
       assert_eq(tags[1], "users")
       assert_eq(tags[2], "auth")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -334,22 +334,22 @@ test "instrument_with_complex_attributes" {
   // 验证特定属性
   match complex_attributes[0].1 {
     StringValue(service_name) => assert_eq(service_name, "payment-service")
-    _ => @test.fail("Expected StringValue for service.name")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[7].1 {
     IntValue(pid) => assert_eq(pid, 12345L)
-    _ => @test.fail("Expected IntValue for process.pid")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[10].1 {
     FloatValue(cpu_percent) => assert_eq(cpu_percent, 75.5)
-    _ => @test.fail("Expected FloatValue for process.cpu.percent")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[11].1 {
     BoolValue(healthy) => assert_eq(healthy, true)
-    _ => @test.fail("Expected BoolValue for process.healthy")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[8].1 {
@@ -359,7 +359,7 @@ test "instrument_with_complex_attributes" {
       assert_eq(args[1], "--config")
       assert_eq(args[2], "/etc/payment/config.yaml")
     }
-    _ => @test.fail("Expected ArrayStringValue for process.command_args")
+    _ => @test.fail("Test failed")
   }
 }
 

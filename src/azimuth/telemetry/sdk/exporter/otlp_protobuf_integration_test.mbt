@@ -292,16 +292,16 @@ test "otlp_protobuf_metric_encoding" {
       assert_eq(gauge.data_points[0].attributes.length(), 2)
       match gauge.data_points[0].attributes[0].value {
         OTLPAnyValue::StringValue(s) => assert_eq(s, "web-server-01")
-        _ => @test.fail("Expected StringValue")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected Gauge metric data")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(gauge_metric.name, "system.cpu.usage")
   match gauge_metric.description {
     Some(desc) => assert_eq(desc, "System CPU usage percentage")
-    None => @test.fail("Expected Some(description)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -404,28 +404,28 @@ test "otlp_protobuf_log_encoding" {
   assert_eq(log_record.severity_number, SeverityNumber::SEVERITY_NUMBER_ERROR)
   match log_record.severity_text {
     Some(text) => assert_eq(text, "ERROR")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.body {
     Some(OTLPAnyValue::StringValue(body)) => assert_eq(body, "Database connection failed")
-    _ => @test.fail("Expected StringValue body")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(log_record.attributes.length(), 3)
   match log_record.attributes[2].value {
     OTLPAnyValue::IntValue(retry_count) => assert_eq(retry_count, 3L)
-    _ => @test.fail("Expected IntValue retry.count")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.trace_id {
     Some(trace_id) => assert_eq(trace_id.length(), 16)
-    None => @test.fail("Expected Some(trace_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.span_id {
     Some(span_id) => assert_eq(span_id.length(), 8)
-    None => @test.fail("Expected Some(span_id)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -510,7 +510,7 @@ test "otlp_protobuf_resource_encoding" {
           assert_eq(name, "payment-service")
           found_service_name = true
         }
-        _ => @test.fail("Expected StringValue for service.name")
+        _ => @test.fail("Test failed")
       }
     } else if attr.key == "telemetry.sdk.name" {
       match attr.value {
@@ -518,7 +518,7 @@ test "otlp_protobuf_resource_encoding" {
           assert_eq(sdk_name, "azimuth")
           found_sdk_name = true
         }
-        _ => @test.fail("Expected StringValue for telemetry.sdk.name")
+        _ => @test.fail("Test failed")
       }
     } else if attr.key == "host.name" {
       match attr.value {
@@ -526,7 +526,7 @@ test "otlp_protobuf_resource_encoding" {
           assert_eq(host, "payment-server-01")
           found_host_name = true
         }
-        _ => @test.fail("Expected StringValue for host.name")
+        _ => @test.fail("Test failed")
       }
     }
     i = i + 1

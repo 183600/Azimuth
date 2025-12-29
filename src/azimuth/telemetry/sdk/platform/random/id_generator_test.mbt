@@ -286,7 +286,7 @@ test "unique_request_id_generation" {
   
   // 验证请求ID组成部分
   let parse_request_id = fn(id : String) : (Int64, String, Int64) {
-    let parts = id.split("-")
+    let parts = id"-".split_to_string()
     let timestamp = parts[0].to_int64()
     let node_id = parts[1]
     let sequence = parts[2].to_int64()

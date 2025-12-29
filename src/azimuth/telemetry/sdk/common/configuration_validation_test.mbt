@@ -43,7 +43,7 @@ test "service_resource_config_validation" {
     }
     
     // 验证schema URL格式
-    if resource.schema_url.length() > 0 && !resource.schema_url.starts_with("https://") && !resource.schema_url.starts_with("http://") {
+    if resource.schema_url.length() > 0 && !resource.schema_url.has_prefix("https://") && !resource.schema_url.has_prefix("http://") {
       warnings.push("schema_url should be a valid HTTP/HTTPS URL")
     }
     
@@ -172,11 +172,11 @@ test "exporter_config_validation" {
       OtlpHttp => {
         if config.endpoint.length() == 0 {
           errors.push("endpoint is required for OTLP HTTP exporter")
-        } else if !config.endpoint.starts_with("http://") && !config.endpoint.starts_with("https://") {
+        } else if !config.endpoint.has_prefix("http://") && !config.endpoint.has_prefix("https://") {
           errors.push("endpoint must be a valid HTTP/HTTPS URL for OTLP HTTP exporter")
         }
         
-        if config.certificate_file.length() > 0 && !config.endpoint.starts_with("https://") {
+        if config.certificate_file.length() > 0 && !config.endpoint.has_prefix("https://") {
           warnings.push("certificate_file specified but endpoint is not HTTPS")
         }
       }
@@ -184,7 +184,7 @@ test "exporter_config_validation" {
       OtlpGrpc => {
         if config.endpoint.length() == 0 {
           errors.push("endpoint is required for OTLP gRPC exporter")
-        } else if !config.endpoint.starts_with("http://") && !config.endpoint.starts_with("https://") {
+        } else if !config.endpoint.has_prefix("http://") && !config.endpoint.has_prefix("https://") {
           errors.push("endpoint must be a valid HTTP/HTTPS URL for OTLP gRPC exporter")
         }
       }
@@ -685,16 +685,16 @@ test "environment_variable_config_parsing" {
     
     // 验证URL格式
     if config.otlp_endpoint.length() > 0 && 
-       !config.otlp_endpoint.starts_with("http://") && 
-       !config.otlp_endpoint.starts_with("https://") {
+       !config.otlp_endpoint.has_prefix("http://") && 
+       !config.otlp_endpoint.has_prefix("https://") {
       errors.push("OTEL_EXPORTER_OTLP_ENDPOINT must be a valid HTTP/HTTPS URL")
     }
     
     // 验证headers格式
     if config.otlp_headers.length() > 0 {
-      let header_pairs = config.otlp_headers.split(",")
+      let header_pairs = config.otlp_headers",".split_to_string()
       for pair in header_pairs {
-        let parts = pair.split("=")
+        let parts = pair"=".split_to_string()
         if parts.length() != 2 {
           errors.push("OTEL_EXPORTER_OTLP_HEADERS must be in format 'key1=value1,key2=value2'")
           break

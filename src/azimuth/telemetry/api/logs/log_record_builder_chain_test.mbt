@@ -26,12 +26,12 @@ test "log_record_builder_basic_chaining" {
   // 验证属性值
   match log_record.attributes[0].1 {
     StringValue(s) => assert_eq(s, "test-service")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[1].1 {
     StringValue(s) => assert_eq(s, "1.0.0")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -101,22 +101,22 @@ test "log_record_builder_complex_attributes_chaining" {
   // 验证各种类型的属性
   match log_record.attributes[0].1 {
     StringValue(s) => assert_eq(s, "string.value")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[1].1 {
     IntValue(i) => assert_eq(i, 42L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[2].1 {
     FloatValue(f) => assert_eq(f, 3.14)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[3].1 {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[4].1 {
@@ -126,7 +126,7 @@ test "log_record_builder_complex_attributes_chaining" {
       assert_eq(arr[1], "b")
       assert_eq(arr[2], "c")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[5].1 {
@@ -136,7 +136,7 @@ test "log_record_builder_complex_attributes_chaining" {
       assert_eq(arr[1], 2L)
       assert_eq(arr[2], 3L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[6].1 {
@@ -146,7 +146,7 @@ test "log_record_builder_complex_attributes_chaining" {
       assert_eq(arr[1], 2.2)
       assert_eq(arr[2], 3.3)
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[7].1 {
@@ -156,15 +156,15 @@ test "log_record_builder_complex_attributes_chaining" {
       assert_eq(arr[1], false)
       assert_eq(arr[2], true)
     }
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
 test "log_record_builder_trace_context_chaining" {
   // 测试追踪上下文的链式调用
   
-  let trace_id = Array::make(16, 1_byte)
-  let span_id = Array::make(8, 2_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte })
   let trace_flags = 1_byte
   
   let log_record = LogRecord::builder()
@@ -201,7 +201,7 @@ test "log_record_builder_trace_context_chaining" {
       assert_eq(id.length(), 16)
       assert_eq(id[0], 1_byte)
     }
-    None => @test.fail("Expected trace_id")
+    None => @test.fail("Test failed")
   }
   
   match traced_log_record.span_id {
@@ -209,12 +209,12 @@ test "log_record_builder_trace_context_chaining" {
       assert_eq(id.length(), 8)
       assert_eq(id[0], 2_byte)
     }
-    None => @test.fail("Expected span_id")
+    None => @test.fail("Test failed")
   }
   
   match traced_log_record.trace_flags {
     Some(flags) => assert_eq(flags, 1_byte)
-    None => @test.fail("Expected trace_flags")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -262,7 +262,7 @@ test "log_record_builder_resource_and_instrumentation_chaining" {
       assert_eq(res.service_name, "test-service")
       assert_eq(res.telemetry_sdk_name, "azimuth")
     }
-    None => @test.fail("Expected resource")
+    None => @test.fail("Test failed")
   }
   
   match full_log_record.instrumentation_scope {
@@ -271,7 +271,7 @@ test "log_record_builder_resource_and_instrumentation_chaining" {
       assert_eq(scope.version, Some("1.0.0"))
       assert_eq(scope.schema_url, Some("https://opentelemetry.io/schemas/1.20.0"))
     }
-    None => @test.fail("Expected instrumentation_scope")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -300,27 +300,27 @@ test "log_record_builder_edge_cases_chaining" {
   // 验证边界值
   match edge_case_log.attributes[0].1 {
     StringValue(s) => assert_eq(s, "")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match edge_case_log.attributes[4].1 {
     IntValue(i) => assert_eq(i, 0L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match edge_case_log.attributes[5].1 {
     FloatValue(f) => assert_eq(f, 0.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match edge_case_log.attributes[6].1 {
     BoolValue(b) => assert_eq(b, false)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match edge_case_log.attributes[7].1 {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 极值测试
@@ -371,17 +371,17 @@ test "log_record_builder_observability_chaining" {
   // 验证可观测性属性
   match log_record.attributes[0].1 {
     StringValue(s) => assert_eq(s, "observability-service")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[8].1 {
     IntValue(i) => assert_eq(i, 12345L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[14].1 {
     StringValue(s) => assert_eq(s, "moonbit")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -416,22 +416,22 @@ test "log_record_builder_business_logging_chaining" {
   // 验证业务日志属性
   match log_record.attributes[0].1 {
     StringValue(s) => assert_eq(s, "user.login")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[2].1 {
     StringValue(s) => assert_eq(s, "user-789")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[14].1 {
     IntValue(i) => assert_eq(i, 150L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[15].1 {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -467,22 +467,22 @@ test "log_record_builder_error_logging_chaining" {
   // 验证错误日志属性
   match log_record.attributes[0].1 {
     StringValue(s) => assert_eq(s, "ConnectionException")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[9].1 {
     IntValue(i) => assert_eq(i, 5432L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[15].1 {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[16].1 {
     BoolValue(b) => assert_eq(b, false)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -518,21 +518,21 @@ test "log_record_builder_performance_logging_chaining" {
   // 验证性能日志属性
   match log_record.attributes[0].1 {
     StringValue(s) => assert_eq(s, "http.request.duration")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[3].1 {
     FloatValue(f) => assert_eq(f, 125.5)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[4].1 {
     IntValue(i) => assert_eq(i, 1000L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[17].1 {
     StringValue(s) => assert_eq(s, "api-gateway")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }

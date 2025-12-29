@@ -56,17 +56,17 @@ test "option_operations" {
   
   match some_value {
     Some(value) => assert_eq(value, 42)
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
 }
 
 test "array_creation" {
-  let zero_ints = Array::make(8, 0)
+  let zero_ints = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0 })
   assert_eq(zero_ints.length(), 8)
   assert_eq(zero_ints[0], 0)
   assert_eq(zero_ints[7], 0)
   
-  let zero_strings = Array::make(5, "")
+  let zero_strings = [for i = 0; i < 5; i = i + 1].map(fn(_) { "" })
   assert_eq(zero_strings.length(), 5)
   assert_eq(zero_strings[0], "")
   assert_eq(zero_strings[4], "")

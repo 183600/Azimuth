@@ -5,7 +5,7 @@ test "baggage_edge_cases" {
   
   // 测试空Baggage的操作
   match empty_baggage.get("non.existent") {
-    Some(_) => @test.fail("Expected None for empty baggage")
+    Some(_) => @test.fail("Expected None for non-existent key")
     None => assert_eq(true, true)
   }
   
@@ -15,7 +15,7 @@ test "baggage_edge_cases" {
   
   match baggage_with_large.get("large.key") {
     Some(value) => assert_eq(value.length(), large_value.length())
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符键和值
@@ -25,7 +25,7 @@ test "baggage_edge_cases" {
   
   match baggage_with_special.get(special_key) {
     Some(value) => assert_eq(value, special_value)
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试Unicode键和值
@@ -35,7 +35,7 @@ test "baggage_edge_cases" {
   
   match baggage_with_unicode.get(unicode_key) {
     Some(value) => assert_eq(value, unicode_value)
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试覆盖值
@@ -44,34 +44,34 @@ test "baggage_edge_cases" {
   
   match baggage2.get("test.key") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试空键和空值
   let baggage_empty_key = empty_baggage.with_entry("", "empty.key.value")
   match baggage_empty_key.get("") {
     Some(value) => assert_eq(value, "empty.key.value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   let baggage_empty_value = empty_baggage.with_entry("empty.value.key", "")
   match baggage_empty_value.get("empty.value.key") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试包含空格的键和值
   let baggage_spaces = empty_baggage.with_entry("key with spaces", "value with spaces")
   match baggage_spaces.get("key with spaces") {
     Some(value) => assert_eq(value, "value with spaces")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试数字键（虽然类型是String，但可以包含数字）
   let baggage_numeric_key = empty_baggage.with_entry("123", "numeric.key.value")
   match baggage_numeric_key.get("123") {
     Some(value) => assert_eq(value, "numeric.key.value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试大量条目
@@ -85,16 +85,16 @@ test "baggage_edge_cases" {
   // 验证一些条目
   match baggage_multi.get("key.0") {
     Some(value) => assert_eq(value, "value.0")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match baggage_multi.get("key.29") {
     Some(value) => assert_eq(value, "value.29")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match baggage_multi.get("key.30") {
-    Some(_) => @test.fail("Expected None for non-existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -108,11 +108,11 @@ test "baggage_edge_cases" {
   
   match baggage_headers.get("user-id") {
     Some(value) => assert_eq(value, "12345")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match baggage_headers.get("correlation-id") {
     Some(value) => assert_eq(value, "corr-def456")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
 }

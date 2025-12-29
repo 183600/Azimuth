@@ -5,7 +5,7 @@ test "map_carrier_operations" {
   // 测试基本操作
   let result1 = carrier.get("non_existent_key")
   match result1 {
-    Some(_) => @test.fail("Expected None for non-existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -14,7 +14,7 @@ test "map_carrier_operations" {
   let result2 = carrier.get("test_key")
   match result2 {
     Some(value) => assert_eq(value, "test_value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试覆盖
@@ -22,7 +22,7 @@ test "map_carrier_operations" {
   let result3 = carrier.get("test_key")
   match result3 {
     Some(value) => assert_eq(value, "new_value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -114,7 +114,7 @@ test "w3c_trace_context_propagator" {
       assert_eq(trace_parent[0:2], "00")
       assert_eq(trace_parent[51:53], "01")
     }
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   // 测试提取操作
@@ -157,7 +157,7 @@ test "w3c_baggage_propagator" {
       // 验证baggage格式: key1=value1,key2=value2
       assert_eq(baggage_value, "key1=value1,key2=value2")
     }
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 测试提取操作
@@ -212,12 +212,12 @@ test "composite_propagator_with_multiple_propagators" {
   // 验证两个header都被设置
   match carrier.get("traceparent") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("baggage") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 测试提取操作
@@ -267,16 +267,16 @@ test "map_carrier_edge_cases_and_complex_operations" {
   // 测试获取特定键
   match large_carrier.get("key0") {
     Some(value) => assert_eq(value, "value0")
-    None => @test.fail("Expected value for key0")
+    None => @test.fail("Test failed")
   }
   
   match large_carrier.get("key99") {
     Some(value) => assert_eq(value, "value99")
-    None => @test.fail("Expected value for key99")
+    None => @test.fail("Test failed")
   }
   
   match large_carrier.get("nonexistent") {
-    Some(_) => @test.fail("Expected None for nonexistent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -301,27 +301,27 @@ test "map_carrier_edge_cases_and_complex_operations" {
   // 验证特殊键值对
   match special_carrier.get("") {
     Some(value) => assert_eq(value, "empty_key")
-    None => @test.fail("Expected value for empty key")
+    None => @test.fail("Test failed")
   }
   
   match special_carrier.get("empty_value") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty value")
+    None => @test.fail("Test failed")
   }
   
   match special_carrier.get("special!@#$%^&*()") {
     Some(value) => assert_eq(value, "special!@#$%^&*()")
-    None => @test.fail("Expected value for special characters")
+    None => @test.fail("Test failed")
   }
   
   match special_carrier.get("unicode_test") {
     Some(value) => assert_eq(value, "测试中文")
-    None => @test.fail("Expected unicode value")
+    None => @test.fail("Test failed")
   }
   
   match special_carrier.get("space key") {
     Some(value) => assert_eq(value, "space value")
-    None => @test.fail("Expected value for space key")
+    None => @test.fail("Test failed")
   }
   
   // 测试设置操作
@@ -428,12 +428,12 @@ test "propagation_integration_with_context_and_baggage" {
   // 验证注入的header
   match carrier.get("traceparent") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("baggage") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 创建包含复杂baggage的carrier
@@ -464,11 +464,11 @@ test "propagation_integration_with_context_and_baggage" {
   // 验证多次传播不会丢失信息
   match carrier2.get("traceparent") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header after multiple propagation")
+    None => @test.fail("Test failed")
   }
   
   match carrier2.get("baggage") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header after multiple propagation")
+    None => @test.fail("Test failed")
   }
 }

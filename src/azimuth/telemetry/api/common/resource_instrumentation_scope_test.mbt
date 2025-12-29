@@ -29,14 +29,14 @@ test "resource_with_attributes" {
   assert_eq(resource.service_name, "api-service")
   match resource.service_version {
     Some(version) => assert_eq(version, "1.2.3")
-    None => @test.fail("Expected Some(version)")
+    None => @test.fail("Test failed")
   }
   assert_eq(resource.attributes.length(), 3)
   
   // 验证第一个属性
   match resource.attributes[0].1 {
     AttributeValue::StringValue(instance_id) => assert_eq(instance_id, "instance-123")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -50,11 +50,11 @@ test "instrumentation_scope_basic" {
   assert_eq(scope.name, "test-instrumentation")
   match scope.version {
     Some(version) => assert_eq(version, "2.0.0")
-    None => @test.fail("Expected Some(version)")
+    None => @test.fail("Test failed")
   }
   match scope.schema_url {
     Some(schema_url) => assert_eq(schema_url, "https://example.com/schema/v1")
-    None => @test.fail("Expected Some(schema_url)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -93,7 +93,7 @@ test "resource_with_various_attribute_types" {
   // 验证布尔属性
   match resource.attributes[3].1 {
     AttributeValue::BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证字符串数组属性
@@ -104,6 +104,6 @@ test "resource_with_various_attribute_types" {
       assert_eq(arr[1], "b")
       assert_eq(arr[2], "c")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }

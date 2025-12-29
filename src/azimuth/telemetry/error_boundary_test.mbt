@@ -109,7 +109,7 @@ test "error_handling_array_attributes_edge_cases" {
       ArrayIntValue(arr) => assert_eq(arr.length(), 0)
       ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
       ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
-      _ => @test.fail("Expected array type")
+      _ => @test.fail("Test failed")
     }
     i = i + 1
   }
@@ -153,7 +153,7 @@ test "error_handling_array_attributes_edge_cases" {
   // 验证大型数组的大小
   match large_array_span.attributes[0].1 {
     ArrayStringValue(arr) => assert_eq(arr.length(), 1000)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -167,7 +167,7 @@ test "error_handling_context_edge_cases" {
   // 测试在空上下文中获取值
   let non_existent_key = create_key("non.existent.key")
   match empty_ctx.get(non_existent_key) {
-    Some(_) => @test.fail("Expected None for non-existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -181,7 +181,7 @@ test "error_handling_context_edge_cases" {
   // 验证最后设置的值被保留
   match ctx3.get(key) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试空字符串键和值
@@ -189,14 +189,14 @@ test "error_handling_context_edge_cases" {
   let ctx_with_empty_key = ctx.with_value(empty_key, "value_with_empty_key")
   match ctx_with_empty_key.get(empty_key) {
     Some(value) => assert_eq(value, "value_with_empty_key")
-    None => @test.fail("Expected Some(value) for empty key")
+    None => @test.fail("Test failed")
   }
   
   let normal_key = create_key("normal.key")
   let ctx_with_empty_value = ctx.with_value(normal_key, "")
   match ctx_with_empty_value.get(normal_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some(empty value)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -209,7 +209,7 @@ test "error_handling_baggage_edge_cases" {
   
   // 测试在空baggage中获取值
   match empty_baggage.get("non.existent.key") {
-    Some(_) => @test.fail("Expected None for non-existent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -222,20 +222,20 @@ test "error_handling_baggage_edge_cases" {
   // 验证最后设置的值被保留
   match baggage3.get("test.key") {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试空字符串键和值
   let baggage_with_empty_key = baggage.with_entry("", "value_with_empty_key")
   match baggage_with_empty_key.get("") {
     Some(value) => assert_eq(value, "value_with_empty_key")
-    None => @test.fail("Expected Some(value) for empty key")
+    None => @test.fail("Test failed")
   }
   
   let baggage_with_empty_value = baggage.with_entry("normal.key", "")
   match baggage_with_empty_value.get("normal.key") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some(empty value)")
+    None => @test.fail("Test failed")
   }
   
   // 测试包含特殊字符的键和值
@@ -244,7 +244,7 @@ test "error_handling_baggage_edge_cases" {
   let baggage_with_special = baggage.with_entry(special_key, special_value)
   match baggage_with_special.get(special_key) {
     Some(value) => assert_eq(value, special_value)
-    None => @test.fail("Expected Some(value) for special characters")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -265,7 +265,7 @@ test "error_handling_log_record_edge_cases" {
   assert_eq(empty_log_record.severity_number, SeverityNumber::Info)
   match empty_log_record.body {
     Some(body) => assert_eq(body, "")
-    None => @test.fail("Expected Some(empty body)")
+    None => @test.fail("Test failed")
   }
   
   // 测试极值时间戳
@@ -298,7 +298,7 @@ test "error_handling_log_record_edge_cases" {
   logger.emit(long_log_record)
   match long_log_record.body {
     Some(body) => assert_eq(body.length(), 100000)
-    None => @test.fail("Expected Some(long body)")
+    None => @test.fail("Test failed")
   }
   
   // 测试包含特殊字符的日志消息
@@ -312,7 +312,7 @@ test "error_handling_log_record_edge_cases" {
   logger.emit(special_log_record)
   match special_log_record.body {
     Some(body) => assert_eq(body, special_message)
-    None => @test.fail("Expected Some(special body)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -349,8 +349,8 @@ test "error_handling_span_context_edge_cases" {
   // 测试SpanContext的边界情况
   
   // 测试全零的trace_id和span_id
-  let zero_trace_id = Array::make(16, 0_byte)
-  let zero_span_id = Array::make(8, 0_byte)
+  let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   
   let zero_context = SpanContext::{
     trace_id: zero_trace_id,
@@ -365,8 +365,8 @@ test "error_handling_span_context_edge_cases" {
   assert_eq(zero_context.trace_state, "")
   
   // 测试全1的trace_id和span_id
-  let max_trace_id = Array::make(16, 0xff_byte)
-  let max_span_id = Array::make(8, 0xff_byte)
+  let max_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0xff_byte })
+  let max_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0xff_byte })
   
   let max_context = SpanContext::{
     trace_id: max_trace_id,
@@ -382,8 +382,8 @@ test "error_handling_span_context_edge_cases" {
   // 测试复杂的trace_state
   let complex_trace_state = "key1=value1,key2=value2;prop1=val1,key3=value3;prop1=val1;prop2=val2"
   let complex_context = SpanContext::{
-    trace_id: Array::make(16, 0x12_byte),
-    span_id: Array::make(8, 0x34_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x12_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x34_byte }),
     trace_flags: 1_byte,
     trace_state: complex_trace_state
   }
@@ -394,8 +394,8 @@ test "error_handling_span_context_edge_cases" {
   // 测试非常长的trace_state
   let long_trace_state = "key=" + "value" * 1000
   let long_context = SpanContext::{
-    trace_id: Array::make(16, 0x56_byte),
-    span_id: Array::make(8, 0x78_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x56_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x78_byte }),
     trace_flags: 1_byte,
     trace_state: long_trace_state
   }

@@ -24,7 +24,7 @@ test "span_creation_performance" {
     assert_eq(span.name.has_prefix("performance-test-span-"), true)
     match span.kind {
       Server => assert_eq(true, true)
-      _ => @test.fail("Expected Server span kind")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -107,7 +107,7 @@ test "log_record_creation_performance" {
     assert_eq(log_record.timestamp_unix_nanos, 1234567890L + i.to_int64())
     match log_record.body {
       Some(message) => assert_eq(message.has_prefix("Performance test log message"), true)
-      None => @test.fail("Expected body message")
+      None => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -136,7 +136,7 @@ test "context_and_baggage_performance" {
     // 验证Context值
     match current_ctx.get(key1) {
       Some(value) => assert_eq(value.has_prefix("value1-"), true)
-      None => @test.fail("Expected to find key1")
+      None => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -154,7 +154,7 @@ test "context_and_baggage_performance" {
     // 验证Baggage条目
     match baggage.get("baggage-key-1") {
       Some(value) => assert_eq(value.has_prefix("baggage-value1-"), true)
-      None => @test.fail("Expected to find baggage-key-1")
+      None => @test.fail("Test failed")
     }
     
     j = j + 1
@@ -181,12 +181,12 @@ test "propagation_performance" {
     // 验证注入的头部
     match test_carrier.get("traceparent") {
       Some(_) => assert_eq(true, true)
-      None => @test.fail("Expected traceparent header")
+      None => @test.fail("Test failed")
     }
     
     match test_carrier.get("baggage") {
       Some(_) => assert_eq(true, true)
-      None => @test.fail("Expected baggage header")
+      None => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -235,22 +235,22 @@ test "attribute_operations_performance" {
     // 验证属性值
     match string_attr {
       StringValue(s) => assert_eq(s.has_prefix("string-value-"), true)
-      _ => @test.fail("Expected StringValue")
+      _ => @test.fail("Test failed")
     }
     
     match int_attr {
       IntValue(val) => assert_eq(val, i.to_int64())
-      _ => @test.fail("Expected IntValue")
+      _ => @test.fail("Test failed")
     }
     
     match float_attr {
       FloatValue(val) => assert_eq(val, i.to_double())
-      _ => @test.fail("Expected FloatValue")
+      _ => @test.fail("Test failed")
     }
     
     match bool_attr {
       BoolValue(val) => assert_eq(val, i % 2 == 0)
-      _ => @test.fail("Expected BoolValue")
+      _ => @test.fail("Test failed")
     }
     
     match string_array_attr {
@@ -258,7 +258,7 @@ test "attribute_operations_performance" {
         assert_eq(arr.length(), 3)
         assert_eq(arr[0].has_prefix("item1-"), true)
       }
-      _ => @test.fail("Expected ArrayStringValue")
+      _ => @test.fail("Test failed")
     }
     
     match int_array_attr {
@@ -266,7 +266,7 @@ test "attribute_operations_performance" {
         assert_eq(arr.length(), 3)
         assert_eq(arr[0], i.to_int64())
       }
-      _ => @test.fail("Expected ArrayIntValue")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -318,17 +318,17 @@ test "concurrent_span_creation" {
     
     match span1.kind {
       Server => assert_eq(true, true)
-      _ => @test.fail("Expected Server span kind")
+      _ => @test.fail("Test failed")
     }
     
     match span2.kind {
       Client => assert_eq(true, true)
-      _ => @test.fail("Expected Client span kind")
+      _ => @test.fail("Test failed")
     }
     
     match span3.kind {
       Internal => assert_eq(true, true)
-      _ => @test.fail("Expected Internal span kind")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1
@@ -384,8 +384,8 @@ test "memory_usage_stress_test" {
   // 创建大量Span
   let mut i = 0
   while i < 100 {
-    let trace_id = Array::make(16, i.to_byte())
-    let span_id = Array::make(8, i.to_byte())
+    let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { i.to_byte( }))
+    let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { i.to_byte( }))
     
     let span = Span::{
       name: "memory-test-span-" + i.to_string(),
@@ -446,12 +446,12 @@ test "memory_usage_stress_test" {
   
   match log_records[0].body {
     Some(message) => assert_eq(message, "Memory test log 0")
-    None => @test.fail("Expected body message")
+    None => @test.fail("Test failed")
   }
   
   match attributes[0] {
     StringValue(value) => assert_eq(value, "memory-test-attribute-0")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
 }
 

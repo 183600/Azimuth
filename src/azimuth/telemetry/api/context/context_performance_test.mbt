@@ -333,22 +333,22 @@ test "context_and_baggage_integration_performance" {
         k = k + 1
       }
     }
-    None => @test.fail("Expected Some baggage value")
+    None => @test.fail("Test failed")
   }
   
   match final_ctx.get(trace_id_key) {
     Some(value) => assert_eq(value, "0af7651916cd43dd8448eb211c80319c")
-    None => @test.fail("Expected Some trace_id value")
+    None => @test.fail("Test failed")
   }
   
   match final_ctx.get(span_id_key) {
     Some(value) => assert_eq(value, "b7ad6b7169203331")
-    None => @test.fail("Expected Some span_id value")
+    None => @test.fail("Test failed")
   }
   
   match final_ctx.get(flags_key) {
     Some(value) => assert_eq(value, "01")
-    None => @test.fail("Expected Some trace_flags value")
+    None => @test.fail("Test failed")
   }
   
   assert_eq(final_ctx.values.length(), 4)

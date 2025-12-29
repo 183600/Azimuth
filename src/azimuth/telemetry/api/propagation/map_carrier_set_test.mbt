@@ -22,17 +22,17 @@ test "map_carrier_set_operations" {
   
   match carrier.get("key1") {
     Some(value) => assert_eq(value, "value1") // 原始值
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("key2") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 验证新设置的键不存在（因为set是no-op）
   match carrier.get("key3") {
-    Some(_) => @test.fail("Expected None for key3")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -49,7 +49,7 @@ test "map_carrier_set_operations" {
   assert_eq(keys_after_set.length(), 0)
   
   match empty_carrier.get("new.key") {
-    Some(_) => @test.fail("Expected None for new.key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   

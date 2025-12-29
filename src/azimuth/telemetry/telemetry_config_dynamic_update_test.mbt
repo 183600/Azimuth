@@ -254,7 +254,7 @@ fn update_config_with_validation(config : Array[(String, String)], key : String,
                                 validation_type : String, validation_range : String) -> Array[(String, String)] {
   let validated_value = match validation_type {
     "float_range" => {
-      let parts = validation_range.split(",")
+      let parts = validation_range",".split_to_string()
       let min_val = parts[0].to_double()
       let max_val = parts[1].to_double()
       let val = value.to_double()
@@ -268,7 +268,7 @@ fn update_config_with_validation(config : Array[(String, String)], key : String,
       }
     }
     "int_range" => {
-      let parts = validation_range.split(",")
+      let parts = validation_range",".split_to_string()
       let min_val = parts[0].to_int()
       let max_val = parts[1].to_int()
       let val = value.to_int()

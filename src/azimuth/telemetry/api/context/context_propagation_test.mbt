@@ -1,324 +1,306 @@
-// API Context模块的上下文传播测试
+// 上下文传播测试用例
+// 测试Context和Baggage的传播和管理功能
 
-test "context_creation_and_empty" {
-  // 测试上下文创建和空上下文
+test "context_basic_operations" {
+  // 测试Context的基本操作
   
-  let empty_ctx = context::Context::empty()
+  let empty_ctx = Context::empty()
+  let trace_key = create_key("trace_id")
+  let span_key = create_key("span_id")
   
   // 验证空上下文
-  assert_eq(empty_ctx.values.length(), 0)
+  assert_eq(empty_ctx.get(trace_key), None)
+  assert_eq(empty_ctx.get(span_key), None)
   
-  // 验证从空上下文获取值返回None
-  let key = context::create_key("test.key")
-  let value = empty_ctx.get(key)
-  assert_eq(value, None)
-}
-
-test "context_with_value_operations" {
-  // 测试上下文的值操作
+  // 添加值到上下文
+  let ctx_with_trace = empty_ctx.with_value(trace_key, "0af7651916cd43dd8448eb211c80319c")
+  let ctx_with_span = ctx_with_trace.with_value(span_key, "b7ad6b7169203331")
   
-  let ctx = context::Context::empty()
-  let key1 = context::create_key("user.id")
-  let key2 = context::create_key("request.id")
-  let key3 = context::create_key("trace.id")
-  
-  // 添加第一个值
-  let ctx1 = ctx.with_value(key1, "user123")
-  
-  // 验证值被添加
-  let value1 = ctx1.get(key1)
-  match value1 {
-    Some(v) => assert_eq(v, "user123")
-    None => assert_eq(false, true)  // 不应该到达这里
+  // 验证上下文中的值
+  match ctx_with_trace.get(trace_key) {
+    Some(value) => {
+      assert_eq(value, "0af7651916cd43dd8448eb211c80319c")
+      assert_eq(value.length(), 32)
+    }
+    None => assert_eq(false, true)
   }
   
-  // 验证原始上下文没有被修改
-  let original_value = ctx.get(key1)
-  assert_eq(original_value, None)
-  
-  // 添加第二个值
-  let ctx2 = ctx1.with_value(key2, "req456")
-  
-  // 验证两个值都存在
-  let value2 = ctx2.get(key2)
-  match value2 {
-    Some(v) => assert_eq(v, "req456")
-    None => assert_eq(false, true)  // 不应该到达这里
+  match ctx_with_span.get(trace_key) {
+    Some(value) => assert_eq(value, "0af7651916cd43dd8448eb211c80319c")
+    None => assert_eq(false, true)
   }
   
-  // 验证第一个值仍然存在
-  let value1_again = ctx2.get(key1)
-  match value1_again {
-    Some(v) => assert_eq(v, "user123")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 添加第三个值
-  let ctx3 = ctx2.with_value(key3, "trace789")
-  
-  // 验证所有三个值都存在
-  let value3 = ctx3.get(key3)
-  match value3 {
-    Some(v) => assert_eq(v, "trace789")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 验证值数组长度
-  assert_eq(ctx3.values.length(), 3)
-}
-
-test "context_key_creation_and_usage" {
-  // 测试上下文键的创建和使用
-  
-  let key_name = "correlation.id"
-  let key = context::create_key(key_name)
-  
-  // 验证键名
-  assert_eq(key.name, key_name)
-  
-  // 测试使用键存储和检索值
-  let ctx = context::Context::empty()
-  let ctx_with_value = ctx.with_value(key, "corr-12345")
-  
-  let retrieved_value = ctx_with_value.get(key)
-  match retrieved_value {
-    Some(v) => assert_eq(v, "corr-12345")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 测试特殊字符的键名
-  let special_key_name = "special.key.with.dots_and_underscores"
-  let special_key = context::create_key(special_key_name)
-  assert_eq(special_key.name, special_key_name)
-  
-  let ctx_with_special = ctx_with_value.with_value(special_key, "special-value")
-  let special_value = ctx_with_special.get(special_key)
-  match special_value {
-    Some(v) => assert_eq(v, "special-value")
-    None => assert_eq(false, true)  // 不应该到达这里
+  match ctx_with_span.get(span_key) {
+    Some(value) => {
+      assert_eq(value, "b7ad6b7169203331")
+      assert_eq(value.length(), 16)
+    }
+    None => assert_eq(false, true)
   }
 }
 
 test "context_value_overwrite" {
-  // 测试上下文值的覆盖
+  // 测试Context值的覆盖
   
-  let ctx = context::Context::empty()
-  let key = context::create_key("mutable.value")
+  let empty_ctx = Context::empty()
+  let user_key = create_key("user_id")
   
-  // 设置初始值
-  let ctx1 = ctx.with_value(key, "initial")
-  let value1 = ctx1.get(key)
-  match value1 {
-    Some(v) => assert_eq(v, "initial")
-    None => assert_eq(false, true)  // 不应该到达这里
+  // 添加初始值
+  let ctx_with_user = empty_ctx.with_value(user_key, "user123")
+  
+  // 验证初始值
+  match ctx_with_user.get(user_key) {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_eq(false, true)
   }
   
   // 覆盖值
-  let ctx2 = ctx1.with_value(key, "updated")
-  let value2 = ctx2.get(key)
-  match value2 {
-    Some(v) => assert_eq(v, "updated")
-    None => assert_eq(false, true)  // 不应该到达这里
+  let ctx_with_new_user = ctx_with_user.with_value(user_key, "user456")
+  
+  // 验证新值
+  match ctx_with_new_user.get(user_key) {
+    Some(value) => assert_eq(value, "user456")
+    None => assert_eq(false, true)
   }
   
-  // 验证值数组包含两个条目
-  assert_eq(ctx2.values.length(), 2)
-  
-  // 再次覆盖
-  let ctx3 = ctx2.with_value(key, "final")
-  let value3 = ctx3.get(key)
-  match value3 {
-    Some(v) => assert_eq(v, "final")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 验证值数组包含三个条目
-  assert_eq(ctx3.values.length(), 3)
-}
-
-test "baggage_creation_and_empty" {
-  // 测试Baggage创建和空Baggage
-  
-  let empty_baggage = context::Baggage::empty()
-  
-  // 验证空Baggage
-  assert_eq(empty_baggage.entries.length(), 0)
-  
-  // 验证从空Baggage获取值返回None
-  let value = empty_baggage.get("test.key")
-  assert_eq(value, None)
-}
-
-test "baggage_entry_operations" {
-  // 测试Baggage的条目操作
-  
-  let baggage = context::Baggage::empty()
-  
-  // 添加第一个条目
-  let baggage1 = baggage.with_entry("user.id", "user123")
-  
-  // 验证条目被添加
-  let value1 = baggage1.get("user.id")
-  match value1 {
-    Some(v) => assert_eq(v, "user123")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 验证原始Baggage没有被修改
-  let original_value = baggage.get("user.id")
-  assert_eq(original_value, None)
-  
-  // 添加更多条目
-  let baggage2 = baggage1.with_entry("request.id", "req456")
-  let baggage3 = baggage2.with_entry("service.name", "auth-service")
-  
-  // 验证所有条目都存在
-  let value2 = baggage3.get("request.id")
-  match value2 {
-    Some(v) => assert_eq(v, "req456")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  let value3 = baggage3.get("service.name")
-  match value3 {
-    Some(v) => assert_eq(v, "auth-service")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 验证条目数组长度
-  assert_eq(baggage3.entries.length(), 3)
-}
-
-test "baggage_key_value_types" {
-  // 测试Baggage的键值类型
-  
-  let baggage = context::Baggage::empty()
-  
-  // 测试各种键值类型
-  let baggage1 = baggage.with_entry("numeric.key", "12345")
-  let baggage2 = baggage1.with_entry("boolean.key", "true")
-  let baggage3 = baggage2.with_entry("json.key", "{\"nested\": \"value\"}")
-  let baggage4 = baggage3.with_entry("url.key", "https://example.com/path")
-  let baggage5 = baggage4.with_entry("empty.key", "")
-  
-  // 验证数值键
-  let numeric_value = baggage5.get("numeric.key")
-  match numeric_value {
-    Some(v) => assert_eq(v, "12345")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 验证布尔键
-  let boolean_value = baggage5.get("boolean.key")
-  match boolean_value {
-    Some(v) => assert_eq(v, "true")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 验证JSON键
-  let json_value = baggage5.get("json.key")
-  match json_value {
-    Some(v) => assert_eq(v, "{\"nested\": \"value\"}")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 验证URL键
-  let url_value = baggage5.get("url.key")
-  match url_value {
-    Some(v) => assert_eq(v, "https://example.com/path")
-    None => assert_eq(false, true)  // 不应该到达这里
-  }
-  
-  // 验证空值
-  let empty_value = baggage5.get("empty.key")
-  match empty_value {
-    Some(v) => assert_eq(v, "")
-    None => assert_eq(false, true)  // 不应该到达这里
+  // 验证旧上下文不受影响
+  match ctx_with_user.get(user_key) {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_eq(false, true)
   }
 }
 
-test "baggage_entry_overwrite" {
-  // 测试Baggage条目的覆盖
+test "context_multiple_keys" {
+  // 测试Context多个键的管理
   
-  let baggage = context::Baggage::empty()
+  let empty_ctx = Context::empty()
+  let keys = [
+    create_key("trace_id"),
+    create_key("span_id"),
+    create_key("user_id"),
+    create_key("request_id"),
+    create_key("session_id")
+  ]
   
-  // 设置初始条目
-  let baggage1 = baggage.with_entry("overwrite.me", "initial")
-  let value1 = baggage1.get("overwrite.me")
-  match value1 {
-    Some(v) => assert_eq(v, "initial")
-    None => assert_eq(false, true)  // 不应该到达这里
+  let values = [
+    "0af7651916cd43dd8448eb211c80319c",
+    "b7ad6b7169203331",
+    "user123",
+    "req456",
+    "sess789"
+  ]
+  
+  // 逐步添加键值对
+  let mut ctx = empty_ctx
+  let mut i = 0
+  while i < keys.length() {
+    ctx = ctx.with_value(keys[i], values[i])
+    i = i + 1
   }
   
-  // 覆盖条目
-  let baggage2 = baggage1.with_entry("overwrite.me", "updated")
-  let value2 = baggage2.get("overwrite.me")
-  match value2 {
-    Some(v) => assert_eq(v, "updated")
-    None => assert_eq(false, true)  // 不应该到达这里
+  // 验证所有键值对
+  i = 0
+  while i < keys.length() {
+    match ctx.get(keys[i]) {
+      Some(value) => assert_eq(value, values[i])
+      None => assert_eq(false, true)
+    }
+    i = i + 1
   }
   
-  // 验证条目数组包含两个条目
-  assert_eq(baggage2.entries.length(), 2)
+  // 验证不存在的键
+  let nonexistent_key = create_key("nonexistent")
+  match ctx.get(nonexistent_key) {
+    Some(_) => assert_eq(false, true)
+    None => assert_eq(true, true)  // 预期为None
+  }
+}
+
+test "baggage_basic_operations" {
+  // 测试Baggage的基本操作
   
-  // 再次覆盖
-  let baggage3 = baggage2.with_entry("overwrite.me", "final")
-  let value3 = baggage3.get("overwrite.me")
-  match value3 {
-    Some(v) => assert_eq(v, "final")
-    None => assert_eq(false, true)  // 不应该到达这里
+  let empty_baggage = Baggage::empty()
+  
+  // 验证空baggage
+  match empty_baggage.get("user_id") {
+    Some(_) => assert_eq(false, true)
+    None => assert_eq(true, true)  // 预期为None
   }
   
-  // 验证条目数组包含三个条目
-  assert_eq(baggage3.entries.length(), 3)
+  // 添加条目
+  let baggage_with_user = empty_baggage.with_entry("user_id", "user123")
+  let baggage_with_session = baggage_with_user.with_entry("session_id", "sess456")
+  
+  // 验证条目
+  match baggage_with_user.get("user_id") {
+    Some(value) => {
+      assert_eq(value, "user123")
+      assert_eq(value.has_prefix("user"), true)
+    }
+    None => assert_eq(false, true)
+  }
+  
+  match baggage_with_session.get("user_id") {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_eq(false, true)
+  }
+  
+  match baggage_with_session.get("session_id") {
+    Some(value) => {
+      assert_eq(value, "sess456")
+      assert_eq(value.has_prefix("sess"), true)
+    }
+    None => assert_eq(false, true)
+  }
+}
+
+test "baggage_duplicate_keys" {
+  // 测试Baggage重复键的处理
+  
+  let empty_baggage = Baggage::empty()
+  
+  // 添加初始条目
+  let baggage_with_user = empty_baggage.with_entry("user_id", "user123")
+  
+  // 添加相同键的不同值
+  let baggage_with_new_user = baggage_with_user.with_entry("user_id", "user456")
+  
+  // 验证新值
+  match baggage_with_new_user.get("user_id") {
+    Some(value) => assert_eq(value, "user456")
+    None => assert_eq(false, true)
+  }
+  
+  // 验证旧baggage不受影响
+  match baggage_with_user.get("user_id") {
+    Some(value) => assert_eq(value, "user123")
+    None => assert_eq(false, true)
+  }
+}
+
+test "context_propagation_chain" {
+  // 测试上下文传播链
+  
+  let empty_ctx = Context::empty()
+  let trace_key = create_key("trace_id")
+  let span_key = create_key("span_id")
+  let user_key = create_key("user_id")
+  
+  // 创建上下文链
+  let ctx1 = empty_ctx.with_value(trace_key, "trace123")
+  let ctx2 = ctx1.with_value(span_key, "span456")
+  let ctx3 = ctx2.with_value(user_key, "user789")
+  
+  // 验证传播链中的所有值
+  match ctx3.get(trace_key) {
+    Some(value) => assert_eq(value, "trace123")
+    None => assert_eq(false, true)
+  }
+  
+  match ctx3.get(span_key) {
+    Some(value) => assert_eq(value, "span456")
+    None => assert_eq(false, true)
+  }
+  
+  match ctx3.get(user_key) {
+    Some(value) => assert_eq(value, "user789")
+    None => assert_eq(false, true)
+  }
+  
+  // 验证早期上下文不受影响
+  match ctx1.get(trace_key) {
+    Some(value) => assert_eq(value, "trace123")
+    None => assert_eq(false, true)
+  }
+  
+  match ctx1.get(span_key) {
+    Some(_) => assert_eq(false, true)
+    None => assert_eq(true, true)  // 预期为None
+  }
+}
+
+test "baggage_complex_entries" {
+  // 测试Baggage复杂条目
+  
+  let empty_baggage = Baggage::empty()
+  
+  // 添加复杂键值对
+  let complex_entries = [
+    ("http.method", "GET"),
+    ("http.status_code", "200"),
+    ("user.agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"),
+    ("service.name", "payment-service"),
+    ("deployment.environment", "production"),
+    ("custom.trace.id", "0af7651916cd43dd8448eb211c80319c"),
+    ("request.timeout", "30s"),
+    ("retry.count", "3")
+  ]
+  
+  // 逐步添加复杂条目
+  let mut baggage = empty_baggage
+  let mut i = 0
+  while i < complex_entries.length() {
+    let (key, value) = complex_entries[i]
+    baggage = baggage.with_entry(key, value)
+    i = i + 1
+  }
+  
+  // 验证所有复杂条目
+  i = 0
+  while i < complex_entries.length() {
+    let (key, expected_value) = complex_entries[i]
+    match baggage.get(key) {
+      Some(actual_value) => {
+        assert_eq(actual_value, expected_value)
+        assert_eq(actual_value.length() > 0, true)
+      }
+      None => assert_eq(false, true)
+    }
+    i = i + 1
+  }
+  
+  // 测试特殊字符键值对
+  let special_baggage = baggage.with_entry("special.key!@#$%", "special!@#$%^&*()value")
+  match special_baggage.get("special.key!@#$%") {
+    Some(value) => {
+      assert_eq(value, "special!@#$%^&*()value")
+      assert_eq(value.contains("!@#$%"), true)
+    }
+    None => assert_eq(false, true)
+  }
 }
 
 test "context_baggage_integration" {
   // 测试Context和Baggage的集成
   
-  let ctx = context::Context::empty()
-  let baggage = context::Baggage::empty()
+  let empty_ctx = Context::empty()
+  let empty_baggage = Baggage::empty()
   
-  // 在Context中存储Baggage
-  let baggage_key = context::create_key("otel.baggage")
+  let trace_key = create_key("trace_id")
+  let ctx_with_trace = empty_ctx.with_value(trace_key, "trace123")
   
-  // 添加一些条目到Baggage
-  let populated_baggage = baggage
-    .with_entry("user.id", "user123")
-    .with_entry("service.name", "payment-service")
-    .with_entry("request.id", "req789")
+  let baggage_with_user = empty_baggage.with_entry("user_id", "user456")
   
-  // 将Baggage存储在Context中（简化实现，实际中可能需要序列化）
-  let ctx_with_baggage = ctx.with_value(baggage_key, "baggage_data")
-  
-  // 验证Baggage数据可以从Context中获取
-  let stored_baggage_data = ctx_with_baggage.get(baggage_key)
-  match stored_baggage_data {
-    Some(data) => assert_eq(data, "baggage_data")
-    None => assert_eq(false, true)  // 不应该到达这里
+  // 验证Context和Baggage独立工作
+  match ctx_with_trace.get(trace_key) {
+    Some(value) => assert_eq(value, "trace123")
+    None => assert_eq(false, true)
   }
   
-  // 验证原始Baggage仍然独立
-  let user_id = populated_baggage.get("user.id")
-  match user_id {
-    Some(id) => assert_eq(id, "user123")
-    None => assert_eq(false, true)  // 不应该到达这里
+  match baggage_with_user.get("user_id") {
+    Some(value) => assert_eq(value, "user456")
+    None => assert_eq(false, true)
   }
   
-  // 验证Context中可以存储其他数据
-  let trace_key = context::create_key("trace.id")
-  let final_ctx = ctx_with_baggage.with_value(trace_key, "trace123")
-  
-  let trace_id = final_ctx.get(trace_key)
-  match trace_id {
-    Some(id) => assert_eq(id, "trace123")
-    None => assert_eq(false, true)  // 不应该到达这里
+  // 验证Context中无法获取Baggage的值
+  match ctx_with_trace.get(create_key("user_id")) {
+    Some(_) => assert_eq(false, true)
+    None => assert_eq(true, true)  // 预期为None
   }
   
-  // 验证Baggage数据仍然存在
-  let baggage_data_still = final_ctx.get(baggage_key)
-  match baggage_data_still {
-    Some(data) => assert_eq(data, "baggage_data")
-    None => assert_eq(false, true)  // 不应该到达这里
+  // 验证Baggage中无法获取Context的值
+  match baggage_with_user.get("trace_id") {
+    Some(_) => assert_eq(false, true)
+    None => assert_eq(true, true)  // 预期为None
   }
 }

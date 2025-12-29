@@ -280,7 +280,7 @@ test "performance_timer_measurement" {
       assert_eq(classify_performance(500000000L), "slow")      // 500ms
       assert_eq(classify_performance(2000000000L), "very_slow") // 2s
     }
-    None => @test.fail("Expected end time")
+    None => @test.fail("Test failed")
   }
   
   // 测试计时器重置

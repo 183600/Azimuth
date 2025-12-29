@@ -83,7 +83,7 @@ test "sdk_provider_interface_contract" {
   ])
   
   match mock_provider_impl.initialize(test_provider, invalid_config) {
-    Ok(_) => assert_eq(false, true, "Initialization should fail")
+    Ok(_) => assert_eq(false, true)
     Err(msg) => assert_eq(msg.contains("Missing required configuration"), true)
   }
 }
@@ -248,7 +248,7 @@ test "sdk_component_lifecycle_management" {
       assert_eq(component.state, Initialized)
       assert_eq(component.initialization_order, 1)
     }
-    None => assert_eq(false, true, "Tracer component should exist")
+    None => assert_eq(false, true)
   }
   
   match initialized_manager.components.get("meter") {
@@ -256,7 +256,7 @@ test "sdk_component_lifecycle_management" {
       assert_eq(component.state, Initialized)
       assert_eq(component.initialization_order, 2)
     }
-    None => assert_eq(false, true, "Meter component should exist")
+    None => assert_eq(false, true)
   }
   
   match initialized_manager.components.get("logger") {
@@ -264,7 +264,7 @@ test "sdk_component_lifecycle_management" {
       assert_eq(component.state, Initialized)
       assert_eq(component.initialization_order, 3)
     }
-    None => assert_eq(false, true, "Logger component should exist")
+    None => assert_eq(false, true)
   }
 }
 
@@ -404,7 +404,7 @@ test "sdk_resource_management" {
     Some(memory_usage) => {
       assert_eq(memory_usage.current_usage <= memory_usage.max_limit, true)
     }
-    None => assert_eq(false, true, "Memory resource should exist")
+    None => assert_eq(false, true)
   }
 }
 

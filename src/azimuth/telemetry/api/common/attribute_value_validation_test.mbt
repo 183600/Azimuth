@@ -9,10 +9,10 @@ test "attribute_value_type_conversion_and_validation" {
       let empty_string = AttributeValue::string("")
       match empty_string {
         StringValue(empty) => assert_eq(empty, "")
-        _ => @test.fail("Expected StringValue for empty string")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试整数类型的边界值
@@ -24,22 +24,22 @@ test "attribute_value_type_conversion_and_validation" {
       let zero_int = AttributeValue::int(0L)
       match zero_int {
         IntValue(zero) => assert_eq(zero, 0L)
-        _ => @test.fail("Expected IntValue for zero")
+        _ => @test.fail("Test failed")
       }
       
       let max_int = AttributeValue::int(9223372036854775807L)
       match max_int {
         IntValue(max) => assert_eq(max, 9223372036854775807L)
-        _ => @test.fail("Expected IntValue for max value")
+        _ => @test.fail("Test failed")
       }
       
       let min_int = AttributeValue::int(-9223372036854775808L)
       match min_int {
         IntValue(min) => assert_eq(min, -9223372036854775808L)
-        _ => @test.fail("Expected IntValue for min value")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试浮点数类型的特殊值
@@ -51,13 +51,13 @@ test "attribute_value_type_conversion_and_validation" {
       let zero_float = AttributeValue::float(0.0)
       match zero_float {
         FloatValue(zero) => assert_eq(zero, 0.0)
-        _ => @test.fail("Expected FloatValue for zero")
+        _ => @test.fail("Test failed")
       }
       
       let negative_float = AttributeValue::float(-1.0)
       match negative_float {
         FloatValue(neg) => assert_eq(neg, -1.0)
-        _ => @test.fail("Expected FloatValue for negative")
+        _ => @test.fail("Test failed")
       }
       
       let infinity = AttributeValue::float(1.0/0.0)
@@ -66,7 +66,7 @@ test "attribute_value_type_conversion_and_validation" {
           // 验证无穷大
           assert_eq(inf > 1000000.0, true)
         }
-        _ => @test.fail("Expected FloatValue for infinity")
+        _ => @test.fail("Test failed")
       }
       
       let nan = AttributeValue::float(0.0/0.0)
@@ -75,10 +75,10 @@ test "attribute_value_type_conversion_and_validation" {
           // NaN不等于任何值，包括自身
           assert_eq(n != n, true)
         }
-        _ => @test.fail("Expected FloatValue for NaN")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试布尔类型
@@ -89,10 +89,10 @@ test "attribute_value_type_conversion_and_validation" {
       let false_attr = AttributeValue::bool(false)
       match false_attr {
         BoolValue(false_val) => assert_eq(false_val, false)
-        _ => @test.fail("Expected BoolValue for false")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -110,7 +110,7 @@ test "attribute_value_array_operations_and_validation" {
       let empty_string_array = AttributeValue::array_string([])
       match empty_string_array {
         ArrayStringValue(empty) => assert_eq(empty.length(), 0)
-        _ => @test.fail("Expected ArrayStringValue for empty array")
+        _ => @test.fail("Test failed")
       }
       
       // 测试单元素数组
@@ -120,7 +120,7 @@ test "attribute_value_array_operations_and_validation" {
           assert_eq(single.length(), 1)
           assert_eq(single[0], "single")
         }
-        _ => @test.fail("Expected ArrayStringValue for single element")
+        _ => @test.fail("Test failed")
       }
       
       // 测试包含特殊字符的字符串数组
@@ -135,10 +135,10 @@ test "attribute_value_array_operations_and_validation" {
           assert_eq(special[4], "特殊字符")
           assert_eq(special[5], "!@#$%^&*()")
         }
-        _ => @test.fail("Expected ArrayStringValue for special characters")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试整数数组
@@ -167,10 +167,10 @@ test "attribute_value_array_operations_and_validation" {
           assert_eq(boundary[3], 9223372036854775807L)
           assert_eq(boundary[4], -9223372036854775808L)
         }
-        _ => @test.fail("Expected ArrayIntValue for boundary values")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试浮点数数组
@@ -199,10 +199,10 @@ test "attribute_value_array_operations_and_validation" {
           assert_eq(special[3] < -1000000.0, true) // -Infinity
           assert_eq(special[4] != special[4], true) // NaN
         }
-        _ => @test.fail("Expected ArrayFloatValue for special values")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试布尔数组
@@ -225,7 +225,7 @@ test "attribute_value_array_operations_and_validation" {
             i = i + 1
           }
         }
-        _ => @test.fail("Expected ArrayBoolValue for all true")
+        _ => @test.fail("Test failed")
       }
       
       let all_false_array = AttributeValue::array_bool([false, false, false])
@@ -238,10 +238,10 @@ test "attribute_value_array_operations_and_validation" {
             i = i + 1
           }
         }
-        _ => @test.fail("Expected ArrayBoolValue for all false")
+        _ => @test.fail("Test failed")
       }
     }
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -276,7 +276,7 @@ test "resource_with_comprehensive_attributes_validation" {
   assert_eq(resource.telemetry_sdk_name, "azimuth")
   assert_eq(resource.telemetry_sdk_version, "0.1.0")
   match resource.service_version {
-    Some(_) => @test.fail("Expected None for default resource version")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -292,45 +292,45 @@ test "resource_with_comprehensive_attributes_validation" {
   // 验证字符串属性
   match comprehensive_attributes[0].1 {
     StringValue(simple) => assert_eq(simple, "simple_value")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[1].1 {
     StringValue(empty) => assert_eq(empty, "")
-    _ => @test.fail("Expected StringValue for empty")
+    _ => @test.fail("Test failed")
   }
   
   // 验证整数属性
   match comprehensive_attributes[3].1 {
     IntValue(zero) => assert_eq(zero, 0L)
-    _ => @test.fail("Expected IntValue for zero")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[6].1 {
     IntValue(max) => assert_eq(max, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue for max")
+    _ => @test.fail("Test failed")
   }
   
   // 验证浮点数属性
   match comprehensive_attributes[9].1 {
     FloatValue(zero) => assert_eq(zero, 0.0)
-    _ => @test.fail("Expected FloatValue for zero")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[11].1 {
     FloatValue(negative) => assert_eq(negative, -3.14159)
-    _ => @test.fail("Expected FloatValue for negative")
+    _ => @test.fail("Test failed")
   }
   
   // 验证布尔属性
   match comprehensive_attributes[13].1 {
     BoolValue(true_val) => assert_eq(true_val, true)
-    _ => @test.fail("Expected BoolValue for true")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[14].1 {
     BoolValue(false_val) => assert_eq(false_val, false)
-    _ => @test.fail("Expected BoolValue for false")
+    _ => @test.fail("Test failed")
   }
   
   // 验证数组属性
@@ -341,7 +341,7 @@ test "resource_with_comprehensive_attributes_validation" {
       assert_eq(str_array[1], "b")
       assert_eq(str_array[2], "c")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[16].1 {
@@ -351,7 +351,7 @@ test "resource_with_comprehensive_attributes_validation" {
       assert_eq(int_array[1], 2L)
       assert_eq(int_array[2], 3L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[17].1 {
@@ -361,7 +361,7 @@ test "resource_with_comprehensive_attributes_validation" {
       assert_eq(float_array[1], 2.2)
       assert_eq(float_array[2], 3.3)
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match comprehensive_attributes[18].1 {
@@ -371,7 +371,7 @@ test "resource_with_comprehensive_attributes_validation" {
       assert_eq(bool_array[1], false)
       assert_eq(bool_array[2], true)
     }
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -385,11 +385,11 @@ test "instrumentation_scope_comprehensive_validation" {
   
   assert_eq(basic_scope.name, "test-instrument")
   match basic_scope.version {
-    Some(_) => @test.fail("Expected None for version")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   match basic_scope.schema_url {
-    Some(_) => @test.fail("Expected None for schema_url")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -403,11 +403,11 @@ test "instrumentation_scope_comprehensive_validation" {
   assert_eq(full_scope.name, "full-instrument")
   match full_scope.version {
     Some(v) => assert_eq(v, "1.2.3")
-    None => @test.fail("Expected Some(version)")
+    None => @test.fail("Test failed")
   }
   match full_scope.schema_url {
     Some(url) => assert_eq(url, "https://example.com/schema/v1")
-    None => @test.fail("Expected Some(schema_url)")
+    None => @test.fail("Test failed")
   }
   
   // 测试边界情况
@@ -420,11 +420,11 @@ test "instrumentation_scope_comprehensive_validation" {
   assert_eq(empty_name_scope.name, "")
   match empty_name_scope.version {
     Some(v) => assert_eq(v, "")
-    None => @test.fail("Expected Some(empty version)")
+    None => @test.fail("Test failed")
   }
   match empty_name_scope.schema_url {
     Some(url) => assert_eq(url, "")
-    None => @test.fail("Expected Some(empty schema_url)")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符
@@ -437,11 +437,11 @@ test "instrumentation_scope_comprehensive_validation" {
   assert_eq(special_scope.name, "special-instrument!@#$%^&*()")
   match special_scope.version {
     Some(v) => assert_eq(v, "版本-1.0.0")
-    None => @test.fail("Expected Some(special version)")
+    None => @test.fail("Test failed")
   }
   match special_scope.schema_url {
     Some(url) => assert_eq(url, "https://测试.example.com/schema?param=value#fragment")
-    None => @test.fail("Expected Some(special schema_url)")
+    None => @test.fail("Test failed")
   }
   
   // 测试长字符串
@@ -455,10 +455,10 @@ test "instrumentation_scope_comprehensive_validation" {
   assert_eq(long_scope.name.length(), 1000)
   match long_scope.version {
     Some(v) => assert_eq(v.length(), 100)
-    None => @test.fail("Expected Some(long version)")
+    None => @test.fail("Test failed")
   }
   match long_scope.schema_url {
     Some(url) => assert_eq(url.length(), 500)
-    None => @test.fail("Expected Some(long schema_url)")
+    None => @test.fail("Test failed")
   }
 }

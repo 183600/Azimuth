@@ -1,8 +1,8 @@
 // Trace模块的综合测试用例
 test "span_context_creation_and_properties" {
   // 测试SpanContext的创建和属性
-  let trace_id = Array::make(16, 0_byte)
-  let span_id = Array::make(8, 0_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   let trace_flags = 1_byte
   let trace_state = "rojo=00f067aa0ba902b7"
   
@@ -28,9 +28,9 @@ test "span_context_creation_and_properties" {
 
 test "span_creation_with_all_fields" {
   // 测试创建包含所有字段的Span
-  let trace_id = Array::make(16, 1_byte)
-  let span_id = Array::make(8, 1_byte)
-  let parent_span_id = Array::make(8, 2_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte })
+  let parent_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte })
   
   let span_context = SpanContext::{
     trace_id,
@@ -87,7 +87,7 @@ test "span_creation_with_all_fields" {
   assert_eq(span.start_time_unix_nanos, 1640995200000000000L)
   match span.end_time_unix_nanos {
     Some(end_time) => assert_eq(end_time, 1640995200100000000L)
-    None => @test.fail("Expected end_time")
+    None => @test.fail("Test failed")
   }
   
   // 验证属性
@@ -145,8 +145,8 @@ test "span_kinds_enumeration" {
 
 test "span_status_codes" {
   // 测试所有StatusCode枚举值
-  let trace_id = Array::make(16, 0_byte)
-  let span_id = Array::make(8, 0_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   let span_context = SpanContext::{
     trace_id,
     span_id,
@@ -204,24 +204,24 @@ test "span_status_codes" {
   // 验证状态描述
   match unset_span.status_description {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Expected None for Unset status")
+    Some(_) => @test.fail("Test failed")
   }
   
   match ok_span.status_description {
     Some(desc) => assert_eq(desc, "Operation succeeded")
-    None => @test.fail("Expected Some for Ok status")
+    None => @test.fail("Test failed")
   }
   
   match error_span.status_description {
     Some(desc) => assert_eq(desc, "Operation failed")
-    None => @test.fail("Expected Some for Error status")
+    None => @test.fail("Test failed")
   }
 }
 
 test "span_event_and_link_creation" {
   // 测试SpanEvent和SpanLink的创建
-  let trace_id = Array::make(16, 3_byte)
-  let span_id = Array::make(8, 3_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 3_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 3_byte })
   let span_context = SpanContext::{
     trace_id,
     span_id,
@@ -243,8 +243,8 @@ test "span_event_and_link_creation" {
   
   // 创建复杂的链接
   let linked_context = SpanContext::{
-    trace_id: Array::make(16, 4_byte),
-    span_id: Array::make(8, 4_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 4_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 4_byte }),
     trace_flags: 1_byte,
     trace_state: ""
   }
@@ -267,7 +267,7 @@ test "span_event_and_link_creation" {
   
   match error_event.attributes[0].1 {
     AttributeValue::StringValue(value) => assert_eq(value, "java.lang.NullPointerException")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 验证链接属性

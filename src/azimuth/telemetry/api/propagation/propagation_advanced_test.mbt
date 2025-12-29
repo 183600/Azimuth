@@ -19,14 +19,14 @@ test "w3c_trace_context_propagator_complex_scenarios" {
       // 验证traceparent格式：version-trace_id-span_id-trace_flags
       assert_eq(trace_parent.length(), 55)  // 标准W3C traceparent长度
       
-      let parts = trace_parent.split("-")
+      let parts = trace_parent"-".split_to_string()
       assert_eq(parts.length(), 4)
       assert_eq(parts[0], "00")  // 版本
       assert_eq(parts[1].length(), 32)  // trace_id (16 bytes = 32 hex chars)
       assert_eq(parts[2].length(), 16)  // span_id (8 bytes = 16 hex chars)
       assert_eq(parts[3].length(), 2)   // trace_flags (1 byte = 2 hex chars)
     }
-    None => @test.fail("Expected traceparent header to be set")
+    None => @test.fail("Test failed")
   }
   
   // 测试extract操作
@@ -65,10 +65,10 @@ test "w3c_baggage_propagator_complex_scenarios" {
       assert_eq(baggage_value.contains("key2=value2"), true)
       
       // 验证多个条目用逗号分隔
-      let entries = baggage_value.split(",")
+      let entries = baggage_value",".split_to_string()
       assert_eq(entries.length(), 2)
     }
-    None => @test.fail("Expected baggage header to be set")
+    None => @test.fail("Test failed")
   }
   
   // 测试从包含baggage的carrier中extract
@@ -103,12 +103,12 @@ test "composite_propagator_multiple_propagators" {
   // 验证两个头都被设置
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header to be set by composite propagator")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header to be set by composite propagator")
+    None => @test.fail("Test failed")
   }
   
   // 测试composite extract
@@ -142,42 +142,42 @@ test "map_carrier_complex_operations" {
   // 测试get操作
   match carrier.get("string.header") {
     Some(value) => assert_eq(value, "string.value")
-    None => @test.fail("Expected string.header value")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("number.header") {
     Some(value) => assert_eq(value, "12345")
-    None => @test.fail("Expected number.header value")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("boolean.header") {
     Some(value) => assert_eq(value, "true")
-    None => @test.fail("Expected boolean.header value")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("empty.header") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty.header value")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("unicode.header") {
     Some(value) => assert_eq(value, "Unicode测试🚀")
-    None => @test.fail("Expected unicode.header value")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("special.chars.header") {
     Some(value) => assert_eq(value, "!@#$%^&*()_+-=[]{}|;':\",./<>?")
-    None => @test.fail("Expected special.chars.header value")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("long.header") {
     Some(value) => assert_eq(value.length(), 1000)
-    None => @test.fail("Expected long.header value")
+    None => @test.fail("Test failed")
   }
   
   // 测试不存在的键
   match carrier.get("nonexistent.header") {
-    Some(_) => @test.fail("Expected None for nonexistent header")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -252,23 +252,23 @@ test "propagation_with_complex_context_and_baggage" {
   // 验证原有headers仍然存在
   match carrier.get("authorization") {
     Some(value) => assert_eq(value, "Bearer token123")
-    None => @test.fail("Expected authorization header to persist")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("content-type") {
     Some(value) => assert_eq(value, "application/json")
-    None => @test.fail("Expected content-type header to persist")
+    None => @test.fail("Test failed")
   }
   
   // 验证新的headers被添加
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header to be added")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header to be added")
+    None => @test.fail("Test failed")
   }
   
   // 测试extract
@@ -300,12 +300,12 @@ test "propagation_error_handling_and_edge_cases" {
   
   match empty_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header in empty carrier")
+    None => @test.fail("Test failed")
   }
   
   match empty_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header in empty carrier")
+    None => @test.fail("Test failed")
   }
   
   // 测试包含损坏headers的carrier
@@ -334,7 +334,7 @@ test "propagation_error_handling_and_edge_cases" {
   // 验证inject在大量headers情况下仍能正常工作
   match carrier_with_many_headers.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header in carrier with many headers")
+    None => @test.fail("Test failed")
   }
   
   // 测试Unicode和特殊字符的headers
@@ -349,17 +349,17 @@ test "propagation_error_handling_and_edge_cases" {
   // 验证原有headers保持不变
   match unicode_carrier.get("unicode.header") {
     Some(value) => assert_eq(value, "Unicode测试🚀")
-    None => @test.fail("Expected unicode header to persist")
+    None => @test.fail("Test failed")
   }
   
   match unicode_carrier.get("special.chars") {
     Some(value) => assert_eq(value, "!@#$%^&*()_+-=[]{}|;':\",./<>?")
-    None => @test.fail("Expected special chars header to persist")
+    None => @test.fail("Test failed")
   }
   
   match unicode_carrier.get("emoji.header") {
     Some(value) => assert_eq(value, "🔥💯🎉")
-    None => @test.fail("Expected emoji header to persist")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -392,12 +392,12 @@ test "propagation_performance_and_large_scale" {
   // 验证性能测试完成
   match large_carrier.get(TRACE_PARENT_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header after large scale inject")
+    None => @test.fail("Test failed")
   }
   
   match large_carrier.get(BAGGAGE_HEADER) {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header after large scale inject")
+    None => @test.fail("Test failed")
   }
   
   // 测试大量extract操作

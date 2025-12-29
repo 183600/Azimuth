@@ -78,8 +78,8 @@ pub fn NoopTracer::start_span(
   start_time_unix_nanos? : Int64
 ) -> (context::Context, Span) {
   let span_context = SpanContext::{
-    trace_id: Array::make(16, 0_byte),
-    span_id: Array::make(8, 0_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
     trace_flags: 0_byte,
     trace_state: ""
   }

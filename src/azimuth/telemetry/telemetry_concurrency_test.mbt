@@ -23,22 +23,22 @@ test "concurrent_context_operations" {
   // 验证数据隔离
   match ctx1_with_data.get(key1) {
     Some(value) => assert_eq(value, "value1.from.ctx1")
-    None => @test.fail("Expected value from ctx1")
+    None => @test.fail("Test failed")
   }
   
   match ctx2_with_data.get(key2) {
     Some(value) => assert_eq(value, "value2.from.ctx2")
-    None => @test.fail("Expected value from ctx2")
+    None => @test.fail("Test failed")
   }
   
   match ctx3_with_data.get(key3) {
     Some(value) => assert_eq(value, "value3.from.ctx3")
-    None => @test.fail("Expected value from ctx3")
+    None => @test.fail("Test failed")
   }
   
   match ctx4_with_data.get(key4) {
     Some(value) => assert_eq(value, "value4.from.ctx4")
-    None => @test.fail("Expected value from ctx4")
+    None => @test.fail("Test failed")
   }
   
   // 测试键名冲突的处理
@@ -50,18 +50,18 @@ test "concurrent_context_operations" {
   // 验证共享键在不同上下文中的隔离
   match ctx1_shared.get(shared_key) {
     Some(value) => assert_eq(value, "shared.value.from.ctx1")
-    None => @test.fail("Expected shared value from ctx1")
+    None => @test.fail("Test failed")
   }
   
   match ctx2_shared.get(shared_key) {
     Some(value) => assert_eq(value, "shared.value.from.ctx2")
-    None => @test.fail("Expected shared value from ctx2")
+    None => @test.fail("Test failed")
   }
   
   // 验证原始数据仍然存在
   match ctx1_shared.get(key1) {
     Some(value) => assert_eq(value, "value1.from.ctx1")
-    None => @test.fail("Original data should persist")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -89,17 +89,17 @@ test "concurrent_baggage_operations" {
   // 验证baggage隔离
   match baggage1_with_entries.get("concurrent.baggage1.key1") {
     Some(value) => assert_eq(value, "baggage1.value1")
-    None => @test.fail("Expected baggage1 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage2_with_entries.get("concurrent.baggage2.key1") {
     Some(value) => assert_eq(value, "baggage2.value1")
-    None => @test.fail("Expected baggage2 value")
+    None => @test.fail("Test failed")
   }
   
   match baggage3_with_entries.get("concurrent.baggage3.key1") {
     Some(value) => assert_eq(value, "baggage3.value1")
-    None => @test.fail("Expected baggage3 value")
+    None => @test.fail("Test failed")
   }
   
   // 测试相同键名的处理
@@ -108,12 +108,12 @@ test "concurrent_baggage_operations" {
   
   match baggage1_shared.get("shared.key") {
     Some(value) => assert_eq(value, "shared.value.from.baggage1")
-    None => @test.fail("Expected shared value from baggage1")
+    None => @test.fail("Test failed")
   }
   
   match baggage2_shared.get("shared.key") {
     Some(value) => assert_eq(value, "shared.value.from.baggage2")
-    None => @test.fail("Expected shared value from baggage2")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -146,22 +146,22 @@ test "concurrent_mixed_operations" {
   // 验证混合操作的隔离性
   match ctx_with_trace.get(create_key("trace.id")) {
     Some(value) => assert_eq(value.contains("concurrent"), true)
-    None => @test.fail("Expected trace ID")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_span.get(create_key("span.id")) {
     Some(value) => assert_eq(value.contains("concurrent"), true)
-    None => @test.fail("Expected span ID")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_request.get("request.id") {
     Some(value) => assert_eq(value.contains("concurrent"), true)
-    None => @test.fail("Expected request ID")
+    None => @test.fail("Test failed")
   }
   
   match baggage_with_session.get("session.id") {
     Some(value) => assert_eq(value.contains("concurrent"), true)
-    None => @test.fail("Expected session ID")
+    None => @test.fail("Test failed")
   }
   
   // 测试跨对象数据传输
@@ -171,10 +171,10 @@ test "concurrent_mixed_operations" {
       let baggage_with_trace = baggage_with_correlation.with_entry("trace.id", trace_id)
       match baggage_with_trace.get("trace.id") {
         Some(value) => assert_eq(value.contains("concurrent"), true)
-        None => @test.fail("Expected trace ID in baggage")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected trace ID from context")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -209,22 +209,22 @@ test "concurrent_resource_sharing" {
   // 验证资源信息在所有上下文中一致
   match ctx1_with_resource.get(resource_key) {
     Some(value) => assert_eq(value, "concurrent.shared.service")
-    None => @test.fail("Expected resource name in ctx1")
+    None => @test.fail("Test failed")
   }
   
   match ctx2_with_resource.get(resource_key) {
     Some(value) => assert_eq(value, "concurrent.shared.service")
-    None => @test.fail("Expected resource name in ctx2")
+    None => @test.fail("Test failed")
   }
   
   match ctx1_with_resource.get(sdk_key) {
     Some(value) => assert_eq(value, "azimuth")
-    None => @test.fail("Expected SDK name in ctx1")
+    None => @test.fail("Test failed")
   }
   
   match ctx2_with_resource.get(sdk_key) {
     Some(value) => assert_eq(value, "azimuth")
-    None => @test.fail("Expected SDK name in ctx2")
+    None => @test.fail("Test failed")
   }
   
   // 测试资源属性共享
@@ -246,17 +246,17 @@ test "concurrent_resource_sharing" {
   
   match ctx3_with_attrs.get(attr_key1) {
     Some(value) => assert_eq(value, "shared.value1")
-    None => @test.fail("Expected shared attribute 1")
+    None => @test.fail("Test failed")
   }
   
   match ctx3_with_attrs.get(attr_key2) {
     Some(value) => assert_eq(value, "42")
-    None => @test.fail("Expected shared attribute 2")
+    None => @test.fail("Test failed")
   }
   
   match ctx3_with_attrs.get(attr_key3) {
     Some(value) => assert_eq(value, "true")
-    None => @test.fail("Expected shared attribute 3")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -284,19 +284,19 @@ test "concurrent_error_isolation" {
   // 验证错误隔离：正常上下文不受错误上下文影响
   match normal_ctx_with_data.get(normal_key) {
     Some(value) => assert_eq(value, "normal.value")
-    None => @test.fail("Normal context should not be affected by errors")
+    None => @test.fail("Test failed")
   }
   
   // 验证错误上下文可以处理问题数据
   match error_ctx_with_data.get(error_key) {
     Some(value) => assert_eq(value, error_value)
-    None => @test.fail("Error context should handle problematic data")
+    None => @test.fail("Test failed")
   }
   
   // 验证恢复上下文独立工作
   match recovery_ctx_with_data.get(recovery_key) {
     Some(value) => assert_eq(value, "recovered.value")
-    None => @test.fail("Recovery context should work independently")
+    None => @test.fail("Test failed")
   }
   
   // 测试baggage的错误隔离
@@ -308,12 +308,12 @@ test "concurrent_error_isolation" {
   
   match normal_baggage_with_data.get("normal.baggage") {
     Some(value) => assert_eq(value, "normal.baggage.value")
-    None => @test.fail("Normal baggage should not be affected")
+    None => @test.fail("Test failed")
   }
   
   match error_baggage_with_data.get("error.baggage") {
     Some(value) => assert_eq(value, "error\0baggage\0value")
-    None => @test.fail("Error baggage should handle problematic data")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -385,12 +385,12 @@ test "concurrent_performance_considerations" {
     
     match baggage.get("baggage.performance." + n.to_string()) {
       Some(value) => assert_eq(value, expected_unique)
-      None => @test.fail("Expected unique baggage value")
+      None => @test.fail("Test failed")
     }
     
     match baggage.get("shared.performance.key") {
       Some(value) => assert_eq(value, expected_shared)
-      None => @test.fail("Expected shared baggage value")
+      None => @test.fail("Test failed")
     }
     
     n = n + 1

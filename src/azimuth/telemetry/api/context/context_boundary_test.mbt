@@ -16,27 +16,27 @@ test "context_with_nested_values" {
   // 验证所有值都存在
   match ctx4.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected Some(value1)")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(key2) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected Some(value2)")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(key3) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected Some(value3)")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(key4) {
     Some(value) => assert_eq(value, "value4")
-    None => @test.fail("Expected Some(value4)")
+    None => @test.fail("Test failed")
   }
   
   // 验证原始context不受影响
   match base_ctx.get(key1) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -56,7 +56,7 @@ test "baggage_with_complex_values" {
   // 验证特殊字符值
   match baggage5.get("special.chars") {
     Some(value) => assert_eq(value, "!@#$%^&*()")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 验证Unicode值
@@ -65,18 +65,18 @@ test "baggage_with_complex_values" {
       assert_eq(value.contains("测试"), true)
       assert_eq(value.contains("🚀"), true)
     }
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 验证空值
   match baggage5.get("empty.value") {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 验证包含空格的值
   match baggage5.get("spaces") {
     Some(value) => assert_eq(value, "   leading and trailing   ")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
 }

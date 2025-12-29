@@ -41,21 +41,21 @@ test "platform_system_info_detection" {
   // 验证Linux系统信息
   assert_eq(linux_info.platform, "linux")
   assert_eq(linux_info.arch, "x86_64")
-  assert_eq(linux_info.version.starts_with("5."), true)
+  assert_eq(linux_info.version.has_prefix("5."), true)
   assert_eq(linux_info.hostname.contains("linux"), true)
   assert_eq(linux_info.timezone, "UTC")
   
   // 验证Windows系统信息
   assert_eq(windows_info.platform, "windows")
   assert_eq(windows_info.arch, "amd64")
-  assert_eq(windows_info.version.starts_with("10."), true)
+  assert_eq(windows_info.version.has_prefix("10."), true)
   assert_eq(windows_info.hostname.contains("win"), true)
   assert_eq(windows_info.timezone.contains("America"), true)
   
   // 验证macOS系统信息
   assert_eq(macos_info.platform, "darwin")
   assert_eq(macos_info.arch, "arm64")
-  assert_eq(macos_info.version.starts_with("13."), true)
+  assert_eq(macos_info.version.has_prefix("13."), true)
   assert_eq(macos_info.hostname.contains("mac"), true)
   assert_eq(macos_info.timezone.contains("Los_Angeles"), true)
   

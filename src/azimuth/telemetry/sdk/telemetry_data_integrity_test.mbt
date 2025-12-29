@@ -492,7 +492,7 @@ test "telemetry_data_transformation_integrity" {
       (data, 0.0)  // 无数据丢失
     } else {
       // 移除一半的数据
-      let data_parts = data.split(",")
+      let data_parts = data",".split_to_string()
       let mut filtered_parts = Array::empty<String>()
       
       let mut i = 0
@@ -521,13 +521,13 @@ test "telemetry_data_transformation_integrity" {
     match aggregation_type {
       "sum" => {
         // 简单求和聚合
-        let numbers = data.split(",").map(fn(part) { part.parse_int().unwrap_or(0) })
+        let numbers = data",".split_to_string().map(fn(part) { part.parse_int().unwrap_or(0) })
         let sum = numbers.fold(0, fn(acc, num) { acc + num })
         (sum.to_string(), 0.8)  // 80%的数据被压缩
       }
       "avg" => {
         // 平均值聚合
-        let numbers = data.split(",").map(fn(part) { part.parse_float().unwrap_or(0.0) })
+        let numbers = data",".split_to_string().map(fn(part) { part.parse_float().unwrap_or(0.0) })
         let sum = numbers.fold(0.0, fn(acc, num) { acc + num })
         let avg = if numbers.length() > 0 { sum / numbers.length().to_float() } else { 0.0 }
         (avg.to_string(), 0.8)
@@ -550,7 +550,7 @@ test "telemetry_data_transformation_integrity" {
       }
       "standard" => {
         // 移除多余空格和特殊字符
-        let cleaned = data.split(" ").map(fn(part) { part.trim() }).join(" ")
+        let cleaned = data" ".split_to_string().map(fn(part) { part.trim() }).join(" ")
         (cleaned, 0.1)  // 10%的数据被清理
       }
       _ => (data, 0.0)
@@ -561,7 +561,7 @@ test "telemetry_data_transformation_integrity" {
   let apply_sampling = fn(data: String, sample_params: Map[String, String]) -> (String, Float) {
     // 模拟采样操作：随机选择数据子集
     let sampling_ratio = sample_params.get("ratio").unwrap_or("0.5").parse_float().unwrap_or(0.5)
-    let data_parts = data.split(",")
+    let data_parts = data",".split_to_string()
     
     let sample_size = (data_parts.length().to_float() * sampling_ratio).to_int()
     let mut sampled_parts = Array::empty<String>()
@@ -744,7 +744,7 @@ test "telemetry_data_recovery_integrity" {
     match corruption_type {
       PartialLoss => {
         // 丢失部分数据
-        let parts = original_data.split(",")
+        let parts = original_data",".split_to_string()
         if parts.length() > 2 {
           parts[0] + "," + parts[1]  // 只保留前两部分
         } else {
@@ -761,7 +761,7 @@ test "telemetry_data_recovery_integrity" {
       }
       Reordering => {
         // 重新排序数据
-        let parts = original_data.split(",")
+        let parts = original_data",".split_to_string()
         if parts.length() > 1 {
           parts[1] + "," + parts[0]  // 交换前两部分
         } else {
@@ -863,7 +863,7 @@ test "telemetry_data_recovery_integrity" {
       CompleteLoss => assert_eq(corrupted, "")
       Modification => assert_eq(corrupted != test_data, true)
       Reordering => {
-        if test_data.split(",").length() > 1 {
+        if test_data",".split_to_string().length() > 1 {
           assert_eq(corrupted != test_data, true)
         }
       }

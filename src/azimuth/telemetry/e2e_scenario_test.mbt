@@ -222,26 +222,26 @@ test "e2e_web_request_processing" {
   // 验证上下文传播
   match processing_ctx.get(request_id_key) {
     Some(request_id) => assert_eq(request_id, "req-12345-67890")
-    None => @test.fail("Expected Some(request.id)")
+    None => @test.fail("Test failed")
   }
   
   // 验证baggage传播
   match request_baggage.get("correlation.id") {
     Some(correlation_id) => assert_eq(correlation_id, "corr-789012")
-    None => @test.fail("Expected Some(correlation.id)")
+    None => @test.fail("Test failed")
   }
   
   // 验证日志记录完整性
   assert_eq(start_log.severity_number, SeverityNumber::Info)
   match start_log.body {
     Some(body) => assert_eq(body, "HTTP request started: POST /api/v1/orders")
-    None => @test.fail("Expected Some(body) for start log")
+    None => @test.fail("Test failed")
   }
   
   assert_eq(complete_log.severity_number, SeverityNumber::Info)
   match complete_log.body {
     Some(body) => assert_eq(body, "HTTP request completed successfully")
-    None => @test.fail("Expected Some(body) for complete log")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -253,8 +253,8 @@ test "e2e_microservice_communication" {
   let ctx = Context::empty()
   
   // 2. 创建分布式追踪上下文
-  let trace_id = Array::make(16, 0x0a_byte)
-  let parent_span_id = Array::make(8, 0x01_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x0a_byte })
+  let parent_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x01_byte })
   
   let gateway_span_context = SpanContext::{
     trace_id,
@@ -297,7 +297,7 @@ test "e2e_microservice_communication" {
   // 创建从Gateway到User Service的链接
   let user_service_context = SpanContext::{
     trace_id,
-    span_id: Array::make(8, 0x02_byte),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte }),
     trace_flags: 1_byte,
     trace_state: "sampling.decision=true"
   }
@@ -427,12 +427,12 @@ test "e2e_microservice_communication" {
   // 验证baggage传播
   match propagation_baggage.get("user.id") {
     Some(user_id) => assert_eq(user_id, "user-789")
-    None => @test.fail("Expected Some(user.id) from baggage")
+    None => @test.fail("Test failed")
   }
   
   match propagation_baggage.get("request.id") {
     Some(request_id) => assert_eq(request_id, "gw-req-12345")
-    None => @test.fail("Expected Some(request.id) from baggage")
+    None => @test.fail("Test failed")
   }
   
   // 验证服务间链接关系
@@ -617,11 +617,11 @@ test "e2e_error_handling_and_recovery" {
   
   match error_log.body {
     Some(body) => assert_eq(body, "Payment gateway error: timeout occurred")
-    None => @test.fail("Expected Some(body) for error log")
+    None => @test.fail("Test failed")
   }
   
   match recovery_log.body {
     Some(body) => assert_eq(body, "Payment processed successfully via backup gateway")
-    None => @test.fail("Expected Some(body) for recovery log")
+    None => @test.fail("Test failed")
   }
 }

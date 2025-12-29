@@ -22,33 +22,33 @@ test "context_chained_operations" {
   // 验证链式操作结果
   match ctx_with_user.get(user_key) {
     Some(user) => assert_eq(user, "alice")
-    None => @test.fail("Expected user value")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_request.get(request_id_key) {
     Some(request_id) => assert_eq(request_id, "req-12345")
-    None => @test.fail("Expected request_id value")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_trace.get(trace_id_key) {
     Some(trace_id) => assert_eq(trace_id, "trace-67890")
-    None => @test.fail("Expected trace_id value")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_service.get(service_key) {
     Some(service) => assert_eq(service, "auth-service")
-    None => @test.fail("Expected service value")
+    None => @test.fail("Test failed")
   }
   
   // 验证原始上下文未受影响
   match ctx.get(user_key) {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Original context should not have user value")
+    Some(_) => @test.fail("Test failed")
   }
   
   match ctx.get(request_id_key) {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Original context should not have request_id value")
+    Some(_) => @test.fail("Test failed")
   }
 }
 
@@ -79,48 +79,48 @@ test "context_nested_chained_operations" {
   // 验证第一层上下文
   match auth_ctx.get(auth_key) {
     Some(auth) => assert_eq(auth, "bearer-token-123")
-    None => @test.fail("Expected auth value")
+    None => @test.fail("Test failed")
   }
   
   match auth_ctx.get(user_key) {
     Some(user) => assert_eq(user, "bob")
-    None => @test.fail("Expected user value")
+    None => @test.fail("Test failed")
   }
   
   match auth_ctx.get(session_key) {
     Some(session) => assert_eq(session, "session-456")
-    None => @test.fail("Expected session value")
+    None => @test.fail("Test failed")
   }
   
   match auth_ctx.get(request_key) {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Auth context should not have request value")
+    Some(_) => @test.fail("Test failed")
   }
   
   // 验证第二层上下文（包含第一层的值）
   match request_ctx.get(auth_key) {
     Some(auth) => assert_eq(auth, "bearer-token-123")
-    None => @test.fail("Expected auth value in request context")
+    None => @test.fail("Test failed")
   }
   
   match request_ctx.get(user_key) {
     Some(user) => assert_eq(user, "bob")
-    None => @test.fail("Expected user value in request context")
+    None => @test.fail("Test failed")
   }
   
   match request_ctx.get(session_key) {
     Some(session) => assert_eq(session, "session-456")
-    None => @test.fail("Expected session value in request context")
+    None => @test.fail("Test failed")
   }
   
   match request_ctx.get(request_key) {
     Some(request) => assert_eq(request, "GET /api/users")
-    None => @test.fail("Expected request value")
+    None => @test.fail("Test failed")
   }
   
   match request_ctx.get(trace_key) {
     Some(trace) => assert_eq(trace, "trace-789")
-    None => @test.fail("Expected trace value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -139,29 +139,29 @@ test "context_chained_value_overriding" {
   // 验证每个上下文的状态
   match ctx1.get(key) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected value1")
+    None => @test.fail("Test failed")
   }
   
   match ctx2.get(key) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected value2")
+    None => @test.fail("Test failed")
   }
   
   match ctx3.get(key) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected value3")
+    None => @test.fail("Test failed")
   }
   
   // 验证原始上下文未受影响
   match ctx.get(key) {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Original context should not have any value")
+    Some(_) => @test.fail("Test failed")
   }
   
   // 验证上下文链的独立性
   match ctx1.get(key) {
     Some(value) => assert_eq(value, "value1")  // ctx1应该仍然是value1
-    None => @test.fail("Expected value1 in ctx1")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -180,43 +180,43 @@ test "context_chained_baggage_operations" {
   // 验证baggage链式操作
   match baggage1.get("user-id") {
     Some(user_id) => assert_eq(user_id, "12345")
-    None => @test.fail("Expected user-id in baggage1")
+    None => @test.fail("Test failed")
   }
   
   match baggage1.get("region") {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("baggage1 should not have region")
+    Some(_) => @test.fail("Test failed")
   }
   
   match baggage2.get("user-id") {
     Some(user_id) => assert_eq(user_id, "12345")
-    None => @test.fail("Expected user-id in baggage2")
+    None => @test.fail("Test failed")
   }
   
   match baggage2.get("region") {
     Some(region) => assert_eq(region, "us-east")
-    None => @test.fail("Expected region in baggage2")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("user-id") {
     Some(user_id) => assert_eq(user_id, "12345")
-    None => @test.fail("Expected user-id in baggage3")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("region") {
     Some(region) => assert_eq(region, "us-east")
-    None => @test.fail("Expected region in baggage3")
+    None => @test.fail("Test failed")
   }
   
   match baggage3.get("version") {
     Some(version) => assert_eq(version, "v1.2.3")
-    None => @test.fail("Expected version in baggage3")
+    None => @test.fail("Test failed")
   }
   
   // 验证原始baggage未受影响
   match baggage.get("user-id") {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Original baggage should not have user-id")
+    Some(_) => @test.fail("Test failed")
   }
 }
 
@@ -260,65 +260,65 @@ test "context_complex_chained_scenario" {
   // 验证网关层上下文
   match gateway_ctx.get(trace_id_key) {
     Some(trace_id) => assert_eq(trace_id, "trace-abc123")
-    None => @test.fail("Expected trace_id in gateway context")
+    None => @test.fail("Test failed")
   }
   
   match gateway_ctx.get(user_id_key) {
     Some(user_id) => assert_eq(user_id, "user-789")
-    None => @test.fail("Expected user_id in gateway context")
+    None => @test.fail("Test failed")
   }
   
   match gateway_ctx.get(span_id_key) {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Gateway context should not have span_id")
+    Some(_) => @test.fail("Test failed")
   }
   
   // 验证认证服务上下文
   match auth_ctx.get(trace_id_key) {
     Some(trace_id) => assert_eq(trace_id, "trace-abc123")
-    None => @test.fail("Expected trace_id in auth context")
+    None => @test.fail("Test failed")
   }
   
   match auth_ctx.get(span_id_key) {
     Some(span_id) => assert_eq(span_id, "span-auth-001")
-    None => @test.fail("Expected span_id in auth context")
+    None => @test.fail("Test failed")
   }
   
   match auth_ctx.get(service_name_key) {
     Some(service) => assert_eq(service, "auth-service")
-    None => @test.fail("Expected service_name in auth context")
+    None => @test.fail("Test failed")
   }
   
   // 验证用户服务上下文
   match user_ctx.get(trace_id_key) {
     Some(trace_id) => assert_eq(trace_id, "trace-abc123")
-    None => @test.fail("Expected trace_id in user context")
+    None => @test.fail("Test failed")
   }
   
   match user_ctx.get(span_id_key) {
     Some(span_id) => assert_eq(span_id, "span-user-001")
-    None => @test.fail("Expected span_id in user context")
+    None => @test.fail("Test failed")
   }
   
   match user_ctx.get(service_name_key) {
     Some(service) => assert_eq(service, "user-service")
-    None => @test.fail("Expected service_name in user context")
+    None => @test.fail("Test failed")
   }
   
   match user_ctx.get(request_id_key) {
     Some(request_id) => assert_eq(request_id, "req-user-002")
-    None => @test.fail("Expected request_id in user context")
+    None => @test.fail("Test failed")
   }
   
   // 验证上下文链的独立性
   match auth_ctx.get(span_id_key) {
     Some(span_id) => assert_eq(span_id, "span-auth-001")  // 应该仍然是auth的span_id
-    None => @test.fail("Expected span_id in auth context")
+    None => @test.fail("Test failed")
   }
   
   match auth_ctx.get(service_name_key) {
     Some(service) => assert_eq(service, "auth-service")  // 应该仍然是auth-service
-    None => @test.fail("Expected service_name in auth context")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -370,19 +370,19 @@ test "context_chained_performance_characteristics" {
   
   match deep_ctx.get(first_key) {
     Some(value) => assert_eq(value, "deep-value-0")
-    None => @test.fail("Expected deep-value-0")
+    None => @test.fail("Test failed")
   }
   
   match deep_ctx.get(last_key) {
     Some(value) => assert_eq(value, "deep-value-999")
-    None => @test.fail("Expected deep-value-999")
+    None => @test.fail("Test failed")
   }
   
   // 验证中间值
   let middle_key = create_key("deep-key-500")
   match deep_ctx.get(middle_key) {
     Some(value) => assert_eq(value, "deep-value-500")
-    None => @test.fail("Expected deep-value-500")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -402,7 +402,7 @@ test "context_chained_error_handling" {
   // 验证空键可以正常工作
   match ctx_with_empty_key.get(empty_key) {
     Some(value) => assert_eq(value, "value-with-empty-key")
-    None => @test.fail("Expected value for empty key")
+    None => @test.fail("Test failed")
   }
   
   // 设置空值
@@ -411,7 +411,7 @@ test "context_chained_error_handling" {
   // 验证空值可以正常工作
   match ctx_with_empty_value.get(normal_key) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected empty value")
+    None => @test.fail("Test failed")
   }
   
   // 测试长键和长值
@@ -424,7 +424,7 @@ test "context_chained_error_handling" {
   // 验证长键和长值可以正常工作
   match ctx_with_long_values.get(long_key) {
     Some(value) => assert_eq(value, long_value)
-    None => @test.fail("Expected long value")
+    None => @test.fail("Test failed")
   }
   
   // 测试特殊字符
@@ -436,7 +436,7 @@ test "context_chained_error_handling" {
   // 验证特殊字符可以正常工作
   match ctx_with_special_chars.get(special_key) {
     Some(value) => assert_eq(value, special_value)
-    None => @test.fail("Expected value with special characters")
+    None => @test.fail("Test failed")
   }
   
   // 测试Unicode字符
@@ -448,6 +448,6 @@ test "context_chained_error_handling" {
   // 验证Unicode字符可以正常工作
   match ctx_with_unicode.get(unicode_key) {
     Some(value) => assert_eq(value, unicode_value)
-    None => @test.fail("Expected Unicode value")
+    None => @test.fail("Test failed")
   }
 }

@@ -10,11 +10,11 @@ test "map_carrier_basic_operations" {
   // 测试get操作
   match carrier.get("key1") {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("non-existent") {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -48,7 +48,7 @@ test "w3c_trace_context_inject" {
       assert_eq(trace_parent[1], '0')
       assert_eq(trace_parent[2], '-')
     }
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -65,7 +65,7 @@ test "w3c_baggage_operations" {
     Some(baggage_value) => {
       assert_eq(baggage_value, "key1=value1,key2=value2")
     }
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 测试extract

@@ -160,10 +160,10 @@ test "random_id_generation_consistency" {
   }
   
   // 模拟生成的ID进行验证
-  let valid_trace_id = Array::make(16, 1_byte)
-  let invalid_trace_id = Array::make(16, 0_byte)
-  let valid_span_id = Array::make(8, 1_byte)
-  let invalid_span_id = Array::make(8, 0_byte)
+  let valid_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let invalid_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let valid_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 1_byte })
+  let invalid_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   
   assert_eq(is_valid_trace_id(valid_trace_id), true)
   assert_eq(is_valid_trace_id(invalid_trace_id), false)

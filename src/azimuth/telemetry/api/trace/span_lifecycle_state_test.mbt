@@ -217,7 +217,7 @@ test "span_attribute_lifecycle" {
             assert_eq(s, "test-service")
             found_service_name = true
           }
-          _ => @test.fail("Expected StringValue for service.name")
+          _ => @test.fail("Test failed")
         }
       }
       "user.id" => {
@@ -226,7 +226,7 @@ test "span_attribute_lifecycle" {
             assert_eq(s, "user-123456")
             found_user_id = true
           }
-          _ => @test.fail("Expected StringValue for user.id")
+          _ => @test.fail("Test failed")
         }
       }
       "process.pid" => {
@@ -235,7 +235,7 @@ test "span_attribute_lifecycle" {
             assert_eq(pid, 12345L)
             found_process_pid = true
           }
-          _ => @test.fail("Expected IntValue for process.pid")
+          _ => @test.fail("Test failed")
         }
       }
       "tags" => {
@@ -247,7 +247,7 @@ test "span_attribute_lifecycle" {
             assert_eq(arr[2], "span")
             found_tags = true
           }
-          _ => @test.fail("Expected ArrayStringValue for tags")
+          _ => @test.fail("Test failed")
         }
       }
       "ports" => {
@@ -258,7 +258,7 @@ test "span_attribute_lifecycle" {
             assert_eq(arr[1], 8443L)
             found_ports = true
           }
-          _ => @test.fail("Expected ArrayIntValue for ports")
+          _ => @test.fail("Test failed")
         }
       }
       "thresholds" => {
@@ -270,7 +270,7 @@ test "span_attribute_lifecycle" {
             assert_eq(arr[2], 95.0)
             found_thresholds = true
           }
-          _ => @test.fail("Expected ArrayFloatValue for thresholds")
+          _ => @test.fail("Test failed")
         }
       }
       "features" => {
@@ -282,7 +282,7 @@ test "span_attribute_lifecycle" {
             assert_eq(arr[2], true)
             found_features = true
           }
-          _ => @test.fail("Expected ArrayBoolValue for features")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性

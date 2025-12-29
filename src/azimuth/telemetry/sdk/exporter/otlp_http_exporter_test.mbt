@@ -20,7 +20,7 @@ test "otlp_http_exporter_basic_configuration" {
   }
   
   // 验证基本配置
-  assert_eq(config.endpoint.starts_with("http"), true)
+  assert_eq(config.endpoint.has_prefix("http"), true)
   assert_eq(config.endpoint.contains("/v1/"), true)
   assert_eq(config.headers.length(), 2)
   assert_eq(config.timeout_ms > 0, true)
@@ -32,9 +32,9 @@ test "otlp_http_exporter_basic_configuration" {
   let metrics_endpoint = { config | endpoint: "http://localhost:4318/v1/metrics" }
   let logs_endpoint = { config | endpoint: "http://localhost:4318/v1/logs" }
   
-  assert_eq(traces_endpoint.endpoint.ends_with("/traces"), true)
-  assert_eq(metrics_endpoint.endpoint.ends_with("/metrics"), true)
-  assert_eq(logs_endpoint.ends_with("/logs"), true)
+  assert_eq(traces_endpoint.endpoint.has_suffix("/traces"), true)
+  assert_eq(metrics_endpoint.endpoint.has_suffix("/metrics"), true)
+  assert_eq(logs_endpoint.has_suffix("/logs"), true)
 }
 
 test "otlp_http_exporter_request_formatting" {
@@ -332,15 +332,15 @@ test "otlp_http_exporter_authentication" {
       }
       Basic => {
         assert_eq(config.credentials.contains(":"), true)
-        assert_eq(config.headers[0].starts_with("Authorization: Basic"), true)
+        assert_eq(config.headers[0].has_prefix("Authorization: Basic"), true)
       }
       BearerToken => {
         assert_eq(config.credentials.length() > 10, true)
-        assert_eq(config.headers[0].starts_with("Authorization: Bearer"), true)
+        assert_eq(config.headers[0].has_prefix("Authorization: Bearer"), true)
       }
       APIKey => {
         assert_eq(config.credentials.length() > 0, true)
-        assert_eq(config.headers[0].starts_with("x-api-key:"), true)
+        assert_eq(config.headers[0].has_prefix("x-api-key:"), true)
       }
     }
   }
@@ -364,5 +364,5 @@ test "otlp_http_exporter_authentication" {
   
   assert_eq(tls_config.enabled, true)
   assert_eq(tls_config.verify_cert, true)
-  assert_eq(tls_config.ca_cert_path.ends_with(".crt"), true)
+  assert_eq(tls_config.ca_cert_path.has_suffix(".crt"), true)
 }

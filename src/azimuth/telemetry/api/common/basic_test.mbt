@@ -7,22 +7,22 @@ test "attribute_value_basic" {
   
   match string_attr {
     StringValue(s) => assert_eq(s, "test")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match int_attr {
     IntValue(i) => assert_eq(i, 42)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match float_attr {
     FloatValue(f) => assert_eq(f, 3.14)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match bool_attr {
     BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -39,7 +39,7 @@ test "attribute_value_array" {
       assert_eq(arr[1], "b")
       assert_eq(arr[2], "c")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match int_array {
@@ -49,7 +49,7 @@ test "attribute_value_array" {
       assert_eq(arr[1], 2L)
       assert_eq(arr[2], 3L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match float_array {
@@ -59,7 +59,7 @@ test "attribute_value_array" {
       assert_eq(arr[1], 2.2)
       assert_eq(arr[2], 3.3)
     }
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match bool_array {
@@ -69,7 +69,7 @@ test "attribute_value_array" {
       assert_eq(arr[1], false)
       assert_eq(arr[2], true)
     }
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -114,7 +114,7 @@ test "resource_with_complex_attributes" {
   
   assert_eq(resource_with_attrs.service_name, "complex-service")
   match resource_with_attrs.service_version {
-    Some(_) => @test.fail("Expected None for default resource")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   assert_eq(resource_with_attrs.telemetry_sdk_name, "azimuth")
@@ -129,7 +129,7 @@ test "resource_with_complex_attributes" {
       assert_eq(tags[1], "api")
       assert_eq(tags[2], "critical")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -152,42 +152,42 @@ test "attribute_value_edge_cases" {
   
   match empty_string {
     StringValue(s) => assert_eq(s, "")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match zero_int {
     IntValue(i) => assert_eq(i, 0L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match negative_int {
     IntValue(i) => assert_eq(i, -1L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match max_int {
     IntValue(i) => assert_eq(i, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_int_array {
     ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_float_array {
     ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match empty_bool_array {
     ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 

@@ -24,7 +24,7 @@ test "logs_severity_edge_cases" {
       Some(body) => {
         assert_eq(body.contains("Test message"), true)
       }
-      None => @test.fail("Expected Some(body)")
+      None => @test.fail("Test failed")
     }
   }
   
@@ -63,7 +63,7 @@ test "logs_severity_edge_cases" {
       Some(text) => {
         assert_eq(text, name)
       }
-      None => @test.fail("Expected Some(severity_text)")
+      None => @test.fail("Test failed")
     }
   }
 }
@@ -175,7 +175,7 @@ test "logs_log_record_edge_cases" {
           assert_eq(body.contains("@") || body.contains("#") || body.contains("$"), true)
         }
       }
-      None => @test.fail("Expected Some(body)")
+      None => @test.fail("Test failed")
     }
   }
   
@@ -223,22 +223,22 @@ test "logs_log_record_edge_cases" {
   // 验证不同类型的属性
   match log_with_complex_attrs.attributes[0].1 {
     StringValue(value) => assert_eq(value, "string_value_0")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_with_complex_attrs.attributes[1].1 {
     IntValue(value) => assert_eq(value, 1L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_with_complex_attrs.attributes[2].1 {
     FloatValue(value) => assert_eq(value, 2.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match log_with_complex_attrs.attributes[3].1 {
     BoolValue(value) => assert_eq(value, false)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -352,21 +352,21 @@ test "logs_logger_edge_cases" {
   // 验证不同类型的属性
   match complex_attributes[0].1 {
     StringValue(value) => assert_eq(value, "string value")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[1].1 {
     IntValue(value) => assert_eq(value, 42L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[2].1 {
     FloatValue(value) => assert_eq(value, 3.14)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match complex_attributes[3].1 {
     BoolValue(value) => assert_eq(value, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
 }

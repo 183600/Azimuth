@@ -238,22 +238,22 @@ test "performance_complex_attribute_operations_stress" {
     // 验证数组属性
     match span.attributes[4].1 {
       ArrayStringValue(arr) => assert_eq(arr.length(), 3)
-      _ => @test.fail("Expected ArrayStringValue")
+      _ => @test.fail("Test failed")
     }
     
     match span.attributes[5].1 {
       ArrayIntValue(arr) => assert_eq(arr.length(), 3)
-      _ => @test.fail("Expected ArrayIntValue")
+      _ => @test.fail("Test failed")
     }
     
     match span.attributes[6].1 {
       ArrayFloatValue(arr) => assert_eq(arr.length(), 3)
-      _ => @test.fail("Expected ArrayFloatValue")
+      _ => @test.fail("Test failed")
     }
     
     match span.attributes[7].1 {
       ArrayBoolValue(arr) => assert_eq(arr.length(), 3)
-      _ => @test.fail("Expected ArrayBoolValue")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1

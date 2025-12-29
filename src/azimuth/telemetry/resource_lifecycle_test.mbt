@@ -150,12 +150,12 @@ test "resource_lifecycle_sharing" {
     // 验证共享资源信息一致
     match spans[j].attributes[0].1 {
       StringValue(service_name) => assert_eq(service_name, shared_resource.service_name)
-      _ => @test.fail("Expected StringValue for service.name")
+      _ => @test.fail("Test failed")
     }
     
     match spans[j].attributes[1].1 {
       StringValue(sdk_name) => assert_eq(sdk_name, shared_resource.telemetry_sdk_name)
-      _ => @test.fail("Expected StringValue for sdk.name")
+      _ => @test.fail("Test failed")
     }
     
     j = j + 1
@@ -195,24 +195,24 @@ test "resource_lifecycle_context_propagation" {
   // 验证资源信息在上下文中的传播
   match ctx_with_resource.get(resource_key) {
     Some(service_name) => assert_eq(service_name, resource.service_name)
-    None => @test.fail("Expected Some(service_name) from context")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_resource.get(sdk_key) {
     Some(sdk_name) => assert_eq(sdk_name, resource.telemetry_sdk_name)
-    None => @test.fail("Expected Some(sdk_name) from context")
+    None => @test.fail("Test failed")
   }
   
   match ctx_with_resource.get(version_key) {
     Some(version) => assert_eq(version, resource.telemetry_sdk_version)
-    None => @test.fail("Expected Some(version) from context")
+    None => @test.fail("Test failed")
   }
   
   // 验证span正确使用了资源信息
   assert_eq(span.attributes.length(), 2)
   match span.attributes[0].1 {
     StringValue(service_name) => assert_eq(service_name, resource.service_name)
-    _ => @test.fail("Expected StringValue for service.name")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -251,22 +251,22 @@ test "resource_lifecycle_baggage_integration" {
   // 验证baggage中的资源信息
   match baggage.get("service.name") {
     Some(service_name) => assert_eq(service_name, resource.service_name)
-    None => @test.fail("Expected Some(service.name) from baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("sdk.name") {
     Some(sdk_name) => assert_eq(sdk_name, resource.telemetry_sdk_name)
-    None => @test.fail("Expected Some(sdk_name) from baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("sdk.version") {
     Some(version) => assert_eq(version, resource.telemetry_sdk_version)
-    None => @test.fail("Expected Some(version) from baggage")
+    None => @test.fail("Test failed")
   }
   
   match baggage.get("resource.type") {
     Some(resource_type) => assert_eq(resource_type, "telemetry")
-    None => @test.fail("Expected Some(resource.type) from baggage")
+    None => @test.fail("Test failed")
   }
   
   // 验证span正确使用了baggage中的资源信息
@@ -274,7 +274,7 @@ test "resource_lifecycle_baggage_integration" {
   assert_eq(span.attributes[4].0, "baggage.integrated")
   match span.attributes[4].1 {
     BoolValue(integrated) => assert_eq(integrated, true)
-    _ => @test.fail("Expected BoolValue for baggage.integrated")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -363,19 +363,19 @@ test "resource_lifecycle_complex_scenarios" {
   
   match ctx_with_complex.get(context_key) {
     Some(value) => assert_eq(value, "complex.context.value")
-    None => @test.fail("Expected Some(value) from complex context")
+    None => @test.fail("Test failed")
   }
   
   match complex_baggage.get("scenario.type") {
     Some(scenario_type) => assert_eq(scenario_type, "complex")
-    None => @test.fail("Expected Some(scenario.type) from complex baggage")
+    None => @test.fail("Test failed")
   }
   
   // 验证日志记录的完整性
   assert_eq(complex_log_record.severity_number, SeverityNumber::Info)
   match complex_log_record.body {
     Some(body_text) => assert_eq(body_text, "Complex scenario operation completed")
-    None => @test.fail("Expected Some(body) for complex log record")
+    None => @test.fail("Test failed")
   }
   assert_eq(complex_log_record.attributes.length(), 8)
 }
@@ -435,7 +435,7 @@ test "resource_lifecycle_edge_cases" {
     assert_eq(span.attributes.length(), 3)
     match span.attributes[0].1 {
       StringValue(service_name) => assert_eq(service_name, resource.service_name)
-      _ => @test.fail("Expected StringValue for service.name")
+      _ => @test.fail("Test failed")
     }
     
     i = i + 1

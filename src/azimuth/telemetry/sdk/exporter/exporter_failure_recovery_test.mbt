@@ -44,7 +44,7 @@ test "exporter_failure_recovery" {
         let error = ConnectionTimeout
         match error {
           ConnectionTimeout => assert_eq(true, true)
-          _ => @test.fail("Expected ConnectionTimeout")
+          _ => @test.fail("Test failed")
         }
       }
       2 => {
@@ -52,7 +52,7 @@ test "exporter_failure_recovery" {
         let error = ConnectionRefused
         match error {
           ConnectionRefused => assert_eq(true, true)
-          _ => @test.fail("Expected ConnectionRefused")
+          _ => @test.fail("Test failed")
         }
       }
       3 => {
@@ -60,7 +60,7 @@ test "exporter_failure_recovery" {
         recovered = true
         break
       }
-      _ => @test.fail("Unexpected retry count")
+      _ => @test.fail("Test failed")
     }
   }
   
@@ -78,7 +78,7 @@ test "exporter_failure_recovery" {
   let fallback_strategy = BufferInMemory
   match fallback_strategy {
     BufferInMemory => assert_eq(true, true)
-    _ => @test.fail("Expected BufferInMemory strategy")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 测试缓冲区管理
@@ -145,7 +145,7 @@ test "exporter_circuit_breaker_pattern" {
   
   match state {
     Open => assert_eq(true, true)
-    _ => @test.fail("Circuit breaker should be open")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 模拟熔断器从半开状态到关闭状态
@@ -161,7 +161,7 @@ test "exporter_circuit_breaker_pattern" {
   
   match state {
     Closed => assert_eq(true, true)
-    _ => @test.fail("Circuit breaker should be closed")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 测试熔断器指标
@@ -261,7 +261,7 @@ test "exporter_data_integrity_on_failure" {
   
   match recovery_status {
     Partial => assert_eq(true, true)
-    _ => @test.fail("Expected Partial recovery status")
+    _ => @test.fail("Test failed")
   }
   
   assert_eq(recovered_items > 0, true)

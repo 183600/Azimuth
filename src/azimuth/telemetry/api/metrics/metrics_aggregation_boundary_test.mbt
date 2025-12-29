@@ -45,7 +45,7 @@ test "metrics_counter_boundary_conditions" {
     ("unicode.string", AttributeValue::string("测试中文🚀")),
     ("special.chars", AttributeValue::string("!@#$%^&*()")),
     ("very.long.string", AttributeValue::string("a".repeat(1000))),
-    ("large.array", AttributeValue::array_string(Array::make(100, "item")))
+    ("large.array", AttributeValue::array_string([for i = 0; i < 100; i = i + 1].map(fn(_) { "item" })))
   ]
   
   // 测试边界属性
@@ -481,7 +481,7 @@ test "metrics_attribute_boundary_combinations" {
     [],  // 空数组
     ["single_item"],  // 单项数组
     ["item1", "item2", "item3"],  // 多项数组
-    Array::make(100, "repeated_item"),  // 大数组
+    [for i = 0; i < 100; i = i + 1].map(fn(_) { "repeated_item" }),  // 大数组
     ["", " ", "normal", "special!@#$%", "测试中文", "🚀"]  // 混合内容
   ]
   
@@ -489,7 +489,7 @@ test "metrics_attribute_boundary_combinations" {
     [],  // 空数组
     [42L],  // 单项数组
     [1L, 2L, 3L, 4L, 5L],  // 多项数组
-    Array::make(100, 999L),  // 大数组
+    [for i = 0; i < 100; i = i + 1].map(fn(_) { 999L }),  // 大数组
     [0L, 1L, -1L, 9223372036854775807L, -9223372036854775808L]  // 边界值数组
   ]
   
@@ -497,7 +497,7 @@ test "metrics_attribute_boundary_combinations" {
     [],  // 空数组
     [3.14],  // 单项数组
     [1.1, 2.2, 3.3, 4.4, 5.5],  // 多项数组
-    Array::make(100, 99.99),  // 大数组
+    [for i = 0; i < 100; i = i + 1].map(fn(_) { 99.99 }),  // 大数组
     [0.0, 1.0e-10, 1.7976931348623157e+308, 1.0/0.0, 0.0/0.0]  // 特殊值数组
   ]
   
@@ -505,7 +505,7 @@ test "metrics_attribute_boundary_combinations" {
     [],  // 空数组
     [true],  // 单项数组
     [true, false, true, false],  // 多项数组
-    Array::make(100, true),  // 大数组
+    [for i = 0; i < 100; i = i + 1].map(fn(_) { true }),  // 大数组
     [true, false]  // 混合数组
   ]
   

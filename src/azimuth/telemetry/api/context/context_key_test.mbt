@@ -52,22 +52,22 @@ test "context_operations_with_different_keys" {
   // 获取值并验证
   match ctx4.get(string_key) {
     Some(value) => assert_eq(value, "string value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(number_key) {
     Some(value) => assert_eq(value, "42")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(boolean_key) {
     Some(value) => assert_eq(value, "true")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match ctx4.get(unicode_key) {
     Some(value) => assert_eq(value, "测试值")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -80,21 +80,21 @@ test "context_key_value_overwrite" {
   let ctx1 = ctx.with_value(key, "initial value")
   match ctx1.get(key) {
     Some(value) => assert_eq(value, "initial value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 覆盖值
   let ctx2 = ctx1.with_value(key, "overwritten value")
   match ctx2.get(key) {
     Some(value) => assert_eq(value, "overwritten value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 再次覆盖
   let ctx3 = ctx2.with_value(key, "final value")
   match ctx3.get(key) {
     Some(value) => assert_eq(value, "final value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -111,17 +111,17 @@ test "context_key_non_existent" {
   // 验证存在的键
   match ctx1.get(existing_key) {
     Some(value) => assert_eq(value, "value")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 验证不存在的键
   match ctx1.get(non_existent_key1) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx1.get(non_existent_key2) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }
@@ -161,7 +161,7 @@ test "context_key_with_special_values" {
   while j < keys.length() {
     match current_ctx.get(keys[j]) {
       Some(value) => assert_eq(value, values[j])
-      None => @test.fail("Expected Some(value)")
+      None => @test.fail("Test failed")
     }
     j = j + 1
   }
@@ -181,7 +181,7 @@ test "context_key_with_long_names_and_values" {
   // 验证长值
   match ctx1.get(long_key) {
     Some(value) => assert_eq(value, long_value)
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   // 验证键名
@@ -204,31 +204,31 @@ test "multiple_context_keys_independence" {
   // 验证独立性
   match ctx_a.get(key_a) {
     Some(value) => assert_eq(value, "value.a")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match ctx_a.get(key_b) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx_b.get(key_b) {
     Some(value) => assert_eq(value, "value.b")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match ctx_b.get(key_c) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   match ctx_c.get(key_c) {
     Some(value) => assert_eq(value, "value.c")
-    None => @test.fail("Expected Some(value)")
+    None => @test.fail("Test failed")
   }
   
   match ctx_c.get(key_a) {
-    Some(_) => @test.fail("Expected None")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
 }

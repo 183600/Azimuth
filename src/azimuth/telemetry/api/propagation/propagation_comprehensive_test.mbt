@@ -9,7 +9,7 @@ test "map_carrier_basic_operations" {
   
   // 测试获取不存在的键
   match carrier.get("nonexistent.key") {
-    Some(_) => @test.fail("Expected None for nonexistent key")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -29,17 +29,17 @@ test "map_carrier_basic_operations" {
   // 测试获取存在的键
   match carrier_with_data.get("traceparent") {
     Some(value) => assert_eq(value, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-    None => @test.fail("Expected Some value for traceparent")
+    None => @test.fail("Test failed")
   }
   
   match carrier_with_data.get("tracestate") {
     Some(value) => assert_eq(value, "rojo=00f067aa0ba902b7")
-    None => @test.fail("Expected Some value for tracestate")
+    None => @test.fail("Test failed")
   }
   
   match carrier_with_data.get("baggage") {
     Some(value) => assert_eq(value, "key1=value1,key2=value2")
-    None => @test.fail("Expected Some value for baggage")
+    None => @test.fail("Test failed")
   }
   
   // 验证keys方法
@@ -68,14 +68,14 @@ test "w3c_trace_context_propagator_inject" {
       assert_eq(trace_parent.has_prefix("00-"), true)
       assert_eq(trace_parent.contains("-"), true)
       
-      let parts = trace_parent.split("-")
+      let parts = trace_parent"-".split_to_string()
       assert_eq(parts.length(), 4)
       assert_eq(parts[0], "00")
       assert_eq(parts[1].length(), 32) // trace_id
       assert_eq(parts[2].length(), 16) // span_id
       assert_eq(parts[3], "01") // trace_flags
     }
-    None => @test.fail("Expected Some traceparent value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -122,18 +122,18 @@ test "w3c_baggage_propagator_inject" {
       assert_eq(baggage_value.contains("="), true)
       assert_eq(baggage_value.contains(","), true)
       
-      let entries = baggage_value.split(",")
+      let entries = baggage_value",".split_to_string()
       assert_eq(entries.length(), 2)
       
-      let entry1_parts = entries[0].split("=")
+      let entry1_parts = entries[0]"=".split_to_string()
       assert_eq(entry1_parts[0], "key1")
       assert_eq(entry1_parts[1], "value1")
       
-      let entry2_parts = entries[1].split("=")
+      let entry2_parts = entries[1]"=".split_to_string()
       assert_eq(entry2_parts[0], "key2")
       assert_eq(entry2_parts[1], "value2")
     }
-    None => @test.fail("Expected Some baggage value")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -183,12 +183,12 @@ test "composite_propagator_creation_and_usage" {
   // 验证两个propagator都执行了inject
   match carrier.get("traceparent") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("baggage") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 测试extract操作
@@ -226,12 +226,12 @@ test "composite_propagator_multiple_propagators" {
   // 验证header存在（由于是简化实现，多次inject会覆盖相同的值）
   match carrier.get("traceparent") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("baggage") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -252,7 +252,7 @@ test "propagation_edge_cases" {
   
   // 验证carrier没有被修改
   match carrier.get("traceparent") {
-    Some(_) => @test.fail("Expected None for traceparent")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
@@ -299,17 +299,17 @@ test "propagation_with_complex_context" {
   // 验证context的值没有被修改
   match complex_ctx.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected Some value for key1")
+    None => @test.fail("Test failed")
   }
   
   match complex_ctx.get(key2) {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected Some value for key2")
+    None => @test.fail("Test failed")
   }
   
   match complex_ctx.get(key3) {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected Some value for key3")
+    None => @test.fail("Test failed")
   }
   
   // 测试extract不会覆盖现有的context值
@@ -324,7 +324,7 @@ test "propagation_with_complex_context" {
   assert_eq(extracted_ctx.values.length(), 3)
   match extracted_ctx.get(key1) {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected Some value for key1")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -355,16 +355,16 @@ test "map_carrier_to_map_conversion" {
   // 验证数据内容
   match carrier.get("key1") {
     Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Expected Some value for key1")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("key2") {
     Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Expected Some value for key2")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("key3") {
     Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Expected Some value for key3")
+    None => @test.fail("Test failed")
   }
 }

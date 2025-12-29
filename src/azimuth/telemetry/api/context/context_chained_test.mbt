@@ -19,27 +19,27 @@ test "context_chained_operations_basic" {
   // 验证所有值都正确设置
   match chained_ctx.get(key1) {
     Some(value) => assert_eq(value, "user-123")
-    None => @test.fail("Expected Some(value) for user.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(key2) {
     Some(value) => assert_eq(value, "req-456")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(key3) {
     Some(value) => assert_eq(value, "session-789")
-    None => @test.fail("Expected Some(value) for session.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(key4) {
     Some(value) => assert_eq(value, "trace-012")
-    None => @test.fail("Expected Some(value) for trace.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(key5) {
     Some(value) => assert_eq(value, "corr-345")
-    None => @test.fail("Expected Some(value) for correlation.id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -60,12 +60,12 @@ test "context_chained_operations_with_overwrites" {
   // 验证最终值
   match chained_ctx.get(key1) {
     Some(value) => assert_eq(value, "user-345")
-    None => @test.fail("Expected Some(value) for user.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(key2) {
     Some(value) => assert_eq(value, "req-012")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -85,17 +85,17 @@ test "context_chained_operations_performance" {
   // 验证部分值
   match chained_ctx.get(create_key("key.0")) {
     Some(value) => assert_eq(value, "value.0")
-    None => @test.fail("Expected Some(value) for key.0")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(create_key("key.49")) {
     Some(value) => assert_eq(value, "value.49")
-    None => @test.fail("Expected Some(value) for key.49")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(create_key("key.99")) {
     Some(value) => assert_eq(value, "value.99")
-    None => @test.fail("Expected Some(value) for key.99")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -114,27 +114,27 @@ test "baggage_chained_operations_basic" {
   // 验证所有值都正确设置
   match chained_baggage.get("user.id") {
     Some(value) => assert_eq(value, "user-123")
-    None => @test.fail("Expected Some(value) for user.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("request.id") {
     Some(value) => assert_eq(value, "req-456")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("session.id") {
     Some(value) => assert_eq(value, "session-789")
-    None => @test.fail("Expected Some(value) for session.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("trace.id") {
     Some(value) => assert_eq(value, "trace-012")
-    None => @test.fail("Expected Some(value) for trace.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("correlation.id") {
     Some(value) => assert_eq(value, "corr-345")
-    None => @test.fail("Expected Some(value) for correlation.id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -153,12 +153,12 @@ test "baggage_chained_operations_with_overwrites" {
   // 验证最终值
   match chained_baggage.get("user.id") {
     Some(value) => assert_eq(value, "user-345")
-    None => @test.fail("Expected Some(value) for user.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("request.id") {
     Some(value) => assert_eq(value, "req-012")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -186,33 +186,33 @@ test "context_and_baggage_combined_chained_operations" {
   // 验证Context中的值
   match chained_ctx.get(ctx_key1) {
     Some(value) => assert_eq(value, "trace-123456")
-    None => @test.fail("Expected Some(value) for trace.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(ctx_key2) {
     Some(value) => assert_eq(value, "span-789012")
-    None => @test.fail("Expected Some(value) for span.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(ctx_key3) {
     Some(value) => assert_eq(value, "parent-345678")
-    None => @test.fail("Expected Some(value) for parent.span.id")
+    None => @test.fail("Test failed")
   }
   
   // 验证Baggage中的值
   match chained_baggage.get("user.id") {
     Some(value) => assert_eq(value, "user-123")
-    None => @test.fail("Expected Some(value) for user.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("request.id") {
     Some(value) => assert_eq(value, "req-456")
-    None => @test.fail("Expected Some(value) for request.id")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("session.id") {
     Some(value) => assert_eq(value, "session-789")
-    None => @test.fail("Expected Some(value) for session.id")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -236,27 +236,27 @@ test "context_chained_operations_with_special_values" {
   // 验证特殊值
   match chained_ctx.get(create_key("empty.value")) {
     Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected Some(empty value)")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(create_key("special.chars")) {
     Some(value) => assert_eq(value, "!@#$%^&*()_+-={}[]|\\:;\"'<>?,./")
-    None => @test.fail("Expected Some(special chars)")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(create_key("unicode.value")) {
     Some(value) => assert_eq(value, "Unicode测试🚀")
-    None => @test.fail("Expected Some(unicode value)")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(create_key("json.value")) {
     Some(value) => assert_eq(value, "{\"key\":\"value\",\"array\":[1,2,3],\"nested\":{\"prop\":\"val\"}}")
-    None => @test.fail("Expected Some(json value)")
+    None => @test.fail("Test failed")
   }
   
   match chained_ctx.get(create_key("newline.value")) {
     Some(value) => assert_eq(value, "line1\nline2\rline3\r\nline4")
-    None => @test.fail("Expected Some(newline value)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -278,21 +278,21 @@ test "baggage_chained_operations_with_special_keys" {
   // 验证特殊键
   match chained_baggage.get("") {
     Some(value) => assert_eq(value, "empty.key.value")
-    None => @test.fail("Expected Some(empty key value)")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("special.key.with.dots") {
     Some(value) => assert_eq(value, "dots.value")
-    None => @test.fail("Expected Some(dots value)")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("key with spaces") {
     Some(value) => assert_eq(value, "spaces.value")
-    None => @test.fail("Expected Some(spaces value)")
+    None => @test.fail("Test failed")
   }
   
   match chained_baggage.get("Unicode键测试🚀") {
     Some(value) => assert_eq(value, "unicode.key.value")
-    None => @test.fail("Expected Some(unicode key value)")
+    None => @test.fail("Test failed")
   }
 }

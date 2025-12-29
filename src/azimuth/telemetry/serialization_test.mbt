@@ -121,8 +121,8 @@ test "serialization_attribute_values" {
 test "serialization_span_context" {
   // 测试SpanContext的序列化
   
-  let trace_id = Array::make(16, 0x0a_byte)
-  let span_id = Array::make(8, 0x0b_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x0a_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x0b_byte })
   
   let span_context = SpanContext::{
     trace_id,
@@ -144,8 +144,8 @@ test "serialization_span_context" {
   assert_eq(span_context.trace_state, "key1=value1,key2=value2")
   
   // 测试全零和全1的情况
-  let zero_trace_id = Array::make(16, 0_byte)
-  let zero_span_id = Array::make(8, 0_byte)
+  let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
+  let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
   let zero_context = SpanContext::{
     trace_id: zero_trace_id,
     span_id: zero_span_id,
@@ -159,8 +159,8 @@ test "serialization_span_context" {
   assert_eq(zero_trace_hex, "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
   assert_eq(zero_span_hex, "00 00 00 00 00 00 00 00")
   
-  let max_trace_id = Array::make(16, 0xff_byte)
-  let max_span_id = Array::make(8, 0xff_byte)
+  let max_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0xff_byte })
+  let max_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0xff_byte })
   let max_context = SpanContext::{
     trace_id: max_trace_id,
     span_id: max_span_id,
@@ -436,8 +436,8 @@ test "serialization_complex_scenarios" {
   assert_eq(event_attributes_serialized.contains("error.message=string:Internal server error"), true)
   
   // 创建复杂的SpanLink
-  let linked_trace_id = Array::make(16, 0x01_byte)
-  let linked_span_id = Array::make(8, 0x02_byte)
+  let linked_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte })
+  let linked_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte })
   let linked_context = SpanContext::{
     trace_id: linked_trace_id,
     span_id: linked_span_id,

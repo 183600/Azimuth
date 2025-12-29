@@ -9,11 +9,11 @@ test "log_record_builder_basic" {
   assert_eq(log_record.timestamp_unix_nanos, 1234567890L)
   match log_record.severity_number {
     Error => assert_eq(true, true)
-    _ => @test.fail("Expected Error severity")
+    _ => @test.fail("Test failed")
   }
   match log_record.body {
     Some(body) => assert_eq(body, "Test error message")
-    None => @test.fail("Expected body to be set")
+    None => @test.fail("Test failed")
   }
   assert_eq(log_record.attributes.length(), 0)
 }
@@ -31,30 +31,30 @@ test "log_record_builder_with_attributes" {
   assert_eq(log_record.timestamp_unix_nanos, 9876543210L)
   match log_record.severity_number {
     Info => assert_eq(true, true)
-    _ => @test.fail("Expected Info severity")
+    _ => @test.fail("Test failed")
   }
   match log_record.body {
     Some(body) => assert_eq(body, "Info message")
-    None => @test.fail("Expected body to be set")
+    None => @test.fail("Test failed")
   }
   assert_eq(log_record.attributes.length(), 3)
   
   // 验证第一个属性
   match log_record.attributes[0].1 {
     AttributeValue::StringValue(user_id) => assert_eq(user_id, "user123")
-    _ => @test.fail("Expected StringValue for user.id")
+    _ => @test.fail("Test failed")
   }
   
   // 验证第二个属性
   match log_record.attributes[1].1 {
     AttributeValue::StringValue(req_id) => assert_eq(req_id, "req456")
-    _ => @test.fail("Expected StringValue for request.id")
+    _ => @test.fail("Test failed")
   }
   
   // 验证第三个属性
   match log_record.attributes[2].1 {
     AttributeValue::FloatValue(response_time) => assert_eq(response_time, 123.45)
-    _ => @test.fail("Expected FloatValue for response.time")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -64,16 +64,16 @@ test "log_record_builder_default_values" {
   assert_eq(log_record.timestamp_unix_nanos, 0L)
   match log_record.severity_number {
     Info => assert_eq(true, true)
-    _ => @test.fail("Expected default Info severity")
+    _ => @test.fail("Test failed")
   }
   match log_record.body {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Expected no body")
+    Some(_) => @test.fail("Test failed")
   }
   assert_eq(log_record.attributes.length(), 0)
   match log_record.observed_timestamp_unix_nanos {
     None => assert_eq(true, true)
-    Some(_) => @test.fail("Expected no observed timestamp")
+    Some(_) => @test.fail("Test failed")
   }
 }
 
@@ -89,7 +89,7 @@ test "log_record_builder_complex_attributes" {
   
   match log_record.severity_number {
     Warn => assert_eq(true, true)
-    _ => @test.fail("Expected Warn severity")
+    _ => @test.fail("Test failed")
   }
   assert_eq(log_record.attributes.length(), 4)
   
@@ -101,7 +101,7 @@ test "log_record_builder_complex_attributes" {
       assert_eq(tags[1], "api")
       assert_eq(tags[2], "critical")
     }
-    _ => @test.fail("Expected ArrayStringValue for tags")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[1].1 {
@@ -111,7 +111,7 @@ test "log_record_builder_complex_attributes" {
       assert_eq(metrics[1], 2.2)
       assert_eq(metrics[2], 3.3)
     }
-    _ => @test.fail("Expected ArrayFloatValue for metrics")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[2].1 {
@@ -121,7 +121,7 @@ test "log_record_builder_complex_attributes" {
       assert_eq(status_codes[1], 404L)
       assert_eq(status_codes[2], 500L)
     }
-    _ => @test.fail("Expected ArrayIntValue for status_codes")
+    _ => @test.fail("Test failed")
   }
   
   match log_record.attributes[3].1 {
@@ -131,7 +131,7 @@ test "log_record_builder_complex_attributes" {
       assert_eq(feature_flags[1], false)
       assert_eq(feature_flags[2], true)
     }
-    _ => @test.fail("Expected ArrayBoolValue for feature_flags")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -149,7 +149,7 @@ test "log_record_all_severity_levels" {
     assert_eq(log_record.severity_number, severity)
     match log_record.body {
       Some(body) => assert_eq(body, "Test message for severity level")
-      None => @test.fail("Expected body to be set")
+      None => @test.fail("Test failed")
     }
     
     index = index + 1

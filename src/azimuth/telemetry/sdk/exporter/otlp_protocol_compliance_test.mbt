@@ -350,7 +350,7 @@ test "otlp_protocol_compliance" {
     let mut is_compliant = true
     
     // 检查端点格式
-    if not (config.endpoint.starts_with("http://") or config.endpoint.starts_with("https://")) {
+    if not (config.endpoint.has_prefix("http://") or config.endpoint.has_prefix("https://")) {
       issues.push("Endpoint must use HTTP or HTTPS protocol")
       is_compliant = false
     }

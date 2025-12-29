@@ -86,10 +86,10 @@ test "resource_attributes_complex_scenarios" {
   ]
   
   // 5. 长数组属性
-  let long_string_array = Array::make(1000, "item")
-  let long_int_array = Array::make(1000, 1L)
-  let long_float_array = Array::make(1000, 1.0)
-  let long_bool_array = Array::make(1000, true)
+  let long_string_array = [for i = 0; i < 1000; i = i + 1].map(fn(_) { "item" })
+  let long_int_array = [for i = 0; i < 1000; i = i + 1].map(fn(_) { 1L })
+  let long_float_array = [for i = 0; i < 1000; i = i + 1].map(fn(_) { 1.0 })
+  let long_bool_array = [for i = 0; i < 1000; i = i + 1].map(fn(_) { true })
   
   let long_array_attrs = [
     ("long.string.array", AttributeValue::array_string(long_string_array)),
@@ -144,17 +144,17 @@ test "attribute_value_type_conversions_and_edge_cases" {
   
   match empty_string {
     AttributeValue::StringValue(s) => assert_eq(s, "")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match space_string {
     AttributeValue::StringValue(s) => assert_eq(s, " ")
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   match long_string {
     AttributeValue::StringValue(s) => assert_eq(s.length(), 100000)
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 2. 整数属性值的边界情况
@@ -165,17 +165,17 @@ test "attribute_value_type_conversions_and_edge_cases" {
   
   match zero_int {
     AttributeValue::IntValue(i) => assert_eq(i, 0L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match max_int {
     AttributeValue::IntValue(i) => assert_eq(i, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match min_int {
     AttributeValue::IntValue(i) => assert_eq(i, -9223372036854775808L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 浮点数属性值的边界情况
@@ -189,12 +189,12 @@ test "attribute_value_type_conversions_and_edge_cases" {
   
   match zero_float {
     AttributeValue::FloatValue(f) => assert_eq(f, 0.0)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match positive_inf {
     AttributeValue::FloatValue(f) => assert_eq(f > 1.0e308, true)
-    _ => @test.fail("Expected FloatValue")
+    _ => @test.fail("Test failed")
   }
   
   // 4. 布尔属性值的边界情况
@@ -203,25 +203,25 @@ test "attribute_value_type_conversions_and_edge_cases" {
   
   match true_value {
     AttributeValue::BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   match false_value {
     AttributeValue::BoolValue(b) => assert_eq(b, false)
-    _ => @test.fail("Expected BoolValue")
+    _ => @test.fail("Test failed")
   }
   
   // 5. 数组属性值的边界情况
   let empty_string_array = AttributeValue::array_string([])
   let single_string_array = AttributeValue::array_string(["single"])
-  let large_string_array = AttributeValue::array_string(Array::make(10000, "item"))
+  let large_string_array = AttributeValue::array_string([for i = 0; i < 10000; i = i + 1].map(fn(_) { "item" }))
   
   let empty_int_array = AttributeValue::array_int([])
   let mixed_int_array = AttributeValue::array_int([0L, -1L, 1L, 9223372036854775807L, -9223372036854775808L])
   
   match empty_string_array {
     AttributeValue::ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match single_string_array {
@@ -229,7 +229,7 @@ test "attribute_value_type_conversions_and_edge_cases" {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], "single")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match mixed_int_array {
@@ -241,7 +241,7 @@ test "attribute_value_type_conversions_and_edge_cases" {
       assert_eq(arr[3], 9223372036854775807L)
       assert_eq(arr[4], -9223372036854775808L)
     }
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
 }
 
@@ -419,7 +419,7 @@ test "resource_attribute_performance_considerations" {
   
   match long_string_values[0] {
     (key, AttributeValue::StringValue(s)) => assert_eq(s.length(), 100000)
-    _ => @test.fail("Expected StringValue")
+    _ => @test.fail("Test failed")
   }
   
   // 3. 深层嵌套数据结构

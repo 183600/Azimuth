@@ -84,12 +84,12 @@ test "measurement_boundary_values" {
   // 验证属性值
   match max_int_measurement.attributes[0].1 {
     IntValue(max_val) => assert_eq(max_val, 9223372036854775807L)
-    _ => @test.fail("Expected max IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match min_int_measurement.attributes[0].1 {
     IntValue(min_val) => assert_eq(min_val, -9223372036854775808L)
-    _ => @test.fail("Expected min IntValue")
+    _ => @test.fail("Test failed")
   }
 }
 

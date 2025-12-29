@@ -11,7 +11,7 @@ test "log_record_builder_basic_chaining" {
   assert_eq(log_record.severity_number, Info)
   match log_record.body {
     Some(body) => assert_eq(body, "Basic chain test")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   
   // 测试带有属性的链式调用
@@ -44,7 +44,7 @@ test "log_record_builder_basic_chaining" {
             assert_eq(code, 500L)
             found_error_code = true
           }
-          _ => @test.fail("Expected IntValue for error.code")
+          _ => @test.fail("Test failed")
         }
       }
       "error.message" => {
@@ -53,7 +53,7 @@ test "log_record_builder_basic_chaining" {
             assert_eq(message, "Internal Server Error")
             found_error_message = true
           }
-          _ => @test.fail("Expected StringValue for error.message")
+          _ => @test.fail("Test failed")
         }
       }
       "service.name" => {
@@ -62,7 +62,7 @@ test "log_record_builder_basic_chaining" {
             assert_eq(name, "test-service")
             found_service_name = true
           }
-          _ => @test.fail("Expected StringValue for service.name")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性
@@ -79,8 +79,8 @@ test "log_record_builder_basic_chaining" {
 test "log_record_builder_complex_chaining" {
   // 测试复杂的链式调用场景
   let resource = Resource::default("complex-test-service")
-  let trace_id = Array::make(16, 1_byte)
-  let span_id = Array::make(8, 2_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 1_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 2_byte })
   let trace_flags = 1_byte
   
   let log_record = LogRecord::builder()
@@ -113,16 +113,16 @@ test "log_record_builder_complex_chaining" {
   assert_eq(log_record.timestamp_unix_nanos, 1234567890L)
   match log_record.observed_timestamp_unix_nanos {
     Some(observed) => assert_eq(observed, 1234567891L)
-    None => @test.fail("Expected Some(observed_timestamp)")
+    None => @test.fail("Test failed")
   }
   assert_eq(log_record.severity_number, Warn)
   match log_record.severity_text {
     Some(text) => assert_eq(text, "WARN")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   match log_record.body {
     Some(body) => assert_eq(body, "Complex log record")
-    None => @test.fail("Expected Some(body)")
+    None => @test.fail("Test failed")
   }
   
   // 验证属性数量
@@ -131,17 +131,17 @@ test "log_record_builder_complex_chaining" {
   // 验证追踪信息
   match log_record.trace_id {
     Some(id) => assert_eq(id.length(), 16)
-    None => @test.fail("Expected Some(trace_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.span_id {
     Some(id) => assert_eq(id.length(), 8)
-    None => @test.fail("Expected Some(span_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.trace_flags {
     Some(flags) => assert_eq(flags, 1_byte)
-    None => @test.fail("Expected Some(trace_flags)")
+    None => @test.fail("Test failed")
   }
   
   // 验证资源
@@ -151,7 +151,7 @@ test "log_record_builder_complex_chaining" {
       assert_eq(res.telemetry_sdk_name, "azimuth")
       assert_eq(res.telemetry_sdk_version, "0.1.0")
     }
-    None => @test.fail("Expected Some(resource)")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -210,32 +210,32 @@ test "log_record_builder_severity_chaining" {
   // 验证严重程度文本
   match trace_log.severity_text {
     Some(text) => assert_eq(text, "TRACE")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   
   match debug_log.severity_text {
     Some(text) => assert_eq(text, "DEBUG")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   
   match info_log.severity_text {
     Some(text) => assert_eq(text, "INFO")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   
   match warn_log.severity_text {
     Some(text) => assert_eq(text, "WARN")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   
   match error_log.severity_text {
     Some(text) => assert_eq(text, "ERROR")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   
   match fatal_log.severity_text {
     Some(text) => assert_eq(text, "FATAL")
-    None => @test.fail("Expected Some(severity_text)")
+    None => @test.fail("Test failed")
   }
   
   // 验证时间顺序
@@ -294,7 +294,7 @@ test "log_record_builder_attribute_type_chaining" {
             assert_eq(s, "string_value")
             string_found = true
           }
-          _ => @test.fail("Expected StringValue for string.attr")
+          _ => @test.fail("Test failed")
         }
       }
       "int.attr" => {
@@ -303,7 +303,7 @@ test "log_record_builder_attribute_type_chaining" {
             assert_eq(iv, 42L)
             int_found = true
           }
-          _ => @test.fail("Expected IntValue for int.attr")
+          _ => @test.fail("Test failed")
         }
       }
       "float.attr" => {
@@ -312,7 +312,7 @@ test "log_record_builder_attribute_type_chaining" {
             assert_eq(fv, 3.14159)
             float_found = true
           }
-          _ => @test.fail("Expected FloatValue for float.attr")
+          _ => @test.fail("Test failed")
         }
       }
       "bool.attr" => {
@@ -321,7 +321,7 @@ test "log_record_builder_attribute_type_chaining" {
             assert_eq(bv, true)
             bool_found = true
           }
-          _ => @test.fail("Expected BoolValue for bool.attr")
+          _ => @test.fail("Test failed")
         }
       }
       "string.array.attr" => {
@@ -333,7 +333,7 @@ test "log_record_builder_attribute_type_chaining" {
             assert_eq(arr[2], "c")
             string_array_found = true
           }
-          _ => @test.fail("Expected ArrayStringValue for string.array.attr")
+          _ => @test.fail("Test failed")
         }
       }
       "int.array.attr" => {
@@ -344,7 +344,7 @@ test "log_record_builder_attribute_type_chaining" {
             assert_eq(arr[4], 5L)
             int_array_found = true
           }
-          _ => @test.fail("Expected ArrayIntValue for int.array.attr")
+          _ => @test.fail("Test failed")
         }
       }
       "float.array.attr" => {
@@ -355,7 +355,7 @@ test "log_record_builder_attribute_type_chaining" {
             assert_eq(arr[2], 3.3)
             float_array_found = true
           }
-          _ => @test.fail("Expected ArrayFloatValue for float.array.attr")
+          _ => @test.fail("Test failed")
         }
       }
       "bool.array.attr" => {
@@ -367,7 +367,7 @@ test "log_record_builder_attribute_type_chaining" {
             assert_eq(arr[2], true)
             bool_array_found = true
           }
-          _ => @test.fail("Expected ArrayBoolValue for bool.array.attr")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性
@@ -389,8 +389,8 @@ test "log_record_builder_attribute_type_chaining" {
 
 test "log_record_builder_trace_context_chaining" {
   // 测试追踪上下文的链式调用
-  let trace_id = Array::make(16, 0x12_byte)
-  let span_id = Array::make(8, 0x34_byte)
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x12_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x34_byte })
   let trace_flags = 0x01_byte
   
   let log_record = LogRecord::builder()
@@ -412,7 +412,7 @@ test "log_record_builder_trace_context_chaining" {
       assert_eq(id[0], 0x12_byte)
       assert_eq(id[15], 0x12_byte)
     }
-    None => @test.fail("Expected Some(trace_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.span_id {
@@ -421,12 +421,12 @@ test "log_record_builder_trace_context_chaining" {
       assert_eq(id[0], 0x34_byte)
       assert_eq(id[7], 0x34_byte)
     }
-    None => @test.fail("Expected Some(span_id)")
+    None => @test.fail("Test failed")
   }
   
   match log_record.trace_flags {
     Some(flags) => assert_eq(flags, 0x01_byte)
-    None => @test.fail("Expected Some(trace_flags)")
+    None => @test.fail("Test failed")
   }
   
   // 验证追踪相关属性
@@ -447,7 +447,7 @@ test "log_record_builder_trace_context_chaining" {
             assert_eq(id, "12345678901234567890123456789012")
             trace_id_found = true
           }
-          _ => @test.fail("Expected StringValue for trace.id")
+          _ => @test.fail("Test failed")
         }
       }
       "span.id" => {
@@ -456,7 +456,7 @@ test "log_record_builder_trace_context_chaining" {
             assert_eq(id, "1234567890123456")
             span_id_found = true
           }
-          _ => @test.fail("Expected StringValue for span.id")
+          _ => @test.fail("Test failed")
         }
       }
       "trace.sampled" => {
@@ -465,7 +465,7 @@ test "log_record_builder_trace_context_chaining" {
             assert_eq(sampled, true)
             trace_sampled_found = true
           }
-          _ => @test.fail("Expected BoolValue for trace.sampled")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性
@@ -500,7 +500,7 @@ test "log_record_builder_resource_chaining" {
       assert_eq(res.telemetry_sdk_name, "azimuth")
       assert_eq(res.telemetry_sdk_version, "0.1.0")
     }
-    None => @test.fail("Expected Some(resource)")
+    None => @test.fail("Test failed")
   }
   
   // 验证资源相关属性
@@ -532,11 +532,11 @@ test "log_record_builder_edge_cases_chaining" {
   assert_eq(edge_case_log.timestamp_unix_nanos, 0L)
   match edge_case_log.body {
     Some(body) => assert_eq(body, "")
-    None => @test.fail("Expected Some(empty body)")
+    None => @test.fail("Test failed")
   }
   match edge_case_log.severity_text {
     Some(text) => assert_eq(text, "")
-    None => @test.fail("Expected Some(empty severity_text)")
+    None => @test.fail("Test failed")
   }
   
   // 验证空数组属性
@@ -589,19 +589,19 @@ test "log_record_builder_performance_chaining" {
   // 验证第一个和最后一个属性
   match performance_log.attributes[0].1 {
     IntValue(val) => assert_eq(val, 0L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   match performance_log.attributes[99].1 {
     IntValue(val) => assert_eq(val, 99L)
-    _ => @test.fail("Expected IntValue")
+    _ => @test.fail("Test failed")
   }
   
   // 测试大型数组属性
-  let large_string_array = Array::make(1000, "large_array_item")
-  let large_int_array = Array::make(1000, 42L)
-  let large_float_array = Array::make(1000, 3.14)
-  let large_bool_array = Array::make(1000, true)
+  let large_string_array = [for i = 0; i < 1000; i = i + 1].map(fn(_) { "large_array_item" })
+  let large_int_array = [for i = 0; i < 1000; i = i + 1].map(fn(_) { 42L })
+  let large_float_array = [for i = 0; i < 1000; i = i + 1].map(fn(_) { 3.14 })
+  let large_bool_array = [for i = 0; i < 1000; i = i + 1].map(fn(_) { true })
   
   let large_array_log = LogRecord::builder()
     .timestamp(1234567891L)
@@ -618,21 +618,21 @@ test "log_record_builder_performance_chaining" {
   
   match large_array_log.attributes[0].1 {
     ArrayStringValue(arr) => assert_eq(arr.length(), 1000)
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Test failed")
   }
   
   match large_array_log.attributes[1].1 {
     ArrayIntValue(arr) => assert_eq(arr.length(), 1000)
-    _ => @test.fail("Expected ArrayIntValue")
+    _ => @test.fail("Test failed")
   }
   
   match large_array_log.attributes[2].1 {
     ArrayFloatValue(arr) => assert_eq(arr.length(), 1000)
-    _ => @test.fail("Expected ArrayFloatValue")
+    _ => @test.fail("Test failed")
   }
   
   match large_array_log.attributes[3].1 {
     ArrayBoolValue(arr) => assert_eq(arr.length(), 1000)
-    _ => @test.fail("Expected ArrayBoolValue")
+    _ => @test.fail("Test failed")
   }
 }

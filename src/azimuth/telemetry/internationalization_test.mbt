@@ -221,7 +221,7 @@ fn create_i18n_manager() -> InternationalizationManager {
 // 格式化数字
 fn format_number(locale : Locale, number : Double) -> String {
   let number_str = number.to_string()
-  let parts = number_str.split(".")
+  let parts = number_str".".split_to_string()
   
   let integer_part = parts[0]
   let decimal_part = if parts.length() > 1 { parts[1] } else { "" }

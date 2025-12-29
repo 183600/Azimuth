@@ -38,27 +38,27 @@ test "trace_context_consistency" {
   // 验证Context中的值在Span创建后仍然保持一致
   match span_ctx.get(trace_key) {
     Some(value) => assert_eq(value, "trace-12345678901234567890123456789012")
-    None => @test.fail("Expected trace.id in span context")
+    None => @test.fail("Test failed")
   }
   
   match span_ctx.get(span_key) {
     Some(value) => assert_eq(value, "span-1234567890123456")
-    None => @test.fail("Expected span.id in span context")
+    None => @test.fail("Test failed")
   }
   
   match span_ctx.get(user_key) {
     Some(value) => assert_eq(value, "user-123456789")
-    None => @test.fail("Expected user.id in span context")
+    None => @test.fail("Test failed")
   }
   
   match span_ctx.get(session_key) {
     Some(value) => assert_eq(value, "session-abcdef123456")
-    None => @test.fail("Expected session.id in span context")
+    None => @test.fail("Test failed")
   }
   
   match span_ctx.get(operation_key) {
     Some(value) => assert_eq(value, "user.profile.operation")
-    None => @test.fail("Expected operation.name in span context")
+    None => @test.fail("Test failed")
   }
   
   // 验证Span属性与Context值的一致性
@@ -78,7 +78,7 @@ test "trace_context_consistency" {
             assert_eq(trace_id, "trace-12345678901234567890123456789012")
             found_trace_id = true
           }
-          _ => @test.fail("Expected StringValue for trace.id")
+          _ => @test.fail("Test failed")
         }
       }
       "span.id" => {
@@ -87,7 +87,7 @@ test "trace_context_consistency" {
             assert_eq(span_id, "span-1234567890123456")
             found_span_id = true
           }
-          _ => @test.fail("Expected StringValue for span.id")
+          _ => @test.fail("Test failed")
         }
       }
       "user.id" => {
@@ -96,7 +96,7 @@ test "trace_context_consistency" {
             assert_eq(user_id, "user-123456789")
             found_user_id = true
           }
-          _ => @test.fail("Expected StringValue for user.id")
+          _ => @test.fail("Test failed")
         }
       }
       "session.id" => {
@@ -105,7 +105,7 @@ test "trace_context_consistency" {
             assert_eq(session_id, "session-abcdef123456")
             found_session_id = true
           }
-          _ => @test.fail("Expected StringValue for session.id")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性
@@ -151,10 +151,10 @@ test "context_baggage_consistency" {
           assert_eq(ctx_correlation_id, baggage_correlation_id)
           assert_eq(ctx_correlation_id, "corr-abcdef1234567890")
         }
-        None => @test.fail("Expected correlation.id in baggage")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected correlation.id in context")
+    None => @test.fail("Test failed")
   }
   
   // 验证Context和Baggage的数据独立性
@@ -163,25 +163,25 @@ test "context_baggage_consistency" {
   
   // Context的更新不应该影响Baggage
   match updated_baggage.get("context.only") {
-    Some(_) => @test.fail("Context update should not affect baggage")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   // Baggage的更新不应该影响Context
   match updated_ctx.get(create_key("baggage.only")) {
-    Some(_) => @test.fail("Baggage update should not affect context")
+    Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
   // 验证原始数据仍然保持一致
   match updated_ctx.get(correlation_key) {
     Some(value) => assert_eq(value, "corr-abcdef1234567890")
-    None => @test.fail("Expected correlation.id in updated context")
+    None => @test.fail("Test failed")
   }
   
   match updated_baggage.get("correlation.id") {
     Some(value) => assert_eq(value, "corr-abcdef1234567890")
-    None => @test.fail("Expected correlation.id in updated baggage")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -209,8 +209,8 @@ test "logs_trace_consistency" {
   
   // 在Span上下文中创建LogRecord
   let trace_context = SpanContext::{
-    trace_id: Array::make(16, 0x12_byte),
-    span_id: Array::make(8, 0x34_byte),
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x12_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x34_byte }),
     trace_flags: 0x01_byte,
     trace_state: "test-trace-state"
   }
@@ -265,14 +265,14 @@ test "logs_trace_consistency" {
                     assert_eq(span_service_name, service_name)
                     span_service_found = true
                   }
-                  _ => @test.fail("Expected StringValue for span service.name")
+                  _ => @test.fail("Test failed")
                 }
               }
               j = j + 1
             }
             assert_eq(span_service_found, true)
           }
-          _ => @test.fail("Expected StringValue for service.name")
+          _ => @test.fail("Test failed")
         }
       }
       "operation.name" => {
@@ -292,14 +292,14 @@ test "logs_trace_consistency" {
                     assert_eq(span_operation_name, operation_name)
                     span_operation_found = true
                   }
-                  _ => @test.fail("Expected StringValue for span operation.name")
+                  _ => @test.fail("Test failed")
                 }
               }
               j = j + 1
             }
             assert_eq(span_operation_found, true)
           }
-          _ => @test.fail("Expected StringValue for operation.name")
+          _ => @test.fail("Test failed")
         }
       }
       "user.id" => {
@@ -319,14 +319,14 @@ test "logs_trace_consistency" {
                     assert_eq(span_user_id, user_id)
                     span_user_found = true
                   }
-                  _ => @test.fail("Expected StringValue for span user.id")
+                  _ => @test.fail("Test failed")
                 }
               }
               j = j + 1
             }
             assert_eq(span_user_found, true)
           }
-          _ => @test.fail("Expected StringValue for user.id")
+          _ => @test.fail("Test failed")
         }
       }
       "session.id" => {
@@ -346,14 +346,14 @@ test "logs_trace_consistency" {
                     assert_eq(span_session_id, session_id)
                     span_session_found = true
                   }
-                  _ => @test.fail("Expected StringValue for span session.id")
+                  _ => @test.fail("Test failed")
                 }
               }
               j = j + 1
             }
             assert_eq(span_session_found, true)
           }
-          _ => @test.fail("Expected StringValue for session.id")
+          _ => @test.fail("Test failed")
         }
       }
       "span.name" => {
@@ -362,7 +362,7 @@ test "logs_trace_consistency" {
             assert_eq(span_name, span.name)
             found_span_name = true
           }
-          _ => @test.fail("Expected StringValue for span.name")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性
@@ -387,7 +387,7 @@ test "logs_trace_consistency" {
         i = i + 1
       }
     }
-    None => @test.fail("Expected trace_id in log record")
+    None => @test.fail("Test failed")
   }
   
   match log_record.span_id {
@@ -399,12 +399,12 @@ test "logs_trace_consistency" {
         i = i + 1
       }
     }
-    None => @test.fail("Expected span_id in log record")
+    None => @test.fail("Test failed")
   }
   
   match log_record.trace_flags {
     Some(log_trace_flags) => assert_eq(log_trace_flags, trace_context.trace_flags)
-    None => @test.fail("Expected trace_flags in log record")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -460,28 +460,28 @@ test "metrics_context_consistency" {
         ("metric.type", AttributeValue::string("gauge"))
       ]))
     }
-    None => @test.fail("Expected user.id in context")
+    None => @test.fail("Test failed")
   }
   
   // 验证Context中的其他值
   match enriched_ctx.get(session_key) {
     Some(session_id) => assert_eq(session_id, "session-abcdef123456")
-    None => @test.fail("Expected session.id in context")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx.get(request_key) {
     Some(request_id) => assert_eq(request_id, "req-1234567890abcdef")
-    None => @test.fail("Expected request.id in context")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx.get(operation_key) {
     Some(operation_name) => assert_eq(operation_name, "processPayment")
-    None => @test.fail("Expected operation.name in context")
+    None => @test.fail("Test failed")
   }
   
   match enriched_ctx.get(service_key) {
     Some(service_name) => assert_eq(service_name, "payment-service")
-    None => @test.fail("Expected service.name in context")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -521,7 +521,7 @@ test "propagation_context_baggage_consistency" {
   // 验证注入的数据
   match carrier.get("traceparent") {
     Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
+    None => @test.fail("Test failed")
   }
   
   match carrier.get("baggage") {
@@ -533,7 +533,7 @@ test "propagation_context_baggage_consistency" {
       assert_eq(baggage_value.contains("service.name=test-service"), true)
       assert_eq(baggage_value.contains("deployment.env=test"), true)
     }
-    None => @test.fail("Expected baggage header")
+    None => @test.fail("Test failed")
   }
   
   // 提取上下文
@@ -569,10 +569,10 @@ test "propagation_context_baggage_consistency" {
         Some(baggage_user_id) => {
           assert_eq(user_id, baggage_user_id)
         }
-        None => @test.fail("Expected user.id in baggage")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected user.id in enriched context")
+    None => @test.fail("Test failed")
   }
 }
 
@@ -652,7 +652,7 @@ test "resource_all_modules_consistency" {
             assert_eq(service_name, resource.service_name)
             span_service_found = true
           }
-          _ => @test.fail("Expected StringValue for service.name")
+          _ => @test.fail("Test failed")
         }
       }
       "telemetry.sdk.name" => {
@@ -661,7 +661,7 @@ test "resource_all_modules_consistency" {
             assert_eq(sdk_name, resource.telemetry_sdk_name)
             span_sdk_name_found = true
           }
-          _ => @test.fail("Expected StringValue for telemetry.sdk.name")
+          _ => @test.fail("Test failed")
         }
       }
       "telemetry.sdk.version" => {
@@ -670,7 +670,7 @@ test "resource_all_modules_consistency" {
             assert_eq(sdk_version, resource.telemetry_sdk_version)
             span_sdk_version_found = true
           }
-          _ => @test.fail("Expected StringValue for telemetry.sdk.version")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性
@@ -690,7 +690,7 @@ test "resource_all_modules_consistency" {
       assert_eq(log_resource.telemetry_sdk_name, resource.telemetry_sdk_name)
       assert_eq(log_resource.telemetry_sdk_version, resource.telemetry_sdk_version)
     }
-    None => @test.fail("Expected resource in log record")
+    None => @test.fail("Test failed")
   }
   
   // 验证LogRecord属性中的Resource一致性
@@ -709,7 +709,7 @@ test "resource_all_modules_consistency" {
             assert_eq(service_name, resource.service_name)
             log_service_found = true
           }
-          _ => @test.fail("Expected StringValue for service.name")
+          _ => @test.fail("Test failed")
         }
       }
       "telemetry.sdk.name" => {
@@ -718,7 +718,7 @@ test "resource_all_modules_consistency" {
             assert_eq(sdk_name, resource.telemetry_sdk_name)
             log_sdk_name_found = true
           }
-          _ => @test.fail("Expected StringValue for telemetry.sdk.name")
+          _ => @test.fail("Test failed")
         }
       }
       "telemetry.sdk.version" => {
@@ -727,7 +727,7 @@ test "resource_all_modules_consistency" {
             assert_eq(sdk_version, resource.telemetry_sdk_version)
             log_sdk_version_found = true
           }
-          _ => @test.fail("Expected StringValue for telemetry.sdk.version")
+          _ => @test.fail("Test failed")
         }
       }
       _ => () // 忽略其他属性
@@ -820,8 +820,8 @@ test "cross_module_data_integrity" {
       ("telemetry.sdk.version", AttributeValue::string(resource.telemetry_sdk_version)),  // 与Resource一致
       ("log.type", AttributeValue::string("integrity.test"))
     ],
-    trace_id: Some(Array::make(16, 0x12_byte)),
-    span_id: Some(Array::make(8, 0x34_byte)),
+    trace_id: Some([for i = 0; i < 16; i = i + 1].map(fn(_) { 0x12_byte })),
+    span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0x34_byte })),
     trace_flags: Some(0x01_byte),
     resource: Some(resource),
     instrumentation_scope: None
@@ -883,7 +883,7 @@ test "cross_module_data_integrity" {
                   assert_eq(span_user_id, ctx_user_id)
                   span_user_found = true
                 }
-                _ => @test.fail("Expected StringValue for user.id")
+                _ => @test.fail("Test failed")
               }
             }
             i = i + 1
@@ -901,17 +901,17 @@ test "cross_module_data_integrity" {
                   assert_eq(log_user_id, ctx_user_id)
                   log_user_found = true
                 }
-                _ => @test.fail("Expected StringValue for user.id")
+                _ => @test.fail("Test failed")
               }
             }
             i = i + 1
           }
           assert_eq(log_user_found, true)
         }
-        None => @test.fail("Expected user.id in baggage")
+        None => @test.fail("Test failed")
       }
     }
-    None => @test.fail("Expected user.id in context")
+    None => @test.fail("Test failed")
   }
   
   // 验证所有模块中的trace.id一致
@@ -928,7 +928,7 @@ test "cross_module_data_integrity" {
               assert_eq(span_trace_id, ctx_trace_id)
               span_trace_found = true
             }
-            _ => @test.fail("Expected StringValue for trace.id")
+            _ => @test.fail("Test failed")
           }
         }
         i = i + 1
@@ -946,14 +946,14 @@ test "cross_module_data_integrity" {
               assert_eq(log_trace_id, ctx_trace_id)
               log_trace_found = true
             }
-            _ => @test.fail("Expected StringValue for trace.id")
+            _ => @test.fail("Test failed")
           }
         }
         i = i + 1
       }
       assert_eq(log_trace_found, true)
     }
-    None => @test.fail("Expected trace.id in context")
+    None => @test.fail("Test failed")
   }
   
   // 验证数据完整性测试成功
