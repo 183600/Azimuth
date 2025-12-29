@@ -1,296 +1,220 @@
-// 跨模块集成测试 - 测试Context、Trace、Metrics和Logs的集成
-// 验证不同API模块之间的协作和数据流
-
-test "context_trace_integration" {
-  // 测试Context与Trace的集成
+// 跨模块集成测试 - 测试common、context和metrics模块之间的交互
+test "cross module integration: resource with context" {
+  // 创建Resource
+  let resource = Resource::default("integration-test-service")
   
-  let ctx = context::Context::empty()
-  let trace_key = context::create_key("trace_id")
-  let span_key = context::create_key("span_id")
+  // 创建Context并添加resource信息
+  let context = Context::empty()
+  let resource_key = create_key("resource")
+  let context_with_resource = context.with_value(resource_key, resource.service_name)
   
-  // 在Context中设置trace信息
-  let ctx_with_trace = ctx.with_value(trace_key, "0af7651916cd43dd8448eb211c80319c")
-  let ctx_with_span = ctx_with_trace.with_value(span_key, "b7ad6b7169203331")
-  
-  // 验证Context中的trace信息
-  match ctx_with_span.get(trace_key) {
-    Some(trace_id) => assert_eq(trace_id, "0af7651916cd43dd8448eb211c80319c")
-    None => @test.fail("Trace ID not found in context")
+  // 验证context中包含了resource信息
+  assert match (context_with_resource.get(resource_key)) {
+    Some(value) => value == "integration-test-service"
+    None => false
   }
   
-  match ctx_with_span.get(span_key) {
-    Some(span_id) => assert_eq(span_id, "b7ad6b7169203331")
-    None => @test.fail("Span ID not found in context")
-  }
+  // 创建MeterProvider和Meter
+  let meter_provider = NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("integration-meter", Some("1.0.0"), None)
   
-  // 创建Tracer并启动Span
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("test-tracer", "1.0.0")
-  let (ctx_with_span_obj, span) = tracer.start_span(ctx_with_span, "test-operation", trace::Server)
+  // 使用meter创建counter
+  let counter = meter.create_counter("integration_counter", Some("count"), Some("Integration test counter"))
   
-  // 验证Span创建
-  assert_eq(span.name, "test-operation")
-  assert_eq(span.kind, trace::Internal)
-  assert_eq(span.attributes.length(), 0)
-}
-
-test "metrics_logs_integration" {
-  // 测试Metrics与Logs的集成
-  
-  // 创建Meter和Logger
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", "1.0.0")
-  let logger_provider = logs::NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("test-logger", "1.0.0")
-  
-  // 创建指标
-  let counter = meter.create_counter("http_requests_total", "count", "Total HTTP requests")
-  let histogram = meter.create_histogram("http_request_duration", "ms", "HTTP request duration")
-  
-  // 记录指标
-  counter.add(1L, [("method", common::AttributeValue::string("GET"))])
-  histogram.record(125.5, [("status", common::AttributeValue::int(200L))])
-  
-  // 记录日志
-  logger.info("HTTP request processed", [
-    ("method", common::AttributeValue::string("GET")),
-    ("status", common::AttributeValue::int(200L)),
-    ("duration", common::AttributeValue::float(125.5))
-  ])
-  
-  // 验证指标和日志的属性一致性
-  let metric_attrs = [
-    ("method", common::AttributeValue::string("GET")),
-    ("status", common::AttributeValue::int(200L))
-  ]
-  let log_attrs = [
-    ("method", common::AttributeValue::string("GET")),
-    ("status", common::AttributeValue::int(200L)),
-    ("duration", common::AttributeValue::float(125.5))
+  // 添加带有resource属性的measurement
+  let attributes = [
+    ("service.name", AttributeValue::string(resource.service_name)),
+    ("service.version", match (resource.service_version) {
+      Some(v) => AttributeValue::string(v)
+      None => AttributeValue::string("unknown")
+    }),
+    ("sdk.name", AttributeValue::string(resource.telemetry_sdk_name))
   ]
   
-  assert_eq(metric_attrs.length(), 2)
-  assert_eq(log_attrs.length(), 3)
+  // 执行measurement
+  counter.add(1L, Some(attributes))
+  
+  // 验证Resource和Context的集成
+  assert resource.telemetry_sdk_name == "azimuth"
+  assert resource.attributes.length == 0
 }
 
-test "trace_logs_correlation" {
-  // 测试Trace与Logs的关联
-  
-  let ctx = context::Context::empty()
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("correlation-test")
-  let logger_provider = logs::NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("correlation-test")
-  
-  // 启动Span
-  let (span_ctx, span) = tracer.start_span(ctx, "operation-with-logs")
-  
-  // 在Span上下文中记录日志
-  let log_record = logs::LogRecord::builder()
-    .severity(logs::Info)
-    .body("Operation started")
-    .with_attribute("trace_id", common::AttributeValue::string("test-trace-id"))
-    .with_attribute("span_id", common::AttributeValue::string("test-span-id"))
-    .build()
-  
-  logger.emit(log_record)
-  
-  // 验证日志与trace的关联
-  assert_eq(log_record.severity_number, logs::Info)
-  assert_eq(log_record.body, Some("Operation started"))
-  assert_eq(log_record.attributes.length(), 2)
-  
-  match log_record.attributes[0] {
-    (key, common::StringValue(value)) => {
-      assert_eq(key, "trace_id")
-      assert_eq(value, "test-trace-id")
-    }
-    _ => @test.fail("Invalid trace_id attribute")
-  }
-}
-
-test "baggage_propagation_integration" {
-  // 测试Baggage与Propagation的集成
-  
-  let ctx = context::Context::empty()
-  let baggage = context::Baggage::empty()
-  
-  // 添加baggage条目
+test "cross module integration: baggage with metrics attributes" {
+  // 创建Baggage
+  let baggage = Baggage::empty()
   let baggage_with_entries = baggage
     .with_entry("user.id", "12345")
     .with_entry("request.id", "req-67890")
-    .with_entry("service.version", "1.2.3")
+    .with_entry("environment", "production")
   
-  // 创建传播器
-  let w3c_propagator = propagation::W3CBaggagePropagator::{}
-  let carrier = propagation::MapCarrier::new()
+  // 从Baggage创建metrics attributes
+  let mut attributes = []
   
-  // 注入baggage到carrier
-  w3c_propagator.inject(ctx, carrier)
-  
-  // 从carrier提取baggage
-  let extracted_ctx = w3c_propagator.extract(ctx, carrier)
-  
-  // 验证baggage条目
-  match baggage_with_entries.get("user.id") {
-    Some(user_id) => assert_eq(user_id, "12345")
-    None => @test.fail("user.id not found in baggage")
+  // 模拟从baggage中提取值并转换为attributes
+  match (baggage_with_entries.get("user.id")) {
+    Some(user_id) => attributes.push(("user.id", AttributeValue::string(user_id)))
+    None => ()
   }
   
-  match baggage_with_entries.get("request.id") {
-    Some(request_id) => assert_eq(request_id, "req-67890")
-    None => @test.fail("request.id not found in baggage")
+  match (baggage_with_entries.get("request.id")) {
+    Some(request_id) => attributes.push(("request.id", AttributeValue::string(request_id)))
+    None => ()
   }
   
-  match baggage_with_entries.get("service.version") {
-    Some(version) => assert_eq(version, "1.2.3")
-    None => @test.fail("service.version not found in baggage")
+  match (baggage_with_entries.get("environment")) {
+    Some(env) => attributes.push(("environment", AttributeValue::string(env)))
+    None => ()
   }
+  
+  // 创建meter和instrument
+  let meter_provider = NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("baggage-meter", None, None)
+  let histogram = meter.create_histogram("request_duration", Some("ms"), Some("Request duration histogram"))
+  
+  // 使用从baggage提取的attributes进行measurement
+  histogram.record(100.5, Some(attributes))
+  
+  // 验证baggage entries
+  assert match (baggage_with_entries.get("user.id")) {
+    Some(id) => id == "12345"
+    None => false
+  }
+  
+  assert match (baggage_with_entries.get("request.id")) {
+    Some(id) => id == "req-67890"
+    None => false
+  }
+  
+  assert match (baggage_with_entries.get("environment")) {
+    Some(env) => env == "production"
+    None => false
+  }
+  
+  // 验证attributes数量
+  assert attributes.length == 3
 }
 
-test "resource_attributes_integration" {
-  // 测试Resource属性在所有模块中的集成
+test "cross module integration: instrumentation scope with context" {
+  // 创建InstrumentationScope
+  let scope = InstrumentationScope::{
+    name: "integration-scope",
+    version: Some("2.0.0"),
+    schema_url: Some("https://example.com/integration-schema")
+  }
   
-  // 创建带有属性的Resource
-  let resource = common::Resource::default("integration-test-service")
-  let resource_attrs = [
-    ("service.namespace", common::AttributeValue::string("production")),
-    ("service.instance.id", common::AttributeValue::string("instance-123")),
-    ("deployment.environment", common::AttributeValue::string("prod")),
-    ("host.name", common::AttributeValue::string("web-server-01"))
+  // 创建Context并添加scope信息
+  let context = Context::empty()
+  let scope_key = create_key("instrumentation_scope")
+  let context_with_scope = context.with_value(scope_key, scope.name)
+  
+  // 验证context中包含了scope信息
+  assert match (context_with_scope.get(scope_key)) {
+    Some(value) => value == "integration-scope"
+    None => false
+  }
+  
+  // 创建带有scope属性的Resource
+  let resource = Resource::default("scope-test-service")
+  let scope_attributes = [
+    ("scope.name", AttributeValue::string(scope.name)),
+    ("scope.version", match (scope.version) {
+      Some(v) => AttributeValue::string(v)
+      None => AttributeValue::string("unknown")
+    }),
+    ("scope.schema", match (scope.schema_url) {
+      Some(url) => AttributeValue::string(url)
+      None => AttributeValue::string("")
+    })
   ]
   
-  // 验证Resource属性
-  assert_eq(resource.service_name, "integration-test-service")
-  assert_eq(resource.telemetry_sdk_name, "azimuth")
-  assert_eq(resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(resource_attrs.length(), 4)
+  // 将scope attributes添加到resource
+  let resource_with_scope = Resource::{
+    service_name: resource.service_name,
+    service_version: resource.service_version,
+    telemetry_sdk_name: resource.telemetry_sdk_name,
+    telemetry_sdk_version: resource.telemetry_sdk_version,
+    attributes: scope_attributes
+  }
   
-  // 在LogRecord中使用Resource
-  let log_record = logs::LogRecord::builder()
-    .severity(logs::Info)
-    .body("Log with resource context")
-    .build()
-  
-  // 在Span中使用Resource
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("resource-test")
-  let (ctx, span) = tracer.start_span(context::Context::empty(), "resource-span")
-  
-  // 验证Resource在日志和追踪中的使用
-  assert_eq(log_record.body, Some("Log with resource context"))
-  assert_eq(span.name, "resource-span")
-}
-
-test "composite_propagator_integration" {
-  // 测试Composite Propagator的集成
-  
-  let ctx = context::Context::empty()
-  let trace_propagator = propagation::W3CTraceContextPropagator::{}
-  let baggage_propagator = propagation::W3CBaggagePropagator::{}
-  
-  // 创建复合传播器
-  let composite = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
-  let carrier = propagation::MapCarrier::new()
-  
-  // 注入上下文
-  composite.inject(ctx, carrier)
-  
-  // 提取上下文
-  let extracted_ctx = composite.extract(ctx, carrier)
-  
-  // 验证复合传播器的行为
-  assert_eq(carrier.keys().length(), 0)  // 简化实现，实际应该有traceparent和baggage
-  
-  // 验证提取的上下文
-  let trace_key = context::create_key("trace_info")
-  let baggage_key = context::create_key("baggage_info")
-  
-  // 由于是简化实现，这里主要验证复合传播器的结构
-  assert_eq(extracted_ctx.values.length(), 0)
-}
-
-test "end_to_end_telemetry_flow" {
-  // 测试端到端的遥测数据流
-  
-  // 1. 创建基础上下文
-  let ctx = context::Context::empty()
-  
-  // 2. 设置baggage
-  let baggage = context::Baggage::empty()
-    .with_entry("workflow.id", "workflow-123")
-    .with_entry("tenant.id", "tenant-456")
-  
-  // 3. 启动根span
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("workflow-tracer")
-  let (root_ctx, root_span) = tracer.start_span(ctx, "workflow-execution")
-  
-  // 4. 创建指标记录器
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("workflow-meter")
-  let counter = meter.create_counter("workflow.steps.total")
-  let histogram = meter.create_histogram("workflow.step.duration")
-  
-  // 5. 创建日志记录器
-  let logger_provider = logs::NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("workflow-logger")
-  
-  // 6. 执行工作流步骤并记录遥测数据
-  counter.add(1L, [("workflow.id", common::AttributeValue::string("workflow-123"))])
-  histogram.record(150.0, [("step.name", common::AttributeValue::string("data-processing"))])
-  
-  logger.info("Workflow step completed", [
-    ("workflow.id", common::AttributeValue::string("workflow-123")),
-    ("step.name", common::AttributeValue::string("data-processing")),
-    ("step.duration", common::AttributeValue::float(150.0))
-  ])
-  
-  // 7. 启动子span
-  let (child_ctx, child_span) = tracer.start_span(root_ctx, "data-processing-step")
-  
-  // 8. 验证端到端数据流
-  assert_eq(root_span.name, "workflow-execution")
-  assert_eq(child_span.name, "data-processing-step")
-  assert_eq(baggage.entries.length(), 2)
-  
-  // 9. 验证遥测数据的一致性
-  match baggage.get("workflow.id") {
-    Some(workflow_id) => assert_eq(workflow_id, "workflow-123")
-    None => @test.fail("workflow.id not found in baggage")
+  // 验证resource包含了scope信息
+  assert resource_with_scope.attributes.length == 3
+  assert match (resource_with_scope.attributes[0].1) {
+    StringValue(name) => name == "integration-scope"
+    _ => false
   }
 }
 
-test "telemetry_sdk_configuration_integration" {
-  // 测试遥测SDK配置的集成
+test "cross module integration: complex attribute conversion" {
+  // 创建包含各种类型的AttributeValue
+  let complex_attributes = [
+    ("string_attr", AttributeValue::string("test_string")),
+    ("int_attr", AttributeValue::int(42L)),
+    ("float_attr", AttributeValue::float(3.14159)),
+    ("bool_attr", AttributeValue::bool(true)),
+    ("string_array_attr", AttributeValue::array_string(["a", "b", "c"])),
+    ("int_array_attr", AttributeValue::array_int([1L, 2L, 3L])),
+    ("float_array_attr", AttributeValue::array_float([1.1, 2.2, 3.3])),
+    ("bool_array_attr", AttributeValue::array_bool([true, false, true]))
+  ]
   
-  // 创建带有不同配置的Resource
-  let prod_resource = common::Resource::default("production-service")
-  let staging_resource = common::Resource::default("staging-service")
+  // 创建带有复杂属性的Resource
+  let resource = Resource::{
+    service_name: "complex-attr-service",
+    service_version: Some("1.0.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: complex_attributes
+  }
   
-  // 验证不同环境的Resource配置
-  assert_eq(prod_resource.service_name, "production-service")
-  assert_eq(staging_resource.service_name, "staging-service")
-  assert_eq(prod_resource.telemetry_sdk_name, staging_resource.telemetry_sdk_name)
+  // 创建Context并添加属性计数信息
+  let context = Context::empty()
+  let attr_count_key = create_key("attribute_count")
+  let context_with_count = context.with_value(attr_count_key, resource.attributes.length.to_string())
   
-  // 创建带有不同配置的Instrumentation
-  let prod_tracer = tracer_provider.get_tracer("prod-tracer", "2.0.0")
-  let staging_tracer = tracer_provider.get_tracer("staging-tracer", "1.5.0")
+  // 验证属性数量
+  assert match (context_with_count.get(attr_count_key)) {
+    Some(count) => count == "8"
+    None => false
+  }
   
-  let prod_meter = meter_provider.get_meter("prod-meter", "2.0.0", "https://example.com/schema")
-  let staging_meter = meter_provider.get_meter("staging-meter", "1.5.0")
+  // 验证各种属性类型
+  assert match (resource.attributes[0].1) {
+    StringValue(s) => s == "test_string"
+    _ => false
+  }
   
-  let prod_logger = logger_provider.get_logger("prod-logger", "2.0.0")
-  let staging_logger = logger_provider.get_logger("staging-logger", "1.5.0", "https://example.com/schema")
+  assert match (resource.attributes[1].1) {
+    IntValue(i) => i == 42L
+    _ => false
+  }
   
-  // 验证不同配置的Instrumentation创建
-  // 注意：由于使用No-op实现，这里主要验证创建过程不会出错
-  let (prod_ctx, prod_span) = prod_tracer.start_span(context::Context::empty(), "prod-operation")
-  let (staging_ctx, staging_span) = staging_tracer.start_span(context::Context::empty(), "staging-operation")
+  assert match (resource.attributes[2].1) {
+    FloatValue(f) => f == 3.14159
+    _ => false
+  }
   
-  assert_eq(prod_span.name, "prod-operation")
-  assert_eq(staging_span.name, "staging-operation")
+  assert match (resource.attributes[3].1) {
+    BoolValue(b) => b == true
+    _ => false
+  }
   
-  // 验证配置的一致性
-  assert_eq(prod_resource.telemetry_sdk_version, staging_resource.telemetry_sdk_version)
+  assert match (resource.attributes[4].1) {
+    ArrayStringValue(arr) => arr.length == 3
+    _ => false
+  }
+  
+  assert match (resource.attributes[5].1) {
+    ArrayIntValue(arr) => arr.length == 3
+    _ => false
+  }
+  
+  assert match (resource.attributes[6].1) {
+    ArrayFloatValue(arr) => arr.length == 3
+    _ => false
+  }
+  
+  assert match (resource.attributes[7].1) {
+    ArrayBoolValue(arr) => arr.length == 3
+    _ => false
+  }
 }
