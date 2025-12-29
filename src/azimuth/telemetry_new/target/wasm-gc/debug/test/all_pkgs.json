@@ -1,0 +1,9 @@
+{
+  "packages": [
+    {
+      "root": "azimuth/telemetry_new",
+      "rel": "",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry_new/target/wasm-gc/debug/test/telemetry_new.mi"
+    }
+  ]
+}

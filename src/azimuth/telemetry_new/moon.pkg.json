@@ -6,6 +6,5 @@
   "authors": [
     "Azimuth Team"
   ],
-  "root": "src",
-  "is-main": true
+  "root": "src"
 }

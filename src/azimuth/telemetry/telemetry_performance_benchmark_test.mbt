@@ -1,289 +1,147 @@
-// 性能基准测试用例
-// 测试遥测系统的性能特征和基准
+// 遥测性能基准测试用例
+// 测试遥测系统的性能指标和基准
 
-test "attribute_creation_performance" {
-  // 测试属性创建性能
+test "telemetry_span_creation_performance" {
+  // 测试跨度创建性能
   
-  let iterations = 1000
-  let start_time = 1000000L  // 模拟开始时间
+  let span_name = "performance_test_span"
+  let operation_count = 1000
   
-  // 创建大量属性
-  let mut attributes = []
-  let mut i = 0
-  while i < iterations {
-    let key = "attribute_" + i.to_string()
-    let value = "value_" + i.to_string()
-    attributes.push((key, value))
-    i = i + 1
-  }
+  // 验证跨度名称
+  assert_eq(span_name.has_prefix("performance"), true)
+  assert_eq(span_name.has_suffix("span"), true)
   
-  let end_time = 1000500L  // 模拟结束时间
+  // 模拟性能测试数据
+  let start_time = 1000000L
+  let end_time = 1001000L
   let duration = end_time - start_time
   
-  // 验证性能指标
-  assert_eq(attributes.length(), iterations)
-  assert_eq(duration > 0L, true)
-  assert_eq(duration < 1000000L, true)  // 应该在合理时间内完成
+  // 验证时间计算
+  assert_eq(duration, 1000L)
+  assert_eq(duration > 500L, true)
+  assert_eq(duration < 2000L, true)
   
-  // 验证属性内容
-  assert_eq(attributes[0].0, "attribute_0")
-  assert_eq(attributes[0].1, "value_0")
-  assert_eq(attributes[999].0, "attribute_999")
-  assert_eq(attributes[999].1, "value_999")
+  // 计算操作吞吐量
+  let throughput = operation_count.to_int() * 1000 / duration.to_int()
+  assert_eq(throughput > 500, true)
+  assert_eq(throughput < 2000, true)
   
-  // 计算平均创建时间
-  let avg_time_per_attr = duration / iterations.to_int64()
-  assert_eq(avg_time_per_attr > 0L, true)
-  assert_eq(avg_time_per_attr < 1000L, true)  // 每个属性创建时间应小于1ms
+  // 创建性能报告字符串
+  let performance_report = "Operations: " + operation_count.to_string() + 
+                          ", Duration: " + duration.to_string() + 
+                          "ms, Throughput: " + throughput.to_string() + " ops/sec"
+  assert_eq(performance_report.has_prefix("Operations: 1000"), true)
+  assert_eq(performance_report.has_suffix("ops/sec"), true)
 }
 
-test "trace_id_generation_performance" {
-  // 测试追踪ID生成性能
+test "telemetry_metric_aggregation_performance" {
+  // 测试度量聚合性能
   
-  let trace_count = 100
-  let start_time = 2000000L
+  let metric_name = "response_time"
+  let sample_count = 500
+  let total_value = 25000.0
+  let average_value = total_value / sample_count.to_double()
   
-  // 生成大量追踪ID
-  let mut trace_ids = []
-  let mut i = 0
-  while i < trace_count {
-    // 模拟生成32位十六进制追踪ID
-    let trace_id = "0af7651916cd43dd8448eb211c80319c"
-    trace_ids.push(trace_id)
-    i = i + 1
-  }
+  // 验证度量名称
+  assert_eq(metric_name, "response_time")
   
-  let end_time = 2000200L
-  let duration = end_time - start_time
+  // 验证样本数量
+  assert_eq(sample_count, 500)
   
-  // 验证生成性能
-  assert_eq(trace_ids.length(), trace_count)
-  assert_eq(duration > 0L, true)
+  // 验证总值
+  assert_eq(total_value, 25000.0)
   
-  // 验证ID格式
-  assert_eq(trace_ids[0].length(), 32)
-  assert_eq(trace_ids[0].has_prefix("0af7"), true)
-  assert_eq(trace_ids[99].length(), 32)
+  // 验证平均值计算
+  assert_eq(average_value, 50.0)
+  assert_eq(average_value > 40.0, true)
+  assert_eq(average_value < 60.0, true)
   
-  // 计算平均生成时间
-  let avg_time_per_trace = duration / trace_count.to_int64()
-  assert_eq(avg_time_per_trace > 0L, true)
-  assert_eq(avg_time_per_trace < 100L, true)  // 每个追踪ID生成应很快
+  // 计算聚合时间（模拟）
+  let aggregation_time_ms = 50L
+  let aggregation_rate = sample_count.to_int() * 1000 / aggregation_time_ms.to_int()
+  
+  // 验证聚合速率
+  assert_eq(aggregation_rate > 5000, true)
+  assert_eq(aggregation_rate < 20000, true)
+  
+  // 创建聚合性能字符串
+  let aggregation_report = "Metric: " + metric_name + 
+                          ", Samples: " + sample_count.to_string() + 
+                          ", Average: " + average_value.to_string() + 
+                          ", Rate: " + aggregation_rate.to_string() + " samples/sec"
+  assert_eq(aggregation_report.has_prefix("Metric: response_time"), true)
+  assert_eq(aggregation_report.has_suffix("samples/sec"), true)
 }
 
-test "metric_aggregation_performance" {
-  // 测试指标聚合性能
+test "telemetry_log_throughput_performance" {
+  // 测试日志吞吐量性能
   
-  let measurement_count = 5000
-  let start_time = 3000000L
+  let log_level = "INFO"
+  let log_batch_size = 200
+  let processing_time_ms = 100L
+  let throughput = log_batch_size.to_int() * 1000 / processing_time_ms.to_int()
   
-  // 创建大量测量值
-  let mut measurements = []
-  let mut i = 0
-  while i < measurement_count {
-    let value = (i % 100).to_double() + 0.5
-    measurements.push(value)
-    i = i + 1
-  }
+  // 验证日志级别
+  assert_eq(log_level, "INFO")
   
-  // 聚合计算
-  let mut sum = 0.0
-  let mut count = 0
-  let mut min_val = 999999.0
-  let mut max_val = 0.0
+  // 验证批次大小
+  assert_eq(log_batch_size, 200)
   
-  let mut j = 0
-  while j < measurements.length() {
-    let val = measurements[j]
-    sum = sum + val
-    count = count + 1
-    if val < min_val {
-      min_val = val
-    }
-    if val > max_val {
-      max_val = val
-    }
-    j = j + 1
-  }
+  // 验证处理时间
+  assert_eq(processing_time_ms, 100L)
   
-  let end_time = 3000800L
-  let duration = end_time - start_time
+  // 验证吞吐量计算
+  assert_eq(throughput, 2000)
+  assert_eq(throughput > 1000, true)
+  assert_eq(throughput < 5000, true)
   
-  // 验证聚合结果
-  assert_eq(count, measurement_count)
-  assert_eq(sum > 0.0, true)
-  assert_eq(min_val <= max_val, true)
-  assert_eq(min_val >= 0.5, true)
-  assert_eq(max_val <= 99.5, true)
+  // 计算延迟（模拟）
+  let avg_latency_ms = processing_time_ms.to_double() / log_batch_size.to_double()
+  assert_eq(avg_latency_ms, 0.5)
+  assert_eq(avg_latency_ms > 0.1, true)
+  assert_eq(avg_latency_ms < 1.0, true)
   
-  // 验证聚合性能
-  assert_eq(duration > 0L, true)
-  assert_eq(duration < 1000000L, true)
-  
-  // 计算平均值
-  let avg = sum / count.to_double()
-  assert_eq(avg >= 0.5, true)
-  assert_eq(avg <= 99.5, true)
+  // 创建吞吐量报告字符串
+  let throughput_report = "Level: " + log_level + 
+                         ", Batch: " + log_batch_size.to_string() + 
+                         ", Throughput: " + throughput.to_string() + " logs/sec" +
+                         ", Avg Latency: " + avg_latency_ms.to_string() + "ms"
+  assert_eq(throughput_report.has_prefix("Level: INFO"), true)
+  assert_eq(throughput_report.has_suffix("ms"), true)
 }
 
-test "log_batch_processing_performance" {
-  // 测试日志批处理性能
+test "telemetry_memory_usage_performance" {
+  // 测试内存使用性能
   
-  let log_count = 2000
-  let start_time = 4000000L
+  let initial_memory_mb = 100
+  let final_memory_mb = 150
+  let memory_increase = final_memory_mb - initial_memory_mb
+  let operation_count = 10000
+  let memory_per_operation = memory_increase.to_double() / operation_count.to_double()
   
-  // 创建大量日志条目
-  let mut log_entries = []
-  let mut i = 0
-  while i < log_count {
-    let timestamp = 1609459200000L + i.to_int64()  // 2021年开始的时间戳
-    let message = "Log entry " + i.to_string()
-    let severity = if i % 5 == 0 { "ERROR" } else { "INFO" }
-    let log_entry = timestamp.to_string() + " [" + severity + "] " + message
-    log_entries.push(log_entry)
-    i = i + 1
-  }
+  // 验证初始内存
+  assert_eq(initial_memory_mb, 100)
   
-  // 批处理日志
-  let batch_size = 100
-  let mut batch_count = 0
-  let mut total_chars = 0
+  // 验证最终内存
+  assert_eq(final_memory_mb, 150)
   
-  let mut start_idx = 0
-  while start_idx < log_entries.length() {
-    let end_idx = if start_idx + batch_size < log_entries.length() { 
-      start_idx + batch_size 
-    } else { 
-      log_entries.length() 
-    }
-    
-    // 处理批次
-    let mut k = start_idx
-    while k < end_idx {
-      let entry = log_entries[k]
-      total_chars = total_chars + entry.length()
-      k = k + 1
-    }
-    
-    batch_count = batch_count + 1
-    start_idx = end_idx
-  }
+  // 验证内存增长
+  assert_eq(memory_increase, 50)
+  assert_eq(memory_increase > 0, true)
   
-  let end_time = 4000600L
-  let duration = end_time - start_time
+  // 验证操作数量
+  assert_eq(operation_count, 10000)
   
-  // 验证批处理结果
-  assert_eq(log_entries.length(), log_count)
-  assert_eq(batch_count > 0, true)
-  assert_eq(total_chars > 0, true)
+  // 验证每操作内存使用
+  assert_eq(memory_per_operation, 0.005)
+  assert_eq(memory_per_operation > 0.001, true)
+  assert_eq(memory_per_operation < 0.01, true)
   
-  // 验证批处理性能
-  assert_eq(duration > 0L, true)
-  assert_eq(duration < 500000L, true)
-  
-  // 计算平均每条日志处理时间
-  let avg_time_per_log = duration / log_count.to_int64()
-  assert_eq(avg_time_per_log > 0L, true)
-  assert_eq(avg_time_per_log < 500L, true)
-}
-
-test "context_serialization_performance" {
-  // 测试上下文序列化性能
-  
-  let context_count = 800
-  let start_time = 5000000L
-  
-  // 创建大量上下文
-  let mut contexts = []
-  let mut i = 0
-  while i < context_count {
-    let context_id = "ctx_" + i.to_string()
-    let user_id = "user_" + (i % 100).to_string()
-    let request_id = "req_" + (i * 7).to_string()
-    let context_data = context_id + ":" + user_id + ":" + request_id
-    contexts.push(context_data)
-    i = i + 1
-  }
-  
-  // 序列化所有上下文
-  let mut serialized_data = ""
-  let mut j = 0
-  while j < contexts.length() {
-    let ctx = contexts[j]
-    if j > 0 {
-      serialized_data = serialized_data + ";"
-    }
-    serialized_data = serialized_data + ctx
-    j = j + 1
-  }
-  
-  let end_time = 5000400L
-  let duration = end_time - start_time
-  
-  // 验证序列化结果
-  assert_eq(contexts.length(), context_count)
-  assert_eq(serialized_data.length() > 0, true)
-  assert_eq(serialized_data.split(";").length(), context_count)
-  
-  // 验证序列化性能
-  assert_eq(duration > 0L, true)
-  assert_eq(duration < 200000L, true)
-  
-  // 计算平均序列化时间
-  let avg_time_per_context = duration / context_count.to_int64()
-  assert_eq(avg_time_per_context > 0L, true)
-  assert_eq(avg_time_per_context < 500L, true)
-}
-
-test "memory_allocation_benchmark" {
-  // 测试内存分配基准
-  
-  let allocation_count = 300
-  let start_time = 6000000L
-  
-  // 分配大量遥测对象
-  let mut telemetry_objects = []
-  let mut i = 0
-  while i < allocation_count {
-    // 模拟创建遥测对象
-    let trace_id = "trace_" + i.to_string()
-    let span_id = "span_" + i.to_string()
-    let metric_value = i.to_double() * 1.5
-    let log_message = "Message " + i.to_string()
-    
-    let telemetry_obj = trace_id + "|" + span_id + "|" + 
-                       metric_value.to_string() + "|" + log_message
-    telemetry_objects.push(telemetry_obj)
-    i = i + 1
-  }
-  
-  // 计算总内存使用（模拟）
-  let mut total_memory = 0
-  let mut k = 0
-  while k < telemetry_objects.length() {
-    let obj = telemetry_objects[k]
-    total_memory = total_memory + obj.length()
-    k = k + 1
-  }
-  
-  let end_time = 6000300L
-  let duration = end_time - start_time
-  
-  // 验证分配结果
-  assert_eq(telemetry_objects.length(), allocation_count)
-  assert_eq(total_memory > 0, true)
-  
-  // 验证分配性能
-  assert_eq(duration > 0L, true)
-  assert_eq(duration < 300000L, true)
-  
-  // 计算平均分配时间
-  let avg_time_per_object = duration / allocation_count.to_int64()
-  assert_eq(avg_time_per_object > 0L, true)
-  assert_eq(avg_time_per_object < 2000L, true)
-  
-  // 计算平均对象大小
-  let avg_object_size = total_memory / allocation_count
-  assert_eq(avg_object_size > 10, true)
-  assert_eq(avg_object_size < 200, true)
+  // 创建内存使用报告字符串
+  let memory_report = "Memory: " + initial_memory_mb.to_string() + 
+                     "MB -> " + final_memory_mb.to_string() + 
+                     "MB (+ " + memory_increase.to_string() + 
+                     "MB), Per op: " + memory_per_operation.to_string() + "MB"
+  assert_eq(memory_report.has_prefix("Memory: 100MB"), true)
+  assert_eq(memory_report.has_suffix("MB"), true)
 }

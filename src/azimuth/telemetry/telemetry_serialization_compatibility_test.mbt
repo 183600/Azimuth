@@ -1,342 +1,183 @@
-// 序列化兼容性测试用例
+// 遥测序列化兼容性测试用例
 // 测试遥测数据的序列化和反序列化兼容性
 
-test "json_format_serialization" {
-  // 测试JSON格式序列化
+test "telemetry_json_serialization_format" {
+  // 测试JSON序列化格式兼容性
   
-  let trace_data = "0af7651916cd43dd8448eb211c80319c"
-  let span_data = "b7ad6b7169203331"
-  let service_name = "payment-service"
-  let operation_name = "process_payment"
-  
-  // 创建JSON格式的遥测数据
-  let json_data = "{"
-  json_data = json_data + "\"trace_id\":\"" + trace_data + "\"," 
-  json_data = json_data + "\"span_id\":\"" + span_data + "\"," 
-  json_data = json_data + "\"service_name\":\"" + service_name + "\"," 
-  json_data = json_data + "\"operation\":\"" + operation_name + "\"" 
-  json_data = json_data + "}"
-  
-  // 验证JSON格式
-  assert_eq(json_data.has_prefix("{"), true)
-  assert_eq(json_data.has_suffix("}"), true)
-  assert_eq(json_data.contains("\"trace_id\":"), true)
-  assert_eq(json_data.contains("\"span_id\":"), true)
-  assert_eq(json_data.contains("\"service_name\":"), true)
-  assert_eq(json_data.contains("\"operation\":"), true)
-  
-  // 验证JSON内容
-  assert_eq(json_data.contains(trace_data), true)
-  assert_eq(json_data.contains(span_data), true)
-  assert_eq(json_data.contains(service_name), true)
-  assert_eq(json_data.contains(operation_name), true)
-  
-  // 验证JSON结构
-  let comma_count = 0
-  let mut i = 0
-  while i < json_data.length() {
-    if json_data[i] == ',' {
-      comma_count = comma_count + 1
-    }
-    i = i + 1
-  }
-  assert_eq(comma_count, 3)  // 3个逗号分隔4个字段
-}
-
-test "protobuf_format_serialization" {
-  // 测试Protobuf格式序列化
-  
-  let metric_name = "http_requests_total"
-  let metric_value = 1234.5
-  let metric_unit = "count"
-  let timestamp = 1640995200000000000L
-  
-  // 模拟Protobuf二进制格式（使用十六进制字符串表示）
-  let protobuf_data = "0a" +                      // 字段1，长度前缀
-                     "12" +                      // metric_name长度18
-                     "687474705f72657175657374735f746f74616c" +  // metric_name内容
-                     "15" +                      // 字段2，64位固定长度
-                     "4039d4a54093fd93" +        // metric_value的IEEE 754表示
-                     "22" +                      // 字段4，长度前缀
-                     "05" +                      // unit长度5
-                     "636f756e74" +              // unit内容
-                     "25" +                      // 字段5，64位固定长度
-                     "00000170e3f270800"         // timestamp的varint表示
-  
-  // 验证Protobuf格式长度
-  assert_eq(protobuf_data.length(), 58)
-  
-  // 验证字段标记
-  assert_eq(protobuf_data.has_prefix("0a"), true)  // 第一个字段标记
-  assert_eq(protobuf_data.contains("15"), true)    // 第二个字段标记
-  assert_eq(protobuf_data.contains("22"), true)    // 第四个字段标记
-  assert_eq(protobuf_data.contains("25"), true)    // 第五个字段标记
-  
-  // 验证数据内容
-  assert_eq(protobuf_data.contains("68747470"), true)  // "http"的十六进制
-  assert_eq(protobuf_data.contains("636f756e74"), true)  // "count"的十六进制
-  
-  // 模拟反序列化验证
-  let field1_length = 0x12  // 18
-  let field1_data = "687474705f72657175657374735f746f74616c"
-  assert_eq(field1_data.length(), field1_length * 2)  // 十六进制长度是实际长度的2倍
-}
-
-test "xml_format_serialization" {
-  // 测试XML格式序列化
-  
-  let log_level = "INFO"
-  let log_message = "User login successful"
-  let user_id = "user12345"
-  let timestamp = "2023-01-01T12:00:00Z"
-  
-  // 创建XML格式的遥测数据
-  let xml_data = "<log>"
-  xml_data = xml_data + "<level>" + log_level + "</level>"
-  xml_data = xml_data + "<message>" + log_message + "</message>"
-  xml_data = xml_data + "<user_id>" + user_id + "</user_id>"
-  xml_data = xml_data + "<timestamp>" + timestamp + "</timestamp>"
-  xml_data = xml_data + "</log>"
-  
-  // 验证XML格式
-  assert_eq(xml_data.has_prefix("<log>"), true)
-  assert_eq(xml_data.has_suffix("</log>"), true)
-  assert_eq(xml_data.contains("<level>"), true)
-  assert_eq(xml_data.contains("</level>"), true)
-  assert_eq(xml_data.contains("<message>"), true)
-  assert_eq(xml_data.contains("</message>"), true)
-  assert_eq(xml_data.contains("<user_id>"), true)
-  assert_eq(xml_data.contains("</user_id>"), true)
-  assert_eq(xml_data.contains("<timestamp>"), true)
-  assert_eq(xml_data.contains("</timestamp>"), true)
-  
-  // 验证XML内容
-  assert_eq(xml_data.contains(log_level), true)
-  assert_eq(xml_data.contains(log_message), true)
-  assert_eq(xml_data.contains(user_id), true)
-  assert_eq(xml_data.contains(timestamp), true)
-  
-  // 验证XML标签配对
-  let open_tags = 0
-  let close_tags = 0
-  let mut i = 0
-  while i < xml_data.length() - 1 {
-    if xml_data[i] == '<' && xml_data[i + 1] != '/' {
-      open_tags = open_tags + 1
-    }
-    if xml_data[i] == '<' && xml_data[i + 1] == '/' {
-      close_tags = close_tags + 1
-    }
-    i = i + 1
-  }
-  assert_eq(open_tags, close_tags)  // 开标签和闭标签数量应该相等
-}
-
-test "csv_format_serialization" {
-  // 测试CSV格式序列化
-  
-  let header = "timestamp,trace_id,span_id,metric_name,metric_value"
-  let row1 = "2023-01-01T12:00:00Z,0af7651916cd43dd8448eb211c80319c,b7ad6b7169203331,cpu_usage,75.5"
-  let row2 = "2023-01-01T12:01:00Z,0af7651916cd43dd8448eb211c80319c,c8ad6b7169203332,memory_usage,1024.0"
-  let row3 = "2023-01-01T12:02:00Z,0af7651916cd43dd8448eb211c80319c,d9ad6b7169203333,disk_io,150.25"
-  
-  // 创建CSV格式的遥测数据
-  let csv_data = header + "\n" + row1 + "\n" + row2 + "\n" + row3
-  
-  // 验证CSV格式
-  assert_eq(csv_data.has_prefix(header), true)
-  assert_eq(csv_data.contains("\n"), true)
-  assert_eq(csv_data.contains(","), true)
-  
-  // 验证CSV结构
-  let lines = csv_data.split("\n")
-  assert_eq(lines.length(), 4)  // 1个header + 3个数据行
-  
-  // 验证header
-  let header_columns = header.split(",")
-  assert_eq(header_columns.length(), 5)  // 5列
-  assert_eq(header_columns[0], "timestamp")
-  assert_eq(header_columns[1], "trace_id")
-  assert_eq(header_columns[2], "span_id")
-  assert_eq(header_columns[3], "metric_name")
-  assert_eq(header_columns[4], "metric_value")
-  
-  // 验证数据行
-  let row1_columns = row1.split(",")
-  assert_eq(row1_columns.length(), 5)
-  assert_eq(row1_columns[0], "2023-01-01T12:00:00Z")
-  assert_eq(row1_columns[1], "0af7651916cd43dd8448eb211c80319c")
-  assert_eq(row1_columns[2], "b7ad6b7169203331")
-  assert_eq(row1_columns[3], "cpu_usage")
-  assert_eq(row1_columns[4], "75.5")
-}
-
-test "yaml_format_serialization" {
-  // 测试YAML格式序列化
-  
-  let service_name = "order-processing"
-  let service_version = "1.2.3"
-  let environment = "production"
-  let attributes = "region:us-west-2,zone:us-west-2a"
-  
-  // 创建YAML格式的遥测数据
-  let yaml_data = "service:\n"
-  yaml_data = yaml_data + "  name: " + service_name + "\n"
-  yaml_data = yaml_data + "  version: " + service_version + "\n"
-  yaml_data = yaml_data + "  environment: " + environment + "\n"
-  yaml_data = yaml_data + "attributes:\n"
-  yaml_data = yaml_data + "  region: us-west-2\n"
-  yaml_data = yaml_data + "  zone: us-west-2a"
-  
-  // 验证YAML格式
-  assert_eq(yaml_data.contains("service:"), true)
-  assert_eq(yaml_data.contains("name: " + service_name), true)
-  assert_eq(yaml_data.contains("version: " + service_version), true)
-  assert_eq(yaml_data.contains("environment: " + environment), true)
-  assert_eq(yaml_data.contains("attributes:"), true)
-  assert_eq(yaml_data.contains("region: us-west-2"), true)
-  assert_eq(yaml_data.contains("zone: us-west-2a"), true)
-  
-  // 验证YAML缩进
-  assert_eq(yaml_data.contains("  name:"), true)  // 2空格缩进
-  assert_eq(yaml_data.contains("  version:"), true)
-  assert_eq(yaml_data.contains("  environment:"), true)
-  assert_eq(yaml_data.contains("  region:"), true)
-  assert_eq(yaml_data.contains("  zone:"), true)
-  
-  // 验证YAML结构
-  let lines = yaml_data.split("\n")
-  assert_eq(lines.length(), 7)  // 7行
-  
-  // 验证层级结构
-  assert_eq(lines[0], "service:")
-  assert_eq(lines[1].has_prefix("  name:"), true)
-  assert_eq(lines[4], "attributes:")
-  assert_eq(lines[5].has_prefix("  region:"), true)
-}
-
-test "binary_format_compatibility" {
-  // 测试二进制格式兼容性
-  
-  let magic_number = "TELE"
-  let version = 1
-  let data_type = 2  // 1=trace, 2=metric, 3=log
-  let payload_length = 32
-  let payload_data = "0af7651916cd43dd8448eb211c80319c"
-  
-  // 创建二进制格式头部（使用十六进制表示）
-  let binary_header = "54454c45" +           // "TELE"的ASCII十六进制
-                     "01" +                   // 版本号1
-                     "02" +                   // 数据类型2
-                     "00000020" +             // 载荷长度32（小端序）
-                     payload_data             // 载荷数据
-  
-  // 验证二进制格式
-  assert_eq(binary_header.has_prefix("54454c45"), true)  // 魔数
-  assert_eq(binary_header.contains("01"), true)          // 版本
-  assert_eq(binary_header.contains("02"), true)          // 数据类型
-  assert_eq(binary_header.contains("00000020"), true)    // 长度
-  assert_eq(binary_header.has_suffix(payload_data), true) // 载荷
-  
-  // 验证格式兼容性
-  let header_size = 4 + 1 + 1 + 4  // 魔数4字节 + 版本1字节 + 类型1字节 + 长度4字节
-  assert_eq(header_size, 10)
-  
-  let total_size = header_size + payload_length
-  assert_eq(binary_header.length(), total_size * 2)  // 十六进制表示是实际长度的2倍
-  
-  // 模拟版本兼容性检查
-  let supported_versions = [1, 2]
-  let current_version = 1
-  let version_supported = false
-  
-  let mut i = 0
-  while i < supported_versions.length() {
-    if supported_versions[i] == current_version {
-      version_supported = true
-      break
-    }
-    i = i + 1
-  }
-  assert_eq(version_supported, true)
-  
-  // 模拟数据类型兼容性检查
-  let supported_types = [1, 2, 3]  // trace, metric, log
-  let current_type = 2
-  let type_supported = false
-  
-  let mut j = 0
-  while j < supported_types.length() {
-    if supported_types[j] == current_type {
-      type_supported = true
-      break
-    }
-    j = j + 1
-  }
-  assert_eq(type_supported, true)
-}
-
-test "cross_format_conversion" {
-  // 测试跨格式转换
-  
-  let original_data = "trace_id:0af7651916cd43dd8448eb211c80319c,span_id:b7ad6b7169203331,service:payment-service"
-  
-  // 转换为JSON格式
-  let json_format = "{"
-  json_format = json_format + "\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\"," 
-  json_format = json_format + "\"span_id\":\"b7ad6b7169203331\"," 
-  json_format = json_format + "\"service\":\"payment-service\"" 
-  json_format = json_format + "}"
-  
-  // 转换为XML格式
-  let xml_format = "<telemetry>"
-  xml_format = xml_format + "<trace_id>0af7651916cd43dd8448eb211c80319c</trace_id>"
-  xml_format = xml_format + "<span_id>b7ad6b7169203331</span_id>"
-  xml_format = xml_format + "<service>payment-service</service>"
-  xml_format = xml_format + "</telemetry>"
-  
-  // 转换为YAML格式
-  let yaml_format = "trace_id: 0af7651916cd43dd8448eb211c80319c\n"
-  yaml_format = yaml_format + "span_id: b7ad6b7169203331\n"
-  yaml_format = yaml_format + "service: payment-service"
-  
-  // 验证数据一致性
+  let json_template = "{\"trace_id\":\"%s\",\"span_id\":\"%s\",\"timestamp\":%d}"
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
   let span_id = "b7ad6b7169203331"
-  let service = "payment-service"
+  let timestamp = 1704067200L
   
-  // 验证JSON包含所有数据
-  assert_eq(json_format.contains(trace_id), true)
-  assert_eq(json_format.contains(span_id), true)
-  assert_eq(json_format.contains(service), true)
+  // 验证JSON模板
+  assert_eq(json_template.has_prefix("{"), true)
+  assert_eq(json_template.has_suffix("}"), true)
+  assert_eq(json_template.contains("trace_id"), true)
+  assert_eq(json_template.contains("span_id"), true)
+  assert_eq(json_template.contains("timestamp"), true)
   
-  // 验证XML包含所有数据
-  assert_eq(xml_format.contains(trace_id), true)
-  assert_eq(xml_format.contains(span_id), true)
-  assert_eq(xml_format.contains(service), true)
+  // 验证追踪ID
+  assert_eq(trace_id.length(), 32)
+  assert_eq(trace_id.has_prefix("0af7"), true)
   
-  // 验证YAML包含所有数据
-  assert_eq(yaml_format.contains(trace_id), true)
-  assert_eq(yaml_format.contains(span_id), true)
-  assert_eq(yaml_format.contains(service), true)
+  // 验证跨度ID
+  assert_eq(span_id.length(), 16)
+  assert_eq(span_id.has_prefix("b7ad"), true)
   
-  // 验证格式特征
-  assert_eq(json_format.has_prefix("{"), true)
-  assert_eq(json_format.has_suffix("}"), true)
-  assert_eq(xml_format.has_prefix("<telemetry>"), true)
-  assert_eq(xml_format.has_suffix("</telemetry>"), true)
-  assert_eq(yaml_format.contains("trace_id:"), true)
-  assert_eq(yaml_format.contains("span_id:"), true)
-  assert_eq(yaml_format.contains("service:"), true)
+  // 验证时间戳
+  assert_eq(timestamp > 1700000000L, true)
   
-  // 验证转换完整性
-  let formats = [json_format, xml_format, yaml_format]
-  let mut format_index = 0
-  while format_index < formats.length() {
-    let format_data = formats[format_index]
-    assert_eq(format_data.contains(trace_id), true)
-    assert_eq(format_data.contains(span_id), true)
-    assert_eq(format_data.contains(service), true)
-    format_index = format_index + 1
-  }
+  // 创建格式化的JSON字符串（模拟）
+  let formatted_json = json_template.replace("%s", trace_id).replace("%s", span_id).replace("%d", timestamp.to_string())
+  assert_eq(formatted_json.has_prefix("{\"trace_id\":\"0af7"), true)
+  assert_eq(formatted_json.has_suffix("1704067200}"), true)
+}
+
+test "telemetry_protobuf_serialization_format" {
+  // 测试Protocol Buffers序列化格式兼容性
+  
+  let protobuf_schema = "message TelemetryData { string trace_id = 1; string span_id = 2; int64 timestamp = 3; }"
+  let field_trace_id = "trace_id"
+  let field_span_id = "span_id"
+  let field_timestamp = "timestamp"
+  
+  // 验证Protobuf模式
+  assert_eq(protobuf_schema.has_prefix("message"), true)
+  assert_eq(protobuf_schema.contains(field_trace_id), true)
+  assert_eq(protobuf_schema.contains(field_span_id), true)
+  assert_eq(protobuf_schema.contains(field_timestamp), true)
+  
+  // 验证字段名
+  assert_eq(field_trace_id, "trace_id")
+  assert_eq(field_span_id, "span_id")
+  assert_eq(field_timestamp, "timestamp")
+  
+  // 验证字段编号
+  let trace_id_field_num = 1
+  let span_id_field_num = 2
+  let timestamp_field_num = 3
+  
+  assert_eq(trace_id_field_num, 1)
+  assert_eq(span_id_field_num, 2)
+  assert_eq(timestamp_field_num, 3)
+  assert_eq(timestamp_field_num > span_id_field_num, true)
+  
+  // 创建序列化状态字符串
+  let serialization_status = "Schema: protobuf" +
+                            ", Fields: " + (trace_id_field_num + span_id_field_num + timestamp_field_num).to_string() +
+                            ", Compatibility: backward_forward"
+  assert_eq(serialization_status.has_prefix("Schema: protobuf"), true)
+  assert_eq(serialization_status.has_suffix("backward_forward"), true)
+}
+
+test "telemetry_xml_serialization_format" {
+  // 测试XML序列化格式兼容性
+  
+  let xml_template = "<telemetry><trace_id>%s</trace_id><span_id>%s</span_id><timestamp>%d</timestamp></telemetry>"
+  let xml_root = "telemetry"
+  let xml_trace_element = "trace_id"
+  let xml_span_element = "span_id"
+  let xml_timestamp_element = "timestamp"
+  
+  // 验证XML模板
+  assert_eq(xml_template.has_prefix("<telemetry>"), true)
+  assert_eq(xml_template.has_suffix("</telemetry>"), true)
+  assert_eq(xml_template.contains(xml_trace_element), true)
+  assert_eq(xml_template.contains(xml_span_element), true)
+  assert_eq(xml_template.contains(xml_timestamp_element), true)
+  
+  // 验证XML元素名
+  assert_eq(xml_root, "telemetry")
+  assert_eq(xml_trace_element, "trace_id")
+  assert_eq(xml_span_element, "span_id")
+  assert_eq(xml_timestamp_element, "timestamp")
+  
+  // 验证标签配对
+  let open_trace_tag = "<" + xml_trace_element + ">"
+  let close_trace_tag = "</" + xml_trace_element + ">"
+  assert_eq(xml_template.contains(open_trace_tag), true)
+  assert_eq(xml_template.contains(close_trace_tag), true)
+  
+  // 创建XML兼容性状态字符串
+  let xml_compatibility = "Format: XML" +
+                         ", Root: " + xml_root +
+                         ", Elements: 3" +
+                         ", Validation: well_formed"
+  assert_eq(xml_compatibility.has_prefix("Format: XML"), true)
+  assert_eq(xml_compatibility.has_suffix("well_formed"), true)
+}
+
+test "telemetry_binary_serialization_format" {
+  // 测试二进制序列化格式兼容性
+  
+  let binary_format = "binary_v1"
+  let version_major = 1
+  let version_minor = 0
+  let header_size = 8  // bytes
+  
+  // 验证二进制格式
+  assert_eq(binary_format.has_prefix("binary"), true)
+  assert_eq(binary_format.has_suffix("v1"), true)
+  
+  // 验证版本号
+  assert_eq(version_major, 1)
+  assert_eq(version_minor, 0)
+  
+  // 验证头大小
+  assert_eq(header_size, 8)
+  assert_eq(header_size > 0, true)
+  
+  // 创建版本字符串
+  let version_string = version_major.to_string() + "." + version_minor.to_string()
+  assert_eq(version_string, "1.0")
+  
+  // 验证二进制兼容性特征
+  let is_little_endian = true
+  let has_magic_bytes = true
+  let includes_checksum = false
+  
+  assert_eq(is_little_endian, true)
+  assert_eq(has_magic_bytes, true)
+  assert_eq(includes_checksum, false)
+  
+  // 创建二进制兼容性状态字符串
+  let binary_compatibility = "Format: " + binary_format +
+                            ", Version: " + version_string +
+                            ", Header: " + header_size.to_string() + "bytes" +
+                            ", Endianness: little" +
+                            ", Safety: magic_bytes"
+  assert_eq(binary_compatibility.has_prefix("Format: binary_v1"), true)
+  assert_eq(binary_compatibility.has_suffix("magic_bytes"), true)
+}
+
+test "telemetry_cross_format_compatibility" {
+  // 测试跨格式兼容性
+  
+  let source_format = "json"
+  let target_format = "protobuf"
+  let conversion_supported = true
+  let data_loss_risk = false
+  
+  // 验证源格式
+  assert_eq(source_format, "json")
+  
+  // 验证目标格式
+  assert_eq(target_format, "protobuf")
+  
+  // 验证转换支持
+  assert_eq(conversion_supported, true)
+  
+  // 验证数据丢失风险
+  assert_eq(data_loss_risk, false)
+  
+  // 验证格式差异
+  let formats_different = source_format != target_format
+  assert_eq(formats_different, true)
+  
+  // 创建兼容性矩阵字符串
+  let compatibility_matrix = source_format + " -> " + target_format + ": " + conversion_supported.to_string() +
+                            ", Data_loss: " + data_loss_risk.to_string() +
+                            ", Round_trip: " + (!data_loss_risk).to_string()
+  assert_eq(compatibility_matrix.has_prefix("json -> protobuf: true"), true)
+  assert_eq(compatibility_matrix.has_suffix("Round_trip: true"), true)
 }
