@@ -8,6 +8,6 @@
     "moonbitlang/core/assertion": "*"
   },
 "test": {
-    "test": ["new_enhanced_tests.mbt", "enhanced_quality_tests.mbt"]
+    "test": ["new_enhanced_tests.mbt", "enhanced_quality_tests.mbt", "azimuth_comprehensive_enhanced_tests.mbt"]
   }
 }
