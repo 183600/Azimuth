@@ -75,6 +75,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_74696d655f73796e6368726f6e697a6174696f6e5f746573742e6d6274_6, ["time_zone_and_utc_handling"]),
     7: (__test_74696d655f73796e6368726f6e697a6174696f6e5f746573742e6d6274_7, ["high_resolution_timing"]),
   },
+  "telemetry_time_window_processing_test.mbt": {
+    0: (__test_74656c656d657472795f74696d655f77696e646f775f70726f63657373696e675f746573742e6d6274_0, ["fixed_time_window_aggregation"]),
+    1: (__test_74656c656d657472795f74696d655f77696e646f775f70726f63657373696e675f746573742e6d6274_1, ["sliding_window_computation"]),
+    2: (__test_74656c656d657472795f74696d655f77696e646f775f70726f63657373696e675f746573742e6d6274_2, ["time_window_percentile_calculation"]),
+    3: (__test_74656c656d657472795f74696d655f77696e646f775f70726f63657373696e675f746573742e6d6274_3, ["time_window_rate_calculation"]),
+    4: (__test_74656c656d657472795f74696d655f77696e646f775f70726f63657373696e675f746573742e6d6274_4, ["time_window_memory_efficiency"]),
+    5: (__test_74656c656d657472795f74696d655f77696e646f775f70726f63657373696e675f746573742e6d6274_5, ["time_window_boundary_handling"]),
+  },
   "telemetry_test.mbt": {
     0: (__test_74656c656d657472795f746573742e6d6274_0, ["telemetry_service_identification"]),
     1: (__test_74656c656d657472795f746573742e6d6274_1, ["telemetry_trace_identification"]),

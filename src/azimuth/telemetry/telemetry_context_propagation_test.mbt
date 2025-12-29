@@ -1,335 +1,284 @@
 // 遥测上下文传播测试用例
 
-test "telemetry_trace_context_creation" {
-  // 测试遥测追踪上下文创建
+test "context_trace_propagation" {
+  // 测试追踪上下文传播
   
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let trace_flags = "01"
+  let parent_trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let parent_span_id = "b7ad6b7169203331"
+  let child_span_id = "b7ad6b7169203332"
   
-  // 创建追踪上下文
-  let trace_context = "00-" + trace_id + "-" + span_id + "-" + trace_flags
+  // 创建父上下文
+  let parent_context = "trace-id=" + parent_trace_id + ",span-id=" + parent_span_id
   
-  // 验证追踪上下文格式
-  assert_eq(trace_context.has_prefix("00-"), true)
-  assert_eq(trace_context.contains(trace_id), true)
-  assert_eq(trace_context.contains(span_id), true)
-  assert_eq(trace_context.has_suffix("-" + trace_flags), true)
-  assert_eq(trace_context.length(), 55)  // 2 + 1 + 32 + 1 + 16 + 1 + 2 = 55
+  // 验证父上下文
+  assert_eq(parent_context.contains("trace-id=" + parent_trace_id), true)
+  assert_eq(parent_context.contains("span-id=" + parent_span_id), true)
+  assert_eq(parent_trace_id.length(), 32)
+  assert_eq(parent_span_id.length(), 16)
   
-  // 验证各部分长度
-  let parts = trace_context.split("-")
-  assert_eq(parts.length(), 4)
-  assert_eq(parts[0], "00")
-  assert_eq(parts[1], trace_id)
-  assert_eq(parts[2], span_id)
-  assert_eq(parts[3], trace_flags)
+  // 创建子上下文（继承trace-id，生成新的span-id）
+  let child_context = "trace-id=" + parent_trace_id + ",span-id=" + child_span_id + ",parent-span-id=" + parent_span_id
+  
+  // 验证子上下文
+  assert_eq(child_context.contains("trace-id=" + parent_trace_id), true)
+  assert_eq(child_context.contains("span-id=" + child_span_id), true)
+  assert_eq(child_context.contains("parent-span-id=" + parent_span_id), true)
+  assert_eq(child_span_id.length(), 16)
+  
+  // 验证父子关系
+  assert_eq(child_span_id != parent_span_id, true)
+  assert_eq(child_context.contains(parent_span_id), true)
 }
 
-test "telemetry_baggage_context_propagation" {
-  // 测试遥测行李上下文传播
+test "context_baggage_propagation" {
+  // 测试行李(baggage)传播
   
-  let baggage_items = [
-    ("user.id", "12345"),
-    ("request.source", "mobile"),
-    ("tenant.id", "company-abc"),
-    ("session.id", "sess-xyz-789")
+  let initial_baggage = [
+    ("user-id", "12345"),
+    ("request-source", "mobile"),
+    ("tenant-id", "tenant-abc")
   ]
   
-  // 创建行李上下文
-  let mut baggage_context = ""
+  // 创建初始上下文
+  let mut context = "trace-id=abc123,span-id=def456"
   let mut i = 0
-  while i < baggage_items.length() {
-    let key = baggage_items[i].0
-    let value = baggage_items[i].1
-    
-    if baggage_context.length() > 0 {
-      baggage_context = baggage_context + ","
-    }
-    
-    baggage_context = baggage_context + key + "=" + value
+  while i < initial_baggage.length() {
+    let (key, value) = initial_baggage[i]
+    context = context + ",baggage-" + key + "=" + value
     i = i + 1
   }
   
-  // 验证行李上下文
-  assert_eq(baggage_context.contains("user.id=12345"), true)
-  assert_eq(baggage_context.contains("request.source=mobile"), true)
-  assert_eq(baggage_context.contains("tenant.id=company-abc"), true)
-  assert_eq(baggage_context.contains("session.id=sess-xyz-789"), true)
+  // 验证初始上下文包含行李
+  assert_eq(context.contains("baggage-user-id=12345"), true)
+  assert_eq(context.contains("baggage-request-source=mobile"), true)
+  assert_eq(context.contains("baggage-tenant-id=tenant-abc"), true)
   
-  // 验证分隔符
-  let comma_count = 0
-  let mut j = 0
-  while j < baggage_context.length() {
-    if baggage_context[j] == ',' {
-      comma_count = comma_count + 1
-    }
-    j = j + 1
+  // 添加新的行李项
+  let additional_baggage = [
+    ("session-id", "sess-789"),
+    ("region", "us-east-1")
+  ]
+  
+  i = 0
+  while i < additional_baggage.length() {
+    let (key, value) = additional_baggage[i]
+    context = context + ",baggage-" + key + "=" + value
+    i = i + 1
   }
-  assert_eq(comma_count, 3)  // 4个项，3个逗号
+  
+  // 验证扩展后的上下文
+  assert_eq(context.contains("baggage-session-id=sess-789"), true)
+  assert_eq(context.contains("baggage-region=us-east-1"), true)
+  assert_eq(context.contains("baggage-user-id=12345"), true) // 原有行李仍然存在
 }
 
-test "telemetry_cross_service_propagation" {
-  // 测试跨服务遥测传播
+test "context_cross_service_propagation" {
+  // 测试跨服务上下文传播
   
-  let originating_trace_id = "a1b2c3d4e5f678901234567890123456"
-  let originating_span_id = "f1e2d3c4b5a69788"
+  let service_a_context = "trace-id=trace123,span-id=spanA,service=service-a"
+  let service_b_context = "trace-id=trace123,span-id=spanB,service=service-b,parent-span-id=spanA"
+  let service_c_context = "trace-id=trace123,span-id=spanC,service=service-c,parent-span-id=spanB"
   
-  // API网关创建span
-  let gateway_span_id = "1122334455667788"
-  let gateway_context = "00-" + originating_trace_id + "-" + gateway_span_id + "-01"
+  // 验证跨服务传播的一致性
+  assert_eq(service_a_context.contains("trace-id=trace123"), true)
+  assert_eq(service_b_context.contains("trace-id=trace123"), true)
+  assert_eq(service_c_context.contains("trace-id=trace123"), true)
   
-  // API服务创建子span
-  let api_span_id = "8877665544332211"
-  let api_context = "00-" + originating_trace_id + "-" + api_span_id + "-01"
+  // 验证span链
+  assert_eq(service_a_context.contains("span-id=spanA"), true)
+  assert_eq(service_b_context.contains("parent-span-id=spanA"), true)
+  assert_eq(service_b_context.contains("span-id=spanB"), true)
+  assert_eq(service_c_context.contains("parent-span-id=spanB"), true)
+  assert_eq(service_c_context.contains("span-id=spanC"), true)
   
-  // 数据库服务创建子span
-  let db_span_id = "aabbccddeeff0011"
-  let db_context = "00-" + originating_trace_id + "-" + db_span_id + "-01"
-  
-  // 验证跨服务传播
-  assert_eq(gateway_context.contains(originating_trace_id), true)
-  assert_eq(api_context.contains(originating_trace_id), true)
-  assert_eq(db_context.contains(originating_trace_id), true)
-  
-  // 验证不同的span ID
-  assert_eq(gateway_context.contains(gateway_span_id), true)
-  assert_eq(api_context.contains(api_span_id), true)
-  assert_eq(db_context.contains(db_span_id), true)
-  
-  // 验证span ID各不相同
-  assert_eq(gateway_span_id != api_span_id, true)
-  assert_eq(api_span_id != db_span_id, true)
-  assert_eq(gateway_span_id != db_span_id, true)
+  // 验证服务标识
+  assert_eq(service_a_context.contains("service=service-a"), true)
+  assert_eq(service_b_context.contains("service=service-b"), true)
+  assert_eq(service_c_context.contains("service=service-c"), true)
 }
 
-test "telemetry_context_extraction" {
-  // 测试遥测上下文提取
+test "context_http_headers_propagation" {
+  // 测试HTTP头上下文传播
   
   let incoming_headers = [
-    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("baggage", "user.id=12345,request.source=web,tenant.id=acme-corp"),
-    ("x-request-id", "req-abc-123-def-456")
+    ("x-trace-id", "0af7651916cd43dd8448eb211c80319c"),
+    ("x-span-id", "b7ad6b7169203331"),
+    ("x-parent-span-id", "b7ad6b7169203330"),
+    ("x-sampled", "true")
   ]
   
-  // 提取traceparent
-  let mut traceparent = ""
-  let mut baggage = ""
-  let mut request_id = ""
-  
+  // 从HTTP头提取上下文
+  let mut extracted_context = ""
   let mut i = 0
   while i < incoming_headers.length() {
-    let header_name = incoming_headers[i].0
-    let header_value = incoming_headers[i].1
-    
-    if header_name == "traceparent" {
-      traceparent = header_value
-    } else if header_name == "baggage" {
-      baggage = header_value
-    } else if header_name == "x-request-id" {
-      request_id = header_value
+    let (header_name, header_value) = incoming_headers[i]
+    match header_name {
+      "x-trace-id" => extracted_context = extracted_context + "trace-id=" + header_value + ",",
+      "x-span-id" => extracted_context = extracted_context + "span-id=" + header_value + ",",
+      "x-parent-span-id" => extracted_context = extracted_context + "parent-span-id=" + header_value + ",",
+      "x-sampled" => extracted_context = extracted_context + "sampled=" + header_value + ",",
+      _ => ()
     }
-    
     i = i + 1
   }
   
-  // 验证提取结果
-  assert_eq(traceparent, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  assert_eq(baggage, "user.id=12345,request.source=web,tenant.id=acme-corp")
-  assert_eq(request_id, "req-abc-123-def-456")
+  // 验证提取的上下文
+  assert_eq(extracted_context.contains("trace-id=0af7651916cd43dd8448eb211c80319c"), true)
+  assert_eq(extracted_context.contains("span-id=b7ad6b7169203331"), true)
+  assert_eq(extracted_context.contains("parent-span-id=b7ad6b7169203330"), true)
+  assert_eq(extracted_context.contains("sampled=true"), true)
   
-  // 解析traceparent
-  let trace_parts = traceparent.split("-")
-  assert_eq(trace_parts.length(), 4)
-  assert_eq(trace_parts[0], "00")
-  assert_eq(trace_parts[1], "0af7651916cd43dd8448eb211c80319c")
-  assert_eq(trace_parts[2], "b7ad6b7169203331")
-  assert_eq(trace_parts[3], "01")
-  
-  // 解析baggage
-  let baggage_items = baggage.split(",")
-  assert_eq(baggage_items.length(), 3)
-  assert_eq(baggage_items[0], "user.id=12345")
-  assert_eq(baggage_items[1], "request.source=web")
-  assert_eq(baggage_items[2], "tenant.id=acme-corp")
-}
-
-test "telemetry_context_injection" {
-  // 测试遥测上下文注入
-  
-  let trace_id = "1234567890abcdef1234567890abcdef"
-  let span_id = "fedcba0987654321"
-  let trace_flags = "01"
-  
-  let baggage_items = [
-    ("user.id", "98765"),
-    ("service.version", "1.2.3"),
-    ("region", "us-west-2")
+  // 生成传出HTTP头
+  let outgoing_headers = [
+    ("x-trace-id", "0af7651916cd43dd8448eb211c80319c"),
+    ("x-span-id", "b7ad6b7169203332"), // 新的span
+    ("x-parent-span-id", "b7ad6b7169203331"),
+    ("x-sampled", "true")
   ]
   
-  // 创建注入的头部
-  let mut outgoing_headers = []
-  
-  // 注入traceparent
-  let traceparent = "00-" + trace_id + "-" + span_id + "-" + trace_flags
-  outgoing_headers.push(("traceparent", traceparent))
-  
-  // 注入baggage
-  let mut baggage = ""
-  let mut i = 0
-  while i < baggage_items.length() {
-    let key = baggage_items[i].0
-    let value = baggage_items[i].1
-    
-    if baggage.length() > 0 {
-      baggage = baggage + ","
-    }
-    baggage = baggage + key + "=" + value
-    i = i + 1
-  }
-  outgoing_headers.push(("baggage", baggage))
-  
-  // 注入其他上下文
-  outgoing_headers.push(("x-correlation-id", "corr-" + span_id))
-  outgoing_headers.push(("x-trace-id", trace_id))
-  
-  // 验证注入结果
+  // 验证传出头
   assert_eq(outgoing_headers.length(), 4)
-  assert_eq(outgoing_headers[0].0, "traceparent")
-  assert_eq(outgoing_headers[0].1, traceparent)
-  assert_eq(outgoing_headers[1].0, "baggage")
-  assert_eq(outgoing_headers[1].1, baggage)
-  assert_eq(outgoing_headers[2].0, "x-correlation-id")
-  assert_eq(outgoing_headers[2].1, "corr-fedcba0987654321")
-  assert_eq(outgoing_headers[3].0, "x-trace-id")
-  assert_eq(outgoing_headers[3].1, trace_id)
+  assert_eq(outgoing_headers[1].1, "b7ad6b7169203332") // 新的span-id
+  assert_eq(outgoing_headers[2].1, "b7ad6b7169203331") // 父span-id
 }
 
-test "telemetry_context_propagation_chain" {
-  // 测试遥测上下文传播链
+test "context_async_propagation" {
+  // 测试异步上下文传播
   
-  // 客户端发起请求
-  let client_trace_id = "abcdef1234567890abcdef1234567890"
-  let client_span_id = "1111222233334444"
-  let client_context = "00-" + client_trace_id + "-" + client_span_id + "-01"
+  let parent_context = "trace-id=async123,span-id=parentSpan,correlation-id=corr456"
+  let async_tasks = ["task-1", "task-2", "task-3"]
+  let async_contexts = []
   
-  // API网关接收并创建新span
-  let gateway_span_id = "5555666677778888"
-  let gateway_context = "00-" + client_trace_id + "-" + gateway_span_id + "-01"
-  
-  // 认证服务处理并创建新span
-  let auth_span_id = "9999aaaabbbbcccc"
-  let auth_context = "00-" + client_trace_id + "-" + auth_span_id + "-01"
-  
-  // 业务逻辑服务处理并创建新span
-  let business_span_id = "ddddeeeeffff0000"
-  let business_context = "00-" + client_trace_id + "-" + business_span_id + "-01"
-  
-  // 数据库服务处理并创建新span
-  let db_span_id = "1111222233334444"
-  let db_context = "00-" + client_trace_id + "-" + db_span_id + "-01"
-  
-  // 创建传播链
-  let propagation_chain = [
-    ("client", client_context),
-    ("gateway", gateway_context),
-    ("auth", auth_context),
-    ("business", business_context),
-    ("database", db_context)
-  ]
-  
-  // 验证传播链
-  assert_eq(propagation_chain.length(), 5)
-  
-  // 验证所有上下文都包含相同的trace ID
+  // 为每个异步任务创建上下文
   let mut i = 0
-  while i < propagation_chain.length() {
-    let context = propagation_chain[i].1
-    assert_eq(context.contains(client_trace_id), true)
+  while i < async_tasks.length() {
+    let task_name = async_tasks[i]
+    let task_context = parent_context + ",async-task=" + task_name + ",span-id=span" + i.to_string()
+    async_contexts.push(task_context)
     i = i + 1
   }
   
-  // 验证每个服务都有不同的span ID
-  assert_eq(client_span_id != gateway_span_id, true)
-  assert_eq(gateway_span_id != auth_span_id, true)
-  assert_eq(auth_span_id != business_span_id, true)
-  assert_eq(business_span_id != db_span_id, true)
+  // 验证异步上下文传播
+  assert_eq(async_tasks.length(), 3)
+  assert_eq(async_contexts.length(), 3)
   
-  // 验证服务名称
-  assert_eq(propagation_chain[0].0, "client")
-  assert_eq(propagation_chain[2].0, "auth")
-  assert_eq(propagation_chain[4].0, "database")
+  // 验证每个异步任务都继承了父上下文
+  let mut j = 0
+  while j < async_contexts.length() {
+    assert_eq(async_contexts[j].contains("trace-id=async123"), true)
+    assert_eq(async_contexts[j].contains("correlation-id=corr456"), true)
+    assert_eq(async_contexts[j].contains("async-task="), true)
+    j = j + 1
+  }
+  
+  // 验证每个任务都有唯一的span
+  assert_eq(async_contexts[0].contains("span-id=span0"), true)
+  assert_eq(async_contexts[1].contains("span-id=span1"), true)
+  assert_eq(async_contexts[2].contains("span-id=span2"), true)
 }
 
-test "telemetry_context_correlation" {
-  // 测试遥测上下文关联
+test "context_message_queue_propagation" {
+  // 测试消息队列上下文传播
   
-  let main_trace_id = "cafebabe12345678decafbad98765432"
-  let main_span_id = "deadbeefcafebabe"
+  let producer_context = "trace-id=mq123,span-id=producerSpan,producer-service=order-service"
+  let message_payload = "{\"order_id\":\"order-123\",\"amount\":99.99}"
   
-  // 异步任务1
-  let async1_span_id = "1111111111111111"
-  let async1_context = "00-" + main_trace_id + "-" + async1_span_id + "-01"
+  // 将上下文注入消息元数据
+  let message_metadata = "trace-id=mq123,span-id=producerSpan,producer-service=order-service,message-id=msg-456"
+  let full_message = message_metadata + "|" + message_payload
   
-  // 异步任务2
-  let async2_span_id = "2222222222222222"
-  let async2_context = "00-" + main_trace_id + "-" + async2_span_id + "-01"
+  // 验证消息包含上下文
+  assert_eq(full_message.contains("trace-id=mq123"), true)
+  assert_eq(full_message.contains("span-id=producerSpan"), true)
+  assert_eq(full_message.contains("producer-service=order-service"), true)
+  assert_eq(full_message.contains(message_payload), true)
   
-  // 子流程1
-  let subflow1_span_id = "3333333333333333"
-  let subflow1_context = "00-" + main_trace_id + "-" + subflow1_span_id + "-01"
+  // 消费者提取上下文
+  let parts = full_message.split("|")
+  let consumer_context = parts[0]
+  let consumer_payload = parts[1]
   
-  // 子流程2
-  let subflow2_span_id = "4444444444444444"
-  let subflow2_context = "00-" + main_trace_id + "-" + subflow2_span_id + "-01"
+  // 消费者创建新的上下文
+  let consumer_span_id = "consumerSpan789"
+  let consumer_full_context = consumer_context + ",span-id=" + consumer_span_id + ",consumer-service=payment-service,parent-span-id=producerSpan"
   
-  // 创建关联映射
-  let correlation_map = [
-    ("main", main_span_id),
-    ("async_task_1", async1_span_id),
-    ("async_task_2", async2_span_id),
-    ("subflow_1", subflow1_span_id),
-    ("subflow_2", subflow2_span_id)
+  // 验证消费者上下文
+  assert_eq(consumer_context.contains("trace-id=mq123"), true)
+  assert_eq(consumer_payload, message_payload)
+  assert_eq(consumer_full_context.contains("span-id=" + consumer_span_id), true)
+  assert_eq(consumer_full_context.contains("consumer-service=payment-service"), true)
+  assert_eq(consumer_full_context.contains("parent-span-id=producerSpan"), true)
+}
+
+test "context_grpc_propagation" {
+  // 测试gRPC上下文传播
+  
+  let grpc_metadata = [
+    ("grpc-trace-bin", "0af7651916cd43dd8448eb211c80319c"),
+    ("grpc-span-bin", "b7ad6b7169203331"),
+    ("grpc-parent-span-bin", "b7ad6b7169203330"),
+    ("grpc-sampled-bin", "1")
   ]
   
-  // 验证关联映射
-  assert_eq(correlation_map.length(), 5)
-  
-  // 验证所有span都关联到同一个trace
+  // 从gRPC元数据提取上下文
+  let mut grpc_context = ""
   let mut i = 0
-  while i < correlation_map.length() {
-    let span_id = correlation_map[i].1
-    let context = "00-" + main_trace_id + "-" + span_id + "-01"
-    assert_eq(context.contains(main_trace_id), true)
-    i = i + 1
-  }
-  
-  // 验证span ID唯一性
-  let mut unique_span_ids = []
-  i = 0
-  while i < correlation_map.length() {
-    let span_id = correlation_map[i].1
-    unique_span_ids.push(span_id)
-    i = i + 1
-  }
-  
-  // 检查唯一性
-  let mut all_unique = true
-  i = 0
-  while i < unique_span_ids.length() {
-    let mut j = i + 1
-    while j < unique_span_ids.length() {
-      if unique_span_ids[i] == unique_span_ids[j] {
-        all_unique = false
-        break
-      }
-      j = j + 1
-    }
-    if not all_unique {
-      break
+  while i < grpc_metadata.length() {
+    let (key, value) = grpc_metadata[i]
+    match key {
+      "grpc-trace-bin" => grpc_context = grpc_context + "trace-id=" + value + ",",
+      "grpc-span-bin" => grpc_context = grpc_context + "span-id=" + value + ",",
+      "grpc-parent-span-bin" => grpc_context = grpc_context + "parent-span-id=" + value + ",",
+      "grpc-sampled-bin" => grpc_context = grpc_context + "sampled=" + value + ",",
+      _ => ()
     }
     i = i + 1
   }
   
-  assert_eq(all_unique, true)
+  // 验证gRPC上下文提取
+  assert_eq(grpc_context.contains("trace-id=0af7651916cd43dd8448eb211c80319c"), true)
+  assert_eq(grpc_context.contains("span-id=b7ad6b7169203331"), true)
+  assert_eq(grpc_context.contains("parent-span-id=b7ad6b7169203330"), true)
+  assert_eq(grpc_context.contains("sampled=1"), true)
+  
+  // 创建传出gRPC元数据
+  let outgoing_grpc_metadata = [
+    ("grpc-trace-bin", "0af7651916cd43dd8448eb211c80319c"),
+    ("grpc-span-bin", "b7ad6b7169203332"), // 新span
+    ("grpc-parent-span-bin", "b7ad6b7169203331"),
+    ("grpc-sampled-bin", "1")
+  ]
+  
+  // 验证传出gRPC元数据
+  assert_eq(outgoing_grpc_metadata.length(), 4)
+  assert_eq(outgoing_grpc_metadata[1].1, "b7ad6b7169203332")
+}
+
+test "context_database_propagation" {
+  // 测试数据库上下文传播
+  
+  let application_context = "trace-id=db123,span-id=appSpan,user-id=user456"
+  let database_operation = "SELECT * FROM orders WHERE user_id = ?"
+  
+  // 将上下文信息添加到数据库操作
+  let db_session_context = "trace-id=db123,span-id=dbSpan,parent-span-id=appSpan,operation=query"
+  let full_db_operation = db_session_context + "|" + database_operation
+  
+  // 验证数据库操作包含上下文
+  assert_eq(full_db_operation.contains("trace-id=db123"), true)
+  assert_eq(full_db_operation.contains("span-id=dbSpan"), true)
+  assert_eq(full_db_operation.contains("parent-span-id=appSpan"), true)
+  assert_eq(full_db_operation.contains(database_operation), true)
+  
+  // 模拟数据库响应
+  let db_response = "result_count=5,execution_time=25ms"
+  let db_response_context = "trace-id=db123,span-id=dbSpanResponse,parent-span-id=dbSpan,status=success"
+  let full_db_response = db_response_context + "|" + db_response
+  
+  // 验证数据库响应上下文
+  assert_eq(full_db_response.contains("trace-id=db123"), true)
+  assert_eq(full_db_response.contains("span-id=dbSpanResponse"), true)
+  assert_eq(full_db_response.contains("parent-span-id=dbSpan"), true)
+  assert_eq(full_db_response.contains("status=success"), true)
+  assert_eq(full_db_response.contains(db_response), true)
 }
