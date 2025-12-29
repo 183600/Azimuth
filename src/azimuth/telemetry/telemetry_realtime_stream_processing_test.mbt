@@ -1,379 +1,331 @@
-// 实时流处理测试用例
-// 验证遥测数据的实时流处理能力，包括吞吐量、延迟、背压处理等
+// 遥测数据实时流处理测试用例
 
-test "realtime_stream_throughput_test" {
-  // 测试实时流吞吐量
+test "telemetry_stream_window_processing" {
+  // 测试流窗口处理
   
-  let batch_size = 1000
-  let time_window_ms = 1000L // 1秒时间窗口
-  let start_time = 1640995200L * 1000L // 转换为毫秒
-  
-  // 模拟生成遥测数据流
-  let telemetry_stream = []
-  let mut i = 0
-  while i < batch_size {
-    let event = {
-      "timestamp": start_time + (i * 10L), // 每10ms一个事件
-      "trace_id": "trace_" + i.to_string(),
-      "span_id": "span_" + i.to_string(),
-      "service": "test_service",
-      "operation": "test_operation"
-    }
-    telemetry_stream.push(event)
-    i = i + 1
-  }
-  
-  // 计算理论吞吐量
-  let total_time_ms = (batch_size - 1) * 10L
-  let theoretical_throughput = (batch_size.to_double() / total_time_ms.to_double()) * 1000.0 // events per second
-  
-  // 验证吞吐量满足要求
-  assert_eq(theoretical_throughput >= 90.0, true) // 要求至少90 events/sec
-  assert_eq(telemetry_stream.length(), batch_size)
-}
-
-test "realtime_stream_latency_test" {
-  // 测试实时流延迟
-  
-  let event_count = 100
-  let max_acceptable_latency_ms = 50L // 最大可接受延迟50ms
-  
-  let latencies = []
-  let base_timestamp = 1640995200L * 1000L // 毫秒时间戳
-  
-  // 模拟事件生成和处理
-  let mut i = 0
-  while i < event_count {
-    let generation_time = base_timestamp + (i * 5L) // 每5ms生成一个事件
-    let processing_delay = 10L + (i % 20).to_long() // 处理延迟10-30ms
-    let processing_time = generation_time + processing_delay
-    let latency = processing_time - generation_time
-    
-    latencies.push(latency)
-    i = i + 1
-  }
-  
-  // 计算延迟统计
-  let mut total_latency = 0L
-  let mut max_latency = 0L
-  let mut min_latency = latencies[0]
-  
-  let mut j = 0
-  while j < latencies.length() {
-    let latency = latencies[j]
-    total_latency = total_latency + latency
-    
-    if latency > max_latency {
-      max_latency = latency
-    }
-    
-    if latency < min_latency {
-      min_latency = latency
-    }
-    
-    j = j + 1
-  }
-  
-  let average_latency = total_latency / latencies.length().to_long()
-  
-  // 验证延迟指标
-  assert_eq(average_latency <= max_acceptable_latency_ms, true)
-  assert_eq(max_latency <= (max_acceptable_latency_ms * 2L), true) // 最大延迟不超过2倍可接受延迟
-  assert_eq(min_latency >= 10L, true) // 最小延迟应该大于等于处理基准延迟
-}
-
-test "realtime_stream_backpressure_handling" {
-  // 测试实时流背压处理
-  
-  let producer_rate = 100 // 每秒生产100个事件
-  let consumer_rate = 80   // 每秒消费80个事件
-  let buffer_capacity = 200
-  let test_duration_seconds = 5
-  
-  let mut buffer_size = 0
-  let mut dropped_events = 0
-  let mut processed_events = 0
-  let mut time_elapsed = 0
-  
-  while time_elapsed < test_duration_seconds {
-    // 生产阶段
-    let mut produced_this_second = 0
-    while produced_this_second < producer_rate {
-      if buffer_size < buffer_capacity {
-        buffer_size = buffer_size + 1
-      } else {
-        dropped_events = dropped_events + 1
-      }
-      produced_this_second = produced_this_second + 1
-    }
-    
-    // 消费阶段
-    let mut consumed_this_second = 0
-    while consumed_this_second < consumer_rate && buffer_size > 0 {
-      buffer_size = buffer_size - 1
-      processed_events = processed_events + 1
-      consumed_this_second = consumed_this_second + 1
-    }
-    
-    time_elapsed = time_elapsed + 1
-  }
-  
-  // 验证背压处理效果
-  let total_produced = producer_rate * test_duration_seconds
-  let total_consumed = consumer_rate * test_duration_seconds
-  let expected_dropped = total_produced - buffer_capacity - total_consumed
-  
-  assert_eq(processed_events, total_consumed)
-  assert_eq(dropped_events >= expected_dropped, true)
-  assert_eq(buffer_size <= buffer_capacity, true)
-}
-
-test "realtime_stream_windowing_test" {
-  // 测试实时流窗口处理
-  
-  let events = [
-    {"timestamp": 1000L, "value": 10.0},
-    {"timestamp": 1500L, "value": 15.0},
-    {"timestamp": 2000L, "value": 20.0},
-    {"timestamp": 2500L, "value": 25.0},
-    {"timestamp": 3000L, "value": 30.0},
-    {"timestamp": 3500L, "value": 35.0},
-    {"timestamp": 4000L, "value": 40.0},
-    {"timestamp": 4500L, "value": 45.0}
+  let event_stream = [
+    (1000, "request", 200),
+    (1500, "request", 200),
+    (2000, "error", 500),
+    (2500, "request", 200),
+    (3000, "request", 200),
+    (3500, "request", 404),
+    (4000, "request", 200),
+    (4500, "error", 503),
+    (5000, "request", 200),
+    (5500, "request", 200)
   ]
   
-  let window_size_ms = 2000L // 2秒窗口
-  let window_start = 2000L
-  let window_end = window_start + window_size_ms
+  let window_size = 2000  // 2秒窗口
   
-  // 筛选窗口内的事件
-  let windowed_events = []
-  let mut i = 0
-  while i < events.length() {
-    let event = events[i]
-    let timestamp = event["timestamp"]
+  // 流窗口处理
+  let mut window_results = []
+  let mut start_time = event_stream[0].0
+  
+  while start_time <= event_stream[event_stream.length() - 1].0 {
+    let end_time = start_time + window_size
     
-    if timestamp >= window_start && timestamp < window_end {
-      windowed_events.push(event)
-    }
-    i = i + 1
-  }
-  
-  // 计算窗口统计
-  let mut sum_values = 0.0
-  let mut count_values = 0
-  
-  let mut j = 0
-  while j < windowed_events.length() {
-    let value = windowed_events[j]["value"]
-    sum_values = sum_values + value
-    count_values = count_values + 1
-    j = j + 1
-  }
-  
-  let average_value = sum_values / count_values.to_double()
-  
-  // 验证窗口处理结果
-  assert_eq(windowed_events.length(), 4) // 应该有4个事件在窗口内
-  assert_eq(average_value, 27.5) // (20+25+30+35)/4
-}
-
-test "realtime_stream_aggregation_test" {
-  // 测试实时流聚合
-  
-  let metric_events = [
-    {"service": "api", "metric": "request_count", "value": 10.0, "timestamp": 1000L},
-    {"service": "api", "metric": "request_count", "value": 15.0, "timestamp": 1500L},
-    {"service": "api", "metric": "response_time", "value": 100.0, "timestamp": 1200L},
-    {"service": "db", "metric": "query_count", "value": 5.0, "timestamp": 1300L},
-    {"service": "db", "metric": "query_count", "value": 8.0, "timestamp": 1800L},
-    {"service": "api", "metric": "response_time", "value": 120.0, "timestamp": 1600L}
-  ]
-  
-  // 按服务和指标进行聚合
-  let aggregations = []
-  let processed_keys = []
-  
-  let mut i = 0
-  while i < metric_events.length() {
-    let event = metric_events[i]
-    let service = event["service"]
-    let metric = event["metric"]
-    let key = service + ":" + metric
-    let value = event["value"]
+    // 统计窗口内的事件
+    let mut request_count = 0
+    let mut error_count = 0
+    let mut success_count = 0
     
-    // 检查是否已经处理过这个key
-    let mut key_found = false
-    let mut key_index = -1
-    
-    let mut j = 0
-    while j < processed_keys.length() {
-      if processed_keys[j] == key {
-        key_found = true
-        key_index = j
-        break
-      }
-      j = j + 1
-    }
-    
-    if key_found {
-      // 更新现有聚合
-      let current_sum = aggregations[key_index]["sum"]
-      let current_count = aggregations[key_index]["count"]
-      aggregations[key_index]["sum"] = current_sum + value
-      aggregations[key_index]["count"] = current_count + 1
-      aggregations[key_index]["average"] = aggregations[key_index]["sum"] / aggregations[key_index]["count"].to_double()
-    } else {
-      // 创建新的聚合
-      processed_keys.push(key)
-      aggregations.push({
-        "key": key,
-        "sum": value,
-        "count": 1,
-        "average": value
-      })
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证聚合结果
-  assert_eq(aggregations.length(), 3) // 应该有3个不同的聚合
-  
-  // 验证api:request_count的聚合
-  let mut api_request_count_found = false
-  let mut j = 0
-  while j < aggregations.length() {
-    if aggregations[j]["key"] == "api:request_count" {
-      assert_eq(aggregations[j]["sum"], 25.0) // 10 + 15
-      assert_eq(aggregations[j]["count"], 2)
-      assert_eq(aggregations[j]["average"], 12.5) // 25/2
-      api_request_count_found = true
-      break
-    }
-    j = j + 1
-  }
-  assert_eq(api_request_count_found, true)
-}
-
-test "realtime_stream_filtering_test" {
-  // 测试实时流过滤
-  
-  let log_events = [
-    {"level": "INFO", "message": "User login successful", "service": "auth"},
-    {"level": "ERROR", "message": "Database connection failed", "service": "db"},
-    {"level": "WARN", "message": "High memory usage", "service": "monitor"},
-    {"level": "ERROR", "message": "Authentication failed", "service": "auth"},
-    {"level": "INFO", "message": "Order created", "service": "order"},
-    {"level": "ERROR", "message": "Payment processing failed", "service": "payment"}
-  ]
-  
-  // 过滤出ERROR级别的日志
-  let error_logs = []
-  let mut i = 0
-  while i < log_events.length() {
-    let event = log_events[i]
-    if event["level"] == "ERROR" {
-      error_logs.push(event)
-    }
-    i = i + 1
-  }
-  
-  // 进一步按服务过滤ERROR日志
-  let auth_errors = []
-  let mut j = 0
-  while j < error_logs.length() {
-    let error_log = error_logs[j]
-    if error_log["service"] == "auth" {
-      auth_errors.push(error_log)
-    }
-    j = j + 1
-  }
-  
-  // 验证过滤结果
-  assert_eq(error_logs.length(), 3) // 应该有3个ERROR日志
-  assert_eq(auth_errors.length(), 1) // 应该有1个auth服务的ERROR日志
-  assert_eq(auth_errors[0]["message"], "Authentication failed")
-}
-
-test "realtime_stream_state_management" {
-  // 测试实时流状态管理
-  
-  let state_changes = [
-    {"entity_id": "user_123", "state": "created", "timestamp": 1000L},
-    {"entity_id": "user_456", "state": "created", "timestamp": 1100L},
-    {"entity_id": "user_123", "state": "active", "timestamp": 1200L},
-    {"entity_id": "user_789", "state": "created", "timestamp": 1300L},
-    {"entity_id": "user_456", "state": "suspended", "timestamp": 1400L},
-    {"entity_id": "user_123", "state": "inactive", "timestamp": 1500L}
-  ]
-  
-  // 维护实体状态
-  let entity_states = []
-  
-  let mut i = 0
-  while i < state_changes.length() {
-    let change = state_changes[i]
-    let entity_id = change["entity_id"]
-    let new_state = change["state"]
-    let timestamp = change["timestamp"]
-    
-    // 查找现有实体状态
-    let mut entity_found = false
-    let mut entity_index = -1
-    
-    let mut j = 0
-    while j < entity_states.length() {
-      if entity_states[j]["entity_id"] == entity_id {
-        entity_found = true
-        entity_index = j
-        break
-      }
-      j = j + 1
-    }
-    
-    if entity_found {
-      // 更新现有实体状态
-      entity_states[entity_index]["current_state"] = new_state
-      entity_states[entity_index]["last_updated"] = timestamp
+    let mut i = 0
+    while i < event_stream.length() {
+      let event_time = event_stream[i].0
+      let event_type = event_stream[i].1
+      let status_code = event_stream[i].2
       
-      // 记录状态历史
-      let state_history = entity_states[entity_index]["state_history"]
-      state_history.push({
-        "state": new_state,
-        "timestamp": timestamp
-      })
-    } else {
-      // 创建新实体状态
-      entity_states.push({
-        "entity_id": entity_id,
-        "current_state": new_state,
-        "created_at": timestamp,
-        "last_updated": timestamp,
-        "state_history": [{
-          "state": new_state,
-          "timestamp": timestamp
-        }]
-      })
+      if event_time >= start_time && event_time < end_time {
+        if event_type == "request" {
+          request_count = request_count + 1
+          if status_code >= 200 && status_code < 300 {
+            success_count = success_count + 1
+          } else if status_code >= 400 {
+            error_count = error_count + 1
+          }
+        } else if event_type == "error" {
+          error_count = error_count + 1
+        }
+      }
+      i = i + 1
     }
     
+    if request_count > 0 || error_count > 0 {
+      let error_rate = if request_count > 0 {
+        error_count.to_double() / request_count.to_double()
+      } else {
+        0.0
+      }
+      
+      window_results = window_results.push((start_time, end_time, request_count, error_count, error_rate))
+    }
+    
+    start_time = start_time + 1000  // 滑动窗口，每次前进1秒
+  }
+  
+  // 验证流窗口处理结果
+  assert_eq(window_results.length() > 0, true)
+  
+  // 验证第一个窗口 (1000-3000)
+  assert_eq(window_results[0].0, 1000)
+  assert_eq(window_results[0].1, 3000)
+  assert_eq(window_results[0].2, 4)  // 4个请求
+  assert_eq(window_results[0].3, 1)  // 1个错误
+  assert_eq(window_results[0].4 > 0.2 && window_results[0].4 < 0.3, true)  // 错误率约25%
+}
+
+test "telemetry_stream_aggregation" {
+  // 测试流聚合
+  
+  let metric_stream = [
+    (100, "cpu", 45.2),
+    (200, "memory", 67.8),
+    (300, "cpu", 48.1),
+    (400, "disk", 23.5),
+    (500, "memory", 69.2),
+    (600, "cpu", 46.8),
+    (700, "disk", 24.1),
+    (800, "memory", 68.5),
+    (900, "cpu", 47.3),
+    (1000, "memory", 70.1)
+  ]
+  
+  // 流聚合：按metric类型聚合
+  let mut aggregated_metrics = @hashmap.new()
+  
+  let mut i = 0
+  while i < metric_stream.length() {
+    let timestamp = metric_stream[i].0
+    let metric_type = metric_stream[i].1
+    let value = metric_stream[i].2
+    
+    if aggregated_metrics.contains(metric_type) {
+      let (sum, count, min_val, max_val, last_timestamp) = aggregated_metrics[metric_type]
+      let new_sum = sum + value
+      let new_count = count + 1
+      let new_min = if value < min_val { value } else { min_val }
+      let new_max = if value > max_val { value } else { max_val }
+      
+      aggregated_metrics[metric_type] = (new_sum, new_count, new_min, new_max, timestamp)
+    } else {
+      aggregated_metrics[metric_type] = (value, 1, value, value, timestamp)
+    }
     i = i + 1
   }
   
-  // 验证状态管理结果
-  assert_eq(entity_states.length(), 3) // 应该有3个不同的实体
+  // 验证流聚合结果
+  assert_eq(aggregated_metrics.keys().length(), 3)  // 应该有3种metric类型
   
-  // 验证user_123的最终状态
-  let mut user_123_found = false
-  let mut j = 0
-  while j < entity_states.length() {
-    if entity_states[j]["entity_id"] == "user_123" {
-      assert_eq(entity_states[j]["current_state"], "inactive")
-      assert_eq(entity_states[j]["state_history"].length(), 3) // created -> active -> inactive
-      user_123_found = true
-      break
+  // 验证CPU聚合结果
+  let (cpu_sum, cpu_count, cpu_min, cpu_max, cpu_last_time) = aggregated_metrics["cpu"]
+  assert_eq(cpu_count, 4)  // 4个CPU数据点
+  assert_eq(cpu_min > 45.0 && cpu_min < 48.0, true)  // 最小值约45.2
+  assert_eq(cpu_max > 47.0 && cpu_max < 49.0, true)  // 最大值约48.1
+  assert_eq(cpu_last_time, 900)  // 最后一个时间戳
+  
+  // 验证内存聚合结果
+  let (mem_sum, mem_count, mem_min, mem_max, mem_last_time) = aggregated_metrics["memory"]
+  assert_eq(mem_count, 4)  // 4个内存数据点
+  assert_eq(mem_min > 67.0 && mem_min < 69.0, true)  // 最小值约67.8
+  assert_eq(mem_max > 69.0 && mem_max < 71.0, true)  // 最大值约70.1
+  
+  // 验证磁盘聚合结果
+  let (disk_sum, disk_count, disk_min, disk_max, disk_last_time) = aggregated_metrics["disk"]
+  assert_eq(disk_count, 2)  // 2个磁盘数据点
+  assert_eq(disk_min > 23.0 && disk_min < 24.0, true)  // 最小值约23.5
+  assert_eq(disk_max > 24.0 && disk_max < 25.0, true)  // 最大值约24.1
+}
+
+test "telemetry_stream_filtering" {
+  // 测试流过滤
+  
+  let log_stream = [
+    (1000, "INFO", "User login successful"),
+    (1500, "DEBUG", "Cache hit for user profile"),
+    (2000, "WARN", "High memory usage detected"),
+    (2500, "ERROR", "Database connection failed"),
+    (3000, "INFO", "User logout"),
+    (3500, "ERROR", "Payment processing failed"),
+    (4000, "DEBUG", "API response cached"),
+    (4500, "CRITICAL", "System overload detected"),
+    (5000, "INFO", "User registration completed")
+  ]
+  
+  // 过滤条件：只保留ERROR和CRITICAL级别的日志
+  let mut filtered_stream = []
+  let mut i = 0
+  while i < log_stream.length() {
+    let timestamp = log_stream[i].0
+    let level = log_stream[i].1
+    let message = log_stream[i].2
+    
+    if level == "ERROR" || level == "CRITICAL" {
+      filtered_stream = filtered_stream.push((timestamp, level, message))
     }
-    j = j + 1
+    i = i + 1
   }
-  assert_eq(user_123_found, true)
+  
+  // 验证流过滤结果
+  assert_eq(filtered_stream.length(), 3)  // 应该有3条ERROR/CRITICAL日志
+  
+  // 验证过滤内容
+  assert_eq(filtered_stream[0].0, 2500)
+  assert_eq(filtered_stream[0].1, "ERROR")
+  assert_eq(filtered_stream[0].2, "Database connection failed")
+  
+  assert_eq(filtered_stream[1].0, 3500)
+  assert_eq(filtered_stream[1].1, "ERROR")
+  assert_eq(filtered_stream[1].2, "Payment processing failed")
+  
+  assert_eq(filtered_stream[2].0, 4500)
+  assert_eq(filtered_stream[2].1, "CRITICAL")
+  assert_eq(filtered_stream[2].2, "System overload detected")
+}
+
+test "telemetry_stream_transformation" {
+  // 测试流转换
+  
+  let raw_metrics = [
+    (1000, "response_time_ms", 250),
+    (2000, "response_time_ms", 180),
+    (3000, "response_time_ms", 320),
+    (4000, "response_time_ms", 150),
+    (5000, "response_time_ms", 280)
+  ]
+  
+  // 流转换：将毫秒转换为秒，并添加性能等级
+  let mut transformed_stream = []
+  let mut i = 0
+  while i < raw_metrics.length() {
+    let timestamp = raw_metrics[i].0
+    let metric_name = raw_metrics[i].1
+    let value_ms = raw_metrics[i].2
+    
+    // 转换为秒
+    let value_seconds = value_ms.to_double() / 1000.0
+    
+    // 添加性能等级
+    let performance_grade = if value_ms < 200 {
+      "excellent"
+    } else if value_ms < 300 {
+      "good"
+    } else {
+      "poor"
+    }
+    
+    transformed_stream = transformed_stream.push((timestamp, metric_name, value_seconds, performance_grade))
+    i = i + 1
+  }
+  
+  // 验证流转换结果
+  assert_eq(transformed_stream.length(), raw_metrics.length())
+  
+  // 验证转换后的值
+  assert_eq(transformed_stream[0].2, 0.25)  // 250ms -> 0.25s
+  assert_eq(transformed_stream[0].3, "good")  // 250ms属于"good"
+  
+  assert_eq(transformed_stream[1].2, 0.18)  // 180ms -> 0.18s
+  assert_eq(transformed_stream[1].3, "excellent")  // 180ms属于"excellent"
+  
+  assert_eq(transformed_stream[2].2, 0.32)  // 320ms -> 0.32s
+  assert_eq(transformed_stream[2].3, "poor")  // 320ms属于"poor"
+  
+  // 验证性能等级分布
+  let mut excellent_count = 0
+  let mut good_count = 0
+  let mut poor_count = 0
+  let mut i = 0
+  while i < transformed_stream.length() {
+    let grade = transformed_stream[i].3
+    if grade == "excellent" {
+      excellent_count = excellent_count + 1
+    } else if grade == "good" {
+      good_count = good_count + 1
+    } else if grade == "poor" {
+      poor_count = poor_count + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(excellent_count, 2)  // 2个excellent
+  assert_eq(good_count, 2)       // 2个good
+  assert_eq(poor_count, 1)       // 1个poor
+}
+
+test "telemetry_stream_sessionization" {
+  // 测试流会话化
+  
+  let user_events = [
+    (1000, "user_123", "login"),
+    (1500, "user_123", "view_page"),
+    (2000, "user_456", "login"),
+    (2500, "user_123", "add_to_cart"),
+    (3000, "user_456", "view_page"),
+    (3500, "user_123", "checkout"),
+    (4000, "user_789", "login"),
+    (4500, "user_456", "logout"),
+    (5000, "user_123", "logout"),
+    (6000, "user_789", "view_page")
+  ]
+  
+  let session_timeout = 3000  // 3秒超时
+  
+  // 流会话化：将事件分组到会话中
+  let mut sessions = @hashmap.new()
+  
+  let mut i = 0
+  while i < user_events.length() {
+    let timestamp = user_events[i].0
+    let user_id = user_events[i].1
+    let event = user_events[i].2
+    
+    if sessions.contains(user_id) {
+      let (last_time, event_count) = sessions[user_id]
+      
+      // 检查是否超时
+      if timestamp - last_time > session_timeout {
+        // 新会话
+        sessions[user_id] = (timestamp, 1)
+      } else {
+        // 继续当前会话
+        sessions[user_id] = (timestamp, event_count + 1)
+      }
+    } else {
+      // 新用户/新会话
+      sessions[user_id] = (timestamp, 1)
+    }
+    i = i + 1
+  }
+  
+  // 验证流会话化结果
+  assert_eq(sessions.keys().length(), 3)  // 应该有3个用户
+  
+  // 验证user_123的会话
+  let (user_123_last_time, user_123_events) = sessions["user_123"]
+  assert_eq(user_123_events, 5)  // user_123应该有5个事件
+  assert_eq(user_123_last_time, 5000)  // 最后一个事件时间
+  
+  // 验证user_456的会话
+  let (user_456_last_time, user_456_events) = sessions["user_456"]
+  assert_eq(user_456_events, 4)  // user_456应该有4个事件
+  assert_eq(user_456_last_time, 4500)  // 最后一个事件时间
+  
+  // 验证user_789的会话
+  let (user_789_last_time, user_789_events) = sessions["user_789"]
+  assert_eq(user_789_events, 2)  // user_789应该有2个事件
+  assert_eq(user_789_last_time, 6000)  // 最后一个事件时间
+  
+  // 计算总事件数
+  let mut total_events = 0
+  let keys = sessions.keys()
+  let mut i = 0
+  while i < keys.length() {
+    let user_id = keys[i]
+    let (_, event_count) = sessions[user_id]
+    total_events = total_events + event_count
+    i = i + 1
+  }
+  
+  assert_eq(total_events, 11)  // 总共11个事件
 }

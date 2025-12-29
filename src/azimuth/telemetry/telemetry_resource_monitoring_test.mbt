@@ -1,532 +1,402 @@
-// 遥测资源监控测试用例
+// 遥测数据资源监控测试用例
 
-test "resource_cpu_monitoring" {
-  // 测试CPU资源监控
+test "telemetry_cpu_usage_monitoring" {
+  // 测试CPU使用率监控
   
   let cpu_metrics = [
-    ("cpu.usage.percent", 75.5),
-    ("cpu.load.average.1m", 2.8),
-    ("cpu.load.average.5m", 2.4),
-    ("cpu.load.average.15m", 2.1),
-    ("cpu.cores.total", 8),
-    ("cpu.cores.available", 8)
+    (1000, 25.3),
+    (2000, 32.7),
+    (3000, 45.2),
+    (4000, 58.9),
+    (5000, 67.4),
+    (6000, 72.1),
+    (7000, 65.8),
+    (8000, 54.3),
+    (9000, 41.6),
+    (10000, 35.2)
   ]
   
-  // 验证CPU指标
-  assert_eq(cpu_metrics.length(), 6)
+  let warning_threshold = 60.0
+  let critical_threshold = 70.0
   
-  // 验证CPU使用率
-  let mut cpu_usage = 0.0
+  // CPU使用率监控分析
+  let mut alerts = []
+  let mut peak_usage = 0.0
+  let mut average_usage = 0.0
+  
+  // 计算峰值和平均值
+  let mut sum = 0.0
   let mut i = 0
   while i < cpu_metrics.length() {
-    let (metric_name, metric_value) = cpu_metrics[i]
-    if metric_name == "cpu.usage.percent" {
-      cpu_usage = metric_value
+    let usage = cpu_metrics[i].1
+    sum = sum + usage
+    
+    if usage > peak_usage {
+      peak_usage = usage
+    }
+    
+    // 检查告警阈值
+    if usage > critical_threshold {
+      alerts = alerts.push((cpu_metrics[i].0, "critical", usage))
+    } else if usage > warning_threshold {
+      alerts = alerts.push((cpu_metrics[i].0, "warning", usage))
+    }
+    
+    i = i + 1
+  }
+  average_usage = sum / cpu_metrics.length().to_double()
+  
+  // 验证CPU监控结果
+  assert_eq(peak_usage > 70.0, true)  // 峰值应该超过70%
+  assert_eq(average_usage > 40.0 && average_usage < 60.0, true)  // 平均值在合理范围
+  
+  // 验证告警
+  assert_eq(alerts.length(), 4)  // 应该有4个告警
+  
+  // 验证critical告警
+  let mut critical_count = 0
+  let mut warning_count = 0
+  let mut i = 0
+  while i < alerts.length() {
+    if alerts[i].1 == "critical" {
+      critical_count = critical_count + 1
+      assert_eq(alerts[i].2 > critical_threshold, true)  // critical告警的CPU使用率应该超过阈值
+    } else if alerts[i].1 == "warning" {
+      warning_count = warning_count + 1
+      assert_eq(alerts[i].2 > warning_threshold && alerts[i].2 <= critical_threshold, true)
     }
     i = i + 1
   }
-  assert_eq(cpu_usage, 75.5)
-  assert_eq(cpu_usage >= 0.0 && cpu_usage <= 100.0, true)
   
-  // 验证负载平均值
-  let mut load_1m = 0.0
-  let mut load_5m = 0.0
-  let mut load_15m = 0.0
-  i = 0
-  while i < cpu_metrics.length() {
-    let (metric_name, metric_value) = cpu_metrics[i]
-    match metric_name {
-      "cpu.load.average.1m" => load_1m = metric_value,
-      "cpu.load.average.5m" => load_5m = metric_value,
-      "cpu.load.average.15m" => load_15m = metric_value,
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  // 验证负载平均值关系
-  assert_eq(load_1m >= load_5m, true)
-  assert_eq(load_5m >= load_15m, true)
-  assert_eq(load_1m, 2.8)
-  assert_eq(load_5m, 2.4)
-  assert_eq(load_15m, 2.1)
-  
-  // 验证CPU核心数
-  let mut total_cores = 0
-  let mut available_cores = 0
-  i = 0
-  while i < cpu_metrics.length() {
-    let (metric_name, metric_value) = cpu_metrics[i]
-    match metric_name {
-      "cpu.cores.total" => total_cores = metric_value.to_int(),
-      "cpu.cores.available" => available_cores = metric_value.to_int(),
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(total_cores, 8)
-  assert_eq(available_cores, 8)
-  assert_eq(total_cores == available_cores, true)
+  assert_eq(critical_count, 3)  // 3个critical告警
+  assert_eq(warning_count, 1)  // 1个warning告警
 }
 
-test "resource_memory_monitoring" {
-  // 测试内存资源监控
+test "telemetry_memory_usage_monitoring" {
+  // 测试内存使用监控
   
   let memory_metrics = [
-    ("memory.total.bytes", 8589934592L),      // 8GB
-    ("memory.available.bytes", 4294967296L),  // 4GB
-    ("memory.used.bytes", 4294967296L),       // 4GB
-    ("memory.usage.percent", 50.0),
-    ("memory.swap.total.bytes", 2147483648L), // 2GB
-    ("memory.swap.used.bytes", 1073741824L)   // 1GB
+    (1000, 1024, 4096),    // (timestamp, used_mb, total_mb)
+    (2000, 1536, 4096),
+    (3000, 2048, 4096),
+    (4000, 2560, 4096),
+    (5000, 3072, 4096),
+    (6000, 2816, 4096),
+    (7000, 2304, 4096),
+    (8000, 1792, 4096)
   ]
   
-  // 验证内存指标
-  assert_eq(memory_metrics.length(), 6)
+  let memory_threshold = 0.7  // 70%阈值
   
-  // 验证内存总量和可用量
-  let mut total_memory = 0L
-  let mut available_memory = 0L
-  let mut used_memory = 0L
+  // 内存使用监控分析
+  let mut memory_alerts = []
+  let mut memory_growth_trend = []
+  
   let mut i = 0
   while i < memory_metrics.length() {
-    let (metric_name, metric_value) = memory_metrics[i]
-    match metric_name {
-      "memory.total.bytes" => total_memory = metric_value,
-      "memory.available.bytes" => available_memory = metric_value,
-      "memory.used.bytes" => used_memory = metric_value,
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  // 验证内存关系
-  assert_eq(total_memory, 8589934592L) // 8GB
-  assert_eq(available_memory, 4294967296L) // 4GB
-  assert_eq(used_memory, 4294967296L) // 4GB
-  assert_eq(total_memory == available_memory + used_memory, true)
-  
-  // 验证内存使用率
-  let mut memory_usage_percent = 0.0
-  i = 0
-  while i < memory_metrics.length() {
-    let (metric_name, metric_value) = memory_metrics[i]
-    if metric_name == "memory.usage.percent" {
-      memory_usage_percent = metric_value
-    }
-    i = i + 1
-  }
-  assert_eq(memory_usage_percent, 50.0)
-  
-  // 验证swap内存
-  let mut swap_total = 0L
-  let mut swap_used = 0L
-  i = 0
-  while i < memory_metrics.length() {
-    let (metric_name, metric_value) = memory_metrics[i]
-    match metric_name {
-      "memory.swap.total.bytes" => swap_total = metric_value,
-      "memory.swap.used.bytes" => swap_used = metric_value,
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(swap_total, 2147483648L) // 2GB
-  assert_eq(swap_used, 1073741824L) // 1GB
-  assert_eq(swap_used <= swap_total, true)
-}
-
-test "resource_disk_monitoring" {
-  // 测试磁盘资源监控
-  
-  let disk_metrics = [
-    ("disk.total.bytes", 107374182400L),     // 100GB
-    ("disk.available.bytes", 53687091200L),  // 50GB
-    ("disk.used.bytes", 53687091200L),       // 50GB
-    ("disk.usage.percent", 50.0),
-    ("disk.inodes.total", 10000000),
-    ("disk.inodes.used", 2500000),
-    ("disk.read.bytes", 1073741824L),        // 1GB读取
-    ("disk.write.bytes", 2147483648L)        // 2GB写入
-  ]
-  
-  // 验证磁盘指标
-  assert_eq(disk_metrics.length(), 8)
-  
-  // 验证磁盘空间
-  let mut disk_total = 0L
-  let mut disk_available = 0L
-  let mut disk_used = 0L
-  let mut i = 0
-  while i < disk_metrics.length() {
-    let (metric_name, metric_value) = disk_metrics[i]
-    match metric_name {
-      "disk.total.bytes" => disk_total = metric_value,
-      "disk.available.bytes" => disk_available = metric_value,
-      "disk.used.bytes" => disk_used = metric_value,
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  // 验证磁盘空间关系
-  assert_eq(disk_total, 107374182400L) // 100GB
-  assert_eq(disk_available, 53687091200L) // 50GB
-  assert_eq(disk_used, 53687091200L) // 50GB
-  assert_eq(disk_total == disk_available + disk_used, true)
-  
-  // 验证磁盘使用率
-  let mut disk_usage_percent = 0.0
-  i = 0
-  while i < disk_metrics.length() {
-    let (metric_name, metric_value) = disk_metrics[i]
-    if metric_name == "disk.usage.percent" {
-      disk_usage_percent = metric_value
-    }
-    i = i + 1
-  }
-  assert_eq(disk_usage_percent, 50.0)
-  
-  // 验证inode使用情况
-  let mut inodes_total = 0
-  let mut inodes_used = 0
-  i = 0
-  while i < disk_metrics.length() {
-    let (metric_name, metric_value) = disk_metrics[i]
-    match metric_name {
-      "disk.inodes.total" => inodes_total = metric_value.to_int(),
-      "disk.inodes.used" => inodes_used = metric_value.to_int(),
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(inodes_total, 10000000)
-  assert_eq(inodes_used, 2500000)
-  assert_eq(inodes_used < inodes_total, true)
-  
-  // 验证磁盘I/O
-  let mut disk_read = 0L
-  let mut disk_write = 0L
-  i = 0
-  while i < disk_metrics.length() {
-    let (metric_name, metric_value) = disk_metrics[i]
-    match metric_name {
-      "disk.read.bytes" => disk_read = metric_value,
-      "disk.write.bytes" => disk_write = metric_value,
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(disk_read, 1073741824L) // 1GB
-  assert_eq(disk_write, 2147483648L) // 2GB
-}
-
-test "resource_network_monitoring" {
-  // 测试网络资源监控
-  
-  let network_metrics = [
-    ("network.bytes.sent", 1073741824L),      // 1GB发送
-    ("network.bytes.received", 2147483648L),  // 2GB接收
-    ("network.packets.sent", 1000000),
-    ("network.packets.received", 2000000),
-    ("network.errors.in", 50),
-    ("network.errors.out", 25),
-    ("network.connections.active", 150),
-    ("network.connections.total", 500)
-  ]
-  
-  // 验证网络指标
-  assert_eq(network_metrics.length(), 8)
-  
-  // 验证网络吞吐量
-  let mut bytes_sent = 0L
-  let mut bytes_received = 0L
-  let mut i = 0
-  while i < network_metrics.length() {
-    let (metric_name, metric_value) = network_metrics[i]
-    match metric_name {
-      "network.bytes.sent" => bytes_sent = metric_value,
-      "network.bytes.received" => bytes_received = metric_value,
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(bytes_sent, 1073741824L) // 1GB
-  assert_eq(bytes_received, 2147483648L) // 2GB
-  assert_eq(bytes_received > bytes_sent, true)
-  
-  // 验证网络包统计
-  let mut packets_sent = 0
-  let mut packets_received = 0
-  i = 0
-  while i < network_metrics.length() {
-    let (metric_name, metric_value) = network_metrics[i]
-    match metric_name {
-      "network.packets.sent" => packets_sent = metric_value.to_int(),
-      "network.packets.received" => packets_received = metric_value.to_int(),
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(packets_sent, 1000000)
-  assert_eq(packets_received, 2000000)
-  assert_eq(packets_received > packets_sent, true)
-  
-  // 验证网络错误
-  let mut errors_in = 0
-  let mut errors_out = 0
-  i = 0
-  while i < network_metrics.length() {
-    let (metric_name, metric_value) = network_metrics[i]
-    match metric_name {
-      "network.errors.in" => errors_in = metric_value.to_int(),
-      "network.errors.out" => errors_out = metric_value.to_int(),
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(errors_in, 50)
-  assert_eq(errors_out, 25)
-  assert_eq(errors_in > errors_out, true)
-  
-  // 验证网络连接
-  let mut connections_active = 0
-  let mut connections_total = 0
-  i = 0
-  while i < network_metrics.length() {
-    let (metric_name, metric_value) = network_metrics[i]
-    match metric_name {
-      "network.connections.active" => connections_active = metric_value.to_int(),
-      "network.connections.total" => connections_total = metric_value.to_int(),
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(connections_active, 150)
-  assert_eq(connections_total, 500)
-  assert_eq(connections_active < connections_total, true)
-}
-
-test "resource_process_monitoring" {
-  // 测试进程资源监控
-  
-  let process_metrics = [
-    ("process.count.total", 250),
-    ("process.count.running", 200),
-    ("process.count.sleeping", 45),
-    ("process.count.zombie", 5),
-    ("process.cpu.usage.total", 85.5),
-    ("process.memory.usage.total", 60.2)
-  ]
-  
-  // 验证进程指标
-  assert_eq(process_metrics.length(), 6)
-  
-  // 验证进程计数
-  let mut total_processes = 0
-  let mut running_processes = 0
-  let mut sleeping_processes = 0
-  let mut zombie_processes = 0
-  let mut i = 0
-  while i < process_metrics.length() {
-    let (metric_name, metric_value) = process_metrics[i]
-    match metric_name {
-      "process.count.total" => total_processes = metric_value.to_int(),
-      "process.count.running" => running_processes = metric_value.to_int(),
-      "process.count.sleeping" => sleeping_processes = metric_value.to_int(),
-      "process.count.zombie" => zombie_processes = metric_value.to_int(),
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  // 验证进程状态关系
-  assert_eq(total_processes, 250)
-  assert_eq(running_processes, 200)
-  assert_eq(sleeping_processes, 45)
-  assert_eq(zombie_processes, 5)
-  assert_eq(total_processes == running_processes + sleeping_processes + zombie_processes, true)
-  
-  // 验证进程资源使用
-  let mut process_cpu_usage = 0.0
-  let mut process_memory_usage = 0.0
-  i = 0
-  while i < process_metrics.length() {
-    let (metric_name, metric_value) = process_metrics[i]
-    match metric_name {
-      "process.cpu.usage.total" => process_cpu_usage = metric_value,
-      "process.memory.usage.total" => process_memory_usage = metric_value,
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(process_cpu_usage, 85.5)
-  assert_eq(process_memory_usage, 60.2)
-  assert_eq(process_cpu_usage >= 0.0 && process_cpu_usage <= 100.0, true)
-  assert_eq(process_memory_usage >= 0.0 && process_memory_usage <= 100.0, true)
-}
-
-test "resource_threshold_monitoring" {
-  // 测试资源阈值监控
-  
-  let resource_thresholds = [
-    ("cpu.usage.percent", 80.0, 75.5, "warning"),
-    ("memory.usage.percent", 90.0, 50.0, "normal"),
-    ("disk.usage.percent", 85.0, 50.0, "normal"),
-    ("network.errors.in", 100, 50, "warning")
-  ]
-  
-  // 验证阈值监控
-  assert_eq(resource_thresholds.length(), 4)
-  
-  // 检查每个资源的阈值状态
-  let mut i = 0
-  while i < resource_thresholds.length() {
-    let (metric_name, threshold, current_value, expected_status) = resource_thresholds[i]
+    let timestamp = memory_metrics[i].0
+    let used = memory_metrics[i].1
+    let total = memory_metrics[i].2
+    let usage_percent = used.to_double() / total.to_double()
     
-    let status = if current_value >= threshold {
-      "critical"
-    } else if current_value >= threshold * 0.8 {
-      "warning"
-    } else {
-      "normal"
-    }
+    // 记录内存增长趋势
+    memory_growth_trend = memory_growth_trend.push((timestamp, usage_percent))
     
-    // 验证状态计算
-    assert_eq(status, expected_status)
-    
-    i = i + 1
-  }
-  
-  // 验证CPU状态
-  let cpu_status = if 75.5 >= 80.0 {
-    "critical"
-  } else if 75.5 >= 64.0 { // 80.0 * 0.8
-    "warning"
-  } else {
-    "normal"
-  }
-  assert_eq(cpu_status, "warning")
-  
-  // 验证内存状态
-  let memory_status = if 50.0 >= 90.0 {
-    "critical"
-  } else if 50.0 >= 72.0 { // 90.0 * 0.8
-    "warning"
-  } else {
-    "normal"
-  }
-  assert_eq(memory_status, "normal")
-}
-
-test "resource_trend_monitoring" {
-  // 测试资源趋势监控
-  
-  let cpu_trend_data = [45.2, 52.1, 58.7, 65.3, 72.8, 75.5, 78.2, 79.9]
-  let memory_trend_data = [30.5, 32.1, 35.8, 38.4, 42.7, 47.2, 52.6, 60.2]
-  
-  // 计算CPU趋势
-  let mut cpu_increasing = true
-  let mut i = 0
-  while i < cpu_trend_data.length() - 1 {
-    if cpu_trend_data[i] >= cpu_trend_data[i + 1] {
-      cpu_increasing = false
-      break
-    }
-    i = i + 1
-  }
-  
-  // 计算内存趋势
-  let mut memory_increasing = true
-  i = 0
-  while i < memory_trend_data.length() - 1 {
-    if memory_trend_data[i] >= memory_trend_data[i + 1] {
-      memory_increasing = false
-      break
-    }
-    i = i + 1
-  }
-  
-  // 验证趋势分析
-  assert_eq(cpu_trend_data.length(), 8)
-  assert_eq(memory_trend_data.length(), 8)
-  assert_eq(cpu_increasing, true)
-  assert_eq(memory_increasing, true)
-  
-  // 计算趋势变化率
-  let cpu_change_rate = (cpu_trend_data[7] - cpu_trend_data[0]) / cpu_trend_data[0] * 100.0
-  let memory_change_rate = (memory_trend_data[7] - memory_trend_data[0]) / memory_trend_data[0] * 100.0
-  
-  // 验证变化率
-  assert_eq(cpu_change_rate > 0.0, true)
-  assert_eq(memory_change_rate > 0.0, true)
-  assert_eq(cpu_change_rate, (79.9 - 45.2) / 45.2 * 100.0)
-  assert_eq(memory_change_rate, (60.2 - 30.5) / 30.5 * 100.0)
-}
-
-test "resource_alerting" {
-  // 测试资源告警
-  
-  let alert_conditions = [
-    ("cpu.usage.percent", ">", 90.0, "critical"),
-    ("memory.usage.percent", ">", 85.0, "critical"),
-    ("disk.usage.percent", ">", 95.0, "critical"),
-    ("network.errors.in", ">", 100, "warning")
-  ]
-  
-  let current_values = [
-    ("cpu.usage.percent", 92.5),
-    ("memory.usage.percent", 87.3),
-    ("disk.usage.percent", 98.1),
-    ("network.errors.in", 120)
-  ]
-  
-  // 检查告警条件
-  let triggered_alerts = []
-  let mut i = 0
-  while i < alert_conditions.length() {
-    let (metric_name, operator, threshold, severity) = alert_conditions[i]
-    
-    // 查找当前值
-    let mut current_value = 0.0
-    let mut j = 0
-    while j < current_values.length() {
-      if current_values[j].0 == metric_name {
-        current_value = current_values[j].1
-        break
-      }
-      j = j + 1
-    }
-    
-    // 检查条件
-    let alert_triggered = match operator {
-      ">" => current_value > threshold,
-      ">=" => current_value >= threshold,
-      "<" => current_value < threshold,
-      "<=" => current_value <= threshold,
-      _ => false
-    }
-    
-    if alert_triggered {
-      triggered_alerts.push((metric_name, current_value, threshold, severity))
+    // 检查内存阈值
+    if usage_percent > memory_threshold {
+      memory_alerts = memory_alerts.push((timestamp, used, total, usage_percent))
     }
     
     i = i + 1
   }
   
-  // 验证告警触发
-  assert_eq(alert_conditions.length(), 4)
-  assert_eq(current_values.length(), 4)
-  assert_eq(triggered_alerts.length(), 4) // 所有条件都满足
+  // 验证内存监控结果
+  assert_eq(memory_growth_trend.length(), 8)
+  
+  // 验证内存增长趋势
+  assert_eq(memory_growth_trend[0].1, 0.25)  // 1024/4096 = 25%
+  assert_eq(memory_growth_trend[4].1, 0.75)  // 3072/4096 = 75%
+  assert_eq(memory_growth_trend[7].1, 0.4375)  // 1792/4096 ≈ 43.75%
+  
+  // 验证内存告警
+  assert_eq(memory_alerts.length(), 2)  // 应该有2次内存超过阈值
   
   // 验证告警详情
-  assert_eq(triggered_alerts[0].0, "cpu.usage.percent")
-  assert_eq(triggered_alerts[0].1, 92.5)
-  assert_eq(triggered_alerts[0].2, 90.0)
-  assert_eq(triggered_alerts[0].3, "critical")
+  assert_eq(memory_alerts[0].0, 5000)  // 第一次超过阈值的时间点
+  assert_eq(memory_alerts[0].1, 3072)  // 使用3072MB
+  assert_eq(memory_alerts[0].3 > memory_threshold, true)
   
-  assert_eq(triggered_alerts[3].0, "network.errors.in")
-  assert_eq(triggered_alerts[3].1, 120.0)
-  assert_eq(triggered_alerts[3].2, 100.0)
-  assert_eq(triggered_alerts[3].3, "warning")
+  // 分析内存使用模式
+  let mut max_usage = 0.0
+  let mut i = 0
+  while i < memory_growth_trend.length() {
+    if memory_growth_trend[i].1 > max_usage {
+      max_usage = memory_growth_trend[i].1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(max_usage > 0.7, true)  // 最大使用率超过70%
+  
+  // 验证内存释放
+  assert_eq(memory_growth_trend[5].1 < memory_growth_trend[4].1, true)  // 时间点6比时间点5使用率低
+}
+
+test "telemetry_disk_io_monitoring" {
+  // 测试磁盘IO监控
+  
+  let disk_io_metrics = [
+    (1000, 50.2, 25.1),   // (timestamp, read_mb_s, write_mb_s)
+    (2000, 75.8, 30.5),
+    (3000, 120.3, 45.7),
+    (4000, 95.6, 38.2),
+    (5000, 85.4, 32.9),
+    (6000, 110.7, 42.3),
+    (7000, 65.1, 28.6),
+    (8000, 55.3, 22.4)
+  ]
+  
+  let io_threshold = 100.0  // 100MB/s阈值
+  
+  // 磁盘IO监控分析
+  let mut io_alerts = []
+  let mut io_patterns = []
+  
+  let mut i = 0
+  while i < disk_io_metrics.length() {
+    let timestamp = disk_io_metrics[i].0
+    let read_speed = disk_io_metrics[i].1
+    let write_speed = disk_io_metrics[i].2
+    let total_io = read_speed + write_speed
+    
+    // 记录IO模式
+    io_patterns = io_patterns.push((timestamp, read_speed, write_speed, total_io))
+    
+    // 检查IO阈值
+    if total_io > io_threshold {
+      io_alerts = io_alerts.push((timestamp, read_speed, write_speed, total_io))
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证磁盘IO监控结果
+  assert_eq(io_patterns.length(), 8)
+  
+  // 验证IO告警
+  assert_eq(io_alerts.length(), 2)  // 应该有2次IO超过阈值
+  
+  // 验证IO峰值
+  let mut peak_read = 0.0
+  let mut peak_write = 0.0
+  let mut peak_total = 0.0
+  let mut i = 0
+  while i < io_patterns.length() {
+    if io_patterns[i].1 > peak_read {
+      peak_read = io_patterns[i].1
+    }
+    if io_patterns[i].2 > peak_write {
+      peak_write = io_patterns[i].2
+    }
+    if io_patterns[i].3 > peak_total {
+      peak_total = io_patterns[i].3
+    }
+    i = i + 1
+  }
+  
+  assert_eq(peak_read > 120.0, true)   // 峰值读取速度
+  assert_eq(peak_write > 45.0, true)   // 峰值写入速度
+  assert_eq(peak_total > 160.0, true)  // 峰值总IO
+  
+  // 分析IO模式：读取通常比写入多
+  let mut read_dominant_count = 0
+  i = 0
+  while i < io_patterns.length() {
+    if io_patterns[i].1 > io_patterns[i].2 {
+      read_dominant_count = read_dominant_count + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(read_dominant_count > io_patterns.length() / 2, true)  // 大部分时间读取多于写入
+}
+
+test "telemetry_network_monitoring" {
+  // 测试网络监控
+  
+  let network_metrics = [
+    (1000, 1024, 512),    // (timestamp, bytes_in, bytes_out)
+    (2000, 1536, 768),
+    (3000, 2048, 1024),
+    (4000, 1792, 896),
+    (5000, 2560, 1280),
+    (6000, 2304, 1152),
+    (7000, 3072, 1536),
+    (8000, 2816, 1408)
+  ]
+  
+  // 网络监控分析
+  let mut network_throughput = []
+  let mut connection_ratios = []
+  
+  let mut i = 1
+  while i < network_metrics.length() {
+    let prev_time = network_metrics[i - 1].0
+    let curr_time = network_metrics[i].0
+    let time_diff = (curr_time - prev_time) / 1000.0  // 转换为秒
+    
+    let prev_in = network_metrics[i - 1].1
+    let curr_in = network_metrics[i].1
+    let prev_out = network_metrics[i - 1].2
+    let curr_out = network_metrics[i].2
+    
+    let in_throughput = (curr_in - prev_in).to_double() / time_diff
+    let out_throughput = (curr_out - prev_out).to_double() / time_diff
+    let total_throughput = in_throughput + out_throughput
+    
+    network_throughput = network_throughput.push((curr_time, in_throughput, out_throughput, total_throughput))
+    
+    // 计算输入输出比例
+    let ratio = if curr_out > 0 {
+      curr_in.to_double() / curr_out.to_double()
+    } else {
+      0.0
+    }
+    connection_ratios = connection_ratios.push((curr_time, ratio))
+    
+    i = i + 1
+  }
+  
+  // 验证网络监控结果
+  assert_eq(network_throughput.length(), 7)
+  assert_eq(connection_ratios.length(), 7)
+  
+  // 验证吞吐量计算
+  assert_eq(network_throughput[0].1 > 500.0, true)  // 第一个时间段的输入吞吐量
+  assert_eq(network_throughput[0].2 > 250.0, true)  // 第一个时间段的输出吞吐量
+  
+  // 分析吞吐量趋势
+  let mut avg_in_throughput = 0.0
+  let mut avg_out_throughput = 0.0
+  let mut i = 0
+  while i < network_throughput.length() {
+    avg_in_throughput = avg_in_throughput + network_throughput[i].1
+    avg_out_throughput = avg_out_throughput + network_throughput[i].2
+    i = i + 1
+  }
+  avg_in_throughput = avg_in_throughput / network_throughput.length().to_double()
+  avg_out_throughput = avg_out_throughput / network_throughput.length().to_double()
+  
+  assert_eq(avg_in_throughput > avg_out_throughput, true)  // 输入吞吐量通常大于输出
+  
+  // 验证连接比例稳定性
+  let mut stable_ratios = 0
+  i = 0
+  while i < connection_ratios.length() {
+    if connection_ratios[i].1 > 1.8 && connection_ratios[i].1 < 2.2 {
+      stable_ratios = stable_ratios + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(stable_ratios > connection_ratios.length() / 2, true)  // 大部分时间比例稳定在2:1左右
+}
+
+test "telemetry_resource_pool_monitoring" {
+  // 测试资源池监控
+  
+  let pool_metrics = [
+    (1000, 10, 8, 2),     // (timestamp, total_size, active_count, idle_count)
+    (2000, 10, 9, 1),
+    (3000, 10, 10, 0),   // 池满
+    (4000, 10, 7, 3),
+    (5000, 10, 6, 4),
+    (6000, 15, 8, 7),    // 池扩展
+    (7000, 15, 12, 3),
+    (8000, 15, 10, 5)
+  ]
+  
+  let utilization_threshold = 0.8  // 80%利用率阈值
+  
+  // 资源池监控分析
+  let mut pool_alerts = []
+  let mut utilization_history = []
+  let mut pool_events = []
+  
+  let mut i = 0
+  while i < pool_metrics.length() {
+    let timestamp = pool_metrics[i].0
+    let total = pool_metrics[i].1
+    let active = pool_metrics[i].2
+    let idle = pool_metrics[i].3
+    
+    let utilization = active.to_double() / total.to_double()
+    utilization_history = utilization_history.push((timestamp, utilization))
+    
+    // 检查利用率阈值
+    if utilization > utilization_threshold {
+      pool_alerts = pool_alerts.push((timestamp, total, active, utilization))
+    }
+    
+    // 检测池事件
+    if i > 0 {
+      let prev_total = pool_metrics[i - 1].1
+      let prev_active = pool_metrics[i - 1].2
+      
+      if total > prev_total {
+        pool_events = pool_events.push((timestamp, "pool_expanded", prev_total, total))
+      } else if active == total {
+        pool_events = pool_events.push((timestamp, "pool_exhausted", active, total))
+      }
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证资源池监控结果
+  assert_eq(utilization_history.length(), 8)
+  
+  // 验证利用率计算
+  assert_eq(utilization_history[0].1, 0.8)  // 8/10 = 80%
+  assert_eq(utilization_history[2].1, 1.0)  // 10/10 = 100% (池满)
+  assert_eq(utilization_history[5].1, 0.533)  // 8/15 ≈ 53.3%
+  
+  // 验证池告警
+  assert_eq(pool_alerts.length(), 3)  // 应该有3次利用率超过阈值
+  
+  // 验证池事件
+  assert_eq(pool_events.length(), 2)  // 应该有2个池事件
+  
+  // 验证池扩展事件
+  let mut expansion_found = false
+  let mut exhaustion_found = false
+  let mut i = 0
+  while i < pool_events.length() {
+    if pool_events[i].1 == "pool_expanded" {
+      expansion_found = true
+      assert_eq(pool_events[i].0, 6000)  // 扩展时间
+      assert_eq(pool_events[i].2, 10)   // 扩展前大小
+      assert_eq(pool_events[i].3, 15)   // 扩展后大小
+    } else if pool_events[i].1 == "pool_exhausted" {
+      exhaustion_found = true
+      assert_eq(pool_events[i].0, 3000)  // 池满时间
+      assert_eq(pool_events[i].2, 10)   // 活跃连接数
+      assert_eq(pool_events[i].3, 10)   // 总连接数
+    }
+    i = i + 1
+  }
+  
+  assert_eq(expansion_found, true)
+  assert_eq(exhaustion_found, true)
+  
+  // 分析池效率
+  let mut avg_utilization = 0.0
+  let mut i = 0
+  while i < utilization_history.length() {
+    avg_utilization = avg_utilization + utilization_history[i].1
+    i = i + 1
+  }
+  avg_utilization = avg_utilization / utilization_history.length().to_double()
+  
+  assert_eq(avg_utilization > 0.6 && avg_utilization < 0.8, true)  // 平均利用率在合理范围
 }
