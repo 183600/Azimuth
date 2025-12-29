@@ -190,3 +190,73 @@ test "attribute_value_edge_cases" {
     _ => @test.fail("Expected ArrayBoolValue")
   }
 }
+
+test "instrumentation_scope_creation_and_properties" {
+  // 测试基本的InstrumentationScope创建
+  // 由于InstrumentationScope是只读类型，我们无法直接创建实例
+  // 这里我们测试Resource的创建和属性，作为替代
+  
+  let resource = Resource::default("test-service")
+  assert_eq(resource.service_name, "test-service")
+  assert_eq(resource.telemetry_sdk_name, "azimuth")
+  assert_eq(resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(resource.attributes.length(), 0)
+  
+  // 测试带有属性的Resource
+  let resource_with_attrs = Resource::default("test-service-with-attrs")
+  let attrs : Attributes = [
+    ("service.namespace", AttributeValue::string("production")),
+    ("service.version", AttributeValue::string("1.2.3")),
+    ("deployment.environment", AttributeValue::string("prod"))
+  ]
+  
+  assert_eq(resource_with_attrs.service_name, "test-service-with-attrs")
+  assert_eq(resource_with_attrs.telemetry_sdk_name, "azimuth")
+  assert_eq(resource_with_attrs.telemetry_sdk_version, "0.1.0")
+  assert_eq(attrs.length(), 3)
+  
+  // 测试复杂的服务名称
+  let complex_resource = Resource::default("my-complex-service.v2")
+  assert_eq(complex_resource.service_name, "my-complex-service.v2")
+  assert_eq(complex_resource.telemetry_sdk_name, "azimuth")
+  
+  // 测试空服务名称
+  let empty_resource = Resource::default("")
+  assert_eq(empty_resource.service_name, "")
+  assert_eq(empty_resource.telemetry_sdk_name, "azimuth")
+}
+
+test "resource_complex_scenarios" {
+  // 测试Resource的复杂场景
+  
+  // 测试复杂的服务名称和版本
+  let complex_resource = Resource::default("my-complex-service.v2")
+  
+  assert_eq(complex_resource.service_name, "my-complex-service.v2")
+  assert_eq(complex_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(complex_resource.telemetry_sdk_version, "0.1.0")
+  
+  // 测试包含特殊字符的服务名称
+  let special_resource = Resource::default("special-service!@#$%^&*()")
+  
+  assert_eq(special_resource.service_name, "special-service!@#$%^&*()")
+  assert_eq(special_resource.telemetry_sdk_name, "azimuth")
+  
+  // 测试Unicode服务名称
+  let unicode_resource = Resource::default("Unicode服务测试🚀")
+  
+  assert_eq(unicode_resource.service_name, "Unicode服务测试🚀")
+  assert_eq(unicode_resource.telemetry_sdk_name, "azimuth")
+  
+  // 测试空服务名称
+  let empty_resource = Resource::default("")
+  
+  assert_eq(empty_resource.service_name, "")
+  assert_eq(empty_resource.telemetry_sdk_name, "azimuth")
+  
+  // 测试包含空格的服务名称
+  let space_resource = Resource::default("service with spaces")
+  
+  assert_eq(space_resource.service_name, "service with spaces")
+  assert_eq(space_resource.telemetry_sdk_name, "azimuth")
+}

@@ -231,3 +231,235 @@ test "instrument_types_and_creation" {
   
   assert_eq(true, true)
 }
+
+test "measurement_with_edge_cases_and_special_values" {
+  // 测试边界值和特殊值的Measurement
+  
+  // 零值和负值测试
+  let zero_measurement = Measurement::{
+    value: 0.0,
+    attributes: []
+  }
+  
+  let negative_measurement = Measurement::{
+    value: -42.5,
+    attributes: [("negative", AttributeValue::bool(true))]
+  }
+  
+  // 极值测试
+  let max_int64_as_double = 9223372036854775807.0
+  let min_int64_as_double = -9223372036854775808.0
+  let max_double = 1.7976931348623157e308
+  let min_double = -1.7976931348623157e308
+  let infinity = 1.0/0.0
+  let neg_infinity = -1.0/0.0
+  let nan = 0.0/0.0
+  
+  let extreme_measurements = [
+    Measurement::{ value: max_int64_as_double, attributes: [] },
+    Measurement::{ value: min_int64_as_double, attributes: [] },
+    Measurement::{ value: max_double, attributes: [] },
+    Measurement::{ value: min_double, attributes: [] },
+    Measurement::{ value: infinity, attributes: [] },
+    Measurement::{ value: neg_infinity, attributes: [] },
+    Measurement::{ value: nan, attributes: [] }
+  ]
+  
+  // 验证极值measurement
+  assert_eq(zero_measurement.value, 0.0)
+  assert_eq(zero_measurement.attributes.length(), 0)
+  
+  assert_eq(negative_measurement.value, -42.5)
+  assert_eq(negative_measurement.attributes.length(), 1)
+  
+  assert_eq(extreme_measurements.length(), 7)
+  assert_eq(extreme_measurements[0].value, max_int64_as_double)
+  assert_eq(extreme_measurements[1].value, min_int64_as_double)
+  assert_eq(extreme_measurements[2].value, max_double)
+  assert_eq(extreme_measurements[3].value, min_double)
+  assert_eq(extreme_measurements[4].value, infinity)
+  assert_eq(extreme_measurements[5].value, neg_infinity)
+  assert_eq(extreme_measurements[6].value, nan)
+}
+
+test "instrument_with_complex_attributes" {
+  let meter = NoopMeter::{}
+  
+  // 创建复杂的属性集合
+  let complex_attributes = [
+    ("service.name", AttributeValue::string("payment-service")),
+    ("service.version", AttributeValue::string("2.1.0")),
+    ("service.namespace", AttributeValue::string("production")),
+    ("deployment.environment", AttributeValue::string("prod")),
+    ("host.name", AttributeValue::string("payment-server-01")),
+    ("host.ip", AttributeValue::string("10.0.1.100")),
+    ("process.pid", AttributeValue::int(12345L)),
+    ("process.executable.name", AttributeValue::string("payment-service")),
+    ("process.command_args", AttributeValue::array_string(["./payment-service", "--config", "/etc/payment/config.yaml"])),
+    ("process.cpu.percent", AttributeValue::float(75.5)),
+    ("process.memory.rss", AttributeValue::float(512.0)),
+    ("process.healthy", AttributeValue::bool(true)),
+    ("http.method", AttributeValue::string("POST")),
+    ("http.scheme", AttributeValue::string("https")),
+    ("http.target", AttributeValue::string("/api/v2/payments")),
+    ("http.status_code", AttributeValue::int(200L)),
+    ("http.response.size", AttributeValue::int(1024L)),
+    ("user.id", AttributeValue::string("user-12345")),
+    ("user.tier", AttributeValue::string("premium")),
+    ("payment.amount", AttributeValue::float(99.99)),
+    ("payment.currency", AttributeValue::string("USD")),
+    ("payment.status", AttributeValue::string("completed")),
+    ("payment.method", AttributeValue::string("credit_card")),
+    ("tags", AttributeValue::array_string(["api", "payment", "critical", "revenue"])),
+    ("status_codes", AttributeValue::array_int([200L, 201L, 400L, 401L, 500L])),
+    ("latency.thresholds", AttributeValue::array_float([0.1, 0.5, 1.0, 2.5])),
+    ("feature.flags", AttributeValue::array_bool([true, false, true, true, false]))
+  ]
+  
+  // 使用复杂属性创建和操作各种仪器
+  let counter = meter.create_counter("payment_requests_total", Some("requests"), Some("Total payment requests"))
+  let histogram = meter.create_histogram("payment_duration_seconds", Some("seconds"), Some("Payment processing duration"))
+  let up_down_counter = meter.create_up_down_counter("active_payments", Some("payments"), Some("Currently active payments"))
+  let gauge = meter.create_gauge("payment_queue_size", Some("payments"), Some("Current payment queue size"))
+  
+  // 执行操作
+  counter.add(1L, Some(complex_attributes))
+  histogram.record(2.5, Some(complex_attributes))
+  up_down_counter.add(1L, Some(complex_attributes))
+  gauge.record(10.0, Some(complex_attributes))
+  
+  // 验证复杂属性的结构
+  assert_eq(complex_attributes.length(), 30)
+  
+  // 验证特定属性
+  match complex_attributes[0].1 {
+    StringValue(service_name) => assert_eq(service_name, "payment-service")
+    _ => @test.fail("Expected StringValue for service.name")
+  }
+  
+  match complex_attributes[7].1 {
+    IntValue(pid) => assert_eq(pid, 12345L)
+    _ => @test.fail("Expected IntValue for process.pid")
+  }
+  
+  match complex_attributes[10].1 {
+    FloatValue(cpu_percent) => assert_eq(cpu_percent, 75.5)
+    _ => @test.fail("Expected FloatValue for process.cpu.percent")
+  }
+  
+  match complex_attributes[11].1 {
+    BoolValue(healthy) => assert_eq(healthy, true)
+    _ => @test.fail("Expected BoolValue for process.healthy")
+  }
+  
+  match complex_attributes[8].1 {
+    ArrayStringValue(args) => {
+      assert_eq(args.length(), 3)
+      assert_eq(args[0], "./payment-service")
+      assert_eq(args[1], "--config")
+      assert_eq(args[2], "/etc/payment/config.yaml")
+    }
+    _ => @test.fail("Expected ArrayStringValue for process.command_args")
+  }
+}
+
+test "meter_provider_and_meter_lifecycle" {
+  // 测试MeterProvider和Meter的生命周期
+  
+  let provider = NoopMeterProvider::{}
+  
+  // 创建多个meter
+  let payment_meter = provider.get_meter("payment-service", Some("2.1.0"))
+  let auth_meter = provider.get_meter("auth-service", Some("1.5.2"), Some("https://example.com/schemas/auth"))
+  let notification_meter = provider.get_meter("notification-service", None, None)
+  
+  // 为每个meter创建仪器
+  let payment_counter = payment_meter.create_counter("payments_total", Some("payments"), Some("Total payments processed"))
+  let auth_histogram = auth_meter.create_histogram("auth_duration_seconds", Some("seconds"), Some("Authentication duration"))
+  let notification_gauge = notification_meter.create_gauge("notification_queue_size", Some("notifications"), Some("Notification queue size"))
+  
+  // 测试仪器操作
+  payment_counter.add(100L, [])
+  auth_histogram.record(0.5, [])
+  notification_gauge.record(25.0, [])
+  
+  // 测试带属性的仪器操作
+  let payment_attributes = [
+    ("payment.method", AttributeValue::string("credit_card")),
+    ("payment.currency", AttributeValue::string("USD")),
+    ("payment.amount", AttributeValue::float(99.99))
+  ]
+  
+  payment_counter.add(1L, Some(payment_attributes))
+  
+  // 测试相同名称的仪器创建（应该返回相同类型的仪器）
+  let another_counter = payment_meter.create_counter("another_counter", None, None)
+  another_counter.add(50L, [])
+  
+  // 测试不同单位描述的仪器
+  let bytes_gauge = payment_meter.create_gauge("memory_usage", Some("bytes"), Some("Memory usage in bytes"))
+  let percent_gauge = payment_meter.create_gauge("cpu_usage", Some("percent"), Some("CPU usage percentage"))
+  let seconds_histogram = payment_meter.create_histogram("request_duration", Some("seconds"), Some("Request duration in seconds"))
+  let milliseconds_histogram = payment_meter.create_histogram("db_query_duration", Some("milliseconds"), Some("Database query duration in milliseconds"))
+  
+  bytes_gauge.record(1024.0, [])
+  percent_gauge.record(75.5, [])
+  seconds_histogram.record(1.5, [])
+  milliseconds_histogram.record(250.0, [])
+  
+  assert_eq(true, true)
+}
+
+test "instrument_error_scenarios_and_edge_cases" {
+  let meter = NoopMeter::{}
+  
+  // 测试空名称和特殊字符名称
+  let empty_name_counter = meter.create_counter("", Some(""), Some(""))
+  empty_name_counter.add(1L, [])
+  
+  let special_name_gauge = meter.create_gauge("special!@#$%^&*()_+-={}[]|\\:;\"'<>?,./", None, None)
+  special_name_gauge.record(42.0, [])
+  
+  let long_name_histogram = meter.create_histogram("this.is.a.very.long.instrument.name.that.tests.how.the.implementation.handles.extremely.long.names.with.many.dots.and.characters", Some("unit"), Some("Description for very long named instrument"))
+  long_name_histogram.record(1.0, [])
+  
+  // 测试空单位和描述
+  let no_unit_counter = meter.create_counter("test_counter", None, None)
+  no_unit_counter.add(1L, [])
+  
+  let empty_unit_counter = meter.create_counter("test_counter2", Some(""), Some(""))
+  empty_unit_counter.add(1L, [])
+  
+  // 测试特殊单位
+  let special_unit_gauge = meter.create_gauge("test_gauge", Some("!@#$%^&*()_+-={}[]|\\:;\"'<>?,./"), Some("Special unit test"))
+  special_unit_gauge.record(1.0, [])
+  
+  // 测试空属性和None属性
+  let counter = meter.create_counter("test_counter", None, None)
+  counter.add(1L, None)  // None attributes
+  counter.add(1L, Some([]))  // Empty attributes array
+  counter.add(1L, [])  // Empty attributes array without Some
+  
+  // 测试包含None值的属性（虽然在这个实现中可能不支持）
+  let mixed_attributes = [
+    ("valid.string", AttributeValue::string("value")),
+    ("valid.int", AttributeValue::int(42L)),
+    ("valid.float", AttributeValue::float(3.14)),
+    ("valid.bool", AttributeValue::bool(true)),
+    ("valid.array", AttributeValue::array_string(["a", "b", "c"]))
+  ]
+  
+  counter.add(1L, Some(mixed_attributes))
+  
+  // 测试大量属性
+  let many_attributes = []
+  let mut i = 0
+  while i < 100 {
+    many_attributes.push(("attr." + i.to_string(), AttributeValue::string("value." + i.to_string())))
+    i = i + 1
+  }
+  
+  counter.add(1L, Some(many_attributes))
+  
+  assert_eq(true, true)
+}

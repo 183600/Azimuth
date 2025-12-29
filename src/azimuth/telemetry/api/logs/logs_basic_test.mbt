@@ -232,3 +232,283 @@ test "severity_number_comparison_and_ordering" {
     None => @test.fail("Expected Some(severity_text)")
   }
 }
+
+test "log_record_builder_with_all_fields" {
+  let resource = Resource::default("test-service")
+  let instrumentation_scope = InstrumentationScope::{
+    name: "test-logger",
+    version: Some("1.0.0"),
+    schema_url: None
+  }
+  
+  let trace_id = Array::make(16, 1_byte)
+  let span_id = Array::make(8, 2_byte)
+  
+  // 使用builder创建包含所有字段的LogRecord
+  let log_record = LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(Error)
+    .severity_text("DATABASE_ERROR")
+    .body("Database connection failed")
+    .with_attribute("error.code", AttributeValue::string("DB_CONN_FAILED"))
+    .with_attribute("error.retries", AttributeValue::int(3L))
+    .with_attribute("error.timeout", AttributeValue::float(30.0))
+    .with_attribute("error.retryable", AttributeValue::bool(true))
+    .with_attribute("error.tags", AttributeValue::array_string(["database", "timeout", "retry"]))
+    .build()
+  
+  // 创建完整的LogRecord结构体
+  let full_log_record = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Error,
+    severity_text: Some("DATABASE_ERROR"),
+    body: Some("Database connection failed"),
+    attributes: [
+      ("error.code", AttributeValue::string("DB_CONN_FAILED")),
+      ("error.retries", AttributeValue::int(3L)),
+      ("error.timeout", AttributeValue::float(30.0)),
+      ("error.retryable", AttributeValue::bool(true)),
+      ("error.tags", AttributeValue::array_string(["database", "timeout", "retry"]))
+    ],
+    trace_id: Some(trace_id),
+    span_id: Some(span_id),
+    trace_flags: Some(1_byte),
+    resource: Some(resource),
+    instrumentation_scope: Some(instrumentation_scope)
+  }
+  
+  // 验证所有字段
+  assert_eq(full_log_record.timestamp_unix_nanos, 1640995200000000000L)
+  match full_log_record.observed_timestamp_unix_nanos {
+    Some(timestamp) => assert_eq(timestamp, 1640995200000000100L)
+    None => @test.fail("Expected Some(observed_timestamp)")
+  }
+  assert_eq(full_log_record.severity_number, Error)
+  match full_log_record.severity_text {
+    Some(text) => assert_eq(text, "DATABASE_ERROR")
+    None => @test.fail("Expected Some(severity_text)")
+  }
+  match full_log_record.body {
+    Some(body) => assert_eq(body, "Database connection failed")
+    None => @test.fail("Expected Some(body)")
+  }
+  assert_eq(full_log_record.attributes.length(), 5)
+  
+  // 验证trace和span信息
+  match full_log_record.trace_id {
+    Some(id) => {
+      assert_eq(id.length(), 16)
+      assert_eq(id[0], 1_byte)
+    }
+    None => @test.fail("Expected Some(trace_id)")
+  }
+  
+  match full_log_record.span_id {
+    Some(id) => {
+      assert_eq(id.length(), 8)
+      assert_eq(id[0], 2_byte)
+    }
+    None => @test.fail("Expected Some(span_id)")
+  }
+  
+  match full_log_record.trace_flags {
+    Some(flags) => assert_eq(flags, 1_byte)
+    None => @test.fail("Expected Some(trace_flags)")
+  }
+  
+  // 验证resource和instrumentation_scope
+  match full_log_record.resource {
+    Some(res) => assert_eq(res.service_name, "test-service")
+    None => @test.fail("Expected Some(resource)")
+  }
+  
+  match full_log_record.instrumentation_scope {
+    Some(scope) => assert_eq(scope.name, "test-logger")
+    None => @test.fail("Expected Some(instrumentation_scope)")
+  }
+}
+
+test "log_record_with_complex_attributes" {
+  // 创建包含复杂属性的LogRecord
+  let complex_attributes = [
+    ("user.id", AttributeValue::string("user-12345")),
+    ("request.id", AttributeValue::string("req-67890")),
+    ("session.id", AttributeValue::string("sess-abcdef")),
+    ("request.method", AttributeValue::string("POST")),
+    ("request.path", AttributeValue::string("/api/v1/users")),
+    ("response.status", AttributeValue::int(500L)),
+    ("response.time_ms", AttributeValue::int(1250L)),
+    ("response.size_bytes", AttributeValue::int(1024L)),
+    ("cpu.usage", AttributeValue::float(75.5)),
+    ("memory.usage", AttributeValue::float(512.0)),
+    ("cache.hit", AttributeValue::bool(false)),
+    ("auth.success", AttributeValue::bool(true)),
+    ("tags", AttributeValue::array_string(["api", "users", "auth", "database"])),
+    ("status.codes", AttributeValue::array_int([200L, 400L, 401L, 500L])),
+    ("latency.percentiles", AttributeValue::array_float([0.5, 0.95, 0.99])),
+    ("feature.flags", AttributeValue::array_bool([true, false, true, true]))
+  ]
+  
+  let log_record = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Warn,
+    severity_text: Some("SLOW_QUERY"),
+    body: Some("Database query took longer than expected"),
+    attributes: complex_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  // 验证复杂属性
+  assert_eq(log_record.attributes.length(), 18)
+  
+  // 验证字符串属性
+  match log_record.attributes[0].1 {
+    StringValue(user_id) => assert_eq(user_id, "user-12345")
+    _ => @test.fail("Expected StringValue for user.id")
+  }
+  
+  // 验证整数属性
+  match log_record.attributes[5].1 {
+    IntValue(status) => assert_eq(status, 500L)
+    _ => @test.fail("Expected IntValue for response.status")
+  }
+  
+  // 验证浮点数属性
+  match log_record.attributes[8].1 {
+    FloatValue(cpu) => assert_eq(cpu, 75.5)
+    _ => @test.fail("Expected FloatValue for cpu.usage")
+  }
+  
+  // 验证布尔属性
+  match log_record.attributes[10].1 {
+    BoolValue(cache_hit) => assert_eq(cache_hit, false)
+    _ => @test.fail("Expected BoolValue for cache.hit")
+  }
+  
+  // 验证数组属性
+  match log_record.attributes[12].1 {
+    ArrayStringValue(tags) => {
+      assert_eq(tags.length(), 4)
+      assert_eq(tags[0], "api")
+      assert_eq(tags[1], "users")
+      assert_eq(tags[2], "auth")
+      assert_eq(tags[3], "database")
+    }
+    _ => @test.fail("Expected ArrayStringValue for tags")
+  }
+  
+  match log_record.attributes[13].1 {
+    ArrayIntValue(status_codes) => {
+      assert_eq(status_codes.length(), 4)
+      assert_eq(status_codes[0], 200L)
+      assert_eq(status_codes[1], 400L)
+      assert_eq(status_codes[2], 401L)
+      assert_eq(status_codes[3], 500L)
+    }
+    _ => @test.fail("Expected ArrayIntValue for status.codes")
+  }
+  
+  match log_record.attributes[14].1 {
+    ArrayFloatValue(percentiles) => {
+      assert_eq(percentiles.length(), 3)
+      assert_eq(percentiles[0], 0.5)
+      assert_eq(percentiles[1], 0.95)
+      assert_eq(percentiles[2], 0.99)
+    }
+    _ => @test.fail("Expected ArrayFloatValue for latency.percentiles")
+  }
+  
+  match log_record.attributes[15].1 {
+    ArrayBoolValue(flags) => {
+      assert_eq(flags.length(), 4)
+      assert_eq(flags[0], true)
+      assert_eq(flags[1], false)
+      assert_eq(flags[2], true)
+      assert_eq(flags[3], true)
+    }
+    _ => @test.fail("Expected ArrayBoolValue for feature.flags")
+  }
+}
+
+test "log_record_edge_cases_and_special_values" {
+  // 测试边界情况和特殊值
+  
+  // 空字符串和None值
+  let empty_log = LogRecord::{
+    timestamp_unix_nanos: 0L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Info,
+    severity_text: None,
+    body: None,
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  assert_eq(empty_log.timestamp_unix_nanos, 0L)
+  match empty_log.severity_text {
+    Some(_) => @test.fail("Expected None for severity_text")
+    None => assert_eq(true, true)
+  }
+  match empty_log.body {
+    Some(_) => @test.fail("Expected None for body")
+    None => assert_eq(true, true)
+  }
+  assert_eq(empty_log.attributes.length(), 0)
+  
+  // 极值测试
+  let max_timestamp = 9223372036854775807L
+  let min_timestamp = -9223372036854775808L
+  
+  let extreme_log = LogRecord::{
+    timestamp_unix_nanos: max_timestamp,
+    observed_timestamp_unix_nanos: Some(min_timestamp),
+    severity_number: Fatal,
+    severity_text: Some(""),
+    body: Some(""),
+    attributes: [
+      ("empty.string", AttributeValue::string("")),
+      ("zero.int", AttributeValue::int(0L)),
+      ("max.int", AttributeValue::int(9223372036854775807L)),
+      ("min.int", AttributeValue::int(-9223372036854775808L)),
+      ("zero.float", AttributeValue::float(0.0)),
+      ("negative.float", AttributeValue::float(-1.0)),
+      ("infinity.float", AttributeValue::float(1.0/0.0)),
+      ("nan.float", AttributeValue::float(0.0/0.0)),
+      ("empty.array", AttributeValue::array_string([]))
+    ],
+    trace_id: Some(Array::make(16, 0_byte)),
+    span_id: Some(Array::make(8, 0_byte)),
+    trace_flags: Some(0_byte),
+    resource: Some(Resource::default("")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "",
+      version: Some(""),
+      schema_url: Some("")
+    })
+  }
+  
+  assert_eq(extreme_log.timestamp_unix_nanos, max_timestamp)
+  match extreme_log.observed_timestamp_unix_nanos {
+    Some(timestamp) => assert_eq(timestamp, min_timestamp)
+    None => @test.fail("Expected Some(min_timestamp)")
+  }
+  assert_eq(extreme_log.severity_number, Fatal)
+  match extreme_log.severity_text {
+    Some(text) => assert_eq(text, "")
+    None => @test.fail("Expected Some(empty text)")
+  }
+  match extreme_log.body {
+    Some(body) => assert_eq(body, "")
+    None => @test.fail("Expected Some(empty body)")
+  }
+}

@@ -70,6 +70,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_70726f7061676174696f6e5f62617369635f746573742e6d6274_4, ["carrier_keys_iteration"]),
     5: (__test_70726f7061676174696f6e5f62617369635f746573742e6d6274_5, ["w3c_trace_context_propagator"]),
     6: (__test_70726f7061676174696f6e5f62617369635f746573742e6d6274_6, ["w3c_baggage_propagator"]),
+    7: (__test_70726f7061676174696f6e5f62617369635f746573742e6d6274_7, ["composite_propagator_with_multiple_propagators"]),
+    8: (__test_70726f7061676174696f6e5f62617369635f746573742e6d6274_8, ["map_carrier_edge_cases_and_complex_operations"]),
+    9: (__test_70726f7061676174696f6e5f62617369635f746573742e6d6274_9, ["trace_context_propagator_complex_scenarios"]),
+    10: (__test_70726f7061676174696f6e5f62617369635f746573742e6d6274_10, ["propagation_integration_with_context_and_baggage"]),
   },
   "propagation.mbt": {
   },

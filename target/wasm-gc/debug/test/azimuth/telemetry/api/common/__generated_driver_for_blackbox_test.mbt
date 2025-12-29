@@ -57,7 +57,19 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "integration_test.mbt": {
+    0: (__test_696e746567726174696f6e5f746573742e6d6274_0, ["resource_and_attributes_integration"]),
+    1: (__test_696e746567726174696f6e5f746573742e6d6274_1, ["attribute_complex_integration"]),
+    2: (__test_696e746567726174696f6e5f746573742e6d6274_2, ["attribute_type_comprehensive_integration"]),
+  },
   "common.mbt": {
+  },
+  "boundary_test.mbt": {
+    0: (__test_626f756e646172795f746573742e6d6274_0, ["attribute_value_extreme_edge_cases"]),
+    1: (__test_626f756e646172795f746573742e6d6274_1, ["resource_boundary_conditions"]),
+    2: (__test_626f756e646172795f746573742e6d6274_2, ["array_boundary_conditions"]),
+    3: (__test_626f756e646172795f746573742e6d6274_3, ["resource_extreme_scenarios"]),
+    4: (__test_626f756e646172795f746573742e6d6274_4, ["attributes_complex_scenarios"]),
   },
   "basic_test.mbt": {
     0: (__test_62617369635f746573742e6d6274_0, ["attribute_value_basic"]),
@@ -66,6 +78,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_62617369635f746573742e6d6274_3, ["attributes_usage"]),
     4: (__test_62617369635f746573742e6d6274_4, ["resource_with_complex_attributes"]),
     5: (__test_62617369635f746573742e6d6274_5, ["attribute_value_edge_cases"]),
+    6: (__test_62617369635f746573742e6d6274_6, ["instrumentation_scope_creation_and_properties"]),
+    7: (__test_62617369635f746573742e6d6274_7, ["resource_complex_scenarios"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
