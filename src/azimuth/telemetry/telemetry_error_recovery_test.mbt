@@ -1,363 +1,510 @@
-// 遥测错误恢复机制测试用例
+// 遥测错误恢复测试用例，专注于错误检测、恢复策略和容错机制
 
-test "telemetry_network_connection_recovery" {
-  // 测试网络连接错误恢复机制
+test "telemetry_error_network_failure_recovery" {
+  // 测试网络故障恢复机制
   
-  let mut connection_attempts = 0
-  let max_retries = 3
-  let mut connection_successful = false
-  
-  // 模拟网络连接失败和重试
-  while connection_attempts < max_retries and not connection_successful {
-    connection_attempts = connection_attempts + 1
-    
-    // 模拟连接尝试（前两次失败，第三次成功）
-    if connection_attempts < 3 {
-      // 连接失败
-      assert_eq(connection_successful, false)
-    } else {
-      // 连接成功
-      connection_successful = true
-    }
-  }
-  
-  // 验证错误恢复结果
-  assert_eq(connection_successful, true)
-  assert_eq(connection_attempts, 3)
-  assert_eq(connection_attempts <= max_retries, true)
-}
-
-test "telemetry_data_export_failure_recovery" {
-  // 测试数据导出失败恢复机制
-  
-  let telemetry_data = [
-    "trace_data_1",
-    "trace_data_2", 
-    "trace_data_3",
-    "metrics_data_1",
-    "logs_data_1"
+  let network_errors = [
+    ("connection_timeout", 5000),    // 5秒超时
+    ("connection_refused", 1000),    // 1秒后重试
+    ("dns_resolution_failed", 2000), // 2秒后重试
+    ("ssl_handshake_failed", 3000),  // 3秒后重试
+    ("read_timeout", 4000)           // 4秒超时
   ]
   
-  let mut exported_data = Array[String]::new()
-  let mut failed_data = Array[String]::new()
-  let mut retry_queue = Array[String]::new()
+  let max_retry_attempts = 3
+  let backoff_multiplier = 2
+  let initial_backoff_ms = 1000
   
-  // 第一次导出尝试（部分失败）
-  for data in telemetry_data {
-    if data.has_suffix("_1") {
-      // 模拟导出失败
-      failed_data.push(data)
-      retry_queue.push(data)
-    } else {
-      // 导出成功
-      exported_data.push(data)
-    }
-  }
+  // 验证输入数据
+  assert_eq(network_errors.length(), 5)
+  assert_eq(max_retry_attempts > 0, true)
   
-  // 验证第一次导出结果
-  assert_eq(exported_data.length(), 2) // trace_data_2, trace_data_3
-  assert_eq(failed_data.length(), 3) // trace_data_1, metrics_data_1, logs_data_1
-  assert_eq(retry_queue.length(), 3)
-  
-  // 重试失败的导出
-  for data in retry_queue {
-    if data.has_prefix("metrics") {
-      // 模拟重试成功
-      exported_data.push(data)
-    } else {
-      // 仍然失败，但记录错误
-      failed_data.push(data + "_retry_failed")
-    }
-  }
-  
-  // 验证重试结果
-  assert_eq(exported_data.length(), 3) // trace_data_2, trace_data_3, metrics_data_1
-  assert_eq(exported_data.contains("metrics_data_1"), true)
-  
-  // 验证错误数据被正确处理
-  let final_failed_count = 0
-  for data in failed_data {
-    if data.has_suffix("_retry_failed") {
-      final_failed_count = final_failed_count + 1
-    }
-  }
-  assert_eq(final_failed_count, 2) // trace_data_1, logs_data_1 仍然失败
-}
-
-test "telemetry_memory_pressure_recovery" {
-  // 测试内存压力下的恢复机制
-  
-  let mut memory_usage = 80 // 初始内存使用率80%
-  let high_memory_threshold = 90
-  let critical_memory_threshold = 95
-  let mut recovery_actions = Array[String]::new()
-  
-  // 模拟内存压力增加
-  while memory_usage < critical_memory_threshold {
-    memory_usage = memory_usage + 3
+  // 模拟网络错误恢复
+  let mut recovery_results = []
+  let mut i = 0
+  while i < network_errors.length() {
+    let error_type = network_errors[i].0
+    let error_delay = network_errors[i].1
     
-    if memory_usage > high_memory_threshold {
-      // 触发内存恢复机制
-      if memory_usage < critical_memory_threshold {
-        // 高内存压力恢复
-        recovery_actions.push("clear_cache")
-        memory_usage = memory_usage - 10
-      } else {
-        // 关键内存压力恢复
-        recovery_actions.push("drop_buffers")
-        recovery_actions.push("reduce_batch_size")
-        memory_usage = memory_usage - 20
-      }
-    }
-  }
-  
-  // 验证恢复机制执行
-  assert_eq(memory_usage >= critical_memory_threshold, true)
-  assert_eq(recovery_actions.length() > 0, true)
-  assert_eq(recovery_actions.contains("clear_cache"), true)
-  
-  // 验证内存使用率下降
-  if recovery_actions.contains("drop_buffers") {
-    assert_eq(memory_usage < critical_memory_threshold - 15, true)
-  }
-}
-
-test "telemetry_service_degradation_recovery" {
-  // 测试服务降级和恢复机制
-  
-  let mut service_status = "healthy"
-  let mut error_count = 0
-  let error_threshold = 5
-  let mut degradation_level = 0 // 0=正常, 1=轻度降级, 2=重度降级
-  
-  let telemetry_operations = [
-    "trace_export", "metrics_collection", "log_processing",
-    "trace_export", "metrics_collection", "log_processing",
-    "trace_export", "metrics_collection", "log_processing",
-    "trace_export", "metrics_collection", "log_processing",
-    "trace_export", "metrics_collection", "log_processing"
-  ]
-  
-  // 模拟操作失败和服务降级
-  for operation in telemetry_operations {
-    let operation_success = if error_count < 3 { false } else { true }
+    let mut retry_count = 0
+    let mut total_delay = 0
+    let mut recovered = false
+    let mut current_backoff = initial_backoff_ms
     
-    if not operation_success {
-      error_count = error_count + 1
+    while retry_count < max_retry_attempts && not recovered {
+      retry_count = retry_count + 1
       
-      // 根据错误数量调整降级级别
-      if error_count >= error_threshold {
-        degradation_level = 2 // 重度降级
-        service_status = "degraded_heavy"
-      } else if error_count >= 3 {
-        degradation_level = 1 // 轻度降级
-        service_status = "degraded_light"
+      // 模拟重试延迟
+      total_delay = total_delay + current_backoff
+      
+      // 模拟恢复成功概率（随重试次数增加）
+      let success_probability = retry_count.to_double() / max_retry_attempts.to_double()
+      let random_value = (retry_count * 7) % 10 // 简化的随机数
+      let should_succeed = random_value < (success_probability * 10.0).to_int()
+      
+      if should_succeed {
+        recovered = true
+      } else {
+        current_backoff = current_backoff * backoff_multiplier
       }
     }
-  }
-  
-  // 验证服务降级状态
-  assert_eq(error_count, 3)
-  assert_eq(degradation_level, 1)
-  assert_eq(service_status, "degraded_light")
-  
-  // 模拟服务恢复
-  let mut consecutive_successes = 0
-  let recovery_threshold = 3
-  
-  for i = 0; i < 5; i = i + 1 {
-    // 模拟成功的操作
-    consecutive_successes = consecutive_successes + 1
     
-    if consecutive_successes >= recovery_threshold {
-      // 开始恢复
-      if degradation_level == 1 {
-        degradation_level = 0
-        service_status = "healthy"
-      } else if degradation_level == 2 {
-        degradation_level = 1
-        service_status = "degraded_light"
-      }
-      consecutive_successes = 0
-    }
+    recovery_results.push((error_type, retry_count, total_delay, recovered))
+    
+    i = i + 1
   }
   
-  // 验证服务恢复
-  assert_eq(degradation_level, 0)
-  assert_eq(service_status, "healthy")
+  // 验证恢复结果
+  assert_eq(recovery_results.length(), 5)
+  
+  // 验证重试逻辑
+  i = 0
+  while i < recovery_results.length() {
+    let retry_count = recovery_results[i].1
+    let total_delay = recovery_results[i].2
+    let recovered = recovery_results[i].3
+    
+    assert_eq(retry_count > 0, true)
+    assert_eq(retry_count <= max_retry_attempts, true)
+    assert_eq(total_delay >= initial_backoff_ms, true)
+    
+    // 验证指数退避
+    if retry_count > 1 {
+      assert_eq(total_delay >= initial_backoff_ms + initial_backoff_ms * backoff_multiplier, true)
+    }
+    
+    i = i + 1
+  }
+  
+  // 计算总体恢复率
+  let mut recovered_count = 0
+  i = 0
+  while i < recovery_results.length() {
+    if recovery_results[i].3 {
+      recovered_count = recovered_count + 1
+    }
+    i = i + 1
+  }
+  
+  let recovery_rate = recovered_count.to_double() / recovery_results.length().to_double()
+  assert_eq(recovery_rate >= 0.4, true) // 至少40%的恢复率
 }
 
-test "telemetry_circuit_breaker_recovery" {
-  // 测试断路器模式的恢复机制
+test "telemetry_error_data_corruption_handling" {
+  // 测试数据损坏处理机制
   
-  let mut circuit_state = "closed" // closed, open, half_open
-  let mut failure_count = 0
-  let failure_threshold = 3
-  let mut success_count = 0
-  let success_threshold = 2
-  
-  // 模拟断路器打开
-  while circuit_state == "closed" and failure_count < failure_threshold {
-    // 模拟失败请求
-    failure_count = failure_count + 1
-    
-    if failure_count >= failure_threshold {
-      circuit_state = "open"
-    }
-  }
-  
-  // 验证断路器打开
-  assert_eq(circuit_state, "open")
-  assert_eq(failure_count, failure_threshold)
-  
-  // 模拟断路器半开状态
-  let mut wait_time = 0
-  let recovery_timeout = 5
-  
-  while circuit_state == "open" and wait_time < recovery_timeout {
-    wait_time = wait_time + 1
-    
-    if wait_time >= recovery_timeout {
-      circuit_state = "half_open"
-    }
-  }
-  
-  // 验证断路器半开状态
-  assert_eq(circuit_state, "half_open")
-  assert_eq(wait_time, recovery_timeout)
-  
-  // 模拟半开状态下的成功请求
-  while circuit_state == "half_open" and success_count < success_threshold {
-    // 模拟成功请求
-    success_count = success_count + 1
-    
-    if success_count >= success_threshold {
-      circuit_state = "closed"
-      failure_count = 0 // 重置失败计数
-    }
-  }
-  
-  // 验证断路器恢复关闭状态
-  assert_eq(circuit_state, "closed")
-  assert_eq(success_count, success_threshold)
-  assert_eq(failure_count, 0)
-}
-
-test "telemetry_data_corruption_recovery" {
-  // 测试数据损坏恢复机制
-  
-  let original_data = [
-    "trace_id:abc123,span_id:def456,status:ok",
-    "metric_name:counter,value:42,labels:env=test",
-    "log_level:INFO,message:test data,timestamp:1234567890"
+  let corrupted_data_samples = [
+    ("malformed_json", "{\"trace_id\": \"123\", \"span_id\": }"), // 缺少值
+    ("invalid_trace_id", "{\"trace_id\": \"invalid\", \"span_id\": \"456\"}"), // 无效trace_id
+    ("missing_required_field", "{\"span_id\": \"456\"}"), // 缺少必需字段
+    ("extra_large_data", "{\"trace_id\": \"" + "1".repeat(1000) + "\", \"span_id\": \"456\"}"), // 过大数据
+    ("null_values", "{\"trace_id\": null, \"span_id\": \"456\"}") // 空值
   ]
   
-  let mut corrupted_data = Array[String]::new()
-  let mut recovered_data = Array[String]::new()
-  let mut checksums = Array[String]::new()
+  // 验证输入数据
+  assert_eq(corrupted_data_samples.length(), 5)
   
-  // 为原始数据生成校验和
-  for data in original_data {
-    let checksum = generate_checksum(data)
-    checksums.push(checksum)
-  }
-  
-  // 模拟数据损坏
-  corrupted_data.push("trace_id:abc123,span_id:def456,status:corrupted") // 损坏的数据
-  corrupted_data.push("metric_name:counter,value:42,labels:env=test") // 正常数据
-  corrupted_data.push("log_level:INFO,message:corrupted data,timestamp:1234567890") // 损坏的数据
-  
-  // 检测和恢复损坏的数据
-  for i in 0..corrupted_data.length() {
-    let data = corrupted_data[i]
-    let expected_checksum = checksums[i]
-    let actual_checksum = generate_checksum(data)
+  // 模拟数据损坏处理
+  let mut handling_results = []
+  let mut i = 0
+  while i < corrupted_data_samples.length() {
+    let corruption_type = corrupted_data_samples[i].0
+    let corrupted_data = corrupted_data_samples[i].1
     
-    if actual_checksum != expected_checksum {
-      // 数据损坏，尝试恢复
-      let recovered = attempt_data_recovery(data, original_data[i])
-      recovered_data.push(recovered)
-    } else {
-      // 数据正常
-      recovered_data.push(data)
+    // 数据验证和修复逻辑
+    let mut is_valid = true
+    let mut repair_action = "none"
+    let mut data_loss = false
+    
+    if corruption_type == "malformed_json" {
+      is_valid = false
+      repair_action = "reject"
+      data_loss = true
+    } else if corruption_type == "invalid_trace_id" {
+      is_valid = false
+      repair_action = "sanitize"
+      // 修复：替换为有效的trace_id
+      corrupted_data = "{\"trace_id\": \"0af7651916cd43dd8448eb211c80319c\", \"span_id\": \"456\"}"
+    } else if corruption_type == "missing_required_field" {
+      is_valid = false
+      repair_action = "complete"
+      // 修复：添加缺少的字段
+      corrupted_data = "{\"trace_id\": \"0af7651916cd43dd8448eb211c80319c\", \"span_id\": \"456\"}"
+    } else if corruption_type == "extra_large_data" {
+      is_valid = false
+      repair_action = "truncate"
+      // 修复：截断过大的字段
+      corrupted_data = "{\"trace_id\": \"0af7651916cd43dd8448eb211c80319c\", \"span_id\": \"456\"}"
+    } else if corruption_type == "null_values" {
+      is_valid = false
+      repair_action = "replace_defaults"
+      // 修复：替换空值为默认值
+      corrupted_data = "{\"trace_id\": \"0af7651916cd43dd8448eb211c80319c\", \"span_id\": \"456\"}"
     }
+    
+    handling_results.push((corruption_type, is_valid, repair_action, data_loss))
+    
+    i = i + 1
   }
   
-  // 验证数据恢复结果
-  assert_eq(recovered_data.length(), original_data.length())
+  // 验证处理结果
+  assert_eq(handling_results.length(), 5)
   
-  // 验证恢复后的数据完整性
-  for i in 0..recovered_data.length() {
-    let recovered_checksum = generate_checksum(recovered_data[i])
-    let expected_checksum = checksums[i]
-    assert_eq(recovered_checksum, expected_checksum)
+  // 验证每种损坏类型的处理
+  i = 0
+  while i < handling_results.length() {
+    let corruption_type = handling_results[i].0
+    let repair_action = handling_results[i].2
+    let data_loss = handling_results[i].3
+    
+    if corruption_type == "malformed_json" {
+      assert_eq(repair_action, "reject")
+      assert_eq(data_loss, true)
+    } else {
+      assert_eq(repair_action != "none", true)
+      assert_eq(data_loss == false, true) // 其他情况应该可以修复而不丢失数据
+    }
+    
+    i = i + 1
+  }
+  
+  // 计算数据保留率
+  let mut data_preserved_count = 0
+  i = 0
+  while i < handling_results.length() {
+    if not handling_results[i].3 {
+      data_preserved_count = data_preserved_count + 1
+    }
+    i = i + 1
+  }
+  
+  let data_preservation_rate = data_preserved_count.to_double() / handling_results.length().to_double()
+  assert_eq(data_preservation_rate >= 0.8, true) // 至少80%的数据保留率
+}
+
+test "telemetry_error_circuit_breaker" {
+  // 测试熔断器机制
+  
+  let failure_threshold = 5 // 连续失败5次触发熔断
+  let recovery_timeout_ms = 10000 // 10秒后尝试恢复
+  let half_open_max_calls = 3 // 半开状态最多允许3次调用
+  
+  // 模拟请求序列（成功/失败）
+  let request_results = [
+    false, false, false, false, false, // 连续5次失败，触发熔断
+    true,  // 熔断状态，直接拒绝
+    true,  // 熔断状态，直接拒绝
+    false, // 超时后进入半开状态，失败
+    false, // 半开状态，失败
+    true,  // 半开状态，成功
+    true,  // 半开状态，成功，恢复到关闭状态
+    true,  // 正常状态，成功
+    false, // 正常状态，失败
+    true   // 正常状态，成功
+  ]
+  
+  // 验证输入数据
+  assert_eq(request_results.length(), 10)
+  
+  // 模拟熔断器状态变化
+  enum CircuitState {
+    Closed
+    Open
+    HalfOpen
+  }
+  
+  let mut circuit_state = CircuitState::Closed
+  let mut failure_count = 0
+  let mut last_failure_time = 0L
+  let mut half_open_calls = 0
+  let mut circuit_states = []
+  
+  let mut i = 0
+  while i < request_results.length() {
+    let request_success = request_results[i]
+    let current_time = (i * 2000).to_long() // 每个请求间隔2秒
+    
+    let mut call_allowed = false
+    let mut state_changed = false
+    
+    match circuit_state {
+      CircuitState::Closed => {
+        call_allowed = true
+        if request_success {
+          failure_count = 0
+        } else {
+          failure_count = failure_count + 1
+          last_failure_time = current_time
+          if failure_count >= failure_threshold {
+            circuit_state = CircuitState::Open
+            state_changed = true
+          }
+        }
+      }
+      CircuitState::Open => {
+        if current_time - last_failure_time >= recovery_timeout_ms.to_long() {
+          circuit_state = CircuitState::HalfOpen
+          half_open_calls = 0
+          state_changed = true
+          call_allowed = true
+        } else {
+          call_allowed = false
+        }
+      }
+      CircuitState::HalfOpen => {
+        if half_open_calls < half_open_max_calls {
+          call_allowed = true
+          half_open_calls = half_open_calls + 1
+          
+          if request_success {
+            circuit_state = CircuitState::Closed
+            failure_count = 0
+            state_changed = true
+          } else {
+            circuit_state = CircuitState::Open
+            last_failure_time = current_time
+            state_changed = true
+          }
+        } else {
+          call_allowed = false
+        }
+      }
+    }
+    
+    circuit_states.push((i, circuit_state, call_allowed, state_changed))
+    
+    i = i + 1
+  }
+  
+  // 验证熔断器行为
+  assert_eq(circuit_states.length(), 10)
+  
+  // 验证熔断器在连续失败后打开
+  assert_eq(circuit_states[5].1, CircuitState::Open) // 第6个请求时熔断器打开
+  assert_eq(circuit_states[5].2, false) // 熔断状态下拒绝调用
+  
+  // 验证半开状态
+  let mut found_half_open = false
+  i = 0
+  while i < circuit_states.length() {
+    if circuit_states[i].1 == CircuitState::HalfOpen {
+      found_half_open = true
+      break
+    }
+    i = i + 1
+  }
+  assert_eq(found_half_open, true)
+  
+  // 验证最终恢复到关闭状态
+  let mut final_state = CircuitState::Closed
+  i = circuit_states.length() - 1
+  while i >= 0 {
+    if circuit_states[i].3 { // 最后一次状态变化
+      final_state = circuit_states[i].1
+      break
+    }
+    i = i - 1
+  }
+  assert_eq(final_state, CircuitState::Closed)
+}
+
+test "telemetry_error_graceful_degradation" {
+  // 测试优雅降级机制
+  
+  let system_load_levels = [
+    (0.3, "full"),      // 30%负载，全功能
+    (0.6, "reduced"),   // 60%负载，降级功能
+    (0.8, "minimal"),   // 80%负载，最小功能
+    (0.9, "emergency"), // 90%负载，紧急模式
+    (0.4, "reduced")    // 40%负载，恢复到降级功能
+  ]
+  
+  // 验证输入数据
+  assert_eq(system_load_levels.length(), 5)
+  
+  // 模拟优雅降级策略
+  let mut degradation_levels = []
+  let mut i = 0
+  while i < system_load_levels.length() {
+    let load_level = system_load_levels[i].0
+    let expected_mode = system_load_levels[i].1
+    
+    let mut current_mode = "full"
+    let mut sampling_rate = 1.0
+    let mut batch_size = 512
+    let mut export_interval_ms = 5000
+    let mut features_enabled = ["traces", "metrics", "logs", "profiling"]
+    
+    // 根据负载调整功能
+    if load_level >= 0.9 {
+      current_mode = "emergency"
+      sampling_rate = 0.01
+      batch_size = 32
+      export_interval_ms = 30000
+      features_enabled = ["traces"] // 只保留关键追踪功能
+    } else if load_level >= 0.8 {
+      current_mode = "minimal"
+      sampling_rate = 0.1
+      batch_size = 64
+      export_interval_ms = 15000
+      features_enabled = ["traces", "metrics"] // 保留追踪和指标
+    } else if load_level >= 0.6 {
+      current_mode = "reduced"
+      sampling_rate = 0.5
+      batch_size = 128
+      export_interval_ms = 10000
+      features_enabled = ["traces", "metrics", "logs"] // 保留大部分功能
+    } else {
+      current_mode = "full"
+      sampling_rate = 1.0
+      batch_size = 512
+      export_interval_ms = 5000
+      features_enabled = ["traces", "metrics", "logs", "profiling"] // 全功能
+    }
+    
+    degradation_levels.push((
+      load_level,
+      current_mode,
+      sampling_rate,
+      batch_size,
+      export_interval_ms,
+      features_enabled.length()
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证降级策略
+  assert_eq(degradation_levels.length(), 5)
+  
+  // 验证高负载时的降级
+  assert_eq(degradation_levels[3].1, "emergency") // 90%负载
+  assert_eq(degradation_levels[3].2, 0.01) // 1%采样率
+  assert_eq(degradation_levels[3].5, 1) // 只有1个功能启用
+  
+  // 验证中等负载时的降级
+  assert_eq(degradation_levels[1].1, "reduced") // 60%负载
+  assert_eq(degradation_levels[1].2, 0.5) // 50%采样率
+  assert_eq(degradation_levels[1].5, 3) // 3个功能启用
+  
+  // 验证低负载时的全功能
+  assert_eq(degradation_levels[0].1, "full") // 30%负载
+  assert_eq(degradation_levels[0].2, 1.0) // 100%采样率
+  assert_eq(degradation_levels[0].5, 4) // 全部4个功能启用
+  
+  // 验证降级的单调性（负载越高，功能越少）
+  i = 1
+  while i < degradation_levels.length() {
+    if degradation_levels[i].0 > degradation_levels[i-1].0 {
+      assert_eq(degradation_levels[i].5 <= degradation_levels[i-1].5, true)
+    }
+    i = i + 1
   }
 }
 
-test "telemetry_graceful_shutdown_recovery" {
-  // 测试优雅关闭和恢复机制
+test "telemetry_error_checkpoint_recovery" {
+  // 测试检查点恢复机制
   
-  let mut shutdown_initiated = false
-  let mut in_flight_operations = 5
-  let mut completed_operations = 0
-  let mut shutdown_timeout = 10
-  let mut graceful_shutdown = false
+  let checkpoint_intervals = [1000, 5000, 10000] // 1秒、5秒、10秒间隔
+  let failure_points = [2500, 7500, 12000] // 在这些时间点发生故障
+  let total_operations = 15000
   
-  // 启动优雅关闭
-  shutdown_initiated = true
+  // 验证输入数据
+  assert_eq(checkpoint_intervals.length(), 3)
+  assert_eq(failure_points.length(), 3)
   
-  // 模拟完成进行中的操作
-  while in_flight_operations > 0 and shutdown_timeout > 0 {
-    // 模拟操作完成
-    in_flight_operations = in_flight_operations - 1
-    completed_operations = completed_operations + 1
-    shutdown_timeout = shutdown_timeout - 1
+  // 模拟检查点恢复
+  let mut recovery_scenarios = []
+  let mut interval_index = 0
+  while interval_index < checkpoint_intervals.length() {
+    let checkpoint_interval = checkpoint_intervals[interval_index]
+    
+    let mut last_checkpoint = 0
+    let mut recovered_position = 0
+    let mut data_loss_amount = 0
+    let mut recovery_time = 0
+    
+    let mut i = 0
+    while i < failure_points.length() {
+      let failure_point = failure_points[i]
+      
+      // 找到最近的检查点
+      let mut checkpoint_found = false
+      let mut checkpoint_time = 0
+      let mut j = checkpoint_interval
+      while j <= failure_point {
+        checkpoint_time = j
+        j = j + checkpoint_interval
+      }
+      
+      if checkpoint_time > 0 {
+        last_checkpoint = checkpoint_time
+        recovered_position = checkpoint_time
+        data_loss_amount = failure_point - checkpoint_time
+        recovery_time = 500 // 模拟恢复时间
+        checkpoint_found = true
+      }
+      
+      recovery_scenarios.push((
+        checkpoint_interval,
+        failure_point,
+        checkpoint_found,
+        recovered_position,
+        data_loss_amount,
+        recovery_time
+      ))
+      
+      i = i + 1
+    }
+    
+    interval_index = interval_index + 1
   }
   
-  // 验证优雅关闭状态
-  if in_flight_operations == 0 {
-    graceful_shutdown = true
+  // 验证恢复场景
+  assert_eq(recovery_scenarios.length(), 9) // 3个间隔 × 3个故障点
+  
+  // 验证检查点间隔对数据丢失的影响
+  let mut interval_1000_loss = 0
+  let mut interval_5000_loss = 0
+  let mut interval_10000_loss = 0
+  
+  let mut i = 0
+  while i < recovery_scenarios.length() {
+    let interval = recovery_scenarios[i].0
+    let data_loss = recovery_scenarios[i].4
+    
+    if interval == 1000 {
+      interval_1000_loss = interval_1000_loss + data_loss
+    } else if interval == 5000 {
+      interval_5000_loss = interval_5000_loss + data_loss
+    } else if interval == 10000 {
+      interval_10000_loss = interval_10000_loss + data_loss
+    }
+    
+    i = i + 1
   }
   
-  assert_eq(graceful_shutdown, true)
-  assert_eq(completed_operations, 5)
-  assert_eq(in_flight_operations, 0)
+  // 验证更频繁的检查点减少数据丢失
+  assert_eq(interval_1000_loss <= interval_5000_loss, true)
+  assert_eq(interval_5000_loss <= interval_10000_loss, true)
   
-  // 模拟系统重启和状态恢复
-  let mut system_restarted = false
-  let mut state_restored = false
-  
-  // 重启系统
-  system_restarted = true
-  
-  // 恢复状态
-  if system_restarted {
-    state_restored = true
-    shutdown_initiated = false // 重置关闭状态
+  // 验证所有场景都能找到检查点进行恢复
+  let mut successful_recoveries = 0
+  i = 0
+  while i < recovery_scenarios.length() {
+    if recovery_scenarios[i].2 {
+      successful_recoveries = successful_recoveries + 1
+    }
+    i = i + 1
   }
   
-  // 验证系统恢复
-  assert_eq(system_restarted, true)
-  assert_eq(state_restored, true)
-  assert_eq(shutdown_initiated, false)
-}
-
-// 辅助函数
-fn generate_checksum(data : String) -> String {
-  // 生成简单的校验和（模拟）
-  let mut sum = 0
-  for char in data.to_array() {
-    sum = sum + char.to_int()
-  }
-  return sum.to_string()
-}
-
-fn attempt_data_recovery(corrupted_data : String, original_data : String) -> String {
-  // 尝试数据恢复（模拟）
-  // 在实际实现中，这里会有更复杂的恢复逻辑
-  if corrupted_data.contains("corrupted") {
-    return original_data // 恢复为原始数据
-  } else {
-    return corrupted_data // 数据未损坏，直接返回
-  }
+  assert_eq(successful_recoveries, recovery_scenarios.length())
+  
+  // 计算平均数据丢失
+  let total_data_loss = interval_1000_loss + interval_5000_loss + interval_10000_loss
+  let average_data_loss = total_data_loss.to_double() / recovery_scenarios.length().to_double()
+  
+  // 验证平均数据丢失在合理范围内
+  assert_eq(average_data_loss >= 0.0, true)
+  assert_eq(average_data_loss <= 5000.0, true) // 平均不超过5秒的数据丢失
 }

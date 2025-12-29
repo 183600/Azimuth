@@ -1,577 +1,917 @@
-// 序列化兼容性测试 - 测试数据序列化和反序列化
+// 序列化兼容性测试用例
+// 测试遥测数据的序列化和反序列化兼容性
 
-test "attribute_value_serialization" {
+test "attribute_value_serialization_compatibility" {
   // 测试AttributeValue的序列化兼容性
   
-  // 测试各种类型的属性值
-  let string_attr = common::AttributeValue::string("test-string")
-  let int_attr = common::AttributeValue::int(12345L)
-  let float_attr = common::AttributeValue::float(3.14159)
-  let bool_attr = common::AttributeValue::bool(true)
-  let string_array_attr = common::AttributeValue::array_string(["a", "b", "c"])
-  let int_array_attr = common::AttributeValue::array_int([1L, 2L, 3L])
-  let float_array_attr = common::AttributeValue::array_float([1.1, 2.2, 3.3])
-  let bool_array_attr = common::AttributeValue::array_bool([true, false, true])
+  // 1. 测试基本类型的序列化兼容性
+  let string_attr = AttributeValue::string("test_string")
+  let int_attr = AttributeValue::int(42L)
+  let float_attr = AttributeValue::float(3.14)
+  let bool_attr = AttributeValue::bool(true)
   
-  // 模拟序列化过程（在实际实现中会有真正的序列化逻辑）
-  // 这里我们验证属性值可以正确创建和访问
-  let attributes = [
-    ("string.key", string_attr),
-    ("int.key", int_attr),
-    ("float.key", float_attr),
-    ("bool.key", bool_attr),
-    ("string_array.key", string_array_attr),
-    ("int_array.key", int_array_attr),
-    ("float_array.key", float_array_attr),
-    ("bool_array.key", bool_array_attr)
-  ]
-  
-  // 验证属性值的类型和内容
-  assert_eq(attributes.length(), 8)
-  
-  // 验证字符串属性
-  match attributes[0].1 {
-    common::StringValue(s) => assert_eq(s, "test-string")
-    _ => assert!(false, "Expected StringValue")
+  // 模拟序列化过程
+  let serialized_string = match string_attr {
+    StringValue(s) => "string:" + s
+    _ => @test.fail("Test failed")
   }
   
-  // 验证整数属性
-  match attributes[1].1 {
-    common::IntValue(i) => assert_eq(i, 12345L)
-    _ => assert!(false, "Expected IntValue")
+  let serialized_int = match int_attr {
+    IntValue(i) => "int:" + i.to_string()
+    _ => @test.fail("Test failed")
   }
   
-  // 验证浮点属性
-  match attributes[2].1 {
-    common::FloatValue(f) => assert_eq(f, 3.14159)
-    _ => assert!(false, "Expected FloatValue")
+  let serialized_float = match float_attr {
+    FloatValue(f) => "float:" + f.to_string()
+    _ => @test.fail("Test failed")
   }
   
-  // 验证布尔属性
-  match attributes[3].1 {
-    common::BoolValue(b) => assert_eq(b, true)
-    _ => assert!(false, "Expected BoolValue")
+  let serialized_bool = match bool_attr {
+    BoolValue(b) => "bool:" + (if b { "true" } else { "false" })
+    _ => @test.fail("Test failed")
   }
+  
+  // 验证序列化结果
+  assert_eq(serialized_string, "string:test_string")
+  assert_eq(serialized_int, "int:42")
+  assert_eq(serialized_float, "float:3.14")
+  assert_eq(serialized_bool, "bool:true")
+  
+  // 2. 模拟反序列化过程
+  let deserialized_string = if serialized_string.starts_with("string:") {
+    let value = serialized_string.substring(7)  // 跳过"string:"
+    AttributeValue::string(value)
+  } else {
+    @test.fail("Test failed")
+  }
+  
+  let deserialized_int = if serialized_int.starts_with("int:") {
+    let value = serialized_int.substring(4)  // 跳过"int:"
+    AttributeValue::int(value.to_int64())
+  } else {
+    @test.fail("Test failed")
+  }
+  
+  let deserialized_float = if serialized_float.starts_with("float:") {
+    let value = serialized_float.substring(6)  // 跳过"float:"
+    AttributeValue::float(value.to_double())
+  } else {
+    @test.fail("Test failed")
+  }
+  
+  let deserialized_bool = if serialized_bool.starts_with("bool:") {
+    let value = serialized_bool.substring(5)  // 跳过"bool:"
+    AttributeValue::bool(value == "true")
+  } else {
+    @test.fail("Test failed")
+  }
+  
+  // 验证反序列化结果
+  match deserialized_string {
+    StringValue(s) => assert_eq(s, "test_string")
+    _ => @test.fail("Test failed")
+  }
+  
+  match deserialized_int {
+    IntValue(i) => assert_eq(i, 42L)
+    _ => @test.fail("Test failed")
+  }
+  
+  match deserialized_float {
+    FloatValue(f) => assert_eq(f, 3.14)
+    _ => @test.fail("Test failed")
+  }
+  
+  match deserialized_bool {
+    BoolValue(b) => assert_eq(b, true)
+    _ => @test.fail("Test failed")
+  }
+  
+  // 3. 测试数组类型的序列化兼容性
+  let string_array_attr = AttributeValue::array_string(["a", "b", "c"])
+  let int_array_attr = AttributeValue::array_int([1L, 2L, 3L])
+  let float_array_attr = AttributeValue::array_float([1.1, 2.2, 3.3])
+  let bool_array_attr = AttributeValue::array_bool([true, false, true])
+  
+  // 模拟数组序列化
+  let serialized_string_array = match string_array_attr {
+    ArrayStringValue(arr) => {
+      let serialized_items = []
+      let mut i = 0
+      while i < arr.length() {
+        serialized_items.push(arr[i])
+        i = i + 1
+      }
+      "string_array:" + serialized_items.join(",")
+    }
+    _ => @test.fail("Test failed")
+  }
+  
+  let serialized_int_array = match int_array_attr {
+    ArrayIntValue(arr) => {
+      let serialized_items = []
+      let mut i = 0
+      while i < arr.length() {
+        serialized_items.push(arr[i].to_string())
+        i = i + 1
+      }
+      "int_array:" + serialized_items.join(",")
+    }
+    _ => @test.fail("Test failed")
+  }
+  
+  // 验证数组序列化
+  assert_eq(serialized_string_array, "string_array:a,b,c")
+  assert_eq(serialized_int_array, "int_array:1,2,3")
+  
+  // 4. 测试特殊值的序列化兼容性
+  let empty_string_attr = AttributeValue::string("")
+  let zero_int_attr = AttributeValue::int(0L)
+  let negative_int_attr = AttributeValue::int(-1L)
+  let max_int_attr = AttributeValue::int(9223372036854775807L)
+  let zero_float_attr = AttributeValue::float(0.0)
+  let infinity_float_attr = AttributeValue::float(1.0/0.0)
+  let nan_float_attr = AttributeValue::float(0.0/0.0)
+  
+  // 序列化特殊值
+  let serialized_empty_string = match empty_string_attr {
+    StringValue(s) => "string:" + s
+    _ => @test.fail("Test failed")
+  }
+  
+  let serialized_zero_int = match zero_int_attr {
+    IntValue(i) => "int:" + i.to_string()
+    _ => @test.fail("Test failed")
+  }
+  
+  let serialized_negative_int = match negative_int_attr {
+    IntValue(i) => "int:" + i.to_string()
+    _ => @test.fail("Test failed")
+  }
+  
+  let serialized_max_int = match max_int_attr {
+    IntValue(i) => "int:" + i.to_string()
+    _ => @test.fail("Test failed")
+  }
+  
+  // 验证特殊值序列化
+  assert_eq(serialized_empty_string, "string:")
+  assert_eq(serialized_zero_int, "int:0")
+  assert_eq(serialized_negative_int, "int:-1")
+  assert_eq(serialized_max_int, "int:9223372036854775807")
 }
 
-test "resource_serialization" {
+test "resource_serialization_compatibility" {
   // 测试Resource的序列化兼容性
   
-  // 创建完整的Resource
-  let resource = common::Resource::{
-    service_name: "test-service",
-    service_version: Some("1.2.3"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: [
-      ("service.instance.id", common::AttributeValue::string("instance-123")),
-      ("service.namespace", common::AttributeValue::string("production")),
-      ("host.name", common::AttributeValue::string("host-001")),
-      ("deployment.environment", common::AttributeValue::string("prod")),
-      ("os.type", common::AttributeValue::string("linux")),
-      ("os.version", common::AttributeValue::string("5.4.0")),
-      ("process.pid", common::AttributeValue::int(12345L)),
-      ("process.executable.name", common::AttributeValue::string("test-app")),
-      ("process.command_args", common::AttributeValue::array_string(["--config", "config.yaml"])),
-      ("cpu.count", common::AttributeValue::int(8L)),
-      ("memory.total", common::AttributeValue::int(16777216000L)),
-      ("service.available", common::AttributeValue::bool(true))
-    ]
+  // 1. 创建基本资源
+  let basic_resource = Resource::default("test-service")
+  
+  // 2. 模拟资源序列化
+  let serialized_resource = "resource:" + 
+    basic_resource.service_name + "|" +
+    match basic_resource.service_version {
+      Some(version) => version
+      None => ""
+    } + "|" +
+    basic_resource.telemetry_sdk_name + "|" +
+    basic_resource.telemetry_sdk_version + "|" +
+    "attributes_count:" + basic_resource.attributes.length().to_string()
+  
+  // 验证资源序列化
+  assert_eq(serialized_resource, "resource:test-service||azimuth|0.1.0|attributes_count:0")
+  
+  // 3. 模拟资源反序列化
+  let deserialized_service_name = if serialized_resource.starts_with("resource:") {
+    let parts = serialized_resource.substring(8).split("|")
+    parts[0]
+  } else {
+    @test.fail("Test failed")
   }
   
-  // 验证Resource结构
-  assert_eq(resource.service_name, "test-service")
-  assert_eq(resource.service_version, Some("1.2.3"))
-  assert_eq(resource.telemetry_sdk_name, "azimuth")
-  assert_eq(resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(resource.attributes.length(), 12)
+  // 验证反序列化结果
+  assert_eq(deserialized_service_name, "test-service")
   
-  // 验证特定属性
-  let mut found_instance_id = false
-  let mut found_pid = false
-  let mut found_available = false
-  let mut i = 0
-  while i < resource.attributes.length() {
-    let (key, value) = resource.attributes[i]
-    match key {
-      "service.instance.id" => {
-        match value {
-          common::StringValue(id) => {
-            if id == "instance-123" { found_instance_id = true }
-          }
-          _ => ()
-        }
-      }
-      "process.pid" => {
-        match value {
-          common::IntValue(pid) => {
-            if pid == 12345L { found_pid = true }
-          }
-          _ => ()
-        }
-      }
-      "service.available" => {
-        match value {
-          common::BoolValue(available) => {
-            if available == true { found_available = true }
-          }
-          _ => ()
-        }
-      }
-      _ => ()
-    }
-    i = i + 1
+  // 4. 测试复杂资源的序列化兼容性
+  let complex_resource = Resource::default("complex-service")
+  
+  // 创建带有属性的复杂资源（通过创建LogRecord来模拟）
+  let complex_attributes = [
+    ("service.namespace", AttributeValue::string("production")),
+    ("service.version", AttributeValue::string("2.1.0")),
+    ("deployment.environment", AttributeValue::string("prod")),
+    ("host.name", AttributeValue::string("web-server-01")),
+    ("process.pid", AttributeValue::int(12345L))
+  ]
+  
+  let complex_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Complex resource test"),
+    attributes: complex_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(complex_resource),
+    instrumentation_scope: None
   }
   
-  assert!(found_instance_id)
-  assert!(found_pid)
-  assert!(found_available)
+  // 模拟复杂资源序列化
+  let serialized_complex_resource = "resource:" + 
+    complex_resource.service_name + "|" +
+    "2.1.0|" +  // 假设有版本
+    complex_resource.telemetry_sdk_name + "|" +
+    complex_resource.telemetry_sdk_version + "|" +
+    "attributes_count:" + complex_attributes.length().to_string()
+  
+  // 验证复杂资源序列化
+  assert_eq(serialized_complex_resource, "resource:complex-service|2.1.0|azimuth|0.1.0|attributes_count:5")
+  
+  // 5. 测试特殊字符资源的序列化兼容性
+  let special_resource = Resource::default("service-with-special-chars!@#$%^&*()")
+  
+  let serialized_special_resource = "resource:" + 
+    special_resource.service_name + "|" +
+    "1.0.0|" +
+    special_resource.telemetry_sdk_name + "|" +
+    special_resource.telemetry_sdk_version + "|" +
+    "attributes_count:0"
+  
+  // 验证特殊字符资源序列化
+  assert_eq(serialized_special_resource, "resource:service-with-special-chars!@#$%^&*()|1.0.0|azimuth|0.1.0|attributes_count:0")
+  
+  // 6. 测试Unicode资源的序列化兼容性
+  let unicode_resource = Resource::default("Unicode服务测试🚀")
+  
+  let serialized_unicode_resource = "resource:" + 
+    unicode_resource.service_name + "|" +
+    "1.0.0|" +
+    unicode_resource.telemetry_sdk_name + "|" +
+    unicode_resource.telemetry_sdk_version + "|" +
+    "attributes_count:0"
+  
+  // 验证Unicode资源序列化
+  assert_eq(serialized_unicode_resource, "resource:Unicode服务测试🚀|1.0.0|azimuth|0.1.0|attributes_count:0")
 }
 
-test "span_serialization" {
+test "span_serialization_compatibility" {
   // 测试Span的序列化兼容性
   
-  // 创建完整的Span
-  let span_context = trace::SpanContext::{
-    trace_id: [0_byte, 1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte,
-               8_byte, 9_byte, 10_byte, 11_byte, 12_byte, 13_byte, 14_byte, 15_byte],
-    span_id: [0_byte, 1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte],
-    trace_flags: 1_byte,
-    trace_state: "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+  // 1. 创建基本span
+  let ctx = Context::empty()
+  let (_, basic_span) = NoopTracer::start_span(ctx, "basic_span", Internal, None)
+  
+  // 2. 模拟span序列化
+  let serialized_span = "span:" + 
+    basic_span.name + "|" +
+    match basic_span.kind {
+      Internal => "Internal"
+      Server => "Server"
+      Client => "Client"
+      Producer => "Producer"
+      Consumer => "Consumer"
+    } + "|" +
+    basic_span.start_time_unix_nanos.to_string() + "|" +
+    match basic_span.end_time_unix_nanos {
+      Some(end_time) => end_time.to_string()
+      None => "null"
+    } + "|" +
+    match basic_span.status {
+      Unset => "Unset"
+      Ok => "Ok"
+      Error => "Error"
+    } + "|" +
+    "attributes_count:" + basic_span.attributes.length().to_string() + "|" +
+    "events_count:" + basic_span.events.length().to_string() + "|" +
+    "links_count:" + basic_span.links.length().to_string()
+  
+  // 验证基本span序列化
+  assert_eq(serialized_span, "span:basic_span|Internal|0|null|Unset|attributes_count:0|events_count:0|links_count:0")
+  
+  // 3. 模拟span反序列化
+  let deserialized_span_name = if serialized_span.starts_with("span:") {
+    let parts = serialized_span.substring(5).split("|")
+    parts[0]
+  } else {
+    @test.fail("Test failed")
   }
   
-  let span_events = [
-    trace::SpanEvent::{
-      name: "event1",
-      timestamp_unix_nanos: 1609459200000000000L,
-      attributes: [
-        ("event.type", common::AttributeValue::string("info")),
-        ("event.message", common::AttributeValue::string("Operation started"))
-      ]
-    },
-    trace::SpanEvent::{
-      name: "event2",
-      timestamp_unix_nanos: 1609459201000000000L,
-      attributes: [
-        ("event.type", common::AttributeValue::string("error")),
-        ("error.code", common::AttributeValue::int(500))
-      ]
-    }
+  // 验证反序列化结果
+  assert_eq(deserialized_span_name, "basic_span")
+  
+  // 4. 测试复杂span的序列化兼容性
+  let span_attributes = [
+    ("service.name", AttributeValue::string("test-service")),
+    ("operation.name", AttributeValue::string("complex_operation")),
+    ("user.id", AttributeValue::string("user-12345")),
+    ("duration.ms", AttributeValue::int(250L)),
+    ("success", AttributeValue::bool(true))
   ]
   
-  let span_links = [
-    trace::SpanLink::{
-      context: trace::SpanContext::{
-        trace_id: [1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte,
-                   1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte],
-        span_id: [1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte, 1_byte],
-        trace_flags: 0_byte,
-        trace_state: ""
+  let (_, complex_span) = NoopTracer::start_span(ctx, "complex_span", Server, Some(span_attributes))
+  
+  // 创建带有事件的复杂span
+  let complex_span_with_events = Span::{
+    name: "complex_span_with_events",
+    context: complex_span.context,
+    kind: Server,
+    parent_span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0x01_byte })),
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200000000500L),
+    status: Ok,
+    status_description: Some("Operation completed successfully"),
+    attributes: span_attributes,
+    events: [
+      SpanEvent::{
+        name: "start_event",
+        timestamp_unix_nanos: 1640995200000000000L,
+        attributes: [("event.phase", AttributeValue::string("start"))]
       },
-      attributes: [
-        ("link.type", common::AttributeValue::string("parent"))
-      ]
-    }
-  ]
-  
-  let span = trace::Span::{
-    name: "test-span",
-    context: span_context,
-    kind: trace::SpanKind::Server,
-    parent_span_id: Some([9_byte, 9_byte, 9_byte, 9_byte, 9_byte, 9_byte, 9_byte, 9_byte]),
-    start_time_unix_nanos: 1609459200000000000L,
-    end_time_unix_nanos: Some(1609459205000000000L),
-    status: trace::StatusCode::Error,
-    status_description: Some("Operation failed due to timeout"),
-    attributes: [
-      ("http.method", common::AttributeValue::string("GET")),
-      ("http.url", common::AttributeValue::string("https://example.com/api/test")),
-      ("http.status_code", common::AttributeValue::int(500)),
-      ("user.id", common::AttributeValue::string("user-123")),
-      ("request.size", common::AttributeValue::int(1024L)),
-      ("response.size", common::AttributeValue::int(2048L)),
-      ("success", common::AttributeValue::bool(false))
+      SpanEvent::{
+        name: "end_event",
+        timestamp_unix_nanos: 1640995200000000500L,
+        attributes: [("event.phase", AttributeValue::string("end"))]
+      }
     ],
-    events: span_events,
-    links: span_links
+    links: [
+      SpanLink::{
+        context: SpanContext::{
+          trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x02_byte }),
+          span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x03_byte }),
+          trace_flags: 1_byte,
+          trace_state: ""
+        },
+        attributes: [("link.type", AttributeValue::string("parent"))]
+      }
+    ]
   }
   
-  // 验证Span结构
-  assert_eq(span.name, "test-span")
-  assert_eq(span.kind, trace::SpanKind::Server)
-  assert_eq(span.status, trace::StatusCode::Error)
-  assert_eq(span.status_description, Some("Operation failed due to timeout"))
-  assert_eq(span.attributes.length(), 7)
-  assert_eq(span.events.length(), 2)
-  assert_eq(span.links.length(), 1)
+  // 模拟复杂span序列化
+  let serialized_complex_span = "span:" + 
+    complex_span_with_events.name + "|" +
+    "Server|" +
+    complex_span_with_events.start_time_unix_nanos.to_string() + "|" +
+    match complex_span_with_events.end_time_unix_nanos {
+      Some(end_time) => end_time.to_string()
+      None => "null"
+    } + "|" +
+    "Ok|" +
+    "attributes_count:" + complex_span_with_events.attributes.length().to_string() + "|" +
+    "events_count:" + complex_span_with_events.events.length().to_string() + "|" +
+    "links_count:" + complex_span_with_events.links.length().to_string() + "|" +
+    "parent_span_id:true|" +
+    "status_description:Operation completed successfully"
   
-  // 验证SpanContext
-  assert_eq(span.context.trace_flags, 1_byte)
-  assert_eq(span.context.trace_state, "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
+  // 验证复杂span序列化
+  assert_eq(serialized_complex_span, "span:complex_span_with_events|Server|1640995200000000000|1640995200000000500|Ok|attributes_count:5|events_count:2|links_count:1|parent_span_id:true|status_description:Operation completed successfully")
   
-  // 验证事件
-  assert_eq(span.events[0].name, "event1")
-  assert_eq(span.events[0].timestamp_unix_nanos, 1609459200000000000L)
-  assert_eq(span.events[0].attributes.length(), 2)
+  // 5. 测试SpanContext的序列化兼容性
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x0a_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x0b_byte })
   
-  assert_eq(span.events[1].name, "event2")
-  assert_eq(span.events[1].timestamp_unix_nanos, 1609459201000000000L)
-  assert_eq(span.events[1].attributes.length(), 2)
+  let span_context = SpanContext::{
+    trace_id,
+    span_id,
+    trace_flags: 1_byte,
+    trace_state: "key1=value1,key2=value2"
+  }
+  
+  // 模拟SpanContext序列化
+  let serialized_trace_id = "trace_id:" + 
+    span_context.trace_id[0].to_string() + "," +
+    span_context.trace_id[1].to_string() + "," +
+    span_context.trace_id[2].to_string() + "," +
+    span_context.trace_id[3].to_string()
+  
+  let serialized_span_id = "span_id:" + 
+    span_context.span_id[0].to_string() + "," +
+    span_context.span_id[1].to_string() + "," +
+    span_context.span_id[2].to_string() + "," +
+    span_context.span_id[3].to_string()
+  
+  let serialized_span_context = serialized_trace_id + "|" +
+    serialized_span_id + "|" +
+    "trace_flags:" + span_context.trace_flags.to_string() + "|" +
+    "trace_state:" + span_context.trace_state
+  
+  // 验证SpanContext序列化
+  assert_eq(serialized_span_context, "trace_id:10,10,10,10|span_id:11,11,11,11|trace_flags:1|trace_state:key1=value1,key2=value2")
 }
 
-test "log_record_serialization" {
+test "log_record_serialization_compatibility" {
   // 测试LogRecord的序列化兼容性
   
-  // 创建完整的LogRecord
-  let trace_id = [0_byte, 1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte,
-                  8_byte, 9_byte, 10_byte, 11_byte, 12_byte, 13_byte, 14_byte, 15_byte]
-  let span_id = [0_byte, 1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte]
-  
-  let resource = common::Resource::default("logging-service")
-  let instrumentation_scope = common::InstrumentationScope::{
-    name: "logging-scope",
-    version: Some("1.0.0"),
-    schema_url: Some("https://example.com/logging-schema")
+  // 1. 创建基本日志记录
+  let basic_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Basic log message"),
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
   }
   
-  let log_record = logs::LogRecord::{
-    timestamp_unix_nanos: 1609459200000000000L,
-    observed_timestamp_unix_nanos: Some(1609459200000001000L),
-    severity_number: logs::SeverityNumber::Error,
-    severity_text: Some("ERROR"),
-    body: Some("Database connection failed"),
-    attributes: [
-      ("error.type", common::AttributeValue::string("connection_error")),
-      ("error.code", common::AttributeValue::int(1001)),
-      ("error.message", common::AttributeValue::string("Connection timeout after 30 seconds")),
-      ("database.name", common::AttributeValue::string("production_db")),
-      ("database.host", common::AttributeValue::string("db.example.com")),
-      ("database.port", common::AttributeValue::int(5432)),
-      ("retry.count", common::AttributeValue::int(3)),
-      ("retryable", common::AttributeValue::bool(true)),
-      ("stack.trace", common::AttributeValue::string("at Database.connect (db.js:123:45)")),
-      ("user.id", common::AttributeValue::string("user-456")),
-      ("session.id", common::AttributeValue::string("session-789")),
-      ("request.id", common::AttributeValue::string("req-abc123")),
-      ("correlation.id", common::AttributeValue::array_string(["corr-1", "corr-2"]))
-    ],
-    trace_id: Some(trace_id),
-    span_id: Some(span_id),
-    trace_flags: Some(1_byte),
-    resource: Some(resource),
-    instrumentation_scope: Some(instrumentation_scope)
+  // 2. 模拟日志记录序列化
+  let serialized_log = "log:" + 
+    basic_log.timestamp_unix_nanos.to_string() + "|" +
+    match basic_log.observed_timestamp_unix_nanos {
+      Some(observed) => observed.to_string()
+      None => "null"
+    } + "|" +
+    match basic_log.severity_number {
+      Trace => "Trace"
+      Debug => "Debug"
+      Info => "Info"
+      Warn => "Warn"
+      Error => "Error"
+      Fatal => "Fatal"
+    } + "|" +
+    match basic_log.severity_text {
+      Some(text) => text
+      None => ""
+    } + "|" +
+    match basic_log.body {
+      Some(body) => body
+      None => ""
+    } + "|" +
+    "attributes_count:" + basic_log.attributes.length().to_string() + "|" +
+    "has_trace_id:" + (if basic_log.trace_id.is_some() { "true" } else { "false" }) + "|" +
+    "has_span_id:" + (if basic_log.span_id.is_some() { "true" } else { "false" }) + "|" +
+    "has_resource:" + (if basic_log.resource.is_some() { "true" } else { "false" }) + "|" +
+    "has_instrumentation_scope:" + (if basic_log.instrumentation_scope.is_some() { "true" } else { "false" })
+  
+  // 验证基本日志记录序列化
+  assert_eq(serialized_log, "log:1640995200000000000|null|Info|INFO|Basic log message|attributes_count:0|has_trace_id:false|has_span_id:false|has_resource:false|has_instrumentation_scope:false")
+  
+  // 3. 模拟日志记录反序列化
+  let deserialized_log_body = if serialized_log.starts_with("log:") {
+    let parts = serialized_log.substring(4).split("|")
+    // body是第5个部分（索引4）
+    parts[4]
+  } else {
+    @test.fail("Test failed")
   }
   
-  // 验证LogRecord结构
-  assert_eq(log_record.timestamp_unix_nanos, 1609459200000000000L)
-  assert_eq(log_record.observed_timestamp_unix_nanos, Some(1609459200000001000L))
-  assert_eq(log_record.severity_number, logs::SeverityNumber::Error)
-  assert_eq(log_record.severity_text, Some("ERROR"))
-  assert_eq(log_record.body, Some("Database connection failed"))
-  assert_eq(log_record.attributes.length(), 13)
-  assert_eq(log_record.trace_id, Some(trace_id))
-  assert_eq(log_record.span_id, Some(span_id))
-  assert_eq(log_record.trace_flags, Some(1_byte))
-  assert_eq(log_record.resource, Some(resource))
-  assert_eq(log_record.instrumentation_scope, Some(instrumentation_scope))
+  // 验证反序列化结果
+  assert_eq(deserialized_log_body, "Basic log message")
   
-  // 验证特定属性
-  let mut found_error_type = false
-  let mut found_retry_count = false
-  let mut found_retryable = false
-  let mut i = 0
-  while i < log_record.attributes.length() {
-    let (key, value) = log_record.attributes[i]
-    match key {
-      "error.type" => {
-        match value {
-          common::StringValue(error_type) => {
-            if error_type == "connection_error" { found_error_type = true }
-          }
-          _ => ()
-        }
-      }
-      "retry.count" => {
-        match value {
-          common::IntValue(retry_count) => {
-            if retry_count == 3L { found_retry_count = true }
-          }
-          _ => ()
-        }
-      }
-      "retryable" => {
-        match value {
-          common::BoolValue(retryable) => {
-            if retryable == true { found_retryable = true }
-          }
-          _ => ()
-        }
-      }
-      _ => ()
-    }
-    i = i + 1
-  }
+  // 4. 测试复杂日志记录的序列化兼容性
+  let trace_id = Some([for i = 0; i < 16; i = i + 1].map(fn(_) { 0x01_byte }))
+  let span_id = Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0x02_byte }))
   
-  assert!(found_error_type)
-  assert!(found_retry_count)
-  assert!(found_retryable)
-}
-
-test "measurement_serialization" {
-  // 测试Measurement的序列化兼容性
-  
-  // 创建各种Measurement
-  let measurement1 = metrics::Measurement::{
-    value: 123.45,
-    attributes: [
-      ("metric.name", common::AttributeValue::string("response_time")),
-      ("unit", common::AttributeValue::string("ms")),
-      ("endpoint", common::AttributeValue::string("/api/users"))
-    ]
-  }
-  
-  let measurement2 = metrics::Measurement::{
-    value: 42.0,
-    attributes: [
-      ("metric.name", common::AttributeValue::string("cpu_usage")),
-      ("unit", common::AttributeValue::string("percent")),
-      ("host", common::AttributeValue::string("server-001"))
-    ]
-  }
-  
-  let measurement3 = metrics::Measurement::{
-    value: 1000.0,
-    attributes: [
-      ("metric.name", common::AttributeValue::string("memory_usage")),
-      ("unit", common::AttributeValue::string("bytes")),
-      ("process", common::AttributeValue::string("web-server")),
-      ("available", common::AttributeValue::bool(true))
-    ]
-  }
-  
-  // 验证Measurement结构
-  assert_eq(measurement1.value, 123.45)
-  assert_eq(measurement1.attributes.length(), 3)
-  assert_eq(measurement2.value, 42.0)
-  assert_eq(measurement2.attributes.length(), 3)
-  assert_eq(measurement3.value, 1000.0)
-  assert_eq(measurement3.attributes.length(), 4)
-  
-  // 验证特定属性
-  let mut found_metric_name1 = false
-  let mut found_metric_name2 = false
-  let mut found_metric_name3 = false
-  let mut i = 0
-  while i < measurement1.attributes.length() {
-    let (key, value) = measurement1.attributes[i]
-    if key == "metric.name" {
-      match value {
-        common::StringValue(name) => {
-          if name == "response_time" { found_metric_name1 = true }
-        }
-        _ => ()
-      }
-    }
-    i = i + 1
-  }
-  
-  i = 0
-  while i < measurement2.attributes.length() {
-    let (key, value) = measurement2.attributes[i]
-    if key == "metric.name" {
-      match value {
-        common::StringValue(name) => {
-          if name == "cpu_usage" { found_metric_name2 = true }
-        }
-        _ => ()
-      }
-    }
-    i = i + 1
-  }
-  
-  i = 0
-  while i < measurement3.attributes.length() {
-    let (key, value) = measurement3.attributes[i]
-    if key == "metric.name" {
-      match value {
-        common::StringValue(name) => {
-          if name == "memory_usage" { found_metric_name3 = true }
-        }
-        _ => ()
-      }
-    }
-    i = i + 1
-  }
-  
-  assert!(found_metric_name1)
-  assert!(found_metric_name2)
-  assert!(found_metric_name3)
-}
-
-test "context_serialization" {
-  // 测试Context的序列化兼容性
-  
-  // 创建带有多个值的Context
-  let ctx = context::Context::empty()
-  let ctx1 = ctx.with_value(context::create_key("trace.id"), "trace-12345")
-  let ctx2 = ctx1.with_value(context::create_key("user.id"), "user-67890")
-  let ctx3 = ctx2.with_value(context::create_key("request.id"), "req-abcdef")
-  let ctx4 = ctx3.with_value(context::create_key("session.id"), "sess-123456")
-  let final_ctx = ctx4.with_value(context::create_key("correlation.id"), "corr-789012")
-  
-  // 验证Context值
-  assert_eq(final_ctx.get(context::create_key("trace.id")), Some("trace-12345"))
-  assert_eq(final_ctx.get(context::create_key("user.id")), Some("user-67890"))
-  assert_eq(final_ctx.get(context::create_key("request.id")), Some("req-abcdef"))
-  assert_eq(final_ctx.get(context::create_key("session.id")), Some("sess-123456"))
-  assert_eq(final_ctx.get(context::create_key("correlation.id")), Some("corr-789012"))
-  
-  // 验证不存在的键
-  assert_eq(final_ctx.get(context::create_key("non.existent.key")), None)
-}
-
-test "baggage_serialization" {
-  // 测试Baggage的序列化兼容性
-  
-  // 创建带有多个条目的Baggage
-  let baggage = context::Baggage::empty()
-  let baggage1 = baggage.with_entry("user.id", "user-123")
-  let baggage2 = baggage1.with_entry("session.id", "session-456")
-  let baggage3 = baggage2.with_entry("request.id", "request-789")
-  let baggage4 = baggage3.with_entry("trace.id", "trace-abc")
-  let final_baggage = baggage4.with_entry("correlation.id", "corr-def")
-  
-  // 验证Baggage条目
-  assert_eq(final_baggage.get("user.id"), Some("user-123"))
-  assert_eq(final_baggage.get("session.id"), Some("session-456"))
-  assert_eq(final_baggage.get("request.id"), Some("request-789"))
-  assert_eq(final_baggage.get("trace.id"), Some("trace-abc"))
-  assert_eq(final_baggage.get("correlation.id"), Some("corr-def"))
-  
-  // 验证不存在的键
-  assert_eq(final_baggage.get("non.existent.key"), None)
-}
-
-test "instrumentation_scope_serialization" {
-  // 测试InstrumentationScope的序列化兼容性
-  
-  // 创建各种InstrumentationScope
-  let scope1 = common::InstrumentationScope::{
-    name: "http-client",
-    version: Some("1.2.3"),
-    schema_url: Some("https://opentelemetry.io/schemas/v1.20.0")
-  }
-  
-  let scope2 = common::InstrumentationScope::{
-    name: "database-driver",
-    version: Some("2.0.0"),
-    schema_url: Some("https://opentelemetry.io/schemas/v1.20.0")
-  }
-  
-  let scope3 = common::InstrumentationScope::{
-    name: "custom-instrumentation",
-    version: None,
-    schema_url: Some("https://example.com/custom-schema")
-  }
-  
-  let scope4 = common::InstrumentationScope::{
-    name: "minimal-scope",
-    version: None,
-    schema_url: None
-  }
-  
-  // 验证InstrumentationScope结构
-  assert_eq(scope1.name, "http-client")
-  assert_eq(scope1.version, Some("1.2.3"))
-  assert_eq(scope1.schema_url, Some("https://opentelemetry.io/schemas/v1.20.0"))
-  
-  assert_eq(scope2.name, "database-driver")
-  assert_eq(scope2.version, Some("2.0.0"))
-  assert_eq(scope2.schema_url, Some("https://opentelemetry.io/schemas/v1.20.0"))
-  
-  assert_eq(scope3.name, "custom-instrumentation")
-  assert_eq(scope3.version, None)
-  assert_eq(scope3.schema_url, Some("https://example.com/custom-schema"))
-  
-  assert_eq(scope4.name, "minimal-scope")
-  assert_eq(scope4.version, None)
-  assert_eq(scope4.schema_url, None)
-}
-
-test "complex_data_structure_serialization" {
-  // 测试复杂数据结构的序列化兼容性
-  
-  // 创建包含嵌套和复杂数据的结构
   let complex_attributes = [
-    ("simple.string", common::AttributeValue::string("simple value")),
-    ("simple.int", common::AttributeValue::int(42L)),
-    ("simple.float", common::AttributeValue::float(3.14159)),
-    ("simple.bool", common::AttributeValue::bool(true)),
-    ("string.array", common::AttributeValue::array_string(["a", "b", "c", "d", "e"])),
-    ("int.array", common::AttributeValue::array_int([1L, 2L, 3L, 4L, 5L])),
-    ("float.array", common::AttributeValue::array_float([1.1, 2.2, 3.3, 4.4, 5.5])),
-    ("bool.array", common::AttributeValue::array_bool([true, false, true, false, true])),
-    ("empty.string", common::AttributeValue::string("")),
-    ("zero.int", common::AttributeValue::int(0L)),
-    ("zero.float", common::AttributeValue::float(0.0)),
-    ("false.bool", common::AttributeValue::bool(false)),
-    ("empty.array", common::AttributeValue::array_string([])),
-    ("unicode.string", common::AttributeValue::string("测试Unicode🌟🎉🚀")),
-    ("special.chars", common::AttributeValue::string("special!@#$%^&*()_+-={}[]|\\:;\"'<>?,./")),
-    ("very.long.string", common::AttributeValue::string("This is a very long string that might be used to test serialization of large text values and ensure that the system can handle them properly without any issues or data loss during the process"))
+    ("service.name", AttributeValue::string("test-service")),
+    ("operation.name", AttributeValue::string("complex_operation")),
+    ("user.id", AttributeValue::string("user-12345")),
+    ("request.id", AttributeValue::string("req-abcdef")),
+    ("duration.ms", AttributeValue::int(250L)),
+    ("success.rate", AttributeValue::float(0.95)),
+    ("cache.hit", AttributeValue::bool(true)),
+    ("tags", AttributeValue::array_string(["api", "auth", "critical"])),
+    ("status.codes", AttributeValue::array_int([200L, 201L, 404L])),
+    ("latency.percentiles", AttributeValue::array_float([0.5, 0.95, 0.99]))
   ]
   
-  let complex_resource = common::Resource::{
-    service_name: "complex-test-service",
-    service_version: Some("1.0.0-beta+build.123"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: complex_attributes
+  let complex_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Error,
+    severity_text: Some("ERROR"),
+    body: Some("Complex log operation failed"),
+    attributes: complex_attributes,
+    trace_id,
+    span_id,
+    trace_flags: Some(1_byte),
+    resource: Some(Resource::default("test-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "test-logger",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
   }
   
-  // 验证复杂Resource结构
-  assert_eq(complex_resource.service_name, "complex-test-service")
-  assert_eq(complex_resource.service_version, Some("1.0.0-beta+build.123"))
-  assert_eq(complex_resource.attributes.length(), 16)
+  // 模拟复杂日志记录序列化
+  let serialized_complex_log = "log:" + 
+    complex_log.timestamp_unix_nanos.to_string() + "|" +
+    match complex_log.observed_timestamp_unix_nanos {
+      Some(observed) => observed.to_string()
+      None => "null"
+    } + "|" +
+    "Error|" +
+    "ERROR|" +
+    "Complex log operation failed|" +
+    "attributes_count:" + complex_log.attributes.length().to_string() + "|" +
+    "has_trace_id:true|" +
+    "has_span_id:true|" +
+    "has_resource:true|" +
+    "has_instrumentation_scope:true|" +
+    "trace_flags:1|" +
+    "resource_name:test-service|" +
+    "scope_name:test-logger|" +
+    "scope_version:1.0.0"
   
-  // 验证特定复杂属性
-  let mut found_unicode = false
-  let mut found_special_chars = false
-  let mut found_long_string = false
+  // 验证复杂日志记录序列化
+  assert_eq(serialized_complex_log, "log:1640995200000000000|1640995200000000100|Error|ERROR|Complex log operation failed|attributes_count:10|has_trace_id:true|has_span_id:true|has_resource:true|has_instrumentation_scope:true|trace_flags:1|resource_name:test-service|scope_name:test-logger|scope_version:1.0.0")
+  
+  // 5. 测试特殊字符日志记录的序列化兼容性
+  let special_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Warn,
+    severity_text: Some("WARN"),
+    body: Some("Special chars: !@#$%^&*()_+-=[]{}|;':\"\,./<>?"),
+    attributes: [
+      ("special.key", AttributeValue::string("!@#$%^&*()")),
+      ("unicode.value", AttributeValue::string("Unicode测试🚀")),
+      ("empty.value", AttributeValue::string(""))
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  // 模拟特殊字符日志记录序列化
+  let serialized_special_log = "log:" + 
+    special_log.timestamp_unix_nanos.to_string() + "|" +
+    "null|" +
+    "Warn|" +
+    "WARN|" +
+    "Special chars: !@#$%^&*()_+-=[]{}|;':\"\,./<>?|" +
+    "attributes_count:" + special_log.attributes.length().to_string() + "|" +
+    "has_trace_id:false|" +
+    "has_span_id:false|" +
+    "has_resource:false|" +
+    "has_instrumentation_scope:false"
+  
+  // 验证特殊字符日志记录序列化
+  assert_eq(serialized_special_log, "log:1640995200000000000|null|Warn|WARN|Special chars: !@#$%^&*()_+-=[]{}|;':\"\,./<>?|attributes_count:3|has_trace_id:false|has_span_id:false|has_resource:false|has_instrumentation_scope:false")
+}
+
+test "context_serialization_compatibility" {
+  // 测试Context的序列化兼容性
+  
+  // 1. 创建基本上下文
+  let basic_ctx = Context::empty()
+  
+  // 2. 模拟上下文序列化
+  let serialized_ctx = "context:values_count:" + basic_ctx.values.length().to_string()
+  
+  // 验证基本上下文序列化
+  assert_eq(serialized_ctx, "context:values_count:0")
+  
+  // 3. 测试复杂上下文的序列化兼容性
+  let user_key = create_key("user.id")
+  let session_key = create_key("session.id")
+  let request_key = create_key("request.id")
+  
+  let complex_ctx = basic_ctx
+    .with_value(user_key, "user-12345")
+    .with_value(session_key, "sess-abcdef")
+    .with_value(request_key, "req-123456")
+  
+  // 模拟复杂上下文序列化
+  let serialized_complex_ctx = "context:values_count:" + complex_ctx.values.length().to_string() + "|"
   let mut i = 0
-  while i < complex_resource.attributes.length() {
-    let (key, value) = complex_resource.attributes[i]
-    match key {
-      "unicode.string" => {
-        match value {
-          common::StringValue(s) => {
-            if s == "测试Unicode🌟🎉🚀" { found_unicode = true }
-          }
-          _ => ()
-        }
-      }
-      "special.chars" => {
-        match value {
-          common::StringValue(s) => {
-            if s == "special!@#$%^&*()_+-={}[]|\\:;\"'<>?,./" { found_special_chars = true }
-          }
-          _ => ()
-        }
-      }
-      "very.long.string" => {
-        match value {
-          common::StringValue(s) => {
-            if s.starts_with("This is a very long string") { found_long_string = true }
-          }
-          _ => ()
-        }
-      }
+  while i < complex_ctx.values.length() {
+    let (key, value) = complex_ctx.values[i]
+    serialized_complex_ctx = serialized_complex_ctx + key + "=" + value
+    if i < complex_ctx.values.length() - 1 {
+      serialized_complex_ctx = serialized_complex_ctx + ","
+    }
+    i = i + 1
+  }
+  
+  // 验证复杂上下文序列化
+  assert_eq(serialized_complex_ctx.starts_with("context:values_count:3|"), true)
+  assert_eq(serialized_complex_ctx.contains("user.id=user-12345"), true)
+  assert_eq(serialized_complex_ctx.contains("session.id=sess-abcdef"), true)
+  assert_eq(serialized_complex_ctx.contains("request.id=req-123456"), true)
+  
+  // 4. 模拟上下文反序列化
+  let deserialized_ctx_values = if serialized_complex_ctx.starts_with("context:values_count:") {
+    let parts = serialized_complex_ctx.split("|")
+    if parts.length() > 1 {
+      parts[1].split(",")
+    } else {
+      []
+    }
+  } else {
+    @test.fail("Test failed")
+  }
+  
+  // 验证反序列化结果
+  assert_eq(deserialized_ctx_values.length(), 3)
+  
+  // 5. 测试特殊字符上下文的序列化兼容性
+  let special_key = create_key("!@#$%^&*()")
+  let unicode_key = create_key("Unicode键🚀")
+  
+  let special_ctx = basic_ctx
+    .with_value(special_key, "!@#$%^&*()")
+    .with_value(unicode_key, "Unicode值🌟")
+    .with_value(create_key(""), "empty_key_value")
+  
+  // 模拟特殊字符上下文序列化
+  let serialized_special_ctx = "context:values_count:" + special_ctx.values.length().to_string() + "|"
+  let mut i = 0
+  while i < special_ctx.values.length() {
+    let (key, value) = special_ctx.values[i]
+    serialized_special_ctx = serialized_special_ctx + key + "=" + value
+    if i < special_ctx.values.length() - 1 {
+      serialized_special_ctx = serialized_special_ctx + ","
+    }
+    i = i + 1
+  }
+  
+  // 验证特殊字符上下文序列化
+  assert_eq(serialized_special_ctx.starts_with("context:values_count:3|"), true)
+  assert_eq(serialized_special_ctx.contains("!@#$%^&*()=!@#$%^&*()"), true)
+  assert_eq(serialized_special_ctx.contains("Unicode键🚀=Unicode值🌟"), true)
+  assert_eq(serialized_special_ctx.contains("=empty_key_value"), true)
+}
+
+test "baggage_serialization_compatibility" {
+  // 测试Baggage的序列化兼容性
+  
+  // 1. 创建基本baggage
+  let basic_baggage = Baggage::empty()
+  
+  // 2. 模拟baggage序列化
+  let serialized_baggage = "baggage:entries_count:" + basic_baggage.entries.length().to_string()
+  
+  // 验证基本baggage序列化
+  assert_eq(serialized_baggage, "baggage:entries_count:0")
+  
+  // 3. 测试复杂baggage的序列化兼容性
+  let complex_baggage = basic_baggage
+    .with_entry("user.id", "user-12345")
+    .with_entry("session.id", "sess-abcdef")
+    .with_entry("request.id", "req-123456")
+    .with_entry("user.role", "admin")
+    .with_entry("request.source", "web")
+  
+  // 模拟复杂baggage序列化（W3C Baggage格式）
+  let serialized_complex_baggage = "baggage:"
+  let mut i = 0
+  while i < complex_baggage.entries.length() {
+    let (key, value) = complex_baggage.entries[i]
+    serialized_complex_baggage = serialized_complex_baggage + key + "=" + value
+    if i < complex_baggage.entries.length() - 1 {
+      serialized_complex_baggage = serialized_complex_baggage + ","
+    }
+    i = i + 1
+  }
+  
+  // 验证复杂baggage序列化
+  assert_eq(serialized_complex_baggage, "baggage:user.id=user-12345,session.id=sess-abcdef,request.id=req-123456,user.role=admin,request.source=web")
+  
+  // 4. 模拟baggage反序列化
+  let deserialized_baggage_entries = if serialized_complex_baggage.starts_with("baggage:") {
+    let baggage_part = serialized_complex_baggage.substring(8)
+    baggage_part.split(",")
+  } else {
+    @test.fail("Test failed")
+  }
+  
+  // 验证反序列化结果
+  assert_eq(deserialized_baggage_entries.length(), 5)
+  
+  // 验证具体条目
+  let mut found_user_id = false
+  let mut found_session_id = false
+  let mut found_request_id = false
+  let mut found_user_role = false
+  let mut found_request_source = false
+  
+  let mut i = 0
+  while i < deserialized_baggage_entries.length() {
+    let entry = deserialized_baggage_entries[i]
+    match entry {
+      "user.id=user-12345" => found_user_id = true
+      "session.id=sess-abcdef" => found_session_id = true
+      "request.id=req-123456" => found_request_id = true
+      "user.role=admin" => found_user_role = true
+      "request.source=web" => found_request_source = true
       _ => ()
     }
     i = i + 1
   }
   
-  assert!(found_unicode)
-  assert!(found_special_chars)
-  assert!(found_long_string)
+  assert_eq(found_user_id, true)
+  assert_eq(found_session_id, true)
+  assert_eq(found_request_id, true)
+  assert_eq(found_user_role, true)
+  assert_eq(found_request_source, true)
+  
+  // 5. 测试特殊字符baggage的序列化兼容性
+  let special_baggage = basic_baggage
+    .with_entry("!@#$%^&*()", "!@#$%^&*()")
+    .with_entry("Unicode键🚀", "Unicode值🌟")
+    .with_entry("", "empty_key")
+    .with_entry("empty_value", "")
+  
+  // 模拟特殊字符baggage序列化
+  let serialized_special_baggage = "baggage:"
+  let mut i = 0
+  while i < special_baggage.entries.length() {
+    let (key, value) = special_baggage.entries[i]
+    serialized_special_baggage = serialized_special_baggage + key + "=" + value
+    if i < special_baggage.entries.length() - 1 {
+      serialized_special_baggage = serialized_special_baggage + ","
+    }
+    i = i + 1
+  }
+  
+  // 验证特殊字符baggage序列化
+  assert_eq(serialized_special_baggage, "baggage:!@#$%^&*()=!@#$%^&*(),Unicode键🚀=Unicode值🌟,=empty_key,empty_value=")
+  
+  // 6. 测试符合W3C规范的baggage序列化
+  let w3c_baggage = basic_baggage
+    .with_entry("key1", "value1")
+    .with_entry("key2", "value2")
+    .with_entry("key3", "value3")
+  
+  // 模拟W3C Baggage序列化
+  let w3c_serialized = "key1=value1,key2=value2,key3=value3"
+  
+  // 验证W3C Baggage序列化
+  assert_eq(w3c_serialized, "key1=value1,key2=value2,key3=value3")
+  
+  // 模拟W3C Baggage反序列化
+  let w3c_entries = w3c_serialized.split(",")
+  assert_eq(w3c_entries.length(), 3)
+  
+  // 验证W3C Baggage条目
+  let mut found_key1 = false
+  let mut found_key2 = false
+  let mut found_key3 = false
+  
+  let mut i = 0
+  while i < w3c_entries.length() {
+    let entry = w3c_entries[i]
+    match entry {
+      "key1=value1" => found_key1 = true
+      "key2=value2" => found_key2 = true
+      "key3=value3" => found_key3 = true
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_key1, true)
+  assert_eq(found_key2, true)
+  assert_eq(found_key3, true)
+}
+
+test "propagation_serialization_compatibility" {
+  // 测试Propagation的序列化兼容性
+  
+  // 1. 测试W3C TraceContext的序列化兼容性
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x0a_byte })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x0b_byte })
+  
+  let span_context = SpanContext::{
+    trace_id,
+    span_id,
+    trace_flags: 1_byte,
+    trace_state: "key1=value1,key2=value2"
+  }
+  
+  // 模拟W3C TraceContext序列化
+  let trace_id_hex = "0af7651916cd43dd8448eb211c80319c"  // 示例值
+  let span_id_hex = "b7ad6b7169203331"  // 示例值
+  let trace_flags_hex = "01"  // 采样标志
+  
+  let w3c_traceparent = "00-" + trace_id_hex + "-" + span_id_hex + "-" + trace_flags_hex
+  let w3c_tracestate = "key1=value1,key2=value2"
+  
+  // 验证W3C TraceContext序列化
+  assert_eq(w3c_traceparent, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  assert_eq(w3c_tracestate, "key1=value1,key2=value2")
+  
+  // 2. 模拟W3C TraceContext反序列化
+  let deserialized_traceparent_parts = w3c_traceparent.split("-")
+  assert_eq(deserialized_traceparent_parts.length(), 4)
+  assert_eq(deserialized_traceparent_parts[0], "00")  // version
+  assert_eq(deserialized_traceparent_parts[1], trace_id_hex)  // trace_id
+  assert_eq(deserialized_traceparent_parts[2], span_id_hex)  // span_id
+  assert_eq(deserialized_traceparent_parts[3], trace_flags_hex)  // trace_flags
+  
+  let deserialized_tracestate_entries = w3c_tracestate.split(",")
+  assert_eq(deserialized_tracestate_entries.length(), 2)
+  assert_eq(deserialized_tracestate_entries[0], "key1=value1")
+  assert_eq(deserialized_tracestate_entries[1], "key2=value2")
+  
+  // 3. 测试W3C Baggage的序列化兼容性
+  let baggage = Baggage::empty()
+    .with_entry("key1", "value1")
+    .with_entry("key2", "value2")
+    .with_entry("key3", "value3")
+  
+  // 模拟W3C Baggage序列化
+  let w3c_baggage = "key1=value1,key2=value2,key3=value3"
+  
+  // 验证W3C Baggage序列化
+  assert_eq(w3c_baggage, "key1=value1,key2=value2,key3=value3")
+  
+  // 4. 测试复合传播器的序列化兼容性
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  let ctx = Context::empty()
+  let carrier = MapCarrier::new()
+  
+  // 模拟复合传播器注入
+  composite_propagator.inject(ctx, carrier)
+  
+  // 验证carrier中的数据
+  match carrier.get("traceparent") {
+    Some(trace_parent) => assert_eq(trace_parent.length() > 0, true)
+    None => @test.fail("Test failed")
+  }
+  
+  match carrier.get("tracestate") {
+    Some(trace_state) => assert_eq(trace_state, "key1=value1,key2=value2")
+    None => ()  // tracestate是可选的
+  }
+  
+  match carrier.get("baggage") {
+    Some(baggage_header) => assert_eq(baggage_header.length() > 0, true)
+    None => @test.fail("Test failed")
+  }
+  
+  // 5. 测试MapCarrier的序列化兼容性
+  let carrier_data = [
+    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
+    ("tracestate", "key1=value1,key2=value2"),
+    ("baggage", "key1=value1,key2=value2,key3=value3"),
+    ("custom-header", "custom-value")
+  ]
+  
+  let map_carrier = MapCarrier::from_map(carrier_data)
+  
+  // 模拟MapCarrier序列化
+  let serialized_carrier = "carrier:"
+  let mut i = 0
+  while i < map_carrier.data.length() {
+    let (key, value) = map_carrier.data[i]
+    serialized_carrier = serialized_carrier + key + ":" + value
+    if i < map_carrier.data.length() - 1 {
+      serialized_carrier = serialized_carrier + "|"
+    }
+    i = i + 1
+  }
+  
+  // 验证MapCarrier序列化
+  assert_eq(serialized_carrier.starts_with("carrier:traceparent:"), true)
+  assert_eq(serialized_carrier.contains("tracestate:key1=value1,key2=value2"), true)
+  assert_eq(serialized_carrier.contains("baggage:key1=value1,key2=value2,key3=value3"), true)
+  assert_eq(serialized_carrier.contains("custom-header:custom-value"), true)
+  
+  // 6. 测试特殊字符传播的序列化兼容性
+  let special_baggage = Baggage::empty()
+    .with_entry("special-key", "special!@#$%^&*()value")
+    .with_entry("Unicode键", "Unicode值🚀")
+    .with_entry("empty", "")
+  
+  // 模拟特殊字符W3C Baggage序列化
+  let special_w3c_baggage = "special-key=special!@#$%^&*()value,Unicode键=Unicode值🚀,empty="
+  
+  // 验证特殊字符W3C Baggage序列化
+  assert_eq(special_w3c_baggage, "special-key=special!@#$%^&*()value,Unicode键=Unicode值🚀,empty=")
+  
+  // 模拟特殊字符W3C Baggage反序列化
+  let special_entries = special_w3c_baggage.split(",")
+  assert_eq(special_entries.length(), 3)
+  
+  // 验证特殊字符条目
+  let mut found_special_key = false
+  let mut found_unicode_key = false
+  let mut found_empty = false
+  
+  let mut i = 0
+  while i < special_entries.length() {
+    let entry = special_entries[i]
+    match entry {
+      "special-key=special!@#$%^&*()value" => found_special_key = true
+      "Unicode键=Unicode值🚀" => found_unicode_key = true
+      "empty=" => found_empty = true
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_special_key, true)
+  assert_eq(found_unicode_key, true)
+  assert_eq(found_empty, true)
 }

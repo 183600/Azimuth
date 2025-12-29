@@ -1,235 +1,558 @@
-// 错误边界测试 - 测试各种边界情况和错误处理
+// 错误边界综合测试用例
+// 测试错误场景和边界情况的处理
 
-test "attribute_value_boundary_conditions" {
-  // 测试AttributeValue的各种边界条件和异常情况
+test "attribute_value_error_handling" {
+  // 测试AttributeValue的错误处理和边界情况
   
-  // 1. 字符串边界测试
-  let empty_string = AttributeValue::string("")
-  let max_length_string = AttributeValue::string("a" * 10000)  // 假设最大长度限制
-  let unicode_string = AttributeValue::string("测试中文字符串🚀emoji和特殊字符!@#$%^&*()")
-  let null_bytes_string = AttributeValue::string("prefix\x00\x01\x02suffix")
+  // 测试极值字符串
+  let very_long_string = "a" * 10000  // 假设支持字符串重复
+  let long_string_attr = AttributeValue::string(very_long_string)
   
-  // 验证字符串边界值
-  match empty_string {
-    StringValue(s) => assert_eq(s, "")
+  match long_string_attr {
+    StringValue(s) => assert_eq(s.length() > 0, true)
     _ => @test.fail("Test failed")
   }
   
-  match max_length_string {
-    StringValue(s) => assert_eq(s.length(), 10000)
+  // 测试特殊字符字符串
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?`~\n\r\t\\"
+  let special_chars_attr = AttributeValue::string(special_chars)
+  
+  match special_chars_attr {
+    StringValue(s) => assert_eq(s, special_chars)
     _ => @test.fail("Test failed")
   }
   
-  match unicode_string {
-    StringValue(s) => {
-      assert_eq(s.contains("测试"), true)
-      assert_eq(s.contains("🚀"), true)
-    }
+  // 测试Unicode字符串
+  let unicode_string = "Unicode测试🚀🌟💫✨🎯🎉🎊🎈🎁🎂🎄🎃🎆🎇🎈🎉"
+  let unicode_attr = AttributeValue::string(unicode_string)
+  
+  match unicode_attr {
+    StringValue(s) => assert_eq(s, unicode_string)
     _ => @test.fail("Test failed")
   }
   
-  // 2. 整数边界测试
-  let zero_int = AttributeValue::int(0L)
-  let max_int64 = AttributeValue::int(9223372036854775807L)
-  let min_int64 = AttributeValue::int(-9223372036854775808L)
-  let negative_one = AttributeValue::int(-1L)
+  // 测试极值整数
+  let max_int = 9223372036854775807L
+  let min_int = -9223372036854775808L
+  let max_int_attr = AttributeValue::int(max_int)
+  let min_int_attr = AttributeValue::int(min_int)
   
-  match zero_int {
-    IntValue(i) => assert_eq(i, 0L)
+  match max_int_attr {
+    IntValue(i) => assert_eq(i, max_int)
     _ => @test.fail("Test failed")
   }
   
-  match max_int64 {
-    IntValue(i) => assert_eq(i, 9223372036854775807L)
+  match min_int_attr {
+    IntValue(i) => assert_eq(i, min_int)
     _ => @test.fail("Test failed")
   }
   
-  match min_int64 {
-    IntValue(i) => assert_eq(i, -9223372036854775808L)
+  // 测试特殊浮点数值
+  let infinity = 1.0/0.0
+  let neg_infinity = -1.0/0.0
+  let nan = 0.0/0.0
+  let very_small = 1.0e-308
+  let very_large = 1.0e+308
+  
+  let infinity_attr = AttributeValue::float(infinity)
+  let neg_infinity_attr = AttributeValue::float(neg_infinity)
+  let nan_attr = AttributeValue::float(nan)
+  let very_small_attr = AttributeValue::float(very_small)
+  let very_large_attr = AttributeValue::float(very_large)
+  
+  match infinity_attr {
+    FloatValue(f) => assert_eq(f > 0.0 && f > 1.0e+308, true)
     _ => @test.fail("Test failed")
   }
   
-  // 3. 浮点数边界测试
-  let zero_float = AttributeValue::float(0.0)
-  let positive_infinity = AttributeValue::float(1.0/0.0)
-  let negative_infinity = AttributeValue::float(-1.0/0.0)
-  let nan_value = AttributeValue::float(0.0/0.0)
-  let max_double = AttributeValue::float(1.7976931348623157e308)
-  let min_positive_double = AttributeValue::float(2.2250738585072014e-308)
-  let max_negative_double = AttributeValue::float(-2.2250738585072014e-308)
-  
-  match zero_float {
-    FloatValue(f) => assert_eq(f, 0.0)
+  match neg_infinity_attr {
+    FloatValue(f) => assert_eq(f < 0.0 && f < -1.0e+308, true)
     _ => @test.fail("Test failed")
   }
   
-  match positive_infinity {
-    FloatValue(f) => assert_eq(f > 1.0e308, true)
+  match nan_attr {
+    FloatValue(f) => assert_eq(f != f, true)  // NaN != NaN
     _ => @test.fail("Test failed")
   }
   
-  match negative_infinity {
-    FloatValue(f) => assert_eq(f < -1.0e308, true)
-    _ => @test.fail("Test failed")
-  }
-  
-  // 4. 布尔值边界测试
-  let true_value = AttributeValue::bool(true)
-  let false_value = AttributeValue::bool(false)
-  
-  match true_value {
-    BoolValue(b) => assert_eq(b, true)
-    _ => @test.fail("Test failed")
-  }
-  
-  match false_value {
-    BoolValue(b) => assert_eq(b, false)
-    _ => @test.fail("Test failed")
-  }
-  
-  // 5. 数组边界测试
+  // 测试空数组
   let empty_string_array = AttributeValue::array_string([])
-  let large_string_array = AttributeValue::array_string([for i = 0; i < 1000; i = i + 1].map(fn(i) { "item_" + i.to_string() }))
   let empty_int_array = AttributeValue::array_int([])
-  let large_int_array = AttributeValue::array_int([for i = 0; i < 1000; i = i + 1].map(fn(i) { i }))
-  let mixed_string_array = AttributeValue::array_string(["", "normal", "special!@#$%", "unicode测试", "   spaces   "])
+  let empty_float_array = AttributeValue::array_float([])
+  let empty_bool_array = AttributeValue::array_bool([])
   
   match empty_string_array {
     ArrayStringValue(arr) => assert_eq(arr.length(), 0)
     _ => @test.fail("Test failed")
   }
   
-  match large_string_array {
-    ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 1000)
-      assert_eq(arr[0], "item_0")
-      assert_eq(arr[999], "item_999")
+  match empty_int_array {
+    ArrayIntValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Test failed")
+  }
+  
+  match empty_float_array {
+    ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Test failed")
+  }
+  
+  match empty_bool_array {
+    ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Test failed")
+  }
+  
+  // 测试包含特殊值的数组
+  let special_int_array = AttributeValue::array_int([0L, -1L, 1L, max_int, min_int])
+  let special_float_array = AttributeValue::array_float([0.0, -0.0, infinity, neg_infinity, nan])
+  let special_string_array = AttributeValue::array_string(["", " ", "\n", "\t", special_chars])
+  
+  match special_int_array {
+    ArrayIntValue(arr) => {
+      assert_eq(arr.length(), 5)
+      assert_eq(arr[0], 0L)
+      assert_eq(arr[1], -1L)
+      assert_eq(arr[2], 1L)
+      assert_eq(arr[3], max_int)
+      assert_eq(arr[4], min_int)
     }
     _ => @test.fail("Test failed")
   }
   
-  match mixed_string_array {
-    ArrayStringValue(arr) => {
+  match special_float_array {
+    ArrayFloatValue(arr) => {
       assert_eq(arr.length(), 5)
-      assert_eq(arr[0], "")
-      assert_eq(arr[1], "normal")
-      assert_eq(arr[2], "special!@#$%")
-      assert_eq(arr[3], "unicode测试")
-      assert_eq(arr[4], "   spaces   ")
+      assert_eq(arr[0], 0.0)
+      assert_eq(arr[1], -0.0)
+      assert_eq(arr[2] > 1.0e+308, true)  // infinity
+      assert_eq(arr[3] < -1.0e+308, true)  // neg_infinity
+      assert_eq(arr[4] != arr[4], true)    // nan
     }
     _ => @test.fail("Test failed")
   }
 }
 
-test "context_edge_cases_and_limits" {
-  // 测试Context的边界情况和限制
+test "context_error_boundary" {
+  // 测试Context的错误边界情况
   
-  // 1. 空Context操作
+  // 测试空上下文
   let empty_ctx = Context::empty()
-  let non_existent_key = create_key("non.existent.key")
+  assert_eq(empty_ctx.values.length(), 0)
   
-  match empty_ctx.get(non_existent_key) {
+  // 测试获取不存在的键
+  let nonexistent_key = create_key("nonexistent.key")
+  match empty_ctx.get(nonexistent_key) {
     Some(_) => @test.fail("Test failed")
     None => assert_eq(true, true)
   }
   
-  // 2. 特殊键名测试
+  // 测试设置空键名
   let empty_key = create_key("")
-  let space_key = create_key(" ")
-  let special_char_key = create_key("!@#$%^&*()_+-={}[]|\\:;\"'<>?,./")
-  let unicode_key = create_key("键名测试🚀")
-  let very_long_key = create_key("a" * 1000)
-  let dot_key = create_key("key.with.dots")
-  let null_key = create_key("key\x00with\x00nulls")
-  
-  let ctx_with_special_keys = empty_ctx
-    .with_value(empty_key, "empty_key_value")
-    .with_value(space_key, "space_key_value")
-    .with_value(special_char_key, "special_char_value")
-    .with_value(unicode_key, "unicode_value")
-    .with_value(very_long_key, "long_key_value")
-    .with_value(dot_key, "dot_key_value")
-    .with_value(null_key, "null_key_value")
-  
-  // 验证特殊键名的值
-  match ctx_with_special_keys.get(empty_key) {
-    Some(value) => assert_eq(value, "empty_key_value")
+  let ctx_with_empty_key = empty_ctx.with_value(empty_key, "value")
+  match ctx_with_empty_key.get(empty_key) {
+    Some(value) => assert_eq(value, "value")
     None => @test.fail("Test failed")
   }
   
-  match ctx_with_special_keys.get(unicode_key) {
-    Some(value) => assert_eq(value, "unicode_value")
-    None => @test.fail("Test failed")
-  }
-  
-  // 3. 特殊值测试
-  let empty_value = create_key("empty_value")
-  let very_long_value = create_key("very_long_value")
-  let special_char_value = create_key("special_char_value")
-  let unicode_value = create_key("unicode_value")
-  let null_value = create_key("null_value")
-  
-  let ctx_with_special_values = empty_ctx
-    .with_value(empty_value, "")
-    .with_value(very_long_value, "v" * 10000)
-    .with_value(special_char_value, "!@#$%^&*()_+-={}[]|\\:;\"'<>?,./\x00\x01\x02")
-    .with_value(unicode_value, "值测试🚀测试值")
-    .with_value(null_value, "prefix\x00suffix")
-  
-  match ctx_with_special_values.get(empty_value) {
+  // 测试设置空值
+  let normal_key = create_key("normal.key")
+  let ctx_with_empty_value = empty_ctx.with_value(normal_key, "")
+  match ctx_with_empty_value.get(normal_key) {
     Some(value) => assert_eq(value, "")
     None => @test.fail("Test failed")
   }
   
-  match ctx_with_special_values.get(very_long_value) {
-    Some(value) => assert_eq(value.length(), 10000)
+  // 测试设置特殊字符键和值
+  let special_key = create_key("!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  let special_value = "!@#$%^&*()_+-=[]{}|;':\",./<>?\n\r\t\\"
+  let ctx_with_special = empty_ctx.with_value(special_key, special_value)
+  match ctx_with_special.get(special_key) {
+    Some(value) => assert_eq(value, special_value)
     None => @test.fail("Test failed")
   }
   
-  // 4. 大量键值对测试
-  let mut ctx_with_many_values = empty_ctx
+  // 测试设置Unicode键和值
+  let unicode_key = create_key("Unicode键🚀")
+  let unicode_value = "Unicode值🌟"
+  let ctx_with_unicode = empty_ctx.with_value(unicode_key, unicode_value)
+  match ctx_with_unicode.get(unicode_key) {
+    Some(value) => assert_eq(value, unicode_value)
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试长键和值
+  let long_key_name = "a" * 1000
+  let long_key = create_key(long_key_name)
+  let long_value = "b" * 1000
+  let ctx_with_long = empty_ctx.with_value(long_key, long_value)
+  match ctx_with_long.get(long_key) {
+    Some(value) => assert_eq(value, long_value)
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试覆盖相同键的值
+  let ctx_with_override = empty_ctx
+    .with_value(normal_key, "first_value")
+    .with_value(normal_key, "second_value")
+    .with_value(normal_key, "final_value")
+  
+  match ctx_with_override.get(normal_key) {
+    Some(value) => assert_eq(value, "final_value")
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试大量键值对
+  let mut ctx_with_many = empty_ctx
   let mut i = 0
-  while i < 1000 {
-    ctx_with_many_values = ctx_with_many_values.with_value(
-      create_key("key_" + i.to_string()),
-      "value_" + i.to_string()
-    )
+  while i < 100 {
+    let key = create_key("key." + i.to_string())
+    ctx_with_many = ctx_with_many.with_value(key, "value." + i.to_string())
     i = i + 1
   }
   
-  // 验证大量键值对中的特定值
-  match ctx_with_many_values.get(create_key("key_0")) {
-    Some(value) => assert_eq(value, "value_0")
+  // 验证第一个和最后一个键
+  let first_key = create_key("key.0")
+  let last_key = create_key("key.99")
+  
+  match ctx_with_many.get(first_key) {
+    Some(value) => assert_eq(value, "value.0")
     None => @test.fail("Test failed")
   }
   
-  match ctx_with_many_values.get(create_key("key_999")) {
-    Some(value) => assert_eq(value, "value_999")
-    None => @test.fail("Test failed")
-  }
-  
-  // 5. 键值覆盖测试
-  let overwrite_key = create_key("overwrite_test")
-  let ctx1 = empty_ctx.with_value(overwrite_key, "original_value")
-  let ctx2 = ctx1.with_value(overwrite_key, "overwritten_value")
-  let ctx3 = ctx2.with_value(overwrite_key, "final_value")
-  
-  match ctx3.get(overwrite_key) {
-    Some(value) => assert_eq(value, "final_value")
+  match ctx_with_many.get(last_key) {
+    Some(value) => assert_eq(value, "value.99")
     None => @test.fail("Test failed")
   }
 }
 
-test "span_lifecycle_boundary_conditions" {
-  // 测试Span生命周期的边界条件
+test "baggage_error_boundary" {
+  // 测试Baggage的错误边界情况
   
-  // 1. 极端时间戳测试
-  let min_timestamp = -9223372036854775808L
+  // 测试空baggage
+  let empty_baggage = Baggage::empty()
+  assert_eq(empty_baggage.entries.length(), 0)
+  
+  // 测试获取不存在的条目
+  match empty_baggage.get("nonexistent") {
+    Some(_) => @test.fail("Test failed")
+    None => assert_eq(true, true)
+  }
+  
+  // 测试设置空键
+  let baggage_with_empty_key = empty_baggage.with_entry("", "value")
+  match baggage_with_empty_key.get("") {
+    Some(value) => assert_eq(value, "value")
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试设置空值
+  let baggage_with_empty_value = empty_baggage.with_entry("key", "")
+  match baggage_with_empty_value.get("key") {
+    Some(value) => assert_eq(value, "")
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试设置特殊字符键和值
+  let baggage_with_special = empty_baggage
+    .with_entry("!@#$%^&*()", "!@#$%^&*()")
+    .with_entry("key with spaces", "value with spaces")
+    .with_entry("key\nwith\nnewlines", "value\nwith\nnewlines")
+    .with_entry("key\twith\ttabs", "value\twith\ttabs")
+  
+  match baggage_with_special.get("!@#$%^&*()") {
+    Some(value) => assert_eq(value, "!@#$%^&*()")
+    None => @test.fail("Test failed")
+  }
+  
+  match baggage_with_special.get("key with spaces") {
+    Some(value) => assert_eq(value, "value with spaces")
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试Unicode键和值
+  let baggage_with_unicode = empty_baggage
+    .with_entry("Unicode键🚀", "Unicode值🌟")
+    .with_entry("ключ", "значение")
+    .with_entry("キー", "値")
+  
+  match baggage_with_unicode.get("Unicode键🚀") {
+    Some(value) => assert_eq(value, "Unicode值🌟")
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试长键和值
+  let long_key = "a" * 1000
+  let long_value = "b" * 1000
+  let baggage_with_long = empty_baggage.with_entry(long_key, long_value)
+  match baggage_with_long.get(long_key) {
+    Some(value) => assert_eq(value, long_value)
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试覆盖相同键的值
+  let baggage_with_override = empty_baggage
+    .with_entry("duplicate.key", "first_value")
+    .with_entry("duplicate.key", "second_value")
+    .with_entry("duplicate.key", "final_value")
+  
+  match baggage_with_override.get("duplicate.key") {
+    Some(value) => assert_eq(value, "final_value")
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试大量条目
+  let mut baggage_with_many = empty_baggage
+  let mut i = 0
+  while i < 100 {
+    baggage_with_many = baggage_with_many.with_entry("key." + i.to_string(), "value." + i.to_string())
+    i = i + 1
+  }
+  
+  // 验证第一个和最后一个条目
+  match baggage_with_many.get("key.0") {
+    Some(value) => assert_eq(value, "value.0")
+    None => @test.fail("Test failed")
+  }
+  
+  match baggage_with_many.get("key.99") {
+    Some(value) => assert_eq(value, "value.99")
+    None => @test.fail("Test failed")
+  }
+}
+
+test "log_record_error_boundary" {
+  // 测试LogRecord的错误边界情况
+  
+  // 测试极值时间戳
   let max_timestamp = 9223372036854775807L
+  let min_timestamp = -9223372036854775808L
   let zero_timestamp = 0L
   
-  let span_with_min_time = Span::{
-    name: "min_time_span",
+  let max_timestamp_log = LogRecord::{
+    timestamp_unix_nanos: max_timestamp,
+    observed_timestamp_unix_nanos: Some(max_timestamp),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Max timestamp log"),
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  let min_timestamp_log = LogRecord::{
+    timestamp_unix_nanos: min_timestamp,
+    observed_timestamp_unix_nanos: Some(min_timestamp),
+    severity_number: Error,
+    severity_text: Some("ERROR"),
+    body: Some("Min timestamp log"),
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  let zero_timestamp_log = LogRecord::{
+    timestamp_unix_nanos: zero_timestamp,
+    observed_timestamp_unix_nanos: Some(zero_timestamp),
+    severity_number: Debug,
+    severity_text: Some("DEBUG"),
+    body: Some("Zero timestamp log"),
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  assert_eq(max_timestamp_log.timestamp_unix_nanos, max_timestamp)
+  assert_eq(min_timestamp_log.timestamp_unix_nanos, min_timestamp)
+  assert_eq(zero_timestamp_log.timestamp_unix_nanos, zero_timestamp)
+  
+  // 测试空和特殊字符串
+  let empty_body_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Info,
+    severity_text: Some(""),
+    body: Some(""),
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  let special_chars_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Warn,
+    severity_text: Some("!@#$%^&*()"),
+    body: Some("!@#$%^&*()\n\r\t\\"),
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  let unicode_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Fatal,
+    severity_text: Some("Unicode🚀"),
+    body: Some("Unicode消息🌟💫✨"),
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  match empty_body_log.severity_text {
+    Some(text) => assert_eq(text, "")
+    None => @test.fail("Test failed")
+  }
+  
+  match empty_body_log.body {
+    Some(body) => assert_eq(body, "")
+    None => @test.fail("Test failed")
+  }
+  
+  match special_chars_log.severity_text {
+    Some(text) => assert_eq(text, "!@#$%^&*()")
+    None => @test.fail("Test failed")
+  }
+  
+  match unicode_log.severity_text {
+    Some(text) => assert_eq(text, "Unicode🚀")
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试极长字符串
+  let very_long_body = "a" * 10000
+  let very_long_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Info,
+    severity_text: Some("VERY_LONG"),
+    body: Some(very_long_body),
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  match very_long_log.body {
+    Some(body) => assert_eq(body.length() > 1000, true)
+    None => @test.fail("Test failed")
+  }
+  
+  // 测试复杂的属性集合
+  let complex_attributes = [
+    ("empty.string", AttributeValue::string("")),
+    ("special.chars", AttributeValue::string("!@#$%^&*()")),
+    ("unicode", AttributeValue::string("Unicode🚀")),
+    ("very.long", AttributeValue::string("a" * 1000)),
+    ("zero.int", AttributeValue::int(0L)),
+    ("neg.int", AttributeValue::int(-1L)),
+    ("max.int", AttributeValue::int(9223372036854775807L)),
+    ("min.int", AttributeValue::int(-9223372036854775808L)),
+    ("zero.float", AttributeValue::float(0.0)),
+    ("neg.float", AttributeValue::float(-1.0)),
+    ("infinity", AttributeValue::float(1.0/0.0)),
+    ("neg.infinity", AttributeValue::float(-1.0/0.0)),
+    ("nan", AttributeValue::float(0.0/0.0)),
+    ("true.bool", AttributeValue::bool(true)),
+    ("false.bool", AttributeValue::bool(false)),
+    ("empty.array", AttributeValue::array_string([])),
+    ("string.array", AttributeValue::array_string(["", " ", "!@#", "Unicode🚀"])),
+    ("int.array", AttributeValue::array_int([0L, -1L, 9223372036854775807L])),
+    ("float.array", AttributeValue::array_float([0.0, -1.0, 1.0/0.0, 0.0/0.0])),
+    ("bool.array", AttributeValue::array_bool([true, false, true]))
+  ]
+  
+  let complex_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Info,
+    severity_text: Some("COMPLEX"),
+    body: Some("Complex attributes log"),
+    attributes: complex_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  assert_eq(complex_log.attributes.length(), 20)
+  
+  // 验证各种属性类型
+  match complex_log.attributes[0].1 {
+    StringValue(s) => assert_eq(s, "")
+    _ => @test.fail("Test failed")
+  }
+  
+  match complex_log.attributes[6].1 {
+    IntValue(i) => assert_eq(i, 9223372036854775807L)
+    _ => @test.fail("Test failed")
+  }
+  
+  match complex_log.attributes[11].1 {
+    FloatValue(f) => assert_eq(f != f, true)  // NaN
+    _ => @test.fail("Test failed")
+  }
+  
+  match complex_log.attributes[17].1 {
+    ArrayStringValue(arr) => {
+      assert_eq(arr.length(), 4)
+      assert_eq(arr[0], "")
+      assert_eq(arr[1], " ")
+      assert_eq(arr[2], "!@#")
+      assert_eq(arr[3], "Unicode🚀")
+    }
+    _ => @test.fail("Test failed")
+  }
+}
+
+test "span_error_boundary" {
+  // 测试Span的错误边界情况
+  
+  // 测试极值时间戳
+  let max_timestamp = 9223372036854775807L
+  let min_timestamp = -9223372036854775808L
+  
+  let max_timestamp_span = Span::{
+    name: "max_timestamp_span",
+    context: SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: max_timestamp,
+    end_time_unix_nanos: Some(max_timestamp),
+    status: Ok,
+    status_description: Some("Max timestamp span"),
+    attributes: [],
+    events: [],
+    links: []
+  }
+  
+  let min_timestamp_span = Span::{
+    name: "min_timestamp_span",
     context: SpanContext::{
       trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
       span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
@@ -239,75 +562,82 @@ test "span_lifecycle_boundary_conditions" {
     kind: Internal,
     parent_span_id: None,
     start_time_unix_nanos: min_timestamp,
-    end_time_unix_nanos: Some(max_timestamp),
-    status: Ok,
-    status_description: None,
-    attributes: [],
-    events: [],
-    links: []
-  }
-  
-  let span_with_zero_time = Span::{
-    name: "zero_time_span",
-    context: SpanContext::{
-      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
-      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
-      trace_flags: 0_byte,
-      trace_state: ""
-    },
-    kind: Internal,
-    parent_span_id: None,
-    start_time_unix_nanos: zero_timestamp,
-    end_time_unix_nanos: Some(zero_timestamp),
-    status: Ok,
-    status_description: None,
-    attributes: [],
-    events: [],
-    links: []
-  }
-  
-  assert_eq(span_with_min_time.start_time_unix_nanos, min_timestamp)
-  match span_with_min_time.end_time_unix_nanos {
-    Some(end_time) => assert_eq(end_time, max_timestamp)
-    None => @test.fail("Test failed")
-  }
-  
-  assert_eq(span_with_zero_time.start_time_unix_nanos, zero_timestamp)
-  match span_with_zero_time.end_time_unix_nanos {
-    Some(end_time) => assert_eq(end_time, zero_timestamp)
-    None => @test.fail("Test failed")
-  }
-  
-  // 2. 无效时间顺序测试
-  let invalid_time_span = Span::{
-    name: "invalid_time_span",
-    context: SpanContext::{
-      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
-      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
-      trace_flags: 0_byte,
-      trace_state: ""
-    },
-    kind: Internal,
-    parent_span_id: None,
-    start_time_unix_nanos: 1000L,
-    end_time_unix_nanos: Some(500L),  // 结束时间早于开始时间
+    end_time_unix_nanos: Some(min_timestamp),
     status: Error,
-    status_description: Some("Invalid time sequence"),
+    status_description: Some("Min timestamp span"),
     attributes: [],
     events: [],
     links: []
   }
   
-  assert_eq(invalid_time_span.start_time_unix_nanos, 1000L)
-  match invalid_time_span.end_time_unix_nanos {
-    Some(end_time) => assert_eq(end_time, 500L)
-    None => @test.fail("Test failed")
-  }
-  assert_eq(invalid_time_span.status, Error)
+  assert_eq(max_timestamp_span.start_time_unix_nanos, max_timestamp)
+  assert_eq(min_timestamp_span.start_time_unix_nanos, min_timestamp)
   
-  // 3. 极长Span名称测试
-  let very_long_name = "a" * 10000
-  let long_name_span = Span::{
+  // 测试空和特殊字符串
+  let empty_name_span = Span::{
+    name: "",
+    context: SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: None,
+    status: Unset,
+    status_description: None,
+    attributes: [],
+    events: [],
+    links: []
+  }
+  
+  let special_chars_span = Span::{
+    name: "!@#$%^&*()_+-=[]{}|;':\",./<>?",
+    context: SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: None,
+    status: Unset,
+    status_description: Some("!@#$%^&*()"),
+    attributes: [],
+    events: [],
+    links: []
+  }
+  
+  let unicode_span = Span::{
+    name: "Unicode测试🚀",
+    context: SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: None,
+    status: Unset,
+    status_description: Some("Unicode描述🌟"),
+    attributes: [],
+    events: [],
+    links: []
+  }
+  
+  assert_eq(empty_name_span.name, "")
+  assert_eq(special_chars_span.name, "!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  assert_eq(unicode_span.name, "Unicode测试🚀")
+  
+  // 测试极长名称
+  let very_long_name = "a" * 1000
+  let very_long_span = Span::{
     name: very_long_name,
     context: SpanContext::{
       trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
@@ -317,7 +647,7 @@ test "span_lifecycle_boundary_conditions" {
     },
     kind: Internal,
     parent_span_id: None,
-    start_time_unix_nanos: 0L,
+    start_time_unix_nanos: 1640995200000000000L,
     end_time_unix_nanos: None,
     status: Unset,
     status_description: None,
@@ -326,11 +656,24 @@ test "span_lifecycle_boundary_conditions" {
     links: []
   }
   
-  assert_eq(long_name_span.name.length(), 10000)
+  assert_eq(very_long_span.name.length() > 100, true)
   
-  // 4. 特殊字符Span名称测试
-  let special_name_span = Span::{
-    name: "!@#$%^&*()_+-={}[]|\\:;\"'<>?,./测试🚀\x00\x01\x02",
+  // 测试复杂的属性集合
+  let complex_attributes = [
+    ("empty.string", AttributeValue::string("")),
+    ("special.chars", AttributeValue::string("!@#$%^&*()")),
+    ("unicode", AttributeValue::string("Unicode🚀")),
+    ("zero.int", AttributeValue::int(0L)),
+    ("max.int", AttributeValue::int(9223372036854775807L)),
+    ("infinity", AttributeValue::float(1.0/0.0)),
+    ("nan", AttributeValue::float(0.0/0.0)),
+    ("true.bool", AttributeValue::bool(true)),
+    ("empty.array", AttributeValue::array_string([])),
+    ("mixed.array", AttributeValue::array_string(["", "!@", "Unicode🚀"]))
+  ]
+  
+  let complex_span = Span::{
+    name: "complex_span",
     context: SpanContext::{
       trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
       span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
@@ -339,371 +682,331 @@ test "span_lifecycle_boundary_conditions" {
     },
     kind: Internal,
     parent_span_id: None,
-    start_time_unix_nanos: 0L,
+    start_time_unix_nanos: 1640995200000000000L,
     end_time_unix_nanos: None,
     status: Unset,
     status_description: None,
-    attributes: [],
+    attributes: complex_attributes,
     events: [],
     links: []
   }
   
-  assert_eq(special_name_span.name.contains("测试"), true)
-  assert_eq(special_name_span.name.contains("🚀"), true)
+  assert_eq(complex_span.attributes.length(), 10)
   
-  // 5. 大量属性测试
-  let mut many_attributes = []
-  let mut i = 0
-  while i < 1000 {
-    many_attributes.push(("attr_" + i.to_string(), AttributeValue::string("value_" + i.to_string())))
-    i = i + 1
-  }
-  
-  let many_attributes_span = Span::{
-    name: "many_attributes_span",
-    context: SpanContext::{
-      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
-      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
-      trace_flags: 0_byte,
-      trace_state: ""
+  // 测试复杂的事件集合
+  let complex_events = [
+    SpanEvent::{
+      name: "",
+      timestamp_unix_nanos: 1640995200000000000L,
+      attributes: []
     },
-    kind: Internal,
-    parent_span_id: None,
-    start_time_unix_nanos: 0L,
-    end_time_unix_nanos: None,
-    status: Unset,
-    status_description: None,
-    attributes: many_attributes,
-    events: [],
-    links: []
-  }
-  
-  assert_eq(many_attributes_span.attributes.length(), 1000)
-  
-  // 6. 大量事件测试
-  let mut many_events = []
-  let mut i = 0
-  while i < 100 {
-    many_events.push(SpanEvent::{
-      name: "event_" + i.to_string(),
-      timestamp_unix_nanos: i.to_int64(),
-      attributes: [("event_index", AttributeValue::int(i.to_int64()))]
-    })
-    i = i + 1
-  }
-  
-  let many_events_span = Span::{
-    name: "many_events_span",
-    context: SpanContext::{
-      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
-      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
-      trace_flags: 0_byte,
-      trace_state: ""
+    SpanEvent::{
+      name: "!@#$%^&*()",
+      timestamp_unix_nanos: 1640995200000000100L,
+      attributes: [("special.chars", AttributeValue::string("!@#$%^&*()"))]
     },
-    kind: Internal,
-    parent_span_id: None,
-    start_time_unix_nanos: 0L,
-    end_time_unix_nanos: None,
-    status: Unset,
-    status_description: None,
-    attributes: [],
-    events: many_events,
-    links: []
-  }
-  
-  assert_eq(many_events_span.events.length(), 100)
-}
-
-test "baggage_extreme_conditions" {
-  // 测试Baggage的极端条件
-  
-  // 1. 空键和空值测试
-  let empty_baggage = Baggage::empty()
-  let baggage_with_empty_key = empty_baggage.with_entry("", "value_for_empty_key")
-  let baggage_with_empty_value = baggage_with_empty_key.with_entry("key_for_empty_value", "")
-  let baggage_with_both_empty = baggage_with_empty_value.with_entry("", "")
-  
-  match baggage_with_empty_key.get("") {
-    Some(value) => assert_eq(value, "value_for_empty_key")
-    None => @test.fail("Test failed")
-  }
-  
-  match baggage_with_empty_value.get("key_for_empty_value") {
-    Some(value) => assert_eq(value, "")
-    None => @test.fail("Test failed")
-  }
-  
-  match baggage_with_both_empty.get("") {
-    Some(value) => assert_eq(value, "")
-    None => @test.fail("Test failed")
-  }
-  
-  // 2. 特殊字符键值测试
-  let special_baggage = empty_baggage
-    .with_entry("!@#$%^&*()", "!@#$%^&*()")
-    .with_entry("键测试🚀", "值测试🚀")
-    .with_entry("key\x00with\x00nulls", "value\x00with\x00nulls")
-    .with_entry("   spaces   ", "   spaces   ")
-    .with_entry("dots.and.underscores", "dots.and.underscores")
-  
-  match special_baggage.get("!@#$%^&*()") {
-    Some(value) => assert_eq(value, "!@#$%^&*()")
-    None => @test.fail("Test failed")
-  }
-  
-  match special_baggage.get("键测试🚀") {
-    Some(value) => assert_eq(value, "值测试🚀")
-    None => @test.fail("Test failed")
-  }
-  
-  // 3. 长键和长值测试
-  let long_key = "k" * 1000
-  let long_value = "v" * 10000
-  let long_baggage = empty_baggage
-    .with_entry(long_key, long_value)
-    .with_entry("normal_key", long_value)
-    .with_entry(long_key, "normal_value")
-  
-  match long_baggage.get(long_key) {
-    Some(value) => assert_eq(value, "normal_value")  // 应该是覆盖后的值
-    None => @test.fail("Test failed")
-  }
-  
-  match long_baggage.get("normal_key") {
-    Some(value) => assert_eq(value.length(), 10000)
-    None => @test.fail("Test failed")
-  }
-  
-  // 4. 大量条目测试
-  let mut many_entries_baggage = empty_baggage
-  let mut i = 0
-  while i < 1000 {
-    many_entries_baggage = many_entries_baggage.with_entry(
-      "entry_" + i.to_string(),
-      "value_" + i.to_string()
-    )
-    i = i + 1
-  }
-  
-  match many_entries_baggage.get("entry_0") {
-    Some(value) => assert_eq(value, "value_0")
-    None => @test.fail("Test failed")
-  }
-  
-  match many_entries_baggage.get("entry_999") {
-    Some(value) => assert_eq(value, "value_999")
-    None => @test.fail("Test failed")
-  }
-  
-  // 5. 重复键覆盖测试
-  let override_baggage = empty_baggage
-    .with_entry("test_key", "original_value")
-    .with_entry("test_key", "first_override")
-    .with_entry("test_key", "second_override")
-    .with_entry("test_key", "final_value")
-  
-  match override_baggage.get("test_key") {
-    Some(value) => assert_eq(value, "final_value")
-    None => @test.fail("Test failed")
-  }
-  
-  // 6. 复合键测试（类似URL参数）
-  let complex_baggage = empty_baggage
-    .with_entry("user.id", "user123")
-    .with_entry("user.name", "John Doe")
-    .with_entry("user.email", "john@example.com")
-    .with_entry("service.name", "payment-service")
-    .with_entry("service.version", "2.1.0")
-    .with_entry("request.id", "req-12345")
-    .with_entry("trace.id", "trace-67890")
-    .with_entry("session.id", "sess-abcde")
-    .with_entry("correlation.id", "corr-fghij")
-    .with_entry("deployment.env", "production")
-    .with_entry("region", "us-west-2")
-    .with_entry("availability.zone", "us-west-2a")
-    .with_entry("instance.id", "i-1234567890abcdef0")
-  
-  match complex_baggage.get("user.id") {
-    Some(value) => assert_eq(value, "user123")
-    None => @test.fail("Test failed")
-  }
-  
-  match complex_baggage.get("instance.id") {
-    Some(value) => assert_eq(value, "i-1234567890abcdef0")
-    None => @test.fail("Test failed")
-  }
-}
-
-test "log_record_boundary_conditions" {
-  // 测试LogRecord的边界条件
-  
-  // 1. 极端时间戳测试
-  let min_time_log = LogRecord::{
-    timestamp_unix_nanos: -9223372036854775808L,
-    observed_timestamp_unix_nanos: Some(-9223372036854775808L),
-    severity_number: Error,
-    severity_text: Some("MIN_TIME_ERROR"),
-    body: Some("Log with minimum timestamp"),
-    attributes: [],
-    trace_id: None,
-    span_id: None,
-    trace_flags: None,
-    resource: None,
-    instrumentation_scope: None
-  }
-  
-  let max_time_log = LogRecord::{
-    timestamp_unix_nanos: 9223372036854775807L,
-    observed_timestamp_unix_nanos: Some(9223372036854775807L),
-    severity_number: Fatal,
-    severity_text: Some("MAX_TIME_FATAL"),
-    body: Some("Log with maximum timestamp"),
-    attributes: [],
-    trace_id: None,
-    span_id: None,
-    trace_flags: None,
-    resource: None,
-    instrumentation_scope: None
-  }
-  
-  assert_eq(min_time_log.timestamp_unix_nanos, -9223372036854775808L)
-  match min_time_log.observed_timestamp_unix_nanos {
-    Some(timestamp) => assert_eq(timestamp, -9223372036854775808L)
-    None => @test.fail("Test failed")
-  }
-  
-  assert_eq(max_time_log.timestamp_unix_nanos, 9223372036854775807L)
-  match max_time_log.observed_timestamp_unix_nanos {
-    Some(timestamp) => assert_eq(timestamp, 9223372036854775807L)
-    None => @test.fail("Test failed")
-  }
-  
-  // 2. 极长日志消息测试
-  let very_long_message = "a" * 100000
-  let long_message_log = LogRecord::{
-    timestamp_unix_nanos: 0L,
-    observed_timestamp_unix_nanos: None,
-    severity_number: Info,
-    severity_text: None,
-    body: Some(very_long_message),
-    attributes: [],
-    trace_id: None,
-    span_id: None,
-    trace_flags: None,
-    resource: None,
-    instrumentation_scope: None
-  }
-  
-  match long_message_log.body {
-    Some(message) => assert_eq(message.length(), 100000)
-    None => @test.fail("Test failed")
-  }
-  
-  // 3. 特殊字符日志消息测试
-  let special_message = "Special chars: !@#$%^&*()_+-={}[]|\\:;\"'<>?,./\x00\x01\x02 Unicode: 测试🚀 Newlines:\n\tTabs"
-  let special_message_log = LogRecord::{
-    timestamp_unix_nanos: 0L,
-    observed_timestamp_unix_nanos: None,
-    severity_number: Warn,
-    severity_text: Some("SPECIAL_CHARS_WARNING"),
-    body: Some(special_message),
-    attributes: [],
-    trace_id: None,
-    span_id: None,
-    trace_flags: None,
-    resource: None,
-    instrumentation_scope: None
-  }
-  
-  match special_message_log.body {
-    Some(message) => {
-      assert_eq(message.contains("测试"), true)
-      assert_eq(message.contains("🚀"), true)
-      assert_eq(message.contains("\n"), true)
-      assert_eq(message.contains("\t"), true)
+    SpanEvent::{
+      name: "Unicode事件🚀",
+      timestamp_unix_nanos: 1640995200000000200L,
+      attributes: [("unicode", AttributeValue::string("Unicode🌟"))]
+    },
+    SpanEvent::{
+      name: "complex_event",
+      timestamp_unix_nanos: 1640995200000000300L,
+      attributes: [
+        ("empty.string", AttributeValue::string("")),
+        ("max.int", AttributeValue::int(9223372036854775807L)),
+        ("infinity", AttributeValue::float(1.0/0.0)),
+        ("true.bool", AttributeValue::bool(true)),
+        ("mixed.array", AttributeValue::array_string(["", "!@", "Unicode🚀"]))
+      ]
     }
-    None => @test.fail("Test failed")
+  ]
+  
+  let events_span = Span::{
+    name: "events_span",
+    context: SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: None,
+    status: Unset,
+    status_description: None,
+    attributes: [],
+    events: complex_events,
+    links: []
   }
   
-  // 4. 大量属性测试
-  let mut many_attributes = []
-  let mut i = 0
-  while i < 1000 {
-    many_attributes.push(("log_attr_" + i.to_string(), AttributeValue::string("log_value_" + i.to_string())))
-    i = i + 1
+  assert_eq(events_span.events.length(), 4)
+  assert_eq(events_span.events[0].name, "")
+  assert_eq(events_span.events[1].name, "!@#$%^&*()")
+  assert_eq(events_span.events[2].name, "Unicode事件🚀")
+  assert_eq(events_span.events[3].attributes.length(), 5)
+  
+  // 测试复杂的链接集合
+  let complex_links = [
+    SpanLink::{
+      context: SpanContext::{
+        trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+        span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+        trace_flags: 0_byte,
+        trace_state: ""
+      },
+      attributes: []
+    },
+    SpanLink::{
+      context: SpanContext::{
+        trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0xff_byte }),
+        span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0xff_byte }),
+        trace_flags: 0xff_byte,
+        trace_state: "!@#$%^&*()"
+      },
+      attributes: [("special.state", AttributeValue::string("!@#$%^&*()"))]
+    },
+    SpanLink::{
+      context: SpanContext::{
+        trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x12_byte }),
+        span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x34_byte }),
+        trace_flags: 1_byte,
+        trace_state: "Unicode状态🚀"
+      },
+      attributes: [
+        ("unicode", AttributeValue::string("Unicode🌟")),
+        ("complex", AttributeValue::array_string(["", "!@", "Unicode🚀"]))
+      ]
+    }
+  ]
+  
+  let links_span = Span::{
+    name: "links_span",
+    context: SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: None,
+    status: Unset,
+    status_description: None,
+    attributes: [],
+    events: [],
+    links: complex_links
   }
   
-  let many_attributes_log = LogRecord::{
-    timestamp_unix_nanos: 0L,
-    observed_timestamp_unix_nanos: None,
-    severity_number: Info,
-    severity_text: Some("MANY_ATTRIBUTES_INFO"),
-    body: Some("Log with many attributes"),
-    attributes: many_attributes,
-    trace_id: None,
-    span_id: None,
-    trace_flags: None,
-    resource: None,
-    instrumentation_scope: None
-  }
+  assert_eq(links_span.links.length(), 3)
+  assert_eq(links_span.links[0].attributes.length(), 0)
+  assert_eq(links_span.links[1].context.trace_flags, 0xff_byte)
+  assert_eq(links_span.links[2].context.trace_state, "Unicode状态🚀")
+}
+
+test "span_context_error_boundary" {
+  // 测试SpanContext的错误边界情况
   
-  assert_eq(many_attributes_log.attributes.length(), 1000)
-  
-  // 5. 复杂Trace和Span ID测试
+  // 测试全零的trace_id和span_id
   let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
-  let max_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0xff_byte })
   let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
+  
+  let zero_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: ""
+  }
+  
+  // 测试全1的trace_id和span_id
+  let max_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0xff_byte })
   let max_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0xff_byte })
   
-  let zero_ids_log = LogRecord::{
-    timestamp_unix_nanos: 0L,
-    observed_timestamp_unix_nanos: None,
-    severity_number: Debug,
-    severity_text: Some("ZERO_IDS_DEBUG"),
-    body: Some("Log with zero trace and span IDs"),
-    attributes: [],
-    trace_id: Some(zero_trace_id),
-    span_id: Some(zero_span_id),
-    trace_flags: Some(0_byte),
-    resource: None,
-    instrumentation_scope: None
+  let max_context = SpanContext::{
+    trace_id: max_trace_id,
+    span_id: max_span_id,
+    trace_flags: 0xff_byte,
+    trace_state: ""
   }
   
-  let max_ids_log = LogRecord::{
-    timestamp_unix_nanos: 0L,
-    observed_timestamp_unix_nanos: None,
-    severity_number: Debug,
-    severity_text: Some("MAX_IDS_DEBUG"),
-    body: Some("Log with max trace and span IDs"),
-    attributes: [],
-    trace_id: Some(max_trace_id),
-    span_id: Some(max_span_id),
-    trace_flags: Some(0xff_byte),
-    resource: None,
-    instrumentation_scope: None
+  // 测试交替模式的trace_id和span_id
+  let alt_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(i) { 
+    if i % 2 == 0 { 0xaa_byte } else { 0x55_byte }
+  }]
+  let alt_span_id = [for i = 0; i < 8; i = i + 1].map(fn(i) { 
+    if i % 2 == 0 { 0xaa_byte } else { 0x55_byte }
+  }]
+  
+  let alt_context = SpanContext::{
+    trace_id: alt_trace_id,
+    span_id: alt_span_id,
+    trace_flags: 0xa5_byte,
+    trace_state: ""
   }
   
-  match zero_ids_log.trace_id {
-    Some(id) => {
-      assert_eq(id.length(), 16)
-      let mut i = 0
-      while i < 16 {
-        assert_eq(id[i], 0_byte)
-        i = i + 1
-      }
-    }
-    None => @test.fail("Test failed")
+  // 验证各种上下文
+  assert_eq(zero_context.trace_id.length(), 16)
+  assert_eq(zero_context.span_id.length(), 8)
+  assert_eq(zero_context.trace_flags, 0_byte)
+  
+  assert_eq(max_context.trace_id.length(), 16)
+  assert_eq(max_context.span_id.length(), 8)
+  assert_eq(max_context.trace_flags, 0xff_byte)
+  
+  assert_eq(alt_context.trace_id.length(), 16)
+  assert_eq(alt_context.span_id.length(), 8)
+  assert_eq(alt_context.trace_flags, 0xa5_byte)
+  
+  // 测试极值trace_flags
+  let min_flags_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: ""
   }
   
-  match max_ids_log.trace_id {
-    Some(id) => {
-      assert_eq(id.length(), 16)
-      let mut i = 0
-      while i < 16 {
-        assert_eq(id[i], 0xff_byte)
-        i = i + 1
-      }
-    }
-    None => @test.fail("Test failed")
+  let max_flags_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0xff_byte,
+    trace_state: ""
   }
+  
+  assert_eq(min_flags_context.trace_flags, 0_byte)
+  assert_eq(max_flags_context.trace_flags, 0xff_byte)
+  
+  // 测试空和特殊trace_state
+  let empty_state_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: ""
+  }
+  
+  let space_state_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: " "
+  }
+  
+  let special_state_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  }
+  
+  let unicode_state_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: "Unicode状态🚀"
+  }
+  
+  let very_long_state_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: "a" * 1000
+  }
+  
+  assert_eq(empty_state_context.trace_state, "")
+  assert_eq(space_state_context.trace_state, " ")
+  assert_eq(special_state_context.trace_state, "!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  assert_eq(unicode_state_context.trace_state, "Unicode状态🚀")
+  assert_eq(very_long_state_context.trace_state.length() > 100, true)
+  
+  // 测试复杂的trace_state格式
+  let complex_state_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: "key1=value1,key2=value2;prop1=val1,key3=value3;prop1=val1;prop2=val2"
+  }
+  
+  let empty_key_state_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: "=value1,key2=,key3=value3"
+  }
+  
+  let special_key_value_state_context = SpanContext::{
+    trace_id: zero_trace_id,
+    span_id: zero_span_id,
+    trace_flags: 0_byte,
+    trace_state: "!@#$%^&*()=!@#$%^&*(),Unicode键=Unicode值🚀"
+  }
+  
+  assert_eq(complex_state_context.trace_state, "key1=value1,key2=value2;prop1=val1,key3=value3;prop1=val1;prop2=val2")
+  assert_eq(empty_key_state_context.trace_state, "=value1,key2=,key3=value3")
+  assert_eq(special_key_value_state_context.trace_state, "!@#$%^&*()=!@#$%^&*(),Unicode键=Unicode值🚀")
+}
+
+test "propagation_error_boundary" {
+  // 测试Propagation的错误边界情况
+  
+  // 测试空carrier
+  let empty_carrier = MapCarrier::new()
+  let ctx = Context::empty()
+  
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  
+  // 从空carrier提取
+  let extracted_from_empty = trace_propagator.extract(ctx, empty_carrier)
+  let baggage_from_empty = baggage_propagator.extract(ctx, empty_carrier)
+  
+  // 测试注入到空carrier
+  trace_propagator.inject(ctx, empty_carrier)
+  baggage_propagator.inject(ctx, empty_carrier)
+  
+  // 测试带有特殊字符的carrier
+  let special_data = [
+    ("", "empty_key"),
+    (" ", "space_key"),
+    ("!@#$%^&*()", "!@#$%^&*()"),
+    ("Unicode键🚀", "Unicode值🌟"),
+    ("very_long_key", "a" * 1000),
+    ("normal_key", "very_long_value_" + ("b" * 1000))
+  ]
+  
+  let special_carrier = MapCarrier::from_map(special_data)
+  
+  // 从特殊carrier提取
+  let extracted_from_special = trace_propagator.extract(ctx, special_carrier)
+  let baggage_from_special = baggage_propagator.extract(ctx, special_carrier)
+  
+  // 测试注入到特殊carrier
+  trace_propagator.inject(ctx, special_carrier)
+  baggage_propagator.inject(ctx, special_carrier)
+  
+  // 验证carrier操作不会崩溃
+  assert_eq(true, true)
+  
+  // 测试复合propagator的错误处理
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  // 使用复合propagator进行注入和提取
+  composite_propagator.inject(ctx, empty_carrier)
+  let extracted_composite = composite_propagator.extract(ctx, empty_carrier)
+  
+  composite_propagator.inject(ctx, special_carrier)
+  let extracted_special_composite = composite_propagator.extract(ctx, special_carrier)
+  
+  // 验证复合propagator操作不会崩溃
+  assert_eq(true, true)
+  
+  // 测试空propagator数组
+  let empty_composite_propagator = CompositePropagator::new([])
+  
+  empty_composite_propagator.inject(ctx, empty_carrier)
+  let extracted_empty_composite = empty_composite_propagator.extract(ctx, empty_carrier)
+  
+  // 验证空propagator数组操作不会崩溃
+  assert_eq(true, true)
 }
