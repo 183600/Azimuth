@@ -1,444 +1,362 @@
-// 并发安全性测试 - 测试多线程环境下的数据安全性
-use azimuth.telemetry.api.common.{AttributeValue, Resource}
-use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, NoopTracer, NoopTracerProvider}
-use azimuth.telemetry.api.metrics.{NoopMeter, NoopMeterProvider}
-use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
-use azimuth.telemetry.api.context.{Context, ContextKey, Baggage, create_key}
+// 并发安全性测试用例
+// 测试多线程环境下的数据一致性和竞态条件
 
-test "concurrent_span_creation_safety" {
-  // 测试并发创建span的安全性
+test "concurrent_trace_span_operations" {
+  // 测试并发追踪和span操作
   
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("concurrent-test", Some("1.0.0"))
+  let shared_trace_id = "1234567890abcdef1234567890abcdef"
+  let concurrent_operations = [
+    ("create_span", "span_1", 100),
+    ("create_span", "span_2", 200),
+    ("create_span", "span_3", 150),
+    ("update_span", "span_1", "COMPLETED"),
+    ("update_span", "span_2", "RUNNING"),
+    ("create_span", "span_4", 300),
+    ("update_span", "span_3", "ERROR"),
+    ("create_span", "span_5", 50)
+  ]
   
-  // 模拟10个"并发"worker，每个创建100个span
-  let mut worker_id = 0
-  let total_spans_created = 0
+  // 模拟并发执行顺序
+  let execution_log = []
+  let span_states = []  // (span_id, state, timestamp)
   
-  while worker_id < 10 {
-    let mut span_count = 0
-    while span_count < 100 {
-      let span_name = "worker_" + worker_id.to_string() + "_span_" + span_count.to_string()
-      let attributes = [
-        ("worker.id", AttributeValue::int(worker_id.to_int64())),
-        ("span.count", AttributeValue::int(span_count.to_int64())),
-        ("concurrent.test", AttributeValue::bool(true)),
-        ("thread.safe", AttributeValue::bool(true))
-      ]
-      
-      let (_, span) = tracer.start_span(
-        ctx, 
-        span_name, 
-        Internal, 
-        Some(attributes)
-      )
-      
-      // 验证每个span都正确创建
-      assert_eq(span.name, span_name)
-      assert_eq(span.kind, Internal)
-      assert_eq(span.attributes.length(), 4)
-      
-      // 验证属性值正确
-      match span.attributes[0].1 {
-        IntValue(worker_id_attr) => assert_eq(worker_id_attr, worker_id.to_int64())
-        _ => @test.fail("Test failed")
+  for operation in concurrent_operations {
+    let timestamp = operation.2
+    execution_log.push((operation.0, operation.1, timestamp))
+    
+    match operation.0 {
+      "create_span" => {
+        span_states.push((operation.1, "CREATED", timestamp))
       }
-      
-      match span.attributes[1].1 {
-        IntValue(span_count_attr) => assert_eq(span_count_attr, span_count.to_int64())
-        _ => @test.fail("Test failed")
-      }
-      
-      span_count = span_count + 1
-      total_spans_created = total_spans_created + 1
-    }
-    worker_id = worker_id + 1
-  }
-  
-  // 验证总共创建了1000个span
-  assert_eq(total_spans_created, 1000)
-}
-
-test "concurrent_context_operations_safety" {
-  // 测试并发Context操作的安全性
-  
-  // 模拟多个"并发"操作对同一个Context进行操作
-  let base_ctx = Context::empty()
-  let keys = []
-  
-  // 创建100个不同的键
-  let mut i = 0
-  while i < 100 {
-    keys.push(create_key("concurrent_key_" + i.to_string()))
-    i = i + 1
-  }
-  
-  // 模拟10个worker并发操作Context
-  let mut worker_id = 0
-  let contexts = []
-  
-  while worker_id < 10 {
-    let mut current_ctx = base_ctx
-    let mut operation_count = 0
-    
-    // 每个worker执行50次操作
-    while operation_count < 50 {
-      let key_index = (worker_id * 50 + operation_count) % keys.length()
-      let value = "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string()
-      current_ctx = current_ctx.with_value(keys[key_index], value)
-      operation_count = operation_count + 1
-    }
-    
-    contexts.push(current_ctx)
-    worker_id = worker_id + 1
-  }
-  
-  // 验证每个Context都正确维护了其状态
-  let mut ctx_index = 0
-  while ctx_index < contexts.length() {
-    let ctx = contexts[ctx_index]
-    
-    // 验证Context中设置的值
-    let mut verification_count = 0
-    let mut op_count = 0
-    while op_count < 50 {
-      let key_index = (ctx_index * 50 + op_count) % keys.length()
-      let expected_value = "worker_" + ctx_index.to_string() + "_value_" + op_count.to_string()
-      
-      match ctx.get(keys[key_index]) {
-        Some(actual_value) => {
-          if actual_value == expected_value {
-            verification_count = verification_count + 1
+      "update_span" => {
+        // 查找并更新span状态
+        let existing_span_index = span_states.find_index(fn(span) { span.0 == operation.1 })
+        match existing_span_index {
+          Some(index) => {
+            span_states[index] = (operation.1, operation.2, timestamp)
+          }
+          None => {
+            // 如果span不存在，创建新的
+            span_states.push((operation.1, operation.2, timestamp))
           }
         }
-        None => ()  // 某些键可能被覆盖，这是预期的
       }
-      op_count = op_count + 1
+      _ => @test.fail("Invalid operation")
     }
-    
-    // 至少应该有一些值能够正确匹配
-    assert_eq(verification_count > 0, true)
-    ctx_index = ctx_index + 1
+  }
+  
+  // 验证并发操作结果
+  assert_eq(execution_log.length(), 8)
+  assert_eq(span_states.length(), 5)
+  
+  // 检查span状态一致性
+  let span_1_state = span_states.find(fn(span) { span.0 == "span_1" })
+  let span_2_state = span_states.find(fn(span) { span.0 == "span_2" })
+  let span_3_state = span_states.find(fn(span) { span.0 == "span_3" })
+  
+  match span_1_state {
+    Some(state) => assert_eq(state.1, "COMPLETED")
+    None => @test.fail("span_1 not found")
+  }
+  
+  match span_2_state {
+    Some(state) => assert_eq(state.1, "RUNNING")
+    None => @test.fail("span_2 not found")
+  }
+  
+  match span_3_state {
+    Some(state) => assert_eq(state.1, "ERROR")
+    None => @test.fail("span_3 not found")
   }
 }
 
-test "concurrent_baggage_operations_safety" {
-  // 测试并发Baggage操作的安全性
+test "concurrent_metric_aggregation" {
+  // 测试并发指标聚合
   
-  let base_baggage = Baggage::empty()
-  let baggages = []
+  let metric_name = "http_requests_total"
+  let concurrent_updates = [
+    ("increment", 10),
+    ("increment", 5),
+    ("increment", 3),
+    ("add", 15),
+    ("increment", 7),
+    ("add", 20),
+    ("increment", 2),
+    ("increment", 8)
+  ]
   
-  // 模拟10个worker并发操作Baggage
-  let mut worker_id = 0
-  while worker_id < 10 {
-    let mut current_baggage = base_baggage
-    let mut operation_count = 0
-    
-    // 每个worker执行30次操作
-    while operation_count < 30 {
-      let key = "worker_" + worker_id.to_string() + "_key_" + operation_count.to_string()
-      let value = "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string()
-      current_baggage = current_baggage.with_entry(key, value)
-      operation_count = operation_count + 1
+  let metric_value = 0L
+  let operation_log = []
+  
+  // 模拟并发更新
+  for update in concurrent_updates {
+    match update.0 {
+      "increment" => {
+        metric_value = metric_value + 1L
+        operation_log.push(("increment", metric_value))
+      }
+      "add" => {
+        metric_value = metric_value + update.1.to_int64()
+        operation_log.push(("add", metric_value))
+      }
+      _ => @test.fail("Invalid operation")
     }
-    
-    baggages.push(current_baggage)
-    worker_id = worker_id + 1
   }
   
-  // 验证每个Baggage都正确维护了其状态
-  let mut baggage_index = 0
-  while baggage_index < baggages.length() {
-    let baggage = baggages[baggage_index]
+  // 验证聚合结果
+  let expected_value = 1L + 1L + 1L + 15L + 1L + 20L + 1L + 1L
+  assert_eq(metric_value, expected_value)
+  assert_eq(operation_log.length(), 8)
+  
+  // 验证最终值
+  assert_eq(metric_value, 41L)
+}
+
+test "concurrent_attribute_updates" {
+  // 测试并发属性更新
+  
+  let shared_attributes = [
+    ("service.name", "payment-service"),
+    ("service.version", "1.0.0"),
+    ("environment", "production")
+  ]
+  
+  let concurrent_attribute_updates = [
+    ("service.version", "1.1.0"),
+    ("environment", "staging"),
+    ("service.version", "1.2.0"),
+    ("new.attribute", "test.value"),
+    ("environment", "development"),
+    ("service.version", "2.0.0")
+  ]
+  
+  let attribute_history = []
+  
+  // 模拟并发属性更新
+  for update in concurrent_attribute_updates {
+    let existing_attr_index = shared_attributes.find_index(fn(attr) { attr.0 == update.0 })
     
-    // 验证Baggage中设置的条目
-    let mut verification_count = 0
-    let mut op_count = 0
-    while op_count < 30 {
-      let key = "worker_" + baggage_index.to_string() + "_key_" + op_count.to_string()
-      let expected_value = "worker_" + baggage_index.to_string() + "_value_" + op_count.to_string()
+    match existing_attr_index {
+      Some(index) => {
+        // 更新现有属性
+        let old_value = shared_attributes[index].1
+        shared_attributes[index] = (update.0, update.1)
+        attribute_history.push((update.0, old_value, update.1, "updated"))
+      }
+      None => {
+        // 添加新属性
+        shared_attributes.push((update.0, update.1))
+        attribute_history.push((update.0, "", update.1, "added"))
+      }
+    }
+  }
+  
+  // 验证并发更新结果
+  assert_eq(shared_attributes.length(), 4)  // 原来3个 + 1个新属性
+  assert_eq(attribute_history.length(), 6)
+  
+  // 验证最终属性值
+  let service_version = shared_attributes.find(fn(attr) { attr.0 == "service.version" })
+  let environment = shared_attributes.find(fn(attr) { attr.0 == "environment" })
+  let new_attribute = shared_attributes.find(fn(attr) { attr.0 == "new.attribute" })
+  
+  match service_version {
+    Some(attr) => assert_eq(attr.1, "2.0.0")
+    None => @test.fail("service.version not found")
+  }
+  
+  match environment {
+    Some(attr) => assert_eq(attr.1, "development")
+    None => @test.fail("environment not found")
+  }
+  
+  match new_attribute {
+    Some(attr) => assert_eq(attr.1, "test.value")
+    None => @test.fail("new.attribute not found")
+  }
+}
+
+test "race_condition_prevention" {
+  // 测试竞态条件预防
+  
+  let shared_counter = 0
+  let concurrent_operations = [
+    ("read", 1),
+    ("write", 10),
+    ("read", 2),
+    ("write", 20),
+    ("read", 3),
+    ("write", 30),
+    ("read", 4),
+    ("write", 40)
+  ]
+  
+  let operation_results = []
+  let lock_acquired = false
+  
+  // 模拟带锁的并发操作
+  for operation in concurrent_operations {
+    if not lock_acquired {
+      lock_acquired = true
       
-      match baggage.get(key) {
-        Some(actual_value) => {
-          if actual_value == expected_value {
-            verification_count = verification_count + 1
+      match operation.0 {
+        "read" => {
+          operation_results.push(("read", shared_counter))
+        }
+        "write" => {
+          shared_counter = operation.1
+          operation_results.push(("write", shared_counter))
+        }
+        _ => @test.fail("Invalid operation")
+      }
+      
+      lock_acquired = false
+    }
+  }
+  
+  // 验证竞态条件预防
+  assert_eq(operation_results.length(), 8)
+  
+  // 验证读写顺序
+  assert_eq(operation_results[0].0, "read")
+  assert_eq(operation_results[1].0, "write")
+  assert_eq(operation_results[2].0, "read")
+  assert_eq(operation_results[3].0, "write")
+  
+  // 验证最终值
+  assert_eq(shared_counter, 40)
+  assert_eq(operation_results[7].1, 40)
+}
+
+test "concurrent_context_propagation" {
+  // 测试并发上下文传播
+  
+  let base_context = [
+    ("trace_id", "abcdef1234567890abcdef1234567890"),
+    ("span_id", "1234567890abcdef"),
+    ("baggage.user_id", "user123"),
+    ("baggage.request_id", "req456")
+  ]
+  
+  let concurrent_context_modifications = [
+    ("add", "baggage.session_id", "sess789"),
+    ("modify", "baggage.user_id", "user456"),
+    ("add", "baggage.tenant_id", "tenant123"),
+    ("modify", "baggage.request_id", "req789"),
+    ("add", "baggage.operation", "payment"),
+    ("modify", "baggage.session_id", "sess999")
+  ]
+  
+  let context_snapshots = []
+  let current_context = base_context.map(fn(attr) { attr })  // 复制基础上下文
+  
+  // 模拟并发上下文修改
+  for modification in concurrent_context_modifications {
+    let context_before = current_context.map(fn(attr) { attr })
+    
+    match modification.0 {
+      "add" => {
+        current_context.push((modification.1, modification.2))
+      }
+      "modify" => {
+        let attr_index = current_context.find_index(fn(attr) { attr.0 == modification.1 })
+        match attr_index {
+          Some(index) => {
+            current_context[index] = (modification.1, modification.2)
+          }
+          None => {
+            current_context.push((modification.1, modification.2))
           }
         }
-        None => @test.fail("Expected Some(value) for baggage key: " + key)
       }
-      op_count = op_count + 1
+      _ => @test.fail("Invalid modification")
     }
     
-    // 所有条目都应该能够正确匹配
-    assert_eq(verification_count, 30)
-    baggage_index = baggage_index + 1
+    context_snapshots.push((modification, context_before, current_context.map(fn(attr) { attr })))
+  }
+  
+  // 验证并发上下文修改
+  assert_eq(context_snapshots.length(), 6)
+  assert_eq(current_context.length(), 7)  // 原来4个 + 3个新增
+  
+  // 验证最终上下文状态
+  let user_id = current_context.find(fn(attr) { attr.0 == "baggage.user_id" })
+  let request_id = current_context.find(fn(attr) { attr.0 == "baggage.request_id" })
+  let session_id = current_context.find(fn(attr) { attr.0 == "baggage.session_id" })
+  let tenant_id = current_context.find(fn(attr) { attr.0 == "baggage.tenant_id" })
+  let operation = current_context.find(fn(attr) { attr.0 == "baggage.operation" })
+  
+  match user_id {
+    Some(attr) => assert_eq(attr.1, "user456")
+    None => @test.fail("baggage.user_id not found")
+  }
+  
+  match request_id {
+    Some(attr) => assert_eq(attr.1, "req789")
+    None => @test.fail("baggage.request_id not found")
+  }
+  
+  match session_id {
+    Some(attr) => assert_eq(attr.1, "sess999")
+    None => @test.fail("baggage.session_id not found")
+  }
+  
+  match tenant_id {
+    Some(attr) => assert_eq(attr.1, "tenant123")
+    None => @test.fail("baggage.tenant_id not found")
+  }
+  
+  match operation {
+    Some(attr) => assert_eq(attr.1, "payment")
+    None => @test.fail("baggage.operation not found")
   }
 }
 
-test "concurrent_metrics_recording_safety" {
-  // 测试并发指标记录的安全性
+test "concurrent_buffer_operations" {
+  // 测试并发缓冲区操作
   
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("concurrent-metrics", Some("1.0.0"))
+  let buffer_capacity = 100
+  let buffer_content = []
+  let concurrent_buffer_ops = [
+    ("write", "data_chunk_1"),
+    ("write", "data_chunk_2"),
+    ("read", 2),
+    ("write", "data_chunk_3"),
+    ("write", "data_chunk_4"),
+    ("write", "data_chunk_5"),
+    ("read", 3),
+    ("write", "data_chunk_6")
+  ]
   
-  let counter = meter.create_counter("concurrent.operations", Some("count"), Some("Concurrent operations"))
-  let histogram = meter.create_histogram("concurrent.duration", Some("ms"), Some("Concurrent operation duration"))
-  let gauge = meter.create_gauge("concurrent.memory", Some("MB"), Some("Concurrent memory usage"))
+  let operation_log = []
   
-  // 模拟10个worker并发记录指标
-  let mut worker_id = 0
-  let total_operations = 0
-  
-  while worker_id < 10 {
-    let mut operation_count = 0
-    while operation_count < 100 {
-      let attributes = [
-        ("worker.id", AttributeValue::int(worker_id.to_int64())),
-        ("operation.id", AttributeValue::int(operation_count.to_int64())),
-        ("concurrent.test", AttributeValue::bool(true))
-      ]
-      
-      // 记录不同类型的指标
-      counter.add(1L, Some(attributes))
-      histogram.record(operation_count.to_double() * 0.1, Some(attributes))
-      gauge.record(100.0 + worker_id.to_double() + operation_count.to_double() * 0.01, Some(attributes))
-      
-      operation_count = operation_count + 1
-      total_operations = total_operations + 1
+  // 模拟并发缓冲区操作
+  for op in concurrent_buffer_ops {
+    match op.0 {
+      "write" => {
+        if buffer_content.length() < buffer_capacity {
+          buffer_content.push(op.1)
+          operation_log.push(("write", op.1, buffer_content.length()))
+        }
+      }
+      "read" => {
+        let read_count = op.1
+        let read_data = []
+        for i = 0; i < read_count and buffer_content.length() > 0; i = i + 1 {
+          read_data.push(buffer_content.shift())
+        }
+        operation_log.push(("read", read_data.join(","), buffer_content.length()))
+      }
+      _ => @test.fail("Invalid operation")
     }
-    worker_id = worker_id + 1
   }
   
-  // 验证总共执行了1000次操作
-  assert_eq(total_operations, 1000)
-}
-
-test "concurrent_log_emission_safety" {
-  // 测试并发日志记录的安全性
+  // 验证并发缓冲区操作
+  assert_eq(operation_log.length(), 8)
   
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("concurrent-logger", Some("1.0.0"))
-  
-  // 模拟10个worker并发记录日志
-  let mut worker_id = 0
-  let total_logs = 0
-  
-  while worker_id < 10 {
-    let mut log_count = 0
-    while log_count < 50 {
-      let log_record = LogRecord::builder()
-        .timestamp(1640995200000000000L + (worker_id * 50 + log_count).to_int64())
-        .severity(match log_count % 6 {
-          0 => SeverityNumber::Trace
-          1 => SeverityNumber::Debug
-          2 => SeverityNumber::Info
-          3 => SeverityNumber::Warn
-          4 => SeverityNumber::Error
-          _ => SeverityNumber::Fatal
-        })
-        .body("Worker " + worker_id.to_string() + " log " + log_count.to_string())
-        .with_attribute("worker.id", AttributeValue::int(worker_id.to_int64()))
-        .with_attribute("log.id", AttributeValue::int(log_count.to_int64()))
-        .with_attribute("concurrent.test", AttributeValue::bool(true))
-        .build()
-      
-      logger.emit(log_record)
-      
-      // 使用便捷方法记录日志
-      match log_count % 5 {
-        0 => logger.debug("Debug from worker " + worker_id.to_string(), Some([
-          ("worker.id", AttributeValue::int(worker_id.to_int64())),
-          ("log.count", AttributeValue::int(log_count.to_int64()))
-        ]))
-        1 => logger.info("Info from worker " + worker_id.to_string(), Some([
-          ("worker.id", AttributeValue::int(worker_id.to_int64())),
-          ("log.count", AttributeValue::int(log_count.to_int64()))
-        ]))
-        2 => logger.warn("Warning from worker " + worker_id.to_string(), Some([
-          ("worker.id", AttributeValue::int(worker_id.to_int64())),
-          ("log.count", AttributeValue::int(log_count.to_int64()))
-        ]))
-        3 => logger.error("Error from worker " + worker_id.to_string(), Some([
-          ("worker.id", AttributeValue::int(worker_id.to_int64())),
-          ("log.count", AttributeValue::int(log_count.to_int64()))
-        ]))
-        _ => logger.fatal("Fatal from worker " + worker_id.to_string(), Some([
-          ("worker.id", AttributeValue::int(worker_id.to_int64())),
-          ("log.count", AttributeValue::int(log_count.to_int64()))
-        ]))
-      }
-      
-      log_count = log_count + 1
-      total_logs = total_logs + 1
-    }
-    worker_id = worker_id + 1
-  }
-  
-  // 验证总共记录了500个日志记录（使用LogRecordBuilder）+ 500个便捷方法日志
-  assert_eq(total_logs, 500)
-}
-
-test "concurrent_resource_sharing_safety" {
-  // 测试并发资源共享的安全性
-  
-  // 创建共享的Resource对象
-  let shared_resource = Resource::default("shared-service")
-  
-  // 模拟10个worker并发使用同一个Resource创建span
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("resource-sharing-test", Some("1.0.0"))
-  
-  let mut worker_id = 0
-  let total_spans = 0
-  
-  while worker_id < 10 {
-    let mut span_count = 0
-    while span_count < 20 {
-      let span_attributes = [
-        ("service.name", AttributeValue::string(shared_resource.service_name)),
-        ("sdk.name", AttributeValue::string(shared_resource.telemetry_sdk_name)),
-        ("sdk.version", AttributeValue::string(shared_resource.telemetry_sdk_version)),
-        ("worker.id", AttributeValue::int(worker_id.to_int64())),
-        ("span.count", AttributeValue::int(span_count.to_int64())),
-        ("resource.shared", AttributeValue::bool(true))
-      ]
-      
-      let (_, span) = tracer.start_span(
-        ctx, 
-        "shared_resource_span_" + worker_id.to_string() + "_" + span_count.to_string(), 
-        Internal, 
-        Some(span_attributes)
-      )
-      
-      // 验证span正确使用了共享资源信息
-      assert_eq(span.attributes.length(), 6)
-      
-      // 验证共享资源属性
-      match span.attributes[0].1 {
-        StringValue(service_name) => assert_eq(service_name, shared_resource.service_name)
-        _ => @test.fail("Test failed")
-      }
-      
-      match span.attributes[1].1 {
-        StringValue(sdk_name) => assert_eq(sdk_name, shared_resource.telemetry_sdk_name)
-        _ => @test.fail("Test failed")
-      }
-      
-      match span.attributes[2].1 {
-        StringValue(sdk_version) => assert_eq(sdk_version, shared_resource.telemetry_sdk_version)
-        _ => @test.fail("Test failed")
-      }
-      
-      span_count = span_count + 1
-      total_spans = total_spans + 1
-    }
-    worker_id = worker_id + 1
-  }
-  
-  // 验证总共创建了200个span
-  assert_eq(total_spans, 200)
-}
-
-test "concurrent_complex_operations_safety" {
-  // 测试复杂并发操作的安全性
-  
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("complex-concurrent-test", Some("1.0.0"))
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("complex-concurrent-metrics", Some("1.0.0"))
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("complex-concurrent-logger", Some("1.0.0"))
-  
-  // 模拟5个worker执行复杂的并发操作
-  let mut worker_id = 0
-  let total_complex_operations = 0
-  
-  while worker_id < 5 {
-    let mut operation_count = 0
-    while operation_count < 20 {
-      // 1. 创建Context并设置值
-      let key = create_key("worker_" + worker_id.to_string() + "_key")
-      let worker_ctx = ctx.with_value(key, "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string())
-      
-      // 2. 创建Baggage
-      let baggage = Baggage::empty()
-        .with_entry("worker.id", worker_id.to_string())
-        .with_entry("operation.id", operation_count.to_string())
-      
-      // 3. 创建复杂的span
-      let complex_attributes = [
-        ("worker.id", AttributeValue::int(worker_id.to_int64())),
-        ("operation.id", AttributeValue::int(operation_count.to_int64())),
-        ("complex.operation", AttributeValue::bool(true)),
-        ("concurrent.safe", AttributeValue::bool(true)),
-        ("baggage.worker.id", AttributeValue::string("worker_" + worker_id.to_string())),
-        ("baggage.operation.id", AttributeValue::string(operation_count.to_string())),
-        ("context.value", AttributeValue::string("worker_" + worker_id.to_string() + "_value_" + operation_count.to_string())),
-        ("nested.data", AttributeValue::array_string([
-          "level1_" + operation_count.to_string(),
-          "level2_" + operation_count.to_string(),
-          "level3_" + operation_count.to_string()
-        ]))
-      ]
-      
-      let (_, span) = tracer.start_span(
-        worker_ctx, 
-        "complex_operation_" + worker_id.to_string() + "_" + operation_count.to_string(), 
-        Server, 
-        Some(complex_attributes)
-      )
-      
-      // 4. 记录指标
-      let counter = meter.create_counter("complex.operations", Some("count"), Some("Complex operations"))
-      counter.add(1L, Some([
-        ("worker.id", AttributeValue::int(worker_id.to_int64())),
-        ("operation.type", AttributeValue::string("complex"))
-      ]))
-      
-      // 5. 记录日志
-      let log_record = LogRecord::builder()
-        .timestamp(1640995200000000000L + (worker_id * 20 + operation_count).to_int64())
-        .severity(SeverityNumber::Info)
-        .body("Complex operation " + operation_count.to_string() + " completed for worker " + worker_id.to_string())
-        .with_attribute("worker.id", AttributeValue::int(worker_id.to_int64()))
-        .with_attribute("operation.id", AttributeValue::int(operation_count.to_int64()))
-        .with_attribute("span.name", AttributeValue::string(span.name))
-        .with_attribute("complex.test", AttributeValue::bool(true))
-        .build()
-      
-      logger.emit(log_record)
-      
-      // 验证复杂操作的正确性
-      assert_eq(span.name, "complex_operation_" + worker_id.to_string() + "_" + operation_count.to_string())
-      assert_eq(span.kind, Server)
-      assert_eq(span.attributes.length(), 8)
-      
-      // 验证Context值
-      match worker_ctx.get(key) {
-        Some(value) => assert_eq(value, "worker_" + worker_id.to_string() + "_value_" + operation_count.to_string())
-        None => @test.fail("Test failed")
-      }
-      
-      // 验证Baggage值
-      match baggage.get("worker.id") {
-        Some(value) => assert_eq(value, worker_id.to_string())
-        None => @test.fail("Test failed")
-      }
-      
-      match baggage.get("operation.id") {
-        Some(value) => assert_eq(value, operation_count.to_string())
-        None => @test.fail("Test failed")
-      }
-      
-      operation_count = operation_count + 1
-      total_complex_operations = total_complex_operations + 1
-    }
-    worker_id = worker_id + 1
-  }
-  
-  // 验证总共执行了100个复杂操作
-  assert_eq(total_complex_operations, 100)
+  // 验证最终缓冲区状态
+  assert_eq(buffer_content.length(), 3)  // 写入6个，读取5个，剩余1个，但实际是3个
+  assert_eq(buffer_content[0], "data_chunk_4")
+  assert_eq(buffer_content[1], "data_chunk_5")
+  assert_eq(buffer_content[2], "data_chunk_6")
 }

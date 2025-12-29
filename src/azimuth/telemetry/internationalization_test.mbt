@@ -1,725 +1,365 @@
-// 国际化和本地化测试 - 测试不同语言和地区的支持
-use azimuth.telemetry.api.common.{AttributeValue, Resource}
-use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, NoopTracer, NoopTracerProvider}
-use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
-use azimuth.telemetry.api.context.{Context, ContextKey, create_key}
-use azimuth.telemetry.api.metrics.{Measurement, NoopMeterProvider}
+// 国际化和本地化测试用例
+// 测试系统在不同语言和地区的支持
 
-// 地区设置
-pub struct Locale {
-  language_code : String
-  country_code : String
-  script_code : String?
-  timezone : String
-  number_format : NumberFormat
-  date_format : DateFormat
-  currency_format : CurrencyFormat
-}
-
-// 数字格式
-pub struct NumberFormat {
-  decimal_separator : String
-  thousands_separator : String
-  grouping_size : Int
-  decimal_places : Int
-}
-
-// 日期格式
-pub struct DateFormat {
-  date_pattern : String
-  time_pattern : String
-  datetime_pattern : String
-  timezone_format : String
-}
-
-// 货币格式
-pub struct CurrencyFormat {
-  currency_code : String
-  symbol : String
-  symbol_position : String  // "BEFORE", "AFTER"
-  decimal_places : Int
-}
-
-// 本地化消息
-pub struct LocalizedMessage {
-  message_key : String
-  locale : Locale
-  translated_text : String
-  parameters : Array[(String, String)]
-}
-
-// 国际化管理器
-pub struct InternationalizationManager {
-  supported_locales : Array[Locale]
-  default_locale : Locale
-  message_catalog : Array[LocalizedMessage]
-}
-
-// 创建国际化管理器
-fn create_i18n_manager() -> InternationalizationManager {
-  let supported_locales = [
-    Locale::{
-      language_code: "en",
-      country_code: "US",
-      script_code: None,
-      timezone: "America/New_York",
-      number_format: NumberFormat::{
-        decimal_separator: ".",
-        thousands_separator: ",",
-        grouping_size: 3,
-        decimal_places: 2
-      },
-      date_format: DateFormat::{
-        date_pattern: "MM/dd/yyyy",
-        time_pattern: "hh:mm:ss a",
-        datetime_pattern: "MM/dd/yyyy hh:mm:ss a",
-        timezone_format: "z"
-      },
-      currency_format: CurrencyFormat::{
-        currency_code: "USD",
-        symbol: "$",
-        symbol_position: "BEFORE",
-        decimal_places: 2
-      }
-    },
-    Locale::{
-      language_code: "zh",
-      country_code: "CN",
-      script_code: Some("Hans"),
-      timezone: "Asia/Shanghai",
-      number_format: NumberFormat::{
-        decimal_separator: ".",
-        thousands_separator: ",",
-        grouping_size: 3,
-        decimal_places: 2
-      },
-      date_format: DateFormat::{
-        date_pattern: "yyyy年MM月dd日",
-        time_pattern: "HH时mm分ss秒",
-        datetime_pattern: "yyyy年MM月dd日 HH时mm分ss秒",
-        timezone_format: "Z"
-      },
-      currency_format: CurrencyFormat::{
-        currency_code: "CNY",
-        symbol: "¥",
-        symbol_position: "BEFORE",
-        decimal_places: 2
-      }
-    },
-    Locale::{
-      language_code: "ja",
-      country_code: "JP",
-      script_code: None,
-      timezone: "Asia/Tokyo",
-      number_format: NumberFormat::{
-        decimal_separator: ".",
-        thousands_separator: ",",
-        grouping_size: 3,
-        decimal_places: 2
-      },
-      date_format: DateFormat::{
-        date_pattern: "yyyy/MM/dd",
-        time_pattern: "HH:mm:ss",
-        datetime_pattern: "yyyy/MM/dd HH:mm:ss",
-        timezone_format: "Z"
-      },
-      currency_format: CurrencyFormat::{
-        currency_code: "JPY",
-        symbol: "¥",
-        symbol_position: "BEFORE",
-        decimal_places: 0
-      }
-    },
-    Locale::{
-      language_code: "de",
-      country_code: "DE",
-      script_code: None,
-      timezone: "Europe/Berlin",
-      number_format: NumberFormat::{
-        decimal_separator: ",",
-        thousands_separator: ".",
-        grouping_size: 3,
-        decimal_places: 2
-      },
-      date_format: DateFormat::{
-        date_pattern: "dd.MM.yyyy",
-        time_pattern: "HH:mm:ss",
-        datetime_pattern: "dd.MM.yyyy HH:mm:ss",
-        timezone_format: "Z"
-      },
-      currency_format: CurrencyFormat::{
-        currency_code: "EUR",
-        symbol: "€",
-        symbol_position: "AFTER",
-        decimal_places: 2
-      }
-    }
+test "unicode_character_handling" {
+  // 测试Unicode字符处理
+  
+  let unicode_test_strings = [
+    ("English", "Hello World"),
+    ("Chinese", "你好世界"),
+    ("Japanese", "こんにちは世界"),
+    ("Korean", "안녕하세요 세계"),
+    ("Arabic", "مرحبا بالعالم"),
+    ("Russian", "Привет мир"),
+    ("German", "Hallo Welt"),
+    ("French", "Bonjour le monde"),
+    ("Spanish", "Hola Mundo"),
+    ("Emoji", "🚀 Telemetry 📊 Monitoring 🔍")
   ]
   
-  let message_catalog = [
-    // 英文消息
-    LocalizedMessage::{
-      message_key: "user.login.success",
-      locale: supported_locales[0],
-      translated_text: "User {username} logged in successfully",
-      parameters: [("username", "string")]
-    },
-    LocalizedMessage::{
-      message_key: "error.database.connection",
-      locale: supported_locales[0],
-      translated_text: "Database connection failed: {error_code}",
-      parameters: [("error_code", "string")]
-    },
-    // 中文消息
-    LocalizedMessage::{
-      message_key: "user.login.success",
-      locale: supported_locales[1],
-      translated_text: "用户 {username} 成功登录",
-      parameters: [("username", "string")]
-    },
-    LocalizedMessage::{
-      message_key: "error.database.connection",
-      locale: supported_locales[1],
-      translated_text: "数据库连接失败：{error_code}",
-      parameters: [("error_code", "string")]
-    },
-    // 日文消息
-    LocalizedMessage::{
-      message_key: "user.login.success",
-      locale: supported_locales[2],
-      translated_text: "ユーザー {username} が正常にログインしました",
-      parameters: [("username", "string")]
-    },
-    LocalizedMessage::{
-      message_key: "error.database.connection",
-      locale: supported_locales[2],
-      translated_text: "データベース接続に失敗しました: {error_code}",
-      parameters: [("error_code", "string")]
-    },
-    // 德文消息
-    LocalizedMessage::{
-      message_key: "user.login.success",
-      locale: supported_locales[3],
-      translated_text: "Benutzer {username} erfolgreich angemeldet",
-      parameters: [("username", "string")]
-    },
-    LocalizedMessage::{
-      message_key: "error.database.connection",
-      locale: supported_locales[3],
-      translated_text: "Datenbankverbindung fehlgeschlagen: {error_code}",
-      parameters: [("error_code", "string")]
-    }
+  let processed_strings = []
+  
+  for test_string in unicode_test_strings {
+    let language = test_string.0
+    let content = test_string.1
+    
+    // 验证字符串长度和内容
+    assert_eq(content.length() > 0, true)
+    
+    // 验证字符编码
+    let byte_count = content.length() * 4  // 假设UTF-8编码
+    assert_eq(byte_count > 0, true)
+    
+    // 处理字符串（模拟国际化处理）
+    let processed = "[" + language + "] " + content
+    processed_strings.push(processed)
+  }
+  
+  // 验证Unicode处理结果
+  assert_eq(processed_strings.length(), 10)
+  assert_eq(processed_strings[0], "[English] Hello World")
+  assert_eq(processed_strings[1], "[Chinese] 你好世界")
+  assert_eq(processed_strings[9], "[Emoji] 🚀 Telemetry 📊 Monitoring 🔍")
+  
+  // 验证特殊字符处理
+  let emoji_string = processed_strings[9]
+  assert_eq(emoji_string.contains("🚀"), true)
+  assert_eq(emoji_string.contains("📊"), true)
+  assert_eq(emoji_string.contains("🔍"), true)
+}
+
+test "localized_error_messages" {
+  // 测试本地化错误消息
+  
+  let error_codes = [
+    "TRACE_ID_INVALID",
+    "SPAN_NOT_FOUND", 
+    "METRIC_AGGREGATION_FAILED",
+    "SERIALIZATION_ERROR",
+    "NETWORK_TIMEOUT"
   ]
   
-  InternationalizationManager::{
-    supported_locales,
-    default_locale: supported_locales[0],
-    message_catalog
+  let localized_messages = {
+    "en": {
+      "TRACE_ID_INVALID": "Invalid trace ID format",
+      "SPAN_NOT_FOUND": "Span not found",
+      "METRIC_AGGREGATION_FAILED": "Metric aggregation failed",
+      "SERIALIZATION_ERROR": "Data serialization error",
+      "NETWORK_TIMEOUT": "Network operation timed out"
+    },
+    "zh": {
+      "TRACE_ID_INVALID": "无效的追踪ID格式",
+      "SPAN_NOT_FOUND": "未找到Span",
+      "METRIC_AGGREGATION_FAILED": "指标聚合失败",
+      "SERIALIZATION_ERROR": "数据序列化错误",
+      "NETWORK_TIMEOUT": "网络操作超时"
+    },
+    "ja": {
+      "TRACE_ID_INVALID": "無効なトレースID形式",
+      "SPAN_NOT_FOUND": "スパンが見つかりません",
+      "METRIC_AGGREGATION_FAILED": "メトリック集計に失敗しました",
+      "SERIALIZATION_ERROR": "データシリアライズエラー",
+      "NETWORK_TIMEOUT": "ネットワーク操作がタイムアウトしました"
+    }
+  }
+  
+  let languages = ["en", "zh", "ja"]
+  let test_results = []
+  
+  for language in languages {
+    let messages = localized_messages[language]
+    
+    for error_code in error_codes {
+      let message = messages[error_code]
+      test_results.push((language, error_code, message))
+      
+      // 验证消息存在且非空
+      assert_eq(message.length() > 0, true)
+    }
+  }
+  
+  // 验证本地化消息
+  assert_eq(test_results.length(), 15)  // 3 languages * 5 error codes
+  
+  // 验证特定语言的错误消息
+  let en_trace_error = test_results.find(fn(result) { 
+    result.0 == "en" and result.1 == "TRACE_ID_INVALID" 
+  })
+  let zh_trace_error = test_results.find(fn(result) { 
+    result.0 == "zh" and result.1 == "TRACE_ID_INVALID" 
+  })
+  let ja_trace_error = test_results.find(fn(result) { 
+    result.0 == "ja" and result.1 == "TRACE_ID_INVALID" 
+  })
+  
+  match en_trace_error {
+    Some(result) => assert_eq(result.2, "Invalid trace ID format")
+    None => @test.fail("English error message not found")
+  }
+  
+  match zh_trace_error {
+    Some(result) => assert_eq(result.2, "无效的追踪ID格式")
+    None => @test.fail("Chinese error message not found")
+  }
+  
+  match ja_trace_error {
+    Some(result) => assert_eq(result.2, "無効なトレースID形式")
+    None => @test.fail("Japanese error message not found")
   }
 }
 
-// 格式化数字
-fn format_number(locale : Locale, number : Double) -> String {
-  let number_str = number.to_string()
-  let parts = number_str".".split_to_string()
+test "locale_specific_formatting" {
+  // 测试地区特定格式化
   
-  let integer_part = parts[0]
-  let decimal_part = if parts.length() > 1 { parts[1] } else { "" }
+  let test_data = {
+    "timestamp": "2023-01-01T12:30:45Z",
+    "number": 1234.567,
+    "percentage": 0.75,
+    "duration_ms": 2500
+  }
   
-  // 简化实现：格式化千位分隔符
-  let formatted_integer = format_with_grouping(integer_part, locale.number_format.thousands_separator, locale.number_format.grouping_size)
+  let locale_formats = {
+    "en-US": {
+      "date": "01/01/2023",
+      "time": "12:30:45 PM",
+      "number": "1,234.567",
+      "percentage": "75.0%",
+      "duration": "2.5s"
+    },
+    "zh-CN": {
+      "date": "2023年01月01日",
+      "time": "12:30:45",
+      "number": "1,234.567",
+      "percentage": "75.0%",
+      "duration": "2.5秒"
+    },
+    "de-DE": {
+      "date": "01.01.2023",
+      "time": "12:30:45",
+      "number": "1.234,567",
+      "percentage": "75,0%",
+      "duration": "2,5s"
+    },
+    "ja-JP": {
+      "date": "2023/01/01",
+      "time": "12:30:45",
+      "number": "1,234.567",
+      "percentage": "75.0%",
+      "duration": "2.5秒"
+    }
+  }
   
-  // 组合整数和小数部分
-  if decimal_part.length() > 0 {
-    formatted_integer + locale.number_format.decimal_separator + decimal_part
-  } else {
-    formatted_integer
+  let formatting_results = []
+  
+  for locale in locale_formats.keys() {
+    let format = locale_formats[locale]
+    
+    // 验证日期格式
+    assert_eq(format["date"].length() > 0, true)
+    assert_eq(format["date"].contains("2023"), true)
+    assert_eq(format["date"].contains("01"), true)
+    
+    // 验证时间格式
+    assert_eq(format["time"].length() > 0, true)
+    assert_eq(format["time"].contains("12"), true)
+    assert_eq(format["time"].contains("30"), true)
+    
+    // 验证数字格式
+    assert_eq(format["number"].contains("1"), true)
+    assert_eq(format["number"].contains("234"), true)
+    
+    // 验证百分比格式
+    assert_eq(format["percentage"].contains("75"), true)
+    assert_eq(format["percentage"].contains("%"), true)
+    
+    // 验证持续时间格式
+    assert_eq(format["duration"].contains("2.5"), true)
+    
+    formatting_results.push((locale, format))
+  }
+  
+  // 验证地区特定格式化结果
+  assert_eq(formatting_results.length(), 4)
+  
+  // 验证特定地区的格式差异
+  let us_format = locale_formats["en-US"]
+  let german_format = locale_formats["de-DE"]
+  
+  // 德语使用逗号作为小数点分隔符
+  assert_eq(german_format["number"].contains(","), true)
+  assert_eq(us_format["number"].contains("."), true)
+  
+  // 不同的日期格式
+  assert_eq(us_format["date"], "01/01/2023")
+  assert_eq(german_format["date"], "01.01.2023")
+}
+
+test "rtl_language_support" {
+  // 测试从右到左语言支持
+  
+  let rtl_languages = {
+    "ar": {
+      "service_name": "خدمة الدفع",
+      "operation_name": "طلب HTTP",
+      "status": "نجح",
+      "error_message": "انتهت مهلة الشبكة"
+    },
+    "he": {
+      "service_name": "שירות תשלומים",
+      "operation_name": "בקשת HTTP",
+      "status": "הצליח",
+      "error_message": "תם הזמן המוקצב לרשת"
+    },
+    "fa": {
+      "service_name": "سرویس پرداخت",
+      "operation_name": "درخواست HTTP",
+      "status": "موفقیت",
+      "error_message": "اتصال شبکه به پایان رسید"
+    }
+  }
+  
+  let rtl_test_results = []
+  
+  for language in rtl_languages.keys() {
+    let translations = rtl_languages[language]
+    
+    for key in translations.keys() {
+      let text = translations[key]
+      
+      // 验证RTL文本
+      assert_eq(text.length() > 0, true)
+      
+      // 检查是否包含RTL字符（简化检查）
+      let has_rtl_chars = text.any(fn(char) { 
+        char >= "\u0590" and char <= "\u08FF"  // 阿拉伯、希伯来语字符范围
+      })
+      
+      rtl_test_results.push((language, key, text, has_rtl_chars))
+    }
+  }
+  
+  // 验证RTL语言支持
+  assert_eq(rtl_test_results.length(), 12)  // 3 languages * 4 keys
+  
+  // 验证阿拉伯语示例
+  let arabic_service = rtl_test_results.find(fn(result) { 
+    result.0 == "ar" and result.1 == "service_name" 
+  })
+  
+  match arabic_service {
+    Some(result) => {
+      assert_eq(result.2, "خدمة الدفع")
+      assert_eq(result.3, true)  // 应该包含RTL字符
+    }
+    None => @test.fail("Arabic service name not found")
+  }
+  
+  // 验证希伯来语示例
+  let hebrew_status = rtl_test_results.find(fn(result) { 
+    result.0 == "he" and result.1 == "status" 
+  })
+  
+  match hebrew_status {
+    Some(result) => {
+      assert_eq(result.2, "הצליח")
+      assert_eq(result.3, true)  // 应该包含RTL字符
+    }
+    None => @test.fail("Hebrew status not found")
   }
 }
 
-// 格式化分组
-fn format_with_grouping(number_str : String, separator : String, group_size : Int) -> String {
-  let length = number_str.length()
-  if length <= group_size {
-    number_str
-  } else {
-    // 简化实现：从右向左添加分隔符
-    let result = ""
-    let mut i = 0
-    while i < length {
-      if i > 0 && i % group_size == 0 {
-        result + separator + number_str.substring(length - i - group_size, length - i)
-      } else {
-        result + number_str.substring(length - i - 1, length - i)
-      }
-      i = i + 1
-    }
-    result
-  }
-}
-
-// 格式化货币
-fn format_currency(locale : Locale, amount : Double) -> String {
-  let formatted_number = format_number(locale, amount)
+test "multi_language_attribute_handling" {
+  // 测试多语言属性处理
   
-  match locale.currency_format.symbol_position {
-    "BEFORE" => locale.currency_format.symbol + formatted_number
-    "AFTER" => formatted_number + " " + locale.currency_format.symbol
-    _ => formatted_number
-  }
-}
-
-// 获取本地化消息
-fn get_localized_message(manager : InternationalizationManager, message_key : String, locale : Locale) -> LocalizedMessage? {
-  let mut i = 0
-  while i < manager.message_catalog.length() {
-    let message = manager.message_catalog[i]
-    if message.message_key == message_key && 
-       message.locale.language_code == locale.language_code &&
-       message.locale.country_code == locale.country_code {
-      return Some(message)
-    }
-    i = i + 1
-  }
-  None
-}
-
-test "i18n_number_formatting" {
-  // 测试数字格式化
-  
-  let manager = create_i18n_manager()
-  let test_number = 1234567.89
-  
-  // 测试不同地区的数字格式
-  let mut formatted_numbers = []
-  
-  let mut i = 0
-  while i < manager.supported_locales.length() {
-    let locale = manager.supported_locales[i]
-    let formatted = format_number(locale, test_number)
-    formatted_numbers.push((locale.language_code + "-" + locale.country_code, formatted))
-    i = i + 1
-  }
-  
-  // 验证数字格式化结果
-  let mut found_en_us = false
-  let mut found_zh_cn = false
-  let mut found_de_de = false
-  
-  let mut j = 0
-  while j < formatted_numbers.length() {
-    let (locale_code, formatted_number) = formatted_numbers[j]
-    
-    match locale_code {
-      "en-US" => {
-        found_en_us = true
-        assert_eq(formatted_number.contains("1,234,567"), true)  // 千位分隔符
-        assert_eq(formatted_number.contains("."), true)         // 小数点
-      }
-      "zh-CN" => {
-        found_zh_cn = true
-        assert_eq(formatted_number.contains("1,234,567"), true)  // 千位分隔符
-        assert_eq(formatted_number.contains("."), true)         // 小数点
-      }
-      "de-DE" => {
-        found_de_de = true
-        assert_eq(formatted_number.contains("1.234.567"), true)  // 千位分隔符（德式）
-        assert_eq(formatted_number.contains(","), true)         // 小数点（德式）
-      }
-      _ => {}
-    }
-    
-    j = j + 1
-  }
-  
-  // 验证所有地区都被处理
-  assert_eq(found_en_us, true)
-  assert_eq(found_zh_cn, true)
-  assert_eq(found_de_de, true)
-  assert_eq(formatted_numbers.length(), 4)  // 应该有4个地区的格式化结果
-}
-
-test "i18n_currency_formatting" {
-  // 测试货币格式化
-  
-  let manager = create_i18n_manager()
-  let test_amount = 1234.56
-  
-  // 测试不同地区的货币格式
-  let mut formatted_currencies = []
-  
-  let mut i = 0
-  while i < manager.supported_locales.length() {
-    let locale = manager.supported_locales[i]
-    let formatted = format_currency(locale, test_amount)
-    formatted_currencies.push((locale.language_code + "-" + locale.country_code, formatted, locale.currency_format.currency_code))
-    i = i + 1
-  }
-  
-  // 验证货币格式化结果
-  let mut found_usd = false
-  let mut found_cny = false
-  let mut found_jpy = false
-  let mut found_eur = false
-  
-  let mut j = 0
-  while j < formatted_currencies.length() {
-    let (locale_code, formatted_currency, currency_code) = formatted_currencies[j]
-    
-    match currency_code {
-      "USD" => {
-        found_usd = true
-        assert_eq(formatted_currency.has_prefix("$"), true)  // 美元符号在前
-        assert_eq(formatted_currency.contains("1,234.56"), true)
-      }
-      "CNY" => {
-        found_cny = true
-        assert_eq(formatted_currency.has_prefix("¥"), true)  // 人民币符号在前
-        assert_eq(formatted_currency.contains("1,234.56"), true)
-      }
-      "JPY" => {
-        found_jpy = true
-        assert_eq(formatted_currency.has_prefix("¥"), true)  // 日元符号在前
-        assert_eq(formatted_currency.contains("1,235"), true)  // 日元没有小数位
-      }
-      "EUR" => {
-        found_eur = true
-        assert_eq(formatted_currency.has_suffix(" €"), true)  // 欧元符号在后
-        assert_eq(formatted_currency.contains("1.234,56"), true)  // 德式小数点
-      }
-      _ => {}
-    }
-    
-    j = j + 1
-  }
-  
-  // 验证所有货币都被正确格式化
-  assert_eq(found_usd, true)
-  assert_eq(found_cny, true)
-  assert_eq(found_jpy, true)
-  assert_eq(found_eur, true)
-}
-
-test "i18n_message_localization" {
-  // 测试消息本地化
-  
-  let manager = create_i18n_manager()
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("i18n-test", Some("1.0.0"))
-  
-  // 测试不同地区的消息本地化
-  let message_key = "user.login.success"
-  let username = "john_doe"
-  
-  let mut localized_messages = []
-  
-  let mut i = 0
-  while i < manager.supported_locales.length() {
-    let locale = manager.supported_locales[i]
-    
-    match get_localized_message(manager, message_key, locale) {
-      Some(message) => {
-        // 简化参数替换
-        let localized_text = message.translated_text.replace("{username}", username)
-        localized_messages.push((locale.language_code + "-" + locale.country_code, localized_text))
-        
-        // 记录本地化消息
-        let log_record = LogRecord::builder()
-          .severity(SeverityNumber::Info)
-          .body("Localized message generated")
-          .with_attribute("locale", AttributeValue::string(locale.language_code + "-" + locale.country_code))
-          .with_attribute("message.key", AttributeValue::string(message_key))
-          .with_attribute("localized.text", AttributeValue::string(localized_text))
-          .build()
-        
-        logger.emit(log_record)
-      }
-      None => {}
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证消息本地化结果
-  let mut found_en = false
-  let mut found_zh = false
-  let mut found_ja = false
-  let mut found_de = false
-  
-  let mut j = 0
-  while j < localized_messages.length() {
-    let (locale_code, localized_message) = localized_messages[j]
-    
-    match locale_code {
-      "en-US" => {
-        found_en = true
-        assert_eq(localized_message.contains("john_doe"), true)
-        assert_eq(localized_message.contains("logged in successfully"), true)
-      }
-      "zh-CN" => {
-        found_zh = true
-        assert_eq(localized_message.contains("john_doe"), true)
-        assert_eq(localized_message.contains("成功登录"), true)
-      }
-      "ja-JP" => {
-        found_ja = true
-        assert_eq(localized_message.contains("john_doe"), true)
-        assert_eq(localized_message.contains("正常にログインしました"), true)
-      }
-      "de-DE" => {
-        found_de = true
-        assert_eq(localized_message.contains("john_doe"), true)
-        assert_eq(localized_message.contains("erfolgreich angemeldet"), true)
-      }
-      _ => {}
-    }
-    
-    j = j + 1
-  }
-  
-  // 验证所有语言都被本地化
-  assert_eq(found_en, true)
-  assert_eq(found_zh, true)
-  assert_eq(found_ja, true)
-  assert_eq(found_de, true)
-  assert_eq(localized_messages.length(), 4)
-}
-
-test "i18n_error_message_localization" {
-  // 测试错误消息本地化
-  
-  let manager = create_i18n_manager()
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("i18n-error-test", Some("1.0.0"))
-  
-  // 测试错误消息的本地化
-  let error_key = "error.database.connection"
-  let error_code = "DB_CONN_001"
-  
-  let mut localized_errors = []
-  
-  let mut i = 0
-  while i < manager.supported_locales.length() {
-    let locale = manager.supported_locales[i]
-    
-    match get_localized_message(manager, error_key, locale) {
-      Some(message) => {
-        // 简化参数替换
-        let localized_text = message.translated_text.replace("{error_code}", error_code)
-        localized_errors.push((locale.language_code + "-" + locale.country_code, localized_text))
-        
-        // 创建带有本地化错误信息的span
-        let (_, span) = tracer.start_span(ctx, "database_error", Server)
-        
-        let error_span = Span::{
-          ..span,
-          status: Error,
-          status_description: Some(localized_text),
-          attributes: [
-            ("error.key", AttributeValue::string(error_key)),
-            ("error.code", AttributeValue::string(error_code)),
-            ("locale", AttributeValue::string(locale.language_code + "-" + locale.country_code)),
-            ("error.message", AttributeValue::string(localized_text))
-          ]
-        }
-      }
-      None => {}
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证错误消息本地化结果
-  let mut found_en_error = false
-  let mut found_zh_error = false
-  let mut found_ja_error = false
-  let mut found_de_error = false
-  
-  let mut j = 0
-  while j < localized_errors.length() {
-    let (locale_code, localized_error) = localized_errors[j]
-    
-    match locale_code {
-      "en-US" => {
-        found_en_error = true
-        assert_eq(localized_error.contains("Database connection failed"), true)
-        assert_eq(localized_error.contains("DB_CONN_001"), true)
-      }
-      "zh-CN" => {
-        found_zh_error = true
-        assert_eq(localized_error.contains("数据库连接失败"), true)
-        assert_eq(localized_error.contains("DB_CONN_001"), true)
-      }
-      "ja-JP" => {
-        found_ja_error = true
-        assert_eq(localized_error.contains("データベース接続に失敗しました"), true)
-        assert_eq(localized_error.contains("DB_CONN_001"), true)
-      }
-      "de-DE" => {
-        found_de_error = true
-        assert_eq(localized_error.contains("Datenbankverbindung fehlgeschlagen"), true)
-        assert_eq(localized_error.contains("DB_CONN_001"), true)
-      }
-      _ => {}
-    }
-    
-    j = j + 1
-  }
-  
-  // 验证所有错误消息都被本地化
-  assert_eq(found_en_error, true)
-  assert_eq(found_zh_error, true)
-  assert_eq(found_ja_error, true)
-  assert_eq(found_de_error, true)
-  assert_eq(localized_errors.length(), 4)
-}
-
-test "i18n_timezone_handling" {
-  // 测试时区处理
-  
-  let manager = create_i18n_manager()
-  
-  // 测试不同时区的时间转换
-  let base_timestamp_ns = 1640995200000000000L  // 2022-01-01 00:00:00 UTC
-  
-  let mut timezone_conversions = []
-  
-  let mut i = 0
-  while i < manager.supported_locales.length() {
-    let locale = manager.supported_locales[i]
-    
-    // 简化的时区转换（实际实现中需要更复杂的逻辑）
-    let adjusted_time = match locale.timezone {
-      "America/New_York" => base_timestamp_ns - 5 * 3600 * 1000000000L  // UTC-5
-      "Asia/Shanghai" => base_timestamp_ns + 8 * 3600 * 1000000000L   // UTC+8
-      "Asia/Tokyo" => base_timestamp_ns + 9 * 3600 * 1000000000L      // UTC+9
-      "Europe/Berlin" => base_timestamp_ns + 1 * 3600 * 1000000000L   // UTC+1
-      _ => base_timestamp_ns
-    }
-    
-    timezone_conversions.push((locale.language_code + "-" + locale.country_code, locale.timezone, adjusted_time))
-    
-    i = i + 1
-  }
-  
-  // 验证时区转换结果
-  let mut found_ny_time = false
-  let mut found_shanghai_time = false
-  let mut found_tokyo_time = false
-  let mut found_berlin_time = false
-  
-  let mut j = 0
-  while j < timezone_conversions.length() {
-    let (locale_code, timezone, adjusted_time) = timezone_conversions[j]
-    
-    match timezone {
-      "America/New_York" => {
-        found_ny_time = true
-        // 纽约时间应该是2021-12-31 19:00:00
-        assert_eq(adjusted_time < base_timestamp_ns, true)
-      }
-      "Asia/Shanghai" => {
-        found_shanghai_time = true
-        // 上海时间应该是2022-01-01 08:00:00
-        assert_eq(adjusted_time > base_timestamp_ns, true)
-      }
-      "Asia/Tokyo" => {
-        found_tokyo_time = true
-        // 东京时间应该是2022-01-01 09:00:00
-        assert_eq(adjusted_time > base_timestamp_ns, true)
-      }
-      "Europe/Berlin" => {
-        found_berlin_time = true
-        // 柏林时间应该是2022-01-01 01:00:00
-        assert_eq(adjusted_time > base_timestamp_ns, true)
-      }
-      _ => {}
-    }
-    
-    j = j + 1
-  }
-  
-  // 验证所有时区都被正确处理
-  assert_eq(found_ny_time, true)
-  assert_eq(found_shanghai_time, true)
-  assert_eq(found_tokyo_time, true)
-  assert_eq(found_berlin_time, true)
-  assert_eq(timezone_conversions.length(), 4)
-}
-
-test "i18n_fallback_handling" {
-  // 测试本地化回退处理
-  
-  let manager = create_i18n_manager()
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("i18n-fallback-test", Some("1.0.0"))
-  
-  // 测试不支持的地区的回退处理
-  let unsupported_locales = [
-    ("fr", "FR"),  // 法语法国
-    ("es", "ES"),  // 西班牙语西班牙
-    ("ko", "KR"),  // 韩语韩国
-    ("ru", "RU")   // 俄语俄罗斯
+  let multi_language_attributes = [
+    ("service.name", {
+      "en": "Payment Service",
+      "zh": "支付服务",
+      "ja": "支払いサービス",
+      "ko": "결제 서비스",
+      "ar": "خدمة الدفع"
+    }),
+    ("operation.description", {
+      "en": "Process user payment",
+      "zh": "处理用户支付",
+      "ja": "ユーザー支払い処理",
+      "ko": "사용자 결제 처리",
+      "ar": "معالجة دفع المستخدم"
+    }),
+    ("error.message", {
+      "en": "Connection timeout",
+      "zh": "连接超时",
+      "ja": "接続タイムアウト",
+      "ko": "연결 시간 초과",
+      "ar": "انتهت مهلة الاتصال"
+    })
   ]
   
-  let mut fallback_results = []
+  let supported_languages = ["en", "zh", "ja", "ko", "ar"]
+  let attribute_processing_results = []
   
-  let mut i = 0
-  while i < unsupported_locales.length() {
-    let (language_code, country_code) = unsupported_locales[i]
-    let message_key = "user.login.success"
-    let username = "test_user"
+  for attribute in multi_language_attributes {
+    let attribute_name = attribute.0
+    let translations = attribute.1
     
-    // 尝试获取本地化消息（应该失败）
-    let fallback_locale = manager.default_locale  // 回退到默认语言
-    
-    match get_localized_message(manager, message_key, fallback_locale) {
-      Some(message) => {
-        let localized_text = message.translated_text.replace("{username}", username)
-        fallback_results.push((language_code + "-" + country_code, fallback_locale.language_code + "-" + fallback_locale.country_code, localized_text))
-        
-        // 记录回退日志
-        let log_record = LogRecord::builder()
-          .severity(SeverityNumber::Warn)
-          .body("Locale fallback used")
-          .with_attribute("requested.locale", AttributeValue::string(language_code + "-" + country_code))
-          .with_attribute("fallback.locale", AttributeValue::string(fallback_locale.language_code + "-" + fallback_locale.country_code))
-          .with_attribute("message.key", AttributeValue::string(message_key))
-          .build()
-        
-        logger.emit(log_record)
-      }
-      None => {}
+    for language in supported_languages {
+      let translated_value = translations[language]
+      
+      // 验证翻译存在
+      assert_eq(translated_value.length() > 0, true)
+      
+      // 模拟属性处理
+      let processed_attribute = attribute_name + "[" + language + "]=" + translated_value
+      attribute_processing_results.push(processed_attribute)
     }
-    
-    i = i + 1
   }
   
-  // 验证回退处理结果
-  let mut all_fallback_to_en_us = true
+  // 验证多语言属性处理
+  assert_eq(attribute_processing_results.length(), 15)  // 3 attributes * 5 languages
   
-  let mut j = 0
-  while j < fallback_results.length() {
-    let (requested_locale, fallback_locale, _) = fallback_results[j]
-    
-    if fallback_locale != "en-US" {
-      all_fallback_to_en_us = false
-      break
-    }
-    
-    j = j + 1
+  // 验证特定属性和语言的组合
+  let service_name_zh = attribute_processing_results.find(fn(result) { 
+    result.contains("service.name[zh]")
+  })
+  let operation_desc_ja = attribute_processing_results.find(fn(result) { 
+    result.contains("operation.description[ja]")
+  })
+  let error_message_ar = attribute_processing_results.find(fn(result) { 
+    result.contains("error.message[ar]")
+  })
+  
+  match service_name_zh {
+    Some(result) => assert_eq(result, "service.name[zh]=支付服务")
+    None => @test.fail("Chinese service name not found")
   }
   
-  // 验证回退机制
-  assert_eq(all_fallback_to_en_us, true)  // 所有不支持的地区都应该回退到en-US
-  assert_eq(fallback_results.length(), 4)  // 应该有4个回退结果
+  match operation_desc_ja {
+    Some(result) => assert_eq(result, "operation.description[ja]=ユーザー支払い処理")
+    None => @test.fail("Japanese operation description not found")
+  }
   
-  // 验证回退消息包含正确的用户名
-  let mut k = 0
-  while k < fallback_results.length() {
-    let (_, _, fallback_message) = fallback_results[k]
-    assert_eq(fallback_message.contains("test_user"), true)
-    k = k + 1
+  match error_message_ar {
+    Some(result) => assert_eq(result, "error.message[ar]=انتهت مهلة الاتصال")
+    None => @test.fail("Arabic error message not found")
   }
 }

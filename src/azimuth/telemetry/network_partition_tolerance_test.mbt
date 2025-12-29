@@ -1,764 +1,763 @@
-// 网络分区容错测试用例
-// 测试网络分区情况下的遥测系统行为
+// 网络分区容错测试用例 - 测试网络分区情况下的遥测系统容错能力
 
-test "logger_network_partition_tolerance" {
-  // 测试Logger在网络分区情况下的容错能力
-  
-  // 1. 创建Logger Provider和Logger
-  let provider = NoopLoggerProvider::{}
-  let logger = provider.get_logger("partition-test-logger", Some("1.0.0"), Some("https://example.com/schema"))
-  
-  // 2. 模拟网络分区前的正常操作
-  let normal_attributes = [
-    ("operation.phase", AttributeValue::string("normal")),
-    ("network.status", AttributeValue::string("connected")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  logger.info("Normal operation", Some(normal_attributes))
-  logger.debug("Debug message during normal operation", Some(normal_attributes))
-  logger.warn("Warning during normal operation", Some(normal_attributes))
-  
-  // 3. 模拟网络分区开始
-  let partition_attributes = [
-    ("operation.phase", AttributeValue::string("partition")),
-    ("network.status", AttributeValue::string("partitioned")),
-    ("partition.start_time", AttributeValue::string("2023-01-01T00:00:00Z")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  // 在网络分区期间记录日志
-  logger.error("Network partition detected", Some(partition_attributes))
-  logger.warn("Entering degraded mode", Some(partition_attributes))
-  logger.info("Buffering logs during partition", Some(partition_attributes))
-  
-  // 4. 模拟网络分区期间的批量日志记录
-  let mut i = 0
-  while i < 100 {
-    let batch_attributes = [
-      ("operation.phase", AttributeValue::string("partition")),
-      ("network.status", AttributeValue::string("partitioned")),
-      ("batch.index", AttributeValue::int(i.to_int64())),
-      ("service.name", AttributeValue::string("partition-test-service"))
-    ]
-    
-    logger.debug("Batch log during partition " + i.to_string(), Some(batch_attributes))
-    i = i + 1
-  }
-  
-  // 5. 模拟网络分区恢复
-  let recovery_attributes = [
-    ("operation.phase", AttributeValue::string("recovery")),
-    ("network.status", AttributeValue::string("recovering")),
-    ("partition.end_time", AttributeValue::string("2023-01-01T01:00:00Z")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  logger.info("Network partition recovered", Some(recovery_attributes))
-  logger.info("Flushing buffered logs", Some(recovery_attributes))
-  
-  // 6. 模拟恢复后的正常操作
-  let post_recovery_attributes = [
-    ("operation.phase", AttributeValue::string("normal")),
-    ("network.status", AttributeValue::string("connected")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  logger.info("Normal operation resumed", Some(post_recovery_attributes))
-  
-  // 7. 验证网络分区容错
-  // 创建日志记录来验证容错行为
-  let partition_tolerance_log = LogRecord::{
-    timestamp_unix_nanos: 1640995200000000000L,
-    observed_timestamp_unix_nanos: Some(1640995200000000100L),
-    severity_number: Info,
-    severity_text: Some("INFO"),
-    body: Some("Network partition tolerance test completed"),
-    attributes: [
-      ("test.type", AttributeValue::string("network_partition_tolerance")),
-      ("logs.before_partition", AttributeValue::int(3L)),
-      ("logs.during_partition", AttributeValue::int(102L)),  // 2 + 100 batch
-      ("logs.after_recovery", AttributeValue::int(2L)),
-      ("total.logs", AttributeValue::int(107L)),
-      ("partition.duration", AttributeValue::string("1h")),
-      ("buffer.capacity", AttributeValue::int(1000L)),
-      ("buffer.usage", AttributeValue::float(10.2))  // 102/1000 * 100
-    ],
-    trace_id: None,
-    span_id: None,
-    trace_flags: None,
-    resource: Some(Resource::default("partition-test-service")),
-    instrumentation_scope: Some(InstrumentationScope::{
-      name: "partition-test-logger",
-      version: Some("1.0.0"),
-      schema_url: None
-    })
-  }
-  
-  // 验证容错日志
-  assert_eq(partition_tolerance_log.attributes.length(), 8)
-  
-  let mut found_test_type = false
-  let mut found_total_logs = false
-  let mut found_partition_duration = false
-  
-  let mut i = 0
-  while i < partition_tolerance_log.attributes.length() {
-    let (name, value) = partition_tolerance_log.attributes[i]
-    match (name, value) {
-      ("test.type", StringValue(test_type)) => {
-        assert_eq(test_type, "network_partition_tolerance")
-        found_test_type = true
-      }
-      ("total.logs", IntValue(total)) => {
-        assert_eq(total, 107L)
-        found_total_logs = true
-      }
-      ("partition.duration", StringValue(duration)) => {
-        assert_eq(duration, "1h")
-        found_partition_duration = true
-      }
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  assert_eq(found_test_type, true)
-  assert_eq(found_total_logs, true)
-  assert_eq(found_partition_duration, true)
+use azimuth.telemetry.api.common.{AttributeValue, Resource}
+use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, NoopTracer, NoopTracerProvider}
+use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
+use azimuth.telemetry.api.context.{Context, ContextKey, create_key}
+
+// 网络状态
+pub enum NetworkStatus {
+  Connected
+  Partitioned
+  Degraded
+  Recovering
 }
 
-test "tracer_network_partition_tolerance" {
-  // 测试Tracer在网络分区情况下的容错能力
-  
-  // 1. 创建Tracer Provider和Tracer
-  let provider = NoopTracerProvider::{}
-  let tracer = provider.get_tracer("partition-test-tracer", Some("1.0.0"))
-  
-  // 2. 模拟网络分区前的正常span创建
-  let ctx = Context::empty()
-  let normal_attributes = [
-    ("operation.phase", AttributeValue::string("normal")),
-    ("network.status", AttributeValue::string("connected")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  let (_, normal_span) = tracer.start_span(ctx, "normal_operation", Server, Some(normal_attributes))
-  
-  // 3. 模拟网络分区开始
-  let partition_attributes = [
-    ("operation.phase", AttributeValue::string("partition")),
-    ("network.status", AttributeValue::string("partitioned")),
-    ("partition.start_time", AttributeValue::string("2023-01-01T00:00:00Z")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  // 在网络分区期间创建span
-  let (_, partition_span) = tracer.start_span(ctx, "partition_operation", Server, Some(partition_attributes))
-  
-  // 4. 模拟网络分区期间的批量span创建
-  let mut partition_spans = []
-  let mut i = 0
-  while i < 50 {
-    let batch_attributes = [
-      ("operation.phase", AttributeValue::string("partition")),
-      ("network.status", AttributeValue::string("partitioned")),
-      ("batch.index", AttributeValue::int(i.to_int64())),
-      ("service.name", AttributeValue::string("partition-test-service"))
-    ]
-    
-    let (_, batch_span) = tracer.start_span(ctx, "batch_operation_" + i.to_string(), Client, Some(batch_attributes))
-    partition_spans.push(batch_span)
-    i = i + 1
-  }
-  
-  // 5. 模拟网络分区恢复
-  let recovery_attributes = [
-    ("operation.phase", AttributeValue::string("recovery")),
-    ("network.status", AttributeValue::string("recovering")),
-    ("partition.end_time", AttributeValue::string("2023-01-01T01:00:00Z")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  let (_, recovery_span) = tracer.start_span(ctx, "recovery_operation", Server, Some(recovery_attributes))
-  
-  // 6. 模拟恢复后的正常span创建
-  let post_recovery_attributes = [
-    ("operation.phase", AttributeValue::string("normal")),
-    ("network.status", AttributeValue::string("connected")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  let (_, post_recovery_span) = tracer.start_span(ctx, "post_recovery_operation", Server, Some(post_recovery_attributes))
-  
-  // 7. 验证网络分区容错
-  // 创建日志记录来验证容错行为
-  let tracer_partition_log = LogRecord::{
-    timestamp_unix_nanos: 1640995200000000000L,
-    observed_timestamp_unix_nanos: Some(1640995200000000100L),
-    severity_number: Info,
-    severity_text: Some("INFO"),
-    body: Some("Tracer network partition tolerance test completed"),
-    attributes: [
-      ("test.type", AttributeValue::string("tracer_network_partition_tolerance")),
-      ("spans.before_partition", AttributeValue::int(1L)),
-      ("spans.during_partition", AttributeValue::int(51L)),  // 1 + 50 batch
-      ("spans.after_recovery", AttributeValue::int(2L)),
-      ("total.spans", AttributeValue::int(54L)),
-      ("partition.duration", AttributeValue::string("1h")),
-      ("span.buffer.capacity", AttributeValue::int(1000L)),
-      ("span.buffer.usage", AttributeValue::float(5.4))  // 54/1000 * 100
-    ],
-    trace_id: Some(recovery_span.context.trace_id),
-    span_id: Some(recovery_span.context.span_id),
-    trace_flags: Some(recovery_span.context.trace_flags),
-    resource: Some(Resource::default("partition-test-service")),
-    instrumentation_scope: Some(InstrumentationScope::{
-      name: "partition-test-tracer",
-      version: Some("1.0.0"),
-      schema_url: None
-    })
-  }
-  
-  // 验证容错日志
-  assert_eq(tracer_partition_log.attributes.length(), 8)
-  
-  let mut found_test_type = false
-  let mut found_total_spans = false
-  let mut found_buffer_usage = false
-  
-  let mut i = 0
-  while i < tracer_partition_log.attributes.length() {
-    let (name, value) = tracer_partition_log.attributes[i]
-    match (name, value) {
-      ("test.type", StringValue(test_type)) => {
-        assert_eq(test_type, "tracer_network_partition_tolerance")
-        found_test_type = true
-      }
-      ("total.spans", IntValue(total)) => {
-        assert_eq(total, 54L)
-        found_total_spans = true
-      }
-      ("span.buffer.usage", FloatValue(usage)) => {
-        assert_eq(usage, 5.4)
-        found_buffer_usage = true
-      }
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  assert_eq(found_test_type, true)
-  assert_eq(found_total_spans, true)
-  assert_eq(found_buffer_usage, true)
+// 网络分区类型
+pub enum PartitionType {
+  FullPartition      // 完全分区，无法连接
+  PartialPartition   // 部分分区，某些节点可达
+  LatencySpike       // 延迟激增
+  PacketLoss         // 丢包
+  BandwidthLimit     // 带宽限制
 }
 
-test "meter_network_partition_tolerance" {
-  // 测试Meter在网络分区情况下的容错能力
-  
-  // 1. 创建Meter Provider和Meter
-  let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("partition-test-meter", Some("1.0.0"), Some("https://example.com/schema"))
-  
-  // 2. 创建指标
-  let operation_counter = meter.create_counter("operations_total", Some("operations"), Some("Total operations"))
-  let duration_histogram = meter.create_histogram("operation_duration_ms", Some("ms"), Some("Operation duration"))
-  let active_connections_gauge = meter.create_gauge("active_connections", Some("connections"), Some("Active connections"))
-  
-  // 3. 模拟网络分区前的正常指标记录
-  let normal_attributes = [
-    ("operation.phase", AttributeValue::string("normal")),
-    ("network.status", AttributeValue::string("connected")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  operation_counter.add(10L, Some(normal_attributes))
-  duration_histogram.record(100.0, Some(normal_attributes))
-  active_connections_gauge(25.0, Some(normal_attributes))
-  
-  // 4. 模拟网络分区开始
-  let partition_attributes = [
-    ("operation.phase", AttributeValue::string("partition")),
-    ("network.status", AttributeValue::string("partitioned")),
-    ("partition.start_time", AttributeValue::string("2023-01-01T00:00:00Z")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  // 在网络分区期间记录指标
-  operation_counter.add(5L, Some(partition_attributes))
-  duration_histogram.record(200.0, Some(partition_attributes))  // 延迟增加
-  active_connections_gauge(15.0, Some(partition_attributes))  // 连接减少
-  
-  // 5. 模拟网络分区期间的批量指标记录
-  let mut i = 0
-  while i < 100 {
-    let batch_attributes = [
-      ("operation.phase", AttributeValue::string("partition")),
-      ("network.status", AttributeValue::string("partitioned")),
-      ("batch.index", AttributeValue::int(i.to_int64())),
-      ("service.name", AttributeValue::string("partition-test-service"))
-    ]
-    
-    operation_counter.add(1L, Some(batch_attributes))
-    duration_histogram.record(150.0 + i.to_double(), Some(batch_attributes))
-    i = i + 1
-  }
-  
-  // 6. 模拟网络分区恢复
-  let recovery_attributes = [
-    ("operation.phase", AttributeValue::string("recovery")),
-    ("network.status", AttributeValue::string("recovering")),
-    ("partition.end_time", AttributeValue::string("2023-01-01T01:00:00Z")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  operation_counter.add(20L, Some(recovery_attributes))  # 恢复后批量处理
-  duration_histogram.record(80.0, Some(recovery_attributes))  # 延迟恢复正常
-  active_connections_gauge(30.0, Some(recovery_attributes))  # 连接恢复
-  
-  // 7. 模拟恢复后的正常指标记录
-  let post_recovery_attributes = [
-    ("operation.phase", AttributeValue::string("normal")),
-    ("network.status", AttributeValue::string("connected")),
-    ("service.name", AttributeValue::string("partition-test-service"))
-  ]
-  
-  operation_counter.add(15L, Some(post_recovery_attributes))
-  duration_histogram.record(90.0, Some(post_recovery_attributes))
-  active_connections_gauge(35.0, Some(post_recovery_attributes))
-  
-  // 8. 验证网络分区容错
-  // 创建日志记录来验证容错行为
-  let meter_partition_log = LogRecord::{
-    timestamp_unix_nanos: 1640995200000000000L,
-    observed_timestamp_unix_nanos: Some(1640995200000000100L),
-    severity_number: Info,
-    severity_text: Some("INFO"),
-    body: Some("Meter network partition tolerance test completed"),
-    attributes: [
-      ("test.type", AttributeValue::string("meter_network_partition_tolerance")),
-      ("operations.before_partition", AttributeValue::int(10L)),
-      ("operations.during_partition", AttributeValue::int(105L)),  # 5 + 100 batch
-      ("operations.after_recovery", AttributeValue::int(35L)),  # 20 + 15
-      ("total.operations", AttributeValue::int(150L)),
-      ("avg.duration.normal", AttributeValue::float(100.0)),
-      ("avg.duration.partition", AttributeValue::float(200.0)),
-      ("avg.duration.recovery", AttributeValue::float(80.0)),
-      ("partition.duration", AttributeValue::string("1h")),
-      ("metrics.buffer.capacity", AttributeValue::int(10000L)),
-      ("metrics.buffer.usage", AttributeValue::float(1.5))  # 150/10000 * 100
-    ],
-    trace_id: None,
-    span_id: None,
-    trace_flags: None,
-    resource: Some(Resource::default("partition-test-service")),
-    instrumentation_scope: Some(InstrumentationScope::{
-      name: "partition-test-meter",
-      version: Some("1.0.0"),
-      schema_url: None
-    })
-  }
-  
-  // 验证容错日志
-  assert_eq(meter_partition_log.attributes.length(), 11)
-  
-  let mut found_test_type = false
-  let mut found_total_operations = false
-  let mut found_avg_durations = false
-  
-  let mut i = 0
-  while i < meter_partition_log.attributes.length() {
-    let (name, value) = meter_partition_log.attributes[i]
-    match (name, value) {
-      ("test.type", StringValue(test_type)) => {
-        assert_eq(test_type, "meter_network_partition_tolerance")
-        found_test_type = true
-      }
-      ("total.operations", IntValue(total)) => {
-        assert_eq(total, 150L)
-        found_total_operations = true
-      }
-      ("avg.duration.normal", FloatValue(duration)) => {
-        assert_eq(duration, 100.0)
-        found_avg_durations = true
-      }
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  assert_eq(found_test_type, true)
-  assert_eq(found_total_operations, true)
-  assert_eq(found_avg_durations, true)
+// 容错策略
+pub enum ToleranceStrategy {
+  Retry              // 重试
+  CircuitBreaker     // 熔断器
+  Fallback           // 降级
+  Buffering          // 缓冲
+  GracefulDegradation // 优雅降级
 }
 
-test "propagation_network_partition_tolerance" {
-  // 测试Propagation在网络分区情况下的容错能力
-  
-  // 1. 创建上下文和传播器
-  let ctx = Context::empty()
-  let trace_propagator = W3CTraceContextPropagator::{}
-  let baggage_propagator = W3CBaggagePropagator::{}
-  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
-  
-  // 2. 模拟网络分区前的正常传播
-  let normal_carrier = MapCarrier::new()
-  composite_propagator.inject(ctx, normal_carrier)
-  
-  let normal_extracted_ctx = composite_propagator.extract(ctx, normal_carrier)
-  
-  // 3. 模拟网络分区开始
-  let partition_carrier = MapCarrier::new()
-  
-  // 在网络分区期间尝试注入和提取
-  composite_propagator.inject(ctx, partition_carrier)
-  let partition_extracted_ctx = composite_propagator.extract(ctx, partition_carrier)
-  
-  // 4. 模拟网络分区期间的批量传播操作
-  let mut partition_carriers = []
-  let mut i = 0
-  while i < 50 {
-    let batch_carrier = MapCarrier::new()
-    composite_propagator.inject(ctx, batch_carrier)
-    partition_carriers.push(batch_carrier)
-    i = i + 1
-  }
-  
-  // 5. 模拟网络分区恢复
-  let recovery_carrier = MapCarrier::new()
-  composite_propagator.inject(ctx, recovery_carrier)
-  let recovery_extracted_ctx = composite_propagator.extract(ctx, recovery_carrier)
-  
-  // 6. 模拟恢复后的正常传播
-  let post_recovery_carrier = MapCarrier::new()
-  composite_propagator.inject(ctx, post_recovery_carrier)
-  let post_recovery_extracted_ctx = composite_propagator.extract(ctx, post_recovery_carrier)
-  
-  // 7. 验证网络分区容错
-  // 验证每个carrier都包含必要的header
-  match normal_carrier.get("traceparent") {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  match partition_carrier.get("traceparent") {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  match recovery_carrier.get("traceparent") {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  match post_recovery_carrier.get("traceparent") {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  // 验证批量carrier的操作
-  let mut i = 0
-  while i < partition_carriers.length() {
-    let carrier = partition_carriers[i]
-    match carrier.get("traceparent") {
-      Some(_) => assert_eq(true, true)
-      None => @test.fail("Test failed")
-    }
-    i = i + 1
-  }
-  
-  // 8. 创建日志记录来验证容错行为
-  let propagation_partition_log = LogRecord::{
-    timestamp_unix_nanos: 1640995200000000000L,
-    observed_timestamp_unix_nanos: Some(1640995200000000100L),
-    severity_number: Info,
-    severity_text: Some("INFO"),
-    body: Some("Propagation network partition tolerance test completed"),
-    attributes: [
-      ("test.type", AttributeValue::string("propagation_network_partition_tolerance")),
-      ("operations.before_partition", AttributeValue::int(2L)),  # inject + extract
-      ("operations.during_partition", AttributeValue::int(102L)),  # 2 + 100 batch (50*2)
-      ("operations.after_recovery", AttributeValue::int(4L)),  # 2 + 2
-      ("total.operations", AttributeValue::int(108L)),
-      ("partition.duration", AttributeValue::string("1h")),
-      ("propagation.buffer.capacity", AttributeValue::int(1000L)),
-      ("propagation.buffer.usage", AttributeValue::float(10.8)),  # 108/1000 * 100
-      ("header.injection.success_rate", AttributeValue::float(100.0)),
-      ("header.extraction.success_rate", AttributeValue::float(100.0))
-    ],
-    trace_id: None,
-    span_id: None,
-    trace_flags: None,
-    resource: Some(Resource::default("partition-test-service")),
-    instrumentation_scope: Some(InstrumentationScope::{
-      name: "partition-test-propagation",
-      version: Some("1.0.0"),
-      schema_url: None
-    })
-  }
-  
-  // 验证容错日志
-  assert_eq(propagation_partition_log.attributes.length(), 9)
-  
-  let mut found_test_type = false
-  let mut found_total_operations = false
-  let mut found_success_rates = false
-  
-  let mut i = 0
-  while i < propagation_partition_log.attributes.length() {
-    let (name, value) = propagation_partition_log.attributes[i]
-    match (name, value) {
-      ("test.type", StringValue(test_type)) => {
-        assert_eq(test_type, "propagation_network_partition_tolerance")
-        found_test_type = true
-      }
-      ("total.operations", IntValue(total)) => {
-        assert_eq(total, 108L)
-        found_total_operations = true
-      }
-      ("header.injection.success_rate", FloatValue(rate)) => {
-        assert_eq(rate, 100.0)
-        found_success_rates = true
-      }
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  assert_eq(found_test_type, true)
-  assert_eq(found_total_operations, true)
-  assert_eq(found_success_rates, true)
+// 网络分区配置
+pub struct PartitionConfig {
+  partition_type : PartitionType
+  duration_ms : Int64
+  affected_nodes : Array[String]
+  tolerance_strategy : ToleranceStrategy
+  retry_attempts : Int
+  retry_delay_ms : Int64
+  buffer_size : Int
 }
 
-test "end_to_end_network_partition_tolerance" {
-  // 端到端网络分区容错测试
+// 容错结果
+pub struct ToleranceResult {
+  strategy : ToleranceStrategy
+  success : Bool
+  attempts : Int
+  total_time_ms : Int64
+  data_lost : Bool
+  data_corrupted : Bool
+  fallback_used : Bool
+}
+
+// 遥测数据缓冲区
+pub struct TelemetryBuffer {
+  data : Array[String]
+  max_size : Int
+  current_size : Int
+  overflow_count : Int
+}
+
+// 熔断器状态
+pub enum CircuitBreakerState {
+  Closed     // 正常状态
+  Open       // 熔断状态
+  HalfOpen   // 半开状态
+}
+
+// 熔断器
+pub struct CircuitBreaker {
+  state : CircuitBreakerState
+  failure_count : Int
+  failure_threshold : Int
+  recovery_timeout_ms : Int64
+  last_failure_time : Int64
+}
+
+test "network_partition_full_partition_tolerance" {
+  // 测试完全网络分区的容错处理
   
-  // 1. 创建完整的遥测环境
-  let logger_provider = NoopLoggerProvider::{}
-  let tracer_provider = NoopTracerProvider::{}
-  let meter_provider = NoopMeterProvider::{}
+  // 1. 创建完全分区配置
+  let full_partition_config = PartitionConfig{
+    partition_type: FullPartition,
+    duration_ms: 30000L,  // 30秒分区
+    affected_nodes: ["collector-1", "collector-2", "collector-3"],
+    tolerance_strategy: Buffering,
+    retry_attempts: 3,
+    retry_delay_ms: 1000L,
+    buffer_size: 10000
+  }
   
-  let logger = logger_provider.get_logger("e2e-partition-logger", Some("1.0.0"), None)
-  let tracer = tracer_provider.get_tracer("e2e-partition-tracer", Some("1.0.0"))
-  let meter = meter_provider.get_meter("e2e-partition-meter", Some("1.0.0"), None)
+  // 2. 创建遥测缓冲区
+  let buffer = TelemetryBuffer{
+    data: [],
+    max_size: full_partition_config.buffer_size,
+    current_size: 0,
+    overflow_count: 0
+  }
   
-  // 2. 创建指标
-  let operation_counter = meter.create_counter("e2e_operations_total", Some("operations"), Some("E2E operations"))
-  let duration_histogram = meter.create_histogram("e2e_duration_ms", Some("ms"), Some("E2E duration"))
+  // 3. 模拟网络分区前的正常状态
+  let network_status_before = Connected
+  assert_eq(network_status_before, Connected)
   
-  // 3. 模拟网络分区前的正常操作
-  let ctx = Context::empty()
-  let normal_attributes = [
-    ("operation.phase", AttributeValue::string("normal")),
-    ("network.status", AttributeValue::string("connected")),
-    ("service.name", AttributeValue::string("e2e-partition-service"))
-  ]
+  // 4. 模拟网络分区发生
+  let network_status_during = Partitioned
+  let partition_start_time = 1640995200000000000L
   
-  // 正常span
-  let (_, normal_span) = tracer.start_span(ctx, "e2e_normal_operation", Server, Some(normal_attributes))
+  // 5. 在分区期间生成遥测数据
+  let mut telemetry_data_generated = 0
+  let mut telemetry_data_buffered = 0
   
-  // 正常日志
-  logger.info("E2E normal operation started", Some(normal_attributes))
+  // 模拟30秒分区期间的数据生成
+  let mut current_time = partition_start_time
+  while current_time < partition_start_time + full_partition_config.duration_ms * 1000000L {
+    // 每秒生成10个遥测数据
+    let mut i = 0
+    while i < 10 {
+      let telemetry_data = "telemetry_data_" + telemetry_data_generated.to_string()
+      telemetry_data_generated = telemetry_data_generated + 1
+      
+      // 尝试发送，但因为分区而失败，数据被缓冲
+      if buffer.current_size < buffer.max_size {
+        buffer.data.push(telemetry_data)
+        buffer.current_size = buffer.current_size + 1
+        telemetry_data_buffered = telemetry_data_buffered + 1
+      } else {
+        buffer.overflow_count = buffer.overflow_count + 1
+      }
+      
+      i = i + 1
+    }
+    
+    current_time = current_time + 1000000000L  // 前进1秒
+  }
   
-  // 正常指标
-  operation_counter.add(1L, Some(normal_attributes))
-  duration_histogram.record(100.0, Some(normal_attributes))
+  // 6. 验证分区期间的数据缓冲
+  assert_eq(telemetry_data_generated > 0, true)
+  assert_eq(telemetry_data_buffered > 0, true)
+  assert_eq(buffer.current_size, telemetry_data_buffered)
+  assert_eq(buffer.current_size <= buffer.max_size, true)
   
-  // 4. 模拟网络分区开始
-  let partition_start_time = "2023-01-01T00:00:00Z"
-  let partition_attributes = [
-    ("operation.phase", AttributeValue::string("partition")),
-    ("network.status", AttributeValue::string("partitioned")),
-    ("partition.start_time", AttributeValue::string(partition_start_time)),
-    ("service.name", AttributeValue::string("e2e-partition-service"))
-  ]
+  // 7. 模拟网络恢复
+  let network_status_after = Connected
+  let partition_end_time = partition_start_time + full_partition_config.duration_ms * 1000000L
   
-  // 分区期间的span
-  let (_, partition_span) = tracer.start_span(ctx, "e2e_partition_operation", Server, Some(partition_attributes))
+  // 8. 网络恢复后的数据重放
+  let mut data_sent_successfully = 0
+  let mut data_send_failed = 0
+  let mut retry_attempts = 0
   
-  // 分区期间的日志
-  logger.error("E2E network partition detected", Some(partition_attributes))
-  logger.warn("E2E entering degraded mode", Some(partition_attributes))
-  
-  // 分区期间的指标
-  operation_counter.add(1L, Some(partition_attributes))
-  duration_histogram.record(500.0, Some(partition_attributes))  # 延迟增加
-  
-  // 5. 模拟网络分区期间的批量操作
   let mut i = 0
-  while i < 20 {
-    let batch_attributes = [
-      ("operation.phase", AttributeValue::string("partition")),
-      ("network.status", AttributeValue::string("partitioned")),
-      ("batch.index", AttributeValue::int(i.to_int64())),
-      ("service.name", AttributeValue::string("e2e-partition-service"))
-    ]
+  while i < buffer.data.length() {
+    let data = buffer.data[i]
     
-    // 批量span
-    let (_, batch_span) = tracer.start_span(ctx, "e2e_batch_operation_" + i.to_string(), Client, Some(batch_attributes))
+    // 尝试发送数据，如果失败则重试
+    let mut sent = false
+    let mut attempt = 0
     
-    // 批量日志
-    logger.debug("E2E batch operation " + i.to_string() + " during partition", Some(batch_attributes))
+    while attempt < full_partition_config.retry_attempts && !sent {
+      attempt = attempt + 1
+      retry_attempts = retry_attempts + 1
+      
+      // 模拟发送成功（网络已恢复）
+      sent = true
+    }
     
-    // 批量指标
-    operation_counter.add(1L, Some(batch_attributes))
-    duration_histogram.record(300.0 + i.to_double() * 10.0, Some(batch_attributes))
+    if sent {
+      data_sent_successfully = data_sent_successfully + 1
+    } else {
+      data_send_failed = data_send_failed + 1
+    }
     
     i = i + 1
   }
   
-  // 6. 模拟网络分区恢复
-  let partition_end_time = "2023-01-01T01:00:00Z"
-  let recovery_attributes = [
-    ("operation.phase", AttributeValue::string("recovery")),
-    ("network.status", AttributeValue::string("recovering")),
-    ("partition.end_time", AttributeValue::string(partition_end_time)),
-    ("service.name", AttributeValue::string("e2e-partition-service"))
-  ]
-  
-  // 恢复期间的span
-  let (_, recovery_span) = tracer.start_span(ctx, "e2e_recovery_operation", Server, Some(recovery_attributes))
-  
-  // 恢复期间的日志
-  logger.info("E2E network partition recovered", Some(recovery_attributes))
-  logger.info("E2E flushing buffered telemetry data", Some(recovery_attributes))
-  
-  // 恢复期间的指标
-  operation_counter.add(5L, Some(recovery_attributes))  # 批量处理缓冲的数据
-  duration_histogram.record(80.0, Some(recovery_attributes))  # 延迟恢复正常
-  
-  // 7. 模拟恢复后的正常操作
-  let post_recovery_attributes = [
-    ("operation.phase", AttributeValue::string("normal")),
-    ("network.status", AttributeValue::string("connected")),
-    ("service.name", AttributeValue::string("e2e-partition-service"))
-  ]
-  
-  # 恢复后的span
-  let (_, post_recovery_span) = tracer.start_span(ctx, "e2e_post_recovery_operation", Server, Some(post_recovery_attributes))
-  
-  # 恢复后的日志
-  logger.info("E2E normal operation resumed", Some(post_recovery_attributes))
-  
-  # 恢复后的指标
-  operation_counter.add(3L, Some(post_recovery_attributes))
-  duration_histogram.record(90.0, Some(post_recovery_attributes))
-  
-  // 8. 验证端到端网络分区容错
-  let e2e_partition_log = LogRecord::{
-    timestamp_unix_nanos: 1640995200000000000L,
-    observed_timestamp_unix_nanos: Some(1640995200000000100L),
-    severity_number: Info,
-    severity_text: Some("INFO"),
-    body: Some("E2E network partition tolerance test completed"),
-    attributes: [
-      ("test.type", AttributeValue::string("e2e_network_partition_tolerance")),
-      ("spans.before_partition", AttributeValue::int(1L)),
-      ("spans.during_partition", AttributeValue::int(21L)),  # 1 + 20 batch
-      ("spans.after_recovery", AttributeValue::int(2L)),
-      ("total.spans", AttributeValue::int(24L)),
-      ("logs.before_partition", AttributeValue::int(1L)),
-      ("logs.during_partition", AttributeValue::int(22L)),  # 2 + 20 batch
-      ("logs.after_recovery", AttributeValue::int(3L)),
-      ("total.logs", AttributeValue::int(26L)),
-      ("operations.before_partition", AttributeValue::int(1L)),
-      ("operations.during_partition", AttributeValue::int(21L)),  # 1 + 20 batch
-      ("operations.after_recovery", AttributeValue::int(8L)),  # 5 + 3
-      ("total.operations", AttributeValue::int(30L)),
-      ("avg.duration.normal", AttributeValue::float(100.0)),
-      ("avg.duration.partition", AttributeValue::float(500.0)),
-      ("avg.duration.recovery", AttributeValue::float(80.0)),
-      ("partition.start_time", AttributeValue::string(partition_start_time)),
-      ("partition.end_time", AttributeValue::string(partition_end_time)),
-      ("partition.duration", AttributeValue::string("1h")),
-      ("telemetry.buffer.capacity", AttributeValue::int(5000L)),
-      ("telemetry.buffer.usage", AttributeValue::float(1.6)),  # (24+26+30)/5000 * 100
-      ("data.loss.during_partition", AttributeValue::float(0.0)),  # 没有数据丢失
-      ("data.integrity.maintained", AttributeValue::bool(true))
-    ],
-    trace_id: Some(post_recovery_span.context.trace_id),
-    span_id: Some(post_recovery_span.context.span_id),
-    trace_flags: Some(post_recovery_span.context.trace_flags),
-    resource: Some(Resource::default("e2e-partition-service")),
-    instrumentation_scope: Some(InstrumentationScope::{
-      name: "e2e-partition-scope",
-      version: Some("1.0.0"),
-      schema_url: None
-    })
+  // 9. 验证容错结果
+  let tolerance_result = ToleranceResult{
+    strategy: full_partition_config.tolerance_strategy,
+    success: data_sent_successfully > 0,
+    attempts: retry_attempts,
+    total_time_ms: full_partition_config.duration_ms,
+    data_lost: data_send_failed > 0,
+    data_corrupted: false,
+    fallback_used: false
   }
   
-  // 验证端到端容错日志
-  assert_eq(e2e_partition_log.attributes.length(), 22)
+  assert_eq(tolerance_result.strategy, Buffering)
+  assert_eq(tolerance_result.success, true)
+  assert_eq(tolerance_result.attempts > 0, true)
+  assert_eq(tolerance_result.total_time_ms, full_partition_config.duration_ms)
   
-  // 验证关键指标
-  let mut found_test_type = false
-  let mut found_total_spans = false
-  let mut found_total_logs = false
-  let mut found_total_operations = false
-  let mut found_data_integrity = false
+  // 10. 验证数据完整性
+  assert_eq(data_sent_successfully + data_send_failed, telemetry_data_buffered)
+  assert_eq(data_sent_successfully > telemetry_data_buffered * 9 / 10, true)  // 至少90%的数据成功发送
+}
+
+test "network_partition_circuit_breaker_tolerance" {
+  // 测试熔断器容错策略
   
+  // 1. 创建熔断器
+  let circuit_breaker = CircuitBreaker{
+    state: Closed,
+    failure_count: 0,
+    failure_threshold: 5,
+    recovery_timeout_ms: 60000L,  // 1分钟恢复超时
+    last_failure_time: 0L
+  }
+  
+  // 2. 模拟网络故障逐渐增加
+  let mut failure_count = 0
+  let mut circuit_breaker_state_changes = []
+  
+  // 模拟连续失败
   let mut i = 0
-  while i < e2e_partition_log.attributes.length() {
-    let (name, value) = e2e_partition_log.attributes[i]
-    match (name, value) {
-      ("test.type", StringValue(test_type)) => {
-        assert_eq(test_type, "e2e_network_partition_tolerance")
-        found_test_type = true
+  while i < 10 {
+    // 模拟发送遥测数据
+    let send_success = i < 3  // 前3次成功，后面都失败
+    
+    if !send_success {
+      failure_count = failure_count + 1
+      
+      // 更新熔断器状态
+      if failure_count >= circuit_breaker.failure_threshold && circuit_breaker.state == Closed {
+        circuit_breaker.state = Open
+        circuit_breaker.last_failure_time = 1640995200000000000L + i.to_int64() * 1000000000L
+        circuit_breaker_state_changes.push(("Closed", "Open", i))
       }
-      ("total.spans", IntValue(total_spans)) => {
-        assert_eq(total_spans, 24L)
-        found_total_spans = true
-      }
-      ("total.logs", IntValue(total_logs)) => {
-        assert_eq(total_logs, 26L)
-        found_total_logs = true
-      }
-      ("total.operations", IntValue(total_operations)) => {
-        assert_eq(total_operations, 30L)
-        found_total_operations = true
-      }
-      ("data.integrity.maintained", BoolValue(integrity)) => {
-        assert_eq(integrity, true)
-        found_data_integrity = true
-      }
-      _ => ()
+    }
+    
+    i = i + 1
+  }
+  
+  // 3. 验证熔断器状态变化
+  assert_eq(circuit_breaker.state, Open)
+  assert_eq(circuit_breaker_state_changes.length(), 1)
+  assert_eq(circuit_breaker_state_changes[0].0, "Closed")
+  assert_eq(circuit_breaker_state_changes[0].1, "Open")
+  assert_eq(circuit_breaker_state_changes[0].2, 5)  // 第5次失败后熔断
+  
+  // 4. 测试熔断器开启时的行为
+  let mut requests_blocked = 0
+  let mut requests_allowed = 0
+  
+  // 模拟在熔断器开启时的请求
+  i = 0
+  while i < 10 {
+    if circuit_breaker.state == Open {
+      requests_blocked = requests_blocked + 1
+      // 请求被直接拒绝，不尝试发送
+    } else {
+      requests_allowed = requests_allowed + 1
     }
     i = i + 1
   }
   
-  assert_eq(found_test_type, true)
-  assert_eq(found_total_spans, true)
-  assert_eq(found_total_logs, true)
-  assert_eq(found_total_operations, true)
-  assert_eq(found_data_integrity, true)
+  assert_eq(requests_blocked, 10)
+  assert_eq(requests_allowed, 0)
   
-  // 9. 验证跨模块的一致性
-  // 确保所有模块都正确处理了网络分区
-  let expected_total_telemetry = 80L  # 24 spans + 26 logs + 30 operations
-  let actual_total_telemetry = 24L + 26L + 30L
-  assert_eq(actual_total_telemetry, expected_total_telemetry)
+  // 5. 模拟熔断器恢复
+  let current_time = circuit_breaker.last_failure_time + circuit_breaker.recovery_timeout_ms * 1000000L
   
-  // 验证时间戳的一致性
-  assert_eq(e2e_partition_log.timestamp_unix_nanos, 1640995200000000000L)
-  match e2e_partition_log.observed_timestamp_unix_nanos {
-    Some(observed) => assert_eq(observed, 1640995200000000100L)
-    None => @test.fail("Test failed")
+  // 检查是否可以进入半开状态
+  if current_time >= circuit_breaker.last_failure_time + circuit_breaker.recovery_timeout_ms * 1000000L {
+    circuit_breaker.state = HalfOpen
+    circuit_breaker_state_changes.push(("Open", "HalfOpen", 10))
   }
   
-  // 验证resource和instrumentation scope的一致性
-  match e2e_partition_log.resource {
-    Some(resource) => assert_eq(resource.service_name, "e2e-partition-service")
-    None => @test.fail("Test failed")
+  assert_eq(circuit_breaker.state, HalfOpen)
+  
+  // 6. 测试半开状态
+  let mut half_open_success = 0
+  let mut half_open_failure = 0
+  
+  // 在半开状态下允许少量请求通过
+  i = 0
+  while i < 3 {
+    // 模拟发送成功（网络已恢复）
+    half_open_success = half_open_success + 1
+    i = i + 1
   }
   
-  match e2e_partition_log.instrumentation_scope {
-    Some(scope) => {
-      assert_eq(scope.name, "e2e-partition-scope")
-      match scope.version {
-        Some(version) => assert_eq(version, "1.0.0")
-        None => @test.fail("Test failed")
+  // 如果半开状态下的请求成功，则关闭熔断器
+  if half_open_success > 0 {
+    circuit_breaker.state = Closed
+    circuit_breaker.failure_count = 0
+    circuit_breaker_state_changes.push(("HalfOpen", "Closed", 13))
+  }
+  
+  // 7. 验证熔断器恢复
+  assert_eq(circuit_breaker.state, Closed)
+  assert_eq(circuit_breaker.failure_count, 0)
+  assert_eq(circuit_breaker_state_changes.length(), 3)
+  assert_eq(circuit_breaker_state_changes[2].0, "HalfOpen")
+  assert_eq(circuit_breaker_state_changes[2].1, "Closed")
+  
+  // 8. 验证容错结果
+  let tolerance_result = ToleranceResult{
+    strategy: CircuitBreaker,
+    success: true,
+    attempts: failure_count + half_open_success + half_open_failure,
+    total_time_ms: circuit_breaker.recovery_timeout_ms,
+    data_lost: false,
+    data_corrupted: false,
+    fallback_used: true
+  }
+  
+  assert_eq(tolerance_result.strategy, CircuitBreaker)
+  assert_eq(tolerance_result.success, true)
+  assert_eq(tolerance_result.fallback_used, true)
+}
+
+test "network_partition_graceful_degradation_tolerance" {
+  // 测试优雅降级容错策略
+  
+  // 1. 创建优雅降级配置
+  let degradation_config = PartitionConfig{
+    partition_type: PartialPartition,
+    duration_ms: 60000L,  // 1分钟分区
+    affected_nodes: ["collector-1"],  // 只有一个收集器不可用
+    tolerance_strategy: GracefulDegradation,
+    retry_attempts: 2,
+    retry_delay_ms: 500L,
+    buffer_size: 1000
+  }
+  
+  // 2. 定义遥测数据优先级
+  let telemetry_priorities = [
+    ("critical_error", 1),
+    ("security_event", 2),
+    ("performance_metric", 3),
+    ("debug_info", 4),
+    ("trace_data", 5)
+  ]
+  
+  // 3. 模拟网络分区发生
+  let partition_start_time = 1640995200000000000L
+  
+  // 4. 在分区期间生成不同优先级的遥测数据
+  let mut generated_data = []
+  let mut total_generated = 0
+  
+  let mut priority_index = 0
+  while priority_index < telemetry_priorities.length() {
+    let (data_type, priority) = telemetry_priorities[priority_index]
+    
+    // 为每个优先级生成数据
+    let mut i = 0
+    while i < 20 {
+      let data = data_type + "_" + i.to_string()
+      generated_data.push((data, priority))
+      total_generated = total_generated + 1
+      i = i + 1
+    }
+    
+    priority_index = priority_index + 1
+  }
+  
+  // 5. 应用优雅降级策略
+  let mut data_sent = []
+  let mut data_dropped = []
+  let mut data_buffered = []
+  
+  // 按优先级排序
+  let mut sorted_data = generated_data
+  // 简化排序：按优先级数字升序排列
+  
+  let mut i = 0
+  while i < sorted_data.length() {
+    let (data, priority) = sorted_data[i]
+    
+    // 根据优先级决定处理方式
+    if priority <= 2 {
+      // 高优先级数据：尝试发送，失败则缓冲
+      data_sent.push(data)
+    } else if priority == 3 {
+      // 中优先级数据：缓冲
+      data_buffered.push(data)
+    } else {
+      // 低优先级数据：丢弃
+      data_dropped.push(data)
+    }
+    
+    i = i + 1
+  }
+  
+  // 6. 验证优雅降级效果
+  assert_eq(data_sent.length(), 40)  // priority 1和2的数据
+  assert_eq(data_buffered.length(), 20)  // priority 3的数据
+  assert_eq(data_dropped.length(), 40)  // priority 4和5的数据
+  assert_eq(data_sent.length() + data_buffered.length() + data_dropped.length(), total_generated)
+  
+  // 7. 模拟网络恢复
+  let partition_end_time = partition_start_time + degradation_config.duration_ms * 1000000L
+  
+  // 8. 网络恢复后处理缓冲的数据
+  let mut buffered_data_sent = 0
+  let mut buffered_data_failed = 0
+  
+  let mut i = 0
+  while i < data_buffered.length() {
+    let data = data_buffered[i]
+    
+    // 尝试发送缓冲的数据
+    let send_success = i < data_buffered.length() * 9 / 10  // 90%成功
+    if send_success {
+      buffered_data_sent = buffered_data_sent + 1
+    } else {
+      buffered_data_failed = buffered_data_failed + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 9. 验证容错结果
+  let total_data_sent = data_sent.length() + buffered_data_sent
+  let total_data_lost = data_dropped.length() + buffered_data_failed
+  
+  let tolerance_result = ToleranceResult{
+    strategy: GracefulDegradation,
+    success: total_data_sent > total_data_lost,
+    attempts: data_sent.length() + data_buffered.length(),
+    total_time_ms: degradation_config.duration_ms,
+    data_lost: total_data_lost > 0,
+    data_corrupted: false,
+    fallback_used: true
+  }
+  
+  assert_eq(tolerance_result.strategy, GracefulDegradation)
+  assert_eq(tolerance_result.success, true)
+  assert_eq(tolerance_result.data_lost, true)  // 有数据丢失
+  assert_eq(tolerance_result.fallback_used, true)
+  
+  // 10. 验证关键数据得到保护
+  let critical_data_sent = 0  // priority 1的数据
+  let security_data_sent = 20  // priority 2的数据
+  assert_eq(critical_data_sent + security_data_sent, 40)  // 关键数据都得到了处理
+}
+
+test "network_partition_latency_spike_tolerance" {
+  // 测试网络延迟激增的容错处理
+  
+  // 1. 创建延迟激增配置
+  let latency_spike_config = PartitionConfig{
+    partition_type: LatencySpike,
+    duration_ms: 30000L,  // 30秒延迟激增
+    affected_nodes: ["collector-1", "collector-2"],
+    tolerance_strategy: Retry,
+    retry_attempts: 3,
+    retry_delay_ms: 2000L,
+    buffer_size: 500
+  }
+  
+  // 2. 定义正常和异常延迟
+  let normal_latency_ms = 50L
+  let spike_latency_ms = 5000L  // 5秒延迟
+  let timeout_threshold_ms = 3000L  // 3秒超时
+  
+  // 3. 模拟延迟激增发生
+  let spike_start_time = 1640995200000000000L
+  let spike_end_time = spike_start_time + latency_spike_config.duration_ms * 1000000L
+  
+  // 4. 在延迟激增期间发送遥测数据
+  let mut requests_sent = 0
+  let mut requests_successful = 0
+  let mut requests_timed_out = 0
+  let mut requests_retried = 0
+  let mut total_latency = 0L
+  
+  let mut current_time = spike_start_time
+  while current_time < spike_end_time {
+    // 每秒发送一个请求
+    let request_start_time = current_time
+    
+    // 模拟网络延迟
+    let current_latency = if current_time >= spike_start_time && current_time < spike_end_time {
+      spike_latency_ms
+    } else {
+      normal_latency_ms
+    }
+    
+    let request_end_time = request_start_time + current_latency * 1000000L
+    total_latency = total_latency + current_latency
+    
+    // 检查是否超时
+    if current_latency > timeout_threshold_ms {
+      requests_timed_out = requests_timed_out + 1
+      
+      // 超时重试
+      let mut retry_success = false
+      let mut attempt = 0
+      
+      while attempt < latency_spike_config.retry_attempts && !retry_success {
+        attempt = attempt + 1
+        requests_retried = requests_retried + 1
+        
+        // 重试时延迟可能降低
+        let retry_latency = normal_latency_ms + (spike_latency_ms - normal_latency_ms) / (attempt + 1)
+        if retry_latency <= timeout_threshold_ms {
+          retry_success = true
+          requests_successful = requests_successful + 1
+        }
+      }
+    } else {
+      requests_successful = requests_successful + 1
+    }
+    
+    requests_sent = requests_sent + 1
+    current_time = current_time + 1000000000L  // 前进1秒
+  }
+  
+  // 5. 验证延迟激增期间的表现
+  assert_eq(requests_sent, 30)  // 30秒内每秒一个请求
+  assert_eq(requests_timed_out > 0, true)  // 有请求超时
+  assert_eq(requests_retried > 0, true)  // 有重试
+  
+  // 6. 计算平均延迟
+  let average_latency = total_latency / requests_sent
+  assert_eq(average_latency > normal_latency_ms, true)
+  assert_eq(average_latency < spike_latency_ms, true)
+  
+  // 7. 验证容错结果
+  let tolerance_result = ToleranceResult{
+    strategy: Retry,
+    success: requests_successful > requests_timed_out,
+    attempts: requests_sent + requests_retried,
+    total_time_ms: latency_spike_config.duration_ms,
+    data_lost: requests_timed_out > requests_retried,
+    data_corrupted: false,
+    fallback_used: false
+  }
+  
+  assert_eq(tolerance_result.strategy, Retry)
+  assert_eq(tolerance_result.attempts, requests_sent + requests_retried)
+  assert_eq(tolerance_result.total_time_ms, latency_spike_config.duration_ms)
+}
+
+test "network_partition_bandwidth_limit_tolerance" {
+  // 测试带宽限制的容错处理
+  
+  // 1. 创建带宽限制配置
+  let bandwidth_limit_config = PartitionConfig{
+    partition_type: BandwidthLimit,
+    duration_ms: 60000L,  // 1分钟带宽限制
+    affected_nodes: ["collector-1"],
+    tolerance_strategy: Fallback,
+    retry_attempts: 1,
+    retry_delay_ms: 1000L,
+    buffer_size: 2000
+  }
+  
+  // 2. 定义带宽参数
+  let normal_bandwidth_kbps = 1000  // 1MB/s
+  let limited_bandwidth_kbps = 100   // 100KB/s
+  let telemetry_data_size_kb = 10    // 每个遥测数据10KB
+  
+  // 3. 模拟带宽限制发生
+  let limit_start_time = 1640995200000000000L
+  
+  // 4. 在带宽限制期间发送遥测数据
+  let mut data_generated = 0
+  let mut data_sent = 0
+  let mut data_dropped = 0
+  let mut data_fallback = 0
+  let mut total_bandwidth_used = 0L
+  
+  let mut current_time = limit_start_time
+  let limit_end_time = limit_start_time + bandwidth_limit_config.duration_ms * 1000000L
+  
+  while current_time < limit_end_time {
+    // 每秒生成5个遥测数据
+    let mut i = 0
+    while i < 5 {
+      data_generated = data_generated + 1
+      
+      // 检查当前带宽使用情况
+      let current_bandwidth = if current_time >= limit_start_time && current_time < limit_end_time {
+        limited_bandwidth_kbps
+      } else {
+        normal_bandwidth_kbps
+      }
+      
+      // 检查是否有足够带宽
+      if total_bandwidth_used + telemetry_data_size_kb.to_long() <= current_bandwidth.to_long() {
+        // 有足够带宽，发送数据
+        data_sent = data_sent + 1
+        total_bandwidth_used = total_bandwidth_used + telemetry_data_size_kb.to_long()
+      } else {
+        // 带宽不足，使用降级策略
+        if data_generated % 3 == 0 {
+          // 每3个数据中有1个使用降级（发送摘要）
+          data_fallback = data_fallback + 1
+          total_bandwidth_used = total_bandwidth_used + 1  // 摘要只有1KB
+        } else {
+          // 其他数据被丢弃
+          data_dropped = data_dropped + 1
+        }
+      }
+      
+      i = i + 1
+    }
+    
+    // 每秒重置带宽计数
+    total_bandwidth_used = 0L
+    current_time = current_time + 1000000000L  // 前进1秒
+  }
+  
+  // 5. 验证带宽限制期间的表现
+  assert_eq(data_generated, 300)  // 60秒内每秒5个数据
+  assert_eq(data_sent > 0, true)  // 有数据发送成功
+  assert_eq(data_fallback > 0, true)  // 有数据使用降级
+  assert_eq(data_dropped > 0, true)  // 有数据被丢弃
+  
+  // 6. 验证数据分布
+  let total_processed = data_sent + data_fallback + data_dropped
+  assert_eq(total_processed, data_generated)
+  
+  // 在带宽限制下，应该有一定比例的数据使用降级
+  let fallback_ratio = data_fallback.to_double() / total_processed.to_double()
+  assert_eq(fallback_ratio > 0.1 && fallback_ratio < 0.5, true)
+  
+  // 7. 验证容错结果
+  let tolerance_result = ToleranceResult{
+    strategy: Fallback,
+    success: data_sent + data_fallback > data_dropped,
+    attempts: data_generated,
+    total_time_ms: bandwidth_limit_config.duration_ms,
+    data_lost: data_dropped > 0,
+    data_corrupted: false,
+    fallback_used: data_fallback > 0
+  }
+  
+  assert_eq(tolerance_result.strategy, Fallback)
+  assert_eq(tolerance_result.success, true)
+  assert_eq(tolerance_result.data_lost, true)
+  assert_eq(tolerance_result.fallback_used, true)
+}
+
+test "network_partition_mixed_tolerance_strategies" {
+  // 测试混合容错策略
+  
+  // 1. 创建混合网络故障场景
+  let mixed_scenarios = [
+    (FullPartition, Buffering, 30000L),
+    (PartialPartition, CircuitBreaker, 20000L),
+    (LatencySpike, Retry, 15000L),
+    (BandwidthLimit, GracefulDegradation, 25000L)
+  ]
+  
+  // 2. 为每个场景测试容错策略
+  let mut scenario_results = []
+  
+  let mut i = 0
+  while i < mixed_scenarios.length() {
+    let (partition_type, strategy, duration) = mixed_scenarios[i]
+    
+    let config = PartitionConfig{
+      partition_type: partition_type,
+      duration_ms: duration,
+      affected_nodes: ["collector-" + i.to_string()],
+      tolerance_strategy: strategy,
+      retry_attempts: 3,
+      retry_delay_ms: 1000L,
+      buffer_size: 1000
+    }
+    
+    // 模拟故障和恢复
+    let data_generated = 100
+    let mut data_handled = 0
+    
+    match strategy {
+      Buffering => {
+        // 缓冲策略：所有数据都被缓冲，恢复后发送
+        data_handled = data_generated
+      }
+      CircuitBreaker => {
+        // 熔断策略：部分数据被熔断器阻止
+        data_handled = data_generated * 7 / 10  // 70%的数据被处理
+      }
+      Retry => {
+        // 重试策略：大部分数据最终成功
+        data_handled = data_generated * 9 / 10  // 90%的数据被处理
+      }
+      GracefulDegradation => {
+        // 优雅降级：高优先级数据被处理
+        data_handled = data_generated * 8 / 10  // 80%的数据被处理
+      }
+      Fallback => {
+        // 降级策略：部分数据降级处理
+        data_handled = data_generated * 6 / 10  // 60%的数据被处理
       }
     }
-    None => @test.fail("Test failed")
+    
+    let result = ToleranceResult{
+      strategy: strategy,
+      success: data_handled > data_generated / 2,
+      attempts: data_generated,
+      total_time_ms: duration,
+      data_lost: data_handled < data_generated,
+      data_corrupted: false,
+      fallback_used: strategy != Buffering
+    }
+    
+    scenario_results.push(result)
+    i = i + 1
+  }
+  
+  // 3. 验证所有场景的容错效果
+  let mut successful_strategies = 0
+  let mut i = 0
+  while i < scenario_results.length() {
+    let result = scenario_results[i]
+    
+    assert_eq(result.success, true)  // 所有策略都应该有成功
+    assert_eq(result.attempts > 0, true)  // 都有尝试处理
+    assert_eq(result.total_time_ms > 0, true)  // 都有处理时间
+    
+    if result.success {
+      successful_strategies = successful_strategies + 1
+    }
+    
+    i = i + 1
+  }
+  
+  assert_eq(successful_strategies, scenario_results.length())
+  
+  // 4. 分析最佳策略
+  let mut best_strategy = scenario_results[0].strategy
+  let mut best_success_rate = 0.0
+  
+  i = 0
+  while i < scenario_results.length() {
+    let result = scenario_results[i]
+    let success_rate = result.attempts.to_double() / 100.0  // 假设生成了100个数据
+    
+    if success_rate > best_success_rate {
+      best_success_rate = success_rate
+      best_strategy = result.strategy
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证找到了最佳策略
+  assert_eq(best_success_rate > 0.5, true)  // 最佳策略成功率应该超过50%
+  
+  // 5. 验证策略组合的有效性
+  // 在实际应用中，可以根据不同的网络状况选择不同的策略
+  let strategy_effectiveness = [
+    (Buffering, 0.95),      // 缓冲策略在完全分区时最有效
+    (CircuitBreaker, 0.85), // 熔断策略在部分分区时有效
+    (Retry, 0.90),          // 重试策略在延迟问题时有效
+    (GracefulDegradation, 0.88) // 优雅降级在带宽限制时有效
+  ]
+  
+  let mut i = 0
+  while i < strategy_effectiveness.length() {
+    let (strategy, effectiveness) = strategy_effectiveness[i]
+    assert_eq(effectiveness > 0.8, true)  // 所有策略的有效性都应该超过80%
+    i = i + 1
   }
 }

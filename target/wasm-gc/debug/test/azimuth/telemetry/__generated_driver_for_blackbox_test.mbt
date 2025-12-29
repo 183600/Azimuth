@@ -677,6 +677,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_4, ["attribute_value_type_consistency"]),
     5: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_5, ["cross_module_data_integrity"]),
   },
+  "cross_service_tracing_test.mbt": {
+    0: (__test_63726f73735f736572766963655f74726163696e675f746573742e6d6274_0, ["cross_service_trace_propagation"]),
+    1: (__test_63726f73735f736572766963655f74726163696e675f746573742e6d6274_1, ["cross_service_baggage_propagation"]),
+    2: (__test_63726f73735f736572766963655f74726163696e675f746573742e6d6274_2, ["cross_service_async_operations"]),
+    3: (__test_63726f73735f736572766963655f74726163696e675f746573742e6d6274_3, ["cross_service_error_propagation"]),
+  },
   "cross_platform_compatibility_test.mbt": {
     0: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_0, ["platform_compatibility_basic_types"]),
     1: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_1, ["platform_compatibility_array_types"]),
