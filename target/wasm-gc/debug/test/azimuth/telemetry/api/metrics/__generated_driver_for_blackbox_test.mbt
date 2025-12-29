@@ -107,6 +107,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     10: (__test_6d6574726963735f62617369635f746573742e6d6274_10, ["meter_provider_and_meter_lifecycle"]),
     11: (__test_6d6574726963735f62617369635f746573742e6d6274_11, ["instrument_error_scenarios_and_edge_cases"]),
   },
+  "metrics_basic_functionality_test.mbt": {
+    0: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_0, ["InstrumentType enum values"]),
+    1: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_1, ["Measurement creation and validation"]),
+    2: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_2, ["Measurement with no attributes"]),
+    3: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_3, ["NoopCounter functionality"]),
+    4: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_4, ["NoopHistogram functionality"]),
+    5: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_5, ["NoopUpDownCounter functionality"]),
+    6: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_6, ["NoopGauge functionality"]),
+    7: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_7, ["NoopMeter instrument creation"]),
+    8: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_8, ["NoopMeterProvider functionality"]),
+    9: (__test_6d6574726963735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_9, ["Meter instrument creation with minimal parameters"]),
+  },
   "metrics_aggregation_test.mbt": {
     0: (__test_6d6574726963735f6167677265676174696f6e5f746573742e6d6274_0, ["metrics_counter_aggregation"]),
     1: (__test_6d6574726963735f6167677265676174696f6e5f746573742e6d6274_1, ["metrics_histogram_aggregation"]),

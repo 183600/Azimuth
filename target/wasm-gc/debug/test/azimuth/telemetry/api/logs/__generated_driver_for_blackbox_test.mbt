@@ -107,6 +107,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_6c6f67735f62617369635f746573742e6d6274_8, ["log_record_with_complex_attributes"]),
     9: (__test_6c6f67735f62617369635f746573742e6d6274_9, ["log_record_edge_cases_and_special_values"]),
   },
+  "logs_basic_functionality_test.mbt": {
+    0: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_0, ["SeverityNumber enum values"]),
+    1: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_1, ["LogRecord creation with all fields"]),
+    2: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_2, ["LogRecord minimal creation"]),
+    3: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_3, ["NoopLogger emit functionality"]),
+    4: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_4, ["NoopLogger convenience methods"]),
+    5: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_5, ["NoopLoggerProvider functionality"]),
+    6: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_6, ["LogRecordBuilder basic usage"]),
+    7: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_7, ["LogRecordBuilder minimal usage"]),
+    8: (__test_6c6f67735f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_8, ["LogRecordBuilder chain operations"]),
+  },
   "logs_advanced_test.mbt": {
     0: (__test_6c6f67735f616476616e6365645f746573742e6d6274_0, ["log_record_builder_fluent_api"]),
     1: (__test_6c6f67735f616476616e6365645f746573742e6d6274_1, ["log_record_with_trace_context"]),
