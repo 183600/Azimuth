@@ -785,6 +785,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_74656c656d657472795f616476616e6365645f73616d706c65725f746573742e6d6274_8, ["advanced_sampler_consistency_hash_sampling"]),
     9: (__test_74656c656d657472795f616476616e6365645f73616d706c65725f746573742e6d6274_9, ["advanced_sampler_multi_objective_optimization"]),
   },
+  "telemetry_advanced_features_test.mbt": {
+    0: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_0, ["telemetry_sampling_algorithms"]),
+    1: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_1, ["telemetry_context_propagation"]),
+    2: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_2, ["telemetry_metric_aggregation"]),
+    3: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_3, ["telemetry_error_classification"]),
+    4: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_4, ["telemetry_data_compression"]),
+    5: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_5, ["telemetry_circuit_breaker"]),
+    6: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_6, ["telemetry_data_retention"]),
+    7: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_7, ["telemetry_distributed_tracing"]),
+    8: (__test_74656c656d657472795f616476616e6365645f66656174757265735f746573742e6d6274_8, ["telemetry_anomaly_detection"]),
+  },
   "special_scenarios_test.mbt": {
     0: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_0, ["chained_span_operations"]),
     1: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_1, ["complex_attribute_scenarios"]),
@@ -793,6 +804,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_4, ["multi_propagator_complex_scenario"]),
     5: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_5, ["log_record_complex_building"]),
     6: (__test_7370656369616c5f7363656e6172696f735f746573742e6d6274_6, ["metrics_complex_scenarios"]),
+  },
+  "simple_working_test.mbt": {
+    0: (__test_73696d706c655f776f726b696e675f746573742e6d6274_0, ["simple test"]),
+    1: (__test_73696d706c655f776f726b696e675f746573742e6d6274_1, ["string operations"]),
+    2: (__test_73696d706c655f776f726b696e675f746573742e6d6274_2, ["numeric operations"]),
+    3: (__test_73696d706c655f776f726b696e675f746573742e6d6274_3, ["conditional logic"]),
   },
   "simple_validation_test.mbt": {
     0: (__test_73696d706c655f76616c69646174696f6e5f746573742e6d6274_0, ["basic_string_operations"]),
