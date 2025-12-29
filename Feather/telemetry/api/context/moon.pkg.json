@@ -1,9 +1,0 @@
-{
-  "name": "feather/telemetry/api/context",
-  "import": [
-    {
-      "path": "feather/telemetry/api/common",
-      "alias": "common"
-    }
-  ]
-}

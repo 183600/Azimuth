@@ -1,9 +1,0 @@
-{
-  "name": "feather/telemetry",
-  "version": "0.1.0",
-  "readme": "README.mbt.md",
-  "repository": "",
-  "license": "Apache-2.0",
-  "keywords": ["opentelemetry", "telemetry", "trace", "metrics", "logs"],
-  "description": "OpenTelemetry风格的MoonBit Telemetry套件，支持Trace/Metrics/Logs三大信号和OTLP导出"
-}
