@@ -1,712 +1,649 @@
-// 端到端场景测试 - 模拟真实使用场景
+// 实际使用场景测试 - 模拟真实世界的Web应用场景
 
-test "web_request_processing_scenario" {
-  // 模拟Web请求处理的完整场景
+test "web_request_lifecycle_telemetry" {
+  // 模拟完整的Web请求生命周期，包括HTTP请求处理、数据库操作、缓存访问等
   
-  // 1. 初始化遥测系统
-  let resource = common::Resource::default("web-service")
-  let ctx = context::Context::empty()
+  // 1. HTTP请求接收
+  let request_ctx = Context::empty()
+    .with_value(create_key("request.id"), "req-web-001")
+    .with_value(create_key("client.ip"), "203.0.113.1")
+    .with_value(create_key("user.agent"), "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    .with_value(create_key("request.start.time"), "1640995200000")
   
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let logger_provider = logs::NoopLoggerProvider::{}
+  let request_baggage = Baggage::empty()
+    .with_entry("http.method", "GET")
+    .with_entry("http.path", "/api/v1/products/123")
+    .with_entry("http.scheme", "https")
+    .with_entry("http.host", "api.example.com")
+    .with_entry("user.id", "user-web-456")
+    .with_entry("session.id", "sess-web-789")
   
-  let tracer = tracer_provider.get_tracer("web-tracer", "1.0.0")
-  let meter = meter_provider.get_meter("web-meter", "1.0.0")
-  let logger = logger_provider.get_logger("web-logger", "1.0.0")
-  
-  // 2. 创建指标
-  let request_counter = meter.create_counter("http.requests.total", "count", "Total HTTP requests")
-  let request_duration = meter.create_histogram("http.request.duration", "ms", "HTTP request duration")
-  let active_connections = meter.create_gauge("http.active_connections", "count", "Active HTTP connections")
-  let error_counter = meter.create_counter("http.errors.total", "count", "Total HTTP errors")
-  
-  // 3. 模拟HTTP请求处理
-  let (request_ctx, request_span) = tracer.start_span(
-    ctx,
-    "HTTP GET /api/users",
-    trace::Server,
-    [
+  // 2. 创建主请求Span
+  let (_, main_span) = NoopTracer::start_span(
+    request_ctx,
+    "http.request",
+    Server,
+    Some([
       ("http.method", AttributeValue::string("GET")),
-      ("http.url", AttributeValue::string("/api/users")),
+      ("http.path", AttributeValue::string("/api/v1/products/123")),
       ("http.scheme", AttributeValue::string("https")),
       ("http.host", AttributeValue::string("api.example.com")),
-      ("user.id", AttributeValue::string("user123"))
-    ],
-    Some(1640995200000000000L)  // 2022-01-01 00:00:00 UTC
+      ("http.user_agent", AttributeValue::string("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")),
+      ("client.ip", AttributeValue::string("203.0.113.1")),
+      ("user.id", AttributeValue::string("user-web-456"))
+    ])
   )
   
-  // 4. 记录请求开始
-  request_counter.add(1L, [
+  // 3. 记录请求Metrics
+  let web_meter = NoopMeter::{}
+  let request_counter = web_meter.create_counter("http_requests_total", Some("requests"), Some("Total HTTP requests"))
+  
+  let request_attributes = [
     ("http.method", AttributeValue::string("GET")),
-    ("http.route", AttributeValue::string("/api/users")),
+    ("http.path", AttributeValue::string("/api/v1/products/123")),
+    ("http.status_code", AttributeValue::int(200L)),
+    ("user.id", AttributeValue::string("user-web-456")),
+    ("endpoint.type", AttributeValue::string("product_detail"))
+  ]
+  
+  request_counter.add(1L, Some(request_attributes))
+  
+  // 4. 身份验证检查
+  let auth_ctx = request_ctx.with_value(create_key("auth.required"), "false")
+  let (_, auth_span) = NoopTracer::start_span(
+    auth_ctx,
+    "auth.check",
+    Internal,
+    Some([
+      ("auth.type", AttributeValue::string("optional")),
+      ("auth.result", AttributeValue::string("skipped")),
+      ("endpoint", AttributeValue::string("public_product"))
+    ])
+  )
+  
+  // 5. 缓存检查
+  let cache_ctx = auth_ctx.with_value(create_key("cache.key"), "product:123"))
+  let (_, cache_span) = NoopTracer::start_span(
+    cache_ctx,
+    "cache.get",
+    Internal,
+    Some([
+      ("cache.operation", AttributeValue::string("get")),
+      ("cache.key", AttributeValue::string("product:123")),
+      ("cache.backend", AttributeValue::string("redis"))
+    ])
+  )
+  
+  let cache_meter = NoopMeter::{}
+  let cache_counter = cache_meter.create_counter("cache_operations_total", Some("operations"), Some("Total cache operations"))
+  let cache_histogram = cache_meter.create_histogram("cache_duration_ms", Some("ms"), Some("Cache operation duration"))
+  
+  // 模拟缓存未命中
+  cache_counter.add(1L, Some([
+    ("cache.operation", AttributeValue::string("get")),
+    ("cache.result", AttributeValue::string("miss")),
+    ("cache.backend", AttributeValue::string("redis"))
+  ]))
+  
+  cache_histogram.record(2.5, Some([
+    ("cache.operation", AttributeValue::string("get")),
+    ("cache.backend", AttributeValue::string("redis"))
+  ]))
+  
+  // 6. 数据库查询
+  let db_ctx = cache_ctx.with_value(create_key("db.query"), "SELECT * FROM products WHERE id = ?")
+  let (_, db_span) = NoopTracer::start_span(
+    db_ctx,
+    "db.query",
+    Internal,
+    Some([
+      ("db.operation", AttributeValue::string("select")),
+      ("db.table", AttributeValue::string("products")),
+      ("db.query.type", AttributeValue::string("single_row"))
+    ])
+  )
+  
+  let db_meter = NoopMeter::{}
+  let db_counter = db_meter.create_counter("db_queries_total", Some("queries"), Some("Total database queries"))
+  let db_histogram = db_meter.create_histogram("db_query_duration_ms", Some("ms"), Some("Database query duration"))
+  
+  db_counter.add(1L, Some([
+    ("db.operation", AttributeValue::string("select")),
+    ("db.table", AttributeValue::string("products")),
+    ("db.result", AttributeValue::string("success"))
+  ]))
+  
+  db_histogram.record(45.0, Some([
+    ("db.operation", AttributeValue::string("select")),
+    ("db.table", AttributeValue::string("products"))
+  ]))
+  
+  // 7. 数据处理和序列化
+  let processing_ctx = db_ctx.with_value(create_key("processing.type"), "json_serialization")
+  let (_, processing_span) = NoopTracer::start_span(
+    processing_ctx,
+    "data.processing",
+    Internal,
+    Some([
+      ("processing.operation", AttributeValue::string("serialize")),
+      ("data.format", AttributeValue::string("json")),
+      ("record.count", AttributeValue::int(1L))
+    ])
+  )
+  
+  // 8. 缓存写入
+  let cache_write_ctx = processing_ctx.with_value(create_key("cache.ttl"), "300")
+  let (_, cache_write_span) = NoopTracer::start_span(
+    cache_write_ctx,
+    "cache.set",
+    Internal,
+    Some([
+      ("cache.operation", AttributeValue::string("set")),
+      ("cache.key", AttributeValue::string("product:123")),
+      ("cache.ttl", AttributeValue::int(300L)),
+      ("cache.backend", AttributeValue::string("redis"))
+    ])
+  )
+  
+  cache_counter.add(1L, Some([
+    ("cache.operation", AttributeValue::string("set")),
+    ("cache.result", AttributeValue::string("success")),
+    ("cache.backend", AttributeValue::string("redis"))
+  ]))
+  
+  cache_histogram.record(1.8, Some([
+    ("cache.operation", AttributeValue::string("set")),
+    ("cache.backend", AttributeValue::string("redis"))
+  ]))
+  
+  // 9. 响应发送
+  let response_ctx = cache_write_ctx.with_value(create_key("response.status"), "200")
+  let (_, response_span) = NoopTracer::start_span(
+    response_ctx,
+    "http.response",
+    Internal,
+    Some([
+      ("http.status_code", AttributeValue::int(200L)),
+      ("response.size", AttributeValue::int(1024L)),
+      ("response.content_type", AttributeValue::string("application/json"))
+    ])
+  )
+  
+  let response_histogram = web_meter.create_histogram("http_response_duration_ms", Some("ms"), Some("HTTP response duration"))
+  response_histogram.record(125.0, Some([
+    ("http.method", AttributeValue::string("GET")),
+    ("http.path", AttributeValue::string("/api/v1/products/123")),
     ("http.status_code", AttributeValue::int(200L))
-  ])
+  ]))
   
-  active_connections.record(1.0, [
-    ("service.name", AttributeValue::string("web-service"))
-  ])
+  // 10. 日志记录
+  let web_logger = NoopLogger::{}
   
-  // 5. 记录请求开始日志
-  let start_log = logs::LogRecord::builder()
-    .timestamp(1640995200000000000L)
-    .severity(logs::Info)
-    .body("Started processing HTTP request")
-    .with_attribute("http.method", AttributeValue::string("GET"))
-    .with_attribute("http.url", AttributeValue::string("/api/users"))
-    .with_attribute("user.id", AttributeValue::string("user123"))
-    .with_attribute("request.id", AttributeValue::string("req-abc123"))
-    .build()
-  
-  // 6. 模拟数据库查询
-  let (db_ctx, db_span) = tracer.start_span(
-    request_ctx,
-    "Database Query: SELECT * FROM users WHERE id = ?",
-    trace::Client,
-    [
-      ("db.system", AttributeValue::string("postgresql")),
-      ("db.statement", AttributeValue::string("SELECT * FROM users WHERE id = ?")),
-      ("db.operation", AttributeValue::string("SELECT")),
-      ("db.user", AttributeValue::string("app_user"))
-    ]
-  )
-  
-  // 记录数据库查询指标
-  let db_query_counter = meter.create_counter("db.queries.total", "count", "Total database queries")
-  let db_query_duration = meter.create_histogram("db.query.duration", "ms", "Database query duration")
-  
-  db_query_counter.add(1L, [
-    ("db.system", AttributeValue::string("postgresql")),
-    ("db.operation", AttributeValue::string("SELECT"))
-  ])
-  
-  db_query_duration.record(25.5, [
-    ("db.system", AttributeValue::string("postgresql")),
-    ("db.operation", AttributeValue::string("SELECT"))
-  ])
-  
-  // 7. 记录数据库查询日志
-  let db_log = logs::LogRecord::builder()
-    .timestamp(1640995200001000000L)
-    .severity(logs::Debug)
-    .body("Executed database query successfully")
-    .with_attribute("db.system", AttributeValue::string("postgresql"))
-    .with_attribute("db.operation", AttributeValue::string("SELECT"))
-    .with_attribute("db.duration_ms", AttributeValue::float(25.5))
-    .build()
-  
-  // 8. 模拟缓存操作
-  let (cache_ctx, cache_span) = tracer.start_span(
-    request_ctx,
-    "Cache GET: user:user123",
-    trace::Client,
-    [
-      ("cache.system", AttributeValue::string("redis")),
-      ("cache.operation", AttributeValue::string("GET")),
-      ("cache.key", AttributeValue::string("user:user123"))
-    ]
-  )
-  
-  // 记录缓存指标
-  let cache_counter = meter.create_counter("cache.operations.total", "count", "Total cache operations")
-  let cache_hit_ratio = meter.create_gauge("cache.hit_ratio", "percent", "Cache hit ratio")
-  
-  cache_counter.add(1L, [
-    ("cache.system", AttributeValue::string("redis")),
-    ("cache.operation", AttributeValue::string("GET")),
-    ("cache.result", AttributeValue::string("hit"))
-  ])
-  
-  cache_hit_ratio.record(85.5, [
-    ("cache.system", AttributeValue::string("redis"))
-  ])
-  
-  // 9. 模拟外部API调用
-  let (api_ctx, api_span) = tracer.start_span(
-    request_ctx,
-    "External API Call: GET https://api.payment.com/charges/charge123",
-    trace::Client,
-    [
-      ("http.method", AttributeValue::string("GET")),
-      ("http.url", AttributeValue::string("https://api.payment.com/charges/charge123")),
-      ("http.scheme", AttributeValue::string("https")),
-      ("http.host", AttributeValue::string("api.payment.com")),
-      ("peer.service", AttributeValue::string("payment-api"))
-    ]
-  )
-  
-  // 记录外部API指标
-  let external_api_counter = meter.create_counter("external.api.calls.total", "count", "Total external API calls")
-  let external_api_duration = meter.create_histogram("external.api.duration", "ms", "External API call duration")
-  
-  external_api_counter.add(1L, [
+  web_logger.info("HTTP request processed successfully", Some([
+    ("request.id", AttributeValue::string("req-web-001")),
     ("http.method", AttributeValue::string("GET")),
-    ("peer.service", AttributeValue::string("payment-api")),
-    ("http.status_code", AttributeValue::int(200L))
-  ])
+    ("http.path", AttributeValue::string("/api/v1/products/123")),
+    ("http.status_code", AttributeValue::int(200L)),
+    ("user.id", AttributeValue::string("user-web-456")),
+    ("client.ip", AttributeValue::string("203.0.113.1")),
+    ("duration.ms", AttributeValue::int(125L)),
+    ("cache.hit", AttributeValue::bool(false)),
+    ("db.queries", AttributeValue::int(1L))
+  ]))
   
-  external_api_duration.record(150.0, [
-    ("http.method", AttributeValue::string("GET")),
-    ("peer.service", AttributeValue::string("payment-api"))
-  ])
+  // 11. 验证整个请求生命周期
+  assert_eq(main_span.name, "http.request")
+  assert_eq(auth_span.name, "auth.check")
+  assert_eq(cache_span.name, "cache.get")
+  assert_eq(db_span.name, "db.query")
+  assert_eq(processing_span.name, "data.processing")
+  assert_eq(cache_write_span.name, "cache.set")
+  assert_eq(response_span.name, "http.response")
   
-  // 10. 记录外部API日志
-  let api_log = logs::LogRecord::builder()
-    .timestamp(1640995200002000000L)
-    .severity(logs::Info)
-    .body("External API call completed successfully")
-    .with_attribute("http.method", AttributeValue::string("GET"))
-    .with_attribute("http.url", AttributeValue::string("https://api.payment.com/charges/charge123"))
-    .with_attribute("http.status_code", AttributeValue::int(200L))
-    .with_attribute("external.api.duration_ms", AttributeValue::float(150.0))
-    .build()
-  
-  // 11. 完成请求处理
-  request_duration.record(200.0, [
-    ("http.method", AttributeValue::string("GET")),
-    ("http.route", AttributeValue::string("/api/users")),
-    ("http.status_code", AttributeValue::int(200L))
-  ])
-  
-  active_connections.record(0.0, [
-    ("service.name", AttributeValue::string("web-service"))
-  ])
-  
-  // 12. 记录请求完成日志
-  let end_log = logs::LogRecord::builder()
-    .timestamp(1640995200002000000L)
-    .severity(logs::Info)
-    .body("HTTP request completed successfully")
-    .with_attribute("http.method", AttributeValue::string("GET"))
-    .with_attribute("http.url", AttributeValue::string("/api/users"))
-    .with_attribute("http.status_code", AttributeValue::int(200L))
-    .with_attribute("request.duration_ms", AttributeValue::float(200.0))
-    .with_attribute("user.id", AttributeValue::string("user123"))
-    .build()
-  
-  // 13. 验证所有遥测数据都正确创建
-  assert_eq(request_span.name, "HTTP GET /api/users")
-  assert_eq(db_span.name, "Database Query: SELECT * FROM users WHERE id = ?")
-  assert_eq(cache_span.name, "Cache GET: user:user123")
-  assert_eq(api_span.name, "External API Call: GET https://api.payment.com/charges/charge123")
-  
-  match start_log.body {
-    Some(body) => assert_eq(body, "Started processing HTTP request")
+  // 验证Context传播
+  match request_ctx.get(create_key("request.id")) {
+    Some(value) => assert_eq(value, "req-web-001")
     None => @test.fail("Test failed")
   }
   
-  match end_log.body {
-    Some(body) => assert_eq(body, "HTTP request completed successfully")
+  match db_ctx.get(create_key("db.query")) {
+    Some(value) => assert_eq(value, "SELECT * FROM products WHERE id = ?")
     None => @test.fail("Test failed")
   }
 }
 
-test "microservice_communication_scenario" {
-  // 模拟微服务间通信的场景
+test "microservice_payment_workflow" {
+  // 模拟微服务支付工作流，包括多个服务间的调用
   
-  // 1. 初始化服务A的遥测
-  let service_a_resource = common::Resource::default("service-a")
-  let ctx = context::Context::empty()
+  // 1. 支付请求初始化
+  let payment_ctx = Context::empty()
+    .with_value(create_key("payment.id"), "pay-ms-001")
+    .with_value(create_key("correlation.id"), "corr-ms-12345")
+    .with_value(create_key("user.id"), "user-ms-789")
+    .with_value(create_key("merchant.id"), "merchant-ms-456")
   
-  let tracer_provider_a = trace::NoopTracerProvider::{}
-  let meter_provider_a = metrics::NoopMeterProvider::{}
-  let logger_provider_a = logs::NoopLoggerProvider::{}
+  let payment_baggage = Baggage::empty()
+    .with_entry("service.name", "payment-service")
+    .with_entry("service.version", "3.2.1")
+    .with_entry("payment.amount", "299.99")
+    .with_entry("payment.currency", "USD")
+    .with_entry("payment.method", "credit_card")
+    .with_entry("request.source", "mobile_app")
   
-  let tracer_a = tracer_provider_a.get_tracer("service-a-tracer")
-  let meter_a = meter_provider_a.get_meter("service-a-meter")
-  let logger_a = logger_provider_a.get_logger("service-a-logger")
-  
-  // 2. 服务A开始处理请求
-  let (service_a_ctx, service_a_span) = tracer_a.start_span(
-    ctx,
-    "Process Order",
-    trace::Server,
-    [
-      ("service.name", AttributeValue::string("service-a")),
-      ("operation.type", AttributeValue::string("process_order")),
-      ("order.id", AttributeValue::string("order-123")),
-      ("customer.id", AttributeValue::string("customer-456"))
-    ]
+  // 2. 主支付处理Span
+  let (_, payment_span) = NoopTracer::start_span(
+    payment_ctx,
+    "payment.process",
+    Server,
+    Some([
+      ("payment.id", AttributeValue::string("pay-ms-001")),
+      ("correlation.id", AttributeValue::string("corr-ms-12345")),
+      ("user.id", AttributeValue::string("user-ms-789")),
+      ("merchant.id", AttributeValue::string("merchant-ms-456")),
+      ("payment.amount", AttributeValue::float(299.99)),
+      ("payment.currency", AttributeValue::string("USD")),
+      ("payment.method", AttributeValue::string("credit_card"))
+    ])
   )
   
-  // 3. 服务A调用服务B
-  let (call_b_ctx, call_b_span) = tracer_a.start_span(
-    service_a_ctx,
-    "Call Service B: Validate Inventory",
-    trace::Client,
-    [
-      ("peer.service", AttributeValue::string("service-b")),
-      ("operation.type", AttributeValue::string("validate_inventory")),
-      ("product.id", AttributeValue::string("product-789")),
-      ("quantity", AttributeValue::int(5L))
-    ]
+  // 3. 风险评估服务调用
+  let risk_ctx = payment_ctx.with_value(create_key("risk.score.required"), "true")
+  let (_, risk_span) = NoopTracer::start_span(
+    risk_ctx,
+    "risk.assessment",
+    Client,
+    Some([
+      ("service.name", AttributeValue::string("risk-service")),
+      ("operation.type", AttributeValue::string("assess_transaction")),
+      ("payment.amount", AttributeValue::float(299.99)),
+      ("user.id", AttributeValue::string("user-ms-789"))
+    ])
   )
   
-  // 4. 设置传播头部
-  let carrier = propagation::MapCarrier::new()
-  let trace_propagator = propagation::W3CTraceContextPropagator::{}
-  let baggage_propagator = propagation::W3CBaggagePropagator::{}
+  let risk_meter = NoopMeter::{}
+  let risk_counter = risk_meter.create_counter("risk_assessments_total", Some("assessments"), Some("Total risk assessments"))
+  let risk_histogram = risk_meter.create_histogram("risk_assessment_duration_ms", Some("ms"), Some("Risk assessment duration"))
   
-  trace_propagator.inject(call_b_ctx, carrier)
-  baggage_propagator.inject(call_b_ctx, carrier)
+  risk_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("risk-service")),
+    ("risk.result", AttributeValue::string("approved")),
+    ("risk.score", AttributeValue::int(25L)),
+    ("user.risk.tier", AttributeValue::string("low"))
+  ]))
   
-  // 5. 模拟服务B接收请求
-  let service_b_resource = common::Resource::default("service-b")
-  let tracer_provider_b = trace::NoopTracerProvider::{}
-  let tracer_b = tracer_provider_b.get_tracer("service-b-tracer")
+  risk_histogram.record(150.0, Some([
+    ("service.name", AttributeValue::string("risk-service")),
+    ("assessment.type", AttributeValue::string("transaction"))
+  ]))
   
-  // 提取传播的上下文
-  let service_b_ctx = trace_propagator.extract(context::Context::empty(), carrier)
-  let service_b_ctx_with_baggage = baggage_propagator.extract(service_b_ctx, carrier)
-  
-  let (service_b_span_ctx, service_b_span) = tracer_b.start_span(
-    service_b_ctx_with_baggage,
-    "Validate Inventory",
-    trace::Server,
-    [
-      ("service.name", AttributeValue::string("service-b")),
-      ("operation.type", AttributeValue::string("validate_inventory")),
-      ("product.id", AttributeValue::string("product-789")),
-      ("quantity", AttributeValue::int(5L))
-    ]
+  // 4. 银行网关调用
+  let bank_ctx = risk_ctx.with_value(create_key("bank.gateway"), "acme_bank")
+  let (_, bank_span) = NoopTracer::start_span(
+    bank_ctx,
+    "bank.authorization",
+    Client,
+    Some([
+      ("service.name", AttributeValue::string("bank-gateway-service")),
+      ("bank.name", AttributeValue::string("acme_bank")),
+      ("operation.type", AttributeValue::string("authorize")),
+      ("payment.amount", AttributeValue::float(299.99)),
+      ("card.type", AttributeValue::string("credit"))
+    ])
   )
   
-  // 6. 服务B调用数据库
-  let (db_ctx, db_span) = tracer_b.start_span(
-    service_b_span_ctx,
-    "Check Inventory DB",
-    trace::Client,
-    [
-      ("db.system", AttributeValue::string("mysql")),
-      ("db.operation", AttributeValue::string("SELECT")),
-      ("db.table", AttributeValue::string("inventory"))
-    ]
+  let bank_meter = NoopMeter::{}
+  let bank_counter = bank_meter.create_counter("bank_authorizations_total", Some("authorizations"), Some("Total bank authorizations"))
+  let bank_histogram = bank_meter.create_histogram("bank_authorization_duration_ms", Some("ms"), Some("Bank authorization duration"))
+  
+  bank_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("bank-gateway-service")),
+    ("bank.name", AttributeValue::string("acme_bank")),
+    ("auth.result", AttributeValue::string("approved")),
+    ("auth.code", AttributeValue::string("00"))
+  ]))
+  
+  bank_histogram.record(850.0, Some([
+    ("service.name", AttributeValue::string("bank-gateway-service")),
+    ("bank.name", AttributeValue::string("acme_bank"))
+  ]))
+  
+  // 5. 余额更新服务调用
+  let balance_ctx = bank_ctx.with_value(create_key("account.type"), "checking")
+  let (_, balance_span) = NoopTracer::start_span(
+    balance_ctx,
+    "account.balance.update",
+    Client,
+    Some([
+      ("service.name", AttributeValue::string("account-service")),
+      ("operation.type", AttributeValue::string("debit")),
+      ("account.type", AttributeValue::string("checking")),
+      ("amount", AttributeValue::float(299.99))
+    ])
   )
   
-  // 7. 服务B调用服务C
-  let (call_c_ctx, call_c_span) = tracer_b.start_span(
-    service_b_span_ctx,
-    "Call Service C: Check Reservations",
-    trace::Client,
-    [
-      ("peer.service", AttributeValue::string("service-c")),
-      ("operation.type", AttributeValue::string("check_reservations")),
-      ("product.id", AttributeValue::string("product-789"))
-    ]
+  let account_meter = NoopMeter::{}
+  let account_counter = account_meter.create_counter("account_updates_total", Some("updates"), Some("Total account updates"))
+  let account_gauge = account_meter.create_gauge("account_balance", Some("USD"), Some("Account balance"))
+  
+  account_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("account-service")),
+    ("operation.type", AttributeValue::string("debit")),
+    ("result", AttributeValue::string("success"))
+  ]))
+  
+  account_gauge.record(1250.50, Some([
+    ("service.name", AttributeValue::string("account-service")),
+    ("account.type", AttributeValue::string("checking")),
+    ("user.id", AttributeValue::string("user-ms-789"))
+  ]))
+  
+  // 6. 通知服务调用
+  let notification_ctx = balance_ctx.with_value(create_key("notification.type"), "payment_confirmation")
+  let (_, notification_span) = NoopTracer::start_span(
+    notification_ctx,
+    "notification.send",
+    Client,
+    Some([
+      ("service.name", AttributeValue::string("notification-service")),
+      ("notification.type", AttributeValue::string("email")),
+      ("notification.template", AttributeValue::string("payment_confirmation")),
+      ("recipient", AttributeValue::string("user@example.com"))
+    ])
   )
   
-  // 8. 模拟服务C处理
-  let service_c_resource = common::Resource::default("service-c")
-  let tracer_provider_c = trace::NoopTracerProvider::{}
-  let tracer_c = tracer_provider_c.get_tracer("service-c-tracer")
+  let notification_meter = NoopMeter::{}
+  let notification_counter = notification_meter.create_counter("notifications_sent_total", Some("notifications"), Some("Total notifications sent"))
   
-  let service_c_ctx = trace_propagator.extract(context::Context::empty(), carrier)
-  let (service_c_span_ctx, service_c_span) = tracer_c.start_span(
-    service_c_ctx,
-    "Check Reservations",
-    trace::Server,
-    [
-      ("service.name", AttributeValue::string("service-c")),
-      ("operation.type", AttributeValue::string("check_reservations")),
-      ("product.id", AttributeValue::string("product-789"))
-    ]
+  notification_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("notification-service")),
+    ("notification.type", AttributeValue::string("email")),
+    ("notification.status", AttributeValue::string("sent"))
+  ]))
+  
+  // 7. 审计日志记录
+  let audit_ctx = notification_ctx.with_value(create_key("audit.required"), "true")
+  let (_, audit_span) = NoopTracer::start_span(
+    audit_ctx,
+    "audit.log",
+    Internal,
+    Some([
+      ("service.name", AttributeValue::string("audit-service")),
+      ("operation.type", AttributeValue::string("log_payment")),
+      ("audit.category", AttributeValue::string("financial")),
+      ("compliance.required", AttributeValue::bool(true))
+    ])
   )
   
-  // 9. 记录各种指标
-  let meter_b = metrics::NoopMeterProvider::{}.get_meter("service-b-meter")
-  let inventory_checks = meter_b.create_counter("inventory.checks.total", "count", "Total inventory checks")
-  let inventory_check_duration = meter_b.create_histogram("inventory.check.duration", "ms", "Inventory check duration")
+  // 8. 支付完成Metrics和日志
+  let payment_meter = NoopMeter::{}
+  let payment_success_counter = payment_meter.create_counter("payments_completed_total", Some("payments"), Some("Total completed payments"))
+  let payment_amount_histogram = payment_meter.create_histogram("payment_amount_distribution", Some("USD"), Some("Payment amount distribution"))
+  let payment_duration_histogram = payment_meter.create_histogram("payment_processing_duration_ms", Some("ms"), Some("Payment processing duration"))
   
-  inventory_checks.add(1L, [
-    ("product.id", AttributeValue::string("product-789")),
-    ("result", AttributeValue::string("available"))
-  ])
+  payment_success_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("payment-service")),
+    ("payment.method", AttributeValue::string("credit_card")),
+    ("payment.result", AttributeValue::string("success")),
+    ("merchant.id", AttributeValue::string("merchant-ms-456"))
+  ]))
   
-  inventory_check_duration.record(45.0, [
-    ("product.id", AttributeValue::string("product-789"))
-  ])
+  payment_amount_histogram.record(299.99, Some([
+    ("service.name", AttributeValue::string("payment-service")),
+    ("payment.method", AttributeValue::string("credit_card")),
+    ("user.tier", AttributeValue::string("premium"))
+  ]))
   
-  // 10. 记录日志
-  let service_b_log = logs::LogRecord::builder()
-    .timestamp(1640995200000000000L)
-    .severity(logs::Info)
-    .body("Inventory validation completed successfully")
-    .with_attribute("service.name", AttributeValue::string("service-b"))
-    .with_attribute("product.id", AttributeValue::string("product-789"))
-    .with_attribute("quantity", AttributeValue::int(5L))
-    .with_attribute("result", AttributeValue::string("available"))
-    .build()
+  payment_duration_histogram.record(1250.0, Some([
+    ("service.name", AttributeValue::string("payment-service")),
+    ("payment.method", AttributeValue::string("credit_card"))
+  ]))
   
-  let service_c_log = logs::LogRecord::builder()
-    .timestamp(1640995200000500000L)
-    .severity(logs::Info)
-    .body("Reservation check completed")
-    .with_attribute("service.name", AttributeValue::string("service-c"))
-    .with_attribute("product.id", AttributeValue::string("product-789"))
-    .with_attribute("reserved_quantity", AttributeValue::int(2L))
-    .build()
+  let payment_logger = NoopLogger::{}
+  payment_logger.info("Payment processed successfully", Some([
+    ("payment.id", AttributeValue::string("pay-ms-001")),
+    ("correlation.id", AttributeValue::string("corr-ms-12345")),
+    ("user.id", AttributeValue::string("user-ms-789")),
+    ("merchant.id", AttributeValue::string("merchant-ms-456")),
+    ("payment.amount", AttributeValue::float(299.99)),
+    ("payment.currency", AttributeValue::string("USD")),
+    ("payment.method", AttributeValue::string("credit_card")),
+    ("risk.score", AttributeValue::int(25L)),
+    ("bank.auth.code", AttributeValue::string("00")),
+    ("total.duration.ms", AttributeValue::int(1250L)),
+    ("services.involved", AttributeValue::array_string(["payment-service", "risk-service", "bank-gateway-service", "account-service", "notification-service", "audit-service"]))
+  ]))
   
-  // 11. 验证微服务通信链路
-  assert_eq(service_a_span.name, "Process Order")
-  assert_eq(call_b_span.name, "Call Service B: Validate Inventory")
-  assert_eq(service_b_span.name, "Validate Inventory")
-  assert_eq(db_span.name, "Check Inventory DB")
-  assert_eq(call_c_span.name, "Call Service C: Check Reservations")
-  assert_eq(service_c_span.name, "Check Reservations")
+  // 9. 验证整个支付工作流
+  assert_eq(payment_span.name, "payment.process")
+  assert_eq(risk_span.name, "risk.assessment")
+  assert_eq(bank_span.name, "bank.authorization")
+  assert_eq(balance_span.name, "account.balance.update")
+  assert_eq(notification_span.name, "notification.send")
+  assert_eq(audit_span.name, "audit.log")
   
-  match service_b_log.body {
-    Some(body) => assert_eq(body, "Inventory validation completed successfully")
+  // 验证Context一致性
+  match payment_ctx.get(create_key("payment.id")) {
+    Some(value) => assert_eq(value, "pay-ms-001")
     None => @test.fail("Test failed")
   }
   
-  match service_c_log.body {
-    Some(body) => assert_eq(body, "Reservation check completed")
+  match bank_ctx.get(create_key("bank.gateway")) {
+    Some(value) => assert_eq(value, "acme_bank")
+    None => @test.fail("Test failed")
+  }
+  
+  match balance_ctx.get(create_key("account.type")) {
+    Some(value) => assert_eq(value, "checking")
     None => @test.fail("Test failed")
   }
 }
 
-test "background_job_processing_scenario" {
-  // 模拟后台作业处理的场景
+test "iot_device_data_processing" {
+  // 模拟IoT设备数据处理场景
   
-  // 1. 初始化后台作业服务的遥测
-  let job_resource = common::Resource::default("job-processor")
-  let ctx = context::Context::empty()
+  // 1. 设备数据接收
+  let iot_ctx = Context::empty()
+    .with_value(create_key("device.id"), "device-iot-001")
+    .with_value(create_key("device.type"), "temperature_sensor")
+    .with_value(create_key("location"), "warehouse_a")
+    .with_value(create_key("batch.id"), "batch-iot-123")
   
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let logger_provider = logs::NoopLoggerProvider::{}
+  let iot_baggage = Baggage::empty()
+    .with_entry("device.manufacturer", "sensorcorp")
+    .with_entry("device.model", "temp-pro-5000")
+    .with_entry("firmware.version", "2.1.3")
+    .with_entry("data.protocol", "mqtt")
+    .with_entry("processing.priority", "normal")
   
-  let tracer = tracer_provider.get_tracer("job-tracer")
-  let meter = meter_provider.get_meter("job-meter")
-  let logger = logger_provider.get_logger("job-logger")
-  
-  // 2. 创建作业处理指标
-  let job_counter = meter.create_counter("jobs.processed.total", "count", "Total jobs processed")
-  let job_duration = meter.create_histogram("job.duration", "ms", "Job processing duration")
-  let job_queue_size = meter.create_gauge("job.queue.size", "count", "Job queue size")
-  let job_failure_counter = meter.create_counter("jobs.failed.total", "count", "Total failed jobs")
-  
-  // 3. 模拟不同类型的作业处理
-  let job_types = ["email", "report", "cleanup", "backup", "notification"]
-  let mut i = 0
-  while i < job_types.length() {
-    let job_type = job_types[i]
-    
-    // 4. 开始作业处理
-    let (job_ctx, job_span) = tracer.start_span(
-      ctx,
-      "Process Job: " + job_type,
-      trace::Internal,
-      [
-        ("job.type", AttributeValue::string(job_type)),
-        ("job.id", AttributeValue::string("job-" + i.to_string())),
-        ("job.queue", AttributeValue::string("high-priority"))
-      ]
-    )
-    
-    // 5. 记录作业开始指标
-    job_queue_size.record((10 - i).to_double(), [
-      ("job.queue", AttributeValue::string("high-priority"))
+  // 2. 数据接收Span
+  let (_, receive_span) = NoopTracer::start_span(
+    iot_ctx,
+    "iot.data.receive",
+    Server,
+    Some([
+      ("device.id", AttributeValue::string("device-iot-001")),
+      ("device.type", AttributeValue::string("temperature_sensor")),
+      ("location", AttributeValue::string("warehouse_a")),
+      ("data.protocol", AttributeValue::string("mqtt")),
+      ("message.size", AttributeValue::int(256L))
     ])
-    
-    // 6. 模拟作业处理步骤
-    let (step1_ctx, step1_span) = tracer.start_span(
-      job_ctx,
-      "Validate Job Parameters",
-      trace::Internal,
-      [
-        ("job.step", AttributeValue::string("validate")),
-        ("job.type", AttributeValue::string(job_type))
-      ]
-    )
-    
-    let (step2_ctx, step2_span) = tracer.start_span(
-      job_ctx,
-      "Execute Job Logic",
-      trace::Internal,
-      [
-        ("job.step", AttributeValue::string("execute")),
-        ("job.type", AttributeValue::string(job_type))
-      ]
-    )
-    
-    // 7. 根据作业类型执行不同的操作
-    match job_type {
-      "email" => {
-        // 邮件作业特有操作
-        let (email_ctx, email_span) = tracer.start_span(
-          step2_ctx,
-          "Send Email",
-          trace::Client,
-          [
-            ("operation.type", AttributeValue::string("send_email")),
-            ("email.provider", AttributeValue::string("smtp")),
-            ("email.recipients", AttributeValue::int(5L))
-          ]
-        )
-        
-        // 记录邮件发送指标
-        let email_counter = meter.create_counter("emails.sent.total", "count", "Total emails sent")
-        email_counter.add(1L, [
-          ("email.provider", AttributeValue::string("smtp")),
-          ("email.status", AttributeValue::string("sent"))
-        ])
-      }
-      "report" => {
-        // 报告作业特有操作
-        let (report_ctx, report_span) = tracer.start_span(
-          step2_ctx,
-          "Generate Report",
-          trace::Internal,
-          [
-            ("operation.type", AttributeValue::string("generate_report")),
-            ("report.type", AttributeValue::string("monthly")),
-            ("report.format", AttributeValue::string("pdf"))
-          ]
-        )
-        
-        // 记录报告生成指标
-        let report_counter = meter.create_counter("reports.generated.total", "count", "Total reports generated")
-        report_counter.add(1L, [
-          ("report.type", AttributeValue::string("monthly")),
-          ("report.format", AttributeValue::string("pdf"))
-        ])
-      }
-      _ => {
-        // 其他作业类型的通用处理
-        let (generic_ctx, generic_span) = tracer.start_span(
-          step2_ctx,
-          "Generic Job Processing",
-          trace::Internal,
-          [
-            ("operation.type", AttributeValue::string("generic_process")),
-            ("job.type", AttributeValue::string(job_type))
-          ]
-        )
-      }
-    }
-    
-    // 8. 模拟作业完成
-    let job_success = i % 5 != 0  // 每5个作业有1个失败
-    
-    if job_success {
-      job_counter.add(1L, [
-        ("job.type", AttributeValue::string(job_type)),
-        ("job.status", AttributeValue::string("success"))
-      ])
-      
-      job_duration.record((100.0 + i.to_double() * 10.0), [
-        ("job.type", AttributeValue::string(job_type))
-      ])
-      
-      // 记录成功日志
-      let success_log = logs::LogRecord::builder()
-        .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
-        .severity(logs::Info)
-        .body("Job completed successfully")
-        .with_attribute("job.type", AttributeValue::string(job_type))
-        .with_attribute("job.id", AttributeValue::string("job-" + i.to_string()))
-        .with_attribute("job.duration_ms", AttributeValue::float(100.0 + i.to_double() * 10.0))
-        .build()
-    } else {
-      job_failure_counter.add(1L, [
-        ("job.type", AttributeValue::string(job_type)),
-        ("failure.reason", AttributeValue::string("timeout"))
-      ])
-      
-      // 记录失败日志
-      let failure_log = logs::LogRecord::builder()
-        .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
-        .severity(logs::Error)
-        .body("Job failed due to timeout")
-        .with_attribute("job.type", AttributeValue::string(job_type))
-        .with_attribute("job.id", AttributeValue::string("job-" + i.to_string()))
-        .with_attribute("failure.reason", AttributeValue::string("timeout"))
-        .build()
-    }
-    
-    i = i + 1
+  )
+  
+  // 3. 数据验证
+  let validation_ctx = iot_ctx.with_value(create_key("validation.rules"), "temperature_range")
+  let (_, validation_span) = NoopTracer::start_span(
+    validation_ctx,
+    "data.validation",
+    Internal,
+    Some([
+      ("validation.type", AttributeValue::string("schema")),
+      ("validation.rules", AttributeValue::string("temperature_range")),
+      ("data.type", AttributeValue::string("sensor_reading"))
+    ])
+  )
+  
+  let validation_meter = NoopMeter::{}
+  let validation_counter = validation_meter.create_counter("data_validations_total", Some("validations"), Some("Total data validations"))
+  
+  validation_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("data-processing-service")),
+    ("validation.result", AttributeValue::string("passed")),
+    ("device.type", AttributeValue::string("temperature_sensor"))
+  ]))
+  
+  // 4. 数据转换和标准化
+  let transform_ctx = validation_ctx.with_value(create_key("transform.type"), "unit_conversion")
+  let (_, transform_span) = NoopTracer::start_span(
+    transform_ctx,
+    "data.transformation",
+    Internal,
+    Some([
+      ("transform.operation", AttributeValue::string("celsius_to_fahrenheit")),
+      ("input.unit", AttributeValue::string("celsius")),
+      ("output.unit", AttributeValue::string("fahrenheit"))
+    ])
+  )
+  
+  // 5. 异常检测
+  let anomaly_ctx = transform_ctx.with_value(create_key("anomaly.detection"), "statistical")
+  let (_, anomaly_span) = NoopTracer::start_span(
+    anomaly_ctx,
+    "anomaly.detection",
+    Internal,
+    Some([
+      ("detection.method", AttributeValue::string("statistical")),
+      ("algorithm", AttributeValue::string("z_score")),
+      ("threshold", AttributeValue::float(2.5))
+    ])
+  )
+  
+  let anomaly_meter = NoopMeter::{}
+  let anomaly_counter = anomaly_meter.create_counter("anomaly_detections_total", Some("detections"), Some("Total anomaly detections"))
+  let anomaly_gauge = anomaly_meter.create_gauge("anomaly_score", Some("score"), Some("Current anomaly score"))
+  
+  anomaly_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("anomaly-detection-service")),
+    ("detection.result", AttributeValue::string("normal")),
+    ("anomaly.score", AttributeValue::float(0.8))
+  ]))
+  
+  anomaly_gauge.record(0.8, Some([
+    ("device.id", AttributeValue::string("device-iot-001")),
+    ("location", AttributeValue::string("warehouse_a"))
+  ]))
+  
+  // 6. 数据聚合
+  let aggregation_ctx = anomaly_ctx.with_value(create_key("aggregation.window"), "5m")
+  let (_, aggregation_span) = NoopTracer::start_span(
+    aggregation_ctx,
+    "data.aggregation",
+    Internal,
+    Some([
+      ("aggregation.type", AttributeValue::string("time_window")),
+      ("window.size", AttributeValue::string("5m")),
+      ("aggregation.functions", AttributeValue::array_string(["avg", "min", "max", "count"]))
+    ])
+  )
+  
+  let aggregation_meter = NoopMeter::{}
+  let aggregation_histogram = aggregation_meter.create_histogram("aggregation_duration_ms", Some("ms"), Some("Data aggregation duration"))
+  
+  aggregation_histogram.record(25.0, Some([
+    ("service.name", AttributeValue::string("data-aggregation-service")),
+    ("aggregation.type", AttributeValue::string("time_window")),
+    ("window.size", AttributeValue::string("5m"))
+  ]))
+  
+  // 7. 数据存储
+  let storage_ctx = aggregation_ctx.with_value(create_key("storage.backend"), "timeseries_db")
+  let (_, storage_span) = NoopTracer::start_span(
+    storage_ctx,
+    "data.storage",
+    Internal,
+    Some([
+      ("storage.operation", AttributeValue::string("write")),
+      ("storage.backend", AttributeValue::string("timeseries_db")),
+      ("table.name", AttributeValue::string("sensor_readings"))
+    ])
+  )
+  
+  let storage_meter = NoopMeter::{}
+  let storage_counter = storage_meter.create_counter("storage_operations_total", Some("operations"), Some("Total storage operations"))
+  let storage_gauge = storage_meter.create_gauge("storage_size_mb", Some("MB"), Some("Storage size in MB"))
+  
+  storage_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("storage-service")),
+    ("storage.operation", AttributeValue::string("write")),
+    ("storage.backend", AttributeValue::string("timeseries_db")),
+    ("result", AttributeValue::string("success"))
+  ]))
+  
+  storage_gauge.record1024.0, Some([
+    ("storage.backend", AttributeValue::string("timeseries_db")),
+    ("location", AttributeValue::string("warehouse_a"))
+  ]))
+  
+  // 8. 实时监控和告警
+  let monitoring_ctx = storage_ctx.with_value(create_key("alert.threshold"), "temperature_high")
+  let (_, monitoring_span) = NoopTracer::start_span(
+    monitoring_ctx,
+    "realtime.monitoring",
+    Internal,
+    Some([
+      ("monitoring.type", AttributeValue::string("threshold_check")),
+      ("alert.type", AttributeValue::string("temperature")),
+      ("threshold.value", AttributeValue::float(35.0))
+    ])
+  )
+  
+  // 9. 数据处理完成Metrics和日志
+  let iot_meter = NoopMeter::{}
+  let processing_counter = iot_meter.create_counter("iot_data_processed_total", Some("records"), Some("Total IoT data records processed"))
+  let processing_duration_histogram = iot_meter.create_histogram("iot_processing_duration_ms", Some("ms"), Some("IoT data processing duration"))
+  
+  processing_counter.add(1L, Some([
+    ("service.name", AttributeValue::string("iot-processing-service")),
+    ("device.type", AttributeValue::string("temperature_sensor")),
+    ("location", AttributeValue::string("warehouse_a")),
+    ("processing.result", AttributeValue::string("success"))
+  ]))
+  
+  processing_duration_histogram.record(85.0, Some([
+    ("service.name", AttributeValue::string("iot-processing-service")),
+    ("device.type", AttributeValue::string("temperature_sensor"))
+  ]))
+  
+  let iot_logger = NoopLogger::{}
+  iot_logger.info("IoT data processed successfully", Some([
+    ("device.id", AttributeValue::string("device-iot-001")),
+    ("device.type", AttributeValue::string("temperature_sensor")),
+    ("location", AttributeValue::string("warehouse_a")),
+    ("batch.id", AttributeValue::string("batch-iot-123")),
+    ("data.points", AttributeValue::int(1L)),
+    ("temperature.celsius", AttributeValue::float(22.5)),
+    ("temperature.fahrenheit", AttributeValue::float(72.5)),
+    ("anomaly.score", AttributeValue::float(0.8)),
+    ("processing.duration.ms", AttributeValue::int(85L)),
+    ("storage.backend", AttributeValue::string("timeseries_db"))
+  ]))
+  
+  // 10. 验证整个IoT数据处理流程
+  assert_eq(receive_span.name, "iot.data.receive")
+  assert_eq(validation_span.name, "data.validation")
+  assert_eq(transform_span.name, "data.transformation")
+  assert_eq(anomaly_span.name, "anomaly.detection")
+  assert_eq(aggregation_span.name, "data.aggregation")
+  assert_eq(storage_span.name, "data.storage")
+  assert_eq(monitoring_span.name, "realtime.monitoring")
+  
+  // 验证Context传播
+  match iot_ctx.get(create_key("device.id")) {
+    Some(value) => assert_eq(value, "device-iot-001")
+    None => @test.fail("Test failed")
   }
   
-  // 9. 验证作业处理完成
-  assert_eq(i, job_types.length())
-  assert_eq(job_span.name, "Process Job: cleanup")  // 最后一个作业类型
-}
-
-test "real_time_data_streaming_scenario" {
-  // 模拟实时数据流处理的场景
-  
-  // 1. 初始化流处理服务的遥测
-  let stream_resource = common::Resource::default("stream-processor")
-  let ctx = context::Context::empty()
-  
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let logger_provider = logs::NoopLoggerProvider::{}
-  
-  let tracer = tracer_provider.get_tracer("stream-tracer")
-  let meter = meter_provider.get_meter("stream-meter")
-  let logger = logger_provider.get_logger("stream-logger")
-  
-  // 2. 创建流处理指标
-  let messages_processed = meter.create_counter("messages.processed.total", "count", "Total messages processed")
-  let message_processing_duration = meter.create_histogram("message.processing.duration", "ms", "Message processing duration")
-  let stream_lag = meter.create_gauge("stream.lag", "ms", "Stream processing lag")
-  let error_rate = meter.create_gauge("stream.error.rate", "percent", "Stream error rate")
-  
-  // 3. 模拟消息流处理
-  let message_types = ["user_action", "system_event", "metric_update", "log_entry"]
-  let mut i = 0
-  while i < message_types.length() {
-    let message_type = message_types[i]
-    
-    // 4. 开始处理消息
-    let (message_ctx, message_span) = tracer.start_span(
-      ctx,
-      "Process Message: " + message_type,
-      trace::Internal,
-      [
-        ("message.type", AttributeValue::string(message_type)),
-        ("message.id", AttributeValue::string("msg-" + i.to_string())),
-        ("stream.topic", AttributeValue::string("events")),
-        ("partition", AttributeValue::int(0L))
-      ]
-    )
-    
-    // 5. 记录消息处理开始
-    stream_lag.record((50.0 + i.to_double() * 5.0), [
-      ("stream.topic", AttributeValue::string("events"))
-    ])
-    
-    // 6. 根据消息类型进行不同的处理
-    match message_type {
-      "user_action" => {
-        // 用户行为分析
-        let (analytics_ctx, analytics_span) = tracer.start_span(
-          message_ctx,
-          "Analyze User Action",
-          trace::Internal,
-          [
-            ("operation.type", AttributeValue::string("analytics")),
-            ("action.type", AttributeValue::string("click"))
-          ]
-        )
-        
-        // 记录用户行为指标
-        let user_actions = meter.create_counter("user.actions.total", "count", "Total user actions")
-        user_actions.add(1L, [
-          ("action.type", AttributeValue::string("click")),
-          ("user.segment", AttributeValue::string("premium"))
-        ])
-      }
-      "system_event" => {
-        // 系统事件处理
-        let (event_ctx, event_span) = tracer.start_span(
-          message_ctx,
-          "Process System Event",
-          trace::Internal,
-          [
-            ("operation.type", AttributeValue::string("system_event")),
-            ("event.severity", AttributeValue::string("warning"))
-          ]
-        )
-        
-        // 记录系统事件指标
-        let system_events = meter.create_counter("system.events.total", "count", "Total system events")
-        system_events.add(1L, [
-          ("event.severity", AttributeValue::string("warning")),
-          ("event.source", AttributeValue::string("auth-service"))
-        ])
-      }
-      "metric_update" => {
-        // 指标更新处理
-        let (metric_ctx, metric_span) = tracer.start_span(
-          message_ctx,
-          "Update Metrics",
-          trace::Internal,
-          [
-            ("operation.type", AttributeValue::string("metric_update")),
-            ("metric.source", AttributeValue::string("application"))
-          ]
-        )
-        
-        // 记录指标更新
-        let metrics_updated = meter.create_counter("metrics.updated.total", "count", "Total metrics updated")
-        metrics_updated.add(10L, [
-          ("metric.source", AttributeValue::string("application"))
-        ])
-      }
-      "log_entry" => {
-        // 日志条目处理
-        let (log_ctx, log_span) = tracer.start_span(
-          message_ctx,
-          "Process Log Entry",
-          trace::Internal,
-          [
-            ("operation.type", AttributeValue::string("log_processing")),
-            ("log.level", AttributeValue::string("INFO"))
-          ]
-        )
-        
-        // 记录日志处理指标
-        let logs_processed = meter.create_counter("logs.processed.total", "count", "Total logs processed")
-        logs_processed.add(1L, [
-          ("log.level", AttributeValue::string("INFO")),
-          ("log.source", AttributeValue::string("web-server"))
-        ])
-      }
-    }
-    
-    // 7. 完成消息处理
-    let processing_success = i % 4 != 0  // 每4个消息有1个处理失败
-    
-    if processing_success {
-      messages_processed.add(1L, [
-        ("message.type", AttributeValue::string(message_type)),
-        ("processing.status", AttributeValue::string("success"))
-      ])
-      
-      message_processing_duration.record((10.0 + i.to_double() * 2.0), [
-        ("message.type", AttributeValue::string(message_type))
-      ])
-      
-      // 记录成功日志
-      let success_log = logs::LogRecord::builder()
-        .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
-        .severity(logs::Debug)
-        .body("Message processed successfully")
-        .with_attribute("message.type", AttributeValue::string(message_type))
-        .with_attribute("message.id", AttributeValue::string("msg-" + i.to_string()))
-        .with_attribute("processing.duration_ms", AttributeValue::float(10.0 + i.to_double() * 2.0))
-        .build()
-    } else {
-      // 记录失败指标
-      let message_errors = meter.create_counter("messages.errors.total", "count", "Total message processing errors")
-      message_errors.add(1L, [
-        ("message.type", AttributeValue::string(message_type)),
-        ("error.type", AttributeValue::string("parsing_error"))
-      ])
-      
-      // 记录失败日志
-      let error_log = logs::LogRecord::builder()
-        .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
-        .severity(logs::Error)
-        .body("Failed to process message")
-        .with_attribute("message.type", AttributeValue::string(message_type))
-        .with_attribute("message.id", AttributeValue::string("msg-" + i.to_string()))
-        .with_attribute("error.type", AttributeValue::string("parsing_error"))
-        .build()
-    }
-    
-    // 8. 更新错误率
-    error_rate.record(25.0, [
-      ("stream.topic", AttributeValue::string("events"))
-    ])
-    
-    i = i + 1
+  match aggregation_ctx.get(create_key("aggregation.window")) {
+    Some(value) => assert_eq(value, "5m")
+    None => @test.fail("Test failed")
   }
-  
-  // 9. 验证流处理完成
-  assert_eq(i, message_types.length())
-  assert_eq(message_span.name, "Process Message: log_entry")  // 最后一个消息类型
 }
