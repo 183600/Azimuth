@@ -133,7 +133,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/azimuth/telemetry\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/azimuth\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }

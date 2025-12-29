@@ -57,6 +57,128 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "context_test.mbt": {
+    0: (__test_636f6e746578745f746573742e6d6274_0, ["context_multiple_values"]),
+    1: (__test_636f6e746578745f746573742e6d6274_1, ["baggage_multiple_entries"]),
+  },
+  "context_performance_test.mbt": {
+    0: (__test_636f6e746578745f706572666f726d616e63655f746573742e6d6274_0, ["context_high_frequency_operations"]),
+    1: (__test_636f6e746578745f706572666f726d616e63655f746573742e6d6274_1, ["context_memory_efficiency"]),
+    2: (__test_636f6e746578745f706572666f726d616e63655f746573742e6d6274_2, ["baggage_high_frequency_operations"]),
+    3: (__test_636f6e746578745f706572666f726d616e63655f746573742e6d6274_3, ["context_complex_nested_operations"]),
+    4: (__test_636f6e746578745f706572666f726d616e63655f746573742e6d6274_4, ["baggage_complex_entries_operations"]),
+    5: (__test_636f6e746578745f706572666f726d616e63655f746573742e6d6274_5, ["context_concurrent_simulation"]),
+    6: (__test_636f6e746578745f706572666f726d616e63655f746573742e6d6274_6, ["context_and_baggage_integration_performance"]),
+  },
+  "context_key_test.mbt": {
+    0: (__test_636f6e746578745f6b65795f746573742e6d6274_0, ["context_key_creation_and_usage"]),
+    1: (__test_636f6e746578745f6b65795f746573742e6d6274_1, ["context_key_with_various_names"]),
+    2: (__test_636f6e746578745f6b65795f746573742e6d6274_2, ["context_operations_with_different_keys"]),
+    3: (__test_636f6e746578745f6b65795f746573742e6d6274_3, ["context_key_value_overwrite"]),
+    4: (__test_636f6e746578745f6b65795f746573742e6d6274_4, ["context_key_non_existent"]),
+    5: (__test_636f6e746578745f6b65795f746573742e6d6274_5, ["context_key_with_special_values"]),
+    6: (__test_636f6e746578745f6b65795f746573742e6d6274_6, ["context_key_with_long_names_and_values"]),
+    7: (__test_636f6e746578745f6b65795f746573742e6d6274_7, ["multiple_context_keys_independence"]),
+  },
+  "context_edge_cases_test.mbt": {
+    0: (__test_636f6e746578745f656467655f63617365735f746573742e6d6274_0, ["context_key_validation_edge_cases"]),
+    1: (__test_636f6e746578745f656467655f63617365735f746573742e6d6274_1, ["context_value_edge_cases"]),
+    2: (__test_636f6e746578745f656467655f63617365735f746573742e6d6274_2, ["context_chain_operations_edge_cases"]),
+  },
+  "context_concurrent_safety_test.mbt": {
+    0: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_0, ["context_concurrent_creation_and_access"]),
+    1: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_1, ["context_concurrent_chained_operations"]),
+    2: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_2, ["context_concurrent_baggage_operations"]),
+    3: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_3, ["context_concurrent_complex_scenarios"]),
+    4: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_4, ["context_concurrent_large_scale_operations"]),
+    5: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_5, ["context_concurrent_special_value_handling"]),
+    6: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_6, ["context_concurrent_baggage_isolation"]),
+  },
+  "context_comprehensive_test.mbt": {
+    0: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_0, ["baggage_basic_operations"]),
+    1: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_1, ["baggage_complex_scenarios"]),
+    2: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_2, ["baggage_edge_cases"]),
+    3: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_3, ["context_with_baggage_integration"]),
+    4: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_4, ["context_key_creation_and_usage"]),
+    5: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_5, ["context_value_overwrite_behavior"]),
+    6: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_6, ["context_multiple_keys_isolation"]),
+  },
+  "context_chained_test.mbt": {
+    0: (__test_636f6e746578745f636861696e65645f746573742e6d6274_0, ["context_chained_operations_basic"]),
+    1: (__test_636f6e746578745f636861696e65645f746573742e6d6274_1, ["context_chained_operations_with_overwrites"]),
+    2: (__test_636f6e746578745f636861696e65645f746573742e6d6274_2, ["context_chained_operations_performance"]),
+    3: (__test_636f6e746578745f636861696e65645f746573742e6d6274_3, ["baggage_chained_operations_basic"]),
+    4: (__test_636f6e746578745f636861696e65645f746573742e6d6274_4, ["baggage_chained_operations_with_overwrites"]),
+    5: (__test_636f6e746578745f636861696e65645f746573742e6d6274_5, ["context_and_baggage_combined_chained_operations"]),
+    6: (__test_636f6e746578745f636861696e65645f746573742e6d6274_6, ["context_chained_operations_with_special_values"]),
+    7: (__test_636f6e746578745f636861696e65645f746573742e6d6274_7, ["baggage_chained_operations_with_special_keys"]),
+  },
+  "context_chained_operations_test.mbt": {
+    0: (__test_636f6e746578745f636861696e65645f6f7065726174696f6e735f746573742e6d6274_0, ["context_chained_operations"]),
+    1: (__test_636f6e746578745f636861696e65645f6f7065726174696f6e735f746573742e6d6274_1, ["context_nested_chained_operations"]),
+    2: (__test_636f6e746578745f636861696e65645f6f7065726174696f6e735f746573742e6d6274_2, ["context_chained_value_overriding"]),
+    3: (__test_636f6e746578745f636861696e65645f6f7065726174696f6e735f746573742e6d6274_3, ["context_chained_baggage_operations"]),
+    4: (__test_636f6e746578745f636861696e65645f6f7065726174696f6e735f746573742e6d6274_4, ["context_complex_chained_scenario"]),
+    5: (__test_636f6e746578745f636861696e65645f6f7065726174696f6e735f746573742e6d6274_5, ["context_chained_performance_characteristics"]),
+    6: (__test_636f6e746578745f636861696e65645f6f7065726174696f6e735f746573742e6d6274_6, ["context_chained_error_handling"]),
+  },
+  "context_boundary_test.mbt": {
+    0: (__test_636f6e746578745f626f756e646172795f746573742e6d6274_0, ["context_with_nested_values"]),
+    1: (__test_636f6e746578745f626f756e646172795f746573742e6d6274_1, ["baggage_with_complex_values"]),
+  },
+  "context_basic_test.mbt": {
+    0: (__test_636f6e746578745f62617369635f746573742e6d6274_0, ["context_basic_operations"]),
+    1: (__test_636f6e746578745f62617369635f746573742e6d6274_1, ["baggage_basic_operations"]),
+    2: (__test_636f6e746578745f62617369635f746573742e6d6274_2, ["context_key_creation"]),
+    3: (__test_636f6e746578745f62617369635f746573742e6d6274_3, ["context_multiple_values_and_overwrites"]),
+    4: (__test_636f6e746578745f62617369635f746573742e6d6274_4, ["context_empty_and_special_values"]),
+    5: (__test_636f6e746578745f62617369635f746573742e6d6274_5, ["baggage_multiple_entries_and_overwrites"]),
+    6: (__test_636f6e746578745f62617369635f746573742e6d6274_6, ["context_and_baggage_integration"]),
+  },
+  "context_baggage_concurrency_test.mbt": {
+    0: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_0, ["context_basic_concurrent_access"]),
+    1: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_1, ["context_chained_operations_isolation"]),
+    2: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_2, ["baggage_basic_concurrent_access"]),
+    3: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_3, ["baggage_chained_operations_isolation"]),
+    4: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_4, ["context_complex_concurrent_scenarios"]),
+    5: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_5, ["baggage_complex_concurrent_scenarios"]),
+    6: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_6, ["context_and_baggage_integration_concurrency"]),
+    7: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_7, ["context_edge_cases_concurrency"]),
+    8: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_8, ["baggage_edge_cases_concurrency"]),
+    9: (__test_636f6e746578745f626167676167655f636f6e63757272656e63795f746573742e6d6274_9, ["context_and_baggage_mixed_concurrency"]),
+  },
+  "context_advanced_test.mbt": {
+    0: (__test_636f6e746578745f616476616e6365645f746573742e6d6274_0, ["context_basic_operations"]),
+    1: (__test_636f6e746578745f616476616e6365645f746573742e6d6274_1, ["context_nested_operations"]),
+    2: (__test_636f6e746578745f616476616e6365645f746573742e6d6274_2, ["context_value_override_operations"]),
+    3: (__test_636f6e746578745f616476616e6365645f746573742e6d6274_3, ["context_complex_scenarios"]),
+    4: (__test_636f6e746578745f616476616e6365645f746573742e6d6274_4, ["context_edge_cases_and_boundary_values"]),
+    5: (__test_636f6e746578745f616476616e6365645f746573742e6d6274_5, ["context_performance_and_large_scale_operations"]),
+  },
+  "context.mbt": {
+  },
+  "baggage_management_test.mbt": {
+    0: (__test_626167676167655f6d616e6167656d656e745f746573742e6d6274_0, ["baggage_basic_operations"]),
+    1: (__test_626167676167655f6d616e6167656d656e745f746573742e6d6274_1, ["baggage_multiple_entries_management"]),
+    2: (__test_626167676167655f6d616e6167656d656e745f746573742e6d6274_2, ["baggage_entry_override_operations"]),
+    3: (__test_626167676167655f6d616e6167656d656e745f746573742e6d6274_3, ["baggage_complex_scenarios"]),
+    4: (__test_626167676167655f6d616e6167656d656e745f746573742e6d6274_4, ["baggage_edge_cases_and_special_values"]),
+    5: (__test_626167676167655f6d616e6167656d656e745f746573742e6d6274_5, ["baggage_large_scale_operations"]),
+    6: (__test_626167676167655f6d616e6167656d656e745f746573742e6d6274_6, ["baggage_real_world_usage_patterns"]),
+  },
+  "baggage_management_comprehensive_test.mbt": {
+    0: (__test_626167676167655f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_0, ["baggage_basic_operations"]),
+    1: (__test_626167676167655f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_1, ["baggage_multiple_entries"]),
+    2: (__test_626167676167655f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_2, ["baggage_key_value_variations"]),
+    3: (__test_626167676167655f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_3, ["context_with_baggage_integration"]),
+    4: (__test_626167676167655f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_4, ["baggage_case_sensitivity"]),
+    5: (__test_626167676167655f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_5, ["baggage_edge_cases"]),
+    6: (__test_626167676167655f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_6, ["context_key_creation_and_usage"]),
+    7: (__test_626167676167655f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_7, ["baggage_large_scale_operations"]),
+  },
+  "baggage_edge_cases_test.mbt": {
+    0: (__test_626167676167655f656467655f63617365735f746573742e6d6274_0, ["baggage_edge_cases"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
@@ -133,7 +255,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/azimuth/telemetry\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/azimuth/telemetry/api/context\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }

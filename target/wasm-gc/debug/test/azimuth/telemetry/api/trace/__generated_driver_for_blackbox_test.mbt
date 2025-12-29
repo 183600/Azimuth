@@ -57,6 +57,100 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "trace_test.mbt": {
+    0: (__test_74726163655f746573742e6d6274_0, ["span_creation_and_attributes"]),
+    1: (__test_74726163655f746573742e6d6274_1, ["span_context_details"]),
+    2: (__test_74726163655f746573742e6d6274_2, ["span_events_and_links_creation"]),
+  },
+  "trace_edge_cases_test.mbt": {
+    0: (__test_74726163655f656467655f63617365735f746573742e6d6274_0, ["trace_span_context_validation"]),
+    1: (__test_74726163655f656467655f63617365735f746573742e6d6274_1, ["trace_span_lifecycle_edge_cases"]),
+  },
+  "trace_comprehensive_test.mbt": {
+    0: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_0, ["span_context_creation_and_properties"]),
+    1: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_1, ["span_creation_with_all_fields"]),
+    2: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_2, ["span_kinds_enumeration"]),
+    3: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_3, ["span_status_codes"]),
+    4: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_4, ["span_event_and_link_creation"]),
+    5: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_5, ["noop_tracer_provider_functionality"]),
+  },
+  "trace_boundary_test.mbt": {
+    0: (__test_74726163655f626f756e646172795f746573742e6d6274_0, ["span_context_validation"]),
+    1: (__test_74726163655f626f756e646172795f746573742e6d6274_1, ["span_attributes_edge_cases"]),
+  },
+  "trace_basic_test.mbt": {
+    0: (__test_74726163655f62617369635f746573742e6d6274_0, ["span_creation"]),
+    1: (__test_74726163655f62617369635f746573742e6d6274_1, ["span_with_attributes"]),
+    2: (__test_74726163655f62617369635f746573742e6d6274_2, ["span_with_different_kinds"]),
+    3: (__test_74726163655f62617369635f746573742e6d6274_3, ["tracer_provider"]),
+    4: (__test_74726163655f62617369635f746573742e6d6274_4, ["span_context_properties"]),
+    5: (__test_74726163655f62617369635f746573742e6d6274_5, ["span_events_and_links"]),
+    6: (__test_74726163655f62617369635f746573742e6d6274_6, ["span_with_complete_information"]),
+    7: (__test_74726163655f62617369635f746573742e6d6274_7, ["span_context_edge_cases_and_special_values"]),
+    8: (__test_74726163655f62617369635f746573742e6d6274_8, ["span_status_and_lifecycle"]),
+  },
+  "trace.mbt": {
+  },
+  "span_state_management_test.mbt": {
+    0: (__test_7370616e5f73746174655f6d616e6167656d656e745f746573742e6d6274_0, ["span_lifecycle_state_transitions"]),
+    1: (__test_7370616e5f73746174655f6d616e6167656d656e745f746573742e6d6274_1, ["span_status_management"]),
+    2: (__test_7370616e5f73746174655f6d616e6167656d656e745f746573742e6d6274_2, ["span_event_management"]),
+    3: (__test_7370616e5f73746174655f6d616e6167656d656e745f746573742e6d6274_3, ["span_attribute_management"]),
+    4: (__test_7370616e5f73746174655f6d616e6167656d656e745f746573742e6d6274_4, ["span_parent_child_relationships"]),
+    5: (__test_7370616e5f73746174655f6d616e6167656d656e745f746573742e6d6274_5, ["span_timing_and_duration"]),
+  },
+  "span_performance_test.mbt": {
+    0: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_0, ["span_creation_performance"]),
+    1: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_1, ["span_with_complex_attributes_performance"]),
+    2: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_2, ["span_context_creation_performance"]),
+    3: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_3, ["span_event_creation_performance"]),
+    4: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_4, ["span_link_creation_performance"]),
+    5: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_5, ["span_with_all_components_performance"]),
+    6: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_6, ["span_memory_allocation_efficiency"]),
+  },
+  "span_lifecycle_test.mbt": {
+    0: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_0, ["span_creation_basic"]),
+    1: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_1, ["span_with_parent_context"]),
+    2: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_2, ["span_lifecycle_with_events"]),
+    3: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_3, ["span_lifecycle_with_links"]),
+    4: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_4, ["span_status_transitions"]),
+    5: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_5, ["span_comprehensive_lifecycle"]),
+    6: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_6, ["span_with_different_kinds_lifecycle"]),
+  },
+  "span_lifecycle_state_test.mbt": {
+    0: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_0, ["span_lifecycle_state_transitions"]),
+    1: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_1, ["span_status_transitions"]),
+    2: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_2, ["span_context_lifecycle"]),
+    3: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_3, ["span_attribute_lifecycle"]),
+    4: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_4, ["span_event_lifecycle"]),
+    5: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_5, ["span_link_lifecycle"]),
+    6: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_6, ["span_parent_relationship_lifecycle"]),
+    7: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_7, ["span_timing_lifecycle"]),
+    8: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_8, ["span_complex_lifecycle_scenarios"]),
+  },
+  "span_lifecycle_advanced_test.mbt": {
+    0: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_0, ["span_lifecycle_state_management"]),
+    1: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_1, ["span_status_transitions"]),
+    2: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_2, ["span_events_and_links_management"]),
+    3: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_3, ["span_hierarchy_and_parent_relationships"]),
+    4: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_4, ["span_timing_and_duration_calculations"]),
+  },
+  "span_kinds_status_test.mbt": {
+    0: (__test_7370616e5f6b696e64735f7374617475735f746573742e6d6274_0, ["span_kinds_and_status_codes"]),
+  },
+  "span_kind_status_enums_test.mbt": {
+    0: (__test_7370616e5f6b696e645f7374617475735f656e756d735f746573742e6d6274_0, ["span_kind_all_values"]),
+    1: (__test_7370616e5f6b696e645f7374617475735f656e756d735f746573742e6d6274_1, ["status_code_all_values"]),
+    2: (__test_7370616e5f6b696e645f7374617475735f656e756d735f746573742e6d6274_2, ["span_with_all_enum_combinations"]),
+    3: (__test_7370616e5f6b696e645f7374617475735f656e756d735f746573742e6d6274_3, ["span_context_byte_arrays"]),
+  },
+  "span_context_advanced_test.mbt": {
+    0: (__test_7370616e5f636f6e746578745f616476616e6365645f746573742e6d6274_0, ["span_context_creation_and_validation"]),
+    1: (__test_7370616e5f636f6e746578745f616476616e6365645f746573742e6d6274_1, ["span_context_with_noop_tracer"]),
+    2: (__test_7370616e5f636f6e746578745f616476616e6365645f746573742e6d6274_2, ["span_lifecycle_with_events_and_links"]),
+    3: (__test_7370616e5f636f6e746578745f616476616e6365645f746573742e6d6274_3, ["span_kind_and_status_enums"]),
+    4: (__test_7370616e5f636f6e746578745f616476616e6365645f746573742e6d6274_4, ["span_context_trace_flags_and_state"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
@@ -133,7 +227,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/azimuth/telemetry\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/azimuth/telemetry/api/trace\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }

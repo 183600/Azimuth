@@ -57,6 +57,105 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "logs_test.mbt": {
+    0: (__test_6c6f67735f746573742e6d6274_0, ["log_record_comprehensive"]),
+    1: (__test_6c6f67735f746573742e6d6274_1, ["log_record_various_severity"]),
+  },
+  "logs_severity_test.mbt": {
+    0: (__test_6c6f67735f73657665726974795f746573742e6d6274_0, ["severity_number_all_values"]),
+    1: (__test_6c6f67735f73657665726974795f746573742e6d6274_1, ["log_record_with_all_severity_and_attributes"]),
+    2: (__test_6c6f67735f73657665726974795f746573742e6d6274_2, ["log_record_with_trace_and_span_context"]),
+    3: (__test_6c6f67735f73657665726974795f746573742e6d6274_3, ["log_record_with_resource_and_instrumentation_scope"]),
+    4: (__test_6c6f67735f73657665726974795f746573742e6d6274_4, ["logger_convenience_methods"]),
+  },
+  "logs_edge_cases_test.mbt": {
+    0: (__test_6c6f67735f656467655f63617365735f746573742e6d6274_0, ["logs_severity_edge_cases"]),
+    1: (__test_6c6f67735f656467655f63617365735f746573742e6d6274_1, ["logs_log_record_edge_cases"]),
+    2: (__test_6c6f67735f656467655f63617365735f746573742e6d6274_2, ["logs_logger_edge_cases"]),
+  },
+  "logs_comprehensive_test.mbt": {
+    0: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_0, ["log_record_builder_basic_usage"]),
+    1: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_1, ["log_record_builder_with_attributes"]),
+    2: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_2, ["log_record_builder_complex_attributes"]),
+    3: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_3, ["log_record_builder_all_severity_levels"]),
+    4: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_4, ["log_record_builder_with_trace_context"]),
+    5: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_5, ["log_record_builder_with_resource_and_scope"]),
+    6: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_6, ["log_record_builder_edge_cases"]),
+    7: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_7, ["log_record_builder_chaining"]),
+    8: (__test_6c6f67735f636f6d70726568656e736976655f746573742e6d6274_8, ["log_record_builder_default_values"]),
+  },
+  "logs_boundary_test.mbt": {
+    0: (__test_6c6f67735f626f756e646172795f746573742e6d6274_0, ["log_record_edge_cases"]),
+    1: (__test_6c6f67735f626f756e646172795f746573742e6d6274_1, ["log_record_with_special_characters"]),
+  },
+  "logs_basic_test.mbt": {
+    0: (__test_6c6f67735f62617369635f746573742e6d6274_0, ["logger_basic_operations"]),
+    1: (__test_6c6f67735f62617369635f746573742e6d6274_1, ["log_record_builder"]),
+    2: (__test_6c6f67735f62617369635f746573742e6d6274_2, ["log_record_emission"]),
+    3: (__test_6c6f67735f62617369635f746573742e6d6274_3, ["logger_provider"]),
+    4: (__test_6c6f67735f62617369635f746573742e6d6274_4, ["severity_levels"]),
+    5: (__test_6c6f67735f62617369635f746573742e6d6274_5, ["log_record_complex_scenarios"]),
+    6: (__test_6c6f67735f62617369635f746573742e6d6274_6, ["severity_number_comparison_and_ordering"]),
+    7: (__test_6c6f67735f62617369635f746573742e6d6274_7, ["log_record_builder_with_all_fields"]),
+    8: (__test_6c6f67735f62617369635f746573742e6d6274_8, ["log_record_with_complex_attributes"]),
+    9: (__test_6c6f67735f62617369635f746573742e6d6274_9, ["log_record_edge_cases_and_special_values"]),
+  },
+  "logs_advanced_test.mbt": {
+    0: (__test_6c6f67735f616476616e6365645f746573742e6d6274_0, ["log_record_builder_fluent_api"]),
+    1: (__test_6c6f67735f616476616e6365645f746573742e6d6274_1, ["log_record_with_trace_context"]),
+  },
+  "logs.mbt": {
+  },
+  "logger_convenience_test.mbt": {
+    0: (__test_6c6f676765725f636f6e76656e69656e63655f746573742e6d6274_0, ["logger_convenience_methods"]),
+  },
+  "log_record_builder_test.mbt": {
+    0: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_0, ["log_record_builder_basic"]),
+    1: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_1, ["log_record_builder_with_attributes"]),
+    2: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_2, ["log_record_builder_default_values"]),
+    3: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_3, ["log_record_builder_complex_attributes"]),
+    4: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_4, ["log_record_all_severity_levels"]),
+  },
+  "log_record_builder_comprehensive_test.mbt": {
+    0: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d70726568656e736976655f746573742e6d6274_0, ["log_record_builder_basic_workflow"]),
+    1: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d70726568656e736976655f746573742e6d6274_1, ["log_record_builder_with_attributes"]),
+    2: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d70726568656e736976655f746573742e6d6274_2, ["log_record_builder_with_complex_attributes"]),
+    3: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d70726568656e736976655f746573742e6d6274_3, ["log_record_builder_with_trace_context"]),
+    4: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d70726568656e736976655f746573742e6d6274_4, ["log_record_builder_all_severity_levels"]),
+    5: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d70726568656e736976655f746573742e6d6274_5, ["log_record_builder_chaining_operations"]),
+    6: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d70726568656e736976655f746573742e6d6274_6, ["log_record_builder_edge_cases"]),
+    7: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d70726568656e736976655f746573742e6d6274_7, ["log_record_builder_default_values"]),
+  },
+  "log_record_builder_complex_chain_test.mbt": {
+    0: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_0, ["log_record_builder_basic_chaining"]),
+    1: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_1, ["log_record_builder_complex_chaining"]),
+    2: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_2, ["log_record_builder_severity_chaining"]),
+    3: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_3, ["log_record_builder_attribute_type_chaining"]),
+    4: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_4, ["log_record_builder_trace_context_chaining"]),
+    5: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_5, ["log_record_builder_resource_chaining"]),
+    6: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_6, ["log_record_builder_edge_cases_chaining"]),
+    7: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_7, ["log_record_builder_performance_chaining"]),
+  },
+  "log_record_builder_chain_test.mbt": {
+    0: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_0, ["log_record_builder_basic_chaining"]),
+    1: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_1, ["log_record_builder_severity_variations"]),
+    2: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_2, ["log_record_builder_complex_attributes_chaining"]),
+    3: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_3, ["log_record_builder_trace_context_chaining"]),
+    4: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_4, ["log_record_builder_resource_and_instrumentation_chaining"]),
+    5: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_5, ["log_record_builder_edge_cases_chaining"]),
+    6: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_6, ["log_record_builder_observability_chaining"]),
+    7: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_7, ["log_record_builder_business_logging_chaining"]),
+    8: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_8, ["log_record_builder_error_logging_chaining"]),
+    9: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_9, ["log_record_builder_performance_logging_chaining"]),
+  },
+  "log_record_builder_advanced_test.mbt": {
+    0: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_0, ["log_record_builder_basic_chaining"]),
+    1: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_1, ["log_record_builder_attribute_chaining"]),
+    2: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_2, ["log_record_builder_complex_severity_scenarios"]),
+    3: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_3, ["log_record_builder_trace_context_integration"]),
+    4: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_4, ["log_record_builder_resource_and_instrumentation_scope"]),
+    5: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_5, ["log_record_builder_observed_timestamp_and_severity_text"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
@@ -133,7 +232,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/azimuth/telemetry\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/azimuth/telemetry/api/logs\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
