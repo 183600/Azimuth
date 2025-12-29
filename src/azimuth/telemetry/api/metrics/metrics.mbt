@@ -78,22 +78,22 @@ pub fn NoopGauge::record(value : Double, attributes? : Array[(String, AttributeV
   // No-op implementation
 }
 
-pub fn NoopMeter::create_counter(name : String, unit? : String, description? : String) -> Counter {
+pub fn NoopMeter::create_counter(name : String, unit? : String, description? : String) -> NoopCounter {
   NoopCounter::{}
 }
 
-pub fn NoopMeter::create_histogram(name : String, unit? : String, description? : String) -> Histogram {
+pub fn NoopMeter::create_histogram(name : String, unit? : String, description? : String) -> NoopHistogram {
   NoopHistogram::{}
 }
 
-pub fn NoopMeter::create_up_down_counter(name : String, unit? : String, description? : String) -> UpDownCounter {
+pub fn NoopMeter::create_up_down_counter(name : String, unit? : String, description? : String) -> NoopUpDownCounter {
   NoopUpDownCounter::{}
 }
 
-pub fn NoopMeter::create_gauge(name : String, unit? : String, description? : String) -> Gauge {
+pub fn NoopMeter::create_gauge(name : String, unit? : String, description? : String) -> NoopGauge {
   NoopGauge::{}
 }
 
-pub fn NoopMeterProvider::get_meter(name : String, version? : String, schema_url? : String) -> Meter {
+pub fn NoopMeterProvider::get_meter(name : String, version? : String, schema_url? : String) -> NoopMeter {
   NoopMeter::{}
 }
