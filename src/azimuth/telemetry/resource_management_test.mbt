@@ -182,7 +182,7 @@ test "resource_in_telemetry_components" {
   let tracer_provider = trace::NoopTracerProvider::{}
   let tracer = tracer_provider.get_tracer("resource-test-tracer")
   let (_, span) = tracer.start_span(
-    context::Context::current(),
+    context::Context::empty(),
     "resource-test-span",
     trace::Internal,
     [("resource.test", common::AttributeValue::string("test-value"))]

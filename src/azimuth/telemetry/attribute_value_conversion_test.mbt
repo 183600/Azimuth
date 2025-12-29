@@ -177,7 +177,7 @@ test "attribute_value_in_telemetry_contexts" {
   let tracer_provider = trace::NoopTracerProvider::{}
   let tracer = tracer_provider.get_tracer("complex-attr-tracer")
   let (_, span) = tracer.start_span(
-    context::Context::current(),
+    context::Context::empty(),
     "complex-attr-span",
     trace::Server,
     complex_attributes

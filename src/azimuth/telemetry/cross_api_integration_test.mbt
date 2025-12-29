@@ -5,7 +5,7 @@ test "cross_api_integration_trace_metrics_logs" {
   let resource = common::Resource::default("test-service")
   
   // 创建Context
-  let ctx = context::Context::current()
+  let ctx = context::Context::empty()
   
   // 创建Tracer和相关Span
   let tracer_provider = trace::NoopTracerProvider::{}

@@ -7,7 +7,7 @@ test "trace_api_error_handling" {
   let tracer_provider = trace::NoopTracerProvider::{}
   let tracer = tracer_provider.get_tracer("error-test-tracer")
   let (_, empty_name_span) = tracer.start_span(
-    context::Context::current(),
+    context::Context::empty(),
     "",  // 空名称
     trace::Internal
   )
@@ -21,7 +21,7 @@ test "trace_api_error_handling" {
     i = i + 1
   }
   let (_, long_name_span) = tracer.start_span(
-    context::Context::current(),
+    context::Context::empty(),
     long_name,
     trace::Server
   )
@@ -29,7 +29,7 @@ test "trace_api_error_handling" {
   
   // 测试负时间戳
   let (_, negative_time_span) = tracer.start_span(
-    context::Context::current(),
+    context::Context::empty(),
     "negative-time-span",
     trace::Client,
     [],
@@ -57,7 +57,7 @@ test "trace_api_error_handling" {
   }
   
   let (_, many_attrs_span) = tracer.start_span(
-    context::Context::current(),
+    context::Context::empty(),
     "many-attrs-span",
     trace::Consumer,
     many_attributes
@@ -201,7 +201,7 @@ test "context_api_error_handling" {
   // 测试Context API的错误处理
   
   // 测试空上下文操作
-  let empty_ctx = context::Context::current()
+  let empty_ctx = context::Context::empty()
   
   // 测试在上下文中存储和检索极值
   let extreme_key = "extremely.long.key.name.that.exceeds.normal.expectations.and.tests.boundary.conditions"
