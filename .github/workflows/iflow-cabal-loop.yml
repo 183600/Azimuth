@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master   # 连续运行依赖 push 到 master 再次触发
+      - main   # 连续运行依赖 push 到 main 再次触发
 
 concurrency:
   group: iflow-autoflow
@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 360   # 6 小时上限，主任务跑 5 小时，留 1 小时提交/收尾
     env:
       RUN_HOURS: 5
-      WORK_BRANCH: master
+      WORK_BRANCH: main
       # iFlow CLI 的无交互认证
       IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
       IFLOW_BASE_URL: https://apis.iflow.cn/v1
@@ -33,10 +33,10 @@ jobs:
           token: ${{ secrets.IFLOW_PAT }}
           fetch-depth: 0
 
-      - name: Ensure master branch and git identity
+      - name: Ensure main branch and git identity
         shell: bash
         run: |
-          git switch master || git checkout -b master
+          git switch main || git checkout -b main
           git pull --ff-only || true
           git config user.name "iflow-bot"
           git config user.email "iflow-bot@users.noreply.github.com"
@@ -110,6 +110,6 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "ci: ${RUN_HOURS}h batch update (run $GITHUB_RUN_ID)"
-            # 使用 checkout 时注入的 PAT 远端凭据推送到 master
+            # 使用 checkout 时注入的 PAT 远端凭据推送到 main
             git push origin HEAD:main
           fi
