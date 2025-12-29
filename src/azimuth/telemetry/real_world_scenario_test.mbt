@@ -1,794 +1,712 @@
-// 实际场景综合测试 - 模拟真实世界中的遥测系统使用场景
+// 端到端场景测试 - 模拟真实使用场景
 
-test "microservices_telemetry_pipeline" {
-  // 测试微服务遥测管道
+test "web_request_processing_scenario" {
+  // 模拟Web请求处理的完整场景
   
-  struct Microservice {
-    name : String
-    version : String
-    endpoint : String
-    health_status : String
-    response_time_ms : Int
-    error_rate : Double
-  }
+  // 1. 初始化遥测系统
+  let resource = common::Resource::default("web-service")
+  let ctx = context::Context::empty()
   
-  struct TelemetryPipeline {
-    services : Array<Microservice>
-    trace_collector : String
-    metrics_collector : String
-    log_aggregator : String
-    sampling_rate : Double
-  }
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
   
-  // 创建微服务架构
-  let create_microservice = fn(name : String, version : String, endpoint : String) : Microservice {
-    {
-      name: name,
-      version: version,
-      endpoint: endpoint,
-      health_status: "healthy",
-      response_time_ms: (@rand() * 500).to_int() + 50,  // 50-550ms
-      error_rate: @rand() * 0.05  // 0-5%错误率
-    }
-  }
+  let tracer = tracer_provider.get_tracer("web-tracer", "1.0.0")
+  let meter = meter_provider.get_meter("web-meter", "1.0.0")
+  let logger = logger_provider.get_logger("web-logger", "1.0.0")
   
-  // 模拟微服务架构
-  let services = [
-    create_microservice("api-gateway", "1.2.0", "http://api-gateway:8080"),
-    create_microservice("user-service", "2.1.3", "http://user-service:8081"),
-    create_microservice("order-service", "3.0.1", "http://order-service:8082"),
-    create_microservice("payment-service", "1.5.2", "http://payment-service:8083"),
-    create_microservice("notification-service", "1.0.8", "http://notification-service:8084"),
-    create_microservice("inventory-service", "2.3.1", "http://inventory-service:8085")
-  ]
+  // 2. 创建指标
+  let request_counter = meter.create_counter("http.requests.total", "count", "Total HTTP requests")
+  let request_duration = meter.create_histogram("http.request.duration", "ms", "HTTP request duration")
+  let active_connections = meter.create_gauge("http.active_connections", "count", "Active HTTP connections")
+  let error_counter = meter.create_counter("http.errors.total", "count", "Total HTTP errors")
   
-  let pipeline = {
-    services: services,
-    trace_collector: "http://jaeger:14268/api/traces",
-    metrics_collector: "http://prometheus:9090/metrics",
-    log_aggregator: "http://elasticsearch:9200",
-    sampling_rate: 0.1  // 10%采样率
-  }
+  // 3. 模拟HTTP请求处理
+  let (request_ctx, request_span) = tracer.start_span(
+    ctx,
+    "HTTP GET /api/users",
+    trace::Server,
+    [
+      ("http.method", common::AttributeValue::string("GET")),
+      ("http.url", common::AttributeValue::string("/api/users")),
+      ("http.scheme", common::AttributeValue::string("https")),
+      ("http.host", common::AttributeValue::string("api.example.com")),
+      ("user.id", common::AttributeValue::string("user123"))
+    ],
+    Some(1640995200000000000L)  // 2022-01-01 00:00:00 UTC
+  )
   
-  // 模拟请求链路追踪
-  let simulate_request_trace = fn(pipeline : TelemetryPipeline, 
-                                  request_path : String) : Array<String> {
-    let mut trace_spans : Array<String> = []
-    let trace_id = "trace-" + (@rand().to_string() * 8)
-    
-    // API Gateway入口
-    trace_spans.push(trace_id + ":api-gateway:incoming_request")
-    
-    // 根据请求路径路由到不同服务
-    if request_path.contains("/users") {
-      trace_spans.push(trace_id + ":user-service:get_user")
-      if request_path.contains("/orders") {
-        trace_spans.push(trace_id + ":order-service:get_user_orders")
-        trace_spans.push(trace_id + ":inventory-service:check_stock")
-      }
-    } else if request_path.contains("/orders") {
-      trace_spans.push(trace_id + ":order-service:create_order")
-      trace_spans.push(trace_id + ":payment-service:process_payment")
-      trace_spans.push(trace_id + ":inventory-service:reserve_items")
-      trace_spans.push(trace_id + ":notification-service:send_confirmation")
-    } else if request_path.contains("/payments") {
-      trace_spans.push(trace_id + ":payment-service:handle_payment")
-      trace_spans.push(trace_id + ":order-service:update_order_status")
-    }
-    
-    trace_spans
-  }
+  // 4. 记录请求开始
+  request_counter.add(1L, [
+    ("http.method", common::AttributeValue::string("GET")),
+    ("http.route", common::AttributeValue::string("/api/users")),
+    ("http.status_code", common::AttributeValue::int(200L))
+  ])
   
-  // 模拟指标收集
-  let collect_service_metrics = fn(service : Microservice) : Array<String> {
-    let metrics = [
-      service.name + "_response_time:" + service.response_time_ms.to_string(),
-      service.name + "_error_rate:" + (@sprintf("%.4f", service.error_rate)),
-      service.name + "_health:" + service.health_status,
-      service.name + "_requests_total:" + ((@rand() * 1000).to_int() + 100).to_string()
+  active_connections.record(1.0, [
+    ("service.name", common::AttributeValue::string("web-service"))
+  ])
+  
+  // 5. 记录请求开始日志
+  let start_log = logs::LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(logs::Info)
+    .body("Started processing HTTP request")
+    .with_attribute("http.method", common::AttributeValue::string("GET"))
+    .with_attribute("http.url", common::AttributeValue::string("/api/users"))
+    .with_attribute("user.id", common::AttributeValue::string("user123"))
+    .with_attribute("request.id", common::AttributeValue::string("req-abc123"))
+    .build()
+  
+  // 6. 模拟数据库查询
+  let (db_ctx, db_span) = tracer.start_span(
+    request_ctx,
+    "Database Query: SELECT * FROM users WHERE id = ?",
+    trace::Client,
+    [
+      ("db.system", common::AttributeValue::string("postgresql")),
+      ("db.statement", common::AttributeValue::string("SELECT * FROM users WHERE id = ?")),
+      ("db.operation", common::AttributeValue::string("SELECT")),
+      ("db.user", common::AttributeValue::string("app_user"))
     ]
-    metrics
+  )
+  
+  // 记录数据库查询指标
+  let db_query_counter = meter.create_counter("db.queries.total", "count", "Total database queries")
+  let db_query_duration = meter.create_histogram("db.query.duration", "ms", "Database query duration")
+  
+  db_query_counter.add(1L, [
+    ("db.system", common::AttributeValue::string("postgresql")),
+    ("db.operation", common::AttributeValue::string("SELECT"))
+  ])
+  
+  db_query_duration.record(25.5, [
+    ("db.system", common::AttributeValue::string("postgresql")),
+    ("db.operation", common::AttributeValue::string("SELECT"))
+  ])
+  
+  // 7. 记录数据库查询日志
+  let db_log = logs::LogRecord::builder()
+    .timestamp(1640995200001000000L)
+    .severity(logs::Debug)
+    .body("Executed database query successfully")
+    .with_attribute("db.system", common::AttributeValue::string("postgresql"))
+    .with_attribute("db.operation", common::AttributeValue::string("SELECT"))
+    .with_attribute("db.duration_ms", common::AttributeValue::float(25.5))
+    .build()
+  
+  // 8. 模拟缓存操作
+  let (cache_ctx, cache_span) = tracer.start_span(
+    request_ctx,
+    "Cache GET: user:user123",
+    trace::Client,
+    [
+      ("cache.system", common::AttributeValue::string("redis")),
+      ("cache.operation", common::AttributeValue::string("GET")),
+      ("cache.key", common::AttributeValue::string("user:user123"))
+    ]
+  )
+  
+  // 记录缓存指标
+  let cache_counter = meter.create_counter("cache.operations.total", "count", "Total cache operations")
+  let cache_hit_ratio = meter.create_gauge("cache.hit_ratio", "percent", "Cache hit ratio")
+  
+  cache_counter.add(1L, [
+    ("cache.system", common::AttributeValue::string("redis")),
+    ("cache.operation", common::AttributeValue::string("GET")),
+    ("cache.result", common::AttributeValue::string("hit"))
+  ])
+  
+  cache_hit_ratio.record(85.5, [
+    ("cache.system", common::AttributeValue::string("redis"))
+  ])
+  
+  // 9. 模拟外部API调用
+  let (api_ctx, api_span) = tracer.start_span(
+    request_ctx,
+    "External API Call: GET https://api.payment.com/charges/charge123",
+    trace::Client,
+    [
+      ("http.method", common::AttributeValue::string("GET")),
+      ("http.url", common::AttributeValue::string("https://api.payment.com/charges/charge123")),
+      ("http.scheme", common::AttributeValue::string("https")),
+      ("http.host", common::AttributeValue::string("api.payment.com")),
+      ("peer.service", common::AttributeValue::string("payment-api"))
+    ]
+  )
+  
+  // 记录外部API指标
+  let external_api_counter = meter.create_counter("external.api.calls.total", "count", "Total external API calls")
+  let external_api_duration = meter.create_histogram("external.api.duration", "ms", "External API call duration")
+  
+  external_api_counter.add(1L, [
+    ("http.method", common::AttributeValue::string("GET")),
+    ("peer.service", common::AttributeValue::string("payment-api")),
+    ("http.status_code", common::AttributeValue::int(200L))
+  ])
+  
+  external_api_duration.record(150.0, [
+    ("http.method", common::AttributeValue::string("GET")),
+    ("peer.service", common::AttributeValue::string("payment-api"))
+  ])
+  
+  // 10. 记录外部API日志
+  let api_log = logs::LogRecord::builder()
+    .timestamp(1640995200002000000L)
+    .severity(logs::Info)
+    .body("External API call completed successfully")
+    .with_attribute("http.method", common::AttributeValue::string("GET"))
+    .with_attribute("http.url", common::AttributeValue::string("https://api.payment.com/charges/charge123"))
+    .with_attribute("http.status_code", common::AttributeValue::int(200L))
+    .with_attribute("external.api.duration_ms", common::AttributeValue::float(150.0))
+    .build()
+  
+  // 11. 完成请求处理
+  request_duration.record(200.0, [
+    ("http.method", common::AttributeValue::string("GET")),
+    ("http.route", common::AttributeValue::string("/api/users")),
+    ("http.status_code", common::AttributeValue::int(200L))
+  ])
+  
+  active_connections.record(0.0, [
+    ("service.name", common::AttributeValue::string("web-service"))
+  ])
+  
+  // 12. 记录请求完成日志
+  let end_log = logs::LogRecord::builder()
+    .timestamp(1640995200002000000L)
+    .severity(logs::Info)
+    .body("HTTP request completed successfully")
+    .with_attribute("http.method", common::AttributeValue::string("GET"))
+    .with_attribute("http.url", common::AttributeValue::string("/api/users"))
+    .with_attribute("http.status_code", common::AttributeValue::int(200L))
+    .with_attribute("request.duration_ms", common::AttributeValue::float(200.0))
+    .with_attribute("user.id", common::AttributeValue::string("user123"))
+    .build()
+  
+  // 13. 验证所有遥测数据都正确创建
+  assert_eq(request_span.name, "HTTP GET /api/users")
+  assert_eq(db_span.name, "Database Query: SELECT * FROM users WHERE id = ?")
+  assert_eq(cache_span.name, "Cache GET: user:user123")
+  assert_eq(api_span.name, "External API Call: GET https://api.payment.com/charges/charge123")
+  
+  match start_log.body {
+    Some(body) => assert_eq(body, "Started processing HTTP request")
+    None => @test.fail("Expected log body")
   }
   
-  // 测试管道功能
-  let request_paths = [
-    "/api/v1/users/123",
-    "/api/v1/users/456/orders",
-    "/api/v1/orders",
-    "/api/v1/payments/confirm",
-    "/api/v1/users/789/profile"
-  ]
-  
-  // 生成追踪数据
-  let mut all_traces : Array<String> = []
-  for path in request_paths {
-    let traces = simulate_request_trace(pipeline, path)
-    all_traces = all_traces.concat(traces)
-  }
-  
-  // 生成指标数据
-  let mut all_metrics : Array<String> = []
-  for service in pipeline.services {
-    let metrics = collect_service_metrics(service)
-    all_metrics = all_metrics.concat(metrics)
-  }
-  
-  // 验证追踪数据
-  assert_eq(all_traces.length() > 0, true)
-  
-  // 验证每个追踪都有相同的trace_id
-  let trace_groups = all_traces.group_by(fn(span) { 
-    span.split(":")[0]  // 按trace_id分组
-  })
-  
-  for (trace_id, spans) in trace_groups {
-    assert_eq(spans.length() >= 2, true)  // 每个追踪至少有2个span
-    assert_eq(spans.any(fn(s) { s.contains("api-gateway") }), true)  // 每个追踪都经过API Gateway
-  }
-  
-  // 验证指标数据
-  assert_eq(all_metrics.length(), pipeline.services.length() * 4)  // 每个服务4个指标
-  
-  for metric in all_metrics {
-    assert_eq(metric.contains(":"), true)
-    let parts = metric.split(":")
-    assert_eq(parts.length(), 2)
-    assert_eq(parts[0].length() > 0, true)
-    assert_eq(parts[1].length() > 0, true)
-  }
-  
-  // 验证采样率应用
-  let sampled_traces = (@rand() * all_traces.length().to_double()).to_int()
-  let expected_sampled = (all_traces.length().to_double() * pipeline.sampling_rate).to_int()
-  
-  assert_eq(@abs(sampled_traces - expected_sampled) <= 2, true)  // 允许小的偏差
-}
-
-test "high_load_scenario_testing" {
-  // 测试高负载场景
-  
-  struct LoadTestConfig {
-    concurrent_users : Int
-    requests_per_second : Int
-    test_duration_seconds : Int
-    expected_response_time_p95 : Int
-    max_error_rate : Double
-  }
-  
-  struct LoadTestResult {
-    total_requests : Int
-    successful_requests : Int
-    failed_requests : Int
-    average_response_time : Double
-    p95_response_time : Double
-    error_rate : Double
-    throughput : Double
-  }
-  
-  // 高负载配置
-  let load_config = {
-    concurrent_users: 100,
-    requests_per_second: 1000,
-    test_duration_seconds: 60,
-    expected_response_time_p95: 500,
-    max_error_rate: 0.01  // 1%
-  }
-  
-  // 模拟高负载测试
-  let simulate_load_test = fn(config : LoadTestConfig) : LoadTestResult {
-    let total_requests = config.requests_per_second * config.test_duration_seconds
-    let mut response_times : Array<Int> = []
-    let mut failed_count = 0
-    
-    // 模拟请求处理
-    for i = 0; i < total_requests; i = i + 1 {
-      // 模拟响应时间（随负载增加）
-      let load_factor = i.to_double() / total_requests.to_double()
-      let base_response_time = 50.0
-      let load_added_time = load_factor * 200.0  // 最多增加200ms
-      let random_variance = (@rand() - 0.5) * 100.0  // ±50ms随机变化
-      
-      let response_time = @max(10.0, base_response_time + load_added_time + random_variance)
-      response_times.push(response_time.to_int())
-      
-      // 模拟错误（高负载时错误率增加）
-      let error_probability = load_factor * 0.02  // 最多2%错误率
-      if @rand() < error_probability {
-        failed_count = failed_count + 1
-      }
-    }
-    
-    // 计算统计指标
-    response_times = response_times.sort()
-    let average_response_time = response_times.fold(0.0, fn(acc, rt) { acc + rt.to_double() }) / response_times.length().to_double()
-    
-    let p95_index = (response_times.length() * 95 / 100).to_int()
-    let p95_response_time = response_times[p95_index].to_double()
-    
-    let successful_requests = total_requests - failed_count
-    let error_rate = failed_count.to_double() / total_requests.to_double()
-    let throughput = successful_requests.to_double() / config.test_duration_seconds.to_double()
-    
-    {
-      total_requests: total_requests,
-      successful_requests: successful_requests,
-      failed_requests: failed_count,
-      average_response_time: average_response_time,
-      p95_response_time: p95_response_time,
-      error_rate: error_rate,
-      throughput: throughput
-    }
-  }
-  
-  // 执行负载测试
-  let load_result = simulate_load_test(load_config)
-  
-  // 验证负载测试结果
-  assert_eq(load_result.total_requests, 60000)  // 1000 RPS × 60秒
-  assert_eq(load_result.successful_requests > 0, true)
-  assert_eq(load_result.failed_requests >= 0, true)
-  
-  // 验证性能指标
-  assert_eq(load_result.average_response_time > 0.0, true)
-  assert_eq(load_result.p95_response_time > 0.0, true)
-  assert_eq(load_result.throughput > 0.0, true)
-  
-  // 验证性能要求
-  assert_eq(load_result.p95_response_time <= load_config.expected_response_time_p95.to_double(), true)
-  assert_eq(load_result.error_rate <= load_config.max_error_rate, true)
-  
-  // 验证吞吐量
-  let expected_throughput = load_config.requests_per_second.to_double() * (1.0 - load_config.max_error_rate)
-  assert_eq(load_result.throughput >= expected_throughput * 0.9, true)  // 允许10%偏差
-  
-  // 测试遥测系统在高负载下的表现
-  let telemetry_overhead = load_result.average_response_time * 0.05  // 假设5%的开销
-  let adjusted_response_time = load_result.average_response_time + telemetry_overhead
-  
-  assert_eq(adjusted_response_time <= load_config.expected_response_time_p95.to_double() * 1.1, true)
-}
-
-test "distributed_tracing_complex_scenario" {
-  // 测试分布式追踪复杂场景
-  
-  struct ServiceCall {
-    service_name : String
-    operation : String
-    trace_id : String
-    span_id : String
-    parent_span_id : String
-    start_time : Int64
-    duration_ms : Int
-    tags : Array<String>
-    status : String
-  }
-  
-  struct TraceContext {
-    trace_id : String
-    baggage : Array<(String, String)>
-    sampling_decision : Bool
-  }
-  
-  // 模拟复杂的分布式调用链
-  let simulate_complex_trace = fn() : Array<ServiceCall> {
-    let trace_id = "complex-trace-" + (@rand() * 10000).to_string()
-    let mut calls : Array<ServiceCall> = []
-    let mut current_time = 1609459200000L
-    
-    // 1. API Gateway接收请求
-    calls.push({
-      service_name: "api-gateway",
-      operation: "handle_request",
-      trace_id: trace_id,
-      span_id: "span-001",
-      parent_span_id: "",
-      start_time: current_time,
-      duration_ms: 25,
-      tags: ["http.method:POST", "http.path:/api/v1/complex"],
-      status: "ok"
-    })
-    current_time = current_time + 25
-    
-    // 2. 并行调用多个服务
-    let parallel_start = current_time
-    
-    // 2a. 用户服务
-    calls.push({
-      service_name: "user-service",
-      operation: "authenticate_user",
-      trace_id: trace_id,
-      span_id: "span-002",
-      parent_span_id: "span-001",
-      start_time: parallel_start,
-      duration_ms: 120,
-      tags: ["user.id:12345", "auth.method:jwt"],
-      status: "ok"
-    })
-    
-    // 2b. 权限服务
-    calls.push({
-      service_name: "auth-service",
-      operation: "check_permissions",
-      trace_id: trace_id,
-      span_id: "span-003",
-      parent_span_id: "span-001",
-      start_time: parallel_start,
-      duration_ms: 80,
-      tags: ["resource:order", "action:create"],
-      status: "ok"
-    })
-    
-    // 2c. 限流服务
-    calls.push({
-      service_name: "rate-limiter",
-      operation: "check_rate_limit",
-      trace_id: trace_id,
-      span_id: "span-004",
-      parent_span_id: "span-001",
-      start_time: parallel_start,
-      duration_ms: 15,
-      tags: ["user.tier:premium", "limit:1000/min"],
-      status: "ok"
-    })
-    
-    current_time = parallel_start + 120  // 最长的并行调用
-    
-    // 3. 订单服务（串行调用）
-    calls.push({
-      service_name: "order-service",
-      operation: "create_order",
-      trace_id: trace_id,
-      span_id: "span-005",
-      parent_span_id: "span-001",
-      start_time: current_time,
-      duration_ms: 200,
-      tags: ["order.type:purchase", "order.value:299.99"],
-      status: "ok"
-    })
-    current_time = current_time + 200
-    
-    // 4. 订单服务内部的并行调用
-    let nested_parallel_start = current_time
-    
-    // 4a. 库存服务
-    calls.push({
-      service_name: "inventory-service",
-      operation: "reserve_items",
-      trace_id: trace_id,
-      span_id: "span-006",
-      parent_span_id: "span-005",
-      start_time: nested_parallel_start,
-      duration_ms: 150,
-      tags: ["item.id:prod-123", "quantity:2"],
-      status: "ok"
-    })
-    
-    // 4b. 支付服务
-    calls.push({
-      service_name: "payment-service",
-      operation: "process_payment",
-      trace_id: trace_id,
-      span_id: "span-007",
-      parent_span_id: "span-005",
-      start_time: nested_parallel_start,
-      duration_ms: 500,
-      tags: ["payment.method:credit_card", "payment.amount:299.99"],
-      status: "ok"
-    })
-    
-    // 4c. 物流服务
-    calls.push({
-      service_name: "shipping-service",
-      operation: "calculate_shipping",
-      trace_id: trace_id,
-      span_id: "span-008",
-      parent_span_id: "span-005",
-      start_time: nested_parallel_start,
-      duration_ms: 100,
-      tags: ["destination:US", "weight:2.5kg"],
-      status: "ok"
-    })
-    
-    current_time = nested_parallel_start + 500  // 最长的嵌套并行调用
-    
-    // 5. 异步通知服务（不阻塞主流程）
-    calls.push({
-      service_name: "notification-service",
-      operation: "send_confirmation_email",
-      trace_id: trace_id,
-      span_id: "span-009",
-      parent_span_id: "span-005",
-      start_time: current_time + 50,  // 稍后启动
-      duration_ms: 300,
-      tags: ["notification.type:email", "recipient:user@example.com"],
-      status: "ok"
-    })
-    
-    calls
-  }
-  
-  // 生成复杂追踪
-  let complex_trace = simulate_complex_trace()
-  
-  // 验证追踪结构
-  assert_eq(complex_trace.length() >= 8, true)  // 至少8个调用
-  
-  // 验证所有调用都有相同的trace_id
-  let trace_ids = complex_trace.map(fn(call) { call.trace_id }).unique()
-  assert_eq(trace_ids.length(), 1)
-  
-  // 验证父子关系
-  let root_span = complex_trace.find(fn(call) { call.parent_span_id == "" })
-  assert_eq(root_span.unwrap().service_name, "api-gateway")
-  
-  // 验证并行调用
-  let api_gateway_children = complex_trace.filter(fn(call) { call.parent_span_id == "span-001" })
-  assert_eq(api_gateway_children.length(), 3)  // 3个并行调用
-  
-  // 验证嵌套并行调用
-  let order_children = complex_trace.filter(fn(call) { call.parent_span_id == "span-005" })
-  assert_eq(order_children.length(), 3)  // 3个嵌套并行调用
-  
-  // 验证时间线
-  let sorted_calls = complex_trace.sort_by(fn(a, b) { 
-    if a.start_time < b.start_time { -1 } else if a.start_time > b.start_time { 1 } else { 0 }
-  })
-  
-  for i = 1; i < sorted_calls.length(); i = i + 1 {
-    assert_eq(sorted_calls[i].start_time >= sorted_calls[i-1].start_time, true)
-  }
-  
-  // 验证总持续时间
-  let total_duration = sorted_calls[sorted_calls.length() - 1].start_time + 
-                       sorted_calls[sorted_calls.length() - 1].duration_ms.to_int64() -
-                       sorted_calls[0].start_time
-  
-  assert_eq(total_duration <= 1000L, true)  // 总时间应在合理范围内
-  
-  // 验证标签和状态
-  for call in complex_trace {
-    assert_eq(call.tags.length() > 0, true)
-    assert_eq(call.status == "ok" || call.status == "error", true)
-    assert_eq(call.span_id != "", true)
-    assert_eq(call.operation != "", true)
+  match end_log.body {
+    Some(body) => assert_eq(body, "HTTP request completed successfully")
+    None => @test.fail("Expected log body")
   }
 }
 
-test "telemetry_system_resilience" {
-  // 测试遥测系统韧性
+test "microservice_communication_scenario" {
+  // 模拟微服务间通信的场景
   
-  enum FailureType {
-    NetworkPartition
-    CollectorDown
-    HighMemoryUsage
-    DiskSpaceFull
-    DatabaseConnectionLost
+  // 1. 初始化服务A的遥测
+  let service_a_resource = common::Resource::default("service-a")
+  let ctx = context::Context::empty()
+  
+  let tracer_provider_a = trace::NoopTracerProvider::{}
+  let meter_provider_a = metrics::NoopMeterProvider::{}
+  let logger_provider_a = logs::NoopLoggerProvider::{}
+  
+  let tracer_a = tracer_provider_a.get_tracer("service-a-tracer")
+  let meter_a = meter_provider_a.get_meter("service-a-meter")
+  let logger_a = logger_provider_a.get_logger("service-a-logger")
+  
+  // 2. 服务A开始处理请求
+  let (service_a_ctx, service_a_span) = tracer_a.start_span(
+    ctx,
+    "Process Order",
+    trace::Server,
+    [
+      ("service.name", common::AttributeValue::string("service-a")),
+      ("operation.type", common::AttributeValue::string("process_order")),
+      ("order.id", common::AttributeValue::string("order-123")),
+      ("customer.id", common::AttributeValue::string("customer-456"))
+    ]
+  )
+  
+  // 3. 服务A调用服务B
+  let (call_b_ctx, call_b_span) = tracer_a.start_span(
+    service_a_ctx,
+    "Call Service B: Validate Inventory",
+    trace::Client,
+    [
+      ("peer.service", common::AttributeValue::string("service-b")),
+      ("operation.type", common::AttributeValue::string("validate_inventory")),
+      ("product.id", common::AttributeValue::string("product-789")),
+      ("quantity", common::AttributeValue::int(5L))
+    ]
+  )
+  
+  // 4. 设置传播头部
+  let carrier = propagation::MapCarrier::new()
+  let trace_propagator = propagation::W3CTraceContextPropagator::{}
+  let baggage_propagator = propagation::W3CBaggagePropagator::{}
+  
+  trace_propagator.inject(call_b_ctx, carrier)
+  baggage_propagator.inject(call_b_ctx, carrier)
+  
+  // 5. 模拟服务B接收请求
+  let service_b_resource = common::Resource::default("service-b")
+  let tracer_provider_b = trace::NoopTracerProvider::{}
+  let tracer_b = tracer_provider_b.get_tracer("service-b-tracer")
+  
+  // 提取传播的上下文
+  let service_b_ctx = trace_propagator.extract(context::Context::empty(), carrier)
+  let service_b_ctx_with_baggage = baggage_propagator.extract(service_b_ctx, carrier)
+  
+  let (service_b_span_ctx, service_b_span) = tracer_b.start_span(
+    service_b_ctx_with_baggage,
+    "Validate Inventory",
+    trace::Server,
+    [
+      ("service.name", common::AttributeValue::string("service-b")),
+      ("operation.type", common::AttributeValue::string("validate_inventory")),
+      ("product.id", common::AttributeValue::string("product-789")),
+      ("quantity", common::AttributeValue::int(5L))
+    ]
+  )
+  
+  // 6. 服务B调用数据库
+  let (db_ctx, db_span) = tracer_b.start_span(
+    service_b_span_ctx,
+    "Check Inventory DB",
+    trace::Client,
+    [
+      ("db.system", common::AttributeValue::string("mysql")),
+      ("db.operation", common::AttributeValue::string("SELECT")),
+      ("db.table", common::AttributeValue::string("inventory"))
+    ]
+  )
+  
+  // 7. 服务B调用服务C
+  let (call_c_ctx, call_c_span) = tracer_b.start_span(
+    service_b_span_ctx,
+    "Call Service C: Check Reservations",
+    trace::Client,
+    [
+      ("peer.service", common::AttributeValue::string("service-c")),
+      ("operation.type", common::AttributeValue::string("check_reservations")),
+      ("product.id", common::AttributeValue::string("product-789"))
+    ]
+  )
+  
+  // 8. 模拟服务C处理
+  let service_c_resource = common::Resource::default("service-c")
+  let tracer_provider_c = trace::NoopTracerProvider::{}
+  let tracer_c = tracer_provider_c.get_tracer("service-c-tracer")
+  
+  let service_c_ctx = trace_propagator.extract(context::Context::empty(), carrier)
+  let (service_c_span_ctx, service_c_span) = tracer_c.start_span(
+    service_c_ctx,
+    "Check Reservations",
+    trace::Server,
+    [
+      ("service.name", common::AttributeValue::string("service-c")),
+      ("operation.type", common::AttributeValue::string("check_reservations")),
+      ("product.id", common::AttributeValue::string("product-789"))
+    ]
+  )
+  
+  // 9. 记录各种指标
+  let meter_b = metrics::NoopMeterProvider::{}.get_meter("service-b-meter")
+  let inventory_checks = meter_b.create_counter("inventory.checks.total", "count", "Total inventory checks")
+  let inventory_check_duration = meter_b.create_histogram("inventory.check.duration", "ms", "Inventory check duration")
+  
+  inventory_checks.add(1L, [
+    ("product.id", common::AttributeValue::string("product-789")),
+    ("result", common::AttributeValue::string("available"))
+  ])
+  
+  inventory_check_duration.record(45.0, [
+    ("product.id", common::AttributeValue::string("product-789"))
+  ])
+  
+  // 10. 记录日志
+  let service_b_log = logs::LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(logs::Info)
+    .body("Inventory validation completed successfully")
+    .with_attribute("service.name", common::AttributeValue::string("service-b"))
+    .with_attribute("product.id", common::AttributeValue::string("product-789"))
+    .with_attribute("quantity", common::AttributeValue::int(5L))
+    .with_attribute("result", common::AttributeValue::string("available"))
+    .build()
+  
+  let service_c_log = logs::LogRecord::builder()
+    .timestamp(1640995200000500000L)
+    .severity(logs::Info)
+    .body("Reservation check completed")
+    .with_attribute("service.name", common::AttributeValue::string("service-c"))
+    .with_attribute("product.id", common::AttributeValue::string("product-789"))
+    .with_attribute("reserved_quantity", common::AttributeValue::int(2L))
+    .build()
+  
+  // 11. 验证微服务通信链路
+  assert_eq(service_a_span.name, "Process Order")
+  assert_eq(call_b_span.name, "Call Service B: Validate Inventory")
+  assert_eq(service_b_span.name, "Validate Inventory")
+  assert_eq(db_span.name, "Check Inventory DB")
+  assert_eq(call_c_span.name, "Call Service C: Check Reservations")
+  assert_eq(service_c_span.name, "Check Reservations")
+  
+  match service_b_log.body {
+    Some(body) => assert_eq(body, "Inventory validation completed successfully")
+    None => @test.fail("Expected service B log body")
   }
   
-  struct ResilienceTest {
-    failure_type : FailureType
-    failure_duration_seconds : Int
-    expected_behavior : String
-    recovery_time_seconds : Int
-    data_loss_expected : Bool
+  match service_c_log.body {
+    Some(body) => assert_eq(body, "Reservation check completed")
+    None => @test.fail("Expected service C log body")
   }
-  
-  struct SystemHealth {
-    telemetry_enabled : Bool
-    buffer_utilization : Double
-    queue_size : Int
-    error_rate : Double
-    last_successful_export : Int64
-  }
-  
-  // 韧性测试场景
-  let resilience_tests = [
-    {
-      failure_type: NetworkPartition,
-      failure_duration_seconds: 30,
-      expected_behavior: "buffer_data_and_retry",
-      recovery_time_seconds: 10,
-      data_loss_expected: false
-    },
-    {
-      failure_type: CollectorDown,
-      failure_duration_seconds: 60,
-      expected_behavior: "switch_to_backup_collector",
-      recovery_time_seconds: 5,
-      data_loss_expected: false
-    },
-    {
-      failure_type: HighMemoryUsage,
-      failure_duration_seconds: 45,
-      expected_behavior: "reduce_sampling_rate",
-      recovery_time_seconds: 15,
-      data_loss_expected: false
-    },
-    {
-      failure_type: DiskSpaceFull,
-      failure_duration_seconds: 20,
-      expected_behavior: "drop_old_data",
-      recovery_time_seconds: 30,
-      data_loss_expected: true
-    },
-    {
-      failure_type: DatabaseConnectionLost,
-      failure_duration_seconds: 25,
-      expected_behavior: "cache_and_retry",
-      recovery_time_seconds: 20,
-      data_loss_expected: false
-    }
-  ]
-  
-  // 模拟系统韧性响应
-  let simulate_resilience_response = fn(test : ResilienceTest, initial_health : SystemHealth) : SystemHealth {
-    let mut health = initial_health
-    let failure_start = 1609459200L  // 模拟时间戳
-    let failure_end = failure_start + test.failure_duration_seconds.to_int64()
-    
-    // 模拟故障期间的行为
-    match test.failure_type {
-      NetworkPartition => {
-        health.buffer_utilization = @min(0.95, health.buffer_utilization + 0.3)
-        health.queue_size = health.queue_size + 1000
-        health.error_rate = health.error_rate + 0.1
-        health.telemetry_enabled = true  // 仍然启用，但缓冲
-      }
-      CollectorDown => {
-        health.buffer_utilization = @min(0.9, health.buffer_utilization + 0.2)
-        health.error_rate = health.error_rate + 0.15
-        health.telemetry_enabled = true  // 切换到备用收集器
-      }
-      HighMemoryUsage => {
-        health.buffer_utilization = @min(0.85, health.buffer_utilization + 0.1)
-        health.telemetry_enabled = true  // 降低采样率但保持启用
-      }
-      DiskSpaceFull => {
-        health.buffer_utilization = 0.5  // 强制清理缓冲区
-        health.queue_size = @max(100, health.queue_size / 2)  // 减少队列大小
-        health.telemetry_enabled = true  // 继续收集，但丢弃旧数据
-      }
-      DatabaseConnectionLost => {
-        health.buffer_utilization = @min(0.8, health.buffer_utilization + 0.25)
-        health.queue_size = health.queue_size + 500
-        health.error_rate = health.error_rate + 0.08
-        health.telemetry_enabled = true  // 缓存并重试
-      }
-    }
-    
-    // 模拟恢复过程
-    health.last_successful_export = failure_end + test.recovery_time_seconds.to_int64()
-    health.error_rate = @max(0.0, health.error_rate - 0.05)  // 错误率逐渐下降
-    health.buffer_utilization = @max(0.1, health.buffer_utilization - 0.2)  // 缓冲区逐渐清理
-    
-    health
-  }
-  
-  // 测试各种故障场景
-  let initial_health = {
-    telemetry_enabled: true,
-    buffer_utilization: 0.3,
-    queue_size: 100,
-    error_rate: 0.01,
-    last_successful_export: 1609459100L
-  }
-  
-  for test in resilience_tests {
-    let recovered_health = simulate_resilience_response(test, initial_health)
-    
-    // 验证系统仍然运行
-    assert_eq(recovered_health.telemetry_enabled, true)
-    
-    // 验证缓冲区未溢出
-    assert_eq(recovered_health.buffer_utilization <= 1.0, true)
-    
-    // 验证错误率在可接受范围内
-    assert_eq(recovered_health.error_rate <= 0.5, true)
-    
-    // 验证系统有恢复迹象
-    assert_eq(recovered_health.last_successful_export > initial_health.last_successful_export, true)
-    
-    // 验证特定故障类型的预期行为
-    match test.failure_type {
-      NetworkPartition => {
-        assert_eq(recovered_health.queue_size > initial_health.queue_size, true)
-        assert_eq(recovered_health.buffer_utilization > initial_health.buffer_utilization, true)
-      }
-      CollectorDown => {
-        assert_eq(recovered_health.error_rate > initial_health.error_rate, true)
-      }
-      HighMemoryUsage => {
-        assert_eq(recovered_health.buffer_utilization <= 0.9, true)
-      }
-      DiskSpaceFull => {
-        assert_eq(recovered_health.queue_size < initial_health.queue_size * 2, true)
-      }
-      DatabaseConnectionLost => {
-        assert_eq(recovered_health.buffer_utilization > initial_health.buffer_utilization, true)
-      }
-    }
-  }
-  
-  // 测试系统极限情况
-  let extreme_health = { initial_health | buffer_utilization: 0.95, queue_size: 10000, error_rate: 0.3 }
-  let extreme_test = {
-    failure_type: NetworkPartition,
-    failure_duration_seconds: 120,  // 长时间故障
-    expected_behavior: "emergency_mode",
-    recovery_time_seconds: 60,
-    data_loss_expected: true
-  }
-  
-  let extreme_recovered = simulate_resilience_response(extreme_test, extreme_health)
-  
-  // 即使在极端情况下，系统也应该继续运行
-  assert_eq(extreme_recovered.telemetry_enabled, true)
-  assert_eq(extreme_recovered.buffer_utilization <= 1.0, true)
 }
 
-test "end_to_end_telemetry_workflow" {
-  // 测试端到端遥测工作流
+test "background_job_processing_scenario" {
+  // 模拟后台作业处理的场景
   
-  struct TelemetryWorkflow {
-    application_name : String
-    environment : String
-    version : String
-    services : Array<String>
-    data_generators : Array<String>
-    exporters : Array<String>
-    processors : Array<String>
-  }
+  // 1. 初始化后台作业服务的遥测
+  let job_resource = common::Resource::default("job-processor")
+  let ctx = context::Context::empty()
   
-  struct WorkflowMetrics {
-    spans_generated : Int
-    metrics_generated : Int
-    logs_generated : Int
-    data_exported : Int
-    processing_time_ms : Int64
-    success_rate : Double
-  }
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
   
-  // 创建端到端工作流
-  let create_workflow = fn() : TelemetryWorkflow {
-    {
-      application_name: "ecommerce-platform",
-      environment: "production",
-      version: "2.1.0",
-      services: [
-        "web-frontend",
-        "api-gateway", 
-        "user-service",
-        "catalog-service",
-        "order-service",
-        "payment-service",
-        "shipping-service"
-      ],
-      data_generators: [
-        "request-tracer",
-        "metric-collector",
-        "log-aggregator",
-        "error-reporter"
-      ],
-      exporters: [
-        "jaeger-exporter",
-        "prometheus-exporter", 
-        "elasticsearch-exporter",
-        "s3-exporter"
-      ],
-      processors: [
-        "batch-processor",
-        "sampling-processor",
-        "enrichment-processor",
-        "filter-processor"
+  let tracer = tracer_provider.get_tracer("job-tracer")
+  let meter = meter_provider.get_meter("job-meter")
+  let logger = logger_provider.get_logger("job-logger")
+  
+  // 2. 创建作业处理指标
+  let job_counter = meter.create_counter("jobs.processed.total", "count", "Total jobs processed")
+  let job_duration = meter.create_histogram("job.duration", "ms", "Job processing duration")
+  let job_queue_size = meter.create_gauge("job.queue.size", "count", "Job queue size")
+  let job_failure_counter = meter.create_counter("jobs.failed.total", "count", "Total failed jobs")
+  
+  // 3. 模拟不同类型的作业处理
+  let job_types = ["email", "report", "cleanup", "backup", "notification"]
+  let mut i = 0
+  while i < job_types.length() {
+    let job_type = job_types[i]
+    
+    // 4. 开始作业处理
+    let (job_ctx, job_span) = tracer.start_span(
+      ctx,
+      "Process Job: " + job_type,
+      trace::Internal,
+      [
+        ("job.type", common::AttributeValue::string(job_type)),
+        ("job.id", common::AttributeValue::string("job-" + i.to_string())),
+        ("job.queue", common::AttributeValue::string("high-priority"))
       ]
-    }
-  }
-  
-  // 模拟完整工作流
-  let simulate_end_to_end_workflow = fn(workflow : TelemetryWorkflow, 
-                                        duration_minutes : Int) : WorkflowMetrics {
-    let mut metrics = {
-      spans_generated: 0,
-      metrics_generated: 0,
-      logs_generated: 0,
-      data_exported: 0,
-      processing_time_ms: 0L,
-      success_rate: 1.0
-    }
+    )
     
-    let start_time = 1609459200000L
-    let duration_ms = duration_minutes.to_int64() * 60 * 1000
+    // 5. 记录作业开始指标
+    job_queue_size.record((10 - i).to_double(), [
+      ("job.queue", common::AttributeValue::string("high-priority"))
+    ])
     
-    // 模拟数据生成
-    for minute = 0; minute < duration_minutes; minute = minute + 1 {
-      let requests_per_minute = 100 + (@rand() * 50).to_int()  // 100-150 RPM
-      
-      // 每个请求生成span
-      metrics.spans_generated = metrics.spans_generated + requests_per_minute
-      
-      // 每个服务生成指标
-      for service in workflow.services {
-        metrics.metrics_generated = metrics.metrics_generated + 10  // 每个服务10个指标
+    // 6. 模拟作业处理步骤
+    let (step1_ctx, step1_span) = tracer.start_span(
+      job_ctx,
+      "Validate Job Parameters",
+      trace::Internal,
+      [
+        ("job.step", common::AttributeValue::string("validate")),
+        ("job.type", common::AttributeValue::string(job_type))
+      ]
+    )
+    
+    let (step2_ctx, step2_span) = tracer.start_span(
+      job_ctx,
+      "Execute Job Logic",
+      trace::Internal,
+      [
+        ("job.step", common::AttributeValue::string("execute")),
+        ("job.type", common::AttributeValue::string(job_type))
+      ]
+    )
+    
+    // 7. 根据作业类型执行不同的操作
+    match job_type {
+      "email" => {
+        // 邮件作业特有操作
+        let (email_ctx, email_span) = tracer.start_span(
+          step2_ctx,
+          "Send Email",
+          trace::Client,
+          [
+            ("operation.type", common::AttributeValue::string("send_email")),
+            ("email.provider", common::AttributeValue::string("smtp")),
+            ("email.recipients", common::AttributeValue::int(5L))
+          ]
+        )
+        
+        // 记录邮件发送指标
+        let email_counter = meter.create_counter("emails.sent.total", "count", "Total emails sent")
+        email_counter.add(1L, [
+          ("email.provider", common::AttributeValue::string("smtp")),
+          ("email.status", common::AttributeValue::string("sent"))
+        ])
       }
-      
-      // 生成日志（错误日志较少）
-      let error_rate = 0.02  // 2%错误率
-      let error_logs = (requests_per_minute.to_double() * error_rate).to_int()
-      let info_logs = requests_per_minute - error_logs
-      metrics.logs_generated = metrics.logs_generated + error_logs + info_logs
-      
-      // 模拟处理时间
-      let processing_time = (requests_per_minute.to_double() * 2.5).to_int64()  // 每个请求2.5ms处理时间
-      metrics.processing_time_ms = metrics.processing_time_ms + processing_time
+      "report" => {
+        // 报告作业特有操作
+        let (report_ctx, report_span) = tracer.start_span(
+          step2_ctx,
+          "Generate Report",
+          trace::Internal,
+          [
+            ("operation.type", common::AttributeValue::string("generate_report")),
+            ("report.type", common::AttributeValue::string("monthly")),
+            ("report.format", common::AttributeValue::string("pdf"))
+          ]
+        )
+        
+        // 记录报告生成指标
+        let report_counter = meter.create_counter("reports.generated.total", "count", "Total reports generated")
+        report_counter.add(1L, [
+          ("report.type", common::AttributeValue::string("monthly")),
+          ("report.format", common::AttributeValue::string("pdf"))
+        ])
+      }
+      _ => {
+        // 其他作业类型的通用处理
+        let (generic_ctx, generic_span) = tracer.start_span(
+          step2_ctx,
+          "Generic Job Processing",
+          trace::Internal,
+          [
+            ("operation.type", common::AttributeValue::string("generic_process")),
+            ("job.type", common::AttributeValue::string(job_type))
+          ]
+        )
+      }
     }
     
-    // 模拟处理和导出
-    let total_data_points = metrics.spans_generated + metrics.metrics_generated + metrics.logs_generated
+    // 8. 模拟作业完成
+    let job_success = i % 5 != 0  // 每5个作业有1个失败
     
-    // 批处理减少处理时间
-    let batch_efficiency = 0.7  // 30%效率提升
-    metrics.processing_time_ms = (metrics.processing_time_ms.to_double() * batch_efficiency).to_int64()
+    if job_success {
+      job_counter.add(1L, [
+        ("job.type", common::AttributeValue::string(job_type)),
+        ("job.status", common::AttributeValue::string("success"))
+      ])
+      
+      job_duration.record((100.0 + i.to_double() * 10.0), [
+        ("job.type", common::AttributeValue::string(job_type))
+      ])
+      
+      // 记录成功日志
+      let success_log = logs::LogRecord::builder()
+        .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
+        .severity(logs::Info)
+        .body("Job completed successfully")
+        .with_attribute("job.type", common::AttributeValue::string(job_type))
+        .with_attribute("job.id", common::AttributeValue::string("job-" + i.to_string()))
+        .with_attribute("job.duration_ms", common::AttributeValue::float(100.0 + i.to_double() * 10.0))
+        .build()
+    } else {
+      job_failure_counter.add(1L, [
+        ("job.type", common::AttributeValue::string(job_type)),
+        ("failure.reason", common::AttributeValue::string("timeout"))
+      ])
+      
+      // 记录失败日志
+      let failure_log = logs::LogRecord::builder()
+        .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
+        .severity(logs::Error)
+        .body("Job failed due to timeout")
+        .with_attribute("job.type", common::AttributeValue::string(job_type))
+        .with_attribute("job.id", common::AttributeValue::string("job-" + i.to_string()))
+        .with_attribute("failure.reason", common::AttributeValue::string("timeout"))
+        .build()
+    }
     
-    // 采样减少数据量
-    let sampling_rate = 0.1  // 10%采样
-    metrics.data_exported = (total_data_points.to_double() * sampling_rate).to_int()
-    
-    // 模拟导出成功率
-    let export_success_rate = 0.98  // 98%成功率
-    metrics.success_rate = export_success_rate
-    
-    metrics
+    i = i + 1
   }
   
-  // 执行端到端测试
-  let workflow = create_workflow()
-  let workflow_metrics = simulate_end_to_end_workflow(workflow, 10)  // 10分钟测试
+  // 9. 验证作业处理完成
+  assert_eq(i, job_types.length())
+  assert_eq(job_span.name, "Process Job: cleanup")  // 最后一个作业类型
+}
+
+test "real_time_data_streaming_scenario" {
+  // 模拟实时数据流处理的场景
   
-  // 验证工作流配置
-  assert_eq(workflow.application_name, "ecommerce-platform")
-  assert_eq(workflow.environment, "production")
-  assert_eq(workflow.services.length(), 7)
-  assert_eq(workflow.data_generators.length(), 4)
-  assert_eq(workflow.exporters.length(), 4)
-  assert_eq(workflow.processors.length(), 4)
+  // 1. 初始化流处理服务的遥测
+  let stream_resource = common::Resource::default("stream-processor")
+  let ctx = context::Context::empty()
   
-  // 验证生成的数据
-  assert_eq(workflow_metrics.spans_generated > 0, true)
-  assert_eq(workflow_metrics.metrics_generated > 0, true)
-  assert_eq(workflow_metrics.logs_generated > 0, true)
-  assert_eq(workflow_metrics.data_exported > 0, true)
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
   
-  // 验证数据量关系
-  let total_generated = workflow_metrics.spans_generated + 
-                       workflow_metrics.metrics_generated + 
-                       workflow_metrics.logs_generated
+  let tracer = tracer_provider.get_tracer("stream-tracer")
+  let meter = meter_provider.get_meter("stream-meter")
+  let logger = logger_provider.get_logger("stream-logger")
   
-  assert_eq(workflow_metrics.data_exported <= total_generated, true)
+  // 2. 创建流处理指标
+  let messages_processed = meter.create_counter("messages.processed.total", "count", "Total messages processed")
+  let message_processing_duration = meter.create_histogram("message.processing.duration", "ms", "Message processing duration")
+  let stream_lag = meter.create_gauge("stream.lag", "ms", "Stream processing lag")
+  let error_rate = meter.create_gauge("stream.error.rate", "percent", "Stream error rate")
   
-  // 验证采样效果
-  let actual_sampling_rate = workflow_metrics.data_exported.to_double() / total_generated.to_double()
-  assert_eq(actual_sampling_rate >= 0.05 && actual_sampling_rate <= 0.15, true)  // 允许采样率偏差
-  
-  // 验证处理性能
-  let avg_processing_per_data_point = workflow_metrics.processing_time_ms.to_double() / total_generated.to_double()
-  assert_eq(avg_processing_per_data_point <= 5.0, true)  // 每个数据点不超过5ms处理时间
-  
-  // 验证成功率
-  assert_eq(workflow_metrics.success_rate >= 0.95, true)  // 至少95%成功率
-  
-  // 验证工作流完整性
-  let expected_services = ["web-frontend", "api-gateway", "user-service", "catalog-service", 
-                          "order-service", "payment-service", "shipping-service"]
-  
-  for service in expected_services {
-    assert_eq(workflow.services.contains(service), true)
+  // 3. 模拟消息流处理
+  let message_types = ["user_action", "system_event", "metric_update", "log_entry"]
+  let mut i = 0
+  while i < message_types.length() {
+    let message_type = message_types[i]
+    
+    // 4. 开始处理消息
+    let (message_ctx, message_span) = tracer.start_span(
+      ctx,
+      "Process Message: " + message_type,
+      trace::Internal,
+      [
+        ("message.type", common::AttributeValue::string(message_type)),
+        ("message.id", common::AttributeValue::string("msg-" + i.to_string())),
+        ("stream.topic", common::AttributeValue::string("events")),
+        ("partition", common::AttributeValue::int(0L))
+      ]
+    )
+    
+    // 5. 记录消息处理开始
+    stream_lag.record((50.0 + i.to_double() * 5.0), [
+      ("stream.topic", common::AttributeValue::string("events"))
+    ])
+    
+    // 6. 根据消息类型进行不同的处理
+    match message_type {
+      "user_action" => {
+        // 用户行为分析
+        let (analytics_ctx, analytics_span) = tracer.start_span(
+          message_ctx,
+          "Analyze User Action",
+          trace::Internal,
+          [
+            ("operation.type", common::AttributeValue::string("analytics")),
+            ("action.type", common::AttributeValue::string("click"))
+          ]
+        )
+        
+        // 记录用户行为指标
+        let user_actions = meter.create_counter("user.actions.total", "count", "Total user actions")
+        user_actions.add(1L, [
+          ("action.type", common::AttributeValue::string("click")),
+          ("user.segment", common::AttributeValue::string("premium"))
+        ])
+      }
+      "system_event" => {
+        // 系统事件处理
+        let (event_ctx, event_span) = tracer.start_span(
+          message_ctx,
+          "Process System Event",
+          trace::Internal,
+          [
+            ("operation.type", common::AttributeValue::string("system_event")),
+            ("event.severity", common::AttributeValue::string("warning"))
+          ]
+        )
+        
+        // 记录系统事件指标
+        let system_events = meter.create_counter("system.events.total", "count", "Total system events")
+        system_events.add(1L, [
+          ("event.severity", common::AttributeValue::string("warning")),
+          ("event.source", common::AttributeValue::string("auth-service"))
+        ])
+      }
+      "metric_update" => {
+        // 指标更新处理
+        let (metric_ctx, metric_span) = tracer.start_span(
+          message_ctx,
+          "Update Metrics",
+          trace::Internal,
+          [
+            ("operation.type", common::AttributeValue::string("metric_update")),
+            ("metric.source", common::AttributeValue::string("application"))
+          ]
+        )
+        
+        // 记录指标更新
+        let metrics_updated = meter.create_counter("metrics.updated.total", "count", "Total metrics updated")
+        metrics_updated.add(10L, [
+          ("metric.source", common::AttributeValue::string("application"))
+        ])
+      }
+      "log_entry" => {
+        // 日志条目处理
+        let (log_ctx, log_span) = tracer.start_span(
+          message_ctx,
+          "Process Log Entry",
+          trace::Internal,
+          [
+            ("operation.type", common::AttributeValue::string("log_processing")),
+            ("log.level", common::AttributeValue::string("INFO"))
+          ]
+        )
+        
+        // 记录日志处理指标
+        let logs_processed = meter.create_counter("logs.processed.total", "count", "Total logs processed")
+        logs_processed.add(1L, [
+          ("log.level", common::AttributeValue::string("INFO")),
+          ("log.source", common::AttributeValue::string("web-server"))
+        ])
+      }
+    }
+    
+    // 7. 完成消息处理
+    let processing_success = i % 4 != 0  // 每4个消息有1个处理失败
+    
+    if processing_success {
+      messages_processed.add(1L, [
+        ("message.type", common::AttributeValue::string(message_type)),
+        ("processing.status", common::AttributeValue::string("success"))
+      ])
+      
+      message_processing_duration.record((10.0 + i.to_double() * 2.0), [
+        ("message.type", common::AttributeValue::string(message_type))
+      ])
+      
+      // 记录成功日志
+      let success_log = logs::LogRecord::builder()
+        .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
+        .severity(logs::Debug)
+        .body("Message processed successfully")
+        .with_attribute("message.type", common::AttributeValue::string(message_type))
+        .with_attribute("message.id", common::AttributeValue::string("msg-" + i.to_string()))
+        .with_attribute("processing.duration_ms", common::AttributeValue::float(10.0 + i.to_double() * 2.0))
+        .build()
+    } else {
+      // 记录失败指标
+      let message_errors = meter.create_counter("messages.errors.total", "count", "Total message processing errors")
+      message_errors.add(1L, [
+        ("message.type", common::AttributeValue::string(message_type)),
+        ("error.type", common::AttributeValue::string("parsing_error"))
+      ])
+      
+      // 记录失败日志
+      let error_log = logs::LogRecord::builder()
+        .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
+        .severity(logs::Error)
+        .body("Failed to process message")
+        .with_attribute("message.type", common::AttributeValue::string(message_type))
+        .with_attribute("message.id", common::AttributeValue::string("msg-" + i.to_string()))
+        .with_attribute("error.type", common::AttributeValue::string("parsing_error"))
+        .build()
+    }
+    
+    // 8. 更新错误率
+    error_rate.record(25.0, [
+      ("stream.topic", common::AttributeValue::string("events"))
+    ])
+    
+    i = i + 1
   }
   
-  let expected_components = ["jaeger-exporter", "prometheus-exporter", "elasticsearch-exporter", 
-                            "s3-exporter", "batch-processor", "sampling-processor"]
-  
-  for component in expected_components {
-    let found = workflow.exporters.contains(component) || workflow.processors.contains(component)
-    assert_eq(found, true)
-  }
+  // 9. 验证流处理完成
+  assert_eq(i, message_types.length())
+  assert_eq(message_span.name, "Process Message: log_entry")  // 最后一个消息类型
 }
