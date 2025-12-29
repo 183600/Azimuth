@@ -111,6 +111,25 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "span_lifecycle_test.mbt": {
     0: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_0, ["span_lifecycle_and_operations"]),
   },
+  "span_lifecycle_state_test.mbt": {
+    0: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_0, ["span_creation_with_all_parameters"]),
+    1: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_1, ["span_creation_with_minimal_parameters"]),
+    2: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_2, ["span_kind_variations"]),
+    3: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_3, ["span_context_properties"]),
+    4: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_4, ["span_attributes_complex_scenarios"]),
+    5: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_5, ["span_events_and_links"]),
+    6: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_6, ["span_status_transitions"]),
+    7: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_7, ["span_timing_and_duration"]),
+    8: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_8, ["span_parent_relationships"]),
+    9: (__test_7370616e5f6c6966656379636c655f73746174655f746573742e6d6274_9, ["span_comprehensive_workflow"]),
+  },
+  "span_lifecycle_advanced_test.mbt": {
+    0: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_0, ["span_hierarchical_lifecycle"]),
+    1: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_1, ["span_status_transitions"]),
+    2: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_2, ["span_event_lifecycle"]),
+    3: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_3, ["span_link_relationships"]),
+    4: (__test_7370616e5f6c6966656379636c655f616476616e6365645f746573742e6d6274_4, ["span_timing_and_duration"]),
+  },
   "span_kinds_status_test.mbt": {
     0: (__test_7370616e5f6b696e64735f7374617475735f746573742e6d6274_0, ["span_kinds_and_status_codes"]),
   },

@@ -122,6 +122,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "instrument_types_test.mbt": {
     0: (__test_696e737472756d656e745f74797065735f746573742e6d6274_0, ["instrument_types_individual"]),
   },
+  "instrument_aggregation_test.mbt": {
+    0: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_0, ["instrument_type_counter_aggregation"]),
+    1: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_1, ["instrument_type_histogram_aggregation"]),
+    2: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_2, ["instrument_type_up_down_counter_aggregation"]),
+    3: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_3, ["instrument_type_gauge_aggregation"]),
+    4: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_4, ["instrument_type_observable_counter_aggregation"]),
+    5: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_5, ["instrument_type_observable_gauge_aggregation"]),
+    6: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_6, ["instrument_type_observable_up_down_counter_aggregation"]),
+    7: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_7, ["metrics_complex_aggregation_scenarios"]),
+    8: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_8, ["metrics_performance_aggregation"]),
+    9: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_9, ["metrics_edge_cases_aggregation"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED

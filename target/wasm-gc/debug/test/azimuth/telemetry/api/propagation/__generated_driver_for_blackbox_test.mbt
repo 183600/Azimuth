@@ -57,6 +57,14 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "w3c_compliance_test.mbt": {
+    0: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_0, ["w3c_traceparent_format_validation"]),
+    1: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_1, ["w3c_tracestate_format_validation"]),
+    2: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_2, ["w3c_baggage_format_validation"]),
+    3: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_3, ["w3c_header_size_limits"]),
+    4: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_4, ["w3c_propagation_roundtrip"]),
+    5: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_5, ["w3c_composite_propagator_compliance"]),
+  },
   "propagation_test.mbt": {
     0: (__test_70726f7061676174696f6e5f746573742e6d6274_0, ["map_carrier_basic_operations"]),
     1: (__test_70726f7061676174696f6e5f746573742e6d6274_1, ["w3c_trace_context_inject"]),
@@ -108,6 +116,20 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "map_carrier_set_test.mbt": {
     0: (__test_6d61705f636172726965725f7365745f746573742e6d6274_0, ["map_carrier_set_operations"]),
+  },
+  "composite_propagator_combination_test.mbt": {
+    0: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_0, ["composite_propagator_single_propagator"]),
+    1: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_1, ["composite_propagator_dual_propagators"]),
+    2: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_2, ["composite_propagator_multiple_propagators"]),
+    3: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_3, ["composite_propagator_empty_propagators"]),
+    4: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_4, ["composite_propagator_with_context_data"]),
+    5: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_5, ["composite_propagator_with_baggage_data"]),
+    6: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_6, ["composite_propagator_map_carrier_integration"]),
+    7: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_7, ["composite_propagator_header_names"]),
+    8: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_8, ["composite_propagator_order_dependency"]),
+    9: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_9, ["composite_propagator_complex_scenario"]),
+    10: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_10, ["composite_propagator_error_handling"]),
+    11: (__test_636f6d706f736974655f70726f70616761746f725f636f6d62696e6174696f6e5f746573742e6d6274_11, ["composite_propagator_performance_considerations"]),
   },
   "composite_error_test.mbt": {
     0: (__test_636f6d706f736974655f6572726f725f746573742e6d6274_0, ["composite_propagator_empty_propagators"]),

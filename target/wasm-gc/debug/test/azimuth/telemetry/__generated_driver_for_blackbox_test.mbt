@@ -177,6 +177,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_706572666f726d616e63655f636f6e63757272656e63795f746573742e6d6274_6, ["concurrent_context_operations"]),
     7: (__test_706572666f726d616e63655f636f6e63757272656e63795f746573742e6d6274_7, ["memory_usage_stress_test"]),
   },
+  "performance_benchmark_test.mbt": {
+    0: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_0, ["span_creation_performance_benchmark"]),
+    1: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_1, ["log_record_creation_performance_benchmark"]),
+    2: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_2, ["metrics_operations_performance_benchmark"]),
+    3: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_3, ["context_operations_performance_benchmark"]),
+    4: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_4, ["propagation_operations_performance_benchmark"]),
+    5: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_5, ["attribute_value_operations_performance_benchmark"]),
+    6: (__test_706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_6, ["end_to_end_performance_benchmark"]),
+  },
   "memory_usage_test.mbt": {
     0: (__test_6d656d6f72795f75736167655f746573742e6d6274_0, ["memory_usage_under_load"]),
     1: (__test_6d656d6f72795f75736167655f746573742e6d6274_1, ["span_pool_memory_efficiency"]),
@@ -221,8 +230,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_5, ["cross_platform_error_handling"]),
   },
   "cross_module_integration_test.mbt": {
-    0: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_0, ["trace_context_integration"]),
-    1: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_1, ["metrics_context_baggage_integration"]),
+    0: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_0, ["trace_to_logs_integration"]),
+    1: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_1, ["trace_to_metrics_integration"]),
+    2: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_2, ["context_propagation_integration"]),
+    3: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_3, ["end_to_end_telemetry_flow"]),
+    4: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_4, ["telemetry_resource_integration"]),
   },
   "cross_api_integration_test.mbt": {
     0: (__test_63726f73735f6170695f696e746567726174696f6e5f746573742e6d6274_0, ["cross_api_integration_trace_metrics_logs"]),

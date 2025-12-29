@@ -60,6 +60,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "simple_test.mbt": {
     0: (__test_73696d706c655f746573742e6d6274_0, ["simple_attribute_value_test"]),
   },
+  "resource_instrumentation_test.mbt": {
+    0: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_0, ["resource_default_creation_variants"]),
+    1: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_1, ["resource_with_comprehensive_attributes"]),
+    2: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_2, ["resource_edge_cases_and_special_values"]),
+    3: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_3, ["resource_attributes_edge_cases"]),
+    4: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_4, ["instrumentation_scope_comprehensive_scenarios"]),
+    5: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_5, ["resource_and_attributes_performance_considerations"]),
+  },
   "integration_test.mbt": {
     0: (__test_696e746567726174696f6e5f746573742e6d6274_0, ["resource_and_attributes_integration"]),
     1: (__test_696e746567726174696f6e5f746573742e6d6274_1, ["attribute_complex_integration"]),
@@ -94,6 +102,22 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_62617369635f746573742e6d6274_5, ["attribute_value_edge_cases"]),
     6: (__test_62617369635f746573742e6d6274_6, ["instrumentation_scope_creation_and_properties"]),
     7: (__test_62617369635f746573742e6d6274_7, ["resource_complex_scenarios"]),
+  },
+  "attribute_value_conversion_test.mbt": {
+    0: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_0, ["attribute_value_string_representation"]),
+    1: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_1, ["attribute_value_array_string_representation"]),
+    2: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_2, ["attribute_value_type_inference"]),
+    3: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_3, ["attribute_value_array_parsing"]),
+    4: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_4, ["attribute_value_type_conversion_matrix"]),
+    5: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_5, ["attribute_value_serialization_roundtrip"]),
+  },
+  "attribute_value_boundary_test.mbt": {
+    0: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_0, ["attribute_value_string_boundary_cases"]),
+    1: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_1, ["attribute_value_numeric_boundary_cases"]),
+    2: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_2, ["attribute_value_boolean_boundary_cases"]),
+    3: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_3, ["attribute_value_array_boundary_cases"]),
+    4: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_4, ["attribute_value_type_consistency"]),
+    5: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_5, ["attribute_value_conversion_edge_cases"]),
   },
   "advanced_test.mbt": {
     0: (__test_616476616e6365645f746573742e6d6274_0, ["resource_complex_attributes_and_validation"]),
