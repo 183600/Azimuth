@@ -1,466 +1,761 @@
-// 简化的遥测批处理优化测试用例
+// 遥测批处理优化测试用例
 
-@testable
 test "telemetry_batch_size_optimization" {
-  // 测试遥测批次大小优化
+  // 测试遥测批处理大小优化
   
-  let incoming_data = []
-  let mut i = 0
-  while i < 1000 {
-    incoming_data.push({
-      "trace_id": "trace-" + i.to_string(),
-      "timestamp": "1640995200",
-      "data_size": "100" // 简化数据大小
-    })
-    i = i + 1
-  }
-  
-  // 测试不同批次大小的性能
-  let batch_sizes = [10, 50, 100, 200, 500]
-  let batch_performance = []
-  
-  let mut j = 0
-  while j < batch_sizes.length() {
-    let current_batch_size = batch_sizes[j]
-    let mut total_batches = 0
-    let mut total_processing_time = 0
-    let mut total_memory_usage = 0
-    
-    // 模拟批处理
-    i = 0
-    while i < incoming_data.length() {
-      let batch_end = if i + current_batch_size < incoming_data.length() {
-        i + current_batch_size
-      } else {
-        incoming_data.length()
-      }
-      
-      // 计算批次数据大小
-      let batch_data_size = (batch_end - i) * 100 // 简化计算
-      
-      // 模拟处理时间（基于数据大小）
-      let processing_time = batch_data_size / 100 // 简化模型
-      total_processing_time = total_processing_time + processing_time
-      
-      // 模拟内存使用
-      let memory_usage = batch_data_size
-      total_memory_usage = total_memory_usage + memory_usage
-      
-      total_batches = total_batches + 1
-      i = i + current_batch_size
-    }
-    
-    batch_performance.push({
-      "batch_size": current_batch_size,
-      "total_batches": total_batches,
-      "avg_processing_time": total_processing_time / total_batches,
-      "total_memory_usage": total_memory_usage,
-      "efficiency": total_batches.to_double() / total_processing_time.to_double()
-    })
-    j = j + 1
-  }
-  
-  // 验证批次大小对性能的影响
-  assert_eq(batch_performance.length(), 5)
-  
-  // 验证批次大小与批次数的关系
-  assert_eq(batch_performance[0]["batch_size"], 10)
-  assert_eq(batch_performance[0]["total_batches"], 100) // 1000/10
-  
-  assert_eq(batch_performance[2]["batch_size"], 100)
-  assert_eq(batch_performance[2]["total_batches"], 10) // 1000/100
-  
-  assert_eq(batch_performance[4]["batch_size"], 500)
-  assert_eq(batch_performance[4]["total_batches"], 2) // 1000/500，最后一批可能不足500
-  
-  // 验证效率计算
-  let mut i = 0
-  while i < batch_performance.length() {
-    let perf = batch_performance[i]
-    assert_eq(perf["efficiency"] > 0.0, true)
-    i = i + 1
-  }
-  
-  // 找出最优批次大小（基于效率）
-  let mut max_efficiency = 0.0
-  let mut optimal_batch_size = 0
-  
-  i = 0
-  while i < batch_performance.length() {
-    let perf = batch_performance[i]
-    if perf["efficiency"] > max_efficiency {
-      max_efficiency = perf["efficiency"]
-      optimal_batch_size = perf["batch_size"]
-    }
-    i = i + 1
-  }
-  
-  // 验证找到了最优批次大小
-  assert_eq(optimal_batch_size > 0, true)
-  assert_eq(max_efficiency > 0.0, true)
-}
-
-@testable
-test "telemetry_batch_timing_optimization" {
-  // 测试遥测批次时间优化
-  
-  let data_stream = []
-  let mut i = 0
-  while i < 500 {
-    data_stream.push({
-      "id": i,
-      "arrival_time": "1640995200",
-      "priority": if i % 10 == 0 { "high" } else { "normal" }
-    })
-    i = i + 1
-  }
-  
-  // 测试不同的批次时间窗口
-  let time_windows = [5, 10, 30, 60] // 秒
-  let timing_performance = []
-  
-  let mut j = 0
-  while j < time_windows.length() {
-    let current_window = time_windows[j]
-    let mut batches_created = 0
-    let mut avg_batch_size = 0
-    let mut max_wait_time = 0
-    let mut total_wait_time = 0
-    
-    // 模拟基于时间的批处理
-    let mut current_batch = []
-    let batch_start_time = "1640995200"
-    
-    i = 0
-    while i < data_stream.length() {
-      let data_item = data_stream[i]
-      let item_time = data_item["arrival_time"]
-      
-      // 检查是否需要刷新批次（时间窗口）
-      if (item_time.to_int() - batch_start_time.to_int()) >= current_window || current_batch.length() >= 100 {
-        // 计算批次统计
-        batches_created = batches_created + 1
-        avg_batch_size = avg_batch_size + current_batch.length()
-        
-        // 计算等待时间（简化）
-        let wait_time = current_window
-        total_wait_time = total_wait_time + wait_time
-        if wait_time > max_wait_time {
-          max_wait_time = wait_time
-        }
-        
-        // 开始新批次
-        current_batch = [data_item]
-      } else {
-        current_batch.push(data_item)
-      }
-      i = i + 1
-    }
-    
-    // 处理最后一个批次
-    if current_batch.length() > 0 {
-      batches_created = batches_created + 1
-      avg_batch_size = avg_batch_size + current_batch.length()
-    }
-    
-    avg_batch_size = avg_batch_size / batches_created
-    
-    timing_performance.push({
-      "time_window": current_window,
-      "batches_created": batches_created,
-      "avg_batch_size": avg_batch_size,
-      "max_wait_time": max_wait_time,
-      "avg_wait_time": total_wait_time / data_stream.length()
-    })
-    j = j + 1
-  }
-  
-  // 验证时间窗口对批处理的影响
-  assert_eq(timing_performance.length(), 4)
-  
-  // 验证时间窗口与批次大小的关系
-  assert_eq(timing_performance[0]["time_window"], 5)
-  assert_eq(timing_performance[3]["time_window"], 60)
-  
-  // 时间窗口越大，平均批次大小应该越大
-  assert_eq(timing_performance[3]["avg_batch_size"] >= timing_performance[0]["avg_batch_size"], true)
-  
-  // 时间窗口越大，最大等待时间应该越大
-  assert_eq(timing_performance[3]["max_wait_time"] >= timing_performance[0]["max_wait_time"], true)
-  
-  // 验证批次创建数量合理
-  let mut i = 0
-  while i < timing_performance.length() {
-    let perf = timing_performance[i]
-    assert_eq(perf["batches_created"] > 0, true)
-    assert_eq(perf["avg_batch_size"] > 0, true)
-    i = i + 1
-  }
-}
-
-@testable
-test "telemetry_batch_priority_optimization" {
-  // 测试遥测批次优先级优化
-  
-  let mixed_priority_data = []
-  let mut i = 0
-  while i < 200 {
-    let priority = if i % 20 == 0 { "critical" } 
-                 else if i % 10 == 0 { "high" }
-                 else if i % 5 == 0 { "medium" }
-                 else { "low" }
-    
-    mixed_priority_data.push({
-      "id": i,
-      "priority": priority,
-      "size": "50"
-    })
-    i = i + 1
-  }
-  
-  // 优先级批处理策略
-  let priority_batches = {
-    "critical": [],
-    "high": [],
-    "medium": [],
-    "low": []
-  }
-  
-  // 按优先级分组
-  i = 0
-  while i < mixed_priority_data.length() {
-    let data_item = mixed_priority_data[i]
-    let priority = data_item["priority"]
-    
-    match priority {
-      "critical" => priority_batches["critical"].push(data_item)
-      "high" => priority_batches["high"].push(data_item)
-      "medium" => priority_batches["medium"].push(data_item)
-      "low" => priority_batches["low"].push(data_item)
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  // 验证优先级分组
-  let critical_count = priority_batches["critical"].length()
-  let high_count = priority_batches["high"].length()
-  let medium_count = priority_batches["medium"].length()
-  let low_count = priority_batches["low"].length()
-  
-  assert_eq(critical_count + high_count + medium_count + low_count, 200)
-  assert_eq(critical_count, 10) // 每20个一个critical
-  assert_eq(high_count, 10)    // 每10个一个high（除去critical）
-  
-  // 优先级处理策略
-  let processing_order = []
-  let batch_sizes = {
-    "critical": 5,  // 小批次，快速处理
-    "high": 10,     // 中等批次
-    "medium": 20,   // 较大批次
-    "low": 50       // 大批次
-  }
-  
-  // 按优先级顺序创建处理批次
-  let priorities = ["critical", "high", "medium", "low"]
-  let mut j = 0
-  while j < priorities.length() {
-    let priority = priorities[j]
-    let data_list = priority_batches[priority]
-    let batch_size = batch_sizes[priority]
-    
-    i = 0
-    while i < data_list.length() {
-      let batch_end = if i + batch_size < data_list.length() {
-        i + batch_size
-      } else {
-        data_list.length()
-      }
-      
-      // 创建批次
-      let batch = []
-      let mut k = i
-      while k < batch_end {
-        batch.push(data_list[k])
-        k = k + 1
-      }
-      
-      processing_order.push({
-        "priority": priority,
-        "batch_size": batch.length(),
-        "data": batch
-      })
-      
-      i = i + batch_size
-    }
-    j = j + 1
-  }
-  
-  // 验证优先级处理顺序
-  assert_eq(processing_order.length() > 0, true)
-  
-  // 验证critical批次在最前面
-  let mut found_critical = false
-  let mut found_low = false
-  let mut critical_position = -1
-  let mut low_position = -1
-  
-  i = 0
-  while i < processing_order.length() {
-    if processing_order[i]["priority"] == "critical" && not found_critical {
-      found_critical = true
-      critical_position = i
-    }
-    if processing_order[i]["priority"] == "low" && not found_low {
-      found_low = true
-      low_position = i
-    }
-    i = i + 1
-  }
-  
-  if found_critical && found_low {
-    assert_eq(critical_position < low_position, true)
-  }
-  
-  // 计算优先级处理统计
-  let priority_stats = [
-    ("critical.batches", 0),
-    ("high.batches", 0),
-    ("medium.batches", 0),
-    ("low.batches", 0)
+  let batch_size_tests = [
+    ("small_batch", 32, 1000, 120.5),       // 批次名称, 批次大小, 处理时间(毫秒), 吞吐量(条/秒)
+    ("medium_batch", 128, 1500, 85.3),
+    ("large_batch", 512, 2000, 256.0),
+    ("xlarge_batch", 1024, 3500, 292.6),
+    ("xxlarge_batch", 2048, 6000, 341.3)
   ]
   
+  // 验证批处理测试
+  assert_eq(batch_size_tests.length(), 5)
+  assert_eq(batch_size_tests[0].0, "small_batch")
+  assert_eq(batch_size_tests[0].1, 32)
+  assert_eq(batch_size_tests[0].2, 1000)
+  assert_eq(batch_size_tests[0].3, 120.5)
+  assert_eq(batch_size_tests[4].0, "xxlarge_batch")
+  assert_eq(batch_size_tests[4].1, 2048)
+  assert_eq(batch_size_tests[4].2, 6000)
+  assert_eq(batch_size_tests[4].3, 341.3)
+  
+  // 计算效率指标
+  let efficiency_metrics = []
+  let mut i = 0
+  
+  while i < batch_size_tests.length() {
+    let batch_name = batch_size_tests[i].0
+    let batch_size = batch_size_tests[i].1
+    let processing_time = batch_size_tests[i].2
+    let throughput = batch_size_tests[i].3
+    
+    let latency_per_item = processing_time.to_double() / batch_size.to_double()
+    let efficiency = throughput.to_double() / processing_time.to_double()
+    
+    efficiency_metrics.push((
+      batch_name,
+      batch_size,
+      processing_time,
+      throughput,
+      latency_per_item,
+      efficiency
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证效率指标
+  assert_eq(efficiency_metrics.length(), 5)
+  assert_eq(efficiency_metrics[0].0, "small_batch")
+  assert_eq(efficiency_metrics[0].4, 31.25) // 1000/32 = 31.25ms/item
+  assert_eq(efficiency_metrics[0].5, 0.1205) // 120.5/1000
+  assert_eq(efficiency_metrics[4].0, "xxlarge_batch")
+  assert_eq(efficiency_metrics[4].4, 2.9296875) // 6000/2048 ≈ 2.93ms/item
+  assert_eq(efficiency_metrics[4].5, 0.05688333333333333) // 341.3/6000
+  
+  // 找出最优批次大小
+  let mut best_throughput = 0.0
+  let mut best_latency = 999999.0
+  let mut best_efficiency = 0.0
+  let mut best_throughput_batch = ""
+  let mut best_latency_batch = ""
+  let mut best_efficiency_batch = ""
+  
   i = 0
-  while i < processing_order.length() {
-    let priority = processing_order[i]["priority"]
-    let mut j = 0
-    while j < priority_stats.length() {
-      if priority_stats[j].0.has_prefix(priority) {
-        priority_stats[j] = (priority_stats[j].0, priority_stats[j].1 + 1)
-        break
-      }
-      j = j + 1
+  while i < efficiency_metrics.length() {
+    let batch_name = efficiency_metrics[i].0
+    let throughput = efficiency_metrics[i].3
+    let latency = efficiency_metrics[i].4
+    let efficiency = efficiency_metrics[i].5
+    
+    if throughput > best_throughput {
+      best_throughput = throughput
+      best_throughput_batch = batch_name
     }
+    
+    if latency < best_latency {
+      best_latency = latency
+      best_latency_batch = batch_name
+    }
+    
+    if efficiency > best_efficiency {
+      best_efficiency = efficiency
+      best_efficiency_batch = batch_name
+    }
+    
     i = i + 1
   }
   
-  // 验证批次统计
-  let mut total_batches = 0
+  // 验证最优批次
+  assert_eq(best_throughput_batch, "xxlarge_batch") // 最大吞吐量
+  assert_eq(best_throughput, 341.3)
+  assert_eq(best_latency_batch, "xxlarge_batch") // 最低延迟
+  assert_eq(best_latency, 2.9296875)
+  assert_eq(best_efficiency_batch, "small_batch") // 最高效率
+  assert_eq(best_efficiency, 0.1205)
+  
+  // 批处理大小建议
+  let batch_recommendations = []
   i = 0
-  while i < priority_stats.length() {
-    total_batches = total_batches + priority_stats[i].1
+  
+  while i < efficiency_metrics.length() {
+    let batch_name = efficiency_metrics[i].0
+    let batch_size = efficiency_metrics[i].1
+    let throughput = efficiency_metrics[i].3
+    let latency = efficiency_metrics[i].4
+    
+    let recommendation = if throughput > 300.0 && latency < 5.0 {
+      "optimal_for_high_throughput"
+    } else if throughput > 200.0 && latency < 10.0 {
+      "good_for_general_use"
+    } else if throughput > 100.0 {
+      "suitable_for_low_volume"
+    } else {
+      "not_recommended"
+    }
+    
+    batch_recommendations.push((batch_name, batch_size, recommendation))
     i = i + 1
   }
   
-  assert_eq(total_batches, processing_order.length())
+  // 验证批处理建议
+  assert_eq(batch_recommendations.length(), 5)
+  assert_eq(batch_recommendations[0].0, "small_batch")
+  assert_eq(batch_recommendations[0].2, "suitable_for_low_volume")
+  assert_eq(batch_recommendations[2].0, "large_batch")
+  assert_eq(batch_recommendations[2].2, "good_for_general_use")
+  assert_eq(batch_recommendations[4].0, "xxlarge_batch")
+  assert_eq(batch_recommendations[4].2, "optimal_for_high_throughput")
 }
 
-@testable
-test "telemetry_batch_compression_optimization" {
-  // 测试遥测批次压缩优化
+test "telemetry_batch_timeout_optimization" {
+  // 测试遥测批处理超时优化
   
-  let telemetry_batch = []
+  let timeout_tests = [
+    ("short_timeout", 100, 256, 85.3, 95.2),   // 超时名称, 超时时间(毫秒), 批次大小, 实际吞吐量, 目标吞吐量
+    ("medium_timeout", 500, 512, 156.7, 180.5),
+    ("long_timeout", 1000, 1024, 234.8, 250.0),
+    ("xlong_timeout", 2000, 2048, 298.5, 320.0),
+    ("adaptive_timeout", 250, 512, 178.9, 190.0)
+  ]
+  
+  // 验证超时测试
+  assert_eq(timeout_tests.length(), 5)
+  assert_eq(timeout_tests[0].0, "short_timeout")
+  assert_eq(timeout_tests[0].1, 100)
+  assert_eq(timeout_tests[0].2, 256)
+  assert_eq(timeout_tests[0].3, 85.3)
+  assert_eq(timeout_tests[0].4, 95.2)
+  assert_eq(timeout_tests[4].0, "adaptive_timeout")
+  assert_eq(timeout_tests[4].1, 250)
+  assert_eq(timeout_tests[4].2, 512)
+  assert_eq(timeout_tests[4].3, 178.9)
+  assert_eq(timeout_tests[4].4, 190.0)
+  
+  // 计算超时效率
+  let timeout_efficiency = []
   let mut i = 0
-  while i < 100 {
-    telemetry_batch.push({
-      "trace_id": "trace-" + i.to_string(),
-      "service_name": "api-service",
-      "operation_name": "process_request",
-      "duration_ms": "100",
-      "status_code": "200",
-      "timestamp": "1640995200"
-    })
+  
+  while i < timeout_tests.length() {
+    let timeout_name = timeout_tests[i].0
+    let timeout_ms = timeout_tests[i].1
+    let batch_size = timeout_tests[i].2
+    let actual_throughput = timeout_tests[i].3
+    let target_throughput = timeout_tests[i].4
+    
+    let achievement_rate = actual_throughput.to_double() / target_throughput.to_double()
+    let timeout_efficiency_val = actual_throughput.to_double() / timeout_ms.to_double()
+    let batch_fill_rate = actual_throughput.to_double() / batch_size.to_double()
+    
+    timeout_efficiency.push((
+      timeout_name,
+      timeout_ms,
+      batch_size,
+      actual_throughput,
+      target_throughput,
+      achievement_rate,
+      timeout_efficiency_val,
+      batch_fill_rate
+    ))
+    
     i = i + 1
   }
   
-  // 计算原始批次大小
-  let mut original_size = 0
-  i = 0
-  while i < telemetry_batch.length() {
-    let item = telemetry_batch[i]
-    original_size = original_size + item["trace_id"].length()
-    original_size = original_size + item["service_name"].length()
-    original_size = original_size + item["operation_name"].length()
-    original_size = original_size + 10 // duration_ms
-    original_size = original_size + 3  // status_code
-    original_size = original_size + 10 // timestamp
-    i = i + 1
-  }
+  // 验证超时效率
+  assert_eq(timeout_efficiency.length(), 5)
+  assert_eq(timeout_efficiency[0].0, "short_timeout")
+  assert_eq(timeout_efficiency[0].5, 0.8960084033613446) // 85.3/95.2 ≈ 89.6%
+  assert_eq(timeout_efficiency[0].6, 0.853) // 85.3/100
+  assert_eq(timeout_efficiency[0].7, 0.333203125) // 85.3/256 ≈ 33.3%
+  assert_eq(timeout_efficiency[4].0, "adaptive_timeout")
+  assert_eq(timeout_efficiency[4].5, 0.9421052631578947) // 178.9/190.0 ≈ 94.2%
+  assert_eq(timeout_efficiency[4].6, 0.7156) // 178.9/250
+  assert_eq(timeout_efficiency[4].7, 0.3494140625) // 178.9/512 ≈ 34.9%
   
-  // 应用压缩优化
-  let compressed_batch = []
+  // 找出最优超时配置
+  let mut best_achievement = 0.0
+  let mut best_efficiency = 0.0
+  let mut best_achievement_timeout = ""
+  let mut best_efficiency_timeout = ""
   
-  // 压缩每个项目
   i = 0
-  while i < telemetry_batch.length() {
-    let item = telemetry_batch[i]
-    let compressed_item = {
-      "trace_id": item["trace_id"],
-      "service_ref": "s1", // 引用字典
-      "operation_ref": "o1",
-      "duration_ms": item["duration_ms"],
-      "status_code": item["status_code"],
-      "timestamp": item["timestamp"]
+  while i < timeout_efficiency.length() {
+    let timeout_name = timeout_efficiency[i].0
+    let achievement_rate = timeout_efficiency[i].5
+    let timeout_efficiency_val = timeout_efficiency[i].6]
+    
+    if achievement_rate > best_achievement {
+      best_achievement = achievement_rate
+      best_achievement_timeout = timeout_name
     }
-    compressed_batch.push(compressed_item)
-    i = i + 1
-  }
-  
-  // 计算压缩后大小
-  let mut compressed_size = 0
-  i = 0
-  while i < compressed_batch.length() {
-    let item = compressed_batch[i]
-    compressed_size = compressed_size + item["trace_id"].length()
-    compressed_size = compressed_size + 2 // service_ref
-    compressed_size = compressed_size + 2 // operation_ref
-    compressed_size = compressed_size + 10 // duration_ms
-    compressed_size = compressed_size + 3  // status_code
-    compressed_size = compressed_size + 10 // timestamp
-    i = i + 1
-  }
-  
-  // 添加字典大小
-  let dict_size = 50 // 简化字典大小
-  compressed_size = compressed_size + dict_size
-  
-  // 验证压缩效果
-  assert_eq(compressed_batch.length(), telemetry_batch.length())
-  assert_eq(compressed_size < original_size, true)
-  
-  // 计算压缩率
-  let compression_ratio = (original_size - compressed_size).to_double() / original_size.to_double()
-  
-  // 验证压缩率合理
-  assert_eq(compression_ratio > 0.1, true) // 至少10%压缩
-  assert_eq(compression_ratio < 0.8, true) // 不超过80%压缩
-  
-  // 验证解压缩能力（模拟）
-  let decompressed_batch = []
-  i = 0
-  while i < compressed_batch.length() {
-    let item = compressed_batch[i]
-    let decompressed_item = {
-      "trace_id": item["trace_id"],
-      "service_name": "api-service", // 从字典解压
-      "operation_name": "process_request", // 从字典解压
-      "duration_ms": item["duration_ms"],
-      "status_code": item["status_code"],
-      "timestamp": item["timestamp"]
+    
+    if timeout_efficiency_val > best_efficiency {
+      best_efficiency = timeout_efficiency_val
+      best_efficiency_timeout = timeout_name
     }
-    decompressed_batch.push(decompressed_item)
+    
     i = i + 1
   }
   
-  // 验证解压缩结果
-  assert_eq(decompressed_batch.length(), telemetry_batch.length())
+  // 验证最优超时
+  assert_eq(best_achievement_timeout, "adaptive_timeout") // 最高达成率
+  assert_eq(best_achievement, 0.9421052631578947)
+  assert_eq(best_efficiency_timeout, "xlong_timeout") // 最高效率
+  assert_eq(best_efficiency, 0.14925) // 298.5/2000
   
-  // 验证关键字段保持一致
+  // 超时优化建议
+  let timeout_recommendations = []
   i = 0
-  while i < 5 { // 抽样验证前5个
-    assert_eq(decompressed_batch[i]["trace_id"], telemetry_batch[i]["trace_id"])
-    assert_eq(decompressed_batch[i]["duration_ms"], telemetry_batch[i]["duration_ms"])
-    assert_eq(decompressed_batch[i]["status_code"], telemetry_batch[i]["status_code"])
+  
+  while i < timeout_efficiency.length() {
+    let timeout_name = timeout_efficiency[i].0
+    let timeout_ms = timeout_efficiency[i].1
+    let achievement_rate = timeout_efficiency[i].5
+    let batch_fill_rate = timeout_efficiency[i].7]
+    
+    let recommendation = if achievement_rate > 0.9 && batch_fill_rate > 0.3 {
+      "optimal_configuration"
+    } else if achievement_rate > 0.8 {
+      "acceptable_configuration"
+    } else if achievement_rate > 0.7 {
+      "needs_improvement"
+    } else {
+      "requires_reconfiguration"
+    }
+    
+    let suggested_adjustment = if batch_fill_rate < 0.2 {
+      "reduce_batch_size_or_increase_timeout"
+    } else if batch_fill_rate > 0.8 {
+      "increase_batch_size_or_reduce_timeout"
+    } else {
+      "current_settings_are_balanced"
+    }
+    
+    timeout_recommendations.push((
+      timeout_name,
+      timeout_ms,
+      recommendation,
+      suggested_adjustment
+    ))
+    
     i = i + 1
   }
+  
+  // 验证超时建议
+  assert_eq(timeout_recommendations.length(), 5)
+  assert_eq(timeout_recommendations[0].0, "short_timeout")
+  assert_eq(timeout_recommendations[0].2, "needs_improvement") // 89.6%达成率
+  assert_eq(timeout_recommendations[0].3, "reduce_batch_size_or_increase_timeout")
+  assert_eq(timeout_recommendations[4].0, "adaptive_timeout")
+  assert_eq(timeout_recommendations[4].2, "optimal_configuration") // 94.2%达成率
+  assert_eq(timeout_recommendations[4].3, "current_settings_are_balanced")
+}
+
+test "telemetry_batch_adaptive_sizing" {
+  // 测试遥测批处理自适应大小调整
+  
+  let adaptive_scenarios = [
+    ("low_load", 50, 128, 256, 0.8),        // 场景名称, 输入速率(条/秒), 初始批次大小, 最终批次大小, 调整因子
+    ("medium_load", 200, 256, 512, 1.2),
+    ("high_load", 800, 512, 1024, 1.5),
+    ("burst_load", 2000, 1024, 2048, 2.0),
+    ("variable_load", 500, 512, 384, 0.75)
+  ]
+  
+  // 验证自适应场景
+  assert_eq(adaptive_scenarios.length(), 5)
+  assert_eq(adaptive_scenarios[0].0, "low_load")
+  assert_eq(adaptive_scenarios[0].1, 50)
+  assert_eq(adaptive_scenarios[0].2, 128)
+  assert_eq(adaptive_scenarios[0].3, 256)
+  assert_eq(adaptive_scenarios[0].4, 0.8)
+  assert_eq(adaptive_scenarios[4].0, "variable_load")
+  assert_eq(adaptive_scenarios[4].1, 500)
+  assert_eq(adaptive_scenarios[4].2, 512)
+  assert_eq(adaptive_scenarios[4].3, 384)
+  assert_eq(adaptive_scenarios[4].4, 0.75)
+  
+  // 分析自适应调整效果
+  let adaptive_analysis = []
+  let mut i = 0
+  
+  while i < adaptive_scenarios.length() {
+    let scenario_name = adaptive_scenarios[i].0
+    let input_rate = adaptive_scenarios[i].1
+    let initial_batch_size = adaptive_scenarios[i].2
+    let final_batch_size = adaptive_scenarios[i].3
+    let adjustment_factor = adaptive_scenarios[i].4
+    
+    let actual_adjustment = final_batch_size.to_double() / initial_batch_size.to_double()
+    let adjustment_accuracy = 1.0 - (actual_adjustment - adjustment_factor).abs() / adjustment_factor
+    let optimal_batch_size = (input_rate / 10.0).to_int() // 目标是每秒10个批次
+    let optimality_score = 1.0 - (final_batch_size.to_double() - optimal_batch_size.to_double()).abs() / optimal_batch_size.to_double()
+    
+    adaptive_analysis.push((
+      scenario_name,
+      input_rate,
+      initial_batch_size,
+      final_batch_size,
+      actual_adjustment,
+      adjustment_accuracy,
+      optimal_batch_size,
+      optimality_score
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证自适应分析
+  assert_eq(adaptive_analysis.length(), 5)
+  assert_eq(adaptive_analysis[0].0, "low_load")
+  assert_eq(adaptive_analysis[0].4, 2.0) // 256/128 = 2.0
+  assert_eq(adaptive_analysis[0].5, 0.6) // 1.0 - |2.0-0.8|/0.8 = 0.6
+  assert_eq(adaptive_analysis[0].6, 5) // 50/10 = 5
+  assert_eq(adaptive_analysis[0].7, 0.5) // 1.0 - |256-5|/5 = 0.5
+  assert_eq(adaptive_analysis[4].0, "variable_load")
+  assert_eq(adaptive_analysis[4].4, 0.75) // 384/512 = 0.75
+  assert_eq(adaptive_analysis[4].5, 1.0) // 1.0 - |0.75-0.75|/0.75 = 1.0
+  assert_eq(adaptive_analysis[4].6, 50) // 500/10 = 50
+  assert_eq(adaptive_analysis[4].7, 0.232) // 1.0 - |384-50|/50 = 0.232
+  
+  // 自适应策略评估
+  let adaptive_strategy_scores = []
+  i = 0
+  
+  while i < adaptive_analysis.length() {
+    let scenario_name = adaptive_analysis[i].0
+    let adjustment_accuracy = adaptive_analysis[i].5
+    let optimality_score = adaptive_analysis[i].7
+    
+    let overall_score = (adjustment_accuracy + optimality_score) / 2.0
+    let strategy_rating = if overall_score > 0.8 {
+      "excellent"
+    } else if overall_score > 0.6 {
+      "good"
+    } else if overall_score > 0.4 {
+      "fair"
+    } else {
+      "poor"
+    }
+    
+    adaptive_strategy_scores.push((
+      scenario_name,
+      adjustment_accuracy,
+      optimality_score,
+      overall_score,
+      strategy_rating
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证自适应策略评分
+  assert_eq(adaptive_strategy_scores.length(), 5)
+  assert_eq(adaptive_strategy_scores[0].0, "low_load")
+  assert_eq(adaptive_strategy_scores[0].3, 0.55) // (0.6 + 0.5)/2
+  assert_eq(adaptive_strategy_scores[0].4, "fair")
+  assert_eq(adaptive_strategy_scores[4].0, "variable_load")
+  assert_eq(adaptive_strategy_scores[4].3, 0.616) // (1.0 + 0.232)/2
+  assert_eq(adaptive_strategy_scores[4].4, "fair")
+  
+  // 自适应参数优化建议
+  let adaptive_optimization = []
+  i = 0
+  
+  while i < adaptive_strategy_scores.length() {
+    let scenario_name = adaptive_strategy_scores[i].0
+    let overall_score = adaptive_strategy_scores[i].3
+    let strategy_rating = adaptive_strategy_scores[i].4
+    
+    let optimization_needed = overall_score < 0.7
+    let optimization_suggestion = if optimization_needed {
+      match scenario_name {
+        "low_load" => "Use more conservative adjustment factors",
+        "medium_load" => "Implement load prediction algorithms",
+        "high_load" => "Consider burst handling mechanisms",
+        "burst_load" => "Add rate limiting and backpressure",
+        "variable_load" => "Implement machine learning based prediction",
+        _ => "Review adaptive algorithm parameters"
+      }
+    } else {
+      "Current adaptive strategy is effective"
+    }
+    
+    adaptive_optimization.push((
+      scenario_name,
+      overall_score,
+      strategy_rating,
+      optimization_needed,
+      optimization_suggestion
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证自适应优化建议
+  assert_eq(adaptive_optimization.length(), 5)
+  assert_eq(adaptive_optimization[0].0, "low_load")
+  assert_eq(adaptive_optimization[0].3, true) // 需要优化
+  assert_eq(adaptive_optimization[0].4, "Use more conservative adjustment factors")
+  assert_eq(adaptive_optimization[2].0, "high_load")
+  assert_eq(adaptive_optimization[2].3, true) // 需要优化
+  assert_eq(adaptive_optimization[2].4, "Consider burst handling mechanisms")
+}
+
+test "telemetry_batch_priority_handling" {
+  // 测试遥测批处理优先级处理
+  
+  let priority_levels = [
+    ("critical", 1, 50, 10),                 // 优先级名称, 优先级值, 批次大小, 超时时间(毫秒)
+    ("high", 2, 100, 50),
+    ("normal", 3, 256, 200),
+    ("low", 4, 512, 500),
+    ("background", 5, 1024, 1000)
+  ]
+  
+  // 验证优先级级别
+  assert_eq(priority_levels.length(), 5)
+  assert_eq(priority_levels[0].0, "critical")
+  assert_eq(priority_levels[0].1, 1)
+  assert_eq(priority_levels[0].2, 50)
+  assert_eq(priority_levels[0].3, 10)
+  assert_eq(priority_levels[4].0, "background")
+  assert_eq(priority_levels[4].1, 5)
+  assert_eq(priority_levels[4].2, 1024)
+  assert_eq(priority_levels[4].3, 1000)
+  
+  // 优先级处理模拟
+  let priority_processing = []
+  let mut i = 0
+  
+  while i < priority_levels.length() {
+    let priority_name = priority_levels[i].0
+    let priority_value = priority_levels[i].1
+    let batch_size = priority_levels[i].2
+    let timeout_ms = priority_levels[i].3]
+    
+    // 模拟处理延迟（高优先级处理更快）
+    let base_latency = 100.0
+    let priority_multiplier = 1.0 / priority_value.to_double()
+    let processing_latency = base_latency * priority_multiplier
+    
+    // 模拟吞吐量（高优先级有保障）
+    let base_throughput = 100.0
+    let priority_boost = 6.0 - priority_value.to_double() // 5-1=4, 5-2=3, etc.
+    let guaranteed_throughput = base_throughput * (1.0 + priority_boost * 0.2)
+    
+    // 计算处理效率
+    let efficiency = guaranteed_throughput / processing_latency
+    let urgency_score = 6.0 - priority_value.to_double() // 5-1=4 (最高), 5-5=1 (最低)
+    
+    priority_processing.push((
+      priority_name,
+      priority_value,
+      batch_size,
+      timeout_ms,
+      processing_latency,
+      guaranteed_throughput,
+      efficiency,
+      urgency_score
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证优先级处理
+  assert_eq(priority_processing.length(), 5)
+  assert_eq(priority_processing[0].0, "critical")
+  assert_eq(priority_processing[0].4, 100.0) // 100/1
+  assert_eq(priority_processing[0].5, 180.0) // 100 * (1 + 4*0.2)
+  assert_eq(priority_processing[0].6, 1.8) // 180/100
+  assert_eq(priority_processing[0].7, 5.0) // 6-1=5 (最高紧急度)
+  assert_eq(priority_processing[4].0, "background")
+  assert_eq(priority_processing[4].4, 20.0) // 100/5
+  assert_eq(priority_processing[4].5, 100.0) // 100 * (1 + 1*0.2)
+  assert_eq(priority_processing[4].6, 5.0) // 100/20
+  assert_eq(priority_processing[4].7, 1.0) // 6-5=1 (最低紧急度)
+  
+  // 优先级队列模拟
+  let priority_queue_simulation = []
+  let test_items = [
+    ("item_1", "critical", 1640995200),
+    ("item_2", "low", 1640995201),
+    ("item_3", "high", 1640995202),
+    ("item_4", "background", 1640995203),
+    ("item_5", "normal", 1640995204),
+    ("item_6", "critical", 1640995205),
+    ("item_7", "high", 1640995206)
+  ]
+  
+  // 按优先级排序（高优先级先处理）
+  let mut sorted_items = test_items
+  let mut j = 0
+  
+  while j < sorted_items.length() - 1 {
+    let mut k = j + 1
+    while k < sorted_items.length() {
+      let priority_j = get_priority_value(sorted_items[j].1, priority_levels)
+      let priority_k = get_priority_value(sorted_items[k].1, priority_levels)
+      
+      if priority_j > priority_k || (priority_j == priority_k && sorted_items[j].2 > sorted_items[k].2) {
+        let temp = sorted_items[j]
+        sorted_items[j] = sorted_items[k]
+        sorted_items[k] = temp
+      }
+      
+      k = k + 1
+    }
+    j = j + 1
+  }
+  
+  // 验证排序结果
+  assert_eq(sorted_items.length(), 7)
+  assert_eq(sorted_items[0].1, "critical") // 最高优先级
+  assert_eq(sorted_items[0].2, 1640995200) // 最早时间
+  assert_eq(sorted_items[1].1, "critical") // 第二个critical
+  assert_eq(sorted_items[1].2, 1640995205)
+  assert_eq(sorted_items[2].1, "high") // 然后是high
+  assert_eq(sorted_items[2].2, 1640995202)
+  assert_eq(sorted_items[6].1, "background") // 最低优先级
+  
+  // 优先级处理统计
+  let priority_statistics = []
+  i = 0
+  
+  while i < priority_processing.length() {
+    let priority_name = priority_processing[i].0
+    let processing_latency = priority_processing[i].4
+    let guaranteed_throughput = priority_processing[i].5]
+    let efficiency = priority_processing[i].6
+    
+    let sla_met = processing_latency < 200.0 && guaranteed_throughput > 150.0
+    let performance_grade = if efficiency > 2.0 {
+      "A"
+    } else if efficiency > 1.5 {
+      "B"
+    } else if efficiency > 1.0 {
+      "C"
+    } else {
+      "D"
+    }
+    
+    priority_statistics.push((
+      priority_name,
+      processing_latency,
+      guaranteed_throughput,
+      efficiency,
+      sla_met,
+      performance_grade
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证优先级统计
+  assert_eq(priority_statistics.length(), 5)
+  assert_eq(priority_statistics[0].0, "critical")
+  assert_eq(priority_statistics[0].3, 1.8)
+  assert_eq(priority_statistics[0].4, true) // SLA达成
+  assert_eq(priority_statistics[0].5, "B")
+  assert_eq(priority_statistics[4].0, "background")
+  assert_eq(priority_statistics[4].3, 5.0)
+  assert_eq(priority_statistics[4].4, false) // SLA未达成
+  assert_eq(priority_statistics[4].5, "A")
+}
+
+test "telemetry_batch_error_handling" {
+  // 测试遥测批处理错误处理
+  
+  let error_scenarios = [
+    ("network_timeout", 0.05, "retry_with_backoff"),      // 错误类型, 错误率, 处理策略
+    ("data_corruption", 0.02, "skip_corrupted_items"),
+    ("memory_overflow", 0.01, "reduce_batch_size"),
+    ("serialization_failure", 0.03, "fallback_format"),
+    ("queue_full", 0.08, "enable_backpressure")
+  ]
+  
+  // 验证错误场景
+  assert_eq(error_scenarios.length(), 5)
+  assert_eq(error_scenarios[0].0, "network_timeout")
+  assert_eq(error_scenarios[0].1, 0.05)
+  assert_eq(error_scenarios[0].2, "retry_with_backoff")
+  assert_eq(error_scenarios[4].0, "queue_full")
+  assert_eq(error_scenarios[4].1, 0.08)
+  assert_eq(error_scenarios[4].2, "enable_backpressure")
+  
+  // 错误处理模拟
+  let error_handling_results = []
+  let mut i = 0
+  
+  while i < error_scenarios.length() {
+    let error_type = error_scenarios[i].0
+    let error_rate = error_scenarios[i].1
+    let handling_strategy = error_scenarios[i].2]
+    
+    // 模拟处理结果
+    let recovery_success_rate = match handling_strategy {
+      "retry_with_backoff" => 0.85,
+      "skip_corrupted_items" => 0.95,
+      "reduce_batch_size" => 0.90,
+      "fallback_format" => 0.80,
+      "enable_backpressure" => 0.92,
+      _ => 0.70
+    }
+    
+    let effective_success_rate = (1.0 - error_rate) * recovery_success_rate
+    let data_loss_rate = error_rate * (1.0 - recovery_success_rate)
+    
+    // 计算处理延迟影响
+    let latency_impact = match handling_strategy {
+      "retry_with_backoff" => 1.5,
+      "skip_corrupted_items" => 1.1,
+      "reduce_batch_size" => 0.8,
+      "fallback_format" => 1.2,
+      "enable_backpressure" => 1.3,
+      _ => 1.0
+    }
+    
+    error_handling_results.push((
+      error_type,
+      error_rate,
+      handling_strategy,
+      recovery_success_rate,
+      effective_success_rate,
+      data_loss_rate,
+      latency_impact
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证错误处理结果
+  assert_eq(error_handling_results.length(), 5)
+  assert_eq(error_handling_results[0].0, "network_timeout")
+  assert_eq(error_handling_results[0].3, 0.85)
+  assert_eq(error_handling_results[0].4, 0.8075) // (1-0.05)*0.85
+  assert_eq(error_handling_results[0].5, 0.0075) // 0.05*(1-0.85)
+  assert_eq(error_handling_results[0].6, 1.5)
+  assert_eq(error_handling_results[4].0, "queue_full")
+  assert_eq(error_handling_results[4].3, 0.92)
+  assert_eq(error_handling_results[4].4, 0.8464) // (1-0.08)*0.92
+  assert_eq(error_handling_results[4].5, 0.0064) // 0.08*(1-0.92)
+  assert_eq(error_handling_results[4].6, 1.3)
+  
+  // 错误处理策略评估
+  let strategy_evaluation = []
+  i = 0
+  
+  while i < error_handling_results.length() {
+    let error_type = error_handling_results[i].0
+    let handling_strategy = error_handling_results[i].2
+    let effective_success_rate = error_handling_results[i].4
+    let data_loss_rate = error_handling_results[i].5
+    let latency_impact = error_handling_results[i].6]
+    
+    let strategy_score = effective_success_rate * 0.6 + (1.0 - data_loss_rate) * 0.3 + (2.0 - latency_impact) * 0.1
+    let strategy_grade = if strategy_score > 0.9 {
+      "excellent"
+    } else if strategy_score > 0.8 {
+      "good"
+    } else if strategy_score > 0.7 {
+      "acceptable"
+    } else {
+      "needs_improvement"
+    }
+    
+    strategy_evaluation.push((
+      error_type,
+      handling_strategy,
+      strategy_score,
+      strategy_grade
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证策略评估
+  assert_eq(strategy_evaluation.length(), 5)
+  assert_eq(strategy_evaluation[0].0, "network_timeout")
+  assert_eq(strategy_evaluation[0].2, 0.7965) // 0.8075*0.6 + 0.9925*0.3 + 0.5*0.1
+  assert_eq(strategy_evaluation[0].3, "acceptable")
+  assert_eq(strategy_evaluation[1].0, "data_corruption")
+  assert_eq(strategy_evaluation[1].2, 0.8586) // 计算得分
+  assert_eq(strategy_evaluation[1].3, "good")
+  
+  // 错误恢复建议
+  let recovery_recommendations = []
+  i = 0
+  
+  while i < strategy_evaluation.length() {
+    let error_type = strategy_evaluation[i].0
+    let strategy_score = strategy_evaluation[i].2
+    let strategy_grade = strategy_evaluation[i].3]
+    
+    let needs_optimization = strategy_score < 0.8
+    let optimization_suggestion = if needs_optimization {
+      match error_type {
+        "network_timeout" => "Implement circuit breaker pattern",
+        "data_corruption" => "Add data validation and checksums",
+        "memory_overflow" => "Implement memory monitoring and pre-allocation",
+        "serialization_failure" => "Use more robust serialization libraries",
+        "queue_full" => "Implement dynamic queue sizing",
+        _ => "Review error handling implementation"
+      }
+    } else {
+      "Current error handling strategy is effective"
+    }
+    
+    recovery_recommendations.push((
+      error_type,
+      strategy_grade,
+      needs_optimization,
+      optimization_suggestion
+    ))
+    
+    i = i + 1
+  }
+  
+  // 验证恢复建议
+  assert_eq(recovery_recommendations.length(), 5)
+  assert_eq(recovery_recommendations[0].0, "network_timeout")
+  assert_eq(recovery_recommendations[0].2, true) // 需要优化
+  assert_eq(recovery_recommendations[0].3, "Implement circuit breaker pattern")
+  assert_eq(recovery_recommendations[1].0, "data_corruption")
+  assert_eq(recovery_recommendations[1].2, false) // 不需要优化
+  assert_eq(recovery_recommendations[1].3, "Current error handling strategy is effective")
+}
+
+// 辅助函数：获取优先级值
+func get_priority_value(priority_name : String, priority_levels : Array<(String, Int, Int, Int)>) -> Int {
+  let mut i = 0
+  while i < priority_levels.length() {
+    if priority_levels[i].0 == priority_name {
+      return priority_levels[i].1
+    }
+    i = i + 1
+  }
+  return 999 // 默认低优先级
 }
