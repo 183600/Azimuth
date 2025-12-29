@@ -197,6 +197,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     0: (__test_616476616e6365645f746573742e6d6274_0, ["resource_complex_attributes_and_validation"]),
     1: (__test_616476616e6365645f746573742e6d6274_1, ["attribute_value_edge_cases_and_type_safety"]),
   },
+  "advanced_boundary_test.mbt": {
+    0: (__test_616476616e6365645f626f756e646172795f746573742e6d6274_0, ["attribute_value_extreme_edge_cases"]),
+    1: (__test_616476616e6365645f626f756e646172795f746573742e6d6274_1, ["attribute_value_array_edge_cases"]),
+    2: (__test_616476616e6365645f626f756e646172795f746573742e6d6274_2, ["resource_advanced_scenarios"]),
+    3: (__test_616476616e6365645f626f756e646172795f746573742e6d6274_3, ["instrumentation_scope_edge_cases"]),
+    4: (__test_616476616e6365645f626f756e646172795f746573742e6d6274_4, ["attributes_complex_operations"]),
+    5: (__test_616476616e6365645f626f756e646172795f746573742e6d6274_5, ["attribute_value_type_safety_and_conversion"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
