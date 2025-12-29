@@ -1,681 +1,327 @@
-// Span高级生命周期管理测试用例
-// 测试复杂的Span生命周期场景和状态转换
+// Span 生命周期和状态管理高级测试用例
+// 测试Span的创建、状态转换、事件和链接管理
 
-test "span_hierarchical_lifecycle" {
-  // 测试Span的层次化生命周期
+test "span_lifecycle_state_management" {
+  // 测试Span的基本生命周期
   
-  let provider = NoopTracerProvider::{}
-  let tracer = provider.get_tracer("hierarchical-test", "1.0.0")
-  let ctx = Context::empty()
+  // 创建初始上下文
+  let initial_context = context::Context::empty()
   
-  // 创建根span
-  let (root_ctx, root_span) = tracer.start_span(
-    ctx,
-    "root-operation",
-    Server,
-    [
-      ("service.name", AttributeValue::string("api-gateway")),
-      ("operation.type", AttributeValue::string("request")),
-      ("request.id", AttributeValue::string("req-123456"))
-    ],
+  // 创建No-op Tracer
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("test-tracer", "1.0.0")
+  
+  // 开始一个Span
+  let (ctx, span) = tracer.start_span(
+    initial_context,
+    "test-operation",
+    trace::Server,
+    [("http.method", common::AttributeValue::string("GET"))],
     1640995200000000000L  // 2022-01-01 00:00:00 UTC
   )
   
-  // 验证根span
-  assert_eq(root_span.name, "root-operation")
-  match root_span.kind {
-    Server => assert_eq(true, true)
-    _ => @test.fail("Expected Server span kind")
+  // 验证Span初始状态
+  assert_eq(span.name, "test-operation")
+  match span.kind {
+    trace::Server => assert_eq(true, true)
+    _ => assert_eq(false, true)
   }
-  assert_eq(root_span.attributes.length(), 3)
-  
-  // 创建第一级子span
-  let (auth_ctx, auth_span) = tracer.start_span(
-    root_ctx,
-    "authenticate-user",
-    Internal,
-    [
-      ("sub.operation", AttributeValue::string("auth")),
-      ("user.id", AttributeValue::int(12345L)),
-      ("auth.method", AttributeValue::string("jwt"))
-    ],
-    1640995200000000100L  // 100ns later
-  )
-  
-  // 验证第一级子span
-  assert_eq(auth_span.name, "authenticate-user")
-  match auth_span.kind {
-    Internal => assert_eq(true, true)
-    _ => @test.fail("Expected Internal span kind")
+  assert_eq(span.start_time_unix_nanos, 1640995200000000000L)
+  match span.status {
+    trace::Unset => assert_eq(true, true)
+    _ => assert_eq(false, true)
   }
-  assert_eq(auth_span.attributes.length(), 3)
-  
-  // 创建第二级子span
-  let (db_ctx, db_span) = tracer.start_span(
-    auth_ctx,
-    "database-query",
-    Client,
-    [
-      ("sub.operation", AttributeValue::string("db")),
-      ("db.type", AttributeValue::string("postgresql")),
-      ("db.query", AttributeValue::string("SELECT * FROM users WHERE id = $1")),
-      ("db.connection.pool", AttributeValue::string("primary"))
-    ],
-    1640995200000000200L  // 200ns later
-  )
-  
-  // 验证第二级子span
-  assert_eq(db_span.name, "database-query")
-  match db_span.kind {
-    Client => assert_eq(true, true)
-    _ => @test.fail("Expected Client span kind")
+  assert_eq(span.end_time_unix_nanos, None)
+  assert_eq(span.attributes.length(), 1)
+  assert_eq(span.attributes[0].0, "http.method")
+  match span.attributes[0].1 {
+    common::StringValue(method) => assert_eq(method, "GET")
+    _ => assert_eq(false, true)
   }
-  assert_eq(db_span.attributes.length(), 4)
   
-  // 创建并行的子span
-  let (cache_ctx, cache_span) = tracer.start_span(
-    auth_ctx,
-    "cache-lookup",
-    Internal,
-    [
-      ("sub.operation", AttributeValue::string("cache")),
-      ("cache.type", AttributeValue::string("redis")),
-      ("cache.key", AttributeValue::string("user:12345"))
-    ],
-    1640995200000000250L  // 250ns later
-  )
+  // 验证SpanContext
+  assert_eq(span.context.trace_id.length(), 16)
+  assert_eq(span.context.span_id.length(), 8)
+  assert_eq(span.context.trace_flags, 0_byte)
+  assert_eq(span.context.trace_state, "")
   
-  // 验证并行子span
-  assert_eq(cache_span.name, "cache-lookup")
-  match cache_span.kind {
-    Internal => assert_eq(true, true)
-    _ => @test.fail("Expected Internal span kind")
-  }
-  assert_eq(cache_span.attributes.length(), 3)
-  
-  // 创建另一个根span（不同的trace）
-  let (another_root_ctx, another_root_span) = tracer.start_span(
-    ctx,
-    "background-job",
-    Producer,
-    [
-      ("job.type", AttributeValue::string("cleanup")),
-      ("job.schedule", AttributeValue::string("daily")),
-      ("job.instance", AttributeValue::string("worker-01"))
-    ],
-    1640995200000001000L  // 1μs later
-  )
-  
-  // 验证另一个根span
-  assert_eq(another_root_span.name, "background-job")
-  match another_root_span.kind {
-    Producer => assert_eq(true, true)
-    _ => @test.fail("Expected Producer span kind")
-  }
-  assert_eq(another_root_span.attributes.length(), 3)
-  
-  // 验证所有span的时间戳递增
-  assert_eq(root_span.start_time_unix_nanos < auth_span.start_time_unix_nanos, true)
-  assert_eq(auth_span.start_time_unix_nanos < db_span.start_time_unix_nanos, true)
-  assert_eq(auth_span.start_time_unix_nanos < cache_span.start_time_unix_nanos, true)
-  assert_eq(root_span.start_time_unix_nanos < another_root_span.start_time_unix_nanos, true)
+  // 验证初始事件和链接为空
+  assert_eq(span.events.length(), 0)
+  assert_eq(span.links.length(), 0)
 }
 
 test "span_status_transitions" {
   // 测试Span状态转换
   
-  let provider = NoopTracerProvider::{}
-  let tracer = provider.get_tracer("status-test", "1.0.0")
-  let ctx = Context::empty()
+  let initial_context = context::Context::empty()
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("test-tracer")
   
-  // 创建span并测试初始状态
-  let (ctx1, span1) = tracer.start_span(ctx, "initial-status", Internal, [], 1000L)
-  match span1.status {
-    Unset => assert_eq(true, true)
-    _ => @test.fail("Expected Unset status")
-  }
-  match span1.status_description {
-    Some(_) => @test.fail("Expected None for status_description")
-    None => assert_eq(true, true)
+  // 开始Span
+  let (ctx, mut span) = tracer.start_span(initial_context, "operation-with-status")
+  
+  // 验证初始状态
+  match span.status {
+    trace::Unset => assert_eq(true, true)
+    _ => assert_eq(false, true)
   }
   
-  // 模拟span状态转换过程
-  // 注意：由于NoopTracer不支持状态更新，这里我们创建不同状态的span来模拟
-  
-  // 创建成功状态的span
-  let (ctx2, span2) = tracer.start_span(ctx, "success-operation", Internal, [], 2000L)
-  // 在实际实现中，这里会调用span.set_status(Ok, "Operation completed successfully")
-  // 但由于NoopTracer的限制，我们只能创建新的span来模拟
-  
-  // 创建错误状态的span
-  let (ctx3, span3) = tracer.start_span(ctx, "error-operation", Internal, [], 3000L)
-  // 在实际实现中，这里会调用span.set_status(Error, "Database connection failed")
-  
-  // 测试不同类型的错误状态
-  let (ctx4, span4) = tracer.start_span(
-    ctx,
-    "timeout-error",
-    Internal,
-    [
-      ("error.type", AttributeValue::string("timeout")),
-      ("error.message", AttributeValue::string("Operation timed out after 30 seconds")),
-      ("error.code", AttributeValue::int(408L)),
-      ("error.retryable", AttributeValue::bool(true))
-    ],
-    4000L
-  )
-  
-  let (ctx5, span5) = tracer.start_span(
-    ctx,
-    "validation-error",
-    Internal,
-    [
-      ("error.type", AttributeValue::string("validation")),
-      ("error.message", AttributeValue::string("Invalid input parameter")),
-      ("error.field", AttributeValue::string("user.email")),
-      ("error.code", AttributeValue::int(400L)),
-      ("error.retryable", AttributeValue::bool(false))
-    ],
-    5000L
-  )
-  
-  let (ctx6, span6) = tracer.start_span(
-    ctx,
-    "system-error",
-    Internal,
-    [
-      ("error.type", AttributeValue::string("system")),
-      ("error.message", AttributeValue::string("Out of memory")),
-      ("error.code", AttributeValue::int(500L)),
-      ("error.severity", AttributeValue::string("critical")),
-      ("error.component", AttributeValue::string("memory.manager"))
-    ],
-    6000L
-  )
-  
-  // 验证错误span的属性
-  assert_eq(span4.attributes.length(), 4)
-  assert_eq(span5.attributes.length(), 5)
-  assert_eq(span6.attributes.length(), 5)
-  
-  // 验证错误类型属性
-  let mut found_timeout_error = false
-  let mut found_validation_error = false
-  let mut found_system_error = false
-  
-  let mut i = 0
-  while i < span4.attributes.length() {
-    match span4.attributes[i].0 {
-      "error.type" => {
-        match span4.attributes[i].1 {
-          AttributeValue::StringValue(error_type) => {
-            assert_eq(error_type, "timeout")
-            found_timeout_error = true
-          }
-          _ => @test.fail("Expected StringValue")
-        }
-      }
-      _ => ()
-    }
-    i = i + 1
+  // 模拟状态转换到Ok
+  span = trace::Span::{
+    ..span,
+    status: trace::Ok,
+    status_description: Some("Operation completed successfully")
   }
   
-  i = 0
-  while i < span5.attributes.length() {
-    match span5.attributes[i].0 {
-      "error.type" => {
-        match span5.attributes[i].1 {
-          AttributeValue::StringValue(error_type) => {
-            assert_eq(error_type, "validation")
-            found_validation_error = true
-          }
-          _ => @test.fail("Expected StringValue")
-        }
-      }
-      _ => ()
-    }
-    i = i + 1
+  match span.status {
+    trace::Ok => assert_eq(true, true)
+    _ => assert_eq(false, true)
+  }
+  match span.status_description {
+    Some(desc) => assert_eq(desc, "Operation completed successfully")
+    None => assert_eq(false, true)
   }
   
-  i = 0
-  while i < span6.attributes.length() {
-    match span6.attributes[i].0 {
-      "error.type" => {
-        match span6.attributes[i].1 {
-          AttributeValue::StringValue(error_type) => {
-            assert_eq(error_type, "system")
-            found_system_error = true
-          }
-          _ => @test.fail("Expected StringValue")
-        }
-      }
-      _ => ()
-    }
-    i = i + 1
+  // 模拟状态转换到Error
+  span = trace::Span::{
+    ..span,
+    status: trace::Error,
+    status_description: Some("Operation failed due to timeout")
   }
   
-  assert_eq(found_timeout_error, true)
-  assert_eq(found_validation_error, true)
-  assert_eq(found_system_error, true)
+  match span.status {
+    trace::Error => assert_eq(true, true)
+    _ => assert_eq(false, true)
+  }
+  match span.status_description {
+    Some(desc) => assert_eq(desc, "Operation failed due to timeout")
+    None => assert_eq(false, true)
+  }
 }
 
-test "span_event_lifecycle" {
-  // 测试Span事件的生命周期
+test "span_events_and_links_management" {
+  // 测试Span事件和链接管理
   
-  let provider = NoopTracerProvider::{}
-  let tracer = provider.get_tracer("event-test", "1.0.0")
-  let ctx = Context::empty()
+  let initial_context = context::Context::empty()
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("test-tracer")
   
-  // 创建一个span来添加事件
-  let (span_ctx, span) = tracer.start_span(
-    ctx,
-    "operation-with-events",
-    Internal,
-    [
-      ("operation.name", AttributeValue::string("data.processing")),
-      ("batch.id", AttributeValue::string("batch-12345"))
-    ],
-    1000L
-  )
+  // 开始Span
+  let (ctx, span) = tracer.start_span(initial_context, "operation-with-events")
   
-  // 创建各种类型的事件
-  let start_event = SpanEvent::{
-    name: "operation.started",
-    timestamp_unix_nanos: 1000L,
+  // 创建Span事件
+  let event1 = trace::SpanEvent::{
+    name: "database.query",
+    timestamp_unix_nanos: 1640995200000000000L,
     attributes: [
-      ("event.phase", AttributeValue::string("start")),
-      ("initiator", AttributeValue::string("scheduler"))
+      ("db.statement", common::AttributeValue::string("SELECT * FROM users")),
+      ("db.duration_ms", common::AttributeValue::int(150L))
     ]
   }
   
-  let progress_event = SpanEvent::{
-    name: "operation.progress",
-    timestamp_unix_nanos: 2000L,
+  let event2 = trace::SpanEvent::{
+    name: "cache.hit",
+    timestamp_unix_nanos: 1640995200100000000L,
     attributes: [
-      ("event.phase", AttributeValue::string("progress")),
-      ("progress.percentage", AttributeValue::float(25.0)),
-      ("items.processed", AttributeValue::int(2500L)),
-      ("items.total", AttributeValue::int(10000L))
+      ("cache.key", common::AttributeValue::string("user:123")),
+      ("cache.hit", common::AttributeValue::bool(true))
     ]
   }
   
-  let warning_event = SpanEvent::{
-    name: "operation.warning",
-    timestamp_unix_nanos: 3000L,
+  // 创建Span链接
+  let linked_context = trace::SpanContext::{
+    trace_id: Array::make(16, 1_byte),
+    span_id: Array::make(8, 2_byte),
+    trace_flags: 1_byte,
+    trace_state: "key1=value1,key2=value2"
+  }
+  
+  let link = trace::SpanLink::{
+    context: linked_context,
     attributes: [
-      ("event.phase", AttributeValue::string("warning")),
-      ("warning.type", AttributeValue::string("slow.processing")),
-      ("warning.message", AttributeValue::string("Processing slower than expected")),
-      ("threshold.exceeded", AttributeValue::string("processing.time"))
+      ("link.type", common::AttributeValue::string("parent")),
+      ("relationship", common::AttributeValue::string("follows-from"))
     ]
   }
   
-  let error_event = SpanEvent::{
-    name: "operation.error",
-    timestamp_unix_nanos: 4000L,
-    attributes: [
-      ("event.phase", AttributeValue::string("error")),
-      ("error.type", AttributeValue::string("data.corruption")),
-      ("error.message", AttributeValue::string("Invalid data format detected")),
-      ("error.severity", AttributeValue::string("medium")),
-      ("error.recoverable", AttributeValue::bool(true)),
-      ("error.retry.count", AttributeValue::int(3L))
-    ]
+  // 创建包含事件和链接的Span
+  let span_with_events = trace::Span::{
+    ..span,
+    events: [event1, event2],
+    links: [link]
   }
   
-  let recovery_event = SpanEvent::{
-    name: "operation.recovery",
-    timestamp_unix_nanos: 5000L,
-    attributes: [
-      ("event.phase", AttributeValue::string("recovery")),
-      ("recovery.action", AttributeValue::string("data.cleanup")),
-      ("recovery.success", AttributeValue::bool(true)),
-      ("data.cleaned", AttributeValue::int(100L))
-    ]
+  // 验证事件
+  assert_eq(span_with_events.events.length(), 2)
+  assert_eq(span_with_events.events[0].name, "database.query")
+  assert_eq(span_with_events.events[0].timestamp_unix_nanos, 1640995200000000000L)
+  assert_eq(span_with_events.events[0].attributes.length(), 2)
+  assert_eq(span_with_events.events[0].attributes[0].0, "db.statement")
+  match span_with_events.events[0].attributes[0].1 {
+    common::StringValue(stmt) => assert_eq(stmt, "SELECT * FROM users")
+    _ => assert_eq(false, true)
   }
   
-  let completion_event = SpanEvent::{
-    name: "operation.completed",
-    timestamp_unix_nanos: 6000L,
-    attributes: [
-      ("event.phase", AttributeValue::string("completion")),
-      ("final.status", AttributeValue::string("success")),
-      ("total.duration.ms", AttributeValue::float(5.0)),
-      ("items.processed", AttributeValue::int(10000L)),
-      ("items.failed", AttributeValue::int(100L)),
-      ("items.retried", AttributeValue::int(50L))
-    ]
+  assert_eq(span_with_events.events[1].name, "cache.hit")
+  assert_eq(span_with_events.events[1].timestamp_unix_nanos, 1640995200100000000L)
+  assert_eq(span_with_events.events[1].attributes.length(), 2)
+  
+  // 验证链接
+  assert_eq(span_with_events.links.length(), 1)
+  assert_eq(span_with_events.links[0].context.trace_id.length(), 16)
+  assert_eq(span_with_events.links[0].context.span_id.length(), 8)
+  assert_eq(span_with_events.links[0].context.trace_flags, 1_byte)
+  assert_eq(span_with_events.links[0].context.trace_state, "key1=value1,key2=value2")
+  assert_eq(span_with_events.links[0].attributes.length(), 2)
+  assert_eq(span_with_events.links[0].attributes[0].0, "link.type")
+  match span_with_events.links[0].attributes[0].1 {
+    common::StringValue(link_type) => assert_eq(link_type, "parent")
+    _ => assert_eq(false, true)
   }
-  
-  // 验证事件结构
-  let events = [start_event, progress_event, warning_event, error_event, recovery_event, completion_event]
-  let mut i = 0
-  while i < events.length() {
-    let event = events[i]
-    
-    // 验证事件名称不为空
-    assert_eq(event.name.length() > 0, true)
-    
-    // 验证时间戳递增
-    if i > 0 {
-      assert_eq(events[i-1].timestamp_unix_nanos < event.timestamp_unix_nanos, true)
-    }
-    
-    // 验证事件属性
-    assert_eq(event.attributes.length() > 0, true)
-    
-    i = i + 1
-  }
-  
-  // 验证特定事件的属性
-  assert_eq(start_event.attributes.length(), 2)
-  assert_eq(progress_event.attributes.length(), 4)
-  assert_eq(warning_event.attributes.length(), 3)
-  assert_eq(error_event.attributes.length(), 6)
-  assert_eq(recovery_event.attributes.length(), 4)
-  assert_eq(completion_event.attributes.length(), 6)
-  
-  // 验证错误事件的复杂属性
-  let mut found_error_type = false
-  let mut found_error_severity = false
-  let mut found_error_recoverable = false
-  
-  let mut j = 0
-  while j < error_event.attributes.length() {
-    match error_event.attributes[j].0 {
-      "error.type" => found_error_type = true,
-      "error.severity" => found_error_severity = true,
-      "error.recoverable" => {
-        match error_event.attributes[j].1 {
-          AttributeValue::BoolValue(recoverable) => {
-            assert_eq(recoverable, true)
-            found_error_recoverable = true
-          }
-          _ => @test.fail("Expected BoolValue")
-        }
-      }
-      _ => ()
-    }
-    j = j + 1
-  }
-  
-  assert_eq(found_error_type, true)
-  assert_eq(found_error_severity, true)
-  assert_eq(found_error_recoverable, true)
 }
 
-test "span_link_relationships" {
-  // 测试Span链接关系
+test "span_hierarchy_and_parent_relationships" {
+  // 测试Span层次结构和父子关系
   
-  let provider = NoopTracerProvider::{}
-  let tracer = provider.get_tracer("link-test", "1.0.0")
-  let ctx = Context::empty()
+  let initial_context = context::Context::empty()
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("test-tracer")
   
-  // 创建多个相关的span context用于链接
-  let parent_context = SpanContext::{
-    trace_id: [1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte, 8_byte, 
-               9_byte, 10_byte, 11_byte, 12_byte, 13_byte, 14_byte, 15_byte, 16_byte],
-    span_id: [1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte, 8_byte],
-    trace_flags: 1_byte,
-    trace_state: "parent=value1,child=value2"
-  }
-  
-  let related_context1 = SpanContext::{
-    trace_id: [1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte, 8_byte, 
-               9_byte, 10_byte, 11_byte, 12_byte, 13_byte, 14_byte, 15_byte, 16_byte],  // 相同trace
-    span_id: [9_byte, 10_byte, 11_byte, 12_byte, 13_byte, 14_byte, 15_byte, 16_byte],  // 不同span
-    trace_flags: 1_byte,
-    trace_state: "related=value3"
-  }
-  
-  let related_context2 = SpanContext::{
-    trace_id: [17_byte, 18_byte, 19_byte, 20_byte, 21_byte, 22_byte, 23_byte, 24_byte, 
-               25_byte, 26_byte, 27_byte, 28_byte, 29_byte, 30_byte, 31_byte, 32_byte],  // 不同trace
-    span_id: [17_byte, 18_byte, 19_byte, 20_byte, 21_byte, 22_byte, 23_byte, 24_byte],
-    trace_flags: 0_byte,
-    trace_state: "external=value4"
-  }
-  
-  let batch_context = SpanContext::{
-    trace_id: [33_byte, 34_byte, 35_byte, 36_byte, 37_byte, 38_byte, 39_byte, 40_byte, 
-               41_byte, 42_byte, 43_byte, 44_byte, 45_byte, 46_byte, 47_byte, 48_byte],
-    span_id: [25_byte, 26_byte, 27_byte, 28_byte, 29_byte, 30_byte, 31_byte, 32_byte],
-    trace_flags: 1_byte,
-    trace_state: "batch=value5,job=processing"
-  }
-  
-  // 创建带有链接的span
-  let (linked_ctx, linked_span) = tracer.start_span(
-    ctx,
-    "operation-with-links",
-    Consumer,
-    [
-      ("operation.type", AttributeValue::string("aggregation")),
-      ("link.count", AttributeValue::int(4L))
-    ],
-    1000L
+  // 创建父Span
+  let (parent_ctx, parent_span) = tracer.start_span(
+    initial_context,
+    "parent-operation",
+    trace::Server,
+    [("service.name", common::AttributeValue::string("api-service"))]
   )
   
-  // 创建各种类型的链接
-  let parent_link = SpanLink::{
-    context: parent_context,
-    attributes: [
-      ("link.type", AttributeValue::string("parent")),
-      ("relationship", AttributeValue::string("direct"))
-    ]
+  // 创建子Span
+  let (child_ctx, child_span) = tracer.start_span(
+    parent_ctx,
+    "child-operation",
+    trace::Internal,
+    [("operation.type", common::AttributeValue::string("database-query"))]
+  )
+  
+  // 验证子Span的父关系
+  assert_eq(child_span.name, "child-operation")
+  match child_span.kind {
+    trace::Internal => assert_eq(true, true)
+    _ => assert_eq(false, true)
   }
   
-  let same_trace_link = SpanLink::{
-    context: related_context1,
-    attributes: [
-      ("link.type", AttributeValue::string("same_trace")),
-      ("relationship", AttributeValue::string("causal"))
-    ]
+  // 创建具有明确父SpanID的子Span
+  let parent_span_id = Array::make(8, 42_byte)
+  let child_with_explicit_parent = tracer.start_span(
+    parent_ctx,
+    "child-with-explicit-parent"
+  )
+  
+  let child_span_with_parent = trace::Span::{
+    ..child_with_explicit_parent.1,
+    parent_span_id: Some(parent_span_id)
   }
   
-  let different_trace_link = SpanLink::{
-    context: related_context2,
-    attributes: [
-      ("link.type", AttributeValue::string("different_trace")),
-      ("relationship", AttributeValue::string("correlation")),
-      ("external.system", AttributeValue::string("payment.service"))
-    ]
+  // 验证显式父SpanID
+  match child_span_with_parent.parent_span_id {
+    Some(parent_id) => {
+      assert_eq(parent_id.length(), 8)
+      assert_eq(parent_id[0], 42_byte)
+    }
+    None => assert_eq(false, true)
   }
   
-  let batch_link = SpanLink::{
-    context: batch_context,
-    attributes: [
-      ("link.type", AttributeValue::string("batch")),
-      ("relationship", AttributeValue::string("batch_member")),
-      ("batch.id", AttributeValue::string("batch-2023-001")),
-      ("batch.size", AttributeValue::int(100L)),
-      ("batch.index", AttributeValue::int(42L))
-    ]
+  // 验证不同SpanKind的行为
+  let server_span = tracer.start_span(initial_context, "server-span", trace::Server)
+  match server_span.1.kind {
+    trace::Server => assert_eq(true, true)
+    _ => assert_eq(false, true)
   }
   
-  // 验证链接结构
-  let links = [parent_link, same_trace_link, different_trace_link, batch_link]
-  let mut i = 0
-  while i < links.length() {
-    let link = links[i]
-    
-    // 验证链接的context
-    assert_eq(link.context.trace_id.length(), 16)
-    assert_eq(link.context.span_id.length(), 8)
-    
-    // 验证链接属性
-    assert_eq(link.attributes.length() > 0, true)
-    
-    i = i + 1
+  let client_span = tracer.start_span(initial_context, "client-span", trace::Client)
+  match client_span.1.kind {
+    trace::Client => assert_eq(true, true)
+    _ => assert_eq(false, true)
   }
   
-  // 验证特定链接的属性
-  assert_eq(parent_link.attributes.length(), 2)
-  assert_eq(same_trace_link.attributes.length(), 2)
-  assert_eq(different_trace_link.attributes.length(), 3)
-  assert_eq(batch_link.attributes.length(), 5)
+  let producer_span = tracer.start_span(initial_context, "producer-span", trace::Producer)
+  match producer_span.1.kind {
+    trace::Producer => assert_eq(true, true)
+    _ => assert_eq(false, true)
+  }
   
-  // 验证相同trace的链接
-  assert_eq(parent_context.trace_id, related_context1.trace_id)
-  assert_eq(parent_context.trace_id != related_context2.trace_id, true)
-  assert_eq(parent_context.trace_id != batch_context.trace_id, true)
-  
-  // 验证不同span ID
-  assert_eq(parent_context.span_id != related_context1.span_id, true)
-  
-  // 验证trace flags
-  assert_eq(parent_context.trace_flags, 1_byte)
-  assert_eq(related_context1.trace_flags, 1_byte)
-  assert_eq(related_context2.trace_flags, 0_byte)
-  assert_eq(batch_context.trace_flags, 1_byte)
-  
-  // 验证trace state
-  assert_eq(parent_context.trace_state.contains("parent=value1"), true)
-  assert_eq(related_context1.trace_state.contains("related=value3"), true)
-  assert_eq(related_context2.trace_state.contains("external=value4"), true)
-  assert_eq(batch_context.trace_state.contains("batch=value5"), true)
+  let consumer_span = tracer.start_span(initial_context, "consumer-span", trace::Consumer)
+  match consumer_span.1.kind {
+    trace::Consumer => assert_eq(true, true)
+    _ => assert_eq(false, true)
+  }
 }
 
-test "span_timing_and_duration" {
+test "span_timing_and_duration_calculations" {
   // 测试Span时间和持续时间计算
   
-  let provider = NoopTracerProvider::{}
-  let tracer = provider.get_tracer("timing-test", "1.0.0")
-  let ctx = Context::empty()
+  let initial_context = context::Context::empty()
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("test-tracer")
   
-  // 创建不同时间跨度的span
-  let base_time = 1640995200000000000L  // 2022-01-01 00:00:00 UTC
-  
-  // 微秒级操作
-  let (micro_ctx, micro_span) = tracer.start_span(
-    ctx,
-    "micro-operation",
-    Internal,
-    [("operation.scale", AttributeValue::string("micro"))],
-    base_time
+  // 创建具有特定开始时间的Span
+  let start_time = 1640995200000000000L  // 2022-01-01 00:00:00 UTC
+  let (ctx, span) = tracer.start_span(
+    initial_context,
+    "timed-operation",
+    trace::Internal,
+    [],
+    Some(start_time)
   )
   
-  // 毫秒级操作
-  let (milli_ctx, milli_span) = tracer.start_span(
-    ctx,
-    "milli-operation",
-    Internal,
-    [("operation.scale", AttributeValue::string("milli"))],
-    base_time + 1000000L  // 1ms later
-  )
+  // 验证开始时间
+  assert_eq(span.start_time_unix_nanos, start_time)
+  assert_eq(span.end_time_unix_nanos, None)
   
-  // 秒级操作
-  let (second_ctx, second_span) = tracer.start_span(
-    ctx,
-    "second-operation",
-    Internal,
-    [("operation.scale", AttributeValue::string("second"))],
-    base_time + 1000000000L  // 1s later
-  )
-  
-  // 分钟级操作
-  let (minute_ctx, minute_span) = tracer.start_span(
-    ctx,
-    "minute-operation",
-    Internal,
-    [("operation.scale", AttributeValue::string("minute"))],
-    base_time + 60000000000L  // 60s later
-  )
-  
-  // 验证时间戳递增
-  assert_eq(micro_span.start_time_unix_nanos < milli_span.start_time_unix_nanos, true)
-  assert_eq(milli_span.start_time_unix_nanos < second_span.start_time_unix_nanos, true)
-  assert_eq(second_span.start_time_unix_nanos < minute_span.start_time_unix_nanos, true)
-  
-  // 测试时间戳精度
-  let high_precision_time = 1640995200123456789L
-  let (precision_ctx, precision_span) = tracer.start_span(
-    ctx,
-    "high-precision-operation",
-    Internal,
-    [
-      ("timestamp.precision", AttributeValue::string("nanosecond")),
-      ("timestamp.value", AttributeValue::string("1640995200123456789"))
-    ],
-    high_precision_time
-  )
-  
-  assert_eq(precision_span.start_time_unix_nanos, high_precision_time)
-  
-  // 测试极值时间戳
-  let min_time = -9223372036854775808L  // Int64最小值
-  let max_time = 9223372036854775807L   // Int64最大值
-  
-  let (min_ctx, min_span) = tracer.start_span(
-    ctx,
-    "minimum-time-operation",
-    Internal,
-    [("time.boundary", AttributeValue::string("minimum"))],
-    min_time
-  )
-  
-  let (max_ctx, max_span) = tracer.start_span(
-    ctx,
-    "maximum-time-operation",
-    Internal,
-    [("time.boundary", AttributeValue::string("maximum"))],
-    max_time
-  )
-  
-  assert_eq(min_span.start_time_unix_nanos, min_time)
-  assert_eq(max_span.start_time_unix_nanos, max_time)
-  
-  // 测试相对时间计算
-  let start_time = 1000000L
-  let end_time = 5000000L
-  let duration = end_time - start_time
-  
-  let (relative_ctx, relative_span) = tracer.start_span(
-    ctx,
-    "relative-timing-operation",
-    Internal,
-    [
-      ("start.time", AttributeValue::int(start_time)),
-      ("end.time", AttributeValue::int(end_time)),
-      ("duration", AttributeValue::int(duration)),
-      ("duration.ms", AttributeValue::float((duration as Double) / 1000000.0))
-    ],
-    start_time
-  )
-  
-  assert_eq(relative_span.start_time_unix_nanos, start_time)
-  assert_eq(duration, 4000000L)
-  
-  // 验证duration属性
-  let mut found_duration = false
-  let mut found_duration_ms = false
-  
-  let mut i = 0
-  while i < relative_span.attributes.length() {
-    match relative_span.attributes[i].0 {
-      "duration" => {
-        match relative_span.attributes[i].1 {
-          AttributeValue::IntValue(d) => {
-            assert_eq(d, duration)
-            found_duration = true
-          }
-          _ => @test.fail("Expected IntValue")
-        }
-      }
-      "duration.ms" => {
-        match relative_span.attributes[i].1 {
-          AttributeValue::FloatValue(d_ms) => {
-            assert_eq(d_ms, 4.0)
-            found_duration_ms = true
-          }
-          _ => @test.fail("Expected FloatValue")
-        }
-      }
-      _ => ()
-    }
-    i = i + 1
+  // 模拟Span结束
+  let end_time = 1640995201000000000L  // 1秒后
+  let completed_span = trace::Span::{
+    ..span,
+    end_time_unix_nanos: Some(end_time),
+    status: trace::Ok
   }
   
-  assert_eq(found_duration, true)
-  assert_eq(found_duration_ms, true)
+  // 验证结束时间和持续时间
+  match completed_span.end_time_unix_nanos {
+    Some(end) => {
+      assert_eq(end, end_time)
+      let duration = end - start_time
+      assert_eq(duration, 1000000000L)  // 1秒，以纳秒为单位
+    }
+    None => assert_eq(false, true)
+  }
+  
+  match completed_span.status {
+    trace::Ok => assert_eq(true, true)
+    _ => assert_eq(false, true)
+  }
+  
+  // 测试零持续时间Span
+  let instant_start = 1640995202000000000L
+  let (ctx2, instant_span) = tracer.start_span(
+    initial_context,
+    "instant-operation",
+    trace::Internal,
+    [],
+    Some(instant_start)
+  )
+  
+  let completed_instant_span = trace::Span::{
+    ..instant_span,
+    end_time_unix_nanos: Some(instant_start),  // 立即结束
+    status: trace::Ok
+  }
+  
+  match completed_instant_span.end_time_unix_nanos {
+    Some(end) => {
+      let duration = end - instant_start
+      assert_eq(duration, 0L)  // 零持续时间
+    }
+    None => assert_eq(false, true)
+  }
 }

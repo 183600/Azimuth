@@ -60,6 +60,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "simple_test.mbt": {
     0: (__test_73696d706c655f746573742e6d6274_0, ["simple_attribute_value_test"]),
   },
+  "resource_management_test.mbt": {
+    0: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_0, ["resource_default_creation_and_validation"]),
+    1: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_1, ["resource_with_explicit_attributes"]),
+    2: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_2, ["resource_attribute_types_comprehensive"]),
+    3: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_3, ["resource_edge_cases_and_boundary_values"]),
+    4: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_4, ["resource_real_world_scenarios"]),
+    5: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_5, ["resource_inheritance_and_composition"]),
+  },
   "resource_instrumentation_test.mbt": {
     0: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_0, ["resource_default_creation_variants"]),
     1: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_1, ["resource_with_comprehensive_attributes"]),
@@ -68,10 +76,27 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_4, ["instrumentation_scope_comprehensive_scenarios"]),
     5: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_5, ["resource_and_attributes_performance_considerations"]),
   },
+  "resource_complex_configuration_test.mbt": {
+    0: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_0, ["resource_complex_configuration"]),
+    1: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_1, ["resource_attributes_configuration"]),
+    2: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_2, ["resource_edge_cases_configuration"]),
+    3: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_3, ["resource_multi_environment_configuration"]),
+    4: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_4, ["resource_microservices_configuration"]),
+    5: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_5, ["resource_performance_configuration"]),
+  },
   "integration_test.mbt": {
     0: (__test_696e746567726174696f6e5f746573742e6d6274_0, ["resource_and_attributes_integration"]),
     1: (__test_696e746567726174696f6e5f746573742e6d6274_1, ["attribute_complex_integration"]),
     2: (__test_696e746567726174696f6e5f746573742e6d6274_2, ["attribute_type_comprehensive_integration"]),
+  },
+  "instrumentation_scope_validation_test.mbt": {
+    0: (__test_696e737472756d656e746174696f6e5f73636f70655f76616c69646174696f6e5f746573742e6d6274_0, ["instrumentation_scope_basic_creation"]),
+    1: (__test_696e737472756d656e746174696f6e5f73636f70655f76616c69646174696f6e5f746573742e6d6274_1, ["instrumentation_scope_name_validation"]),
+    2: (__test_696e737472756d656e746174696f6e5f73636f70655f76616c69646174696f6e5f746573742e6d6274_2, ["instrumentation_scope_version_validation"]),
+    3: (__test_696e737472756d656e746174696f6e5f73636f70655f76616c69646174696f6e5f746573742e6d6274_3, ["instrumentation_scope_schema_url_validation"]),
+    4: (__test_696e737472756d656e746174696f6e5f73636f70655f76616c69646174696f6e5f746573742e6d6274_4, ["instrumentation_scope_real_world_scenarios"]),
+    5: (__test_696e737472756d656e746174696f6e5f73636f70655f76616c69646174696f6e5f746573742e6d6274_5, ["instrumentation_scope_hierarchy_and_relationships"]),
+    6: (__test_696e737472756d656e746174696f6e5f73636f70655f76616c69646174696f6e5f746573742e6d6274_6, ["instrumentation_scope_comprehensive_validation"]),
   },
   "instrumentation_scope_test.mbt": {
     0: (__test_696e737472756d656e746174696f6e5f73636f70655f746573742e6d6274_0, ["instrumentation_scope_creation"]),
@@ -103,6 +128,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_62617369635f746573742e6d6274_6, ["instrumentation_scope_creation_and_properties"]),
     7: (__test_62617369635f746573742e6d6274_7, ["resource_complex_scenarios"]),
   },
+  "attribute_value_type_safety_test.mbt": {
+    0: (__test_6174747269627574655f76616c75655f747970655f7361666574795f746573742e6d6274_0, ["attribute_value_type_safety_and_conversion"]),
+    1: (__test_6174747269627574655f76616c75655f747970655f7361666574795f746573742e6d6274_1, ["attribute_value_array_type_safety"]),
+    2: (__test_6174747269627574655f76616c75655f747970655f7361666574795f746573742e6d6274_2, ["attribute_value_edge_cases_and_limits"]),
+    3: (__test_6174747269627574655f76616c75655f747970655f7361666574795f746573742e6d6274_3, ["attribute_value_complex_scenarios"]),
+    4: (__test_6174747269627574655f76616c75655f747970655f7361666574795f746573742e6d6274_4, ["attribute_value_type_consistency"]),
+    5: (__test_6174747269627574655f76616c75655f747970655f7361666574795f746573742e6d6274_5, ["attribute_value_performance_considerations"]),
+  },
   "attribute_value_conversion_test.mbt": {
     0: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_0, ["attribute_value_string_representation"]),
     1: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_1, ["attribute_value_array_string_representation"]),
@@ -118,6 +151,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_3, ["attribute_value_array_boundary_cases"]),
     4: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_4, ["attribute_value_type_consistency"]),
     5: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_5, ["attribute_value_conversion_edge_cases"]),
+  },
+  "attribute_value_advanced_test.mbt": {
+    0: (__test_6174747269627574655f76616c75655f616476616e6365645f746573742e6d6274_0, ["attribute_value_type_conversions_comprehensive"]),
+    1: (__test_6174747269627574655f76616c75655f616476616e6365645f746573742e6d6274_1, ["attribute_value_edge_cases_and_boundary_values"]),
+    2: (__test_6174747269627574655f76616c75655f616476616e6365645f746573742e6d6274_2, ["attribute_value_complex_scenarios"]),
   },
   "advanced_test.mbt": {
     0: (__test_616476616e6365645f746573742e6d6274_0, ["resource_complex_attributes_and_validation"]),

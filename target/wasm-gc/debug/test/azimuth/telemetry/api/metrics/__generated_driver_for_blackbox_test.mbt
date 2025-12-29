@@ -113,6 +113,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_6d6574726963735f6167677265676174696f6e5f746573742e6d6274_3, ["metrics_up_down_counter_aggregation"]),
     4: (__test_6d6574726963735f6167677265676174696f6e5f746573742e6d6274_4, ["metrics_multi_dimensional_aggregation"]),
   },
+  "metrics_aggregation_boundary_test.mbt": {
+    0: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_0, ["metrics_counter_boundary_conditions"]),
+    1: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_1, ["metrics_histogram_boundary_conditions"]),
+    2: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_2, ["metrics_up_down_counter_boundary_conditions"]),
+    3: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_3, ["metrics_gauge_boundary_conditions"]),
+    4: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_4, ["metrics_aggregation_edge_cases"]),
+    5: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_5, ["metrics_high_cardinality_attributes"]),
+    6: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_6, ["metrics_large_scale_operations"]),
+    7: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_7, ["metrics_attribute_boundary_combinations"]),
+  },
   "metrics_advanced_test.mbt": {
     0: (__test_6d6574726963735f616476616e6365645f746573742e6d6274_0, ["measurement_complex_attributes"]),
     1: (__test_6d6574726963735f616476616e6365645f746573742e6d6274_1, ["instrument_type_coverage"]),
@@ -128,6 +138,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_696e737472756d656e745f74797065735f746573742e6d6274_5, ["instrument_with_complex_attributes"]),
     6: (__test_696e737472756d656e745f74797065735f746573742e6d6274_6, ["meter_provider_multiple_meters"]),
     7: (__test_696e737472756d656e745f74797065735f746573742e6d6274_7, ["instrument_edge_cases"]),
+  },
+  "instrument_types_advanced_test.mbt": {
+    0: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_0, ["metrics_counter_instrument_operations"]),
+    1: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_1, ["metrics_histogram_instrument_operations"]),
+    2: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_2, ["metrics_up_down_counter_instrument_operations"]),
+    3: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_3, ["metrics_gauge_instrument_operations"]),
+    4: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_4, ["metrics_meter_multiple_instruments_creation"]),
+    5: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_5, ["metrics_measurement_struct_operations"]),
+    6: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_6, ["metrics_instrument_type_enum_validation"]),
   },
   "instrument_aggregation_test.mbt": {
     0: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_0, ["instrument_type_counter_aggregation"]),

@@ -117,6 +117,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_3, ["log_record_builder_complex_attributes"]),
     4: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_4, ["log_record_all_severity_levels"]),
   },
+  "log_record_builder_complex_chain_test.mbt": {
+    0: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_0, ["log_record_builder_basic_chaining"]),
+    1: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_1, ["log_record_builder_complex_chaining"]),
+    2: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_2, ["log_record_builder_severity_chaining"]),
+    3: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_3, ["log_record_builder_attribute_type_chaining"]),
+    4: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_4, ["log_record_builder_trace_context_chaining"]),
+    5: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_5, ["log_record_builder_resource_chaining"]),
+    6: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_6, ["log_record_builder_edge_cases_chaining"]),
+    7: (__test_6c6f675f7265636f72645f6275696c6465725f636f6d706c65785f636861696e5f746573742e6d6274_7, ["log_record_builder_performance_chaining"]),
+  },
   "log_record_builder_chain_test.mbt": {
     0: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_0, ["log_record_builder_basic_chaining"]),
     1: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_1, ["log_record_builder_severity_variations"]),
@@ -130,13 +140,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     9: (__test_6c6f675f7265636f72645f6275696c6465725f636861696e5f746573742e6d6274_9, ["log_record_builder_performance_logging_chaining"]),
   },
   "log_record_builder_advanced_test.mbt": {
-    0: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_0, ["log_record_builder_fluent_chaining"]),
-    1: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_1, ["log_record_builder_conditional_chaining"]),
-    2: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_2, ["log_record_builder_dynamic_attribute_building"]),
-    3: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_3, ["log_record_builder_error_scenarios"]),
-    4: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_4, ["log_record_builder_performance_patterns"]),
-    5: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_5, ["log_record_builder_severity_transitions"]),
-    6: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_6, ["log_record_builder_complex_array_attributes"]),
+    0: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_0, ["log_record_builder_basic_chaining"]),
+    1: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_1, ["log_record_builder_attribute_chaining"]),
+    2: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_2, ["log_record_builder_complex_severity_scenarios"]),
+    3: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_3, ["log_record_builder_trace_context_integration"]),
+    4: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_4, ["log_record_builder_resource_and_instrumentation_scope"]),
+    5: (__test_6c6f675f7265636f72645f6275696c6465725f616476616e6365645f746573742e6d6274_5, ["log_record_builder_observed_timestamp_and_severity_text"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
