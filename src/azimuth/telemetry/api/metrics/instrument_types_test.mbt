@@ -1,149 +1,197 @@
-// 指标instrument类型测试用例
-test "counter_instrument_creation_and_usage" {
+// InstrumentType枚举的测试用例
+// 测试指标仪器类型
+
+test "instrument_type_all_values" {
+  // 测试所有InstrumentType枚举值
+  let counter_type = Counter
+  let histogram_type = Histogram
+  let up_down_counter_type = UpDownCounter
+  let gauge_type = Gauge
+  let observable_counter_type = ObservableCounter
+  let observable_gauge_type = ObservableGauge
+  let observable_up_down_counter_type = ObservableUpDownCounter
+  
+  // 虽然我们无法直接比较枚举值，但可以通过使用它们来验证
+  // 在实际应用中，这些类型会用于创建不同的指标仪器
+  
+  // 创建测量值来测试不同类型的度量
+  let counter_measurement = Measurement::{
+    value: 10.0,
+    attributes: [("instrument.type", AttributeValue::string("counter"))]
+  }
+  
+  let histogram_measurement = Measurement::{
+    value: 100.5,
+    attributes: [("instrument.type", AttributeValue::string("histogram"))]
+  }
+  
+  let gauge_measurement = Measurement::{
+    value: 75.0,
+    attributes: [("instrument.type", AttributeValue::string("gauge"))]
+  }
+  
+  assert_eq(counter_measurement.value, 10.0)
+  assert_eq(histogram_measurement.value, 100.5)
+  assert_eq(gauge_measurement.value, 75.0)
+  
+  // 验证属性
+  match counter_measurement.attributes[0].1 {
+    AttributeValue::StringValue(s) => assert_eq(s, "counter")
+    _ => @test.fail("Expected StringValue")
+  }
+}
+
+test "meter_creates_all_instrument_types" {
+  // 测试Meter创建所有类型的仪器
   let provider = NoopMeterProvider::{}
   let meter = provider.get_meter("test-meter", "1.0.0")
-  let counter = meter.create_counter("test_counter", "bytes", "Test counter for bytes")
   
-  // 测试增加计数器
-  counter.add(100L)
-  counter.add(50L, [("http.method", AttributeValue::string("GET"))])
-  counter.add(-25L, [("http.method", AttributeValue::string("POST")), ("status.code", AttributeValue::int(200L))])
+  // 创建各种类型的仪器
+  let counter = meter.create_counter("test.counter", "count", "A test counter")
+  let histogram = meter.create_histogram("test.histogram", "ms", "A test histogram")
+  let up_down_counter = meter.create_up_down_counter("test.up_down_counter", "bytes", "A test up-down counter")
+  let gauge = meter.create_gauge("test.gauge", "percent", "A test gauge")
   
-  // 由于是No-op实现，我们只能验证调用不会失败
-  assert_eq(true, true)
+  // 验证仪器可以正常使用（不会崩溃）
+  counter.add(10L)
+  counter.add(5L, [("tag", AttributeValue::string("value"))])
+  
+  histogram.record(100.5)
+  histogram.record(200.3, [("operation", AttributeValue::string("read"))])
+  
+  up_down_counter.add(-3L)
+  up_down_counter.add(7L, [("direction", AttributeValue::string("up"))])
+  
+  gauge.record(75.0)
+  gauge.record(25.5, [("status", AttributeValue::string("active"))])
+  
+  assert_eq(true, true) // 如果没有崩溃，测试通过
 }
 
-test "histogram_instrument_creation_and_usage" {
-  let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("test-meter", "1.0.0")
-  let histogram = meter.create_histogram("request_duration", "ms", "Request duration histogram")
-  
-  // 测试记录直方图值
-  histogram.record(100.0)
-  histogram.record(250.5, [("http.method", AttributeValue::string("GET"))])
-  histogram.record(75.25, [("http.method", AttributeValue::string("POST")), ("status.code", AttributeValue::int(404L))])
-  
-  // 测试边界值
-  histogram.record(0.0)
-  histogram.record(-1.0)
-  histogram.record(1.0/0.0)  // Infinity
-  histogram.record(0.0/0.0)  // NaN
-  
-  assert_eq(true, true)
-}
-
-test "up_down_counter_instrument_creation_and_usage" {
-  let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("test-meter", "1.0.0")
-  let up_down_counter = meter.create_up_down_counter("active_connections", "connections", "Active connections")
-  
-  // 测试增加和减少计数器
-  up_down_counter.add(10L)
-  up_down_counter.add(-5L, [("service.name", AttributeValue::string("api"))])
-  up_down_counter.add(3L, [("service.name", AttributeValue::string("worker")), ("node.id", AttributeValue::string("node-1"))])
-  
-  // 测试零值
-  up_down_counter.add(0L)
-  
-  assert_eq(true, true)
-}
-
-test "gauge_instrument_creation_and_usage" {
-  let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("test-meter", "1.0.0")
-  let gauge = meter.create_gauge("cpu_usage", "percent", "CPU usage percentage")
-  
-  // 测试记录仪表值
-  gauge.record(75.5)
-  gauge.record(25.0, [("host.name", AttributeValue::string("web-server-01"))])
-  gauge.record(100.0, [("host.name", AttributeValue::string("db-server")), ("cpu.core", AttributeValue::int(0L))])
-  
-  // 测试边界值
-  gauge.record(0.0)
-  gauge.record(-5.0)  // 可能为负值，取决于具体实现
-  gauge.record(150.0) // 超过100%的值
-  
-  assert_eq(true, true)
-}
-
-test "meter_multiple_instruments_creation" {
-  let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("multi-instrument-meter", "2.0.0")
-  
-  let counter = meter.create_counter("requests_total", "requests", "Total number of requests")
-  let histogram = meter.create_histogram("response_time", "ms", "Response time distribution")
-  let up_down_counter = meter.create_up_down_counter("queue_size", "items", "Current queue size")
-  let gauge = meter.create_gauge("memory_usage", "bytes", "Memory usage in bytes")
-  
-  // 测试所有instruments的使用
-  counter.add(1L, [("endpoint", AttributeValue::string("/api/users"))])
-  histogram.record(150.0, [("endpoint", AttributeValue::string("/api/users"))])
-  up_down_counter.add(5L, [("queue.name", AttributeValue::string("processing"))])
-  gauge.record(1024.0 * 1024.0 * 512.0, [("process.name", AttributeValue::string("worker"))])
-  
-  assert_eq(true, true)
-}
-
-test "instrument_with_complex_attributes" {
-  let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("complex-attributes-meter", "1.0.0")
-  let counter = meter.create_counter("complex_counter", "operations", "Counter with complex attributes")
-  
-  // 测试复杂属性类型
-  counter.add(1L, [
-    ("string.attr", AttributeValue::string("complex-value")),
+test "measurement_with_various_attribute_types" {
+  // 测试包含各种属性类型的测量值
+  let attributes = [
+    ("string.attr", AttributeValue::string("test")),
     ("int.attr", AttributeValue::int(42L)),
-    ("float.attr", AttributeValue::float(3.14159)),
+    ("float.attr", AttributeValue::float(3.14)),
     ("bool.attr", AttributeValue::bool(true)),
-    ("string.array", AttributeValue::array_string(["tag1", "tag2", "tag3"])),
+    ("string.array", AttributeValue::array_string(["a", "b", "c"])),
     ("int.array", AttributeValue::array_int([1L, 2L, 3L])),
     ("float.array", AttributeValue::array_float([1.1, 2.2, 3.3])),
     ("bool.array", AttributeValue::array_bool([true, false, true]))
-  ])
+  ]
   
-  assert_eq(true, true)
+  let measurement = Measurement::{
+    value: 123.45,
+    attributes: attributes
+  }
+  
+  assert_eq(measurement.value, 123.45)
+  assert_eq(measurement.attributes.length(), 8)
+  
+  // 验证各种属性类型
+  match measurement.attributes[0].1 {
+    AttributeValue::StringValue(s) => assert_eq(s, "test")
+    _ => @test.fail("Expected StringValue")
+  }
+  
+  match measurement.attributes[1].1 {
+    AttributeValue::IntValue(i) => assert_eq(i, 42L)
+    _ => @test.fail("Expected IntValue")
+  }
+  
+  match measurement.attributes[2].1 {
+    AttributeValue::FloatValue(f) => assert_eq(f, 3.14)
+    _ => @test.fail("Expected FloatValue")
+  }
+  
+  match measurement.attributes[3].1 {
+    AttributeValue::BoolValue(b) => assert_eq(b, true)
+    _ => @test.fail("Expected BoolValue")
+  }
+  
+  match measurement.attributes[4].1 {
+    AttributeValue::ArrayStringValue(arr) => {
+      assert_eq(arr.length(), 3)
+      assert_eq(arr[0], "a")
+    }
+    _ => @test.fail("Expected ArrayStringValue")
+  }
 }
 
-test "meter_provider_multiple_meters" {
-  let provider = NoopMeterProvider::{}
+test "instrument_edge_case_measurements" {
+  // 测试边界情况的测量值
   
-  let meter1 = provider.get_meter("service-a", "1.0.0")
-  let meter2 = provider.get_meter("service-b", "2.0.0", "https://example.com/schema")
-  let meter3 = provider.get_meter("service-c")  // 没有版本和schema
+  // 零值和负值
+  let zero_measurement = Measurement::{
+    value: 0.0,
+    attributes: [("type", AttributeValue::string("zero"))]
+  }
   
-  let counter1 = meter1.create_counter("requests", "requests", "Service A requests")
-  let counter2 = meter2.create_counter("requests", "requests", "Service B requests")
-  let counter3 = meter3.create_counter("requests", "requests", "Service C requests")
+  let negative_measurement = Measurement::{
+    value: -42.5,
+    attributes: [("type", AttributeValue::string("negative"))]
+  }
   
-  counter1.add(10L)
-  counter2.add(20L, [("service", AttributeValue::string("service-b"))])
-  counter3.add(30L, [("service", AttributeValue::string("service-c")), ("version", AttributeValue::string("1.0.0"))])
+  // 极大值和极小值
+  let max_measurement = Measurement::{
+    value: 1.7976931348623157e+308,  // Double最大值
+    attributes: [("type", AttributeValue::string("max"))]
+  }
   
-  assert_eq(true, true)
+  let min_measurement = Measurement::{
+    value: -1.7976931348623157e+308, // Double最小值
+    attributes: [("type", AttributeValue::string("min"))]
+  }
+  
+  // 特殊浮点值
+  let infinity_measurement = Measurement::{
+    value: 1.0/0.0,  // 正无穷
+    attributes: [("type", AttributeValue::string("infinity"))]
+  }
+  
+  let neg_infinity_measurement = Measurement::{
+    value: -1.0/0.0, // 负无穷
+    attributes: [("type", AttributeValue::string("neg_infinity"))]
+  }
+  
+  let nan_measurement = Measurement::{
+    value: 0.0/0.0,  // NaN
+    attributes: [("type", AttributeValue::string("nan"))]
+  }
+  
+  // 验证值
+  assert_eq(zero_measurement.value, 0.0)
+  assert_eq(negative_measurement.value, -42.5)
+  assert_eq(max_measurement.value, 1.7976931348623157e+308)
+  assert_eq(min_measurement.value, -1.7976931348623157e+308)
+  assert_eq(infinity_measurement.value, 1.0/0.0)
+  assert_eq(neg_infinity_measurement.value, -1.0/0.0)
+  assert_eq(nan_measurement.value, 0.0/0.0)
 }
 
-test "instrument_edge_cases" {
+test "meter_provider_with_different_parameters" {
+  // 测试MeterProvider使用不同参数创建Meter
   let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("edge-cases-meter", "1.0.0")
   
-  // 测试空名称和特殊字符
-  let empty_name_counter = meter.create_counter("", "", "")
-  let special_name_counter = meter.create_counter("special/name/with/special.chars", "special-unit", "Special description with 特殊字符")
+  // 只提供名称
+  let meter1 = provider.get_meter("meter1")
   
-  empty_name_counter.add(1L)
-  special_name_counter.add(1L, [("special.key", AttributeValue::string("special/value"))])
+  // 提供名称和版本
+  let meter2 = provider.get_meter("meter2", "2.0.0")
   
-  // 测试极值
-  let counter = meter.create_counter("extreme_counter", "count", "Counter with extreme values")
-  counter.add(9223372036854775807L)  // Max Int64
-  counter.add(-9223372036854775808L) // Min Int64
+  // 提供所有参数
+  let meter3 = provider.get_meter("meter3", "3.0.0", "http://example.com/schema")
   
-  // 浮点极值
-  let histogram = meter.create_histogram("extreme_histogram", "ms", "Histogram with extreme values")
-  histogram.record(1.7976931348623157e+308)  // Max Double
-  histogram.record(-1.7976931348623157e+308) // Min Double
-  histogram.record(1.0/0.0)  // Infinity
-  histogram.record(0.0/0.0)  // NaN
+  // 创建仪器并使用它们
+  let counter1 = meter1.create_counter("counter1")
+  let counter2 = meter2.create_counter("counter2", "ops")
+  let counter3 = meter3.create_counter("counter3", "ops", "Counter with all parameters")
   
-  assert_eq(true, true)
+  // 使用仪器
+  counter1.add(1L)
+  counter2.add(2L, [("version", AttributeValue::string("2.0.0"))])
+  counter3.add(3L, [("schema", AttributeValue::string("full"))])
+  
+  assert_eq(true, true) // 如果没有崩溃，测试通过
 }

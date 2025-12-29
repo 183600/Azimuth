@@ -1,6 +1,8 @@
 // Azimuth Telemetry - Logs API
 // 结构化日志记录
 
+use azimuth.telemetry.api.common.{AttributeValue, Resource, InstrumentationScope}
+
 pub enum SeverityNumber {
   Trace
   Debug

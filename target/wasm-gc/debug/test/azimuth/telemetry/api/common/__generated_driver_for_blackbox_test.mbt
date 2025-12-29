@@ -76,6 +76,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_4, ["instrumentation_scope_comprehensive_scenarios"]),
     5: (__test_7265736f757263655f696e737472756d656e746174696f6e5f746573742e6d6274_5, ["resource_and_attributes_performance_considerations"]),
   },
+  "resource_instrumentation_scope_test.mbt": {
+    0: (__test_7265736f757263655f696e737472756d656e746174696f6e5f73636f70655f746573742e6d6274_0, ["resource_default_creation"]),
+    1: (__test_7265736f757263655f696e737472756d656e746174696f6e5f73636f70655f746573742e6d6274_1, ["resource_with_attributes"]),
+    2: (__test_7265736f757263655f696e737472756d656e746174696f6e5f73636f70655f746573742e6d6274_2, ["instrumentation_scope_basic"]),
+    3: (__test_7265736f757263655f696e737472756d656e746174696f6e5f73636f70655f746573742e6d6274_3, ["instrumentation_scope_minimal"]),
+    4: (__test_7265736f757263655f696e737472756d656e746174696f6e5f73636f70655f746573742e6d6274_4, ["resource_with_various_attribute_types"]),
+  },
   "resource_complex_configuration_test.mbt": {
     0: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_0, ["resource_complex_configuration"]),
     1: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_1, ["resource_attributes_configuration"]),
@@ -148,6 +155,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_6174747269627574655f76616c75655f6f7065726174696f6e735f746573742e6d6274_2, ["attribute_value_boolean_operations"]),
     3: (__test_6174747269627574655f76616c75655f6f7065726174696f6e735f746573742e6d6274_3, ["attribute_value_array_operations"]),
     4: (__test_6174747269627574655f76616c75655f6f7065726174696f6e735f746573742e6d6274_4, ["attribute_value_complex_scenarios"]),
+  },
+  "attribute_value_edge_cases_test.mbt": {
+    0: (__test_6174747269627574655f76616c75655f656467655f63617365735f746573742e6d6274_0, ["attribute_value_extreme_string_values"]),
+    1: (__test_6174747269627574655f76616c75655f656467655f63617365735f746573742e6d6274_1, ["attribute_value_extreme_numeric_values"]),
+    2: (__test_6174747269627574655f76616c75655f656467655f63617365735f746573742e6d6274_2, ["attribute_value_array_edge_cases"]),
+    3: (__test_6174747269627574655f76616c75655f656467655f63617365735f746573742e6d6274_3, ["attribute_value_consistency_operations"]),
+    4: (__test_6174747269627574655f76616c75655f656467655f63617365735f746573742e6d6274_4, ["attribute_value_pattern_matching"]),
+    5: (__test_6174747269627574655f76616c75655f656467655f63617365735f746573742e6d6274_5, ["attribute_value_nested_structures"]),
+    6: (__test_6174747269627574655f76616c75655f656467655f63617365735f746573742e6d6274_6, ["attribute_value_large_data_handling"]),
   },
   "attribute_value_conversion_test.mbt": {
     0: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_0, ["attribute_value_string_representation"]),

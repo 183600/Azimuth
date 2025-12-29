@@ -3,38 +3,38 @@
 
 test "attribute_value_type_conversions_comprehensive" {
   // 测试字符串类型
-  let string_attr = common::AttributeValue::string("test_value")
+  let string_attr = AttributeValue::string("test_value")
   match string_attr {
-    common::StringValue(s) => assert_eq(s, "test_value")
+    StringValue(s) => assert_eq(s, "test_value")
     _ => assert_eq(false, true)  // 不应该到达这里
   }
   
   // 测试整数类型
-  let int_attr = common::AttributeValue::int(42L)
+  let int_attr = AttributeValue::int(42L)
   match int_attr {
-    common::IntValue(i) => assert_eq(i, 42L)
+    IntValue(i) => assert_eq(i, 42L)
     _ => assert_eq(false, true)  // 不应该到达这里
   }
   
   // 测试浮点类型
-  let float_attr = common::AttributeValue::float(3.14159)
+  let float_attr = AttributeValue::float(3.14159)
   match float_attr {
-    common::FloatValue(f) => assert_eq(f > 3.14 && f < 3.15, true)
+    FloatValue(f) => assert_eq(f > 3.14 && f < 3.15, true)
     _ => assert_eq(false, true)  // 不应该到达这里
   }
   
   // 测试布尔类型
-  let bool_attr = common::AttributeValue::bool(true)
+  let bool_attr = AttributeValue::bool(true)
   match bool_attr {
-    common::BoolValue(b) => assert_eq(b, true)
+    BoolValue(b) => assert_eq(b, true)
     _ => assert_eq(false, true)  // 不应该到达这里
   }
   
   // 测试字符串数组类型
   let string_array = ["item1", "item2", "item3"]
-  let string_array_attr = common::AttributeValue::array_string(string_array)
+  let string_array_attr = AttributeValue::array_string(string_array)
   match string_array_attr {
-    common::ArrayStringValue(arr) => {
+    ArrayStringValue(arr) => {
       assert_eq(arr.length(), 3)
       assert_eq(arr[0], "item1")
       assert_eq(arr[2], "item3")
@@ -44,9 +44,9 @@ test "attribute_value_type_conversions_comprehensive" {
   
   // 测试整数数组类型
   let int_array = [1L, 2L, 3L, 4L, 5L]
-  let int_array_attr = common::AttributeValue::array_int(int_array)
+  let int_array_attr = AttributeValue::array_int(int_array)
   match int_array_attr {
-    common::ArrayIntValue(arr) => {
+    ArrayIntValue(arr) => {
       assert_eq(arr.length(), 5)
       assert_eq(arr[0], 1L)
       assert_eq(arr[4], 5L)
@@ -56,9 +56,9 @@ test "attribute_value_type_conversions_comprehensive" {
   
   // 测试浮点数组类型
   let float_array = [1.1, 2.2, 3.3]
-  let float_array_attr = common::AttributeValue::array_float(float_array)
+  let float_array_attr = AttributeValue::array_float(float_array)
   match float_array_attr {
-    common::ArrayFloatValue(arr) => {
+    ArrayFloatValue(arr) => {
       assert_eq(arr.length(), 3)
       assert_eq(arr[0] > 1.0 && arr[0] < 1.2, true)
       assert_eq(arr[2] > 3.2 && arr[2] < 3.4, true)
@@ -68,9 +68,9 @@ test "attribute_value_type_conversions_comprehensive" {
   
   // 测试布尔数组类型
   let bool_array = [true, false, true]
-  let bool_array_attr = common::AttributeValue::array_bool(bool_array)
+  let bool_array_attr = AttributeValue::array_bool(bool_array)
   match bool_array_attr {
-    common::ArrayBoolValue(arr) => {
+    ArrayBoolValue(arr) => {
       assert_eq(arr.length(), 3)
       assert_eq(arr[0], true)
       assert_eq(arr[1], false)

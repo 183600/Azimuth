@@ -1,6 +1,8 @@
 // Azimuth Telemetry - Metrics API
 // 指标收集和聚合
 
+use azimuth.telemetry.api.common.AttributeValue
+
 pub enum InstrumentType {
   Counter
   Histogram

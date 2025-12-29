@@ -57,6 +57,16 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "verify_new_tests.mbt": {
+    0: (__test_7665726966795f6e65775f74657374732e6d6274_0, ["verify_resource_instrumentation_scope"]),
+    1: (__test_7665726966795f6e65775f74657374732e6d6274_1, ["verify_span_kind_status"]),
+    2: (__test_7665726966795f6e65775f74657374732e6d6274_2, ["verify_instrument_type"]),
+    3: (__test_7665726966795f6e65775f74657374732e6d6274_3, ["verify_severity_number"]),
+    4: (__test_7665726966795f6e65775f74657374732e6d6274_4, ["verify_context_key"]),
+    5: (__test_7665726966795f6e65775f74657374732e6d6274_5, ["verify_composite_propagator"]),
+    6: (__test_7665726966795f6e65775f74657374732e6d6274_6, ["verify_attribute_value_edge_cases"]),
+    7: (__test_7665726966795f6e65775f74657374732e6d6274_7, ["verify_span_lifecycle"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
