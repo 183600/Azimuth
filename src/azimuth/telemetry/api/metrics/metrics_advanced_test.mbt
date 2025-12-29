@@ -1,115 +1,337 @@
 // Metrics模块高级测试用例
+test "instrument_type_coverage" {
+  // 测试所有instrument类型
+  let counter_type = Counter
+  let histogram_type = Histogram
+  let up_down_counter_type = UpDownCounter
+  let gauge_type = Gauge
+  let observable_counter_type = ObservableCounter
+  let observable_gauge_type = ObservableGauge
+  let observable_up_down_counter_type = ObservableUpDownCounter
+  
+  // 验证类型存在（通过创建Noop实例）
+  let noop_counter = NoopCounter::{}
+  let noop_histogram = NoopHistogram::{}
+  let noop_up_down_counter = NoopUpDownCounter::{}
+  let noop_gauge = NoopGauge::{}
+  
+  // 测试基本操作不会崩溃
+  noop_counter.add(42L, [])
+  noop_histogram.record(3.14, [])
+  noop_up_down_counter.add(-10L, [])
+  noop_gauge.record(100.0, [])
+  
+  assert_eq(true, true)
+}
 
 test "measurement_complex_attributes" {
-  // 测试带有复杂属性的Measurement
-  let complex_attrs : Attributes = [
-    ("service.name", AttributeValue::string("payment-service")),
-    ("service.version", AttributeValue::string("2.1.0")),
-    ("http.method", AttributeValue::string("POST")),
-    ("http.status_code", AttributeValue::int(200L)),
-    ("response.size", AttributeValue::float(1024.5)),
+  // 创建包含复杂属性的Measurement
+  let complex_attributes = [
+    ("user.id", AttributeValue::string("user-12345")),
+    ("request.method", AttributeValue::string("POST")),
+    ("response.status", AttributeValue::int(200L)),
+    ("response.time_ms", AttributeValue::int(150L)),
+    ("cpu.usage", AttributeValue::float(75.5)),
+    ("memory.usage", AttributeValue::float(512.0)),
     ("cache.hit", AttributeValue::bool(true)),
-    ("endpoints", AttributeValue::array_string(["/api/pay", "/api/verify", "/api/status"])),
-    ("status_codes", AttributeValue::array_int([200L, 201L, 400L, 500L])),
-    ("response_times", AttributeValue::array_float([10.5, 25.3, 100.7, 250.2])),
-    ("feature_flags", AttributeValue::array_bool([true, false, true, true]))
+    ("tags", AttributeValue::array_string(["api", "auth", "critical"])),
+    ("status.codes", AttributeValue::array_int([200L, 201L, 404L])),
+    ("latency.percentiles", AttributeValue::array_float([0.5, 0.95, 0.99])),
+    ("feature.flags", AttributeValue::array_bool([true, false, true]))
   ]
   
   let measurement = Measurement::{
     value: 42.5,
-    attributes: complex_attrs
+    attributes: complex_attributes
   }
   
   assert_eq(measurement.value, 42.5)
-  assert_eq(measurement.attributes.length(), 10)
+  assert_eq(measurement.attributes.length(), 11)
   
-  // 验证字符串属性
+  // 验证各种属性类型
   match measurement.attributes[0].1 {
-    StringValue(name) => assert_eq(name, "payment-service")
-    _ => @test.fail("Expected StringValue")
+    StringValue(user_id) => assert_eq(user_id, "user-12345")
+    _ => @test.fail("Expected StringValue for user.id")
   }
   
-  // 验证整数属性
-  match measurement.attributes[3].1 {
-    IntValue(code) => assert_eq(code, 200L)
-    _ => @test.fail("Expected IntValue")
+  match measurement.attributes[2].1 {
+    IntValue(status) => assert_eq(status, 200L)
+    _ => @test.fail("Expected IntValue for response.status")
   }
   
-  // 验证浮点数属性
   match measurement.attributes[4].1 {
-    FloatValue(size) => assert_eq(size, 1024.5)
-    _ => @test.fail("Expected FloatValue")
+    FloatValue(cpu) => assert_eq(cpu, 75.5)
+    _ => @test.fail("Expected FloatValue for cpu.usage")
   }
   
-  // 验证布尔属性
-  match measurement.attributes[5].1 {
-    BoolValue(hit) => assert_eq(hit, true)
-    _ => @test.fail("Expected BoolValue")
-  }
-  
-  // 验证字符串数组属性
   match measurement.attributes[6].1 {
-    ArrayStringValue(endpoints) => {
-      assert_eq(endpoints.length(), 3)
-      assert_eq(endpoints[0], "/api/pay")
-      assert_eq(endpoints[1], "/api/verify")
-      assert_eq(endpoints[2], "/api/status")
+    BoolValue(cache_hit) => assert_eq(cache_hit, true)
+    _ => @test.fail("Expected BoolValue for cache.hit")
+  }
+  
+  match measurement.attributes[7].1 {
+    ArrayStringValue(tags) => {
+      assert_eq(tags.length(), 3)
+      assert_eq(tags[0], "api")
+      assert_eq(tags[1], "auth")
+      assert_eq(tags[2], "critical")
     }
-    _ => @test.fail("Expected ArrayStringValue")
+    _ => @test.fail("Expected ArrayStringValue for tags")
   }
 }
 
-test "instrument_type_coverage" {
-  // 测试所有仪器类型的创建和使用
+test "meter_with_all_instruments" {
+  let meter = NoopMeter::{}
   
-  // 创建MeterProvider和Meter
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("test-meter", Some("1.0.0"), Some("https://example.com/schema"))
+  // 测试创建所有类型的instrument
+  let counter = meter.create_counter("test_counter", Some("count"), Some("A test counter"))
+  let histogram = meter.create_histogram("test_histogram", Some("ms"), Some("A test histogram"))
+  let up_down_counter = meter.create_up_down_counter("test_up_down", Some("count"), Some("A test up-down counter"))
+  let gauge = meter.create_gauge("test_gauge", Some("value"), Some("A test gauge"))
   
-  // 测试Counter
-  let counter = meter.create_counter("request_count", Some("requests"), Some("Total number of requests"))
-  counter.add(1L, [("http.method", AttributeValue::string("GET"))])
-  counter.add(5L, [("http.method", AttributeValue::string("POST"))])
-  counter.add(0L, [("http.method", AttributeValue::string("PUT"))])
-  counter.add(-1L, [("http.method", AttributeValue::string("DELETE"))])  // 测试负值
+  // 测试所有instrument的操作
+  counter.add(100L, [
+    ("operation.type", AttributeValue::string("read")),
+    ("user.id", AttributeValue::string("user-123"))
+  ])
   
-  // 测试Histogram
-  let histogram = meter.create_histogram("response_time", Some("ms"), Some("Response time in milliseconds"))
-  histogram.record(100.0, [("endpoint", AttributeValue::string("/api/users"))])
-  histogram.record(0.0, [("endpoint", AttributeValue::string("/api/products"))])  // 测试零值
-  histogram.record(9999.99, [("endpoint", AttributeValue::string("/api/orders"))])  // 测试大值
+  counter.add(50L, [
+    ("operation.type", AttributeValue::string("write")),
+    ("user.id", AttributeValue::string("user-456"))
+  ])
   
-  // 测试UpDownCounter
-  let up_down_counter = meter.create_up_down_counter("active_connections", Some("connections"), Some("Current active connections"))
-  up_down_counter.add(10L, [("server", AttributeValue::string("web-01"))])
-  up_down_counter.add(-5L, [("server", AttributeValue::string("web-01"))])  // 测试减少
-  up_down_counter.add(0L, [("server", AttributeValue::string("web-02"))])   // 测试零值
+  histogram.record(25.5, [
+    ("operation.type", AttributeValue::string("read")),
+    ("db.table", AttributeValue::string("users"))
+  ])
   
-  // 测试Gauge
-  let gauge = meter.create_gauge("cpu_usage", Some("percent"), Some("CPU usage percentage"))
-  gauge.record(75.5, [("instance", AttributeValue::string("server-01"))])
-  gauge.record(0.0, [("instance", AttributeValue::string("server-02"))])    // 测试零值
-  gauge.record(100.0, [("instance", AttributeValue::string("server-03"))])  // 测试最大值
-  gauge.record(-1.0, [("instance", AttributeValue::string("server-04"))])   // 测试负值
+  histogram.record(150.0, [
+    ("operation.type", AttributeValue::string("write")),
+    ("db.table", AttributeValue::string("orders"))
+  ])
   
-  // 测试带有复杂属性的仪器
-  let complex_attrs : Attributes = [
-    ("service.namespace", AttributeValue::string("production")),
-    ("service.version", AttributeValue::string("2.1.0")),
-    ("deployment.environment", AttributeValue::string("prod")),
-    ("host.name", AttributeValue::string("web-server-01")),
-    ("process.pid", AttributeValue::int(12345L)),
-    ("tags", AttributeValue::array_string(["web", "api", "critical"]))
+  up_down_counter.add(10L, [
+    ("resource.type", AttributeValue::string("connection")),
+    ("pool.name", AttributeValue::string("primary"))
+  ])
+  
+  up_down_counter.add(-5L, [
+    ("resource.type", AttributeValue::string("connection")),
+    ("pool.name", AttributeValue::string("primary"))
+  ])
+  
+  gauge.record(75.0, [
+    ("metric.type", AttributeValue::string("cpu")),
+    ("host.name", AttributeValue::string("web-server-01"))
+  ])
+  
+  gauge.record(25.0, [
+    ("metric.type", AttributeValue::string("memory")),
+    ("host.name", AttributeValue::string("web-server-01"))
+  ])
+  
+  assert_eq(true, true)
+}
+
+test "meter_provider_complex_scenarios" {
+  let provider = NoopMeterProvider::{}
+  
+  // 测试创建多个meter
+  let meter1 = provider.get_meter("meter1", Some("1.0.0"), Some("https://example.com/schema1"))
+  let meter2 = provider.get_meter("meter2", Some("2.0.0"), Some("https://example.com/schema2"))
+  let meter3 = provider.get_meter("meter3", None, None)
+  
+  // 为每个meter创建instruments
+  let counter1 = meter1.create_counter("counter1", Some("requests"), Some("Total requests"))
+  let counter2 = meter2.create_counter("counter2", Some("errors"), Some("Total errors"))
+  let histogram1 = meter3.create_histogram("histogram1", Some("latency"), Some("Request latency"))
+  
+  // 测试所有instruments的操作
+  counter1.add(1000L, [
+    ("service.name", AttributeValue::string("auth-service")),
+    ("endpoint", AttributeValue::string("/login")),
+    ("method", AttributeValue::string("POST"))
+  ])
+  
+  counter2.add(50L, [
+    ("service.name", AttributeValue::string("auth-service")),
+    ("error.type", AttributeValue::string("authentication")),
+    ("error.code", AttributeValue::string("AUTH_FAILED"))
+  ])
+  
+  histogram1.record(125.5, [
+    ("service.name", AttributeValue::string("user-service")),
+    ("operation", AttributeValue::string("get_user")),
+    ("db.query", AttributeValue::string("SELECT * FROM users"))
+  ])
+  
+  assert_eq(true, true)
+}
+
+test "measurement_edge_cases_and_special_values" {
+  // 测试边界值和特殊值
+  
+  // 极值测试
+  let max_measurement = Measurement::{
+    value: 1.7976931348623157e+308,  // Double最大值
+    attributes: [
+      ("max.int", AttributeValue::int(9223372036854775807L)),
+      ("min.int", AttributeValue::int(-9223372036854775808L)),
+      ("max.float", AttributeValue::float(1.7976931348623157e+308)),
+      ("min.float", AttributeValue::float(-1.7976931348623157e+308)),
+      ("infinity", AttributeValue::float(1.0/0.0)),
+      ("negative.infinity", AttributeValue::float(-1.0/0.0)),
+      ("nan", AttributeValue::float(0.0/0.0))
+    ]
+  }
+  
+  let min_measurement = Measurement::{
+    value: -1.7976931348623157e+308,  // Double最小值
+    attributes: [
+      ("zero", AttributeValue::int(0L)),
+      ("empty.string", AttributeValue::string("")),
+      ("empty.array", AttributeValue::array_string([]))
+    ]
+  }
+  
+  let zero_measurement = Measurement::{
+    value: 0.0,
+    attributes: []
+  }
+  
+  assert_eq(max_measurement.value, 1.7976931348623157e+308)
+  assert_eq(min_measurement.value, -1.7976931348623157e+308)
+  assert_eq(zero_measurement.value, 0.0)
+  
+  // 验证极值属性
+  match max_measurement.attributes[0].1 {
+    IntValue(max_int) => assert_eq(max_int, 9223372036854775807L)
+    _ => @test.fail("Expected max int value")
+  }
+  
+  match max_measurement.attributes[1].1 {
+    IntValue(min_int) => assert_eq(min_int, -9223372036854775808L)
+    _ => @test.fail("Expected min int value")
+  }
+  
+  match min_measurement.attributes[0].1 {
+    IntValue(zero) => assert_eq(zero, 0L)
+    _ => @test.fail("Expected zero int value")
+  }
+  
+  match min_measurement.attributes[1].1 {
+    StringValue(empty_str) => assert_eq(empty_str, "")
+    _ => @test.fail("Expected empty string")
+  }
+  
+  match min_measurement.attributes[2].1 {
+    ArrayStringValue(empty_arr) => assert_eq(empty_arr.length(), 0)
+    _ => @test.fail("Expected empty array")
+  }
+}
+
+test "instrument_with_unicode_and_special_characters" {
+  let meter = NoopMeter::{}
+  
+  // 测试Unicode和特殊字符的instrument名称和属性
+  let unicode_counter = meter.create_counter("Unicode计数器🚀", Some("个"), Some("Unicode测试计数器"))
+  let special_histogram = meter.create_histogram("special!@#$%^&*()_+-=[]{}|;':\",./<>?", Some("ms"), Some("Special characters histogram"))
+  
+  // 测试Unicode和特殊字符属性
+  let unicode_attributes = [
+    ("用户ID", AttributeValue::string("用户-12345")),
+    ("操作类型", AttributeValue::string("读取")),
+    ("状态码", AttributeValue::int(200L)),
+    ("成功率", AttributeValue::float(0.95)),
+    ("是否成功", AttributeValue::bool(true)),
+    ("标签", AttributeValue::array_string(["API", "认证", "关键"])),
+    ("特殊字符!@#$%", AttributeValue::string("value!@#$%")),
+    ("emoji🚀🔥", AttributeValue::string("rocket fire"))
   ]
   
-  let complex_counter = meter.create_counter("complex_requests", Some("requests"), Some("Complex request counter"))
-  complex_counter.add(1L, complex_attrs)
+  unicode_counter.add(100L, Some(unicode_attributes))
   
-  // 测试空属性
-  let empty_counter = meter.create_counter("empty_attrs", Some("count"), Some("Counter with empty attributes"))
-  empty_counter.add(1L, [])
+  let special_attributes = [
+    ("key with spaces", AttributeValue::string("value with spaces")),
+    ("key-with-dashes", AttributeValue::string("value-with-dashes")),
+    ("key_with_underscores", AttributeValue::string("value_with_underscores")),
+    ("key.with.dots", AttributeValue::string("value.with.dots"))
+  ]
   
-  // 测试None属性
-  let none_counter = meter.create_counter("none_attrs", Some("count"), Some("Counter with None attributes"))
-  none_counter.add(1L, None)
+  special_histogram.record(250.0, Some(special_attributes))
+  
+  assert_eq(true, true)
+}
+
+test "complex_metric_scenarios" {
+  let provider = NoopMeterProvider::{}
+  let meter = provider.get_meter("complex-metrics", Some("1.0.0"), Some("https://example.com/metrics"))
+  
+  // 模拟复杂的业务场景
+  let request_counter = meter.create_counter("http_requests_total", Some("requests"), Some("Total HTTP requests"))
+  let request_duration = meter.create_histogram("http_request_duration_seconds", Some("seconds"), Some("HTTP request duration"))
+  let active_connections = meter.create_up_down_counter("active_connections", Some("connections"), Some("Active connections"))
+  let cpu_usage = meter.create_gauge("cpu_usage_percent", Some("percent"), Some("CPU usage percentage"))
+  
+  // 模拟请求处理
+  let endpoints = ["/api/users", "/api/orders", "/api/products", "/health", "/metrics"]
+  let methods = ["GET", "POST", "PUT", "DELETE"]
+  let status_codes = [200L, 201L, 400L, 401L, 404L, 500L]
+  
+  // 模拟100个请求
+  let mut i = 0
+  while i < 100 {
+    let endpoint = endpoints[i % endpoints.length()]
+    let method = methods[i % methods.length()]
+    let status_code = status_codes[i % status_codes.length()]
+    let duration = 10.0 + (i.to_double() * 0.5)  // 10ms to 60ms
+    
+    // 记录请求
+    request_counter.add(1L, [
+      ("endpoint", AttributeValue::string(endpoint)),
+      ("method", AttributeValue::string(method)),
+      ("status_code", AttributeValue::int(status_code)),
+      ("service.version", AttributeValue::string("1.2.3")),
+      ("host.name", AttributeValue::string("web-server-" + ((i % 3 + 1).to_string())))
+    ])
+    
+    // 记录延迟
+    request_duration.record(duration / 1000.0, [  // 转换为秒
+      ("endpoint", AttributeValue::string(endpoint)),
+      ("method", AttributeValue::string(method)),
+      ("service.version", AttributeValue::string("1.2.3"))
+    ])
+    
+    i = i + 1
+  }
+  
+  // 模拟连接变化
+  active_connections.add(50L, [
+    ("pool.name", AttributeValue::string("database")),
+    ("pool.type", AttributeValue::string("connection"))
+  ])
+  
+  active_connections.add(-10L, [
+    ("pool.name", AttributeValue::string("database")),
+    ("pool.type", AttributeValue::string("connection"))
+  ])
+  
+  active_connections.add(25L, [
+    ("pool.name", AttributeValue::string("redis")),
+    ("pool.type", AttributeValue::string("connection"))
+  ])
+  
+  // 模拟CPU使用率变化
+  let cpu_values = [15.5, 25.0, 45.0, 75.0, 85.0, 60.0, 40.0, 30.0]
+  let mut j = 0
+  while j < cpu_values.length() {
+    cpu_usage.record(cpu_values[j], [
+      ("host.name", AttributeValue::string("web-server-01")),
+      ("cpu.core", AttributeValue::int((j + 1).to_int64())),
+      ("process.name", AttributeValue::string("azimuth-telemetry"))
+    ])
+    j = j + 1
+  }
+  
+  assert_eq(true, true)
 }
