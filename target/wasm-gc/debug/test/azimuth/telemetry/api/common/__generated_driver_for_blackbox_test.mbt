@@ -60,13 +60,6 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "simple_test.mbt": {
     0: (__test_73696d706c655f746573742e6d6274_0, ["simple_attribute_value_test"]),
   },
-  "resource_merge_test.mbt": {
-    0: (__test_7265736f757263655f6d657267655f746573742e6d6274_0, ["resource_merge_basic"]),
-    1: (__test_7265736f757263655f6d657267655f746573742e6d6274_1, ["resource_merge_with_attributes"]),
-    2: (__test_7265736f757263655f6d657267655f746573742e6d6274_2, ["resource_merge_conflict_resolution"]),
-    3: (__test_7265736f757263655f6d657267655f746573742e6d6274_3, ["resource_merge_complex_attributes"]),
-    4: (__test_7265736f757263655f6d657267655f746573742e6d6274_4, ["resource_merge_empty_and_edge_cases"]),
-  },
   "integration_test.mbt": {
     0: (__test_696e746567726174696f6e5f746573742e6d6274_0, ["resource_and_attributes_integration"]),
     1: (__test_696e746567726174696f6e5f746573742e6d6274_1, ["attribute_complex_integration"]),
