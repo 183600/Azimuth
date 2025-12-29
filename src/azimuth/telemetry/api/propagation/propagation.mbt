@@ -8,8 +8,8 @@ pub trait TextMapCarrier {
 }
 
 pub trait TextMapPropagator {
-  inject(ctx : context.Context, carrier : TextMapCarrier) -> Unit
-  extract(ctx : context.Context, carrier : TextMapCarrier) -> context.Context
+  inject(ctx : context::Context, carrier : TextMapCarrier) -> Unit
+  extract(ctx : context::Context, carrier : TextMapCarrier) -> context::Context
 }
 
 // W3C TraceContext Propagator
@@ -26,13 +26,13 @@ pub struct TraceContextHeader {
 pub const TRACE_PARENT_HEADER : String = "traceparent"
 pub const TRACE_STATE_HEADER : String = "tracestate"
 
-pub fn W3CTraceContextPropagator::inject(ctx : context.Context, carrier : TextMapCarrier) -> Unit {
+pub fn W3CTraceContextPropagator::inject(ctx : context::Context, carrier : TextMapCarrier) -> Unit {
   // 简化实现：在实际实现中需要从Context中提取SpanContext
   let trace_parent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
   carrier.set(TRACE_PARENT_HEADER, trace_parent)
 }
 
-pub fn W3CTraceContextPropagator::extract(ctx : context.Context, carrier : TextMapCarrier) -> context.Context {
+pub fn W3CTraceContextPropagator::extract(ctx : context::Context, carrier : TextMapCarrier) -> context::Context {
   match carrier.get(TRACE_PARENT_HEADER) {
     Some(_trace_parent) => {
       // 简化实现：在实际实现中需要解析traceparent并更新Context
@@ -48,13 +48,13 @@ pub struct W3CBaggagePropagator {
 
 pub const BAGGAGE_HEADER : String = "baggage"
 
-pub fn W3CBaggagePropagator::inject(ctx : context.Context, carrier : TextMapCarrier) -> Unit {
+pub fn W3CBaggagePropagator::inject(ctx : context::Context, carrier : TextMapCarrier) -> Unit {
   // 简化实现：在实际实现中需要从Context中提取Baggage
   let baggage_value = "key1=value1,key2=value2"
   carrier.set(BAGGAGE_HEADER, baggage_value)
 }
 
-pub fn W3CBaggagePropagator::extract(ctx : context.Context, carrier : TextMapCarrier) -> context.Context {
+pub fn W3CBaggagePropagator::extract(ctx : context::Context, carrier : TextMapCarrier) -> context::Context {
   match carrier.get(BAGGAGE_HEADER) {
     Some(_baggage_header) => {
       // 简化实现：在实际实现中需要解析baggage header并更新Context
@@ -75,7 +75,7 @@ impl CompositePropagator {
   }
 }
 
-pub fn CompositePropagator::inject(ctx : context.Context, carrier : TextMapCarrier) -> Unit {
+pub fn CompositePropagator::inject(ctx : context::Context, carrier : TextMapCarrier) -> Unit {
   let mut index = 0
   while index < self.propagators.length() {
     let propagator = self.propagators[index]
@@ -84,7 +84,7 @@ pub fn CompositePropagator::inject(ctx : context.Context, carrier : TextMapCarri
   }
 }
 
-pub fn CompositePropagator::extract(ctx : context.Context, carrier : TextMapCarrier) -> context.Context {
+pub fn CompositePropagator::extract(ctx : context::Context, carrier : TextMapCarrier) -> context::Context {
   let mut current_ctx = ctx
   let mut index = 0
   while index < self.propagators.length() {

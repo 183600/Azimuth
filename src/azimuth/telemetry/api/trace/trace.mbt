@@ -31,7 +31,7 @@ pub struct Span {
   end_time_unix_nanos : Int64?
   status : StatusCode
   status_description : String?
-  attributes : Array[(String, common.AttributeValue)]
+  attributes : Array[(String, common::AttributeValue)]
   events : Array[SpanEvent]
   links : Array[SpanLink]
 }
@@ -39,22 +39,22 @@ pub struct Span {
 pub struct SpanEvent {
   name : String
   timestamp_unix_nanos : Int64
-  attributes : Array[(String, common.AttributeValue)]
+  attributes : Array[(String, common::AttributeValue)]
 }
 
 pub struct SpanLink {
   context : SpanContext
-  attributes : Array[(String, common.AttributeValue)]
+  attributes : Array[(String, common::AttributeValue)]
 }
 
 pub trait Tracer {
   start_span(
-    ctx : context.Context,
+    ctx : context::Context,
     name : String,
     kind? : SpanKind,
-    attributes? : Array[(String, common.AttributeValue)],
+    attributes? : Array[(String, common::AttributeValue)],
     start_time_unix_nanos? : Int64
-  ) -> (context.Context, Span)
+  ) -> (context::Context, Span)
 }
 
 pub trait TracerProvider {
@@ -69,12 +69,12 @@ pub struct NoopTracerProvider {
 }
 
 pub fn NoopTracer::start_span(
-  ctx : context.Context,
+  ctx : context::Context,
   name : String,
   kind? : SpanKind,
-  attributes? : Array[(String, common.AttributeValue)],
+  attributes? : Array[(String, common::AttributeValue)],
   start_time_unix_nanos? : Int64
-) -> (context.Context, Span) {
+) -> (context::Context, Span) {
   let span_context = SpanContext::{
     trace_id: Array::make(16, 0_byte),
     span_id: Array::make(8, 0_byte),

@@ -58,20 +58,8 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
   "metrics_test.mbt": {
-    0: (__test_6d6574726963735f746573742e6d6274_0, ["instrument_type_values"]),
-    1: (__test_6d6574726963735f746573742e6d6274_1, ["measurement_creation"]),
-    2: (__test_6d6574726963735f746573742e6d6274_2, ["noop_counter_add"]),
-    3: (__test_6d6574726963735f746573742e6d6274_3, ["noop_histogram_record"]),
-    4: (__test_6d6574726963735f746573742e6d6274_4, ["noop_up_down_counter_add"]),
-    5: (__test_6d6574726963735f746573742e6d6274_5, ["noop_gauge_record"]),
-    6: (__test_6d6574726963735f746573742e6d6274_6, ["noop_meter_create_instruments"]),
-    7: (__test_6d6574726963735f746573742e6d6274_7, ["noop_meter_provider_get_meter"]),
-    8: (__test_6d6574726963735f746573742e6d6274_8, ["measurement_with_multiple_attributes"]),
-    9: (__test_6d6574726963735f746573742e6d6274_9, ["meter_comprehensive_instrument_creation"]),
-    10: (__test_6d6574726963735f746573742e6d6274_10, ["instrument_combination_web_server_scenario"]),
-    11: (__test_6d6574726963735f746573742e6d6274_11, ["instrument_combination_database_scenario"]),
-    12: (__test_6d6574726963735f746573742e6d6274_12, ["instrument_combination_business_metrics_scenario"]),
-    13: (__test_6d6574726963735f746573742e6d6274_13, ["instrument_edge_cases_and_boundary_values"]),
+    0: (__test_6d6574726963735f746573742e6d6274_0, ["meter_and_instruments"]),
+    1: (__test_6d6574726963735f746573742e6d6274_1, ["measurement_with_various_attributes"]),
   },
   "metrics_basic_test.mbt": {
     0: (__test_6d6574726963735f62617369635f746573742e6d6274_0, ["counter_operations"]),

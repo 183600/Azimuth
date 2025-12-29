@@ -58,19 +58,8 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
   "logs_test.mbt": {
-    0: (__test_6c6f67735f746573742e6d6274_0, ["severity_number_values"]),
-    1: (__test_6c6f67735f746573742e6d6274_1, ["log_record_basic_creation"]),
-    2: (__test_6c6f67735f746573742e6d6274_2, ["log_record_with_trace_context"]),
-    3: (__test_6c6f67735f746573742e6d6274_3, ["noop_logger_methods"]),
-    4: (__test_6c6f67735f746573742e6d6274_4, ["noop_logger_emit"]),
-    5: (__test_6c6f67735f746573742e6d6274_5, ["noop_logger_provider_get_logger"]),
-    6: (__test_6c6f67735f746573742e6d6274_6, ["log_record_builder_basic"]),
-    7: (__test_6c6f67735f746573742e6d6274_7, ["log_record_builder_with_attributes"]),
-    8: (__test_6c6f67735f746573742e6d6274_8, ["log_record_builder_complete"]),
-    9: (__test_6c6f67735f746573742e6d6274_9, ["log_record_comprehensive_builder"]),
-    10: (__test_6c6f67735f746573742e6d6274_10, ["log_record_with_trace_context_complex"]),
-    11: (__test_6c6f67735f746573742e6d6274_11, ["log_record_edge_cases_and_special_characters"]),
-    12: (__test_6c6f67735f746573742e6d6274_12, ["log_record_severity_progression"]),
+    0: (__test_6c6f67735f746573742e6d6274_0, ["log_record_comprehensive"]),
+    1: (__test_6c6f67735f746573742e6d6274_1, ["log_record_various_severity"]),
   },
   "logs_basic_test.mbt": {
     0: (__test_6c6f67735f62617369635f746573742e6d6274_0, ["logger_basic_operations"]),
