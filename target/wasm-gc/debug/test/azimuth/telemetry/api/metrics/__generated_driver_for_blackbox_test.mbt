@@ -68,6 +68,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_6d6574726963735f746573742e6d6274_7, ["noop_meter_provider_get_meter"]),
     8: (__test_6d6574726963735f746573742e6d6274_8, ["measurement_with_multiple_attributes"]),
     9: (__test_6d6574726963735f746573742e6d6274_9, ["meter_comprehensive_instrument_creation"]),
+    10: (__test_6d6574726963735f746573742e6d6274_10, ["instrument_combination_web_server_scenario"]),
+    11: (__test_6d6574726963735f746573742e6d6274_11, ["instrument_combination_database_scenario"]),
+    12: (__test_6d6574726963735f746573742e6d6274_12, ["instrument_combination_business_metrics_scenario"]),
+    13: (__test_6d6574726963735f746573742e6d6274_13, ["instrument_edge_cases_and_boundary_values"]),
   },
   "metrics.mbt": {
   },

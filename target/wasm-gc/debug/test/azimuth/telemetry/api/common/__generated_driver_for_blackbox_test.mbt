@@ -64,6 +64,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_636f6d6d6f6e5f746573742e6d6274_3, ["common_attributes_empty"]),
     4: (__test_636f6d6d6f6e5f746573742e6d6274_4, ["common_resource_with_attributes"]),
     5: (__test_636f6d6d6f6e5f746573742e6d6274_5, ["common_instrumentation_scope_creation"]),
+    6: (__test_636f6d6d6f6e5f746573742e6d6274_6, ["attribute_value_boundary_cases"]),
+    7: (__test_636f6d6d6f6e5f746573742e6d6274_7, ["resource_edge_cases"]),
+    8: (__test_636f6d6d6f6e5f746573742e6d6274_8, ["attributes_complex_scenarios"]),
+    9: (__test_636f6d6d6f6e5f746573742e6d6274_9, ["instrumentation_scope_edge_cases"]),
   },
   "common.mbt": {
   },
