@@ -100,6 +100,21 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_74656c656d657472795f6572726f725f68616e646c696e675f746573742e6d6274_6, ["integration_error_scenarios"]),
     7: (__test_74656c656d657472795f6572726f725f68616e646c696e675f746573742e6d6274_7, ["memory_and_resource_exhaustion_scenarios"]),
   },
+  "cross_platform_compatibility_test.mbt": {
+    0: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_0, ["platform_detection_and_abstraction"]),
+    1: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_1, ["cross_platform_file_system_operations"]),
+    2: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_2, ["cross_platform_networking_compatibility"]),
+    3: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_3, ["cross_platform_time_and_timezone_handling"]),
+    4: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_4, ["cross_platform_memory_management"]),
+    5: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_5, ["cross_platform_error_handling"]),
+  },
+  "async_concurrency_test.mbt": {
+    0: (__test_6173796e635f636f6e63757272656e63795f746573742e6d6274_0, ["async_task_execution"]),
+    1: (__test_6173796e635f636f6e63757272656e63795f746573742e6d6274_1, ["concurrent_span_processing"]),
+    2: (__test_6173796e635f636f6e63757272656e63795f746573742e6d6274_2, ["async_metric_collection"]),
+    3: (__test_6173796e635f636f6e63757272656e63795f746573742e6d6274_3, ["concurrent_error_handling"]),
+    4: (__test_6173796e635f636f6e63757272656e63795f746573742e6d6274_4, ["async_resource_management"]),
+  },
   "advanced_telemetry_test.mbt": {
     0: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_0, ["telemetry_baggage_items"]),
     1: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_1, ["telemetry_span_events"]),
