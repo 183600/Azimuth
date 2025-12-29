@@ -7,7 +7,7 @@ test "context_high_frequency_operations" {
   
   // 高频设置和获取操作
   let mut i = 0
-  let current_ctx = ctx
+  let mut current_ctx = ctx
   while i < 10000 {
     let key = create_key("key." + i.to_string())
     let value = "value." + i.to_string()

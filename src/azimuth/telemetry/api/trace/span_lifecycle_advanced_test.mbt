@@ -16,7 +16,7 @@ test "span_lifecycle_state_management" {
     initial_context,
     "test-operation",
     trace::Server,
-    [("http.method", common::AttributeValue::string("GET"))],
+    [("http.method", AttributeValue::string("GET"))],
     1640995200000000000L  // 2022-01-01 00:00:00 UTC
   )
   
@@ -35,7 +35,7 @@ test "span_lifecycle_state_management" {
   assert_eq(span.attributes.length(), 1)
   assert_eq(span.attributes[0].0, "http.method")
   match span.attributes[0].1 {
-    common::StringValue(method) => assert_eq(method, "GET")
+    StringValue(method) => assert_eq(method, "GET")
     _ => assert_eq(false, true)
   }
   
@@ -114,8 +114,8 @@ test "span_events_and_links_management" {
     name: "database.query",
     timestamp_unix_nanos: 1640995200000000000L,
     attributes: [
-      ("db.statement", common::AttributeValue::string("SELECT * FROM users")),
-      ("db.duration_ms", common::AttributeValue::int(150L))
+      ("db.statement", AttributeValue::string("SELECT * FROM users")),
+      ("db.duration_ms", AttributeValue::int(150L))
     ]
   }
   
@@ -123,8 +123,8 @@ test "span_events_and_links_management" {
     name: "cache.hit",
     timestamp_unix_nanos: 1640995200100000000L,
     attributes: [
-      ("cache.key", common::AttributeValue::string("user:123")),
-      ("cache.hit", common::AttributeValue::bool(true))
+      ("cache.key", AttributeValue::string("user:123")),
+      ("cache.hit", AttributeValue::bool(true))
     ]
   }
   
@@ -139,8 +139,8 @@ test "span_events_and_links_management" {
   let link = trace::SpanLink::{
     context: linked_context,
     attributes: [
-      ("link.type", common::AttributeValue::string("parent")),
-      ("relationship", common::AttributeValue::string("follows-from"))
+      ("link.type", AttributeValue::string("parent")),
+      ("relationship", AttributeValue::string("follows-from"))
     ]
   }
   
@@ -158,7 +158,7 @@ test "span_events_and_links_management" {
   assert_eq(span_with_events.events[0].attributes.length(), 2)
   assert_eq(span_with_events.events[0].attributes[0].0, "db.statement")
   match span_with_events.events[0].attributes[0].1 {
-    common::StringValue(stmt) => assert_eq(stmt, "SELECT * FROM users")
+    StringValue(stmt) => assert_eq(stmt, "SELECT * FROM users")
     _ => assert_eq(false, true)
   }
   
@@ -175,7 +175,7 @@ test "span_events_and_links_management" {
   assert_eq(span_with_events.links[0].attributes.length(), 2)
   assert_eq(span_with_events.links[0].attributes[0].0, "link.type")
   match span_with_events.links[0].attributes[0].1 {
-    common::StringValue(link_type) => assert_eq(link_type, "parent")
+    StringValue(link_type) => assert_eq(link_type, "parent")
     _ => assert_eq(false, true)
   }
 }
@@ -192,7 +192,7 @@ test "span_hierarchy_and_parent_relationships" {
     initial_context,
     "parent-operation",
     trace::Server,
-    [("service.name", common::AttributeValue::string("api-service"))]
+    [("service.name", AttributeValue::string("api-service"))]
   )
   
   // 创建子Span
@@ -200,7 +200,7 @@ test "span_hierarchy_and_parent_relationships" {
     parent_ctx,
     "child-operation",
     trace::Internal,
-    [("operation.type", common::AttributeValue::string("database-query"))]
+    [("operation.type", AttributeValue::string("database-query"))]
   )
   
   // 验证子Span的父关系

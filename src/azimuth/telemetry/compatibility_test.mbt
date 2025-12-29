@@ -14,29 +14,29 @@ test "api_backward_compatibility" {
   assert_eq(resource_v1.attributes.length(), 0)
   
   // 2. 测试AttributeValue的向后兼容性
-  let string_attr = common::AttributeValue::string("test")
-  let int_attr = common::AttributeValue::int(42L)
-  let float_attr = common::AttributeValue::float(3.14)
-  let bool_attr = common::AttributeValue::bool(true)
+  let string_attr = AttributeValue::string("test")
+  let int_attr = AttributeValue::int(42L)
+  let float_attr = AttributeValue::float(3.14)
+  let bool_attr = AttributeValue::bool(true)
   
   // 验证所有属性类型仍然可用
   match string_attr {
-    common::StringValue(s) => assert_eq(s, "test")
+    StringValue(s) => assert_eq(s, "test")
     _ => @test.fail("Expected StringValue")
   }
   
   match int_attr {
-    common::IntValue(i) => assert_eq(i, 42L)
+    IntValue(i) => assert_eq(i, 42L)
     _ => @test.fail("Expected IntValue")
   }
   
   match float_attr {
-    common::FloatValue(f) => assert_eq(f, 3.14)
+    FloatValue(f) => assert_eq(f, 3.14)
     _ => @test.fail("Expected FloatValue")
   }
   
   match bool_attr {
-    common::BoolValue(b) => assert_eq(b, true)
+    BoolValue(b) => assert_eq(b, true)
     _ => @test.fail("Expected BoolValue")
   }
   
@@ -71,29 +71,29 @@ test "version_specific_features" {
   assert_eq(resource.telemetry_sdk_version, "0.1.0")
   
   // 2. 测试数组属性类型（可能是较新版本的功能）
-  let string_array = common::AttributeValue::array_string(["item1", "item2", "item3"])
-  let int_array = common::AttributeValue::array_int([1L, 2L, 3L])
-  let float_array = common::AttributeValue::array_float([1.1, 2.2, 3.3])
-  let bool_array = common::AttributeValue::array_bool([true, false, true])
+  let string_array = AttributeValue::array_string(["item1", "item2", "item3"])
+  let int_array = AttributeValue::array_int([1L, 2L, 3L])
+  let float_array = AttributeValue::array_float([1.1, 2.2, 3.3])
+  let bool_array = AttributeValue::array_bool([true, false, true])
   
   // 验证数组类型可用
   match string_array {
-    common::ArrayStringValue(arr) => assert_eq(arr.length(), 3)
+    ArrayStringValue(arr) => assert_eq(arr.length(), 3)
     _ => @test.fail("Expected ArrayStringValue")
   }
   
   match int_array {
-    common::ArrayIntValue(arr) => assert_eq(arr.length(), 3)
+    ArrayIntValue(arr) => assert_eq(arr.length(), 3)
     _ => @test.fail("Expected ArrayIntValue")
   }
   
   match float_array {
-    common::ArrayFloatValue(arr) => assert_eq(arr.length(), 3)
+    ArrayFloatValue(arr) => assert_eq(arr.length(), 3)
     _ => @test.fail("Expected ArrayFloatValue")
   }
   
   match bool_array {
-    common::ArrayBoolValue(arr) => assert_eq(arr.length(), 3)
+    ArrayBoolValue(arr) => assert_eq(arr.length(), 3)
     _ => @test.fail("Expected ArrayBoolValue")
   }
   
@@ -102,7 +102,7 @@ test "version_specific_features" {
     .timestamp(1640995200000000000L)
     .severity(logs::Info)
     .body("Version test log")
-    .with_attribute("version.test", common::AttributeValue::string("0.1.0"))
+    .with_attribute("version.test", AttributeValue::string("0.1.0"))
     .build()
   
   // 验证LogRecordBuilder功能完整
@@ -132,14 +132,14 @@ test "cross_version_interoperability" {
   
   // 2. 测试不同版本的属性格式兼容性
   let v1_attrs : Array[(String, common::AttributeValue)] = [
-    ("legacy.attr", common::AttributeValue::string("legacy-value")),
-    ("numeric.attr", common::AttributeValue::int(100L))
+    ("legacy.attr", AttributeValue::string("legacy-value")),
+    ("numeric.attr", AttributeValue::int(100L))
   ]
   
   let v2_attrs : Array[(String, common::AttributeValue)] = [
-    ("legacy.attr", common::AttributeValue::string("legacy-value")),
-    ("numeric.attr", common::AttributeValue::int(100L)),
-    ("array.attr", common::AttributeValue::array_string(["new", "feature"]))
+    ("legacy.attr", AttributeValue::string("legacy-value")),
+    ("numeric.attr", AttributeValue::int(100L)),
+    ("array.attr", AttributeValue::array_string(["new", "feature"]))
   ]
   
   // 验证属性格式兼容
@@ -177,29 +177,29 @@ test "deprecation_compatibility" {
   assert_eq(resource.telemetry_sdk_name, "azimuth")
   
   // 2. 测试可能弃用的属性类型
-  let legacy_string = common::AttributeValue::string("legacy")
-  let legacy_int = common::AttributeValue::int(42)
-  let legacy_float = common::AttributeValue::float(3.14)
-  let legacy_bool = common::AttributeValue::bool(true)
+  let legacy_string = AttributeValue::string("legacy")
+  let legacy_int = AttributeValue::int(42)
+  let legacy_float = AttributeValue::float(3.14)
+  let legacy_bool = AttributeValue::bool(true)
   
   // 验证旧的属性类型仍然可用
   match legacy_string {
-    common::StringValue(s) => assert_eq(s, "legacy")
+    StringValue(s) => assert_eq(s, "legacy")
     _ => @test.fail("Expected StringValue")
   }
   
   match legacy_int {
-    common::IntValue(i) => assert_eq(i, 42L)
+    IntValue(i) => assert_eq(i, 42L)
     _ => @test.fail("Expected IntValue")
   }
   
   match legacy_float {
-    common::FloatValue(f) => assert_eq(f, 3.14)
+    FloatValue(f) => assert_eq(f, 3.14)
     _ => @test.fail("Expected FloatValue")
   }
   
   match legacy_bool {
-    common::BoolValue(b) => assert_eq(b, true)
+    BoolValue(b) => assert_eq(b, true)
     _ => @test.fail("Expected BoolValue")
   }
   
@@ -237,10 +237,10 @@ test "future_compatibility" {
   
   // 2. 测试属性扩展性
   let extensible_attrs : Array[(String, common::AttributeValue)] = [
-    ("current.attr", common::AttributeValue::string("current")),
-    ("future.attr1", common::AttributeValue::string("future1")),
-    ("future.attr2", common::AttributeValue::int(123L)),
-    ("future.attr3", common::AttributeValue::bool(true))
+    ("current.attr", AttributeValue::string("current")),
+    ("future.attr1", AttributeValue::string("future1")),
+    ("future.attr2", AttributeValue::int(123L)),
+    ("future.attr3", AttributeValue::bool(true))
   ]
   
   // 验证可以添加未来的属性
@@ -274,20 +274,20 @@ test "future_compatibility" {
   
   // 5. 测试数组类型扩展性
   let large_arrays = [
-    common::AttributeValue::array_string(Array::make(1000, "item")),
-    common::AttributeValue::array_int(Array::make(1000, 1L)),
-    common::AttributeValue::array_float(Array::make(1000, 1.0)),
-    common::AttributeValue::array_bool(Array::make(1000, true))
+    AttributeValue::array_string(Array::make(1000, "item")),
+    AttributeValue::array_int(Array::make(1000, 1L)),
+    AttributeValue::array_float(Array::make(1000, 1.0)),
+    AttributeValue::array_bool(Array::make(1000, true))
   ]
   
   // 验证数组可以处理大量数据（为未来扩展做准备）
   let mut i = 0
   while i < large_arrays.length() {
     match large_arrays[i] {
-      common::ArrayStringValue(arr) => assert_eq(arr.length(), 1000)
-      common::ArrayIntValue(arr) => assert_eq(arr.length(), 1000)
-      common::ArrayFloatValue(arr) => assert_eq(arr.length(), 1000)
-      common::ArrayBoolValue(arr) => assert_eq(arr.length(), 1000)
+      ArrayStringValue(arr) => assert_eq(arr.length(), 1000)
+      ArrayIntValue(arr) => assert_eq(arr.length(), 1000)
+      ArrayFloatValue(arr) => assert_eq(arr.length(), 1000)
+      ArrayBoolValue(arr) => assert_eq(arr.length(), 1000)
       _ => @test.fail("Expected array type")
     }
     i = i + 1
@@ -362,19 +362,19 @@ test "data_format_compatibility" {
   
   // 1. 测试属性值格式兼容性
   let string_values = [
-    common::AttributeValue::string(""),
-    common::AttributeValue::string("simple"),
-    common::AttributeValue::string("with spaces"),
-    common::AttributeValue::string("with-symbols!@#$%"),
-    common::AttributeValue::string("Unicode测试🚀"),
-    common::AttributeValue::string("very-long-string-" + "x" * 1000)
+    AttributeValue::string(""),
+    AttributeValue::string("simple"),
+    AttributeValue::string("with spaces"),
+    AttributeValue::string("with-symbols!@#$%"),
+    AttributeValue::string("Unicode测试🚀"),
+    AttributeValue::string("very-long-string-" + "x" * 1000)
   ]
   
   // 验证各种字符串格式
   let mut i = 0
   while i < string_values.length() {
     match string_values[i] {
-      common::StringValue(s) => assert_eq(s.length() > 0, true)
+      StringValue(s) => assert_eq(s.length() > 0, true)
       _ => @test.fail("Expected StringValue")
     }
     i = i + 1
@@ -382,26 +382,26 @@ test "data_format_compatibility" {
   
   // 2. 测试数值格式兼容性
   let numeric_values = [
-    common::AttributeValue::int(0L),
-    common::AttributeValue::int(-1L),
-    common::AttributeValue::int(1L),
-    common::AttributeValue::int(9223372036854775807L),  // Int64最大值
-    common::AttributeValue::int(-9223372036854775808L), // Int64最小值
-    common::AttributeValue::float(0.0),
-    common::AttributeValue::float(-1.0),
-    common::AttributeValue::float(1.0),
-    common::AttributeValue::float(1.7976931348623157e+308), // Double最大值
-    common::AttributeValue::float(-1.7976931348623157e+308), // Double最小值
-    common::AttributeValue::float(1.0/0.0), // 无穷大
-    common::AttributeValue::float(0.0/0.0)  // NaN
+    AttributeValue::int(0L),
+    AttributeValue::int(-1L),
+    AttributeValue::int(1L),
+    AttributeValue::int(9223372036854775807L),  // Int64最大值
+    AttributeValue::int(-9223372036854775808L), // Int64最小值
+    AttributeValue::float(0.0),
+    AttributeValue::float(-1.0),
+    AttributeValue::float(1.0),
+    AttributeValue::float(1.7976931348623157e+308), // Double最大值
+    AttributeValue::float(-1.7976931348623157e+308), // Double最小值
+    AttributeValue::float(1.0/0.0), // 无穷大
+    AttributeValue::float(0.0/0.0)  // NaN
   ]
   
   // 验证各种数值格式
   i = 0
   while i < numeric_values.length() {
     match numeric_values[i] {
-      common::IntValue(_) => assert_eq(true, true)
-      common::FloatValue(_) => assert_eq(true, true)
+      IntValue(_) => assert_eq(true, true)
+      FloatValue(_) => assert_eq(true, true)
       _ => @test.fail("Expected numeric value")
     }
     i = i + 1
@@ -409,28 +409,28 @@ test "data_format_compatibility" {
   
   // 3. 测试数组格式兼容性
   let array_formats = [
-    common::AttributeValue::array_string([]),
-    common::AttributeValue::array_string(["single"]),
-    common::AttributeValue::array_string(["multiple", "values"]),
-    common::AttributeValue::array_int([]),
-    common::AttributeValue::array_int([1L]),
-    common::AttributeValue::array_int([1L, 2L, 3L]),
-    common::AttributeValue::array_float([]),
-    common::AttributeValue::array_float([1.0]),
-    common::AttributeValue::array_float([1.1, 2.2, 3.3]),
-    common::AttributeValue::array_bool([]),
-    common::AttributeValue::array_bool([true]),
-    common::AttributeValue::array_bool([true, false, true])
+    AttributeValue::array_string([]),
+    AttributeValue::array_string(["single"]),
+    AttributeValue::array_string(["multiple", "values"]),
+    AttributeValue::array_int([]),
+    AttributeValue::array_int([1L]),
+    AttributeValue::array_int([1L, 2L, 3L]),
+    AttributeValue::array_float([]),
+    AttributeValue::array_float([1.0]),
+    AttributeValue::array_float([1.1, 2.2, 3.3]),
+    AttributeValue::array_bool([]),
+    AttributeValue::array_bool([true]),
+    AttributeValue::array_bool([true, false, true])
   ]
   
   // 验证各种数组格式
   i = 0
   while i < array_formats.length() {
     match array_formats[i] {
-      common::ArrayStringValue(_) => assert_eq(true, true)
-      common::ArrayIntValue(_) => assert_eq(true, true)
-      common::ArrayFloatValue(_) => assert_eq(true, true)
-      common::ArrayBoolValue(_) => assert_eq(true, true)
+      ArrayStringValue(_) => assert_eq(true, true)
+      ArrayIntValue(_) => assert_eq(true, true)
+      ArrayFloatValue(_) => assert_eq(true, true)
+      ArrayBoolValue(_) => assert_eq(true, true)
       _ => @test.fail("Expected array value")
     }
     i = i + 1

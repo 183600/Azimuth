@@ -2,7 +2,7 @@
 test "w3c_trace_context_propagator_basic" {
   // 测试W3C TraceContext Propagator的基本功能
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let carrier = MapCarrier::new()
   let propagator = W3CTraceContextPropagator::{}
   
@@ -27,7 +27,7 @@ test "w3c_trace_context_propagator_basic" {
 test "w3c_baggage_propagator_basic" {
   // 测试W3C Baggage Propagator的基本功能
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let carrier = MapCarrier::new()
   let propagator = W3CBaggagePropagator::{}
   
@@ -52,7 +52,7 @@ test "w3c_baggage_propagator_basic" {
 test "composite_propagator_single" {
   // 测试包含单个传播器的复合传播器
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let carrier = MapCarrier::new()
   
   // 创建只包含W3C TraceContext的复合传播器
@@ -82,7 +82,7 @@ test "composite_propagator_single" {
 test "composite_propagator_multiple" {
   // 测试包含多个传播器的复合传播器
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let carrier = MapCarrier::new()
   
   // 创建包含两个传播器的复合传播器
@@ -119,7 +119,7 @@ test "composite_propagator_multiple" {
 test "composite_propagator_order_independence" {
   // 测试复合传播器中传播器顺序的独立性
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let carrier1 = MapCarrier::new()
   let carrier2 = MapCarrier::new()
   
@@ -200,7 +200,7 @@ test "map_carrier_operations" {
 test "composite_propagator_with_empty_carrier" {
   // 测试复合传播器与空carrier的交互
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let empty_carrier = MapCarrier::new()
   
   let trace_propagator = W3CTraceContextPropagator::{}
@@ -229,7 +229,7 @@ test "composite_propagator_with_empty_carrier" {
 test "composite_propagator_with_preexisting_data" {
   // 测试复合传播器与预存在数据的carrier的交互
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let preexisting_data = [
     ("custom-header", "custom-value"),
     ("another-header", "another-value"),
@@ -272,7 +272,7 @@ test "composite_propagator_with_preexisting_data" {
 test "composite_propagator_large_scale" {
   // 测试复合传播器的大规模操作
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let carrier = MapCarrier::new()
   
   // 创建包含多个传播器的复合传播器
@@ -320,7 +320,7 @@ test "composite_propagator_large_scale" {
 test "propagator_error_handling" {
   // 测试传播器的错误处理
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   
   // 测试空数据carrier
   let empty_carrier = MapCarrier::from_map([])

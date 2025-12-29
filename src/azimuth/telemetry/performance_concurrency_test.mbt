@@ -39,8 +39,8 @@ test "span_creation_performance" {
   let mut i = 0
   while i < 5000 {
     let attrs = [
-      ("iteration", common::AttributeValue::int(i)),
-      ("operation", common::AttributeValue::string("performance_test"))
+      ("iteration", AttributeValue::int(i)),
+      ("operation", AttributeValue::string("performance_test"))
     ]
     
     let (new_ctx, span) = tracer.start_span(
@@ -72,8 +72,8 @@ test "metrics_operations_performance" {
   
   // 测试大量指标操作
   let attrs = [
-    ("service", common::AttributeValue::string("performance_test")),
-    ("version", common::AttributeValue::string("1.0.0"))
+    ("service", AttributeValue::string("performance_test")),
+    ("version", AttributeValue::string("1.0.0"))
   ]
   
   let mut i = 0
@@ -104,8 +104,8 @@ test "logging_performance_test" {
   let logger = logger_provider.get_logger("performance_logger")
   
   let attrs = [
-    ("component", common::AttributeValue::string("performance_test")),
-    ("module", common::AttributeValue::string("logging"))
+    ("component", AttributeValue::string("performance_test")),
+    ("module", AttributeValue::string("logging"))
   ]
   
   // 测试便捷方法的性能
@@ -133,8 +133,8 @@ test "logging_performance_test" {
         _ => logs::Fatal
       })
       .body("Performance log message " + i.to_string())
-      .with_attribute("iteration", common::AttributeValue::int(i))
-      .with_attribute("timestamp", common::AttributeValue::int(1640995200000000000L + i.to_int64()))
+      .with_attribute("iteration", AttributeValue::int(i))
+      .with_attribute("timestamp", AttributeValue::int(1640995200000000000L + i.to_int64()))
       |> build
     
     logger.emit(log_record)
@@ -190,7 +190,7 @@ test "attributes_operations_performance" {
   let mut large_attrs = [] : Array[(String, common::AttributeValue)]
   let mut i = 0
   while i < 1000 {
-    large_attrs.push(("attr_" + i.to_string(), common::AttributeValue::string("value_" + i.to_string())))
+    large_attrs.push(("attr_" + i.to_string(), AttributeValue::string("value_" + i.to_string())))
     i = i + 1
   }
   
@@ -200,10 +200,10 @@ test "attributes_operations_performance" {
   let float_array = Array::make(100, 3.14)
   let bool_array = Array::make(100, true)
   
-  large_attrs.push(("string_array", common::AttributeValue::array_string(string_array)))
-  large_attrs.push(("int_array", common::AttributeValue::array_int(int_array)))
-  large_attrs.push(("float_array", common::AttributeValue::array_float(float_array)))
-  large_attrs.push(("bool_array", common::AttributeValue::array_bool(bool_array)))
+  large_attrs.push(("string_array", AttributeValue::array_string(string_array)))
+  large_attrs.push(("int_array", AttributeValue::array_int(int_array)))
+  large_attrs.push(("float_array", AttributeValue::array_float(float_array)))
+  large_attrs.push(("bool_array", AttributeValue::array_bool(bool_array)))
   
   // 测试属性访问性能
   i = 0
@@ -254,7 +254,7 @@ test "memory_usage_stress_test" {
     let mut large_attrs = [] : Array[(String, common::AttributeValue)]
     let mut j = 0
     while j < 1000 {
-      large_attrs.push(("key_" + j.to_string(), common::AttributeValue::string("value_" + j.to_string())))
+      large_attrs.push(("key_" + j.to_string(), AttributeValue::string("value_" + j.to_string())))
       j = j + 1
     }
     large_data_structures.push(large_attrs)
@@ -266,8 +266,8 @@ test "memory_usage_stress_test" {
   while i < large_data_structures.length() {
     let attrs = large_data_structures[i]
     assert_eq(attrs.length(), 1000)
-    assert_eq(attrs[0], ("key_0", common::AttributeValue::string("value_0")))
-    assert_eq(attrs[999], ("key_999", common::AttributeValue::string("value_999")))
+    assert_eq(attrs[0], ("key_0", AttributeValue::string("value_0")))
+    assert_eq(attrs[999], ("key_999", AttributeValue::string("value_999")))
     i = i + 1
   }
 }

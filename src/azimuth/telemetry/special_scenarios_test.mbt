@@ -12,21 +12,21 @@ test "chained_span_operations" {
     ctx,
     "parent_operation",
     trace::Server,
-    [("service", common::AttributeValue::string("web_server"))]
+    [("service", AttributeValue::string("web_server"))]
   )
   
   let (ctx2, child_span1) = tracer.start_span(
     ctx1,
     "child_operation_1",
     trace::Internal,
-    [("component", common::AttributeValue::string("database"))]
+    [("component", AttributeValue::string("database"))]
   )
   
   let (ctx3, child_span2) = tracer.start_span(
     ctx2,
     "child_operation_2",
     trace::Client,
-    [("target", common::AttributeValue::string("external_api"))]
+    [("target", AttributeValue::string("external_api"))]
   )
   
   // 验证Span链关系
@@ -48,33 +48,33 @@ test "complex_attribute_scenarios" {
   
   // 嵌套属性结构模拟
   let nested_attrs = [
-    ("user.id", common::AttributeValue::int(12345)),
-    ("user.name", common::AttributeValue::string("张三")),
-    ("user.email", common::AttributeValue::string("zhangsan@example.com")),
-    ("user.roles", common::AttributeValue::array_string(["admin", "user"])),
-    ("request.method", common::AttributeValue::string("POST")),
-    ("request.path", common::AttributeValue::string("/api/v1/users")),
-    ("request.size", common::AttributeValue::int(1024)),
-    ("response.status", common::AttributeValue::int(200)),
-    ("response.time_ms", common::AttributeValue::float(150.5)),
-    ("response.size", common::AttributeValue::int(2048))
+    ("user.id", AttributeValue::int(12345)),
+    ("user.name", AttributeValue::string("张三")),
+    ("user.email", AttributeValue::string("zhangsan@example.com")),
+    ("user.roles", AttributeValue::array_string(["admin", "user"])),
+    ("request.method", AttributeValue::string("POST")),
+    ("request.path", AttributeValue::string("/api/v1/users")),
+    ("request.size", AttributeValue::int(1024)),
+    ("response.status", AttributeValue::int(200)),
+    ("response.time_ms", AttributeValue::float(150.5)),
+    ("response.size", AttributeValue::int(2048))
   ]
   
   // 验证嵌套属性
   assert_eq(nested_attrs.length(), 10)
-  assert_eq(nested_attrs[0], ("user.id", common::AttributeValue::int(12345)))
-  assert_eq(nested_attrs[3], ("user.roles", common::AttributeValue::array_string(["admin", "user"])))
+  assert_eq(nested_attrs[0], ("user.id", AttributeValue::int(12345)))
+  assert_eq(nested_attrs[3], ("user.roles", AttributeValue::array_string(["admin", "user"])))
   
   // 测试属性值的复杂类型
   let complex_attrs = [
-    ("unicode_text", common::AttributeValue::string("测试Unicode文本🚀")),
-    ("json_string", common::AttributeValue::string("{\"key\": \"value\", \"number\": 42}")),
-    ("url_encoded", common::AttributeValue::string("https%3A%2F%2Fexample.com%2Fpath%3Fparam%3Dvalue")),
-    ("base64_data", common::AttributeValue::string("SGVsbG8gV29ybGQ=")),
-    ("version_info", common::AttributeValue::array_string(["1.0.0", "2.0.0", "3.0.0"])),
-    ("status_codes", common::AttributeValue::array_int([200, 201, 400, 404, 500])),
-    ("latency_values", common::AttributeValue::array_float([10.5, 25.3, 50.7, 100.2])),
-    ("feature_flags", common::AttributeValue::array_bool([true, false, true]))
+    ("unicode_text", AttributeValue::string("测试Unicode文本🚀")),
+    ("json_string", AttributeValue::string("{\"key\": \"value\", \"number\": 42}")),
+    ("url_encoded", AttributeValue::string("https%3A%2F%2Fexample.com%2Fpath%3Fparam%3Dvalue")),
+    ("base64_data", AttributeValue::string("SGVsbG8gV29ybGQ=")),
+    ("version_info", AttributeValue::array_string(["1.0.0", "2.0.0", "3.0.0"])),
+    ("status_codes", AttributeValue::array_int([200, 201, 400, 404, 500])),
+    ("latency_values", AttributeValue::array_float([10.5, 25.3, 50.7, 100.2])),
+    ("feature_flags", AttributeValue::array_bool([true, false, true]))
   ]
   
   assert_eq(complex_attrs.length(), 8)
@@ -212,14 +212,14 @@ test "log_record_complex_building" {
     .timestamp(1640995200000000000L)
     .severity(logs::Error)
     .body("Database connection failed")
-    .with_attribute("error.code", common::AttributeValue::int(500))
-    .with_attribute("error.type", common::AttributeValue::string("ConnectionError"))
-    .with_attribute("database.host", common::AttributeValue::string("db.example.com"))
-    .with_attribute("database.port", common::AttributeValue::int(5432))
-    .with_attribute("retry.count", common::AttributeValue::int(3))
-    .with_attribute("retry.delay_ms", common::AttributeValue::array_float([100, 200, 400]))
-    .with_attribute("affected.tables", common::AttributeValue::array_string(["users", "orders", "products"]))
-    .with_attribute("transaction.id", common::AttributeValue::string("txn_12345"))
+    .with_attribute("error.code", AttributeValue::int(500))
+    .with_attribute("error.type", AttributeValue::string("ConnectionError"))
+    .with_attribute("database.host", AttributeValue::string("db.example.com"))
+    .with_attribute("database.port", AttributeValue::int(5432))
+    .with_attribute("retry.count", AttributeValue::int(3))
+    .with_attribute("retry.delay_ms", AttributeValue::array_float([100, 200, 400]))
+    .with_attribute("affected.tables", AttributeValue::array_string(["users", "orders", "products"]))
+    .with_attribute("transaction.id", AttributeValue::string("txn_12345"))
     |> build
   
   // 验证LogRecord结构
@@ -237,15 +237,15 @@ test "log_record_complex_building" {
     let (key, value) = log_record.attributes[i]
     match key {
       "error.code" => {
-        assert_eq(value, common::AttributeValue::int(500))
+        assert_eq(value, AttributeValue::int(500))
         found_error_code = true
       }
       "retry.delay_ms" => {
-        assert_eq(value, common::AttributeValue::array_float([100, 200, 400]))
+        assert_eq(value, AttributeValue::array_float([100, 200, 400]))
         found_retry_delays = true
       }
       "affected.tables" => {
-        assert_eq(value, common::AttributeValue::array_string(["users", "orders", "products"]))
+        assert_eq(value, AttributeValue::array_string(["users", "orders", "products"]))
         found_affected_tables = true
       }
       _ => ()
@@ -296,17 +296,17 @@ test "metrics_complex_scenarios" {
   while i < 100 {
     // 记录请求
     request_counter.add(1, [
-      ("method", common::AttributeValue::string(if i % 2 == 0 { "GET" } else { "POST" })),
-      ("status", common::AttributeValue::int(if i % 10 == 0 { 500 } else { 200 })),
-      ("endpoint", common::AttributeValue::string("/api/v1/resource"))
+      ("method", AttributeValue::string(if i % 2 == 0 { "GET" } else { "POST" })),
+      ("status", AttributeValue::int(if i % 10 == 0 { 500 } else { 200 })),
+      ("endpoint", AttributeValue::string("/api/v1/resource"))
     ])
     
     // 记录响应时间
     response_histogram.record(
       0.1 + (i.to_double() * 0.001),
       [
-        ("method", common::AttributeValue::string(if i % 2 == 0 { "GET" } else { "POST" })),
-        ("endpoint", common::AttributeValue::string("/api/v1/resource"))
+        ("method", AttributeValue::string(if i % 2 == 0 { "GET" } else { "POST" })),
+        ("endpoint", AttributeValue::string("/api/v1/resource"))
       ]
     )
     
@@ -317,8 +317,8 @@ test "metrics_complex_scenarios" {
   i = 0
   while i < 50 {
     active_connections.record(10 + (i % 20).to_double(), [
-      ("database", common::AttributeValue::string("primary")),
-      ("pool", common::AttributeValue::string("write"))
+      ("database", AttributeValue::string("primary")),
+      ("pool", AttributeValue::string("write"))
     ])
     i = i + 1
   }
@@ -328,13 +328,13 @@ test "metrics_complex_scenarios" {
   while i < 30 {
     if i % 3 == 0 {
       queue_size.add(5, [
-        ("queue_type", common::AttributeValue::string("priority")),
-        ("worker", common::AttributeValue::string("worker_" + (i % 5).to_string()))
+        ("queue_type", AttributeValue::string("priority")),
+        ("worker", AttributeValue::string("worker_" + (i % 5).to_string()))
       ])
     } else {
       queue_size.add(-3, [
-        ("queue_type", common::AttributeValue::string("priority")),
-        ("worker", common::AttributeValue::string("worker_" + (i % 5).to_string()))
+        ("queue_type", AttributeValue::string("priority")),
+        ("worker", AttributeValue::string("worker_" + (i % 5).to_string()))
       ])
     }
     i = i + 1

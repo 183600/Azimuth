@@ -119,7 +119,7 @@ test "log_record_creation_performance" {
 test "context_and_baggage_performance" {
   // 测试Context和Baggage操作的性能
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let key1 = create_key("performance-key-1")
   let key2 = create_key("performance-key-2")
   let key3 = create_key("performance-key-3")
@@ -166,7 +166,7 @@ test "context_and_baggage_performance" {
 test "propagation_performance" {
   // 测试传播操作的性能
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let carrier = MapCarrier::new()
   let trace_propagator = W3CTraceContextPropagator::{}
   let baggage_propagator = W3CBaggagePropagator::{}

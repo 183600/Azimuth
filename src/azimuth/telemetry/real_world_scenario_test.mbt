@@ -27,24 +27,24 @@ test "web_request_processing_scenario" {
     "HTTP GET /api/users",
     trace::Server,
     [
-      ("http.method", common::AttributeValue::string("GET")),
-      ("http.url", common::AttributeValue::string("/api/users")),
-      ("http.scheme", common::AttributeValue::string("https")),
-      ("http.host", common::AttributeValue::string("api.example.com")),
-      ("user.id", common::AttributeValue::string("user123"))
+      ("http.method", AttributeValue::string("GET")),
+      ("http.url", AttributeValue::string("/api/users")),
+      ("http.scheme", AttributeValue::string("https")),
+      ("http.host", AttributeValue::string("api.example.com")),
+      ("user.id", AttributeValue::string("user123"))
     ],
     Some(1640995200000000000L)  // 2022-01-01 00:00:00 UTC
   )
   
   // 4. 记录请求开始
   request_counter.add(1L, [
-    ("http.method", common::AttributeValue::string("GET")),
-    ("http.route", common::AttributeValue::string("/api/users")),
-    ("http.status_code", common::AttributeValue::int(200L))
+    ("http.method", AttributeValue::string("GET")),
+    ("http.route", AttributeValue::string("/api/users")),
+    ("http.status_code", AttributeValue::int(200L))
   ])
   
   active_connections.record(1.0, [
-    ("service.name", common::AttributeValue::string("web-service"))
+    ("service.name", AttributeValue::string("web-service"))
   ])
   
   // 5. 记录请求开始日志
@@ -52,10 +52,10 @@ test "web_request_processing_scenario" {
     .timestamp(1640995200000000000L)
     .severity(logs::Info)
     .body("Started processing HTTP request")
-    .with_attribute("http.method", common::AttributeValue::string("GET"))
-    .with_attribute("http.url", common::AttributeValue::string("/api/users"))
-    .with_attribute("user.id", common::AttributeValue::string("user123"))
-    .with_attribute("request.id", common::AttributeValue::string("req-abc123"))
+    .with_attribute("http.method", AttributeValue::string("GET"))
+    .with_attribute("http.url", AttributeValue::string("/api/users"))
+    .with_attribute("user.id", AttributeValue::string("user123"))
+    .with_attribute("request.id", AttributeValue::string("req-abc123"))
     .build()
   
   // 6. 模拟数据库查询
@@ -64,10 +64,10 @@ test "web_request_processing_scenario" {
     "Database Query: SELECT * FROM users WHERE id = ?",
     trace::Client,
     [
-      ("db.system", common::AttributeValue::string("postgresql")),
-      ("db.statement", common::AttributeValue::string("SELECT * FROM users WHERE id = ?")),
-      ("db.operation", common::AttributeValue::string("SELECT")),
-      ("db.user", common::AttributeValue::string("app_user"))
+      ("db.system", AttributeValue::string("postgresql")),
+      ("db.statement", AttributeValue::string("SELECT * FROM users WHERE id = ?")),
+      ("db.operation", AttributeValue::string("SELECT")),
+      ("db.user", AttributeValue::string("app_user"))
     ]
   )
   
@@ -76,13 +76,13 @@ test "web_request_processing_scenario" {
   let db_query_duration = meter.create_histogram("db.query.duration", "ms", "Database query duration")
   
   db_query_counter.add(1L, [
-    ("db.system", common::AttributeValue::string("postgresql")),
-    ("db.operation", common::AttributeValue::string("SELECT"))
+    ("db.system", AttributeValue::string("postgresql")),
+    ("db.operation", AttributeValue::string("SELECT"))
   ])
   
   db_query_duration.record(25.5, [
-    ("db.system", common::AttributeValue::string("postgresql")),
-    ("db.operation", common::AttributeValue::string("SELECT"))
+    ("db.system", AttributeValue::string("postgresql")),
+    ("db.operation", AttributeValue::string("SELECT"))
   ])
   
   // 7. 记录数据库查询日志
@@ -90,9 +90,9 @@ test "web_request_processing_scenario" {
     .timestamp(1640995200001000000L)
     .severity(logs::Debug)
     .body("Executed database query successfully")
-    .with_attribute("db.system", common::AttributeValue::string("postgresql"))
-    .with_attribute("db.operation", common::AttributeValue::string("SELECT"))
-    .with_attribute("db.duration_ms", common::AttributeValue::float(25.5))
+    .with_attribute("db.system", AttributeValue::string("postgresql"))
+    .with_attribute("db.operation", AttributeValue::string("SELECT"))
+    .with_attribute("db.duration_ms", AttributeValue::float(25.5))
     .build()
   
   // 8. 模拟缓存操作
@@ -101,9 +101,9 @@ test "web_request_processing_scenario" {
     "Cache GET: user:user123",
     trace::Client,
     [
-      ("cache.system", common::AttributeValue::string("redis")),
-      ("cache.operation", common::AttributeValue::string("GET")),
-      ("cache.key", common::AttributeValue::string("user:user123"))
+      ("cache.system", AttributeValue::string("redis")),
+      ("cache.operation", AttributeValue::string("GET")),
+      ("cache.key", AttributeValue::string("user:user123"))
     ]
   )
   
@@ -112,13 +112,13 @@ test "web_request_processing_scenario" {
   let cache_hit_ratio = meter.create_gauge("cache.hit_ratio", "percent", "Cache hit ratio")
   
   cache_counter.add(1L, [
-    ("cache.system", common::AttributeValue::string("redis")),
-    ("cache.operation", common::AttributeValue::string("GET")),
-    ("cache.result", common::AttributeValue::string("hit"))
+    ("cache.system", AttributeValue::string("redis")),
+    ("cache.operation", AttributeValue::string("GET")),
+    ("cache.result", AttributeValue::string("hit"))
   ])
   
   cache_hit_ratio.record(85.5, [
-    ("cache.system", common::AttributeValue::string("redis"))
+    ("cache.system", AttributeValue::string("redis"))
   ])
   
   // 9. 模拟外部API调用
@@ -127,11 +127,11 @@ test "web_request_processing_scenario" {
     "External API Call: GET https://api.payment.com/charges/charge123",
     trace::Client,
     [
-      ("http.method", common::AttributeValue::string("GET")),
-      ("http.url", common::AttributeValue::string("https://api.payment.com/charges/charge123")),
-      ("http.scheme", common::AttributeValue::string("https")),
-      ("http.host", common::AttributeValue::string("api.payment.com")),
-      ("peer.service", common::AttributeValue::string("payment-api"))
+      ("http.method", AttributeValue::string("GET")),
+      ("http.url", AttributeValue::string("https://api.payment.com/charges/charge123")),
+      ("http.scheme", AttributeValue::string("https")),
+      ("http.host", AttributeValue::string("api.payment.com")),
+      ("peer.service", AttributeValue::string("payment-api"))
     ]
   )
   
@@ -140,14 +140,14 @@ test "web_request_processing_scenario" {
   let external_api_duration = meter.create_histogram("external.api.duration", "ms", "External API call duration")
   
   external_api_counter.add(1L, [
-    ("http.method", common::AttributeValue::string("GET")),
-    ("peer.service", common::AttributeValue::string("payment-api")),
-    ("http.status_code", common::AttributeValue::int(200L))
+    ("http.method", AttributeValue::string("GET")),
+    ("peer.service", AttributeValue::string("payment-api")),
+    ("http.status_code", AttributeValue::int(200L))
   ])
   
   external_api_duration.record(150.0, [
-    ("http.method", common::AttributeValue::string("GET")),
-    ("peer.service", common::AttributeValue::string("payment-api"))
+    ("http.method", AttributeValue::string("GET")),
+    ("peer.service", AttributeValue::string("payment-api"))
   ])
   
   // 10. 记录外部API日志
@@ -155,21 +155,21 @@ test "web_request_processing_scenario" {
     .timestamp(1640995200002000000L)
     .severity(logs::Info)
     .body("External API call completed successfully")
-    .with_attribute("http.method", common::AttributeValue::string("GET"))
-    .with_attribute("http.url", common::AttributeValue::string("https://api.payment.com/charges/charge123"))
-    .with_attribute("http.status_code", common::AttributeValue::int(200L))
-    .with_attribute("external.api.duration_ms", common::AttributeValue::float(150.0))
+    .with_attribute("http.method", AttributeValue::string("GET"))
+    .with_attribute("http.url", AttributeValue::string("https://api.payment.com/charges/charge123"))
+    .with_attribute("http.status_code", AttributeValue::int(200L))
+    .with_attribute("external.api.duration_ms", AttributeValue::float(150.0))
     .build()
   
   // 11. 完成请求处理
   request_duration.record(200.0, [
-    ("http.method", common::AttributeValue::string("GET")),
-    ("http.route", common::AttributeValue::string("/api/users")),
-    ("http.status_code", common::AttributeValue::int(200L))
+    ("http.method", AttributeValue::string("GET")),
+    ("http.route", AttributeValue::string("/api/users")),
+    ("http.status_code", AttributeValue::int(200L))
   ])
   
   active_connections.record(0.0, [
-    ("service.name", common::AttributeValue::string("web-service"))
+    ("service.name", AttributeValue::string("web-service"))
   ])
   
   // 12. 记录请求完成日志
@@ -177,11 +177,11 @@ test "web_request_processing_scenario" {
     .timestamp(1640995200002000000L)
     .severity(logs::Info)
     .body("HTTP request completed successfully")
-    .with_attribute("http.method", common::AttributeValue::string("GET"))
-    .with_attribute("http.url", common::AttributeValue::string("/api/users"))
-    .with_attribute("http.status_code", common::AttributeValue::int(200L))
-    .with_attribute("request.duration_ms", common::AttributeValue::float(200.0))
-    .with_attribute("user.id", common::AttributeValue::string("user123"))
+    .with_attribute("http.method", AttributeValue::string("GET"))
+    .with_attribute("http.url", AttributeValue::string("/api/users"))
+    .with_attribute("http.status_code", AttributeValue::int(200L))
+    .with_attribute("request.duration_ms", AttributeValue::float(200.0))
+    .with_attribute("user.id", AttributeValue::string("user123"))
     .build()
   
   // 13. 验证所有遥测数据都正确创建
@@ -222,10 +222,10 @@ test "microservice_communication_scenario" {
     "Process Order",
     trace::Server,
     [
-      ("service.name", common::AttributeValue::string("service-a")),
-      ("operation.type", common::AttributeValue::string("process_order")),
-      ("order.id", common::AttributeValue::string("order-123")),
-      ("customer.id", common::AttributeValue::string("customer-456"))
+      ("service.name", AttributeValue::string("service-a")),
+      ("operation.type", AttributeValue::string("process_order")),
+      ("order.id", AttributeValue::string("order-123")),
+      ("customer.id", AttributeValue::string("customer-456"))
     ]
   )
   
@@ -235,10 +235,10 @@ test "microservice_communication_scenario" {
     "Call Service B: Validate Inventory",
     trace::Client,
     [
-      ("peer.service", common::AttributeValue::string("service-b")),
-      ("operation.type", common::AttributeValue::string("validate_inventory")),
-      ("product.id", common::AttributeValue::string("product-789")),
-      ("quantity", common::AttributeValue::int(5L))
+      ("peer.service", AttributeValue::string("service-b")),
+      ("operation.type", AttributeValue::string("validate_inventory")),
+      ("product.id", AttributeValue::string("product-789")),
+      ("quantity", AttributeValue::int(5L))
     ]
   )
   
@@ -264,10 +264,10 @@ test "microservice_communication_scenario" {
     "Validate Inventory",
     trace::Server,
     [
-      ("service.name", common::AttributeValue::string("service-b")),
-      ("operation.type", common::AttributeValue::string("validate_inventory")),
-      ("product.id", common::AttributeValue::string("product-789")),
-      ("quantity", common::AttributeValue::int(5L))
+      ("service.name", AttributeValue::string("service-b")),
+      ("operation.type", AttributeValue::string("validate_inventory")),
+      ("product.id", AttributeValue::string("product-789")),
+      ("quantity", AttributeValue::int(5L))
     ]
   )
   
@@ -277,9 +277,9 @@ test "microservice_communication_scenario" {
     "Check Inventory DB",
     trace::Client,
     [
-      ("db.system", common::AttributeValue::string("mysql")),
-      ("db.operation", common::AttributeValue::string("SELECT")),
-      ("db.table", common::AttributeValue::string("inventory"))
+      ("db.system", AttributeValue::string("mysql")),
+      ("db.operation", AttributeValue::string("SELECT")),
+      ("db.table", AttributeValue::string("inventory"))
     ]
   )
   
@@ -289,9 +289,9 @@ test "microservice_communication_scenario" {
     "Call Service C: Check Reservations",
     trace::Client,
     [
-      ("peer.service", common::AttributeValue::string("service-c")),
-      ("operation.type", common::AttributeValue::string("check_reservations")),
-      ("product.id", common::AttributeValue::string("product-789"))
+      ("peer.service", AttributeValue::string("service-c")),
+      ("operation.type", AttributeValue::string("check_reservations")),
+      ("product.id", AttributeValue::string("product-789"))
     ]
   )
   
@@ -306,9 +306,9 @@ test "microservice_communication_scenario" {
     "Check Reservations",
     trace::Server,
     [
-      ("service.name", common::AttributeValue::string("service-c")),
-      ("operation.type", common::AttributeValue::string("check_reservations")),
-      ("product.id", common::AttributeValue::string("product-789"))
+      ("service.name", AttributeValue::string("service-c")),
+      ("operation.type", AttributeValue::string("check_reservations")),
+      ("product.id", AttributeValue::string("product-789"))
     ]
   )
   
@@ -318,12 +318,12 @@ test "microservice_communication_scenario" {
   let inventory_check_duration = meter_b.create_histogram("inventory.check.duration", "ms", "Inventory check duration")
   
   inventory_checks.add(1L, [
-    ("product.id", common::AttributeValue::string("product-789")),
-    ("result", common::AttributeValue::string("available"))
+    ("product.id", AttributeValue::string("product-789")),
+    ("result", AttributeValue::string("available"))
   ])
   
   inventory_check_duration.record(45.0, [
-    ("product.id", common::AttributeValue::string("product-789"))
+    ("product.id", AttributeValue::string("product-789"))
   ])
   
   // 10. 记录日志
@@ -331,19 +331,19 @@ test "microservice_communication_scenario" {
     .timestamp(1640995200000000000L)
     .severity(logs::Info)
     .body("Inventory validation completed successfully")
-    .with_attribute("service.name", common::AttributeValue::string("service-b"))
-    .with_attribute("product.id", common::AttributeValue::string("product-789"))
-    .with_attribute("quantity", common::AttributeValue::int(5L))
-    .with_attribute("result", common::AttributeValue::string("available"))
+    .with_attribute("service.name", AttributeValue::string("service-b"))
+    .with_attribute("product.id", AttributeValue::string("product-789"))
+    .with_attribute("quantity", AttributeValue::int(5L))
+    .with_attribute("result", AttributeValue::string("available"))
     .build()
   
   let service_c_log = logs::LogRecord::builder()
     .timestamp(1640995200000500000L)
     .severity(logs::Info)
     .body("Reservation check completed")
-    .with_attribute("service.name", common::AttributeValue::string("service-c"))
-    .with_attribute("product.id", common::AttributeValue::string("product-789"))
-    .with_attribute("reserved_quantity", common::AttributeValue::int(2L))
+    .with_attribute("service.name", AttributeValue::string("service-c"))
+    .with_attribute("product.id", AttributeValue::string("product-789"))
+    .with_attribute("reserved_quantity", AttributeValue::int(2L))
     .build()
   
   // 11. 验证微服务通信链路
@@ -398,15 +398,15 @@ test "background_job_processing_scenario" {
       "Process Job: " + job_type,
       trace::Internal,
       [
-        ("job.type", common::AttributeValue::string(job_type)),
-        ("job.id", common::AttributeValue::string("job-" + i.to_string())),
-        ("job.queue", common::AttributeValue::string("high-priority"))
+        ("job.type", AttributeValue::string(job_type)),
+        ("job.id", AttributeValue::string("job-" + i.to_string())),
+        ("job.queue", AttributeValue::string("high-priority"))
       ]
     )
     
     // 5. 记录作业开始指标
     job_queue_size.record((10 - i).to_double(), [
-      ("job.queue", common::AttributeValue::string("high-priority"))
+      ("job.queue", AttributeValue::string("high-priority"))
     ])
     
     // 6. 模拟作业处理步骤
@@ -415,8 +415,8 @@ test "background_job_processing_scenario" {
       "Validate Job Parameters",
       trace::Internal,
       [
-        ("job.step", common::AttributeValue::string("validate")),
-        ("job.type", common::AttributeValue::string(job_type))
+        ("job.step", AttributeValue::string("validate")),
+        ("job.type", AttributeValue::string(job_type))
       ]
     )
     
@@ -425,8 +425,8 @@ test "background_job_processing_scenario" {
       "Execute Job Logic",
       trace::Internal,
       [
-        ("job.step", common::AttributeValue::string("execute")),
-        ("job.type", common::AttributeValue::string(job_type))
+        ("job.step", AttributeValue::string("execute")),
+        ("job.type", AttributeValue::string(job_type))
       ]
     )
     
@@ -439,17 +439,17 @@ test "background_job_processing_scenario" {
           "Send Email",
           trace::Client,
           [
-            ("operation.type", common::AttributeValue::string("send_email")),
-            ("email.provider", common::AttributeValue::string("smtp")),
-            ("email.recipients", common::AttributeValue::int(5L))
+            ("operation.type", AttributeValue::string("send_email")),
+            ("email.provider", AttributeValue::string("smtp")),
+            ("email.recipients", AttributeValue::int(5L))
           ]
         )
         
         // 记录邮件发送指标
         let email_counter = meter.create_counter("emails.sent.total", "count", "Total emails sent")
         email_counter.add(1L, [
-          ("email.provider", common::AttributeValue::string("smtp")),
-          ("email.status", common::AttributeValue::string("sent"))
+          ("email.provider", AttributeValue::string("smtp")),
+          ("email.status", AttributeValue::string("sent"))
         ])
       }
       "report" => {
@@ -459,17 +459,17 @@ test "background_job_processing_scenario" {
           "Generate Report",
           trace::Internal,
           [
-            ("operation.type", common::AttributeValue::string("generate_report")),
-            ("report.type", common::AttributeValue::string("monthly")),
-            ("report.format", common::AttributeValue::string("pdf"))
+            ("operation.type", AttributeValue::string("generate_report")),
+            ("report.type", AttributeValue::string("monthly")),
+            ("report.format", AttributeValue::string("pdf"))
           ]
         )
         
         // 记录报告生成指标
         let report_counter = meter.create_counter("reports.generated.total", "count", "Total reports generated")
         report_counter.add(1L, [
-          ("report.type", common::AttributeValue::string("monthly")),
-          ("report.format", common::AttributeValue::string("pdf"))
+          ("report.type", AttributeValue::string("monthly")),
+          ("report.format", AttributeValue::string("pdf"))
         ])
       }
       _ => {
@@ -479,8 +479,8 @@ test "background_job_processing_scenario" {
           "Generic Job Processing",
           trace::Internal,
           [
-            ("operation.type", common::AttributeValue::string("generic_process")),
-            ("job.type", common::AttributeValue::string(job_type))
+            ("operation.type", AttributeValue::string("generic_process")),
+            ("job.type", AttributeValue::string(job_type))
           ]
         )
       }
@@ -491,12 +491,12 @@ test "background_job_processing_scenario" {
     
     if job_success {
       job_counter.add(1L, [
-        ("job.type", common::AttributeValue::string(job_type)),
-        ("job.status", common::AttributeValue::string("success"))
+        ("job.type", AttributeValue::string(job_type)),
+        ("job.status", AttributeValue::string("success"))
       ])
       
       job_duration.record((100.0 + i.to_double() * 10.0), [
-        ("job.type", common::AttributeValue::string(job_type))
+        ("job.type", AttributeValue::string(job_type))
       ])
       
       // 记录成功日志
@@ -504,14 +504,14 @@ test "background_job_processing_scenario" {
         .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
         .severity(logs::Info)
         .body("Job completed successfully")
-        .with_attribute("job.type", common::AttributeValue::string(job_type))
-        .with_attribute("job.id", common::AttributeValue::string("job-" + i.to_string()))
-        .with_attribute("job.duration_ms", common::AttributeValue::float(100.0 + i.to_double() * 10.0))
+        .with_attribute("job.type", AttributeValue::string(job_type))
+        .with_attribute("job.id", AttributeValue::string("job-" + i.to_string()))
+        .with_attribute("job.duration_ms", AttributeValue::float(100.0 + i.to_double() * 10.0))
         .build()
     } else {
       job_failure_counter.add(1L, [
-        ("job.type", common::AttributeValue::string(job_type)),
-        ("failure.reason", common::AttributeValue::string("timeout"))
+        ("job.type", AttributeValue::string(job_type)),
+        ("failure.reason", AttributeValue::string("timeout"))
       ])
       
       // 记录失败日志
@@ -519,9 +519,9 @@ test "background_job_processing_scenario" {
         .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
         .severity(logs::Error)
         .body("Job failed due to timeout")
-        .with_attribute("job.type", common::AttributeValue::string(job_type))
-        .with_attribute("job.id", common::AttributeValue::string("job-" + i.to_string()))
-        .with_attribute("failure.reason", common::AttributeValue::string("timeout"))
+        .with_attribute("job.type", AttributeValue::string(job_type))
+        .with_attribute("job.id", AttributeValue::string("job-" + i.to_string()))
+        .with_attribute("failure.reason", AttributeValue::string("timeout"))
         .build()
     }
     
@@ -566,16 +566,16 @@ test "real_time_data_streaming_scenario" {
       "Process Message: " + message_type,
       trace::Internal,
       [
-        ("message.type", common::AttributeValue::string(message_type)),
-        ("message.id", common::AttributeValue::string("msg-" + i.to_string())),
-        ("stream.topic", common::AttributeValue::string("events")),
-        ("partition", common::AttributeValue::int(0L))
+        ("message.type", AttributeValue::string(message_type)),
+        ("message.id", AttributeValue::string("msg-" + i.to_string())),
+        ("stream.topic", AttributeValue::string("events")),
+        ("partition", AttributeValue::int(0L))
       ]
     )
     
     // 5. 记录消息处理开始
     stream_lag.record((50.0 + i.to_double() * 5.0), [
-      ("stream.topic", common::AttributeValue::string("events"))
+      ("stream.topic", AttributeValue::string("events"))
     ])
     
     // 6. 根据消息类型进行不同的处理
@@ -587,16 +587,16 @@ test "real_time_data_streaming_scenario" {
           "Analyze User Action",
           trace::Internal,
           [
-            ("operation.type", common::AttributeValue::string("analytics")),
-            ("action.type", common::AttributeValue::string("click"))
+            ("operation.type", AttributeValue::string("analytics")),
+            ("action.type", AttributeValue::string("click"))
           ]
         )
         
         // 记录用户行为指标
         let user_actions = meter.create_counter("user.actions.total", "count", "Total user actions")
         user_actions.add(1L, [
-          ("action.type", common::AttributeValue::string("click")),
-          ("user.segment", common::AttributeValue::string("premium"))
+          ("action.type", AttributeValue::string("click")),
+          ("user.segment", AttributeValue::string("premium"))
         ])
       }
       "system_event" => {
@@ -606,16 +606,16 @@ test "real_time_data_streaming_scenario" {
           "Process System Event",
           trace::Internal,
           [
-            ("operation.type", common::AttributeValue::string("system_event")),
-            ("event.severity", common::AttributeValue::string("warning"))
+            ("operation.type", AttributeValue::string("system_event")),
+            ("event.severity", AttributeValue::string("warning"))
           ]
         )
         
         // 记录系统事件指标
         let system_events = meter.create_counter("system.events.total", "count", "Total system events")
         system_events.add(1L, [
-          ("event.severity", common::AttributeValue::string("warning")),
-          ("event.source", common::AttributeValue::string("auth-service"))
+          ("event.severity", AttributeValue::string("warning")),
+          ("event.source", AttributeValue::string("auth-service"))
         ])
       }
       "metric_update" => {
@@ -625,15 +625,15 @@ test "real_time_data_streaming_scenario" {
           "Update Metrics",
           trace::Internal,
           [
-            ("operation.type", common::AttributeValue::string("metric_update")),
-            ("metric.source", common::AttributeValue::string("application"))
+            ("operation.type", AttributeValue::string("metric_update")),
+            ("metric.source", AttributeValue::string("application"))
           ]
         )
         
         // 记录指标更新
         let metrics_updated = meter.create_counter("metrics.updated.total", "count", "Total metrics updated")
         metrics_updated.add(10L, [
-          ("metric.source", common::AttributeValue::string("application"))
+          ("metric.source", AttributeValue::string("application"))
         ])
       }
       "log_entry" => {
@@ -643,16 +643,16 @@ test "real_time_data_streaming_scenario" {
           "Process Log Entry",
           trace::Internal,
           [
-            ("operation.type", common::AttributeValue::string("log_processing")),
-            ("log.level", common::AttributeValue::string("INFO"))
+            ("operation.type", AttributeValue::string("log_processing")),
+            ("log.level", AttributeValue::string("INFO"))
           ]
         )
         
         // 记录日志处理指标
         let logs_processed = meter.create_counter("logs.processed.total", "count", "Total logs processed")
         logs_processed.add(1L, [
-          ("log.level", common::AttributeValue::string("INFO")),
-          ("log.source", common::AttributeValue::string("web-server"))
+          ("log.level", AttributeValue::string("INFO")),
+          ("log.source", AttributeValue::string("web-server"))
         ])
       }
     }
@@ -662,12 +662,12 @@ test "real_time_data_streaming_scenario" {
     
     if processing_success {
       messages_processed.add(1L, [
-        ("message.type", common::AttributeValue::string(message_type)),
-        ("processing.status", common::AttributeValue::string("success"))
+        ("message.type", AttributeValue::string(message_type)),
+        ("processing.status", AttributeValue::string("success"))
       ])
       
       message_processing_duration.record((10.0 + i.to_double() * 2.0), [
-        ("message.type", common::AttributeValue::string(message_type))
+        ("message.type", AttributeValue::string(message_type))
       ])
       
       // 记录成功日志
@@ -675,16 +675,16 @@ test "real_time_data_streaming_scenario" {
         .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
         .severity(logs::Debug)
         .body("Message processed successfully")
-        .with_attribute("message.type", common::AttributeValue::string(message_type))
-        .with_attribute("message.id", common::AttributeValue::string("msg-" + i.to_string()))
-        .with_attribute("processing.duration_ms", common::AttributeValue::float(10.0 + i.to_double() * 2.0))
+        .with_attribute("message.type", AttributeValue::string(message_type))
+        .with_attribute("message.id", AttributeValue::string("msg-" + i.to_string()))
+        .with_attribute("processing.duration_ms", AttributeValue::float(10.0 + i.to_double() * 2.0))
         .build()
     } else {
       // 记录失败指标
       let message_errors = meter.create_counter("messages.errors.total", "count", "Total message processing errors")
       message_errors.add(1L, [
-        ("message.type", common::AttributeValue::string(message_type)),
-        ("error.type", common::AttributeValue::string("parsing_error"))
+        ("message.type", AttributeValue::string(message_type)),
+        ("error.type", AttributeValue::string("parsing_error"))
       ])
       
       // 记录失败日志
@@ -692,15 +692,15 @@ test "real_time_data_streaming_scenario" {
         .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
         .severity(logs::Error)
         .body("Failed to process message")
-        .with_attribute("message.type", common::AttributeValue::string(message_type))
-        .with_attribute("message.id", common::AttributeValue::string("msg-" + i.to_string()))
-        .with_attribute("error.type", common::AttributeValue::string("parsing_error"))
+        .with_attribute("message.type", AttributeValue::string(message_type))
+        .with_attribute("message.id", AttributeValue::string("msg-" + i.to_string()))
+        .with_attribute("error.type", AttributeValue::string("parsing_error"))
         .build()
     }
     
     // 8. 更新错误率
     error_rate.record(25.0, [
-      ("stream.topic", common::AttributeValue::string("events"))
+      ("stream.topic", AttributeValue::string("events"))
     ])
     
     i = i + 1

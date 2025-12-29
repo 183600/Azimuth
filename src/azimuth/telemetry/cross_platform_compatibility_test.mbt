@@ -1,828 +1,529 @@
-// 跨平台兼容性测试 - 用于测试遥测系统在不同平台和环境下的兼容性
+// 跨平台兼容性测试 - 测试系统在不同平台和环境下的兼容性
+use azimuth.telemetry.api.common.{AttributeValue, Resource}
+use azimuth.telemetry.api.context.{Context, create_key}
+use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber}
+use azimuth.telemetry.api.metrics.{NoopMeter}
+use azimuth.telemetry.api.trace.{SpanKind}
+use azimuth.telemetry.api.propagation.{MapCarrier, W3CTraceContextPropagator}
 
-test "platform_detection_and_abstraction" {
-  // 测试平台检测和抽象层
+test "platform_compatibility_basic_types" {
+  // 测试基本类型的跨平台兼容性
   
-  enum Platform {
-    Windows
-    Linux
-    MacOS
-    FreeBSD
-    Android
-    IOS
-    Wasm
-    Unknown
-  }
+  // 1. 字符串兼容性测试
+  let ascii_string = "ASCII string: Hello World!"
+  let unicode_string = "Unicode string: 你好世界! 🌍"
+  let mixed_string = "Mixed: ASCII + 你好 + 🚀 + Special: \n\t\r"
   
-  enum Architecture {
-    X86
-    X64
-    Arm32
-    Arm64
-    Wasm32
-    Wasm64
-    Unknown
-  }
+  let ascii_attr = AttributeValue::string(ascii_string)
+  let unicode_attr = AttributeValue::string(unicode_string)
+  let mixed_attr = AttributeValue::string(mixed_string)
   
-  struct PlatformInfo {
-    platform : Platform
-    architecture : Architecture
-    endianness : String
-    word_size : Int
-    pointer_size : Int
-  }
-  
-  // 模拟不同平台的信息
-  let platform_configs = [
-    {
-      platform: Windows,
-      architecture: X64,
-      endianness: "little",
-      word_size: 64,
-      pointer_size: 8
-    },
-    {
-      platform: Linux,
-      architecture: X64,
-      endianness: "little",
-      word_size: 64,
-      pointer_size: 8
-    },
-    {
-      platform: MacOS,
-      architecture: Arm64,
-      endianness: "little",
-      word_size: 64,
-      pointer_size: 8
-    },
-    {
-      platform: Android,
-      architecture: Arm64,
-      endianness: "little",
-      word_size: 64,
-      pointer_size: 8
-    },
-    {
-      platform: IOS,
-      architecture: Arm64,
-      endianness: "little",
-      word_size: 64,
-      pointer_size: 8
-    },
-    {
-      platform: Wasm,
-      architecture: Wasm32,
-      endianness: "little",
-      word_size: 32,
-      pointer_size: 4
+  // 验证字符串兼容性
+  match ascii_attr {
+    StringValue(s) => {
+      assert_eq(s, ascii_string)
+      assert_eq(s.length(), 24)
     }
-  ]
-  
-  // 验证平台配置
-  for config in platform_configs {
-    assert_eq(config.word_size > 0, true)
-    assert_eq(config.pointer_size > 0, true)
-    assert_eq(config.endianness == "little" || config.endianness == "big", true)
-    
-    match config.architecture {
-      X86 => assert_eq(config.word_size, 32)
-      X64 => assert_eq(config.word_size, 64)
-      Arm32 => assert_eq(config.word_size, 32)
-      Arm64 => assert_eq(config.word_size, 64)
-      Wasm32 => assert_eq(config.word_size, 32)
-      Wasm64 => assert_eq(config.word_size, 64)
-      Unknown => ()
-    }
+    _ => @test.fail("Expected StringValue for ASCII")
   }
   
-  // 测试平台特定功能检测
-  let detect_platform_features = fn(platform : Platform) : Array<String> {
-    match platform {
-      Windows => ["registry", "event_log", "performance_counters", "windows_services"]
-      Linux => ["proc_fs", "sysctl", "systemd", "cgroups"]
-      MacOS => ["launchd", "core_foundation", "foundation", "cocoa"]
-      Android => ["content_resolver", "activity_manager", "broadcast_receiver"]
-      IOS => ["ns_user_defaults", "core_data", "keychain", "notification_center"]
-      Wasm => ["web_storage", "indexed_db", "web_workers", "fetch_api"]
-      _ => ["basic_filesystem", "environment_variables"]
+  match unicode_attr {
+    StringValue(s) => {
+      assert_eq(s, unicode_string)
+      assert_eq(s.length(), 19)
     }
+    _ => @test.fail("Expected StringValue for Unicode")
   }
   
-  // 验证平台功能检测
-  for config in platform_configs {
-    let features = detect_platform_features(config.platform)
-    assert_eq(features.length() > 0, true)
-    
-    for feature in features {
-      assert_eq(feature.length() > 0, true)
-      assert_eq(feature.contains(" "), false)  // 功能名称不应包含空格
+  match mixed_attr {
+    StringValue(s) => {
+      assert_eq(s, mixed_string)
+      assert_eq(s.length(), 39)
     }
+    _ => @test.fail("Expected StringValue for mixed")
+  }
+  
+  // 2. 数值兼容性测试
+  let positive_int = AttributeValue::int(9223372036854775807L)
+  let negative_int = AttributeValue::int(-9223372036854775808L)
+  let zero_int = AttributeValue::int(0L)
+  
+  let positive_float = AttributeValue::float(1.7976931348623157e+308)
+  let negative_float = AttributeValue::float(-1.7976931348623157e+308)
+  let zero_float = AttributeValue::float(0.0)
+  let nan_float = AttributeValue::float(0.0/0.0)
+  let infinity_float = AttributeValue::float(1.0/0.0)
+  
+  // 验证数值兼容性
+  match positive_int {
+    IntValue(v) => assert_eq(v, 9223372036854775807L)
+    _ => @test.fail("Expected IntValue for positive")
+  }
+  
+  match negative_int {
+    IntValue(v) => assert_eq(v, -9223372036854775808L)
+    _ => @test.fail("Expected IntValue for negative")
+  }
+  
+  match zero_int {
+    IntValue(v) => assert_eq(v, 0L)
+    _ => @test.fail("Expected IntValue for zero")
+  }
+  
+  match positive_float {
+    FloatValue(v) => assert_eq(v > 1.0e+308, true)
+    _ => @test.fail("Expected FloatValue for positive")
+  }
+  
+  match negative_float {
+    FloatValue(v) => assert_eq(v < -1.0e+308, true)
+    _ => @test.fail("Expected FloatValue for negative")
+  }
+  
+  match zero_float {
+    FloatValue(v) => assert_eq(v, 0.0)
+    _ => @test.fail("Expected FloatValue for zero")
+  }
+  
+  match nan_float {
+    FloatValue(v) => assert_eq(v != v, true)
+    _ => @test.fail("Expected FloatValue for NaN")
+  }
+  
+  match infinity_float {
+    FloatValue(v) => assert_eq(v > 1.0e+308, true)
+    _ => @test.fail("Expected FloatValue for infinity")
+  }
+  
+  // 3. 布尔兼容性测试
+  let true_attr = AttributeValue::bool(true)
+  let false_attr = AttributeValue::bool(false)
+  
+  match true_attr {
+    BoolValue(v) => assert_eq(v, true)
+    _ => @test.fail("Expected BoolValue for true")
+  }
+  
+  match false_attr {
+    BoolValue(v) => assert_eq(v, false)
+    _ => @test.fail("Expected BoolValue for false")
   }
 }
 
-test "cross_platform_file_system_operations" {
-  // 测试跨平台文件系统操作
+test "platform_compatibility_array_types" {
+  // 测试数组类型的跨平台兼容性
   
-  enum PathSeparator {
-    ForwardSlash    // Unix-like: /
-    BackSlash       // Windows: \
+  // 1. 字符串数组兼容性
+  let string_array = AttributeValue::array_string([
+    "ASCII",
+    "Unicode: 中文",
+    "Emoji: 🎉",
+    "Special: \n\t\r",
+    "Empty: ",
+    "Mixed: Hello 世界 🌍"
+  ])
+  
+  match string_array {
+    ArrayStringValue(arr) => {
+      assert_eq(arr.length(), 6)
+      assert_eq(arr[0], "ASCII")
+      assert_eq(arr[1], "Unicode: 中文")
+      assert_eq(arr[2], "Emoji: 🎉")
+      assert_eq(arr[3], "Special: \n\t\r")
+      assert_eq(arr[4], "")
+      assert_eq(arr[5], "Mixed: Hello 世界 🌍")
+    }
+    _ => @test.fail("Expected ArrayStringValue")
   }
   
-  struct FileSystemConfig {
-    platform : Platform
-    path_separator : PathSeparator
-    case_sensitive : Bool
-    max_path_length : Int
-    temp_directory : String
-    home_directory : String
+  // 2. 整数数组兼容性
+  let int_array = AttributeValue::array_int([
+    0L,
+    -1L,
+    1L,
+    9223372036854775807L,
+    -9223372036854775808L,
+    42L,
+    -42L
+  ])
+  
+  match int_array {
+    ArrayIntValue(arr) => {
+      assert_eq(arr.length(), 7)
+      assert_eq(arr[0], 0L)
+      assert_eq(arr[1], -1L)
+      assert_eq(arr[2], 1L)
+      assert_eq(arr[3], 9223372036854775807L)
+      assert_eq(arr[4], -9223372036854775808L)
+      assert_eq(arr[5], 42L)
+      assert_eq(arr[6], -42L)
+    }
+    _ => @test.fail("Expected ArrayIntValue")
   }
   
-  let fs_configs = [
-    {
-      platform: Windows,
-      path_separator: BackSlash,
-      case_sensitive: false,
-      max_path_length: 260,
-      temp_directory: "C:\\Users\\User\\AppData\\Local\\Temp",
-      home_directory: "C:\\Users\\User"
-    },
-    {
-      platform: Linux,
-      path_separator: ForwardSlash,
-      case_sensitive: true,
-      max_path_length: 4096,
-      temp_directory: "/tmp",
-      home_directory: "/home/user"
-    },
-    {
-      platform: MacOS,
-      path_separator: ForwardSlash,
-      case_sensitive: true,
-      max_path_length: 1024,
-      temp_directory: "/tmp",
-      home_directory: "/Users/user"
-    },
-    {
-      platform: Android,
-      path_separator: ForwardSlash,
-      case_sensitive: true,
-      max_path_length: 4096,
-      temp_directory: "/data/local/tmp",
-      home_directory: "/data/user/0/com.app"
-    }
-  ]
+  // 3. 浮点数数组兼容性
+  let float_array = AttributeValue::array_float([
+    0.0,
+    -0.0,
+    1.0,
+    -1.0,
+    3.14159265359,
+    -3.14159265359,
+    1.7976931348623157e+308,
+    -1.7976931348623157e+308,
+    0.0/0.0,  // NaN
+    1.0/0.0   // Infinity
+  ])
   
-  // 测试路径规范化
-  let normalize_path = fn(path : String, config : FileSystemConfig) : String {
-    let separator = match config.path_separator {
-      ForwardSlash => "/"
-      BackSlash => "\\"
+  match float_array {
+    ArrayFloatValue(arr) => {
+      assert_eq(arr.length(), 10)
+      assert_eq(arr[0], 0.0)
+      assert_eq(arr[1], -0.0)
+      assert_eq(arr[2], 1.0)
+      assert_eq(arr[3], -1.0)
+      assert_eq(arr[4], 3.14159265359)
+      assert_eq(arr[5], -3.14159265359)
+      assert_eq(arr[6] > 1.0e+308, true)
+      assert_eq(arr[7] < -1.0e+308, true)
+      assert_eq(arr[8] != arr[8], true)  // NaN check
+      assert_eq(arr[9] > 1.0e+308, true)  // Infinity check
     }
-    
-    // 替换所有分隔符为当前平台的分隔符
-    let mut normalized = path
-    if separator == "/" {
-      normalized = normalized.replace("\\", "/")
-    } else {
-      normalized = normalized.replace("/", "\\")
-    }
-    
-    normalized
+    _ => @test.fail("Expected ArrayFloatValue")
   }
   
-  // 测试路径拼接
-  let join_paths = fn(paths : Array<String>, config : FileSystemConfig) : String {
-    let separator = match config.path_separator {
-      ForwardSlash => "/"
-      BackSlash => "\\"
-    }
-    
-    let mut result = ""
-    for i = 0; i < paths.length(); i = i + 1 {
-      let path = paths[i]
-      if i > 0 {
-        result = result + separator
-      }
-      result = result + path
-    }
-    
-    result
-  }
+  // 4. 布尔数组兼容性
+  let bool_array = AttributeValue::array_bool([
+    true,
+    false,
+    true && false,
+    true || false,
+    !true,
+    !false
+  ])
   
-  // 验证文件系统操作
-  for config in fs_configs {
-    // 测试路径规范化
-    let mixed_path = "folder\\subfolder/file.txt"
-    let normalized = normalize_path(mixed_path, config)
-    
-    let expected_separator = match config.path_separator {
-      ForwardSlash => "/"
-      BackSlash => "\\"
+  match bool_array {
+    ArrayBoolValue(arr) => {
+      assert_eq(arr.length(), 6)
+      assert_eq(arr[0], true)
+      assert_eq(arr[1], false)
+      assert_eq(arr[2], false)
+      assert_eq(arr[3], true)
+      assert_eq(arr[4], false)
+      assert_eq(arr[5], true)
     }
-    
-    assert_eq(normalized.contains(expected_separator), true)
-    assert_eq(normalized.contains(expected_separator == "/" ? "\\" : "/"), false)
-    
-    // 测试路径拼接
-    let paths = ["home", "user", "documents", "file.txt"]
-    let joined_path = join_paths(paths, config)
-    
-    assert_eq(joined_path.contains("home"), true)
-    assert_eq(joined_path.contains("user"), true)
-    assert_eq(joined_path.contains("documents"), true)
-    assert_eq(joined_path.contains("file.txt"), true)
-    
-    // 验证路径长度限制
-    assert_eq(joined_path.length() <= config.max_path_length, true)
-    
-    // 测试临时目录路径
-    let temp_path = join_paths([config.temp_directory, "telemetry.log"], config)
-    assert_eq(temp_path.starts_with(config.temp_directory), true)
+    _ => @test.fail("Expected ArrayBoolValue")
   }
 }
 
-test "cross_platform_networking_compatibility" {
-  // 测试跨平台网络兼容性
+test "platform_compatibility_resource" {
+  // 测试Resource的跨平台兼容性
   
-  enum SocketType {
-    TCP
-    UDP
-    Unix
-    NamedPipe
+  // 1. 基本Resource兼容性
+  let basic_resource = Resource::default("platform-compatibility-service")
+  
+  assert_eq(basic_resource.service_name, "platform-compatibility-service")
+  assert_eq(basic_resource.service_version, None)
+  assert_eq(basic_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(basic_resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(basic_resource.attributes.length(), 0)
+  
+  // 2. 特殊字符Resource兼容性
+  let special_resource = Resource::default("special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  
+  assert_eq(special_resource.service_name, "special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  assert_eq(special_resource.telemetry_sdk_name, "azimuth")
+  
+  // 3. Unicode Resource兼容性
+  let unicode_resource = Resource::default("Unicode服务测试🚀")
+  
+  assert_eq(unicode_resource.service_name, "Unicode服务测试🚀")
+  assert_eq(unicode_resource.telemetry_sdk_name, "azimuth")
+  
+  // 4. 空和边界Resource兼容性
+  let empty_resource = Resource::default("")
+  let space_resource = Resource::default("   ")
+  let newline_resource = Resource::default("line1\nline2")
+  
+  assert_eq(empty_resource.service_name, "")
+  assert_eq(space_resource.service_name, "   ")
+  assert_eq(newline_resource.service_name, "line1\nline2")
+}
+
+test "platform_compatibility_context" {
+  // 测试Context的跨平台兼容性
+  
+  // 1. 基本Context兼容性
+  let empty_context = Context::empty()
+  assert_eq(empty_context.values.length(), 0)
+  
+  // 2. 特殊键值Context兼容性
+  let special_key = create_key("special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  let unicode_key = create_key("Unicode键测试🔑")
+  let empty_key = create_key("")
+  
+  let special_context = empty_context
+    .with_value(special_key, "special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+    .with_value(unicode_key, "Unicode值测试📝")
+    .with_value(empty_key, "")
+  
+  match special_context.get(special_key) {
+    Some(value) => assert_eq(value, "special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+    None => @test.fail("Expected value for special key")
   }
   
-  struct NetworkConfig {
-    platform : Platform
-    supported_sockets : Array<SocketType>
-    default_timeout_ms : Int
-    max_connections : Int
-    dns_resolution_supported : Bool
-    ipv6_supported : Bool
+  match special_context.get(unicode_key) {
+    Some(value) => assert_eq(value, "Unicode值测试📝")
+    None => @test.fail("Expected value for Unicode key")
   }
   
-  let network_configs = [
-    {
-      platform: Windows,
-      supported_sockets: [TCP, UDP, NamedPipe],
-      default_timeout_ms: 30000,
-      max_connections: 2048,
-      dns_resolution_supported: true,
-      ipv6_supported: true
-    },
-    {
-      platform: Linux,
-      supported_sockets: [TCP, UDP, Unix],
-      default_timeout_ms: 60000,
-      max_connections: 4096,
-      dns_resolution_supported: true,
-      ipv6_supported: true
-    },
-    {
-      platform: MacOS,
-      supported_sockets: [TCP, UDP, Unix],
-      default_timeout_ms: 45000,
-      max_connections: 2048,
-      dns_resolution_supported: true,
-      ipv6_supported: true
-    },
-    {
-      platform: Wasm,
-      supported_sockets: [TCP],  // 浏览器环境限制
-      default_timeout_ms: 15000,
-      max_connections: 6,        // 浏览器连接限制
-      dns_resolution_supported: true,
-      ipv6_supported: true
-    }
-  ]
-  
-  // 测试端点解析
-  let parse_endpoint = fn(endpoint : String, config : NetworkConfig) : (String, Int) {
-    // 简化的端点解析逻辑
-    if endpoint.contains(":") {
-      let parts = endpoint.split(":")
-      let host = parts[0]
-      let port = if parts.length() > 1 {
-        parts[1].to_int()
-      } else {
-        80
-      }
-      (host, port)
-    } else {
-      (endpoint, 80)
-    }
+  match special_context.get(empty_key) {
+    Some(value) => assert_eq(value, "")
+    None => @test.fail("Expected value for empty key")
   }
   
-  // 测试连接字符串生成
-  let generate_connection_string = fn(host : String, port : Int, socket_type : SocketType, 
-                                     config : NetworkConfig) : String {
-    match socket_type {
-      TCP => "tcp://" + host + ":" + port.to_string()
-      UDP => "udp://" + host + ":" + port.to_string()
-      Unix => {
-        if config.platform == Linux || config.platform == MacOS {
-          "unix:///tmp/socket_" + port.to_string()
-        } else {
-          "unsupported"
-        }
-      }
-      NamedPipe => {
-        if config.platform == Windows {
-          "\\\\.\\pipe\\telemetry_" + port.to_string()
-        } else {
-          "unsupported"
-        }
-      }
-    }
-  }
+  // 3. 长键值Context兼容性
+  let long_key = create_key("a" * 1000)
+  let long_value = "b" * 10000
+  let long_context = empty_context.with_value(long_key, long_value)
   
-  // 验证网络配置和操作
-  for config in network_configs {
-    // 验证基本配置
-    assert_eq(config.default_timeout_ms > 0, true)
-    assert_eq(config.max_connections > 0, true)
-    assert_eq(config.supported_sockets.length() > 0, true)
-    
-    // 测试端点解析
-    let (host, port) = parse_endpoint("localhost:4318", config)
-    assert_eq(host, "localhost")
-    assert_eq(port, 4318)
-    
-    // 测试连接字符串生成
-    for socket_type in config.supported_sockets {
-      let conn_str = generate_connection_string("localhost", 4318, socket_type, config)
-      assert_eq(conn_str != "unsupported", true)
-      
-      match socket_type {
-        TCP => assert_eq(conn_str.starts_with("tcp://"), true)
-        UDP => assert_eq(conn_str.starts_with("udp://"), true)
-        Unix => assert_eq(conn_str.starts_with("unix://"), true)
-        NamedPipe => assert_eq(conn_str.starts_with("\\\\"), true)
-      }
-    }
-    
-    // 测试平台特定的网络特性
-    match config.platform {
-      Wasm => {
-        assert_eq(config.max_connections <= 10, true)  // 浏览器连接限制
-        assert_eq(config.supported_sockets.contains(Unix), false)
-        assert_eq(config.supported_sockets.contains(NamedPipe), false)
-      }
-      Windows => {
-        assert_eq(config.supported_sockets.contains(NamedPipe), true)
-        assert_eq(config.supported_sockets.contains(Unix), false)
-      }
-      Linux | MacOS => {
-        assert_eq(config.supported_sockets.contains(Unix), true)
-        assert_eq(config.supported_sockets.contains(NamedPipe), false)
-      }
-      _ => ()
-    }
+  match long_context.get(long_key) {
+    Some(value) => assert_eq(value.length(), 10000)
+    None => @test.fail("Expected value for long key")
   }
 }
 
-test "cross_platform_time_and_timezone_handling" {
-  // 测试跨平台时间和时区处理
+test "platform_compatibility_log_record" {
+  // 测试LogRecord的跨平台兼容性
   
-  enum TimeSource {
-    SystemClock
-    HighResolutionTimer
-    MonotonicClock
-    RealtimeClock
-  }
+  // 1. 基本LogRecord兼容性
+  let basic_log = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    .body("Basic platform compatibility test")
+    .build()
   
-  struct TimeConfig {
-    platform : Platform
-    supported_time_sources : Array<TimeSource>
-    resolution_ns : Int64
-    timezone_database_available : Bool
-    daylight_saving_supported : Bool
-  }
+  assert_eq(basic_log.severity_number, SeverityNumber::Info)
+  assert_eq(basic_log.body.unwrap_or(""), "Basic platform compatibility test")
   
-  let time_configs = [
-    {
-      platform: Windows,
-      supported_time_sources: [SystemClock, HighResolutionTimer, RealtimeClock],
-      resolution_ns: 100000L,  // 100微秒
-      timezone_database_available: true,
-      daylight_saving_supported: true
-    },
-    {
-      platform: Linux,
-      supported_time_sources: [SystemClock, HighResolutionTimer, MonotonicClock, RealtimeClock],
-      resolution_ns: 1L,  // 1纳秒
-      timezone_database_available: true,
-      daylight_saving_supported: true
-    },
-    {
-      platform: MacOS,
-      supported_time_sources: [SystemClock, HighResolutionTimer, MonotonicClock, RealtimeClock],
-      resolution_ns: 1L,  // 1纳秒
-      timezone_database_available: true,
-      daylight_saving_supported: true
-    },
-    {
-      platform: Wasm,
-      supported_time_sources: [SystemClock, HighResolutionTimer],
-      resolution_ns: 1000000L,  // 1毫秒
-      timezone_database_available: false,  // 依赖浏览器
-      daylight_saving_supported: false
-    }
-  ]
+  // 2. 特殊字符LogRecord兼容性
+  let special_log = LogRecord::builder()
+    .severity(SeverityNumber::Error)
+    .body("Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?")
+    .severity_text("ERROR!@#$%")
+    .with_attribute("special.key", AttributeValue::string("special!@#$%^&*()"))
+    .with_attribute("unicode.key", AttributeValue::string("Unicode: 你好世界 🌍"))
+    .with_attribute("empty.key", AttributeValue::string(""))
+    .with_attribute("null.key", AttributeValue::string("null"))
+    .build()
   
-  // 测试时间戳格式转换
-  let format_timestamp = fn(timestamp : Int64, format : String, config : TimeConfig) : String {
-    match format {
-      "iso8601" => {
-        // 简化的ISO8601格式
-        let seconds = timestamp / 1000000000L
-        let nanos = timestamp % 1000000000L
-        seconds.to_string() + "." + (@sprintf("%09d", nanos.to_int())) + "Z"
-      }
-      "unix" => timestamp.to_string()
-      "rfc3339" => {
-        // 简化的RFC3339格式
-        let seconds = timestamp / 1000000000L
-        seconds.to_string() + "Z"
-      }
-      _ => timestamp.to_string()
-    }
-  }
+  assert_eq(special_log.severity_number, SeverityNumber::Error)
+  assert_eq(special_log.severity_text.unwrap_or(""), "ERROR!@#$%")
+  assert_eq(special_log.body.unwrap_or("").contains("!@#$%^&*()"), true)
+  assert_eq(special_log.attributes.length(), 4)
   
-  // 测试时区转换
-  let convert_timezone = fn(timestamp : Int64, from_tz : String, to_tz : String, 
-                            config : TimeConfig) : Int64 {
-    if !config.timezone_database_available {
-      // 如果没有时区数据库，返回原始时间戳
-      timestamp
-    } else {
-      // 简化的时区转换逻辑
-      let offset_hours = match (from_tz, to_tz) {
-        ("UTC", "America/New_York") => -5
-        ("UTC", "Europe/London") => 0
-        ("UTC", "Asia/Tokyo") => 9
-        ("America/New_York", "UTC") => 5
-        ("Europe/London", "UTC") => 0
-        ("Asia/Tokyo", "UTC") => -9
-        _ => 0
-      }
-      
-      timestamp + (offset_hours * 3600 * 1000000000L)
-    }
-  }
+  // 3. 极值LogRecord兼容性
+  let extreme_log = LogRecord::builder()
+    .severity(SeverityNumber::Fatal)
+    .body("")
+    .severity_text("")
+    .with_attribute("max.int", AttributeValue::int(9223372036854775807L))
+    .with_attribute("min.int", AttributeValue::int(-9223372036854775808L))
+    .with_attribute("max.float", AttributeValue::float(1.7976931348623157e+308))
+    .with_attribute("min.float", AttributeValue::float(-1.7976931348623157e+308))
+    .with_attribute("nan.float", AttributeValue::float(0.0/0.0))
+    .with_attribute("infinity.float", AttributeValue::float(1.0/0.0))
+    .build()
   
-  // 验证时间配置和操作
-  for config in time_configs {
-    // 验证基本配置
-    assert_eq(config.resolution_ns > 0, true)
-    assert_eq(config.supported_time_sources.length() > 0, true)
-    
-    // 测试时间戳格式化
-    let test_timestamp = 1609459200000000000L  // 2021-01-01 00:00:00 UTC
-    let iso8601_format = format_timestamp(test_timestamp, "iso8601", config)
-    let unix_format = format_timestamp(test_timestamp, "unix", config)
-    let rfc3339_format = format_timestamp(test_timestamp, "rfc3339", config)
-    
-    assert_eq(iso8601_format.contains("1609459200"), true)
-    assert_eq(iso8601_format.contains("Z"), true)
-    assert_eq(unix_format, "1609459200000000000")
-    assert_eq(rfc3339_format.contains("1609459200"), true)
-    assert_eq(rfc3339_format.contains("Z"), true)
-    
-    // 测试时区转换
-    if config.timezone_database_available {
-      let utc_timestamp = test_timestamp
-      let ny_timestamp = convert_timezone(utc_timestamp, "UTC", "America/New_York", config)
-      let tokyo_timestamp = convert_timezone(utc_timestamp, "UTC", "Asia/Tokyo", config)
-      
-      assert_eq(ny_timestamp, utc_timestamp - (5 * 3600 * 1000000000L))
-      assert_eq(tokyo_timestamp, utc_timestamp + (9 * 3600 * 1000000000L))
-    }
-    
-    // 测试平台特定的时间特性
-    match config.platform {
-      Wasm => {
-        assert_eq(config.resolution_ns >= 1000000L, true)  // 至少1毫秒精度
-        assert_eq(config.timezone_database_available, false)
-      }
-      Linux | MacOS => {
-        assert_eq(config.resolution_ns <= 1000L, true)  // 至少1微秒精度
-        assert_eq(config.supported_time_sources.contains(MonotonicClock), true)
-      }
-      Windows => {
-        assert_eq(config.supported_time_sources.contains(HighResolutionTimer), true)
-        assert_eq(config.supported_time_sources.contains(MonotonicClock), false)
-      }
-      _ => ()
-    }
-  }
+  assert_eq(extreme_log.severity_number, SeverityNumber::Fatal)
+  assert_eq(extreme_log.body.unwrap_or(""), "")
+  assert_eq(extreme_log.severity_text.unwrap_or(""), "")
+  assert_eq(extreme_log.attributes.length(), 6)
 }
 
-test "cross_platform_memory_management" {
-  // 测试跨平台内存管理
+test "platform_compatibility_metrics" {
+  // 测试Metrics的跨平台兼容性
   
-  enum MemoryType {
-    Heap
-    Stack
-    Mapped
-    Shared
-  }
+  // 1. 基本Metrics兼容性
+  let meter = NoopMeter::{}
+  let counter = meter.create_counter("platform.counter", "count", "Platform counter")
+  let histogram = meter.create_histogram("platform.histogram", "ms", "Platform histogram")
+  let gauge = meter.create_gauge("platform.gauge", "units", "Platform gauge")
   
-  struct MemoryConfig {
-    platform : Platform
-    total_memory_mb : Int64
-    available_memory_mb : Int64
-    page_size_bytes : Int
-    max_heap_size_mb : Int64
-    supports_shared_memory : Bool
-    supports_memory_mapping : Bool
-  }
+  // 2. 特殊字符Metrics兼容性
+  let special_counter = meter.create_counter("special!@#$%^&*()", "count", "Special counter")
+  let unicode_histogram = meter.create_histogram("Unicode直方图📊", "ms", "Unicode histogram")
+  let empty_gauge = meter.create_gauge("", "", "Empty gauge")
   
-  let memory_configs = [
-    {
-      platform: Windows,
-      total_memory_mb: 16384L,    // 16GB
-      available_memory_mb: 8192L, // 8GB
-      page_size_bytes: 4096,
-      max_heap_size_mb: 2048L,
-      supports_shared_memory: true,
-      supports_memory_mapping: true
-    },
-    {
-      platform: Linux,
-      total_memory_mb: 32768L,    // 32GB
-      available_memory_mb: 16384L, // 16GB
-      page_size_bytes: 4096,
-      max_heap_size_mb: 4096L,
-      supports_shared_memory: true,
-      supports_memory_mapping: true
-    },
-    {
-      platform: MacOS,
-      total_memory_mb: 16384L,    // 16GB
-      available_memory_mb: 8192L, // 8GB
-      page_size_bytes: 4096,
-      max_heap_size_mb: 2048L,
-      supports_shared_memory: true,
-      supports_memory_mapping: true
-    },
-    {
-      platform: Wasm,
-      total_memory_mb: 4096L,     // 4GB (浏览器限制)
-      available_memory_mb: 2048L, // 2GB
-      page_size_bytes: 65536,     // 64KB pages
-      max_heap_size_mb: 1024L,
-      supports_shared_memory: false,
-      supports_memory_mapping: false
-    }
-  ]
+  // 3. 带特殊属性的Metrics操作兼容性
+  counter.add(1L, [
+    ("special.key", AttributeValue::string("special!@#$%^&*()")),
+    ("unicode.key", AttributeValue::string("Unicode值 🌍")),
+    ("empty.key", AttributeValue::string("")),
+    ("max.int", AttributeValue::int(9223372036854775807L)),
+    ("min.int", AttributeValue::int(-9223372036854775808L)),
+    ("max.float", AttributeValue::float(1.7976931348623157e+308)),
+    ("min.float", AttributeValue::float(-1.7976931348623157e+308)),
+    ("nan.float", AttributeValue::float(0.0/0.0)),
+    ("infinity.float", AttributeValue::float(1.0/0.0)),
+    ("bool.true", AttributeValue::bool(true)),
+    ("bool.false", AttributeValue::bool(false))
+  ])
   
-  // 测试内存分配策略
-  let calculate_allocation_strategy = fn(requested_size : Int, config : MemoryConfig) : MemoryType {
-    if requested_size < 1024 {  // 小于1KB，使用栈
-      Stack
-    } else if requested_size < 1024 * 1024 {  // 小于1MB，使用堆
-      Heap
-    } else if config.supports_memory_mapping && requested_size > 10 * 1024 * 1024 {  // 大于10MB，使用内存映射
-      Mapped
-    } else {
-      Heap
-    }
-  }
+  histogram.record(3.14159265359, [
+    ("unicode.attribute", AttributeValue::string("Unicode属性 📏")),
+    ("special.attribute", AttributeValue::string("special!@#$%^&*()"))
+  ])
   
-  // 测试内存限制检查
-  let check_memory_limits = fn(allocation_size_mb : Int64, config : MemoryConfig) : Bool {
-    allocation_size_mb <= config.max_heap_size_mb && 
-    allocation_size_mb <= config.available_memory_mb / 2  // 保留一半内存给系统
-  }
+  gauge.record(42.0, [
+    ("array.string", AttributeValue::array_string(["a", "b", "c"])),
+    ("array.int", AttributeValue::array_int([1L, 2L, 3L])),
+    ("array.float", AttributeValue::array_float([1.1, 2.2, 3.3])),
+    ("array.bool", AttributeValue::array_bool([true, false, true]))
+  ])
   
-  // 验证内存配置和操作
-  for config in memory_configs {
-    // 验证基本配置
-    assert_eq(config.total_memory_mb > 0, true)
-    assert_eq(config.available_memory_mb > 0, true)
-    assert_eq(config.available_memory_mb <= config.total_memory_mb, true)
-    assert_eq(config.page_size_bytes > 0, true)
-    assert_eq(config.max_heap_size_mb > 0, true)
-    
-    // 测试分配策略
-    let small_allocation = calculate_allocation_strategy(512, config)
-    let medium_allocation = calculate_allocation_strategy(2048, config)
-    let large_allocation = calculate_allocation_strategy(20 * 1024 * 1024, config)
-    
-    assert_eq(small_allocation, Stack)
-    assert_eq(medium_allocation, Heap)
-    
-    if config.supports_memory_mapping {
-      assert_eq(large_allocation, Mapped)
-    } else {
-      assert_eq(large_allocation, Heap)
-    }
-    
-    // 测试内存限制
-    let reasonable_allocation = check_memory_limits(512, config)
-    let excessive_allocation = check_memory_limits(config.max_heap_size_mb + 1, config)
-    
-    assert_eq(reasonable_allocation, true)
-    assert_eq(excessive_allocation, false)
-    
-    // 测试平台特定的内存特性
-    match config.platform {
-      Wasm => {
-        assert_eq(config.supports_shared_memory, false)
-        assert_eq(config.supports_memory_mapping, false)
-        assert_eq(config.page_size_bytes >= 65536, true)  // WebAssembly使用大页面
-      }
-      Linux => {
-        assert_eq(config.supports_shared_memory, true)
-        assert_eq(config.supports_memory_mapping, true)
-      }
-      Windows => {
-        assert_eq(config.supports_shared_memory, true)
-        assert_eq(config.supports_memory_mapping, true)
-      }
-      _ => ()
-    }
-  }
+  // 验证操作不会导致错误
+  assert_eq(true, true)
 }
 
-test "cross_platform_error_handling" {
-  // 测试跨平台错误处理
+test "platform_compatibility_spans" {
+  // 测试Span的跨平台兼容性
   
-  enum ErrorType {
-    NetworkError
-    FileSystemError
-    MemoryError
-    PermissionError
-    TimeoutError
-    PlatformError
+  // 1. 基本Span兼容性
+  let tracer = NoopTracer::{}
+  let context = Context::empty()
+  
+  let (ctx1, span1) = tracer.start_span(
+    context,
+    "platform-span",
+    Some(SpanKind::Internal),
+    [("platform.test", AttributeValue::bool(true))]
+  )
+  
+  // 2. 特殊字符Span兼容性
+  let (ctx2, span2) = tracer.start_span(
+    ctx1,
+    "special!@#$%^&*()_+-=[]{}|;':\",./<>?",
+    Some(SpanKind::Server),
+    [("special.name", AttributeValue::string("special!@#$%^&*()"))]
+  )
+  
+  // 3. Unicode Span兼容性
+  let (ctx3, span3) = tracer.start_span(
+    ctx2,
+    "Unicode测试Span 🎯",
+    Some(SpanKind::Client),
+    [("unicode.name", AttributeValue::string("Unicode值 🌍"))]
+  )
+  
+  // 4. 空和边界Span兼容性
+  let (ctx4, span4) = tracer.start_span(
+    ctx3,
+    "",
+    Some(SpanKind::Producer),
+    [("empty.name", AttributeValue::string(""))]
+  )
+  
+  // 验证所有Span都正确创建
+  assert_eq(span1.name, "platform-span")
+  assert_eq(span1.kind, SpanKind::Internal)
+  assert_eq(span1.attributes.length(), 1)
+  
+  assert_eq(span2.name, "special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  assert_eq(span2.kind, SpanKind::Server)
+  assert_eq(span2.attributes.length(), 1)
+  
+  assert_eq(span3.name, "Unicode测试Span 🎯")
+  assert_eq(span3.kind, SpanKind::Client)
+  assert_eq(span3.attributes.length(), 1)
+  
+  assert_eq(span4.name, "")
+  assert_eq(span4.kind, SpanKind::Producer)
+  assert_eq(span4.attributes.length(), 1)
+}
+
+test "platform_compatibility_propagation" {
+  // 测试传播的跨平台兼容性
+  
+  // 1. 基本传播兼容性
+  let propagator = W3CTraceContextPropagator::{}
+  let context = Context::empty()
+  let carrier = MapCarrier::new()
+  
+  propagator.inject(context, carrier)
+  let extracted_context = propagator.extract(Context::empty(), carrier)
+  
+  // 2. 特殊字符传播兼容性
+  let special_key = create_key("special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  let special_context = context.with_value(special_key, "special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  
+  let special_carrier = MapCarrier::new()
+  propagator.inject(special_context, special_carrier)
+  let special_extracted_context = propagator.extract(Context::empty(), special_carrier)
+  
+  // 3. Unicode传播兼容性
+  let unicode_key = create_key("Unicode传播键🔑")
+  let unicode_context = context.with_value(unicode_key, "Unicode传播值 📡")
+  
+  let unicode_carrier = MapCarrier::new()
+  propagator.inject(unicode_context, unicode_carrier)
+  let unicode_extracted_context = propagator.extract(Context::empty(), unicode_carrier)
+  
+  // 4. 长值传播兼容性
+  let long_key = create_key("long.key")
+  let long_value = "a" * 10000
+  let long_context = context.with_value(long_key, long_value)
+  
+  let long_carrier = MapCarrier::new()
+  propagator.inject(long_context, long_carrier)
+  let long_extracted_context = propagator.extract(Context::empty(), long_carrier)
+  
+  // 验证传播操作不会导致错误
+  assert_eq(true, true)
+}
+
+test "platform_compatibility_endianness" {
+  // 测试字节序兼容性
+  
+  // 1. SpanContext字节序兼容性
+  let trace_id = Array::make(16, 0_byte)
+  let span_id = Array::make(8, 0_byte)
+  
+  // 设置特定字节值测试字节序
+  let mut i = 0
+  while i < trace_id.length() {
+    trace_id[i] = (i % 256).to_byte()
+    i = i + 1
   }
   
-  struct PlatformError {
-    error_type : ErrorType
-    platform_code : Int
-    message : String
-    is_recoverable : Bool
-    suggested_action : String
+  let mut j = 0
+  while j < span_id.length() {
+    span_id[j] = (j % 256).to_byte()
+    j = j + 1
   }
   
-  struct ErrorHandlingConfig {
-    platform : Platform
-    error_codes : Array<(ErrorType, Int)>
-    default_retry_attempts : Int
-    supports_error_dialogs : Bool
-    logging_mechanism : String
+  let span_context = SpanContext::{
+    trace_id: trace_id,
+    span_id: span_id,
+    trace_flags: 255_byte,
+    trace_state: "key1=value1,key2=value2"
   }
   
-  let error_configs = [
-    {
-      platform: Windows,
-      error_codes: [
-        (NetworkError, 10060),    // Connection timed out
-        (FileSystemError, 2),     // File not found
-        (MemoryError, 8),         // Not enough memory
-        (PermissionError, 5),     // Access denied
-        (TimeoutError, 258)       // Wait timeout
-      ],
-      default_retry_attempts: 3,
-      supports_error_dialogs: true,
-      logging_mechanism: "event_log"
-    },
-    {
-      platform: Linux,
-      error_codes: [
-        (NetworkError, 110),      // Connection timed out
-        (FileSystemError, 2),     // No such file or directory
-        (MemoryError, 12),        // Not enough memory
-        (PermissionError, 13),    // Permission denied
-        (TimeoutError, 62)        // Timer expired
-      ],
-      default_retry_attempts: 5,
-      supports_error_dialogs: false,
-      logging_mechanism: "syslog"
-    },
-    {
-      platform: MacOS,
-      error_codes: [
-        (NetworkError, 60),       // Operation timed out
-        (FileSystemError, 2),     // No such file or directory
-        (MemoryError, 3),         // Not enough memory
-        (PermissionError, 13),    // Permission denied
-        (TimeoutError, 78)        // Connection timed out
-      ],
-      default_retry_attempts: 4,
-      supports_error_dialogs: true,
-      logging_mechanism: "asl"  // Apple System Log
-    },
-    {
-      platform: Wasm,
-      error_codes: [
-        (NetworkError, 0),       // Network errors in JavaScript
-        (FileSystemError, 0),    // Sandboxed file system
-        (MemoryError, 0),        // Out of memory
-        (PermissionError, 0),    // Security restrictions
-        (TimeoutError, 0)        // Timeout
-      ],
-      default_retry_attempts: 2,
-      supports_error_dialogs: false,
-      logging_mechanism: "console"
-    }
-  ]
+  // 验证字节序兼容性
+  assert_eq(span_context.trace_id.length(), 16)
+  assert_eq(span_context.span_id.length(), 8)
+  assert_eq(span_context.trace_flags, 255_byte)
+  assert_eq(span_context.trace_state.length() > 0, true)
   
-  // 测试错误映射
-  let map_platform_error = fn(platform_code : Int, config : ErrorHandlingConfig) : PlatformError {
-    // 查找错误类型
-    let mut error_type = PlatformError
-    for (etype, code) in config.error_codes {
-      if code == platform_code {
-        error_type = etype
-        break
-      }
-    }
-    
-    // 生成平台特定的错误信息
-    let message = match (config.platform, error_type) {
-      (Windows, NetworkError) => "WinSock error: " + platform_code.to_string()
-      (Linux, NetworkError) => "POSIX network error: " + platform_code.to_string()
-      (MacOS, NetworkError) => "Darwin network error: " + platform_code.to_string()
-      (Wasm, NetworkError) => "JavaScript network error"
-      (Windows, FileSystemError) => "Windows file system error: " + platform_code.to_string()
-      (Linux, FileSystemError) => "POSIX file system error: " + platform_code.to_string()
-      (MacOS, FileSystemError) => "Darwin file system error: " + platform_code.to_string()
-      (Wasm, FileSystemError) => "Browser file system error"
-      _ => "Platform error: " + platform_code.to_string()
-    }
-    
-    // 确定是否可恢复
-    let is_recoverable = match error_type {
-      NetworkError | TimeoutError => true
-      FileSystemError | MemoryError | PermissionError => false
-      PlatformError => true
-    }
-    
-    // 建议操作
-    let suggested_action = match error_type {
-      NetworkError => "Check network connection and retry"
-      FileSystemError => "Verify file path and permissions"
-      MemoryError => "Free up memory and reduce allocation size"
-      PermissionError => "Run with appropriate privileges"
-      TimeoutError => "Increase timeout or retry operation"
-      PlatformError => "Check platform-specific requirements"
-    }
-    
-    {
-      error_type: error_type,
-      platform_code: platform_code,
-      message: message,
-      is_recoverable: is_recoverable,
-      suggested_action: suggested_action
-    }
+  // 2. 验证字节值
+  let mut k = 0
+  while k < trace_id.length() {
+    assert_eq(span_context.trace_id[k], (k % 256).to_byte())
+    k = k + 1
   }
   
-  // 验证错误处理配置和操作
-  for config in error_configs {
-    // 验证基本配置
-    assert_eq(config.error_codes.length() > 0, true)
-    assert_eq(config.default_retry_attempts > 0, true)
-    assert_eq(config.logging_mechanism.length() > 0, true)
-    
-    // 测试错误映射
-    for (error_type, code) in config.error_codes {
-      let platform_error = map_platform_error(code, config)
-      
-      assert_eq(platform_error.error_type, error_type)
-      assert_eq(platform_error.platform_code, code)
-      assert_eq(platform_error.message.length() > 0, true)
-      assert_eq(platform_error.suggested_action.length() > 0, true)
-      
-      // 验证可恢复性判断
-      let expected_recoverable = match error_type {
-        NetworkError | TimeoutError => true
-        FileSystemError | MemoryError | PermissionError => false
-        PlatformError => true
-      }
-      assert_eq(platform_error.is_recoverable, expected_recoverable)
-    }
-    
-    // 测试平台特定的错误处理特性
-    match config.platform {
-      Windows => {
-        assert_eq(config.supports_error_dialogs, true)
-        assert_eq(config.logging_mechanism, "event_log")
-      }
-      Linux => {
-        assert_eq(config.supports_error_dialogs, false)
-        assert_eq(config.logging_mechanism, "syslog")
-      }
-      MacOS => {
-        assert_eq(config.supports_error_dialogs, true)
-        assert_eq(config.logging_mechanism, "asl")
-      }
-      Wasm => {
-        assert_eq(config.supports_error_dialogs, false)
-        assert_eq(config.logging_mechanism, "console")
-        assert_eq(config.default_retry_attempts <= 3, true)  // 浏览器环境限制重试
-      }
-      _ => ()
-    }
+  let mut l = 0
+  while l < span_id.length() {
+    assert_eq(span_context.span_id[l], (l % 256).to_byte())
+    l = l + 1
   }
 }

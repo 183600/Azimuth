@@ -16,10 +16,10 @@ test "metrics_counter_instrument_operations" {
   
   // 测试Counter的add操作（No-op实现不会实际计数）
   counter.add(1L)
-  counter.add(5L, [("http.method", common::AttributeValue::string("GET"))])
+  counter.add(5L, [("http.method", AttributeValue::string("GET"))])
   counter.add(3L, [
-    ("http.method", common::AttributeValue::string("POST")),
-    ("http.status_code", common::AttributeValue::int(200L))
+    ("http.method", AttributeValue::string("POST")),
+    ("http.status_code", AttributeValue::int(200L))
   ])
   
   // 创建另一个Counter用于边界测试
@@ -61,14 +61,14 @@ test "metrics_histogram_instrument_operations" {
   
   // 带属性的记录
   response_time_histogram.record(0.15, [
-    ("http.method", common::AttributeValue::string("GET")),
-    ("http.endpoint", common::AttributeValue::string("/api/users"))
+    ("http.method", AttributeValue::string("GET")),
+    ("http.endpoint", AttributeValue::string("/api/users"))
   ])
   
   response_time_histogram.record(1.2, [
-    ("http.method", common::AttributeValue::string("POST")),
-    ("http.endpoint", common::AttributeValue::string("/api/orders")),
-    ("database.query", common::AttributeValue::string("INSERT"))
+    ("http.method", AttributeValue::string("POST")),
+    ("http.endpoint", AttributeValue::string("/api/orders")),
+    ("database.query", AttributeValue::string("INSERT"))
   ])
   
   // 创建另一个Histogram用于不同场景
@@ -108,10 +108,10 @@ test "metrics_up_down_counter_instrument_operations" {
   // 测试UpDownCounter的add操作（支持正负值）
   active_connections.add(10L)  // 增加10个连接
   active_connections.add(5L, [
-    ("connection.type", common::AttributeValue::string("websocket"))
+    ("connection.type", AttributeValue::string("websocket"))
   ])
   active_connections.add(-3L, [
-    ("connection.type", common::AttributeValue::string("http"))
+    ("connection.type", AttributeValue::string("http"))
   ])
   active_connections.add(-2L)  // 减少2个连接
   
@@ -129,15 +129,15 @@ test "metrics_up_down_counter_instrument_operations" {
   
   // 测试复杂的属性场景
   queue_length.add(100L, [
-    ("queue.name", common::AttributeValue::string("priority")),
-    ("priority.level", common::AttributeValue::int(1L)),
-    ("processing.required", common::AttributeValue::bool(true))
+    ("queue.name", AttributeValue::string("priority")),
+    ("priority.level", AttributeValue::int(1L)),
+    ("processing.required", AttributeValue::bool(true))
   ])
   
   queue_length.add(-50L, [
-    ("queue.name", common::AttributeValue::string("bulk")),
-    ("priority.level", common::AttributeValue::int(5L)),
-    ("processing.required", common::AttributeValue::bool(false))
+    ("queue.name", AttributeValue::string("bulk")),
+    ("priority.level", AttributeValue::int(5L)),
+    ("processing.required", AttributeValue::bool(false))
   ])
   
   // 验证UpDownCounter类型
@@ -166,13 +166,13 @@ test "metrics_gauge_instrument_operations" {
   
   // 带属性的记录
   cpu_usage.record(65.3, [
-    ("cpu.core", common::AttributeValue::int(0L)),
-    ("process.name", common::AttributeValue::string("web-server"))
+    ("cpu.core", AttributeValue::int(0L)),
+    ("process.name", AttributeValue::string("web-server"))
   ])
   
   cpu_usage.record(23.7, [
-    ("cpu.core", common::AttributeValue::int(1L)),
-    ("process.name", common::AttributeValue::string("database"))
+    ("cpu.core", AttributeValue::int(1L)),
+    ("process.name", AttributeValue::string("database"))
   ])
   
   // 创建另一个Gauge用于温度监控
@@ -237,16 +237,16 @@ test "metrics_meter_multiple_instruments_creation" {
   
   // 测试所有instruments的操作
   request_counter.add(1L)
-  request_counter.add(1L, [("endpoint", common::AttributeValue::string("/api/data"))])
+  request_counter.add(1L, [("endpoint", AttributeValue::string("/api/data"))])
   
   response_time.record(0.1)
-  response_time.record(0.25, [("endpoint", common::AttributeValue::string("/api/data"))])
+  response_time.record(0.25, [("endpoint", AttributeValue::string("/api/data"))])
   
   active_sessions.add(5L)
-  active_sessions.add(-2L, [("user.type", common::AttributeValue::string("premium"))])
+  active_sessions.add(-2L, [("user.type", AttributeValue::string("premium"))])
   
   memory_usage.record(1024.0 * 1024.0 * 100.0)  // 100MB
-  memory_usage.record(1024.0 * 1024.0 * 150.0, [("process.type", common::AttributeValue::string("worker"))])
+  memory_usage.record(1024.0 * 1024.0 * 150.0, [("process.type", AttributeValue::string("worker"))])
   
   // 验证所有instrument类型都能正常创建和操作
   assert_eq(true, true)
@@ -264,29 +264,29 @@ test "metrics_measurement_struct_operations" {
   let complex_measurement = metrics::Measurement::{
     value: 123.456,
     attributes: [
-      ("service.name", common::AttributeValue::string("api-service")),
-      ("service.version", common::AttributeValue::string("1.2.3")),
-      ("deployment.environment", common::AttributeValue::string("production")),
-      ("instance.id", common::AttributeValue::string("i-1234567890abcdef0")),
-      ("availability.zone", common::AttributeValue::string("us-west-2a"))
+      ("service.name", AttributeValue::string("api-service")),
+      ("service.version", AttributeValue::string("1.2.3")),
+      ("deployment.environment", AttributeValue::string("production")),
+      ("instance.id", AttributeValue::string("i-1234567890abcdef0")),
+      ("availability.zone", AttributeValue::string("us-west-2a"))
     ]
   }
   
   let boolean_measurement = metrics::Measurement::{
     value: 1.0,  // 将布尔值转换为数值
     attributes: [
-      ("healthy", common::AttributeValue::bool(true)),
-      ("ready", common::AttributeValue::bool(false))
+      ("healthy", AttributeValue::bool(true)),
+      ("ready", AttributeValue::bool(false))
     ]
   }
   
   let array_measurement = metrics::Measurement::{
     value: 100.0,
     attributes: [
-      ("tags", common::AttributeValue::array_string(["web", "api", "public"])),
-      ("ports", common::AttributeValue::array_int([80L, 443L, 8080L])),
-      ("thresholds", common::AttributeValue::array_float([0.5, 0.9, 0.99])),
-      ("flags", common::AttributeValue::array_bool([true, false, true]))
+      ("tags", AttributeValue::array_string(["web", "api", "public"])),
+      ("ports", AttributeValue::array_int([80L, 443L, 8080L])),
+      ("thresholds", AttributeValue::array_float([0.5, 0.9, 0.99])),
+      ("flags", AttributeValue::array_bool([true, false, true]))
     ]
   }
   
@@ -299,7 +299,7 @@ test "metrics_measurement_struct_operations" {
   assert_eq(complex_measurement.attributes.length(), 5)
   assert_eq(complex_measurement.attributes[0].0, "service.name")
   match complex_measurement.attributes[0].1 {
-    common::StringValue(name) => assert_eq(name, "api-service")
+    StringValue(name) => assert_eq(name, "api-service")
     _ => assert_eq(false, true)
   }
   
@@ -308,7 +308,7 @@ test "metrics_measurement_struct_operations" {
   assert_eq(boolean_measurement.attributes.length(), 2)
   assert_eq(boolean_measurement.attributes[0].0, "healthy")
   match boolean_measurement.attributes[0].1 {
-    common::BoolValue(healthy) => assert_eq(healthy, true)
+    BoolValue(healthy) => assert_eq(healthy, true)
     _ => assert_eq(false, true)
   }
   
@@ -317,7 +317,7 @@ test "metrics_measurement_struct_operations" {
   assert_eq(array_measurement.attributes.length(), 4)
   
   match array_measurement.attributes[0].1 {
-    common::ArrayStringValue(tags) => {
+    ArrayStringValue(tags) => {
       assert_eq(tags.length(), 3)
       assert_eq(tags[0], "web")
       assert_eq(tags[1], "api")
@@ -327,7 +327,7 @@ test "metrics_measurement_struct_operations" {
   }
   
   match array_measurement.attributes[1].1 {
-    common::ArrayIntValue(ports) => {
+    ArrayIntValue(ports) => {
       assert_eq(ports.length(), 3)
       assert_eq(ports[0], 80L)
       assert_eq(ports[1], 443L)

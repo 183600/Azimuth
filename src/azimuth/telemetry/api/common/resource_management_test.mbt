@@ -50,9 +50,9 @@ test "resource_with_explicit_attributes" {
     telemetry_sdk_name: "azimuth",
     telemetry_sdk_version: "0.1.0",
     attributes: [
-      ("deployment.environment", common::AttributeValue::string("production")),
-      ("service.instance.id", common::AttributeValue::string("i-1234567890abcdef0")),
-      ("availability.zone", common::AttributeValue::string("us-west-2a"))
+      ("deployment.environment", AttributeValue::string("production")),
+      ("service.instance.id", AttributeValue::string("i-1234567890abcdef0")),
+      ("availability.zone", AttributeValue::string("us-west-2a"))
     ]
   }
   
@@ -69,19 +69,19 @@ test "resource_with_explicit_attributes" {
   // 验证每个属性
   assert_eq(resource_with_attrs.attributes[0].0, "deployment.environment")
   match resource_with_attrs.attributes[0].1 {
-    common::StringValue(env) => assert_eq(env, "production")
+    StringValue(env) => assert_eq(env, "production")
     _ => assert_eq(false, true)
   }
   
   assert_eq(resource_with_attrs.attributes[1].0, "service.instance.id")
   match resource_with_attrs.attributes[1].1 {
-    common::StringValue(instance_id) => assert_eq(instance_id, "i-1234567890abcdef0")
+    StringValue(instance_id) => assert_eq(instance_id, "i-1234567890abcdef0")
     _ => assert_eq(false, true)
   }
   
   assert_eq(resource_with_attrs.attributes[2].0, "availability.zone")
   match resource_with_attrs.attributes[2].1 {
-    common::StringValue(zone) => assert_eq(zone, "us-west-2a")
+    StringValue(zone) => assert_eq(zone, "us-west-2a")
     _ => assert_eq(false, true)
   }
 }
@@ -97,35 +97,35 @@ test "resource_attribute_types_comprehensive" {
     telemetry_sdk_version: "0.1.0",
     attributes: [
       // 字符串属性
-      ("service.namespace", common::AttributeValue::string("backend")),
-      ("host.name", common::AttributeValue::string("web-server-01")),
+      ("service.namespace", AttributeValue::string("backend")),
+      ("host.name", AttributeValue::string("web-server-01")),
       
       // 整数属性
-      ("process.pid", common::AttributeValue::int(12345L)),
-      ("process.start_time", common::AttributeValue::int(1640995200L)),
+      ("process.pid", AttributeValue::int(12345L)),
+      ("process.start_time", AttributeValue::int(1640995200L)),
       
       // 浮点属性
-      ("cpu.count", common::AttributeValue::float(4.0)),
-      ("memory.total", common::AttributeValue::float(8589934592.0)),
+      ("cpu.count", AttributeValue::float(4.0)),
+      ("memory.total", AttributeValue::float(8589934592.0)),
       
       // 布尔属性
-      ("service.healthy", common::AttributeValue::bool(true)),
-      ("maintenance.mode", common::AttributeValue::bool(false)),
+      ("service.healthy", AttributeValue::bool(true)),
+      ("maintenance.mode", AttributeValue::bool(false)),
       
       // 字符串数组属性
-      ("service.tags", common::AttributeValue::array_string(["web", "api", "public"])),
-      ("endpoints", common::AttributeValue::array_string(["/health", "/metrics", "/api"])),
+      ("service.tags", AttributeValue::array_string(["web", "api", "public"])),
+      ("endpoints", AttributeValue::array_string(["/health", "/metrics", "/api"])),
       
       // 整数数组属性
-      ("ports", common::AttributeValue::array_int([80L, 443L, 8080L])),
-      ("worker.threads", common::AttributeValue::array_int([1L, 2L, 4L, 8L])),
+      ("ports", AttributeValue::array_int([80L, 443L, 8080L])),
+      ("worker.threads", AttributeValue::array_int([1L, 2L, 4L, 8L])),
       
       // 浮点数组属性
-      ("cpu.thresholds", common::AttributeValue::array_float([0.5, 0.8, 0.9])),
-      ("memory.thresholds", common::AttributeValue::array_float([0.6, 0.85, 0.95])),
+      ("cpu.thresholds", AttributeValue::array_float([0.5, 0.8, 0.9])),
+      ("memory.thresholds", AttributeValue::array_float([0.6, 0.85, 0.95])),
       
       // 布尔数组属性
-      ("feature.flags", common::AttributeValue::array_bool([true, false, true]))
+      ("feature.flags", AttributeValue::array_bool([true, false, true]))
     ]
   }
   
@@ -134,31 +134,31 @@ test "resource_attribute_types_comprehensive" {
   
   // 验证字符串属性
   match comprehensive_resource.attributes[0].1 {
-    common::StringValue(namespace) => assert_eq(namespace, "backend")
+    StringValue(namespace) => assert_eq(namespace, "backend")
     _ => assert_eq(false, true)
   }
   
   // 验证整数属性
   match comprehensive_resource.attributes[2].1 {
-    common::IntValue(pid) => assert_eq(pid, 12345L)
+    IntValue(pid) => assert_eq(pid, 12345L)
     _ => assert_eq(false, true)
   }
   
   // 验证浮点属性
   match comprehensive_resource.attributes[4].1 {
-    common::FloatValue(cpu_count) => assert_eq(cpu_count, 4.0)
+    FloatValue(cpu_count) => assert_eq(cpu_count, 4.0)
     _ => assert_eq(false, true)
   }
   
   // 验证布尔属性
   match comprehensive_resource.attributes[6].1 {
-    common::BoolValue(healthy) => assert_eq(healthy, true)
+    BoolValue(healthy) => assert_eq(healthy, true)
     _ => assert_eq(false, true)
   }
   
   // 验证字符串数组属性
   match comprehensive_resource.attributes[8].1 {
-    common::ArrayStringValue(tags) => {
+    ArrayStringValue(tags) => {
       assert_eq(tags.length(), 3)
       assert_eq(tags[0], "web")
       assert_eq(tags[1], "api")
@@ -169,7 +169,7 @@ test "resource_attribute_types_comprehensive" {
   
   // 验证整数数组属性
   match comprehensive_resource.attributes[10].1 {
-    common::ArrayIntValue(ports) => {
+    ArrayIntValue(ports) => {
       assert_eq(ports.length(), 3)
       assert_eq(ports[0], 80L)
       assert_eq(ports[1], 443L)
@@ -180,7 +180,7 @@ test "resource_attribute_types_comprehensive" {
   
   // 验证浮点数组属性
   match comprehensive_resource.attributes[12].1 {
-    common::ArrayFloatValue(thresholds) => {
+    ArrayFloatValue(thresholds) => {
       assert_eq(thresholds.length(), 3)
       assert_eq(thresholds[0], 0.5)
       assert_eq(thresholds[1], 0.8)
@@ -191,7 +191,7 @@ test "resource_attribute_types_comprehensive" {
   
   // 验证布尔数组属性
   match comprehensive_resource.attributes[14].1 {
-    common::ArrayBoolValue(flags) => {
+    ArrayBoolValue(flags) => {
       assert_eq(flags.length(), 3)
       assert_eq(flags[0], true)
       assert_eq(flags[1], false)
@@ -232,25 +232,25 @@ test "resource_edge_cases_and_boundary_values" {
     telemetry_sdk_version: "0.1.0",
     attributes: [
       // 空字符串值
-      ("empty.string", common::AttributeValue::string("")),
+      ("empty.string", AttributeValue::string("")),
       
       // 长字符串值
-      ("long.string", common::AttributeValue::string("a".repeat(1000))),
+      ("long.string", AttributeValue::string("a".repeat(1000))),
       
       // 边界数值
-      ("zero.int", common::AttributeValue::int(0L)),
-      ("max.int", common::AttributeValue::int(9223372036854775807L)),
-      ("min.int", common::AttributeValue::int(-9223372036854775808L)),
-      ("zero.float", common::AttributeValue::float(0.0)),
-      ("max.float", common::AttributeValue::float(1.7976931348623157e+308)),
-      ("min.float", common::AttributeValue::float(2.2250738585072014e-308)),
-      ("negative.float", common::AttributeValue::float(-3.14159)),
+      ("zero.int", AttributeValue::int(0L)),
+      ("max.int", AttributeValue::int(9223372036854775807L)),
+      ("min.int", AttributeValue::int(-9223372036854775808L)),
+      ("zero.float", AttributeValue::float(0.0)),
+      ("max.float", AttributeValue::float(1.7976931348623157e+308)),
+      ("min.float", AttributeValue::float(2.2250738585072014e-308)),
+      ("negative.float", AttributeValue::float(-3.14159)),
       
       // 空数组
-      ("empty.array", common::AttributeValue::array_string([])),
+      ("empty.array", AttributeValue::array_string([])),
       
       // 单元素数组
-      ("single.element", common::AttributeValue::array_string(["only"]))
+      ("single.element", AttributeValue::array_string(["only"]))
     ]
   }
   
@@ -261,37 +261,37 @@ test "resource_edge_cases_and_boundary_values" {
   }
   
   match boundary_resource.attributes[0].1 {
-    common::StringValue(empty_str) => assert_eq(empty_str.length(), 0)
+    StringValue(empty_str) => assert_eq(empty_str.length(), 0)
     _ => assert_eq(false, true)
   }
   
   match boundary_resource.attributes[1].1 {
-    common::StringValue(long_str) => assert_eq(long_str.length(), 1000)
+    StringValue(long_str) => assert_eq(long_str.length(), 1000)
     _ => assert_eq(false, true)
   }
   
   match boundary_resource.attributes[2].1 {
-    common::IntValue(zero_int) => assert_eq(zero_int, 0L)
+    IntValue(zero_int) => assert_eq(zero_int, 0L)
     _ => assert_eq(false, true)
   }
   
   match boundary_resource.attributes[3].1 {
-    common::IntValue(max_int) => assert_eq(max_int, 9223372036854775807L)
+    IntValue(max_int) => assert_eq(max_int, 9223372036854775807L)
     _ => assert_eq(false, true)
   }
   
   match boundary_resource.attributes[4].1 {
-    common::IntValue(min_int) => assert_eq(min_int, -9223372036854775808L)
+    IntValue(min_int) => assert_eq(min_int, -9223372036854775808L)
     _ => assert_eq(false, true)
   }
   
   match boundary_resource.attributes[9].1 {
-    common::ArrayStringValue(empty_array) => assert_eq(empty_array.length(), 0)
+    ArrayStringValue(empty_array) => assert_eq(empty_array.length(), 0)
     _ => assert_eq(false, true)
   }
   
   match boundary_resource.attributes[10].1 {
-    common::ArrayStringValue(single_element) => {
+    ArrayStringValue(single_element) => {
       assert_eq(single_element.length(), 1)
       assert_eq(single_element[0], "only")
     }
@@ -309,19 +309,19 @@ test "resource_real_world_scenarios" {
     telemetry_sdk_name: "azimuth",
     telemetry_sdk_version: "0.1.0",
     attributes: [
-      ("service.namespace", common::AttributeValue::string("frontend")),
-      ("deployment.environment", common::AttributeValue::string("production")),
-      ("host.name", common::AttributeValue::string("web-prod-01.example.com")),
-      ("host.ip", common::AttributeValue::string("10.0.1.100")),
-      ("os.type", common::AttributeValue::string("linux")),
-      ("os.version", common::AttributeValue::string("ubuntu-20.04")),
-      ("process.pid", common::AttributeValue::int(1234L)),
-      ("process.command", common::AttributeValue::string("nginx")),
-      ("process.runtime.name", common::AttributeValue::string("node")),
-      ("process.runtime.version", common::AttributeValue::string("18.17.0")),
-      ("cpu.count", common::AttributeValue::float(4.0)),
-      ("memory.total", common::AttributeValue::float(8589934592.0)),
-      ("service.instance.id", common::AttributeValue::string("web-prod-01-1234"))
+      ("service.namespace", AttributeValue::string("frontend")),
+      ("deployment.environment", AttributeValue::string("production")),
+      ("host.name", AttributeValue::string("web-prod-01.example.com")),
+      ("host.ip", AttributeValue::string("10.0.1.100")),
+      ("os.type", AttributeValue::string("linux")),
+      ("os.version", AttributeValue::string("ubuntu-20.04")),
+      ("process.pid", AttributeValue::int(1234L)),
+      ("process.command", AttributeValue::string("nginx")),
+      ("process.runtime.name", AttributeValue::string("node")),
+      ("process.runtime.version", AttributeValue::string("18.17.0")),
+      ("cpu.count", AttributeValue::float(4.0)),
+      ("memory.total", AttributeValue::float(8589934592.0)),
+      ("service.instance.id", AttributeValue::string("web-prod-01-1234"))
     ]
   }
   
@@ -340,19 +340,19 @@ test "resource_real_world_scenarios" {
     telemetry_sdk_name: "azimuth",
     telemetry_sdk_version: "0.1.0",
     attributes: [
-      ("service.namespace", common::AttributeValue::string("data")),
-      ("deployment.environment", common::AttributeValue::string("production")),
-      ("host.name", common::AttributeValue::string("db-prod-01.example.com")),
-      ("db.system", common::AttributeValue::string("postgresql")),
-      ("db.version", common::AttributeValue::string("14.6")),
-      ("db.connection_string", common::AttributeValue::string("postgresql://user:pass@db-prod-01:5432/users")),
-      ("db.max_connections", common::AttributeValue::int(200L)),
-      ("db.active_connections", common::AttributeValue::int(45L)),
-      ("cpu.count", common::AttributeValue::float(8.0)),
-      ("memory.total", common::AttributeValue::float(17179869184.0)),
-      ("storage.total", common::AttributeValue::float(1099511627776.0)),
-      ("storage.used", common::AttributeValue::float(549755813888.0)),
-      ("service.instance.id", common::AttributeValue::string("db-prod-01-5678"))
+      ("service.namespace", AttributeValue::string("data")),
+      ("deployment.environment", AttributeValue::string("production")),
+      ("host.name", AttributeValue::string("db-prod-01.example.com")),
+      ("db.system", AttributeValue::string("postgresql")),
+      ("db.version", AttributeValue::string("14.6")),
+      ("db.connection_string", AttributeValue::string("postgresql://user:pass@db-prod-01:5432/users")),
+      ("db.max_connections", AttributeValue::int(200L)),
+      ("db.active_connections", AttributeValue::int(45L)),
+      ("cpu.count", AttributeValue::float(8.0)),
+      ("memory.total", AttributeValue::float(17179869184.0)),
+      ("storage.total", AttributeValue::float(1099511627776.0)),
+      ("storage.used", AttributeValue::float(549755813888.0)),
+      ("service.instance.id", AttributeValue::string("db-prod-01-5678"))
     ]
   }
   
@@ -371,19 +371,19 @@ test "resource_real_world_scenarios" {
     telemetry_sdk_name: "azimuth",
     telemetry_sdk_version: "0.1.0",
     attributes: [
-      ("service.namespace", common::AttributeValue::string("order-system")),
-      ("deployment.environment", common::AttributeValue::string("staging")),
-      ("k8s.pod.name", common::AttributeValue::string("order-processing-7d4f8c9b-xyz123")),
-      ("k8s.namespace", common::AttributeValue::string("order-system")),
-      ("k8s.node.name", common::AttributeValue::string("worker-node-3")),
-      ("k8s.deployment.name", common::AttributeValue::string("order-processing")),
-      ("container.name", common::AttributeValue::string("order-processing")),
-      ("container.image", common::AttributeValue::string("order-processing:2.5.0")),
-      ("process.language", common::AttributeValue::string("java")),
-      ("process.runtime.version", common::AttributeValue::string("17.0.2")),
-      ("service.instance.id", common::AttributeValue::string("order-processing-7d4f8c9b-xyz123")),
-      ("feature.flags", common::AttributeValue::array_string(["new-algorithm", "enhanced-logging", "cache-optimization"])),
-      ("dependencies", common::AttributeValue::array_string(["payment-service", "inventory-service", "notification-service"]))
+      ("service.namespace", AttributeValue::string("order-system")),
+      ("deployment.environment", AttributeValue::string("staging")),
+      ("k8s.pod.name", AttributeValue::string("order-processing-7d4f8c9b-xyz123")),
+      ("k8s.namespace", AttributeValue::string("order-system")),
+      ("k8s.node.name", AttributeValue::string("worker-node-3")),
+      ("k8s.deployment.name", AttributeValue::string("order-processing")),
+      ("container.name", AttributeValue::string("order-processing")),
+      ("container.image", AttributeValue::string("order-processing:2.5.0")),
+      ("process.language", AttributeValue::string("java")),
+      ("process.runtime.version", AttributeValue::string("17.0.2")),
+      ("service.instance.id", AttributeValue::string("order-processing-7d4f8c9b-xyz123")),
+      ("feature.flags", AttributeValue::array_string(["new-algorithm", "enhanced-logging", "cache-optimization"])),
+      ("dependencies", AttributeValue::array_string(["payment-service", "inventory-service", "notification-service"]))
     ]
   }
   
@@ -397,7 +397,7 @@ test "resource_real_world_scenarios" {
   
   // 验证数组属性
   match microservice_resource.attributes[12].1 {
-    common::ArrayStringValue(feature_flags) => {
+    ArrayStringValue(feature_flags) => {
       assert_eq(feature_flags.length(), 3)
       assert_eq(feature_flags.contains("new-algorithm"), true)
       assert_eq(feature_flags.contains("enhanced-logging"), true)
@@ -407,7 +407,7 @@ test "resource_real_world_scenarios" {
   }
   
   match microservice_resource.attributes[13].1 {
-    common::ArrayStringValue(dependencies) => {
+    ArrayStringValue(dependencies) => {
       assert_eq(dependencies.length(), 3)
       assert_eq(dependencies.contains("payment-service"), true)
       assert_eq(dependencies.contains("inventory-service"), true)
@@ -427,10 +427,10 @@ test "resource_inheritance_and_composition" {
     telemetry_sdk_name: "azimuth",
     telemetry_sdk_version: "0.1.0",
     attributes: [
-      ("deployment.environment", common::AttributeValue::string("production")),
-      ("service.namespace", common::AttributeValue::string("backend")),
-      ("cpu.count", common::AttributeValue::float(4.0)),
-      ("memory.total", common::AttributeValue::float(8589934592.0))
+      ("deployment.environment", AttributeValue::string("production")),
+      ("service.namespace", AttributeValue::string("backend")),
+      ("cpu.count", AttributeValue::float(4.0)),
+      ("memory.total", AttributeValue::float(8589934592.0))
     ]
   }
   
@@ -442,16 +442,16 @@ test "resource_inheritance_and_composition" {
     telemetry_sdk_version: base_resource.telemetry_sdk_version,
     attributes: [
       // 继承基础属性
-      ("deployment.environment", common::AttributeValue::string("production")),
-      ("service.namespace", common::AttributeValue::string("backend")),
-      ("cpu.count", common::AttributeValue::float(4.0)),
-      ("memory.total", common::AttributeValue::float(8589934592.0)),
+      ("deployment.environment", AttributeValue::string("production")),
+      ("service.namespace", AttributeValue::string("backend")),
+      ("cpu.count", AttributeValue::float(4.0)),
+      ("memory.total", AttributeValue::float(8589934592.0)),
       
       // 添加特定属性
-      ("service.type", common::AttributeValue::string("api")),
-      ("http.port", common::AttributeValue::int(8080L)),
-      ("api.version", common::AttributeValue::string("v2")),
-      ("endpoints", common::AttributeValue::array_string(["/users", "/auth", "/profiles"]))
+      ("service.type", AttributeValue::string("api")),
+      ("http.port", AttributeValue::int(8080L)),
+      ("api.version", AttributeValue::string("v2")),
+      ("endpoints", AttributeValue::array_string(["/users", "/auth", "/profiles"]))
     ]
   }
   
@@ -524,20 +524,20 @@ test "resource_inheritance_and_composition" {
   // 测试Resource组合（多个服务合并信息）
   let composite_attributes = [
     // 来自API服务的属性
-    ("service.type", common::AttributeValue::string("api")),
-    ("http.port", common::AttributeValue::int(8080L)),
+    ("service.type", AttributeValue::string("api")),
+    ("http.port", AttributeValue::int(8080L)),
     
     // 来自数据库服务的属性
-    ("db.system", common::AttributeValue::string("postgresql")),
-    ("db.port", common::AttributeValue::int(5432L)),
+    ("db.system", AttributeValue::string("postgresql")),
+    ("db.port", AttributeValue::int(5432L)),
     
     // 来自缓存服务的属性
-    ("cache.system", common::AttributeValue::string("redis")),
-    ("cache.port", common::AttributeValue::int(6379L)),
+    ("cache.system", AttributeValue::string("redis")),
+    ("cache.port", AttributeValue::int(6379L)),
     
     // 共享的基础设施属性
-    ("datacenter", common::AttributeValue::string("us-west-2")),
-    ("region", common::AttributeValue::string("oregon"))
+    ("datacenter", AttributeValue::string("us-west-2")),
+    ("region", AttributeValue::string("oregon"))
   ]
   
   let composite_resource = common::Resource::{

@@ -2,38 +2,38 @@
 
 test "attribute_value_creation_and_type_checking" {
   // 测试各种属性值的创建
-  let string_val = common::AttributeValue::string("test-string")
-  let int_val = common::AttributeValue::int(12345L)
-  let float_val = common::AttributeValue::float(67.89)
-  let bool_val = common::AttributeValue::bool(true)
-  let array_string_val = common::AttributeValue::array_string(["a", "b", "c"])
-  let array_int_val = common::AttributeValue::array_int([1L, 2L, 3L, 4L])
-  let array_float_val = common::AttributeValue::array_float([1.1, 2.2, 3.3])
-  let array_bool_val = common::AttributeValue::array_bool([true, false, true, false])
+  let string_val = AttributeValue::string("test-string")
+  let int_val = AttributeValue::int(12345L)
+  let float_val = AttributeValue::float(67.89)
+  let bool_val = AttributeValue::bool(true)
+  let array_string_val = AttributeValue::array_string(["a", "b", "c"])
+  let array_int_val = AttributeValue::array_int([1L, 2L, 3L, 4L])
+  let array_float_val = AttributeValue::array_float([1.1, 2.2, 3.3])
+  let array_bool_val = AttributeValue::array_bool([true, false, true, false])
   
   // 验证类型和值
   match string_val {
-    common::StringValue(v) => @assert.eq(v, "test-string")
+    StringValue(v) => @assert.eq(v, "test-string")
     _ => @assert.fail("Expected StringValue")
   }
   
   match int_val {
-    common::IntValue(v) => @assert.eq(v, 12345L)
+    IntValue(v) => @assert.eq(v, 12345L)
     _ => @assert.fail("Expected IntValue")
   }
   
   match float_val {
-    common::FloatValue(v) => @assert.eq(v, 67.89)
+    FloatValue(v) => @assert.eq(v, 67.89)
     _ => @assert.fail("Expected FloatValue")
   }
   
   match bool_val {
-    common::BoolValue(v) => @assert.eq(v, true)
+    BoolValue(v) => @assert.eq(v, true)
     _ => @assert.fail("Expected BoolValue")
   }
   
   match array_string_val {
-    common::ArrayStringValue(v) => {
+    ArrayStringValue(v) => {
       @assert.eq(v.length(), 3)
       @assert.eq(v[0], "a")
       @assert.eq(v[1], "b")
@@ -43,7 +43,7 @@ test "attribute_value_creation_and_type_checking" {
   }
   
   match array_int_val {
-    common::ArrayIntValue(v) => {
+    ArrayIntValue(v) => {
       @assert.eq(v.length(), 4)
       @assert.eq(v[0], 1L)
       @assert.eq(v[1], 2L)
@@ -54,7 +54,7 @@ test "attribute_value_creation_and_type_checking" {
   }
   
   match array_float_val {
-    common::ArrayFloatValue(v) => {
+    ArrayFloatValue(v) => {
       @assert.eq(v.length(), 3)
       @assert.eq(v[0], 1.1)
       @assert.eq(v[1], 2.2)
@@ -64,7 +64,7 @@ test "attribute_value_creation_and_type_checking" {
   }
   
   match array_bool_val {
-    common::ArrayBoolValue(v) => {
+    ArrayBoolValue(v) => {
       @assert.eq(v.length(), 4)
       @assert.eq(v[0], true)
       @assert.eq(v[1], false)
@@ -79,81 +79,81 @@ test "attribute_value_edge_cases" {
   // 测试边界情况
   
   // 空字符串
-  let empty_string = common::AttributeValue::string("")
+  let empty_string = AttributeValue::string("")
   match empty_string {
-    common::StringValue(v) => @assert.eq(v, "")
+    StringValue(v) => @assert.eq(v, "")
     _ => @assert.fail("Expected empty StringValue")
   }
   
   // 零值
-  let zero_int = common::AttributeValue::int(0L)
-  let zero_float = common::AttributeValue::float(0.0)
-  let false_bool = common::AttributeValue::bool(false)
+  let zero_int = AttributeValue::int(0L)
+  let zero_float = AttributeValue::float(0.0)
+  let false_bool = AttributeValue::bool(false)
   
   match zero_int {
-    common::IntValue(v) => @assert.eq(v, 0L)
+    IntValue(v) => @assert.eq(v, 0L)
     _ => @assert.fail("Expected zero IntValue")
   }
   
   match zero_float {
-    common::FloatValue(v) => @assert.eq(v, 0.0)
+    FloatValue(v) => @assert.eq(v, 0.0)
     _ => @assert.fail("Expected zero FloatValue")
   }
   
   match false_bool {
-    common::BoolValue(v) => @assert.eq(v, false)
+    BoolValue(v) => @assert.eq(v, false)
     _ => @assert.fail("Expected false BoolValue")
   }
   
   // 空数组
-  let empty_array_string = common::AttributeValue::array_string([])
-  let empty_array_int = common::AttributeValue::array_int([])
-  let empty_array_float = common::AttributeValue::array_float([])
-  let empty_array_bool = common::AttributeValue::array_bool([])
+  let empty_array_string = AttributeValue::array_string([])
+  let empty_array_int = AttributeValue::array_int([])
+  let empty_array_float = AttributeValue::array_float([])
+  let empty_array_bool = AttributeValue::array_bool([])
   
   match empty_array_string {
-    common::ArrayStringValue(v) => @assert.eq(v.length(), 0)
+    ArrayStringValue(v) => @assert.eq(v.length(), 0)
     _ => @assert.fail("Expected empty ArrayStringValue")
   }
   
   match empty_array_int {
-    common::ArrayIntValue(v) => @assert.eq(v.length(), 0)
+    ArrayIntValue(v) => @assert.eq(v.length(), 0)
     _ => @assert.fail("Expected empty ArrayIntValue")
   }
   
   match empty_array_float {
-    common::ArrayFloatValue(v) => @assert.eq(v.length(), 0)
+    ArrayFloatValue(v) => @assert.eq(v.length(), 0)
     _ => @assert.fail("Expected empty ArrayFloatValue")
   }
   
   match empty_array_bool {
-    common::ArrayBoolValue(v) => @assert.eq(v.length(), 0)
+    ArrayBoolValue(v) => @assert.eq(v.length(), 0)
     _ => @assert.fail("Expected empty ArrayBoolValue")
   }
   
   // 极值
-  let max_int = common::AttributeValue::int(9223372036854775807L)  // Int64最大值
-  let min_int = common::AttributeValue::int(-9223372036854775808L) // Int64最小值
-  let max_float = common::AttributeValue::float(1.7976931348623157e+308) // Double最大值
-  let min_float = common::AttributeValue::float(-1.7976931348623157e+308) // Double最小值
+  let max_int = AttributeValue::int(9223372036854775807L)  // Int64最大值
+  let min_int = AttributeValue::int(-9223372036854775808L) // Int64最小值
+  let max_float = AttributeValue::float(1.7976931348623157e+308) // Double最大值
+  let min_float = AttributeValue::float(-1.7976931348623157e+308) // Double最小值
   
   match max_int {
-    common::IntValue(v) => @assert.eq(v, 9223372036854775807L)
+    IntValue(v) => @assert.eq(v, 9223372036854775807L)
     _ => @assert.fail("Expected max IntValue")
   }
   
   match min_int {
-    common::IntValue(v) => @assert.eq(v, -9223372036854775808L)
+    IntValue(v) => @assert.eq(v, -9223372036854775808L)
     _ => @assert.fail("Expected min IntValue")
   }
   
   match max_float {
-    common::FloatValue(v) => @assert.eq(v, 1.7976931348623157e+308)
+    FloatValue(v) => @assert.eq(v, 1.7976931348623157e+308)
     _ => @assert.fail("Expected max FloatValue")
   }
   
   match min_float {
-    common::FloatValue(v) => @assert.eq(v, -1.7976931348623157e+308)
+    FloatValue(v) => @assert.eq(v, -1.7976931348623157e+308)
     _ => @assert.fail("Expected min FloatValue")
   }
 }
@@ -163,14 +163,14 @@ test "attribute_value_in_telemetry_contexts" {
   
   // 创建复杂属性值集合
   let complex_attributes = [
-    ("string.key", common::AttributeValue::string("complex.value")),
-    ("int.key", common::AttributeValue::int(999999L)),
-    ("float.key", common::AttributeValue::float(3.14159265359)),
-    ("bool.key", common::AttributeValue::bool(false)),
-    ("array.string.key", common::AttributeValue::array_string(["alpha", "beta", "gamma", "delta"])),
-    ("array.int.key", common::AttributeValue::array_int([10L, 20L, 30L, 40L, 50L])),
-    ("array.float.key", common::AttributeValue::array_float([0.1, 0.2, 0.3])),
-    ("array.bool.key", common::AttributeValue::array_bool([true, true, false, false]))
+    ("string.key", AttributeValue::string("complex.value")),
+    ("int.key", AttributeValue::int(999999L)),
+    ("float.key", AttributeValue::float(3.14159265359)),
+    ("bool.key", AttributeValue::bool(false)),
+    ("array.string.key", AttributeValue::array_string(["alpha", "beta", "gamma", "delta"])),
+    ("array.int.key", AttributeValue::array_int([10L, 20L, 30L, 40L, 50L])),
+    ("array.float.key", AttributeValue::array_float([0.1, 0.2, 0.3])),
+    ("array.bool.key", AttributeValue::array_bool([true, true, false, false]))
   ]
   
   // 在Trace中使用复杂属性
@@ -200,10 +200,10 @@ test "attribute_value_in_telemetry_contexts" {
     .timestamp(5000000L)
     .severity(logs::Warn)
     .body("Log with complex attributes")
-    .with_attribute("log.string", common::AttributeValue::string("log.value"))
-    .with_attribute("log.int", common::AttributeValue::int(777))
-    .with_attribute("log.float", common::AttributeValue::float(2.71828))
-    .with_attribute("log.bool", common::AttributeValue::bool(true))
+    .with_attribute("log.string", AttributeValue::string("log.value"))
+    .with_attribute("log.int", AttributeValue::int(777))
+    .with_attribute("log.float", AttributeValue::float(2.71828))
+    .with_attribute("log.bool", AttributeValue::bool(true))
     .build()
   
   logger.emit(log_record)
@@ -217,14 +217,14 @@ test "attribute_value_serialization_compatibility" {
   
   // 创建包含各种类型的属性值
   let attributes = [
-    ("string.attr", common::AttributeValue::string("serialization-test")),
-    ("int.attr", common::AttributeValue::int(42L)),
-    ("float.attr", common::AttributeValue::float(3.14159)),
-    ("bool.attr", common::AttributeValue::bool(true)),
-    ("array.string.attr", common::AttributeValue::array_string(["x", "y", "z"])),
-    ("array.int.attr", common::AttributeValue::array_int([1L, 2L, 3L])),
-    ("array.float.attr", common::AttributeValue::array_float([1.0, 2.0, 3.0])),
-    ("array.bool.attr", common::AttributeValue::array_bool([true, false, true]))
+    ("string.attr", AttributeValue::string("serialization-test")),
+    ("int.attr", AttributeValue::int(42L)),
+    ("float.attr", AttributeValue::float(3.14159)),
+    ("bool.attr", AttributeValue::bool(true)),
+    ("array.string.attr", AttributeValue::array_string(["x", "y", "z"])),
+    ("array.int.attr", AttributeValue::array_int([1L, 2L, 3L])),
+    ("array.float.attr", AttributeValue::array_float([1.0, 2.0, 3.0])),
+    ("array.bool.attr", AttributeValue::array_bool([true, false, true]))
   ]
   
   // 模拟序列化过程（转换为字符串表示）
@@ -233,11 +233,11 @@ test "attribute_value_serialization_compatibility" {
   while i < attributes.length() {
     let (key, value) = attributes[i]
     let serialized = match value {
-      common::StringValue(v) => "string:" + v
-      common::IntValue(v) => "int:" + v.to_string()
-      common::FloatValue(v) => "float:" + v.to_string()
-      common::BoolValue(v) => "bool:" + (if v { "true" } else { "false" })
-      common::ArrayStringValue(v) => {
+      StringValue(v) => "string:" + v
+      IntValue(v) => "int:" + v.to_string()
+      FloatValue(v) => "float:" + v.to_string()
+      BoolValue(v) => "bool:" + (if v { "true" } else { "false" })
+      ArrayStringValue(v) => {
         let mut result = "array.string:["
         let mut j = 0
         while j < v.length() {
@@ -250,7 +250,7 @@ test "attribute_value_serialization_compatibility" {
         result = result + "]"
         result
       }
-      common::ArrayIntValue(v) => {
+      ArrayIntValue(v) => {
         let mut result = "array.int:["
         let mut j = 0
         while j < v.length() {
@@ -263,7 +263,7 @@ test "attribute_value_serialization_compatibility" {
         result = result + "]"
         result
       }
-      common::ArrayFloatValue(v) => {
+      ArrayFloatValue(v) => {
         let mut result = "array.float:["
         let mut j = 0
         while j < v.length() {
@@ -276,7 +276,7 @@ test "attribute_value_serialization_compatibility" {
         result = result + "]"
         result
       }
-      common::ArrayBoolValue(v) => {
+      ArrayBoolValue(v) => {
         let mut result = "array.bool:["
         let mut j = 0
         while j < v.length() {
@@ -334,45 +334,45 @@ test "attribute_value_type_safety_and_validation" {
   // 测试类型匹配函数（模拟）
   let is_string = fn(attr : common::AttributeValue) -> Bool {
     match attr {
-      common::StringValue(_) => true
+      StringValue(_) => true
       _ => false
     }
   }
   
   let is_int = fn(attr : common::AttributeValue) -> Bool {
     match attr {
-      common::IntValue(_) => true
+      IntValue(_) => true
       _ => false
     }
   }
   
   let is_float = fn(attr : common::AttributeValue) -> Bool {
     match attr {
-      common::FloatValue(_) => true
+      FloatValue(_) => true
       _ => false
     }
   }
   
   let is_bool = fn(attr : common::AttributeValue) -> Bool {
     match attr {
-      common::BoolValue(_) => true
+      BoolValue(_) => true
       _ => false
     }
   }
   
   let is_array_string = fn(attr : common::AttributeValue) -> Bool {
     match attr {
-      common::ArrayStringValue(_) => true
+      ArrayStringValue(_) => true
       _ => false
     }
   }
   
   // 测试各种属性值
-  let string_attr = common::AttributeValue::string("type-test")
-  let int_attr = common::AttributeValue::int(100L)
-  let float_attr = common::AttributeValue::float(50.5)
-  let bool_attr = common::AttributeValue::bool(false)
-  let array_string_attr = common::AttributeValue::array_string(["type", "test"])
+  let string_attr = AttributeValue::string("type-test")
+  let int_attr = AttributeValue::int(100L)
+  let float_attr = AttributeValue::float(50.5)
+  let bool_attr = AttributeValue::bool(false)
+  let array_string_attr = AttributeValue::array_string(["type", "test"])
   
   // 验证类型检查
   @assert.assert(is_string(string_attr), "string_attr should be identified as string")

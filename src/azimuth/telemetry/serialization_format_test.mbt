@@ -4,41 +4,41 @@ test "attribute_value_serialization" {
   // 测试AttributeValue的序列化格式
   
   // 字符串值序列化
-  let string_attr = common::AttributeValue::string("test-value")
+  let string_attr = AttributeValue::string("test-value")
   let string_serialized = match string_attr {
-    common::StringValue(s) => "string:" + s
+    StringValue(s) => "string:" + s
     _ => "unknown"
   }
   assert_eq(string_serialized, "string:test-value")
   
   // 整数值序列化
-  let int_attr = common::AttributeValue::int(42L)
+  let int_attr = AttributeValue::int(42L)
   let int_serialized = match int_attr {
-    common::IntValue(i) => "int:" + i.to_string()
+    IntValue(i) => "int:" + i.to_string()
     _ => "unknown"
   }
   assert_eq(int_serialized, "int:42")
   
   // 浮点数值序列化
-  let float_attr = common::AttributeValue::float(3.14)
+  let float_attr = AttributeValue::float(3.14)
   let float_serialized = match float_attr {
-    common::FloatValue(f) => "float:" + f.to_string()
+    FloatValue(f) => "float:" + f.to_string()
     _ => "unknown"
   }
   assert_eq(float_serialized, "float:3.14")
   
   // 布尔值序列化
-  let bool_attr = common::AttributeValue::bool(true)
+  let bool_attr = AttributeValue::bool(true)
   let bool_serialized = match bool_attr {
-    common::BoolValue(b) => if b { "bool:true" } else { "bool:false" }
+    BoolValue(b) => if b { "bool:true" } else { "bool:false" }
     _ => "unknown"
   }
   assert_eq(bool_serialized, "bool:true")
   
   // 字符串数组序列化
-  let string_array_attr = common::AttributeValue::array_string(["a", "b", "c"])
+  let string_array_attr = AttributeValue::array_string(["a", "b", "c"])
   let string_array_serialized = match string_array_attr {
-    common::ArrayStringValue(arr) => {
+    ArrayStringValue(arr) => {
       let result = "array_string:["
       let mut i = 0
       while i < arr.length() {
@@ -55,9 +55,9 @@ test "attribute_value_serialization" {
   assert_eq(string_array_serialized, "array_string:[")
   
   // 整数数组序列化
-  let int_array_attr = common::AttributeValue::array_int([1L, 2L, 3L])
+  let int_array_attr = AttributeValue::array_int([1L, 2L, 3L])
   let int_array_serialized = match int_array_attr {
-    common::ArrayIntValue(arr) => {
+    ArrayIntValue(arr) => {
       let result = "array_int:["
       let mut i = 0
       while i < arr.length() {
@@ -96,9 +96,9 @@ test "resource_serialization" {
   // 带有属性的资源序列化
   let resource_with_attrs = common::Resource::default("service-with-attrs")
   let attrs : Array[(String, common::AttributeValue)] = [
-    ("key1", common::AttributeValue::string("value1")),
-    ("key2", common::AttributeValue::int(42L)),
-    ("key3", common::AttributeValue::bool(true))
+    ("key1", AttributeValue::string("value1")),
+    ("key2", AttributeValue::int(42L)),
+    ("key3", AttributeValue::bool(true))
   ]
   
   let attrs_serialized = "Attributes["
@@ -109,9 +109,9 @@ test "resource_serialization" {
     }
     let (key, value) = attrs[i]
     let value_serialized = match value {
-      common::StringValue(s) => "string:" + s
-      common::IntValue(i) => "int:" + i.to_string()
-      common::BoolValue(b) => if b { "bool:true" } else { "bool:false" }
+      StringValue(s) => "string:" + s
+      IntValue(i) => "int:" + i.to_string()
+      BoolValue(b) => if b { "bool:true" } else { "bool:false" }
       _ => "unknown"
     }
     // 在实际实现中，这里会添加key + ":" + value_serialized
@@ -206,9 +206,9 @@ test "log_record_serialization" {
     .timestamp(1640995200000000000L)
     .severity(logs::Info)
     .body("Test log message")
-    .with_attribute("attr1", common::AttributeValue::string("value1"))
-    .with_attribute("attr2", common::AttributeValue::int(42L))
-    .with_attribute("attr3", common::AttributeValue::bool(true))
+    .with_attribute("attr1", AttributeValue::string("value1"))
+    .with_attribute("attr2", AttributeValue::int(42L))
+    .with_attribute("attr3", AttributeValue::bool(true))
     .build()
   
   // LogRecord序列化
@@ -240,9 +240,9 @@ test "log_record_serialization" {
   while i < log_record.attributes.length() {
     let (key, value) = log_record.attributes[i]
     let value_serialized = match value {
-      common::StringValue(s) => "string:" + s
-      common::IntValue(i) => "int:" + i.to_string()
-      common::BoolValue(b) => if b { "bool:true" } else { "bool:false" }
+      StringValue(s) => "string:" + s
+      IntValue(i) => "int:" + i.to_string()
+      BoolValue(b) => if b { "bool:true" } else { "bool:false" }
       _ => "unknown"
     }
     let attr_serialized = key + "=" + value_serialized
@@ -270,8 +270,8 @@ test "span_serialization" {
     "test-span",
     trace::Server,
     [
-      ("attr1", common::AttributeValue::string("value1")),
-      ("attr2", common::AttributeValue::int(42L))
+      ("attr1", AttributeValue::string("value1")),
+      ("attr2", AttributeValue::int(42L))
     ],
     Some(1640995200000000000L)
   )
@@ -389,8 +389,8 @@ test "metrics_serialization" {
   let measurement = metrics::Measurement::{
     value: 42.5,
     attributes: [
-      ("attr1", common::AttributeValue::string("value1")),
-      ("attr2", common::AttributeValue::int(100L))
+      ("attr1", AttributeValue::string("value1")),
+      ("attr2", AttributeValue::int(100L))
     ]
   }
   
@@ -403,8 +403,8 @@ test "metrics_serialization" {
     }
     let (key, value) = measurement.attributes[i]
     let value_serialized = match value {
-      common::StringValue(s) => "string:" + s
-      common::IntValue(i) => "int:" + i.to_string()
+      StringValue(s) => "string:" + s
+      IntValue(i) => "int:" + i.to_string()
       _ => "unknown"
     }
     attributes_serialized = attributes_serialized + key + "=" + value_serialized
@@ -445,11 +445,11 @@ test "json_like_serialization" {
     "json-test-span",
     trace::Server,
     [
-      ("string.attr", common::AttributeValue::string("json-value")),
-      ("int.attr", common::AttributeValue::int(123L)),
-      ("float.attr", common::AttributeValue::float(45.67)),
-      ("bool.attr", common::AttributeValue::bool(true)),
-      ("array.attr", common::AttributeValue::array_string(["item1", "item2", "item3"]))
+      ("string.attr", AttributeValue::string("json-value")),
+      ("int.attr", AttributeValue::int(123L)),
+      ("float.attr", AttributeValue::float(45.67)),
+      ("bool.attr", AttributeValue::bool(true)),
+      ("array.attr", AttributeValue::array_string(["item1", "item2", "item3"]))
     ]
   )
   
@@ -457,7 +457,7 @@ test "json_like_serialization" {
     .timestamp(1640995200000000000L)
     .severity(logs::Info)
     .body("JSON test log")
-    .with_attribute("log.attr", common::AttributeValue::string("log-value"))
+    .with_attribute("log.attr", AttributeValue::string("log-value"))
     .build()
   
   // 生成类似JSON的序列化格式
@@ -486,11 +486,11 @@ test "json_like_serialization" {
     json_like = json_like + "{\"key\":\"" + key + "\"," 
     
     match value {
-      common::StringValue(s) => json_like = json_like + "\"type\":\"string\",\"value\":\"" + s + "\"}"
-      common::IntValue(iv) => json_like = json_like + "\"type\":\"int\",\"value\":" + iv.to_string() + "}"
-      common::FloatValue(fv) => json_like = json_like + "\"type\":\"float\",\"value\":" + fv.to_string() + "}"
-      common::BoolValue(bv) => json_like = json_like + "\"type\":\"bool\",\"value\":" + if bv { "true" } else { "false" }
-      common::ArrayStringValue(arr) => {
+      StringValue(s) => json_like = json_like + "\"type\":\"string\",\"value\":\"" + s + "\"}"
+      IntValue(iv) => json_like = json_like + "\"type\":\"int\",\"value\":" + iv.to_string() + "}"
+      FloatValue(fv) => json_like = json_like + "\"type\":\"float\",\"value\":" + fv.to_string() + "}"
+      BoolValue(bv) => json_like = json_like + "\"type\":\"bool\",\"value\":" + if bv { "true" } else { "false" }
+      ArrayStringValue(arr) => {
         json_like = json_like + "\"type\":\"array_string\",\"value\":["
         let mut j = 0
         while j < arr.length() {

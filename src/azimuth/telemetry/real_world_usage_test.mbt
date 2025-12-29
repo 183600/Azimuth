@@ -17,10 +17,10 @@ test "web_request_tracing_scenario" {
   // 开始请求追踪
   let ctx = context::Context::empty()
   let request_attrs = [
-    ("http.method", common::AttributeValue::string("POST")),
-    ("http.url", common::AttributeValue::string("/api/v1/users")),
-    ("http.user_agent", common::AttributeValue::string("Mozilla/5.0")),
-    ("net.peer.ip", common::AttributeValue::string("192.168.1.100"))
+    ("http.method", AttributeValue::string("POST")),
+    ("http.url", AttributeValue::string("/api/v1/users")),
+    ("http.user_agent", AttributeValue::string("Mozilla/5.0")),
+    ("net.peer.ip", AttributeValue::string("192.168.1.100"))
   ]
   
   let (ctx_with_span, request_span) = tracer.start_span(
@@ -32,9 +32,9 @@ test "web_request_tracing_scenario" {
   
   // 记录请求开始日志
   logger.info("Request started", [
-    ("span.name", common::AttributeValue::string(request_span.name)),
-    ("http.method", common::AttributeValue::string("POST")),
-    ("http.url", common::AttributeValue::string("/api/v1/users"))
+    ("span.name", AttributeValue::string(request_span.name)),
+    ("http.method", AttributeValue::string("POST")),
+    ("http.url", AttributeValue::string("/api/v1/users"))
   ])
   
   // 模拟数据库操作
@@ -43,15 +43,15 @@ test "web_request_tracing_scenario" {
     "database.query",
     trace::Internal,
     [
-      ("db.system", common::AttributeValue::string("postgresql")),
-      ("db.statement", common::AttributeValue::string("SELECT * FROM users WHERE id = $1")),
-      ("db.operation", common::AttributeValue::string("SELECT"))
+      ("db.system", AttributeValue::string("postgresql")),
+      ("db.statement", AttributeValue::string("SELECT * FROM users WHERE id = $1")),
+      ("db.operation", AttributeValue::string("SELECT"))
     ]
   )
   
   logger.debug("Database query executed", [
-    ("db.operation", common::AttributeValue::string("SELECT")),
-    ("db.duration_ms", common::AttributeValue::int(25))
+    ("db.operation", AttributeValue::string("SELECT")),
+    ("db.duration_ms", AttributeValue::int(25))
   ])
   
   // 模拟外部API调用
@@ -60,34 +60,34 @@ test "web_request_tracing_scenario" {
     "external.api.call",
     trace::Client,
     [
-      ("http.url", common::AttributeValue::string("https://api.payment.com/charge")),
-      ("http.method", common::AttributeValue::string("POST")),
-      ("net.peer.name", common::AttributeValue::string("api.payment.com"))
+      ("http.url", AttributeValue::string("https://api.payment.com/charge")),
+      ("http.method", AttributeValue::string("POST")),
+      ("net.peer.name", AttributeValue::string("api.payment.com"))
     ]
   )
   
   logger.info("External API call completed", [
-    ("external.service", common::AttributeValue::string("payment_api")),
-    ("http.status_code", common::AttributeValue::int(200))
+    ("external.service", AttributeValue::string("payment_api")),
+    ("http.status_code", AttributeValue::int(200))
   ])
   
   // 记录请求指标
   request_counter.add(1, [
-    ("http.method", common::AttributeValue::string("POST")),
-    ("http.status_code", common::AttributeValue::int(201)),
-    ("http.route", common::AttributeValue::string("/api/v1/users"))
+    ("http.method", AttributeValue::string("POST")),
+    ("http.status_code", AttributeValue::int(201)),
+    ("http.route", AttributeValue::string("/api/v1/users"))
   ])
   
   response_histogram.record(0.150, [
-    ("http.method", common::AttributeValue::string("POST")),
-    ("http.route", common::AttributeValue::string("/api/v1/users"))
+    ("http.method", AttributeValue::string("POST")),
+    ("http.route", AttributeValue::string("/api/v1/users"))
   ])
   
   // 记录请求完成日志
   logger.info("Request completed", [
-    ("http.status_code", common::AttributeValue::int(201)),
-    ("response.size_bytes", common::AttributeValue::int(1024)),
-    ("duration_ms", common::AttributeValue::int(150))
+    ("http.status_code", AttributeValue::int(201)),
+    ("response.size_bytes", AttributeValue::int(1024)),
+    ("duration_ms", AttributeValue::int(150))
   ])
   
   // 验证所有操作都正确执行
@@ -164,15 +164,15 @@ test "batch_processing_scenario" {
     "batch.process",
     trace::Internal,
     [
-      ("batch.id", common::AttributeValue::string("batch-001")),
-      ("batch.size", common::AttributeValue::int(1000)),
-      ("batch.type", common::AttributeValue::string("user_import"))
+      ("batch.id", AttributeValue::string("batch-001")),
+      ("batch.size", AttributeValue::int(1000)),
+      ("batch.type", AttributeValue::string("user_import"))
     ]
   )
   
   logger.info("Batch processing started", [
-    ("batch.id", common::AttributeValue::string("batch-001")),
-    ("batch.size", common::AttributeValue::int(1000))
+    ("batch.id", AttributeValue::string("batch-001")),
+    ("batch.size", AttributeValue::int(1000))
   ])
   
   // 模拟处理批次中的项目
@@ -183,16 +183,16 @@ test "batch_processing_scenario" {
       "item.process",
       trace::Internal,
       [
-        ("item.index", common::AttributeValue::int(i * 100)),
-        ("item.sub_batch_size", common::AttributeValue::int(100))
+        ("item.index", AttributeValue::int(i * 100)),
+        ("item.sub_batch_size", AttributeValue::int(100))
       ]
     )
     
     // 模拟项目处理
     if i % 3 == 0 {
       logger.warn("Item processing warning", [
-        ("item.index", common::AttributeValue::int(i * 100)),
-        ("warning.type", common::AttributeValue::string("duplicate_data"))
+        ("item.index", AttributeValue::int(i * 100)),
+        ("warning.type", AttributeValue::string("duplicate_data"))
       ])
     }
     
@@ -201,24 +201,24 @@ test "batch_processing_scenario" {
   
   // 记录批处理完成指标
   batch_counter.add(1, [
-    ("batch.type", common::AttributeValue::string("user_import")),
-    ("batch.status", common::AttributeValue::string("completed"))
+    ("batch.type", AttributeValue::string("user_import")),
+    ("batch.status", AttributeValue::string("completed"))
   ])
   
   item_counter.add(1000, [
-    ("batch.type", common::AttributeValue::string("user_import")),
-    ("item.status", common::AttributeValue::string("processed"))
+    ("batch.type", AttributeValue::string("user_import")),
+    ("item.status", AttributeValue::string("processed"))
   ])
   
   processing_histogram.record(30.5, [
-    ("batch.type", common::AttributeValue::string("user_import")),
-    ("batch.size", common::AttributeValue::int(1000))
+    ("batch.type", AttributeValue::string("user_import")),
+    ("batch.size", AttributeValue::int(1000))
   ])
   
   logger.info("Batch processing completed", [
-    ("batch.id", common::AttributeValue::string("batch-001")),
-    ("items.processed", common::AttributeValue::int(1000)),
-    ("duration_seconds", common::AttributeValue::float(30.5))
+    ("batch.id", AttributeValue::string("batch-001")),
+    ("items.processed", AttributeValue::int(1000)),
+    ("duration_seconds", AttributeValue::float(30.5))
   ])
   
   // 验证批处理span
@@ -238,7 +238,7 @@ test "error_handling_scenario" {
     ctx,
     "risky_operation",
     trace::Internal,
-    [("operation.type", common::AttributeValue::string("database_write"))]
+    [("operation.type", AttributeValue::string("database_write"))]
   )
   
   // 模拟错误发生
@@ -247,17 +247,17 @@ test "error_handling_scenario" {
     "error.handling",
     trace::Internal,
     [
-      ("error.type", common::AttributeValue::string("ConnectionTimeout")),
-      ("error.retry_count", common::AttributeValue::int(3))
+      ("error.type", AttributeValue::string("ConnectionTimeout")),
+      ("error.retry_count", AttributeValue::int(3))
     ]
   )
   
   // 记录错误日志
   logger.error("Operation failed due to timeout", [
-    ("error.type", common::AttributeValue::string("ConnectionTimeout")),
-    ("error.message", common::AttributeValue::string("Database connection timeout after 30 seconds")),
-    ("error.retry_count", common::AttributeValue::int(3)),
-    ("operation.id", common::AttributeValue::string("op-12345"))
+    ("error.type", AttributeValue::string("ConnectionTimeout")),
+    ("error.message", AttributeValue::string("Database connection timeout after 30 seconds")),
+    ("error.retry_count", AttributeValue::int(3)),
+    ("operation.id", AttributeValue::string("op-12345"))
   ])
   
   // 模拟恢复操作
@@ -266,14 +266,14 @@ test "error_handling_scenario" {
     "recovery.operation",
     trace::Internal,
     [
-      ("recovery.type", common::AttributeValue::string("fallback_database")),
-      ("recovery.success", common::AttributeValue::bool(true))
+      ("recovery.type", AttributeValue::string("fallback_database")),
+      ("recovery.success", AttributeValue::bool(true))
     ]
   )
   
   logger.info("Recovery operation successful", [
-    ("recovery.type", common::AttributeValue::string("fallback_database")),
-    ("recovery.duration_ms", common::AttributeValue::int(5000))
+    ("recovery.type", AttributeValue::string("fallback_database")),
+    ("recovery.duration_ms", AttributeValue::int(5000))
   ])
   
   // 验证错误处理流程

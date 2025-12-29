@@ -128,21 +128,21 @@ test "log_record_resource_management" {
     .timestamp(1000000L)
     .severity(logs::Info)
     .body("Log message 1")
-    .with_attribute("attr1", common::AttributeValue::string("value1"))
+    .with_attribute("attr1", AttributeValue::string("value1"))
     .build()
   
   let log2 = logs::LogRecord::builder()
     .timestamp(2000000L)
     .severity(logs::Warn)
     .body("Log message 2")
-    .with_attribute("attr2", common::AttributeValue::string("value2"))
+    .with_attribute("attr2", AttributeValue::string("value2"))
     .build()
   
   let log3 = logs::LogRecord::builder()
     .timestamp(3000000L)
     .severity(logs::Error)
     .body("Log message 3")
-    .with_attribute("attr3", common::AttributeValue::string("value3"))
+    .with_attribute("attr3", AttributeValue::string("value3"))
     .build()
   
   // 2. 验证日志记录创建
@@ -258,14 +258,14 @@ test "metrics_resource_management" {
   let up_down2 = meter.create_up_down_counter("updown-2", "count", "UpDown 2")
   
   // 2. 使用所有指标仪器
-  counter1.add(1L, [("instrument", common::AttributeValue::string("counter1"))])
-  counter2.add(2L, [("instrument", common::AttributeValue::string("counter2"))])
-  histogram1.record(100.0, [("instrument", common::AttributeValue::string("histogram1"))])
-  histogram2.record(200.0, [("instrument", common::AttributeValue::string("histogram2"))])
-  gauge1.record(75.0, [("instrument", common::AttributeValue::string("gauge1"))])
-  gauge2.record(85.0, [("instrument", common::AttributeValue::string("gauge2"))])
-  up_down1.add(5L, [("instrument", common::AttributeValue::string("updown1"))])
-  up_down2.add(-3L, [("instrument", common::AttributeValue::string("updown2"))])
+  counter1.add(1L, [("instrument", AttributeValue::string("counter1"))])
+  counter2.add(2L, [("instrument", AttributeValue::string("counter2"))])
+  histogram1.record(100.0, [("instrument", AttributeValue::string("histogram1"))])
+  histogram2.record(200.0, [("instrument", AttributeValue::string("histogram2"))])
+  gauge1.record(75.0, [("instrument", AttributeValue::string("gauge1"))])
+  gauge2.record(85.0, [("instrument", AttributeValue::string("gauge2"))])
+  up_down1.add(5L, [("instrument", AttributeValue::string("updown1"))])
+  up_down2.add(-3L, [("instrument", AttributeValue::string("updown2"))])
   
   // 3. 验证操作完成
   assert_eq(true, true)  // 所有操作都应该成功
@@ -277,10 +277,10 @@ test "metrics_resource_management" {
   let new_updown = meter.create_up_down_counter("new-updown", "count", "New UpDown")
   
   // 5. 使用新创建的指标仪器
-  new_counter.add(10L, [("instrument", common::AttributeValue::string("new"))])
-  new_histogram.record(150.0, [("instrument", common::AttributeValue::string("new"))])
-  new_gauge.record(95.0, [("instrument", common::AttributeValue::string("new"))])
-  new_updown.add(1L, [("instrument", common::AttributeValue::string("new"))])
+  new_counter.add(10L, [("instrument", AttributeValue::string("new"))])
+  new_histogram.record(150.0, [("instrument", AttributeValue::string("new"))])
+  new_gauge.record(95.0, [("instrument", AttributeValue::string("new"))])
+  new_updown.add(1L, [("instrument", AttributeValue::string("new"))])
   
   // 验证新操作完成
   assert_eq(true, true)
@@ -405,7 +405,7 @@ test "large_scale_resource_management" {
         _ => logs::Fatal
       })
       .body("Large scale log " + i.to_string())
-      .with_attribute("index", common::AttributeValue::int(i.to_int64()))
+      .with_attribute("index", AttributeValue::int(i.to_int64()))
       .build()
     log_records.push(log_record)
     i = i + 1
@@ -432,7 +432,7 @@ test "large_scale_resource_management" {
         3 => trace::Producer
         _ => trace::Consumer
       },
-      [("index", common::AttributeValue::int(i.to_int64()))]
+      [("index", AttributeValue::int(i.to_int64()))]
     )
     spans.push(span)
     i = i + 1
@@ -472,7 +472,7 @@ test "memory_efficiency_test" {
   let mut small_objects : Array[common::AttributeValue] = []
   let mut i = 0
   while i < 10000 {
-    let attr = common::AttributeValue::string("small-object-" + i.to_string())
+    let attr = AttributeValue::string("small-object-" + i.to_string())
     small_objects.push(attr)
     i = i + 1
   }
@@ -482,17 +482,17 @@ test "memory_efficiency_test" {
   
   // 2. 测试大对象的创建和销毁
   let large_string = "x" * 100000
-  let large_attr = common::AttributeValue::string(large_string)
-  let large_array = common::AttributeValue::array_string(Array::make(10000, "large-array-item"))
+  let large_attr = AttributeValue::string(large_string)
+  let large_array = AttributeValue::array_string(Array::make(10000, "large-array-item"))
   
   // 验证大对象创建成功
   match large_attr {
-    common::StringValue(s) => assert_eq(s.length(), 100000)
+    StringValue(s) => assert_eq(s.length(), 100000)
     _ => @test.fail("Expected StringValue")
   }
   
   match large_array {
-    common::ArrayStringValue(arr) => assert_eq(arr.length(), 10000)
+    ArrayStringValue(arr) => assert_eq(arr.length(), 10000)
     _ => @test.fail("Expected ArrayStringValue")
   }
   
@@ -502,7 +502,7 @@ test "memory_efficiency_test" {
   while i < 1000 {
     complex_attrs.push((
       "complex.key." + i.to_string(),
-      common::AttributeValue::array_string([
+      AttributeValue::array_string([
         "value1." + i.to_string(),
         "value2." + i.to_string(),
         "value3." + i.to_string()

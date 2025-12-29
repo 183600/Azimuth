@@ -5,13 +5,13 @@ test "context_basic_operations" {
   // 测试Context的基本操作
   
   // 创建空Context
-  let empty_context = context::Context::empty()
+  let empty_context = Context::empty()
   assert_eq(empty_context.values.length(), 0)
   
   // 创建ContextKey
-  let user_key = context::create_key("user.id")
-  let session_key = context::create_key("session.id")
-  let request_key = context::create_key("request.id")
+  let user_key = create_key("user.id")
+  let session_key = create_key("session.id")
+  let request_key = create_key("request.id")
   
   // 验证ContextKey的创建
   assert_eq(user_key.name, "user.id")
@@ -44,13 +44,13 @@ test "context_basic_operations" {
 test "context_nested_operations" {
   // 测试Context的嵌套操作
   
-  let empty_context = context::Context::empty()
+  let empty_context = Context::empty()
   
   // 创建多个ContextKey
-  let user_key = context::create_key("user.id")
-  let session_key = context::create_key("session.id")
-  let request_key = context::create_key("request.id")
-  let trace_key = context::create_key("trace.id")
+  let user_key = create_key("user.id")
+  let session_key = create_key("session.id")
+  let request_key = create_key("request.id")
+  let trace_key = create_key("trace.id")
   
   // 嵌套添加值
   let context1 = empty_context.with_value(user_key, "user-123")
@@ -100,9 +100,9 @@ test "context_nested_operations" {
 test "context_value_override_operations" {
   // 测试Context的值覆盖操作
   
-  let empty_context = context::Context::empty()
-  let user_key = context::create_key("user.id")
-  let status_key = context::create_key("status")
+  let empty_context = Context::empty()
+  let user_key = create_key("user.id")
+  let status_key = create_key("status")
   
   // 添加初始值
   let context1 = empty_context.with_value(user_key, "user-123")
@@ -153,17 +153,17 @@ test "context_value_override_operations" {
 test "context_complex_scenarios" {
   // 测试Context的复杂场景
   
-  let empty_context = context::Context::empty()
+  let empty_context = Context::empty()
   
   // 创建多个相关的ContextKey
-  let user_id_key = context::create_key("user.id")
-  let user_name_key = context::create_key("user.name")
-  let user_role_key = context::create_key("user.role")
-  let session_id_key = context::create_key("session.id")
-  let request_id_key = context::create_key("request.id")
-  let correlation_id_key = context::create_key("correlation.id")
-  let trace_id_key = context::create_key("trace.id")
-  let span_id_key = context::create_key("span.id")
+  let user_id_key = create_key("user.id")
+  let user_name_key = create_key("user.name")
+  let user_role_key = create_key("user.role")
+  let session_id_key = create_key("session.id")
+  let request_id_key = create_key("request.id")
+  let correlation_id_key = create_key("correlation.id")
+  let trace_id_key = create_key("trace.id")
+  let span_id_key = create_key("span.id")
   
   // 构建复杂的Context层次结构
   let user_context = empty_context
@@ -238,10 +238,10 @@ test "context_complex_scenarios" {
 test "context_edge_cases_and_boundary_values" {
   // 测试Context的边界情况和特殊值
   
-  let empty_context = context::Context::empty()
+  let empty_context = Context::empty()
   
   // 测试空字符串值
-  let empty_key = context::create_key("empty.value")
+  let empty_key = create_key("empty.value")
   let context_with_empty = empty_context.with_value(empty_key, "")
   
   match context_with_empty.get(empty_key) {
@@ -253,7 +253,7 @@ test "context_edge_cases_and_boundary_values" {
   }
   
   // 测试长字符串值
-  let long_key = context::create_key("long.value")
+  let long_key = create_key("long.value")
   let long_string = "a".repeat(1000) + "b".repeat(1000) + "c".repeat(1000)
   let context_with_long = empty_context.with_value(long_key, long_string)
   
@@ -263,7 +263,7 @@ test "context_edge_cases_and_boundary_values" {
   }
   
   // 测试特殊字符值
-  let special_key = context::create_key("special.value")
+  let special_key = create_key("special.value")
   let special_string = "特殊字符!@#$%^&*()_+-=[]{}|;':\",./<>?"
   let context_with_special = empty_context.with_value(special_key, special_string)
   
@@ -273,7 +273,7 @@ test "context_edge_cases_and_boundary_values" {
   }
   
   // 测试数字字符串值
-  let numeric_key = context::create_key("numeric.value")
+  let numeric_key = create_key("numeric.value")
   let numeric_string = "1234567890.0987654321"
   let context_with_numeric = empty_context.with_value(numeric_key, numeric_string)
   
@@ -283,7 +283,7 @@ test "context_edge_cases_and_boundary_values" {
   }
   
   // 测试JSON字符串值
-  let json_key = context::create_key("json.value")
+  let json_key = create_key("json.value")
   let json_string = "{\"key\":\"value\",\"number\":42,\"array\":[1,2,3]}"
   let context_with_json = empty_context.with_value(json_key, json_string)
   
@@ -293,7 +293,7 @@ test "context_edge_cases_and_boundary_values" {
   }
   
   // 测试ContextKey的边界情况
-  let empty_name_key = context::create_key("")
+  let empty_name_key = create_key("")
   let context_with_empty_key = empty_context.with_value(empty_name_key, "value")
   
   match context_with_empty_key.get(empty_name_key) {
@@ -301,7 +301,7 @@ test "context_edge_cases_and_boundary_values" {
     None => assert_eq(false, true)
   }
   
-  let long_name_key = context::create_key("this.is.a.very.long.key.name.with.many.dots.and.words")
+  let long_name_key = create_key("this.is.a.very.long.key.name.with.many.dots.and.words")
   let context_with_long_key = empty_context.with_value(long_name_key, "long-key-value")
   
   match context_with_long_key.get(long_name_key) {
@@ -313,13 +313,13 @@ test "context_edge_cases_and_boundary_values" {
 test "context_performance_and_large_scale_operations" {
   // 测试Context的性能和大规模操作
   
-  let empty_context = context::Context::empty()
+  let empty_context = Context::empty()
   
   // 创建大量ContextKey
   let keys = []
   let mut index = 0
   while index < 100 {
-    let key = context::create_key("key." + index.to_string())
+    let key = create_key("key." + index.to_string())
     keys.push(key)
     index = index + 1
   }
@@ -377,14 +377,14 @@ test "context_performance_and_large_scale_operations" {
   
   // 测试从大规模Context中创建子Context
   let subset_context = updated_context.with_value(
-    context::create_key("new.key"), 
+    create_key("new.key"), 
     "new.value"
   )
   
   assert_eq(subset_context.values.length(), 101)
   
   // 验证新值存在
-  match subset_context.get(context::create_key("new.key")) {
+  match subset_context.get(create_key("new.key")) {
     Some(value) => assert_eq(value, "new.value")
     None => assert_eq(false, true)
   }

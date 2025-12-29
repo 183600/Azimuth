@@ -461,12 +461,12 @@ test "context_concurrent_special_value_handling" {
   while i < contexts.length() {
     let (key, ctx, expected_value) = contexts[i]
     match ctx.get(key) {
-    let actual_value => {
-      if actual_value != expected_value {
-        @test.fail("Expected '" + expected_value + "', got '" + actual_value + "'")
+      Some(actual_value) => {
+        if actual_value != expected_value {
+          @test.fail("Expected '" + expected_value + "', got '" + actual_value + "'")
+        }
       }
-    }
-    None => @test.fail("Expected Some(value) for special value: " + i.to_string())
+      None => @test.fail("Expected Some(value) for special value: " + i.to_string())
     }
     i = i + 1
   }

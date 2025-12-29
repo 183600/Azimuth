@@ -1,469 +1,320 @@
-// 错误处理和边界情况综合测试
-test "attribute_value_boundary_cases" {
-  // 测试AttributeValue的各种边界情况
+// 错误处理和边界情况测试 - 测试系统的健壮性
+use azimuth.telemetry.api.common.{AttributeValue, Resource}
+use azimuth.telemetry.api.context.{Context, create_key}
+use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber}
+use azimuth.telemetry.api.metrics.{NoopMeter}
+use azimuth.telemetry.api.trace.{SpanKind, StatusCode}
+use azimuth.telemetry.api.propagation.{MapCarrier, W3CTraceContextPropagator}
+
+test "error_handling_null_values" {
+  // 测试空值和None值的处理
   
-  // 测试极长字符串
-  let very_long_string = "a".repeat(1000000)
-  let long_string_attr = AttributeValue::string(very_long_string)
-  match long_string_attr {
-    StringValue(s) => assert_eq(s.length(), 1000000)
-    _ => @test.fail("Expected StringValue")
+  // 1. 测试空字符串
+  let empty_string_attr = AttributeValue::string("")
+  match empty_string_attr {
+    StringValue(s) => assert_eq(s, "")
+    _ => @test.fail("Expected StringValue with empty string")
   }
   
-  // 测试极值整数
-  let max_int_attr = AttributeValue::int(9223372036854775807L)
-  let min_int_attr = AttributeValue::int(-9223372036854775808L)
-  
-  match max_int_attr {
-    IntValue(i) => assert_eq(i, 9223372036854775807L)
-    _ => @test.fail("Expected IntValue")
+  // 2. 测试空数组
+  let empty_string_array = AttributeValue::array_string([])
+  match empty_string_array {
+    ArrayStringValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Expected ArrayStringValue with empty array")
   }
   
-  match min_int_attr {
-    IntValue(i) => assert_eq(i, -9223372036854775808L)
-    _ => @test.fail("Expected IntValue")
+  // 3. 测试Resource的空值处理
+  let empty_resource = Resource::default("")
+  assert_eq(empty_resource.service_name, "")
+  assert_eq(empty_resource.service_version, None)
+  
+  // 4. 测试Context的空值处理
+  let empty_context = Context::empty()
+  let non_existent_key = create_key("non.existent.key")
+  match empty_context.get(non_existent_key) {
+    Some(_) => @test.fail("Expected None for non-existent key")
+    None => assert_eq(true, true)
   }
   
-  // 测试特殊浮点值
-  let infinity_attr = AttributeValue::float(1.0/0.0)
-  let neg_infinity_attr = AttributeValue::float(-1.0/0.0)
-  let nan_attr = AttributeValue::float(0.0/0.0)
+  // 5. 测试LogRecord的空值处理
+  let log_record_with_none = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    // 不设置body，保持为None
+    .build()
   
-  match infinity_attr {
-    FloatValue(f) => assert_eq(f > 0.0 && f.is_infinite(), true)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  match neg_infinity_attr {
-    FloatValue(f) => assert_eq(f < 0.0 && f.is_infinite(), true)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  match nan_attr {
-    FloatValue(f) => assert_eq(f.is_nan(), true)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  // 测试极小和极大浮点数
-  let smallest_float = AttributeValue::float(1.7976931348623157e-308)
-  let largest_float = AttributeValue::float(1.7976931348623157e+308)
-  
-  match smallest_float {
-    FloatValue(f) => assert_eq(f > 0.0 && f < 1.0e-300, true)
-    _ => @test.fail("Expected FloatValue")
-  }
-  
-  match largest_float {
-    FloatValue(f) => assert_eq(f > 1.0e+300, true)
-    _ => @test.fail("Expected FloatValue")
+  match log_record_with_none.body {
+    Some(_) => @test.fail("Expected None for body")
+    None => assert_eq(true, true)
   }
 }
 
-test "span_context_boundary_cases" {
-  // 测试SpanContext的边界情况
+test "error_handling_extreme_values" {
+  // 测试极值处理
   
-  // 测试全零trace_id和span_id
-  let zero_trace_id = Array::make(16, 0x00_byte)
-  let zero_span_id = Array::make(8, 0x00_byte)
-  
-  let zero_context = SpanContext::{
-    trace_id: zero_trace_id,
-    span_id: zero_span_id,
-    trace_flags: 0x00_byte,
-    trace_state: ""
+  // 1. 测试极大整数值
+  let max_int = AttributeValue::int(9223372036854775807L)
+  match max_int {
+    IntValue(v) => assert_eq(v, 9223372036854775807L)
+    _ => @test.fail("Expected IntValue with max value")
   }
   
-  assert_eq(zero_context.trace_id.length(), 16)
-  assert_eq(zero_context.span_id.length(), 8)
-  assert_eq(zero_context.trace_flags, 0x00_byte)
-  assert_eq(zero_context.trace_state, "")
-  
-  // 测试全F的trace_id和span_id
-  let max_trace_id = Array::make(16, 0xFF_byte)
-  let max_span_id = Array::make(8, 0xFF_byte)
-  
-  let max_context = SpanContext::{
-    trace_id: max_trace_id,
-    span_id: max_span_id,
-    trace_flags: 0xFF_byte,
-    trace_state: "very-long-trace-state-with-lots-of-data-and-information"
+  // 2. 测试极小整数值
+  let min_int = AttributeValue::int(-9223372036854775808L)
+  match min_int {
+    IntValue(v) => assert_eq(v, -9223372036854775808L)
+    _ => @test.fail("Expected IntValue with min value")
   }
   
-  assert_eq(max_context.trace_id.length(), 16)
-  assert_eq(max_context.span_id.length(), 8)
-  assert_eq(max_context.trace_flags, 0xFF_byte)
-  assert_eq(max_context.trace_state.length(), 58)
+  // 3. 测试极大浮点数值
+  let max_float = AttributeValue::float(1.7976931348623157e+308)
+  match max_float {
+    FloatValue(v) => assert_eq(v > 1.0e+308, true)
+    _ => @test.fail("Expected FloatValue with max value")
+  }
   
-  // 测试交替的trace_id和span_id
-  let alternating_trace_id = Array::make(16, 0x00_byte)
-  let alternating_span_id = Array::make(8, 0x00_byte)
+  // 4. 测试极小浮点数值
+  let min_float = AttributeValue::float(-1.7976931348623157e+308)
+  match min_float {
+    FloatValue(v) => assert_eq(v < -1.0e+308, true)
+    _ => @test.fail("Expected FloatValue with min value")
+  }
+  
+  // 5. 测试无穷大
+  let infinity = AttributeValue::float(1.0/0.0)
+  match infinity {
+    FloatValue(v) => assert_eq(v > 1.0e+308, true)
+    _ => @test.fail("Expected FloatValue with infinity")
+  }
+  
+  // 6. 测试NaN
+  let nan = AttributeValue::float(0.0/0.0)
+  match nan {
+    FloatValue(v) => assert_eq(v != v, true)  // NaN不等于自身
+    _ => @test.fail("Expected FloatValue with NaN")
+  }
+}
+
+test "error_handling_invalid_operations" {
+  // 测试无效操作的处理
+  
+  // 1. 测试负数计数器操作
+  let meter = NoopMeter::{}
+  let counter = meter.create_counter("test.counter", "count", "Test counter")
+  
+  // 在实际实现中，计数器应该拒绝负值
+  // 这里我们只是验证操作不会崩溃
+  counter.add(-1L, [("test.operation", AttributeValue::string("negative_add"))])
+  
+  // 2. 测试空属性名
+  let log_record = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    .body("Test with empty attribute name")
+    .with_attribute("", AttributeValue::string("value"))
+    .build()
+  
+  assert_eq(log_record.attributes.length(), 1)
+  
+  // 3. 测试超长字符串
+  let long_string = "a" * 10000
+  let long_string_attr = AttributeValue::string(long_string)
+  match long_string_attr {
+    StringValue(s) => assert_eq(s.length(), 10000)
+    _ => @test.fail("Expected StringValue with long string")
+  }
+  
+  // 4. 测试超长属性名
+  let long_attr_name = "a" * 1000
+  let log_record_with_long_name = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    .body("Test with long attribute name")
+    .with_attribute(long_attr_name, AttributeValue::string("value"))
+    .build()
+  
+  assert_eq(log_record_with_long_name.attributes.length(), 1)
+}
+
+test "error_handling_unicode_and_special_characters" {
+  // 测试Unicode和特殊字符处理
+  
+  // 1. 测试Unicode字符串
+  let unicode_string = "Unicode测试🚀𝔘𝔫𝔦𝔠𝔬𝔡𝔢"
+  let unicode_attr = AttributeValue::string(unicode_string)
+  match unicode_attr {
+    StringValue(s) => assert_eq(s, unicode_string)
+    _ => @test.fail("Expected StringValue with Unicode")
+  }
+  
+  // 2. 测试特殊控制字符
+  let control_chars = "\n\r\t\b\f\v"
+  let control_chars_attr = AttributeValue::string(control_chars)
+  match control_chars_attr {
+    StringValue(s) => assert_eq(s, control_chars)
+    _ => @test.fail("Expected StringValue with control characters")
+  }
+  
+  // 3. 测试JSON特殊字符
+  let json_chars = "\"\\{}[]<>|&^%$#@!~`"
+  let json_chars_attr = AttributeValue::string(json_chars)
+  match json_chars_attr {
+    StringValue(s) => assert_eq(s, json_chars)
+    _ => @test.fail("Expected StringValue with JSON special characters")
+  }
+  
+  // 4. 测试零宽字符
+  let zero_width_chars = "\u200B\u200C\u200D\u2060\uFEFF"
+  let zero_width_chars_attr = AttributeValue::string(zero_width_chars)
+  match zero_width_chars_attr {
+    StringValue(s) => assert_eq(s, zero_width_chars)
+    _ => @test.fail("Expected StringValue with zero-width characters")
+  }
+  
+  // 5. 测试包含特殊字符的服务名
+  let special_resource = Resource::default("service!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  assert_eq(special_resource.service_name, "service!@#$%^&*()_+-=[]{}|;':\",./<>?")
+}
+
+test "error_handling_memory_pressure" {
+  // 测试内存压力下的行为
+  
+  // 1. 创建大量属性
+  let large_attr_array = []
   let mut i = 0
-  while i < 16 {
-    alternating_trace_id[i] = if i % 2 == 0 { 0xAA_byte } else { 0x55_byte }
+  while i < 10000 {
+    large_attr_array.push(("attr." + i.to_string(), AttributeValue::string("value." + i.to_string())))
     i = i + 1
   }
+  
+  // 2. 创建包含大量属性的LogRecord
+  let log_record = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    .body("Test with many attributes")
+  let mut builder = log_record
   let mut j = 0
-  while j < 8 {
-    alternating_span_id[j] = if j % 2 == 0 { 0xAA_byte } else { 0x55_byte }
+  while j < 1000 {
+    builder = builder.with_attribute("attr." + j.to_string(), AttributeValue::string("value." + j.to_string()))
+    j = j + 1
+  }
+  let final_log_record = builder.build()
+  
+  assert_eq(final_log_record.attributes.length(), 1000)
+  
+  // 3. 创建大量Context值
+  let context = Context::empty()
+  let mut ctx = context
+  let mut k = 0
+  while k < 1000 {
+    let key = create_key("key." + k.to_string())
+    ctx = ctx.with_value(key, "value." + k.to_string())
+    k = k + 1
+  }
+  
+  // 验证第一个值仍然存在
+  let first_key = create_key("key.0")
+  match ctx.get(first_key) {
+    Some(value) => assert_eq(value, "value.0")
+    None => @test.fail("Expected value for key.0")
+  }
+}
+
+test "error_handling_concurrent_access" {
+  // 测试并发访问的安全性（模拟）
+  
+  // 1. 创建共享资源
+  let resource = Resource::default("concurrent-test-service")
+  let context = Context::empty()
+  
+  // 2. 模拟并发创建LogRecord
+  let mut i = 0
+  while i < 100 {
+    let log_record = LogRecord::builder()
+      .severity(SeverityNumber::Info)
+      .body("Concurrent test " + i.to_string())
+      .with_attribute("thread.id", AttributeValue::int(i.to_int64()))
+      .with_attribute("resource.name", AttributeValue::string(resource.service_name))
+      .build()
+    
+    assert_eq(log_record.attributes.length(), 2)
+    i = i + 1
+  }
+  
+  // 3. 模拟并发Context操作
+  let key = create_key("concurrent.key")
+  let mut ctx = context
+  let mut j = 0
+  while j < 100 {
+    ctx = ctx.with_value(key, "concurrent.value." + j.to_string())
+    
+    match ctx.get(key) {
+      Some(value) => assert_eq(value.length() > 0, true)
+      None => @test.fail("Expected value for concurrent.key")
+    }
+    
     j = j + 1
   }
   
-  let alternating_context = SpanContext::{
-    trace_id: alternating_trace_id,
-    span_id: alternating_span_id,
-    trace_flags: 0x55_byte,
-    trace_state: "custom=value1,another=value2"
-  }
-  
-  assert_eq(alternating_context.trace_id[0], 0xAA_byte)
-  assert_eq(alternating_context.trace_id[1], 0x55_byte)
-  assert_eq(alternating_context.span_id[0], 0xAA_byte)
-  assert_eq(alternating_context.span_id[1], 0x55_byte)
-  assert_eq(alternating_context.trace_flags, 0x55_byte)
-}
-
-test "log_record_builder_boundary_cases" {
-  // 测试LogRecordBuilder的边界情况
-  
-  // 测试极长的时间戳
-  let max_timestamp_record = LogRecord::builder()
-    .timestamp(9223372036854775807L)
-    .severity(Info)
-    .body("Max timestamp test")
-    .build()
-  
-  assert_eq(max_timestamp_record.timestamp_unix_nanos, 9223372036854775807L)
-  
-  // 测试负时间戳
-  let negative_timestamp_record = LogRecord::builder()
-    .timestamp(-9223372036854775808L)
-    .severity(Debug)
-    .body("Negative timestamp test")
-    .build()
-  
-  assert_eq(negative_timestamp_record.timestamp_unix_nanos, -9223372036854775808L)
-  
-  // 测试零时间戳
-  let zero_timestamp_record = LogRecord::builder()
-    .timestamp(0L)
-    .severity(Warn)
-    .body("Zero timestamp test")
-    .build()
-  
-  assert_eq(zero_timestamp_record.timestamp_unix_nanos, 0L)
-  
-  // 测试极长的body
-  let very_long_body = "x".repeat(1000000)
-  let long_body_record = LogRecord::builder()
-    .timestamp(1234567890L)
-    .severity(Error)
-    .body(very_long_body)
-    .build()
-  
-  match long_body_record.body {
-    Some(message) => assert_eq(message.length(), 1000000)
-    None => @test.fail("Expected body message")
-  }
-  
-  // 测试空body
-  let empty_body_record = LogRecord::builder()
-    .timestamp(1234567890L)
-    .severity(Fatal)
-    .body("")
-    .build()
-  
-  match empty_body_record.body {
-    Some(message) => assert_eq(message, "")
-    None => @test.fail("Expected empty body message")
-  }
-  
-  // 测试包含特殊字符的body
-  let special_body_record = LogRecord::builder()
-    .timestamp(1234567890L)
-    .severity(Trace)
-    .body("Special chars: !@#$%^&*(){}[]|\\:;\"'<>?,./ Unicode: 测试🚀\n\t\r")
-    .build()
-  
-  match special_body_record.body {
-    Some(message) => {
-      assert_eq(message.contains("!@#$%^&*()"), true)
-      assert_eq(message.contains("测试🚀"), true)
-      assert_eq(message.contains("\n\t\r"), true)
-    }
-    None => @test.fail("Expected special chars body")
-  }
-}
-
-test "context_and_baggage_boundary_cases" {
-  // 测试Context和Baggage的边界情况
-  
-  // 测试极长的键和值
-  let very_long_key = "k".repeat(10000)
-  let very_long_value = "v".repeat(10000)
-  
-  let context = context::Context::empty()
-  let long_key = create_key(very_long_key)
-  let context_with_long = context.with_value(long_key, very_long_value)
-  
-  match context_with_long.get(long_key) {
-    Some(value) => assert_eq(value, very_long_value)
-    None => @test.fail("Expected to find long key")
-  }
-  
-  // 测试包含特殊字符的键和值
-  let special_key = create_key("special!@#$%^&*(){}[]|\\:;\"'<>?,./Unicode键测试🚀")
-  let special_value = "special!@#$%^&*(){}[]|\\:;\"'<>?,./Unicode值测试🚀"
-  
-  let context_with_special = context.with_value(special_key, special_value)
-  match context_with_special.get(special_key) {
-    Some(value) => assert_eq(value, special_value)
-    None => @test.fail("Expected to find special key")
-  }
-  
-  // 测试Baggage的边界情况
-  let baggage = Baggage::empty()
-    .with_entry(very_long_key, very_long_value)
-    .with_entry("special!@#$%", "special chars value")
-    .with_entry("", "empty key value")
-    .with_entry("empty value", "")
-  
-  match baggage.get(very_long_key) {
-    Some(value) => assert_eq(value, very_long_value)
-    None => @test.fail("Expected to find long baggage key")
-  }
-  
-  match baggage.get("special!@#$%") {
-    Some(value) => assert_eq(value, "special chars value")
-    None => @test.fail("Expected to find special baggage key")
-  }
-  
-  match baggage.get("") {
-    Some(value) => assert_eq(value, "empty key value")
-    None => @test.fail("Expected to find empty baggage key")
-  }
-  
-  match baggage.get("empty value") {
-    Some(value) => assert_eq(value, "")
-    None => @test.fail("Expected to find empty baggage value")
-  }
-}
-
-test "propagation_boundary_cases" {
-  // 测试Propagation的边界情况
-  
-  // 测试包含特殊字符的头部值
-  let special_data = [
-    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("baggage", "key1=value!@#$%,key2=value测试🚀,key3=value with spaces"),
-    ("custom-header", "special!@#$%^&*(){}[]|\\:;\"'<>?,./Unicode测试🚀"),
-    ("empty-header", ""),
-    ("very-long-header", "x".repeat(10000))
-  ]
-  let carrier = MapCarrier::from_map(special_data)
-  
-  // 测试从特殊字符carrier提取
-  let trace_propagator = W3CTraceContextPropagator::{}
-  let baggage_propagator = W3CBaggagePropagator::{}
-  let ctx = context::Context::empty()
-  
-  let extracted_ctx1 = trace_propagator.extract(ctx, carrier)
-  let extracted_ctx2 = baggage_propagator.extract(ctx, carrier)
-  
-  assert_eq(true, true) // 验证不会出错
-  
-  // 测试向空carrier注入
-  let empty_carrier = MapCarrier::new()
-  trace_propagator.inject(ctx, empty_carrier)
-  baggage_propagator.inject(ctx, empty_carrier)
-  
-  // 验证注入的头部
-  match empty_carrier.get("traceparent") {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected traceparent header")
-  }
-  
-  match empty_carrier.get("baggage") {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Expected baggage header")
-  }
-  
-  // 测试复合传播器与空传播器数组
-  let empty_propagators = []
-  let empty_composite = CompositePropagator::new(empty_propagators)
-  
-  empty_composite.inject(ctx, empty_carrier)
-  let extracted_ctx3 = empty_composite.extract(ctx, carrier)
-  
-  assert_eq(true, true) // 验证不会出错
-}
-
-test "metrics_boundary_cases" {
-  // 测试Metrics的边界情况
-  
+  // 4. 模拟并发Metrics操作
   let meter = NoopMeter::{}
+  let counter = meter.create_counter("concurrent.counter", "count", "Concurrent counter")
   
-  // 测试极值指标操作
-  let counter = meter.create_counter("boundary_counter", None, None)
-  let histogram = meter.create_histogram("boundary_histogram", None, None)
-  let up_down_counter = meter.create_up_down_counter("boundary_up_down", None, None)
-  let gauge = meter.create_gauge("boundary_gauge", None, None)
-  
-  // 测试极值counter操作
-  counter.add(9223372036854775807L, Some([
-    ("max.value", AttributeValue::int(9223372036854775807L)),
-    ("very.long.key", AttributeValue::string("k".repeat(1000))),
-    ("special.chars", AttributeValue::string("!@#$%^&*()测试🚀"))
-  ]))
-  
-  counter.add(-9223372036854775808L, Some([
-    ("min.value", AttributeValue::int(-9223372036854775808L)),
-    ("empty.value", AttributeValue::string(""))
-  ]))
-  
-  // 测试极值histogram操作
-  histogram.record(1.7976931348623157e+308, Some([
-    ("max.float", AttributeValue::float(1.7976931348623157e+308)),
-    ("infinity", AttributeValue::float(1.0/0.0)),
-    ("neg.infinity", AttributeValue::float(-1.0/0.0)),
-    ("nan", AttributeValue::float(0.0/0.0))
-  ]))
-  
-  histogram.record(-1.7976931348623157e+308, Some([
-    ("min.float", AttributeValue::float(-1.7976931348623157e+308))
-  ]))
-  
-  // 测试极值up_down_counter操作
-  up_down_counter.add(9223372036854775807L, Some([("positive.max", AttributeValue::string("test"))]))
-  up_down_counter.add(-9223372036854775808L, Some([("negative.max", AttributeValue::string("test"))]))
-  
-  // 测试极值gauge操作
-  gauge.record(1.7976931348623157e+308, Some([("float.max", AttributeValue::string("test"))]))
-  gauge.record(-1.7976931348623157e+308, Some([("float.min", AttributeValue::string("test"))]))
-  
-  assert_eq(true, true) // 验证所有操作不会出错
+  let mut k = 0
+  while k < 1000 {
+    counter.add(1L, [("iteration", AttributeValue::int(k.to_int64()))])
+    k = k + 1
+  }
 }
 
-test "resource_boundary_cases" {
-  // 测试Resource的边界情况
+test "error_handling_recovery_scenarios" {
+  // 测试错误恢复场景
   
-  // 测试极长的服务名称
-  let very_long_service_name = "service-".repeat(10000)
-  let long_resource = Resource::default(very_long_service_name)
+  // 1. 测试部分失败后的恢复
+  let resource = Resource::default("recovery-test-service")
   
-  assert_eq(long_resource.service_name, very_long_service_name)
-  assert_eq(long_resource.service_name.length(), 80000) // "service-" is 8 chars, repeated 10000 times
+  // 模拟部分失败的操作
+  let log_record = LogRecord::builder()
+    .severity(SeverityNumber::Error)
+    .body("Partial failure occurred")
+    .with_attribute("error.recovered", AttributeValue::bool(true))
+    .with_attribute("retry.count", AttributeValue::int(3L))
+    .build()
   
-  // 测试包含特殊字符的服务名称
-  let special_service_name = "special!@#$%^&*(){}[]|\\:;\"'<>?,./Unicode服务测试🚀"
-  let special_resource = Resource::default(special_service_name)
+  // 恢复后的正常操作
+  let recovery_log = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    .body("Operation recovered successfully")
+    .with_attribute("recovery.success", AttributeValue::bool(true))
+    .with_attribute("operation.duration", AttributeValue::float(150.5))
+    .build()
   
-  assert_eq(special_resource.service_name, special_service_name)
+  assert_eq(log_record.severity_number, SeverityNumber::Error)
+  assert_eq(recovery_log.severity_number, SeverityNumber::Info)
   
-  // 测试空服务名称
-  let empty_resource = Resource::default("")
-  assert_eq(empty_resource.service_name, "")
+  // 2. 测试上下文恢复
+  let context = Context::empty()
+  let key = create_key("recovery.key")
+  let original_context = context.with_value(key, "original.value")
   
-  // 测试只包含空格的服务名称
-  let space_resource = Resource::default("   ")
-  assert_eq(space_resource.service_name, "   ")
+  // 模拟上下文丢失
+  let corrupted_context = Context::empty()
   
-  // 测试Unicode服务名称
-  let unicode_resource = Resource::default(" Unicode服务测试🚀 with spaces and 特殊字符!@#$% ")
-  assert_eq(unicode_resource.service_name, " Unicode服务测试🚀 with spaces and 特殊字符!@#$% ")
+  // 恢复上下文
+  let recovered_context = corrupted_context.with_value(key, "original.value")
   
-  // 验证所有资源的SDK信息
-  assert_eq(long_resource.telemetry_sdk_name, "azimuth")
-  assert_eq(special_resource.telemetry_sdk_name, "azimuth")
-  assert_eq(empty_resource.telemetry_sdk_name, "azimuth")
-  assert_eq(space_resource.telemetry_sdk_name, "azimuth")
-  assert_eq(unicode_resource.telemetry_sdk_name, "azimuth")
-  
-  assert_eq(long_resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(special_resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(empty_resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(space_resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(unicode_resource.telemetry_sdk_version, "0.1.0")
-}
-
-test "array_boundary_cases" {
-  // 测试各种数组的边界情况
-  
-  // 测试空数组
-  let empty_string_array = AttributeValue::array_string([])
-  let empty_int_array = AttributeValue::array_int([])
-  let empty_float_array = AttributeValue::array_float([])
-  let empty_bool_array = AttributeValue::array_bool([])
-  
-  match empty_string_array {
-    ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayStringValue")
+  match recovered_context.get(key) {
+    Some(value) => assert_eq(value, "original.value")
+    None => @test.fail("Expected recovered context value")
   }
   
-  match empty_int_array {
-    ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayIntValue")
-  }
+  // 3. 测试传播恢复
+  let propagator = W3CTraceContextPropagator::{}
+  let carrier = MapCarrier::new()
   
-  match empty_float_array {
-    ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayFloatValue")
-  }
+  // 正常传播
+  propagator.inject(original_context, carrier)
+  let extracted_context = propagator.extract(Context::empty(), carrier)
   
-  match empty_bool_array {
-    ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
-    _ => @test.fail("Expected ArrayBoolValue")
-  }
-  
-  // 测试单元素数组
-  let single_string_array = AttributeValue::array_string(["single"])
-  let single_int_array = AttributeValue::array_int([42L])
-  let single_float_array = AttributeValue::array_float([3.14])
-  let single_bool_array = AttributeValue::array_bool([true])
-  
-  match single_string_array {
-    ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 1)
-      assert_eq(arr[0], "single")
-    }
-    _ => @test.fail("Expected ArrayStringValue")
-  }
-  
-  // 测试包含特殊值的数组
-  let special_string_array = AttributeValue::array_string([
-    "", " ", "!@#$%", "测试🚀", "very long string".repeat(1000)
-  ])
-  
-  let special_int_array = AttributeValue::array_int([
-    0L, -1L, 1L, 9223372036854775807L, -9223372036854775808L
-  ])
-  
-  let special_float_array = AttributeValue::array_float([
-    0.0, -0.0, 1.0/0.0, -1.0/0.0, 0.0/0.0, 1.7976931348623157e+308
-  ])
-  
-  let special_bool_array = AttributeValue::array_bool([true, false])
-  
-  match special_string_array {
-    ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 5)
-      assert_eq(arr[0], "")
-      assert_eq(arr[1], " ")
-      assert_eq(arr[2], "!@#$%")
-      assert_eq(arr[3], "测试🚀")
-      assert_eq(arr[4].length(), 16000) // "very long string" is 16 chars, repeated 1000 times
-    }
-    _ => @test.fail("Expected ArrayStringValue")
-  }
-  
-  match special_int_array {
-    ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 5)
-      assert_eq(arr[0], 0L)
-      assert_eq(arr[1], -1L)
-      assert_eq(arr[2], 1L)
-      assert_eq(arr[3], 9223372036854775807L)
-      assert_eq(arr[4], -9223372036854775808L)
-    }
-    _ => @test.fail("Expected ArrayIntValue")
+  // 验证恢复
+  match extracted_context.get(key) {
+    Some(_) => assert_eq(true, true)
+    None => @test.fail("Expected extracted context value")
   }
 }

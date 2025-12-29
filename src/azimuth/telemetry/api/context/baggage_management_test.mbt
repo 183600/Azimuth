@@ -34,7 +34,7 @@ test "baggage_basic_operations" {
 test "baggage_multiple_entries_management" {
   // 测试Baggage的多条目管理
   
-  let empty_baggage = context::Baggage::empty()
+  let empty_baggage = Baggage::empty()
   
   // 添加多个条目
   let baggage1 = empty_baggage.with_entry("user.id", "user-123")
@@ -84,7 +84,7 @@ test "baggage_multiple_entries_management" {
 test "baggage_entry_override_operations" {
   // 测试Baggage条目的覆盖操作
   
-  let empty_baggage = context::Baggage::empty()
+  let empty_baggage = Baggage::empty()
   
   // 添加初始条目
   let baggage1 = empty_baggage.with_entry("user.id", "user-123")
@@ -135,7 +135,7 @@ test "baggage_entry_override_operations" {
 test "baggage_complex_scenarios" {
   // 测试Baggage的复杂场景
   
-  let empty_baggage = context::Baggage::empty()
+  let empty_baggage = Baggage::empty()
   
   // 构建复杂的Baggage层次结构
   let user_baggage = empty_baggage
@@ -229,7 +229,7 @@ test "baggage_complex_scenarios" {
 test "baggage_edge_cases_and_special_values" {
   // 测试Baggage的边界情况和特殊值
   
-  let empty_baggage = context::Baggage::empty()
+  let empty_baggage = Baggage::empty()
   
   // 测试空字符串键和值
   let baggage_empty_key = empty_baggage.with_entry("", "empty-key-value")
@@ -311,7 +311,7 @@ test "baggage_edge_cases_and_special_values" {
 test "baggage_large_scale_operations" {
   // 测试Baggage的大规模操作
   
-  let empty_baggage = context::Baggage::empty()
+  let empty_baggage = Baggage::empty()
   
   // 创建大量条目
   let mut current_baggage = empty_baggage
@@ -388,7 +388,7 @@ test "baggage_large_scale_operations" {
 test "baggage_real_world_usage_patterns" {
   // 测试Baggage的实际使用模式
   
-  let empty_baggage = context::Baggage::empty()
+  let empty_baggage = Baggage::empty()
   
   // 模拟微服务链中的Baggage传播
   let gateway_baggage = empty_baggage

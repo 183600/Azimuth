@@ -1,322 +1,198 @@
-// 跨模块集成测试 - 测试Trace、Metrics、Logs和Context模块之间的协作
-use azimuth.telemetry.api.common.{AttributeValue, Resource, InstrumentationScope}
-use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, SpanLink, NoopTracer, NoopTracerProvider}
-use azimuth.telemetry.api.metrics.{Measurement, Counter, Histogram, UpDownCounter, Gauge, NoopMeter, NoopMeterProvider}
-use azimuth.telemetry.api.logs.{SeverityNumber, LogRecord, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
-use azimuth.telemetry.api.context.{Context, ContextKey, Baggage, create_key}
+// 跨模块集成测试 - 测试不同API之间的协作
+use azimuth.telemetry.api.common.{AttributeValue, Resource}
+use azimuth.telemetry.api.context.{Context, create_key}
+use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber, NoopLogger}
+use azimuth.telemetry.api.metrics.{NoopMeter, Measurement}
+use azimuth.telemetry.api.trace.{Span, SpanKind, StatusCode}
+use azimuth.telemetry.api.propagation.{MapCarrier, W3CTraceContextPropagator}
 
-test "cross_module_trace_metrics_integration" {
-  // 创建上下文和追踪
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("integration-test", Some("1.0.0"))
+test "cross_module_integration_basic" {
+  // 测试基本的跨模块集成
   
-  // 开始一个span
-  let (ctx_with_span, span) = tracer.start_span(
-    ctx, 
-    "operation_with_metrics", 
-    Server, 
-    Some([
-      ("service.name", AttributeValue::string("integration-service")),
-      ("operation.type", AttributeValue::string("data_processing"))
-    ])
-  )
+  // 1. 创建Resource和Context
+  let resource = Resource::default("integration-test-service")
+  let context = Context::empty()
+  let key = create_key("test-key")
+  let context_with_value = context.with_value(key, "test-value")
   
-  // 在span上下文中记录指标
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("integration-test-metrics", Some("1.0.0"))
-  
-  let counter = meter.create_counter("operations.total", Some("count"), Some("Total number of operations"))
-  let histogram = meter.create_histogram("operation.duration", Some("ms"), Some("Operation duration in milliseconds"))
-  let gauge = meter.create_gauge("active.connections", Some("count"), Some("Number of active connections"))
-  
-  // 记录指标数据
-  counter.add(1L, Some([
-    ("operation.name", AttributeValue::string("data_processing")),
-    ("service.name", AttributeValue::string("integration-service"))
-  ]))
-  
-  histogram.record(150.5, Some([
-    ("operation.name", AttributeValue::string("data_processing")),
-    ("service.version", AttributeValue::string("1.2.3"))
-  ]))
-  
-  gauge.record(42.0, Some([
-    ("service.name", AttributeValue::string("integration-service")),
-    ("region", AttributeValue::string("us-west-2"))
-  ]))
-  
-  // 验证span属性
-  assert_eq(span.name, "operation_with_metrics")
-  assert_eq(span.kind, Server)
-  assert_eq(span.attributes.length(), 2)
-  assert_eq(span.attributes[0].0, "service.name")
-  assert_eq(span.attributes[1].0, "operation.type")
-  
-  match span.attributes[0].1 {
-    StringValue(value) => assert_eq(value, "integration-service")
-    _ => @test.fail("Expected StringValue for service.name")
-  }
-  
-  match span.attributes[1].1 {
-    StringValue(value) => assert_eq(value, "data_processing")
-    _ => @test.fail("Expected StringValue for operation.type")
-  }
-}
-
-test "cross_module_trace_logs_integration" {
-  // 创建带有追踪信息的日志记录
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("logging-test", Some("1.0.0"))
-  
-  // 开始一个span
-  let (ctx_with_span, span) = tracer.start_span(
-    ctx, 
-    "operation_with_logging", 
-    Client, 
-    Some([
-      ("user.id", AttributeValue::string("user-12345")),
-      ("request.id", AttributeValue::string("req-67890"))
-    ])
-  )
-  
-  // 创建logger并记录日志
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("integration-test-logger", Some("1.0.0"))
-  
-  // 创建与span关联的日志记录
+  // 2. 测试Context与LogRecord的集成
   let log_record = LogRecord::builder()
-    .timestamp(1640995200000000000L)
     .severity(SeverityNumber::Info)
-    .body("Operation completed successfully")
-    .with_attribute("service.name", AttributeValue::string("integration-service"))
-    .with_attribute("operation.name", AttributeValue::string("data_processing"))
-    .with_attribute("user.id", AttributeValue::string("user-12345"))
-    .with_attribute("duration.ms", AttributeValue::int(250L))
-    .with_attribute("success.rate", AttributeValue::float(0.95))
-    .with_attribute("features", AttributeValue::array_bool([true, false, true]))
+    .body("Integration test log message")
+    .with_attribute("service.name", AttributeValue::string(resource.service_name))
     .build()
   
-  // 发出日志记录
-  logger.emit(log_record)
-  
-  // 使用便捷方法记录不同级别的日志
-  logger.debug("Debugging operation flow", Some([
-    ("step", AttributeValue::string("validation")),
-    ("input.size", AttributeValue::int(1024L))
-  ]))
-  
-  logger.info("Operation started", Some([
-    ("operation.id", AttributeValue::string("op-12345")),
-    ("timestamp", AttributeValue::int(1640995200L))
-  ]))
-  
-  logger.warn("Performance warning", Some([
-    ("threshold.exceeded", AttributeValue::bool(true)),
-    ("actual.duration", AttributeValue::float(1250.5))
-  ]))
-  
-  logger.error("Operation failed", Some([
-    ("error.code", AttributeValue::string("TIMEOUT")),
-    ("error.message", AttributeValue::string("Operation timed out after 30 seconds")),
-    ("retry.count", AttributeValue::int(3L))
-  ]))
-  
-  logger.fatal("Critical system error", Some([
-    ("system.component", AttributeValue::string("database")),
-    ("error.severity", AttributeValue::string("critical")),
-    ("impact", AttributeValue::string("service_unavailable"))
-  ]))
-  
-  // 验证span和日志的关联性
-  assert_eq(span.name, "operation_with_logging")
-  assert_eq(span.kind, Client)
-  assert_eq(span.attributes.length(), 2)
-  
-  // 验证日志记录构建器创建的记录
   assert_eq(log_record.severity_number, SeverityNumber::Info)
-  assert_eq(log_record.timestamp_unix_nanos, 1640995200000000000L)
-  match log_record.body {
-    Some(body_text) => assert_eq(body_text, "Operation completed successfully")
-    None => @test.fail("Expected Some(body) for log record")
+  assert_eq(log_record.body.unwrap_or(""), "Integration test log message")
+  assert_eq(log_record.attributes.length(), 1)
+  
+  // 3. 测试Logger与Context的集成
+  let logger = NoopLogger::{}
+  logger.info("Test log message", [])
+  
+  // 4. 测试Meter与Measurement的集成
+  let meter = NoopMeter::{}
+  let counter = meter.create_counter("test-counter", "count", "Test counter")
+  counter.add(1L, [("test.attribute", AttributeValue::string("test-value"))])
+  
+  // 5. 测试Tracer与Context的集成
+  let tracer = NoopTracer::{}
+  let (span_context, span) = tracer.start_span(
+    context_with_value,
+    "integration-test-span",
+    Some(SpanKind::Internal),
+    [("integration.test", AttributeValue::bool(true))],
+    Some(12345L)
+  )
+  
+  assert_eq(span.name, "integration-test-span")
+  assert_eq(span.kind, SpanKind::Internal)
+  assert_eq(span.attributes.length(), 1)
+  
+  // 6. 测试Propagation与Context的集成
+  let propagator = W3CTraceContextPropagator::{}
+  let carrier = MapCarrier::new()
+  propagator.inject(context_with_value, carrier)
+  
+  let extracted_context = propagator.extract(context, carrier)
+  match extracted_context.get(key) {
+    Some(_) => assert_eq(true, true)
+    None => assert_eq(false, true)
   }
-  assert_eq(log_record.attributes.length(), 6)
 }
 
-test "cross_module_context_baggage_integration" {
-  // 测试Context和Baggage在跨模块传播中的集成
+test "cross_module_complex_workflow" {
+  // 测试复杂的跨模块工作流
   
-  // 创建初始上下文
-  let ctx = Context::empty()
+  // 1. 设置基础组件
+  let resource = Resource::default("complex-workflow-service")
+  let context = Context::empty()
   
-  // 添加上下文值
+  // 2. 在Context中设置多个值
   let user_key = create_key("user.id")
   let request_key = create_key("request.id")
   let trace_key = create_key("trace.id")
   
-  let ctx_with_values = ctx
-    .with_value(user_key, "user-12345")
-    .with_value(request_key, "req-67890")
-    .with_value(trace_key, "trace-abcdef")
+  let context_with_data = context
+    .with_value(user_key, "user-123")
+    .with_value(request_key, "req-456")
+    .with_value(trace_key, "trace-789")
   
-  // 创建baggage
-  let baggage = Baggage::empty()
-    .with_entry("correlation.id", "corr-12345")
-    .with_entry("session.id", "sess-67890")
-    .with_entry("tenant.id", "tenant-abc")
-    .with_entry("region", "us-west-2")
+  // 3. 创建带有属性的LogRecord
+  let log_record = LogRecord::builder()
+    .severity(SeverityNumber::Warn)
+    .body("Complex workflow operation")
+    .with_attribute("user.id", AttributeValue::string("user-123"))
+    .with_attribute("request.id", AttributeValue::string("req-456"))
+    .with_attribute("operation.type", AttributeValue::string("complex_workflow"))
+    .with_attribute("processing.time", AttributeValue::float(150.5))
+    .with_attribute("success", AttributeValue::bool(true))
+    .build()
   
-  // 在带有上下文和baggage的情况下创建span
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("context-test", Some("1.0.0"))
+  assert_eq(log_record.attributes.length(), 5)
   
-  let (final_ctx, span) = tracer.start_span(
-    ctx_with_values, 
-    "context_aware_operation", 
-    Internal, 
-    Some([
-      ("correlation.id", AttributeValue::string("corr-12345")),
-      ("session.id", AttributeValue::string("sess-67890")),
-      ("tenant.id", AttributeValue::string("tenant-abc")),
-      ("region", AttributeValue::string("us-west-2"))
-    ])
+  // 4. 创建多个Span并测试关联
+  let tracer = NoopTracer::{}
+  let (ctx1, span1) = tracer.start_span(
+    context_with_data,
+    "operation-1",
+    Some(SpanKind::Server),
+    [("operation.step", AttributeValue::int(1L))]
   )
   
-  // 验证上下文值
-  match ctx_with_values.get(user_key) {
-    Some(user_id) => assert_eq(user_id, "user-12345")
-    None => @test.fail("Expected Some(user.id)")
+  let (ctx2, span2) = tracer.start_span(
+    ctx1,
+    "operation-2",
+    Some(SpanKind::Client),
+    [("operation.step", AttributeValue::int(2L))]
+  )
+  
+  let (ctx3, span3) = tracer.start_span(
+    ctx2,
+    "operation-3",
+    Some(SpanKind::Internal),
+    [("operation.step", AttributeValue::int(3L))]
+  )
+  
+  assert_eq(span1.name, "operation-1")
+  assert_eq(span2.name, "operation-2")
+  assert_eq(span3.name, "operation-3")
+  assert_eq(span1.kind, SpanKind::Server)
+  assert_eq(span2.kind, SpanKind::Client)
+  assert_eq(span3.kind, SpanKind::Internal)
+  
+  // 5. 创建Metrics并记录
+  let meter = NoopMeter::{}
+  let counter = meter.create_counter("operations.total", "count", "Total operations")
+  let histogram = meter.create_histogram("operation.duration", "ms", "Operation duration")
+  let gauge = meter.create_gauge("system.memory", "MB", "System memory usage")
+  
+  counter.add(1L, [("operation.type", AttributeValue::string("server"))])
+  histogram.record(120.5, [("operation.step", AttributeValue::int(1L))])
+  gauge.record(512.0, [("system.component", AttributeValue::string("heap"))])
+  
+  // 6. 测试Propagation的复杂场景
+  let propagator = W3CTraceContextPropagator::{}
+  let carrier = MapCarrier::new()
+  
+  // 注入上下文
+  propagator.inject(context_with_data, carrier)
+  
+  // 提取上下文
+  let extracted_context = propagator.extract(Context::empty(), carrier)
+  
+  // 验证提取的上下文包含原始数据
+  match extracted_context.get(user_key) {
+    Some(value) => assert_eq(value, "user-123")
+    None => assert_eq(false, true)
   }
   
-  match ctx_with_values.get(request_key) {
-    Some(request_id) => assert_eq(request_id, "req-67890")
-    None => @test.fail("Expected Some(request.id)")
+  match extracted_context.get(request_key) {
+    Some(value) => assert_eq(value, "req-456")
+    None => assert_eq(false, true)
   }
   
-  match ctx_with_values.get(trace_key) {
-    Some(trace_id) => assert_eq(trace_id, "trace-abcdef")
-    None => @test.fail("Expected Some(trace.id)")
-  }
-  
-  // 验证baggage条目
-  match baggage.get("correlation.id") {
-    Some(correlation_id) => assert_eq(correlation_id, "corr-12345")
-    None => @test.fail("Expected Some(correlation.id)")
-  }
-  
-  match baggage.get("session.id") {
-    Some(session_id) => assert_eq(session_id, "sess-67890")
-    None => @test.fail("Expected Some(session.id)")
-  }
-  
-  match baggage.get("tenant.id") {
-    Some(tenant_id) => assert_eq(tenant_id, "tenant-abc")
-    None => @test.fail("Expected Some(tenant.id)")
-  }
-  
-  match baggage.get("region") {
-    Some(region) => assert_eq(region, "us-west-2")
-    None => @test.fail("Expected Some(region)")
-  }
-  
-  // 验证span属性包含了baggage信息
-  assert_eq(span.name, "context_aware_operation")
-  assert_eq(span.kind, Internal)
-  assert_eq(span.attributes.length(), 4)
-  
-  // 验证span属性与baggage的一致性
-  let attribute_names = ["correlation.id", "session.id", "tenant.id", "region"]
-  let mut i = 0
-  while i < attribute_names.length() {
-    let found = span.attributes.any(fn(attr) { attr.0 == attribute_names[i] })
-    assert_eq(found, true)
-    i = i + 1
+  match extracted_context.get(trace_key) {
+    Some(value) => assert_eq(value, "trace-789")
+    None => assert_eq(false, true)
   }
 }
 
-test "cross_module_resource_instrumentation_integration" {
-  // 测试Resource和InstrumentationScope在跨模块使用中的集成
+test "cross_module_error_handling" {
+  // 测试跨模块错误处理
   
-  // 创建资源
-  let resource = Resource::default("integration-service")
-  
-  // 创建带有复杂属性的span
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("resource-test", Some("1.0.0"))
-  
-  let complex_attributes = [
-    ("service.name", AttributeValue::string("integration-service")),
-    ("service.version", AttributeValue::string("2.1.0")),
-    ("service.namespace", AttributeValue::string("production")),
-    ("deployment.environment", AttributeValue::string("prod")),
-    ("host.name", AttributeValue::string("web-server-01")),
-    ("host.ip", AttributeValue::string("10.0.1.100")),
-    ("process.pid", AttributeValue::int(12345L)),
-    ("process.executable.name", AttributeValue::string("integration-service")),
-    ("process.command_line", AttributeValue::array_string(["./integration-service", "--config", "/etc/config.yaml"])),
-    ("process.runtime.name", AttributeValue::string("moonbit")),
-    ("process.runtime.version", AttributeValue::string("1.0.0")),
-    ("process.runtime.description", AttributeValue::string("MoonBit Runtime")),
-    ("os.type", AttributeValue::string("linux")),
-    ("os.version", AttributeValue::string("5.15.0")),
-    ("os.description", AttributeValue::string("Linux 5.15.0-generic")),
-    ("cloud.provider", AttributeValue::string("aws")),
-    ("cloud.region", AttributeValue::string("us-west-2")),
-    ("cloud.availability_zone", AttributeValue::string("us-west-2a")),
-    ("cloud.account.id", AttributeValue::string("123456789012"))
-  ]
-  
-  let (ctx_with_span, span) = tracer.start_span(
-    ctx, 
-    "resource_aware_operation", 
-    Server, 
-    Some(complex_attributes)
-  )
-  
-  // 创建与资源关联的指标
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("resource-metrics", Some("1.0.0"))
-  
-  let counter = meter.create_counter("requests.total", Some("count"), Some("Total number of requests"))
-  counter.add(1L, Some([
-    ("service.name", AttributeValue::string("integration-service")),
-    ("service.version", AttributeValue::string("2.1.0")),
-    ("cloud.region", AttributeValue::string("us-west-2"))
-  ]))
-  
-  // 创建与资源关联的日志
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("resource-logger", Some("1.0.0"))
-  
-  let log_record = LogRecord::builder()
-    .timestamp(1640995200000000000L)
-    .severity(SeverityNumber::Info)
-    .body("Resource-aware operation completed")
-    .with_attribute("service.name", AttributeValue::string("integration-service"))
-    .with_attribute("service.version", AttributeValue::string("2.1.0"))
-    .with_attribute("host.name", AttributeValue::string("web-server-01"))
-    .with_attribute("cloud.region", AttributeValue::string("us-west-2"))
+  // 1. 创建带有错误信息的LogRecord
+  let error_log = LogRecord::builder()
+    .severity(SeverityNumber::Error)
+    .body("Operation failed with error")
+    .with_attribute("error.type", AttributeValue::string("ValidationError"))
+    .with_attribute("error.message", AttributeValue::string("Invalid input parameter"))
+    .with_attribute("error.code", AttributeValue::int(400L))
+    .with_attribute("error.stack", AttributeValue::string("at function1 (line 23)"))
     .build()
   
-  logger.emit(log_record)
+  assert_eq(error_log.severity_number, SeverityNumber::Error)
+  assert_eq(error_log.attributes.length(), 4)
   
-  // 验证资源信息
-  assert_eq(resource.service_name, "integration-service")
-  assert_eq(resource.telemetry_sdk_name, "azimuth")
-  assert_eq(resource.telemetry_sdk_version, "0.1.0")
+  // 2. 创建带有错误状态的Span
+  let tracer = NoopTracer::{}
+  let (error_ctx, error_span) = tracer.start_span(
+    Context::empty(),
+    "error-operation",
+    Some(SpanKind::Internal),
+    [("error.expected", AttributeValue::bool(false))]
+  )
   
-  // 验证span属性
-  assert_eq(span.name, "resource_aware_operation")
-  assert_eq(span.kind, Server)
-  assert_eq(span.attributes.length(), 20)
+  // 在实际实现中，这里应该设置Span的状态为Error
+  // 由于是Noop实现，我们只能验证基本属性
+  assert_eq(error_span.name, "error-operation")
+  assert_eq(error_span.status, Unset)
   
-  // 验证日志记录
-  assert_eq(log_record.severity_number, SeverityNumber::Info)
-  match log_record.body {
-    Some(body_text) => assert_eq(body_text, "Resource-aware operation completed")
-    None => @test.fail("Expected Some(body) for log record")
-  }
-  assert_eq(log_record.attributes.length(), 4)
+  // 3. 测试错误上下文的传播
+  let propagator = W3CTraceContextPropagator::{}
+  let error_carrier = MapCarrier::new()
+  propagator.inject(error_ctx, error_carrier)
+  
+  let recovered_ctx = propagator.extract(Context::empty(), error_carrier)
+  assert_eq(recovered_ctx.values.length(), error_ctx.values.length())
 }

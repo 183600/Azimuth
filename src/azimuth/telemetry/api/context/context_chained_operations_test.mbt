@@ -5,13 +5,13 @@ test "context_chained_operations" {
   // 测试上下文链式操作
   
   // 创建空上下文
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   
   // 创建上下文键
-  let user_key = context::create_key("user")
-  let request_id_key = context::create_key("request_id")
-  let trace_id_key = context::create_key("trace_id")
-  let service_key = context::create_key("service")
+  let user_key = create_key("user")
+  let request_id_key = create_key("request_id")
+  let trace_id_key = create_key("trace_id")
+  let service_key = create_key("service")
   
   // 链式设置多个值
   let ctx_with_user = ctx.with_value(user_key, "alice")
@@ -56,14 +56,14 @@ test "context_nested_chained_operations" {
   // 测试嵌套上下文链式操作
   
   // 创建基础上下文
-  let base_ctx = context::Context::empty()
+  let base_ctx = Context::empty()
   
   // 创建上下文键
-  let auth_key = context::create_key("auth")
-  let user_key = context::create_key("user")
-  let session_key = context::create_key("session")
-  let request_key = context::create_key("request")
-  let trace_key = context::create_key("trace")
+  let auth_key = create_key("auth")
+  let user_key = create_key("user")
+  let session_key = create_key("session")
+  let request_key = create_key("request")
+  let trace_key = create_key("trace")
   
   // 第一层：认证上下文
   let auth_ctx = base_ctx
@@ -128,8 +128,8 @@ test "context_chained_value_overriding" {
   // 测试上下文链式操作中的值覆盖
   
   // 创建上下文和键
-  let ctx = context::Context::empty()
-  let key = context::create_key("override-test")
+  let ctx = Context::empty()
+  let key = create_key("override-test")
   
   // 链式设置多个值，覆盖同一个键
   let ctx1 = ctx.with_value(key, "value1")
@@ -169,8 +169,8 @@ test "context_chained_baggage_operations" {
   // 测试上下文链式操作与baggage的结合
   
   // 创建上下文和baggage
-  let ctx = context::Context::empty()
-  let baggage = context::Baggage::empty()
+  let ctx = Context::empty()
+  let baggage = Baggage::empty()
   
   // 链式添加baggage条目
   let baggage1 = baggage.with_entry("user-id", "12345")
@@ -224,17 +224,17 @@ test "context_complex_chained_scenario" {
   // 测试复杂的上下文链式操作场景
   
   // 模拟微服务调用链
-  let base_ctx = context::Context::empty()
+  let base_ctx = Context::empty()
   
   // 创建各种键
-  let trace_id_key = context::create_key("trace_id")
-  let span_id_key = context::create_key("span_id")
-  let user_id_key = context::create_key("user_id")
-  let auth_token_key = context::create_key("auth_token")
-  let service_name_key = context::create_key("service_name")
-  let operation_key = context::create_key("operation")
-  let request_id_key = context::create_key("request_id")
-  let correlation_id_key = context::create_key("correlation_id")
+  let trace_id_key = create_key("trace_id")
+  let span_id_key = create_key("span_id")
+  let user_id_key = create_key("user_id")
+  let auth_token_key = create_key("auth_token")
+  let service_name_key = create_key("service_name")
+  let operation_key = create_key("operation")
+  let request_id_key = create_key("request_id")
+  let correlation_id_key = create_key("correlation_id")
   
   // 第一层：网关层上下文
   let gateway_ctx = base_ctx
@@ -326,13 +326,13 @@ test "context_chained_performance_characteristics" {
   // 测试上下文链式操作的性能特征
   
   // 创建上下文和键
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let keys = []
   let mut i = 0
   
   // 创建多个键
   while i < 100 {
-    keys.push(context::create_key("key-" + @int.to_string(i)))
+    keys.push(create_key("key-" + to_string(i)))
     i = i + 1
   }
   
@@ -340,7 +340,7 @@ test "context_chained_performance_characteristics" {
   let mut current_ctx = ctx
   let mut j = 0
   while j < keys.length() {
-    current_ctx = current_ctx.with_value(keys[j], "value-" + @int.to_string(j))
+    current_ctx = current_ctx.with_value(keys[j], "value-" + to_string(j))
     j = j + 1
   }
   
@@ -348,8 +348,8 @@ test "context_chained_performance_characteristics" {
   let mut k = 0
   while k < keys.length() {
     match current_ctx.get(keys[k]) {
-      Some(value) => assert_eq(value, "value-" + @int.to_string(k))
-      None => @test.fail("Expected value for key-" + @int.to_string(k))
+      Some(value) => assert_eq(value, "value-" + to_string(k))
+      None => @test.fail("Expected value for key-" + to_string(k))
     }
     k = k + 1
   }
@@ -359,14 +359,14 @@ test "context_chained_performance_characteristics" {
   let mut deep_ctx = ctx
   let mut m = 0
   while m < 1000 {
-    let temp_key = context::create_key("deep-key-" + @int.to_string(m))
-    deep_ctx = deep_ctx.with_value(temp_key, "deep-value-" + @int.to_string(m))
+    let temp_key = create_key("deep-key-" + to_string(m))
+    deep_ctx = deep_ctx.with_value(temp_key, "deep-value-" + to_string(m))
     m = m + 1
   }
   
   // 验证深度链式操作的结果
-  let first_key = context::create_key("deep-key-0")
-  let last_key = context::create_key("deep-key-999")
+  let first_key = create_key("deep-key-0")
+  let last_key = create_key("deep-key-999")
   
   match deep_ctx.get(first_key) {
     Some(value) => assert_eq(value, "deep-value-0")
@@ -379,7 +379,7 @@ test "context_chained_performance_characteristics" {
   }
   
   // 验证中间值
-  let middle_key = context::create_key("deep-key-500")
+  let middle_key = create_key("deep-key-500")
   match deep_ctx.get(middle_key) {
     Some(value) => assert_eq(value, "deep-value-500")
     None => @test.fail("Expected deep-value-500")
@@ -390,11 +390,11 @@ test "context_chained_error_handling" {
   // 测试上下文链式操作的错误处理
   
   // 创建上下文
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   
   // 测试空键和空值
-  let empty_key = context::create_key("")
-  let normal_key = context::create_key("normal")
+  let empty_key = create_key("")
+  let normal_key = create_key("normal")
   
   // 设置空键的值
   let ctx_with_empty_key = ctx.with_value(empty_key, "value-with-empty-key")
@@ -416,7 +416,7 @@ test "context_chained_error_handling" {
   
   // 测试长键和长值
   let long_key_name = "this-is-a-very-long-key-name-that-might-potentially-cause-issues-in-some-implementations"
-  let long_key = context::create_key(long_key_name)
+  let long_key = create_key(long_key_name)
   let long_value = "this-is-a-very-long-value-that-might-potentially-cause-issues-in-some-implementations-and-should-be-tested-thoroughly"
   
   let ctx_with_long_values = ctx.with_value(long_key, long_value)
@@ -428,7 +428,7 @@ test "context_chained_error_handling" {
   }
   
   // 测试特殊字符
-  let special_key = context::create_key("key-with-special-chars:;!@#$%^&*()[]{}|\\\"'<>?/\\")
+  let special_key = create_key("key-with-special-chars:;!@#$%^&*()[]{}|\\\"'<>?/\\")
   let special_value = "value-with-special-chars:;!@#$%^&*()[]{}|\\\"'<>?/\\"
   
   let ctx_with_special_chars = ctx.with_value(special_key, special_value)
@@ -440,7 +440,7 @@ test "context_chained_error_handling" {
   }
   
   // 测试Unicode字符
-  let unicode_key = context::create_key("键-包含-中文")
+  let unicode_key = create_key("键-包含-中文")
   let unicode_value = "值-包含-中文-和-特殊-字符-😀"
   
   let ctx_with_unicode = ctx.with_value(unicode_key, unicode_value)

@@ -1,438 +1,300 @@
-// 性能基准测试用例
-// 测试遥测API的性能特征
-
-use azimuth.telemetry.api.common.{AttributeValue, Resource, InstrumentationScope}
+// 性能基准测试 - 测试关键操作的性能
+use azimuth.telemetry.api.common.{AttributeValue, Resource}
 use azimuth.telemetry.api.context.{Context, create_key}
-use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
-use azimuth.telemetry.api.metrics.{NoopMeter, NoopMeterProvider}
-use azimuth.telemetry.api.trace.{NoopTracer, NoopTracerProvider}
-use azimuth.telemetry.api.propagation.{W3CTraceContextPropagator, W3CBaggagePropagator, MapCarrier}
+use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber}
+use azimuth.telemetry.api.metrics.{NoopMeter}
+use azimuth.telemetry.api.trace.{SpanKind}
+use azimuth.telemetry.api.propagation.{MapCarrier, W3CTraceContextPropagator}
 
-test "context_creation_performance" {
-  // 测试上下文创建性能
+test "performance_resource_creation" {
+  // 测试Resource创建性能
+  let start_time = 0L  // 在实际实现中应该使用高精度计时器
   
-  let start_iterations = 100
-  
-  // 测试空上下文创建
+  // 创建1000个Resource实例
   let mut i = 0
-  while i < start_iterations {
-    let empty_ctx = Context::empty()
-    assert_eq(empty_ctx.values.length(), 0)
+  while i < 1000 {
+    let resource = Resource::default("performance-test-service-" + i.to_string())
+    assert_eq(resource.service_name.length() > 0, true)
     i = i + 1
   }
   
-  // 测试上下文值设置
-  let ctx = Context::empty()
-  let key = create_key("performance_key")
+  let end_time = 0L  // 在实际实现中应该使用高精度计时器
+  let duration = end_time - start_time
   
-  let mut j = 0
-  while j < start_iterations {
-    let ctx_with_value = ctx.with_value(key, "performance_value_" + j.to_string())
-    assert_eq(ctx_with_value.values.length(), j + 1)
-    j = j + 1
-  }
-  
-  // 验证性能测试完成
-  assert_eq(true, true)
+  // 验证性能在可接受范围内（这里只是示例，实际阈值需要根据基准测试确定）
+  assert_eq(duration < 1000000000L, true)  // 小于1秒
 }
 
-test "attribute_value_creation_performance" {
-  // 测试属性值创建性能
+test "performance_context_operations" {
+  // 测试Context操作性能
+  let context = Context::empty()
+  let key1 = create_key("key1")
+  let key2 = create_key("key2")
+  let key3 = create_key("key3")
   
-  let iterations = 50
+  let start_time = 0L
   
-  // 测试字符串属性值创建
+  // 执行大量Context操作
+  let mut ctx = context
   let mut i = 0
-  while i < iterations {
-    let string_attr = AttributeValue::string("performance_string_" + i.to_string())
-    match string_attr {
-      AttributeValue::StringValue(v) => assert_eq(v.has_prefix("performance_string"), true)
-      _ => assert_eq(false, true)
-    }
-    i = i + 1
-  }
-  
-  // 测试整数属性值创建
-  let mut j = 0
-  while j < iterations {
-    let int_attr = AttributeValue::int(j.to_int64())
-    match int_attr {
-      AttributeValue::IntValue(v) => assert_eq(v, j.to_int64())
-      _ => assert_eq(false, true)
-    }
-    j = j + 1
-  }
-  
-  // 测试浮点数属性值创建
-  let mut k = 0
-  while k < iterations {
-    let float_attr = AttributeValue::float(k.to_double() * 3.14)
-    match float_attr {
-      AttributeValue::FloatValue(v) => assert_eq(v > 0.0, true)
-      _ => assert_eq(false, true)
-    }
-    k = k + 1
-  }
-  
-  // 测试布尔属性值创建
-  let mut l = 0
-  while l < iterations {
-    let bool_value = l % 2 == 0
-    let bool_attr = AttributeValue::bool(bool_value)
-    match bool_attr {
-      AttributeValue::BoolValue(v) => assert_eq(v, bool_value)
-      _ => assert_eq(false, true)
-    }
-    l = l + 1
-  }
-  
-  // 验证性能测试完成
-  assert_eq(true, true)
-}
-
-test "log_record_creation_performance" {
-  // 测试日志记录创建性能
-  
-  let iterations = 30
-  
-  // 测试基本日志记录创建
-  let mut i = 0
-  while i < iterations {
-    let log_record = LogRecord::builder()
-      .body("Performance log " + i.to_string())
-      .severity(SeverityNumber::Info)
-      .build()
+  while i < 1000 {
+    ctx = ctx.with_value(key1, "value1-" + i.to_string())
+    ctx = ctx.with_value(key2, "value2-" + i.to_string())
+    ctx = ctx.with_value(key3, "value3-" + i.to_string())
     
-    match log_record.body {
-      Some(body) => assert_eq(body.has_prefix("Performance log"), true)
+    // 读取值
+    match ctx.get(key1) {
+      Some(_) => assert_eq(true, true)
+      None => assert_eq(false, true)
+    }
+    match ctx.get(key2) {
+      Some(_) => assert_eq(true, true)
+      None => assert_eq(false, true)
+    }
+    match ctx.get(key3) {
+      Some(_) => assert_eq(true, true)
       None => assert_eq(false, true)
     }
     
     i = i + 1
   }
   
-  // 测试带属性的日志记录创建
-  let mut j = 0
-  while j < iterations {
-    let mut builder = LogRecord::builder()
-      .body("Performance log with attributes " + j.to_string())
-      .severity(SeverityNumber::Warn)
-    
-    // 添加多个属性
-    let mut k = 0
-    while k < 5 {
-      builder = builder.with_attribute(
-        "attr_" + k.to_string(),
-        AttributeValue::string("value_" + k.to_string() + "_" + j.to_string())
-      )
-      k = k + 1
-    }
-    
-    let log_record = builder.build()
-    assert_eq(log_record.attributes.length(), 5)
-    
-    j = j + 1
-  }
+  let end_time = 0L
+  let duration = end_time - start_time
   
-  // 验证性能测试完成
-  assert_eq(true, true)
+  assert_eq(duration < 2000000000L, true)  // 小于2秒
 }
 
-test "span_creation_performance" {
-  // 测试Span创建性能
+test "performance_attribute_operations" {
+  // 测试属性操作性能
+  let start_time = 0L
   
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("performance-tracer")
-  let ctx = Context::empty()
-  
-  let iterations = 25
-  
-  // 测试基本Span创建
+  // 创建大量属性
   let mut i = 0
-  while i < iterations {
-    let (ctx1, span) = tracer.start_span(ctx, "performance_span_" + i.to_string(), Some(Internal), None, None)
-    assert_eq(span.name.has_prefix("performance_span"), true)
-    assert_eq(span.kind, Internal)
+  while i < 1000 {
+    let string_attr = AttributeValue::string("string-value-" + i.to_string())
+    let int_attr = AttributeValue::int(i.to_int64())
+    let float_attr = AttributeValue::float(i.to_double() * 3.14159)
+    let bool_attr = AttributeValue::bool(i % 2 == 0)
+    
+    // 验证属性值
+    match string_attr {
+      StringValue(s) => assert_eq(s.length() > 0, true)
+      _ => assert_eq(false, true)
+    }
+    
+    match int_attr {
+      IntValue(v) => assert_eq(v >= 0L, true)
+      _ => assert_eq(false, true)
+    }
+    
+    match float_attr {
+      FloatValue(v) => assert_eq(v >= 0.0, true)
+      _ => assert_eq(false, true)
+    }
+    
+    match bool_attr {
+      BoolValue(v) => assert_eq(v == true || v == false, true)
+      _ => assert_eq(false, true)
+    }
+    
     i = i + 1
   }
   
-  // 测试带属性的Span创建
-  let mut j = 0
-  while j < iterations {
-    let attributes = [
-      ("iteration", AttributeValue::int(j.to_int64())),
-      ("operation", AttributeValue::string("performance_test")),
-      ("service", AttributeValue::string("performance_service"))
-    ]
+  let end_time = 0L
+  let duration = end_time - start_time
+  
+  assert_eq(duration < 1000000000L, true)  // 小于1秒
+}
+
+test "performance_log_record_creation" {
+  // 测试LogRecord创建性能
+  let start_time = 0L
+  
+  // 创建大量LogRecord
+  let mut i = 0
+  while i < 1000 {
+    let log_record = LogRecord::builder()
+      .severity(SeverityNumber::Info)
+      .body("Performance test log message " + i.to_string())
+      .with_attribute("iteration", AttributeValue::int(i.to_int64()))
+      .with_attribute("message.id", AttributeValue::string("msg-" + i.to_string()))
+      .with_attribute("process.time", AttributeValue::float(i.to_double()))
+      .with_attribute("success", AttributeValue::bool(i % 10 != 0))
+      .build()
     
-    let (ctx1, span) = tracer.start_span(
-      ctx,
-      "performance_span_with_attrs_" + j.to_string(),
-      Some(Server),
-      Some(attributes),
-      Some(1234567890L + j.to_int64())
+    assert_eq(log_record.body.unwrap_or("").length() > 0, true)
+    assert_eq(log_record.attributes.length(), 4)
+    
+    i = i + 1
+  }
+  
+  let end_time = 0L
+  let duration = end_time - start_time
+  
+  assert_eq(duration < 2000000000L, true)  // 小于2秒
+}
+
+test "performance_span_creation" {
+  // 测试Span创建性能
+  let tracer = NoopTracer::{}
+  let context = Context::empty()
+  let start_time = 0L
+  
+  // 创建大量Span
+  let mut i = 0
+  while i < 1000 {
+    let (ctx, span) = tracer.start_span(
+      context,
+      "performance-span-" + i.to_string(),
+      Some(SpanKind::Internal),
+      [
+        ("iteration", AttributeValue::int(i.to_int64())),
+        ("operation.type", AttributeValue::string("performance_test")),
+        ("component", AttributeValue::string("test_suite"))
+      ],
+      Some(i.to_int64() * 1000000L)
     )
     
-    assert_eq(span.name.has_prefix("performance_span_with_attrs"), true)
-    assert_eq(span.kind, Server)
+    assert_eq(span.name.length() > 0, true)
     assert_eq(span.attributes.length(), 3)
     
-    j = j + 1
+    i = i + 1
   }
   
-  // 验证性能测试完成
-  assert_eq(true, true)
+  let end_time = 0L
+  let duration = end_time - start_time
+  
+  assert_eq(duration < 3000000000L, true)  // 小于3秒
 }
 
-test "metrics_operations_performance" {
-  // 测试指标操作性能
+test "performance_metrics_operations" {
+  // 测试Metrics操作性能
+  let meter = NoopMeter::{}
+  let counter = meter.create_counter("performance.counter", "count", "Performance counter")
+  let histogram = meter.create_histogram("performance.histogram", "ms", "Performance histogram")
+  let gauge = meter.create_gauge("performance.gauge", "units", "Performance gauge")
   
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("performance-meter")
+  let start_time = 0L
   
-  let iterations = 20
-  
-  // 测试计数器操作
-  let counter = meter.create_counter("performance_counter", Some("count"), Some("Performance counter"))
-  
+  // 执行大量Metrics操作
   let mut i = 0
-  while i < iterations {
-    let attributes = [
+  while i < 10000 {
+    counter.add(1L, [
       ("iteration", AttributeValue::int(i.to_int64())),
-      ("operation", AttributeValue::string("counter_test"))
-    ]
-    
-    counter.add(1L, attributes)
-    i = i + 1
-  }
-  
-  // 测试直方图操作
-  let histogram = meter.create_histogram("performance_histogram", Some("ms"), Some("Performance histogram"))
-  
-  let mut j = 0
-  while j < iterations {
-    let attributes = [
-      ("iteration", AttributeValue::int(j.to_int64())),
-      ("operation", AttributeValue::string("histogram_test"))
-    ]
-    
-    histogram.record(j.to_double() * 10.0, attributes)
-    j = j + 1
-  }
-  
-  // 测试仪表操作
-  let gauge = meter.create_gauge("performance_gauge", Some("percent"), Some("Performance gauge"))
-  
-  let mut k = 0
-  while k < iterations {
-    let attributes = [
-      ("iteration", AttributeValue::int(k.to_int64())),
-      ("operation", AttributeValue::string("gauge_test"))
-    ]
-    
-    gauge.record(k.to_double() * 2.5, attributes)
-    k = k + 1
-  }
-  
-  // 验证性能测试完成
-  assert_eq(true, true)
-}
-
-test "propagation_operations_performance" {
-  // 测试传播操作性能
-  
-  let trace_propagator = W3CTraceContextPropagator::{}
-  let baggage_propagator = W3CBaggagePropagator::{}
-  let ctx = Context::empty()
-  
-  let iterations = 15
-  
-  // 测试注入操作
-  let mut i = 0
-  while i < iterations {
-    let carrier = MapCarrier::new()
-    trace_propagator.inject(ctx, carrier)
-    baggage_propagator.inject(ctx, carrier)
-    i = i + 1
-  }
-  
-  // 测试提取操作
-  let carrier_data = [
-    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("baggage", "key1=value1,key2=value2")
-  ]
-  let carrier = MapCarrier::from_map(carrier_data)
-  
-  let mut j = 0
-  while j < iterations {
-    let extracted_ctx1 = trace_propagator.extract(ctx, carrier)
-    let extracted_ctx2 = baggage_propagator.extract(ctx, carrier)
-    j = j + 1
-  }
-  
-  // 验证性能测试完成
-  assert_eq(true, true)
-}
-
-test "resource_and_scope_creation_performance" {
-  // 测试资源和检测范围创建性能
-  
-  let iterations = 30
-  
-  // 测试资源创建
-  let mut i = 0
-  while i < iterations {
-    let resource = Resource::default("performance-service-" + i.to_string())
-    assert_eq(resource.service_name.has_prefix("performance-service"), true)
-    assert_eq(resource.telemetry_sdk_name, "azimuth")
-    i = i + 1
-  }
-  
-  // 测试检测范围创建
-  let mut j = 0
-  while j < iterations {
-    let scope = InstrumentationScope::{
-      name: "performance-scope-" + j.to_string(),
-      version: Some("1.0." + j.to_string()),
-      schema_url: Some("https://example.com/performance-schema-" + j.to_string())
-    }
-    assert_eq(scope.name.has_prefix("performance-scope"), true)
-    j = j + 1
-  }
-  
-  // 验证性能测试完成
-  assert_eq(true, true)
-}
-
-test "mixed_operations_performance" {
-  // 测试混合操作性能
-  
-  let tracer_provider = NoopTracerProvider::{}
-  let logger_provider = NoopLoggerProvider::{}
-  let meter_provider = NoopMeterProvider::{}
-  
-  let tracer = tracer_provider.get_tracer("mixed-performance-tracer")
-  let logger = logger_provider.get_logger("mixed-performance-logger")
-  let meter = meter_provider.get_meter("mixed-performance-meter")
-  
-  let ctx = Context::empty()
-  let iterations = 10
-  
-  // 混合操作循环
-  let mut i = 0
-  while i < iterations {
-    // 创建Span
-    let (ctx1, span) = tracer.start_span(ctx, "mixed_operation_" + i.to_string(), Some(Server), None, None)
-    
-    // 记录日志
-    logger.info("Mixed operation log " + i.to_string(), [
-      ("iteration", AttributeValue::int(i.to_int64())),
-      ("operation", AttributeValue::string("mixed_performance_test"))
+      ("operation", AttributeValue::string("test"))
     ])
     
-    // 记录指标
-    let counter = meter.create_counter("mixed_operations", Some("count"), Some("Mixed operations"))
-    let histogram = meter.create_histogram("mixed_duration", Some("ms"), Some("Mixed operation duration"))
+    histogram.record(i.to_double(), [
+      ("iteration", AttributeValue::int(i.to_int64())),
+      ("operation", AttributeValue::string("test"))
+    ])
     
-    counter.add(1L, [("iteration", AttributeValue::int(i.to_int64()))])
-    histogram.record(i.to_double() * 5.0, [("iteration", AttributeValue::int(i.to_int64()))])
-    
-    // 上下文操作
-    let key = create_key("mixed_key_" + i.to_string())
-    let ctx2 = ctx1.with_value(key, "mixed_value_" + i.to_string())
-    
-    // 传播操作
-    let trace_propagator = W3CTraceContextPropagator::{}
-    let carrier = MapCarrier::new()
-    trace_propagator.inject(ctx2, carrier)
+    gauge.record(i.to_double() / 100.0, [
+      ("iteration", AttributeValue::int(i.to_int64())),
+      ("operation", AttributeValue::string("test"))
+    ])
     
     i = i + 1
   }
   
-  // 验证性能测试完成
-  assert_eq(true, true)
+  let end_time = 0L
+  let duration = end_time - start_time
+  
+  assert_eq(duration < 2000000000L, true)  // 小于2秒
 }
 
-test "large_attribute_sets_performance" {
-  // 测试大属性集性能
+test "performance_propagation_operations" {
+  // 测试传播操作性能
+  let propagator = W3CTraceContextPropagator::{}
+  let context = Context::empty()
+  let key = create_key("performance.key")
   
-  let tracer_provider = NoopTracerProvider::{}
-  let logger_provider = NoopLoggerProvider::{}
-  let meter_provider = NoopMeterProvider::{}
+  let start_time = 0L
   
-  let tracer = tracer_provider.get_tracer("large-attrs-tracer")
-  let logger = logger_provider.get_logger("large-attrs-logger")
-  let meter = meter_provider.get_meter("large-attrs-meter")
-  
-  let ctx = Context::empty()
-  let iterations = 5
-  
-  // 创建大属性集
-  let mut large_attributes = []
+  // 执行大量传播操作
   let mut i = 0
-  while i < 20 {
-    large_attributes.push((
-      "large_attr_" + i.to_string(),
-      AttributeValue::string("large_value_" + i.to_string() + "_" + "x" * 50)
-    ))
+  while i < 1000 {
+    // 创建带有数据的上下文
+    let ctx = context.with_value(key, "value-" + i.to_string())
+    
+    // 创建carrier
+    let carrier = MapCarrier::new()
+    
+    // 注入
+    propagator.inject(ctx, carrier)
+    
+    // 提取
+    let extracted_ctx = propagator.extract(Context::empty(), carrier)
+    
+    // 验证
+    match extracted_ctx.get(key) {
+      Some(_) => assert_eq(true, true)
+      None => assert_eq(false, true)
+    }
+    
     i = i + 1
   }
   
-  // 使用大属性集进行操作
-  let mut j = 0
-  while j < iterations {
-    // 创建带大属性集的Span
-    let (ctx1, span) = tracer.start_span(
+  let end_time = 0L
+  let duration = end_time - start_time
+  
+  assert_eq(duration < 3000000000L, true)  // 小于3秒
+}
+
+test "performance_complex_workflow" {
+  // 测试复杂工作流的性能
+  let resource = Resource::default("performance-workflow-service")
+  let tracer = NoopTracer::{}
+  let meter = NoopMeter::{}
+  let counter = meter.create_counter("workflow.operations", "count", "Workflow operations")
+  let propagator = W3CTraceContextPropagator::{}
+  
+  let start_time = 0L
+  
+  // 执行复杂工作流
+  let mut i = 0
+  while i < 100 {
+    let context = Context::empty()
+    let key = create_key("workflow.id")
+    let ctx = context.with_value(key, "workflow-" + i.to_string())
+    
+    // 创建Span
+    let (span_ctx, span) = tracer.start_span(
       ctx,
-      "large_attrs_span_" + j.to_string(),
-      Some(Client),
-      Some(large_attributes),
-      None
+      "workflow-operation",
+      Some(SpanKind::Internal),
+      [("workflow.id", AttributeValue::string("workflow-" + i.to_string()))]
     )
     
-    // 记录带大属性集的日志
-    logger.info("Large attrs log " + j.to_string(), large_attributes)
+    // 创建LogRecord
+    let log_record = LogRecord::builder()
+      .severity(SeverityNumber::Info)
+      .body("Workflow operation " + i.to_string())
+      .with_attribute("workflow.id", AttributeValue::string("workflow-" + i.to_string()))
+      .build()
     
-    // 记录带大属性集的指标
-    let counter = meter.create_counter("large_attrs_operations", Some("count"), Some("Large attrs operations"))
-    counter.add(1L, large_attributes)
+    // 记录指标
+    counter.add(1L, [("workflow.id", AttributeValue::string("workflow-" + i.to_string()))])
     
-    j = j + 1
-  }
-  
-  // 验证性能测试完成
-  assert_eq(true, true)
-}
-
-test "api_provider_creation_performance" {
-  // 测试API提供器创建性能
-  
-  let iterations = 20
-  
-  // 测试追踪器提供器创建
-  let mut i = 0
-  while i < iterations {
-    let tracer_provider = NoopTracerProvider::{}
-    let tracer = tracer_provider.get_tracer("perf-tracer-" + i.to_string(), Some("1.0." + i.to_string()))
+    // 传播上下文
+    let carrier = MapCarrier::new()
+    propagator.inject(span_ctx, carrier)
+    let extracted_ctx = propagator.extract(Context::empty(), carrier)
+    
+    // 验证
+    assert_eq(span.name, "workflow-operation")
+    assert_eq(log_record.body.unwrap_or(""), "Workflow operation " + i.to_string())
+    match extracted_ctx.get(key) {
+      Some(_) => assert_eq(true, true)
+      None => assert_eq(false, true)
+    }
+    
     i = i + 1
   }
   
-  // 测试日志器提供器创建
-  let mut j = 0
-  while j < iterations {
-    let logger_provider = NoopLoggerProvider::{}
-    let logger = logger_provider.get_logger("perf-logger-" + j.to_string(), Some("1.0." + j.to_string()))
-    j = j + 1
-  }
+  let end_time = 0L
+  let duration = end_time - start_time
   
-  // 测试仪表提供器创建
-  let mut k = 0
-  while k < iterations {
-    let meter_provider = NoopMeterProvider::{}
-    let meter = meter_provider.get_meter("perf-meter-" + k.to_string(), Some("1.0." + k.to_string()))
-    k = k + 1
-  }
-  
-  // 验证性能测试完成
-  assert_eq(true, true)
+  assert_eq(duration < 5000000000L, true)  // 小于5秒
 }

@@ -219,7 +219,7 @@ test "logs_metrics_integration" {
 test "context_propagation_integration" {
   // 测试Context、Propagation和Trace的集成
   
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let user_key = create_key("user-id")
   let session_key = create_key("session-id")
   
@@ -399,7 +399,7 @@ test "end_to_end_telemetry_flow" {
   }
   
   // 2. 创建Context并添加Baggage
-  let ctx = context::Context::empty()
+  let ctx = Context::empty()
   let baggage = Baggage::empty()
     .with_entry("user.id", "12345")
     .with_entry("request.id", "req-67890")

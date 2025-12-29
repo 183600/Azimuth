@@ -16,7 +16,7 @@ test "trace_api_performance_regression" {
       context::Context::empty(),
       "performance-span-" + i.to_string(),
       trace::Internal,
-      [("iteration", common::AttributeValue::int(i.to_int64()))],
+      [("iteration", AttributeValue::int(i.to_int64()))],
       i.to_int64() * 1000L
     )
     
@@ -38,7 +38,7 @@ test "trace_api_performance_regression" {
   let mut large_attrs : Array[(String, common::AttributeValue)] = []
   let mut j = 0
   while j < 100 {
-    large_attrs.push(("large.attr." + j.to_string(), common::AttributeValue::string("value." + j.to_string())))
+    large_attrs.push(("large.attr." + j.to_string(), AttributeValue::string("value." + j.to_string())))
     j = j + 1
   }
   
@@ -75,7 +75,7 @@ test "metrics_api_performance_regression" {
   
   let mut i = 0
   while i < num_counter_ops {
-    counter.add(i.to_int64(), [("counter.iteration", common::AttributeValue::int(i.to_int64()))])
+    counter.add(i.to_int64(), [("counter.iteration", AttributeValue::int(i.to_int64()))])
     i = i + 1
   }
   
@@ -90,7 +90,7 @@ test "metrics_api_performance_regression" {
   
   let mut j = 0
   while j < num_histogram_ops {
-    histogram.record(j.to_float(), [("histogram.iteration", common::AttributeValue::int(j.to_int64()))])
+    histogram.record(j.to_float(), [("histogram.iteration", AttributeValue::int(j.to_int64()))])
     j = j + 1
   }
   
@@ -104,7 +104,7 @@ test "metrics_api_performance_regression" {
   let mut many_attrs : Array[(String, common::AttributeValue)] = []
   let mut k = 0
   while k < 50 {
-    many_attrs.push(("metric.attr." + k.to_string(), common::AttributeValue::float(k.to_float())))
+    many_attrs.push(("metric.attr." + k.to_string(), AttributeValue::float(k.to_float())))
     k = k + 1
   }
   
@@ -134,11 +134,11 @@ test "logs_api_performance_regression" {
   let mut i = 0
   while i < num_convenience_logs {
     match i % 5 {
-      0 => logger.debug("Debug message " + i.to_string(), [("iteration", common::AttributeValue::int(i.to_int64()))])
-      1 => logger.info("Info message " + i.to_string(), [("iteration", common::AttributeValue::int(i.to_int64()))])
-      2 => logger.warn("Warning message " + i.to_string(), [("iteration", common::AttributeValue::int(i.to_int64()))])
-      3 => logger.error("Error message " + i.to_string(), [("iteration", common::AttributeValue::int(i.to_int64()))])
-      _ => logger.fatal("Fatal message " + i.to_string(), [("iteration", common::AttributeValue::int(i.to_int64()))])
+      0 => logger.debug("Debug message " + i.to_string(), [("iteration", AttributeValue::int(i.to_int64()))])
+      1 => logger.info("Info message " + i.to_string(), [("iteration", AttributeValue::int(i.to_int64()))])
+      2 => logger.warn("Warning message " + i.to_string(), [("iteration", AttributeValue::int(i.to_int64()))])
+      3 => logger.error("Error message " + i.to_string(), [("iteration", AttributeValue::int(i.to_int64()))])
+      _ => logger.fatal("Fatal message " + i.to_string(), [("iteration", AttributeValue::int(i.to_int64()))])
     }
     i = i + 1
   }
@@ -165,8 +165,8 @@ test "logs_api_performance_regression" {
         _ => logs::Fatal
       })
       .body("Structured log message " + j.to_string())
-      .with_attribute("builder.iteration", common::AttributeValue::int(j.to_int64()))
-      .with_attribute("batch.id", common::AttributeValue::string("batch-" + (j / 10).to_string()))
+      .with_attribute("builder.iteration", AttributeValue::int(j.to_int64()))
+      .with_attribute("batch.id", AttributeValue::string("batch-" + (j / 10).to_string()))
       .build()
     
     logger.emit(log_record)
@@ -183,7 +183,7 @@ test "logs_api_performance_regression" {
   let mut many_log_attrs : Array[(String, common::AttributeValue)] = []
   let mut k = 0
   while k < 30 {
-    many_log_attrs.push(("log.attr." + k.to_string(), common::AttributeValue::string("value." + k.to_string())))
+    many_log_attrs.push(("log.attr." + k.to_string(), AttributeValue::string("value." + k.to_string())))
     k = k + 1
   }
   
@@ -228,7 +228,7 @@ test "context_propagation_performance" {
       ctx,
       "nested-span-" + i.to_string(),
       trace::Internal,
-      [("depth", common::AttributeValue::int(i.to_int64()))]
+      [("depth", AttributeValue::int(i.to_int64()))]
     )
     ctx = new_ctx
     @assert.eq(span.name, "nested-span-" + i.to_string())
@@ -257,7 +257,7 @@ test "context_propagation_performance" {
       base_span_ctx,
       "child-span-" + j.to_string(),
       trace::Internal,
-      [("sibling", common::AttributeValue::int(j.to_int64()))]
+      [("sibling", AttributeValue::int(j.to_int64()))]
     )
     
     @assert.eq(child_span.parent_span_id.unwrap(), base_span.context.span_id)
@@ -279,29 +279,29 @@ test "attribute_value_performance" {
   
   let mut i = 0
   while i < num_attrs {
-    let string_attr = common::AttributeValue::string("string-value-" + i.to_string())
-    let int_attr = common::AttributeValue::int(i.to_int64())
-    let float_attr = common::AttributeValue::float(i.to_float())
-    let bool_attr = common::AttributeValue::bool(i % 2 == 0)
+    let string_attr = AttributeValue::string("string-value-" + i.to_string())
+    let int_attr = AttributeValue::int(i.to_int64())
+    let float_attr = AttributeValue::float(i.to_float())
+    let bool_attr = AttributeValue::bool(i % 2 == 0)
     
     // 验证属性值
     match string_attr {
-      common::StringValue(v) => @assert.assert(v.contains(i.to_string()), "String value should contain iteration")
+      StringValue(v) => @assert.assert(v.contains(i.to_string()), "String value should contain iteration")
       _ => @assert.fail("Expected StringValue")
     }
     
     match int_attr {
-      common::IntValue(v) => @assert.eq(v, i.to_int64())
+      IntValue(v) => @assert.eq(v, i.to_int64())
       _ => @assert.fail("Expected IntValue")
     }
     
     match float_attr {
-      common::FloatValue(v) => @assert.eq(v, i.to_float())
+      FloatValue(v) => @assert.eq(v, i.to_float())
       _ => @assert.fail("Expected FloatValue")
     }
     
     match bool_attr {
-      common::BoolValue(v) => @assert.eq(v, i % 2 == 0)
+      BoolValue(v) => @assert.eq(v, i % 2 == 0)
       _ => @assert.fail("Expected BoolValue")
     }
     
@@ -327,7 +327,7 @@ test "attribute_value_performance" {
       string_array.push("array-element-" + k.to_string())
       k = k + 1
     }
-    let array_string_attr = common::AttributeValue::array_string(string_array)
+    let array_string_attr = AttributeValue::array_string(string_array)
     
     let mut int_array = []
     let mut l = 0
@@ -335,16 +335,16 @@ test "attribute_value_performance" {
       int_array.push(l.to_int64())
       l = l + 1
     }
-    let array_int_attr = common::AttributeValue::array_int(int_array)
+    let array_int_attr = AttributeValue::array_int(int_array)
     
     // 验证数组属性
     match array_string_attr {
-      common::ArrayStringValue(v) => @assert.eq(v.length(), array_size)
+      ArrayStringValue(v) => @assert.eq(v.length(), array_size)
       _ => @assert.fail("Expected ArrayStringValue")
     }
     
     match array_int_attr {
-      common::ArrayIntValue(v) => @assert.eq(v.length(), array_size)
+      ArrayIntValue(v) => @assert.eq(v.length(), array_size)
       _ => @assert.fail("Expected ArrayIntValue")
     }
     
@@ -372,9 +372,9 @@ test "resource_operations_performance" {
       telemetry_sdk_name: "azimuth",
       telemetry_sdk_version: "0.1.0",
       attributes: [
-        ("resource.id", common::AttributeValue::int(i.to_int64())),
-        ("performance.test", common::AttributeValue::bool(true)),
-        ("batch.id", common::AttributeValue::string("batch-" + (i / 10).to_string()))
+        ("resource.id", AttributeValue::int(i.to_int64())),
+        ("performance.test", AttributeValue::bool(true)),
+        ("batch.id", AttributeValue::string("batch-" + (i / 10).to_string()))
       ]
     }
     
@@ -429,7 +429,7 @@ test "memory_usage_regression" {
       context::Context::empty(),
       "memory-test-span-" + i.to_string(),
       trace::Internal,
-      [("memory.test", common::AttributeValue::int(i.to_int64()))]
+      [("memory.test", AttributeValue::int(i.to_int64()))]
     )
     spans.push(span)
     i = i + 1
@@ -459,7 +459,7 @@ test "memory_usage_regression" {
       .timestamp(k.to_int64() * 1000000L)
       .severity(logs::Info)
       .body("Memory test log " + k.to_string())
-      .with_attribute("memory.test", common::AttributeValue::int(k.to_int64()))
+      .with_attribute("memory.test", AttributeValue::int(k.to_int64()))
       .build()
     
     log_records.push(log_record)

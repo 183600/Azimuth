@@ -46,11 +46,11 @@ test "log_record_builder_attribute_chaining" {
     .timestamp(1640995200000000000L)
     .severity(logs::Info)
     .body("HTTP request processed")
-    .with_attribute("http.method", common::AttributeValue::string("GET"))
-    .with_attribute("http.status_code", common::AttributeValue::int(200L))
-    .with_attribute("http.duration_ms", common::AttributeValue::float(123.456))
-    .with_attribute("http.success", common::AttributeValue::bool(true))
-    .with_attribute("user.roles", common::AttributeValue::array_string(["admin", "user"]))
+    .with_attribute("http.method", AttributeValue::string("GET"))
+    .with_attribute("http.status_code", AttributeValue::int(200L))
+    .with_attribute("http.duration_ms", AttributeValue::float(123.456))
+    .with_attribute("http.success", AttributeValue::bool(true))
+    .with_attribute("user.roles", AttributeValue::array_string(["admin", "user"]))
     .build()
   
   // 验证属性数量和内容
@@ -59,19 +59,19 @@ test "log_record_builder_attribute_chaining" {
   // 验证每个属性
   assert_eq(log_record.attributes[0].0, "http.method")
   match log_record.attributes[0].1 {
-    common::StringValue(method) => assert_eq(method, "GET")
+    StringValue(method) => assert_eq(method, "GET")
     _ => assert_eq(false, true)
   }
   
   assert_eq(log_record.attributes[1].0, "http.status_code")
   match log_record.attributes[1].1 {
-    common::IntValue(status) => assert_eq(status, 200L)
+    IntValue(status) => assert_eq(status, 200L)
     _ => assert_eq(false, true)
   }
   
   assert_eq(log_record.attributes[2].0, "http.duration_ms")
   match log_record.attributes[2].1 {
-    common::FloatValue(duration) => {
+    FloatValue(duration) => {
       assert_eq(duration > 120.0 && duration < 130.0, true)
     }
     _ => assert_eq(false, true)
@@ -79,13 +79,13 @@ test "log_record_builder_attribute_chaining" {
   
   assert_eq(log_record.attributes[3].0, "http.success")
   match log_record.attributes[3].1 {
-    common::BoolValue(success) => assert_eq(success, true)
+    BoolValue(success) => assert_eq(success, true)
     _ => assert_eq(false, true)
   }
   
   assert_eq(log_record.attributes[4].0, "user.roles")
   match log_record.attributes[4].1 {
-    common::ArrayStringValue(roles) => {
+    ArrayStringValue(roles) => {
       assert_eq(roles.length(), 2)
       assert_eq(roles[0], "admin")
       assert_eq(roles[1], "user")
@@ -170,7 +170,7 @@ test "log_record_builder_trace_context_integration" {
     .timestamp(1640995200000000000L)
     .severity(logs::Info)
     .body("Operation completed with trace context")
-    .with_attribute("operation.name", common::AttributeValue::string("user-login"))
+    .with_attribute("operation.name", AttributeValue::string("user-login"))
     .build()
   
   // 手动设置追踪上下文（因为简化实现中没有直接的方法）
@@ -227,8 +227,8 @@ test "log_record_builder_resource_and_instrumentation_scope" {
     ..resource,
     service_version: Some("2.1.0"),
     attributes: [
-      ("deployment.environment", common::AttributeValue::string("production")),
-      ("service.instance.id", common::AttributeValue::string("instance-123"))
+      ("deployment.environment", AttributeValue::string("production")),
+      ("service.instance.id", AttributeValue::string("instance-123"))
     ]
   }
   
@@ -244,8 +244,8 @@ test "log_record_builder_resource_and_instrumentation_scope" {
     .timestamp(1640995200000000000L)
     .severity(logs::Info)
     .body("User authentication successful")
-    .with_attribute("user.id", common::AttributeValue::string("user-456"))
-    .with_attribute("auth.method", common::AttributeValue::string("oauth2"))
+    .with_attribute("user.id", AttributeValue::string("user-456"))
+    .with_attribute("auth.method", AttributeValue::string("oauth2"))
     .build()
   
   // 手动设置资源和InstrumentationScope
@@ -268,7 +268,7 @@ test "log_record_builder_resource_and_instrumentation_scope" {
       assert_eq(res.attributes.length(), 2)
       assert_eq(res.attributes[0].0, "deployment.environment")
       match res.attributes[0].1 {
-        common::StringValue(env) => assert_eq(env, "production")
+        StringValue(env) => assert_eq(env, "production")
         _ => assert_eq(false, true)
       }
     }
@@ -311,8 +311,8 @@ test "log_record_builder_observed_timestamp_and_severity_text" {
     .timestamp(1640995200000000000L)  // 事件时间戳
     .severity(logs::Warn)
     .body("Resource usage warning")
-    .with_attribute("cpu.usage", common::AttributeValue::float(85.5))
-    .with_attribute("memory.usage", common::AttributeValue::float(78.2))
+    .with_attribute("cpu.usage", AttributeValue::float(85.5))
+    .with_attribute("memory.usage", AttributeValue::float(78.2))
     .build()
   
   // 手动设置观察时间戳和严重性文本
@@ -353,13 +353,13 @@ test "log_record_builder_observed_timestamp_and_severity_text" {
   // 验证属性值
   assert_eq(complete_log_record.attributes[0].0, "cpu.usage")
   match complete_log_record.attributes[0].1 {
-    common::FloatValue(cpu) => assert_eq(cpu > 85.0 && cpu < 86.0, true)
+    FloatValue(cpu) => assert_eq(cpu > 85.0 && cpu < 86.0, true)
     _ => assert_eq(false, true)
   }
   
   assert_eq(complete_log_record.attributes[1].0, "memory.usage")
   match complete_log_record.attributes[1].1 {
-    common::FloatValue(memory) => assert_eq(memory > 78.0 && memory < 79.0, true)
+    FloatValue(memory) => assert_eq(memory > 78.0 && memory < 79.0, true)
     _ => assert_eq(false, true)
   }
 }

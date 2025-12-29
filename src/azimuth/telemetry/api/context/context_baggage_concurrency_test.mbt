@@ -4,7 +4,7 @@
 test "context_basic_concurrent_access" {
   // 测试Context的基本并发访问
   
-  let base_ctx = context::Context::empty()
+  let base_ctx = Context::empty()
   let key1 = create_key("concurrent.key1")
   let key2 = create_key("concurrent.key2")
   let key3 = create_key("concurrent.key3")
@@ -50,7 +50,7 @@ test "context_basic_concurrent_access" {
 test "context_chained_operations_isolation" {
   // 测试Context链式操作的隔离性
   
-  let base_ctx = context::Context::empty()
+  let base_ctx = Context::empty()
   let key1 = create_key("chain.key1")
   let key2 = create_key("chain.key2")
   let key3 = create_key("chain.key3")
@@ -224,7 +224,7 @@ test "baggage_chained_operations_isolation" {
 test "context_complex_concurrent_scenarios" {
   // 测试Context的复杂并发场景
   
-  let base_ctx = context::Context::empty()
+  let base_ctx = Context::empty()
   
   // 创建多个键
   let keys = [
@@ -410,7 +410,7 @@ test "baggage_complex_concurrent_scenarios" {
 test "context_and_baggage_integration_concurrency" {
   // 测试Context和Baggage集成的并发场景
   
-  let base_ctx = context::Context::empty()
+  let base_ctx = Context::empty()
   let base_baggage = Baggage::empty()
   
   // 创建Context键
@@ -482,7 +482,7 @@ test "context_and_baggage_integration_concurrency" {
 test "context_edge_cases_concurrency" {
   // 测试Context的边界情况并发
   
-  let base_ctx = context::Context::empty()
+  let base_ctx = Context::empty()
   
   // 测试空字符串键和值
   let empty_key = create_key("")
@@ -633,7 +633,7 @@ test "baggage_edge_cases_concurrency" {
 test "context_and_baggage_mixed_concurrency" {
   // 测试Context和Baggage的混合并发场景
   
-  let base_ctx = context::Context::empty()
+  let base_ctx = Context::empty()
   let base_baggage = Baggage::empty()
   
   // 创建多个Context和Baggage的组合

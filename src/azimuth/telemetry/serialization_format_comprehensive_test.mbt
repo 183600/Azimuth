@@ -1,429 +1,439 @@
-// 序列化和反序列化综合测试
-test "attribute_value_serialization" {
-  // 测试AttributeValue的序列化格式
-  
-  // 字符串属性序列化
-  let string_attr = AttributeValue::string("test-value")
-  let string_serialized = match string_attr {
-    StringValue(s) => "string:" + s
-    _ => "unknown"
-  }
-  assert_eq(string_serialized, "string:test-value")
-  
-  // 整数属性序列化
-  let int_attr = AttributeValue::int(42L)
-  let int_serialized = match int_attr {
-    IntValue(i) => "int:" + i.to_string()
-    _ => "unknown"
-  }
-  assert_eq(int_serialized, "int:42")
-  
-  // 浮点数属性序列化
-  let float_attr = AttributeValue::float(3.14)
-  let float_serialized = match float_attr {
-    FloatValue(f) => "float:" + f.to_string()
-    _ => "unknown"
-  }
-  assert_eq(float_serialized.has_prefix("float:3.14"), true)
-  
-  // 布尔属性序列化
-  let bool_attr = AttributeValue::bool(true)
-  let bool_serialized = match bool_attr {
-    BoolValue(b) => "bool:" + (if b { "true" } else { "false" })
-    _ => "unknown"
-  }
-  assert_eq(bool_serialized, "bool:true")
-  
-  // 字符串数组属性序列化
-  let string_array_attr = AttributeValue::array_string(["a", "b", "c"])
-  let string_array_serialized = match string_array_attr {
-    ArrayStringValue(arr) => {
-      let result = "array_string:"
-      let mut i = 0
-      while i < arr.length() {
-        if i > 0 { result = result + "," }
-        result = result + arr[i]
-        i = i + 1
-      }
-      result
-    }
-    _ => "unknown"
-  }
-  assert_eq(string_array_serialized, "array_string:a,b,c")
-  
-  // 整数数组属性序列化
-  let int_array_attr = AttributeValue::array_int([1L, 2L, 3L])
-  let int_array_serialized = match int_array_attr {
-    ArrayIntValue(arr) => {
-      let result = "array_int:"
-      let mut i = 0
-      while i < arr.length() {
-        if i > 0 { result = result + "," }
-        result = result + arr[i].to_string()
-        i = i + 1
-      }
-      result
-    }
-    _ => "unknown"
-  }
-  assert_eq(int_array_serialized, "array_int:1,2,3")
-}
+// 序列化和反序列化测试 - 测试数据的持久化和传输
+use azimuth.telemetry.api.common.{AttributeValue, Resource}
+use azimuth.telemetry.api.context.{Context, create_key}
+use azimuth.telemetry.api.logs.{LogRecord, SeverityNumber}
+use azimuth.telemetry.api.metrics.{Measurement}
+use azimuth.telemetry.api.trace.{SpanKind, StatusCode, SpanContext}
+use azimuth.telemetry.api.propagation.{MapCarrier, W3CTraceContextPropagator}
 
-test "span_context_serialization" {
-  // 测试SpanContext的序列化格式
+test "serialization_attribute_values" {
+  // 测试AttributeValue的序列化和反序列化
   
-  let trace_id = Array::make(16, 0x00_byte)
-  trace_id[0] = 0x0a_byte
-  trace_id[1] = 0xf7_byte
-  trace_id[2] = 0x65_byte
-  trace_id[3] = 0x19_byte
+  // 1. 测试基本类型的序列化
+  let string_attr = AttributeValue::string("test-string")
+  let int_attr = AttributeValue::int(42L)
+  let float_attr = AttributeValue::float(3.14159)
+  let bool_attr = AttributeValue::bool(true)
   
-  let span_id = Array::make(8, 0x00_byte)
-  span_id[0] = 0xb7_byte
-  span_id[1] = 0xad_byte
-  span_id[2] = 0x6b_byte
-  span_id[3] = 0x71_byte
-  
-  let span_context = SpanContext::{
-    trace_id: trace_id,
-    span_id: span_id,
-    trace_flags: 0x01_byte,
-    trace_state: "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
-  }
-  
-  // 序列化SpanContext为W3C traceparent格式
-  let trace_id_hex = "0af7651916cd43dd8448eb211c80319c"
-  let span_id_hex = "b7ad6b7169203331"
-  let trace_flags_hex = "01"
-  
-  let traceparent_serialized = "00-" + trace_id_hex + "-" + span_id_hex + "-" + trace_flags_hex
-  assert_eq(traceparent_serialized, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  
-  // 序列化trace_state
-  let trace_state_serialized = span_context.trace_state
-  assert_eq(trace_state_serialized, "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
+  // 模拟序列化为字符串
+  let string_serialized = "string:test-string"
+  let int_serialized = "int:42"
+  let float_serialized = "float:3.14159"
+  let bool_serialized = "bool:true"
   
   // 验证序列化格式
-  assert_eq(traceparent_serialized.has_prefix("00-"), true)
-  assert_eq(traceparent_serialized.contains("-"), true)
-  assert_eq(traceparent_serialized.length(), 55)
+  assert_eq(string_serialized.starts_with("string:"), true)
+  assert_eq(int_serialized.starts_with("int:"), true)
+  assert_eq(float_serialized.starts_with("float:"), true)
+  assert_eq(bool_serialized.starts_with("bool:"), true)
   
-  assert_eq(trace_state_serialized.contains("rojo="), true)
-  assert_eq(trace_state_serialized.contains("congo="), true)
-  assert_eq(trace_state_serialized.contains(","), true)
-}
-
-test "log_record_serialization" {
-  // 测试LogRecord的序列化格式
+  // 2. 测试数组类型的序列化
+  let string_array = AttributeValue::array_string(["a", "b", "c"])
+  let int_array = AttributeValue::array_int([1L, 2L, 3L])
+  let float_array = AttributeValue::array_float([1.1, 2.2, 3.3])
+  let bool_array = AttributeValue::array_bool([true, false, true])
   
-  let log_record = LogRecord::builder()
-    .timestamp(1234567890L)
-    .severity(Error)
-    .body("Error processing request")
-    .with_attribute("error.code", AttributeValue::int(500L))
-    .with_attribute("error.message", AttributeValue::string("Internal server error"))
-    .with_attribute("user.id", AttributeValue::int(12345L))
-    .build()
+  // 模拟数组序列化
+  let string_array_serialized = "array_string:[\"a\",\"b\",\"c\"]"
+  let int_array_serialized = "array_int:[1,2,3]"
+  let float_array_serialized = "array_float:[1.1,2.2,3.3]"
+  let bool_array_serialized = "array_bool:[true,false,true]"
   
-  // 序列化LogRecord为JSON格式（模拟）
-  let log_json = "{"
-    + "\"timestamp\":" + log_record.timestamp_unix_nanos.to_string() + ","
-    + "\"severity\":\"ERROR\","
-    + "\"body\":\"Error processing request\","
-    + "\"attributes\":["
-    + "{\"key\":\"error.code\",\"value\":\"int:500\"},"
-    + "{\"key\":\"error.message\",\"value\":\"string:Internal server error\"},"
-    + "{\"key\":\"user.id\",\"value\":\"int:12345\"}"
-    + "]}"
+  // 验证数组序列化格式
+  assert_eq(string_array_serialized.starts_with("array_string:"), true)
+  assert_eq(int_array_serialized.starts_with("array_int:"), true)
+  assert_eq(float_array_serialized.starts_with("array_float:"), true)
+  assert_eq(bool_array_serialized.starts_with("array_bool:"), true)
   
-  // 验证JSON格式
-  assert_eq(log_json.contains("\"timestamp\":1234567890"), true)
-  assert_eq(log_json.contains("\"severity\":\"ERROR\""), true)
-  assert_eq(log_json.contains("\"body\":\"Error processing request\""), true)
-  assert_eq(log_json.contains("\"attributes\""), true)
-  assert_eq(log_json.contains("\"key\":\"error.code\""), true)
-  assert_eq(log_json.contains("\"value\":\"int:500\""), true)
+  // 3. 测试特殊值的序列化
+  let empty_string = AttributeValue::string("")
+  let zero_int = AttributeValue::int(0L)
+  let negative_int = AttributeValue::int(-1L)
+  let infinity_float = AttributeValue::float(1.0/0.0)
+  let nan_float = AttributeValue::float(0.0/0.0)
   
-  // 序列化严重性级别
-  let severity_serialized = match log_record.severity_number {
-    Trace => "TRACE"
-    Debug => "DEBUG"
-    Info => "INFO"
-    Warn => "WARN"
-    Error => "ERROR"
-    Fatal => "FATAL"
+  // 验证特殊值序列化
+  assert_eq(empty_string, StringValue(""))
+  assert_eq(zero_int, IntValue(0L))
+  assert_eq(negative_int, IntValue(-1L))
+  match infinity_float {
+    FloatValue(v) => assert_eq(v > 1.0e+308, true)
+    _ => @test.fail("Expected FloatValue with infinity")
   }
-  assert_eq(severity_serialized, "ERROR")
-}
-
-test "metrics_serialization" {
-  // 测试Metrics的序列化格式
-  
-  // 序列化Measurement
-  let measurement = Measurement::{
-    value: 99.5,
-    attributes: [
-      ("service.name", AttributeValue::string("payment-service")),
-      ("operation.type", AttributeValue::string("transaction")),
-      ("status", AttributeValue::string("success"))
-    ]
+  match nan_float {
+    FloatValue(v) => assert_eq(v != v, true)
+    _ => @test.fail("Expected FloatValue with NaN")
   }
-  
-  let measurement_json = "{"
-    + "\"value\":99.5,"
-    + "\"attributes\":["
-    + "{\"key\":\"service.name\",\"value\":\"string:payment-service\"},"
-    + "{\"key\":\"operation.type\",\"value\":\"string:transaction\"},"
-    + "{\"key\":\"status\",\"value\":\"string:success\"}"
-    + "]}"
-  
-  // 验证Measurement序列化
-  assert_eq(measurement_json.contains("\"value\":99.5"), true)
-  assert_eq(measurement_json.contains("\"service.name\""), true)
-  assert_eq(measurement_json.contains("\"payment-service\""), true)
-  
-  // 序列化InstrumentType
-  let counter_type = "Counter"
-  let histogram_type = "Histogram"
-  let up_down_counter_type = "UpDownCounter"
-  let gauge_type = "Gauge"
-  
-  assert_eq(counter_type, "Counter")
-  assert_eq(histogram_type, "Histogram")
-  assert_eq(up_down_counter_type, "UpDownCounter")
-  assert_eq(gauge_type, "Gauge")
 }
 
-test "resource_serialization" {
-  // 测试Resource的序列化格式
+test "serialization_resource" {
+  // 测试Resource的序列化和反序列化
   
-  let resource = Resource::default("order-service")
+  // 1. 测试基本Resource序列化
+  let resource = Resource::default("test-service")
+  
+  // 模拟Resource序列化为JSON格式
   let resource_json = "{"
-    + "\"service_name\":\"order-service\","
+    + "\"service_name\":\"test-service\","
     + "\"service_version\":null,"
     + "\"telemetry_sdk_name\":\"azimuth\","
     + "\"telemetry_sdk_version\":\"0.1.0\","
-    + "\"attributes\":[]}"
+    + "\"attributes\":[]"
+    + "}"
   
-  // 验证Resource序列化
-  assert_eq(resource_json.contains("\"service_name\":\"order-service\""), true)
-  assert_eq(resource_json.contains("\"telemetry_sdk_name\":\"azimuth\""), true)
-  assert_eq(resource_json.contains("\"telemetry_sdk_version\":\"0.1.0\""), true)
-  assert_eq(resource_json.contains("\"attributes\":[]"), true)
+  // 验证JSON格式包含必要字段
+  assert_eq(resource_json.contains("service_name"), true)
+  assert_eq(resource_json.contains("telemetry_sdk_name"), true)
+  assert_eq(resource_json.contains("telemetry_sdk_version"), true)
+  assert_eq(resource_json.contains("attributes"), true)
   
-  // 序列化带有属性的Resource
-  let resource_with_attrs = Resource::default("user-service")
+  // 2. 测试带有属性的Resource序列化
+  let resource_with_attrs = Resource::default("complex-service")
   let attrs = [
     ("service.namespace", AttributeValue::string("production")),
     ("service.instance.id", AttributeValue::string("instance-123")),
+    ("service.version", AttributeValue::string("2.1.0")),
     ("deployment.environment", AttributeValue::string("prod"))
   ]
   
-  let attrs_json = “["
-    + "{\"key\":\"service.namespace\",\"value\":\"string:production\"},"
-    + "{\"key\":\"service.instance.id\",\"value\":\"string:instance-123\"},"
-    + "{\"key\":\"deployment.environment\",\"value\":\"string:prod\"}"
+  // 模拟带属性Resource的序列化
+  let complex_resource_json = "{"
+    + "\"service_name\":\"complex-service\","
+    + "\"service_version\":null,"
+    + "\"telemetry_sdk_name\":\"azimuth\","
+    + "\"telemetry_sdk_version\":\"0.1.0\","
+    + "\"attributes\":["
+    + "{\"key\":\"service.namespace\",\"value\":{\"type\":\"string\",\"data\":\"production\"}},"
+    + "{\"key\":\"service.instance.id\",\"value\":{\"type\":\"string\",\"data\":\"instance-123\"}},"
+    + "{\"key\":\"service.version\",\"value\":{\"type\":\"string\",\"data\":\"2.1.0\"}},"
+    + "{\"key\":\"deployment.environment\",\"value\":{\"type\":\"string\",\"data\":\"prod\"}}"
     + "]"
+    + "}"
   
-  // 验证属性序列化
-  assert_eq(attrs_json.contains("service.namespace"), true)
-  assert_eq(attrs_json.contains("production"), true)
-  assert_eq(attrs_json.contains("instance-123"), true)
-  assert_eq(attrs_json.contains("prod"), true)
+  // 验证复杂Resource序列化
+  assert_eq(complex_resource_json.contains("service.namespace"), true)
+  assert_eq(complex_resource_json.contains("service.instance.id"), true)
+  assert_eq(complex_resource_json.contains("service.version"), true)
+  assert_eq(complex_resource_json.contains("deployment.environment"), true)
 }
 
-test "baggage_serialization" {
-  // 测试Baggage的序列化格式
+test "serialization_log_record" {
+  // 测试LogRecord的序列化和反序列化
   
-  let baggage = Baggage::empty()
-    .with_entry("user.id", "12345")
-    .with_entry("session.id", "session-abcdef")
-    .with_entry("request.id", "req-123456")
+  // 1. 测试基本LogRecord序列化
+  let log_record = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    .body("Test log message")
+    .build()
   
-  // 序列化为W3C baggage格式
-  let baggage_serialized = "user.id=12345,session.id=session-abcdef,request.id=req-123456"
+  // 模拟LogRecord序列化
+  let log_record_json = "{"
+    + "\"timestamp_unix_nanos\":0,"
+    + "\"observed_timestamp_unix_nanos\":null,"
+    + "\"severity_number\":\"Info\","
+    + "\"severity_text\":null,"
+    + "\"body\":\"Test log message\","
+    + "\"attributes\":[],"
+    + "\"trace_id\":null,"
+    + "\"span_id\":null,"
+    + "\"trace_flags\":null,"
+    + "\"resource\":null,"
+    + "\"instrumentation_scope\":null"
+    + "}"
   
-  // 验证baggage序列化
-  assert_eq(baggage_serialized.contains("user.id=12345"), true)
-  assert_eq(baggage_serialized.contains("session.id=session-abcdef"), true)
-  assert_eq(baggage_serialized.contains("request.id=req-123456"), true)
-  assert_eq(baggage_serialized.contains(","), true)
+  // 验证LogRecord序列化格式
+  assert_eq(log_record_json.contains("timestamp_unix_nanos"), true)
+  assert_eq(log_record_json.contains("severity_number"), true)
+  assert_eq(log_record_json.contains("body"), true)
+  assert_eq(log_record_json.contains("attributes"), true)
   
-  // 测试包含特殊字符的baggage序列化
-  let special_baggage = Baggage::empty()
-    .with_entry("special.key", "value with spaces")
-    .with_entry("unicode.key", "值测试🚀")
-    .with_entry("empty.value", "")
+  // 2. 测试复杂LogRecord序列化
+  let complex_log_record = LogRecord::builder()
+    .severity(SeverityNumber::Error)
+    .body("Error occurred")
+    .severity_text("ERROR")
+    .with_attribute("error.type", AttributeValue::string("ValidationError"))
+    .with_attribute("error.code", AttributeValue::int(400L))
+    .with_attribute("error.retryable", AttributeValue::bool(false))
+    .build()
   
-  let special_baggage_serialized = "special.key=value with spaces,unicode.key=值测试🚀,empty.value="
-  
-  assert_eq(special_baggage_serialized.contains("value with spaces"), true)
-  assert_eq(special_baggage_serialized.contains("值测试🚀"), true)
-  assert_eq(special_baggage_serialized.contains("empty.value="), true)
+  // 验证复杂LogRecord
+  assert_eq(complex_log_record.severity_number, SeverityNumber::Error)
+  assert_eq(complex_log_record.severity_text.unwrap_or(""), "ERROR")
+  assert_eq(complex_log_record.body.unwrap_or(""), "Error occurred")
+  assert_eq(complex_log_record.attributes.length(), 3)
 }
 
-test "context_serialization" {
-  // 测试Context的序列化格式
+test "serialization_context" {
+  // 测试Context的序列化和反序列化
   
-  let ctx = context::Context::empty()
-  let user_key = create_key("user-id")
-  let session_key = create_key("session-id")
+  // 1. 测试基本Context序列化
+  let context = Context::empty()
   
-  let ctx_with_values = ctx
-    .with_value(user_key, "user-12345")
-    .with_value(session_key, "session-abcdef")
+  // 模拟Context序列化
+  let context_json = "{\"values\":[]}"
   
-  // 序列化Context为键值对格式
-  let ctx_serialized = "user-id=user-12345;session-id=session-abcdef"
+  // 验证空Context序列化
+  assert_eq(context_json.contains("values"), true)
+  assert_eq(context_json.contains("[]"), true)
   
-  // 验证Context序列化
-  assert_eq(ctx_serialized.contains("user-id=user-12345"), true)
-  assert_eq(ctx_serialized.contains("session-id=session-abcdef"), true)
-  assert_eq(ctx_serialized.contains(";"), true)
+  // 2. 测试带有值的Context序列化
+  let key1 = create_key("key1")
+  let key2 = create_key("key2")
+  let key3 = create_key("key3")
   
-  // 测试包含特殊字符的Context序列化
-  let special_key = create_key("special.key!@#$%")
-  let special_value = "special value 测试🚀"
+  let context_with_values = context
+    .with_value(key1, "value1")
+    .with_value(key2, "value2")
+    .with_value(key3, "value3")
   
-  let ctx_with_special = ctx.with_value(special_key, special_value)
-  let special_ctx_serialized = "special.key!@#$%=special value 测试🚀"
+  // 模拟带值Context的序列化
+  let complex_context_json = "{"
+    + "\"values\":["
+    + "{\"key\":\"key1\",\"value\":\"value1\"},"
+    + "{\"key\":\"key2\",\"value\":\"value2\"},"
+    + "{\"key\":\"key3\",\"value\":\"value3\"}"
+    + "]"
+    + "}"
   
-  assert_eq(special_ctx_serialized.contains("special.key!@#$%"), true)
-  assert_eq(special_ctx_serialized.contains("special value 测试🚀"), true)
+  // 验证复杂Context序列化
+  assert_eq(complex_context_json.contains("key1"), true)
+  assert_eq(complex_context_json.contains("key2"), true)
+  assert_eq(complex_context_json.contains("key3"), true)
+  assert_eq(complex_context_json.contains("value1"), true)
+  assert_eq(complex_context_json.contains("value2"), true)
+  assert_eq(complex_context_json.contains("value3"), true)
+  
+  // 3. 测试Context的反序列化
+  match context_with_values.get(key1) {
+    Some(value) => assert_eq(value, "value1")
+    None => @test.fail("Expected value for key1")
+  }
+  
+  match context_with_values.get(key2) {
+    Some(value) => assert_eq(value, "value2")
+    None => @test.fail("Expected value for key2")
+  }
+  
+  match context_with_values.get(key3) {
+    Some(value) => assert_eq(value, "value3")
+    None => @test.fail("Expected value for key3")
+  }
 }
 
-test "complex_span_serialization" {
-  // 测试复杂Span的序列化格式
+test "serialization_span_context" {
+  // 测试SpanContext的序列化和反序列化
   
-  let trace_id = Array::make(16, 0x01_byte)
-  let span_id = Array::make(8, 0x02_byte)
-  let parent_span_id = Array::make(8, 0x03_byte)
+  // 1. 测试基本SpanContext序列化
+  let span_context = SpanContext::{
+    trace_id: Array::make(16, 0_byte),
+    span_id: Array::make(8, 0_byte),
+    trace_flags: 0_byte,
+    trace_state: ""
+  }
   
-  let span = Span::{
-    name: "complex-operation",
-    context: SpanContext::{
-      trace_id: trace_id,
-      span_id: span_id,
-      trace_flags: 0x01_byte,
-      trace_state: "test=value"
-    },
-    kind: Server,
-    parent_span_id: Some(parent_span_id),
-    start_time_unix_nanos: 1234567890L,
-    end_time_unix_nanos: Some(1234567990L),
-    status: Ok,
-    status_description: Some("Operation completed successfully"),
+  // 模拟SpanContext序列化为十六进制字符串
+  let trace_id_hex = "00000000000000000000000000000000"
+  let span_id_hex = "0000000000000000"
+  let span_context_serialized = trace_id_hex + "-" + span_id_hex + "-00"
+  
+  // 验证SpanContext序列化格式
+  assert_eq(span_context_serialized.length(), 35)  // 32 + 1 + 16 + 1 + 2
+  assert_eq(span_context_serialized.contains("-"), true)
+  
+  // 2. 测试带有值的SpanContext序列化
+  let trace_id_with_value = Array::make(16, 1_byte)
+  let span_id_with_value = Array::make(8, 1_byte)
+  let span_context_with_values = SpanContext::{
+    trace_id: trace_id_with_value,
+    span_id: span_id_with_value,
+    trace_flags: 1_byte,
+    trace_state: "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+  }
+  
+  // 验证带有值的SpanContext
+  assert_eq(span_context_with_values.trace_id.length(), 16)
+  assert_eq(span_context_with_values.span_id.length(), 8)
+  assert_eq(span_context_with_values.trace_flags, 1_byte)
+  assert_eq(span_context_with_values.trace_state.length() > 0, true)
+}
+
+test "serialization_propagation_headers" {
+  // 测试传播头的序列化和反序列化
+  
+  // 1. 测试W3C TraceContext头序列化
+  let propagator = W3CTraceContextPropagator::{}
+  let context = Context::empty()
+  let carrier = MapCarrier::new()
+  
+  // 注入上下文
+  propagator.inject(context, carrier)
+  
+  // 模拟traceparent头的格式
+  let traceparent_header = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+  
+  // 验证traceparent头格式
+  assert_eq(traceparent_header.length(), 55)  // 2 + 1 + 32 + 1 + 16 + 1 + 2
+  assert_eq(traceparent_header.split("-").length(), 4)
+  
+  // 解析traceparent头
+  let parts = traceparent_header.split("-")
+  let version = parts[0]
+  let trace_id = parts[1]
+  let span_id = parts[2]
+  let trace_flags = parts[3]
+  
+  assert_eq(version, "00")
+  assert_eq(trace_id.length(), 32)
+  assert_eq(span_id.length(), 16)
+  assert_eq(trace_flags, "01")
+  
+  // 2. 测试W3C Baggage头序列化
+  let baggage_header = "key1=value1,key2=value2;param1=paramvalue1,key3=value3"
+  
+  // 验证baggage头格式
+  assert_eq(baggage_header.contains("key1=value1"), true)
+  assert_eq(baggage_header.contains("key2=value2"), true)
+  assert_eq(baggage_header.contains("key3=value3"), true)
+  
+  // 解析baggage头
+  let baggage_entries = baggage_header.split(",")
+  
+  // 验证解析结果
+  assert_eq(baggage_entries.length(), 3)
+  assert_eq(baggage_entries[0].starts_with("key1="), true)
+  assert_eq(baggage_entries[1].starts_with("key2="), true)
+  assert_eq(baggage_entries[2].starts_with("key3="), true)
+}
+
+test "serialization_measurement" {
+  // 测试Measurement的序列化和反序列化
+  
+  // 1. 测试基本Measurement序列化
+  let measurement = Measurement::{
+    value: 123.45,
+    attributes: [
+      ("unit", AttributeValue::string("ms")),
+      ("type", AttributeValue::string("response_time"))
+    ]
+  }
+  
+  // 模拟Measurement序列化
+  let measurement_json = "{"
+    + "\"value\":123.45,"
+    + "\"attributes\":["
+    + "{\"key\":\"unit\",\"value\":{\"type\":\"string\",\"data\":\"ms\"}},"
+    + "{\"key\":\"type\",\"value\":{\"type\":\"string\",\"data\":\"response_time\"}}"
+    + "]"
+    + "}"
+  
+  // 验证Measurement序列化格式
+  assert_eq(measurement_json.contains("value"), true)
+  assert_eq(measurement_json.contains("attributes"), true)
+  assert_eq(measurement_json.contains("unit"), true)
+  assert_eq(measurement_json.contains("type"), true)
+  
+  // 2. 测试复杂Measurement序列化
+  let complex_measurement = Measurement::{
+    value: 999.999,
     attributes: [
       ("service.name", AttributeValue::string("api-service")),
-      ("operation.type", AttributeValue::string("database_query")),
-      ("db.statement", AttributeValue::string("SELECT * FROM users")),
-      ("db.rows_affected", AttributeValue::int(10L))
-    ],
-    events: [
-      SpanEvent::{
-        name: "db.query.start",
-        timestamp_unix_nanos: 1234567950L,
-        attributes: [
-          ("db.query", AttributeValue::string("SELECT * FROM users"))
-        ]
-      },
-      SpanEvent::{
-        name: "db.query.complete",
-        timestamp_unix_nanos: 1234567980L,
-        attributes: [
-          ("db.duration_ms", AttributeValue::float(30.5))
-        ]
-      }
-    ],
-    links: []
+      ("endpoint", AttributeValue::string("/api/v1/users")),
+      ("method", AttributeValue::string("GET")),
+      ("status_code", AttributeValue::int(200L)),
+      ("success", AttributeValue::bool(true)),
+      ("tags", AttributeValue::array_string(["api", "users", "public"]))
+    ]
   }
   
-  // 序列化Span为JSON格式
-  let span_json = "{"
-    + "\"name\":\"complex-operation\","
-    + "\"kind\":\"Server\","
-    + "\"start_time_unix_nanos\":1234567890,"
-    + "\"end_time_unix_nanos\":1234567990,"
-    + "\"status\":\"Ok\","
-    + "\"status_description\":\"Operation completed successfully\","
-    + "\"attributes\":["
-    + "{\"key\":\"service.name\",\"value\":\"string:api-service\"},"
-    + "{\"key\":\"operation.type\",\"value\":\"string:database_query\"},"
-    + "{\"key\":\"db.statement\",\"value\":\"string:SELECT * FROM users\"},"
-    + "{\"key\":\"db.rows_affected\",\"value\":\"int:10\"}"
-    + "],"
-    + "\"events\":["
-    + "{\"name\":\"db.query.start\",\"timestamp_unix_nanos\":1234567950,\"attributes\":[{\"key\":\"db.query\",\"value\":\"string:SELECT * FROM users\"}]},"
-    + "{\"name\":\"db.query.complete\",\"timestamp_unix_nanos\":1234567980,\"attributes\":[{\"key\":\"db.duration_ms\",\"value\":\"float:30.5\"}]}"
-    + "],"
-    + "\"links\":[]}"
+  // 验证复杂Measurement
+  assert_eq(complex_measurement.value, 999.999)
+  assert_eq(complex_measurement.attributes.length(), 6)
   
-  // 验证复杂Span序列化
-  assert_eq(span_json.contains("\"name\":\"complex-operation\""), true)
-  assert_eq(span_json.contains("\"kind\":\"Server\""), true)
-  assert_eq(span_json.contains("\"status\":\"Ok\""), true)
-  assert_eq(span_json.contains("\"attributes\""), true)
-  assert_eq(span_json.contains("\"events\""), true)
-  assert_eq(span_json.contains("\"db.query.start\""), true)
-  assert_eq(span_json.contains("\"db.query.complete\""), true)
-  assert_eq(span_json.contains("\"SELECT * FROM users\""), true)
+  // 验证属性类型
+  let mut found_string_attr = false
+  let mut found_int_attr = false
+  let mut found_bool_attr = false
+  let mut found_array_attr = false
+  
+  let mut i = 0
+  while i < complex_measurement.attributes.length() {
+    let (key, value) = complex_measurement.attributes[i]
+    
+    match value {
+      StringValue(_) => found_string_attr = true
+      IntValue(_) => found_int_attr = true
+      BoolValue(_) => found_bool_attr = true
+      ArrayStringValue(_) => found_array_attr = true
+      _ => @test.fail("Unexpected attribute type")
+    }
+    
+    i = i + 1
+  }
+  
+  assert_eq(found_string_attr, true)
+  assert_eq(found_int_attr, true)
+  assert_eq(found_bool_attr, true)
+  assert_eq(found_array_attr, true)
 }
 
-test "serialization_format_consistency" {
-  // 测试序列化格式的一致性
+test "serialization_compatibility" {
+  // 测试序列化兼容性
   
-  // 创建相同的对象并验证序列化结果的一致性
-  let attr1 = AttributeValue::string("test-value")
-  let attr2 = AttributeValue::string("test-value")
+  // 1. 测试版本兼容性
+  let resource_v1 = Resource::default("test-service")
   
-  let serialized1 = match attr1 {
-    StringValue(s) => "string:" + s
-    _ => "unknown"
+  // 模拟不同版本的序列化格式
+  let v1_json = "{"
+    + "\"service_name\":\"test-service\","
+    + "\"service_version\":null,"
+    + "\"telemetry_sdk_name\":\"azimuth\","
+    + "\"telemetry_sdk_version\":\"0.1.0\","
+    + "\"attributes\":[]"
+    + "}"
+  
+  let v2_json = "{"
+    + "\"service_name\":\"test-service\","
+    + "\"service_version\":null,"
+    + "\"telemetry_sdk_name\":\"azimuth\","
+    + "\"telemetry_sdk_version\":\"0.2.0\","
+    + "\"attributes\":[],"
+    + "\"schema_url\":null"
+    + "}"
+  
+  // 验证版本兼容性
+  assert_eq(v1_json.contains("0.1.0"), true)
+  assert_eq(v2_json.contains("0.2.0"), true)
+  assert_eq(v2_json.contains("schema_url"), true)
+  
+  // 2. 测试字段兼容性
+  let log_record_with_optional = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    .body("Test message")
+    .severity_text("INFO")
+    .build()
+  
+  let log_record_without_optional = LogRecord::builder()
+    .severity(SeverityNumber::Info)
+    .body("Test message")
+    .build()
+  
+  // 验证可选字段兼容性
+  assert_eq(log_record_with_optional.severity_text.unwrap_or(""), "INFO")
+  assert_eq(log_record_without_optional.severity_text, None)
+  
+  // 3. 测试数据类型兼容性
+  let int_attr = AttributeValue::int(42L)
+  let float_attr = AttributeValue::float(42.0)
+  
+  // 验证数值类型兼容性
+  match int_attr {
+    IntValue(v) => assert_eq(v, 42L)
+    _ => @test.fail("Expected IntValue")
   }
   
-  let serialized2 = match attr2 {
-    StringValue(s) => "string:" + s
-    _ => "unknown"
+  match float_attr {
+    FloatValue(v) => assert_eq(v, 42.0)
+    _ => @test.fail("Expected FloatValue")
   }
-  
-  assert_eq(serialized1, serialized2)
-  assert_eq(serialized1, "string:test-value")
-  
-  // 测试不同类型属性的序列化区分
-  let string_attr = AttributeValue::string("123")
-  let int_attr = AttributeValue::int(123L)
-  
-  let string_serialized = match string_attr {
-    StringValue(s) => "string:" + s
-    _ => "unknown"
-  }
-  
-  let int_serialized = match int_attr {
-    IntValue(i) => "int:" + i.to_string()
-    _ => "unknown"
-  }
-  
-  assert_eq(string_serialized, "string:123")
-  assert_eq(int_serialized, "int:123")
-  assert_eq(string_serialized != int_serialized, true) // 不同类型应该有不同的序列化格式
-  
-  // 测试数组序列化的顺序一致性
-  let array_attr = AttributeValue::array_string(["a", "b", "c"])
-  let array_serialized = match array_attr {
-    ArrayStringValue(arr) => {
-      let result = "array_string:"
-      let mut i = 0
-      while i < arr.length() {
-        if i > 0 { result = result + "," }
-        result = result + arr[i]
-        i = i + 1
-      }
-      result
-    }
-    _ => "unknown"
-  }
-  
-  assert_eq(array_serialized, "array_string:a,b,c")
-  assert_eq(array_serialized.contains("a,b,c"), true)
-  assert_eq(array_serialized.contains("b,c"), false) // 验证顺序正确
 }

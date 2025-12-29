@@ -5,56 +5,56 @@ test "common_module_error_handling" {
   // 测试common模块的错误处理和边界条件
   
   // 测试AttributeValue的边界条件
-  let max_int_value = common::AttributeValue::int(9223372036854775807L)
-  let min_int_value = common::AttributeValue::int(-9223372036854775808L)
-  let zero_int_value = common::AttributeValue::int(0L)
+  let max_int_value = AttributeValue::int(9223372036854775807L)
+  let min_int_value = AttributeValue::int(-9223372036854775808L)
+  let zero_int_value = AttributeValue::int(0L)
   
   // 验极值
   match max_int_value {
-    common::IntValue(value) => assert_eq(value, 9223372036854775807L)
+    IntValue(value) => assert_eq(value, 9223372036854775807L)
     _ => assert_eq(false, true)
   }
   
   match min_int_value {
-    common::IntValue(value) => assert_eq(value, -9223372036854775808L)
+    IntValue(value) => assert_eq(value, -9223372036854775808L)
     _ => assert_eq(false, true)
   }
   
   match zero_int_value {
-    common::IntValue(value) => assert_eq(value, 0L)
+    IntValue(value) => assert_eq(value, 0L)
     _ => assert_eq(false, true)
   }
   
   // 测试浮点边界值
-  let max_float_value = common::AttributeValue::float(1.7976931348623157e+308)
-  let min_float_value = common::AttributeValue::float(2.2250738585072014e-308)
-  let negative_inf_value = common::AttributeValue::float(-1.0 / 0.0)  // 负无穷
-  let positive_inf_value = common::AttributeValue::float(1.0 / 0.0)   // 正无穷
-  let nan_value = common::AttributeValue::float(0.0 / 0.0)            // NaN
+  let max_float_value = AttributeValue::float(1.7976931348623157e+308)
+  let min_float_value = AttributeValue::float(2.2250738585072014e-308)
+  let negative_inf_value = AttributeValue::float(-1.0 / 0.0)  // 负无穷
+  let positive_inf_value = AttributeValue::float(1.0 / 0.0)   // 正无穷
+  let nan_value = AttributeValue::float(0.0 / 0.0)            // NaN
   
   match max_float_value {
-    common::FloatValue(value) => assert_eq(value > 1.0e+308, true)
+    FloatValue(value) => assert_eq(value > 1.0e+308, true)
     _ => assert_eq(false, true)
   }
   
   match min_float_value {
-    common::FloatValue(value) => assert_eq(value > 0.0 && value < 1.0e-307, true)
+    FloatValue(value) => assert_eq(value > 0.0 && value < 1.0e-307, true)
     _ => assert_eq(false, true)
   }
   
   // 测试空数组和单元素数组
-  let empty_string_array = common::AttributeValue::array_string([])
-  let single_string_array = common::AttributeValue::array_string(["only"])
-  let empty_int_array = common::AttributeValue::array_int([])
-  let single_int_array = common::AttributeValue::array_int([42L])
+  let empty_string_array = AttributeValue::array_string([])
+  let single_string_array = AttributeValue::array_string(["only"])
+  let empty_int_array = AttributeValue::array_int([])
+  let single_int_array = AttributeValue::array_int([42L])
   
   match empty_string_array {
-    common::ArrayStringValue(arr) => assert_eq(arr.length(), 0)
+    ArrayStringValue(arr) => assert_eq(arr.length(), 0)
     _ => assert_eq(false, true)
   }
   
   match single_string_array {
-    common::ArrayStringValue(arr) => {
+    ArrayStringValue(arr) => {
       assert_eq(arr.length(), 1)
       assert_eq(arr[0], "only")
     }
@@ -126,15 +126,15 @@ test "trace_module_error_handling" {
   
   // 测试复杂的Span属性
   let complex_attributes = [
-    ("empty.string", common::AttributeValue::string("")),
-    ("long.string", common::AttributeValue::string("a".repeat(1000))),
-    ("unicode.string", common::AttributeValue::string("unicode.测试.🌟")),
-    ("max.int", common::AttributeValue::int(9223372036854775807L)),
-    ("min.int", common::AttributeValue::int(-9223372036854775808L)),
-    ("max.float", common::AttributeValue::float(1.7976931348623157e+308)),
-    ("min.float", common::AttributeValue::float(2.2250738585072014e-308)),
-    ("empty.array", common::AttributeValue::array_string([])),
-    ("large.array", common::AttributeValue::array_int([1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L]))
+    ("empty.string", AttributeValue::string("")),
+    ("long.string", AttributeValue::string("a".repeat(1000))),
+    ("unicode.string", AttributeValue::string("unicode.测试.🌟")),
+    ("max.int", AttributeValue::int(9223372036854775807L)),
+    ("min.int", AttributeValue::int(-9223372036854775808L)),
+    ("max.float", AttributeValue::float(1.7976931348623157e+308)),
+    ("min.float", AttributeValue::float(2.2250738585072014e-308)),
+    ("empty.array", AttributeValue::array_string([])),
+    ("large.array", AttributeValue::array_int([1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L]))
   ]
   
   let (complex_ctx, complex_span) = tracer.start_span(
@@ -157,7 +157,7 @@ test "trace_module_error_handling" {
     name: "a".repeat(1000),
     timestamp_unix_nanos: 9223372036854775807L,
     attributes: [
-      ("max.attribute", common::AttributeValue::string("a".repeat(1000)))
+      ("max.attribute", AttributeValue::string("a".repeat(1000)))
     ]
   }
   
@@ -314,14 +314,14 @@ test "logs_module_error_handling" {
   // 测试复杂属性组合
   let complex_log = builder
     .body("complex log")
-    .with_attribute("empty.value", common::AttributeValue::string(""))
-    .with_attribute("long.value", common::AttributeValue::string("a".repeat(1000)))
-    .with_attribute("unicode.value", common::AttributeValue::string("unicode.测试.🌟"))
-    .with_attribute("max.int", common::AttributeValue::int(9223372036854775807L))
-    .with_attribute("min.int", common::AttributeValue::int(-9223372036854775808L))
-    .with_attribute("max.float", common::AttributeValue::float(1.7976931348623157e+308))
-    .with_attribute("empty.array", common::AttributeValue::array_string([]))
-    .with_attribute("large.array", common::AttributeValue::array_int([1L, 2L, 3L, 4L, 5L]))
+    .with_attribute("empty.value", AttributeValue::string(""))
+    .with_attribute("long.value", AttributeValue::string("a".repeat(1000)))
+    .with_attribute("unicode.value", AttributeValue::string("unicode.测试.🌟"))
+    .with_attribute("max.int", AttributeValue::int(9223372036854775807L))
+    .with_attribute("min.int", AttributeValue::int(-9223372036854775808L))
+    .with_attribute("max.float", AttributeValue::float(1.7976931348623157e+308))
+    .with_attribute("empty.array", AttributeValue::array_string([]))
+    .with_attribute("large.array", AttributeValue::array_int([1L, 2L, 3L, 4L, 5L]))
     .build()
   
   assert_eq(complex_log.attributes.length(), 8)
@@ -389,13 +389,13 @@ test "metrics_module_error_handling" {
   
   // 测试边界Counter属性
   empty_name_counter.add(1L, [
-    ("empty.value", common::AttributeValue::string("")),
-    ("long.value", common::AttributeValue::string("a".repeat(1000))),
-    ("unicode.value", common::AttributeValue::string("unicode.测试.🌟")),
-    ("max.int", common::AttributeValue::int(9223372036854775807L)),
-    ("min.int", common::AttributeValue::int(-9223372036854775808L)),
-    ("empty.array", common::AttributeValue::array_string([])),
-    ("large.array", common::AttributeValue::array_int([1L, 2L, 3L, 4L, 5L]))
+    ("empty.value", AttributeValue::string("")),
+    ("long.value", AttributeValue::string("a".repeat(1000))),
+    ("unicode.value", AttributeValue::string("unicode.测试.🌟")),
+    ("max.int", AttributeValue::int(9223372036854775807L)),
+    ("min.int", AttributeValue::int(-9223372036854775808L)),
+    ("empty.array", AttributeValue::array_string([])),
+    ("large.array", AttributeValue::array_int([1L, 2L, 3L, 4L, 5L]))
   ])
   
   // 测试边界Histogram操作
@@ -409,11 +409,11 @@ test "metrics_module_error_handling" {
   
   // 测试边界Histogram属性
   empty_unit_histogram.record(1.0, [
-    ("max.float", common::AttributeValue::float(1.7976931348623157e+308)),
-    ("min.float", common::AttributeValue::float(2.2250738585072014e-308)),
-    ("inf.float", common::AttributeValue::float(1.0 / 0.0)),
-    ("neg.inf.float", common::AttributeValue::float(-1.0 / 0.0)),
-    ("nan.float", common::AttributeValue::float(0.0 / 0.0))
+    ("max.float", AttributeValue::float(1.7976931348623157e+308)),
+    ("min.float", AttributeValue::float(2.2250738585072014e-308)),
+    ("inf.float", AttributeValue::float(1.0 / 0.0)),
+    ("neg.inf.float", AttributeValue::float(-1.0 / 0.0)),
+    ("nan.float", AttributeValue::float(0.0 / 0.0))
   ])
   
   // 测试边界UpDownCounter操作
@@ -442,27 +442,27 @@ test "metrics_module_error_handling" {
   
   let max_measurement = metrics::Measurement::{
     value: 1.7976931348623157e+308,
-    attributes: [("max.value", common::AttributeValue::float(1.7976931348623157e+308))]
+    attributes: [("max.value", AttributeValue::float(1.7976931348623157e+308))]
   }
   
   let min_measurement = metrics::Measurement::{
     value: 2.2250738585072014e-308,
-    attributes: [("min.value", common::AttributeValue::float(2.2250738585072014e-308))]
+    attributes: [("min.value", AttributeValue::float(2.2250738585072014e-308))]
   }
   
   let negative_measurement = metrics::Measurement::{
     value: -1.7976931348623157e+308,
-    attributes: [("negative.value", common::AttributeValue::float(-1.7976931348623157e+308))]
+    attributes: [("negative.value", AttributeValue::float(-1.7976931348623157e+308))]
   }
   
   let inf_measurement = metrics::Measurement::{
     value: 1.0 / 0.0,
-    attributes: [("inf.value", common::AttributeValue::float(1.0 / 0.0))]
+    attributes: [("inf.value", AttributeValue::float(1.0 / 0.0))]
   }
   
   let nan_measurement = metrics::Measurement::{
     value: 0.0 / 0.0,
-    attributes: [("nan.value", common::AttributeValue::float(0.0 / 0.0))]
+    attributes: [("nan.value", AttributeValue::float(0.0 / 0.0))]
   }
   
   assert_eq(zero_measurement.value, 0.0)

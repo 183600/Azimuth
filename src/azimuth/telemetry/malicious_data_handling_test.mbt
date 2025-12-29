@@ -17,10 +17,10 @@ test "malicious_string_input_handling" {
   let mut i = 0
   while i < sql_injection_strings.length() {
     let malicious_string = sql_injection_strings[i]
-    let attr = common::AttributeValue::string(malicious_string)
+    let attr = AttributeValue::string(malicious_string)
     
     match attr {
-      common::StringValue(s) => {
+      StringValue(s) => {
         // 验证字符串原样存储，不执行SQL
         assert_eq(s, malicious_string)
       }
@@ -43,10 +43,10 @@ test "malicious_string_input_handling" {
   i = 0
   while i < xss_strings.length() {
     let xss_string = xss_strings[i]
-    let attr = common::AttributeValue::string(xss_string)
+    let attr = AttributeValue::string(xss_string)
     
     match attr {
-      common::StringValue(s) => {
+      StringValue(s) => {
         // 验证XSS字符串原样存储，不执行脚本
         assert_eq(s, xss_string)
       }
@@ -69,10 +69,10 @@ test "malicious_string_input_handling" {
   i = 0
   while i < path_traversal_strings.length() {
     let path_string = path_traversal_strings[i]
-    let attr = common::AttributeValue::string(path_string)
+    let attr = AttributeValue::string(path_string)
     
     match attr {
-      common::StringValue(s) => {
+      StringValue(s) => {
         // 验证路径遍历字符串原样存储，不访问文件系统
         assert_eq(s, path_string)
       }
@@ -97,10 +97,10 @@ test "malicious_numeric_input_handling" {
   let mut i = 0
   while i < overflow_values.length() {
     let overflow_value = overflow_values[i]
-    let attr = common::AttributeValue::int(overflow_value)
+    let attr = AttributeValue::int(overflow_value)
     
     match attr {
-      common::IntValue(v) => {
+      IntValue(v) => {
         // 验证数值原样存储
         assert_eq(v, overflow_value)
       }
@@ -123,10 +123,10 @@ test "malicious_numeric_input_handling" {
   i = 0
   while i < special_floats.length() {
     let special_float = special_floats[i]
-    let attr = common::AttributeValue::float(special_float)
+    let attr = AttributeValue::float(special_float)
     
     match attr {
-      common::FloatValue(v) => {
+      FloatValue(v) => {
         // 验证浮点数值原样存储
         assert_eq(v, special_float)
       }
@@ -136,12 +136,12 @@ test "malicious_numeric_input_handling" {
   }
   
   // 3. 测试极大数组值
-  let large_int_array = common::AttributeValue::array_int(Array::make(10000, 9223372036854775807L))
-  let large_float_array = common::AttributeValue::array_float(Array::make(10000, 1.7976931348623157e+308))
+  let large_int_array = AttributeValue::array_int(Array::make(10000, 9223372036854775807L))
+  let large_float_array = AttributeValue::array_float(Array::make(10000, 1.7976931348623157e+308))
   
   // 验证大数组被安全处理
   match large_int_array {
-    common::ArrayIntValue(arr) => {
+    ArrayIntValue(arr) => {
       assert_eq(arr.length(), 10000)
       assert_eq(arr[0], 9223372036854775807L)
     }
@@ -149,7 +149,7 @@ test "malicious_numeric_input_handling" {
   }
   
   match large_float_array {
-    common::ArrayFloatValue(arr) => {
+    ArrayFloatValue(arr) => {
       assert_eq(arr.length(), 10000)
       assert_eq(arr[0], 1.7976931348623157e+308)
     }
@@ -363,11 +363,11 @@ test "malicious_log_input_handling" {
   
   // 2. 测试恶意日志属性
   let malicious_attributes = [
-    ("<script>alert('XSS')</script>", common::AttributeValue::string("<script>alert('XSS')</script>")),
-    ("'; DROP TABLE users; --", common::AttributeValue::string("'; DROP TABLE users; --")),
-    ("../../../etc/passwd", common::AttributeValue::string("../../../etc/passwd")),
-    ("attr\0with\0nulls", common::AttributeValue::string("value\0with\0nulls")),
-    ("attr\nwith\nnewlines", common::AttributeValue::string("value\nwith\nnewlines"))
+    ("<script>alert('XSS')</script>", AttributeValue::string("<script>alert('XSS')</script>")),
+    ("'; DROP TABLE users; --", AttributeValue::string("'; DROP TABLE users; --")),
+    ("../../../etc/passwd", AttributeValue::string("../../../etc/passwd")),
+    ("attr\0with\0nulls", AttributeValue::string("value\0with\0nulls")),
+    ("attr\nwith\nnewlines", AttributeValue::string("value\nwith\nnewlines"))
   ]
   
   // 验证恶意属性被安全处理
@@ -396,7 +396,7 @@ test "malicious_log_input_handling" {
   while i < 1000 {
     builder = builder.with_attribute(
       "attr_" + i.to_string(),
-      common::AttributeValue::string("value_" + i.to_string())
+      AttributeValue::string("value_" + i.to_string())
     )
     i = i + 1
   }
@@ -438,11 +438,11 @@ test "malicious_span_input_handling" {
   
   // 2. 测试恶意span属性
   let malicious_span_attributes = [
-    ("<script>alert('XSS')</script>", common::AttributeValue::string("<script>alert('XSS')</script>")),
-    ("'; DROP TABLE users; --", common::AttributeValue::string("'; DROP TABLE users; --")),
-    ("../../../etc/passwd", common::AttributeValue::string("../../../etc/passwd")),
-    ("attr\0with\0nulls", common::AttributeValue::string("value\0with\0nulls")),
-    ("attr\nwith\nnewlines", common::AttributeValue::string("value\nwith\nnewlines"))
+    ("<script>alert('XSS')</script>", AttributeValue::string("<script>alert('XSS')</script>")),
+    ("'; DROP TABLE users; --", AttributeValue::string("'; DROP TABLE users; --")),
+    ("../../../etc/passwd", AttributeValue::string("../../../etc/passwd")),
+    ("attr\0with\0nulls", AttributeValue::string("value\0with\0nulls")),
+    ("attr\nwith\nnewlines", AttributeValue::string("value\nwith\nnewlines"))
   ]
   
   // 验证恶意span属性被安全处理
@@ -467,7 +467,7 @@ test "malicious_span_input_handling" {
   while i < 1000 {
     many_attrs.push((
       "span_attr_" + i.to_string(),
-      common::AttributeValue::string("span_value_" + i.to_string())
+      AttributeValue::string("span_value_" + i.to_string())
     ))
     i = i + 1
   }
@@ -580,18 +580,18 @@ test "denial_of_service_protection" {
   
   // 1. 测试极大字符串输入
   let extremely_large_string = "x" * 1000000  // 1MB字符串
-  let large_attr = common::AttributeValue::string(extremely_large_string)
+  let large_attr = AttributeValue::string(extremely_large_string)
   
   match large_attr {
-    common::StringValue(s) => assert_eq(s.length(), 1000000)
+    StringValue(s) => assert_eq(s.length(), 1000000)
     _ => @test.fail("Expected StringValue")
   }
   
   // 2. 测试极大数组输入
-  let extremely_large_array = common::AttributeValue::array_string(Array::make(100000, "large-array-item"))
+  let extremely_large_array = AttributeValue::array_string(Array::make(100000, "large-array-item"))
   
   match extremely_large_array {
-    common::ArrayStringValue(arr) => assert_eq(arr.length(), 100000)
+    ArrayStringValue(arr) => assert_eq(arr.length(), 100000)
     _ => @test.fail("Expected ArrayStringValue")
   }
   
@@ -618,7 +618,7 @@ test "denial_of_service_protection" {
   while i < 50000 {
     extremely_many_attrs.push((
       "extreme_attr_" + i.to_string(),
-      common::AttributeValue::string("extreme_value_" + i.to_string())
+      AttributeValue::string("extreme_value_" + i.to_string())
     ))
     i = i + 1
   }
