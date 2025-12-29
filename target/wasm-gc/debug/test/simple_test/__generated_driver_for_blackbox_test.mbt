@@ -57,15 +57,9 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "simple_additional_tests.mbt": {
+  "simple_moonbit_tests.mbt": {
   },
-  "basic_test.mbt": {
-    0: (__test_62617369635f746573742e6d6274_0, ["simple arithmetic test"]),
-    1: (__test_62617369635f746573742e6d6274_1, ["boolean logic test"]),
-    2: (__test_62617369635f746573742e6d6274_2, ["string operations test"]),
-    3: (__test_62617369635f746573742e6d6274_3, ["option types test"]),
-    4: (__test_62617369635f746573742e6d6274_4, ["span context creation test"]),
-    5: (__test_62617369635f746573742e6d6274_5, ["context operations test"]),
+  "high_quality_tests.mbt": {
   },
   "azimuth.mbt": {
   },
