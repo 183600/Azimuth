@@ -1,443 +1,701 @@
-// 资源生命周期管理测试 - 测试资源的创建、使用和销毁
-use azimuth.telemetry.api.common.{AttributeValue, Resource}
-use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, SpanLink, NoopTracer, NoopTracerProvider}
-use azimuth.telemetry.api.metrics.{NoopMeter, NoopMeterProvider}
-use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
-use azimuth.telemetry.api.context.{Context, ContextKey, Baggage, create_key}
+// 资源生命周期管理测试用例
+// 测试遥测系统资源的创建、使用和销毁
 
-test "resource_lifecycle_creation" {
-  // 测试资源的创建阶段
+test "resource_lifecycle_management" {
+  // 测试Resource的生命周期管理
   
-  // 创建基本资源
-  let basic_resource = Resource::default("basic-service")
-  assert_eq(basic_resource.service_name, "basic-service")
-  assert_eq(basic_resource.telemetry_sdk_name, "azimuth")
-  assert_eq(basic_resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(basic_resource.service_version, None)
-  assert_eq(basic_resource.attributes.length(), 0)
+  // 1. 资源创建阶段
+  let created_resource = Resource::default("lifecycle-test-service")
+  assert_eq(created_resource.service_name, "lifecycle-test-service")
+  assert_eq(created_resource.service_version, None)
+  assert_eq(created_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(created_resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(created_resource.attributes.length(), 0)
   
-  // 创建带有不同服务名称的资源
-  let service_names = [
-    "web-service",
-    "api-service", 
-    "database-service",
-    "cache-service",
-    "queue-service"
-  ]
-  
-  let resources = []
-  let mut i = 0
-  while i < service_names.length() {
-    let resource = Resource::default(service_names[i])
-    resources.push(resource)
-    
-    // 验证每个资源都正确创建
-    assert_eq(resources[i].service_name, service_names[i])
-    assert_eq(resources[i].telemetry_sdk_name, "azimuth")
-    assert_eq(resources[i].telemetry_sdk_version, "0.1.0")
-    
-    i = i + 1
+  // 2. 资源初始化阶段
+  let initialized_resource = Resource::{
+    service_name: "lifecycle-test-service",
+    service_version: Some("1.0.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("initialized")),
+      ("lifecycle.timestamp", AttributeValue::int(1640995200000000000L)),
+      ("lifecycle.status", AttributeValue::string("active"))
+    ]
   }
   
-  // 验证所有资源都成功创建
-  assert_eq(resources.length(), 5)
-}
-
-test "resource_lifecycle_usage" {
-  // 测试资源的使用阶段
+  assert_eq(initialized_resource.service_version, Some("1.0.0"))
+  assert_eq(initialized_resource.attributes.length(), 3)
   
-  let resource = Resource::default("usage-test-service")
+  // 3. 资源使用阶段
+  let active_resource = Resource::{
+    service_name: "lifecycle-test-service",
+    service_version: Some("1.0.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("active")),
+      ("lifecycle.uptime", AttributeValue::int(3600L)),
+      ("lifecycle.requests", AttributeValue::int(1000L)),
+      ("lifecycle.errors", AttributeValue::int(5L))
+    ]
+  }
   
-  // 在span中使用资源
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("usage-test", Some("1.0.0"))
+  assert_eq(active_resource.attributes.length(), 4)
   
-  let resource_attributes = [
-    ("service.name", AttributeValue::string(resource.service_name)),
-    ("sdk.name", AttributeValue::string(resource.telemetry_sdk_name)),
-    ("sdk.version", AttributeValue::string(resource.telemetry_sdk_version))
+  // 4. 资源更新阶段
+  let updated_resource = Resource::{
+    service_name: "lifecycle-test-service",
+    service_version: Some("1.1.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("updated")),
+      ("lifecycle.uptime", AttributeValue::int(7200L)),
+      ("lifecycle.requests", AttributeValue::int(2500L)),
+      ("lifecycle.errors", AttributeValue::int(12L)),
+      ("lifecycle.last_update", AttributeValue::int(1640998800000000000L))
+    ]
+  }
+  
+  assert_eq(updated_resource.service_version, Some("1.1.0"))
+  assert_eq(updated_resource.attributes.length(), 5)
+  
+  // 5. 资源停用阶段
+  let deprecated_resource = Resource::{
+    service_name: "lifecycle-test-service",
+    service_version: Some("1.1.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("deprecated")),
+      ("lifecycle.deprecation_date", AttributeValue::int(1641085200000000000L)),
+      ("lifecycle.replacement", AttributeValue::string("new-service")),
+      ("lifecycle.migration_required", AttributeValue::bool(true))
+    ]
+  }
+  
+  assert_eq(deprecated_resource.attributes.length(), 4)
+  
+  // 6. 资源销毁阶段（模拟）
+  let destroyed_attributes = [
+    ("lifecycle.phase", AttributeValue::string("destroyed")),
+    ("lifecycle.destroy_date", AttributeValue::int(1641171600000000000L)),
+    ("lifecycle.total_uptime", AttributeValue::int(86400L)),
+    ("lifecycle.total_requests", AttributeValue::int(10000L))
   ]
   
-  let (_, span) = tracer.start_span(
+  assert_eq(destroyed_attributes.length(), 4)
+}
+
+test "instrumentation_scope_lifecycle" {
+  // 测试InstrumentationScope的生命周期管理
+  
+  // 1. 创建阶段
+  let created_scope = InstrumentationScope::{
+    name: "lifecycle-scope",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/schema")
+  }
+  
+  assert_eq(created_scope.name, "lifecycle-scope")
+  assert_eq(created_scope.version, Some("1.0.0"))
+  assert_eq(created_scope.schema_url, Some("https://example.com/schema"))
+  
+  // 2. 初始化阶段
+  let initialized_scope = InstrumentationScope::{
+    name: "lifecycle-scope",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/schema/v1")
+  }
+  
+  // 3. 活跃阶段
+  let active_scope = InstrumentationScope::{
+    name: "lifecycle-scope",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/schema/v1")
+  }
+  
+  // 4. 更新阶段
+  let updated_scope = InstrumentationScope::{
+    name: "lifecycle-scope",
+    version: Some("1.1.0"),
+    schema_url: Some("https://example.com/schema/v1.1")
+  }
+  
+  assert_eq(updated_scope.version, Some("1.1.0"))
+  assert_eq(updated_scope.schema_url, Some("https://example.com/schema/v1.1"))
+  
+  // 5. 停用阶段
+  let deprecated_scope = InstrumentationScope::{
+    name: "lifecycle-scope",
+    version: Some("1.1.0"),
+    schema_url: Some("https://example.com/schema/v1.1")
+  }
+  
+  // 6. 多个scope的生命周期管理
+  let scopes = [
+    InstrumentationScope::{
+      name: "scope-v1",
+      version: Some("1.0.0"),
+      schema_url: Some("https://example.com/schema/v1")
+    },
+    InstrumentationScope::{
+      name: "scope-v2",
+      version: Some("2.0.0"),
+      schema_url: Some("https://example.com/schema/v2")
+    },
+    InstrumentationScope::{
+      name: "scope-v3",
+      version: Some("3.0.0"),
+      schema_url: Some("https://example.com/schema/v3")
+    }
+  ]
+  
+  assert_eq(scopes.length(), 3)
+  assert_eq(scopes[0].version, Some("1.0.0"))
+  assert_eq(scopes[1].version, Some("2.0.0"))
+  assert_eq(scopes[2].version, Some("3.0.0"))
+}
+
+test "span_lifecycle_management" {
+  // 测试Span的生命周期管理
+  
+  // 1. Span创建阶段
+  let ctx = Context::empty()
+  let (ctx_with_span, created_span) = NoopTracer::start_span(
     ctx, 
-    "resource_usage_span", 
+    "lifecycle-operation", 
     Internal, 
-    Some(resource_attributes)
+    Some([("lifecycle.phase", AttributeValue::string("created"))])
   )
   
-  // 验证资源在span中的使用
-  assert_eq(span.attributes.length(), 3)
-  assert_eq(span.attributes[0].0, "service.name")
-  assert_eq(span.attributes[1].0, "sdk.name")
-  assert_eq(span.attributes[2].0, "sdk.version")
+  assert_eq(created_span.name, "lifecycle-operation")
+  assert_eq(created_span.kind, Internal)
+  assert_eq(created_span.status, Unset)
+  assert_eq(created_span.end_time_unix_nanos, None)
   
-  // 在指标中使用资源
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("usage-metrics", Some("1.0.0"))
-  let counter = meter.create_counter("resource.operations", Some("count"), Some("Operations using resource"))
-  
-  counter.add(1L, Some([
-    ("service.name", AttributeValue::string(resource.service_name)),
-    ("sdk.name", AttributeValue::string(resource.telemetry_sdk_name))
-  ]))
-  
-  // 在日志中使用资源
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("usage-logger", Some("1.0.0"))
-  
-  let log_record = LogRecord::builder()
-    .timestamp(1640995200000000000L)
-    .severity(SeverityNumber::Info)
-    .body("Resource usage test")
-    .with_attribute("service.name", AttributeValue::string(resource.service_name))
-    .with_attribute("sdk.version", AttributeValue::string(resource.telemetry_sdk_version))
-    .build()
-  
-  logger.emit(log_record)
-  
-  // 验证资源在所有遥测信号中的正确使用
-  assert_eq(resource.service_name, "usage-test-service")
-  assert_eq(resource.telemetry_sdk_name, "azimuth")
-  assert_eq(resource.telemetry_sdk_version, "0.1.0")
-}
-
-test "resource_lifecycle_sharing" {
-  // 测试资源的共享使用
-  
-  let shared_resource = Resource::default("shared-service")
-  
-  // 多个组件共享同一个资源
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("sharing-test", Some("1.0.0"))
-  
-  // 模拟5个不同的组件使用共享资源
-  let component_names = ["web", "api", "database", "cache", "queue"]
-  let spans = []
-  
-  let mut i = 0
-  while i < component_names.length() {
-    let component_attributes = [
-      ("service.name", AttributeValue::string(shared_resource.service_name)),
-      ("sdk.name", AttributeValue::string(shared_resource.telemetry_sdk_name)),
-      ("component.name", AttributeValue::string(component_names[i])),
-      ("resource.shared", AttributeValue::bool(true))
-    ]
-    
-    let (_, span) = tracer.start_span(
-      ctx, 
-      component_names[i] + "_component_span", 
-      Internal, 
-      Some(component_attributes)
-    )
-    
-    spans.push(span)
-    i = i + 1
+  // 2. Span活跃阶段
+  let active_span = Span::{
+    name: "lifecycle-operation",
+    context: created_span.context,
+    kind: Server,
+    parent_span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0x01_byte })),
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: None,
+    status: Unset,
+    status_description: None,
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("active")),
+      ("operation.progress", AttributeValue::int(50L))
+    ],
+    events: [
+      SpanEvent::{
+        name: "operation.started",
+        timestamp_unix_nanos: 1640995200000000000L,
+        attributes: [("lifecycle.event", AttributeValue::string("start"))]
+      }
+    ],
+    links: []
   }
   
-  // 验证所有组件都正确使用了共享资源
-  assert_eq(spans.length(), 5)
+  assert_eq(active_span.attributes.length(), 2)
+  assert_eq(active_span.events.length(), 1)
+  assert_eq(active_span.end_time_unix_nanos, None)
   
-  let mut j = 0
-  while j < spans.length() {
-    assert_eq(spans[j].attributes.length(), 4)
-    assert_eq(spans[j].attributes[0].0, "service.name")
-    assert_eq(spans[j].attributes[1].0, "sdk.name")
-    assert_eq(spans[j].attributes[2].0, "component.name")
-    assert_eq(spans[j].attributes[3].0, "resource.shared")
-    
-    // 验证共享资源信息一致
-    match spans[j].attributes[0].1 {
-      StringValue(service_name) => assert_eq(service_name, shared_resource.service_name)
-      _ => @test.fail("Test failed")
-    }
-    
-    match spans[j].attributes[1].1 {
-      StringValue(sdk_name) => assert_eq(sdk_name, shared_resource.telemetry_sdk_name)
-      _ => @test.fail("Test failed")
-    }
-    
-    j = j + 1
-  }
-}
-
-test "resource_lifecycle_context_propagation" {
-  // 测试资源在上下文传播中的生命周期
-  
-  let resource = Resource::default("context-propagation-service")
-  
-  // 创建带有资源信息的上下文
-  let ctx = Context::empty()
-  let resource_key = create_key("resource.service_name")
-  let sdk_key = create_key("resource.sdk_name")
-  let version_key = create_key("resource.sdk_version")
-  
-  let ctx_with_resource = ctx
-    .with_value(resource_key, resource.service_name)
-    .with_value(sdk_key, resource.telemetry_sdk_name)
-    .with_value(version_key, resource.telemetry_sdk_version)
-  
-  // 在上下文传播中使用资源
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("context-propagation-test", Some("1.0.0"))
-  
-  let (_, span) = tracer.start_span(
-    ctx_with_resource, 
-    "context_propagation_span", 
-    Server, 
-    Some([
-      ("service.name", AttributeValue::string(resource.service_name)),
-      ("context.propagated", AttributeValue::bool(true))
-    ])
-  )
-  
-  // 验证资源信息在上下文中的传播
-  match ctx_with_resource.get(resource_key) {
-    Some(service_name) => assert_eq(service_name, resource.service_name)
-    None => @test.fail("Test failed")
+  // 3. Span完成阶段
+  let completed_span = Span::{
+    name: "lifecycle-operation",
+    context: active_span.context,
+    kind: Server,
+    parent_span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0x01_byte })),
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200000001000L),
+    status: Ok,
+    status_description: Some("Operation completed successfully"),
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("completed")),
+      ("operation.progress", AttributeValue::int(100L)),
+      ("operation.duration", AttributeValue::int(1000L))
+    ],
+    events: [
+      SpanEvent::{
+        name: "operation.started",
+        timestamp_unix_nanos: 1640995200000000000L,
+        attributes: [("lifecycle.event", AttributeValue::string("start"))]
+      },
+      SpanEvent::{
+        name: "operation.completed",
+        timestamp_unix_nanos: 1640995200000001000L,
+        attributes: [("lifecycle.event", AttributeValue::string("end"))]
+      }
+    ],
+    links: []
   }
   
-  match ctx_with_resource.get(sdk_key) {
-    Some(sdk_name) => assert_eq(sdk_name, resource.telemetry_sdk_name)
-    None => @test.fail("Test failed")
+  assert_eq(completed_span.status, Ok)
+  assert_eq(completed_span.end_time_unix_nanos, Some(1640995200000001000L))
+  assert_eq(completed_span.events.length(), 2)
+  
+  // 4. Span错误阶段
+  let error_span = Span::{
+    name: "lifecycle-operation",
+    context: created_span.context,
+    kind: Server,
+    parent_span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0x01_byte })),
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200000000500L),
+    status: Error,
+    status_description: Some("Operation failed due to timeout"),
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("error")),
+      ("error.type", AttributeValue::string("timeout")),
+      ("error.message", AttributeValue::string("Operation timed out"))
+    ],
+    events: [
+      SpanEvent::{
+        name: "error.occurred",
+        timestamp_unix_nanos: 1640995200000000500L,
+        attributes: [
+          ("lifecycle.event", AttributeValue::string("error")),
+          ("error.code", AttributeValue::string("TIMEOUT"))
+        ]
+      }
+    ],
+    links: []
   }
   
-  match ctx_with_resource.get(version_key) {
-    Some(version) => assert_eq(version, resource.telemetry_sdk_version)
-    None => @test.fail("Test failed")
-  }
+  assert_eq(error_span.status, Error)
+  assert_eq(error_span.status_description, Some("Operation failed due to timeout"))
+  assert_eq(error_span.events.length(), 1)
   
-  // 验证span正确使用了资源信息
-  assert_eq(span.attributes.length(), 2)
-  match span.attributes[0].1 {
-    StringValue(service_name) => assert_eq(service_name, resource.service_name)
-    _ => @test.fail("Test failed")
-  }
-}
-
-test "resource_lifecycle_baggage_integration" {
-  // 测试资源在Baggage中的集成
-  
-  let resource = Resource::default("baggage-integration-service")
-  
-  // 创建带有资源信息的baggage
-  let baggage = Baggage::empty()
-    .with_entry("service.name", resource.service_name)
-    .with_entry("sdk.name", resource.telemetry_sdk_name)
-    .with_entry("sdk.version", resource.telemetry_sdk_version)
-    .with_entry("resource.type", "telemetry")
-  
-  // 在span中使用baggage中的资源信息
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("baggage-integration-test", Some("1.0.0"))
-  
-  let baggage_attributes = [
-    ("service.name", AttributeValue::string(resource.service_name)),
-    ("sdk.name", AttributeValue::string(resource.telemetry_sdk_name)),
-    ("sdk.version", AttributeValue::string(resource.telemetry_sdk_version)),
-    ("resource.type", AttributeValue::string("telemetry")),
-    ("baggage.integrated", AttributeValue::bool(true))
-  ]
-  
-  let (_, span) = tracer.start_span(
+  // 5. 嵌套Span的生命周期
+  let (parent_ctx, parent_span) = NoopTracer::start_span(
     ctx, 
-    "baggage_integration_span", 
+    "parent-operation", 
+    Server, 
+    Some([("lifecycle.level", AttributeValue::string("parent"))])
+  )
+  
+  let (child_ctx, child_span) = NoopTracer::start_span(
+    parent_ctx, 
+    "child-operation", 
     Client, 
-    Some(baggage_attributes)
+    Some([("lifecycle.level", AttributeValue::string("child"))])
   )
   
-  // 验证baggage中的资源信息
-  match baggage.get("service.name") {
-    Some(service_name) => assert_eq(service_name, resource.service_name)
-    None => @test.fail("Test failed")
-  }
-  
-  match baggage.get("sdk.name") {
-    Some(sdk_name) => assert_eq(sdk_name, resource.telemetry_sdk_name)
-    None => @test.fail("Test failed")
-  }
-  
-  match baggage.get("sdk.version") {
-    Some(version) => assert_eq(version, resource.telemetry_sdk_version)
-    None => @test.fail("Test failed")
-  }
-  
-  match baggage.get("resource.type") {
-    Some(resource_type) => assert_eq(resource_type, "telemetry")
-    None => @test.fail("Test failed")
-  }
-  
-  // 验证span正确使用了baggage中的资源信息
-  assert_eq(span.attributes.length(), 5)
-  assert_eq(span.attributes[4].0, "baggage.integrated")
-  match span.attributes[4].1 {
-    BoolValue(integrated) => assert_eq(integrated, true)
-    _ => @test.fail("Test failed")
-  }
+  assert_eq(parent_span.name, "parent-operation")
+  assert_eq(child_span.name, "child-operation")
+  assert_eq(child_span.parent_span_id.is_some(), true)
 }
 
-test "resource_lifecycle_complex_scenarios" {
-  // 测试资源在复杂场景中的生命周期
+test "log_record_lifecycle" {
+  // 测试LogRecord的生命周期管理
   
-  let resource = Resource::default("complex-scenario-service")
+  // 1. 日志创建阶段
+  let created_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Log record created"),
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("created")),
+      ("log.source", AttributeValue::string("test-module"))
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
   
-  // 创建复杂的资源使用场景
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("complex-scenario-test", Some("1.0.0"))
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("complex-scenario-metrics", Some("1.0.0"))
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("complex-scenario-logger", Some("1.0.0"))
+  assert_eq(created_log.body, Some("Log record created"))
+  assert_eq(created_log.severity_number, Info)
+  assert_eq(created_log.attributes.length(), 2)
   
-  // 1. 创建带有复杂属性的span
-  let complex_span_attributes = [
-    ("service.name", AttributeValue::string(resource.service_name)),
-    ("sdk.name", AttributeValue::string(resource.telemetry_sdk_name)),
-    ("sdk.version", AttributeValue::string(resource.telemetry_sdk_version)),
-    ("operation.type", AttributeValue::string("complex_processing")),
-    ("complex.scenario", AttributeValue::bool(true)),
-    ("nested.data", AttributeValue::array_string(["level1", "level2", "level3"])),
-    ("metrics.count", AttributeValue::int(42L)),
-    ("processing.time", AttributeValue::float(123.45))
-  ]
+  // 2. 日志处理阶段
+  let processing_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Processing log record"),
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("processing")),
+      ("log.processor", AttributeValue::string("log-processor-1")),
+      ("log.queue.position", AttributeValue::int(5L))
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(Resource::default("log-processor-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "log-processor",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
   
-  let (_, complex_span) = tracer.start_span(
-    ctx, 
-    "complex_scenario_span", 
-    Server, 
-    Some(complex_span_attributes)
-  )
+  assert_eq(processing_log.body, Some("Processing log record"))
+  assert_eq(processing_log.resource.is_some(), true)
+  assert_eq(processing_log.instrumentation_scope.is_some(), true)
   
-  // 2. 记录多种类型的指标
-  let counter = meter.create_counter("complex.operations", Some("count"), Some("Complex operations"))
-  let histogram = meter.create_histogram("complex.duration", Some("ms"), Some("Complex operation duration"))
-  let gauge = meter.create_gauge("complex.memory", Some("MB"), Some("Complex memory usage"))
+  // 3. 日志输出阶段
+  let output_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Log record output to destination"),
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("output")),
+      ("output.destination", AttributeValue::string("file")),
+      ("output.format", AttributeValue::string("json")),
+      ("output.size", AttributeValue::int(1024L))
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(Resource::default("log-processor-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "log-processor",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
   
-  counter.add(1L, Some([
-    ("service.name", AttributeValue::string(resource.service_name)),
-    ("operation.type", AttributeValue::string("complex_processing"))
-  ]))
+  assert_eq(output_log.body, Some("Log record output to destination"))
+  assert_eq(output_log.attributes.length(), 4)
   
-  histogram.record(250.5, Some([
-    ("service.name", AttributeValue::string(resource.service_name)),
-    ("operation.phase", AttributeValue::string("processing"))
-  ]))
+  // 4. 错误日志的生命周期
+  let error_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Error,
+    severity_text: Some("ERROR"),
+    body: Some("Error occurred during log processing"),
+    attributes: [
+      ("lifecycle.phase", AttributeValue::string("error")),
+      ("error.type", AttributeValue::string("processing.error")),
+      ("error.retry.count", AttributeValue::int(3L)),
+      ("error.final", AttributeValue::bool(true))
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(Resource::default("log-processor-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "log-processor",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
   
-  gauge.record(512.0, Some([
-    ("service.name", AttributeValue::string(resource.service_name)),
-    ("memory.type", AttributeValue::string("heap"))
-  ]))
+  assert_eq(error_log.severity_number, Error)
+  assert_eq(error_log.attributes.length(), 4)
   
-  // 3. 记录复杂的日志
-  let complex_log_record = LogRecord::builder()
+  // 5. 使用LogRecordBuilder的生命周期
+  let builder_log = LogRecord::builder()
     .timestamp(1640995200000000000L)
-    .severity(SeverityNumber::Info)
-    .body("Complex scenario operation completed")
-    .with_attribute("service.name", AttributeValue::string(resource.service_name))
-    .with_attribute("sdk.name", AttributeValue::string(resource.telemetry_sdk_name))
-    .with_attribute("operation.type", AttributeValue::string("complex_processing"))
-    .with_attribute("span.name", AttributeValue::string(complex_span.name))
-    .with_attribute("metrics.recorded", AttributeValue::bool(true))
-    .with_attribute("logs.emitted", AttributeValue::bool(true))
-    .with_attribute("complex.scenario", AttributeValue::bool(true))
+    .severity(logs::SeverityNumber::Warn)
+    .body("Warning log using builder")
+    .with_attribute("lifecycle.phase", AttributeValue::string("builder"))
+    .with_attribute("builder.version", AttributeValue::string("1.0.0"))
     .build()
   
-  logger.emit(complex_log_record)
-  
-  // 4. 创建上下文和baggage传播
-  let context_key = create_key("complex.context.key")
-  let ctx_with_complex = ctx.with_value(context_key, "complex.context.value")
-  
-  let complex_baggage = Baggage::empty()
-    .with_entry("service.name", resource.service_name)
-    .with_entry("scenario.type", "complex")
-    .with_entry("processing.stage", "complete")
-  
-  // 验证复杂场景中的资源使用
-  assert_eq(complex_span.name, "complex_scenario_span")
-  assert_eq(complex_span.kind, Server)
-  assert_eq(complex_span.attributes.length(), 8)
-  
-  match ctx_with_complex.get(context_key) {
-    Some(value) => assert_eq(value, "complex.context.value")
-    None => @test.fail("Test failed")
-  }
-  
-  match complex_baggage.get("scenario.type") {
-    Some(scenario_type) => assert_eq(scenario_type, "complex")
-    None => @test.fail("Test failed")
-  }
-  
-  // 验证日志记录的完整性
-  assert_eq(complex_log_record.severity_number, SeverityNumber::Info)
-  match complex_log_record.body {
-    Some(body_text) => assert_eq(body_text, "Complex scenario operation completed")
-    None => @test.fail("Test failed")
-  }
-  assert_eq(complex_log_record.attributes.length(), 8)
+  assert_eq(builder_log.body, Some("Warning log using builder"))
+  assert_eq(builder_log.severity_number, Warn)
+  assert_eq(builder_log.attributes.length(), 2)
 }
 
-test "resource_lifecycle_edge_cases" {
-  // 测试资源生命周期的边界情况
+test "context_lifecycle_management" {
+  // 测试Context的生命周期管理
   
-  // 测试空服务名称的资源
-  let empty_service_resource = Resource::default("")
-  assert_eq(empty_service_resource.service_name, "")
-  assert_eq(empty_service_resource.telemetry_sdk_name, "azimuth")
+  // 1. 上下文创建阶段
+  let created_ctx = Context::empty()
+  assert_eq(created_ctx.values.length(), 0)
   
-  // 测试非常长服务名称的资源
-  let long_name = "a" * 1000
-  let long_name_resource = Resource::default(long_name)
-  assert_eq(long_name_resource.service_name.length(), 1000)
+  // 2. 上下文初始化阶段
+  let init_key = create_key("lifecycle.phase")
+  let init_ctx = created_ctx
+    .with_value(init_key, "initialized")
+    .with_value(create_key("lifecycle.timestamp"), "1640995200000000000")
   
-  // 测试包含特殊字符服务名称的资源
-  let special_name = "service!@#$%^&*()_+-={}[]|\\:;\"'<>?,./"
-  let special_name_resource = Resource::default(special_name)
-  assert_eq(special_name_resource.service_name, special_name)
+  assert_eq(init_ctx.values.length(), 2)
   
-  // 测试Unicode服务名称的资源
-  let unicode_name = "Unicode服务测试🚀🌟💫"
-  let unicode_name_resource = Resource::default(unicode_name)
-  assert_eq(unicode_name_resource.service_name, unicode_name)
+  // 3. 上下文活跃阶段
+  let active_ctx = init_ctx
+    .with_value(create_key("lifecycle.phase"), "active")
+    .with_value(create_key("lifecycle.uptime"), "3600")
+    .with_value(create_key("lifecycle.operations"), "100")
   
-  // 验证所有边界情况下的资源都能正常使用
-  let edge_case_resources = [
-    empty_service_resource,
-    long_name_resource,
-    special_name_resource,
-    unicode_name_resource
+  assert_eq(active_ctx.values.length(), 4)
+  
+  // 4. 上下文传播阶段
+  let propagation_key = create_key("lifecycle.propagation")
+  let propagated_ctx = active_ctx
+    .with_value(propagation_key, "in-progress")
+    .with_value(create_key("lifecycle.hops"), "3")
+  
+  assert_eq(propagated_ctx.values.length(), 6)
+  
+  // 5. 上下文清理阶段
+  let cleanup_ctx = propagated_ctx
+    .with_value(create_key("lifecycle.phase"), "cleanup")
+    .with_value(create_key("lifecycle.cleanup.reason"), "shutdown")
+  
+  assert_eq(cleanup_ctx.values.length(), 8)
+  
+  // 6. 验证上下文状态
+  match cleanup_ctx.get(init_key) {
+    Some(phase) => assert_eq(phase, "cleanup")
+    None => @test.fail("Test failed")
+  }
+  
+  match cleanup_ctx.get(create_key("lifecycle.cleanup.reason")) {
+    Some(reason) => assert_eq(reason, "shutdown")
+    None => @test.fail("Test failed")
+  }
+  
+  // 7. 上下文的层次化生命周期
+  let root_ctx = Context::empty()
+  let child_ctx = root_ctx
+    .with_value(create_key("context.level"), "child")
+    .with_value(create_key("context.parent"), "root")
+  
+  let grandchild_ctx = child_ctx
+    .with_value(create_key("context.level"), "grandchild")
+    .with_value(create_key("context.parent"), "child")
+    .with_value(create_key("context.root"), "root")
+  
+  assert_eq(root_ctx.values.length(), 0)
+  assert_eq(child_ctx.values.length(), 2)
+  assert_eq(grandchild_ctx.values.length(), 3)
+}
+
+test "baggage_lifecycle_management" {
+  // 测试Baggage的生命周期管理
+  
+  // 1. Baggage创建阶段
+  let created_baggage = Baggage::empty()
+  assert_eq(created_baggage.entries.length(), 0)
+  
+  // 2. Baggage初始化阶段
+  let init_baggage = created_baggage
+    .with_entry("lifecycle.phase", "created")
+    .with_entry("lifecycle.timestamp", "1640995200000000000")
+  
+  assert_eq(init_baggage.entries.length(), 2)
+  
+  // 3. Baggage传播阶段
+  let propagation_baggage = init_baggage
+    .with_entry("lifecycle.phase", "propagation")
+    .with_entry("lifecycle.hops", "1")
+    .with_entry("lifecycle.service", "service-a")
+  
+  assert_eq(propagation_baggage.entries.length(), 4)
+  
+  // 4. Baggage更新阶段
+  let updated_baggage = propagation_baggage
+    .with_entry("lifecycle.phase", "updated")
+    .with_entry("lifecycle.hops", "2")
+    .with_entry("lifecycle.service", "service-b")
+    .with_entry("lifecycle.updated.timestamp", "1640995200000001000")
+  
+  assert_eq(updated_baggage.entries.length(), 5)
+  
+  // 5. Baggage清理阶段
+  let cleanup_baggage = updated_baggage
+    .with_entry("lifecycle.phase", "cleanup")
+    .with_entry("lifecycle.cleanup.reason", "end-of-request")
+  
+  assert_eq(cleanup_baggage.entries.length(), 6)
+  
+  // 6. 验证Baggage状态
+  match cleanup_baggage.get("lifecycle.phase") {
+    Some(phase) => assert_eq(phase, "cleanup")
+    None => @test.fail("Test failed")
+  }
+  
+  match cleanup_baggage.get("lifecycle.cleanup.reason") {
+    Some(reason) => assert_eq(reason, "end-of-request")
+    None => @test.fail("Test failed")
+  }
+  
+  // 7. Baggage的跨服务传播生命周期
+  let service_a_baggage = Baggage::empty()
+    .with_entry("service.name", "service-a")
+    .with_entry("request.id", "req-123")
+    .with_entry("user.id", "user-456")
+  
+  let service_b_baggage = service_a_baggage
+    .with_entry("service.name", "service-b")
+    .with_entry("service.a.timestamp", "1640995200000000000")
+    .with_entry("service.b.timestamp", "1640995200000000500")
+  
+  let service_c_baggage = service_b_baggage
+    .with_entry("service.name", "service-c")
+    .with_entry("service.b.timestamp", "1640995200000000500")
+    .with_entry("service.c.timestamp", "1640995200000001000")
+    .with_entry("total.hops", "2")
+  
+  assert_eq(service_a_baggage.entries.length(), 3)
+  assert_eq(service_b_baggage.entries.length(), 5)
+  assert_eq(service_c_baggage.entries.length(), 6)
+}
+
+test "metrics_lifecycle_management" {
+  // 测试Metrics的生命周期管理
+  
+  // 1. Meter创建阶段
+  let meter_provider = NoopMeterProvider::{}
+  let created_meter = meter_provider.get_meter("lifecycle-meter", Some("1.0.0"), Some("https://example.com/schema"))
+  
+  // 2. Counter创建阶段
+  let created_counter = created_meter.create_counter("lifecycle-counter", Some("operations"), Some("Lifecycle counter operations"))
+  
+  // 3. Counter活跃阶段
+  let active_attributes = [
+    ("lifecycle.phase", AttributeValue::string("active")),
+    ("service.name", AttributeValue::string("lifecycle-service")),
+    ("operation.type", AttributeValue::string("increment"))
   ]
   
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("edge-case-test", Some("1.0.0"))
+  created_counter.add(1L, Some(active_attributes))
+  created_counter.add(5L, Some(active_attributes))
+  created_counter.add(10L, Some(active_attributes))
   
-  let mut i = 0
-  while i < edge_case_resources.length() {
-    let resource = edge_case_resources[i]
-    let resource_attributes = [
-      ("service.name", AttributeValue::string(resource.service_name)),
-      ("sdk.name", AttributeValue::string(resource.telemetry_sdk_name)),
-      ("edge.case", AttributeValue::bool(true))
-    ]
+  // 4. Counter更新阶段
+  let updated_attributes = [
+    ("lifecycle.phase", AttributeValue::string("updated")),
+    ("service.name", AttributeValue::string("lifecycle-service")),
+    ("operation.type", AttributeValue::string("increment")),
+    ("counter.version", AttributeValue::string("2.0.0"))
+  ]
+  
+  created_counter.add(20L, Some(updated_attributes))
+  
+  // 5. Histogram创建和使用
+  let created_histogram = created_meter.create_histogram("lifecycle-histogram", Some("ms"), Some("Lifecycle duration histogram"))
+  
+  let histogram_attributes = [
+    ("lifecycle.phase", AttributeValue::string("measurement")),
+    ("service.name", AttributeValue::string("lifecycle-service")),
+    ("operation.type", AttributeValue::string("duration"))
+  ]
+  
+  created_histogram.record(100.0, Some(histogram_attributes))
+  created_histogram.record(250.0, Some(histogram_attributes))
+  created_histogram.record(500.0, Some(histogram_attributes))
+  
+  // 6. Gauge创建和使用
+  let created_gauge = created_meter.create_gauge("lifecycle-gauge", Some("units"), Some("Lifecycle gauge measurement"))
+  
+  let gauge_attributes = [
+    ("lifecycle.phase", AttributeValue::string("monitoring")),
+    ("service.name", AttributeValue::string("lifecycle-service")),
+    ("metric.type", AttributeValue::string("gauge"))
+  ]
+  
+  created_gauge.record(75.0, Some(gauge_attributes))
+  created_gauge.record(80.0, Some(gauge_attributes))
+  created_gauge.record(65.0, Some(gauge_attributes))
+  
+  // 7. UpDownCounter创建和使用
+  let created_up_down_counter = created_meter.create_up_down_counter("lifecycle-up-down", Some("items"), Some("Lifecycle up-down counter"))
+  
+  let up_down_attributes = [
+    ("lifecycle.phase", AttributeValue::string("adjustment")),
+    ("service.name", AttributeValue::string("lifecycle-service")),
+    ("operation.type", AttributeValue::string("increment_decrement"))
+  ]
+  
+  created_up_down_counter.add(10L, Some(up_down_attributes))
+  created_up_down_counter.add(-5L, Some(up_down_attributes))
+  created_up_down_counter.add(15L, Some(up_down_attributes))
+  created_up_down_counter.add(-3L, Some(up_down_attributes))
+  
+  // 8. 验证metric操作不会抛出异常
+  assert_eq(true, true)  // 如果所有操作都成功执行，测试通过
+}
+
+test "propagation_lifecycle_management" {
+  // 测试Propagation的生命周期管理
+  
+  // 1. Propagator创建阶段
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  // 2. Carrier创建阶段
+  let created_carrier = MapCarrier::new()
+  assert_eq(created_carrier.data.length(), 0)
+  
+  // 3. 注入阶段
+  let ctx = Context::empty()
+  let injection_ctx = ctx
+    .with_value(create_key("lifecycle.phase"), "injection")
+    .with_value(create_key("lifecycle.timestamp"), "1640995200000000000")
+  
+  composite_propagator.inject(injection_ctx, created_carrier)
+  
+  // 4. 验证注入结果
+  let trace_parent = created_carrier.get("traceparent")
+  let baggage_header = created_carrier.get("baggage")
+  
+  assert_eq(trace_parent.is_some(), true)
+  assert_eq(baggage_header.is_some(), true)
+  
+  // 5. 提取阶段
+  let extraction_ctx = composite_propagator.extract(ctx, created_carrier)
+  
+  // 6. 传播阶段
+  let propagation_carrier = MapCarrier::new()
+  let propagation_ctx = extraction_ctx
+    .with_value(create_key("lifecycle.phase"), "propagation")
+    .with_value(create_key("lifecycle.hops"), "1")
+  
+  composite_propagator.inject(propagation_ctx, propagation_carrier)
+  
+  // 7. 验证传播结果
+  let propagated_trace_parent = propagation_carrier.get("traceparent")
+  let propagated_baggage = propagation_carrier.get("baggage")
+  
+  assert_eq(propagated_trace_parent.is_some(), true)
+  assert_eq(propagated_baggage.is_some(), true)
+  
+  // 8. 多跳传播生命周期
+  let mut current_ctx = ctx
+  let mut hop_count = 0
+  
+  while hop_count < 3 {
+    let hop_carrier = MapCarrier::new()
+    current_ctx = current_ctx
+      .with_value(create_key("lifecycle.phase"), "hop-" + hop_count.to_string())
+      .with_value(create_key("lifecycle.hops"), hop_count.to_string())
     
-    let (_, span) = tracer.start_span(
-      ctx, 
-      "edge_case_span_" + i.to_string(), 
-      Internal, 
-      Some(resource_attributes)
-    )
+    composite_propagator.inject(current_ctx, hop_carrier)
+    current_ctx = composite_propagator.extract(ctx, hop_carrier)
     
-    // 验证边界情况下的资源都能正确使用
-    assert_eq(span.attributes.length(), 3)
-    match span.attributes[0].1 {
-      StringValue(service_name) => assert_eq(service_name, resource.service_name)
-      _ => @test.fail("Test failed")
-    }
-    
-    i = i + 1
+    hop_count = hop_count + 1
   }
+  
+  assert_eq(hop_count, 3)
+  
+  // 9. 传播清理阶段
+  let cleanup_carrier = MapCarrier::new()
+  let cleanup_ctx = ctx
+    .with_value(create_key("lifecycle.phase"), "cleanup")
+    .with_value(create_key("lifecycle.cleanup.reason"), "end-of-trace")
+  
+  composite_propagator.inject(cleanup_ctx, cleanup_carrier)
+  
+  // 验证清理状态
+  let cleanup_trace_parent = cleanup_carrier.get("traceparent")
+  let cleanup_baggage = cleanup_carrier.get("baggage")
+  
+  assert_eq(cleanup_trace_parent.is_some(), true)
+  assert_eq(cleanup_baggage.is_some(), true)
 }

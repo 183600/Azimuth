@@ -1,1286 +1,806 @@
 // 优雅关闭测试用例
-test "resource_cleanup_on_shutdown" {
-  // 测试关闭时的资源清理
+// 测试遥测系统的优雅关闭和资源清理能力
+
+test "graceful_shutdown_initiation" {
+  // 测试优雅关闭的启动过程
   
-  // 1. 定义资源状态
-  enum ResourceState {
-    Initializing
-    Active
-    Draining    // 排空中
-    Closing     // 关闭中
-    Closed      // 已关闭
-    Failed      // 失败
-  }
+  // 1. 测试关闭信号接收
+  let shutdown_signal = "SIGTERM"
+  let shutdown_timestamp = 1640995200000000000L
+  let shutdown_initiator = "system"
+  let shutdown_reason = "system_maintenance"
   
-  // 2. 定义资源类型
-  enum ResourceType {
-    NetworkConnection
-    FileHandle
-    MemoryBuffer
-    ThreadPool
-    Timer
-    Lock
-    DatabaseConnection
-    MessageQueue
-  }
-  
-  // 3. 定义资源句柄
-  struct ResourceHandle {
-    id : String
-    resource_type : ResourceType
-    state : ResourceState
-    created_at : Int64
-    last_activity : Int64
-    cleanup_timeout_ms : Int
-    force_close_after_ms : Int
-    is_critical : Bool
-  }
-  
-  // 4. 定义关闭管理器
-  struct ShutdownManager {
-    resources : Array[ResourceHandle]
-    shutdown_timeout_ms : Int
-    force_shutdown_timeout_ms : Int
-    shutdown_hooks : Array[ShutdownHook]
-    shutdown_started : Int64?
-    shutdown_completed : Int64?
-  }
-  
-  // 5. 定义关闭钩子
-  struct ShutdownHook {
-    name : String
-    priority : Int  // 优先级，数字越小优先级越高
-    timeout_ms : Int
-    executed : Bool
-    execution_time_ms : Int
-    success : Bool
-    error_message : String?
-  }
-  
-  // 6. 创建关闭管理器
-  let shutdown_manager = ShutdownManager::{
-    resources: [],
-    shutdown_timeout_ms: 30000,      // 30秒
-    force_shutdown_timeout_ms: 60000, // 60秒
-    shutdown_hooks: [],
-    shutdown_started: None,
-    shutdown_completed: None
-  }
-  
-  // 7. 创建测试资源
-  let test_resources = [
-    ResourceHandle::{
-      id: "network_conn_1",
-      resource_type: NetworkConnection,
-      state: Active,
-      created_at: 1640995200000000000L,
-      last_activity: 1640995200000000000L,
-      cleanup_timeout_ms: 5000,
-      force_close_after_ms: 10000,
-      is_critical: false
-    },
-    ResourceHandle::{
-      id: "file_handle_1",
-      resource_type: FileHandle,
-      state: Active,
-      created_at: 1640995200000000000L,
-      last_activity: 1640995200000000000L,
-      cleanup_timeout_ms: 2000,
-      force_close_after_ms: 5000,
-      is_critical: false
-    },
-    ResourceHandle::{
-      id: "memory_buffer_1",
-      resource_type: MemoryBuffer,
-      state: Active,
-      created_at: 1640995200000000000L,
-      last_activity: 1640995200000000000L,
-      cleanup_timeout_ms: 1000,
-      force_close_after_ms: 2000,
-      is_critical: false
-    },
-    ResourceHandle::{
-      id: "thread_pool_1",
-      resource_type: ThreadPool,
-      state: Active,
-      created_at: 1640995200000000000L,
-      last_activity: 1640995200000000000L,
-      cleanup_timeout_ms: 10000,
-      force_close_after_ms: 20000,
-      is_critical: true
-    },
-    ResourceHandle::{
-      id: "database_conn_1",
-      resource_type: DatabaseConnection,
-      state: Active,
-      created_at: 1640995200000000000L,
-      last_activity: 1640995200000000000L,
-      cleanup_timeout_ms: 8000,
-      force_close_after_ms: 15000,
-      is_critical: true
-    }
+  let shutdown_attributes = [
+    ("shutdown.signal", AttributeValue::string(shutdown_signal)),
+    ("shutdown.timestamp", AttributeValue::int(shutdown_timestamp)),
+    ("shutdown.initiator", AttributeValue::string(shutdown_initiator)),
+    ("shutdown.reason", AttributeValue::string(shutdown_reason))
   ]
   
-  // 8. 实现资源关闭函数
-  fn close_resource(resource : ResourceHandle, timeout_ms : Int) -> (ResourceHandle, Bool, String) {
-    let mut updated_resource = resource
-    let mut success = false
-    let mut message = ""
-    
-    // 模拟资源关闭过程
-    match resource.resource_type {
-      NetworkConnection => {
-        updated_resource.state = Closing
-        // 模拟网络连接关闭需要一定时间
-        if timeout_ms >= resource.cleanup_timeout_ms {
-          updated_resource.state = Closed
-          success = true
-          message = "Network connection closed gracefully"
-        } else {
-          updated_resource.state = Failed
-          success = false
-          message = "Network connection close timeout"
-        }
-      }
-      FileHandle => {
-        updated_resource.state = Closing
-        if timeout_ms >= resource.cleanup_timeout_ms {
-          updated_resource.state = Closed
-          success = true
-          message = "File handle closed gracefully"
-        } else {
-          updated_resource.state = Failed
-          success = false
-          message = "File handle close timeout"
-        }
-      }
-      MemoryBuffer => {
-        updated_resource.state = Closing
-        if timeout_ms >= resource.cleanup_timeout_ms {
-          updated_resource.state = Closed
-          success = true
-          message = "Memory buffer freed"
-        } else {
-          updated_resource.state = Failed
-          success = false
-          message = "Memory buffer cleanup timeout"
-        }
-      }
-      ThreadPool => {
-        updated_resource.state = Draining  // 先排空任务
-        if timeout_ms >= resource.cleanup_timeout_ms {
-          updated_resource.state = Closing
-          if timeout_ms >= resource.cleanup_timeout_ms * 2 {
-            updated_resource.state = Closed
-            success = true
-            message = "Thread pool drained and closed gracefully"
-          } else {
-            success = false
-            message = "Thread pool drained but close timeout"
-          }
-        } else {
-          updated_resource.state = Failed
-          success = false
-          message = "Thread pool drain timeout"
-        }
-      }
-      DatabaseConnection => {
-        updated_resource.state = Closing
-        if timeout_ms >= resource.cleanup_timeout_ms {
-          updated_resource.state = Closed
-          success = true
-          message = "Database connection closed gracefully"
-        } else {
-          updated_resource.state = Failed
-          success = false
-          message = "Database connection close timeout"
-        }
-      }
-      _ => {
-        updated_resource.state = Closed
-        success = true
-        message = "Resource closed"
-      }
-    }
-    
-    (updated_resource, success, message)
-  }
+  // 验证关闭属性
+  let mut found_signal = false
+  let mut found_timestamp = false
+  let mut found_initiator = false
+  let mut found_reason = false
   
-  // 9. 实现优雅关闭函数
-  fn graceful_shutdown(manager : ShutdownManager) -> (ShutdownManager, Bool, Array[String]) {
-    let mut updated_manager = manager
-    let mut shutdown_messages = []
-    let mut all_success = true
-    
-    // 设置关闭开始时间
-    updated_manager.shutdown_started = Some(1640995200000000000L)
-    
-    // 按优先级排序资源（关键资源优先关闭）
-    let sorted_resources = sort_resources_by_priority(manager.resources)
-    
-    // 逐个关闭资源
-    let mut i = 0
-    while i < sorted_resources.length() {
-      let resource = sorted_resources[i]
-      let (closed_resource, success, message) = close_resource(resource, resource.cleanup_timeout_ms)
-      
-      shutdown_messages.push(resource.id + ": " + message)
-      
-      if not success {
-        all_success = false
-        
-        // 尝试强制关闭
-        let (forced_resource, force_success, force_message) = close_resource(closed_resource, resource.force_close_after_ms)
-        shutdown_messages.push(resource.id + " (forced): " + force_message)
-        
-        if not force_success and resource.is_critical {
-          // 关键资源强制关闭失败，整个关闭过程失败
-          all_success = false
-        }
-      }
-      
-      i = i + 1
-    }
-    
-    // 执行关闭钩子
-    let executed_hooks = execute_shutdown_hooks(manager.shutdown_hooks)
-    updated_manager.shutdown_hooks = executed_hooks
-    
-    // 设置关闭完成时间
-    updated_manager.shutdown_completed = Some(1640995200000000000L + 30000000000L)  // 30秒后
-    
-    (updated_manager, all_success, shutdown_messages)
-  }
-  
-  // 10. 实现资源排序函数
-  fn sort_resources_by_priority(resources : Array[ResourceHandle]) -> Array[ResourceHandle] {
-    // 简化排序：关键资源优先
-    let critical = []
-    let non_critical = []
-    
-    let mut i = 0
-    while i < resources.length() {
-      let resource = resources[i]
-      if resource.is_critical {
-        critical.push(resource)
-      } else {
-        non_critical.push(resource)
-      }
-      i = i + 1
-    }
-    
-    // 合并数组
-    let sorted = []
-    let mut j = 0
-    while j < critical.length() {
-      sorted.push(critical[j])
-      j = j + 1
-    }
-    
-    let mut k = 0
-    while k < non_critical.length() {
-      sorted.push(non_critical[k])
-      k = k + 1
-    }
-    
-    sorted
-  }
-  
-  // 11. 实现关闭钩子执行函数
-  fn execute_shutdown_hooks(hooks : Array[ShutdownHook]) -> Array[ShutdownHook] {
-    let mut executed_hooks = []
-    
-    // 按优先级排序钩子
-    let sorted_hooks = sort_hooks_by_priority(hooks)
-    
-    // 执行钩子
-    let mut i = 0
-    while i < sorted_hooks.length() {
-      let hook = sorted_hooks[i]
-      let mut executed_hook = hook
-      
-      // 模拟钩子执行
-      let execution_time = hook.timeout_ms / 2  // 假设执行时间为超时时间的一半
-      let success = execution_time <= hook.timeout_ms
-      
-      executed_hook.executed = true
-      executed_hook.execution_time_ms = execution_time
-      executed_hook.success = success
-      
-      if not success {
-        executed_hook.error_message = Some("Hook execution timeout")
-      }
-      
-      executed_hooks.push(executed_hook)
-      i = i + 1
-    }
-    
-    executed_hooks
-  }
-  
-  // 12. 实现钩子排序函数
-  fn sort_hooks_by_priority(hooks : Array[ShutdownHook]) -> Array[ShutdownHook] {
-    // 简化的冒泡排序
-    let sorted = []
-    let mut i = 0
-    while i < hooks.length() {
-      sorted.push(hooks[i])
-      i = i + 1
-    }
-    
-    let mut n = sorted.length()
-    let mut swapped = true
-    while swapped and n > 1 {
-      swapped = false
-      let mut i = 1
-      while i < n {
-        if sorted[i-1].priority > sorted[i].priority {
-          let temp = sorted[i-1]
-          sorted[i-1] = sorted[i]
-          sorted[i] = temp
-          swapped = true
-        }
-        i = i + 1
-      }
-      n = n - 1
-    }
-    
-    sorted
-  }
-  
-  // 13. 测试优雅关闭
-  
-  let manager_with_resources = ShutdownManager::{
-    resources: test_resources,
-    shutdown_timeout_ms: 30000,
-    force_shutdown_timeout_ms: 60000,
-    shutdown_hooks: [],
-    shutdown_started: None,
-    shutdown_completed: None
-  }
-  
-  // 执行优雅关闭
-  let (final_manager, success, messages) = graceful_shutdown(manager_with_resources)
-  
-  // 验证关闭结果
-  assert_eq(final_manager.shutdown_started != None, true)
-  assert_eq(final_manager.shutdown_completed != None, true)
-  assert_eq(messages.length(), test_resources.length())
-  
-  // 验证每个资源都被处理
   let mut i = 0
-  while i < messages.length() {
-    assert_eq(messages[i].contains(": "), true)
+  while i < shutdown_attributes.length() {
+    let (name, value) = shutdown_attributes[i]
+    match (name, value) {
+      ("shutdown.signal", StringValue(signal)) => {
+        assert_eq(signal, shutdown_signal)
+        found_signal = true
+      }
+      ("shutdown.timestamp", IntValue(timestamp)) => {
+        assert_eq(timestamp, shutdown_timestamp)
+        found_timestamp = true
+      }
+      ("shutdown.initiator", StringValue(initiator)) => {
+        assert_eq(initiator, shutdown_initiator)
+        found_initiator = true
+      }
+      ("shutdown.reason", StringValue(reason)) => {
+        assert_eq(reason, shutdown_reason)
+        found_reason = true
+      }
+      _ => ()
+    }
     i = i + 1
   }
-}
-
-test "in_flight_request_handling" {
-  // 测试处理进行中的请求
   
-  // 1. 定义请求状态
-  enum RequestState {
-    Pending
-    Processing
-    Completed
-    Failed
-    Cancelled
-  }
+  assert_eq(found_signal, true)
+  assert_eq(found_timestamp, true)
+  assert_eq(found_initiator, true)
+  assert_eq(found_reason, true)
   
-  // 2. 定义请求类型
-  enum RequestType {
-    TelemetryData
-    LogRecord
-    Metric
-    Trace
-    HealthCheck
-    ConfigUpdate
-  }
+  // 2. 测试关闭阶段标记
+  let shutdown_phase = "initiation"
+  let shutdown_timeout_seconds = 30
+  let shutdown_grace_period_seconds = 60
+  let shutdown_force_after_seconds = 120
   
-  // 3. 定义请求
-  struct InFlightRequest {
-    id : String
-    request_type : RequestType
-    state : RequestState
-    created_at : Int64
-    timeout_ms : Int
-    priority : Int
-    can_be_interrupted : Bool
-    cleanup_required : Bool
-  }
-  
-  // 4. 定义请求管理器
-  struct RequestManager {
-    requests : Array[InFlightRequest]
-    max_wait_time_ms : Int
-    drain_timeout_ms : Int
-    force_cancel_after_ms : Int
-  }
-  
-  // 5. 创建测试请求
-  let test_requests = [
-    InFlightRequest::{
-      id: "req_001",
-      request_type: TelemetryData,
-      state: Processing,
-      created_at: 1640995200000000000L,
-      timeout_ms: 5000,
-      priority: 1,
-      can_be_interrupted: true,
-      cleanup_required: false
-    },
-    InFlightRequest::{
-      id: "req_002",
-      request_type: LogRecord,
-      state: Processing,
-      created_at: 1640995200000000000L,
-      timeout_ms: 2000,
-      priority: 2,
-      can_be_interrupted: true,
-      cleanup_required: false
-    },
-    InFlightRequest::{
-      id: "req_003",
-      request_type: Trace,
-      state: Processing,
-      created_at: 1640995200000000000L,
-      timeout_ms: 10000,
-      priority: 1,
-      can_be_interrupted: false,  // 不能中断的关键请求
-      cleanup_required: true
-    },
-    InFlightRequest|{
-      id: "req_004",
-      request_type: HealthCheck,
-      state: Pending,
-      created_at: 1640995200000000000L,
-      timeout_ms: 1000,
-      priority: 3,
-      can_be_interrupted: true,
-      cleanup_required: false
-    },
-    InFlightRequest::{
-      id: "req_005",
-      request_type: ConfigUpdate,
-      state: Processing,
-      created_at: 1640995200000000000L,
-      timeout_ms: 8000,
-      priority: 2,
-      can_be_interrupted: true,
-      cleanup_required: true
-    }
+  let phase_attributes = [
+    ("shutdown.phase", AttributeValue::string(shutdown_phase)),
+    ("shutdown.timeout.seconds", AttributeValue::int(shutdown_timeout_seconds.to_int64())),
+    ("shutdown.grace.period.seconds", AttributeValue::int(shutdown_grace_period_seconds.to_int64())),
+    ("shutdown.force.after.seconds", AttributeValue::int(shutdown_force_after_seconds.to_int64()))
   ]
   
-  // 6. 创建请求管理器
-  let request_manager = RequestManager::{
-    requests: test_requests,
-    max_wait_time_ms: 15000,  // 15秒
-    drain_timeout_ms: 10000,  // 10秒
-    force_cancel_after_ms: 20000  // 20秒
-  }
-  
-  // 7. 实现请求处理函数
-  fn handle_in_flight_requests(manager : RequestManager, shutdown_timeout_ms : Int) -> (RequestManager, Array[String]) {
-    let mut updated_manager = manager
-    let mut handling_messages = []
-    
-    // 按优先级排序请求
-    let sorted_requests = sort_requests_by_priority(manager.requests)
-    
-    // 等待请求完成或超时
-    let mut wait_time = 0
-    while wait_time < shutdown_timeout_ms {
-      let mut all_completed = true
-      
-      let mut i = 0
-      while i < sorted_requests.length() {
-        let request = sorted_requests[i]
-        
-        if request.state == Processing or request.state == Pending {
-          all_completed = false
-          
-          // 检查请求是否超时
-          let elapsed = wait_time
-          if elapsed >= request.timeout_ms {
-            if request.can_be_interrupted {
-              // 可以中断的请求，取消它
-              updated_manager.requests[i].state = Cancelled
-              handling_messages.push("Request " + request.id + " cancelled due to shutdown")
-            } else {
-              // 不能中断的请求，等待它完成
-              handling_messages.push("Request " + request.id + " cannot be interrupted, waiting...")
-            }
-          }
-        }
-        
-        i = i + 1
-      }
-      
-      if all_completed {
-        handling_messages.push("All in-flight requests completed")
-        break
-      }
-      
-      wait_time = wait_time + 1000  // 每次等待1秒
-    }
-    
-    // 如果还有未完成的请求，强制取消
-    let mut j = 0
-    while j < updated_manager.requests.length() {
-      let request = updated_manager.requests[j]
-      if request.state == Processing or request.state == Pending {
-        updated_manager.requests[j].state = Cancelled
-        handling_messages.push("Request " + request.id + " force cancelled")
-      }
-      j = j + 1
-    }
-    
-    (updated_manager, handling_messages)
-  }
-  
-  // 8. 实现请求排序函数
-  fn sort_requests_by_priority(requests : Array[InFlightRequest]) -> Array[InFlightRequest] {
-    // 按优先级排序，优先级数字越小优先级越高
-    let sorted = []
-    let mut i = 0
-    while i < requests.length() {
-      sorted.push(requests[i])
-      i = i + 1
-    }
-    
-    let mut n = sorted.length()
-    let mut swapped = true
-    while swapped and n > 1 {
-      swapped = false
-      let mut i = 1
-      while i < n {
-        if sorted[i-1].priority > sorted[i].priority {
-          let temp = sorted[i-1]
-          sorted[i-1] = sorted[i]
-          sorted[i] = temp
-          swapped = true
-        }
-        i = i + 1
-      }
-      n = n - 1
-    }
-    
-    sorted
-  }
-  
-  // 9. 测试进行中请求处理
-  let (final_manager, messages) = handle_in_flight_requests(request_manager, 15000)
-  
-  // 验证处理结果
-  assert_eq(messages.length() > 0, true)
-  
-  // 验证不能中断的请求被特殊处理
-  let mut critical_request_found = false
-  let mut i = 0
-  while i < final_manager.requests.length() {
-    if final_manager.requests[i].id == "req_003" {
-      critical_request_found = true
-      break
+  // 验证阶段属性
+  i = 0
+  while i < phase_attributes.length() {
+    let (name, value) = phase_attributes[i]
+    match (name, value) {
+      ("shutdown.phase", StringValue(phase)) => assert_eq(phase, shutdown_phase)
+      ("shutdown.timeout.seconds", IntValue(timeout)) => assert_eq(timeout, shutdown_timeout_seconds.to_int64())
+      ("shutdown.grace.period.seconds", IntValue(grace)) => assert_eq(grace, shutdown_grace_period_seconds.to_int64())
+      ("shutdown.force.after.seconds", IntValue(force)) => assert_eq(force, shutdown_force_after_seconds.to_int64())
+      _ => ()
     }
     i = i + 1
   }
-  assert_eq(critical_request_found, true)
-}
-
-test "data_flush_and_persistence" {
-  // 测试数据刷新和持久化
   
-  // 1. 定义数据状态
-  enum DataState {
-    InMemory
-    Buffering
-    Flushing
-    Persisted
-    Failed
-  }
+  // 3. 测试关闭状态跟踪
+  let shutdown_status = "in_progress"
+  let shutdown_progress_percentage = 0
+  let shutdown_remaining_seconds = 60
+  let shutdown_can_be_cancelled = true
   
-  // 2. 定义数据块
-  struct DataChunk {
-    id : String
-    data_type : String
-    state : DataState
-    size_bytes : Int
-    created_at : Int64
-    retry_count : Int
-    max_retries : Int
-    priority : Int
-  }
-  
-  // 3. 定义持久化管理器
-  struct PersistenceManager {
-    chunks : Array[DataChunk]
-    buffer_size_bytes : Int
-    flush_interval_ms : Int
-    max_flush_time_ms : Int
-    force_flush_timeout_ms : Int
-    persistence_enabled : Bool
-  }
-  
-  // 4. 创建测试数据块
-  let test_chunks = [
-    DataChunk::{
-      id: "chunk_001",
-      data_type: "logs",
-      state: InMemory,
-      size_bytes: 1024,
-      created_at: 1640995200000000000L,
-      retry_count: 0,
-      max_retries: 3,
-      priority: 1
-    },
-    DataChunk::{
-      id: "chunk_002",
-      data_type: "metrics",
-      state: InMemory,
-      size_bytes: 512,
-      created_at: 1640995200000000000L,
-      retry_count: 0,
-      max_retries: 3,
-      priority: 2
-    },
-    DataChunk::{
-      id: "chunk_003",
-      data_type: "traces",
-      state: Buffering,
-      size_bytes: 2048,
-      created_at: 1640995200000000000L,
-      retry_count: 0,
-      max_retries: 3,
-      priority: 1
-    },
-    DataChunk::{
-      id: "chunk_004",
-      data_type: "logs",
-      state: Flushing,
-      size_bytes: 768,
-      created_at: 1640995200000000000L,
-      retry_count: 1,
-      max_retries: 3,
-      priority: 2
-    },
-    DataChunk::{
-      id: "chunk_005",
-      data_type: "metrics",
-      state: Failed,
-      size_bytes: 256,
-      created_at: 1640995200000000000L,
-      retry_count: 3,
-      max_retries: 3,
-      priority: 3
-    }
+  let status_attributes = [
+    ("shutdown.status", AttributeValue::string(shutdown_status)),
+    ("shutdown.progress.percentage", AttributeValue::int(shutdown_progress_percentage.to_int64())),
+    ("shutdown.remaining.seconds", AttributeValue::int(shutdown_remaining_seconds.to_int64())),
+    ("shutdown.can.be.cancelled", AttributeValue::bool(shutdown_can_be_cancelled))
   ]
   
-  // 5. 创建持久化管理器
-  let persistence_manager = PersistenceManager::{
-    chunks: test_chunks,
-    buffer_size_bytes: 10000,
-    flush_interval_ms: 5000,
-    max_flush_time_ms: 10000,
-    force_flush_timeout_ms: 15000,
-    persistence_enabled: true
-  }
-  
-  // 6. 实现数据刷新函数
-  fn flush_data_chunks(manager : PersistenceManager, shutdown_timeout_ms : Int) -> (PersistenceManager, Array[String]) {
-    let mut updated_manager = manager
-    let mut flush_messages = []
-    
-    // 按优先级排序数据块
-    let sorted_chunks = sort_chunks_by_priority(manager.chunks)
-    
-    // 计算总数据大小
-    let mut total_size = 0
-    let mut i = 0
-    while i < sorted_chunks.length() {
-      total_size = total_size + sorted_chunks[i].size_bytes
-      i = i + 1
-    }
-    
-    flush_messages.push("Total data to flush: " + total_size.to_string() + " bytes")
-    
-    // 逐个刷新数据块
-    let mut flush_time = 0
-    let mut j = 0
-    while j < sorted_chunks.length() and flush_time < shutdown_timeout_ms {
-      let chunk = sorted_chunks[j]
-      
-      let (flushed_chunk, success, message, time_taken) = flush_single_chunk(chunk, manager.max_flush_time_ms)
-      
-      updated_manager.chunks[j] = flushed_chunk
-      flush_messages.push("Chunk " + chunk.id + ": " + message)
-      
-      if success {
-        flush_time = flush_time + time_taken
-      } else {
-        // 刷新失败，检查是否可以重试
-        if flushed_chunk.retry_count < flushed_chunk.max_retries {
-          updated_manager.chunks[j].retry_count = updated_manager.chunks[j].retry_count + 1
-          updated_manager.chunks[j].state = InMemory  // 重置状态以便重试
-          flush_messages.push("Chunk " + chunk.id + " will be retried")
-        } else {
-          flush_messages.push("Chunk " + chunk.id + " failed after max retries")
-        }
-      }
-      
-      j = j + 1
-    }
-    
-    // 如果超时，强制刷新剩余数据块
-    if flush_time >= shutdown_timeout_ms {
-      let mut k = j
-      while k < sorted_chunks.length() {
-        let chunk = sorted_chunks[k]
-        let (forced_chunk, success, message, _) = flush_single_chunk(chunk, manager.force_flush_timeout_ms)
-        
-        // 找到对应的索引并更新
-        let mut l = 0
-        while l < updated_manager.chunks.length() {
-          if updated_manager.chunks[l].id == chunk.id {
-            updated_manager.chunks[l] = forced_chunk
-            break
-          }
-          l = l + 1
-        }
-        
-        flush_messages.push("Chunk " + chunk.id + " (forced): " + message)
-        k = k + 1
-      }
-    }
-    
-    (updated_manager, flush_messages)
-  }
-  
-  // 7. 实现单个数据块刷新函数
-  fn flush_single_chunk(chunk : DataChunk, timeout_ms : Int) -> (DataChunk, Bool, String, Int) {
-    let mut updated_chunk = chunk
-    let mut success = false
-    let mut message = ""
-    let mut time_taken = 0
-    
-    // 模拟刷新过程
-    match chunk.state {
-      InMemory => {
-        updated_chunk.state = Flushing
-        time_taken = chunk.size_bytes / 100  // 假设每100字节需要1ms
-        
-        if time_taken <= timeout_ms {
-          updated_chunk.state = Persisted
-          success = true
-          message = "Flushed successfully"
-        } else {
-          updated_chunk.state = Failed
-          success = false
-          message = "Flush timeout"
-        }
-      }
-      Buffering => {
-        updated_chunk.state = Flushing
-        time_taken = chunk.size_bytes / 200  // 缓冲中的数据刷新更快
-        
-        if time_taken <= timeout_ms {
-          updated_chunk.state = Persisted
-          success = true
-          message = "Buffered data flushed successfully"
-        } else {
-          updated_chunk.state = Failed
-          success = false
-          message = "Buffered data flush timeout"
-        }
-      }
-      Flushing => {
-        // 已经在刷新中，等待完成
-        time_taken = 1000  // 假设还需要1秒
-        
-        if chunk.retry_count < chunk.max_retries {
-          updated_chunk.state = Persisted
-          success = true
-          message = "Flush completed after retry"
-        } else {
-          updated_chunk.state = Failed
-          success = false
-          message = "Flush failed after max retries"
-        }
-      }
-      Failed => {
-        // 已经失败，尝试恢复
-        if chunk.retry_count < chunk.max_retries {
-          updated_chunk.state = Flushing
-          updated_chunk.retry_count = updated_chunk.retry_count + 1
-          time_taken = chunk.size_bytes / 150
-          
-          if time_taken <= timeout_ms {
-            updated_chunk.state = Persisted
-            success = true
-            message = "Recovered and flushed successfully"
-          } else {
-            updated_chunk.state = Failed
-            success = false
-            message = "Recovery flush timeout"
-          }
-        } else {
-          success = false
-          message = "Cannot recover, already failed"
-        }
-      }
-      Persisted => {
-        success = true
-        message = "Already persisted"
-      }
-    }
-    
-    (updated_chunk, success, message, time_taken)
-  }
-  
-  // 8. 实现数据块排序函数
-  fn sort_chunks_by_priority(chunks : Array[DataChunk]) -> Array[DataChunk] {
-    // 按优先级排序，优先级数字越小优先级越高
-    let sorted = []
-    let mut i = 0
-    while i < chunks.length() {
-      sorted.push(chunks[i])
-      i = i + 1
-    }
-    
-    let mut n = sorted.length()
-    let mut swapped = true
-    while swapped and n > 1 {
-      swapped = false
-      let mut i = 1
-      while i < n {
-        if sorted[i-1].priority > sorted[i].priority {
-          let temp = sorted[i-1]
-          sorted[i-1] = sorted[i]
-          sorted[i] = temp
-          swapped = true
-        }
-        i = i + 1
-      }
-      n = n - 1
-    }
-    
-    sorted
-  }
-  
-  // 9. 测试数据刷新和持久化
-  let (final_manager, messages) = flush_data_chunks(persistence_manager, 15000)
-  
-  // 验证刷新结果
-  assert_eq(messages.length() > 0, true)
-  assert_eq(messages[0].contains("Total data"), true)
-  
-  // 验证数据块状态变化
-  let mut persisted_count = 0
-  let mut failed_count = 0
-  let mut i = 0
-  while i < final_manager.chunks.length() {
-    match final_manager.chunks[i].state {
-      Persisted => persisted_count = persisted_count + 1
-      Failed => failed_count = failed_count + 1
-      _ => {}
+  // 验证状态属性
+  i = 0
+  while i < status_attributes.length() {
+    let (name, value) = status_attributes[i]
+    match (name, value) {
+      ("shutdown.status", StringValue(status)) => assert_eq(status, shutdown_status)
+      ("shutdown.progress.percentage", IntValue(progress)) => assert_eq(progress, shutdown_progress_percentage.to_int64())
+      ("shutdown.remaining.seconds", IntValue(remaining)) => assert_eq(remaining, shutdown_remaining_seconds.to_int64())
+      ("shutdown.can.be.cancelled", BoolValue(cancelable)) => assert_eq(cancelable, shutdown_can_be_cancelled)
+      _ => ()
     }
     i = i + 1
   }
-  
-  assert_eq(persisted_count > 0, true)  // 至少有一些数据被持久化
 }
 
-test "shutdown_signal_handling" {
-  // 测试关闭信号处理
+test "resource_cleanup_during_shutdown" {
+  // 测试关闭过程中的资源清理
   
-  // 1. 定义信号类型
-  enum SignalType {
-    SIGTERM    // 正常终止信号
-    SIGINT     // 中断信号（Ctrl+C）
-    SIGHUP     // 终端关闭信号
-    SIGUSR1    // 用户自定义信号1
-    SIGUSR2    // 用户自定义信号2
-  }
+  // 1. 测试活跃资源统计
+  let active_spans_count = 150
+  let pending_logs_count = 75
+  let active_metrics_count = 25
+  let open_connections_count = 10
   
-  // 2. 定义信号处理器
-  struct SignalHandler {
-    signal_type : SignalType
-    handler_name : String
-    priority : Int
-    timeout_ms : Int
-    graceful_shutdown : Bool
-    executed : Bool
-    execution_time : Int64
-    success : Bool
-  }
-  
-  // 3. 定义信号管理器
-  struct SignalManager {
-    handlers : Array[SignalHandler]
-    shutdown_initiated : Bool
-    shutdown_signal_received : SignalType?
-    signal_timestamp : Int64?
-  }
-  
-  // 4. 创建信号处理器
-  let signal_handlers = [
-    SignalHandler::{
-      signal_type: SIGTERM,
-      handler_name: "graceful_shutdown_handler",
-      priority: 1,
-      timeout_ms: 30000,
-      graceful_shutdown: true,
-      executed: false,
-      execution_time: 0L,
-      success: false
-    },
-    SignalHandler::{
-      signal_type: SIGINT,
-      handler_name: "interrupt_handler",
-      priority: 2,
-      timeout_ms: 15000,
-      graceful_shutdown: true,
-      executed: false,
-      execution_time: 0L,
-      success: false
-    },
-    SignalHandler::{
-      signal_type: SIGHUP,
-      handler_name: "config_reload_handler",
-      priority: 3,
-      timeout_ms: 5000,
-      graceful_shutdown: false,  // 不触发关闭
-      executed: false,
-      execution_time: 0L,
-      success: false
-    },
-    SignalHandler::{
-      signal_type: SIGUSR1,
-      handler_name: "status_dump_handler",
-      priority: 4,
-      timeout_ms: 2000,
-      graceful_shutdown: false,  // 不触发关闭
-      executed: false,
-      execution_time: 0L,
-      success: false
-    },
-    SignalHandler::{
-      signal_type: SIGUSR2,
-      handler_name: "force_shutdown_handler",
-      priority: 5,
-      timeout_ms: 5000,
-      graceful_shutdown: false,  // 强制关闭
-      executed: false,
-      execution_time: 0L,
-      success: false
-    }
+  let resource_stats_attributes = [
+    ("shutdown.active.spans", AttributeValue::int(active_spans_count.to_int64())),
+    ("shutdown.pending.logs", AttributeValue::int(pending_logs_count.to_int64())),
+    ("shutdown.active.metrics", AttributeValue::int(active_metrics_count.to_int64())),
+    ("shutdown.open.connections", AttributeValue::int(open_connections_count.to_int64()))
   ]
   
-  // 5. 创建信号管理器
-  let signal_manager = SignalManager::{
-    handlers: signal_handlers,
-    shutdown_initiated: false,
-    shutdown_signal_received: None,
-    signal_timestamp: None
-  }
-  
-  // 6. 实现信号处理函数
-  fn handle_signal(manager : SignalManager, signal : SignalType, timestamp : Int64) -> (SignalManager, Array[String]) {
-    let mut updated_manager = manager
-    let mut handling_messages = []
-    
-    // 记录信号接收
-    updated_manager.shutdown_signal_received = Some(signal)
-    updated_manager.signal_timestamp = Some(timestamp)
-    
-    // 查找对应的处理器
-    let mut handlers_to_execute = []
-    let mut i = 0
-    while i < manager.handlers.length() {
-      if manager.handlers[i].signal_type == signal {
-        handlers_to_execute.push(manager.handlers[i])
-      }
-      i = i + 1
-    }
-    
-    // 按优先级执行处理器
-    handlers_to_execute = sort_handlers_by_priority(handlers_to_execute)
-    
-    let mut j = 0
-    while j < handlers_to_execute.length() {
-      let handler = handlers_to_execute[j]
-      let mut executed_handler = handler
-      
-      // 模拟信号处理
-      let execution_start = timestamp
-      let execution_time = simulate_handler_execution(handler)
-      let execution_end = execution_start + execution_time
-      
-      executed_handler.executed = true
-      executed_handler.execution_time = execution_time
-      executed_handler.success = execution_time <= handler.timeout_ms.to_int64()
-      
-      // 更新管理器中的处理器
-      let mut k = 0
-      while k < updated_manager.handlers.length() {
-        if updated_manager.handlers[k].signal_type == signal and updated_manager.handlers[k].handler_name == handler.handler_name {
-          updated_manager.handlers[k] = executed_handler
-          break
-        }
-        k = k + 1
-      }
-      
-      // 记录处理结果
-      if executed_handler.success {
-        handling_messages.push(handler.handler_name + " executed successfully")
-        
-        // 如果是优雅关闭信号，标记关闭开始
-        if handler.graceful_shutdown {
-          updated_manager.shutdown_initiated = true
-          handling_messages.push("Graceful shutdown initiated")
-        }
-      } else {
-        handling_messages.push(handler.handler_name + " execution failed or timeout")
-      }
-      
-      j = j + 1
-    }
-    
-    (updated_manager, handling_messages)
-  }
-  
-  // 7. 实现处理器排序函数
-  fn sort_handlers_by_priority(handlers : Array[SignalHandler]) -> Array[SignalHandler] {
-    // 按优先级排序，优先级数字越小优先级越高
-    let sorted = []
-    let mut i = 0
-    while i < handlers.length() {
-      sorted.push(handlers[i])
-      i = i + 1
-    }
-    
-    let mut n = sorted.length()
-    let mut swapped = true
-    while swapped and n > 1 {
-      swapped = false
-      let mut i = 1
-      while i < n {
-        if sorted[i-1].priority > sorted[i].priority {
-          let temp = sorted[i-1]
-          sorted[i-1] = sorted[i]
-          sorted[i] = temp
-          swapped = true
-        }
-        i = i + 1
-      }
-      n = n - 1
-    }
-    
-    sorted
-  }
-  
-  // 8. 实现处理器执行模拟函数
-  fn simulate_handler_execution(handler : SignalHandler) -> Int64 {
-    match handler.signal_type {
-      SIGTERM => {
-        // 优雅关闭，需要较长时间
-        20000000000L  // 20秒
-      }
-      SIGINT => {
-        // 中断处理，中等时间
-        10000000000L  // 10秒
-      }
-      SIGHUP => {
-        // 配置重载，快速
-        2000000000L  // 2秒
-      }
-      SIGUSR1 => {
-        // 状态转储，快速
-        1000000000L  // 1秒
-      }
-      SIGUSR2 => {
-        // 强制关闭，快速
-        3000000000L  // 3秒
-      }
-    }
-  }
-  
-  // 9. 测试信号处理
-  
-  // 测试SIGTERM信号
-  let (manager1, messages1) = handle_signal(signal_manager, SIGTERM, 1640995200000000000L)
-  assert_eq(manager1.shutdown_signal_received, Some(SIGTERM))
-  assert_eq(manager1.shutdown_initiated, true)
-  assert_eq(messages1.length() > 0, true)
-  assert_eq(messages1[0].contains("graceful_shutdown_handler"), true)
-  
-  // 测试SIGINT信号
-  let (manager2, messages2) = handle_signal(manager1, SIGINT, 1640995200000000000L)
-  assert_eq(manager2.shutdown_signal_received, Some(SIGINT))
-  assert_eq(messages2.length() > 0, true)
-  assert_eq(messages2[0].contains("interrupt_handler"), true)
-  
-  // 测试SIGHUP信号（不触发关闭）
-  let (manager3, messages3) = handle_signal(manager2, SIGHUP, 1640995200000000000L)
-  assert_eq(manager3.shutdown_signal_received, Some(SIGHUP))
-  // 注意：SIGHUP不会改变shutdown_initiated状态
-  
-  // 测试SIGUSR1信号（状态转储）
-  let (manager4, messages4) = handle_signal(manager3, SIGUSR1, 1640995200000000000L)
-  assert_eq(manager4.shutdown_signal_received, Some(SIGUSR1))
-  assert_eq(messages4[0].contains("status_dump_handler"), true)
-  
-  // 测试SIGUSR2信号（强制关闭）
-  let (manager5, messages5) = handle_signal(manager4, SIGUSR2, 1640995200000000000L)
-  assert_eq(manager5.shutdown_signal_received, Some(SIGUSR2))
-  assert_eq(messages5[0].contains("force_shutdown_handler"), true)
-}
-
-// 辅助函数
-fn sort_resources_by_priority(resources : Array[ResourceHandle]) -> Array[ResourceHandle] {
-  // 简化排序：关键资源优先
-  let critical = []
-  let non_critical = []
+  // 验证资源统计属性
+  let mut found_spans = false
+  let mut found_logs = false
+  let mut found_metrics = false
+  let mut found_connections = false
   
   let mut i = 0
-  while i < resources.length() {
-    let resource = resources[i]
-    if resource.is_critical {
-      critical.push(resource)
-    } else {
-      non_critical.push(resource)
+  while i < resource_stats_attributes.length() {
+    let (name, value) = resource_stats_attributes[i]
+    match (name, value) {
+      ("shutdown.active.spans", IntValue(count)) => {
+        assert_eq(count, active_spans_count.to_int64())
+        found_spans = true
+      }
+      ("shutdown.pending.logs", IntValue(count)) => {
+        assert_eq(count, pending_logs_count.to_int64())
+        found_logs = true
+      }
+      ("shutdown.active.metrics", IntValue(count)) => {
+        assert_eq(count, active_metrics_count.to_int64())
+        found_metrics = true
+      }
+      ("shutdown.open.connections", IntValue(count)) => {
+        assert_eq(count, open_connections_count.to_int64())
+        found_connections = true
+      }
+      _ => ()
     }
     i = i + 1
   }
   
-  // 合并数组
-  let sorted = []
-  let mut j = 0
-  while j < critical.length() {
-    sorted.push(critical[j])
-    j = j + 1
-  }
+  assert_eq(found_spans, true)
+  assert_eq(found_logs, true)
+  assert_eq(found_metrics, true)
+  assert_eq(found_connections, true)
   
-  let mut k = 0
-  while k < non_critical.length() {
-    sorted.push(non_critical[k])
-    k = k + 1
-  }
+  // 2. 测试资源清理策略
+  let span_cleanup_strategy = "force_complete"
+  let log_cleanup_strategy = "flush_all"
+  let metric_cleanup_strategy = "export_final"
+  let connection_cleanup_strategy = "graceful_close"
   
-  sorted
-}
-
-fn sort_requests_by_priority(requests : Array[InFlightRequest]) -> Array[InFlightRequest] {
-  // 按优先级排序，优先级数字越小优先级越高
-  let sorted = []
-  let mut i = 0
-  while i < requests.length() {
-    sorted.push(requests[i])
+  let cleanup_strategy_attributes = [
+    ("shutdown.span.cleanup.strategy", AttributeValue::string(span_cleanup_strategy)),
+    ("shutdown.log.cleanup.strategy", AttributeValue::string(log_cleanup_strategy)),
+    ("shutdown.metric.cleanup.strategy", AttributeValue::string(metric_cleanup_strategy)),
+    ("shutdown.connection.cleanup.strategy", AttributeValue::string(connection_cleanup_strategy))
+  ]
+  
+  // 验证清理策略属性
+  i = 0
+  while i < cleanup_strategy_attributes.length() {
+    let (name, value) = cleanup_strategy_attributes[i]
+    match (name, value) {
+      ("shutdown.span.cleanup.strategy", StringValue(strategy)) => assert_eq(strategy, span_cleanup_strategy)
+      ("shutdown.log.cleanup.strategy", StringValue(strategy)) => assert_eq(strategy, log_cleanup_strategy)
+      ("shutdown.metric.cleanup.strategy", StringValue(strategy)) => assert_eq(strategy, metric_cleanup_strategy)
+      ("shutdown.connection.cleanup.strategy", StringValue(strategy)) => assert_eq(strategy, connection_cleanup_strategy)
+      _ => ()
+    }
     i = i + 1
   }
   
-  let mut n = sorted.length()
-  let mut swapped = true
-  while swapped and n > 1 {
-    swapped = false
-    let mut i = 1
-    while i < n {
-      if sorted[i-1].priority > sorted[i].priority {
-        let temp = sorted[i-1]
-        sorted[i-1] = sorted[i]
-        sorted[i] = temp
-        swapped = true
-      }
-      i = i + 1
-    }
-    n = n - 1
-  }
+  // 3. 测试清理进度跟踪
+  let spans_cleaned_count = 75
+  let logs_flushed_count = 50
+  let metrics_exported_count = 20
+  let connections_closed_count = 5
   
-  sorted
-}
-
-fn sort_chunks_by_priority(chunks : Array[DataChunk]) -> Array[DataChunk] {
-  // 按优先级排序，优先级数字越小优先级越高
-  let sorted = []
-  let mut i = 0
-  while i < chunks.length() {
-    sorted.push(chunks[i])
+  let cleanup_progress_attributes = [
+    ("shutdown.spans.cleaned", AttributeValue::int(spans_cleaned_count.to_int64())),
+    ("shutdown.logs.flushed", AttributeValue::int(logs_flushed_count.to_int64())),
+    ("shutdown.metrics.exported", AttributeValue::int(metrics_exported_count.to_int64())),
+    ("shutdown.connections.closed", AttributeValue::int(connections_closed_count.to_int64()))
+  ]
+  
+  // 验证清理进度属性
+  i = 0
+  while i < cleanup_progress_attributes.length() {
+    let (name, value) = cleanup_progress_attributes[i]
+    match (name, value) {
+      ("shutdown.spans.cleaned", IntValue(count)) => assert_eq(count, spans_cleaned_count.to_int64())
+      ("shutdown.logs.flushed", IntValue(count)) => assert_eq(count, logs_flushed_count.to_int64())
+      ("shutdown.metrics.exported", IntValue(count)) => assert_eq(count, metrics_exported_count.to_int64())
+      ("shutdown.connections.closed", IntValue(count)) => assert_eq(count, connections_closed_count.to_int64())
+      _ => ()
+    }
     i = i + 1
   }
   
-  let mut n = sorted.length()
-  let mut swapped = true
-  while swapped and n > 1 {
-    swapped = false
-    let mut i = 1
-    while i < n {
-      if sorted[i-1].priority > sorted[i].priority {
-        let temp = sorted[i-1]
-        sorted[i-1] = sorted[i]
-        sorted[i] = temp
-        swapped = true
-      }
-      i = i + 1
-    }
-    n = n - 1
-  }
+  // 4. 测试清理时间统计
+  let span_cleanup_time_ms = 5000
+  let log_flush_time_ms = 3000
+  let metric_export_time_ms = 2000
+  let connection_close_time_ms = 1000
   
-  sorted
+  let cleanup_time_attributes = [
+    ("shutdown.span.cleanup.time.ms", AttributeValue::int(span_cleanup_time_ms.to_int64())),
+    ("shutdown.log.flush.time.ms", AttributeValue::int(log_flush_time_ms.to_int64())),
+    ("shutdown.metric.export.time.ms", AttributeValue::int(metric_export_time_ms.to_int64())),
+    ("shutdown.connection.close.time.ms", AttributeValue::int(connection_close_time_ms.to_int64()))
+  ]
+  
+  // 验证清理时间属性
+  i = 0
+  while i < cleanup_time_attributes.length() {
+    let (name, value) = cleanup_time_attributes[i]
+    match (name, value) {
+      ("shutdown.span.cleanup.time.ms", IntValue(time)) => assert_eq(time, span_cleanup_time_ms.to_int64())
+      ("shutdown.log.flush.time.ms", IntValue(time)) => assert_eq(time, log_flush_time_ms.to_int64())
+      ("shutdown.metric.export.time.ms", IntValue(time)) => assert_eq(time, metric_export_time_ms.to_int64())
+      ("shutdown.connection.close.time.ms", IntValue(time)) => assert_eq(time, connection_close_time_ms.to_int64())
+      _ => ()
+    }
+    i = i + 1
+  }
 }
 
-fn sort_handlers_by_priority(handlers : Array[SignalHandler]) -> Array[SignalHandler] {
-  // 按优先级排序，优先级数字越小优先级越高
-  let sorted = []
+test "data_flush_and_export_during_shutdown" {
+  // 测试关闭过程中的数据刷新和导出
+  
+  // 1. 测试数据刷新状态
+  let flush_status = "in_progress"
+  let flush_start_time = 1640995200000000000L
+  let flush_expected_duration_seconds = 10
+  let flush_batch_size = 100
+  
+  let flush_status_attributes = [
+    ("shutdown.flush.status", AttributeValue::string(flush_status)),
+    ("shutdown.flush.start.time", AttributeValue::int(flush_start_time)),
+    ("shutdown.flush.expected.duration.seconds", AttributeValue::int(flush_expected_duration_seconds.to_int64())),
+    ("shutdown.flush.batch.size", AttributeValue::int(flush_batch_size.to_int64()))
+  ]
+  
+  // 验证刷新状态属性
+  let mut found_flush_status = false
+  let mut found_start_time = false
+  let mut found_duration = false
+  let mut found_batch_size = false
+  
   let mut i = 0
-  while i < handlers.length() {
-    sorted.push(handlers[i])
+  while i < flush_status_attributes.length() {
+    let (name, value) = flush_status_attributes[i]
+    match (name, value) {
+      ("shutdown.flush.status", StringValue(status)) => {
+        assert_eq(status, flush_status)
+        found_flush_status = true
+      }
+      ("shutdown.flush.start.time", IntValue(time)) => {
+        assert_eq(time, flush_start_time)
+        found_start_time = true
+      }
+      ("shutdown.flush.expected.duration.seconds", IntValue(duration)) => {
+        assert_eq(duration, flush_expected_duration_seconds.to_int64())
+        found_duration = true
+      }
+      ("shutdown.flush.batch.size", IntValue(batch_size)) => {
+        assert_eq(batch_size, flush_batch_size.to_int64())
+        found_batch_size = true
+      }
+      _ => ()
+    }
     i = i + 1
   }
   
-  let mut n = sorted.length()
-  let mut swapped = true
-  while swapped and n > 1 {
-    swapped = false
-    let mut i = 1
-    while i < n {
-      if sorted[i-1].priority > sorted[i].priority {
-        let temp = sorted[i-1]
-        sorted[i-1] = sorted[i]
-        sorted[i] = temp
-        swapped = true
-      }
-      i = i + 1
-    }
-    n = n - 1
-  }
+  assert_eq(found_flush_status, true)
+  assert_eq(found_start_time, true)
+  assert_eq(found_duration, true)
+  assert_eq(found_batch_size, true)
   
-  sorted
-}
-
-fn sort_hooks_by_priority(hooks : Array[ShutdownHook]) -> Array[ShutdownHook] {
-  // 按优先级排序，优先级数字越小优先级越高
-  let sorted = []
-  let mut i = 0
-  while i < hooks.length() {
-    sorted.push(hooks[i])
+  // 2. 测试数据导出配置
+  let export_format = "json"
+  let export_compression = "gzip"
+  let export_encryption = "aes256"
+  let export_destination = "s3://telemetry-backup/shutdown/"
+  
+  let export_config_attributes = [
+    ("shutdown.export.format", AttributeValue::string(export_format)),
+    ("shutdown.export.compression", AttributeValue::string(export_compression)),
+    ("shutdown.export.encryption", AttributeValue::string(export_encryption)),
+    ("shutdown.export.destination", AttributeValue::string(export_destination))
+  ]
+  
+  // 验证导出配置属性
+  i = 0
+  while i < export_config_attributes.length() {
+    let (name, value) = export_config_attributes[i]
+    match (name, value) {
+      ("shutdown.export.format", StringValue(format)) => assert_eq(format, export_format)
+      ("shutdown.export.compression", StringValue(compression)) => assert_eq(compression, export_compression)
+      ("shutdown.export.encryption", StringValue(encryption)) => assert_eq(encryption, export_encryption)
+      ("shutdown.export.destination", StringValue(destination)) => assert_eq(destination, export_destination)
+      _ => ()
+    }
     i = i + 1
   }
   
-  let mut n = sorted.length()
-  let mut swapped = true
-  while swapped and n > 1 {
-    swapped = false
-    let mut i = 1
-    while i < n {
-      if sorted[i-1].priority > sorted[i].priority {
-        let temp = sorted[i-1]
-        sorted[i-1] = sorted[i]
-        sorted[i] = temp
-        swapped = true
-      }
-      i = i + 1
+  // 3. 测试导出进度跟踪
+  let total_records_to_export = 10000
+  let records_exported = 7500
+  let export_progress_percentage = 75
+  let export_remaining_records = 2500
+  
+  let export_progress_attributes = [
+    ("shutdown.export.total.records", AttributeValue::int(total_records_to_export.to_int64())),
+    ("shutdown.export.records.exported", AttributeValue::int(records_exported.to_int64())),
+    ("shutdown.export.progress.percentage", AttributeValue::int(export_progress_percentage.to_int64())),
+    ("shutdown.export.remaining.records", AttributeValue::int(export_remaining_records.to_int64()))
+  ]
+  
+  // 验证导出进度属性
+  i = 0
+  while i < export_progress_attributes.length() {
+    let (name, value) = export_progress_attributes[i]
+    match (name, value) {
+      ("shutdown.export.total.records", IntValue(total)) => assert_eq(total, total_records_to_export.to_int64())
+      ("shutdown.export.records.exported", IntValue(exported)) => assert_eq(exported, records_exported.to_int64())
+      ("shutdown.export.progress.percentage", IntValue(progress)) => assert_eq(progress, export_progress_percentage.to_int64())
+      ("shutdown.export.remaining.records", IntValue(remaining)) => assert_eq(remaining, export_remaining_records.to_int64())
+      _ => ()
     }
-    n = n - 1
+    i = i + 1
   }
   
-  sorted
+  // 4. 测试导出错误处理
+  let export_errors_count = 2
+  let export_retries_count = 5
+  let export_last_error = "Connection timeout"
+  let export_success_rate = 99.98
+  
+  let export_error_attributes = [
+    ("shutdown.export.errors.count", AttributeValue::int(export_errors_count.to_int64())),
+    ("shutdown.export.retries.count", AttributeValue::int(export_retries_count.to_int64())),
+    ("shutdown.export.last.error", AttributeValue::string(export_last_error)),
+    ("shutdown.export.success.rate", AttributeValue::float(export_success_rate))
+  ]
+  
+  // 验证导出错误属性
+  i = 0
+  while i < export_error_attributes.length() {
+    let (name, value) = export_error_attributes[i]
+    match (name, value) {
+      ("shutdown.export.errors.count", IntValue(count)) => assert_eq(count, export_errors_count.to_int64())
+      ("shutdown.export.retries.count", IntValue(count)) => assert_eq(count, export_retries_count.to_int64())
+      ("shutdown.export.last.error", StringValue(error)) => assert_eq(error, export_last_error)
+      ("shutdown.export.success.rate", FloatValue(rate)) => assert_eq(rate, export_success_rate)
+      _ => ()
+    }
+    i = i + 1
+  }
+}
+
+test "connection_management_during_shutdown" {
+  // 测试关闭过程中的连接管理
+  
+  // 1. 测试连接统计
+  let total_connections = 25
+  let active_connections = 15
+  let idle_connections = 8
+  let closing_connections = 2
+  
+  let connection_stats_attributes = [
+    ("shutdown.connections.total", AttributeValue::int(total_connections.to_int64())),
+    ("shutdown.connections.active", AttributeValue::int(active_connections.to_int64())),
+    ("shutdown.connections.idle", AttributeValue::int(idle_connections.to_int64())),
+    ("shutdown.connections.closing", AttributeValue::int(closing_connections.to_int64()))
+  ]
+  
+  // 验证连接统计属性
+  let mut found_total = false
+  let mut found_active = false
+  let mut found_idle = false
+  let mut found_closing = false
+  
+  let mut i = 0
+  while i < connection_stats_attributes.length() {
+    let (name, value) = connection_stats_attributes[i]
+    match (name, value) {
+      ("shutdown.connections.total", IntValue(count)) => {
+        assert_eq(count, total_connections.to_int64())
+        found_total = true
+      }
+      ("shutdown.connections.active", IntValue(count)) => {
+        assert_eq(count, active_connections.to_int64())
+        found_active = true
+      }
+      ("shutdown.connections.idle", IntValue(count)) => {
+        assert_eq(count, idle_connections.to_int64())
+        found_idle = true
+      }
+      ("shutdown.connections.closing", IntValue(count)) => {
+        assert_eq(count, closing_connections.to_int64())
+        found_closing = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_total, true)
+  assert_eq(found_active, true)
+  assert_eq(found_idle, true)
+  assert_eq(found_closing, true)
+  
+  // 2. 测试连接关闭策略
+  let connection_close_strategy = "graceful"
+  let connection_close_timeout_seconds = 30
+  let connection_force_close_after_seconds = 60
+  let connection_drain_enabled = true
+  
+  let close_strategy_attributes = [
+    ("shutdown.connection.close.strategy", AttributeValue::string(connection_close_strategy)),
+    ("shutdown.connection.close.timeout.seconds", AttributeValue::int(connection_close_timeout_seconds.to_int64())),
+    ("shutdown.connection.force.close.after.seconds", AttributeValue::int(connection_force_close_after_seconds.to_int64())),
+    ("shutdown.connection.drain.enabled", AttributeValue::bool(connection_drain_enabled))
+  ]
+  
+  // 验证关闭策略属性
+  i = 0
+  while i < close_strategy_attributes.length() {
+    let (name, value) = close_strategy_attributes[i]
+    match (name, value) {
+      ("shutdown.connection.close.strategy", StringValue(strategy)) => assert_eq(strategy, connection_close_strategy)
+      ("shutdown.connection.close.timeout.seconds", IntValue(timeout)) => assert_eq(timeout, connection_close_timeout_seconds.to_int64())
+      ("shutdown.connection.force.close.after.seconds", IntValue(force)) => assert_eq(force, connection_force_close_after_seconds.to_int64())
+      ("shutdown.connection.drain.enabled", BoolValue(enabled)) => assert_eq(enabled, connection_drain_enabled)
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  // 3. 测试连接类型分类
+  let database_connections = 5
+  let http_connections = 10
+  let websocket_connections = 8
+  let message_queue_connections = 2
+  
+  let connection_type_attributes = [
+    ("shutdown.connections.database", AttributeValue::int(database_connections.to_int64())),
+    ("shutdown.connections.http", AttributeValue::int(http_connections.to_int64())),
+    ("shutdown.connections.websocket", AttributeValue::int(websocket_connections.to_int64())),
+    ("shutdown.connections.message.queue", AttributeValue::int(message_queue_connections.to_int64()))
+  ]
+  
+  // 验证连接类型属性
+  i = 0
+  while i < connection_type_attributes.length() {
+    let (name, value) = connection_type_attributes[i]
+    match (name, value) {
+      ("shutdown.connections.database", IntValue(count)) => assert_eq(count, database_connections.to_int64())
+      ("shutdown.connections.http", IntValue(count)) => assert_eq(count, http_connections.to_int64())
+      ("shutdown.connections.websocket", IntValue(count)) => assert_eq(count, websocket_connections.to_int64())
+      ("shutdown.connections.message.queue", IntValue(count)) => assert_eq(count, message_queue_connections.to_int64())
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  // 4. 测试连接关闭进度
+  let connections_closed = 18
+  let connections_remaining = 7
+  let close_progress_percentage = 72
+  let average_close_time_ms = 1500
+  
+  let close_progress_attributes = [
+    ("shutdown.connections.closed", AttributeValue::int(connections_closed.to_int64())),
+    ("shutdown.connections.remaining", AttributeValue::int(connections_remaining.to_int64())),
+    ("shutdown.connections.close.progress.percentage", AttributeValue::int(close_progress_percentage.to_int64())),
+    ("shutdown.connections.average.close.time.ms", AttributeValue::int(average_close_time_ms.to_int64()))
+  ]
+  
+  // 验证关闭进度属性
+  i = 0
+  while i < close_progress_attributes.length() {
+    let (name, value) = close_progress_attributes[i]
+    match (name, value) {
+      ("shutdown.connections.closed", IntValue(count)) => assert_eq(count, connections_closed.to_int64())
+      ("shutdown.connections.remaining", IntValue(count)) => assert_eq(count, connections_remaining.to_int64())
+      ("shutdown.connections.close.progress.percentage", IntValue(progress)) => assert_eq(progress, close_progress_percentage.to_int64())
+      ("shutdown.connections.average.close.time.ms", IntValue(time)) => assert_eq(time, average_close_time_ms.to_int64())
+      _ => ()
+    }
+    i = i + 1
+  }
+}
+
+test "shutdown_timeout_and_force_termination" {
+  // 测试关闭超时和强制终止
+  
+  // 1. 测试超时配置
+  let graceful_shutdown_timeout_seconds = 60
+  let force_shutdown_after_seconds = 120
+  let max_wait_for_operations_seconds = 30
+  let termination_grace_period_seconds = 10
+  
+  let timeout_config_attributes = [
+    ("shutdown.graceful.timeout.seconds", AttributeValue::int(graceful_shutdown_timeout_seconds.to_int64())),
+    ("shutdown.force.after.seconds", AttributeValue::int(force_shutdown_after_seconds.to_int64())),
+    ("shutdown.max.wait.operations.seconds", AttributeValue::int(max_wait_for_operations_seconds.to_int64())),
+    ("shutdown.termination.grace.period.seconds", AttributeValue::int(termination_grace_period_seconds.to_int64()))
+  ]
+  
+  // 验证超时配置属性
+  let mut found_graceful_timeout = false
+  let mut found_force_after = false
+  let mut found_max_wait = false
+  let mut found_termination_grace = false
+  
+  let mut i = 0
+  while i < timeout_config_attributes.length() {
+    let (name, value) = timeout_config_attributes[i]
+    match (name, value) {
+      ("shutdown.graceful.timeout.seconds", IntValue(timeout)) => {
+        assert_eq(timeout, graceful_shutdown_timeout_seconds.to_int64())
+        found_graceful_timeout = true
+      }
+      ("shutdown.force.after.seconds", IntValue(timeout)) => {
+        assert_eq(timeout, force_shutdown_after_seconds.to_int64())
+        found_force_after = true
+      }
+      ("shutdown.max.wait.operations.seconds", IntValue(timeout)) => {
+        assert_eq(timeout, max_wait_for_operations_seconds.to_int64())
+        found_max_wait = true
+      }
+      ("shutdown.termination.grace.period.seconds", IntValue(timeout)) => {
+        assert_eq(timeout, termination_grace_period_seconds.to_int64())
+        found_termination_grace = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_graceful_timeout, true)
+  assert_eq(found_force_after, true)
+  assert_eq(found_max_wait, true)
+  assert_eq(found_termination_grace, true)
+  
+  // 2. 测试超时状态跟踪
+  let time_elapsed_seconds = 75
+  let time_remaining_seconds = 45
+  let timeout_warning_issued = true
+  let force_termination_triggered = false
+  
+  let timeout_status_attributes = [
+    ("shutdown.time.elapsed.seconds", AttributeValue::int(time_elapsed_seconds.to_int64())),
+    ("shutdown.time.remaining.seconds", AttributeValue::int(time_remaining_seconds.to_int64())),
+    ("shutdown.timeout.warning.issued", AttributeValue::bool(timeout_warning_issued)),
+    ("shutdown.force.termination.triggered", AttributeValue::bool(force_termination_triggered))
+  ]
+  
+  // 验证超时状态属性
+  i = 0
+  while i < timeout_status_attributes.length() {
+    let (name, value) = timeout_status_attributes[i]
+    match (name, value) {
+      ("shutdown.time.elapsed.seconds", IntValue(elapsed)) => assert_eq(elapsed, time_elapsed_seconds.to_int64())
+      ("shutdown.time.remaining.seconds", IntValue(remaining)) => assert_eq(remaining, time_remaining_seconds.to_int64())
+      ("shutdown.timeout.warning.issued", BoolValue(warning)) => assert_eq(warning, timeout_warning_issued)
+      ("shutdown.force.termination.triggered", BoolValue(force)) => assert_eq(force, force_termination_triggered)
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  // 3. 测试强制终止条件
+  let graceful_shutdown_failed = true
+  let critical_operations_stuck = true
+  let resource_exhaustion_detected = false
+  let external_signal_received = true
+  
+  let force_termination_conditions_attributes = [
+    ("shutdown.graceful.failed", AttributeValue::bool(graceful_shutdown_failed)),
+    ("shutdown.critical.operations.stuck", AttributeValue::bool(critical_operations_stuck)),
+    ("shutdown.resource.exhaustion.detected", AttributeValue::bool(resource_exhaustion_detected)),
+    ("shutdown.external.signal.received", AttributeValue::bool(external_signal_received))
+  ]
+  
+  // 验证强制终止条件属性
+  i = 0
+  while i < force_termination_conditions_attributes.length() {
+    let (name, value) = force_termination_conditions_attributes[i]
+    match (name, value) {
+      ("shutdown.graceful.failed", BoolValue(failed)) => assert_eq(failed, graceful_shutdown_failed)
+      ("shutdown.critical.operations.stuck", BoolValue(stuck)) => assert_eq(stuck, critical_operations_stuck)
+      ("shutdown.resource.exhaustion.detected", BoolValue(exhaustion)) => assert_eq(exhaustion, resource_exhaustion_detected)
+      ("shutdown.external.signal.received", BoolValue(signal)) => assert_eq(signal, external_signal_received)
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  // 4. 测试强制终止执行
+  let force_termination_method = "sigkill"
+  let force_termination_timestamp = 1640995260000000000L
+  let force_termination_reason = "timeout_exceeded"
+  let force_termination_success = true
+  
+  let force_termination_execution_attributes = [
+    ("shutdown.force.termination.method", AttributeValue::string(force_termination_method)),
+    ("shutdown.force.termination.timestamp", AttributeValue::int(force_termination_timestamp)),
+    ("shutdown.force.termination.reason", AttributeValue::string(force_termination_reason)),
+    ("shutdown.force.termination.success", AttributeValue::bool(force_termination_success))
+  ]
+  
+  // 验证强制终止执行属性
+  i = 0
+  while i < force_termination_execution_attributes.length() {
+    let (name, value) = force_termination_execution_attributes[i]
+    match (name, value) {
+      ("shutdown.force.termination.method", StringValue(method)) => assert_eq(method, force_termination_method)
+      ("shutdown.force.termination.timestamp", IntValue(timestamp)) => assert_eq(timestamp, force_termination_timestamp)
+      ("shutdown.force.termination.reason", StringValue(reason)) => assert_eq(reason, force_termination_reason)
+      ("shutdown.force.termination.success", BoolValue(success)) => assert_eq(success, force_termination_success)
+      _ => ()
+    }
+    i = i + 1
+  }
+}
+
+test "shutdown_completion_and_reporting" {
+  // 测试关闭完成和报告
+  
+  // 1. 测试关闭完成状态
+  let shutdown_completion_status = "completed"
+  let shutdown_completion_timestamp = 1640995320000000000L
+  let shutdown_total_duration_seconds = 120
+  let shutdown_success = true
+  
+  let completion_status_attributes = [
+    ("shutdown.completion.status", AttributeValue::string(shutdown_completion_status)),
+    ("shutdown.completion.timestamp", AttributeValue::int(shutdown_completion_timestamp)),
+    ("shutdown.total.duration.seconds", AttributeValue::int(shutdown_total_duration_seconds.to_int64())),
+    ("shutdown.success", AttributeValue::bool(shutdown_success))
+  ]
+  
+  // 验证完成状态属性
+  let mut found_completion_status = false
+  let mut found_completion_timestamp = false
+  let mut found_total_duration = false
+  let mut found_success = false
+  
+  let mut i = 0
+  while i < completion_status_attributes.length() {
+    let (name, value) = completion_status_attributes[i]
+    match (name, value) {
+      ("shutdown.completion.status", StringValue(status)) => {
+        assert_eq(status, shutdown_completion_status)
+        found_completion_status = true
+      }
+      ("shutdown.completion.timestamp", IntValue(timestamp)) => {
+        assert_eq(timestamp, shutdown_completion_timestamp)
+        found_completion_timestamp = true
+      }
+      ("shutdown.total.duration.seconds", IntValue(duration)) => {
+        assert_eq(duration, shutdown_total_duration_seconds.to_int64())
+        found_total_duration = true
+      }
+      ("shutdown.success", BoolValue(success)) => {
+        assert_eq(success, shutdown_success)
+        found_success = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_completion_status, true)
+  assert_eq(found_completion_timestamp, true)
+  assert_eq(found_total_duration, true)
+  assert_eq(found_success, true)
+  
+  // 2. 测试资源清理统计
+  let total_spans_processed = 150
+  let total_logs_flushed = 5000
+  let total_metrics_exported = 100
+  let total_connections_closed = 25
+  
+  let cleanup_statistics_attributes = [
+    ("shutdown.total.spans.processed", AttributeValue::int(total_spans_processed.to_int64())),
+    ("shutdown.total.logs.flushed", AttributeValue::int(total_logs_flushed.to_int64())),
+    ("shutdown.total.metrics.exported", AttributeValue::int(total_metrics_exported.to_int64())),
+    ("shutdown.total.connections.closed", AttributeValue::int(total_connections_closed.to_int64()))
+  ]
+  
+  // 验证清理统计属性
+  i = 0
+  while i < cleanup_statistics_attributes.length() {
+    let (name, value) = cleanup_statistics_attributes[i]
+    match (name, value) {
+      ("shutdown.total.spans.processed", IntValue(count)) => assert_eq(count, total_spans_processed.to_int64())
+      ("shutdown.total.logs.flushed", IntValue(count)) => assert_eq(count, total_logs_flushed.to_int64())
+      ("shutdown.total.metrics.exported", IntValue(count)) => assert_eq(count, total_metrics_exported.to_int64())
+      ("shutdown.total.connections.closed", IntValue(count)) => assert_eq(count, total_connections_closed.to_int64())
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  // 3. 测试错误和异常统计
+  let shutdown_errors_count = 3
+  let shutdown_warnings_count = 7
+  let shutdown_exceptions_count = 1
+  let shutdown_forced_terminations_count = 0
+  
+  let error_statistics_attributes = [
+    ("shutdown.errors.count", AttributeValue::int(shutdown_errors_count.to_int64())),
+    ("shutdown.warnings.count", AttributeValue::int(shutdown_warnings_count.to_int64())),
+    ("shutdown.exceptions.count", AttributeValue::int(shutdown_exceptions_count.to_int64())),
+    ("shutdown.forced.terminations.count", AttributeValue::int(shutdown_forced_terminations_count.to_int64()))
+  ]
+  
+  // 验证错误统计属性
+  i = 0
+  while i < error_statistics_attributes.length() {
+    let (name, value) = error_statistics_attributes[i]
+    match (name, value) {
+      ("shutdown.errors.count", IntValue(count)) => assert_eq(count, shutdown_errors_count.to_int64())
+      ("shutdown.warnings.count", IntValue(count)) => assert_eq(count, shutdown_warnings_count.to_int64())
+      ("shutdown.exceptions.count", IntValue(count)) => assert_eq(count, shutdown_exceptions_count.to_int64())
+      ("shutdown.forced.terminations.count", IntValue(count)) => assert_eq(count, shutdown_forced_terminations_count.to_int64())
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  // 4. 测试关闭报告生成
+  let report_generated = true
+  let report_format = "json"
+  let report_location = "/var/log/telemetry/shutdown_report_20220101_000000.json"
+  let report_size_bytes = 2048
+  
+  let report_generation_attributes = [
+    ("shutdown.report.generated", AttributeValue::bool(report_generated)),
+    ("shutdown.report.format", AttributeValue::string(report_format)),
+    ("shutdown.report.location", AttributeValue::string(report_location)),
+    ("shutdown.report.size.bytes", AttributeValue::int(report_size_bytes.to_int64()))
+  ]
+  
+  // 验证报告生成属性
+  i = 0
+  while i < report_generation_attributes.length() {
+    let (name, value) = report_generation_attributes[i]
+    match (name, value) {
+      ("shutdown.report.generated", BoolValue(generated)) => assert_eq(generated, report_generated)
+      ("shutdown.report.format", StringValue(format)) => assert_eq(format, report_format)
+      ("shutdown.report.location", StringValue(location)) => assert_eq(location, report_location)
+      ("shutdown.report.size.bytes", IntValue(size)) => assert_eq(size, report_size_bytes.to_int64())
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  // 5. 测试系统状态验证
+  let all_resources_released = true
+  let all_data_persisted = true
+  let all_connections_closed = true
+  let system_ready_for_restart = true
+  
+  let system_status_attributes = [
+    ("shutdown.all.resources.released", AttributeValue::bool(all_resources_released)),
+    ("shutdown.all.data.persisted", AttributeValue::bool(all_data_persisted)),
+    ("shutdown.all.connections.closed", AttributeValue::bool(all_connections_closed)),
+    ("shutdown.system.ready.for.restart", AttributeValue::bool(system_ready_for_restart))
+  ]
+  
+  // 验证系统状态属性
+  i = 0
+  while i < system_status_attributes.length() {
+    let (name, value) = system_status_attributes[i]
+    match (name, value) {
+      ("shutdown.all.resources.released", BoolValue(released)) => assert_eq(released, all_resources_released)
+      ("shutdown.all.data.persisted", BoolValue(persisted)) => assert_eq(persisted, all_data_persisted)
+      ("shutdown.all.connections.closed", BoolValue(closed)) => assert_eq(closed, all_connections_closed)
+      ("shutdown.system.ready.for.restart", BoolValue(ready)) => assert_eq(ready, system_ready_for_restart)
+      _ => ()
+    }
+    i = i + 1
+  }
 }
