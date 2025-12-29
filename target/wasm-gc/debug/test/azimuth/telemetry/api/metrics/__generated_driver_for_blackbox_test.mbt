@@ -77,6 +77,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "metrics.mbt": {
   },
+  "instrument_types_test.mbt": {
+    0: (__test_696e737472756d656e745f74797065735f746573742e6d6274_0, ["instrument_types_individual"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED

@@ -61,6 +61,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     0: (__test_636f6e746578745f746573742e6d6274_0, ["context_multiple_values"]),
     1: (__test_636f6e746578745f746573742e6d6274_1, ["baggage_multiple_entries"]),
   },
+  "context_edge_cases_test.mbt": {
+    0: (__test_636f6e746578745f656467655f63617365735f746573742e6d6274_0, ["context_edge_cases"]),
+  },
   "context_basic_test.mbt": {
     0: (__test_636f6e746578745f62617369635f746573742e6d6274_0, ["context_basic_operations"]),
     1: (__test_636f6e746578745f62617369635f746573742e6d6274_1, ["baggage_basic_operations"]),
@@ -71,6 +74,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_636f6e746578745f62617369635f746573742e6d6274_6, ["context_and_baggage_integration"]),
   },
   "context.mbt": {
+  },
+  "baggage_edge_cases_test.mbt": {
+    0: (__test_626167676167655f656467655f63617365735f746573742e6d6274_0, ["baggage_edge_cases"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED

@@ -62,6 +62,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_696e746567726174696f6e5f746573742e6d6274_1, ["attribute_complex_integration"]),
     2: (__test_696e746567726174696f6e5f746573742e6d6274_2, ["attribute_type_comprehensive_integration"]),
   },
+  "instrumentation_scope_test.mbt": {
+    0: (__test_696e737472756d656e746174696f6e5f73636f70655f746573742e6d6274_0, ["instrumentation_scope_creation"]),
+  },
   "common.mbt": {
   },
   "boundary_test.mbt": {
