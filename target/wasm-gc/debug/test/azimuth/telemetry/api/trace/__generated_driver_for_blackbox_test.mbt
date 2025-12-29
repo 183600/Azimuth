@@ -73,6 +73,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     12: (__test_74726163655f746573742e6d6274_12, ["span_complex_event_and_link_scenarios"]),
     13: (__test_74726163655f746573742e6d6274_13, ["span_context_and_trace_propagation"]),
   },
+  "trace_basic_test.mbt": {
+    0: (__test_74726163655f62617369635f746573742e6d6274_0, ["span_creation"]),
+    1: (__test_74726163655f62617369635f746573742e6d6274_1, ["span_with_attributes"]),
+    2: (__test_74726163655f62617369635f746573742e6d6274_2, ["span_with_different_kinds"]),
+    3: (__test_74726163655f62617369635f746573742e6d6274_3, ["tracer_provider"]),
+  },
   "trace.mbt": {
   },
 }

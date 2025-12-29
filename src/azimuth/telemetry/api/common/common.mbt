@@ -53,3 +53,19 @@ pub fn AttributeValue::float(value : Double) -> AttributeValue {
 pub fn AttributeValue::bool(value : Bool) -> AttributeValue {
   BoolValue(value)
 }
+
+pub fn AttributeValue::array_string(value : Array[String]) -> AttributeValue {
+  ArrayStringValue(value)
+}
+
+pub fn AttributeValue::array_int(value : Array[Int64]) -> AttributeValue {
+  ArrayIntValue(value)
+}
+
+pub fn AttributeValue::array_float(value : Array[Double]) -> AttributeValue {
+  ArrayFloatValue(value)
+}
+
+pub fn AttributeValue::array_bool(value : Array[Bool]) -> AttributeValue {
+  ArrayBoolValue(value)
+}
