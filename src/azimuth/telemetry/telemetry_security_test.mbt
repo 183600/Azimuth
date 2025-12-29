@@ -1,623 +1,422 @@
-// 遥测安全测试用例
-// 测试遥测系统的安全功能、数据保护和访问控制
+// 遥测数据安全性和加密测试用例
 
-test "telemetry_security_data_encryption" {
-  // 测试遥测数据加密功能
+test "telemetry_data_encryption_basic" {
+  // 测试遥测数据的基本加密功能
   
-  let encryption_config = [
-    ("data_at_rest_encryption", "AES-256", true),
-    ("data_in_transit_encryption", "TLS-1.3", true),
-    ("key_rotation_interval_hours", 24),
-    ("encryption_algorithm", "AES-GCM-256"),
-    ("key_management_service", "AWS-KMS"),
-    ("encryption_key_length_bits", 256)
+  // 创建敏感遥测数据
+  let sensitive_data = [
+    "user_id=12345",
+    "email=user@example.com",
+    "session_token=abc123def456",
+    "api_key=sk_live_1234567890"
   ]
   
-  // 验证加密配置数量
-  assert_eq(encryption_config.length(), 6)
+  // 验证敏感数据
+  assert_eq(sensitive_data.length(), 4)
+  assert_eq(sensitive_data[0].contains("user_id"), true)
+  assert_eq(sensitive_data[1].contains("@"), true)
+  assert_eq(sensitive_data[2].has_prefix("session_token"), true)
+  assert_eq(sensitive_data[3].has_prefix("sk_live"), true)
   
-  // 验证静态数据加密
-  assert_eq(encryption_config[0].0, "data_at_rest_encryption")
-  assert_eq(encryption_config[0].1, "AES-256")
-  assert_eq(encryption_config[0].2, true)
+  // 模拟加密过程（简单的字符替换模拟）
+  let encrypt = fn(data : String) -> String {
+    let mut encrypted = ""
+    let mut i = 0
+    while i < data.length() {
+      let char = data[i]
+      // 简单的字符移位加密
+      let encrypted_char = if char >= 'a' and char <= 'z' {
+        ((char.to_int() - 'a'.to_int() + 3) % 26 + 'a'.to_int()).to_char()
+      } else if char >= 'A' and char <= 'Z' {
+        ((char.to_int() - 'A'.to_int() + 3) % 26 + 'A'.to_int()).to_char()
+      } else if char >= '0' and char <= '9' {
+        ((char.to_int() - '0'.to_int() + 5) % 10 + '0'.to_int()).to_char()
+      } else {
+        char
+      }
+      encrypted = encrypted + encrypted_char.to_string()
+      i = i + 1
+    }
+    encrypted
+  }
   
-  // 验证传输中数据加密
-  assert_eq(encryption_config[1].0, "data_in_transit_encryption")
-  assert_eq(encryption_config[1].1, "TLS-1.3")
-  assert_eq(encryption_config[1].2, true)
+  // 加密所有敏感数据
+  let mut encrypted_data = []
+  let mut i = 0
+  while i < sensitive_data.length() {
+    let encrypted = encrypt(sensitive_data[i])
+    encrypted_data.push(encrypted)
+    i = i + 1
+  }
   
-  // 验证密钥轮换间隔
-  assert_eq(encryption_config[2].0, "key_rotation_interval_hours")
-  assert_eq(encryption_config[2].1, 24)
-  assert_eq(encryption_config[2].1 > 12, true)
-  assert_eq(encryption_config[2].1 < 48, true)
+  // 验证加密结果
+  assert_eq(encrypted_data.length(), 4)
+  assert_eq(encrypted_data[0] != sensitive_data[0], true) // 加密后应该不同
+  assert_eq(encrypted_data[1] != sensitive_data[1], true)
+  assert_eq(encrypted_data[2] != sensitive_data[2], true)
+  assert_eq(encrypted_data[3] != sensitive_data[3], true)
   
-  // 验证加密算法
-  assert_eq(encryption_config[3].0, "encryption_algorithm")
-  assert_eq(encryption_config[3].1, "AES-GCM-256")
-  assert_eq(encryption_config[3].1.contains("AES"), true)
-  assert_eq(encryption_config[3].1.contains("GCM"), true)
-  
-  // 验证密钥管理服务
-  assert_eq(encryption_config[4].0, "key_management_service")
-  assert_eq(encryption_config[4].1, "AWS-KMS")
-  assert_eq(encryption_config[4].1.contains("KMS"), true)
-  
-  // 验证加密密钥长度
-  assert_eq(encryption_config[5].0, "encryption_key_length_bits")
-  assert_eq(encryption_config[5].1, 256)
-  assert_eq(encryption_config[5].1 >= 256, true)
-  
-  // 验证加密强度
-  let encryption_strength = encryption_config[5].1
-  assert_eq(encryption_strength >= 256, true) // 至少256位加密
-  
-  // 计算每年的密钥轮换次数
-  let key_rotations_per_year = 365 / encryption_config[2].1
-  assert_eq(key_rotations_per_year > 10, true)
-  assert_eq(key_rotations_per_year < 20, true)
+  // 验证加密数据不包含原始敏感信息
+  i = 0
+  while i < encrypted_data.length() {
+    assert_eq(encrypted_data[i].contains("user_id"), false)
+    assert_eq(encrypted_data[i].contains("@"), false)
+    assert_eq(encrypted_data[i].contains("session_token"), false)
+    assert_eq(encrypted_data[i].contains("sk_live"), false)
+    i = i + 1
+  }
 }
 
-test "telemetry_security_access_control" {
-  // 测试遥测系统访问控制
+test "telemetry_data_masking" {
+  // 测试遥测数据的脱敏功能
   
-  let access_control_policies = [
-    ("admin_role", ["read", "write", "delete", "manage"]),
-    ("operator_role", ["read", "write"]),
-    ("analyst_role", ["read"]),
-    ("viewer_role", ["read"]),
-    ("api_key_role", ["write"]),
-    ("service_account_role", ["read", "write"])
+  // 创建包含敏感信息的遥测数据
+  let telemetry_logs = [
+    "User login: user_id=12345, ip=192.168.1.100",
+    "Payment processed: card_number=4111111111111111, amount=100.50",
+    "API call: token=Bearer abc123def456ghi789, endpoint=/api/v1/users",
+    "Database query: query=SELECT * FROM users WHERE email='user@example.com'"
   ]
   
-  // 验证访问控制策略数量
-  assert_eq(access_control_policies.length(), 6)
+  // 验证原始日志
+  assert_eq(telemetry_logs.length(), 4)
   
-  // 验证管理员角色权限
-  assert_eq(access_control_policies[0].0, "admin_role")
-  assert_eq(access_control_policies[0].1.length(), 4)
-  assert_eq(access_control_policies[0].1.contains("delete"), true)
-  assert_eq(access_control_policies[0].1.contains("manage"), true)
+  // 定义脱敏规则
+  let mask_data = fn(log : String) -> String {
+    let mut masked = log
+    
+    // 脱敏用户ID
+    masked = masked.replace("user_id=12345", "user_id=****")
+    
+    // 脱敏IP地址
+    masked = masked.replace("192.168.1.100", "192.168.1.***")
+    
+    // 脱敏信用卡号
+    masked = masked.replace("4111111111111111", "************1111")
+    
+    // 脱敏Bearer token
+    masked = masked.replace("abc123def456ghi789", "****************")
+    
+    // 脱敏邮箱地址
+    masked = masked.replace("user@example.com", "u***@example.com")
+    
+    masked
+  }
   
-  // 验证操作员角色权限
-  assert_eq(access_control_policies[1].0, "operator_role")
-  assert_eq(access_control_policies[1].1.length(), 2)
-  assert_eq(access_control_policies[1].1.contains("read"), true)
-  assert_eq(access_control_policies[1].1.contains("write"), true)
-  assert_eq(access_control_policies[1].1.contains("delete") == false, true)
-  
-  // 验证分析师角色权限
-  assert_eq(access_control_policies[2].0, "analyst_role")
-  assert_eq(access_control_policies[2].1.length(), 1)
-  assert_eq(access_control_policies[2].1[0], "read")
-  
-  // 验证查看者角色权限
-  assert_eq(access_control_policies[3].0, "viewer_role")
-  assert_eq(access_control_policies[3].1.length(), 1)
-  assert_eq(access_control_policies[3].1[0], "read")
-  
-  // 验证API密钥角色权限
-  assert_eq(access_control_policies[4].0, "api_key_role")
-  assert_eq(access_control_policies[4].1.length(), 1)
-  assert_eq(access_control_policies[4].1[0], "write")
-  
-  // 验证服务账户角色权限
-  assert_eq(access_control_policies[5].0, "service_account_role")
-  assert_eq(access_control_policies[5].1.length(), 2)
-  assert_eq(access_control_policies[5].1.contains("read"), true)
-  assert_eq(access_control_policies[5].1.contains("write"), true)
-  
-  // 计算具有读取权限的角色数量
-  let mut read_permission_count = 0
+  // 应用脱敏规则
+  let mut masked_logs = []
   let mut i = 0
-  while i < access_control_policies.length() {
-    if access_control_policies[i].1.contains("read") {
-      read_permission_count = read_permission_count + 1
-    }
+  while i < telemetry_logs.length() {
+    let masked = mask_data(telemetry_logs[i])
+    masked_logs.push(masked)
     i = i + 1
   }
   
-  assert_eq(read_permission_count, 5)
+  // 验证脱敏结果
+  assert_eq(masked_logs.length(), 4)
   
-  // 计算具有写入权限的角色数量
-  let mut write_permission_count = 0
-  i = 0
-  while i < access_control_policies.length() {
-    if access_control_policies[i].1.contains("write") {
-      write_permission_count = write_permission_count + 1
-    }
-    i = i + 1
-  }
+  // 验证敏感信息已被脱敏
+  assert_eq(masked_logs[0].contains("user_id=****"), true)
+  assert_eq(masked_logs[0].contains("192.168.1.***"), true)
+  assert_eq(masked_logs[0].contains("12345"), false)
   
-  assert_eq(write_permission_count, 4)
+  assert_eq(masked_logs[1].contains("************1111"), true)
+  assert_eq(masked_logs[1].contains("4111111111111111"), false)
   
-  // 计算具有删除权限的角色数量
-  let mut delete_permission_count = 0
-  i = 0
-  while i < access_control_policies.length() {
-    if access_control_policies[i].1.contains("delete") {
-      delete_permission_count = delete_permission_count + 1
-    }
-    i = i + 1
-  }
+  assert_eq(masked_logs[2].contains("****************"), true)
+  assert_eq(masked_logs[2].contains("abc123def456ghi789"), false)
   
-  assert_eq(delete_permission_count, 1)
+  assert_eq(masked_logs[3].contains("u***@example.com"), true)
+  assert_eq(masked_logs[3].contains("user@example.com"), false)
+  
+  // 验证脱敏后仍然保留有用的信息
+  assert_eq(masked_logs[0].contains("User login"), true)
+  assert_eq(masked_logs[1].contains("Payment processed"), true)
+  assert_eq(masked_logs[2].contains("API call"), true)
+  assert_eq(masked_logs[3].contains("Database query"), true)
 }
 
-test "telemetry_security_data_masking" {
-  // 测试遥测数据脱敏功能
+test "telemetry_access_control" {
+  // 测试遥测数据的访问控制
   
-  let masking_rules = [
-    ("email_addresses", "regex", "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", "*****@*****.***"),
-    ("phone_numbers", "regex", "\\+?[1-9]\\d{1,14}", "+***-***-****"),
-    ("credit_cards", "regex", "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b", "****-****-****-****"),
-    ("ssn", "regex", "\\b\\d{3}-\\d{2}-\\d{4}\\b", "***-**-****"),
-    ("ip_addresses", "partial", "xxx.xxx.xxx.xxx", "xxx.xxx.xxx.***"),
-    ("user_ids", "hash", "original_value", "hashed_value")
+  // 定义用户角色和权限
+  let roles = [
+    ("admin", ["read", "write", "delete"]),
+    ("analyst", ["read"]),
+    ("developer", ["read", "write"]),
+    ("viewer", ["read"])
   ]
   
-  // 验证脱敏规则数量
-  assert_eq(masking_rules.length(), 6)
-  
-  // 验证电子邮件地址脱敏
-  assert_eq(masking_rules[0].0, "email_addresses")
-  assert_eq(masking_rules[0].1, "regex")
-  assert_eq(masking_rules[0].3.contains("@"), true)
-  assert_eq(masking_rules[0].3.contains("*****"), true)
-  
-  // 验证电话号码脱敏
-  assert_eq(masking_rules[1].0, "phone_numbers")
-  assert_eq(masking_rules[1].1, "regex")
-  assert_eq(masking_rules[1].3.contains("+"), true)
-  assert_eq(masking_rules[1].3.contains("***"), true)
-  
-  // 验证信用卡号脱敏
-  assert_eq(masking_rules[2].0, "credit_cards")
-  assert_eq(masking_rules[2].1, "regex")
-  assert_eq(masking_rules[2].3.contains("****"), true)
-  assert_eq(masking_rules[2].3.length(), 19)
-  
-  // 验证社会安全号码脱敏
-  assert_eq(masking_rules[3].0, "ssn")
-  assert_eq(masking_rules[3].1, "regex")
-  assert_eq(masking_rules[3].3.contains("-"), true)
-  assert_eq(masking_rules[3].3.length(), 11)
-  
-  // 验证IP地址脱敏
-  assert_eq(masking_rules[4].0, "ip_addresses")
-  assert_eq(masking_rules[4].1, "partial")
-  assert_eq(masking_rules[4].3.contains("."), true)
-  assert_eq(masking_rules[4].3.contains("***"), true)
-  
-  // 验证用户ID脱敏
-  assert_eq(masking_rules[5].0, "user_ids")
-  assert_eq(masking_rules[5].1, "hash")
-  assert_eq(masking_rules[5].2, "original_value")
-  assert_eq(masking_rules[5].3, "hashed_value")
-  
-  // 计算使用正则表达式的脱敏规则数量
-  let mut regex_masking_count = 0
-  let mut i = 0
-  while i < masking_rules.length() {
-    if masking_rules[i].1 == "regex" {
-      regex_masking_count = regex_masking_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(regex_masking_count, 4)
-  
-  // 计算使用部分脱敏的规则数量
-  let mut partial_masking_count = 0
-  i = 0
-  while i < masking_rules.length() {
-    if masking_rules[i].1 == "partial" {
-      partial_masking_count = partial_masking_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(partial_masking_count, 1)
-  
-  // 计算使用哈希的脱敏规则数量
-  let mut hash_masking_count = 0
-  i = 0
-  while i < masking_rules.length() {
-    if masking_rules[i].1 == "hash" {
-      hash_masking_count = hash_masking_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(hash_masking_count, 1)
-}
-
-test "telemetry_security_audit_logging" {
-  // 测试遥测系统审计日志
-  
-  let audit_events = [
-    ("user_login", "success", "admin@example.com", "2023-01-01T10:00:00Z"),
-    ("data_access", "success", "analyst@example.com", "2023-01-01T10:05:00Z"),
-    ("config_change", "success", "operator@example.com", "2023-01-01T10:10:00Z"),
-    ("permission_denied", "failure", "viewer@example.com", "2023-01-01T10:15:00Z"),
-    ("data_export", "success", "analyst@example.com", "2023-01-01T10:20:00Z"),
-    ("key_rotation", "success", "system", "2023-01-01T10:25:00Z")
+  // 定义遥测数据的敏感级别
+  let data_sensitivity = [
+    ("system_metrics", "public"),
+    ("application_logs", "internal"),
+    ("user_activity", "confidential"),
+    ("security_events", "secret")
   ]
   
-  // 验证审计事件数量
-  assert_eq(audit_events.length(), 6)
+  // 验证角色定义
+  assert_eq(roles.length(), 4)
+  assert_eq(data_sensitivity.length(), 4)
   
-  // 验证用户登录事件
-  assert_eq(audit_events[0].0, "user_login")
-  assert_eq(audit_events[0].1, "success")
-  assert_eq(audit_events[0].2, "admin@example.com")
-  assert_eq(audit_events[0].3, "2023-01-01T10:00:00Z")
-  
-  // 验证数据访问事件
-  assert_eq(audit_events[1].0, "data_access")
-  assert_eq(audit_events[1].1, "success")
-  assert_eq(audit_events[1].2, "analyst@example.com")
-  assert_eq(audit_events[1].3, "2023-01-01T10:05:00Z")
-  
-  // 验证配置变更事件
-  assert_eq(audit_events[2].0, "config_change")
-  assert_eq(audit_events[2].1, "success")
-  assert_eq(audit_events[2].2, "operator@example.com")
-  assert_eq(audit_events[2].3, "2023-01-01T10:10:00Z")
-  
-  // 验证权限拒绝事件
-  assert_eq(audit_events[3].0, "permission_denied")
-  assert_eq(audit_events[3].1, "failure")
-  assert_eq(audit_events[3].2, "viewer@example.com")
-  assert_eq(audit_events[3].3, "2023-01-01T10:15:00Z")
-  
-  // 验证数据导出事件
-  assert_eq(audit_events[4].0, "data_export")
-  assert_eq(audit_events[4].1, "success")
-  assert_eq(audit_events[4].2, "analyst@example.com")
-  assert_eq(audit_events[4].3, "2023-01-01T10:20:00Z")
-  
-  // 验证密钥轮换事件
-  assert_eq(audit_events[5].0, "key_rotation")
-  assert_eq(audit_events[5].1, "success")
-  assert_eq(audit_events[5].2, "system")
-  assert_eq(audit_events[5].3, "2023-01-01T10:25:00Z")
-  
-  // 计算成功事件数量
-  let mut success_event_count = 0
-  let mut i = 0
-  while i < audit_events.length() {
-    if audit_events[i].1 == "success" {
-      success_event_count = success_event_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(success_event_count, 5)
-  
-  // 计算失败事件数量
-  let mut failure_event_count = 0
-  i = 0
-  while i < audit_events.length() {
-    if audit_events[i].1 == "failure" {
-      failure_event_count = failure_event_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(failure_event_count, 1)
-  
-  // 验证时间戳递增
-  i = 1
-  while i < audit_events.length() {
-    assert_eq(audit_events[i].3 > audit_events[i-1].3, true)
-    i = i + 1
-  }
-  
-  // 计算每个用户的操作次数
-  let user_operations = [
-    ("admin@example.com", 1),
-    ("analyst@example.com", 2),
-    ("operator@example.com", 1),
-    ("viewer@example.com", 1),
-    ("system", 1)
-  ]
-  
-  // 验证用户操作统计
-  assert_eq(user_operations.length(), 5)
-  assert_eq(user_operations[1].0, "analyst@example.com")
-  assert_eq(user_operations[1].1, 2) // 分析师操作最多
-}
-
-test "telemetry_security_compliance_standards" {
-  // 测试遥测系统合规标准
-  
-  let compliance_standards = [
-    ("GDPR", "data_protection", true, "EU"),
-    ("HIPAA", "healthcare", true, "US"),
-    ("SOC2", "security", true, "Global"),
-    ("PCI-DSS", "payment", true, "Global"),
-    ("ISO27001", "information_security", true, "Global"),
-    ("CCPA", "privacy", true, "California")
-  ]
-  
-  // 验证合规标准数量
-  assert_eq(compliance_standards.length(), 6)
-  
-  // 验证GDPR合规
-  assert_eq(compliance_standards[0].0, "GDPR")
-  assert_eq(compliance_standards[0].1, "data_protection")
-  assert_eq(compliance_standards[0].2, true)
-  assert_eq(compliance_standards[0].3, "EU")
-  
-  // 验证HIPAA合规
-  assert_eq(compliance_standards[1].0, "HIPAA")
-  assert_eq(compliance_standards[1].1, "healthcare")
-  assert_eq(compliance_standards[1].2, true)
-  assert_eq(compliance_standards[1].3, "US")
-  
-  // 验证SOC2合规
-  assert_eq(compliance_standards[2].0, "SOC2")
-  assert_eq(compliance_standards[2].1, "security")
-  assert_eq(compliance_standards[2].2, true)
-  assert_eq(compliance_standards[2].3, "Global")
-  
-  // 验证PCI-DSS合规
-  assert_eq(compliance_standards[3].0, "PCI-DSS")
-  assert_eq(compliance_standards[3].1, "payment")
-  assert_eq(compliance_standards[3].2, true)
-  assert_eq(compliance_standards[3].3, "Global")
-  
-  // 验证ISO27001合规
-  assert_eq(compliance_standards[4].0, "ISO27001")
-  assert_eq(compliance_standards[4].1, "information_security")
-  assert_eq(compliance_standards[4].2, true)
-  assert_eq(compliance_standards[4].3, "Global")
-  
-  // 验证CCPA合规
-  assert_eq(compliance_standards[5].0, "CCPA")
-  assert_eq(compliance_standards[5].1, "privacy")
-  assert_eq(compliance_standards[5].2, true)
-  assert_eq(compliance_standards[5].3, "California")
-  
-  // 计算已启用的合规标准数量
-  let mut enabled_standards_count = 0
-  let mut i = 0
-  while i < compliance_standards.length() {
-    if compliance_standards[i].2 == true {
-      enabled_standards_count = enabled_standards_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(enabled_standards_count, 6)
-  
-  // 计算全球适用标准数量
-  let mut global_standards_count = 0
-  i = 0
-  while i < compliance_standards.length() {
-    if compliance_standards[i].3 == "Global" {
-      global_standards_count = global_standards_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(global_standards_count, 3)
-  
-  // 计算地区特定标准数量
-  let mut regional_standards_count = 0
-  i = 0
-  while i < compliance_standards.length() {
-    if compliance_standards[i].3 != "Global" {
-      regional_standards_count = regional_standards_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(regional_standards_count, 3)
-}
-
-test "telemetry_security_threat_detection" {
-  // 测试遥测系统威胁检测
-  
-  let threat_patterns = [
-    ("sql_injection", "regex", "(?i)(union|select|insert|update|delete|drop|create|alter)", "high"),
-    ("xss_attack", "regex", "(?i)(<script|javascript:|onload=|onerror=)", "high"),
-    ("brute_force", "rate", "failed_login_count > 10 in 5 minutes", "medium"),
-    ("data_exfiltration", "volume", "data_export_volume > normal_baseline * 5", "high"),
-    ("unusual_access", "anomaly", "access_from_new_location or unusual_time", "medium"),
-    ("privilege_escalation", "pattern", "user_accessing_admin_resources_without_permission", "critical")
-  ]
-  
-  // 验证威胁模式数量
-  assert_eq(threat_patterns.length(), 6)
-  
-  // 验证SQL注入检测
-  assert_eq(threat_patterns[0].0, "sql_injection")
-  assert_eq(threat_patterns[0].1, "regex")
-  assert_eq(threat_patterns[0].2.contains("union"), true)
-  assert_eq(threat_patterns[0].3, "high")
-  
-  // 验证XSS攻击检测
-  assert_eq(threat_patterns[1].0, "xss_attack")
-  assert_eq(threat_patterns[1].1, "regex")
-  assert_eq(threat_patterns[1].2.contains("script"), true)
-  assert_eq(threat_patterns[1].3, "high")
-  
-  // 验证暴力破解检测
-  assert_eq(threat_patterns[2].0, "brute_force")
-  assert_eq(threat_patterns[2].1, "rate")
-  assert_eq(threat_patterns[2].2.contains("failed_login"), true)
-  assert_eq(threat_patterns[2].3, "medium")
-  
-  // 验证数据泄露检测
-  assert_eq(threat_patterns[3].0, "data_exfiltration")
-  assert_eq(threat_patterns[3].1, "volume")
-  assert_eq(threat_patterns[3].2.contains("data_export"), true)
-  assert_eq(threat_patterns[3].3, "high")
-  
-  // 验证异常访问检测
-  assert_eq(threat_patterns[4].0, "unusual_access")
-  assert_eq(threat_patterns[4].1, "anomaly")
-  assert_eq(threat_patterns[4].2.contains("new_location"), true)
-  assert_eq(threat_patterns[4].3, "medium")
-  
-  // 验证权限提升检测
-  assert_eq(threat_patterns[5].0, "privilege_escalation")
-  assert_eq(threat_patterns[5].1, "pattern")
-  assert_eq(threat_patterns[5].2.contains("admin_resources"), true)
-  assert_eq(threat_patterns[5].3, "critical")
-  
-  // 计算高风险威胁数量
-  let mut high_risk_count = 0
-  let mut i = 0
-  while i < threat_patterns.length() {
-    if threat_patterns[i].3 == "high" {
-      high_risk_count = high_risk_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(high_risk_count, 3)
-  
-  // 计算中风险威胁数量
-  let mut medium_risk_count = 0
-  i = 0
-  while i < threat_patterns.length() {
-    if threat_patterns[i].3 == "medium" {
-      medium_risk_count = medium_risk_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(medium_risk_count, 2)
-  
-  // 计算关键风险威胁数量
-  let mut critical_risk_count = 0
-  i = 0
-  while i < threat_patterns.length() {
-    if threat_patterns[i].3 == "critical" {
-      critical_risk_count = critical_risk_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(critical_risk_count, 1)
-  
-  // 计算使用正则表达式的威胁检测数量
-  let mut regex_detection_count = 0
-  i = 0
-  while i < threat_patterns.length() {
-    if threat_patterns[i].1 == "regex" {
-      regex_detection_count = regex_detection_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(regex_detection_count, 2)
-}
-
-test "telemetry_security_incident_response" {
-  // 测试遥测系统事件响应
-  
-  let incident_response_steps = [
-    ("detection", "automatic", "0-5 minutes", "threat_detection_system"),
-    ("analysis", "manual", "5-30 minutes", "security_analyst"),
-    ("containment", "automatic", "0-10 minutes", "security_orchestration"),
-    ("eradication", "manual", "30-120 minutes", "security_team"),
-    ("recovery", "automatic", "10-60 minutes", "recovery_system"),
-    ("post_incident_review", "manual", "1-3 days", "incident_response_team")
-  ]
-  
-  // 验证事件响应步骤数量
-  assert_eq(incident_response_steps.length(), 6)
-  
-  // 验证检测步骤
-  assert_eq(incident_response_steps[0].0, "detection")
-  assert_eq(incident_response_steps[0].1, "automatic")
-  assert_eq(incident_response_steps[0].2, "0-5 minutes")
-  assert_eq(incident_response_steps[0].3, "threat_detection_system")
-  
-  // 验证分析步骤
-  assert_eq(incident_response_steps[1].0, "analysis")
-  assert_eq(incident_response_steps[1].1, "manual")
-  assert_eq(incident_response_steps[1].2, "5-30 minutes")
-  assert_eq(incident_response_steps[1].3, "security_analyst")
-  
-  // 验证遏制步骤
-  assert_eq(incident_response_steps[2].0, "containment")
-  assert_eq(incident_response_steps[2].1, "automatic")
-  assert_eq(incident_response_steps[2].2, "0-10 minutes")
-  assert_eq(incident_response_steps[2].3, "security_orchestration")
-  
-  // 验证根除步骤
-  assert_eq(incident_response_steps[3].0, "eradication")
-  assert_eq(incident_response_steps[3].1, "manual")
-  assert_eq(incident_response_steps[3].2, "30-120 minutes")
-  assert_eq(incident_response_steps[3].3, "security_team")
-  
-  // 验证恢复步骤
-  assert_eq(incident_response_steps[4].0, "recovery")
-  assert_eq(incident_response_steps[4].1, "automatic")
-  assert_eq(incident_response_steps[4].2, "10-60 minutes")
-  assert_eq(incident_response_steps[4].3, "recovery_system")
-  
-  // 验证事后复盘步骤
-  assert_eq(incident_response_steps[5].0, "post_incident_review")
-  assert_eq(incident_response_steps[5].1, "manual")
-  assert_eq(incident_response_steps[5].2, "1-3 days")
-  assert_eq(incident_response_steps[5].3, "incident_response_team")
-  
-  // 计算自动步骤数量
-  let mut automatic_steps_count = 0
-  let mut i = 0
-  while i < incident_response_steps.length() {
-    if incident_response_steps[i].1 == "automatic" {
-      automatic_steps_count = automatic_steps_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(automatic_steps_count, 3)
-  
-  // 计算手动步骤数量
-  let mut manual_steps_count = 0
-  i = 0
-  while i < incident_response_steps.length() {
-    if incident_response_steps[i].1 == "manual" {
-      manual_steps_count = manual_steps_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(manual_steps_count, 3)
-  
-  // 计算最短响应时间（分钟）
-  let min_response_time = 5 + 30 + 120 + (3 * 24 * 60) // 最长时间估算
-  assert_eq(min_response_time > 5000, true)
-  
-  // 计算平均响应时间（分钟）
-  let avg_response_time = 2.5 + 17.5 + 5 + 75 + 35 + (2 * 24 * 60) // 平均时间估算
-  assert_eq(avg_response_time > 3000, true)
-  
-  // 验证关键响应阶段
-  let critical_phases = ["detection", "containment", "recovery"]
-  assert_eq(critical_phases.length(), 3)
-  
-  // 验证所有关键阶段都是自动化的
-  i = 0
-  while i < critical_phases.length() {
-    let mut j = 0
-    let mut found = false
-    while j < incident_response_steps.length() {
-      if incident_response_steps[j].0 == critical_phases[i] {
-        assert_eq(incident_response_steps[j].1, "automatic")
-        found = true
+  // 模拟访问控制检查
+  let check_access = fn(role : String, sensitivity : String, action : String) -> Bool {
+    // 查找角色权限
+    let mut role_permissions = []
+    let mut i = 0
+    while i < roles.length() {
+      if roles[i].0 == role {
+        role_permissions = roles[i].1
         break
+      }
+      i = i + 1
+    }
+    
+    // 检查是否有执行动作的权限
+    let mut has_permission = false
+    i = 0
+    while i < role_permissions.length() {
+      if role_permissions[i] == action {
+        has_permission = true
+        break
+      }
+      i = i + 1
+    }
+    
+    if not has_permission {
+      return false
+    }
+    
+    // 检查敏感级别访问规则
+    if sensitivity == "public" {
+      return true // 所有角色都可以访问公共数据
+    } else if sensitivity == "internal" {
+      return role != "viewer" // 除了viewer，其他角色都可以访问
+    } else if sensitivity == "confidential" {
+      return role == "admin" or role == "analyst" // 只有admin和analyst可以访问
+    } else if sensitivity == "secret" {
+      return role == "admin" // 只有admin可以访问
+    }
+    
+    false
+  }
+  
+  // 测试访问控制场景
+  assert_eq(check_access("viewer", "system_metrics", "read"), true)
+  assert_eq(check_access("viewer", "application_logs", "read"), false)
+  assert_eq(check_access("viewer", "user_activity", "read"), false)
+  assert_eq(check_access("viewer", "security_events", "read"), false)
+  
+  assert_eq(check_access("analyst", "system_metrics", "read"), true)
+  assert_eq(check_access("analyst", "application_logs", "read"), false)
+  assert_eq(check_access("analyst", "user_activity", "read"), true)
+  assert_eq(check_access("analyst", "security_events", "read"), false)
+  
+  assert_eq(check_access("developer", "system_metrics", "read"), true)
+  assert_eq(check_access("developer", "application_logs", "read"), true)
+  assert_eq(check_access("developer", "user_activity", "read"), false)
+  assert_eq(check_access("developer", "application_logs", "write"), true)
+  
+  assert_eq(check_access("admin", "system_metrics", "read"), true)
+  assert_eq(check_access("admin", "user_activity", "read"), true)
+  assert_eq(check_access("admin", "security_events", "read"), true)
+  assert_eq(check_access("admin", "security_events", "delete"), true)
+  
+  // 测试无权限访问
+  assert_eq(check_access("viewer", "system_metrics", "write"), false)
+  assert_eq(check_access("analyst", "user_activity", "write"), false)
+}
+
+test "telemetry_audit_logging" {
+  // 测试遥测数据的审计日志功能
+  
+  // 创建审计日志记录
+  let mut audit_logs = []
+  
+  // 模拟审计事件
+  let log_access = fn(user : String, resource : String, action : String, timestamp : Int, result : String) {
+    let audit_entry = user + ":" + resource + ":" + action + ":" + timestamp.to_string() + ":" + result
+    audit_logs.push(audit_entry)
+  }
+  
+  // 记录各种审计事件
+  log_access("admin", "telemetry/metrics", "read", 1640995200, "success")
+  log_access("analyst", "telemetry/logs", "read", 1640995205, "success")
+  log_access("developer", "telemetry/config", "write", 1640995210, "success")
+  log_access("viewer", "telemetry/traces", "read", 1640995215, "denied")
+  log_access("analyst", "telemetry/users", "read", 1640995220, "success")
+  log_access("admin", "telemetry/security", "delete", 1640995225, "success")
+  
+  // 验证审计日志记录
+  assert_eq(audit_logs.length(), 6)
+  
+  // 验证审计日志格式
+  let mut i = 0
+  while i < audit_logs.length() {
+    let entry = audit_logs[i]
+    let parts = entry.split(":")
+    assert_eq(parts.length(), 5) // 应该有5个部分：user:resource:action:timestamp:result
+    assert_eq(parts[0].length() > 0, true) // 用户名不为空
+    assert_eq(parts[1].has_prefix("telemetry/"), true) // 资源以telemetry/开头
+    assert_eq(parts[2].length() > 0, true) // 动作不为空
+    assert_eq(parts[3].to_int() > 0, true) // 时间戳是有效数字
+    assert_eq(parts[4] == "success" or parts[4] == "denied", true) // 结果是success或denied
+    i = i + 1
+  }
+  
+  // 分析审计日志 - 查找失败访问
+  let mut failed_accesses = []
+  i = 0
+  while i < audit_logs.length() {
+    let entry = audit_logs[i]
+    if entry.has_suffix(":denied") {
+      failed_accesses.push(entry)
+    }
+    i = i + 1
+  }
+  
+  // 验证失败访问分析
+  assert_eq(failed_accesses.length(), 1)
+  assert_eq(failed_accesses[0].contains("viewer"), true)
+  assert_eq(failed_accesses[0].contains("telemetry/traces"), true)
+  
+  // 分析审计日志 - 按用户统计访问次数
+  let mut user_access_counts = []
+  let users = ["admin", "analyst", "developer", "viewer"]
+  i = 0
+  while i < users.length() {
+    let user = users[i]
+    let mut count = 0
+    let mut j = 0
+    while j < audit_logs.length() {
+      if audit_logs[j].has_prefix(user + ":") {
+        count = count + 1
       }
       j = j + 1
     }
-    assert_eq(found, true)
+    user_access_counts.push((user, count))
+    i = i + 1
+  }
+  
+  // 验证访问统计
+  assert_eq(user_access_counts.length(), 4)
+  assert_eq(user_access_counts[0].0, "admin")
+  assert_eq(user_access_counts[0].1, 2) // admin有2次访问
+  assert_eq(user_access_counts[1].0, "analyst")
+  assert_eq(user_access_counts[1].1, 2) // analyst有2次访问
+  assert_eq(user_access_counts[2].0, "developer")
+  assert_eq(user_access_counts[2].1, 1) // developer有1次访问
+  assert_eq(user_access_counts[3].0, "viewer")
+  assert_eq(user_access_counts[3].1, 1) // viewer有1次访问
+}
+
+test "telemetry_secure_transmission" {
+  // 测试遥测数据的安全传输
+  
+  // 创建遥测数据包
+  let telemetry_packets = [
+    ("packet_001", "metric:cpu:75.5", "high"),
+    ("packet_002", "trace:1234567890", "medium"),
+    ("packet_003", "log:error_message", "low"),
+    ("packet_004", "metric:memory:60.2", "high")
+  ]
+  
+  // 验证数据包
+  assert_eq(telemetry_packets.length(), 4)
+  
+  // 模拟安全传输协议
+  let secure_transmit = fn(packet_id : String, data : String, priority : String) -> String {
+    // 创建传输头
+    let header = "TELEMETRY/v1.0"
+    
+    // 添加时间戳
+    let timestamp = 1640995200L
+    
+    // 创建校验和（简化版）
+    let mut checksum = 0
+    let mut i = 0
+    while i < data.length() {
+      checksum = checksum + data[i].to_int()
+      i = i + 1
+    }
+    
+    // 根据优先级选择加密级别
+    let encryption_level = if priority == "high" {
+      "AES-256"
+    } else if priority == "medium" {
+      "AES-128"
+    } else {
+      "NONE"
+    }
+    
+    // 构建安全传输包
+    let secure_packet = header + "|" + packet_id + "|" + timestamp.to_string() + "|" + 
+                       encryption_level + "|" + checksum.to_string() + "|" + data
+    
+    secure_packet
+  }
+  
+  // 安全传输所有数据包
+  let mut transmitted_packets = []
+  let mut i = 0
+  while i < telemetry_packets.length() {
+    let packet = telemetry_packets[i]
+    let transmitted = secure_transmit(packet.0, packet.1, packet.2)
+    transmitted_packets.push(transmitted)
+    i = i + 1
+  }
+  
+  // 验证传输包格式
+  assert_eq(transmitted_packets.length(), 4)
+  i = 0
+  while i < transmitted_packets.length() {
+    let packet = transmitted_packets[i]
+    let parts = packet.split("|")
+    assert_eq(parts.length(), 6) // 应该有6个部分
+    assert_eq(parts[0], "TELEMETRY/v1.0") // 协议版本
+    assert_eq(parts[1].has_prefix("packet_"), true) // 包ID
+    assert_eq(parts[2].to_int() > 0, true) // 时间戳
+    assert_eq(parts[3] == "AES-256" or parts[3] == "AES-128" or parts[3] == "NONE", true) // 加密级别
+    assert_eq(parts[4].to_int() >= 0, true) // 校验和
+    assert_eq(parts[5].length() > 0, true) // 数据内容
+    i = i + 1
+  }
+  
+  // 验证高优先级包使用了强加密
+  assert_eq(transmitted_packets[0].contains("AES-256"), true) // packet_001是high优先级
+  assert_eq(transmitted_packets[3].contains("AES-256"), true) // packet_004是high优先级
+  
+  // 验证中等优先级包使用了中等加密
+  assert_eq(transmitted_packets[1].contains("AES-128"), true) // packet_002是medium优先级
+  
+  // 验证低优先级包没有加密
+  assert_eq(transmitted_packets[2].contains("NONE"), true) // packet_003是low优先级
+  
+  // 模拟接收端验证
+  let verify_packet = fn(transmitted : String) -> Bool {
+    let parts = transmitted.split("|")
+    if parts.length() != 6 {
+      return false
+    }
+    
+    let data = parts[5]
+    let received_checksum = parts[4].to_int()
+    
+    // 重新计算校验和
+    let mut calculated_checksum = 0
+    let mut i = 0
+    while i < data.length() {
+      calculated_checksum = calculated_checksum + data[i].to_int()
+      i = i + 1
+    }
+    
+    return calculated_checksum == received_checksum
+  }
+  
+  // 验证所有传输包的完整性
+  i = 0
+  while i < transmitted_packets.length() {
+    assert_eq(verify_packet(transmitted_packets[i]), true)
     i = i + 1
   }
 }
