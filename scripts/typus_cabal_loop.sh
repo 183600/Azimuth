@@ -32,7 +32,7 @@ get_mtime() {
 
 # ==================== 监控函数 ====================
 monitor_watchdog() {
-  master_pid="$1"; timeout="$2"; hb_file="$3"; shift 3
+  main_pid="$1"; timeout="$2"; hb_file="$3"; shift 3
 
   while [[ ! -f "$hb_file" ]]; do sleep 1; done
   last_heartbeat=$(date +%s)
@@ -50,7 +50,7 @@ monitor_watchdog() {
 
     if (( elapsed > timeout )); then
       echo "⚠️ [$(date '+%F %T')] 检测到${timeout}秒内无输出，正在重启..."
-      kill -- -"$master_pid" 2>/dev/null || :
+      kill -- -"$main_pid" 2>/dev/null || :
       sleep 1
       exec "$0" "$@"
     fi
@@ -144,7 +144,7 @@ attempt_bump_and_release() {
   # - GitHub Actions 环境（可选，但建议）
   # - 最近 7 天无新 release
   # - bump 版本号（用 iflow 修改 moon.mod.json 的 version）
-  # - push master
+  # - push main
   # - 创建 GitHub Release
 
   if [[ "${GITHUB_ACTIONS:-}" != "true" ]]; then
@@ -193,9 +193,9 @@ attempt_bump_and_release() {
     return 0
   }
 
-  echo "⬆️ 推送到 master..."
+  echo "⬆️ 推送到 main..."
   # 尽量推；如果远端有新提交则保守跳过发布（避免自动 rebase 引发冲突）
-  if ! git push origin HEAD:master; then
+  if ! git push origin HEAD:main; then
     echo "⚠️ git push 失败（远端可能领先或网络问题），跳过创建 release。"
     return 0
   fi
@@ -213,7 +213,7 @@ attempt_bump_and_release() {
   fi
 
   echo "🏷️ 创建 GitHub Release: ${tag}"
-  gh release create "${tag}" --target master --generate-notes || {
+  gh release create "${tag}" --target main --generate-notes || {
     echo "⚠️ 创建 GitHub Release 失败。"
     return 0
   }
