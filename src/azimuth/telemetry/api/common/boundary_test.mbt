@@ -219,7 +219,7 @@ test "resource_boundary_conditions" {
     _ => @test.fail("Expected IntValue")
   }
   
-  match special_attributes[14].1 {
+  match special_attributes[12].1 {
     ArrayStringValue(arr) => assert_eq(arr.length(), 3)
     _ => @test.fail("Expected ArrayStringValue")
   }

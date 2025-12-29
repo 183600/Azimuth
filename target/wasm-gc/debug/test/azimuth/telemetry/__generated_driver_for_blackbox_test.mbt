@@ -57,6 +57,11 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "integration_test.mbt": {
+    0: (__test_696e746567726174696f6e5f746573742e6d6274_0, ["telemetry_integration_tracing_and_metrics"]),
+    1: (__test_696e746567726174696f6e5f746573742e6d6274_1, ["telemetry_integration_context_and_propagation"]),
+    2: (__test_696e746567726174696f6e5f746573742e6d6274_2, ["telemetry_integration_logs_and_tracing"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED

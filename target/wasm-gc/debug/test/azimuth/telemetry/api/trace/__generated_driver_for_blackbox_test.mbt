@@ -67,6 +67,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_1, ["status_codes"]),
     2: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_2, ["span_context_creation"]),
   },
+  "trace_boundary_test.mbt": {
+    0: (__test_74726163655f626f756e646172795f746573742e6d6274_0, ["span_context_validation"]),
+    1: (__test_74726163655f626f756e646172795f746573742e6d6274_1, ["span_attributes_edge_cases"]),
+  },
   "trace_basic_test.mbt": {
     0: (__test_74726163655f62617369635f746573742e6d6274_0, ["span_creation"]),
     1: (__test_74726163655f62617369635f746573742e6d6274_1, ["span_with_attributes"]),
