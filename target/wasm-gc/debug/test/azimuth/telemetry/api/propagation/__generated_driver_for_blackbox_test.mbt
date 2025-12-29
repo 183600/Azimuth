@@ -58,12 +58,18 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
   "w3c_compliance_test.mbt": {
-    0: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_0, ["w3c_traceparent_format_validation"]),
-    1: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_1, ["w3c_tracestate_format_validation"]),
-    2: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_2, ["w3c_baggage_format_validation"]),
-    3: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_3, ["w3c_header_size_limits"]),
-    4: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_4, ["w3c_propagation_roundtrip"]),
-    5: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_5, ["w3c_composite_propagator_compliance"]),
+    0: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_0, ["w3c_trace_context_propagator_inject"]),
+    1: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_1, ["w3c_trace_context_propagator_extract"]),
+    2: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_2, ["w3c_trace_context_propagator_extract_no_header"]),
+    3: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_3, ["w3c_baggage_propagator_inject"]),
+    4: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_4, ["w3c_baggage_propagator_extract"]),
+    5: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_5, ["w3c_baggage_propagator_extract_no_header"]),
+    6: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_6, ["composite_propagator_multiple_propagators"]),
+    7: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_7, ["composite_propagator_extract_multiple_headers"]),
+    8: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_8, ["map_carrier_basic_operations"]),
+    9: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_9, ["map_carrier_edge_cases"]),
+    10: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_10, ["w3c_trace_context_header_format_validation"]),
+    11: (__test_7733635f636f6d706c69616e63655f746573742e6d6274_11, ["w3c_baggage_header_format_validation"]),
   },
   "propagation_test.mbt": {
     0: (__test_70726f7061676174696f6e5f746573742e6d6274_0, ["map_carrier_basic_operations"]),

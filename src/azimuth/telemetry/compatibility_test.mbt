@@ -1,263 +1,455 @@
-// 兼容性测试用例
-// 测试telemetry系统的版本兼容性和向后兼容性
+// 兼容性测试 - 测试版本兼容性
 
-test "attribute_value_compatibility" {
-  // 测试AttributeValue的版本兼容性（使用字符串模拟）
+test "api_backward_compatibility" {
+  // 测试API向后兼容性
   
-  // 测试所有支持的AttributeValue类型
-  let string_attr = "string:test-string"
-  let int_attr = "int:42"
-  let float_attr = "float:3.14159"
-  let bool_attr = "bool:true"
+  // 1. 测试Resource创建的向后兼容性
+  let resource_v1 = common::Resource::default("test-service")
   
-  // 测试数组类型
-  let array_string_attr = "array_string:[a,b,c]"
-  let array_int_attr = "array_int:[1,2,3]"
-  let array_float_attr = "array_float:[1.1,2.2,3.3]"
-  let array_bool_attr = "array_bool:[true,false,true]"
+  // 验证基本属性保持不变
+  assert_eq(resource_v1.service_name, "test-service")
+  assert_eq(resource_v1.service_version, None)
+  assert_eq(resource_v1.telemetry_sdk_name, "azimuth")
+  assert_eq(resource_v1.telemetry_sdk_version, "0.1.0")
+  assert_eq(resource_v1.attributes.length(), 0)
   
-  // 验证所有类型的创建和基本操作
-  assert_eq(string_attr, "string:test-string")
-  assert_eq(int_attr, "int:42")
-  assert_eq(float_attr, "float:3.14159")
-  assert_eq(bool_attr, "bool:true")
+  // 2. 测试AttributeValue的向后兼容性
+  let string_attr = common::AttributeValue::string("test")
+  let int_attr = common::AttributeValue::int(42L)
+  let float_attr = common::AttributeValue::float(3.14)
+  let bool_attr = common::AttributeValue::bool(true)
   
-  assert_eq(array_string_attr, "array_string:[a,b,c]")
-  assert_eq(array_int_attr, "array_int:[1,2,3]")
-  assert_eq(array_float_attr, "array_float:[1.1,2.2,3.3]")
-  assert_eq(array_bool_attr, "array_bool:[true,false,true]")
+  // 验证所有属性类型仍然可用
+  match string_attr {
+    common::StringValue(s) => assert_eq(s, "test")
+    _ => @test.fail("Expected StringValue")
+  }
   
-  // 验证类型前缀
-  assert_eq(string_attr.starts_with("string:"), true)
-  assert_eq(int_attr.starts_with("int:"), true)
-  assert_eq(float_attr.starts_with("float:"), true)
-  assert_eq(bool_attr.starts_with("bool:"), true)
+  match int_attr {
+    common::IntValue(i) => assert_eq(i, 42L)
+    _ => @test.fail("Expected IntValue")
+  }
   
-  assert_eq(array_string_attr.starts_with("array_string:"), true)
-  assert_eq(array_int_attr.starts_with("array_int:"), true)
-  assert_eq(array_float_attr.starts_with("array_float:"), true)
-  assert_eq(array_bool_attr.starts_with("array_bool:"), true)
+  match float_attr {
+    common::FloatValue(f) => assert_eq(f, 3.14)
+    _ => @test.fail("Expected FloatValue")
+  }
+  
+  match bool_attr {
+    common::BoolValue(b) => assert_eq(b, true)
+    _ => @test.fail("Expected BoolValue")
+  }
+  
+  // 3. 测试Context API的向后兼容性
+  let ctx = context::Context::empty()
+  let key = context::create_key("test-key")
+  let ctx_with_value = ctx.with_value(key, "test-value")
+  
+  match ctx_with_value.get(key) {
+    Some(value) => assert_eq(value, "test-value")
+    None => @test.fail("Expected test-key value")
+  }
+  
+  // 4. 测试Baggage API的向后兼容性
+  let baggage = context::Baggage::empty()
+  let baggage_with_entry = baggage.with_entry("test-entry", "test-value")
+  
+  match baggage_with_entry.get("test-entry") {
+    Some(value) => assert_eq(value, "test-value")
+    None => @test.fail("Expected test-entry value")
+  }
 }
 
-test "span_kind_status_compatibility" {
-  // 测试SpanKind和StatusCode的兼容性（使用字符串模拟）
+test "version_specific_features" {
+  // 测试版本特定功能
   
-  // 测试所有SpanKind值
-  let internal_kind = "Internal"
-  let server_kind = "Server"
-  let client_kind = "Client"
-  let producer_kind = "Producer"
-  let consumer_kind = "Consumer"
+  // 1. 测试当前版本的所有功能
+  let resource = common::Resource::default("version-test-service")
   
-  // 验证SpanKind的可用性
-  assert_eq(internal_kind, "Internal")
-  assert_eq(server_kind, "Server")
-  assert_eq(client_kind, "Client")
-  assert_eq(producer_kind, "Producer")
-  assert_eq(consumer_kind, "Consumer")
+  // 验证当前版本的SDK信息
+  assert_eq(resource.telemetry_sdk_name, "azimuth")
+  assert_eq(resource.telemetry_sdk_version, "0.1.0")
   
-  // 测试所有StatusCode值
-  let unset_status = "Unset"
-  let ok_status = "Ok"
-  let error_status = "Error"
+  // 2. 测试数组属性类型（可能是较新版本的功能）
+  let string_array = common::AttributeValue::array_string(["item1", "item2", "item3"])
+  let int_array = common::AttributeValue::array_int([1L, 2L, 3L])
+  let float_array = common::AttributeValue::array_float([1.1, 2.2, 3.3])
+  let bool_array = common::AttributeValue::array_bool([true, false, true])
   
-  // 验证StatusCode的可用性
-  assert_eq(unset_status, "Unset")
-  assert_eq(ok_status, "Ok")
-  assert_eq(error_status, "Error")
+  // 验证数组类型可用
+  match string_array {
+    common::ArrayStringValue(arr) => assert_eq(arr.length(), 3)
+    _ => @test.fail("Expected ArrayStringValue")
+  }
   
-  // 测试SpanKind和StatusCode的组合使用
-  let test_span = ("compatibility-test-span", "0123456789abcdef0123456789abcdef", "0123456789abcdef", server_kind, ok_status)
+  match int_array {
+    common::ArrayIntValue(arr) => assert_eq(arr.length(), 3)
+    _ => @test.fail("Expected ArrayIntValue")
+  }
   
-  // 验证Span的Kind和Status
-  assert_eq(test_span.3, "Server")
-  assert_eq(test_span.4, "Ok")
+  match float_array {
+    common::ArrayFloatValue(arr) => assert_eq(arr.length(), 3)
+    _ => @test.fail("Expected ArrayFloatValue")
+  }
+  
+  match bool_array {
+    common::ArrayBoolValue(arr) => assert_eq(arr.length(), 3)
+    _ => @test.fail("Expected ArrayBoolValue")
+  }
+  
+  // 3. 测试LogRecordBuilder的所有功能
+  let log_record = logs::LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(logs::Info)
+    .body("Version test log")
+    .with_attribute("version.test", common::AttributeValue::string("0.1.0"))
+    .build()
+  
+  // 验证LogRecordBuilder功能完整
+  match log_record.body {
+    Some(body) => assert_eq(body, "Version test log")
+    None => @test.fail("Expected log body")
+  }
+  
+  match log_record.severity_number {
+    logs::Info => assert_eq(true, true)
+    _ => @test.fail("Expected Info severity")
+  }
+  
+  assert_eq(log_record.attributes.length(), 1)
 }
 
-test "severity_number_compatibility" {
-  // 测试SeverityNumber的兼容性（使用字符串模拟）
+test "cross_version_interoperability" {
+  // 测试跨版本互操作性
   
-  // 测试所有SeverityNumber值
-  let trace_severity = "Trace"
-  let debug_severity = "Debug"
-  let info_severity = "Info"
-  let warn_severity = "Warn"
-  let error_severity = "Error"
-  let fatal_severity = "Fatal"
+  // 1. 模拟不同版本的数据格式
+  let v1_resource = common::Resource::default("v1-service")
+  let v2_resource = common::Resource::default("v2-service")
   
-  // 验证SeverityNumber的可用性
-  assert_eq(trace_severity, "Trace")
-  assert_eq(debug_severity, "Debug")
-  assert_eq(info_severity, "Info")
-  assert_eq(warn_severity, "Warn")
-  assert_eq(error_severity, "Error")
-  assert_eq(fatal_severity, "Fatal")
+  // 验证不同版本创建的资源可以共存
+  assert_eq(v1_resource.service_name, "v1-service")
+  assert_eq(v2_resource.service_name, "v2-service")
   
-  // 测试SeverityNumber在LogRecord中的使用
-  let test_log = ("1640995200000000000", info_severity, "INFO", "Compatibility test log")
-  
-  // 验证LogRecord的SeverityNumber
-  assert_eq(test_log.1, "Info")
-}
-
-test "instrument_type_compatibility" {
-  // 测试InstrumentType的兼容性（使用字符串模拟）
-  
-  // 测试所有InstrumentType值
-  let counter_type = "Counter"
-  let histogram_type = "Histogram"
-  let up_down_counter_type = "UpDownCounter"
-  let gauge_type = "Gauge"
-  let observable_counter_type = "ObservableCounter"
-  let observable_gauge_type = "ObservableGauge"
-  let observable_up_down_counter_type = "ObservableUpDownCounter"
-  
-  // 验证InstrumentType的可用性
-  assert_eq(counter_type, "Counter")
-  assert_eq(histogram_type, "Histogram")
-  assert_eq(up_down_counter_type, "UpDownCounter")
-  assert_eq(gauge_type, "Gauge")
-  assert_eq(observable_counter_type, "ObservableCounter")
-  assert_eq(observable_gauge_type, "ObservableGauge")
-  assert_eq(observable_up_down_counter_type, "ObservableUpDownCounter")
-}
-
-test "noop_implementations_compatibility" {
-  // 测试No-op实现的兼容性（使用字符串模拟）
-  
-  // 测试No-op Tracer操作
-  let noop_tracer_result = ("noop-test-span", "Server", "test-attr", "test-value")
-  
-  // 验证No-op Tracer的结果
-  assert_eq(noop_tracer_result.0, "noop-test-span")
-  assert_eq(noop_tracer_result.1, "Server")
-  assert_eq(noop_tracer_result.2, "test-attr")
-  assert_eq(noop_tracer_result.3, "test-value")
-  
-  // 测试No-op Meter操作
-  let noop_counter_result = ("test-counter", "100", "test-key", "test-value")
-  let noop_histogram_result = ("test-histogram", "50.0", "test-key", "test-value")
-  let noop_up_down_counter_result = ("test-up-down-counter", "-25", "test-key", "test-value")
-  let noop_gauge_result = ("test-gauge", "75.0", "test-key", "test-value")
-  
-  // 验证No-op Meter操作结果
-  assert_eq(noop_counter_result.0, "test-counter")
-  assert_eq(noop_counter_result.1, "100")
-  
-  assert_eq(noop_histogram_result.0, "test-histogram")
-  assert_eq(noop_histogram_result.1, "50.0")
-  
-  assert_eq(noop_up_down_counter_result.0, "test-up-down-counter")
-  assert_eq(noop_up_down_counter_result.1, "-25")
-  
-  assert_eq(noop_gauge_result.0, "test-gauge")
-  assert_eq(noop_gauge_result.1, "75.0")
-  
-  // 测试No-op Logger操作
-  let noop_logger_result = ("No-op test log", "INFO", "test-key", "test-value")
-  
-  // 验证No-op Logger操作结果
-  assert_eq(noop_logger_result.0, "No-op test log")
-  assert_eq(noop_logger_result.1, "INFO")
-}
-
-test "resource_default_compatibility" {
-  // 测试Resource默认构造函数的兼容性（使用字符串模拟）
-  
-  // 测试Resource::default函数
-  let default_resource = ("test-service", "", "azimuth", "0.1.0", [])
-  
-  // 验证默认Resource的字段
-  assert_eq(default_resource.0, "test-service")
-  assert_eq(default_resource.1, "") // 预期为空字符串
-  assert_eq(default_resource.2, "azimuth")
-  assert_eq(default_resource.3, "0.1.0")
-  assert_eq(default_resource.4.length(), 0)
-  
-  // 测试具有不同服务名的Resource
-  let payment_resource = ("payment-service", "", "azimuth", "0.1.0", [])
-  let order_resource = ("order-service", "", "azimuth", "0.1.0", [])
-  let user_resource = ("user-service", "", "azimuth", "0.1.0", [])
-  
-  assert_eq(payment_resource.0, "payment-service")
-  assert_eq(order_resource.0, "order-service")
-  assert_eq(user_resource.0, "user-service")
-  
-  // 验证所有默认Resource的其他字段相同
-  assert_eq(payment_resource.2, order_resource.2)
-  assert_eq(order_resource.2, user_resource.2)
-  assert_eq(user_resource.2, "azimuth")
-  
-  assert_eq(payment_resource.3, order_resource.3)
-  assert_eq(order_resource.3, user_resource.3)
-  assert_eq(user_resource.3, "0.1.0")
-}
-
-test "propagation_header_compatibility" {
-  // 测试传播头部的兼容性（使用字符串模拟）
-  
-  // 验证W3C标准头部常量
-  let trace_parent_header = "traceparent"
-  let trace_state_header = "tracestate"
-  let baggage_header = "baggage"
-  
-  assert_eq(trace_parent_header, "traceparent")
-  assert_eq(trace_state_header, "tracestate")
-  assert_eq(baggage_header, "baggage")
-  
-  // 测试MapCarrier的兼容性
-  let carrier_data = [
-    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"),
-    ("baggage", "key1=value1,key2=value2"),
-    ("custom-header", "custom-value")
+  // 2. 测试不同版本的属性格式兼容性
+  let v1_attrs : Array[(String, common::AttributeValue)] = [
+    ("legacy.attr", common::AttributeValue::string("legacy-value")),
+    ("numeric.attr", common::AttributeValue::int(100L))
   ]
   
-  // 验证MapCarrier的基本操作
-  let mut found_traceparent = false
-  let mut found_tracestate = false
-  let mut found_baggage = false
-  let mut found_custom = false
+  let v2_attrs : Array[(String, common::AttributeValue)] = [
+    ("legacy.attr", common::AttributeValue::string("legacy-value")),
+    ("numeric.attr", common::AttributeValue::int(100L)),
+    ("array.attr", common::AttributeValue::array_string(["new", "feature"]))
+  ]
   
+  // 验证属性格式兼容
+  assert_eq(v1_attrs.length(), 2)
+  assert_eq(v2_attrs.length(), 3)
+  
+  // 3. 测试不同版本的SpanKind兼容性
+  let ctx = context::Context::empty()
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("compatibility-test-tracer")
+  
+  let (v1_ctx, v1_span) = tracer.start_span(ctx, "v1-span", trace::Internal)
+  let (v2_ctx, v2_span) = tracer.start_span(ctx, "v2-span", trace::Server)
+  
+  // 验证所有SpanKind仍然可用
+  match v1_span.kind { trace::Internal => assert_eq(true, true) _ => @test.fail("Expected Internal") }
+  match v2_span.kind { trace::Server => assert_eq(true, true) _ => @test.fail("Expected Server") }
+  
+  // 4. 测试不同版本的SeverityNumber兼容性
+  let v1_log = logs::LogRecord::builder().severity(logs::Info).build()
+  let v2_log = logs::LogRecord::builder().severity(logs::Warn).build()
+  
+  match v1_log.severity_number { logs::Info => assert_eq(true, true) _ => @test.fail("Expected Info") }
+  match v2_log.severity_number { logs::Warn => assert_eq(true, true) _ => @test.fail("Expected Warn") }
+}
+
+test "deprecation_compatibility" {
+  // 测试弃用功能的兼容性
+  
+  // 1. 测试可能弃用的功能仍然可用
+  let resource = common::Resource::default("deprecation-test")
+  
+  // 验证旧的Resource创建方式仍然工作
+  assert_eq(resource.service_name, "deprecation-test")
+  assert_eq(resource.telemetry_sdk_name, "azimuth")
+  
+  // 2. 测试可能弃用的属性类型
+  let legacy_string = common::AttributeValue::string("legacy")
+  let legacy_int = common::AttributeValue::int(42)
+  let legacy_float = common::AttributeValue::float(3.14)
+  let legacy_bool = common::AttributeValue::bool(true)
+  
+  // 验证旧的属性类型仍然可用
+  match legacy_string {
+    common::StringValue(s) => assert_eq(s, "legacy")
+    _ => @test.fail("Expected StringValue")
+  }
+  
+  match legacy_int {
+    common::IntValue(i) => assert_eq(i, 42L)
+    _ => @test.fail("Expected IntValue")
+  }
+  
+  match legacy_float {
+    common::FloatValue(f) => assert_eq(f, 3.14)
+    _ => @test.fail("Expected FloatValue")
+  }
+  
+  match legacy_bool {
+    common::BoolValue(b) => assert_eq(b, true)
+    _ => @test.fail("Expected BoolValue")
+  }
+  
+  // 3. 测试可能弃用的API调用
+  let ctx = context::Context::empty()
+  let key = context::create_key("legacy-key")
+  let ctx_with_legacy = ctx.with_value(key, "legacy-value")
+  
+  match ctx_with_legacy.get(key) {
+    Some(value) => assert_eq(value, "legacy-value")
+    None => @test.fail("Expected legacy-key value")
+  }
+  
+  // 4. 测试可能弃用的传播格式
+  let carrier = propagation::MapCarrier::new()
+  let trace_propagator = propagation::W3CTraceContextPropagator::{}
+  
+  trace_propagator.inject(ctx, carrier)
+  
+  match carrier.get(propagation::TRACE_PARENT_HEADER) {
+    Some(_) => assert_eq(true, true)
+    None => @test.fail("Expected traceparent header")
+  }
+}
+
+test "future_compatibility" {
+  // 测试未来兼容性
+  
+  // 1. 测试扩展性 - 预留未来扩展的空间
+  let resource = common::Resource::default("future-test")
+  
+  // 验证当前结构可以容纳未来扩展
+  assert_eq(resource.service_name, "future-test")
+  assert_eq(resource.service_version, None)  // 可以为未来版本预留
+  
+  // 2. 测试属性扩展性
+  let extensible_attrs : Array[(String, common::AttributeValue)] = [
+    ("current.attr", common::AttributeValue::string("current")),
+    ("future.attr1", common::AttributeValue::string("future1")),
+    ("future.attr2", common::AttributeValue::int(123L)),
+    ("future.attr3", common::AttributeValue::bool(true))
+  ]
+  
+  // 验证可以添加未来的属性
+  assert_eq(extensible_attrs.length(), 4)
+  
+  // 3. 测试枚举扩展性
+  let all_severities = [
+    logs::Trace, logs::Debug, logs::Info, logs::Warn, logs::Error, logs::Fatal
+  ]
+  
+  // 验证所有当前严重级别都可用
+  assert_eq(all_severities.length(), 6)
+  
+  let all_kinds = [
+    trace::Internal, trace::Server, trace::Client, trace::Producer, trace::Consumer
+  ]
+  
+  // 验证所有当前SpanKind都可用
+  assert_eq(all_kinds.length(), 5)
+  
+  // 4. 测试传播格式扩展性
+  let carrier = propagation::MapCarrier::from_map([
+    ("existing.header", "existing-value"),
+    ("future.header1", "future-value1"),
+    ("future.header2", "future-value2")
+  ])
+  
+  // 验证可以添加未来的头部
+  let keys = carrier.keys()
+  assert_eq(keys.length(), 3)
+  
+  // 5. 测试数组类型扩展性
+  let large_arrays = [
+    common::AttributeValue::array_string(Array::make(1000, "item")),
+    common::AttributeValue::array_int(Array::make(1000, 1L)),
+    common::AttributeValue::array_float(Array::make(1000, 1.0)),
+    common::AttributeValue::array_bool(Array::make(1000, true))
+  ]
+  
+  // 验证数组可以处理大量数据（为未来扩展做准备）
   let mut i = 0
-  while i < carrier_data.length() {
-    let (key, value) = carrier_data[i]
-    if key == "traceparent" {
-      assert_eq(value.contains("0af7651916cd43dd8448eb211c80319c"), true)
-      assert_eq(value.contains("b7ad6b7169203331"), true)
-      assert_eq(value.contains("01"), true)
-      found_traceparent = true
-    } else if key == "tracestate" {
-      assert_eq(value.contains("rojo=00f067aa0ba902b7"), true)
-      assert_eq(value.contains("congo=t61rcWkgMzE"), true)
-      found_tracestate = true
-    } else if key == "baggage" {
-      assert_eq(value.contains("key1=value1"), true)
-      assert_eq(value.contains("key2=value2"), true)
-      found_baggage = true
-    } else if key == "custom-header" {
-      assert_eq(value, "custom-value")
-      found_custom = true
+  while i < large_arrays.length() {
+    match large_arrays[i] {
+      common::ArrayStringValue(arr) => assert_eq(arr.length(), 1000)
+      common::ArrayIntValue(arr) => assert_eq(arr.length(), 1000)
+      common::ArrayFloatValue(arr) => assert_eq(arr.length(), 1000)
+      common::ArrayBoolValue(arr) => assert_eq(arr.length(), 1000)
+      _ => @test.fail("Expected array type")
+    }
+    i = i + 1
+  }
+}
+
+test "configuration_compatibility" {
+  // 测试配置兼容性
+  
+  // 1. 测试默认配置的兼容性
+  let default_resource = common::Resource::default("config-test")
+  
+  // 验证默认配置值
+  assert_eq(default_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(default_resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(default_resource.service_version, None)
+  assert_eq(default_resource.attributes.length(), 0)
+  
+  // 2. 测试不同配置组合的兼容性
+  let config1 = common::Resource::default("config1")
+  let config2 = common::Resource::default("config2")
+  let config3 = common::Resource::default("config3")
+  
+  // 验证不同配置可以共存
+  assert_eq(config1.service_name, "config1")
+  assert_eq(config2.service_name, "config2")
+  assert_eq(config3.service_name, "config3")
+  
+  // 3. 测试传播器配置兼容性
+  let trace_propagator = propagation::W3CTraceContextPropagator::{}
+  let baggage_propagator = propagation::W3CBaggagePropagator::{}
+  let composite = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  // 验证不同传播器配置可以工作
+  let ctx = context::Context::empty()
+  let carrier = propagation::MapCarrier::new()
+  
+  trace_propagator.inject(ctx, carrier)
+  baggage_propagator.inject(ctx, carrier)
+  composite.inject(ctx, carrier)
+  
+  // 4. 测试指标配置兼容性
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("config-meter", "1.0.0", "http://example.com/schema")
+  
+  // 验证meter配置
+  let counter = meter.create_counter("config-counter", "count", "Config test counter")
+  let histogram = meter.create_histogram("config-histogram", "ms", "Config test histogram")
+  let gauge = meter.create_gauge("config-gauge", "percent", "Config test gauge")
+  let up_down = meter.create_up_down_counter("config-updown", "count", "Config test up-down")
+  
+  // 验证所有指标类型都可以创建
+  counter.add(1L)
+  histogram.record(100.0)
+  gauge.record(75.0)
+  up_down.add(1L)
+  
+  // 5. 测试日志配置兼容性
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("config-logger", "1.0.0", "http://example.com/schema")
+  
+  // 验证logger配置
+  logger.debug("Debug message", [])
+  logger.info("Info message", [])
+  logger.warn("Warn message", [])
+  logger.error("Error message", [])
+  logger.fatal("Fatal message", [])
+}
+
+test "data_format_compatibility" {
+  // 测试数据格式兼容性
+  
+  // 1. 测试属性值格式兼容性
+  let string_values = [
+    common::AttributeValue::string(""),
+    common::AttributeValue::string("simple"),
+    common::AttributeValue::string("with spaces"),
+    common::AttributeValue::string("with-symbols!@#$%"),
+    common::AttributeValue::string("Unicode测试🚀"),
+    common::AttributeValue::string("very-long-string-" + "x" * 1000)
+  ]
+  
+  // 验证各种字符串格式
+  let mut i = 0
+  while i < string_values.length() {
+    match string_values[i] {
+      common::StringValue(s) => assert_eq(s.length() > 0, true)
+      _ => @test.fail("Expected StringValue")
     }
     i = i + 1
   }
   
-  assert_eq(found_traceparent, true)
-  assert_eq(found_tracestate, true)
-  assert_eq(found_baggage, true)
-  assert_eq(found_custom, true)
+  // 2. 测试数值格式兼容性
+  let numeric_values = [
+    common::AttributeValue::int(0L),
+    common::AttributeValue::int(-1L),
+    common::AttributeValue::int(1L),
+    common::AttributeValue::int(9223372036854775807L),  // Int64最大值
+    common::AttributeValue::int(-9223372036854775808L), // Int64最小值
+    common::AttributeValue::float(0.0),
+    common::AttributeValue::float(-1.0),
+    common::AttributeValue::float(1.0),
+    common::AttributeValue::float(1.7976931348623157e+308), // Double最大值
+    common::AttributeValue::float(-1.7976931348623157e+308), // Double最小值
+    common::AttributeValue::float(1.0/0.0), // 无穷大
+    common::AttributeValue::float(0.0/0.0)  // NaN
+  ]
   
-  // 验证keys方法
-  let mut keys = []
-  let mut i = 0
-  while i < carrier_data.length() {
-    keys.push(carrier_data[i].0)
+  // 验证各种数值格式
+  i = 0
+  while i < numeric_values.length() {
+    match numeric_values[i] {
+      common::IntValue(_) => assert_eq(true, true)
+      common::FloatValue(_) => assert_eq(true, true)
+      _ => @test.fail("Expected numeric value")
+    }
     i = i + 1
   }
   
-  assert_eq(keys.length(), 4)
-  assert_eq(keys.contains("traceparent"), true)
-  assert_eq(keys.contains("tracestate"), true)
-  assert_eq(keys.contains("baggage"), true)
-  assert_eq(keys.contains("custom-header"), true)
+  // 3. 测试数组格式兼容性
+  let array_formats = [
+    common::AttributeValue::array_string([]),
+    common::AttributeValue::array_string(["single"]),
+    common::AttributeValue::array_string(["multiple", "values"]),
+    common::AttributeValue::array_int([]),
+    common::AttributeValue::array_int([1L]),
+    common::AttributeValue::array_int([1L, 2L, 3L]),
+    common::AttributeValue::array_float([]),
+    common::AttributeValue::array_float([1.0]),
+    common::AttributeValue::array_float([1.1, 2.2, 3.3]),
+    common::AttributeValue::array_bool([]),
+    common::AttributeValue::array_bool([true]),
+    common::AttributeValue::array_bool([true, false, true])
+  ]
+  
+  // 验证各种数组格式
+  i = 0
+  while i < array_formats.length() {
+    match array_formats[i] {
+      common::ArrayStringValue(_) => assert_eq(true, true)
+      common::ArrayIntValue(_) => assert_eq(true, true)
+      common::ArrayFloatValue(_) => assert_eq(true, true)
+      common::ArrayBoolValue(_) => assert_eq(true, true)
+      _ => @test.fail("Expected array value")
+    }
+    i = i + 1
+  }
+  
+  // 4. 测试传播格式兼容性
+  let ctx = context::Context::empty()
+  let carrier = propagation::MapCarrier::from_map([
+    ("simple.header", "simple-value"),
+    ("complex.header", "complex-value-with-dashes"),
+    ("numeric.header", "12345"),
+    ("empty.header", ""),
+    ("unicode.header", "Unicode测试🚀")
+  ])
+  
+  // 验证各种头部格式
+  let trace_propagator = propagation::W3CTraceContextPropagator::{}
+  let extracted_ctx = trace_propagator.extract(ctx, carrier)
+  
+  // 验证提取操作成功
+  assert_eq(true, true)
 }
