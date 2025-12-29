@@ -1,253 +1,295 @@
-// 遥测配置管理和动态更新测试用例
-
-test "telemetry_service_configuration" {
-  // 测试遥测服务配置管理
-  
-  let service_name = "payment-processor"
-  let service_version = "1.3.2"
-  let environment = "production"
-  let endpoint = "https://otel-collector.internal:4317"
-  let headers = "{\"authorization\":\"Bearer token123\"}"
-  let timeout_ms = 5000
-  let batch_size = 512
-  let export_interval_ms = 10000
-  
-  // 创建服务配置对象
-  let service_config = "{"
-  service_config = service_config + "\"service\":{\"name\":\"" + service_name + "\",\"version\":\"" + service_version + "\"},"
-  service_config = service_config + "\"environment\":\"" + environment + "\","
-  service_config = service_config + "\"exporter\":{\"endpoint\":\"" + endpoint + "\",\"headers\":" + headers + ",\"timeout_ms\":" + timeout_ms.to_string() + "},"
-  service_config = service_config + "\"batch\":{\"size\":" + batch_size.to_string() + "},"
-  service_config = service_config + "\"export_interval_ms\":" + export_interval_ms.to_string()
-  service_config = service_config + "}"
-  
-  // 验证配置JSON格式
-  assert_eq(service_config.has_prefix("{"), true)
-  assert_eq(service_config.has_suffix("}"), true)
-  assert_eq(service_config.contains("\"service\":"), true)
-  assert_eq(service_config.contains("\"environment\":"), true)
-  assert_eq(service_config.contains("\"exporter\":"), true)
-  assert_eq(service_config.contains("\"batch\":"), true)
-  
-  // 验证具体配置值
-  assert_eq(service_config.contains(service_name), true)
-  assert_eq(service_config.contains(service_version), true)
-  assert_eq(service_config.contains(environment), true)
-  assert_eq(service_config.contains(endpoint), true)
-  assert_eq(service_config.contains("5000"), true)
-  assert_eq(service_config.contains("512"), true)
-  assert_eq(service_config.contains("10000"), true)
-}
-
-test "telemetry_sampling_configuration" {
-  // 测试遥测采样配置管理
-  
-  let sampler_type = "probabilistic"
-  let sampling_ratio = 0.1  // 10% 采样率
-  let parent_based = true
-  let default_sampling_decision = "record_and_sample"
-  let max_traces_per_second = 1000
-  let sampling_environment = "staging"
-  
-  // 创建采样配置对象
-  let sampling_config = "{"
-  sampling_config = sampling_config + "\"sampler\":{\"type\":\"" + sampler_type + "\",\"ratio\":" + sampling_ratio.to_string() + "},"
-  sampling_config = sampling_config + "\"parent_based\":" + (parent_based ? "true" : "false") + ","
-  sampling_config = sampling_config + "\"default_decision\":\"" + default_sampling_decision + "\","
-  sampling_config = sampling_config + "\"limits\":{\"max_traces_per_second\":" + max_traces_per_second.to_string() + "},"
-  sampling_config = sampling_config + "\"environment\":\"" + sampling_environment + "\""
-  sampling_config = sampling_config + "}"
-  
-  // 验证采样配置JSON格式
-  assert_eq(sampling_config.has_prefix("{"), true)
-  assert_eq(sampling_config.has_suffix("}"), true)
-  assert_eq(sampling_config.contains("\"sampler\":"), true)
-  assert_eq(sampling_config.contains("\"parent_based\":"), true)
-  assert_eq(sampling_config.contains("\"default_decision\":"), true)
-  assert_eq(sampling_config.contains("\"limits\":"), true)
-  
-  // 验证具体采样配置值
-  assert_eq(sampling_config.contains("probabilistic"), true)
-  assert_eq(sampling_config.contains("0.1"), true)
-  assert_eq(sampling_config.contains("true"), true)
-  assert_eq(sampling_config.contains("record_and_sample"), true)
-  assert_eq(sampling_config.contains("1000"), true)
-  assert_eq(sampling_config.contains("staging"), true)
-}
-
-test "telemetry_metric_configuration" {
-  // 测试遥测指标配置管理
-  
-  let metric_exporter = "prometheus"
-  let metric_port = 9090
-  let metric_path = "/metrics"
-  let enable_histogram = true
-  let histogram_buckets = "[0.1,0.5,1.0,2.5,5.0,10.0]"
-  let enable_summary = false
-  let summary_quantiles = "[0.5,0.9,0.95,0.99]"
-  let metric_aggregation_tempo = "10s"
-  
-  // 创建指标配置对象
-  let metric_config = "{"
-  metric_config = metric_config + "\"exporter\":{\"type\":\"" + metric_exporter + "\",\"port\":" + metric_port.to_string() + ",\"path\":\"" + metric_path + "\"},"
-  metric_config = metric_config + "\"histogram\":{\"enabled\":" + (enable_histogram ? "true" : "false") + ",\"buckets\":" + histogram_buckets + "},"
-  metric_config = metric_config + "\"summary\":{\"enabled\":" + (enable_summary ? "true" : "false") + ",\"quantiles\":" + summary_quantiles + "},"
-  metric_config = metric_config + "\"aggregation\":{\"tempo\":\"" + metric_aggregation_tempo + "\"}"
-  metric_config = metric_config + "}"
-  
-  // 验证指标配置JSON格式
-  assert_eq(metric_config.has_prefix("{"), true)
-  assert_eq(metric_config.has_suffix("}"), true)
-  assert_eq(metric_config.contains("\"exporter\":"), true)
-  assert_eq(metric_config.contains("\"histogram\":"), true)
-  assert_eq(metric_config.contains("\"summary\":"), true)
-  assert_eq(metric_config.contains("\"aggregation\":"), true)
-  
-  // 验证具体指标配置值
-  assert_eq(metric_config.contains("prometheus"), true)
-  assert_eq(metric_config.contains("9090"), true)
-  assert_eq(metric_config.contains("/metrics"), true)
-  assert_eq(metric_config.contains("true"), true)
-  assert_eq(metric_config.contains("false"), true)
-  assert_eq(metric_config.contains("10s"), true)
-}
-
-test "telemetry_log_configuration" {
-  // 测试遥测日志配置管理
-  
-  let log_level = "INFO"
-  let log_format = "json"
-  let enable_console_output = true
-  let enable_file_output = true
-  let log_file_path = "/var/log/telemetry/service.log"
-  let max_file_size_mb = 100
-  let max_file_backups = 5
-  let log_compression = "gzip"
-  
-  // 创建日志配置对象
-  let log_config = "{"
-  log_config = log_config + "\"level\":\"" + log_level + "\","
-  log_config = log_config + "\"format\":\"" + log_format + "\","
-  log_config = log_config + "\"outputs\":{\"console\":" + (enable_console_output ? "true" : "false") + ",\"file\":" + (enable_file_output ? "true" : "false") + "},"
-  log_config = log_config + "\"file\":{\"path\":\"" + log_file_path + "\",\"max_size_mb\":" + max_file_size_mb.to_string() + ",\"max_backups\":" + max_file_backups.to_string() + ",\"compression\":\"" + log_compression + "\"}"
-  log_config = log_config + "}"
-  
-  // 验证日志配置JSON格式
-  assert_eq(log_config.has_prefix("{"), true)
-  assert_eq(log_config.has_suffix("}"), true)
-  assert_eq(log_config.contains("\"level\":"), true)
-  assert_eq(log_config.contains("\"format\":"), true)
-  assert_eq(log_config.contains("\"outputs\":"), true)
-  assert_eq(log_config.contains("\"file\":"), true)
-  
-  // 验证具体日志配置值
-  assert_eq(log_config.contains("INFO"), true)
-  assert_eq(log_config.contains("json"), true)
-  assert_eq(log_config.contains("true"), true)
-  assert_eq(log_config.contains("/var/log/telemetry/service.log"), true)
-  assert_eq(log_config.contains("100"), true)
-  assert_eq(log_config.contains("5"), true)
-  assert_eq(log_config.contains("gzip"), true)
-}
-
-test "telemetry_dynamic_config_update" {
-  // 测试遥测动态配置更新
-  
-  let original_sampling_ratio = 0.1
-  let updated_sampling_ratio = 0.2
-  let original_batch_size = 512
-  let updated_batch_size = 1024
-  let original_log_level = "INFO"
-  let updated_log_level = "DEBUG"
-  let original_export_interval = 10000
-  let updated_export_interval = 5000
-  
-  // 创建原始配置
-  let original_config = "{"
-  original_config = original_config + "\"sampling_ratio\":" + original_sampling_ratio.to_string() + ","
-  original_config = original_config + "\"batch_size\":" + original_batch_size.to_string() + ","
-  original_config = original_config + "\"log_level\":\"" + original_log_level + "\","
-  original_config = original_config + "\"export_interval\":" + original_export_interval.to_string()
-  original_config = original_config + "}"
-  
-  // 创建更新配置
-  let updated_config = "{"
-  updated_config = updated_config + "\"sampling_ratio\":" + updated_sampling_ratio.to_string() + ","
-  updated_config = updated_config + "\"batch_size\":" + updated_batch_size.to_string() + ","
-  updated_config = updated_config + "\"log_level\":\"" + updated_log_level + "\","
-  updated_config = updated_config + "\"export_interval\":" + updated_export_interval.to_string()
-  updated_config = updated_config + "}"
-  
-  // 验证原始配置
-  assert_eq(original_config.contains("0.1"), true)
-  assert_eq(original_config.contains("512"), true)
-  assert_eq(original_config.contains("INFO"), true)
-  assert_eq(original_config.contains("10000"), true)
-  
-  // 验证更新配置
-  assert_eq(updated_config.contains("0.2"), true)
-  assert_eq(updated_config.contains("1024"), true)
-  assert_eq(updated_config.contains("DEBUG"), true)
-  assert_eq(updated_config.contains("5000"), true)
-  
-  // 创建配置变更记录数组
-  let config_changes = [
-    ("sampling_ratio", original_sampling_ratio.to_string(), updated_sampling_ratio.to_string()),
-    ("batch_size", original_batch_size.to_string(), updated_batch_size.to_string()),
-    ("log_level", original_log_level, updated_log_level),
-    ("export_interval", original_export_interval.to_string(), updated_export_interval.to_string())
-  ]
-  
-  // 验证配置变更记录
-  assert_eq(config_changes.length(), 4)
-  assert_eq(config_changes[0].0, "sampling_ratio")
-  assert_eq(config_changes[0].1, "0.1")
-  assert_eq(config_changes[0].2, "0.2")
-  assert_eq(config_changes[2].0, "log_level")
-  assert_eq(config_changes[2].1, "INFO")
-  assert_eq(config_changes[2].2, "DEBUG")
-}
+// 遥测配置管理测试用例
 
 test "telemetry_config_validation" {
   // 测试遥测配置验证
   
-  let valid_port = 4317
-  let invalid_port = 99999
-  let valid_sampling_ratio = 0.5
-  let invalid_sampling_ratio = 1.5
-  let valid_log_level = "INFO"
-  let invalid_log_level = "INVALID_LEVEL"
-  let valid_timeout_ms = 5000
-  let invalid_timeout_ms = -1000
-  
-  // 创建配置验证结果数组
-  let validation_results = [
-    ("port", valid_port > 0 && valid_port <= 65535, valid_port.to_string()),
-    ("port_invalid", invalid_port > 0 && invalid_port <= 65535, invalid_port.to_string()),
-    ("sampling_ratio", valid_sampling_ratio >= 0.0 && valid_sampling_ratio <= 1.0, valid_sampling_ratio.to_string()),
-    ("sampling_ratio_invalid", invalid_sampling_ratio >= 0.0 && invalid_sampling_ratio <= 1.0, invalid_sampling_ratio.to_string()),
-    ("log_level", valid_log_level == "TRACE" || valid_log_level == "DEBUG" || valid_log_level == "INFO" || valid_log_level == "WARN" || valid_log_level == "ERROR" || valid_log_level == "FATAL", valid_log_level),
-    ("log_level_invalid", invalid_log_level == "TRACE" || invalid_log_level == "DEBUG" || invalid_log_level == "INFO" || invalid_log_level == "WARN" || invalid_log_level == "ERROR" || invalid_log_level == "FATAL", invalid_log_level),
-    ("timeout_ms", valid_timeout_ms > 0, valid_timeout_ms.to_string()),
-    ("timeout_ms_invalid", invalid_timeout_ms > 0, invalid_timeout_ms.to_string())
+  let valid_configs = [
+    ("service.name", "user-service"),
+    ("service.version", "1.0.0"),
+    ("deployment.environment", "production"),
+    ("telemetry.sdk.name", "azimuth"),
+    ("telemetry.sdk.version", "0.1.0")
   ]
   
-  // 验证配置验证结果
-  assert_eq(validation_results.length(), 8)
-  assert_eq(validation_results[0].0, "port")
-  assert_eq(validation_results[0].1, true)
-  assert_eq(validation_results[1].0, "port_invalid")
-  assert_eq(validation_results[1].1, false)
-  assert_eq(validation_results[2].0, "sampling_ratio")
-  assert_eq(validation_results[2].1, true)
-  assert_eq(validation_results[3].0, "sampling_ratio_invalid")
-  assert_eq(validation_results[3].1, false)
-  assert_eq(validation_results[4].0, "log_level")
-  assert_eq(validation_results[4].1, true)
-  assert_eq(validation_results[5].0, "log_level_invalid")
-  assert_eq(validation_results[5].1, false)
-  assert_eq(validation_results[6].0, "timeout_ms")
-  assert_eq(validation_results[6].1, true)
-  assert_eq(validation_results[7].0, "timeout_ms_invalid")
-  assert_eq(validation_results[7].1, false)
+  let invalid_configs = [
+    ("service.name", ""), // 空服务名称
+    ("service.version", "1.0"), // 无效版本格式
+    ("deployment.environment", "prod"), // 无效环境值
+    ("telemetry.sdk.name", ""), // 空SDK名称
+    ("invalid.key", "value") // 无效配置键
+  ]
+  
+  // 验证有效配置
+  let mut i = 0
+  while i < valid_configs.length() {
+    let key = valid_configs[i].0
+    let value = valid_configs[i].1
+    
+    assert_eq(key.contains("."), true)
+    assert_eq(value.length() > 0, true)
+    
+    // 验证特定配置格式
+    match key {
+      "service.name" => assert_eq(value.has_suffix("-service"), true),
+      "service.version" => assert_eq(value.split(".").length(), 3),
+      "deployment.environment" => assert_eq(["production", "staging", "development"].contains(value), true),
+      _ => ()
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证无效配置检测
+  i = 0
+  while i < invalid_configs.length() {
+    let key = invalid_configs[i].0
+    let value = invalid_configs[i].1
+    
+    // 检测无效配置的条件
+    let is_invalid = 
+      (key == "service.name" && value.length() == 0) ||
+      (key == "service.version" && value.split(".").length() != 3) ||
+      (key == "deployment.environment" && !["production", "staging", "development"].contains(value)) ||
+      (key == "telemetry.sdk.name" && value.length() == 0) ||
+      (!key.has_prefix("service.") && !key.has_prefix("telemetry.") && !key.has_prefix("deployment."))
+    
+    assert_eq(is_invalid, true)
+    
+    i = i + 1
+  }
+}
+
+test "telemetry_config_hierarchy" {
+  // 测试配置层次结构
+  
+  let global_config = [
+    ("service.name", "global-service"),
+    ("service.version", "1.0.0"),
+    ("telemetry.enabled", "true")
+  ]
+  
+  let service_config = [
+    ("service.name", "user-service"), // 覆盖全局配置
+    ("service.instance.id", "instance-123") // 新增配置
+  ]
+  
+  let endpoint_config = [
+    ("http.endpoint", "/api/users"),
+    ("http.method", "GET")
+  ]
+  
+  // 模拟配置合并
+  let mut merged_config = []
+  
+  // 添加全局配置
+  let mut i = 0
+  while i < global_config.length() {
+    merged_config.push(global_config[i])
+    i = i + 1
+  }
+  
+  // 添加服务配置（覆盖和新增）
+  i = 0
+  while i < service_config.length() {
+    let key = service_config[i].0
+    let value = service_config[i].1
+    
+    // 查找是否需要覆盖
+    let mut found = false
+    let mut j = 0
+    while j < merged_config.length() {
+      if merged_config[j].0 == key {
+        merged_config[j] = (key, value)
+        found = true
+        break
+      }
+      j = j + 1
+    }
+    
+    if !found {
+      merged_config.push((key, value))
+    }
+    
+    i = i + 1
+  }
+  
+  // 添加端点配置
+  i = 0
+  while i < endpoint_config.length() {
+    merged_config.push(endpoint_config[i])
+    i = i + 1
+  }
+  
+  // 验证合并结果
+  assert_eq(merged_config.length(), 6)
+  
+  // 验证覆盖生效
+  let mut service_name_found = false
+  i = 0
+  while i < merged_config.length() {
+    if merged_config[i].0 == "service.name" {
+      assert_eq(merged_config[i].1, "user-service") // 应该被覆盖
+      service_name_found = true
+      break
+    }
+    i = i + 1
+  }
+  assert_eq(service_name_found, true)
+}
+
+test "telemetry_config_dynamic_update" {
+  // 测试动态配置更新
+  
+  let mut current_config = [
+    ("sampling.rate", "0.1"),
+    ("batch.size", "100"),
+    ("export.interval", "5000")
+  ]
+  
+  let updates = [
+    ("sampling.rate", "0.2"), // 更新采样率
+    ("batch.size", "200"),   // 更新批次大小
+    ("compression.enabled", "true") // 新增配置
+  ]
+  
+  // 应用动态更新
+  let mut i = 0
+  while i < updates.length() {
+    let key = updates[i].0
+    let value = updates[i].1
+    
+    // 查找并更新现有配置
+    let mut found = false
+    let mut j = 0
+    while j < current_config.length() {
+      if current_config[j].0 == key {
+        current_config[j] = (key, value)
+        found = true
+        break
+      }
+      j = j + 1
+    }
+    
+    // 如果找不到，添加新配置
+    if !found {
+      current_config.push((key, value))
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证更新结果
+  assert_eq(current_config.length(), 4) // 原有3个 + 1个新增
+  
+  // 验证具体更新值
+  let mut sampling_rate_found = false
+  let mut batch_size_found = false
+  let mut compression_found = false
+  
+  i = 0
+  while i < current_config.length() {
+    match current_config[i].0 {
+      "sampling.rate" => {
+        assert_eq(current_config[i].1, "0.2")
+        sampling_rate_found = true
+      },
+      "batch.size" => {
+        assert_eq(current_config[i].1, "200")
+        batch_size_found = true
+      },
+      "compression.enabled" => {
+        assert_eq(current_config[i].1, "true")
+        compression_found = true
+      },
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(sampling_rate_found, true)
+  assert_eq(batch_size_found, true)
+  assert_eq(compression_found, true)
+}
+
+test "telemetry_config_environment_override" {
+  // 测试环境变量配置覆盖
+  
+  let base_config = [
+    ("service.name", "default-service"),
+    ("log.level", "INFO"),
+    ("exporter.endpoint", "http://localhost:4317")
+  ]
+  
+  let env_overrides = [
+    ("SERVICE_NAME", "env-service"),
+    ("LOG_LEVEL", "DEBUG"),
+    ("CUSTOM_ENDPOINT", "http://env-host:4317")
+  ]
+  
+  // 模拟环境变量覆盖逻辑
+  let mut final_config = []
+  
+  // 复制基础配置
+  let mut i = 0
+  while i < base_config.length() {
+    final_config.push(base_config[i])
+    i = i + 1
+  }
+  
+  // 应用环境变量覆盖
+  i = 0
+  while i < env_overrides.length() {
+    let env_key = env_overrides[i].0
+    let env_value = env_overrides[i].1
+    
+    // 将环境变量键转换为配置键
+    let config_key = 
+      if env_key == "SERVICE_NAME" { "service.name" }
+      else if env_key == "LOG_LEVEL" { "log.level" }
+      else if env_key == "CUSTOM_ENDPOINT" { "exporter.endpoint" }
+      else { "" }
+    
+    // 查找并覆盖配置
+    if config_key.length() > 0 {
+      let mut j = 0
+      while j < final_config.length() {
+        if final_config[j].0 == config_key {
+          final_config[j] = (config_key, env_value)
+          break
+        }
+        j = j + 1
+      }
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证覆盖结果
+  let mut service_name_overridden = false
+  let mut log_level_overridden = false
+  let mut endpoint_overridden = false
+  
+  i = 0
+  while i < final_config.length() {
+    match final_config[i].0 {
+      "service.name" => {
+        assert_eq(final_config[i].1, "env-service")
+        service_name_overridden = true
+      },
+      "log.level" => {
+        assert_eq(final_config[i].1, "DEBUG")
+        log_level_overridden = true
+      },
+      "exporter.endpoint" => {
+        assert_eq(final_config[i].1, "http://env-host:4317")
+        endpoint_overridden = true
+      },
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(service_name_overridden, true)
+  assert_eq(log_level_overridden, true)
+  assert_eq(endpoint_overridden, true)
 }

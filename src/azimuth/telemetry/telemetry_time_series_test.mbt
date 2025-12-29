@@ -1,261 +1,270 @@
-// 遥测时间序列数据测试用例
+// 遥测时间序列数据处理测试用例
 
-test "time_series_data_structure" {
-  // 测试时间序列数据结构
+test "telemetry_time_series_basic_operations" {
+  // 测试时间序列数据基本操作
   
-  let metric_name = "cpu_usage_percent"
-  let timestamps = [1640995200L, 1640995260L, 1640995320L, 1640995380L, 1640995440L]
-  let values = [45.2, 47.8, 52.1, 49.6, 51.3]
-  let tags = ["service:api", "env:production", "region:us-east-1"]
-  
-  // 验证指标名称
-  assert_eq(metric_name.has_prefix("cpu"), true)
-  assert_eq(metric_name.has_suffix("percent"), true)
-  assert_eq(metric_name.length(), 17)
+  let metric_name = "cpu_usage"
+  let timestamps = [1634567890, 1634567950, 1634568010, 1634568070, 1634568130]
+  let values = [45.2, 47.8, 52.1, 48.9, 46.3]
+  let unit = "percent"
+  let tags = "{\"host\":\"web-server-01\",\"region\":\"us-west-2\"}"
   
   // 验证时间戳序列
   assert_eq(timestamps.length(), 5)
-  assert_eq(timestamps[1] - timestamps[0], 60L) // 60秒间隔
-  assert_eq(timestamps[4] - timestamps[0], 240L) // 总共4分钟
+  assert_eq(timestamps[0], 1634567890)
+  assert_eq(timestamps[4], 1634568130)
+  assert_eq(timestamps[4] - timestamps[0], 240)  // 4分钟间隔
   
   // 验证数值序列
   assert_eq(values.length(), 5)
-  assert_eq(values[0] > 40.0, true)
-  assert_eq(values[2] < 55.0, true)
+  assert_eq(values[0], 45.2)
+  assert_eq(values[2], 52.1)  // 最高值
+  assert_eq(values[4], 46.3)
   
-  // 验证标签
-  assert_eq(tags.length(), 3)
-  assert_eq(tags[0], "service:api")
-  assert_eq(tags[2], "region:us-east-1")
+  // 验证指标元数据
+  assert_eq(metric_name, "cpu_usage")
+  assert_eq(unit, "percent")
+  assert_eq(tags.contains("web-server-01"), true)
+  assert_eq(tags.contains("us-west-2"), true)
+  
+  // 创建时间序列数据点数组
+  let time_series_points = []
+  for i = 0; i < timestamps.length(); i = i + 1 {
+    let point = "{\"timestamp\":" + timestamps[i].to_string() + ",\"value\":" + values[i].to_string() + "}"
+    time_series_points.push(point)
+  }
+  
+  // 验证时间序列数据点
+  assert_eq(time_series_points.length(), 5)
+  assert_eq(time_series_points[0].contains("1634567890"), true)
+  assert_eq(time_series_points[0].contains("45.2"), true)
+  assert_eq(time_series_points[2].contains("52.1"), true)
 }
 
-test "time_series_aggregation" {
+test "telemetry_time_series_aggregation" {
   // 测试时间序列数据聚合
   
-  let data_points = [23.5, 27.8, 31.2, 29.6, 33.1, 28.9, 32.4, 30.7]
+  let metric_name = "request_duration"
+  let window_size_ms = 60000  // 1分钟窗口
+  let aggregation_type = "avg"
+  let raw_values = [120.5, 135.2, 98.7, 145.3, 112.8, 128.9, 105.6, 139.4]
+  let expected_avg = (120.5 + 135.2 + 98.7 + 145.3 + 112.8 + 128.9 + 105.6 + 139.4) / 8.0
+  let expected_min = 98.7
+  let expected_max = 145.3
+  let expected_sum = 120.5 + 135.2 + 98.7 + 145.3 + 112.8 + 128.9 + 105.6 + 139.4
+  let expected_count = 8
   
-  // 计算平均值
-  let mut sum = 0.0
-  let mut i = 0
-  while i < data_points.length() {
-    sum = sum + data_points[i]
-    i = i + 1
-  }
-  let average = sum / data_points.length().to_double()
+  // 验证原始数据
+  assert_eq(raw_values.length(), 8)
+  assert_eq(raw_values[0], 120.5)
+  assert_eq(raw_values[7], 139.4)
+  
+  // 验证聚合计算
+  assert_eq(expected_avg > 120.0, true)
+  assert_eq(expected_avg < 130.0, true)
+  assert_eq(expected_min, 98.7)
+  assert_eq(expected_max, 145.3)
+  assert_eq(expected_sum > 1000.0, true)
+  assert_eq(expected_count, 8)
+  
+  // 创建聚合结果数组
+  let aggregation_results = [
+    ("avg", expected_avg.to_string()),
+    ("min", expected_min.to_string()),
+    ("max", expected_max.to_string()),
+    ("sum", expected_sum.to_string()),
+    ("count", expected_count.to_string())
+  ]
   
   // 验证聚合结果
-  assert_eq(data_points.length(), 8)
-  assert_eq(average > 25.0, true)
-  assert_eq(average < 35.0, true)
-  
-  // 计算最大值和最小值
-  let mut max_value = data_points[0]
-  let mut min_value = data_points[0]
-  i = 0
-  while i < data_points.length() {
-    if data_points[i] > max_value {
-      max_value = data_points[i]
-    }
-    if data_points[i] < min_value {
-      min_value = data_points[i]
-    }
-    i = i + 1
-  }
-  
-  assert_eq(max_value, 33.1)
-  assert_eq(min_value, 23.5)
-  assert_eq(max_value - min_value, 9.6)
+  assert_eq(aggregation_results.length(), 5)
+  assert_eq(aggregation_results[0].0, "avg")
+  assert_eq(aggregation_results[0].1, expected_avg.to_string())
+  assert_eq(aggregation_results[1].0, "min")
+  assert_eq(aggregation_results[1].1, "98.7")
+  assert_eq(aggregation_results[4].0, "count")
+  assert_eq(aggregation_results[4].1, "8")
 }
 
-test "time_series_windowing" {
-  // 测试时间序列窗口处理
-  
-  let full_series = [10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0]
-  let window_size = 3
-  let sliding_windows = []
-  
-  // 创建滑动窗口
-  let mut i = 0
-  while i <= full_series.length() - window_size {
-    let window = []
-    let mut j = 0
-    while j < window_size {
-      window.push(full_series[i + j])
-      j = j + 1
-    }
-    sliding_windows.push(window)
-    i = i + 1
-  }
-  
-  // 验证窗口数量
-  assert_eq(sliding_windows.length(), 8) // 10 - 3 + 1 = 8
-  
-  // 验证窗口内容
-  assert_eq(sliding_windows[0].length(), 3)
-  assert_eq(sliding_windows[0][0], 10.0)
-  assert_eq(sliding_windows[0][2], 20.0)
-  
-  assert_eq(sliding_windows[4].length(), 3)
-  assert_eq(sliding_windows[4][0], 30.0)
-  assert_eq(sliding_windows[4][2], 40.0)
-  
-  assert_eq(sliding_windows[7].length(), 3)
-  assert_eq(sliding_windows[7][0], 40.0)
-  assert_eq(sliding_windows[7][2], 50.0)
-}
-
-test "time_series_downsampling" {
+test "telemetry_time_series_downsampling" {
   // 测试时间序列数据降采样
   
-  let high_freq_data = [1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
-  let downsample_factor = 3
-  let downsampled_data = []
+  let original_interval = 10  // 10秒间隔
+  let target_interval = 60    // 60秒间隔
+  let downsampling_ratio = target_interval / original_interval
+  let original_data = [10.5, 12.3, 11.8, 13.2, 14.1, 15.6, 13.9, 12.7, 11.4, 10.9, 9.8, 11.2]
+  let expected_downsampled_length = original_data.length() / downsampling_ratio
   
-  // 执行降采样
-  let mut i = 0
-  while i < high_freq_data.length() {
-    if i % downsample_factor == 0 {
-      downsampled_data.push(high_freq_data[i])
+  // 验证降采样参数
+  assert_eq(original_interval, 10)
+  assert_eq(target_interval, 60)
+  assert_eq(downsampling_ratio, 6)
+  
+  // 验证原始数据
+  assert_eq(original_data.length(), 12)
+  assert_eq(original_data[0], 10.5)
+  assert_eq(original_data[11], 11.2)
+  
+  // 验证降采样后的预期长度
+  assert_eq(expected_downsampled_length, 2)
+  
+  // 模拟降采样过程（取每个窗口的平均值）
+  let downsampled_data = []
+  for i = 0; i < original_data.length(); i = i + downsampling_ratio {
+    let window_sum = 0.0
+    let window_count = 0
+    for j = i; j < i + downsampling_ratio && j < original_data.length(); j = j + 1 {
+      window_sum = window_sum + original_data[j]
+      window_count = window_count + 1
     }
-    i = i + 1
+    let window_avg = window_sum / window_count.to_float()
+    downsampled_data.push(window_avg)
   }
   
   // 验证降采样结果
-  assert_eq(high_freq_data.length(), 11)
-  assert_eq(downsampled_data.length(), 4) // ceil(11/3) = 4
-  
-  assert_eq(downsampled_data[0], 1.0)
-  assert_eq(downsampled_data[1], 1.3)
-  assert_eq(downsampled_data[2], 1.6)
-  assert_eq(downsampled_data[3], 1.9)
+  assert_eq(downsampled_data.length(), 2)
+  assert_eq(downsampled_data[0] > 10.0, true)
+  assert_eq(downsampled_data[0] < 15.0, true)
+  assert_eq(downsampled_data[1] > 10.0, true)
+  assert_eq(downsampled_data[1] < 15.0, true)
 }
 
-test "time_series_interpolation" {
+test "telemetry_time_series_interpolation" {
   // 测试时间序列数据插值
   
-  let known_points = [(0L, 100.0), (10L, 200.0), (20L, 150.0)]
-  let interpolation_timestamp = 5L
+  let known_timestamps = [1634567890, 1634567950, 1634568010]
+  let known_values = [100.0, 120.0, 110.0]
+  let interpolate_timestamp = 1634567920  // 在第一个和第二个时间戳之间
+  let expected_interpolated_value = 100.0 + (120.0 - 100.0) * ((interpolate_timestamp - known_timestamps[0]).to_float() / (known_timestamps[1] - known_timestamps[0]).to_float())
   
-  // 简单线性插值
-  let mut interpolated_value = 0.0
-  let mut i = 0
-  while i < known_points.length() - 1 {
-    let (t1, v1) = known_points[i]
-    let (t2, v2) = known_points[i + 1]
-    
-    if interpolation_timestamp >= t1 && interpolation_timestamp <= t2 {
-      let ratio = (interpolation_timestamp - t1).to_double() / (t2 - t1).to_double()
-      interpolated_value = v1 + ratio * (v2 - v1)
-      break
-    }
-    i = i + 1
-  }
+  // 验证已知数据
+  assert_eq(known_timestamps.length(), 3)
+  assert_eq(known_values.length(), 3)
+  assert_eq(known_timestamps[1] - known_timestamps[0], 60)
+  assert_eq(known_timestamps[2] - known_timestamps[1], 60)
   
-  // 验证插值结果
-  assert_eq(known_points.length(), 3)
-  assert_eq(interpolated_value, 150.0) // 100 + 0.5 * (200 - 100)
-  assert_eq(interpolated_value > known_points[0].1, true)
-  assert_eq(interpolated_value < known_points[1].1, true)
+  // 验证插值时间戳位置
+  assert_eq(interpolate_timestamp > known_timestamps[0], true)
+  assert_eq(interpolate_timestamp < known_timestamps[1], true)
+  
+  // 验证插值计算
+  assert_eq(expected_interpolated_value > 100.0, true)
+  assert_eq(expected_interpolated_value < 120.0, true)
+  
+  // 创建插值结果
+  let interpolation_result = "{"
+  interpolation_result = interpolation_result + "\"timestamp\":" + interpolate_timestamp.to_string() + ","
+  interpolation_result = interpolation_result + "\"interpolated_value\":" + expected_interpolated_value.to_string() + ","
+  interpolation_result = interpolation_result + "\"method\":\"linear\""
+  interpolation_result = interpolation_result + "}"
+  
+  // 验证插值结果格式
+  assert_eq(interpolation_result.has_prefix("{"), true)
+  assert_eq(interpolation_result.has_suffix("}"), true)
+  assert_eq(interpolation_result.contains("\"timestamp\":"), true)
+  assert_eq(interpolation_result.contains("\"interpolated_value\":"), true)
+  assert_eq(interpolation_result.contains("\"method\":\"linear\""), true)
 }
 
-test "time_series_anomaly_detection" {
-  // 测试时间序列异常检测
+test "telemetry_time_series_anomaly_detection" {
+  // 测试时间序列数据异常检测
   
-  let normal_data = [50.0, 52.0, 48.0, 51.0, 49.0, 53.0, 47.0, 50.0]
-  let anomaly_data = [50.0, 52.0, 150.0, 51.0, 49.0, -50.0, 47.0, 50.0]
-  let threshold = 20.0
-  
-  // 计算基准统计量
-  let mut sum = 0.0
-  let mut i = 0
-  while i < normal_data.length() {
-    sum = sum + normal_data[i]
-    i = i + 1
+  let baseline_values = [50.0, 52.0, 48.0, 51.0, 49.0, 53.0, 47.0, 50.0]
+  let anomalous_values = [50.0, 52.0, 48.0, 150.0, 49.0, 53.0, 47.0, 50.0]  // 包含异常值150.0
+  let threshold_multiplier = 2.0
+  let baseline_mean = (50.0 + 52.0 + 48.0 + 51.0 + 49.0 + 53.0 + 47.0 + 50.0) / 8.0
+  let baseline_variance = 0.0
+  for i = 0; i < baseline_values.length(); i = i + 1 {
+    baseline_variance = baseline_variance + (baseline_values[i] - baseline_mean) * (baseline_values[i] - baseline_mean)
   }
-  let mean = sum / normal_data.length().to_double()
+  baseline_variance = baseline_variance / baseline_values.length().to_float()
+  let baseline_std_dev = baseline_variance.sqrt()
+  let anomaly_threshold = baseline_mean + threshold_multiplier * baseline_std_dev
   
-  // 检测异常
-  let detected_anomalies = []
-  i = 0
-  while i < anomaly_data.length() {
-    let deviation = (anomaly_data[i] - mean).abs()
-    if deviation > threshold {
-      detected_anomalies.push((i, anomaly_data[i], deviation))
-    }
-    i = i + 1
+  // 验证基线数据
+  assert_eq(baseline_values.length(), 8)
+  assert_eq(baseline_mean > 49.0, true)
+  assert_eq(baseline_mean < 51.0, true)
+  
+  // 验证异常检测参数
+  assert_eq(threshold_multiplier, 2.0)
+  assert_eq(anomaly_threshold > baseline_mean, true)
+  
+  // 验证异常值检测
+  assert_eq(anomalous_values[3], 150.0)
+  assert_eq(anomalous_values[3] > anomaly_threshold, true)
+  
+  // 创建异常检测结果数组
+  let anomaly_detection_results = []
+  for i = 0; i < anomalous_values.length(); i = i + 1 {
+    let is_anomaly = anomalous_values[i] > anomaly_threshold || anomalous_values[i] < (baseline_mean - threshold_multiplier * baseline_std_dev)
+    let result = "{\"index\":" + i.to_string() + ",\"value\":" + anomalous_values[i].to_string() + ",\"is_anomaly\":" + (is_anomaly ? "true" : "false") + "}"
+    anomaly_detection_results.push(result)
   }
   
   // 验证异常检测结果
-  assert_eq(normal_data.length(), 8)
-  assert_eq(mean > 48.0 && mean < 52.0, true)
-  
-  assert_eq(detected_anomalies.length(), 2)
-  assert_eq(detected_anomalies[0].0, 2) // 索引2
-  assert_eq(detected_anomalies[0].1, 150.0) // 异常值
-  assert_eq(detected_anomalies[1].0, 5) // 索引5
-  assert_eq(detected_anomalies[1].1, -50.0) // 异常值
+  assert_eq(anomaly_detection_results.length(), 8)
+  assert_eq(anomaly_detection_results[3].contains("\"is_anomaly\":true"), true)
+  assert_eq(anomaly_detection_results[0].contains("\"is_anomaly\":false"), true)
 }
 
-test "time_series_compression" {
-  // 测试时间序列数据压缩
+test "telemetry_time_series_seasonal_analysis" {
+  // 测试时间序列数据季节性分析
   
-  let raw_data = [100.0, 100.1, 99.9, 100.2, 100.0, 99.8, 100.1, 100.0]
-  let compression_threshold = 0.15
-  let compressed_data = []
+  let hourly_pattern = [100.0, 120.0, 150.0, 180.0, 200.0, 180.0, 150.0, 120.0, 100.0, 80.0, 60.0, 50.0, 60.0, 80.0, 100.0, 120.0, 150.0, 180.0, 200.0, 180.0, 150.0, 120.0, 100.0, 80.0]
+  let daily_pattern_length = 24  // 24小时模式
+  let peak_hours = [8, 12, 18]    // 8点、12点、18点为高峰
+  let low_hours = [0, 5, 23]      // 0点、5点、23点为低谷
   
-  // 简单的差分压缩
-  compressed_data.push(raw_data[0]) // 保留第一个值
-  let mut i = 1
-  while i < raw_data.length() {
-    let diff = raw_data[i] - raw_data[i - 1]
-    if diff.abs() > compression_threshold {
-      compressed_data.push(raw_data[i])
-    }
-    i = i + 1
+  // 验证季节性模式数据
+  assert_eq(hourly_pattern.length(), 24)
+  assert_eq(daily_pattern_length, 24)
+  
+  // 验证高峰时段值
+  assert_eq(hourly_pattern[8], 200.0)  // 8点高峰
+  assert_eq(hourly_pattern[12], 200.0) // 12点高峰
+  assert_eq(hourly_pattern[18], 200.0) // 18点高峰
+  
+  // 验证低谷时段值
+  assert_eq(hourly_pattern[0], 100.0)  // 0点低谷
+  assert_eq(hourly_pattern[5], 180.0)  // 5点相对低谷
+  assert_eq(hourly_pattern[23], 80.0)  // 23点低谷
+  
+  // 计算季节性统计量
+  let pattern_mean = 0.0
+  for i = 0; i < hourly_pattern.length(); i = i + 1 {
+    pattern_mean = pattern_mean + hourly_pattern[i]
+  }
+  pattern_mean = pattern_mean / hourly_pattern.length().to_float()
+  
+  let pattern_max = hourly_pattern[0]
+  let pattern_min = hourly_pattern[0]
+  for i = 0; i < hourly_pattern.length(); i = i + 1 {
+    if hourly_pattern[i] > pattern_max { pattern_max = hourly_pattern[i] }
+    if hourly_pattern[i] < pattern_min { pattern_min = hourly_pattern[i] }
   }
   
-  // 验证压缩结果
-  assert_eq(raw_data.length(), 8)
-  assert_eq(compressed_data.length(), 3) // 显著减少
-  assert_eq(compressed_data[0], 100.0)
-  assert_eq(compressed_data[1], 100.2) // 超过阈值
-  assert_eq(compressed_data[2], 99.8) // 超过阈值
+  // 验证季节性统计量
+  assert_eq(pattern_mean > 100.0, true)
+  assert_eq(pattern_mean < 200.0, true)
+  assert_eq(pattern_max, 200.0)
+  assert_eq(pattern_min, 50.0)
   
-  // 计算压缩率
-  let compression_ratio = compressed_data.length().to_double() / raw_data.length().to_double()
-  assert_eq(compression_ratio < 0.5, true) // 压缩率超过50%
-}
-
-test "time_series_forecasting" {
-  // 测试时间序列预测
+  // 创建季节性分析结果
+  let seasonal_analysis = "{"
+  seasonal_analysis = seasonal_analysis + "\"pattern_length\":" + daily_pattern_length.to_string() + ","
+  seasonal_analysis = seasonal_analysis + "\"mean\":" + pattern_mean.to_string() + ","
+  seasonal_analysis = seasonal_analysis + "\"max\":" + pattern_max.to_string() + ","
+  seasonal_analysis = seasonal_analysis + "\"min\":" + pattern_min.to_string() + ","
+  seasonal_analysis = seasonal_analysis + "\"peak_hours\":" + "[" + peak_hours[0].to_string() + "," + peak_hours[1].to_string() + "," + peak_hours[2].to_string() + "]" + ","
+  seasonal_analysis = seasonal_analysis + "\"low_hours\":" + "[" + low_hours[0].to_string() + "," + low_hours[1].to_string() + "," + low_hours[2].to_string() + "]"
+  seasonal_analysis = seasonal_analysis + "}"
   
-  let historical_data = [10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
-  let forecast_horizon = 3
-  let forecasted_values = []
-  
-  // 简单线性趋势预测
-  let mut sum_diff = 0.0
-  let mut i = 1
-  while i < historical_data.length() {
-    sum_diff = sum_diff + (historical_data[i] - historical_data[i - 1])
-    i = i + 1
-  }
-  let avg_diff = sum_diff / (historical_data.length() - 1).to_double()
-  
-  // 生成预测值
-  let last_value = historical_data[historical_data.length() - 1]
-  let mut j = 1
-  while j <= forecast_horizon {
-    let forecasted = last_value + avg_diff * j.to_double()
-    forecasted_values.push(forecasted)
-    j = j + 1
-  }
-  
-  // 验证预测结果
-  assert_eq(historical_data.length(), 6)
-  assert_eq(avg_diff, 2.0) // 每次增加2
-  assert_eq(forecasted_values.length(), 3)
-  assert_eq(forecasted_values[0], 22.0)
-  assert_eq(forecasted_values[1], 24.0)
-  assert_eq(forecasted_values[2], 26.0)
+  // 验证季节性分析结果格式
+  assert_eq(seasonal_analysis.has_prefix("{"), true)
+  assert_eq(seasonal_analysis.has_suffix("}"), true)
+  assert_eq(seasonal_analysis.contains("\"pattern_length\":"), true)
+  assert_eq(seasonal_analysis.contains("\"mean\":"), true)
+  assert_eq(seasonal_analysis.contains("\"peak_hours\":"), true)
+  assert_eq(seasonal_analysis.contains("\"low_hours\":"), true)
 }
