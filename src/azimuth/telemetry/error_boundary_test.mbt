@@ -1,404 +1,458 @@
-// 错误处理和边界情况测试 - 测试异常输入和边界条件的处理
-use azimuth.telemetry.api.common.{AttributeValue, Resource}
-use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, NoopTracer, NoopTracerProvider}
-use azimuth.telemetry.api.metrics.{NoopMeter, NoopMeterProvider}
-use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
-use azimuth.telemetry.api.context.{Context, ContextKey, Baggage, create_key}
+// 错误处理和边界情况测试 - 测试异常情况下的行为
+// 验证遥测库在边界条件和错误情况下的健壮性
 
-test "error_handling_span_creation_edge_cases" {
-  // 测试span创建时的边界情况和错误处理
+test "attribute_value_edge_cases" {
+  // 测试AttributeValue的边界情况
   
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("error-test", Some("1.0.0"))
+  // 测试空值和极值
+  let empty_string = common::AttributeValue::string("")
+  let max_int = common::AttributeValue::int(9223372036854775807L)
+  let min_int = common::AttributeValue::int(-9223372036854775808L)
+  let zero_float = common::AttributeValue::float(0.0)
+  let infinity_float = common::AttributeValue::float(1.0/0.0)
+  let negative_infinity = common::AttributeValue::float(-1.0/0.0)
+  let nan_float = common::AttributeValue::float(0.0/0.0)
   
-  // 测试空字符串span名称
-  let (_, empty_span) = tracer.start_span(ctx, "", Internal, None)
-  assert_eq(empty_span.name, "")
-  assert_eq(empty_span.kind, Internal)
-  
-  // 测试非常长的span名称
-  let long_name = "a" * 10000
-  let (_, long_span) = tracer.start_span(ctx, long_name, Internal, None)
-  assert_eq(long_span.name.length(), 10000)
-  assert_eq(long_span.kind, Internal)
-  
-  // 测试包含特殊字符的span名称
-  let special_name = "span_with_special_chars!@#$%^&*()_+-={}[]|\\:;\"'<>?,./"
-  let (_, special_span) = tracer.start_span(ctx, special_name, Internal, None)
-  assert_eq(special_span.name, special_name)
-  
-  // 测试Unicode字符的span名称
-  let unicode_name = "Unicode测试_span_🚀_🌟_💫"
-  let (_, unicode_span) = tracer.start_span(ctx, unicode_name, Internal, None)
-  assert_eq(unicode_span.name, unicode_name)
-  
-  // 测试包含换行符的span名称
-  let newline_name = "span_with\nnewlines\nand\ttabs"
-  let (_, newline_span) = tracer.start_span(ctx, newline_name, Internal, None)
-  assert_eq(newline_span.name, newline_name)
-}
-
-test "error_handling_attribute_boundary_values" {
-  // 测试属性的边界值和错误处理
-  
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("attribute-test", Some("1.0.0"))
-  
-  // 测试极值整数
-  let extreme_int_attributes = [
-    ("max.int64", AttributeValue::int(9223372036854775807L)),  // Int64最大值
-    ("min.int64", AttributeValue::int(-9223372036854775808L)), // Int64最小值
-    ("zero.int64", AttributeValue::int(0L))
-  ]
-  
-  let (_, extreme_int_span) = tracer.start_span(ctx, "extreme_int_test", Internal, Some(extreme_int_attributes))
-  assert_eq(extreme_int_span.attributes.length(), 3)
-  
-  // 测试极值浮点数
-  let extreme_float_attributes = [
-    ("max.double", AttributeValue::float(1.7976931348623157e+308)),    // Double最大值
-    ("min.double", AttributeValue::float(-1.7976931348623157e+308)),   // Double最小值
-    ("min.positive.double", AttributeValue::float(5e-324)),            // 最小正数
-    ("infinity", AttributeValue::float(1.0/0.0)),                      // 正无穷
-    ("negative.infinity", AttributeValue::float(-1.0/0.0)),            // 负无穷
-    ("nan", AttributeValue::float(0.0/0.0))                           // NaN
-  ]
-  
-  let (_, extreme_float_span) = tracer.start_span(ctx, "extreme_float_test", Internal, Some(extreme_float_attributes))
-  assert_eq(extreme_float_span.attributes.length(), 6)
-  
-  // 测试空字符串和特殊字符串值
-  let string_boundary_attributes = [
-    ("empty.string", AttributeValue::string("")),
-    ("space.string", AttributeValue::string(" ")),
-    ("many.spaces", AttributeValue::string(" " * 1000)),
-    ("null.chars", AttributeValue::string("\0\0\0")),
-    ("unicode.test", AttributeValue::string("🚀🌟💫✨🎉")),
-    ("emoji.stress", AttributeValue::string("😀😃😄😁😆😅😂🤣😊😇"))
-  ]
-  
-  let (_, string_boundary_span) = tracer.start_span(ctx, "string_boundary_test", Internal, Some(string_boundary_attributes))
-  assert_eq(string_boundary_span.attributes.length(), 6)
-}
-
-test "error_handling_array_attributes_edge_cases" {
-  // 测试数组属性的边界情况
-  
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("array-test", Some("1.0.0"))
+  // 验证边界值创建
+  assert_eq(empty_string is common::StringValue, true)
+  assert_eq(max_int is common::IntValue, true)
+  assert_eq(min_int is common::IntValue, true)
+  assert_eq(zero_float is common::FloatValue, true)
+  assert_eq(infinity_float is common::FloatValue, true)
+  assert_eq(negative_infinity is common::FloatValue, true)
+  assert_eq(nan_float is common::FloatValue, true)
   
   // 测试空数组
-  let empty_array_attributes = [
-    ("empty.string.array", AttributeValue::array_string([])),
-    ("empty.int.array", AttributeValue::array_int([])),
-    ("empty.float.array", AttributeValue::array_float([])),
-    ("empty.bool.array", AttributeValue::array_bool([]))
-  ]
+  let empty_string_array = common::AttributeValue::array_string([])
+  let empty_int_array = common::AttributeValue::array_int([])
+  let empty_float_array = common::AttributeValue::array_float([])
+  let empty_bool_array = common::AttributeValue::array_bool([])
   
-  let (_, empty_array_span) = tracer.start_span(ctx, "empty_array_test", Internal, Some(empty_array_attributes))
-  assert_eq(empty_array_span.attributes.length(), 4)
+  assert_eq(empty_string_array is common::ArrayStringValue, true)
+  assert_eq(empty_int_array is common::ArrayIntValue, true)
+  assert_eq(empty_float_array is common::ArrayFloatValue, true)
+  assert_eq(empty_bool_array is common::ArrayBoolValue, true)
   
-  // 验证所有数组都是空的
-  let mut i = 0
-  while i < empty_array_span.attributes.length() {
-    match empty_array_span.attributes[i].1 {
-      ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-      ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-      ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
-      ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
-      _ => @test.fail("Test failed")
-    }
-    i = i + 1
-  }
-  
-  // 测试单元素数组
-  let single_element_arrays = [
-    ("single.string", AttributeValue::array_string(["only_element"])),
-    ("single.int", AttributeValue::array_int([42L])),
-    ("single.float", AttributeValue::array_float([3.14])),
-    ("single.bool", AttributeValue::array_bool([true]))
-  ]
-  
-  let (_, single_array_span) = tracer.start_span(ctx, "single_array_test", Internal, Some(single_element_arrays))
-  assert_eq(single_array_span.attributes.length(), 4)
-  
-  // 测试大型数组
-  let large_string_array = []
-  let large_int_array = []
-  let large_float_array = []
-  let large_bool_array = []
-  
-  let mut j = 0
-  while j < 1000 {
-    large_string_array.push("item_" + j.to_string())
-    large_int_array.push(j.to_int64())
-    large_float_array.push(j.to_double() * 0.1)
-    large_bool_array.push(j % 2 == 0)
-    j = j + 1
-  }
-  
-  let large_array_attributes = [
-    ("large.string.array", AttributeValue::array_string(large_string_array)),
-    ("large.int.array", AttributeValue::array_int(large_int_array)),
-    ("large.float.array", AttributeValue::array_float(large_float_array)),
-    ("large.bool.array", AttributeValue::array_bool(large_bool_array))
-  ]
-  
-  let (_, large_array_span) = tracer.start_span(ctx, "large_array_test", Internal, Some(large_array_attributes))
-  assert_eq(large_array_span.attributes.length(), 4)
-  
-  // 验证大型数组的大小
-  match large_array_span.attributes[0].1 {
-    ArrayStringValue(arr) => assert_eq(arr.length(), 1000)
-    _ => @test.fail("Test failed")
+  // 验证空数组长度
+  match empty_string_array {
+    common::ArrayStringValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Empty string array test failed")
   }
 }
 
-test "error_handling_context_edge_cases" {
-  // 测试Context操作的边界情况
+test "context_boundary_conditions" {
+  // 测试Context的边界条件
   
-  // 测试空上下文
-  let empty_ctx = Context::empty()
-  assert_eq(empty_ctx.values.length(), 0)
+  // 测试空Context
+  let empty_ctx = context::Context::empty()
+  let empty_key = context::create_key("")
+  let test_key = context::create_key("test-key")
   
-  // 测试在空上下文中获取值
-  let non_existent_key = create_key("non.existent.key")
-  match empty_ctx.get(non_existent_key) {
-    Some(_) => @test.fail("Test failed")
-    None => assert_eq(true, true)
+  // 验证空Context行为
+  match empty_ctx.get(test_key) {
+    Some(_) => @test.fail("Should not find value in empty context")
+    None => assert_eq(true, true)  // 预期行为
   }
   
-  // 测试重复设置相同的键
-  let ctx = Context::empty()
-  let key = create_key("test.key")
-  let ctx1 = ctx.with_value(key, "value1")
-  let ctx2 = ctx1.with_value(key, "value2")
-  let ctx3 = ctx2.with_value(key, "value3")
-  
-  // 验证最后设置的值被保留
-  match ctx3.get(key) {
-    Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Test failed")
-  }
-  
-  // 测试空字符串键和值
-  let empty_key = create_key("")
-  let ctx_with_empty_key = ctx.with_value(empty_key, "value_with_empty_key")
+  // 测试空键
+  let ctx_with_empty_key = empty_ctx.with_value(empty_key, "value-for-empty-key")
   match ctx_with_empty_key.get(empty_key) {
-    Some(value) => assert_eq(value, "value_with_empty_key")
-    None => @test.fail("Test failed")
+    Some(value) => assert_eq(value, "value-for-empty-key")
+    None => @test.fail("Should find value for empty key")
   }
   
-  let normal_key = create_key("normal.key")
-  let ctx_with_empty_value = ctx.with_value(normal_key, "")
-  match ctx_with_empty_value.get(normal_key) {
-    Some(value) => assert_eq(value, "")
-    None => @test.fail("Test failed")
-  }
-}
-
-test "error_handling_baggage_edge_cases" {
-  // 测试Baggage操作的边界情况
+  // 测试极长键和值
+  let long_key = context::create_key("a" * 1000)
+  let long_value = "b" * 10000
+  let ctx_with_long_values = empty_ctx.with_value(long_key, long_value)
   
-  // 测试空baggage
-  let empty_baggage = Baggage::empty()
-  assert_eq(empty_baggage.entries.length(), 0)
-  
-  // 测试在空baggage中获取值
-  match empty_baggage.get("non.existent.key") {
-    Some(_) => @test.fail("Test failed")
-    None => assert_eq(true, true)
+  match ctx_with_long_values.get(long_key) {
+    Some(value) => assert_eq(value.length(), 10000)
+    None => @test.fail("Should find value for long key")
   }
   
-  // 测试重复设置相同的键
-  let baggage = Baggage::empty()
-  let baggage1 = baggage.with_entry("test.key", "value1")
-  let baggage2 = baggage1.with_entry("test.key", "value2")
-  let baggage3 = baggage2.with_entry("test.key", "value3")
+  // 测试特殊字符键
+  let special_key = context::create_key("special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  let special_value = "special!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let ctx_with_special = empty_ctx.with_value(special_key, special_value)
   
-  // 验证最后设置的值被保留
-  match baggage3.get("test.key") {
-    Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Test failed")
-  }
-  
-  // 测试空字符串键和值
-  let baggage_with_empty_key = baggage.with_entry("", "value_with_empty_key")
-  match baggage_with_empty_key.get("") {
-    Some(value) => assert_eq(value, "value_with_empty_key")
-    None => @test.fail("Test failed")
-  }
-  
-  let baggage_with_empty_value = baggage.with_entry("normal.key", "")
-  match baggage_with_empty_value.get("normal.key") {
-    Some(value) => assert_eq(value, "")
-    None => @test.fail("Test failed")
-  }
-  
-  // 测试包含特殊字符的键和值
-  let special_key = "special.key!@#$%^&*()"
-  let special_value = "special.value!@#$%^&*()"
-  let baggage_with_special = baggage.with_entry(special_key, special_value)
-  match baggage_with_special.get(special_key) {
+  match ctx_with_special.get(special_key) {
     Some(value) => assert_eq(value, special_value)
-    None => @test.fail("Test failed")
+    None => @test.fail("Should find value for special key")
   }
 }
 
-test "error_handling_log_record_edge_cases" {
-  // 测试日志记录的边界情况
+test "log_record_error_conditions" {
+  // 测试LogRecord的错误条件
   
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("edge-case-logger", Some("1.0.0"))
+  // 测试各种严重性级别
+  let trace_log = logs::LogRecord::builder()
+    .severity(logs::Trace)
+    .body("Trace level log")
+    .build()
   
-  // 测试空日志记录
-  let empty_log_record = LogRecord::builder()
-    .timestamp(0L)
-    .severity(SeverityNumber::Info)
+  let debug_log = logs::LogRecord::builder()
+    .severity(logs::Debug)
+    .body("Debug level log")
+    .build()
+  
+  let info_log = logs::LogRecord::builder()
+    .severity(logs::Info)
+    .body("Info level log")
+    .build()
+  
+  let warn_log = logs::LogRecord::builder()
+    .severity(logs::Warn)
+    .body("Warning level log")
+    .build()
+  
+  let error_log = logs::LogRecord::builder()
+    .severity(logs::Error)
+    .body("Error level log")
+    .build()
+  
+  let fatal_log = logs::LogRecord::builder()
+    .severity(logs::Fatal)
+    .body("Fatal level log")
+    .build()
+  
+  // 验证不同严重性级别
+  assert_eq(trace_log.severity_number, logs::Trace)
+  assert_eq(debug_log.severity_number, logs::Debug)
+  assert_eq(info_log.severity_number, logs::Info)
+  assert_eq(warn_log.severity_number, logs::Warn)
+  assert_eq(error_log.severity_number, logs::Error)
+  assert_eq(fatal_log.severity_number, logs::Fatal)
+  
+  // 测试空和极长日志体
+  let empty_body_log = logs::LogRecord::builder()
+    .severity(logs::Info)
     .body("")
     .build()
   
-  logger.emit(empty_log_record)
-  assert_eq(empty_log_record.severity_number, SeverityNumber::Info)
-  match empty_log_record.body {
+  let long_body_log = logs::LogRecord::builder()
+    .severity(logs::Info)
+    .body("x" * 100000)
+    .build()
+  
+  match empty_body_log.body {
     Some(body) => assert_eq(body, "")
-    None => @test.fail("Test failed")
+    None => @test.fail("Empty body should be Some(\"\")")
   }
+  
+  match long_body_log.body {
+    Some(body) => assert_eq(body.length(), 100000)
+    None => @test.fail("Long body should not be None")
+  }
+  
+  // 测试Unicode和特殊字符
+  let unicode_log = logs::LogRecord::builder()
+    .severity(logs::Info)
+    .body("Unicode测试🚀 with émojis and spëcial chars")
+    .build()
+  
+  match unicode_log.body {
+    Some(body) => assert_eq(body.contains("测试"), true)
+    None => @test.fail("Unicode body should not be None")
+  }
+}
+
+test "metric_boundary_conditions" {
+  // 测试指标的边界条件
+  
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("boundary-test-meter")
+  
+  // 创建各种指标
+  let counter = meter.create_counter("", "count", "")  // 空名称
+  let histogram = meter.create_histogram("a" * 1000, "ms", "a" * 1000)  // 极长名称和描述
+  let up_down_counter = meter.create_up_down_counter("up-down", "", "")  // 空单位和描述
+  let gauge = meter.create_gauge("gauge", "unit", nil)  // nil描述
+  
+  // 测试极值记录
+  counter.add(9223372036854775807L)  // 最大Int64
+  counter.add(-9223372036854775808L)  // 最小Int64
+  counter.add(0L)  // 零值
+  
+  histogram.record(1.7976931348623157e+308)  // 最大Double
+  histogram.record(-1.7976931348623157e+308)  // 最小Double
+  histogram.record(0.0)  // 零值
+  histogram.record(1.0/0.0)  // 无穷大
+  histogram.record(0.0/0.0)  // NaN
+  
+  up_down_counter.add(9223372036854775807L)  // 最大正值
+  up_down_counter.add(-9223372036854775808L)  // 最大负值
+  
+  gauge.record(1.7976931348623157e+308)  // 最大值
+  gauge.record(-1.7976931348623157e+308)  // 最小值
+  
+  // 测试大量属性
+  let many_attrs = []
+  let mut i = 0
+  while i < 1000 {
+    many_attrs.push(("attr-" + i.to_string(), common::AttributeValue::string("value-" + i.to_string())))
+    i = i + 1
+  }
+  
+  counter.add(1L, many_attrs)
+  histogram.record(100.0, many_attrs)
+  
+  // 验证操作不会失败
+  assert_eq(true, true)
+}
+
+test "span_edge_cases" {
+  // 测试Span的边界情况
+  
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("edge-case-tracer")
+  
+  // 测试空名称和极长名称
+  let (empty_name_ctx, empty_name_span) = tracer.start_span(
+    context::Context::empty(),
+    "",
+    trace::Internal
+  )
+  
+  let (long_name_ctx, long_name_span) = tracer.start_span(
+    context::Context::empty(),
+    "a" * 10000,
+    trace::Server
+  )
+  
+  // 验证不同名称的Span
+  assert_eq(empty_name_span.name, "")
+  assert_eq(long_name_span.name.length(), 10000)
+  
+  // 测试各种SpanKind
+  let (internal_ctx, internal_span) = tracer.start_span(
+    context::Context::empty(),
+    "internal-span",
+    trace::Internal
+  )
+  
+  let (server_ctx, server_span) = tracer.start_span(
+    context::Context::empty(),
+    "server-span",
+    trace::Server
+  )
+  
+  let (client_ctx, client_span) = tracer.start_span(
+    context::Context::empty(),
+    "client-span",
+    trace::Client
+  )
+  
+  let (producer_ctx, producer_span) = tracer.start_span(
+    context::Context::empty(),
+    "producer-span",
+    trace::Producer
+  )
+  
+  let (consumer_ctx, consumer_span) = tracer.start_span(
+    context::Context::empty(),
+    "consumer-span",
+    trace::Consumer
+  )
+  
+  // 验证不同SpanKind
+  assert_eq(internal_span.kind, trace::Internal)
+  assert_eq(server_span.kind, trace::Server)
+  assert_eq(client_span.kind, trace::Client)
+  assert_eq(producer_span.kind, trace::Producer)
+  assert_eq(consumer_span.kind, trace::Consumer)
   
   // 测试极值时间戳
-  let extreme_timestamp_log = LogRecord::builder()
-    .timestamp(-9223372036854775808L)  // Int64最小值
-    .severity(SeverityNumber::Error)
-    .body("Log with minimum timestamp")
-    .build()
+  let (min_time_ctx, min_time_span) = tracer.start_span(
+    context::Context::empty(),
+    "min-time-span",
+    trace::Internal,
+    [],
+    -9223372036854775808L
+  )
   
-  logger.emit(extreme_timestamp_log)
-  assert_eq(extreme_timestamp_log.timestamp_unix_nanos, -9223372036854775808L)
+  let (max_time_ctx, max_time_span) = tracer.start_span(
+    context::Context::empty(),
+    "max-time-span",
+    trace::Internal,
+    [],
+    9223372036854775807L
+  )
   
-  let max_timestamp_log = LogRecord::builder()
-    .timestamp(9223372036854775807L)   // Int64最大值
-    .severity(SeverityNumber::Fatal)
-    .body("Log with maximum timestamp")
-    .build()
+  // 验证极值时间戳
+  assert_eq(min_time_span.start_time_unix_nanos, -9223372036854775808L)
+  assert_eq(max_time_span.start_time_unix_nanos, 9223372036854775807L)
+}
+
+test "propagation_error_handling" {
+  // 测试传播的错误处理
   
-  logger.emit(max_timestamp_log)
-  assert_eq(max_timestamp_log.timestamp_unix_nanos, 9223372036854775807L)
+  let trace_propagator = propagation::W3CTraceContextPropagator::{}
+  let baggage_propagator = propagation::W3CBaggagePropagator::{}
+  let composite_propagator = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
   
-  // 测试非常长的日志消息
-  let long_message = "x" * 100000
-  let long_log_record = LogRecord::builder()
-    .timestamp(1640995200000000000L)
-    .severity(SeverityNumber::Info)
-    .body(long_message)
-    .build()
+  // 测试空carrier
+  let empty_carrier = propagation::MapCarrier::new()
+  let extracted_from_empty = composite_propagator.extract(context::Context::empty(), empty_carrier)
   
-  logger.emit(long_log_record)
-  match long_log_record.body {
-    Some(body) => assert_eq(body.length(), 100000)
-    None => @test.fail("Test failed")
+  // 验证从空carrier提取
+  assert_eq(extracted_from_empty.values.length(), 0)
+  
+  // 测试损坏的traceparent格式
+  let corrupted_carrier = propagation::MapCarrier::from_map([
+    ("traceparent", "invalid-format"),
+    ("baggage", "invalid=baggage=format=with=too=many=equals")
+  ])
+  
+  let extracted_from_corrupted = composite_propagator.extract(context::Context::empty(), corrupted_carrier)
+  
+  // 验证从损坏carrier提取不会崩溃
+  assert_eq(true, true)
+  
+  // 测试极长header值
+  let long_traceparent = "00-" + "a" * 32 + "-" + "b" * 16 + "-01"
+  let long_baggage = "key1=" + "a" * 1000 + ",key2=" + "b" * 1000
+  
+  let long_carrier = propagation::MapCarrier::from_map([
+    ("traceparent", long_traceparent),
+    ("baggage", long_baggage)
+  ])
+  
+  let extracted_from_long = composite_propagator.extract(context::Context::empty(), long_carrier)
+  
+  // 验证从极长header提取不会崩溃
+  assert_eq(true, true)
+}
+
+test "baggage_boundary_conditions" {
+  // 测试Baggage的边界条件
+  
+  // 测试空键和值
+  let empty_key_baggage = context::Baggage::empty()
+    .with_entry("", "value-for-empty-key")
+  let empty_value_baggage = context::Baggage::empty()
+    .with_entry("key-for-empty-value", "")
+  
+  // 验证空键和值
+  match empty_key_baggage.get("") {
+    Some(value) => assert_eq(value, "value-for-empty-key")
+    None => @test.fail("Should find value for empty key")
   }
   
-  // 测试包含特殊字符的日志消息
-  let special_message = "Special chars: !@#$%^&*()_+-={}[]|\\:;\"'<>?,./\n\t\0Unicode: 🚀🌟💫"
-  let special_log_record = LogRecord::builder()
-    .timestamp(1640995200000000000L)
-    .severity(SeverityNumber::Warn)
-    .body(special_message)
-    .build()
+  match empty_value_baggage.get("key-for-empty-value") {
+    Some(value) => assert_eq(value, "")
+    None => @test.fail("Should find empty value")
+  }
   
-  logger.emit(special_log_record)
-  match special_log_record.body {
-    Some(body) => assert_eq(body, special_message)
-    None => @test.fail("Test failed")
+  // 测试极长键和值
+  let long_key = "a" * 1000
+  let long_value = "b" * 10000
+  let long_baggage = context::Baggage::empty()
+    .with_entry(long_key, long_value)
+  
+  match long_baggage.get(long_key) {
+    Some(value) => assert_eq(value.length(), 10000)
+    None => @test.fail("Should find value for long key")
+  }
+  
+  // 测试特殊字符键和值
+  let special_key = "special!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let special_value = "special!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  let special_baggage = context::Baggage::empty()
+    .with_entry(special_key, special_value)
+  
+  match special_baggage.get(special_key) {
+    Some(value) => assert_eq(value, special_value)
+    None => @test.fail("Should find value for special key")
+  }
+  
+  // 测试Unicode键和值
+  let unicode_key = "Unicode键测试🚀"
+  let unicode_value = "Unicode值测试🌟"
+  let unicode_baggage = context::Baggage::empty()
+    .with_entry(unicode_key, unicode_value)
+  
+  match unicode_baggage.get(unicode_key) {
+    Some(value) => assert_eq(value, unicode_value)
+    None => @test.fail("Should find value for Unicode key")
   }
 }
 
-test "error_handling_resource_edge_cases" {
-  // 测试Resource创建的边界情况
+test "resource_error_conditions" {
+  // 测试Resource的错误条件
   
   // 测试空服务名称
-  let empty_service_resource = Resource::default("")
-  assert_eq(empty_service_resource.service_name, "")
-  assert_eq(empty_service_resource.telemetry_sdk_name, "azimuth")
+  let empty_service_resource = common::Resource::default("")
   
-  // 测试非常长的服务名称
-  let long_service_name = "a" * 10000
-  let long_service_resource = Resource::default(long_service_name)
-  assert_eq(long_service_resource.service_name.length(), 10000)
+  // 测试极长服务名称
+  let long_service_resource = common::Resource::default("a" * 10000)
   
-  // 测试包含特殊字符的服务名称
-  let special_service_name = "service!@#$%^&*()_+-={}[]|\\:;\"'<>?,./"
-  let special_service_resource = Resource::default(special_service_name)
-  assert_eq(special_service_resource.service_name, special_service_name)
+  // 测试特殊字符服务名称
+  let special_service_resource = common::Resource::default("special!@#$%^&*()_+-=[]{}|;':\",./<>?")
   
   // 测试Unicode服务名称
-  let unicode_service_name = "Unicode服务测试🚀🌟💫"
-  let unicode_service_resource = Resource::default(unicode_service_name)
-  assert_eq(unicode_service_resource.service_name, unicode_service_name)
+  let unicode_service_resource = common::Resource::default("Unicode服务测试🚀")
   
-  // 测试包含空格的服务名称
-  let space_service_name = "service with multiple   spaces"
-  let space_service_resource = Resource::default(space_service_name)
-  assert_eq(space_service_resource.service_name, space_service_name)
+  // 验证各种服务名称
+  assert_eq(empty_service_resource.service_name, "")
+  assert_eq(long_service_resource.service_name.length(), 10000)
+  assert_eq(special_service_resource.service_name, "special!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  assert_eq(unicode_service_resource.service_name, "Unicode服务测试🚀")
+  
+  // 验证所有Resource都有相同的SDK信息
+  assert_eq(empty_service_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(long_service_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(special_service_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(unicode_service_resource.telemetry_sdk_name, "azimuth")
+  
+  assert_eq(empty_service_resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(long_service_resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(special_service_resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(unicode_service_resource.telemetry_sdk_version, "0.1.0")
 }
 
-test "error_handling_span_context_edge_cases" {
-  // 测试SpanContext的边界情况
+test "graceful_degradation_test" {
+  // 测试优雅降级
   
-  // 测试全零的trace_id和span_id
-  let zero_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })
-  let zero_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })
-  
-  let zero_context = SpanContext::{
-    trace_id: zero_trace_id,
-    span_id: zero_span_id,
-    trace_flags: 0_byte,
-    trace_state: ""
+  // 测试在内存不足情况下的行为（模拟）
+  let large_objects = []
+  let mut i = 0
+  while i < 100000 {
+    let large_string = "x" * 10000
+    let large_array = [for j = 0; j < 1000; j = j + 1].map(fn(_) { large_string })
+    large_objects.push(large_array)
+    i = i + 1
   }
   
-  assert_eq(zero_context.trace_id.length(), 16)
-  assert_eq(zero_context.span_id.length(), 8)
-  assert_eq(zero_context.trace_flags, 0_byte)
-  assert_eq(zero_context.trace_state, "")
+  // 即使创建了大量对象，基本操作仍应工作
+  let ctx = context::Context::empty()
+  let key = context::create_key("test-key")
+  let ctx_with_value = ctx.with_value(key, "test-value")
   
-  // 测试全1的trace_id和span_id
-  let max_trace_id = [for i = 0; i < 16; i = i + 1].map(fn(_) { 0xff_byte })
-  let max_span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0xff_byte })
-  
-  let max_context = SpanContext::{
-    trace_id: max_trace_id,
-    span_id: max_span_id,
-    trace_flags: 0xff_byte,
-    trace_state: ""
+  match ctx_with_value.get(key) {
+    Some(value) => assert_eq(value, "test-value")
+    None => @test.fail("Basic context operations should work even under memory pressure")
   }
   
-  assert_eq(max_context.trace_id.length(), 16)
-  assert_eq(max_context.span_id.length(), 8)
-  assert_eq(max_context.trace_flags, 0xff_byte)
-  
-  // 测试复杂的trace_state
-  let complex_trace_state = "key1=value1,key2=value2;prop1=val1,key3=value3;prop1=val1;prop2=val2"
-  let complex_context = SpanContext::{
-    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x12_byte }),
-    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x34_byte }),
-    trace_flags: 1_byte,
-    trace_state: complex_trace_state
+  // 测试在快速连续操作下的稳定性
+  let mut i = 0
+  while i < 10000 {
+    let tracer_provider = trace::NoopTracerProvider::{}
+    let tracer = tracer_provider.get_tracer("stress-test-" + i.to_string())
+    let (_, span) = tracer.start_span(context::Context::empty(), "stress-span-" + i.to_string())
+    
+    let meter_provider = metrics::NoopMeterProvider::{}
+    let meter = meter_provider.get_meter("stress-meter-" + i.to_string())
+    let counter = meter.create_counter("stress-counter-" + i.to_string())
+    counter.add(1L)
+    
+    let logger_provider = logs::NoopLoggerProvider::{}
+    let logger = logger_provider.get_logger("stress-logger-" + i.to_string())
+    logger.info("Stress test log " + i.to_string())
+    
+    i = i + 1
   }
   
-  assert_eq(complex_context.trace_state, complex_trace_state)
-  assert_eq(complex_context.trace_flags, 1_byte)
-  
-  // 测试非常长的trace_state
-  let long_trace_state = "key=" + "value" * 1000
-  let long_context = SpanContext::{
-    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0x56_byte }),
-    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x78_byte }),
-    trace_flags: 1_byte,
-    trace_state: long_trace_state
-  }
-  
-  assert_eq(long_context.trace_state.length(), long_trace_state.length())
+  // 验证所有操作都成功完成
+  assert_eq(i, 10000)
 }

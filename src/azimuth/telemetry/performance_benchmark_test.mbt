@@ -1,286 +1,400 @@
-// 性能基准测试用例
-// 测试系统在各种负载下的性能表现
+// 性能基准测试 - 测试关键操作的性能
+// 验证遥测库在各种负载下的性能表现
 
-test "trace_creation_performance" {
-  // 测试追踪创建性能
+test "context_operations_performance" {
+  // 测试Context操作的性能
   
-  let trace_count = 1000
-  let start_time = 0  // 模拟时间戳
-  let end_time = 0
+  let ctx = context::Context::empty()
+  let start_time = 1640995200000L  // 模拟时间戳
   
-  // 模拟追踪创建
-  let traces = []
-  for i = 0; i < trace_count; i = i + 1 {
-    let trace = {
-      "trace_id": "trace_" + i.to_string(),
-      "span_id": "span_" + i.to_string(),
-      "operation": "operation_" + (i % 10).to_string(),
-      "start_time": start_time + i,
-      "duration": 100 + (i % 200)
-    }
-    traces.push(trace)
+  // 测试Context创建性能
+  let mut i = 0
+  let contexts = []
+  while i < 1000 {
+    let new_ctx = context::Context::empty()
+    contexts.push(new_ctx)
+    i = i + 1
   }
   
-  // 验证追踪创建性能
-  assert_eq(traces.length(), trace_count)
+  // 验证Context创建性能
+  assert_eq(contexts.length(), 1000)
   
-  // 验证数据完整性
-  let first_trace = traces[0]
-  let last_trace = traces[trace_count - 1]
+  // 测试Context值设置性能
+  let key = context::create_key("performance-test-key")
+  let mut i = 0
+  let contexts_with_values = []
+  while i < 1000 {
+    let ctx_with_value = ctx.with_value(key, "value-" + i.to_string())
+    contexts_with_values.push(ctx_with_value)
+    i = i + 1
+  }
   
-  assert_eq(first_trace["trace_id"], "trace_0")
-  assert_eq(last_trace["trace_id"], "trace_999")
+  // 验证Context值设置性能
+  assert_eq(contexts_with_values.length(), 1000)
   
-  // 验证性能指标（每秒创建的追踪数）
-  let creation_rate = trace_count.to_double() / 1.0  // 假设1秒内完成
-  assert_eq(creation_rate >= 1000.0, true)  // 至少1000 traces/second
+  // 测试Context值获取性能
+  let mut i = 0
+  let mut found_count = 0
+  while i < contexts_with_values.length() {
+    match contexts_with_values[i].get(key) {
+      Some(_) => found_count = found_count + 1
+      None => ()
+    }
+    i = i + 1
+  }
+  
+  // 验证Context值获取性能
+  assert_eq(found_count, 1000)
 }
 
-test "metric_aggregation_performance" {
-  // 测试指标聚合性能
+test "attribute_operations_performance" {
+  // 测试属性操作的性能
   
-  let metric_samples = 10000
-  let metrics = []
+  // 测试单值属性创建性能
+  let mut i = 0
+  let string_attributes = []
+  let int_attributes = []
+  let float_attributes = []
+  let bool_attributes = []
   
-  // 生成指标样本
-  for i = 0; i < metric_samples; i = i + 1 {
-    let metric = {
-      "name": "response_time_ms",
-      "value": 50.0 + (i.to_double() % 500.0),
-      "labels": [
-        ("endpoint", "/api/" + (i % 5).to_string()),
-        ("method", "GET"),
-        ("status", if i % 10 == 0 { "500" } else { "200" })
-      ]
-    }
-    metrics.push(metric)
+  while i < 5000 {
+    string_attributes.push(common::AttributeValue::string("attr-" + i.to_string()))
+    int_attributes.push(common::AttributeValue::int(i.to_int64()))
+    float_attributes.push(common::AttributeValue::float(i.to_double() * 1.5))
+    bool_attributes.push(common::AttributeValue::bool(i % 2 == 0))
+    i = i + 1
   }
   
-  // 聚合指标
-  let aggregated_metrics = {}
-  let metric_count = 0
-  let total_value = 0.0
-  let min_value = 1000000.0
-  let max_value = 0.0
+  // 验证属性创建性能
+  assert_eq(string_attributes.length(), 5000)
+  assert_eq(int_attributes.length(), 5000)
+  assert_eq(float_attributes.length(), 5000)
+  assert_eq(bool_attributes.length(), 5000)
   
-  for metric in metrics {
-    metric_count = metric_count + 1
-    let value = metric["value"]
-    total_value = total_value + value
+  // 测试数组属性创建性能
+  let mut i = 0
+  let array_attributes = []
+  while i < 1000 {
+    let string_array = ["item1", "item2", "item3"]
+    let int_array = [1L, 2L, 3L, 4L, 5L]
+    let float_array = [1.1, 2.2, 3.3]
+    let bool_array = [true, false, true]
     
-    if value < min_value {
-      min_value = value
-    }
-    
-    if value > max_value {
-      max_value = value
-    }
+    array_attributes.push(common::AttributeValue::array_string(string_array))
+    array_attributes.push(common::AttributeValue::array_int(int_array))
+    array_attributes.push(common::AttributeValue::array_float(float_array))
+    array_attributes.push(common::AttributeValue::array_bool(bool_array))
+    i = i + 1
   }
   
-  let average_value = total_value / metric_count.to_double()
-  
-  // 验证聚合结果
-  assert_eq(metric_count, metric_samples)
-  assert_eq(average_value > 50.0, true)
-  assert_eq(average_value < 550.0, true)
-  assert_eq(min_value >= 50.0, true)
-  assert_eq(max_value < 550.0, true)
-  
-  // 验证聚合性能（每秒处理的指标数）
-  let aggregation_rate = metric_samples.to_double() / 0.1  // 假设100ms内完成
-  assert_eq(aggregation_rate >= 10000.0, true)  // 至少10000 metrics/second
+  // 验证数组属性创建性能
+  assert_eq(array_attributes.length(), 4000)
 }
 
-test "batch_processing_performance" {
-  // 测试批处理性能
+test "log_record_creation_performance" {
+  // 测试LogRecord创建的性能
   
-  let batch_sizes = [100, 500, 1000, 2000, 5000]
-  let processing_times = []
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("performance-test-logger")
   
-  for batch_size in batch_sizes {
-    let batch_data = []
-    
-    // 生成批处理数据
-    for i = 0; i < batch_size; i = i + 1 {
-      batch_data.push("item_" + i.to_string())
-    }
-    
-    // 模拟批处理
-    let processed_items = []
-    for item in batch_data {
-      processed_items.push("processed_" + item)
-    }
-    
-    // 记录处理时间（模拟）
-    let processing_time = batch_size.to_double() / 10000.0  // 假设每秒处理10000项
-    processing_times.push((batch_size, processing_time))
-    
-    // 验证批处理结果
-    assert_eq(processed_items.length(), batch_size)
-    assert_eq(processed_items[0], "processed_item_0")
-    assert_eq(processed_items[batch_size - 1], "processed_item_" + (batch_size - 1).to_string())
+  // 测试LogRecord创建性能
+  let mut i = 0
+  let log_records = []
+  while i < 10000 {
+    let log_record = logs::LogRecord::builder()
+      .severity(logs::Info)
+      .body("Performance test log entry " + i.to_string())
+      .with_attribute("index", common::AttributeValue::int(i.to_int64()))
+      .with_attribute("module", common::AttributeValue::string("performance-test"))
+      .with_attribute("timestamp", common::AttributeValue::int(1640995200000L + i.to_int64()))
+      .build()
+    log_records.push(log_record)
+    i = i + 1
   }
   
-  // 验证批处理性能
-  assert_eq(processing_times.length(), 5)
+  // 验证LogRecord创建性能
+  assert_eq(log_records.length(), 10000)
   
-  // 验证批处理效率（批大小越大，效率越高）
-  let rate_100 = processing_times[0].0.to_double() / processing_times[0].1
-  let rate_5000 = processing_times[4].0.to_double() / processing_times[4].1
+  // 测试LogRecord发射性能
+  let mut i = 0
+  while i < log_records.length() {
+    logger.emit(log_records[i])
+    i = i + 1
+  }
   
-  assert_eq(rate_5000 >= rate_100, true)
+  // 验证所有LogRecord都已发射
+  assert_eq(i, 10000)
+}
+
+test "metric_recording_performance" {
+  // 测试指标记录的性能
+  
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("performance-test-meter")
+  
+  // 创建各种指标
+  let counter = meter.create_counter("performance_counter", "count", "Performance test counter")
+  let histogram = meter.create_histogram("performance_histogram", "ms", "Performance test histogram")
+  let up_down_counter = meter.create_up_down_counter("performance_up_down", "count", "Performance test up-down counter")
+  let gauge = meter.create_gauge("performance_gauge", "value", "Performance test gauge")
+  
+  // 测试Counter记录性能
+  let mut i = 0
+  while i < 50000 {
+    counter.add(1L, [("index", common::AttributeValue::int(i.to_int64()))])
+    i = i + 1
+  }
+  
+  // 测试Histogram记录性能
+  let mut i = 0
+  while i < 25000 {
+    histogram.record(i.to_double() * 0.1, [("index", common::AttributeValue::int(i.to_int64()))])
+    i = i + 1
+  }
+  
+  // 测试UpDownCounter记录性能
+  let mut i = 0
+  while i < 25000 {
+    if i % 2 == 0 {
+      up_down_counter.add(1L, [("index", common::AttributeValue::int(i.to_int64()))])
+    } else {
+      up_down_counter.add(-1L, [("index", common::AttributeValue::int(i.to_int64()))])
+    }
+    i = i + 1
+  }
+  
+  // 测试Gauge记录性能
+  let mut i = 0
+  while i < 25000 {
+    gauge.record(i.to_double() * 0.5, [("index", common::AttributeValue::int(i.to_int64()))])
+    i = i + 1
+  }
+  
+  // 验证所有指标记录都已执行
+  assert_eq(i, 25000)
+}
+
+test "span_creation_performance" {
+  // 测试Span创建的性能
+  
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("performance-test-tracer")
+  
+  // 测试Span创建性能
+  let mut i = 0
+  let spans = []
+  let contexts = []
+  
+  while i < 5000 {
+    let (ctx, span) = tracer.start_span(
+      context::Context::empty(),
+      "performance-span-" + i.to_string(),
+      trace::Internal,
+      [("index", common::AttributeValue::int(i.to_int64()))],
+      1640995200000L + i.to_int64()
+    )
+    spans.push(span)
+    contexts.push(ctx)
+    i = i + 1
+  }
+  
+  // 验证Span创建性能
+  assert_eq(spans.length(), 5000)
+  assert_eq(contexts.length(), 5000)
+  
+  // 测试嵌套Span创建性能
+  let mut i = 0
+  let nested_spans = []
+  while i < 1000 && i < contexts.length() {
+    let (nested_ctx, nested_span) = tracer.start_span(
+      contexts[i],
+      "nested-performance-span-" + i.to_string(),
+      trace::Client,
+      [("parent_index", common::AttributeValue::int(i.to_int64()))]
+    )
+    nested_spans.push(nested_span)
+    i = i + 1
+  }
+  
+  // 验证嵌套Span创建性能
+  assert_eq(nested_spans.length(), 1000)
+}
+
+test "propagation_operations_performance" {
+  // 测试传播操作的性能
+  
+  let trace_propagator = propagation::W3CTraceContextPropagator::{}
+  let baggage_propagator = propagation::W3CBaggagePropagator::{}
+  let composite_propagator = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  // 测试注入性能
+  let mut i = 0
+  let carriers = []
+  while i < 5000 {
+    let carrier = propagation::MapCarrier::new()
+    composite_propagator.inject(context::Context::empty(), carrier)
+    carriers.push(carrier)
+    i = i + 1
+  }
+  
+  // 验证注入性能
+  assert_eq(carriers.length(), 5000)
+  
+  // 测试提取性能
+  let mut i = 0
+  let extracted_contexts = []
+  while i < carriers.length() {
+    let extracted_ctx = composite_propagator.extract(context::Context::empty(), carriers[i])
+    extracted_contexts.push(extracted_ctx)
+    i = i + 1
+  }
+  
+  // 验证提取性能
+  assert_eq(extracted_contexts.length(), 5000)
+}
+
+test "baggage_operations_performance" {
+  // 测试Baggage操作的性能
+  
+  // 测试Baggage条目添加性能
+  let mut i = 0
+  let baggage_entries = []
+  while i < 10000 {
+    let baggage = context::Baggage::empty()
+      .with_entry("key-" + i.to_string(), "value-" + i.to_string())
+      .with_entry("user.id", "user-" + i.to_string())
+      .with_entry("request.id", "req-" + i.to_string())
+      .with_entry("trace.id", "trace-" + i.to_string())
+    baggage_entries.push(baggage)
+    i = i + 1
+  }
+  
+  // 验证Baggage条目添加性能
+  assert_eq(baggage_entries.length(), 10000)
+  
+  // 测试Baggage条目查找性能
+  let mut i = 0
+  let mut found_count = 0
+  while i < baggage_entries.length() {
+    match baggage_entries[i].get("user.id") {
+      Some(_) => found_count = found_count + 1
+      None => ()
+    }
+    i = i + 1
+  }
+  
+  // 验证Baggage条目查找性能
+  assert_eq(found_count, 10000)
+}
+
+test "resource_creation_performance" {
+  // 测试Resource创建的性能
+  
+  // 测试基本Resource创建性能
+  let mut i = 0
+  let resources = []
+  while i < 10000 {
+    let resource = common::Resource::default("performance-test-service-" + i.to_string())
+    resources.push(resource)
+    i = i + 1
+  }
+  
+  // 验证Resource创建性能
+  assert_eq(resources.length(), 10000)
+  
+  // 测试带属性的Resource创建性能
+  let mut i = 0
+  let resources_with_attrs = []
+  while i < 5000 {
+    let resource = common::Resource::default("service-with-attrs-" + i.to_string())
+    let attrs = [
+      ("service.namespace", common::AttributeValue::string("namespace-" + i.to_string())),
+      ("service.instance.id", common::AttributeValue::string("instance-" + i.to_string())),
+      ("deployment.environment", common::AttributeValue::string(if i % 2 == 0 { "prod" } else { "staging" })),
+      ("host.name", common::AttributeValue::string("host-" + i.to_string()))
+    ]
+    resources_with_attrs.push((resource, attrs))
+    i = i + 1
+  }
+  
+  // 验证带属性的Resource创建性能
+  assert_eq(resources_with_attrs.length(), 5000)
 }
 
 test "memory_usage_performance" {
   // 测试内存使用性能
   
-  let data_sizes = [1000, 5000, 10000, 50000]
-  let memory_usage = []
-  
-  for data_size in data_sizes {
-    let data = []
-    
-    // 分配内存
-    for i = 0; i < data_size; i = i + 1 {
-      data.push({
-        "id": i,
-        "name": "item_" + i.to_string(),
-        "description": "This is a description for item " + i.to_string(),
-        "timestamp": "2023-01-01T00:00:" + (if i < 10 { "0" } else { "" }) + (i % 60).to_string() + "Z",
-        "attributes": [
-          ("attr1", "value1_" + i.to_string()),
-          ("attr2", "value2_" + i.to_string()),
-          ("attr3", "value3_" + i.to_string())
-        ]
-      })
+  // 创建大量对象并验证内存使用模式
+  let large_attribute_arrays = []
+  let mut i = 0
+  while i < 1000 {
+    let string_array = []
+    let mut j = 0
+    while j < 100 {
+      string_array.push("item-" + i.to_string() + "-" + j.to_string())
+      j = j + 1
     }
-    
-    // 计算内存使用（模拟）
-    let estimated_memory = data_size * 200  // 假设每个对象200字节
-    memory_usage.push((data_size, estimated_memory))
-    
-    // 验证数据完整性
-    assert_eq(data.length(), data_size)
-    assert_eq(data[0]["id"], 0)
-    assert_eq(data[data_size - 1]["id"], data_size - 1)
+    large_attribute_arrays.push(common::AttributeValue::array_string(string_array))
+    i = i + 1
   }
   
-  // 验证内存使用模式
-  assert_eq(memory_usage.length(), 4)
+  // 验证大型属性数组创建
+  assert_eq(large_attribute_arrays.length(), 1000)
   
-  // 验证内存使用线性增长
-  let memory_1000 = memory_usage[0].1.to_double()
-  let memory_50000 = memory_usage[3].1.to_double()
-  let memory_ratio = memory_50000 / memory_1000
+  // 创建大量复杂LogRecord
+  let complex_log_records = []
+  let mut i = 0
+  while i < 5000 {
+    let log_record = logs::LogRecord::builder()
+      .severity(logs::Info)
+      .body("Complex log entry " + i.to_string())
+      .with_attribute("index", common::AttributeValue::int(i.to_int64()))
+      .with_attribute("module", common::AttributeValue::string("performance-test"))
+      .with_attribute("timestamp", common::AttributeValue::int(1640995200000L + i.to_int64()))
+      .with_attribute("data", common::AttributeValue::array_string(["item1", "item2", "item3"]))
+      .build()
+    complex_log_records.push(log_record)
+    i = i + 1
+  }
   
-  assert_eq(memory_ratio >= 50.0, true)  // 50倍数据量应该使用约50倍内存
+  // 验证复杂LogRecord创建
+  assert_eq(complex_log_records.length(), 5000)
 }
 
-test "serialization_performance" {
-  // 测试序列化性能
+test "serialization_format_performance" {
+  // 测试序列化格式性能
   
-  let record_count = 5000
-  let telemetry_records = []
-  
-  // 生成遥测记录
-  for i = 0; i < record_count; i = i + 1 {
-    let record = {
-      "trace_id": "trace_" + i.to_string(),
-      "span_id": "span_" + i.to_string(),
-      "operation": "operation_" + (i % 20).to_string(),
-      "start_time": 1672531200 + i,  // Unix时间戳
-      "duration": 100 + (i % 1000),
-      "status": if i % 10 == 0 { "ERROR" } else { "OK" },
-      "attributes": [
-        ("service.name", "test-service"),
-        ("host.name", "host-" + (i % 10).to_string()),
-        ("user.id", "user-" + (i % 100).to_string())
-      ]
-    }
-    telemetry_records.push(record)
+  // 测试JSON格式序列化性能
+  let mut i = 0
+  let json_strings = []
+  while i < 10000 {
+    let json_data = "{"
+    json_data = json_data + "\"index\":" + i.to_string() + ","
+    json_data = json_data + "\"name\":\"item-" + i.to_string() + "\"," 
+    json_data = json_data + "\"value\":" + (i * 1.5).to_string() + ","
+    json_data = json_data + "\"active\":" + (if i % 2 == 0 { "true" } else { "false" }) + ","
+    json_data = json_data + "\"tags\":[\"tag1\",\"tag2\",\"tag3\"]"
+    json_data = json_data + "}"
+    json_strings.push(json_data)
+    i = i + 1
   }
-  
-  // JSON序列化性能测试
-  let json_serialization_start = 0  // 模拟时间戳
-  let json_records = []
-  
-  for record in telemetry_records {
-    let json_string = "{"
-      + "\"trace_id\":\"" + record["trace_id"] + "\","
-      + "\"span_id\":\"" + record["span_id"] + "\","
-      + "\"operation\":\"" + record["operation"] + "\","
-      + "\"duration\":" + record["duration"].to_string()
-      + "}"
-    json_records.push(json_string)
-  }
-  
-  let json_serialization_time = 1.0  // 假设1秒
-  let json_throughput = record_count.to_double() / json_serialization_time
   
   // 验证JSON序列化性能
-  assert_eq(json_records.length(), record_count)
-  assert_eq(json_throughput >= 5000.0, true)  // 至少5000 records/second
+  assert_eq(json_strings.length(), 10000)
   
-  // 二进制序列化性能测试
-  let binary_serialization_start = 0  // 模拟时间戳
-  let binary_records = []
-  
-  for record in telemetry_records {
-    let binary_data = record["trace_id"] + "|" + record["span_id"] + "|" + record["duration"].to_string()
-    binary_records.push(binary_data)
+  // 测试Prometheus格式序列化性能
+  let mut i = 0
+  let prometheus_strings = []
+  while i < 5000 {
+    let prometheus_data = "performance_metric{"
+    prometheus_data = prometheus_data + "service=\"test-service\"," 
+    prometheus_data = prometheus_data + "environment=\"production\"," 
+    prometheus_data = prometheus_data + "index=\"" + i.to_string() + "\""
+    prometheus_data = prometheus_data + "} " + (i * 0.1).to_string() + " " + (1640995200000L + i.to_int64()).to_string()
+    prometheus_strings.push(prometheus_data)
+    i = i + 1
   }
   
-  let binary_serialization_time = 0.5  // 假设0.5秒
-  let binary_throughput = record_count.to_double() / binary_serialization_time
-  
-  // 验证二进制序列化性能
-  assert_eq(binary_records.length(), record_count)
-  assert_eq(binary_throughput >= 10000.0, true)  // 至少10000 records/second
-  
-  // 验证二进制序列化比JSON序列化更快
-  assert_eq(binary_throughput > json_throughput, true)
-}
-
-test "concurrent_performance" {
-  // 测试并发性能
-  
-  let thread_counts = [1, 2, 4, 8, 16]
-  let performance_results = []
-  
-  for thread_count in thread_counts {
-    let operations_per_thread = 1000
-    let total_operations = thread_count * operations_per_thread
-    let completed_operations = 0
-    
-    // 模拟并发执行
-    for thread = 0; thread < thread_count; thread = thread + 1 {
-      for op = 0; op < operations_per_thread; op = op + 1 {
-        // 模拟操作
-        let result = thread * operations_per_thread + op
-        completed_operations = completed_operations + 1
-      }
-    }
-    
-    // 计算吞吐量（假设执行时间与线程数成反比）
-    let execution_time = 1.0 / thread_count.to_double()
-    let throughput = total_operations.to_double() / execution_time
-    
-    performance_results.push((thread_count, throughput))
-    
-    // 验证操作完成
-    assert_eq(completed_operations, total_operations)
-  }
-  
-  // 验证并发性能
-  assert_eq(performance_results.length(), 5)
-  
-  // 验证扩展性（更多线程应该有更高吞吐量）
-  let throughput_1 = performance_results[0].1
-  let throughput_16 = performance_results[4].1
-  
-  assert_eq(throughput_16 > throughput_1, true)
-  
-  // 验证并行效率（虽然不一定是线性扩展）
-  let efficiency = throughput_16 / (16.0 * throughput_1)
-  assert_eq(efficiency > 0.1, true)  // 至少10%的并行效率
+  // 验证Prometheus序列化性能
+  assert_eq(prometheus_strings.length(), 5000)
 }

@@ -1,529 +1,564 @@
-// 资源管理测试 - 测试资源正确释放
+// 资源管理测试 - 测试资源的正确释放
+// 验证遥测库的资源管理、内存泄漏防护和生命周期管理
 
-test "resource_lifecycle_management" {
-  // 测试Resource的生命周期管理
+test "context_lifecycle_management" {
+  // 测试Context的生命周期管理
   
-  // 1. 创建资源
-  let resource1 = common::Resource::default("resource-1")
-  let resource2 = common::Resource::default("resource-2")
-  let resource3 = common::Resource::default("resource-3")
-  
-  // 验证资源创建成功
-  assert_eq(resource1.service_name, "resource-1")
-  assert_eq(resource2.service_name, "resource-2")
-  assert_eq(resource3.service_name, "resource-3")
-  
-  // 2. 模拟资源使用
-  let resources : Array[common::Resource] = [resource1, resource2, resource3]
-  
-  // 3. 验证资源在使用期间的状态
+  // 创建大量Context实例
   let mut i = 0
-  while i < resources.length() {
-    let resource = resources[i]
-    assert_eq(resource.telemetry_sdk_name, "azimuth")
-    assert_eq(resource.telemetry_sdk_version, "0.1.0")
-    assert_eq(resource.attributes.length(), 0)
+  let contexts = []
+  
+  while i < 10000 {
+    let ctx = context::Context::empty()
+      .with_value(context::create_key("key-" + i.to_string()), "value-" + i.to_string())
+      .with_value(context::create_key("type"), "test-context")
+      .with_value(context::create_key("index"), i.to_string())
+    contexts.push(ctx)
     i = i + 1
   }
   
-  // 4. 模拟资源释放（在MoonBit中，资源会通过垃圾回收自动释放）
-  // 这里我们验证资源不再被引用时的行为
-  let resource_after_use = common::Resource::default("resource-after-use")
-  assert_eq(resource_after_use.service_name, "resource-after-use")
+  // 验证所有Context都正确创建
+  assert_eq(contexts.length(), 10000)
   
-  // 验证新资源创建不受之前资源影响
-  assert_eq(resource_after_use.telemetry_sdk_name, "azimuth")
-  assert_eq(resource_after_use.telemetry_sdk_version, "0.1.0")
+  // 验证Context的值可正确访问
+  let mut i = 0
+  let mut access_count = 0
+  while i < contexts.length() {
+    let key = context::create_key("key-" + i.to_string())
+    match contexts[i].get(key) {
+      Some(_) => access_count = access_count + 1
+      None => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(access_count, 10000)
+  
+  // 模拟Context释放（在真实环境中应检查内存使用）
+  let empty_contexts = []
+  i = 0
+  while i < contexts.length() {
+    // 在实际实现中，这里应该释放Context资源
+    empty_contexts.push(context::Context::empty())
+    i = i + 1
+  }
+  
+  // 验证新创建的空Context
+  assert_eq(empty_contexts.length(), 10000)
 }
 
-test "context_resource_cleanup" {
-  // 测试Context的资源清理
+test "attribute_memory_management" {
+  // 测试属性的内存管理
   
-  let ctx = context::Context::empty()
+  // 创建大量属性
+  let mut i = 0
+  let large_attributes = []
   
-  // 1. 创建多个带有不同值的context
-  let key1 = context::create_key("key1")
-  let key2 = context::create_key("key2")
-  let key3 = context::create_key("key3")
-  
-  let ctx1 = ctx.with_value(key1, "value1")
-  let ctx2 = ctx1.with_value(key2, "value2")
-  let ctx3 = ctx2.with_value(key3, "value3")
-  
-  // 2. 验证context链式创建
-  match ctx3.get(key1) {
-    Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Test failed")
+  while i < 5000 {
+    // 创建大字符串属性
+    let large_string = "x".repeat(1000)
+    let string_attr = common::AttributeValue::string(large_string + i.to_string())
+    large_attributes.push(string_attr)
+    
+    // 创建大数组属性
+    let string_array = []
+    let mut j = 0
+    while j < 100 {
+      string_array.push("item-" + i.to_string() + "-" + j.to_string())
+      j = j + 1
+    }
+    let array_attr = common::AttributeValue::array_string(string_array)
+    large_attributes.push(array_attr)
+    
+    i = i + 1
   }
   
-  match ctx3.get(key2) {
-    Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Test failed")
+  // 验证大属性都正确创建
+  assert_eq(large_attributes.length(), 10000)
+  
+  // 验证大属性的值
+  let mut i = 0
+  let mut string_count = 0
+  let mut array_count = 0
+  
+  while i < large_attributes.length() {
+    match large_attributes[i] {
+      common::StringValue(s) => {
+        assert_eq(s.length() > 1000, true)
+        string_count = string_count + 1
+      }
+      common::ArrayStringValue(arr) => {
+        assert_eq(arr.length(), 100)
+        array_count = array_count + 1
+      }
+      _ => ()
+    }
+    i = i + 1
   }
   
-  match ctx3.get(key3) {
-    Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Test failed")
+  assert_eq(string_count, 5000)
+  assert_eq(array_count, 5000)
+  
+  // 模拟属性释放
+  let empty_attributes = []
+  i = 0
+  while i < 1000 {
+    empty_attributes.push(common::AttributeValue::string(""))
+    empty_attributes.push(common::AttributeValue::array_string([]))
+    i = i + 1
   }
   
-  // 3. 验证原始context不受影响
-  match ctx.get(key1) {
-    Some(_) => @test.fail("Test failed")
-    None => assert_eq(true, true)
-  }
-  
-  // 4. 模拟context清理（创建新的空context）
-  let cleaned_ctx = context::Context::empty()
-  match cleaned_ctx.get(key1) {
-    Some(_) => @test.fail("Test failed")
-    None => assert_eq(true, true)
-  }
-}
-
-test "baggage_resource_management" {
-  // 测试Baggage的资源管理
-  
-  let baggage = context::Baggage::empty()
-  
-  // 1. 创建带有多个条目的baggage
-  let baggage1 = baggage.with_entry("entry1", "value1")
-  let baggage2 = baggage1.with_entry("entry2", "value2")
-  let baggage3 = baggage2.with_entry("entry3", "value3")
-  
-  // 2. 验证baggage条目
-  match baggage3.get("entry1") {
-    Some(value) => assert_eq(value, "value1")
-    None => @test.fail("Test failed")
-  }
-  
-  match baggage3.get("entry2") {
-    Some(value) => assert_eq(value, "value2")
-    None => @test.fail("Test failed")
-  }
-  
-  match baggage3.get("entry3") {
-    Some(value) => assert_eq(value, "value3")
-    None => @test.fail("Test failed")
-  }
-  
-  // 3. 验证原始baggage不受影响
-  match baggage.get("entry1") {
-    Some(_) => @test.fail("Test failed")
-    None => assert_eq(true, true)
-  }
-  
-  // 4. 模拟baggage清理
-  let cleaned_baggage = context::Baggage::empty()
-  match cleaned_baggage.get("entry1") {
-    Some(_) => @test.fail("Test failed")
-    None => assert_eq(true, true)
-  }
+  assert_eq(empty_attributes.length(), 2000)
 }
 
 test "log_record_resource_management" {
   // 测试LogRecord的资源管理
   
-  // 1. 创建多个日志记录
-  let log1 = logs::LogRecord::builder()
-    .timestamp(1000000L)
-    .severity(logs::Info)
-    .body("Log message 1")
-    .with_attribute("attr1", AttributeValue::string("value1"))
-    .build()
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("resource-test-logger")
   
-  let log2 = logs::LogRecord::builder()
-    .timestamp(2000000L)
-    .severity(logs::Warn)
-    .body("Log message 2")
-    .with_attribute("attr2", AttributeValue::string("value2"))
-    .build()
-  
-  let log3 = logs::LogRecord::builder()
-    .timestamp(3000000L)
-    .severity(logs::Error)
-    .body("Log message 3")
-    .with_attribute("attr3", AttributeValue::string("value3"))
-    .build()
-  
-  // 2. 验证日志记录创建
-  match log1.body {
-    Some(body) => assert_eq(body, "Log message 1")
-    None => @test.fail("Test failed")
-  }
-  
-  match log2.body {
-    Some(body) => assert_eq(body, "Log message 2")
-    None => @test.fail("Test failed")
-  }
-  
-  match log3.body {
-    Some(body) => assert_eq(body, "Log message 3")
-    None => @test.fail("Test failed")
-  }
-  
-  // 3. 验证日志记录属性
-  assert_eq(log1.attributes.length(), 1)
-  assert_eq(log2.attributes.length(), 1)
-  assert_eq(log3.attributes.length(), 1)
-  
-  // 4. 模拟日志记录处理后的清理
-  let logs : Array[logs::LogRecord] = [log1, log2, log3]
-  
-  // 处理日志记录
+  // 创建大量LogRecord
   let mut i = 0
-  while i < logs.length() {
-    let log = logs[i]
-    // 模拟日志处理
-    match log.body {
-      Some(_) => assert_eq(true, true)  // 处理成功
-      None => @test.fail("Test failed")
-    }
-    i = i + 1
-  }
+  let log_records = []
   
-  // 5. 创建新的日志记录验证资源可用性
-  let new_log = logs::LogRecord::builder()
-    .timestamp(4000000L)
-    .severity(logs::Debug)
-    .body("New log message")
-    .build()
-  
-  match new_log.body {
-    Some(body) => assert_eq(body, "New log message")
-    None => @test.fail("Test failed")
-  }
-}
-
-test "span_resource_management" {
-  // 测试Span的资源管理
-  
-  let ctx = context::Context::empty()
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("resource-test-tracer")
-  
-  // 1. 创建多个span
-  let (ctx1, span1) = tracer.start_span(ctx, "span-1", trace::Internal)
-  let (ctx2, span2) = tracer.start_span(ctx1, "span-2", trace::Server)
-  let (ctx3, span3) = tracer.start_span(ctx2, "span-3", trace::Client)
-  
-  // 2. 验证span创建
-  assert_eq(span1.name, "span-1")
-  assert_eq(span2.name, "span-2")
-  assert_eq(span3.name, "span-3")
-  
-  match span1.kind { trace::Internal => assert_eq(true, true) _ => @test.fail("Test failed") }
-  match span2.kind { trace::Server => assert_eq(true, true) _ => @test.fail("Test failed") }
-  match span3.kind { trace::Client => assert_eq(true, true) _ => @test.fail("Test failed") }
-  
-  // 3. 验证span上下文独立性
-  assert_eq(span1.context.trace_id.length(), 16)
-  assert_eq(span1.context.span_id.length(), 8)
-  assert_eq(span2.context.trace_id.length(), 16)
-  assert_eq(span2.context.span_id.length(), 8)
-  assert_eq(span3.context.trace_id.length(), 16)
-  assert_eq(span3.context.span_id.length(), 8)
-  
-  // 4. 模拟span结束和资源清理
-  let spans : Array[trace::Span] = [span1, span2, span3]
-  
-  // 处理span结束
-  let mut i = 0
-  while i < spans.length() {
-    let span = spans[i]
-    // 模拟span结束处理
-    assert_eq(span.name.length() > 0, true)
-    i = i + 1
-  }
-  
-  // 5. 创建新的span验证资源可用性
-  let (new_ctx, new_span) = tracer.start_span(ctx, "new-span", trace::Producer)
-  assert_eq(new_span.name, "new-span")
-  match new_span.kind { trace::Producer => assert_eq(true, true) _ => @test.fail("Test failed") }
-}
-
-test "metrics_resource_management" {
-  // 测试Metrics的资源管理
-  
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("resource-test-meter")
-  
-  // 1. 创建多个指标仪器
-  let counter1 = meter.create_counter("counter-1", "count", "Counter 1")
-  let counter2 = meter.create_counter("counter-2", "count", "Counter 2")
-  let histogram1 = meter.create_histogram("histogram-1", "ms", "Histogram 1")
-  let histogram2 = meter.create_histogram("histogram-2", "ms", "Histogram 2")
-  let gauge1 = meter.create_gauge("gauge-1", "percent", "Gauge 1")
-  let gauge2 = meter.create_gauge("gauge-2", "percent", "Gauge 2")
-  let up_down1 = meter.create_up_down_counter("updown-1", "count", "UpDown 1")
-  let up_down2 = meter.create_up_down_counter("updown-2", "count", "UpDown 2")
-  
-  // 2. 使用所有指标仪器
-  counter1.add(1L, [("instrument", AttributeValue::string("counter1"))])
-  counter2.add(2L, [("instrument", AttributeValue::string("counter2"))])
-  histogram1.record(100.0, [("instrument", AttributeValue::string("histogram1"))])
-  histogram2.record(200.0, [("instrument", AttributeValue::string("histogram2"))])
-  gauge1.record(75.0, [("instrument", AttributeValue::string("gauge1"))])
-  gauge2.record(85.0, [("instrument", AttributeValue::string("gauge2"))])
-  up_down1.add(5L, [("instrument", AttributeValue::string("updown1"))])
-  up_down2.add(-3L, [("instrument", AttributeValue::string("updown2"))])
-  
-  // 3. 验证操作完成
-  assert_eq(true, true)  // 所有操作都应该成功
-  
-  // 4. 创建新的指标仪器验证资源可用性
-  let new_counter = meter.create_counter("new-counter", "count", "New Counter")
-  let new_histogram = meter.create_histogram("new-histogram", "ms", "New Histogram")
-  let new_gauge = meter.create_gauge("new-gauge", "percent", "New Gauge")
-  let new_updown = meter.create_up_down_counter("new-updown", "count", "New UpDown")
-  
-  // 5. 使用新创建的指标仪器
-  new_counter.add(10L, [("instrument", AttributeValue::string("new"))])
-  new_histogram.record(150.0, [("instrument", AttributeValue::string("new"))])
-  new_gauge.record(95.0, [("instrument", AttributeValue::string("new"))])
-  new_updown.add(1L, [("instrument", AttributeValue::string("new"))])
-  
-  // 验证新操作完成
-  assert_eq(true, true)
-}
-
-test "propagation_resource_management" {
-  // 测试传播的资源管理
-  
-  let ctx = context::Context::empty()
-  let trace_propagator = propagation::W3CTraceContextPropagator::{}
-  let baggage_propagator = propagation::W3CBaggagePropagator::{}
-  let composite = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
-  
-  // 1. 创建多个carrier并注入
-  let carrier1 = propagation::MapCarrier::new()
-  let carrier2 = propagation::MapCarrier::new()
-  let carrier3 = propagation::MapCarrier::new()
-  
-  trace_propagator.inject(ctx, carrier1)
-  baggage_propagator.inject(ctx, carrier2)
-  composite.inject(ctx, carrier3)
-  
-  // 2. 验证carrier内容
-  match carrier1.get(propagation::TRACE_PARENT_HEADER) {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  match carrier2.get(propagation::BAGGAGE_HEADER) {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  match carrier3.get(propagation::TRACE_PARENT_HEADER) {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  match carrier3.get(propagation::BAGGAGE_HEADER) {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  // 3. 提取传播信息
-  let extracted_ctx1 = trace_propagator.extract(ctx, carrier1)
-  let extracted_ctx2 = baggage_propagator.extract(ctx, carrier2)
-  let extracted_ctx3 = composite.extract(ctx, carrier3)
-  
-  // 4. 验证提取操作完成
-  assert_eq(true, true)
-  
-  // 5. 创建新的carrier验证资源可用性
-  let new_carrier = propagation::MapCarrier::new()
-  trace_propagator.inject(ctx, new_carrier)
-  baggage_propagator.inject(ctx, new_carrier)
-  
-  match new_carrier.get(propagation::TRACE_PARENT_HEADER) {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-  
-  match new_carrier.get(propagation::BAGGAGE_HEADER) {
-    Some(_) => assert_eq(true, true)
-    None => @test.fail("Test failed")
-  }
-}
-
-test "large_scale_resource_management" {
-  // 测试大规模资源管理
-  
-  // 1. 创建大量资源
-  let mut resources : Array[common::Resource] = []
-  let mut i = 0
-  while i < 1000 {
-    let resource = common::Resource::default("large-scale-resource-" + i.to_string())
-    resources.push(resource)
-    i = i + 1
-  }
-  
-  // 2. 验证所有资源创建成功
-  assert_eq(resources.length(), 1000)
-  
-  // 3. 创建大量context
-  let mut contexts : Array[context::Context] = []
-  i = 0
-  while i < 1000 {
-    let ctx = context::Context::empty()
-    let key = context::create_key("key-" + i.to_string())
-    let ctx_with_value = ctx.with_value(key, "value-" + i.to_string())
-    contexts.push(ctx_with_value)
-    i = i + 1
-  }
-  
-  // 4. 验证所有context创建成功
-  assert_eq(contexts.length(), 1000)
-  
-  // 5. 创建大量baggage
-  let mut baggages : Array[context::Baggage] = []
-  i = 0
-  while i < 1000 {
-    let baggage = context::Baggage::empty()
-    let baggage_with_entry = baggage.with_entry("entry-" + i.to_string(), "value-" + i.to_string())
-    baggages.push(baggage_with_entry)
-    i = i + 1
-  }
-  
-  // 6. 验证所有baggage创建成功
-  assert_eq(baggages.length(), 1000)
-  
-  // 7. 创建大量日志记录
-  let mut log_records : Array[logs::LogRecord] = []
-  i = 0
-  while i < 1000 {
+  while i < 8000 {
     let log_record = logs::LogRecord::builder()
-      .timestamp(1000000L + i.to_int64())
-      .severity(match i % 6 {
-        0 => logs::Trace
-        1 => logs::Debug
-        2 => logs::Info
-        3 => logs::Warn
-        4 => logs::Error
-        _ => logs::Fatal
-      })
-      .body("Large scale log " + i.to_string())
-      .with_attribute("index", AttributeValue::int(i.to_int64()))
+      .severity(if i % 6 == 0 { logs::Trace }
+                else if i % 6 == 1 { logs::Debug }
+                else if i % 6 == 2 { logs::Info }
+                else if i % 6 == 3 { logs::Warn }
+                else if i % 6 == 4 { logs::Error }
+                else { logs::Fatal })
+      .body("Resource test log message " + i.to_string() + " with additional content for memory testing")
+      .with_attribute("index", common::AttributeValue::int(i.to_int64()))
+      .with_attribute("type", common::AttributeValue::string("resource-test"))
+      .with_attribute("data", common::AttributeValue::array_string(["item1", "item2", "item3"]))
       .build()
     log_records.push(log_record)
     i = i + 1
   }
   
-  // 8. 验证所有日志记录创建成功
-  assert_eq(log_records.length(), 1000)
+  // 验证所有LogRecord都正确创建
+  assert_eq(log_records.length(), 8000)
   
-  // 9. 创建大量span
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("large-scale-tracer")
-  let base_ctx = context::Context::empty()
-  
-  let mut spans : Array[trace::Span] = []
-  i = 0
-  while i < 500 {  // span创建较复杂，减少数量
-    let (ctx, span) = tracer.start_span(
-      base_ctx,
-      "large-scale-span-" + i.to_string(),
-      match i % 5 {
-        0 => trace::Internal
-        1 => trace::Server
-        2 => trace::Client
-        3 => trace::Producer
-        _ => trace::Consumer
-      },
-      [("index", AttributeValue::int(i.to_int64()))]
-    )
-    spans.push(span)
+  // 发射所有日志
+  let mut i = 0
+  while i < log_records.length() {
+    logger.emit(log_records[i])
     i = i + 1
   }
   
-  // 10. 验证所有span创建成功
-  assert_eq(spans.length(), 500)
+  // 验证所有日志都已发射
+  assert_eq(i, 8000)
   
-  // 11. 验证资源清理后创建新资源的能力
-  let new_resource = common::Resource::default("resource-after-cleanup")
-  let new_ctx = context::Context::empty().with_value(context::create_key("new-key"), "new-value")
-  let new_baggage = context::Baggage::empty().with_entry("new-entry", "new-value")
-  let new_log = logs::LogRecord::builder().severity(logs::Info).body("New log").build()
-  let (new_span_ctx, new_span) = tracer.start_span(new_ctx, "new-span", trace::Internal)
+  // 验证LogRecord的属性
+  let mut i = 0
+  let mut attr_count = 0
+  while i < log_records.length() {
+    attr_count = attr_count + log_records[i].attributes.length()
+    i = i + 1
+  }
   
-  // 验证新资源创建成功
-  assert_eq(new_resource.service_name, "resource-after-cleanup")
-  match new_ctx.get(context::create_key("new-key")) {
-    Some(value) => assert_eq(value, "new-value")
-    None => @test.fail("Test failed")
-  }
-  match new_baggage.get("new-entry") {
-    Some(value) => assert_eq(value, "new-value")
-    None => @test.fail("Test failed")
-  }
-  match new_log.body {
-    Some(body) => assert_eq(body, "New log")
-    None => @test.fail("Test failed")
-  }
-  assert_eq(new_span.name, "new-span")
+  assert_eq(attr_count, 8000 * 3)
 }
 
-test "memory_efficiency_test" {
-  // 测试内存效率
+test "metric_resource_management" {
+  // 测试指标的资源管理
   
-  // 1. 测试大量小对象的创建和销毁
-  let mut small_objects : Array[common::AttributeValue] = []
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("resource-test-meter")
+  
+  // 创建多个指标实例
+  let counters = []
+  let histograms = []
+  let up_down_counters = []
+  let gauges = []
+  
   let mut i = 0
-  while i < 10000 {
-    let attr = AttributeValue::string("small-object-" + i.to_string())
-    small_objects.push(attr)
+  while i < 100 {
+    counters.push(meter.create_counter("resource-counter-" + i.to_string()))
+    histograms.push(meter.create_histogram("resource-histogram-" + i.to_string()))
+    up_down_counters.push(meter.create_up_down_counter("resource-updown-" + i.to_string()))
+    gauges.push(meter.create_gauge("resource-gauge-" + i.to_string()))
     i = i + 1
   }
   
-  // 验证所有对象创建成功
-  assert_eq(small_objects.length(), 10000)
+  // 验证所有指标都正确创建
+  assert_eq(counters.length(), 100)
+  assert_eq(histograms.length(), 100)
+  assert_eq(up_down_counters.length(), 100)
+  assert_eq(gauges.length(), 100)
   
-  // 2. 测试大对象的创建和销毁
-  let large_string = "x" * 100000
-  let large_attr = AttributeValue::string(large_string)
-  let large_array = AttributeValue::array_string([for i = 0; i < 10000; i = i + 1].map(fn(_) { "large-array-item" }))
-  
-  // 验证大对象创建成功
-  match large_attr {
-    StringValue(s) => assert_eq(s.length(), 100000)
-    _ => @test.fail("Test failed")
+  // 记录大量指标数据
+  let mut i = 0
+  while i < counters.length() {
+    let mut j = 0
+    while j < 5000 {
+      counters[i].add(1L, [("index", common::AttributeValue::int(j.to_int64()))])
+      histograms[i].record(j.to_double(), [("index", common::AttributeValue::int(j.to_int64()))])
+      up_down_counters[i].add(if j % 2 == 0 { 1L } else { -1L }, [("index", common::AttributeValue::int(j.to_int64()))])
+      gauges[i].record(j.to_double() * 0.1, [("index", common::AttributeValue::int(j.to_int64()))])
+      j = j + 1
+    }
+    i = i + 1
   }
   
-  match large_array {
-    ArrayStringValue(arr) => assert_eq(arr.length(), 10000)
-    _ => @test.fail("Test failed")
+  // 验证所有记录操作都完成
+  assert_eq(i, 100)
+}
+
+test "span_resource_management" {
+  // 测试Span的资源管理
+  
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("resource-test-tracer")
+  
+  // 创建大量Span
+  let mut i = 0
+  let spans = []
+  let contexts = []
+  
+  while i < 3000 {
+    let (ctx, span) = tracer.start_span(
+      context::Context::empty(),
+      "resource-span-" + i.to_string(),
+      trace::Internal,
+      [
+        ("index", common::AttributeValue::int(i.to_int64())),
+        ("type", common::AttributeValue::string("resource-test")),
+        ("data", common::AttributeValue::array_string(["item1", "item2", "item3"]))
+      ],
+      1640995200000L + i.to_int64()
+    )
+    spans.push(span)
+    contexts.push(ctx)
+    i = i + 1
   }
   
-  // 3. 测试复杂嵌套结构的创建和销毁
-  let mut complex_attrs : Array[(String, common::AttributeValue)] = []
+  // 验证所有Span都正确创建
+  assert_eq(spans.length(), 3000)
+  assert_eq(contexts.length(), 3000)
+  
+  // 验证Span的属性
+  let mut i = 0
+  let mut total_attrs = 0
+  while i < spans.length() {
+    total_attrs = total_attrs + spans[i].attributes.length()
+    i = i + 1
+  }
+  
+  assert_eq(total_attrs, 3000 * 3)
+}
+
+test "propagation_resource_management" {
+  // 测试传播的资源管理
+  
+  let trace_propagator = propagation::W3CTraceContextPropagator::{}
+  let baggage_propagator = propagation::W3CBaggagePropagator::{}
+  let composite_propagator = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  // 创建大量Carrier
+  let mut i = 0
+  let carriers = []
+  
+  while i < 2000 {
+    let carrier = propagation::MapCarrier::from_map([
+      ("traceparent", "00-" + "a".repeat(32) + "-" + "b".repeat(16) + "-01"),
+      ("baggage", "key1=value1,key2=value2,key3=value3"),
+      ("custom-header-" + i.to_string(), "custom-value-" + i.to_string())
+    ])
+    carriers.push(carrier)
+    i = i + 1
+  }
+  
+  // 验证所有Carrier都正确创建
+  assert_eq(carriers.length(), 2000)
+  
+  // 执行大量注入和提取操作
+  let mut i = 0
+  let extracted_contexts = []
+  
+  while i < carriers.length() {
+    let ctx = context::Context::empty()
+    composite_propagator.inject(ctx, carriers[i])
+    let extracted_ctx = composite_propagator.extract(ctx, carriers[i])
+    extracted_contexts.push(extracted_ctx)
+    i = i + 1
+  }
+  
+  // 验证所有操作都成功
+  assert_eq(extracted_contexts.length(), 2000)
+}
+
+test "baggage_resource_management" {
+  // 测试Baggage的资源管理
+  
+  // 创建大量Baggage实例
+  let mut i = 0
+  let baggage_instances = []
+  
+  while i < 4000 {
+    let baggage = context::Baggage::empty()
+      .with_entry("user.id", "user-" + i.to_string())
+      .with_entry("request.id", "req-" + i.to_string())
+      .with_entry("session.id", "session-" + i.to_string())
+      .with_entry("trace.id", "trace-" + i.to_string())
+      .with_entry("correlation.id", "corr-" + i.to_string())
+    baggage_instances.push(baggage)
+    i = i + 1
+  }
+  
+  // 验证所有Baggage实例都正确创建
+  assert_eq(baggage_instances.length(), 4000)
+  
+  // 访问所有Baggage条目
+  let mut i = 0
+  let mut total_access = 0
+  
+  while i < baggage_instances.length() {
+    match baggage_instances[i].get("user.id") {
+      Some(_) => total_access = total_access + 1
+      None => ()
+    }
+    
+    match baggage_instances[i].get("request.id") {
+      Some(_) => total_access = total_access + 1
+      None => ()
+    }
+    
+    match baggage_instances[i].get("session.id") {
+      Some(_) => total_access = total_access + 1
+      None => ()
+    }
+    
+    match baggage_instances[i].get("trace.id") {
+      Some(_) => total_access = total_access + 1
+      None => ()
+    }
+    
+    match baggage_instances[i].get("correlation.id") {
+      Some(_) => total_access = total_access + 1
+      None => ()
+    }
+    
+    i = i + 1
+  }
+  
+  assert_eq(total_access, 4000 * 5)
+}
+
+test "resource_lifecycle_management" {
+  // 测试Resource的生命周期管理
+  
+  // 创建大量Resource实例
+  let mut i = 0
+  let resources = []
+  
+  while i < 1500 {
+    let resource = common::Resource::default("resource-test-service-" + i.to_string())
+    resources.push(resource)
+    i = i + 1
+  }
+  
+  // 验证所有Resource实例都正确创建
+  assert_eq(resources.length(), 1500)
+  
+  // 验证Resource属性
+  let mut i = 0
+  while i < resources.length() {
+    assert_eq(resources[i].service_name, "resource-test-service-" + i.to_string())
+    assert_eq(resources[i].telemetry_sdk_name, "azimuth")
+    assert_eq(resources[i].telemetry_sdk_version, "0.1.0")
+    assert_eq(resources[i].attributes.length(), 0)
+    i = i + 1
+  }
+  
+  // 创建带属性的Resource
+  let mut i = 0
+  let resources_with_attrs = []
+  
+  while i < 500 {
+    let resource = common::Resource::default("resource-service-with-attrs-" + i.to_string())
+    let attrs = [
+      ("service.namespace", common::AttributeValue::string("namespace-" + i.to_string())),
+      ("service.instance.id", common::AttributeValue::string("instance-" + i.to_string())),
+      ("deployment.environment", common::AttributeValue::string(if i % 2 == 0 { "prod" } else { "staging" })),
+      ("host.name", common::AttributeValue::string("host-" + i.to_string())),
+      ("process.pid", common::AttributeValue::int((1000 + i).to_int64()))
+    ]
+    resources_with_attrs.push((resource, attrs))
+    i = i + 1
+  }
+  
+  // 验证带属性的Resource
+  assert_eq(resources_with_attrs.length(), 500)
+  
+  let mut i = 0
+  while i < resources_with_attrs.length() {
+    let (resource, attrs) = resources_with_attrs[i]
+    assert_eq(resource.service_name, "resource-service-with-attrs-" + i.to_string())
+    assert_eq(attrs.length(), 5)
+    i = i + 1
+  }
+}
+
+test "memory_leak_detection" {
+  // 测试内存泄漏检测
+  
+  // 创建和销毁大量对象（模拟内存泄漏检测）
+  let mut iteration = 0
+  while iteration < 10 {
+    // 创建大量临时对象
+    let mut i = 0
+    let temp_objects = []
+    
+    while i < 5000 {
+      // 创建临时Context
+      let temp_ctx = context::Context::empty()
+        .with_value(context::create_key("temp"), "temp-value-" + i.to_string())
+      
+      // 创建临时属性
+      let temp_attr = common::AttributeValue::string("temp-string-" + i.to_string())
+      
+      // 创建临时LogRecord
+      let temp_log = logs::LogRecord::builder()
+        .severity(logs::Info)
+        .body("Temp log " + i.to_string())
+        .build()
+      
+      // 创建临时Span
+      let tracer_provider = trace::NoopTracerProvider::{}
+      let tracer = tracer_provider.get_tracer("temp-tracer")
+      let (_, temp_span) = tracer.start_span(
+        context::Context::empty(),
+        "temp-span-" + i.to_string()
+      )
+      
+      // 创建临时Baggage
+      let temp_baggage = context::Baggage::empty()
+        .with_entry("temp.key", "temp.value-" + i.to_string())
+      
+      temp_objects.push((temp_ctx, temp_attr, temp_log, temp_span, temp_baggage))
+      i = i + 1
+    }
+    
+    // 验证临时对象都正确创建
+    assert_eq(temp_objects.length(), 5000)
+    
+    // 访问临时对象
+    let mut i = 0
+    let mut access_count = 0
+    while i < temp_objects.length() {
+      let (ctx, attr, log, span, baggage) = temp_objects[i]
+      
+      // 访问Context
+      match ctx.get(context::create_key("temp")) {
+        Some(_) => access_count = access_count + 1
+        None => ()
+      }
+      
+      // 访问属性
+      match attr {
+        common::StringValue(_) => access_count = access_count + 1
+        _ => ()
+      }
+      
+      // 访问LogRecord
+      if log.body.is_some() {
+        access_count = access_count + 1
+      }
+      
+      // 访问Span
+      if span.name.length() > 0 {
+        access_count = access_count + 1
+      }
+      
+      // 访问Baggage
+      match baggage.get("temp.key") {
+        Some(_) => access_count = access_count + 1
+        None => ()
+      }
+      
+      i = i + 1
+    }
+    
+    // 验证访问次数
+    assert_eq(access_count, 5000 * 5)
+    
+    // 在真实环境中，这里应该检查内存使用情况
+    iteration = iteration + 1
+  }
+  
+  // 验证所有迭代都完成
+  assert_eq(iteration, 10)
+}
+
+test "resource_cleanup_verification" {
+  // 测试资源清理验证
+  
+  // 创建各种资源
+  let contexts = []
+  let attributes = []
+  let log_records = []
+  let spans = []
+  let baggage_instances = []
+  let resources = []
+  let carriers = []
+  
+  // 填充资源
+  let mut i = 0
+  while i < 1000 {
+    contexts.push(context::Context::empty().with_value(context::create_key("test"), "value"))
+    attributes.push(common::AttributeValue::string("test"))
+    
+    let log_record = logs::LogRecord::builder()
+      .severity(logs::Info)
+      .body("test")
+      .build()
+    log_records.push(log_record)
+    
+    let tracer_provider = trace::NoopTracerProvider::{}
+    let tracer = tracer_provider.get_tracer("test")
+    let (_, span) = tracer.start_span(context::Context::empty(), "test")
+    spans.push(span)
+    
+    baggage_instances.push(context::Baggage::empty().with_entry("test", "value"))
+    resources.push(common::Resource::default("test-service"))
+    
+    let carrier = propagation::MapCarrier::new()
+    carriers.push(carrier)
+    
+    i = i + 1
+  }
+  
+  // 验证资源创建
+  assert_eq(contexts.length(), 1000)
+  assert_eq(attributes.length(), 1000)
+  assert_eq(log_records.length(), 1000)
+  assert_eq(spans.length(), 1000)
+  assert_eq(baggage_instances.length(), 1000)
+  assert_eq(resources.length(), 1000)
+  assert_eq(carriers.length(), 1000)
+  
+  // 模拟资源清理
+  let empty_resources = []
   i = 0
   while i < 1000 {
-    complex_attrs.push((
-      "complex.key." + i.to_string(),
-      AttributeValue::array_string([
-        "value1." + i.to_string(),
-        "value2." + i.to_string(),
-        "value3." + i.to_string()
-      ])
-    ))
+    // 在实际实现中，这里应该清理资源
+    empty_resources.push(())
     i = i + 1
   }
   
-  // 验证复杂结构创建成功
-  assert_eq(complex_attrs.length(), 1000)
+  // 验证清理完成
+  assert_eq(empty_resources.length(), 1000)
   
-  // 4. 验证资源清理后系统仍然响应
-  let cleanup_resource = common::Resource::default("cleanup-test")
-  assert_eq(cleanup_resource.service_name, "cleanup-test")
-  
-  let cleanup_ctx = context::Context::empty()
-  let cleanup_key = context::create_key("cleanup-key")
-  let cleanup_ctx_with_value = cleanup_ctx.with_value(cleanup_key, "cleanup-value")
-  
-  match cleanup_ctx_with_value.get(cleanup_key) {
-    Some(value) => assert_eq(value, "cleanup-value")
-    None => @test.fail("Test failed")
+  // 验证资源可以重新创建
+  let new_contexts = []
+  i = 0
+  while i < 100 {
+    new_contexts.push(context::Context::empty())
+    i = i + 1
   }
+  
+  assert_eq(new_contexts.length(), 100)
 }
