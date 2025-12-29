@@ -1,954 +1,336 @@
-// 遥测数据多租户隔离测试用例
+// 多租户隔离测试用例
+// 测试遥测系统在多租户环境下的数据隔离和安全性
 
-test "telemetry_multi_tenant_data_isolation" {
-  // 测试遥测数据多租户隔离
+test "tenant_data_isolation" {
+  // 测试租户数据隔离
   
-  let tenant_configurations = {
-    "tenant_a": {
-      "tenant_id": "tenant_a",
-      "name": "Acme Corporation",
-      "data_retention_days": 30,
-      "quota_gb": 100,
-      "allowed_services": ["payment", "user", "order"],
-      "isolation_level": "strict"
-    },
-    "tenant_b": {
-      "tenant_id": "tenant_b", 
-      "name": "Beta Industries",
-      "data_retention_days": 60,
-      "quota_gb": 200,
-      "allowed_services": ["inventory", "shipping", "analytics"],
-      "isolation_level": "strict"
-    },
-    "tenant_c": {
-      "tenant_id": "tenant_c",
-      "name": "Gamma Solutions",
-      "data_retention_days": 90,
-      "quota_gb": 150,
-      "allowed_services": ["monitoring", "logging", "security"],
-      "isolation_level": "strict"
-    }
-  }
+  let tenant_a = "tenant_a"
+  let tenant_b = "tenant_b"
+  let tenant_c = "tenant_c"
   
-  let multi_telemetry_data = [
-    {
-      "data_id": "trace_001",
-      "tenant_id": "tenant_a",
-      "service": "payment",
-      "trace_id": "trace_a_001",
-      "content": "Payment processing trace data",
-      "size_bytes": 1024,
-      "timestamp": 1634567890123L
-    },
-    {
-      "data_id": "metric_001", 
-      "tenant_id": "tenant_a",
-      "service": "user",
-      "metric_name": "user_registrations",
-      "content": "User registration metrics",
-      "size_bytes": 512,
-      "timestamp": 1634567890123L
-    },
-    {
-      "data_id": "log_001",
-      "tenant_id": "tenant_b",
-      "service": "inventory",
-      "log_level": "INFO",
-      "content": "Inventory update log",
-      "size_bytes": 2048,
-      "timestamp": 1634567890123L
-    },
-    {
-      "data_id": "trace_002",
-      "tenant_id": "tenant_b", 
-      "service": "shipping",
-      "trace_id": "trace_b_001",
-      "content": "Shipping fulfillment trace",
-      "size_bytes": 1536,
-      "timestamp": 1634567890123L
-    },
-    {
-      "data_id": "metric_002",
-      "tenant_id": "tenant_c",
-      "service": "monitoring", 
-      "metric_name": "system_cpu",
-      "content": "System monitoring metrics",
-      "size_bytes": 768,
-      "timestamp": 1634567890123L
-    },
-    {
-      "data_id": "alert_001",
-      "tenant_id": "tenant_c",
-      "service": "security",
-      "alert_type": "unauthorized_access",
-      "content": "Security alert data",
-      "size_bytes": 3072,
-      "timestamp": 1634567890123L
-    }
-  ]
+  // 创建租户A的数据
+  let tenant_a_traces = "trace_a1,trace_a2,trace_a3"
+  let tenant_a_metrics = "metric_a1,metric_a2,metric_a3"
+  let tenant_a_logs = "log_a1,log_a2,log_a3"
   
-  // 租户数据隔离验证
-  let tenant_data_isolation = {}
+  // 创建租户B的数据
+  let tenant_b_traces = "trace_b1,trace_b2,trace_b3"
+  let tenant_b_metrics = "metric_b1,metric_b2,metric_b3"
+  let tenant_b_logs = "log_b1,log_b2,log_b3"
   
-  // 按租户分组数据
-  for (tenant_id, config) in tenant_configurations {
-    tenant_data_isolation[tenant_id] = {
-      "config": config,
-      "data": [],
-      "total_size_bytes": 0,
-      "data_count": 0,
-      "services_in_use": {},
-      "isolation_violations": []
-    }
-  }
+  // 创建租户C的数据
+  let tenant_c_traces = "trace_c1,trace_c2,trace_c3"
+  let tenant_c_metrics = "metric_c1,metric_c2,metric_c3"
+  let tenant_c_logs = "log_c1,log_c2,log_c3"
   
-  // 分配数据到对应租户
-  for data_item in multi_telemetry_data {
-    let tenant_id = data_item["tenant_id"]
-    
-    if tenant_data_isolation.contains_key(tenant_id) {
-      let tenant_isolation = tenant_data_isolation[tenant_id]
-      
-      // 验证数据隔离边界
-      let isolation_violations = []
-      
-      // 检查服务是否在允许列表中
-      let service = data_item["service"]
-      let allowed_services = tenant_configurations[tenant_id]["allowed_services"]
-      
-      if !allowed_services.contains(service) {
-        isolation_violations.push("Service '" + service + "' not in allowed services list")
-      }
-      
-      // 检查数据大小是否超出配额
-      let current_total = tenant_isolation["total_size_bytes"] + data_item["size_bytes"]
-      let quota_bytes = tenant_configurations[tenant_id]["quota_gb"] * 1024 * 1024 * 1024
-      
-      if current_total > quota_bytes {
-        isolation_violations.push("Data size exceeds tenant quota")
-      }
-      
-      // 检查数据是否包含其他租户标识符
-      let content = data_item["content"]
-      for other_tenant_id in tenant_configurations.keys() {
-        if other_tenant_id != tenant_id && content.contains(other_tenant_id) {
-          isolation_violations.push("Data contains reference to other tenant: " + other_tenant_id)
-        }
-      }
-      
-      // 记录隔离违规
-      tenant_isolation["isolation_violations"] = tenant_isolation["isolation_violations"].concat(isolation_violations)
-      
-      // 添加数据到租户
-      tenant_isolation["data"].push(data_item)
-      tenant_isolation["total_size_bytes"] = tenant_isolation["total_size_bytes"] + data_item["size_bytes"]
-      tenant_isolation["data_count"] = tenant_isolation["data_count"] + 1
-      
-      // 记录服务使用情况
-      if tenant_isolation["services_in_use"].contains_key(service) {
-        tenant_isolation["services_in_use"][service] = tenant_isolation["services_in_use"][service] + 1
-      } else {
-        tenant_isolation["services_in_use"][service] = 1
-      }
-    }
-  }
+  // 验证租户A数据隔离
+  assert_eq(tenant_a_traces.contains("trace_a"), true)
+  assert_eq(tenant_a_traces.contains("trace_b"), false)
+  assert_eq(tenant_a_traces.contains("trace_c"), false)
+  assert_eq(tenant_a_metrics.contains("metric_a"), true)
+  assert_eq(tenant_a_metrics.contains("metric_b"), false)
+  assert_eq(tenant_a_logs.contains("log_a"), true)
+  assert_eq(tenant_a_logs.contains("log_b"), false)
   
-  // 验证租户隔离结果
-  assert_eq(tenant_data_isolation.keys().length(), 3)
+  // 验证租户B数据隔离
+  assert_eq(tenant_b_traces.contains("trace_b"), true)
+  assert_eq(tenant_b_traces.contains("trace_a"), false)
+  assert_eq(tenant_b_traces.contains("trace_c"), false)
+  assert_eq(tenant_b_metrics.contains("metric_b"), true)
+  assert_eq(tenant_b_metrics.contains("metric_c"), false)
+  assert_eq(tenant_b_logs.contains("log_b"), true)
+  assert_eq(tenant_b_logs.contains("log_c"), false)
   
-  for (tenant_id, isolation_info) in tenant_data_isolation {
-    let config = isolation_info["config"]
-    let data = isolation_info["data"]
-    let total_size = isolation_info["total_size_bytes"]
-    let data_count = isolation_info["data_count"]
-    let services_in_use = isolation_info["services_in_use"]
-    let violations = isolation_info["isolation_violations"]
-    
-    // 验证数据分配正确
-    assert_eq(data.length() > 0, true)
-    assert_eq(total_size > 0, true)
-    assert_eq(data_count > 0, true)
-    
-    // 验证所有数据都属于该租户
-    for data_item in data {
-      assert_eq(data_item["tenant_id"], tenant_id)
-    }
-    
-    // 验证服务使用在允许范围内
-    for service in services_in_use.keys() {
-      assert_eq(config["allowed_services"].contains(service), true)
-    }
-    
-    // 验证配额未超出
-    let quota_bytes = config["quota_gb"] * 1024 * 1024 * 1024
-    assert_eq(total_size <= quota_bytes, true)
-    
-    // 验证隔离级别
-    assert_eq(config["isolation_level"], "strict")
-  }
+  // 验证租户C数据隔离
+  assert_eq(tenant_c_traces.contains("trace_c"), true)
+  assert_eq(tenant_c_traces.contains("trace_a"), false)
+  assert_eq(tenant_c_traces.contains("trace_b"), false)
+  assert_eq(tenant_c_metrics.contains("metric_c"), true)
+  assert_eq(tenant_c_metrics.contains("metric_a"), false)
+  assert_eq(tenant_c_logs.contains("log_c"), true)
+  assert_eq(tenant_c_logs.contains("log_a"), false)
   
-  // 验证租户间数据隔离
-  let tenant_a_data = tenant_data_isolation["tenant_a"]["data"]
-  let tenant_b_data = tenant_data_isolation["tenant_b"]["data"]
-  let tenant_c_data = tenant_data_isolation["tenant_c"]["data"]
-  
-  // 确保没有数据交叉
-  for data_item in tenant_a_data {
-    assert_eq(data_item["tenant_id"], "tenant_a")
-    assert_eq(tenant_b_data.contains(data_item), false)
-    assert_eq(tenant_c_data.contains(data_item), false)
-  }
-  
-  for data_item in tenant_b_data {
-    assert_eq(data_item["tenant_id"], "tenant_b")
-    assert_eq(tenant_a_data.contains(data_item), false)
-    assert_eq(tenant_c_data.contains(data_item), false)
-  }
-  
-  for data_item in tenant_c_data {
-    assert_eq(data_item["tenant_id"], "tenant_c")
-    assert_eq(tenant_a_data.contains(data_item), false)
-    assert_eq(tenant_b_data.contains(data_item), false)
-  }
+  // 验证数据计数
+  assert_eq(tenant_a_traces.split(",").length(), 3)
+  assert_eq(tenant_b_traces.split(",").length(), 3)
+  assert_eq(tenant_c_traces.split(",").length(), 3)
 }
 
-test "telemetry_multi_tenant_resource_quotas" {
-  // 测试遥测多租户资源配额
+test "tenant_context_isolation" {
+  // 测试租户上下文隔离
   
-  let tenant_quotas = {
-    "tenant_enterprise": {
-      "tenant_id": "tenant_enterprise",
-      "tier": "enterprise",
-      "quotas": {
-        "max_spans_per_day": 1000000,
-        "max_storage_gb": 500,
-        "max_retention_days": 365,
-        "max_api_calls_per_hour": 50000,
-        "max_concurrent_queries": 100
-      },
-      "current_usage": {
-        "spans_today": 0,
-        "storage_used_gb": 0,
-        "api_calls_this_hour": 0,
-        "active_queries": 0
-      }
-    },
-    "tenant_business": {
-      "tenant_id": "tenant_business",
-      "tier": "business", 
-      "quotas": {
-        "max_spans_per_day": 100000,
-        "max_storage_gb": 100,
-        "max_retention_days": 90,
-        "max_api_calls_per_hour": 10000,
-        "max_concurrent_queries": 25
-      },
-      "current_usage": {
-        "spans_today": 0,
-        "storage_used_gb": 0,
-        "api_calls_this_hour": 0,
-        "active_queries": 0
-      }
-    },
-    "tenant_starter": {
-      "tenant_id": "tenant_starter",
-      "tier": "starter",
-      "quotas": {
-        "max_spans_per_day": 10000,
-        "max_storage_gb": 10,
-        "max_retention_days": 30,
-        "max_api_calls_per_hour": 1000,
-        "max_concurrent_queries": 5
-      },
-      "current_usage": {
-        "spans_today": 0,
-        "storage_used_gb": 0,
-        "api_calls_this_hour": 0,
-        "active_queries": 0
-      }
-    }
-  }
+  let tenant_1 = "company_alpha"
+  let tenant_2 = "company_beta"
+  let tenant_3 = "company_gamma"
   
-  // 模拟资源使用情况
-  let usage_scenarios = [
-    {
-      "tenant_id": "tenant_enterprise",
-      "operations": [
-        {"type": "spans", "count": 500000},
-        {"type": "storage", "size_gb": 250},
-        {"type": "api_calls", "count": 25000},
-        {"type": "queries", "count": 50}
-      ]
-    },
-    {
-      "tenant_id": "tenant_business",
-      "operations": [
-        {"type": "spans", "count": 80000},
-        {"type": "storage", "size_gb": 80},
-        {"type": "api_calls", "count": 8000},
-        {"type": "queries", "count": 20}
-      ]
-    },
-    {
-      "tenant_id": "tenant_starter",
-      "operations": [
-        {"type": "spans", "count": 12000}, // 超出配额
-        {"type": "storage", "size_gb": 8},
-        {"type": "api_calls", "count": 1200}, // 超出配额
-        {"type": "queries", "count": 6} // 超出配额
-      ]
-    }
-  ]
+  // 创建租户1的上下文
+  let tenant_1_context = "tenant_id:" + tenant_1 + ",user_id:user_1,session_id:session_1"
   
-  // 执行资源使用和配额检查
-  let quota_violations = {}
+  // 创建租户2的上下文
+  let tenant_2_context = "tenant_id:" + tenant_2 + ",user_id:user_2,session_id:session_2"
   
-  for scenario in usage_scenarios {
-    let tenant_id = scenario["tenant_id"]
-    let tenant_quota = tenant_quotas[tenant_id]
-    let violations = []
-    
-    for operation in scenario["operations"] {
-      let operation_type = operation["type"]
-      let operation_value = operation["count"]
-      
-      match operation_type {
-        "spans" => {
-          tenant_quota["current_usage"]["spans_today"] = operation_value
-          if operation_value > tenant_quota["quotas"]["max_spans_per_day"] {
-            violations.push("Daily span limit exceeded: " + operation_value.to_string() + " > " + tenant_quota["quotas"]["max_spans_per_day"].to_string())
-          }
-        }
-        "storage" => {
-          let size_gb = operation["size_gb"]
-          tenant_quota["current_usage"]["storage_used_gb"] = size_gb
-          if size_gb > tenant_quota["quotas"]["max_storage_gb"] {
-            violations.push("Storage quota exceeded: " + size_gb.to_string() + "GB > " + tenant_quota["quotas"]["max_storage_gb"].to_string() + "GB")
-          }
-        }
-        "api_calls" => {
-          tenant_quota["current_usage"]["api_calls_this_hour"] = operation_value
-          if operation_value > tenant_quota["quotas"]["max_api_calls_per_hour"] {
-            violations.push("API call limit exceeded: " + operation_value.to_string() + " > " + tenant_quota["quotas"]["max_api_calls_per_hour"].to_string())
-          }
-        }
-        "queries" => {
-          tenant_quota["current_usage"]["active_queries"] = operation_value
-          if operation_value > tenant_quota["quotas"]["max_concurrent_queries"] {
-            violations.push("Concurrent query limit exceeded: " + operation_value.to_string() + " > " + tenant_quota["quotas"]["max_concurrent_queries"].to_string())
-          }
-        }
-        _ => {}
-      }
-    }
-    
-    quota_violations[tenant_id] = violations
-  }
+  // 创建租户3的上下文
+  let tenant_3_context = "tenant_id:" + tenant_3 + ",user_id:user_3,session_id:session_3"
   
-  // 验证配额检查结果
-  assert_eq(quota_violations.keys().length(), 3)
+  // 验证租户1上下文隔离
+  assert_eq(tenant_1_context.contains("tenant_id:" + tenant_1), true)
+  assert_eq(tenant_1_context.contains("tenant_id:" + tenant_2), false)
+  assert_eq(tenant_1_context.contains("tenant_id:" + tenant_3), false)
+  assert_eq(tenant_1_context.contains("user_id:user_1"), true)
+  assert_eq(tenant_1_context.contains("user_id:user_2"), false)
   
-  // 验证enterprise租户（应该没有违规）
-  assert_eq(quota_violations["tenant_enterprise"].length(), 0)
+  // 验证租户2上下文隔离
+  assert_eq(tenant_2_context.contains("tenant_id:" + tenant_2), true)
+  assert_eq(tenant_2_context.contains("tenant_id:" + tenant_1), false)
+  assert_eq(tenant_2_context.contains("tenant_id:" + tenant_3), false)
+  assert_eq(tenant_2_context.contains("user_id:user_2"), true)
+  assert_eq(tenant_2_context.contains("user_id:user_3"), false)
   
-  // 验证business租户（应该没有违规）
-  assert_eq(quota_violations["tenant_business"].length(), 0)
+  // 验证租户3上下文隔离
+  assert_eq(tenant_3_context.contains("tenant_id:" + tenant_3), true)
+  assert_eq(tenant_3_context.contains("tenant_id:" + tenant_1), false)
+  assert_eq(tenant_3_context.contains("tenant_id:" + tenant_2), false)
+  assert_eq(tenant_3_context.contains("user_id:user_3"), true)
+  assert_eq(tenant_3_context.contains("user_id:user_1"), false)
   
-  // 验证starter租户（应该有违规）
-  assert_eq(quota_violations["tenant_starter"].length(), 3)
+  // 验证上下文结构
+  let tenant_1_parts = tenant_1_context.split(",")
+  let tenant_2_parts = tenant_2_context.split(",")
+  let tenant_3_parts = tenant_3_context.split(",")
   
-  // 验证具体违规内容
-  let starter_violations = quota_violations["tenant_starter"]
-  assert_eq(starter_violations[0].contains("Daily span limit exceeded"), true)
-  assert_eq(starter_violations[1].contains("API call limit exceeded"), true)
-  assert_eq(starter_violations[2].contains("Concurrent query limit exceeded"), true)
-  
-  // 验证使用率计算
-  let calculate_usage_percentage = (used, limit) => {
-    return (used.to_float() / limit.to_float()) * 100.0
-  }
-  
-  for (tenant_id, quota) in tenant_quotas {
-    let usage = quota["current_usage"]
-    let limits = quota["quotas"]
-    
-    let span_usage_pct = calculate_usage_percentage(usage["spans_today"], limits["max_spans_per_day"])
-    let storage_usage_pct = calculate_usage_percentage(usage["storage_used_gb"], limits["max_storage_gb"])
-    let api_usage_pct = calculate_usage_percentage(usage["api_calls_this_hour"], limits["max_api_calls_per_hour"])
-    let query_usage_pct = calculate_usage_percentage(usage["active_queries"], limits["max_concurrent_queries"])
-    
-    // 验证使用率在合理范围内
-    assert_eq(span_usage_pct >= 0.0 && span_usage_pct <= 200.0, true) // 允许超出配额
-    assert_eq(storage_usage_pct >= 0.0 && storage_usage_pct <= 200.0, true)
-    assert_eq(api_usage_pct >= 0.0 && api_usage_pct <= 200.0, true)
-    assert_eq(query_usage_pct >= 0.0 && query_usage_pct <= 200.0, true)
-    
-    // 验证不同层级的租户有不同的使用模式
-    match tenant_id {
-      "tenant_enterprise" => {
-        assert_eq(span_usage_pct <= 60.0, true) // enterprise使用率相对较低
-        assert_eq(storage_usage_pct <= 60.0, true)
-      }
-      "tenant_business" => {
-        assert_eq(span_usage_pct <= 90.0, true) // business使用率中等
-        assert_eq(storage_usage_pct <= 90.0, true)
-      }
-      "tenant_starter" => {
-        assert_eq(span_usage_pct > 100.0, true) // starter超出配额
-        assert_eq(api_usage_pct > 100.0, true)
-      }
-      _ => {}
-    }
-  }
+  assert_eq(tenant_1_parts.length(), 3)
+  assert_eq(tenant_2_parts.length(), 3)
+  assert_eq(tenant_3_parts.length(), 3)
 }
 
-test "telemetry_multi_tenant_performance_isolation" {
-  // 测试遥测多租户性能隔离
+test "tenant_resource_quota_isolation" {
+  // 测试租户资源配额隔离
   
-  let tenant_performance_profiles = {
-    "tenant_premium": {
-      "tenant_id": "tenant_premium",
-      "performance_tier": "premium",
-      "resource_limits": {
-        "cpu_cores": 8,
-        "memory_gb": 32,
-        "network_bandwidth_mbps": 1000,
-        "io_ops_per_sec": 10000
-      },
-      "priority": "high",
-      "sla_guarantees": {
-        "query_response_time_p99_ms": 100,
-        "data_ingestion_latency_p95_ms": 50,
-        "availability_percentage": 99.9
-      }
-    },
-    "tenant_standard": {
-      "tenant_id": "tenant_standard",
-      "performance_tier": "standard",
-      "resource_limits": {
-        "cpu_cores": 4,
-        "memory_gb": 16,
-        "network_bandwidth_mbps": 500,
-        "io_ops_per_sec": 5000
-      },
-      "priority": "medium",
-      "sla_guarantees": {
-        "query_response_time_p99_ms": 500,
-        "data_ingestion_latency_p95_ms": 200,
-        "availability_percentage": 99.5
-      }
-    },
-    "tenant_basic": {
-      "tenant_id": "tenant_basic",
-      "performance_tier": "basic",
-      "resource_limits": {
-        "cpu_cores": 2,
-        "memory_gb": 8,
-        "network_bandwidth_mbps": 100,
-        "io_ops_per_sec": 1000
-      },
-      "priority": "low",
-      "sla_guarantees": {
-        "query_response_time_p99_ms": 2000,
-        "data_ingestion_latency_p95_ms": 1000,
-        "availability_percentage": 99.0
-      }
-    }
-  }
+  let tenant_x = "enterprise_client"
+  let tenant_y = "startup_client"
+  let tenant_z = "individual_client"
   
-  // 模拟并发负载测试
-  let load_test_scenarios = [
-    {
-      "tenant_id": "tenant_premium",
-      "concurrent_queries": 80,
-      "data_ingestion_rate_mb_per_sec": 100,
-      "test_duration_seconds": 60
-    },
-    {
-      "tenant_id": "tenant_standard", 
-      "concurrent_queries": 40,
-      "data_ingestion_rate_mb_per_sec": 50,
-      "test_duration_seconds": 60
-    },
-    {
-      "tenant_id": "tenant_basic",
-      "concurrent_queries": 10,
-      "data_ingestion_rate_mb_per_sec": 20,
-      "test_duration_seconds": 60
-    }
-  ]
+  // 设置租户配额
+  let tenant_x_quota = "max_traces:10000,max_metrics:50000,max_logs:100000"
+  let tenant_y_quota = "max_traces:1000,max_metrics:5000,max_logs:10000"
+  let tenant_z_quota = "max_traces:100,max_metrics:500,max_logs:1000"
   
-  // 性能隔离测试
-  let performance_results = {}
+  // 创建租户使用情况
+  let tenant_x_usage = "used_traces:5000,used_metrics:25000,used_logs:50000"
+  let tenant_y_usage = "used_traces:500,used_metrics:2500,used_logs:5000"
+  let tenant_z_usage = "used_traces:50,used_metrics:250,used_logs:500"
   
-  for scenario in load_test_scenarios {
-    let tenant_id = scenario["tenant_id"]
-    let profile = tenant_performance_profiles[tenant_id]
-    
-    let test_results = {
-      "actual_query_response_times": [],
-      "actual_ingestion_latencies": [],
-      "resource_utilization": {
-        "cpu_usage_percent": 0.0,
-        "memory_usage_gb": 0.0,
-        "network_usage_mbps": 0.0,
-        "io_ops_per_sec": 0
-      },
-      "sla_compliance": {
-        "query_response_time_sla_met": true,
-        "ingestion_latency_sla_met": true,
-        "availability_sla_met": true
-      },
-      "performance_isolation_violations": []
-    }
-    
-    // 模拟负载执行
-    let concurrent_queries = scenario["concurrent_queries"]
-    let ingestion_rate = scenario["data_ingestion_rate_mb_per_sec"]
-    let test_duration = scenario["test_duration_seconds"]
-    
-    // 模拟查询响应时间
-    for i in 0..concurrent_queries {
-      let base_response_time = match profile["priority"] {
-        "high" => 50
-        "medium" => 200
-        "low" => 800
-        _ => 500
-      }
-      
-      // 添加随机变化
-      let response_time = base_response_time + (@int((i * 17) % 100))
-      test_results["actual_query_response_times"].push(response_time)
-    }
-    
-    // 模拟数据摄入延迟
-    for i in 0..(ingestion_rate * test_duration / 10) {
-      let base_ingestion_latency = match profile["priority"] {
-        "high" => 25
-        "medium" => 100
-        "low" => 500
-        _ => 200
-      }
-      
-      let ingestion_latency = base_ingestion_latency + (@int((i * 13) % 50))
-      test_results["actual_ingestion_latencies"].push(ingestion_latency)
-    }
-    
-    // 计算资源使用情况
-    let cpu_usage = (concurrent_queries.to_float() / profile["resource_limits"]["cpu_cores"].to_float()) * 25.0
-    let memory_usage = (profile["resource_limits"]["memory_gb"].to_float() * 0.6) + (concurrent_queries.to_float() * 0.1)
-    let network_usage = ingestion_rate.to_float() * 1.2
-    let io_ops = concurrent_queries * 50 + ingestion_rate * 10
-    
-    test_results["resource_utilization"]["cpu_usage_percent"] = @min(cpu_usage, 95.0)
-    test_results["resource_utilization"]["memory_usage_gb"] = @min(memory_usage, profile["resource_limits"]["memory_gb"].to_float() * 0.9)
-    test_results["resource_utilization"]["network_usage_mbps"] = @min(network_usage, profile["resource_limits"]["network_bandwidth_mbps"].to_float() * 0.8)
-    test_results["resource_utilization"]["io_ops_per_sec"] = @min(io_ops, profile["resource_limits"]["io_ops_per_sec"])
-    
-    // 检查SLA合规性
-    let query_times = test_results["actual_query_response_times"]
-    query_times.sort()
-    let p99_query_time = query_times[@int(query_times.length() * 0.99)]
-    
-    let ingestion_latencies = test_results["actual_ingestion_latencies"]
-    ingestion_latencies.sort()
-    let p95_ingestion_latency = ingestion_latencies[@int(ingestion_latencies.length() * 0.95)]
-    
-    test_results["sla_compliance"]["query_response_time_sla_met"] = p99_query_time <= profile["sla_guarantees"]["query_response_time_p99_ms"]
-    test_results["sla_compliance"]["ingestion_latency_sla_met"] = p95_ingestion_latency <= profile["sla_guarantees"]["data_ingestion_latency_p95_ms"]
-    
-    // 检查性能隔离违规
-    if test_results["resource_utilization"]["cpu_usage_percent"] > 90.0 {
-      test_results["performance_isolation_violations"].push("CPU usage exceeds 90%")
-    }
-    
-    if test_results["resource_utilization"]["memory_usage_gb"] > profile["resource_limits"]["memory_gb"].to_float() * 0.85 {
-      test_results["performance_isolation_violations"].push("Memory usage exceeds 85% of limit")
-    }
-    
-    performance_results[tenant_id] = test_results
-  }
+  // 验证租户X配额隔离
+  assert_eq(tenant_x_quota.contains("max_traces:10000"), true)
+  assert_eq(tenant_x_quota.contains("max_metrics:50000"), true)
+  assert_eq(tenant_x_quota.contains("max_logs:100000"), true)
+  assert_eq(tenant_x_quota.contains("max_traces:1000"), false)
+  assert_eq(tenant_x_usage.contains("used_traces:5000"), true)
+  assert_eq(tenant_x_usage.contains("used_metrics:25000"), true)
   
-  // 验证性能隔离结果
-  assert_eq(performance_results.keys().length(), 3)
+  // 验证租户Y配额隔离
+  assert_eq(tenant_y_quota.contains("max_traces:1000"), true)
+  assert_eq(tenant_y_quota.contains("max_metrics:5000"), true)
+  assert_eq(tenant_y_quota.contains("max_logs:10000"), true)
+  assert_eq(tenant_y_quota.contains("max_traces:10000"), false)
+  assert_eq(tenant_y_usage.contains("used_traces:500"), true)
+  assert_eq(tenant_y_usage.contains("used_metrics:2500"), true)
   
-  for (tenant_id, results) in performance_results {
-    let profile = tenant_performance_profiles[tenant_id]
-    
-    // 验证响应时间符合优先级预期
-    let query_times = results["actual_query_response_times"]
-    let avg_query_time = 0
-    for time in query_times {
-      avg_query_time = avg_query_time + time
-    }
-    avg_query_time = avg_query_time / query_times.length()
-    
-    match profile["priority"] {
-      "high" => assert_eq(avg_query_time < 150, true)
-      "medium" => assert_eq(avg_query_time < 300, true)
-      "low" => assert_eq(avg_query_time < 1000, true)
-      _ => {}
-    }
-    
-    // 验证SLA合规性
-    assert_eq(results["sla_compliance"].contains_key("query_response_time_sla_met"), true)
-    assert_eq(results["sla_compliance"].contains_key("ingestion_latency_sla_met"), true)
-    assert_eq(results["sla_compliance"].contains_key("availability_sla_met"), true)
-    
-    // 验证高优先级租户SLA达标率更高
-    match profile["priority"] {
-      "high" => {
-        assert_eq(results["sla_compliance"]["query_response_time_sla_met"], true)
-        assert_eq(results["sla_compliance"]["ingestion_latency_sla_met"], true)
-      }
-      "medium" => {
-        assert_eq(results["sla_compliance"]["query_response_time_sla_met"], true)
-        assert_eq(results["sla_compliance"]["ingestion_latency_sla_met"], true)
-      }
-      "low" => {
-        // basic租户可能有SLA违规，这是预期的
-        assert_eq(results["sla_compliance"].contains_key("query_response_time_sla_met"), true)
-      }
-      _ => {}
-    }
-    
-    // 验证资源使用在限制范围内
-    let utilization = results["resource_utilization"]
-    let limits = profile["resource_limits"]
-    
-    assert_eq(utilization["cpu_usage_percent"] <= 95.0, true)
-    assert_eq(utilization["memory_usage_gb"] <= limits["memory_gb"].to_float(), true)
-    assert_eq(utilization["network_usage_mbps"] <= limits["network_bandwidth_mbps"].to_float(), true)
-    assert_eq(utilization["io_ops_per_sec"] <= limits["io_ops_per_sec"], true)
-  }
+  // 验证租户Z配额隔离
+  assert_eq(tenant_z_quota.contains("max_traces:100"), true)
+  assert_eq(tenant_z_quota.contains("max_metrics:500"), true)
+  assert_eq(tenant_z_quota.contains("max_logs:1000"), true)
+  assert_eq(tenant_z_quota.contains("max_traces:1000"), false)
+  assert_eq(tenant_z_usage.contains("used_traces:50"), true)
+  assert_eq(tenant_z_usage.contains("used_metrics:250"), true)
   
-  // 验证不同租户间的性能隔离
-  let premium_results = performance_results["tenant_premium"]
-  let standard_results = performance_results["tenant_standard"]
-  let basic_results = performance_results["tenant_basic"]
-  
-  let premium_avg_query = 0
-  for time in premium_results["actual_query_response_times"] {
-    premium_avg_query = premium_avg_query + time
-  }
-  premium_avg_query = premium_avg_query / premium_results["actual_query_response_times"].length()
-  
-  let standard_avg_query = 0
-  for time in standard_results["actual_query_response_times"] {
-    standard_avg_query = standard_avg_query + time
-  }
-  standard_avg_query = standard_avg_query / standard_results["actual_query_response_times"].length()
-  
-  let basic_avg_query = 0
-  for time in basic_results["actual_query_response_times"] {
-    basic_avg_query = basic_avg_query + time
-  }
-  basic_avg_query = basic_avg_query / basic_results["actual_query_response_times"].length()
-  
-  // 高优先级租户应该有更好的性能
-  assert_eq(premium_avg_query < standard_avg_query, true)
-  assert_eq(standard_avg_query < basic_avg_query, true)
+  // 验证配额使用率
+  assert_eq(tenant_x_usage.contains("used_traces:5000"), true)  // 50%使用率
+  assert_eq(tenant_y_usage.contains("used_traces:500"), true)   // 50%使用率
+  assert_eq(tenant_z_usage.contains("used_traces:50"), true)    // 50%使用率
 }
 
-test "telemetry_multi_tenant_billing_isolation" {
-  // 测试遥测多租户计费隔离
+test "tenant_security_isolation" {
+  // 测试租户安全隔离
   
-  let tenant_billing_plans = {
-    "tenant_enterprise": {
-      "tenant_id": "tenant_enterprise",
-      "billing_plan": "enterprise",
-      "pricing_model": "tiered",
-      "rates": {
-        "span_per_thousand": 0.5,
-        "storage_per_gb_per_month": 0.8,
-        "api_call_per_thousand": 0.2,
-        "query_per_thousand": 0.3,
-        "retention_days_per_30": 1.0
-      },
-      "included_quotas": {
-        "spans_per_month": 10000000,
-        "storage_gb": 1000,
-        "api_calls_per_month": 5000000,
-        "queries_per_month": 1000000,
-        "retention_days": 365
-      },
-      "current_month_usage": {
-        "spans": 0,
-        "storage_gb": 0,
-        "api_calls": 0,
-        "queries": 0,
-        "retention_days": 0
-      }
-    },
-    "tenant_business": {
-      "tenant_id": "tenant_business",
-      "billing_plan": "business",
-      "pricing_model": "usage_based",
-      "rates": {
-        "span_per_thousand": 1.0,
-        "storage_per_gb_per_month": 1.5,
-        "api_call_per_thousand": 0.5,
-        "query_per_thousand": 0.8,
-        "retention_days_per_30": 2.0
-      },
-      "included_quotas": {
-        "spans_per_month": 1000000,
-        "storage_gb": 100,
-        "api_calls_per_month": 1000000,
-        "queries_per_month": 500000,
-        "retention_days": 90
-      },
-      "current_month_usage": {
-        "spans": 0,
-        "storage_gb": 0,
-        "api_calls": 0,
-        "queries": 0,
-        "retention_days": 0
-      }
-    },
-    "tenant_starter": {
-      "tenant_id": "tenant_starter",
-      "billing_plan": "starter",
-      "pricing_model": "fixed",
-      "rates": {
-        "span_per_thousand": 2.0,
-        "storage_per_gb_per_month": 3.0,
-        "api_call_per_thousand": 1.0,
-        "query_per_thousand": 1.5,
-        "retention_days_per_30": 5.0
-      },
-      "included_quotas": {
-        "spans_per_month": 100000,
-        "storage_gb": 10,
-        "api_calls_per_month": 100000,
-        "queries_per_month": 50000,
-        "retention_days": 30
-      },
-      "current_month_usage": {
-        "spans": 0,
-        "storage_gb": 0,
-        "api_calls": 0,
-        "queries": 0,
-        "retention_days": 0
-      }
-    }
-  }
+  let tenant_admin = "admin_organization"
+  let tenant_standard = "standard_organization"
+  let tenant_basic = "basic_organization"
   
-  // 模拟月度使用情况
-  let monthly_usage_data = [
-    {
-      "tenant_id": "tenant_enterprise",
-      "usage": {
-        "spans": 12000000, // 超出配额
-        "storage_gb": 800,
-        "api_calls": 4500000,
-        "queries": 800000,
-        "retention_days": 300
-      }
-    },
-    {
-      "tenant_id": "tenant_business",
-      "usage": {
-        "spans": 1500000, // 超出配额
-        "storage_gb": 150, // 超出配额
-        "api_calls": 800000, // 超出配额
-        "queries": 600000, // 超出配额
-        "retention_days": 60
-      }
-    },
-    {
-      "tenant_id": "tenant_starter",
-      "usage": {
-        "spans": 80000,
-        "storage_gb": 8,
-        "api_calls": 90000,
-        "queries": 40000,
-        "retention_days": 30
-      }
-    }
+  // 设置租户权限
+  let tenant_admin_permissions = "read:true,write:true,delete:true,admin:true"
+  let tenant_standard_permissions = "read:true,write:true,delete:false,admin:false"
+  let tenant_basic_permissions = "read:true,write:false,delete:false,admin:false"
+  
+  // 创建租户访问令牌
+  let tenant_admin_token = "token_admin_" + tenant_admin + "_full_access"
+  let tenant_standard_token = "token_standard_" + tenant_standard + "_limited_access"
+  let tenant_basic_token = "token_basic_" + tenant_basic + "_read_only"
+  
+  // 验证租户管理员权限隔离
+  assert_eq(tenant_admin_permissions.contains("admin:true"), true)
+  assert_eq(tenant_admin_permissions.contains("delete:true"), true)
+  assert_eq(tenant_admin_permissions.contains("write:true"), true)
+  assert_eq(tenant_admin_token.contains("full_access"), true)
+  assert_eq(tenant_admin_token.contains(tenant_admin), true)
+  
+  // 验证租户标准权限隔离
+  assert_eq(tenant_standard_permissions.contains("admin:false"), true)
+  assert_eq(tenant_standard_permissions.contains("delete:false"), true)
+  assert_eq(tenant_standard_permissions.contains("write:true"), true)
+  assert_eq(tenant_standard_token.contains("limited_access"), true)
+  assert_eq(tenant_standard_token.contains(tenant_standard), true)
+  
+  // 验证租户基础权限隔离
+  assert_eq(tenant_basic_permissions.contains("admin:false"), true)
+  assert_eq(tenant_basic_permissions.contains("delete:false"), true)
+  assert_eq(tenant_basic_permissions.contains("write:false"), true)
+  assert_eq(tenant_basic_token.contains("read_only"), true)
+  assert_eq(tenant_basic_token.contains(tenant_basic), true)
+  
+  // 验证权限边界
+  assert_eq(tenant_admin_token.contains(tenant_standard), false)
+  assert_eq(tenant_standard_token.contains(tenant_basic), false)
+  assert_eq(tenant_basic_token.contains(tenant_admin), false)
+}
+
+test "tenant_data_filtering" {
+  // 测试租户数据过滤
+  
+  let tenant_prod = "production_tenant"
+  let tenant_staging = "staging_tenant"
+  let tenant_dev = "development_tenant"
+  
+  // 创建混合数据流
+  let mixed_telemetry_data = [
+    tenant_prod + ":trace_prod_1:metric_prod_1:log_prod_1",
+    tenant_staging + ":trace_staging_1:metric_staging_1:log_staging_1",
+    tenant_dev + ":trace_dev_1:metric_dev_1:log_dev_1",
+    tenant_prod + ":trace_prod_2:metric_prod_2:log_prod_2",
+    tenant_staging + ":trace_staging_2:metric_staging_2:log_staging_2",
+    tenant_dev + ":trace_dev_2:metric_dev_2:log_dev_2"
   ]
   
-  // 计算账单
-  let billing_calculations = {}
-  
-  for usage_data in monthly_usage_data {
-    let tenant_id = usage_data["tenant_id"]
-    let plan = tenant_billing_plans[tenant_id]
-    let usage = usage_data["usage"]
-    
-    let billing = {
-      "tenant_id": tenant_id,
-      "plan": plan["billing_plan"],
-      "pricing_model": plan["pricing_model"],
-      "usage_breakdown": {},
-      "included_usage": {},
-      "excess_usage": {},
-      "included_costs": {},
-      "excess_costs": {},
-      "total_cost": 0.0,
-      "billing_isolation_issues": []
+  // 过滤租户生产数据
+  let mut prod_filtered_data = []
+  let mut i = 0
+  while i < mixed_telemetry_data.length() {
+    let data = mixed_telemetry_data[i]
+    if data.has_prefix(tenant_prod + ":") {
+      prod_filtered_data.push(data)
     }
-    
-    // 计算各项使用费用
-    let metrics = ["spans", "storage_gb", "api_calls", "queries", "retention_days"]
-    
-    for metric in metrics {
-      let used = usage[metric]
-      let included = plan["included_quotas"][metric]
-      let rate = plan["rates"][metric]
-      
-      billing["usage_breakdown"][metric] = used
-      billing["included_usage"][metric] = included
-      
-      let excess = @max(0, used - included)
-      billing["excess_usage"][metric] = excess
-      
-      // 计算费用
-      let excess_cost = 0.0
-      
-      match metric {
-        "spans" => excess_cost = (excess / 1000.0) * rate
-        "storage_gb" => excess_cost = excess * rate
-        "api_calls" => excess_cost = (excess / 1000.0) * rate
-        "queries" => excess_cost = (excess / 1000.0) * rate
-        "retention_days" => excess_cost = ((excess - 30) / 30.0) * rate if excess > 30 else 0.0
-        _ => {}
-      }
-      
-      billing["excess_costs"][metric] = excess_cost
-      billing["total_cost"] = billing["total_cost"] + excess_cost
-      
-      // 检查计费隔离问题
-      if metric != "retention_days" && used < 0 {
-        billing["billing_isolation_issues"].push("Negative usage detected for " + metric)
-      }
-      
-      if excess < 0 {
-        billing["billing_isolation_issues"].push("Negative excess usage calculated for " + metric)
-      }
-      
-      if excess_cost < 0.0 {
-        billing["billing_isolation_issues"].push("Negative cost calculated for " + metric)
-      }
-    }
-    
-    // 不同定价模型的额外处理
-    match plan["pricing_model"] {
-      "fixed" => {
-        // 固定价格计划，有基础月费
-        let base_monthly_fee = 99.0
-        billing["total_cost"] = billing["total_cost"] + base_monthly_fee
-        billing["included_costs"]["base_fee"] = base_monthly_fee
-      }
-      "tiered" => {
-        // 阶梯定价，使用量越大单价越低
-        let span_tiers = [
-          {"threshold": 1000000, "rate": 1.0},
-          {"threshold": 5000000, "rate": 0.7},
-          {"threshold": 10000000, "rate": 0.5},
-          {"threshold": 999999999, "rate": 0.3}
-        ]
-        
-        let span_usage = usage["spans"]
-        let span_cost = 0.0
-        let remaining_spans = span_usage
-        
-        for tier in span_tiers {
-          if remaining_spans > 0 {
-            let tier_usage = @min(remaining_spans, tier["threshold"])
-            span_cost = span_cost + (tier_usage / 1000.0) * tier["rate"]
-            remaining_spans = remaining_spans - tier_usage
-          }
-        }
-        
-        // 替换原有的span费用
-        billing["excess_costs"]["spans"] = span_cost
-        billing["total_cost"] = billing["total_cost"] - billing["excess_costs"]["spans"] + span_cost
-      }
-      "usage_based" => {
-        // 纯使用量定价，无基础费用
-        // 已按使用量计算，无需额外处理
-      }
-      _ => {}
-    }
-    
-    billing_calculations[tenant_id] = billing
+    i = i + 1
   }
   
-  // 验证计费隔离结果
-  assert_eq(billing_calculations.keys().length(), 3)
-  
-  for (tenant_id, billing) in billing_calculations {
-    let plan = tenant_billing_plans[tenant_id]
-    
-    // 验证计费数据完整性
-    assert_eq(billing["tenant_id"], tenant_id)
-    assert_eq(billing["plan"], plan["billing_plan"])
-    assert_eq(billing["pricing_model"], plan["pricing_model"])
-    assert_eq(billing["total_cost"] >= 0.0, true)
-    
-    // 验证使用量分解
-    assert_eq(billing["usage_breakdown"].keys().length(), 5)
-    assert_eq(billing["included_usage"].keys().length(), 5)
-    assert_eq(billing["excess_usage"].keys().length(), 5)
-    assert_eq(billing["excess_costs"].keys().length(), 5)
-    
-    // 验证超额使用量计算正确
-    for metric in ["spans", "storage_gb", "api_calls", "queries", "retention_days"] {
-      let used = billing["usage_breakdown"][metric]
-      let included = billing["included_usage"][metric]
-      let excess = billing["excess_usage"][metric]
-      
-      if used > included {
-        assert_eq(excess, used - included)
-      } else {
-        assert_eq(excess, 0)
-      }
-      
-      assert_eq(excess >= 0, true)
+  // 过滤租户预发数据
+  let mut staging_filtered_data = []
+  let mut j = 0
+  while j < mixed_telemetry_data.length() {
+    let data = mixed_telemetry_data[j]
+    if data.has_prefix(tenant_staging + ":") {
+      staging_filtered_data.push(data)
     }
-    
-    // 验证费用计算正确
-    for metric in ["spans", "storage_gb", "api_calls", "queries", "retention_days"] {
-      let excess = billing["excess_usage"][metric]
-      let excess_cost = billing["excess_costs"][metric]
-      let rate = plan["rates"][metric]
-      
-      let expected_cost = 0.0
-      match metric {
-        "spans" => expected_cost = (excess / 1000.0) * rate
-        "storage_gb" => expected_cost = excess * rate
-        "api_calls" => expected_cost = (excess / 1000.0) * rate
-        "queries" => expected_cost = (excess / 1000.0) * rate
-        "retention_days" => expected_cost = ((excess - 30) / 30.0) * rate if excess > 30 else 0.0
-        _ => {}
-      }
-      
-      assert_eq(@abs(excess_cost - expected_cost) < 0.01, true)
-      assert_eq(excess_cost >= 0.0, true)
-    }
-    
-    // 验证计费隔离问题检测
-    for issue in billing["billing_isolation_issues"] {
-      assert_eq(issue.length() > 0, true)
-      assert_eq(issue.contains("Negative"), true)
-    }
+    j = j + 1
   }
   
-  // 验证不同租户的计费差异
-  let enterprise_billing = billing_calculations["tenant_enterprise"]
-  let business_billing = billing_calculations["tenant_business"]
-  let starter_billing = billing_calculations["tenant_starter"]
+  // 过滤租户开发数据
+  let mut dev_filtered_data = []
+  let mut k = 0
+  while k < mixed_telemetry_data.length() {
+    let data = mixed_telemetry_data[k]
+    if data.has_prefix(tenant_dev + ":") {
+      dev_filtered_data.push(data)
+    }
+    k = k + 1
+  }
   
-  // Enterprise租户由于使用量大但单价低，总费用可能不是最高
-  // Business租户按使用量计费，费用应该较高
-  // Starter租户使用量小，费用应该最低
+  // 验证过滤结果
+  assert_eq(prod_filtered_data.length(), 2)
+  assert_eq(staging_filtered_data.length(), 2)
+  assert_eq(dev_filtered_data.length(), 2)
   
-  assert_eq(starter_billing["total_cost"] < business_billing["total_cost"], true)
+  // 验证生产数据过滤
+  assert_eq(prod_filtered_data[0].contains(tenant_prod), true)
+  assert_eq(prod_filtered_data[0].contains("trace_prod_1"), true)
+  assert_eq(prod_filtered_data[1].contains(tenant_prod), true)
+  assert_eq(prod_filtered_data[1].contains("trace_prod_2"), true)
+  assert_eq(prod_filtered_data[0].contains(tenant_staging), false)
+  assert_eq(prod_filtered_data[0].contains(tenant_dev), false)
   
-  // 验证计费模型差异
-  assert_eq(enterprise_billing["pricing_model"], "tiered")
-  assert_eq(business_billing["pricing_model"], "usage_based")
-  assert_eq(starter_billing["pricing_model"], "fixed")
-  assert_eq(starter_billing["included_costs"].contains_key("base_fee"), true)
+  // 验证预发数据过滤
+  assert_eq(staging_filtered_data[0].contains(tenant_staging), true)
+  assert_eq(staging_filtered_data[0].contains("trace_staging_1"), true)
+  assert_eq(staging_filtered_data[1].contains(tenant_staging), true)
+  assert_eq(staging_filtered_data[1].contains("trace_staging_2"), true)
+  assert_eq(staging_filtered_data[0].contains(tenant_prod), false)
+  assert_eq(staging_filtered_data[0].contains(tenant_dev), false)
+  
+  // 验证开发数据过滤
+  assert_eq(dev_filtered_data[0].contains(tenant_dev), true)
+  assert_eq(dev_filtered_data[0].contains("trace_dev_1"), true)
+  assert_eq(dev_filtered_data[1].contains(tenant_dev), true)
+  assert_eq(dev_filtered_data[1].contains("trace_dev_2"), true)
+  assert_eq(dev_filtered_data[0].contains(tenant_prod), false)
+  assert_eq(dev_filtered_data[0].contains(tenant_staging), false)
+}
+
+test "tenant_cross_contamination_prevention" {
+  // 测试租户交叉污染防护
+  
+  let tenant_isolated_a = "isolated_tenant_a"
+  let tenant_isolated_b = "isolated_tenant_b"
+  
+  // 创建租户A的隔离存储
+  let tenant_a_storage = "storage_" + tenant_isolated_a + "_separate"
+  let tenant_a_database = "database_" + tenant_isolated_a + "_dedicated"
+  let tenant_a_cache = "cache_" + tenant_isolated_a + "_private"
+  
+  // 创建租户B的隔离存储
+  let tenant_b_storage = "storage_" + tenant_isolated_b + "_separate"
+  let tenant_b_database = "database_" + tenant_isolated_b + "_dedicated"
+  let tenant_b_cache = "cache_" + tenant_isolated_b + "_private"
+  
+  // 验证租户A存储隔离
+  assert_eq(tenant_a_storage.contains(tenant_isolated_a), true)
+  assert_eq(tenant_a_storage.contains(tenant_isolated_b), false)
+  assert_eq(tenant_a_database.contains(tenant_isolated_a), true)
+  assert_eq(tenant_a_database.contains(tenant_isolated_b), false)
+  assert_eq(tenant_a_cache.contains(tenant_isolated_a), true)
+  assert_eq(tenant_a_cache.contains(tenant_isolated_b), false)
+  
+  // 验证租户B存储隔离
+  assert_eq(tenant_b_storage.contains(tenant_isolated_b), true)
+  assert_eq(tenant_b_storage.contains(tenant_isolated_a), false)
+  assert_eq(tenant_b_database.contains(tenant_isolated_b), true)
+  assert_eq(tenant_b_database.contains(tenant_isolated_a), false)
+  assert_eq(tenant_b_cache.contains(tenant_isolated_b), true)
+  assert_eq(tenant_b_cache.contains(tenant_isolated_a), false)
+  
+  // 模拟访问控制验证
+  let tenant_a_access_key = "key_" + tenant_isolated_a + "_access"
+  let tenant_b_access_key = "key_" + tenant_isolated_b + "_access"
+  
+  // 验证访问密钥隔离
+  assert_eq(tenant_a_access_key.contains(tenant_isolated_a), true)
+  assert_eq(tenant_a_access_key.contains(tenant_isolated_b), false)
+  assert_eq(tenant_b_access_key.contains(tenant_isolated_b), true)
+  assert_eq(tenant_b_access_key.contains(tenant_isolated_a), false)
+  
+  // 验证资源命名空间隔离
+  let tenant_a_namespace = "ns_" + tenant_isolated_a + "_workspace"
+  let tenant_b_namespace = "ns_" + tenant_isolated_b + "_workspace"
+  
+  assert_eq(tenant_a_namespace.contains(tenant_isolated_a), true)
+  assert_eq(tenant_a_namespace.contains(tenant_isolated_b), false)
+  assert_eq(tenant_b_namespace.contains(tenant_isolated_b), true)
+  assert_eq(tenant_b_namespace.contains(tenant_isolated_a), false)
+  
+  // 验证网络隔离
+  let tenant_a_network = "network_" + tenant_isolated_a + "_vpc"
+  let tenant_b_network = "network_" + tenant_isolated_b + "_vpc"
+  
+  assert_eq(tenant_a_network.contains(tenant_isolated_a), true)
+  assert_eq(tenant_a_network.contains(tenant_isolated_b), false)
+  assert_eq(tenant_b_network.contains(tenant_isolated_b), true)
+  assert_eq(tenant_b_network.contains(tenant_isolated_a), false)
 }

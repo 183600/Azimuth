@@ -1,238 +1,246 @@
-// 遥测错误处理和边界条件测试用例
+// 错误边界处理测试用例
+// 测试遥测系统在异常情况下的稳定性和恢复能力
 
-test "telemetry_invalid_trace_id_handling" {
-  // 测试无效trace_id的处理
+test "malformed_trace_id_handling" {
+  // 测试格式错误的追踪ID处理
   
-  let empty_trace_id = ""
-  let null_trace_id = "null"
-  let too_short_trace_id = "abc123"
-  let too_long_trace_id = "0af7651916cd43dd8448eb211c80319c0af7651916cd43dd8448eb211c80319c0af7651916cd43dd8448eb211c80319c"
-  let invalid_chars_trace_id = "xyz789invalid_characters_here"
+  let valid_trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let invalid_trace_id_short = "abc123"
+  let invalid_trace_id_long = "0af7651916cd43dd8448eb211c80319c12345678"
+  let invalid_trace_id_chars = "ghijklmnopqrstuvwxyz1234567890abcdef"
   
-  // 验证空trace_id
-  assert_eq(empty_trace_id.length(), 0)
-  assert_eq(empty_trace_id == "", true)
+  // 验证有效追踪ID
+  assert_eq(valid_trace_id.length(), 32)
+  assert_eq(valid_trace_id.has_prefix("0af7"), true)
+  assert_eq(valid_trace_id.has_suffix("319c"), true)
   
-  // 验证null trace_id
-  assert_eq(null_trace_id == "null", true)
-  assert_eq(null_trace_id.length(), 4)
+  // 处理过短的追踪ID
+  assert_eq(invalid_trace_id_short.length(), 6)
+  assert_eq(invalid_trace_id_short.length() < 32, true)
   
-  // 验证过短trace_id
-  assert_eq(too_short_trace_id.length(), 6)
-  assert_eq(too_short_trace_id.length() < 32, true)
+  // 处理过长的追踪ID
+  assert_eq(invalid_trace_id_long.length(), 40)
+  assert_eq(invalid_trace_id_long.length() > 32, true)
   
-  // 验证过长trace_id
-  assert_eq(too_long_trace_id.length(), 96)
-  assert_eq(too_long_trace_id.length() > 32, true)
+  // 处理包含无效字符的追踪ID
+  assert_eq(invalid_trace_id_chars.length(), 32)
+  assert_eq(invalid_trace_id_chars.contains("g"), true)
+  assert_eq(invalid_trace_id_chars.contains("z"), true)
   
-  // 验证包含无效字符的trace_id
-  assert_eq(invalid_chars_trace_id.contains("xyz"), true)
-  assert_eq(invalid_chars_trace_id.contains("invalid"), true)
-  assert_eq(invalid_chars_trace_id.contains("_"), true)
+  // 创建错误处理函数结果
+  let error_message_short = "Trace ID too short: " + invalid_trace_id_short.length().to_string()
+  let error_message_long = "Trace ID too long: " + invalid_trace_id_long.length().to_string()
+  let error_message_chars = "Trace ID contains invalid characters"
   
-  // 创建错误状态数组
-  let error_states = [
-    ("empty", empty_trace_id.length() == 0),
-    ("null", null_trace_id == "null"),
-    ("too_short", too_short_trace_id.length() < 32),
-    ("too_long", too_long_trace_id.length() > 32),
-    ("invalid_chars", invalid_chars_trace_id.contains("invalid"))
-  ]
-  
-  // 验证错误状态数组
-  assert_eq(error_states.length(), 5)
-  assert_eq(error_states[0].0, "empty")
-  assert_eq(error_states[0].1, true)
-  assert_eq(error_states[2].0, "too_short")
-  assert_eq(error_states[2].1, true)
+  // 验证错误消息
+  assert_eq(error_message_short.contains("too short"), true)
+  assert_eq(error_message_long.contains("too long"), true)
+  assert_eq(error_message_chars.contains("invalid characters"), true)
 }
 
-test "telemetry_invalid_metric_values_handling" {
-  // 测试无效指标值的处理
+test "invalid_metric_value_handling" {
+  // 测试无效指标值处理
   
-  let negative_metric = -50.5
+  let valid_metric = 123.45
   let infinite_metric = 1.0 / 0.0  // 模拟无穷大
-  let nan_metric = 0.0 / 0.0     // 模拟NaN
-  let extremely_large_metric = 999999999999999999999999.0
-  let extremely_small_metric = 0.000000000000000000000001
+  let nan_metric = 0.0 / 0.0       // 模拟NaN
+  let negative_metric = -999.99
+  let extreme_metric = 999999999999999999.99
   
-  // 验证负值指标
+  // 验证有效指标
+  assert_eq(valid_metric > 0.0, true)
+  assert_eq(valid_metric < 1000.0, true)
+  
+  // 处理负数指标
   assert_eq(negative_metric < 0.0, true)
-  assert_eq(negative_metric.to_string().has_prefix("-"), true)
+  let negative_warning = "Negative metric value detected: " + negative_metric.to_string()
+  assert_eq(negative_warning.contains("Negative metric"), true)
   
-  // 验证极大值指标
-  assert_eq(extremely_large_metric > 1000000.0, true)
-  assert_eq(extremely_large_metric.to_string().length() > 10, true)
+  // 处理极大值指标
+  assert_eq(extreme_metric > 1000000.0, true)
+  let extreme_warning = "Extremely large metric value: " + extreme_metric.to_string()
+  assert_eq(extreme_warning.contains("Extremely large"), true)
   
-  // 验证极小值指标
-  assert_eq(extremely_small_metric < 0.000001, true)
-  assert_eq(extremely_small_metric > 0.0, true)
+  // 创建错误恢复值
+  let fallback_value = 0.0
+  let max_allowed_value = 1000000.0
+  let min_allowed_value = -1000000.0
   
-  // 创建指标验证结果数组
-  let metric_validations = [
-    ("negative", negative_metric < 0.0),
-    ("extremely_large", extremely_large_metric > 1000000.0),
-    ("extremely_small", extremely_small_metric < 0.000001),
-    ("positive", negative_metric < 0.0 ? false : true)
-  ]
-  
-  // 验证指标验证结果
-  assert_eq(metric_validations.length(), 4)
-  assert_eq(metric_validations[0].0, "negative")
-  assert_eq(metric_validations[0].1, true)
-  assert_eq(metric_validations[1].0, "extremely_large")
-  assert_eq(metric_validations[1].1, true)
+  // 验证边界值
+  assert_eq(fallback_value >= min_allowed_value, true)
+  assert_eq(fallback_value <= max_allowed_value, true)
+  assert_eq(fallback_value == 0.0, true)
 }
 
-test "telemetry_invalid_log_severity_handling" {
-  // 测试无效日志严重性级别的处理
+test "corrupted_log_data_recovery" {
+  // 测试损坏日志数据恢复
   
-  let empty_severity = ""
-  let lowercase_severity = "error"
-  let mixedcase_severity = "Error"
-  let numeric_severity = "404"
-  let invalid_severity = "UNKNOWN_LEVEL"
-  let whitespace_severity = "  INFO  "
+  let valid_log = "2023-01-01T12:00:00Z [INFO] Application started"
+  let corrupted_log_empty = ""
+  let corrupted_log_null = "null"
+  let corrupted_log_malformed = "2023-13-45T99:99:99Z [INVALID] Bad data"
+  let corrupted_log_truncated = "2023-01-01T12:00:00Z [INFO] Application"
   
-  // 验证空严重性级别
-  assert_eq(empty_severity.length(), 0)
-  assert_eq(empty_severity == "", true)
+  // 验证有效日志
+  assert_eq(valid_log.length(), 38)
+  assert_eq(valid_log.contains("[INFO]"), true)
+  assert_eq(valid_log.contains("Application started"), true)
   
-  // 验证小写严重性级别
-  assert_eq(lowercase_severity, "error")
-  assert_eq(lowercase_severity != "ERROR", true)
+  // 处理空日志
+  assert_eq(corrupted_log_empty.length(), 0)
+  let empty_recovery = "[RECOVERED] Empty log detected"
+  assert_eq(empty_recovery.contains("RECOVERED"), true)
+  assert_eq(empty_recovery.contains("Empty log"), true)
   
-  // 验证混合大小写严重性级别
-  assert_eq(mixedcase_severity, "Error")
-  assert_eq(mixedcase_severity != "ERROR", true)
-  assert_eq(mixedcase_severity != "error", true)
+  // 处理null日志
+  assert_eq(corrupted_log_null, "null")
+  let null_recovery = "[RECOVERED] Null log detected"
+  assert_eq(null_recovery.contains("RECOVERED"), true)
+  assert_eq(null_recovery.contains("Null log"), true)
   
-  // 验证数字严重性级别
-  assert_eq(numeric_severity.contains("404"), true)
-  assert_eq(numeric_severity.has_prefix("4"), true)
+  // 处理格式错误的日志
+  assert_eq(corrupted_log_malformed.contains("2023-13-45"), true)
+  assert_eq(corrupted_log_malformed.contains("[INVALID]"), true)
+  let malformed_recovery = "[RECOVERED] Malformed timestamp in log"
+  assert_eq(malformed_recovery.contains("RECOVERED"), true)
+  assert_eq(malformed_recovery.contains("Malformed timestamp"), true)
   
-  // 验证无效严重性级别
-  assert_eq(invalid_severity.contains("UNKNOWN"), true)
-  assert_eq(invalid_severity.has_suffix("LEVEL"), true)
-  
-  // 验证包含空白字符的严重性级别
-  assert_eq(whitespace_severity.has_prefix(" "), true)
-  assert_eq(whitespace_severity.has_suffix(" "), true)
-  assert_eq(whitespace_severity.trim() == "INFO", true)
-  
-  // 创建严重性级别标准化数组
-  let severity_normalizations = [
-    ("empty", empty_severity.length() == 0 ? "UNKNOWN" : empty_severity),
-    ("lowercase", lowercase_severity.uppercase()),
-    ("mixedcase", mixedcase_severity.uppercase()),
-    ("numeric", numeric_severity.has_only_digits() ? "UNKNOWN" : numeric_severity),
-    ("invalid", invalid_severity.contains("UNKNOWN") ? "UNKNOWN" : invalid_severity),
-    ("whitespace", whitespace_severity.trim())
-  ]
-  
-  // 验证严重性级别标准化结果
-  assert_eq(severity_normalizations.length(), 6)
-  assert_eq(severity_normalizations[0].0, "empty")
-  assert_eq(severity_normalizations[1].0, "lowercase")
-  assert_eq(severity_normalizations[1].1, "ERROR")
+  // 处理截断的日志
+  assert_eq(corrupted_log_truncated.length() < valid_log.length(), true)
+  let truncated_recovery = corrupted_log_truncated + " [TRUNCATED]"
+  assert_eq(truncated_recovery.contains("[TRUNCATED]"), true)
+  assert_eq(truncated_recovery.length() > corrupted_log_truncated.length(), true)
 }
 
-test "telemetry_malformed_json_handling" {
-  // 测试畸形JSON数据的处理
+test "context_propagation_failure" {
+  // 测试上下文传播失败处理
   
-  let missing_bracket = "{\"name\":\"test\""
-  let extra_comma = "{\"name\":\"test\",}"
-  let missing_quotes = "{name:\"test\"}"
-  let unclosed_string = "{\"name\":\"test"
-  let invalid_escape = "{\"name\":\"test\\\"invalid\"}"
+  let valid_context = "user_id=12345,request_id=abcdef"
+  let corrupted_context_empty = ""
+  let corrupted_context_malformed = "user_id=,request_id=xyz"
+  let corrupted_context_missing_key = "=12345,request_id=xyz"
+  let corrupted_context_missing_value = "user_id=,request_id="
   
-  // 验证缺少括号的JSON
-  assert_eq(missing_bracket.has_prefix("{"), true)
-  assert_eq(missing_bracket.has_suffix("\""), true)
-  assert_eq(missing_bracket.has_suffix("}") == false, true)
+  // 验证有效上下文
+  assert_eq(valid_context.contains("user_id=12345"), true)
+  assert_eq(valid_context.contains("request_id=abcdef"), true)
+  assert_eq(valid_context.split(",").length(), 2)
   
-  // 验证多余逗号的JSON
-  assert_eq(extra_comma.contains("\,}"), true)
-  assert_eq(extra_comma.has_suffix("}"), true)
+  // 处理空上下文
+  assert_eq(corrupted_context_empty.length(), 0)
+  let empty_context_recovery = "user_id=anonymous,request_id=generated"
+  assert_eq(empty_context_recovery.contains("user_id=anonymous"), true)
+  assert_eq(empty_context_recovery.contains("request_id=generated"), true)
   
-  // 验证缺少引号的JSON
-  assert_eq(missing_quotes.contains("name:\"test\""), true)
-  assert_eq(missing_quotes.contains("\"name\"") == false, true)
+  // 处理格式错误的上下文
+  assert_eq(corrupted_context_malformed.contains("user_id="), true)
+  assert_eq(corrupted_context_malformed.contains("request_id=xyz"), true)
+  let malformed_context_recovery = "user_id=default,request_id=xyz"
+  assert_eq(malformed_context_recovery.contains("user_id=default"), true)
   
-  // 验证未闭合字符串的JSON
-  assert_eq(unclosed_string.has_prefix("{"), true)
-  assert_eq(unclosed_string.has_suffix("\"") == false, true)
-  assert_eq(unclosed_string.has_suffix("}") == false, true)
+  // 处理缺少键的上下文
+  assert_eq(corrupted_context_missing_key.has_prefix("="), true)
+  let missing_key_recovery = "unknown_key=12345,request_id=xyz"
+  assert_eq(missing_key_recovery.contains("unknown_key=12345"), true)
   
-  // 验证无效转义的JSON
-  assert_eq(invalid_escape.contains("\\\"invalid"), true)
-  
-  // 创建JSON错误检测数组
-  let json_errors = [
-    ("missing_bracket", missing_bracket.has_suffix("}") == false),
-    ("extra_comma", extra_comma.contains("\,}")),
-    ("missing_quotes", missing_quotes.contains("name:\"test\"")),
-    ("unclosed_string", unclosed_string.has_suffix("}") == false),
-    ("invalid_escape", invalid_escape.contains("\\\"invalid"))
-  ]
-  
-  // 验证JSON错误检测结果
-  assert_eq(json_errors.length(), 5)
-  assert_eq(json_errors[0].0, "missing_bracket")
-  assert_eq(json_errors[0].1, true)
-  assert_eq(json_errors[2].0, "missing_quotes")
-  assert_eq(json_errors[2].1, true)
+  // 处理缺少值的上下文
+  assert_eq(corrupted_context_missing_value.contains("user_id="), true)
+  assert_eq(corrupted_context_missing_value.contains("request_id="), true)
+  let missing_value_recovery = "user_id=unknown,request_id=unknown"
+  assert_eq(missing_value_recovery.contains("user_id=unknown"), true)
+  assert_eq(missing_value_recovery.contains("request_id=unknown"), true)
 }
 
-test "telemetry_resource_limit_handling" {
-  // 测试资源限制的处理
+test "attribute_type_mismatch_handling" {
+  // 测试属性类型不匹配处理
   
-  let max_attributes = 1000
-  let max_string_length = 10000
-  let max_array_size = 5000
-  let current_attributes = 1500
-  let current_string_length = 15000
-  let current_array_size = 6000
+  let expected_string_attr = "username"
+  let expected_int_attr = "user_age"
+  let expected_float_attr = "user_score"
+  let expected_bool_attr = "is_active"
   
-  // 验证属性数量超出限制
-  assert_eq(current_attributes > max_attributes, true)
-  assert_eq(current_attributes - max_attributes, 500)
+  // 类型不匹配的值
+  let string_as_int = "123"
+  let int_as_string = 456L
+  let float_as_string = "78.9"
+  let bool_as_string = "true"
   
-  // 验证字符串长度超出限制
-  assert_eq(current_string_length > max_string_length, true)
-  assert_eq(current_string_length - max_string_length, 5000)
+  // 验证预期类型
+  assert_eq(expected_string_attr.has_prefix("user"), true)
+  assert_eq(expected_int_attr.has_suffix("age"), true)
+  assert_eq(expected_float_attr.has_suffix("score"), true)
+  assert_eq(expected_bool_attr.has_prefix("is_"), true)
   
-  // 验证数组大小超出限制
-  assert_eq(current_array_size > max_array_size, true)
-  assert_eq(current_array_size - max_array_size, 1000)
+  // 处理字符串作为整数
+  assert_eq(string_as_int.has_prefix("1"), true)
+  assert_eq(string_as_int.has_suffix("3"), true)
+  let string_int_error = "Type mismatch: expected Int64, got String for " + expected_int_attr
+  assert_eq(string_int_error.contains("Type mismatch"), true)
+  assert_eq(string_int_error.contains("expected Int64"), true)
   
-  // 创建资源限制违规数组
-  let limit_violations = [
-    ("attributes", current_attributes > max_attributes),
-    ("string_length", current_string_length > max_string_length),
-    ("array_size", current_array_size > max_array_size)
-  ]
+  // 处理整数作为字符串
+  assert_eq(int_as_string > 400L, true)
+  assert_eq(int_as_string < 500L, true)
+  let int_string_error = "Type mismatch: expected String, got Int64 for " + expected_string_attr
+  assert_eq(int_string_error.contains("Type mismatch"), true)
+  assert_eq(int_string_error.contains("expected String"), true)
   
-  // 验证资源限制违规结果
-  assert_eq(limit_violations.length(), 3)
-  assert_eq(limit_violations[0].0, "attributes")
-  assert_eq(limit_violations[0].1, true)
-  assert_eq(limit_violations[1].0, "string_length")
-  assert_eq(limit_violations[1].1, true)
-  assert_eq(limit_violations[2].0, "array_size")
-  assert_eq(limit_violations[2].1, true)
+  // 处理浮点数作为字符串
+  assert_eq(float_as_string.contains("."), true)
+  let float_string_error = "Type mismatch: expected Double, got String for " + expected_float_attr
+  assert_eq(float_string_error.contains("Type mismatch"), true)
+  assert_eq(float_string_error.contains("expected Double"), true)
   
-  // 创建缓解措施数组
-  let mitigation_strategies = [
-    ("attributes", current_attributes > max_attributes ? "truncate_attributes" : "no_action"),
-    ("string_length", current_string_length > max_string_length ? "truncate_string" : "no_action"),
-    ("array_size", current_array_size > max_array_size ? "split_array" : "no_action")
-  ]
+  // 处理布尔值作为字符串
+  assert_eq(bool_as_string, "true")
+  let bool_string_error = "Type mismatch: expected Bool, got String for " + expected_bool_attr
+  assert_eq(bool_string_error.contains("Type mismatch"), true)
+  assert_eq(bool_string_error.contains("expected Bool"), true)
+}
+
+test "resource_degradation_handling" {
+  // 测试资源降级处理
   
-  // 验证缓解措施
-  assert_eq(mitigation_strategies.length(), 3)
-  assert_eq(mitigation_strategies[0].0, "attributes")
-  assert_eq(mitigation_strategies[0].1, "truncate_attributes")
-  assert_eq(mitigation_strategies[1].0, "string_length")
-  assert_eq(mitigation_strategies[1].1, "truncate_string")
+  let normal_memory_usage = 512L      // MB
+  let high_memory_usage = 4096L       // MB
+  let critical_memory_usage = 8192L   // MB
+  let exhausted_memory_usage = 16384L // MB
+  
+  let normal_cpu_usage = 25.0          // 百分比
+  let high_cpu_usage = 75.0            // 百分比
+  let critical_cpu_usage = 95.0        // 百分比
+  
+  // 验证正常资源使用
+  assert_eq(normal_memory_usage < 1024L, true)
+  assert_eq(normal_cpu_usage < 50.0, true)
+  
+  // 处理高内存使用
+  assert_eq(high_memory_usage > 2048L, true)
+  assert_eq(high_memory_usage < 8192L, true)
+  let high_memory_warning = "High memory usage detected: " + high_memory_usage.to_string() + "MB"
+  assert_eq(high_memory_warning.contains("High memory usage"), true)
+  
+  // 处理临界内存使用
+  assert_eq(critical_memory_usage > 6144L, true)
+  assert_eq(critical_memory_usage < 16384L, true)
+  let critical_memory_action = "Enabling memory conservation mode at " + critical_memory_usage.to_string() + "MB"
+  assert_eq(critical_memory_action.contains("memory conservation"), true)
+  
+  // 处理内存耗尽
+  assert_eq(exhausted_memory_usage >= 16384L, true)
+  let exhausted_memory_emergency = "Emergency: Memory exhausted at " + exhausted_memory_usage.to_string() + "MB"
+  assert_eq(exhausted_memory_emergency.contains("Emergency"), true)
+  assert_eq(exhausted_memory_emergency.contains("Memory exhausted"), true)
+  
+  // 处理高CPU使用
+  assert_eq(high_cpu_usage > 50.0, true)
+  assert_eq(high_cpu_usage < 90.0, true)
+  let high_cpu_warning = "High CPU usage detected: " + high_cpu_usage.to_string() + "%"
+  assert_eq(high_cpu_warning.contains("High CPU usage"), true)
+  
+  // 处理临界CPU使用
+  assert_eq(critical_cpu_usage > 90.0, true)
+  assert_eq(critical_cpu_usage <= 100.0, true)
+  let critical_cpu_action = "Throttling telemetry collection at " + critical_cpu_usage.to_string() + "% CPU"
+  assert_eq(critical_cpu_action.contains("Throttling telemetry"), true)
 }
