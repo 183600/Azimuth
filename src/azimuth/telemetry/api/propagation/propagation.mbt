@@ -1,7 +1,7 @@
 // Azimuth Telemetry - Propagation API
 // 跨进程上下文传播
 
-use azimuth.telemetry.api.context.Context
+
 
 pub trait TextMapCarrier {
   get(self : TextMapCarrier, key : String) -> String?

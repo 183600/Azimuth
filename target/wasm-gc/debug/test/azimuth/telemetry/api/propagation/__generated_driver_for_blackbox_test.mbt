@@ -76,6 +76,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_70726f7061676174696f6e5f746573742e6d6274_1, ["w3c_trace_context_inject"]),
     2: (__test_70726f7061676174696f6e5f746573742e6d6274_2, ["w3c_baggage_operations"]),
   },
+  "propagation_integration_test.mbt": {
+    0: (__test_70726f7061676174696f6e5f696e746567726174696f6e5f746573742e6d6274_0, ["propagation_composite_integration"]),
+    1: (__test_70726f7061676174696f6e5f696e746567726174696f6e5f746573742e6d6274_1, ["propagation_w3c_tracecontext_format"]),
+    2: (__test_70726f7061676174696f6e5f696e746567726174696f6e5f746573742e6d6274_2, ["propagation_baggage_header_parsing"]),
+    3: (__test_70726f7061676174696f6e5f696e746567726174696f6e5f746573742e6d6274_3, ["propagation_carrier_implementation"]),
+  },
   "propagation_edge_cases_test.mbt": {
     0: (__test_70726f7061676174696f6e5f656467655f63617365735f746573742e6d6274_0, ["propagation_header_edge_cases"]),
     1: (__test_70726f7061676174696f6e5f656467655f63617365735f746573742e6d6274_1, ["propagation_baggage_edge_cases"]),

@@ -84,13 +84,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_6d6574726963735f636f6d70726568656e736976655f746573742e6d6274_7, ["metric_measurement_edge_cases"]),
   },
   "metrics_boundary_test.mbt": {
-    0: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_0, ["counter_boundary_values"]),
-    1: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_1, ["histogram_boundary_values"]),
-    2: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_2, ["up_down_counter_boundary_values"]),
-    3: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_3, ["gauge_boundary_values"]),
-    4: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_4, ["meter_creation_boundary_values"]),
-    5: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_5, ["measurement_boundary_values"]),
-    6: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_6, ["instrument_type_boundary_coverage"]),
+    0: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_0, ["metrics_counter_boundary_values"]),
+    1: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_1, ["metrics_histogram_precision_boundary"]),
+    2: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_2, ["metrics_gauge_monotonic_boundary"]),
+    3: (__test_6d6574726963735f626f756e646172795f746573742e6d6274_3, ["metrics_up_down_counter_accumulation"]),
   },
   "metrics_basic_test.mbt": {
     0: (__test_6d6574726963735f62617369635f746573742e6d6274_0, ["counter_operations"]),

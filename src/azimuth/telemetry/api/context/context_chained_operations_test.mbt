@@ -332,7 +332,7 @@ test "context_chained_performance_characteristics" {
   
   // 创建多个键
   while i < 100 {
-    keys.push(create_key("key-" + to_string(i)))
+    keys.push(create_key("key-" + i.to_string()))
     i = i + 1
   }
   
@@ -340,7 +340,7 @@ test "context_chained_performance_characteristics" {
   let mut current_ctx = ctx
   let mut j = 0
   while j < keys.length() {
-    current_ctx = current_ctx.with_value(keys[j], "value-" + to_string(j))
+    current_ctx = current_ctx.with_value(keys[j], "value-" + j.to_string())
     j = j + 1
   }
   
@@ -348,8 +348,8 @@ test "context_chained_performance_characteristics" {
   let mut k = 0
   while k < keys.length() {
     match current_ctx.get(keys[k]) {
-      Some(value) => assert_eq(value, "value-" + to_string(k))
-      None => @test.fail("Expected value for key-" + to_string(k))
+      Some(value) => assert_eq(value, "value-" + k.to_string())
+      None => @test.fail("Expected value for key-" + k.to_string())
     }
     k = k + 1
   }
@@ -359,8 +359,8 @@ test "context_chained_performance_characteristics" {
   let mut deep_ctx = ctx
   let mut m = 0
   while m < 1000 {
-    let temp_key = create_key("deep-key-" + to_string(m))
-    deep_ctx = deep_ctx.with_value(temp_key, "deep-value-" + to_string(m))
+    let temp_key = create_key("deep-key-" + m.to_string())
+    deep_ctx = deep_ctx.with_value(temp_key, "deep-value-" + m.to_string())
     m = m + 1
   }
   

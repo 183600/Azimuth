@@ -97,6 +97,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_5, ["context_concurrent_special_value_handling"]),
     6: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_6, ["context_concurrent_baggage_isolation"]),
   },
+  "context_concurrent_integration_test.mbt": {
+    0: (__test_636f6e746578745f636f6e63757272656e745f696e746567726174696f6e5f746573742e6d6274_0, ["context_concurrent_operations"]),
+    1: (__test_636f6e746578745f636f6e63757272656e745f696e746567726174696f6e5f746573742e6d6274_1, ["context_key_collision_handling"]),
+    2: (__test_636f6e746578745f636f6e63757272656e745f696e746567726174696f6e5f746573742e6d6274_2, ["context_large_value_handling"]),
+    3: (__test_636f6e746578745f636f6e63757272656e745f696e746567726174696f6e5f746573742e6d6274_3, ["baggage_concurrent_entry_operations"]),
+    4: (__test_636f6e746578745f636f6e63757272656e745f696e746567726174696f6e5f746573742e6d6274_4, ["baggage_special_characters_handling"]),
+    5: (__test_636f6e746578745f636f6e63757272656e745f696e746567726174696f6e5f746573742e6d6274_5, ["context_and_baggage_integration"]),
+  },
   "context_comprehensive_test.mbt": {
     0: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_0, ["baggage_basic_operations"]),
     1: (__test_636f6e746578745f636f6d70726568656e736976655f746573742e6d6274_1, ["baggage_complex_scenarios"]),

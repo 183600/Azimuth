@@ -68,6 +68,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_6c6f67735f73657665726974795f746573742e6d6274_3, ["log_record_with_resource_and_instrumentation_scope"]),
     4: (__test_6c6f67735f73657665726974795f746573742e6d6274_4, ["logger_convenience_methods"]),
   },
+  "logs_serialization_test.mbt": {
+    0: (__test_6c6f67735f73657269616c697a6174696f6e5f746573742e6d6274_0, ["log_record_serialization_format"]),
+    1: (__test_6c6f67735f73657269616c697a6174696f6e5f746573742e6d6274_1, ["log_record_severity_conversion"]),
+    2: (__test_6c6f67735f73657269616c697a6174696f6e5f746573742e6d6274_2, ["log_record_attribute_types_serialization"]),
+    3: (__test_6c6f67735f73657269616c697a6174696f6e5f746573742e6d6274_3, ["log_record_builder_chaining_serialization"]),
+    4: (__test_6c6f67735f73657269616c697a6174696f6e5f746573742e6d6274_4, ["log_record_trace_context_serialization"]),
+  },
   "logs_edge_cases_test.mbt": {
     0: (__test_6c6f67735f656467655f63617365735f746573742e6d6274_0, ["logs_severity_edge_cases"]),
     1: (__test_6c6f67735f656467655f63617365735f746573742e6d6274_1, ["logs_log_record_edge_cases"]),

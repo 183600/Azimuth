@@ -1,8 +1,7 @@
 // Azimuth Telemetry - Trace API
 // 分布式链路追踪
 
-use azimuth.telemetry.api.common.{AttributeValue, Resource, InstrumentationScope}
-use azimuth.telemetry.api.context.Context
+
 
 pub enum SpanKind {
   Internal

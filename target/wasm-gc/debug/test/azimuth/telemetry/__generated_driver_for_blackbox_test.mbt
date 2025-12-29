@@ -89,12 +89,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_74656c656d657472795f73656375726974795f746573742e6d6274_4, ["security_audit_logging"]),
   },
   "telemetry_performance_test.mbt": {
-    0: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_0, ["performance_large_attribute_processing"]),
-    1: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_1, ["performance_string_operations"]),
-    2: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_2, ["performance_array_operations"]),
-    3: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_3, ["performance_numeric_operations"]),
-    4: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_4, ["memory_usage_patterns"]),
-    5: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_5, ["performance_context_switching"]),
+    0: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_0, ["performance_context_operations"]),
+    1: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_1, ["performance_log_record_creation"]),
+    2: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_2, ["performance_metrics_recording"]),
+    3: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_3, ["performance_propagation_operations"]),
+    4: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_4, ["performance_attribute_operations"]),
+    5: (__test_74656c656d657472795f706572666f726d616e63655f746573742e6d6274_5, ["performance_memory_allocation"]),
   },
   "telemetry_integrity_test.mbt": {
     0: (__test_74656c656d657472795f696e746567726974795f746573742e6d6274_0, ["data_integrity_attribute_consistency"]),
@@ -383,9 +383,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_8, ["platform_compatibility_endianness"]),
   },
   "cross_module_integration_test.mbt": {
-    0: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_0, ["cross_module_integration_basic"]),
-    1: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_1, ["cross_module_complex_workflow"]),
-    2: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_2, ["cross_module_error_handling"]),
+    0: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_0, ["cross_module_context_logs_integration"]),
+    1: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_1, ["cross_module_metrics_context_integration"]),
+    2: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_2, ["cross_module_propagation_logs_integration"]),
+    3: (__test_63726f73735f6d6f64756c655f696e746567726174696f6e5f746573742e6d6274_3, ["cross_module_resource_context_integration"]),
   },
   "cross_module_data_consistency_test.mbt": {
     0: (__test_63726f73735f6d6f64756c655f646174615f636f6e73697374656e63795f746573742e6d6274_0, ["trace_context_consistency"]),

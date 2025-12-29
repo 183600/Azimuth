@@ -57,6 +57,13 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "type_conversion_validation_test.mbt": {
+    0: (__test_747970655f636f6e76657273696f6e5f76616c69646174696f6e5f746573742e6d6274_0, ["attribute_value_type_conversions"]),
+    1: (__test_747970655f636f6e76657273696f6e5f76616c69646174696f6e5f746573742e6d6274_1, ["attribute_value_edge_cases"]),
+    2: (__test_747970655f636f6e76657273696f6e5f76616c69646174696f6e5f746573742e6d6274_2, ["resource_creation_and_validation"]),
+    3: (__test_747970655f636f6e76657273696f6e5f76616c69646174696f6e5f746573742e6d6274_3, ["instrumentation_scope_validation"]),
+    4: (__test_747970655f636f6e76657273696f6e5f76616c69646174696f6e5f746573742e6d6274_4, ["attribute_value_string_representation"]),
+  },
   "simple_test.mbt": {
     0: (__test_73696d706c655f746573742e6d6274_0, ["simple_attribute_value_test"]),
   },
