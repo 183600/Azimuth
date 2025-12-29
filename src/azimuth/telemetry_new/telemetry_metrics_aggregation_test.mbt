@@ -3,188 +3,248 @@
 test "counter_metrics_aggregation" {
   // 测试计数器指标聚合
   
-  let service_metrics = [
-    ("http_requests_total", 150),
-    ("http_requests_total", 200),
-    ("http_requests_total", 175),
-    ("http_requests_total", 180)
+  let raw_counter_metrics = [
+    ("http_requests_total", "service_a", "GET", 150),
+    ("http_requests_total", "service_a", "POST", 80),
+    ("http_requests_total", "service_b", "GET", 200),
+    ("http_requests_total", "service_b", "POST", 120),
+    ("http_requests_total", "service_a", "GET", 100),  // 同一服务同一方法的后续计数
+    ("error_count", "service_a", "timeout", 5),
+    ("error_count", "service_b", "connection", 3),
+    ("error_count", "service_a", "timeout", 8)  // 同一服务同一错误类型的后续计数
   ]
   
-  // 验证指标数量
-  assert_eq(service_metrics.length(), 4)
+  // 验证原始计数器指标
+  assert_eq(raw_counter_metrics.length(), 8)
   
-  // 聚合计数器指标
-  let mut total_requests = 0
-  for metric in service_metrics {
-    total_requests = total_requests + metric.1
+  // 按指标名、服务、标签分组聚合
+  let aggregated_metrics = []
+  let processed_keys = []
+  
+  for metric in raw_counter_metrics {
+    let key = metric.0 + ":" + metric.1 + ":" + metric.2
+    
+    if not processed_keys.contains(key) {
+      let mut total_value = 0
+      
+      // 累加相同键的所有值
+      for m in raw_counter_metrics {
+        if m.0 + ":" + m.1 + ":" + m.2 == key {
+          total_value = total_value + m.3
+        }
+      }
+      
+      aggregated_metrics.push((metric.0, metric.1, metric.2, total_value))
+      processed_keys.push(key)
+    }
   }
   
   // 验证聚合结果
-  assert_eq(total_requests, 705)
-  assert_eq(total_requests > 700, true)
-  assert_eq(total_requests < 800, true)
+  assert_eq(aggregated_metrics.length(), 5)  // 8个原始指标聚合为5个唯一组合
   
-  // 计算平均值
-  let avg_requests = total_requests / service_metrics.length()
-  assert_eq(avg_requests, 176)
+  // 验证具体的聚合结果
+  let service_a_get_requests = aggregated_metrics.find(|m| m.0 == "http_requests_total" and m.1 == "service_a" and m.2 == "GET")
+  let service_a_post_requests = aggregated_metrics.find(|m| m.0 == "http_requests_total" and m.1 == "service_a" and m.2 == "POST")
+  let service_a_timeout_errors = aggregated_metrics.find(|m| m.0 == "error_count" and m.1 == "service_a" and m.2 == "timeout")
+  
+  assert_eq(service_a_get_requests.3, 250)  // 150 + 100
+  assert_eq(service_a_post_requests.3, 80)
+  assert_eq(service_a_timeout_errors.3, 13)  // 5 + 8
 }
 
 test "gauge_metrics_aggregation" {
-  // 测试仪表指标聚合
+  // 测试仪表指标聚合（取最新值）
   
-  let memory_readings = [
-    1024.5,  // MB
-    1056.8,  // MB
-    987.2,   // MB
-    1102.3,  // MB
-    998.7    // MB
+  let raw_gauge_metrics = [
+    ("cpu_usage", "service_a", 45.2, "2023-12-01T10:00:00Z"),
+    ("memory_usage", "service_a", 1024.0, "2023-12-01T10:00:00Z"),
+    ("cpu_usage", "service_a", 48.7, "2023-12-01T10:01:00Z"),
+    ("cpu_usage", "service_b", 62.1, "2023-12-01T10:00:30Z"),
+    ("memory_usage", "service_a", 1056.0, "2023-12-01T10:01:00Z"),
+    ("memory_usage", "service_b", 2048.0, "2023-12-01T10:00:30Z"),
+    ("cpu_usage", "service_a", 52.3, "2023-12-01T10:02:00Z")  // service_a的最新CPU使用率
   ]
   
-  // 验证读数数量
-  assert_eq(memory_readings.length(), 5)
+  // 验证原始仪表指标
+  assert_eq(raw_gauge_metrics.length(), 7)
   
-  // 计算最小值
-  let mut min_memory = memory_readings[0]
-  let mut i = 1
-  while i < memory_readings.length() {
-    if memory_readings[i] < min_memory {
-      min_memory = memory_readings[i]
+  // 按指标名和服务分组，取最新时间戳的值
+  let latest_gauges = []
+  let processed_keys = []
+  
+  for metric in raw_gauge_metrics {
+    let key = metric.0 + ":" + metric.1
+    
+    if not processed_keys.contains(key) {
+      let mut latest_metric = metric
+      
+      // 查找相同键的最新指标
+      for m in raw_gauge_metrics {
+        if m.0 + ":" + m.1 == key and m.3 > latest_metric.3 {
+          latest_metric = m
+        }
+      }
+      
+      latest_gauges.push((metric.0, metric.1, latest_metric.2, latest_metric.3))
+      processed_keys.push(key)
     }
-    i = i + 1
   }
-  assert_eq(min_memory, 987.2)
   
-  // 计算最大值
-  let mut max_memory = memory_readings[0]
-  i = 1
-  while i < memory_readings.length() {
-    if memory_readings[i] > max_memory {
-      max_memory = memory_readings[i]
-    }
-    i = i + 1
-  }
-  assert_eq(max_memory, 1102.3)
+  // 验证聚合结果
+  assert_eq(latest_gauges.length(), 4)  // 7个原始指标聚合为4个唯一服务-指标组合
   
-  // 计算平均值
-  let mut total_memory = 0.0
-  for reading in memory_readings {
-    total_memory = total_memory + reading
-  }
-  let avg_memory = total_memory / memory_readings.length()
+  // 验证具体的聚合结果
+  let service_a_cpu = latest_gauges.find(|g| g.0 == "cpu_usage" and g.1 == "service_a")
+  let service_a_memory = latest_gauges.find(|g| g.0 == "memory_usage" and g.1 == "service_a")
+  let service_b_cpu = latest_gauges.find(|g| g.0 == "cpu_usage" and g.1 == "service_b")
   
-  assert_eq(avg_memory > 1000.0, true)
-  assert_eq(avg_memory < 1100.0, true)
+  assert_eq(service_a_cpu.2, 52.3)  // 最新值
+  assert_eq(service_a_cpu.3, "2023-12-01T10:02:00Z")  // 最新时间戳
+  assert_eq(service_a_memory.2, 1056.0)
+  assert_eq(service_b_cpu.2, 62.1)
 }
 
 test "histogram_metrics_aggregation" {
   // 测试直方图指标聚合
   
-  let response_time_buckets = [
-    ("0.1", 50),    // 0-100ms
-    ("0.5", 120),   // 100-500ms
-    ("1.0", 80),    // 500ms-1s
-    ("5.0", 30),    // 1-5s
-    ("inf", 10)     // >5s
+  let raw_histogram_metrics = [
+    ("request_duration", "service_a", "0.1", 50),    // (指标名, 服务, 桶边界, 计数)
+    ("request_duration", "service_a", "0.5", 120),
+    ("request_duration", "service_a", "1.0", 180),
+    ("request_duration", "service_a", "5.0", 195),
+    ("request_duration", "service_a", "inf", 200),
+    ("request_duration", "service_b", "0.1", 30),
+    ("request_duration", "service_b", "0.5", 80),
+    ("request_duration", "service_b", "1.0", 140),
+    ("request_duration", "service_b", "5.0", 180),
+    ("request_duration", "service_b", "inf", 200)
   ]
   
-  // 验证桶数量
-  assert_eq(response_time_buckets.length(), 5)
+  // 验证原始直方图指标
+  assert_eq(raw_histogram_metrics.length(), 10)
   
-  // 验证快速响应 (<500ms)
-  let fast_responses = response_time_buckets[0].1 + response_time_buckets[1].1
-  assert_eq(fast_responses, 170)
+  // 按服务和指标分组
+  let service_a_histogram = []
+  let service_b_histogram = []
   
-  // 验证慢响应 (>1s)
-  let slow_responses = response_time_buckets[3].1 + response_time_buckets[4].1
-  assert_eq(slow_responses, 40)
-  
-  // 计算总响应数
-  let mut total_responses = 0
-  for bucket in response_time_buckets {
-    total_responses = total_responses + bucket.1
+  for metric in raw_histogram_metrics {
+    if metric.1 == "service_a" {
+      service_a_histogram.push(metric)
+    } else if metric.1 == "service_b" {
+      service_b_histogram.push(metric)
+    }
   }
-  assert_eq(total_responses, 290)
   
-  // 计算快速响应百分比
-  let fast_percentage = (fast_responses * 100) / total_responses
-  assert_eq(fast_percentage, 58)
+  // 验证分组结果
+  assert_eq(service_a_histogram.length(), 5)
+  assert_eq(service_b_histogram.length(), 5)
+  
+  // 计算分位数（简化计算）
+  let service_a_total = service_a_histogram[4].3  // +Inf桶的计数
+  let service_b_total = service_b_histogram[4].3
+  
+  // 验证总计数
+  assert_eq(service_a_total, 200)
+  assert_eq(service_b_total, 200)
+  
+  // 计算P95分位数（简化：假设1.0秒桶接近P95）
+  let service_a_p95_bucket = service_a_histogram.find(|m| m.2 == "1.0")
+  let service_b_p95_bucket = service_b_histogram.find(|m| m.2 == "1.0")
+  
+  // 验证分位数计算
+  assert_eq(service_a_p95_bucket.2, "1.0")
+  assert_eq(service_a_p95_bucket.3, 180)
+  assert_eq(service_b_p95_bucket.2, "1.0")
+  assert_eq(service_b_p95_bucket.3, 140)
+  
+  // 计算平均请求持续时间（简化估算）
+  let service_a_avg_duration = (50.0 * 0.05 + 70.0 * 0.3 + 60.0 * 0.75 + 15.0 * 3.0 + 5.0 * 10.0) / service_a_total.to_float()
+  let service_b_avg_duration = (30.0 * 0.05 + 50.0 * 0.3 + 60.0 * 0.75 + 40.0 * 3.0 + 20.0 * 10.0) / service_b_total.to_float()
+  
+  // 验证平均持续时间在合理范围内
+  assert_eq(service_a_avg_duration > 0.0, true)
+  assert_eq(service_b_avg_duration > 0.0, true)
 }
 
-test "summary_metrics_aggregation" {
-  // 测试摘要指标聚合
+test "multi_service_metrics_aggregation" {
+  // 测试多服务指标聚合
   
-  let latency_quantiles = [
-    ("0.5", 0.150),  // 50th percentile: 150ms
-    ("0.9", 0.450),  // 90th percentile: 450ms
-    ("0.95", 0.680), // 95th percentile: 680ms
-    ("0.99", 1.200)  // 99th percentile: 1.2s
+  let service_metrics = [
+    ("service_a", "cpu_usage", 45.2),
+    ("service_a", "memory_usage", 1024.0),
+    ("service_a", "request_count", 1500),
+    ("service_b", "cpu_usage", 62.1),
+    ("service_b", "memory_usage", 2048.0),
+    ("service_b", "request_count", 2300),
+    ("service_c", "cpu_usage", 38.7),
+    ("service_c", "memory_usage", 768.0),
+    ("service_c", "request_count", 900)
   ]
   
-  // 验证分位数数量
-  assert_eq(latency_quantiles.length(), 4)
+  // 验证服务指标
+  assert_eq(service_metrics.length(), 9)
   
-  // 验证中位数
-  assert_eq(latency_quantiles[0].0, "0.5")
-  assert_eq(latency_quantiles[0].1, 0.150)
+  // 按指标类型聚合所有服务
+  let cpu_usages = []
+  let memory_usages = []
+  let request_counts = []
   
-  // 验证99分位数
-  assert_eq(latency_quantiles[3].0, "0.99")
-  assert_eq(latency_quantiles[3].1, 1.200)
-  
-  // 验证分位数递增
-  let mut i = 1
-  while i < latency_quantiles.length() {
-    assert_eq(latency_quantiles[i].1 > latency_quantiles[i-1].1, true)
-    i = i + 1
+  for metric in service_metrics {
+    match metric.1 {
+      "cpu_usage" => cpu_usages.push(metric.2)
+      "memory_usage" => memory_usages.push(metric.2)
+      "request_count" => request_counts.push(metric.2)
+      _ => ()
+    }
   }
   
-  // 计算延迟范围
-  let min_latency = latency_quantiles[0].1
-  let max_latency = latency_quantiles[3].1
-  let latency_range = max_latency - min_latency
+  // 验证指标分组
+  assert_eq(cpu_usages.length(), 3)
+  assert_eq(memory_usages.length(), 3)
+  assert_eq(request_counts.length(), 3)
   
-  assert_eq(latency_range > 1.0, true)
-  assert_eq(latency_range < 1.1, true)
-}
-
-test "time_series_aggregation" {
-  // 测试时间序列聚合
+  // 计算聚合统计
+  let mut total_cpu = 0.0
+  let mut total_memory = 0.0
+  let mut total_requests = 0
   
-  let time_series_data = [
-    ("2023-01-01T00:00:00Z", 100),
-    ("2023-01-01T01:00:00Z", 120),
-    ("2023-01-01T02:00:00Z", 95),
-    ("2023-01-01T03:00:00Z", 110),
-    ("2023-01-01T04:00:00Z", 105)
-  ]
-  
-  // 验证时间序列点数量
-  assert_eq(time_series_data.length(), 5)
-  
-  // 验证时间戳格式
-  assert_eq(time_series_data[0].0.has_prefix("2023-01-01"), true)
-  assert_eq(time_series_data[0].0.has_suffix("00:00:00Z"), true)
-  
-  // 计算时间窗口内的总和
-  let mut total_value = 0
-  for point in time_series_data {
-    total_value = total_value + point.1
-  }
-  assert_eq(total_value, 530)
-  
-  // 计算滑动平均值 (窗口大小为3)
-  let moving_averages = []
-  let mut i = 2
-  while i < time_series_data.length() {
-    let window_sum = time_series_data[i-2].1 + time_series_data[i-1].1 + time_series_data[i].1
-    let window_avg = window_sum / 3
-    moving_averages.push(window_avg)
-    i = i + 1
+  for cpu in cpu_usages {
+    total_cpu = total_cpu + cpu
   }
   
-  // 验证移动平均值
-  assert_eq(moving_averages.length(), 3)
-  assert_eq(moving_averages[0], 105) // (100+120+95)/3
-  assert_eq(moving_averages[1], 108) // (120+95+110)/3
-  assert_eq(moving_averages[2], 103) // (95+110+105)/3
+  for memory in memory_usages {
+    total_memory = total_memory + memory
+  }
+  
+  for requests in request_counts {
+    total_requests = total_requests + requests
+  }
+  
+  // 计算平均值
+  let avg_cpu = total_cpu / cpu_usages.length().to_float()
+  let avg_memory = total_memory / memory_usages.length().to_float()
+  let avg_requests = total_requests / request_counts.length()
+  
+  // 验证聚合统计
+  assert_eq(avg_cpu > 40.0, true)
+  assert_eq(avg_cpu < 65.0, true)
+  assert_eq(avg_memory > 1000.0, true)
+  assert_eq(avg_requests > 1000, true)
+  
+  // 查找最大值和最小值
+  let mut max_cpu = cpu_usages[0]
+  let mut min_cpu = cpu_usages[0]
+  
+  for cpu in cpu_usages {
+    if cpu > max_cpu {
+      max_cpu = cpu
+    }
+    if cpu < min_cpu {
+      min_cpu = cpu
+    }
+  }
+  
+  // 验证极值
+  assert_eq(max_cpu, 62.1)  // service_b
+  assert_eq(min_cpu, 38.7)  // service_c
 }

@@ -883,6 +883,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_4, ["malicious_baggage_handling"]),
     5: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_5, ["malicious_propagation_data_handling"]),
   },
+  "security_compliance_comprehensive_test.mbt": {
+    0: (__test_73656375726974795f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_0, ["data_privacy_and_pii_protection"]),
+    1: (__test_73656375726974795f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_1, ["access_control_and_authorization"]),
+    2: (__test_73656375726974795f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_2, ["security_boundary_and_isolation"]),
+    3: (__test_73656375726974795f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_3, ["audit_trail_and_compliance_reporting"]),
+  },
   "security_boundary_test.mbt": {
     0: (__test_73656375726974795f626f756e646172795f746573742e6d6274_0, ["input_sanitization_validation"]),
     1: (__test_73656375726974795f626f756e646172795f746573742e6d6274_1, ["access_control_validation"]),
@@ -913,6 +919,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_7265736f757263655f6c696d69745f6465677261646174696f6e5f746573742e6d6274_3, ["resource_limits_feature_flag_degradation"]),
     4: (__test_7265736f757263655f6c696d69745f6465677261646174696f6e5f746573742e6d6274_4, ["resource_limits_sampling_rate_adjustment"]),
     5: (__test_7265736f757263655f6c696d69745f6465677261646174696f6e5f746573742e6d6274_5, ["resource_limits_graceful_recovery"]),
+  },
+  "resource_limit_degradation_comprehensive_test.mbt": {
+    0: (__test_7265736f757263655f6c696d69745f6465677261646174696f6e5f636f6d70726568656e736976655f746573742e6d6274_0, ["memory_pressure_degradation"]),
+    1: (__test_7265736f757263655f6c696d69745f6465677261646174696f6e5f636f6d70726568656e736976655f746573742e6d6274_1, ["cpu_throttling_adaptation"]),
+    2: (__test_7265736f757263655f6c696d69745f6465677261646174696f6e5f636f6d70726568656e736976655f746573742e6d6274_2, ["disk_space_exhaustion_handling"]),
+    3: (__test_7265736f757263655f6c696d69745f6465677261646174696f6e5f636f6d70726568656e736976655f746573742e6d6274_3, ["network_bandwidth_limitation"]),
   },
   "resource_lifecycle_test.mbt": {
     0: (__test_7265736f757263655f6c6966656379636c655f746573742e6d6274_0, ["resource_lifecycle_management"]),
@@ -1288,11 +1300,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_646174615f636f6e73697374656e63795f746573742e6d6274_6, ["data_consistency_checksum_validation"]),
   },
   "data_consistency_comprehensive_test.mbt": {
-    0: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_0, ["data consistency: resource to context propagation"]),
-    1: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_1, ["data consistency: baggage to metrics attributes"]),
-    2: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_2, ["data consistency: instrumentation scope across modules"]),
-    3: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_3, ["data consistency: complex attribute type conversion"]),
-    4: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_4, ["data consistency: round trip conversion"]),
+    0: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_0, ["distributed_trace_consistency"]),
+    1: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_1, ["metric_aggregation_consistency"]),
+    2: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_2, ["log_streaming_consistency"]),
+    3: (__test_646174615f636f6e73697374656e63795f636f6d70726568656e736976655f746573742e6d6274_3, ["event_sourcing_consistency"]),
   },
   "cross_service_tracing_test.mbt": {
     0: (__test_63726f73735f736572766963655f74726163696e675f746573742e6d6274_0, ["cross_service_trace_propagation"]),
