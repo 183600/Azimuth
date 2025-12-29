@@ -1,7 +1,7 @@
 test "context_empty_creation" {
   // 测试空Context创建
   let context = Context::empty()
-  assert_eq(context.values.size(), 0)
+  assert_eq(context.values.length(), 0)
 }
 
 test "context_with_value_and_get" {
@@ -32,7 +32,7 @@ test "context_get_missing_key" {
 test "baggage_empty_creation" {
   // 测试空Baggage创建
   let baggage = Baggage::empty()
-  assert_eq(baggage.entries.size(), 0)
+  assert_eq(baggage.entries.length(), 0)
 }
 
 test "baggage_with_entry_and_get" {

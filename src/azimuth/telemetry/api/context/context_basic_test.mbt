@@ -43,5 +43,7 @@ test "context_key_creation" {
   
   assert_eq(key1.name, "key1")
   assert_eq(key2.name, "key2")
-  assert_ne(key1.name, key2.name)
+  if key1.name == key2.name {
+    @test.fail("Expected key1.name != key2.name")
+  }
 }

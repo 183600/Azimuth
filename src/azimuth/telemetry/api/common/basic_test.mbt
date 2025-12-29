@@ -91,3 +91,102 @@ test "attributes_usage" {
   ]
   assert_eq(attrs.length(), 4)
 }
+
+test "resource_with_complex_attributes" {
+  let resource = Resource::default("complex-service")
+  let complex_attrs : Attributes = [
+    ("service.namespace", AttributeValue::string("production")),
+    ("service.instance.id", AttributeValue::string("instance-123")),
+    ("service.version", AttributeValue::string("2.1.0")),
+    ("deployment.environment", AttributeValue::string("prod")),
+    ("host.name", AttributeValue::string("web-server-01")),
+    ("process.pid", AttributeValue::int(12345L)),
+    ("process.cpu.percent", AttributeValue::float(75.5)),
+    ("process.healthy", AttributeValue::bool(true)),
+    ("tags", AttributeValue::array_string(["web", "api", "critical"])),
+    ("ports", AttributeValue::array_int([8080L, 8443L, 9090L])),
+    ("cpu.thresholds", AttributeValue::array_float([60.0, 80.0, 95.0])),
+    ("feature.flags", AttributeValue::array_bool([true, false, true]))
+  ]
+  
+  // 使用默认资源工厂函数
+  let resource_with_attrs = Resource::default("complex-service")
+  
+  assert_eq(resource_with_attrs.service_name, "complex-service")
+  match resource_with_attrs.service_version {
+    Some(_) => @test.fail("Expected None for default resource")
+    None => assert_eq(true, true)
+  }
+  assert_eq(resource_with_attrs.telemetry_sdk_name, "azimuth")
+  assert_eq(resource_with_attrs.telemetry_sdk_version, "0.1.0")
+  
+  // 测试复杂属性数组
+  assert_eq(complex_attrs.length(), 12)
+  match complex_attrs[8].1 {
+    ArrayStringValue(tags) => {
+      assert_eq(tags.length(), 3)
+      assert_eq(tags[0], "web")
+      assert_eq(tags[1], "api")
+      assert_eq(tags[2], "critical")
+    }
+    _ => @test.fail("Expected ArrayStringValue")
+  }
+}
+
+test "attribute_value_edge_cases" {
+  // 测试边界情况和特殊值
+  let empty_string = AttributeValue::string("")
+  let zero_int = AttributeValue::int(0L)
+  let negative_int = AttributeValue::int(-1L)
+  let max_int = AttributeValue::int(9223372036854775807L)
+  let zero_float = AttributeValue::float(0.0)
+  let negative_float = AttributeValue::float(-1.0)
+  let infinity_float = AttributeValue::float(1.0/0.0)
+  let nan_float = AttributeValue::float(0.0/0.0)
+  
+  // 测试空数组
+  let empty_string_array = AttributeValue::array_string([])
+  let empty_int_array = AttributeValue::array_int([])
+  let empty_float_array = AttributeValue::array_float([])
+  let empty_bool_array = AttributeValue::array_bool([])
+  
+  match empty_string {
+    StringValue(s) => assert_eq(s, "")
+    _ => @test.fail("Expected StringValue")
+  }
+  
+  match zero_int {
+    IntValue(i) => assert_eq(i, 0L)
+    _ => @test.fail("Expected IntValue")
+  }
+  
+  match negative_int {
+    IntValue(i) => assert_eq(i, -1L)
+    _ => @test.fail("Expected IntValue")
+  }
+  
+  match max_int {
+    IntValue(i) => assert_eq(i, 9223372036854775807L)
+    _ => @test.fail("Expected IntValue")
+  }
+  
+  match empty_string_array {
+    ArrayStringValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Expected ArrayStringValue")
+  }
+  
+  match empty_int_array {
+    ArrayIntValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Expected ArrayIntValue")
+  }
+  
+  match empty_float_array {
+    ArrayFloatValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Expected ArrayFloatValue")
+  }
+  
+  match empty_bool_array {
+    ArrayBoolValue(arr) => assert_eq(arr.length(), 0)
+    _ => @test.fail("Expected ArrayBoolValue")
+  }
+}

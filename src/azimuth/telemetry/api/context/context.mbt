@@ -20,7 +20,13 @@ pub fn Context::empty() -> Context {
 
 pub fn Context::with_value(self : Context, key : ContextKey, value : String) -> Context {
   // 简化实现，将值转换为字符串
-  let new_values = self.values.push((key.name, value))
+  let new_values = []
+  let mut i = 0
+  while i < self.values.length() {
+    new_values.push(self.values[i])
+    i = i + 1
+  }
+  new_values.push((key.name, value))
   Context::{ values: new_values }
 }
 
@@ -42,7 +48,13 @@ pub fn Baggage::empty() -> Baggage {
 }
 
 pub fn Baggage::with_entry(self : Baggage, key : String, value : String) -> Baggage {
-  let new_entries = self.entries.push((key, value))
+  let new_entries = []
+  let mut i = 0
+  while i < self.entries.length() {
+    new_entries.push(self.entries[i])
+    i = i + 1
+  }
+  new_entries.push((key, value))
   Baggage::{ entries: new_entries }
 }
 

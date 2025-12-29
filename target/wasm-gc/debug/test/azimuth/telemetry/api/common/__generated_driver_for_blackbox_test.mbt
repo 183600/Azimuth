@@ -64,6 +64,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_62617369635f746573742e6d6274_1, ["attribute_value_array"]),
     2: (__test_62617369635f746573742e6d6274_2, ["resource_creation"]),
     3: (__test_62617369635f746573742e6d6274_3, ["attributes_usage"]),
+    4: (__test_62617369635f746573742e6d6274_4, ["resource_with_complex_attributes"]),
+    5: (__test_62617369635f746573742e6d6274_5, ["attribute_value_edge_cases"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED

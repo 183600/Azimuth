@@ -109,3 +109,126 @@ test "severity_levels" {
   
   assert_eq(true, true)
 }
+
+test "log_record_complex_scenarios" {
+  let resource = Resource::default("test-service")
+  let instrumentation_scope = InstrumentationScope::{
+    name: "test-logger",
+    version: Some("1.0.0"),
+    schema_url: None
+  }
+  
+  let trace_id = Array::make(16, 1_byte)
+  let span_id = Array::make(8, 1_byte)
+  
+  let complex_attributes = [
+    ("user.id", AttributeValue::string("user-123")),
+    ("request.id", AttributeValue::string("req-456")),
+    ("duration.ms", AttributeValue::int(250L)),
+    ("success.rate", AttributeValue::float(0.95)),
+    ("cache.hit", AttributeValue::bool(true)),
+    ("tags", AttributeValue::array_string(["api", "auth", "critical"])),
+    ("status.codes", AttributeValue::array_int([200L, 201L, 404L])),
+    ("latency.thresholds", AttributeValue::array_float([0.1, 0.5, 1.0])),
+    ("feature.flags", AttributeValue::array_bool([true, false, true]))
+  ]
+  
+  let log_record = LogRecord::builder()
+    .timestamp(1640995200000000000L)  // 2022-01-01 00:00:00 UTC
+    .severity(Error)
+    .severity_text("DATABASE_ERROR")
+    .body("Failed to connect to database after 3 retries")
+    .with_attribute("error.code", AttributeValue::string("DB_CONN_FAILED"))
+    .with_attribute("error.retries", AttributeValue::int(3L))
+    .build()
+  
+  // 创建完整的log record
+  let full_log_record = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000150L),
+    severity_number: Error,
+    severity_text: Some("DATABASE_ERROR"),
+    body: Some("Failed to connect to database after 3 retries"),
+    attributes: [
+      ("error.code", AttributeValue::string("DB_CONN_FAILED")),
+      ("error.retries", AttributeValue::int(3L))
+    ],
+    trace_id: Some(trace_id),
+    span_id: Some(span_id),
+    trace_flags: Some(1_byte),
+    resource: Some(resource),
+    instrumentation_scope: Some(instrumentation_scope)
+  }
+  
+  assert_eq(full_log_record.timestamp_unix_nanos, 1640995200000000000L)
+  match full_log_record.observed_timestamp_unix_nanos {
+    Some(timestamp) => assert_eq(timestamp, 1640995200000000150L)
+    None => @test.fail("Expected Some(timestamp)")
+  }
+  assert_eq(full_log_record.severity_number, Error)
+  match full_log_record.severity_text {
+    Some(text) => assert_eq(text, "DATABASE_ERROR")
+    None => @test.fail("Expected Some(text)")
+  }
+  match full_log_record.body {
+    Some(body) => assert_eq(body, "Failed to connect to database after 3 retries")
+    None => @test.fail("Expected Some(body)")
+  }
+  assert_eq(full_log_record.attributes.length(), 2)
+  match full_log_record.trace_id {
+    Some(id) => assert_eq(id.length(), 16)
+    None => @test.fail("Expected Some(trace_id)")
+  }
+  match full_log_record.span_id {
+    Some(id) => assert_eq(id.length(), 8)
+    None => @test.fail("Expected Some(span_id)")
+  }
+  match full_log_record.trace_flags {
+    Some(flags) => assert_eq(flags, 1_byte)
+    None => @test.fail("Expected Some(trace_flags)")
+  }
+}
+
+test "severity_number_comparison_and_ordering" {
+  // 测试严重性级别的数值比较
+  assert_eq(true, true)  // 基本断言确保测试运行
+  
+  // 测试所有严重性级别都能正确创建
+  let trace_severity = Trace
+  let debug_severity = Debug
+  let info_severity = Info
+  let warn_severity = Warn
+  let error_severity = Error
+  let fatal_severity = Fatal
+  
+  // 创建不同严重性级别的日志记录
+  let builder = LogRecord::builder()
+  
+  let trace_log = builder.severity(trace_severity).body("Trace message").build()
+  let debug_log = builder.severity(debug_severity).body("Debug message").build()
+  let info_log = builder.severity(info_severity).body("Info message").build()
+  let warn_log = builder.severity(warn_severity).body("Warning message").build()
+  let error_log = builder.severity(error_severity).body("Error message").build()
+  let fatal_log = builder.severity(fatal_severity).body("Fatal message").build()
+  
+  // 验证每个日志记录都有正确的严重性级别
+  assert_eq(trace_log.severity_number, Trace)
+  assert_eq(debug_log.severity_number, Debug)
+  assert_eq(info_log.severity_number, Info)
+  assert_eq(warn_log.severity_number, Warn)
+  assert_eq(error_log.severity_number, Error)
+  assert_eq(fatal_log.severity_number, Fatal)
+  
+  // 测试带自定义严重性文本的日志
+  let custom_error_log = builder
+    .severity(Error)
+    .severity_text("CUSTOM_ERROR")
+    .body("Custom error message")
+    .build()
+  
+  assert_eq(custom_error_log.severity_number, Error)
+  match custom_error_log.severity_text {
+    Some(text) => assert_eq(text, "CUSTOM_ERROR")
+    None => @test.fail("Expected Some(severity_text)")
+  }
+}

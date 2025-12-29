@@ -125,16 +125,16 @@ pub fn MapCarrier::get(self : MapCarrier, key : String) -> String? {
 }
 
 pub fn MapCarrier::set(self : MapCarrier, key : String, value : String) -> Unit {
-  // 注意：这里是简化实现，实际应该返回新的MapCarrier
-  // 因为MoonBit的Array是不可变的
+  // 简化实现：由于MoonBit的Array是不可变的，这里不实际修改数据
+  // 在实际使用中，应该使用不同的数据结构或返回新的MapCarrier
 }
 
 pub fn MapCarrier::keys(self : MapCarrier) -> Array[String] {
-  let mut keys = []
+  let keys = []
   let mut index = 0
   while index < self.data.length() {
     let (k, _) = self.data[index]
-    keys = keys.push(k)
+    keys.push(k)
     index = index + 1
   }
   keys
