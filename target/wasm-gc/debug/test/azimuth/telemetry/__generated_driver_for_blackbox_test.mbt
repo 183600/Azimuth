@@ -75,6 +75,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_74696d655f73796e6368726f6e697a6174696f6e5f746573742e6d6274_6, ["time_zone_and_utc_handling"]),
     7: (__test_74696d655f73796e6368726f6e697a6174696f6e5f746573742e6d6274_7, ["high_resolution_timing"]),
   },
+  "test_validation.mbt": {
+  },
   "telemetry_trace_chaining_test.mbt": {
     0: (__test_74656c656d657472795f74726163655f636861696e696e675f746573742e6d6274_0, ["trace_span_creation"]),
     1: (__test_74656c656d657472795f74726163655f636861696e696e675f746573742e6d6274_1, ["trace_span_timing"]),
