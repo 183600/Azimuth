@@ -1,549 +1,932 @@
-// 多租户隔离测试 - 测试多租户环境下的数据隔离
-use azimuth.telemetry.api.common.{AttributeValue, Resource}
-use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, NoopTracer, NoopTracerProvider}
-use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
-use azimuth.telemetry.api.context.{Context, ContextKey, create_key}
-use azimuth.telemetry.api.metrics.{Measurement, NoopMeterProvider}
+// 多租户隔离测试用例
+// 测试多租户场景下的数据隔离
 
-// 租户信息结构
-pub struct TenantInfo {
-  tenant_id : String
-  tenant_name : String
-  namespace : String
-  isolation_level : String  // "STRICT", "MODERATE", "BASIC"
-  resource_quota : ResourceQuota
-}
-
-// 资源配额
-pub struct ResourceQuota {
-  max_spans_per_minute : Int
-  max_logs_per_minute : Int
-  max_metrics_per_minute : Int
-  max_storage_mb : Int
-  max_memory_mb : Int
-}
-
-// 租户上下文
-pub struct TenantContext {
-  tenant_info : TenantInfo
-  current_usage : TenantResourceUsage
-  is_isolated : Bool
-}
-
-// 租户资源使用情况
-pub struct TenantResourceUsage {
-  spans_count : Int
-  logs_count : Int
-  metrics_count : Int
-  storage_used_mb : Int
-  memory_used_mb : Int
-}
-
-// 租户管理器
-pub struct TenantManager {
-  tenants : Array[TenantInfo]
-  active_contexts : Array[TenantContext]
-}
-
-// 创建租户管理器
-fn create_tenant_manager() -> TenantManager {
-  let tenants = [
-    TenantInfo::{
-      tenant_id: "tenant-001",
-      tenant_name: "Acme Corp",
-      namespace: "acme",
-      isolation_level: "STRICT",
-      resource_quota: ResourceQuota::{
-        max_spans_per_minute: 1000,
-        max_logs_per_minute: 2000,
-        max_metrics_per_minute: 500,
-        max_storage_mb: 1024,
-        max_memory_mb: 512
-      }
-    },
-    TenantInfo::{
-      tenant_id: "tenant-002",
-      tenant_name: "Beta Inc",
-      namespace: "beta",
-      isolation_level: "MODERATE",
-      resource_quota: ResourceQuota::{
-        max_spans_per_minute: 500,
-        max_logs_per_minute: 1000,
-        max_metrics_per_minute: 250,
-        max_storage_mb: 512,
-        max_memory_mb: 256
-      }
-    },
-    TenantInfo::{
-      tenant_id: "tenant-003",
-      tenant_name: "Gamma LLC",
-      namespace: "gamma",
-      isolation_level: "BASIC",
-      resource_quota: ResourceQuota::{
-        max_spans_per_minute: 200,
-        max_logs_per_minute: 400,
-        max_metrics_per_minute: 100,
-        max_storage_mb: 256,
-        max_memory_mb: 128
-      }
-    }
+test "resource_tenant_isolation" {
+  // 测试Resource的多租户隔离
+  
+  // 1. 创建不同租户的资源
+  let tenant_a_resource = Resource::default("tenant-a-service")
+  let tenant_b_resource = Resource::default("tenant-b-service")
+  let tenant_c_resource = Resource::default("tenant-c-service")
+  
+  // 2. 为每个租户的资源添加租户标识属性
+  let tenant_a_attributes = [
+    ("tenant.id", AttributeValue::string("tenant-a")),
+    ("tenant.name", AttributeValue::string("Tenant A")),
+    ("tenant.environment", AttributeValue::string("production")),
+    ("service.name", AttributeValue::string("tenant-a-service"))
   ]
   
-  TenantManager::{
-    tenants,
-    active_contexts: []
-  }
-}
-
-// 租户隔离验证器
-fn verify_tenant_isolation(tenant_a : String, tenant_b : String, data_type : String) -> Bool {
-  // 简化实现：检查不同租户的数据是否正确隔离
-  if tenant_a == tenant_b {
-    true  // 同一租户不需要隔离
-  } else {
-    // 不同租户应该被隔离
-    match data_type {
-      "spans" => true
-      "logs" => true
-      "metrics" => true
-      "context" => true
-      _ => false
-    }
-  }
-}
-
-// 检查资源配额
-fn check_resource_quota(tenant_context : TenantContext, resource_type : String) -> Bool {
-  let quota = tenant_context.tenant_info.resource_quota
-  let usage = tenant_context.current_usage
+  let tenant_b_attributes = [
+    ("tenant.id", AttributeValue::string("tenant-b")),
+    ("tenant.name", AttributeValue::string("Tenant B")),
+    ("tenant.environment", AttributeValue::string("staging")),
+    ("service.name", AttributeValue::string("tenant-b-service"))
+  ]
   
-  match resource_type {
-    "spans" => usage.spans_count < quota.max_spans_per_minute
-    "logs" => usage.logs_count < quota.max_logs_per_minute
-    "metrics" => usage.metrics_count < quota.max_metrics_per_minute
-    "storage" => usage.storage_used_mb < quota.max_storage_mb
-    "memory" => usage.memory_used_mb < quota.max_memory_mb
-    _ => false
+  let tenant_c_attributes = [
+    ("tenant.id", AttributeValue::string("tenant-c")),
+    ("tenant.name", AttributeValue::string("Tenant C")),
+    ("tenant.environment", AttributeValue::string("development")),
+    ("service.name", AttributeValue::string("tenant-c-service"))
+  ]
+  
+  // 3. 创建带有租户隔离的日志记录
+  let tenant_a_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Tenant A operation"),
+    attributes: tenant_a_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(tenant_a_resource),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "tenant-a-logger",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
   }
-}
-
-test "multi_tenant_span_isolation" {
-  // 测试跨租户的Span隔离
   
-  let tenant_manager = create_tenant_manager()
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("tenant-test", Some("1.0.0"))
+  let tenant_b_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Tenant B operation"),
+    attributes: tenant_b_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(tenant_b_resource),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "tenant-b-logger",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
   
-  // 为不同租户创建Span
-  let mut tenant_spans = []
+  let tenant_c_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Tenant C operation"),
+    attributes: tenant_c_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(tenant_c_resource),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "tenant-c-logger",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
+  
+  // 4. 验证租户隔离
+  // 验证每个租户的资源和服务名称不同
+  match tenant_a_log.resource {
+    Some(resource) => assert_eq(resource.service_name, "tenant-a-service")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_log.resource {
+    Some(resource) => assert_eq(resource.service_name, "tenant-b-service")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_c_log.resource {
+    Some(resource) => assert_eq(resource.service_name, "tenant-c-service")
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证每个租户的属性包含正确的租户ID
+  let mut found_tenant_a_id = false
+  let mut found_tenant_b_id = false
+  let mut found_tenant_c_id = false
   
   let mut i = 0
-  while i < tenant_manager.tenants.length() {
-    let tenant = tenant_manager.tenants[i]
-    
-    // 为每个租户创建多个Span
-    let mut j = 0
-    while j < 10 {
-      let span_name = tenant.namespace + "_operation_" + j.to_string()
-      let (_, span) = tracer.start_span(ctx, span_name, Internal)
-      
-      // 添加租户特定的属性
-      let tenant_span = Span::{
-        ..span,
-        attributes: [
-          ("tenant.id", AttributeValue::string(tenant.tenant_id)),
-          ("tenant.name", AttributeValue::string(tenant.tenant_name)),
-          ("tenant.namespace", AttributeValue::string(tenant.namespace)),
-          ("operation.id", AttributeValue::int(j.to_int64())),
-          ("isolation.level", AttributeValue::string(tenant.isolation_level))
-        ]
+  while i < tenant_a_log.attributes.length() {
+    let (name, value) = tenant_a_log.attributes[i]
+    match (name, value) {
+      ("tenant.id", StringValue(tenant_id)) => {
+        assert_eq(tenant_id, "tenant-a")
+        found_tenant_a_id = true
       }
-      
-      tenant_spans.push((tenant.tenant_id, tenant_span))
-      j = j + 1
+      _ => ()
     }
-    
     i = i + 1
   }
   
-  // 验证租户隔离
-  let mut isolation_violations = 0
-  
-  // 检查每个Span是否只属于正确的租户
-  let mut k = 0
-  while k < tenant_spans.length() {
-    let (expected_tenant_id, span) = tenant_spans[k]
-    
-    // 查找Span中的租户ID属性
-    let mut found_tenant_id = ""
-    let mut l = 0
-    while l < span.attributes.length() {
-      let (key, value) = span.attributes[l]
-      if key == "tenant.id" {
-        match value {
-          StringValue(id) => found_tenant_id = id
-          _ => {}
-        }
+  i = 0
+  while i < tenant_b_log.attributes.length() {
+    let (name, value) = tenant_b_log.attributes[i]
+    match (name, value) {
+      ("tenant.id", StringValue(tenant_id)) => {
+        assert_eq(tenant_id, "tenant-b")
+        found_tenant_b_id = true
       }
-      l = l + 1
+      _ => ()
     }
-    
-    // 验证租户隔离
-    if not(verify_tenant_isolation(expected_tenant_id, found_tenant_id, "spans")) {
-      isolation_violations = isolation_violations + 1
-    }
-    
-    k = k + 1
+    i = i + 1
   }
   
-  // 验证隔离效果
-  assert_eq(isolation_violations, 0)  // 不应该有隔离违规
-  assert_eq(tenant_spans.length(), 30)  // 3个租户，每个10个Span
+  i = 0
+  while i < tenant_c_log.attributes.length() {
+    let (name, value) = tenant_c_log.attributes[i]
+    match (name, value) {
+      ("tenant.id", StringValue(tenant_id)) => {
+        assert_eq(tenant_id, "tenant-c")
+        found_tenant_c_id = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_tenant_a_id, true)
+  assert_eq(found_tenant_b_id, true)
+  assert_eq(found_tenant_c_id, true)
+  
+  // 验证每个租户的instrumentation scope不同
+  match tenant_a_log.instrumentation_scope {
+    Some(scope) => assert_eq(scope.name, "tenant-a-logger")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_log.instrumentation_scope {
+    Some(scope) => assert_eq(scope.name, "tenant-b-logger")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_c_log.instrumentation_scope {
+    Some(scope) => assert_eq(scope.name, "tenant-c-logger")
+    None => @test.fail("Test failed")
+  }
 }
 
-test "multi_tenant_log_isolation" {
-  // 测试跨租户的日志隔离
+test "context_tenant_isolation" {
+  // 测试Context的多租户隔离
   
-  let tenant_manager = create_tenant_manager()
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("tenant-logger", Some("1.0.0"))
+  // 1. 为不同租户创建上下文
+  let ctx = Context::empty()
   
-  // 为不同租户创建日志记录
+  let tenant_a_key = create_key("tenant.id")
+  let tenant_b_key = create_key("tenant.id")
+  let tenant_c_key = create_key("tenant.id")
+  
+  let user_a_key = create_key("user.id")
+  let user_b_key = create_key("user.id")
+  let user_c_key = create_key("user.id")
+  
+  // 2. 为每个租户设置不同的上下文值
+  let tenant_a_ctx = ctx
+    .with_value(tenant_a_key, "tenant-a")
+    .with_value(user_a_key, "user-a-001")
+    .with_value(create_key("tenant.environment"), "production")
+  
+  let tenant_b_ctx = ctx
+    .with_value(tenant_b_key, "tenant-b")
+    .with_value(user_b_key, "user-b-001")
+    .with_value(create_key("tenant.environment"), "staging")
+  
+  let tenant_c_ctx = ctx
+    .with_value(tenant_c_key, "tenant-c")
+    .with_value(user_c_key, "user-c-001")
+    .with_value(create_key("tenant.environment"), "development")
+  
+  // 3. 验证租户隔离
+  // 验证每个租户的上下文包含正确的租户ID
+  match tenant_a_ctx.get(tenant_a_key) {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-a")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_ctx.get(tenant_b_key) {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-b")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_c_ctx.get(tenant_c_key) {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-c")
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证每个租户的用户ID不同
+  match tenant_a_ctx.get(user_a_key) {
+    Some(user_id) => assert_eq(user_id, "user-a-001")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_ctx.get(user_b_key) {
+    Some(user_id) => assert_eq(user_id, "user-b-001")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_c_ctx.get(user_c_key) {
+    Some(user_id) => assert_eq(user_id, "user-c-001")
+    None => @test.fail("Test failed")
+  }
+  
+  // 4. 测试上下文隔离的完整性
+  // 确保租户A不能访问租户B的数据
+  match tenant_a_ctx.get(user_b_key) {
+    Some(_) => @test.fail("Test failed")  // 不应该能访问
+    None => assert_eq(true, true)  // 正确，无法访问
+  }
+  
+  match tenant_b_ctx.get(user_c_key) {
+    Some(_) => @test.fail("Test failed")  // 不应该能访问
+    None => assert_eq(true, true)  // 正确，无法访问
+  }
+  
+  match tenant_c_ctx.get(user_a_key) {
+    Some(_) => @test.fail("Test failed")  // 不应该能访问
+    None => assert_eq(true, true)  // 正确，无法访问
+  }
+}
+
+test "baggage_tenant_isolation" {
+  // 测试Baggage的多租户隔离
+  
+  // 1. 为不同租户创建baggage
+  let baggage = Baggage::empty()
+  
+  let tenant_a_baggage = baggage
+    .with_entry("tenant.id", "tenant-a")
+    .with_entry("user.id", "user-a-001")
+    .with_entry("tenant.environment", "production")
+    .with_entry("tenant.region", "us-east-1")
+  
+  let tenant_b_baggage = baggage
+    .with_entry("tenant.id", "tenant-b")
+    .with_entry("user.id", "user-b-001")
+    .with_entry("tenant.environment", "staging")
+    .with_entry("tenant.region", "us-west-2")
+  
+  let tenant_c_baggage = baggage
+    .with_entry("tenant.id", "tenant-c")
+    .with_entry("user.id", "user-c-001")
+    .with_entry("tenant.environment", "development")
+    .with_entry("tenant.region", "eu-west-1")
+  
+  // 2. 验证租户隔离
+  // 验证每个租户的baggage包含正确的租户ID
+  match tenant_a_baggage.get("tenant.id") {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-a")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_baggage.get("tenant.id") {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-b")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_c_baggage.get("tenant.id") {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-c")
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证每个租户的用户ID不同
+  match tenant_a_baggage.get("user.id") {
+    Some(user_id) => assert_eq(user_id, "user-a-001")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_baggage.get("user.id") {
+    Some(user_id) => assert_eq(user_id, "user-b-001")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_c_baggage.get("user.id") {
+    Some(user_id) => assert_eq(user_id, "user-c-001")
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证每个租户的环境不同
+  match tenant_a_baggage.get("tenant.environment") {
+    Some(environment) => assert_eq(environment, "production")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_baggage.get("tenant.environment") {
+    Some(environment) => assert_eq(environment, "staging")
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_c_baggage.get("tenant.environment") {
+    Some(environment) => assert_eq(environment, "development")
+    None => @test.fail("Test failed")
+  }
+  
+  // 3. 测试baggage隔离的完整性
+  // 确保租户A不能访问租户B的特定数据
+  match tenant_a_baggage.get("tenant.region") {
+    Some(region) => assert_eq(region, "us-east-1")  // 只能访问自己的区域
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_baggage.get("tenant.region") {
+    Some(region) => assert_eq(region, "us-west-2")  // 只能访问自己的区域
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_c_baggage.get("tenant.region") {
+    Some(region) => assert_eq(region, "eu-west-1")  // 只能访问自己的区域
+    None => @test.fail("Test failed")
+  }
+}
+
+test "trace_tenant_isolation" {
+  // 测试Trace的多租户隔离
+  
+  // 1. 为不同租户创建上下文
+  let ctx = Context::empty()
+  let tenant_a_key = create_key("tenant.id")
+  let tenant_b_key = create_key("tenant.id")
+  
+  let tenant_a_ctx = ctx.with_value(tenant_a_key, "tenant-a")
+  let tenant_b_ctx = ctx.with_value(tenant_b_key, "tenant-b")
+  
+  // 2. 为每个租户创建带有租户标识的span
+  let tenant_a_span_attributes = [
+    ("tenant.id", AttributeValue::string("tenant-a")),
+    ("user.id", AttributeValue::string("user-a-001")),
+    ("operation.name", AttributeValue::string("tenant-a-operation"))
+  ]
+  
+  let tenant_b_span_attributes = [
+    ("tenant.id", AttributeValue::string("tenant-b")),
+    ("user.id", AttributeValue::string("user-b-001")),
+    ("operation.name", AttributeValue::string("tenant-b-operation"))
+  ]
+  
+  let (_, tenant_a_span) = NoopTracer::start_span(tenant_a_ctx, "tenant-a-span", Server, Some(tenant_a_span_attributes))
+  let (_, tenant_b_span) = NoopTracer::start_span(tenant_b_ctx, "tenant-b-span", Server, Some(tenant_b_span_attributes))
+  
+  // 3. 验证租户隔离
+  // 验证每个租户的span包含正确的租户ID
+  let mut found_tenant_a_id = false
+  let mut found_tenant_b_id = false
+  
+  let mut i = 0
+  while i < tenant_a_span.attributes.length() {
+    let (name, value) = tenant_a_span.attributes[i]
+    match (name, value) {
+      ("tenant.id", StringValue(tenant_id)) => {
+        assert_eq(tenant_id, "tenant-a")
+        found_tenant_a_id = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  i = 0
+  while i < tenant_b_span.attributes.length() {
+    let (name, value) = tenant_b_span.attributes[i]
+    match (name, value) {
+      ("tenant.id", StringValue(tenant_id)) => {
+        assert_eq(tenant_id, "tenant-b")
+        found_tenant_b_id = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_tenant_a_id, true)
+  assert_eq(found_tenant_b_id, true)
+  
+  // 验证每个租户的span名称不同
+  assert_eq(tenant_a_span.name, "tenant-a-span")
+  assert_eq(tenant_b_span.name, "tenant-b-span")
+  
+  // 验证每个租户的用户ID不同
+  let mut found_tenant_a_user = false
+  let mut found_tenant_b_user = false
+  
+  i = 0
+  while i < tenant_a_span.attributes.length() {
+    let (name, value) = tenant_a_span.attributes[i]
+    match (name, value) {
+      ("user.id", StringValue(user_id)) => {
+        assert_eq(user_id, "user-a-001")
+        found_tenant_a_user = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  i = 0
+  while i < tenant_b_span.attributes.length() {
+    let (name, value) = tenant_b_span.attributes[i]
+    match (name, value) {
+      ("user.id", StringValue(user_id)) => {
+        assert_eq(user_id, "user-b-001")
+        found_tenant_b_user = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_tenant_a_user, true)
+  assert_eq(found_tenant_b_user, true)
+  
+  // 4. 测试trace隔离的完整性
+  // 验证不同租户的trace_id和span_id是独立的
+  let trace_ids_equal = tenant_a_span.context.trace_id.length() == tenant_b_span.context.trace_id.length()
+  assert_eq(trace_ids_equal, true)  // 长度应该相同
+  
+  // 检查trace_id内容不同（至少有一个字节不同）
+  let mut trace_ids_different = false
+  let mut i = 0
+  while i < tenant_a_span.context.trace_id.length() {
+    if tenant_a_span.context.trace_id[i] != tenant_b_span.context.trace_id[i] {
+      trace_ids_different = true
+      break
+    }
+    i = i + 1
+  }
+  assert_eq(trace_ids_different, true)  // trace_id应该不同
+}
+
+test "metrics_tenant_isolation" {
+  // 测试Metrics的多租户隔离
+  
+  // 1. 为不同租户创建meter
+  let meter_provider = NoopMeterProvider::{}
+  let tenant_a_meter = meter_provider.get_meter("tenant-a-meter", Some("1.0.0"), Some("https://tenant-a.example.com"))
+  let tenant_b_meter = meter_provider.get_meter("tenant-b-meter", Some("1.0.0"), Some("https://tenant-b.example.com"))
+  
+  // 2. 为每个租户创建指标
+  let tenant_a_counter = tenant_a_meter.create_counter("tenant_a_operations", Some("operations"), Some("Tenant A operations"))
+  let tenant_b_counter = tenant_b_meter.create_counter("tenant_b_operations", Some("operations"), Some("Tenant B operations"))
+  
+  let tenant_a_histogram = tenant_a_meter.create_histogram("tenant_a_duration", Some("ms"), Some("Tenant A duration"))
+  let tenant_b_histogram = tenant_b_meter.create_histogram("tenant_b_duration", Some("ms"), Some("Tenant B duration"))
+  
+  // 3. 为每个租户记录指标
+  let tenant_a_attributes = [
+    ("tenant.id", AttributeValue::string("tenant-a")),
+    ("user.id", AttributeValue::string("user-a-001")),
+    ("service.name", AttributeValue::string("tenant-a-service"))
+  ]
+  
+  let tenant_b_attributes = [
+    ("tenant.id", AttributeValue::string("tenant-b")),
+    ("user.id", AttributeValue::string("user-b-001")),
+    ("service.name", AttributeValue::string("tenant-b-service"))
+  ]
+  
+  tenant_a_counter.add(1L, Some(tenant_a_attributes))
+  tenant_b_counter.add(1L, Some(tenant_b_attributes))
+  
+  tenant_a_histogram.record(100.0, Some(tenant_a_attributes))
+  tenant_b_histogram.record(200.0, Some(tenant_b_attributes))
+  
+  // 4. 验证租户隔离
+  // 由于是No-op实现，我们通过创建日志来验证隔离
+  let tenant_a_metrics_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Tenant A metrics recorded"),
+    attributes: tenant_a_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(Resource::default("tenant-a-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "tenant-a-meter",
+      version: Some("1.0.0"),
+      schema_url: Some("https://tenant-a.example.com")
+    })
+  }
+  
+  let tenant_b_metrics_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Tenant B metrics recorded"),
+    attributes: tenant_b_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(Resource::default("tenant-b-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "tenant-b-meter",
+      version: Some("1.0.0"),
+      schema_url: Some("https://tenant-b.example.com")
+    })
+  }
+  
+  // 验证每个租户的指标属性包含正确的租户ID
+  let mut found_tenant_a_id = false
+  let mut found_tenant_b_id = false
+  
+  let mut i = 0
+  while i < tenant_a_metrics_log.attributes.length() {
+    let (name, value) = tenant_a_metrics_log.attributes[i]
+    match (name, value) {
+      ("tenant.id", StringValue(tenant_id)) => {
+        assert_eq(tenant_id, "tenant-a")
+        found_tenant_a_id = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  i = 0
+  while i < tenant_b_metrics_log.attributes.length() {
+    let (name, value) = tenant_b_metrics_log.attributes[i]
+    match (name, value) {
+      ("tenant.id", StringValue(tenant_id)) => {
+        assert_eq(tenant_id, "tenant-b")
+        found_tenant_b_id = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_tenant_a_id, true)
+  assert_eq(found_tenant_b_id, true)
+  
+  // 验证每个租户的instrumentation scope不同
+  match tenant_a_metrics_log.instrumentation_scope {
+    Some(scope) => {
+      assert_eq(scope.name, "tenant-a-meter")
+      match scope.schema_url {
+        Some(schema) => assert_eq(schema, "https://tenant-a.example.com")
+        None => @test.fail("Test failed")
+      }
+    }
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_metrics_log.instrumentation_scope {
+    Some(scope) => {
+      assert_eq(scope.name, "tenant-b-meter")
+      match scope.schema_url {
+        Some(schema) => assert_eq(schema, "https://tenant-b.example.com")
+        None => @test.fail("Test failed")
+      }
+    }
+    None => @test.fail("Test failed")
+  }
+}
+
+test "propagation_tenant_isolation" {
+  // 测试Propagation的多租户隔离
+  
+  // 1. 为不同租户创建上下文
+  let ctx = Context::empty()
+  let tenant_a_key = create_key("tenant.id")
+  let tenant_b_key = create_key("tenant.id")
+  
+  let tenant_a_ctx = ctx.with_value(tenant_a_key, "tenant-a")
+  let tenant_b_ctx = ctx.with_value(tenant_b_key, "tenant-b")
+  
+  // 2. 为每个租户创建baggage
+  let tenant_a_baggage = Baggage::empty()
+    .with_entry("tenant.id", "tenant-a")
+    .with_entry("user.id", "user-a-001")
+    .with_entry("tenant.environment", "production")
+  
+  let tenant_b_baggage = Baggage::empty()
+    .with_entry("tenant.id", "tenant-b")
+    .with_entry("user.id", "user-b-001")
+    .with_entry("tenant.environment", "staging")
+  
+  // 3. 为每个租户创建carrier
+  let tenant_a_carrier = MapCarrier::new()
+  let tenant_b_carrier = MapCarrier::new()
+  
+  // 4. 使用propagator为每个租户注入上下文
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  composite_propagator.inject(tenant_a_ctx, tenant_a_carrier)
+  composite_propagator.inject(tenant_b_ctx, tenant_b_carrier)
+  
+  // 5. 验证租户隔离
+  // 验证每个租户的carrier包含不同的traceparent
+  match tenant_a_carrier.get("traceparent") {
+    Some(trace_parent_a) => assert_eq(trace_parent_a.length() > 0, true)
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_carrier.get("traceparent") {
+    Some(trace_parent_b) => assert_eq(trace_parent_b.length() > 0, true)
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证traceparent不同
+  match (tenant_a_carrier.get("traceparent"), tenant_b_carrier.get("traceparent")) {
+    (Some(tp_a), Some(tp_b)) => assert_eq(tp_a != tp_b, true)
+    _ => @test.fail("Test failed")
+  }
+  
+  // 验证每个租户的carrier包含不同的baggage
+  match tenant_a_carrier.get("baggage") {
+    Some(baggage_a) => assert_eq(baggage_a.contains("tenant-a"), true)
+    None => @test.fail("Test failed")
+  }
+  
+  match tenant_b_carrier.get("baggage") {
+    Some(baggage_b) => assert_eq(baggage_b.contains("tenant-b"), true)
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证baggage不同
+  match (tenant_a_carrier.get("baggage"), tenant_b_carrier.get("baggage")) {
+    (Some(bg_a), Some(bg_b)) => {
+      assert_eq(bg_a.contains("tenant-a"), true)
+      assert_eq(bg_b.contains("tenant-b"), true)
+      assert_eq(bg_a != bg_b, true)
+    }
+    _ => @test.fail("Test failed")
+  }
+  
+  // 6. 测试传播隔离的完整性
+  // 从carrier提取上下文并验证租户隔离
+  let extracted_a_ctx = composite_propagator.extract(ctx, tenant_a_carrier)
+  let extracted_b_ctx = composite_propagator.extract(ctx, tenant_b_carrier)
+  
+  // 验证提取的上下文保持租户隔离
+  match extracted_a_ctx.get(tenant_a_key) {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-a")
+    None => @test.fail("Test failed")
+  }
+  
+  match extracted_b_ctx.get(tenant_b_key) {
+    Some(tenant_id) => assert_eq(tenant_id, "tenant-b")
+    None => @test.fail("Test failed")
+  }
+}
+
+test "end_to_end_tenant_isolation" {
+  // 端到端多租户隔离测试
+  
+  // 1. 创建多个租户的完整遥测环境
+  let tenants = ["tenant-a", "tenant-b", "tenant-c"]
+  let tenant_environments = ["production", "staging", "development"]
+  let tenant_regions = ["us-east-1", "us-west-2", "eu-west-1"]
+  
+  // 2. 为每个租户创建资源、上下文、baggage等
   let mut tenant_logs = []
+  let mut tenant_spans = []
+  let mut tenant_metrics_logs = []
   
-  let mut i = 0
-  while i < tenant_manager.tenants.length() {
-    let tenant = tenant_manager.tenants[i]
+  let mut tenant_index = 0
+  while tenant_index < tenants.length() {
+    let tenant_id = tenants[tenant_index]
+    let environment = tenant_environments[tenant_index]
+    let region = tenant_regions[tenant_index]
     
-    // 为每个租户创建多个日志记录
+    // 创建租户特定的资源
+    let tenant_resource = Resource::default(tenant_id + "-service")
+    
+    // 创建租户特定的上下文
+    let ctx = Context::empty()
+    let tenant_key = create_key("tenant.id")
+    let user_key = create_key("user.id")
+    let tenant_ctx = ctx
+      .with_value(tenant_key, tenant_id)
+      .with_value(user_key, "user-" + tenant_id + "-001")
+      .with_value(create_key("tenant.environment"), environment)
+      .with_value(create_key("tenant.region"), region)
+    
+    // 创建租户特定的baggage
+    let tenant_baggage = Baggage::empty()
+      .with_entry("tenant.id", tenant_id)
+      .with_entry("user.id", "user-" + tenant_id + "-001")
+      .with_entry("tenant.environment", environment)
+      .with_entry("tenant.region", region)
+    
+    // 创建租户特定的span
+    let tenant_span_attributes = [
+      ("tenant.id", AttributeValue::string(tenant_id)),
+      ("user.id", AttributeValue::string("user-" + tenant_id + "-001")),
+      ("tenant.environment", AttributeValue::string(environment)),
+      ("tenant.region", AttributeValue::string(region)),
+      ("operation.name", AttributeValue::string("tenant-operation"))
+    ]
+    
+    let (_, tenant_span) = NoopTracer::start_span(tenant_ctx, tenant_id + "-span", Server, Some(tenant_span_attributes))
+    
+    // 创建租户特定的日志
+    let tenant_log = LogRecord::{
+      timestamp_unix_nanos: 1640995200000000000L + tenant_index.to_int64(),
+      observed_timestamp_unix_nanos: Some(1640995200000000100L + tenant_index.to_int64()),
+      severity_number: Info,
+      severity_text: Some("INFO"),
+      body: Some(tenant_id + " operation completed"),
+      attributes: tenant_span_attributes,
+      trace_id: Some(tenant_span.context.trace_id),
+      span_id: Some(tenant_span.context.span_id),
+      trace_flags: Some(tenant_span.context.trace_flags),
+      resource: Some(tenant_resource),
+      instrumentation_scope: Some(InstrumentationScope::{
+        name: tenant_id + "-logger",
+        version: Some("1.0.0"),
+        schema_url: Some("https://" + tenant_id + ".example.com")
+      })
+    }
+    
+    // 创建租户特定的指标日志
+    let tenant_meter = NoopMeterProvider::{}.get_meter(tenant_id + "-meter", Some("1.0.0"), Some("https://" + tenant_id + ".example.com"))
+    let tenant_counter = tenant_meter.create_counter(tenant_id + "_operations", Some("operations"), Some(tenant_id + " operations"))
+    tenant_counter.add(1L, Some(tenant_span_attributes))
+    
+    let tenant_metrics_log = LogRecord::{
+      timestamp_unix_nanos: 1640995200000002000L + tenant_index.to_int64(),
+      observed_timestamp_unix_nanos: Some(1640995200000002100L + tenant_index.to_int64()),
+      severity_number: Info,
+      severity_text: Some("INFO"),
+      body: Some(tenant_id + " metrics recorded"),
+      attributes: tenant_span_attributes,
+      trace_id: None,
+      span_id: None,
+      trace_flags: None,
+      resource: Some(tenant_resource),
+      instrumentation_scope: Some(InstrumentationScope::{
+        name: tenant_id + "-meter",
+        version: Some("1.0.0"),
+        schema_url: Some("https://" + tenant_id + ".example.com")
+      })
+    }
+    
+    // 创建租户特定的carrier
+    let tenant_carrier = MapCarrier::new()
+    let composite_propagator = CompositePropagator::new([W3CTraceContextPropagator::{}, W3CBaggagePropagator::{}])
+    composite_propagator.inject(tenant_ctx, tenant_carrier)
+    
+    // 验证carrier隔离
+    match tenant_carrier.get("traceparent") {
+      Some(trace_parent) => assert_eq(trace_parent.length() > 0, true)
+      None => @test.fail("Test failed")
+    }
+    
+    match tenant_carrier.get("baggage") {
+      Some(baggage) => assert_eq(baggage.contains(tenant_id), true)
+      None => @test.fail("Test failed")
+    }
+    
+    // 添加到数组
+    tenant_logs.push(tenant_log)
+    tenant_spans.push(tenant_span)
+    tenant_metrics_logs.push(tenant_metrics_log)
+    
+    tenant_index = tenant_index + 1
+  }
+  
+  // 3. 验证端到端租户隔离
+  // 验证每个租户的日志包含正确的租户信息
+  let mut log_index = 0
+  while log_index < tenant_logs.length() {
+    let log = tenant_logs[log_index]
+    let expected_tenant_id = tenants[log_index]
+    let expected_environment = tenant_environments[log_index]
+    let expected_region = tenant_regions[log_index]
+    
+    // 验证租户ID
+    let mut found_tenant_id = false
+    let mut found_environment = false
+    let mut found_region = false
+    
+    let mut attr_index = 0
+    while attr_index < log.attributes.length() {
+      let (name, value) = log.attributes[attr_index]
+      match (name, value) {
+        ("tenant.id", StringValue(tenant_id)) => {
+          assert_eq(tenant_id, expected_tenant_id)
+          found_tenant_id = true
+        }
+        ("tenant.environment", StringValue(environment)) => {
+          assert_eq(environment, expected_environment)
+          found_environment = true
+        }
+        ("tenant.region", StringValue(region)) => {
+          assert_eq(region, expected_region)
+          found_region = true
+        }
+        _ => ()
+      }
+      attr_index = attr_index + 1
+    }
+    
+    assert_eq(found_tenant_id, true)
+    assert_eq(found_environment, true)
+    assert_eq(found_region, true)
+    
+    // 验证resource和instrumentation scope
+    match log.resource {
+      Some(resource) => assert_eq(resource.service_name, expected_tenant_id + "-service")
+      None => @test.fail("Test failed")
+    }
+    
+    match log.instrumentation_scope {
+      Some(scope) => {
+        assert_eq(scope.name, expected_tenant_id + "-logger")
+        match scope.schema_url {
+          Some(schema) => assert_eq(schema, "https://" + expected_tenant_id + ".example.com")
+          None => @test.fail("Test failed")
+        }
+      }
+      None => @test.fail("Test failed")
+    }
+    
+    log_index = log_index + 1
+  }
+  
+  // 4. 验证跨租户数据隔离
+  // 确保租户A的数据不会出现在租户B的日志中
+  let mut i = 0
+  while i < tenant_logs.length() {
+    let log = tenant_logs[i]
+    let current_tenant = tenants[i]
+    
+    // 检查其他租户的数据不会出现在当前租户的日志中
     let mut j = 0
-    while j < 15 {
-      let log_record = LogRecord::builder()
-        .severity(if j % 3 == 0 { SeverityNumber::Info } else if j % 3 == 1 { SeverityNumber::Warn } else { SeverityNumber::Error })
-        .body(tenant.namespace + " log message " + j.to_string())
-        .with_attribute("tenant.id", AttributeValue::string(tenant.tenant_id))
-        .with_attribute("tenant.name", AttributeValue::string(tenant.tenant_name))
-        .with_attribute("log.category", AttributeValue::string("tenant_" + tenant.namespace))
-        .with_attribute("log.sequence", AttributeValue::int(j.to_int64()))
-        .with_attribute("sensitivity.level", AttributeValue::string(if tenant.isolation_level == "STRICT" { "high" } else if tenant.isolation_level == "MODERATE" { "medium" } else { "low" }))
-        .build()
-      
-      tenant_logs.push((tenant.tenant_id, log_record))
+    while j < tenant_logs.length() {
+      if i != j {
+        let other_tenant = tenants[j]
+        
+        // 确保其他租户的ID不会出现在当前租户的属性中
+        let mut found_other_tenant = false
+        let mut attr_index = 0
+        while attr_index < log.attributes.length() {
+          let (name, value) = log.attributes[attr_index]
+          match (name, value) {
+            ("tenant.id", StringValue(tenant_id)) => {
+              if tenant_id == other_tenant {
+                found_other_tenant = true
+                break
+              }
+            }
+            _ => ()
+          }
+          attr_index = attr_index + 1
+        }
+        
+        assert_eq(found_other_tenant, false)  // 不应该找到其他租户的ID
+      }
       j = j + 1
     }
     
     i = i + 1
   }
   
-  // 验证租户日志隔离
-  let mut log_isolation_violations = 0
-  
-  // 检查每个日志记录的租户隔离
-  let mut k = 0
-  while k < tenant_logs.length() {
-    let (expected_tenant_id, log_record) = tenant_logs[k]
+  // 5. 验证trace隔离
+  // 确保每个租户的trace_id和span_id都是独立的
+  let mut i = 0
+  while i < tenant_spans.length() {
+    let current_span = tenant_spans[i]
     
-    // 查找日志记录中的租户ID属性
-    let mut found_tenant_id = ""
-    let mut l = 0
-    while l < log_record.attributes.length() {
-      let (key, value) = log_record.attributes[l]
-      if key == "tenant.id" {
-        match value {
-          StringValue(id) => found_tenant_id = id
-          _ => {}
+    // 与其他所有span比较
+    let mut j = 0
+    while j < tenant_spans.length() {
+      if i != j {
+        let other_span = tenant_spans[j]
+        
+        // 检查trace_id不同
+        let mut trace_ids_different = false
+        let mut k = 0
+        while k < current_span.context.trace_id.length() {
+          if current_span.context.trace_id[k] != other_span.context.trace_id[k] {
+            trace_ids_different = true
+            break
+          }
+          k = k + 1
         }
+        assert_eq(trace_ids_different, true)  // trace_id应该不同
+        
+        // 检查span_id不同
+        let mut span_ids_different = false
+        k = 0
+        while k < current_span.context.span_id.length() {
+          if current_span.context.span_id[k] != other_span.context.span_id[k] {
+            span_ids_different = true
+            break
+          }
+          k = k + 1
+        }
+        assert_eq(span_ids_different, true)  // span_id应该不同
       }
-      l = l + 1
-    }
-    
-    // 验证租户隔离
-    if not(verify_tenant_isolation(expected_tenant_id, found_tenant_id, "logs")) {
-      log_isolation_violations = log_isolation_violations + 1
-    }
-    
-    k = k + 1
-  }
-  
-  // 验证日志隔离效果
-  assert_eq(log_isolation_violations, 0)  // 不应该有隔离违规
-  assert_eq(tenant_logs.length(), 45)     // 3个租户，每个15个日志记录
-}
-
-test "multi_tenant_context_isolation" {
-  // 测试跨租户的上下文隔离
-  
-  let tenant_manager = create_tenant_manager()
-  
-  // 为不同租户创建上下文
-  let mut tenant_contexts = []
-  
-  let mut i = 0
-  while i < tenant_manager.tenants.length() {
-    let tenant = tenant_manager.tenants[i]
-    
-    let base_context = Context::empty()
-    
-    // 创建租户特定的上下文键
-    let tenant_key = create_key("tenant." + tenant.namespace + ".data")
-    let user_key = create_key("user." + tenant.namespace + ".id")
-    let session_key = create_key("session." + tenant.namespace + ".id")
-    
-    // 设置租户特定的上下文值
-    let tenant_context = base_context
-      .with_value(tenant_key, "tenant_data_" + tenant.tenant_id)
-      .with_value(user_key, "user_" + tenant.tenant_id + "_" + i.to_string())
-      .with_value(session_key, "session_" + tenant.tenant_id + "_" + (i * 100).to_string())
-    
-    tenant_contexts.push((tenant.tenant_id, tenant_context))
-    
-    i = i + 1
-  }
-  
-  // 验证租户上下文隔离
-  let mut context_isolation_violations = 0
-  
-  // 检查每个上下文的租户隔离
-  let mut j = 0
-  while j < tenant_contexts.length() {
-    let (expected_tenant_id, context) = tenant_contexts[j]
-    
-    // 简化验证：检查上下文是否包含正确的租户信息
-    // 在实际实现中，应该检查上下文中的所有值都只属于正确的租户
-    let is_properly_isolated = verify_tenant_isolation(expected_tenant_id, expected_tenant_id, "context")
-    
-    if not(is_properly_isolated) {
-      context_isolation_violations = context_isolation_violations + 1
-    }
-    
-    j = j + 1
-  }
-  
-  // 验证上下文隔离效果
-  assert_eq(context_isolation_violations, 0)  // 不应该有隔离违规
-  assert_eq(tenant_contexts.length(), 3)      // 3个租户上下文
-}
-
-test "multi_tenant_resource_quota_enforcement" {
-  // 测试租户资源配额强制执行
-  
-  let tenant_manager = create_tenant_manager()
-  
-  // 为每个租户创建资源使用上下文
-  let mut tenant_contexts = []
-  
-  let mut i = 0
-  while i < tenant_manager.tenants.length() {
-    let tenant = tenant_manager.tenants[i]
-    
-    let tenant_context = TenantContext::{
-      tenant_info: tenant,
-      current_usage: TenantResourceUsage::{
-        spans_count: 0,
-        logs_count: 0,
-        metrics_count: 0,
-        storage_used_mb: 0,
-        memory_used_mb: 0
-      },
-      is_isolated: tenant.isolation_level == "STRICT"
-    }
-    
-    tenant_contexts.push(tenant_context)
-    
-    i = i + 1
-  }
-  
-  // 模拟资源使用并检查配额
-  let mut quota_violations = 0
-  
-  let mut j = 0
-  while j < tenant_contexts.length() {
-    let mut context = tenant_contexts[j]
-    let quota = context.tenant_info.resource_quota
-    
-    // 模拟不同的资源使用水平
-    let usage_factor = j + 1  // 不同租户有不同的使用模式
-    
-    // 更新资源使用情况
-    context.current_usage.spans_count = quota.max_spans_per_minute * usage_factor / 2
-    context.current_usage.logs_count = quota.max_logs_per_minute * usage_factor / 2
-    context.current_usage.metrics_count = quota.max_metrics_per_minute * usage_factor / 2
-    context.current_usage.storage_used_mb = quota.max_storage_mb * usage_factor / 2
-    context.current_usage.memory_used_mb = quota.max_memory_mb * usage_factor / 2
-    
-    // 检查各种资源配额
-    let spans_quota_ok = check_resource_quota(context, "spans")
-    let logs_quota_ok = check_resource_quota(context, "logs")
-    let metrics_quota_ok = check_resource_quota(context, "metrics")
-    let storage_quota_ok = check_resource_quota(context, "storage")
-    let memory_quota_ok = check_resource_quota(context, "memory")
-    
-    // 根据租户的隔离级别，配额检查应该有不同的严格程度
-    let expected_violations = match context.tenant_info.isolation_level {
-      "STRICT" => 5   // 严格隔离：所有资源都应该检查配额
-      "MODERATE" => 3 // 中等隔离：主要资源检查配额
-      "BASIC" => 1    // 基本隔离：只检查关键资源配额
-      _ => 0
-    }
-    
-    let actual_violations = (if not(spans_quota_ok) { 1 } else { 0 }) +
-                           (if not(logs_quota_ok) { 1 } else { 0 }) +
-                           (if not(metrics_quota_ok) { 1 } else { 0 }) +
-                           (if not(storage_quota_ok) { 1 } else { 0 }) +
-                           (if not(memory_quota_ok) { 1 } else { 0 })
-    
-    // 验证配额强制执行
-    if actual_violations < expected_violations {
-      quota_violations = quota_violations + 1
-    }
-    
-    tenant_contexts[j] = context
-    j = j + 1
-  }
-  
-  // 验证资源配额强制执行效果
-  assert_eq(quota_violations, 0)  // 不应该有配额违规
-}
-
-test "multi_tenant_data_bleed_prevention" {
-  // 测试防止租户间数据泄露
-  
-  let tenant_manager = create_tenant_manager()
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("bleed-test", Some("1.0.0"))
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("bleed-logger", Some("1.0.0"))
-  
-  // 模拟潜在的数据泄露场景
-  let mut data_bleed_attempts = 0
-  let mut successful_bleeds = 0
-  
-  // 场景1：尝试在Span中访问其他租户的数据
-  let mut i = 0
-  while i < tenant_manager.tenants.length() {
-    let tenant_a = tenant_manager.tenants[i]
-    let tenant_b = tenant_manager.tenants[(i + 1) % tenant_manager.tenants.length()]
-    
-    // 尝试创建包含其他租户数据的Span
-    let (_, span) = tracer.start_span(ctx, "bleed_attempt_span", Internal)
-    
-    let malicious_span = Span::{
-      ..span,
-      attributes: [
-        ("tenant.id", AttributeValue::string(tenant_a.tenant_id)),  // 声明属于租户A
-        ("stolen.data", AttributeValue::string("secret_from_" + tenant_b.tenant_id)),  // 但包含租户B的数据
-        ("data.source", AttributeValue::string(tenant_b.namespace))
-      ]
-    }
-    
-    data_bleed_attempts = data_bleed_attempts + 1
-    
-    // 检查是否成功检测到数据泄露
-    let has_bleed = malicious_span.attributes.length() > 1  // 简化检测
-    if has_bleed {
-      successful_bleeds = successful_bleeds + 1
+      j = j + 1
     }
     
     i = i + 1
   }
-  
-  // 场景2：尝试在日志中泄露其他租户的信息
-  let mut j = 0
-  while j < tenant_manager.tenants.length() {
-    let tenant_a = tenant_manager.tenants[j]
-    let tenant_b = tenant_manager.tenants[(j + 2) % tenant_manager.tenants.length()]
-    
-    // 尝试创建包含其他租户信息的日志
-    let log_record = LogRecord::builder()
-      .severity(SeverityNumber::Error)
-      .body("Log from " + tenant_a.tenant_name)
-      .with_attribute("tenant.id", AttributeValue::string(tenant_a.tenant_id))
-      .with_attribute("leaked.tenant", AttributeValue::string(tenant_b.tenant_id))
-      .with_attribute("leaked.data", AttributeValue::string("sensitive_info_" + tenant_b.tenant_id))
-      .build()
-    
-    data_bleed_attempts = data_bleed_attempts + 1
-    
-    // 检查是否成功检测到数据泄露
-    let has_bleed = log_record.attributes.length() > 2  // 简化检测
-    if has_bleed {
-      successful_bleeds = successful_bleeds + 1
-    }
-    
-    j = j + 1
-  }
-  
-  // 在严格隔离模式下，应该检测到所有数据泄露尝试
-  let detected_bleeds = data_bleed_attempts  // 简化：假设所有都被检测到
-  
-  // 验证数据泄露防护效果
-  assert_eq(data_bleed_attempts, 6)          // 3个租户，2种泄露场景
-  assert_eq(detected_bleeds, data_bleed_attempts)  // 所有泄露尝试都应该被检测到
-  assert_eq(successful_bleeds <= 1, true)    // 成功泄露应该很少或没有
-}
-
-test "multi_tenant_performance_isolation" {
-  // 测试租户间的性能隔离
-  
-  let tenant_manager = create_tenant_manager()
-  
-  // 模拟不同租户的不同负载模式
-  let mut tenant_performance = []
-  
-  let mut i = 0
-  while i < tenant_manager.tenants.length() {
-    let tenant = tenant_manager.tenants[i]
-    
-    // 不同租户有不同的性能特征
-    let (operation_count, avg_latency_ms, error_rate) = match tenant.isolation_level {
-      "STRICT" => (1000, 50.0, 0.01)    // 高负载，低延迟，低错误率
-      "MODERATE" => (500, 100.0, 0.05)  // 中等负载，中等延迟，中等错误率
-      "BASIC" => (200, 200.0, 0.1)      // 低负载，高延迟，高错误率
-      _ => (100, 300.0, 0.2)
-    }
-    
-    tenant_performance.push((tenant.tenant_id, operation_count, avg_latency_ms, error_rate))
-    
-    i = i + 1
-  }
-  
-  // 验证性能隔离效果
-  let mut performance_isolation_violations = 0
-  
-  // 检查每个租户的性能是否符合其隔离级别
-  let mut j = 0
-  while j < tenant_performance.length() {
-    let (tenant_id, operation_count, avg_latency_ms, error_rate) = tenant_performance[j]
-    
-    // 找到对应的租户信息
-    let mut tenant_info = tenant_manager.tenants[0]  // 默认值
-    let mut k = 0
-    while k < tenant_manager.tenants.length() {
-      if tenant_manager.tenants[k].tenant_id == tenant_id {
-        tenant_info = tenant_manager.tenants[k]
-        break
-      }
-      k = k + 1
-    }
-    
-    // 验证性能隔离
-    let performance_ok = match tenant_info.isolation_level {
-      "STRICT" => avg_latency_ms <= 100.0 && error_rate <= 0.02
-      "MODERATE" => avg_latency_ms <= 150.0 && error_rate <= 0.1
-      "BASIC" => avg_latency_ms <= 300.0 && error_rate <= 0.2
-      _ => false
-    }
-    
-    if not(performance_ok) {
-      performance_isolation_violations = performance_isolation_violations + 1
-    }
-    
-    j = j + 1
-  }
-  
-  // 验证性能隔离效果
-  assert_eq(performance_isolation_violations, 0)  // 不应该有性能隔离违规
-  assert_eq(tenant_performance.length(), 3)       // 应该有3个租户的性能数据
 }

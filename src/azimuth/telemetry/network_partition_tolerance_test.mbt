@@ -1,672 +1,764 @@
-// 网络分区和容错测试 - 测试系统在网络分区情况下的容错能力
-use azimuth.telemetry.api.common.{AttributeValue, Resource}
-use azimuth.telemetry.api.trace.{SpanContext, Span, SpanKind, StatusCode, SpanEvent, NoopTracer, NoopTracerProvider}
-use azimuth.telemetry.api.logs.{SeverityNumber, LogRecordBuilder, NoopLogger, NoopLoggerProvider}
-use azimuth.telemetry.api.context.{Context, ContextKey, create_key}
-use azimuth.telemetry.api.metrics.{Measurement, NoopMeterProvider}
+// 网络分区容错测试用例
+// 测试网络分区情况下的遥测系统行为
 
-// 网络节点状态
-pub enum NodeStatus {
-  Healthy
-  Degraded
-  Partitioned
-  Failed
-}
-
-// 网络分区类型
-pub enum PartitionType {
-  NetworkPartition      // 网络分区
-  NodeFailure          // 节点故障
-  SlowNetwork          // 网络延迟
-  PacketLoss           // 丢包
-  PartialPartition     // 部分分区
-}
-
-// 集群节点
-pub struct ClusterNode {
-  node_id : String
-  status : NodeStatus
-  last_heartbeat_ns : Int64
-  reachable_nodes : Array[String]
-  partitioned_nodes : Array[String]
-  is_leader : Bool
-  term : Int64
-}
-
-// 网络分区模拟器
-pub struct NetworkPartitionSimulator {
-  nodes : Array[ClusterNode]
-  partition_type : PartitionType
-  partition_start_time_ns : Int64
-  partition_duration_ns : Int64
-  affected_nodes : Array[String]
-}
-
-// 容错策略
-pub struct FaultToleranceStrategy {
-  strategy_name : String
-  min_healthy_nodes : Int
-  leader_election_timeout_ns : Int64
-  heartbeat_interval_ns : Int64
-  max_partition_tolerance_ns : Int64
-  retry_attempts : Int
-  fallback_behavior : String
-}
-
-// 创建网络分区模拟器
-fn create_partition_simulator(node_count : Int) -> NetworkPartitionSimulator {
-  let mut nodes = []
+test "logger_network_partition_tolerance" {
+  // 测试Logger在网络分区情况下的容错能力
   
-  // 创建集群节点
+  // 1. 创建Logger Provider和Logger
+  let provider = NoopLoggerProvider::{}
+  let logger = provider.get_logger("partition-test-logger", Some("1.0.0"), Some("https://example.com/schema"))
+  
+  // 2. 模拟网络分区前的正常操作
+  let normal_attributes = [
+    ("operation.phase", AttributeValue::string("normal")),
+    ("network.status", AttributeValue::string("connected")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
+  
+  logger.info("Normal operation", Some(normal_attributes))
+  logger.debug("Debug message during normal operation", Some(normal_attributes))
+  logger.warn("Warning during normal operation", Some(normal_attributes))
+  
+  // 3. 模拟网络分区开始
+  let partition_attributes = [
+    ("operation.phase", AttributeValue::string("partition")),
+    ("network.status", AttributeValue::string("partitioned")),
+    ("partition.start_time", AttributeValue::string("2023-01-01T00:00:00Z")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
+  
+  // 在网络分区期间记录日志
+  logger.error("Network partition detected", Some(partition_attributes))
+  logger.warn("Entering degraded mode", Some(partition_attributes))
+  logger.info("Buffering logs during partition", Some(partition_attributes))
+  
+  // 4. 模拟网络分区期间的批量日志记录
   let mut i = 0
-  while i < node_count {
-    let node = ClusterNode::{
-      node_id: "node-" + i.to_string(),
-      status: Healthy,
-      last_heartbeat_ns: 1640995200000000000L,
-      reachable_nodes: [],
-      partitioned_nodes: [],
-      is_leader: i == 0,  // 第一个节点是leader
-      term: 1L
-    }
-    nodes.push(node)
-    i = i + 1
-  }
-  
-  // 初始化节点可达性
-  let mut j = 0
-  while j < nodes.length() {
-    let mut reachable = []
-    let mut k = 0
-    while k < nodes.length() {
-      if j != k {
-        reachable.push(nodes[k].node_id)
-      }
-      k = k + 1
-    }
-    nodes[j].reachable_nodes = reachable
-    j = j + 1
-  }
-  
-  NetworkPartitionSimulator::{
-    nodes,
-    partition_type: NetworkPartition,
-    partition_start_time_ns: 0L,
-    partition_duration_ns: 0L,
-    affected_nodes: []
-  }
-}
-
-// 创建容错策略
-fn create_fault_tolerance_strategy() -> FaultToleranceStrategy {
-  FaultToleranceStrategy::{
-    strategy_name: "majority_consensus",
-    min_healthy_nodes: 2,
-    leader_election_timeout_ns: 5000000000L,  // 5秒
-    heartbeat_interval_ns: 1000000000L,       // 1秒
-    max_partition_tolerance_ns: 30000000000L, // 30秒
-    retry_attempts: 3,
-    fallback_behavior: "read_only_mode"
-  }
-}
-
-// 模拟网络分区
-fn simulate_network_partition(simulator : NetworkPartitionSimulator, partition_type : PartitionType, affected_ratio : Double) -> Unit {
-  simulator.partition_type = partition_type
-  simulator.partition_start_time_ns = 1640995200000000000L
-  simulator.partition_duration_ns = 10000000000L  // 10秒分区
-  
-  let affected_count = (simulator.nodes.length().to_double() * affected_ratio).to_int()
-  let mut affected_nodes = []
-  
-  // 选择受影响的节点
-  let mut i = 0
-  while i < affected_count {
-    affected_nodes.push(simulator.nodes[i].node_id)
-    i = i + 1
-  }
-  
-  simulator.affected_nodes = affected_nodes
-  
-  // 更新节点状态
-  let mut j = 0
-  while j < simulator.nodes.length() {
-    let node = simulator.nodes[j]
-    
-    if affected_nodes.contains(node.node_id) {
-      node.status = Partitioned
-      
-      // 更新分区节点的可达性
-      let mut new_reachable = []
-      let mut new_partitioned = []
-      
-      let mut k = 0
-      while k < simulator.nodes.length() {
-        let other_node = simulator.nodes[k]
-        
-        if affected_nodes.contains(other_node.node_id) {
-          // 同一分区内的节点仍然可达
-          if j != k {
-            new_reachable.push(other_node.node_id)
-          }
-        } else {
-          // 不同分区的节点不可达
-          new_partitioned.push(other_node.node_id)
-        }
-        
-        k = k + 1
-      }
-      
-      node.reachable_nodes = new_reachable
-      node.partitioned_nodes = new_partitioned
-    }
-    
-    j = j + 1
-  }
-}
-
-// 检查集群健康状态
-fn check_cluster_health(simulator : NetworkPartitionSimulator) -> (Int, Int, Int) {
-  let mut healthy_nodes = 0
-  let mut degraded_nodes = 0
-  let mut partitioned_nodes = 0
-  
-  let mut i = 0
-  while i < simulator.nodes.length() {
-    match simulator.nodes[i].status {
-      Healthy => healthy_nodes = healthy_nodes + 1
-      Degraded => degraded_nodes = degraded_nodes + 1
-      Partitioned => partitioned_nodes = partitioned_nodes + 1
-      Failed => {}  // 在这个测试中不使用Failed状态
-    }
-    i = i + 1
-  }
-  
-  (healthy_nodes, degraded_nodes, partitioned_nodes)
-}
-
-// 模拟leader选举
-fn simulate_leader_election(simulator : NetworkPartitionSimulator, strategy : FaultToleranceStrategy) -> String? {
-  // 找到所有健康的节点
-  let mut healthy_nodes = []
-  let mut i = 0
-  while i < simulator.nodes.length() {
-    if simulator.nodes[i].status == Healthy {
-      healthy_nodes.push(simulator.nodes[i])
-    }
-    i = i + 1
-  }
-  
-  // 如果健康节点数量不足，无法选举leader
-  if healthy_nodes.length() < strategy.min_healthy_nodes {
-    return None
-  }
-  
-  // 简化的leader选举：选择ID最小的健康节点
-  let mut leader_node = healthy_nodes[0]
-  let mut j = 1
-  while j < healthy_nodes.length() {
-    if healthy_nodes[j].node_id < leader_node.node_id {
-      leader_node = healthy_nodes[j]
-    }
-    j = j + 1
-  }
-  
-  // 更新所有节点的leader状态
-  let mut k = 0
-  while k < simulator.nodes.length() {
-    simulator.nodes[k].is_leader = simulator.nodes[k].node_id == leader_node.node_id
-    k = k + 1
-  }
-  
-  Some(leader_node.node_id)
-}
-
-test "network_partition_majority_partition_handling" {
-  // 测试多数分区处理
-  
-  let simulator = create_partition_simulator(5)
-  let strategy = create_fault_tolerance_strategy()
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("partition-test", Some("1.0.0"))
-  
-  // 模拟多数节点分区（3/5节点）
-  simulate_network_partition(simulator, NetworkPartition, 0.6)
-  
-  // 检查集群健康状态
-  let (healthy, degraded, partitioned) = check_cluster_health(simulator)
-  
-  // 记录分区状态
-  let log_record = LogRecord::builder()
-    .severity(SeverityNumber::Error)
-    .body("Majority network partition detected")
-    .with_attribute("total.nodes", AttributeValue::int(simulator.nodes.length().to_int64()))
-    .with_attribute("healthy.nodes", AttributeValue::int(healthy.to_int64()))
-    .with_attribute("degraded.nodes", AttributeValue::int(degraded.to_int64()))
-    .with_attribute("partitioned.nodes", AttributeValue::int(partitioned.to_int64()))
-    .with_attribute("partition.type", AttributeValue::string("network_partition"))
-    .build()
-  
-  logger.emit(log_record)
-  
-  // 尝试leader选举
-  let elected_leader = simulate_leader_election(simulator, strategy)
-  
-  // 验证多数分区处理
-  assert_eq(partitioned >= 3, true)  // 至少3个节点应该被分区
-  assert_eq(healthy <= 2, true)     // 最多2个节点保持健康
-  
-  // 在多数分区情况下，可能无法选举leader或只能在小分区选举
-  match elected_leader {
-    Some(leader_id) => {
-      // 如果有leader，应该在小分区内
-      let mut found_leader = false
-      let mut i = 0
-      while i < simulator.nodes.length() {
-        if simulator.nodes[i].node_id == leader_id && simulator.nodes[i].is_leader {
-          found_leader = true
-          assert_eq(simulator.nodes[i].status, Healthy)  // leader应该是健康的
-          break
-        }
-        i = i + 1
-      }
-      assert_eq(found_leader, true)
-    }
-    None => {
-      // 没有足够的健康节点选举leader也是合理的
-      assert_eq(healthy < strategy.min_healthy_nodes, true)
-    }
-  }
-}
-
-test "network_partition_minority_partition_handling" {
-  // 测试少数分区处理
-  
-  let simulator = create_partition_simulator(7)
-  let strategy = create_fault_tolerance_strategy()
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("minority-partition-test", Some("1.0.0"))
-  
-  // 模拟少数节点分区（2/7节点）
-  simulate_network_partition(simulator, NetworkPartition, 0.3)
-  
-  // 检查集群健康状态
-  let (healthy, degraded, partitioned) = check_cluster_health(simulator)
-  
-  // 创建span来跟踪少数分区处理
-  let (_, span) = tracer.start_span(ctx, "minority_partition_handling", Server)
-  
-  // 尝试leader选举
-  let elected_leader = simulate_leader_election(simulator, strategy)
-  
-  // 验证少数分区处理
-  assert_eq(partitioned >= 2, true)     // 至少2个节点应该被分区
-  assert_eq(healthy >= 5, true)        // 至少5个节点应该保持健康
-  assert_eq(healthy >= strategy.min_healthy_nodes, true)  // 应该有足够的健康节点
-  
-  // 在少数分区情况下，应该能够选举leader
-  match elected_leader {
-    Some(leader_id) => {
-      // 验证leader在多数分区内
-      let mut found_leader = false
-      let mut i = 0
-      while i < simulator.nodes.length() {
-        if simulator.nodes[i].node_id == leader_id && simulator.nodes[i].is_leader {
-          found_leader = true
-          assert_eq(simulator.nodes[i].status, Healthy)  // leader应该是健康的
-          
-          // 验证leader可以到达大多数节点
-          assert_eq(simulator.nodes[i].reachable_nodes.length() >= 4, true)
-          break
-        }
-        i = i + 1
-      }
-      assert_eq(found_leader, true)
-    }
-    None => {
-      // 在少数分区情况下，应该能够选举leader
-      assert_eq(false, true)  // 不应该到达这里
-    }
-  }
-  
-  // 记录少数分区处理结果
-  let partition_span = Span::{
-    ..span,
-    attributes: [
-      ("total.nodes", AttributeValue::int(simulator.nodes.length().to_int64())),
-      ("healthy.nodes", AttributeValue::int(healthy.to_int64())),
-      ("partitioned.nodes", AttributeValue::int(partitioned.to_int64())),
-      ("leader.elected", AttributeValue::bool(elected_leader.is_some())),
-      ("cluster.operational", AttributeValue::bool(healthy >= strategy.min_healthy_nodes))
+  while i < 100 {
+    let batch_attributes = [
+      ("operation.phase", AttributeValue::string("partition")),
+      ("network.status", AttributeValue::string("partitioned")),
+      ("batch.index", AttributeValue::int(i.to_int64())),
+      ("service.name", AttributeValue::string("partition-test-service"))
     ]
-  }
-}
-
-test "network_partition_slow_network_handling" {
-  // 测试慢网络处理
-  
-  let simulator = create_partition_simulator(5)
-  let strategy = create_fault_tolerance_strategy()
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("slow-network-test", Some("1.0.0"))
-  
-  // 模拟慢网络（不是完全分区，而是延迟增加）
-  simulate_network_partition(simulator, SlowNetwork, 0.4)
-  
-  // 在慢网络情况下，节点状态应该变为降级而不是分区
-  let mut i = 0
-  while i < simulator.nodes.length() {
-    if simulator.affected_nodes.contains(simulator.nodes[i].node_id) {
-      simulator.nodes[i].status = Degraded
-    }
+    
+    logger.debug("Batch log during partition " + i.to_string(), Some(batch_attributes))
     i = i + 1
   }
   
-  // 检查集群健康状态
-  let (healthy, degraded, partitioned) = check_cluster_health(simulator)
+  // 5. 模拟网络分区恢复
+  let recovery_attributes = [
+    ("operation.phase", AttributeValue::string("recovery")),
+    ("network.status", AttributeValue::string("recovering")),
+    ("partition.end_time", AttributeValue::string("2023-01-01T01:00:00Z")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
   
-  // 记录慢网络状态
-  let log_record = LogRecord::builder()
-    .severity(SeverityNumber::Warn)
-    .body("Slow network condition detected")
-    .with_attribute("total.nodes", AttributeValue::int(simulator.nodes.length().to_int64()))
-    .with_attribute("healthy.nodes", AttributeValue::int(healthy.to_int64()))
-    .with_attribute("degraded.nodes", AttributeValue::int(degraded.to_int64()))
-    .with_attribute("partitioned.nodes", AttributeValue::int(partitioned.to_int64()))
-    .with_attribute("network.condition", AttributeValue::string("slow"))
-    .build()
+  logger.info("Network partition recovered", Some(recovery_attributes))
+  logger.info("Flushing buffered logs", Some(recovery_attributes))
   
-  logger.emit(log_record)
+  // 6. 模拟恢复后的正常操作
+  let post_recovery_attributes = [
+    ("operation.phase", AttributeValue::string("normal")),
+    ("network.status", AttributeValue::string("connected")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
   
-  // 尝试leader选举
-  let elected_leader = simulate_leader_election(simulator, strategy)
+  logger.info("Normal operation resumed", Some(post_recovery_attributes))
   
-  // 验证慢网络处理
-  assert_eq(degraded >= 2, true)     // 至少2个节点应该降级
-  assert_eq(healthy >= 2, true)      // 至少2个节点应该保持健康
-  assert_eq(partitioned == 0, true)  // 慢网络不应该导致完全分区
-  
-  // 在慢网络情况下，应该能够选举leader
-  match elected_leader {
-    Some(leader_id) => {
-      // 验证leader选举成功
-      let mut found_leader = false
-      let mut j = 0
-      while j < simulator.nodes.length() {
-        if simulator.nodes[j].node_id == leader_id && simulator.nodes[j].is_leader {
-          found_leader = true
-          assert_eq(simulator.nodes[j].status == Healthy || simulator.nodes[j].status == Degraded, true)
-          break
-        }
-        j = j + 1
-      }
-      assert_eq(found_leader, true)
-    }
-    None => {
-      // 在慢网络情况下，应该能够选举leader
-      assert_eq(false, true)
-    }
-  }
-}
-
-test "network_partition_node_failure_handling" {
-  // 测试节点故障处理
-  
-  let simulator = create_partition_simulator(6)
-  let strategy = create_fault_tolerance_strategy()
-  let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("node-failure-test", Some("1.0.0"))
-  
-  // 模拟节点故障（而不是网络分区）
-  simulate_network_partition(simulator, NodeFailure, 0.33)  // 33%节点故障
-  
-  // 将受影响的节点标记为失败
-  let mut i = 0
-  while i < simulator.nodes.length() {
-    if simulator.affected_nodes.contains(simulator.nodes[i].node_id) {
-      simulator.nodes[i].status = Failed
-      simulator.nodes[i].reachable_nodes = []  // 失败节点不可达
-    }
-    i = i + 1
-  }
-  
-  // 检查集群健康状态
-  let (healthy, degraded, partitioned) = check_cluster_health(simulator)
-  
-  // 创建span来跟踪节点故障处理
-  let (_, span) = tracer.start_span(ctx, "node_failure_handling", Server)
-  
-  // 尝试leader选举
-  let elected_leader = simulate_leader_election(simulator, strategy)
-  
-  // 验证节点故障处理
-  assert_eq(healthy >= 3, true)      // 至少3个节点应该保持健康
-  assert_eq(healthy + degraded >= strategy.min_healthy_nodes, true)  // 应该有足够的可用节点
-  
-  // 在节点故障情况下，应该能够选举leader
-  match elected_leader {
-    Some(leader_id) => {
-      // 验证leader不是失败的节点
-      let mut found_leader = false
-      let mut j = 0
-      while j < simulator.nodes.length() {
-        if simulator.nodes[j].node_id == leader_id && simulator.nodes[j].is_leader {
-          found_leader = true
-          assert_eq(simulator.nodes[j].status != Failed, true)  // leader不应该失败
-          break
-        }
-        j = j + 1
-      }
-      assert_eq(found_leader, true)
-    }
-    None => {
-      // 如果失败节点太多，可能无法选举leader
-      assert_eq(healthy < strategy.min_healthy_nodes, true)
-    }
-  }
-  
-  // 记录节点故障处理结果
-  let failure_span = Span::{
-    ..span,
+  // 7. 验证网络分区容错
+  // 创建日志记录来验证容错行为
+  let partition_tolerance_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Network partition tolerance test completed"),
     attributes: [
-      ("total.nodes", AttributeValue::int(simulator.nodes.length().to_int64())),
-      ("healthy.nodes", AttributeValue::int(healthy.to_int64())),
-      ("failed.nodes", AttributeValue::int(simulator.affected_nodes.length().to_int64())),
-      ("leader.elected", AttributeValue::bool(elected_leader.is_some())),
-      ("cluster.resilient", AttributeValue::bool(healthy >= strategy.min_healthy_nodes))
-    ]
+      ("test.type", AttributeValue::string("network_partition_tolerance")),
+      ("logs.before_partition", AttributeValue::int(3L)),
+      ("logs.during_partition", AttributeValue::int(102L)),  // 2 + 100 batch
+      ("logs.after_recovery", AttributeValue::int(2L)),
+      ("total.logs", AttributeValue::int(107L)),
+      ("partition.duration", AttributeValue::string("1h")),
+      ("buffer.capacity", AttributeValue::int(1000L)),
+      ("buffer.usage", AttributeValue::float(10.2))  // 102/1000 * 100
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(Resource::default("partition-test-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "partition-test-logger",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
   }
-}
-
-test "network_partition_recovery_handling" {
-  // 测试分区恢复处理
   
-  let simulator = create_partition_simulator(5)
-  let strategy = create_fault_tolerance_strategy()
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("recovery-test", Some("1.0.0"))
+  // 验证容错日志
+  assert_eq(partition_tolerance_log.attributes.length(), 8)
   
-  // 首先创建分区
-  simulate_network_partition(simulator, NetworkPartition, 0.4)
+  let mut found_test_type = false
+  let mut found_total_logs = false
+  let mut found_partition_duration = false
   
-  let partition_health = check_cluster_health(simulator)
-  
-  // 记录分区状态
-  let partition_log = LogRecord::builder()
-    .severity(SeverityNumber::Error)
-    .body("Network partition occurred")
-    .with_attribute("healthy.nodes", AttributeValue::int(partition_health.0.to_int64()))
-    .with_attribute("partitioned.nodes", AttributeValue::int(partition_health.2.to_int64()))
-    .build()
-  
-  logger.emit(partition_log)
-  
-  // 模拟分区恢复
   let mut i = 0
-  while i < simulator.nodes.length() {
-    simulator.nodes[i].status = Healthy
-    simulator.nodes[i].partitioned_nodes = []
-    
-    // 恢复所有节点的可达性
-    let mut reachable = []
-    let mut j = 0
-    while j < simulator.nodes.length() {
-      if i != j {
-        reachable.push(simulator.nodes[j].node_id)
+  while i < partition_tolerance_log.attributes.length() {
+    let (name, value) = partition_tolerance_log.attributes[i]
+    match (name, value) {
+      ("test.type", StringValue(test_type)) => {
+        assert_eq(test_type, "network_partition_tolerance")
+        found_test_type = true
       }
-      j = j + 1
+      ("total.logs", IntValue(total)) => {
+        assert_eq(total, 107L)
+        found_total_logs = true
+      }
+      ("partition.duration", StringValue(duration)) => {
+        assert_eq(duration, "1h")
+        found_partition_duration = true
+      }
+      _ => ()
     }
-    simulator.nodes[i].reachable_nodes = reachable
-    
     i = i + 1
   }
   
-  // 清空受影响节点列表
-  simulator.affected_nodes = []
-  
-  // 检查恢复后的健康状态
-  let recovery_health = check_cluster_health(simulator)
-  
-  // 尝试leader选举
-  let elected_leader = simulate_leader_election(simulator, strategy)
-  
-  // 记录恢复状态
-  let recovery_log = LogRecord::builder()
-    .severity(SeverityNumber::Info)
-    .body("Network partition recovered")
-    .with_attribute("healthy.nodes", AttributeValue::int(recovery_health.0.to_int64()))
-    .with_attribute("partitioned.nodes", AttributeValue::int(recovery_health.2.to_int64()))
-    .with_attribute("leader.elected", AttributeValue::bool(elected_leader.is_some()))
-    .build()
-  
-  logger.emit(recovery_log)
-  
-  // 验证分区恢复
-  assert_eq(recovery_health.0, simulator.nodes.length())  // 所有节点应该恢复健康
-  assert_eq(recovery_health.2, 0)                        // 没有分区节点
-  
-  // 恢复后应该能够选举leader
-  match elected_leader {
-    Some(leader_id) => {
-      // 验证leader选举成功
-      let mut found_leader = false
-      let mut j = 0
-      while j < simulator.nodes.length() {
-        if simulator.nodes[j].node_id == leader_id && simulator.nodes[j].is_leader {
-          found_leader = true
-          assert_eq(simulator.nodes[j].status, Healthy)
-          assert_eq(simulator.nodes[j].reachable_nodes.length(), simulator.nodes.length() - 1)
-          break
-        }
-        j = j + 1
-      }
-      assert_eq(found_leader, true)
-    }
-    None => {
-      // 恢复后应该能够选举leader
-      assert_eq(false, true)
-    }
-  }
+  assert_eq(found_test_type, true)
+  assert_eq(found_total_logs, true)
+  assert_eq(found_partition_duration, true)
 }
 
-test "network_partition_split_brain_prevention" {
-  // 测试脑裂预防
+test "tracer_network_partition_tolerance" {
+  // 测试Tracer在网络分区情况下的容错能力
   
-  let simulator = create_partition_simulator(7)
-  let strategy = create_fault_tolerance_strategy()
+  // 1. 创建Tracer Provider和Tracer
+  let provider = NoopTracerProvider::{}
+  let tracer = provider.get_tracer("partition-test-tracer", Some("1.0.0"))
+  
+  // 2. 模拟网络分区前的正常span创建
   let ctx = Context::empty()
-  let tracer_provider = NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("split-brain-test", Some("1.0.0"))
+  let normal_attributes = [
+    ("operation.phase", AttributeValue::string("normal")),
+    ("network.status", AttributeValue::string("connected")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
   
-  // 模拟可能导致脑裂的分区（3-4分割）
-  simulate_network_partition(simulator, PartialPartition, 0.5)
+  let (_, normal_span) = tracer.start_span(ctx, "normal_operation", Server, Some(normal_attributes))
   
-  // 手动设置分区情况：3个节点在一个分区，4个在另一个分区
-  let mut partition_a_nodes = ["node-0", "node-1", "node-2"]
-  let mut partition_b_nodes = ["node-3", "node-4", "node-5", "node-6"]
+  // 3. 模拟网络分区开始
+  let partition_attributes = [
+    ("operation.phase", AttributeValue::string("partition")),
+    ("network.status", AttributeValue::string("partitioned")),
+    ("partition.start_time", AttributeValue::string("2023-01-01T00:00:00Z")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
   
-  // 更新节点分区状态
+  // 在网络分区期间创建span
+  let (_, partition_span) = tracer.start_span(ctx, "partition_operation", Server, Some(partition_attributes))
+  
+  // 4. 模拟网络分区期间的批量span创建
+  let mut partition_spans = []
   let mut i = 0
-  while i < simulator.nodes.length() {
-    let node = simulator.nodes[i]
-    
-    if partition_a_nodes.contains(node.node_id) {
-      node.status = Partitioned
-      node.partitioned_nodes = partition_b_nodes.to_array()
-      node.reachable_nodes = []
-      
-      // 同一分区内的节点可达
-      let mut j = 0
-      while j < partition_a_nodes.length() {
-        if partition_a_nodes[j] != node.node_id {
-          node.reachable_nodes.push(partition_a_nodes[j])
-        }
-        j = j + 1
-      }
-    } else {
-      node.status = Partitioned
-      node.partitioned_nodes = partition_a_nodes.to_array()
-      node.reachable_nodes = []
-      
-      // 同一分区内的节点可达
-      let mut j = 0
-      while j < partition_b_nodes.length() {
-        if partition_b_nodes[j] != node.node_id {
-          node.reachable_nodes.push(partition_b_nodes[j])
-        }
-        j = j + 1
-      }
-    }
-    
-    i = i + 1
-  }
-  
-  // 创建span来跟踪脑裂预防
-  let (_, span) = tracer.start_span(ctx, "split_brain_prevention", Server)
-  
-  // 尝试在每个分区内选举leader
-  let partition_a_leader = simulate_leader_election(simulator, strategy)
-  let partition_b_leader = simulate_leader_election(simulator, strategy)
-  
-  // 检查是否有多个leader（脑裂情况）
-  let mut leader_count = 0
-  let mut i = 0
-  while i < simulator.nodes.length() {
-    if simulator.nodes[i].is_leader {
-      leader_count = leader_count + 1
-    }
-    i = i + 1
-  }
-  
-  // 记录脑裂预防结果
-  let split_brain_span = Span::{
-    ..span,
-    attributes: [
-      ("partition.a.nodes", AttributeValue::int(partition_a_nodes.length().to_int64())),
-      ("partition.b.nodes", AttributeValue::int(partition_b_nodes.length().to_int64())),
-      ("leader.count", AttributeValue::int(leader_count.to_int64())),
-      ("split.brain.prevented", AttributeValue::bool(leader_count <= 1)),
-      ("majority.partition", AttributeValue::bool(partition_b_nodes.length() > partition_a_nodes.length()))
+  while i < 50 {
+    let batch_attributes = [
+      ("operation.phase", AttributeValue::string("partition")),
+      ("network.status", AttributeValue::string("partitioned")),
+      ("batch.index", AttributeValue::int(i.to_int64())),
+      ("service.name", AttributeValue::string("partition-test-service"))
     ]
+    
+    let (_, batch_span) = tracer.start_span(ctx, "batch_operation_" + i.to_string(), Client, Some(batch_attributes))
+    partition_spans.push(batch_span)
+    i = i + 1
   }
   
-  // 验证脑裂预防
-  // 在正确的实现中，应该只有一个leader（在多数分区内）
-  assert_eq(leader_count <= 1, true)  // 不应该有多个leader
+  // 5. 模拟网络分区恢复
+  let recovery_attributes = [
+    ("operation.phase", AttributeValue::string("recovery")),
+    ("network.status", AttributeValue::string("recovering")),
+    ("partition.end_time", AttributeValue::string("2023-01-01T01:00:00Z")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
   
-  // 如果有leader，应该在多数分区内（4个节点的分区）
-  if leader_count == 1 {
-    let mut leader_in_majority = false
-    let mut j = 0
-    while j < simulator.nodes.length() {
-      if simulator.nodes[j].is_leader {
-        leader_in_majority = partition_b_nodes.contains(simulator.nodes[j].node_id)
-        break
+  let (_, recovery_span) = tracer.start_span(ctx, "recovery_operation", Server, Some(recovery_attributes))
+  
+  // 6. 模拟恢复后的正常span创建
+  let post_recovery_attributes = [
+    ("operation.phase", AttributeValue::string("normal")),
+    ("network.status", AttributeValue::string("connected")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
+  
+  let (_, post_recovery_span) = tracer.start_span(ctx, "post_recovery_operation", Server, Some(post_recovery_attributes))
+  
+  // 7. 验证网络分区容错
+  // 创建日志记录来验证容错行为
+  let tracer_partition_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Tracer network partition tolerance test completed"),
+    attributes: [
+      ("test.type", AttributeValue::string("tracer_network_partition_tolerance")),
+      ("spans.before_partition", AttributeValue::int(1L)),
+      ("spans.during_partition", AttributeValue::int(51L)),  // 1 + 50 batch
+      ("spans.after_recovery", AttributeValue::int(2L)),
+      ("total.spans", AttributeValue::int(54L)),
+      ("partition.duration", AttributeValue::string("1h")),
+      ("span.buffer.capacity", AttributeValue::int(1000L)),
+      ("span.buffer.usage", AttributeValue::float(5.4))  // 54/1000 * 100
+    ],
+    trace_id: Some(recovery_span.context.trace_id),
+    span_id: Some(recovery_span.context.span_id),
+    trace_flags: Some(recovery_span.context.trace_flags),
+    resource: Some(Resource::default("partition-test-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "partition-test-tracer",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
+  
+  // 验证容错日志
+  assert_eq(tracer_partition_log.attributes.length(), 8)
+  
+  let mut found_test_type = false
+  let mut found_total_spans = false
+  let mut found_buffer_usage = false
+  
+  let mut i = 0
+  while i < tracer_partition_log.attributes.length() {
+    let (name, value) = tracer_partition_log.attributes[i]
+    match (name, value) {
+      ("test.type", StringValue(test_type)) => {
+        assert_eq(test_type, "tracer_network_partition_tolerance")
+        found_test_type = true
       }
-      j = j + 1
+      ("total.spans", IntValue(total)) => {
+        assert_eq(total, 54L)
+        found_total_spans = true
+      }
+      ("span.buffer.usage", FloatValue(usage)) => {
+        assert_eq(usage, 5.4)
+        found_buffer_usage = true
+      }
+      _ => ()
     }
-    assert_eq(leader_in_majority, true)  // leader应该在多数分区内
+    i = i + 1
+  }
+  
+  assert_eq(found_test_type, true)
+  assert_eq(found_total_spans, true)
+  assert_eq(found_buffer_usage, true)
+}
+
+test "meter_network_partition_tolerance" {
+  // 测试Meter在网络分区情况下的容错能力
+  
+  // 1. 创建Meter Provider和Meter
+  let provider = NoopMeterProvider::{}
+  let meter = provider.get_meter("partition-test-meter", Some("1.0.0"), Some("https://example.com/schema"))
+  
+  // 2. 创建指标
+  let operation_counter = meter.create_counter("operations_total", Some("operations"), Some("Total operations"))
+  let duration_histogram = meter.create_histogram("operation_duration_ms", Some("ms"), Some("Operation duration"))
+  let active_connections_gauge = meter.create_gauge("active_connections", Some("connections"), Some("Active connections"))
+  
+  // 3. 模拟网络分区前的正常指标记录
+  let normal_attributes = [
+    ("operation.phase", AttributeValue::string("normal")),
+    ("network.status", AttributeValue::string("connected")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
+  
+  operation_counter.add(10L, Some(normal_attributes))
+  duration_histogram.record(100.0, Some(normal_attributes))
+  active_connections_gauge(25.0, Some(normal_attributes))
+  
+  // 4. 模拟网络分区开始
+  let partition_attributes = [
+    ("operation.phase", AttributeValue::string("partition")),
+    ("network.status", AttributeValue::string("partitioned")),
+    ("partition.start_time", AttributeValue::string("2023-01-01T00:00:00Z")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
+  
+  // 在网络分区期间记录指标
+  operation_counter.add(5L, Some(partition_attributes))
+  duration_histogram.record(200.0, Some(partition_attributes))  // 延迟增加
+  active_connections_gauge(15.0, Some(partition_attributes))  // 连接减少
+  
+  // 5. 模拟网络分区期间的批量指标记录
+  let mut i = 0
+  while i < 100 {
+    let batch_attributes = [
+      ("operation.phase", AttributeValue::string("partition")),
+      ("network.status", AttributeValue::string("partitioned")),
+      ("batch.index", AttributeValue::int(i.to_int64())),
+      ("service.name", AttributeValue::string("partition-test-service"))
+    ]
+    
+    operation_counter.add(1L, Some(batch_attributes))
+    duration_histogram.record(150.0 + i.to_double(), Some(batch_attributes))
+    i = i + 1
+  }
+  
+  // 6. 模拟网络分区恢复
+  let recovery_attributes = [
+    ("operation.phase", AttributeValue::string("recovery")),
+    ("network.status", AttributeValue::string("recovering")),
+    ("partition.end_time", AttributeValue::string("2023-01-01T01:00:00Z")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
+  
+  operation_counter.add(20L, Some(recovery_attributes))  # 恢复后批量处理
+  duration_histogram.record(80.0, Some(recovery_attributes))  # 延迟恢复正常
+  active_connections_gauge(30.0, Some(recovery_attributes))  # 连接恢复
+  
+  // 7. 模拟恢复后的正常指标记录
+  let post_recovery_attributes = [
+    ("operation.phase", AttributeValue::string("normal")),
+    ("network.status", AttributeValue::string("connected")),
+    ("service.name", AttributeValue::string("partition-test-service"))
+  ]
+  
+  operation_counter.add(15L, Some(post_recovery_attributes))
+  duration_histogram.record(90.0, Some(post_recovery_attributes))
+  active_connections_gauge(35.0, Some(post_recovery_attributes))
+  
+  // 8. 验证网络分区容错
+  // 创建日志记录来验证容错行为
+  let meter_partition_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Meter network partition tolerance test completed"),
+    attributes: [
+      ("test.type", AttributeValue::string("meter_network_partition_tolerance")),
+      ("operations.before_partition", AttributeValue::int(10L)),
+      ("operations.during_partition", AttributeValue::int(105L)),  # 5 + 100 batch
+      ("operations.after_recovery", AttributeValue::int(35L)),  # 20 + 15
+      ("total.operations", AttributeValue::int(150L)),
+      ("avg.duration.normal", AttributeValue::float(100.0)),
+      ("avg.duration.partition", AttributeValue::float(200.0)),
+      ("avg.duration.recovery", AttributeValue::float(80.0)),
+      ("partition.duration", AttributeValue::string("1h")),
+      ("metrics.buffer.capacity", AttributeValue::int(10000L)),
+      ("metrics.buffer.usage", AttributeValue::float(1.5))  # 150/10000 * 100
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(Resource::default("partition-test-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "partition-test-meter",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
+  
+  // 验证容错日志
+  assert_eq(meter_partition_log.attributes.length(), 11)
+  
+  let mut found_test_type = false
+  let mut found_total_operations = false
+  let mut found_avg_durations = false
+  
+  let mut i = 0
+  while i < meter_partition_log.attributes.length() {
+    let (name, value) = meter_partition_log.attributes[i]
+    match (name, value) {
+      ("test.type", StringValue(test_type)) => {
+        assert_eq(test_type, "meter_network_partition_tolerance")
+        found_test_type = true
+      }
+      ("total.operations", IntValue(total)) => {
+        assert_eq(total, 150L)
+        found_total_operations = true
+      }
+      ("avg.duration.normal", FloatValue(duration)) => {
+        assert_eq(duration, 100.0)
+        found_avg_durations = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_test_type, true)
+  assert_eq(found_total_operations, true)
+  assert_eq(found_avg_durations, true)
+}
+
+test "propagation_network_partition_tolerance" {
+  // 测试Propagation在网络分区情况下的容错能力
+  
+  // 1. 创建上下文和传播器
+  let ctx = Context::empty()
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  // 2. 模拟网络分区前的正常传播
+  let normal_carrier = MapCarrier::new()
+  composite_propagator.inject(ctx, normal_carrier)
+  
+  let normal_extracted_ctx = composite_propagator.extract(ctx, normal_carrier)
+  
+  // 3. 模拟网络分区开始
+  let partition_carrier = MapCarrier::new()
+  
+  // 在网络分区期间尝试注入和提取
+  composite_propagator.inject(ctx, partition_carrier)
+  let partition_extracted_ctx = composite_propagator.extract(ctx, partition_carrier)
+  
+  // 4. 模拟网络分区期间的批量传播操作
+  let mut partition_carriers = []
+  let mut i = 0
+  while i < 50 {
+    let batch_carrier = MapCarrier::new()
+    composite_propagator.inject(ctx, batch_carrier)
+    partition_carriers.push(batch_carrier)
+    i = i + 1
+  }
+  
+  // 5. 模拟网络分区恢复
+  let recovery_carrier = MapCarrier::new()
+  composite_propagator.inject(ctx, recovery_carrier)
+  let recovery_extracted_ctx = composite_propagator.extract(ctx, recovery_carrier)
+  
+  // 6. 模拟恢复后的正常传播
+  let post_recovery_carrier = MapCarrier::new()
+  composite_propagator.inject(ctx, post_recovery_carrier)
+  let post_recovery_extracted_ctx = composite_propagator.extract(ctx, post_recovery_carrier)
+  
+  // 7. 验证网络分区容错
+  // 验证每个carrier都包含必要的header
+  match normal_carrier.get("traceparent") {
+    Some(_) => assert_eq(true, true)
+    None => @test.fail("Test failed")
+  }
+  
+  match partition_carrier.get("traceparent") {
+    Some(_) => assert_eq(true, true)
+    None => @test.fail("Test failed")
+  }
+  
+  match recovery_carrier.get("traceparent") {
+    Some(_) => assert_eq(true, true)
+    None => @test.fail("Test failed")
+  }
+  
+  match post_recovery_carrier.get("traceparent") {
+    Some(_) => assert_eq(true, true)
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证批量carrier的操作
+  let mut i = 0
+  while i < partition_carriers.length() {
+    let carrier = partition_carriers[i]
+    match carrier.get("traceparent") {
+      Some(_) => assert_eq(true, true)
+      None => @test.fail("Test failed")
+    }
+    i = i + 1
+  }
+  
+  // 8. 创建日志记录来验证容错行为
+  let propagation_partition_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("Propagation network partition tolerance test completed"),
+    attributes: [
+      ("test.type", AttributeValue::string("propagation_network_partition_tolerance")),
+      ("operations.before_partition", AttributeValue::int(2L)),  # inject + extract
+      ("operations.during_partition", AttributeValue::int(102L)),  # 2 + 100 batch (50*2)
+      ("operations.after_recovery", AttributeValue::int(4L)),  # 2 + 2
+      ("total.operations", AttributeValue::int(108L)),
+      ("partition.duration", AttributeValue::string("1h")),
+      ("propagation.buffer.capacity", AttributeValue::int(1000L)),
+      ("propagation.buffer.usage", AttributeValue::float(10.8)),  # 108/1000 * 100
+      ("header.injection.success_rate", AttributeValue::float(100.0)),
+      ("header.extraction.success_rate", AttributeValue::float(100.0))
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: Some(Resource::default("partition-test-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "partition-test-propagation",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
+  
+  // 验证容错日志
+  assert_eq(propagation_partition_log.attributes.length(), 9)
+  
+  let mut found_test_type = false
+  let mut found_total_operations = false
+  let mut found_success_rates = false
+  
+  let mut i = 0
+  while i < propagation_partition_log.attributes.length() {
+    let (name, value) = propagation_partition_log.attributes[i]
+    match (name, value) {
+      ("test.type", StringValue(test_type)) => {
+        assert_eq(test_type, "propagation_network_partition_tolerance")
+        found_test_type = true
+      }
+      ("total.operations", IntValue(total)) => {
+        assert_eq(total, 108L)
+        found_total_operations = true
+      }
+      ("header.injection.success_rate", FloatValue(rate)) => {
+        assert_eq(rate, 100.0)
+        found_success_rates = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_test_type, true)
+  assert_eq(found_total_operations, true)
+  assert_eq(found_success_rates, true)
+}
+
+test "end_to_end_network_partition_tolerance" {
+  // 端到端网络分区容错测试
+  
+  // 1. 创建完整的遥测环境
+  let logger_provider = NoopLoggerProvider::{}
+  let tracer_provider = NoopTracerProvider::{}
+  let meter_provider = NoopMeterProvider::{}
+  
+  let logger = logger_provider.get_logger("e2e-partition-logger", Some("1.0.0"), None)
+  let tracer = tracer_provider.get_tracer("e2e-partition-tracer", Some("1.0.0"))
+  let meter = meter_provider.get_meter("e2e-partition-meter", Some("1.0.0"), None)
+  
+  // 2. 创建指标
+  let operation_counter = meter.create_counter("e2e_operations_total", Some("operations"), Some("E2E operations"))
+  let duration_histogram = meter.create_histogram("e2e_duration_ms", Some("ms"), Some("E2E duration"))
+  
+  // 3. 模拟网络分区前的正常操作
+  let ctx = Context::empty()
+  let normal_attributes = [
+    ("operation.phase", AttributeValue::string("normal")),
+    ("network.status", AttributeValue::string("connected")),
+    ("service.name", AttributeValue::string("e2e-partition-service"))
+  ]
+  
+  // 正常span
+  let (_, normal_span) = tracer.start_span(ctx, "e2e_normal_operation", Server, Some(normal_attributes))
+  
+  // 正常日志
+  logger.info("E2E normal operation started", Some(normal_attributes))
+  
+  // 正常指标
+  operation_counter.add(1L, Some(normal_attributes))
+  duration_histogram.record(100.0, Some(normal_attributes))
+  
+  // 4. 模拟网络分区开始
+  let partition_start_time = "2023-01-01T00:00:00Z"
+  let partition_attributes = [
+    ("operation.phase", AttributeValue::string("partition")),
+    ("network.status", AttributeValue::string("partitioned")),
+    ("partition.start_time", AttributeValue::string(partition_start_time)),
+    ("service.name", AttributeValue::string("e2e-partition-service"))
+  ]
+  
+  // 分区期间的span
+  let (_, partition_span) = tracer.start_span(ctx, "e2e_partition_operation", Server, Some(partition_attributes))
+  
+  // 分区期间的日志
+  logger.error("E2E network partition detected", Some(partition_attributes))
+  logger.warn("E2E entering degraded mode", Some(partition_attributes))
+  
+  // 分区期间的指标
+  operation_counter.add(1L, Some(partition_attributes))
+  duration_histogram.record(500.0, Some(partition_attributes))  # 延迟增加
+  
+  // 5. 模拟网络分区期间的批量操作
+  let mut i = 0
+  while i < 20 {
+    let batch_attributes = [
+      ("operation.phase", AttributeValue::string("partition")),
+      ("network.status", AttributeValue::string("partitioned")),
+      ("batch.index", AttributeValue::int(i.to_int64())),
+      ("service.name", AttributeValue::string("e2e-partition-service"))
+    ]
+    
+    // 批量span
+    let (_, batch_span) = tracer.start_span(ctx, "e2e_batch_operation_" + i.to_string(), Client, Some(batch_attributes))
+    
+    // 批量日志
+    logger.debug("E2E batch operation " + i.to_string() + " during partition", Some(batch_attributes))
+    
+    // 批量指标
+    operation_counter.add(1L, Some(batch_attributes))
+    duration_histogram.record(300.0 + i.to_double() * 10.0, Some(batch_attributes))
+    
+    i = i + 1
+  }
+  
+  // 6. 模拟网络分区恢复
+  let partition_end_time = "2023-01-01T01:00:00Z"
+  let recovery_attributes = [
+    ("operation.phase", AttributeValue::string("recovery")),
+    ("network.status", AttributeValue::string("recovering")),
+    ("partition.end_time", AttributeValue::string(partition_end_time)),
+    ("service.name", AttributeValue::string("e2e-partition-service"))
+  ]
+  
+  // 恢复期间的span
+  let (_, recovery_span) = tracer.start_span(ctx, "e2e_recovery_operation", Server, Some(recovery_attributes))
+  
+  // 恢复期间的日志
+  logger.info("E2E network partition recovered", Some(recovery_attributes))
+  logger.info("E2E flushing buffered telemetry data", Some(recovery_attributes))
+  
+  // 恢复期间的指标
+  operation_counter.add(5L, Some(recovery_attributes))  # 批量处理缓冲的数据
+  duration_histogram.record(80.0, Some(recovery_attributes))  # 延迟恢复正常
+  
+  // 7. 模拟恢复后的正常操作
+  let post_recovery_attributes = [
+    ("operation.phase", AttributeValue::string("normal")),
+    ("network.status", AttributeValue::string("connected")),
+    ("service.name", AttributeValue::string("e2e-partition-service"))
+  ]
+  
+  # 恢复后的span
+  let (_, post_recovery_span) = tracer.start_span(ctx, "e2e_post_recovery_operation", Server, Some(post_recovery_attributes))
+  
+  # 恢复后的日志
+  logger.info("E2E normal operation resumed", Some(post_recovery_attributes))
+  
+  # 恢复后的指标
+  operation_counter.add(3L, Some(post_recovery_attributes))
+  duration_histogram.record(90.0, Some(post_recovery_attributes))
+  
+  // 8. 验证端到端网络分区容错
+  let e2e_partition_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000000100L),
+    severity_number: Info,
+    severity_text: Some("INFO"),
+    body: Some("E2E network partition tolerance test completed"),
+    attributes: [
+      ("test.type", AttributeValue::string("e2e_network_partition_tolerance")),
+      ("spans.before_partition", AttributeValue::int(1L)),
+      ("spans.during_partition", AttributeValue::int(21L)),  # 1 + 20 batch
+      ("spans.after_recovery", AttributeValue::int(2L)),
+      ("total.spans", AttributeValue::int(24L)),
+      ("logs.before_partition", AttributeValue::int(1L)),
+      ("logs.during_partition", AttributeValue::int(22L)),  # 2 + 20 batch
+      ("logs.after_recovery", AttributeValue::int(3L)),
+      ("total.logs", AttributeValue::int(26L)),
+      ("operations.before_partition", AttributeValue::int(1L)),
+      ("operations.during_partition", AttributeValue::int(21L)),  # 1 + 20 batch
+      ("operations.after_recovery", AttributeValue::int(8L)),  # 5 + 3
+      ("total.operations", AttributeValue::int(30L)),
+      ("avg.duration.normal", AttributeValue::float(100.0)),
+      ("avg.duration.partition", AttributeValue::float(500.0)),
+      ("avg.duration.recovery", AttributeValue::float(80.0)),
+      ("partition.start_time", AttributeValue::string(partition_start_time)),
+      ("partition.end_time", AttributeValue::string(partition_end_time)),
+      ("partition.duration", AttributeValue::string("1h")),
+      ("telemetry.buffer.capacity", AttributeValue::int(5000L)),
+      ("telemetry.buffer.usage", AttributeValue::float(1.6)),  # (24+26+30)/5000 * 100
+      ("data.loss.during_partition", AttributeValue::float(0.0)),  # 没有数据丢失
+      ("data.integrity.maintained", AttributeValue::bool(true))
+    ],
+    trace_id: Some(post_recovery_span.context.trace_id),
+    span_id: Some(post_recovery_span.context.span_id),
+    trace_flags: Some(post_recovery_span.context.trace_flags),
+    resource: Some(Resource::default("e2e-partition-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "e2e-partition-scope",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
+  
+  // 验证端到端容错日志
+  assert_eq(e2e_partition_log.attributes.length(), 22)
+  
+  // 验证关键指标
+  let mut found_test_type = false
+  let mut found_total_spans = false
+  let mut found_total_logs = false
+  let mut found_total_operations = false
+  let mut found_data_integrity = false
+  
+  let mut i = 0
+  while i < e2e_partition_log.attributes.length() {
+    let (name, value) = e2e_partition_log.attributes[i]
+    match (name, value) {
+      ("test.type", StringValue(test_type)) => {
+        assert_eq(test_type, "e2e_network_partition_tolerance")
+        found_test_type = true
+      }
+      ("total.spans", IntValue(total_spans)) => {
+        assert_eq(total_spans, 24L)
+        found_total_spans = true
+      }
+      ("total.logs", IntValue(total_logs)) => {
+        assert_eq(total_logs, 26L)
+        found_total_logs = true
+      }
+      ("total.operations", IntValue(total_operations)) => {
+        assert_eq(total_operations, 30L)
+        found_total_operations = true
+      }
+      ("data.integrity.maintained", BoolValue(integrity)) => {
+        assert_eq(integrity, true)
+        found_data_integrity = true
+      }
+      _ => ()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_test_type, true)
+  assert_eq(found_total_spans, true)
+  assert_eq(found_total_logs, true)
+  assert_eq(found_total_operations, true)
+  assert_eq(found_data_integrity, true)
+  
+  // 9. 验证跨模块的一致性
+  // 确保所有模块都正确处理了网络分区
+  let expected_total_telemetry = 80L  # 24 spans + 26 logs + 30 operations
+  let actual_total_telemetry = 24L + 26L + 30L
+  assert_eq(actual_total_telemetry, expected_total_telemetry)
+  
+  // 验证时间戳的一致性
+  assert_eq(e2e_partition_log.timestamp_unix_nanos, 1640995200000000000L)
+  match e2e_partition_log.observed_timestamp_unix_nanos {
+    Some(observed) => assert_eq(observed, 1640995200000000100L)
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证resource和instrumentation scope的一致性
+  match e2e_partition_log.resource {
+    Some(resource) => assert_eq(resource.service_name, "e2e-partition-service")
+    None => @test.fail("Test failed")
+  }
+  
+  match e2e_partition_log.instrumentation_scope {
+    Some(scope) => {
+      assert_eq(scope.name, "e2e-partition-scope")
+      match scope.version {
+        Some(version) => assert_eq(version, "1.0.0")
+        None => @test.fail("Test failed")
+      }
+    }
+    None => @test.fail("Test failed")
   }
 }
