@@ -210,7 +210,9 @@ test "telemetry reservoir_sampling" {
   let mut max_id = 0
   i = 0
   while i < reservoir.length() {
-    let id_str = reservoir[i].slice(5, reservoir[i].length())
+    let item = reservoir[i]
+    let id_str_length = item.length() - 5
+    let id_str = item.slice(5, 5 + id_str_length)
     let id = id_str.to_int()
     
     if id < min_id { min_id = id }

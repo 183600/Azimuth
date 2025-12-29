@@ -171,44 +171,56 @@ test "telemetry_dimension_grouping" {
   ]
   
   // 按HTTP方法分组
-  let mut method_groups = Map::new()
+  let mut get_count = 0
+  let mut post_count = 0
+  let mut put_count = 0
+  let mut delete_count = 0
+  
   let mut i = 0
   while i < metric_data.length() {
     let method = metric_data[i].1
     let count = metric_data[i].3
     
-    match method_groups.get(method) {
-      Some(existing_count) => method_groups.insert(method, existing_count + count)
-      None => method_groups.insert(method, count)
+    if method == "GET" {
+      get_count = get_count + count
+    } else if method == "POST" {
+      post_count = post_count + count
+    } else if method == "PUT" {
+      put_count = put_count + count
+    } else if method == "DELETE" {
+      delete_count = delete_count + count
     }
     
     i = i + 1
   }
   
   // 验证分组结果
-  assert_eq(method_groups.get("GET"), Some(300))
-  assert_eq(method_groups.get("POST"), Some(125))
-  assert_eq(method_groups.get("PUT"), Some(25))
-  assert_eq(method_groups.get("DELETE"), Some(10))
+  assert_eq(get_count, 300)
+  assert_eq(post_count, 125)
+  assert_eq(put_count, 25)
+  assert_eq(delete_count, 10)
   
   // 按路径分组
-  let mut path_groups = Map::new()
+  let mut users_count = 0
+  let mut products_count = 0
+  
   i = 0
   while i < metric_data.length() {
     let path = metric_data[i].2
     let count = metric_data[i].3
     
-    match path_groups.get(path) {
-      Some(existing_count) => path_groups.insert(path, existing_count + count)
-      None => path_groups.insert(path, count)
+    if path == "/api/users" {
+      users_count = users_count + count
+    } else if path == "/api/products" {
+      products_count = products_count + count
     }
     
     i = i + 1
   }
   
   // 验证路径分组结果
-  assert_eq(path_groups.get("/api/users"), Some(185))
-  assert_eq(path_groups.get("/api/products"), Some(275))
+  assert_eq(users_count, 185)
+  assert_eq(products_count, 275)
 }
 
 test "telemetry_rate_calculation" {
