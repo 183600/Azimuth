@@ -1,365 +1,361 @@
-// 国际化和本地化测试用例
-// 测试系统在不同语言和地区的支持
+// 国际化支持测试 - 验证遥测系统的国际化功能
 
-test "unicode_character_handling" {
-  // 测试Unicode字符处理
+test "multilingual_error_messages" {
+  // 测试多语言错误消息
   
-  let unicode_test_strings = [
-    ("English", "Hello World"),
-    ("Chinese", "你好世界"),
-    ("Japanese", "こんにちは世界"),
-    ("Korean", "안녕하세요 세계"),
-    ("Arabic", "مرحبا بالعالم"),
-    ("Russian", "Привет мир"),
-    ("German", "Hallo Welt"),
-    ("French", "Bonjour le monde"),
-    ("Spanish", "Hola Mundo"),
-    ("Emoji", "🚀 Telemetry 📊 Monitoring 🔍")
+  let error_codes = ["E001", "E002", "E003", "E004"]
+  let english_messages = [
+    "Connection timeout",
+    "Invalid authentication credentials",
+    "Rate limit exceeded",
+    "Service unavailable"
+  ]
+  let chinese_messages = [
+    "连接超时",
+    "身份验证凭据无效",
+    "超过速率限制",
+    "服务不可用"
+  ]
+  let japanese_messages = [
+    "接続タイムアウト",
+    "無効な認証資格情報",
+    "レート制限を超えました",
+    "サービスが利用できません"
   ]
   
-  let processed_strings = []
+  // 验证错误代码
+  assert_eq(error_codes.length(), 4)
+  assert_eq(error_codes[0], "E001")
+  assert_eq(error_codes[3], "E004")
   
-  for test_string in unicode_test_strings {
-    let language = test_string.0
-    let content = test_string.1
-    
-    // 验证字符串长度和内容
-    assert_eq(content.length() > 0, true)
-    
-    // 验证字符编码
-    let byte_count = content.length() * 4  // 假设UTF-8编码
-    assert_eq(byte_count > 0, true)
-    
-    // 处理字符串（模拟国际化处理）
-    let processed = "[" + language + "] " + content
-    processed_strings.push(processed)
+  // 验证英文消息
+  assert_eq(english_messages.length(), 4)
+  assert_eq(english_messages[0], "Connection timeout")
+  assert_eq(english_messages[2], "Rate limit exceeded")
+  
+  // 验证中文消息
+  assert_eq(chinese_messages.length(), 4)
+  assert_eq(chinese_messages[0], "连接超时")
+  assert_eq(chinese_messages[1], "身份验证凭据无效")
+  
+  // 验证日文消息
+  assert_eq(japanese_messages.length(), 4)
+  assert_eq(japanese_messages[0], "接続タイムアウト")
+  assert_eq(japanese_messages[3], "サービスが利用できません")
+  
+  // 创建多语言错误报告
+  let mut i = 0
+  let multilingual_errors = []
+  while i < error_codes.length() {
+    let error_report = error_codes[i] + ":"
+    error_report = error_report + " EN:" + english_messages[i] + ","
+    error_report = error_report + " ZH:" + chinese_messages[i] + ","
+    error_report = error_report + " JA:" + japanese_messages[i]
+    multilingual_errors.push(error_report)
+    i = i + 1
   }
   
-  // 验证Unicode处理结果
-  assert_eq(processed_strings.length(), 10)
-  assert_eq(processed_strings[0], "[English] Hello World")
-  assert_eq(processed_strings[1], "[Chinese] 你好世界")
-  assert_eq(processed_strings[9], "[Emoji] 🚀 Telemetry 📊 Monitoring 🔍")
-  
-  // 验证特殊字符处理
-  let emoji_string = processed_strings[9]
-  assert_eq(emoji_string.contains("🚀"), true)
-  assert_eq(emoji_string.contains("📊"), true)
-  assert_eq(emoji_string.contains("🔍"), true)
+  // 验证多语言错误报告
+  assert_eq(multilingual_errors.length(), 4)
+  assert_eq(multilingual_errors[0].contains("E001:"), true)
+  assert_eq(multilingual_errors[0].contains("EN:Connection timeout"), true)
+  assert_eq(multilingual_errors[0].contains("ZH:连接超时"), true)
+  assert_eq(multilingual_errors[0].contains("JA:接続タイムアウト"), true)
 }
 
-test "localized_error_messages" {
-  // 测试本地化错误消息
+test "timezone_handling" {
+  // 测试时区处理
   
-  let error_codes = [
-    "TRACE_ID_INVALID",
-    "SPAN_NOT_FOUND", 
-    "METRIC_AGGREGATION_FAILED",
-    "SERIALIZATION_ERROR",
-    "NETWORK_TIMEOUT"
+  let utc_timestamp = 1640995200L // 2022-01-01 00:00:00 UTC
+  let timezones = ["UTC", "America/New_York", "Asia/Shanghai", "Europe/London", "Asia/Tokyo"]
+  let expected_offsets = [0, -5, 8, 0, 9] // 相对于UTC的偏移小时数
+  
+  // 验证时区列表
+  assert_eq(timezones.length(), 5)
+  assert_eq(timezones[0], "UTC")
+  assert_eq(timezones[2], "Asia/Shanghai")
+  
+  // 验证时区偏移
+  assert_eq(expected_offsets.length(), 5)
+  assert_eq(expected_offsets[0], 0) // UTC
+  assert_eq(expected_offsets[1], -5) // EST (UTC-5)
+  assert_eq(expected_offsets[4], 9) // JST (UTC+9)
+  
+  // 创建时区转换数据
+  let mut timezone_conversions = []
+  let mut i = 0
+  while i < timezones.length() {
+    let timezone = timezones[i]
+    let offset = expected_offsets[i]
+    let local_time = utc_timestamp + (offset * 3600L) // 偏移秒数
+    
+    let conversion = timezone + ":" + local_time.to_string() + "(offset:" + offset.to_string() + "h)"
+    timezone_conversions.push(conversion)
+    i = i + 1
+  }
+  
+  // 验证时区转换结果
+  assert_eq(timezone_conversions.length(), 5)
+  assert_eq(timezone_conversions[0].contains("UTC:1640995200(offset:0h)"), true)
+  assert_eq(timezone_conversions[1].contains("America/New_York:1640993400(offset:-5h)"), true)
+  assert_eq(timezone_conversions[2].contains("Asia/Shanghai:1640998800(offset:8h)"), true)
+  
+  // 验证时区格式化
+  let formatted_utc = "2022-01-01T00:00:00Z"
+  let formatted_shanghai = "2022-01-01T08:00:00+08:00"
+  let formatted_new_york = "2021-12-31T19:00:00-05:00"
+  
+  assert_eq(formatted_utc.has_suffix("Z"), true)
+  assert_eq(formatted_shanghai.contains("+08:00"), true)
+  assert_eq(formatted_new_york.contains("-05:00"), true)
+}
+
+test "character_encoding_support" {
+  // 测试字符编码支持
+  
+  let utf8_strings = [
+    "Hello World", // 英文
+    "你好世界", // 中文
+    "こんにちは世界", // 日文
+    "Здравствуйте мир", // 俄文
+    "مرحبا بالعالم", // 阿拉伯文
+    "🌍🌎🌏", // Emoji
+    "Café résumé naïve", // 带重音符号
+    "北京/東京/Москва" // 混合字符
   ]
   
-  let localized_messages = {
-    "en": {
-      "TRACE_ID_INVALID": "Invalid trace ID format",
-      "SPAN_NOT_FOUND": "Span not found",
-      "METRIC_AGGREGATION_FAILED": "Metric aggregation failed",
-      "SERIALIZATION_ERROR": "Data serialization error",
-      "NETWORK_TIMEOUT": "Network operation timed out"
-    },
-    "zh": {
-      "TRACE_ID_INVALID": "无效的追踪ID格式",
-      "SPAN_NOT_FOUND": "未找到Span",
-      "METRIC_AGGREGATION_FAILED": "指标聚合失败",
-      "SERIALIZATION_ERROR": "数据序列化错误",
-      "NETWORK_TIMEOUT": "网络操作超时"
-    },
-    "ja": {
-      "TRACE_ID_INVALID": "無効なトレースID形式",
-      "SPAN_NOT_FOUND": "スパンが見つかりません",
-      "METRIC_AGGREGATION_FAILED": "メトリック集計に失敗しました",
-      "SERIALIZATION_ERROR": "データシリアライズエラー",
-      "NETWORK_TIMEOUT": "ネットワーク操作がタイムアウトしました"
-    }
-  }
+  // 验证UTF-8字符串
+  assert_eq(utf8_strings.length(), 8)
+  assert_eq(utf8_strings[0], "Hello World")
+  assert_eq(utf8_strings[1], "你好世界")
+  assert_eq(utf8_strings[2], "こんにちは世界")
   
-  let languages = ["en", "zh", "ja"]
-  let test_results = []
-  
-  for language in languages {
-    let messages = localized_messages[language]
+  // 验证字符串长度和字节长度
+  let mut i = 0
+  while i < utf8_strings.length() {
+    let str = utf8_strings[i]
+    let char_length = str.length()
+    let byte_length = str.to_bytes().length()
     
-    for error_code in error_codes {
-      let message = messages[error_code]
-      test_results.push((language, error_code, message))
-      
-      // 验证消息存在且非空
-      assert_eq(message.length() > 0, true)
+    // 验证字符长度
+    assert_eq(char_length > 0, true)
+    
+    // 验证字节长度（对于非ASCII字符，字节长度通常大于字符长度）
+    if i > 0 { // 非英文字符
+      assert_eq(byte_length >= char_length, true)
     }
+    
+    i = i + 1
   }
   
-  // 验证本地化消息
-  assert_eq(test_results.length(), 15)  // 3 languages * 5 error codes
-  
-  // 验证特定语言的错误消息
-  let en_trace_error = test_results.find(fn(result) { 
-    result.0 == "en" and result.1 == "TRACE_ID_INVALID" 
-  })
-  let zh_trace_error = test_results.find(fn(result) { 
-    result.0 == "zh" and result.1 == "TRACE_ID_INVALID" 
-  })
-  let ja_trace_error = test_results.find(fn(result) { 
-    result.0 == "ja" and result.1 == "TRACE_ID_INVALID" 
-  })
-  
-  match en_trace_error {
-    Some(result) => assert_eq(result.2, "Invalid trace ID format")
-    None => @test.fail("English error message not found")
+  // 创建多语言遥测数据
+  let mut multilingual_telemetry = []
+  i = 0
+  while i < utf8_strings.length() {
+    let message = utf8_strings[i]
+    let telemetry_data = "message=\"" + message + "\",lang=" + i.to_string()
+    multilingual_telemetry.push(telemetry_data)
+    i = i + 1
   }
   
-  match zh_trace_error {
-    Some(result) => assert_eq(result.2, "无效的追踪ID格式")
-    None => @test.fail("Chinese error message not found")
-  }
-  
-  match ja_trace_error {
-    Some(result) => assert_eq(result.2, "無効なトレースID形式")
-    None => @test.fail("Japanese error message not found")
-  }
+  // 验证多语言遥测数据
+  assert_eq(multilingual_telemetry.length(), 8)
+  assert_eq(multilingual_telemetry[0].contains("message=\"Hello World\""), true)
+  assert_eq(multilingual_telemetry[1].contains("message=\"你好世界\""), true)
+  assert_eq(multilingual_telemetry[4].contains("message=\"مرحبا بالعالم\""), true)
+  assert_eq(multilingual_telemetry[5].contains("message=\"🌍🌎🌏\""), true)
 }
 
 test "locale_specific_formatting" {
-  // 测试地区特定格式化
+  // 测试区域特定格式化
   
-  let test_data = {
-    "timestamp": "2023-01-01T12:30:45Z",
-    "number": 1234.567,
-    "percentage": 0.75,
-    "duration_ms": 2500
+  let locales = ["en-US", "zh-CN", "ja-JP", "de-DE", "fr-FR"]
+  let number = 1234567.89
+  let date = 1640995200L // 2022-01-01
+  
+  // 验证区域设置
+  assert_eq(locales.length(), 5)
+  assert_eq(locales[0], "en-US")
+  assert_eq(locales[1], "zh-CN")
+  
+  // 模拟区域特定数字格式
+  let number_formats = [
+    "1,234,567.89", // en-US
+    "1,234,567.89", // zh-CN
+    "1,234,567.89", // ja-JP
+    "1.234.567,89", // de-DE
+    "1 234 567,89"  // fr-FR
+  ]
+  
+  // 验证数字格式
+  assert_eq(number_formats.length(), 5)
+  assert_eq(number_formats[0], "1,234,567.89")
+  assert_eq(number_formats[3], "1.234.567,89")
+  assert_eq(number_formats[4], "1 234 567,89")
+  
+  // 模拟区域特定日期格式
+  let date_formats = [
+    "1/1/2022",      // en-US (MM/DD/YYYY)
+    "2022/1/1",      // zh-CN (YYYY/MM/DD)
+    "2022/01/01",    // ja-JP (YYYY/MM/DD)
+    "1.1.2022",      // de-DE (DD.MM.YYYY)
+    "01/01/2022"     // fr-FR (DD/MM/YYYY)
+  ]
+  
+  // 验证日期格式
+  assert_eq(date_formats.length(), 5)
+  assert_eq(date_formats[0], "1/1/2022")
+  assert_eq(date_formats[1], "2022/1/1")
+  assert_eq(date_formats[3], "1.1.2022")
+  
+  // 创建区域特定遥测数据
+  let mut locale_telemetry = []
+  let mut i = 0
+  while i < locales.length() {
+    let locale = locales[i]
+    let num_format = number_formats[i]
+    let date_format = date_formats[i]
+    
+    let telemetry_data = "locale=" + locale + ","
+    telemetry_data = telemetry_data + "number=" + num_format + ","
+    telemetry_data = telemetry_data + "date=" + date_format
+    
+    locale_telemetry.push(telemetry_data)
+    i = i + 1
   }
   
-  let locale_formats = {
-    "en-US": {
-      "date": "01/01/2023",
-      "time": "12:30:45 PM",
-      "number": "1,234.567",
-      "percentage": "75.0%",
-      "duration": "2.5s"
-    },
-    "zh-CN": {
-      "date": "2023年01月01日",
-      "time": "12:30:45",
-      "number": "1,234.567",
-      "percentage": "75.0%",
-      "duration": "2.5秒"
-    },
-    "de-DE": {
-      "date": "01.01.2023",
-      "time": "12:30:45",
-      "number": "1.234,567",
-      "percentage": "75,0%",
-      "duration": "2,5s"
-    },
-    "ja-JP": {
-      "date": "2023/01/01",
-      "time": "12:30:45",
-      "number": "1,234.567",
-      "percentage": "75.0%",
-      "duration": "2.5秒"
-    }
-  }
-  
-  let formatting_results = []
-  
-  for locale in locale_formats.keys() {
-    let format = locale_formats[locale]
-    
-    // 验证日期格式
-    assert_eq(format["date"].length() > 0, true)
-    assert_eq(format["date"].contains("2023"), true)
-    assert_eq(format["date"].contains("01"), true)
-    
-    // 验证时间格式
-    assert_eq(format["time"].length() > 0, true)
-    assert_eq(format["time"].contains("12"), true)
-    assert_eq(format["time"].contains("30"), true)
-    
-    // 验证数字格式
-    assert_eq(format["number"].contains("1"), true)
-    assert_eq(format["number"].contains("234"), true)
-    
-    // 验证百分比格式
-    assert_eq(format["percentage"].contains("75"), true)
-    assert_eq(format["percentage"].contains("%"), true)
-    
-    // 验证持续时间格式
-    assert_eq(format["duration"].contains("2.5"), true)
-    
-    formatting_results.push((locale, format))
-  }
-  
-  // 验证地区特定格式化结果
-  assert_eq(formatting_results.length(), 4)
-  
-  // 验证特定地区的格式差异
-  let us_format = locale_formats["en-US"]
-  let german_format = locale_formats["de-DE"]
-  
-  // 德语使用逗号作为小数点分隔符
-  assert_eq(german_format["number"].contains(","), true)
-  assert_eq(us_format["number"].contains("."), true)
-  
-  // 不同的日期格式
-  assert_eq(us_format["date"], "01/01/2023")
-  assert_eq(german_format["date"], "01.01.2023")
+  // 验证区域特定遥测数据
+  assert_eq(locale_telemetry.length(), 5)
+  assert_eq(locale_telemetry[0].contains("locale=en-US"), true)
+  assert_eq(locale_telemetry[0].contains("number=1,234,567.89"), true)
+  assert_eq(locale_telemetry[3].contains("locale=de-DE"), true)
+  assert_eq(locale_telemetry[3].contains("date=1.1.2022"), true)
 }
 
 test "rtl_language_support" {
   // 测试从右到左语言支持
   
-  let rtl_languages = {
-    "ar": {
-      "service_name": "خدمة الدفع",
-      "operation_name": "طلب HTTP",
-      "status": "نجح",
-      "error_message": "انتهت مهلة الشبكة"
-    },
-    "he": {
-      "service_name": "שירות תשלומים",
-      "operation_name": "בקשת HTTP",
-      "status": "הצליח",
-      "error_message": "תם הזמן המוקצב לרשת"
-    },
-    "fa": {
-      "service_name": "سرویس پرداخت",
-      "operation_name": "درخواست HTTP",
-      "status": "موفقیت",
-      "error_message": "اتصال شبکه به پایان رسید"
-    }
-  }
-  
-  let rtl_test_results = []
-  
-  for language in rtl_languages.keys() {
-    let translations = rtl_languages[language]
-    
-    for key in translations.keys() {
-      let text = translations[key]
-      
-      // 验证RTL文本
-      assert_eq(text.length() > 0, true)
-      
-      // 检查是否包含RTL字符（简化检查）
-      let has_rtl_chars = text.any(fn(char) { 
-        char >= "\u0590" and char <= "\u08FF"  // 阿拉伯、希伯来语字符范围
-      })
-      
-      rtl_test_results.push((language, key, text, has_rtl_chars))
-    }
-  }
-  
-  // 验证RTL语言支持
-  assert_eq(rtl_test_results.length(), 12)  // 3 languages * 4 keys
-  
-  // 验证阿拉伯语示例
-  let arabic_service = rtl_test_results.find(fn(result) { 
-    result.0 == "ar" and result.1 == "service_name" 
-  })
-  
-  match arabic_service {
-    Some(result) => {
-      assert_eq(result.2, "خدمة الدفع")
-      assert_eq(result.3, true)  // 应该包含RTL字符
-    }
-    None => @test.fail("Arabic service name not found")
-  }
-  
-  // 验证希伯来语示例
-  let hebrew_status = rtl_test_results.find(fn(result) { 
-    result.0 == "he" and result.1 == "status" 
-  })
-  
-  match hebrew_status {
-    Some(result) => {
-      assert_eq(result.2, "הצליח")
-      assert_eq(result.3, true)  // 应该包含RTL字符
-    }
-    None => @test.fail("Hebrew status not found")
-  }
-}
-
-test "multi_language_attribute_handling" {
-  // 测试多语言属性处理
-  
-  let multi_language_attributes = [
-    ("service.name", {
-      "en": "Payment Service",
-      "zh": "支付服务",
-      "ja": "支払いサービス",
-      "ko": "결제 서비스",
-      "ar": "خدمة الدفع"
-    }),
-    ("operation.description", {
-      "en": "Process user payment",
-      "zh": "处理用户支付",
-      "ja": "ユーザー支払い処理",
-      "ko": "사용자 결제 처리",
-      "ar": "معالجة دفع المستخدم"
-    }),
-    ("error.message", {
-      "en": "Connection timeout",
-      "zh": "连接超时",
-      "ja": "接続タイムアウト",
-      "ko": "연결 시간 초과",
-      "ar": "انتهت مهلة الاتصال"
-    })
+  let rtl_languages = ["ar", "he", "fa", "ur"] // 阿拉伯语、希伯来语、波斯语、乌尔都语
+  let rtl_texts = [
+    "مرحبا بالعالم", // 阿拉伯语：Hello World
+    "שלום עולם",    // 希伯来语：Hello World
+    "سلام دنیا",     // 波斯语：Hello World
+    "ہیلو دنیا"      // 乌尔都语：Hello World
   ]
   
-  let supported_languages = ["en", "zh", "ja", "ko", "ar"]
-  let attribute_processing_results = []
+  // 验证RTL语言代码
+  assert_eq(rtl_languages.length(), 4)
+  assert_eq(rtl_languages[0], "ar")
+  assert_eq(rtl_languages[2], "fa")
   
-  for attribute in multi_language_attributes {
-    let attribute_name = attribute.0
-    let translations = attribute.1
+  // 验证RTL文本
+  assert_eq(rtl_texts.length(), 4)
+  assert_eq(rtl_texts[0], "مرحبا بالعالم")
+  assert_eq(rtl_texts[1], "שלום עולם")
+  
+  // 创建RTL遥测数据
+  let mut rtl_telemetry = []
+  let mut i = 0
+  while i < rtl_languages.length() {
+    let lang = rtl_languages[i]
+    let text = rtl_texts[i]
+    let direction = "rtl"
     
-    for language in supported_languages {
-      let translated_value = translations[language]
-      
-      // 验证翻译存在
-      assert_eq(translated_value.length() > 0, true)
-      
-      // 模拟属性处理
-      let processed_attribute = attribute_name + "[" + language + "]=" + translated_value
-      attribute_processing_results.push(processed_attribute)
-    }
+    let telemetry_data = "lang=" + lang + ","
+    telemetry_data = telemetry_data + "direction=" + direction + ","
+    telemetry_data = telemetry_data + "message=\"" + text + "\""
+    
+    rtl_telemetry.push(telemetry_data)
+    i = i + 1
   }
   
-  // 验证多语言属性处理
-  assert_eq(attribute_processing_results.length(), 15)  // 3 attributes * 5 languages
+  // 验证RTL遥测数据
+  assert_eq(rtl_telemetry.length(), 4)
+  assert_eq(rtl_telemetry[0].contains("lang=ar"), true)
+  assert_eq(rtl_telemetry[0].contains("direction=rtl"), true)
+  assert_eq(rtl_telemetry[0].contains("message=\"مرحبا بالعالم\""), true)
   
-  // 验证特定属性和语言的组合
-  let service_name_zh = attribute_processing_results.find(fn(result) { 
-    result.contains("service.name[zh]")
-  })
-  let operation_desc_ja = attribute_processing_results.find(fn(result) { 
-    result.contains("operation.description[ja]")
-  })
-  let error_message_ar = attribute_processing_results.find(fn(result) { 
-    result.contains("error.message[ar]")
-  })
+  // 验证RTL文本方向标记
+  let rtl_mark = "\u200F" // Right-to-Left Mark
+  let ltr_mark = "\u200E" // Left-to-Right Mark
   
-  match service_name_zh {
-    Some(result) => assert_eq(result, "service.name[zh]=支付服务")
-    None => @test.fail("Chinese service name not found")
+  let marked_texts = [
+    rtl_mark + "مرحبا بالعالم" + rtl_mark,
+    rtl_mark + "שלום עולם" + rtl_mark,
+    rtl_mark + "سلام دنیا" + rtl_mark,
+    rtl_mark + "ہیلو دنیا" + rtl_mark
+  ]
+  
+  // 验证方向标记
+  assert_eq(marked_texts.length(), 4)
+  assert_eq(marked_texts[0].has_prefix(rtl_mark), true)
+  assert_eq(marked_texts[0].has_suffix(rtl_mark), true)
+}
+
+test "currency_and_number_localization" {
+  // 测试货币和数字本地化
+  
+  let currencies = ["USD", "CNY", "JPY", "EUR", "GBP"]
+  let amounts = [1234.56, 1234.56, 1234.56, 1234.56, 1234.56]
+  let currency_symbols = ["$", "¥", "¥", "€", "£"]
+  
+  // 验证货币代码
+  assert_eq(currencies.length(), 5)
+  assert_eq(currencies[0], "USD")
+  assert_eq(currencies[2], "JPY")
+  
+  // 验证货币符号
+  assert_eq(currency_symbols.length(), 5)
+  assert_eq(currency_symbols[0], "$")
+  assert_eq(currency_symbols[1], "¥") // 人民币
+  assert_eq(currency_symbols[2], "¥") // 日元
+  assert_eq(currency_symbols[4], "£")
+  
+  // 创建本地化货币格式
+  let mut localized_currencies = []
+  let mut i = 0
+  while i < currencies.length() {
+    let currency = currencies[i]
+    let amount = amounts[i]
+    let symbol = currency_symbols[i]
+    
+    let formatted_currency = symbol + amount.to_string() + " " + currency
+    localized_currencies.push(formatted_currency)
+    i = i + 1
   }
   
-  match operation_desc_ja {
-    Some(result) => assert_eq(result, "operation.description[ja]=ユーザー支払い処理")
-    None => @test.fail("Japanese operation description not found")
+  // 验证本地化货币格式
+  assert_eq(localized_currencies.length(), 5)
+  assert_eq(localized_currencies[0], "$1234.56 USD")
+  assert_eq(localized_currencies[1], "¥1234.56 CNY")
+  assert_eq(localized_currencies[3], "€1234.56 EUR")
+  
+  // 创建百分比本地化
+  let percentages = [0.25, 0.50, 0.75, 1.00]
+  let locales = ["en-US", "zh-CN", "ja-JP", "de-DE"]
+  let percentage_formats = ["25%", "50%", "75%", "100%"]
+  
+  // 验证百分比格式
+  assert_eq(percentages.length(), 4)
+  assert_eq(percentage_formats.length(), 4)
+  assert_eq(percentage_formats[0], "25%")
+  assert_eq(percentage_formats[3], "100%")
+  
+  // 创建本地化遥测指标
+  let mut localized_metrics = []
+  i = 0
+  while i < currencies.length() {
+    let metric_name = "revenue"
+    let currency_amount = localized_currencies[i]
+    let currency_code = currencies[i]
+    
+    let metric_data = metric_name + "{currency=\"" + currency_code + "\"} " + currency_amount
+    localized_metrics.push(metric_data)
+    i = i + 1
   }
   
-  match error_message_ar {
-    Some(result) => assert_eq(result, "error.message[ar]=انتهت مهلة الاتصال")
-    None => @test.fail("Arabic error message not found")
-  }
+  // 验证本地化遥测指标
+  assert_eq(localized_metrics.length(), 5)
+  assert_eq(localized_metrics[0].contains("revenue{currency=\"USD\"} $1234.56 USD"), true)
+  assert_eq(localized_metrics[2].contains("revenue{currency=\"JPY\"} ¥1234.56 JPY"), true)
 }

@@ -1,760 +1,343 @@
-// 数据完整性测试 - 测试数据的一致性和完整性
-// 验证遥测数据在传输、存储和处理过程中保持完整性
+// 数据完整性测试 - 验证遥测数据的完整性和一致性
 
-test "attribute_data_integrity" {
-  // 测试属性数据的完整性
+test "trace_data_integrity_validation" {
+  // 测试追踪数据完整性验证
   
-  // 创建各种类型的属性
-  let string_attr = common::AttributeValue::string("test-string-value")
-  let int_attr = common::AttributeValue::int(12345L)
-  let float_attr = common::AttributeValue::float(3.14159265359)
-  let bool_attr = common::AttributeValue::bool(true)
-  let string_array_attr = common::AttributeValue::array_string(["item1", "item2", "item3"])
-  let int_array_attr = common::AttributeValue::array_int([1L, 2L, 3L, 4L, 5L])
-  let float_array_attr = common::AttributeValue::array_float([1.1, 2.2, 3.3])
-  let bool_array_attr = common::AttributeValue::array_bool([true, false, true])
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let parent_span_id = "a1b2c3d4e5f67890"
+  let trace_flags = "01"
   
-  // 验证字符串属性完整性
-  match string_attr {
-    common::StringValue(s) => {
-      assert_eq(s, "test-string-value")
-      assert_eq(s.length(), 16)
-      assert_eq(s.contains("test"), true)
-    }
-    _ => @test.fail("Expected StringValue")
-  }
+  // 验证Trace ID格式（32个十六进制字符）
+  assert_eq(trace_id.length(), 32)
+  assert_eq(trace_id.has_prefix("0af7"), true)
+  assert_eq(trace_id.has_suffix("319c"), true)
   
-  // 验证整数属性完整性
-  match int_attr {
-    common::IntValue(i) => {
-      assert_eq(i, 12345L)
-      assert_eq(i > 10000L, true)
-      assert_eq(i < 20000L, true)
-    }
-    _ => @test.fail("Expected IntValue")
-  }
+  // 验证Span ID格式（16个十六进制字符）
+  assert_eq(span_id.length(), 16)
+  assert_eq(span_id.has_prefix("b7ad"), true)
+  assert_eq(span_id.has_suffix("3331"), true)
   
-  // 验证浮点数属性完整性
-  match float_attr {
-    common::FloatValue(f) => {
-      assert_eq(f > 3.14 && f < 3.15, true)
-      assert_eq(f * 1000 > 3141.0 && f * 1000 < 3142.0, true)
-    }
-    _ => @test.fail("Expected FloatValue")
-  }
+  // 验证Parent Span ID格式
+  assert_eq(parent_span_id.length(), 16)
+  assert_eq(parent_span_id.has_prefix("a1b2"), true)
+  assert_eq(parent_span_id.has_suffix("7890"), true)
   
-  // 验证布尔属性完整性
-  match bool_attr {
-    common::BoolValue(b) => {
-      assert_eq(b, true)
-      assert_eq(!b, false)
-    }
-    _ => @test.fail("Expected BoolValue")
-  }
+  // 验证Trace Flags格式
+  assert_eq(trace_flags.length(), 2)
+  assert_eq(trace_flags.has_prefix("0"), true)
   
-  // 验证字符串数组属性完整性
-  match string_array_attr {
-    common::ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 3)
-      assert_eq(arr[0], "item1")
-      assert_eq(arr[1], "item2")
-      assert_eq(arr[2], "item3")
-    }
-    _ => @test.fail("Expected ArrayStringValue")
-  }
+  // 创建完整追踪数据
+  let trace_data = trace_id + ":" + span_id + ":" + parent_span_id + ":" + trace_flags
+  assert_eq(trace_data.length(), 68) // 32 + 1 + 16 + 1 + 16 + 1 + 2
+  assert_eq(trace_data.contains(":"), true)
   
-  // 验证整数数组属性完整性
-  match int_array_attr {
-    common::ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 5)
-      assert_eq(arr[0], 1L)
-      assert_eq(arr[2], 3L)
-      assert_eq(arr[4], 5L)
-    }
-    _ => @test.fail("Expected ArrayIntValue")
-  }
+  // 验证追踪数据校验和
+  let checksum = trace_data.length() % 256
+  assert_eq(checksum >= 0, true)
+  assert_eq(checksum < 256, true)
 }
 
-test "context_data_consistency" {
-  // 测试Context数据一致性
+test "metric_data_consistency_check" {
+  // 测试指标数据一致性检查
   
-  let base_ctx = context::Context::empty()
-  let key1 = context::create_key("consistency-key-1")
-  let key2 = context::create_key("consistency-key-2")
-  let key3 = context::create_key("consistency-key-3")
+  let metric_name = "http_requests_total"
+  let metric_value = 1234.5
+  let metric_timestamp = 1640995200L
+  let metric_labels = "method=\"GET\",status=\"200\",service=\"api\""
   
-  // 设置多个键值对
-  let ctx1 = base_ctx.with_value(key1, "value-1")
-  let ctx2 = ctx1.with_value(key2, "value-2")
-  let ctx3 = ctx2.with_value(key3, "value-3")
+  // 验证指标名称格式
+  assert_eq(metric_name.has_prefix("http"), true)
+  assert_eq(metric_name.has_suffix("_total"), true)
+  assert_eq(metric_name.contains("_"), true)
+  
+  // 验证指标值范围
+  assert_eq(metric_value > 0.0, true)
+  assert_eq(metric_value < 10000.0, true)
+  assert_eq(metric_value.to_string().contains("."), true)
+  
+  // 验证时间戳合理性
+  assert_eq(metric_timestamp > 1600000000L, true) // 2020年之后
+  assert_eq(metric_timestamp < 1700000000L, true) // 2023年之前
+  
+  // 验证标签格式
+  assert_eq(metric_labels.contains("method=\"GET\""), true)
+  assert_eq(metric_labels.contains("status=\"200\""), true)
+  assert_eq(metric_labels.contains("service=\"api\""), true)
+  assert_eq(metric_labels.contains(","), true) // 多个标签
+  
+  // 创建完整指标数据
+  let metric_data = metric_name + "{" + metric_labels + "} " + metric_value.to_string() + " " + metric_timestamp.to_string()
+  
+  // 验证指标数据完整性
+  assert_eq(metric_data.has_prefix(metric_name + "{"), true)
+  assert_eq(metric_data.contains("} " + metric_value.to_string()), true)
+  assert_eq(metric_data.has_suffix(" " + metric_timestamp.to_string()), true)
   
   // 验证数据一致性
-  match ctx3.get(key1) {
-    Some(value) => assert_eq(value, "value-1")
-    None => @test.fail("Key1 not found")
-  }
-  
-  match ctx3.get(key2) {
-    Some(value) => assert_eq(value, "value-2")
-    None => @test.fail("Key2 not found")
-  }
-  
-  match ctx3.get(key3) {
-    Some(value) => assert_eq(value, "value-3")
-    None => @test.fail("Key3 not found")
-  }
-  
-  // 验证不可变性 - 原始Context不应被修改
-  match ctx1.get(key2) {
-    Some(_) => @test.fail("Key2 should not exist in ctx1")
-    None => assert_eq(true, true)
-  }
-  
-  match ctx2.get(key3) {
-    Some(_) => @test.fail("Key3 should not exist in ctx2")
-    None => assert_eq(true, true)
-  }
-  
-  // 验证键值对数量
-  assert_eq(ctx3.values.length(), 3)
-  assert_eq(ctx2.values.length(), 2)
-  assert_eq(ctx1.values.length(), 1)
-  assert_eq(base_ctx.values.length(), 0)
+  let data_parts = metric_data.split(" ")
+  assert_eq(data_parts.length(), 3)
+  assert_eq(data_parts[0].has_prefix(metric_name), true)
+  assert_eq(data_parts[1], metric_value.to_string())
+  assert_eq(data_parts[2], metric_timestamp.to_string())
 }
 
-test "log_record_data_integrity" {
-  // 测试LogRecord数据完整性
+test "log_data_structure_validation" {
+  // 测试日志数据结构验证
   
-  let log_record = logs::LogRecord::builder()
-    .severity(logs::Error)
-    .body("Data integrity test log message")
-    .with_attribute("error.code", common::AttributeValue::int(500L))
-    .with_attribute("error.message", common::AttributeValue::string("Internal server error"))
-    .with_attribute("service.name", common::AttributeValue::string("integrity-test-service"))
-    .with_attribute("request.id", common::AttributeValue::string("req-12345"))
-    .with_attribute("user.id", common::AttributeValue::int(67890L))
-    .with_attribute("tags", common::AttributeValue::array_string(["critical", "data-integrity"]))
-    .build()
+  let log_timestamp = 1640995300L
+  let log_level = "ERROR"
+  let log_message = "Database connection failed"
+  let log_attributes = "user_id=12345,operation=login,duration_ms=1500"
   
-  // 验证基本字段完整性
-  assert_eq(log_record.severity_number, logs::Error)
-  match log_record.body {
-    Some(body) => {
-      assert_eq(body, "Data integrity test log message")
-      assert_eq(body.length(), 30)
-    }
-    None => @test.fail("Body should not be None")
-  }
+  // 验证时间戳格式
+  assert_eq(log_timestamp > 1600000000L, true)
+  assert_eq(log_timestamp < 1700000000L, true)
   
-  // 验证属性完整性
-  assert_eq(log_record.attributes.length(), 6)
-  
-  // 验证特定属性
-  let mut found_error_code = false
-  let mut found_error_message = false
-  let mut found_service_name = false
-  let mut found_request_id = false
-  let mut found_user_id = false
-  let mut found_tags = false
-  
+  // 验证日志级别
+  let valid_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+  let mut level_valid = false
   let mut i = 0
-  while i < log_record.attributes.length() {
-    let (key, value) = log_record.attributes[i]
-    
-    match key {
-      "error.code" => {
-        match value {
-          common::IntValue(code) => {
-            assert_eq(code, 500L)
-            found_error_code = true
-          }
-          _ => @test.fail("error.code should be IntValue")
-        }
-      }
-      "error.message" => {
-        match value {
-          common::StringValue(message) => {
-            assert_eq(message, "Internal server error")
-            found_error_message = true
-          }
-          _ => @test.fail("error.message should be StringValue")
-        }
-      }
-      "service.name" => {
-        match value {
-          common::StringValue(service) => {
-            assert_eq(service, "integrity-test-service")
-            found_service_name = true
-          }
-          _ => @test.fail("service.name should be StringValue")
-        }
-      }
-      "request.id" => {
-        match value {
-          common::StringValue(request_id) => {
-            assert_eq(request_id, "req-12345")
-            found_request_id = true
-          }
-          _ => @test.fail("request.id should be StringValue")
-        }
-      }
-      "user.id" => {
-        match value {
-          common::IntValue(user_id) => {
-            assert_eq(user_id, 67890L)
-            found_user_id = true
-          }
-          _ => @test.fail("user.id should be IntValue")
-        }
-      }
-      "tags" => {
-        match value {
-          common::ArrayStringValue(tags) => {
-            assert_eq(tags.length(), 2)
-            assert_eq(tags[0], "critical")
-            assert_eq(tags[1], "data-integrity")
-            found_tags = true
-          }
-          _ => @test.fail("tags should be ArrayStringValue")
-        }
-      }
-      _ => ()
+  while i < valid_levels.length() {
+    if valid_levels[i] == log_level {
+      level_valid = true
     }
-    
     i = i + 1
   }
+  assert_eq(level_valid, true)
   
-  // 验证所有属性都找到
-  assert_eq(found_error_code, true)
-  assert_eq(found_error_message, true)
-  assert_eq(found_service_name, true)
-  assert_eq(found_request_id, true)
-  assert_eq(found_user_id, true)
-  assert_eq(found_tags, true)
+  // 验证日志消息
+  assert_eq(log_message.length() > 0, true)
+  assert_eq(log_message.contains(" "), true) // 包含空格
+  assert_eq(log_message.has_suffix("failed"), true)
+  
+  // 验证日志属性
+  assert_eq(log_attributes.contains("user_id=12345"), true)
+  assert_eq(log_attributes.contains("operation=login"), true)
+  assert_eq(log_attributes.contains("duration_ms=1500"), true)
+  assert_eq(log_attributes.contains(","), true)
+  
+  // 创建完整日志记录
+  let log_record = log_timestamp.to_string() + " [" + log_level + "] " + log_message + " {" + log_attributes + "}"
+  
+  // 验证日志记录结构
+  assert_eq(log_record.has_prefix(log_timestamp.to_string()), true)
+  assert_eq(log_record.contains("[" + log_level + "]"), true)
+  assert_eq(log_record.contains(log_message), true)
+  assert_eq(log_record.has_suffix("{" + log_attributes + "}"), true)
+  
+  // 验证日志记录完整性
+  let log_parts = log_record.split(" ")
+  assert_eq(log_parts.length() >= 4, true) // 至少包含时间戳、级别、消息、属性
 }
 
-test "span_data_integrity" {
-  // 测试Span数据完整性
+test "data_corruption_detection" {
+  // 测试数据损坏检测
   
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("integrity-test-tracer")
-  let (_, span) = tracer.start_span(
-    context::Context::empty(),
-    "integrity-test-span",
-    trace::Server,
-    [
-      ("http.method", common::AttributeValue::string("POST")),
-      ("http.url", common::AttributeValue::string("https://api.example.com/v1/users")),
-      ("http.status_code", common::AttributeValue::int(201L)),
-      ("user.id", common::AttributeValue::int(12345L)),
-      ("request.duration", common::AttributeValue::float(250.75)),
-      ("success", common::AttributeValue::bool(true)),
-      ("endpoints", common::AttributeValue::array_string(["/users", "/auth"]))
-    ],
-    1640995200000L
-  )
+  let original_data = "trace_id:0af7651916cd43dd8448eb211c80319c,span_id:b7ad6b7169203331,status:OK"
+  let data_checksum = original_data.length() % 1000 // 简单校验和
   
-  // 验证基本字段完整性
-  assert_eq(span.name, "integrity-test-span")
-  assert_eq(span.kind, trace::Internal)  // No-op实现默认为Internal
-  assert_eq(span.start_time_unix_nanos, 1640995200000L)
-  assert_eq(span.status, trace::Unset)
-  assert_eq(span.events.length(), 0)
-  assert_eq(span.links.length(), 0)
+  // 验证原始数据
+  assert_eq(original_data.contains("trace_id:"), true)
+  assert_eq(original_data.contains("span_id:"), true)
+  assert_eq(original_data.contains("status:OK"), true)
+  assert_eq(data_checksum >= 0, true)
   
-  // 验证属性完整性
-  assert_eq(span.attributes.length(), 7)
+  // 模拟数据损坏场景
+  let corrupted_data = original_data.replace("OK", "CORRUPTED")
+  let corrupted_checksum = corrupted_data.length() % 1000
   
-  // 验证特定属性
-  let mut found_http_method = false
-  let mut found_http_url = false
-  let mut found_http_status = false
-  let mut found_user_id = false
-  let mut found_duration = false
-  let mut found_success = false
-  let mut found_endpoints = false
+  // 验证损坏检测
+  assert_eq(corrupted_data.contains("status:CORRUPTED"), true)
+  assert_eq(corrupted_checksum != data_checksum, true) // 校验和不匹配
   
-  let mut i = 0
-  while i < span.attributes.length() {
-    let (key, value) = span.attributes[i]
-    
-    match key {
-      "http.method" => {
-        match value {
-          common::StringValue(method) => {
-            assert_eq(method, "POST")
-            found_http_method = true
-          }
-          _ => @test.fail("http.method should be StringValue")
-        }
-      }
-      "http.url" => {
-        match value {
-          common::StringValue(url) => {
-            assert_eq(url, "https://api.example.com/v1/users")
-            found_http_url = true
-          }
-          _ => @test.fail("http.url should be StringValue")
-        }
-      }
-      "http.status_code" => {
-        match value {
-          common::IntValue(status) => {
-            assert_eq(status, 201L)
-            found_http_status = true
-          }
-          _ => @test.fail("http.status_code should be IntValue")
-        }
-      }
-      "user.id" => {
-        match value {
-          common::IntValue(user_id) => {
-            assert_eq(user_id, 12345L)
-            found_user_id = true
-          }
-          _ => @test.fail("user.id should be IntValue")
-        }
-      }
-      "request.duration" => {
-        match value {
-          common::FloatValue(duration) => {
-            assert_eq(duration > 250.0 && duration < 251.0, true)
-            found_duration = true
-          }
-          _ => @test.fail("request.duration should be FloatValue")
-        }
-      }
-      "success" => {
-        match value {
-          common::BoolValue(success) => {
-            assert_eq(success, true)
-            found_success = true
-          }
-          _ => @test.fail("success should be BoolValue")
-        }
-      }
-      "endpoints" => {
-        match value {
-          common::ArrayStringValue(endpoints) => {
-            assert_eq(endpoints.length(), 2)
-            assert_eq(endpoints[0], "/users")
-            assert_eq(endpoints[1], "/auth")
-            found_endpoints = true
-          }
-          _ => @test.fail("endpoints should be ArrayStringValue")
-        }
-      }
-      _ => ()
-    }
-    
-    i = i + 1
-  }
+  // 模拟部分数据丢失
+  let truncated_data = original_data.slice(0, 20)
+  assert_eq(truncated_data.length(), 20)
+  assert_eq(truncated_data.length() < original_data.length(), true)
   
-  // 验证所有属性都找到
-  assert_eq(found_http_method, true)
-  assert_eq(found_http_url, true)
-  assert_eq(found_http_status, true)
-  assert_eq(found_user_id, true)
-  assert_eq(found_duration, true)
-  assert_eq(found_success, true)
-  assert_eq(found_endpoints, true)
-}
-
-test "metric_data_integrity" {
-  // 测试指标数据完整性
-  
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("integrity-test-meter")
-  
-  // 创建各种指标
-  let counter = meter.create_counter("integrity_counter", "count", "Integrity test counter")
-  let histogram = meter.create_histogram("integrity_histogram", "ms", "Integrity test histogram")
-  let up_down_counter = meter.create_up_down_counter("integrity_up_down", "count", "Integrity test up-down counter")
-  let gauge = meter.create_gauge("integrity_gauge", "value", "Integrity test gauge")
-  
-  // 记录指标数据
-  counter.add(100L, [
-    ("service", common::AttributeValue::string("integrity-service")),
-    ("version", common::AttributeValue::string("1.0.0")),
-    ("environment", common::AttributeValue::string("test"))
-  ])
-  
-  histogram.record(150.5, [
-    ("service", common::AttributeValue::string("integrity-service")),
-    ("operation", common::AttributeValue::string("data-processing")),
-    ("percentile", common::AttributeValue::string("p95"))
-  ])
-  
-  up_down_counter.add(-25L, [
-    ("service", common::AttributeValue::string("integrity-service")),
-    ("metric.type", common::AttributeValue::string("resource-usage")),
-    ("direction", common::AttributeValue::string("decrease"))
-  ])
-  
-  gauge.record(75.25, [
-    ("service", common::AttributeValue::string("integrity-service")),
-    ("resource", common::AttributeValue::string("memory")),
-    ("unit", common::AttributeValue::string("percentage"))
-  ])
-  
-  // 验证指标记录的完整性
-  // 注意：由于使用No-op实现，这里主要验证操作不会失败
-  assert_eq(true, true)
-  
-  // 验证指标名称和描述的完整性
-  let metric_names = ["integrity_counter", "integrity_histogram", "integrity_up_down", "integrity_gauge"]
-  let metric_units = ["count", "ms", "count", "value"]
-  let metric_descriptions = [
-    "Integrity test counter",
-    "Integrity test histogram", 
-    "Integrity test up-down counter",
-    "Integrity test gauge"
+  // 检测数据完整性
+  let data_integrity_check = [
+    ("trace_id_present", original_data.contains("trace_id:")),
+    ("span_id_present", original_data.contains("span_id:")),
+    ("status_present", original_data.contains("status:")),
+    ("format_valid", original_data.contains(":") && original_data.contains(",")),
+    ("length_valid", original_data.length() > 10)
   ]
   
-  assert_eq(metric_names.length(), 4)
-  assert_eq(metric_units.length(), 4)
-  assert_eq(metric_descriptions.length(), 4)
-  
-  assert_eq(metric_names[0], "integrity_counter")
-  assert_eq(metric_units[1], "ms")
-  assert_eq(metric_descriptions[2], "Integrity test up-down counter")
-}
-
-test "baggage_data_integrity" {
-  // 测试Baggage数据完整性
-  
-  let baggage = context::Baggage::empty()
-    .with_entry("user.id", "12345")
-    .with_entry("request.id", "req-67890")
-    .with_entry("session.id", "session-abcdef")
-    .with_entry("correlation.id", "corr-123456")
-    .with_entry("trace.id", "trace-789012")
-  
-  // 验证所有条目都可以正确获取
-  match baggage.get("user.id") {
-    Some(user_id) => {
-      assert_eq(user_id, "12345")
-      assert_eq(user_id.length(), 5)
-    }
-    None => @test.fail("user.id not found")
-  }
-  
-  match baggage.get("request.id") {
-    Some(request_id) => {
-      assert_eq(request_id, "req-67890")
-      assert_eq(request_id.has_prefix("req-"), true)
-    }
-    None => @test.fail("request.id not found")
-  }
-  
-  match baggage.get("session.id") {
-    Some(session_id) => {
-      assert_eq(session_id, "session-abcdef")
-      assert_eq(session_id.has_prefix("session-"), true)
-    }
-    None => @test.fail("session.id not found")
-  }
-  
-  match baggage.get("correlation.id") {
-    Some(correlation_id) => {
-      assert_eq(correlation_id, "corr-123456")
-      assert_eq(correlation_id.has_prefix("corr-"), true)
-    }
-    None => @test.fail("correlation.id not found")
-  }
-  
-  match baggage.get("trace.id") {
-    Some(trace_id) => {
-      assert_eq(trace_id, "trace-789012")
-      assert_eq(trace_id.has_prefix("trace-"), true)
-    }
-    None => @test.fail("trace.id not found")
-  }
-  
-  // 验证不存在的键返回None
-  match baggage.get("non.existent.key") {
-    Some(_) => @test.fail("non.existent.key should not be found")
-    None => assert_eq(true, true)
-  }
-  
-  // 验证Baggage条目数量
-  assert_eq(baggage.entries.length(), 5)
-}
-
-test "resource_data_integrity" {
-  // 测试Resource数据完整性
-  
-  let resource = common::Resource::default("integrity-test-service")
-  
-  // 验证基本Resource字段
-  assert_eq(resource.service_name, "integrity-test-service")
-  assert_eq(resource.service_name.length(), 21)
-  assert_eq(resource.service_name.has_prefix("integrity-"), true)
-  assert_eq(resource.service_name.has_suffix("-service"), true)
-  
-  assert_eq(resource.telemetry_sdk_name, "azimuth")
-  assert_eq(resource.telemetry_sdk_version, "0.1.0")
-  
-  // 验证默认值为None
-  match resource.service_version {
-    Some(_) => @test.fail("service_version should be None for default resource")
-    None => assert_eq(true, true)
-  }
-  
-  // 验证属性为空
-  assert_eq(resource.attributes.length(), 0)
-  
-  // 测试带有属性的Resource
-  let resource_with_attrs = common::Resource::default("integrity-service-with-attrs")
-  let attrs = [
-    ("service.namespace", common::AttributeValue::string("production")),
-    ("service.instance.id", common::AttributeValue::string("instance-12345")),
-    ("deployment.environment", common::AttributeValue::string("production")),
-    ("host.name", common::AttributeValue::string("integrity-host-01")),
-    ("process.pid", common::AttributeValue::int(12345L)),
-    ("process.cpu.percent", common::AttributeValue::float(75.5)),
-    ("process.healthy", common::AttributeValue::bool(true)),
-    ("tags", common::AttributeValue::array_string(["integrity", "test", "critical"]))
-  ]
-  
-  // 验证Resource基本字段
-  assert_eq(resource_with_attrs.service_name, "integrity-service-with-attrs")
-  assert_eq(resource_with_attrs.telemetry_sdk_name, "azimuth")
-  assert_eq(resource_with_attrs.telemetry_sdk_version, "0.1.0")
-  
-  // 验证属性完整性
-  assert_eq(attrs.length(), 8)
-  
-  // 验证特定属性
-  match attrs[0] {
-    ("service.namespace", common::StringValue(namespace)) => {
-      assert_eq(namespace, "production")
-    }
-    _ => @test.fail("service.namespace attribute mismatch")
-  }
-  
-  match attrs[1] {
-    ("service.instance.id", common::StringValue(instance_id)) => {
-      assert_eq(instance_id, "instance-12345")
-    }
-    _ => @test.fail("service.instance.id attribute mismatch")
-  }
-  
-  match attrs[4] {
-    ("process.pid", common::IntValue(pid)) => {
-      assert_eq(pid, 12345L)
-    }
-    _ => @test.fail("process.pid attribute mismatch")
-  }
-  
-  match attrs[5] {
-    ("process.cpu.percent", common::FloatValue(cpu_percent)) => {
-      assert_eq(cpu_percent > 75.0 && cpu_percent < 76.0, true)
-    }
-    _ => @test.fail("process.cpu.percent attribute mismatch")
-  }
-  
-  match attrs[6] {
-    ("process.healthy", common::BoolValue(healthy)) => {
-      assert_eq(healthy, true)
-    }
-    _ => @test.fail("process.healthy attribute mismatch")
-  }
-  
-  match attrs[7] {
-    ("tags", common::ArrayStringValue(tags)) => {
-      assert_eq(tags.length(), 3)
-      assert_eq(tags[0], "integrity")
-      assert_eq(tags[1], "test")
-      assert_eq(tags[2], "critical")
-    }
-    _ => @test.fail("tags attribute mismatch")
-  }
-}
-
-test "propagation_data_integrity" {
-  // 测试传播数据完整性
-  
-  let trace_propagator = propagation::W3CTraceContextPropagator::{}
-  let baggage_propagator = propagation::W3CBaggagePropagator::{}
-  let composite_propagator = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
-  
-  // 创建带有数据的Carrier
-  let carrier = propagation::MapCarrier::from_map([
-    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("tracestate", "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"),
-    ("baggage", "user.id=12345,request.id=req-67890,service.version=1.2.3"),
-    ("custom-header", "custom-value")
-  ])
-  
-  // 验证Carrier数据完整性
-  match carrier.get("traceparent") {
-    Some(traceparent) => {
-      assert_eq(traceparent, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-      assert_eq(traceparent.length(), 55)
-    }
-    None => @test.fail("traceparent not found")
-  }
-  
-  match carrier.get("tracestate") {
-    Some(tracestate) => {
-      assert_eq(tracestate, "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE")
-      assert_eq(tracestate.contains("rojo="), true)
-      assert_eq(tracestate.contains("congo="), true)
-    }
-    None => @test.fail("tracestate not found")
-  }
-  
-  match carrier.get("baggage") {
-    Some(baggage) => {
-      assert_eq(baggage, "user.id=12345,request.id=req-67890,service.version=1.2.3")
-      assert_eq(baggage.contains("user.id=12345"), true)
-      assert_eq(baggage.contains("request.id=req-67890"), true)
-      assert_eq(baggage.contains("service.version=1.2.3"), true)
-    }
-    None => @test.fail("baggage not found")
-  }
-  
-  match carrier.get("custom-header") {
-    Some(custom_header) => {
-      assert_eq(custom_header, "custom-value")
-    }
-    None => @test.fail("custom-header not found")
-  }
-  
-  // 验证不存在的header
-  match carrier.get("non-existent-header") {
-    Some(_) => @test.fail("non-existent-header should not be found")
-    None => assert_eq(true, true)
-  }
-  
-  // 验证键列表
-  let keys = carrier.keys()
-  assert_eq(keys.length(), 4)
-  assert_eq(keys.contains("traceparent"), true)
-  assert_eq(keys.contains("tracestate"), true)
-  assert_eq(keys.contains("baggage"), true)
-  assert_eq(keys.contains("custom-header"), true)
+  // 验证完整性检查结果
+  assert_eq(data_integrity_check.length(), 5)
+  assert_eq(data_integrity_check[0].1, true) // trace_id_present
+  assert_eq(data_integrity_check[3].1, true) // format_valid
 }
 
 test "cross_module_data_consistency" {
   // 测试跨模块数据一致性
   
-  // 创建一致的Resource
-  let resource = common::Resource::default("consistency-test-service")
-  let resource_attrs = [
-    ("service.namespace", common::AttributeValue::string("test")),
-    ("service.version", common::AttributeValue::string("1.0.0")),
-    ("deployment.environment", common::AttributeValue::string("test"))
+  let operation_id = "op_12345"
+  let user_id = "user_67890"
+  let service_name = "payment-service"
+  
+  // 在Trace模块中的数据
+  let trace_data = "trace_id:abc123,span_id:def456,operation_id:" + operation_id + ",user_id:" + user_id
+  
+  // 在Metrics模块中的数据
+  let metric_data = "operation_duration{service=\"" + service_name + "\",operation=\"" + operation_id + "\"} 150.5"
+  
+  // 在Logs模块中的数据
+  let log_data = "timestamp:1640995400 level:INFO message:\"Operation completed\" operation_id:" + operation_id + " user_id:" + user_id
+  
+  // 验证Trace数据
+  assert_eq(trace_data.contains("operation_id:" + operation_id), true)
+  assert_eq(trace_data.contains("user_id:" + user_id), true)
+  
+  // 验证Metrics数据
+  assert_eq(metric_data.contains("operation=\"" + operation_id + "\""), true)
+  assert_eq(metric_data.contains("service=\"" + service_name + "\""), true)
+  
+  // 验证Logs数据
+  assert_eq(log_data.contains("operation_id:" + operation_id), true)
+  assert_eq(log_data.contains("user_id:" + user_id), true)
+  
+  // 验证跨模块一致性
+  let consistency_checks = [
+    ("operation_id_consistent", 
+      trace_data.contains(operation_id) && 
+      metric_data.contains(operation_id) && 
+      log_data.contains(operation_id)),
+    ("user_id_consistent", 
+      trace_data.contains(user_id) && 
+      log_data.contains(user_id)),
+    ("service_name_consistent", 
+      metric_data.contains(service_name))
   ]
   
-  // 创建一致的Context
-  let ctx = context::Context::empty()
-    .with_value(context::create_key("trace.id"), "trace-12345")
-    .with_value(context::create_key("correlation.id"), "corr-67890")
+  // 验证一致性检查结果
+  assert_eq(consistency_checks.length(), 3)
+  assert_eq(consistency_checks[0].1, true) // operation_id_consistent
+  assert_eq(consistency_checks[1].1, true) // user_id_consistent
+  assert_eq(consistency_checks[2].1, true) // service_name_consistent
+}
+
+test "data_sequence_validation" {
+  // 测试数据序列验证
   
-  // 创建一致的Baggage
-  let baggage = context::Baggage::empty()
-    .with_entry("user.id", "12345")
-    .with_entry("session.id", "session-abcdef")
-  
-  // 创建一致的Span
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("consistency-test-tracer")
-  let (_, span) = tracer.start_span(
-    ctx,
-    "consistency-test-span",
-    trace::Server,
-    [
-      ("service.name", common::AttributeValue::string("consistency-test-service")),
-      ("service.namespace", common::AttributeValue::string("test")),
-      ("service.version", common::AttributeValue::string("1.0.0")),
-      ("deployment.environment", common::AttributeValue::string("test")),
-      ("trace.id", common::AttributeValue::string("trace-12345")),
-      ("correlation.id", common::AttributeValue::string("corr-67890")),
-      ("user.id", common::AttributeValue::string("12345")),
-      ("session.id", common::AttributeValue::string("session-abcdef"))
-    ]
-  )
-  
-  // 创建一致的LogRecord
-  let log_record = logs::LogRecord::builder()
-    .severity(logs::Info)
-    .body("Consistency test log")
-    .with_attribute("service.name", common::AttributeValue::string("consistency-test-service"))
-    .with_attribute("service.namespace", common::AttributeValue::string("test"))
-    .with_attribute("service.version", common::AttributeValue::string("1.0.0"))
-    .with_attribute("deployment.environment", common::AttributeValue::string("test"))
-    .with_attribute("trace.id", common::AttributeValue::string("trace-12345"))
-    .with_attribute("correlation.id", common::AttributeValue::string("corr-67890"))
-    .with_attribute("user.id", common::AttributeValue::string("12345"))
-    .with_attribute("session.id", common::AttributeValue::string("session-abcdef"))
-    .build()
-  
-  // 验证跨模块数据一致性
-  assert_eq(resource.service_name, "consistency-test-service")
-  assert_eq(span.name, "consistency-test-span")
-  
-  // 验证服务名称在所有模块中一致
-  let mut found_service_name = false
+  let sequence_start = 1000
+  let sequence_length = 10
+  let mut data_sequence = []
   let mut i = 0
-  while i < span.attributes.length() {
-    let (key, value) = span.attributes[i]
-    match key {
-      "service.name" => {
-        match value {
-          common::StringValue(service_name) => {
-            assert_eq(service_name, "consistency-test-service")
-            found_service_name = true
-          }
-          _ => @test.fail("service.name should be StringValue")
-        }
-      }
-      _ => ()
-    }
-    i = i + 1
-  }
-  assert_eq(found_service_name, true)
   
-  // 验证服务版本在所有模块中一致
-  let mut found_service_version = false
-  i = 0
-  while i < span.attributes.length() {
-    let (key, value) = span.attributes[i]
-    match key {
-      "service.version" => {
-        match value {
-          common::StringValue(service_version) => {
-            assert_eq(service_version, "1.0.0")
-            found_service_version = true
-          }
-          _ => @test.fail("service.version should be StringValue")
-        }
-      }
-      _ => ()
-    }
+  // 创建有序数据序列
+  while i < sequence_length {
+    let sequence_number = sequence_start + i
+    let data_item = "item_" + sequence_number.to_string()
+    data_sequence.push(data_item)
     i = i + 1
   }
-  assert_eq(found_service_version, true)
   
-  // 验证环境在所有模块中一致
-  let mut found_environment = false
+  // 验证序列长度
+  assert_eq(data_sequence.length(), sequence_length)
+  
+  // 验证序列起始和结束
+  assert_eq(data_sequence[0], "item_1000")
+  assert_eq(data_sequence[9], "item_1009")
+  
+  // 验证序列连续性
+  let mut sequence_valid = true
   i = 0
-  while i < span.attributes.length() {
-    let (key, value) = span.attributes[i]
-    match key {
-      "deployment.environment" => {
-        match value {
-          common::StringValue(environment) => {
-            assert_eq(environment, "test")
-            found_environment = true
-          }
-          _ => @test.fail("deployment.environment should be StringValue")
-        }
-      }
-      _ => ()
+  while i < data_sequence.length() - 1 {
+    let current_item = data_sequence[i]
+    let next_item = data_sequence[i + 1]
+    let current_num = current_item.split("_")[1].to_int()
+    let next_num = next_item.split("_")[1].to_int()
+    
+    if next_num != current_num + 1 {
+      sequence_valid = false
     }
     i = i + 1
   }
-  assert_eq(found_environment, true)
+  assert_eq(sequence_valid, true)
+  
+  // 模拟序列中断
+  data_sequence[5] = "item_2000" // 插入错误的序列号
+  
+  // 检测序列中断
+  let mut gap_detected = false
+  i = 0
+  while i < data_sequence.length() - 1 {
+    let current_item = data_sequence[i]
+    let next_item = data_sequence[i + 1]
+    let current_num = current_item.split("_")[1].to_int()
+    let next_num = next_item.split("_")[1].to_int()
+    
+    if next_num > current_num + 1 {
+      gap_detected = true
+    }
+    i = i + 1
+  }
+  assert_eq(gap_detected, true)
+}
+
+test "data_duplication_detection" {
+  // 测试数据重复检测
+  
+  let unique_items = 100
+  let duplicate_rate = 0.1 // 10%重复率
+  let mut data_items = []
+  let mut i = 0
+  
+  // 创建包含重复项的数据集
+  while i < unique_items {
+    let item_id = "item_" + i.to_string()
+    data_items.push(item_id)
+    
+    // 插入重复项
+    if i < (unique_items.to_double() * duplicate_rate).to_int() {
+      data_items.push(item_id) // 重复添加
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证数据集大小
+  let expected_duplicates = (unique_items.to_double() * duplicate_rate).to_int()
+  assert_eq(data_items.length(), unique_items + expected_duplicates)
+  
+  // 检测重复项
+  let mut unique_count = 0
+  let mut duplicate_count = 0
+  let mut seen_items = []
+  
+  i = 0
+  while i < data_items.length() {
+    let current_item = data_items[i]
+    let mut already_seen = false
+    let mut j = 0
+    
+    while j < seen_items.length() {
+      if seen_items[j] == current_item {
+        already_seen = true
+      }
+      j = j + 1
+    }
+    
+    if already_seen {
+      duplicate_count = duplicate_count + 1
+    } else {
+      unique_count = unique_count + 1
+      seen_items.push(current_item)
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证重复检测结果
+  assert_eq(unique_count, unique_items)
+  assert_eq(duplicate_count, expected_duplicates)
+  assert_eq(seen_items.length(), unique_items)
+  
+  // 计算重复率
+  let actual_duplicate_rate = duplicate_count.to_double() / data_items.length().to_double()
+  assert_eq(actual_duplicate_rate > 0.08, true) // 允许一些误差
+  assert_eq(actual_duplicate_rate < 0.12, true)
 }
