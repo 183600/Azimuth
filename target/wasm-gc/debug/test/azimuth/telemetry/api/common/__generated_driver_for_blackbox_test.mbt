@@ -128,6 +128,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_62617369635f746573742e6d6274_6, ["instrumentation_scope_creation_and_properties"]),
     7: (__test_62617369635f746573742e6d6274_7, ["resource_complex_scenarios"]),
   },
+  "attribute_value_validation_test.mbt": {
+    0: (__test_6174747269627574655f76616c75655f76616c69646174696f6e5f746573742e6d6274_0, ["attribute_value_type_conversion_and_validation"]),
+    1: (__test_6174747269627574655f76616c75655f76616c69646174696f6e5f746573742e6d6274_1, ["attribute_value_array_operations_and_validation"]),
+    2: (__test_6174747269627574655f76616c75655f76616c69646174696f6e5f746573742e6d6274_2, ["resource_with_comprehensive_attributes_validation"]),
+    3: (__test_6174747269627574655f76616c75655f76616c69646174696f6e5f746573742e6d6274_3, ["instrumentation_scope_comprehensive_validation"]),
+  },
   "attribute_value_type_safety_test.mbt": {
     0: (__test_6174747269627574655f76616c75655f747970655f7361666574795f746573742e6d6274_0, ["attribute_value_type_safety_and_conversion"]),
     1: (__test_6174747269627574655f76616c75655f747970655f7361666574795f746573742e6d6274_1, ["attribute_value_array_type_safety"]),
