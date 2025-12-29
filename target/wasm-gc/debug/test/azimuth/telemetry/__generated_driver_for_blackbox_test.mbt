@@ -57,10 +57,28 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "integration_test.mbt": {
-    0: (__test_696e746567726174696f6e5f746573742e6d6274_0, ["telemetry_integration_tracing_and_metrics"]),
-    1: (__test_696e746567726174696f6e5f746573742e6d6274_1, ["telemetry_integration_context_and_propagation"]),
-    2: (__test_696e746567726174696f6e5f746573742e6d6274_2, ["telemetry_integration_logs_and_tracing"]),
+  "working_test.mbt": {
+    0: (__test_776f726b696e675f746573742e6d6274_0, ["string_operations"]),
+    1: (__test_776f726b696e675f746573742e6d6274_1, ["numeric_operations"]),
+    2: (__test_776f726b696e675f746573742e6d6274_2, ["array_operations"]),
+    3: (__test_776f726b696e675f746573742e6d6274_3, ["boolean_operations"]),
+    4: (__test_776f726b696e675f746573742e6d6274_4, ["option_operations"]),
+    5: (__test_776f726b696e675f746573742e6d6274_5, ["array_creation"]),
+  },
+  "telemetry_test.mbt": {
+    0: (__test_74656c656d657472795f746573742e6d6274_0, ["telemetry_service_identification"]),
+    1: (__test_74656c656d657472795f746573742e6d6274_1, ["telemetry_trace_identification"]),
+    2: (__test_74656c656d657472795f746573742e6d6274_2, ["telemetry_metric_data"]),
+    3: (__test_74656c656d657472795f746573742e6d6274_3, ["telemetry_log_severity_levels"]),
+    4: (__test_74656c656d657472795f746573742e6d6274_4, ["telemetry_attribute_operations"]),
+    5: (__test_74656c656d657472795f746573742e6d6274_5, ["telemetry_resource_metadata"]),
+  },
+  "advanced_telemetry_test.mbt": {
+    0: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_0, ["telemetry_baggage_items"]),
+    1: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_1, ["telemetry_span_events"]),
+    2: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_2, ["telemetry_status_codes"]),
+    3: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_3, ["telemetry_instrumentation_scope"]),
+    4: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_4, ["telemetry_propagation_headers"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
