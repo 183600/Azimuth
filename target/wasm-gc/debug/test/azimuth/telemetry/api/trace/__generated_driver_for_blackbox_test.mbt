@@ -101,6 +101,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_74726163655f62617369635f746573742e6d6274_7, ["span_context_edge_cases_and_special_values"]),
     8: (__test_74726163655f62617369635f746573742e6d6274_8, ["span_status_and_lifecycle"]),
   },
+  "trace_basic_functionality_test.mbt": {
+    0: (__test_74726163655f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_0, ["SpanKind enum values"]),
+    1: (__test_74726163655f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_1, ["StatusCode enum values"]),
+    2: (__test_74726163655f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_2, ["SpanContext creation and validation"]),
+    3: (__test_74726163655f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_3, ["Span creation with basic fields"]),
+    4: (__test_74726163655f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_4, ["SpanEvent creation"]),
+    5: (__test_74726163655f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_5, ["SpanLink creation"]),
+    6: (__test_74726163655f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_6, ["NoopTracer basic functionality"]),
+    7: (__test_74726163655f62617369635f66756e6374696f6e616c6974795f746573742e6d6274_7, ["NoopTracerProvider functionality"]),
+  },
   "trace.mbt": {
   },
   "span_state_management_test.mbt": {
