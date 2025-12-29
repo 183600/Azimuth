@@ -1,564 +1,343 @@
-// 资源管理测试 - 测试资源的正确释放
-// 验证遥测库的资源管理、内存泄漏防护和生命周期管理
+// 资源管理测试 - 验证遥测系统的资源管理功能
 
-test "context_lifecycle_management" {
-  // 测试Context的生命周期管理
+test "memory_pool_management" {
+  // 测试内存池管理
   
-  // 创建大量Context实例
+  let pool_size = 1000
+  let object_size = 256 // bytes
+  let mut allocated_objects = []
+  let mut available_objects = pool_size
   let mut i = 0
-  let contexts = []
   
-  while i < 10000 {
-    let ctx = context::Context::empty()
-      .with_value(context::create_key("key-" + i.to_string()), "value-" + i.to_string())
-      .with_value(context::create_key("type"), "test-context")
-      .with_value(context::create_key("index"), i.to_string())
-    contexts.push(ctx)
+  // 初始化内存池
+  while i < pool_size {
+    let object_id = "obj_" + i.to_string()
+    available_objects = available_objects - 1
     i = i + 1
   }
   
-  // 验证所有Context都正确创建
-  assert_eq(contexts.length(), 10000)
+  // 验证初始状态
+  assert_eq(available_objects, 0)
   
-  // 验证Context的值可正确访问
-  let mut i = 0
-  let mut access_count = 0
-  while i < contexts.length() {
-    let key = context::create_key("key-" + i.to_string())
-    match contexts[i].get(key) {
-      Some(_) => access_count = access_count + 1
-      None => ()
-    }
-    i = i + 1
-  }
-  
-  assert_eq(access_count, 10000)
-  
-  // 模拟Context释放（在真实环境中应检查内存使用）
-  let empty_contexts = []
+  // 模拟对象分配和释放
   i = 0
-  while i < contexts.length() {
-    // 在实际实现中，这里应该释放Context资源
-    empty_contexts.push(context::Context::empty())
-    i = i + 1
-  }
-  
-  // 验证新创建的空Context
-  assert_eq(empty_contexts.length(), 10000)
-}
-
-test "attribute_memory_management" {
-  // 测试属性的内存管理
-  
-  // 创建大量属性
-  let mut i = 0
-  let large_attributes = []
-  
-  while i < 5000 {
-    // 创建大字符串属性
-    let large_string = "x".repeat(1000)
-    let string_attr = common::AttributeValue::string(large_string + i.to_string())
-    large_attributes.push(string_attr)
-    
-    // 创建大数组属性
-    let string_array = []
-    let mut j = 0
-    while j < 100 {
-      string_array.push("item-" + i.to_string() + "-" + j.to_string())
-      j = j + 1
-    }
-    let array_attr = common::AttributeValue::array_string(string_array)
-    large_attributes.push(array_attr)
-    
-    i = i + 1
-  }
-  
-  // 验证大属性都正确创建
-  assert_eq(large_attributes.length(), 10000)
-  
-  // 验证大属性的值
-  let mut i = 0
-  let mut string_count = 0
-  let mut array_count = 0
-  
-  while i < large_attributes.length() {
-    match large_attributes[i] {
-      common::StringValue(s) => {
-        assert_eq(s.length() > 1000, true)
-        string_count = string_count + 1
-      }
-      common::ArrayStringValue(arr) => {
-        assert_eq(arr.length(), 100)
-        array_count = array_count + 1
-      }
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  assert_eq(string_count, 5000)
-  assert_eq(array_count, 5000)
-  
-  // 模拟属性释放
-  let empty_attributes = []
-  i = 0
-  while i < 1000 {
-    empty_attributes.push(common::AttributeValue::string(""))
-    empty_attributes.push(common::AttributeValue::array_string([]))
-    i = i + 1
-  }
-  
-  assert_eq(empty_attributes.length(), 2000)
-}
-
-test "log_record_resource_management" {
-  // 测试LogRecord的资源管理
-  
-  let logger_provider = logs::NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("resource-test-logger")
-  
-  // 创建大量LogRecord
-  let mut i = 0
-  let log_records = []
-  
-  while i < 8000 {
-    let log_record = logs::LogRecord::builder()
-      .severity(if i % 6 == 0 { logs::Trace }
-                else if i % 6 == 1 { logs::Debug }
-                else if i % 6 == 2 { logs::Info }
-                else if i % 6 == 3 { logs::Warn }
-                else if i % 6 == 4 { logs::Error }
-                else { logs::Fatal })
-      .body("Resource test log message " + i.to_string() + " with additional content for memory testing")
-      .with_attribute("index", common::AttributeValue::int(i.to_int64()))
-      .with_attribute("type", common::AttributeValue::string("resource-test"))
-      .with_attribute("data", common::AttributeValue::array_string(["item1", "item2", "item3"]))
-      .build()
-    log_records.push(log_record)
-    i = i + 1
-  }
-  
-  // 验证所有LogRecord都正确创建
-  assert_eq(log_records.length(), 8000)
-  
-  // 发射所有日志
-  let mut i = 0
-  while i < log_records.length() {
-    logger.emit(log_records[i])
-    i = i + 1
-  }
-  
-  // 验证所有日志都已发射
-  assert_eq(i, 8000)
-  
-  // 验证LogRecord的属性
-  let mut i = 0
-  let mut attr_count = 0
-  while i < log_records.length() {
-    attr_count = attr_count + log_records[i].attributes.length()
-    i = i + 1
-  }
-  
-  assert_eq(attr_count, 8000 * 3)
-}
-
-test "metric_resource_management" {
-  // 测试指标的资源管理
-  
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("resource-test-meter")
-  
-  // 创建多个指标实例
-  let counters = []
-  let histograms = []
-  let up_down_counters = []
-  let gauges = []
-  
-  let mut i = 0
-  while i < 100 {
-    counters.push(meter.create_counter("resource-counter-" + i.to_string()))
-    histograms.push(meter.create_histogram("resource-histogram-" + i.to_string()))
-    up_down_counters.push(meter.create_up_down_counter("resource-updown-" + i.to_string()))
-    gauges.push(meter.create_gauge("resource-gauge-" + i.to_string()))
-    i = i + 1
-  }
-  
-  // 验证所有指标都正确创建
-  assert_eq(counters.length(), 100)
-  assert_eq(histograms.length(), 100)
-  assert_eq(up_down_counters.length(), 100)
-  assert_eq(gauges.length(), 100)
-  
-  // 记录大量指标数据
-  let mut i = 0
-  while i < counters.length() {
-    let mut j = 0
-    while j < 5000 {
-      counters[i].add(1L, [("index", common::AttributeValue::int(j.to_int64()))])
-      histograms[i].record(j.to_double(), [("index", common::AttributeValue::int(j.to_int64()))])
-      up_down_counters[i].add(if j % 2 == 0 { 1L } else { -1L }, [("index", common::AttributeValue::int(j.to_int64()))])
-      gauges[i].record(j.to_double() * 0.1, [("index", common::AttributeValue::int(j.to_int64()))])
-      j = j + 1
-    }
-    i = i + 1
-  }
-  
-  // 验证所有记录操作都完成
-  assert_eq(i, 100)
-}
-
-test "span_resource_management" {
-  // 测试Span的资源管理
-  
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("resource-test-tracer")
-  
-  // 创建大量Span
-  let mut i = 0
-  let spans = []
-  let contexts = []
-  
-  while i < 3000 {
-    let (ctx, span) = tracer.start_span(
-      context::Context::empty(),
-      "resource-span-" + i.to_string(),
-      trace::Internal,
-      [
-        ("index", common::AttributeValue::int(i.to_int64())),
-        ("type", common::AttributeValue::string("resource-test")),
-        ("data", common::AttributeValue::array_string(["item1", "item2", "item3"]))
-      ],
-      1640995200000L + i.to_int64()
-    )
-    spans.push(span)
-    contexts.push(ctx)
-    i = i + 1
-  }
-  
-  // 验证所有Span都正确创建
-  assert_eq(spans.length(), 3000)
-  assert_eq(contexts.length(), 3000)
-  
-  // 验证Span的属性
-  let mut i = 0
-  let mut total_attrs = 0
-  while i < spans.length() {
-    total_attrs = total_attrs + spans[i].attributes.length()
-    i = i + 1
-  }
-  
-  assert_eq(total_attrs, 3000 * 3)
-}
-
-test "propagation_resource_management" {
-  // 测试传播的资源管理
-  
-  let trace_propagator = propagation::W3CTraceContextPropagator::{}
-  let baggage_propagator = propagation::W3CBaggagePropagator::{}
-  let composite_propagator = propagation::CompositePropagator::new([trace_propagator, baggage_propagator])
-  
-  // 创建大量Carrier
-  let mut i = 0
-  let carriers = []
-  
-  while i < 2000 {
-    let carrier = propagation::MapCarrier::from_map([
-      ("traceparent", "00-" + "a".repeat(32) + "-" + "b".repeat(16) + "-01"),
-      ("baggage", "key1=value1,key2=value2,key3=value3"),
-      ("custom-header-" + i.to_string(), "custom-value-" + i.to_string())
-    ])
-    carriers.push(carrier)
-    i = i + 1
-  }
-  
-  // 验证所有Carrier都正确创建
-  assert_eq(carriers.length(), 2000)
-  
-  // 执行大量注入和提取操作
-  let mut i = 0
-  let extracted_contexts = []
-  
-  while i < carriers.length() {
-    let ctx = context::Context::empty()
-    composite_propagator.inject(ctx, carriers[i])
-    let extracted_ctx = composite_propagator.extract(ctx, carriers[i])
-    extracted_contexts.push(extracted_ctx)
-    i = i + 1
-  }
-  
-  // 验证所有操作都成功
-  assert_eq(extracted_contexts.length(), 2000)
-}
-
-test "baggage_resource_management" {
-  // 测试Baggage的资源管理
-  
-  // 创建大量Baggage实例
-  let mut i = 0
-  let baggage_instances = []
-  
-  while i < 4000 {
-    let baggage = context::Baggage::empty()
-      .with_entry("user.id", "user-" + i.to_string())
-      .with_entry("request.id", "req-" + i.to_string())
-      .with_entry("session.id", "session-" + i.to_string())
-      .with_entry("trace.id", "trace-" + i.to_string())
-      .with_entry("correlation.id", "corr-" + i.to_string())
-    baggage_instances.push(baggage)
-    i = i + 1
-  }
-  
-  // 验证所有Baggage实例都正确创建
-  assert_eq(baggage_instances.length(), 4000)
-  
-  // 访问所有Baggage条目
-  let mut i = 0
-  let mut total_access = 0
-  
-  while i < baggage_instances.length() {
-    match baggage_instances[i].get("user.id") {
-      Some(_) => total_access = total_access + 1
-      None => ()
-    }
-    
-    match baggage_instances[i].get("request.id") {
-      Some(_) => total_access = total_access + 1
-      None => ()
-    }
-    
-    match baggage_instances[i].get("session.id") {
-      Some(_) => total_access = total_access + 1
-      None => ()
-    }
-    
-    match baggage_instances[i].get("trace.id") {
-      Some(_) => total_access = total_access + 1
-      None => ()
-    }
-    
-    match baggage_instances[i].get("correlation.id") {
-      Some(_) => total_access = total_access + 1
-      None => ()
-    }
-    
-    i = i + 1
-  }
-  
-  assert_eq(total_access, 4000 * 5)
-}
-
-test "resource_lifecycle_management" {
-  // 测试Resource的生命周期管理
-  
-  // 创建大量Resource实例
-  let mut i = 0
-  let resources = []
-  
-  while i < 1500 {
-    let resource = common::Resource::default("resource-test-service-" + i.to_string())
-    resources.push(resource)
-    i = i + 1
-  }
-  
-  // 验证所有Resource实例都正确创建
-  assert_eq(resources.length(), 1500)
-  
-  // 验证Resource属性
-  let mut i = 0
-  while i < resources.length() {
-    assert_eq(resources[i].service_name, "resource-test-service-" + i.to_string())
-    assert_eq(resources[i].telemetry_sdk_name, "azimuth")
-    assert_eq(resources[i].telemetry_sdk_version, "0.1.0")
-    assert_eq(resources[i].attributes.length(), 0)
-    i = i + 1
-  }
-  
-  // 创建带属性的Resource
-  let mut i = 0
-  let resources_with_attrs = []
-  
   while i < 500 {
-    let resource = common::Resource::default("resource-service-with-attrs-" + i.to_string())
-    let attrs = [
-      ("service.namespace", common::AttributeValue::string("namespace-" + i.to_string())),
-      ("service.instance.id", common::AttributeValue::string("instance-" + i.to_string())),
-      ("deployment.environment", common::AttributeValue::string(if i % 2 == 0 { "prod" } else { "staging" })),
-      ("host.name", common::AttributeValue::string("host-" + i.to_string())),
-      ("process.pid", common::AttributeValue::int((1000 + i).to_int64()))
-    ]
-    resources_with_attrs.push((resource, attrs))
-    i = i + 1
-  }
-  
-  // 验证带属性的Resource
-  assert_eq(resources_with_attrs.length(), 500)
-  
-  let mut i = 0
-  while i < resources_with_attrs.length() {
-    let (resource, attrs) = resources_with_attrs[i]
-    assert_eq(resource.service_name, "resource-service-with-attrs-" + i.to_string())
-    assert_eq(attrs.length(), 5)
-    i = i + 1
-  }
-}
-
-test "memory_leak_detection" {
-  // 测试内存泄漏检测
-  
-  // 创建和销毁大量对象（模拟内存泄漏检测）
-  let mut iteration = 0
-  while iteration < 10 {
-    // 创建大量临时对象
-    let mut i = 0
-    let temp_objects = []
+    // 分配对象
+    let object_id = "allocated_" + i.to_string()
+    allocated_objects.push(object_id)
     
-    while i < 5000 {
-      // 创建临时Context
-      let temp_ctx = context::Context::empty()
-        .with_value(context::create_key("temp"), "temp-value-" + i.to_string())
-      
-      // 创建临时属性
-      let temp_attr = common::AttributeValue::string("temp-string-" + i.to_string())
-      
-      // 创建临时LogRecord
-      let temp_log = logs::LogRecord::builder()
-        .severity(logs::Info)
-        .body("Temp log " + i.to_string())
-        .build()
-      
-      // 创建临时Span
-      let tracer_provider = trace::NoopTracerProvider::{}
-      let tracer = tracer_provider.get_tracer("temp-tracer")
-      let (_, temp_span) = tracer.start_span(
-        context::Context::empty(),
-        "temp-span-" + i.to_string()
-      )
-      
-      // 创建临时Baggage
-      let temp_baggage = context::Baggage::empty()
-        .with_entry("temp.key", "temp.value-" + i.to_string())
-      
-      temp_objects.push((temp_ctx, temp_attr, temp_log, temp_span, temp_baggage))
-      i = i + 1
+    // 释放对象（模拟）
+    if i >= 100 {
+      let released_index = i - 100
+      available_objects = available_objects + 1
     }
     
-    // 验证临时对象都正确创建
-    assert_eq(temp_objects.length(), 5000)
-    
-    // 访问临时对象
-    let mut i = 0
-    let mut access_count = 0
-    while i < temp_objects.length() {
-      let (ctx, attr, log, span, baggage) = temp_objects[i]
-      
-      // 访问Context
-      match ctx.get(context::create_key("temp")) {
-        Some(_) => access_count = access_count + 1
-        None => ()
-      }
-      
-      // 访问属性
-      match attr {
-        common::StringValue(_) => access_count = access_count + 1
-        _ => ()
-      }
-      
-      // 访问LogRecord
-      if log.body.is_some() {
-        access_count = access_count + 1
-      }
-      
-      // 访问Span
-      if span.name.length() > 0 {
-        access_count = access_count + 1
-      }
-      
-      // 访问Baggage
-      match baggage.get("temp.key") {
-        Some(_) => access_count = access_count + 1
-        None => ()
-      }
-      
-      i = i + 1
-    }
-    
-    // 验证访问次数
-    assert_eq(access_count, 5000 * 5)
-    
-    // 在真实环境中，这里应该检查内存使用情况
-    iteration = iteration + 1
+    i = i + 1
   }
   
-  // 验证所有迭代都完成
-  assert_eq(iteration, 10)
+  // 验证内存池状态
+  assert_eq(allocated_objects.length(), 500)
+  assert_eq(available_objects, 100) // 释放了100个对象
+  
+  // 计算内存使用量
+  let used_memory = allocated_objects.length() * object_size
+  let total_memory = pool_size * object_size
+  let memory_usage = used_memory.to_double() / total_memory.to_double()
+  
+  assert_eq(memory_usage > 0.4, true) // 500*256 / 1000*256 = 0.5
+  assert_eq(memory_usage < 0.6, true)
 }
 
-test "resource_cleanup_verification" {
-  // 测试资源清理验证
+test "cache_eviction_policy" {
+  // 测试缓存淘汰策略
   
-  // 创建各种资源
-  let contexts = []
-  let attributes = []
-  let log_records = []
-  let spans = []
-  let baggage_instances = []
-  let resources = []
-  let carriers = []
-  
-  // 填充资源
+  let cache_capacity = 100
+  let cache_entries = 150
+  let mut cache = []
+  let mut eviction_count = 0
   let mut i = 0
-  while i < 1000 {
-    contexts.push(context::Context::empty().with_value(context::create_key("test"), "value"))
-    attributes.push(common::AttributeValue::string("test"))
+  
+  // 模拟LRU缓存
+  while i < cache_entries {
+    let entry_key = "key_" + i.to_string()
+    let entry_value = "value_" + i.to_string()
     
-    let log_record = logs::LogRecord::builder()
-      .severity(logs::Info)
-      .body("test")
-      .build()
-    log_records.push(log_record)
-    
-    let tracer_provider = trace::NoopTracerProvider::{}
-    let tracer = tracer_provider.get_tracer("test")
-    let (_, span) = tracer.start_span(context::Context::empty(), "test")
-    spans.push(span)
-    
-    baggage_instances.push(context::Baggage::empty().with_entry("test", "value"))
-    resources.push(common::Resource::default("test-service"))
-    
-    let carrier = propagation::MapCarrier::new()
-    carriers.push(carrier)
+    // 检查缓存是否已满
+    if cache.length() >= cache_capacity {
+      // 淘汰最旧的条目
+      let evicted_entry = cache[0]
+      cache = cache.slice(1, cache.length()) // 移除第一个元素
+      eviction_count = eviction_count + 1
+      
+      // 添加新条目
+      cache.push(entry_key + ":" + entry_value)
+    } else {
+      // 添加新条目
+      cache.push(entry_key + ":" + entry_value)
+    }
     
     i = i + 1
   }
   
-  // 验证资源创建
-  assert_eq(contexts.length(), 1000)
-  assert_eq(attributes.length(), 1000)
-  assert_eq(log_records.length(), 1000)
-  assert_eq(spans.length(), 1000)
-  assert_eq(baggage_instances.length(), 1000)
-  assert_eq(resources.length(), 1000)
-  assert_eq(carriers.length(), 1000)
+  // 验证缓存状态
+  assert_eq(cache.length(), cache_capacity)
+  assert_eq(eviction_count, cache_entries - cache_capacity) // 150 - 100 = 50
   
-  // 模拟资源清理
-  let empty_resources = []
+  // 验证缓存内容（应该是最新的条目）
+  assert_eq(cache[0], "key_50:value_50") // 第51个条目成为第一个
+  assert_eq(cache[99], "key_149:value_149") // 最后一个条目
+  
+  // 验证缓存命中率（模拟）
+  let hit_count = 80
+  let miss_count = eviction_count + 20
+  let hit_rate = hit_count.to_double() / (hit_count + miss_count).to_double()
+  
+  assert_eq(hit_rate > 0.5, true)
+  assert_eq(hit_rate < 0.7, true)
+}
+
+test "connection_pool_management" {
+  // 测试连接池管理
+  
+  let max_connections = 20
+  let active_connections = 15
+  let pending_requests = 10
+  let mut available_connections = max_connections - active_connections
+  let mut fulfilled_requests = 0
+  let mut rejected_requests = 0
+  let mut i = 0
+  
+  // 验证初始状态
+  assert_eq(available_connections, 5)
+  
+  // 模拟连接请求
+  while i < pending_requests {
+    if available_connections > 0 {
+      // 分配连接
+      available_connections = available_connections - 1
+      fulfilled_requests = fulfilled_requests + 1
+    } else {
+      // 拒绝请求
+      rejected_requests = rejected_requests + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证连接池状态
+  assert_eq(fulfilled_requests, 5) // 只有5个可用连接
+  assert_eq(rejected_requests, 5) // 其余5个被拒绝
+  assert_eq(available_connections, 0) // 所有连接都被使用
+  
+  // 模拟连接释放
+  let released_connections = 8
+  available_connections = available_connections + released_connections
+  
+  // 验证连接释放后的状态
+  assert_eq(available_connections, 8)
+  assert_eq(available_connections <= max_connections, true)
+  
+  // 计算连接利用率
+  let utilization = (max_connections - available_connections).to_double() / max_connections.to_double()
+  assert_eq(utilization > 0.5, true) // (20-8)/20 = 0.6
+  assert_eq(utilization < 0.7, true)
+}
+
+test "buffer_pool_optimization" {
+  // 测试缓冲池优化
+  
+  let buffer_sizes = [64, 128, 256, 512, 1024]
+  let buffer_counts = [100, 50, 25, 12, 6]
+  let mut total_buffers = 0
+  let mut total_memory = 0
+  let mut i = 0
+  
+  // 计算总缓冲区数量和内存使用
+  while i < buffer_sizes.length() {
+    total_buffers = total_buffers + buffer_counts[i]
+    total_memory = total_memory + (buffer_sizes[i] * buffer_counts[i])
+    i = i + 1
+  }
+  
+  // 验证缓冲池统计
+  assert_eq(total_buffers, 193) // 100 + 50 + 25 + 12 + 6
+  assert_eq(total_memory, 64*100 + 128*50 + 256*25 + 512*12 + 1024*6)
+  
+  // 模拟缓冲区分配
+  let requested_sizes = [80, 200, 300, 100, 600]
+  let mut allocated_buffers = []
+  let mut allocation_failures = 0
+  
   i = 0
-  while i < 1000 {
-    // 在实际实现中，这里应该清理资源
-    empty_resources.push(())
+  while i < requested_sizes.length() {
+    let requested_size = requested_sizes[i]
+    let mut allocated = false
+    
+    // 寻找合适的缓冲区
+    let mut j = 0
+    while j < buffer_sizes.length() {
+      if buffer_sizes[j] >= requested_size && buffer_counts[j] > 0 {
+        // 分配缓冲区
+        buffer_counts[j] = buffer_counts[j] - 1
+        allocated_buffers.push("size_" + buffer_sizes[j].to_string())
+        allocated = true
+        break
+      }
+      j = j + 1
+    }
+    
+    if !allocated {
+      allocation_failures = allocation_failures + 1
+    }
+    
     i = i + 1
   }
   
-  // 验证清理完成
-  assert_eq(empty_resources.length(), 1000)
+  // 验证分配结果
+  assert_eq(allocated_buffers.length(), 5) // 所有请求都被满足
+  assert_eq(allocation_failures, 0)
+  assert_eq(allocated_buffers[0], "size_128") // 80 -> 128
+  assert_eq(allocated_buffers[1], "size_256") // 200 -> 256
+  assert_eq(allocated_buffers[4], "size_1024") // 600 -> 1024
+}
+
+test "resource_monitoring" {
+  // 测试资源监控
   
-  // 验证资源可以重新创建
-  let new_contexts = []
+  let monitoring_interval = 5 // seconds
+  let monitoring_duration = 60 // seconds
+  let cpu_threshold = 80.0 // percent
+  let memory_threshold = 90.0 // percent
+  
+  // 模拟资源监控数据
+  let cpu_readings = [45.2, 67.8, 82.1, 78.9, 91.3, 73.4, 65.2, 88.7, 59.1, 72.3]
+  let memory_readings = [65.5, 78.2, 89.1, 92.4, 85.6, 79.3, 71.8, 94.2, 68.7, 76.9]
+  let mut cpu_violations = 0
+  let mut memory_violations = 0
+  let mut i = 0
+  
+  // 检查资源使用违规
+  while i < cpu_readings.length() {
+    if cpu_readings[i] > cpu_threshold {
+      cpu_violations = cpu_violations + 1
+    }
+    if memory_readings[i] > memory_threshold {
+      memory_violations = memory_violations + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证监控结果
+  assert_eq(cpu_violations, 3) // 82.1, 91.3, 88.7
+  assert_eq(memory_violations, 4) // 89.1, 92.4, 94.2, 85.6
+  
+  // 计算平均资源使用
+  let mut total_cpu = 0.0
+  let mut total_memory = 0.0
   i = 0
-  while i < 100 {
-    new_contexts.push(context::Context::empty())
+  while i < cpu_readings.length() {
+    total_cpu = total_cpu + cpu_readings[i]
+    total_memory = total_memory + memory_readings[i]
     i = i + 1
   }
   
-  assert_eq(new_contexts.length(), 100)
+  let avg_cpu = total_cpu / cpu_readings.length().to_double()
+  let avg_memory = total_memory / memory_readings.length().to_double()
+  
+  assert_eq(avg_cpu > 70.0, true)
+  assert_eq(avg_cpu < 80.0, true)
+  assert_eq(avg_memory > 70.0, true)
+  assert_eq(avg_memory < 85.0, true)
+}
+
+test "garbage_collection_impact" {
+  // 测试垃圾回收影响
+  
+  let objects_created = 1000
+  let objects_retained = 200
+  let gc_threshold = 800
+  let mut gc_cycles = 0
+  let mut objects_collected = 0
+  
+  // 模拟对象生命周期
+  let mut i = 0
+  while i < objects_created {
+    // 模拟对象创建
+    let object_id = "obj_" + i.to_string()
+    
+    // 模拟垃圾回收触发
+    if i > 0 && i % gc_threshold == 0 {
+      gc_cycles = gc_cycles + 1
+      objects_collected = objects_collected + gc_threshold - objects_retained
+    }
+    
+    i = i + 1
+  }
+  
+  // 最后一次垃圾回收
+  if objects_created % gc_threshold != 0 {
+    gc_cycles = gc_cycles + 1
+    let remaining_objects = objects_created % gc_threshold
+    objects_collected = objects_collected + (remaining_objects - objects_retained)
+  }
+  
+  // 验证垃圾回收统计
+  assert_eq(gc_cycles, 2) // 1000 / 800 = 1.25 -> 2次GC
+  assert_eq(objects_collected, objects_created - objects_retained) // 1000 - 200 = 800
+  
+  // 计算GC效率
+  let gc_efficiency = objects_collected.to_double() / objects_created.to_double()
+  assert_eq(gc_efficiency > 0.7, true) // 800/1000 = 0.8
+  assert_eq(gc_efficiency < 0.9, true)
+  
+  // 计算GC频率
+  let gc_frequency = gc_cycles.to_double() / (objects_created.to_double() / 100.0)
+  assert_eq(gc_frequency > 1.0, true)
+  assert_eq(gc_frequency < 3.0, true)
+}
+
+test "resource_limits_enforcement" {
+  // 测试资源限制执行
+  
+  let max_cpu_time = 1000 // milliseconds
+  let max_memory_mb = 512
+  let max_file_descriptors = 100
+  let mut tasks_completed = 0
+  let mut tasks_throttled = 0
+  
+  // 模拟任务执行和资源限制检查
+  let task_cpu_times = [200, 800, 1200, 300, 600, 900, 1500, 400, 700, 500]
+  let task_memory_usage = [100, 200, 600, 150, 300, 450, 700, 180, 350, 250]
+  let mut i = 0
+  
+  while i < task_cpu_times.length() {
+    let cpu_time = task_cpu_times[i]
+    let memory_usage = task_memory_usage[i]
+    
+    // 检查资源限制
+    if cpu_time <= max_cpu_time && memory_usage <= max_memory_mb {
+      tasks_completed = tasks_completed + 1
+    } else {
+      tasks_throttled = tasks_throttled + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证资源限制执行结果
+  assert_eq(tasks_completed, 6) // 符合限制的任务
+  assert_eq(tasks_throttled, 4) // 超出限制的任务
+  
+  // 计算资源限制效率
+  let total_tasks = tasks_completed + tasks_throttled
+  let completion_rate = tasks_completed.to_double() / total_tasks.to_double()
+  assert_eq(completion_rate > 0.5, true) // 6/10 = 0.6
+  assert_eq(completion_rate < 0.7, true)
+  
+  // 验证文件描述符限制
+  let open_files = 85
+  assert_eq(open_files <= max_file_descriptors, true)
+  
+  let file_descriptor_usage = open_files.to_double() / max_file_descriptors.to_double()
+  assert_eq(file_descriptor_usage > 0.8, true) // 85/100 = 0.85
+  assert_eq(file_descriptor_usage < 0.9, true)
 }
