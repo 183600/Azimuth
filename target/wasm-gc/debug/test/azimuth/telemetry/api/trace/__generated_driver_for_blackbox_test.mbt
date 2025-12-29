@@ -67,9 +67,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_74726163655f656467655f63617365735f746573742e6d6274_1, ["trace_span_lifecycle_edge_cases"]),
   },
   "trace_comprehensive_test.mbt": {
-    0: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_0, ["span_kinds"]),
-    1: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_1, ["status_codes"]),
-    2: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_2, ["span_context_creation"]),
+    0: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_0, ["span_context_creation_and_properties"]),
+    1: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_1, ["span_creation_with_all_fields"]),
+    2: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_2, ["span_kinds_enumeration"]),
+    3: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_3, ["span_status_codes"]),
+    4: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_4, ["span_event_and_link_creation"]),
+    5: (__test_74726163655f636f6d70726568656e736976655f746573742e6d6274_5, ["noop_tracer_provider_functionality"]),
   },
   "trace_boundary_test.mbt": {
     0: (__test_74726163655f626f756e646172795f746573742e6d6274_0, ["span_context_validation"]),
@@ -87,6 +90,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_74726163655f62617369635f746573742e6d6274_8, ["span_status_and_lifecycle"]),
   },
   "trace.mbt": {
+  },
+  "span_performance_test.mbt": {
+    0: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_0, ["span_creation_performance"]),
+    1: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_1, ["span_with_complex_attributes_performance"]),
+    2: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_2, ["span_context_creation_performance"]),
+    3: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_3, ["span_event_creation_performance"]),
+    4: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_4, ["span_link_creation_performance"]),
+    5: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_5, ["span_with_all_components_performance"]),
+    6: (__test_7370616e5f706572666f726d616e63655f746573742e6d6274_6, ["span_memory_allocation_efficiency"]),
   },
   "span_lifecycle_test.mbt": {
     0: (__test_7370616e5f6c6966656379636c655f746573742e6d6274_0, ["span_lifecycle_and_operations"]),

@@ -1,0 +1,49 @@
+{
+  "packages": [
+    {
+      "root": "azimuth/telemetry",
+      "rel": "",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/telemetry.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth/azimuth.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth/telemetry",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth/telemetry/telemetry.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth/telemetry/api/common",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth/telemetry/api/common/common.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth/telemetry/api/context",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth/telemetry/api/context/context.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth/telemetry/api/logs",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth/telemetry/api/logs/logs.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth/telemetry/api/metrics",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth/telemetry/api/metrics/metrics.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth/telemetry/api/propagation",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth/telemetry/api/propagation/propagation.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth/telemetry/api/trace",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth/telemetry/api/trace/trace.mi"
+    }
+  ]
+}
