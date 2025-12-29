@@ -208,6 +208,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_7, ["large_scale_resource_management"]),
     8: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_8, ["memory_efficiency_test"]),
   },
+  "resource_limit_test.mbt": {
+    0: (__test_7265736f757263655f6c696d69745f746573742e6d6274_0, ["memory_usage_limits"]),
+    1: (__test_7265736f757263655f6c696d69745f746573742e6d6274_1, ["cpu_usage_throttling"]),
+    2: (__test_7265736f757263655f6c696d69745f746573742e6d6274_2, ["disk_space_management"]),
+    3: (__test_7265736f757263655f6c696d69745f746573742e6d6274_3, ["connection_pool_limits"]),
+  },
   "resource_lifecycle_test.mbt": {
     0: (__test_7265736f757263655f6c6966656379636c655f746573742e6d6274_0, ["resource_lifecycle_creation"]),
     1: (__test_7265736f757263655f6c6966656379636c655f746573742e6d6274_1, ["resource_lifecycle_usage"]),
@@ -295,6 +301,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_6e6574776f726b5f706172746974696f6e5f746573742e6d6274_1, ["circuit_breaker_pattern"]),
     2: (__test_6e6574776f726b5f706172746974696f6e5f746573742e6d6274_2, ["exponential_backoff_retry"]),
     3: (__test_6e6574776f726b5f706172746974696f6e5f746573742e6d6274_3, ["graceful_degradation"]),
+  },
+  "multi_tenant_isolation_test.mbt": {
+    0: (__test_6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_0, ["tenant_data_isolation"]),
+    1: (__test_6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_1, ["resource_quota_enforcement"]),
+    2: (__test_6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_2, ["tenant_performance_isolation"]),
+    3: (__test_6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_3, ["tenant_billing_and_metering"]),
   },
   "memory_usage_test.mbt": {
     0: (__test_6d656d6f72795f75736167655f746573742e6d6274_0, ["memory_usage_under_load"]),
