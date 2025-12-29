@@ -1,0 +1,21 @@
+{
+  "name": "feather/telemetry/sdk/trace",
+  "import": [
+    {
+      "path": "feather/telemetry/api/common",
+      "alias": "common"
+    },
+    {
+      "path": "feather/telemetry/api/context",
+      "alias": "context"
+    },
+    {
+      "path": "feather/telemetry/api/trace",
+      "alias": "trace"
+    },
+    {
+      "path": "feather/telemetry/api/propagation",
+      "alias": "propagation"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "import": [
+    {
+      "path": "telemetry/api/common",
+      "alias": "telemetry_api_common"
+    },
+    {
+      "path": "telemetry/api/context", 
+      "alias": "telemetry_api_context"
+    },
+    {
+      "path": "telemetry/api/trace",
+      "alias": "telemetry_api_trace"
+    },
+    {
+      "path": "telemetry/api/propagation",
+      "alias": "telemetry_api_propagation"
+    },
+    {
+      "path": "telemetry/sdk/trace",
+      "alias": "telemetry_sdk_trace"
+    },
+    {
+      "path": "telemetry/sdk/exporter/console",
+      "alias": "telemetry_sdk_exporter_console"
+    }
+  ]
+}
