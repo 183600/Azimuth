@@ -1,828 +1,610 @@
-// 实时监控集成测试 - 遥测系统与各种监控平台的集成测试
+// 遥测数据实时监控测试用例
 
-test "realtime_monitoring_prometheus_integration" {
-  // 测试与Prometheus监控系统的集成
+test "telemetry_realtime_metrics_collection" {
+  // 测试遥测实时指标收集
   
-  struct PrometheusMetric {
-    name : String
-    metric_type : String  // counter, gauge, histogram, summary
-    help : String
-    samples : Array[PrometheusSample]
-    timestamp : Int64
+  let monitoring_window_ms = 5000L // 5秒监控窗口
+  let metrics_collection_interval = 1000L // 1秒收集间隔
+  let simulation_duration = 10000L // 10秒模拟
+  
+  let realtime_metrics = {
+    "request_count": 0,
+    "error_count": 0,
+    "response_time_total": 0L,
+    "active_spans": 0,
+    "throughput_samples": [],
+    "error_rate_samples": [],
+    "latency_samples": []
   }
   
-  struct PrometheusSample {
-    labels : Array[(String, String)]
-    value : Double
-    timestamp : Int64
-  }
+  // 模拟实时数据流
+  let current_time = 1634567890123L
+  let end_time = current_time + simulation_duration
   
-  struct PrometheusConfig {
-    endpoint : String
-    job_name : String
-    scrape_interval_seconds : Int
-    metrics_path : String
-    honor_labels : Bool
-    params : Array[(String, String)]
-  }
-  
-  // 配置Prometheus集成
-  let prometheus_config = {
-    endpoint: "http://prometheus-server:9090",
-    job_name: "telemetry-exporter",
-    scrape_interval_seconds: 15,
-    metrics_path: "/metrics",
-    honor_labels: true,
-    params: [("format", "prometheus")]
-  }
-  
-  // 生成测试指标数据
-  let test_metrics = [
-    {
-      name: "telemetry_spans_created_total",
-      metric_type: "counter",
-      help: "Total number of spans created",
-      samples: [
-        { labels: [("service", "api-gateway"), ("status", "success")], value: 1000.0, timestamp: 1609459200000L },
-        { labels: [("service", "user-service"), ("status", "success")], value: 800.0, timestamp: 1609459200000L },
-        { labels: [("service", "payment-service"), ("status", "error")], value: 50.0, timestamp: 1609459200000L }
-      ],
-      timestamp: 1609459200000L
-    },
-    {
-      name: "telemetry_request_duration_seconds",
-      metric_type: "histogram",
-      help: "Request duration in seconds",
-      samples: [
-        { labels: [("service", "api-gateway"), ("le", "0.1")], value: 800.0, timestamp: 1609459200000L },
-        { labels: [("service", "api-gateway"), ("le", "0.5")], value: 950.0, timestamp: 1609459200000L },
-        { labels: [("service", "api-gateway"), ("le", "+Inf")], value: 1000.0, timestamp: 1609459200000L },
-        { labels: [("service", "api-gateway"), ("quantile", "0.95")], value: 0.35, timestamp: 1609459200000L }
-      ],
-      timestamp: 1609459200000L
-    },
-    {
-      name: "telemetry_active_spans",
-      metric_type: "gauge",
-      help: "Number of currently active spans",
-      samples: [
-        { labels: [("service", "order-service")], value: 25.0, timestamp: 1609459200000L },
-        { labels: [("service", "inventory-service")], value: 15.0, timestamp: 1609459200000L }
-      ],
-      timestamp: 1609459200000L
-    }
-  ]
-  
-  // 测试Prometheus指标导出
-  let export_result = test_prometheus_export(prometheus_config, test_metrics)
-  
-  // 验证导出成功
-  assert_eq(export_result.export_successful, true)
-  
-  // 验证指标格式正确
-  assert_eq(export_result.format_valid, true)
-  
-  // 验证所有指标都被导出
-  assert_eq(export_result.metrics_exported >= test_metrics.length(), true)
-  
-  // 验证样本数量正确
-  let total_samples = test_metrics.map(fn(m) { m.samples.length() }).reduce(fn(acc, x) { acc + x }, 0)
-  assert_eq(export_result.samples_exported >= total_samples * 0.95, true)
-  
-  // 测试Prometheus查询集成
-  let prometheus_queries = [
-    {
-      query_name: "rate_of_spans_creation",
-      query: "rate(telemetry_spans_created_total[5m])",
-      expected_result_type: "vector"
-    },
-    {
-      query_name: "95th_percentile_latency",
-      query: "histogram_quantile(0.95, telemetry_request_duration_seconds_bucket)",
-      expected_result_type: "vector"
-    },
-    {
-      query_name: "total_active_spans",
-      query: "sum(telemetry_active_spans)",
-      expected_result_type: "scalar"
-    }
-  ]
-  
-  for query in prometheus_queries {
-    let query_result = test_prometheus_query(prometheus_config, query)
+  while current_time < end_time {
+    // 模拟请求到达
+    let requests_per_second = 50 + (current_time % 3000) / 100 // 50-80请求/秒
+    let error_rate = 0.02 + (current_time % 5000) / 50000.0 // 2%-12%错误率
     
-    // 验证查询执行成功
-    assert_eq(query_result.execution_successful, true)
-    
-    // 验证结果类型正确
-    assert_eq(query_result.result_type, query.expected_result_type)
-    
-    // 验证查询性能
-    assert_eq(query_result.execution_time_ms <= 1000, true)
-    
-    // 验证数据质量
-    assert_eq(query_result.data_quality_score >= 0.95, true)
-  }
-  
-  // 测试Prometheus告警规则集成
-  let alert_rules = [
-    {
-      rule_name: "HighErrorRate",
-      expression: "rate(telemetry_spans_created_total{status=\"error\"}[5m]) / rate(telemetry_spans_created_total[5m]) > 0.05",
-      severity: "warning",
-      for_duration: "2m"
-    },
-    {
-      rule_name: "HighLatency",
-      expression: "histogram_quantile(0.95, telemetry_request_duration_seconds_bucket) > 1.0",
-      severity: "critical", 
-      for_duration: "1m"
-    }
-  ]
-  
-  for rule in alert_rules {
-    let alert_result = test_prometheus_alert(prometheus_config, rule)
-    
-    // 验证告警规则创建成功
-    assert_eq(alert_result.rule_created, true)
-    
-    // 验证告警规则语法正确
-    assert_eq(alert_result.syntax_valid, true)
-    
-    // 验证告警触发测试
-    assert_eq(alert_result.trigger_test_successful, true)
-  }
-}
-
-test "realtime_monitoring_grafana_integration" {
-  // 测试与Grafana可视化平台的集成
-  
-  struct GrafanaDashboard {
-    uid : String
-    title : String
-    tags : Array[String]
-    panels : Array[GrafanaPanel]
-    time_range : (String, String)
-    refresh_interval : String
-  }
-  
-  struct GrafanaPanel {
-    id : Int
-    title : String
-    type : String
-    targets : Array[GrafanaTarget]
-    grid_pos : (Int, Int, Int, Int)  // x, y, w, h
-  }
-  
-  struct GrafanaTarget {
-    ref_id : String
-    expr : String
-    legend_format : String
-    interval : String
-  }
-  
-  struct GrafanaConfig {
-    endpoint : String
-    api_key : String
-    data_source_name : String
-    organization : String
-  }
-  
-  // 配置Grafana集成
-  let grafana_config = {
-    endpoint: "http://grafana-server:3000",
-    api_key: "eyJrIjoi...",
-    data_source_name: "Prometheus",
-    organization: "telemetry-team"
-  }
-  
-  // 创建测试仪表板
-  let test_dashboard = {
-    uid: "telemetry-overview",
-    title: "Telemetry System Overview",
-    tags: ["telemetry", "monitoring", "overview"],
-    panels: [
-      {
-        id: 1,
-        title: "Request Rate",
-        type: "graph",
-        targets: [
-          {
-            ref_id: "A",
-            expr: "rate(telemetry_spans_created_total[5m])",
-            legend_format: "{{service}}",
-            interval: "15s"
-          }
-        ],
-        grid_pos: (0, 0, 12, 6)
-      },
-      {
-        id: 2,
-        title: "Response Time Percentiles",
-        type: "graph",
-        targets: [
-          {
-            ref_id: "A",
-            expr: "histogram_quantile(0.50, telemetry_request_duration_seconds_bucket)",
-            legend_format: "50th percentile",
-            interval: "15s"
-          },
-          {
-            ref_id: "B",
-            expr: "histogram_quantile(0.95, telemetry_request_duration_seconds_bucket)",
-            legend_format: "95th percentile",
-            interval: "15s"
-          }
-        ],
-        grid_pos: (0, 12, 12, 6)
-      },
-      {
-        id: 3,
-        title: "Error Rate",
-        type: "singlestat",
-        targets: [
-          {
-            ref_id: "A",
-            expr: "rate(telemetry_spans_created_total{status=\"error\"}[5m]) / rate(telemetry_spans_created_total[5m]) * 100",
-            legend_format: "Error Rate %",
-            interval: "15s"
-          }
-        ],
-        grid_pos: (6, 0, 6, 6)
+    for i in 0..requests_per_second {
+      let response_time = 50L + (current_time % 2000) // 50-2050ms响应时间
+      let is_error = (i * 7) % 100 < (error_rate * 100)
+      
+      realtime_metrics["request_count"] = realtime_metrics["request_count"] + 1
+      realtime_metrics["response_time_total"] = realtime_metrics["response_time_total"] + response_time
+      
+      if is_error {
+        realtime_metrics["error_count"] = realtime_metrics["error_count"] + 1
       }
-    ],
-    time_range: ("now-1h", "now"),
-    refresh_interval: "15s"
-  }
-  
-  // 测试Grafana仪表板创建
-  let dashboard_result = test_grafana_dashboard_creation(grafana_config, test_dashboard)
-  
-  // 验证仪表板创建成功
-  assert_eq(dashboard_result.creation_successful, true)
-  
-  // 验证仪表板配置正确
-  assert_eq(dashboard_result.config_valid, true)
-  
-  // 验证所有面板都被创建
-  assert_eq(dashboard_result.panels_created >= test_dashboard.panels.length(), true)
-  
-  // 验证数据源连接正常
-  assert_eq(dashboard_result.data_source_connected, true)
-  
-  // 测试Grafana查询执行
-  for panel in test_dashboard.panels {
-    for target in panel.targets {
-      let query_result = test_grafana_query_execution(grafana_config, target)
       
-      // 验证查询执行成功
-      assert_eq(query_result.execution_successful, true)
-      
-      // 验证返回数据格式正确
-      assert_eq(query_result.data_format_valid, true)
-      
-      // 验证查询性能
-      assert_eq(query_result.execution_time_ms <= 2000, true)
+      realtime_metrics["latency_samples"].push(response_time)
     }
-  }
-  
-  // 测试Grafana告警集成
-  let grafana_alerts = [
-    {
-      panel_id: 3,
-      alert_name: "HighErrorRate",
-      conditions: [
-        {
-          query_ref_id: "A",
-          operator: "gt",
-          value: 5.0
+    
+    // 模拟span生命周期
+    let new_spans = 10 + (current_time % 2000) / 200 // 10-19新span
+    let completed_spans = 8 + (current_time % 1800) / 225 // 8-15完成span
+    realtime_metrics["active_spans"] = realtime_metrics["active_spans"] + new_spans - completed_spans
+    realtime_metrics["active_spans"] = @max(0, realtime_metrics["active_spans"])
+    
+    // 每秒收集指标样本
+    if current_time % metrics_collection_interval == 0 {
+      let current_throughput = requests_per_second
+      let current_error_rate = if realtime_metrics["request_count"] > 0 {
+        realtime_metrics["error_count"].to_float() / realtime_metrics["request_count"].to_float()
+      } else { 0.0 }
+      let avg_latency = if realtime_metrics["latency_samples"].length() > 0 {
+        realtime_metrics["response_time_total"] / realtime_metrics["latency_samples"].length()
+      } else { 0L }
+      
+      realtime_metrics["throughput_samples"].push(current_throughput)
+      realtime_metrics["error_rate_samples"].push(current_error_rate)
+      
+      // 清理旧样本以节省内存
+      if realtime_metrics["latency_samples"].length() > 1000 {
+        realtime_metrics["latency_samples"] = realtime_metrics["latency_samples"].slice(-500)
+        realtime_metrics["response_time_total"] = 0L
+        for sample in realtime_metrics["latency_samples"] {
+          realtime_metrics["response_time_total"] = realtime_metrics["response_time_total"] + sample
         }
-      ],
-      frequency: "60s",
-      for_duration: "2m"
-    }
-  ]
-  
-  for alert in grafana_alerts {
-    let alert_result = test_grafana_alert_configuration(grafana_config, alert)
-    
-    // 验证告警配置成功
-    assert_eq(alert_result.configuration_successful, true)
-    
-    // 验证告警条件正确
-    assert_eq(alert_result.conditions_valid, true)
-    
-    // 验证通知渠道配置
-    assert_eq(alert_result.notification_configured, true)
-  }
-}
-
-test "realtime_monitoring_alertmanager_integration" {
-  // 测试与Alertmanager告警管理系统的集成
-  
-  struct Alert {
-    name : String
-    status : String  // firing, resolved
-    severity : String
-    summary : String
-    description : String
-    labels : Array[(String, String)]
-    annotations : Array[(String, String)]
-    starts_at : Int64
-    ends_at : Int64?
-  }
-  
-  struct AlertmanagerConfig {
-    endpoint : String
-    api_version : String
-    receivers : Array[AlertReceiver]
-    route : AlertRoute
-    inhibit_rules : Array[InhibitRule]
-  }
-  
-  struct AlertReceiver {
-    name : String
-    type : String  // email, slack, webhook, pagerduty
-    settings : Array[(String, String)]
-  }
-  
-  struct AlertRoute {
-    receiver : String
-    group_by : Array[String]
-    group_wait : String
-    group_interval : String
-    repeat_interval : String
-  }
-  
-  struct InhibitRule {
-    source_match : Array[(String, String)]
-    target_match : Array[(String, String)]
-    equal : Array[String]
-  }
-  
-  // 配置Alertmanager集成
-  let alertmanager_config = {
-    endpoint: "http://alertmanager:9093",
-    api_version: "v2",
-    receivers: [
-      {
-        name: "email-alerts",
-        type: "email",
-        settings: [
-          ("to", "alerts@example.com"),
-          ("from", "telemetry@example.com"),
-          ("smtp_host", "smtp.example.com")
-        ]
-      },
-      {
-        name: "slack-alerts",
-        type: "slack",
-        settings: [
-          ("api_url", "https://hooks.slack.com/services/..."),
-          ("channel", "#telemetry-alerts"),
-          ("username", "Alertmanager")
-        ]
       }
-    ],
-    route: {
-      receiver: "email-alerts",
-      group_by: ["alertname", "cluster", "service"],
-      group_wait: "30s",
-      group_interval: "5m",
-      repeat_interval: "12h"
+    }
+    
+    current_time = current_time + 100L // 100ms时间步进
+  }
+  
+  // 验证实时指标收集结果
+  assert_eq(realtime_metrics["request_count"] > 0, true)
+  assert_eq(realtime_metrics["error_count"] >= 0, true)
+  assert_eq(realtime_metrics["response_time_total"] > 0L, true)
+  assert_eq(realtime_metrics["active_spans"] >= 0, true)
+  
+  // 验证指标样本收集
+  assert_eq(realtime_metrics["throughput_samples"].length() > 0, true)
+  assert_eq(realtime_metrics["error_rate_samples"].length() > 0, true)
+  assert_eq(realtime_metrics["latency_samples"].length() > 0, true)
+  
+  // 验证指标合理性
+  let total_error_rate = realtime_metrics["error_count"].to_float() / realtime_metrics["request_count"].to_float()
+  assert_eq(total_error_rate >= 0.0 && total_error_rate <= 1.0, true)
+  
+  let avg_response_time = realtime_metrics["response_time_total"] / realtime_metrics["latency_samples"].length()
+  assert_eq(avg_response_time >= 50L && avg_response_time <= 2100L, true)
+}
+
+test "telemetry_realtime_alert_detection" {
+  // 测试遥测实时告警检测
+  
+  let alert_thresholds = {
+    "error_rate": 0.05,        // 5%错误率阈值
+    "response_time_p95": 1000L, // 95%响应时间阈值
+    "throughput_drop": 0.3,    // 30%吞吐量下降阈值
+    "active_spans_max": 100    // 最大活跃span数
+  }
+  
+  let alert_conditions = {
+    "error_rate_high": false,
+    "response_time_high": false,
+    "throughput_dropped": false,
+    "active_spans_exceeded": false
+  }
+  
+  let alert_history = []
+  
+  // 模拟实时监控场景
+  let monitoring_scenarios = [
+    {
+      "name": "normal_operation",
+      "duration": 3000L,
+      "error_rate": 0.02,
+      "avg_response_time": 200L,
+      "throughput": 100,
+      "active_spans": 50
     },
-    inhibit_rules: [
-      {
-        source_match: [("severity", "critical")],
-        target_match: [("severity", "warning")],
-        equal: ["alertname", "service"]
+    {
+      "name": "error_spike",
+      "duration": 2000L,
+      "error_rate": 0.08,
+      "avg_response_time": 250L,
+      "throughput": 95,
+      "active_spans": 55
+    },
+    {
+      "name": "latency_increase",
+      "duration": 2000L,
+      "error_rate": 0.03,
+      "avg_response_time": 1200L,
+      "throughput": 90,
+      "active_spans": 60
+    },
+    {
+      "name": "throughput_drop",
+      "duration": 2000L,
+      "error_rate": 0.025,
+      "avg_response_time": 300L,
+      "throughput": 60,
+      "active_spans": 45
+    },
+    {
+      "name": "span_overload",
+      "duration": 1000L,
+      "error_rate": 0.04,
+      "avg_response_time": 400L,
+      "throughput": 80,
+      "active_spans": 120
+    }
+  ]
+  
+  let baseline_throughput = 100.0
+  let current_time = 1634567890123L
+  
+  for scenario in monitoring_scenarios {
+    let scenario_start = current_time
+    let scenario_end = current_time + scenario["duration"]
+    
+    while current_time < scenario_end {
+      // 检查告警条件
+      alert_conditions["error_rate_high"] = scenario["error_rate"] > alert_thresholds["error_rate"]
+      alert_conditions["response_time_high"] = scenario["avg_response_time"] > alert_thresholds["response_time_p95"]
+      alert_conditions["throughput_dropped"] = scenario["throughput"] < (baseline_throughput * (1.0 - alert_thresholds["throughput_drop"]))
+      alert_conditions["active_spans_exceeded"] = scenario["active_spans"] > alert_thresholds["active_spans_max"]
+      
+      // 检查是否有新的告警触发
+      let active_alerts = []
+      for (condition, is_triggered) in alert_conditions {
+        if is_triggered {
+          active_alerts.push(condition)
+        }
       }
-    ]
+      
+      // 记录告警事件
+      if active_alerts.length() > 0 {
+        let alert_event = {
+          "timestamp": current_time,
+          "scenario": scenario["name"],
+          "triggered_alerts": active_alerts,
+          "metrics": {
+            "error_rate": scenario["error_rate"],
+            "avg_response_time": scenario["avg_response_time"],
+            "throughput": scenario["throughput"],
+            "active_spans": scenario["active_spans"]
+          }
+        }
+        alert_history.push(alert_event)
+      }
+      
+      current_time = current_time + 500L // 500ms检查间隔
+    }
   }
   
-  // 生成测试告警
-  let test_alerts = [
+  // 验证告警检测结果
+  assert_eq(alert_history.length() > 0, true)
+  
+  // 验证特定场景的告警触发
+  let error_spike_alerts = 0
+  let latency_alerts = 0
+  let throughput_alerts = 0
+  let span_overload_alerts = 0
+  
+  for alert in alert_history {
+    if alert["scenario"] == "error_spike" && alert["triggered_alerts"].contains("error_rate_high") {
+      error_spike_alerts = error_spike_alerts + 1
+    }
+    if alert["scenario"] == "latency_increase" && alert["triggered_alerts"].contains("response_time_high") {
+      latency_alerts = latency_alerts + 1
+    }
+    if alert["scenario"] == "throughput_drop" && alert["triggered_alerts"].contains("throughput_dropped") {
+      throughput_alerts = throughput_alerts + 1
+    }
+    if alert["scenario"] == "span_overload" && alert["triggered_alerts"].contains("active_spans_exceeded") {
+      span_overload_alerts = span_overload_alerts + 1
+    }
+  }
+  
+  assert_eq(error_spike_alerts > 0, true)
+  assert_eq(latency_alerts > 0, true)
+  assert_eq(throughput_alerts > 0, true)
+  assert_eq(span_overload_alerts > 0, true)
+  
+  // 验证告警指标记录
+  for alert in alert_history {
+    assert_eq(alert["timestamp"] > 0L, true)
+    assert_eq(alert["scenario"].length() > 0, true)
+    assert_eq(alert["triggered_alerts"].length() > 0, true)
+    assert_eq(alert.contains_key("metrics"), true)
+  }
+}
+
+test "telemetry_realtime_dashboard_data" {
+  // 测试遥测实时仪表板数据
+  
+  let dashboard_update_interval = 2000L // 2秒更新间隔
+  let dashboard_data = {
+    "current_metrics": {
+      "requests_per_second": 0,
+      "error_rate": 0.0,
+      "avg_response_time": 0L,
+      "p95_response_time": 0L,
+      "active_connections": 0,
+      "cpu_usage": 0.0,
+      "memory_usage": 0.0
+    },
+    "historical_trends": {
+      "throughput_history": [],
+      "error_rate_history": [],
+      "latency_history": [],
+      "resource_usage_history": []
+    },
+    "service_health": {
+      "overall_status": "healthy",
+      "service_status_map": {},
+      "last_updated": 0L
+    },
+    "alerts": {
+      "active_alerts": [],
+      "alert_count": 0,
+      "severity_distribution": {"critical": 0, "warning": 0, "info": 0}
+    }
+  }
+  
+  let services = ["payment-service", "user-service", "order-service", "inventory-service"]
+  let current_time = 1634567890123L
+  let simulation_duration = 20000L // 20秒模拟
+  
+  // 初始化服务状态
+  for service in services {
+    dashboard_data["service_health"]["service_status_map"][service] = "healthy"
+  }
+  
+  while current_time < 1634567890123L + simulation_duration {
+    // 模拟实时指标更新
+    let time_factor = (current_time % 10000) / 10000.0 // 0-1的时间因子
+    
+    dashboard_data["current_metrics"]["requests_per_second"] = 80 + @int(time_factor * 40) // 80-120
+    dashboard_data["current_metrics"]["error_rate"] = 0.01 + time_factor * 0.04 // 1%-5%
+    dashboard_data["current_metrics"]["avg_response_time"] = 150L + @int(time_factor * 350L) // 150-500ms
+    dashboard_data["current_metrics"]["p95_response_time"] = 300L + @int(time_factor * 700L) // 300-1000ms
+    dashboard_data["current_metrics"]["active_connections"] = 200 + @int(time_factor * 100) // 200-300
+    dashboard_data["current_metrics"]["cpu_usage"] = 30.0 + time_factor * 40.0 // 30%-70%
+    dashboard_data["current_metrics"]["memory_usage"] = 40.0 + time_factor * 30.0 // 40%-70%
+    
+    // 更新历史趋势（保持最近10个数据点）
+    dashboard_data["historical_trends"]["throughput_history"].push(dashboard_data["current_metrics"]["requests_per_second"])
+    dashboard_data["historical_trends"]["error_rate_history"].push(dashboard_data["current_metrics"]["error_rate"])
+    dashboard_data["historical_trends"]["latency_history"].push(dashboard_data["current_metrics"]["avg_response_time"])
+    dashboard_data["historical_trends"]["resource_usage_history"].push(dashboard_data["current_metrics"]["cpu_usage"])
+    
+    // 限制历史数据长度
+    let max_history_length = 10
+    for trend_key in dashboard_data["historical_trends"].keys() {
+      let trend = dashboard_data["historical_trends"][trend_key]
+      if trend.length() > max_history_length {
+        dashboard_data["historical_trends"][trend_key] = trend.slice(-max_history_length)
+      }
+    }
+    
+    // 更新服务健康状态
+    let overall_health_score = 0.0
+    for service in services {
+      let service_health = 100.0 - (dashboard_data["current_metrics"]["error_rate"] * 100) - (dashboard_data["current_metrics"]["cpu_usage"] * 0.5)
+      service_health = @max(0.0, @min(100.0, service_health))
+      
+      let service_status = if service_health > 80 { "healthy" } else if service_health > 60 { "warning" } else { "critical" }
+      dashboard_data["service_health"]["service_status_map"][service] = service_status
+      
+      overall_health_score = overall_health_score + service_health
+    }
+    
+    overall_health_score = overall_health_score / services.length()
+    dashboard_data["service_health"]["overall_status"] = if overall_health_score > 80 { "healthy" } else if overall_health_score > 60 { "warning" } else { "critical" }
+    
+    // 生成告警
+    dashboard_data["alerts"]["active_alerts"] = []
+    let severity_counts = {"critical": 0, "warning": 0, "info": 0}
+    
+    if dashboard_data["current_metrics"]["error_rate"] > 0.03 {
+      dashboard_data["alerts"]["active_alerts"].push({
+        "type": "error_rate_high",
+        "severity": "warning",
+        "message": "Error rate is " + (dashboard_data["current_metrics"]["error_rate"] * 100).to_string() + "%"
+      })
+      severity_counts["warning"] = severity_counts["warning"] + 1
+    }
+    
+    if dashboard_data["current_metrics"]["p95_response_time"] > 800L {
+      dashboard_data["alerts"]["active_alerts"].push({
+        "type": "response_time_high",
+        "severity": "critical",
+        "message": "P95 response time is " + dashboard_data["current_metrics"]["p95_response_time"].to_string() + "ms"
+      })
+      severity_counts["critical"] = severity_counts["critical"] + 1
+    }
+    
+    if dashboard_data["current_metrics"]["cpu_usage"] > 60.0 {
+      dashboard_data["alerts"]["active_alerts"].push({
+        "type": "cpu_usage_high",
+        "severity": "warning",
+        "message": "CPU usage is " + dashboard_data["current_metrics"]["cpu_usage"].to_string() + "%"
+      })
+      severity_counts["warning"] = severity_counts["warning"] + 1
+    }
+    
+    dashboard_data["alerts"]["alert_count"] = dashboard_data["alerts"]["active_alerts"].length()
+    dashboard_data["alerts"]["severity_distribution"] = severity_counts
+    dashboard_data["service_health"]["last_updated"] = current_time
+    
+    current_time = current_time + dashboard_update_interval
+  }
+  
+  // 验证仪表板数据完整性
+  assert_eq(dashboard_data["current_metrics"]["requests_per_second"] > 0, true)
+  assert_eq(dashboard_data["current_metrics"]["error_rate"] >= 0.0, true)
+  assert_eq(dashboard_data["current_metrics"]["avg_response_time"] > 0L, true)
+  assert_eq(dashboard_data["current_metrics"]["p95_response_time"] > 0L, true)
+  assert_eq(dashboard_data["current_metrics"]["active_connections"] > 0, true)
+  assert_eq(dashboard_data["current_metrics"]["cpu_usage"] > 0.0, true)
+  assert_eq(dashboard_data["current_metrics"]["memory_usage"] > 0.0, true)
+  
+  // 验证历史趋势数据
+  assert_eq(dashboard_data["historical_trends"]["throughput_history"].length() > 0, true)
+  assert_eq(dashboard_data["historical_trends"]["error_rate_history"].length() > 0, true)
+  assert_eq(dashboard_data["historical_trends"]["latency_history"].length() > 0, true)
+  assert_eq(dashboard_data["historical_trends"]["resource_usage_history"].length() > 0, true)
+  
+  // 验证历史数据长度限制
+  for trend_key in dashboard_data["historical_trends"].keys() {
+    let trend = dashboard_data["historical_trends"][trend_key]
+    assert_eq(trend.length() <= 10, true)
+  }
+  
+  // 验证服务健康状态
+  assert_eq(dashboard_data["service_health"]["overall_status"].length() > 0, true)
+  assert_eq(dashboard_data["service_health"]["service_status_map"].keys().length(), services.length())
+  assert_eq(dashboard_data["service_health"]["last_updated"] > 0L, true)
+  
+  // 验证告警数据
+  assert_eq(dashboard_data["alerts"]["alert_count"] >= 0, true)
+  assert_eq(dashboard_data["alerts"]["active_alerts"].length() == dashboard_data["alerts"]["alert_count"], true)
+  assert_eq(dashboard_data["alerts"]["severity_distribution"].contains_key("critical"), true)
+  assert_eq(dashboard_data["alerts"]["severity_distribution"].contains_key("warning"), true)
+  assert_eq(dashboard_data["alerts"]["severity_distribution"].contains_key("info"), true)
+}
+
+test "telemetry_realtime_anomaly_detection" {
+  // 测试遥测实时异常检测
+  
+  let anomaly_detection_config = {
+    "statistical_window": 100,     // 统计窗口大小
+    "threshold_std_dev": 2.5,      // 标准差阈值
+    "trend_analysis_window": 20,   // 趋势分析窗口
+    "pattern_recognition_threshold": 0.8 // 模式识别阈值
+  }
+  
+  let anomaly_detector = {
+    "metrics_history": {
+      "response_time": [],
+      "throughput": [],
+      "error_rate": [],
+      "cpu_usage": []
+    },
+    "baseline_statistics": {
+      "response_time": {"mean": 0.0, "std_dev": 0.0},
+      "throughput": {"mean": 0.0, "std_dev": 0.0},
+      "error_rate": {"mean": 0.0, "std_dev": 0.0},
+      "cpu_usage": {"mean": 0.0, "std_dev": 0.0}
+    },
+    "detected_anomalies": [],
+    "anomaly_patterns": []
+  }
+  
+  // 生成正常基线数据
+  let baseline_duration = 5000L
+  let current_time = 1634567890123L
+  
+  while current_time < 1634567890123L + baseline_duration {
+    let normal_response_time = 200.0 + (@sin(current_time / 1000.0) * 50.0) // 150-250ms正常波动
+    let normal_throughput = 100.0 + (@cos(current_time / 2000.0) * 20.0) // 80-120正常波动
+    let normal_error_rate = 0.02 + (@sin(current_time / 3000.0) * 0.01) // 1%-3%正常波动
+    let normal_cpu_usage = 45.0 + (@cos(current_time / 1500.0) * 10.0) // 35%-55%正常波动
+    
+    anomaly_detector["metrics_history"]["response_time"].push(normal_response_time)
+    anomaly_detector["metrics_history"]["throughput"].push(normal_throughput)
+    anomaly_detector["metrics_history"]["error_rate"].push(normal_error_rate)
+    anomaly_detector["metrics_history"]["cpu_usage"].push(normal_cpu_usage)
+    
+    current_time = current_time + 100L
+  }
+  
+  // 计算基线统计
+  for metric_name in anomaly_detector["metrics_history"].keys() {
+    let values = anomaly_detector["metrics_history"][metric_name]
+    let sum = 0.0
+    for value in values {
+      sum = sum + value
+    }
+    let mean = sum / values.length()
+    
+    let variance = 0.0
+    for value in values {
+      variance = variance + (value - mean) * (value - mean)
+    }
+    variance = variance / values.length()
+    let std_dev = @sqrt(variance)
+    
+    anomaly_detector["baseline_statistics"][metric_name]["mean"] = mean
+    anomaly_detector["baseline_statistics"][metric_name]["std_dev"] = std_dev
+  }
+  
+  // 注入异常数据并检测
+  let anomaly_scenarios = [
     {
-      name: "HighErrorRate",
-      status: "firing",
-      severity: "critical",
-      summary: "High error rate detected",
-      description: "Error rate is 10% which is above the 5% threshold",
-      labels: [
-        ("alertname", "HighErrorRate"),
-        ("severity", "critical"),
-        ("service", "payment-service"),
-        ("instance", "payment-service-01")
-      ],
-      annotations: [
-        ("summary", "High error rate detected"),
-        ("description", "Error rate is 10% which is above the 5% threshold")
-      ],
-      starts_at: 1609459200000L,
-      ends_at: None
+      "name": "response_time_spike",
+      "duration": 2000L,
+      "response_time_multiplier": 3.0,
+      "throughput_multiplier": 1.0,
+      "error_rate_multiplier": 1.0,
+      "cpu_usage_multiplier": 1.0
     },
     {
-      name: "HighLatency",
-      status: "firing",
-      severity: "warning",
-      summary: "High latency detected",
-      description: "95th percentile latency is 1.5s which is above the 1s threshold",
-      labels: [
-        ("alertname", "HighLatency"),
-        ("severity", "warning"),
-        ("service", "user-service"),
-        ("instance", "user-service-02")
-      ],
-      annotations: [
-        ("summary", "High latency detected"),
-        ("description", "95th percentile latency is 1.5s which is above the 1s threshold")
-      ],
-      starts_at: 1609459250000L,
-      ends_at: None
+      "name": "throughput_drop",
+      "duration": 2000L,
+      "response_time_multiplier": 1.0,
+      "throughput_multiplier": 0.3,
+      "error_rate_multiplier": 1.0,
+      "cpu_usage_multiplier": 1.0
+    },
+    {
+      "name": "error_rate_spike",
+      "duration": 1500L,
+      "response_time_multiplier": 1.0,
+      "throughput_multiplier": 1.0,
+      "error_rate_multiplier": 5.0,
+      "cpu_usage_multiplier": 1.0
+    },
+    {
+      "name": "cpu_usage_spike",
+      "duration": 2500L,
+      "response_time_multiplier": 1.0,
+      "throughput_multiplier": 1.0,
+      "error_rate_multiplier": 1.0,
+      "cpu_usage_multiplier": 2.0
     }
   ]
   
-  // 测试告警发送
-  for alert in test_alerts {
-    let send_result = test_alert_sending(alertmanager_config, alert)
+  for scenario in anomaly_scenarios {
+    let scenario_start = current_time
+    let scenario_end = current_time + scenario["duration"]
     
-    // 验证告警发送成功
-    assert_eq(send_result.send_successful, true)
-    
-    // 验证告警格式正确
-    assert_eq(send_result.format_valid, true)
-    
-    // 验证路由正确
-    assert_eq(send_result.routed_correctly, true)
-    
-    // 验证接收器收到告警
-    assert_eq(send_result.received_by_receiver, true)
-  }
-  
-  // 测试告警分组和聚合
-  let grouped_alerts_result = test_alert_grouping(alertmanager_config, test_alerts)
-  
-  // 验证告警分组正确
-  assert_eq(grouped_alerts_result.grouping_successful, true)
-  
-  // 验证分组数量合理
-  assert_eq(grouped_alerts_result.group_count >= 1, true)
-  assert_eq(grouped_alerts_result.group_count <= test_alerts.length(), true)
-  
-  // 验证分组逻辑正确
-  assert_eq(grouped_alerts_result.grouping_logic_valid, true)
-  
-  // 测试告警抑制
-  let inhibition_result = test_alert_inhibition(alertmanager_config, test_alerts)
-  
-  // 验证抑制规则生效
-  assert_eq(inhibition_result.inhibition_working, true)
-  
-  // 验证抑制逻辑正确
-  assert_eq(inhibition_result.inhibition_logic_valid, true)
-  
-  // 验证关键告警不被抑制
-  assert_eq(inhibition_result.critical_alerts_preserved, true)
-  
-  // 测试告警恢复
-  let resolved_alerts = test_alerts.map(fn(alert) { 
-    { alert | status: "resolved", ends_at: Some(1609459300000L) }
-  })
-  
-  let recovery_result = test_alert_recovery(alertmanager_config, resolved_alerts)
-  
-  // 验证恢复告警发送成功
-  assert_eq(recovery_result.recovery_alerts_sent, true)
-  
-  // 验证恢复通知正确
-  assert_eq(recovery_result.recovery_notifications_sent, true)
-  
-  // 验证告警状态更新
-  assert_eq(recovery_result.alert_status_updated, true)
-}
-
-test "realtime_monitoring_custom_metrics_integration" {
-  // 测试自定义指标集成
-  
-  struct CustomMetric {
-    name : String
-    metric_type : String
-    unit : String
-    description : String
-    dimensions : Array[String]
-    aggregation_function : String
-  }
-  
-  struct CustomMetricConfig {
-    collection_interval_seconds : Int
-    batch_size : Int
-    export_format : String
-    custom_dimensions : Array[(String, String)]
-    metric_filters : Array[String]
-  }
-  
-  // 配置自定义指标
-  let custom_config = {
-    collection_interval_seconds: 10,
-    batch_size: 100,
-    export_format: "json",
-    custom_dimensions: [("environment", "production"), ("version", "1.2.3")],
-    metric_filters: ["telemetry.*", "business.*"]
-  }
-  
-  // 定义自定义指标
-  let custom_metrics = [
-    {
-      name: "telemetry_business_transactions_total",
-      metric_type: "counter",
-      unit: "transactions",
-      description: "Total number of business transactions",
-      dimensions: ["service", "transaction_type", "status"],
-      aggregation_function: "sum"
-    },
-    {
-      name: "telemetry_business_revenue_total",
-      metric_type: "counter",
-      unit: "dollars",
-      description: "Total revenue generated",
-      dimensions: ["service", "currency", "region"],
-      aggregation_function: "sum"
-    },
-    {
-      name: "telemetry_customer_satisfaction_score",
-      metric_type: "gauge",
-      unit: "score",
-      description: "Customer satisfaction score",
-      dimensions: ["service", "region", "customer_segment"],
-      aggregation_function: "average"
-    },
-    {
-      name: "telemetry_cache_hit_ratio",
-      metric_type: "gauge",
-      unit: "percent",
-      description: "Cache hit ratio",
-      dimensions: ["cache_type", "service", "region"],
-      aggregation_function: "average"
+    while current_time < scenario_end {
+      // 生成异常数据
+      let base_response_time = 200.0 + (@sin(current_time / 1000.0) * 50.0)
+      let base_throughput = 100.0 + (@cos(current_time / 2000.0) * 20.0)
+      let base_error_rate = 0.02 + (@sin(current_time / 3000.0) * 0.01)
+      let base_cpu_usage = 45.0 + (@cos(current_time / 1500.0) * 10.0)
+      
+      let anomalous_response_time = base_response_time * scenario["response_time_multiplier"]
+      let anomalous_throughput = base_throughput * scenario["throughput_multiplier"]
+      let anomalous_error_rate = base_error_rate * scenario["error_rate_multiplier"]
+      let anomalous_cpu_usage = base_cpu_usage * scenario["cpu_usage_multiplier"]
+      
+      // 异常检测逻辑
+      let detected_anomalies = []
+      
+      // 统计异常检测
+      let response_time_z = @abs(anomalous_response_time - anomaly_detector["baseline_statistics"]["response_time"]["mean"]) / anomaly_detector["baseline_statistics"]["response_time"]["std_dev"]
+      let throughput_z = @abs(anomalous_throughput - anomaly_detector["baseline_statistics"]["throughput"]["mean"]) / anomaly_detector["baseline_statistics"]["throughput"]["std_dev"]
+      let error_rate_z = @abs(anomalous_error_rate - anomaly_detector["baseline_statistics"]["error_rate"]["mean"]) / anomaly_detector["baseline_statistics"]["error_rate"]["std_dev"]
+      let cpu_usage_z = @abs(anomalous_cpu_usage - anomaly_detector["baseline_statistics"]["cpu_usage"]["mean"]) / anomaly_detector["baseline_statistics"]["cpu_usage"]["std_dev"]
+      
+      if response_time_z > anomaly_detection_config["threshold_std_dev"] {
+        detected_anomalies.push("response_time_anomaly")
+      }
+      if throughput_z > anomaly_detection_config["threshold_std_dev"] {
+        detected_anomalies.push("throughput_anomaly")
+      }
+      if error_rate_z > anomaly_detection_config["threshold_std_dev"] {
+        detected_anomalies.push("error_rate_anomaly")
+      }
+      if cpu_usage_z > anomaly_detection_config["threshold_std_dev"] {
+        detected_anomalies.push("cpu_usage_anomaly")
+      }
+      
+      // 记录检测到的异常
+      if detected_anomalies.length() > 0 {
+        let anomaly_record = {
+          "timestamp": current_time,
+          "scenario": scenario["name"],
+          "anomaly_types": detected_anomalies,
+          "metrics": {
+            "response_time": anomalous_response_time,
+            "throughput": anomalous_throughput,
+            "error_rate": anomalous_error_rate,
+            "cpu_usage": anomalous_cpu_usage
+          },
+          "z_scores": {
+            "response_time": response_time_z,
+            "throughput": throughput_z,
+            "error_rate": error_rate_z,
+            "cpu_usage": cpu_usage_z
+          }
+        }
+        anomaly_detector["detected_anomalies"].push(anomaly_record)
+      }
+      
+      // 更新指标历史（用于趋势检测）
+      anomaly_detector["metrics_history"]["response_time"].push(anomalous_response_time)
+      anomaly_detector["metrics_history"]["throughput"].push(anomalous_throughput)
+      anomaly_detector["metrics_history"]["error_rate"].push(anomalous_error_rate)
+      anomaly_detector["metrics_history"]["cpu_usage"].push(anomalous_cpu_usage)
+      
+      // 限制历史数据长度
+      let max_history = anomaly_detection_config["statistical_window"]
+      for metric_name in anomaly_detector["metrics_history"].keys() {
+        let history = anomaly_detector["metrics_history"][metric_name]
+        if history.length() > max_history {
+          anomaly_detector["metrics_history"][metric_name] = history.slice(-max_history)
+        }
+      }
+      
+      current_time = current_time + 100L
     }
-  ]
-  
-  // 测试自定义指标收集
-  let collection_result = test_custom_metric_collection(custom_config, custom_metrics)
-  
-  // 验证指标收集成功
-  assert_eq(collection_result.collection_successful, true)
-  
-  // 验证所有指标都被收集
-  assert_eq(collection_result.metrics_collected >= custom_metrics.length(), true)
-  
-  // 验证收集间隔正确
-  assert_eq(collection_result.collection_interval_accurate, true)
-  
-  // 验证维度正确添加
-  assert_eq(collection_result.dimensions_applied, true)
-  
-  // 测试自定义指标聚合
-  for metric in custom_metrics {
-    let aggregation_result = test_metric_aggregation(metric, custom_config)
-    
-    // 验证聚合函数正确应用
-    assert_eq(aggregation_result.aggregation_function_applied, true)
-    
-    // 验证聚合结果合理
-    assert_eq(aggregation_result.result_reasonable, true)
-    
-    // 验证聚合性能
-    assert_eq(aggregation_result.aggregation_time_ms <= 100, true)
   }
   
-  // 测试自定义指标导出
-  let export_formats = ["json", "prometheus", "influxdb"]
+  // 验证异常检测结果
+  assert_eq(anomaly_detector["detected_anomalies"].length() > 0, true)
   
-  for format in export_formats {
-    let export_result = test_custom_metric_export(custom_config, custom_metrics, format)
-    
-    // 验证导出成功
-    assert_eq(export_result.export_successful, true)
-    
-    // 验证格式正确
-    assert_eq(export_result.format_valid, true)
-    
-    // 验证数据完整性
-    assert_eq(export_result.data_integrity_preserved, true)
-    
-    // 验证导出性能
-    assert_eq(export_result.export_time_ms <= 500, true)
+  // 验证特定场景的异常检测
+  let scenario_anomaly_counts = {
+    "response_time_spike": 0,
+    "throughput_drop": 0,
+    "error_rate_spike": 0,
+    "cpu_usage_spike": 0
   }
   
-  // 测试自定义指标告警
-  let custom_alert_rules = [
-    {
-      metric_name: "telemetry_business_revenue_total",
-      condition: "rate > 1000",
-      severity: "warning",
-      message: "Revenue rate is below expected"
-    },
-    {
-      metric_name: "telemetry_customer_satisfaction_score",
-      condition: "value < 4.0",
-      severity: "critical",
-      message: "Customer satisfaction score is too low"
+  for anomaly in anomaly_detector["detected_anomalies"] {
+    let scenario = anomaly["scenario"]
+    if scenario_anomaly_counts.contains_key(scenario) {
+      scenario_anomaly_counts[scenario] = scenario_anomaly_counts[scenario] + 1
     }
-  ]
+  }
   
-  for rule in custom_alert_rules {
-    let alert_result = test_custom_metric_alert(rule, custom_config)
-    
-    // 验证告警规则创建成功
-    assert_eq(alert_result.rule_created, true)
-    
-    // 验证告警条件正确
-    assert_eq(alert_result.condition_valid, true)
-    
-    // 验证告警触发测试
-    assert_eq(alert_result.trigger_test_successful, true)
-  }
-}
-
-// 辅助函数实现（模拟）
-fn test_prometheus_export(config : PrometheusConfig, metrics : Array[PrometheusMetric]) -> { 
-  export_successful : Bool, 
-  format_valid : Bool, 
-  metrics_exported : Int, 
-  samples_exported : Int 
-} {
-  let total_samples = metrics.map(fn(m) { m.samples.length() }).reduce(fn(acc, x) { acc + x }, 0)
+  assert_eq(scenario_anomaly_counts["response_time_spike"] > 0, true)
+  assert_eq(scenario_anomaly_counts["throughput_drop"] > 0, true)
+  assert_eq(scenario_anomaly_counts["error_rate_spike"] > 0, true)
+  assert_eq(scenario_anomaly_counts["cpu_usage_spike"] > 0, true)
   
-  {
-    export_successful: true,
-    format_valid: true,
-    metrics_exported: metrics.length(),
-    samples_exported: (total_samples.to_double() * 0.98).to_int()
+  // 验证异常记录完整性
+  for anomaly in anomaly_detector["detected_anomalies"] {
+    assert_eq(anomaly["timestamp"] > 0L, true)
+    assert_eq(anomaly["scenario"].length() > 0, true)
+    assert_eq(anomaly["anomaly_types"].length() > 0, true)
+    assert_eq(anomaly.contains_key("metrics"), true)
+    assert_eq(anomaly.contains_key("z_scores"), true)
   }
-}
-
-fn test_prometheus_query(config : PrometheusConfig, query : { query_name : String, query : String, expected_result_type : String }) -> { 
-  execution_successful : Bool, 
-  result_type : String, 
-  data_quality_score : Double, 
-  execution_time_ms : Int 
-} {
-  {
-    execution_successful: true,
-    result_type: query.expected_result_type,
-    data_quality_score: 0.97,
-    execution_time_ms: 200
-  }
-}
-
-fn test_prometheus_alert(config : PrometheusConfig, rule : { rule_name : String, expression : String, severity : String, for_duration : String }) -> { 
-  rule_created : Bool, 
-  syntax_valid : Bool, 
-  trigger_test_successful : Bool 
-} {
-  {
-    rule_created: true,
-    syntax_valid: true,
-    trigger_test_successful: true
-  }
-}
-
-fn test_grafana_dashboard_creation(config : GrafanaConfig, dashboard : GrafanaDashboard) -> { 
-  creation_successful : Bool, 
-  config_valid : Bool, 
-  panels_created : Int, 
-  data_source_connected : Bool 
-} {
-  {
-    creation_successful: true,
-    config_valid: true,
-    panels_created: dashboard.panels.length(),
-    data_source_connected: true
-  }
-}
-
-fn test_grafana_query_execution(config : GrafanaConfig, target : GrafanaTarget) -> { 
-  execution_successful : Bool, 
-  data_format_valid : Bool, 
-  execution_time_ms : Int 
-} {
-  {
-    execution_successful: true,
-    data_format_valid: true,
-    execution_time_ms: 500
-  }
-}
-
-fn test_grafana_alert_configuration(config : GrafanaConfig, alert : { panel_id : Int, alert_name : String, conditions : Array[Array[String, String, Double]], frequency : String, for_duration : String }) -> { 
-  configuration_successful : Bool, 
-  conditions_valid : Bool, 
-  notification_configured : Bool 
-} {
-  {
-    configuration_successful: true,
-    conditions_valid: true,
-    notification_configured: true
-  }
-}
-
-fn test_alert_sending(config : AlertmanagerConfig, alert : Alert) -> { 
-  send_successful : Bool, 
-  format_valid : Bool, 
-  routed_correctly : Bool, 
-  received_by_receiver : Bool 
-} {
-  {
-    send_successful: true,
-    format_valid: true,
-    routed_correctly: true,
-    received_by_receiver: true
-  }
-}
-
-fn test_alert_grouping(config : AlertmanagerConfig, alerts : Array[Alert]) -> { 
-  grouping_successful : Bool, 
-  group_count : Int, 
-  grouping_logic_valid : Bool 
-} {
-  {
-    grouping_successful: true,
-    group_count: 2,
-    grouping_logic_valid: true
-  }
-}
-
-fn test_alert_inhibition(config : AlertmanagerConfig, alerts : Array[Alert]) -> { 
-  inhibition_working : Bool, 
-  inhibition_logic_valid : Bool, 
-  critical_alerts_preserved : Bool 
-} {
-  {
-    inhibition_working: true,
-    inhibition_logic_valid: true,
-    critical_alerts_preserved: true
-  }
-}
-
-fn test_alert_recovery(config : AlertmanagerConfig, resolved_alerts : Array[Alert]) -> { 
-  recovery_alerts_sent : Bool, 
-  recovery_notifications_sent : Bool, 
-  alert_status_updated : Bool 
-} {
-  {
-    recovery_alerts_sent: true,
-    recovery_notifications_sent: true,
-    alert_status_updated: true
-  }
-}
-
-fn test_custom_metric_collection(config : CustomMetricConfig, metrics : Array[CustomMetric]) -> { 
-  collection_successful : Bool, 
-  metrics_collected : Int, 
-  collection_interval_accurate : Bool, 
-  dimensions_applied : Bool 
-} {
-  {
-    collection_successful: true,
-    metrics_collected: metrics.length(),
-    collection_interval_accurate: true,
-    dimensions_applied: true
-  }
-}
-
-fn test_metric_aggregation(metric : CustomMetric, config : CustomMetricConfig) -> { 
-  aggregation_function_applied : Bool, 
-  result_reasonable : Bool, 
-  aggregation_time_ms : Int 
-} {
-  {
-    aggregation_function_applied: true,
-    result_reasonable: true,
-    aggregation_time_ms: 50
-  }
-}
-
-fn test_custom_metric_export(config : CustomMetricConfig, metrics : Array[CustomMetric], format : String) -> { 
-  export_successful : Bool, 
-  format_valid : Bool, 
-  data_integrity_preserved : Bool, 
-  export_time_ms : Int 
-} {
-  {
-    export_successful: true,
-    format_valid: true,
-    data_integrity_preserved: true,
-    export_time_ms: 200
-  }
-}
-
-fn test_custom_metric_alert(rule : { metric_name : String, condition : String, severity : String, message : String }, config : CustomMetricConfig) -> { 
-  rule_created : Bool, 
-  condition_valid : Bool, 
-  trigger_test_successful : Bool 
-} {
-  {
-    rule_created: true,
-    condition_valid: true,
-    trigger_test_successful: true
+  
+  // 验证基线统计计算正确
+  for metric_name in anomaly_detector["baseline_statistics"].keys() {
+    let stats = anomaly_detector["baseline_statistics"][metric_name]
+    assert_eq(stats["mean"] > 0.0, true)
+    assert_eq(stats["std_dev"] > 0.0, true)
   }
 }
