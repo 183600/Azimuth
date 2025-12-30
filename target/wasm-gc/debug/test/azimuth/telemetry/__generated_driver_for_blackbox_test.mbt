@@ -929,11 +929,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_6572726f725f626f756e646172795f636f6d70726568656e736976655f746573742e6d6274_6, ["propagation_error_boundary"]),
   },
   "end_to_end_workflow_test.mbt": {
-    0: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_0, ["complete_telemetry_pipeline"]),
-    1: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_1, ["distributed_tracing_workflow"]),
-    2: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_2, ["metrics_aggregation_workflow"]),
-    3: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_3, ["log_correlation_workflow"]),
-    4: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_4, ["telemetry_quality_assurance"]),
+    0: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_0, ["complete telemetry lifecycle"]),
+    1: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_1, ["cross-service distributed tracing"]),
+    2: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_2, ["telemetry data pipeline"]),
+    3: (__test_656e645f746f5f656e645f776f726b666c6f775f746573742e6d6274_3, ["error handling in workflow"]),
   },
   "end_to_end_integration_test.mbt": {
     0: (__test_656e645f746f5f656e645f696e746567726174696f6e5f746573742e6d6274_0, ["complete_trace_lifecycle"]),

@@ -1,37 +1,184 @@
 // 指标聚合和统计测试用例
+// 测试Azimuth Telemetry指标聚合和统计功能
 
-test "metrics_aggregation_functions" {
-  // 测试指标聚合函数
+test "counter_metric_aggregation" {
+  // 测试计数器指标聚合
   
-  let metric_values = [10.5, 20.3, 15.7, 25.1, 18.9, 12.4, 22.6, 19.8]
-  let metric_names = ["cpu_usage", "memory_usage", "disk_io", "network_throughput"]
+  let metric_name = "http_requests_total"
+  let metric_values = [10L, 15L, 25L, 30L, 20L]
+  let metric_labels = [
+    [("method", "GET"), ("status", "200")],
+    [("method", "POST"), ("status", "201")],
+    [("method", "GET"), ("status", "404")],
+    [("method", "PUT"), ("status", "200")],
+    [("method", "DELETE"), ("status", "204")]
+  ]
   
-  // 验证数据
-  assert_eq(metric_values.length(), 8)
-  assert_eq(metric_names.length(), 4)
-  assert_eq(metric_values[0], 10.5)
-  assert_eq(metric_values[7], 19.8)
+  assert_eq(metric_values.length(), metric_labels.length())
+  assert_eq(metric_values.length(), 5)
   
   // 计算总和
-  let mut sum = 0.0
+  let mut total = 0L
   let mut i = 0
   while i < metric_values.length() {
-    sum = sum + metric_values[i]
+    total = total + metric_values[i]
     i = i + 1
   }
   
+  assert_eq(total, 100L)
+  
+  // 按状态码分组聚合
+  let mut success_total = 0L
+  let mut client_error_total = 0L
+  i = 0
+  while i < metric_labels.length() {
+    let labels = metric_labels[i]
+    let mut status = ""
+    let mut j = 0
+    while j < labels.length() {
+      let (key, value) = labels[j]
+      if key == "status" {
+        status = value
+      }
+      j = j + 1
+    }
+    
+    if status == "200" || status == "201" || status == "204" {
+      success_total = success_total + metric_values[i]
+    } else if status == "404" {
+      client_error_total = client_error_total + metric_values[i]
+    }
+    i = i + 1
+  }
+  
+  assert_eq(success_total, 85L)
+  assert_eq(client_error_total, 15L)
+  
+  // 按方法分组聚合
+  let mut get_total = 0L
+  let mut post_total = 0L
+  i = 0
+  while i < metric_labels.length() {
+    let labels = metric_labels[i]
+    let mut method = ""
+    let mut j = 0
+    while j < labels.length() {
+      let (key, value) = labels[j]
+      if key == "method" {
+        method = value
+      }
+      j = j + 1
+    }
+    
+    if method == "GET" {
+      get_total = get_total + metric_values[i]
+    } else if method == "POST" {
+      post_total = post_total + metric_values[i]
+    }
+    i = i + 1
+  }
+  
+  assert_eq(get_total, 35L)
+  assert_eq(post_total, 15L)
+}
+
+test "histogram_metric_statistics" {
+  // 测试直方图指标统计
+  
+  let metric_name = "request_duration_seconds"
+  let bucket_bounds = [0.1, 0.5, 1.0, 2.5, 5.0, 10.0]
+  let bucket_counts = [5L, 25L, 60L, 85L, 95L, 100L]
+  let sum = 187.5
+  let count = 100L
+  
+  assert_eq(bucket_bounds.length(), bucket_counts.length())
+  assert_eq(bucket_bounds.length(), 6)
+  
+  // 验证bucket递增
+  let mut i = 1
+  while i < bucket_bounds.length() {
+    assert_eq(bucket_bounds[i] > bucket_bounds[i-1], true)
+    i = i + 1
+  }
+  
+  // 验证bucket计数递增
+  i = 1
+  while i < bucket_counts.length() {
+    assert_eq(bucket_counts[i] >= bucket_counts[i-1], true)
+    i = i + 1
+  }
+  
+  // 计算每个区间的计数
+  let interval_counts = [
+    bucket_counts[0], // <= 0.1
+    bucket_counts[1] - bucket_counts[0], // (0.1, 0.5]
+    bucket_counts[2] - bucket_counts[1], // (0.5, 1.0]
+    bucket_counts[3] - bucket_counts[2], // (1.0, 2.5]
+    bucket_counts[4] - bucket_counts[3], // (2.5, 5.0]
+    bucket_counts[5] - bucket_counts[4], // (5.0, 10.0]
+    count - bucket_counts[5] // > 10.0
+  ]
+  
+  assert_eq(interval_counts[0], 5L)
+  assert_eq(interval_counts[1], 20L)
+  assert_eq(interval_counts[2], 35L)
+  assert_eq(interval_counts[3], 25L)
+  assert_eq(interval_counts[4], 10L)
+  assert_eq(interval_counts[5], 5L)
+  assert_eq(interval_counts[6], 0L)
+  
   // 验证总和
-  assert_eq(sum, 145.3)
+  let mut interval_sum = 0L
+  i = 0
+  while i < interval_counts.length() {
+    interval_sum = interval_sum + interval_counts[i]
+    i = i + 1
+  }
+  assert_eq(interval_sum, count)
   
   // 计算平均值
-  let average = sum / metric_values.length().to_double()
-  assert_eq(average, 18.1625)
+  let average = sum / count.to_double()
+  assert_eq(average > 1.5, true)
+  assert_eq(average < 2.0, true)
   
-  // 找出最大值和最小值
+  // 计算中位数近似值（基于bucket）
+  let median_bucket_index = 0
+  i = 0
+  while i < bucket_counts.length() {
+    if bucket_counts[i] >= count / 2L {
+      median_bucket_index = i
+      break
+    }
+    i = i + 1
+  }
+  
+  assert_eq(median_bucket_index, 2) // 1.0 bucket
+  assert_eq(bucket_bounds[median_bucket_index], 1.0)
+}
+
+test "gauge_metric_fluctuation" {
+  // 测试仪表指标波动
+  
+  let metric_name = "cpu_usage_percent"
+  let metric_values = [25.5, 30.2, 45.8, 60.1, 55.3, 40.7, 35.2, 28.9]
+  let timestamps = [
+    1640995200L,
+    1640995260L,
+    1640995320L,
+    1640995380L,
+    1640995440L,
+    1640995500L,
+    1640995560L,
+    1640995620L
+  ]
+  
+  assert_eq(metric_values.length(), timestamps.length())
+  assert_eq(metric_values.length(), 8)
+  
+  // 计算最大值和最小值
   let mut max_value = metric_values[0]
   let mut min_value = metric_values[0]
-  
-  i = 1
+  let mut i = 1
   while i < metric_values.length() {
     if metric_values[i] > max_value {
       max_value = metric_values[i]
@@ -42,182 +189,287 @@ test "metrics_aggregation_functions" {
     i = i + 1
   }
   
-  // 验证最大值和最小值
-  assert_eq(max_value, 25.1)
-  assert_eq(min_value, 10.5)
+  assert_eq(max_value, 60.1)
+  assert_eq(min_value, 25.5)
   
   // 计算范围
   let range = max_value - min_value
-  assert_eq(range, 14.6)
-}
-
-test "time_window_aggregation" {
-  // 测试时间窗口聚合
+  assert_eq(range, 34.6)
   
-  let time_windows = ["1m", "5m", "15m", "1h", "6h", "24h"]
-  let window_sizes = [60, 300, 900, 3600, 21600, 86400] // 秒
-  
-  // 验证时间窗口
-  assert_eq(time_windows.length(), 6)
-  assert_eq(window_sizes.length(), 6)
-  assert_eq(time_windows[0], "1m")
-  assert_eq(time_windows[5], "24h")
-  
-  // 验证窗口大小
-  assert_eq(window_sizes[0], 60) // 1分钟
-  assert_eq(window_sizes[2], 900) // 15分钟
-  assert_eq(window_sizes[5], 86400) // 24小时
-  
-  // 模拟时间序列数据点
-  let data_points = []
-  let mut timestamp = 1640995200L // 开始时间戳
-  let mut i = 0
-  while i < 100 {
-    data_points.push((timestamp, i.to_double() * 1.5))
-    timestamp = timestamp + 60L // 每分钟一个数据点
-    i = i + 1
-  }
-  
-  // 验证数据点
-  assert_eq(data_points.length(), 100)
-  assert_eq(data_points[0].0, 1640995200L)
-  assert_eq(data_points[0].1, 0.0)
-  assert_eq(data_points[99].0, 1640995200L + 99L * 60L)
-  assert_eq(data_points[99].1, 99.0 * 1.5)
-  
-  // 计算5分钟窗口的聚合
-  let window_5m_size = 300 // 5分钟 = 300秒
-  let mut window_count = 0
-  let mut window_sum = 0.0
-  
+  // 计算平均值
+  let mut sum = 0.0
   i = 0
-  while i < data_points.length() {
-    let point_timestamp = data_points[i].0
-    let point_value = data_points[i].1
-    
-    // 简化：每5个点（5分钟）聚合一次
-    if i % 5 == 0 && i > 0 {
-      window_count = window_count + 1
+  while i < metric_values.length() {
+    sum = sum + metric_values[i]
+    i = i + 1
+  }
+  let average = sum / metric_values.length().to_double()
+  assert_eq(average > 35.0, true)
+  assert_eq(average < 45.0, true)
+  
+  // 计算变化率
+  let mut max_increase = 0.0
+  let mut max_decrease = 0.0
+  i = 1
+  while i < metric_values.length() {
+    let change = metric_values[i] - metric_values[i-1]
+    if change > max_increase {
+      max_increase = change
     }
-    
-    window_sum = window_sum + point_value
+    if change < max_decrease {
+      max_decrease = change
+    }
     i = i + 1
   }
   
-  // 验证聚合结果
-  assert_eq(window_count, 19) // 100个点，每5个一组，共19个完整窗口
-  assert_eq(window_sum > 0.0, true)
+  assert_eq(max_increase > 14.0, true) // 45.8 - 30.2 = 15.6
+  assert_eq(max_decrease < -10.0, true) // 60.1 - 55.3 = -4.8, 55.3 - 40.7 = -14.6
+  
+  // 验证时间戳递增
+  i = 1
+  while i < timestamps.length() {
+    assert_eq(timestamps[i] > timestamps[i-1], true)
+    i = i + 1
+  }
+  
+  // 计算时间间隔
+  let time_interval = timestamps[1] - timestamps[0]
+  assert_eq(time_interval, 60L) // 1分钟间隔
 }
 
-test "percentile_calculation" {
-  // 测试百分位数计算
+test "metric_rate_calculation" {
+  // 测试指标速率计算
+  
+  let counter_name = "operations_total"
+  let counter_values = [100L, 150L, 250L, 400L, 550L, 700L, 900L, 1100L]
+  let timestamps = [
+    1640995200L, // 0分钟
+    1640995260L, // 1分钟
+    1640995320L, // 2分钟
+    1640995380L, // 3分钟
+    1640995440L, // 4分钟
+    1640995500L, // 5分钟
+    1640995560L, // 6分钟
+    1640995620L  // 7分钟
+  ]
+  
+  assert_eq(counter_values.length(), timestamps.length())
+  
+  // 计算每分钟速率
+  let rates = []
+  let mut i = 1
+  while i < counter_values.length() {
+    let value_diff = counter_values[i] - counter_values[i-1]
+    let time_diff = timestamps[i] - timestamps[i-1]
+    let rate = value_diff.to_double() / time_diff.to_double() * 60.0 // 转换为每分钟
+    rates.push(rate)
+    i = i + 1
+  }
+  
+  assert_eq(rates.length(), 7)
+  
+  // 验证速率计算
+  assert_eq(rates[0], 50.0)   // (150-100)/60*60
+  assert_eq(rates[1], 100.0)  // (250-150)/60*60
+  assert_eq(rates[2], 150.0)  // (400-250)/60*60
+  assert_eq(rates[3], 150.0)  // (550-400)/60*60
+  assert_eq(rates[4], 150.0)  // (700-550)/60*60
+  assert_eq(rates[5], 200.0)  // (900-700)/60*60
+  assert_eq(rates[6], 200.0)  // (1100-900)/60*60
+  
+  // 计算平均速率
+  let mut rate_sum = 0.0
+  i = 0
+  while i < rates.length() {
+    rate_sum = rate_sum + rates[i]
+    i = i + 1
+  }
+  let average_rate = rate_sum / rates.length().to_double()
+  assert_eq(average_rate > 140.0, true)
+  assert_eq(average_rate < 145.0, true)
+  
+  // 计算最大和最小速率
+  let mut max_rate = rates[0]
+  let mut min_rate = rates[0]
+  i = 1
+  while i < rates.length() {
+    if rates[i] > max_rate {
+      max_rate = rates[i]
+    }
+    if rates[i] < min_rate {
+      min_rate = rates[i]
+    }
+    i = i + 1
+  }
+  
+  assert_eq(max_rate, 200.0)
+  assert_eq(min_rate, 50.0)
+}
+
+test "metric_percentile_calculation" {
+  // 测试指标百分位数计算
   
   let response_times = [
-    10.2, 15.5, 12.8, 25.1, 8.9, 18.7, 22.3, 14.6, 
-    19.4, 11.3, 16.9, 13.2, 20.8, 9.7, 17.5, 21.1,
-    23.6, 7.8, 24.9, 26.2, 6.5, 27.4, 5.9, 28.7
+    0.05, 0.08, 0.12, 0.15, 0.18, 0.22, 0.25, 0.28, 0.32, 0.35,
+    0.38, 0.42, 0.45, 0.48, 0.52, 0.55, 0.58, 0.62, 0.65, 0.68,
+    0.72, 0.75, 0.78, 0.82, 0.85, 0.88, 0.92, 0.95, 0.98, 1.02,
+    1.05, 1.08, 1.12, 1.15, 1.18, 1.22, 1.25, 1.28, 1.32, 1.35,
+    1.38, 1.42, 1.45, 1.48, 1.52, 1.55, 1.58, 1.62, 1.65, 1.68
   ]
   
-  // 验证响应时间数据
-  assert_eq(response_times.length(), 24)
-  assert_eq(response_times[0], 10.2)
-  assert_eq(response_times[23], 28.7)
+  assert_eq(response_times.length(), 50)
   
-  // 排序响应时间（简化：假设已排序）
-  let sorted_times = [
-    5.9, 6.5, 7.8, 8.9, 9.7, 10.2, 11.3, 12.8,
-    13.2, 14.6, 15.5, 16.9, 17.5, 18.7, 19.4, 20.8,
-    21.1, 22.3, 23.6, 24.9, 25.1, 26.2, 27.4, 28.7
-  ]
-  
-  // 验证排序结果
-  assert_eq(sorted_times.length(), 24)
-  assert_eq(sorted_times[0], 5.9) // 最小值
-  assert_eq(sorted_times[23], 28.7) // 最大值
+  // 验证数据已排序
+  let mut i = 1
+  while i < response_times.length() {
+    assert_eq(response_times[i] >= response_times[i-1], true)
+    i = i + 1
+  }
   
   // 计算百分位数
-  let p50_index = (sorted_times.length() * 50) / 100 - 1 // P50 (中位数)
-  let p95_index = (sorted_times.length() * 95) / 100 - 1 // P95
-  let p99_index = (sorted_times.length() * 99) / 100 - 1 // P99
+  let p50_index = (response_times.length() * 50) / 100
+  let p90_index = (response_times.length() * 90) / 100
+  let p95_index = (response_times.length() * 95) / 100
+  let p99_index = (response_times.length() * 99) / 100
   
-  // 验证索引计算
-  assert_eq(p50_index, 11)
-  assert_eq(p95_index, 22)
-  assert_eq(p99_index, 23)
+  // 调整索引（从0开始）
+  let p50_value = response_times[p50_index - 1]
+  let p90_value = response_times[p90_index - 1]
+  let p95_value = response_times[p95_index - 1]
+  let p99_value = response_times[p99_index - 1]
   
-  // 获取百分位数值
-  let p50_value = sorted_times[p50_index]
-  let p95_value = sorted_times[p95_index]
-  let p99_value = sorted_times[p99_index]
+  assert_eq(p50_value, 0.72)  // 第25个值
+  assert_eq(p90_value, 1.52)  // 第45个值
+  assert_eq(p95_value, 1.62)  // 第48个值
+  assert_eq(p99_value, 1.68)  // 第50个值
   
-  // 验证百分位数值
-  assert_eq(p50_value, 16.9)
-  assert_eq(p95_value, 27.4)
-  assert_eq(p99_value, 28.7)
-  
-  // 验证百分位数关系
-  assert_eq(p50_value < p95_value, true)
+  // 验证百分位数递增
+  assert_eq(p50_value < p90_value, true)
+  assert_eq(p90_value < p95_value, true)
   assert_eq(p95_value < p99_value, true)
-  assert_eq(p99_value <= sorted_times[23], true)
+  
+  // 计算平均值
+  let mut sum = 0.0
+  i = 0
+  while i < response_times.length() {
+    sum = sum + response_times[i]
+    i = i + 1
+  }
+  let average = sum / response_times.length().to_double()
+  assert_eq(average > 0.8, true)
+  assert_eq(average < 1.0, true)
+  
+  // 验证平均值在P50和P90之间
+  assert_eq(average > p50_value, true)
+  assert_eq(average < p90_value, true)
 }
 
-test "rate_calculation_and_trend_analysis" {
-  // 测试比率计算和趋势分析
+test "metric_aggregation_with_labels" {
+  // 测试带标签的指标聚合
   
-  let time_periods = ["00:00", "01:00", "02:00", "03:00", "04:00", "05:00"]
-  let request_counts = [1200, 1450, 1680, 1320, 1890, 2100]
-  let error_counts = [24, 29, 34, 26, 38, 42]
+  let metric_data = [
+    {
+      name: "http_request_duration_seconds",
+      value: 0.25,
+      labels: [("method", "GET"), ("status", "200"), ("endpoint", "/api/users")]
+    },
+    {
+      name: "http_request_duration_seconds",
+      value: 0.45,
+      labels: [("method", "POST"), ("status", "201"), ("endpoint", "/api/users")]
+    },
+    {
+      name: "http_request_duration_seconds",
+      value: 0.15,
+      labels: [("method", "GET"), ("status", "200"), ("/api/users")]
+    },
+    {
+      name: "http_request_duration_seconds",
+      value: 1.25,
+      labels: [("method", "GET"), ("status", "404"), ("/api/orders")]
+    },
+    {
+      name: "http_request_duration_seconds",
+      value: 0.85,
+      labels: [("method", "PUT"), ("status", "200"), ("/api/orders")]
+    }
+  ]
   
-  // 验证数据
-  assert_eq(time_periods.length(), 6)
-  assert_eq(request_counts.length(), 6)
-  assert_eq(error_counts.length(), 6)
+  assert_eq(metric_data.length(), 5)
   
-  // 计算每个时间段的错误率
-  let error_rates = []
+  // 按方法分组聚合
+  let method_stats = {
+    "GET": { count: 0, sum: 0.0, min: 999.0, max: 0.0 },
+    "POST": { count: 0, sum: 0.0, min: 999.0, max: 0.0 },
+    "PUT": { count: 0, sum: 0.0, min: 999.0, max: 0.0 }
+  }
+  
   let mut i = 0
-  while i < request_counts.length() {
-    let error_rate = error_counts[i].to_double() / request_counts[i].to_double() * 100.0
-    error_rates.push(error_rate)
+  while i < metric_data.length() {
+    let data = metric_data[i]
+    let mut method = ""
+    let mut j = 0
+    while j < data.labels.length() {
+      let (key, value) = data.labels[j]
+      if key == "method" {
+        method = value
+      }
+      j = j + 1
+    }
+    
+    // 更新统计信息
+    match method {
+      "GET" => {
+        method_stats["GET"].count = method_stats["GET"].count + 1
+        method_stats["GET"].sum = method_stats["GET"].sum + data.value
+        if data.value < method_stats["GET"].min {
+          method_stats["GET"].min = data.value
+        }
+        if data.value > method_stats["GET"].max {
+          method_stats["GET"].max = data.value
+        }
+      }
+      "POST" => {
+        method_stats["POST"].count = method_stats["POST"].count + 1
+        method_stats["POST"].sum = method_stats["POST"].sum + data.value
+        method_stats["POST"].min = data.value
+        method_stats["POST"].max = data.value
+      }
+      "PUT" => {
+        method_stats["PUT"].count = method_stats["PUT"].count + 1
+        method_stats["PUT"].sum = method_stats["PUT"].sum + data.value
+        method_stats["PUT"].min = data.value
+        method_stats["PUT"].max = data.value
+      }
+      _ => {}
+    }
     i = i + 1
   }
   
-  // 验证错误率计算
-  assert_eq(error_rates.length(), 6)
-  assert_eq(error_rates[0], 2.0) // 24/1200 * 100
-  assert_eq(error_rates[5], 2.0) // 42/2100 * 100
+  // 验证GET方法统计
+  assert_eq(method_stats["GET"].count, 3)
+  assert_eq(method_stats["GET"].sum > 1.5, true)
+  assert_eq(method_stats["GET"].min, 0.15)
+  assert_eq(method_stats["GET"].max, 1.25)
   
-  // 计算请求增长率
-  let request_growth_rates = []
-  i = 1
-  while i < request_counts.length() {
-    let growth_rate = (request_counts[i].to_double() - request_counts[i-1].to_double()) / request_counts[i-1].to_double() * 100.0
-    request_growth_rates.push(growth_rate)
-    i = i + 1
-  }
+  // 验证POST方法统计
+  assert_eq(method_stats["POST"].count, 1)
+  assert_eq(method_stats["POST"].sum, 0.45)
+  assert_eq(method_stats["POST"].min, 0.45)
+  assert_eq(method_stats["POST"].max, 0.45)
   
-  // 验证增长率计算
-  assert_eq(request_growth_rates.length(), 5)
-  assert_eq(request_growth_rates[0] > 0.0, true) // 1200 -> 1450 增长
-  assert_eq(request_growth_rates[4] > 0.0, true) // 1890 -> 2100 增长
+  // 验证PUT方法统计
+  assert_eq(method_stats["PUT"].count, 1)
+  assert_eq(method_stats["PUT"].sum, 0.85)
+  assert_eq(method_stats["PUT"].min, 0.85)
+  assert_eq(method_stats["PUT"].max, 0.85)
   
-  // 计算平均增长率
-  let mut total_growth = 0.0
-  i = 0
-  while i < request_growth_rates.length() {
-    total_growth = total_growth + request_growth_rates[i]
-    i = i + 1
-  }
+  // 计算各方法平均值
+  let get_average = method_stats["GET"].sum / method_stats["GET"].count.to_double()
+  let post_average = method_stats["POST"].sum / method_stats["POST"].count.to_double()
+  let put_average = method_stats["PUT"].sum / method_stats["PUT"].count.to_double()
   
-  let average_growth = total_growth / request_growth_rates.length().to_double()
-  assert_eq(average_growth > 0.0, true) // 整体呈增长趋势
-  
-  // 识别趋势方向
-  let trend_direction = if average_growth > 5.0 { "strong_growth" } 
-                       else if average_growth > 0.0 { "moderate_growth" }
-                       else if average_growth < -5.0 { "strong_decline" }
-                       else { "stable" }
-  
-  // 验证趋势判断逻辑
-  assert_eq(trend_direction == "strong_growth" || trend_direction == "moderate_growth", true)
+  assert_eq(get_average > 0.5, true)
+  assert_eq(post_average, 0.45)
+  assert_eq(put_average, 0.85)
 }
