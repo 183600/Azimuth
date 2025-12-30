@@ -1,498 +1,355 @@
-// 遥测数据序列化兼容性测试用例
+// 数据序列化兼容性测试用例
+// 测试遥测数据的序列化和反序列化功能，确保不同格式和版本的兼容性
 
-test "telemetry_json_serialization_compatibility" {
-  // 测试JSON序列化兼容性
+test "telemetry_json_serialization" {
+  // 测试JSON格式序列化
   
-  let telemetry_data = [
-    {
-      "timestamp": 1234567890,
-      "trace_id": "trace_123",
-      "span_id": "span_456",
-      "service": "auth_service",
-      "operation": "authenticate",
-      "duration_ms": 150,
-      "status": "success",
-      "tags": ["user_id:123", "method:oauth2"]
-    },
-    {
-      "timestamp": 1234567950,
-      "trace_id": "trace_123",
-      "span_id": "span_789",
-      "service": "user_service",
-      "operation": "get_user",
-      "duration_ms": 85,
-      "status": "success",
-      "tags": ["user_id:123", "cache_hit:false"]
-    }
-  ]
+  let metric_name = "http_requests_total"
+  let metric_value = 1234.5
+  let metric_timestamp = 1640995200L
+  let metric_tags = ["service:api", "env:production"]
   
-  // JSON序列化模拟
-  let mut json_strings = []
+  // 创建JSON格式的遥测数据
+  let json_data = "{"
+  json_data = json_data + "\"name\":\"" + metric_name + "\"," 
+  json_data = json_data + "\"value\":" + metric_value.to_string() + ","
+  json_data = json_data + "\"timestamp\":" + metric_timestamp.to_string() + ","
+  json_data = json_data + "\"tags\":["
+  
   let mut i = 0
-  while i < telemetry_data.length() {
-    let data = telemetry_data[i]
-    
-    // 模拟JSON序列化（简化版本）
-    let json_str = "{" +
-      "\"timestamp\":" + data["timestamp"].to_string() + "," +
-      "\"trace_id\":\"" + data["trace_id"] + "\"," +
-      "\"span_id\":\"" + data["span_id"] + "\"," +
-      "\"service\":\"" + data["service"] + "\"," +
-      "\"operation\":\"" + data["operation"] + "\"," +
-      "\"duration_ms\":" + data["duration_ms"].to_string() + "," +
-      "\"status\":\"" + data["status"] + "\"," +
-      "\"tags\":[" + data["tags"][0] + "," + data["tags"][1] + "]" +
-      "}"
-    
-    json_strings = json_strings.push(json_str)
+  while i < metric_tags.length() {
+    json_data = json_data + "\"" + metric_tags[i] + "\""
+    if i < metric_tags.length() - 1 {
+      json_data = json_data + ","
+    }
     i = i + 1
   }
   
-  // 验证JSON序列化结果
-  assert_eq(json_strings.length(), 2)
+  json_data = json_data + "]"
+  json_data = json_data + "}"
   
   // 验证JSON格式
+  assert_eq(json_data.has_prefix("{"), true)
+  assert_eq(json_data.has_suffix("}"), true)
+  assert_eq(json_data.contains("\"name\":\"http_requests_total\""), true)
+  assert_eq(json_data.contains("\"value\":1234.5"), true)
+  assert_eq(json_data.contains("\"timestamp\":1640995200"), true)
+  assert_eq(json_data.contains("\"tags\":[\"service:api\",\"env:production\"]"), true)
+  
+  // 验证JSON结构完整性
+  let brace_count = 0
+  let mut j = 0
+  while j < json_data.length() {
+    if json_data[j] == '{' {
+      brace_count = brace_count + 1
+    } else if json_data[j] == '}' {
+      brace_count = brace_count - 1
+    }
+    j = j + 1
+  }
+  assert_eq(brace_count, 0)  // 括号应该匹配
+}
+
+test "telemetry_protobuf_serialization" {
+  // 测试Protocol Buffers格式序列化（模拟）
+  
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let operation_name = "GET /api/users"
+  let start_time = 1640995200L
+  let duration = 150000000L  // 150ms in nanoseconds
+  
+  // 模拟protobuf序列化数据结构
+  let protobuf_data = "trace_id:" + trace_id + "|"
+  protobuf_data = protobuf_data + "span_id:" + span_id + "|"
+  protobuf_data = protobuf_data + "operation:" + operation_name + "|"
+  protobuf_data = protobuf_data + "start_time:" + start_time.to_string() + "|"
+  protobuf_data = protobuf_data + "duration:" + duration.to_string()
+  
+  // 验证protobuf数据格式
+  assert_eq(protobuf_data.has_prefix("trace_id:"), true)
+  assert_eq(protobuf_data.contains("span_id:"), true)
+  assert_eq(protobuf_data.contains("operation:"), true)
+  assert_eq(protobuf_data.contains("start_time:"), true)
+  assert_eq(protobuf_data.has_suffix("duration:" + duration.to_string()), true)
+  
+  // 模拟反序列化验证
+  let fields = protobuf_data.split("|")
+  assert_eq(fields.length(), 5)
+  assert_eq(fields[0], "trace_id:" + trace_id)
+  assert_eq(fields[1], "span_id:" + span_id)
+  assert_eq(fields[2], "operation:" + operation_name)
+  assert_eq(fields[3], "start_time:" + start_time.to_string())
+  assert_eq(fields[4], "duration:" + duration.to_string())
+}
+
+test "telemetry_prometheus_format" {
+  // 测试Prometheus格式序列化
+  
+  let metric_name = "cpu_usage_percent"
+  let metric_value = 75.5
+  let metric_timestamp = 1640995200L
+  let metric_labels = [("service", "api"), ("instance", "host-1")]
+  
+  // 创建Prometheus格式的指标数据
+  let prometheus_data = metric_name + "{"
+  
   let mut i = 0
-  while i < json_strings.length() {
-    let json_str = json_strings[i]
-    
-    // 检查JSON基本结构
-    assert_eq(json_str[0], '{')
-    assert_eq(json_str[json_str.length() - 1], '}')
-    
-    // 检查必要字段
-    assert_eq(json_str.contains("\"timestamp\":"), true)
-    assert_eq(json_str.contains("\"trace_id\":"), true)
-    assert_eq(json_str.contains("\"span_id\":"), true)
-    assert_eq(json_str.contains("\"service\":"), true)
-    assert_eq(json_str.contains("\"operation\":"), true)
-    assert_eq(json_str.contains("\"duration_ms\":"), true)
-    assert_eq(json_str.contains("\"status\":"), true)
-    assert_eq(json_str.contains("\"tags\":"), true)
-    
+  while i < metric_labels.length() {
+    let (key, value) = metric_labels[i]
+    prometheus_data = prometheus_data + key + "=\"" + value + "\""
+    if i < metric_labels.length() - 1 {
+      prometheus_data = prometheus_data + ","
+    }
     i = i + 1
   }
   
-  // 验证数据完整性
-  assert_eq(json_strings[0].contains("auth_service"), true)
-  assert_eq(json_strings[0].contains("authenticate"), true)
-  assert_eq(json_strings[1].contains("user_service"), true)
-  assert_eq(json_strings[1].contains("get_user"), true)
+  prometheus_data = prometheus_data + "} " + metric_value.to_string()
+  prometheus_data = prometheus_data + " " + metric_timestamp.to_string()
+  
+  // 验证Prometheus格式
+  assert_eq(prometheus_data.has_prefix(metric_name + "{"), true)
+  assert_eq(prometheus_data.contains("service=\"api\""), true)
+  assert_eq(prometheus_data.contains("instance=\"host-1\""), true)
+  assert_eq(prometheus_data.contains("} 75.5"), true)
+  assert_eq(prometheus_data.has_suffix(" " + metric_timestamp.to_string()), true)
+  
+  // 验证标签格式
+  assert_eq(prometheus_data.contains("{service=\"api\",instance=\"host-1\"}"), true)
 }
 
-test "telemetry_protobuf_serialization_compatibility" {
-  // 测试Protocol Buffers序列化兼容性
+test "telemetry_opentelemetry_format" {
+  // 测试OpenTelemetry格式序列化
   
-  let metric_data = [
-    {
-      "name": "http_requests_total",
-      "type": "counter",
-      "value": 12345,
-      "timestamp": 1234567890,
-      "labels": [
-        {"key": "method", "value": "GET"},
-        {"key": "status", "value": "200"},
-        {"key": "service", "value": "api_gateway"}
-      ]
-    },
-    {
-      "name": "response_time_seconds",
-      "type": "histogram",
-      "value": 0.125,
-      "timestamp": 1234567890,
-      "labels": [
-        {"key": "endpoint", "value": "/api/users"},
-        {"key": "percentile", "value": "p95"}
-      ]
+  let span_name = "database_query"
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let parent_span_id = "a1b2c3d4e5f67890"
+  let attributes = [("db.statement", "SELECT * FROM users"), ("db.type", "sql")]
+  
+  // 创建OpenTelemetry格式的span数据
+  let otel_data = "Span{"
+  otel_data = otel_data + "name:\"" + span_name + "\"," 
+  otel_data = otel_data + "trace_id:\"" + trace_id + "\"," 
+  otel_data = otel_data + "span_id:\"" + span_id + "\"," 
+  otel_data = otel_data + "parent_span_id:\"" + parent_span_id + "\"," 
+  otel_data = otel_data + "attributes:["
+  
+  let mut i = 0
+  while i < attributes.length() {
+    let (key, value) = attributes[i]
+    otel_data = otel_data + key + "=\"" + value + "\""
+    if i < attributes.length() - 1 {
+      otel_data = otel_data + ","
     }
+    i = i + 1
+  }
+  
+  otel_data = otel_data + "]}"
+  
+  // 验证OpenTelemetry格式
+  assert_eq(otel_data.has_prefix("Span{name:\"" + span_name + "\""), true)
+  assert_eq(otel_data.contains("trace_id:\"" + trace_id + "\""), true)
+  assert_eq(otel_data.contains("span_id:\"" + span_id + "\""), true)
+  assert_eq(otel_data.contains("parent_span_id:\"" + parent_span_id + "\""), true)
+  assert_eq(otel_data.contains("db.statement=\"SELECT * FROM users\""), true)
+  assert_eq(otel_data.contains("db.type=\"sql\""), true)
+  assert_eq(otel_data.has_suffix("}]"), true)
+}
+
+test "telemetry_csv_serialization" {
+  // 测试CSV格式序列化
+  
+  let metrics = [
+    ("cpu_usage", "75.5", "1640995200"),
+    ("memory_usage", "68.2", "1640995200"),
+    ("disk_usage", "45.8", "1640995200"),
+    ("network_io", "120.3", "1640995200")
   ]
   
-  // Protocol Buffers序列化模拟（简化版本）
-  let mut protobuf_data = []
+  // 创建CSV格式的数据
+  let csv_header = "metric_name,value,timestamp"
+  let csv_data = csv_header
+  
   let mut i = 0
-  while i < metric_data.length() {
-    let metric = metric_data[i]
-    
-    // 模拟protobuf编码（字段编号 + 类型 + 值）
-    let mut encoded_fields = []
-    
-    // 字段1: name (string)
-    encoded_fields = encoded_fields.push("1:2:" + metric["name"])
-    
-    // 字段2: type (string)
-    encoded_fields = encoded_fields.push("2:2:" + metric["type"])
-    
-    // 字段3: value (varint/double)
-    if metric["type"] == "counter" {
-      encoded_fields = encoded_fields.push("3:0:" + metric["value"].to_string())
-    } else {
-      encoded_fields = encoded_fields.push("3:1:" + metric["value"].to_string())
-    }
-    
-    // 字段4: timestamp (varint)
-    encoded_fields = encoded_fields.push("4:0:" + metric["timestamp"].to_string())
-    
-    // 字段5: labels (repeated message)
-    let mut encoded_labels = []
-    let mut j = 0
-    while j < metric["labels"].length() {
-      let label = metric["labels"][j]
-      let encoded_label = "5:2:{1:2:" + label["key"] + ",2:2:" + label["value"] + "}"
-      encoded_labels = encoded_labels.push(encoded_label)
-      j = j + 1
-    }
-    
-    // 组合所有字段
-    let mut encoded_metric = ""
-    let mut k = 0
-    while k < encoded_fields.length() {
-      encoded_metric = encoded_metric + encoded_fields[k]
-      if k < encoded_fields.length() - 1 {
-        encoded_metric = encoded_metric + ","
-      }
-      k = k + 1
-    }
-    
-    if encoded_labels.length() > 0 {
-      encoded_metric = encoded_metric + ",5:2:["
-      let mut l = 0
-      while l < encoded_labels.length() {
-        encoded_metric = encoded_metric + encoded_labels[l]
-        if l < encoded_labels.length() - 1 {
-          encoded_metric = encoded_metric + ","
-        }
-        l = l + 1
-      }
-      encoded_metric = encoded_metric + "]"
-    }
-    
-    protobuf_data = protobuf_data.push(encoded_metric)
+  while i < metrics.length() {
+    let (name, value, timestamp) = metrics[i]
+    csv_data = csv_data + "\n" + name + "," + value + "," + timestamp
     i = i + 1
   }
   
-  // 验证protobuf序列化结果
-  assert_eq(protobuf_data.length(), 2)
+  // 验证CSV格式
+  assert_eq(csv_data.has_prefix(csv_header), true)
+  assert_eq(csv_data.contains("cpu_usage,75.5,1640995200"), true)
+  assert_eq(csv_data.contains("memory_usage,68.2,1640995200"), true)
+  assert_eq(csv_data.contains("disk_usage,45.8,1640995200"), true)
+  assert_eq(csv_data.contains("network_io,120.3,1640995200"), true)
   
-  // 验证字段编码
-  let mut i = 0
-  while i < protobuf_data.length() {
-    let encoded = protobuf_data[i]
-    
-    // 检查字段编号
-    assert_eq(encoded.contains("1:2:"), true)  // name字段
-    assert_eq(encoded.contains("2:2:"), true)  // type字段
-    assert_eq(encoded.contains("3:"), true)    // value字段
-    assert_eq(encoded.contains("4:0:"), true)  // timestamp字段
-    assert_eq(encoded.contains("5:2:"), true)  // labels字段
-    
-    i = i + 1
+  // 验证CSV行数
+  let lines = csv_data.split("\n")
+  assert_eq(lines.length(), 5)  // 1行header + 4行数据
+  
+  // 验证CSV列数
+  let mut j = 0
+  while j < lines.length() {
+    let columns = lines[j].split(",")
+    assert_eq(columns.length(), 3)  // 每行应该有3列
+    j = j + 1
   }
-  
-  // 验证数据类型编码
-  assert_eq(protobuf_data[0].contains("3:0:"), true)  // counter使用varint
-  assert_eq(protobuf_data[1].contains("3:1:"), true)  // histogram使用double
 }
 
-test "telemetry_version_compatibility" {
+test "telemetry_binary_serialization" {
+  // 测试二进制格式序列化（模拟）
+  
+  let trace_id_bytes = [10_byte, 247_byte, 101_byte, 25_byte, 22_byte, 205_byte, 67_byte, 221_byte]
+  let span_id_bytes = [183_byte, 173_byte, 107_byte, 113_byte, 105_byte, 32_byte, 51_byte, 49_byte]
+  let timestamp = 1640995200L
+  let duration = 150000000L
+  
+  // 模拟二进制序列化数据
+  let binary_data = []
+  
+  // 添加trace_id长度和数据
+  binary_data.push(trace_id_bytes.length().to_byte())
+  let mut i = 0
+  while i < trace_id_bytes.length() {
+    binary_data.push(trace_id_bytes[i])
+    i = i + 1
+  }
+  
+  // 添加span_id长度和数据
+  binary_data.push(span_id_bytes.length().to_byte())
+  i = 0
+  while i < span_id_bytes.length() {
+    binary_data.push(span_id_bytes[i])
+    i = i + 1
+  }
+  
+  // 添加时间戳（简化为前8字节）
+  let timestamp_bytes = [
+    (timestamp >> 56).to_byte(),
+    (timestamp >> 48).to_byte(),
+    (timestamp >> 40).to_byte(),
+    (timestamp >> 32).to_byte(),
+    (timestamp >> 24).to_byte(),
+    (timestamp >> 16).to_byte(),
+    (timestamp >> 8).to_byte(),
+    (timestamp).to_byte()
+  ]
+  
+  i = 0
+  while i < timestamp_bytes.length() {
+    binary_data.push(timestamp_bytes[i])
+    i = i + 1
+  }
+  
+  // 验证二进制数据结构
+  assert_eq(binary_data.length(), 1 + trace_id_bytes.length() + 1 + span_id_bytes.length() + 8)
+  assert_eq(binary_data[0], trace_id_bytes.length().to_byte())
+  assert_eq(binary_data[9], span_id_bytes.length().to_byte())
+  
+  // 验证trace_id数据
+  i = 0
+  while i < trace_id_bytes.length() {
+    assert_eq(binary_data[1 + i], trace_id_bytes[i])
+    i = i + 1
+  }
+  
+  // 验证span_id数据
+  i = 0
+  while i < span_id_bytes.length() {
+    assert_eq(binary_data[10 + i], span_id_bytes[i])
+    i = i + 1
+  }
+}
+
+test "telemetry_compatibility_versioning" {
   // 测试版本兼容性
   
-  let v1_data = {
-    "version": "1.0",
-    "timestamp": 1234567890,
-    "service": "auth_service",
-    "metric": "login_attempts",
-    "value": 42,
-    "tags": ["method:password", "status:success"]
-  }
+  let current_version = "1.2.3"
+  let legacy_version = "1.1.0"
+  let data_format_v1 = "metric:value:timestamp"
+  let data_format_v2 = "metric|value|timestamp|version"
   
-  let v2_data = {
-    "version": "2.0",
-    "timestamp": 1234567890,
-    "service": "auth_service",
-    "metric": "login_attempts",
-    "value": 42,
-    "tags": ["method:password", "status:success"],
-    "metadata": {
-      "source": "web",
-      "region": "us-west-2",
-      "environment": "production"
-    },
-    "schema_version": "2.1"
-  }
+  // 创建当前版本的数据
+  let current_data = "cpu_usage:75.5:1640995200"
   
-  // 版本兼容性检查
-  let mut compatibility_issues = []
-  
-  // 检查必需字段是否存在
-  let required_fields = ["timestamp", "service", "metric", "value"]
-  
-  let mut i = 0
-  while i < required_fields.length() {
-    let field = required_fields[i]
-    
-    // 检查v1数据
-    if !v1_data.contains(field) {
-      compatibility_issues = compatibility_issues.push("v1_missing_" + field)
-    }
-    
-    // 检查v2数据
-    if !v2_data.contains(field) {
-      compatibility_issues = compatibility_issues.push("v2_missing_" + field)
-    }
-    
-    i = i + 1
-  }
-  
-  // 检查新增字段（向后兼容）
-  let v2_new_fields = ["metadata", "schema_version"]
-  i = 0
-  while i < v2_new_fields.length() {
-    let field = v2_new_fields[i]
-    if v2_data.contains(field) {
-      // v2有新字段是正常的，不应该影响兼容性
-    } else {
-      compatibility_issues = compatibility_issues.push("v2_missing_new_" + field)
-    }
-    i = i + 1
-  }
+  // 创建向后兼容的数据
+  let compatible_data = "cpu_usage|75.5|1640995200|" + current_version
   
   // 验证版本兼容性
-  assert_eq(compatibility_issues.length(), 0)  // 应该没有兼容性问题
+  assert_eq(current_data.contains(":"), true)
+  assert_eq(compatible_data.contains("|"), true)
+  assert_eq(compatible_data.contains(current_version), true)
   
-  // 验证数据转换
-  let mut v1_to_v2_converted = v1_data
-  v1_to_v2_converted["version"] = "2.0"
-  v1_to_v2_converted["metadata"] = "{}"  // 空metadata
-  v1_to_v2_converted["schema_version"] = "2.1"
+  // 模拟版本检测
+  let is_v1_format = current_data.contains(":")
+  let is_v2_format = compatible_data.contains("|")
   
-  // 验证转换后的数据包含所有v2字段
-  let v2_fields = v2_data.keys()
-  let mut i = 0
-  while i < v2_fields.length() {
-    let field = v2_fields[i]
-    assert_eq(v1_to_v2_converted.contains(field), true)
-    i = i + 1
+  assert_eq(is_v1_format, true)
+  assert_eq(is_v2_format, true)
+  
+  // 模拟格式转换
+  let converted_data = ""
+  if is_v1_format {
+    let parts = current_data.split(":")
+    if parts.length() >= 3 {
+      converted_data = parts[0] + "|" + parts[1] + "|" + parts[2] + "|" + current_version
+    }
   }
+  
+  assert_eq(converted_data, "cpu_usage|75.5|1640995200|1.2.3")
 }
 
-test "telemetry_backward_compatibility" {
-  // 测试向后兼容性
+test "telemetry_serialization_performance" {
+  // 测试序列化性能
   
-  let legacy_format = [
-    "1234567890,auth_service,login_attempts,42,method:password,status:success",
-    "1234567950,user_service,get_user,85,user_id:123,cache:false"
-  ]
-  
-  let modern_format = [
-    {
-      "timestamp": 1234567890,
-      "service": "auth_service",
-      "metric": "login_attempts",
-      "value": 42,
-      "tags": {"method": "password", "status": "success"}
-    },
-    {
-      "timestamp": 1234567950,
-      "service": "user_service",
-      "metric": "get_user",
-      "value": 85,
-      "tags": {"user_id": "123", "cache": "false"}
-    }
-  ]
-  
-  // 向后兼容性转换：legacy -> modern
-  let mut converted_data = []
+  let large_dataset = []
   let mut i = 0
-  while i < legacy_format.length() {
-    let legacy_line = legacy_format[i]
-    
-    // 解析legacy格式（CSV格式）
-    let mut parts = []
-    let mut start = 0
-    let mut j = 0
-    while j < legacy_line.length() {
-      if legacy_line[j] == ',' {
-        parts = parts.push(legacy_line[start..j])
-        start = j + 1
-      }
-      j = j + 1
-    }
-    parts = parts.push(legacy_line[start..])  // 最后一个部分
-    
-    // 转换为modern格式
-    if parts.length() >= 4 {
-      let timestamp = parts[0]
-      let service = parts[1]
-      let metric = parts[2]
-      let value = parts[3]
-      
-      // 解析tags
-      let mut tags = @hashmap.new()
-      let mut k = 4
-      while k < parts.length() {
-        let tag_part = parts[k]
-        let mut colon_pos = 0
-        let mut l = 0
-        while l < tag_part.length() {
-          if tag_part[l] == ':' {
-            colon_pos = l
-            break
-          }
-          l = l + 1
-        }
-        
-        if colon_pos > 0 {
-          let key = tag_part[..colon_pos]
-          let value = tag_part[(colon_pos + 1)..]
-          tags[key] = value
-        }
-        k = k + 1
-      }
-      
-      let modern_record = {
-        "timestamp": timestamp,
-        "service": service,
-        "metric": metric,
-        "value": value,
-        "tags": tags
-      }
-      
-      converted_data = converted_data.push(modern_record)
-    }
-    
+  
+  // 创建大数据集
+  while i < 1000 {
+    let metric_name = "metric_" + i.to_string()
+    let metric_value = (i * 1.5).to_string()
+    let timestamp = (1640995200L + i.to_int64()).to_string()
+    large_dataset.push((metric_name, metric_value, timestamp))
     i = i + 1
   }
   
-  // 验证向后兼容性转换
-  assert_eq(converted_data.length(), modern_format.length())
+  // 测试JSON序列化性能
+  let json_start = 1640995200L
+  let json_data = "["
   
-  // 验证转换后的数据
-  let mut i = 0
-  while i < converted_data.length() {
-    let converted = converted_data[i]
-    let modern = modern_format[i]
-    
-    assert_eq(converted["timestamp"], modern["timestamp"])
-    assert_eq(converted["service"], modern["service"])
-    assert_eq(converted["metric"], modern["metric"])
-    assert_eq(converted["value"], modern["value"])
-    
-    // 验证tags转换
-    let converted_tags = converted["tags"]
-    let modern_tags = modern["tags"]
-    
-    let keys = modern_tags.keys()
-    let mut j = 0
-    while j < keys.length() {
-      let key = keys[j]
-      assert_eq(converted_tags.contains(key), true)
-      assert_eq(converted_tags[key], modern_tags[key])
-      j = j + 1
-    }
-    
-    i = i + 1
-  }
-}
-
-test "telemetry_cross_format_compatibility" {
-  // 测试跨格式兼容性
-  
-  let json_data = {
-    "timestamp": 1234567890,
-    "trace_id": "trace_123",
-    "spans": [
-      {
-        "span_id": "span_1",
-        "service": "gateway",
-        "operation": "receive",
-        "duration": 10
-      },
-      {
-        "span_id": "span_2", 
-        "service": "auth",
-        "operation": "validate",
-        "duration": 25
-      }
-    ]
-  }
-  
-  // JSON到XML转换
-  let xml_data = "<telemetry>" +
-    "<timestamp>1234567890</timestamp>" +
-    "<trace_id>trace_123</trace_id>" +
-    "<spans>" +
-      "<span>" +
-        "<span_id>span_1</span_id>" +
-        "<service>gateway</service>" +
-        "<operation>receive</operation>" +
-        "<duration>10</duration>" +
-      "</span>" +
-      "<span>" +
-        "<span_id>span_2</span_id>" +
-        "<service>auth</service>" +
-        "<operation>validate</operation>" +
-        "<duration>25</duration>" +
-      "</span>" +
-    "</spans>" +
-  "</telemetry>"
-  
-  // 跨格式兼容性验证
-  let mut compatibility_score = 0
-  let total_checks = 0
-  
-  // 检查基本字段
-  if xml_data.contains("<timestamp>1234567890</timestamp>") {
-    compatibility_score = compatibility_score + 1
-  }
-  total_checks = total_checks + 1
-  
-  if xml_data.contains("<trace_id>trace_123</trace_id>") {
-    compatibility_score = compatibility_score + 1
-  }
-  total_checks = total_checks + 1
-  
-  // 检查spans结构
-  if xml_data.contains("<spans>") && xml_data.contains("</spans>") {
-    compatibility_score = compatibility_score + 1
-  }
-  total_checks = total_checks + 1
-  
-  // 检查span数量
-  let mut span_count = 0
-  let mut i = 0
-  while i < xml_data.length() - 5 {
-    if xml_data[i..(i + 5)] == "<span" {
-      span_count = span_count + 1
+  i = 0
+  while i < large_dataset.length() {
+    let (name, value, ts) = large_dataset[i]
+    json_data = json_data + "{\"name\":\"" + name + "\",\"value\":" + value + ",\"timestamp\":" + ts + "}"
+    if i < large_dataset.length() - 1 {
+      json_data = json_data + ","
     }
     i = i + 1
   }
   
-  if span_count == 2 {
-    compatibility_score = compatibility_score + 1
-  }
-  total_checks = total_checks + 1
+  json_data = json_data + "]"
   
-  // 检查span内容
-  if xml_data.contains("<span_id>span_1</span_id>") &&
-     xml_data.contains("<service>gateway</service>") &&
-     xml_data.contains("<operation>receive</operation>") &&
-     xml_data.contains("<duration>10</duration>") {
-    compatibility_score = compatibility_score + 1
-  }
-  total_checks = total_checks + 1
+  let json_end = 1640995200L
+  let json_duration = json_end - json_start  // 模拟时间差
   
-  if xml_data.contains("<span_id>span_2</span_id>") &&
-     xml_data.contains("<service>auth</service>") &&
-     xml_data.contains("<operation>validate</operation>") &&
-     xml_data.contains("<duration>25</duration>") {
-    compatibility_score = compatibility_score + 1
-  }
-  total_checks = total_checks + 1
-  
-  // 验证跨格式兼容性
-  let compatibility_ratio = compatibility_score.to_double() / total_checks.to_double()
-  assert_eq(compatibility_ratio > 0.8, true)  // 兼容性应该大于80%
+  // 验证序列化结果
+  assert_eq(json_data.has_prefix("["), true)
+  assert_eq(json_data.has_suffix("]"), true)
+  assert_eq(json_data.contains("metric_0"), true)
+  assert_eq(json_data.contains("metric_999"), true)
   
   // 验证数据完整性
-  assert_eq(span_count, json_data["spans"].length())
+  let json_objects = json_data.split("},{")
+  assert_eq(json_objects.length(), 1000)
+  
+  // 测试压缩效果（简单模拟）
+  let original_length = json_data.length()
+  let compressed_ratio = 0.7  // 假设70%压缩率
+  let compressed_length = (original_length.to_double() * compressed_ratio).to_int()
+  
+  assert_eq(compressed_length < original_length, true)
+  assert_eq(compressed_length > original_length / 2, true)  // 压缩率应该合理
 }

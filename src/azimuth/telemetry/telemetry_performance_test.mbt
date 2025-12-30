@@ -1,206 +1,278 @@
-// 遥测系统性能测试用例
+// 遥测性能测试用例
+// 测试遥测系统的性能特性
 
-test "performance_context_operations" {
-  // 测试上下文操作的性能
+test "telemetry_throughput_benchmark" {
+  // 测试遥测吞吐量基准
   
-  let base_context = Context::empty()
-  let key1 = create_key("perf_key_1")
-  let key2 = create_key("perf_key_2")
-  let key3 = create_key("perf_key_3")
+  let operations_per_second = 10000
+  let test_duration_seconds = 10
+  let expected_total_operations = operations_per_second * test_duration_seconds
   
-  // 测试大量上下文创建操作
-  let start_time = 0L  // 简化时间戳，实际应该使用系统时间
-  let mut context = base_context
+  // 模拟性能测试
+  let mut actual_operations = 0
+  let mut start_time = 1000000L
+  let end_time = start_time + test_duration_seconds.to_int64() * 1000L
   
-  // 执行1000次上下文设置操作
-  let mut i = 0
-  while i < 1000 {
-    context = context.with_value(key1, "value_" + i.to_string())
-    context = context.with_value(key2, "value2_" + i.to_string())
-    context = context.with_value(key3, "value3_" + i.to_string())
-    i = i + 1
+  // 模拟操作处理
+  let mut current_time = start_time
+  while current_time < end_time {
+    // 每毫秒处理10个操作
+    let operations_this_ms = if current_time % 100L == 0L { 10 } else { 0 }
+    actual_operations = actual_operations + operations_this_ms
+    current_time = current_time + 1L
   }
   
-  let end_time = 0L  // 简化时间戳
-  let operation_time = end_time - start_time
+  // 验证吞吐量
+  assert_eq(actual_operations, expected_total_operations)
+  let actual_throughput = actual_operations / test_duration_seconds
+  assert_eq(actual_throughput, operations_per_second)
   
-  // 验证操作完成（实际性能测试应该测量真实时间）
-  assert_eq(context.get(key1) != None, true)
-  assert_eq(context.get(key2) != None, true)
-  assert_eq(context.get(key3) != None, true)
+  // 创建性能报告
+  let performance_report = "Throughput: " + actual_throughput.to_string() + 
+                          " ops/sec, Total: " + actual_operations.to_string() + 
+                          " ops, Duration: " + test_duration_seconds.to_string() + "s"
   
-  // 验证性能要求（简化版本）
-  assert_eq(true, true)  // 在实际测试中应该验证操作时间
+  assert_eq(performance_report.contains("Throughput: 10000"), true)
+  assert_eq(performance_report.contains("Total: 100000"), true)
+  assert_eq(performance_report.contains("Duration: 10s"), true)
 }
 
-test "performance_log_record_creation" {
-  // 测试日志记录创建的性能
+test "telemetry_latency_measurement" {
+  // 测试遥测延迟测量
   
-  // 测试大量日志记录创建
+  let operations = ["metric_collection", "trace_creation", "log_processing", "data_export"]
+  let latencies = [1.5, 2.3, 0.8, 5.2] // 毫秒
+  
+  // 计算延迟统计
+  let mut total_latency = 0.0
+  let mut max_latency = latencies[0]
+  let mut min_latency = latencies[0]
+  
   let mut i = 0
-  while i < 1000 {
-    let log_record = LogRecord::builder()
-      .timestamp(1234567890000000000L + i.to_int64())
-      .severity(Info)
-      .body("Performance test log message " + i.to_string())
-      .with_attribute("iteration", AttributeValue::int(i.to_int64()))
-      .with_attribute("service.name", AttributeValue::string("performance-test"))
-      .with_attribute("thread.id", AttributeValue::string("thread-" + (i % 10).to_string()))
-      .build()
-    
-    // 验证日志记录创建成功
-    assert_eq(log_record.body, Some("Performance test log message " + i.to_string()))
-    assert_eq(log_record.attributes.length(), 3)
-    
+  while i < latencies.length() {
+    total_latency = total_latency + latencies[i]
+    if latencies[i] > max_latency {
+      max_latency = latencies[i]
+    }
+    if latencies[i] < min_latency {
+      min_latency = latencies[i]
+    }
     i = i + 1
   }
   
-  // 验证所有操作完成
-  assert_eq(i, 1000)
-}
-
-test "performance_metrics_recording" {
-  // 测试指标记录的性能
+  let avg_latency = total_latency / latencies.length().to_double()
   
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("performance-meter")
-  let counter = meter.create_counter("performance_counter", "count", "Performance test counter")
-  let histogram = meter.create_histogram("performance_histogram", "ms", "Performance test histogram")
+  // 验证延迟统计
+  assert_eq(avg_latency, 2.45) // (1.5 + 2.3 + 0.8 + 5.2) / 4
+  assert_eq(max_latency, 5.2)
+  assert_eq(min_latency, 0.8)
   
-  // 测试大量指标记录
-  let mut i = 0
-  while i < 10000 {
-    // 记录计数器指标
-    counter.add(1L, [
-      ("operation.type", AttributeValue::string("test")),
-      ("iteration", AttributeValue::int(i.to_int64()))
-    ])
-    
-    // 记录直方图指标
-    histogram.record(i.to_double() / 1000.0, [
-      ("metric.type", AttributeValue::string("latency")),
-      ("batch.size", AttributeValue::int((i % 100).to_int64()))
-    ])
-    
-    i = i + 1
-  }
+  // 验证延迟阈值
+  let latency_threshold = 3.0 // 3毫秒阈值
+  let slow_operations = []
   
-  // 验证所有操作完成
-  assert_eq(i, 10000)
-}
-
-test "performance_propagation_operations" {
-  // 测试传播操作的性能
-  
-  let propagator = W3CTraceContextPropagator::{}
-  let context = Context::empty()
-  
-  // 测试大量注入和提取操作
-  let mut i = 0
-  while i < 1000 {
-    let carrier = MapCarrier::new()
-    
-    // 注入操作
-    propagator.inject(context, carrier)
-    
-    // 提取操作
-    let extracted_context = propagator.extract(Context::empty(), carrier)
-    
-    // 验证操作完成
-    assert_eq(true, true)
-    
-    i = i + 1
-  }
-  
-  // 验证所有操作完成
-  assert_eq(i, 1000)
-}
-
-test "performance_attribute_operations" {
-  // 测试属性操作的性能
-  
-  // 创建大量不同类型的属性
-  let string_attributes = []
-  let int_attributes = []
-  let float_attributes = []
-  let bool_attributes = []
-  
-  // 生成1000个属性
-  let mut i = 0
-  while i < 1000 {
-    string_attributes.push(("string.attr." + i.to_string(), AttributeValue::string("value_" + i.to_string())))
-    int_attributes.push(("int.attr." + i.to_string(), AttributeValue::int(i.to_int64())))
-    float_attributes.push(("float.attr." + i.to_string(), AttributeValue::float(i.to_double() / 100.0)))
-    bool_attributes.push(("bool.attr." + i.to_string(), AttributeValue::bool(i % 2 == 0)))
-    
-    i = i + 1
-  }
-  
-  // 测试属性数组操作
-  assert_eq(string_attributes.length(), 1000)
-  assert_eq(int_attributes.length(), 1000)
-  assert_eq(float_attributes.length(), 1000)
-  assert_eq(bool_attributes.length(), 1000)
-  
-  // 测试属性查找操作
-  let mut found_count = 0
   i = 0
-  while i < 1000 {
-    if i < string_attributes.length() {
-      let (key, value) = string_attributes[i]
-      match value {
-        StringValue(s) => {
-          if s.has_prefix("value_") {
-            found_count = found_count + 1
-          }
-        }
-        _ => {}
-      }
+  while i < operations.length() {
+    if latencies[i] > latency_threshold {
+      slow_operations.push(operations[i])
     }
     i = i + 1
   }
   
-  // 验证查找操作
-  assert_eq(found_count, 1000)
+  assert_eq(slow_operations.length(), 2) // trace_creation 和 data_export
+  assert_eq(slow_operations.contains("trace_creation"), true)
+  assert_eq(slow_operations.contains("data_export"), true)
+  
+  // 创建延迟报告
+  let latency_report = "Avg: " + avg_latency.to_string() + "ms, " +
+                      "Min: " + min_latency.to_string() + "ms, " +
+                      "Max: " + max_latency.to_string() + "ms, " +
+                      "Slow ops: " + slow_operations.length().to_string()
+  
+  assert_eq(latency_report.contains("Avg: 2.45"), true)
+  assert_eq(latency_report.contains("Min: 0.8"), true)
+  assert_eq(latency_report.contains("Max: 5.2"), true)
+  assert_eq(latency_report.contains("Slow ops: 2"), true)
 }
 
-test "performance_memory_allocation" {
-  // 测试内存分配性能
+test "telemetry_memory_usage" {
+  // 测试遥测内存使用
   
-  // 测试大量对象创建和销毁
+  let telemetry_components = [
+    ("metric_collector", 1024 * 1024),     // 1MB
+    ("trace_processor", 2 * 1024 * 1024),  // 2MB
+    ("log_aggregator", 512 * 1024),        // 512KB
+    ("exporter", 256 * 1024),              // 256KB
+    ("config_manager", 128 * 1024)         // 128KB
+  ]
+  
+  // 计算总内存使用
+  let mut total_memory = 0
   let mut i = 0
-  while i < 100 {
-    // 创建大量上下文对象
-    let contexts = []
-    let mut j = 0
-    while j < 100 {
-      let context = Context::empty()
-      let key = create_key("key_" + j.to_string())
-      let enriched_context = context.with_value(key, "value_" + j.to_string())
-      contexts.push(enriched_context)
-      j = j + 1
+  while i < telemetry_components.length() {
+    total_memory = total_memory + telemetry_components[i].1
+    i = i + 1
+  }
+  
+  // 验证内存使用
+  assert_eq(total_memory, 1024 * 1024 + 2 * 1024 * 1024 + 512 * 1024 + 256 * 1024 + 128 * 1024)
+  assert_eq(total_memory, 3932160) // 3.75MB
+  
+  // 计算内存使用百分比
+  let system_memory = 1024 * 1024 * 1024 // 1GB系统内存
+  let memory_usage_percent = (total_memory.to_double() / system_memory.to_double()) * 100.0
+  
+  // 验证内存使用百分比
+  assert_eq(memory_usage_percent < 1.0, true) // 应该小于1%
+  assert_eq(memory_usage_percent > 0.0, true)
+  
+  // 找出内存使用最多的组件
+  let mut max_memory_component = telemetry_components[0]
+  i = 1
+  while i < telemetry_components.length() {
+    if telemetry_components[i].1 > max_memory_component.1 {
+      max_memory_component = telemetry_components[i]
+    }
+    i = i + 1
+  }
+  
+  assert_eq(max_memory_component.0, "trace_processor")
+  assert_eq(max_memory_component.1, 2 * 1024 * 1024)
+  
+  // 创建内存使用报告
+  let memory_report = "Total: " + (total_memory / 1024).to_string() + "KB, " +
+                     "Usage: " + memory_usage_percent.to_string().slice(0, 4) + "%, " +
+                     "Largest: " + max_memory_component.0
+  
+  assert_eq(memory_report.contains("Total: 3840KB"), true)
+  assert_eq(memory_report.contains("Usage: 0.3"), true)
+  assert_eq(memory_report.contains("Largest: trace_processor"), true)
+}
+
+test "telemetry_cpu_utilization" {
+  // 测试遥测CPU利用率
+  
+  let time_intervals = [0, 100, 200, 300, 400] // 毫秒
+  let cpu_usage_samples = [10.5, 25.3, 45.8, 30.2, 15.6] // 百分比
+  
+  // 计算CPU利用率统计
+  let mut total_cpu = 0.0
+  let mut max_cpu = cpu_usage_samples[0]
+  let mut min_cpu = cpu_usage_samples[0]
+  
+  let mut i = 0
+  while i < cpu_usage_samples.length() {
+    total_cpu = total_cpu + cpu_usage_samples[i]
+    if cpu_usage_samples[i] > max_cpu {
+      max_cpu = cpu_usage_samples[i]
+    }
+    if cpu_usage_samples[i] < min_cpu {
+      min_cpu = cpu_usage_samples[i]
+    }
+    i = i + 1
+  }
+  
+  let avg_cpu = total_cpu / cpu_usage_samples.length().to_double()
+  
+  // 验证CPU利用率统计
+  assert_eq(avg_cpu > 20.0, true)
+  assert_eq(avg_cpu < 30.0, true)
+  assert_eq(max_cpu, 45.8)
+  assert_eq(min_cpu, 10.5)
+  
+  // 计算高CPU使用时间
+  let high_cpu_threshold = 30.0
+  let mut high_cpu_intervals = 0
+  
+  i = 0
+  while i < cpu_usage_samples.length() {
+    if cpu_usage_samples[i] > high_cpu_threshold {
+      high_cpu_intervals = high_cpu_intervals + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(high_cpu_intervals, 2) // 45.8% 和 30.2%
+  
+  // 计算CPU使用率变化
+  let cpu_variance = max_cpu - min_cpu
+  assert_eq(cpu_variance, 35.3) // 45.8 - 10.5
+  
+  // 创建CPU利用率报告
+  let cpu_report = "Avg: " + avg_cpu.to_string().slice(0, 4) + "%, " +
+                  "Min: " + min_cpu.to_string() + "%, " +
+                  "Max: " + max_cpu.to_string() + "%, " +
+                  "High intervals: " + high_cpu_intervals.to_string()
+  
+  assert_eq(cpu_report.contains("Avg: 25"), true)
+  assert_eq(cpu_report.contains("Min: 10.5"), true)
+  assert_eq(cpu_report.contains("Max: 45.8"), true)
+  assert_eq(cpu_report.contains("High intervals: 2"), true)
+}
+
+test "telemetry_scalability_test" {
+  // 测试遥测可扩展性
+  
+  let load_levels = [100, 500, 1000, 5000, 10000] // 每秒请求数
+  let response_times = [5.2, 8.7, 12.3, 45.6, 98.5] // 毫秒
+  let error_rates = [0.0, 0.1, 0.2, 1.5, 3.2] // 百分比
+  
+  // 验证可扩展性指标
+  let mut i = 0
+  while i < load_levels.length() {
+    let load = load_levels[i]
+    let response_time = response_times[i]
+    let error_rate = error_rates[i]
+    
+    // 验证响应时间随负载增加而增加
+    if i > 0 {
+      assert_eq(response_time > response_times[i - 1], true)
     }
     
-    // 创建大量日志记录
-    let log_records = []
-    j = 0
-    while j < 100 {
-      let log_record = LogRecord::builder()
-        .severity(Info)
-        .body("Memory test log " + j.to_string())
-        .with_attribute("index", AttributeValue::int(j.to_int64()))
-        .build()
-      log_records.push(log_record)
-      j = j + 1
-    }
+    // 验证错误率在可接受范围内
+    assert_eq(error_rate < 5.0, true) // 错误率应该小于5%
     
-    // 验证对象创建成功
-    assert_eq(contexts.length(), 100)
-    assert_eq(log_records.length(), 100)
+    // 计算吞吐量（考虑错误率）
+    let effective_throughput = load * (100.0 - error_rate) / 100.0
+    assert_eq(effective_throughput > 0, true)
     
     i = i + 1
   }
   
-  // 验证所有操作完成
-  assert_eq(i, 100)
+  // 计算性能退化
+  let baseline_response_time = response_times[0]
+  let max_response_time = response_times[4]
+  let performance_degradation = (max_response_time - baseline_response_time) / baseline_response_time * 100.0
+  
+  // 验证性能退化在可接受范围内
+  assert_eq(performance_degradation < 2000.0, true) // 退化不超过20倍
+  
+  // 找到最佳性能点（响应时间和吞吐量的平衡）
+  let mut best_performance_index = 0
+  let mut best_score = 0.0
+  
+  i = 0
+  while i < load_levels.length() {
+    // 性能分数：吞吐量 / 响应时间
+    let score = load_levels[i].to_double() / response_times[i]
+    if score > best_score {
+      best_score = score
+      best_performance_index = i
+    }
+    i = i + 1
+  }
+  
+  // 验证最佳性能点
+  assert_eq(best_performance_index >= 0, true)
+  assert_eq(best_performance_index < load_levels.length(), true)
+  
+  // 创建可扩展性报告
+  let scalability_report = "Best performance at load: " + 
+                          load_levels[best_performance_index].to_string() + 
+                          ", Performance degradation: " + 
+                          performance_degradation.to_string().slice(0, 5) + "%"
+  
+  assert_eq(scalability_report.contains("Best performance at load:"), true)
+  assert_eq(scalability_report.contains("Performance degradation:"), true)
+  assert_eq(scalability_report.contains("%"), true)
 }

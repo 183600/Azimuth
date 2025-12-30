@@ -1,157 +1,335 @@
 // 遥测集成测试用例
+// 测试遥测系统的端到端集成
 
-test "telemetry_end_to_end_workflow" {
-  // 测试遥测端到端工作流程
+test "telemetry_end_to_end_trace_flow" {
+  // 测试端到端追踪流
   
-  // 1. 模拟数据生成
-  let trace_id = "trace_" + "1234567890abcdef".substring(0, 8)
-  let span_id = "span_" + "fedcba0987654321".substring(0, 8)
-  let service_name = "payment-service"
-  let operation_name = "process_payment"
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let service_chain = ["gateway", "auth-service", "user-service", "payment-service"]
+  let span_ids = ["a1b2c3d4e5f67890", "b7ad6b7169203331", "c8d9e0f1a2b3c4d5", "d1e2f3a4b5c6d7e8"]
   
-  // 2. 创建span数据
-  let span_data = "trace_id:" + trace_id + 
-                  " span_id:" + span_id + 
-                  " service:" + service_name + 
-                  " operation:" + operation_name + 
-                  " status:success"
-  
-  // 验证span数据
-  assert_eq(span_data.contains("trace_id:trace_12345678"), true)
-  assert_eq(span_data.contains("span_id:span_fedcba09"), true)
-  assert_eq(span_data.contains("service:payment-service"), true)
-  assert_eq(span_data.contains("operation:process_payment"), true)
-  assert_eq(span_data.contains("status:success"), true)
-  
-  // 3. 添加指标数据
-  let metric_name = "payment_duration_ms"
-  let metric_value = 250.5
-  let metric_data = metric_name + ":" + metric_value.to_string()
-  
-  // 验证指标数据
-  assert_eq(metric_data, "payment_duration_ms:250.5")
-  
-  // 4. 添加日志数据
-  let log_level = "INFO"
-  let log_message = "Payment processed successfully for order #12345"
-  let log_data = "level:" + log_level + " message:" + log_message
-  
-  // 验证日志数据
-  assert_eq(log_data.contains("level:INFO"), true)
-  assert_eq(log_data.contains("message:Payment processed successfully"), true)
-  assert_eq(log_data.contains("order #12345"), true)
-  
-  // 5. 创建完整的遥测包
-  let telemetry_package = span_data + "|" + metric_data + "|" + log_data
-  
-  // 验证完整遥测包
-  assert_eq(telemetry_package.contains(span_data), true)
-  assert_eq(telemetry_package.contains(metric_data), true)
-  assert_eq(telemetry_package.contains(log_data), true)
-  
-  // 6. 模拟数据处理和验证
-  let package_parts = telemetry_package.split("|")
-  assert_eq(package_parts.length(), 3)
-  assert_eq(package_parts[0], span_data)
-  assert_eq(package_parts[1], metric_data)
-  assert_eq(package_parts[2], log_data)
-  
-  // 7. 验证数据完整性
-  let mut total_length = 0
+  // 创建服务链追踪
+  let mut trace_flow = []
   let mut i = 0
-  while i < package_parts.length() {
-    total_length = total_length + package_parts[i].length()
+  while i < service_chain.length() {
+    let span_info = {
+      "trace_id": trace_id,
+      "span_id": span_ids[i],
+      "service_name": service_chain[i],
+      "parent_span_id": if i > 0 { span_ids[i - 1] } else { "" }
+    }
+    trace_flow.push(span_info)
     i = i + 1
   }
   
-  // 考虑分隔符的长度
-  let expected_length = total_length + (package_parts.length() - 1) * 1
-  assert_eq(telemetry_package.length(), expected_length)
+  // 验证追踪流
+  assert_eq(trace_flow.length(), 4)
+  assert_eq(trace_flow[0]["service_name"], "gateway")
+  assert_eq(trace_flow[0]["parent_span_id"], "") // 根span
+  assert_eq(trace_flow[1]["parent_span_id"], span_ids[0]) // 第一个子span
+  assert_eq(trace_flow[3]["service_name"], "payment-service")
+  
+  // 验证追踪ID一致性
+  i = 0
+  while i < trace_flow.length() {
+    assert_eq(trace_flow[i]["trace_id"], trace_id)
+    i = i + 1
+  }
+  
+  // 创建追踪流字符串
+  let mut trace_string = trace_id + ":"
+  i = 0
+  while i < trace_flow.length() {
+    trace_string = trace_string + service_chain[i] + "(" + span_ids[i] + ")"
+    if i < trace_flow.length() - 1 {
+      trace_string = trace_string + "->"
+    }
+    i = i + 1
+  }
+  
+  // 验证追踪流字符串
+  assert_eq(trace_string.has_prefix(trace_id + ":"), true)
+  assert_eq(trace_string.contains("gateway(a1b2c3d4e5f67890)"), true)
+  assert_eq(trace_string.contains("payment-service(d1e2f3a4b5c6d7e8)"), true)
+  assert_eq(trace_string.contains("->"), true)
 }
 
-test "telemetry_cross_service_communication" {
-  // 测试跨服务通信的遥测功能
+test "telemetry_cross_service_metrics" {
+  // 测试跨服务指标
   
-  // 1. 定义服务链路
-  let services = ["api-gateway", "auth-service", "user-service", "order-service", "payment-service"]
-  let service_operations = ["route_request", "authenticate_user", "get_user_profile", "create_order", "process_payment"]
+  let services = ["api-gateway", "user-service", "order-service", "payment-service"]
+  let service_metrics = [
+    [("http_requests_total", "1000"), ("error_rate", "0.1"), ("avg_response_time", "50")],
+    [("http_requests_total", "2000"), ("error_rate", "0.2"), ("avg_response_time", "30")],
+    [("http_requests_total", "1500"), ("error_rate", "0.5"), ("avg_response_time", "80")],
+    [("http_requests_total", "800"), ("error_rate", "0.05"), ("avg_response_time", "120")]
+  ]
   
-  // 验证服务链路
-  assert_eq(services.length(), 5)
-  assert_eq(service_operations.length(), 5)
-  assert_eq(services.length() == service_operations.length(), true)
+  // 计算全局指标
+  let mut total_requests = 0
+  let mut total_errors = 0.0
+  let mut weighted_response_time = 0.0
   
-  // 2. 创建分布式追踪ID
-  let distributed_trace_id = "dtrace_" + "abc123def456".substring(0, 12)
-  assert_eq(distributed_trace_id, "dtrace_abc123def456")
-  
-  // 3. 模拟服务间调用链
-  let mut call_chain = []
   let mut i = 0
-  
   while i < services.length() {
-    let span_id = "span_" + i.to_string()
-    let parent_span_id = if i > 0 { "span_" + (i - 1).to_string() } else { "root" }
+    let requests = service_metrics[i][0].1.to_int()
+    let error_rate = service_metrics[i][1].1.to_double()
+    let response_time = service_metrics[i][2].1.to_double()
     
-    let span_info = (services[i], service_operations[i], span_id, parent_span_id, distributed_trace_id)
-    call_chain.push(span_info)
+    total_requests = total_requests + requests
+    total_errors = total_errors + (requests.to_double() * error_rate / 100.0)
+    weighted_response_time = weighted_response_time + (requests.to_double() * response_time)
+    
     i = i + 1
   }
   
-  // 验证调用链
-  assert_eq(call_chain.length(), 5)
+  let global_error_rate = (total_errors / total_requests.to_double()) * 100.0
+  let global_avg_response_time = weighted_response_time / total_requests.to_double()
   
-  // 验证第一个span
-  assert_eq(call_chain[0].0, "api-gateway")
-  assert_eq(call_chain[0].1, "route_request")
-  assert_eq(call_chain[0].2, "span_0")
-  assert_eq(call_chain[0].3, "root")
-  assert_eq(call_chain[0].4, "dtrace_abc123def456")
+  // 验证全局指标
+  assert_eq(total_requests, 5300) // 1000 + 2000 + 1500 + 800
+  assert_eq(global_error_rate > 0.0, true)
+  assert_eq(global_error_rate < 1.0, true)
+  assert_eq(global_avg_response_time > 40.0, true)
+  assert_eq(global_avg_response_time < 80.0, true)
   
-  // 验证最后一个span
-  assert_eq(call_chain[4].0, "payment-service")
-  assert_eq(call_chain[4].1, "process_payment")
-  assert_eq(call_chain[4].2, "span_4")
-  assert_eq(call_chain[4].3, "span_3")
-  assert_eq(call_chain[4].4, "dtrace_abc123def456")
+  // 找出性能最差的服务
+  let mut worst_service_index = 0
+  let mut max_response_time = service_metrics[0][2].1.to_double()
   
-  // 4. 创建服务间传播上下文
-  let mut propagation_context = "trace_id:" + distributed_trace_id
+  i = 1
+  while i < services.length() {
+    let response_time = service_metrics[i][2].1.to_double()
+    if response_time > max_response_time {
+      max_response_time = response_time
+      worst_service_index = i
+    }
+    i = i + 1
+  }
+  
+  assert_eq(worst_service_index, 3) // payment-service
+  assert_eq(services[worst_service_index], "payment-service")
+  assert_eq(max_response_time, 120.0)
+  
+  // 创建跨服务指标报告
+  let cross_service_report = "Total requests: " + total_requests.to_string() + 
+                            ", Global error rate: " + global_error_rate.to_string().slice(0, 4) + "%, " +
+                            "Global avg response time: " + global_avg_response_time.to_string().slice(0, 5) + "ms"
+  
+  assert_eq(cross_service_report.contains("Total requests: 5300"), true)
+  assert_eq(cross_service_report.contains("Global error rate:"), true)
+  assert_eq(cross_service_report.contains("Global avg response time:"), true)
+}
+
+test "telemetry_distributed_tracing_integration" {
+  // 测试分布式追踪集成
+  
+  let external_systems = [
+    ("database", "mysql-primary.internal", "3306"),
+    ("cache", "redis-cluster.internal", "6379"),
+    ("queue", "rabbitmq.internal", "5672"),
+    ("storage", "s3.amazonaws.com", "443")
+  ]
+  
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let parent_span_id = "a1b2c3d4e5f67890"
+  
+  // 创建外部系统调用追踪
+  let mut external_spans = []
+  let mut i = 0
+  while i < external_systems.length() {
+    let system = external_systems[i]
+    let external_span = {
+      "trace_id": trace_id,
+      "parent_span_id": parent_span_id,
+      "span_id": "ext_" + i.to_string(),
+      "service_name": system.0,
+      "remote_endpoint": system.1 + ":" + system.2,
+      "span_kind": "client"
+    }
+    external_spans.push(external_span)
+    i = i + 1
+  }
+  
+  // 验证外部span
+  assert_eq(external_spans.length(), 4)
+  assert_eq(external_spans[0]["service_name"], "database")
+  assert_eq(external_spans[0]["remote_endpoint"], "mysql-primary.internal:3306")
+  assert_eq(external_spans[3]["service_name"], "storage")
+  assert_eq(external_spans[3]["remote_endpoint"], "s3.amazonaws.com:443")
+  
+  // 验证所有外部span都有相同的父span
   i = 0
-  while i < call_chain.length() {
-    propagation_context = propagation_context + 
-                          " " + call_chain[i].0 + ":" + call_chain[i].2
+  while i < external_spans.length() {
+    assert_eq(external_spans[i]["parent_span_id"], parent_span_id)
+    assert_eq(external_spans[i]["trace_id"], trace_id)
+    assert_eq(external_spans[i]["span_kind"], "client")
     i = i + 1
   }
   
-  // 验证传播上下文
-  assert_eq(propagation_context.contains("trace_id:dtrace_abc123def456"), true)
-  assert_eq(propagation_context.contains("api-gateway:span_0"), true)
-  assert_eq(propagation_context.contains("auth-service:span_1"), true)
-  assert_eq(propagation_context.contains("user-service:span_2"), true)
-  assert_eq(propagation_context.contains("order-service:span_3"), true)
-  assert_eq(propagation_context.contains("payment-service:span_4"), true)
-  
-  // 5. 计算服务间延迟
-  let service_latencies = [15.2, 25.8, 12.3, 45.6, 78.9] // 毫秒
-  let mut total_latency = 0.0
+  // 创建分布式追踪字符串
+  let mut distributed_trace = trace_id + ":" + parent_span_id + "->{"
   i = 0
-  while i < service_latencies.length() {
-    total_latency = total_latency + service_latencies[i]
+  while i < external_spans.length() {
+    distributed_trace = distributed_trace + external_spans[i]["service_name"] + 
+                       "(" + external_spans[i]["remote_endpoint"] + ")"
+    if i < external_spans.length() - 1 {
+      distributed_trace = distributed_trace + ","
+    }
+    i = i + 1
+  }
+  distributed_trace = distributed_trace + "}"
+  
+  // 验证分布式追踪字符串
+  assert_eq(distributed_trace.has_prefix(trace_id + ":" + parent_span_id + "->{"), true)
+  assert_eq(distributed_trace.has_suffix("}"), true)
+  assert_eq(distributed_trace.contains("database(mysql-primary.internal:3306)"), true)
+  assert_eq(distributed_trace.contains("storage(s3.amazonaws.com:443)"), true)
+}
+
+test "telemetry_log_correlation" {
+  // 测试日志关联
+  
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  
+  let log_entries = [
+    ("INFO", "Request received", "1640995200"),
+    ("DEBUG", "Validating user permissions", "1640995201"),
+    ("WARN", "Cache miss, querying database", "1640995202"),
+    ("INFO", "User authenticated successfully", "1640995203"),
+    ("ERROR", "Payment processing failed", "1640995204")
+  ]
+  
+  // 创建带关联信息的日志
+  let mut correlated_logs = []
+  let mut i = 0
+  while i < log_entries.length() {
+    let log_entry = log_entries[i]
+    let correlated_log = {
+      "timestamp": log_entry.2,
+      "level": log_entry.0,
+      "message": log_entry.1,
+      "trace_id": trace_id,
+      "span_id": span_id
+    }
+    correlated_logs.push(correlated_log)
     i = i + 1
   }
   
-  // 验证延迟计算
-  assert_eq(total_latency, 177.8)
-  assert_eq(service_latencies[4] > service_latencies[0], true) // payment-service最慢
+  // 验证日志关联
+  assert_eq(correlated_logs.length(), 5)
   
-  // 6. 创建性能报告
-  let performance_report = "total_latency:" + total_latency.to_string() + "ms " +
-                          "services:" + services.length().to_string() + " " +
-                          "avg_latency:" + (total_latency / service_latencies.length().to_double()).to_string() + "ms"
+  // 验证所有日志都有相同的trace_id和span_id
+  i = 0
+  while i < correlated_logs.length() {
+    assert_eq(correlated_logs[i]["trace_id"], trace_id)
+    assert_eq(correlated_logs[i]["span_id"], span_id)
+    i = i + 1
+  }
   
-  // 验证性能报告
-  assert_eq(performance_report.contains("total_latency:177.8ms"), true)
-  assert_eq(performance_report.contains("services:5"), true)
-  assert_eq(performance_report.contains("avg_latency:35.56ms"), true)
+  // 验证日志内容
+  assert_eq(correlated_logs[0]["level"], "INFO")
+  assert_eq(correlated_logs[0]["message"], "Request received")
+  assert_eq(correlated_logs[4]["level"], "ERROR")
+  assert_eq(correlated_logs[4]["message"], "Payment processing failed")
+  
+  // 创建关联日志字符串
+  let mut log_correlation_string = ""
+  i = 0
+  while i < correlated_logs.length() {
+    let log_str = correlated_logs[i]["timestamp"] + " [" + correlated_logs[i]["level"] + "] " +
+                 correlated_logs[i]["message"] + " (trace=" + trace_id + ", span=" + span_id + ")"
+    
+    if i > 0 {
+      log_correlation_string = log_correlation_string + "\n"
+    }
+    log_correlation_string = log_correlation_string + log_str
+    i = i + 1
+  }
+  
+  // 验证关联日志字符串
+  assert_eq(log_correlation_string.contains("(trace=" + trace_id + ", span=" + span_id + ")"), true)
+  assert_eq(log_correlation_string.contains("1640995204 [ERROR] Payment processing failed"), true)
+  assert_eq(log_correlation_string.contains("1640995200 [INFO] Request received"), true)
+  
+  // 统计错误日志数量
+  let mut error_count = 0
+  i = 0
+  while i < correlated_logs.length() {
+    if correlated_logs[i]["level"] == "ERROR" {
+      error_count = error_count + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(error_count, 1)
+}
+
+test "telemetry_metric_trace_correlation" {
+  // 测试指标与追踪关联
+  
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let operation_name = "http_get_user"
+  
+  let metrics = [
+    ("http_request_duration_seconds", 0.125),
+    ("database_query_duration_seconds", 0.045),
+    ("cache_hit_ratio", 0.75),
+    ("error_count", 0)
+  ]
+  
+  // 创建带追踪关联的指标
+  let mut correlated_metrics = []
+  let mut i = 0
+  while i < metrics.length() {
+    let metric = metrics[i]
+    let correlated_metric = {
+      "name": metric.0,
+      "value": metric.1.to_string(),
+      "labels": "trace_id=" + trace_id + ",span_id=" + span_id + ",operation=" + operation_name
+    }
+    correlated_metrics.push(correlated_metric)
+    i = i + 1
+  }
+  
+  // 验证指标关联
+  assert_eq(correlated_metrics.length(), 4)
+  
+  // 验证所有指标都有相同的标签
+  i = 0
+  while i < correlated_metrics.length() {
+    assert_eq(correlated_metrics[i]["labels"].contains("trace_id=" + trace_id), true)
+    assert_eq(correlated_metrics[i]["labels"].contains("span_id=" + span_id), true)
+    assert_eq(correlated_metrics[i]["labels"].contains("operation=" + operation_name), true)
+    i = i + 1
+  }
+  
+  // 验证指标内容
+  assert_eq(correlated_metrics[0]["name"], "http_request_duration_seconds")
+  assert_eq(correlated_metrics[0]["value"], "0.125")
+  assert_eq(correlated_metrics[3]["name"], "error_count")
+  assert_eq(correlated_metrics[3]["value"], "0")
+  
+  // 创建关联指标字符串
+  let mut metric_correlation_string = ""
+  i = 0
+  while i < correlated_metrics.length() {
+    let metric_str = correlated_metrics[i]["name"] + "{" + correlated_metrics[i]["labels"] + "} " + 
+                    correlated_metrics[i]["value"]
+    
+    if i > 0 {
+      metric_correlation_string = metric_correlation_string + "\n"
+    }
+    metric_correlation_string = metric_correlation_string + metric_str
+    i = i + 1
+  }
+  
+  // 验证关联指标字符串
+  assert_eq(metric_correlation_string.contains("trace_id=" + trace_id), true)
+  assert_eq(metric_correlation_string.contains("span_id=" + span_id), true)
+  assert_eq(metric_correlation_string.contains("operation=" + operation_name), true)
+  assert_eq(metric_correlation_string.contains("http_request_duration_seconds{"), true)
+  assert_eq(metric_correlation_string.contains("error_count{"), true)
 }

@@ -1,422 +1,314 @@
-// 遥测数据安全性和加密测试用例
+// 遥测安全测试用例
+// 测试遥测系统的安全特性
 
-test "telemetry_data_encryption_basic" {
-  // 测试遥测数据的基本加密功能
+test "telemetry_data_sanitization" {
+  // 测试遥测数据清理
   
-  // 创建敏感遥测数据
   let sensitive_data = [
-    "user_id=12345",
-    "email=user@example.com",
-    "session_token=abc123def456",
-    "api_key=sk_live_1234567890"
+    ("password", "secret123"),
+    ("api_key", "sk-1234567890abcdef"),
+    ("credit_card", "4111-1111-1111-1111"),
+    ("email", "user@example.com"),
+    ("phone", "+1-555-123-4567")
   ]
   
-  // 验证敏感数据
-  assert_eq(sensitive_data.length(), 4)
-  assert_eq(sensitive_data[0].contains("user_id"), true)
-  assert_eq(sensitive_data[1].contains("@"), true)
-  assert_eq(sensitive_data[2].has_prefix("session_token"), true)
-  assert_eq(sensitive_data[3].has_prefix("sk_live"), true)
-  
-  // 模拟加密过程（简单的字符替换模拟）
-  let encrypt = fn(data : String) -> String {
-    let mut encrypted = ""
-    let mut i = 0
-    while i < data.length() {
-      let char = data[i]
-      // 简单的字符移位加密
-      let encrypted_char = if char >= 'a' and char <= 'z' {
-        ((char.to_int() - 'a'.to_int() + 3) % 26 + 'a'.to_int()).to_char()
-      } else if char >= 'A' and char <= 'Z' {
-        ((char.to_int() - 'A'.to_int() + 3) % 26 + 'A'.to_int()).to_char()
-      } else if char >= '0' and char <= '9' {
-        ((char.to_int() - '0'.to_int() + 5) % 10 + '0'.to_int()).to_char()
-      } else {
-        char
-      }
-      encrypted = encrypted + encrypted_char.to_string()
-      i = i + 1
-    }
-    encrypted
-  }
-  
-  // 加密所有敏感数据
-  let mut encrypted_data = []
+  // 清理敏感数据
+  let mut sanitized_data = []
   let mut i = 0
   while i < sensitive_data.length() {
-    let encrypted = encrypt(sensitive_data[i])
-    encrypted_data.push(encrypted)
+    let key = sensitive_data[i].0
+    let value = sensitive_data[i].1
+    
+    // 根据数据类型进行清理
+    let sanitized_value = if key == "password" {
+      "***"
+    } else if key == "api_key" {
+      "sk-****"
+    } else if key == "credit_card" {
+      "****-****-****-1111"
+    } else if key == "email" {
+      "u***@example.com"
+    } else if key == "phone" {
+      "+1-***-***-4567"
+    } else {
+      value
+    }
+    
+    sanitized_data.push((key, sanitized_value))
     i = i + 1
   }
   
-  // 验证加密结果
-  assert_eq(encrypted_data.length(), 4)
-  assert_eq(encrypted_data[0] != sensitive_data[0], true) // 加密后应该不同
-  assert_eq(encrypted_data[1] != sensitive_data[1], true)
-  assert_eq(encrypted_data[2] != sensitive_data[2], true)
-  assert_eq(encrypted_data[3] != sensitive_data[3], true)
+  // 验证清理结果
+  assert_eq(sanitized_data[0].1, "***") // password
+  assert_eq(sanitized_data[1].1, "sk-****") // api_key
+  assert_eq(sanitized_data[2].1, "****-****-****-1111") // credit_card
+  assert_eq(sanitized_data[3].1, "u***@example.com") // email
+  assert_eq(sanitized_data[4].1, "+1-***-***-4567") // phone
   
-  // 验证加密数据不包含原始敏感信息
+  // 验证敏感信息不再存在
+  let mut sanitized_string = ""
   i = 0
-  while i < encrypted_data.length() {
-    assert_eq(encrypted_data[i].contains("user_id"), false)
-    assert_eq(encrypted_data[i].contains("@"), false)
-    assert_eq(encrypted_data[i].contains("session_token"), false)
-    assert_eq(encrypted_data[i].contains("sk_live"), false)
+  while i < sanitized_data.length() {
+    sanitized_string = sanitized_string + sanitized_data[i].0 + "=" + sanitized_data[i].1 + ";"
     i = i + 1
   }
+  
+  assert_eq(sanitized_string.contains("secret123"), false)
+  assert_eq(sanitized_string.contains("sk-1234567890abcdef"), false)
+  assert_eq(sanitized_string.contains("4111-1111-1111-1111"), false)
+  assert_eq(sanitized_string.contains("user@example.com"), false)
+  assert_eq(sanitized_string.contains("+1-555-123-4567"), false)
 }
 
-test "telemetry_data_masking" {
-  // 测试遥测数据的脱敏功能
+test "telemetry_encryption_at_rest" {
+  // 测试静态数据加密
   
-  // 创建包含敏感信息的遥测数据
-  let telemetry_logs = [
-    "User login: user_id=12345, ip=192.168.1.100",
-    "Payment processed: card_number=4111111111111111, amount=100.50",
-    "API call: token=Bearer abc123def456ghi789, endpoint=/api/v1/users",
-    "Database query: query=SELECT * FROM users WHERE email='user@example.com'"
-  ]
+  let telemetry_data = "metric_name=cpu_usage,value=75.5,timestamp=1640995200"
+  let encryption_key = "my-secret-key-12345"
   
-  // 验证原始日志
-  assert_eq(telemetry_logs.length(), 4)
-  
-  // 定义脱敏规则
-  let mask_data = fn(log : String) -> String {
-    let mut masked = log
-    
-    // 脱敏用户ID
-    masked = masked.replace("user_id=12345", "user_id=****")
-    
-    // 脱敏IP地址
-    masked = masked.replace("192.168.1.100", "192.168.1.***")
-    
-    // 脱敏信用卡号
-    masked = masked.replace("4111111111111111", "************1111")
-    
-    // 脱敏Bearer token
-    masked = masked.replace("abc123def456ghi789", "****************")
-    
-    // 脱敏邮箱地址
-    masked = masked.replace("user@example.com", "u***@example.com")
-    
-    masked
-  }
-  
-  // 应用脱敏规则
-  let mut masked_logs = []
+  // 模拟简单加密（XOR）
+  let mut encrypted_data = ""
   let mut i = 0
-  while i < telemetry_logs.length() {
-    let masked = mask_data(telemetry_logs[i])
-    masked_logs.push(masked)
+  while i < telemetry_data.length() {
+    let data_char = telemetry_data[i]
+    let key_char = encryption_key[i % encryption_key.length()]
+    // 简化加密：字符码相加
+    let encrypted_char = (data_char.to_int() + key_char.to_int()).to_char()
+    encrypted_data = encrypted_data + encrypted_char.to_string()
     i = i + 1
   }
   
-  // 验证脱敏结果
-  assert_eq(masked_logs.length(), 4)
+  // 验证加密数据不同于原始数据
+  assert_eq(encrypted_data != telemetry_data, true)
+  assert_eq(encrypted_data.length(), telemetry_data.length())
   
-  // 验证敏感信息已被脱敏
-  assert_eq(masked_logs[0].contains("user_id=****"), true)
-  assert_eq(masked_logs[0].contains("192.168.1.***"), true)
-  assert_eq(masked_logs[0].contains("12345"), false)
+  // 模拟解密
+  let mut decrypted_data = ""
+  i = 0
+  while i < encrypted_data.length() {
+    let encrypted_char = encrypted_data[i]
+    let key_char = encryption_key[i % encryption_key.length()]
+    // 简化解密：字符码相减
+    let decrypted_char = (encrypted_char.to_int() - key_char.to_int()).to_char()
+    decrypted_data = decrypted_data + decrypted_char.to_string()
+    i = i + 1
+  }
   
-  assert_eq(masked_logs[1].contains("************1111"), true)
-  assert_eq(masked_logs[1].contains("4111111111111111"), false)
+  // 验证解密结果
+  assert_eq(decrypted_data, telemetry_data)
   
-  assert_eq(masked_logs[2].contains("****************"), true)
-  assert_eq(masked_logs[2].contains("abc123def456ghi789"), false)
+  // 创建加密记录
+  let encryption_record = "original_length=" + telemetry_data.length().to_string() + 
+                         ",encrypted_length=" + encrypted_data.length().to_string() + 
+                         ",key_length=" + encryption_key.length().to_string()
   
-  assert_eq(masked_logs[3].contains("u***@example.com"), true)
-  assert_eq(masked_logs[3].contains("user@example.com"), false)
-  
-  // 验证脱敏后仍然保留有用的信息
-  assert_eq(masked_logs[0].contains("User login"), true)
-  assert_eq(masked_logs[1].contains("Payment processed"), true)
-  assert_eq(masked_logs[2].contains("API call"), true)
-  assert_eq(masked_logs[3].contains("Database query"), true)
+  assert_eq(encryption_record.contains("original_length="), true)
+  assert_eq(encryption_record.contains("encrypted_length="), true)
+  assert_eq(encryption_record.contains("key_length="), true)
 }
 
 test "telemetry_access_control" {
-  // 测试遥测数据的访问控制
+  // 测试访问控制
   
-  // 定义用户角色和权限
-  let roles = [
+  let user_roles = [
     ("admin", ["read", "write", "delete"]),
     ("analyst", ["read"]),
-    ("developer", ["read", "write"]),
-    ("viewer", ["read"])
+    ("viewer", ["read"]),
+    ("service", ["write"])
   ]
   
-  // 定义遥测数据的敏感级别
-  let data_sensitivity = [
-    ("system_metrics", "public"),
-    ("application_logs", "internal"),
-    ("user_activity", "confidential"),
-    ("security_events", "secret")
+  let resources = [
+    "telemetry.metrics",
+    "telemetry.traces",
+    "telemetry.logs",
+    "telemetry.config"
   ]
   
-  // 验证角色定义
-  assert_eq(roles.length(), 4)
-  assert_eq(data_sensitivity.length(), 4)
-  
-  // 模拟访问控制检查
-  let check_access = fn(role : String, sensitivity : String, action : String) -> Bool {
-    // 查找角色权限
-    let mut role_permissions = []
-    let mut i = 0
-    while i < roles.length() {
-      if roles[i].0 == role {
-        role_permissions = roles[i].1
-        break
-      }
-      i = i + 1
-    }
-    
-    // 检查是否有执行动作的权限
-    let mut has_permission = false
-    i = 0
-    while i < role_permissions.length() {
-      if role_permissions[i] == action {
-        has_permission = true
-        break
-      }
-      i = i + 1
-    }
-    
-    if not has_permission {
-      return false
-    }
-    
-    // 检查敏感级别访问规则
-    if sensitivity == "public" {
-      return true // 所有角色都可以访问公共数据
-    } else if sensitivity == "internal" {
-      return role != "viewer" // 除了viewer，其他角色都可以访问
-    } else if sensitivity == "confidential" {
-      return role == "admin" or role == "analyst" // 只有admin和analyst可以访问
-    } else if sensitivity == "secret" {
-      return role == "admin" // 只有admin可以访问
-    }
-    
-    false
-  }
-  
-  // 测试访问控制场景
-  assert_eq(check_access("viewer", "system_metrics", "read"), true)
-  assert_eq(check_access("viewer", "application_logs", "read"), false)
-  assert_eq(check_access("viewer", "user_activity", "read"), false)
-  assert_eq(check_access("viewer", "security_events", "read"), false)
-  
-  assert_eq(check_access("analyst", "system_metrics", "read"), true)
-  assert_eq(check_access("analyst", "application_logs", "read"), false)
-  assert_eq(check_access("analyst", "user_activity", "read"), true)
-  assert_eq(check_access("analyst", "security_events", "read"), false)
-  
-  assert_eq(check_access("developer", "system_metrics", "read"), true)
-  assert_eq(check_access("developer", "application_logs", "read"), true)
-  assert_eq(check_access("developer", "user_activity", "read"), false)
-  assert_eq(check_access("developer", "application_logs", "write"), true)
-  
-  assert_eq(check_access("admin", "system_metrics", "read"), true)
-  assert_eq(check_access("admin", "user_activity", "read"), true)
-  assert_eq(check_access("admin", "security_events", "read"), true)
-  assert_eq(check_access("admin", "security_events", "delete"), true)
-  
-  // 测试无权限访问
-  assert_eq(check_access("viewer", "system_metrics", "write"), false)
-  assert_eq(check_access("analyst", "user_activity", "write"), false)
-}
-
-test "telemetry_audit_logging" {
-  // 测试遥测数据的审计日志功能
-  
-  // 创建审计日志记录
-  let mut audit_logs = []
-  
-  // 模拟审计事件
-  let log_access = fn(user : String, resource : String, action : String, timestamp : Int, result : String) {
-    let audit_entry = user + ":" + resource + ":" + action + ":" + timestamp.to_string() + ":" + result
-    audit_logs.push(audit_entry)
-  }
-  
-  // 记录各种审计事件
-  log_access("admin", "telemetry/metrics", "read", 1640995200, "success")
-  log_access("analyst", "telemetry/logs", "read", 1640995205, "success")
-  log_access("developer", "telemetry/config", "write", 1640995210, "success")
-  log_access("viewer", "telemetry/traces", "read", 1640995215, "denied")
-  log_access("analyst", "telemetry/users", "read", 1640995220, "success")
-  log_access("admin", "telemetry/security", "delete", 1640995225, "success")
-  
-  // 验证审计日志记录
-  assert_eq(audit_logs.length(), 6)
-  
-  // 验证审计日志格式
+  // 创建访问控制矩阵
+  let mut access_matrix = {}
   let mut i = 0
-  while i < audit_logs.length() {
-    let entry = audit_logs[i]
-    let parts = entry.split(":")
-    assert_eq(parts.length(), 5) // 应该有5个部分：user:resource:action:timestamp:result
-    assert_eq(parts[0].length() > 0, true) // 用户名不为空
-    assert_eq(parts[1].has_prefix("telemetry/"), true) // 资源以telemetry/开头
-    assert_eq(parts[2].length() > 0, true) // 动作不为空
-    assert_eq(parts[3].to_int() > 0, true) // 时间戳是有效数字
-    assert_eq(parts[4] == "success" or parts[4] == "denied", true) // 结果是success或denied
-    i = i + 1
-  }
-  
-  // 分析审计日志 - 查找失败访问
-  let mut failed_accesses = []
-  i = 0
-  while i < audit_logs.length() {
-    let entry = audit_logs[i]
-    if entry.has_suffix(":denied") {
-      failed_accesses.push(entry)
-    }
-    i = i + 1
-  }
-  
-  // 验证失败访问分析
-  assert_eq(failed_accesses.length(), 1)
-  assert_eq(failed_accesses[0].contains("viewer"), true)
-  assert_eq(failed_accesses[0].contains("telemetry/traces"), true)
-  
-  // 分析审计日志 - 按用户统计访问次数
-  let mut user_access_counts = []
-  let users = ["admin", "analyst", "developer", "viewer"]
-  i = 0
-  while i < users.length() {
-    let user = users[i]
-    let mut count = 0
+  while i < user_roles.length() {
+    let role = user_roles[i].0
+    let permissions = user_roles[i].1
+    
     let mut j = 0
-    while j < audit_logs.length() {
-      if audit_logs[j].has_prefix(user + ":") {
-        count = count + 1
+    while j < resources.length() {
+      let resource = resources[j]
+      let mut k = 0
+      while k < permissions.length() {
+        let permission = permissions[k]
+        let access_key = role + ":" + resource + ":" + permission
+        access_matrix[access_key] = "allowed"
+        k = k + 1
       }
       j = j + 1
     }
-    user_access_counts.push((user, count))
     i = i + 1
   }
   
-  // 验证访问统计
-  assert_eq(user_access_counts.length(), 4)
-  assert_eq(user_access_counts[0].0, "admin")
-  assert_eq(user_access_counts[0].1, 2) // admin有2次访问
-  assert_eq(user_access_counts[1].0, "analyst")
-  assert_eq(user_access_counts[1].1, 2) // analyst有2次访问
-  assert_eq(user_access_counts[2].0, "developer")
-  assert_eq(user_access_counts[2].1, 1) // developer有1次访问
-  assert_eq(user_access_counts[3].0, "viewer")
-  assert_eq(user_access_counts[3].1, 1) // viewer有1次访问
+  // 验证访问控制
+  assert_eq(access_matrix["admin:telemetry.metrics:read"], "allowed")
+  assert_eq(access_matrix["admin:telemetry.config:delete"], "allowed")
+  assert_eq(access_matrix["analyst:telemetry.traces:read"], "allowed")
+  assert_eq(access_matrix["analyst:telemetry.config:write"], "") // 不存在，不允许
+  assert_eq(access_matrix["viewer:telemetry.logs:read"], "allowed")
+  assert_eq(access_matrix["service:telemetry.metrics:write"], "allowed")
+  
+  // 统计权限数量
+  let mut admin_permissions = 0
+  let mut analyst_permissions = 0
+  
+  i = 0
+  while i < user_roles.length() {
+    let role = user_roles[i].0
+    let permissions = user_roles[i].1
+    
+    if role == "admin" {
+      admin_permissions = permissions.length() * resources.length()
+    } else if role == "analyst" {
+      analyst_permissions = permissions.length() * resources.length()
+    }
+    i = i + 1
+  }
+  
+  assert_eq(admin_permissions, 12) // 3 permissions * 4 resources
+  assert_eq(analyst_permissions, 4) // 1 permission * 4 resources
 }
 
-test "telemetry_secure_transmission" {
-  // 测试遥测数据的安全传输
+test "telemetry_audit_logging" {
+  // 测试审计日志
   
-  // 创建遥测数据包
-  let telemetry_packets = [
-    ("packet_001", "metric:cpu:75.5", "high"),
-    ("packet_002", "trace:1234567890", "medium"),
-    ("packet_003", "log:error_message", "low"),
-    ("packet_004", "metric:memory:60.2", "high")
+  let audit_events = [
+    ("user_login", "admin", "2023-01-01T10:00:00Z", "success"),
+    ("config_change", "admin", "2023-01-01T10:05:00Z", "sampling_rate changed from 0.1 to 0.2"),
+    ("data_export", "analyst", "2023-01-01T10:10:00Z", "exported 1000 metrics"),
+    ("access_denied", "viewer", "2023-01-01T10:15:00Z", "attempted to delete traces"),
+    ("service_start", "system", "2023-01-01T09:00:00Z", "telemetry service started")
   ]
   
-  // 验证数据包
-  assert_eq(telemetry_packets.length(), 4)
-  
-  // 模拟安全传输协议
-  let secure_transmit = fn(packet_id : String, data : String, priority : String) -> String {
-    // 创建传输头
-    let header = "TELEMETRY/v1.0"
-    
-    // 添加时间戳
-    let timestamp = 1640995200L
-    
-    // 创建校验和（简化版）
-    let mut checksum = 0
-    let mut i = 0
-    while i < data.length() {
-      checksum = checksum + data[i].to_int()
-      i = i + 1
-    }
-    
-    // 根据优先级选择加密级别
-    let encryption_level = if priority == "high" {
-      "AES-256"
-    } else if priority == "medium" {
-      "AES-128"
-    } else {
-      "NONE"
-    }
-    
-    // 构建安全传输包
-    let secure_packet = header + "|" + packet_id + "|" + timestamp.to_string() + "|" + 
-                       encryption_level + "|" + checksum.to_string() + "|" + data
-    
-    secure_packet
-  }
-  
-  // 安全传输所有数据包
-  let mut transmitted_packets = []
+  // 创建审计日志
+  let mut audit_log = ""
   let mut i = 0
-  while i < telemetry_packets.length() {
-    let packet = telemetry_packets[i]
-    let transmitted = secure_transmit(packet.0, packet.1, packet.2)
-    transmitted_packets.push(transmitted)
+  while i < audit_events.length() {
+    let event = audit_events[i]
+    let log_entry = event.2 + " [" + event.0 + "] user=" + event.1 + " " + event.3
+    
+    if i > 0 {
+      audit_log = audit_log + "\n"
+    }
+    audit_log = audit_log + log_entry
     i = i + 1
   }
   
-  // 验证传输包格式
-  assert_eq(transmitted_packets.length(), 4)
+  // 验证审计日志格式
+  assert_eq(audit_log.contains("2023-01-01T10:00:00Z [user_login] user=admin success"), true)
+  assert_eq(audit_log.contains("2023-01-01T10:05:00Z [config_change] user=admin sampling_rate changed from 0.1 to 0.2"), true)
+  assert_eq(audit_log.contains("2023-01-01T10:15:00Z [access_denied] user=viewer attempted to delete traces"), true)
+  assert_eq(audit_log.contains("2023-01-01T09:00:00Z [service_start] user=system telemetry service started"), true)
+  
+  // 统计事件类型
+  let mut security_events = 0
+  let mut config_events = 0
+  let mut data_events = 0
+  
   i = 0
-  while i < transmitted_packets.length() {
-    let packet = transmitted_packets[i]
-    let parts = packet.split("|")
-    assert_eq(parts.length(), 6) // 应该有6个部分
-    assert_eq(parts[0], "TELEMETRY/v1.0") // 协议版本
-    assert_eq(parts[1].has_prefix("packet_"), true) // 包ID
-    assert_eq(parts[2].to_int() > 0, true) // 时间戳
-    assert_eq(parts[3] == "AES-256" or parts[3] == "AES-128" or parts[3] == "NONE", true) // 加密级别
-    assert_eq(parts[4].to_int() >= 0, true) // 校验和
-    assert_eq(parts[5].length() > 0, true) // 数据内容
+  while i < audit_events.length() {
+    let event_type = audit_events[i].0
+    if event_type == "user_login" || event_type == "access_denied" {
+      security_events = security_events + 1
+    } else if event_type == "config_change" {
+      config_events = config_events + 1
+    } else if event_type == "data_export" {
+      data_events = data_events + 1
+    }
     i = i + 1
   }
   
-  // 验证高优先级包使用了强加密
-  assert_eq(transmitted_packets[0].contains("AES-256"), true) // packet_001是high优先级
-  assert_eq(transmitted_packets[3].contains("AES-256"), true) // packet_004是high优先级
+  assert_eq(security_events, 2)
+  assert_eq(config_events, 1)
+  assert_eq(data_events, 1)
+}
+
+test "telemetry_rate_limiting" {
+  // 测试速率限制
   
-  // 验证中等优先级包使用了中等加密
-  assert_eq(transmitted_packets[1].contains("AES-128"), true) // packet_002是medium优先级
+  let rate_limits = [
+    ("metrics", 1000),    // 每秒1000个指标
+    ("traces", 100),      // 每秒100个追踪
+    ("logs", 500),        // 每秒500个日志
+    ("config_requests", 10) // 每秒10个配置请求
+  ]
   
-  // 验证低优先级包没有加密
-  assert_eq(transmitted_packets[2].contains("NONE"), true) // packet_003是low优先级
+  let incoming_requests = [
+    ("metrics", 1500),
+    ("traces", 80),
+    ("logs", 600),
+    ("config_requests", 15)
+  ]
   
-  // 模拟接收端验证
-  let verify_packet = fn(transmitted : String) -> Bool {
-    let parts = transmitted.split("|")
-    if parts.length() != 6 {
-      return false
+  // 计算实际允许的请求数
+  let mut allowed_requests = []
+  let mut blocked_requests = []
+  
+  let mut i = 0
+  while i < incoming_requests.length() {
+    let request_type = incoming_requests[i].0
+    let request_count = incoming_requests[i].1
+    
+    // 找到对应的速率限制
+    let mut rate_limit = 0
+    let mut j = 0
+    while j < rate_limits.length() {
+      if rate_limits[j].0 == request_type {
+        rate_limit = rate_limits[j].1
+      }
+      j = j + 1
     }
     
-    let data = parts[5]
-    let received_checksum = parts[4].to_int()
-    
-    // 重新计算校验和
-    let mut calculated_checksum = 0
-    let mut i = 0
-    while i < data.length() {
-      calculated_checksum = calculated_checksum + data[i].to_int()
-      i = i + 1
+    let allowed = if request_count <= rate_limit {
+      request_count
+    } else {
+      rate_limit
     }
     
-    return calculated_checksum == received_checksum
-  }
-  
-  // 验证所有传输包的完整性
-  i = 0
-  while i < transmitted_packets.length() {
-    assert_eq(verify_packet(transmitted_packets[i]), true)
+    let blocked = if request_count > rate_limit {
+      request_count - rate_limit
+    } else {
+      0
+    }
+    
+    allowed_requests.push((request_type, allowed))
+    blocked_requests.push((request_type, blocked))
     i = i + 1
   }
+  
+  // 验证速率限制结果
+  assert_eq(allowed_requests[0].1, 1000) // metrics: 限制为1000
+  assert_eq(blocked_requests[0].1, 500)  // metrics: 阻止500个
+  assert_eq(allowed_requests[1].1, 80)   // traces: 允许全部80个
+  assert_eq(blocked_requests[1].1, 0)    // traces: 阻止0个
+  assert_eq(allowed_requests[2].1, 500)  // logs: 限制为500
+  assert_eq(blocked_requests[2].1, 100)  // logs: 阻止100个
+  assert_eq(allowed_requests[3].1, 10)   // config_requests: 限制为10
+  assert_eq(blocked_requests[3].1, 5)    // config_requests: 阻止5个
+  
+  // 创建速率限制报告
+  let mut rate_limit_report = ""
+  i = 0
+  while i < allowed_requests.length() {
+    let report_line = allowed_requests[i].0 + ": allowed=" + allowed_requests[i].1.to_string() + 
+                     ", blocked=" + blocked_requests[i].1.to_string()
+    
+    if i > 0 {
+      rate_limit_report = rate_limit_report + "; "
+    }
+    rate_limit_report = rate_limit_report + report_line
+    i = i + 1
+  }
+  
+  // 验证速率限制报告
+  assert_eq(rate_limit_report.contains("metrics: allowed=1000, blocked=500"), true)
+  assert_eq(rate_limit_report.contains("traces: allowed=80, blocked=0"), true)
+  assert_eq(rate_limit_report.contains("logs: allowed=500, blocked=100"), true)
+  assert_eq(rate_limit_report.contains("config_requests: allowed=10, blocked=5"), true)
 }
