@@ -1385,6 +1385,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_62617369635f74656c656d657472795f746573742e6d6274_8, ["telemetry_error_handling"]),
     9: (__test_62617369635f74656c656d657472795f746573742e6d6274_9, ["telemetry_performance_metrics"]),
   },
+  "backward_compatibility_test.mbt": {
+    0: (__test_6261636b776172645f636f6d7061746962696c6974795f746573742e6d6274_0, ["attribute format compatibility"]),
+    1: (__test_6261636b776172645f636f6d7061746962696c6974795f746573742e6d6274_1, ["span data structure evolution"]),
+    2: (__test_6261636b776172645f636f6d7061746962696c6974795f746573742e6d6274_2, ["metric aggregation compatibility"]),
+    3: (__test_6261636b776172645f636f6d7061746962696c6974795f746573742e6d6274_3, ["log severity mapping compatibility"]),
+    4: (__test_6261636b776172645f636f6d7061746962696c6974795f746573742e6d6274_4, ["context propagation compatibility"]),
+    5: (__test_6261636b776172645f636f6d7061746962696c6974795f746573742e6d6274_5, ["resource metadata compatibility"]),
+    6: (__test_6261636b776172645f636f6d7061746962696c6974795f746573742e6d6274_6, ["serialization format compatibility"]),
+    7: (__test_6261636b776172645f636f6d7061746962696c6974795f746573742e6d6274_7, ["api contract compatibility"]),
+  },
   "attribute_value_type_conversion_test.mbt": {
     0: (__test_6174747269627574655f76616c75655f747970655f636f6e76657273696f6e5f746573742e6d6274_0, ["attribute_value_string_conversion"]),
     1: (__test_6174747269627574655f76616c75655f747970655f636f6e76657273696f6e5f746573742e6d6274_1, ["attribute_value_array_conversion"]),
