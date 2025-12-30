@@ -78,6 +78,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_6, ["concurrent_safety_validation"]),
     7: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_7, ["performance_benchmark_validation"]),
   },
+  "basic_test_new.mbt": {
+    0: (__test_62617369635f746573745f6e65772e6d6274_0, ["metrics_basic_test"]),
+    1: (__test_62617369635f746573745f6e65772e6d6274_1, ["logs_basic_test"]),
+    2: (__test_62617369635f746573745f6e65772e6d6274_2, ["trace_basic_test"]),
+    3: (__test_62617369635f746573745f6e65772e6d6274_3, ["attribute_basic_test"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
