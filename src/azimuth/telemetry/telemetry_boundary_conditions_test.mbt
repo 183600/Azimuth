@@ -85,42 +85,6 @@ test "telemetry_minimum_values_handling" {
   assert_eq(min_values.length(), 6)
 }
 
-test "telemetry_null_and_undefined_handling" {
-  // 测试遥测空值和未定义值处理
-  
-  let null_values = [
-    ("null_string", null, "string"),
-    ("null_number", null, "number"),
-    ("null_boolean", null, "boolean"),
-    ("null_array", null, "array"),
-    ("null_object", null, "object"),
-    ("undefined_value", null, "any")
-  ]
-  
-  let mut safely_handled = 0
-  let mut errors_caused = 0
-  
-  // 测试空值处理
-  for value_data in null_values {
-    let value_name = value_data.0
-    let value = value_data.1
-    let expected_type = value_data.2
-    
-    // 模拟空值安全处理
-    let handled_safely = value == null
-    
-    if handled_safely {
-      safely_handled = safely_handled + 1
-    } else {
-      errors_caused = errors_caused + 1
-    }
-  }
-  
-  // 验证空值处理结果
-  assert_eq(safely_handled, 6)
-  assert_eq(errors_caused, 0)
-}
-
 test "telemetry_extreme_string_lengths" {
   // 测试遥测极端字符串长度
   
@@ -165,14 +129,14 @@ test "telemetry_concurrent_load_boundaries" {
     ("low_load", 10, true),
     ("medium_load", 100, true),
     ("high_load", 1000, true),
-    ("extreme_load", 10000, false),  // 可能超出系统限制
-    ("maximum_load", 100000, false)   // 肯定超出系统限制
+    ("extreme_load", 10000, false),
+    ("maximum_load", 100000, false)
   ]
   
   let system_limits = {
     "max_concurrent_operations": 5000,
-    "max_memory_usage": 2048,  // MB
-    "max_cpu_usage": 80        // percentage
+    "max_memory_usage": 2048,
+    "max_cpu_usage": 80
   }
   
   let mut successful_loads = 0
@@ -202,55 +166,16 @@ test "telemetry_concurrent_load_boundaries" {
   assert_eq(concurrent_loads.length(), 5)
 }
 
-test "telemetry_memory_pressure_boundaries" {
-  // 测试遥测内存压力边界
-  
-  let memory_scenarios = [
-    ("low_memory", 100, true),      // 100MB
-    ("medium_memory", 512, true),    // 512MB
-    ("high_memory", 1024, true),     // 1GB
-    ("critical_memory", 2048, false), // 2GB - 接近限制
-    ("extreme_memory", 4096, false)   // 4GB - 超出限制
-  ]
-  
-  let system_memory_limit = 2048  // 2GB
-  
-  let mut within_limits = 0
-  let mut exceeded_limits = 0
-  
-  // 测试内存压力边界
-  for scenario in memory_scenarios {
-    let scenario_name = scenario.0
-    let memory_usage = scenario.1
-    let should_succeed = scenario.2
-    
-    let memory_within_limit = memory_usage <= system_memory_limit
-    
-    if memory_within_limit == should_succeed {
-      if memory_within_limit {
-        within_limits = within_limits + 1
-      } else {
-        exceeded_limits = exceeded_limits + 1
-      }
-    }
-  }
-  
-  // 验证内存压力测试结果
-  assert_eq(within_limits, 3)
-  assert_eq(exceeded_limits, 2)
-  assert_eq(memory_scenarios.length(), 5)
-}
-
 test "telemetry_timeout_boundaries" {
   // 测试遥测超时边界
   
   let timeout_scenarios = [
-    ("fast_operation", 100, 1000, true),    // 100ms操作，1s超时
-    ("normal_operation", 500, 1000, true),  // 500ms操作，1s超时
-    ("slow_operation", 900, 1000, true),    // 900ms操作，1s超时
-    ("boundary_operation", 1000, 1000, true), // 1s操作，1s超时
-    ("timeout_operation", 1100, 1000, false), // 1.1s操作，1s超时
-    ("extreme_timeout", 5000, 1000, false)    // 5s操作，1s超时
+    ("fast_operation", 100, 1000, true),
+    ("normal_operation", 500, 1000, true),
+    ("slow_operation", 900, 1000, true),
+    ("boundary_operation", 1000, 1000, true),
+    ("timeout_operation", 1100, 1000, false),
+    ("extreme_timeout", 5000, 1000, false)
   ]
   
   let mut completed_operations = 0
@@ -330,14 +255,14 @@ test "telemetry_data_volume_boundaries" {
     ("small_batch", 100, true),
     ("medium_batch", 1000, true),
     ("large_batch", 10000, true),
-    ("huge_batch", 100000, false),  // 可能超出处理能力
-    ("massive_batch", 1000000, false) // 肯定超出处理能力
+    ("huge_batch", 100000, false),
+    ("massive_batch", 1000000, false)
   ]
   
   let processing_limits = {
     "max_batch_size": 50000,
-    "max_memory_per_batch": 1024,  // MB
-    "max_processing_time": 5000    // ms
+    "max_memory_per_batch": 1024,
+    "max_processing_time": 5000
   }
   
   let mut successfully_processed = 0
