@@ -53,6 +53,19 @@
       "root": "azimuth/telemetry",
       "rel": "azimuth/telemetry",
       "files": {
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/comprehensive_test_suite.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/simple_test_new.mbt": {
           "backend": [
             "Wasm",

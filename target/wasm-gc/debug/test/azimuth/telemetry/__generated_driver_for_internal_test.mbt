@@ -68,6 +68,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_73696d706c655f746573745f6e65772e6d6274_1, ["simple_numeric_operations"]),
     2: (__test_73696d706c655f746573745f6e65772e6d6274_2, ["simple_array_operations"]),
   },
+  "comprehensive_test_suite.mbt": {
+    0: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_0, ["resource_creation_and_validation"]),
+    1: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_1, ["attribute_value_type_conversions"]),
+    2: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_2, ["span_context_operations"]),
+    3: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_3, ["metric_instruments_basic_functionality"]),
+    4: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_4, ["telemetry_data_serialization"]),
+    5: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_5, ["error_boundary_handling"]),
+    6: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_6, ["concurrent_safety_validation"]),
+    7: (__test_636f6d70726568656e736976655f746573745f73756974652e6d6274_7, ["performance_benchmark_validation"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
