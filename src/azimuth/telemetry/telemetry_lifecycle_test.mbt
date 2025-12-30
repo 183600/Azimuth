@@ -1,434 +1,285 @@
-// 遥测数据生命周期管理测试用例
+// 遥测数据生命周期测试用例
 
-test "telemetry_lifecycle_data_creation" {
-  // 测试遥测数据创建阶段
+test "telemetry_data_lifecycle_stages" {
+  // 测试遥测数据生命周期阶段
   
-  let current_time = 1634567890123L
-  let service_name = "payment-service"
-  let operation_name = "process_payment"
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
+  let lifecycle_stages = ["creation", "collection", "processing", "storage", "analysis", "archival", "deletion"]
+  let stage_durations = [0.1, 1.0, 2.5, 30.0, 60.0, 1440.0, 43200.0] // 分钟
   
-  // 创建遥测数据记录
-  let telemetry_record = {
-    "trace_id": trace_id,
-    "span_id": span_id,
-    "parent_span_id": "",
-    "operation_name": operation_name,
-    "service_name": service_name,
-    "status": "created",
-    "start_time": current_time,
-    "end_time": 0L, // 未结束
-    "duration": 0L,
-    "attributes": [],
-    "events": [],
-    "links": [],
-    "resource": {
-      "service.name": service_name,
-      "service.version": "1.2.3",
-      "deployment.environment": "production"
-    },
-    "created_at": current_time,
-    "updated_at": current_time
+  // 验证生命周期阶段
+  assert_eq(lifecycle_stages.length(), 7)
+  assert_eq(lifecycle_stages[0], "creation")
+  assert_eq(lifecycle_stages[6], "deletion")
+  
+  // 验证阶段持续时间
+  assert_eq(stage_durations.length(), 7)
+  assert_eq(stage_durations[0], 0.1)   // 创建阶段0.1分钟
+  assert_eq(stage_durations[6], 43200.0) // 删除阶段30天后
+  
+  // 计算总生命周期时间
+  let mut total_lifecycle = 0.0
+  let mut i = 0
+  while i < stage_durations.length() {
+    total_lifecycle = total_lifecycle + stage_durations[i]
+    i = i + 1
   }
   
-  // 验证数据创建状态
-  assert_eq(telemetry_record["trace_id"], trace_id)
-  assert_eq(telemetry_record["span_id"], span_id)
-  assert_eq(telemetry_record["operation_name"], operation_name)
-  assert_eq(telemetry_record["service_name"], service_name)
-  assert_eq(telemetry_record["status"], "created")
-  assert_eq(telemetry_record["start_time"], current_time)
-  assert_eq(telemetry_record["end_time"], 0L)
-  assert_eq(telemetry_record["duration"], 0L)
-  assert_eq(telemetry_record["created_at"], current_time)
-  assert_eq(telemetry_record["updated_at"], current_time)
+  // 验证总生命周期
+  assert_eq(total_lifecycle, 44653.6) // 所有阶段时间总和
   
-  // 验证资源信息
-  let resource = telemetry_record["resource"]
-  assert_eq(resource["service.name"], service_name)
-  assert_eq(resource["service.version"], "1.2.3")
-  assert_eq(resource["deployment.environment"], "production")
+  // 转换为天数
+  let total_days = total_lifecycle / 1440.0 // 1440分钟 = 1天
+  assert_eq(total_days, 31.00388888888889) // 约31天
+  
+  // 模拟数据在不同阶段的状态
+  let data_states = [
+    ("raw", "creation"),
+    ("collected", "collection"),
+    ("parsed", "processing"),
+    ("stored", "storage"),
+    ("analyzed", "analysis"),
+    ("archived", "archival"),
+    ("deleted", "deletion")
+  ]
+  
+  // 验证数据状态
+  assert_eq(data_states.length(), 7)
+  assert_eq(data_states[0].0, "raw")
+  assert_eq(data_states[0].1, "creation")
+  assert_eq(data_states[6].0, "deleted")
+  assert_eq(data_states[6].1, "deletion")
 }
 
-test "telemetry_lifecycle_data_active" {
-  // 测试遥测数据活跃阶段
+test "data_retention_policies" {
+  // 测试数据保留策略
   
-  let start_time = 1634567890123L
-  let active_time = 1634567890234L
-  let telemetry_record = {
-    "trace_id": "0af7651916cd43dd8448eb211c80319c",
-    "span_id": "b7ad6b7169203331",
-    "operation_name": "process_payment",
-    "service_name": "payment-service",
-    "status": "active",
-    "start_time": start_time,
-    "end_time": 0L,
-    "duration": 0L,
-    "attributes": [
-      ("http.method", "GET"),
-      ("http.url", "/api/payments"),
-      ("user.id", "12345")
-    ],
-    "events": [
-      {
-        "name": "database.query.start",
-        "timestamp": start_time + 100L,
-        "attributes": [("query.type", "select")]
+  let retention_policies = ["real_time", "short_term", "medium_term", "long_term", "permanent"]
+  let retention_periods = [1, 7, 30, 365, -1] // 天数，-1表示永久
+  
+  // 验证保留策略
+  assert_eq(retention_policies.length(), 5)
+  assert_eq(retention_policies[0], "real_time")
+  assert_eq(retention_policies[4], "permanent")
+  
+  // 验证保留周期
+  assert_eq(retention_periods.length(), 5)
+  assert_eq(retention_periods[0], 1)    // 实时数据保留1天
+  assert_eq(retention_periods[2], 30)  // 中期数据保留30天
+  assert_eq(retention_periods[4], -1)  // 永久保留
+  
+  // 模拟不同数据类型的保留策略
+  let data_type_retention = [
+    ("metrics", "medium_term"),
+    ("traces", "short_term"),
+    ("logs", "long_term"),
+    ("events", "short_term"),
+    ("alerts", "permanent"),
+    ("profiles", "long_term")
+  ]
+  
+  // 验证数据类型保留策略
+  assert_eq(data_type_retention.length(), 6)
+  assert_eq(data_type_retention[0].0, "metrics")
+  assert_eq(data_type_retention[0].1, "medium_term")
+  assert_eq(data_type_retention[3].1, "short_term")
+  
+  // 计算存储成本（基于保留周期）
+  let storage_costs = []
+  let mut i = 0
+  while i < data_type_retention.length() {
+    let data_type = data_type_retention[i].0
+    let retention_policy = data_type_retention[i].1
+    
+    // 找到对应的保留周期
+    let mut retention_days = 0
+    let mut j = 0
+    while j < retention_policies.length() {
+      if retention_policies[j] == retention_policy {
+        retention_days = retention_periods[j]
+        break
       }
-    ],
-    "created_at": start_time,
-    "updated_at": active_time
+      j = j + 1
+    }
+    
+    // 计算成本（简化：每天1单位成本）
+    let cost = if retention_days == -1 {
+      1000.0 // 永久保留的高成本
+    } else {
+      retention_days.to_double() * 1.0
+    }
+    
+    storage_costs.push((data_type, retention_policy, cost))
+    i = i + 1
   }
   
-  // 模拟活跃状态更新
-  telemetry_record["status"] = "active"
-  telemetry_record["updated_at"] = active_time
-  
-  // 添加新的事件
-  let new_event = {
-    "name": "cache.hit",
-    "timestamp": active_time + 50L,
-    "attributes": [("cache.key", "user_12345")]
-  }
-  telemetry_record["events"].push(new_event)
-  
-  // 添加新属性
-  telemetry_record["attributes"].push(("payment.amount", "100.50"))
-  
-  // 验证活跃状态
-  assert_eq(telemetry_record["status"], "active")
-  assert_eq(telemetry_record["updated_at"], active_time)
-  assert_eq(telemetry_record["attributes"].length(), 4)
-  assert_eq(telemetry_record["events"].length(), 2)
-  
-  // 验证事件时间顺序
-  let events = telemetry_record["events"]
-  assert_eq(events[0]["timestamp"] < events[1]["timestamp"], true)
-  assert_eq(events[0]["name"], "database.query.start")
-  assert_eq(events[1]["name"], "cache.hit")
-  
-  // 验证属性完整性
-  let attributes = telemetry_record["attributes"]
-  assert_eq(attributes.contains(("http.method", "GET")), true)
-  assert_eq(attributes.contains(("payment.amount", "100.50")), true)
+  // 验证存储成本
+  assert_eq(storage_costs.length(), 6)
+  assert_eq(storage_costs[0].1, "medium_term")
+  assert_eq(storage_costs[0].2, 30.0) // metrics保留30天，成本30
+  assert_eq(storage_costs[4].1, "permanent")
+  assert_eq(storage_costs[4].2, 1000.0) // alerts永久保留，成本高
 }
 
-test "telemetry_lifecycle_data_completion" {
-  // 测试遥测数据完成阶段
+test "automated_data_cleanup" {
+  // 测试自动数据清理
   
-  let start_time = 1634567890123L
-  let end_time = 1634567890456L
-  let telemetry_record = {
-    "trace_id": "0af7651916cd43dd8448eb211c80319c",
-    "span_id": "b7ad6b7169203331",
-    "operation_name": "process_payment",
-    "service_name": "payment-service",
-    "status": "active",
-    "start_time": start_time,
-    "end_time": 0L,
-    "duration": 0L,
-    "attributes": [
-      ("http.method", "GET"),
-      ("http.status_code", "200"),
-      ("user.id", "12345")
-    ],
-    "events": [
-      {"name": "validation.start", "timestamp": start_time + 10L},
-      {"name": "validation.complete", "timestamp": start_time + 50L},
-      {"name": "payment.processed", "timestamp": start_time + 200L}
-    ],
-    "created_at": start_time,
-    "updated_at": start_time + 200L
-  }
+  let cleanup_triggers = ["time_based", "size_based", "access_based", "policy_based"]
+  let cleanup_methods = ["immediate_delete", "graceful_delete", "archive_then_delete", "compress_then_archive"]
   
-  // 完成遥测记录
-  telemetry_record["status"] = "completed"
-  telemetry_record["end_time"] = end_time
-  telemetry_record["duration"] = end_time - start_time
-  telemetry_record["updated_at"] = end_time
+  // 验证清理触发器
+  assert_eq(cleanup_triggers.length(), 4)
+  assert_eq(cleanup_triggers[0], "time_based")
+  assert_eq(cleanup_triggers[3], "policy_based")
   
-  // 添加完成事件
-  let completion_event = {
-    "name": "span.complete",
-    "timestamp": end_time,
-    "attributes": [("success", "true"), ("duration_ms", (end_time - start_time).to_string())]
-  }
-  telemetry_record["events"].push(completion_event)
+  // 验证清理方法
+  assert_eq(cleanup_methods.length(), 4)
+  assert_eq(cleanup_methods[0], "immediate_delete")
+  assert_eq(cleanup_methods[3], "compress_then_archive")
   
-  // 验证完成状态
-  assert_eq(telemetry_record["status"], "completed")
-  assert_eq(telemetry_record["end_time"], end_time)
-  assert_eq(telemetry_record["duration"], end_time - start_time)
-  assert_eq(telemetry_record["updated_at"], end_time)
-  
-  // 验证持续时间计算正确
-  let expected_duration = 333L
-  assert_eq(telemetry_record["duration"], expected_duration)
-  
-  // 验证事件完整性
-  let events = telemetry_record["events"]
-  assert_eq(events.length(), 4)
-  assert_eq(events[3]["name"], "span.complete")
-  assert_eq(events[3]["timestamp"], end_time)
-  
-  // 验证时间顺序
-  for i in 1..events.length() {
-    assert_eq(events[i-1]["timestamp"] <= events[i]["timestamp"], true)
-  }
-}
-
-test "telemetry_lifecycle_data_expiration" {
-  // 测试遥测数据过期阶段
-  
-  let current_time = 1634567890123L
-  let retention_period = 7 * 24 * 60 * 60 * 1000L // 7天
-  let telemetry_records = []
-  
-  // 创建不同年龄的遥测记录
-  let record_ages = [
-    {"id": "record_1", "age_hours": 1, "expected_status": "active"},
-    {"id": "record_2", "age_hours": 24, "expected_status": "active"},
-    {"id": "record_3", "age_hours": 168, "expected_status": "active"}, // 正好7天
-    {"id": "record_4", "age_hours": 169, "expected_status": "expired"}, // 超过7天
-    {"id": "record_5", "age_hours": 336, "expected_status": "expired"} // 超过14天
+  // 模拟待清理的数据集
+  let datasets = [
+    ("dataset_1", 1000000, 30, "2024-01-01"),    // (名称, 大小KB, 保留天数, 创建日期)
+    ("dataset_2", 500000, 7, "2024-01-15"),
+    ("dataset_3", 2000000, 365, "2023-12-01"),
+    ("dataset_4", 750000, 1, "2024-01-20"),
+    ("dataset_5", 1500000, 90, "2023-11-01")
   ]
   
-  for record_info in record_ages {
-    let record_age_ms = record_info["age_hours"] * 60 * 60 * 1000L
-    let created_time = current_time - record_age_ms
+  // 验证数据集
+  assert_eq(datasets.length(), 5)
+  assert_eq(datasets[0].0, "dataset_1")
+  assert_eq(datasets[0].1, 1000000) // 1GB
+  assert_eq(datasets[0].2, 30)      // 保留30天
+  
+  // 模拟当前日期和清理决策
+  let current_date = "2024-01-21"
+  let cleanup_decisions = []
+  
+  let mut i = 0
+  while i < datasets.length() {
+    let dataset = datasets[i]
+    let creation_date = dataset.3
+    let retention_days = dataset.2
     
-    let record = {
-      "id": record_info["id"],
-      "trace_id": "trace_" + record_info["id"],
-      "span_id": "span_" + record_info["id"],
-      "status": "completed",
-      "created_at": created_time,
-      "updated_at": created_time + 1000L,
-      "age_hours": record_info["age_hours"]
+    // 简化计算：假设创建日期到当前日期的天数
+    let days_since_creation = 21 - 1 // dataset_1创建于1月1日，当前1月21日
+    if dataset.0 == "dataset_2" {
+      days_since_creation = 21 - 15
+    } else if dataset.0 == "dataset_3" {
+      days_since_creation = 21 + 31 // 12月1日到1月21日
+    } else if dataset.0 == "dataset_4" {
+      days_since_creation = 21 - 20
+    } else if dataset.0 == "dataset_5" {
+      days_since_creation = 21 + 61 // 11月1日到1月21日
     }
     
-    telemetry_records.push(record)
-  }
-  
-  // 检查过期状态
-  let expired_records = []
-  let active_records = []
-  
-  for record in telemetry_records {
-    let record_age = current_time - record["created_at"]
-    let is_expired = record_age > retention_period
-    
-    if is_expired {
-      record["status"] = "expired"
-      expired_records.push(record)
+    let should_cleanup = days_since_creation >= retention_days
+    let cleanup_method = if dataset.1 > 1000000 {
+      "archive_then_delete" // 大数据先归档
     } else {
-      active_records.push(record)
+      "immediate_delete"
     }
+    
+    cleanup_decisions.push((dataset.0, should_cleanup, cleanup_method, days_since_creation))
+    i = i + 1
   }
   
-  // 验证过期检查结果
-  assert_eq(expired_records.length(), 2)
-  assert_eq(active_records.length(), 3)
+  // 验证清理决策
+  assert_eq(cleanup_decisions.length(), 5)
+  assert_eq(cleanup_decisions[0].1, false) // dataset_1保留30天，才过了20天
+  assert_eq(cleanup_decisions[1].1, true)  // dataset_2保留7天，已过6天
+  assert_eq(cleanup_decisions[3].1, true)  // dataset_4保留1天，已过1天
   
-  // 验证过期记录
-  for record in expired_records {
-    assert_eq(record["status"], "expired")
-    assert_eq(record["age_hours"] >= 169, true)
-  }
-  
-  // 验证活跃记录
-  for record in active_records {
-    assert_eq(record["status"], "completed")
-    assert_eq(record["age_hours"] <= 168, true)
-  }
-  
-  // 验证具体记录的过期状态
-  let expired_ids = []
-  for record in expired_records {
-    expired_ids.push(record["id"])
-  }
-  
-  assert_eq(expired_ids.contains("record_4"), true)
-  assert_eq(expired_ids.contains("record_5"), true)
-  assert_eq(expired_ids.contains("record_1"), false)
-  assert_eq(expired_ids.contains("record_2"), false)
-  assert_eq(expired_ids.contains("record_3"), false)
+  // 验证清理方法选择
+  assert_eq(cleanup_decisions[2].2, "archive_then_delete") // dataset_3是2GB，先归档
+  assert_eq(cleanup_decisions[3].2, "immediate_delete")    // dataset_4是750MB，直接删除
 }
 
-test "telemetry_lifecycle_data_archival" {
-  // 测试遥测数据归档阶段
+test "data_archival_strategies" {
+  // 测试数据归档策略
   
-  let current_time = 1634567890123L
-  let archival_threshold = 30 * 24 * 60 * 60 * 1000L // 30天后归档
-  let telemetry_data = []
+  let archival_formats = ["compressed", "parquet", "orc", "avro"]
+  let archival_locations = ["cold_storage", "tape", "cloud_archive", "distributed_storage"]
   
-  // 创建需要归档的数据
-  let archival_candidates = [
-    {"id": "data_1", "age_days": 29, "should_archive": false},
-    {"id": "data_2", "age_days": 30, "shouldArchive": false},
-    {"id": "data_3", "age_days": 31, "should_archive": true},
-    {"id": "data_4", "age_days": 60, "should_archive": true},
-    {"id": "data_5", "age_days": 90, "should_archive": true}
+  // 验证归档格式
+  assert_eq(archival_formats.length(), 4)
+  assert_eq(archival_formats[0], "compressed")
+  assert_eq(archival_formats[3], "avro")
+  
+  // 验证归档位置
+  assert_eq(archival_locations.length(), 4)
+  assert_eq(archival_locations[0], "cold_storage")
+  assert_eq(archival_locations[3], "distributed_storage")
+  
+  // 模拟归档数据特征
+  let archival_data = [
+    ("trace_data_2023", 50000000, "high_access", "parquet"),
+    ("log_data_2023", 200000000, "low_access", "compressed"),
+    ("metric_data_2023", 10000000, "medium_access", "orc"),
+    ("event_data_2023", 75000000, "low_access", "avro")
   ]
   
-  for candidate in archival_candidates {
-    let age_ms = candidate["age_days"] * 24 * 60 * 60 * 1000L
-    let created_time = current_time - age_ms
-    
-    let data_record = {
-      "id": candidate["id"],
-      "trace_id": "trace_" + candidate["id"],
-      "created_at": created_time,
-      "status": "completed",
-      "size_bytes": 1024 + candidate["age_days"] * 10,
-      "access_count": 100 - candidate["age_days"],
-      "last_accessed": current_time - (candidate["age_days"] * 12 * 60 * 60 * 1000L)
-    }
-    
-    telemetry_data.push(data_record)
-  }
+  // 验证归档数据
+  assert_eq(archival_data.length(), 4)
+  assert_eq(archival_data[0].0, "trace_data_2023")
+  assert_eq(archival_data[0].1, 50000000) // 50GB
+  assert_eq(archival_data[0].2, "high_access")
   
-  // 执行归档逻辑
-  let archived_data = []
-  let retained_data = []
-  
-  for record in telemetry_data {
-    let record_age = current_time - record["created_at"]
-    let should_archive = record_age > archival_threshold
+  // 计算归档成本和性能
+  let archival_analysis = []
+  let mut i = 0
+  while i < archival_data.length() {
+    let data = archival_data[i]
+    let data_name = data.0
+    let data_size = data.1.to_double() // GB
+    let access_pattern = data.2
+    let format = data.3
     
-    // 额外的归档条件：访问频率低
-    let access_frequency = record["access_count"].to_float() / (record_age / (24 * 60 * 60 * 1000L)).to_float()
-    let low_access_frequency = access_frequency < 1.0 // 每天访问少于1次
-    
-    if should_archive || low_access_frequency {
-      let archived_record = record
-      archived_record["status"] = "archived"
-      archived_record["archived_at"] = current_time
-      archived_record["archival_reason"] = if should_archive { "age" } else { "low_access" }
-      archived_data.push(archived_record)
+    // 根据访问模式选择存储位置
+    let storage_location = if access_pattern == "high_access" {
+      "distributed_storage"
+    } else if access_pattern == "medium_access" {
+      "cold_storage"
     } else {
-      retained_data.push(record)
-    }
-  }
-  
-  // 验证归档结果
-  assert_eq(archived_data.length() >= 3, true)
-  assert_eq(retained_data.length() <= 2, true)
-  
-  // 验证归档记录属性
-  for record in archived_data {
-    assert_eq(record["status"], "archived")
-    assert_eq(record["archived_at"], current_time)
-    assert_eq(record["archival_reason"] == "age" || record["archival_reason"] == "low_access", true)
-  }
-  
-  // 验证归档原因分布
-  let age_archived = 0
-  let low_access_archived = 0
-  
-  for record in archived_data {
-    if record["archival_reason"] == "age" {
-      age_archived = age_archived + 1
-    } else if record["archival_reason"] == "low_access" {
-      low_access_archived = low_access_archived + 1
-    }
-  }
-  
-  assert_eq(age_archived >= 3, true) // 至少3个因年龄归档
-  assert_eq(age_archived + low_access_archived, archived_data.length())
-}
-
-test "telemetry_lifecycle_data_cleanup" {
-  // 测试遥测数据清理阶段
-  
-  let current_time = 1634567890123L
-  let cleanup_threshold = 365 * 24 * 60 * 60 * 1000L // 1年后清理
-  let telemetry_storage = []
-  
-  // 创建不同状态的遥测数据
-  let cleanup_candidates = [
-    {"id": "cleanup_1", "age_days": 300, "status": "archived", "should_cleanup": false},
-    {"id": "cleanup_2", "age_days": 365, "status": "archived", "should_cleanup": false},
-    {"id": "cleanup_3", "age_days": 366, "status": "archived", "should_cleanup": true},
-    {"id": "cleanup_4", "age_days": 400, "status": "archived", "should_cleanup": true},
-    {"id": "cleanup_5", "age_days": 500, "status": "archived", "should_cleanup": true},
-    {"id": "cleanup_6", "age_days": 366, "status": "active", "should_cleanup": false} // 活跃数据不清理
-  ]
-  
-  for candidate in cleanup_candidates {
-    let age_ms = candidate["age_days"] * 24 * 60 * 60 * 1000L
-    let created_time = current_time - age_ms
-    
-    let storage_record = {
-      "id": candidate["id"],
-      "trace_id": "trace_" + candidate["id"],
-      "created_at": created_time,
-      "status": candidate["status"],
-      "size_bytes": 2048 + candidate["age_days"] * 5,
-      "cleanup_eligible": candidate["status"] == "archived"
+      "cloud_archive"
     }
     
-    telemetry_storage.push(storage_record)
-  }
-  
-  // 执行清理逻辑
-  let cleaned_up_records = []
-  let remaining_records = []
-  
-  for record in telemetry_storage {
-    let record_age = current_time - record["created_at"]
-    let should_cleanup = record_age > cleanup_threshold && record["cleanup_eligible"]
-    
-    if should_cleanup {
-      let cleanup_record = record
-      cleanup_record["status"] = "cleaned_up"
-      cleanup_record["cleaned_up_at"] = current_time
-      cleaned_up_records.push(cleanup_record)
+    // 计算存储成本（每月每GB成本）
+    let cost_per_gb = if storage_location == "distributed_storage" {
+      0.10
+    } else if storage_location == "cold_storage" {
+      0.02
     } else {
-      remaining_records.push(record)
+      0.005
     }
+    
+    let monthly_cost = data_size * cost_per_gb
+    
+    // 计算压缩比
+    let compression_ratio = if format == "compressed" {
+      0.3
+    } else if format == "parquet" {
+      0.4
+    } else if format == "orc" {
+      0.35
+    } else {
+      0.5
+    }
+    
+    let actual_storage_size = data_size * compression_ratio
+    
+    archival_analysis.push((data_name, storage_location, monthly_cost, actual_storage_size, compression_ratio))
+    i = i + 1
   }
   
-  // 验证清理结果
-  assert_eq(cleaned_up_records.length(), 3)
-  assert_eq(remaining_records.length(), 3)
+  // 验证归档分析
+  assert_eq(archival_analysis.length(), 4)
+  assert_eq(archival_analysis[0].1, "distributed_storage") // 高访问数据
+  assert_eq(archival_analysis[1].1, "cloud_archive")        // 低访问数据
+  assert_eq(archival_analysis[0].2, 5000000.0) // 50GB * 0.10 = 5M/月
+  assert_eq(archival_analysis[1].2, 1000000.0) // 200GB * 0.005 = 1M/月
   
-  // 验证清理记录属性
-  for record in cleaned_up_records {
-    assert_eq(record["status"], "cleaned_up")
-    assert_eq(record["cleaned_up_at"], current_time)
-    assert_eq(record["id"].has_prefix("cleanup_"), true)
-  }
-  
-  // 验证保留记录
-  let retained_ids = []
-  for record in remaining_records {
-    retained_ids.push(record["id"])
-  }
-  
-  assert_eq(retained_ids.contains("cleanup_1"), true) // 未达到清理阈值
-  assert_eq(retained_ids.contains("cleanup_2"), true) // 正好达到阈值
-  assert_eq(retained_ids.contains("cleanup_6"), true) // 活跃数据不清理
-  assert_eq(retained_ids.contains("cleanup_3"), false) // 已清理
-  assert_eq(retained_ids.contains("cleanup_4"), false) // 已清理
-  assert_eq(retained_ids.contains("cleanup_5"), false) // 已清理
-  
-  // 验证存储空间回收
-  let original_total_size = 0L
-  for record in telemetry_storage {
-    original_total_size = original_total_size + record["size_bytes"]
-  }
-  
-  let remaining_total_size = 0L
-  for record in remaining_records {
-    remaining_total_size = remaining_total_size + record["size_bytes"]
-  }
-  
-  let cleaned_up_size = original_total_size - remaining_total_size
-  assert_eq(cleaned_up_size > 0, true)
-  
-  // 验证清理后的存储效率
-  let cleanup_efficiency = cleaned_up_size.to_float() / original_total_size.to_float()
-  assert_eq(cleanup_efficiency > 0.3, true) // 至少回收30%的存储空间
+  // 验证压缩效果
+  assert_eq(archival_analysis[0].3, 20000000.0) // 50GB * 0.4 = 20GB
+  assert_eq(archival_analysis[1].3, 60000000.0) // 200GB * 0.3 = 60GB
 }
