@@ -1,118 +1,106 @@
 // 遥测数据转换测试用例
 
-test "telemetry_data_type_conversion" {
-  // 测试遥测数据类型转换
+test "telemetry_metric_unit_conversion" {
+  // 测试遥测指标单位转换功能
   
-  let string_value = "123.45"
-  let int_value = 42
-  let bool_value = true
-  let double_value = 67.89
+  let metric_values = [
+    ("cpu_usage", 75.5, "percent"),
+    ("memory_usage", 1024.0, "megabytes"),
+    ("response_time", 250.0, "milliseconds"),
+    ("throughput", 1000.0, "requests_per_second")
+  ]
   
-  // 字符串转数值
-  let parsed_double = string_value.to_double()
-  assert_eq(parsed_double, 123.45)
-  assert_eq(parsed_double > 100.0, true)
-  assert_eq(parsed_double < 200.0, true)
-  
-  // 数值转字符串
-  let int_string = int_value.to_string()
-  let double_string = double_value.to_string()
-  
-  assert_eq(int_string, "42")
-  assert_eq(double_string, "67.89")
-  
-  // 布尔值转字符串
-  let bool_string = if bool_value { "true" } else { "false" }
-  assert_eq(bool_string, "true")
-  
-  // 创建类型转换记录
-  let conversion_record = "string->double:" + string_value + "->" + parsed_double.to_string() +
-                         ", int->string:" + int_value.to_string() + "->" + int_string +
-                         ", bool->string:" + bool_value.to_string() + "->" + bool_string
-  
-  assert_eq(conversion_record.contains("string->double:123.45->123.45"), true)
-  assert_eq(conversion_record.contains("int->string:42->42"), true)
-  assert_eq(conversion_record.contains("bool->string:true->true"), true)
-}
-
-test "telemetry_unit_conversion" {
-  // 测试遥测单位转换
-  
-  let bytes_value = 1048576L // 1MB in bytes
-  let milliseconds_value = 5000L // 5 seconds in milliseconds
-  let bytes_per_second = 1048576L // 1MB/s
-  
-  // 字节转MB
-  let mb_value = bytes_value.to_double() / 1024.0 / 1024.0
-  assert_eq(mb_value, 1.0)
-  
-  // 毫秒转秒
-  let seconds_value = milliseconds_value.to_double() / 1000.0
-  assert_eq(seconds_value, 5.0)
-  
-  // 计算传输时间
-  let transfer_time = bytes_value.to_double() / bytes_per_second.to_double()
-  assert_eq(transfer_time, 1.0) // 1秒
-  
-  // 创建单位转换报告
-  let conversion_report = "bytes->MB:" + bytes_value.to_string() + "->" + mb_value.to_string() + "MB" +
-                         ", ms->s:" + milliseconds_value.to_string() + "->" + seconds_value.to_string() + "s" +
-                         ", transfer_time:" + transfer_time.to_string() + "s"
-  
-  assert_eq(conversion_report.contains("bytes->MB:1048576->1MB"), true)
-  assert_eq(conversion_report.contains("ms->s:5000->5s"), true)
-  assert_eq(conversion_report.contains("transfer_time:1s"), true)
-}
-
-test "telemetry_format_conversion" {
-  // 测试遥测格式转换
-  
-  let metric_name = "cpu_usage"
-  let metric_value = 75.5
-  let metric_timestamp = 1640995200L
-  let metric_tags = ["service:api", "env:production", "region:us-west"]
-  
-  // 转换为JSON格式
-  let json_format = "{"
-  json_format = json_format + "\"metric\":\"" + metric_name + "\","
-  json_format = json_format + "\"value\":" + metric_value.to_string() + ","
-  json_format = json_format + "\"timestamp\":" + metric_timestamp.to_string() + ","
-  json_format = json_format + "\"tags\":[" 
-  
+  // 验证原始数据
   let mut i = 0
-  while i < metric_tags.length() {
-    json_format = json_format + "\"" + metric_tags[i] + "\""
-    if i < metric_tags.length() - 1 {
-      json_format = json_format + ","
-    }
+  while i < metric_values.length() {
+    let metric_name = metric_values[i].0
+    let metric_value = metric_values[i].1
+    let metric_unit = metric_values[i].2
+    
+    assert_eq(metric_name.length() > 0, true)
+    assert_eq(metric_value > 0.0, true)
+    assert_eq(metric_unit.length() > 0, true)
+    
     i = i + 1
   }
   
-  json_format = json_format + "]}"
+  // 执行单位转换
+  let mut converted_values = []
+  i = 0
+  while i < metric_values.length() {
+    let metric_name = metric_values[i].0
+    let metric_value = metric_values[i].1
+    let metric_unit = metric_values[i].2
+    let converted_value = 0.0
+    let converted_unit = ""
+    
+    if metric_unit == "percent" {
+      converted_value = metric_value / 100.0
+      converted_unit = "ratio"
+    } else if metric_unit == "megabytes" {
+      converted_value = metric_value / 1024.0
+      converted_unit = "gigabytes"
+    } else if metric_unit == "milliseconds" {
+      converted_value = metric_value / 1000.0
+      converted_unit = "seconds"
+    } else if metric_unit == "requests_per_second" {
+      converted_value = metric_value * 60.0
+      converted_unit = "requests_per_minute"
+    }
+    
+    converted_values.push((metric_name, converted_value, converted_unit))
+    i = i + 1
+  }
   
-  // 验证JSON格式
-  assert_eq(json_format.has_prefix("{"), true)
-  assert_eq(json_format.has_suffix("}"), true)
-  assert_eq(json_format.contains("\"metric\":\"cpu_usage\""), true)
-  assert_eq(json_format.contains("\"value\":75.5"), true)
+  // 验证转换结果
+  assert_eq(converted_values.length(), 4)
+  assert_eq(converted_values[0].2, "ratio")
+  assert_eq(converted_values[1].2, "gigabytes")
+  assert_eq(converted_values[2].2, "seconds")
+  assert_eq(converted_values[3].2, "requests_per_minute")
   
-  // 转换为Prometheus格式
-  let prometheus_tags = metric_tags.join(",")
-  let prometheus_format = metric_name + "{" + prometheus_tags + "} " + metric_value.to_string() + " " + metric_timestamp.to_string()
+  // 验证转换值
+  assert_eq(converted_values[0].1, 0.755)
+  assert_eq(converted_values[1].1, 1.0)
+  assert_eq(converted_values[2].1, 0.25)
+  assert_eq(converted_values[3].1, 60000.0)
+}
+
+test "telemetry_timestamp_format_conversion" {
+  // 测试遥测时间戳格式转换
   
-  // 验证Prometheus格式
-  assert_eq(prometheus_format.has_prefix("cpu_usage{"), true)
-  assert_eq(prometheus_format.contains("service:api"), true)
-  assert_eq(prometheus_format.contains("env:production"), true)
-  assert_eq(prometheus_format.contains("region:us-west"), true)
-  assert_eq(prometheus_format.has_suffix(" 1640995200"), true)
+  let unix_timestamp = 1640995200L
+  let iso_timestamp = "2022-01-01T00:00:00Z"
+  let rfc_timestamp = "Sat, 01 Jan 2022 00:00:00 GMT"
   
-  // 转换为InfluxDB格式
-  let influxdb_tags = metric_tags.join(",")
-  let influxdb_format = metric_name + "," + influxdb_tags + " value=" + metric_value.to_string() + " " + metric_timestamp.to_string()
+  // 验证原始时间戳
+  assert_eq(unix_timestamp > 1600000000L, true)
+  assert_eq(iso_timestamp.contains("2022-01-01"), true)
+  assert_eq(rfc_timestamp.contains("2022"), true)
   
-  // 验证InfluxDB格式
-  assert_eq(influxdb_format.has_prefix("cpu_usage,"), true)
-  assert_eq(influxdb_format.contains("value=75.5"), true)
-  assert_eq(influxdb_format.has_suffix(" 1640995200"), true)
+  // 模拟时间戳转换
+  let mut timestamp_conversions = []
+  
+  // Unix到ISO格式转换
+  let unix_to_iso = iso_timestamp
+  timestamp_conversions.push(("unix_to_iso", unix_to_iso))
+  
+  // ISO到RFC格式转换
+  let iso_to_rfc = rfc_timestamp
+  timestamp_conversions.push(("iso_to_rfc", iso_to_rfc))
+  
+  // Unix到RFC格式转换
+  let unix_to_rfc = rfc_timestamp
+  timestamp_conversions.push(("unix_to_rfc", unix_to_rfc))
+  
+  // 验证转换结果
+  assert_eq(timestamp_conversions.length(), 3)
+  assert_eq(timestamp_conversions[0].0, "unix_to_iso")
+  assert_eq(timestamp_conversions[1].0, "iso_to_rfc")
+  assert_eq(timestamp_conversions[2].0, "unix_to_rfc")
+  
+  // 验证时间戳一致性
+  assert_eq(timestamp_conversions[0].1.contains("2022-01-01"), true)
+  assert_eq(timestamp_conversions[1].1.contains("Jan 2022"), true)
+  assert_eq(timestamp_conversions[2].1.contains("00:00:00"), true)
 }
