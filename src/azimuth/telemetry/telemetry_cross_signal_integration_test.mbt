@@ -3,43 +3,43 @@
 
 test "trace_metrics_integration" {
   // 创建资源和上下文
-  let resource = common::Resource::default("integration_test_service")
-  let context = context::Context::empty()
-  let trace_key = context::create_key("trace_id")
+  let resource = @azimuth.telemetry.api.common.Resource::default("integration_test_service")
+  let context = @azimuth.telemetry.api.context.Context::empty()
+  let trace_key = @azimuth.telemetry.api.context.create_key("trace_id")
   
   // 模拟生成trace信息
   let trace_id = "1234567890abcdef1234567890abcdef"
   let context_with_trace = context.with_value(trace_key, trace_id)
   
   // 创建Tracer和Span
-  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer_provider = @azimuth.telemetry.api.trace.NoopTracerProvider::{}
   let tracer = tracer_provider.get_tracer("integration_tracer", "1.0.0")
   let (ctx, span) = tracer.start_span(
     context_with_trace,
     "integration_operation",
-    trace::Server,
-    [("operation_type", common::AttributeValue::string("test"))]
+    @azimuth.telemetry.api.trace.Server,
+    [("operation_type", @azimuth.telemetry.api.common.AttributeValue::string("test"))]
   )
   
   // 创建Meter和指标
-  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter_provider = @azimuth.telemetry.api.metrics.NoopMeterProvider::{}
   let meter = meter_provider.get_meter("integration_meter", "1.0.0")
   let counter = meter.create_counter("operations_total", "count", "Total number of operations")
   let histogram = meter.create_histogram("operation_duration", "ms", "Operation duration in milliseconds")
   
   // 记录指标数据
-  counter.add(1L, [("trace_id", common::AttributeValue::string(trace_id))])
-  histogram.record(150.5, [("operation", common::AttributeValue::string(span.name))])
+  counter.add(1L, [("trace_id", @azimuth.telemetry.api.common.AttributeValue::string(trace_id))])
+  histogram.record(150.5, [("operation", @azimuth.telemetry.api.common.AttributeValue::string(span.name))])
   
   // 创建Logger和日志
-  let logger_provider = logs::NoopLoggerProvider::{}
+  let logger_provider = @azimuth.telemetry.api.logs.NoopLoggerProvider::{}
   let logger = logger_provider.get_logger("integration_logger", "1.0.0")
   
   // 记录日志
   logger.info(
     "Operation completed successfully",
-    [("trace_id", common::AttributeValue::string(trace_id)), 
-     ("span_name", common::AttributeValue::string(span.name))]
+    [("trace_id", @azimuth.telemetry.api.common.AttributeValue::string(trace_id)), 
+     ("span_name", @azimuth.telemetry.api.common.AttributeValue::string(span.name))]
   )
   
   // 验证数据一致性
@@ -52,13 +52,13 @@ test "trace_metrics_integration" {
 
 test "context_baggage_propagation" {
   // 创建带有baggage的上下文
-  let baggage = context::Baggage::empty()
+  let baggage = @azimuth.telemetry.api.context.Baggage::empty()
     .with_entry("user_id", "12345")
     .with_entry("session_id", "abcdef")
     .with_entry("request_id", "req_789")
   
-  let context = context::Context::empty()
-  let baggage_key = context::create_key("baggage")
+  let context = @azimuth.telemetry.api.context.Context::empty()
+  let baggage_key = @azimuth.telemetry.api.context.create_key("baggage")
   let baggage_str = "user_id=12345,session_id=abcdef,request_id=req_789"
   let context_with_baggage = context.with_value(baggage_key, baggage_str)
   

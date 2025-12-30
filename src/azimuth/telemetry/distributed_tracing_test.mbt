@@ -1,330 +1,364 @@
-// 分布式追踪测试用例
-// 测试分布式系统中的追踪功能和跨服务调用链
+// 分布式追踪场景测试用例
+// 专注于测试分布式系统中的追踪、上下文传播和服务间调用链
 
-test "distributed_trace_hierarchy" {
-  // 测试分布式追踪层次结构
+test "distributed_trace_span_hierarchy" {
+  // 测试分布式追踪中的span层次结构
   
-  let root_trace_id = "12345678901234567890123456789012"
-  let root_span_id = "abcdef1234567890"
-  let child_span1_id = "1111111111111111"
-  let child_span2_id = "2222222222222222"
-  let grandchild_span_id = "3333333333333333"
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let root_span_id = "b7ad6b7169203331"
+  let child_span1_id = "a1b2c3d4e5f67890"
+  let child_span2_id = "f9e8d7c6b5a49321"
+  let grandchild_span_id = "1234567890abcdef"
   
-  // 验证根追踪ID
-  assert_eq(root_trace_id.length(), 32)
-  assert_eq(root_trace_id.has_prefix("1234"), true)
-  assert_eq(root_trace_id.has_suffix("9012"), true)
-  
-  // 验证根跨度ID
+  // 验证trace和span ID格式
+  assert_eq(trace_id.length(), 32)
   assert_eq(root_span_id.length(), 16)
-  assert_eq(root_span_id.has_prefix("abcd"), true)
-  assert_eq(root_span_id.has_suffix("7890"), true)
+  assert_eq(child_span1_id.length(), 16)
+  assert_eq(grandchild_span_id.length(), 16)
   
-  // 创建跨度层次结构
+  // 创建span层次结构
   let span_hierarchy = [
-    (root_span_id, ""), // 根跨度，无父跨度
-    (child_span1_id, root_span_id), // 子跨度1
-    (child_span2_id, root_span_id), // 子跨度2
-    (grandchild_span_id, child_span1_id) // 孙子跨度
+    (trace_id, root_span_id, "root", "API Gateway"),
+    (trace_id, child_span1_id, root_span_id, "Auth Service"),
+    (trace_id, child_span2_id, root_span_id, "Payment Service"),
+    (trace_id, grandchild_span_id, child_span1_id, "Database Query")
   ]
   
-  // 验证跨度层次
+  // 验证span层次结构
   assert_eq(span_hierarchy.length(), 4)
-  assert_eq(span_hierarchy[0].0, root_span_id)
-  assert_eq(span_hierarchy[0].1, "") // 根跨度无父跨度
-  assert_eq(span_hierarchy[1].0, child_span1_id)
-  assert_eq(span_hierarchy[1].1, root_span_id)
-  assert_eq(span_hierarchy[3].0, grandchild_span_id)
-  assert_eq(span_hierarchy[3].1, child_span1_id)
+  assert_eq(span_hierarchy[0].2, "root") // root span没有parent
+  assert_eq(span_hierarchy[1].2, root_span_id) // child span1的parent是root
+  assert_eq(span_hierarchy[2].2, root_span_id) // child span2的parent是root
+  assert_eq(span_hierarchy[3].2, child_span1_id) // grandchild的parent是child span1
+  
+  // 验证所有span属于同一个trace
+  let mut i = 0
+  while i < span_hierarchy.length() {
+    assert_eq(span_hierarchy[i].0, trace_id)
+    i = i + 1
+  }
+  
+  // 验证服务名称
+  assert_eq(span_hierarchy[0].3, "API Gateway")
+  assert_eq(span_hierarchy[1].3, "Auth Service")
+  assert_eq(span_hierarchy[2].3, "Payment Service")
+  assert_eq(span_hierarchy[3].3, "Database Query")
 }
 
-test "distributed_service_chain" {
-  // 测试分布式服务调用链
+test "distributed_trace_context_propagation" {
+  // 测试分布式追踪上下文传播
   
-  let services = ["gateway", "auth", "user-service", "order-service", "payment-service"]
-  let operations = ["handle_request", "authenticate", "get_user", "create_order", "process_payment"]
+  let trace_id = "a1b2c3d4e5f678901234567890123456"
+  let span_id = "f1e2d3c4b5a69788"
+  let trace_flags = "01" // 采样标志
   
-  // 验证服务数量
-  assert_eq(services.length(), 5)
-  assert_eq(operations.length(), 5)
+  // 创建追踪头信息
+  let traceparent_header = "00-" + trace_id + "-" + span_id + "-" + trace_flags
   
-  // 验证关键服务
-  assert_eq(services[0], "gateway")
-  assert_eq(services[4], "payment-service")
-  assert_eq(operations[0], "handle_request")
-  assert_eq(operations[4], "process_payment")
+  // 验证traceparent格式
+  assert_eq(traceparent_header.length(), 55)
+  assert_eq(traceparent_header.has_prefix("00-"), true)
+  assert_eq(traceparent_header.contains("-" + trace_id + "-"), true)
+  assert_eq(traceparent_header.has_suffix("-" + trace_flags), true)
   
-  // 创建服务调用链
-  let mut service_chain = ""
+  // 模拟HTTP请求头传播
+  let http_headers = {
+    "traceparent" => traceparent_header,
+    "x-trace-id" => trace_id,
+    "x-span-id" => span_id,
+    "x-sampled" => "true"
+  }
+  
+  // 验证HTTP头
+  assert_eq(http_headers["traceparent"], traceparent_header)
+  assert_eq(http_headers["x-trace-id"], trace_id)
+  assert_eq(http_headers["x-span-id"], span_id)
+  assert_eq(http_headers["x-sampled"], "true")
+  
+  // 模拟服务间传播
+  let service_chain = ["gateway", "auth", "user", "order", "payment"]
+  let propagated_contexts = []
+  
   let mut i = 0
-  while i < services.length() {
-    if (i > 0) {
-      service_chain = service_chain + " -> "
+  while i < service_chain.length() {
+    let service_name = service_chain[i]
+    let new_span_id = "span_" + service_name + "_" + i.to_string()
+    let context = {
+      "trace_id" => trace_id,
+      "parent_span_id" => i > 0 ? "span_" + service_chain[i-1] + "_" + (i-1).to_string() : span_id,
+      "current_span_id" => new_span_id,
+      "service_name" => service_name
     }
-    service_chain = service_chain + services[i] + ":" + operations[i]
+    propagated_contexts.push(context)
     i = i + 1
   }
   
-  // 验证服务调用链
-  assert_eq(service_chain.contains("gateway:handle_request"), true)
-  assert_eq(service_chain.contains("payment-service:process_payment"), true)
-  assert_eq(service_chain.contains(" -> "), true)
-  assert_eq(service_chain.has_prefix("gateway:handle_request"), true)
-  assert_eq(service_chain.has_suffix("payment-service:process_payment"), true)
+  // 验证传播上下文
+  assert_eq(propagated_contexts.length(), 5)
+  assert_eq(propagated_contexts[0]["service_name"], "gateway")
+  assert_eq(propagated_contexts[4]["service_name"], "payment")
+  assert_eq(propagated_contexts[2]["parent_span_id"], "span_auth_1")
+  assert_eq(propagated_contexts[4]["parent_span_id"], "span_order_3")
 }
 
-test "distributed_trace_timing" {
-  // 测试分布式追踪时间计算
+test "distributed_trace_error_propagation" {
+  // 测试分布式追踪中的错误传播
   
-  let span_start_times = [1000L, 1050L, 1100L, 1150L, 1200L]
-  let span_end_times = [1050L, 1100L, 1150L, 1200L, 1250L]
+  let trace_id = "error1234567890abcdef1234567890abcdef"
+  let error_span_id = "deadbeefcafebabe"
+  let error_code = "500"
+  let error_message = "Internal Server Error"
   
-  // 验证时间数组
-  assert_eq(span_start_times.length(), 5)
-  assert_eq(span_end_times.length(), 5)
-  
-  // 计算每个跨度的持续时间
-  let mut durations = []
-  let mut i = 0
-  while i < span_start_times.length() {
-    let duration = span_end_times[i] - span_start_times[i]
-    durations.push(duration)
-    i = i + 1
+  // 创建错误span
+  let error_span = {
+    "trace_id" => trace_id,
+    "span_id" => error_span_id,
+    "span_name" => "HTTP POST /api/payment",
+    "status_code" => error_code,
+    "error_message" => error_message,
+    "error_type" => "InternalError",
+    "stack_trace" => "at PaymentService.process (payment.js:45:15)",
+    "timestamp" => "1640995200000"
   }
   
-  // 验证持续时间计算
-  assert_eq(durations.length(), 5)
-  assert_eq(durations[0], 50L)
-  assert_eq(durations[4], 50L)
-  
-  // 计算总体追踪时间
-  let total_trace_time = span_end_times[4] - span_start_times[0]
-  assert_eq(total_trace_time, 250L)
-  
-  // 创建时间报告
-  let timing_report = "Total: " + total_trace_time.to_string() + "ms"
-  i = 0
-  while i < durations.length() {
-    timing_report = timing_report + ", Span" + i.to_string() + ": " + durations[i].to_string() + "ms"
-    i = i + 1
-  }
-  
-  // 验证时间报告
-  assert_eq(timing_report.contains("Total: 250ms"), true)
-  assert_eq(timing_report.contains("Span0: 50ms"), true)
-  assert_eq(timing_report.contains("Span4: 50ms"), true)
-}
-
-test "distributed_error_propagation" {
-  // 测试分布式错误传播
-  
-  let error_services = ["payment-service", "order-service"]
-  let error_types = ["payment_declined", "inventory_unavailable"]
-  let error_messages = [
-    "Credit card declined: insufficient funds",
-    "Product out of stock: SKU-12345"
-  ]
-  let error_codes = [402, 503]
-  
-  // 验证错误信息
-  assert_eq(error_services.length(), 2)
-  assert_eq(error_types.length(), 2)
-  assert_eq(error_messages.length(), 2)
-  assert_eq(error_codes.length(), 2)
+  // 验证错误span
+  assert_eq(error_span["trace_id"], trace_id)
+  assert_eq(error_span["span_id"], error_span_id)
+  assert_eq(error_span["status_code"], error_code)
+  assert_eq(error_span["error_message"], error_message)
+  assert_eq(error_span["error_type"], "InternalError")
   
   // 创建错误传播链
-  let error_chain = [
-    {
-      "service": error_services[0],
-      "error_type": error_types[0],
-      "message": error_messages[0],
-      "code": error_codes[0].to_string()
-    },
-    {
-      "service": error_services[1],
-      "error_type": error_types[1],
-      "message": error_messages[1],
-      "code": error_codes[1].to_string()
-    }
+  let error_propagation_chain = [
+    ("gateway", "200", "Success"),
+    ("auth", "200", "Success"), 
+    ("payment", error_code, error_message),
+    ("notification", "400", "Payment failed")
   ]
   
-  // 验证错误链
-  assert_eq(error_chain.length(), 2)
-  assert_eq(error_chain[0]["service"], error_services[0])
-  assert_eq(error_chain[0]["error_type"], error_types[0])
-  assert_eq(error_chain[1]["code"], "503")
+  // 验证错误传播链
+  assert_eq(error_propagation_chain.length(), 4)
+  assert_eq(error_propagation_chain[0].1, "200") // gateway成功
+  assert_eq(error_propagation_chain[1].1, "200") // auth成功
+  assert_eq(error_propagation_chain[2].1, error_code) // payment失败
+  assert_eq(error_propagation_chain[3].1, "400") // notification因payment失败而失败
   
-  // 创建错误追踪ID
-  let error_trace_id = "error_" + error_services[0] + "_" + error_codes[0].to_string()
-  assert_eq(error_trace_id, "error_payment-service_402")
-  assert_eq(error_trace_id.contains("payment-service"), true)
-  assert_eq(error_trace_id.contains("402"), true)
-}
-
-test "distributed_metadata_propagation" {
-  // 测试分布式元数据传播
-  
-  let user_metadata = [
-    ("user.id", "user12345"),
-    ("user.tier", "premium"),
-    ("user.region", "us-west-2")
-  ]
-  
-  let request_metadata = [
-    ("request.id", "req-67890"),
-    ("request.version", "v1.2.3"),
-    ("request.source", "mobile_app")
-  ]
-  
-  // 验证元数据
-  assert_eq(user_metadata.length(), 3)
-  assert_eq(request_metadata.length(), 3)
-  assert_eq(user_metadata[0].0, "user.id")
-  assert_eq(request_metadata[2].0, "request.source")
-  
-  // 合并元数据
-  let combined_metadata = []
+  // 验证错误影响范围
+  let mut affected_services = 0
   let mut i = 0
-  while i < user_metadata.length() {
-    combined_metadata.push(user_metadata[i])
-    i = i + 1
-  }
-  
-  i = 0
-  while i < request_metadata.length() {
-    combined_metadata.push(request_metadata[i])
-    i = i + 1
-  }
-  
-  // 验证合并后的元数据
-  assert_eq(combined_metadata.length(), 6)
-  assert_eq(combined_metadata[0], ("user.id", "user12345"))
-  assert_eq(combined_metadata[5], ("request.source", "mobile_app"))
-  
-  // 创建元数据传播字符串
-  let mut metadata_string = ""
-  i = 0
-  while i < combined_metadata.length() {
-    if (i > 0) {
-      metadata_string = metadata_string + ";"
-    }
-    metadata_string = metadata_string + combined_metadata[i].0 + "=" + combined_metadata[i].1
-    i = i + 1
-  }
-  
-  // 验证元数据字符串
-  assert_eq(metadata_string.contains("user.id=user12345"), true)
-  assert_eq(metadata_string.contains("request.source=mobile_app"), true)
-  assert_eq(metadata_string.contains(";"), true)
-}
-
-test "distributed_trace_sampling" {
-  // 测试分布式追踪采样
-  
-  let trace_priorities = ["low", "medium", "high", "critical"]
-  let sampling_decisions = [false, false, true, true]
-  let trace_ids = [
-    "11111111111111111111111111111111",
-    "22222222211111111111111111111111",
-    "33333333311111111111111111111111",
-    "44444444411111111111111111111111"
-  ]
-  
-  // 验证采样数据
-  assert_eq(trace_priorities.length(), 4)
-  assert_eq(sampling_decisions.length(), 4)
-  assert_eq(trace_ids.length(), 4)
-  
-  // 验证采样决策逻辑
-  let mut i = 0
-  while i < trace_priorities.length() {
-    let priority = trace_priorities[i]
-    let should_sample = priority == "high" || priority == "critical"
-    assert_eq(should_sample, sampling_decisions[i])
-    i = i + 1
-  }
-  
-  // 创建采样报告
-  let mut sampled_traces = []
-  let mut un_sampled_traces = []
-  
-  i = 0
-  while i < trace_ids.length() {
-    if (sampling_decisions[i]) {
-      sampled_traces.push(trace_ids[i])
-    } else {
-      un_sampled_traces.push(trace_ids[i])
+  while i < error_propagation_chain.length() {
+    if error_propagation_chain[i].1 != "200" {
+      affected_services = affected_services + 1
     }
     i = i + 1
   }
   
-  // 验证采样结果
-  assert_eq(sampled_traces.length(), 2)
-  assert_eq(un_sampled_traces.length(), 2)
-  assert_eq(sampled_traces[0], "33333333311111111111111111111111")
-  assert_eq(sampled_traces[1], "44444444411111111111111111111111")
-  assert_eq(un_sampled_traces[0], "11111111111111111111111111111111")
-  assert_eq(un_sampled_traces[1], "22222222211111111111111111111111")
+  assert_eq(affected_services, 2) // payment和notification受影响
 }
 
-test "distributed_performance_metrics" {
-  // 测试分布式性能指标
+test "distributed_trace_performance_analysis" {
+  // 测试分布式追踪性能分析
   
-  let service_latencies = [45.2, 123.7, 67.8, 234.5, 89.3]
-  let service_names = ["gateway", "auth", "user", "order", "payment"]
-  let service_throughputs = [1000, 500, 800, 300, 200]
+  let trace_id = "perf1234567890abcdef1234567890abcdef"
   
-  // 验证性能数据
-  assert_eq(service_latencies.length(), 5)
-  assert_eq(service_names.length(), 5)
-  assert_eq(service_throughputs.length(), 5)
+  // 创建具有不同持续时间的spans
+  let span_durations = [
+    ("gateway", "HTTP Request", 150.5),
+    ("auth", "Token Validation", 45.2),
+    ("user", "User Lookup", 125.8),
+    ("order", "Order Processing", 340.7),
+    ("payment", "Payment Processing", 890.3),
+    ("notification", "Email Notification", 210.1)
+  ]
   
-  // 计算平均延迟
-  let mut total_latency = 0.0
+  // 验证span数据
+  assert_eq(span_durations.length(), 6)
+  assert_eq(span_durations[0].0, "gateway")
+  assert_eq(span_durations[4].1, "Payment Processing")
+  assert_eq(span_durations[4].2, 890.3) // 最耗时的操作
+  
+  // 计算总持续时间
+  let mut total_duration = 0.0
   let mut i = 0
-  while i < service_latencies.length() {
-    total_latency = total_latency + service_latencies[i]
+  while i < span_durations.length() {
+    total_duration = total_duration + span_durations[i].2
     i = i + 1
   }
   
-  let average_latency = total_latency / service_latencies.length().to_double()
-  assert_eq(average_latency > 100.0, true)
-  assert_eq(average_latency < 120.0, true)
+  assert_eq(total_duration, 1762.6)
   
   // 找出最慢的服务
-  let mut max_latency = 0.0
   let mut slowest_service = ""
-  
+  let mut slowest_duration = 0.0
   i = 0
-  while i < service_latencies.length() {
-    if (service_latencies[i] > max_latency) {
-      max_latency = service_latencies[i]
-      slowest_service = service_names[i]
+  while i < span_durations.length() {
+    if span_durations[i].2 > slowest_duration {
+      slowest_duration = span_durations[i].2
+      slowest_service = span_durations[i].0
     }
     i = i + 1
   }
   
-  // 验证最慢的服务
-  assert_eq(max_latency, 234.5)
-  assert_eq(slowest_service, "order")
+  assert_eq(slowest_service, "payment")
+  assert_eq(slowest_duration, 890.3)
   
-  // 计算总吞吐量
-  let mut total_throughput = 0
+  // 计算平均持续时间
+  let average_duration = total_duration / span_durations.length().to_double()
+  assert_eq(average_duration > 200.0, true)
+  assert_eq(average_duration < 400.0, true)
+  
+  // 识别性能瓶颈（超过平均持续时间50%的服务）
+  let performance_bottlenecks = []
   i = 0
-  while i < service_throughputs.length() {
-    total_throughput = total_throughput + service_throughputs[i]
+  while i < span_durations.length() {
+    if span_durations[i].2 > average_duration * 1.5 {
+      performance_bottlenecks.push(span_durations[i])
+    }
     i = i + 1
   }
   
-  assert_eq(total_throughput, 2800)
+  assert_eq(performance_bottlenecks.length(), 2) // order和payment是瓶颈
+  assert_eq(performance_bottlenecks[0].0, "order")
+  assert_eq(performance_bottlenecks[1].0, "payment")
+}
+
+test "distributed_trace_cross_service_correlation" {
+  // 测试分布式追踪跨服务关联
   
-  // 创建性能报告
-  let performance_report = "Avg Latency: " + average_latency.to_string().slice(0, 5) + "ms" +
-                          ", Slowest: " + slowest_service + " (" + max_latency.to_string() + "ms)" +
-                          ", Total Throughput: " + total_throughput.to_string() + " req/s"
+  let business_transaction_id = "order_12345_20231231"
+  let user_id = "user_67890"
+  let session_id = "session_abcdef"
   
-  // 验证性能报告
-  assert_eq(performance_report.contains("Avg Latency:"), true)
-  assert_eq(performance_report.contains("Slowest: order"), true)
-  assert_eq(performance_report.contains("Total Throughput: 2800"), true)
+  // 创建跨服务关联标识
+  let correlation_context = {
+    "business_transaction_id" => business_transaction_id,
+    "user_id" => user_id,
+    "session_id" => session_id,
+    "request_id" => "req_" + business_transaction_id,
+    "client_id" => "web_app_v1.2.3"
+  }
+  
+  // 验证关联上下文
+  assert_eq(correlation_context["business_transaction_id"], business_transaction_id)
+  assert_eq(correlation_context["user_id"], user_id)
+  assert_eq(correlation_context["session_id"], session_id)
+  assert_eq(correlation_context["request_id"], "req_order_12345_20231231")
+  
+  // 模拟跨服务调用链
+  let service_calls = [
+    ("web_frontend", "start_order", business_transaction_id),
+    ("api_gateway", "validate_order", business_transaction_id),
+    ("order_service", "create_order", business_transaction_id),
+    ("inventory_service", "check_stock", business_transaction_id),
+    ("payment_service", "process_payment", business_transaction_id),
+    ("notification_service", "send_confirmation", business_transaction_id)
+  ]
+  
+  // 验证所有服务调用都关联到同一业务事务
+  let mut i = 0
+  while i < service_calls.length() {
+    assert_eq(service_calls[i].2, business_transaction_id)
+    i = i + 1
+  }
+  
+  // 创建跨服务日志关联
+  let correlated_logs = []
+  i = 0
+  while i < service_calls.length() {
+    let log_entry = {
+      "timestamp" => "164099520" + i.to_string(),
+      "service" => service_calls[i].0,
+      "operation" => service_calls[i].1,
+      "business_transaction_id" => service_calls[i].2,
+      "user_id" => user_id,
+      "message" => "Operation " + service_calls[i].1 + " completed"
+    }
+    correlated_logs.push(log_entry)
+    i = i + 1
+  }
+  
+  // 验证日志关联
+  assert_eq(correlated_logs.length(), 6)
+  assert_eq(correlated_logs[0]["service"], "web_frontend")
+  assert_eq(correlated_logs[5]["service"], "notification_service")
+  
+  // 验证所有日志都有相同的业务事务ID和用户ID
+  i = 0
+  while i < correlated_logs.length() {
+    assert_eq(correlated_logs[i]["business_transaction_id"], business_transaction_id)
+    assert_eq(correlated_logs[i]["user_id"], user_id)
+    i = i + 1
+  }
+}
+
+test "distributed_trace_sampling_decisions" {
+  // 测试分布式追踪采样决策
+  
+  let trace_scenarios = [
+    ("high_value_transaction", true, 1.0),
+    ("error_scenario", true, 1.0),
+    ("slow_request", true, 0.8),
+    ("normal_request", false, 0.1),
+    ("health_check", false, 0.01)
+  ]
+  
+  // 验证采样场景
+  assert_eq(trace_scenarios.length(), 5)
+  assert_eq(trace_scenarios[0].0, "high_value_transaction")
+  assert_eq(trace_scenarios[0].1, true) // 高价值交易总是采样
+  assert_eq(trace_scenarios[0].2, 1.0) // 采样率100%
+  
+  // 模拟采样决策逻辑
+  let sampling_decisions = []
+  let mut i = 0
+  while i < trace_scenarios.length() {
+    let scenario = trace_scenarios[i]
+    let should_sample = scenario.1 // 简化的采样决策
+    let sampling_rate = scenario.2
+    let decision = {
+      "scenario" => scenario.0,
+      "sampled" => should_sample,
+      "sampling_rate" => sampling_rate,
+      "reason" => should_sample ? "high_priority" : "probability_based"
+    }
+    sampling_decisions.push(decision)
+    i = i + 1
+  }
+  
+  // 验证采样决策
+  assert_eq(sampling_decisions.length(), 5)
+  assert_eq(sampling_decisions[0]["sampled"], true)
+  assert_eq(sampling_decisions[3]["sampled"], false)
+  assert_eq(sampling_decisions[1]["reason"], "high_priority")
+  assert_eq(sampling_decisions[4]["reason"], "probability_based")
+  
+  // 计算实际采样率
+  let mut sampled_count = 0
+  i = 0
+  while i < sampling_decisions.length() {
+    if sampling_decisions[i]["sampled"] == true {
+      sampled_count = sampled_count + 1
+    }
+    i = i + 1
+  }
+  
+  let actual_sampling_rate = sampled_count.to_double() / sampling_decisions.length().to_double()
+  assert_eq(actual_sampling_rate, 0.6) // 3/5的请求被采样
+  
+  // 验证高优先级场景都被采样
+  let mut high_priority_sampled = 0
+  let mut high_priority_total = 0
+  i = 0
+  while i < sampling_decisions.length() {
+    if sampling_decisions[i]["reason"] == "high_priority" {
+      high_priority_total = high_priority_total + 1
+      if sampling_decisions[i]["sampled"] == true {
+        high_priority_sampled = high_priority_sampled + 1
+      }
+    }
+    i = i + 1
+  }
+  
+  assert_eq(high_priority_total, 3) // 3个高优先级场景
+  assert_eq(high_priority_sampled, 3) // 所有高优先级都被采样
 }
