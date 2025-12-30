@@ -1,357 +1,346 @@
-// 遥测采样策略测试用例
-// 测试各种遥测采样策略和算法
+// 遥测数据采样策略测试用例
+// 测试不同的采样算法和策略，确保在性能与数据完整性之间的平衡
 
-test "telemetry_fixed_rate_sampling" {
-  // 测试固定速率采样
+test "probability_based_sampling" {
+  // 测试基于概率的采样
   
-  let sample_rate = 0.1  // 10%采样率
-  let total_requests = 1000
-  let expected_samples = (total_requests.to_double() * sample_rate).to_int()
-  
-  // 模拟采样决策
+  let sampling_rate = 0.1  // 10% 采样率
+  let total_requests = 10000
   let mut sampled_count = 0
+  
+  // 模拟随机采样决策
   let mut i = 0
   while i < total_requests {
-    // 简单的哈希采样模拟
-    let hash_value = (i * 17 + 13) % 100
-    if hash_value < (sample_rate * 100.0).to_int() {
+    // 简化的随机采样模拟（实际应使用随机数生成器）
+    let pseudo_random = (i * 17) % 100  // 简单的伪随机
+    if pseudo_random < (sampling_rate * 100).to_int() {
       sampled_count = sampled_count + 1
     }
     i = i + 1
   }
   
-  // 验证采样结果在预期范围内
-  assert_eq(total_requests, 1000)
-  assert_eq(expected_samples, 100)
-  assert_eq(sampled_count > 80, true)
-  assert_eq(sampled_count < 120, true)
+  // 验证采样率在合理范围内
+  let actual_sampling_rate = sampled_count.to_double() / total_requests.to_double()
+  assert_eq(actual_sampling_rate > 0.08, true)  // 允许±2%的误差
+  assert_eq(actual_sampling_rate < 0.12, true)
   
-  // 计算实际采样率
-  let actual_rate = sampled_count.to_double() / total_requests.to_double()
-  assert_eq(actual_rate > 0.08, true)
-  assert_eq(actual_rate < 0.12, true)
+  // 测试不同采样率
+  let high_sampling_rate = 0.8  // 80% 采样率
+  let mut high_sampled_count = 0
+  i = 0
+  while i < 1000 {
+    let pseudo_random = (i * 23) % 100
+    if pseudo_random < (high_sampling_rate * 100).to_int() {
+      high_sampled_count = high_sampled_count + 1
+    }
+    i = i + 1
+  }
+  
+  let high_actual_rate = high_sampled_count.to_double() / 1000.0
+  assert_eq(high_actual_rate > 0.75, true)
+  assert_eq(high_actual_rate < 0.85, true)
 }
 
-test "telemetry_probability_sampling" {
-  // 测试概率采样
+test "trace_id_consistent_sampling" {
+  // 测试基于trace_id的一致性采样
   
-  let probability = 0.25  // 25%概率
   let trace_ids = [
-    "abc123", "def456", "ghi789", "jkl012", "mno345",
-    "pqr678", "stu901", "vwx234", "yza567", "bcd890"
+    "0af7651916cd43dd8448eb211c80319c",
+    "4bf92f3577b34da6a3ce929d0e0e4736", 
+    "a1b2c3d4e5f67890123456789abcdef0",
+    "1234567890abcdef1234567890abcdef",
+    "fedcba0987654321fedcba0987654321"
   ]
   
-  // 模拟基于trace ID的概率采样
-  let mut sampled_traces = []
+  let sampling_threshold = 1000000  // 2^20，约0.1%的采样率
+  
+  // 基于trace_id进行确定性采样
+  let sampled_traces = []
   let mut i = 0
   while i < trace_ids.length() {
     let trace_id = trace_ids[i]
-    // 简单的哈希函数模拟
-    let mut hash = 0
+    // 取trace_id的前8位十六进制作为采样依据
+    let trace_prefix = trace_id.slice(0, 8)
+    
+    // 转换为十进制数（简化模拟）
+    let mut prefix_value = 0
     let mut j = 0
-    while j < trace_id.length() {
-      hash = hash + trace_id[j].to_int()
+    while j < trace_prefix.length() {
+      let char_value = match trace_prefix.slice(j, j + 1) {
+        "a" => 10, "b" => 11, "c" => 12, "d" => 13, "e" => 14, "f" => 15,
+        x => x.to_int()
+      }
+      prefix_value = prefix_value * 16 + char_value
       j = j + 1
     }
-    let normalized_hash = hash % 100
-    if normalized_hash < (probability * 100.0).to_int() {
+    
+    // 确定性采样决策
+    let should_sample = prefix_value < sampling_threshold
+    if should_sample {
       sampled_traces.push(trace_id)
     }
+    
     i = i + 1
   }
   
-  // 验证概率采样结果
-  assert_eq(trace_ids.length(), 10)
-  assert_eq(sampled_traces.length() > 0, true)
-  assert_eq(sampled_traces.length() <= 10, true)
-  
-  // 验证采样率在预期范围内
-  let actual_rate = sampled_traces.length().to_double() / trace_ids.length().to_double()
-  assert_eq(actual_rate > 0.0, true)
-  assert_eq(actual_rate <= 1.0, true)
+  // 验证一致性采样结果
+  assert_eq(sampled_traces.length(), 1)  // 在这个阈值下应该只有一个trace被采样
+  assert_eq(sampled_traces[0], "0af7651916cd43dd8448eb211c80319c")  // 第一个trace_id的值最小
 }
 
-test "telemetry_adaptive_sampling" {
-  // 测试自适应采样
+test "adaptive_sampling_based_on_error_rate" {
+  // 测试基于错误率的自适应采样
   
-  let load_levels = [100, 500, 1000, 2000, 5000]
-  let sampling_rates = [1.0, 0.8, 0.5, 0.2, 0.05]  // 负载越高，采样率越低
+  let error_threshold = 0.05  // 5% 错误率阈值
+  let base_sampling_rate = 0.01  // 基础采样率1%
+  let max_sampling_rate = 0.5   // 最大采样率50%
   
-  // 验证自适应采样策略
+  // 模拟不同错误率场景
+  let error_rates = [0.01, 0.03, 0.05, 0.08, 0.15, 0.20]
+  let expected_sampling_rates = [0.01, 0.03, 0.05, 0.25, 0.5, 0.5]  // 线性增长到最大值
+  
   let mut i = 0
-  while i < load_levels.length() {
-    let load = load_levels[i]
-    let rate = sampling_rates[i]
-    let expected_samples = (load.to_double() * rate).to_int()
+  while i < error_rates.length() {
+    let current_error_rate = error_rates[i]
+    let adaptive_sampling_rate = 
+      if current_error_rate <= error_threshold {
+        current_error_rate  // 低于阈值时，采样率等于错误率
+      } else {
+        // 高于阈值时，线性增长到最大值
+        let excess_rate = current_error_rate - error_threshold
+        let rate_increase = excess_rate * 10.0  // 放大因子
+        let calculated_rate = base_sampling_rate + rate_increase
+        if calculated_rate > max_sampling_rate {
+          max_sampling_rate
+        } else {
+          calculated_rate
+        }
+      }
     
-    // 验证采样率随负载变化
-    if i > 0 {
-      assert_eq(rate < sampling_rates[i - 1], true)
-    }
+    // 验证自适应采样率
+    assert_eq(adaptive_sampling_rate >= expected_sampling_rates[i] - 0.01, true)
+    assert_eq(adaptive_sampling_rate <= expected_sampling_rates[i] + 0.01, true)
     
     i = i + 1
   }
-  
-  assert_eq(load_levels.length(), 5)
-  assert_eq(sampling_rates.length(), 5)
-  assert_eq(sampling_rates[0], 1.0)
-  assert_eq(sampling_rates[4], 0.05)
 }
 
-test "telemetry_priority_based_sampling" {
+test "priority_based_sampling" {
   // 测试基于优先级的采样
   
-  let traces_with_priority = [
-    ("trace_001", "HIGH"),
-    ("trace_002", "LOW"),
-    ("trace_003", "MEDIUM"),
-    ("trace_004", "CRITICAL"),
-    ("trace_005", "LOW"),
-    ("trace_006", "MEDIUM"),
-    ("trace_007", "HIGH"),
-    ("trace_008", "LOW")
+  let operation_priorities = [
+    ("payment_processing", 10),
+    ("user_authentication", 9),
+    ("order_creation", 8),
+    ("inventory_update", 7),
+    ("catalog_browsing", 5),
+    ("health_check", 1)
   ]
   
-  // 定义不同优先级的采样率
-  let priority_rates = [("CRITICAL", 1.0), ("HIGH", 0.8), ("MEDIUM", 0.5), ("LOW", 0.1)]
+  let priority_threshold = 7  // 优先级阈值
+  let total_operations = 1000
   
-  // 模拟优先级采样
-  let mut sampled_by_priority = [("CRITICAL", 0), ("HIGH", 0), ("MEDIUM", 0), ("LOW", 0)]
-  let mut i = 0
-  while i < traces_with_priority.length() {
-    let trace_id = traces_with_priority[i].0
-    let priority = traces_with_priority[i].1
-    
-    // 查找优先级对应的采样率
-    let mut sampling_rate = 0.0
-    let mut j = 0
-    while j < priority_rates.length() {
-      if priority == priority_rates[j].0 {
-        sampling_rate = priority_rates[j].1
-        break
-      }
-      j = j + 1
-    }
-    
-    // 简单的采样决策
-    let hash_value = trace_id.length() % 10
-    if hash_value < (sampling_rate * 10.0).to_int() {
-      // 更新采样计数
-      let mut k = 0
-      while k < sampled_by_priority.length() {
-        if priority == sampled_by_priority[k].0 {
-          sampled_by_priority[k] = (sampled_by_priority[k].0, sampled_by_priority[k].1 + 1)
-          break
-        }
-        k = k + 1
-      }
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证优先级采样结果
-  assert_eq(traces_with_priority.length(), 8)
-  assert_eq(sampled_by_priority.length(), 4)
-  
-  // CRITICAL应该全部采样
-  assert_eq(sampled_by_priority[0].1, 1)
-  // LOW应该采样最少
-  assert_eq(sampled_by_priority[3].1 <= 1, true)
-}
-
-test "telemetry_error_based_sampling" {
-  // 测试基于错误的采样
-  
-  let requests_with_status = [
-    ("GET", 200),
-    ("POST", 201),
-    ("GET", 404),
-    ("PUT", 200),
-    ("DELETE", 204),
-    ("GET", 500),
-    ("POST", 400),
-    ("GET", 200),
-    ("PATCH", 500),
-    ("GET", 200)
-  ]
-  
-  // 错误请求采样率更高
-  let success_sampling_rate = 0.1
-  let error_sampling_rate = 0.8
-  
-  // 模拟基于状态的采样
-  let mut sampled_success = 0
-  let mut sampled_error = 0
-  let mut total_success = 0
-  let mut total_error = 0
-  
-  let mut i = 0
-  while i < requests_with_status.length() {
-    let status = requests_with_status[i].1
-    let is_error = status >= 400
-    
-    if is_error {
-      total_error = total_error + 1
-      // 错误请求高采样率
-      let hash_value = i % 10
-      if hash_value < (error_sampling_rate * 10.0).to_int() {
-        sampled_error = sampled_error + 1
-      }
-    } else {
-      total_success = total_success + 1
-      // 成功请求低采样率
-      let hash_value = i % 10
-      if hash_value < (success_sampling_rate * 10.0).to_int() {
-        sampled_success = sampled_success + 1
-      }
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证错误采样策略
-  assert_eq(requests_with_status.length(), 10)
-  assert_eq(total_success, 6)
-  assert_eq(total_error, 4)
-  
-  // 错误采样率应该显著高于成功采样率
-  if sampled_success > 0 && sampled_error > 0 {
-    let success_rate = sampled_success.to_double() / total_success.to_double()
-    let error_rate = sampled_error.to_double() / total_error.to_double()
-    assert_eq(error_rate > success_rate, true)
-  }
-}
-
-test "telemetry_time_based_sampling" {
-  // 测试基于时间的采样
-  
-  let current_time = 1640995200L  // 2022-01-01 00:00:00
-  let sampling_window = 60L  // 1分钟窗口
-  let max_samples_per_window = 10
-  
-  // 模拟不同时间到达的请求
-  let request_timestamps = [
-    current_time + 5L,
-    current_time + 15L,
-    current_time + 25L,
-    current_time + 35L,
-    current_time + 45L,
-    current_time + 55L,
-    current_time + 65L,  // 下一个窗口
-    current_time + 75L,
-    current_time + 85L,
-    current_time + 95L
-  ]
-  
-  // 按时间窗口分组采样
-  let mut window_samples = [(current_time / sampling_window, 0)]
-  let mut i = 0
-  while i < request_timestamps.length() {
-    let timestamp = request_timestamps[i]
-    let window_id = timestamp / sampling_window
-    
-    // 检查是否需要新的窗口计数器
-    let mut found_window = false
-    let mut j = 0
-    while j < window_samples.length() {
-      if window_samples[j].0 == window_id {
-        found_window = true
-        if window_samples[j].1 < max_samples_per_window {
-          window_samples[j] = (window_samples[j].0, window_samples[j].1 + 1)
-        }
-        break
-      }
-      j = j + 1
-    }
-    
-    if not(found_window) {
-      window_samples.push((window_id, 1))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证时间窗口采样
-  assert_eq(request_timestamps.length(), 10)
-  assert_eq(window_samples.length(), 2)
-  
-  // 第一个窗口应该有6个样本
-  assert_eq(window_samples[0].1, 6)
-  // 第二个窗口应该有4个样本
-  assert_eq(window_samples[1].1, 4)
-  
-  // 所有窗口都不应超过最大样本数
-  let mut j = 0
-  while j < window_samples.length() {
-    assert_eq(window_samples[j].1 <= max_samples_per_window, true)
-    j = j + 1
-  }
-}
-
-test "telemetry_resource_based_sampling" {
-  // 测试基于资源的采样
-  
-  let services = [
-    ("payment-service", "HIGH"),
-    ("user-service", "MEDIUM"),
-    ("order-service", "HIGH"),
-    ("notification-service", "LOW"),
-    ("analytics-service", "LOW")
-  ]
-  
-  // 不同服务级别的采样率
-  let service_sampling_rates = [("HIGH", 0.8), ("MEDIUM", 0.5), ("LOW", 0.2)]
-  
-  // 模拟基于服务重要性的采样
-  let mut sampled_services = []
-  let mut i = 0
-  while i < services.length() {
-    let service_name = services[i].0
-    let priority = services[i].1
-    
-    // 查找服务对应的采样率
-    let mut sampling_rate = 0.0
-    let mut j = 0
-    while j < service_sampling_rates.length() {
-      if priority == service_sampling_rates[j].0 {
-        sampling_rate = service_sampling_rates[j].1
-        break
-      }
-      j = j + 1
-    }
-    
-    // 采样决策
-    let hash_value = service_name.length() % 10
-    if hash_value < (sampling_rate * 10.0).to_int() {
-      sampled_services.push(service_name)
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证基于资源的采样
-  assert_eq(services.length(), 5)
-  assert_eq(sampled_services.length() >= 0, true)
-  assert_eq(sampled_services.length() <= 5, true)
-  
-  // HIGH优先级服务应该有更高的采样概率
-  let high_priority_services = ["payment-service", "order-service"]
+  // 统计不同优先级操作的采样情况
   let mut high_priority_sampled = 0
-  let mut j = 0
-  while j < sampled_services.length() {
-    let mut k = 0
-    while k < high_priority_services.length() {
-      if sampled_services[j] == high_priority_services[k] {
-        high_priority_sampled = high_priority_sampled + 1
+  let mut low_priority_sampled = 0
+  let mut high_priority_total = 0
+  let mut low_priority_total = 0
+  
+  // 模拟操作分布
+  let operation_distribution = [
+    ("payment_processing", 50),
+    ("user_authentication", 100),
+    ("order_creation", 150),
+    ("inventory_update", 200),
+    ("catalog_browsing", 400),
+    ("health_check", 100)
+  ]
+  
+  let mut i = 0
+  while i < operation_priorities.length() {
+    let operation_name = operation_priorities[i].0
+    let priority = operation_priorities[i].1
+    
+    // 查找对应的操作数量
+    let mut operation_count = 0
+    let mut j = 0
+    while j < operation_distribution.length() {
+      if operation_distribution[j].0 == operation_name {
+        operation_count = operation_distribution[j].1
         break
       }
-      k = k + 1
+      j = j + 1
     }
-    j = j + 1
+    
+    // 基于优先级决定采样
+    let should_sample = priority >= priority_threshold
+    let sampled_count = if should_sample { operation_count } else { operation_count / 10 }
+    
+    if priority >= priority_threshold {
+      high_priority_sampled = high_priority_sampled + sampled_count
+      high_priority_total = high_priority_total + operation_count
+    } else {
+      low_priority_sampled = low_priority_sampled + sampled_count
+      low_priority_total = low_priority_total + operation_count
+    }
+    
+    i = i + 1
   }
   
-  // 验证高优先级服务采样结果
-  assert_eq(high_priority_sampled >= 0, true)
-  assert_eq(high_priority_sampled <= 2, true)
+  // 验证高优先级操作的采样率
+  let high_priority_sampling_rate = high_priority_sampled.to_double() / high_priority_total.to_double()
+  assert_eq(high_priority_sampling_rate, 1.0)  // 高优先级操作100%采样
+  
+  // 验证低优先级操作的采样率
+  let low_priority_sampling_rate = low_priority_sampled.to_double() / low_priority_total.to_double()
+  assert_eq(low_priority_sampling_rate, 0.1)  // 低优先级操作10%采样
+}
+
+test "sampling_budget_management" {
+  // 测试采样预算管理
+  
+  let total_budget = 1000  // 每秒最大采样数
+  let time_window = 60     // 时间窗口（秒）
+  let current_load = 5000  // 当前每秒请求数
+  
+  // 计算目标采样率
+  let target_sampling_rate = total_budget.to_double() / current_load.to_double()
+  assert_eq(target_sampling_rate, 0.2)  // 20%采样率
+  
+  // 模拟不同时间段的负载变化
+  let load_profile = [
+    (0, 1000),   // 0秒: 1000 req/s
+    (10, 3000),  // 10秒: 3000 req/s  
+    (20, 8000),  // 20秒: 8000 req/s
+    (30, 12000), // 30秒: 12000 req/s
+    (40, 6000),  // 40秒: 6000 req/s
+    (50, 2000)   // 50秒: 2000 req/s
+  ]
+  
+  let mut total_sampled = 0
+  let mut i = 0
+  while i < load_profile.length() {
+    let timestamp = load_profile[i].0
+    let load = load_profile[i].1
+    
+    // 计算当前时间段的采样率
+    let current_sampling_rate = if load <= total_budget {
+      1.0  // 低负载时100%采样
+    } else {
+      total_budget.to_double() / load.to_double()
+    }
+    
+    let sampled_in_window = (load.to_double() * current_sampling_rate).to_int()
+    total_sampled = total_sampled + sampled_in_window
+    
+    // 验证不超过预算
+    assert_eq(sampled_in_window <= total_budget, true)
+    
+    i = i + 1
+  }
+  
+  // 验证总采样数在预算范围内
+  let total_budget_overall = total_budget * (load_profile.length())
+  assert_eq(total_sampled <= total_budget_overall, true)
+}
+
+test "sampling_decision_caching" {
+  // 测试采样决策缓存
+  
+  let trace_ids = [
+    "trace1_abcdef123456",
+    "trace2_abcdef123456", 
+    "trace1_abcdef123456",  // 重复
+    "trace3_abcdef123456",
+    "trace2_abcdef123456",  // 重复
+    "trace4_abcdef123456",
+    "trace1_abcdef123456",  // 重复
+    "trace5_abcdef123456"
+  ]
+  
+  let sampling_cache = []  // 模拟缓存
+  let sampling_decisions = []  // 存储决策结果
+  
+  // 模拟采样决策缓存逻辑
+  let mut i = 0
+  while i < trace_ids.length() {
+    let trace_id = trace_ids[i]
+    
+    // 检查缓存
+    let mut cache_hit = false
+    let mut cached_decision = false
+    let mut j = 0
+    while j < sampling_cache.length() {
+      if sampling_cache[j].0 == trace_id {
+        cache_hit = true
+        cached_decision = sampling_cache[j].1
+        break
+      }
+      j = j + 1
+    }
+    
+    let sampling_decision = if cache_hit {
+      cached_decision
+    } else {
+      // 模拟采样决策（基于trace_id哈希）
+      let hash_value = trace_id.length() % 3  // 简化哈希
+      let decision = hash_value == 0  // 约33%的采样率
+      
+      // 添加到缓存
+      sampling_cache.push((trace_id, decision))
+      decision
+    }
+    
+    sampling_decisions.push(sampling_decision)
+    i = i + 1
+  }
+  
+  // 验证缓存效果
+  assert_eq(sampling_cache.length(), 5)  // 5个唯一的trace_id
+  assert_eq(sampling_decisions.length(), 8)  // 8个决策
+  
+  // 验证重复trace_id的决策一致性
+  assert_eq(sampling_decisions[0], sampling_decisions[2])  // trace1
+  assert_eq(sampling_decisions[1], sampling_decisions[4])  // trace2
+  assert_eq(sampling_decisions[0], sampling_decisions[6])  // trace1
+}
+
+test "sampling_metadata_enrichment" {
+  // 测试采样元数据丰富
+  
+  let sampling_decision = true
+  let sampling_rate = 0.15
+  let sampling_algorithm = "adaptive_error_rate"
+  let sampling_reason = "high_error_rate_detected"
+  
+  // 创建采样元数据
+  let sampling_metadata = {
+    "sampled": sampling_decision.to_string(),
+    "sampling_rate": sampling_rate.to_string(),
+    "sampling_algorithm": sampling_algorithm,
+    "sampling_reason": sampling_reason,
+    "sampling_timestamp": "1640995200",
+    "sampling_budget_used": "150",
+    "sampling_budget_total": "1000"
+  }
+  
+  // 验证元数据完整性
+  assert_eq(sampling_metadata["sampled"], "true")
+  assert_eq(sampling_metadata["sampling_rate"], "0.15")
+  assert_eq(sampling_metadata["sampling_algorithm"], "adaptive_error_rate")
+  assert_eq(sampling_metadata["sampling_reason"], "high_error_rate_detected")
+  assert_eq(sampling_metadata["sampling_timestamp"], "1640995200")
+  assert_eq(sampling_metadata["sampling_budget_used"], "150")
+  assert_eq(sampling_metadata["sampling_budget_total"], "1000")
+  
+  // 创建包含采样信息的追踪头
+  let enriched_traceparent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+  let sampling_tracestate = "azimuth_sampling=" + sampling_rate.to_string() + 
+                           ",azimuth_algorithm=" + sampling_algorithm + 
+                           ",azimuth_reason=" + sampling_reason
+  
+  // 验证丰富的追踪状态
+  assert_eq(sampling_tracestate.contains("azimuth_sampling=0.15"), true)
+  assert_eq(sampling_tracestate.contains("azimuth_algorithm=adaptive_error_rate"), true)
+  assert_eq(sampling_tracestate.contains("azimuth_reason=high_error_rate_detected"), true)
 }

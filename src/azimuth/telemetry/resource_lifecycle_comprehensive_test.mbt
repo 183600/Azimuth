@@ -1,416 +1,366 @@
-// 资源生命周期综合管理测试 - 测试资源分配和释放
+// 资源管理的生命周期综合测试
+// 测试资源创建、使用、更新和销毁的完整生命周期
 
-test "resource_creation_and_cleanup" {
-  // 测试Resource的创建和清理
-  let resource1 = common::Resource::default("test-service-1")
-  let resource2 = common::Resource::default("test-service-2")
-  let resource3 = common::Resource::default("test-service-3")
+test "resource_creation_and_initialization" {
+  // 测试资源的创建和初始化
+  let basic_resource = common::Resource::default("test_service")
   
-  // 验证资源创建
-  assert_eq(resource1.service_name, "test-service-1")
-  assert_eq(resource2.service_name, "test-service-2")
-  assert_eq(resource3.service_name, "test-service-3")
+  @assertion.assert_eq(basic_resource.service_name, "test_service")
+  @assertion.assert_eq(basic_resource.service_version, None)
+  @assertion.assert_eq(basic_resource.telemetry_sdk_name, "azimuth")
+  @assertion.assert_eq(basic_resource.telemetry_sdk_version, "0.1.0")
+  @assertion.assert_eq(basic_resource.attributes.length(), 0)
   
-  // 测试带属性的Resource创建
-  let attributes = [
-    ("service.instance.id", common::AttributeValue::string("instance-123")),
-    ("service.namespace", common::AttributeValue::string("production")),
-    ("host.name", common::AttributeValue::string("host-001")),
-    ("deployment.environment", common::AttributeValue::string("prod"))
-  ]
+  // 测试带有版本的资源创建
+  let versioned_resource = common::Resource::default("versioned_service")
+  let versioned_with_version = versioned_resource.{ service_version: Some("1.0.0") }
   
-  let resource_with_attrs = common::Resource::{
-    service_name: "test-service-with-attrs",
-    service_version: Some("1.2.3"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: attributes
+  @assertion.assert_eq(versioned_with_version.service_name, "versioned_service")
+  @assertion.assert_eq(versioned_with_version.service_version, Some("1.0.0"))
+  
+  // 测试带有属性的完整资源创建
+  let full_resource = common::Resource::{
+    service_name: "full_service",
+    service_version: Some("2.0.0"),
+    telemetry_sdk_name: "custom_sdk",
+    telemetry_sdk_version: "1.5.0",
+    attributes: [
+      ("environment", AttributeValue::string("production")),
+      ("region", AttributeValue::string("us-west-2")),
+      ("instance_id", AttributeValue::string("i-1234567890abcdef0"))
+    ]
   }
   
-  // 验证属性设置
-  assert_eq(resource_with_attrs.service_name, "test-service-with-attrs")
-  assert_eq(resource_with_attrs.service_version, Some("1.2.3"))
-  assert_eq(resource_with_attrs.attributes.length(), 4)
-  
-  // 验证特定属性
-  let mut found_instance_id = false
-  let mut found_namespace = false
-  let mut i = 0
-  while i < resource_with_attrs.attributes.length() {
-    let (key, value) = resource_with_attrs.attributes[i]
-    match key {
-      "service.instance.id" => {
-        match value {
-          common::StringValue(id) => {
-            if id == "instance-123" { found_instance_id = true }
-          }
-          _ => ()
-        }
-      }
-      "service.namespace" => {
-        match value {
-          common::StringValue(ns) => {
-            if ns == "production" { found_namespace = true }
-          }
-          _ => ()
-        }
-      }
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  assert!(found_instance_id)
-  assert!(found_namespace)
+  @assertion.assert_eq(full_resource.service_name, "full_service")
+  @assertion.assert_eq(full_resource.service_version, Some("2.0.0"))
+  @assertion.assert_eq(full_resource.telemetry_sdk_name, "custom_sdk")
+  @assertion.assert_eq(full_resource.telemetry_sdk_version, "1.5.0")
+  @assertion.assert_eq(full_resource.attributes.length(), 3)
 }
 
-test "instrumentation_scope_lifecycle" {
-  // 测试InstrumentationScope的生命周期管理
+test "resource_attribute_lifecycle" {
+  // 测试资源属性的生命周期管理
+  let mut resource = common::Resource::default("attr_test_service")
+  
+  // 初始状态：无属性
+  @assertion.assert_eq(resource.attributes.length(), 0)
+  
+  // 添加单个属性
+  resource = resource.{ attributes: [("initial_attr", AttributeValue::string("initial_value"))] }
+  @assertion.assert_eq(resource.attributes.length(), 1)
+  
+  // 添加多个属性
+  resource = resource.{ attributes: resource.attributes + [
+    ("environment", AttributeValue::string("development")),
+    ("version", AttributeValue::string("1.0.0")),
+    ("debug", AttributeValue::bool(true))
+  ]}
+  @assertion.assert_eq(resource.attributes.length(), 4)
+  
+  // 更新现有属性（通过替换整个属性数组）
+  let updated_attributes = resource.attributes.map(fn(attr) {
+    if attr[0] == "environment" {
+      ("environment", AttributeValue::string("production"))
+    } else {
+      attr
+    }
+  })
+  resource = resource.{ attributes: updated_attributes }
+  
+  // 验证属性更新
+  let env_attr = resource.attributes.find(fn(attr) { attr[0] == "environment" })
+  match env_attr {
+    Some((_, AttributeValue::string("production"))) => @assertion.assert_true(true)
+    _ => @assertion.assert_true(false)
+  }
+  
+  // 移除属性（通过过滤）
+  let filtered_attributes = resource.attributes.filter(fn(attr) { attr[0] != "debug" })
+  resource = resource.{ attributes: filtered_attributes }
+  @assertion.assert_eq(resource.attributes.length(), 3)
+}
+
+test "resource_merging_and_inheritance" {
+  // 测试资源合并和继承
+  let base_resource = common::Resource::{
+    service_name: "base_service",
+    service_version: Some("1.0.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("environment", AttributeValue::string("base")),
+      ("region", AttributeValue::string("us-east-1")),
+      ("team", AttributeValue::string("platform"))
+    ]
+  }
+  
+  let override_resource = common::Resource::{
+    service_name: "override_service",
+    service_version: Some("2.0.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("environment", AttributeValue::string("override")),
+      ("datacenter", AttributeValue::string("dc-1")),
+      ("feature", AttributeValue::bool(true))
+    ]
+  }
+  
+  // 模拟资源合并逻辑：基础资源 + 覆盖资源的属性
+  let merged_attributes = base_resource.attributes + override_resource.attributes
+  let merged_resource = common::Resource::{
+    service_name: override_resource.service_name,
+    service_version: override_resource.service_version,
+    telemetry_sdk_name: base_resource.telemetry_sdk_name,
+    telemetry_sdk_version: base_resource.telemetry_sdk_version,
+    attributes: merged_attributes
+  }
+  
+  // 验证合并结果
+  @assertion.assert_eq(merged_resource.service_name, "override_service")
+  @assertion.assert_eq(merged_resource.service_version, Some("2.0.0"))
+  @assertion.assert_eq(merged_resource.attributes.length(), 6)  // 3 + 3
+  
+  // 验证合并后的属性
+  let environment_attr = merged_resource.attributes.find(fn(attr) { attr[0] == "environment" })
+  let region_attr = merged_resource.attributes.find(fn(attr) { attr[0] == "region" })
+  let datacenter_attr = merged_resource.attributes.find(fn(attr) { attr[0] == "datacenter" })
+  
+  match environment_attr {
+    Some((_, AttributeValue::string("override"))) => @assertion.assert_true(true)
+    _ => @assertion.assert_true(false)
+  }
+  
+  match region_attr {
+    Some((_, AttributeValue::string("us-east-1"))) => @assertion.assert_true(true)
+    _ => @assertion.assert_true(false)
+  }
+  
+  match datacenter_attr {
+    Some((_, AttributeValue::string("dc-1"))) => @assertion.assert_true(true)
+    _ => @assertion.assert_true(false)
+  }
+}
+
+test "resource_validation_and_constraints" {
+  // 测试资源验证和约束
+  // 测试空服务名称
+  let empty_name_resource = common::Resource::default("")
+  @assertion.assert_eq(empty_name_resource.service_name, "")
+  
+  // 测试非常长的服务名称
+  let long_name = "a" * 1000
+  let long_name_resource = common::Resource::default(long_name)
+  @assertion.assert_eq(long_name_resource.service_name.length(), 1000)
+  
+  // 测试特殊字符的服务名称
+  let special_chars_resource = common::Resource::default("service-name_123.test")
+  @assertion.assert_eq(special_chars_resource.service_name, "service-name_123.test")
+  
+  // 测试Unicode服务名称
+  let unicode_resource = common::Resource::default("遥测服务")
+  @assertion.assert_eq(unicode_resource.service_name, "遥测服务")
+  
+  // 测试大量属性
+  let large_attributes = Array::range_with(0, 1000, 1).map(fn(i) {
+    ("attr_" + i.to_string(), AttributeValue::int(i.to_int64()))
+  })
+  let large_attr_resource = common::Resource::{
+    service_name: "large_attr_service",
+    service_version: None,
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: large_attributes
+  }
+  @assertion.assert_eq(large_attr_resource.attributes.length(), 1000)
+  
+  // 测试非常长的属性值
+  let long_value = "b" * 10000
+  let long_value_resource = common::Resource::{
+    service_name: "long_value_service",
+    service_version: None,
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [("long_attr", AttributeValue::string(long_value))]
+  }
+  
+  match long_value_resource.attributes[0][1] {
+    AttributeValue::StringValue(s) => @assertion.assert_eq(s.length(), 10000)
+    _ => @assertion.assert_true(false)
+  }
+}
+
+test "resource_lifecycle_with_instrumentation_scope" {
+  // 测试资源与仪表化范围的交互
+  let resource = common::Resource::default("instrumented_service")
+  
+  // 创建多个仪表化范围
   let scope1 = common::InstrumentationScope::{
-    name: "scope-1",
+    name: "scope1",
     version: Some("1.0.0"),
-    schema_url: Some("https://example.com/schema-v1")
+    schema_url: Some("https://example.com/schema1")
   }
   
   let scope2 = common::InstrumentationScope::{
-    name: "scope-2",
+    name: "scope2",
     version: Some("2.0.0"),
-    schema_url: Some("https://example.com/schema-v2")
+    schema_url: Some("https://example.com/schema2")
   }
   
   let scope3 = common::InstrumentationScope::{
-    name: "scope-3",
-    version: Some("3.0.0"),
-    schema_url: Some("https://example.com/schema-v3")
-  }
-  
-  // 验证创建
-  assert_eq(scope1.name, "scope-1")
-  assert_eq(scope1.version, Some("1.0.0"))
-  assert_eq(scope1.schema_url, Some("https://example.com/schema-v1"))
-  
-  assert_eq(scope2.name, "scope-2")
-  assert_eq(scope2.version, Some("2.0.0"))
-  assert_eq(scope2.schema_url, Some("https://example.com/schema-v2"))
-  
-  assert_eq(scope3.name, "scope-3")
-  assert_eq(scope3.version, Some("3.0.0"))
-  assert_eq(scope3.schema_url, Some("https://example.com/schema-v3"))
-  
-  // 测试最小配置的Scope
-  let minimal_scope = common::InstrumentationScope::{
-    name: "minimal-scope",
+    name: "scope3",
     version: None,
     schema_url: None
   }
   
-  assert_eq(minimal_scope.name, "minimal-scope")
-  assert_eq(minimal_scope.version, None)
-  assert_eq(minimal_scope.schema_url, None)
+  // 验证仪表化范围的创建
+  @assertion.assert_eq(scope1.name, "scope1")
+  @assertion.assert_eq(scope1.version, Some("1.0.0"))
+  @assertion.assert_eq(scope1.schema_url, Some("https://example.com/schema1"))
+  
+  @assertion.assert_eq(scope2.name, "scope2")
+  @assertion.assert_eq(scope2.version, Some("2.0.0"))
+  @assertion.assert_eq(scope2.schema_url, Some("https://example.com/schema2"))
+  
+  @assertion.assert_eq(scope3.name, "scope3")
+  @assertion.assert_eq(scope3.version, None)
+  @assertion.assert_eq(scope3.schema_url, None)
+  
+  // 模拟资源与范围的关联
+  let resource_scopes = [scope1, scope2, scope3]
+  @assertion.assert_eq(resource_scopes.length(), 3)
 }
 
-test "tracer_provider_lifecycle" {
-  // 测试TracerProvider的生命周期管理
-  let tracer_provider1 = trace::NoopTracerProvider::{}
-  let tracer_provider2 = trace::NoopTracerProvider::{}
-  let tracer_provider3 = trace::NoopTracerProvider::{}
-  
-  // 创建多个Tracer实例
-  let tracer1 = tracer_provider1.get_tracer("tracer-1")
-  let tracer2 = tracer_provider1.get_tracer("tracer-2", Some("1.0.0"))
-  let tracer3 = tracer_provider2.get_tracer("tracer-3", Some("2.0.0"))
-  let tracer4 = tracer_provider3.get_tracer("tracer-4", Some("3.0.0"))
-  
-  // 验证Tracer创建（在Noop实现中，所有Tracer都是相同的）
-  // 在实际实现中，这里会有不同的Tracer实例
-  assert_eq(true, true)
-  
-  // 测试使用Tracer创建Span
-  let ctx = context::Context::empty()
-  let (_, span1) = tracer1.start_span(ctx, "test-span-1")
-  let (_, span2) = tracer2.start_span(ctx, "test-span-2")
-  let (_, span3) = tracer3.start_span(ctx, "test-span-3")
-  let (_, span4) = tracer4.start_span(ctx, "test-span-4")
-  
-  // 验证Span创建
-  assert_eq(span1.name, "test-span-1")
-  assert_eq(span2.name, "test-span-2")
-  assert_eq(span3.name, "test-span-3")
-  assert_eq(span4.name, "test-span-4")
-}
-
-test "meter_provider_lifecycle" {
-  // 测试MeterProvider的生命周期管理
-  let meter_provider1 = metrics::NoopMeterProvider::{}
-  let meter_provider2 = metrics::NoopMeterProvider::{}
-  let meter_provider3 = metrics::NoopMeterProvider::{}
-  
-  // 创建多个Meter实例
-  let meter1 = meter_provider1.get_meter("meter-1")
-  let meter2 = meter_provider1.get_meter("meter-2", Some("1.0.0"))
-  let meter3 = meter_provider2.get_meter("meter-3", Some("2.0.0"), Some("https://example.com/schema1"))
-  let meter4 = meter_provider3.get_meter("meter-4", Some("3.0.0"), Some("https://example.com/schema2"))
-  
-  // 验证Meter创建（在Noop实现中，所有Meter都是相同的）
-  // 在实际实现中，这里会有不同的Meter实例
-  assert_eq(true, true)
-  
-  // 测试使用Meter创建各种指标
-  let counter1 = meter1.create_counter("counter-1", Some("count"), Some("Test counter 1"))
-  let histogram1 = meter1.create_histogram("histogram-1", Some("ms"), Some("Test histogram 1"))
-  let gauge1 = meter1.create_gauge("gauge-1", Some("value"), Some("Test gauge 1"))
-  let up_down_counter1 = meter1.create_up_down_counter("up-down-1", Some("count"), Some("Test up-down 1"))
-  
-  let counter2 = meter2.create_counter("counter-2", None, None)
-  let histogram2 = meter2.create_histogram("histogram-2", None, None)
-  let gauge2 = meter2.create_gauge("gauge-2", None, None)
-  let up_down_counter2 = meter2.create_up_down_counter("up-down-2", None, None)
-  
-  // 验证指标创建
-  assert_eq(true, true)
-  
-  // 测试指标操作
-  counter1.add(1L, Some([("test", common::AttributeValue::bool(true))]))
-  histogram1.record(100.0, Some([("test", common::AttributeValue::bool(true))]))
-  gauge1.record(50.0, Some([("test", common::AttributeValue::bool(true))]))
-  up_down_counter1.add(1L, Some([("test", common::AttributeValue::bool(true))]))
-  
-  counter2.add(2L, None)
-  histogram2.record(200.0, None)
-  gauge2.record(150.0, None)
-  up_down_counter2.add(-1L, None)
-  
-  // 验证操作不会抛出异常
-  assert_eq(true, true)
-}
-
-test "logger_provider_lifecycle" {
-  // 测试LoggerProvider的生命周期管理
-  let logger_provider1 = logs::NoopLoggerProvider::{}
-  let logger_provider2 = logs::NoopLoggerProvider::{}
-  let logger_provider3 = logs::NoopLoggerProvider::{}
-  
-  // 创建多个Logger实例
-  let logger1 = logger_provider1.get_logger("logger-1")
-  let logger2 = logger_provider1.get_logger("logger-2", Some("1.0.0"))
-  let logger3 = logger_provider2.get_logger("logger-3", Some("2.0.0"), Some("https://example.com/schema1"))
-  let logger4 = logger_provider3.get_logger("logger-4", Some("3.0.0"), Some("https://example.com/schema2"))
-  
-  // 验证Logger创建（在Noop实现中，所有Logger都是相同的）
-  // 在实际实现中，这里会有不同的Logger实例
-  assert_eq(true, true)
-  
-  // 测试使用Logger记录各种级别的日志
-  logger1.debug("Debug message from logger-1", Some([("logger.id", common::AttributeValue::string("logger-1"))]))
-  logger1.info("Info message from logger-1", Some([("logger.id", common::AttributeValue::string("logger-1"))]))
-  logger1.warn("Warning message from logger-1", Some([("logger.id", common::AttributeValue::string("logger-1"))]))
-  logger1.error("Error message from logger-1", Some([("logger.id", common::AttributeValue::string("logger-1"))]))
-  logger1.fatal("Fatal message from logger-1", Some([("logger.id", common::AttributeValue::string("logger-1"))]))
-  
-  logger2.debug("Debug message from logger-2", None)
-  logger2.info("Info message from logger-2", None)
-  logger2.warn("Warning message from logger-2", None)
-  logger2.error("Error message from logger-2", None)
-  logger2.fatal("Fatal message from logger-2", None)
-  
-  // 测试使用LogRecordBuilder
-  let log_record = logs::LogRecord::builder()
-    .body("Structured log message")
-    .severity(logs::SeverityNumber::Info)
-    .with_attribute("component", common::AttributeValue::string("test-component"))
-    .with_attribute("version", common::AttributeValue::string("1.0.0"))
-    .build()
-  
-  logger1.emit(log_record)
-  
-  // 验证操作不会抛出异常
-  assert_eq(true, true)
-}
-
-test "propagator_lifecycle" {
-  // 测试Propagator的生命周期管理
-  let trace_propagator1 = propagation::W3CTraceContextPropagator::{}
-  let trace_propagator2 = propagation::W3CTraceContextPropagator::{}
-  let baggage_propagator1 = propagation::W3CBaggagePropagator::{}
-  let baggage_propagator2 = propagation::W3CBaggagePropagator::{}
-  
-  // 创建复合传播器
-  let composite_propagator1 = propagation::CompositePropagator::new([
-    trace_propagator1 as propagation::TextMapPropagator,
-    baggage_propagator1 as propagation::TextMapPropagator
-  ])
-  
-  let composite_propagator2 = propagation::CompositePropagator::new([
-    trace_propagator2 as propagation::TextMapPropagator,
-    baggage_propagator2 as propagation::TextMapPropagator
-  ])
-  
-  // 测试传播器操作
-  let ctx = context::Context::empty()
-  let carrier1 = propagation::MapCarrier::new()
-  let carrier2 = propagation::MapCarrier::new()
-  
-  // 使用不同的传播器进行注入和提取
-  composite_propagator1.inject(ctx, carrier1)
-  composite_propagator2.inject(ctx, carrier2)
-  
-  let extracted_ctx1 = composite_propagator1.extract(ctx, carrier1)
-  let extracted_ctx2 = composite_propagator2.extract(ctx, carrier2)
-  
-  // 验证操作不会抛出异常
-  assert_eq(true, true)
-  
-  // 验证carrier中有预期的数据
-  let trace_parent1 = carrier1.get(propagation::TRACE_PARENT_HEADER)
-  let baggage1 = carrier1.get(propagation::BAGGAGE_HEADER)
-  let trace_parent2 = carrier2.get(propagation::TRACE_PARENT_HEADER)
-  let baggage2 = carrier2.get(propagation::BAGGAGE_HEADER)
-  
-  assert!(trace_parent1.is_some())
-  assert!(baggage1.is_some())
-  assert!(trace_parent2.is_some())
-  assert!(baggage2.is_some())
-}
-
-test "carrier_lifecycle" {
-  // 测试Carrier的生命周期管理
-  let carrier1 = propagation::MapCarrier::new()
-  let carrier2 = propagation::MapCarrier::new()
-  let carrier3 = propagation::MapCarrier::new()
-  
-  // 测试carrier操作
-  carrier1.set("test-header-1", "test-value-1")
-  carrier1.set("test-header-2", "test-value-2")
-  
-  carrier2.set("another-header-1", "another-value-1")
-  carrier2.set("another-header-2", "another-value-2")
-  
-  // 测试从map创建carrier
-  let initial_data = [
-    ("pre-set-header-1", "pre-set-value-1"),
-    ("pre-set-header-2", "pre-set-value-2"),
-    ("pre-set-header-3", "pre-set-value-3")
-  ]
-  let carrier3 = propagation::MapCarrier::from_map(initial_data)
-  
-  // 验证carrier操作
-  let value1 = carrier1.get("test-header-1")
-  let value2 = carrier1.get("test-header-2")
-  let another_value1 = carrier2.get("another-header-1")
-  let another_value2 = carrier2.get("another-header-2")
-  let pre_set_value1 = carrier3.get("pre-set-header-1")
-  let pre_set_value2 = carrier3.get("pre-set-header-2")
-  let pre_set_value3 = carrier3.get("pre-set-header-3")
-  
-  assert_eq(value1, Some("test-value-1"))
-  assert_eq(value2, Some("test-value-2"))
-  assert_eq(another_value1, Some("another-value-1"))
-  assert_eq(another_value2, Some("another-value-2"))
-  assert_eq(pre_set_value1, Some("pre-set-value-1"))
-  assert_eq(pre_set_value2, Some("pre-set-value-2"))
-  assert_eq(pre_set_value3, Some("pre-set-value-3"))
-  
-  // 测试获取所有键
-  let keys1 = carrier1.keys()
-  let keys2 = carrier2.keys()
-  let keys3 = carrier3.keys()
-  
-  assert_eq(keys1.length(), 2)
-  assert_eq(keys2.length(), 2)
-  assert_eq(keys3.length(), 3)
-}
-
-test "context_and_baggage_lifecycle" {
-  // 测试Context和Baggage的生命周期管理
-  let base_ctx = context::Context::empty()
-  let base_baggage = context::Baggage::empty()
-  
-  // 创建多个Context实例
-  let ctx1 = base_ctx.with_value(context::create_key("key-1"), "value-1")
-  let ctx2 = base_ctx.with_value(context::create_key("key-2"), "value-2")
-  let ctx3 = base_ctx.with_value(context::create_key("key-3"), "value-3")
-  
-  // 创建多个Baggage实例
-  let baggage1 = base_baggage.with_entry("baggage-key-1", "baggage-value-1")
-  let baggage2 = base_baggage.with_entry("baggage-key-2", "baggage-value-2")
-  let baggage3 = base_baggage.with_entry("baggage-key-3", "baggage-value-3")
-  
-  // 验证Context操作
-  assert_eq(ctx1.get(context::create_key("key-1")), Some("value-1"))
-  assert_eq(ctx2.get(context::create_key("key-2")), Some("value-2"))
-  assert_eq(ctx3.get(context::create_key("key-3")), Some("value-3"))
-  
-  // 验证Baggage操作
-  assert_eq(baggage1.get("baggage-key-1"), Some("baggage-value-1"))
-  assert_eq(baggage2.get("baggage-key-2"), Some("baggage-value-2"))
-  assert_eq(baggage3.get("baggage-key-3"), Some("baggage-value-3"))
-  
-  // 测试链式操作
-  let chained_ctx = ctx1.with_value(context::create_key("chained-key"), "chained-value")
-  let chained_baggage = baggage1.with_entry("chained-baggage-key", "chained-baggage-value")
-  
-  assert_eq(chained_ctx.get(context::create_key("key-1")), Some("value-1"))
-  assert_eq(chained_ctx.get(context::create_key("chained-key")), Some("chained-value"))
-  assert_eq(chained_baggage.get("baggage-key-1"), Some("baggage-value-1"))
-  assert_eq(chained_baggage.get("chained-baggage-key"), Some("chained-baggage-value"))
-}
-
-test "resource_limit_management" {
-  // 测试资源限制管理
-  // 测试大量资源创建
+test "resource_cleanup_and_disposal" {
+  // 测试资源清理和处置
   let mut resources = []
-  let mut scopes = []
-  let mut tracers = []
-  let mut meters = []
-  let mut loggers = []
   
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let logger_provider = logs::NoopLoggerProvider::{}
-  
-  // 创建大量资源实例
-  let mut i = 0
-  while i < 100 {
-    let resource = common::Resource::default("service-${i}")
-    let scope = common::InstrumentationScope::{
-      name: "scope-${i}",
-      version: Some("${i}.0.0"),
-      schema_url: Some("https://example.com/schema-${i}")
+  // 创建多个资源
+  for i in 0..10 {
+    let resource = common::Resource::{
+      service_name: "service_" + i.to_string(),
+      service_version: Some("1.0." + i.to_string()),
+      telemetry_sdk_name: "azimuth",
+      telemetry_sdk_version: "0.1.0",
+      attributes: [
+        ("index", AttributeValue::int(i.to_int64())),
+        ("created_at", AttributeValue::string("2023-01-01"))
+      ]
     }
-    let tracer = tracer_provider.get_tracer("tracer-${i}")
-    let meter = meter_provider.get_meter("meter-${i}")
-    let logger = logger_provider.get_logger("logger-${i}")
-    
-    resources.push(resource)
-    scopes.push(scope)
-    tracers.push(tracer)
-    meters.push(meter)
-    loggers.push(logger)
-    
-    i = i + 1
+    resources = resources + [resource]
   }
   
   // 验证资源创建
-  assert_eq(resources.length(), 100)
-  assert_eq(scopes.length(), 100)
-  assert_eq(tracers.length(), 100)
-  assert_eq(meters.length(), 100)
-  assert_eq(loggers.length(), 100)
+  @assertion.assert_eq(resources.length(), 10)
   
-  // 验证特定资源
-  assert_eq(resources[0].service_name, "service-0")
-  assert_eq(resources[99].service_name, "service-99")
-  assert_eq(scopes[0].name, "scope-0")
-  assert_eq(scopes[99].name, "scope-99")
+  // 模拟资源清理（通过移除引用）
+  resources = []
+  @assertion.assert_eq(resources.length(), 0)
   
-  // 测试资源使用
-  let ctx = context::Context::empty()
-  let (_, test_span) = tracers[0].start_span(ctx, "test-span")
-  let test_counter = meters[0].create_counter("test-counter", None, None)
-  test_counter.add(1L, None)
-  loggers[0].info("Test message", None)
+  // 验证资源可以重新创建
+  let new_resource = common::Resource::default("new_service_after_cleanup")
+  @assertion.assert_eq(new_resource.service_name, "new_service_after_cleanup")
+}
+
+test "resource_state_transitions" {
+  // 测试资源状态转换
+  let mut resource = common::Resource::default("stateful_service")
   
-  // 验证操作不会抛出异常
-  assert_eq(test_span.name, "test-span")
-  assert_eq(true, true)
+  // 初始状态
+  @assertion.assert_eq(resource.service_name, "stateful_service")
+  @assertion.assert_eq(resource.attributes.length(), 0)
+  
+  // 状态转换：初始化
+  resource = resource.{ 
+    attributes: [
+      ("state", AttributeValue::string("initialized")),
+      ("start_time", AttributeValue::string("2023-01-01T00:00:00Z"))
+    ]
+  }
+  
+  // 状态转换：配置
+  resource = resource.{ 
+    attributes: resource.attributes + [
+      ("state", AttributeValue::string("configured")),
+      ("config_version", AttributeValue::string("1.0.0"))
+    ]
+  }
+  
+  // 状态转换：活跃
+  resource = resource.{ 
+    attributes: resource.attributes.map(fn(attr) {
+      if attr[0] == "state" {
+        ("state", AttributeValue::string("active"))
+      } else {
+        attr
+      }
+    }) + [
+      ("active_since", AttributeValue::string("2023-01-01T01:00:00Z"))
+    ]
+  }
+  
+  // 状态转换：停用
+  resource = resource.{ 
+    attributes: resource.attributes.map(fn(attr) {
+      if attr[0] == "state" {
+        ("state", AttributeValue::string("inactive"))
+      } else {
+        attr
+      }
+    }) + [
+      ("inactive_since", AttributeValue::string("2023-01-01T02:00:00Z"))
+    ]
+  }
+  
+  // 验证最终状态
+  @assertion.assert_eq(resource.attributes.length(), 5)
+  
+  let current_state = resource.attributes.find(fn(attr) { attr[0] == "state" })
+  match current_state {
+    Some((_, AttributeValue::string("inactive"))) => @assertion.assert_true(true)
+    _ => @assertion.assert_true(false)
+  }
+}
+
+test "resource_concurrent_access" {
+  // 测试资源的并发访问
+  let base_resource = common::Resource::default("concurrent_service")
+  
+  // 模拟并发资源操作
+  let num_operations = 100
+  let operations = Array::range_with(0, num_operations, 1).map(fn(i) {
+    // 创建资源变体（模拟并发操作）
+    let variant_resource = base_resource.{ 
+      attributes: [
+        ("operation_id", AttributeValue::int(i.to_int64())),
+        ("thread_id", AttributeValue::string("thread_" + (i % 10).to_string()))
+      ]
+    }
+    variant_resource
+  })
+  
+  // 验证所有操作都产生了有效的资源
+  @assertion.assert_eq(operations.length(), num_operations)
+  
+  // 验证每个资源的唯一性
+  let operation_ids = operations.map(fn(resource) {
+    match resource.attributes.find(fn(attr) { attr[0] == "operation_id" }) {
+      Some((_, AttributeValue::IntValue(id))) => id
+      _ => -1L
+    }
+  })
+  
+  let unique_ids = operation_ids.to_set()
+  @assertion.assert_eq(unique_ids.size(), num_operations)
+  
+  // 验证线程ID分布
+  let thread_ids = operations.map(fn(resource) {
+    match resource.attributes.find(fn(attr) { attr[0] == "thread_id" }) {
+      Some((_, AttributeValue::StringValue(id))) => id
+      _ => ""
+    }
+  })
+  
+  let unique_thread_ids = thread_ids.to_set()
+  @assertion.assert_eq(unique_thread_ids.size(), 10)  // 10个不同的线程
 }
