@@ -92,9 +92,6 @@ test "data_format_conversion_compatibility" {
 test "dynamic_config_hot_reload" {
   // 测试动态配置热重载功能
   
-  let initial_config = "{\"sample_rate\":0.1,\"batch_size\":100,\"export_interval\":5000}"
-  let updated_config = "{\"sample_rate\":0.2,\"batch_size\":200,\"export_interval\":3000}"
-  
   // 解析初始配置
   let initial_sample_rate = 0.1
   let initial_batch_size = 100
@@ -439,7 +436,6 @@ test "data_compression_efficiency" {
   // 测试数据压缩效率
   
   let original_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
-  let compressed_data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." // 模拟压缩数据
   let compression_algorithms = ["gzip", "lz4", "snappy", "zstd"]
   let compression_ratios = [0.65, 0.75, 0.80, 0.55] // 压缩比
   
@@ -480,7 +476,6 @@ test "data_compression_efficiency" {
   
   // 计算压缩时间（毫秒）
   let compression_times = [10, 5, 8, 15] // 不同算法的压缩时间
-  let decompression_times = [8, 3, 6, 12] // 不同算法的解压时间
   
   // 找出最快的压缩算法
   let mut fastest_compression_time = compression_times[0]
