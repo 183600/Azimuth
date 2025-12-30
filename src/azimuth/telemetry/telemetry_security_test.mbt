@@ -1,401 +1,506 @@
-// 遥测安全测试用例
-// 测试遥测系统的安全功能，包括数据加密、访问控制和隐私保护
-
-test "telemetry_sensitive_data_masking" {
-  // 测试遥测敏感数据掩码
-  
-  let sensitive_data = [
-    ("user.email", "john.doe@example.com"),
-    ("user.phone", "+1-555-123-4567"),
-    ("credit_card", "4111-1111-1111-1111"),
-    ("ssn", "123-45-6789"),
-    ("api_key", "sk_live_1234567890abcdef"),
-    ("password", "SuperSecret123!")
-  ]
-  
-  // 验证敏感数据
-  assert_eq(sensitive_data.length(), 6)
-  assert_eq(sensitive_data[0].0, "user.email")
-  assert_eq(sensitive_data[1].1, "+1-555-123-4567")
-  assert_eq(sensitive_data[2].0, "credit_card")
-  assert_eq(sensitive_data[5].0, "password")
-  
-  // 应用数据掩码规则
-  let masked_data = []
-  let mut i = 0
-  while i < sensitive_data.length() {
-    let field_name = sensitive_data[i].0
-    let field_value = sensitive_data[i].1
-    let masked_value = ""
-    
-    // 根据字段类型应用不同的掩码规则
-    if (field_name.has_suffix("email")) {
-      // 邮箱掩码：保留前3个字符和域名
-      masked_value = field_value.slice(0, 3) + "***@" + field_value.slice(field_value.index_of("@") + 1, field_value.length())
-    } else if (field_name.has_suffix("phone")) {
-      // 电话掩码：保留前3位和后4位
-      masked_value = field_value.slice(0, 6) + "***" + field_value.slice(field_value.length() - 4, field_value.length())
-    } else if (field_name == "credit_card") {
-      // 信用卡掩码：只显示后4位
-      masked_value = "****-****-****-" + field_value.slice(field_value.length() - 4, field_value.length())
-    } else if (field_name == "ssn") {
-      // SSN掩码：只显示后4位
-      masked_value = "***-**-" + field_value.slice(field_value.length() - 4, field_value.length())
-    } else if (field_name.has_suffix("key") || field_name == "password") {
-      // API密钥和密码：完全掩码
-      masked_value = "***"
-    } else {
-      masked_value = field_value // 不敏感数据保持原样
-    }
-    
-    masked_data.push((field_name, masked_value))
-    i = i + 1
-  }
-  
-  // 验证掩码结果
-  assert_eq(masked_data.length(), 6)
-  assert_eq(masked_data[0].1, "joh***@example.com")
-  assert_eq(masked_data[1].1, "+1-555-***-4567")
-  assert_eq(masked_data[2].1, "****-****-****-1111")
-  assert_eq(masked_data[3].1, "***-**-6789")
-  assert_eq(masked_data[4].1, "***")
-  assert_eq(masked_data[5].1, "***")
-  
-  // 验证敏感信息不再可见
-  let mut has_unmasked_email = false
-  let mut has_unmasked_card = false
-  let mut has_unmasked_key = false
-  
-  i = 0
-  while i < masked_data.length() {
-    let value = masked_data[i].1
-    if (value.contains("@") && !value.contains("***")) {
-      has_unmasked_email = true
-    }
-    if (value.has_prefix("4111") && value.length() > 4) {
-      has_unmasked_card = true
-    }
-    if (value.has_prefix("sk_live") && value.length() > 3) {
-      has_unmasked_key = true
-    }
-    i = i + 1
-  }
-  
-  assert_eq(has_unmasked_email, false)
-  assert_eq(has_unmasked_card, false)
-  assert_eq(has_unmasked_key, false)
-}
-
-test "telemetry_access_control" {
-  // 测试遥测访问控制
-  
-  let user_roles = ["admin", "operator", "viewer", "guest"]
-  let permissions = [
-    ("admin", ["read", "write", "delete", "configure"]),
-    ("operator", ["read", "write"]),
-    ("viewer", ["read"]),
-    ("guest", [])
-  ]
-  
-  // 验证用户角色和权限
-  assert_eq(user_roles.length(), 4)
-  assert_eq(permissions.length(), 4)
-  assert_eq(permissions[0].0, "admin")
-  assert_eq(permissions[3].0, "guest")
-  
-  // 测试访问控制逻辑
-  let test_operations = ["read", "write", "delete", "configure"]
-  let mut i = 0
-  while i < user_roles.length() {
-    let user_role = user_roles[i]
-    let mut j = 0
-    while j < test_operations.length() {
-      let operation = test_operations[j]
-      let mut has_permission = false
-      
-      // 检查用户是否有执行操作的权限
-      let mut k = 0
-      while k < permissions.length() {
-        if (permissions[k].0 == user_role) {
-          let role_permissions = permissions[k].1
-          let mut l = 0
-          while l < role_permissions.length() {
-            if (role_permissions[l] == operation) {
-              has_permission = true
-              break
-            }
-            l = l + 1
-          }
-          break
-        }
-        k = k + 1
-      }
-      
-      // 验证权限逻辑
-      if (user_role == "admin") {
-        assert_eq(has_permission, true) // 管理员有所有权限
-      } else if (user_role == "guest") {
-        assert_eq(has_permission, false) // 访客没有权限
-      } else if (user_role == "viewer" && operation == "read") {
-        assert_eq(has_permission, true) // 查看者只有读权限
-      } else if (user_role == "viewer" && operation != "read") {
-        assert_eq(has_permission, false) // 查看者没有其他权限
-      }
-      
-      j = j + 1
-    }
-    i = i + 1
-  }
-}
+// 遥测安全性和隐私保护测试用例
+// 专注于测试遥测系统的安全功能和隐私保护机制
 
 test "telemetry_data_encryption" {
   // 测试遥测数据加密
   
-  let original_data = "user_id=12345&action=login&timestamp=1640995200"
-  let encryption_key = "secret_key_12345"
-  
-  // 验证原始数据
-  assert_eq(original_data.length(), 42)
-  assert_eq(original_data.contains("user_id=12345"), true)
-  assert_eq(encryption_key, "secret_key_12345")
-  
-  // 模拟简单加密（XOR加密作为示例）
-  let encrypted_data = ""
-  let mut i = 0
-  while i < original_data.length() {
-    let original_char = original_data.char_at(i)
-    let key_char = encryption_key.char_at(i % encryption_key.length())
-    // 简化的字符加密逻辑
-    let encrypted_char = if (original_char != key_char) { "X" } else { "Y" }
-    encrypted_data = encrypted_data + encrypted_char
-    i = i + 1
+  let sensitive_telemetry_data = {
+    "trace_id" => "abc123def45678901234567890123456",
+    "user_id" => "user_12345",
+    "email" => "user@example.com",
+    "credit_card" => "4111-1111-1111-1111",
+    "session_token" => "sess_abcdef123456",
+    "api_key" => "sk-1234567890abcdef"
   }
   
-  // 验证加密数据
-  assert_eq(encrypted_data.length(), original_data.length())
-  assert_eq(encrypted_data != original_data, true) // 加密后应该不同
+  // 验证敏感数据
+  assert_eq(sensitive_telemetry_data["user_id"], "user_12345")
+  assert_eq(sensitive_telemetry_data["email"], "user@example.com")
+  assert_eq(sensitive_telemetry_data["credit_card"], "4111-1111-1111-1111")
+  assert_eq(sensitive_telemetry_data["api_key"], "sk-1234567890abcdef")
   
-  // 模拟解密
-  let decrypted_data = ""
-  i = 0
-  while i < encrypted_data.length() {
-    let encrypted_char = encrypted_data.char_at(i)
-    let key_char = encryption_key.char_at(i % encryption_key.length())
-    // 简化的字符解密逻辑
-    let decrypted_char = if (encrypted_char == "X") { original_data.char_at(i) } else { "?" }
-    decrypted_data = decrypted_data + decrypted_char
-    i = i + 1
-  }
-  
-  // 验证解密结果（简化版，实际应该完全恢复原始数据）
-  assert_eq(decrypted_data.length(), original_data.length())
-  
-  // 创建加密元数据
-  let encryption_metadata = {
-    "algorithm": "XOR",
-    "key_length": encryption_key.length().to_string(),
-    "data_length": original_data.length().to_string(),
-    "encrypted": "true"
-  }
-  
-  // 验证加密元数据
-  assert_eq(encryption_metadata["algorithm"], "XOR")
-  assert_eq(encryption_metadata["key_length"], "16")
-  assert_eq(encryption_metadata["data_length"], "42")
-  assert_eq(encryption_metadata["encrypted"], "true")
-}
-
-test "telemetry_audit_logging" {
-  // 测试遥测审计日志
-  
-  let audit_events = [
-    ("user_access", "admin", "read", "telemetry_data", "2023-01-01T10:00:00Z"),
-    ("data_export", "operator", "export", "metrics_2023", "2023-01-01T10:05:00Z"),
-    ("config_change", "admin", "update", "sampling_rate", "2023-01-01T10:10:00Z"),
-    ("unauthorized_access", "guest", "read", "sensitive_data", "2023-01-01T10:15:00Z")
+  // 定义敏感字段
+  let sensitive_fields = [
+    "email", "credit_card", "session_token", "api_key", "password", "ssn"
   ]
   
-  // 验证审计事件
-  assert_eq(audit_events.length(), 4)
-  assert_eq(audit_events[0].0, "user_access")
-  assert_eq(audit_events[3].0, "unauthorized_access")
+  // 验证敏感字段定义
+  assert_eq(sensitive_fields.length(), 6)
+  assert_eq(sensitive_fields[0], "email")
+  assert_eq(sensitive_fields[2], "session_token")
   
-  // 创建审计日志条目
-  let audit_logs = []
+  // 模拟AES加密
+  let encryption_key = "encryption_key_1234567890abcdef"
+  let iv = "initialization_vec"
+  
+  // 验证加密参数
+  assert_eq(encryption_key.length(), 32)
+  assert_eq(iv.length(), 19)
+  
+  // 加密敏感数据
+  let encrypted_data = {}
+  let keys = sensitive_telemetry_data.keys()
   let mut i = 0
-  while i < audit_events.length() {
-    let event_type = audit_events[i].0
-    let user = audit_events[i].1
-    let action = audit_events[i].2
-    let resource = audit_events[i].3
-    let timestamp = audit_events[i].4]
+  while i < keys.length() {
+    let key = keys[i]
+    let value = sensitive_telemetry_data[key]
     
-    let log_entry = timestamp + " [" + event_type.toUpperCase() + "] " + 
-                   "User=" + user + " Action=" + action + " Resource=" + resource
-    
-    audit_logs.push(log_entry)
-    i = i + 1
-  }
-  
-  // 验证审计日志
-  assert_eq(audit_logs.length(), 4)
-  assert_eq(audit_logs[0].contains("USER_ACCESS"), true)
-  assert_eq(audit_logs[0].contains("User=admin"), true)
-  assert_eq(audit_logs[3].contains("UNAUTHORIZED_ACCESS"), true)
-  assert_eq(audit_logs[3].contains("User=guest"), true)
-  
-  // 检查安全事件
-  let security_events = []
-  i = 0
-  while i < audit_events.length() {
-    let event_type = audit_events[i].0
-    if (event_type == "unauthorized_access" || event_type == "config_change") {
-      security_events.push(audit_events[i])
-    }
-    i = i + 1
-  }
-  
-  // 验证安全事件
-  assert_eq(security_events.length(), 2)
-  assert_eq(security_events[0].0, "config_change")
-  assert_eq(security_events[1].0, "unauthorized_access")
-}
-
-test "telemetry_data_retention" {
-  // 测试遥测数据保留策略
-  
-  let data_categories = [
-    ("performance_metrics", 90),    // 90天
-    ("error_logs", 365),            // 1年
-    ("user_activity", 30),          // 30天
-    ("security_events", 2555),      // 7年
-    ("debug_logs", 7)               // 7天
-  ]
-  
-  // 验证数据类别和保留期
-  assert_eq(data_categories.length(), 5)
-  assert_eq(data_categories[0].0, "performance_metrics")
-  assert_eq(data_categories[0].1, 90)
-  assert_eq(data_categories[3].0, "security_events")
-  assert_eq(data_categories[3].1, 2555)
-  
-  // 检查数据是否应该保留
-  let current_date = "2023-06-01"
-  let test_data = [
-    ("performance_metrics", "2023-03-01"), // 92天前，应该删除
-    ("error_logs", "2022-06-01"),          // 365天前，边界情况
-    ("user_activity", "2023-05-15"),       // 17天前，应该保留
-    ("security_events", "2020-01-01"),     // 3年前，应该保留
-    ("debug_logs", "2023-05-25")           // 7天前，边界情况
-  ]
-  
-  // 应用保留策略
-  let retention_decisions = []
-  let mut i = 0
-  while i < test_data.length() {
-    let category = test_data[i].0
-    let data_date = test_data[i].1
-    let mut should_retain = false
-    
-    // 找到该类别的保留期
+    // 检查是否为敏感字段
+    let mut is_sensitive = false
     let mut j = 0
-    while j < data_categories.length() {
-      if (data_categories[j].0 == category) {
-        let retention_days = data_categories[j].1
-        
-        // 简化的日期比较（假设数据格式正确）
-        if (category == "performance_metrics" && data_date.has_prefix("2023-05")) {
-          should_retain = true // 5月的数据在90天内
-        } else if (category == "error_logs" && data_date == "2022-06-01") {
-          should_retain = true // 正好365天，保留
-        } else if (category == "user_activity" && data_date.has_prefix("2023-05")) {
-          should_retain = true // 5月的数据在30天内
-        } else if (category == "security_events") {
-          should_retain = true // 安全事件长期保留
-        } else if (category == "debug_logs" && data_date.has_prefix("2023-05-25")) {
-          should_retain = true // 7天边界情况
-        }
+    while j < sensitive_fields.length() {
+      if key == sensitive_fields[j] {
+        is_sensitive = true
         break
       }
       j = j + 1
     }
     
-    retention_decisions.push((category, data_date, should_retain))
+    if is_sensitive {
+      // 模拟加密：encrypted:key:iv:data
+      encrypted_data[key] = "encrypted:aes256:" + iv + ":" + value.substring(0, 4) + "..."
+    } else {
+      encrypted_data[key] = value // 非敏感数据不加密
+    }
     i = i + 1
   }
   
-  // 验证保留决策
-  assert_eq(retention_decisions.length(), 5)
-  assert_eq(retention_decisions[0].2, false) // performance_metrics 超过90天
-  assert_eq(retention_decisions[1].2, true)  // error_logs 正好365天
-  assert_eq(retention_decisions[2].2, true)  // user_activity 在30天内
-  assert_eq(retention_decisions[3].2, true)  // security_events 长期保留
-  assert_eq(retention_decisions[4].2, true)  // debug_logs 边界情况
+  // 验证加密结果
+  assert_eq(encrypted_data["trace_id"], "abc123def45678901234567890123456") // 非敏感
+  assert_eq(encrypted_data["user_id"], "user_12345") // 非敏感
+  assert_eq(encrypted_data["email"], "encrypted:aes256:initialization_vec:user...") // 已加密
+  assert_eq(encrypted_data["credit_card"], "encrypted:aes256:initialization_vec:4111...") // 已加密
+  assert_eq(encrypted_data["api_key"], "encrypted:aes256:initialization_vec:sk-1...") // 已加密
+  
+  // 验证加密格式
+  let sensitive_keys = ["email", "credit_card", "session_token", "api_key"]
+  i = 0
+  while i < sensitive_keys.length() {
+    let encrypted_value = encrypted_data[sensitive_keys[i]]
+    assert_eq(encrypted_value.has_prefix("encrypted:"), true)
+    assert_eq(encrypted_value.contains("aes256"), true)
+    assert_eq(encrypted_value.contains("initialization_vec"), true)
+    i = i + 1
+  }
 }
 
-test "telemetry_network_security" {
-  // 测试遥测网络安全
+test "telemetry pii_masking" {
+  // 测试个人身份信息(PII)脱敏
   
-  let endpoints = [
-    ("collector", "https://otel-collector.example.com:4317", "mTLS"),
-    ("api", "https://api.telemetry.example.com", "TLS"),
-    ("internal", "http://localhost:8080", "None"),
-    ("backup", "https://backup.telemetry.example.com:9090", "mTLS")
+  let pii_data = {
+    "user_name" => "John Doe",
+    "email" => "john.doe@example.com",
+    "phone" => "+1-555-123-4567",
+    "ssn" => "123-45-6789",
+    "credit_card" => "4111-1111-1111-1111",
+    "ip_address" => "192.168.1.100",
+    "address" => "123 Main St, New York, NY 10001"
+  }
+  
+  // 验证PII数据
+  assert_eq(pii_data["user_name"], "John Doe")
+  assert_eq(pii_data["email"], "john.doe@example.com")
+  assert_eq(pii_data["phone"], "+1-555-123-4567")
+  assert_eq(pii_data["ssn"], "123-45-6789")
+  
+  // 定义PII脱敏规则
+  let masking_rules = {
+    "email" => {"type" => "email", "show_chars" => 2},
+    "phone" => {"type" => "phone", "show_last" => 4},
+    "ssn" => {"type" => "ssn", "show_last" => 4},
+    "credit_card" => {"type" => "credit_card", "show_last" => 4},
+    "user_name" => {"type" => "name", "show_initial" => true},
+    "ip_address" => {"type" => "ip", "mask_octets" => 2},
+    "address" => {"type" => "address", "show_zip" => true}
+  }
+  
+  // 验证脱敏规则
+  assert_eq(masking_rules["email"]["show_chars"], 2)
+  assert_eq(masking_rules["ssn"]["show_last"], 4)
+  assert_eq(masking_rules["ip_address"]["mask_octets"], 2)
+  
+  // 应用脱敏规则
+  let masked_data = {}
+  let keys = pii_data.keys()
+  let mut i = 0
+  while i < keys.length() {
+    let key = keys[i]
+    let value = pii_data[key]
+    let rule = masking_rules[key]
+    let masked_value = ""
+    
+    if rule["type"] == "email") {
+      // 邮箱脱敏：jo***@example.com
+      masked_value = value.substring(0, rule["show_chars"]) + "***@" + value.split("@")[1]
+    } else if rule["type"] == "phone") {
+      // 电话脱敏：xxx-xxx-4567
+      masked_value = "***-***-" + value.substring(value.length() - rule["show_last"], value.length())
+    } else if rule["type"] == "ssn") {
+      // SSN脱敏：xxx-xx-6789
+      masked_value = "***-**-" + value.substring(value.length() - rule["show_last"], value.length())
+    } else if rule["type"] == "credit_card") {
+      // 信用卡脱敏：xxxx-xxxx-xxxx-1111
+      masked_value = "xxxx-xxxx-xxxx-" + value.substring(value.length() - rule["show_last"], value.length())
+    } else if rule["type"] == "name") {
+      // 姓名脱敏：John D.
+      let name_parts = value.split(" ")
+      masked_value = name_parts[0] + " " + name_parts[1].substring(0, 1) + "."
+    } else if rule["type"] == "ip") {
+      // IP脱敏：192.168.x.x
+      let octets = value.split(".")
+      masked_value = octets[0] + "." + octets[1] + ".x.x"
+    } else if rule["type"] == "address") {
+      // 地址脱敏：xxx xxx xxx, New York, NY 10001
+      let address_parts = value.split(", ")
+      masked_value = "xxx xxx xxx, " + address_parts[1] + ", " + address_parts[2]
+    }
+    
+    masked_data[key] = masked_value
+    i = i + 1
+  }
+  
+  // 验证脱敏结果
+  assert_eq(masked_data["email"], "jo***@example.com")
+  assert_eq(masked_data["phone"], "***-***-4567")
+  assert_eq(masked_data["ssn"], "***-**-6789")
+  assert_eq(masked_data["credit_card"], "xxxx-xxxx-xxxx-1111")
+  assert_eq(masked_data["user_name"], "John D.")
+  assert_eq(masked_data["ip_address"], "192.168.x.x")
+  assert_eq(masked_data["address"], "xxx xxx xxx, New York, NY 10001")
+  
+  // 验证脱敏安全性
+  assert_eq(masked_data["email"] != pii_data["email"], true)
+  assert_eq(masked_data["ssn"] != pii_data["ssn"], true)
+  assert_eq(masked_data["credit_card"] != pii_data["credit_card"], true)
+  assert_eq(masked_data["address"].contains("10001"), true) // 保留邮编
+}
+
+test "telemetry_access_control" {
+  // 测试遥测数据访问控制
+  
+  let user_roles = [
+    ("admin", ["read", "write", "delete", "manage"]),
+    ("analyst", ["read"]),
+    ("developer", ["read", "write"]),
+    ("viewer", ["read"])
   ]
   
-  // 验证端点配置
-  assert_eq(endpoints.length(), 4)
-  assert_eq(endpoints[0].0, "collector")
-  assert_eq(endpoints[0].1, "https://otel-collector.example.com:4317")
-  assert_eq(endpoints[0].2, "mTLS")
+  // 验证用户角色
+  assert_eq(user_roles.length(), 4)
+  assert_eq(user_roles[0].0, "admin")
+  assert_eq(user_roles[0].1.length(), 4)
+  assert_eq(user_roles[3].0, "viewer")
+  assert_eq(user_roles[3].1.length(), 1)
   
-  // 检查端点安全性
-  let secure_endpoints = []
-  let insecure_endpoints = []
+  // 定义遥测数据资源
+  let telemetry_resources = [
+    {"resource" => "traces", "sensitivity" => "medium", "required_role" => "analyst"},
+    {"resource" => "metrics", "sensitivity" => "low", "required_role" => "viewer"},
+    {"resource" => "logs", "sensitivity" => "high", "required_role" => "developer"},
+    {"resource" => "config", "sensitivity" => "high", "required_role" => "admin"}
+  ]
+  
+  // 验证资源定义
+  assert_eq(telemetry_resources.length(), 4)
+  assert_eq(telemetry_resources[0]["resource"], "traces")
+  assert_eq(telemetry_resources[2]["sensitivity"], "high")
+  
+  // 模拟用户访问请求
+  let access_requests = [
+    {"user" => "alice", "role" => "admin", "resource" => "config", "action" => "delete"},
+    {"user" => "bob", "role" => "analyst", "resource" => "traces", "action" => "read"},
+    {"user" => "charlie", "role" => "developer", "resource" => "logs", "action" => "write"},
+    {"user" => "diana", "role" => "viewer", "resource" => "metrics", "action" => "read"},
+    {"user" => "eve", "role" => "analyst", "resource" => "config", "action" => "write"} // 应该被拒绝
+  ]
+  
+  // 验证访问请求
+  assert_eq(access_requests.length(), 5)
+  assert_eq(access_requests[0]["user"], "alice")
+  assert_eq(access_requests[4]["action"], "write")
+  
+  // 执行访问控制检查
+  let access_decisions = []
   let mut i = 0
-  while i < endpoints.length() {
-    let endpoint_name = endpoints[i].0
-    let endpoint_url = endpoints[i].1
-    let security_type = endpoints[i].2
+  while i < access_requests.length() {
+    let request = access_requests[i]
+    let user_role = request["role"]
+    let requested_resource = request["resource"]
+    let requested_action = request["action"]
     
-    if (endpoint_url.has_prefix("https://") && security_type != "None") {
-      secure_endpoints.push((endpoint_name, security_type))
-    } else {
-      insecure_endpoints.push((endpoint_name, security_type))
+    // 查找用户角色权限
+    let mut user_permissions = []
+    let mut j = 0
+    while j < user_roles.length() {
+      if user_roles[j].0 == user_role {
+        user_permissions = user_roles[j].1
+        break
+      }
+      j = j + 1
     }
     
+    // 查找资源要求
+    let mut required_role = ""
+    j = 0
+    while j < telemetry_resources.length() {
+      if telemetry_resources[j]["resource"] == requested_resource {
+        required_role = telemetry_resources[j]["required_role"]
+        break
+      }
+      j = j + 1
+    }
+    
+    // 检查权限
+    let mut has_permission = false
+    if user_permissions.contains(requested_action)) {
+      // 简化的角色层级检查
+      if user_role == "admin" {
+        has_permission = true
+      } else if user_role == "developer" && (required_role == "developer" || required_role == "analyst" || required_role == "viewer") {
+        has_permission = true
+      } else if user_role == "analyst" && (required_role == "analyst" || required_role == "viewer") {
+        has_permission = true
+      } else if user_role == "viewer" && required_role == "viewer") {
+        has_permission = true
+      }
+    }
+    
+    let decision = {
+      "user" => request["user"],
+      "role" => user_role,
+      "resource" => requested_resource,
+      "action" => requested_action,
+      "allowed" => has_permission,
+      "reason" => has_permission ? "Permission granted" : "Insufficient privileges"
+    }
+    access_decisions.push(decision)
     i = i + 1
   }
   
-  // 验证安全分类
-  assert_eq(secure_endpoints.length(), 3)
-  assert_eq(insecure_endpoints.length(), 1)
-  assert_eq(secure_endpoints[0].0, "collector")
-  assert_eq(secure_endpoints[0].1, "mTLS")
-  assert_eq(insecure_endpoints[0].0, "internal")
+  // 验证访问决策
+  assert_eq(access_decisions.length(), 5)
+  assert_eq(access_decisions[0]["allowed"], true)  // admin可以访问config
+  assert_eq(access_decisions[1]["allowed"], true)  // analyst可以读取traces
+  assert_eq(access_decisions[2]["allowed"], true)  // developer可以写入logs
+  assert_eq(access_decisions[3]["allowed"], true)  // viewer可以读取metrics
+  assert_eq(access_decisions[4]["allowed"], false) // analyst不能写入config
   
-  // 验证mTLS端点
-  let mtls_endpoints = []
+  // 统计访问结果
+  let mut allowed_count = 0
+  let mut denied_count = 0
   i = 0
-  while i < secure_endpoints.length() {
-    if (secure_endpoints[i].1 == "mTLS") {
-      mtls_endpoints.push(secure_endpoints[i].0)
+  while i < access_decisions.length() {
+    if access_decisions[i]["allowed"] {
+      allowed_count = allowed_count + 1
+    } else {
+      denied_count = denied_count + 1
     }
     i = i + 1
   }
   
-  // 验证mTLS端点数量
-  assert_eq(mtls_endpoints.length(), 2)
-  assert_eq(mtls_endpoints[0], "collector")
-  assert_eq(mtls_endpoints[1], "backup")
+  assert_eq(allowed_count, 4)
+  assert_eq(denied_count, 1)
+}
+
+test "telemetry_audit_logging" {
+  // 测试遥测系统审计日志
   
-  // 创建安全配置报告
-  let security_report = "Secure Endpoints: " + secure_endpoints.length().to_string() + 
-                       ", Insecure Endpoints: " + insecure_endpoints.length().to_string() + 
-                       ", mTLS Endpoints: " + mtls_endpoints.length().to_string()
+  let audit_events = [
+    {"event_type" => "data_access", "user" => "alice", "resource" => "traces", "action" => "read", "timestamp" => 1640995200000L},
+    {"event_type" => "config_change", "user" => "admin", "resource" => "sampling_rate", "action" => "update", "timestamp" => 1640995210000L},
+    {"event_type" => "data_deletion", "user" => "admin", "resource" => "logs", "action" => "delete", "timestamp" => 1640995220000L},
+    {"event_type" => "login", "user" => "bob", "resource" => "system", "action" => "authenticate", "timestamp" => 1640995230000L},
+    {"event_type" => "permission_change", "user" => "admin", "resource" => "roles", "action" => "modify", "timestamp" => 1640995240000L}
+  ]
   
-  // 验证安全报告
-  assert_eq(security_report.contains("Secure Endpoints: 3"), true)
-  assert_eq(security_report.contains("Insecure Endpoints: 1"), true)
-  assert_eq(security_report.contains("mTLS Endpoints: 2"), true)
+  // 验证审计事件
+  assert_eq(audit_events.length(), 5)
+  assert_eq(audit_events[0]["event_type"], "data_access")
+  assert_eq(audit_events[1]["action"], "update")
+  assert_eq(audit_events[4]["resource"], "roles")
+  
+  // 生成审计日志条目
+  let audit_logs = []
+  let mut i = 0
+  while i < audit_events.length() {
+    let event = audit_events[i]
+    let log_entry = {
+      "log_id" => "audit_" + i.to_string(),
+      "timestamp" => event["timestamp"],
+      "event_type" => event["event_type"],
+      "user" => event["user"],
+      "resource" => event["resource"],
+      "action" => event["action"],
+      "ip_address" => "192.168.1." + (100 + i).to_string(),
+      "user_agent" => "TelemetryClient/1.0",
+      "result" => "success",
+      "details" => {
+        "session_id" => "sess_" + event["user"] + "_" + i.to_string(),
+        "request_id" => "req_" + i.to_string()
+      }
+    }
+    audit_logs.push(log_entry)
+    i = i + 1
+  }
+  
+  // 验证审计日志
+  assert_eq(audit_logs.length(), 5)
+  assert_eq(audit_logs[0]["log_id"], "audit_0")
+  assert_eq(audit_logs[0]["user"], "alice")
+  assert_eq(audit_logs[0]["ip_address"], "192.168.1.100")
+  assert_eq(audit_logs[4]["ip_address"], "192.168.1.104")
+  
+  // 验证审计日志完整性
+  i = 0
+  while i < audit_logs.length() {
+    let log = audit_logs[i]
+    assert_eq(log.contains_key("log_id"), true)
+    assert_eq(log.contains_key("timestamp"), true)
+    assert_eq(log.contains_key("event_type"), true)
+    assert_eq(log.contains_key("user"), true)
+    assert_eq(log.contains_key("details"), true)
+    assert_eq(log["result"], "success")
+    i = i + 1
+  }
+  
+  // 按事件类型统计审计日志
+  let event_type_counts = {}
+  i = 0
+  while i < audit_logs.length() {
+    let event_type = audit_logs[i]["event_type"]
+    if !event_type_counts.contains_key(event_type)) {
+      event_type_counts[event_type] = 0
+    }
+    event_type_counts[event_type] = event_type_counts[event_type] + 1
+    i = i + 1
+  }
+  
+  // 验证事件统计
+  assert_eq(event_type_counts["data_access"], 1)
+  assert_eq(event_type_counts["config_change"], 1)
+  assert_eq(event_type_counts["data_deletion"], 1)
+  assert_eq(event_type_counts["login"], 1)
+  assert_eq(event_type_counts["permission_change"], 1)
+  
+  // 按用户统计活动
+  let user_activity_counts = {}
+  i = 0
+  while i < audit_logs.length() {
+    let user = audit_logs[i]["user"]
+    if !user_activity_counts.contains_key(user)) {
+      user_activity_counts[user] = 0
+    }
+    user_activity_counts[user] = user_activity_counts[user] + 1
+    i = i + 1
+  }
+  
+  // 验证用户活动统计
+  assert_eq(user_activity_counts["alice"], 1)
+  assert_eq(user_activity_counts["admin"], 3)
+  assert_eq(user_activity_counts["bob"], 1)
+}
+
+test "telemetry_data_anonymization" {
+  // 测试遥测数据匿名化
+  
+  let raw_telemetry_data = [
+    {"trace_id" => "trace_001", "user_id" => "user_12345", "ip" => "192.168.1.100", "email" => "user@example.com"},
+    {"trace_id" => "trace_002", "user_id" => "user_67890", "ip" => "10.0.0.50", "email" => "admin@example.com"},
+    {"trace_id" => "trace_003", "user_id" => "user_11111", "ip" => "172.16.0.25", "email" => "test@example.com"},
+    {"trace_id" => "trace_004", "user_id" => "user_22222", "ip" => "203.0.113.10", "email" => "dev@example.com"}
+  ]
+  
+  // 验证原始数据
+  assert_eq(raw_telemetry_data.length(), 4)
+  assert_eq(raw_telemetry_data[0]["user_id"], "user_12345")
+  assert_eq(raw_telemetry_data[1]["email"], "admin@example.com")
+  
+  // 匿名化策略
+  let anonymization_strategies = {
+    "user_id" => {"method" => "hash", "salt" => "salt_123"},
+    "ip" => {"method" => "tokenize", "preserve_prefix" => 2},
+    "email" => {"method" => "pseudonymize", "domain" => "anonymized.com"}
+  }
+  
+  // 验证匿名化策略
+  assert_eq(anonymization_strategies["user_id"]["method"], "hash")
+  assert_eq(anonymization_strategies["ip"]["preserve_prefix"], 2)
+  assert_eq(anonymization_strategies["email"]["domain"], "anonymized.com")
+  
+  // 应用匿名化
+  let anonymized_data = []
+  let mut i = 0
+  while i < raw_telemetry_data.length() {
+    let data = raw_telemetry_data[i]
+    let anonymized_record = {
+      "trace_id" => data["trace_id"] // trace_id通常不需要匿名化
+    }
+    
+    // 匿名化user_id（简化哈希）
+    let user_id = data["user_id"]
+    let hash_value = (user_id.length() + 123) % 10000 // 简化的哈希函数
+    anonymized_record["user_id"] = "user_hash_" + hash_value.to_string()
+    
+    // 匿名化IP地址
+    let ip = data["ip"]
+    let octets = ip.split(".")
+    anonymized_record["ip"] = octets[0] + "." + octets[1] + ".x.x"
+    
+    // 匿名化邮箱
+    let email = data["email"]
+    let local_part = email.split("@")[0]
+    anonymized_record["email"] = local_part.substring(0, 2) + "***@anonymized.com"
+    
+    anonymized_data.push(anonymized_record)
+    i = i + 1
+  }
+  
+  // 验证匿名化结果
+  assert_eq(anonymized_data.length(), 4)
+  
+  // 验证user_id匿名化
+  assert_eq(anonymized_data[0]["user_id"] != raw_telemetry_data[0]["user_id"], true)
+  assert_eq(anonymized_data[0]["user_id"].has_prefix("user_hash_"), true)
+  
+  // 验证IP匿名化
+  assert_eq(anonymized_data[0]["ip"], "192.168.x.x")
+  assert_eq(anonymized_data[1]["ip"], "10.0.x.x")
+  assert_eq(anonymized_data[2]["ip"], "172.16.x.x")
+  
+  // 验证邮箱匿名化
+  assert_eq(anonymized_data[0]["email"], "us***@anonymized.com")
+  assert_eq(anonymized_data[1]["email"], "ad***@anonymized.com")
+  assert_eq(anonymized_data[3]["email"], "de***@anonymized.com")
+  
+  // 验证匿名化的一致性（相同输入产生相同输出）
+  let consistent_anonymization = {}
+  i = 0
+  while i < anonymized_data.length() {
+    let record = anonymized_data[i]
+    let key = record["user_id"]
+    if !consistent_anonymization.contains_key(key)) {
+      consistent_anonymization[key] = 1
+    } else {
+      consistent_anonymization[key] = consistent_anonymization[key] + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证每个匿名化的user_id都是唯一的
+  let keys = consistent_anonymization.keys()
+  i = 0
+  while i < keys.length() {
+    assert_eq(consistent_anonymization[keys[i]], 1)
+    i = i + 1
+  }
+  
+  // 验证数据可用性（保留分析价值）
+  i = 0
+  while i < anonymized_data.length() {
+    let record = anonymized_data[i]
+    assert_eq(record.contains_key("trace_id"), true) // 保留trace_id用于关联
+    assert_eq(record["ip"].contains("x.x"), true) // IP结构仍然可识别
+    assert_eq(record["email"].contains("@anonymized.com"), true) // 邮箱域统一化
+    i = i + 1
+  }
 }
