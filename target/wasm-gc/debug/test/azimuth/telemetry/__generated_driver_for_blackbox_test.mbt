@@ -2528,6 +2528,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_3, ["telemetry_instrumentation_scope"]),
     4: (__test_616476616e6365645f74656c656d657472795f746573742e6d6274_4, ["telemetry_propagation_headers"]),
   },
+  "advanced_telemetry_scenarios_test.mbt": {
+    0: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_0, ["network_connection_pool_telemetry"]),
+    1: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_1, ["data_format_conversion_compatibility"]),
+    2: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_2, ["dynamic_config_hot_reload"]),
+    3: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_3, ["time_window_aggregation"]),
+    4: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_4, ["fault_injection_recovery"]),
+    5: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_5, ["memory_leak_detection"]),
+    6: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_6, ["high_concurrency_scenarios"]),
+    7: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_7, ["cache_eviction_strategy"]),
+    8: (__test_616476616e6365645f74656c656d657472795f7363656e6172696f735f746573742e6d6274_8, ["data_compression_efficiency"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
