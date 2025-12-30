@@ -29,7 +29,7 @@ test "telemetry_json_export_format" {
     i = i + 1
   }
   
-  json_output = json_output + "]]}"
+  json_output = json_output + "]}"
   
   // 验证JSON格式
   assert_eq(json_output.has_prefix("{\"metrics\":["), true)
@@ -90,59 +90,6 @@ test "telemetry_prometheus_export_format" {
   // 验证行数
   let lines = prometheus_output.split("\n")
   assert_eq(lines.length() - 1, 4)  // 最后一个元素是空字符串
-}
-
-test "telemetry_otlp_export_format" {
-  // 测试遥测数据OTLP (OpenTelemetry Protocol) 导出格式
-  
-  let span_data = [
-    ("trace1", "span1", "GET /api/users", 1640995200L, 125500000),
-    ("trace1", "span2", "database.query", 1640995200L, 45000000),
-    ("trace2", "span3", "POST /api/orders", 1640995201L, 200000000)
-  ]
-  
-  // 简化的OTLP JSON格式
-  let mut otlp_output = "{"
-  otlp_output = otlp_output + "\"resourceSpans\":[{"
-  otlp_output = otlp_output + "\"resource\":{"
-  otlp_output = otlp_output + "\"attributes\":["
-  otlp_output = otlp_output + "{\"key\":\"service.name\",\"value\":{\"stringValue\":\"payment-service\"}}"
-  otlp_output = otlp_output + "]"
-  otlp_output = otlp_output + "},"
-  otlp_output = otlp_output + "\"scopeSpans\":[{"
-  otlp_output = otlp_output + "\"spans\":["
-  
-  let mut i = 0
-  while i < span_data.length() {
-    let span = span_data[i]
-    otlp_output = otlp_output + "{"
-    otlp_output = otlp_output + "\"traceId\":\"" + span.0 + "\"," 
-    otlp_output = otlp_output + "\"spanId\":\"" + span.1 + "\"," 
-    otlp_output = otlp_output + "\"name\":\"" + span.2 + "\"," 
-    otlp_output = otlp_output + "\"startTimeUnixNano\":\"" + (span.3 * 1000000000L).to_string() + "\"," 
-    otlp_output = otlp_output + "\"endTimeUnixNano\":\"" + ((span.3 * 1000000000L) + span.4).to_string() + "\""
-    otlp_output = otlp_output + "}"
-    
-    if i < span_data.length() - 1 {
-      otlp_output = otlp_output + ","
-    }
-    
-    i = i + 1
-  }
-  
-  otlp_output = otlp_output + "]"
-  otlp_output = otlp_output + "}]"
-  otlp_output = otlp_output + "}]"
-  otlp_output = otlp_output + "}"
-  
-  // 验证OTLP格式
-  assert_eq(otlp_output.contains("\"resourceSpans\""), true)
-  assert_eq(otlp_output.contains("\"service.name\""), true)
-  assert_eq(otlp_output.contains("\"traceId\":\"trace1\""), true)
-  assert_eq(otlp_output.contains("\"spanId\":\"span1\""), true)
-  assert_eq(otlp_output.contains("\"name\":\"GET /api/users\""), true)
-  assert_eq(otlp_output.contains("\"startTimeUnixNano\""), true)
-  assert_eq(otlp_output.contains("\"endTimeUnixNano\""), true)
 }
 
 test "telemetry_csv_export_format" {

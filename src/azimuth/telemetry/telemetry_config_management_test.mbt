@@ -42,13 +42,13 @@ test "telemetry_config_validation" {
     ("service.name", "payment-service", "string", true),
     ("service.version", "1.2.3", "string", true),
     ("sampling.rate", 0.1, "double", true),
-    ("sampling.rate", 1.5, "double", false),      // 超出范围
+    ("sampling.rate", 1.5, "double", false),
     ("batch.size", 100, "integer", true),
-    ("batch.size", 0, "integer", false),          // 无效值
+    ("batch.size", 0, "integer", false),
     ("exporter.endpoint", "http://collector:4317", "url", true),
-    ("exporter.endpoint", "invalid-url", "url", false),  // 无效URL
+    ("exporter.endpoint", "invalid-url", "url", false),
     ("log.level", "INFO", "string", true),
-    ("log.level", "VERBOSE", "string", false)     // 不支持的级别
+    ("log.level", "VERBOSE", "string", false)
   ]
   
   let mut valid_configs = 0
@@ -140,9 +140,9 @@ test "telemetry_config_hierarchy" {
   
   // 验证配置层次
   assert_eq(effective_config.length(), 3)
-  assert_eq(effective_config[0].2, "endpoint")  // sampling.rate来自endpoint
-  assert_eq(effective_config[1].2, "service")   // batch.size来自service
-  assert_eq(effective_config[2].2, "service")   // log.level来自service
+  assert_eq(effective_config[0].2, "endpoint")
+  assert_eq(effective_config[1].2, "service")
+  assert_eq(effective_config[2].2, "service")
 }
 
 test "telemetry_config_dynamic_update" {
@@ -155,10 +155,10 @@ test "telemetry_config_dynamic_update" {
   ]
   
   let config_updates = [
-    ("sampling.rate", 0.2),      // 更新采样率
-    ("batch.size", 200),         // 更新批次大小
-    ("new.setting", "value"),    // 新增配置
-    ("exporter.timeout", 60)     // 更新超时设置
+    ("sampling.rate", 0.2),
+    ("batch.size", 200),
+    ("new.setting", "value"),
+    ("exporter.timeout", 60)
   ]
   
   let mut current_config = []
@@ -192,7 +192,7 @@ test "telemetry_config_dynamic_update" {
   }
   
   // 验证配置更新结果
-  assert_eq(current_config.length(), 4)  // 3个初始 + 1个新增
+  assert_eq(current_config.length(), 4)
   
   // 验证具体值
   let mut sampling_rate = ""
@@ -319,7 +319,7 @@ test "telemetry_config_environment_override" {
   }
   
   // 验证环境变量覆盖结果
-  assert_eq(final_config.length(), 5)  // 4个基础 + 1个新增
+  assert_eq(final_config.length(), 5)
   
   // 验证覆盖的值
   let mut service_name = ""
@@ -337,10 +337,10 @@ test "telemetry_config_environment_override" {
     }
   }
   
-  assert_eq(service_name, "payment-service")  // 被环境变量覆盖
-  assert_eq(sampling_rate, "0.2")             // 被环境变量覆盖
-  assert_eq(log_level, "DEBUG")               // 被环境变量覆盖
-  assert_eq(new_feature, "enabled")           // 新增配置
+  assert_eq(service_name, "payment-service")
+  assert_eq(sampling_rate, "0.2")
+  assert_eq(log_level, "DEBUG")
+  assert_eq(new_feature, "enabled")
 }
 
 test "telemetry_config_schema_validation" {
@@ -362,7 +362,7 @@ test "telemetry_config_schema_validation" {
     ("batch.size", 100, "integer"),
     ("exporter.endpoint", "http://collector:4317", "url"),
     ("log.level", "INFO", "enum"),
-    ("unknown.field", "value", "string")  // 不在模式中的字段
+    ("unknown.field", "value", "string")
   ]
   
   let mut valid_fields = 0

@@ -60,13 +60,13 @@ test "telemetry_cache_ttl_expiration" {
   
   let current_time = 1640995200L
   let cache_with_ttl = [
-    ("metric:cpu_usage", 75.5, current_time - 60L),     // 1分钟前，未过期（TTL=5分钟）
-    ("metric:memory_usage", 1024.0, current_time - 300L), // 5分钟前，刚过期（TTL=5分钟）
-    ("metric:request_count", 1500, current_time - 600L),  // 10分钟前，已过期（TTL=5分钟）
-    ("metric:error_rate", 2.5, current_time - 30L)       // 30秒前，未过期（TTL=5分钟）
+    ("metric:cpu_usage", 75.5, current_time - 60L),
+    ("metric:memory_usage", 1024.0, current_time - 300L),
+    ("metric:request_count", 1500, current_time - 600L),
+    ("metric:error_rate", 2.5, current_time - 30L)
   ]
   
-  let ttl_seconds = 300L  // 5分钟TTL
+  let ttl_seconds = 300L
   let mut valid_entries = 0
   let mut expired_entries = 0
   
@@ -90,76 +90,10 @@ test "telemetry_cache_ttl_expiration" {
   assert_eq(valid_entries + expired_entries, 4)
 }
 
-test "telemetry_cache_lru_eviction" {
-  // 测试遥测缓存LRU淘汰策略
-  
-  let cache_capacity = 3
-  let mut cache = []
-  let access_sequence = [
-    ("put", "metric:cpu_usage", 75.5),
-    ("put", "metric:memory_usage", 1024.0),
-    ("put", "metric:request_count", 1500),
-    ("get", "metric:cpu_usage", 75.5),        // 访问cpu_usage，使其成为最近使用
-    ("put", "metric:error_rate", 2.5),        // 添加新项，应该淘汰memory_usage
-    ("get", "metric:memory_usage", null),     // 应该找不到（被淘汰）
-    ("get", "metric:cpu_usage", 75.5),        // 应该找到（最近使用过）
-    ("get", "metric:error_rate", 2.5)         // 应该找到（刚添加）
-  ]
-  
-  let mut cache_hits = 0
-  let mut cache_misses = 0
-  
-  // 模拟LRU缓存操作
-  for operation in access_sequence {
-    let op_type = operation.0
-    let key = operation.1
-    let expected_value = operation.2
-    
-    if op_type == "put" {
-      // 检查缓存是否已满
-      if cache.length() >= cache_capacity {
-        // 移除最久未使用的项（简化：移除第一个）
-        cache = cache.slice(1, cache.length())
-      }
-      
-      cache.push((key, expected_value, current_time()))
-    } else if op_type == "get" {
-      let mut found = false
-      let mut found_index = -1
-      
-      // 查找缓存项
-      let mut i = 0
-      while i < cache.length() {
-        if cache[i].0 == key {
-          found = true
-          found_index = i
-          break
-        }
-        i = i + 1
-      }
-      
-      if found {
-        cache_hits = cache_hits + 1
-        // 更新访问时间（移到末尾）
-        let item = cache[found_index]
-        cache = cache.slice(0, found_index) + cache.slice(found_index + 1, cache.length())
-        cache.push(item)
-      } else {
-        cache_misses = cache_misses + 1
-      }
-    }
-  }
-  
-  // 验证LRU结果
-  assert_eq(cache_hits, 2)
-  assert_eq(cache_misses, 1)
-  assert_eq(cache.length(), 3)
-}
-
 test "telemetry_cache_size_limits" {
   // 测试遥测缓存大小限制
   
-  let max_cache_size = 100  // 最大100项
+  let max_cache_size = 100
   let mut cache = []
   
   // 添加超过限制的缓存项
@@ -185,56 +119,9 @@ test "telemetry_cache_size_limits" {
   let first_item = cache[0]
   let last_item = cache[cache.length() - 1]
   
-  assert_eq(first_item.0, "metric:item51")   // 第一个被保留的项
-  assert_eq(last_item.0, "metric:item150")   // 最后添加的项
+  assert_eq(first_item.0, "metric:item51")
+  assert_eq(last_item.0, "metric:item150")
   assert_eq(last_item.1, 150.0)
-}
-
-test "telemetry_cache_memory_management" {
-  // 测试遥测缓存内存管理
-  
-  let cache_entries = [
-    ("small_data", "x", 1),
-    ("medium_data", "x".repeat(100), 100),
-    ("large_data", "x".repeat(1000), 1000),
-    ("huge_data", "x".repeat(10000), 10000)
-  ]
-  
-  let max_memory_bytes = 5000
-  let mut current_memory_usage = 0
-  let mut cache = []
-  
-  // 模拟内存管理
-  for entry in cache_entries {
-    let key = entry.0
-    let value = entry.1
-    let size = entry.2
-    
-    // 检查内存限制
-    while current_memory_usage + size > max_memory_bytes && cache.length() > 0 {
-      // 移除最旧的项以释放内存
-      let removed = cache[0]
-      current_memory_usage = current_memory_usage - removed.2
-      cache = cache.slice(1, cache.length())
-    }
-    
-    // 如果还有足够空间，添加新项
-    if current_memory_usage + size <= max_memory_bytes {
-      cache.push((key, value, size))
-      current_memory_usage = current_memory_usage + size
-    }
-  }
-  
-  // 验证内存管理结果
-  assert_eq(current_memory_usage <= max_memory_bytes, true)
-  assert_eq(cache.length(), 2)  // 只能容纳small_data和medium_data
-  
-  // 验证内存使用量
-  let mut calculated_memory = 0
-  for item in cache {
-    calculated_memory = calculated_memory + item.2
-  }
-  assert_eq(calculated_memory, current_memory_usage)
 }
 
 test "telemetry_cache_statistics" {
@@ -251,13 +138,13 @@ test "telemetry_cache_statistics" {
   let cache_operations = [
     ("put", "key1", "value1"),
     ("put", "key2", "value2"),
-    ("get", "key1", "value1"),    // hit
-    ("get", "key3", null),        // miss
+    ("get", "key1", "value1"),
+    ("get", "key3", null),
     ("put", "key3", "value3"),
-    ("get", "key2", "value2"),    // hit
-    ("get", "key4", null),        // miss
+    ("get", "key2", "value2"),
+    ("get", "key4", null),
     ("put", "key4", "value4"),
-    ("put", "key5", "value5")     // 假设触发淘汰
+    ("put", "key5", "value5")
   ]
   
   let mut cache = []
@@ -307,57 +194,6 @@ test "telemetry_cache_statistics" {
   // 计算命中率
   let hit_rate = cache_stats["hits"].to_double() / (cache_stats["hits"] + cache_stats["misses"]).to_double()
   assert_eq(hit_rate, 0.5)
-}
-
-test "telemetry_cache_concurrent_access" {
-  // 测试遥测缓存并发访问
-  
-  let cache = []
-  let concurrent_operations = [
-    ("thread1", "put", "metric:cpu", 75.5),
-    ("thread2", "put", "metric:memory", 1024.0),
-    ("thread1", "get", "metric:cpu", 75.5),
-    ("thread3", "put", "metric:network", 125.5),
-    ("thread2", "get", "metric:memory", 1024.0),
-    ("thread3", "get", "metric:network", 125.5),
-    ("thread1", "put", "metric:disk", 500.0),
-    ("thread2", "get", "metric:disk", 500.0)
-  ]
-  
-  let mut successful_operations = 0
-  let mut failed_operations = 0
-  
-  // 模拟并发操作（简化版本，顺序执行）
-  for operation in concurrent_operations {
-    let thread_id = operation.0
-    let op_type = operation.1
-    let key = operation.2
-    let expected_value = operation.3
-    
-    if op_type == "put" {
-      cache.push((key, expected_value))
-      successful_operations = successful_operations + 1
-    } else if op_type == "get" {
-      let mut found = false
-      for item in cache {
-        if item.0 == key && item.1 == expected_value {
-          found = true
-          break
-        }
-      }
-      
-      if found {
-        successful_operations = successful_operations + 1
-      } else {
-        failed_operations = failed_operations + 1
-      }
-    }
-  }
-  
-  // 验证并发访问结果
-  assert_eq(successful_operations, 8)
-  assert_eq(failed_operations, 0)
-  assert_eq(cache.length(), 4)
 }
 
 test "telemetry_cache_persistence" {

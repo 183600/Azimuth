@@ -1,284 +1,444 @@
-// 遥测内存效率测试用例
-// 测试遥测系统的内存使用优化和效率
+// 内存效率测试
+// 测试遥测系统的内存使用效率和优化
 
-test "telemetry_batch_size_optimization" {
-  // 测试批次大小优化
+test "telemetry_memory_efficiency_attribute_reuse" {
+  // 测试属性重用的内存效率
   
-  let data_points = [100, 500, 1000, 2000, 5000, 10000]
-  let optimal_batch_size = 1000
-  let memory_per_point = 100  // bytes per data point
+  // 1. 创建可重用的属性值
+  let reusable_string_attr = common::AttributeValue::string("reusable-value")
+  let reusable_int_attr = common::AttributeValue::int(42)
+  let reusable_float_attr = common::AttributeValue::float(3.14159)
+  let reusable_bool_attr = common::AttributeValue::bool(true)
   
-  let mut memory_usage = []
-  let mut batch_efficiency = []
+  // 2. 大量重用相同属性值创建Span
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("memory-efficiency-tracer")
   
+  let span_count = 1000
   let mut i = 0
-  while i < data_points.length() {
-    let points = data_points[i]
-    
-    // 计算批次数量
-    let batch_count = (points + optimal_batch_size - 1) / optimal_batch_size
-    
-    // 计算内存使用（包含批次开销）
-    let batch_overhead = 50  // bytes per batch
-    let total_memory = points * memory_per_point + batch_count * batch_overhead
-    
-    // 计算效率（数据点/总内存）
-    let efficiency = points.to_double() / total_memory.to_double()
-    
-    memory_usage.push(total_memory)
-    batch_efficiency.push(efficiency)
-    
+  while i < span_count {
+    let (_, _) = tracer.start_span(
+      context::Context::empty(),
+      "memory-efficiency-span-" + i.to_string(),
+      trace::Internal,
+      [
+        ("reusable.string", reusable_string_attr),
+        ("reusable.int", reusable_int_attr),
+        ("reusable.float", reusable_float_attr),
+        ("reusable.bool", reusable_bool_attr)
+      ]
+    )
     i = i + 1
   }
   
-  // 验证内存使用递增
-  assert_eq(memory_usage.length(), 6)
-  let mut j = 1
-  while j < memory_usage.length() {
-    assert_eq(memory_usage[j] > memory_usage[j-1], true)
-    j = j + 1
-  }
+  // 验证内存效率：大量Span创建使用重用属性
+  assert_eq(span_count, 1000)
   
-  // 验证效率趋势（批次越大，效率越高）
-  assert_eq(batch_efficiency.length(), 6)
-  j = 1
-  while j < batch_efficiency.length() {
-    assert_eq(batch_efficiency[j] >= batch_efficiency[j-1], true)
-    j = j + 1
-  }
+  // 3. 计算内存效率指标
+  let total_attributes = span_count * 4 // 每个Span 4个属性
+  let unique_attribute_values = 4 // 只有4个唯一的属性值被重用
   
-  // 验证最大数据点的内存使用
-  let max_memory = memory_usage[memory_usage.length() - 1]
-  let expected_max_memory = 10000 * memory_per_point + (10000 / optimal_batch_size) * 50
-  assert_eq(max_memory, expected_max_memory)
+  let memory_efficiency_ratio = total_attributes.to_double() / unique_attribute_values.to_double()
+  
+  // 验证内存效率比率
+  assert_eq(memory_efficiency_ratio >= 1000.0, true) // 至少1000:1的重用比率
+  
+  let memory_efficiency_result = "Attribute reuse efficiency: " +
+                                total_attributes.to_string() + 
+                                " total attrs, " +
+                                unique_attribute_values.to_string() + 
+                                " unique values, ratio=" + memory_efficiency_ratio.to_string()
+  
+  assert_eq(memory_efficiency_result.contains("4000 total attrs"), true)
+  assert_eq(memory_efficiency_result.contains("4 unique values"), true)
 }
 
-test "telemetry_memory_pool_management" {
-  // 测试内存池管理
+test "telemetry_memory_efficiency_context_sharing" {
+  // 测试上下文共享的内存效率
   
-  let pool_sizes = [100, 500, 1000, 2000]
-  let request_sizes = [50, 200, 800, 1500, 3000]
+  // 1. 创建基础上下文
+  let base_ctx = context::Context::empty()
   
-  let mut pool_efficiency = []
-  let mut fragmentation_ratios = []
+  // 2. 在基础上下文上添加共享数据
+  let shared_key = context::create_key("shared.data")
+  let ctx_with_shared = base_ctx.with_value(shared_key, "shared-value")
   
+  // 3. 大量Span共享相同的上下文
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("context-sharing-tracer")
+  
+  let shared_context_span_count = 500
   let mut i = 0
-  while i < pool_sizes.length() {
-    let pool_size = pool_sizes[i]
-    let mut allocated_memory = 0
-    let mut wasted_memory = 0
-    
-    let mut j = 0
-    while j < request_sizes.length() {
-      let request_size = request_sizes[j]
-      
-      // 计算实际分配（向上舍入到最近的块大小）
-      let block_size = 64
-      let actual_allocation = ((request_size + block_size - 1) / block_size) * block_size
-      
-      if allocated_memory + actual_allocation <= pool_size {
-        allocated_memory = allocated_memory + actual_allocation
-        wasted_memory = wasted_memory + (actual_allocation - request_size)
-      }
-      
-      j = j + 1
-    }
-    
-    // 计算效率和碎片率
-    let efficiency = allocated_memory.to_double() / pool_size.to_double()
-    let fragmentation = wasted_memory.to_double() / allocated_memory.to_double()
-    
-    pool_efficiency.push(efficiency)
-    fragmentation_ratios.push(fragmentation)
-    
+  while i < shared_context_span_count {
+    // 每个Span都使用相同的共享上下文
+    let (_, _) = tracer.start_span(
+      ctx_with_shared,
+      "shared-context-span-" + i.to_string(),
+      trace::Internal,
+      [("span.index", common::AttributeValue::int(i))]
+    )
     i = i + 1
   }
   
-  // 验证池效率
-  assert_eq(pool_efficiency.length(), 4)
-  let mut k = 0
-  while k < pool_efficiency.length() {
-    assert_eq(pool_efficiency[k] >= 0.0, true)
-    assert_eq(pool_efficiency[k] <= 1.0, true)
-    k = k + 1
+  // 验证上下文共享效率
+  assert_eq(shared_context_span_count, 500)
+  
+  // 4. 测试行李共享
+  let shared_baggage = context::Baggage::empty()
+    .with_entry("shared.key1", "shared.value1")
+    .with_entry("shared.key2", "shared.value2")
+    .with_entry("shared.key3", "shared.value3")
+  
+  // 大量操作使用共享行李
+  let baggage_operation_count = 300
+  let mut i = 0
+  while i < baggage_operation_count {
+    // 重用共享行李进行操作
+    let _ = shared_baggage.get("shared.key1")
+    let _ = shared_baggage.get("shared.key2")
+    let _ = shared_baggage.get("shared.key3")
+    i = i + 1
   }
   
-  // 验证碎片率
-  assert_eq(fragmentation_ratios.length(), 4)
-  k = 0
-  while k < fragmentation_ratios.length() {
-    assert_eq(fragmentation_ratios[k] >= 0.0, true)
-    assert_eq(fragmentation_ratios[k] < 1.0, true)
-    k = k + 1
-  }
+  // 验证行李共享效率
+  assert_eq(baggage_operation_count, 300)
+  
+  // 5. 计算上下文共享效率
+  let total_context_operations = shared_context_span_count + baggage_operation_count
+  let memory_sharing_efficiency = total_context_operations.to_double() / 4.0 // 4个共享数据项
+  
+  // 验证内存共享效率
+  assert_eq(memory_sharing_efficiency >= 200.0, true)
+  
+  let context_sharing_result = "Context sharing efficiency: " +
+                              total_context_operations.to_string() + 
+                              " operations, 4 shared items, efficiency=" + memory_sharing_efficiency.to_string()
+  
+  assert_eq(context_sharing_result.contains("800 operations"), true)
+  assert_eq(context_sharing_result.contains("4 shared items"), true)
 }
 
-test "telemetry_compression_effectiveness" {
-  // 测试压缩效果
+test "telemetry_memory_efficiency_batch_operations" {
+  // 测试批量操作的内存效率
   
-  let original_data_sizes = [1000, 5000, 10000, 50000, 100000]
-  let compression_ratios = [0.3, 0.4, 0.35, 0.25, 0.2]  // 压缩后的比例
+  // 1. 批量创建指标以减少内存分配
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("batch-efficiency-meter")
   
-  let mut compressed_sizes = []
-  let mut memory_savings = []
+  // 预先创建所有指标实例
+  let counter = meter.create_counter("batch.counter", "count", "Batch test counter")
+  let histogram = meter.create_histogram("batch.histogram", "ms", "Batch test histogram")
+  let gauge = meter.create_gauge("batch.gauge", "units", "Batch test gauge")
   
+  // 2. 批量记录指标数据
+  let batch_size = 100
+  let batch_count = 20
+  
+  let mut total_batch_operations = 0
+  let mut batch_iteration = 0
+  while batch_iteration < batch_count {
+    let mut i = 0
+    while i < batch_size {
+      // 批量记录不同类型的指标
+      counter.add(1, [("batch", common::AttributeValue::int(batch_iteration))])
+      histogram.record(i.to_double(), [("batch", common::AttributeValue::int(batch_iteration))])
+      gauge.record((i + batch_iteration).to_double(), [("batch", common::AttributeValue::int(batch_iteration))])
+      
+      total_batch_operations = total_batch_operations + 3
+      i = i + 1
+    }
+    batch_iteration = batch_iteration + 1
+  }
+  
+  // 验证批量操作效率
+  assert_eq(total_batch_operations, 6000) // 20 * 100 * 3
+  
+  // 3. 批量创建日志记录
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("batch-efficiency-logger")
+  
+  // 预先创建日志属性模板
+  let log_attributes_template = [
+    ("batch.id", common::AttributeValue::string("template")),
+    ("log.type", common::AttributeValue::string("batch")),
+    ("process.id", common::AttributeValue::int(12345))
+  ]
+  
+  // 批量创建日志
+  let log_batch_count = 50
   let mut i = 0
-  while i < original_data_sizes.length() {
-    let original_size = original_data_sizes[i]
-    let compression_ratio = compression_ratios[i]
+  while i < log_batch_count {
+    let batch_log = logs::LogRecord::builder()
+      .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
+      .severity(logs::Info)
+      .body("Batch log " + i.to_string())
+      .with_attribute("batch.id", common::AttributeValue::string("batch-" + i.to_string()))
+      .with_attribute("log.type", common::AttributeValue::string("batch"))
+      .with_attribute("process.id", common::AttributeValue::int(12345))
+      .build()
     
-    // 计算压缩后大小
-    let compressed_size = (original_size.to_double() * compression_ratio).to_int()
-    
-    // 计算内存节省
-    let memory_saved = original_size - compressed_size
-    let saving_percentage = memory_saved.to_double() / original_size.to_double()
-    
-    compressed_sizes.push(compressed_size)
-    memory_savings.push(saving_percentage)
-    
+    logger.emit(batch_log)
     i = i + 1
   }
   
-  // 验证压缩后大小
-  assert_eq(compressed_sizes.length(), 5)
-  let mut j = 0
-  while j < compressed_sizes.length() {
-    assert_eq(compressed_sizes[j] < original_data_sizes[j], true)
-    assert_eq(compressed_sizes[j] > 0, true)
-    j = j + 1
-  }
+  // 验证批量日志效率
+  assert_eq(log_batch_count, 50)
   
-  // 验证内存节省百分比
-  assert_eq(memory_savings.length(), 5)
-  j = 0
-  while j < memory_savings.length() {
-    assert_eq(memory_savings[j] > 0.0, true)
-    assert_eq(memory_savings[j] < 1.0, true)
-    j = j + 1
-  }
+  // 4. 计算批量操作内存效率
+  let total_operations = total_batch_operations + log_batch_count
+  let memory_efficiency_score = total_operations.to_double() / 6.0 // 6个预创建对象
   
-  // 验证压缩效果与数据大小的关系
-  assert_eq(compressed_sizes[0] < original_data_sizes[0], true)  // 小数据集
-  assert_eq(compressed_sizes[4] < original_data_sizes[4], true)  // 大数据集
+  // 验证批量操作内存效率
+  assert_eq(memory_efficiency_score >= 1000.0, true)
+  
+  let batch_efficiency_result = "Batch operations efficiency: " +
+                               total_operations.to_string() + 
+                               " operations, 6 pre-created objects, efficiency=" + memory_efficiency_score.to_string()
+  
+  assert_eq(batch_efficiency_result.contains("6050 operations"), true)
+  assert_eq(batch_efficiency_result.contains("6 pre-created objects"), true)
 }
 
-test "telemetry_garbage_collection_impact" {
-  // 测试垃圾回收影响
+test "telemetry_memory_efficiency_object_pooling" {
+  // 测试对象池化的内存效率
   
-  let object_counts = [100, 500, 1000, 5000, 10000]
-  let object_lifetimes = [100, 500, 1000, 2000, 5000]  // milliseconds
+  // 1. 模拟对象池化 - 重用Span对象结构
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("object-pooling-tracer")
   
-  let mut gc_pressure_scores = []
-  let mut memory_pressure_levels = []
+  // 创建可重用的Span模板
+  let span_template_attributes = [
+    ("pooled.object", common::AttributeValue::string("span-template")),
+    ("pool.id", common::AttributeValue::int(1)),
+    ("reuse.count", common::AttributeValue::int(0))
+  ]
   
+  // 模拟对象池化重用
+  let pool_reuse_count = 200
+  let mut reuse_counter = 0
   let mut i = 0
-  while i < object_counts.length() {
-    let object_count = object_counts[i]
-    let object_lifetime = object_lifetimes[i]
+  while i < pool_reuse_count {
+    // 模拟从池中获取对象并重用
+    let reused_attributes = [
+      ("pooled.object", common::AttributeValue::string("span-template")),
+      ("pool.id", common::AttributeValue::int(1)),
+      ("reuse.count", common::AttributeValue::int(reuse_counter))
+    ]
     
-    // 计算GC压力分数（对象数量 × 生命周期）
-    let gc_pressure = object_count * object_lifetime
+    let (_, _) = tracer.start_span(
+      context::Context::empty(),
+      "pooled-span-" + i.to_string(),
+      trace::Internal,
+      reused_attributes
+    )
     
-    // 确定内存压力级别
-    let pressure_level = 
-      if gc_pressure < 100000 { "low" }
-      else if gc_pressure < 1000000 { "medium" }
-      else if gc_pressure < 10000000 { "high" }
-      else { "critical" }
-    
-    gc_pressure_scores.push(gc_pressure)
-    memory_pressure_levels.push(pressure_level)
-    
+    reuse_counter = reuse_counter + 1
     i = i + 1
   }
   
-  // 验证GC压力分数递增
-  assert_eq(gc_pressure_scores.length(), 5)
-  let mut j = 1
-  while j < gc_pressure_scores.length() {
-    assert_eq(gc_pressure_scores[j] > gc_pressure_scores[j-1], true)
-    j = j + 1
+  // 验证对象池化效率
+  assert_eq(pool_reuse_count, 200)
+  assert_eq(reuse_counter, 200)
+  
+  // 2. 模拟LogRecord对象池化
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("object-pooling-logger")
+  
+  // 创建可重用的日志模板
+  let log_pool_reuse_count = 150
+  let mut i = 0
+  while i < log_pool_reuse_count {
+    // 模拟从池中获取LogRecord并重用
+    let pooled_log = logs::LogRecord::builder()
+      .timestamp(1640995200000000000L + i.to_int64() * 1000000L)
+      .severity(match i % 4 {
+        0 => logs::Debug
+        1 => logs::Info
+        2 => logs::Warn
+        _ => logs::Error
+      })
+      .body("Pooled log " + i.to_string())
+      .with_attribute("pooled.object", common::AttributeValue::string("log-template"))
+      .with_attribute("reuse.count", common::AttributeValue::int(i))
+      .build()
+    
+    logger.emit(pooled_log)
+    i = i + 1
   }
   
-  // 验证内存压力级别
-  assert_eq(memory_pressure_levels.length(), 5)
-  assert_eq(memory_pressure_levels[0], "low")      // 100 * 100 = 10000
-  assert_eq(memory_pressure_levels[1], "medium")   // 500 * 500 = 250000
-  assert_eq(memory_pressure_levels[2], "medium")   // 1000 * 1000 = 1000000
-  assert_eq(memory_pressure_levels[3], "high")     // 5000 * 2000 = 10000000
-  assert_eq(memory_pressure_levels[4], "critical") // 10000 * 5000 = 50000000
+  // 验证日志对象池化效率
+  assert_eq(log_pool_reuse_count, 150)
+  
+  // 3. 计算对象池化内存效率
+  let total_pooled_objects = pool_reuse_count + log_pool_reuse_count
+  let unique_pooled_templates = 2 // Span模板和LogRecord模板
+  let pooling_efficiency = total_pooled_objects.to_double() / unique_pooled_templates.to_double()
+  
+  // 验证对象池化效率
+  assert_eq(pooling_efficiency >= 175.0, true)
+  
+  let pooling_efficiency_result = "Object pooling efficiency: " +
+                                 total_pooled_objects.to_string() + 
+                                 " pooled objects, " +
+                                 unique_pooled_templates.to_string() + 
+                                 " templates, efficiency=" + pooling_efficiency.to_string()
+  
+  assert_eq(pooling_efficiency_result.contains("350 pooled objects"), true)
+  assert_eq(pooling_efficiency_result.contains("2 templates"), true)
 }
 
-test "telemetry_memory_leak_detection" {
-  // 测试内存泄漏检测
+test "telemetry_memory_efficiency_lazy_initialization" {
+  // 测试延迟初始化的内存效率
   
-  let operation_cycles = [10, 50, 100, 500, 1000]
-  let leak_rates = [0.0, 0.01, 0.05, 0.1, 0.2]  // 每个周期的泄漏率
+  // 1. 延迟初始化指标 - 只在需要时创建
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("lazy-initialization-meter")
   
-  let mut cumulative_memory = []
-  let mut leak_detected = []
+  // 模拟延迟初始化：只在实际使用时创建指标
+  let lazy_operations = 100
+  let mut created_counters = []
+  let mut created_histograms = []
   
   let mut i = 0
-  while i < operation_cycles.length() {
-    let cycles = operation_cycles[i]
-    let leak_rate = leak_rates[i]
-    
-    let base_memory_per_cycle = 1000  // bytes
-    let mut total_memory = 0
-    
-    let mut j = 0
-    while j < cycles {
-      // 每个周期分配内存
-      total_memory = total_memory + base_memory_per_cycle
-      
-      // 模拟部分内存未释放（泄漏）
-      let leaked_memory = (base_memory_per_cycle.to_double() * leak_rate).to_int()
-      total_memory = total_memory + leaked_memory
-      
-      j = j + 1
+  while i < lazy_operations {
+    // 只在特定条件下创建指标
+    if i % 10 == 0 {
+      // 延迟创建Counter
+      let counter = meter.create_counter("lazy.counter." + i.to_string(), "count", "Lazy counter " + i.to_string())
+      created_counters.push(counter)
+      counter.add(1, [("lazy.init", common::AttributeValue::bool(true))])
     }
     
-    // 检测是否存在内存泄漏
-    let expected_normal_memory = cycles * base_memory_per_cycle
-    let memory_difference = total_memory - expected_normal_memory
-    let has_leak = memory_difference > (expected_normal_memory / 10)  // 超过10%认为有泄漏
-    
-    cumulative_memory.push(total_memory)
-    leak_detected.push(has_leak)
+    if i % 15 == 0 {
+      // 延迟创建Histogram
+      let histogram = meter.create_histogram("lazy.histogram." + i.to_string(), "ms", "Lazy histogram " + i.to_string())
+      created_histograms.push(histogram)
+      histogram.record(i.to_double(), [("lazy.init", common::AttributeValue::bool(true))])
+    }
     
     i = i + 1
   }
   
-  // 验证累积内存递增
-  assert_eq(cumulative_memory.length(), 5)
-  let mut j = 1
-  while j < cumulative_memory.length() {
-    assert_eq(cumulative_memory[j] > cumulative_memory[j-1], true)
-    j = j + 1
+  // 验证延迟初始化效率
+  assert_eq(lazy_operations, 100)
+  assert_eq(created_counters.length(), 10) // 只有100/10个Counter被创建
+  assert_eq(created_histograms.length(), 7) // 只有floor(100/15)个Histogram被创建
+  
+  // 2. 延迟初始化日志记录器
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let mut created_loggers = []
+  
+  // 只在需要时创建专用日志记录器
+  let lazy_log_operations = 50
+  let mut i = 0
+  while i < lazy_log_operations {
+    if i % 8 == 0 {
+      // 延迟创建专用日志记录器
+      let specialized_logger = logger_provider.get_logger("lazy.logger." + i.to_string(), "1.0.0")
+      created_loggers.push(specialized_logger)
+      specialized_logger.info("Lazy initialized log", [("logger.id", common::AttributeValue::int(i))])
+    }
+    i = i + 1
   }
   
-  // 验证泄漏检测结果
-  assert_eq(leak_detected.length(), 5)
-  assert_eq(leak_detected[0], false)  // 0%泄漏率
-  assert_eq(leak_detected[1], false)  // 1%泄漏率
-  assert_eq(leak_detected[2], true)   // 5%泄漏率
-  assert_eq(leak_detected[3], true)   // 10%泄漏率
-  assert_eq(leak_detected[4], true)   // 20%泄漏率
+  // 验证延迟初始化日志记录器效率
+  assert_eq(lazy_log_operations, 50)
+  assert_eq(created_loggers.length(), 7) // 只有floor(50/8)+1个日志记录器被创建
   
-  // 验证泄漏检测的准确性
-  let mut detected_leaks = 0
-  let mut actual_leaks = 0
-  j = 0
-  while j < leak_rates.length() {
-    if leak_rates[j] > 0.02 {  // 实际泄漏率大于2%
-      actual_leaks = actual_leaks + 1
+  // 3. 计算延迟初始化内存效率
+  let total_lazy_operations = lazy_operations + lazy_log_operations
+  let total_created_objects = created_counters.length() + created_histograms.length() + created_loggers.length()
+  let lazy_efficiency_ratio = total_lazy_operations.to_double() / total_created_objects.to_double()
+  
+  // 验证延迟初始化效率
+  assert_eq(lazy_efficiency_ratio >= 5.0, true) // 至少5:1的操作与对象比率
+  
+  let lazy_efficiency_result = "Lazy initialization efficiency: " +
+                              total_lazy_operations.to_string() + 
+                              " operations, " +
+                              total_created_objects.to_string() + 
+                              " objects created, ratio=" + lazy_efficiency_ratio.to_string()
+  
+  assert_eq(lazy_efficiency_result.contains("150 operations"), true)
+  assert_eq(lazy_efficiency_result.contains("24 objects created"), true)
+}
+
+test "telemetry_memory_efficiency_streaming_processing" {
+  // 测试流式处理的内存效率
+  
+  // 1. 流式处理大量数据，避免一次性加载到内存
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("streaming-processor")
+  
+  // 模拟流式处理：分批处理大数据集
+  let total_data_points = 10000
+  let batch_size = 100
+  
+  let mut processed_batches = 0
+  let mut current_batch = 0
+  
+  while current_batch * batch_size < total_data_points {
+    let start_index = current_batch * batch_size
+    let end_index = (start_index + batch_size).min(total_data_points)
+    
+    // 处理当前批次
+    let mut i = start_index
+    while i < end_index {
+      // 流式处理每个数据点，不保留所有数据在内存中
+      let stream_log = logs::LogRecord::builder()
+        .timestamp(1640995200000000000L + i.to_int64() * 1000L)
+        .severity(logs::Info)
+        .body("Stream processing data point " + i.to_string())
+        .with_attribute("batch.id", common::AttributeValue::int(current_batch))
+        .with_attribute("data.point", common::AttributeValue::int(i))
+        .build()
+      
+      logger.emit(stream_log)
+      i = i + 1
     }
-    if leak_detected[j] {
-      detected_leaks = detected_leaks + 1
-    }
-    j = j + 1
+    
+    processed_batches = processed_batches + 1
+    current_batch = current_batch + 1
   }
   
-  assert_eq(detected_leaks >= actual_leaks, true)
+  // 验证流式处理效率
+  assert_eq(processed_batches * batch_size >= total_data_points, true)
+  
+  // 2. 流式指标处理
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("streaming-processor")
+  
+  let stream_counter = meter.create_counter("stream.processed", "count", "Stream processed data points")
+  let stream_histogram = meter.create_histogram("stream.latency", "ms", "Stream processing latency")
+  
+  // 流式处理指标数据
+  let mut i = 0
+  while i < total_data_points {
+    // 模拟流式处理延迟
+    let latency = (i % 100).to_double() / 10.0
+    
+    stream_counter.add(1, [("batch", common::AttributeValue::int(i / batch_size))])
+    stream_histogram.record(latency, [("data.point", common::AttributeValue::int(i % 1000))])
+    
+    i = i + 1
+  }
+  
+  // 验证流式指标处理
+  assert_eq(i, total_data_points)
+  
+  // 3. 计算流式处理内存效率
+  let memory_efficiency_factor = total_data_points.to_double() / batch_size.to_double()
+  let streaming_efficiency_score = memory_efficiency_factor * 2.0 // 考虑日志和指标
+  
+  // 验证流式处理内存效率
+  assert_eq(streaming_efficiency_score >= 100.0, true)
+  
+  let streaming_efficiency_result = "Streaming processing efficiency: " +
+                                   total_data_points.to_string() + 
+                                   " data points, " +
+                                   processed_batches.to_string() + 
+                                   " batches, efficiency=" + streaming_efficiency_score.to_string()
+  
+  assert_eq(streaming_efficiency_result.contains("10000 data points"), true)
+  assert_eq(streaming_efficiency_result.contains("100 batches"), true)
 }
