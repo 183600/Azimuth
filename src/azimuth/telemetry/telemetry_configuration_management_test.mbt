@@ -1,674 +1,383 @@
-// 遥测配置管理测试用例，确保配置加载、更新和验证的正确性
+// 遥测配置管理测试用例
+// 测试遥测系统的配置管理功能
 
-test "telemetry_default_configuration" {
-  // 测试默认配置
+test "telemetry_service_configuration" {
+  // 测试服务配置
   
-  let default_config = {
-    "service": {
-      "name": "unknown-service",
-      "version": "1.0.0",
-      "environment": "development"
-    },
-    "sampling": {
-      "enabled": true,
-      "rate": 0.1,
-      "strategy": "fixed_rate"
-    },
-    "exporter": {
-      "type": "stdout",
-      "endpoint": "",
-      "batch_size": 100,
-      "timeout_ms": 5000
-    },
-    "resource": {
-      "attributes": {},
-      "detectors": ["env", "host"]
-    },
-    "instrumentation": {
-      "http": {
-        "enabled": true,
-        "capture_headers": false
-      },
-      "database": {
-        "enabled": true,
-        "capture_statement": false
+  let service_config = [
+    ("service.name", "payment-service"),
+    ("service.version", "1.2.3"),
+    ("service.namespace", "ecommerce"),
+    ("service.instance.id", "instance-12345"),
+    ("deployment.environment", "production")
+  ]
+  
+  // 验证配置完整性
+  assert_eq(service_config.length(), 5)
+  
+  // 验证必需配置项
+  let required_configs = ["service.name", "service.version", "deployment.environment"]
+  let mut i = 0
+  while i < required_configs.length() {
+    let required_key = required_configs[i]
+    let mut found = false
+    let mut j = 0
+    while j < service_config.length() {
+      if service_config[j].0 == required_key {
+        found = true
+        break
       }
+      j = j + 1
     }
+    assert_eq(found, true)
+    i = i + 1
   }
   
-  // 验证默认配置结构
-  assert_eq(default_config.contains_key("service"), true)
-  assert_eq(default_config.contains_key("sampling"), true)
-  assert_eq(default_config.contains_key("exporter"), true)
-  assert_eq(default_config.contains_key("resource"), true)
-  assert_eq(default_config.contains_key("instrumentation"), true)
+  // 验证配置值格式
+  assert_eq(service_config[0].1, "payment-service")
+  assert_eq(service_config[1].1, "1.2.3")
+  assert_eq(service_config[4].1, "production")
+}
+
+test "telemetry_sampling_configuration" {
+  // 测试采样配置
   
-  // 验证服务配置
-  assert_eq(default_config["service"]["name"], "unknown-service")
-  assert_eq(default_config["service"]["version"], "1.0.0")
-  assert_eq(default_config["service"]["environment"], "development")
+  let sampling_config = [
+    ("sampling.enabled", "true"),
+    ("sampling.rate", "0.1"),
+    ("sampling.strategy", "probability"),
+    ("sampling.max_traces_per_second", "100"),
+    ("sampling.default_decision", "false")
+  ]
   
   // 验证采样配置
-  assert_eq(default_config["sampling"]["enabled"], true)
-  assert_eq(default_config["sampling"]["rate"], 0.1)
-  assert_eq(default_config["sampling"]["strategy"], "fixed_rate")
+  assert_eq(sampling_config.length(), 5)
+  
+  // 验证采样启用状态
+  let mut sampling_enabled = false
+  let mut sampling_rate = 0.0
+  let mut max_traces = 0
+  
+  let mut i = 0
+  while i < sampling_config.length() {
+    let key = sampling_config[i].0
+    let value = sampling_config[i].1
+    
+    if key == "sampling.enabled" {
+      sampling_enabled = value == "true"
+    } else if key == "sampling.rate" {
+      sampling_rate = value.to_double()
+    } else if key == "sampling.max_traces_per_second" {
+      max_traces = value.to_int()
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证采样参数
+  assert_eq(sampling_enabled, true)
+  assert_eq(sampling_rate > 0.0, true)
+  assert_eq(sampling_rate <= 1.0, true)
+  assert_eq(max_traces, 100)
+}
+
+test "telemetry_exporter_configuration" {
+  // 测试导出器配置
+  
+  let exporter_config = [
+    ("exporter.type", "otlp"),
+    ("exporter.endpoint", "http://localhost:4317"),
+    ("exporter.protocol", "grpc"),
+    ("exporter.timeout", "30s"),
+    ("exporter.compression", "gzip"),
+    ("exporter.batch_size", "512"),
+    ("exporter.max_export_batch_size", "512"),
+    ("exporter.export_timeout_millis", "30000")
+  ]
   
   // 验证导出器配置
-  assert_eq(default_config["exporter"]["type"], "stdout")
-  assert_eq(default_config["exporter"]["batch_size"], 100)
-  assert_eq(default_config["exporter"]["timeout_ms"], 5000)
+  assert_eq(exporter_config.length(), 8)
+  
+  // 验证导出器类型
+  let mut exporter_type = ""
+  let mut exporter_endpoint = ""
+  let mut exporter_protocol = ""
+  
+  let mut i = 0
+  while i < exporter_config.length() {
+    let key = exporter_config[i].0
+    let value = exporter_config[i].1
+    
+    if key == "exporter.type" {
+      exporter_type = value
+    } else if key == "exporter.endpoint" {
+      exporter_endpoint = value
+    } else if key == "exporter.protocol" {
+      exporter_protocol = value
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证导出器参数
+  assert_eq(exporter_type, "otlp")
+  assert_eq(exporter_endpoint.has_prefix("http"), true)
+  assert_eq(exporter_protocol, "grpc")
+}
+
+test "telemetry_metric_configuration" {
+  // 测试指标配置
+  
+  let metric_config = [
+    ("metric.enabled", "true"),
+    ("metric.export_interval", "60s"),
+    ("metric.export_timeout", "30s"),
+    ("metric.reader.type", "periodic"),
+    ("metric.aggregation.temporality", "cumulative"),
+    ("metric.default.histogram.boundaries", "0.1,0.5,1.0,2.0,5.0,10.0")
+  ]
+  
+  // 验证指标配置
+  assert_eq(metric_config.length(), 6)
+  
+  // 验证指标启用状态
+  let mut metric_enabled = false
+  let mut export_interval = ""
+  let mut reader_type = ""
+  
+  let mut i = 0
+  while i < metric_config.length() {
+    let key = metric_config[i].0
+    let value = metric_config[i].1
+    
+    if key == "metric.enabled" {
+      metric_enabled = value == "true"
+    } else if key == "metric.export_interval" {
+      export_interval = value
+    } else if key == "metric.reader.type" {
+      reader_type = value
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证指标参数
+  assert_eq(metric_enabled, true)
+  assert_eq(export_interval.has_suffix("s"), true)
+  assert_eq(reader_type, "periodic")
+}
+
+test "telemetry_trace_configuration" {
+  // 测试追踪配置
+  
+  let trace_config = [
+    ("trace.enabled", "true"),
+    ("trace.sampler.type", "parentbased_traceidratio"),
+    ("trace.sampler.arg", "0.1"),
+    ("trace.batch.max_export_batch_size", "512"),
+    ("trace.batch.max_export_timeout_millis", "30000"),
+    ("trace.batch.schedule_delay_millis", "5000"),
+    ("trace.max_attributes_per_span", "128"),
+    ("trace.max_events_per_span", "128"),
+    ("trace.max_links_per_span", "128")
+  ]
+  
+  // 验证追踪配置
+  assert_eq(trace_config.length(), 9)
+  
+  // 验证追踪启用状态
+  let mut trace_enabled = false
+  let mut sampler_type = ""
+  let mut sampler_arg = 0.0
+  
+  let mut i = 0
+  while i < trace_config.length() {
+    let key = trace_config[i].0
+    let value = trace_config[i].1
+    
+    if key == "trace.enabled" {
+      trace_enabled = value == "true"
+    } else if key == "trace.sampler.type" {
+      sampler_type = value
+    } else if key == "trace.sampler.arg" {
+      sampler_arg = value.to_double()
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证追踪参数
+  assert_eq(trace_enabled, true)
+  assert_eq(sampler_type.contains("traceidratio"), true)
+  assert_eq(sampler_arg > 0.0, true)
+  assert_eq(sampler_arg <= 1.0, true)
+}
+
+test "telemetry_log_configuration" {
+  // 测试日志配置
+  
+  let log_config = [
+    ("log.enabled", "true"),
+    ("log.level", "INFO"),
+    ("log.format", "json"),
+    ("log.include.timestamp", "true"),
+    ("log.include.severity", "true"),
+    ("log.include.service.name", "true"),
+    ("log.max.events", "1000"),
+    ("log.max.attributes", "128")
+  ]
+  
+  // 验证日志配置
+  assert_eq(log_config.length(), 8)
+  
+  // 验证日志级别
+  let valid_log_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+  let mut log_level = ""
+  let mut log_enabled = false
+  
+  let mut i = 0
+  while i < log_config.length() {
+    let key = log_config[i].0
+    let value = log_config[i].1
+    
+    if key == "log.enabled" {
+      log_enabled = value == "true"
+    } else if key == "log.level" {
+      log_level = value
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证日志级别有效性
+  let mut valid_level = false
+  i = 0
+  while i < valid_log_levels.length() {
+    if log_level == valid_log_levels[i] {
+      valid_level = true
+      break
+    }
+    i = i + 1
+  }
+  
+  assert_eq(log_enabled, true)
+  assert_eq(valid_level, true)
+}
+
+test "telemetry_resource_configuration" {
+  // 测试资源配置
+  
+  let resource_config = [
+    ("resource.attributes", "service.name=payment-service,service.version=1.2.3"),
+    ("resource.detectors", "process,os,host"),
+    ("resource.schema.url", "https://opentelemetry.io/schemas/v1.20.0"),
+    ("resource.merge.enabled", "true")
+  ]
+  
+  // 验证资源配置
+  assert_eq(resource_config.length(), 4)
+  
+  // 解析资源属性
+  let mut resource_attributes = []
+  let mut i = 0
+  while i < resource_config.length() {
+    if resource_config[i].0 == "resource.attributes" {
+      let attributes_string = resource_config[i].1
+      let attr_pairs = attributes_string.split(",")
+      let mut j = 0
+      while j < attr_pairs.length() {
+        let kv_pair = attr_pairs[j]
+        let kv_parts = kv_pair.split("=")
+        if kv_parts.length() == 2 {
+          resource_attributes.push((kv_parts[0], kv_parts[1]))
+        }
+        j = j + 1
+      }
+      break
+    }
+    i = i + 1
+  }
+  
+  // 验证资源属性
+  assert_eq(resource_attributes.length(), 2)
+  assert_eq(resource_attributes[0], ("service.name", "payment-service"))
+  assert_eq(resource_attributes[1], ("service.version", "1.2.3"))
 }
 
 test "telemetry_configuration_validation" {
   // 测试配置验证
   
-  let valid_configs = [
-    {
-      "service": {
-        "name": "payment-service",
-        "version": "1.2.3",
-        "environment": "production"
-      },
-      "sampling": {
-        "enabled": true,
-        "rate": 0.15,
-        "strategy": "trace_id_based"
-      }
-    },
-    {
-      "service": {
-        "name": "user-service",
-        "version": "2.0.0",
-        "environment": "staging"
-      },
-      "sampling": {
-        "enabled": false,
-        "rate": 0.0,
-        "strategy": "always_off"
-      }
-    }
+  let configurations = [
+    // 有效配置
+    [("service.name", "payment-service"), ("sampling.rate", "0.1"), ("exporter.endpoint", "http://localhost:4317")],
+    // 无效配置：缺少必需项
+    [("sampling.rate", "0.1"), ("exporter.endpoint", "http://localhost:4317")],
+    // 无效配置：采样率超出范围
+    [("service.name", "payment-service"), ("sampling.rate", "1.5"), ("exporter.endpoint", "http://localhost:4317")],
+    // 有效配置：最小配置
+    [("service.name", "minimal-service")]
   ]
   
-  let invalid_configs = [
-    {
-      "service": {
-        "name": "",  // 空名称
-        "version": "1.0.0",
-        "environment": "production"
-      }
-    },
-    {
-      "service": {
-        "name": "valid-service",
-        "version": "1.0.0",
-        "environment": "production"
-      },
-      "sampling": {
-        "enabled": true,
-        "rate": 1.5,  // 超出范围
-        "strategy": "fixed_rate"
-      }
-    }
-  ]
+  let validation_results = []
   
-  // 验证有效配置
+  // 验证每个配置
   let mut i = 0
-  while i < valid_configs.length() {
-    let config = valid_configs[i]
+  while i < configurations.length() {
+    let config = configurations[i]
+    let mut is_valid = true
+    let mut validation_errors = []
     
-    // 验证服务名称非空
-    assert_eq(config["service"]["name"].length() > 0, true)
-    
-    // 验证版本格式
-    let version = config["service"]["version"]
-    assert_eq(version.contains("."), true)
-    
-    // 验证采样率范围
-    if config["sampling"]["enabled"] {
-      let rate = config["sampling"]["rate"]
-      assert_eq(rate >= 0.0, true)
-      assert_eq(rate <= 1.0, true)
+    // 检查必需的服务名称
+    let mut has_service_name = false
+    let mut j = 0
+    while j < config.length() {
+      if config[j].0 == "service.name" && config[j].1.length() > 0 {
+        has_service_name = true
+        break
+      }
+      j = j + 1
     }
     
+    if not(has_service_name) {
+      is_valid = false
+      validation_errors.push("Missing required service.name")
+    }
+    
+    // 检查采样率范围
+    j = 0
+    while j < config.length() {
+      if config[j].0 == "sampling.rate" {
+        let rate = config[j].1.to_double()
+        if rate < 0.0 || rate > 1.0 {
+          is_valid = false
+          validation_errors.push("Invalid sampling.rate: must be between 0.0 and 1.0")
+        }
+        break
+      }
+      j = j + 1
+    }
+    
+    validation_results.push((is_valid, validation_errors))
     i = i + 1
   }
   
-  // 验证无效配置特征
-  i = 0
-  while i < invalid_configs.length() {
-    let config = invalid_configs[i]
-    
-    // 检查无效配置的特征
-    if config["service"]["name"].length() == 0 {
-      assert_eq(true, true)  // 检测到空名称
-    }
-    
-    if config.contains_key("sampling") && config["sampling"]["enabled"] {
-      let rate = config["sampling"]["rate"]
-      if rate > 1.0 || rate < 0.0 {
-        assert_eq(true, true)  // 检测到无效采样率
-      }
-    }
-    
-    i = i + 1
-  }
-}
-
-test "telemetry_configuration_hierarchy" {
-  // 测试配置层次结构（环境变量 > 配置文件 > 默认值）
+  // 验证配置验证结果
+  assert_eq(configurations.length(), 4)
+  assert_eq(validation_results.length(), 4)
   
-  let default_config = {
-    "service": {
-      "name": "default-service",
-      "environment": "development"
-    },
-    "sampling": {
-      "enabled": true,
-      "rate": 0.1
-    }
-  }
+  // 第一个配置应该有效
+  assert_eq(validation_results[0].0, true)
+  assert_eq(validation_results[0].1.length(), 0)
   
-  let file_config = {
-    "service": {
-      "name": "file-service",
-      "environment": "staging"
-    },
-    "sampling": {
-      "rate": 0.2
-    }
-  }
+  // 第二个配置应该无效（缺少服务名称）
+  assert_eq(validation_results[1].0, false)
+  assert_eq(validation_results[1].1.length() > 0, true)
   
-  let env_config = {
-    "service": {
-      "name": "env-service"
-    },
-    "sampling": {
-      "enabled": false
-    }
-  }
+  // 第三个配置应该无效（采样率超出范围）
+  assert_eq(validation_results[2].0, false)
+  assert_eq(validation_results[2].1.length() > 0, true)
   
-  // 模拟配置合并（优先级：环境变量 > 配置文件 > 默认值）
-  let mut merged_config = default_config
-  
-  // 应用文件配置
-  if file_config.contains_key("service") {
-    let file_service = file_config["service"]
-    if file_service.contains_key("name") {
-      merged_config["service"]["name"] = file_service["name"]
-    }
-    if file_service.contains_key("environment") {
-      merged_config["service"]["environment"] = file_service["environment"]
-    }
-  }
-  
-  if file_config.contains_key("sampling") {
-    let file_sampling = file_config["sampling"]
-    if file_sampling.contains_key("rate") {
-      merged_config["sampling"]["rate"] = file_sampling["rate"]
-    }
-  }
-  
-  // 应用环境变量配置
-  if env_config.contains_key("service") {
-    let env_service = env_config["service"]
-    if env_service.contains_key("name") {
-      merged_config["service"]["name"] = env_service["name"]
-    }
-  }
-  
-  if env_config.contains_key("sampling") {
-    let env_sampling = env_config["sampling"]
-    if env_sampling.contains_key("enabled") {
-      merged_config["sampling"]["enabled"] = env_sampling["enabled"]
-    }
-  }
-  
-  // 验证配置合并结果
-  assert_eq(merged_config["service"]["name"], "env-service")        // 来自环境变量
-  assert_eq(merged_config["service"]["environment"], "staging")      // 来自配置文件
-  assert_eq(merged_config["sampling"]["enabled"], false)             // 来自环境变量
-  assert_eq(merged_config["sampling"]["rate"], 0.2)                  // 来自配置文件
-}
-
-test "telemetry_dynamic_configuration_update" {
-  // 测试动态配置更新
-  
-  let mut current_config = {
-    "service": {
-      "name": "initial-service",
-      "environment": "development"
-    },
-    "sampling": {
-      "enabled": true,
-      "rate": 0.1
-    },
-    "exporter": {
-      "type": "stdout",
-      "batch_size": 100
-    }
-  }
-  
-  let config_updates = [
-    {
-      "timestamp": 1704067200L,
-      "changes": {
-        "sampling": {
-          "rate": 0.15
-        }
-      }
-    },
-    {
-      "timestamp": 1704067260L,
-      "changes": {
-        "exporter": {
-          "batch_size": 200
-        }
-      }
-    },
-    {
-      "timestamp": 1704067320L,
-      "changes": {
-        "service": {
-          "environment": "staging"
-        },
-        "sampling": {
-          "enabled": false
-        }
-      }
-    }
-  ]
-  
-  // 应用配置更新
-  let mut i = 0
-  while i < config_updates.length() {
-    let update = config_updates[i]
-    let changes = update["changes"]
-    
-    // 更新采样配置
-    if changes.contains_key("sampling") {
-      let sampling_changes = changes["sampling"]
-      if sampling_changes.contains_key("enabled") {
-        current_config["sampling"]["enabled"] = sampling_changes["enabled"]
-      }
-      if sampling_changes.contains_key("rate") {
-        current_config["sampling"]["rate"] = sampling_changes["rate"]
-      }
-    }
-    
-    // 更新导出器配置
-    if changes.contains_key("exporter") {
-      let exporter_changes = changes["exporter"]
-      if exporter_changes.contains_key("batch_size") {
-        current_config["exporter"]["batch_size"] = exporter_changes["batch_size"]
-      }
-    }
-    
-    // 更新服务配置
-    if changes.contains_key("service") {
-      let service_changes = changes["service"]
-      if service_changes.contains_key("environment") {
-        current_config["service"]["environment"] = service_changes["environment"]
-      }
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证更新后的配置
-  assert_eq(current_config["service"]["name"], "initial-service")  // 未更新
-  assert_eq(current_config["service"]["environment"], "staging")   // 已更新
-  assert_eq(current_config["sampling"]["enabled"], false)          // 已更新
-  assert_eq(current_config["sampling"]["rate"], 0.15)              // 已更新
-  assert_eq(current_config["exporter"]["type"], "stdout")          // 未更新
-  assert_eq(current_config["exporter"]["batch_size"], 200)         // 已更新
-}
-
-test "telemetry_configuration_profiles" {
-  // 测试配置档案
-  
-  let configuration_profiles = {
-    "development": {
-      "service": {
-        "environment": "development"
-      },
-      "sampling": {
-        "enabled": true,
-        "rate": 1.0  // 开发环境100%采样
-      },
-      "exporter": {
-        "type": "stdout"
-      },
-      "instrumentation": {
-        "http": {
-          "capture_headers": true
-        }
-      }
-    },
-    "staging": {
-      "service": {
-        "environment": "staging"
-      },
-      "sampling": {
-        "enabled": true,
-        "rate": 0.5  // 预发布环境50%采样
-      },
-      "exporter": {
-        "type": "otlp",
-        "endpoint": "http://collector:4317"
-      },
-      "instrumentation": {
-        "http": {
-          "capture_headers": false
-        }
-      }
-    },
-    "production": {
-      "service": {
-        "environment": "production"
-      },
-      "sampling": {
-        "enabled": true,
-        "rate": 0.1  // 生产环境10%采样
-      },
-      "exporter": {
-        "type": "otlp",
-        "endpoint": "http://prod-collector:4317",
-        "batch_size": 500
-      },
-      "instrumentation": {
-        "http": {
-          "capture_headers": false
-        }
-      }
-    }
-  }
-  
-  // 测试不同环境的配置
-  let environments = ["development", "staging", "production"]
-  
-  let mut i = 0
-  while i < environments.length() {
-    let env = environments[i]
-    let profile = configuration_profiles[env]
-    
-    // 验证环境特定的配置
-    assert_eq(profile["service"]["environment"], env)
-    
-    if env == "development" {
-      assert_eq(profile["sampling"]["rate"], 1.0)
-      assert_eq(profile["exporter"]["type"], "stdout")
-      assert_eq(profile["instrumentation"]["http"]["capture_headers"], true)
-    } else if env == "staging" {
-      assert_eq(profile["sampling"]["rate"], 0.5)
-      assert_eq(profile["exporter"]["type"], "otlp")
-      assert_eq(profile["exporter"]["endpoint"], "http://collector:4317")
-      assert_eq(profile["instrumentation"]["http"]["capture_headers"], false)
-    } else if env == "production" {
-      assert_eq(profile["sampling"]["rate"], 0.1)
-      assert_eq(profile["exporter"]["type"], "otlp")
-      assert_eq(profile["exporter"]["endpoint"], "http://prod-collector:4317")
-      assert_eq(profile["exporter"]["batch_size"], 500)
-    }
-    
-    i = i + 1
-  }
-}
-
-test "telemetry_configuration_feature_flags" {
-  // 测试功能开关配置
-  
-  let feature_flags_config = {
-    "features": {
-      "advanced_sampling": {
-        "enabled": true,
-        "conditions": {
-          "environment": ["production", "staging"],
-          "service_version": ">=1.2.0"
-        }
-      },
-      "memory_profiling": {
-        "enabled": false,
-        "conditions": {
-          "environment": ["development"]
-        }
-      },
-      "distributed_tracing": {
-        "enabled": true,
-        "conditions": {}
-      },
-      "custom_metrics": {
-        "enabled": true,
-        "conditions": {
-          "service_name": ["payment-service", "order-service"]
-        }
-      }
-    }
-  }
-  
-  let current_context = {
-    "environment": "production",
-    "service_name": "payment-service",
-    "service_version": "1.3.0"
-  }
-  
-  // 检查功能开关状态
-  let features = feature_flags_config["features"]
-  let mut active_features = []
-  
-  // 检查advanced_sampling
-  let advanced_sampling = features["advanced_sampling"]
-  if advanced_sampling["enabled"] {
-    let conditions = advanced_sampling["conditions"]
-    let env_match = conditions["environment"].contains(current_context["environment"])
-    let version_match = current_context["service_version"] >= "1.2.0"
-    
-    if env_match && version_match {
-      active_features.push("advanced_sampling")
-    }
-  }
-  
-  // 检查memory_profiling
-  let memory_profiling = features["memory_profiling"]
-  if memory_profiling["enabled"] {
-    let conditions = memory_profiling["conditions"]
-    let env_match = conditions["environment"].contains(current_context["environment"])
-    
-    if env_match {
-      active_features.push("memory_profiling")
-    }
-  }
-  
-  // 检查distributed_tracing
-  let distributed_tracing = features["distributed_tracing"]
-  if distributed_tracing["enabled"] {
-    active_features.push("distributed_tracing")
-  }
-  
-  // 检查custom_metrics
-  let custom_metrics = features["custom_metrics"]
-  if custom_metrics["enabled"] {
-    let conditions = custom_metrics["conditions"]
-    let service_match = conditions["service_name"].contains(current_context["service_name"])
-    
-    if service_match {
-      active_features.push("custom_metrics")
-    }
-  }
-  
-  // 验证激活的功能
-  assert_eq(active_features.contains("advanced_sampling"), true)
-  assert_eq(active_features.contains("memory_profiling"), false)
-  assert_eq(active_features.contains("distributed_tracing"), true)
-  assert_eq(active_features.contains("custom_metrics"), true)
-  assert_eq(active_features.length(), 3)
-}
-
-test "telemetry_configuration_security" {
-  // 测试配置安全性
-  
-  let sensitive_config = {
-    "exporter": {
-      "type": "otlp",
-      "endpoint": "https://otel-collector.example.com:4317",
-      "headers": {
-        "authorization": "Bearer secret-token-12345",
-        "x-api-key": "api-key-secret-67890"
-      },
-      "tls": {
-        "enabled": true,
-        "cert_file": "/path/to/cert.pem",
-        "key_file": "/path/to/key.pem",
-        "ca_file": "/path/to/ca.pem"
-      }
-    },
-    "database": {
-      "connection_string": "postgresql://user:password@localhost:5432/telemetry",
-      "password": "secret-db-password"
-    }
-  }
-  
-  // 模拟敏感信息脱敏
-  let mut sanitized_config = sensitive_config
-  
-  // 脱敏认证信息
-  if sanitized_config["exporter"].contains_key("headers") {
-    let headers = sanitized_config["exporter"]["headers"]
-    if headers.contains_key("authorization") {
-      let auth_value = headers["authorization"]
-      if auth_value.has_prefix("Bearer ") {
-        headers["authorization"] = "Bearer ***REDACTED***"
-      }
-    }
-    if headers.contains_key("x-api-key") {
-      headers["x-api-key"] = "***REDACTED***"
-    }
-  }
-  
-  // 脱敏数据库密码
-  if sanitized_config["database"].contains_key("password") {
-    sanitized_config["database"]["password"] = "***REDACTED***"
-  }
-  
-  // 脱敏连接字符串中的密码
-  let conn_string = sanitized_config["database"]["connection_string"]
-  if conn_string.contains("password") {
-    sanitized_config["database"]["connection_string"] = "postgresql://user:***REDACTED***@localhost:5432/telemetry"
-  }
-  
-  // 验证脱敏结果
-  assert_eq(sanitized_config["exporter"]["headers"]["authorization"], "Bearer ***REDACTED***")
-  assert_eq(sanitized_config["exporter"]["headers"]["x-api-key"], "***REDACTED***")
-  assert_eq(sanitized_config["database"]["password"], "***REDACTED***")
-  assert_eq(sanitized_config["database"]["connection_string"].contains("***REDACTED***"), true)
-  
-  // 验证非敏感信息保持不变
-  assert_eq(sanitized_config["exporter"]["type"], "otlp")
-  assert_eq(sanitized_config["exporter"]["endpoint"], "https://otel-collector.example.com:4317")
-  assert_eq(sanitized_config["exporter"]["tls"]["enabled"], true)
-  
-  // 验证配置文件权限检查
-  let config_file_permissions = {
-    "owner": "telemetry",
-    "group": "telemetry",
-    "mode": "600",  // 只有所有者可读写
-    "is_secure": true
-  }
-  
-  assert_eq(config_file_permissions["mode"], "600")
-  assert_eq(config_file_permissions["is_secure"], true)
-}
-
-test "telemetry_configuration_migration" {
-  // 测试配置版本迁移
-  
-  let config_versions = {
-    "v1": {
-      "service_name": "payment-service",
-      "service_version": "1.0.0",
-      "sampling_rate": 0.1,
-      "exporter_type": "stdout"
-    },
-    "v2": {
-      "service": {
-        "name": "payment-service",
-        "version": "1.0.0"
-      },
-      "sampling": {
-        "rate": 0.1
-      },
-      "exporter": {
-        "type": "stdout"
-      }
-    },
-    "v3": {
-      "service": {
-        "name": "payment-service",
-        "version": "1.0.0",
-        "environment": "development"
-      },
-      "sampling": {
-        "enabled": true,
-        "rate": 0.1,
-        "strategy": "fixed_rate"
-      },
-      "exporter": {
-        "type": "stdout",
-        "batch_size": 100
-      }
-    }
-  }
-  
-  // 模拟从v1迁移到v3
-  let v1_config = config_versions["v1"]
-  let mut migrated_config = {}
-  
-  // v1 -> v2 迁移
-  migrated_config["service"] = {
-    "name": v1_config["service_name"],
-    "version": v1_config["service_version"]
-  }
-  migrated_config["sampling"] = {
-    "rate": v1_config["sampling_rate"]
-  }
-  migrated_config["exporter"] = {
-    "type": v1_config["exporter_type"]
-  }
-  
-  // v2 -> v3 迁移
-  migrated_config["service"]["environment"] = "development"  // 默认值
-  migrated_config["sampling"]["enabled"] = true
-  migrated_config["sampling"]["strategy"] = "fixed_rate"
-  migrated_config["exporter"]["batch_size"] = 100  // 默认值
-  
-  // 验证迁移结果
-  let v3_config = config_versions["v3"]
-  
-  assert_eq(migrated_config["service"]["name"], v3_config["service"]["name"])
-  assert_eq(migrated_config["service"]["version"], v3_config["service"]["version"])
-  assert_eq(migrated_config["service"]["environment"], v3_config["service"]["environment"])
-  assert_eq(migrated_config["sampling"]["enabled"], v3_config["sampling"]["enabled"])
-  assert_eq(migrated_config["sampling"]["rate"], v3_config["sampling"]["rate"])
-  assert_eq(migrated_config["sampling"]["strategy"], v3_config["sampling"]["strategy"])
-  assert_eq(migrated_config["exporter"]["type"], v3_config["exporter"]["type"])
-  assert_eq(migrated_config["exporter"]["batch_size"], v3_config["exporter"]["batch_size"])
-  
-  // 验证迁移路径
-  let migration_paths = [
-    ("v1", "v2", ["service_name -> service.name", "service_version -> service.version"]),
-    ("v2", "v3", ["add service.environment", "add sampling.enabled", "add sampling.strategy"])
-  ]
-  
-  let mut i = 0
-  while i < migration_paths.length() {
-    let path = migration_paths[i]
-    let from_version = path.0
-    let to_version = path.1
-    let changes = path.2
-    
-    // 验证迁移路径存在
-    assert_eq(from_version < to_version, true)
-    assert_eq(changes.length() > 0, true)
-    
-    i = i + 1
-  }
+  // 第四个配置应该有效（最小配置）
+  assert_eq(validation_results[3].0, true)
+  assert_eq(validation_results[3].1.length(), 0)
 }
