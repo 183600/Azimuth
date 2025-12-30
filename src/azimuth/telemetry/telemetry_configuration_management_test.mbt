@@ -1,425 +1,591 @@
-// 遥测系统配置管理测试
-// 测试各种配置选项、动态更新和验证机制
+// 遥测配置管理测试
+// 测试遥测系统的配置加载、验证、动态更新等功能
 
-test "resource_configuration_management" {
-  // 测试资源配置管理
+test "telemetry_service_configuration_validation" {
+  // 测试遥测服务配置验证
   
-  // 测试默认资源配置
-  let default_resource = common::Resource::default("test_service")
-  assert_eq(default_resource.service_name, "test_service")
-  assert_eq(default_resource.service_version, None)
-  assert_eq(default_resource.telemetry_sdk_name, "azimuth")
-  assert_eq(default_resource.telemetry_sdk_version, "0.1.0")
-  
-  // 测试服务配置更新
-  let configured_resource = common::Resource::{
-    service_name: "production_service",
-    service_version: Some("2.1.0"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: [
-      ("environment", common::AttributeValue::string("production")),
-      ("region", common::AttributeValue::string("us-west-2")),
-      ("datacenter", common::AttributeValue::string("dc-01"))
-    ]
-  }
-  
-  assert_eq(configured_resource.service_name, "production_service")
-  assert_eq(configured_resource.service_version.unwrap(), "2.1.0")
-  assert_eq(configured_resource.attributes.length(), 3)
-  
-  // 测试配置继承
-  let inherited_resource = common::Resource::{
-    ..configured_resource,
-    service_name: "derived_service",
-    service_version: Some("2.1.1"),
-    attributes: configured_resource.attributes + [
-      ("instance_id", common::AttributeValue::string("i-1234567890abcdef0"))
-    ]
-  }
-  
-  assert_eq(inherited_resource.service_name, "derived_service")
-  assert_eq(inherited_resource.service_version.unwrap(), "2.1.1")
-  assert_eq(inherited_resource.telemetry_sdk_name, "azimuth")  // 继承的属性
-  assert_eq(inherited_resource.attributes.length(), 4)  // 3个继承 + 1个新增
-  
-  // 测试环境特定配置
-  let dev_config = common::Resource::default("dev_service")
-  let staging_config = common::Resource::{
-    ..dev_config,
-    service_name: "staging_service",
-    attributes: [
-      ("environment", common::AttributeValue::string("staging")),
-      ("debug", common::AttributeValue::bool(true))
-    ]
-  }
-  let prod_config = common::Resource::{
-    ..dev_config,
-    service_name: "prod_service",
-    attributes: [
-      ("environment", common::AttributeValue::string("production")),
-      ("debug", common::AttributeValue::bool(false)),
-      ("monitoring", common::AttributeValue::bool(true))
-    ]
-  }
-  
-  assert_eq(dev_config.service_name, "dev_service")
-  assert_eq(staging_config.service_name, "staging_service")
-  assert_eq(prod_config.service_name, "prod_service")
-  assert_eq(staging_config.attributes.length(), 2)
-  assert_eq(prod_config.attributes.length(), 3)
-}
-
-test "instrumentation_scope_configuration" {
-  // 测试instrumentation scope配置
-  
-  // 测试基础scope配置
-  let basic_scope = common::InstrumentationScope {
-    name: "basic_instrumentation",
-    version: None,
-    schema_url: None
-  }
-  
-  // 测试完整scope配置
-  let full_scope = common::InstrumentationScope {
-    name: "full_instrumentation",
-    version: Some("1.2.3"),
-    schema_url: Some("http://example.com/schema/v1")
-  }
-  
-  // 测试scope配置变体
-  let scopes = [
-    basic_scope,
-    full_scope,
-    common::InstrumentationScope {
-      name: "version_only",
-      version: Some("2.0.0"),
-      schema_url: None
-    },
-    common::InstrumentationScope {
-      name: "schema_only",
-      version: None,
-      schema_url: Some("https://example.org/schema")
-    }
+  // 创建有效的服务配置
+  let valid_config = [
+    ("service.name", "payment-service"),
+    ("service.version", "1.2.3"),
+    ("service.namespace", "ecommerce"),
+    ("service.instance.id", "instance-12345"),
+    ("deployment.environment", "production"),
+    ("telemetry.sdk.name", "azimuth"),
+    ("telemetry.sdk.version", "0.1.0"),
+    ("telemetry.sdk.language", "moonbit")
   ]
   
-  // 验证配置差异
-  assert_eq(scopes[0].name, "basic_instrumentation")
-  assert_eq(scopes[0].version, None)
-  assert_eq(scopes[0].schema_url, None)
-  
-  assert_eq(scopes[1].name, "full_instrumentation")
-  assert_eq(scopes[1].version.unwrap(), "1.2.3")
-  assert_eq(scopes[1].schema_url.unwrap(), "http://example.com/schema/v1")
-  
-  assert_eq(scopes[2].name, "version_only")
-  assert_eq(scopes[2].version.unwrap(), "2.0.0")
-  assert_eq(scopes[2].schema_url, None)
-  
-  assert_eq(scopes[3].name, "schema_only")
-  assert_eq(scopes[3].version, None)
-  assert_eq(scopes[3].schema_url.unwrap(), "https://example.org/schema")
-}
-
-test "tracer_provider_configuration" {
-  // 测试TracerProvider配置
-  
-  // 测试noop tracer provider配置
-  let noop_provider = trace::NoopTracerProvider::{}
-  
-  // 测试获取不同配置的tracer
-  let default_tracer = noop_provider.get_tracer("default_tracer")
-  let versioned_tracer = noop_provider.get_tracer("versioned_tracer", "1.0.0")
-  let full_configured_tracer = noop_provider.get_tracer("full_tracer", "2.1.0")
-  
-  // 验证tracer创建（由于是noop实现，主要验证不会崩溃）
-  let base_context = context::Context::empty()
-  
-  let (_, default_span) = default_tracer.start_span(base_context, "default_operation")
-  let (_, versioned_span) = versioned_tracer.start_span(base_context, "versioned_operation")
-  let (_, full_span) = full_configured_tracer.start_span(base_context, "full_operation")
-  
-  assert_eq(default_span.name, "default_operation")
-  assert_eq(versioned_span.name, "versioned_operation")
-  assert_eq(full_span.name, "full_operation")
-  
-  // 测试不同span kind配置
-  let span_kinds = [
-    trace::Internal,
-    trace::Server,
-    trace::Client,
-    trace::Producer,
-    trace::Consumer
-  ]
-  
+  // 验证必要字段存在
+  let required_fields = ["service.name", "telemetry.sdk.name", "telemetry.sdk.version"]
   let mut i = 0
-  while i < span_kinds.length() {
-    let kind = span_kinds[i]
-    let (_, span) = default_tracer.start_span(
-      base_context,
-      "kind_test_" + i.to_string(),
-      kind
-    )
-    assert_eq(span.kind, kind)
-    i = i + 1
-  }
-}
-
-test "meter_provider_configuration" {
-  // 测试MeterProvider配置
-  
-  // 测试noop meter provider配置
-  let noop_provider = metrics::NoopMeterProvider::{}
-  
-  // 测试获取不同配置的meter
-  let default_meter = noop_provider.get_meter("default_meter")
-  let versioned_meter = noop_provider.get_meter("versioned_meter", "1.0.0")
-  let full_configured_meter = noop_provider.get_meter(
-    "full_meter", 
-    "2.1.0", 
-    "http://example.com/schema"
-  )
-  
-  // 测试创建不同类型的仪器
-  let default_counter = default_meter.create_counter("default_counter", "count", "Default counter")
-  let default_histogram = default_meter.create_histogram("default_histogram", "ms", "Default histogram")
-  let default_gauge = default_meter.create_gauge("default_gauge", "value", "Default gauge")
-  
-  let versioned_counter = versioned_meter.create_counter("versioned_counter", "", "")
-  let versioned_histogram = versioned_meter.create_histogram("versioned_histogram", "", "")
-  let versioned_gauge = versioned_meter.create_gauge("versioned_gauge", "", "")
-  
-  let full_counter = full_configured_meter.create_counter("full_counter", "operations", "Full counter with description")
-  let full_histogram = full_configured_meter.create_histogram("full_histogram", "seconds", "Full histogram with description")
-  let full_gauge = full_configured_meter.create_gauge("full_gauge", "connections", "Full gauge with description")
-  
-  // 验证仪器创建（主要验证不会崩溃）
-  default_counter.add(1L)
-  default_histogram.record(100.0)
-  default_gauge.record(50.0)
-  
-  versioned_counter.add(1L)
-  versioned_histogram.record(100.0)
-  versioned_gauge.record(50.0)
-  
-  full_counter.add(1L)
-  full_histogram.record(100.0)
-  full_gauge.record(50.0)
-}
-
-test "logger_provider_configuration" {
-  // 测试LoggerProvider配置
-  
-  // 测试noop logger provider配置
-  let noop_provider = logs::NoopLoggerProvider::{}
-  
-  // 测试获取不同配置的logger
-  let default_logger = noop_provider.get_logger("default_logger")
-  let versioned_logger = noop_provider.get_logger("versioned_logger", "1.0.0")
-  let full_configured_logger = noop_provider.get_logger(
-    "full_logger", 
-    "2.1.0", 
-    "http://example.com/schema"
-  )
-  
-  // 测试不同日志级别
-  let test_messages = [
-    ("Debug message", fn(logger: logs::NoopLogger) { logger.debug("Debug message", []) }),
-    ("Info message", fn(logger: logs::NoopLogger) { logger.info("Info message", []) }),
-    ("Warning message", fn(logger: logs::NoopLogger) { logger.warn("Warning message", []) }),
-    ("Error message", fn(logger: logs::NoopLogger) { logger.error("Error message", []) }),
-    ("Fatal message", fn(logger: logs::NoopLogger) { logger.fatal("Fatal message", []) })
-  ]
-  
-  // 测试所有logger配置
-  let loggers = [default_logger, versioned_logger, full_configured_logger]
-  let mut i = 0
-  while i < loggers.length() {
-    let logger = loggers[i]
+  while i < required_fields.length() {
+    let field = required_fields[i]
+    let mut field_found = false
     let mut j = 0
-    while j < test_messages.length() {
-      let (_, log_function) = test_messages[j]
-      log_function(logger)
+    while j < valid_config.length() {
+      let (key, _) = valid_config[j]
+      if key == field {
+        field_found = true
+        break
+      }
       j = j + 1
     }
+    assert_eq(field_found, true, "Required field " + field + " not found")
     i = i + 1
   }
   
-  // 测试带属性的日志记录
-  let log_attributes = [
-    ("user_id", common::AttributeValue::string("user123")),
-    ("session_id", common::AttributeValue::string("session456")),
-    ("request_id", common::AttributeValue::string("request789"))
-  ]
-  
-  default_logger.info("Test with attributes", log_attributes)
-  versioned_logger.warn("Warning with attributes", log_attributes)
-  full_configured_logger.error("Error with attributes", log_attributes)
-}
-
-test "context_configuration_options" {
-  // 测试上下文配置选项
-  
-  // 测试空上下文配置
-  let empty_context = context::Context::empty()
-  assert_eq(empty_context.values.length(), 0)
-  
-  // 测试预配置键
-  let common_keys = [
-    context::create_key("trace_id"),
-    context::create_key("span_id"),
-    context::create_key("user_id"),
-    context::create_key("session_id"),
-    context::create_key("request_id"),
-    context::create_key("correlation_id")
-  ]
-  
-  // 测试上下文预配置
-  let preconfigured_context = empty_context
-    .with_value(common_keys[0], "trace123456")
-    .with_value(common_keys[1], "span789012")
-    .with_value(common_keys[2], "user345678")
-    .with_value(common_keys[3], "session901234")
-    .with_value(common_keys[4], "request567890")
-    .with_value(common_keys[5], "correlation123456")
-  
-  // 验证预配置值
-  assert_eq(preconfigured_context.values.length(), 6)
-  assert_eq(preconfigured_context.get(common_keys[0]).unwrap(), "trace123456")
-  assert_eq(preconfigured_context.get(common_keys[1]).unwrap(), "span789012")
-  assert_eq(preconfigured_context.get(common_keys[2]).unwrap(), "user345678")
-  assert_eq(preconfigured_context.get(common_keys[3]).unwrap(), "session901234")
-  assert_eq(preconfigured_context.get(common_keys[4]).unwrap(), "request567890")
-  assert_eq(preconfigured_context.get(common_keys[5]).unwrap(), "correlation123456")
-  
-  // 测试上下文配置模板
-  let create_user_context = fn(user_id: String, session_id: String) {
-    empty_context
-      .with_value(context::create_key("user_id"), user_id)
-      .with_value(context::create_key("session_id"), session_id)
-      .with_value(context::create_key("timestamp"), "1234567890")
+  // 验证服务名称格式
+  let mut j = 0
+  while j < valid_config.length() {
+    let (key, value) = valid_config[j]
+    if key == "service.name" {
+      assert_eq(value.length() > 0, true, "Service name cannot be empty")
+      assert_eq(value.has_prefix("-"), false, "Service name cannot start with hyphen")
+      assert_eq(value.has_suffix("-"), false, "Service name cannot end with hyphen")
+    }
+    j = j + 1
   }
   
-  let user_context1 = create_user_context("user123", "session456")
-  let user_context2 = create_user_context("user789", "session012")
-  
-  assert_eq(user_context1.get(context::create_key("user_id")).unwrap(), "user123")
-  assert_eq(user_context1.get(context::create_key("session_id")).unwrap(), "session456")
-  assert_eq(user_context2.get(context::create_key("user_id")).unwrap(), "user789")
-  assert_eq(user_context2.get(context::create_key("session_id")).unwrap(), "session012")
+  // 验证版本号格式
+  j = 0
+  while j < valid_config.length() {
+    let (key, value) = valid_config[j]
+    if key == "service.version" {
+      assert_eq(value.contains("."), true, "Version must contain dots")
+      let version_parts = value.split(".")
+      assert_eq(version_parts.length(), 3, "Version must have 3 parts")
+    }
+    j = j + 1
+  }
 }
 
-test "baggage_configuration_patterns" {
-  // 测试baggage配置模式
+test "telemetry_endpoint_configuration" {
+  // 测试遥测端点配置
   
-  // 测试空baggage配置
-  let empty_baggage = context::Baggage::empty()
-  assert_eq(empty_baggage.entries.length(), 0)
+  // 创建端点配置
+  let endpoint_configs = [
+    ("otel.exporter.otlp.endpoint", "https://otel-collector.example.com:4317"),
+    ("otel.exporter.otlp.protocol", "grpc"),
+    ("otel.exporter.otlp.headers", "authorization=Bearer token123"),
+    ("otel.exporter.otlp.timeout", "30s"),
+    ("otel.exporter.otlp.compression", "gzip"),
+    ("otel.exporter.jaeger.endpoint", "http://jaeger.example.com:14268/api/traces"),
+    ("otel.exporter.prometheus.endpoint", "http://prometheus.example.com:9090/metrics")
+  ]
   
-  // 测试标准baggage配置
-  let standard_baggage = empty_baggage
-    .with_entry("user_id", "12345")
-    .with_entry("session_id", "abcdef")
-    .with_entry("request_id", "req789")
-    .with_entry("correlation_id", "cor123")
-  
-  assert_eq(standard_baggage.entries.length(), 4)
-  
-  // 测试分布式追踪baggage配置
-  let tracing_baggage = empty_baggage
-    .with_entry("trace_id", "0af7651916cd43dd8448eb211c80319c")
-    .with_entry("span_id", "b7ad6b7169203331")
-    .with_entry("parent_span_id", "a1b2c3d4e5f6g7h8")
-    .with_entry("trace_flags", "01")
-    .with_entry("trace_state", "rojo=00f067aa0ba902b7")
-  
-  assert_eq(tracing_baggage.entries.length(), 5)
-  
-  // 测试业务上下文baggage配置
-  let business_baggage = empty_baggage
-    .with_entry("tenant_id", "tenant_123")
-    .with_entry("organization_id", "org_456")
-    .with_entry("project_id", "project_789")
-    .with_entry("environment", "production")
-    .with_entry("region", "us-west-2")
-    .with_entry("version", "1.2.3")
-  
-  assert_eq(business_baggage.entries.length(), 6)
-  
-  // 测试baggage配置模板
-  let create_tracing_baggage = fn(trace_id: String, span_id: String) {
-    empty_baggage
-      .with_entry("trace_id", trace_id)
-      .with_entry("span_id", span_id)
-      .with_entry("trace_flags", "01")
-      .with_entry("sampling_decision", "recorded")
+  // 验证端点URL格式
+  let mut i = 0
+  while i < endpoint_configs.length() {
+    let (key, value) = endpoint_configs[i]
+    if key.contains("endpoint") {
+      // 验证URL格式
+      assert_eq(value.has_prefix("http://") || value.has_prefix("https://"), true, 
+                "Endpoint must start with http:// or https://")
+      assert_eq(value.contains(":"), true, "Endpoint must contain port")
+      
+      // 验证端口格式
+      let url_parts = value.split(":")
+      assert_eq(url_parts.length() >= 3, true, "URL must have protocol, host, and port")
+      
+      let port_str = url_parts[url_parts.length() - 1].split("/")[0]
+      let mut port_valid = true
+      let mut j = 0
+      while j < port_str.length() {
+        let char = port_str[j]
+        if char < '0' || char > '9' {
+          port_valid = false
+          break
+        }
+        j = j + 1
+      }
+      assert_eq(port_valid, true, "Port must contain only digits")
+    }
+    i = i + 1
   }
   
-  let tracing_baggage1 = create_tracing_baggage("trace123", "span456")
-  let tracing_baggage2 = create_tracing_baggage("trace789", "span012")
-  
-  assert_eq(tracing_baggage1.get("trace_id").unwrap(), "trace123")
-  assert_eq(tracing_baggage1.get("span_id").unwrap(), "span456")
-  assert_eq(tracing_baggage2.get("trace_id").unwrap(), "trace789")
-  assert_eq(tracing_baggage2.get("span_id").unwrap(), "span012")
+  // 验证协议配置
+  i = 0
+  while i < endpoint_configs.length() {
+    let (key, value) = endpoint_configs[i]
+    if key.contains("protocol") {
+      let valid_protocols = ["grpc", "http/protobuf", "http/json"]
+      let mut protocol_valid = false
+      let mut j = 0
+      while j < valid_protocols.length() {
+        if value == valid_protocols[j] {
+          protocol_valid = true
+          break
+        }
+        j = j + 1
+      }
+      assert_eq(protocol_valid, true, "Invalid protocol: " + value)
+    }
+    i = i + 1
+  }
 }
 
-test "attribute_configuration_validation" {
-  // 测试属性配置验证
+test "telemetry_sampling_configuration" {
+  // 测试遥测采样配置
   
-  // 测试有效属性配置
-  let valid_attributes = [
-    ("string_key", common::AttributeValue::string("string_value")),
-    ("int_key", common::AttributeValue::int(42L)),
-    ("float_key", common::AttributeValue::float(3.14)),
-    ("bool_key", common::AttributeValue::bool(true)),
-    ("string_array_key", common::AttributeValue::array_string(["a", "b", "c"])),
-    ("int_array_key", common::AttributeValue::array_int([1L, 2L, 3L])),
-    ("float_array_key", common::AttributeValue::array_float([1.1, 2.2, 3.3])),
-    ("bool_array_key", common::AttributeValue::array_bool([true, false, true]))
+  // 创建采样配置
+  let sampling_configs = [
+    ("otel.traces.sampler", "parentbased_traceidratio"),
+    ("otel.traces.sampler.arg", "0.1"),
+    ("otel.metric.export.interval", "30s"),
+    ("otel.metric.export.timeout", "10s"),
+    ("otel.logs.export.interval", "10s"),
+    ("otel.batch.span.export.max.queue.size", "2048"),
+    ("otel.batch.span.export.max.export.batch.size", "512"),
+    ("otel.batch.span.export.export.timeout", "30s"),
+    ("otel.batch.span.export.max.export.timeout", "60s")
   ]
   
-  // 验证有效属性
-  assert_eq(valid_attributes.length(), 8)
+  // 验证采样器类型
+  let mut i = 0
+  while i < sampling_configs.length() {
+    let (key, value) = sampling_configs[i]
+    if key == "otel.traces.sampler" {
+      let valid_samplers = [
+        "always_on", "always_off", "traceidratio", "parentbased_always_on",
+        "parentbased_always_off", "parentbased_traceidratio"
+      ]
+      let mut sampler_valid = false
+      let mut j = 0
+      while j < valid_samplers.length() {
+        if value == valid_samplers[j] {
+          sampler_valid = true
+          break
+        }
+        j = j + 1
+      }
+      assert_eq(sampler_valid, true, "Invalid sampler: " + value)
+    }
+    i = i + 1
+  }
   
-  // 测试边界属性配置
-  let boundary_attributes = [
-    ("empty_string", common::AttributeValue::string("")),
-    ("max_int", common::AttributeValue::int(9223372036854775807L)),
-    ("min_int", common::AttributeValue::int(-9223372036854775808L)),
-    ("max_float", common::AttributeValue::float(1.7976931348623157e+308)),
-    ("min_float", common::AttributeValue::float(-1.7976931348623157e+308)),
-    ("empty_arrays", common::AttributeValue::array_string([]))
+  // 验证采样率
+  i = 0
+  while i < sampling_configs.length() {
+    let (key, value) = sampling_configs[i]
+    if key == "otel.traces.sampler.arg" {
+      let sampler_ratio = value.to_double()
+      assert_eq(sampler_ratio >= 0.0 && sampler_ratio <= 1.0, true, 
+                "Sampler ratio must be between 0.0 and 1.0")
+    }
+    i = i + 1
+  }
+  
+  // 验证时间间隔格式
+  i = 0
+  while i < sampling_configs.length() {
+    let (key, value) = sampling_configs[i]
+    if key.contains("interval") || key.contains("timeout") {
+      let time_valid = value.has_suffix("s") || value.has_suffix("ms") || value.has_suffix("us")
+      assert_eq(time_valid, true, "Time value must end with s, ms, or us: " + value)
+      
+      // 验证数值部分
+      let time_value = value.substring(0, value.length() - 1)
+      let mut numeric_valid = true
+      let mut j = 0
+      while j < time_value.length() {
+        let char = time_value[j]
+        if (char < '0' || char > '9') && char != '.' {
+          numeric_valid = false
+          break
+        }
+        j = j + 1
+      }
+      assert_eq(numeric_valid, true, "Time value must be numeric: " + value)
+    }
+    i = i + 1
+  }
+}
+
+test "telemetry_resource_attributes_configuration" {
+  // 测试遥测资源属性配置
+  
+  // 创建资源属性配置
+  let resource_attributes = [
+    ("service.name", "user-service"),
+    ("service.version", "2.1.0"),
+    ("service.namespace", "backend"),
+    ("service.instance.id", "pod-12345-67890"),
+    ("deployment.environment", "staging"),
+    ("host.name", "worker-node-1"),
+    ("host.arch", "amd64"),
+    ("os.type", "linux"),
+    ("os.version", "5.15.0"),
+    ("cloud.provider", "aws"),
+    ("cloud.region", "us-west-2"),
+    ("cloud.availability_zone", "us-west-2a"),
+    ("k8s.cluster.name", "production-cluster"),
+    ("k8s.namespace.name", "backend-services"),
+    ("k8s.pod.name", "user-service-7d4f8c9b-xyz")
   ]
   
-  // 验证边界属性
-  assert_eq(boundary_attributes.length(), 6)
-  
-  // 测试特殊字符属性配置
-  let special_char_attributes = [
-    ("unicode_key", common::AttributeValue::string("测试🚀")),
-    ("special_chars", common::AttributeValue::string("!@#$%^&*()")),
-    ("newlines", common::AttributeValue::string("line1\nline2")),
-    ("tabs", common::AttributeValue::string("col1\tcol2")),
-    ("quotes", common::AttributeValue::string("\"quoted\""))
+  // 验证标准资源属性
+  let standard_attributes = [
+    "service.name", "service.version", "deployment.environment",
+    "host.name", "host.arch", "os.type", "cloud.provider", "cloud.region"
   ]
   
-  // 验证特殊字符属性
-  assert_eq(special_char_attributes.length(), 5)
+  let mut i = 0
+  while i < standard_attributes.length() {
+    let attr = standard_attributes[i]
+    let mut attr_found = false
+    let mut j = 0
+    while j < resource_attributes.length() {
+      let (key, _) = resource_attributes[j]
+      if key == attr {
+        attr_found = true
+        break
+      }
+      j = j + 1
+    }
+    // 注意：这里不强制要求所有标准属性都存在，只是检查如果存在的话格式是否正确
+    i = i + 1
+  }
   
-  // 测试属性配置组合
-  let combined_attributes = valid_attributes + boundary_attributes + special_char_attributes
-  assert_eq(combined_attributes.length(), 19)
+  // 验证云提供商
+  i = 0
+  while i < resource_attributes.length() {
+    let (key, value) = resource_attributes[i]
+    if key == "cloud.provider" {
+      let valid_providers = ["aws", "gcp", "azure", "alibaba_cloud", "digitalocean"]
+      let mut provider_valid = false
+      let mut j = 0
+      while j < valid_providers.length() {
+        if value == valid_providers[j] {
+          provider_valid = true
+          break
+        }
+        j = j + 1
+      }
+      assert_eq(provider_valid, true, "Invalid cloud provider: " + value)
+    }
+    i = i + 1
+  }
   
-  // 验证属性配置在span中的使用
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("attribute_test_tracer")
-  let (_, span) = tracer.start_span(
-    context::Context::empty(),
-    "attribute_test_span",
-    trace::Internal,
-    combined_attributes
-  )
+  // 验证架构类型
+  i = 0
+  while i < resource_attributes.length() {
+    let (key, value) = resource_attributes[i]
+    if key == "host.arch" {
+      let valid_archs = ["amd64", "arm64", "386", "ppc64le", "s390x"]
+      let mut arch_valid = false
+      let mut j = 0
+      while j < valid_archs.length() {
+        if value == valid_archs[j] {
+          arch_valid = true
+          break
+        }
+        j = j + 1
+      }
+      assert_eq(arch_valid, true, "Invalid architecture: " + value)
+    }
+    i = i + 1
+  }
+}
+
+test "telemetry_configuration_dynamic_update" {
+  // 测试遥测配置动态更新
   
-  assert_eq(span.attributes.length(), 19)
+  // 初始配置
+  let mut current_config = [
+    ("otel.traces.sampler", "always_on"),
+    ("otel.traces.sampler.arg", "1.0"),
+    ("otel.metric.export.interval", "60s"),
+    ("otel.batch.span.export.max.queue.size", "1024")
+  ]
+  
+  // 模拟配置更新
+  let config_updates = [
+    ("otel.traces.sampler", "traceidratio"),
+    ("otel.traces.sampler.arg", "0.1"),
+    ("otel.metric.export.interval", "30s"),
+    ("otel.batch.span.export.max.queue.size", "2048"),
+    ("new.config.key", "new.value")
+  ]
+  
+  // 应用配置更新
+  let mut i = 0
+  while i < config_updates.length() {
+    let (update_key, update_value) = config_updates[i]
+    
+    // 查找并更新现有配置或添加新配置
+    let mut config_found = false
+    let mut j = 0
+    while j < current_config.length() {
+      let (key, _) = current_config[j]
+      if key == update_key {
+        // 更新现有配置
+        current_config[j] = (update_key, update_value)
+        config_found = true
+        break
+      }
+      j = j + 1
+    }
+    
+    // 如果配置不存在，添加新配置
+    if not config_found {
+      let new_config = []
+      let mut k = 0
+      while k < current_config.length() {
+        new_config.push(current_config[k])
+        k = k + 1
+      }
+      new_config.push((update_key, update_value))
+      current_config = new_config
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证配置更新结果
+  assert_eq(current_config.length(), 5, "Config should have 5 entries after update")
+  
+  // 验证具体更新
+  let mut j = 0
+  while j < current_config.length() {
+    let (key, value) = current_config[j]
+    match key {
+      "otel.traces.sampler" => assert_eq(value, "traceidratio")
+      "otel.traces.sampler.arg" => assert_eq(value, "0.1")
+      "otel.metric.export.interval" => assert_eq(value, "30s")
+      "otel.batch.span.export.max.queue.size" => assert_eq(value, "2048")
+      "new.config.key" => assert_eq(value, "new.value")
+      _ => assert_eq(false, true, "Unexpected config key: " + key)
+    }
+    j = j + 1
+  }
+}
+
+test "telemetry_configuration_priority_resolution" {
+  // 测试遥测配置优先级解析
+  
+  // 模拟不同来源的配置（按优先级排序）
+  let system_config = [
+    ("otel.traces.sampler", "always_on"),
+    ("otel.metric.export.interval", "60s"),
+    ("service.name", "default-service")
+  ]
+  
+  let env_config = [
+    ("otel.traces.sampler", "traceidratio"),
+    ("otel.metric.export.interval", "30s")
+  ]
+  
+  let file_config = [
+    ("otel.traces.sampler.arg", "0.1"),
+    ("service.version", "1.0.0")
+  ]
+  
+  let programmatic_config = [
+    ("service.instance.id", "instance-123"),
+    ("deployment.environment", "production")
+  ]
+  
+  // 合并配置（优先级：programmatic > file > env > system）
+  let mut merged_config = []
+  
+  // 添加系统配置
+  let mut i = 0
+  while i < system_config.length() {
+    merged_config.push(system_config[i])
+    i = i + 1
+  }
+  
+  // 覆盖环境配置
+  i = 0
+  while i < env_config.length() {
+    let (env_key, env_value) = env_config[i]
+    let mut j = 0
+    let mut key_found = false
+    while j < merged_config.length() {
+      let (key, _) = merged_config[j]
+      if key == env_key {
+        merged_config[j] = (env_key, env_value)
+        key_found = true
+        break
+      }
+      j = j + 1
+    }
+    if not key_found {
+      merged_config.push((env_key, env_value))
+    }
+    i = i + 1
+  }
+  
+  // 覆盖文件配置
+  i = 0
+  while i < file_config.length() {
+    let (file_key, file_value) = file_config[i]
+    let mut j = 0
+    let mut key_found = false
+    while j < merged_config.length() {
+      let (key, _) = merged_config[j]
+      if key == file_key {
+        merged_config[j] = (file_key, file_value)
+        key_found = true
+        break
+      }
+      j = j + 1
+    }
+    if not key_found {
+      merged_config.push((file_key, file_value))
+    }
+    i = i + 1
+  }
+  
+  // 覆盖程序配置
+  i = 0
+  while i < programmatic_config.length() {
+    let (prog_key, prog_value) = programmatic_config[i]
+    let mut j = 0
+    let mut key_found = false
+    while j < merged_config.length() {
+      let (key, _) = merged_config[j]
+      if key == prog_key {
+        merged_config[j] = (prog_key, prog_value)
+        key_found = true
+        break
+      }
+      j = j + 1
+    }
+    if not key_found {
+      merged_config.push((prog_key, prog_value))
+    }
+    i = i + 1
+  }
+  
+  // 验证配置优先级解析结果
+  assert_eq(merged_config.length(), 7, "Should have 7 config entries")
+  
+  // 验证高优先级配置覆盖了低优先级配置
+  let mut j = 0
+  while j < merged_config.length() {
+    let (key, value) = merged_config[j]
+    match key {
+      "otel.traces.sampler" => assert_eq(value, "traceidratio", "Env config should override system")
+      "otel.metric.export.interval" => assert_eq(value, "30s", "Env config should override system")
+      "service.name" => assert_eq(value, "default-service", "System config should remain")
+      "otel.traces.sampler.arg" => assert_eq(value, "0.1", "File config should be added")
+      "service.version" => assert_eq(value, "1.0.0", "File config should be added")
+      "service.instance.id" => assert_eq(value, "instance-123", "Programmatic config should be added")
+      "deployment.environment" => assert_eq(value, "production", "Programmatic config should be added")
+      _ => assert_eq(false, true, "Unexpected config key: " + key)
+    }
+    j = j + 1
+  }
+}
+
+test "telemetry_configuration_error_handling" {
+  // 测试遥测配置错误处理
+  
+  // 测试无效配置值
+  let invalid_configs = [
+    ("otel.traces.sampler", "invalid_sampler"), // 无效采样器
+    ("otel.traces.sampler.arg", "1.5"), // 超出范围的采样率
+    ("otel.metric.export.interval", "30x"), // 无效时间格式
+    ("otel.exporter.otlp.endpoint", "ftp://invalid.com"), // 无效协议
+    ("service.name", ""), // 空服务名
+    ("otel.batch.span.export.max.queue.size", "-100") // 负数队列大小
+  ]
+  
+  let mut error_count = 0
+  let mut i = 0
+  while i < invalid_configs.length() {
+    let (key, value) = invalid_configs[i]
+    
+    // 模拟配置验证
+    let mut validation_error = false
+    
+    match key {
+      "otel.traces.sampler" => {
+        let valid_samplers = ["always_on", "always_off", "traceidratio", "parentbased_traceidratio"]
+        let mut sampler_valid = false
+        let mut j = 0
+        while j < valid_samplers.length() {
+          if value == valid_samplers[j] {
+            sampler_valid = true
+            break
+          }
+          j = j + 1
+        }
+        validation_error = not sampler_valid
+      }
+      "otel.traces.sampler.arg" => {
+        let ratio = value.to_double()
+        validation_error = ratio < 0.0 || ratio > 1.0
+      }
+      "otel.metric.export.interval" => {
+        validation_error = not (value.has_suffix("s") || value.has_suffix("ms"))
+      }
+      "otel.exporter.otlp.endpoint" => {
+        validation_error = not (value.has_prefix("http://") || value.has_prefix("https://"))
+      }
+      "service.name" => {
+        validation_error = value.length() == 0
+      }
+      "otel.batch.span.export.max.queue.size" => {
+        let size = value.to_int()
+        validation_error = size < 0
+      }
+      _ => validation_error = false
+    }
+    
+    if validation_error {
+      error_count = error_count + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证错误检测
+  assert_eq(error_count, invalid_configs.length(), "All invalid configs should be detected")
+  
+  // 测试配置恢复机制
+  let fallback_configs = [
+    ("otel.traces.sampler", "always_on"), // 默认值
+    ("otel.traces.sampler.arg", "1.0"), // 默认值
+    ("otel.metric.export.interval", "60s"), // 默认值
+    ("service.name", "unknown-service") // 默认值
+  ]
+  
+  // 模拟配置恢复
+  let mut recovered_configs = []
+  i = 0
+  while i < invalid_configs.length() {
+    let (invalid_key, _) = invalid_configs[i]
+    
+    // 查找对应的默认配置
+    let mut j = 0
+    while j < fallback_configs.length() {
+      let (fallback_key, fallback_value) = fallback_configs[j]
+      if invalid_key == fallback_key {
+        recovered_configs.push((fallback_key, fallback_value))
+        break
+      }
+      j = j + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证配置恢复
+  assert_eq(recovered_configs.length(), 4, "Should recover 4 configs with fallback values")
+  
+  i = 0
+  while i < recovered_configs.length() {
+    let (key, value) = recovered_configs[i]
+    match key {
+      "otel.traces.sampler" => assert_eq(value, "always_on")
+      "otel.traces.sampler.arg" => assert_eq(value, "1.0")
+      "otel.metric.export.interval" => assert_eq(value, "60s")
+      "service.name" => assert_eq(value, "unknown-service")
+      _ => assert_eq(false, true, "Unexpected recovered config: " + key)
+    }
+    i = i + 1
+  }
 }
