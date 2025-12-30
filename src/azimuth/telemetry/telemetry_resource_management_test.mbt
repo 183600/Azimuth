@@ -1,559 +1,448 @@
 // 遥测资源管理测试用例
-// 测试遥测系统的资源管理功能
+// 测试遥测资源的生命周期管理、内存优化和资源清理
 
-test "telemetry_memory_pool_management" {
-  // 测试遥测内存池管理
+test "resource_lifecycle_management" {
+  // 测试资源生命周期管理
   
-  let pool_sizes = [1024, 2048, 4096, 8192] // 字节
-  let pool_allocations = [
-    (1024, 800),  // 池大小，已分配
-    (2048, 1500),
-    (4096, 3000),
-    (8192, 6000)
+  let resource_creation_events = [
+    ("resource_created", 1640995200000L),
+    ("resource_initialized", 1640995200100L),
+    ("resource_configured", 1640995200200L),
+    ("resource_active", 1640995200300L),
+    ("resource_deactivating", 1640995100000L),
+    ("resource_cleanup_started", 1640995100100L),
+    ("resource_cleanup_completed", 1640995100200L),
+    ("resource_destroyed", 1640995100300L)
   ]
   
-  // 验证池大小
-  assert_eq(pool_sizes.length(), 4)
-  assert_eq(pool_sizes[0], 1024)
-  assert_eq(pool_sizes[3], 8192)
-  
-  // 验证池分配
-  assert_eq(pool_allocations.length(), 4)
-  assert_eq(pool_allocations[0].0, 1024)
-  assert_eq(pool_allocations[0].1, 800)
-  
-  // 计算内存利用率
-  let mut utilization_rates = []
+  // 验证资源生命周期事件顺序
   let mut i = 0
-  while i < pool_allocations.length() {
-    let pool_size = pool_allocations[i].0
-    let allocated = pool_allocations[i].1
-    let utilization = allocated.to_double() / pool_size.to_double()
+  while i < resource_creation_events.length() - 1 {
+    let current_event = resource_creation_events[i]
+    let next_event = resource_creation_events[i + 1]
     
-    utilization_rates.push(utilization)
-    i = i + 1
-  }
-  
-  // 验证利用率计算
-  assert_eq(utilization_rates.length(), 4)
-  assert_eq(utilization_rates[0] > 0.7, true)  // 800/1024 ≈ 0.78
-  assert_eq(utilization_rates[1] > 0.7, true)  // 1500/2048 ≈ 0.73
-  assert_eq(utilization_rates[2] > 0.7, true)  // 3000/4096 ≈ 0.73
-  assert_eq(utilization_rates[3] > 0.7, true)  // 6000/8192 ≈ 0.73
-  
-  // 验证所有利用率都在合理范围内
-  i = 0
-  while i < utilization_rates.length() {
-    assert_eq(utilization_rates[i] >= 0.0, true)
-    assert_eq(utilization_rates[i] <= 1.0, true)
-    i = i + 1
-  }
-}
-
-test "telemetry_connection_pool_management" {
-  // 测试遥测连接池管理
-  
-  let pool_config = [
-    ("max_connections", 10),
-    ("min_connections", 2),
-    ("connection_timeout", 30000),
-    ("idle_timeout", 60000)
-  ]
-  
-  let active_connections = [
-    ("collector1", true, 1640995200L),
-    ("collector2", true, 1640995260L),
-    ("collector3", false, 1640995320L),
-    ("collector4", true, 1640995380L)
-  ]
-  
-  // 验证池配置
-  assert_eq(pool_config.length(), 4)
-  assert_eq(pool_config[0].1, 10)
-  assert_eq(pool_config[1].1, 2)
-  
-  // 验证活动连接
-  assert_eq(active_connections.length(), 4)
-  assert_eq(active_connections[0].0, "collector1")
-  assert_eq(active_connections[0].1, true)
-  assert_eq(active_connections[2].1, false)
-  
-  // 计算连接统计
-  let mut active_count = 0
-  let mut inactive_count = 0
-  let mut i = 0
-  while i < active_connections.length() {
-    if active_connections[i].1 {
-      active_count = active_count + 1
-    } else {
-      inactive_count = inactive_count + 1
+    // 验证事件时间戳递增（创建阶段）或递减（销毁阶段）
+    if i < 4 {
+      // 创建阶段：时间戳应该递增
+      assert_eq(current_event.1 < next_event.1, true)
+    } else if i >= 4 {
+      // 销毁阶段：时间戳应该递增（但绝对时间更小）
+      assert_eq(current_event.1 < next_event.1, true)
     }
+    
     i = i + 1
   }
   
-  // 验证连接统计
-  assert_eq(active_count, 3)
-  assert_eq(inactive_count, 1)
-  assert_eq(active_count + inactive_count, active_connections.length())
-  
-  // 验证连接池容量
-  let max_connections = pool_config[0].1
-  let min_connections = pool_config[1].1
-  assert_eq(active_count <= max_connections, true)
-  assert_eq(active_count >= min_connections, true)
-}
-
-test "telemetry_thread_pool_management" {
-  // 测试遥测线程池管理
-  
-  let thread_pool_sizes = [
-    ("metrics_processor", 4),
-    ("trace_collector", 2),
-    ("log_shipper", 3),
-    ("export_worker", 5)
+  // 验证资源状态转换
+  let resource_states = ["created", "initialized", "configured", "active", "deactivating", "cleanup_started", "cleanup_completed", "destroyed"]
+  let valid_transitions = [
+    ("created", "initialized"),
+    ("initialized", "configured"),
+    ("configured", "active"),
+    ("active", "deactivating"),
+    ("deactivating", "cleanup_started"),
+    ("cleanup_started", "cleanup_completed"),
+    ("cleanup_completed", "destroyed")
   ]
   
-  let thread_tasks = [
-    ("metrics_processor", 8),
-    ("trace_collector", 3),
-    ("log_shipper", 6),
-    ("export_worker", 10)
-  ]
-  
-  // 验证线程池大小
-  assert_eq(thread_pool_sizes.length(), 4)
-  assert_eq(thread_pool_sizes[0].0, "metrics_processor")
-  assert_eq(thread_pool_sizes[0].1, 4)
-  
-  // 验证线程任务
-  assert_eq(thread_tasks.length(), 4)
-  assert_eq(thread_tasks[0].0, "metrics_processor")
-  assert_eq(thread_tasks[0].1, 8)
-  
-  // 计算任务队列长度
-  let mut queue_lengths = []
-  let mut i = 0
-  while i < thread_pool_sizes.length() {
-    let pool_name = thread_pool_sizes[i].0
-    let pool_size = thread_pool_sizes[i].1
+  // 验证每个状态转换都是有效的
+  i = 0
+  while i < resource_creation_events.length() - 1 {
+    let current_state = resource_creation_events[i].0.replace("resource_", "")
+    let next_state = resource_creation_events[i + 1].0.replace("resource_", "")
     
-    // 查找对应的任务数
-    let mut task_count = 0
+    let mut valid_transition = false
     let mut j = 0
-    while j < thread_tasks.length() {
-      if thread_tasks[j].0 == pool_name {
-        task_count = thread_tasks[j].1
+    while j < valid_transitions.length() {
+      let (from_state, to_state) = valid_transitions[j]
+      if current_state == from_state && next_state == to_state {
+        valid_transition = true
         break
       }
       j = j + 1
     }
     
-    let queue_length = task_count - pool_size
-    queue_lengths.push((pool_name, pool_size, task_count, queue_length))
+    assert_eq(valid_transition, true, "Invalid state transition: " + current_state + " -> " + next_state)
     i = i + 1
   }
-  
-  // 验证队列长度
-  assert_eq(queue_lengths.length(), 4)
-  assert_eq(queue_lengths[0].3, 4)  // 8 - 4 = 4
-  assert_eq(queue_lengths[1].3, 1)  // 3 - 2 = 1
-  assert_eq(queue_lengths[2].3, 3)  // 6 - 3 = 3
-  assert_eq(queue_lengths[3].3, 5)  // 10 - 5 = 5
 }
 
-test "telemetry_buffer_management" {
-  // 测试遥测缓冲区管理
+test "memory_pool_management" {
+  // 测试内存池管理
   
-  let buffer_configs = [
-    ("trace_buffer", 1024, 512),
-    ("metric_buffer", 2048, 1024),
-    ("log_buffer", 4096, 2048),
-    ("config_buffer", 512, 256)
+  let pool_config = {
+    "initial_size": 100,
+    "max_size": 1000,
+    "growth_factor": 1.5,
+    "shrink_threshold": 0.25,
+    "allocation_unit_size": 1024 // bytes
+  }
+  
+  // 模拟内存池操作
+  let mut pool_operations = []
+  let mut current_pool_size = pool_config["initial_size"]
+  let mut allocated_objects = 0
+  let mut total_allocations = 0
+  let mut total_deallocations = 0
+  
+  // 模拟分配和释放操作
+  let operations = [
+    ("allocate", 50),
+    ("allocate", 100),
+    ("allocate", 200),
+    ("deallocate", 75),
+    ("allocate", 300),
+    ("deallocate", 150),
+    ("allocate", 400),
+    ("deallocate", 200),
+    ("allocate", 100),
+    ("deallocate", 425)
   ]
   
-  let buffer_usage = [
-    ("trace_buffer", 400),
-    ("metric_buffer", 800),
-    ("log_buffer", 1500),
-    ("config_buffer", 200)
-  ]
-  
-  // 验证缓冲区配置
-  assert_eq(buffer_configs.length(), 4)
-  assert_eq(buffer_configs[0].0, "trace_buffer")
-  assert_eq(buffer_configs[0].1, 1024) // 容量
-  assert_eq(buffer_configs[0].2, 512)  // 高水位标记
-  
-  // 验证缓冲区使用
-  assert_eq(buffer_usage.length(), 4)
-  assert_eq(buffer_usage[0].0, "trace_buffer")
-  assert_eq(buffer_usage[0].1, 400)
-  
-  // 计算缓冲区利用率
-  let mut buffer_stats = []
   let mut i = 0
-  while i < buffer_configs.length() {
-    let buffer_name = buffer_configs[i].0
-    let capacity = buffer_configs[i].1
-    let high_water_mark = buffer_configs[i].2
+  while i < operations.length() {
+    let (op_type, count) = operations[i]
     
-    // 查找使用量
-    let mut usage = 0
-    let mut j = 0
-    while j < buffer_usage.length() {
-      if buffer_usage[j].0 == buffer_name {
-        usage = buffer_usage[j].1
-        break
+    match op_type {
+      "allocate" => {
+        let required_capacity = allocated_objects + count
+        
+        // 检查是否需要扩展池
+        if required_capacity > current_pool_size {
+          let new_size = (required_capacity.to_double() * pool_config["growth_factor"]).to_int()
+          current_pool_size = new_size.min(pool_config["max_size"])
+        }
+        
+        allocated_objects = allocated_objects + count
+        total_allocations = total_allocations + count
       }
-      j = j + 1
-    }
-    
-    let utilization = usage.to_double() / capacity.to_double()
-    let is_above_high_water = usage > high_water_mark
-    
-    buffer_stats.push((buffer_name, capacity, usage, utilization, is_above_high_water))
-    i = i + 1
-  }
-  
-  // 验证缓冲区统计
-  assert_eq(buffer_stats.length(), 4)
-  assert_eq(buffer_stats[0].2, 400)
-  assert_eq(buffer_stats[0].3 < 0.5, true)  // 400/1024 ≈ 0.39
-  assert_eq(buffer_stats[0].4, false)      // 400 < 512
-  
-  assert_eq(buffer_stats[2].2, 1500)
-  assert_eq(buffer_stats[2].3 > 0.3, true)  // 1500/4096 ≈ 0.37
-  assert_eq(buffer_stats[2].4, false)      // 1500 < 2048
-}
-
-test "telemetry_file_descriptor_management" {
-  // 测试遥测文件描述符管理
-  
-  let fd_allocations = [
-    ("log_file", 3),
-    ("config_file", 1),
-    ("socket_connection", 2),
-    ("temp_file", 1)
-  ]
-  
-  let fd_limits = [
-    ("process_limit", 1024),
-    ("system_limit", 65536),
-    ("telemetry_limit", 100)
-  ]
-  
-  // 验证文件描述符分配
-  assert_eq(fd_allocations.length(), 4)
-  assert_eq(fd_allocations[0].0, "log_file")
-  assert_eq(fd_allocations[0].1, 3)
-  
-  // 验证文件描述符限制
-  assert_eq(fd_limits.length(), 3)
-  assert_eq(fd_limits[0].0, "process_limit")
-  assert_eq(fd_limits[0].1, 1024)
-  
-  // 计算文件描述符使用统计
-  let mut total_fd_used = 0
-  let mut i = 0
-  while i < fd_allocations.length() {
-    total_fd_used = total_fd_used + fd_allocations[i].1
-    i = i + 1
-  }
-  
-  // 验证总使用量
-  assert_eq(total_fd_used, 7) // 3 + 1 + 2 + 1 = 7
-  
-  // 检查是否超过限制
-  let mut telemetry_limit = 0
-  i = 0
-  while i < fd_limits.length() {
-    if fd_limits[i].0 == "telemetry_limit" {
-      telemetry_limit = fd_limits[i].1
-      break
-    }
-    i = i + 1
-  }
-  
-  assert_eq(total_fd_used <= telemetry_limit, true)
-  
-  // 计算使用率
-  let fd_utilization = total_fd_used.to_double() / telemetry_limit.to_double()
-  assert_eq(fd_utilization, 0.07) // 7/100 = 0.07
-}
-
-test "telemetry_cpu_resource_management" {
-  // 测试遥测CPU资源管理
-  
-  let cpu_cores = 4
-  let cpu_allocations = [
-    ("metrics_processing", 1.5),
-    ("trace_collection", 0.5),
-    ("log_shipping", 1.0),
-    ("data_export", 0.8)
-  ]
-  
-  let cpu_thresholds = [
-    ("warning", 0.7),
-    ("critical", 0.9),
-    ("emergency", 0.95)
-  ]
-  
-  // 验证CPU核心数
-  assert_eq(cpu_cores, 4)
-  
-  // 验证CPU分配
-  assert_eq(cpu_allocations.length(), 4)
-  assert_eq(cpu_allocations[0].0, "metrics_processing")
-  assert_eq(cpu_allocations[0].1, 1.5)
-  
-  // 计算CPU使用统计
-  let mut total_cpu_used = 0.0
-  let mut i = 0
-  while i < cpu_allocations.length() {
-    total_cpu_used = total_cpu_used + cpu_allocations[i].1
-    i = i + 1
-  }
-  
-  // 验证总CPU使用
-  assert_eq(total_cpu_used, 3.8) // 1.5 + 0.5 + 1.0 + 0.8 = 3.8
-  
-  // 计算CPU利用率
-  let cpu_utilization = total_cpu_used / cpu_cores.to_double()
-  assert_eq(cpu_utilization, 0.95) // 3.8/4 = 0.95
-  
-  // 检查CPU阈值
-  let mut warning_threshold = 0.0
-  let mut critical_threshold = 0.0
-  let mut emergency_threshold = 0.0
-  
-  i = 0
-  while i < cpu_thresholds.length() {
-    match cpu_thresholds[i].0 {
-      "warning" => warning_threshold = cpu_thresholds[i].1
-      "critical" => critical_threshold = cpu_thresholds[i].1
-      "emergency" => emergency_threshold = cpu_thresholds[i].1
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  // 验证阈值检查
-  assert_eq(cpu_utilization > warning_threshold, true)
-  assert_eq(cpu_utilization > critical_threshold, true)
-  assert_eq(cpu_utilization >= emergency_threshold, true)
-}
-
-test "telemetry_disk_space_management" {
-  // 测试遥测磁盘空间管理
-  
-  let disk_partitions = [
-    ("/var/log", 1024, 800), // 路径，总容量MB，已使用MB
-    ("/tmp", 512, 200),
-    ("/opt/telemetry", 2048, 1024),
-    ("/home", 4096, 2048)
-  ]
-  
-  let retention_policies = [
-    ("log_retention_days", 7),
-    ("metric_retention_days", 30),
-    ("trace_retention_days", 14),
-    ("cleanup_threshold_percent", 80)
-  ]
-  
-  // 验证磁盘分区
-  assert_eq(disk_partitions.length(), 4)
-  assert_eq(disk_partitions[0].0, "/var/log")
-  assert_eq(disk_partitions[0].1, 1024)
-  assert_eq(disk_partitions[0].2, 800)
-  
-  // 验证保留策略
-  assert_eq(retention_policies.length(), 4)
-  assert_eq(retention_policies[0].1, 7)
-  
-  // 计算磁盘使用统计
-  let mut disk_stats = []
-  let mut i = 0
-  while i < disk_partitions.length() {
-    let path = disk_partitions[i].0
-    let total_capacity = disk_partitions[i].1
-    let used_space = disk_partitions[i].2
-    let free_space = total_capacity - used_space
-    let utilization = used_space.to_double() / total_capacity.to_double()
-    
-    disk_stats.push((path, total_capacity, used_space, free_space, utilization))
-    i = i + 1
-  }
-  
-  // 验证磁盘统计
-  assert_eq(disk_stats.length(), 4)
-  assert_eq(disk_stats[0].3, 224) // 1024 - 800 = 224
-  assert_eq(disk_stats[0].4, 0.78) // 800/1024 ≈ 0.78
-  
-  // 检查清理阈值
-  let mut cleanup_threshold = 0.0
-  i = 0
-  while i < retention_policies.length() {
-    if retention_policies[i].0 == "cleanup_threshold_percent" {
-      cleanup_threshold = retention_policies[i].1 / 100.0
-      break
-    }
-    i = i + 1
-  }
-  
-  // 验证清理阈值检查
-  assert_eq(cleanup_threshold, 0.8)
-  assert_eq(disk_stats[0].4 < cleanup_threshold, true) // 0.78 < 0.8
-  assert_eq(disk_stats[2].4, 0.5) // 1024/2048 = 0.5
-}
-
-test "telemetry_network_bandwidth_management" {
-  // 测试遥测网络带宽管理
-  
-  let network_interfaces = [
-    ("eth0", 1000000, 500000), // 接口，总带宽bps，已使用带宽bps
-    ("wlan0", 500000, 200000),
-    ("docker0", 100000, 50000)
-  ]
-  
-  let bandwidth_limits = [
-    ("telemetry_max_bps", 200000),
-    ("burst_allowance", 50000),
-    ("throttle_threshold", 0.8)
-  ]
-  
-  // 验证网络接口
-  assert_eq(network_interfaces.length(), 3)
-  assert_eq(network_interfaces[0].0, "eth0")
-  assert_eq(network_interfaces[0].1, 1000000)
-  
-  // 验证带宽限制
-  assert_eq(bandwidth_limits.length(), 3)
-  assert_eq(bandwidth_limits[0].1, 200000)
-  
-  // 计算带宽使用统计
-  let mut bandwidth_stats = []
-  let mut i = 0
-  while i < network_interfaces.length() {
-    let interface = network_interfaces[i].0
-    let total_bandwidth = network_interfaces[i].1
-    let used_bandwidth = network_interfaces[i].2
-    let available_bandwidth = total_bandwidth - used_bandwidth
-    let utilization = used_bandwidth.to_double() / total_bandwidth.to_double()
-    
-    bandwidth_stats.push((interface, total_bandwidth, used_bandwidth, available_bandwidth, utilization))
-    i = i + 1
-  }
-  
-  // 验证带宽统计
-  assert_eq(bandwidth_stats.length(), 3)
-  assert_eq(bandwidth_stats[0].3, 500000) // 1000000 - 500000 = 500000
-  assert_eq(bandwidth_stats[0].4, 0.5)     // 500000/1000000 = 0.5
-  
-  // 检查带宽限制
-  let mut telemetry_max_bps = 0
-  let mut throttle_threshold = 0.0
-  i = 0
-  while i < bandwidth_limits.length() {
-    match bandwidth_limits[i].0 {
-      "telemetry_max_bps" => telemetry_max_bps = bandwidth_limits[i].1
-      "throttle_threshold" => throttle_threshold = bandwidth_limits[i].1
-      _ => ()
-    }
-    i = i + 1
-  }
-  
-  // 验证带宽限制检查
-  assert_eq(telemetry_max_bps, 200000)
-  assert_eq(throttle_threshold, 0.8)
-  
-  // 检查是否需要限流
-  i = 0
-  while i < bandwidth_stats.length() {
-    let utilization = bandwidth_stats[i].4
-    let should_throttle = utilization > throttle_threshold
-    assert_eq(should_throttle, false) // 所有接口利用率都低于80%
-    i = i + 1
-  }
-}
-
-test "telemetry_resource_monitoring" {
-  // 测试遥测资源监控
-  
-  let resource_metrics = [
-    ("memory_usage", 75.5),
-    ("cpu_usage", 45.2),
-    ("disk_usage", 60.8),
-    ("network_usage", 30.1)
-  ]
-  
-  let monitoring_intervals = [
-    ("real_time", 1),      // 秒
-    ("near_real_time", 5), // 秒
-    ("periodic", 60),      // 秒
-    ("batch", 300)         // 秒
-  ]
-  
-  let alert_thresholds = [
-    ("memory_warning", 80.0),
-    ("memory_critical", 90.0),
-    ("cpu_warning", 70.0),
-    ("cpu_critical", 85.0),
-    ("disk_warning", 75.0),
-    ("disk_critical", 85.0)
-  ]
-  
-  // 验证资源指标
-  assert_eq(resource_metrics.length(), 4)
-  assert_eq(resource_metrics[0].0, "memory_usage")
-  assert_eq(resource_metrics[0].1, 75.5)
-  
-  // 验证监控间隔
-  assert_eq(monitoring_intervals.length(), 4)
-  assert_eq(monitoring_intervals[0].1, 1)
-  
-  // 验证告警阈值
-  assert_eq(alert_thresholds.length(), 6)
-  assert_eq(alert_thresholds[0].1, 80.0)
-  
-  // 检查告警状态
-  let mut alert_status = []
-  let mut i = 0
-  while i < resource_metrics.length() {
-    let metric_name = resource_metrics[i].0
-    let metric_value = resource_metrics[i].1
-    
-    let mut warning_threshold = 0.0
-    let mut critical_threshold = 0.0
-    
-    // 查找对应的阈值
-    let mut j = 0
-    while j < alert_thresholds.length() {
-      let threshold_name = alert_thresholds[j].0
-      if threshold_name.contains(metric_name) {
-        if threshold_name.contains("warning") {
-          warning_threshold = alert_thresholds[j].1
-        } else if threshold_name.contains("critical") {
-          critical_threshold = alert_thresholds[j].1
+      "deallocate" => {
+        let deallocated = count.min(allocated_objects)
+        allocated_objects = allocated_objects - deallocated
+        total_deallocations = total_deallocations + deallocated
+        
+        // 检查是否需要收缩池
+        let utilization_ratio = allocated_objects.to_double() / current_pool_size.to_double()
+        if utilization_ratio < pool_config["shrink_threshold"] && current_pool_size > pool_config["initial_size"] {
+          let new_size = (allocated_objects.to_double() * 2.0).to_int().max(pool_config["initial_size"])
+          current_pool_size = new_size
         }
       }
-      j = j + 1
+      _ => ()
     }
     
-    let mut status = "normal"
-    if metric_value >= critical_threshold {
-      status = "critical"
-    } else if metric_value >= warning_threshold {
-      status = "warning"
-    }
-    
-    alert_status.push((metric_name, metric_value, status))
+    pool_operations.push((op_type, count, current_pool_size, allocated_objects))
     i = i + 1
   }
   
-  // 验证告警状态
-  assert_eq(alert_status.length(), 4)
-  assert_eq(alert_status[0].2, "warning")  // 内存75.5% > 80%? 否，但假设接近警告阈值
-  assert_eq(alert_status[1].2, "normal")   // CPU45.2% < 70%
-  assert_eq(alert_status[2].2, "normal")   // 磁盘60.8% < 75%
-  assert_eq(alert_status[3].2, "normal")   // 网络30.1% 无阈值
+  // 验证内存池操作
+  assert_eq(pool_operations.length(), operations.length())
+  
+  // 验证最终状态
+  assert_eq(allocated_objects, 0) // 所有对象都应该被释放
+  assert_eq(total_allocations, 1150) // 总分配数量
+  assert_eq(total_deallocations, 1150) // 总释放数量
+  assert_eq(current_pool_size >= pool_config["initial_size"], true)
+  assert_eq(current_pool_size <= pool_config["max_size"], true)
+  
+  // 验证池扩展逻辑
+  assert_eq(pool_operations[3].2 > pool_config["initial_size"], true) // 第4次操作后应该扩展
+  
+  // 验证池收缩逻辑
+  let final_utilization = allocated_objects.to_double() / current_pool_size.to_double()
+  assert_eq(final_utilization <= pool_config["shrink_threshold"], true)
+}
+
+test "buffer_management" {
+  // 测试缓冲区管理
+  
+  let buffer_config = {
+    "max_buffer_size": 10000,
+    "flush_threshold": 8000,
+    "batch_size": 1000,
+    "overflow_strategy": "drop_oldest"
+  }
+  
+  // 模拟缓冲区操作
+  let mut buffer_items = []
+  let mut total_items_added = 0
+  let mut total_items_dropped = 0
+  let mut flush_operations = 0
+  
+  // 模拟数据流入
+  let data_batches = [
+    1500, 2000, 3000, 2500, 1800, 1200, 3500, 2800, 900, 400
+  ]
+  
+  let mut i = 0
+  while i < data_batches.length() {
+    let batch_size = data_batches[i]
+    
+    // 检查是否需要刷新
+    if buffer_items.length() + batch_size >= buffer_config["flush_threshold"] {
+      // 模拟刷新操作
+      let flush_count = buffer_config["batch_size"]
+      let mut j = 0
+      while j < flush_count && j < buffer_items.length() {
+        buffer_items.remove_at(0)
+        j = j + 1
+      }
+      flush_operations = flush_operations + 1
+    }
+    
+    // 添加新项目
+    let mut j = 0
+    while j < batch_size {
+      if buffer_items.length() >= buffer_config["max_buffer_size"] {
+        // 处理溢出
+        match buffer_config["overflow_strategy"] {
+          "drop_oldest" => {
+            buffer_items.remove_at(0)
+            total_items_dropped = total_items_dropped + 1
+          }
+          "drop_newest" => {
+            total_items_dropped = total_items_dropped + 1
+            break
+          }
+          _ => ()
+        }
+      } else {
+        buffer_items.push("item_" + total_items_added.to_string())
+        total_items_added = total_items_added + 1
+      }
+      j = j + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证缓冲区管理
+  assert_eq(total_items_added > 0, true)
+  assert_eq(buffer_items.length() <= buffer_config["max_buffer_size"], true)
+  assert_eq(flush_operations > 0, true)
+  
+  // 验证溢出处理
+  assert_eq(total_items_dropped > 0, true)
+  
+  // 计算缓冲区利用率
+  let utilization = buffer_items.length().to_double() / buffer_config["max_buffer_size"].to_double()
+  assert_eq(utilization <= 1.0, true)
+  
+  // 验证刷新操作效果
+  assert_eq(flush_operations * buffer_config["batch_size"] <= total_items_added + total_items_dropped, true)
+}
+
+test "garbage_collection_optimization" {
+  // 测试垃圾回收优化
+  
+  let gc_config = {
+    "young_generation_size": 1000000,    // 1MB
+    "old_generation_size": 10000000,     // 10MB
+    "gc_threshold": 0.8,                  // 80%使用率触发GC
+    "promotion_age": 10,                  // 对象存活10次GC后晋升到老年代
+    "max_gc_pause": 100                   // 最大GC暂停时间（毫秒）
+  }
+  
+  // 模拟对象生命周期
+  let object_lifetimes = [
+    (100, "short_lived"),    // 短生命周期对象
+    (500, "medium_lived"),   // 中等生命周期对象
+    (2000, "long_lived"),    // 长生命周期对象
+    (50, "ephemeral"),       // 临时对象
+    (1500, "persistent")     // 持久对象
+  ]
+  
+  // 模拟GC操作
+  let mut young_gen_objects = []
+  let mut old_gen_objects = []
+  let mut gc_cycles = 0
+  let mut total_gc_time = 0
+  let mut promoted_objects = 0
+  let mut collected_objects = 0
+  
+  // 模拟对象分配和GC
+  let mut simulation_steps = 20
+  let mut current_step = 0
+  while current_step < simulation_steps {
+    // 分配新对象
+    let mut i = 0
+    while i < object_lifetimes.length() {
+      let (lifetime, obj_type) = object_lifetimes[i]
+      young_gen_objects.push((obj_type, lifetime, current_step))
+      i = i + 1
+    }
+    
+    // 更新对象年龄
+    let mut updated_young_gen = []
+    let mut j = 0
+    while j < young_gen_objects.length() {
+      let (obj_type, lifetime, birth_step) = young_gen_objects[j]
+      let age = current_step - birth_step
+      
+      if age >= lifetime {
+        // 对象生命周期结束，可以被回收
+        collected_objects = collected_objects + 1
+      } else if age >= gc_config["promotion_age"] {
+        // 晋升到老年代
+        old_gen_objects.push((obj_type, age))
+        promoted_objects = promoted_objects + 1
+      } else {
+        // 保留在新生代
+        updated_young_gen.push((obj_type, lifetime, birth_step))
+      }
+      j = j + 1
+    }
+    young_gen_objects = updated_young_gen
+    
+    // 检查是否需要GC
+    let young_gen_usage = young_gen_objects.length().to_double() / gc_config["young_generation_size"].to_double()
+    if young_gen_usage > gc_config["gc_threshold"] {
+      // 执行GC
+      let gc_time = 5 + young_gen_objects.length() / 100 // 模拟GC时间
+      total_gc_time = total_gc_time + gc_time
+      gc_cycles = gc_cycles + 1
+      
+      // 简化的GC：回收一些对象
+      let collect_count = (young_gen_objects.length().to_double() * 0.3).to_int()
+      let mut k = 0
+      while k < collect_count && k < young_gen_objects.length() {
+        young_gen_objects.remove_at(0)
+        collected_objects = collected_objects + 1
+        k = k + 1
+      }
+    }
+    
+    current_step = current_step + 1
+  }
+  
+  // 验证GC优化效果
+  assert_eq(gc_cycles > 0, true)
+  assert_eq(collected_objects > 0, true)
+  assert_eq(promoted_objects > 0, true)
+  
+  // 验证GC暂停时间
+  let avg_gc_time = total_gc_time / gc_cycles
+  assert_eq(avg_gc_time <= gc_config["max_gc_pause"], true)
+  
+  // 验证代际分布
+  let total_surviving = young_gen_objects.length() + old_gen_objects.length()
+  assert_eq(total_surviving > 0, true)
+  
+  // 验证晋升率
+  let promotion_rate = promoted_objects.to_double() / (promoted_objects + collected_objects).to_double()
+  assert_eq(promotion_rate > 0.0, true)
+  assert_eq(promotion_rate < 1.0, true)
+}
+
+test "resource_monitoring" {
+  // 测试资源监控
+  
+  let monitoring_metrics = [
+    ("memory_usage", "bytes", 0, 1000000000), // 0-1GB
+    ("cpu_usage", "percent", 0, 100),         // 0-100%
+    ("buffer_utilization", "percent", 0, 100), // 0-100%
+    ("active_connections", "count", 0, 10000), // 0-10000
+    ("disk_io", "bytes_per_sec", 0, 100000000), // 0-100MB/s
+    ("network_io", "bytes_per_sec", 0, 1000000000) // 0-1GB/s
+  ]
+  
+  // 模拟资源监控数据收集
+  let mut monitoring_data = []
+  let mut timestamp = 1640995200L
+  
+  // 模拟10个监控周期的数据
+  let mut cycle = 0
+  while cycle < 10 {
+    let mut cycle_data = {}
+    
+    let mut i = 0
+    while i < monitoring_metrics.length() {
+      let (metric_name, unit, min_val, max_val) = monitoring_metrics[i]
+      
+      // 生成模拟值（使用正弦波模拟周期性变化）
+      let phase = cycle.to_double() / 10.0 * 2.0 * 3.14159
+      let amplitude = (max_val - min_val).to_double() / 2.0
+      let center = (max_val + min_val).to_double() / 2.0
+      let value = center + amplitude * (phase + i.to_double()).sin()
+      
+      // 确保值在范围内
+      let clamped_value = value.max(min_val.to_double()).min(max_val.to_double())
+      
+      cycle_data[metric_name] = {
+        "value": clamped_value,
+        "unit": unit,
+        "timestamp": timestamp,
+        "min": min_val,
+        "max": max_val
+      }
+      
+      i = i + 1
+    }
+    
+    monitoring_data.push(cycle_data)
+    timestamp = timestamp + 60L // 每分钟一个监控周期
+    cycle = cycle + 1
+  }
+  
+  // 验证监控数据
+  assert_eq(monitoring_data.length(), 10)
+  
+  // 验证每个监控周期的数据完整性
+  let mut i = 0
+  while i < monitoring_data.length() {
+    let cycle_data = monitoring_data[i]
+    
+    // 验证所有指标都存在
+    let mut j = 0
+    while j < monitoring_metrics.length() {
+      let (metric_name, _, _, _) = monitoring_metrics[j]
+      assert_eq(cycle_data.contains(metric_name), true, "Missing metric: " + metric_name)
+      
+      // 验证指标数据结构
+      let metric_data = cycle_data[metric_name]
+      assert_eq(metric_data.contains("value"), true)
+      assert_eq(metric_data.contains("unit"), true)
+      assert_eq(metric_data.contains("timestamp"), true)
+      assert_eq(metric_data.contains("min"), true)
+      assert_eq(metric_data.contains("max"), true)
+      
+      // 验证值在合理范围内
+      let value = metric_data["value"]
+      let min_val = metric_data["min"]
+      let max_val = metric_data["max"]
+      assert_eq(value >= min_val, true)
+      assert_eq(value <= max_val, true)
+      
+      j = j + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证时间戳递增
+  i = 0
+  while i < monitoring_data.length() - 1 {
+    let current_timestamp = monitoring_data[i]["memory_usage"]["timestamp"]
+    let next_timestamp = monitoring_data[i + 1]["memory_usage"]["timestamp"]
+    assert_eq(current_timestamp < next_timestamp, true)
+    i = i + 1
+  }
+  
+  // 计算资源使用趋势
+  let memory_trend = calculate_trend(monitoring_data, "memory_usage")
+  let cpu_trend = calculate_trend(monitoring_data, "cpu_usage")
+  
+  assert_eq(memory_trend.length() > 0, true)
+  assert_eq(cpu_trend.length() > 0, true)
+}
+
+// 辅助函数：计算趋势
+fn calculate_trend(data : Array[Any], metric_name : String) -> Array[Double] {
+  let trend = []
+  let mut i = 0
+  while i < data.length() {
+    trend.push(data[i][metric_name]["value"])
+    i = i + 1
+  }
+  trend
 }
