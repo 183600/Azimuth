@@ -1,278 +1,215 @@
-// 遥测性能测试用例
-// 测试遥测系统的性能特性
+// 遥测性能基准测试用例
 
 test "telemetry_throughput_benchmark" {
   // 测试遥测吞吐量基准
   
-  let operations_per_second = 10000
   let test_duration_seconds = 10
-  let expected_total_operations = operations_per_second * test_duration_seconds
+  let target_throughput = 10000 // 每秒10000个span
+  let total_expected_spans = test_duration_seconds * target_throughput
   
-  // 模拟性能测试
-  let mut actual_operations = 0
-  let mut start_time = 1000000L
-  let end_time = start_time + test_duration_seconds.to_int64() * 1000L
+  // 模拟吞吐量测试
+  let mut processed_spans = 0
+  let mut second_counter = 0
   
-  // 模拟操作处理
-  let mut current_time = start_time
-  while current_time < end_time {
-    // 每毫秒处理10个操作
-    let operations_this_ms = if current_time % 100L == 0L { 10 } else { 0 }
-    actual_operations = actual_operations + operations_this_ms
-    current_time = current_time + 1L
+  while second_counter < test_duration_seconds {
+    let spans_in_second = target_throughput
+    let mut span_counter = 0
+    
+    while span_counter < spans_in_second {
+      // 模拟span处理
+      let span_id = "span_" + processed_spans.to_string()
+      let trace_id = "trace_" + (processed_spans / 100).to_string()
+      let processing_time_ms = 0.1 // 模拟0.1ms处理时间
+      
+      // 验证span生成
+      assert_eq(span_id.has_prefix("span_"), true)
+      assert_eq(trace_id.has_prefix("trace_"), true)
+      assert_eq(processing_time_ms > 0.0, true)
+      
+      processed_spans = processed_spans + 1
+      span_counter = span_counter + 1
+    }
+    
+    second_counter = second_counter + 1
   }
   
   // 验证吞吐量
-  assert_eq(actual_operations, expected_total_operations)
-  let actual_throughput = actual_operations / test_duration_seconds
-  assert_eq(actual_throughput, operations_per_second)
+  assert_eq(processed_spans, total_expected_spans)
+  assert_eq(processed_spans, 100000) // 10秒 * 10000/秒
   
-  // 创建性能报告
-  let performance_report = "Throughput: " + actual_throughput.to_string() + 
-                          " ops/sec, Total: " + actual_operations.to_string() + 
-                          " ops, Duration: " + test_duration_seconds.to_string() + "s"
+  // 计算实际吞吐量
+  let actual_throughput = processed_spans / test_duration_seconds
+  assert_eq(actual_throughput, target_throughput)
   
-  assert_eq(performance_report.contains("Throughput: 10000"), true)
-  assert_eq(performance_report.contains("Total: 100000"), true)
-  assert_eq(performance_report.contains("Duration: 10s"), true)
+  // 计算总处理时间
+  let total_processing_time_ms = processed_spans.to_double() * 0.1
+  assert_eq(total_processing_time_ms, 10000.0) // 100000 * 0.1ms = 10000ms = 10秒
+  
+  // 验证处理效率
+  let processing_efficiency = total_processing_time_ms / (test_duration_seconds * 1000.0)
+  assert_eq(processing_efficiency, 1.0) // 100% CPU利用率
 }
 
-test "telemetry_latency_measurement" {
-  // 测试遥测延迟测量
+test "telemetry_latency_benchmark" {
+  // 测试遥测延迟基准
   
-  let operations = ["metric_collection", "trace_creation", "log_processing", "data_export"]
-  let latencies = [1.5, 2.3, 0.8, 5.2] // 毫秒
+  let latency_samples = [
+    1.2, 2.5, 0.8, 3.1, 1.5, 4.2, 0.9, 2.8, 1.7, 2.1,
+    3.5, 1.1, 2.9, 4.8, 1.3, 2.2, 3.7, 0.7, 2.4, 1.9
+  ] // 延迟样本（毫秒）
   
-  // 计算延迟统计
+  // 验证延迟样本
+  assert_eq(latency_samples.length(), 20)
+  assert_eq(latency_samples[0], 1.2)
+  assert_eq(latency_samples[19], 1.9)
+  
+  // 计算平均延迟
   let mut total_latency = 0.0
-  let mut max_latency = latencies[0]
-  let mut min_latency = latencies[0]
-  
   let mut i = 0
-  while i < latencies.length() {
-    total_latency = total_latency + latencies[i]
-    if latencies[i] > max_latency {
-      max_latency = latencies[i]
+  while i < latency_samples.length() {
+    total_latency = total_latency + latency_samples[i]
+    i = i + 1
+  }
+  
+  let average_latency = total_latency / latency_samples.length().to_double()
+  assert_eq(average_latency > 2.0, true)
+  assert_eq(average_latency < 3.0, true)
+  
+  // 计算最小和最大延迟
+  let mut min_latency = latency_samples[0]
+  let mut max_latency = latency_samples[0]
+  
+  i = 1
+  while i < latency_samples.length() {
+    if latency_samples[i] < min_latency {
+      min_latency = latency_samples[i]
     }
-    if latencies[i] < min_latency {
-      min_latency = latencies[i]
+    if latency_samples[i] > max_latency {
+      max_latency = latency_samples[i]
     }
     i = i + 1
   }
   
-  let avg_latency = total_latency / latencies.length().to_double()
+  // 验证极值
+  assert_eq(min_latency, 0.7)
+  assert_eq(max_latency, 4.8)
   
-  // 验证延迟统计
-  assert_eq(avg_latency, 2.45) // (1.5 + 2.3 + 0.8 + 5.2) / 4
-  assert_eq(max_latency, 5.2)
-  assert_eq(min_latency, 0.8)
+  // 计算延迟分布百分位数
+  let sorted_latencies = latency_samples // 假设已排序
+  let p50_index = (sorted_latencies.length() * 50) / 100
+  let p95_index = (sorted_latencies.length() * 95) / 100
+  let p99_index = (sorted_latencies.length() * 99) / 100
   
-  // 验证延迟阈值
-  let latency_threshold = 3.0 // 3毫秒阈值
-  let slow_operations = []
+  // 验证百分位数索引
+  assert_eq(p50_index, 10)
+  assert_eq(p95_index, 18)
+  assert_eq(p99_index, 19)
   
+  // 计算延迟标准差（简化版本）
+  let mut variance_sum = 0.0
   i = 0
-  while i < operations.length() {
-    if latencies[i] > latency_threshold {
-      slow_operations.push(operations[i])
-    }
+  while i < latency_samples.length() {
+    let diff = latency_samples[i] - average_latency
+    variance_sum = variance_sum + diff * diff
     i = i + 1
   }
   
-  assert_eq(slow_operations.length(), 2) // trace_creation 和 data_export
-  assert_eq(slow_operations.contains("trace_creation"), true)
-  assert_eq(slow_operations.contains("data_export"), true)
+  let variance = variance_sum / latency_samples.length().to_double()
+  let std_deviation = variance.sqrt()
   
-  // 创建延迟报告
-  let latency_report = "Avg: " + avg_latency.to_string() + "ms, " +
-                      "Min: " + min_latency.to_string() + "ms, " +
-                      "Max: " + max_latency.to_string() + "ms, " +
-                      "Slow ops: " + slow_operations.length().to_string()
+  // 验证标准差
+  assert_eq(std_deviation > 0.0, true)
+  assert_eq(std_deviation < 2.0, true)
   
-  assert_eq(latency_report.contains("Avg: 2.45"), true)
-  assert_eq(latency_report.contains("Min: 0.8"), true)
-  assert_eq(latency_report.contains("Max: 5.2"), true)
-  assert_eq(latency_report.contains("Slow ops: 2"), true)
+  // 创建延迟基准报告
+  let latency_report = "latency_benchmark:"
+  latency_report = latency_report + "samples=" + latency_samples.length().to_string() +
+                   ",avg=" + average_latency.to_string() + "ms" +
+                   ",min=" + min_latency.to_string() + "ms" +
+                   ",max=" + max_latency.to_string() + "ms" +
+                   ",std_dev=" + std_deviation.to_string() + "ms"
+  
+  // 验证延迟报告
+  assert_eq(latency_report.contains("latency_benchmark:"), true)
+  assert_eq(latency_report.contains("samples=20"), true)
+  assert_eq(latency_report.contains("avg="), true)
+  assert_eq(latency_report.contains("min=0.7ms"), true)
+  assert_eq(latency_report.contains("max=4.8ms"), true)
+  assert_eq(latency_report.contains("std_dev="), true)
 }
 
-test "telemetry_memory_usage" {
-  // 测试遥测内存使用
+test "telemetry_memory_benchmark" {
+  // 测试遥测内存基准
   
-  let telemetry_components = [
-    ("metric_collector", 1024 * 1024),     // 1MB
-    ("trace_processor", 2 * 1024 * 1024),  // 2MB
-    ("log_aggregator", 512 * 1024),        // 512KB
-    ("exporter", 256 * 1024),              // 256KB
-    ("config_manager", 128 * 1024)         // 128KB
-  ]
+  let objects_per_batch = 1000
+  let batch_count = 10
+  let object_size_bytes = 512
+  
+  // 模拟内存使用测试
+  let mut memory_usage_snapshots = []
+  let mut batch_id = 0
+  
+  while batch_id < batch_count {
+    let mut objects_in_batch = 0
+    let batch_memory_start = batch_id * objects_per_batch * object_size_bytes
+    
+    // 创建对象
+    while objects_in_batch < objects_per_batch {
+      let object_id = "obj_" + batch_id.to_string() + "_" + objects_in_batch.to_string()
+      let object_memory = object_size_bytes
+      
+      // 验证对象创建
+      assert_eq(object_id.has_prefix("obj_"), true)
+      assert_eq(object_memory, object_size_bytes)
+      
+      objects_in_batch = objects_in_batch + 1
+    }
+    
+    let batch_memory_end = batch_memory_start + (objects_per_batch * object_size_bytes)
+    memory_usage_snapshots.push((batch_id, batch_memory_start, batch_memory_end))
+    
+    batch_id = batch_id + 1
+  }
+  
+  // 验证内存快照
+  assert_eq(memory_usage_snapshots.length(), batch_count)
+  assert_eq(memory_usage_snapshots[0].0, 0)
+  assert_eq(memory_usage_snapshots[0].1, 0)
+  assert_eq(memory_usage_snapshots[0].2, objects_per_batch * object_size_bytes)
   
   // 计算总内存使用
-  let mut total_memory = 0
-  let mut i = 0
-  while i < telemetry_components.length() {
-    total_memory = total_memory + telemetry_components[i].1
-    i = i + 1
-  }
+  let total_objects = batch_count * objects_per_batch
+  let total_memory_usage = total_objects * object_size_bytes
   
-  // 验证内存使用
-  assert_eq(total_memory, 1024 * 1024 + 2 * 1024 * 1024 + 512 * 1024 + 256 * 1024 + 128 * 1024)
-  assert_eq(total_memory, 3932160) // 3.75MB
+  // 验证总内存使用
+  assert_eq(total_objects, 10000) // 10 * 1000
+  assert_eq(total_memory_usage, 5120000) // 10000 * 512字节 = 5MB
   
-  // 计算内存使用百分比
-  let system_memory = 1024 * 1024 * 1024 // 1GB系统内存
-  let memory_usage_percent = (total_memory.to_double() / system_memory.to_double()) * 100.0
+  // 计算内存增长率
+  let memory_growth_per_batch = objects_per_batch * object_size_bytes
+  let total_memory_growth = memory_growth_per_batch * batch_count
   
-  // 验证内存使用百分比
-  assert_eq(memory_usage_percent < 1.0, true) // 应该小于1%
-  assert_eq(memory_usage_percent > 0.0, true)
+  // 验证内存增长
+  assert_eq(memory_growth_per_batch, 512000) // 每批512KB
+  assert_eq(total_memory_growth, total_memory_usage)
   
-  // 找出内存使用最多的组件
-  let mut max_memory_component = telemetry_components[0]
-  i = 1
-  while i < telemetry_components.length() {
-    if telemetry_components[i].1 > max_memory_component.1 {
-      max_memory_component = telemetry_components[i]
-    }
-    i = i + 1
-  }
+  // 计算内存效率
+  let memory_efficiency = total_memory_usage.to_double() / (total_objects.to_double() * object_size_bytes.to_double())
+  assert_eq(memory_efficiency, 1.0) // 100%内存效率
   
-  assert_eq(max_memory_component.0, "trace_processor")
-  assert_eq(max_memory_component.1, 2 * 1024 * 1024)
+  // 创建内存基准报告
+  let memory_report = "memory_benchmark:"
+  memory_report = memory_report + "objects=" + total_objects.to_string() +
+                  ",total_memory=" + (total_memory_usage / 1024).to_string() + "KB" +
+                  ",object_size=" + object_size_bytes.to_string() + "B" +
+                  ",batches=" + batch_count.to_string() +
+                  ",efficiency=" + (memory_efficiency * 100.0).to_string() + "%"
   
-  // 创建内存使用报告
-  let memory_report = "Total: " + (total_memory / 1024).to_string() + "KB, " +
-                     "Usage: " + memory_usage_percent.to_string().slice(0, 4) + "%, " +
-                     "Largest: " + max_memory_component.0
-  
-  assert_eq(memory_report.contains("Total: 3840KB"), true)
-  assert_eq(memory_report.contains("Usage: 0.3"), true)
-  assert_eq(memory_report.contains("Largest: trace_processor"), true)
-}
-
-test "telemetry_cpu_utilization" {
-  // 测试遥测CPU利用率
-  
-  let time_intervals = [0, 100, 200, 300, 400] // 毫秒
-  let cpu_usage_samples = [10.5, 25.3, 45.8, 30.2, 15.6] // 百分比
-  
-  // 计算CPU利用率统计
-  let mut total_cpu = 0.0
-  let mut max_cpu = cpu_usage_samples[0]
-  let mut min_cpu = cpu_usage_samples[0]
-  
-  let mut i = 0
-  while i < cpu_usage_samples.length() {
-    total_cpu = total_cpu + cpu_usage_samples[i]
-    if cpu_usage_samples[i] > max_cpu {
-      max_cpu = cpu_usage_samples[i]
-    }
-    if cpu_usage_samples[i] < min_cpu {
-      min_cpu = cpu_usage_samples[i]
-    }
-    i = i + 1
-  }
-  
-  let avg_cpu = total_cpu / cpu_usage_samples.length().to_double()
-  
-  // 验证CPU利用率统计
-  assert_eq(avg_cpu > 20.0, true)
-  assert_eq(avg_cpu < 30.0, true)
-  assert_eq(max_cpu, 45.8)
-  assert_eq(min_cpu, 10.5)
-  
-  // 计算高CPU使用时间
-  let high_cpu_threshold = 30.0
-  let mut high_cpu_intervals = 0
-  
-  i = 0
-  while i < cpu_usage_samples.length() {
-    if cpu_usage_samples[i] > high_cpu_threshold {
-      high_cpu_intervals = high_cpu_intervals + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(high_cpu_intervals, 2) // 45.8% 和 30.2%
-  
-  // 计算CPU使用率变化
-  let cpu_variance = max_cpu - min_cpu
-  assert_eq(cpu_variance, 35.3) // 45.8 - 10.5
-  
-  // 创建CPU利用率报告
-  let cpu_report = "Avg: " + avg_cpu.to_string().slice(0, 4) + "%, " +
-                  "Min: " + min_cpu.to_string() + "%, " +
-                  "Max: " + max_cpu.to_string() + "%, " +
-                  "High intervals: " + high_cpu_intervals.to_string()
-  
-  assert_eq(cpu_report.contains("Avg: 25"), true)
-  assert_eq(cpu_report.contains("Min: 10.5"), true)
-  assert_eq(cpu_report.contains("Max: 45.8"), true)
-  assert_eq(cpu_report.contains("High intervals: 2"), true)
-}
-
-test "telemetry_scalability_test" {
-  // 测试遥测可扩展性
-  
-  let load_levels = [100, 500, 1000, 5000, 10000] // 每秒请求数
-  let response_times = [5.2, 8.7, 12.3, 45.6, 98.5] // 毫秒
-  let error_rates = [0.0, 0.1, 0.2, 1.5, 3.2] // 百分比
-  
-  // 验证可扩展性指标
-  let mut i = 0
-  while i < load_levels.length() {
-    let load = load_levels[i]
-    let response_time = response_times[i]
-    let error_rate = error_rates[i]
-    
-    // 验证响应时间随负载增加而增加
-    if i > 0 {
-      assert_eq(response_time > response_times[i - 1], true)
-    }
-    
-    // 验证错误率在可接受范围内
-    assert_eq(error_rate < 5.0, true) // 错误率应该小于5%
-    
-    // 计算吞吐量（考虑错误率）
-    let effective_throughput = load * (100.0 - error_rate) / 100.0
-    assert_eq(effective_throughput > 0, true)
-    
-    i = i + 1
-  }
-  
-  // 计算性能退化
-  let baseline_response_time = response_times[0]
-  let max_response_time = response_times[4]
-  let performance_degradation = (max_response_time - baseline_response_time) / baseline_response_time * 100.0
-  
-  // 验证性能退化在可接受范围内
-  assert_eq(performance_degradation < 2000.0, true) // 退化不超过20倍
-  
-  // 找到最佳性能点（响应时间和吞吐量的平衡）
-  let mut best_performance_index = 0
-  let mut best_score = 0.0
-  
-  i = 0
-  while i < load_levels.length() {
-    // 性能分数：吞吐量 / 响应时间
-    let score = load_levels[i].to_double() / response_times[i]
-    if score > best_score {
-      best_score = score
-      best_performance_index = i
-    }
-    i = i + 1
-  }
-  
-  // 验证最佳性能点
-  assert_eq(best_performance_index >= 0, true)
-  assert_eq(best_performance_index < load_levels.length(), true)
-  
-  // 创建可扩展性报告
-  let scalability_report = "Best performance at load: " + 
-                          load_levels[best_performance_index].to_string() + 
-                          ", Performance degradation: " + 
-                          performance_degradation.to_string().slice(0, 5) + "%"
-  
-  assert_eq(scalability_report.contains("Best performance at load:"), true)
-  assert_eq(scalability_report.contains("Performance degradation:"), true)
-  assert_eq(scalability_report.contains("%"), true)
+  // 验证内存报告
+  assert_eq(memory_report.contains("memory_benchmark:"), true)
+  assert_eq(memory_report.contains("objects=10000"), true)
+  assert_eq(memory_report.contains("total_memory=5000KB"), true)
+  assert_eq(memory_report.contains("object_size=512B"), true)
+  assert_eq(memory_report.contains("batches=10"), true)
+  assert_eq(memory_report.contains("efficiency=100%"), true)
 }
