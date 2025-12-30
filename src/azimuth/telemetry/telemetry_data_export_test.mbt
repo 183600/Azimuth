@@ -1,411 +1,344 @@
-// 遥测数据导出测试用例
+// 遥测数据导出测试
+// 测试遥测数据到各种后端和格式的导出功能
 
-test "telemetry_json_format_export" {
-  // 测试JSON格式数据导出
+test "otlp_export_format_test" {
+  // 测试OTLP导出格式
   
-  let telemetry_data = [
-    ("metric_name", "cpu_usage"),
-    ("metric_value", 75.5),
-    ("timestamp", 1640995200L),
-    ("tags", "service:api,env:production")
-  ]
+  let trace_id = "1234567890abcdef1234567890abcdef"
+  let span_id = "11112222"
+  let span_name = "http_request"
+  let span_kind = "SERVER"
+  let start_time = 1640995200000000000L // 纳秒时间戳
+  let end_time = 1640995201000000000L
   
-  // 生成JSON格式
-  let mut json_output = "{"
-  let mut i = 0
-  while i < telemetry_data.length() {
-    let key = telemetry_data[i].0
-    let value = telemetry_data[i].1
-    
-    json_output = json_output + "\"" + key + "\":"
-    
-    if key == "metric_value" {
-      json_output = json_output + value.to_string()
-    } else if key == "timestamp" {
-      json_output = json_output + value.to_string()
-    } else {
-      json_output = json_output + "\"" + value.to_string() + "\""
-    }
-    
-    if i < telemetry_data.length() - 1 {
-      json_output = json_output + ","
-    }
-    
-    i = i + 1
-  }
-  json_output = json_output + "}"
+  // 创建OTLP格式的追踪数据
+  let otlp_trace_data = "{"
+  otlp_trace_data = otlp_trace_data + "\"trace_id\":\"" + trace_id + "\"," 
+  otlp_trace_data = otlp_trace_data + "\"span_id\":\"" + span_id + "\"," 
+  otlp_trace_data = otlp_trace_data + "\"name\":\"" + span_name + "\"," 
+  otlp_trace_data = otlp_trace_data + "\"kind\":\"" + span_kind + "\"," 
+  otlp_trace_data = otlp_trace_data + "\"start_time_unix_nano\":\"" + start_time.to_string() + "\"," 
+  otlp_trace_data = otlp_trace_data + "\"end_time_unix_nano\":\"" + end_time.to_string() + "\""
+  otlp_trace_data = otlp_trace_data + "}"
   
-  // 验证JSON格式
-  assert_eq(json_output.has_prefix("{"), true)
-  assert_eq(json_output.has_suffix("}"), true)
-  assert_eq(json_output.contains("\"metric_name\":\"cpu_usage\""), true)
-  assert_eq(json_output.contains("\"metric_value\":75.5"), true)
-  assert_eq(json_output.contains("\"timestamp\":1640995200"), true)
-  assert_eq(json_output.contains("\"tags\":\"service:api,env:production\""), true)
+  // 验证OTLP格式
+  assert_eq(otlp_trace_data.has_prefix("{"), true)
+  assert_eq(otlp_trace_data.has_suffix("}"), true)
+  assert_eq(otlp_trace_data.contains("\"trace_id\":\"" + trace_id + "\""), true)
+  assert_eq(otlp_trace_data.contains("\"span_id\":\"" + span_id + "\""), true)
+  assert_eq(otlp_trace_data.contains("\"name\":\"" + span_name + "\""), true)
+  assert_eq(otlp_trace_data.contains("\"kind\":\"" + span_kind + "\""), true)
+  assert_eq(otlp_trace_data.contains("\"start_time_unix_nano\":\"" + start_time.to_string() + "\""), true)
+  assert_eq(otlp_trace_data.contains("\"end_time_unix_nano\":\"" + end_time.to_string() + "\""), true)
   
-  // 验证JSON结构完整性
-  let comma_count = 0
-  let mut j = 0
-  while j < json_output.length() {
-    if json_output.char_at(j) == ',' {
-      comma_count = comma_count + 1
-    }
-    j = j + 1
-  }
-  
-  assert_eq(comma_count, telemetry_data.length() - 1)
-}
-
-test "telemetry_prometheus_format_export" {
-  // 测试Prometheus格式数据导出
-  
+  // 创建OTLP格式的指标数据
   let metric_name = "http_requests_total"
   let metric_value = 1234.0
-  let metric_labels = [
-    ("method", "GET"),
-    ("status", "200"),
-    ("service", "api")
-  ]
-  let timestamp = 1640995200L
+  let metric_unit = "count"
   
-  // 生成Prometheus格式
-  let mut prometheus_output = metric_name + "{"
+  let otlp_metric_data = "{"
+  otlp_metric_data = otlp_metric_data + "\"name\":\"" + metric_name + "\"," 
+  otlp_metric_data = otlp_metric_data + "\"unit\":\"" + metric_unit + "\"," 
+  otlp_metric_data = otlp_metric_data + "\"sum\":{\"value\":" + metric_value.to_string() + "}"
+  otlp_metric_data = otlp_metric_data + "}"
   
-  let mut i = 0
-  while i < metric_labels.length() {
-    let label_key = metric_labels[i].0
-    let label_value = metric_labels[i].1
-    
-    prometheus_output = prometheus_output + label_key + "=\"" + label_value + "\""
-    
-    if i < metric_labels.length() - 1 {
-      prometheus_output = prometheus_output + ","
-    }
-    
-    i = i + 1
-  }
+  // 验证OTLP指标格式
+  assert_eq(otlp_metric_data.contains("\"name\":\"" + metric_name + "\""), true)
+  assert_eq(otlp_metric_data.contains("\"unit\":\"" + metric_unit + "\""), true)
+  assert_eq(otlp_metric_data.contains("\"sum\":{\"value\":" + metric_value.to_string() + "}"), true)
+}
+
+test "prometheus_export_format_test" {
+  // 测试Prometheus导出格式
   
-  prometheus_output = prometheus_output + "} " + metric_value.to_string() + " " + timestamp.to_string()
+  let metric_name = "http_request_duration_seconds"
+  let metric_value = 0.123
+  let metric_labels = "method=\"GET\",endpoint=\"/api/users\""
+  let metric_timestamp = 1640995200L
+  
+  // 创建Prometheus格式的指标数据
+  let prometheus_metric = metric_name + "{" + metric_labels + "} " + metric_value.to_string() + " " + metric_timestamp.to_string()
   
   // 验证Prometheus格式
-  assert_eq(prometheus_output.has_prefix(metric_name + "{"), true)
-  assert_eq(prometheus_output.contains("method=\"GET\""), true)
-  assert_eq(prometheus_output.contains("status=\"200\""), true)
-  assert_eq(prometheus_output.contains("service=\"api\""), true)
-  assert_eq(prometheus_output.contains("} 1234.0"), true)
-  assert_eq(prometheus_output.has_suffix(" " + timestamp.to_string()), true)
+  assert_eq(prometheus_metric.has_prefix(metric_name + "{"), true)
+  assert_eq(prometheus_metric.contains(metric_labels), true)
+  assert_eq(prometheus_metric.contains(metric_value.to_string()), true)
+  assert_eq(prometheus_metric.has_suffix(" " + metric_timestamp.to_string()), true)
   
-  // 验证标签数量
-  let label_count = 0
-  let mut j = 0
-  while j < prometheus_output.length() {
-    if prometheus_output.char_at(j) == '=' {
-      label_count = label_count + 1
-    }
-    j = j + 1
-  }
-  
-  assert_eq(label_count, metric_labels.length())
-}
-
-test "telemetry_csv_format_export" {
-  // 测试CSV格式数据导出
-  
-  let csv_headers = ["timestamp", "metric_name", "metric_value", "service", "environment"]
-  let csv_data = [
-    [1640995200L, "cpu_usage", 75.5, "api-service", "production"],
-    [1640995260L, "memory_usage", 68.2, "api-service", "production"],
-    [1640995320L, "disk_usage", 45.0, "api-service", "production"]
+  // 创建Prometheus格式的直方图数据
+  let histogram_name = "http_request_duration_seconds_bucket"
+  let buckets = [
+    ("le=\"0.1\"", 10),
+    ("le=\"0.5\"", 25),
+    ("le=\"1.0\"", 40),
+    ("le=\"+Inf\"", 50)
   ]
   
-  // 生成CSV头部
-  let mut csv_output = ""
-  let mut i = 0
-  while i < csv_headers.length() {
-    csv_output = csv_output + csv_headers[i]
-    if i < csv_headers.length() - 1 {
-      csv_output = csv_output + ","
-    }
-    i = i + 1
-  }
-  csv_output = csv_output + "\n"
-  
-  // 生成CSV数据行
-  i = 0
-  while i < csv_data.length() {
-    let row = csv_data[i]
-    let mut j = 0
-    while j < row.length() {
-      csv_output = csv_output + row[j].to_string()
-      if j < row.length() - 1 {
-        csv_output = csv_output + ","
-      }
-      j = j + 1
-    }
-    if i < csv_data.length() - 1 {
-      csv_output = csv_output + "\n"
-    }
-    i = i + 1
+  let mut prometheus_histogram = ""
+  for bucket in buckets {
+    prometheus_histogram = prometheus_histogram + histogram_name + "{" + bucket.0 + ",method=\"GET\"} " + bucket.1.to_string() + " " + metric_timestamp.to_string() + "\n"
   }
   
-  // 验证CSV格式
-  assert_eq(csv_output.contains("timestamp,metric_name,metric_value,service,environment"), true)
-  assert_eq(csv_output.contains("1640995200,cpu_usage,75.5,api-service,production"), true)
-  assert_eq(csv_output.contains("1640995260,memory_usage,68.2,api-service,production"), true)
-  assert_eq(csv_output.contains("1640995320,disk_usage,45.0,api-service,production"), true)
+  // 验证Prometheus直方图格式
+  assert_eq(prometheus_histogram.contains(histogram_name + "{le=\"0.1\",method=\"GET\"} 10"), true)
+  assert_eq(prometheus_histogram.contains(histogram_name + "{le=\"+Inf\",method=\"GET\"} 50"), true)
+  assert_eq(prometheus_histogram.contains("\n"), true)
   
-  // 验证行数
-  let line_count = 1  // 头部
-  let mut j = 0
-  while j < csv_output.length() {
-    if csv_output.char_at(j) == '\n' {
-      line_count = line_count + 1
-    }
-    j = j + 1
-  }
+  // 创建计数器总和
+  let counter_sum = histogram_name.replace("_bucket", "_sum") + "{method=\"GET\"} 6.15 " + metric_timestamp.to_string()
+  let counter_count = histogram_name.replace("_bucket", "_count") + "{method=\"GET\"} 50 " + metric_timestamp.to_string()
   
-  assert_eq(line_count, csv_data.length() + 1)
+  // 验证计数器格式
+  assert_eq(counter_sum.contains("http_request_duration_seconds_sum"), true)
+  assert_eq(counter_count.contains("http_request_duration_seconds_count"), true)
 }
 
-test "telemetry_batch_export" {
-  // 测试批量数据导出
+test "jaeger_export_format_test" {
+  // 测试Jaeger导出格式
   
-  let batch_size = 100
-  let export_formats = ["json", "prometheus", "csv"]
+  let trace_id = "1234567890abcdef1234567890abcdef"
+  let span_id = "11112222"
+  let parent_span_id = "00000000"
+  let operation_name = "GET /api/users"
+  let service_name = "user-service"
+  let start_time = 1640995200000L // 微秒时间戳
+  let duration = 150000 // 微秒
   
-  // 生成批量数据
-  let mut batch_data = []
-  let mut i = 0
-  while i < batch_size {
-    let metric_data = (
-      "metric_" + i.to_string(),
-      i.to_double(),
-      1640995200L + i.to_int64(),
-      "service_" + (i % 5).to_string()
-    )
-    batch_data.push(metric_data)
-    i = i + 1
-  }
+  // 创建Jaeger格式的span数据
+  let jaeger_span = "{"
+  jaeger_span = jaeger_span + "\"traceID\":\"" + trace_id + "\"," 
+  jaeger_span = jaeger_span + "\"spanID\":\"" + span_id + "\"," 
+  jaeger_span = jaeger_span + "\"parentSpanID\":\"" + parent_span_id + "\"," 
+  jaeger_span = jaeger_span + "\"operationName\":\"" + operation_name + "\"," 
+  jaeger_span = jaeger_span + "\"startTime\":" + start_time.to_string() + "," 
+  jaeger_span = jaeger_span + "\"duration\":" + duration.to_string() + "," 
+  jaeger_span = jaeger_span + "\"tags\":[{\"key\":\"service.name\",\"value\":\"" + service_name + "\"}]"
+  jaeger_span = jaeger_span + "}"
   
-  // 模拟批量导出
-  let mut export_results = []
-  let mut j = 0
-  while j < export_formats.length() {
-    let format = export_formats[j]
-    let mut exported_count = 0
-    
-    i = 0
-    while i < batch_data.length() {
-      // 模拟导出操作
-      exported_count = exported_count + 1
-      i = i + 1
-    }
-    
-    export_results.push((format, exported_count))
-    j = j + 1
-  }
+  // 验证Jaeger格式
+  assert_eq(jaeger_span.contains("\"traceID\":\"" + trace_id + "\""), true)
+  assert_eq(jaeger_span.contains("\"spanID\":\"" + span_id + "\""), true)
+  assert_eq(jaeger_span.contains("\"operationName\":\"" + operation_name + "\""), true)
+  assert_eq(jaeger_span.contains("\"startTime\":" + start_time.to_string()), true)
+  assert_eq(jaeger_span.contains("\"duration\":" + duration.to_string()), true)
+  assert_eq(jaeger_span.contains("\"service.name\",\"value\":\"" + service_name + "\""), true)
   
-  // 验证批量导出结果
-  assert_eq(export_results.length(), export_formats.length())
+  // 创建Jaeger批处理格式
+  let jaeger_batch = "{"
+  jaeger_batch = jaeger_batch + "\"process\":{\"serviceName\":\"" + service_name + "\",\"tags\":[]}," 
+  jaeger_batch = jaeger_batch + "\"spans\":[" + jaeger_span + "]"
+  jaeger_batch = jaeger_batch + "}"
   
-  j = 0
-  while j < export_results.length() {
-    assert_eq(export_results[j].0, export_formats[j])
-    assert_eq(export_results[j].1, batch_size)
-    j = j + 1
-  }
+  // 验证Jaeger批处理格式
+  assert_eq(jaeger_batch.contains("\"process\":{\"serviceName\":\"" + service_name + "\""), true)
+  assert_eq(jaeger_batch.contains("\"spans\":["), true)
+  assert_eq(jaeger_batch.contains("]"), true)
 }
 
-test "telemetry_real_time_export" {
-  // 测试实时数据导出
+test "zipkin_export_format_test" {
+  // 测试Zipkin导出格式
   
-  let export_interval_ms = 1000L  // 每秒导出一次
-  let monitoring_duration_ms = 5000L  // 监控5秒
-  let start_time = 1640995200L * 1000L  // 转换为毫秒
+  let trace_id = "1234567890abcdef"
+  let span_id = "11112222"
+  let parent_id = "00000000"
+  let name = "get /api/users"
+  let timestamp = 1640995200000L // 微秒时间戳
+  let duration = 150000 // 微秒
   
-  // 模拟实时数据生成
-  let mut realtime_exports = []
-  let mut current_time = start_time
-  let end_time = start_time + monitoring_duration_ms
+  // 创建Zipkin格式的span数据
+  let zipkin_span = "{"
+  zipkin_span = zipkin_span + "\"traceId\":\"" + trace_id + "\"," 
+  zipkin_span = zipkin_span + "\"id\":\"" + span_id + "\"," 
+  zipkin_span = zipkin_span + "\"parentId\":\"" + parent_id + "\"," 
+  zipkin_span = zipkin_span + "\"name\":\"" + name + "\"," 
+  zipkin_span = zipkin_span + "\"timestamp\":" + timestamp.to_string() + "," 
+  zipkin_span = zipkin_span + "\"duration\":" + duration.to_string() + "," 
+  zipkin_span = zipkin_span + "\"localEndpoint\":{\"serviceName\":\"user-service\"}"
+  zipkin_span = zipkin_span + "}"
   
-  while current_time <= end_time {
-    let metric_value = (current_time / 1000L % 100).to_double()
-    let export_data = (
-      current_time,
-      "realtime_metric",
-      metric_value
-    )
-    
-    realtime_exports.push(export_data)
-    current_time = current_time + export_interval_ms
-  }
+  // 验证Zipkin格式
+  assert_eq(zipkin_span.contains("\"traceId\":\"" + trace_id + "\""), true)
+  assert_eq(zipkin_span.contains("\"id\":\"" + span_id + "\""), true)
+  assert_eq(zipkin_span.contains("\"name\":\"" + name + "\""), true)
+  assert_eq(zipkin_span.contains("\"timestamp\":" + timestamp.to_string()), true)
+  assert_eq(zipkin_span.contains("\"duration\":" + duration.to_string()), true)
+  assert_eq(zipkin_span.contains("\"serviceName\":\"user-service\""), true)
   
-  // 验证实时导出
-  assert_eq(realtime_exports.length(), 6)  // 0s, 1s, 2s, 3s, 4s, 5s
+  // 创建Zipkin批处理格式
+  let zipkin_batch = "[" + zipkin_span + "]"
   
-  // 验证时间间隔
-  let mut i = 1
-  while i < realtime_exports.length() {
-    let time_diff = realtime_exports[i].0 - realtime_exports[i - 1].0
-    assert_eq(time_diff, export_interval_ms)
-    i = i + 1
-  }
-  
-  // 验证数据变化
-  assert_eq(realtime_exports[0].2, 0.0)   // 1640995200 % 100
-  assert_eq(realtime_exports[1].2, 1.0)   // 1640995201 % 100
-  assert_eq(realtime_exports[2].2, 2.0)   // 1640995202 % 100
+  // 验证Zipkin批处理格式
+  assert_eq(zipkin_batch.has_prefix("["), true)
+  assert_eq(zipkin_batch.has_suffix("]"), true)
+  assert_eq(zipkin_batch.contains(zipkin_span), true)
 }
 
-test "telemetry_export_compression" {
-  // 测试导出数据压缩
+test "elasticsearch_export_format_test" {
+  // 测试Elasticsearch导出格式
   
-  let original_data = "metric_name:cpu_usage,metric_value:75.5,timestamp:1640995200,tags:service:api,env:production"
+  let index_name = "telemetry-2025.12.30"
+  let doc_id = "trace_1234567890"
+  let timestamp = "2025-12-30T10:00:00.000Z"
   
-  // 模拟压缩导出
-  let compressed_data = original_data
-    .replace("metric_name", "mn")
-    .replace("metric_value", "mv")
-    .replace("timestamp", "ts")
-    .replace("tags", "tg")
-    .replace("service", "svc")
-    .replace("environment", "env")
-    .replace("production", "prod")
+  // 创建Elasticsearch格式的文档
+  let es_document = "{"
+  es_document = es_document + "\"_index\":\"" + index_name + "\"," 
+  es_document = es_document + "\"_id\":\"" + doc_id + "\"," 
+  es_document = es_document + "\"_source\":{" 
+  es_document = es_document + "\"@timestamp\":\"" + timestamp + "\"," 
+  es_document = es_document + "\"trace_id\":\"1234567890abcdef1234567890abcdef\"," 
+  es_document = es_document + "\"span_id\":\"11112222\"," 
+  es_document = es_document + "\"service_name\":\"user-service\"," 
+  es_document = es_document + "\"operation_name\":\"GET /api/users\"," 
+  es_document = es_document + "\"duration_ms\":150," 
+  es_document = es_document + "\"status\":\"success\""
+  es_document = es_document + "}"
+  es_document = es_document + "}"
   
-  // 验证压缩效果
-  assert_eq(compressed_data.length() < original_data.length(), true)
-  assert_eq(compressed_data.contains("mn:cpu_usage"), true)
-  assert_eq(compressed_data.contains("mv:75.5"), true)
-  assert_eq(compressed_data.contains("ts:1640995200"), true)
-  assert_eq(compressed_data.contains("tg:svc:api,env:prod"), true)
+  // 验证Elasticsearch格式
+  assert_eq(es_document.contains("\"_index\":\"" + index_name + "\""), true)
+  assert_eq(es_document.contains("\"_id\":\"" + doc_id + "\""), true)
+  assert_eq(es_document.contains("\"@timestamp\":\"" + timestamp + "\""), true)
+  assert_eq(es_document.contains("\"trace_id\":\"1234567890abcdef1234567890abcdef\""), true)
+  assert_eq(es_document.contains("\"duration_ms\":150"), true)
+  assert_eq(es_document.contains("\"status\":\"success\""), true)
   
-  // 计算压缩率
-  let compression_ratio = compressed_data.length().to_double() / original_data.length().to_double()
-  assert_eq(compression_ratio < 1.0, true)
-  assert_eq(compression_ratio > 0.5, true)
+  // 创建批量操作格式
+  let bulk_operation = "{ \"index\" : { \"_index\" : \"" + index_name + "\" } }\n"
+  bulk_operation = bulk_operation + "{ \"@timestamp\" : \"" + timestamp + "\", \"service_name\" : \"user-service\" }\n"
+  bulk_operation = bulk_operation + "{ \"index\" : { \"_index\" : \"" + index_name + "\" } }\n"
+  bulk_operation = bulk_operation + "{ \"@timestamp\" : \"" + timestamp + "\", \"service_name\" : \"order-service\" }\n"
+  
+  // 验证批量操作格式
+  assert_eq(bulk_operation.contains("{ \"index\" : { \"_index\" : \"" + index_name + "\" } }"), true)
+  assert_eq(bulk_operation.contains("\"service_name\" : \"user-service\""), true)
+  assert_eq(bulk_operation.contains("\"service_name\" : \"order-service\""), true)
+  assert_eq(bulk_operation.contains("\n"), true)
 }
 
-test "telemetry_export_filtering" {
-  // 测试导出数据过滤
+test "influxdb_export_format_test" {
+  // 测试InfluxDB导出格式
   
-  let all_metrics = [
-    ("cpu_usage", 75.5, "api-service", "production"),
-    ("memory_usage", 68.2, "api-service", "production"),
-    ("disk_usage", 45.0, "db-service", "production"),
-    ("network_usage", 120.0, "api-service", "staging"),
-    ("response_time", 250.0, "api-service", "production")
-  ]
+  let measurement = "http_requests"
+  let tags = "method=GET,endpoint=/api/users,service=user-service"
+  let fields = "duration=150i,status_code=200"
+  let timestamp = 1640995200000000000L // 纳秒时间戳
   
-  let filter_criteria = [
-    ("service", "api-service"),
-    ("environment", "production")
-  ]
+  // 创建InfluxDB line protocol格式
+  let influxdb_line = measurement + "," + tags + " " + fields + " " + timestamp.to_string()
   
-  // 应用过滤条件
-  let mut filtered_metrics = []
-  let mut i = 0
-  while i < all_metrics.length() {
-    let metric = all_metrics[i]
-    let mut passes_filter = true
-    
-    let mut j = 0
-    while j < filter_criteria.length() {
-      let filter_key = filter_criteria[j].0
-      let filter_value = filter_criteria[j].1
-      
-      if filter_key == "service" and metric.2 != filter_value {
-        passes_filter = false
-        break
-      } else if filter_key == "environment" and metric.3 != filter_value {
-        passes_filter = false
-        break
-      }
-      
-      j = j + 1
-    }
-    
-    if passes_filter {
-      filtered_metrics.push(metric)
-    }
-    
-    i = i + 1
-  }
+  // 验证InfluxDB line protocol格式
+  assert_eq(influxdb_line.has_prefix(measurement + ","), true)
+  assert_eq(influxdb_line.contains(tags), true)
+  assert_eq(influxdb_line.contains(fields), true)
+  assert_eq(influxdb_line.has_suffix(" " + timestamp.to_string()), true)
   
-  // 验证过滤结果
-  assert_eq(filtered_metrics.length(), 3)
-  assert_eq(filtered_metrics[0], ("cpu_usage", 75.5, "api-service", "production"))
-  assert_eq(filtered_metrics[1], ("memory_usage", 68.2, "api-service", "production"))
-  assert_eq(filtered_metrics[2], ("response_time", 250.0, "api-service", "production"))
+  // 创建多个数据点
+  let influxdb_batch = ""
+  influxdb_batch = influxdb_batch + measurement + ",method=GET,endpoint=/api/users duration=150i,status_code=200 " + timestamp.to_string() + "\n"
+  influxdb_batch = influxdb_batch + measurement + ",method=POST,endpoint=/api/orders duration=300i,status_code=201 " + (timestamp + 1000000000L).to_string() + "\n"
+  influxdb_batch = influxdb_batch + measurement + ",method=GET,endpoint=/api/products duration=100i,status_code=200 " + (timestamp + 2000000000L).to_string()
   
-  // 验证过滤掉的指标
-  let mut disk_usage_filtered = true
-  let mut network_usage_filtered = true
-  i = 0
-  while i < filtered_metrics.length() {
-    if filtered_metrics[i].0 == "disk_usage" {
-      disk_usage_filtered = false
-    }
-    if filtered_metrics[i].0 == "network_usage" {
-      network_usage_filtered = false
-    }
-    i = i + 1
-  }
-  
-  assert_eq(disk_usage_filtered, true)   // 不匹配服务过滤条件
-  assert_eq(network_usage_filtered, true) // 不匹配环境过滤条件
+  // 验证InfluxDB批处理格式
+  assert_eq(influxdb_batch.contains("method=GET,endpoint=/api/users"), true)
+  assert_eq(influxdb_batch.contains("method=POST,endpoint=/api/orders"), true)
+  assert_eq(influxdb_batch.contains("method=GET,endpoint=/api/products"), true)
+  assert_eq(influxdb_batch.contains("duration=150i"), true)
+  assert_eq(influxdb_batch.contains("duration=300i"), true)
+  assert_eq(influxdb_batch.contains("duration=100i"), true)
+  assert_eq(influxdb_batch.contains("\n"), true)
 }
 
-test "telemetry_export_performance" {
-  // 测试导出性能
+test "csv_export_format_test" {
+  // 测试CSV导出格式
   
-  let large_dataset_size = 10000
-  let export_start_time = 1000000L
+  // 创建CSV头部
+  let csv_header = "timestamp,trace_id,span_id,service_name,operation_name,duration_ms,status"
   
-  // 生成大数据集
-  let mut large_dataset = []
-  let mut i = 0
-  while i < large_dataset_size {
-    let data_point = (
-      "metric_" + (i % 100).to_string(),
-      (i % 1000).to_double(),
-      1640995200L + i.to_int64(),
-      "service_" + (i % 10).to_string()
-    )
-    large_dataset.push(data_point)
-    i = i + 1
+  // 创建CSV数据行
+  let csv_data = []
+  csv_data.push("2025-12-30T10:00:00Z,1234567890abcdef1234567890abcdef,11112222,user-service,GET /api/users,150,success")
+  csv_data.push("2025-12-30T10:00:01Z,1234567890abcdef1234567890abcdef,33334444,user-service,POST /api/orders,300,success")
+  csv_data.push("2025-12-30T10:00:02Z,1234567890abcdef1234567890abcdef,55556666,user-service,GET /api/products,100,error")
+  
+  // 验证CSV头部
+  assert_eq(csv_header.contains("timestamp"), true)
+  assert_eq(csv_header.contains("trace_id"), true)
+  assert_eq(csv_header.contains("duration_ms"), true)
+  assert_eq(csv_header.contains(","), true)
+  
+  // 验证CSV数据
+  assert_eq(csv_data.length(), 3)
+  for row in csv_data {
+    assert_eq(row.contains(","), true)
+    assert_eq(row.split(",").length(), 7) // 7列
   }
   
-  // 模拟导出过程
-  let mut exported_bytes = 0
-  i = 0
-  while i < large_dataset.length() {
-    let data_point = large_dataset[i]
-    
-    // 模拟序列化为字符串
-    let serialized_data = data_point.0 + ":" + data_point.1.to_string() + 
-                         ":" + data_point.2.to_string() + ":" + data_point.3
-    exported_bytes = exported_bytes + serialized_data.length()
-    
-    i = i + 1
+  // 验证特定数据行
+  assert_eq(csv_data[0].contains("user-service"), true)
+  assert_eq(csv_data[0].contains("150"), true)
+  assert_eq(csv_data[0].contains("success"), true)
+  
+  assert_eq(csv_data[2].contains("error"), true)
+  assert_eq(csv_data[2].contains("100"), true)
+  
+  // 创建完整CSV内容
+  let mut csv_content = csv_header + "\n"
+  for row in csv_data {
+    csv_content = csv_content + row + "\n"
   }
   
-  let export_end_time = 1000500L
-  let export_duration = export_end_time - export_start_time
+  // 验证CSV内容
+  assert_eq(csv_content.has_prefix(csv_header), true)
+  assert_eq(csv_content.contains("\n"), true)
+  assert_eq(csv_content.split("\n").length(), 5) // 头部 + 3行数据 + 空行
+}
+
+test "json_export_format_test" {
+  // 测试JSON导出格式
   
-  // 验证导出性能
-  assert_eq(large_dataset.length(), large_dataset_size)
-  assert_eq(exported_bytes > 0, true)
-  assert_eq(export_duration > 0L, true)
+  // 创建JSON数组格式的遥测数据
+  let json_array = "["
+  json_array = json_array + "{"
+  json_array = json_array + "\"timestamp\":\"2025-12-30T10:00:00Z\"," 
+  json_array = json_array + "\"trace_id\":\"1234567890abcdef1234567890abcdef\"," 
+  json_array = json_array + "\"span_id\":\"11112222\"," 
+  json_array = json_array + "\"service_name\":\"user-service\"," 
+  json_array = json_array + "\"operation_name\":\"GET /api/users\"," 
+  json_array = json_array + "\"duration_ms\":150," 
+  json_array = json_array + "\"attributes\":{\"http.method\":\"GET\",\"http.status_code\":200}"
+  json_array = json_array + "},"
+  json_array = json_array + "{"
+  json_array = json_array + "\"timestamp\":\"2025-12-30T10:00:01Z\"," 
+  json_array = json_array + "\"trace_id\":\"1234567890abcdef1234567890abcdef\"," 
+  json_array = json_array + "\"span_id\":\"33334444\"," 
+  json_array = json_array + "\"service_name\":\"order-service\"," 
+  json_array = json_array + "\"operation_name\":\"POST /api/orders\"," 
+  json_array = json_array + "\"duration_ms\":300," 
+  json_array = json_array + "\"attributes\":{\"http.method\":\"POST\",\"http.status_code\":201}"
+  json_array = json_array + "}"
+  json_array = json_array + "]"
   
-  // 计算导出速率
-  let export_rate = large_dataset_size.to_double() / export_duration.to_double() * 1000000.0
-  assert_eq(export_rate > 0.0, true)
+  // 验证JSON数组格式
+  assert_eq(json_array.has_prefix("["), true)
+  assert_eq(json_array.has_suffix("]"), true)
+  assert_eq(json_array.contains("\"service_name\":\"user-service\""), true)
+  assert_eq(json_array.contains("\"service_name\":\"order-service\""), true)
+  assert_eq(json_array.contains("\"duration_ms\":150"), true)
+  assert_eq(json_array.contains("\"duration_ms\":300"), true)
+  assert_eq(json_array.contains("\"attributes\":"), true)
   
-  // 计算平均数据大小
-  let avg_data_size = exported_bytes.to_double() / large_dataset_size.to_double()
-  assert_eq(avg_data_size > 0.0, true)
+  // 创建JSON行格式（每行一个JSON对象）
+  let json_lines = ""
+  json_lines = json_lines + "{\"timestamp\":\"2025-12-30T10:00:00Z\",\"service\":\"user-service\",\"metric\":\"request_count\",\"value\":42}\n"
+  json_lines = json_lines + "{\"timestamp\":\"2025-12-30T10:00:01Z\",\"service\":\"order-service\",\"metric\":\"request_count\",\"value\":38}\n"
+  json_lines = json_lines + "{\"timestamp\":\"2025-12-30T10:00:02Z\",\"service\":\"payment-service\",\"metric\":\"request_count\",\"value\":25}"
   
-  // 计算总导出字节数
-  let total_exported_mb = exported_bytes.to_double() / (1024.0 * 1024.0)
-  assert_eq(total_exported_mb > 0.0, true)
+  // 验证JSON行格式
+  assert_eq(json_lines.contains("{\"timestamp\""), true)
+  assert_eq(json_lines.contains("\"service\":\"user-service\""), true)
+  assert_eq(json_lines.contains("\"metric\":\"request_count\""), true)
+  assert_eq(json_lines.contains("\"value\":42"), true)
+  assert_eq(json_lines.contains("\n"), true)
+  assert_eq(json_lines.split("\n").length(), 3)
 }

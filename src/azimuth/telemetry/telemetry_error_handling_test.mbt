@@ -1,160 +1,339 @@
-// 遥测错误处理测试用例
-// 测试遥测系统的错误处理和恢复机制
+// 遥测错误处理测试
+// 测试遥测系统在各种错误情况下的处理能力
 
-test "telemetry_invalid_trace_id_handling" {
-  // 测试无效追踪ID处理
+test "trace_error_handling_test" {
+  // 测试追踪错误处理
   
-  let valid_trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let invalid_trace_id_short = "invalid"
-  let invalid_trace_id_chars = "xyz123456789012345678901234567890"
-  let empty_trace_id = ""
+  let invalid_trace_id = "invalid_trace_id"
+  let invalid_span_id = "invalid"
+  let error_message = "Invalid trace context"
+  let error_code = "INVALID_TRACE_CONTEXT"
   
-  // 验证有效追踪ID
-  assert_eq(valid_trace_id.length(), 32)
-  assert_eq(valid_trace_id.has_prefix("0af7"), true)
-  assert_eq(valid_trace_id.has_suffix("319c"), true)
+  // 验证无效trace_id
+  assert_eq(invalid_trace_id.length() != 32, true)
+  assert_eq(invalid_trace_id.contains_only_hex() == false, true)
   
-  // 验证无效短追踪ID
-  assert_eq(invalid_trace_id_short.length(), 7)
-  assert_eq(invalid_trace_id_short.length() < 32, true)
+  // 验证无效span_id
+  assert_eq(invalid_span_id.length() != 8, true)
+  assert_eq(invalid_span_id.contains_only_hex() == false, true)
   
-  // 验证无效字符追踪ID
-  assert_eq(invalid_trace_id_chars.length(), 32)
-  assert_eq(invalid_trace_id_chars.has_prefix("xyz1"), true)
-  assert_eq(invalid_trace_id_chars.has_suffix("7890"), true)
+  // 创建错误记录
+  let error_record = error_code + ":" + error_message + ":trace_id=" + invalid_trace_id + ":span_id=" + invalid_span_id
+  assert_eq(error_record.contains(error_code), true)
+  assert_eq(error_record.contains(error_message), true)
+  assert_eq(error_record.contains("trace_id=" + invalid_trace_id), true)
+  assert_eq(error_record.contains("span_id=" + invalid_span_id), true)
   
-  // 验证空追踪ID
-  assert_eq(empty_trace_id.length(), 0)
-  assert_eq(empty_trace_id == "", true)
+  // 验证错误恢复机制
+  let fallback_trace_id = "00000000000000000000000000000000"
+  let fallback_span_id = "00000000"
+  let fallback_context = fallback_trace_id + ":" + fallback_span_id
+  assert_eq(fallback_trace_id.length(), 32)
+  assert_eq(fallback_span_id.length(), 8)
   
-  // 创建错误处理状态字符串
-  let error_status = "Valid: " + (valid_trace_id.length() == 32).to_string() + 
-                    ", Invalid_short: " + (invalid_trace_id_short.length() < 32).to_string() +
-                    ", Invalid_chars: " + (invalid_trace_id_chars.has_prefix("xyz")).to_string() +
-                    ", Empty: " + (empty_trace_id.length() == 0).to_string()
-  assert_eq(error_status.has_prefix("Valid: true"), true)
-  assert_eq(error_status.has_suffix("Empty: true"), true)
+  // 验证错误上下文转换
+  let error_context = "error_type=invalid_trace:original_id=" + invalid_trace_id + ":fallback_id=" + fallback_trace_id
+  assert_eq(error_context.contains("error_type=invalid_trace"), true)
+  assert_eq(error_context.contains("original_id=" + invalid_trace_id), true)
+  assert_eq(error_context.contains("fallback_id=" + fallback_trace_id), true)
 }
 
-test "telemetry_malformed_attribute_handling" {
-  // 测试格式错误的属性处理
+test "metric_error_handling_test" {
+  // 测试指标错误处理
   
-  let valid_attribute = "user.id"
-  let empty_key_attribute = ".value"
-  let empty_value_attribute = "key."
-  let special_chars_attribute = "user@id#test"
+  let invalid_metric_name = ""
+  let negative_metric_value = -50.0
+  let infinite_metric_value = 1.0 / 0.0
+  let nan_metric_value = 0.0 / 0.0
   
-  // 验证有效属性
-  assert_eq(valid_attribute.contains("."), true)
-  assert_eq(valid_attribute.has_prefix("user"), true)
-  assert_eq(valid_attribute.has_suffix(".id"), true)
+  // 验证无效指标名称
+  assert_eq(invalid_metric_name.length(), 0)
   
-  // 验证空键属性
-  assert_eq(empty_key_attribute.has_prefix("."), true)
-  assert_eq(empty_key_attribute.has_suffix(".value"), true)
+  // 验证负指标值
+  assert_eq(negative_metric_value < 0.0, true)
   
-  // 验证空值属性
-  assert_eq(empty_value_attribute.has_prefix("key"), true)
-  assert_eq(empty_value_attribute.has_suffix("."), true)
+  // 验证无穷大指标值
+  assert_eq(infinite_metric_value > 1000000.0, true)
   
-  // 验证特殊字符属性
-  assert_eq(special_chars_attribute.contains("@"), true)
-  assert_eq(special_chars_attribute.contains("#"), true)
+  // 验证NaN指标值
+  assert_eq(nan_metric_value != nan_metric_value, true) // NaN不等于自身
   
-  // 创建属性验证状态字符串
-  let validation_status = "Valid_format: " + (valid_attribute.contains(".") && !valid_attribute.has_prefix(".") && !valid_attribute.has_suffix(".")).to_string() +
-                         ", Empty_key: " + empty_key_attribute.has_prefix(".").to_string() +
-                         ", Empty_value: " + empty_value_attribute.has_suffix(".").to_string() +
-                         ", Special_chars: " + (special_chars_attribute.contains("@") || special_chars_attribute.contains("#")).to_string()
-  assert_eq(validation_status.has_prefix("Valid_format: true"), true)
-  assert_eq(validation_status.has_suffix("Special_chars: true"), true)
+  // 创建指标错误记录
+  let metric_errors = [
+    "empty_name:metric_name_cannot_be_empty",
+    "negative_value:metric_value_cannot_be_negative:" + negative_metric_value.to_string(),
+    "infinite_value:metric_value_cannot_be_infinite",
+    "nan_value:metric_value_cannot_be_nan"
+  ]
+  
+  // 验证指标错误记录
+  for error in metric_errors {
+    assert_eq(error.contains(":"), true)
+  }
+  
+  assert_eq(metric_errors[0].contains("empty_name"), true)
+  assert_eq(metric_errors[1].contains("negative_value"), true)
+  assert_eq(metric_errors[2].contains("infinite_value"), true)
+  assert_eq(metric_errors[3].contains("nan_value"), true)
+  
+  // 验证指标错误恢复
+  let fallback_metric_value = 0.0
+  let fallback_metric_name = "unknown_metric"
+  let recovery_record = "metric_error_recovered:name=" + fallback_metric_name + ":value=" + fallback_metric_value.to_string()
+  assert_eq(recovery_record.contains("metric_error_recovered"), true)
+  assert_eq(recovery_record.contains("name=" + fallback_metric_name), true)
+  assert_eq(recovery_record.contains("value=0.0"), true)
 }
 
-test "telemetry_corrupted_data_recovery" {
-  // 测试损坏数据恢复
+test "log_error_handling_test" {
+  // 测试日志错误处理
   
-  let clean_data = "normal_operation_data"
-  let corrupted_data = "corrupt\x00\x01\x02data"
-  let partial_data = "partial"
+  let oversized_log_message = "a".repeat(100000)
+  let invalid_log_level = "INVALID_LEVEL"
+  let null_timestamp = -1L
+  let malformed_attributes = "invalid:json:format"
   
-  // 验证干净数据
-  assert_eq(clean_data.length(), 20)
-  assert_eq(clean_data.has_prefix("normal"), true)
-  assert_eq(clean_data.has_suffix("data"), true)
+  // 验证超大日志消息
+  assert_eq(oversized_log_message.length(), 100000)
+  assert_eq(oversized_log_message.length() > 32000, true)
   
-  // 验证损坏数据（包含控制字符）
-  assert_eq(corrupted_data.length(), 16)
-  assert_eq(corrupted_data.has_prefix("corrupt"), true)
-  assert_eq(corrupted_data.has_suffix("data"), true)
+  // 验证无效日志级别
+  let valid_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+  let mut is_valid_level = false
+  for level in valid_levels {
+    if level == invalid_log_level {
+      is_valid_level = true
+      break
+    }
+  }
+  assert_eq(is_valid_level, false)
   
-  // 验证部分数据
-  assert_eq(partial_data.length(), 7)
-  assert_eq(partial_data, "partial")
+  // 验证无效时间戳
+  assert_eq(null_timestamp < 0, true)
   
-  // 创建数据恢复策略字符串
-  let recovery_strategy = "Clean: " + (clean_data.length() > 10).to_string() +
-                         ", Corrupted: " + (corrupted_data.has_prefix("corrupt")).to_string() +
-                         ", Partial: " + (partial_data.length() < 10).to_string() +
-                         ", Action: sanitize_or_reconstruct"
-  assert_eq(recovery_strategy.has_prefix("Clean: true"), true)
-  assert_eq(recovery_strategy.has_suffix("sanitize_or_reconstruct"), true)
+  // 验证格式错误的属性
+  assert_eq(malformed_attributes.contains("::"), true)
+  
+  // 创建日志错误记录
+  let log_error_record = "log_error:oversized_message:" + oversized_log_message.length().to_string() + " bytes:invalid_level:" + invalid_log_level + ":null_timestamp:" + null_timestamp.to_string()
+  assert_eq(log_error_record.contains("oversized_message"), true)
+  assert_eq(log_error_record.contains("100000"), true)
+  assert_eq(log_error_record.contains("invalid_level"), true)
+  assert_eq(log_error_record.contains(invalid_log_level), true)
+  assert_eq(log_error_record.contains("null_timestamp"), true)
+  
+  // 验证日志截断处理
+  let truncated_message = oversized_log_message.slice(0, 1000) + "...[truncated]"
+  assert_eq(truncated_message.length(), 1013) // 1000 + 13
+  assert_eq(truncated_message.has_suffix("...[truncated]"), true)
+  
+  // 验证日志级别降级处理
+  let fallback_log_level = "INFO"
+  let level_fallback_record = "log_level_fallback:original=" + invalid_log_level + ":fallback=" + fallback_log_level
+  assert_eq(level_fallback_record.contains("original=" + invalid_log_level), true)
+  assert_eq(level_fallback_record.contains("fallback=" + fallback_log_level), true)
 }
 
-test "telemetry_network_error_simulation" {
-  // 测试网络错误模拟
+test "resource_error_handling_test" {
+  // 测试资源错误处理
   
-  let success_response = "200 OK"
-  let timeout_error = "timeout"
-  let connection_error = "connection_refused"
-  let rate_limit_error = "rate_limit_exceeded"
+  let empty_resource_name = ""
+  let oversized_resource_attributes = "attribute=value,".repeat(5000)
+  let invalid_resource_type = 12345
+  let malformed_resource_json = "{invalid json format}"
   
-  // 验证成功响应
-  assert_eq(success_response.has_prefix("200"), true)
-  assert_eq(success_response.has_suffix("OK"), true)
+  // 验证空资源名称
+  assert_eq(empty_resource_name.length(), 0)
   
-  // 验证超时错误
-  assert_eq(timeout_error, "timeout")
+  // 验证超大资源属性
+  assert_eq(oversized_resource_attributes.length() > 100000, true)
   
-  // 验证连接错误
-  assert_eq(connection_error, "connection_refused")
+  // 验证无效资源类型
+  assert_eq(invalid_resource_type > 1000, true)
   
-  // 验证速率限制错误
-  assert_eq(rate_limit_error, "rate_limit_exceeded")
+  // 验证格式错误的资源JSON
+  assert_eq(malformed_resource_json.has_prefix("{"), true)
+  assert_eq(malformed_resource_json.has_suffix("}"), true)
+  assert_eq(malformed_resource_json.contains("invalid"), true)
   
-  // 创建错误处理策略字符串
-  let error_handling = "Success: " + (success_response.has_prefix("200")).to_string() +
-                      ", Timeout_retry: " + (timeout_error == "timeout").to_string() +
-                      ", Connection_retry: " + (connection_error == "connection_refused").to_string() +
-                      ", Rate_limit_backoff: " + (rate_limit_error == "rate_limit_exceeded").to_string()
-  assert_eq(error_handling.has_prefix("Success: true"), true)
-  assert_eq(error_handling.has_suffix("Rate_limit_backoff: true"), true)
+  // 创建资源错误记录
+  let resource_error_record = "resource_error:empty_name:oversized_attributes:" + oversized_resource_attributes.length().to_string() + ":invalid_type:" + invalid_resource_type.to_string() + ":malformed_json"
+  assert_eq(resource_error_record.contains("empty_name"), true)
+  assert_eq(resource_error_record.contains("oversized_attributes"), true)
+  assert_eq(resource_error_record.contains("invalid_type"), true)
+  assert_eq(resource_error_record.contains("malformed_json"), true)
+  
+  // 验证资源错误恢复
+  let fallback_resource_name = "unknown_resource"
+  let truncated_attributes = oversized_resource_attributes.slice(0, 1000)
+  let recovery_record = "resource_recovery:name=" + fallback_resource_name + ":attributes_truncated_to:" + truncated_attributes.length().to_string()
+  assert_eq(recovery_record.contains("resource_recovery"), true)
+  assert_eq(recovery_record.contains("name=" + fallback_resource_name), true)
+  assert_eq(recovery_record.contains("attributes_truncated_to"), true)
 }
 
-test "telemetry_resource_exhaustion_handling" {
-  // 测试资源耗尽处理
+test "connection_error_handling_test" {
+  // 测试连接错误处理
   
-  let normal_memory_usage = 100  // MB
-  let high_memory_usage = 900    // MB
-  let critical_memory_usage = 950 // MB
+  let connection_timeout = "connection_timeout_after_30_seconds"
+  let connection_refused = "connection_refused_by_server"
+  let dns_resolution_failed = "dns_resolution_failed"
+  let tls_handshake_failed = "tls_handshake_failed"
   
-  // 验证正常内存使用
-  assert_eq(normal_memory_usage, 100)
-  assert_eq(normal_memory_usage < 500, true)
+  // 创建连接错误类型
+  let connection_errors = [
+    connection_timeout,
+    connection_refused,
+    dns_resolution_failed,
+    tls_handshake_failed
+  ]
   
-  // 验证高内存使用
-  assert_eq(high_memory_usage, 900)
-  assert_eq(high_memory_usage > 500, true)
-  assert_eq(high_memory_usage < 950, true)
+  // 验证连接错误类型
+  assert_eq(connection_errors[0].contains("timeout"), true)
+  assert_eq(connection_errors[1].contains("refused"), true)
+  assert_eq(connection_errors[2].contains("dns"), true)
+  assert_eq(connection_errors[3].contains("tls"), true)
   
-  // 验证临界内存使用
-  assert_eq(critical_memory_usage, 950)
-  assert_eq(critical_memory_usage > 900, true)
+  // 创建连接错误记录
+  let mut connection_error_records = []
+  for error in connection_errors {
+    let record = "connection_error:" + error + ":timestamp:" + 1640995200L.to_string() + ":retry_count:3"
+    connection_error_records.push(record)
+  }
   
-  // 创建资源管理策略字符串
-  let resource_management = "Normal: " + (normal_memory_usage < 500).to_string() +
-                           ", High_warning: " + (high_memory_usage > 500 && high_memory_usage < 950).to_string() +
-                           ", Critical_cleanup: " + (critical_memory_usage >= 950).to_string() +
-                           ", Action: monitor_or_cleanup"
-  assert_eq(resource_management.has_prefix("Normal: true"), true)
-  assert_eq(resource_management.has_suffix("Action: monitor_or_cleanup"), true)
+  // 验证连接错误记录
+  assert_eq(connection_error_records.length(), 4)
+  for record in connection_error_records {
+    assert_eq(record.contains("connection_error:"), true)
+    assert_eq(record.contains("timestamp:"), true)
+    assert_eq(record.contains("retry_count:3"), true)
+  }
+  
+  // 验证连接错误恢复策略
+  let recovery_strategies = [
+    "exponential_backoff:initial_delay:1000:max_delay:60000",
+    "circuit_breaker:failure_threshold:5:recovery_timeout:30000",
+    "failover:backup_endpoint:backup-collector:port:4318",
+    "buffering:buffer_size:1000:flush_interval:5000"
+  ]
+  
+  // 验证恢复策略
+  for strategy in recovery_strategies {
+    assert_eq(strategy.contains(":"), true)
+  }
+  
+  assert_eq(recovery_strategies[0].contains("exponential_backoff"), true)
+  assert_eq(recovery_strategies[1].contains("circuit_breaker"), true)
+  assert_eq(recovery_strategies[2].contains("failover"), true)
+  assert_eq(recovery_strategies[3].contains("buffering"), true)
+}
+
+test "serialization_error_handling_test" {
+  // 测试序列化错误处理
+  
+  let circular_reference = "circular_reference_detected"
+  let unsupported_data_type = "unsupported_data_type:function"
+  let malformed_json = "{\"invalid\": json, \"format\": true}"
+  let protobuf_serialization_failed = "protobuf_serialization_failed"
+  
+  // 创建序列化错误类型
+  let serialization_errors = [
+    circular_reference,
+    unsupported_data_type,
+    malformed_json,
+    protobuf_serialization_failed
+  ]
+  
+  // 验证序列化错误类型
+  assert_eq(serialization_errors[0].contains("circular"), true)
+  assert_eq(serialization_errors[1].contains("unsupported"), true)
+  assert_eq(serialization_errors[2].contains("json"), true)
+  assert_eq(serialization_errors[3].contains("protobuf"), true)
+  
+  // 创建序列化错误记录
+  let mut serialization_error_records = []
+  for error in serialization_errors {
+    let record = "serialization_error:" + error + ":data_size:1024:encoding:json"
+    serialization_error_records.push(record)
+  }
+  
+  // 验证序列化错误记录
+  assert_eq(serialization_error_records.length(), 4)
+  for record in serialization_error_records {
+    assert_eq(record.contains("serialization_error:"), true)
+    assert_eq(record.contains("data_size:1024"), true)
+    assert_eq(record.contains("encoding:json"), true)
+  }
+  
+  // 验证序列化错误恢复
+  let fallback_encodings = ["text", "base64", "hex", "binary"]
+  let mut recovery_records = []
+  
+  for encoding in fallback_encodings {
+    let record = "serialization_recovery:fallback_encoding:" + encoding + ":success:true"
+    recovery_records.push(record)
+  }
+  
+  // 验证恢复记录
+  assert_eq(recovery_records.length(), 4)
+  assert_eq(recovery_records[0].contains("fallback_encoding:text"), true)
+  assert_eq(recovery_records[1].contains("fallback_encoding:base64"), true)
+  assert_eq(recovery_records[2].contains("fallback_encoding:hex"), true)
+  assert_eq(recovery_records[3].contains("fallback_encoding:binary"), true)
+}
+
+test "memory_error_handling_test" {
+  // 测试内存错误处理
+  
+  let out_of_memory = "out_of_memory_error"
+  let memory_leak_detected = "memory_leak_detected_in_telemetry_buffer"
+  let buffer_overflow = "telemetry_buffer_overflow"
+  let allocation_failed = "memory_allocation_failed"
+  
+  // 创建内存错误类型
+  let memory_errors = [
+    out_of_memory,
+    memory_leak_detected,
+    buffer_overflow,
+    allocation_failed
+  ]
+  
+  // 验证内存错误类型
+  assert_eq(memory_errors[0].contains("out_of_memory"), true)
+  assert_eq(memory_errors[1].contains("memory_leak"), true)
+  assert_eq(memory_errors[2].contains("buffer_overflow"), true)
+  assert_eq(memory_errors[3].contains("allocation_failed"), true)
+  
+  // 创建内存错误记录
+  let mut memory_error_records = []
+  for error in memory_errors {
+    let record = "memory_error:" + error + ":allocated_mb:256:available_mb:512:timestamp:" + 1640995200L.to_string()
+    memory_error_records.push(record)
+  }
+  
+  // 验证内存错误记录
+  assert_eq(memory_error_records.length(), 4)
+  for record in memory_error_records {
+    assert_eq(record.contains("memory_error:"), true)
+    assert_eq(record.contains("allocated_mb:256"), true)
+    assert_eq(record.contains("available_mb:512"), true)
+  }
+  
+  // 验证内存错误恢复策略
+  let memory_recovery_strategies = [
+    "garbage_collection:force:true:target_reduction:50",
+    "buffer_resize:old_size:1000:new_size:500",
+    "batch_flush:batch_size:100:force_flush:true",
+    "emergency_cleanup:clear_caches:true:release_memory:true"
+  ]
+  
+  // 验证内存恢复策略
+  for strategy in memory_recovery_strategies {
+    assert_eq(strategy.contains(":"), true)
+  }
+  
+  assert_eq(memory_recovery_strategies[0].contains("garbage_collection"), true)
+  assert_eq(memory_recovery_strategies[1].contains("buffer_resize"), true)
+  assert_eq(memory_recovery_strategies[2].contains("batch_flush"), true)
+  assert_eq(memory_recovery_strategies[3].contains("emergency_cleanup"), true)
 }
