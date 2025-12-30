@@ -2,7 +2,7 @@
 // 测试各种边界条件和异常情况下的指标API行为
 
 test "metrics_counter_boundary_conditions" {
-  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter_provider = @azimuth.telemetry.api.metrics.NoopMeterProvider::{}
   let meter = meter_provider.get_meter("test_meter", "1.0.0")
   
   // 测试Counter的边界条件
@@ -24,12 +24,12 @@ test "metrics_counter_boundary_conditions" {
   counter.add(1L, [])
   
   // 测试大量属性
-  let large_attributes = Array::range_with(0, 1000, 1).map(fn(i) { ("attr_" + i.to_string(), AttributeValue::int(i.to_int64())) })
+  let large_attributes = Array::range_with(0, 1000, 1).map(fn(i) { ("attr_" + i.to_string(), @azimuth.telemetry.api.common.AttributeValue::int(i.to_int64())) })
   counter.add(1L, large_attributes)
 }
 
 test "metrics_histogram_boundary_conditions" {
-  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter_provider = @azimuth.telemetry.api.metrics.NoopMeterProvider::{}
   let meter = meter_provider.get_meter("test_meter", "1.0.0")
   
   // 测试Histogram的边界条件
@@ -61,7 +61,7 @@ test "metrics_histogram_boundary_conditions" {
 }
 
 test "metrics_up_down_counter_boundary_conditions" {
-  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter_provider = @azimuth.telemetry.api.metrics.NoopMeterProvider::{}
   let meter = meter_provider.get_meter("test_meter", "1.0.0")
   
   // 测试UpDownCounter的边界条件
@@ -83,7 +83,7 @@ test "metrics_up_down_counter_boundary_conditions" {
 }
 
 test "metrics_gauge_boundary_conditions" {
-  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter_provider = @azimuth.telemetry.api.metrics.NoopMeterProvider::{}
   let meter = meter_provider.get_meter("test_meter", "1.0.0")
   
   // 测试Gauge的边界条件
@@ -113,7 +113,7 @@ test "metrics_gauge_boundary_conditions" {
 }
 
 test "metrics_instrument_name_validation" {
-  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter_provider = @azimuth.telemetry.api.metrics.NoopMeterProvider::{}
   let meter = meter_provider.get_meter("test_meter", "1.0.0")
   
   // 测试空名称
@@ -135,47 +135,47 @@ test "metrics_instrument_name_validation" {
 }
 
 test "metrics_attribute_boundary_conditions" {
-  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter_provider = @azimuth.telemetry.api.metrics.NoopMeterProvider::{}
   let meter = meter_provider.get_meter("test_meter", "1.0.0")
   
   let counter = meter.create_counter("test_counter", "count", "Test counter")
   
   // 测试空属性键
-  counter.add(1L, [("", AttributeValue::string("value"))])
+  counter.add(1L, [("", @azimuth.telemetry.api.common.AttributeValue::string("value"))])
   
   // 测试空属性值
-  counter.add(1L, [("key", AttributeValue::string(""))])
+  counter.add(1L, [("key", @azimuth.telemetry.api.common.AttributeValue::string(""))])
   
   // 测试非常长的属性键
   let long_key = "a" * 1000
-  counter.add(1L, [(long_key, AttributeValue::string("value"))])
+  counter.add(1L, [(long_key, @azimuth.telemetry.api.common.AttributeValue::string("value"))])
   
   // 测试非常长的属性值
   let long_value = "a" * 1000
-  counter.add(1L, [("key", AttributeValue::string(long_value))])
+  counter.add(1L, [("key", @azimuth.telemetry.api.common.AttributeValue::string(long_value))])
   
   // 测试特殊字符属性
-  counter.add(1L, [("special-chars_123", AttributeValue::string("special!@#$%^&*()"))])
+  counter.add(1L, [("special-chars_123", @azimuth.telemetry.api.common.AttributeValue::string("special!@#$%^&*()"))])
   
   // 测试Unicode属性
-  counter.add(1L, [("unicode键", AttributeValue::string("Unicode值"))])
+  counter.add(1L, [("unicode键", @azimuth.telemetry.api.common.AttributeValue::string("Unicode值"))])
   
   // 测试所有属性类型
   counter.add(1L, [
-    ("string_attr", AttributeValue::string("string_value")),
-    ("int_attr", AttributeValue::int(42L)),
-    ("float_attr", AttributeValue::float(3.14)),
-    ("bool_attr", AttributeValue::bool(true)),
-    ("array_string_attr", AttributeValue::array_string(["a", "b", "c"])),
-    ("array_int_attr", AttributeValue::array_int([1L, 2L, 3L])),
-    ("array_float_attr", AttributeValue::array_float([1.1, 2.2, 3.3])),
-    ("array_bool_attr", AttributeValue::array_bool([true, false, true]))
+    ("string_attr", @azimuth.telemetry.api.common.AttributeValue::string("string_value")),
+    ("int_attr", @azimuth.telemetry.api.common.AttributeValue::int(42L)),
+    ("float_attr", @azimuth.telemetry.api.common.AttributeValue::float(3.14)),
+    ("bool_attr", @azimuth.telemetry.api.common.AttributeValue::bool(true)),
+    ("array_string_attr", @azimuth.telemetry.api.common.AttributeValue::array_string(["a", "b", "c"])),
+    ("array_int_attr", @azimuth.telemetry.api.common.AttributeValue::array_int([1L, 2L, 3L])),
+    ("array_float_attr", @azimuth.telemetry.api.common.AttributeValue::array_float([1.1, 2.2, 3.3])),
+    ("array_bool_attr", @azimuth.telemetry.api.common.AttributeValue::array_bool([true, false, true]))
   ])
 }
 
 test "metrics_meter_provider_edge_cases" {
   // 测试空名称的meter
-  let meter_provider1 = metrics::NoopMeterProvider::{}
+  let meter_provider1 = @azimuth.telemetry.api.metrics.NoopMeterProvider::{}
   let meter1 = meter_provider1.get_meter("", "1.0.0", "")
   
   // 测试非常长的meter名称
