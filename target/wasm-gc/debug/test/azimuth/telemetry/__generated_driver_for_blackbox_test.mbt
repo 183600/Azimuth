@@ -74,6 +74,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_74726163655f696e746567726974795f746573742e6d6274_5, ["trace_link_integrity"]),
     6: (__test_74726163655f696e746567726974795f746573742e6d6274_6, ["trace_error_integrity"]),
   },
+  "trace_context_validation_test.mbt": {
+    0: (__test_74726163655f636f6e746578745f76616c69646174696f6e5f746573742e6d6274_0, ["trace_context_creation"]),
+    1: (__test_74726163655f636f6e746578745f76616c69646174696f6e5f746573742e6d6274_1, ["trace_context_hex_conversion"]),
+    2: (__test_74726163655f636f6e746578745f76616c69646174696f6e5f746573742e6d6274_2, ["trace_context_validation"]),
+    3: (__test_74726163655f636f6e746578745f76616c69646174696f6e5f746573742e6d6274_3, ["trace_context_parent_child_relationship"]),
+    4: (__test_74726163655f636f6e746578745f76616c69646174696f6e5f746573742e6d6274_4, ["trace_context_baggage_integration"]),
+  },
   "trace_context_propagation_test.mbt": {
     0: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f746573742e6d6274_0, ["span_context_trace_id_propagation"]),
     1: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f746573742e6d6274_1, ["span_context_parent_relationship"]),
@@ -2649,6 +2656,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_62617369635f74656c656d657472795f746573742e6d6274_7, ["telemetry_serialization_format"]),
     8: (__test_62617369635f74656c656d657472795f746573742e6d6274_8, ["telemetry_error_handling"]),
     9: (__test_62617369635f74656c656d657472795f746573742e6d6274_9, ["telemetry_performance_metrics"]),
+  },
+  "attribute_value_type_conversion_test.mbt": {
+    0: (__test_6174747269627574655f76616c75655f747970655f636f6e76657273696f6e5f746573742e6d6274_0, ["attribute_value_string_conversion"]),
+    1: (__test_6174747269627574655f76616c75655f747970655f636f6e76657273696f6e5f746573742e6d6274_1, ["attribute_value_array_conversion"]),
+    2: (__test_6174747269627574655f76616c75655f747970655f636f6e76657273696f6e5f746573742e6d6274_2, ["attribute_value_type_safety"]),
+    3: (__test_6174747269627574655f76616c75655f747970655f636f6e76657273696f6e5f746573742e6d6274_3, ["attribute_value_serialization_format"]),
   },
   "attribute_value_conversion_test.mbt": {
     0: (__test_6174747269627574655f76616c75655f636f6e76657273696f6e5f746573742e6d6274_0, ["attribute_value_type_conversions"]),
