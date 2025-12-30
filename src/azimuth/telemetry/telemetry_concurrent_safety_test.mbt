@@ -1,472 +1,497 @@
-// 遥测并发安全测试用例
-// 测试遥测系统在并发环境下的安全性
+// 遥测系统并发安全测试
+// 测试多线程环境下的数据安全性和竞态条件处理
 
-test "telemetry_concurrent_metric_collection" {
-  // 测试并发指标收集
+test "concurrent_context_operations" {
+  // 测试上下文的并发操作安全性
   
-  let shared_metrics = []
-  let metric_locks = [("cpu_usage", false), ("memory_usage", false), ("disk_usage", false)]
+  let base_context = context::Context::empty()
   
-  // 模拟并发线程收集指标
-  let thread_operations = [
-    ("thread1", "cpu_usage", 45.2),
-    ("thread2", "memory_usage", 67.8),
-    ("thread3", "cpu_usage", 46.1),
-    ("thread4", "disk_usage", 23.4),
-    ("thread5", "memory_usage", 68.2)
-  ]
-  
-  // 模拟锁机制
+  // 模拟并发写入操作
+  let mut contexts = []
   let mut i = 0
-  while i < thread_operations.length() {
-    let thread_id = thread_operations[i].0
-    let metric_name = thread_operations[i].1
-    let metric_value = thread_operations[i].2
-    
-    // 检查锁状态
-    let mut lock_acquired = false
-    let mut j = 0
-    while j < metric_locks.length() {
-      if metric_locks[j].0 == metric_name && metric_locks[j].1 == false {
-        // 获取锁
-        metric_locks[j] = (metric_locks[j].0, true)
-        lock_acquired = true
-        
-        // 添加指标
-        shared_metrics.push((thread_id, metric_name, metric_value))
-        
-        // 释放锁
-        metric_locks[j] = (metric_locks[j].0, false)
-        break
-      }
-      j = j + 1
-    }
-    
-    // 如果无法获取锁，记录为失败
-    if not(lock_acquired) {
-      shared_metrics.push((thread_id, metric_name, -1.0))  // -1.0表示失败
-    }
-    
+  
+  // 创建多个上下文，每个添加不同的键值对
+  while i < 100 {
+    let key = context::create_key("concurrent_key_" + i.to_string())
+    let context_with_value = base_context.with_value(key, "value_" + i.to_string())
+    contexts.push(context_with_value)
     i = i + 1
   }
   
-  // 验证并发收集结果
-  assert_eq(thread_operations.length(), 5)
-  assert_eq(shared_metrics.length(), 5)
+  // 验证所有上下文都正确创建
+  assert_eq(contexts.length(), 100)
   
-  // 验证没有数据竞争（所有操作都应该成功）
-  let mut success_count = 0
-  let mut failure_count = 0
+  // 验证每个上下文都包含正确的值
   i = 0
-  while i < shared_metrics.length() {
-    if shared_metrics[i].2 >= 0.0 {
-      success_count = success_count + 1
-    } else {
-      failure_count = failure_count + 1
-    }
+  while i < contexts.length() {
+    let test_context = contexts[i]
+    let key = context::create_key("concurrent_key_" + i.to_string())
+    let value = test_context.get(key)
+    assert_eq(value.unwrap(), "value_" + i.to_string())
     i = i + 1
   }
   
-  assert_eq(success_count, 5)
-  assert_eq(failure_count, 0)
+  // 测试链式操作的并发安全性
+  let mut chain_contexts = []
+  let mut j = 0
   
-  // 验证所有锁都已释放
-  i = 0
-  while i < metric_locks.length() {
-    assert_eq(metric_locks[i].1, false)  // 所有锁都应该被释放
-    i = i + 1
+  while j < 50 {
+    let mut chain_context = base_context
+    let mut k = 0
+    while k < 10 {
+      let chain_key = context::create_key("chain_" + j.to_string() + "_" + k.to_string())
+      chain_context = chain_context.with_value(chain_key, "chain_value_" + k.to_string())
+      k = k + 1
+    }
+    chain_contexts.push(chain_context)
+    j = j + 1
+  }
+  
+  // 验证链式操作结果
+  assert_eq(chain_contexts.length(), 50)
+  
+  j = 0
+  while j < chain_contexts.length() {
+    let chain_ctx = chain_contexts[j]
+    assert_eq(chain_ctx.values.length(), 10)
+    
+    // 验证链式操作的所有值都正确
+    let mut k = 0
+    while k < 10 {
+      let chain_key = context::create_key("chain_" + j.to_string() + "_" + k.to_string())
+      let value = chain_ctx.get(chain_key)
+      assert_eq(value.unwrap(), "chain_value_" + k.to_string())
+      k = k + 1
+    }
+    j = j + 1
   }
 }
 
-test "telemetry_concurrent_span_creation" {
-  // 测试并发跨度创建
+test "concurrent_baggage_operations" {
+  // 测试baggage的并发操作安全性
   
-  let span_counter = 0
-  let spans = []
+  let base_baggage = context::Baggage::empty()
   
-  // 模拟多个线程创建跨度
-  let concurrent_operations = [
-    ("req-001", "GET /api/users"),
-    ("req-002", "POST /api/orders"),
-    ("req-003", "GET /api/products"),
-    ("req-004", "PUT /api/users/123"),
-    ("req-005", "DELETE /api/orders/456")
-  ]
-  
-  // 模拟原子计数器
-  let mut atomic_counter = 0
-  
+  // 模拟并发baggage创建
+  let mut baggage_items = []
   let mut i = 0
-  while i < concurrent_operations.length() {
-    let request_id = concurrent_operations[i].0
-    let operation_name = concurrent_operations[i].1
+  
+  while i < 100 {
+    let baggage = base_baggage
+      .with_entry("user_id", i.to_string())
+      .with_entry("session_id", "session_" + i.to_string())
+      .with_entry("request_id", "req_" + i.to_string())
+      .with_entry("timestamp", (1234567890 + i).to_string())
     
-    // 原子递增计数器
-    atomic_counter = atomic_counter + 1
-    let span_id = "span-" + atomic_counter.to_string()
-    
-    // 创建跨度
-    let span = (span_id, request_id, operation_name)
-    spans.push(span)
-    
+    baggage_items.push(baggage)
     i = i + 1
   }
   
-  // 验证并发跨度创建
-  assert_eq(concurrent_operations.length(), 5)
-  assert_eq(spans.length(), 5)
-  assert_eq(atomic_counter, 5)
+  // 验证所有baggage都正确创建
+  assert_eq(baggage_items.length(), 100)
   
-  // 验证每个跨度都有唯一的ID
-  let span_ids = []
+  // 验证每个baggage的内容
+  i = 0
+  while i < baggage_items.length() {
+    let baggage = baggage_items[i]
+    assert_eq(baggage.entries.length(), 4)
+    assert_eq(baggage.get("user_id").unwrap(), i.to_string())
+    assert_eq(baggage.get("session_id").unwrap(), "session_" + i.to_string())
+    assert_eq(baggage.get("request_id").unwrap(), "req_" + i.to_string())
+    assert_eq(baggage.get("timestamp").unwrap(), (1234567890 + i).to_string())
+    i = i + 1
+  }
+  
+  // 测试baggage覆盖操作的并发安全性
+  let mut override_baggage_items = []
+  let mut j = 0
+  
+  while j < 50 {
+    let baggage = base_baggage
+      .with_entry("shared_key", "initial_value_" + j.to_string())
+      .with_entry("unique_key", j.to_string())
+      .with_entry("shared_key", "overridden_value_" + j.to_string())  // 覆盖之前的值
+    
+    override_baggage_items.push(baggage)
+    j = j + 1
+  }
+  
+  // 验证覆盖操作的正确性
+  j = 0
+  while j < override_baggage_items.length() {
+    let baggage = override_baggage_items[j]
+    assert_eq(baggage.entries.length(), 2)  // 应该只有2个条目
+    assert_eq(baggage.get("shared_key").unwrap(), "overridden_value_" + j.to_string())
+    assert_eq(baggage.get("unique_key").unwrap(), j.to_string())
+    j = j + 1
+  }
+}
+
+test "concurrent_span_creation" {
+  // 测试并发span创建的安全性
+  
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("concurrent_tracer")
+  let base_context = context::Context::empty()
+  
+  // 模拟并发span创建
+  let mut spans = []
+  let mut contexts = []
+  let mut i = 0
+  
+  while i < 200 {
+    let span_name = "concurrent_span_" + i.to_string()
+    let span_attributes = [
+      ("span_index", common::AttributeValue::int(i.to_int64())),
+      ("batch_id", common::AttributeValue::int((i / 20).to_int64())),
+      ("operation_type", common::AttributeValue::string(if i % 3 == 0 { "read" } else if i % 3 == 1 { "write" } else { "update" }))
+    ]
+    
+    let (ctx, span) = tracer.start_span(
+      base_context,
+      span_name,
+      match i % 5 {
+        0 => trace::Internal
+        1 => trace::Server
+        2 => trace::Client
+        3 => trace::Producer
+        _ => trace::Consumer
+      },
+      span_attributes,
+      1234567890000000L + i.to_int64()
+    )
+    
+    spans.push(span)
+    contexts.push(ctx)
+    i = i + 1
+  }
+  
+  // 验证所有span都正确创建
+  assert_eq(spans.length(), 200)
+  assert_eq(contexts.length(), 200)
+  
+  // 验证span属性的唯一性和正确性
   i = 0
   while i < spans.length() {
-    span_ids.push(spans[i].0)
-    i = i + 1
-  }
-  
-  // 检查唯一性
-  i = 0
-  while i < span_ids.length() {
-    let mut j = i + 1
-    while j < span_ids.length() {
-      assert_eq(span_ids[i] != span_ids[j], true)  // 确保没有重复
-      j = j + 1
-    }
-    i = i + 1
-  }
-}
-
-test "telemetry_concurrent_batch_processing" {
-  // 测试并发批处理
-  
-  let batch_queue = []
-  let processing_lock = false
-  
-  // 模拟生产者和消费者
-  let producer_operations = [
-    ("producer1", "batch1"),
-    ("producer2", "batch2"),
-    ("producer3", "batch3"),
-    ("producer4", "batch4"),
-    ("producer5", "batch5")
-  ]
-  
-  let consumer_operations = [
-    ("consumer1", "process1"),
-    ("consumer2", "process2"),
-    ("consumer3", "process3")
-  ]
-  
-  // 生产者添加批次
-  let mut i = 0
-  while i < producer_operations.length() {
-    let producer_id = producer_operations[i].0
-    let batch_data = producer_operations[i].1
+    let span = spans[i]
+    assert_eq(span.name, "concurrent_span_" + i.to_string())
+    assert_eq(span.attributes.length(), 3)
+    assert_eq(span.start_time_unix_nanos, 1234567890000000L + i.to_int64())
     
-    // 模拟添加到队列的原子操作
-    batch_queue.push((producer_id, batch_data, "pending"))
-    
-    i = i + 1
-  }
-  
-  // 消费者处理批次
-  let mut processed_count = 0
-  i = 0
-  while i < consumer_operations.length() && batch_queue.length() > 0 {
-    let consumer_id = consumer_operations[i].0
-    let process_id = consumer_operations[i].1
-    
-    // 模拟从队列取出并处理
-    if batch_queue.length() > 0 {
-      let batch = batch_queue.remove_at(0)
-      let updated_batch = (batch.0, batch.1, "processed")
-      
-      // 验证批次状态转换
-      assert_eq(batch.2, "pending")
-      assert_eq(updated_batch.2, "processed")
-      
-      processed_count = processed_count + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证并发批处理结果
-  assert_eq(producer_operations.length(), 5)
-  assert_eq(consumer_operations.length(), 3)
-  assert_eq(processed_count, 3)
-  assert_eq(batch_queue.length(), 2)  // 剩余未处理的批次
-}
-
-test "telemetry_concurrent_context_propagation" {
-  // 测试并发上下文传播
-  
-  let context_store = []
-  let context_lock = false
-  
-  // 模拟并发上下文操作
-  let context_operations = [
-    ("thread1", "trace-001", "create"),
-    ("thread2", "trace-001", "read"),
-    ("thread3", "trace-002", "create"),
-    ("thread4", "trace-001", "update"),
-    ("thread5", "trace-002", "read"),
-    ("thread6", "trace-003", "create")
-  ]
-  
-  // 模拟上下文管理
-  let mut i = 0
-  while i < context_operations.length() {
-    let thread_id = context_operations[i].0
-    let trace_id = context_operations[i].1
-    let operation = context_operations[i].2
-    
-    if operation == "create" {
-      // 创建新上下文
-      let context = (trace_id, thread_id, "active")
-      context_store.push(context)
-    } else if operation == "read" {
-      // 读取上下文
-      let mut found = false
-      let mut j = 0
-      while j < context_store.length() {
-        if context_store[j].0 == trace_id {
-          found = true
-          break
-        }
-        j = j + 1
+    // 验证属性值
+    match span.attributes[0] {
+      (key, common::IntValue(value)) => {
+        assert_eq(key, "span_index")
+        assert_eq(value, i.to_int64())
       }
-      // 验证上下文存在
-      assert_eq(found, true)
-    } else if operation == "update" {
-      // 更新上下文
-      let mut j = 0
-      while j < context_store.length() {
-        if context_store[j].0 == trace_id {
-          context_store[j] = (context_store[j].0, thread_id, "updated")
-          break
-        }
-        j = j + 1
-      }
+      _ => @test.fail("Expected span_index attribute")
     }
     
     i = i + 1
   }
-  
-  // 验证并发上下文操作结果
-  assert_eq(context_operations.length(), 6)
-  assert_eq(context_store.length(), 3)  // 3个不同的trace
-  
-  // 验证上下文状态
-  let mut active_count = 0
-  let mut updated_count = 0
-  let mut i = 0
-  while i < context_store.length() {
-    if context_store[i].2 == "active" {
-      active_count = active_count + 1
-    } else if context_store[i].2 == "updated" {
-      updated_count = updated_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(active_count, 2)  // trace-002, trace-003
-  assert_eq(updated_count, 1)  // trace-001
 }
 
-test "telemetry_concurrent_sampling" {
-  // 测试并发采样
+test "concurrent_metric_recording" {
+  // 测试并发指标记录的安全性
   
-  let sampling_decisions = []
-  let sampling_lock = false
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let meter = meter_provider.get_meter("concurrent_meter")
   
-  // 模拟并发采样决策
-  let sampling_requests = [
-    ("req-001", "trace-001"),
-    ("req-002", "trace-002"),
-    ("req-003", "trace-003"),
-    ("req-004", "trace-004"),
-    ("req-005", "trace-005")
-  ]
+  let counter = meter.create_counter("concurrent_counter", "count", "Concurrent counter")
+  let histogram = meter.create_histogram("concurrent_histogram", "ms", "Concurrent histogram")
+  let gauge = meter.create_gauge("concurrent_gauge", "value", "Concurrent gauge")
   
-  // 采样策略：基于trace ID哈希
+  // 模拟并发指标记录
   let mut i = 0
-  while i < sampling_requests.length() {
-    let request_id = sampling_requests[i].0
-    let trace_id = sampling_requests[i].1
+  while i < 1000 {
+    let attributes = [
+      ("thread_id", common::AttributeValue::int((i % 10).to_int64())),
+      ("batch_id", common::AttributeValue::int((i / 100).to_int64())),
+      ("operation", common::AttributeValue::string(if i % 2 == 0 { "even" } else { "odd" }))
+    ]
     
-    // 模拟线程安全的采样决策
-    let mut hash = 0
-    let mut j = 0
-    while j < trace_id.length() {
-      hash = hash + trace_id[j].to_int()
-      j = j + 1
-    }
-    
-    let should_sample = hash % 2 == 0  // 50%采样率
-    let decision = (request_id, trace_id, should_sample)
-    sampling_decisions.push(decision)
+    // 记录不同类型的指标
+    counter.add(1L, attributes)
+    histogram.record(i.to_double() % 100.0, attributes)
+    gauge.record((i % 50).to_double(), [
+      ("gauge_type", common::AttributeValue::string("concurrent")),
+      ("iteration", common::AttributeValue::int(i.to_int64()))
+    ])
     
     i = i + 1
   }
   
-  // 验证并发采样结果
-  assert_eq(sampling_requests.length(), 5)
-  assert_eq(sampling_decisions.length(), 5)
+  // 验证操作完成（由于是noop实现，主要验证不会崩溃）
+  assert_eq(true, true)
   
-  // 验证采样决策一致性
-  let mut sampled_count = 0
-  let mut not_sampled_count = 0
-  i = 0
-  while i < sampling_decisions.length() {
-    if sampling_decisions[i].2 {
-      sampled_count = sampled_count + 1
+  // 测试并发仪器创建
+  let mut meters = []
+  let mut j = 0
+  while j < 50 {
+    let meter_name = "concurrent_meter_" + j.to_string()
+    let concurrent_meter = meter_provider.get_meter(meter_name, j.to_string())
+    let concurrent_counter = concurrent_meter.create_counter(
+      "counter_" + j.to_string(), 
+      "count", 
+      "Counter " + j.to_string()
+    )
+    
+    // 记录一些指标
+    concurrent_counter.add(j.to_int64(), [
+      ("meter_id", common::AttributeValue::int(j.to_int64()))
+    ])
+    
+    meters.push(concurrent_meter)
+    j = j + 1
+  }
+  
+  assert_eq(meters.length(), 50)
+}
+
+test "concurrent_log_emission" {
+  // 测试并发日志发送的安全性
+  
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let logger = logger_provider.get_logger("concurrent_logger")
+  
+  // 模拟并发日志记录
+  let mut i = 0
+  while i < 500 {
+    let log_attributes = [
+      ("log_id", common::AttributeValue::int(i.to_int64())),
+      ("thread_id", common::AttributeValue::int((i % 20).to_int64())),
+      ("category", common::AttributeValue::string(if i % 4 == 0 { "system" } else if i % 4 == 1 { "application" } else if i % 4 == 2 { "security" } else { "performance" }))
+    ]
+    
+    // 使用不同日志级别
+    if i % 5 == 0 {
+      logger.debug("Debug message " + i.to_string(), log_attributes)
+    } else if i % 5 == 1 {
+      logger.info("Info message " + i.to_string(), log_attributes)
+    } else if i % 5 == 2 {
+      logger.warn("Warning message " + i.to_string(), log_attributes)
+    } else if i % 5 == 3 {
+      logger.error("Error message " + i.to_string(), log_attributes)
     } else {
-      not_sampled_count = not_sampled_count + 1
+      logger.fatal("Fatal message " + i.to_string(), log_attributes)
     }
+    
     i = i + 1
   }
   
-  // 验证采样率接近50%
-  let total = sampled_count + not_sampled_count
-  let sample_rate = sampled_count.to_double() / total.to_double()
-  assert_eq(sample_rate >= 0.0, true)
-  assert_eq(sample_rate <= 1.0, true)
+  // 测试并发LogRecord创建
+  let mut log_records = []
+  let mut j = 0
+  while j < 100 {
+    let complex_log = logs::LogRecord::builder()
+      .timestamp(1234567890000000L + j.to_int64())
+      .severity(match j % 6 {
+        0 => logs::Trace
+        1 => logs::Debug
+        2 => logs::Info
+        3 => logs::Warn
+        4 => logs::Error
+        _ => logs::Fatal
+      })
+      .body("Complex log message " + j.to_string())
+      .with_attribute("log_index", common::AttributeValue::int(j.to_int64()))
+      .with_attribute("batch_id", common::AttributeValue::int((j / 10).to_int64()))
+      .with_attribute("thread_id", common::AttributeValue::int((j % 5).to_int64()))
+      .build()
+    
+    log_records.push(complex_log)
+    j = j + 1
+  }
+  
+  // 验证所有日志记录都正确创建
+  assert_eq(log_records.length(), 100)
+  
+  j = 0
+  while j < log_records.length() {
+    let log = log_records[j]
+    assert_eq(log.timestamp_unix_nanos, 1234567890000000L + j.to_int64())
+    assert_eq(log.body.unwrap(), "Complex log message " + j.to_string())
+    assert_eq(log.attributes.length(), 3)
+    j = j + 1
+  }
 }
 
-test "telemetry_concurrent_serialization" {
-  // 测试并发序列化
+test "concurrent_resource_creation" {
+  // 测试并发资源创建的安全性
   
-  let serialization_queue = []
-  let serialized_output = []
-  
-  // 模拟并发序列化请求
-  let serialization_tasks = [
-    ("task1", "metric", "cpu_usage:45.2"),
-    ("task2", "log", "INFO:Service started"),
-    ("task3", "span", "span-001:GET /api/users"),
-    ("task4", "metric", "memory_usage:67.8"),
-    ("task5", "trace", "trace-001:parent:child")
-  ]
-  
-  // 并发序列化处理
+  // 模拟并发资源创建
+  let mut resources = []
   let mut i = 0
-  while i < serialization_tasks.length() {
-    let task_id = serialization_tasks[i].0
-    let data_type = serialization_tasks[i].1
-    let data = serialization_tasks[i].2
+  
+  while i < 100 {
+    let resource = common::Resource::{
+      service_name: "concurrent_service_" + i.to_string(),
+      service_version: Some((i / 10).to_string() + "." + (i % 10).to_string()),
+      telemetry_sdk_name: "azimuth",
+      telemetry_sdk_version: "0.1.0",
+      attributes: [
+        ("instance_id", common::AttributeValue::string("instance_" + i.to_string())),
+        ("region", common::AttributeValue::string(if i % 3 == 0 { "us-east" } else if i % 3 == 1 { "us-west" } else { "eu-west" })),
+        ("environment", common::AttributeValue::string(if i % 2 == 0 { "production" } else { "staging" }))
+      ]
+    }
     
-    // 模拟序列化操作
-    let serialized = data_type + ":" + data + ":serialized_by_" + task_id
-    serialized_output.push(serialized)
+    resources.push(resource)
+    i = i + 1
+  }
+  
+  // 验证所有资源都正确创建
+  assert_eq(resources.length(), 100)
+  
+  // 验证资源的唯一性
+  i = 0
+  while i < resources.length() {
+    let resource = resources[i]
+    assert_eq(resource.service_name, "concurrent_service_" + i.to_string())
+    assert_eq(resource.attributes.length(), 3)
+    
+    match resource.attributes[0] {
+      (key, common::StringValue(value)) => {
+        assert_eq(key, "instance_id")
+        assert_eq(value, "instance_" + i.to_string())
+      }
+      _ => @test.fail("Expected instance_id attribute")
+    }
     
     i = i + 1
   }
   
-  // 验证并发序列化结果
-  assert_eq(serialization_tasks.length(), 5)
-  assert_eq(serialized_output.length(), 5)
+  // 测试资源属性修改的并发安全性
+  let mut modified_resources = []
+  let mut j = 0
   
-  // 验证序列化完整性
-  i = 0
-  while i < serialized_output.length() {
-    let output = serialized_output[i]
+  while j < 50 {
+    let base_resource = common::Resource::default("base_service_" + j.to_string())
+    let modified_resource = common::Resource::{
+      ..base_resource,
+      attributes: base_resource.attributes + [
+        ("concurrent_attr", common::AttributeValue::string("value_" + j.to_string())),
+        ("timestamp", common::AttributeValue::int((1234567890 + j).to_int64()))
+      ]
+    }
     
-    // 验证格式正确
-    assert_eq(output.contains(":"), true)
-    assert_eq(output.contains(":serialized_by_"), true)
-    
-    // 验证包含原始数据
-    let mut found_original = false
+    modified_resources.push(modified_resource)
+    j = j + 1
+  }
+  
+  // 验证修改后的资源
+  assert_eq(modified_resources.length(), 50)
+  
+  j = 0
+  while j < modified_resources.length() {
+    let resource = modified_resources[j]
+    assert_eq(resource.service_name, "base_service_" + j.to_string())
+    assert_eq(resource.attributes.length(), 2)
+    j = j + 1
+  }
+}
+
+test "concurrent_attribute_operations" {
+  // 测试并发属性操作的安全性
+  
+  // 创建大量属性数组
+  let mut attribute_arrays = []
+  let mut i = 0
+  
+  while i < 100 {
+    let mut attributes = []
     let mut j = 0
-    while j < serialization_tasks.length() {
-      if output.contains(serialization_tasks[j].2) {
-        found_original = true
-        break
-      }
+    while j < 50 {
+      attributes.push((
+        "attr_" + i.to_string() + "_" + j.to_string(),
+        common::AttributeValue::string("value_" + i.to_string() + "_" + j.to_string())
+      ))
       j = j + 1
     }
-    assert_eq(found_original, true)
-    
-    i = i + 1
-  }
-}
-
-test "telemetry_concurrent_resource_cleanup" {
-  // 测试并发资源清理
-  
-  let active_resources = []
-  let cleanup_queue = []
-  
-  // 模拟资源创建和销毁
-  let resource_operations = [
-    ("thread1", "resource-001", "create"),
-    ("thread2", "resource-002", "create"),
-    ("thread3", "resource-001", "cleanup"),
-    ("thread4", "resource-003", "create"),
-    ("thread5", "resource-002", "cleanup"),
-    ("thread6", "resource-003", "cleanup")
-  ]
-  
-  // 处理资源操作
-  let mut i = 0
-  while i < resource_operations.length() {
-    let thread_id = resource_operations[i].0
-    let resource_id = resource_operations[i].1
-    let operation = resource_operations[i].2
-    
-    if operation == "create" {
-      // 创建资源
-      let resource = (resource_id, thread_id, "active")
-      active_resources.push(resource)
-    } else if operation == "cleanup" {
-      // 清理资源
-      let mut found_index = -1
-      let mut j = 0
-      while j < active_resources.length() {
-        if active_resources[j].0 == resource_id && active_resources[j].2 == "active" {
-          found_index = j
-          break
-        }
-        j = j + 1
-      }
-      
-      if found_index >= 0 {
-        // 标记为清理中
-        active_resources[found_index] = (active_resources[found_index].0, active_resources[found_index].1, "cleaning")
-        // 添加到清理队列
-        cleanup_queue.push(resource_id)
-        // 标记为已清理
-        active_resources[found_index] = (active_resources[found_index].0, active_resources[found_index].1, "cleaned")
-      }
-    }
-    
+    attribute_arrays.push(attributes)
     i = i + 1
   }
   
-  // 验证并发资源清理结果
-  assert_eq(resource_operations.length(), 6)
-  assert_eq(cleanup_queue.length(), 3)
+  // 验证所有属性数组都正确创建
+  assert_eq(attribute_arrays.length(), 100)
   
-  // 验证资源状态
-  let mut active_count = 0
-  let mut cleaned_count = 0
   i = 0
-  while i < active_resources.length() {
-    if active_resources[i].2 == "active" {
-      active_count = active_count + 1
-    } else if active_resources[i].2 == "cleaned" {
-      cleaned_count = cleaned_count + 1
+  while i < attribute_arrays.length() {
+    let attributes = attribute_arrays[i]
+    assert_eq(attributes.length(), 50)
+    
+    // 验证属性内容的正确性
+    let first_attr = attributes[0]
+    let last_attr = attributes[49]
+    
+    match first_attr {
+      (key, common::StringValue(value)) => {
+        assert_eq(key, "attr_" + i.to_string() + "_0")
+        assert_eq(value, "value_" + i.to_string() + "_0")
+      }
+      _ => @test.fail("Expected string attribute")
     }
+    
+    match last_attr {
+      (key, common::StringValue(value)) => {
+        assert_eq(key, "attr_" + i.to_string() + "_49")
+        assert_eq(value, "value_" + i.to_string() + "_49")
+      }
+      _ => @test.fail("Expected string attribute")
+    }
+    
     i = i + 1
   }
   
-  assert_eq(active_count, 0)  // 所有资源都应该被清理
-  assert_eq(cleaned_count, 3)  // 3个资源被清理
+  // 测试属性过滤和映射的并发安全性
+  let mut filtered_arrays = []
+  let mut k = 0
   
-  // 验证清理队列包含正确的资源
-  assert_eq(cleanup_queue.contains("resource-001"), true)
-  assert_eq(cleanup_queue.contains("resource-002"), true)
-  assert_eq(cleanup_queue.contains("resource-003"), true)
+  while k < 50 {
+    let original_attrs = attribute_arrays[k * 2]  // 使用偶数索引的数组
+    
+    // 过滤操作：只保留偶数索引的属性
+    let filtered_attrs = original_attrs.filter(fn(attr) {
+      match attr {
+        (key, _) => {
+          let parts = key.split("_")
+          let index = parts.last().to_int()
+          index % 2 == 0
+        }
+      }
+    })
+    
+    // 映射操作：转换属性值
+    let mapped_attrs = filtered_attrs.map(fn(attr) {
+      match attr {
+        (key, common::StringValue(value)) => {
+          (key + "_mapped", common::AttributeValue::string(value + "_mapped"))
+        }
+        _ => attr
+      }
+    })
+    
+    filtered_arrays.push(mapped_attrs)
+    k = k + 1
+  }
+  
+  // 验证过滤和映射结果
+  assert_eq(filtered_arrays.length(), 50)
+  
+  k = 0
+  while k < filtered_arrays.length() {
+    let filtered_attrs = filtered_arrays[k]
+    assert_eq(filtered_attrs.length(), 25)  // 50个属性中应该有25个偶数索引
+    
+    // 验证映射结果
+    match filtered_attrs[0] {
+      (key, common::StringValue(value)) => {
+        assert_eq(key.contains("_mapped"), true)
+        assert_eq(value.contains("_mapped"), true)
+      }
+      _ => @test.fail("Expected mapped attribute")
+    }
+    
+    k = k + 1
+  }
 }

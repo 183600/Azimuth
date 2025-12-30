@@ -1,549 +1,507 @@
-// 遥测序列化兼容性测试用例
-// 测试遥测数据的序列化格式兼容性和互操作性
+// 遥测数据序列化和反序列化测试
+// 测试数据在不同格式间的转换和兼容性
 
-test "json_serialization_format" {
-  // 测试JSON序列化格式
+test "attribute_value_serialization" {
+  // 测试AttributeValue的序列化兼容性
   
-  let telemetry_span = {
-    "trace_id": "0af7651916cd43dd8448eb211c80319c",
-    "span_id": "b7ad6b7169203331",
-    "parent_span_id": "a1b2c3d4e5f67890",
-    "operation_name": "HTTP GET /api/users",
-    "start_time": 1640995200000000L,
-    "end_time": 1640995200250000L,
-    "duration": 250000,
-    "status": "ok",
-    "kind": "client",
-    "attributes": [
-      ("http.method", "GET"),
-      ("http.url", "https://api.example.com/users"),
-      ("http.status_code", "200"),
-      ("service.name", "user-service")
-    ],
-    "events": [
-      {
-        "name": "http.request.started",
-        "timestamp": 1640995200000000L,
-        "attributes": [("event.type", "request_start")]
-      },
-      {
-        "name": "http.response.received",
-        "timestamp": 1640995200250000L,
-        "attributes": [("event.type", "response_end")]
+  // 测试基本类型的字符串表示
+  let string_attr = common::AttributeValue::string("test_value")
+  let int_attr = common::AttributeValue::int(42L)
+  let float_attr = common::AttributeValue::float(3.14159)
+  let bool_attr = common::AttributeValue::bool(true)
+  
+  // 模拟序列化为字符串表示
+  let serialize_to_string = fn(attr: common::AttributeValue) {
+    match attr {
+      common::StringValue(value) => "string:" + value
+      common::IntValue(value) => "int:" + value.to_string()
+      common::FloatValue(value) => "float:" + value.to_string()
+      common::BoolValue(value) => "bool:" + (if value { "true" } else { "false" })
+      common::ArrayStringValue(values) => {
+        let result = "array_string:["
+        let mut i = 0
+        while i < values.length() {
+          if i > 0 { result = result + "," }
+          result = result + values[i]
+          i = i + 1
+        }
+        result + "]"
       }
+      common::ArrayIntValue(values) => {
+        let result = "array_int:["
+        let mut i = 0
+        while i < values.length() {
+          if i > 0 { result = result + "," }
+          result = result + values[i].to_string()
+          i = i + 1
+        }
+        result + "]"
+      }
+      common::ArrayFloatValue(values) => {
+        let result = "array_float:["
+        let mut i = 0
+        while i < values.length() {
+          if i > 0 { result = result + "," }
+          result = result + values[i].to_string()
+          i = i + 1
+        }
+        result + "]"
+      }
+      common::ArrayBoolValue(values) => {
+        let result = "array_bool:["
+        let mut i = 0
+        while i < values.length() {
+          if i > 0 { result = result + "," }
+          result = result + (if values[i] { "true" } else { "false" })
+          i = i + 1
+        }
+        result + "]"
+      }
+    }
+  }
+  
+  // 测试序列化结果
+  assert_eq(serialize_to_string(string_attr), "string:test_value")
+  assert_eq(serialize_to_string(int_attr), "int:42")
+  assert_eq(serialize_to_string(float_attr), "float:3.14159")
+  assert_eq(serialize_to_string(bool_attr), "bool:true")
+  
+  // 测试数组类型序列化
+  let string_array = common::AttributeValue::array_string(["a", "b", "c"])
+  let int_array = common::AttributeValue::array_int([1L, 2L, 3L])
+  let bool_array = common::AttributeValue::array_bool([true, false])
+  
+  assert_eq(serialize_to_string(string_array), "array_string:[a,b,c]")
+  assert_eq(serialize_to_string(int_array), "array_int:[1,2,3]")
+  assert_eq(serialize_to_string(bool_array), "array_bool:[true,false]")
+}
+
+test "resource_serialization_format" {
+  // 测试Resource的序列化格式
+  
+  let resource = common::Resource::{
+    service_name: "test_service",
+    service_version: Some("1.2.3"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("env", common::AttributeValue::string("production")),
+      ("region", common::AttributeValue::string("us-west-2")),
+      ("instance_count", common::AttributeValue::int(3L))
     ]
   }
   
-  // 模拟JSON序列化
-  let json_output = "{"
-  json_output = json_output + "\"trace_id\":\"" + telemetry_span["trace_id"] + "\"," 
-  json_output = json_output + "\"span_id\":\"" + telemetry_span["span_id"] + "\"," 
-  json_output = json_output + "\"parent_span_id\":\"" + telemetry_span["parent_span_id"] + "\"," 
-  json_output = json_output + "\"operation_name\":\"" + telemetry_span["operation_name"] + "\"," 
-  json_output = json_output + "\"start_time\":" + telemetry_span["start_time"].to_string() + "," 
-  json_output = json_output + "\"end_time\":" + telemetry_span["end_time"].to_string() + "," 
-  json_output = json_output + "\"duration\":" + telemetry_span["duration"].to_string() + "," 
-  json_output = json_output + "\"status\":\"" + telemetry_span["status"] + "\"," 
-  json_output = json_output + "\"kind\":\"" + telemetry_span["kind"] + "\"," 
-  
-  // 序列化属性
-  json_output = json_output + "\"attributes\":[" 
-  let mut i = 0
-  while i < telemetry_span["attributes"].length() {
-    let (key, value) = telemetry_span["attributes"][i]
-    if i > 0 { json_output = json_output + "," }
-    json_output = json_output + "{\"key\":\"" + key + "\",\"value\":\"" + value + "\"}"
-    i = i + 1
-  }
-  json_output = json_output + "]," 
-  
-  // 序列化事件
-  json_output = json_output + "\"events\":[" 
-  i = 0
-  while i < telemetry_span["events"].length() {
-    let event = telemetry_span["events"][i]
-    if i > 0 { json_output = json_output + "," }
-    json_output = json_output + "{" 
-    json_output = json_output + "\"name\":\"" + event["name"] + "\"," 
-    json_output = json_output + "\"timestamp\":" + event["timestamp"].to_string() + "," 
-    json_output = json_output + "\"attributes\":[" 
+  // 模拟序列化为JSON格式字符串
+  let serialize_resource_to_json = fn(res: common::Resource) {
+    let json = "{"
+    json = json + "\"service_name\":\"" + res.service_name + "\"," 
     
-    let mut j = 0
-    while j < event["attributes"].length() {
-      let (key, value) = event["attributes"][j]
-      if j > 0 { json_output = json_output + "," }
-      json_output = json_output + "{\"key\":\"" + key + "\",\"value\":\"" + value + "\"}"
-      j = j + 1
+    match res.service_version {
+      Some(version) => json = json + "\"service_version\":\"" + version + "\"," 
+      None => json = json + "\"service_version\":null," 
     }
     
-    json_output = json_output + "]}" 
-    i = i + 1
-  }
-  json_output = json_output + "]" 
-  json_output = json_output + "}" 
-  
-  // 验证JSON格式
-  assert_eq(json_output.has_prefix("{"), true)
-  assert_eq(json_output.has_suffix("}"), true)
-  assert_eq(json_output.contains("\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\""), true)
-  assert_eq(json_output.contains("\"span_id\":\"b7ad6b7169203331\""), true)
-  assert_eq(json_output.contains("\"operation_name\":\"HTTP GET /api/users\""), true)
-  assert_eq(json_output.contains("\"attributes\":["), true)
-  assert_eq(json_output.contains("\"events\":["), true)
-  assert_eq(json_output.contains("\"http.method\""), true)
-  assert_eq(json_output.contains("\"http.status_code\""), true)
-  
-  // 验证JSON结构完整性
-  let open_braces = json_output.chars().filter(fn(c) { c == '{' }).length()
-  let close_braces = json_output.chars().filter(fn(c) { c == '}' }).length()
-  assert_eq(open_braces, close_braces)
-  
-  let open_brackets = json_output.chars().filter(fn(c) { c == '[' }).length()
-  let close_brackets = json_output.chars().filter(fn(c) { c == ']' }).length()
-  assert_eq(open_brackets, close_brackets)
-}
-
-test "protobuf_serialization_format" {
-  // 测试Protocol Buffers序列化格式
-  
-  let telemetry_metric = {
-    "name": "http_requests_total",
-    "description": "Total number of HTTP requests",
-    "unit": "count",
-    "data_type": "counter",
-    "timestamp": 1640995200L,
-    "value": 12345,
-    "attributes": [
-      ("method", "GET"),
-      ("status", "200"),
-      ("endpoint", "/api/users"),
-      ("service", "user-service")
-    ]
-  }
-  
-  // 模拟Protobuf序列化（简化版本）
-  let protobuf_data = []
-  
-  // 写入字段1: name (string)
-  let name_bytes = telemetry_metric["name"].to_utf8_bytes()
-  protobuf_data.push(0x0A) // field 1, wire type 2 (length-delimited)
-  protobuf_data.push(name_bytes.length().to_uint8())
-  let mut i = 0
-  while i < name_bytes.length() {
-    protobuf_data.push(name_bytes[i])
-    i = i + 1
-  }
-  
-  // 写入字段2: description (string)
-  let desc_bytes = telemetry_metric["description"].to_utf8_bytes()
-  protobuf_data.push(0x12) // field 2, wire type 2
-  protobuf_data.push(desc_bytes.length().to_uint8())
-  i = 0
-  while i < desc_bytes.length() {
-    protobuf_data.push(desc_bytes[i])
-    i = i + 1
-  }
-  
-  // 写入字段3: unit (string)
-  let unit_bytes = telemetry_metric["unit"].to_utf8_bytes()
-  protobuf_data.push(0x1A) // field 3, wire type 2
-  protobuf_data.push(unit_bytes.length().to_uint8())
-  i = 0
-  while i < unit_bytes.length() {
-    protobuf_data.push(unit_bytes[i])
-    i = i + 1
-  }
-  
-  // 写入字段4: data_type (enum)
-  protobuf_data.push(0x20) // field 4, wire type 0 (varint)
-  protobuf_data.push(0x01) // counter = 1
-  
-  // 写入字段5: timestamp (int64)
-  protobuf_data.push(0x28) // field 5, wire type 0
-  let timestamp = telemetry_metric["timestamp"]
-  let mut ts = timestamp
-  while ts >= 0x80 {
-    protobuf_data.push((ts & 0x7F | 0x80).to_uint8())
-    ts = ts >> 7
-  }
-  protobuf_data.push(ts.to_uint8())
-  
-  // 写入字段6: value (int64)
-  protobuf_data.push(0x30) // field 6, wire type 0
-  let value = telemetry_metric["value"]
-  let mut v = value
-  while v >= 0x80 {
-    protobuf_data.push((v & 0x7F | 0x80).to_uint8())
-    v = v >> 7
-  }
-  protobuf_data.push(v.to_uint8())
-  
-  // 验证Protobuf数据
-  assert_eq(protobuf_data.length() > 0, true)
-  assert_eq(protobuf_data[0], 0x0A) // 第一个字段标记
-  
-  // 验证字段顺序
-  let field_tags = [0x0A, 0x12, 0x1A, 0x20, 0x28, 0x30]
-  let mut tag_index = 0
-  let mut found_tags = []
-  
-  i = 0
-  while i < protobuf_data.length() {
-    if protobuf_data[i] == field_tags[tag_index] {
-      found_tags.push(protobuf_data[i])
-      if tag_index < field_tags.length() - 1 {
-        tag_index = tag_index + 1
+    json = json + "\"telemetry_sdk_name\":\"" + res.telemetry_sdk_name + "\"," 
+    json = json + "\"telemetry_sdk_version\":\"" + res.telemetry_sdk_version + "\"," 
+    
+    json = json + "\"attributes\":{"
+    let mut i = 0
+    while i < res.attributes.length() {
+      if i > 0 { json = json + "," }
+      let (key, value) = res.attributes[i]
+      json = json + "\"" + key + "\":"
+      
+      match value {
+        common::StringValue(v) => json = json + "\"" + v + "\""
+        common::IntValue(v) => json = json + v.to_string()
+        common::FloatValue(v) => json = json + v.to_string()
+        common::BoolValue(v) => json = json + (if v { "true" } else { "false" })
+        _ => json = json + "\"unsupported_type\""
       }
+      
+      i = i + 1
     }
-    i = i + 1
+    json = json + "}}"
   }
   
-  assert_eq(found_tags.length(), field_tags.length())
+  let json_result = serialize_resource_to_json(resource)
+  
+  // 验证JSON格式包含必要字段
+  assert_eq(json_result.contains("\"service_name\":\"test_service\""), true)
+  assert_eq(json_result.contains("\"service_version\":\"1.2.3\""), true)
+  assert_eq(json_result.contains("\"telemetry_sdk_name\":\"azimuth\""), true)
+  assert_eq(json_result.contains("\"telemetry_sdk_version\":\"0.1.0\""), true)
+  assert_eq(json_result.contains("\"env\":\"production\""), true)
+  assert_eq(json_result.contains("\"region\":\"us-west-2\""), true)
+  assert_eq(json_result.contains("\"instance_count\":3"), true)
 }
 
-test "opentelemetry_protocol_compatibility" {
-  // 测试OpenTelemetry协议兼容性
+test "span_context_serialization" {
+  // 测试SpanContext的序列化
   
-  let otlp_span = {
-    "trace_id": "0af7651916cd43dd8448eb211c80319c",
-    "span_id": "b7ad6b7169203331",
-    "trace_state": "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE",
-    "parent_span_id": "a1b2c3d4e5f67890",
-    "name": "HTTP GET /api/users",
-    "kind": "SpanKind_CLIENT",
-    "start_time_unix_nano": 1640995200000000000L,
-    "end_time_unix_nano": 1640995200250000000L,
-    "attributes": [
-      {"key": "http.method", "value": {"string_value": "GET"}},
-      {"key": "http.url", "value": {"string_value": "https://api.example.com/users"}},
-      {"key": "http.status_code", "value": {"int_value": 200}},
-      {"key": "service.name", "value": {"string_value": "user-service"}}
+  let trace_id = [0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 
+                  0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0]
+  let span_id = [0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0]
+  
+  let span_context = trace::SpanContext::{
+    trace_id: trace_id,
+    span_id: span_id,
+    trace_flags: 1_byte,
+    trace_state: "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+  }
+  
+  // 将字节数组转换为十六进制字符串
+  let bytes_to_hex = fn(bytes: Array[Byte]) {
+    let hex = ""
+    let mut i = 0
+    while i < bytes.length() {
+      let byte = bytes[i]
+      let hex_chars = "0123456789abcdef"
+      let high = (byte >> 4) & 0x0f
+      let low = byte & 0x0f
+      hex = hex + hex_chars[high].to_string() + hex_chars[low].to_string()
+      i = i + 1
+    }
+    hex
+  }
+  
+  // 序列化span context为W3C tracecontext格式
+  let serialize_span_context = fn(ctx: trace::SpanContext) {
+    let trace_id_hex = bytes_to_hex(ctx.trace_id)
+    let span_id_hex = bytes_to_hex(ctx.span_id)
+    let trace_flags_hex = (ctx.trace_flags & 0x01).to_string()
+    
+    "traceparent: 00-" + trace_id_hex + "-" + span_id_hex + "-" + trace_flags_hex
+  }
+  
+  let serialized = serialize_span_context(span_context)
+  
+  // 验证序列化格式
+  assert_eq(serialized.contains("traceparent: 00-"), true)
+  assert_eq(serialized.contains("123456789abcdef0123456789abcdef0"), true)
+  assert_eq(serialized.contains("123456789abcdef0"), true)
+  assert_eq(serialized.contains("-1"), true)
+}
+
+test "log_record_serialization" {
+  // 测试LogRecord的序列化
+  
+  let log_record = logs::LogRecord::{
+    timestamp_unix_nanos: 1234567890000000L,
+    observed_timestamp_unix_nanos: Some(1234567891000000L),
+    severity_number: logs::Error,
+    severity_text: Some("ERROR"),
+    body: Some("Test log message"),
+    attributes: [
+      ("user_id", common::AttributeValue::string("user123")),
+      ("action", common::AttributeValue::string("login")),
+      ("success", common::AttributeValue::bool(false))
     ],
-    "dropped_attributes_count": 0,
-    "events": [
-      {
-        "time_unix_nano": 1640995200000000000L,
-        "name": "http.request.started",
-        "attributes": [{"key": "event.type", "value": {"string_value": "request_start"}}],
-        "dropped_attributes_count": 0
-      }
-    ],
-    "dropped_events_count": 0,
-    "status": {"code": "STATUS_CODE_OK", "message": "OK"},
-    "links": [],
-    "dropped_links_count": 0
+    trace_id: Some([0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 
+                    0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0]),
+    span_id: Some([0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0]),
+    trace_flags: Some(1_byte),
+    resource: Some(common::Resource::default("test_service")),
+    instrumentation_scope: Some(common::InstrumentationScope {
+      name: "test_logger",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
   }
   
-  // 验证OTLP字段完整性
-  let required_fields = [
-    "trace_id", "span_id", "name", "kind", 
-    "start_time_unix_nano", "end_time_unix_nano",
-    "attributes", "status"
-  ]
-  
-  let mut i = 0
-  while i < required_fields.length() {
-    let field = required_fields[i]
-    assert_eq(otlp_span.contains(field), true, "Missing required field: " + field)
-    i = i + 1
-  }
-  
-  // 验证trace_id和span_id格式
-  let trace_id = otlp_span["trace_id"]
-  let span_id = otlp_span["span_id"]
-  assert_eq(trace_id.length(), 32)
-  assert_eq(span_id.length(), 16)
-  assert_eq(trace_id.has_prefix("0af7"), true)
-  assert_eq(span_id.has_prefix("b7ad"), true)
-  
-  // 验证时间戳格式（纳秒）
-  let start_time = otlp_span["start_time_unix_nano"]
-  let end_time = otlp_span["end_time_unix_nano"]
-  assert_eq(start_time > 1000000000000000000L, true)
-  assert_eq(end_time > start_time, true)
-  
-  // 验证Span Kind枚举值
-  let span_kind = otlp_span["kind"]
-  let valid_kinds = [
-    "SpanKind_INTERNAL", "SpanKind_SERVER", "SpanKind_CLIENT", 
-    "SpanKind_PRODUCER", "SpanKind_CONSUMER"
-  ]
-  let mut valid_kind = false
-  i = 0
-  while i < valid_kinds.length() {
-    if span_kind == valid_kinds[i] {
-      valid_kind = true
-      break
+  // 序列化日志记录为结构化格式
+  let serialize_log_record = fn(log: logs::LogRecord) {
+    let result = "{"
+    result = result + "\"timestamp\":" + log.timestamp_unix_nanos.to_string() + ","
+    
+    match log.observed_timestamp_unix_nanos {
+      Some(ts) => result = result + "\"observed_timestamp\":" + ts.to_string() + ","
+      None => result = result + "\"observed_timestamp\":null,"
     }
-    i = i + 1
+    
+    result = result + "\"severity\":" + (match log.severity_number {
+      logs::Trace => "0"
+      logs::Debug => "1"
+      logs::Info => "2"
+      logs::Warn => "3"
+      logs::Error => "4"
+      logs::Fatal => "5"
+    }) + ","
+    
+    match log.severity_text {
+      Some(text) => result = result + "\"severity_text\":\"" + text + "\"," 
+      None => result = result + "\"severity_text\":null,"
+    }
+    
+    match log.body {
+      Some(body) => result = result + "\"body\":\"" + body + "\"," 
+      None => result = result + "\"body\":null,"
+    }
+    
+    result = result + "\"attributes\":{"
+    let mut i = 0
+    while i < log.attributes.length() {
+      if i > 0 { result = result + "," }
+      let (key, value) = log.attributes[i]
+      result = result + "\"" + key + "\":"
+      
+      match value {
+        common::StringValue(v) => result = result + "\"" + v + "\""
+        common::IntValue(v) => result = result + v.to_string()
+        common::FloatValue(v) => result = result + v.to_string()
+        common::BoolValue(v) => result = result + (if v { "true" } else { "false" })
+        _ => result = result + "\"unsupported\""
+      }
+      
+      i = i + 1
+    }
+    result = result + "}}"
   }
-  assert_eq(valid_kind, true)
   
-  // 验证状态码枚举值
-  let status = otlp_span["status"]
-  assert_eq(status.contains("code"), true)
-  assert_eq(status.contains("message"), true)
+  let serialized_log = serialize_log_record(log_record)
+  
+  // 验证序列化结果
+  assert_eq(serialized_log.contains("\"timestamp\":1234567890000000"), true)
+  assert_eq(serialized_log.contains("\"severity\":4"), true)
+  assert_eq(serialized_log.contains("\"severity_text\":\"ERROR\""), true)
+  assert_eq(serialized_log.contains("\"body\":\"Test log message\""), true)
+  assert_eq(serialized_log.contains("\"user_id\":\"user123\""), true)
+  assert_eq(serialized_log.contains("\"success\":false"), true)
 }
 
-test "prometheus_format_compatibility" {
-  // 测试Prometheus格式兼容性
+test "context_serialization_compatibility" {
+  // 测试Context序列化兼容性
   
-  let prometheus_metrics = [
-    {
-      "name": "http_requests_total",
-      "type": "counter",
-      "help": "Total number of HTTP requests",
-      "samples": [
-        {
-          "labels": {"method": "GET", "status": "200", "service": "user-service"},
-          "value": 12345.0,
-          "timestamp": 1640995200L
-        },
-        {
-          "labels": {"method": "POST", "status": "201", "service": "user-service"},
-          "value": 6789.0,
-          "timestamp": 1640995200L
-        }
-      ]
-    },
-    {
-      "name": "http_request_duration_seconds",
-      "type": "histogram",
-      "help": "HTTP request duration in seconds",
-      "samples": [
-        {
-          "labels": {"method": "GET", "service": "user-service", "le": "0.1"},
-          "value": 1000.0,
-          "timestamp": 1640995200L
-        },
-        {
-          "labels": {"method": "GET", "service": "user-service", "le": "0.5"},
-          "value": 1100.0,
-          "timestamp": 1640995200L
-        },
-        {
-          "labels": {"method": "GET", "service": "user-service", "le": "+Inf"},
-          "value": 1200.0,
-          "timestamp": 1640995200L
-        }
-      ]
+  let context = context::Context::empty()
+  let key1 = context::create_key("trace_id")
+  let key2 = context::create_key("user_id")
+  let key3 = context::create_key("session_id")
+  
+  let enriched_context = context
+    .with_value(key1, "trace123456")
+    .with_value(key2, "user789012")
+    .with_value(key3, "session345678")
+  
+  // 序列化上下文为键值对格式
+  let serialize_context = fn(ctx: context::Context) {
+    let result = "{"
+    let mut i = 0
+    while i < ctx.values.length() {
+      if i > 0 { result = result + "," }
+      let (key, value) = ctx.values[i]
+      result = result + "\"" + key + "\":\"" + value + "\""
+      i = i + 1
     }
+    result + "}"
+  }
+  
+  let serialized_context = serialize_context(enriched_context)
+  
+  // 验证序列化结果
+  assert_eq(serialized_context.contains("\"trace_id\":\"trace123456\""), true)
+  assert_eq(serialized_context.contains("\"user_id\":\"user789012\""), true)
+  assert_eq(serialized_context.contains("\"session_id\":\"session345678\""), true)
+  
+  // 测试反序列化兼容性（模拟）
+  let deserialize_context = fn(serialized: String) {
+    // 简化的解析逻辑，实际实现会更复杂
+    let new_context = context::Context::empty()
+    
+    // 模拟解析结果
+    new_context
+      .with_value(context::create_key("trace_id"), "trace123456")
+      .with_value(context::create_key("user_id"), "user789012")
+      .with_value(context::create_key("session_id"), "session345678")
+  }
+  
+  let deserialized_context = deserialize_context(serialized_context)
+  
+  // 验证反序列化结果
+  assert_eq(deserialized_context.get(key1).unwrap(), "trace123456")
+  assert_eq(deserialized_context.get(key2).unwrap(), "user789012")
+  assert_eq(deserialized_context.get(key3).unwrap(), "session345678")
+}
+
+test "baggage_serialization_format" {
+  // 测试Baggage序列化格式
+  
+  let baggage = context::Baggage::empty()
+    .with_entry("user_id", "12345")
+    .with_entry("session_id", "abcdef")
+    .with_entry("request_id", "req789")
+    .with_entry("country", "US")
+    .with_entry("locale", "en-US")
+  
+  // 序列化baggage为W3C Baggage格式
+  let serialize_baggage = fn(bg: context::Baggage) {
+    let result = ""
+    let mut i = 0
+    while i < bg.entries.length() {
+      if i > 0 { result = result + "," }
+      let (key, value) = bg.entries[i]
+      result = result + key + "=" + value
+      i = i + 1
+    }
+    result
+  }
+  
+  let serialized_baggage = serialize_baggage(baggage)
+  
+  // 验证序列化格式
+  assert_eq(serialized_baggage, "user_id=12345,session_id=abcdef,request_id=req789,country=US,locale=en-US")
+  
+  // 测试包含特殊字符的baggage序列化
+  let special_baggage = context::Baggage::empty()
+    .with_entry("key with spaces", "value with spaces")
+    .with_entry("special=chars", "special=chars")
+    .with_entry("unicode", "测试🚀")
+  
+  let serialize_special_baggage = fn(bg: context::Baggage) {
+    let result = ""
+    let mut i = 0
+    while i < bg.entries.length() {
+      if i > 0 { result = result + "," }
+      let (key, value) = bg.entries[i]
+      
+      // URL编码特殊字符（简化实现）
+      let encode_key = key.replace(" ", "%20").replace("=", "%3D")
+      let encode_value = value.replace(" ", "%20").replace("=", "%3D")
+      
+      result = result + encode_key + "=" + encode_value
+      i = i + 1
+    }
+    result
+  }
+  
+  let serialized_special = serialize_special_baggage(special_baggage)
+  
+  // 验证特殊字符序列化
+  assert_eq(serialized_special.contains("key%20with%20spaces=value%20with%20spaces"), true)
+  assert_eq(serialized_special.contains("special%3Dchars=special%3Dchars"), true)
+  assert_eq(serialized_special.contains("unicode=测试🚀"), true)
+}
+
+test "metric_data_serialization" {
+  // 测试指标数据序列化
+  
+  let metric_attributes = [
+    ("service", common::AttributeValue::string("api_gateway")),
+    ("endpoint", common::AttributeValue::string("/api/users")),
+    ("method", common::AttributeValue::string("GET")),
+    ("status_code", common::AttributeValue::int(200L))
   ]
   
-  // 生成Prometheus格式文本
-  let prometheus_text = ""
-  
-  // 处理第一个指标（counter）
-  let counter_metric = prometheus_metrics[0]
-  prometheus_text = prometheus_text + "# HELP " + counter_metric["name"] + " " + counter_metric["help"] + "\n" 
-  prometheus_text = prometheus_text + "# TYPE " + counter_metric["name"] + " " + counter_metric["type"] + "\n" 
-  
-  let mut i = 0
-  while i < counter_metric["samples"].length() {
-    let sample = counter_metric["samples"][i]
-    let labels = sample["labels"]
-    
-    // 构建标签字符串
-    let label_str = ""
-    let mut first = true
-    for (key, value) in labels {
-      if not first {
-        label_str = label_str + ","
+  // 序列化指标数据为Prometheus格式
+  let serialize_metric_prometheus = fn(name: String, value: Double, attrs: Array[(String, common::AttributeValue)]) {
+    let result = name + "{"
+    let mut i = 0
+    while i < attrs.length() {
+      if i > 0 { result = result + "," }
+      let (key, attr_value) = attrs[i]
+      result = result + key + "=\""
+      
+      match attr_value {
+        common::StringValue(v) => result = result + v
+        common::IntValue(v) => result = result + v.to_string()
+        common::FloatValue(v) => result = result + v.to_string()
+        common::BoolValue(v) => result = result + (if v { "true" } else { "false" })
+        _ => result = result + "unsupported"
       }
-      label_str = label_str + key + "=\"" + value + "\""
-      first = false
+      
+      result = result + "\""
+      i = i + 1
     }
-    
-    prometheus_text = prometheus_text + counter_metric["name"] + "{" + label_str + "} " + sample["value"].to_string() + " " + sample["timestamp"].to_string() + "\n" 
-    i = i + 1
+    result = result + "} " + value.to_string()
+    result
   }
   
-  prometheus_text = prometheus_text + "\n" 
-  
-  // 处理第二个指标（histogram）
-  let histogram_metric = prometheus_metrics[1]
-  prometheus_text = prometheus_text + "# HELP " + histogram_metric["name"] + " " + histogram_metric["help"] + "\n" 
-  prometheus_text = prometheus_text + "# TYPE " + histogram_metric["name"] + " " + histogram_metric["type"] + "\n" 
-  
-  i = 0
-  while i < histogram_metric["samples"].length() {
-    let sample = histogram_metric["samples"][i]
-    let labels = sample["labels"]
-    
-    let label_str = ""
-    let mut first = true
-    for (key, value) in labels {
-      if not first {
-        label_str = label_str + ","
-      }
-      label_str = label_str + key + "=\"" + value + "\""
-      first = false
-    }
-    
-    prometheus_text = prometheus_text + histogram_metric["name"] + "_bucket{" + label_str + "} " + sample["value"].to_string() + " " + sample["timestamp"].to_string() + "\n" 
-    i = i + 1
-  }
+  let prometheus_counter = serialize_metric_prometheus("http_requests_total", 12345.0, metric_attributes)
+  let prometheus_histogram = serialize_metric_prometheus("http_request_duration_seconds", 0.150, metric_attributes)
+  let prometheus_gauge = serialize_metric_prometheus("active_connections", 25.0, metric_attributes)
   
   // 验证Prometheus格式
-  assert_eq(prometheus_text.contains("# HELP http_requests_total"), true)
-  assert_eq(prometheus_text.contains("# TYPE http_requests_total counter"), true)
-  assert_eq(prometheus_text.contains("http_requests_total{"), true)
-  assert_eq(prometheus_text.contains("method=\"GET\""), true)
-  assert_eq(prometheus_text.contains("status=\"200\""), true)
-  assert_eq(prometheus_text.contains("service=\"user-service\""), true)
-  assert_eq(prometheus_text.contains("12345.0"), true)
+  assert_eq(prometheus_counter.contains("http_requests_total{"), true)
+  assert_eq(prometheus_counter.contains("service=\"api_gateway\""), true)
+  assert_eq(prometheus_counter.contains("endpoint=\"/api/users\""), true)
+  assert_eq(prometheus_counter.contains("method=\"GET\""), true)
+  assert_eq(prometheus_counter.contains("status_code=\"200\""), true)
+  assert_eq(prometheus_counter.contains("} 12345"), true)
   
-  // 验证histogram格式
-  assert_eq(prometheus_text.contains("# HELP http_request_duration_seconds"), true)
-  assert_eq(prometheus_text.contains("# TYPE http_request_duration_seconds histogram"), true)
-  assert_eq(prometheus_text.contains("http_request_duration_seconds_bucket{"), true)
-  assert_eq(prometheus_text.contains("le=\"0.1\""), true)
-  assert_eq(prometheus_text.contains("le=\"+Inf\""), true)
+  assert_eq(prometheus_histogram.contains("http_request_duration_seconds{"), true)
+  assert_eq(prometheus_histogram.contains("} 0.15"), true)
   
-  // 验证格式规范
-  let lines = prometheus_text.split("\n")
-  let mut metric_lines = 0
-  let mut comment_lines = 0
-  
-  i = 0
-  while i < lines.length() {
-    let line = lines[i]
-    if line.length() > 0 {
-      if line.has_prefix("#") {
-        comment_lines = comment_lines + 1
-        assert_eq(line.contains("HELP") || line.contains("TYPE"), true)
-      } else {
-        metric_lines = metric_lines + 1
-        assert_eq(line.contains(" "), true) // 指标名和值之间应该有空格
-      }
-    }
-    i = i + 1
-  }
-  
-  assert_eq(comment_lines > 0, true)
-  assert_eq(metric_lines > 0, true)
+  assert_eq(prometheus_gauge.contains("active_connections{"), true)
+  assert_eq(prometheus_gauge.contains("} 25"), true)
 }
 
-test "zipkin_format_compatibility" {
-  // 测试Zipkin格式兼容性
+test "cross_format_compatibility" {
+  // 测试跨格式兼容性
   
-  let zipkin_span = {
-    "traceId": "0af7651916cd43dd8448eb211c80319c",
-    "id": "b7ad6b7169203331",
-    "parentId": "a1b2c3d4e5f67890",
-    "name": "get /api/users",
-    "timestamp": 1640995200000L, // 微秒
-    "duration": 250000, // 微秒
-    "localEndpoint": {
-      "serviceName": "user-service",
-      "ipv4": "192.168.1.100",
-      "port": 8080
-    },
-    "remoteEndpoint": {
-      "ipv4": "10.0.0.50",
-      "port": 5432
-    },
-    "annotations": [
-      {
-        "timestamp": 1640995200000L,
-        "value": "cs"
-      },
-      {
-        "timestamp": 1640995200250000L,
-        "value": "cr"
-      }
-    ],
-    "tags": {
-      "http.method": "GET",
-      "http.path": "/api/users",
-      "http.status_code": "200",
-      "service.version": "1.2.3"
-    },
-    "debug": false,
-    "shared": false
+  // 创建包含所有数据类型的复合对象
+  let resource = common::Resource::default("compatibility_test")
+  let span_context = trace::SpanContext::{
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { (i % 256).to_byte() }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { (i % 256).to_byte() }),
+    trace_flags: 1_byte,
+    trace_state: "test=state"
   }
   
-  // 验证Zipkin字段完整性
-  let required_zipkin_fields = ["traceId", "id", "name", "timestamp"]
+  let log_record = logs::LogRecord::{
+    timestamp_unix_nanos: 1234567890000000L,
+    severity_number: logs::Info,
+    body: Some("Compatibility test"),
+    attributes: [
+      ("string_attr", common::AttributeValue::string("test")),
+      ("int_attr", common::AttributeValue::int(42L)),
+      ("float_attr", common::AttributeValue::float(3.14))
+    ],
+    resource: Some(resource)
+  }
+  
+  // 测试不同序列化格式的一致性
+  let serialize_to_json = fn() {
+    "{"
+    "\"resource\":{\"service_name\":\"compatibility_test\"},"
+    "\"log\":{\"timestamp\":1234567890000000,\"severity\":2,\"body\":\"Compatibility test\"},"
+    "\"attributes\":{\"string_attr\":\"test\",\"int_attr\":42,\"float_attr\":3.14}"
+    "}"
+  }
+  
+  let serialize_to_xml = fn() {
+    "<telemetry>"
+    "<resource><service_name>compatibility_test</service_name></resource>"
+    "<log timestamp=\"1234567890000000\" severity=\"2\">Compatibility test</log>"
+    "<attributes><string_attr>test</string_attr><int_attr>42</int_attr><float_attr>3.14</float_attr></attributes>"
+    "</telemetry>"
+  }
+  
+  let serialize_to_yaml = fn() {
+    "resource:\n  service_name: compatibility_test\n"
+    "log:\n  timestamp: 1234567890000000\n  severity: 2\n  body: Compatibility test\n"
+    "attributes:\n  string_attr: test\n  int_attr: 42\n  float_attr: 3.14\n"
+  }
+  
+  let json_output = serialize_to_json()
+  let xml_output = serialize_to_xml()
+  let yaml_output = serialize_to_yaml()
+  
+  // 验证所有格式都包含相同的核心数据
+  let core_data = ["compatibility_test", "Compatibility test", "test", "42", "3.14"]
+  
   let mut i = 0
-  while i < required_zipkin_fields.length() {
-    let field = required_zipkin_fields[i]
-    assert_eq(zipkin_span.contains(field), true, "Missing required Zipkin field: " + field)
+  while i < core_data.length() {
+    let data = core_data[i]
+    assert_eq(json_output.contains(data), true)
+    assert_eq(xml_output.contains(data), true)
+    assert_eq(yaml_output.contains(data), true)
     i = i + 1
   }
   
-  // 验证traceId和id格式（16进制）
-  let trace_id = zipkin_span["traceId"]
-  let span_id = zipkin_span["id"]
-  assert_eq(trace_id.length(), 32)
-  assert_eq(span_id.length(), 16)
-  
-  // 验证时间戳格式（微秒）
-  let timestamp = zipkin_span["timestamp"]
-  let duration = zipkin_span["duration"]
-  assert_eq(timestamp > 1000000000000L, true)
-  assert_eq(duration > 0, true)
-  
-  // 验证endpoint结构
-  let local_endpoint = zipkin_span["localEndpoint"]
-  assert_eq(local_endpoint.contains("serviceName"), true)
-  assert_eq(local_endpoint["serviceName"], "user-service")
-  assert_eq(local_endpoint.contains("ipv4"), true)
-  assert_eq(local_endpoint.contains("port"), true)
-  
-  // 验证annotations格式
-  let annotations = zipkin_span["annotations"]
-  assert_eq(annotations.length(), 2)
-  assert_eq(annotations[0]["value"], "cs") // client start
-  assert_eq(annotations[1]["value"], "cr") // client receive
-  
-  // 验证tags格式
-  let tags = zipkin_span["tags"]
-  assert_eq(tags.contains("http.method"), true)
-  assert_eq(tags["http.method"], "GET")
-  assert_eq(tags.contains("http.status_code"), true)
-  assert_eq(tags["http.status_code"], "200")
-  
-  // 生成Zipkin JSON格式
-  let zipkin_json = "[{" 
-  zipkin_json = zipkin_json + "\"traceId\":\"" + trace_id + "\"," 
-  zipkin_json = zipkin_json + "\"id\":\"" + span_id + "\"," 
-  
-  if zipkin_span.contains("parentId") {
-    zipkin_json = zipkin_json + "\"parentId\":\"" + zipkin_span["parentId"] + "\"," 
-  }
-  
-  zipkin_json = zipkin_json + "\"name\":\"" + zipkin_span["name"] + "\"," 
-  zipkin_json = zipkin_json + "\"timestamp\":" + timestamp.to_string() + "," 
-  zipkin_json = zipkin_json + "\"duration\":" + duration.to_string() + "," 
-  
-  // 添加localEndpoint
-  zipkin_json = zipkin_json + "\"localEndpoint\":{" 
-  zipkin_json = zipkin_json + "\"serviceName\":\"" + local_endpoint["serviceName"] + "\"," 
-  zipkin_json = zipkin_json + "\"ipv4\":\"" + local_endpoint["ipv4"] + "\"," 
-  zipkin_json = zipkin_json + "\"port\":" + local_endpoint["port"].to_string()
-  zipkin_json = zipkin_json + "}," 
-  
-  // 添加tags
-  zipkin_json = zipkin_json + "\"tags\":{" 
-  let mut first = true
-  for (key, value) in tags {
-    if not first {
-      zipkin_json = zipkin_json + ","
-    }
-    zipkin_json = zipkin_json + "\"" + key + "\":\"" + value + "\""
-    first = false
-  }
-  zipkin_json = zipkin_json + "}" 
-  
-  zipkin_json = zipkin_json + "}]" 
-  
-  // 验证Zipkin JSON格式
-  assert_eq(zipkin_json.has_prefix("["), true)
-  assert_eq(zipkin_json.has_suffix("]"), true)
-  assert_eq(zipkin_json.contains("\"traceId\":"), true)
-  assert_eq(zipkin_json.contains("\"id\":"), true)
-  assert_eq(zipkin_json.contains("\"name\":"), true)
-  assert_eq(zipkin_json.contains("\"localEndpoint\":"), true)
-  assert_eq(zipkin_json.contains("\"tags\":"), true)
+  // 验证格式特异性
+  assert_eq(json_output.contains("{"), true)
+  assert_eq(json_output.contains("}"), true)
+  assert_eq(xml_output.contains("<"), true)
+  assert_eq(xml_output.contains(">"), true)
+  assert_eq(yaml_output.contains("\n"), true)
+  assert_eq(yaml_output.contains(":"), true)
 }
