@@ -1,577 +1,652 @@
-// 遥测异常恢复测试用例
-// 测试各种错误场景和恢复策略
+// 遥测错误恢复测试用例，确保系统在异常情况下的稳定性和恢复能力
 
-test "telemetry_network_connection_recovery" {
-  // 测试网络连接恢复
+test "telemetry_network_connection_failure_recovery" {
+  // 测试网络连接失败恢复
   
-  let connection_states = [
-    {"timestamp": 1640995200L, "state": "connected", "error": ""},
-    {"timestamp": 1640995210L, "state": "disconnected", "error": "connection_timeout"},
-    {"timestamp": 1640995220L, "state": "reconnecting", "error": ""},
-    {"timestamp": 1640995230L, "state": "disconnected", "error": "connection_refused"},
-    {"timestamp": 1640995240L, "state": "reconnecting", "error": ""},
-    {"timestamp": 1640995250L, "state": "connected", "error": ""}
-  ]
+  let connection_attempts = []
+  let max_retries = 5
+  let base_delay_ms = 1000
+  let mut connection_successful = false
+  let failure_point = 2  // 第3次尝试成功
   
-  // 模拟连接恢复逻辑
-  let mut recovery_attempts = 0
-  let mut max_recovery_attempts = 5
-  let mut final_state = "disconnected"
-  let mut recovery_successful = false
-  
-  let mut i = 0
-  while i < connection_states.length() {
-    let state_info = connection_states[i]
-    let current_state = state_info["state"]
-    
-    match current_state {
-      "disconnected" => {
-        if recovery_attempts < max_recovery_attempts {
-          // 尝试恢复连接
-          recovery_attempts = recovery_attempts + 1
-          // 在下一个状态中会变为reconnecting
-        }
-      }
-      "reconnecting" => {
-        // 模拟重连过程
-        // 在下一个状态中会变为connected或disconnected
-      }
-      "connected" => {
-        recovery_successful = true
-        final_state = "connected"
-        break
-      }
+  // 模拟连接重试逻辑
+  let mut attempt = 0
+  while attempt < max_retries && !connection_successful {
+    let attempt_info = {
+      "attempt": attempt + 1,
+      "timestamp": 1704067200L + attempt.to_long(),
+      "delay_ms": base_delay_ms * (2 ^ attempt),  // 指数退避
+      "success": attempt == failure_point,
+      "error": if attempt < failure_point { "connection_timeout" } else { "" }
     }
     
-    final_state = current_state
+    connection_attempts.push(attempt_info)
+    
+    if attempt_info["success"] {
+      connection_successful = true
+    }
+    
+    attempt = attempt + 1
+  }
+  
+  // 验证重试逻辑
+  assert_eq(connection_attempts.length(), 3)  // 只需要3次尝试
+  assert_eq(connection_successful, true)
+  
+  // 验证延迟策略
+  assert_eq(connection_attempts[0]["delay_ms"], 1000)  // 2^0 * 1000
+  assert_eq(connection_attempts[1]["delay_ms"], 2000)  // 2^1 * 1000
+  assert_eq(connection_attempts[2]["delay_ms"], 4000)  // 2^2 * 1000
+  
+  // 验证错误处理
+  assert_eq(connection_attempts[0]["error"], "connection_timeout")
+  assert_eq(connection_attempts[1]["error"], "connection_timeout")
+  assert_eq(connection_attempts[2]["error"], "")
+  
+  // 验证恢复后的状态
+  let recovery_state = {
+    "connection_established": connection_successful,
+    "total_attempts": connection_attempts.length(),
+    "total_retry_delay": connection_attempts[0]["delay_ms"] + connection_attempts[1]["delay_ms"],
+    "last_successful_attempt": connection_attempts[2]["attempt"]
+  }
+  
+  assert_eq(recovery_state["connection_established"], true)
+  assert_eq(recovery_state["total_attempts"], 3)
+  assert_eq(recovery_state["total_retry_delay"], 3000)
+  assert_eq(recovery_state["last_successful_attempt"], 3)
+}
+
+test "telemetry_data_corruption_detection" {
+  // 测试数据损坏检测
+  
+  let valid_telemetry_data = {
+    "trace_id": "0af7651916cd43dd8448eb211c80319c",
+    "span_id": "b7ad6b7169203331",
+    "checksum": "abc123def456"
+  }
+  
+  let corrupted_data_sets = [
+    {
+      "trace_id": "0af7651916cd43dd8448eb211c80319",  // 缺少字符
+      "span_id": "b7ad6b7169203331",
+      "checksum": "abc123def456"
+    },
+    {
+      "trace_id": "0af7651916cd43dd8448eb211c80319c",
+      "span_id": "b7ad6b716920333",   // 缺少字符
+      "checksum": "abc123def456"
+    },
+    {
+      "trace_id": "0af7651916cd43dd8448eb211c80319c",
+      "span_id": "b7ad6b7169203331",
+      "checksum": "xyz789uvw456"      // 不匹配的校验和
+    }
+  ]
+  
+  // 数据验证函数
+  let validate_data = func(data: Map[String, String]) -> Bool {
+    let trace_id_valid = data["trace_id"].length() == 32 && data["trace_id"].is_ascii_hex()
+    let span_id_valid = data["span_id"].length() == 16 && data["span_id"].is_ascii_hex()
+    let checksum_valid = data["checksum"] == "abc123def456"  // 简化的校验和验证
+    
+    trace_id_valid && span_id_valid && checksum_valid
+  }
+  
+  // 验证有效数据
+  assert_eq(validate_data(valid_telemetry_data), true)
+  
+  // 验证损坏数据检测
+  let mut corruption_detected = []
+  let mut i = 0
+  while i < corrupted_data_sets.length() {
+    let data = corrupted_data_sets[i]
+    let is_valid = validate_data(data)
+    corruption_detected.push(!is_valid)  // true表示检测到损坏
     i = i + 1
   }
   
-  // 验证连接恢复
-  assert_eq(recovery_attempts, 2)  // 2次恢复尝试
-  assert_eq(recovery_successful, true)  // 最终恢复成功
-  assert_eq(final_state, "connected")   // 最终状态为已连接
-  
-  // 验证恢复统计
-  let recovery_stats = {
-    "total_attempts": recovery_attempts,
-    "successful": recovery_successful,
-    "final_state": final_state,
-    "max_attempts_allowed": max_recovery_attempts
+  // 验证所有损坏都被检测到
+  i = 0
+  while i < corruption_detected.length() {
+    assert_eq(corruption_detected[i], true)
+    i = i + 1
   }
   
-  assert_eq(recovery_stats["total_attempts"], 2)
-  assert_eq(recovery_stats["successful"], true)
-  assert_eq(recovery_stats["final_state"], "connected")
+  // 数据恢复策略
+  let mut recovered_data = []
+  i = 0
+  while i < corrupted_data_sets.length() {
+    let data = corrupted_data_sets[i]
+    let mut recovered = data
+    
+    // 尝试修复trace_id
+    if data["trace_id"].length() < 32 {
+      recovered["trace_id"] = data["trace_id"] + "c"  // 简单的修复
+    }
+    
+    // 尝试修复span_id
+    if data["span_id"].length() < 16 {
+      recovered["span_id"] = data["span_id"] + "1"  // 简单的修复
+    }
+    
+    // 重新计算校验和
+    recovered["checksum"] = "abc123def456"
+    
+    recovered_data.push(recovered)
+    i = i + 1
+  }
+  
+  // 验证数据恢复
+  i = 0
+  while i < recovered_data.length() {
+    assert_eq(validate_data(recovered_data[i]), true)
+    i = i + 1
+  }
 }
 
-test "telemetry_data_loss_prevention" {
-  // 测试数据丢失预防
+test "telemetry_memory_pressure_handling" {
+  // 测试内存压力处理
   
-  let buffer_capacity = 1000
-  let mut buffer = []
-  let mut backup_buffer = []
-  let mut total_data_generated = 0
-  let mut data_lost = 0
+  let memory_limits = {
+    "warning_threshold": 80,    // 80%
+    "critical_threshold": 90,   // 90%
+    "emergency_threshold": 95   // 95%
+  }
   
-  // 模拟数据生成和缓冲
-  let data_generation_events = [
-    {"time": 1, "count": 200, "export_success": false},
-    {"time": 2, "count": 300, "export_success": false}, 
-    {"time": 3, "count": 150, "export_success": true},
-    {"time": 4, "count": 400, "export_success": false},
-    {"time": 5, "count": 100, "export_success": true}
+  let telemetry_buffers = []
+  let buffer_size_mb = 10
+  let max_buffers = 20
+  
+  // 模拟内存使用情况
+  let memory_usage_scenarios = [
+    75,   // 正常使用
+    85,   // 警告级别
+    92,   // 严重级别
+    97    // 紧急级别
   ]
   
+  let mut mitigation_actions = []
+  
   let mut i = 0
-  while i < data_generation_events.length() {
-    let event = data_generation_events[i]
-    let data_count = event["count"]
-    let export_success = event["export_success"]
+  while i < memory_usage_scenarios.length() {
+    let current_usage = memory_usage_scenarios[i]
+    let mut action = ""
     
-    // 生成数据并添加到缓冲区
-    let mut j = 0
-    while j < data_count {
-      let data_item = "data_" + total_data_generated.to_string()
-      
-      if buffer.length() < buffer_capacity {
-        buffer.push(data_item)
-      } else {
-        // 缓冲区满，使用备份缓冲区
-        if backup_buffer.length() < buffer_capacity / 2 {
-          backup_buffer.push(data_item)
-        } else {
-          data_lost = data_lost + 1
+    if current_usage >= memory_limits["emergency_threshold"] {
+      // 紧急措施：清空所有缓冲区
+      telemetry_buffers.clear()
+      action = "emergency_clear_all_buffers"
+    } else if current_usage >= memory_limits["critical_threshold"] {
+      // 严重措施：清空一半缓冲区
+      let buffers_to_remove = telemetry_buffers.length() / 2
+      let mut j = 0
+      while j < buffers_to_remove {
+        if telemetry_buffers.length() > 0 {
+          telemetry_buffers.remove_at(0)
         }
+        j = j + 1
+      }
+      action = "critical_clear_half_buffers"
+    } else if current_usage >= memory_limits["warning_threshold"] {
+      // 警告措施：减少缓冲区大小
+      if telemetry_buffers.length() > max_buffers / 2 {
+        telemetry_buffers.remove_at(telemetry_buffers.length() - 1)
+      }
+      action = "warning_reduce_buffer_size"
+    }
+    
+    mitigation_actions.push({
+      "memory_usage": current_usage,
+      "action": action,
+      "buffers_count": telemetry_buffers.length()
+    })
+    
+    i = i + 1
+  }
+  
+  // 验证内存压力处理
+  assert_eq(mitigation_actions[0]["action"], "warning_reduce_buffer_size")
+  assert_eq(mitigation_actions[1]["action"], "critical_clear_half_buffers")
+  assert_eq(mitigation_actions[2]["action"], "critical_clear_half_buffers")
+  assert_eq(mitigation_actions[3]["action"], "emergency_clear_all_buffers")
+  
+  // 验证缓冲区数量变化
+  assert_eq(mitigation_actions[3]["buffers_count"], 0)  // 紧急情况后所有缓冲区被清空
+  
+  // 验证内存恢复机制
+  let recovery_sequence = []
+  let mut recovery_step = 0
+  
+  while telemetry_buffers.length() < 5 && recovery_step < 10 {
+    telemetry_buffers.push("buffer_" + recovery_step.to_string())
+    recovery_sequence.push({
+      "step": recovery_step,
+      "buffers_count": telemetry_buffers.length()
+    })
+    recovery_step = recovery_step + 1
+  }
+  
+  // 验证恢复过程
+  assert_eq(recovery_sequence.length(), 5)
+  assert_eq(recovery_sequence[0]["buffers_count"], 1)
+  assert_eq(recovery_sequence[4]["buffers_count"], 5)
+}
+
+test "telemetry_service_degradation_handling" {
+  // 测试服务降级处理
+  
+  let service_components = {
+    "trace_collection": {
+      "priority": 1,
+      "enabled": true,
+      "essential": true
+    },
+    "metric_collection": {
+      "priority": 2,
+      "enabled": true,
+      "essential": false
+    },
+    "log_collection": {
+      "priority": 3,
+      "enabled": true,
+      "essential": false
+    },
+    "advanced_sampling": {
+      "priority": 4,
+      "enabled": true,
+      "essential": false
+    }
+  }
+  
+  let degradation_levels = [
+    "none",      // 所有功能正常
+    "minimal",   // 只保留核心功能
+    "severe",    // 只保留最基本功能
+    "critical"   // 紧急模式
+  ]
+  
+  let mut degradation_history = []
+  
+  let mut i = 0
+  while i < degradation_levels.length() {
+    let level = degradation_levels[i]
+    let mut disabled_components = []
+    
+    // 根据降级级别禁用组件
+    let component_keys = service_components.keys()
+    let mut j = 0
+    while j < component_keys.length() {
+      let component = component_keys[j]
+      let component_info = service_components[component]
+      
+      let should_disable = if level == "none" {
+        false
+      } else if level == "minimal" {
+        component_info["priority"] > 2 && !component_info["essential"]
+      } else if level == "severe" {
+        component_info["priority"] > 1 && !component_info["essential"]
+      } else if level == "critical" {
+        !component_info["essential"]
+      } else {
+        false
       }
       
-      total_data_generated = total_data_generated + 1
+      if should_disable {
+        disabled_components.push(component)
+        service_components[component]["enabled"] = false
+      }
+      
       j = j + 1
     }
     
-    // 尝试导出数据
-    if export_success and buffer.length() > 0 {
-      // 成功导出，清空缓冲区
-      let exported_count = buffer.length()
-      buffer.clear()
-      
-      // 从备份缓冲区恢复数据到主缓冲区
-      while backup_buffer.length() > 0 and buffer.length() < buffer_capacity {
-        let backup_item = backup_buffer.remove_at(0)
-        buffer.push(backup_item)
-      }
-    }
+    degradation_history.push({
+      "level": level,
+      "disabled_components": disabled_components,
+      "active_components": service_components.keys().length() - disabled_components.length()
+    })
     
     i = i + 1
   }
   
-  // 验证数据丢失预防
-  assert_eq(total_data_generated, 1150)  // 总共生成1150个数据项
-  assert_eq(buffer.length() + backup_buffer.length() + data_lost, total_data_generated)
-  assert_eq(data_lost, 0)  // 没有数据丢失
+  // 验证降级处理
+  assert_eq(degradation_history[0]["level"], "none")
+  assert_eq(degradation_history[0]["disabled_components"].length(), 0)
+  assert_eq(degradation_history[0]["active_components"], 4)
   
-  // 验证缓冲区状态
-  assert_eq(buffer.length() <= buffer_capacity, true)
-  assert_eq(backup_buffer.length() <= buffer_capacity / 2, true)
+  assert_eq(degradation_history[1]["level"], "minimal")
+  assert_eq(degradation_history[1]["disabled_components"].length(), 1)  // advanced_sampling
+  assert_eq(degradation_history[1]["active_components"], 3)
   
-  // 验证数据完整性
-  let data_preservation_rate = (total_data_generated - data_lost).to_double() / total_data_generated.to_double()
-  assert_eq(data_preservation_rate, 1.0)  // 100%数据保留率
+  assert_eq(degradation_history[2]["level"], "severe")
+  assert_eq(degradation_history[2]["disabled_components"].length(), 2)  // metric_collection, log_collection
+  assert_eq(degradation_history[2]["active_components"], 2)
+  
+  assert_eq(degradation_history[3]["level"], "critical")
+  assert_eq(degradation_history[3]["disabled_components"].length(), 3)  // 除了trace_collection都被禁用
+  assert_eq(degradation_history[3]["active_components"], 1)
+  
+  // 验证核心功能保持
+  assert_eq(service_components["trace_collection"]["enabled"], true)  // 核心功能始终启用
 }
 
-test "telemetry_circuit_breaker_recovery" {
-  // 测试断路器恢复机制
+test "telemetry_circuit_breaker_pattern" {
+  // 测试断路器模式
   
   let circuit_breaker_config = {
-    "failure_threshold": 5,      // 5次失败后打开断路器
-    "recovery_timeout": 60,      // 60秒后尝试半开状态
-    "success_threshold": 3       // 3次成功后关闭断路器
+    "failure_threshold": 5,      // 失败阈值
+    "recovery_timeout_ms": 10000, // 恢复超时
+    "success_threshold": 3       // 成功阈值（用于恢复）
   }
   
-  let operation_results = [
-    {"attempt": 1, "success": false, "error": "timeout"},
-    {"attempt": 2, "success": false, "error": "connection_refused"},
-    {"attempt": 3, "success": false, "error": "server_error"},
-    {"attempt": 4, "success": false, "error": "timeout"},
-    {"attempt": 5, "success": false, "error": "network_error"},  // 达到失败阈值
-    {"attempt": 6, "success": false, "error": "circuit_open"},   // 断路器打开
-    {"attempt": 7, "success": false, "error": "circuit_open"},   // 断路器打开
-    {"attempt": 8, "success": true, "error": ""},                // 半开状态，成功
-    {"attempt": 9, "success": true, "error": ""},                // 半开状态，成功
-    {"attempt": 10, "success": true, "error": ""}                // 半开状态，成功，断路器关闭
-  ]
-  
-  // 模拟断路器状态变化
-  let mut circuit_state = "closed"  // closed, open, half_open
+  let mut circuit_state = "CLOSED"  // CLOSED, OPEN, HALF_OPEN
   let mut failure_count = 0
   let mut success_count = 0
   let mut last_failure_time = 0L
+  let current_time = 1704067200L
   
-  let mut i = 0
-  while i < operation_results.length() {
-    let result = operation_results[i]
-    let success = result["success"]
-    
-    match circuit_state {
-      "closed" => {
-        if success {
-          success_count = success_count + 1
-          failure_count = 0  // 重置失败计数
-        } else {
-          failure_count = failure_count + 1
-          if failure_count >= circuit_breaker_config["failure_threshold"] {
-            circuit_state = "open"
-            last_failure_time = 1640995200L + i.to_int64() * 10L
-          }
-        }
-      }
-      "open" => {
-        // 检查是否可以尝试半开状态
-        let current_time = 1640995200L + i.to_int64() * 10L
-        if current_time - last_failure_time >= circuit_breaker_config["recovery_timeout"].to_int64() {
-          circuit_state = "half_open"
-          success_count = 0
-        }
-      }
-      "half_open" => {
-        if success {
-          success_count = success_count + 1
-          if success_count >= circuit_breaker_config["success_threshold"] {
-            circuit_state = "closed"
-            failure_count = 0
-          }
-        } else {
-          circuit_state = "open"
-          last_failure_time = 1640995200L + i.to_int64() * 10L
-          failure_count = circuit_breaker_config["failure_threshold"]
-        }
-      }
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证断路器恢复
-  assert_eq(circuit_state, "closed")  // 最终恢复到关闭状态
-  assert_eq(failure_count, 0)         // 失败计数重置
-  assert_eq(success_count >= circuit_breaker_config["success_threshold"], true)
-  
-  // 验证断路器统计
-  let circuit_breaker_stats = {
-    "final_state": circuit_state,
-    "total_failures": 5,
-    "total_successes": 3,
-    "recovery_successful": circuit_state == "closed"
-  }
-  
-  assert_eq(circuit_breaker_stats["final_state"], "closed")
-  assert_eq(circuit_breaker_stats["total_failures"], 5)
-  assert_eq(circuit_breaker_stats["total_successes"], 3)
-  assert_eq(circuit_breaker_stats["recovery_successful"], true)
-}
-
-test "telemetry_graceful_degradation" {
-  // 测试优雅降级
-  
-  let service_components = [
-    {"name": "data_collection", "priority": 1, "status": "healthy"},
-    {"name": "data_processing", "priority": 2, "status": "degraded"},
-    {"name": "data_export", "priority": 3, "status": "failed"},
-    {"name": "alerting", "priority": 4, "status": "healthy"}
+  // 模拟请求序列
+  let request_results = [
+    "success", "success", "failure", "failure", "failure",  // 3个失败
+    "failure", "failure",                                    // 达到阈值，断路器打开
+    "failure", "failure",                                    // 断路器打开期间
+    "success", "success", "success"                          // 恢复后成功
   ]
   
-  // 定义降级策略
-  let degradation_strategy = {
-    "data_collection": {"essential": true, "fallback": "buffered_collection"},
-    "data_processing": {"essential": true, "fallback": "basic_processing"},
-    "data_export": {"essential": false, "fallback": "local_storage"},
-    "alerting": {"essential": false, "fallback": "log_only"}
-  }
-  
-  // 执行优雅降级
-  let mut active_components = []
-  let mut degraded_components = []
-  let mut failed_components = []
+  let mut circuit_states = []
   
   let mut i = 0
-  while i < service_components.length() {
-    let component = service_components[i]
-    let component_name = component["name"]
-    let component_status = component["status"]
-    let strategy = degradation_strategy[component_name]
+  while i < request_results.length() {
+    let result = request_results[i]
+    let request_time = current_time + i.to_long() * 1000L
     
-    match component_status {
-      "healthy" => {
-        active_components.push(component_name)
-      }
-      "degraded" => {
-        if strategy["essential"] {
-          active_components.push(component_name + "_fallback")  // 使用降级模式
-          degraded_components.push(component_name)
-        } else {
-          failed_components.push(component_name)
+    if circuit_state == "CLOSED" {
+      if result == "failure" {
+        failure_count = failure_count + 1
+        if failure_count >= circuit_breaker_config["failure_threshold"] {
+          circuit_state = "OPEN"
+          last_failure_time = request_time
         }
+      } else {
+        success_count = success_count + 1
       }
-      "failed" => {
-        if strategy["essential"] {
-          active_components.push(component_name + "_fallback")  // 使用降级模式
-          degraded_components.push(component_name)
-        } else {
-          failed_components.push(component_name)
+    } else if circuit_state == "OPEN" {
+      // 检查是否可以尝试恢复
+      if request_time - last_failure_time >= circuit_breaker_config["recovery_timeout_ms"] {
+        circuit_state = "HALF_OPEN"
+        success_count = 0
+        failure_count = 0
+      }
+    } else if circuit_state == "HALF_OPEN" {
+      if result == "success" {
+        success_count = success_count + 1
+        if success_count >= circuit_breaker_config["success_threshold"] {
+          circuit_state = "CLOSED"
+          failure_count = 0
         }
+      } else {
+        circuit_state = "OPEN"
+        last_failure_time = request_time
+        failure_count = 1
       }
     }
+    
+    circuit_states.push({
+      "request": i + 1,
+      "result": result,
+      "circuit_state": circuit_state,
+      "failure_count": failure_count,
+      "success_count": success_count
+    })
     
     i = i + 1
   }
   
-  // 验证优雅降级
-  assert_eq(active_components.length(), 3)  // 3个组件仍在运行（包括降级模式）
-  assert_eq(degraded_components.length(), 2)  // 2个组件降级运行
-  assert_eq(failed_components.length(), 0)    // 没有完全失败的组件
+  // 验证断路器状态变化
+  assert_eq(circuit_states[4]["circuit_state"], "CLOSED")   // 第5个请求后仍关闭
+  assert_eq(circuit_states[5]["circuit_state"], "OPEN")     // 第6个请求后打开
+  assert_eq(circuit_states[6]["circuit_state"], "OPEN")     // 第7个请求后仍打开
+  assert_eq(circuit_states[7]["circuit_state"], "OPEN")     // 第8个请求后仍打开
+  assert_eq(circuit_states[8]["circuit_state"], "OPEN")     // 第9个请求后仍打开
   
-  // 验证核心功能保持
-  assert_eq(active_components.contains("data_collection"), true)  // 数据收集正常
-  assert_eq(active_components.contains("data_processing_fallback"), true)  // 数据处理降级模式
-  assert_eq(active_components.contains("data_export_fallback"), true)  // 数据导出降级模式
-  
-  // 验证降级统计
-  let degradation_stats = {
-    "total_components": service_components.length(),
-    "active_components": active_components.length(),
-    "degraded_components": degraded_components.length(),
-    "failed_components": failed_components.length(),
-    "service_availability": active_components.length().to_double() / service_components.length().to_double()
-  }
-  
-  assert_eq(degradation_stats["total_components"], 4)
-  assert_eq(degradation_stats["active_components"], 3)
-  assert_eq(degradation_stats["degraded_components"], 2)
-  assert_eq(degradation_stats["failed_components"], 0)
-  assert_eq(degradation_stats["service_availability"], 0.75)  // 75%服务可用性
+  // 验证恢复过程
+  assert_eq(circuit_states[9]["circuit_state"], "HALF_OPEN") // 第10个请求后半开
+  assert_eq(circuit_states[10]["circuit_state"], "HALF_OPEN") // 第11个请求后半开
+  assert_eq(circuit_states[11]["circuit_state"], "HALF_OPEN") // 第12个请求后半开
+  assert_eq(circuit_states[12]["circuit_state"], "CLOSED")    // 第13个请求后关闭
 }
 
-test "telemetry_error_classification" {
-  // 测试错误分类
+test "telemetry_graceful_shutdown_recovery" {
+  // 测试优雅关闭和恢复
   
+  let shutdown_phases = [
+    "INITIATED",    // 开始关闭流程
+    "STOP_ACCEPTING", // 停止接受新请求
+    "DRAIN_ACTIVE",  // 处理活跃请求
+    "FLUSH_BUFFERS", // 刷新缓冲区
+    "CLOSE_CONNECTIONS", // 关闭连接
+    "CLEANUP",      // 清理资源
+    "COMPLETE"      // 关闭完成
+  ]
+  
+  let mut shutdown_progress = []
+  let mut active_requests = 25
+  let mut buffer_size = 1024
+  let mut open_connections = 10
+  
+  let mut i = 0
+  while i < shutdown_phases.length() {
+    let phase = shutdown_phases[i]
+    let mut phase_actions = []
+    
+    if phase == "INITIATED" {
+      phase_actions.push("set_shutdown_flag")
+    } else if phase == "STOP_ACCEPTING" {
+      phase_actions.push("disable_new_requests")
+    } else if phase == "DRAIN_ACTIVE" {
+      // 模拟处理活跃请求
+      let processed = min(active_requests, 10)
+      active_requests = active_requests - processed
+      phase_actions.push("processed_" + processed.to_string() + "_requests")
+    } else if phase == "FLUSH_BUFFERS" {
+      // 模拟刷新缓冲区
+      let flushed = min(buffer_size, 512)
+      buffer_size = buffer_size - flushed
+      phase_actions.push("flushed_" + flushed.to_string() + "_bytes")
+    } else if phase == "CLOSE_CONNECTIONS" {
+      // 模拟关闭连接
+      let closed = min(open_connections, 5)
+      open_connections = open_connections - closed
+      phase_actions.push("closed_" + closed.to_string() + "_connections")
+    } else if phase == "CLEANUP" {
+      phase_actions.push("release_resources")
+      phase_actions.push("cleanup_memory")
+    } else if phase == "COMPLETE" {
+      phase_actions.push("shutdown_complete")
+    }
+    
+    shutdown_progress.push({
+      "phase": phase,
+      "actions": phase_actions,
+      "active_requests": active_requests,
+      "buffer_size": buffer_size,
+      "open_connections": open_connections
+    })
+    
+    i = i + 1
+  }
+  
+  // 验证关闭流程
+  assert_eq(shutdown_progress.length(), shutdown_phases.length())
+  assert_eq(shutdown_progress[0]["phase"], "INITIATED")
+  assert_eq(shutdown_progress[6]["phase"], "COMPLETE")
+  
+  // 验证资源清理
+  assert_eq(shutdown_progress[2]["active_requests"], 15)  // 处理了10个请求
+  assert_eq(shutdown_progress[3]["buffer_size"], 512)     // 刷新了512字节
+  assert_eq(shutdown_progress[4]["open_connections"], 5)  // 关闭了5个连接
+  
+  // 验证最终状态
+  let final_state = shutdown_progress[shutdown_progress.length() - 1]
+  assert_eq(final_state["active_requests"], 0)   // 所有请求都已处理
+  assert_eq(final_state["open_connections"], 0)  // 所有连接都已关闭
+  
+  // 模拟恢复过程
+  let mut recovery_progress = []
+  let recovery_phases = ["STARTUP", "INITIALIZE", "ACCEPTING", "READY"]
+  
+  i = 0
+  while i < recovery_phases.length() {
+    let phase = recovery_phases[i]
+    
+    if phase == "STARTUP" {
+      active_requests = 0
+      buffer_size = 0
+      open_connections = 0
+    } else if phase == "INITIALIZE" {
+      buffer_size = 512
+      open_connections = 5
+    } else if phase == "ACCEPTING" {
+      open_connections = 10
+    } else if phase == "READY" {
+      // 系统完全恢复
+    }
+    
+    recovery_progress.push({
+      "phase": phase,
+      "active_requests": active_requests,
+      "buffer_size": buffer_size,
+      "open_connections": open_connections,
+      "ready": phase == "READY"
+    })
+    
+    i = i + 1
+  }
+  
+  // 验证恢复过程
+  assert_eq(recovery_progress[3]["phase"], "READY")
+  assert_eq(recovery_progress[3]["ready"], true)
+  assert_eq(recovery_progress[3]["open_connections"], 10)
+  assert_eq(recovery_progress[3]["buffer_size"], 512)
+}
+
+test "telemetry_error_reporting_and_analysis" {
+  // 测试错误报告和分析
+  
+  let error_categories = [
+    "network_error",
+    "serialization_error", 
+    "validation_error",
+    "resource_exhaustion",
+    "internal_error"
+  ]
+  
+  let error_log = []
+  
+  // 模拟错误发生
   let error_events = [
-    {"timestamp": 1640995200L, "error": "connection_timeout", "component": "exporter", "severity": "high"},
-    {"timestamp": 1640995210L, "error": "invalid_data_format", "component": "processor", "severity": "medium"},
-    {"timestamp": 1640995220L, "error": "memory_limit_exceeded", "component": "collector", "severity": "critical"},
-    {"timestamp": 1640995230L, "error": "authentication_failed", "component": "exporter", "severity": "high"},
-    {"timestamp": 1640995240L, "error": "queue_full", "component": "buffer", "severity": "medium"}
+    {
+      "timestamp": 1704067200000L,
+      "category": "network_error",
+      "message": "Connection timeout to collector",
+      "severity": "warning",
+      "component": "exporter"
+    },
+    {
+      "timestamp": 1704067201000L,
+      "category": "validation_error",
+      "message": "Invalid trace ID format",
+      "severity": "error",
+      "component": "validator"
+    },
+    {
+      "timestamp": 1704067202000L,
+      "category": "network_error",
+      "message": "DNS resolution failed",
+      "severity": "error",
+      "component": "exporter"
+    },
+    {
+      "timestamp": 1704067203000L,
+      "category": "resource_exhaustion",
+      "message": "Memory usage exceeded threshold",
+      "severity": "critical",
+      "component": "buffer"
+    },
+    {
+      "timestamp": 1704067204000L,
+      "category": "network_error",
+      "message": "Connection refused",
+      "severity": "error",
+      "component": "exporter"
+    }
   ]
   
-  // 错误分类规则
-  let error_categories = {
-    "network": ["connection_timeout", "connection_refused", "authentication_failed"],
-    "data": ["invalid_data_format", "data_corruption", "serialization_error"],
-    "resource": ["memory_limit_exceeded", "disk_full", "queue_full"],
-    "service": ["service_unavailable", "internal_error", "timeout"]
+  // 分析错误模式
+  let mut error_statistics = {}
+  let mut severity_counts = {
+    "info": 0,
+    "warning": 0,
+    "error": 0,
+    "critical": 0
   }
-  
-  // 分类错误事件
-  let mut categorized_errors = {}
-  let mut severity_distribution = {"critical": 0, "high": 0, "medium": 0, "low": 0}
   
   let mut i = 0
   while i < error_events.length() {
     let event = error_events[i]
-    let error_type = event["error"]
+    let category = event["category"]
     let severity = event["severity"]
-    let component = event["component"]
     
-    // 按错误类型分类
-    let mut category = "unknown"
-    for (cat_name, error_list) in error_categories {
-      if error_list.contains(error_type) {
-        category = cat_name
-        break
-      }
-    }
-    
-    if not categorized_errors.contains_key(category) {
-      categorized_errors[category] = []
-    }
-    categorized_errors[category].push({
-      "error": error_type,
-      "component": component,
-      "severity": severity,
-      "timestamp": event["timestamp"]
-    })
-    
-    // 统计严重性分布
-    if severity_distribution.contains_key(severity) {
-      severity_distribution[severity] = severity_distribution[severity] + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证错误分类
-  assert_eq(categorized_errors["network"].length(), 2)  // connection_timeout, authentication_failed
-  assert_eq(categorized_errors["data"].length(), 1)     // invalid_data_format
-  assert_eq(categorized_errors["resource"].length(), 2)  // memory_limit_exceeded, queue_full
-  
-  // 验证严重性分布
-  assert_eq(severity_distribution["critical"], 1)
-  assert_eq(severity_distribution["high"], 2)
-  assert_eq(severity_distribution["medium"], 2)
-  assert_eq(severity_distribution["low"], 0)
-  
-  // 验证分类统计
-  let classification_stats = {
-    "total_errors": error_events.length(),
-    "categories_found": categorized_errors.size(),
-    "most_common_severity": "high",  // high出现2次
-    "critical_errors": severity_distribution["critical"]
-  }
-  
-  assert_eq(classification_stats["total_errors"], 5)
-  assert_eq(classification_stats["categories_found"], 3)
-  assert_eq(classification_stats["most_common_severity"], "high")
-  assert_eq(classification_stats["critical_errors"], 1)
-}
-
-test "telemetry_auto_recovery_strategies" {
-  // 测试自动恢复策略
-  
-  let failure_scenarios = [
-    {
-      "type": "memory_leak",
-      "detection_threshold": 80,  // 80%内存使用率
-      "recovery_action": "restart_component",
-      "recovery_time": 30,        // 30秒恢复时间
-      "success_rate": 0.9
-    },
-    {
-      "type": "connection_pool_exhaustion",
-      "detection_threshold": 95,  // 95%连接池使用率
-      "recovery_action": "expand_pool",
-      "recovery_time": 5,         // 5秒恢复时间
-      "success_rate": 0.95
-    },
-    {
-      "type": "queue_overflow",
-      "detection_threshold": 1000, // 1000项队列阈值
-      "recovery_action": "increase_buffer_size",
-      "recovery_time": 10,        // 10秒恢复时间
-      "success_rate": 0.85
-    }
-  ]
-  
-  // 模拟自动恢复过程
-  let mut recovery_results = []
-  let mut total_recovery_time = 0
-  
-  let mut i = 0
-  while i < failure_scenarios.length() {
-    let scenario = failure_scenarios[i]
-    let failure_type = scenario["type"]
-    let recovery_action = scenario["recovery_action"]
-    let recovery_time = scenario["recovery_time"]
-    let success_rate = scenario["success_rate"]
-    
-    // 模拟恢复执行
-    let recovery_success = 0.8 < success_rate  // 80%的概率成功（模拟）
-    
-    let recovery_result = {
-      "failure_type": failure_type,
-      "recovery_action": recovery_action,
-      "recovery_time": recovery_time,
-      "success": recovery_success,
-      "timestamp": 1640995200L + i.to_int64() * 60L
-    }
-    
-    recovery_results.push(recovery_result)
-    total_recovery_time = total_recovery_time + recovery_time
-    
-    i = i + 1
-  }
-  
-  // 验证自动恢复结果
-  let mut successful_recoveries = 0
-  let mut failed_recoveries = 0
-  i = 0
-  while i < recovery_results.length() {
-    if recovery_results[i]["success"] {
-      successful_recoveries = successful_recoveries + 1
+    // 统计错误类别
+    if error_statistics.contains_key(category) {
+      error_statistics[category] = error_statistics[category] + 1
     } else {
-      failed_recoveries = failed_recoveries + 1
+      error_statistics[category] = 1
     }
+    
+    // 统计严重程度
+    if severity_counts.contains_key(severity) {
+      severity_counts[severity] = severity_counts[severity] + 1
+    }
+    
+    error_log.push(event)
     i = i + 1
   }
   
-  // 验证恢复统计
-  assert_eq(recovery_results.length(), 3)
-  assert_eq(successful_recoveries, 2)  // 2次成功恢复
-  assert_eq(failed_recoveries, 1)      // 1次恢复失败
-  assert_eq(total_recovery_time, 45)   // 总恢复时间45秒
+  // 验证错误统计
+  assert_eq(error_statistics["network_error"], 3)  // 最常见的错误
+  assert_eq(error_statistics["validation_error"], 1)
+  assert_eq(error_statistics["resource_exhaustion"], 1)
   
-  // 验证恢复策略效果
-  let recovery_effectiveness = {
-    "total_scenarios": failure_scenarios.length(),
-    "successful_recoveries": successful_recoveries,
-    "failed_recoveries": failed_recoveries,
-    "success_rate": successful_recoveries.to_double() / failure_scenarios.length().to_double(),
-    "average_recovery_time": total_recovery_time / failure_scenarios.length()
+  assert_eq(severity_counts["warning"], 1)
+  assert_eq(severity_counts["error"], 3)
+  assert_eq(severity_counts["critical"], 1)
+  
+  // 生成错误报告
+  let error_report = {
+    "report_timestamp": 1704067205000L,
+    "time_window": "5s",
+    "total_errors": error_log.length(),
+    "error_categories": error_statistics,
+    "severity_distribution": severity_counts,
+    "most_common_error": "network_error",
+    "critical_issues": severity_counts["critical"],
+    "recommendations": [
+      "Investigate network connectivity issues",
+      "Implement connection pooling",
+      "Add memory monitoring and cleanup"
+    ]
   }
   
-  assert_eq(recovery_effectiveness["total_scenarios"], 3)
-  assert_eq(recovery_effectiveness["successful_recoveries"], 2)
-  assert_eq(recovery_effectiveness["success_rate"], 0.6666666666666666)  // 66.7%成功率
-  assert_eq(recovery_effectiveness["average_recovery_time"], 15)  // 平均15秒
-}
-
-test "telemetry_disaster_recovery" {
-  // 测试灾难恢复
+  // 验证错误报告
+  assert_eq(error_report["total_errors"], 5)
+  assert_eq(error_report["most_common_error"], "network_error")
+  assert_eq(error_report["critical_issues"], 1)
+  assert_eq(error_report["recommendations"].length(), 3)
   
-  let disaster_events = [
-    {"time": 0, "event": "data_center_failure", "impact": "complete", "recovery initiated": true},
-    {"time": 300, "event": "backup_activation", "impact": "partial", "recovery initiated": false},
-    {"time": 600, "event": "failover_complete", "impact": "minimal", "recovery initiated": false},
-    {"time": 900, "event": "service_restored", "impact": "none", "recovery initiated": false}
-  ]
-  
-  // 灾难恢复计划
-  let disaster_recovery_plan = {
-    "backup_sites": ["site_b", "site_c"],
-    "data_replication": true,
-    "rto": 900,    // 恢复时间目标：15分钟
-    "rpo": 300,    // 恢复点目标：5分钟
-    "automatic_failover": true
-  }
-  
-  // 执行灾难恢复
-  let mut recovery_timeline = []
-  let mut current_site = "site_a"  // 主站点
-  let mut data_loss_minutes = 0
-  let mut service_downtime_minutes = 0
-  
-  let mut i = 0
-  while i < disaster_events.length() {
-    let event = disaster_events[i]
-    let event_time = event["time"]
-    let event_name = event["event"]
-    let impact = event["impact"]
-    
-    match event_name {
-      "data_center_failure" => {
-        service_downtime_minutes = 0  // 开始计算停机时间
-        data_loss_minutes = 0         // 开始计算数据丢失
-        current_site = "none"         // 当前无活跃站点
-      }
-      "backup_activation" => {
-        current_site = disaster_recovery_plan["backup_sites"][0]  // 激活第一个备份站点
-        data_loss_minutes = event_time / 60  // 计算数据丢失时间
-      }
-      "failover_complete" => {
-        service_downtime_minutes = event_time / 60  // 计算服务停机时间
-      }
-      "service_restored" => {
-        current_site = "site_a"  // 恢复到主站点
-      }
-    }
-    
-    recovery_timeline.push({
-      "time": event_time,
-      "event": event_name,
-      "impact": impact,
-      "active_site": current_site,
-      "data_loss_minutes": data_loss_minutes,
-      "downtime_minutes": service_downtime_minutes
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证灾难恢复
-  assert_eq(recovery_timeline.length(), 4)
-  assert_eq(recovery_timeline[0]["active_site"], "none")  // 故障后无活跃站点
-  assert_eq(recovery_timeline[1]["active_site"], "site_b")  // 备份站点激活
-  assert_eq(recovery_timeline[2]["active_site"], "site_b")  // 故障转移完成
-  assert_eq(recovery_timeline[3]["active_site"], "site_a")  // 恢复到主站点
-  
-  // 验证恢复目标达成
-  assert_eq(service_downtime_minutes, 15)  // 15分钟停机时间，等于RTO
-  assert_eq(data_loss_minutes, 5)          // 5分钟数据丢失，等于RPO
-  assert_eq(service_downtime_minutes <= disaster_recovery_plan["rto"] / 60, true)
-  assert_eq(data_loss_minutes <= disaster_recovery_plan["rpo"] / 60, true)
-  
-  // 验证灾难恢复统计
-  let disaster_recovery_stats = {
-    "total_recovery_time": service_downtime_minutes,
-    "total_data_loss": data_loss_minutes,
-    "rto_met": service_downtime_minutes <= disaster_recovery_plan["rto"] / 60,
-    "rpo_met": data_loss_minutes <= disaster_recovery_plan["rpo"] / 60,
-    "backup_sites_available": disaster_recovery_plan["backup_sites"].length(),
-    "automatic_failover_enabled": disaster_recovery_plan["automatic_failover"]
-  }
-  
-  assert_eq(disaster_recovery_stats["total_recovery_time"], 15)
-  assert_eq(disaster_recovery_stats["total_data_loss"], 5)
-  assert_eq(disaster_recovery_stats["rto_met"], true)
-  assert_eq(disaster_recovery_stats["rpo_met"], true)
-  assert_eq(disaster_recovery_stats["backup_sites_available"], 2)
-  assert_eq(disaster_recovery_stats["automatic_failover_enabled"], true)
+  // 验证恢复建议
+  let recommendations = error_report["recommendations"]
+  assert_eq(recommendations.contains("Investigate network connectivity issues"), true)
+  assert_eq(recommendations.contains("Implement connection pooling"), true)
+  assert_eq(recommendations.contains("Add memory monitoring and cleanup"), true)
 }
