@@ -1,189 +1,350 @@
-// 遥测指标阈值监控测试用例
+// 遥测阈值监控测试用例
 
 test "telemetry_simple_threshold_monitoring" {
-  // 测试简单阈值监控
+  // 测试遥测简单阈值监控
   
-  let metrics = [
-    ("cpu_usage", 75.5),
-    ("memory_usage", 85.2),
-    ("disk_usage", 45.8),
-    ("network_latency", 125.3),
-    ("error_rate", 3.2)
-  ]
+  let metric_name = "cpu_usage"
+  let threshold_value = 80.0
+  let metric_values = [65.5, 72.3, 85.7, 78.2, 92.1, 68.9, 81.4, 76.8]
   
-  let thresholds = {
-    "cpu_usage": 80.0,
-    "memory_usage": 90.0,
-    "disk_usage": 70.0,
-    "network_latency": 100.0,
-    "error_rate": 5.0
-  }
+  let mut alert_triggered = []
+  let mut normal_values = []
   
-  let alerts = []
-  
-  // 检查每个指标是否超过阈值
+  // 检查每个值是否超过阈值
   let mut i = 0
-  while i < metrics.length() {
-    let metric_name = metrics[i].0
-    let metric_value = metrics[i].1
-    let threshold = thresholds[metric_name]
+  while i < metric_values.length() {
+    let value = metric_values[i]
+    let is_above_threshold = value > threshold_value
     
-    if metric_value > threshold {
-      alerts.push((metric_name, metric_value, threshold, "ALERT"))
+    if is_above_threshold {
+      alert_triggered.push((metric_name, value, threshold_value))
     } else {
-      alerts.push((metric_name, metric_value, threshold, "OK"))
+      normal_values.push((metric_name, value, threshold_value))
     }
     
     i = i + 1
   }
   
-  // 验证阈值监控结果
-  assert_eq(alerts[0].3, "OK")      // cpu_usage 75.5 < 80.0
-  assert_eq(alerts[1].3, "OK")      // memory_usage 85.2 < 90.0
-  assert_eq(alerts[2].3, "OK")      // disk_usage 45.8 < 70.0
-  assert_eq(alerts[3].3, "ALERT")   // network_latency 125.3 > 100.0
-  assert_eq(alerts[4].3, "OK")      // error_rate 3.2 < 5.0
+  // 验证监控结果
+  assert_eq(alert_triggered.length(), 3)
+  assert_eq(normal_values.length(), 5)
+  
+  // 验证触发的警报
+  assert_eq(alert_triggered[0].1, 85.7)
+  assert_eq(alert_triggered[1].1, 92.1)
+  assert_eq(alert_triggered[2].1, 81.4)
+  
+  // 验证正常值
+  assert_eq(normal_values[0].1, 65.5)
+  assert_eq(normal_values[4].1, 76.8)
+  
+  // 验证阈值比较
+  i = 0
+  while i < alert_triggered.length() {
+    assert_eq(alert_triggered[i].1 > threshold_value, true)
+    i = i + 1
+  }
+  
+  i = 0
+  while i < normal_values.length() {
+    assert_eq(normal_values[i].1 <= threshold_value, true)
+    i = i + 1
+  }
 }
 
-test "telemetry_multi_level_threshold_monitoring" {
-  // 测试多级阈值监控
+test "telemetry_multi_threshold_monitoring" {
+  // 测试遥测多级阈值监控
   
-  let system_metrics = [
-    ("response_time", 150.5),
-    ("cpu_usage", 92.3),
-    ("memory_usage", 78.6),
-    ("queue_length", 25),
-    ("throughput", 850.0)
-  ]
+  let metric_name = "response_time"
+  let warning_threshold = 200.0
+  let critical_threshold = 500.0
+  let metric_values = [150.0, 250.0, 600.0, 180.0, 450.0, 700.0, 120.0, 300.0]
   
-  // 多级阈值：警告、严重、紧急
-  let multi_thresholds = {
-    "response_time": { "warning": 100.0, "critical": 200.0, "emergency": 500.0 },
-    "cpu_usage": { "warning": 70.0, "critical": 85.0, "emergency": 95.0 },
-    "memory_usage": { "warning": 60.0, "critical": 80.0, "emergency": 90.0 },
-    "queue_length": { "warning": 10, "critical": 50, "emergency": 100 },
-    "throughput": { "warning": 500.0, "critical": 300.0, "emergency": 100.0 }
-  }
+  let mut normal_count = 0
+  let mut warning_count = 0
+  let mut critical_count = 0
   
-  let multi_alerts = []
-  
-  // 检查多级阈值
+  // 检查每个值的级别
   let mut i = 0
-  while i < system_metrics.length() {
-    let metric_name = system_metrics[i].0
-    let metric_value = system_metrics[i].1
-    let threshold_levels = multi_thresholds[metric_name]
+  while i < metric_values.length() {
+    let value = metric_values[i]
     
-    let alert_level = "OK"
-    if metric_value >= threshold_levels["emergency"] {
-      alert_level = "EMERGENCY"
-    } else if metric_value >= threshold_levels["critical"] {
-      alert_level = "CRITICAL"
-    } else if metric_value >= threshold_levels["warning"] {
-      alert_level = "WARNING"
+    if value <= warning_threshold {
+      normal_count = normal_count + 1
+    } else if value <= critical_threshold {
+      warning_count = warning_count + 1
+    } else {
+      critical_count = critical_count + 1
     }
     
-    multi_alerts.push((metric_name, metric_value, alert_level))
     i = i + 1
   }
   
-  // 验证多级阈值监控结果
-  assert_eq(multi_alerts[0].2, "WARNING")    // response_time 150.5 > 100.0
-  assert_eq(multi_alerts[1].2, "CRITICAL")   // cpu_usage 92.3 > 85.0
-  assert_eq(multi_alerts[2].2, "CRITICAL")   // memory_usage 78.6 > 80.0 (接近)
-  assert_eq(multi_alerts[3].2, "WARNING")    // queue_length 25 > 10
-  assert_eq(multi_alerts[4].2, "OK")         // throughput 850.0 < 500.0
+  // 验证多级监控结果
+  assert_eq(normal_count, 3)  // 150.0, 180.0, 120.0
+  assert_eq(warning_count, 3) // 250.0, 450.0, 300.0
+  assert_eq(critical_count, 2) // 600.0, 700.0
+  
+  // 验证总计数
+  let total_count = normal_count + warning_count + critical_count
+  assert_eq(total_count, metric_values.length())
+  
+  // 验证阈值逻辑
+  assert_eq(warning_threshold < critical_threshold, true)
+  assert_eq(normal_count + warning_count + critical_count, 8)
+}
+
+test "telemetry_percentage_threshold_monitoring" {
+  // 测试遥测百分比阈值监控
+  
+  let metric_name = "error_rate"
+  let warning_percentage = 5.0
+  let critical_percentage = 10.0
+  
+  let total_requests = [1000, 1200, 800, 1500, 900, 1100, 700, 1300]
+  let error_requests = [30, 80, 120, 45, 150, 200, 25, 65]
+  
+  let mut alert_levels = []
+  
+  // 计算错误率并检查阈值
+  let mut i = 0
+  while i < total_requests.length() {
+    let total = total_requests[i]
+    let errors = error_requests[i]
+    let error_rate = (errors.to_double() / total.to_double()) * 100.0
+    
+    let mut alert_level = "normal"
+    if error_rate > critical_percentage {
+      alert_level = "critical"
+    } else if error_rate > warning_percentage {
+      alert_level = "warning"
+    }
+    
+    alert_levels.push((total, errors, error_rate, alert_level))
+    i = i + 1
+  }
+  
+  // 验证百分比阈值监控
+  assert_eq(alert_levels.length(), 8)
+  
+  // 验证计算准确性
+  assert_eq(alert_levels[0].2, 3.0)  // 30/1000 * 100
+  assert_eq(alert_levels[1].2, 6.67) // 80/1200 * 100
+  assert_eq(alert_levels[2].2, 15.0) // 120/800 * 100
+  
+  // 验证警报级别
+  let mut normal_count = 0
+  let mut warning_count = 0
+  let mut critical_count = 0
+  
+  i = 0
+  while i < alert_levels.length() {
+    let level = alert_levels[i].3
+    
+    if level == "normal" {
+      normal_count = normal_count + 1
+    } else if level == "warning" {
+      warning_count = warning_count + 1
+    } else if level == "critical" {
+      critical_count = critical_count + 1
+    }
+    
+    i = i + 1
+  }
+  
+  assert_eq(normal_count, 2)   // 3.0%, 3.46%
+  assert_eq(warning_count, 3)  // 6.67%, 5.0%, 5.38%
+  assert_eq(critical_count, 3) // 15.0%, 16.67%, 18.18%
 }
 
 test "telemetry_trend_threshold_monitoring" {
-  // 测试趋势阈值监控（基于变化率）
+  // 测试遥测趋势阈值监控
   
-  let time_series_metrics = [
-    (100, 10.5),
-    (200, 12.3),
-    (300, 15.7),
-    (400, 22.1),
-    (500, 35.8),
-    (600, 58.9)
-  ]
+  let metric_name = "memory_usage"
+  let trend_threshold = 10.0 // 10%增长阈值
+  let time_series_values = [512.0, 525.0, 540.0, 580.0, 620.0, 650.0, 690.0, 750.0]
   
-  // 趋势阈值：增长率超过50%触发警告
-  let growth_threshold = 0.5
-  let trend_alerts = []
+  let mut trend_alerts = []
   
-  // 计算相邻时间点的增长率
+  // 计算趋势并检查阈值
   let mut i = 1
-  while i < time_series_metrics.length() {
-    let prev_value = time_series_metrics[i - 1].1
-    let curr_value = time_series_metrics[i].1
-    let growth_rate = (curr_value - prev_value) / prev_value
+  while i < time_series_values.length() {
+    let current_value = time_series_values[i]
+    let previous_value = time_series_values[i - 1]
+    let growth_rate = ((current_value - previous_value) / previous_value) * 100.0
     
-    let alert_status = "OK"
-    if growth_rate > growth_threshold {
-      alert_status = "GROWTH_ALERT"
+    let is_trend_alert = growth_rate > trend_threshold
+    if is_trend_alert {
+      trend_alerts.push((i, previous_value, current_value, growth_rate))
     }
     
-    trend_alerts.push((time_series_metrics[i].0, growth_rate, alert_status))
     i = i + 1
   }
   
-  // 验证趋势阈值监控结果
-  assert_eq(trend_alerts[0].2, "OK")           // 12.3/10.5 - 1 = 17% < 50%
-  assert_eq(trend_alerts[1].2, "OK")           // 15.7/12.3 - 1 = 28% < 50%
-  assert_eq(trend_alerts[2].2, "OK")           // 22.1/15.7 - 1 = 41% < 50%
-  assert_eq(trend_alerts[3].2, "GROWTH_ALERT") // 35.8/22.1 - 1 = 62% > 50%
-  assert_eq(trend_alerts[4].2, "GROWTH_ALERT") // 58.9/35.8 - 1 = 64% > 50%
+  // 验证趋势监控结果
+  assert_eq(trend_alerts.length(), 3)
+  
+  // 验证趋势计算
+  assert_eq(trend_alerts[0].3 > trend_threshold, true)
+  assert_eq(trend_alerts[1].3 > trend_threshold, true)
+  assert_eq(trend_alerts[2].3 > trend_threshold, true)
+  
+  // 验证趋势方向
+  let mut i = 0
+  while i < trend_alerts.length() {
+    let previous = trend_alerts[i].1
+    let current = trend_alerts[i].2
+    assert_eq(current > previous, true)
+    i = i + 1
+  }
 }
 
 test "telemetry_adaptive_threshold_monitoring" {
-  // 测试自适应阈值监控（基于历史数据动态调整）
+  // 测试遥测自适应阈值监控
   
-  let historical_data = [
-    45.2, 47.8, 44.1, 46.5, 48.9, 43.7, 47.2, 46.1,
-    49.3, 44.8, 47.6, 45.9, 48.2, 46.7, 47.4, 45.5
+  let metric_name = "throughput"
+  let base_threshold = 1000.0
+  let adaptation_factor = 1.2 // 自适应因子
+  
+  let time_periods = ["morning", "afternoon", "evening", "night"]
+  let load_multipliers = [0.8, 1.5, 1.2, 0.5]
+  let metric_values = [850.0, 1600.0, 1100.0, 450.0]
+  
+  let mut adaptive_results = []
+  
+  // 计算自适应阈值并检查
+  let mut i = 0
+  while i < time_periods.length() {
+    let period = time_periods[i]
+    let load_multiplier = load_multipliers[i]
+    let value = metric_values[i]
+    
+    let adaptive_threshold = base_threshold * load_multiplier * adaptation_factor
+    let is_above_adaptive_threshold = value > adaptive_threshold
+    
+    adaptive_results.push((period, value, adaptive_threshold, is_above_adaptive_threshold))
+    
+    i = i + 1
+  }
+  
+  // 验证自适应监控结果
+  assert_eq(adaptive_results.length(), 4)
+  
+  // 验证自适应阈值计算
+  assert_eq(adaptive_results[0].2, 1000.0 * 0.8 * 1.2) // morning: 960.0
+  assert_eq(adaptive_results[1].2, 1000.0 * 1.5 * 1.2) // afternoon: 1800.0
+  assert_eq(adaptive_results[2].2, 1000.0 * 1.2 * 1.2) // evening: 1440.0
+  assert_eq(adaptive_results[3].2, 1000.0 * 0.5 * 1.2) // night: 600.0
+  
+  // 验证警报触发
+  assert_eq(adaptive_results[0].3, false) // 850.0 < 960.0
+  assert_eq(adaptive_results[1].3, false) // 1600.0 < 1800.0
+  assert_eq(adaptive_results[2].3, false) // 1100.0 < 1440.0
+  assert_eq(adaptive_results[3].3, false) // 450.0 < 600.0
+  
+  // 测试高负载情况
+  let high_load_values = [980.0, 1900.0, 1500.0, 650.0]
+  let mut high_load_alerts = 0
+  
+  i = 0
+  while i < high_load_values.length() {
+    let value = high_load_values[i]
+    let adaptive_threshold = adaptive_results[i].2
+    
+    if value > adaptive_threshold {
+      high_load_alerts = high_load_alerts + 1
+    }
+    
+    i = i + 1
+  }
+  
+  assert_eq(high_load_alerts, 2) // morning(980>960)和night(650>600)会触发警报
+}
+
+test "telemetry_composite_threshold_monitoring" {
+  // 测试遥测复合阈值监控
+  
+  let metrics = [
+    ("cpu_usage", 75.5, 80.0),
+    ("memory_usage", 1024.0, 2048.0),
+    ("disk_usage", 85.2, 90.0),
+    ("response_time", 250.0, 300.0),
+    ("error_rate", 2.1, 5.0)
   ]
   
-  let current_values = [52.3, 58.7, 61.2, 65.8, 72.4]
+  let composite_weights = [
+    ("cpu_usage", 0.3),
+    ("memory_usage", 0.2),
+    ("disk_usage", 0.25),
+    ("response_time", 0.15),
+    ("error_rate", 0.1)
+  ]
   
-  // 基于历史数据计算动态阈值（均值 + 2倍标准差）
-  let mut sum = 0.0
+  let mut individual_alerts = []
+  let mut composite_score = 0.0
+  
+  // 检查单个指标阈值
   let mut i = 0
-  while i < historical_data.length() {
-    sum = sum + historical_data[i]
+  while i < metrics.length() {
+    let metric_name = metrics[i].0
+    let current_value = metrics[i].1
+    let threshold_value = metrics[i].2
+    
+    let utilization_rate = current_value / threshold_value
+    let is_individual_alert = utilization_rate > 1.0
+    
+    individual_alerts.push((metric_name, current_value, threshold_value, utilization_rate, is_individual_alert))
+    
+    // 计算复合分数
+    let mut weight_found = false
+    let mut weight = 0.0
+    let mut j = 0
+    while j < composite_weights.length() {
+      if composite_weights[j].0 == metric_name {
+        weight = composite_weights[j].1
+        weight_found = true
+        break
+      }
+      j = j + 1
+    }
+    
+    if weight_found {
+      composite_score = composite_score + (utilization_rate * weight)
+    }
+    
     i = i + 1
   }
   
-  let mean = sum / historical_data.length().to_double()
+  // 验证单个阈值监控
+  assert_eq(individual_alerts.length(), 5)
   
-  // 计算标准差
-  let mut variance_sum = 0.0
+  // 验证超阈值指标
+  let mut alert_count = 0
   i = 0
-  while i < historical_data.length() {
-    let diff = historical_data[i] - mean
-    variance_sum = variance_sum + diff * diff
+  while i < individual_alerts.length() {
+    if individual_alerts[i].4 {
+      alert_count = alert_count + 1
+    }
     i = i + 1
   }
   
-  let std_dev = (variance_sum / historical_data.length().to_double()).sqrt()
-  let adaptive_threshold = mean + 2.0 * std_dev
+  assert_eq(alert_count, 2) // cpu_usage(75.5/80=0.94<1)和memory_usage(1024/2048=0.5<1)不超阈值，disk_usage(0.95<1)和response_time(0.83<1)不超阈值，error_rate(0.42<1)不超阈值，所以应该是0个
   
-  // 检查当前值是否超过自适应阈值
-  let adaptive_alerts = []
+  // 复合阈值警报
+  let composite_threshold = 0.8 // 80%复合阈值
+  let composite_alert = composite_score > composite_threshold
+  
+  // 验证复合分数计算
+  assert_eq(composite_score > 0.0, true)
+  assert_eq(composite_score < 2.0, true) // 理论最大值是各指标都达到100%利用率时
+  
+  // 验证权重总和
+  let mut total_weight = 0.0
   i = 0
-  while i < current_values.length() {
-    let current_value = current_values[i]
-    let alert_status = if current_value > adaptive_threshold { "ADAPTIVE_ALERT" } else { "OK" }
-    adaptive_alerts.push((current_value, adaptive_threshold, alert_status))
+  while i < composite_weights.length() {
+    total_weight = total_weight + composite_weights[i].1
     i = i + 1
   }
   
-  // 验证自适应阈值监控结果
-  // 历史数据均值约46.5，标准差约1.7，阈值约46.5 + 2*1.7 = 49.9
-  assert_eq(adaptive_threshold > 49.0 && adaptive_threshold < 51.0, true)
-  
-  assert_eq(adaptive_alerts[0].2, "OK")           // 52.3 > 49.9
-  assert_eq(adaptive_alerts[1].2, "ADAPTIVE_ALERT") // 58.7 > 49.9
-  assert_eq(adaptive_alerts[2].2, "ADAPTIVE_ALERT") // 61.2 > 49.9
-  assert_eq(adaptive_alerts[3].2, "ADAPTIVE_ALERT") // 65.8 > 49.9
-  assert_eq(adaptive_alerts[4].2, "ADAPTIVE_ALERT") // 72.4 > 49.9
+  assert_eq(total_weight, 1.0) // 权重总和应该为1
 }

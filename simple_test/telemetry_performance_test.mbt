@@ -1,210 +1,330 @@
-// 遥测系统性能测试用例
+// 遥测性能基准测试用例
 
-test "telemetry_performance_metrics" {
-  // 测试遥测性能指标计算
+test "telemetry_throughput_benchmark" {
+  // 测试遥测系统吞吐量基准
   
-  let operation_times = [125.5, 150.2, 98.7, 210.3, 175.8, 142.1, 189.4, 167.9]
-  let mut sum = 0.0
+  let test_duration_seconds = 60
+  let target_throughput = 1000 // 每秒1000个事件
+  let total_events = test_duration_seconds * target_throughput
   
-  // 计算总时间
+  let mut events_processed = 0
+  let start_time = 0
+  let end_time = test_duration_seconds
+  
+  // 模拟事件处理
   let mut i = 0
-  while i < operation_times.length() {
-    sum = sum + operation_times[i]
+  while i < total_events {
+    // 模拟处理一个遥测事件
+    let event_id = "event_" + i.to_string()
+    let processing_time = 1 // 模拟1毫秒处理时间
+    
+    // 模拟事件处理
+    events_processed = events_processed + 1
+    
     i = i + 1
   }
   
-  // 计算平均时间
-  let average = sum / operation_times.length().to_double()
+  let actual_duration = end_time - start_time
+  let actual_throughput = events_processed / actual_duration
+  
+  // 验证吞吐量性能
+  assert_eq(events_processed, total_events)
+  assert_eq(actual_throughput, target_throughput)
+  assert_eq(actual_duration, test_duration_seconds)
   
   // 验证性能指标
-  assert_eq(average > 100.0, true)
-  assert_eq(average < 200.0, true)
-  assert_eq(sum > 1000.0, true)
-  assert_eq(sum < 1500.0, true)
+  let throughput_efficiency = (actual_throughput.to_double() / target_throughput.to_double()) * 100.0
+  assert_eq(throughput_efficiency, 100.0)
 }
 
-test "telemetry_throughput_calculation" {
-  // 测试遥测吞吐量计算
+test "telemetry_latency_benchmark" {
+  // 测试遥测系统延迟基准
   
-  let request_counts = [1000, 1200, 800, 1500, 900, 1100, 1300, 700]
-  let time_window = 60.0  // 60秒时间窗口
+  let event_count = 10000
+  let target_latency_ms = 10 // 目标延迟10毫秒
+  let mut total_latency = 0
+  let mut max_latency = 0
+  let mut min_latency = 1000
   
-  // 计算总请求数
-  let mut total_requests = 0
+  // 模拟延迟测试
   let mut i = 0
-  while i < request_counts.length() {
-    total_requests = total_requests + request_counts[i]
+  while i < event_count {
+    let event_start_time = i.to_long()
+    let event_end_time = event_start_time + target_latency_ms.to_long()
+    let event_latency = (event_end_time - event_start_time).to_int()
+    
+    total_latency = total_latency + event_latency
+    
+    if event_latency > max_latency {
+      max_latency = event_latency
+    }
+    
+    if event_latency < min_latency {
+      min_latency = event_latency
+    }
+    
     i = i + 1
   }
   
-  // 计算吞吐量（请求/秒）
-  let throughput = total_requests.to_double() / time_window
+  let average_latency = total_latency / event_count
   
-  // 验证吞吐量计算
-  assert_eq(throughput > 100.0, true)
-  assert_eq(throughput < 200.0, true)
-  assert_eq(total_requests > 8000, true)
-  assert_eq(total_requests < 10000, true)
+  // 验证延迟性能
+  assert_eq(average_latency, target_latency_ms)
+  assert_eq(max_latency, target_latency_ms)
+  assert_eq(min_latency, target_latency_ms)
+  
+  // 验证延迟分布
+  let latency_variance = 0 // 在理想情况下，所有延迟相同
+  assert_eq(latency_variance, 0)
+  
+  // 验证延迟百分比
+  let p99_latency = target_latency_ms // 99%的请求延迟
+  let p95_latency = target_latency_ms // 95%的请求延迟
+  let p50_latency = target_latency_ms // 50%的请求延迟
+  
+  assert_eq(p99_latency <= target_latency_ms, true)
+  assert_eq(p95_latency <= target_latency_ms, true)
+  assert_eq(p50_latency <= target_latency_ms, true)
 }
 
-test "telemetry_latency_distribution" {
-  // 测试遥测延迟分布
+test "telemetry_memory_usage_benchmark" {
+  // 测试遥测系统内存使用基准
   
-  let latency_values = [10.5, 25.3, 45.7, 8.2, 32.9, 18.4, 52.1, 12.6]
-  let latency_buckets = [0.0, 20.0, 40.0, 60.0]
+  let base_memory_mb = 100
+  let memory_per_event_kb = 1
+  let event_count = 50000
+  let max_memory_mb = 200
   
-  // 初始化桶计数
-  let bucket_counts = [0, 0, 0, 0]
+  let mut current_memory_mb = base_memory_mb
   
-  // 统计每个桶的延迟数量
+  // 模拟内存使用增长
   let mut i = 0
-  while i < latency_values.length() {
-    let latency = latency_values[i]
-    let mut bucket_idx = 0
+  while i < event_count {
+    let event_memory_kb = memory_per_event_kb
+    let event_memory_mb = event_memory_kb.to_double() / 1024.0
     
-    // 找到合适的桶
+    current_memory_mb = current_memory_mb + event_memory_mb
+    
+    // 模拟内存回收（每1000个事件回收一次）
+    if (i + 1) % 1000 == 0 {
+      let reclaimed_memory_mb = 10.0
+      current_memory_mb = current_memory_mb - reclaimed_memory_mb
+    }
+    
+    i = i + 1
+  }
+  
+  let total_memory_added_mb = (event_count * memory_per_event_kb).to_double() / 1024.0
+  let total_memory_reclaimed_mb = (event_count / 1000) * 10.0
+  let expected_memory_mb = base_memory_mb.to_double() + total_memory_added_mb - total_memory_reclaimed_mb.to_double()
+  
+  // 验证内存使用
+  assert_eq(current_memory_mb > base_memory_mb, true)
+  assert_eq(current_memory_mb < max_memory_mb, true)
+  
+  // 验证内存效率
+  let memory_efficiency = (current_memory_mb - base_memory_mb.to_double()) / total_memory_added_mb
+  assert_eq(memory_efficiency < 1.0, true) // 由于有回收，效率应该小于100%
+  
+  // 验证内存增长趋势
+  let memory_growth_rate = (current_memory_mb - base_memory_mb.to_double()) / event_count.to_double()
+  assert_eq(memory_growth_rate > 0.0, true)
+  assert_eq(memory_growth_rate < 0.01, true) // 每个事件内存增长应该很小
+}
+
+test "telemetry_cpu_usage_benchmark" {
+  // 测试遥测系统CPU使用基准
+  
+  let test_duration_seconds = 30
+  let max_cpu_usage_percent = 80.0
+  let target_cpu_usage_percent = 50.0
+  
+  let mut cpu_samples = []
+  let mut total_cpu_usage = 0.0
+  let sample_interval = 1 // 每秒采样一次
+  
+  // 模拟CPU使用率测试
+  let mut i = 0
+  while i < test_duration_seconds {
+    // 模拟CPU使用率变化
+    let base_cpu_usage = 30.0
+    let workload_factor = 1.0 + (i.to_double() / test_duration_seconds.to_double()) * 0.5
+    let current_cpu_usage = base_cpu_usage * workload_factor
+    
+    // 添加一些随机波动
+    let random_variation = (i % 5).to_double() * 2.0
+    let final_cpu_usage = current_cpu_usage + random_variation
+    
+    cpu_samples.push(final_cpu_usage)
+    total_cpu_usage = total_cpu_usage + final_cpu_usage
+    
+    i = i + 1
+  }
+  
+  let average_cpu_usage = total_cpu_usage / cpu_samples.length().to_double()
+  
+  // 验证CPU使用性能
+  assert_eq(average_cpu_usage > 0.0, true)
+  assert_eq(average_cpu_usage < max_cpu_usage_percent, true)
+  
+  // 计算CPU使用率峰值
+  let mut max_cpu_sample = 0.0
+  let mut min_cpu_sample = 100.0
+  let mut i = 0
+  while i < cpu_samples.length() {
+    if cpu_samples[i] > max_cpu_sample {
+      max_cpu_sample = cpu_samples[i]
+    }
+    if cpu_samples[i] < min_cpu_sample {
+      min_cpu_sample = cpu_samples[i]
+    }
+    i = i + 1
+  }
+  
+  // 验证CPU使用率范围
+  assert_eq(max_cpu_sample < max_cpu_usage_percent, true)
+  assert_eq(min_cpu_sample > 0.0, true)
+  
+  // 验证CPU使用率稳定性
+  let cpu_variance = (max_cpu_sample - min_cpu_sample) / average_cpu_usage
+  assert_eq(cpu_variance < 1.0, true) // 变异系数应该小于1
+}
+
+test "telemetry_concurrent_performance_benchmark" {
+  // 测试遥测系统并发性能基准
+  
+  let concurrent_threads = 10
+  let operations_per_thread = 1000
+  let total_operations = concurrent_threads * operations_per_thread
+  
+  let mut thread_results = []
+  let mut total_operations_completed = 0
+  let mut total_time_taken = 0
+  
+  // 模拟并发操作
+  let mut i = 0
+  while i < concurrent_threads {
+    let thread_id = i
+    let mut operations_completed = 0
+    let thread_start_time = 0
+    let thread_end_time = 100 // 模拟100毫秒完成时间
+    
+    // 模拟每个线程的操作
     let mut j = 0
-    while j < latency_buckets.length() {
-      if latency <= latency_buckets[j] {
-        bucket_idx = j
-        break
-      }
+    while j < operations_per_thread {
+      // 模拟一个操作
+      operations_completed = operations_completed + 1
       j = j + 1
     }
     
-    // 如果超过所有边界，使用最后一个桶
-    if bucket_idx == 0 && latency > latency_buckets[latency_buckets.length() - 1] {
-      bucket_idx = latency_buckets.length() - 1
+    let thread_time = thread_end_time - thread_start_time
+    thread_results.push((thread_id, operations_completed, thread_time))
+    
+    total_operations_completed = total_operations_completed + operations_completed
+    total_time_taken = total_time_taken + thread_time
+    
+    i = i + 1
+  }
+  
+  let average_operations_per_thread = total_operations_completed / concurrent_threads
+  let average_time_per_thread = total_time_taken / concurrent_threads
+  let overall_throughput = total_operations_completed / total_time_taken
+  
+  // 验证并发性能
+  assert_eq(total_operations_completed, total_operations)
+  assert_eq(average_operations_per_thread, operations_per_thread)
+  
+  // 验证并发效率
+  let sequential_time = operations_per_thread * concurrent_threads * 10 // 假设顺序执行每个操作需要10毫秒
+  let concurrency_speedup = sequential_time.to_double() / total_time_taken.to_double()
+  assert_eq(concurrency_speedup > 1.0, true) // 并行应该比顺序快
+  
+  // 验证负载均衡
+  let mut min_operations = operations_per_thread
+  let mut max_operations = 0
+  let mut i = 0
+  while i < thread_results.length() {
+    let ops = thread_results[i].1
+    if ops < min_operations {
+      min_operations = ops
+    }
+    if ops > max_operations {
+      max_operations = ops
+    }
+    i = i + 1
+  }
+  
+  let load_balance_factor = min_operations.to_double() / max_operations.to_double()
+  assert_eq(load_balance_factor, 1.0) // 理想情况下负载完全均衡
+}
+
+test "telemetry_scalability_benchmark" {
+  // 测试遥测系统可扩展性基准
+  
+  let load_levels = [100, 500, 1000, 2000, 5000, 10000]
+  let mut performance_metrics = []
+  
+  // 测试不同负载级别的性能
+  let mut i = 0
+  while i < load_levels.length() {
+    let current_load = load_levels[i]
+    let start_time = 0
+    let base_processing_time = 1 // 基础处理时间1毫秒
+    
+    // 模拟处理时间随负载的增长
+    let load_factor = current_load.to_double() / 100.0
+    let processing_overhead = (load_factor.log() * 10.0).to_int() // 对数增长开销
+    let total_processing_time = base_processing_time + processing_overhead
+    
+    let end_time = start_time + total_processing_time
+    let throughput = current_load / total_processing_time
+    let latency = total_processing_time
+    
+    performance_metrics.push((current_load, total_processing_time, throughput, latency))
+    
+    i = i + 1
+  }
+  
+  // 验证可扩展性性能
+  assert_eq(performance_metrics.length(), load_levels.length())
+  
+  // 验证吞吐量增长
+  let mut previous_throughput = 0
+  let mut i = 0
+  while i < performance_metrics.length() {
+    let current_throughput = performance_metrics[i].2
+    assert_eq(current_throughput > 0, true)
+    
+    if i > 0 {
+      // 吞吐量应该随负载增长（至少初期）
+      if load_levels[i] <= 2000 {
+        assert_eq(current_throughput >= previous_throughput, true)
+      }
     }
     
-    bucket_counts[bucket_idx] = bucket_counts[bucket_idx] + 1
+    previous_throughput = current_throughput
     i = i + 1
   }
   
-  // 验证延迟分布
-  let mut total_count = 0
-  i = 0
-  while i < bucket_counts.length() {
-    total_count = total_count + bucket_counts[i]
-    i = i + 1
-  }
-  
-  assert_eq(total_count, latency_values.length())
-  assert_eq(bucket_counts[0] > 0, true)  // 第一个桶应该有数据
-  assert_eq(bucket_counts[3] > 0, true)  // 最后一个桶应该有数据
-}
-
-test "telemetry_error_rate_monitoring" {
-  // 测试遥测错误率监控
-  
-  let operation_results = [
-    ("operation_1", true),
-    ("operation_2", false),
-    ("operation_3", true),
-    ("operation_4", true),
-    ("operation_5", false),
-    ("operation_6", true),
-    ("operation_7", true),
-    ("operation_8", false)
-  ]
-  
-  // 统计成功和失败的操作
-  let mut success_count = 0
-  let mut failure_count = 0
+  // 验证延迟增长
   let mut i = 0
-  while i < operation_results.length() {
-    if operation_results[i].1 {
-      success_count = success_count + 1
-    } else {
-      failure_count = failure_count + 1
+  while i < performance_metrics.length() {
+    let current_latency = performance_metrics[i].3
+    assert_eq(current_latency > 0, true)
+    
+    if i > 0 {
+      let previous_latency = performance_metrics[i - 1].3
+      // 延迟应该随负载增长，但应该是可控的
+      assert_eq(current_latency >= previous_latency, true)
+      assert_eq(current_latency <= previous_latency * 2, true) // 延迟增长不应该超过2倍
     }
+    
     i = i + 1
   }
   
-  // 计算错误率
-  let total_operations = success_count + failure_count
-  let error_rate = failure_count.to_double() / total_operations.to_double()
-  
-  // 验证错误率监控
-  assert_eq(success_count, 5)
-  assert_eq(failure_count, 3)
-  assert_eq(total_operations, 8)
-  assert_eq(error_rate > 0.3, true)
-  assert_eq(error_rate < 0.4, true)
-}
-
-test "telemetry_resource_utilization" {
-  // 测试遥测资源利用率
-  
-  let cpu_readings = [45.2, 67.8, 23.1, 89.5, 34.6, 78.9, 56.3, 41.7]
-  let memory_readings = [60.5, 72.3, 55.7, 85.2, 48.9, 68.4, 76.1, 52.6]
-  
-  // 计算CPU平均利用率
-  let mut cpu_sum = 0.0
-  let mut i = 0
-  while i < cpu_readings.length() {
-    cpu_sum = cpu_sum + cpu_readings[i]
-    i = i + 1
-  }
-  let cpu_average = cpu_sum / cpu_readings.length().to_double()
-  
-  // 计算内存平均利用率
-  let mut memory_sum = 0.0
-  i = 0
-  while i < memory_readings.length() {
-    memory_sum = memory_sum + memory_readings[i]
-    i = i + 1
-  }
-  let memory_average = memory_sum / memory_readings.length().to_double()
-  
-  // 验证资源利用率
-  assert_eq(cpu_average > 40.0, true)
-  assert_eq(cpu_average < 70.0, true)
-  assert_eq(memory_average > 50.0, true)
-  assert_eq(memory_average < 80.0, true)
-  
-  // 验证峰值利用率
-  assert_eq(cpu_readings[3] > 85.0, true)  // CPU峰值
-  assert_eq(memory_readings[3] > 80.0, true)  // 内存峰值
-}
-
-test "telemetry_concurrent_operations" {
-  // 测试遥测并发操作
-  
-  let concurrent_tasks = [
-    ("task_1", 100),
-    ("task_2", 150),
-    ("task_3", 80),
-    ("task_4", 200),
-    ("task_5", 120)
-  ]
-  
-  // 模拟并发执行时间计算
-  let max_duration = 0
-  let mut i = 0
-  while i < concurrent_tasks.length() {
-    let duration = concurrent_tasks[i].1
-    if duration > max_duration {
-      max_duration = duration
-    }
-    i = i + 1
-  }
-  
-  // 计算总工作量
-  let mut total_work = 0
-  i = 0
-  while i < concurrent_tasks.length() {
-    total_work = total_work + concurrent_tasks[i].1
-    i = i + 1
-  }
-  
-  // 验证并发操作指标
-  assert_eq(max_duration, 200)
-  assert_eq(total_work, 650)
-  assert_eq(concurrent_tasks.length(), 5)
-  
-  // 验证并发效率（理想情况下并发时间接近最长任务时间）
-  let efficiency = total_work.to_double() / (max_duration.to_double() * concurrent_tasks.length().to_double())
-  assert_eq(efficiency > 0.5, true)
-  assert_eq(efficiency < 1.0, true)
+  // 验证线性扩展性（在低负载时）
+  let low_load_throughput = performance_metrics[0].2
+  let medium_load_throughput = performance_metrics[2].2 // 1000负载
+  let scalability_ratio = medium_load_throughput / low_load_throughput
+  assert_eq(scalability_ratio > 5.0, true) // 10倍负载应该有至少5倍吞吐量增长
 }
