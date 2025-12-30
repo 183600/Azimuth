@@ -2068,6 +2068,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_6c6f67735f6170695f737472756374757265645f746573742e6d6274_4, ["logger_provider_and_logger_hierarchy"]),
     5: (__test_6c6f67735f6170695f737472756374757265645f746573742e6d6274_5, ["log_record_timestamp_and_observability"]),
   },
+  "log_record_builder_test.mbt": {
+    0: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_0, ["log_record_builder_basic_usage"]),
+    1: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_1, ["log_record_builder_with_attributes"]),
+    2: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_2, ["log_record_builder_severity_levels"]),
+    3: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_3, ["log_record_builder_with_trace_context"]),
+    4: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_4, ["log_record_builder_complex_attributes"]),
+    5: (__test_6c6f675f7265636f72645f6275696c6465725f746573742e6d6274_5, ["log_record_builder_chaining"]),
+  },
   "internationalization_test.mbt": {
     0: (__test_696e7465726e6174696f6e616c697a6174696f6e5f746573742e6d6274_0, ["telemetry_message_localization"]),
     1: (__test_696e7465726e6174696f6e616c697a6174696f6e5f746573742e6d6274_1, ["telemetry_timezone_handling"]),
