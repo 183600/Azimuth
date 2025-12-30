@@ -1,398 +1,488 @@
-// 遥测数据持久化测试用例，测试不同存储策略和数据格式
+// 遥测数据持久化测试用例
+// 专注于测试遥测数据的存储、检索和持久化功能
 
-test "telemetry_persistence_storage_backends" {
-  // 测试遥测持久化存储后端
+test "telemetry_data_serialization" {
+  // 测试遥测数据序列化
   
-  let storage_backends = ["file", "database", "object_storage", "time_series_db", "message_queue"]
-  let backend_descriptions = [
-    "Local file system storage",
-    "Relational database storage", 
-    "Cloud object storage",
-    "Time series database",
-    "Message queue for streaming"
-  ]
-  
-  // 验证存储后端数组
-  assert_eq(storage_backends.length(), 5)
-  assert_eq(backend_descriptions.length(), 5)
-  
-  // 验证具体存储后端
-  assert_eq(storage_backends[0], "file")
-  assert_eq(storage_backends[1], "database")
-  assert_eq(storage_backends[2], "object_storage")
-  assert_eq(storage_backends[3], "time_series_db")
-  assert_eq(storage_backends[4], "message_queue")
-  
-  // 验证后端描述
-  assert_eq(backend_descriptions[0].contains("file"), true)
-  assert_eq(backend_descriptions[1].contains("database"), true)
-  assert_eq(backend_descriptions[2].contains("object"), true)
-  assert_eq(backend_descriptions[3].contains("time series"), true)
-  assert_eq(backend_descriptions[4].contains("message"), true)
-}
-
-test "telemetry_persistence_data_formats" {
-  // 测试遥测持久化数据格式
-  
-  let data_formats = ["json", "protobuf", "avro", "parquet", "csv"]
-  let format_characteristics = [
-    "Human readable, widely supported",
-    "Binary, compact, efficient",
-    "Schema evolution support",
-    "Columnar, analytical queries",
-    "Simple, tabular format"
-  ]
-  
-  // 验证数据格式数组
-  assert_eq(data_formats.length(), 5)
-  assert_eq(format_characteristics.length(), 5)
-  
-  // 验证具体数据格式
-  assert_eq(data_formats[0], "json")
-  assert_eq(data_formats[1], "protobuf")
-  assert_eq(data_formats[2], "avro")
-  assert_eq(data_formats[3], "parquet")
-  assert_eq(data_formats[4], "csv")
-  
-  // 验证格式特征
-  assert_eq(format_characteristics[0].contains("Human"), true)
-  assert_eq(format_characteristics[1].contains("Binary"), true)
-  assert_eq(format_characteristics[2].contains("schema"), true)
-  assert_eq(format_characteristics[3].contains("columnar"), true)
-  assert_eq(format_characteristics[4].contains("tabular"), true)
-  
-  // 验证格式效率比较
-  let format_efficiency = ["low", "high", "high", "very_high", "medium"]
-  assert_eq(format_efficiency.length(), 5)
-  assert_eq(format_efficiency[0], "low") // JSON效率较低
-  assert_eq(format_efficiency[3], "very_high") // Parquet效率最高
-}
-
-test "telemetry_persistence_retention_policies" {
-  // 测试遥测持久化保留策略
-  
-  let retention_policies = ["1d", "7d", "30d", "90d", "1y", "indefinite"]
-  let policy_descriptions = [
-    "Retain for 1 day",
-    "Retain for 7 days",
-    "Retain for 30 days", 
-    "Retain for 90 days",
-    "Retain for 1 year",
-    "Retain indefinitely"
-  ]
-  
-  // 验证保留策略数组
-  assert_eq(retention_policies.length(), 6)
-  assert_eq(policy_descriptions.length(), 6)
-  
-  // 验证具体保留策略
-  assert_eq(retention_policies[0], "1d")
-  assert_eq(retention_policies[1], "7d")
-  assert_eq(retention_policies[2], "30d")
-  assert_eq(retention_policies[3], "90d")
-  assert_eq(retention_policies[4], "1y")
-  assert_eq(retention_policies[5], "indefinite")
-  
-  // 验证策略描述
-  assert_eq(policy_descriptions[0].contains("1 day"), true)
-  assert_eq(policy_descriptions[1].contains("7 days"), true)
-  assert_eq(policy_descriptions[2].contains("30 days"), true)
-  assert_eq(policy_descriptions[3].contains("90 days"), true)
-  assert_eq(policy_descriptions[4].contains("1 year"), true)
-  assert_eq(policy_descriptions[5].contains("indefinitely"), true)
-  
-  // 验证保留时间递增
-  let retention_days = [1, 7, 30, 90, 365, -1] // -1表示无限期
-  let mut i = 0
-  while i < retention_days.length() - 2 {
-    assert_eq(retention_days[i] < retention_days[i + 1], true)
-    i = i + 1
-  }
-}
-
-test "telemetry_persistence_batch_operations" {
-  // 测试遥测持久化批量操作
-  
-  let batch_sizes = [100, 500, 1000, 5000, 10000]
-  let batch_write_times = [10.0, 35.0, 60.0, 220.0, 400.0] // 写入时间（毫秒）
-  let batch_read_times = [5.0, 18.0, 32.0, 125.0, 240.0] // 读取时间（毫秒）
-  
-  // 验证批量操作数组
-  assert_eq(batch_sizes.length(), 5)
-  assert_eq(batch_write_times.length(), 5)
-  assert_eq(batch_read_times.length(), 5)
-  
-  // 验证批量大小递增
-  let mut i = 0
-  while i < batch_sizes.length() - 1 {
-    assert_eq(batch_sizes[i] < batch_sizes[i + 1], true)
-    i = i + 1
-  }
-  
-  // 验证批量操作吞吐量
-  i = 0
-  while i < batch_sizes.length() {
-    let batch_size = batch_sizes[i]
-    let write_time = batch_write_times[i]
-    let read_time = batch_read_times[i]
-    
-    // 计算写入吞吐量（记录/秒）
-    let write_throughput = batch_size.to_double() / (write_time / 1000.0)
-    assert_eq(write_throughput > 0.0, true)
-    
-    // 计算读取吞吐量（记录/秒）
-    let read_throughput = batch_size.to_double() / (read_time / 1000.0)
-    assert_eq(read_throughput > 0.0, true)
-    
-    // 验证读取通常比写入快
-    assert_eq(read_throughput > write_throughput, true)
-    
-    i = i + 1
-  }
-  
-  // 验证批量效率
-  let small_batch_throughput = batch_sizes[0].to_double() / (batch_write_times[0] / 1000.0)
-  let large_batch_throughput = batch_sizes[4].to_double() / (batch_write_times[4] / 1000.0)
-  
-  // 大批量应该有更好的吞吐量
-  assert_eq(large_batch_throughput > small_batch_throughput, true)
-}
-
-test "telemetry_persistence_data_compression" {
-  // 测试遥测持久化数据压缩
-  
-  let compression_algorithms = ["none", "gzip", "lz4", "snappy", "zstd"]
-  let compression_ratios = [1.0, 0.3, 0.5, 0.6, 0.25] // 压缩比（越小越好）
-  let compression_speeds = ["fastest", "medium", "very_fast", "fast", "medium"]
-  
-  // 验证压缩算法数组
-  assert_eq(compression_algorithms.length(), 5)
-  assert_eq(compression_ratios.length(), 5)
-  assert_eq(compression_speeds.length(), 5)
-  
-  // 验证具体压缩算法
-  assert_eq(compression_algorithms[0], "none")
-  assert_eq(compression_algorithms[1], "gzip")
-  assert_eq(compression_algorithms[2], "lz4")
-  assert_eq(compression_algorithms[3], "snappy")
-  assert_eq(compression_algorithms[4], "zstd")
-  
-  // 验证压缩比
-  assert_eq(compression_ratios[0] == 1.0, true) // 无压缩比率为1
-  assert_eq(compression_ratios[4] < compression_ratios[1], true) // zstd比gzip更好
-  
-  // 验证压缩速度
-  assert_eq(compression_speeds[0], "fastest") // 无压缩最快
-  assert_eq(compression_speeds.length() == 5, true)
-  
-  // 计算存储节省
-  let original_data_size = 1000 // 假设原始数据大小为1000单位
-  let mut i = 0
-  while i < compression_algorithms.length() {
-    let compressed_size = (original_data_size.to_double() * compression_ratios[i]).to_int()
-    let space_saved = original_data_size - compressed_size
-    
-    // 验证压缩后大小
-    assert_eq(compressed_size <= original_data_size, true)
-    
-    // 验证空间节省
-    if compression_algorithms[i] != "none" {
-      assert_eq(space_saved > 0, true)
-    } else {
-      assert_eq(space_saved == 0, true) // 无压缩无空间节省
+  let telemetry_data = {
+    "trace_id" => "abc123def45678901234567890123456",
+    "span_id" => "fedcba0987654321",
+    "parent_span_id" => "1234567890abcdef",
+    "operation_name" => "HTTP POST /api/payment",
+    "start_time" => 1640995200000000L,
+    "end_time" => 1640995201500000L,
+    "duration" => 1500000L,
+    "status_code" => "200",
+    "service_name" => "payment-service",
+    "attributes" => {
+      "http.method" => "POST",
+      "http.url" => "/api/payment",
+      "http.status_code" => "200",
+      "user.id" => "user_12345"
     }
-    
-    i = i + 1
   }
+  
+  // 验证遥测数据结构
+  assert_eq(telemetry_data["trace_id"].length(), 32)
+  assert_eq(telemetry_data["span_id"].length(), 16)
+  assert_eq(telemetry_data["operation_name"], "HTTP POST /api/payment")
+  assert_eq(telemetry_data["duration"], 1500000L)
+  assert_eq(telemetry_data["service_name"], "payment-service")
+  
+  // 序列化为JSON格式
+  let json_data = "{"
+  json_data = json_data + "\"trace_id\":\"" + telemetry_data["trace_id"] + "\"," 
+  json_data = json_data + "\"span_id\":\"" + telemetry_data["span_id"] + "\"," 
+  json_data = json_data + "\"operation_name\":\"" + telemetry_data["operation_name"] + "\"," 
+  json_data = json_data + "\"start_time\":" + telemetry_data["start_time"].to_string() + "," 
+  json_data = json_data + "\"duration\":" + telemetry_data["duration"].to_string() + "," 
+  json_data = json_data + "\"service_name\":\"" + telemetry_data["service_name"] + "\"" 
+  json_data = json_data + "}"
+  
+  // 验证JSON序列化
+  assert_eq(json_data.has_prefix("{"), true)
+  assert_eq(json_data.has_suffix("}"), true)
+  assert_eq(json_data.contains("\"trace_id\":\"abc123def45678901234567890123456\""), true)
+  assert_eq(json_data.contains("\"duration\":1500000"), true)
+  
+  // 序列化为Protobuf格式（简化版本）
+  let protobuf_data = []
+  protobuf_data.push(telemetry_data["trace_id"].length())
+  protobuf_data.push(telemetry_data["span_id"].length())
+  protobuf_data.push(telemetry_data["operation_name"].length())
+  protobuf_data.push(telemetry_data["duration"])
+  
+  // 验证Protobuf序列化数据
+  assert_eq(protobuf_data.length(), 4)
+  assert_eq(protobuf_data[0], 32) // trace_id长度
+  assert_eq(protobuf_data[1], 16) // span_id长度
+  assert_eq(protobuf_data[3], 1500000L) // duration
+  
+  // 序列化为Avro格式（简化版本）
+  let avro_schema = {
+    "type" => "record",
+    "name" => "TelemetrySpan",
+    "fields" => [
+      {"name" => "trace_id", "type" => "string"},
+      {"name" => "span_id", "type" => "string"},
+      {"name" => "operation_name", "type" => "string"},
+      {"name" => "duration", "type" => "long"}
+    ]
+  }
+  
+  // 验证Avro schema
+  assert_eq(avro_schema["type"], "record")
+  assert_eq(avro_schema["name"], "TelemetrySpan")
+  assert_eq(avro_schema["fields"].length(), 4)
 }
 
-test "telemetry_persistence_backup_recovery" {
-  // 测试遥测持久化备份恢复
+test "telemetry_data_compression_storage" {
+  // 测试遥测数据压缩存储
   
-  let backup_strategies = ["full", "incremental", "differential", "snapshot"]
-  let recovery_times = [300.0, 45.0, 120.0, 60.0] // 恢复时间（秒）
-  let backup_sizes = [10000, 500, 2000, 8000] // 备份大小（MB）
+  let telemetry_batch = []
+  let batch_size = 100
   
-  // 验证备份策略数组
-  assert_eq(backup_strategies.length(), 4)
-  assert_eq(recovery_times.length(), 4)
-  assert_eq(backup_sizes.length(), 4)
-  
-  // 验证具体备份策略
-  assert_eq(backup_strategies[0], "full")
-  assert_eq(backup_strategies[1], "incremental")
-  assert_eq(backup_strategies[2], "differential")
-  assert_eq(backup_strategies[3], "snapshot")
-  
-  // 验证恢复时间
-  assert_eq(recovery_times[0] > recovery_times[1], true) // 全量恢复比增量慢
-  assert_eq(recovery_times[1] < recovery_times[2], true) // 增量恢复比差分快
-  
-  // 验证备份大小
-  assert_eq(backup_sizes[0] > backup_sizes[1], true) // 全量备份比增量大
-  assert_eq(backup_sizes[1] < backup_sizes[2], true) // 增量备份比差分小
-  
-  // 计算恢复效率（MB/秒）
+  // 生成大量遥测数据
   let mut i = 0
-  while i < backup_strategies.length() {
-    let recovery_efficiency = backup_sizes[i].to_double() / recovery_times[i]
-    assert_eq(recovery_efficiency > 0.0, true)
+  while i < batch_size {
+    let span_data = {
+      "trace_id" => "trace_" + i.to_string(),
+      "span_id" => "span_" + i.to_string(),
+      "service_name" => "service-" + (i % 5).to_string(),
+      "operation_name" => "operation_" + (i % 10).to_string(),
+      "duration" => 1000L + i.to_long(),
+      "timestamp" => 1640995200000000L + i.to_long()
+    }
+    telemetry_batch.push(span_data)
     i = i + 1
   }
   
-  // 验证增量恢复效率最高
-  let incremental_efficiency = backup_sizes[1].to_double() / recovery_times[1]
-  let full_efficiency = backup_sizes[0].to_double() / recovery_times[0]
+  // 验证批次数据
+  assert_eq(telemetry_batch.length(), batch_size)
+  assert_eq(telemetry_batch[0]["trace_id"], "trace_0")
+  assert_eq(telemetry_batch[99]["span_id"], "span_99")
   
-  // 增量恢复应该有更高的效率（考虑数据量）
-  assert_eq(incremental_efficiency > 0.0, true)
-  assert_eq(full_efficiency > 0.0, true)
+  // 计算原始数据大小
+  let mut original_size = 0
+  i = 0
+  while i < telemetry_batch.length() {
+    let span = telemetry_batch[i]
+    original_size = original_size + span["trace_id"].length()
+    original_size = original_size + span["span_id"].length()
+    original_size = original_size + span["service_name"].length()
+    original_size = original_size + span["operation_name"].length()
+    i = i + 1
+  }
+  
+  // 应用字典压缩
+  let compression_dictionary = {
+    "trace_" => "t",
+    "span_" => "s",
+    "service-" => "sv",
+    "operation_" => "op"
+  }
+  
+  // 压缩数据
+  let compressed_batch = []
+  i = 0
+  while i < telemetry_batch.length() {
+    let span = telemetry_batch[i]
+    let compressed_span = {
+      "trace_id" => span["trace_id"].replace("trace_", "t"),
+      "span_id" => span["span_id"].replace("span_", "s"),
+      "service_name" => span["service_name"].replace("service-", "sv"),
+      "operation_name" => span["operation_name"].replace("operation_", "op"),
+      "duration" => span["duration"],
+      "timestamp" => span["timestamp"]
+    }
+    compressed_batch.push(compressed_span)
+    i = i + 1
+  }
+  
+  // 计算压缩后大小
+  let mut compressed_size = 0
+  i = 0
+  while i < compressed_batch.length() {
+    let span = compressed_batch[i]
+    compressed_size = compressed_size + span["trace_id"].length()
+    compressed_size = compressed_size + span["span_id"].length()
+    compressed_size = compressed_size + span["service_name"].length()
+    compressed_size = compressed_size + span["operation_name"].length()
+    i = i + 1
+  }
+  
+  // 验证压缩效果
+  assert_eq(compressed_size < original_size, true)
+  let compression_ratio = compressed_size.to_double() / original_size.to_double()
+  assert_eq(compression_ratio < 0.8, true) // 至少20%压缩率
+  
+  // 验证压缩数据完整性
+  assert_eq(compressed_batch[0]["trace_id"], "t0")
+  assert_eq(compressed_batch[0]["span_id"], "s0")
+  assert_eq(compressed_batch[0]["service_name"], "sv0")
+  assert_eq(compressed_batch[0]["operation_name"], "op0")
 }
 
-test "telemetry_persistence_data_validation" {
-  // 测试遥测持久化数据验证
+test "telemetry_data_partitioning" {
+  // 测试遥测数据分区策略
   
-  let validation_rules = [
-    "required_fields",
-    "data_type_check", 
-    "timestamp_range",
-    "metric_bounds",
-    "schema_compliance"
-  ]
-  let rule_descriptions = [
-    "Check required fields present",
-    "Validate data types",
-    "Check timestamp ranges",
-    "Validate metric value bounds",
-    "Check schema compliance"
+  let telemetry_data = [
+    {"trace_id" => "trace_001", "timestamp" => 1640995200000L, "service" => "payment"},
+    {"trace_id" => "trace_002", "timestamp" => 1640995300000L, "service" => "auth"},
+    {"trace_id" => "trace_003", "timestamp" => 1640995400000L, "service" => "payment"},
+    {"trace_id" => "trace_004", "timestamp" => 1640995500000L, "service" => "user"},
+    {"trace_id" => "trace_005", "timestamp" => 1640995600000L, "service" => "payment"}
   ]
   
-  // 验证验证规则数组
-  assert_eq(validation_rules.length(), 5)
-  assert_eq(rule_descriptions.length(), 5)
+  // 验证测试数据
+  assert_eq(telemetry_data.length(), 5)
+  assert_eq(telemetry_data[0]["service"], "payment")
+  assert_eq(telemetry_data[1]["service"], "auth")
   
-  // 验证具体验证规则
-  assert_eq(validation_rules[0], "required_fields")
-  assert_eq(validation_rules[1], "data_type_check")
-  assert_eq(validation_rules[2], "timestamp_range")
-  assert_eq(validation_rules[3], "metric_bounds")
-  assert_eq(validation_rules[4], "schema_compliance")
+  // 按时间分区（按小时）
+  let time_partitions = {}
+  let mut i = 0
+  while i < telemetry_data.length() {
+    let data = telemetry_data[i]
+    let timestamp = data["timestamp"]
+    let hour = timestamp / 3600000L // 毫秒转小时
+    let partition_key = "hour_" + hour.to_string()
+    
+    if !time_partitions.contains_key(partition_key) {
+      time_partitions[partition_key] = []
+    }
+    time_partitions[partition_key].push(data)
+    i = i + 1
+  }
   
-  // 验证规则描述
-  assert_eq(rule_descriptions[0].contains("required"), true)
-  assert_eq(rule_descriptions[1].contains("data type"), true)
-  assert_eq(rule_descriptions[2].contains("timestamp"), true)
-  assert_eq(rule_descriptions[3].contains("metric"), true)
-  assert_eq(rule_descriptions[4].contains("schema"), true)
+  // 验证时间分区
+  assert_eq(time_partitions.length(), 1) // 所有数据在同一小时
+  assert_eq(time_partitions["hour_455832"].length(), 5)
   
-  // 模拟数据验证过程
+  // 按服务分区
+  let service_partitions = {}
+  i = 0
+  while i < telemetry_data.length() {
+    let data = telemetry_data[i]
+    let service = data["service"]
+    let partition_key = "service_" + service
+    
+    if !service_partitions.contains_key(partition_key) {
+      service_partitions[partition_key] = []
+    }
+    service_partitions[partition_key].push(data)
+    i = i + 1
+  }
+  
+  // 验证服务分区
+  assert_eq(service_partitions.length(), 3)
+  assert_eq(service_partitions["service_payment"].length(), 3)
+  assert_eq(service_partitions["service_auth"].length(), 1)
+  assert_eq(service_partitions["service_user"].length(), 1)
+  
+  // 按trace_id哈希分区
+  let hash_partitions = {}
+  i = 0
+  while i < telemetry_data.length() {
+    let data = telemetry_data[i]
+    let trace_id = data["trace_id"]
+    // 简化的哈希函数
+    let hash_value = trace_id.length() % 3
+    let partition_key = "hash_" + hash_value.to_string()
+    
+    if !hash_partitions.contains_key(partition_key) {
+      hash_partitions[partition_key] = []
+    }
+    hash_partitions[partition_key].push(data)
+    i = i + 1
+  }
+  
+  // 验证哈希分区
+  assert_eq(hash_partitions.length() <= 3, true)
+  
+  // 验证分区完整性
+  let mut total_partitioned = 0
+  let partitions = [time_partitions, service_partitions, hash_partitions]
+  let mut j = 0
+  while j < partitions.length() {
+    let partition = partitions[j]
+    let keys = partition.keys()
+    let mut k = 0
+    while k < keys.length() {
+      total_partitioned = total_partitioned + partition[keys[k]].length()
+      k = k + 1
+    }
+    j = j + 1
+  }
+  
+  assert_eq(total_partitioned, 15) // 5个数据点 × 3种分区方式
+}
+
+test "telemetry_data_retention_policy" {
+  // 测试遥测数据保留策略
+  
+  let current_time = 1640995200000L // 2022-01-01 00:00:00
+  let retention_policies = {
+    "traces" => {"hot" => 7, "warm" => 30, "cold" => 365}, // 天数
+    "metrics" => {"hot" => 14, "warm" => 90, "cold" => 730},
+    "logs" => {"hot" => 3, "warm" => 14, "cold" => 90}
+  }
+  
+  // 验证保留策略
+  assert_eq(retention_policies["traces"]["hot"], 7)
+  assert_eq(retention_policies["metrics"]["cold"], 730)
+  assert_eq(retention_policies["logs"]["hot"], 3)
+  
+  // 生成不同时间的测试数据
   let test_data = [
-    ("trace_id", "4bf92f3577b34da6a3ce929d0e0e4736"),
-    ("span_id", "00f067aa0ba902b7"),
-    ("timestamp", "1640995200"),
-    ("duration", "150"),
-    ("service_name", "api-gateway")
+    {"id" => "data_001", "type" => "traces", "timestamp" => current_time - 86400000L * 1},  // 1天前
+    {"id" => "data_002", "type" => "traces", "timestamp" => current_time - 86400000L * 10}, // 10天前
+    {"id" => "data_003", "type" => "metrics", "timestamp" => current_time - 86400000L * 20}, // 20天前
+    {"id" => "data_004", "type" => "logs", "timestamp" => current_time - 86400000L * 5},    // 5天前
+    {"id" => "data_005", "type" => "logs", "timestamp" => current_time - 86400000L * 20}    // 20天前
   ]
   
   // 验证测试数据
   assert_eq(test_data.length(), 5)
+  assert_eq(test_data[0]["type"], "traces")
+  assert_eq(test_data[4]["type"], "logs")
   
-  // 验证必需字段
-  let required_fields = ["trace_id", "span_id", "timestamp"]
-  let mut validation_passed = true
-  
+  // 应用保留策略
+  let retention_decisions = []
   let mut i = 0
-  while i < required_fields.length() {
-    let field_found = false
-    let mut j = 0
-    while j < test_data.length() {
-      if test_data[j].0 == required_fields[i] {
-        field_found = true
-        break
-      }
-      j = j + 1
+  while i < test_data.length() {
+    let data = test_data[i]
+    let data_type = data["type"]
+    let data_timestamp = data["timestamp"]
+    let age_days = (current_time - data_timestamp) / 86400000L
+    
+    let policy = retention_policies[data_type]
+    let mut storage_tier = "hot"
+    let mut should_retain = true
+    
+    if age_days <= policy["hot"] {
+      storage_tier = "hot"
+    } else if age_days <= policy["warm"] {
+      storage_tier = "warm"
+    } else if age_days <= policy["cold"] {
+      storage_tier = "cold"
+    } else {
+      should_retain = false
     }
     
-    if !field_found {
-      validation_passed = false
-      break
+    let decision = {
+      "data_id" => data["id"],
+      "data_type" => data_type,
+      "age_days" => age_days,
+      "storage_tier" => storage_tier,
+      "should_retain" => should_retain
     }
-    
+    retention_decisions.push(decision)
     i = i + 1
   }
   
-  // 验证验证结果
-  assert_eq(validation_passed, true)
+  // 验证保留决策
+  assert_eq(retention_decisions.length(), 5)
+  
+  // 验证具体决策
+  assert_eq(retention_decisions[0]["storage_tier"], "hot")   // 1天的traces在热存储
+  assert_eq(retention_decisions[1]["storage_tier"], "warm")  // 10天的traces在温存储
+  assert_eq(retention_decisions[2]["storage_tier"], "warm")  // 20天的metrics在温存储
+  assert_eq(retention_decisions[3]["storage_tier"], "cold")  // 5天的logs在冷存储
+  assert_eq(retention_decisions[4]["should_retain"], false)  // 20天的logs应该被删除
+  
+  // 统计各存储层的数据量
+  let tier_counts = {"hot" => 0, "warm" => 0, "cold" => 0, "deleted" => 0}
+  i = 0
+  while i < retention_decisions.length() {
+    let decision = retention_decisions[i]
+    if decision["should_retain"] {
+      tier_counts[decision["storage_tier"]] = tier_counts[decision["storage_tier"]] + 1
+    } else {
+      tier_counts["deleted"] = tier_counts["deleted"] + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证存储层统计
+  assert_eq(tier_counts["hot"], 1)
+  assert_eq(tier_counts["warm"], 2)
+  assert_eq(tier_counts["cold"], 1)
+  assert_eq(tier_counts["deleted"], 1)
 }
 
-test "telemetry_persistence_performance_monitoring" {
-  // 测试遥测持久化性能监控
+test "telemetry_data_backup_recovery" {
+  // 测试遥测数据备份和恢复
   
-  let performance_metrics = [
-    ("write_latency_ms", 15.5),
-    ("read_latency_ms", 8.2),
-    ("storage_usage_gb", 125.7),
-    ("throughput_ops_per_sec", 1000.0),
-    ("error_rate_percent", 0.1)
-  ]
+  let backup_strategies = {
+    "full_backup" => {"frequency" => "daily", "retention" => 30},
+    "incremental_backup" => {"frequency" => "hourly", "retention" => 7},
+    "differential_backup" => {"frequency" => "daily", "retention" => 14}
+  }
   
-  // 验证性能指标数组
-  assert_eq(performance_metrics.length(), 5)
+  // 验证备份策略
+  assert_eq(backup_strategies["full_backup"]["frequency"], "daily")
+  assert_eq(backup_strategies["incremental_backup"]["frequency"], "hourly")
   
-  // 验证具体性能指标
-  assert_eq(performance_metrics[0].0, "write_latency_ms")
-  assert_eq(performance_metrics[0].1, 15.5)
+  // 模拟遥测数据
+  let telemetry_datasets = {
+    "traces_20220101" => [
+      {"trace_id" => "t001", "timestamp" => 1640995200000L},
+      {"trace_id" => "t002", "timestamp" => 1640995300000L}
+    ],
+    "metrics_20220101" => [
+      {"metric_name" => "cpu_usage", "value" => 75.5, "timestamp" => 1640995200000L}
+    ],
+    "logs_20220101" => [
+      {"level" => "INFO", "message" => "Service started", "timestamp" => 1640995200000L}
+    ]
+  }
   
-  assert_eq(performance_metrics[1].0, "read_latency_ms")
-  assert_eq(performance_metrics[1].1, 8.2)
+  // 验证数据集
+  assert_eq(telemetry_datasets.length(), 3)
+  assert_eq(telemetry_datasets["traces_20220101"].length(), 2)
+  assert_eq(telemetry_datasets["metrics_20220101"].length(), 1)
   
-  assert_eq(performance_metrics[2].0, "storage_usage_gb")
-  assert_eq(performance_metrics[2].1, 125.7)
+  // 执行完整备份
+  let full_backup = {
+    "backup_id" => "backup_full_20220101_000000",
+    "backup_type" => "full",
+    "timestamp" => 1640995200000L,
+    "datasets" => telemetry_datasets.keys(),
+    "size_bytes" => 1024000,
+    "checksum" => "sha256:abc123..."
+  }
   
-  assert_eq(performance_metrics[3].0, "throughput_ops_per_sec")
-  assert_eq(performance_metrics[3].1, 1000.0)
+  // 验证完整备份
+  assert_eq(full_backup["backup_type"], "full")
+  assert_eq(full_backup["datasets"].length(), 3)
+  assert_eq(full_backup["size_bytes"], 1024000)
   
-  assert_eq(performance_metrics[4].0, "error_rate_percent")
-  assert_eq(performance_metrics[4].1, 0.1)
+  // 执行增量备份（模拟新增数据）
+  let incremental_data = {
+    "traces_20220101" => [
+      {"trace_id" => "t003", "timestamp" => 1640995400000L}
+    ]
+  }
   
-  // 验证性能阈值
-  let performance_thresholds = [
-    ("write_latency_ms", 50.0),
-    ("read_latency_ms", 25.0),
-    ("storage_usage_gb", 1000.0),
-    ("throughput_ops_per_sec", 500.0),
-    ("error_rate_percent", 1.0)
-  ]
+  let incremental_backup = {
+    "backup_id" => "backup_inc_20220101_010000",
+    "backup_type" => "incremental",
+    "timestamp" => 1640995600000L,
+    "base_backup_id" => full_backup["backup_id"],
+    "changed_datasets" => incremental_data.keys(),
+    "size_bytes" => 256000,
+    "checksum" => "sha256:def456..."
+  }
   
-  // 验证所有指标都在阈值范围内
+  // 验证增量备份
+  assert_eq(incremental_backup["backup_type"], "incremental")
+  assert_eq(incremental_backup["base_backup_id"], full_backup["backup_id"])
+  assert_eq(incremental_backup["changed_datasets"].length(), 1)
+  
+  // 模拟数据恢复过程
+  let recovery_scenario = "data_corruption"
+  let recovery_plan = {
+    "scenario" => recovery_scenario,
+    "target_timestamp" => 1640995500000L,
+    "use_backups" => [full_backup, incremental_backup],
+    "recovery_steps" => [
+      "restore_full_backup",
+      "apply_incremental_backups",
+      "verify_data_integrity"
+    ]
+  }
+  
+  // 验证恢复计划
+  assert_eq(recovery_plan["scenario"], "data_corruption")
+  assert_eq(recovery_plan["use_backups"].length(), 2)
+  assert_eq(recovery_plan["recovery_steps"].length(), 3)
+  
+  // 执行数据恢复
+  let recovered_data = {}
+  let backup_sequence = recovery_plan["use_backups"]
   let mut i = 0
-  while i < performance_metrics.length() {
-    let metric_name = performance_metrics[i].0
-    let metric_value = performance_metrics[i].1
-    
-    let mut threshold_value = 0.0
-    let mut j = 0
-    while j < performance_thresholds.length() {
-      if performance_thresholds[j].0 == metric_name {
-        threshold_value = performance_thresholds[j].1
-        break
+  while i < backup_sequence.length() {
+    let backup = backup_sequence[i]
+    if backup["backup_type"] == "full" {
+      // 恢复完整备份
+      recovered_data = telemetry_datasets
+    } else if backup["backup_type"] == "incremental" {
+      // 应用增量变更
+      let changed_datasets = backup["changed_datasets"]
+      let mut j = 0
+      while j < changed_datasets.length() {
+        let dataset = changed_datasets[j]
+        if incremental_data.contains_key(dataset) {
+          if !recovered_data.contains_key(dataset) {
+            recovered_data[dataset] = []
+          }
+          let mut k = 0
+          while k < incremental_data[dataset].length() {
+            recovered_data[dataset].push(incremental_data[dataset][k])
+            k = k + 1
+          }
+        }
+        j = j + 1
       }
-      j = j + 1
     }
-    
-    // 验证指标在阈值范围内
-    if metric_name.contains("latency") || metric_name.contains("error_rate") {
-      assert_eq(metric_value <= threshold_value, true)
-    } else {
-      assert_eq(metric_value >= threshold_value, true) // 吞吐量和存储使用应该大于阈值
-    }
-    
     i = i + 1
   }
   
-  // 验证读取延迟低于写入延迟
-  assert_eq(performance_metrics[1].1 < performance_metrics[0].1, true)
+  // 验证恢复的数据
+  assert_eq(recovered_data.length(), 3)
+  assert_eq(recovered_data["traces_20220101"].length(), 3) // 原有2个 + 增量1个
+  assert_eq(recovered_data["metrics_20220101"].length(), 1)
+  assert_eq(recovered_data["logs_20220101"].length(), 1)
   
-  // 验证错误率很低
-  assert_eq(performance_metrics[4].1 < 1.0, true)
+  // 验证数据完整性
+  let mut total_records = 0
+  let datasets = recovered_data.keys()
+  i = 0
+  while i < datasets.length() {
+    total_records = total_records + recovered_data[datasets[i]].length()
+    i = i + 1
+  }
+  
+  assert_eq(total_records, 5) // 2+1+1+1 = 5条记录
 }
