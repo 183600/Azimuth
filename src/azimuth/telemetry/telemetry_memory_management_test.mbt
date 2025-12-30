@@ -1,873 +1,599 @@
 // 遥测内存管理测试用例
+// 测试内存分配、监控和优化策略
 
 test "telemetry_memory_allocation_tracking" {
-  // 测试遥测内存分配跟踪
+  // 测试内存分配跟踪
   
   let memory_pools = [
-    ("span_pool", 1000, 100),      // 池名称, 对象数量, 每个对象大小(字节)
-    ("metric_pool", 500, 50),
-    ("log_pool", 2000, 200),
-    ("trace_pool", 100, 500),
-    ("attribute_pool", 3000, 20)
+    {"name": "trace_data", "allocated": 1024, "used": 768, "max_capacity": 2048},
+    {"name": "metrics_data", "allocated": 512, "used": 384, "max_capacity": 1024},
+    {"name": "log_data", "allocated": 256, "used": 192, "max_capacity": 512},
+    {"name": "buffer_pool", "allocated": 128, "used": 96, "max_capacity": 256}
   ]
   
-  // 验证内存池
-  assert_eq(memory_pools.length(), 5)
-  assert_eq(memory_pools[0].0, "span_pool")
-  assert_eq(memory_pools[0].1, 1000)
-  assert_eq(memory_pools[0].2, 100)
-  assert_eq(memory_pools[4].0, "attribute_pool")
-  assert_eq(memory_pools[4].1, 3000)
-  assert_eq(memory_pools[4].2, 20)
+  // 计算内存使用统计
+  let mut total_allocated = 0
+  let mut total_used = 0
+  let mut total_capacity = 0
+  let mut utilization_rates = []
   
-  // 计算每个池的内存使用
-  let pool_memory_usage = []
-  let mut total_memory = 0
   let mut i = 0
-  
   while i < memory_pools.length() {
-    let pool_name = memory_pools[i].0
-    let object_count = memory_pools[i].1
-    let object_size = memory_pools[i].2
-    let total_size = object_count * object_size
+    let pool = memory_pools[i]
+    let allocated = pool["allocated"]
+    let used = pool["used"]
+    let capacity = pool["max_capacity"]
     
-    pool_memory_usage.push((pool_name, object_count, object_size, total_size))
-    total_memory = total_memory + total_size
+    total_allocated = total_allocated + allocated
+    total_used = total_used + used
+    total_capacity = total_capacity + capacity
+    
+    let utilization_rate = used.to_double() / allocated.to_double()
+    utilization_rates.push(utilization_rate)
     
     i = i + 1
   }
   
-  // 验证内存使用计算
-  assert_eq(pool_memory_usage.length(), 5)
-  assert_eq(pool_memory_usage[0].0, "span_pool")
-  assert_eq(pool_memory_usage[0].3, 100000) // 1000 * 100
-  assert_eq(pool_memory_usage[1].0, "metric_pool")
-  assert_eq(pool_memory_usage[1].3, 25000) // 500 * 50
-  assert_eq(pool_memory_usage[4].0, "attribute_pool")
-  assert_eq(pool_memory_usage[4].3, 60000) // 3000 * 20
+  // 验证内存分配统计
+  assert_eq(total_allocated, 1920)    // 总分配内存
+  assert_eq(total_used, 1440)         // 总使用内存
+  assert_eq(total_capacity, 3840)     // 总容量
+  assert_eq(utilization_rates.length(), 4)
   
-  // 验证总内存
-  assert_eq(total_memory, 100000 + 25000 + 400000 + 50000 + 60000) // 635000字节
-  assert_eq(total_memory, 635000)
-  
-  // 模拟内存分配跟踪
-  let allocation_tracking = []
+  // 计算平均利用率
+  let mut total_utilization = 0.0
   i = 0
-  
-  while i < pool_memory_usage.length() {
-    let pool_name = pool_memory_usage[i].0
-    let total_size = pool_memory_usage[i].3
-    
-    // 模拟分配历史
-    let allocation_history = [
-      ("initial_allocation", total_size),
-      ("growth_allocation", total_size / 2),
-      ("peak_allocation", total_size * 2),
-      ("current_allocation", total_size)
-    ]
-    
-    allocation_tracking.push((pool_name, allocation_history))
+  while i < utilization_rates.length() {
+    total_utilization = total_utilization + utilization_rates[i]
     i = i + 1
   }
+  let average_utilization = total_utilization / utilization_rates.length()
   
-  // 验证分配跟踪
-  assert_eq(allocation_tracking.length(), 5)
-  assert_eq(allocation_tracking[0].0, "span_pool")
-  assert_eq(allocation_tracking[0].1.length(), 4)
-  assert_eq(allocation_tracking[0].1[0].0, "initial_allocation")
-  assert_eq(allocation_tracking[0].1[0].1, 100000)
-  assert_eq(allocation_tracking[0].1[2].0, "peak_allocation")
-  assert_eq(allocation_tracking[0].1[2].1, 200000) // 峰值是初始的2倍
+  assert_eq(average_utilization > 0.7, true)   // 平均利用率大于70%
+  assert_eq(average_utilization < 0.8, true)   // 平均利用率小于80%
+  
+  // 验证内存池状态
+  let memory_stats = {
+    "total_allocated_mb": total_allocated / 1024.0,
+    "total_used_mb": total_used / 1024.0,
+    "total_capacity_mb": total_capacity / 1024.0,
+    "average_utilization": average_utilization,
+    "memory_efficiency": total_used.to_double() / total_allocated.to_double()
+  }
+  
+  assert_eq(memory_stats["total_allocated_mb"], 1.875)
+  assert_eq(memory_stats["total_used_mb"], 1.40625)
+  assert_eq(memory_stats["total_capacity_mb"], 3.75)
+  assert_eq(memory_stats["memory_efficiency"], 0.75)  // 75%效率
 }
 
 test "telemetry_memory_leak_detection" {
-  // 测试遥测内存泄漏检测
+  // 测试内存泄漏检测
   
   let memory_snapshots = [
-    ("snapshot_1", 100000, 1640995200),    // 快照名称, 内存使用量, 时间戳
-    ("snapshot_2", 120000, 1640995300),
-    ("snapshot_3", 110000, 1640995400),
-    ("snapshot_4", 130000, 1640995500),
-    ("snapshot_5", 150000, 1640995600),
-    ("snapshot_6", 180000, 1640995700),
-    ("snapshot_7", 200000, 1640995800),
-    ("snapshot_8", 220000, 1640995900)
+    {"time": 0, "heap_used": 100, "stack_used": 50, "objects_count": 1000},
+    {"time": 60, "heap_used": 120, "stack_used": 55, "objects_count": 1100},
+    {"time": 120, "heap_used": 145, "stack_used": 52, "objects_count": 1250},
+    {"time": 180, "heap_used": 180, "stack_used": 58, "objects_count": 1450},
+    {"time": 240, "heap_used": 220, "stack_used": 54, "objects_count": 1700}
   ]
   
-  // 验证内存快照
-  assert_eq(memory_snapshots.length(), 8)
-  assert_eq(memory_snapshots[0].0, "snapshot_1")
-  assert_eq(memory_snapshots[0].1, 100000)
-  assert_eq(memory_snapshots[0].2, 1640995200)
-  assert_eq(memory_snapshots[7].0, "snapshot_8")
-  assert_eq(memory_snapshots[7].1, 220000)
-  assert_eq(memory_snapshots[7].2, 1640995900)
+  // 检测内存泄漏模式
+  let mut heap_growth_rates = []
+  let mut object_growth_rates = []
   
-  // 计算内存增长趋势
-  let memory_growth = []
   let mut i = 1
-  
   while i < memory_snapshots.length() {
-    let current_snapshot = memory_snapshots[i]
-    let previous_snapshot = memory_snapshots[i - 1]
+    let current = memory_snapshots[i]
+    let previous = memory_snapshots[i - 1]
+    let time_diff = current["time"] - previous["time"]
     
-    let growth = current_snapshot.1 - previous_snapshot.1
-    let growth_rate = growth.to_double() / previous_snapshot.1.to_double()
-    let time_diff = current_snapshot.2 - previous_snapshot.2
+    let heap_growth = current["heap_used"] - previous["heap_used"]
+    let heap_growth_rate = heap_growth.to_double() / time_diff.to_double()
+    heap_growth_rates.push(heap_growth_rate)
     
-    memory_growth.push((
-      current_snapshot.0,
-      previous_snapshot.1,
-      current_snapshot.1,
-      growth,
-      growth_rate,
-      time_diff
-    ))
+    let object_growth = current["objects_count"] - previous["objects_count"]
+    let object_growth_rate = object_growth.to_double() / time_diff.to_double()
+    object_growth_rates.push(object_growth_rate)
     
     i = i + 1
   }
   
-  // 验证内存增长计算
-  assert_eq(memory_growth.length(), 7)
-  assert_eq(memory_growth[0].0, "snapshot_2")
-  assert_eq(memory_growth[0].1, 100000) // 前一个快照内存
-  assert_eq(memory_growth[0].2, 120000) // 当前快照内存
-  assert_eq(memory_growth[0].3, 20000) // 增长量
-  assert_eq(memory_growth[0].4, 0.2) // 增长率 20%
-  assert_eq(memory_growth[0].5, 100) // 时间差 100秒
-  
-  // 检测内存泄漏
-  let leak_threshold = 0.1 // 10%增长率阈值
-  let leak_detection_results = []
+  // 计算平均增长率
+  let mut avg_heap_growth = 0.0
+  let mut avg_object_growth = 0.0
   i = 0
-  
-  while i < memory_growth.length() {
-    let snapshot_name = memory_growth[i].0
-    let growth_rate = memory_growth[i].4
-    let memory_usage = memory_growth[i].2
-    
-    let potential_leak = growth_rate > leak_threshold
-    let severity = if growth_rate > 0.5 {
-      "critical"
-    } else if growth_rate > 0.2 {
-      "warning"
-    } else if growth_rate > 0.1 {
-      "info"
-    } else {
-      "normal"
-    }
-    
-    leak_detection_results.push((snapshot_name, memory_usage, growth_rate, potential_leak, severity))
+  while i < heap_growth_rates.length() {
+    avg_heap_growth = avg_heap_growth + heap_growth_rates[i]
+    avg_object_growth = avg_object_growth + object_growth_rates[i]
     i = i + 1
   }
+  avg_heap_growth = avg_heap_growth / heap_growth_rates.length()
+  avg_object_growth = avg_object_growth / object_growth_rates.length()
+  
+  // 验证内存泄漏检测
+  assert_eq(heap_growth_rates.length(), 4)
+  assert_eq(object_growth_rates.length(), 4)
+  assert_eq(avg_heap_growth > 0.0, true)    // 堆内存在增长
+  assert_eq(avg_object_growth > 0.0, true)  // 对象数量在增长
+  
+  // 检测是否为内存泄漏（持续增长且无GC回收）
+  let leak_threshold = 0.5  // 每秒增长超过0.5单位认为可能泄漏
+  let potential_memory_leak = avg_heap_growth > leak_threshold
+  let potential_object_leak = avg_object_growth > 1.0  // 每秒对象增长超过1个
+  
+  assert_eq(potential_memory_leak, true)
+  assert_eq(potential_object_leak, true)
   
   // 验证泄漏检测结果
-  assert_eq(leak_detection_results.length(), 7)
-  assert_eq(leak_detection_results[0].0, "snapshot_2")
-  assert_eq(leak_detection_results[0].3, true) // 20% > 10% 阈值
-  assert_eq(leak_detection_results[0].4, "warning") // 20%增长率是警告级别
-  
-  // 统计泄漏情况
-  let mut leak_count = 0
-  let mut critical_count = 0
-  let mut warning_count = 0
-  i = 0
-  
-  while i < leak_detection_results.length() {
-    if leak_detection_results[i].3 {
-      leak_count = leak_count + 1
-    }
-    if leak_detection_results[i].4 == "critical" {
-      critical_count = critical_count + 1
-    } else if leak_detection_results[i].4 == "warning" {
-      warning_count = warning_count + 1
-    }
-    i = i + 1
+  let leak_detection_results = {
+    "avg_heap_growth_rate": avg_heap_growth,
+    "avg_object_growth_rate": avg_object_growth,
+    "potential_memory_leak": potential_memory_leak,
+    "potential_object_leak": potential_object_leak,
+    "total_heap_growth": memory_snapshots[4]["heap_used"] - memory_snapshots[0]["heap_used"],
+    "total_object_growth": memory_snapshots[4]["objects_count"] - memory_snapshots[0]["objects_count"]
   }
   
-  // 验证泄漏统计
-  assert_eq(leak_count, 6) // 6个快照超过阈值
-  assert_eq(critical_count, 1) // 1个严重泄漏
-  assert_eq(warning_count, 2) // 2个警告泄漏
-}
-
-test "telemetry_memory_pool_management" {
-  // 测试遥测内存池管理
-  
-  let memory_pools = [
-    ("small_object_pool", 64, 1000, 800),    // 池名称, 对象大小, 池容量, 当前使用
-    ("medium_object_pool", 256, 500, 400),
-    ("large_object_pool", 1024, 200, 150),
-    ("huge_object_pool", 4096, 50, 30)
-  ]
-  
-  // 验证内存池
-  assert_eq(memory_pools.length(), 4)
-  assert_eq(memory_pools[0].0, "small_object_pool")
-  assert_eq(memory_pools[0].1, 64)
-  assert_eq(memory_pools[0].2, 1000)
-  assert_eq(memory_pools[0].3, 800)
-  assert_eq(memory_pools[3].0, "huge_object_pool")
-  assert_eq(memory_pools[3].1, 4096)
-  assert_eq(memory_pools[3].2, 50)
-  assert_eq(memory_pools[3].3, 30)
-  
-  // 计算池利用率
-  let pool_utilization = []
-  let mut i = 0
-  
-  while i < memory_pools.length() {
-    let pool_name = memory_pools[i].0
-    let object_size = memory_pools[i].1
-    let pool_capacity = memory_pools[i].2
-    let current_usage = memory_pools[i].3
-    
-    let utilization_rate = current_usage.to_double() / pool_capacity.to_double()
-    let available_objects = pool_capacity - current_usage
-    let total_memory = pool_capacity * object_size
-    let used_memory = current_usage * object_size
-    
-    pool_utilization.push((
-      pool_name,
-      object_size,
-      pool_capacity,
-      current_usage,
-      utilization_rate,
-      available_objects,
-      total_memory,
-      used_memory
-    ))
-    
-    i = i + 1
-  }
-  
-  // 验证池利用率
-  assert_eq(pool_utilization.length(), 4)
-  assert_eq(pool_utilization[0].0, "small_object_pool")
-  assert_eq(pool_utilization[0].4, 0.8) // 800/1000 = 80%
-  assert_eq(pool_utilization[0].5, 200) // 1000-800 = 200可用
-  assert_eq(pool_utilization[0].6, 64000) // 1000*64
-  assert_eq(pool_utilization[0].7, 51200) // 800*64
-  
-  // 检查池状态
-  let pool_status = []
-  i = 0
-  
-  while i < pool_utilization.length() {
-    let pool_name = pool_utilization[i].0
-    let utilization_rate = pool_utilization[i].4
-    let available_objects = pool_utilization[i].5
-    
-    let status = if utilization_rate > 0.9 {
-      "critical"
-    } else if utilization_rate > 0.8 {
-      "warning"
-    } else if utilization_rate > 0.5 {
-      "normal"
-    } else {
-      "underutilized"
-    }
-    
-    let needs_expansion = utilization_rate > 0.8 && available_objects < 100
-    
-    pool_status.push((pool_name, utilization_rate, status, needs_expansion))
-    i = i + 1
-  }
-  
-  // 验证池状态
-  assert_eq(pool_status.length(), 4)
-  assert_eq(pool_status[0].0, "small_object_pool")
-  assert_eq(pool_status[0].2, "warning") // 80%利用率是警告
-  assert_eq(pool_status[0].3, false) // 200个可用对象，不需要扩展
-  assert_eq(pool_status[1].0, "medium_object_pool")
-  assert_eq(pool_status[1].2, "normal") // 400/500 = 80%，但应该是警告
-  
-  // 模拟池扩展操作
-  let pool_expansions = []
-  i = 0
-  
-  while i < pool_status.length() {
-    let pool_name = pool_status[i].0
-    let needs_expansion = pool_status[i].3
-    
-    if needs_expansion {
-      let original_capacity = memory_pools[i].2
-      let expansion_factor = 1.5
-      let new_capacity = (original_capacity.to_double() * expansion_factor).to_int()
-      
-      pool_expansions.push((pool_name, original_capacity, new_capacity, expansion_factor))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证池扩展
-  assert_eq(pool_expansions.length(), 0) // 没有池需要扩展
+  assert_eq(leak_detection_results["total_heap_growth"], 120)
+  assert_eq(leak_detection_results["total_object_growth"], 700)
+  assert_eq(leak_detection_results["potential_memory_leak"], true)
 }
 
 test "telemetry_memory_gc_optimization" {
-  // 测试遥测内存垃圾回收优化
+  // 测试垃圾回收优化
   
   let gc_cycles = [
-    ("cycle_1", 100000, 20000, 1640995200),   // 周期名称, 堆大小, 回收内存, 时间戳
-    ("cycle_2", 120000, 25000, 1640995300),
-    ("cycle_3", 110000, 15000, 1640995400),
-    ("cycle_4", 130000, 30000, 1640995500),
-    ("cycle_5", 125000, 22000, 1640995600),
-    ("cycle_6", 140000, 35000, 1640995700),
-    ("cycle_7", 135000, 28000, 1640995800),
-    ("cycle_8", 150000, 40000, 1640995900)
+    {"cycle": 1, "type": "minor_gc", "memory_before": 200, "memory_after": 150, "duration_ms": 10},
+    {"cycle": 2, "type": "minor_gc", "memory_before": 180, "memory_after": 140, "duration_ms": 12},
+    {"cycle": 3, "type": "major_gc", "memory_before": 220, "memory_after": 120, "duration_ms": 45},
+    {"cycle": 4, "type": "minor_gc", "memory_before": 160, "memory_after": 130, "duration_ms": 8},
+    {"cycle": 5, "type": "major_gc", "memory_before": 200, "memory_after": 110, "duration_ms": 50}
   ]
   
-  // 验证GC周期
-  assert_eq(gc_cycles.length(), 8)
-  assert_eq(gc_cycles[0].0, "cycle_1")
-  assert_eq(gc_cycles[0].1, 100000)
-  assert_eq(gc_cycles[0].2, 20000)
-  assert_eq(gc_cycles[0].3, 1640995200)
-  assert_eq(gc_cycles[7].0, "cycle_8")
-  assert_eq(gc_cycles[7].1, 150000)
-  assert_eq(gc_cycles[7].2, 40000)
+  // 分析GC性能
+  let mut minor_gc_count = 0
+  let mut major_gc_count = 0
+  let mut total_memory_reclaimed = 0
+  let mut total_gc_time = 0
+  let mut minor_gc_times = []
+  let mut major_gc_times = []
   
-  // 计算GC效率
-  let gc_efficiency = []
   let mut i = 0
-  
   while i < gc_cycles.length() {
-    let cycle_name = gc_cycles[i].0
-    let heap_size = gc_cycles[i].1
-    let reclaimed_memory = gc_cycles[i].2
-    let timestamp = gc_cycles[i].3
+    let cycle = gc_cycles[i]
+    let gc_type = cycle["type"]
+    let memory_before = cycle["memory_before"]
+    let memory_after = cycle["memory_after"]
+    let duration = cycle["duration_ms"]
     
-    let efficiency = reclaimed_memory.to_double() / heap_size.to_double()
-    let remaining_memory = heap_size - reclaimed_memory
+    let memory_reclaimed = memory_before - memory_after
+    total_memory_reclaimed = total_memory_reclaimed + memory_reclaimed
+    total_gc_time = total_gc_time + duration
     
-    gc_efficiency.push((
-      cycle_name,
-      heap_size,
-      reclaimed_memory,
-      remaining_memory,
-      efficiency,
-      timestamp
-    ))
-    
-    i = i + 1
-  }
-  
-  // 验证GC效率
-  assert_eq(gc_efficiency.length(), 8)
-  assert_eq(gc_efficiency[0].0, "cycle_1")
-  assert_eq(gc_efficiency[0].3, 80000) // 100000 - 20000
-  assert_eq(gc_efficiency[0].4, 0.2) // 20000/100000 = 20%
-  assert_eq(gc_efficiency[7].0, "cycle_8")
-  assert_eq(gc_efficiency[7].4, 0.26666666666666666) // 40000/150000 ≈ 26.67%
-  
-  // 分析GC性能趋势
-  let gc_performance_trend = []
-  i = 1
-  
-  while i < gc_efficiency.length() {
-    let current_cycle = gc_efficiency[i]
-    let previous_cycle = gc_efficiency[i - 1]
-    
-    let efficiency_change = current_cycle.4 - previous_cycle.4
-    let heap_size_change = current_cycle.1 - previous_cycle.1
-    let reclaimed_change = current_cycle.2 - previous_cycle.2
-    let time_diff = current_cycle.5 - previous_cycle.5
-    
-    gc_performance_trend.push((
-      current_cycle.0,
-      efficiency_change,
-      heap_size_change,
-      reclaimed_change,
-      time_diff
-    ))
-    
-    i = i + 1
-  }
-  
-  // 验证GC性能趋势
-  assert_eq(gc_performance_trend.length(), 7)
-  assert_eq(gc_performance_trend[0].0, "cycle_2")
-  assert_eq(gc_performance_trend[0].1, 0.05833333333333333) // 0.25 - 0.2 = 0.058
-  assert_eq(gc_performance_trend[0].2, 20000) // 120000 - 100000
-  assert_eq(gc_performance_trend[0].3, 5000) // 25000 - 20000
-  assert_eq(gc_performance_trend[0].4, 100) // 100秒间隔
-  
-  // 计算平均GC效率
-  let mut total_efficiency = 0.0
-  i = 0
-  
-  while i < gc_efficiency.length() {
-    total_efficiency = total_efficiency + gc_efficiency[i].4
-    i = i + 1
-  }
-  
-  let average_efficiency = total_efficiency / gc_efficiency.length().to_double()
-  
-  // 验证平均效率
-  assert_eq(average_efficiency > 0.0, true)
-  assert_eq(average_efficiency < 1.0, true)
-  
-  // GC优化建议
-  let optimization_recommendations = []
-  i = 0
-  
-  while i < gc_efficiency.length() {
-    let cycle_name = gc_efficiency[i].0
-    let efficiency = gc_efficiency[i].4
-    let heap_size = gc_efficiency[i].1
-    
-    let recommendation = if efficiency < 0.15 {
-      "Increase GC frequency or reduce object allocation"
-    } else if efficiency < 0.25 {
-      "Monitor object lifecycle patterns"
-    } else if efficiency > 0.3 {
-      "Consider increasing heap size to reduce GC overhead"
-    } else {
-      "GC performance is optimal"
+    match gc_type {
+      "minor_gc" => {
+        minor_gc_count = minor_gc_count + 1
+        minor_gc_times.push(duration)
+      }
+      "major_gc" => {
+        major_gc_count = major_gc_count + 1
+        major_gc_times.push(duration)
+      }
     }
     
-    optimization_recommendations.push((cycle_name, efficiency, recommendation))
     i = i + 1
   }
   
-  // 验证优化建议
-  assert_eq(optimization_recommendations.length(), 8)
-  assert_eq(optimization_recommendations[0].0, "cycle_1")
-  assert_eq(optimization_recommendations[0].1, 0.2)
-  assert_eq(optimization_recommendations[0].2, "Monitor object lifecycle patterns")
+  // 计算GC统计
+  let avg_minor_gc_time = {
+    let mut sum = 0
+    i = 0
+    while i < minor_gc_times.length() {
+      sum = sum + minor_gc_times[i]
+      i = i + 1
+    }
+    if minor_gc_times.length() > 0 { sum / minor_gc_times.length() } else { 0 }
+  }
+  
+  let avg_major_gc_time = {
+    let mut sum = 0
+    i = 0
+    while i < major_gc_times.length() {
+      sum = sum + major_gc_times[i]
+      i = i + 1
+    }
+    if major_gc_times.length() > 0 { sum / major_gc_times.length() } else { 0 }
+  }
+  
+  // 验证GC优化效果
+  assert_eq(minor_gc_count, 3)
+  assert_eq(major_gc_count, 2)
+  assert_eq(total_memory_reclaimed, 250)
+  assert_eq(total_gc_time, 125)
+  assert_eq(avg_minor_gc_time < avg_major_gc_time, true)  // minor GC应该更快
+  
+  // 验证GC效率
+  let gc_efficiency = total_memory_reclaimed.to_double() / total_gc_time.to_double()
+  assert_eq(gc_efficiency > 1.0, true)  // 每毫秒回收超过1单位内存
+  
+  // 验证GC优化建议
+  let gc_optimization_stats = {
+    "minor_gc_frequency": minor_gc_count.to_double() / gc_cycles.length().to_double(),
+    "major_gc_frequency": major_gc_count.to_double() / gc_cycles.length().to_double(),
+    "avg_minor_gc_duration": avg_minor_gc_time,
+    "avg_major_gc_duration": avg_major_gc_time,
+    "memory_reclaimed_per_ms": gc_efficiency,
+    "total_pause_time": total_gc_time
+  }
+  
+  assert_eq(gc_optimization_stats["minor_gc_frequency"], 0.6)  // 60% minor GC
+  assert_eq(gc_optimization_stats["major_gc_frequency"], 0.4)  // 40% major GC
+  assert_eq(gc_optimization_stats["total_pause_time"], 125)
+}
+
+test "telemetry_memory_pool_management" {
+  // 测试内存池管理
+  
+  let memory_pools_config = [
+    {"name": "small_objects", "object_size": 64, "pool_size": 1000, "allocated": 0},
+    {"name": "medium_objects", "object_size": 256, "pool_size": 500, "allocated": 0},
+    {"name": "large_objects", "object_size": 1024, "pool_size": 100, "allocated": 0}
+  ]
+  
+  // 模拟内存池分配
+  let allocation_requests = [
+    {"size": 32, "pool": "small_objects"},    // 分配到小对象池
+    {"size": 128, "pool": "medium_objects"},  // 分配到中对象池
+    {"size": 512, "pool": "large_objects"},   // 分配到大对象池
+    {"size": 48, "pool": "small_objects"},    // 分配到小对象池
+    {"size": 300, "pool": "large_objects"}    // 分配到大对象池
+  ]
+  
+  let mut pools = {}
+  let mut i = 0
+  while i < memory_pools_config.length() {
+    let config = memory_pools_config[i]
+    pools[config["name"]] = {
+      "object_size": config["object_size"],
+      "pool_size": config["pool_size"],
+      "allocated": config["allocated"],
+      "available": config["pool_size"]
+    }
+    i = i + 1
+  }
+  
+  // 处理分配请求
+  let mut successful_allocations = 0
+  let mut failed_allocations = 0
+  
+  i = 0
+  while i < allocation_requests.length() {
+    let request = allocation_requests[i]
+    let size = request["size"]
+    let pool_name = request["pool"]
+    
+    if pools.contains_key(pool_name) {
+      let pool = pools[pool_name]
+      if pool["available"] > 0 {
+        // 分配成功
+        pools[pool_name]["allocated"] = pools[pool_name]["allocated"] + 1
+        pools[pool_name]["available"] = pools[pool_name]["available"] - 1
+        successful_allocations = successful_allocations + 1
+      } else {
+        // 池已满，分配失败
+        failed_allocations = failed_allocations + 1
+      }
+    } else {
+      failed_allocations = failed_allocations + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证内存池分配结果
+  assert_eq(successful_allocations, 5)  // 所有分配都成功
+  assert_eq(failed_allocations, 0)      // 没有分配失败
+  
+  // 验证各池状态
+  assert_eq(pools["small_objects"]["allocated"], 2)
+  assert_eq(pools["small_objects"]["available"], 998)
+  assert_eq(pools["medium_objects"]["allocated"], 1)
+  assert_eq(pools["medium_objects"]["available"], 499)
+  assert_eq(pools["large_objects"]["allocated"], 2)
+  assert_eq(pools["large_objects"]["available"], 98)
+  
+  // 计算内存池利用率
+  let pool_utilization_rates = {}
+  for (pool_name, pool_data) in pools {
+    let utilization = pool_data["allocated"].to_double() / pool_data["pool_size"].to_double()
+    pool_utilization_rates[pool_name] = utilization
+  }
+  
+  assert_eq(pool_utilization_rates["small_objects"], 0.002)   // 0.2%
+  assert_eq(pool_utilization_rates["medium_objects"], 0.002)  // 0.2%
+  assert_eq(pool_utilization_rates["large_objects"], 0.02)    // 2%
+  
+  // 验证内存池管理统计
+  let pool_management_stats = {
+    "total_pools": pools.size(),
+    "total_successful_allocations": successful_allocations,
+    "total_failed_allocations": failed_allocations,
+    "allocation_success_rate": successful_allocations.to_double() / allocation_requests.length().to_double(),
+    "average_pool_utilization": (pool_utilization_rates["small_objects"] + pool_utilization_rates["medium_objects"] + pool_utilization_rates["large_objects"]) / 3.0
+  }
+  
+  assert_eq(pool_management_stats["total_pools"], 3)
+  assert_eq(pool_management_stats["allocation_success_rate"], 1.0)  // 100%成功率
+  assert_eq(pool_management_stats["average_pool_utilization"] > 0.0, true)
 }
 
 test "telemetry_memory_pressure_handling" {
-  // 测试遥测内存压力处理
+  // 测试内存压力处理
   
   let memory_pressure_levels = [
-    ("normal", 0.6, "green"),     // 压力级别, 内存使用率, 状态颜色
-    ("warning", 0.8, "yellow"),
-    ("critical", 0.9, "orange"),
-    ("emergency", 0.95, "red")
+    {"level": "normal", "threshold": 70, "action": "none"},
+    {"level": "warning", "threshold": 80, "action": "reduce_cache"},
+    {"level": "critical", "threshold": 90, "action": "force_gc"},
+    {"level": "emergency", "threshold": 95, "action": "drop_buffers"}
   ]
   
-  // 验证内存压力级别
-  assert_eq(memory_pressure_levels.length(), 4)
-  assert_eq(memory_pressure_levels[0].0, "normal")
-  assert_eq(memory_pressure_levels[0].1, 0.6)
-  assert_eq(memory_pressure_levels[0].2, "green")
-  assert_eq(memory_pressure_levels[3].0, "emergency")
-  assert_eq(memory_pressure_levels[3].1, 0.95)
-  assert_eq(memory_pressure_levels[3].2, "red")
-  
-  // 模拟内存压力场景
-  let pressure_scenarios = [
-    ("low_load", 1000000, 500000, 0.5),    // 场景名称, 总内存, 使用内存, 使用率
-    ("moderate_load", 1000000, 750000, 0.75),
-    ("high_load", 1000000, 850000, 0.85),
-    ("extreme_load", 1000000, 950000, 0.95),
-    ("memory_spike", 1000000, 980000, 0.98)
+  let memory_usage_scenarios = [
+    {"time": 0, "usage": 65, "expected_action": "none"},
+    {"time": 60, "usage": 82, "expected_action": "reduce_cache"},
+    {"time": 120, "usage": 91, "expected_action": "force_gc"},
+    {"time": 180, "usage": 96, "expected_action": "drop_buffers"},
+    {"time": 240, "usage": 75, "expected_action": "none"}
   ]
   
-  // 验证压力场景
-  assert_eq(pressure_scenarios.length(), 5)
-  assert_eq(pressure_scenarios[0].0, "low_load")
-  assert_eq(pressure_scenarios[0].3, 0.5)
-  assert_eq(pressure_scenarios[4].0, "memory_spike")
-  assert_eq(pressure_scenarios[4].3, 0.98)
+  // 处理内存压力场景
+  let mut pressure_responses = []
+  let mut actions_taken = []
   
-  // 处理内存压力
-  let pressure_responses = []
   let mut i = 0
-  
-  while i < pressure_scenarios.length() {
-    let scenario_name = pressure_scenarios[i].0
-    let total_memory = pressure_scenarios[i].1
-    let used_memory = pressure_scenarios[i].2
-    let usage_rate = pressure_scenarios[i].3
+  while i < memory_usage_scenarios.length() {
+    let scenario = memory_usage_scenarios[i]
+    let current_usage = scenario["usage"]
+    let expected_action = scenario["expected_action"]
     
-    // 确定压力级别
-    let pressure_level = if usage_rate < 0.7 {
-      "normal"
-    } else if usage_rate < 0.8 {
-      "warning"
-    } else if usage_rate < 0.9 {
-      "critical"
-    } else {
-      "emergency"
-    }
+    // 确定内存压力级别和相应动作
+    let mut action = "none"
+    let mut pressure_level = "normal"
     
-    // 确定响应措施
-    let response_actions = match pressure_level {
-      "normal" => ["Continue normal operations"],
-      "warning" => ["Increase GC frequency", "Reduce cache sizes"],
-      "critical" => ["Force GC", "Clear caches", "Reject new requests"],
-      "emergency" => ["Emergency GC", "Clear all caches", "Pause non-critical operations"],
-      _ => ["Unknown pressure level"]
-    }
-    
-    pressure_responses.push((
-      scenario_name,
-      usage_rate,
-      pressure_level,
-      response_actions
-    ))
-    
-    i = i + 1
-  }
-  
-  // 验证压力响应
-  assert_eq(pressure_responses.length(), 5)
-  assert_eq(pressure_responses[0].0, "low_load")
-  assert_eq(pressure_responses[0].2, "normal")
-  assert_eq(pressure_responses[0].3.length(), 1)
-  assert_eq(pressure_responses[2].0, "high_load")
-  assert_eq(pressure_responses[2].2, "critical")
-  assert_eq(pressure_responses[2].3.length(), 3)
-  assert_eq(pressure_responses[4].0, "memory_spike")
-  assert_eq(pressure_responses[4].2, "emergency")
-  assert_eq(pressure_responses[4].3.length(), 3)
-  
-  // 验证响应措施
-  i = 0
-  while i < pressure_responses.length() {
-    let scenario_name = pressure_responses[i].0
-    let pressure_level = pressure_responses[i].2
-    let actions = pressure_responses[i].3
-    
-    // 检查响应措施是否合理
-    match pressure_level {
-      "normal" => assert_eq(actions.length(), 1),
-      "warning" => assert_eq(actions.length(), 2),
-      "critical" => assert_eq(actions.length(), 3),
-      "emergency" => assert_eq(actions.length(), 3),
-      _ => assert_eq(false, true)
-    }
-    
-    i = i + 1
-  }
-  
-  // 模拟内存恢复
-  let recovery_scenarios = []
-  i = 0
-  
-  while i < pressure_responses.length() {
-    let scenario_name = pressure_responses[i].0
-    let initial_usage = pressure_scenarios[i].3
-    let pressure_level = pressure_responses[i].2
-    
-    // 模拟恢复后的使用率
-    let recovered_usage = match pressure_level {
-      "normal" => initial_usage,
-      "warning" => initial_usage - 0.1,
-      "critical" => initial_usage - 0.2,
-      "emergency" => initial_usage - 0.3,
-      _ => initial_usage
-    }
-    
-    let recovery_successful = recovered_usage < initial_usage
-    let recovery_time = match pressure_level {
-      "normal" => 0,
-      "warning" => 30,
-      "critical" => 60,
-      "emergency" => 120,
-      _ => 0
-    }
-    
-    recovery_scenarios.push((
-      scenario_name,
-      initial_usage,
-      recovered_usage,
-      recovery_successful,
-      recovery_time
-    ))
-    
-    i = i + 1
-  }
-  
-  // 验证恢复场景
-  assert_eq(recovery_scenarios.length(), 5)
-  assert_eq(recovery_scenarios[0].0, "low_load")
-  assert_eq(recovery_scenarios[0].1, 0.5)
-  assert_eq(recovery_scenarios[0].2, 0.5) // 正常级别无变化
-  assert_eq(recovery_scenarios[0].3, false) // 无需恢复
-  assert_eq(recovery_scenarios[0].4, 0) // 无恢复时间
-  assert_eq(recovery_scenarios[4].0, "memory_spike")
-  assert_eq(recovery_scenarios[4].1, 0.98)
-  assert_eq(recovery_scenarios[4].2, 0.68) // 0.98 - 0.3
-  assert_eq(recovery_scenarios[4].3, true) // 恢复成功
-  assert_eq(recovery_scenarios[4].4, 120) // 120秒恢复时间
-}
-
-test "telemetry_memory_fragmentation" {
-  // 测试遥测内存碎片化
-  
-  let fragmentation_analysis = [
-    ("heap_segment_1", 1024, 800, 224),     // 段名称, 段大小, 已使用, 碎片
-    ("heap_segment_2", 2048, 1500, 548),
-    ("heap_segment_3", 4096, 3000, 1096),
-    ("heap_segment_4", 8192, 6000, 2192),
-    ("heap_segment_5", 16384, 12000, 4384)
-  ]
-  
-  // 验证碎片化分析
-  assert_eq(fragmentation_analysis.length(), 5)
-  assert_eq(fragmentation_analysis[0].0, "heap_segment_1")
-  assert_eq(fragmentation_analysis[0].1, 1024)
-  assert_eq(fragmentation_analysis[0].2, 800)
-  assert_eq(fragmentation_analysis[0].3, 224)
-  assert_eq(fragmentation_analysis[4].0, "heap_segment_5")
-  assert_eq(fragmentation_analysis[4].1, 16384)
-  assert_eq(fragmentation_analysis[4].2, 12000)
-  assert_eq(fragmentation_analysis[4].3, 4384)
-  
-  // 计算碎片化率
-  let fragmentation_rates = []
-  let mut total_heap_size = 0
-  let mut total_fragmentation = 0
-  let mut i = 0
-  
-  while i < fragmentation_analysis.length() {
-    let segment_name = fragmentation_analysis[i].0
-    let segment_size = fragmentation_analysis[i].1
-    let used_memory = fragmentation_analysis[i].2
-    let fragmented_memory = fragmentation_analysis[i].3
-    
-    let fragmentation_rate = fragmented_memory.to_double() / segment_size.to_double()
-    let utilization_rate = used_memory.to_double() / segment_size.to_double()
-    
-    fragmentation_rates.push((
-      segment_name,
-      segment_size,
-      used_memory,
-      fragmented_memory,
-      fragmentation_rate,
-      utilization_rate
-    ))
-    
-    total_heap_size = total_heap_size + segment_size
-    total_fragmentation = total_fragmentation + fragmented_memory
-    
-    i = i + 1
-  }
-  
-  // 验证碎片化率
-  assert_eq(fragmentation_rates.length(), 5)
-  assert_eq(fragmentation_rates[0].0, "heap_segment_1")
-  assert_eq(fragmentation_rates[0].4, 0.21875) // 224/1024 ≈ 21.88%
-  assert_eq(fragmentation_rates[0].5, 0.78125) // 800/1024 ≈ 78.13%
-  assert_eq(fragmentation_rates[4].0, "heap_segment_5")
-  assert_eq(fragmentation_rates[4].4, 0.267578125) // 4384/16384 ≈ 26.76%
-  
-  // 计算总体碎片化
-  let overall_fragmentation_rate = total_fragmentation.to_double() / total_heap_size.to_double()
-  
-  // 验证总体碎片化
-  assert_eq(total_heap_size, 1024 + 2048 + 4096 + 8192 + 16384) // 31744
-  assert_eq(total_fragmentation, 224 + 548 + 1096 + 2192 + 4384) // 8444
-  assert_eq(overall_fragmentation_rate, 0.26605224609375) // 8444/31744 ≈ 26.61%
-  
-  // 碎片化风险评估
-  let fragmentation_risks = []
-  i = 0
-  
-  while i < fragmentation_rates.length() {
-    let segment_name = fragmentation_rates[i].0
-    let fragmentation_rate = fragmentation_rates[i].4
-    let utilization_rate = fragmentation_rates[i].5
-    
-    let risk_level = if fragmentation_rate > 0.3 {
-      "high"
-    } else if fragmentation_rate > 0.2 {
-      "medium"
-    } else if fragmentation_rate > 0.1 {
-      "low"
-    } else {
-      "minimal"
-    }
-    
-    let needs_compaction = fragmentation_rate > 0.25
-    
-    fragmentation_risks.push((
-      segment_name,
-      fragmentation_rate,
-      utilization_rate,
-      risk_level,
-      needs_compaction
-    ))
-    
-    i = i + 1
-  }
-  
-  // 验证碎片化风险
-  assert_eq(fragmentation_risks.length(), 5)
-  assert_eq(fragmentation_risks[0].0, "heap_segment_1")
-  assert_eq(fragmentation_risks[0].3, "medium") // 21.88%是中等风险
-  assert_eq(fragmentation_risks[0].4, false) // 不需要压缩
-  assert_eq(fragmentation_risks[4].0, "heap_segment_5")
-  assert_eq(fragmentation_risks[4].3, "high") // 26.76%是高风险
-  assert_eq(fragmentation_risks[4].4, true) // 需要压缩
-  
-  // 统计风险分布
-  let mut risk_counts = [0, 0, 0, 0] // minimal, low, medium, high
-  let mut compaction_needed = 0
-  i = 0
-  
-  while i < fragmentation_risks.length() {
-    let risk_level = fragmentation_risks[i].3
-    let needs_compaction = fragmentation_risks[i].4
-    
-    match risk_level {
-      "minimal" => risk_counts[0] = risk_counts[0] + 1,
-      "low" => risk_counts[1] = risk_counts[1] + 1,
-      "medium" => risk_counts[2] = risk_counts[2] + 1,
-      "high" => risk_counts[3] = risk_counts[3] + 1,
-      _ => {}
-    }
-    
-    if needs_compaction {
-      compaction_needed = compaction_needed + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证风险统计
-  assert_eq(risk_counts[0], 0) // 0个最小风险
-  assert_eq(risk_counts[1], 0) // 0个低风险
-  assert_eq(risk_counts[2], 3) // 3个中等风险
-  assert_eq(risk_counts[3], 2) // 2个高风险
-  assert_eq(compaction_needed, 2) // 2个段需要压缩
-}
-
-test "telemetry_memory_budget_allocation" {
-  // 测试遥测内存预算分配
-  
-  let memory_budget = [
-    ("telemetry_spans", 40, 1000000),      // 组件名称, 预算百分比, 预算大小(字节)
-    ("telemetry_metrics", 25, 625000),
-    ("telemetry_logs", 20, 500000),
-    ("telemetry_traces", 10, 250000),
-    ("telemetry_buffers", 5, 125000)
-  ]
-  
-  // 验证内存预算
-  assert_eq(memory_budget.length(), 5)
-  assert_eq(memory_budget[0].0, "telemetry_spans")
-  assert_eq(memory_budget[0].1, 40)
-  assert_eq(memory_budget[0].2, 1000000)
-  assert_eq(memory_budget[4].0, "telemetry_buffers")
-  assert_eq(memory_budget[4].1, 5)
-  assert_eq(memory_budget[4].2, 125000)
-  
-  // 验证预算总和
-  let mut total_percentage = 0
-  let mut total_budget = 0
-  let mut i = 0
-  
-  while i < memory_budget.length() {
-    total_percentage = total_percentage + memory_budget[i].1
-    total_budget = total_budget + memory_budget[i].2
-    i = i + 1
-  }
-  
-  // 验证预算总和
-  assert_eq(total_percentage, 100) // 100%预算分配
-  assert_eq(total_budget, 2500000) // 总预算2.5MB
-  
-  // 模拟实际使用情况
-  let actual_usage = [
-    ("telemetry_spans", 950000),
-    ("telemetry_metrics", 600000),
-    ("telemetry_logs", 480000),
-    ("telemetry_traces", 300000),
-    ("telemetry_buffers", 100000)
-  ]
-  
-  // 验证实际使用
-  assert_eq(actual_usage.length(), 5)
-  assert_eq(actual_usage[0].0, "telemetry_spans")
-  assert_eq(actual_usage[0].1, 950000)
-  assert_eq(actual_usage[4].0, "telemetry_buffers")
-  assert_eq(actual_usage[4].1, 100000)
-  
-  // 计算预算使用情况
-  let budget_utilization = []
-  i = 0
-  
-  while i < memory_budget.length() {
-    let component_name = memory_budget[i].0
-    let budget_percentage = memory_budget[i].1
-    let budget_size = memory_budget[i].2
-    
-    // 查找实际使用
-    let mut used_memory = 0
     let mut j = 0
-    while j < actual_usage.length() {
-      if actual_usage[j].0 == component_name {
-        used_memory = actual_usage[j].1
-        break
+    while j < memory_pressure_levels.length() {
+      let level = memory_pressure_levels[j]
+      if current_usage >= level["threshold"] {
+        action = level["action"]
+        pressure_level = level["level"]
       }
       j = j + 1
     }
     
-    let utilization_rate = used_memory.to_double() / budget_size.to_double()
-    let over_budget = used_memory > budget_size
-    let remaining_budget = budget_size - used_memory
+    pressure_responses.push({
+      "time": scenario["time"],
+      "memory_usage": current_usage,
+      "pressure_level": pressure_level,
+      "action_taken": action,
+      "expected_action": expected_action,
+      "correct_action": action == expected_action
+    })
     
-    budget_utilization.push((
-      component_name,
-      budget_percentage,
-      budget_size,
-      used_memory,
-      utilization_rate,
-      over_budget,
-      remaining_budget
-    ))
-    
-    i = i + 1
-  }
-  
-  // 验证预算使用情况
-  assert_eq(budget_utilization.length(), 5)
-  assert_eq(budget_utilization[0].0, "telemetry_spans")
-  assert_eq(budget_utilization[0].4, 0.95) // 950000/1000000 = 95%
-  assert_eq(budget_utilization[0].5, false) // 未超预算
-  assert_eq(budget_utilization[0].6, 50000) // 剩余预算
-  assert_eq(budget_utilization[3].0, "telemetry_traces")
-  assert_eq(budget_utilization[3].4, 1.2) // 300000/250000 = 120%
-  assert_eq(budget_utilization[3].5, true) // 超预算
-  assert_eq(budget_utilization[3].6, -50000) // 预算不足
-  
-  // 预算调整建议
-  let budget_adjustments = []
-  i = 0
-  
-  while i < budget_utilization.length() {
-    let component_name = budget_utilization[i].0
-    let utilization_rate = budget_utilization[i].4
-    let over_budget = budget_utilization[i].5
-    let current_budget = budget_utilization[i].2
-    
-    let adjustment = if over_budget {
-      let increase_needed = (current_budget.to_double() * (utilization_rate - 1.0)).to_int()
-      ("increase", increase_needed)
-    } else if utilization_rate < 0.7 {
-      let decrease_possible = (current_budget.to_double() * (0.7 - utilization_rate)).to_int()
-      ("decrease", decrease_possible)
-    } else {
-      ("maintain", 0)
+    if action != "none" {
+      actions_taken.push(action)
     }
     
-    budget_adjustments.push((component_name, utilization_rate, adjustment))
     i = i + 1
   }
   
-  // 验证预算调整建议
-  assert_eq(budget_adjustments.length(), 5)
-  assert_eq(budget_adjustments[0].0, "telemetry_spans")
-  assert_eq(budget_adjustments[0].1, 0.95)
-  assert_eq(budget_adjustments[0].2.0, "maintain") // 95%使用率，维持当前预算
-  assert_eq(budget_adjustments[3].0, "telemetry_traces")
-  assert_eq(budget_adjustments[3].1, 1.2)
-  assert_eq(budget_adjustments[3].2.0, "increase") // 超预算，需要增加
-  assert_eq(budget_adjustments[3].2.1, 50000) // 需要增加50000字节
+  // 验证内存压力处理
+  assert_eq(pressure_responses.length(), 5)
+  assert_eq(actions_taken.length(), 3)  // 3次采取了行动
+  
+  // 验证压力响应正确性
+  let mut correct_responses = 0
+  i = 0
+  while i < pressure_responses.length() {
+    if pressure_responses[i]["correct_action"] {
+      correct_responses = correct_responses + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(correct_responses, 5)  // 所有响应都正确
+  
+  // 验证压力级别变化
+  assert_eq(pressure_responses[0]["pressure_level"], "normal")
+  assert_eq(pressure_responses[1]["pressure_level"], "warning")
+  assert_eq(pressure_responses[2]["pressure_level"], "critical")
+  assert_eq(pressure_responses[3]["pressure_level"], "emergency")
+  assert_eq(pressure_responses[4]["pressure_level"], "normal")
+  
+  // 验证内存压力处理统计
+  let pressure_handling_stats = {
+    "total_scenarios": memory_usage_scenarios.length(),
+    "actions_triggered": actions_taken.length(),
+    "correct_responses": correct_responses,
+    "response_accuracy": correct_responses.to_double() / pressure_responses.length().to_double(),
+    "max_memory_usage": 96,
+    "min_memory_usage": 65
+  }
+  
+  assert_eq(pressure_handling_stats["response_accuracy"], 1.0)  // 100%准确率
+  assert_eq(pressure_handling_stats["actions_triggered"], 3)
+}
+
+test "telemetry_memory_fragmentation_analysis" {
+  // 测试内存碎片分析
+  
+  let memory_blocks = [
+    {"start": 0, "size": 100, "free": false},
+    {"start": 100, "size": 50, "free": true},
+    {"start": 150, "size": 80, "free": false},
+    {"start": 230, "size": 30, "free": true},
+    {"start": 260, "size": 120, "free": false},
+    {"start": 380, "size": 40, "free": true},
+    {"start": 420, "size": 60, "free": false}
+  ]
+  
+  // 分析内存碎片
+  let mut total_memory = 0
+  let mut used_memory = 0
+  let mut free_memory = 0
+  let mut free_blocks = []
+  let mut fragmentation_score = 0.0
+  
+  let mut i = 0
+  while i < memory_blocks.length() {
+    let block = memory_blocks[i]
+    let size = block["size"]
+    let is_free = block["free"]
+    
+    total_memory = total_memory + size
+    
+    if is_free {
+      free_memory = free_memory + size
+      free_blocks.push({"start": block["start"], "size": size})
+    } else {
+      used_memory = used_memory + size
+    }
+    
+    i = i + 1
+  }
+  
+  // 计算碎片化程度
+  if free_blocks.length() > 1 {
+    let mut total_free_block_size = 0
+    let mut largest_free_block = 0
+    
+    i = 0
+    while i < free_blocks.length() {
+      let block_size = free_blocks[i]["size"]
+      total_free_block_size = total_free_block_size + block_size
+      if block_size > largest_free_block {
+        largest_free_block = block_size
+      }
+      i = i + 1
+    }
+    
+    fragmentation_score = 1.0 - (largest_free_block.to_double() / total_free_block_size.to_double())
+  }
+  
+  // 验证内存碎片分析
+  assert_eq(total_memory, 480)
+  assert_eq(used_memory, 360)
+  assert_eq(free_memory, 120)
+  assert_eq(free_blocks.length(), 3)
+  assert_eq(fragmentation_score > 0.0, true)
+  
+  // 验证碎片化程度
+  let memory_utilization = used_memory.to_double() / total_memory.to_double()
+  assert_eq(memory_utilization, 0.75)  // 75%利用率
+  
+  // 验证碎片块分布
+  assert_eq(free_blocks[0]["size"], 50)
+  assert_eq(free_blocks[1]["size"], 30)
+  assert_eq(free_blocks[2]["size"], 40)
+  
+  // 验证碎片化分析结果
+  let fragmentation_analysis = {
+    "total_memory": total_memory,
+    "used_memory": used_memory,
+    "free_memory": free_memory,
+    "memory_utilization": memory_utilization,
+    "fragmentation_score": fragmentation_score,
+    "free_blocks_count": free_blocks.length(),
+    "largest_free_block": 50,
+    "fragmentation_level": if fragmentation_score > 0.5 { "high" } else if fragmentation_score > 0.2 { "medium" } else { "low" }
+  }
+  
+  assert_eq(fragmentation_analysis["fragmentation_level"], "medium")  // 中等碎片化
+  assert_eq(fragmentation_analysis["free_blocks_count"], 3)
+  assert_eq(fragmentation_analysis["memory_utilization"], 0.75)
+}
+
+test "telemetry_memory_budget_management" {
+  // 测试内存预算管理
+  
+  let memory_budget = {
+    "total_budget": 1024,  // 总预算1GB
+    "trace_data": 256,     // 追踪数据预算256MB
+    "metrics_data": 128,   // 指标数据预算128MB
+    "log_data": 64,        // 日志数据预算64MB
+    "buffer_pool": 32,     // 缓冲池预算32MB
+    "system_overhead": 512 // 系统开销预算512MB
+  }
+  
+  let actual_usage = {
+    "trace_data": 280,     // 超出预算24MB
+    "metrics_data": 120,   // 在预算内
+    "log_data": 80,        // 超出预算16MB
+    "buffer_pool": 30,     // 在预算内
+    "system_overhead": 490 // 在预算内
+  }
+  
+  // 分析预算执行情况
+  let mut budget_analysis = {}
+  let mut total_over_budget = 0
+  let mut total_under_budget = 0
+  let mut over_budget_components = []
+  
+  for (component, budget) in memory_budget {
+    if component == "total_budget" or component == "system_overhead" {
+      continue  // 跳过总预算和系统开销
+    }
+    
+    let used = actual_usage[component]
+    let variance = used - budget
+    let variance_percentage = variance.to_double() / budget.to_double()
+    
+    budget_analysis[component] = {
+      "budget": budget,
+      "used": used,
+      "variance": variance,
+      "variance_percentage": variance_percentage,
+      "within_budget": variance <= 0
+    }
+    
+    if variance > 0 {
+      total_over_budget = total_over_budget + variance
+      over_budget_components.push(component)
+    } else {
+      total_under_budget = total_under_budget + (-variance)
+    }
+  }
+  
+  // 验证预算管理分析
+  assert_eq(budget_analysis.size(), 4)  // 4个组件的分析
+  assert_eq(total_over_budget, 40)      // 总共超出40MB
+  assert_eq(over_budget_components.length(), 2)  // 2个组件超出预算
+  
+  // 验证具体组件预算情况
+  assert_eq(budget_analysis["trace_data"]["within_budget"], false)
+  assert_eq(budget_analysis["trace_data"]["variance"], 24)
+  assert_eq(budget_analysis["metrics_data"]["within_budget"], true)
+  assert_eq(budget_analysis["log_data"]["within_budget"], false)
+  assert_eq(budget_analysis["log_data"]["variance"], 16)
+  
+  // 计算预算执行率
+  let total_allocated_budget = 256 + 128 + 64 + 32  // 480MB
+  let total_actual_usage = 280 + 120 + 80 + 30      // 510MB
+  let budget_execution_rate = total_actual_usage.to_double() / total_allocated_budget.to_double()
+  
+  assert_eq(budget_execution_rate > 1.0, true)  // 超出预算
+  assert_eq(budget_execution_rate, 1.0625)       // 超出6.25%
+  
+  // 验证预算管理统计
+  let budget_management_stats = {
+    "total_budget_allocated": total_allocated_budget,
+    "total_actual_usage": total_actual_usage,
+    "budget_execution_rate": budget_execution_rate,
+    "total_over_budget_amount": total_over_budget,
+    "components_over_budget": over_budget_components.length(),
+    "budget_compliance_rate": (4 - over_budget_components.length()).to_double() / 4.0
+  }
+  
+  assert_eq(budget_management_stats["budget_compliance_rate"], 0.5)  // 50%符合预算
+  assert_eq(budget_management_stats["components_over_budget"], 2)
+  assert_eq(budget_management_stats["total_over_budget_amount"], 40)
 }

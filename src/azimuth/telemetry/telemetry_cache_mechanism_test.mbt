@@ -1,110 +1,63 @@
 // 遥测缓存机制测试用例
 
-test "telemetry_cache_basic_operations" {
-  // 测试遥测缓存基本操作
+test "telemetry_basic_cache_operations" {
+  // 测试基本缓存操作
   
-  let cache = []
-  let cache_operations = [
-    ("put", "metric:cpu_usage", 75.5),
-    ("put", "metric:memory_usage", 1024.0),
-    ("get", "metric:cpu_usage", 75.5),
-    ("put", "metric:request_count", 1500),
-    ("get", "metric:memory_usage", 1024.0),
-    ("get", "metric:nonexistent", null),
-    ("put", "metric:error_rate", 2.5),
-    ("get", "metric:error_rate", 2.5)
-  ]
+  let cache_size = 100
+  let mut cache_entries = []
+  let mut cache_keys = []
   
-  let mut successful_operations = 0
-  let mut failed_operations = 0
-  
-  // 模拟缓存操作
-  for operation in cache_operations {
-    let op_type = operation.0
-    let key = operation.1
-    let expected_value = operation.2
+  // 添加缓存条目
+  let mut i = 0
+  while i < cache_size {
+    let key = "metric_" + i.to_string()
+    let value = "value_" + i.to_string()
     
-    if op_type == "put" {
-      cache.push((key, expected_value))
-      successful_operations = successful_operations + 1
-    } else if op_type == "get" {
-      let mut found = false
-      let mut found_value = null
-      
-      for item in cache {
-        if item.0 == key {
-          found = true
-          found_value = item.1
-          break
-        }
-      }
-      
-      if found && found_value == expected_value {
-        successful_operations = successful_operations + 1
-      } else if !found && expected_value == null {
-        successful_operations = successful_operations + 1
-      } else {
-        failed_operations = failed_operations + 1
-      }
-    }
+    cache_keys.push(key)
+    cache_entries.push((key, value))
+    
+    i = i + 1
   }
   
-  // 验证缓存操作结果
-  assert_eq(successful_operations, 8)
-  assert_eq(failed_operations, 0)
-  assert_eq(cache.length(), 4)
-}
-
-test "telemetry_cache_ttl_expiration" {
-  // 测试遥测缓存TTL过期机制
+  // 验证缓存条目数量
+  assert_eq(cache_entries.length(), cache_size)
+  assert_eq(cache_keys.length(), cache_size)
   
-  let current_time = 1640995200L
-  let cache_with_ttl = [
-    ("metric:cpu_usage", 75.5, current_time - 60L),
-    ("metric:memory_usage", 1024.0, current_time - 300L),
-    ("metric:request_count", 1500, current_time - 600L),
-    ("metric:error_rate", 2.5, current_time - 30L)
-  ]
+  // 测试缓存查找
+  let search_key = "metric_50"
+  let mut found_value = ""
+  let mut found = false
   
-  let ttl_seconds = 300L
-  let mut valid_entries = 0
-  let mut expired_entries = 0
-  
-  // 检查TTL过期
-  for entry in cache_with_ttl {
-    let key = entry.0
-    let value = entry.1
-    let timestamp = entry.2
-    
-    let age = current_time - timestamp
-    if age <= ttl_seconds {
-      valid_entries = valid_entries + 1
-    } else {
-      expired_entries = expired_entries + 1
+  i = 0
+  while i < cache_entries.length() {
+    if cache_entries[i].0 == search_key {
+      found_value = cache_entries[i].1
+      found = true
+      break
     }
+    i = i + 1
   }
   
-  // 验证TTL检查结果
-  assert_eq(valid_entries, 2)
-  assert_eq(expired_entries, 2)
-  assert_eq(valid_entries + expired_entries, 4)
+  // 验证查找结果
+  assert_eq(found, true)
+  assert_eq(found_value, "value_50")
 }
 
-test "telemetry_cache_size_limits" {
-  // 测试遥测缓存大小限制
+test "telemetry_cache_eviction_policy" {
+  // 测试缓存淘汰策略
   
-  let max_cache_size = 100
+  let max_cache_size = 5
   let mut cache = []
   
-  // 添加超过限制的缓存项
-  let mut i = 1
-  while i <= 150 {
-    let key = "metric:item" + i.to_string()
-    let value = i.to_double()
+  // 添加超过缓存容量的条目
+  let mut i = 0
+  while i < 8 {
+    let key = "key_" + i.to_string()
+    let value = "data_" + i.to_string()
     
-    // 检查缓存大小限制
+    // 简化的LRU策略：当缓存满时删除最旧的条目
     if cache.length() >= max_cache_size {
-      // 移除最旧的项（FIFO策略）
+      // 移除第一个元素（最旧的）
       cache = cache.slice(1, cache.length())
     }
     
@@ -112,143 +65,306 @@ test "telemetry_cache_size_limits" {
     i = i + 1
   }
   
-  // 验证缓存大小限制
+  // 验证缓存大小
   assert_eq(cache.length(), max_cache_size)
   
-  // 验证缓存包含最新的项
-  let first_item = cache[0]
-  let last_item = cache[cache.length() - 1]
+  // 验证保留的是最新的条目
+  assert_eq(cache[0].0, "key_3")
+  assert_eq(cache[1].0, "key_4")
+  assert_eq(cache[2].0, "key_5")
+  assert_eq(cache[3].0, "key_6")
+  assert_eq(cache[4].0, "key_7")
   
-  assert_eq(first_item.0, "metric:item51")
-  assert_eq(last_item.0, "metric:item150")
-  assert_eq(last_item.1, 150.0)
-}
-
-test "telemetry_cache_statistics" {
-  // 测试遥测缓存统计功能
-  
-  let mut cache_stats = {
-    "hits": 0,
-    "misses": 0,
-    "puts": 0,
-    "evictions": 0,
-    "total_requests": 0
+  // 验证最旧的条目已被淘汰
+  let mut key_3_found = false
+  let mut key_0_found = false
+  i = 0
+  while i < cache.length() {
+    if cache[i].0 == "key_3" {
+      key_3_found = true
+    }
+    if cache[i].0 == "key_0" {
+      key_0_found = true
+    }
+    i = i + 1
   }
   
-  let cache_operations = [
-    ("put", "key1", "value1"),
-    ("put", "key2", "value2"),
-    ("get", "key1", "value1"),
-    ("get", "key3", null),
-    ("put", "key3", "value3"),
-    ("get", "key2", "value2"),
-    ("get", "key4", null),
-    ("put", "key4", "value4"),
-    ("put", "key5", "value5")
+  assert_eq(key_3_found, true)
+  assert_eq(key_0_found, false)
+}
+
+test "telemetry_cache_ttl_expiration" {
+  // 测试缓存TTL过期机制
+  
+  let ttl_seconds = 60
+  let current_time = 1640995200L
+  let cache_entries = [
+    ("metric1", "value1", current_time - 30L),    // 30秒前，未过期
+    ("metric2", "value2", current_time - 120L),   // 120秒前，已过期
+    ("metric3", "value3", current_time - 45L),    // 45秒前，未过期
+    ("metric4", "value4", current_time - 180L)    // 180秒前，已过期
   ]
   
-  let mut cache = []
-  let cache_capacity = 3
+  // 检查过期状态
+  let mut valid_entries = []
+  let mut expired_entries = []
   
-  // 模拟缓存操作并更新统计
-  for operation in cache_operations {
-    let op_type = operation.0
-    let key = operation.1
-    let expected_value = operation.2
+  let mut i = 0
+  while i < cache_entries.length() {
+    let entry = cache_entries[i]
+    let age_seconds = current_time - entry.2
     
-    cache_stats["total_requests"] = cache_stats["total_requests"] + 1
-    
-    if op_type == "put" {
-      // 检查是否需要淘汰
-      if cache.length() >= cache_capacity {
-        cache_stats["evictions"] = cache_stats["evictions"] + 1
-        cache = cache.slice(1, cache.length())
-      }
-      
-      cache.push((key, expected_value))
-      cache_stats["puts"] = cache_stats["puts"] + 1
-    } else if op_type == "get" {
-      let mut found = false
-      for item in cache {
-        if item.0 == key {
-          found = true
-          break
-        }
-      }
-      
-      if found {
-        cache_stats["hits"] = cache_stats["hits"] + 1
-      } else {
-        cache_stats["misses"] = cache_stats["misses"] + 1
-      }
+    if age_seconds <= ttl_seconds.to_int64() {
+      valid_entries.push(entry)
+    } else {
+      expired_entries.push(entry)
     }
+    
+    i = i + 1
+  }
+  
+  // 验证过期检查结果
+  assert_eq(valid_entries.length(), 2)
+  assert_eq(expired_entries.length(), 2)
+  
+  // 验证有效条目
+  assert_eq(valid_entries[0].0, "metric1")
+  assert_eq(valid_entries[1].0, "metric3")
+  
+  // 验证过期条目
+  assert_eq(expired_entries[0].0, "metric2")
+  assert_eq(expired_entries[1].0, "metric4")
+}
+
+test "telemetry_cache_hit_miss_ratio" {
+  // 测试缓存命中率
+  
+  let total_requests = 1000
+  let cache_capacity = 100
+  let popular_keys = ["popular1", "popular2", "popular3", "popular4", "popular5"]
+  
+  // 模拟缓存访问模式
+  let mut cache_hits = 0
+  let mut cache_misses = 0
+  let mut cache_content = []
+  
+  let mut i = 0
+  while i < total_requests {
+    let request_key = ""
+    
+    // 80%的请求访问热门key
+    if i % 100 < 80 {
+      request_key = popular_keys[i % popular_keys.length()]
+    } else {
+      // 20%的请求访问随机key
+      request_key = "random_" + i.to_string()
+    }
+    
+    // 检查缓存命中
+    let mut found_in_cache = false
+    let mut j = 0
+    while j < cache_content.length() {
+      if cache_content[j] == request_key {
+        found_in_cache = true
+        break
+      }
+      j = j + 1
+    }
+    
+    if found_in_cache {
+      cache_hits = cache_hits + 1
+    } else {
+      cache_misses = cache_misses + 1
+      
+      // 添加到缓存（简化LRU）
+      if cache_content.length() >= cache_capacity {
+        cache_content = cache_content.slice(1, cache_content.length())
+      }
+      cache_content.push(request_key)
+    }
+    
+    i = i + 1
   }
   
   // 验证缓存统计
-  assert_eq(cache_stats["puts"], 5)
-  assert_eq(cache_stats["hits"], 2)
-  assert_eq(cache_stats["misses"], 2)
-  assert_eq(cache_stats["evictions"], 1)
-  assert_eq(cache_stats["total_requests"], 9)
+  assert_eq(cache_hits + cache_misses, total_requests)
   
-  // 计算命中率
-  let hit_rate = cache_stats["hits"].to_double() / (cache_stats["hits"] + cache_stats["misses"]).to_double()
-  assert_eq(hit_rate, 0.5)
+  let hit_ratio = cache_hits.to_double() / total_requests.to_double()
+  let miss_ratio = cache_misses.to_double() / total_requests.to_double()
+  
+  // 验证命中率应该较高（因为访问模式偏向热门key）
+  assert_eq(hit_ratio > 0.5, true)
+  assert_eq(miss_ratio < 0.5, true)
+  
+  // 验证命中率与未命中率之和为1
+  assert_eq((hit_ratio + miss_ratio - 1.0).abs() < 0.001, true)
 }
 
-test "telemetry_cache_persistence" {
-  // 测试遥测缓存持久化
+test "telemetry_cache_concurrent_access" {
+  // 测试缓存并发访问
   
-  let cache_data = [
-    ("metric:cpu_usage", 75.5, 1640995200L),
-    ("metric:memory_usage", 1024.0, 1640995201L),
-    ("metric:request_count", 1500, 1640995202L),
-    ("metric:error_rate", 2.5, 1640995203L)
+  let num_readers = 3
+  let num_writers = 2
+  let operations_per_thread = 10
+  
+  let mut read_operations = 0
+  let mut write_operations = 0
+  let mut cache_data = []
+  
+  // 模拟并发读取操作
+  let mut i = 0
+  while i < num_readers {
+    let mut j = 0
+    while j < operations_per_thread {
+      // 模拟读取操作
+      let mut found = false
+      let mut k = 0
+      while k < cache_data.length() {
+        if cache_data[k].0.has_prefix("shared_") {
+          found = true
+          break
+        }
+        k = k + 1
+      }
+      
+      read_operations = read_operations + 1
+      j = j + 1
+    }
+    i = i + 1
+  }
+  
+  // 模拟并发写入操作
+  i = 0
+  while i < num_writers {
+    let mut j = 0
+    while j < operations_per_thread {
+      // 模拟写入操作
+      let key = "shared_" + i.to_string() + "_" + j.to_string()
+      let value = "data_" + i.to_string() + "_" + j.to_string()
+      cache_data.push((key, value))
+      
+      write_operations = write_operations + 1
+      j = j + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证并发操作统计
+  assert_eq(read_operations, num_readers * operations_per_thread)
+  assert_eq(write_operations, num_writers * operations_per_thread)
+  assert_eq(cache_data.length(), write_operations)
+}
+
+test "telemetry_cache_memory_efficiency" {
+  // 测试缓存内存效率
+  
+  let max_memory_mb = 10
+  let entry_size_kb = 1
+  let max_entries = (max_memory_mb * 1024) / entry_size_kb
+  
+  let mut current_memory_kb = 0
+  let mut cache_entries = []
+  
+  // 添加条目直到内存限制
+  let mut i = 0
+  while i < max_entries + 5 {  // 尝试超过限制
+    let key = "large_key_" + i.to_string()
+    let value = "x".repeat(1024)  // 1KB数据
+    
+    if current_memory_kb + entry_size_kb <= max_memory_mb * 1024 {
+      cache_entries.push((key, value))
+      current_memory_kb = current_memory_kb + entry_size_kb
+    } else {
+      // 内存不足，不添加
+      break
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证内存限制
+  assert_eq(cache_entries.length(), max_entries)
+  assert_eq(current_memory_kb, max_memory_mb * 1024)
+  
+  // 验证内存使用率
+  let memory_usage_ratio = current_memory_kb.to_double() / (max_memory_mb * 1024).to_double()
+  assert_eq(memory_usage_ratio, 1.0)
+}
+
+test "telemetry_cache_warm_up_strategy" {
+  // 测试缓存预热策略
+  
+  let popular_metrics = [
+    "cpu_usage",
+    "memory_usage", 
+    "disk_io",
+    "network_throughput",
+    "response_time"
   ]
   
-  // 序列化缓存数据
-  let mut serialized_data = ""
+  let mut preloaded_cache = []
+  let mut warm_up_time = 0L
+  let start_time = 1000000L
+  
+  // 模拟缓存预热过程
   let mut i = 0
-  while i < cache_data.length() {
-    let entry = cache_data[i]
-    serialized_data = serialized_data + entry.0 + "|" + entry.1.to_string() + "|" + entry.2.to_string()
-    if i < cache_data.length() - 1 {
-      serialized_data = serialized_data + "\n"
-    }
+  while i < popular_metrics.length() {
+    let metric_name = popular_metrics[i]
+    let metric_value = "preloaded_value_" + i.to_string()
+    
+    // 模拟加载延迟
+    warm_up_time = warm_up_time + 100L
+    
+    preloaded_cache.push((metric_name, metric_value))
     i = i + 1
   }
   
-  // 模拟持久化到存储
-  let persisted_data = serialized_data
+  let end_time = 1000500L
+  warm_up_time = end_time - start_time
   
-  // 反序列化缓存数据
-  let deserialized_entries = []
-  let lines = persisted_data.split("\n")
+  // 验证预热结果
+  assert_eq(preloaded_cache.length(), popular_metrics.length())
+  assert_eq(warm_up_time > 0L, true)
   
-  for line in lines {
-    if line.length() > 0 {
-      let parts = line.split("|")
-      if parts.length() == 3 {
-        deserialized_entries.push((parts[0], parts[1].to_double(), parts[2].to_long()))
+  // 验证预热缓存包含热门指标
+  i = 0
+  while i < popular_metrics.length() {
+    let mut found = false
+    let mut j = 0
+    while j < preloaded_cache.length() {
+      if preloaded_cache[j].0 == popular_metrics[i] {
+        found = true
+        break
       }
+      j = j + 1
     }
-  }
-  
-  // 验证持久化结果
-  assert_eq(deserialized_entries.length(), 4)
-  assert_eq(deserialized_entries[0].0, "metric:cpu_usage")
-  assert_eq(deserialized_entries[0].1, 75.5)
-  assert_eq(deserialized_entries[1].0, "metric:memory_usage")
-  assert_eq(deserialized_entries[1].1, 1024.0)
-  
-  // 验证数据完整性
-  assert_eq(cache_data.length(), deserialized_entries.length())
-  
-  let mut i = 0
-  while i < cache_data.length() {
-    assert_eq(cache_data[i].0, deserialized_entries[i].0)
-    assert_eq(cache_data[i].1, deserialized_entries[i].1)
-    assert_eq(cache_data[i].2, deserialized_entries[i].2)
+    assert_eq(found, true)
     i = i + 1
   }
+  
+  // 验证预热后的缓存命中率
+  let mut cache_hits = 0
+  let test_requests = ["cpu_usage", "memory_usage", "unknown_metric"]
+  
+  i = 0
+  while i < test_requests.length() {
+    let mut found = false
+    let mut j = 0
+    while j < preloaded_cache.length() {
+      if preloaded_cache[j].0 == test_requests[i] {
+        found = true
+        break
+      }
+      j = j + 1
+    }
+    
+    if found {
+      cache_hits = cache_hits + 1
+    }
+    
+    i = i + 1
+  }
+  
+  let warm_up_hit_ratio = cache_hits.to_double() / test_requests.length().to_double()
+  assert_eq(warm_up_hit_ratio > 0.5, true)
 }
