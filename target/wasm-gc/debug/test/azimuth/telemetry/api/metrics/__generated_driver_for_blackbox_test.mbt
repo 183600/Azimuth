@@ -176,6 +176,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_5, ["metrics_measurement_struct_operations"]),
     6: (__test_696e737472756d656e745f74797065735f616476616e6365645f746573742e6d6274_6, ["metrics_instrument_type_enum_validation"]),
   },
+  "instrument_test.mbt": {
+    0: (__test_696e737472756d656e745f746573742e6d6274_0, ["counter_creation_and_usage"]),
+    1: (__test_696e737472756d656e745f746573742e6d6274_1, ["histogram_creation_and_usage"]),
+    2: (__test_696e737472756d656e745f746573742e6d6274_2, ["up_down_counter_creation_and_usage"]),
+    3: (__test_696e737472756d656e745f746573742e6d6274_3, ["gauge_creation_and_usage"]),
+    4: (__test_696e737472756d656e745f746573742e6d6274_4, ["meter_multiple_instruments"]),
+    5: (__test_696e737472756d656e745f746573742e6d6274_5, ["instrument_with_various_attributes"]),
+    6: (__test_696e737472756d656e745f746573742e6d6274_6, ["measurement_structure_validation"]),
+    7: (__test_696e737472756d656e745f746573742e6d6274_7, ["instrument_type_coverage"]),
+  },
   "instrument_aggregation_test.mbt": {
     0: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_0, ["instrument_types_creation"]),
     1: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_1, ["meter_instrument_creation"]),

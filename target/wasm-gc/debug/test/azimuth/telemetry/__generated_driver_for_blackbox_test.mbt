@@ -1436,6 +1436,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_73696d706c655f696e746567726174696f6e5f746573742e6d6274_7, ["logger_operations"]),
     8: (__test_73696d706c655f696e746567726174696f6e5f746573742e6d6274_8, ["tracer_operations"]),
   },
+  "simple_api_validation_test.mbt": {
+    0: (__test_73696d706c655f6170695f76616c69646174696f6e5f746573742e6d6274_0, ["basic_string_operations"]),
+    1: (__test_73696d706c655f6170695f76616c69646174696f6e5f746573742e6d6274_1, ["metric_data_validation"]),
+    2: (__test_73696d706c655f6170695f76616c69646174696f6e5f746573742e6d6274_2, ["log_severity_validation"]),
+    3: (__test_73696d706c655f6170695f76616c69646174696f6e5f746573742e6d6274_3, ["resource_metadata_validation"]),
+    4: (__test_73696d706c655f6170695f76616c69646174696f6e5f746573742e6d6274_4, ["attribute_operations"]),
+    5: (__test_73696d706c655f6170695f76616c69646174696f6e5f746573742e6d6274_5, ["performance_metrics_validation"]),
+  },
   "service_mesh_telemetry_test.mbt": {
     0: (__test_736572766963655f6d6573685f74656c656d657472795f746573742e6d6274_0, ["service_mesh_telemetry_collection"]),
     1: (__test_736572766963655f6d6573685f74656c656d657472795f746573742e6d6274_1, ["sidecar_proxy_metrics"]),
@@ -1523,6 +1531,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_4, ["resource_monitoring"]),
     5: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_5, ["garbage_collection_impact"]),
     6: (__test_7265736f757263655f6d616e6167656d656e745f746573742e6d6274_6, ["resource_limits_enforcement"]),
+  },
+  "resource_management_lifecycle_test.mbt": {
+    0: (__test_7265736f757263655f6d616e6167656d656e745f6c6966656379636c655f746573742e6d6274_0, ["resource_creation_and_default_configuration"]),
+    1: (__test_7265736f757263655f6d616e6167656d656e745f6c6966656379636c655f746573742e6d6274_1, ["resource_attributes_management"]),
+    2: (__test_7265736f757263655f6d616e6167656d656e745f6c6966656379636c655f746573742e6d6274_2, ["resource_inheritance_and_merging"]),
+    3: (__test_7265736f757263655f6d616e6167656d656e745f6c6966656379636c655f746573742e6d6274_3, ["resource_validation_and_constraints"]),
+    4: (__test_7265736f757263655f6d616e6167656d656e745f6c6966656379636c655f746573742e6d6274_4, ["resource_lifecycle_operations"]),
+    5: (__test_7265736f757263655f6d616e6167656d656e745f6c6966656379636c655f746573742e6d6274_5, ["resource_compatibility_and_standardization"]),
   },
   "resource_limit_test.mbt": {
     0: (__test_7265736f757263655f6c696d69745f746573742e6d6274_0, ["memory_usage_limits"]),

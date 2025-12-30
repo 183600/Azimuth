@@ -5,16 +5,16 @@ test "attribute_value_creation_and_validation" {
   // 测试属性值的创建和验证
   
   // 测试字符串属性值
-  let string_attr = common::AttributeValue::string("test_value")
+  let string_attr = @azimuth.telemetry.api.common.AttributeValue::string("test_value")
   match string_attr {
-    common::StringValue(s) => assert_eq(s, "test_value")
+    @azimuth.telemetry.api.common.AttributeValue::StringValue(s) => assert_eq(s, "test_value")
     _ => assert_eq(false, true, "Expected StringValue")
   }
   
   // 测试整数属性值
-  let int_attr = common::AttributeValue::int(42L)
+  let int_attr = @azimuth.telemetry.api.common.AttributeValue::int(42L)
   match int_attr {
-    common::IntValue(i) => assert_eq(i, 42L)
+    @azimuth.telemetry.api.common.AttributeValue::IntValue(i) => assert_eq(i, 42L)
     _ => assert_eq(false, true, "Expected IntValue")
   }
   

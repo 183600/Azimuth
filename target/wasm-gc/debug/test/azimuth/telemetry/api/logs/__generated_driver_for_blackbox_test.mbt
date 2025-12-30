@@ -124,6 +124,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "logs.mbt": {
   },
+  "logger_test.mbt": {
+    0: (__test_6c6f676765725f746573742e6d6274_0, ["logger_creation_and_basic_usage"]),
+    1: (__test_6c6f676765725f746573742e6d6274_1, ["logger_with_attributes"]),
+    2: (__test_6c6f676765725f746573742e6d6274_2, ["log_record_builder_basic"]),
+    3: (__test_6c6f676765725f746573742e6d6274_3, ["log_record_builder_with_attributes"]),
+    4: (__test_6c6f676765725f746573742e6d6274_4, ["log_record_severity_levels"]),
+    5: (__test_6c6f676765725f746573742e6d6274_5, ["log_record_with_trace_context"]),
+    6: (__test_6c6f676765725f746573742e6d6274_6, ["log_record_comprehensive"]),
+    7: (__test_6c6f676765725f746573742e6d6274_7, ["logger_provider_multiple_loggers"]),
+  },
   "logger_functionality_test.mbt": {
     0: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_0, ["log_record_builder_basic"]),
     1: (__test_6c6f676765725f66756e6374696f6e616c6974795f746573742e6d6274_1, ["log_record_builder_with_attributes"]),
