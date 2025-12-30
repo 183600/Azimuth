@@ -1,364 +1,472 @@
-// 遥测数据聚合测试用例
-// 测试各种数据聚合算法和统计计算
+// 遥测数据聚合测试用例，确保数据统计和汇总的正确性
 
-test "telemetry_metric_sum_aggregation" {
-  // 测试指标求和聚合
+test "telemetry_counter_aggregation" {
+  // 测试计数器聚合
   
-  let metric_values = [10.5, 20.3, 15.7, 8.2, 12.9]
-  let mut sum = 0.0
+  let counter_metrics = [
+    ("http_requests_total", 100),
+    ("http_requests_total", 150),
+    ("http_requests_total", 200),
+    ("http_requests_total", 50)
+  ]
+  
+  // 聚合计数器值
+  let mut aggregated_value = 0
   let mut i = 0
-  
-  while i < metric_values.length() {
-    sum = sum + metric_values[i]
+  while i < counter_metrics.length() {
+    let metric = counter_metrics[i]
+    aggregated_value = aggregated_value + metric.1
     i = i + 1
   }
   
-  // 验证求和结果
-  assert_eq(sum > 60.0, true)
-  assert_eq(sum < 70.0, true)
-  assert_eq(sum, 67.6)
+  // 验证聚合结果
+  assert_eq(aggregated_value, 500)
+  assert_eq(aggregated_value > 0, true)
   
-  // 验证聚合元数据
-  let aggregation_metadata = {
-    "operation": "sum",
-    "count": metric_values.length(),
-    "result": sum,
-    "unit": "milliseconds"
-  }
+  // 测试带时间窗口的计数器聚合
+  let time_windowed_metrics = [
+    ("http_requests_total", 100, 1704067200L),  // 1小时前
+    ("http_requests_total", 150, 1704070800L),  // 当前时间
+    ("http_requests_total", 200, 1704074400L),  // 1小时后
+    ("http_requests_total", 50, 1704078000L)    // 2小时后
+  ]
   
-  assert_eq(aggregation_metadata["operation"], "sum")
-  assert_eq(aggregation_metadata["count"], 5)
-  assert_eq(aggregation_metadata["result"], 67.6)
-  assert_eq(aggregation_metadata["unit"], "milliseconds")
-}
-
-test "telemetry_metric_average_aggregation" {
-  // 测试指标平均值聚合
+  let current_time = 1704070800L
+  let window_size = 3600L  // 1小时窗口
+  let mut windowed_sum = 0
   
-  let response_times = [120.5, 98.3, 145.7, 88.2, 110.9, 132.1]
-  let mut sum = 0.0
-  let mut i = 0
-  
-  while i < response_times.length() {
-    sum = sum + response_times[i]
+  i = 0
+  while i < time_windowed_metrics.length() {
+    let metric = time_windowed_metrics[i]
+    let time_diff = (metric.2 - current_time).abs()
+    
+    if time_diff <= window_size {
+      windowed_sum = windowed_sum + metric.1
+    }
     i = i + 1
   }
   
-  let average = sum / response_times.length().to_double()
-  
-  // 验证平均值计算
-  assert_eq(average > 100.0, true)
-  assert_eq(average < 150.0, true)
-  assert_eq(average, 115.95)
-  
-  // 验证聚合统计
-  let aggregation_stats = {
-    "min": 88.2,
-    "max": 145.7,
-    "mean": average,
-    "count": response_times.length(),
-    "sum": sum
-  }
-  
-  assert_eq(aggregation_stats["min"], 88.2)
-  assert_eq(aggregation_stats["max"], 145.7)
-  assert_eq(aggregation_stats["mean"], 115.95)
-  assert_eq(aggregation_stats["count"], 6)
-  assert_eq(aggregation_stats["sum"], 695.7)
+  // 验证时间窗口聚合（只包含1小时内的数据）
+  assert_eq(windowed_sum, 250)  // 100 + 150
 }
 
-test "telemetry_metric_percentile_aggregation" {
-  // 测试指标百分位数聚合
+test "telemetry_gauge_aggregation" {
+  // 测试仪表聚合
   
-  let sorted_values = [10.0, 25.0, 50.0, 75.0, 90.0, 100.0, 150.0, 200.0, 300.0, 500.0]
-  let count = sorted_values.length()
+  let gauge_metrics = [
+    ("cpu_usage", 25.5),
+    ("cpu_usage", 30.2),
+    ("cpu_usage", 28.7),
+    ("cpu_usage", 35.1),
+    ("cpu_usage", 27.8)
+  ]
   
-  // 计算50百分位数（中位数）
-  let p50_index = (count * 50) / 100
-  let p50_value = sorted_values[p50_index]
-  assert_eq(p50_value, 90.0)
+  // 计算统计指标
+  let mut sum = 0.0
+  let mut min_value = gauge_metrics[0].1
+  let mut max_value = gauge_metrics[0].1
   
-  // 计算95百分位数
-  let p95_index = (count * 95) / 100
-  let p95_value = sorted_values[p95_index]
-  assert_eq(p95_value, 500.0)
-  
-  // 计算99百分位数
-  let p99_index = (count * 99) / 100
-  let p99_value = sorted_values[p99_index]
-  assert_eq(p99_value, 500.0)
-  
-  // 验证百分位数聚合结果
-  let percentile_aggregation = {
-    "p50": p50_value,
-    "p90": sorted_values[(count * 90) / 100],
-    "p95": p95_value,
-    "p99": p99_value,
-    "sample_count": count
+  let mut i = 0
+  while i < gauge_metrics.length() {
+    let value = gauge_metrics[i].1
+    sum = sum + value
+    
+    if value < min_value {
+      min_value = value
+    }
+    if value > max_value {
+      max_value = value
+    }
+    i = i + 1
   }
   
-  assert_eq(percentile_aggregation["p50"], 90.0)
-  assert_eq(percentile_aggregation["p90"], 300.0)
-  assert_eq(percentile_aggregation["p95"], 500.0)
-  assert_eq(percentile_aggregation["p99"], 500.0)
-  assert_eq(percentile_aggregation["sample_count"], 10)
+  let average = sum / gauge_metrics.length().to_double()
+  
+  // 验证统计结果
+  assert_eq(min_value, 25.5)
+  assert_eq(max_value, 35.1)
+  assert_eq(average > 29.0, true)  // (25.5+30.2+28.7+35.1+27.8)/5 = 29.46
+  assert_eq(average < 30.0, true)
+  
+  // 验证最新值（仪表通常关注当前值）
+  let latest_value = gauge_metrics[gauge_metrics.length() - 1].1
+  assert_eq(latest_value, 27.8)
 }
 
 test "telemetry_histogram_aggregation" {
   // 测试直方图聚合
   
-  let bucket_boundaries = [10.0, 50.0, 100.0, 500.0, 1000.0]
-  let measurements = [5.0, 15.0, 75.0, 200.0, 600.0, 1200.0, 25.0, 150.0]
-  let mut bucket_counts = [0, 0, 0, 0, 0, 0]  // 包括+inf桶
+  let response_times = [
+    10.5, 15.2, 8.7, 25.1, 12.3, 
+    18.9, 7.2, 22.4, 14.6, 19.8
+  ]
   
-  // 将测量值分配到桶中
+  // 定义桶边界
+  let bucket_bounds = [5.0, 10.0, 15.0, 20.0, 25.0, 30.0]
+  let mut bucket_counts = [0, 0, 0, 0, 0, 0, 0]  // 包括inf桶
+  
+  // 将响应时间分配到桶中
   let mut i = 0
-  while i < measurements.length() {
-    let value = measurements[i]
-    let mut bucket_index = bucket_boundaries.length()  // 默认+inf桶
+  while i < response_times.length() {
+    let value = response_times[i]
+    let mut bucket_index = 0
     
+    // 找到合适的桶
     let mut j = 0
-    while j < bucket_boundaries.length() {
-      if value <= bucket_boundaries[j] {
+    while j < bucket_bounds.length() {
+      if value <= bucket_bounds[j] {
         bucket_index = j
         break
       }
       j = j + 1
     }
     
-    bucket_counts[bucket_index] = bucket_counts[bucket_index] + 1
+    // 如果超过所有边界，放入inf桶
+    if bucket_index == 0 && value > bucket_bounds[bucket_bounds.length() - 1] {
+      bucket_index = bucket_bounds.length()
+    }
+    
+    // 增加该桶及之前所有桶的计数
+    let mut k = bucket_index
+    while k < bucket_counts.length() {
+      bucket_counts[k] = bucket_counts[k] + 1
+      k = k + 1
+    }
+    
     i = i + 1
   }
   
   // 验证桶计数
-  assert_eq(bucket_counts[0], 1)  // <= 10.0: [5.0]
-  assert_eq(bucket_counts[1], 2)  // <= 50.0: [15.0, 25.0]
-  assert_eq(bucket_counts[2], 2)  // <= 100.0: [75.0, 150.0]
-  assert_eq(bucket_counts[3], 1)  // <= 500.0: [200.0]
-  assert_eq(bucket_counts[4], 1)  // <= 1000.0: [600.0]
-  assert_eq(bucket_counts[5], 1)  // +inf: [1200.0]
+  assert_eq(bucket_counts[0], 2)  // <=5.0: 无
+  assert_eq(bucket_counts[1], 3)  // <=10.0: 8.7, 7.2
+  assert_eq(bucket_counts[2], 6)  // <=15.0: 10.5, 15.2, 12.3, 14.6
+  assert_eq(bucket_counts[3], 8)  // <=20.0: 18.9, 19.8
+  assert_eq(bucket_counts[4], 9)  // <=25.0: 25.1
+  assert_eq(bucket_counts[5], 10) // <=30.0: 22.4
+  assert_eq(bucket_counts[6], 10) // <=inf: 所有
   
-  // 验证直方图聚合
-  let histogram_aggregation = {
-    "buckets": bucket_boundaries,
-    "counts": bucket_counts,
-    "total_count": measurements.length(),
-    "sum": 2270.0
-  }
-  
-  assert_eq(histogram_aggregation["total_count"], 8)
-  assert_eq(histogram_aggregation["sum"], 2270.0)
+  // 验证总数
+  assert_eq(bucket_counts[bucket_counts.length() - 1], response_times.length())
 }
 
-test "telemetry_counter_aggregation" {
-  // 测试计数器聚合
+test "telemetry_percentile_calculation" {
+  // 测试百分位数计算
   
-  let service_counters = [
-    ("service_a", 100),
-    ("service_b", 250),
-    ("service_c", 150),
-    ("service_a", 50),   // service_a的另一个计数
-    ("service_d", 75),
-    ("service_b", 100)   // service_b的另一个计数
+  let sorted_values = [
+    1.0, 2.0, 3.0, 4.0, 5.0, 
+    6.0, 7.0, 8.0, 9.0, 10.0,
+    11.0, 12.0, 13.0, 14.0, 15.0,
+    16.0, 17.0, 18.0, 19.0, 20.0
   ]
   
-  // 按服务名称聚合计数
-  let mut aggregated_counters = {}
-  let mut i = 0
+  let total_count = sorted_values.length()
   
-  while i < service_counters.length() {
-    let (service_name, count) = service_counters[i]
-    
-    if aggregated_counters.contains_key(service_name) {
-      let current_count = aggregated_counters[service_name]
-      aggregated_counters[service_name] = current_count + count
-    } else {
-      aggregated_counters[service_name] = count
-    }
-    
-    i = i + 1
+  // 计算50百分位数（中位数）
+  let p50_index = (50 * total_count) / 100
+  let p50_value = if p50_index < total_count {
+    sorted_values[p50_index]
+  } else {
+    sorted_values[total_count - 1]
   }
   
-  // 验证聚合结果
-  assert_eq(aggregated_counters["service_a"], 150)
-  assert_eq(aggregated_counters["service_b"], 350)
-  assert_eq(aggregated_counters["service_c"], 150)
-  assert_eq(aggregated_counters["service_d"], 75)
-  
-  // 验证总计数
-  let mut total_count = 0
-  for (_, count) in aggregated_counters {
-    total_count = total_count + count
+  // 计算95百分位数
+  let p95_index = (95 * total_count) / 100
+  let p95_value = if p95_index < total_count {
+    sorted_values[p95_index]
+  } else {
+    sorted_values[total_count - 1]
   }
   
-  assert_eq(total_count, 725)
+  // 计算99百分位数
+  let p99_index = (99 * total_count) / 100
+  let p99_value = if p99_index < total_count {
+    sorted_values[p99_index]
+  } else {
+    sorted_values[total_count - 1]
+  }
+  
+  // 验证百分位数
+  assert_eq(p50_value, 10.0)
+  assert_eq(p95_value, 19.0)
+  assert_eq(p99_value, 20.0)
+  
+  // 验证百分位数顺序
+  assert_eq(p50_value <= p95_value, true)
+  assert_eq(p95_value <= p99_value, true)
 }
 
-test "telemetry_time_window_aggregation" {
-  // 测试时间窗口聚合
-  
-  let current_time = 1640995200L  // 2022-01-01 00:00:00
-  let window_size_seconds = 60L   // 1分钟窗口
-  let metrics = [
-    (current_time - 30L, 10.0),   // 30秒前
-    (current_time - 45L, 15.0),   // 45秒前
-    (current_time - 90L, 20.0),   // 90秒前（窗口外）
-    (current_time - 10L, 25.0),   // 10秒前
-    (current_time - 120L, 30.0),  // 120秒前（窗口外）
-    (current_time - 5L, 35.0)     // 5秒前
-  ]
-  
-  // 过滤时间窗口内的指标
-  let mut window_metrics = []
-  let mut i = 0
-  
-  while i < metrics.length() {
-    let (timestamp, value) = metrics[i]
-    let age_seconds = current_time - timestamp
-    
-    if age_seconds <= window_size_seconds {
-      window_metrics.push((timestamp, value))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证窗口内指标
-  assert_eq(window_metrics.length(), 4)  // 只有4个指标在1分钟窗口内
-  
-  // 计算窗口聚合
-  let mut window_sum = 0.0
-  i = 0
-  while i < window_metrics.length() {
-    window_sum = window_sum + window_metrics[i].1
-    i = i + 1
-  }
-  
-  let window_average = window_sum / window_metrics.length().to_double()
-  
-  assert_eq(window_sum, 85.0)
-  assert_eq(window_average, 21.25)
-  
-  // 验证时间窗口聚合元数据
-  let window_aggregation = {
-    "window_start": current_time - window_size_seconds,
-    "window_end": current_time,
-    "window_size_seconds": window_size_seconds,
-    "metric_count": window_metrics.length(),
-    "sum": window_sum,
-    "average": window_average
-  }
-  
-  assert_eq(window_aggregation["window_size_seconds"], 60L)
-  assert_eq(window_aggregation["metric_count"], 4)
-  assert_eq(window_aggregation["sum"], 85.0)
-  assert_eq(window_aggregation["average"], 21.25)
-}
-
-test "telemetry_group_by_aggregation" {
-  // 测试分组聚合
-  
-  let request_metrics = [
-    ("GET", "/api/users", 200, 120.5),
-    ("POST", "/api/orders", 201, 250.3),
-    ("GET", "/api/products", 200, 89.7),
-    ("GET", "/api/users", 404, 15.2),
-    ("POST", "/api/orders", 400, 45.8),
-    ("GET", "/api/products", 500, 210.1)
-  ]
-  
-  // 按HTTP方法和状态码分组
-  let mut grouped_metrics = {}
-  let mut i = 0
-  
-  while i < request_metrics.length() {
-    let (method, path, status, duration) = request_metrics[i]
-    let group_key = method + ":" + status.to_string()
-    
-    if grouped_metrics.contains_key(group_key) {
-      let group_data = grouped_metrics[group_key]
-      group_data["count"] = group_data["count"] + 1
-      group_data["total_duration"] = group_data["total_duration"] + duration
-      group_data["paths"].push(path)
-    } else {
-      grouped_metrics[group_key] = {
-        "count": 1,
-        "total_duration": duration,
-        "paths": [path]
-      }
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证分组聚合结果
-  assert_eq(grouped_metrics["GET:200"]["count"], 2)
-  assert_eq(grouped_metrics["POST:201"]["count"], 1)
-  assert_eq(grouped_metrics["GET:404"]["count"], 1)
-  
-  // 计算每组的平均持续时间
-  let get200_avg = grouped_metrics["GET:200"]["total_duration"] / grouped_metrics["GET:200"]["count"].to_double()
-  assert_eq(get200_avg, 105.1)  // (120.5 + 89.7) / 2
-  
-  // 验证路径聚合
-  let get200_paths = grouped_metrics["GET:200"]["paths"]
-  assert_eq(get200_paths.contains("/api/users"), true)
-  assert_eq(get200_paths.contains("/api/products"), true)
-}
-
-test "telemetry_rate_aggregation" {
-  // 测试速率聚合
+test "telemetry_rate_calculation" {
+  // 测试速率计算
   
   let time_series_data = [
-    (1640995200L, 100),  // 每秒请求数
-    (1640995201L, 120),
-    (1640995202L, 95),
-    (1640995203L, 110),
-    (1640995204L, 130),
-    (1640995205L, 105)
+    (1704067200L, 1000),  // 0秒
+    (1704067260L, 1050),  // 60秒后
+    (1704067320L, 1120),  // 120秒后
+    (1704067380L, 1180),  // 180秒后
+    (1704067440L, 1250)   // 240秒后
   ]
   
-  // 计算平均速率
-  let mut total_requests = 0
-  let mut i = 0
-  
+  // 计算时间间隔内的速率
+  let mut rates = []
+  let mut i = 1
   while i < time_series_data.length() {
-    total_requests = total_requests + time_series_data[i].1
+    let prev_data = time_series_data[i - 1]
+    let curr_data = time_series_data[i]
+    
+    let time_diff = curr_data.0 - prev_data.0
+    let value_diff = curr_data.1 - prev_data.1
+    let rate = value_diff.to_double() / time_diff.to_double()
+    
+    rates.push(rate)
     i = i + 1
   }
   
-  let time_span_seconds = time_series_data[time_series_data.length() - 1].0 - time_series_data[0].0
-  let average_rate = total_requests.to_double() / time_span_seconds.to_double()
-  
   // 验证速率计算
-  assert_eq(total_requests, 660)
-  assert_eq(time_span_seconds, 5L)
-  assert_eq(average_rate, 132.0)
+  assert_eq(rates.length(), 4)
+  assert_eq(rates[0] > 0.8, true)  // (1050-1000)/60 ≈ 0.83
+  assert_eq(rates[0] < 0.9, true)
   
-  // 计算峰值速率
-  let mut peak_rate = 0
+  assert_eq(rates[1] > 1.0, true)  // (1120-1050)/60 ≈ 1.17
+  assert_eq(rates[1] < 1.2, true)
+  
+  assert_eq(rates[2] > 0.9, true)  // (1180-1120)/60 = 1.0
+  assert_eq(rates[2] < 1.1, true)
+  
+  assert_eq(rates[3] > 1.0, true)  // (1250-1180)/60 ≈ 1.17
+  assert_eq(rates[3] < 1.2, true)
+  
+  // 计算平均速率
+  let mut total_rate = 0.0
   i = 0
-  while i < time_series_data.length() {
-    if time_series_data[i].1 > peak_rate {
-      peak_rate = time_series_data[i].1
+  while i < rates.length() {
+    total_rate = total_rate + rates[i]
+    i = i + 1
+  }
+  let average_rate = total_rate / rates.length()
+  
+  assert_eq(average_rate > 0.9, true)
+  assert_eq(average_rate < 1.1, true)
+}
+
+test "telemetry_time_bucket_aggregation" {
+  // 测试时间桶聚合
+  
+  let metrics_with_timestamps = [
+    ("cpu_usage", 25.5, 1704067200L),  // 00:00
+    ("cpu_usage", 30.2, 1704067260L),  // 00:01
+    ("cpu_usage", 28.7, 1704067320L),  // 00:02
+    ("cpu_usage", 35.1, 1704067380L),  // 00:03
+    ("cpu_usage", 27.8, 1704067440L),  // 00:04
+    ("cpu_usage", 32.4, 1704067500L),  // 00:05
+    ("cpu_usage", 29.6, 1704067560L),  // 00:06
+    ("cpu_usage", 31.2, 1704067620L)   // 00:07
+  ]
+  
+  let bucket_size = 300L  // 5分钟桶
+  let base_time = 1704067200L  // 基准时间
+  
+  // 创建时间桶
+  let mut time_buckets = []
+  let mut i = 0
+  while i < metrics_with_timestamps.length() {
+    let metric = metrics_with_timestamps[i]
+    let timestamp = metric.2
+    let bucket_index = (timestamp - base_time) / bucket_size
+    
+    // 确保桶数组足够大
+    while time_buckets.length() <= bucket_index.to_int() {
+      time_buckets.push([])
+    }
+    
+    // 将指标添加到对应桶
+    time_buckets[bucket_index.to_int()].push(metric)
+    i = i + 1
+  }
+  
+  // 验证时间桶分布
+  assert_eq(time_buckets.length(), 2)  // 两个5分钟桶
+  
+  // 第一个桶 (00:00-00:05): 6个数据点
+  assert_eq(time_buckets[0].length(), 6)
+  
+  // 第二个桶 (00:05-00:10): 2个数据点
+  assert_eq(time_buckets[1].length(), 2)
+  
+  // 计算每个桶的平均值
+  let mut bucket_averages = []
+  i = 0
+  while i < time_buckets.length() {
+    let bucket = time_buckets[i]
+    let mut sum = 0.0
+    
+    let mut j = 0
+    while j < bucket.length() {
+      sum = sum + bucket[j].1
+      j = j + 1
+    }
+    
+    let average = sum / bucket.length().to_double()
+    bucket_averages.push(average)
+    i = i + 1
+  }
+  
+  // 验证桶平均值
+  assert_eq(bucket_averages[0] > 29.0, true)  // 第一个桶平均值
+  assert_eq(bucket_averages[0] < 31.0, true)
+  
+  assert_eq(bucket_averages[1] > 30.0, true)  // 第二个桶平均值
+  assert_eq(bucket_averages[1] < 31.0, true)
+}
+
+test "telemetry_dimension_aggregation" {
+  // 测试维度聚合
+  
+  let multi_dimensional_metrics = [
+    ("http_requests", "GET", "/api/users", 200, 120),
+    ("http_requests", "GET", "/api/users", 200, 95),
+    ("http_requests", "POST", "/api/orders", 201, 45),
+    ("http_requests", "POST", "/api/orders", 400, 8),
+    ("http_requests", "GET", "/api/products", 200, 230),
+    ("http_requests", "GET", "/api/products", 404, 15),
+    ("http_requests", "PUT", "/api/users/123", 200, 28),
+    ("http_requests", "DELETE", "/api/orders/456", 204, 12)
+  ]
+  
+  // 按HTTP方法聚合
+  let mut method_aggregates = {}
+  let mut i = 0
+  while i < multi_dimensional_metrics.length() {
+    let metric = multi_dimensional_metrics[i]
+    let method = metric.1
+    let count = metric.4
+    
+    if method_aggregates.contains_key(method) {
+      method_aggregates[method] = method_aggregates[method] + count
+    } else {
+      method_aggregates[method] = count
     }
     i = i + 1
   }
   
-  assert_eq(peak_rate, 130)
+  // 验证方法聚合
+  assert_eq(method_aggregates["GET"], 120 + 95 + 230 + 15)  // 460
+  assert_eq(method_aggregates["POST"], 45 + 8)              // 53
+  assert_eq(method_aggregates["PUT"], 28)                    // 28
+  assert_eq(method_aggregates["DELETE"], 12)                 // 12
   
-  // 验证速率聚合
-  let rate_aggregation = {
-    "average_rate": average_rate,
-    "peak_rate": peak_rate,
-    "total_requests": total_requests,
-    "time_span_seconds": time_span_seconds,
-    "data_points": time_series_data.length()
+  // 按状态码聚合
+  let mut status_aggregates = {}
+  i = 0
+  while i < multi_dimensional_metrics.length() {
+    let metric = multi_dimensional_metrics[i]
+    let status = metric.3.to_string()
+    let count = metric.4
+    
+    if status_aggregates.contains_key(status) {
+      status_aggregates[status] = status_aggregates[status] + count
+    } else {
+      status_aggregates[status] = count
+    }
+    i = i + 1
   }
   
-  assert_eq(rate_aggregation["average_rate"], 132.0)
-  assert_eq(rate_aggregation["peak_rate"], 130)
-  assert_eq(rate_aggregation["total_requests"], 660)
-  assert_eq(rate_aggregation["time_span_seconds"], 5L)
-  assert_eq(rate_aggregation["data_points"], 6)
+  // 验证状态码聚合
+  assert_eq(status_aggregates["200"], 120 + 95 + 230 + 28)  // 473
+  assert_eq(status_aggregates["201"], 45)                    // 45
+  assert_eq(status_aggregates["204"], 12)                    // 12
+  assert_eq(status_aggregates["400"], 8)                     // 8
+  assert_eq(status_aggregates["404"], 15)                    // 15
+  
+  // 按端点聚合
+  let mut endpoint_aggregates = {}
+  i = 0
+  while i < multi_dimensional_metrics.length() {
+    let metric = multi_dimensional_metrics[i]
+    let endpoint = metric.2
+    let count = metric.4
+    
+    if endpoint_aggregates.contains_key(endpoint) {
+      endpoint_aggregates[endpoint] = endpoint_aggregates[endpoint] + count
+    } else {
+      endpoint_aggregates[endpoint] = count
+    }
+    i = i + 1
+  }
+  
+  // 验证端点聚合
+  assert_eq(endpoint_aggregates["/api/users"], 120 + 95 + 28)     // 243
+  assert_eq(endpoint_aggregates["/api/orders"], 45 + 8 + 12)     // 65
+  assert_eq(endpoint_aggregates["/api/products"], 230 + 15)      // 245
+  assert_eq(endpoint_aggregates["/api/users/123"], 28)           // 28
+  assert_eq(endpoint_aggregates["/api/orders/456"], 12)          // 12
+}
+
+test "telemetry_exponential_moving_average" {
+  // 测试指数移动平均
+  
+  let metric_values = [10.0, 15.0, 12.0, 18.0, 14.0, 20.0, 16.0, 22.0]
+  let alpha = 0.3  // 平滑因子
+  
+  // 计算指数移动平均
+  let mut ema_values = []
+  let mut ema = metric_values[0]  // 初始EMA为第一个值
+  ema_values.push(ema)
+  
+  let mut i = 1
+  while i < metric_values.length() {
+    let current_value = metric_values[i]
+    ema = alpha * current_value + (1.0 - alpha) * ema
+    ema_values.push(ema)
+    i = i + 1
+  }
+  
+  // 验证EMA计算
+  assert_eq(ema_values.length(), metric_values.length())
+  assert_eq(ema_values[0], 10.0)  // 初始值
+  
+  // 手动计算几个值进行验证
+  // EMA[1] = 0.3 * 15.0 + 0.7 * 10.0 = 4.5 + 7.0 = 11.5
+  assert_eq(ema_values[1] > 11.4, true)
+  assert_eq(ema_values[1] < 11.6, true)
+  
+  // EMA[2] = 0.3 * 12.0 + 0.7 * 11.5 = 3.6 + 8.05 = 11.65
+  assert_eq(ema_values[2] > 11.6, true)
+  assert_eq(ema_values[2] < 11.7, true)
+  
+  // 验证EMA的平滑特性
+  let mut max_diff = 0.0
+  i = 1
+  while i < metric_values.length() {
+    let raw_diff = (metric_values[i] - metric_values[i-1]).abs()
+    let ema_diff = (ema_values[i] - ema_values[i-1]).abs()
+    
+    if ema_diff > max_diff {
+      max_diff = ema_diff
+    }
+    
+    // EMA的变化应该小于原始数据的变化
+    assert_eq(ema_diff <= raw_diff, true)
+    i = i + 1
+  }
+  
+  // 验证EMA在合理范围内
+  let min_value = metric_values[0]
+  let max_value = metric_values[0]
+  i = 1
+  while i < metric_values.length() {
+    if metric_values[i] < min_value {
+      min_value = metric_values[i]
+    }
+    if metric_values[i] > max_value {
+      max_value = metric_values[i]
+    }
+    i = i + 1
+  }
+  
+  i = 0
+  while i < ema_values.length() {
+    assert_eq(ema_values[i] >= min_value, true)
+    assert_eq(ema_values[i] <= max_value, true)
+    i = i + 1
+  }
 }

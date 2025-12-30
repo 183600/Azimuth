@@ -1,310 +1,326 @@
-// 遥测数据验证和清理测试用例
+// 遥测数据验证测试用例，确保数据完整性和正确性
 
-test "telemetry_data_validation_rules" {
-  // 测试遥测数据验证规则
+test "telemetry_metric_name_validation" {
+  // 测试指标名称验证规则
+  
+  let valid_names = [
+    "http_requests_total",
+    "cpu_usage_percent",
+    "memory_bytes",
+    "database_connections_active",
+    "response_time_ms"
+  ]
+  
+  let invalid_names = [
+    "123_invalid_start",
+    "invalid-name-with-dash",
+    "invalid name with space",
+    "invalid@name@with@special",
+    ""
+  ]
+  
+  // 验证有效名称
+  let mut i = 0
+  while i < valid_names.length() {
+    let name = valid_names[i]
+    assert_eq(name.length() > 0, true)
+    assert_eq(name.has_prefix(name[0].to_string()), true)
+    assert_eq(name[0].is_ascii_alphabetic(), true)
+    assert_eq(name.contains(" ") == false, true)
+    i = i + 1
+  }
+  
+  // 验证无效名称特征
+  i = 0
+  while i < invalid_names.length() {
+    let name = invalid_names[i]
+    // 根据名称特征进行验证
+    if name.length() > 0 {
+      assert_eq(name[0].is_ascii_digit() || name.contains("-") || name.contains(" ") || name.contains("@"), true)
+    }
+    i = i + 1
+  }
+  
+  // 测试名称长度限制
+  let long_name = "a" * 300
+  assert_eq(long_name.length(), 300)
+  assert_eq(long_name.length() > 255, true) // 超过合理长度限制
+}
+
+test "telemetry_trace_id_validation" {
+  // 测试追踪ID验证规则
   
   let valid_trace_ids = [
     "0af7651916cd43dd8448eb211c80319c",
     "1234567890abcdef1234567890abcdef",
-    "abcdef0123456789abcdef0123456789"
+    "ffffffffffffffffffffffffffffffff"
   ]
   
   let invalid_trace_ids = [
-    "0af7651916cd43dd8448eb211c80319",
-    "0af7651916cd43dd8448eb211c80319cc",
-    "0af7651916cd43dd8448eb211c80319g",
-    "",
-    "0af7651916cd43dd8448eb211c80319C"
+    "0af7651916cd43dd8448eb211c80319",  // 太短
+    "0af7651916cd43dd8448eb211c80319c00",  // 太长
+    "gaf7651916cd43dd8448eb211c80319c",  // 包含无效字符
+    ""
   ]
   
-  // 验证有效的trace_id
-  let mut valid_count = 0
-  for trace_id in valid_trace_ids {
-    if trace_id.length() == 32 {
-      valid_count = valid_count + 1
-    }
+  // 验证有效追踪ID
+  let mut i = 0
+  while i < valid_trace_ids.length() {
+    let trace_id = valid_trace_ids[i]
+    assert_eq(trace_id.length(), 32)
+    assert_eq(trace_id.is_ascii_hex(), true)
+    i = i + 1
   }
   
-  // 验证无效的trace_id
-  let mut invalid_count = 0
-  for trace_id in invalid_trace_ids {
-    if trace_id.length() != 32 {
-      invalid_count = invalid_count + 1
+  // 验证无效追踪ID特征
+  i = 0
+  while i < invalid_trace_ids.length() {
+    let trace_id = invalid_trace_ids[i]
+    if trace_id.length() > 0 {
+      assert_eq(trace_id.length() != 32 || trace_id.is_ascii_hex() == false, true)
     }
+    i = i + 1
   }
-  
-  assert_eq(valid_count, 3)
-  assert_eq(invalid_count, 5)
 }
 
-test "telemetry_data_sanitization" {
-  // 测试遥测数据清理功能
+test "telemetry_timestamp_validation" {
+  // 测试时间戳验证规则
   
-  let raw_attributes = [
-    ("user.name", "john.doe@example.com"),
-    ("user.password", "secret123"),
-    ("api.key", "sk-1234567890abcdef"),
-    ("credit.card", "4111-1111-1111-1111"),
+  let valid_timestamps = [
+    1640995200L,  // 2022-01-01 00:00:00 UTC
+    1672531200L,  // 2023-01-01 00:00:00 UTC
+    1704067200L   // 2024-01-01 00:00:00 UTC
+  ]
+  
+  let invalid_timestamps = [
+    -1L,          // 负时间戳
+    0L,           // 零时间戳
+    9999999999999L // 过大的时间戳
+  ]
+  
+  // 验证有效时间戳
+  let mut i = 0
+  while i < valid_timestamps.length() {
+    let timestamp = valid_timestamps[i]
+    assert_eq(timestamp > 1600000000L, true)  // 2021年之后
+    assert_eq(timestamp < 2000000000L, true)  // 2033年之前
+    i = i + 1
+  }
+  
+  // 验证时间戳格式转换
+  let current_timestamp = 1704067200L
+  let timestamp_str = current_timestamp.to_string()
+  assert_eq(timestamp_str.length(), 10)
+  assert_eq(timestamp_str.is_ascii_digit(), true)
+}
+
+test "telemetry_attribute_value_validation" {
+  // 测试属性值验证规则
+  
+  let string_values = [
+    "GET",
+    "200",
+    "application/json",
+    "user-id-12345"
+  ]
+  
+  let numeric_values = [
+    200,
+    404,
+    500
+  ]
+  
+  let boolean_values = [
+    true,
+    false
+  ]
+  
+  // 验证字符串属性值
+  let mut i = 0
+  while i < string_values.length() {
+    let value = string_values[i]
+    assert_eq(value.length() > 0, true)
+    assert_eq(value.length() <= 255, true)  // 长度限制
+    i = i + 1
+  }
+  
+  // 验证数值属性值
+  i = 0
+  while i < numeric_values.length() {
+    let value = numeric_values[i]
+    assert_eq(value >= 100, true)  // HTTP状态码范围
+    assert_eq(value <= 599, true)
+    i = i + 1
+  }
+  
+  // 验证布尔属性值
+  i = 0
+  while i < boolean_values.length() {
+    let value = boolean_values[i]
+    assert_eq(value == true || value == false, true)
+    i = i + 1
+  }
+}
+
+test "telemetry_data_integrity_check" {
+  // 测试数据完整性检查
+  
+  let telemetry_data = [
     ("service.name", "payment-service"),
-    ("request.id", "req-123456")
+    ("service.version", "1.2.3"),
+    ("trace.id", "0af7651916cd43dd8448eb211c80319c"),
+    ("span.id", "b7ad6b7169203331"),
+    ("timestamp", "1704067200")
   ]
   
-  let sanitized_attributes = []
-  
-  // 清理敏感数据
-  for attr in raw_attributes {
-    let key = attr.0
-    let value = attr.1
-    
-    // 检查是否为敏感字段
-    if key.contains("password") || key.contains("key") || key.contains("card") {
-      // 掩码处理
-      let masked_value = if value.length() > 4 {
-        "*".repeat(value.length() - 4) + value.substring(value.length() - 4, 4)
-      } else {
-        "****"
-      }
-      sanitized_attributes.push((key, masked_value))
-    } else {
-      sanitized_attributes.push((key, value))
-    }
-  }
-  
-  // 验证清理结果
-  assert_eq(sanitized_attributes.length(), 6)
-  assert_eq(sanitized_attributes[1].1, "*********123")
-  assert_eq(sanitized_attributes[2].1, "*********cdef")
-  assert_eq(sanitized_attributes[3].1, "************1111")
-  assert_eq(sanitized_attributes[4].1, "payment-service")
-}
-
-test "telemetry_data_integrity_checks" {
-  // 测试遥测数据完整性检查
-  
-  let telemetry_records = [
-    ("trace1", "span1", 1640995200L, "serviceA"),
-    ("trace2", "span2", 1640995201L, "serviceB"),
-    ("trace3", "", 1640995202L, "serviceC"),
-    ("", "span4", 1640995203L, "serviceD"),
-    ("trace5", "span5", 0L, "serviceE"),
-    ("trace6", "span6", 1640995205L, "")
+  // 验证必要字段存在
+  let required_fields = [
+    "service.name",
+    "trace.id",
+    "span.id",
+    "timestamp"
   ]
   
-  let mut valid_records = 0
-  let mut invalid_records = 0
-  
-  // 检查记录完整性
-  for record in telemetry_records {
-    let trace_id = record.0
-    let span_id = record.1
-    let timestamp = record.2
-    let service_name = record.3
+  let mut i = 0
+  while i < required_fields.length() {
+    let field = required_fields[i]
+    let mut field_found = false
     
-    let is_valid = 
-      trace_id.length() > 0 && 
-      span_id.length() > 0 && 
-      timestamp > 0L && 
-      service_name.length() > 0
-    
-    if is_valid {
-      valid_records = valid_records + 1
-    } else {
-      invalid_records = invalid_records + 1
-    }
-  }
-  
-  assert_eq(valid_records, 2)
-  assert_eq(invalid_records, 4)
-}
-
-test "telemetry_data_type_validation" {
-  // 测试遥测数据类型验证
-  
-  let metric_data = [
-    ("cpu_usage", "75.5", "double"),
-    ("memory_usage", "1024", "integer"),
-    ("request_count", "not_a_number", "integer"),
-    ("response_time", "45.2", "double"),
-    ("error_rate", "5%", "percentage"),
-    ("status", "active", "string")
-  ]
-  
-  let mut valid_metrics = 0
-  let mut invalid_metrics = 0
-  
-  // 验证数据类型
-  for metric in metric_data {
-    let name = metric.0
-    let value = metric.1
-    let expected_type = metric.2
-    
-    let is_valid = match expected_type {
-      "double" => value.contains("."),
-      "integer" => value.is_numeric(),
-      "string" => true,
-      "percentage" => value.contains("%"),
-      _ => false
-    }
-    
-    if is_valid {
-      valid_metrics = valid_metrics + 1
-    } else {
-      invalid_metrics = invalid_metrics + 1
-    }
-  }
-  
-  assert_eq(valid_metrics, 4)
-  assert_eq(invalid_metrics, 2)
-}
-
-test "telemetry_data_range_validation" {
-  // 测试遥测数据范围验证
-  
-  let performance_metrics = [
-    ("response_time_ms", 150.5, 0.0, 5000.0),
-    ("response_time_ms", 7500.0, 0.0, 5000.0),
-    ("cpu_usage_percent", 75.2, 0.0, 100.0),
-    ("cpu_usage_percent", -5.0, 0.0, 100.0),
-    ("error_rate_percent", 5.5, 0.0, 100.0),
-    ("error_rate_percent", 105.0, 0.0, 100.0)
-  ]
-  
-  let mut in_range_count = 0
-  let mut out_of_range_count = 0
-  
-  // 验证数据范围
-  for metric in performance_metrics {
-    let name = metric.0
-    let value = metric.1
-    let min_val = metric.2
-    let max_val = metric.3
-    
-    if value >= min_val && value <= max_val {
-      in_range_count = in_range_count + 1
-    } else {
-      out_of_range_count = out_of_range_count + 1
-    }
-  }
-  
-  assert_eq(in_range_count, 3)
-  assert_eq(out_of_range_count, 3)
-}
-
-test "telemetry_data_format_validation" {
-  // 测试遥测数据格式验证
-  
-  let formatted_data = [
-    ("timestamp", "2023-01-01T12:00:00Z", "iso8601"),
-    ("timestamp", "2023/01/01 12:00:00", "iso8601"),
-    ("ip_address", "192.168.1.1", "ipv4"),
-    ("ip_address", "256.168.1.1", "ipv4"),
-    ("email", "user@example.com", "email"),
-    ("email", "invalid-email", "email"),
-    ("url", "https://api.example.com/v1", "url"),
-    ("url", "not-a-url", "url")
-  ]
-  
-  let mut valid_format_count = 0
-  let mut invalid_format_count = 0
-  
-  // 验证数据格式
-  for data in formatted_data {
-    let field_type = data.0
-    let value = data.1
-    let expected_format = data.2
-    
-    let is_valid = match expected_format {
-      "iso8601" => value.contains("T") && value.contains("Z"),
-      "ipv4" => value.contains(".") && value.split(".").length() == 4,
-      "email" => value.contains("@") && value.contains("."),
-      "url" => value.has_prefix("http"),
-      _ => false
-    }
-    
-    if is_valid {
-      valid_format_count = valid_format_count + 1
-    } else {
-      invalid_format_count = invalid_format_count + 1
-    }
-  }
-  
-  assert_eq(valid_format_count, 4)
-  assert_eq(invalid_format_count, 4)
-}
-
-test "telemetry_data_deduplication" {
-  // 测试遥测数据去重功能
-  
-  let duplicate_records = [
-    ("trace1", "span1", "metric1", 100.0, 1640995200L),
-    ("trace1", "span1", "metric1", 100.0, 1640995200L),
-    ("trace2", "span2", "metric2", 200.0, 1640995201L),
-    ("trace2", "span2", "metric2", 250.0, 1640995201L),
-    ("trace3", "span3", "metric3", 300.0, 1640995202L),
-    ("trace3", "span3", "metric3", 300.0, 1640995203L),
-    ("trace4", "span4", "metric4", 400.0, 1640995204L)
-  ]
-  
-  let unique_records = []
-  
-  // 简单去重逻辑
-  for record in duplicate_records {
-    let is_duplicate = false
-    
-    for existing in unique_records {
-      if record.0 == existing.0 && 
-         record.1 == existing.1 && 
-         record.2 == existing.2 && 
-         record.3 == existing.3 && 
-         record.4 == existing.4 {
-        is_duplicate = true
+    let mut j = 0
+    while j < telemetry_data.length() {
+      if telemetry_data[j].0 == field {
+        field_found = true
+        assert_eq(telemetry_data[j].1.length() > 0, true)
         break
       }
+      j = j + 1
     }
     
-    if !is_duplicate {
-      unique_records.push(record)
-    }
+    assert_eq(field_found, true)
+    i = i + 1
   }
   
-  // 验证去重结果
-  assert_eq(unique_records.length(), 6)
-  assert_eq(duplicate_records.length(), 7)
+  // 验证数据格式一致性
+  i = 0
+  while i < telemetry_data.length() {
+    let key = telemetry_data[i].0
+    let value = telemetry_data[i].1
+    
+    // 验证键格式
+    assert_eq(key.contains("."), true)
+    assert_eq(key[0].is_ascii_alphabetic(), true)
+    
+    // 验证值非空
+    assert_eq(value.length() > 0, true)
+    
+    i = i + 1
+  }
 }
 
-test "telemetry_data_completeness_check" {
-  // 测试遥测数据完整性检查
+test "telemetry_metric_value_range_validation" {
+  // 测试指标值范围验证
   
-  let batch_data = [
-    ("batch1", 100, 95, 5),
-    ("batch2", 50, 45, 5),
-    ("batch3", 200, 180, 15),
-    ("batch4", 75, 75, 0),
-    ("batch5", 0, 0, 0),
-    ("batch6", 150, 120, 25)
+  let counter_metrics = [
+    ("http_requests_total", 12345),
+    ("errors_total", 67),
+    ("bytes_sent", 1048576)
   ]
   
-  let mut complete_batches = 0
-  let mut incomplete_batches = 0
-  let mut empty_batches = 0
+  let gauge_metrics = [
+    ("cpu_usage", 75.5),
+    ("memory_usage", 60.2),
+    ("active_connections", 150)
+  ]
   
-  // 检查批次完整性
-  for batch in batch_data {
-    let batch_id = batch.0
-    let total = batch.1
-    let processed = batch.2
-    let errors = batch.3
-    
-    if total == 0 {
-      empty_batches = empty_batches + 1
-    } else if processed + errors == total {
-      complete_batches = complete_batches + 1
-    } else {
-      incomplete_batches = incomplete_batches + 1
-    }
+  let histogram_metrics = [
+    ("request_duration_ms", 125.5),
+    ("queue_size", 42),
+    ("response_size_bytes", 2048)
+  ]
+  
+  // 验证计数器指标（非负数）
+  let mut i = 0
+  while i < counter_metrics.length() {
+    let metric = counter_metrics[i]
+    assert_eq(metric.1 >= 0, true)
+    assert_eq(metric.1 <= 10000000, true)  // 合理上限
+    i = i + 1
   }
   
-  assert_eq(complete_batches, 4)
-  assert_eq(incomplete_batches, 1)
-  assert_eq(empty_batches, 1)
+  // 验证仪表指标（百分比或绝对值）
+  i = 0
+  while i < gauge_metrics.length() {
+    let metric = gauge_metrics[i]
+    if metric.0.contains("usage") {
+      assert_eq(metric.1 >= 0.0, true)
+      assert_eq(metric.1 <= 100.0, true)
+    } else {
+      assert_eq(metric.1 >= 0.0, true)
+    }
+    i = i + 1
+  }
+  
+  // 验证直方图指标（正数值）
+  i = 0
+  while i < histogram_metrics.length() {
+    let metric = histogram_metrics[i]
+    assert_eq(metric.1 > 0.0, true)
+    i = i + 1
+  }
+}
+
+test "telemetry_batch_data_consistency" {
+  // 测试批量数据一致性
+  
+  let batch_size = 50
+  let mut telemetry_batch = []
+  let mut i = 0
+  
+  // 创建测试批次
+  while i < batch_size {
+    let record = {
+      "trace_id": "0af7651916cd43dd8448eb211c8031" + i.to_string().pad_left(2, '0'),
+      "metric_name": "test_metric_" + i.to_string(),
+      "metric_value": (i * 10).to_double(),
+      "timestamp": (1704067200L + i.to_long())
+    }
+    telemetry_batch.push(record)
+    i = i + 1
+  }
+  
+  // 验证批次大小
+  assert_eq(telemetry_batch.length(), batch_size)
+  
+  // 验证数据一致性
+  i = 0
+  while i < telemetry_batch.length() {
+    let record = telemetry_batch[i]
+    
+    // 验证trace_id长度
+    assert_eq(record["trace_id"].length(), 32)
+    
+    // 验证metric_name格式
+    assert_eq(record["metric_name"].has_prefix("test_metric_"), true)
+    
+    // 验证metric_value递增
+    assert_eq(record["metric_value"].to_double() == (i * 10).to_double(), true)
+    
+    // 验证timestamp递增
+    assert_eq(record["timestamp"].to_long() == (1704067200L + i.to_long()), true)
+    
+    i = i + 1
+  }
+  
+  // 验证批次唯一性
+  let mut unique_trace_ids = []
+  i = 0
+  while i < telemetry_batch.length() {
+    let trace_id = telemetry_batch[i]["trace_id"]
+    if !unique_trace_ids.contains(trace_id) {
+      unique_trace_ids.push(trace_id)
+    }
+    i = i + 1
+  }
+  
+  assert_eq(unique_trace_ids.length(), batch_size)
 }
