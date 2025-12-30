@@ -2,7 +2,7 @@
 // 测试Span的创建、状态管理和各种操作
 
 test "span_creation_with_default_values" {
-  let ctx = context::Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let tracer = NoopTracer::{}
   let (new_ctx, span) = tracer.start_span(ctx, "test_span")
   
@@ -25,11 +25,11 @@ test "span_creation_with_default_values" {
 }
 
 test "span_creation_with_attributes" {
-  let ctx = context::Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let tracer = NoopTracer::{}
   let attributes = [
-    ("http.method", AttributeValue::string("GET")),
-    ("http.status_code", AttributeValue::int(200L))
+    ("http.method", @azimuth.telemetry.api.common.AttributeValue::string("GET")),
+    ("http.status_code", @azimuth.telemetry.api.common.AttributeValue::int(200L))
   ]
   let (new_ctx, span) = tracer.start_span(ctx, "http_request", kind: Some(Server), attributes: Some(attributes))
   
@@ -56,7 +56,7 @@ test "span_creation_with_attributes" {
 }
 
 test "span_with_custom_start_time" {
-  let ctx = context::Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let tracer = NoopTracer::{}
   let start_time = 1640995200000000000L  // 2022-01-01 00:00:00 UTC in nanoseconds
   let (new_ctx, span) = tracer.start_span(ctx, "timed_span", start_time_unix_nanos: Some(start_time))
@@ -65,7 +65,7 @@ test "span_with_custom_start_time" {
 }
 
 test "span_context_structure" {
-  let ctx = context::Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let tracer = NoopTracer::{}
   let (new_ctx, span) = tracer.start_span(ctx, "context_test")
   
@@ -89,7 +89,7 @@ test "span_context_structure" {
 }
 
 test "span_kinds_coverage" {
-  let ctx = context::Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let tracer = NoopTracer::{}
   
   let (_, internal_span) = tracer.start_span(ctx, "internal", kind: Some(Internal))
@@ -126,7 +126,7 @@ test "tracer_provider_functionality" {
   let tracer2 = provider.get_tracer("tracer2")
   
   // 验证返回的都是NoopTracer实例
-  let ctx = context::Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let (_, span1) = tracer1.start_span(ctx, "test1")
   let (_, span2) = tracer2.start_span(ctx, "test2")
   

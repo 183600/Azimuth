@@ -35,7 +35,7 @@ test "map_carrier_basic_operations" {
 }
 
 test "w3c_trace_context_propagator_inject" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let carrier = MapCarrier::new()
   let propagator = W3CTraceContextPropagator::{}
   
@@ -53,7 +53,7 @@ test "w3c_trace_context_propagator_inject" {
 }
 
 test "w3c_trace_context_propagator_extract" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let trace_data = [
     ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
     ("other-header", "other-value")
@@ -69,7 +69,7 @@ test "w3c_trace_context_propagator_extract" {
 }
 
 test "w3c_baggage_propagator_inject" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let carrier = MapCarrier::new()
   let propagator = W3CBaggagePropagator::{}
   
@@ -85,7 +85,7 @@ test "w3c_baggage_propagator_inject" {
 }
 
 test "w3c_baggage_propagator_extract" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let baggage_data = [
     ("baggage", "key1=value1,key2=value2"),
     ("other-header", "other-value")
@@ -110,7 +110,7 @@ test "composite_propagator_creation" {
 }
 
 test "composite_propagator_inject" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let carrier = MapCarrier::new()
   let trace_propagator = W3CTraceContextPropagator::{}
   let baggage_propagator = W3CBaggagePropagator::{}
@@ -132,7 +132,7 @@ test "composite_propagator_inject" {
 }
 
 test "composite_propagator_extract" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let headers_data = [
     ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
     ("baggage", "key1=value1,key2=value2")
@@ -150,7 +150,7 @@ test "composite_propagator_extract" {
 }
 
 test "propagator_with_empty_carrier" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let empty_carrier = MapCarrier::new()
   let trace_propagator = W3CTraceContextPropagator::{}
   let baggage_propagator = W3CBaggagePropagator::{}
@@ -179,7 +179,7 @@ test "propagator_with_empty_carrier" {
 }
 
 test "propagator_multiple_operations" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   let carrier = MapCarrier::new()
   let composite = CompositePropagator::new([
     W3CTraceContextPropagator::{},

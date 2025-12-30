@@ -1,424 +1,425 @@
-// 遥测配置管理测试用例
-// 测试遥测系统的配置加载、验证和动态更新功能
+// 遥测系统配置管理测试
+// 测试各种配置选项、动态更新和验证机制
 
-test "telemetry_service_configuration" {
-  // 测试遥测服务配置
+test "resource_configuration_management" {
+  // 测试资源配置管理
   
-  let service_config = {
-    "service_name": "user-authentication",
-    "service_version": "2.1.0",
-    "environment": "production",
-    "enabled": true,
-    "sample_rate": 0.1,
-    "batch_size": 100,
-    "export_interval": 5000
+  // 测试默认资源配置
+  let default_resource = common::Resource::default("test_service")
+  assert_eq(default_resource.service_name, "test_service")
+  assert_eq(default_resource.service_version, None)
+  assert_eq(default_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(default_resource.telemetry_sdk_version, "0.1.0")
+  
+  // 测试服务配置更新
+  let configured_resource = common::Resource::{
+    service_name: "production_service",
+    service_version: Some("2.1.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("environment", common::AttributeValue::string("production")),
+      ("region", common::AttributeValue::string("us-west-2")),
+      ("datacenter", common::AttributeValue::string("dc-01"))
+    ]
   }
   
-  // 验证服务名称配置
-  assert_eq(service_config["service_name"], "user-authentication")
-  assert_eq(service_config["service_name"].length(), 18)
-  assert_eq(service_config["service_name"].contains("-"), true)
+  assert_eq(configured_resource.service_name, "production_service")
+  assert_eq(configured_resource.service_version.unwrap(), "2.1.0")
+  assert_eq(configured_resource.attributes.length(), 3)
   
-  // 验证版本配置
-  assert_eq(service_config["service_version"], "2.1.0")
-  assert_eq(service_config["service_version"].contains("."), true)
+  // 测试配置继承
+  let inherited_resource = common::Resource::{
+    ..configured_resource,
+    service_name: "derived_service",
+    service_version: Some("2.1.1"),
+    attributes: configured_resource.attributes + [
+      ("instance_id", common::AttributeValue::string("i-1234567890abcdef0"))
+    ]
+  }
   
-  // 验证环境配置
-  assert_eq(service_config["environment"], "production")
-  assert_eq(service_config["environment"].length(), 10)
+  assert_eq(inherited_resource.service_name, "derived_service")
+  assert_eq(inherited_resource.service_version.unwrap(), "2.1.1")
+  assert_eq(inherited_resource.telemetry_sdk_name, "azimuth")  // 继承的属性
+  assert_eq(inherited_resource.attributes.length(), 4)  // 3个继承 + 1个新增
   
-  // 验证启用状态
-  assert_eq(service_config["enabled"], true)
+  // 测试环境特定配置
+  let dev_config = common::Resource::default("dev_service")
+  let staging_config = common::Resource::{
+    ..dev_config,
+    service_name: "staging_service",
+    attributes: [
+      ("environment", common::AttributeValue::string("staging")),
+      ("debug", common::AttributeValue::bool(true))
+    ]
+  }
+  let prod_config = common::Resource::{
+    ..dev_config,
+    service_name: "prod_service",
+    attributes: [
+      ("environment", common::AttributeValue::string("production")),
+      ("debug", common::AttributeValue::bool(false)),
+      ("monitoring", common::AttributeValue::bool(true))
+    ]
+  }
   
-  // 验证采样率
-  assert_eq(service_config["sample_rate"], 0.1)
-  assert_eq(service_config["sample_rate"] > 0.0, true)
-  assert_eq(service_config["sample_rate"] < 1.0, true)
-  
-  // 验证批处理大小
-  assert_eq(service_config["batch_size"], 100)
-  assert_eq(service_config["batch_size"] > 0, true)
-  
-  // 验证导出间隔
-  assert_eq(service_config["export_interval"], 5000)
-  assert_eq(service_config["export_interval"] > 1000, true)
+  assert_eq(dev_config.service_name, "dev_service")
+  assert_eq(staging_config.service_name, "staging_service")
+  assert_eq(prod_config.service_name, "prod_service")
+  assert_eq(staging_config.attributes.length(), 2)
+  assert_eq(prod_config.attributes.length(), 3)
 }
 
-test "telemetry_exporter_configuration" {
-  // 测试遥测导出器配置
+test "instrumentation_scope_configuration" {
+  // 测试instrumentation scope配置
   
-  let exporter_configs = [
-    {
-      "name": "otlp",
-      "type": "grpc",
-      "endpoint": "http://localhost:4317",
-      "timeout": 30000,
-      "retry_count": 3,
-      "enabled": true
+  // 测试基础scope配置
+  let basic_scope = common::InstrumentationScope {
+    name: "basic_instrumentation",
+    version: None,
+    schema_url: None
+  }
+  
+  // 测试完整scope配置
+  let full_scope = common::InstrumentationScope {
+    name: "full_instrumentation",
+    version: Some("1.2.3"),
+    schema_url: Some("http://example.com/schema/v1")
+  }
+  
+  // 测试scope配置变体
+  let scopes = [
+    basic_scope,
+    full_scope,
+    common::InstrumentationScope {
+      name: "version_only",
+      version: Some("2.0.0"),
+      schema_url: None
     },
-    {
-      "name": "prometheus",
-      "type": "http",
-      "endpoint": "http://localhost:9090",
-      "port": 9090,
-      "path": "/metrics",
-      "enabled": true
-    },
-    {
-      "name": "jaeger",
-      "type": "http",
-      "endpoint": "http://localhost:14268",
-      "enabled": false
+    common::InstrumentationScope {
+      name: "schema_only",
+      version: None,
+      schema_url: Some("https://example.org/schema")
     }
   ]
   
-  // 验证导出器配置数量
-  assert_eq(exporter_configs.length(), 3)
+  // 验证配置差异
+  assert_eq(scopes[0].name, "basic_instrumentation")
+  assert_eq(scopes[0].version, None)
+  assert_eq(scopes[0].schema_url, None)
   
-  // 验证OTLP导出器配置
-  let otlp_config = exporter_configs[0]
-  assert_eq(otlp_config["name"], "otlp")
-  assert_eq(otlp_config["type"], "grpc")
-  assert_eq(otlp_config["endpoint"], "http://localhost:4317")
-  assert_eq(otlp_config["timeout"], 30000)
-  assert_eq(otlp_config["retry_count"], 3)
-  assert_eq(otlp_config["enabled"], true)
+  assert_eq(scopes[1].name, "full_instrumentation")
+  assert_eq(scopes[1].version.unwrap(), "1.2.3")
+  assert_eq(scopes[1].schema_url.unwrap(), "http://example.com/schema/v1")
   
-  // 验证Prometheus导出器配置
-  let prometheus_config = exporter_configs[1]
-  assert_eq(prometheus_config["name"], "prometheus")
-  assert_eq(prometheus_config["type"], "http")
-  assert_eq(prometheus_config["endpoint"], "http://localhost:9090")
-  assert_eq(prometheus_config["port"], 9090)
-  assert_eq(prometheus_config["path"], "/metrics")
-  assert_eq(prometheus_config["enabled"], true)
+  assert_eq(scopes[2].name, "version_only")
+  assert_eq(scopes[2].version.unwrap(), "2.0.0")
+  assert_eq(scopes[2].schema_url, None)
   
-  // 验证Jaeger导出器配置
-  let jaeger_config = exporter_configs[2]
-  assert_eq(jaeger_config["name"], "jaeger")
-  assert_eq(jaeger_config["type"], "http")
-  assert_eq(jaeger_config["endpoint"], "http://localhost:14268")
-  assert_eq(jaeger_config["enabled"], false)
-  
-  // 验证启用的导出器数量
-  let mut enabled_count = 0
-  let mut i = 0
-  while i < exporter_configs.length() {
-    if exporter_configs[i]["enabled"] {
-      enabled_count = enabled_count + 1
-    }
-    i = i + 1
-  }
-  assert_eq(enabled_count, 2)
+  assert_eq(scopes[3].name, "schema_only")
+  assert_eq(scopes[3].version, None)
+  assert_eq(scopes[3].schema_url.unwrap(), "https://example.org/schema")
 }
 
-test "telemetry_sampling_configuration" {
-  // 测试遥测采样配置
+test "tracer_provider_configuration" {
+  // 测试TracerProvider配置
   
-  let sampling_configs = [
-    {
-      "name": "always_on",
-      "type": "constant",
-      "probability": 1.0,
-      "description": "Sample all traces"
-    },
-    {
-      "name": "always_off",
-      "type": "constant", 
-      "probability": 0.0,
-      "description": "Sample no traces"
-    },
-    {
-      "name": "probability_based",
-      "type": "probabilistic",
-      "probability": 0.1,
-      "description": "Sample 10% of traces"
-    },
-    {
-      "name": "rate_limiting",
-      "type": "rate_limit",
-      "max_traces_per_second": 100,
-      "description": "Limit to 100 traces per second"
-    }
+  // 测试noop tracer provider配置
+  let noop_provider = trace::NoopTracerProvider::{}
+  
+  // 测试获取不同配置的tracer
+  let default_tracer = noop_provider.get_tracer("default_tracer")
+  let versioned_tracer = noop_provider.get_tracer("versioned_tracer", "1.0.0")
+  let full_configured_tracer = noop_provider.get_tracer("full_tracer", "2.1.0")
+  
+  // 验证tracer创建（由于是noop实现，主要验证不会崩溃）
+  let base_context = context::Context::empty()
+  
+  let (_, default_span) = default_tracer.start_span(base_context, "default_operation")
+  let (_, versioned_span) = versioned_tracer.start_span(base_context, "versioned_operation")
+  let (_, full_span) = full_configured_tracer.start_span(base_context, "full_operation")
+  
+  assert_eq(default_span.name, "default_operation")
+  assert_eq(versioned_span.name, "versioned_operation")
+  assert_eq(full_span.name, "full_operation")
+  
+  // 测试不同span kind配置
+  let span_kinds = [
+    trace::Internal,
+    trace::Server,
+    trace::Client,
+    trace::Producer,
+    trace::Consumer
   ]
   
-  // 验证采样配置数量
-  assert_eq(sampling_configs.length(), 4)
-  
-  // 验证常量采样配置
-  let always_on = sampling_configs[0]
-  assert_eq(always_on["name"], "always_on")
-  assert_eq(always_on["type"], "constant")
-  assert_eq(always_on["probability"], 1.0)
-  
-  let always_off = sampling_configs[1]
-  assert_eq(always_off["name"], "always_off")
-  assert_eq(always_off["type"], "constant")
-  assert_eq(always_off["probability"], 0.0)
-  
-  // 验证概率采样配置
-  let probability_based = sampling_configs[2]
-  assert_eq(probability_based["name"], "probability_based")
-  assert_eq(probability_based["type"], "probabilistic")
-  assert_eq(probability_based["probability"], 0.1)
-  assert_eq(probability_based["probability"] > 0.0, true)
-  assert_eq(probability_based["probability"] < 1.0, true)
-  
-  // 验证速率限制采样配置
-  let rate_limiting = sampling_configs[3]
-  assert_eq(rate_limiting["name"], "rate_limiting")
-  assert_eq(rate_limiting["type"], "rate_limit")
-  assert_eq(rate_limiting["max_traces_per_second"], 100)
-  
-  // 验证采样配置唯一性
   let mut i = 0
-  let config_names = []
-  while i < sampling_configs.length() {
-    config_names.push(sampling_configs[i]["name"])
+  while i < span_kinds.length() {
+    let kind = span_kinds[i]
+    let (_, span) = default_tracer.start_span(
+      base_context,
+      "kind_test_" + i.to_string(),
+      kind
+    )
+    assert_eq(span.kind, kind)
     i = i + 1
   }
-  assert_eq(config_names.length(), 4)
 }
 
-test "telemetry_resource_configuration" {
-  // 测试遥测资源配置
+test "meter_provider_configuration" {
+  // 测试MeterProvider配置
   
-  let resource_config = {
-    "service": {
-      "name": "order-processing",
-      "namespace": "ecommerce",
-      "version": "1.5.2",
-      "instance_id": "pod-12345-abcde"
-    },
-    "deployment": {
-      "environment": "staging",
-      "region": "us-west-2",
-      "zone": "us-west-2a",
-      "cluster": "k8s-ecommerce"
-    },
-    "host": {
-      "hostname": "worker-node-1",
-      "os": "linux",
-      "arch": "amd64",
-      "cpu_count": 4
-    },
-    "process": {
-      "pid": 12345,
-      "executable_name": "order-service",
-      "command_line": "./order-service --config=config.yaml"
-    }
-  }
+  // 测试noop meter provider配置
+  let noop_provider = metrics::NoopMeterProvider::{}
   
-  // 验证服务配置
-  let service = resource_config["service"]
-  assert_eq(service["name"], "order-processing")
-  assert_eq(service["namespace"], "ecommerce")
-  assert_eq(service["version"], "1.5.2")
-  assert_eq(service["instance_id"], "pod-12345-abcde")
+  // 测试获取不同配置的meter
+  let default_meter = noop_provider.get_meter("default_meter")
+  let versioned_meter = noop_provider.get_meter("versioned_meter", "1.0.0")
+  let full_configured_meter = noop_provider.get_meter(
+    "full_meter", 
+    "2.1.0", 
+    "http://example.com/schema"
+  )
   
-  // 验证部署配置
-  let deployment = resource_config["deployment"]
-  assert_eq(deployment["environment"], "staging")
-  assert_eq(deployment["region"], "us-west-2")
-  assert_eq(deployment["zone"], "us-west-2a")
-  assert_eq(deployment["cluster"], "k8s-ecommerce")
+  // 测试创建不同类型的仪器
+  let default_counter = default_meter.create_counter("default_counter", "count", "Default counter")
+  let default_histogram = default_meter.create_histogram("default_histogram", "ms", "Default histogram")
+  let default_gauge = default_meter.create_gauge("default_gauge", "value", "Default gauge")
   
-  // 验证主机配置
-  let host = resource_config["host"]
-  assert_eq(host["hostname"], "worker-node-1")
-  assert_eq(host["os"], "linux")
-  assert_eq(host["arch"], "amd64")
-  assert_eq(host["cpu_count"], 4)
+  let versioned_counter = versioned_meter.create_counter("versioned_counter", "", "")
+  let versioned_histogram = versioned_meter.create_histogram("versioned_histogram", "", "")
+  let versioned_gauge = versioned_meter.create_gauge("versioned_gauge", "", "")
   
-  // 验证进程配置
-  let process = resource_config["process"]
-  assert_eq(process["pid"], 12345)
-  assert_eq(process["executable_name"], "order-service")
-  assert_eq(process["command_line"], "./order-service --config=config.yaml")
+  let full_counter = full_configured_meter.create_counter("full_counter", "operations", "Full counter with description")
+  let full_histogram = full_configured_meter.create_histogram("full_histogram", "seconds", "Full histogram with description")
+  let full_gauge = full_configured_meter.create_gauge("full_gauge", "connections", "Full gauge with description")
+  
+  // 验证仪器创建（主要验证不会崩溃）
+  default_counter.add(1L)
+  default_histogram.record(100.0)
+  default_gauge.record(50.0)
+  
+  versioned_counter.add(1L)
+  versioned_histogram.record(100.0)
+  versioned_gauge.record(50.0)
+  
+  full_counter.add(1L)
+  full_histogram.record(100.0)
+  full_gauge.record(50.0)
 }
 
-test "telemetry_limits_configuration" {
-  // 测试遥测限制配置
+test "logger_provider_configuration" {
+  // 测试LoggerProvider配置
   
-  let limits_config = {
-    "attribute_count_limit": 128,
-    "attribute_value_length_limit": 1024,
-    "span_count_limit": 1000,
-    "span_event_count_limit": 128,
-    "span_link_count_limit": 128,
-    "metric_count_limit": 2000,
-    "log_record_count_limit": 1000,
-    "batch_count_limit": 500,
-    "collection_timeout": 30000
-  }
+  // 测试noop logger provider配置
+  let noop_provider = logs::NoopLoggerProvider::{}
   
-  // 验证属性限制
-  assert_eq(limits_config["attribute_count_limit"], 128)
-  assert_eq(limits_config["attribute_count_limit"] > 0, true)
-  assert_eq(limits_config["attribute_value_length_limit"], 1024)
-  assert_eq(limits_config["attribute_value_length_limit"] > 100, true)
+  // 测试获取不同配置的logger
+  let default_logger = noop_provider.get_logger("default_logger")
+  let versioned_logger = noop_provider.get_logger("versioned_logger", "1.0.0")
+  let full_configured_logger = noop_provider.get_logger(
+    "full_logger", 
+    "2.1.0", 
+    "http://example.com/schema"
+  )
   
-  // 验证跨度限制
-  assert_eq(limits_config["span_count_limit"], 1000)
-  assert_eq(limits_config["span_count_limit"] > 100, true)
-  assert_eq(limits_config["span_event_count_limit"], 128)
-  assert_eq(limits_config["span_link_count_limit"], 128)
-  
-  // 验证指标限制
-  assert_eq(limits_config["metric_count_limit"], 2000)
-  assert_eq(limits_config["metric_count_limit"] > limits_config["span_count_limit"], true)
-  
-  // 验证日志限制
-  assert_eq(limits_config["log_record_count_limit"], 1000)
-  assert_eq(limits_config["log_record_count_limit"] > 0, true)
-  
-  // 验证批处理限制
-  assert_eq(limits_config["batch_count_limit"], 500)
-  assert_eq(limits_config["batch_count_limit"] < limits_config["span_count_limit"], true)
-  
-  // 验证超时限制
-  assert_eq(limits_config["collection_timeout"], 30000)
-  assert_eq(limits_config["collection_timeout"] > 1000, true)
-}
-
-test "telemetry_configuration_validation" {
-  // 测试遥测配置验证
-  
-  let valid_configs = [
-    ("service_name", "user-service"),
-    ("sample_rate", 0.1),
-    ("batch_size", 100),
-    ("export_interval", 5000),
-    ("timeout", 30000)
+  // 测试不同日志级别
+  let test_messages = [
+    ("Debug message", fn(logger: logs::NoopLogger) { logger.debug("Debug message", []) }),
+    ("Info message", fn(logger: logs::NoopLogger) { logger.info("Info message", []) }),
+    ("Warning message", fn(logger: logs::NoopLogger) { logger.warn("Warning message", []) }),
+    ("Error message", fn(logger: logs::NoopLogger) { logger.error("Error message", []) }),
+    ("Fatal message", fn(logger: logs::NoopLogger) { logger.fatal("Fatal message", []) })
   ]
   
-  let invalid_configs = [
-    ("service_name", ""), // 空服务名称
-    ("sample_rate", -0.1), // 负采样率
-    ("sample_rate", 1.5), // 超过1的采样率
-    ("batch_size", 0), // 零批处理大小
-    ("batch_size", -100), // 负批处理大小
-    ("export_interval", -1000), // 负导出间隔
-    ("timeout", 0) // 零超时
+  // 测试所有logger配置
+  let loggers = [default_logger, versioned_logger, full_configured_logger]
+  let mut i = 0
+  while i < loggers.length() {
+    let logger = loggers[i]
+    let mut j = 0
+    while j < test_messages.length() {
+      let (_, log_function) = test_messages[j]
+      log_function(logger)
+      j = j + 1
+    }
+    i = i + 1
+  }
+  
+  // 测试带属性的日志记录
+  let log_attributes = [
+    ("user_id", common::AttributeValue::string("user123")),
+    ("session_id", common::AttributeValue::string("session456")),
+    ("request_id", common::AttributeValue::string("request789"))
   ]
   
-  // 验证有效配置
-  let mut i = 0
-  while i < valid_configs.length() {
-    let (key, value) = valid_configs[i]
-    let is_valid = validate_config(key, value)
-    assert_eq(is_valid, true, "Valid config should pass: " + key + "=" + value.to_string())
-    i = i + 1
-  }
-  
-  // 验证无效配置
-  i = 0
-  while i < invalid_configs.length() {
-    let (key, value) = invalid_configs[i]
-    let is_valid = validate_config(key, value)
-    assert_eq(is_valid, false, "Invalid config should fail: " + key + "=" + value.to_string())
-    i = i + 1
-  }
-  
-  // 配置验证函数
-  fn validate_config(key : String, value : Any) -> Bool {
-    match key {
-      "service_name" => {
-        match value {
-          String(s) => s.length() > 0
-          _ => false
-        }
-      }
-      "sample_rate" => {
-        match value {
-          Double(r) => r >= 0.0 && r <= 1.0
-          _ => false
-        }
-      }
-      "batch_size" => {
-        match value {
-          Int(b) => b > 0
-          _ => false
-        }
-      }
-      "export_interval" => {
-        match value {
-          Int(e) => e > 0
-          _ => false
-        }
-      }
-      "timeout" => {
-        match value {
-          Int(t) => t > 0
-          _ => false
-        }
-      }
-      _ => false
-    }
-  }
+  default_logger.info("Test with attributes", log_attributes)
+  versioned_logger.warn("Warning with attributes", log_attributes)
+  full_configured_logger.error("Error with attributes", log_attributes)
 }
 
-test "telemetry_configuration_merge" {
-  // 测试遥测配置合并
+test "context_configuration_options" {
+  // 测试上下文配置选项
   
-  let default_config = {
-    "service_name": "unknown-service",
-    "service_version": "1.0.0",
-    "environment": "development",
-    "sample_rate": 1.0,
-    "batch_size": 50,
-    "export_interval": 10000,
-    "enabled": true
+  // 测试空上下文配置
+  let empty_context = context::Context::empty()
+  assert_eq(empty_context.values.length(), 0)
+  
+  // 测试预配置键
+  let common_keys = [
+    context::create_key("trace_id"),
+    context::create_key("span_id"),
+    context::create_key("user_id"),
+    context::create_key("session_id"),
+    context::create_key("request_id"),
+    context::create_key("correlation_id")
+  ]
+  
+  // 测试上下文预配置
+  let preconfigured_context = empty_context
+    .with_value(common_keys[0], "trace123456")
+    .with_value(common_keys[1], "span789012")
+    .with_value(common_keys[2], "user345678")
+    .with_value(common_keys[3], "session901234")
+    .with_value(common_keys[4], "request567890")
+    .with_value(common_keys[5], "correlation123456")
+  
+  // 验证预配置值
+  assert_eq(preconfigured_context.values.length(), 6)
+  assert_eq(preconfigured_context.get(common_keys[0]).unwrap(), "trace123456")
+  assert_eq(preconfigured_context.get(common_keys[1]).unwrap(), "span789012")
+  assert_eq(preconfigured_context.get(common_keys[2]).unwrap(), "user345678")
+  assert_eq(preconfigured_context.get(common_keys[3]).unwrap(), "session901234")
+  assert_eq(preconfigured_context.get(common_keys[4]).unwrap(), "request567890")
+  assert_eq(preconfigured_context.get(common_keys[5]).unwrap(), "correlation123456")
+  
+  // 测试上下文配置模板
+  let create_user_context = fn(user_id: String, session_id: String) {
+    empty_context
+      .with_value(context::create_key("user_id"), user_id)
+      .with_value(context::create_key("session_id"), session_id)
+      .with_value(context::create_key("timestamp"), "1234567890")
   }
   
-  let user_config = {
-    "service_name": "payment-service",
-    "service_version": "2.1.0",
-    "sample_rate": 0.1,
-    "batch_size": 100
+  let user_context1 = create_user_context("user123", "session456")
+  let user_context2 = create_user_context("user789", "session012")
+  
+  assert_eq(user_context1.get(context::create_key("user_id")).unwrap(), "user123")
+  assert_eq(user_context1.get(context::create_key("session_id")).unwrap(), "session456")
+  assert_eq(user_context2.get(context::create_key("user_id")).unwrap(), "user789")
+  assert_eq(user_context2.get(context::create_key("session_id")).unwrap(), "session012")
+}
+
+test "baggage_configuration_patterns" {
+  // 测试baggage配置模式
+  
+  // 测试空baggage配置
+  let empty_baggage = context::Baggage::empty()
+  assert_eq(empty_baggage.entries.length(), 0)
+  
+  // 测试标准baggage配置
+  let standard_baggage = empty_baggage
+    .with_entry("user_id", "12345")
+    .with_entry("session_id", "abcdef")
+    .with_entry("request_id", "req789")
+    .with_entry("correlation_id", "cor123")
+  
+  assert_eq(standard_baggage.entries.length(), 4)
+  
+  // 测试分布式追踪baggage配置
+  let tracing_baggage = empty_baggage
+    .with_entry("trace_id", "0af7651916cd43dd8448eb211c80319c")
+    .with_entry("span_id", "b7ad6b7169203331")
+    .with_entry("parent_span_id", "a1b2c3d4e5f6g7h8")
+    .with_entry("trace_flags", "01")
+    .with_entry("trace_state", "rojo=00f067aa0ba902b7")
+  
+  assert_eq(tracing_baggage.entries.length(), 5)
+  
+  // 测试业务上下文baggage配置
+  let business_baggage = empty_baggage
+    .with_entry("tenant_id", "tenant_123")
+    .with_entry("organization_id", "org_456")
+    .with_entry("project_id", "project_789")
+    .with_entry("environment", "production")
+    .with_entry("region", "us-west-2")
+    .with_entry("version", "1.2.3")
+  
+  assert_eq(business_baggage.entries.length(), 6)
+  
+  // 测试baggage配置模板
+  let create_tracing_baggage = fn(trace_id: String, span_id: String) {
+    empty_baggage
+      .with_entry("trace_id", trace_id)
+      .with_entry("span_id", span_id)
+      .with_entry("trace_flags", "01")
+      .with_entry("sampling_decision", "recorded")
   }
   
-  let env_config = {
-    "environment": "production",
-    "export_interval": 5000
-  }
+  let tracing_baggage1 = create_tracing_baggage("trace123", "span456")
+  let tracing_baggage2 = create_tracing_baggage("trace789", "span012")
   
-  // 模拟配置合并过程
-  let merged_config = {}
+  assert_eq(tracing_baggage1.get("trace_id").unwrap(), "trace123")
+  assert_eq(tracing_baggage1.get("span_id").unwrap(), "span456")
+  assert_eq(tracing_baggage2.get("trace_id").unwrap(), "trace789")
+  assert_eq(tracing_baggage2.get("span_id").unwrap(), "span012")
+}
+
+test "attribute_configuration_validation" {
+  // 测试属性配置验证
   
-  // 从默认配置开始
-  let mut keys = ["service_name", "service_version", "environment", "sample_rate", "batch_size", "export_interval", "enabled"]
-  let mut i = 0
-  while i < keys.length() {
-    let key = keys[i]
-    merged_config[key] = default_config[key]
-    i = i + 1
-  }
+  // 测试有效属性配置
+  let valid_attributes = [
+    ("string_key", common::AttributeValue::string("string_value")),
+    ("int_key", common::AttributeValue::int(42L)),
+    ("float_key", common::AttributeValue::float(3.14)),
+    ("bool_key", common::AttributeValue::bool(true)),
+    ("string_array_key", common::AttributeValue::array_string(["a", "b", "c"])),
+    ("int_array_key", common::AttributeValue::array_int([1L, 2L, 3L])),
+    ("float_array_key", common::AttributeValue::array_float([1.1, 2.2, 3.3])),
+    ("bool_array_key", common::AttributeValue::array_bool([true, false, true]))
+  ]
   
-  // 应用用户配置覆盖
-  keys = ["service_name", "service_version", "sample_rate", "batch_size"]
-  i = 0
-  while i < keys.length() {
-    let key = keys[i]
-    merged_config[key] = user_config[key]
-    i = i + 1
-  }
+  // 验证有效属性
+  assert_eq(valid_attributes.length(), 8)
   
-  // 应用环境配置覆盖
-  keys = ["environment", "export_interval"]
-  i = 0
-  while i < keys.length() {
-    let key = keys[i]
-    merged_config[key] = env_config[key]
-    i = i + 1
-  }
+  // 测试边界属性配置
+  let boundary_attributes = [
+    ("empty_string", common::AttributeValue::string("")),
+    ("max_int", common::AttributeValue::int(9223372036854775807L)),
+    ("min_int", common::AttributeValue::int(-9223372036854775808L)),
+    ("max_float", common::AttributeValue::float(1.7976931348623157e+308)),
+    ("min_float", common::AttributeValue::float(-1.7976931348623157e+308)),
+    ("empty_arrays", common::AttributeValue::array_string([]))
+  ]
   
-  // 验证合并结果
-  assert_eq(merged_config["service_name"], "payment-service") // 来自用户配置
-  assert_eq(merged_config["service_version"], "2.1.0") // 来自用户配置
-  assert_eq(merged_config["environment"], "production") // 来自环境配置
-  assert_eq(merged_config["sample_rate"], 0.1) // 来自用户配置
-  assert_eq(merged_config["batch_size"], 100) // 来自用户配置
-  assert_eq(merged_config["export_interval"], 5000) // 来自环境配置
-  assert_eq(merged_config["enabled"], true) // 来自默认配置
+  // 验证边界属性
+  assert_eq(boundary_attributes.length(), 6)
+  
+  // 测试特殊字符属性配置
+  let special_char_attributes = [
+    ("unicode_key", common::AttributeValue::string("测试🚀")),
+    ("special_chars", common::AttributeValue::string("!@#$%^&*()")),
+    ("newlines", common::AttributeValue::string("line1\nline2")),
+    ("tabs", common::AttributeValue::string("col1\tcol2")),
+    ("quotes", common::AttributeValue::string("\"quoted\""))
+  ]
+  
+  // 验证特殊字符属性
+  assert_eq(special_char_attributes.length(), 5)
+  
+  // 测试属性配置组合
+  let combined_attributes = valid_attributes + boundary_attributes + special_char_attributes
+  assert_eq(combined_attributes.length(), 19)
+  
+  // 验证属性配置在span中的使用
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let tracer = tracer_provider.get_tracer("attribute_test_tracer")
+  let (_, span) = tracer.start_span(
+    context::Context::empty(),
+    "attribute_test_span",
+    trace::Internal,
+    combined_attributes
+  )
+  
+  assert_eq(span.attributes.length(), 19)
 }

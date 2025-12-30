@@ -20,16 +20,16 @@ test "logger_with_attributes" {
   let logger = provider.get_logger("attribute_logger")
   
   let attributes = [
-    ("user_id", AttributeValue::string("12345")),
-    ("request_id", AttributeValue::string("req-67890")),
-    ("method", AttributeValue::string("POST"))
+    ("user_id", @azimuth.telemetry.api.common.AttributeValue::string("12345")),
+    ("request_id", @azimuth.telemetry.api.common.AttributeValue::string("req-67890")),
+    ("method", @azimuth.telemetry.api.common.AttributeValue::string("POST"))
   ]
   
   logger.info("User action completed", Some(attributes))
   logger.error("Database connection failed", Some([
-    ("error_code", AttributeValue::int(500L)),
-    ("retry_count", AttributeValue::int(3L)),
-    ("timeout", AttributeValue::float(30.0))
+    ("error_code", @azimuth.telemetry.api.common.AttributeValue::int(500L)),
+    ("retry_count", @azimuth.telemetry.api.common.AttributeValue::int(3L)),
+    ("timeout", @azimuth.telemetry.api.common.AttributeValue::float(30.0))
   ]))
   
   @test.succeed()
@@ -60,15 +60,15 @@ test "log_record_builder_with_attributes" {
   let log_record = LogRecord::builder()
     .severity(Error)
     .body("Request processing failed")
-    .with_attribute("error_code", AttributeValue::int(400L))
-    .with_attribute("client_ip", AttributeValue::string("192.168.1.100"))
-    .with_attribute("retry_attempt", AttributeValue::bool(true))
+    .with_attribute("error_code", @azimuth.telemetry.api.common.AttributeValue::int(400L))
+    .with_attribute("client_ip", @azimuth.telemetry.api.common.AttributeValue::string("192.168.1.100"))
+    .with_attribute("retry_attempt", @azimuth.telemetry.api.common.AttributeValue::bool(true))
     .build()
   
   assert_eq(log_record.attributes.length(), 3)
   
   match log_record.attributes[0] {
-    (key, IntValue(value)) => {
+    (key, @azimuth.telemetry.api.common.IntValue(value)) => {
       assert_eq(key, "error_code")
       assert_eq(value, 400L)
     }
@@ -76,7 +76,7 @@ test "log_record_builder_with_attributes" {
   }
   
   match log_record.attributes[1] {
-    (key, StringValue(value)) => {
+    (key, @azimuth.telemetry.api.common.StringValue(value)) => {
       assert_eq(key, "client_ip")
       assert_eq(value, "192.168.1.100")
     }
@@ -84,7 +84,7 @@ test "log_record_builder_with_attributes" {
   }
   
   match log_record.attributes[2] {
-    (key, BoolValue(value)) => {
+    (key, @azimuth.telemetry.api.common.BoolValue(value)) => {
       assert_eq(key, "retry_attempt")
       assert_eq(value, true)
     }
@@ -137,8 +137,8 @@ test "log_record_with_trace_context" {
 }
 
 test "log_record_comprehensive" {
-  let resource = Resource::default("test_service")
-  let instrumentation_scope = InstrumentationScope::{
+  let resource = @azimuth.telemetry.api.common.Resource::default("test_service")
+  let instrumentation_scope = @azimuth.telemetry.api.common.InstrumentationScope::{
     name: "test_scope",
     version: Some("1.0.0"),
     schema_url: Some("http://example.com/schema")
@@ -151,8 +151,8 @@ test "log_record_comprehensive" {
     severity_text: Some("ERROR"),
     body: Some("Critical system error"),
     attributes: [
-      ("error_type", AttributeValue::string("NullPointer")),
-      ("stack_trace", AttributeValue::string("at com.example.Main.main(Main.java:10)"))
+      ("error_type", @azimuth.telemetry.api.common.AttributeValue::string("NullPointer")),
+      ("stack_trace", @azimuth.telemetry.api.common.AttributeValue::string("at com.example.Main.main(Main.java:10)"))
     ],
     trace_id: None,
     span_id: None,

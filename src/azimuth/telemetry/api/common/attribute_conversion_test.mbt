@@ -74,7 +74,14 @@ test "resource_with_attributes" {
     ("env", AttributeValue::string("production")),
     ("version", AttributeValue::string("1.0.0"))
   ]
-  let resource_with_attrs = Resource::{ ..resource, attributes }
+  // 创建一个带有属性的新Resource
+  let resource_with_attrs = Resource::{
+    service_name: resource.service_name,
+    service_version: resource.service_version,
+    telemetry_sdk_name: resource.telemetry_sdk_name,
+    telemetry_sdk_version: resource.telemetry_sdk_version,
+    attributes: attributes
+  }
   assert_eq(resource_with_attrs.attributes.length(), 2)
   match resource_with_attrs.attributes[0] {
     (key, StringValue(value)) => {

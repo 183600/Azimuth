@@ -2,13 +2,13 @@
 // 测试上下文的创建、值存储和检索功能
 
 test "context_empty_creation" {
-  let ctx = Context::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   assert_eq(ctx.values.length(), 0)
 }
 
 test "context_with_value_storage" {
-  let ctx = Context::empty()
-  let key = create_key("user_id")
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
+  let key = @azimuth.telemetry.api.context.create_key("user_id")
   let ctx_with_value = ctx.with_value(key, "12345")
   
   assert_eq(ctx_with_value.values.length(), 1)
@@ -22,9 +22,9 @@ test "context_with_value_storage" {
 }
 
 test "context_value_retrieval" {
-  let ctx = Context::empty()
-  let user_id_key = create_key("user_id")
-  let session_key = create_key("session_id")
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
+  let user_id_key = @azimuth.telemetry.api.context.create_key("user_id")
+  let session_key = @azimuth.telemetry.api.context.create_key("session_id")
   
   let ctx_with_values = ctx
     .with_value(user_id_key, "user123")
@@ -42,8 +42,8 @@ test "context_value_retrieval" {
 }
 
 test "context_get_nonexistent_key" {
-  let ctx = Context::empty()
-  let nonexistent_key = create_key("nonexistent")
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
+  let nonexistent_key = @azimuth.telemetry.api.context.create_key("nonexistent")
   
   match ctx.get(nonexistent_key) {
     Some(_) => @test.fail("Expected None for nonexistent key")
@@ -52,10 +52,10 @@ test "context_get_nonexistent_key" {
 }
 
 test "context_multiple_values_order_preservation" {
-  let ctx = Context::empty()
-  let key1 = create_key("first")
-  let key2 = create_key("second")
-  let key3 = create_key("third")
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
+  let key1 = @azimuth.telemetry.api.context.create_key("first")
+  let key2 = @azimuth.telemetry.api.context.create_key("second")
+  let key3 = @azimuth.telemetry.api.context.create_key("third")
   
   let ctx_with_values = ctx
     .with_value(key1, "value1")
@@ -87,8 +87,8 @@ test "context_multiple_values_order_preservation" {
 }
 
 test "context_key_creation" {
-  let key1 = create_key("test_key")
-  let key2 = create_key("another_key")
+  let key1 = @azimuth.telemetry.api.context.create_key("test_key")
+  let key2 = @azimuth.telemetry.api.context.create_key("another_key")
   
   assert_eq(key1.name, "test_key")
   assert_eq(key2.name, "another_key")
@@ -96,8 +96,8 @@ test "context_key_creation" {
 }
 
 test "context_overwrite_value" {
-  let ctx = Context::empty()
-  let key = create_key("mutable_key")
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
+  let key = @azimuth.telemetry.api.context.create_key("mutable_key")
   
   let ctx_with_first = ctx.with_value(key, "first_value")
   let ctx_with_second = ctx_with_first.with_value(key, "second_value")
@@ -114,12 +114,12 @@ test "context_overwrite_value" {
 }
 
 test "baggage_empty_creation" {
-  let baggage = Baggage::empty()
+  let baggage = @azimuth.telemetry.api.context.Baggage::empty()
   assert_eq(baggage.entries.length(), 0)
 }
 
 test "baggage_with_entry" {
-  let baggage = Baggage::empty()
+  let baggage = @azimuth.telemetry.api.context.Baggage::empty()
   let baggage_with_entry = baggage.with_entry("key1", "value1")
   
   assert_eq(baggage_with_entry.entries.length(), 1)
@@ -133,7 +133,7 @@ test "baggage_with_entry" {
 }
 
 test "baggage_multiple_entries" {
-  let baggage = Baggage::empty()
+  let baggage = @azimuth.telemetry.api.context.Baggage::empty()
   let baggage_with_entries = baggage
     .with_entry("user_id", "12345")
     .with_entry("request_id", "req-67890")
@@ -158,7 +158,7 @@ test "baggage_multiple_entries" {
 }
 
 test "baggage_get_nonexistent_entry" {
-  let baggage = Baggage::empty()
+  let baggage = @azimuth.telemetry.api.context.Baggage::empty()
   let baggage_with_entry = baggage.with_entry("existing_key", "existing_value")
   
   match baggage_with_entry.get("nonexistent_key") {
@@ -168,10 +168,10 @@ test "baggage_get_nonexistent_entry" {
 }
 
 test "context_and_baggage_integration" {
-  let ctx = Context::empty()
-  let baggage = Baggage::empty()
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
+  let baggage = @azimuth.telemetry.api.context.Baggage::empty()
   
-  let user_key = create_key("user_context")
+  let user_key = @azimuth.telemetry.api.context.create_key("user_context")
   let ctx_with_user = ctx.with_value(user_key, "user123")
   
   let baggage_with_data = baggage
