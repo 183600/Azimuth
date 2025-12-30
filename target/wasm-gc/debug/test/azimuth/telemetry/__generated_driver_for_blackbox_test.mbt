@@ -2005,6 +2005,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "metrics_advanced_boundary_test.mbt": {
     0: (__test_6d6574726963735f616476616e6365645f626f756e646172795f746573742e6d6274_0, ["metrics_advanced_boundary_conditions"]),
   },
+  "metric_instrument_creation_test.mbt": {
+    0: (__test_6d65747269635f696e737472756d656e745f6372656174696f6e5f746573742e6d6274_0, ["counter_instrument_creation"]),
+    1: (__test_6d65747269635f696e737472756d656e745f6372656174696f6e5f746573742e6d6274_1, ["histogram_instrument_creation"]),
+    2: (__test_6d65747269635f696e737472756d656e745f6372656174696f6e5f746573742e6d6274_2, ["up_down_counter_instrument_creation"]),
+    3: (__test_6d65747269635f696e737472756d656e745f6372656174696f6e5f746573742e6d6274_3, ["gauge_instrument_creation"]),
+    4: (__test_6d65747269635f696e737472756d656e745f6372656174696f6e5f746573742e6d6274_4, ["metric_instrument_attributes_validation"]),
+    5: (__test_6d65747269635f696e737472756d656e745f6372656174696f6e5f746573742e6d6274_5, ["metric_instrument_naming_conventions"]),
+  },
   "memory_usage_test.mbt": {
     0: (__test_6d656d6f72795f75736167655f746573742e6d6274_0, ["memory_usage_under_load"]),
     1: (__test_6d656d6f72795f75736167655f746573742e6d6274_1, ["span_pool_memory_efficiency"]),
