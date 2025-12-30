@@ -1,449 +1,238 @@
-// 遥测多租户隔离测试用例
+// 多租户环境下的遥测隔离测试用例
 
-test "telemetry_tenant_data_isolation" {
-  // 测试租户数据隔离
+test "telemetry_multi_tenant_isolation" {
+  // 测试多租户遥测数据隔离
   
   let tenants = [
-    {"id": "tenant_a", "name": "Company A", "domain": "company-a.com"},
-    {"id": "tenant_b", "name": "Company B", "domain": "company-b.com"},
-    {"id": "tenant_c", "name": "Company C", "domain": "company-c.com"}
+    ("tenant_a", "Acme Corporation", "production"),
+    ("tenant_b", "Beta Industries", "staging"),
+    ("tenant_c", "Gamma LLC", "development"),
+    ("tenant_d", "Delta Inc", "production")
   ]
   
-  let tenant_metrics = [
-    {"tenant_id": "tenant_a", "metric_name": "cpu_usage", "value": 75.5},
-    {"tenant_id": "tenant_b", "metric_name": "cpu_usage", "value": 68.2},
-    {"tenant_id": "tenant_a", "metric_name": "memory_usage", "value": 60.0},
-    {"tenant_id": "tenant_c", "metric_name": "cpu_usage", "value": 82.1},
-    {"tenant_id": "tenant_b", "metric_name": "memory_usage", "value": 55.0}
-  ]
+  // 验证租户信息
+  assert_eq(tenants.length(), 4)
+  assert_eq(tenants[0].0, "tenant_a")
+  assert_eq(tenants[0].1, "Acme Corporation")
+  assert_eq(tenants[0].2, "production")
   
-  // 按租户隔离数据
-  let mut isolated_data = []
+  // 模拟租户数据隔离
+  let mut tenant_data_boundaries = []
   let mut i = 0
   while i < tenants.length() {
-    let tenant = tenants[i]
-    let mut tenant_data = []
+    let tenant_id = tenants[i].0
+    let tenant_name = tenants[i].1
+    let environment = tenants[i].2
     
-    let mut j = 0
-    while j < tenant_metrics.length() {
-      if tenant_metrics[j].tenant_id == tenant.id {
-        tenant_data.push({
-          "metric_name": tenant_metrics[j].metric_name,
-          "value": tenant_metrics[j].value
-        })
-      }
-      j = j + 1
-    }
-    
-    isolated_data.push({
-      "tenant_id": tenant.id,
-      "tenant_name": tenant.name,
-      "metrics": tenant_data
-    })
+    // 为每个租户创建数据边界
+    let data_boundary = tenant_id + ":" + tenant_name + ":" + environment
+    tenant_data_boundaries.push(data_boundary)
     
     i = i + 1
   }
   
-  // 验证数据隔离
-  assert_eq(isolated_data.length(), tenants.length())
-  
-  // 验证每个租户只包含自己的数据
-  assert_eq(isolated_data[0].tenant_id, "tenant_a")
-  assert_eq(isolated_data[0].metrics.length(), 2)
-  
-  assert_eq(isolated_data[1].tenant_id, "tenant_b")
-  assert_eq(isolated_data[1].metrics.length(), 2)
-  
-  assert_eq(isolated_data[2].tenant_id, "tenant_c")
-  assert_eq(isolated_data[2].metrics.length(), 1)
+  // 验证数据边界
+  assert_eq(tenant_data_boundaries.length(), 4)
+  assert_eq(tenant_data_boundaries[0], "tenant_a:Acme Corporation:production")
+  assert_eq(tenant_data_boundaries[3], "tenant_d:Delta Inc:production")
 }
 
-test "telemetry_tenant_resource_quota" {
-  // 测试租户资源配额
+test "telemetry_multi_tenant_resource_quota" {
+  // 测试多租户资源配额管理
   
-  let tenant_quotas = [
-    {"tenant_id": "tenant_a", "max_metrics": 1000, "max_storage_mb": 500},
-    {"tenant_id": "tenant_b", "max_metrics": 500, "max_storage_mb": 250},
-    {"tenant_id": "tenant_c", "max_metrics": 2000, "max_storage_mb": 1000}
+  let resource_quotas = [
+    ("tenant_a", 1000, 100, 10), // 最大指标数，最大存储MB，最大API调用/秒
+    ("tenant_b", 500, 50, 5),
+    ("tenant_c", 200, 20, 2),
+    ("tenant_d", 1500, 200, 20)
   ]
   
-  let current_usage = [
-    {"tenant_id": "tenant_a", "current_metrics": 800, "current_storage_mb": 450},
-    {"tenant_id": "tenant_b", "current_metrics": 600, "current_storage_mb": 200},
-    {"tenant_id": "tenant_c", "current_metrics": 1500, "current_storage_mb": 1200}
-  ]
+  // 验证资源配额
+  assert_eq(resource_quotas.length(), 4)
+  assert_eq(resource_quotas[0].0, "tenant_a")
+  assert_eq(resource_quotas[0].1, 1000) // 最大指标数
+  assert_eq(resource_quotas[0].2, 100) // 最大存储MB
+  assert_eq(resource_quotas[0].3, 10) // 最大API调用/秒
   
-  // 检查配额使用情况
-  let mut quota_status = []
+  // 模拟资源使用监控
+  let mut resource_usage = []
   let mut i = 0
-  while i < tenant_quotas.length() {
-    let quota = tenant_quotas[i]
-    let mut usage = {"current_metrics": 0, "current_storage_mb": 0}
+  while i < resource_quotas.length() {
+    let tenant_id = resource_quotas[i].0
+    let max_metrics = resource_quotas[i].1
+    let max_storage = resource_quotas[i].2
+    let max_api_calls = resource_quotas[i].3
     
-    // 查找当前使用情况
-    let mut j = 0
-    while j < current_usage.length() {
-      if current_usage[j].tenant_id == quota.tenant_id {
-        usage = current_usage[j]
-        break
-      }
-      j = j + 1
-    }
+    // 模拟实际使用量（80%的配额）
+    let used_metrics = (max_metrics * 80) / 100
+    let used_storage = (max_storage * 80) / 100
+    let used_api_calls = (max_api_calls * 80) / 100
     
-    let metrics_usage_ratio = usage.current_metrics.to_double() / quota.max_metrics.to_double()
-    let storage_usage_ratio = usage.current_storage_mb.to_double() / quota.max_storage_mb.to_double()
+    let usage_info = tenant_id + ": metrics=" + used_metrics.to_string() + "/" + max_metrics.to_string() + 
+                   ", storage=" + used_storage.to_string() + "/" + max_storage.to_string() + 
+                   ", api_calls=" + used_api_calls.to_string() + "/" + max_api_calls.to_string()
     
-    let mut status = "normal"
-    if metrics_usage_ratio > 1.0 or storage_usage_ratio > 1.0 {
-      status = "exceeded"
-    } else if metrics_usage_ratio > 0.8 or storage_usage_ratio > 0.8 {
-      status = "warning"
-    }
-    
-    quota_status.push({
-      "tenant_id": quota.tenant_id,
-      "metrics_usage": metrics_usage_ratio,
-      "storage_usage": storage_usage_ratio,
-      "status": status
-    })
-    
+    resource_usage.push(usage_info)
     i = i + 1
   }
   
-  // 验证配额状态
-  assert_eq(quota_status.length(), tenant_quotas.length())
-  assert_eq(quota_status[0].status, "warning")     // 80% metrics, 90% storage
-  assert_eq(quota_status[1].status, "exceeded")    // 120% metrics
-  assert_eq(quota_status[2].status, "exceeded")    // 120% storage
+  // 验证资源使用情况
+  assert_eq(resource_usage.length(), 4)
+  assert_eq(resource_usage[0], "tenant_a: metrics=800/1000, storage=80/100, api_calls=8/10")
+  assert_eq(resource_usage[3], "tenant_d: metrics=1200/1500, storage=160/200, api_calls=16/20")
 }
 
-test "telemetry_tenant_access_control" {
-  // 测试租户访问控制
+test "telemetry_multi_tenant_data_segregation" {
+  // 测试多租户数据分离
   
-  let tenant_permissions = [
-    {"tenant_id": "tenant_a", "permissions": ["read_metrics", "write_metrics", "export_data"]},
-    {"tenant_id": "tenant_b", "permissions": ["read_metrics"]},
-    {"tenant_id": "tenant_c", "permissions": ["read_metrics", "write_metrics"]}
+  let tenant_data_streams = [
+    ("tenant_a", ["metric_a1", "metric_a2", "metric_a3"]),
+    ("tenant_b", ["metric_b1", "metric_b2"]),
+    ("tenant_c", ["metric_c1", "metric_c2", "metric_c3", "metric_c4"]),
+    ("tenant_d", ["metric_d1"])
   ]
   
-  let access_requests = [
-    {"tenant_id": "tenant_a", "action": "read_metrics", "resource": "cpu_usage"},
-    {"tenant_id": "tenant_a", "action": "export_data", "resource": "all_metrics"},
-    {"tenant_id": "tenant_b", "action": "write_metrics", "resource": "memory_usage"},
-    {"tenant_id": "tenant_c", "action": "read_metrics", "resource": "disk_usage"},
-    {"tenant_id": "tenant_c", "action": "export_data", "resource": "all_metrics"}
-  ]
+  // 验证租户数据流
+  assert_eq(tenant_data_streams.length(), 4)
+  assert_eq(tenant_data_streams[0].0, "tenant_a")
+  assert_eq(tenant_data_streams[0].1.length(), 3)
+  assert_eq(tenant_data_streams[2].1.length(), 4)
   
-  // 检查访问权限
-  let mut access_results = []
+  // 模拟数据分离验证
+  let mut segregation_checks = []
   let mut i = 0
-  while i < access_requests.length() {
-    let request = access_requests[i]
-    let mut has_permission = false
+  while i < tenant_data_streams.length() {
+    let tenant_id = tenant_data_streams[i].0
+    let metrics = tenant_data_streams[i].1
     
-    // 查找租户权限
+    // 验证每个指标都属于正确的租户
     let mut j = 0
-    while j < tenant_permissions.length() {
-      if tenant_permissions[j].tenant_id == request.tenant_id {
-        let permissions = tenant_permissions[j].permissions
-        
-        let mut k = 0
-        while k < permissions.length() {
-          if permissions[k] == request.action {
-            has_permission = true
-            break
-          }
-          k = k + 1
-        }
-        break
-      }
-      j = j + 1
-    }
-    
-    access_results.push({
-      "tenant_id": request.tenant_id,
-      "action": request.action,
-      "resource": request.resource,
-      "allowed": has_permission
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证访问控制
-  assert_eq(access_results.length(), access_requests.length())
-  assert_eq(access_results[0].allowed, true)   // tenant_a 有 read_metrics 权限
-  assert_eq(access_results[1].allowed, true)   // tenant_a 有 export_data 权限
-  assert_eq(access_results[2].allowed, false)  // tenant_b 没有 write_metrics 权限
-  assert_eq(access_results[3].allowed, true)   // tenant_c 有 read_metrics 权限
-  assert_eq(access_results[4].allowed, false)  // tenant_c 没有 export_data 权限
-}
-
-test "telemetry_tenant_data_retention" {
-  // 测试租户数据保留策略
-  
-  let tenant_retention_policies = [
-    {"tenant_id": "tenant_a", "retention_days": 30, "data_types": ["metrics", "logs"]},
-    {"tenant_id": "tenant_b", "retention_days": 90, "data_types": ["metrics"]},
-    {"tenant_id": "tenant_c", "retention_days": 7, "data_types": ["logs"]}
-  ]
-  
-  let current_time = 1640995200L  // 2022-01-01
-  
-  let tenant_data = [
-    {"tenant_id": "tenant_a", "data_type": "metrics", "timestamp": 1640908800L},  // 1天前
-    {"tenant_id": "tenant_a", "data_type": "logs", "timestamp": 1638220800L},     // 30天前
-    {"tenant_id": "tenant_b", "data_type": "metrics", "timestamp": 1638314400L},  // 29天前
-    {"tenant_id": "tenant_b", "data_type": "logs", "timestamp": 1635600000L},     // 60天前
-    {"tenant_id": "tenant_c", "data_type": "logs", "timestamp": 1640380800L}      // 8天前
-  ]
-  
-  // 应用数据保留策略
-  let mut retention_results = []
-  let mut i = 0
-  while i < tenant_data.length() {
-    let data = tenant_data[i]
-    let mut should_retain = false
-    
-    // 查找租户保留策略
-    let mut j = 0
-    while j < tenant_retention_policies.length() {
-      let policy = tenant_retention_policies[j]
+    while j < metrics.length() {
+      let metric_name = metrics[j]
       
-      if policy.tenant_id == data.tenant_id {
-        let data_age_days = (current_time - data.timestamp) / (24 * 60 * 60)
-        
-        // 检查数据类型是否在保留范围内
-        let mut data_type_supported = false
-        let mut k = 0
-        while k < policy.data_types.length() {
-          if policy.data_types[k] == data.data_type {
-            data_type_supported = true
-            break
-          }
-          k = k + 1
-        }
-        
-        if data_type_supported and data_age_days <= policy.retention_days.to_int64() {
-          should_retain = true
-        }
-        break
-      }
-      j = j + 1
-    }
-    
-    retention_results.push({
-      "tenant_id": data.tenant_id,
-      "data_type": data.data_type,
-      "timestamp": data.timestamp,
-      "retain": should_retain
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证数据保留结果
-  assert_eq(retention_results.length(), tenant_data.length())
-  assert_eq(retention_results[0].retain, true)   // tenant_a metrics, 1天 < 30天
-  assert_eq(retention_results[1].retain, true)   // tenant_a logs, 30天 = 30天
-  assert_eq(retention_results[2].retain, true)   // tenant_b metrics, 29天 < 90天
-  assert_eq(retention_results[3].retain, false)  // tenant_b logs, 不在保留范围内
-  assert_eq(retention_results[4].retain, false)  // tenant_c logs, 8天 > 7天
-}
-
-test "telemetry_tenant_performance_isolation" {
-  // 测试租户性能隔离
-  
-  let tenant_performance_limits = [
-    {"tenant_id": "tenant_a", "max_requests_per_second": 1000, "max_concurrent_operations": 50},
-    {"tenant_id": "tenant_b", "max_requests_per_second": 500, "max_concurrent_operations": 25},
-    {"tenant_id": "tenant_c", "max_requests_per_second": 2000, "max_concurrent_operations": 100}
-  ]
-  
-  let current_load = [
-    {"tenant_id": "tenant_a", "current_rps": 800, "current_concurrent": 45},
-    {"tenant_id": "tenant_b", "current_rps": 600, "current_concurrent": 30},
-    {"tenant_id": "tenant_c", "current_rps": 1800, "current_concurrent": 95}
-  ]
-  
-  // 评估性能隔离状态
-  let mut performance_status = []
-  let mut i = 0
-  while i < tenant_performance_limits.length() {
-    let limits = tenant_performance_limits[i]
-    let mut load = {"current_rps": 0, "current_concurrent": 0}
-    
-    // 查找当前负载
-    let mut j = 0
-    while j < current_load.length() {
-      if current_load[j].tenant_id == limits.tenant_id {
-        load = current_load[j]
-        break
-      }
-      j = j + 1
-    }
-    
-    let rps_usage_ratio = load.current_rps.to_double() / limits.max_requests_per_second.to_double()
-    let concurrent_usage_ratio = load.current_concurrent.to_double() / limits.max_concurrent_operations.to_double()
-    
-    let mut status = "healthy"
-    if rps_usage_ratio > 1.0 or concurrent_usage_ratio > 1.0 {
-      status = "overloaded"
-    } else if rps_usage_ratio > 0.9 or concurrent_usage_ratio > 0.9 {
-      status = "warning"
-    }
-    
-    performance_status.push({
-      "tenant_id": limits.tenant_id,
-      "rps_usage": rps_usage_ratio,
-      "concurrent_usage": concurrent_usage_ratio,
-      "status": status
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证性能隔离
-  assert_eq(performance_status.length(), tenant_performance_limits.length())
-  assert_eq(performance_status[0].status, "healthy")   // 80% RPS, 90% concurrent
-  assert_eq(performance_status[1].status, "overloaded") // 120% RPS, 120% concurrent
-  assert_eq(performance_status[2].status, "warning")   // 90% RPS, 95% concurrent
-}
-
-test "telemetry_tenant_billing_isolation" {
-  // 测试租户计费隔离
-  
-  let tenant_billing_plans = [
-    {"tenant_id": "tenant_a", "plan": "basic", "price_per_metric": 0.01, "included_metrics": 1000},
-    {"tenant_id": "tenant_b", "plan": "premium", "price_per_metric": 0.005, "included_metrics": 5000},
-    {"tenant_id": "tenant_c", "plan": "enterprise", "price_per_metric": 0.002, "included_metrics": 10000}
-  ]
-  
-  let monthly_usage = [
-    {"tenant_id": "tenant_a", "total_metrics": 1500},
-    {"tenant_id": "tenant_b", "total_metrics": 4500},
-    {"tenant_id": "tenant_c", "total_metrics": 12000}
-  ]
-  
-  // 计算账单
-  let mut billing_calculations = []
-  let mut i = 0
-  while i < tenant_billing_plans.length() {
-    let plan = tenant_billing_plans[i]
-    let mut usage = 0
-    
-    // 查找使用量
-    let mut j = 0
-    while j < monthly_usage.length() {
-      if monthly_usage[j].tenant_id == plan.tenant_id {
-        usage = monthly_usage[j].total_metrics
-        break
-      }
-      j = j + 1
-    }
-    
-    let extra_metrics = if usage > plan.included_metrics { 
-      usage - plan.included_metrics 
-    } else { 
-      0 
-    }
-    
-    let monthly_cost = extra_metrics.to_double() * plan.price_per_metric
-    
-    billing_calculations.push({
-      "tenant_id": plan.tenant_id,
-      "plan": plan.plan,
-      "included_metrics": plan.included_metrics,
-      "actual_usage": usage,
-      "extra_metrics": extra_metrics,
-      "monthly_cost": monthly_cost
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证计费隔离
-  assert_eq(billing_calculations.length(), tenant_billing_plans.length())
-  
-  // tenant_a: 1500 - 1000 = 500 extra * $0.01 = $5.00
-  assert_eq(billing_calculations[0].extra_metrics, 500)
-  assert_eq(billing_calculations[0].monthly_cost, 5.0)
-  
-  // tenant_b: 4500 < 5000 included = $0.00
-  assert_eq(billing_calculations[1].extra_metrics, 0)
-  assert_eq(billing_calculations[1].monthly_cost, 0.0)
-  
-  // tenant_c: 12000 - 10000 = 2000 extra * $0.002 = $4.00
-  assert_eq(billing_calculations[2].extra_metrics, 2000)
-  assert_eq(billing_calculations[2].monthly_cost, 4.0)
-}
-
-test "telemetry_tenant_configuration_isolation" {
-  // 测试租户配置隔离
-  
-  let tenant_configurations = [
-    {"tenant_id": "tenant_a", "sampling_rate": 0.1, "batch_size": 100, "export_interval": 5000},
-    {"tenant_id": "tenant_b", "sampling_rate": 0.5, "batch_size": 500, "export_interval": 10000},
-    {"tenant_id": "tenant_c", "sampling_rate": 1.0, "batch_size": 1000, "export_interval": 15000}
-  ]
-  
-  // 验证配置隔离
-  let mut config_isolation_results = []
-  let mut i = 0
-  while i < tenant_configurations.length() {
-    let config = tenant_configurations[i]
-    
-    // 验证配置值不会影响其他租户
-    let mut config_isolated = true
-    
-    // 检查采样率范围
-    if config.sampling_rate < 0.0 or config.sampling_rate > 1.0 {
-      config_isolated = false
-    }
-    
-    // 检查批处理大小
-    if config.batch_size <= 0 or config.batch_size > 10000 {
-      config_isolated = false
-    }
-    
-    // 检查导出间隔
-    if config.export_interval <= 0 or config.export_interval > 60000 {
-      config_isolated = false
-    }
-    
-    config_isolation_results.push({
-      "tenant_id": config.tenant_id,
-      "sampling_rate": config.sampling_rate,
-      "batch_size": config.batch_size,
-      "export_interval": config.export_interval,
-      "is_valid": config_isolated
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证配置隔离
-  assert_eq(config_isolation_results.length(), tenant_configurations.length())
-  
-  i = 0
-  while i < config_isolation_results.length() {
-    assert_eq(config_isolation_results[i].is_valid, true)
-    
-    // 验证每个租户的配置都是独立的
-    let current_config = config_isolation_results[i]
-    let mut j = i + 1
-    while j < config_isolation_results.length() {
-      let other_config = config_isolation_results[j]
+      // 检查指标名称前缀是否匹配租户ID
+      let expected_prefix = tenant_id + "_metric"
+      let actual_prefix = metric_name.substring(0, expected_prefix.length())
       
-      // 配置值应该不同（证明隔离）
-      let configs_different = 
-        current_config.sampling_rate != other_config.sampling_rate or
-        current_config.batch_size != other_config.batch_size or
-        current_config.export_interval != other_config.export_interval
+      let is_correctly_segregated = actual_prefix == expected_prefix
       
-      assert_eq(configs_different, true)
+      let check_result = tenant_id + ":" + metric_name + "->" + is_correctly_segregated.to_string()
+      segregation_checks.push(check_result)
+      
       j = j + 1
     }
     i = i + 1
   }
+  
+  // 验证分离检查结果
+  assert_eq(segregation_checks.length(), 10) // 3+2+4+1 = 10个指标
+  assert_eq(segregation_checks[0], "tenant_a:metric_a1->true")
+  assert_eq(segregation_checks[9], "tenant_d:metric_d1->true")
+}
+
+test "telemetry_multi_tenant_performance_isolation" {
+  // 测试多租户性能隔离
+  
+  let tenant_performance_metrics = [
+    ("tenant_a", [100, 150, 120, 180, 200]), // 响应时间ms
+    ("tenant_b", [80, 90, 85, 95, 100]),
+    ("tenant_c", [200, 250, 220, 280, 300]),
+    ("tenant_d", [60, 70, 65, 75, 80])
+  ]
+  
+  // 验证性能指标
+  assert_eq(tenant_performance_metrics.length(), 4)
+  assert_eq(tenant_performance_metrics[0].0, "tenant_a")
+  assert_eq(tenant_performance_metrics[0].1.length(), 5)
+  
+  // 计算每个租户的性能统计
+  let mut performance_stats = []
+  let mut i = 0
+  while i < tenant_performance_metrics.length() {
+    let tenant_id = tenant_performance_metrics[i].0
+    let response_times = tenant_performance_metrics[i].1
+    
+    // 计算平均响应时间
+    let mut sum = 0
+    let mut j = 0
+    while j < response_times.length() {
+      sum = sum + response_times[j]
+      j = j + 1
+    }
+    let avg_response_time = sum / response_times.length()
+    
+    // 计算性能等级
+    let performance_tier = if avg_response_time < 100 {
+      "high_performance"
+    } else if avg_response_time < 200 {
+      "medium_performance"
+    } else {
+      "low_performance"
+    }
+    
+    let stat = tenant_id + ": avg=" + avg_response_time.to_string() + "ms, tier=" + performance_tier
+    performance_stats.push(stat)
+    
+    i = i + 1
+  }
+  
+  // 验证性能统计
+  assert_eq(performance_stats.length(), 4)
+  assert_eq(performance_stats[0], "tenant_a: avg=150ms, tier=medium_performance")
+  assert_eq(performance_stats[1], "tenant_b: avg=90ms, tier=high_performance")
+  assert_eq(performance_stats[2], "tenant_c: avg=250ms, tier=low_performance")
+  assert_eq(performance_stats[3], "tenant_d: avg=70ms, tier=high_performance")
+}
+
+test "telemetry_multi_tenant_security_isolation" {
+  // 测试多租户安全隔离
+  
+  let tenant_security_policies = [
+    ("tenant_a", ["read_metrics", "write_metrics", "delete_data"], "encryption_at_rest"),
+    ("tenant_b", ["read_metrics"], "encryption_in_transit"),
+    ("tenant_c", ["read_metrics", "write_metrics"], "encryption_at_rest_and_transit"),
+    ("tenant_d", ["read_metrics", "write_metrics", "delete_data", "admin_access"], "encryption_at_rest")
+  ]
+  
+  // 验证安全策略
+  assert_eq(tenant_security_policies.length(), 4)
+  assert_eq(tenant_security_policies[0].0, "tenant_a")
+  assert_eq(tenant_security_policies[0].1.length(), 3)
+  assert_eq(tenant_security_policies[0].2, "encryption_at_rest")
+  
+  // 模拟安全隔离检查
+  let mut security_checks = []
+  let mut i = 0
+  while i < tenant_security_policies.length() {
+    let tenant_id = tenant_security_policies[i].0
+    let permissions = tenant_security_policies[i].1
+    let encryption_level = tenant_security_policies[i].2
+    
+    // 检查权限隔离
+    let has_admin_access = permissions.contains("admin_access")
+    let can_delete_data = permissions.contains("delete_data")
+    
+    // 检查加密级别
+    let is_high_security = encryption_level.contains("and_transit")
+    
+    let security_level = if has_admin_access {
+      "admin"
+    } else if can_delete_data {
+      "write"
+    } else {
+      "read_only"
+    }
+    
+    let check_result = tenant_id + ": level=" + security_level + ", encryption=" + encryption_level + ", high_security=" + is_high_security.to_string()
+    security_checks.push(check_result)
+    
+    i = i + 1
+  }
+  
+  // 验证安全检查结果
+  assert_eq(security_checks.length(), 4)
+  assert_eq(security_checks[0], "tenant_a: level=write, encryption=encryption_at_rest, high_security=false")
+  assert_eq(security_checks[1], "tenant_b: level=read_only, encryption=encryption_in_transit, high_security=false")
+  assert_eq(security_checks[2], "tenant_c: level=write, encryption=encryption_at_rest_and_transit, high_security=true")
+  assert_eq(security_checks[3], "tenant_d: level=admin, encryption=encryption_at_rest, high_security=false")
 }

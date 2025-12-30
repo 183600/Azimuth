@@ -104,3 +104,174 @@ test "telemetry_timestamp_format_conversion" {
   assert_eq(timestamp_conversions[1].1.contains("Jan 2022"), true)
   assert_eq(timestamp_conversions[2].1.contains("00:00:00"), true)
 }
+
+test "telemetry_data_type_conversion" {
+  // 测试遥测数据类型转换
+  
+  let string_values = ["123.45", "true", "false", "42", "active"]
+  let expected_types = ["float", "boolean", "boolean", "integer", "string"]
+  
+  // 验证原始字符串值
+  let mut i = 0
+  while i < string_values.length() {
+    assert_eq(string_values[i].length() > 0, true)
+    i = i + 1
+  }
+  
+  // 执行类型转换
+  let mut converted_data = []
+  i = 0
+  while i < string_values.length() {
+    let string_value = string_values[i]
+    let expected_type = expected_types[i]
+    let converted_value = ""
+    let actual_type = ""
+    
+    if expected_type == "float" {
+      converted_value = string_value + "_float"
+      actual_type = "float"
+    } else if expected_type == "boolean" {
+      converted_value = string_value + "_bool"
+      actual_type = "boolean"
+    } else if expected_type == "integer" {
+      converted_value = string_value + "_int"
+      actual_type = "integer"
+    } else if expected_type == "string" {
+      converted_value = string_value + "_str"
+      actual_type = "string"
+    }
+    
+    converted_data.push((string_value, converted_value, expected_type, actual_type))
+    i = i + 1
+  }
+  
+  // 验证转换结果
+  assert_eq(converted_data.length(), 5)
+  
+  // 验证类型匹配
+  i = 0
+  while i < converted_data.length() {
+    let expected_type = converted_data[i].2
+    let actual_type = converted_data[i].3
+    assert_eq(expected_type, actual_type)
+    i = i + 1
+  }
+  
+  // 验证转换值格式
+  assert_eq(converted_data[0].1, "123.45_float")
+  assert_eq(converted_data[1].1, "true_bool")
+  assert_eq(converted_data[2].1, "false_bool")
+  assert_eq(converted_data[3].1, "42_int")
+  assert_eq(converted_data[4].1, "active_str")
+}
+
+test "telemetry_encoding_conversion" {
+  // 测试遥测编码转换
+  
+  let original_data = "遥测系统测试数据"
+  let utf8_encoded = original_data
+  let base64_encoded = "5Y2D5LiK566h5rOV6YCS6L+Z5Lqb5rWL6K+V5paH5pys"
+  let url_encoded = "%E9%81%A5%E6%B5%8B%E7%B3%BB%E7%BB%9F%E6%B5%8B%E8%AF%95%E6%95%B0%E6%8D%AE"
+  
+  // 验证原始数据
+  assert_eq(original_data.length(), 8)
+  assert_eq(original_data.contains("遥测"), true)
+  
+  // 验证编码格式
+  assert_eq(utf8_encoded, original_data)
+  assert_eq(base64_encoded.length() > original_data.length(), true)
+  assert_eq(url_encoded.contains("%"), true)
+  
+  // 模拟编码转换
+  let mut encoding_conversions = []
+  
+  // UTF-8到Base64
+  encoding_conversions.push(("utf8_to_base64", base64_encoded))
+  
+  // UTF-8到URL编码
+  encoding_conversions.push(("utf8_to_url", url_encoded))
+  
+  // Base64到UTF-8（模拟）
+  encoding_conversions.push(("base64_to_utf8", original_data))
+  
+  // URL编码到UTF-8（模拟）
+  encoding_conversions.push(("url_to_utf8", original_data))
+  
+  // 验证转换结果
+  assert_eq(encoding_conversions.length(), 4)
+  assert_eq(encoding_conversions[0].0, "utf8_to_base64")
+  assert_eq(encoding_conversions[1].0, "utf8_to_url")
+  assert_eq(encoding_conversions[2].0, "base64_to_utf8")
+  assert_eq(encoding_conversions[3].0, "url_to_utf8")
+  
+  // 验证数据完整性
+  assert_eq(encoding_conversions[2].1, original_data)
+  assert_eq(encoding_conversions[3].1, original_data)
+}
+
+test "telemetry_aggregation_conversion" {
+  // 测试遥测聚合转换
+  
+  let raw_metrics = [
+    ("response_time", 120.0),
+    ("response_time", 150.0),
+    ("response_time", 100.0),
+    ("response_time", 180.0),
+    ("response_time", 90.0)
+  ]
+  
+  // 验证原始指标
+  let mut i = 0
+  while i < raw_metrics.length() {
+    assert_eq(raw_metrics[i].0, "response_time")
+    assert_eq(raw_metrics[i].1 > 0.0, true)
+    i = i + 1
+  }
+  
+  // 计算聚合统计
+  let mut sum = 0.0
+  let mut min_value = raw_metrics[0].1
+  let mut max_value = raw_metrics[0].1
+  
+  i = 0
+  while i < raw_metrics.length() {
+    let value = raw_metrics[i].1
+    sum = sum + value
+    
+    if value < min_value {
+      min_value = value
+    }
+    
+    if value > max_value {
+      max_value = value
+    }
+    
+    i = i + 1
+  }
+  
+  let average = sum / raw_metrics.length().to_double()
+  
+  // 创建聚合结果
+  let aggregated_metrics = [
+    ("response_time_avg", average),
+    ("response_time_min", min_value),
+    ("response_time_max", max_value),
+    ("response_time_sum", sum),
+    ("response_time_count", raw_metrics.length().to_double())
+  ]
+  
+  // 验证聚合结果
+  assert_eq(aggregated_metrics.length(), 5)
+  
+  // 验证聚合值
+  assert_eq(aggregated_metrics[0].1, 128.0)
+  assert_eq(aggregated_metrics[1].1, 90.0)
+  assert_eq(aggregated_metrics[2].1, 180.0)
+  assert_eq(aggregated_metrics[3].1, 640.0)
+  assert_eq(aggregated_metrics[4].1, 5.0)
+  
+  // 验证聚合关系
+  assert_eq(aggregated_metrics[1].1 <= aggregated_metrics[0].1, true)
+  assert_eq(aggregated_metrics[0].1 <= aggregated_metrics[2].1, true)
+  assert_eq(aggregated_metrics[3].1 > aggregated_metrics[2].1, true)
+}

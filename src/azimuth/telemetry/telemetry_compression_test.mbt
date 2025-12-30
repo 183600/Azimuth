@@ -1,297 +1,286 @@
-// 遥测数据压缩测试用例
+// 遥测数据压缩和存储优化测试用例
 
-test "telemetry_data_compression_formats" {
-  // 测试遥测数据压缩格式
+test "telemetry_data_compression_algorithms" {
+  // 测试遥测数据压缩算法
   
-  let compression_formats = ["gzip", "lz4", "snappy", "zstd", "brotli"]
-  let compression_ratios = [0.35, 0.55, 0.60, 0.25, 0.40]
-  
-  // 验证压缩格式
-  assert_eq(compression_formats.length(), 5)
-  assert_eq(compression_formats[0], "gzip")
-  assert_eq(compression_formats[4], "brotli")
-  
-  // 验证压缩比
-  assert_eq(compression_ratios.length(), 5)
-  assert_eq(compression_ratios[0], 0.35) // gzip压缩到35%
-  assert_eq(compression_ratios[3], 0.25) // zstd压缩到25%
-  
-  // 模拟原始遥测数据
-  let original_data = [
-    "trace_id:0af7651916cd43dd8448eb211c80319c",
-    "span_id:b7ad6b7169203331",
-    "service_name:payment-service",
-    "operation:process_payment",
-    "duration_ms:125.5",
-    "status:success",
-    "http.method:POST",
-    "http.status_code:200",
-    "user.id:12345",
-    "region:us-west-2"
+  let compression_algorithms = [
+    ("gzip", "通用压缩", 7.5),
+    ("lz4", "快速压缩", 5.2),
+    ("snappy", "高速压缩", 6.1),
+    ("zstd", "高比率压缩", 8.3),
+    ("brotli", "Web优化", 8.0)
   ]
   
-  // 验证原始数据
-  assert_eq(original_data.length(), 10)
-  assert_eq(original_data[0], "trace_id:0af7651916cd43dd8448eb211c80319c")
-  assert_eq(original_data[9], "region:us-west-2")
+  // 验证压缩算法
+  assert_eq(compression_algorithms.length(), 5)
+  assert_eq(compression_algorithms[0].0, "gzip")
+  assert_eq(compression_algorithms[0].1, "通用压缩")
+  assert_eq(compression_algorithms[0].2, 7.5) // 压缩比率
   
-  // 计算原始数据大小
-  let mut original_size = 0
+  // 模拟压缩性能测试
+  let test_data_sizes = [1024, 10240, 102400, 1024000] // 1KB, 10KB, 100KB, 1MB
+  let mut compression_results = []
+  
   let mut i = 0
-  while i < original_data.length() {
-    original_size = original_size + original_data[i].length()
-    i = i + 1
-  }
-  
-  // 验证原始大小
-  assert_eq(original_size, 207) // 所有字符串的总长度
-  
-  // 计算压缩后大小
-  let compressed_sizes = []
-  i = 0
-  while i < compression_ratios.length() {
-    let compressed_size = (original_size.to_double() * compression_ratios[i]).to_int()
-    compressed_sizes.push(compressed_size)
-    i = i + 1
-  }
-  
-  // 验证压缩后大小
-  assert_eq(compressed_sizes.length(), 5)
-  assert_eq(compressed_sizes[0], 72) // 207 * 0.35 = 72.45 -> 72
-  assert_eq(compressed_sizes[3], 51) // 207 * 0.25 = 51.75 -> 51
-  
-  // 验证压缩效果
-  assert_eq(compressed_sizes[0] < original_size, true)
-  assert_eq(compressed_sizes[3] < compressed_sizes[0], true) // zstd比gzip压缩更好
-}
-
-test "batch_compression_optimization" {
-  // 测试批量压缩优化
-  
-  let batch_sizes = [10, 50, 100, 500, 1000]
-  let batch_efficiency = [0.8, 0.85, 0.9, 0.95, 0.98]
-  
-  // 验证批处理大小
-  assert_eq(batch_sizes.length(), 5)
-  assert_eq(batch_sizes[0], 10)
-  assert_eq(batch_sizes[4], 1000)
-  
-  // 验证批处理效率
-  assert_eq(batch_efficiency.length(), 5)
-  assert_eq(batch_efficiency[0], 0.8) // 小批量效率较低
-  assert_eq(batch_efficiency[4], 0.98) // 大批量效率较高
-  
-  // 模拟批量遥测数据
-  let telemetry_events = []
-  let mut event_id = 1000
-  let mut i = 0
-  while i < 1000 {
-    let event = "event_" + event_id.to_string() + ":data_payload_" + i.to_string()
-    telemetry_events.push(event)
-    event_id = event_id + 1
-    i = i + 1
-  }
-  
-  // 验证遥测事件
-  assert_eq(telemetry_events.length(), 1000)
-  assert_eq(telemetry_events[0], "event_1000:data_payload_0")
-  assert_eq(telemetry_events[999], "event_1999:data_payload_999")
-  
-  // 模拟不同批量大小的压缩
-  let compression_results = []
-  i = 0
-  while i < batch_sizes.length() {
-    let batch_size = batch_sizes[i]
-    let efficiency = batch_efficiency[i]
+  while i < compression_algorithms.length() {
+    let algorithm_name = compression_algorithms[i].0
+    let compression_ratio = compression_algorithms[i].2
     
-    // 模拟压缩时间（毫秒）
-    let compression_time = (batch_size.to_double() / efficiency).to_int()
-    compression_results.push((batch_size, compression_time, efficiency))
-    
+    let mut j = 0
+    while j < test_data_sizes.length() {
+      let original_size = test_data_sizes[j]
+      let compressed_size = (original_size.to_double() / compression_ratio).to_int()
+      
+      let result = algorithm_name + ":" + original_size.to_string() + "->" + compressed_size.to_string() + "bytes"
+      compression_results.push(result)
+      
+      j = j + 1
+    }
     i = i + 1
   }
   
   // 验证压缩结果
-  assert_eq(compression_results.length(), 5)
-  assert_eq(compression_results[0].0, 10)
-  assert_eq(compression_results[0].1, 12) // 10 / 0.8 = 12.5 -> 12
-  assert_eq(compression_results[4].0, 1000)
-  assert_eq(compression_results[4].1, 1020) // 1000 / 0.98 = 1020.4 -> 1020
-  
-  // 找出最优批量大小（压缩时间最短）
-  let mut optimal_batch_size = compression_results[0].0
-  let mut min_compression_time = compression_results[0].1
-  
-  i = 1
-  while i < compression_results.length() {
-    if compression_results[i].1 < min_compression_time {
-      min_compression_time = compression_results[i].1
-      optimal_batch_size = compression_results[i].0
-    }
-    i = i + 1
-  }
-  
-  // 验证最优批量大小
-  assert_eq(optimal_batch_size, 10) // 小批量压缩时间最短
+  assert_eq(compression_results.length(), 20) // 5算法 * 4数据大小
+  assert_eq(compression_results[0], "gzip:1024->136bytes") // 1024/7.5≈136
+  assert_eq(compression_results[4], "lz4:1024->197bytes") // 1024/5.2≈197
 }
 
-test "adaptive_compression_strategy" {
-  // 测试自适应压缩策略
+test "telemetry_data_compression_ratio_analysis" {
+  // 测试遥测数据压缩比率分析
   
-  let data_types = ["metrics", "traces", "logs", "events"]
-  let data_characteristics = [
-    ("high_frequency_numeric", true),
-    ("low_frequency_structured", false),
-    ("text_heavy", false),
-    ("mixed_content", true)
+  let data_types = [
+    ("numeric_metrics", "数字指标", [1, 2, 3, 4, 5]),
+    ("string_logs", "字符串日志", ["error", "warning", "info", "debug", "trace"]),
+    ("json_structured", "JSON结构化", ["{\"key\":\"value\"}", "{\"num\":123}", "{\"flag\":true}"]),
+    ("binary_encoded", "二进制编码", ["0x1234", "0xABCD", "0x5678"])
   ]
   
   // 验证数据类型
   assert_eq(data_types.length(), 4)
-  assert_eq(data_types[0], "metrics")
-  assert_eq(data_types[3], "events")
+  assert_eq(data_types[0].0, "numeric_metrics")
+  assert_eq(data_types[0].1, "数字指标")
   
-  // 验证数据特征
-  assert_eq(data_characteristics.length(), 4)
-  assert_eq(data_characteristics[0].0, "high_frequency_numeric")
-  assert_eq(data_characteristics[0].1, true) // 适合压缩
-  
-  // 根据数据特征选择压缩算法
-  let compression_choices = []
+  // 模拟不同数据类型的压缩效果
+  let mut compression_ratios = []
   let mut i = 0
   while i < data_types.length() {
-    let data_type = data_types[i]
-    let characteristic = data_characteristics[i]
+    let data_type = data_types[i].0
+    let data_description = data_types[i].1
+    let sample_data = data_types[i].2
     
-    let chosen_algorithm = if characteristic.0 == "high_frequency_numeric" {
-      "lz4" // 快速压缩
-    } else if characteristic.0 == "text_heavy" {
-      "gzip" // 文本压缩效果好
-    } else if characteristic.1 == true {
-      "zstd" // 高压缩比
-    } else {
-      "snappy" // 平衡性能
+    // 计算原始大小（简化计算）
+    let mut original_size = 0
+    let mut j = 0
+    while j < sample_data.length() {
+      original_size = original_size + sample_data[j].length()
+      j = j + 1
     }
     
-    compression_choices.push((data_type, chosen_algorithm))
+    // 模拟压缩效果（不同数据类型有不同的压缩比率）
+    let compression_ratio = if data_type == "numeric_metrics" {
+      8.0 // 数字压缩效果好
+    } else if data_type == "string_logs" {
+      4.5 // 字符串压缩效果中等
+    } else if data_type == "json_structured" {
+      6.0 // JSON有重复结构，压缩效果较好
+    } else { // binary_encoded
+      2.0 // 二进制数据压缩效果较差
+    }
+    
+    let compressed_size = (original_size.to_double() / compression_ratio).to_int()
+    let ratio_info = data_type + ": " + original_size.to_string() + "->" + compressed_size.to_string() + " (ratio: " + compression_ratio.to_string() + ")"
+    compression_ratios.push(ratio_info)
+    
     i = i + 1
   }
   
-  // 验证压缩选择
-  assert_eq(compression_choices.length(), 4)
-  assert_eq(compression_choices[0].0, "metrics")
-  assert_eq(compression_choices[0].1, "lz4")
-  assert_eq(compression_choices[1].1, "snappy")
-  assert_eq(compression_choices[2].1, "gzip")
+  // 验证压缩比率分析
+  assert_eq(compression_ratios.length(), 4)
+  assert_eq(compression_ratios[0].contains("numeric_metrics"), true)
+  assert_eq(compression_ratios[0].contains("ratio: 8"), true)
+  assert_eq(compression_ratios[3].contains("binary_encoded"), true)
+  assert_eq(compression_ratios[3].contains("ratio: 2"), true)
+}
+
+test "telemetry_data_compression_performance" {
+  // 测试遥测数据压缩性能
   
-  // 模拟压缩性能指标
   let performance_metrics = [
-    ("lz4", 50, 0.55),    // (算法, 压缩速度MB/s, 压缩比)
-    ("gzip", 20, 0.35),
-    ("zstd", 30, 0.25),
-    ("snappy", 40, 0.60)
+    ("compression_speed_mb_s", "压缩速度", [100, 200, 150, 300, 250]),
+    ("decompression_speed_mb_s", "解压速度", [200, 400, 300, 600, 500]),
+    ("cpu_usage_percent", "CPU使用率", [15, 25, 20, 30, 22]),
+    ("memory_usage_mb", "内存使用", [64, 128, 96, 256, 192])
   ]
   
   // 验证性能指标
   assert_eq(performance_metrics.length(), 4)
-  assert_eq(performance_metrics[0].1, 50) // lz4速度最快
-  assert_eq(performance_metrics[2].2, 0.25) // zstd压缩比最好
+  assert_eq(performance_metrics[0].0, "compression_speed_mb_s")
+  assert_eq(performance_metrics[0].1, "压缩速度")
+  assert_eq(performance_metrics[0].2.length(), 5)
   
-  // 计算综合性能分数
-  let performance_scores = []
-  i = 0
+  // 计算性能统计
+  let mut performance_stats = []
+  let mut i = 0
   while i < performance_metrics.length() {
-    let speed = performance_metrics[i].1.to_double()
-    let ratio = performance_metrics[i].2
-    let score = speed * (1.0 - ratio) // 速度越高、压缩比越低，分数越高
-    performance_scores.push((performance_metrics[i].0, score))
+    let metric_name = performance_metrics[i].0
+    let metric_description = performance_metrics[i].1
+    let values = performance_metrics[i].2
+    
+    // 计算平均值
+    let mut sum = 0
+    let mut j = 0
+    while j < values.length() {
+      sum = sum + values[j]
+      j = j + 1
+    }
+    let average = sum / values.length()
+    
+    // 找出最大值和最小值
+    let mut min_val = values[0]
+    let mut max_val = values[0]
+    j = 1
+    while j < values.length() {
+      if values[j] < min_val {
+        min_val = values[j]
+      }
+      if values[j] > max_val {
+        max_val = values[j]
+      }
+      j = j + 1
+    }
+    
+    let stat = metric_name + ": avg=" + average.to_string() + ", min=" + min_val.to_string() + ", max=" + max_val.to_string()
+    performance_stats.push(stat)
+    
     i = i + 1
   }
   
-  // 验证性能分数
-  assert_eq(performance_scores.length(), 4)
-  assert_eq(performance_scores[0].1, 22.5) // 50 * (1 - 0.55) = 22.5
-  assert_eq(performance_scores[1].1, 13.0) // 20 * (1 - 0.35) = 13.0
+  // 验证性能统计
+  assert_eq(performance_stats.length(), 4)
+  assert_eq(performance_stats[0], "compression_speed_mb_s: avg=200, min=100, max=300")
+  assert_eq(performance_stats[1], "decompression_speed_mb_s: avg=400, min=200, max=600")
+  assert_eq(performance_stats[2], "cpu_usage_percent: avg=22, min=15, max=30")
+  assert_eq(performance_stats[3], "memory_usage_mb: avg=147, min=64, max=256")
 }
 
-test "compression_memory_optimization" {
-  // 测试压缩内存优化
+test "telemetry_data_storage_optimization" {
+  // 测试遥测数据存储优化
   
-  let memory_limits = [1024, 2048, 4096, 8192] // KB
-  let memory_usage = [800, 1800, 3500, 7000]    // 实际使用内存
-  
-  // 验证内存限制
-  assert_eq(memory_limits.length(), 4)
-  assert_eq(memory_limits[0], 1024) // 1MB
-  assert_eq(memory_limits[3], 8192) // 8MB
-  
-  // 验证内存使用
-  assert_eq(memory_usage.length(), 4)
-  assert_eq(memory_usage[0], 800)
-  assert_eq(memory_usage[3], 7000)
-  
-  // 计算内存利用率
-  let memory_utilization = []
-  let mut i = 0
-  while i < memory_limits.length() {
-    let utilization = memory_usage[i].to_double() / memory_limits[i].to_double() * 100.0
-    memory_utilization.push(utilization)
-    i = i + 1
-  }
-  
-  // 验证内存利用率
-  assert_eq(memory_utilization.length(), 4)
-  assert_eq(memory_utilization[0], 78.125) // 800/1024 * 100
-  assert_eq(memory_utilization[3], 85.44921875) // 7000/8192 * 100
-  
-  // 检查内存是否超限
-  let memory_status = []
-  i = 0
-  while i < memory_limits.length() {
-    let status = if memory_usage[i] <= memory_limits[i] { "within_limit" } else { "exceeded" }
-    memory_status.push(status)
-    i = i + 1
-  }
-  
-  // 验证内存状态
-  assert_eq(memory_status.length(), 4)
-  assert_eq(memory_status[0], "within_limit")
-  assert_eq(memory_status[1], "within_limit")
-  assert_eq(memory_status[2], "within_limit")
-  assert_eq(memory_status[3], "within_limit")
-  
-  // 模拟内存优化策略
-  let optimization_strategies = [
-    ("reduce_batch_size", 20),
-    ("lower_compression_level", 15),
-    ("streaming_compression", 30),
-    ("memory_pool", 35)
+  let storage_strategies = [
+    ("time_series_partitioning", "时间序列分区", "按时间范围分区存储"),
+    ("columnar_storage", "列式存储", "按列存储优化查询"),
+    ("data_tiering", "数据分层", "热温冷数据分层存储"),
+    ("deduplication", "数据去重", "消除重复数据"),
+    ("index_optimization", "索引优化", "优化查询索引")
   ]
   
-  // 验证优化策略
-  assert_eq(optimization_strategies.length(), 4)
-  assert_eq(optimization_strategies[0].0, "reduce_batch_size")
-  assert_eq(optimization_strategies[3].1, 35) // 内存池节省35%内存
+  // 验证存储策略
+  assert_eq(storage_strategies.length(), 5)
+  assert_eq(storage_strategies[0].0, "time_series_partitioning")
+  assert_eq(storage_strategies[0].1, "时间序列分区")
   
-  // 计算优化后的内存使用
-  let optimized_memory = []
-  i = 0
-  while i < memory_usage.length() {
-    let savings = memory_usage[i].to_double() * 0.3 // 假设优化节省30%内存
-    let optimized = memory_usage[i].to_double() - savings
-    optimized_memory.push(optimized.to_int())
+  // 模拟存储优化效果
+  let mut optimization_results = []
+  let mut i = 0
+  while i < storage_strategies.length() {
+    let strategy_name = storage_strategies[i].0
+    let strategy_display = storage_strategies[i].1
+    let strategy_description = storage_strategies[i].2
+    
+    // 模拟优化效果（存储空间节省百分比）
+    let space_saving = if strategy_name == "time_series_partitioning" {
+      15
+    } else if strategy_name == "columnar_storage" {
+      25
+    } else if strategy_name == "data_tiering" {
+      40
+    } else if strategy_name == "deduplication" {
+      30
+    } else { // index_optimization
+      10
+    }
+    
+    // 模拟查询性能提升（百分比）
+    let query_improvement = if strategy_name == "time_series_partitioning" {
+      50
+    } else if strategy_name == "columnar_storage" {
+      80
+    } else if strategy_name == "data_tiering" {
+      20
+    } else if strategy_name == "deduplication" {
+      5
+    } else { // index_optimization
+      60
+    }
+    
+    let result = strategy_name + ": 空间节省" + space_saving.to_string() + "%, 查询提升" + query_improvement.to_string() + "%"
+    optimization_results.push(result)
+    
     i = i + 1
   }
   
-  // 验证优化后内存
-  assert_eq(optimized_memory.length(), 4)
-  assert_eq(optimized_memory[0], 560)  // 800 - 800*0.3 = 560
-  assert_eq(optimized_memory[3], 4900) // 7000 - 7000*0.3 = 4900
+  // 验证优化结果
+  assert_eq(optimization_results.length(), 5)
+  assert_eq(optimization_results[0], "time_series_partitioning: 空间节省15%, 查询提升50%")
+  assert_eq(optimization_results[1], "columnar_storage: 空间节省25%, 查询提升80%")
+  assert_eq(optimization_results[2], "data_tiering: 空间节省40%, 查询提升20%")
+  assert_eq(optimization_results[3], "deduplication: 空间节省30%, 查询提升5%")
+  assert_eq(optimization_results[4], "index_optimization: 空间节省10%, 查询提升60%")
+}
+
+test "telemetry_data_compression_adaptive" {
+  // 测试遥测数据自适应压缩
   
-  // 验证优化效果
-  i = 0
-  while i < optimized_memory.length() {
-    assert_eq(optimized_memory[i] < memory_usage[i], true)
+  let data_characteristics = [
+    ("high_redundancy", "高冗余数据", 0.8), // 80%冗余度
+    ("low_redundancy", "低冗余数据", 0.2), // 20%冗余度
+    ("structured_data", "结构化数据", 0.6), // 60%结构化程度
+    ("random_data", "随机数据", 0.1) // 10%可预测性
+  ]
+  
+  // 验证数据特征
+  assert_eq(data_characteristics.length(), 4)
+  assert_eq(data_characteristics[0].0, "high_redundancy")
+  assert_eq(data_characteristics[0].2, 0.8)
+  
+  // 模拟自适应压缩算法选择
+  let mut adaptive_selections = []
+  let mut i = 0
+  while i < data_characteristics.length() {
+    let data_type = data_characteristics[i].0
+    let data_description = data_characteristics[i].1
+    let characteristic_value = data_characteristics[i].2
+    
+    // 根据数据特征选择压缩算法
+    let selected_algorithm = if data_type == "high_redundancy" {
+      "zstd" // 高冗余数据用高压缩比算法
+    } else if data_type == "low_redundancy" {
+      "lz4" // 低冗余数据用快速算法
+    } else if data_type == "structured_data" {
+      "gzip" // 结构化数据用平衡算法
+    } else { // random_data
+      "snappy" // 随机数据用超快速算法
+    }
+    
+    // 预测压缩效果
+    let expected_ratio = if characteristic_value > 0.7 {
+      8.0 // 高冗余
+    } else if characteristic_value > 0.4 {
+      4.0 // 中等冗余
+    } else {
+      1.5 // 低冗余
+    }
+    
+    let selection = data_type + "->" + selected_algorithm + " (expected_ratio: " + expected_ratio.to_string() + ")"
+    adaptive_selections.push(selection)
+    
     i = i + 1
   }
+  
+  // 验证自适应选择
+  assert_eq(adaptive_selections.length(), 4)
+  assert_eq(adaptive_selections[0], "high_redundancy->zstd (expected_ratio: 8)")
+  assert_eq(adaptive_selections[1], "low_redundancy->lz4 (expected_ratio: 1.5)")
+  assert_eq(adaptive_selections[2], "structured_data->gzip (expected_ratio: 4)")
+  assert_eq(adaptive_selections[3], "random_data->snappy (expected_ratio: 1.5)")
 }
