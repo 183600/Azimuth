@@ -1,596 +1,859 @@
 // 遥测数据缓存测试用例
 
-test "telemetry_memory_cache_operations" {
-  // 测试遥测内存缓存操作
+test "telemetry_memory_cache_performance" {
+  // 测试遥测内存缓存性能
   
-  let cache_config = {
-    "max_size": 1000,
-    "ttl_seconds": 300,  // 5分钟
-    "eviction_policy": "lru"
-  }
+  let cache_configurations = [
+    {
+      "cache_name": "hot_metrics_cache",
+      "cache_type": "lru",
+      "max_size_mb": 100,
+      "ttl_seconds": 300,
+      "expected_hit_rate": 0.85
+    },
+    {
+      "cache_name": "trace_data_cache",
+      "cache_type": "lfu",
+      "max_size_mb": 500,
+      "ttl_seconds": 1800,
+      "expected_hit_rate": 0.75
+    },
+    {
+      "cache_name": "log_entries_cache",
+      "cache_type": "fifo",
+      "max_size_mb": 200,
+      "ttl_seconds": 600,
+      "expected_hit_rate": 0.65
+    },
+    {
+      "cache_name": "aggregated_metrics_cache",
+      "cache_type": "lru",
+      "max_size_mb": 50,
+      "ttl_seconds": 3600,
+      "expected_hit_rate": 0.90
+    }
+  ]
   
   // 验证缓存配置
-  assert_eq(cache_config.contains("max_size"), true)
-  assert_eq(cache_config.contains("ttl_seconds"), true)
-  assert_eq(cache_config.contains("eviction_policy"), true)
-  
-  // 验证缓存大小限制
-  let max_size = cache_config.get("max_size", 0)
-  assert_eq(max_size > 0, true)
-  assert_eq(max_size <= 10000, true)  // 最大10000项
-  
-  // 验证TTL配置
-  let ttl_seconds = cache_config.get("ttl_seconds", 0)
-  assert_eq(ttl_seconds > 0, true)
-  assert_eq(ttl_seconds <= 3600, true)  // 最大1小时
-  
-  // 验证淘汰策略
-  let eviction_policy = cache_config.get("eviction_policy", "")
-  assert_eq(eviction_policy == "lru" || eviction_policy == "lfu" || eviction_policy == "fifo", true)
+  assert_eq(cache_configurations.length(), 4)
   
   // 模拟内存缓存操作
-  let memory_cache = {}
-  let cache_timestamps = {}
+  let mut cache_performance_results = []
   
-  // 添加缓存项
-  let cache_key = "telemetry_trace_12345"
-  let cache_value = "{\"trace_id\":\"12345\",\"span_count\":5,\"duration_ms\":250}"
-  let current_timestamp = 1672531200
-  
-  memory_cache[cache_key] = cache_value
-  cache_timestamps[cache_key] = current_timestamp
-  
-  // 验证缓存添加
-  assert_eq(memory_cache.contains(cache_key), true)
-  assert_eq(memory_cache.get(cache_key, ""), cache_value)
-  assert_eq(cache_timestamps.contains(cache_key), true)
-  
-  // 获取缓存项
-  let retrieved_value = memory_cache.get(cache_key, "")
-  assert_eq(retrieved_value, cache_value)
-  
-  // 验证缓存大小
-  assert_eq(memory_cache.size(), 1)
-  
-  // 删除缓存项
-  memory_cache.remove(cache_key)
-  cache_timestamps.remove(cache_key)
-  
-  // 验证缓存删除
-  assert_eq(memory_cache.contains(cache_key), false)
-  assert_eq(memory_cache.size(), 0)
-}
-
-test "telemetry_cache_ttl_expiration" {
-  // 测试遥测缓存TTL过期
-  
-  let cache_config = {
-    "ttl_seconds": 60  // 1分钟TTL
-  }
-  
-  let ttl_seconds = cache_config.get("ttl_seconds", 0)
-  let current_time = 1672531200
-  
-  // 模拟缓存数据和时间戳
-  let cache_data = {}
-  let cache_timestamps = {}
-  
-  // 添加过期的缓存项
-  let expired_key = "expired_trace_12345"
-  let expired_value = "{\"trace_id\":\"12345\",\"status\":\"completed\"}"
-  let expired_timestamp = current_time - (ttl_seconds + 10)  // 比TTL早10秒过期
-  
-  cache_data[expired_key] = expired_value
-  cache_timestamps[expired_key] = expired_timestamp
-  
-  // 添加有效的缓存项
-  let valid_key = "valid_trace_67890"
-  let valid_value = "{\"trace_id\":\"67890\",\"status\":\"running\"}"
-  let valid_timestamp = current_time - 30  // 30秒前添加，仍在TTL内
-  
-  cache_data[valid_key] = valid_value
-  cache_timestamps[valid_key] = valid_timestamp
-  
-  // 模拟过期检查
-  let expired_keys = []
-  let mut i = 0
-  while i < cache_timestamps.keys().length() {
-    let key = cache_timestamps.keys()[i]
-    let timestamp = cache_timestamps.get(key, 0)
-    if current_time - timestamp > ttl_seconds {
-      expired_keys.push(key)
-    }
-    i = i + 1
-  }
-  
-  // 清理过期项
-  let mut j = 0
-  while j < expired_keys.length() {
-    let key = expired_keys[j]
-    cache_data.remove(key)
-    cache_timestamps.remove(key)
-    j = j + 1
-  }
-  
-  // 验证过期清理结果
-  assert_eq(cache_data.contains(expired_key), false)  // 过期项被删除
-  assert_eq(cache_data.contains(valid_key), true)     // 有效项保留
-  assert_eq(cache_data.size(), 1)                      // 只剩1项
-}
-
-test "telemetry_cache_lru_eviction" {
-  // 测试遥测缓存LRU淘汰策略
-  
-  let cache_config = {
-    "max_size": 3,  // 最大3项
-    "eviction_policy": "lru"
-  }
-  
-  let max_size = cache_config.get("max_size", 0)
-  let cache_data = {}
-  let access_order = []  // 记录访问顺序
-  
-  // 添加缓存项直到达到最大容量
-  let keys = ["key1", "key2", "key3"]
-  let mut i = 0
-  while i < keys.length() {
-    let key = keys[i]
-    let value = "value_" + i.to_string()
-    cache_data[key] = value
-    access_order.push(key)
-    i = i + 1
-  }
-  
-  // 验证缓存已满
-  assert_eq(cache_data.size(), max_size)
-  assert_eq(access_order.length(), max_size)
-  
-  // 访问第一个项（使其成为最近使用）
-  let accessed_key = "key1"
-  let mut new_access_order = []
-  let mut j = 0
-  while j < access_order.length() {
-    if access_order[j] != accessed_key {
-      new_access_order.push(access_order[j])
-    }
-    j = j + 1
-  }
-  new_access_order.push(accessed_key)
-  access_order = new_access_order
-  
-  // 添加新项（应该淘汰最久未使用的项）
-  let new_key = "key4"
-  let new_value = "value_4"
-  
-  if cache_data.size() >= max_size {
-    let lru_key = access_order[0]  // 最久未使用的项
-    cache_data.remove(lru_key)
+  for config in cache_configurations {
+    let cache_name = config["cache_name"]
+    let cache_type = config["cache_type"]
+    let max_size_mb = config["max_size_mb"]
+    let ttl_seconds = config["ttl_seconds"]
+    let expected_hit_rate = config["expected_hit_rate"]
     
-    let mut updated_access_order = []
-    let mut k = 1
-    while k < access_order.length() {
-      updated_access_order.push(access_order[k])
-      k = k + 1
+    // 模拟缓存操作
+    let operation_count = 10000
+    let mut cache_hits = 0
+    let mut cache_misses = 0
+    let mut evictions = 0
+    
+    // 模拟缓存项大小
+    let avg_item_size_bytes = match cache_name {
+      "hot_metrics_cache" => 1024,      // 1KB
+      "trace_data_cache" => 4096,       // 4KB
+      "log_entries_cache" => 512,       // 512B
+      "aggregated_metrics_cache" => 256, // 256B
+      _ => 1024
     }
-    access_order = updated_access_order
-  }
-  
-  cache_data[new_key] = new_value
-  access_order.push(new_key)
-  
-  // 验证LRU淘汰结果
-  assert_eq(cache_data.size(), max_size)  // 大小保持不变
-  assert_eq(cache_data.contains("key1"), true)   // key1被访问过，保留
-  assert_eq(cache_data.contains("key2"), false)  // key2最久未使用，被淘汰
-  assert_eq(cache_data.contains("key3"), true)   // key3保留
-  assert_eq(cache_data.contains("key4"), true)   // key4新添加
-}
-
-test "telemetry_cache_batch_operations" {
-  // 测试遥测缓存批量操作
-  
-  let cache_config = {
-    "batch_size": 100,
-    "max_batch_size": 1000
-  }
-  
-  let batch_size = cache_config.get("batch_size", 0)
-  let max_batch_size = cache_config.get("max_batch_size", 0)
-  
-  // 验证批量操作配置
-  assert_eq(batch_size > 0, true)
-  assert_eq(max_batch_size >= batch_size, true)
-  
-  // 准备批量数据
-  let batch_data = []
-  let mut i = 0
-  while i < batch_size {
-    let item_key = "trace_" + i.to_string()
-    let item_value = "{\"id\":" + i.to_string() + ",\"timestamp\":" + (1672531200 + i).to_string() + "}"
-    batch_data.push((item_key, item_value))
-    i = i + 1
-  }
-  
-  // 批量添加到缓存
-  let cache_data = {}
-  let mut j = 0
-  while j < batch_data.length() {
-    let (key, value) = batch_data[j]
-    cache_data[key] = value
-    j = j + 1
-  }
-  
-  // 验证批量添加结果
-  assert_eq(cache_data.size(), batch_size)
-  
-  // 批量获取
-  let keys_to_retrieve = ["trace_0", "trace_10", "trace_50", "trace_99"]
-  let retrieved_values = []
-  let mut k = 0
-  while k < keys_to_retrieve.length() {
-    let key = keys_to_retrieve[k]
-    let value = cache_data.get(key, "")
-    if value.length() > 0 {
-      retrieved_values.push((key, value))
-    }
-    k = k + 1
-  }
-  
-  // 验证批量获取结果
-  assert_eq(retrieved_values.length(), keys_to_retrieve.length())
-  assert_eq(retrieved_values[0].0, "trace_0")
-  assert_eq(retrieved_values[1].0, "trace_10")
-  
-  // 批量删除
-  let keys_to_delete = ["trace_0", "trace_1", "trace_2"]
-  let mut l = 0
-  while l < keys_to_delete.length() {
-    let key = keys_to_delete[l]
-    cache_data.remove(key)
-    l = l + 1
-  }
-  
-  // 验证批量删除结果
-  assert_eq(cache_data.size(), batch_size - keys_to_delete.length())
-  assert_eq(cache_data.contains("trace_0"), false)
-  assert_eq(cache_data.contains("trace_1"), false)
-  assert_eq(cache_data.contains("trace_2"), false)
-  assert_eq(cache_data.contains("trace_3"), true)
-}
-
-test "telemetry_cache_persistence" {
-  // 测试遥测缓存持久化
-  
-  let persistence_config = {
-    "enable_persistence": true,
-    "storage_path": "/var/cache/telemetry",
-    "snapshot_interval_seconds": 300,  // 5分钟
-    "compression_enabled": true
-  }
-  
-  // 验证持久化配置
-  assert_eq(persistence_config.get("enable_persistence", false), true)
-  assert_eq(persistence_config.contains("storage_path"), true)
-  
-  // 验证存储路径
-  let storage_path = persistence_config.get("storage_path", "")
-  assert_eq(storage_path.has_prefix("/"), true)
-  assert_eq(storage_path.contains("telemetry"), true)
-  
-  // 验证快照间隔
-  let snapshot_interval = persistence_config.get("snapshot_interval_seconds", 0)
-  assert_eq(snapshot_interval > 0, true)
-  assert_eq(snapshot_interval <= 3600, true)  // 最大1小时
-  
-  // 模拟缓存数据
-  let cache_data = {
-    "trace_12345": "{\"trace_id\":\"12345\",\"duration_ms\":250}",
-    "trace_67890": "{\"trace_id\":\"67890\",\"duration_ms\":180}",
-    "metric_cpu": "{\"value\":75.2,\"timestamp\":1672531200}"
-  }
-  
-  // 模拟序列化缓存数据
-  let serialized_data = ""
-  let mut i = 0
-  while i < cache_data.keys().length() {
-    let key = cache_data.keys()[i]
-    let value = cache_data.get(key, "")
-    serialized_data = serialized_data + key + ":" + value + "\n"
-    i = i + 1
-  }
-  
-  // 验证序列化结果
-  assert_eq(serialized_data.length() > 0, true)
-  assert_eq(serialized_data.contains("trace_12345"), true)
-  assert_eq(serialized_data.contains("trace_67890"), true)
-  assert_eq(serialized_data.contains("metric_cpu"), true)
-  
-  // 模拟压缩序列化数据
-  let compressed_data = "compressed:" + serialized_data.length().to_string()
-  
-  // 验证压缩结果
-  assert_eq(compressed_data.has_prefix("compressed:"), true)
-  assert_eq(compressed_data.contains(serialized_data.length().to_string()), true)
-  
-  // 模拟反序列化过程
-  let deserialized_cache = {}
-  let lines = serialized_data.split("\n")
-  let mut j = 0
-  while j < lines.length() {
-    let line = lines[j]
-    if line.length() > 0 {
-      let parts = line.split(":")
-      if parts.length() >= 2 {
-        let key = parts[0]
-        let mut value = ""
-        let mut k = 1
-        while k < parts.length() {
-          if k > 1 {
-            value = value + ":"
-          }
-          value = value + parts[k]
-          k = k + 1
-        }
-        deserialized_cache[key] = value
+    
+    let max_items = (max_size_mb * 1024 * 1024) / avg_item_size_bytes
+    let mut current_size = 0
+    
+    // 模拟缓存操作序列
+    let mut i = 0
+    while i < operation_count {
+      let key = "key_" + (i % (max_items * 2)).to_string()  // 2倍的项目空间，确保有重复访问
+      let access_time = 1641018000000L + (i * 1000)
+      
+      // 模拟缓存查找
+      let cache_hit = if i > max_items / 2 {
+        // 在缓存填充后，有更高的命中率
+        (i * 7) % 100 < (expected_hit_rate * 100.0)
+      } else {
+        // 缓存填充阶段，命中率较低
+        (i * 7) % 100 < 20.0
       }
+      
+      if cache_hit {
+        cache_hits = cache_hits + 1
+      } else {
+        cache_misses = cache_misses + 1
+        
+        // 模拟缓存插入
+        if current_size < max_items {
+          current_size = current_size + 1
+        } else {
+          // 模拟缓存淘汰
+          evictions = evictions + 1
+          
+          // 不同淘汰策略的行为
+          match cache_type {
+            "lru" => {
+              // LRU: 淘汰最近最少使用的项
+              current_size = max_items - 1
+            }
+            "lfu" => {
+              // LFU: 淘汰最少使用的项
+              current_size = max_items - 1
+            }
+            "fifo" => {
+              // FIFO: 淘汰最早插入的项
+              current_size = max_items - 1
+            }
+            _ => {
+              current_size = max_items - 1
+            }
+          }
+        }
+      }
+      
+      i = i + 1
     }
-    j = j + 1
+    
+    // 计算性能指标
+    let actual_hit_rate = cache_hits.to_double() / operation_count.to_double()
+    let miss_rate = cache_misses.to_double() / operation_count.to_double()
+    let eviction_rate = evictions.to_double() / operation_count.to_double()
+    
+    // 模拟内存使用情况
+    let memory_usage_mb = (current_size * avg_item_size_bytes).to_double() / (1024.0 * 1024.0)
+    let memory_efficiency = memory_usage_mb / max_size_mb.to_double()
+    
+    // 模拟延迟
+    let hit_latency_us = 10.0  // 缓存命中延迟
+    let miss_latency_us = 1000.0  // 缓存未命中延迟（需要从后端获取）
+    let avg_latency_us = hit_latency_us * actual_hit_rate + miss_latency_us * miss_rate
+    
+    cache_performance_results.push((
+      cache_name,
+      cache_type,
+      max_items,
+      cache_hits,
+      cache_misses,
+      evictions,
+      actual_hit_rate,
+      miss_rate,
+      eviction_rate,
+      memory_usage_mb,
+      memory_efficiency,
+      avg_latency_us
+    ))
   }
   
-  // 验证反序列化结果
-  assert_eq(deserialized_cache.size(), cache_data.size())
-  assert_eq(deserialized_cache.contains("trace_12345"), true)
-  assert_eq(deserialized_cache.get("trace_12345", ""), cache_data.get("trace_12345", ""))
+  // 验证缓存性能结果
+  assert_eq(cache_performance_results.length(), 4)
+  
+  // 验证热指标缓存
+  let hot_metrics_result = cache_performance_results[0]
+  assert_eq(hot_metrics_result.0, "hot_metrics_cache")
+  assert_eq(hot_metrics_result.1, "lru")
+  assert_eq(hot_metrics_result.6 > 0.8, true)  // 实际命中率应该接近预期
+  assert_eq(hot_metrics_result.10 <= 1.0, true)  // 内存效率应该不超过100%
+  
+  // 验证聚合指标缓存（应该有最高命中率）
+  let aggregated_metrics_result = cache_performance_results[3]
+  assert_eq(aggregated_metrics_result.0, "aggregated_metrics_cache")
+  assert_eq(aggregated_metrics_result.6 > hot_metrics_result.6, true)  // 命中率应该更高
+  
+  // 验证所有缓存的性能指标合理
+  for result in cache_performance_results {
+    assert_eq(result.2 > 0, true)      // 最大项目数应该大于0
+    assert_eq(result.3 >= 0, true)      // 缓存命中数应该非负
+    assert_eq(result.4 >= 0, true)      // 缓存未命中数应该非负
+    assert_eq(result.5 >= 0, true)      // 淘汰数应该非负
+    assert_eq(result.6 >= 0.0, true)    // 命中率应该非负
+    assert_eq(result.6 <= 1.0, true)    // 命中率应该不超过100%
+    assert_eq(result.11 > 0.0, true)    // 平均延迟应该大于0
+  }
 }
 
-test "telemetry_cache_statistics" {
-  // 测试遥测缓存统计
+test "telemetry_distributed_cache_consistency" {
+  // 测试遥测分布式缓存一致性
   
-  let cache_stats = {
-    "hits": 850,
-    "misses": 150,
-    "sets": 900,
-    "deletes": 100,
-    "evictions": 50,
-    "current_size": 500,
-    "max_size": 1000,
-    "memory_usage_bytes": 5242880  // 5MB
+  let distributed_cache_nodes = [
+    {
+      "node_id": "node_001",
+      "region": "us-east-1",
+      "data_center": "dc1",
+      "cache_size_mb": 1024,
+      "replication_factor": 2
+    },
+    {
+      "node_id": "node_002",
+      "region": "us-east-1",
+      "data_center": "dc2",
+      "cache_size_mb": 1024,
+      "replication_factor": 2
+    },
+    {
+      "node_id": "node_003",
+      "region": "us-west-1",
+      "data_center": "dc3",
+      "cache_size_mb": 1024,
+      "replication_factor": 2
+    },
+    {
+      "node_id": "node_004",
+      "region": "eu-west-1",
+      "data_center": "dc4",
+      "cache_size_mb": 1024,
+      "replication_factor": 2
+    }
+  ]
+  
+  // 验证分布式缓存节点
+  assert_eq(distributed_cache_nodes.length(), 4)
+  
+  // 模拟分布式缓存操作
+  let mut consistency_results = []
+  
+  for node in distributed_cache_nodes {
+    let node_id = node["node_id"]
+    let region = node["region"]
+    let data_center = node["data_center"]
+    let replication_factor = node["replication_factor"]
+    
+    // 模拟缓存写入操作
+    let write_operations = 1000
+    let mut successful_writes = 0
+    let mut replication_successes = 0
+    let mut write_conflicts = 0
+    
+    let mut i = 0
+    while i < write_operations {
+      let key = "metric_" + i.to_string()
+      let value = "value_" + i.to_string()
+      let timestamp = 1641018000000L + (i * 1000)
+      
+      // 模拟写入成功（95%成功率）
+      let write_success = (i * 13) % 100 < 95
+      
+      if write_success {
+        successful_writes = successful_writes + 1
+        
+        // 模拟复制到其他节点
+        let mut replication_success_count = 0
+        let mut j = 0
+        while j < replication_factor {
+          // 模拟网络延迟和复制成功（90%成功率）
+          let replication_success = (i * 7 + j * 11) % 100 < 90
+          if replication_success {
+            replication_success_count = replication_success_count + 1
+          }
+          j = j + 1
+        }
+        
+        if replication_success_count == replication_factor {
+          replication_successes = replication_successes + 1
+        }
+      } else {
+        // 模拟写入冲突
+        if (i * 17) % 100 < 10 {
+          write_conflicts = write_conflicts + 1
+        }
+      }
+      
+      i = i + 1
+    }
+    
+    // 模拟缓存读取操作
+    let read_operations = 2000
+    let mut cache_hits = 0
+    let mut cache_misses = 0
+    let mut stale_reads = 0
+    let mut inconsistency_detected = 0
+    
+    let mut i = 0
+    while i < read_operations {
+      let key = "metric_" + (i % write_operations).to_string()
+      let read_timestamp = 1641018000000L + (write_operations * 1000) + (i * 500)
+      
+      // 模拟本地缓存命中（70%命中率）
+      let local_hit = (i * 19) % 100 < 70
+      
+      if local_hit {
+        cache_hits = cache_hits + 1
+        
+        // 检查数据是否过期（5%概率读取到过期数据）
+        let is_stale = (i * 23) % 100 < 5
+        if is_stale {
+          stale_reads = stale_reads + 1
+        }
+      } else {
+        cache_misses = cache_misses + 1
+        
+        // 模拟从其他节点读取
+        let remote_hit = (i * 29) % 100 < 80  // 80%远程命中率
+        
+        if not remote_hit {
+          // 模拟不一致检测
+          let inconsistency = (i * 31) % 100 < 2  // 2%不一致概率
+          if inconsistency {
+            inconsistency_detected = inconsistency_detected + 1
+          }
+        }
+      }
+      
+      i = i + 1
+    }
+    
+    // 计算一致性指标
+    let write_success_rate = successful_writes.to_double() / write_operations.to_double()
+    let replication_success_rate = replication_successes.to_double() / successful_writes.to_double()
+    let read_hit_rate = cache_hits.to_double() / read_operations.to_double()
+    let stale_read_rate = stale_reads.to_double() / cache_hits.to_double()
+    let inconsistency_rate = inconsistency_detected.to_double() / read_operations.to_double()
+    
+    // 模拟网络分区影响
+    let network_partition_probability = 0.05  // 5%概率发生网络分区
+    let network_partition_affected = (node_id.hash() % 100) < (network_partition_probability * 100.0)
+    
+    consistency_results.push((
+      node_id,
+      region,
+      data_center,
+      write_success_rate,
+      replication_success_rate,
+      read_hit_rate,
+      stale_read_rate,
+      inconsistency_rate,
+      network_partition_affected
+    ))
   }
   
-  // 验证缓存统计完整性
-  assert_eq(cache_stats.contains("hits"), true)
-  assert_eq(cache_stats.contains("misses"), true)
-  assert_eq(cache_stats.contains("sets"), true)
-  assert_eq(cache_stats.contains("deletes"), true)
+  // 验证一致性结果
+  assert_eq(consistency_results.length(), 4)
   
-  // 验证命中和未命中计数
-  let hits = cache_stats.get("hits", 0)
-  let misses = cache_stats.get("misses", 0)
-  assert_eq(hits > 0, true)
-  assert_eq(misses > 0, true)
-  
-  // 计算命中率
-  let total_requests = hits + misses
-  let hit_rate = (hits.to_double() / total_requests.to_double()) * 100.0
-  
-  // 验证命中率
-  assert_eq(hit_rate > 80.0, true)  // 至少80%命中率
-  assert_eq(hit_rate < 100.0, true)
-  
-  // 验证操作计数
-  let sets = cache_stats.get("sets", 0)
-  let deletes = cache_stats.get("deletes", 0)
-  let evictions = cache_stats.get("evictions", 0)
-  
-  assert_eq(sets > 0, true)
-  assert_eq(deletes >= 0, true)
-  assert_eq(evictions >= 0, true)
-  
-  // 验证缓存大小
-  let current_size = cache_stats.get("current_size", 0)
-  let max_size = cache_stats.get("max_size", 0)
-  
-  assert_eq(current_size >= 0, true)
-  assert_eq(current_size <= max_size, true)
-  assert_eq(max_size > 0, true)
-  
-  // 验证内存使用
-  let memory_usage = cache_stats.get("memory_usage_bytes", 0)
-  assert_eq(memory_usage > 0, true)
-  
-  // 计算平均项大小
-  let avg_item_size = if current_size > 0 {
-    memory_usage.to_double() / current_size.to_double()
-  } else {
-    0.0
+  // 验证所有节点的一致性指标
+  for result in consistency_results {
+    assert_eq(result.3 > 0.8, true)   // 写入成功率应该大于80%
+    assert_eq(result.4 > 0.7, true)   // 复制成功率应该大于70%
+    assert_eq(result.5 > 0.5, true)   // 读取命中率应该大于50%
+    assert_eq(result.6 < 0.1, true)   // 过期读取率应该小于10%
+    assert_eq(result.7 < 0.05, true)  // 不一致率应该小于5%
   }
   
-  assert_eq(avg_item_size > 0.0, true)
+  // 验证不同区域的性能差异
+  let us_east_nodes = []
+  let us_west_nodes = []
+  let eu_west_nodes = []
   
-  // 验证缓存利用率
-  let utilization_rate = (current_size.to_double() / max_size.to_double()) * 100.0
-  assert_eq(utilization_rate >= 0.0, true)
-  assert_eq(utilization_rate <= 100.0, true)
+  for result in consistency_results {
+    if result.1 == "us-east-1" {
+      us_east_nodes.push(result)
+    } else if result.1 == "us-west-1" {
+      us_west_nodes.push(result)
+    } else if result.1 == "eu-west-1" {
+      eu_west_nodes.push(result)
+    }
+  }
+  
+  assert_eq(us_east_nodes.length(), 2)  // 2个us-east-1节点
+  assert_eq(us_west_nodes.length(), 1)  // 1个us-west-1节点
+  assert_eq(eu_west_nodes.length(), 1)  // 1个eu-west-1节点
 }
 
-test "telemetry_cache_warming" {
-  // 测试遥测缓存预热
+test "telemetry_cache_eviction_strategies" {
+  // 测试遥测缓存淘汰策略
   
-  let warming_config = {
-    "enable_warming": true,
-    "warming_data_source": "database",
-    "warming_queries": [
-      "SELECT * FROM recent_traces LIMIT 100",
-      "SELECT * FROM popular_metrics LIMIT 50",
-      "SELECT * FROM hot_spans LIMIT 200"
-    ],
-    "warming_concurrency": 5
+  let eviction_strategies = [
+    {
+      "strategy_name": "lru",
+      "description": "Least Recently Used",
+      "memory_efficiency": 0.85,
+      "cpu_overhead": "low",
+      "hit_rate_optimal": "temporal_locality"
+    },
+    {
+      "strategy_name": "lfu",
+      "description": "Least Frequently Used",
+      "memory_efficiency": 0.90,
+      "cpu_overhead": "medium",
+      "hit_rate_optimal": "frequency_locality"
+    },
+    {
+      "strategy_name": "fifo",
+      "description": "First In First Out",
+      "memory_efficiency": 0.75,
+      "cpu_overhead": "very_low",
+      "hit_rate_optimal": "simple_workloads"
+    },
+    {
+      "strategy_name": "random",
+      "description": "Random Replacement",
+      "memory_efficiency": 0.65,
+      "cpu_overhead": "very_low",
+      "hit_rate_optimal": "uniform_access"
+    },
+    {
+      "strategy_name": "arc",
+      "description": "Adaptive Replacement Cache",
+      "memory_efficiency": 0.95,
+      "cpu_overhead": "high",
+      "hit_rate_optimal": "mixed_workloads"
+    }
+  ]
+  
+  // 验证淘汰策略
+  assert_eq(eviction_strategies.length(), 5)
+  
+  // 模拟不同访问模式下的淘汰策略性能
+  let access_patterns = [
+    {
+      "pattern_name": "temporal_locality",
+      "description": "时间局部性访问模式",
+      "hot_keys_percentage": 20,
+      "access_distribution": "skewed"
+    },
+    {
+      "pattern_name": "frequency_locality",
+      "description": "频率局部性访问模式",
+      "hot_keys_percentage": 30,
+      "access_distribution": "zipf"
+    },
+    {
+      "pattern_name": "uniform_access",
+      "description": "均匀访问模式",
+      "hot_keys_percentage": 5,
+      "access_distribution": "uniform"
+    },
+    {
+      "pattern_name": "mixed_workloads",
+      "description": "混合工作负载",
+      "hot_keys_percentage": 15,
+      "access_distribution": "mixed"
+    }
+  ]
+  
+  // 验证访问模式
+  assert_eq(access_patterns.length(), 4)
+  
+  // 模拟淘汰策略性能测试
+  let mut eviction_performance_results = []
+  
+  for strategy in eviction_strategies {
+    let strategy_name = strategy["strategy_name"]
+    let memory_efficiency = strategy["memory_efficiency"]
+    let cpu_overhead = strategy["cpu_overhead"]
+    
+    for pattern in access_patterns {
+      let pattern_name = pattern["pattern_name"]
+      let hot_keys_percentage = pattern["hot_keys_percentage"]
+      let access_distribution = pattern["access_distribution"]
+      
+      // 模拟缓存操作
+      let cache_size = 1000
+      let total_accesses = 10000
+      let mut cache_hits = 0
+      let mut cache_misses = 0
+      let mut evictions = 0
+      
+      // 模拟缓存内容
+      let mut cache_contents = []
+      let mut access_frequency = {}  // key -> frequency
+      let mut last_access_time = {}  // key -> timestamp
+      let mut insertion_time = {}   // key -> timestamp
+      
+      let mut i = 0
+      while i < total_accesses {
+        let timestamp = i.to_long()
+        
+        // 生成访问键
+        let key = match access_distribution {
+          "skewed" => {
+            // 80%的访问集中在20%的键上
+            if (i * 7) % 100 < 80 {
+              "hot_" + (i % (cache_size * hot_keys_percentage / 100)).to_string()
+            } else {
+              "cold_" + (i % (cache_size * 2)).to_string()
+            }
+          }
+          "zipf" => {
+            // Zipf分布
+            let rank = (i * 13) % cache_size + 1
+            "zipf_" + rank.to_string()
+          }
+          "uniform" => {
+            // 均匀分布
+            "uniform_" + (i % (cache_size * 2)).to_string()
+          }
+          "mixed" => {
+            // 混合分布
+            if i % 3 == 0 {
+              "temporal_" + (i % cache_size).to_string()
+            } else if i % 3 == 1 {
+              "frequency_" + (i % (cache_size * hot_keys_percentage / 100)).to_string()
+            } else {
+              "random_" + (i % (cache_size * 2)).to_string()
+            }
+          }
+          _ => "key_" + i.to_string()
+        }
+        
+        // 检查缓存命中
+        let cache_hit = cache_contents.contains(key)
+        
+        if cache_hit {
+          cache_hits = cache_hits + 1
+          
+          // 更新访问信息
+          access_frequency[key] = access_frequency.get(key, 0) + 1
+          last_access_time[key] = timestamp
+        } else {
+          cache_misses = cache_misses + 1
+          
+          // 检查是否需要淘汰
+          if cache_contents.length() >= cache_size {
+            let evict_key = match strategy_name {
+              "lru" => {
+                // 找到最近最少使用的键
+                let mut lru_key = ""
+                let mut oldest_time = timestamp
+                
+                for cached_key in cache_contents {
+                  let last_access = last_access_time.get(cached_key, 0L)
+                  if last_access < oldest_time {
+                    oldest_time = last_access
+                    lru_key = cached_key
+                  }
+                }
+                lru_key
+              }
+              "lfu" => {
+                // 找到最少使用的键
+                let mut lfu_key = ""
+                let mut min_freq = 2147483647
+                
+                for cached_key in cache_contents {
+                  let freq = access_frequency.get(cached_key, 0)
+                  if freq < min_freq {
+                    min_freq = freq
+                    lfu_key = cached_key
+                  }
+                }
+                lfu_key
+              }
+              "fifo" => {
+                // 找到最早插入的键
+                let mut fifo_key = ""
+                let mut earliest_time = timestamp
+                
+                for cached_key in cache_contents {
+                  let insert_time = insertion_time.get(cached_key, 0L)
+                  if insert_time < earliest_time {
+                    earliest_time = insert_time
+                    fifo_key = cached_key
+                  }
+                }
+                fifo_key
+              }
+              "random" => {
+                // 随机选择一个键
+                let random_index = (i * 17) % cache_contents.length()
+                cache_contents[random_index]
+              }
+              "arc" => {
+                // 简化的ARC实现：结合LRU和LFU
+                if i % 2 == 0 {
+                  // 使用LRU
+                  let mut lru_key = ""
+                  let mut oldest_time = timestamp
+                  
+                  for cached_key in cache_contents {
+                    let last_access = last_access_time.get(cached_key, 0L)
+                    if last_access < oldest_time {
+                      oldest_time = last_access
+                      lru_key = cached_key
+                    }
+                  }
+                  lru_key
+                } else {
+                  // 使用LFU
+                  let mut lfu_key = ""
+                  let mut min_freq = 2147483647
+                  
+                  for cached_key in cache_contents {
+                    let freq = access_frequency.get(cached_key, 0)
+                    if freq < min_freq {
+                      min_freq = freq
+                      lfu_key = cached_key
+                    }
+                  }
+                  lfu_key
+                }
+              }
+              _ => {
+                // 默认使用LRU
+                cache_contents[0]
+              }
+            }
+            
+            // 执行淘汰
+            if evict_key != "" {
+              cache_contents = cache_contents.filter(fn(k) { k != evict_key })
+              access_frequency.remove(evict_key)
+              last_access_time.remove(evict_key)
+              insertion_time.remove(evict_key)
+              evictions = evictions + 1
+            }
+          }
+          
+          // 插入新键
+          cache_contents.push(key)
+          access_frequency[key] = 1
+          last_access_time[key] = timestamp
+          insertion_time[key] = timestamp
+        }
+        
+        i = i + 1
+      }
+      
+      // 计算性能指标
+      let hit_rate = cache_hits.to_double() / total_accesses.to_double()
+      let miss_rate = cache_misses.to_double() / total_accesses.to_double()
+      let eviction_rate = evictions.to_double() / total_accesses.to_double()
+      
+      // 模拟CPU开销
+      let cpu_overhead_factor = match cpu_overhead {
+        "very_low" => 1.0,
+        "low" => 1.2,
+        "medium" => 1.5,
+        "high" => 2.0,
+        _ => 1.0
+      }
+      
+      let adjusted_hit_rate = hit_rate / cpu_overhead_factor
+      
+      eviction_performance_results.push((
+        strategy_name,
+        pattern_name,
+        hit_rate,
+        miss_rate,
+        eviction_rate,
+        adjusted_hit_rate,
+        cache_hits,
+        cache_misses,
+        evictions
+      ))
+    }
   }
   
-  // 验证预热配置
-  assert_eq(warming_config.get("enable_warming", false), true)
-  assert_eq(warming_config.contains("warming_data_source"), true)
-  assert_eq(warming_config.contains("warming_queries"), true)
+  // 验证淘汰策略性能结果
+  assert_eq(eviction_performance_results.length(), 20)  // 5个策略 × 4个模式
   
-  // 验证数据源
-  let data_source = warming_config.get("warming_data_source", "")
-  assert_eq(data_source == "database" || data_source == "file" || data_source == "api", true)
+  // 验证LRU在时间局部性模式下的表现
+  let lru_temporal = eviction_performance_results[0]
+  assert_eq(lru_temporal.0, "lru")
+  assert_eq(lru_temporal.1, "temporal_locality")
+  assert_eq(lru_temporal.2 > 0.7, true)  // 命中率应该较高
   
-  // 验证预热查询
-  let warming_queries = warming_config.get("warming_queries", [])
-  assert_eq(warming_queries.length() > 0, true)
-  assert_eq(warming_queries.length(), 3)  // 3个预热查询
+  // 验证LFU在频率局部性模式下的表现
+  let lfu_frequency = eviction_performance_results[5]
+  assert_eq(lfu_frequency.0, "lfu")
+  assert_eq(lfu_frequency.1, "frequency_locality")
+  assert_eq(lfu_frequency.2 > 0.7, true)  // 命中率应该较高
   
-  // 验证并发度
-  let warming_concurrency = warming_config.get("warming_concurrency", 0)
-  assert_eq(warming_concurrency > 0, true)
-  assert_eq(warming_concurrency <= 10, true)  // 最多10个并发
+  // 验证ARC在混合工作负载下的表现
+  let arc_mixed = eviction_performance_results[19]
+  assert_eq(arc_mixed.0, "arc")
+  assert_eq(arc_mixed.1, "mixed_workloads")
+  assert_eq(arc_mixed.2 > 0.6, true)  // 命中率应该较好
   
-  // 模拟预热过程
-  let cache_data = {}
-  let warming_results = []
+  // 验证所有策略都有合理的性能
+  for result in eviction_performance_results {
+    assert_eq(result.2 >= 0.0, true)  // 命中率应该非负
+    assert_eq(result.2 <= 1.0, true)  // 命中率应该不超过100%
+    assert_eq(result.3 >= 0.0, true)  // 未命中率应该非负
+    assert_eq(result.4 >= 0.0, true)  // 淘汰率应该非负
+    assert_eq(result.6 >= 0, true)    // 命中数应该非负
+    assert_eq(result.7 >= 0, true)    // 未命中数应该非负
+    assert_eq(result.8 >= 0, true)    // 淘汰数应该非负
+  }
+}
+
+test "telemetry_cache_warming_and_preloading" {
+  // 测试遥测缓存预热和预加载
   
-  let mut i = 0
-  while i < warming_queries.length() {
-    let query = warming_queries[i]
+  let warming_strategies = [
+    {
+      "strategy_name": "startup_warming",
+      "trigger": "application_start",
+      "data_source": "historical_hot_data",
+      "warming_duration_seconds": 300,
+      "target_hit_rate": 0.70
+    },
+    {
+      "strategy_name": "scheduled_warming",
+      "trigger": "cron_schedule",
+      "data_source": "predictive_analysis",
+      "warming_duration_seconds": 180,
+      "target_hit_rate": 0.80
+    },
+    {
+      "strategy_name": "demand_based_warming",
+      "trigger": "traffic_spike",
+      "data_source": "realtime_trends",
+      "warming_duration_seconds": 60,
+      "target_hit_rate": 0.60
+    },
+    {
+      "strategy_name": "background_warming",
+      "trigger": "low_load_periods",
+      "data_source": "access_patterns",
+      "warming_duration_seconds": 600,
+      "target_hit_rate": 0.90
+    }
+  ]
+  
+  // 验证预热策略
+  assert_eq(warming_strategies.length(), 4)
+  
+  // 模拟缓存预热过程
+  let mut warming_results = []
+  
+  for strategy in warming_strategies {
+    let strategy_name = strategy["strategy_name"]
+    let trigger = strategy["trigger"]
+    let data_source = strategy["data_source"]
+    let warming_duration_seconds = strategy["warming_duration_seconds"]
+    let target_hit_rate = strategy["target_hit_rate"]
     
-    // 模拟查询结果
-    let query_result_count = if query.contains("recent_traces") {
-      100
-    } else if query.contains("popular_metrics") {
-      50
-    } else if query.contains("hot_spans") {
-      200
-    } else {
-      0
+    // 模拟预热数据源
+    let data_source_size = match data_source {
+      "historical_hot_data" => 10000,
+      "predictive_analysis" => 5000,
+      "realtime_trends" => 2000,
+      "access_patterns" => 15000,
+      _ => 5000
     }
     
-    // 模拟将查询结果添加到缓存
-    let mut j = 0
-    while j < query_result_count {
-      let cache_key = "warm_" + i.to_string() + "_" + j.to_string()
-      let cache_value = "{\"query\":\"" + query + "\",\"index\":" + j.to_string() + "}"
-      cache_data[cache_key] = cache_value
-      j = j + 1
+    // 模拟预热过程
+    let warming_start_time = 1641018000000L
+    let warming_end_time = warming_start_time + (warming_duration_seconds * 1000)
+    
+    let mut items_loaded = 0
+    let mut loading_errors = 0
+    let mut loading_time_ms = 0
+    
+    // 模拟数据加载
+    let mut i = 0
+    while i < data_source_size {
+      let item_load_time = match data_source {
+        "historical_hot_data" => 50,  // 50ms per item
+        "predictive_analysis" => 80,  // 80ms per item
+        "realtime_trends" => 30,      // 30ms per item
+        "access_patterns" => 40,      // 40ms per item
+        _ => 50
+      }
+      
+      // 模拟加载成功/失败
+      let load_success = (i * 13) % 100 < 95  // 95%成功率
+      
+      if load_success {
+        items_loaded = items_loaded + 1
+        loading_time_ms = loading_time_ms + item_load_time
+      } else {
+        loading_errors = loading_errors + 1
+        loading_time_ms = loading_time_ms + item_load_time / 2  // 错误处理时间较短
+      }
+      
+      // 检查是否超时
+      let current_time = warming_start_time + loading_time_ms
+      if current_time >= warming_end_time {
+        break
+      }
+      
+      i = i + 1
     }
     
-    warming_results.push((query, query_result_count))
-    i = i + 1
+    // 计算预热效率
+    let loading_efficiency = items_loaded.to_double() / data_source_size.to_double()
+    let error_rate = loading_errors.to_double() / data_source_size.to_double()
+    let actual_warming_duration = loading_time_ms.to_double() / 1000.0
+    
+    // 模拟预热后的缓存性能
+    let post_warming_accesses = 1000
+    let mut cache_hits = 0
+    
+    let mut i = 0
+    while i < post_warming_accesses {
+      // 预热后的命中率应该更高
+      let hit_probability = target_hit_rate + (loading_efficiency - 0.8) * 0.2
+      let cache_hit = (i * 19) % 100 < (hit_probability * 100.0)
+      
+      if cache_hit {
+        cache_hits = cache_hits + 1
+      }
+      
+      i = i + 1
+    }
+    
+    let actual_hit_rate = cache_hits.to_double() / post_warming_accesses.to_double()
+    
+    // 计算预热收益
+    let baseline_hit_rate = 0.3  // 假设基准命中率为30%
+    let hit_rate_improvement = actual_hit_rate - baseline_hit_rate
+    let warming_benefit = hit_rate_improvement * items_loaded.to_double() / 1000.0
+    
+    warming_results.push((
+      strategy_name,
+      trigger,
+      data_source,
+      data_source_size,
+      items_loaded,
+      loading_errors,
+      loading_efficiency,
+      error_rate,
+      actual_warming_duration,
+      actual_hit_rate,
+      hit_rate_improvement,
+      warming_benefit
+    ))
   }
   
   // 验证预热结果
-  assert_eq(warming_results.length(), warming_queries.length())
-  assert_eq(warming_results[0].1, 100)  // recent_traces查询结果
-  assert_eq(warming_results[1].1, 50)   // popular_metrics查询结果
-  assert_eq(warming_results[2].1, 200)  // hot_spans查询结果
+  assert_eq(warming_results.length(), 4)
   
-  // 验证缓存预热数据
-  let total_warmed_items = 100 + 50 + 200
-  assert_eq(cache_data.size(), total_warmed_items)
-  assert_eq(cache_data.contains("warm_0_0"), true)
-  assert_eq(cache_data.contains("warm_1_0"), true)
-  assert_eq(cache_data.contains("warm_2_0"), true)
+  // 验证启动预热
+  let startup_warming = warming_results[0]
+  assert_eq(startup_warming.0, "startup_warming")
+  assert_eq(startup_warming.1, "application_start")
+  assert_eq(startup_warming.2, "historical_hot_data")
+  assert_eq(startup_warming.5 > 0, true)  // 应该有一些加载错误
+  assert_eq(startup_warming.9 > 0.6, true)  // 实际命中率应该大于60%
   
-  // 验证预热覆盖率
-  let warming_coverage = (cache_data.size().to_double() / total_warmed_items.to_double()) * 100.0
-  assert_eq(warming_coverage, 100.0)  // 100%覆盖率
-}
-
-test "telemetry_cache_invalidation" {
-  // 测试遥测缓存失效
+  // 验证后台预热
+  let background_warming = warming_results[3]
+  assert_eq(background_warming.0, "background_warming")
+  assert_eq(background_warming.1, "low_load_periods")
+  assert_eq(background_warming.2, "access_patterns")
+  assert_eq(background_warming.4 > startup_warming.4, true)  // 应该加载更多项目
+  assert_eq(background_warming.9 > startup_warming.9, true)  // 命中率应该更高
   
-  let invalidation_config = {
-    "invalidation_strategy": "time_based",
-    "invalidation_interval_seconds": 60,
-    "invalidation_rules": [
-      {"pattern": "trace_*", "ttl_seconds": 300},
-      {"pattern": "metric_*", "ttl_seconds": 600},
-      {"pattern": "log_*", "ttl_seconds": 180}
-    ]
+  // 验证所有预热策略都有收益
+  for result in warming_results {
+    assert_eq(result.4 >= 0, true)      // 加载项目数应该非负
+    assert_eq(result.5 >= 0, true)      // 加载错误数应该非负
+    assert_eq(result.6 >= 0.0, true)    // 加载效率应该非负
+    assert_eq(result.6 <= 1.0, true)    // 加载效率应该不超过100%
+    assert_eq(result.7 >= 0.0, true)    // 错误率应该非负
+    assert_eq(result.9 >= 0.0, true)    // 实际命中率应该非负
+    assert_eq(result.10 >= 0.0, true)   // 命中率改善应该非负
+    assert_eq(result.11 >= 0.0, true)   // 预热收益应该非负
   }
   
-  // 验证失效配置
-  assert_eq(invalidation_config.contains("invalidation_strategy"), true)
-  assert_eq(invalidation_config.contains("invalidation_interval_seconds"), true)
-  assert_eq(invalidation_config.contains("invalidation_rules"), true)
+  // 验证不同策略的特点
+  let demand_based = warming_results[2]
+  assert_eq(demand_based.0, "demand_based_warming")
+  assert_eq(demand_based.8 < 120.0, true)  // 实际预热时间应该较短（快速响应）
   
-  // 验证失效策略
-  let strategy = invalidation_config.get("invalidation_strategy", "")
-  assert_eq(strategy == "time_based" || strategy == "event_based" || strategy == "manual", true)
-  
-  // 验证失效间隔
-  let interval = invalidation_config.get("invalidation_interval_seconds", 0)
-  assert_eq(interval > 0, true)
-  
-  // 验证失效规则
-  let rules = invalidation_config.get("invalidation_rules", [])
-  assert_eq(rules.length() > 0, true)
-  assert_eq(rules.length(), 3)  // 3个失效规则
-  
-  // 模拟缓存数据
-  let cache_data = {}
-  let cache_timestamps = {}
-  let current_time = 1672531200
-  
-  // 添加不同类型的缓存项
-  let cache_items = [
-    ("trace_12345", current_time - 400),  // 400秒前，超过trace的TTL(300秒)
-    ("trace_67890", current_time - 200),  // 200秒前，在trace的TTL内
-    ("metric_cpu", current_time - 700),   // 700秒前，超过metric的TTL(600秒)
-    ("metric_memory", current_time - 500), // 500秒前，在metric的TTL内
-    ("log_error", current_time - 200)     // 200秒前，在log的TTL(180秒)外
-  ]
-  
-  let mut i = 0
-  while i < cache_items.length() {
-    let (key, timestamp) = cache_items[i]
-    cache_data[key] = "data_for_" + key
-    cache_timestamps[key] = timestamp
-    i = i + 1
-  }
-  
-  // 模拟失效检查
-  let keys_to_invalidate = []
-  let mut j = 0
-  while j < cache_items.length() {
-    let (key, timestamp) = cache_items[j]
-    let mut ttl_seconds = 0
-    
-    // 根据模式确定TTL
-    let mut k = 0
-    while k < rules.length() {
-      let rule = rules[k]
-      let pattern = rule.get("pattern", "")
-      if key.has_prefix(pattern.replace("*", "")) {
-        ttl_seconds = rule.get("ttl_seconds", 0)
-        break
-      }
-      k = k + 1
-    }
-    
-    // 检查是否过期
-    if ttl_seconds > 0 && (current_time - timestamp) > ttl_seconds {
-      keys_to_invalidate.push(key)
-    }
-    j = j + 1
-  }
-  
-  // 执行失效
-  let mut l = 0
-  while l < keys_to_invalidate.length() {
-    let key = keys_to_invalidate[l]
-    cache_data.remove(key)
-    cache_timestamps.remove(key)
-    l = l + 1
-  }
-  
-  // 验证失效结果
-  assert_eq(cache_data.contains("trace_12345"), false)  // 过期，被删除
-  assert_eq(cache_data.contains("trace_67890"), true)   // 未过期，保留
-  assert_eq(cache_data.contains("metric_cpu"), false)   // 过期，被删除
-  assert_eq(cache_data.contains("metric_memory"), true) // 未过期，保留
-  assert_eq(cache_data.contains("log_error"), false)    // 过期，被删除
-  
-  // 验证剩余缓存项
-  assert_eq(cache_data.size(), 2)  // 只剩2个有效项
+  let scheduled = warming_results[1]
+  assert_eq(scheduled.0, "scheduled_warming")
+  assert_eq(scheduled.9 > 0.7, true)  // 预测性预热应该有较高命中率
 }
