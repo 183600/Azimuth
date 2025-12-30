@@ -39,6 +39,19 @@
       "root": "azimuth/telemetry",
       "rel": "azimuth/telemetry",
       "files": {
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/simple_test_new.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/test_validation.mbt": {
           "backend": [
             "Wasm",
@@ -1381,6 +1394,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_adaptive_performance_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_advanced_features_test.mbt": {
           "backend": [
             "Wasm",
@@ -1563,6 +1589,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_comprehensive_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_compression_performance_test.mbt": {
           "backend": [
             "Wasm",
@@ -1733,6 +1772,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_context_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_correlation_analysis_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -1953,6 +2005,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_energy_efficiency_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_enhanced_features_test.mbt": {
           "backend": [
             "Wasm",
@@ -2135,6 +2200,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_i18n_format_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_i18n_test.mbt": {
           "backend": [
             "Wasm",
@@ -2175,6 +2253,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_integrity_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_intelligent_filtering_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -2265,6 +2356,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_metrics_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_multi_protocol_compatibility_test.mbt": {
           "backend": [
             "Wasm",
@@ -2305,6 +2409,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_multi_tenant_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_network_partition_resilience_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -2408,6 +2525,32 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_predictive_maintenance_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_privacy_compliance_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_realtime_monitoring_test.mbt": {
           "backend": [
             "Wasm",
@@ -2422,6 +2565,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_realtime_stream_processing_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_realtime_stream_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -2590,6 +2746,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_service_discovery_integration_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_service_endpoint_test.mbt": {
           "backend": [
             "Wasm",
@@ -2629,6 +2798,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_time_sync_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_time_window_analysis_test.mbt": {
           "backend": [
             "Wasm",
@@ -2656,6 +2838,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_trace_chaining_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_tracing_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
