@@ -1,6 +1,8 @@
 // Azimuth Telemetry - Metrics API
 // 指标收集和聚合
 
+type AttributeValue = @azimuth.telemetry.api.common.AttributeValue
+
 
 
 pub enum InstrumentType {
@@ -19,19 +21,19 @@ pub struct Measurement {
 }
 
 pub trait Counter {
-  add(amount : Int64, attributes? : Array[(String, AttributeValue)]) -> Unit
+  add(amount : Int64, attributes? : Array[(String, @azimuth.telemetry.api.common.AttributeValue)]) -> Unit
 }
 
 pub trait Histogram {
-  record(value : Double, attributes? : Array[(String, AttributeValue)]) -> Unit
+  record(value : Double, attributes? : Array[(String, @azimuth.telemetry.api.common.AttributeValue)]) -> Unit
 }
 
 pub trait UpDownCounter {
-  add(amount : Int64, attributes? : Array[(String, AttributeValue)]) -> Unit
+  add(amount : Int64, attributes? : Array[(String, @azimuth.telemetry.api.common.AttributeValue)]) -> Unit
 }
 
 pub trait Gauge {
-  record(value : Double, attributes? : Array[(String, AttributeValue)]) -> Unit
+  record(value : Double, attributes? : Array[(String, @azimuth.telemetry.api.common.AttributeValue)]) -> Unit
 }
 
 pub trait Meter {
@@ -64,19 +66,19 @@ pub struct NoopMeter {
 pub struct NoopMeterProvider {
 }
 
-pub fn NoopCounter::add(amount : Int64, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopCounter::add(amount : Int64, attributes? : Array[(String, @azimuth.telemetry.api.common.AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopHistogram::record(value : Double, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopHistogram::record(value : Double, attributes? : Array[(String, @azimuth.telemetry.api.common.AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopUpDownCounter::add(amount : Int64, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopUpDownCounter::add(amount : Int64, attributes? : Array[(String, @azimuth.telemetry.api.common.AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopGauge::record(value : Double, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopGauge::record(value : Double, attributes? : Array[(String, @azimuth.telemetry.api.common.AttributeValue)]) -> Unit {
   // No-op implementation
 }
 

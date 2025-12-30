@@ -198,6 +198,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_8, ["gauge_with_fluctuating_values"]),
     9: (__test_696e737472756d656e745f6167677265676174696f6e5f746573742e6d6274_9, ["instrument_type_enum_validation"]),
   },
+  "cross_instrument_test.mbt": {
+    0: (__test_63726f73735f696e737472756d656e745f746573742e6d6274_0, ["cross_instrument_attribute_consistency"]),
+    1: (__test_63726f73735f696e737472756d656e745f746573742e6d6274_1, ["instrument_type_specific_operations"]),
+    2: (__test_63726f73735f696e737472756d656e745f746573742e6d6274_2, ["meter_factory_pattern_consistency"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED

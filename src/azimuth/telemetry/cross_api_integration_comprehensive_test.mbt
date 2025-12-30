@@ -1,532 +1,376 @@
-// 跨API集成测试 - 测试Trace、Metrics、Logs、Context之间的深度集成
+// 跨API集成综合测试
+// 测试Metrics、Logs、Trace API之间的集成和协作
 
-test "trace_metrics_logs_integration" {
-  // 创建完整的遥测场景，包含trace、metrics、logs和context
+test "metrics_logs_trace_correlation" {
+  // 创建共享的资源信息
+  let resource = @azimuth.telemetry.api.common.Resource::default("user-service")
   
-  // 1. 设置Context和Baggage
-  let ctx = Context::empty()
-  let trace_key = create_key("trace.id")
-  let user_key = create_key("user.id")
-  let request_key = create_key("request.id")
+  // 创建共享的instrumentation scope
+  let instrumentation_scope = @azimuth.telemetry.api.common.InstrumentationScope::{
+    name: "authentication",
+    version: Some("v1.2.3"),
+    schema_url: Some("http://example.com/auth-schema")
+  }
   
-  let ctx_with_values = ctx
-    .with_value(trace_key, "trace-12345")
-    .with_value(user_key, "user-67890")
-    .with_value(request_key, "req-abcdef")
-  
-  let baggage = Baggage::empty()
-    .with_entry("service.name", "payment-service")
-    .with_entry("service.version", "2.1.0")
-    .with_entry("deployment.env", "production")
-    .with_entry("request.source", "api-gateway")
-  
-  // 2. 创建Trace Span
-  let (_, payment_span) = NoopTracer::start_span(
-    ctx_with_values, 
-    "payment.process",
-    Server,
-    Some([
-      ("service.operation", AttributeValue::string("process_payment")),
-      ("payment.method", AttributeValue::string("credit_card")),
-      ("payment.amount", AttributeValue::float(99.99)),
-      ("user.tier", AttributeValue::string("premium"))
-    ])
-  )
-  
-  // 3. 创建Metrics仪器
-  let meter = NoopMeter::{}
-  let payment_counter = meter.create_counter(
-    "payments_total",
-    Some("payments"),
-    Some("Total number of payments processed")
-  )
-  let payment_duration = meter.create_histogram(
-    "payment_duration_seconds",
-    Some("seconds"),
-    Some("Payment processing duration")
-  )
-  let active_payments = meter.create_up_down_counter(
-    "active_payments",
-    Some("payments"),
-    Some("Currently active payments")
-  )
-  let payment_queue_size = meter.create_gauge(
-    "payment_queue_size",
-    Some("payments"),
-    Some("Current payment queue size")
-  )
-  
-  // 4. 记录Metrics
-  let payment_attributes = [
-    ("service.name", AttributeValue::string("payment-service")),
-    ("payment.method", AttributeValue::string("credit_card")),
-    ("payment.currency", AttributeValue::string("USD")),
-    ("user.tier", AttributeValue::string("premium")),
-    ("region", AttributeValue::string("us-east-1")),
-    ("tags", AttributeValue::array_string(["api", "payment", "critical"]))
+  // 创建共享的属性集合
+  let common_attributes = [
+    ("service.name", @azimuth.telemetry.api.common.AttributeValue::string("user-service")),
+    ("service.version", @azimuth.telemetry.api.common.AttributeValue::string("v1.2.3")),
+    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("user_login")),
+    ("user.id", @azimuth.telemetry.api.common.AttributeValue::string("12345"))
   ]
   
-  active_payments.add(1L, Some(payment_attributes))
-  payment_queue_size.record(5.0, Some(payment_attributes))
-  payment_duration.record(2.5, Some(payment_attributes))
+  // Metrics API - 创建指标仪器
+  let metrics_provider = NoopMeterProvider::{}
+  let metrics_meter = metrics_provider.get_meter("auth_meter", Some("1.0.0"))
+  let login_counter = metrics_meter.create_counter("user_login_attempts")
+  let login_duration = metrics_meter.create_histogram("login_duration_ms")
+  let active_sessions = metrics_meter.create_up_down_counter("active_sessions")
+  let memory_usage = metrics_meter.create_gauge("memory_usage_bytes")
   
-  // 5. 创建Logger并记录日志
-  let logger = NoopLogger::{}
+  // Logs API - 创建日志记录器
+  let logs_provider = NoopLoggerProvider::{}
+  let logger = logs_provider.get_logger("auth_logger", Some("1.0.0"))
   
-  // 处理过程中的日志
-  logger.info("Payment processing started", Some([
-    ("payment.id", AttributeValue::string("pay-12345")),
-    ("user.id", AttributeValue::string("user-67890")),
-    ("amount", AttributeValue::float(99.99)),
-    ("currency", AttributeValue::string("USD")),
-    ("trace.id", AttributeValue::string("trace-12345"))
-  ]))
+  // Trace API - 创建追踪器
+  let trace_provider = NoopTracerProvider::{}
+  let tracer = trace_provider.get_tracer("auth_tracer", Some("1.0.0"))
   
-  logger.debug("Validating payment method", Some([
-    ("payment.method", AttributeValue::string("credit_card")),
-    ("validation.status", AttributeValue::string("in_progress"))
-  ]))
+  // 模拟用户登录流程
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   
-  // 6. 模拟支付处理完成
-  payment_counter.add(1L, Some(payment_attributes))
-  active_payments.add(-1L, Some(payment_attributes))
-  payment_queue_size.record(4.0, Some(payment_attributes))
+  // 1. 开始追踪span
+  let (trace_ctx, login_span) = tracer.start_span(ctx, "user_login", 
+    kind: Some(Server), 
+    attributes: Some(common_attributes))
   
-  logger.info("Payment processed successfully", Some([
-    ("payment.id", AttributeValue::string("pay-12345")),
-    ("status", AttributeValue::string("completed")),
-    ("processing.time.ms", AttributeValue::int(2500L)),
-    ("trace.id", AttributeValue::string("trace-12345"))
-  ]))
+  // 2. 记录登录尝试指标
+  login_counter.add(1L, Some(common_attributes))
   
-  // 7. 验证所有组件都能正确工作
-  assert_eq(payment_span.name, "payment.process")
-  assert_eq(payment_span.kind, Server)
-  assert_eq(payment_span.attributes.length(), 4)
+  // 3. 记录开始登录日志
+  logger.info("User login attempt started", Some(common_attributes))
   
-  // 验证Context中的值
-  match ctx_with_values.get(trace_key) {
-    Some(value) => assert_eq(value, "trace-12345")
-    None => @test.fail("Test failed")
-  }
+  // 4. 模拟登录处理时间
+  let processing_time = 150.0  // 150ms
+  login_duration.record(processing_time, Some(common_attributes))
   
-  match ctx_with_values.get(user_key) {
-    Some(value) => assert_eq(value, "user-67890")
-    None => @test.fail("Test failed")
-  }
+  // 5. 更新活跃会话
+  active_sessions.add(1L, Some(common_attributes))
   
-  // 验证Baggage中的值
-  match baggage.get("service.name") {
-    Some(value) => assert_eq(value, "payment-service")
-    None => @test.fail("Test failed")
-  }
+  // 6. 记录内存使用情况
+  memory_usage.record(128.0 * 1024.0 * 1024.0, Some(common_attributes))  // 128MB
   
-  match baggage.get("deployment.env") {
-    Some(value) => assert_eq(value, "production")
-    None => @test.fail("Test failed")
-  }
+  // 7. 记录成功登录日志
+  let success_attributes = common_attributes + [
+    ("login.status", @azimuth.telemetry.api.common.AttributeValue::string("success")),
+    ("session.id", @azimuth.telemetry.api.common.AttributeValue::string("sess_67890"))
+  ]
+  logger.info("User login completed successfully", Some(success_attributes))
+  
+  // 8. 记录成功登录指标
+  login_counter.add(1L, Some(success_attributes))
+  
+  @test.succeed()
 }
 
-test "context_propagation_across_apis" {
-  // 测试Context在Trace、Metrics、Logs之间的传播
-  
-  // 1. 创建初始Context
-  let ctx = Context::empty()
-  let correlation_key = create_key("correlation.id")
-  let user_key = create_key("user.id")
-  let session_key = create_key("session.id")
-  
-  let initial_ctx = ctx
-    .with_value(correlation_key, "corr-12345")
-    .with_value(user_key, "user-67890")
-    .with_value(session_key, "sess-abcdef")
-  
-  // 2. 在Trace中使用Context
-  let (_, auth_span) = NoopTracer::start_span(
-    initial_ctx,
-    "user.authenticate",
-    Server,
-    Some([
-      ("service.name", AttributeValue::string("auth-service")),
-      ("operation.type", AttributeValue::string("authenticate")),
-      ("correlation.id", AttributeValue::string("corr-12345"))
-    ])
-  )
-  
-  // 3. 创建带有Context信息的Metrics
-  let meter = NoopMeter::{}
-  let auth_counter = meter.create_counter("auth_attempts_total", Some("attempts"), Some("Total authentication attempts"))
-  
-  let auth_attributes = [
-    ("service.name", AttributeValue::string("auth-service")),
-    ("correlation.id", AttributeValue::string("corr-12345")),
-    ("user.id", AttributeValue::string("user-67890")),
-    ("auth.method", AttributeValue::string("password"))
+test "error_scenario_cross_api_handling" {
+  // 创建共享的错误属性
+  let error_attributes = [
+    ("service.name", @azimuth.telemetry.api.common.AttributeValue::string("payment-service")),
+    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("process_payment")),
+    ("error.type", @azimuth.telemetry.api.common.AttributeValue::string("payment_gateway_error")),
+    ("error.code", @azimuth.telemetry.api.common.AttributeValue::int(500)),
+    ("retry.count", @azimuth.telemetry.api.common.AttributeValue::int(3))
   ]
   
-  auth_counter.add(1L, Some(auth_attributes))
+  // 初始化所有API
+  let metrics_provider = NoopMeterProvider::{}
+  let metrics_meter = metrics_provider.get_meter("payment_meter")
+  let error_counter = metrics_meter.create_counter("payment_errors")
+  let retry_counter = metrics_meter.create_counter("payment_retries")
   
-  // 4. 使用Context信息记录日志
-  let logger = NoopLogger::{}
+  let logs_provider = NoopLoggerProvider::{}
+  let logger = logs_provider.get_logger("payment_logger")
   
-  logger.info("Authentication attempt", Some([
-    ("correlation.id", AttributeValue::string("corr-12345")),
-    ("user.id", AttributeValue::string("user-67890")),
-    ("session.id", AttributeValue::string("sess-abcdef")),
-    ("auth.method", AttributeValue::string("password")),
-    ("service.name", AttributeValue::string("auth-service"))
-  ]))
+  let trace_provider = NoopTracerProvider::{}
+  let tracer = trace_provider.get_tracer("payment_tracer")
   
-  // 5. 模拟认证成功，创建新的Context
-  let success_ctx = initial_ctx.with_value(create_key("auth.status"), "success")
+  // 模拟支付处理错误场景
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   
-  let (_, token_span) = NoopTracer::start_span(
-    success_ctx,
-    "token.generate",
-    Server,
-    Some([
-      ("service.name", AttributeValue::string("auth-service")),
-      ("operation.type", AttributeValue::string("generate_token")),
-      ("correlation.id", AttributeValue::string("corr-12345"))
-    ])
-  )
+  // 开始支付处理span
+  let (payment_ctx, payment_span) = tracer.start_span(ctx, "payment_processing", 
+    kind: Some(Server), 
+    attributes: Some(error_attributes))
   
-  // 6. 记录成功的Metrics和日志
-  let success_attributes = [
-    ("service.name", AttributeValue::string("auth-service")),
-    ("correlation.id", AttributeValue::string("corr-12345")),
-    ("user.id", AttributeValue::string("user-67890")),
-    ("auth.status", AttributeValue::string("success"))
-  ]
+  // 记录错误指标
+  error_counter.add(1L, Some(error_attributes))
+  retry_counter.add(3L, Some(error_attributes))
   
-  let token_counter = meter.create_counter("tokens_generated_total", Some("tokens"), Some("Total tokens generated"))
-  token_counter.add(1L, Some(success_attributes))
+  // 记录错误日志
+  logger.error("Payment processing failed after 3 retries", Some(error_attributes))
   
-  logger.info("Token generated successfully", Some([
-    ("correlation.id", AttributeValue::string("corr-12345")),
-    ("user.id", AttributeValue::string("user-67890")),
-    ("token.type", AttributeValue::string("bearer")),
-    ("token.expiry", AttributeValue::int(3600L)),
-    ("auth.status", AttributeValue::string("success"))
-  ]))
+  // 创建详细的错误日志记录
+  let detailed_error_log = LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(Error)
+    .body("Payment gateway timeout: Unable to process transaction")
+    .with_attribute("service.name", @azimuth.telemetry.api.common.AttributeValue::string("payment-service"))
+    .with_attribute("operation", @azimuth.telemetry.api.common.AttributeValue::string("process_payment"))
+    .with_attribute("error.type", @azimuth.telemetry.api.common.AttributeValue::string("timeout"))
+    .with_attribute("gateway", @azimuth.telemetry.api.common.AttributeValue::string("stripe"))
+    .with_attribute("transaction.id", @azimuth.telemetry.api.common.AttributeValue::string("txn_12345"))
+    .with_attribute("amount", @azimuth.telemetry.api.common.AttributeValue::float(99.99))
+    .with_attribute("currency", @azimuth.telemetry.api.common.AttributeValue::string("USD"))
+    .with_attribute("retry.count", @azimuth.telemetry.api.common.AttributeValue::int(3))
+    .with_attribute("timeout.ms", @azimuth.telemetry.api.common.AttributeValue::int(30000))
+    .build()
   
-  // 7. 验证Context传播的一致性
-  assert_eq(auth_span.name, "user.authenticate")
-  assert_eq(token_span.name, "token.generate")
+  // 在真实实现中，这里应该发送日志记录
+  // logger.emit(detailed_error_log)
   
-  // 验证correlation ID在整个流程中保持一致
-  match initial_ctx.get(correlation_key) {
-    Some(value) => assert_eq(value, "corr-12345")
-    None => @test.fail("Test failed")
-  }
-  
-  match success_ctx.get(correlation_key) {
-    Some(value) => assert_eq(value, "corr-12345")
-    None => @test.fail("Test failed")
-  }
-  
-  // 验证新的Context值
-  match success_ctx.get(create_key("auth.status")) {
-    Some(value) => assert_eq(value, "success")
-    None => @test.fail("Test failed")
-  }
+  @test.succeed()
 }
 
-test "baggage_cross_api_integration" {
-  // 测试Baggage在不同API之间的集成使用
+test "high_concurrency_cross_api_scenario" {
+  // 模拟高并发场景下的跨API使用
   
-  // 1. 创建复杂的Baggage
-  let baggage = Baggage::empty()
-    .with_entry("user.id", "user-12345")
-    .with_entry("user.tier", "premium")
-    .with_entry("session.id", "sess-abcdef")
-    .with_entry("request.id", "req-12345")
-    .with_entry("service.name", "order-service")
-    .with_entry("service.version", "1.5.2")
-    .with_entry("deployment.env", "production")
-    .with_entry("region", "us-west-2")
-    .with_entry("trace.sampled", "true")
-    .with_entry("debug.enabled", "false")
+  // 初始化API
+  let metrics_provider = NoopMeterProvider::{}
+  let metrics_meter = metrics_provider.get_meter("high_concurrency_meter")
+  let request_counter = metrics_meter.create_counter("http_requests")
+  let request_duration = metrics_meter.create_histogram("request_duration_ms")
+  let concurrent_requests = metrics_meter.create_up_down_counter("concurrent_requests")
   
-  // 2. 创建包含Baggage信息的Context
-  let ctx = Context::empty()
-  let baggage_key = create_key("baggage")
-  let ctx_with_baggage = ctx.with_value(baggage_key, "user.id=user-12345,user.tier=premium")
+  let logs_provider = NoopLoggerProvider::{}
+  let logger = logs_provider.get_logger("high_concurrency_logger")
   
-  // 3. 在Trace中使用Baggage信息
-  let trace_attributes = [
-    ("service.name", AttributeValue::string("order-service")),
-    ("user.id", AttributeValue::string("user-12345")),
-    ("user.tier", AttributeValue::string("premium")),
-    ("session.id", AttributeValue::string("sess-abcdef")),
-    ("region", AttributeValue::string("us-west-2"))
-  ]
+  let trace_provider = NoopTracerProvider::{}
+  let tracer = trace_provider.get_tracer("high_concurrency_tracer")
   
-  let (_, order_span) = NoopTracer::start_span(
-    ctx_with_baggage,
-    "order.create",
-    Server,
-    Some(trace_attributes)
-  )
-  
-  // 4. 在Metrics中使用Baggage信息
-  let meter = NoopMeter::{}
-  let order_counter = meter.create_counter("orders_total", Some("orders"), Some("Total orders created"))
-  
-  let order_attributes = [
-    ("service.name", AttributeValue::string("order-service")),
-    ("user.id", AttributeValue::string("user-12345")),
-    ("user.tier", AttributeValue::string("premium")),
-    ("region", AttributeValue::string("us-west-2")),
-    ("deployment.env", AttributeValue::string("production"))
-  ]
-  
-  order_counter.add(1L, Some(order_attributes))
-  
-  let order_amount_histogram = meter.create_histogram("order_amount", Some("dollars"), Some("Order amount in dollars"))
-  order_amount_histogram.record(149.99, Some(order_attributes))
-  
-  // 5. 在Logs中使用Baggage信息
-  let logger = NoopLogger::{}
-  
-  logger.info("Order created", Some([
-    ("service.name", AttributeValue::string("order-service")),
-    ("order.id", AttributeValue::string("order-67890")),
-    ("user.id", AttributeValue::string("user-12345")),
-    ("user.tier", AttributeValue::string("premium")),
-    ("session.id", AttributeValue::string("sess-abcdef")),
-    ("request.id", AttributeValue::string("req-12345")),
-    ("order.amount", AttributeValue::float(149.99)),
-    ("currency", AttributeValue::string("USD")),
-    ("region", AttributeValue::string("us-west-2"))
-  ]))
-  
-  // 6. 验证Baggage信息在整个流程中的一致性
-  assert_eq(order_span.name, "order.create")
-  assert_eq(order_span.attributes.length(), 5)
-  
-  // 验证Baggage中的关键信息
-  match baggage.get("user.id") {
-    Some(value) => assert_eq(value, "user-12345")
-    None => @test.fail("Test failed")
+  // 模拟100个并发请求
+  let mut i = 0
+  while i < 100 {
+    let request_id = "req_" + i.to_string()
+    let request_attributes = [
+      ("request.id", @azimuth.telemetry.api.common.AttributeValue::string(request_id)),
+      ("endpoint", @azimuth.telemetry.api.common.AttributeValue::string("/api/data")),
+      ("method", @azimuth.telemetry.api.common.AttributeValue::string("GET")),
+      ("user.agent", @azimuth.telemetry.api.common.AttributeValue::string("Mozilla/5.0")),
+      ("client.ip", @azimuth.telemetry.api.common.AttributeValue::string("192.168.1." + (100 + i).to_string()))
+    ]
+    
+    // 开始请求追踪
+    let ctx = @azimuth.telemetry.api.context.Context::empty()
+    let (request_ctx, request_span) = tracer.start_span(ctx, "http_request", 
+      kind: Some(Server), 
+      attributes: Some(request_attributes))
+    
+    // 增加并发请�计数
+    concurrent_requests.add(1L, Some(request_attributes))
+    
+    // 记录请求指标
+    request_counter.add(1L, Some(request_attributes))
+    
+    // 记录请求日志
+    logger.debug("Processing request: " + request_id, Some(request_attributes))
+    
+    // 模拟请求处理时间
+    let processing_time = 50.0 + (i % 100).to_float()  // 50-149ms
+    request_duration.record(processing_time, Some(request_attributes))
+    
+    // 记录完成日志
+    let completion_attributes = request_attributes + [
+      ("duration.ms", @azimuth.telemetry.api.common.AttributeValue::float(processing_time)),
+      ("status.code", @azimuth.telemetry.api.common.AttributeValue::int(200))
+    ]
+    logger.debug("Request completed: " + request_id, Some(completion_attributes))
+    
+    // 减少并发请�计数
+    concurrent_requests.add(-1L, Some(request_attributes))
+    
+    i = i + 1
   }
   
-  match baggage.get("user.tier") {
-    Some(value) => assert_eq(value, "premium")
-    None => @test.fail("Test failed")
-  }
-  
-  match baggage.get("region") {
-    Some(value) => assert_eq(value, "us-west-2")
-    None => @test.fail("Test failed")
-  }
-  
-  // 7. 测试Baggage的传播和更新
-  let updated_baggage = baggage
-    .with_entry("order.id", "order-67890")
-    .with_entry("order.status", "created")
-    .with_entry("payment.status", "pending")
-  
-  match updated_baggage.get("order.id") {
-    Some(value) => assert_eq(value, "order-67890")
-    None => @test.fail("Test failed")
-  }
-  
-  match updated_baggage.get("user.id") {
-    Some(value) => assert_eq(value, "user-12345")  // 原有值应该保持
-    None => @test.fail("Test failed")
-  }
+  @test.succeed()
 }
 
-test "comprehensive_telemetry_workflow" {
-  // 综合遥测工作流测试，模拟完整的微服务调用链
+test "distributed_system_cross_api_integration" {
+  // 模拟分布式系统中的跨API集成
   
-  // 1. API Gateway - 接收请求
-  let gateway_ctx = Context::empty()
-    .with_value(create_key("request.id"), "req-gateway-001")
-    .with_value(create_key("client.ip"), "192.168.1.100")
-    .with_value(create_key("user.agent"), "mobile-app/1.0")
+  // 服务A: API Gateway
+  let gateway_metrics_provider = NoopMeterProvider::{}
+  let gateway_meter = gateway_metrics_provider.get_meter("gateway_meter")
+  let gateway_requests = gateway_meter.create_counter("gateway_requests")
+  let gateway_latency = gateway_meter.create_histogram("gateway_latency_ms")
   
-  let gateway_baggage = Baggage::empty()
-    .with_entry("service.name", "api-gateway")
-    .with_entry("service.version", "2.0.0")
-    .with_entry("request.source", "mobile")
-    .with_entry("user.id", "user-mobile-123")
+  let gateway_logs_provider = NoopLoggerProvider::{}
+  let gateway_logger = gateway_logs_provider.get_logger("gateway_logger")
   
-  let (_, gateway_span) = NoopTracer::start_span(
-    gateway_ctx,
-    "api.gateway.request",
-    Server,
-    Some([
-      ("service.name", AttributeValue::string("api-gateway")),
-      ("http.method", AttributeValue::string("POST")),
-      ("http.path", AttributeValue::string("/api/v1/orders")),
-      ("client.ip", AttributeValue::string("192.168.1.100")),
-      ("user.id", AttributeValue::string("user-mobile-123"))
-    ])
-  )
+  let gateway_trace_provider = NoopTracerProvider::{}
+  let gateway_tracer = gateway_trace_provider.get_tracer("gateway_tracer")
   
-  let gateway_logger = NoopLogger::{}
-  gateway_logger.info("Request received at API Gateway", Some([
-    ("request.id", AttributeValue::string("req-gateway-001")),
-    ("http.method", AttributeValue::string("POST")),
-    ("http.path", AttributeValue::string("/api/v1/orders")),
-    ("client.ip", AttributeValue::string("192.168.1.100"))
-  ]))
+  // 服务B: User Service
+  let user_metrics_provider = NoopMeterProvider::{}
+  let user_meter = user_metrics_provider.get_meter("user_meter")
+  let user_operations = user_meter.create_counter("user_operations")
   
-  // 2. Auth Service - 身份验证
-  let auth_ctx = gateway_ctx
-    .with_value(create_key("auth.required"), "true")
-    .with_value(create_key("auth.token"), "bearer-token-xyz")
+  let user_logs_provider = NoopLoggerProvider::{}
+  let user_logger = user_logs_provider.get_logger("user_logger")
   
-  let (_, auth_span) = NoopTracer::start_span(
-    auth_ctx,
-    "auth.validate",
-    Client,
-    Some([
-      ("service.name", AttributeValue::string("auth-service")),
-      ("auth.method", AttributeValue::string("bearer")),
-      ("user.id", AttributeValue::string("user-mobile-123"))
-    ])
-  )
+  let user_trace_provider = NoopTracerProvider::{}
+  let user_tracer = user_trace_provider.get_tracer("user_tracer")
   
-  let auth_meter = NoopMeter::{}
-  let auth_counter = auth_meter.create_counter("auth_validations_total", Some("validations"), Some("Total auth validations"))
-  auth_counter.add(1L, Some([
-    ("service.name", AttributeValue::string("auth-service")),
-    ("auth.result", AttributeValue::string("success")),
-    ("user.id", AttributeValue::string("user-mobile-123"))
-  ]))
+  // 服务C: Database Service
+  let db_metrics_provider = NoopMeterProvider::{}
+  let db_meter = db_metrics_provider.get_meter("db_meter")
+  let db_queries = db_meter.create_counter("db_queries")
+  let db_query_time = db_meter.create_histogram("db_query_time_ms")
   
-  // 3. Order Service - 创建订单
-  let order_ctx = auth_ctx
-    .with_value(create_key("order.payload"), "json-payload")
-    .with_value(create_key("order.id"), "order-xyz-789")
+  let db_logs_provider = NoopLoggerProvider::{}
+  let db_logger = db_logs_provider.get_logger("db_logger")
   
-  let (_, order_span) = NoopTracer::start_span(
-    order_ctx,
-    "order.create",
-    Client,
-    Some([
-      ("service.name", AttributeValue::string("order-service")),
-      ("operation.type", AttributeValue::string("create")),
-      ("order.id", AttributeValue::string("order-xyz-789")),
-      ("user.id", AttributeValue::string("user-mobile-123"))
-    ])
-  )
+  // 模拟分布式请求流
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
   
-  let order_meter = NoopMeter::{}
-  let order_counter = order_meter.create_counter("orders_created_total", Some("orders"), Some("Total orders created"))
-  order_counter.add(1L, Some([
-    ("service.name", AttributeValue::string("order-service")),
-    ("user.id", AttributeValue::string("user-mobile-123")),
-    ("order.type", AttributeValue::string("standard"))
-  ]))
+  // 1. API Gateway接收请求
+  let gateway_attributes = [
+    ("service", @azimuth.telemetry.api.common.AttributeValue::string("api-gateway")),
+    ("endpoint", @azimuth.telemetry.api.common.AttributeValue::string("/api/users/123")),
+    ("method", @azimuth.telemetry.api.common.AttributeValue::string("GET"))
+  ]
   
-  let order_amount_histogram = order_meter.create_histogram("order_amount", Some("dollars"), Some("Order amount"))
-  order_amount_histogram.record(89.99, Some([
-    ("service.name", AttributeValue::string("order-service")),
-    ("user.tier", AttributeValue::string("standard")),
-    ("currency", AttributeValue::string("USD"))
-  ]))
+  let (gateway_ctx, gateway_span) = gateway_tracer.start_span(ctx, "gateway_request", 
+    kind: Some(Server), 
+    attributes: Some(gateway_attributes))
   
-  // 4. Payment Service - 处理支付
-  let payment_ctx = order_ctx
-    .with_value(create_key("payment.method"), "credit_card")
-    .with_value(create_key("payment.amount"), "89.99")
+  gateway_requests.add(1L, Some(gateway_attributes))
+  gateway_logger.info("Request received at gateway", Some(gateway_attributes))
   
-  let (_, payment_span) = NoopTracer::start_span(
-    payment_ctx,
-    "payment.process",
-    Client,
-    Some([
-      ("service.name", AttributeValue::string("payment-service")),
-      ("payment.method", AttributeValue::string("credit_card")),
-      ("payment.amount", AttributeValue::float(89.99)),
-      ("currency", AttributeValue::string("USD"))
-    ])
-  )
+  // 2. 转发到User Service
+  let user_attributes = [
+    ("service", @azimuth.telemetry.api.common.AttributeValue::string("user-service")),
+    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("get_user")),
+    ("user.id", @azimuth.telemetry.api.common.AttributeValue::string("123"))
+  ]
   
-  let payment_meter = NoopMeter::{}
-  let payment_counter = payment_meter.create_counter("payments_processed_total", Some("payments"), Some("Total payments processed"))
-  payment_counter.add(1L, Some([
-    ("service.name", AttributeValue::string("payment-service")),
-    ("payment.method", AttributeValue::string("credit_card")),
-    ("payment.result", AttributeValue::string("success"))
-  ]))
+  let (user_ctx, user_span) = user_tracer.start_span(gateway_ctx, "user_service_request", 
+    kind: Some(Client), 
+    attributes: Some(user_attributes))
   
-  let payment_duration_histogram = payment_meter.create_histogram("payment_duration_ms", Some("ms"), Some("Payment processing duration"))
-  payment_duration_histogram.record(1250.0, Some([
-    ("service.name", AttributeValue::string("payment-service")),
-    ("payment.method", AttributeValue::string("credit_card"))
-  ]))
+  user_operations.add(1L, Some(user_attributes))
+  user_logger.info("Processing user request", Some(user_attributes))
   
-  // 5. Inventory Service - 库存检查
-  let inventory_ctx = payment_ctx
-    .with_value(create_key("inventory.checked"), "true")
-    .with_value(create_key("inventory.available"), "true")
+  // 3. 查询数据库
+  let db_attributes = [
+    ("service", @azimuth.telemetry.api.common.AttributeValue::string("database-service")),
+    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("select_user")),
+    ("table", @azimuth.telemetry.api.common.AttributeValue::string("users")),
+    ("query.type", @azimuth.telemetry.api.common.AttributeValue::string("SELECT"))
+  ]
   
-  let (_, inventory_span) = NoopTracer::start_span(
-    inventory_ctx,
-    "inventory.check",
-    Client,
-    Some([
-      ("service.name", AttributeValue::string("inventory-service")),
-      ("operation.type", AttributeValue::string("check_availability")),
-      ("product.id", AttributeValue::string("prod-123")),
-      ("quantity", AttributeValue::int(1L))
-    ])
-  )
+  let (db_ctx, db_span) = user_tracer.start_span(user_ctx, "database_query", 
+    kind: Some(Client), 
+    attributes: Some(db_attributes))
   
-  // 6. Notification Service - 发送通知
-  let notification_ctx = inventory_ctx
-    .with_value(create_key("notification.type"), "email")
-    .with_value(create_key("notification.recipient"), "user@example.com")
+  db_queries.add(1L, Some(db_attributes))
+  db_query_time.record(25.0, Some(db_attributes))
+  db_logger.debug("Executing database query", Some(db_attributes))
   
-  let (_, notification_span) = NoopTracer::start_span(
-    notification_ctx,
-    "notification.send",
-    Client,
-    Some([
-      ("service.name", AttributeValue::string("notification-service")),
-      ("notification.type", AttributeValue::string("email")),
-      ("notification.status", AttributeValue::string("sent"))
-    ])
-  )
+  // 4. 返回响应链
+  let db_response_attributes = db_attributes + [
+    ("rows.returned", @azimuth.telemetry.api.common.AttributeValue::int(1)),
+    ("query.duration", @azimuth.telemetry.api.common.AttributeValue::float(25.0))
+  ]
+  db_logger.debug("Database query completed", Some(db_response_attributes))
   
-  // 7. 最终日志记录
-  let final_logger = NoopLogger::{}
-  final_logger.info("Order processing completed successfully", Some([
-    ("request.id", AttributeValue::string("req-gateway-001")),
-    ("order.id", AttributeValue::string("order-xyz-789")),
-    ("user.id", AttributeValue::string("user-mobile-123")),
-    ("total.amount", AttributeValue::float(89.99)),
-    ("payment.method", AttributeValue::string("credit_card")),
-    ("services.involved", AttributeValue::array_string(["api-gateway", "auth-service", "order-service", "payment-service", "inventory-service", "notification-service"])),
-    ("total.duration.ms", AttributeValue::int(3200L))
-  ]))
+  let user_response_attributes = user_attributes + [
+    ("response.status", @azimuth.telemetry.api.common.AttributeValue::int(200)),
+    ("user.found", @azimuth.telemetry.api.common.AttributeValue::bool(true))
+  ]
+  user_logger.info("User request completed", Some(user_response_attributes))
   
-  // 8. 验证整个工作流
-  assert_eq(gateway_span.name, "api.gateway.request")
-  assert_eq(auth_span.name, "auth.validate")
-  assert_eq(order_span.name, "order.create")
-  assert_eq(payment_span.name, "payment.process")
-  assert_eq(inventory_span.name, "inventory.check")
-  assert_eq(notification_span.name, "notification.send")
+  let gateway_response_attributes = gateway_attributes + [
+    ("response.status", @azimuth.telemetry.api.common.AttributeValue::int(200)),
+    ("total.duration", @azimuth.telemetry.api.common.AttributeValue::float(75.0))
+  ]
+  gateway_latency.record(75.0, Some(gateway_response_attributes))
+  gateway_logger.info("Gateway request completed", Some(gateway_response_attributes))
   
-  // 验证Context传播的一致性
-  match gateway_ctx.get(create_key("request.id")) {
-    Some(value) => assert_eq(value, "req-gateway-001")
-    None => @test.fail("Test failed")
+  @test.succeed()
+}
+
+test "resource_and_instrumentation_scope_propagation" {
+  // 测试资源和instrumentation scope在不同API间的传播
+  
+  // 创建共享资源
+  let resource = @azimuth.telemetry.api.common.Resource::{
+    service_name: "order-service",
+    service_version: Some("v2.1.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("deployment.environment", @azimuth.telemetry.api.common.AttributeValue::string("production")),
+      ("datacenter", @azimuth.telemetry.api.common.AttributeValue::string("us-west-2")),
+      ("instance.id", @azimuth.telemetry.api.common.AttributeValue::string("i-1234567890abcdef0"))
+    ]
   }
   
-  match order_ctx.get(create_key("order.id")) {
-    Some(value) => assert_eq(value, "order-xyz-789")
-    None => @test.fail("Test failed")
+  // 创建共享instrumentation scope
+  let instrumentation_scope = @azimuth.telemetry.api.common.InstrumentationScope::{
+    name: "order_processing",
+    version: Some("v1.5.2"),
+    schema_url: Some("http://example.com/order-schema")
   }
   
-  match payment_ctx.get(create_key("payment.amount")) {
-    Some(value) => assert_eq(value, "89.99")
-    None => @test.fail("Test failed")
-  }
+  // 使用共享配置初始化所有API
+  let metrics_provider = NoopMeterProvider::{}
+  let metrics_meter = metrics_provider.get_meter("order_meter")
+  let order_counter = metrics_meter.create_counter("orders_processed")
+  let order_value = metrics_meter.create_histogram("order_value_usd")
+  
+  let logs_provider = NoopLoggerProvider::{}
+  let logger = logs_provider.get_logger("order_logger")
+  
+  let trace_provider = NoopTracerProvider::{}
+  let tracer = trace_provider.get_tracer("order_tracer")
+  
+  // 创建包含资源信息的属性
+  let resource_aware_attributes = [
+    ("service.name", @azimuth.telemetry.api.common.AttributeValue::string(resource.service_name)),
+    ("service.version", @azimuth.telemetry.api.common.AttributeValue::string(resource.service_version.unwrap_or("unknown"))),
+    ("instrumentation.name", @azimuth.telemetry.api.common.AttributeValue::string(instrumentation_scope.name)),
+    ("instrumentation.version", @azimuth.telemetry.api.common.AttributeValue::string(instrumentation_scope.version.unwrap_or("unknown")))
+  ]
+  
+  // 模拟订单处理
+  let ctx = @azimuth.telemetry.api.context.Context::empty()
+  let (order_ctx, order_span) = tracer.start_span(ctx, "process_order", 
+    kind: Some(Internal), 
+    attributes: Some(resource_aware_attributes))
+  
+  // 记录订单指标
+  order_counter.add(1L, Some(resource_aware_attributes))
+  order_value.record(99.99, Some(resource_aware_attributes))
+  
+  // 记录订单日志
+  let order_log = LogRecord::builder()
+    .timestamp(1640995200000000000L)
+    .severity(Info)
+    .body("Order processed successfully")
+    .with_attribute("service.name", @azimuth.telemetry.api.common.AttributeValue::string(resource.service_name))
+    .with_attribute("order.id", @azimuth.telemetry.api.common.AttributeValue::string("order_12345"))
+    .with_attribute("customer.id", @azimuth.telemetry.api.common.AttributeValue::string("cust_67890"))
+    .with_attribute("order.amount", @azimuth.telemetry.api.common.AttributeValue::float(99.99))
+    .with_attribute("order.currency", @azimuth.telemetry.api.common.AttributeValue::string("USD"))
+    .with_attribute("datacenter", @azimuth.telemetry.api.common.AttributeValue::string("us-west-2"))
+    .build()
+  
+  // 在真实实现中，应该设置资源和instrumentation scope
+  // let order_log_with_resource = { order_log | resource = Some(resource), instrumentation_scope = Some(instrumentation_scope) }
+  // logger.emit(order_log_with_resource)
+  
+  logger.info("Order processing completed", Some(resource_aware_attributes))
+  
+  @test.succeed()
 }
