@@ -40,21 +40,27 @@ test "telemetry_extreme_load_conditions" {
 test "telemetry_data_integrity_validation" {
   // 测试遥测数据完整性验证
   
-  let telemetry_data_points = [
-    ("metric_1", 123.45, 1640995200L, ["tag1:value1", "tag2:value2"]),
-    ("metric_2", 678.90, 1640995260L, ["tag3:value3"]),
-    ("metric_3", 345.67, 1640995320L, ["tag4:value4", "tag5:value5", "tag6:value6"])
+  let metric_names = ["metric_1", "metric_2", "metric_3"]
+  let metric_values = [123.45, 678.90, 345.67]
+  let timestamps = [1640995200L, 1640995260L, 1640995320L]
+  let tag_lists = [
+    ["tag1:value1", "tag2:value2"],
+    ["tag3:value3"],
+    ["tag4:value4", "tag5:value5", "tag6:value6"]
   ]
   
   // 验证数据点数量
-  assert_eq(telemetry_data_points.length(), 3)
+  assert_eq(metric_names.length(), 3)
+  assert_eq(metric_values.length(), 3)
+  assert_eq(timestamps.length(), 3)
+  assert_eq(tag_lists.length(), 3)
   
   let mut i = 0
-  while i < telemetry_data_points.length() {
-    let metric_name = telemetry_data_points[i].0
-    let metric_value = telemetry_data_points[i].1
-    let timestamp = telemetry_data_points[i].2
-    let tags = telemetry_data_points[i].3
+  while i < metric_names.length() {
+    let metric_name = metric_names[i]
+    let metric_value = metric_values[i]
+    let timestamp = timestamps[i]
+    let tags = tag_lists[i]
     
     // 验证指标名称
     assert_eq(metric_name.has_prefix("metric_"), true)
@@ -88,17 +94,19 @@ test "telemetry_data_integrity_validation" {
   }
   
   // 验证数据序列化和反序列化的一致性
-  let original_data = telemetry_data_points[0]
-  let serialized_data = original_data.0 + "|" + original_data.1.to_string() + "|" + original_data.2.to_string()
+  let original_name = metric_names[0]
+  let original_value = metric_values[0]
+  let original_timestamp = timestamps[0]
+  let serialized_data = original_name + "|" + original_value.to_string() + "|" + original_timestamp.to_string()
   
-  assert_eq(serialized_data.contains(original_data.0), true)
-  assert_eq(serialized_data.contains(original_data.1.to_string()), true)
-  assert_eq(serialized_data.contains(original_data.2.to_string()), true)
+  assert_eq(serialized_data.contains(original_name), true)
+  assert_eq(serialized_data.contains(original_value.to_string()), true)
+  assert_eq(serialized_data.contains(original_timestamp.to_string()), true)
   
   // 模拟反序列化验证
   let deserialized_parts = serialized_data.split("|")
   assert_eq(deserialized_parts.length(), 3)
-  assert_eq(deserialized_parts[0], original_data.0)
-  assert_eq(deserialized_parts[1], original_data.1.to_string())
-  assert_eq(deserialized_parts[2], original_data.2.to_string())
+  assert_eq(deserialized_parts[0], original_name)
+  assert_eq(deserialized_parts[1], original_value.to_string())
+  assert_eq(deserialized_parts[2], original_timestamp.to_string())
 }
