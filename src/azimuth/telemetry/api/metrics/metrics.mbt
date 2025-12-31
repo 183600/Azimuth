@@ -1,8 +1,6 @@
 // Azimuth Telemetry - Metrics API
 // 指标收集和聚合
 
-use azimuth.telemetry.api.common
-
 pub enum InstrumentType {
   Counter
   Histogram
@@ -15,23 +13,23 @@ pub enum InstrumentType {
 
 pub struct Measurement {
   value : Double
-  attributes : Array[(String, AttributeValue)]
+  attributes : Array[(String, common::AttributeValue)]
 }
 
 pub trait Counter {
-  add(amount : Int64, attributes? : Array[(String, AttributeValue)]) -> Unit
+  add(amount : Int64, attributes? : Array[(String, common::AttributeValue)]) -> Unit
 }
 
 pub trait Histogram {
-  record(value : Double, attributes? : Array[(String, AttributeValue)]) -> Unit
+  record(value : Double, attributes? : Array[(String, common::AttributeValue)]) -> Unit
 }
 
 pub trait UpDownCounter {
-  add(amount : Int64, attributes? : Array[(String, AttributeValue)]) -> Unit
+  add(amount : Int64, attributes? : Array[(String, common::AttributeValue)]) -> Unit
 }
 
 pub trait Gauge {
-  record(value : Double, attributes? : Array[(String, AttributeValue)]) -> Unit
+  record(value : Double, attributes? : Array[(String, common::AttributeValue)]) -> Unit
 }
 
 pub trait Meter {
@@ -64,19 +62,19 @@ pub struct NoopMeter {
 pub struct NoopMeterProvider {
 }
 
-pub fn NoopCounter::add(amount : Int64, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopCounter::add(amount : Int64, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopHistogram::record(value : Double, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopHistogram::record(value : Double, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopUpDownCounter::add(amount : Int64, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopUpDownCounter::add(amount : Int64, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopGauge::record(value : Double, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopGauge::record(value : Double, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 

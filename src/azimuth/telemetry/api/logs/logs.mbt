@@ -1,9 +1,6 @@
 // Azimuth Telemetry - Logs API
 // 结构化日志记录
 
-use azimuth.telemetry.api.common
-use azimuth.telemetry.api.context
-
 pub enum SeverityNumber {
   Trace
   Debug
@@ -19,23 +16,23 @@ pub struct LogRecord {
   severity_number : SeverityNumber
   severity_text : String?
   body : String?
-  attributes : Array[(String, AttributeValue)]
+  attributes : Array[(String, common::AttributeValue)]
   trace_id : Array[Byte]?
   span_id : Array[Byte]?
   trace_flags : Byte?
-  resource : Resource?
-  instrumentation_scope : InstrumentationScope?
+  resource : common::Resource?
+  instrumentation_scope : common::InstrumentationScope?
 }
 
 pub trait Logger {
   emit(log_record : LogRecord) -> Unit
   
   // 便捷方法
-  debug(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit
-  info(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit
-  warn(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit
-  error(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit
-  fatal(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit
+  debug(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit
+  info(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit
+  warn(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit
+  error(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit
+  fatal(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit
 }
 
 pub trait LoggerProvider {
@@ -53,23 +50,23 @@ pub fn NoopLogger::emit(log_record : LogRecord) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopLogger::debug(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopLogger::debug(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopLogger::info(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopLogger::info(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopLogger::warn(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopLogger::warn(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopLogger::error(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopLogger::error(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
-pub fn NoopLogger::fatal(body : String, attributes? : Array[(String, AttributeValue)]) -> Unit {
+pub fn NoopLogger::fatal(body : String, attributes? : Array[(String, common::AttributeValue)]) -> Unit {
   // No-op implementation
 }
 
@@ -88,12 +85,12 @@ pub struct LogRecordBuilder {
   severity_number : SeverityNumber?
   severity_text : String?
   body : String?
-  attributes : Array[(String, AttributeValue)]
+  attributes : Array[(String, common::AttributeValue)]
   trace_id : Array[Byte]?
   span_id : Array[Byte]?
   trace_flags : Byte?
-  resource : Resource?
-  instrumentation_scope : InstrumentationScope?
+  resource : common::Resource?
+  instrumentation_scope : common::InstrumentationScope?
 }
 
 pub fn LogRecordBuilder::new() -> LogRecordBuilder {
@@ -124,7 +121,7 @@ pub fn LogRecordBuilder::body(self : LogRecordBuilder, body : String) -> LogReco
   LogRecordBuilder::{ ..self, body: Some(body) }
 }
 
-pub fn LogRecordBuilder::with_attribute(self : LogRecordBuilder, key : String, value : AttributeValue) -> LogRecordBuilder {
+pub fn LogRecordBuilder::with_attribute(self : LogRecordBuilder, key : String, value : common::AttributeValue) -> LogRecordBuilder {
   let new_attributes = []
   let mut i = 0
   while i < self.attributes.length() {
