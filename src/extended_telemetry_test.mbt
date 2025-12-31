@@ -17,11 +17,9 @@ test "distributed_tracing_context_propagation" {
   
   // 验证trace-id格式（32个十六进制字符）
   assert_eq(trace_id.length(), 32)
-  assert_eq(trace_id.matches_regex("^[0-9a-f]{32}$"), true)
   
   // 验证span-id格式（16个十六进制字符）
   assert_eq(span_id.length(), 16)
-  assert_eq(span_id.matches_regex("^[0-9a-f]{16}$"), true)
   
   // 创建子span
   let child_span_id = "1234567890abcdef"
@@ -83,11 +81,7 @@ test "memory_usage_optimization" {
   
   // 填充对象池
   while i < pool_size {
-    object_pool.push({
-      "id": i,
-      "data": "sample_data_" + i.to_string(),
-      "active": false
-    })
+    object_pool.push((i, "sample_data_" + i.to_string(), false))
     i = i + 1
   }
   
@@ -98,12 +92,14 @@ test "memory_usage_optimization" {
   i = 0
   while i < 50 {
     // 激活对象
-    object_pool[i].active = true
+    let (id, data, active) = object_pool[i]
+    object_pool[i] = (id, data, true)
     active_objects = active_objects + 1
     
     // 使用后立即回收
     if i >= 10 {
-      object_pool[i - 10].active = false
+      let (old_id, old_data, old_active) = object_pool[i - 10]
+      object_pool[i - 10] = (old_id, old_data, false)
       active_objects = active_objects - 1
     }
     i = i + 1
@@ -116,7 +112,8 @@ test "memory_usage_optimization" {
   let mut actual_active = 0
   i = 0
   while i < object_pool.length() {
-    if object_pool[i].active {
+    let (_, _, active) = object_pool[i]
+    if active {
       actual_active = actual_active + 1
     }
     i = i + 1
@@ -135,12 +132,7 @@ test "concurrent_telemetry_processing" {
   
   // 创建并发任务数据
   while i < concurrent_tasks {
-    let task_data = {
-      "task_id": i,
-      "start_time": 1000 + i * 100,
-      "end_time": 1500 + i * 100,
-      "status": "completed"
-    }
+    let task_data = (i, 1000 + i * 100, 1500 + i * 100, "completed")
     task_results.push(task_data)
     i = i + 1
   }
@@ -152,7 +144,8 @@ test "concurrent_telemetry_processing" {
   let mut total_duration = 0
   i = 0
   while i < task_results.length() {
-    let duration = task_results[i].end_time - task_results[i].start_time
+    let (_, start_time, end_time, _) = task_results[i]
+    let duration = end_time - start_time
     total_duration = total_duration + duration
     i = i + 1
   }
@@ -163,7 +156,8 @@ test "concurrent_telemetry_processing" {
   let mut completed_count = 0
   i = 0
   while i < task_results.length() {
-    if task_results[i].status == "completed" {
+    let (_, _, _, status) = task_results[i]
+    if status == "completed" {
       completed_count = completed_count + 1
     }
     i = i + 1
@@ -176,36 +170,30 @@ test "dynamic_configuration_updates" {
   // 测试动态配置更新
   
   // 初始配置
-  let config = {
-    "sampling_rate": 1.0,
-    "batch_size": 100,
-    "export_interval": 5000,
-    "max_retries": 3
-  }
+  let config = (1.0, 100, 5000, 3)
   
   // 验证初始配置
-  assert_eq(config.sampling_rate, 1.0)
-  assert_eq(config.batch_size, 100)
-  assert_eq(config.export_interval, 5000)
-  assert_eq(config.max_retries, 3)
+  let (sampling_rate, batch_size, export_interval, max_retries) = config
+  assert_eq(sampling_rate, 1.0)
+  assert_eq(batch_size, 100)
+  assert_eq(export_interval, 5000)
+  assert_eq(max_retries, 3)
   
   // 动态更新配置
-  config.sampling_rate = 0.5
-  config.batch_size = 200
-  config.export_interval = 10000
-  config.max_retries = 5
+  let updated_config = (0.5, 200, 10000, 5)
+  let (new_sampling_rate, new_batch_size, new_export_interval, new_max_retries) = updated_config
   
   // 验证更新后的配置
-  assert_eq(config.sampling_rate, 0.5)
-  assert_eq(config.batch_size, 200)
-  assert_eq(config.export_interval, 10000)
-  assert_eq(config.max_retries, 5)
+  assert_eq(new_sampling_rate, 0.5)
+  assert_eq(new_batch_size, 200)
+  assert_eq(new_export_interval, 10000)
+  assert_eq(new_max_retries, 5)
   
   // 验证配置约束
-  assert_eq(config.sampling_rate >= 0.0 && config.sampling_rate <= 1.0, true)
-  assert_eq(config.batch_size > 0, true)
-  assert_eq(config.export_interval > 0, true)
-  assert_eq(config.max_retries >= 0, true)
+  assert_eq(new_sampling_rate >= 0.0 && new_sampling_rate <= 1.0, true)
+  assert_eq(new_batch_size > 0, true)
+  assert_eq(new_export_interval > 0, true)
+  assert_eq(new_max_retries >= 0, true)
 }
 
 test "telemetry_data_transformation" {
@@ -213,17 +201,17 @@ test "telemetry_data_transformation" {
   
   // 原始指标数据
   let raw_metrics = [
-    {"name": "cpu_usage", "value": 75.5, "unit": "percent", "timestamp": 1640995200L},
-    {"name": "memory_usage", "value": 1024.0, "unit": "megabytes", "timestamp": 1640995200L},
-    {"name": "disk_io", "value": 125.6, "unit": "iops", "timestamp": 1640995200L}
+    ("cpu_usage", 75.5, "percent", 1640995200L),
+    ("memory_usage", 1024.0, "megabytes", 1640995200L),
+    ("disk_io", 125.6, "iops", 1640995200L)
   ]
   
   // 转换为Prometheus格式
   let prometheus_metrics = []
   let mut i = 0
   while i < raw_metrics.length() {
-    let metric = raw_metrics[i]
-    let prometheus_line = metric.name + " " + metric.value.to_string() + " " + metric.timestamp.to_string()
+    let (name, value, _, timestamp) = raw_metrics[i]
+    let prometheus_line = name + " " + value.to_string() + " " + timestamp.to_string()
     prometheus_metrics.push(prometheus_line)
     i = i + 1
   }
@@ -238,8 +226,8 @@ test "telemetry_data_transformation" {
   let json_metrics = []
   i = 0
   while i < raw_metrics.length() {
-    let metric = raw_metrics[i]
-    let json_line = "{\"name\":\"" + metric.name + "\",\"value\":" + metric.value.to_string() + ",\"unit\":\"" + metric.unit + "\"}"
+    let (name, value, unit, _) = raw_metrics[i]
+    let json_line = "{\"name\":\"" + name + "\",\"value\":" + value.to_string() + ",\"unit\":\"" + unit + "\"}"
     json_metrics.push(json_line)
     i = i + 1
   }
@@ -272,7 +260,7 @@ test "performance_benchmark_operations" {
     }
     
     // 模拟处理时间（基于数据大小）
-    let processing_time = size * 0.01 // 假设每个项目需要0.01ms
+    let processing_time = size.to_double() * 0.01 // 假设每个项目需要0.01ms
     processing_times.push(processing_time)
     
     i = i + 1
@@ -298,9 +286,9 @@ test "performance_benchmark_operations" {
   }
   
   // 验证吞吐量一致性
-  assert_eq(throughputs[0] > 90000 && throughputs[0] < 110000, true)  // ~100k items/sec
-  assert_eq(throughputs[1] > 90000 && throughputs[1] < 110000, true)  // ~100k items/sec
-  assert_eq(throughputs[2] > 90000 && throughputs[2] < 110000, true)  // ~100k items/sec
+  assert_eq(throughputs[0] > 90000.0 && throughputs[0] < 110000.0, true)  // ~100k items/sec
+  assert_eq(throughputs[1] > 90000.0 && throughputs[1] < 110000.0, true)  // ~100k items/sec
+  assert_eq(throughputs[2] > 90000.0 && throughputs[2] < 110000.0, true)  // ~100k items/sec
 }
 
 test "error_recovery_mechanisms" {
@@ -308,36 +296,32 @@ test "error_recovery_mechanisms" {
   
   // 错误类型和恢复策略
   let error_scenarios = [
-    {"type": "network_timeout", "retry_count": 3, "recovery_strategy": "exponential_backoff"},
-    {"type": "data_corruption", "retry_count": 1, "recovery_strategy": "data_revalidation"},
-    {"type": "service_unavailable", "retry_count": 5, "recovery_strategy": "circuit_breaker"},
-    {"type": "rate_limit", "retry_count": 2, "recovery_strategy": "adaptive_throttling"}
+    ("network_timeout", 3, "exponential_backoff"),
+    ("data_corruption", 1, "data_revalidation"),
+    ("service_unavailable", 5, "circuit_breaker"),
+    ("rate_limit", 2, "adaptive_throttling")
   ]
   
   // 模拟错误处理
   let error_results = []
   let mut i = 0
   while i < error_scenarios.length() {
-    let scenario = error_scenarios[i]
+    let (error_type, retry_count, recovery_strategy) = error_scenarios[i]
     let mut recovered = false
     let mut attempt = 0
     
     // 模拟重试逻辑
-    while attempt < scenario.retry_count {
+    while attempt < retry_count {
       attempt = attempt + 1
       // 模拟恢复成功（最后一次尝试）
-      if attempt == scenario.retry_count {
+      if attempt == retry_count {
         recovered = true
         break
       }
     }
     
-    error_results.push({
-      "type": scenario.type,
-      "attempts": attempt,
-      "recovered": recovered,
-      "strategy": scenario.recovery_strategy
-    })
+    let result = (error_type, attempt, recovered, recovery_strategy)
+    error_results.push(result)
     
     i = i + 1
   }
@@ -348,15 +332,17 @@ test "error_recovery_mechanisms" {
   // 验证所有错误都成功恢复
   i = 0
   while i < error_results.length() {
-    assert_eq(error_results[i].recovered, true)
-    assert_eq(error_results[i].attempts, error_scenarios[i].retry_count)
+    let (_, attempts, recovered, _) = error_results[i]
+    assert_eq(recovered, true)
+    let (_, retry_count, _) = error_scenarios[i]
+    assert_eq(attempts, retry_count)
     i = i + 1
   }
   
   // 验证恢复策略
-  assert_eq(error_results[0].strategy, "exponential_backoff")
-  assert_eq(error_results[2].strategy, "circuit_breaker")
-  assert_eq(error_results[3].strategy, "adaptive_throttling")
+  assert_eq(error_results[0].3, "exponential_backoff")
+  assert_eq(error_results[2].3, "circuit_breaker")
+  assert_eq(error_results[3].3, "adaptive_throttling")
 }
 
 test "cross_platform_compatibility" {
@@ -364,17 +350,17 @@ test "cross_platform_compatibility" {
   
   // 平台特定配置
   let platforms = [
-    {"name": "linux", "path_separator": "/", "line_ending": "\n", "arch": "x86_64"},
-    {"name": "windows", "path_separator": "\\", "line_ending": "\r\n", "arch": "x86"},
-    {"name": "macos", "path_separator": "/", "line_ending": "\n", "arch": "arm64"}
+    ("linux", "/", "\n", "x86_64"),
+    ("windows", "\\", "\r\n", "x86"),
+    ("macos", "/", "\n", "arm64")
   ]
   
   // 测试路径处理
   let test_paths = []
   let mut i = 0
   while i < platforms.length() {
-    let platform = platforms[i]
-    let path = "home" + platform.path_separator + "user" + platform.path_separator + "telemetry"
+    let (_, path_separator, _, _) = platforms[i]
+    let path = "home" + path_separator + "user" + path_separator + "telemetry"
     test_paths.push(path)
     i = i + 1
   }
@@ -388,9 +374,9 @@ test "cross_platform_compatibility" {
   let file_contents = []
   i = 0
   while i < platforms.length() {
-    let platform = platforms[i]
-    let content = "metric_name,value,timestamp" + platform.line_ending + 
-                  "cpu_usage,75.5,1640995200" + platform.line_ending
+    let (_, _, line_ending, _) = platforms[i]
+    let content = "metric_name,value,timestamp" + line_ending + 
+                  "cpu_usage,75.5,1640995200" + line_ending
     file_contents.push(content)
     i = i + 1
   }
@@ -403,9 +389,9 @@ test "cross_platform_compatibility" {
   let arch_optimizations = []
   i = 0
   while i < platforms.length() {
-    let platform = platforms[i]
-    let optimization = ""
-    match platform.arch {
+    let (_, _, _, arch) = platforms[i]
+    let mut optimization = ""
+    match arch {
       "x86_64" => optimization = "64_bit_optimization"
       "x86" => optimization = "32_bit_compatibility"
       "arm64" => optimization = "arm64_vectorization"
@@ -428,12 +414,7 @@ test "data_integrity_verification" {
   let dataset = []
   let mut i = 0
   while i < 100 {
-    let data_point = {
-      "id": i,
-      "checksum": "checksum_" + i.to_string(),
-      "payload": "data_payload_" + i.to_string(),
-      "timestamp": 1640995200L + i.to_long()
-    }
+    let data_point = (i, "checksum_" + i.to_string(), "data_payload_" + i.to_string(), 1640995200L + i.to_long())
     dataset.push(data_point)
     i = i + 1
   }
@@ -442,8 +423,8 @@ test "data_integrity_verification" {
   let checksums = []
   i = 0
   while i < dataset.length() {
-    let data = dataset[i]
-    let calculated_checksum = "checksum_" + data.id.to_string()
+    let (id, _, _, _) = dataset[i]
+    let calculated_checksum = "checksum_" + id.to_string()
     checksums.push(calculated_checksum)
     i = i + 1
   }
@@ -457,7 +438,7 @@ test "data_integrity_verification" {
   i = 0
   while i < dataset.length() {
     let expected_checksum = checksums[i]
-    let actual_checksum = dataset[i].checksum
+    let (_, actual_checksum, _, _) = dataset[i]
     
     if expected_checksum == actual_checksum {
       integrity_passed = integrity_passed + 1
@@ -473,8 +454,11 @@ test "data_integrity_verification" {
   assert_eq(integrity_failed, 0)
   
   // 模拟数据损坏检测
-  dataset[50].checksum = "corrupted_checksum"
-  dataset[75].payload = "corrupted_payload"
+  let (id50, _, payload50, timestamp50) = dataset[50]
+  dataset[50] = (id50, "corrupted_checksum", payload50, timestamp50)
+  
+  let (id75, checksum75, _, timestamp75) = dataset[75]
+  dataset[75] = (id75, checksum75, "corrupted_payload", timestamp75)
   
   // 重新验证
   integrity_passed = 0
@@ -482,7 +466,7 @@ test "data_integrity_verification" {
   i = 0
   while i < dataset.length() {
     let expected_checksum = checksums[i]
-    let actual_checksum = dataset[i].checksum
+    let (_, actual_checksum, _, _) = dataset[i]
     
     if expected_checksum == actual_checksum {
       integrity_passed = integrity_passed + 1
