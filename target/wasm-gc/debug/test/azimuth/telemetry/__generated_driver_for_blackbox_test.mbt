@@ -1047,6 +1047,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_736572766963655f6d6573685f74656c656d657472795f746573742e6d6274_2, ["traffic_management_telemetry"]),
     3: (__test_736572766963655f6d6573685f74656c656d657472795f746573742e6d6274_3, ["service_mesh_security_telemetry"]),
   },
+  "service_mesh_integration_comprehensive_test.mbt": {
+    0: (__test_736572766963655f6d6573685f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_0, ["service_mesh_istio_integration"]),
+    1: (__test_736572766963655f6d6573685f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_1, ["service_mesh_linkerd_integration"]),
+    2: (__test_736572766963655f6d6573685f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_2, ["service_mesh_traffic_management"]),
+    3: (__test_736572766963655f6d6573685f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_3, ["service_mesh_security_integration"]),
+    4: (__test_736572766963655f6d6573685f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_4, ["service_mesh_observability_integration"]),
+  },
   "serialization_unit_test.mbt": {
     0: (__test_73657269616c697a6174696f6e5f756e69745f746573742e6d6274_0, ["span_serialization_formats"]),
     1: (__test_73657269616c697a6174696f6e5f756e69745f746573742e6d6274_1, ["metric_serialization_formats"]),
