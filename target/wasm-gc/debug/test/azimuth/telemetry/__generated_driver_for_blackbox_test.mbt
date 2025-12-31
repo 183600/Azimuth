@@ -1086,12 +1086,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_73656375726974795f707269766163795f636f6d70726568656e736976655f746573742e6d6274_6, ["security_vulnerability_protection"]),
   },
   "security_enhanced_test.mbt": {
-    0: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_0, ["malicious_attribute_value_handling"]),
-    1: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_1, ["malicious_context_key_handling"]),
-    2: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_2, ["malicious_span_name_handling"]),
-    3: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_3, ["malicious_log_record_handling"]),
-    4: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_4, ["malicious_baggage_handling"]),
-    5: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_5, ["malicious_propagation_data_handling"]),
+    0: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_0, ["sensitive_data_sanitization"]),
+    1: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_1, ["data_encryption_validation"]),
+    2: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_2, ["access_control_permissions"]),
+    3: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_3, ["certificate_validation"]),
+    4: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_4, ["rate_limiting_security"]),
+    5: (__test_73656375726974795f656e68616e6365645f746573742e6d6274_5, ["audit_logging_security"]),
   },
   "security_compliance_test.mbt": {
     0: (__test_73656375726974795f636f6d706c69616e63655f746573742e6d6274_0, ["telemetry_data_privacy_protection"]),
