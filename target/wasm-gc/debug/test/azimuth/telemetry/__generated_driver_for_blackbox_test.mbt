@@ -2297,6 +2297,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_636f6e66696775726174696f6e5f616476616e6365645f746573742e6d6274_4, ["configuration_hot_reload"]),
     5: (__test_636f6e66696775726174696f6e5f616476616e6365645f746573742e6d6274_5, ["configuration_export_and_import"]),
   },
+  "config_management_test.mbt": {
+    0: (__test_636f6e6669675f6d616e6167656d656e745f746573742e6d6274_0, ["telemetry_service_configuration"]),
+    1: (__test_636f6e6669675f6d616e6167656d656e745f746573742e6d6274_1, ["collector_endpoint_configuration"]),
+    2: (__test_636f6e6669675f6d616e6167656d656e745f746573742e6d6274_2, ["sampling_configuration"]),
+    3: (__test_636f6e6669675f6d616e6167656d656e745f746573742e6d6274_3, ["resource_attributes_configuration"]),
+    4: (__test_636f6e6669675f6d616e6167656d656e745f746573742e6d6274_4, ["batch_processor_configuration"]),
+    5: (__test_636f6e6669675f6d616e6167656d656e745f746573742e6d6274_5, ["experimental_features_configuration"]),
+    6: (__test_636f6e6669675f6d616e6167656d656e745f746573742e6d6274_6, ["configuration_validation_rules"]),
+  },
   "config_hot_reload_test.mbt": {
     0: (__test_636f6e6669675f686f745f72656c6f61645f746573742e6d6274_0, ["dynamic_configuration_update"]),
     1: (__test_636f6e6669675f686f745f72656c6f61645f746573742e6d6274_1, ["configuration_watchers"]),
