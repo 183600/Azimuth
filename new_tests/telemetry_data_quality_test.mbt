@@ -1,363 +1,329 @@
-// Azimuth Telemetry - Data Quality Validation Test
-// 测试遥测数据质量验证功能
+// 遥测数据质量验证测试
+// 测试遥测数据的质量控制和验证机制
 
-// 模拟数据质量指标
-pub struct DataQualityMetrics {
-  completeness_score : Double  // 完整性评分 (0.0-1.0)
-  consistency_score : Double  // 一致性评分 (0.0-1.0)
-  accuracy_score : Double     // 准确性评分 (0.0-1.0)
-  validity_score : Double     // 有效性评分 (0.0-1.0)
-  timeliness_score : Double   // 及时性评分 (0.0-1.0)
-  overall_quality_score : Double // 总体质量评分
+test "telemetry_data_quality_basic_validation" {
+  // 测试基本的数据质量验证
+  
+  let telemetry_samples = [
+    ("sample_1", "cpu_usage", 75.5, "2023-01-01T10:00:00Z", true),
+    ("sample_2", "memory_usage", -10.0, "2023-01-01T10:00:00Z", false), // 无效的负值
+    ("sample_3", "disk_usage", 45.8, "invalid_timestamp", false), // 无效的时间戳
+    ("sample_4", "network_usage", 120.5, "2023-01-01T10:00:00Z", true),
+    ("sample_5", "cpu_usage", 150.0, "2023-01-01T10:00:00Z", false) // 超出合理范围
+  ]
+  
+  // 验证遥测样本
+  assert_eq(telemetry_samples.length(), 5)
+  
+  // 执行数据质量检查
+  let quality_results = []
+  let mut valid_samples = 0
+  let mut invalid_samples = 0
+  
+  let mut i = 0
+  while i < telemetry_samples.length() {
+    let sample_id = telemetry_samples[i].0
+    let metric_name = telemetry_samples[i].1
+    let metric_value = telemetry_samples[i].2
+    let timestamp = telemetry_samples[i].3
+    let expected_valid = telemetry_samples[i].4
+    
+    // 数据质量验证规则
+    let value_valid = metric_value >= 0.0 && metric_value <= 100.0
+    let timestamp_valid = timestamp.has_prefix("2023-") && timestamp.contains("T")
+    let is_valid = value_valid && timestamp_valid
+    
+    if is_valid {
+      valid_samples = valid_samples + 1
+    } else {
+      invalid_samples = invalid_samples + 1
+    }
+    
+    quality_results.push((sample_id, is_valid))
+    i = i + 1
+  }
+  
+  // 验证质量检查结果
+  assert_eq(quality_results.length(), 5)
+  assert_eq(valid_samples, 2) // sample_1 和 sample_4 有效
+  assert_eq(invalid_samples, 3) // sample_2, sample_3, sample_5 无效
+  
+  // 创建数据质量遥测
+  let quality_telemetry = "data_quality:total_samples=" + telemetry_samples.length().to_string() + 
+    ",valid=" + valid_samples.to_string() + 
+    ",invalid=" + invalid_samples.to_string() + 
+    ",quality_rate=" + ((valid_samples.to_double() / telemetry_samples.length().to_double()) * 100.0).to_string() + "%"
+  
+  // 验证数据质量遥测
+  assert_eq(quality_telemetry.contains("total_samples=5"), true)
+  assert_eq(quality_telemetry.contains("valid=2"), true)
+  assert_eq(quality_telemetry.contains("invalid=3"), true)
+  assert_eq(quality_telemetry.contains("quality_rate=40.0%"), true)
 }
 
-test "span_data_completeness_validation" {
-  // 测试Span数据完整性验证
-  let complete_span = {
-    "name": "complete_operation",
-    "trace_id": "0102030405060708090a0b0c0d0e0f10",
-    "span_id": "0102030405060708",
-    "trace_flags": "1",
-    "trace_state": "key=value",
-    "kind": "Server",
-    "parent_span_id": "0000000000000000",
-    "start_time_unix_nanos": "1641033600000000000",
-    "end_time_unix_nanos": "1641033601000000000",
-    "status": "Ok",
-    "status_description": "Success",
-    "attributes": [
-      ("service.name", "test_service"),
-      ("operation.type", "http_request")
-    ],
-    "events": [
-      {
-        "name": "request_received",
-        "timestamp_unix_nanos": "1641033600000000000",
-        "attributes": [("event.type", "start")]
+test "telemetry_data_consistency_check" {
+  // 测试数据一致性检查
+  
+  let time_series_data = [
+    ("server_1", "cpu", 70.0, "2023-01-01T10:00:00Z"),
+    ("server_1", "cpu", 75.0, "2023-01-01T10:01:00Z"),
+    ("server_1", "cpu", 125.0, "2023-01-01T10:02:00Z"), // 异常跳变
+    ("server_1", "cpu", 80.0, "2023-01-01T10:03:00Z"),
+    ("server_2", "cpu", 60.0, "2023-01-01T10:00:00Z"),
+    ("server_2", "cpu", 65.0, "2023-01-01T10:01:00Z"),
+    ("server_2", "cpu", 70.0, "2023-01-01T10:02:00Z")
+  ]
+  
+  // 验证时间序列数据
+  assert_eq(time_series_data.length(), 7)
+  
+  // 按服务器分组检查一致性
+  let server_1_data = []
+  let server_2_data = []
+  
+  let mut i = 0
+  while i < time_series_data.length() {
+    let server_id = time_series_data[i].0
+    if server_id == "server_1" {
+      server_1_data.push(time_series_data[i])
+    } else if server_id == "server_2" {
+      server_2_data.push(time_series_data[i])
+    }
+    i = i + 1
+  }
+  
+  // 验证分组结果
+  assert_eq(server_1_data.length(), 4)
+  assert_eq(server_2_data.length(), 3)
+  
+  // 检查server_1的数据一致性
+  let mut server_1_anomalies = 0
+  i = 1
+  while i < server_1_data.length() {
+    let prev_value = server_1_data[i-1].2
+    let curr_value = server_1_data[i].2
+    let change_rate = (curr_value - prev_value).abs() / prev_value * 100.0
+    
+    // 如果变化率超过50%，认为是异常
+    if change_rate > 50.0 {
+      server_1_anomalies = server_1_anomalies + 1
+    }
+    i = i + 1
+  }
+  
+  // 检查server_2的数据一致性
+  let mut server_2_anomalies = 0
+  i = 1
+  while i < server_2_data.length() {
+    let prev_value = server_2_data[i-1].2
+    let curr_value = server_2_data[i].2
+    let change_rate = (curr_value - prev_value).abs() / prev_value * 100.0
+    
+    if change_rate > 50.0 {
+      server_2_anomalies = server_2_anomalies + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证一致性检查结果
+  assert_eq(server_1_anomalies, 1) // server_1有一个异常跳变
+  assert_eq(server_2_anomalies, 0) // server_2没有异常
+  
+  // 创建一致性检查遥测
+  let consistency_telemetry = "data_consistency:server_1_anomalies=" + server_1_anomalies.to_string() + 
+    ",server_2_anomalies=" + server_2_anomalies.to_string() + 
+    ",total_anomalies=" + (server_1_anomalies + server_2_anomalies).to_string()
+  
+  // 验证一致性检查遥测
+  assert_eq(consistency_telemetry.contains("server_1_anomalies=1"), true)
+  assert_eq(consistency_telemetry.contains("server_2_anomalies=0"), true)
+  assert_eq(consistency_telemetry.contains("total_anomalies=1"), true)
+}
+
+test "telemetry_data_completeness_verification" {
+  // 测试数据完整性验证
+  
+  let expected_metrics = ["cpu", "memory", "disk", "network", "temperature"]
+  let received_data = [
+    ("server_1", "cpu", 75.5),
+    ("server_1", "memory", 60.2),
+    ("server_1", "disk", 45.8),
+    ("server_2", "cpu", 82.1),
+    ("server_2", "memory", 55.8),
+    ("server_2", "network", 120.5),
+    ("server_2", "temperature", 35.6)
+  ]
+  
+  // 验证期望指标和接收数据
+  assert_eq(expected_metrics.length(), 5)
+  assert_eq(received_data.length(), 7)
+  
+  // 按服务器分组检查完整性
+  let server_1_metrics = []
+  let server_2_metrics = []
+  
+  let mut i = 0
+  while i < received_data.length() {
+    let server_id = received_data[i].0
+    let metric_name = received_data[i].1
+    
+    if server_id == "server_1" {
+      server_1_metrics.push(metric_name)
+    } else if server_id == "server_2" {
+      server_2_metrics.push(metric_name)
+    }
+    i = i + 1
+  }
+  
+  // 验证分组结果
+  assert_eq(server_1_metrics.length(), 3)
+  assert_eq(server_2_metrics.length(), 4)
+  
+  // 检查server_1的完整性
+  let mut server_1_missing = []
+  i = 0
+  while i < expected_metrics.length() {
+    let expected_metric = expected_metrics[i]
+    let mut found = false
+    let mut j = 0
+    while j < server_1_metrics.length() {
+      if server_1_metrics[j] == expected_metric {
+        found = true
+        break
       }
-    ]
+      j = j + 1
+    }
+    if not found {
+      server_1_missing.push(expected_metric)
+    }
+    i = i + 1
   }
   
-  let incomplete_span = {
-    "name": "", // 空名称
-    "trace_id": "00000000000000000000000000000000", // 全零trace_id
-    "span_id": "0000000000000000", // 全零span_id
-    "trace_flags": "0",
-    "trace_state": "",
-    "kind": "Internal",
-    "parent_span_id": "",
-    "start_time_unix_nanos": "0", // 无效时间戳
-    "end_time_unix_nanos": "", // 缺少结束时间
-    "status": "Unset",
-    "status_description": "",
-    "attributes": [], // 空属性
-    "events": []     // 空事件
-  }
-  
-  // 验证完整性规则
-  let validate_span_completeness = fn(span : Map[String, String]) -> Double {
-    let mut score = 0.0
-    let max_score = 7.0
-    
-    // 检查名称
-    if span.get("name").unwrap_or("").length() > 0 { score = score + 1.0 }
-    
-    // 检查trace_id不是全零
-    let trace_id = span.get("trace_id").unwrap_or("")
-    let trace_id_valid = trace_id != "00000000000000000000000000000000"
-    if trace_id_valid { score = score + 1.0 }
-    
-    // 检查span_id不是全零
-    let span_id = span.get("span_id").unwrap_or("")
-    let span_id_valid = span_id != "0000000000000000"
-    if span_id_valid { score = score + 1.0 }
-    
-    // 检查时间戳
-    let start_time = span.get("start_time_unix_nanos").unwrap_or("0")
-    if start_time != "0" { score = score + 1.0 }
-    
-    // 检查结束时间
-    let end_time = span.get("end_time_unix_nanos")
-    if end_time.is_some() && end_time.unwrap().length() > 0 { score = score + 1.0 }
-    
-    // 检查状态
-    let status = span.get("status").unwrap_or("")
-    if status != "Unset" { score = score + 1.0 }
-    
-    // 检查属性
-    let attributes = span.get("attributes")
-    if attributes.is_some() && attributes.unwrap().length() > 2 { score = score + 1.0 } // 至少有括号
-    
-    score / max_score
-  }
-  
-  let complete_score = validate_span_completeness(complete_span)
-  let incomplete_score = validate_span_completeness(incomplete_span)
-  
-  // 验证完整性评分
-  assert_eq(complete_score, 1.0) // 完整的Span应该得到满分
-  assert_eq(incomplete_score, 0.0) // 不完整的Span应该得到0分
-}
-
-test "attribute_consistency_validation" {
-  // 测试属性一致性验证
-  let consistent_attributes = [
-    ("service.name", "api-service"),
-    ("service.version", "1.0.0"),
-    ("host.name", "web-server-01"),
-    ("region", "us-west-2"),
-    ("environment", "production")
-  ]
-  
-  let inconsistent_attributes = [
-    ("service.name", "api-service"),
-    ("service.name", "worker-service"), // 重复键不同值
-    ("service.version", "1.0.0"),
-    ("service.version", "2.0.0"),      // 重复键不同值
-    ("host.name", ""),
-    ("region", "us-west-2"),
-    ("environment", "production")
-  ]
-  
-  // 验证属性一致性
-  let validate_attribute_consistency = fn(attributes : Array[(String, String)]) -> Double {
-    let mut score = 0.0
-    let max_score = 3.0
-    
-    // 检查重复键
-    let keys = attributes.map(fn((key, _)) { key })
-    let unique_keys = keys.to_set().to_array()
-    let duplicate_count = keys.length() - unique_keys.length()
-    if duplicate_count == 0 { score = score + 1.0 }
-    
-    // 检查空值
-    let empty_values = attributes.filter(fn((_, value)) { value.length() == 0 })
-    if empty_values.length() == 0 { score = score + 1.0 }
-    
-    // 检查必需属性
-    let required_keys = ["service.name", "service.version"]
-    let has_required = required_keys.all(fn(req_key) {
-      attributes.any(fn((key, _)) { key == req_key })
-    })
-    if has_required { score = score + 1.0 }
-    
-    score / max_score
-  }
-  
-  let consistent_score = validate_attribute_consistency(consistent_attributes)
-  let inconsistent_score = validate_attribute_consistency(inconsistent_attributes)
-  
-  // 验证一致性评分
-  assert_eq(consistent_score, 1.0) // 一致的属性应该得到满分
-  assert_eq(inconsistent_score, 0.0) // 不一致的属性应该得到低分
-  
-  // 测试边界情况
-  let empty_attributes : Array[(String, String)] = []
-  let empty_score = validate_attribute_consistency(empty_attributes)
-  assert_eq(empty_score, 1.0 / 3.0) // 只有重复键检查通过
-}
-
-test "timestamp_accuracy_validation" {
-  // 测试时间戳准确性验证
-  let current_time = 1641033600000000000L // 2022-01-01 12:00:00 UTC
-  let one_hour = 3600L * 1000L * 1000L * 1000L // 1小时的纳秒数
-  
-  let valid_timestamps = [
-    current_time,                    // 当前时间
-    current_time - one_hour,         // 1小时前
-    current_time + one_hour,         // 1小时后
-    current_time - (24L * one_hour), // 1天前
-    current_time + (24L * one_hour)  // 1天后
-  ]
-  
-  let invalid_timestamps = [
-    0L,                             // 零时间戳
-    -1L,                            // 负时间戳
-    current_time - (365L * 24L * one_hour), // 1年前（可能太旧）
-    current_time + (365L * 24L * one_hour)  // 1年后（可能太新）
-  ]
-  
-  // 验证时间戳准确性
-  let validate_timestamp_accuracy = fn(timestamp : Int64) -> Double {
-    let mut score = 0.0
-    let max_score = 3.0
-    
-    // 检查非零
-    if timestamp > 0L { score = score + 1.0 }
-    
-    // 检查合理性（不在未来太远）
-    let future_threshold = current_time + (7L * 24L * one_hour) // 7天内
-    if timestamp <= future_threshold { score = score + 1.0 }
-    
-    // 检查合理性（不在过去太远）
-    let past_threshold = current_time - (30L * 24L * one_hour) // 30天内
-    if timestamp >= past_threshold { score = score + 1.0 }
-    
-    score / max_score
-  }
-  
-  // 验证有效时间戳
-  for timestamp in valid_timestamps {
-    let score = validate_timestamp_accuracy(timestamp)
-    assert_eq(score, 1.0) // 有效时间戳应该得到满分
-  }
-  
-  // 验证无效时间戳
-  for timestamp in invalid_timestamps {
-    let score = validate_timestamp_accuracy(timestamp)
-    assert_true(score < 1.0) // 无效时间戳应该得到低分
-  }
-  
-  // 测试时间戳顺序验证
-  let ordered_timestamps = [
-    current_time - one_hour,
-    current_time,
-    current_time + one_hour
-  ]
-  
-  let validate_timestamp_order = fn(timestamps : Array[Int64]) -> Bool {
-    for i in 1..timestamps.length() {
-      if timestamps[i] <= timestamps[i-1] {
-        return false
+  // 检查server_2的完整性
+  let mut server_2_missing = []
+  i = 0
+  while i < expected_metrics.length() {
+    let expected_metric = expected_metrics[i]
+    let mut found = false
+    let mut j = 0
+    while j < server_2_metrics.length() {
+      if server_2_metrics[j] == expected_metric {
+        found = true
+        break
       }
+      j = j + 1
     }
-    true
+    if not found {
+      server_2_missing.push(expected_metric)
+    }
+    i = i + 1
   }
   
-  assert_true(validate_timestamp_order(ordered_timestamps))
+  // 验证完整性检查结果
+  assert_eq(server_1_missing.length(), 2) // server_1缺少disk和network
+  assert_eq(server_2_missing.length(), 1) // server_2缺少disk
   
-  let unordered_timestamps = [
-    current_time + one_hour,
-    current_time - one_hour,
-    current_time
-  ]
+  // 计算完整性率
+  let server_1_completeness = ((expected_metrics.length() - server_1_missing.length()).to_double() / expected_metrics.length().to_double()) * 100.0
+  let server_2_completeness = ((expected_metrics.length() - server_2_missing.length()).to_double() / expected_metrics.length().to_double()) * 100.0
   
-  assert_false(validate_timestamp_order(unordered_timestamps))
+  // 验证完整性率
+  assert_eq(server_1_completeness, 60.0) // 3/5 = 60%
+  assert_eq(server_2_completeness, 80.0) // 4/5 = 80%
+  
+  // 创建完整性验证遥测
+  let completeness_telemetry = "data_completeness:server_1_rate=" + server_1_completeness.to_string() + "%,server_2_rate=" + server_2_completeness.to_string() + "%,avg_rate=" + ((server_1_completeness + server_2_completeness) / 2.0).to_string() + "%"
+  
+  // 验证完整性验证遥测
+  assert_eq(completeness_telemetry.contains("server_1_rate=60.0%"), true)
+  assert_eq(completeness_telemetry.contains("server_2_rate=80.0%"), true)
+  assert_eq(completeness_telemetry.contains("avg_rate=70.0%"), true)
 }
 
-test "comprehensive_data_quality_assessment" {
-  // 测试综合数据质量评估
-  let test_span = {
-    "name": "quality_test_operation",
-    "trace_id": "01010101010101010101010101010101",
-    "span_id": "0101010101010101",
-    "trace_flags": "1",
-    "trace_state": "test=true",
-    "kind": "Server",
-    "parent_span_id": "0000000000000000",
-    "start_time_unix_nanos": "1641033600000000000",
-    "end_time_unix_nanos": "1641033601000000000",
-    "status": "Ok",
-    "status_description": "Test operation completed",
-    "attributes": [
-      ("service.name", "test_service"),
-      ("service.version", "1.0.0"),
-      ("operation.type", "http_request"),
-      ("http.status_code", "200")
-    ],
-    "events": [
-      {
-        "name": "request_start",
-        "timestamp_unix_nanos": "1641033600000000000",
-        "attributes": [("event.type", "start")]
-      },
-      {
-        "name": "request_end",
-        "timestamp_unix_nanos": "1641033601000000000",
-        "attributes": [("event.type", "end")]
+test "telemetry_data_accuracy_validation" {
+  // 测试数据准确性验证
+  
+  let validation_rules = [
+    ("cpu_usage", 0.0, 100.0, "percentage"),
+    ("memory_usage", 0.0, 100.0, "percentage"),
+    ("disk_usage", 0.0, 100.0, "percentage"),
+    ("network_throughput", 0.0, 10000.0, "mbps"),
+    ("temperature", -40.0, 125.0, "celsius")
+  ]
+  
+  let test_data = [
+    ("server_1", "cpu_usage", 75.5),
+    ("server_1", "memory_usage", 110.0), // 超出范围
+    ("server_1", "disk_usage", 45.8),
+    ("server_2", "network_throughput", 15000.0), // 超出范围
+    ("server_2", "temperature", 35.6),
+    ("server_2", "cpu_usage", -5.0) // 负值无效
+  ]
+  
+  // 验证验证规则和测试数据
+  assert_eq(validation_rules.length(), 5)
+  assert_eq(test_data.length(), 6)
+  
+  // 执行准确性验证
+  let accuracy_results = []
+  let mut accurate_data = 0
+  let mut inaccurate_data = 0
+  
+  let mut i = 0
+  while i < test_data.length() {
+    let server_id = test_data[i].0
+    let metric_name = test_data[i].1
+    let metric_value = test_data[i].2
+    
+    // 查找验证规则
+    let mut min_value = 0.0
+    let mut max_value = 100.0
+    let mut rule_found = false
+    
+    let mut j = 0
+    while j < validation_rules.length() {
+      if validation_rules[j].0 == metric_name {
+        min_value = validation_rules[j].1
+        max_value = validation_rules[j].2
+        rule_found = true
+        break
       }
-    ]
+      j = j + 1
+    }
+    
+    // 验证数据准确性
+    let is_accurate = rule_found && metric_value >= min_value && metric_value <= max_value
+    
+    if is_accurate {
+      accurate_data = accurate_data + 1
+    } else {
+      inaccurate_data = inaccurate_data + 1
+    }
+    
+    accuracy_results.push((server_id, metric_name, is_accurate))
+    i = i + 1
   }
   
-  // 综合质量评估
-  let assess_comprehensive_quality = fn(span : Map[String, String]) -> DataQualityMetrics {
-    // 完整性评估
-    let completeness_score = if span.get("name").unwrap_or("").length() > 0 &&
-                                span.get("trace_id").unwrap_or("") != "00000000000000000000000000000000" &&
-                                span.get("span_id").unwrap_or("") != "0000000000000000" &&
-                                span.get("start_time_unix_nanos").unwrap_or("0") != "0" &&
-                                span.get("end_time_unix_nanos").is_some() &&
-                                span.get("attributes").is_some() {
-      1.0
-    } else {
-      0.0
-    }
-    
-    // 一致性评估
-    let consistency_score = if span.get("events").is_some() {
-      1.0 // 简化检查
-    } else {
-      0.0
-    }
-    
-    // 准确性评估
-    let start_time = span.get("start_time_unix_nanos").unwrap_or("0").to_int64()
-    let end_time = span.get("end_time_unix_nanos").unwrap_or("0").to_int64()
-    let accuracy_score = if start_time < end_time && span.get("status").unwrap_or("") == "Ok" {
-      1.0
-    } else {
-      0.0
-    }
-    
-    // 有效性评估
-    let validity_score = if span.get("attributes").is_some() {
-      1.0 // 简化检查
-    } else {
-      0.0
-    }
-    
-    // 及时性评估（假设当前时间是开始时间后1小时）
-    let current_time = start_time + (3600L * 1000L * 1000L * 1000L)
-    let age = current_time - start_time
-    let timeliness_score = if age <= (3600L * 1000L * 1000L * 1000L) { 1.0 } else { 0.5 }
-    
-    // 总体质量评分
-    let overall_quality_score = (completeness_score + consistency_score + 
-                                accuracy_score + validity_score + timeliness_score) / 5.0
-    
-    DataQualityMetrics::{
-      completeness_score,
-      consistency_score,
-      accuracy_score,
-      validity_score,
-      timeliness_score,
-      overall_quality_score
-    }
-  }
+  // 验证准确性检查结果
+  assert_eq(accuracy_results.length(), 6)
+  assert_eq(accurate_data, 3) // 3个数据点准确
+  assert_eq(inaccurate_data, 3) // 3个数据点不准确
   
-  let quality_metrics = assess_comprehensive_quality(test_span)
+  // 计算准确率
+  let accuracy_rate = (accurate_data.to_double() / test_data.length().to_double()) * 100.0
   
-  // 验证质量指标
-  assert_eq(quality_metrics.completeness_score, 1.0)
-  assert_eq(quality_metrics.consistency_score, 1.0)
-  assert_eq(quality_metrics.accuracy_score, 1.0)
-  assert_eq(quality_metrics.validity_score, 1.0)
-  assert_eq(quality_metrics.timeliness_score, 1.0)
-  assert_eq(quality_metrics.overall_quality_score, 1.0)
+  // 验证准确率
+  assert_eq(accuracy_rate, 50.0)
   
-  // 测试质量等级分类
-  let classify_quality_level = fn(score : Double) -> String {
-    if score >= 0.9 {
-      "Excellent"
-    } else if score >= 0.8 {
-      "Good"
-    } else if score >= 0.6 {
-      "Fair"
-    } else if score >= 0.4 {
-      "Poor"
-    } else {
-      "Very Poor"
-    }
-  }
+  // 创建准确性验证遥测
+  let accuracy_telemetry = "data_accuracy:total_data=" + test_data.length().to_string() + 
+    ",accurate=" + accurate_data.to_string() + 
+    ",inaccurate=" + inaccurate_data.to_string() + 
+    ",accuracy_rate=" + accuracy_rate.to_string() + "%"
   
-  let quality_level = classify_quality_level(quality_metrics.overall_quality_score)
-  assert_eq(quality_level, "Excellent")
-  
-  // 测试质量阈值验证
-  let quality_thresholds = [0.9, 0.8, 0.6, 0.4]
-  let quality_meets_thresholds = quality_thresholds.all(fn(threshold) {
-    quality_metrics.overall_quality_score >= threshold
-  })
-  
-  assert_true(quality_meets_thresholds)
+  // 验证准确性验证遥测
+  assert_eq(accuracy_telemetry.contains("total_data=6"), true)
+  assert_eq(accuracy_telemetry.contains("accurate=3"), true)
+  assert_eq(accuracy_telemetry.contains("inaccurate=3"), true)
+  assert_eq(accuracy_telemetry.contains("accuracy_rate=50.0%"), true)
 }
