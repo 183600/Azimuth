@@ -1,532 +1,601 @@
-// 遥测多租户隔离测试用例
+// 多租户隔离测试用例
 
-test "telemetry_tenant_data_isolation" {
-  // 测试遥测多租户数据隔离功能
+test "telemetry_multi_tenant_data_isolation" {
+  // 测试多租户数据隔离
   
-  let tenants = [
-    {
-      "tenant_id": "tenant-001",
-      "name": "Acme Corp",
-      "data_retention_days": 30,
-      "quota_metrics_per_day": 100000,
-      "allowed_tags": ["env", "service", "version"],
-      "data_encryption": true
-    },
-    {
-      "tenant_id": "tenant-002", 
-      "name": "Beta Inc",
-      "data_retention_days": 60,
-      "quota_metrics_per_day": 200000,
-      "allowed_tags": ["env", "service", "region", "version"],
-      "data_encryption": true
-    },
-    {
-      "tenant_id": "tenant-003",
-      "name": "Gamma LLC",
-      "data_retention_days": 90,
-      "quota_metrics_per_day": 50000,
-      "allowed_tags": ["env", "service"],
-      "data_encryption": false
-    }
-  ]
-  
-  // 验证租户配置
-  assert_eq(tenants.length(), 3)
-  assert_eq(tenants[0]["tenant_id"], "tenant-001")
-  assert_eq(tenants[1]["quota_metrics_per_day"], 200000)
-  assert_eq(tenants[2]["allowed_tags"].length(), 2)
-  
-  // 模拟各租户的遥测数据
-  let tenant_metrics = {
-    "tenant-001": [
-      {"metric": "cpu_usage", "value": 75.5, "tags": {"env": "prod", "service": "web", "version": "v1.2"}},
-      {"metric": "memory_usage", "value": 68.2, "tags": {"env": "prod", "service": "api", "version": "v1.2"}}
+  // 创建不同租户的数据
+  let tenant_a_data = {
+    "tenant_id": "tenant-a-123",
+    "service_name": "user-service",
+    "spans": [
+      {
+        "trace_id": "a1b2c3d4e5f6789012345678901234ab",
+        "span_id": "c1d2e3f4a5b6c7d8",
+        "operation_name": "get_user_profile",
+        "attributes": {
+          "user_id": "user-123",
+          "tenant_id": "tenant-a-123"
+        }
+      }
     ],
-    "tenant-002": [
-      {"metric": "response_time", "value": 120, "tags": {"env": "staging", "service": "web", "region": "us-west", "version": "v2.0"}},
-      {"metric": "error_rate", "value": 0.5, "tags": {"env": "staging", "service": "db", "region": "us-west", "version": "v2.0"}}
-    ],
-    "tenant-003": [
-      {"metric": "throughput", "value": 1500, "tags": {"env": "dev", "service": "cache"}},
-      {"metric": "latency", "value": 25, "tags": {"env": "dev", "service": "queue"}}
+    "metrics": [
+      {
+        "name": "request_count",
+        "value": 100,
+        "attributes": {
+          "service": "user-service",
+          "tenant_id": "tenant-a-123"
+        }
+      }
     ]
   }
   
-  // 验证租户数据
-  assert_eq(tenant_metrics["tenant-001"].length(), 2)
-  assert_eq(tenant_metrics["tenant-002"][0]["metric"], "response_time")
-  assert_eq(tenant_metrics["tenant-003"][1]["value"], 25)
-  
-  // 验证数据隔离 - 每个租户只能访问自己的数据
-  let tenant_001_access = tenant_metrics["tenant-001"]
-  let tenant_002_access = tenant_metrics["tenant-002"]
-  let tenant_003_access = tenant_metrics["tenant-003"]
-  
-  assert_eq(tenant_001_access.length(), 2)
-  assert_eq(tenant_002_access.length(), 2)
-  assert_eq(tenant_003_access.length(), 2)
-  
-  // 验证跨租户数据访问被阻止
-  let cross_tenant_access_blocked = true
-  assert_eq(cross_tenant_access_blocked, true)
-  
-  // 验证数据标记
-  let mut i = 0
-  while i < tenants.length() {
-    let tenant = tenants[i]
-    let tenant_metrics_data = tenant_metrics[tenant["tenant_id"]]
-    let mut j = 0
-    
-    while j < tenant_metrics_data.length() {
-      let metric = tenant_metrics_data[j]
-      // 确保每个指标都有租户标记
-      let has_tenant_tag = metric["tags"].contains("tenant_id")
-      assert_eq(has_tenant_tag, true)
-      j = j + 1
-    }
-    
-    i = i + 1
+  let tenant_b_data = {
+    "tenant_id": "tenant-b-456",
+    "service_name": "order-service",
+    "spans": [
+      {
+        "trace_id": "b2c3d4e5f6789012345678901234abcd",
+        "span_id": "d2e3f4a5b6c7d8e9",
+        "operation_name": "create_order",
+        "attributes": {
+          "order_id": "order-456",
+          "tenant_id": "tenant-b-456"
+        }
+      }
+    ],
+    "metrics": [
+      {
+        "name": "order_count",
+        "value": 50,
+        "attributes": {
+          "service": "order-service",
+          "tenant_id": "tenant-b-456"
+        }
+      }
+    ]
   }
+  
+  // 验证租户数据隔离
+  assert_eq(tenant_a_data["tenant_id"], "tenant-a-123")
+  assert_eq(tenant_b_data["tenant_id"], "tenant-b-456")
+  assert_eq(tenant_a_data["tenant_id"] != tenant_b_data["tenant_id"], true)
+  
+  // 验证租户Span隔离
+  let tenant_a_span = tenant_a_data["spans"][0]
+  let tenant_b_span = tenant_b_data["spans"][0]
+  
+  assert_eq(tenant_a_span["attributes"]["tenant_id"], "tenant-a-123")
+  assert_eq(tenant_b_span["attributes"]["tenant_id"], "tenant-b-456")
+  assert_eq(tenant_a_span["trace_id"] != tenant_b_span["trace_id"], true)
+  assert_eq(tenant_a_span["span_id"] != tenant_b_span["span_id"], true)
+  
+  // 验证租户指标隔离
+  let tenant_a_metric = tenant_a_data["metrics"][0]
+  let tenant_b_metric = tenant_b_data["metrics"][0]
+  
+  assert_eq(tenant_a_metric["attributes"]["tenant_id"], "tenant-a-123")
+  assert_eq(tenant_b_metric["attributes"]["tenant_id"], "tenant-b-456")
+  assert_eq(tenant_a_metric["name"] != tenant_b_metric["name"], true)
+  
+  // 验证跨租户数据访问控制
+  fn can_access_tenant_data(requesting_tenant: String, target_tenant: String, data_type: String) -> Bool {
+    if requesting_tenant == target_tenant {
+      true  // 同租户访问
+    } else if data_type == "aggregated_anonymous_metrics" {
+      true  // 跨租户访问聚合匿名指标
+    } else {
+      false  // 其他情况拒绝访问
+    }
+  }
+  
+  // 测试访问控制
+  assert_eq(can_access_tenant_data("tenant-a-123", "tenant-a-123", "spans"), true)
+  assert_eq(can_access_tenant_data("tenant-a-123", "tenant-b-456", "spans"), false)
+  assert_eq(can_access_tenant_data("tenant-a-123", "tenant-b-456", "aggregated_anonymous_metrics"), true)
+  assert_eq(can_access_tenant_data("tenant-b-456", "tenant-a-123", "metrics"), false)
 }
 
-test "telemetry_tenant_quota_enforcement" {
-  // 测试遥测多租户配额执行功能
+test "telemetry_multi_tenant_resource_quota_isolation" {
+  // 测试多租户资源配额隔离
   
+  // 定义租户资源配额
   let tenant_quotas = {
-    "tenant-001": {
-      "daily_metrics_limit": 100000,
-      "current_daily_count": 75000,
-      "storage_limit_gb": 100,
-      "current_storage_gb": 65,
-      "api_calls_per_hour": 10000,
-      "current_api_calls": 7500
+    "tenant-a-123": {
+      "max_spans_per_second": 1000,
+      "max_metrics_per_second": 500,
+      "max_storage_mb": 1024,
+      "max_memory_mb": 512,
+      "max_cpu_percent": 50
     },
-    "tenant-002": {
-      "daily_metrics_limit": 200000,
-      "current_daily_count": 195000,  // 接近限制
-      "storage_limit_gb": 200,
-      "current_storage_gb": 180,
-      "api_calls_per_hour": 20000,
-      "current_api_calls": 15000
+    "tenant-b-456": {
+      "max_spans_per_second": 2000,
+      "max_metrics_per_second": 1000,
+      "max_storage_mb": 2048,
+      "max_memory_mb": 1024,
+      "max_cpu_percent": 75
     },
-    "tenant-003": {
-      "daily_metrics_limit": 50000,
-      "current_daily_count": 55000,   // 超过限制
-      "storage_limit_gb": 50,
-      "current_storage_gb": 55,       // 超过限制
-      "api_calls_per_hour": 5000,
-      "current_api_calls": 6000       // 超过限制
+    "tenant-c-789": {
+      "max_spans_per_second": 500,
+      "max_metrics_per_second": 250,
+      "max_storage_mb": 512,
+      "max_memory_mb": 256,
+      "max_cpu_percent": 25
     }
   }
   
-  // 验证配额配置
-  assert_eq(tenant_quotas["tenant-001"]["daily_metrics_limit"], 100000)
-  assert_eq(tenant_quotas["tenant-002"]["current_daily_count"], 195000)
-  assert_eq(tenant_quotas["tenant-003"]["storage_limit_gb"], 50)
+  // 模拟租户当前资源使用情况
+  let tenant_usage = {
+    "tenant-a-123": {
+      "current_spans_per_second": 800,
+      "current_metrics_per_second": 400,
+      "current_storage_mb": 800,
+      "current_memory_mb": 400,
+      "current_cpu_percent": 40
+    },
+    "tenant-b-456": {
+      "current_spans_per_second": 2100,  // 超过配额
+      "current_metrics_per_second": 900,
+      "current_storage_mb": 1800,
+      "current_memory_mb": 900,
+      "current_cpu_percent": 70
+    },
+    "tenant-c-789": {
+      "current_spans_per_second": 450,
+      "current_metrics_per_second": 200,
+      "current_storage_mb": 400,
+      "current_memory_mb": 200,
+      "current_cpu_percent": 20
+    }
+  }
   
-  // 检查各租户配额状态
-  let quota_status = {}
-  let mut tenant_ids = ["tenant-001", "tenant-002", "tenant-003"]
-  let mut i = 0
-  
-  while i < tenant_ids.length() {
-    let tenant_id = tenant_ids[i]
+  // 验证资源配额检查
+  for tenant_id in ["tenant-a-123", "tenant-b-456", "tenant-c-789"] {
     let quota = tenant_quotas[tenant_id]
+    let usage = tenant_usage[tenant_id]
     
-    let metrics_usage_percentage = (quota["current_daily_count"].to_float() / quota["daily_metrics_limit"].to_float()) * 100
-    let storage_usage_percentage = (quota["current_storage_gb"].to_float() / quota["storage_limit_gb"].to_float()) * 100
-    let api_usage_percentage = (quota["current_api_calls"].to_float() / quota["api_calls_per_hour"].to_float()) * 100
+    // 检查各项资源使用情况
+    let spans_within_quota = usage["current_spans_per_second"] <= quota["max_spans_per_second"]
+    let metrics_within_quota = usage["current_metrics_per_second"] <= quota["max_metrics_per_second"]
+    let storage_within_quota = usage["current_storage_mb"] <= quota["max_storage_mb"]
+    let memory_within_quota = usage["current_memory_mb"] <= quota["max_memory_mb"]
+    let cpu_within_quota = usage["current_cpu_percent"] <= quota["max_cpu_percent"]
     
-    let metrics_exceeded = quota["current_daily_count"] > quota["daily_metrics_limit"]
-    let storage_exceeded = quota["current_storage_gb"] > quota["storage_limit_gb"]
-    let api_exceeded = quota["current_api_calls"] > quota["api_calls_per_hour"]
-    let any_quota_exceeded = metrics_exceeded or storage_exceeded or api_exceeded
-    
-    quota_status[tenant_id] = {
-      "metrics_usage_percentage": metrics_usage_percentage,
-      "storage_usage_percentage": storage_usage_percentage,
-      "api_usage_percentage": api_usage_percentage,
-      "metrics_exceeded": metrics_exceeded,
-      "storage_exceeded": storage_exceeded,
-      "api_exceeded": api_exceeded,
-      "any_quota_exceeded": any_quota_exceeded
+    // 验证租户A的资源使用
+    if tenant_id == "tenant-a-123" {
+      assert_eq(spans_within_quota, true, "Tenant A spans should be within quota")
+      assert_eq(metrics_within_quota, true, "Tenant A metrics should be within quota")
+      assert_eq(storage_within_quota, true, "Tenant A storage should be within quota")
+      assert_eq(memory_within_quota, true, "Tenant A memory should be within quota")
+      assert_eq(cpu_within_quota, true, "Tenant A CPU should be within quota")
     }
     
-    i = i + 1
-  }
-  
-  // 验证配额状态
-  assert_eq(quota_status["tenant-001"]["metrics_usage_percentage"], 75.0)
-  assert_eq(quota_status["tenant-001"]["any_quota_exceeded"], false)
-  
-  assert_eq(quota_status["tenant-002"]["metrics_usage_percentage"], 97.5)
-  assert_eq(quota_status["tenant-002"]["any_quota_exceeded"], false)
-  
-  assert_eq(quota_status["tenant-003"]["metrics_usage_percentage"], 110.0)
-  assert_eq(quota_status["tenant-003"]["any_quota_exceeded"], true)
-  
-  // 模拟配额执行策略
-  let enforcement_actions = {
-    "tenant-001": "allow",           // 正常使用
-    "tenant-002": "warn",            // 警告但允许
-    "tenant-003": "block"            // 阻止新的遥测数据
-  }
-  
-  // 验证执行策略
-  assert_eq(enforcement_actions["tenant-001"], "allow")
-  assert_eq(enforcement_actions["tenant-002"], "warn")
-  assert_eq(enforcement_actions["tenant-003"], "block")
-  
-  // 验证配额重置机制
-  let quota_reset_time_utc = "00:00:00"
-  let current_time_utc = "23:30:00"
-  let time_until_reset_minutes = 30
-  
-  assert_eq(quota_reset_time_utc, "00:00:00")
-  assert_eq(current_time_utc, "23:30:00")
-  assert_eq(time_until_reset_minutes, 30)
-  
-  // 验证配额监控
-  let quota_monitoring_enabled = true
-  let alert_threshold_percentage = 80.0
-  let tenants_near_limit = []
-  
-  i = 0
-  while i < tenant_ids.length() {
-    let tenant_id = tenant_ids[i]
-    let status = quota_status[tenant_id]
-    
-    if status["metrics_usage_percentage"] >= alert_threshold_percentage {
-      tenants_near_limit.push(tenant_id)
+    // 验证租户B的资源使用（故意超出配额）
+    if tenant_id == "tenant-b-456" {
+      assert_eq(spans_within_quota, false, "Tenant B spans should exceed quota")
+      assert_eq(metrics_within_quota, true, "Tenant B metrics should be within quota")
+      assert_eq(storage_within_quota, true, "Tenant B storage should be within quota")
+      assert_eq(memory_within_quota, true, "Tenant B memory should be within quota")
+      assert_eq(cpu_within_quota, true, "Tenant B CPU should be within quota")
     }
     
-    i = i + 1
+    // 验证租户C的资源使用
+    if tenant_id == "tenant-c-789" {
+      assert_eq(spans_within_quota, true, "Tenant C spans should be within quota")
+      assert_eq(metrics_within_quota, true, "Tenant C metrics should be within quota")
+      assert_eq(storage_within_quota, true, "Tenant C storage should be within quota")
+      assert_eq(memory_within_quota, true, "Tenant C memory should be within quota")
+      assert_eq(cpu_within_quota, true, "Tenant C CPU should be within quota")
+    }
   }
   
-  assert_eq(quota_monitoring_enabled, true)
-  assert_eq(tenants_near_limit.length(), 2)  // tenant-002和tenant-003
-  assert_eq(tenants_near_limit.contains("tenant-002"), true)
-  assert_eq(tenants_near_limit.contains("tenant-003"), true)
+  // 测试配额超限处理策略
+  let quota_exceeded_actions = {
+    "spans_per_second": "drop_excess_spans_with_sampling",
+    "metrics_per_second": "aggregate_and_downsample",
+    "storage_mb": "oldest_data_removal",
+    "memory_mb": "garbage_collection_and_cache_eviction",
+    "cpu_percent": "throttling_and_request_queuing"
+  }
+  
+  for resource_type in quota_exceeded_actions.keys() {
+    let action = quota_exceeded_actions[resource_type]
+    assert_eq(action.length() > 0, true, 
+      "Should have action for resource type: " + resource_type)
+  }
+  
+  // 验证租户B的配额超限处理
+  assert_eq(tenant_usage["tenant-b-456"]["current_spans_per_second"] > tenant_quotas["tenant-b-456"]["max_spans_per_second"], true)
+  assert_eq(quota_exceeded_actions["spans_per_second"], "drop_excess_spans_with_sampling")
 }
 
-test "telemetry_tenant_performance_isolation" {
-  // 测试遥测多租户性能隔离功能
+test "telemetry_multi_tenant_network_isolation" {
+  // 测试多租户网络隔离
   
+  // 定义租户网络配置
+  let tenant_network_configs = {
+    "tenant-a-123": {
+      "exporter_endpoints": [
+        "http://tenant-a-collector:4317",
+        "http://tenant-a-backup:4317"
+      ],
+      "allowed_networks": ["10.0.1.0/24", "192.168.1.0/24"],
+      "blocked_networks": ["0.0.0.0/0"],  // 默认阻止所有
+      "network_policies": {
+        "egress_allowed": ["collector.tenant-a.local:4317"],
+        "ingress_allowed": ["api.tenant-a.local:8080"]
+      }
+    },
+    "tenant-b-456": {
+      "exporter_endpoints": [
+        "http://tenant-b-collector:4317",
+        "http://tenant-b-backup:4317"
+      ],
+      "allowed_networks": ["10.0.2.0/24", "192.168.2.0/24"],
+      "blocked_networks": ["0.0.0.0/0"],  // 默认阻止所有
+      "network_policies": {
+        "egress_allowed": ["collector.tenant-b.local:4317"],
+        "ingress_allowed": ["api.tenant-b.local:8080"]
+      }
+    }
+  }
+  
+  // 验证租户网络隔离
+  let tenant_a_config = tenant_network_configs["tenant-a-123"]
+  let tenant_b_config = tenant_network_configs["tenant-b-456"]
+  
+  // 验证导出端点隔离
+  assert_eq(tenant_a_config["exporter_endpoints"][0], "http://tenant-a-collector:4317")
+  assert_eq(tenant_b_config["exporter_endpoints"][0], "http://tenant-b-collector:4317")
+  assert_eq(tenant_a_config["exporter_endpoints"][0] != tenant_b_config["exporter_endpoints"][0], true)
+  
+  // 验证网络策略隔离
+  assert_eq(tenant_a_config["network_policies"]["egress_allowed"][0], "collector.tenant-a.local:4317")
+  assert_eq(tenant_b_config["network_policies"]["egress_allowed"][0], "collector.tenant-b.local:4317")
+  assert_eq(tenant_a_config["network_policies"]["egress_allowed"][0] != tenant_b_config["network_policies"]["egress_allowed"][0], true)
+  
+  // 测试网络访问控制
+  fn is_network_access_allowed(tenant_id: String, target_endpoint: String) -> Bool {
+    let config = tenant_network_configs[tenant_id]
+    let allowed_endpoints = config["exporter_endpoints"]
+    
+    allowed_endpoints.contains(target_endpoint)
+  }
+  
+  // 验证网络访问控制
+  assert_eq(is_network_access_allowed("tenant-a-123", "http://tenant-a-collector:4317"), true)
+  assert_eq(is_network_access_allowed("tenant-a-123", "http://tenant-b-collector:4317"), false)
+  assert_eq(is_network_access_allowed("tenant-b-456", "http://tenant-b-collector:4317"), true)
+  assert_eq(is_network_access_allowed("tenant-b-456", "http://tenant-a-collector:4317"), false)
+  
+  // 测试网络隔离边界
+  let network_isolation_tests = [
+    ("tenant-a-123", "http://tenant-a-collector:4317", true),
+    ("tenant-a-123", "http://tenant-b-collector:4317", false),
+    ("tenant-a-123", "http://shared-collector:4317", false),
+    ("tenant-b-456", "http://tenant-b-collector:4317", true),
+    ("tenant-b-456", "http://tenant-a-collector:4317", false),
+    ("tenant-b-456", "http://shared-collector:4317", false)
+  ]
+  
+  for test in network_isolation_tests {
+    let tenant_id = test.0
+    let endpoint = test.1
+    let expected_result = test.2
+    
+    let actual_result = is_network_access_allowed(tenant_id, endpoint)
+    assert_eq(actual_result, expected_result, 
+      "Network access test failed for tenant " + tenant_id + " to endpoint " + endpoint)
+  }
+}
+
+test "telemetry_multi_tenant_authz_isolation" {
+  // 测试多租户授权隔离
+  
+  // 定义租户权限配置
+  let tenant_permissions = {
+    "tenant-a-123": {
+      "roles": ["admin", "analyst"],
+      "permissions": [
+        "read:own_telemetry",
+        "write:own_telemetry",
+        "delete:own_telemetry",
+        "read:aggregated_metrics"
+      ],
+      "resource_access": {
+        "spans": ["read", "write", "delete"],
+        "metrics": ["read", "write"],
+        "logs": ["read"],
+        "configuration": ["read", "write"]
+      }
+    },
+    "tenant-b-456": {
+      "roles": ["viewer"],
+      "permissions": [
+        "read:own_telemetry",
+        "read:aggregated_metrics"
+      ],
+      "resource_access": {
+        "spans": ["read"],
+        "metrics": ["read"],
+        "logs": ["read"],
+        "configuration": ["read"]
+      }
+    },
+    "tenant-c-789": {
+      "roles": ["service_account"],
+      "permissions": [
+        "write:own_telemetry",
+        "read:own_telemetry"
+      ],
+      "resource_access": {
+        "spans": ["read", "write"],
+        "metrics": ["write"],
+        "logs": [],
+        "configuration": []
+      }
+    }
+  }
+  
+  // 测试权限检查函数
+  fn has_permission(tenant_id: String, resource: String, action: String) -> Bool {
+    let permissions = tenant_permissions[tenant_id]
+    let resource_access = permissions["resource_access"]
+    
+    match resource_access.get(resource) {
+      Some(allowed_actions) => allowed_actions.contains(action),
+      None => false
+    }
+  }
+  
+  // 验证租户A的权限（管理员权限）
+  assert_eq(has_permission("tenant-a-123", "spans", "read"), true)
+  assert_eq(has_permission("tenant-a-123", "spans", "write"), true)
+  assert_eq(has_permission("tenant-a-123", "spans", "delete"), true)
+  assert_eq(has_permission("tenant-a-123", "metrics", "read"), true)
+  assert_eq(has_permission("tenant-a-123", "metrics", "write"), true)
+  assert_eq(has_permission("tenant-a-123", "logs", "read"), true)
+  assert_eq(has_permission("tenant-a-123", "configuration", "read"), true)
+  assert_eq(has_permission("tenant-a-123", "configuration", "write"), true)
+  
+  // 验证租户B的权限（只读权限）
+  assert_eq(has_permission("tenant-b-456", "spans", "read"), true)
+  assert_eq(has_permission("tenant-b-456", "spans", "write"), false)
+  assert_eq(has_permission("tenant-b-456", "spans", "delete"), false)
+  assert_eq(has_permission("tenant-b-456", "metrics", "read"), true)
+  assert_eq(has_permission("tenant-b-456", "metrics", "write"), false)
+  assert_eq(has_permission("tenant-b-456", "logs", "read"), true)
+  assert_eq(has_permission("tenant-b-456", "configuration", "read"), true)
+  assert_eq(has_permission("tenant-b-456", "configuration", "write"), false)
+  
+  // 验证租户C的权限（服务账户权限）
+  assert_eq(has_permission("tenant-c-789", "spans", "read"), true)
+  assert_eq(has_permission("tenant-c-789", "spans", "write"), true)
+  assert_eq(has_permission("tenant-c-789", "spans", "delete"), false)
+  assert_eq(has_permission("tenant-c-789", "metrics", "read"), false)
+  assert_eq(has_permission("tenant-c-789", "metrics", "write"), true)
+  assert_eq(has_permission("tenant-c-789", "logs", "read"), false)
+  assert_eq(has_permission("tenant-c-789", "configuration", "read"), false)
+  assert_eq(has_permission("tenant-c-789", "configuration", "write"), false)
+  
+  // 测试跨租户访问控制
+  fn can_access_cross_tenant(requesting_tenant: String, target_tenant: String, resource: String, action: String) -> Bool {
+    // 默认情况下，不允许跨租户访问
+    if requesting_tenant != target_tenant {
+      return false
+    }
+    
+    // 同租户访问使用常规权限检查
+    has_permission(requesting_tenant, resource, action)
+  }
+  
+  // 验证跨租户访问控制
+  assert_eq(can_access_cross_tenant("tenant-a-123", "tenant-a-123", "spans", "read"), true)
+  assert_eq(can_access_cross_tenant("tenant-a-123", "tenant-b-456", "spans", "read"), false)
+  assert_eq(can_access_cross_tenant("tenant-b-456", "tenant-b-456", "metrics", "read"), true)
+  assert_eq(can_access_cross_tenant("tenant-b-456", "tenant-c-789", "metrics", "read"), false)
+  
+  // 测试角色层次结构
+  let role_hierarchy = {
+    "admin": ["analyst", "viewer", "service_account"],
+    "analyst": ["viewer", "service_account"],
+    "viewer": ["service_account"],
+    "service_account": []
+  }
+  
+  fn has_role_permission(tenant_id: String, required_role: String) -> Bool {
+    let user_roles = tenant_permissions[tenant_id]["roles"]
+    
+    for role in user_roles {
+      if role == required_role {
+        return true
+      }
+      
+      // 检查角色层次结构
+      match role_hierarchy.get(role) {
+        Some(inherited_roles) => {
+          if inherited_roles.contains(required_role) {
+            return true
+          }
+        }
+        None => {}
+      }
+    }
+    
+    false
+  }
+  
+  // 验证角色权限
+  assert_eq(has_role_permission("tenant-a-123", "admin"), true)
+  assert_eq(has_role_permission("tenant-a-123", "analyst"), true)
+  assert_eq(has_role_permission("tenant-a-123", "viewer"), true)
+  assert_eq(has_role_permission("tenant-a-123", "service_account"), true)
+  
+  assert_eq(has_role_permission("tenant-b-456", "admin"), false)
+  assert_eq(has_role_permission("tenant-b-456", "analyst"), false)
+  assert_eq(has_role_permission("tenant-b-456", "viewer"), true)
+  assert_eq(has_role_permission("tenant-b-456", "service_account"), true)
+  
+  assert_eq(has_role_permission("tenant-c-789", "admin"), false)
+  assert_eq(has_role_permission("tenant-c-789", "analyst"), false)
+  assert_eq(has_role_permission("tenant-c-789", "viewer"), false)
+  assert_eq(has_role_permission("tenant-c-789", "service_account"), true)
+}
+
+test "telemetry_multi_tenant_performance_isolation" {
+  // 测试多租户性能隔离
+  
+  // 定义租户性能配置
   let tenant_performance_configs = {
-    "tenant-001": {
+    "tenant-a-123": {
       "max_concurrent_requests": 100,
       "request_timeout_ms": 5000,
-      "cpu_limit_percentage": 30,
-      "memory_limit_mb": 1024,
-      "network_bandwidth_mbps": 100
+      "batch_processing_delay_ms": 100,
+      "priority": "high",
+      "performance_sla": {
+        "p99_response_time_ms": 1000,
+        "p95_response_time_ms": 500,
+        "error_rate_percent": 1.0
+      }
     },
-    "tenant-002": {
-      "max_concurrent_requests": 200,
-      "request_timeout_ms": 3000,
-      "cpu_limit_percentage": 40,
-      "memory_limit_mb": 2048,
-      "network_bandwidth_mbps": 200
-    },
-    "tenant-003": {
+    "tenant-b-456": {
       "max_concurrent_requests": 50,
       "request_timeout_ms": 10000,
-      "cpu_limit_percentage": 20,
-      "memory_limit_mb": 512,
-      "network_bandwidth_mbps": 50
+      "batch_processing_delay_ms": 200,
+      "priority": "medium",
+      "performance_sla": {
+        "p99_response_time_ms": 2000,
+        "p95_response_time_ms": 1000,
+        "error_rate_percent": 2.0
+      }
+    },
+    "tenant-c-789": {
+      "max_concurrent_requests": 25,
+      "request_timeout_ms": 15000,
+      "batch_processing_delay_ms": 500,
+      "priority": "low",
+      "performance_sla": {
+        "p99_response_time_ms": 5000,
+        "p95_response_time_ms": 2500,
+        "error_rate_percent": 5.0
+      }
     }
   }
   
-  // 验证性能配置
-  assert_eq(tenant_performance_configs["tenant-001"]["max_concurrent_requests"], 100)
-  assert_eq(tenant_performance_configs["tenant-002"]["cpu_limit_percentage"], 40)
-  assert_eq(tenant_performance_configs["tenant-003"]["memory_limit_mb"], 512)
-  
-  // 模拟当前资源使用情况
-  let current_resource_usage = {
-    "tenant-001": {
-      "active_requests": 75,
-      "cpu_usage_percentage": 25,
-      "memory_usage_mb": 800,
-      "network_usage_mbps": 80
+  // 模拟租户性能指标
+  let tenant_performance_metrics = {
+    "tenant-a-123": {
+      "current_concurrent_requests": 85,
+      "average_response_time_ms": 450,
+      "p99_response_time_ms": 950,
+      "p95_response_time_ms": 480,
+      "error_rate_percent": 0.8,
+      "throughput_requests_per_second": 95
     },
-    "tenant-002": {
-      "active_requests": 180,
-      "cpu_usage_percentage": 35,
-      "memory_usage_mb": 1800,
-      "network_usage_mbps": 180
+    "tenant-b-456": {
+      "current_concurrent_requests": 60,  // 超过配额
+      "average_response_time_ms": 1200,
+      "p99_response_time_ms": 2500,  // 超过SLA
+      "p95_response_time_ms": 1100,  // 超过SLA
+      "error_rate_percent": 1.8,
+      "throughput_requests_per_second": 45
     },
-    "tenant-003": {
-      "active_requests": 45,
-      "cpu_usage_percentage": 18,
-      "memory_usage_mb": 450,
-      "network_usage_mbps": 45
+    "tenant-c-789": {
+      "current_concurrent_requests": 20,
+      "average_response_time_ms": 800,
+      "p99_response_time_ms": 2200,
+      "p95_response_time_ms": 1200,
+      "error_rate_percent": 2.5,
+      "throughput_requests_per_second": 18
     }
   }
   
-  // 检查资源使用率
-  let resource_utilization = {}
-  let mut tenant_ids = ["tenant-001", "tenant-002", "tenant-003"]
-  let mut i = 0
-  
-  while i < tenant_ids.length() {
-    let tenant_id = tenant_ids[i]
+  // 验证租户性能隔离
+  for tenant_id in ["tenant-a-123", "tenant-b-456", "tenant-c-789"] {
     let config = tenant_performance_configs[tenant_id]
-    let usage = current_resource_usage[tenant_id]
+    let metrics = tenant_performance_metrics[tenant_id]
     
-    let request_utilization = (usage["active_requests"].to_float() / config["max_concurrent_requests"].to_float()) * 100
-    let cpu_utilization = (usage["cpu_usage_percentage"].to_float() / config["cpu_limit_percentage"].to_float()) * 100
-    let memory_utilization = (usage["memory_usage_mb"].to_float() / config["memory_limit_mb"].to_float()) * 100
-    let network_utilization = (usage["network_usage_mbps"].to_float() / config["network_bandwidth_mbps"].to_float()) * 100
+    // 检查并发请求限制
+    let within_concurrent_limit = metrics["current_concurrent_requests"] <= config["max_concurrent_requests"]
     
-    resource_utilization[tenant_id] = {
-      "request_utilization": request_utilization,
-      "cpu_utilization": cpu_utilization,
-      "memory_utilization": memory_utilization,
-      "network_utilization": network_utilization
+    // 检查响应时间SLA
+    let within_p99_sla = metrics["p99_response_time_ms"] <= config["performance_sla"]["p99_response_time_ms"]
+    let within_p95_sla = metrics["p95_response_time_ms"] <= config["performance_sla"]["p95_response_time_ms"]
+    
+    // 检查错误率SLA
+    let within_error_rate_sla = metrics["error_rate_percent"] <= config["performance_sla"]["error_rate_percent"]
+    
+    // 验证租户A的性能指标
+    if tenant_id == "tenant-a-123" {
+      assert_eq(within_concurrent_limit, true, "Tenant A should be within concurrent request limit")
+      assert_eq(within_p99_sla, true, "Tenant A should be within P99 SLA")
+      assert_eq(within_p95_sla, true, "Tenant A should be within P95 SLA")
+      assert_eq(within_error_rate_sla, true, "Tenant A should be within error rate SLA")
     }
     
-    i = i + 1
-  }
-  
-  // 验证资源使用率
-  assert_eq(resource_utilization["tenant-001"]["request_utilization"], 75.0)
-  assert_eq(resource_utilization["tenant-001"]["cpu_utilization"], 83.33)
-  
-  assert_eq(resource_utilization["tenant-002"]["request_utilization"], 90.0)
-  assert_eq(resource_utilization["tenant-002"]["memory_utilization"], 87.89)
-  
-  assert_eq(resource_utilization["tenant-003"]["request_utilization"], 90.0)
-  assert_eq(resource_utilization["tenant-003"]["network_utilization"], 90.0)
-  
-  // 检查性能隔离效果
-  let performance_isolation_active = true
-  let resource_contention_detected = false
-  let cross_tenant_impact = false
-  
-  assert_eq(performance_isolation_active, true)
-  assert_eq(resource_contention_detected, false)
-  assert_eq(cross_tenant_impact, false)
-  
-  // 模拟负载突发情况
-  let load_spike_simulation = {
-    "tenant-001": {"additional_requests": 50},
-    "tenant-002": {"additional_requests": 30},
-    "tenant-003": {"additional_requests": 20}
-  }
-  
-  // 检查负载突发处理
-  i = 0
-  while i < tenant_ids.length() {
-    let tenant_id = tenant_ids[i]
-    let config = tenant_performance_configs[tenant_id]
-    let usage = current_resource_usage[tenant_id]
-    let spike = load_spike_simulation[tenant_id]
-    
-    let projected_requests = usage["active_requests"] + spike["additional_requests"]
-    let can_handle_spike = projected_requests <= config["max_concurrent_requests"]
-    
-    if tenant_id == "tenant-001" {
-      assert_eq(projected_requests, 125)
-      assert_eq(can_handle_spike, true)
-    } else if tenant_id == "tenant-002" {
-      assert_eq(projected_requests, 210)
-      assert_eq(can_handle_spike, false)  // 超过限制
-    } else if tenant_id == "tenant-003" {
-      assert_eq(projected_requests, 65)
-      assert_eq(can_handle_spike, false)  // 超过限制
+    // 验证租户B的性能指标（故意超出某些限制）
+    if tenant_id == "tenant-b-456" {
+      assert_eq(within_concurrent_limit, false, "Tenant B should exceed concurrent request limit")
+      assert_eq(within_p99_sla, false, "Tenant B should exceed P99 SLA")
+      assert_eq(within_p95_sla, false, "Tenant B should exceed P95 SLA")
+      assert_eq(within_error_rate_sla, true, "Tenant B should be within error rate SLA")
     }
     
-    i = i + 1
-  }
-  
-  // 验证性能监控
-  let performance_monitoring_enabled = true
-  let monitoring_interval_seconds = 30
-  let alert_threshold_utilization = 85.0
-  
-  assert_eq(performance_monitoring_enabled, true)
-  assert_eq(monitoring_interval_seconds, 30)
-  assert_eq(alert_threshold_utilization, 85.0)
-  
-  // 识别高负载租户
-  let high_load_tenants = []
-  i = 0
-  while i < tenant_ids.length() {
-    let tenant_id = tenant_ids[i]
-    let utilization = resource_utilization[tenant_id]
-    
-    if utilization["request_utilization"] >= alert_threshold_utilization {
-      high_load_tenants.push(tenant_id)
-    }
-    
-    i = i + 1
-  }
-  
-  assert_eq(high_load_tenants.length(), 3)  // 所有租户都超过85%阈值
-}
-
-test "telemetry_tenant_security_isolation" {
-  // 测试遥测多租户安全隔离功能
-  
-  let tenant_security_configs = {
-    "tenant-001": {
-      "encryption_at_rest": true,
-      "encryption_in_transit": true,
-      "access_control": "rbac",
-      "audit_logging": true,
-      "data_masking": false,
-      "allowed_ip_ranges": ["192.168.1.0/24", "10.0.0.0/8"],
-      "api_key_required": true
-    },
-    "tenant-002": {
-      "encryption_at_rest": true,
-      "encryption_in_transit": true,
-      "access_control": "abac",
-      "audit_logging": true,
-      "data_masking": true,
-      "allowed_ip_ranges": ["0.0.0.0/0"],  // 允许所有IP
-      "api_key_required": true
-    },
-    "tenant-003": {
-      "encryption_at_rest": false,
-      "encryption_in_transit": true,
-      "access_control": "rbac",
-      "audit_logging": false,
-      "data_masking": false,
-      "allowed_ip_ranges": ["172.16.0.0/12"],
-      "api_key_required": false
+    // 验证租户C的性能指标
+    if tenant_id == "tenant-c-789" {
+      assert_eq(within_concurrent_limit, true, "Tenant C should be within concurrent request limit")
+      assert_eq(within_p99_sla, true, "Tenant C should be within P99 SLA")
+      assert_eq(within_p95_sla, true, "Tenant C should be within P95 SLA")
+      assert_eq(within_error_rate_sla, true, "Tenant C should be within error rate SLA")
     }
   }
   
-  // 验证安全配置
-  assert_eq(tenant_security_configs["tenant-001"]["encryption_at_rest"], true)
-  assert_eq(tenant_security_configs["tenant-002"]["data_masking"], true)
-  assert_eq(tenant_security_configs["tenant-003"]["audit_logging"], false)
+  // 测试性能隔离策略
+  let performance_isolation_strategies = {
+    "concurrent_request_limit": "queue_or_reject_excess_requests",
+    "response_time_sla_violation": "adaptive_throttling",
+    "error_rate_sla_violation": "circuit_breaker_activation",
+    "priority_based_scheduling": "weighted_fair_queueing",
+    "resource_contention": "tenant_isolation_and_preemption"
+  }
   
-  // 模拟访问控制验证
-  let access_requests = [
-    {
-      "tenant_id": "tenant-001",
-      "user_id": "user-001",
-      "resource": "metrics",
-      "action": "read",
-      "source_ip": "192.168.1.100",
-      "has_api_key": true,
-      "permissions": ["read:metrics", "write:logs"]
-    },
-    {
-      "tenant_id": "tenant-002",
-      "user_id": "user-002", 
-      "resource": "traces",
-      "action": "write",
-      "source_ip": "203.0.113.100",
-      "has_api_key": true,
-      "permissions": ["read:metrics", "write:traces"]
-    },
-    {
-      "tenant_id": "tenant-003",
-      "user_id": "user-003",
-      "resource": "logs",
-      "action": "read",
-      "source_ip": "172.16.1.100",
-      "has_api_key": false,
-      "permissions": ["read:logs"]
-    }
+  for strategy in performance_isolation_strategies.keys() {
+    let action = performance_isolation_strategies[strategy]
+    assert_eq(action.length() > 0, true, 
+      "Should have action for performance strategy: " + strategy)
+  }
+  
+  // 验证优先级处理
+  let priority_order = ["high", "medium", "low"]
+  let tenant_priorities = [
+    ("tenant-a-123", "high"),
+    ("tenant-b-456", "medium"),
+    ("tenant-c-789", "low")
   ]
   
-  // 验证访问请求
-  assert_eq(access_requests.length(), 3)
-  assert_eq(access_requests[0]["tenant_id"], "tenant-001")
-  assert_eq(access_requests[1]["source_ip"], "203.0.113.100")
-  assert_eq(access_requests[2]["has_api_key"], false)
-  
-  // 检查访问控制决策
-  let access_decisions = {}
-  let mut i = 0
-  
-  while i < access_requests.length() {
-    let request = access_requests[i]
-    let security_config = tenant_security_configs[request["tenant_id"]]
+  for i = 0; i < tenant_priorities.length(); i = i + 1 {
+    let tenant_id = tenant_priorities[i].0
+    let priority = tenant_priorities[i].1
+    let expected_priority = priority_order[i]
     
-    // 检查API密钥要求
-    let api_key_valid = not security_config["api_key_required"] or request["has_api_key"]
-    
-    // 检查IP白名单（简化处理）
-    let ip_allowed = true  // 假设IP都在允许范围内
-    
-    // 检查权限
-    let required_permission = request["action"] + ":" + request["resource"]
-    let has_permission = request["permissions"].contains(required_permission)
-    
-    // 综合决策
-    let access_granted = api_key_valid and ip_allowed and has_permission
-    
-    access_decisions[request["tenant_id"] + "_" + request["user_id"]] = {
-      "api_key_valid": api_key_valid,
-      "ip_allowed": ip_allowed,
-      "has_permission": has_permission,
-      "access_granted": access_granted
-    }
-    
-    i = i + 1
+    assert_eq(priority, expected_priority, 
+      "Tenant " + tenant_id + " should have priority " + expected_priority)
   }
   
-  // 验证访问决策
-  assert_eq(access_decisions["tenant-001_user-001"]["access_granted"], true)
-  assert_eq(access_decisions["tenant-002_user-002"]["access_granted"], true)
-  assert_eq(access_decisions["tenant-003_user-003"]["access_granted"], true)
-  
-  // 验证数据加密状态
-  let encryption_status = {}
-  i = 0
-  while i < tenant_ids.length() {
-    let tenant_id = tenant_ids[i]
-    let config = tenant_security_configs[tenant_id]
+  // 验证资源分配基于优先级
+  fn get_resource_allocation(tenant_id: String) -> Int {
+    let priority = tenant_performance_configs[tenant_id]["priority"]
     
-    encryption_status[tenant_id] = {
-      "data_encrypted_at_rest": config["encryption_at_rest"],
-      "data_encrypted_in_transit": config["encryption_in_transit"],
-      "overall_encryption": config["encryption_at_rest"] and config["encryption_in_transit"]
+    match priority {
+      "high" => 60,
+      "medium" => 30,
+      "low" => 10,
+      _ => 0
     }
-    
-    i = i + 1
   }
   
-  assert_eq(encryption_status["tenant-001"]["overall_encryption"], true)
-  assert_eq(encryption_status["tenant-002"]["overall_encryption"], true)
-  assert_eq(encryption_status["tenant-003"]["overall_encryption"], false)
-  
-  // 验证审计日志
-  let audit_log_entries = [
-    {"tenant_id": "tenant-001", "action": "data_access", "user": "user-001", "timestamp": 1640995200000},
-    {"tenant_id": "tenant-002", "action": "config_change", "user": "admin-002", "timestamp": 1640995201000},
-    {"tenant_id": "tenant-003", "action": "data_export", "user": "user-003", "timestamp": 1640995202000}
-  ]
-  
-  // 检查审计日志隔离
-  i = 0
-  while i < audit_log_entries.length() {
-    let entry = audit_log_entries[i]
-    let tenant_id = entry["tenant_id"]
-    let audit_enabled = tenant_security_configs[tenant_id]["audit_logging"]
-    
-    if audit_enabled {
-      // 验证审计日志包含必要信息
-      assert_eq(entry.contains("tenant_id"), true)
-      assert_eq(entry.contains("action"), true)
-      assert_eq(entry.contains("user"), true)
-      assert_eq(entry.contains("timestamp"), true)
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证租户间数据访问隔离
-  let cross_tenant_data_access_blocked = true
-  let tenant_data_boundaries_enforced = true
-  let data_leakage_prevention_active = true
-  
-  assert_eq(cross_tenant_data_access_blocked, true)
-  assert_eq(tenant_data_boundaries_enforced, true)
-  assert_eq(data_leakage_prevention_active, true)
+  assert_eq(get_resource_allocation("tenant-a-123"), 60)
+  assert_eq(get_resource_allocation("tenant-b-456"), 30)
+  assert_eq(get_resource_allocation("tenant-c-789"), 10)
+  assert_eq(get_resource_allocation("tenant-a-123") + get_resource_allocation("tenant-b-456") + get_resource_allocation("tenant-c-789"), 100)
 }

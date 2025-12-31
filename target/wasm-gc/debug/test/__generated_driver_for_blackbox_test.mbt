@@ -139,6 +139,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_74656c656d657472795f706572666f726d616e63655f62617369635f746573742e6d6274_2, ["telemetry_throughput_measurement"]),
     3: (__test_74656c656d657472795f706572666f726d616e63655f62617369635f746573742e6d6274_3, ["telemetry_latency_measurement"]),
   },
+  "telemetry_new_test.mbt": {
+    0: (__test_74656c656d657472795f6e65775f746573742e6d6274_0, ["telemetry_new_basic_functionality"]),
+    1: (__test_74656c656d657472795f6e65775f746573742e6d6274_1, ["telemetry_new_metrics_validation"]),
+    2: (__test_74656c656d657472795f6e65775f746573742e6d6274_2, ["telemetry_new_error_handling"]),
+  },
   "telemetry_network_test.mbt": {
     0: (__test_74656c656d657472795f6e6574776f726b5f746573742e6d6274_0, ["telemetry_network_connection_pool"]),
     1: (__test_74656c656d657472795f6e6574776f726b5f746573742e6d6274_1, ["telemetry_network_compression"]),
