@@ -122,13 +122,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_636f6e746578745f656467655f63617365735f746573742e6d6274_2, ["context_chain_operations_edge_cases"]),
   },
   "context_concurrent_safety_test.mbt": {
-    0: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_0, ["context_concurrent_creation_and_access"]),
-    1: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_1, ["context_concurrent_chained_operations"]),
-    2: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_2, ["context_concurrent_baggage_operations"]),
-    3: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_3, ["context_concurrent_complex_scenarios"]),
-    4: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_4, ["context_concurrent_large_scale_operations"]),
-    5: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_5, ["context_concurrent_special_value_handling"]),
-    6: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_6, ["context_concurrent_baggage_isolation"]),
+    0: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_0, ["context_basic_concurrent_access"]),
+    1: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_1, ["context_isolation_between_operations"]),
+    2: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_2, ["context_chained_operations_consistency"]),
+    3: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_3, ["context_overwrite_behavior"]),
+    4: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_4, ["context_large_dataset_handling"]),
+    5: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_5, ["context_complex_value_storage"]),
+    6: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_6, ["context_key_name_edge_cases"]),
+    7: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_7, ["context_performance_with_multiple_operations"]),
+    8: (__test_636f6e746578745f636f6e63757272656e745f7361666574795f746573742e6d6274_8, ["context_memory_efficiency_validation"]),
   },
   "context_concurrent_integration_test.mbt": {
     0: (__test_636f6e746578745f636f6e63757272656e745f696e746567726174696f6e5f746573742e6d6274_0, ["context_concurrent_operations"]),
@@ -238,6 +240,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "baggage_edge_cases_test.mbt": {
     0: (__test_626167676167655f656467655f63617365735f746573742e6d6274_0, ["baggage_edge_cases"]),
+  },
+  "baggage_data_consistency_test.mbt": {
+    0: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_0, ["baggage_basic_operations_consistency"]),
+    1: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_1, ["baggage_overwrite_behavior_consistency"]),
+    2: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_2, ["baggage_complex_key_value_handling"]),
+    3: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_3, ["baggage_large_dataset_consistency"]),
+    4: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_4, ["baggage_chained_operations_consistency"]),
+    5: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_5, ["baggage_isolation_between_instances"]),
+    6: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_6, ["baggage_edge_cases_consistency"]),
+    7: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_7, ["baggage_performance_consistency"]),
+    8: (__test_626167676167655f646174615f636f6e73697374656e63795f746573742e6d6274_8, ["baggage_memory_efficiency_validation"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED

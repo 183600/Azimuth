@@ -94,6 +94,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "resource_instrumentation_creation_test.mbt": {
     0: (__test_7265736f757263655f696e737472756d656e746174696f6e5f6372656174696f6e5f746573742e6d6274_0, ["Resource and InstrumentationScope creation test"]),
   },
+  "resource_configuration_validation_test.mbt": {
+    0: (__test_7265736f757263655f636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_0, ["resource_default_configuration_validation"]),
+    1: (__test_7265736f757263655f636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_1, ["resource_complete_configuration_validation"]),
+    2: (__test_7265736f757263655f636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_2, ["resource_edge_cases_configuration"]),
+    3: (__test_7265736f757263655f636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_3, ["resource_complex_attributes_validation"]),
+    4: (__test_7265736f757263655f636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_4, ["resource_cloud_environment_configuration"]),
+    5: (__test_7265736f757263655f636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_5, ["resource_configuration_validation_with_service_mesh"]),
+    6: (__test_7265736f757263655f636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_6, ["resource_configuration_performance_validation"]),
+    7: (__test_7265736f757263655f636f6e66696775726174696f6e5f76616c69646174696f6e5f746573742e6d6274_7, ["resource_configuration_error_handling"]),
+  },
   "resource_complex_configuration_test.mbt": {
     0: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_0, ["resource_complex_configuration"]),
     1: (__test_7265736f757263655f636f6d706c65785f636f6e66696775726174696f6e5f746573742e6d6274_1, ["resource_attributes_configuration"]),
@@ -215,6 +225,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_3, ["attribute_value_array_boundary_cases"]),
     4: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_4, ["attribute_value_type_consistency"]),
     5: (__test_6174747269627574655f76616c75655f626f756e646172795f746573742e6d6274_5, ["attribute_value_conversion_edge_cases"]),
+  },
+  "attribute_value_boundary_conversion_test.mbt": {
+    0: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_0, ["attribute_value_string_boundary_cases"]),
+    1: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_1, ["attribute_value_int_boundary_cases"]),
+    2: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_2, ["attribute_value_float_boundary_cases"]),
+    3: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_3, ["attribute_value_bool_boundary_cases"]),
+    4: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_4, ["attribute_value_array_string_boundary_cases"]),
+    5: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_5, ["attribute_value_array_int_boundary_cases"]),
+    6: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_6, ["attribute_value_array_float_boundary_cases"]),
+    7: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_7, ["attribute_value_array_bool_boundary_cases"]),
+    8: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_8, ["attribute_value_complex_attribute_collections"]),
+    9: (__test_6174747269627574655f76616c75655f626f756e646172795f636f6e76657273696f6e5f746573742e6d6274_9, ["attribute_value_type_safety_validation"]),
   },
   "attribute_value_advanced_test.mbt": {
     0: (__test_6174747269627574655f76616c75655f616476616e6365645f746573742e6d6274_0, ["attribute_value_type_conversions_comprehensive"]),
