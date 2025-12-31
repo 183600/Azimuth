@@ -188,6 +188,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_74656c656d657472795f73797374656d5f746573742e6d6274_6, ["telemetry_monitoring_alerts"]),
     7: (__test_74656c656d657472795f73797374656d5f746573742e6d6274_7, ["telemetry_data_sampling"]),
   },
+  "telemetry_system_observability_test.mbt": {
+    0: (__test_74656c656d657472795f73797374656d5f6f62736572766162696c6974795f746573742e6d6274_0, ["telemetry_system_self_metrics_collection"]),
+    1: (__test_74656c656d657472795f73797374656d5f6f62736572766162696c6974795f746573742e6d6274_1, ["telemetry_system_health_indicators"]),
+    2: (__test_74656c656d657472795f73797374656d5f6f62736572766162696c6974795f746573742e6d6274_2, ["telemetry_system_performance_profiling"]),
+    3: (__test_74656c656d657472795f73797374656d5f6f62736572766162696c6974795f746573742e6d6274_3, ["telemetry_system_dependency_monitoring"]),
+    4: (__test_74656c656d657472795f73797374656d5f6f62736572766162696c6974795f746573742e6d6274_4, ["telemetry_system_resource_utilization"]),
+    5: (__test_74656c656d657472795f73797374656d5f6f62736572766162696c6974795f746573742e6d6274_5, ["telemetry_system_error_tracking"]),
+    6: (__test_74656c656d657472795f73797374656d5f6f62736572766162696c6974795f746573742e6d6274_6, ["telemetry_system_self_diagnostics"]),
+    7: (__test_74656c656d657472795f73797374656d5f6f62736572766162696c6974795f746573742e6d6274_7, ["telemetry_system_observability_coverage"]),
+  },
   "telemetry_streaming_test.mbt": {
     0: (__test_74656c656d657472795f73747265616d696e675f746573742e6d6274_0, ["real_time_stream_ingestion"]),
     1: (__test_74656c656d657472795f73747265616d696e675f746573742e6d6274_1, ["stream_data_validation"]),
