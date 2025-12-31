@@ -677,14 +677,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "telemetry_comprehensive_test_suite.mbt": {
   },
   "telemetry_comprehensive_test.mbt": {
-    0: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_0, ["telemetry_internationalization_test"]),
-    1: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_1, ["telemetry_data_security_test"]),
-    2: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_2, ["telemetry_compliance_gdpr_test"]),
-    3: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_3, ["telemetry_observability_metrics_test"]),
-    4: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_4, ["telemetry_fault_tolerance_test"]),
-    5: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_5, ["telemetry_version_compatibility_test"]),
-    6: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_6, ["telemetry_backup_archive_test"]),
-    7: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_7, ["telemetry_api_interface_test"]),
+    0: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_0, ["telemetry_data_compression"]),
+    1: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_1, ["telemetry_cache_mechanism"]),
+    2: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_2, ["telemetry_configuration_management"]),
+    3: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_3, ["telemetry_sampling_strategy"]),
+    4: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_4, ["telemetry_batch_export"]),
+    5: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_5, ["telemetry_data_conversion"]),
+    6: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_6, ["telemetry_health_check"]),
+    7: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_7, ["telemetry_lifecycle_management"]),
+    8: (__test_74656c656d657472795f636f6d70726568656e736976655f746573742e6d6274_8, ["telemetry_cross_module_integration"]),
   },
   "telemetry_comprehensive_features_test.mbt": {
     0: (__test_74656c656d657472795f636f6d70726568656e736976655f66656174757265735f746573742e6d6274_0, ["telemetry_data_aggregation"]),
