@@ -1,170 +1,465 @@
-// 遥测数据采样策略测试用例
+// 采样策略测试用例
 
-test "telemetry_sampling_probability_strategy" {
-  // 测试概率采样策略
+test "always_on_sampler" {
+  // 测试始终开启采样器
   
-  let total_requests = 10000
-  let sampling_probability = 0.1  // 10%采样率
+  let sampler = azimuth::telemetry::sdk::trace::AlwaysOnSampler::new()
   
-  // 验证采样参数
-  assert_eq(total_requests, 10000)
-  assert_eq(sampling_probability, 0.1)
+  // 创建采样决策上下文
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "test.span"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  let parent_context = None
   
-  // 计算预期采样数量
-  let expected_sampled_count = total_requests * sampling_probability
-  let actual_sampled_count = 998  // 实际采样数量（模拟结果）
+  // 测试采样决策
+  let decision = sampler.should_sample(
+    parent_context,
+    trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
   
-  // 验证采样数量在合理范围内（±5%误差）
-  let lower_bound = expected_sampled_count * 0.95
-  let upper_bound = expected_sampled_count * 1.05
-  
-  assert_eq(expected_sampled_count, 1000.0)
-  assert_eq(actual_sampled_count >= lower_bound, true)
-  assert_eq(actual_sampled_count <= upper_bound, true)
-  
-  // 验证采样分布均匀性
-  let sampling_intervals = [102, 98, 105, 97, 103, 99, 101, 96, 104, 95]
-  let interval_variance = 12.5  // 区间方差
-  
-  assert_eq(interval_variance <= 25.0, true)  // 方差在合理范围内
+  // 验证始终开启采样器的决策
+  assert_eq(decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::RecordAndSample)
+  assert_eq(decision.is_sampled(), true)
+  assert_eq(decision.is_recording(), true)
+  assert_eq(decision.attributes.size(), 0)  // 没有额外属性
 }
 
-test "telemetry_sampling_adaptive_strategy" {
-  // 测试自适应采样策略
+test "always_off_sampler" {
+  // 测试始终关闭采样器
   
-  let service_loads = [
-    {"service": "user-api", "requests_per_second": 1000, "error_rate": 0.02},
-    {"service": "order-api", "requests_per_second": 500, "error_rate": 0.05},
-    {"service": "payment-api", "requests_per_second": 200, "error_rate": 0.01}
-  ]
+  let sampler = azimuth::telemetry::sdk::trace::AlwaysOffSampler::new()
   
-  // 根据服务负载和错误率自适应调整采样率
-  let adaptive_sampling_rates = [
-    {"service": "user-api", "base_rate": 0.1, "adjusted_rate": 0.15, "reason": "高负载适度提高采样"},
-    {"service": "order-api", "base_rate": 0.1, "adjusted_rate": 0.25, "reason": "高错误率大幅提高采样"},
-    {"service": "payment-api", "base_rate": 0.1, "adjusted_rate": 0.08, "reason": "低负载低错误率降低采样"}
-  ]
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "test.span"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  let parent_context = None
   
-  // 验证自适应调整
-  assert_eq(adaptive_sampling_rates[0]["adjusted_rate"], 0.15)
-  assert_eq(adaptive_sampling_rates[1]["adjusted_rate"], 0.25)
-  assert_eq(adaptive_sampling_rates[2]["adjusted_rate"], 0.08)
+  let decision = sampler.should_sample(
+    parent_context,
+    trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
   
-  // 验证调整逻辑合理性
-  assert_eq(adaptive_sampling_rates[0]["adjusted_rate"] > adaptive_sampling_rates[0]["base_rate"], true)
-  assert_eq(adaptive_sampling_rates[1]["adjusted_rate"] > adaptive_sampling_rates[1]["base_rate"], true)
-  assert_eq(adaptive_sampling_rates[2]["adjusted_rate"] < adaptive_sampling_rates[2]["base_rate"], true)
+  // 验证始终关闭采样器的决策
+  assert_eq(decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::Drop)
+  assert_eq(decision.is_sampled(), false)
+  assert_eq(decision.is_recording(), false)
+  assert_eq(decision.attributes.size(), 0)
 }
 
-test "telemetry_sampling_priority_strategy" {
-  // 测试优先级采样策略
+test "trace_id_ratio_sampler" {
+  // 测试基于Trace ID比例的采样器
   
-  let trace_priorities = [
-    {"trace_id": "critical_trace_001", "priority": "high", "must_sample": true},
-    {"trace_id": "normal_trace_002", "priority": "medium", "must_sample": false},
-    {"trace_id": "low_trace_003", "priority": "low", "must_sample": false},
-    {"trace_id": "error_trace_004", "priority": "high", "must_sample": true}
+  // 创建50%采样率的采样器
+  let sampler = azimuth::telemetry::sdk::trace::TraceIdRatioBasedSampler::new(0.5)
+  
+  let span_name = "test.span"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  let parent_context = None
+  
+  // 测试多个不同的Trace ID
+  let trace_ids = [
+    "4bf92f3577b34da6a3ce929d0e0e4736",  // 应该被采样
+    "00f067aa0ba902b7",                  // 不应该被采样
+    "4bf92f3577b34da6a3ce929d0e0e4737",  // 应该被采样
+    "00f067aa0ba902b8",                  // 不应该被采样
+    "4bf92f3577b34da6a3ce929d0e0e4738"   // 应该被采样
   ]
   
-  // 优先级采样规则
-  let sampling_rules = {
-    "high": {"sampling_rate": 1.0, "description": "高优先级100%采样"},
-    "medium": {"sampling_rate": 0.5, "description": "中优先级50%采样"},
-    "low": {"sampling_rate": 0.1, "description": "低优先级10%采样"}
-  }
-  
-  // 验证采样规则
-  assert_eq(sampling_rules["high"]["sampling_rate"], 1.0)
-  assert_eq(sampling_rules["medium"]["sampling_rate"], 0.5)
-  assert_eq(sampling_rules["low"]["sampling_rate"], 0.1)
-  
-  // 验证优先级应用
-  let sampled_traces = []
-  let unsampled_traces = []
-  
-  for priority_trace in trace_priorities {
-    let rule = sampling_rules[priority_trace["priority"]]
-    let should_sample = priority_trace["must_sample"] || (rule["sampling_rate"] > 0.5)
+  let mut sampled_count = 0
+  for trace_id in trace_ids {
+    let decision = sampler.should_sample(
+      parent_context,
+      trace_id,
+      span_name,
+      span_kind,
+      attributes
+    )
     
-    if should_sample {
-      sampled_traces.push(priority_trace["trace_id"])
-    } else {
-      unsampled_traces.push(priority_trace["trace_id"])
+    if decision.is_sampled() {
+      sampled_count = sampled_count + 1
     }
   }
   
-  assert_eq(sampled_traces.length(), 3)
-  assert_eq(unsampled_traces.length(), 1)
+  // 验证采样率大约为50%
+  let sampling_rate = sampled_count.to_float() / trace_ids.length().to_float()
+  assert_eq(sampling_rate >= 0.4 and sampling_rate <= 0.6, true)
 }
 
-test "telemetry_sampling_reservoir_strategy" {
-  // 测试水库采样策略（固定大小采样集合）
+test "parent_based_sampler" {
+  // 测试基于父Span的采样器
   
-  let reservoir_size = 1000  // 水库大小
-  let total_events = 10000   // 总事件数
+  // 创建基于父Span的采样器
+  let root_sampler = azimuth::telemetry::sdk::trace::AlwaysOnSampler::new()
+  let remote_parent_sampled = azimuth::telemetry::sdk::trace::AlwaysOnSampler::new()
+  let remote_parent_not_sampled = azimuth::telemetry::sdk::trace::AlwaysOffSampler::new()
+  let local_parent_sampled = azimuth::telemetry::sdk::trace::AlwaysOnSampler::new()
+  let local_parent_not_sampled = azimuth::telemetry::sdk::trace::AlwaysOffSampler::new()
   
-  // 验证水库参数
-  assert_eq(reservoir_size, 1000)
-  assert_eq(total_events, 10000)
+  let parent_based_sampler = azimuth::telemetry::sdk::trace::ParentBasedSampler::new(root_sampler)
+    .with_remote_parent_sampled(remote_parent_sampled)
+    .with_remote_parent_not_sampled(remote_parent_not_sampled)
+    .with_local_parent_sampled(local_parent_sampled)
+    .with_local_parent_not_sampled(local_parent_not_sampled)
   
-  // 水库采样算法：每个事件被选中的概率为 reservoir_size/total_events
-  let selection_probability = reservoir_size / total_events
-  assert_eq(selection_probability, 0.1)
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "test.span"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
   
-  // 模拟水库采样过程
-  let reservoir_sampled = []
-  let reservoir_replacements = 245  // 替换次数
+  // 测试无父上下文的情况
+  let no_parent_decision = parent_based_sampler.should_sample(
+    None,
+    trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
+  assert_eq(no_parent_decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::RecordAndSample)
   
-  // 验证水库采样特性
-  assert_eq(reservoir_sampled.length() <= reservoir_size, true)
-  assert_eq(reservoir_replacements >= total_events - reservoir_size, true)
+  // 测试远程父Span已采样
+  let remote_sampled_context = azimuth::telemetry::api::context::Context::empty()
+    .with_value(
+      azimuth::telemetry::api::context::create_key("span_context"),
+      azimuth::telemetry::api::trace::SpanContext::new(
+        trace_id,
+        "00f067aa0ba902b7",
+        true,  // is_sampled
+        true   // is_remote
+      )
+    )
   
-  // 验证时间均匀性：水库采样应保持时间分布
-  let time_distribution = {
-    "first_quarter": 245,
-    "second_quarter": 255,
-    "third_quarter": 252,
-    "fourth_quarter": 248
-  }
+  let remote_sampled_decision = parent_based_sampler.should_sample(
+    Some(remote_sampled_context),
+    trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
+  assert_eq(remote_sampled_decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::RecordAndSample)
   
-  let expected_per_quarter = reservoir_size / 4
-  let tolerance = expected_per_quarter * 0.1  // 10%容差
+  // 测试远程父Span未采样
+  let remote_not_sampled_context = azimuth::telemetry::api::context::Context::empty()
+    .with_value(
+      azimuth::telemetry::api::context::create_key("span_context"),
+      azimuth::telemetry::api::trace::SpanContext::new(
+        trace_id,
+        "00f067aa0ba902b7",
+        false, // is_sampled
+        true   // is_remote
+      )
+    )
   
-  assert_eq(time_distribution["first_quarter"] >= expected_per_quarter - tolerance, true)
-  assert_eq(time_distribution["first_quarter"] <= expected_per_quarter + tolerance, true)
-  assert_eq(time_distribution["second_quarter"] >= expected_per_quarter - tolerance, true)
-  assert_eq(time_distribution["second_quarter"] <= expected_per_quarter + tolerance, true)
+  let remote_not_sampled_decision = parent_based_sampler.should_sample(
+    Some(remote_not_sampled_context),
+    trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
+  assert_eq(remote_not_sampled_decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::Drop)
 }
 
-test "telemetry_sampling_performance_impact" {
-  // 测试采样策略对系统性能的影响
+test "attribute_based_sampler" {
+  // 测试基于属性的采样器
   
-  let baseline_metrics = {
-    "cpu_usage": 45.2,
-    "memory_usage": 67.8,
-    "throughput": 5000  // 请求/秒
-  }
+  // 创建基于属性的采样器
+  let sampler = azimuth::telemetry::sdk::trace::AttributeBasedSampler::new()
+    .with_rule("http.method", "GET", azimuth::telemetry::sdk::trace::SamplingDecision::RecordAndSample)
+    .with_rule("http.method", "POST", azimuth::telemetry::sdk::trace::SamplingDecision::RecordOnly)
+    .with_rule("error", true, azimuth::telemetry::sdk::trace::SamplingDecision::RecordAndSample)
+    .with_default(azimuth::telemetry::sdk::trace::SamplingDecision::Drop)
   
-  let sampling_strategies = [
-    {"name": "no_sampling", "cpu_impact": 0, "memory_impact": 0, "throughput_impact": 0},
-    {"name": "probability_10_percent", "cpu_impact": 2.1, "memory_impact": 1.5, "throughput_impact": -1.2},
-    {"name": "adaptive_sampling", "cpu_impact": 4.3, "memory_impact": 2.8, "throughput_impact": -2.5},
-    {"name": "priority_sampling", "cpu_impact": 3.7, "memory_impact": 2.2, "throughput_impact": -2.0}
-  ]
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "http.request"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let parent_context = None
   
-  // 验证采样策略的性能影响
-  for strategy in sampling_strategies {
-    let cpu_with_sampling = baseline_metrics["cpu_usage"] + strategy["cpu_impact"]
-    let memory_with_sampling = baseline_metrics["memory_usage"] + strategy["memory_impact"]
-    let throughput_with_sampling = baseline_metrics["throughput"] * (1 + strategy["throughput_impact"] / 100)
+  // 测试GET请求
+  let get_attributes = azimuth::telemetry::api::common::Attributes::empty()
+    .with("http.method", azimuth::telemetry::api::common::AttributeValue::String("GET"))
+    .with("http.url", azimuth::telemetry::api::common::AttributeValue::String("/api/users"))
+  
+  let get_decision = sampler.should_sample(
+    parent_context,
+    trace_id,
+    span_name,
+    span_kind,
+    get_attributes
+  )
+  assert_eq(get_decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::RecordAndSample)
+  assert_eq(get_decision.is_sampled(), true)
+  
+  // 测试POST请求
+  let post_attributes = azimuth::telemetry::api::common::Attributes::empty()
+    .with("http.method", azimuth::telemetry::api::common::AttributeValue::String("POST"))
+    .with("http.url", azimuth::telemetry::api::common::AttributeValue::String("/api/orders"))
+  
+  let post_decision = sampler.should_sample(
+    parent_context,
+    trace_id,
+    span_name,
+    span_kind,
+    post_attributes
+  )
+  assert_eq(post_decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::RecordOnly)
+  assert_eq(post_decision.is_sampled(), false)
+  assert_eq(post_decision.is_recording(), true)
+  
+  // 测试错误情况
+  let error_attributes = azimuth::telemetry::api::common::Attributes::empty()
+    .with("error", azimuth::telemetry::api::common::AttributeValue::Bool(true))
+    .with("error.message", azimuth::telemetry::api::common::AttributeValue::String("Database connection failed"))
+  
+  let error_decision = sampler.should_sample(
+    parent_context,
+    trace_id,
+    span_name,
+    span_kind,
+    error_attributes
+  )
+  assert_eq(error_decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::RecordAndSample)
+  assert_eq(error_decision.is_sampled(), true)
+  
+  // 测试默认情况
+  let default_attributes = azimuth::telemetry::api::common::Attributes::empty()
+    .with("http.method", azimuth::telemetry::api::common::AttributeValue::String("PUT"))
+  
+  let default_decision = sampler.should_sample(
+    parent_context,
+    trace_id,
+    span_name,
+    span_kind,
+    default_attributes
+  )
+  assert_eq(default_decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::Drop)
+  assert_eq(default_decision.is_sampled(), false)
+}
+
+test "adaptive_sampling_strategy" {
+  // 测试自适应采样策略
+  
+  // 创建自适应采样器
+  let adaptive_sampler = azimuth::telemetry::sdk::trace::AdaptiveSampler::new()
+    .with_max_spans_per_second(100)
+    .with_adjustment_interval(60)  // 60秒调整间隔
+  
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "adaptive.test.span"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  let parent_context = None
+  
+  // 模拟低负载情况
+  let mut sampled_count_low = 0
+  for i = 0; i < 10; i = i + 1 {
+    let decision = adaptive_sampler.should_sample(
+      parent_context,
+      trace_id + i.to_string(),
+      span_name,
+      span_kind,
+      attributes
+    )
     
-    // 验证性能影响在可接受范围内
-    assert_eq(cpu_with_sampling <= 60.0, true)  // CPU使用率不超过60%
-    assert_eq(memory_with_sampling <= 80.0, true)  // 内存使用率不超过80%
-    assert_eq(throughput_with_sampling >= baseline_metrics["throughput"] * 0.9, true)  // 吞吐量降低不超过10%
+    if decision.is_sampled() {
+      sampled_count_low = sampled_count_low + 1
+    }
   }
   
-  // 验证不同策略之间的性能权衡
-  assert_eq(sampling_strategies[1]["cpu_impact"] < sampling_strategies[2]["cpu_impact"], true)
-  assert_eq(sampling_strategies[1]["memory_impact"] < sampling_strategies[2]["memory_impact"], true)
+  // 低负载时应该大部分被采样
+  let low_load_sampling_rate = sampled_count_low.to_float() / 10.0
+  assert_eq(low_load_sampling_rate >= 0.7, true)
+  
+  // 模拟高负载情况（快速生成大量Span）
+  let mut sampled_count_high = 0
+  for i = 0; i < 200; i = i + 1 {
+    let decision = adaptive_sampler.should_sample(
+      parent_context,
+      trace_id + (i + 1000).to_string(),
+      span_name,
+      span_kind,
+      attributes
+    )
+    
+    if decision.is_sampled() {
+      sampled_count_high = sampled_count_high + 1
+    }
+  }
+  
+  // 高负载时采样率应该降低
+  let high_load_sampling_rate = sampled_count_high.to_float() / 200.0
+  assert_eq(high_load_sampling_rate <= 0.5, true)
+}
+
+test "sampling_decision_attributes" {
+  // 测试采样决策属性
+  
+  let sampler = azimuth::telemetry::sdk::trace::TraceIdRatioBasedSampler::new(0.1)
+  
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "test.span"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  let parent_context = None
+  
+  let decision = sampler.should_sample(
+    parent_context,
+    trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
+  
+  // 验证采样决策属性
+  if decision.is_sampled() {
+    assert_eq(decision.attributes.get("sampler.type").unwrap().to_string(), "trace_id_ratio")
+    assert_eq(decision.attributes.get("sampler.rate").unwrap().to_string(), "0.1")
+    assert_eq(decision.attributes.get("sampling.decision").unwrap().to_string(), "sampled")
+  } else {
+    assert_eq(decision.attributes.get("sampling.decision").unwrap().to_string(), "not_sampled")
+  }
+}
+
+test "sampling_consistency" {
+  // 测试采样一致性
+  
+  let sampler = azimuth::telemetry::sdk::trace::TraceIdRatioBasedSampler::new(0.25)
+  
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "consistency.test"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  let parent_context = None
+  
+  // 对相同的Trace ID多次采样，结果应该一致
+  let decisions = []
+  for i = 0; i < 10; i = i + 1 {
+    let decision = sampler.should_sample(
+      parent_context,
+      trace_id,
+      span_name,
+      span_kind,
+      attributes
+    )
+    decisions.push(decision.is_sampled())
+  }
+  
+  // 验证一致性
+  let first_decision = decisions[0]
+  for decision in decisions {
+    assert_eq(decision, first_decision)
+  }
+  
+  // 不同Trace ID应该有不同的采样结果
+  let different_trace_id = "00f067aa0ba902b7"
+  let different_decision = sampler.should_sample(
+    parent_context,
+    different_trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
+  
+  // 不一定不同，但应该有概率差异
+  assert_eq(different_decision.is_sampled() == first_decision, true or different_decision.is_sampled() != first_decision)
+}
+
+test "sampling_with_context_propagation" {
+  // 测试采样与上下文传播的集成
+  
+  let sampler = azimuth::telemetry::sdk::trace::ParentBasedSampler::new(
+    azimuth::telemetry::sdk::trace::TraceIdRatioBasedSampler::new(0.5)
+  )
+  
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "propagation.test"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  
+  // 创建已采样的父上下文
+  let sampled_parent_context = azimuth::telemetry::api::context::Context::empty()
+    .with_value(
+      azimuth::telemetry::api::context::create_key("span_context"),
+      azimuth::telemetry::api::trace::SpanContext::new(
+        trace_id,
+        "00f067aa0ba902b7",
+        true,  // is_sampled
+        false  // is_remote
+      )
+    )
+  
+  // 子Span应该继承父Span的采样决策
+  let child_decision = sampler.should_sample(
+    Some(sampled_parent_context),
+    trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
+  assert_eq(child_decision.decision, azimuth::telemetry::sdk::trace::SamplingDecision::RecordAndSample)
+  
+  // 创建未采样的父上下文
+  let not_sampled_parent_context = azimuth::telemetry::api::context::Context::empty()
+    .with_value(
+      azimuth::telemetry::api::context::create_key("span_context"),
+      azimuth::telemetry::api::trace::SpanContext::new(
+        trace_id,
+        "00f067aa0ba902b8",
+        false, // is_sampled
+        false  // is_remote
+      )
+    )
+  
+  // 子Span应该继承父Span的采样决策
+  let child_decision2 = sampler.should_sample(
+    Some(not_sampled_parent_context),
+    trace_id,
+    span_name,
+    span_kind,
+    attributes
+  )
+  assert_eq(child_decision2.decision, azimuth::telemetry::sdk::trace::SamplingDecision::Drop)
+}
+
+test "sampling_performance_evaluation" {
+  // 测试采样性能评估
+  
+  let sampler = azimuth::telemetry::sdk::trace::TraceIdRatioBasedSampler::new(0.1)
+  
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "performance.test"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  let parent_context = None
+  
+  // 测试大量采样的性能
+  let start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 10000; i = i + 1 {
+    sampler.should_sample(
+      parent_context,
+      trace_id + i.to_string(),
+      span_name,
+      span_kind,
+      attributes
+    )
+  }
+  
+  let end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let duration = end_time - start_time
+  
+  // 验证性能（应该在合理时间内完成）
+  assert_eq(duration < 1_000_000_000, true)  // 小于1秒
+  
+  // 计算平均每次采样决策的时间
+  let avg_duration = duration.to_float() / 10000.0
+  assert_eq(avg_duration < 100_000.0, true)  // 每次小于100微秒
 }

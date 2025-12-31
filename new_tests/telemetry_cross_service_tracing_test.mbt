@@ -1,435 +1,395 @@
-// 遥测跨服务追踪测试
-// 测试分布式系统中跨服务的链路追踪功能
+// 跨服务追踪测试用例
 
-test "cross_service_trace_propagation" {
-  // 跨服务链路传播测试
-  let services = ["gateway", "auth", "user_service", "order_service", "payment_service"]
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+test "trace_context_creation_and_validation" {
+  // 测试追踪上下文的创建和验证
   
-  let generate_span_context = fn(trace_id : String, service_name : String, parent_span_id : String?) -> (String, String) {
-    // 生成span ID（简化）
-    let span_id = service_name.substring(0, 4) + @int.to_string(@time.now().to_int() % 10000, 16)
-    (trace_id, span_id)
-  }
+  // 创建有效的追踪ID和Span ID
+  let trace_id = azimuth::telemetry::api::trace::generate_trace_id()
+  let span_id = azimuth::telemetry::api::trace::generate_span_id()
   
-  let simulate_service_call = fn(caller_service : String, callee_service : String, trace_id : String, parent_span_id : String) -> (String, String, String) {
-    let (trace_id, span_id) = generate_span_context(trace_id, callee_service, Some(parent_span_id))
-    (caller_service, callee_service, span_id)
-  }
+  // 验证ID格式
+  assert_eq(trace_id.length(), 32)  // 16 bytes = 32 hex chars
+  assert_eq(span_id.length(), 16)   // 8 bytes = 16 hex chars
   
-  // 模拟服务调用链
-  let mut trace_chain = []
-  let mut current_span_id = ""
+  // 验证ID只包含有效字符
+  assert_eq(trace_id.matches("^[0-9a-fA-F]{32}$"), true)
+  assert_eq(span_id.matches("^[0-9a-fA-F]{16}$"), true)
   
-  // Gateway开始链路
-  let (_, gateway_span_id) = generate_span_context(trace_id, services[0], None)
-  trace_chain = trace_chain.push((services[0], "root", gateway_span_id))
-  current_span_id = gateway_span_id
-  
-  // Gateway调用Auth服务
-  let (caller, callee, auth_span_id) = simulate_service_call(services[0], services[1], trace_id, current_span_id)
-  trace_chain = trace_chain.push((caller, callee, auth_span_id))
-  current_span_id = auth_span_id
-  
-  // Auth调用User服务
-  let (caller2, callee2, user_span_id) = simulate_service_call(services[1], services[2], trace_id, current_span_id)
-  trace_chain = trace_chain.push((caller2, callee2, user_span_id))
-  current_span_id = user_span_id
-  
-  // User服务调用Order服务
-  let (caller3, callee3, order_span_id) = simulate_service_call(services[2], services[3], trace_id, current_span_id)
-  trace_chain = trace_chain.push((caller3, callee3, order_span_id))
-  current_span_id = order_span_id
-  
-  // Order服务调用Payment服务
-  let (caller4, callee4, payment_span_id) = simulate_service_call(services[3], services[4], trace_id, current_span_id)
-  trace_chain = trace_chain.push((caller4, callee4, payment_span_id))
-  
-  // 验证链路传播
-  @assertion.assert_eq(trace_chain.length, 5)?
-  
-  // 验证每个span都有相同的trace ID
-  for (service, _, span_id) in trace_chain {
-    let (extracted_trace_id, _) = generate_span_context(trace_id, service, None)
-    @assertion.assert_eq(extracted_trace_id, trace_id)?
-  }
-  
-  // 验证调用关系
-  @assertion.assert_eq(trace_chain[1].0, services[0])?  // Auth的调用者是Gateway
-  @assertion.assert_eq(trace_chain[1].1, services[1])?  // Auth是被调用者
-  
-  @assertion.assert_eq(trace_chain[2].0, services[1])?  // User的调用者是Auth
-  @assertion.assert_eq(trace_chain[2].1, services[2])?  // User是被调用者
+  // 创建Span上下文
+  let span_context = azimuth::telemetry::api::trace::SpanContext::new(trace_id, span_id, true, false)
+  assert_eq(span_context.trace_id, trace_id)
+  assert_eq(span_context.span_id, span_id)
+  assert_eq(span_context.is_sampled, true)
+  assert_eq(span_context.is_remote, false)
 }
 
-test "cross_service_trace_context_injection" {
-  // 跨服务链路上下文注入测试
-  let trace_context = {
-    "trace_id": "0af7651916cd43dd8448eb211c80319c",
-    "span_id": "b7ad6b7169203331",
-    "trace_flags": "01",
-    "baggage_items": [
-      ("user_id", "12345"),
-      ("request_id", "req-67890"),
-      ("session_id", "sess-abcde")
-    ]
-  }
+test "w3c_trace_context_propagation" {
+  // 测试W3C Trace Context的传播
   
-  let inject_http_headers = fn(context : { "trace_id": String, "span_id": String, "trace_flags": String, "baggage_items": Array[(String, String)] }) -> Array[(String, String)] {
-    let mut headers = []
-    
-    // 注入traceparent头部
-    let traceparent = "00-" + context.trace_id + "-" + context.span_id + "-" + context.trace_flags
-    headers = headers.push(("traceparent", traceparent))
-    
-    // 注入baggage头部
-    let baggage_items = context.baggage_items.map(fn(key, value) { key + "=" + value }).join(",")
-    if baggage_items.length > 0 {
-      headers = headers.push(("baggage", baggage_items))
-    }
-    
-    headers
-  }
+  // 创建原始Span上下文
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b9c7c989f97918e1"
+  let span_context = azimuth::telemetry::api::trace::SpanContext::new(trace_id, span_id, true, false)
   
-  let extract_http_headers = fn(headers : Array[(String, String)]) -> { "trace_id": String, "span_id": String, "trace_flags": String, "baggage_items": Array[(String, String)] } {
-    let mut trace_id = ""
-    let mut span_id = ""
-    let mut trace_flags = ""
-    let mut baggage_items = []
-    
-    for (header_name, header_value) in headers {
-      match header_name {
-        "traceparent" => {
-          let parts = header_value.split("-")
-          if parts.length >= 4 {
-            trace_id = parts[1]
-            span_id = parts[2]
-            trace_flags = parts[3]
-          }
-        }
-        "baggage" => {
-          let items = header_value.split(",")
-          for item in items {
-            let key_value = item.split("=")
-            if key_value.length == 2 {
-              baggage_items = baggage_items.push((key_value[0], key_value[1]))
-            }
-          }
-        }
-        _ => {}
-      }
-    }
-    
-    { "trace_id": trace_id, "span_id": span_id, "trace_flags": trace_flags, "baggage_items": baggage_items }
-  }
+  // 创建W3C Trace Context传播器
+  let propagator = azimuth::telemetry::api::propagation::W3CTraceContextPropagator::new()
   
-  // 注入上下文到HTTP头部
-  let injected_headers = inject_http_headers(trace_context)
+  // 注入到载体
+  let carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  let ctx = azimuth::telemetry::api::context::Context::empty()
+    .with_value(azimuth::telemetry::api::context::create_key("span_context"), span_context)
   
-  // 验证注入的头部
-  @assertion.assert_true(injected_headers.length >= 1)?
+  propagator.inject(ctx, carrier)
   
-  let traceparent_header = injected_headers.filter_fn((name, _) { name == "traceparent" })[0]
-  @assertion.assert_eq(traceparent_header.1, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")?
+  // 验证注入的traceparent头
+  let traceparent = carrier.get("traceparent").unwrap()
+  assert_eq(traceparent, "00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01")
   
-  let baggage_header = injected_headers.filter_fn((name, _) { name == "baggage" })[0]
-  @assertion.assert_true(baggage_header.1.contains("user_id=12345"))?
-  @assertion.assert_true(baggage_header.1.contains("request_id=req-67890"))?
-  @assertion.assert_true(baggage_header.1.contains("session_id=sess-abcde"))?
-  
-  // 从HTTP头部提取上下文
-  let extracted_context = extract_http_headers(injected_headers)
+  // 从载体提取
+  let extracted_ctx = propagator.extract(carrier)
+  let extracted_span_context = extracted_ctx.get(azimuth::telemetry::api::context::create_key("span_context")).unwrap()
   
   // 验证提取的上下文
-  @assertion.assert_eq(extracted_context.trace_id, trace_context.trace_id)?
-  @assertion.assert_eq(extracted_context.span_id, trace_context.span_id)?
-  @assertion.assert_eq(extracted_context.trace_flags, trace_context.trace_flags)?
-  @assertion.assert_eq(extracted_context.baggage_items.length, 3)?
-  
-  let extracted_user_id = extracted_context.baggage_items.filter_fn((key, _) { key == "user_id" })[0]
-  @assertion.assert_eq(extracted_user_id.1, "12345")?
+  assert_eq(extracted_span_context.trace_id, trace_id)
+  assert_eq(extracted_span_context.span_id, span_id)
+  assert_eq(extracted_span_context.is_sampled, true)
+  assert_eq(extracted_span_context.is_remote, true)  // 提取的上下文标记为远程
 }
 
-test "cross_service_trace_sampling" {
-  // 跨服务链路采样测试
-  let sampling_strategies = [
-    ("always_on", 1.0),
-    ("always_off", 0.0),
-    ("probability_1_percent", 0.01),
-    ("probability_10_percent", 0.1),
-    ("probability_50_percent", 0.5)
-  ]
+test "distributed_tracing_flow" {
+  // 测试分布式追踪流程
   
-  let make_sampling_decision = fn(trace_id : String, strategy : String, probability : Double) -> Bool {
-    match strategy {
-      "always_on" => true
-      "always_off" => false
-      _ => {
-        // 基于trace ID的确定性采样
-        let hash = trace_id.length + trace_id.char_at(0).to_int()
-        let normalized_hash = @float.from_int(hash % 10000) / 10000.0
-        normalized_hash < probability
-      }
-    }
-  }
+  // 服务A：创建根Span
+  let tracer_a = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("service-a", "1.0.0")
+  let (ctx_a, root_span) = tracer_a.start_span(
+    azimuth::telemetry::api::context::Context::empty(),
+    "http.request",
+    azimuth::telemetry::api::trace::SpanKind::Server,
+    azimuth::telemetry::api::common::Attributes::empty()
+      .with("http.method", azimuth::telemetry::api::common::AttributeValue::String("GET"))
+      .with("http.url", azimuth::telemetry::api::common::AttributeValue::String("/api/users"))
+  )
   
-  let test_trace_ids = [
-    "0af7651916cd43dd8448eb211c80319c",
-    "b8ad6b7169203331c9d4e8f2a7b3c5d6",
-    "e9c7d5a3b1f2e4d6c8a0b2c4d6e8f0a1",
-    "f1e2d3c4b5a6f7e8d9c0b1a2c3d4e5f6",
-    "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
-  ]
+  root_span.set_attribute("user.id", azimuth::telemetry::api::common::AttributeValue::String("user123"))
+  root_span.add_event("request.start", azimuth::telemetry::api::common::Attributes::empty())
   
-  let sampling_results = []
-  for (strategy_name, probability) in sampling_strategies {
-    let strategy_results = []
-    for trace_id in test_trace_ids {
-      let sampled = make_sampling_decision(trace_id, strategy_name, probability)
-      strategy_results = strategy_results.push((trace_id, sampled))
-    }
-    sampling_results = sampling_results.push((strategy_name, strategy_results))
-  }
+  // 服务A调用服务B：传播上下文
+  let propagator = azimuth::telemetry::api::propagation::W3CTraceContextPropagator::new()
+  let carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  propagator.inject(ctx_a, carrier)
   
-  // 验证采样策略
-  for (strategy_name, results) in sampling_results {
-    let sampled_count = results.filter_fn((_, sampled) { sampled }).length
-    
-    match strategy_name {
-      "always_on" => @assertion.assert_eq(sampled_count, test_trace_ids.length)?
-      "always_off" => @assertion.assert_eq(sampled_count, 0)?
-      "probability_1_percent" => {
-        // 1%采样率，5个trace中应该有0或1个被采样
-        @assertion.assert_true(sampled_count <= 1)?
-      }
-      "probability_10_percent" => {
-        // 10%采样率，5个trace中应该有0或1个被采样
-        @assertion.assert_true(sampled_count <= 1)?
-      }
-      "probability_50_percent" => {
-        // 50%采样率，5个trace中应该有2或3个被采样
-        @assertion.assert_true(sampled_count >= 1 && sampled_count <= 4)?
-      }
-      _ => @assertion.assert_fail("Unknown sampling strategy")?
-    }
-  }
+  // 验证传播的头部
+  let traceparent = carrier.get("traceparent").unwrap()
+  assert_eq(traceparent.starts_with("00-"), true)
   
-  // 验证相同trace ID在同一策略下总是得到相同的采样决策
-  let test_trace_id = test_trace_ids[0]
-  let decisions = []
-  for i = 0; i < 5; i = i + 1 {
-    let decision = make_sampling_decision(test_trace_id, "probability_50_percent", 0.5)
-    decisions = decisions.push(decision)
-  }
+  // 服务B：接收并处理请求
+  let ctx_b = propagator.extract(carrier)
+  let tracer_b = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("service-b", "2.1.0")
+  let (ctx_b_child, span_b) = tracer_b.start_span(
+    ctx_b,
+    "database.query",
+    azimuth::telemetry::api::trace::SpanKind::Client,
+    azimuth::telemetry::api::common::Attributes::empty()
+      .with("db.system", azimuth::telemetry::api::common::AttributeValue::String("postgresql"))
+      .with("db.statement", azimuth::telemetry::api::common::AttributeValue::String("SELECT * FROM users"))
+  )
   
-  let first_decision = decisions[0]
-  for decision in decisions {
-    @assertion.assert_eq(decision, first_decision)?
-  }
+  span_b.set_attribute("db.rows", azimuth::telemetry::api::common::AttributeValue::Int64(25))
+  span_b.add_event("query.start", azimuth::telemetry::api::common::Attributes::empty())
+  
+  // 服务B调用服务C：继续传播
+  let carrier_b = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  propagator.inject(ctx_b_child, carrier_b)
+  
+  // 服务C：处理最终请求
+  let ctx_c = propagator.extract(carrier_b)
+  let tracer_c = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("service-c", "3.0.0")
+  let (_, span_c) = tracer_c.start_span(
+    ctx_c,
+    "cache.operation",
+    azimuth::telemetry::api::trace::SpanKind::Internal,
+    azimuth::telemetry::api::common::Attributes::empty()
+      .with("cache.system", azimuth::telemetry::api::common::AttributeValue::String("redis"))
+      .with("cache.operation", azimuth::telemetry::api::common::AttributeValue::String("get"))
+  )
+  
+  span_c.set_attribute("cache.hit", azimuth::telemetry::api::common::AttributeValue::Bool(true))
+  
+  // 结束所有Span
+  span_c.end()
+  span_b.end()
+  root_span.end()
+  
+  // 验证追踪链的完整性
+  let root_context = root_span.span_context()
+  let b_context = span_b.span_context()
+  let c_context = span_c.span_context()
+  
+  assert_eq(b_context.trace_id, root_context.trace_id)
+  assert_eq(c_context.trace_id, root_context.trace_id)
+  assert_eq(b_context.trace_id, c_context.trace_id)
+  
+  // 验证父子关系
+  assert_eq(b_context.parent_span_id.unwrap(), root_context.span_id)
+  assert_eq(c_context.parent_span_id.unwrap(), b_context.span_id)
 }
 
-test "cross_service_trace_error_handling" {
-  // 跨服务链路错误处理测试
-  let service_chain = ["api_gateway", "auth_service", "user_service", "database"]
-  let error_scenarios = [
-    ("network_timeout", "auth_service", "Network timeout after 5000ms"),
-    ("service_unavailable", "user_service", "Service temporarily unavailable"),
-    ("database_error", "database", "Connection refused"),
-    ("authentication_failed", "auth_service", "Invalid credentials")
-  ]
+test "cross_service_baggage_propagation" {
+  // 测试跨服务的Baggage传播
   
-  let simulate_error_propagation = fn(chain : Array[String], error_type : String, failing_service : String, error_message : String) -> Array[(String, String, String, Bool)] {
-    let mut trace_events = []
-    let mut error_occurred = false
-    
-    for service in chain {
-      if service == failing_service {
-        error_occurred = true
-        trace_events = trace_events.push((service, error_type, error_message, false))
-      } else {
-        let status = if error_occurred { "error_propagated" } else { "success" }
-        trace_events = trace_events.push((service, status, "", !error_occurred))
-      }
-    }
-    
-    trace_events
-  }
+  // 创建Baggage传播器
+  let baggage_propagator = azimuth::telemetry::api::propagation::W3CBaggagePropagator::new()
   
-  let error_results = []
-  for (error_type, failing_service, error_message) in error_scenarios {
-    let trace_events = simulate_error_propagation(service_chain, error_type, failing_service, error_message)
-    error_results = error_results.push((error_type, failing_service, trace_events))
-  }
+  // 服务A：创建初始Baggage
+  let baggage_a = azimuth::telemetry::api::context::Baggage::empty()
+    .with_entry("user.id", "12345")
+    .with_entry("user.role", "admin")
+    .with_entry("request.id", "req-abc-123")
+    .with_entry("feature.flags", "new_ui,experimental")
   
-  // 验证错误传播
-  for (error_type, failing_service, trace_events) in error_results {
-    let failing_event = trace_events.filter_fn((service, _, _, _) { service == failing_service })[0]
-    @assertion.assert_false(failing_event.3)?  // 失败的服务应该标记为失败
-    
-    // 验证错误后的服务也受到影响
-    let failing_index = service_chain.index_of(fn(s) { s == failing_service }).unwrap()
-    for i = failing_index + 1; i < service_chain.length; i = i + 1 {
-      let subsequent_service = service_chain[i]
-      let subsequent_event = trace_events.filter_fn((service, _, _, _) { service == subsequent_service })[0]
-      @assertion.assert_false(subsequent_event.3)?  // 后续服务应该标记为失败
-      @assertion.assert_eq(subsequent_event.1, "error_propagated")?
-    }
-    
-    // 验证错误前的服务不受影响
-    for i = 0; i < failing_index; i = i + 1 {
-      let prior_service = service_chain[i]
-      let prior_event = trace_events.filter_fn((service, _, _, _) { service == prior_service })[0]
-      @assertion.assert_true(prior_event.3)?  // 前置服务应该成功
-    }
-  }
+  let ctx_a = azimuth::telemetry::api::context::Context::empty()
+    .with_value(azimuth::telemetry::api::context::create_key("baggage"), baggage_a)
+  
+  // 注入Baggage
+  let carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  baggage_propagator.inject(ctx_a, carrier)
+  
+  // 验证baggage头
+  let baggage_header = carrier.get("baggage").unwrap()
+  assert_eq(baggage_header.contains("user.id=12345"), true)
+  assert_eq(baggage_header.contains("user.role=admin"), true)
+  assert_eq(baggage_header.contains("request.id=req-abc-123"), true)
+  assert_eq(baggage_header.contains("feature.flags=new_ui,experimental"), true)
+  
+  // 服务B：提取Baggage并添加新条目
+  let ctx_b = baggage_propagator.extract(carrier)
+  let extracted_baggage = ctx_b.get(azimuth::telemetry::api::context::create_key("baggage")).unwrap()
+  
+  let baggage_b = extracted_baggage
+    .with_entry("service.name", "auth-service")
+    .with_entry("operation.type", "authentication")
+  
+  let ctx_b_enhanced = ctx_b.with_value(azimuth::telemetry::api::context::create_key("baggage"), baggage_b)
+  
+  // 继续传播
+  let carrier_b = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  baggage_propagator.inject(ctx_b_enhanced, carrier_b)
+  
+  // 服务C：提取并验证完整的Baggage
+  let ctx_c = baggage_propagator.extract(carrier_b)
+  let final_baggage = ctx_c.get(azimuth::telemetry::api::context::create_key("baggage")).unwrap()
+  
+  // 验证所有Baggage条目
+  assert_eq(final_baggage.get("user.id").unwrap(), "12345")
+  assert_eq(final_baggage.get("user.role").unwrap(), "admin")
+  assert_eq(final_baggage.get("request.id").unwrap(), "req-abc-123")
+  assert_eq(final_baggage.get("feature.flags").unwrap(), "new_ui,experimental")
+  assert_eq(final_baggage.get("service.name").unwrap(), "auth-service")
+  assert_eq(final_baggage.get("operation.type").unwrap(), "authentication")
 }
 
-test "cross_service_trace_performance_impact" {
-  // 跨服务链路性能影响测试
-  let baseline_latency_ms = 50
-  let tracing_overhead_per_hop_ms = 2
-  let serialization_overhead_per_kb_ms = 0.1
+test "composite_propagator_integration" {
+  // 测试复合传播器的集成
   
-  let service_hops = [
-    ("gateway", 10),    // 10KB上下文
-    ("auth", 5),        // 5KB上下文
-    ("user", 15),       // 15KB上下文
-    ("order", 8),       // 8KB上下文
-    ("payment", 12)     // 12KB上下文
-  ]
+  // 创建复合传播器（Trace Context + Baggage）
+  let composite_propagator = azimuth::telemetry::api::propagation::CompositePropagator::new([
+    azimuth::telemetry::api::propagation::W3CTraceContextPropagator::new(),
+    azimuth::telemetry::api::propagation::W3CBaggagePropagator::new()
+  ])
   
-  let calculate_tracing_overhead = fn(hops : Array[(String, Int)], base_latency : Int, hop_overhead : Int, serialization_overhead : Double) -> (Int, Double) {
-    let mut total_overhead = 0
-    
-    for (_, context_size_kb) in hops {
-      let hop_overhead_cost = hop_overhead
-      let serialization_cost = @float.from_int(context_size_kb) * serialization_overhead
-      total_overhead = total_overhead + hop_overhead_cost + @float.to_int(serialization_cost)
-    }
-    
-    let total_latency = base_latency + total_overhead
-    let overhead_percentage = @float.from_int(total_overhead) / @float.from_int(total_latency) * 100.0
-    
-    (total_latency, overhead_percentage)
-  }
+  // 服务A：创建完整的上下文
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_id = "00f067aa0ba902b7"
+  let span_context = azimuth::telemetry::api::trace::SpanContext::new(trace_id, span_id, true, false)
   
-  let (traced_latency, overhead_percentage) = calculate_tracing_overhead(service_hops, baseline_latency_ms, tracing_overhead_per_hop_ms, serialization_overhead_per_kb_ms)
+  let baggage = azimuth::telemetry::api::context::Baggage::empty()
+    .with_entry("user.id", "user789")
+    .with_entry("tenant.id", "tenant-001")
   
-  // 验证性能影响
-  @assertion.assert_true(traced_latency > baseline_latency_ms)?
+  let ctx_a = azimuth::telemetry::api::context::Context::empty()
+    .with_value(azimuth::telemetry::api::context::create_key("span_context"), span_context)
+    .with_value(azimuth::telemetry::api::context::create_key("baggage"), baggage)
   
-  let expected_overhead = service_hops.length * tracing_overhead_per_hop_ms
-  let expected_serialization = service_hops.map_fn((_, size) { size }).reduce(fn(acc, size) { acc + size }, 0) * serialization_overhead_per_kb_ms
-  let expected_total_overhead = expected_overhead + @float.to_int(expected_serialization)
+  // 注入复合上下文
+  let carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  composite_propagator.inject(ctx_a, carrier)
   
-  @assertion.assert_eq(traced_latency, baseline_latency_ms + expected_total_overhead)?
+  // 验证注入的头部
+  assert_eq(carrier.get("traceparent").is_some(), true)
+  assert_eq(carrier.get("baggage").is_some(), true)
   
-  // 验证开销百分比在合理范围内
-  @assertion.assert_true(overhead_percentage > 0.0)?
-  @assertion.assert_true(overhead_percentage < 50.0)?  // 开销不应该超过50%
+  // 服务B：提取复合上下文
+  let ctx_b = composite_propagator.extract(carrier)
+  let extracted_span_context = ctx_b.get(azimuth::telemetry::api::context::create_key("span_context")).unwrap()
+  let extracted_baggage = ctx_b.get(azimuth::telemetry::api::context::create_key("baggage")).unwrap()
   
-  // 测试不同服务数量下的性能影响
-  let hop_counts = [2, 3, 5, 8, 10]
-  let performance_by_hops = []
+  // 验证提取的上下文
+  assert_eq(extracted_span_context.trace_id, trace_id)
+  assert_eq(extracted_span_context.span_id, span_id)
+  assert_eq(extracted_span_context.is_remote, true)
   
-  for hop_count in hop_counts {
-    let truncated_hops = service_hops.slice_to(hop_count)
-    let (latency, overhead) = calculate_tracing_overhead(truncated_hops, baseline_latency_ms, tracing_overhead_per_hop_ms, serialization_overhead_per_kb_ms)
-    performance_by_hops = performance_by_hops.push((hop_count, latency, overhead))
-  }
-  
-  // 验证性能影响随跳数增加
-  for i = 1; i < performance_by_hops.length; i = i + 1 {
-    let current_latency = performance_by_hops[i].1
-    let prev_latency = performance_by_hops[i - 1].1
-    @assertion.assert_true(current_latency > prev_latency)?
-  }
+  assert_eq(extracted_baggage.get("user.id").unwrap(), "user789")
+  assert_eq(extracted_baggage.get("tenant.id").unwrap(), "tenant-001")
 }
 
-test "cross_service_trace_compatibility" {
-  // 跨服务链路兼容性测试
-  let tracing_formats = [
-    ("w3c_tracecontext", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
-    ("b3_single_header", "0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1"),
-    ("b3_multi_header", ["X-B3-TraceId: 0af7651916cd43dd8448eb211c80319c", "X-B3-SpanId: b7ad6b7169203331", "X-B3-Sampled: 1"]),
-    ("aws_xray", "Root=1-5e2723a0-abcdef0123456789abcdef01;Parent=abcdef0123456789;Sampled=1")
-  ]
+test "trace_context_edge_cases" {
+  // 测试追踪上下文的边界情况
   
-  let convert_between_formats = fn(source_format : String, source_data : String, target_format : String) -> String? {
-    // 简化的格式转换
-    match (source_format, target_format) {
-      ("w3c_tracecontext", "b3_single_header") => {
-        let parts = source_data.split("-")
-        if parts.length >= 4 {
-          Some(parts[1] + "-" + parts[2] + "-" + if parts[3] == "01" { "1" } else { "0" })
-        } else {
-          None
-        }
-      }
-      ("b3_single_header", "w3c_tracecontext") => {
-        let parts = source_data.split("-")
-        if parts.length >= 3 {
-          let sampled = if parts[2] == "1" { "01" } else { "00" }
-          Some("00-" + parts[0] + "-" + parts[1] + "-" + sampled)
-        } else {
-          None
-        }
-      }
-      _ => None
-    }
-  }
+  // 测试无效的traceparent格式
+  let invalid_carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  invalid_carrier.set("traceparent", "invalid-format")
   
-  let extract_trace_id = fn(format : String, data : String) -> String? {
-    match format {
-      "w3c_tracecontext" => {
-        let parts = data.split("-")
-        if parts.length >= 2 {
-          Some(parts[1])
-        } else {
-          None
-        }
-      }
-      "b3_single_header" => {
-        let parts = data.split("-")
-        if parts.length >= 1 {
-          Some(parts[0])
-        } else {
-          None
-        }
-      }
-      _ => None
-    }
-  }
+  let propagator = azimuth::telemetry::api::propagation::W3CTraceContextPropagator::new()
+  let ctx = propagator.extract(invalid_carrier)
   
-  // 测试格式转换
-  let w3c_data = tracing_formats.filter_fn((format, _) { format == "w3c_tracecontext" })[0].1
-  let b3_converted = convert_between_formats("w3c_tracecontext", w3c_data, "b3_single_header")
-  @assertion.assert_some(b3_converted)?
+  // 无效格式应该返回空上下文
+  let span_context = ctx.get(azimuth::telemetry::api::context::create_key("span_context"))
+  assert_eq(span_context.is_none(), true)
   
-  let b3_data = b3_converted.unwrap()
-  let w3c_converted_back = convert_between_formats("b3_single_header", b3_data, "w3c_tracecontext")
-  @assertion.assert_some(w3c_converted_back)?
+  // 测试版本不支持的traceparent
+  let unsupported_version_carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  unsupported_version_carrier.set("traceparent", "ff-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01")
   
-  // 验证往返转换保持trace ID
-  let original_trace_id = extract_trace_id("w3c_tracecontext", w3c_data)
-  let converted_trace_id = extract_trace_id("w3c_tracecontext", w3c_converted_back.unwrap())
+  let ctx_unsupported = propagator.extract(unsupported_version_carrier)
+  let unsupported_span_context = ctx_unsupported.get(azimuth::telemetry::api::context::create_key("span_context"))
+  assert_eq(unsupported_span_context.is_none(), true)
   
-  @assertion.assert_some(original_trace_id)?
-  @assertion.assert_some(converted_trace_id)?
-  @assertion.assert_eq(original_trace_id.unwrap(), converted_trace_id.unwrap())?
+  // 测试空traceparent
+  let empty_carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  empty_carrier.set("traceparent", "")
   
-  // 测试不同格式的trace ID提取
-  for (format_name, format_data) in tracing_formats {
-    let trace_id = extract_trace_id(format_name, format_data)
-    @assertion.assert_some(trace_id)?
-    @assertion.assert_true(trace_id.unwrap().length > 0)?
-  }
+  let ctx_empty = propagator.extract(empty_carrier)
+  let empty_span_context = ctx_empty.get(azimuth::telemetry::api::context::create_key("span_context"))
+  assert_eq(empty_span_context.is_none(), true)
   
-  // 验证W3C和B3格式的trace ID相同
-  let w3c_trace_id = extract_trace_id("w3c_tracecontext", w3c_data)
-  let b3_trace_id = extract_trace_id("b3_single_header", b3_data)
+  // 测试部分缺失的traceparent
+  let partial_carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  partial_carrier.set("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736")
   
-  @assertion.assert_some(w3c_trace_id)?
-  @assertion.assert_some(b3_trace_id)?
-  @assertion.assert_eq(w3c_trace_id.unwrap(), b3_trace_id.unwrap())?
+  let ctx_partial = propagator.extract(partial_carrier)
+  let partial_span_context = ctx_partial.get(azimuth::telemetry::api::context::create_key("span_context"))
+  assert_eq(partial_span_context.is_none(), true)
+}
+
+test "span_hierarchy_and_relationships" {
+  // 测试Span层次结构和关系
+  
+  // 创建根Span
+  let tracer = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("test-service")
+  let (root_ctx, root_span) = tracer.start_span(
+    azimuth::telemetry::api::context::Context::empty(),
+    "root.operation",
+    azimuth::telemetry::api::trace::SpanKind::Server
+  )
+  
+  // 创建第一层子Span
+  let (child1_ctx, child1_span) = tracer.start_span(
+    root_ctx,
+    "child.operation.1",
+    azimuth::telemetry::api::trace::SpanKind::Client
+  )
+  
+  let (child2_ctx, child2_span) = tracer.start_span(
+    root_ctx,
+    "child.operation.2",
+    azimuth::telemetry::api::trace::SpanKind::Internal
+  )
+  
+  // 创建第二层子Span
+  let (grandchild_ctx, grandchild_span) = tracer.start_span(
+    child1_ctx,
+    "grandchild.operation",
+    azimuth::telemetry::api::trace::SpanKind::Client
+  )
+  
+  // 验证Span关系
+  let root_context = root_span.span_context()
+  let child1_context = child1_span.span_context()
+  let child2_context = child2_span.span_context()
+  let grandchild_context = grandchild_span.span_context()
+  
+  // 所有Span应该有相同的trace ID
+  assert_eq(child1_context.trace_id, root_context.trace_id)
+  assert_eq(child2_context.trace_id, root_context.trace_id)
+  assert_eq(grandchild_context.trace_id, root_context.trace_id)
+  
+  // 验证父子关系
+  assert_eq(child1_context.parent_span_id.unwrap(), root_context.span_id)
+  assert_eq(child2_context.parent_span_id.unwrap(), root_context.span_id)
+  assert_eq(grandchild_context.parent_span_id.unwrap(), child1_context.span_id)
+  
+  // 验证Span ID的唯一性
+  assert_eq(child1_context.span_id != child2_context.span_id, true)
+  assert_eq(child1_context.span_id != grandchild_context.span_id, true)
+  assert_eq(child2_context.span_id != grandchild_context.span_id, true)
+  
+  // 结束Span（按正确顺序）
+  grandchild_span.end()
+  child1_span.end()
+  child2_span.end()
+  root_span.end()
+}
+
+test "async_tracing_context_propagation" {
+  // 测试异步场景下的追踪上下文传播
+  
+  // 创建根Span
+  let tracer = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("async-service")
+  let (root_ctx, root_span) = tracer.start_span(
+    azimuth::telemetry::api::context::Context::empty(),
+    "async.operation",
+    azimuth::telemetry::api::trace::SpanKind::Server
+  )
+  
+  // 模拟异步操作1
+  let async1_span = tracer.start_span(
+    root_ctx,
+    "async.task.1",
+    azimuth::telemetry::api::trace::SpanKind::Internal
+  ).1
+  
+  // 模拟异步操作2
+  let async2_span = tracer.start_span(
+    root_ctx,
+    "async.task.2",
+    azimuth::telemetry::api::trace::SpanKind::Internal
+  ).1
+  
+  // 模拟嵌套异步操作
+  let (nested_ctx, nested_span) = tracer.start_span(
+    root_ctx,
+    "async.nested",
+    azimuth::telemetry::api::trace::SpanKind::Internal
+  )
+  
+  let nested_async_span = tracer.start_span(
+    nested_ctx,
+    "async.nested.task",
+    azimuth::telemetry::api::trace::SpanKind::Internal
+  ).1
+  
+  // 验证所有异步操作都正确关联到根Span
+  let root_context = root_span.span_context()
+  let async1_context = async1_span.span_context()
+  let async2_context = async2_span.span_context()
+  let nested_context = nested_span.span_context()
+  let nested_async_context = nested_async_span.span_context()
+  
+  assert_eq(async1_context.trace_id, root_context.trace_id)
+  assert_eq(async2_context.trace_id, root_context.trace_id)
+  assert_eq(nested_context.trace_id, root_context.trace_id)
+  assert_eq(nested_async_context.trace_id, root_context.trace_id)
+  
+  // 验证父子关系
+  assert_eq(async1_context.parent_span_id.unwrap(), root_context.span_id)
+  assert_eq(async2_context.parent_span_id.unwrap(), root_context.span_id)
+  assert_eq(nested_context.parent_span_id.unwrap(), root_context.span_id)
+  assert_eq(nested_async_context.parent_span_id.unwrap(), nested_context.span_id)
+  
+  // 结束所有Span
+  nested_async_span.end()
+  nested_span.end()
+  async1_span.end()
+  async2_span.end()
+  root_span.end()
 }
