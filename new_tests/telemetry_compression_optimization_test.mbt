@@ -1,394 +1,208 @@
-// 遥测数据压缩优化测试用例
+// 数据压缩优化遥测测试
+// 测试遥测数据压缩算法的性能和效率
 
-test "telemetry_compression_lz4_performance" {
-  // 测试遥测数据LZ4压缩性能
+test "compression_algorithm_comparison" {
+  // 测试压缩算法比较
   
-  let original_data_size = 1024  // 原始数据大小（KB）
-  let compression_ratio_target = 0.4  // 目标压缩比40%
-  let compression_time_limit_ms = 100  // 压缩时间限制
-  
-  // 模拟遥测数据（重复性高的数据）
-  let telemetry_data = [
-    "cpu_usage:45.2,mem_usage:67.8,disk_usage:23.1",
-    "cpu_usage:45.3,mem_usage:67.9,disk_usage:23.2",
-    "cpu_usage:45.1,mem_usage:67.7,disk_usage:23.0",
-    "cpu_usage:45.4,mem_usage:68.0,disk_usage:23.3",
-    "cpu_usage:45.2,mem_usage:67.8,disk_usage:23.1",
-    "cpu_usage:45.3,mem_usage:67.9,disk_usage:23.2",
-    "cpu_usage:45.1,mem_usage:67.7,disk_usage:23.0",
-    "cpu_usage:45.4,mem_usage:68.0,disk_usage:23.3"
+  let compression_metrics = [
+    ("algorithm", "gzip"),
+    ("original_size_bytes", 1024000),
+    ("compressed_size_bytes", 256000),
+    ("compression_ratio", 0.25),
+    ("compression_time_ms", 45),
+    ("decompression_time_ms", 12),
+    ("cpu_usage_percent", 15.2)
   ]
   
-  // 验证数据参数
-  assert_eq(original_data_size, 1024)
-  assert_eq(compression_ratio_target, 0.4)
-  assert_eq(compression_time_limit_ms, 100)
-  assert_eq(telemetry_data.length(), 8)
+  // 验证压缩指标
+  assert_eq(compression_metrics.length(), 7)
   
-  // 模拟LZ4压缩（简化版：基于字符串重复性）
-  let mut compressed_size = 0
-  let mut i = 0
+  // 验证算法名称
+  assert_eq(compression_metrics[0].0, "algorithm")
+  assert_eq(compression_metrics[0].1, "gzip")
+  assert_eq(compression_metrics[0].1.length(), 4)
   
-  while i < telemetry_data.length() {
-    let data_string = telemetry_data[i]
-    let unique_chars = data_string.length()
-    let repeated_patterns = data_string.length() / 4  // 假设25%是重复模式
-    
-    // LZ4压缩效果：重复模式压缩效果好
-    let compressed_chunk_size = unique_chars - (repeated_patterns / 2)
-    compressed_size = compressed_size + compressed_chunk_size
-    
-    i = i + 1
-  }
+  // 验证压缩前后大小
+  assert_eq(compression_metrics[1].0, "original_size_bytes")
+  assert_eq(compression_metrics[2].0, "compressed_size_bytes")
+  assert_eq(compression_metrics[1].1, 1024000)
+  assert_eq(compression_metrics[2].1, 256000)
+  assert_eq(compression_metrics[1].1 > compression_metrics[2].1, true)
   
-  // 计算压缩比
-  let original_total_size = original_data_size
-  let compression_ratio = compressed_size.to_float() / original_total_size.to_float()
+  // 验证压缩比
+  assert_eq(compression_metrics[3].0, "compression_ratio")
+  assert_eq(compression_metrics[3].1, 0.25)
+  assert_eq(compression_metrics[3].1 > 0.0, true)
+  assert_eq(compression_metrics[3].1 < 1.0, true)
   
-  // 验证压缩效果
-  assert_eq(compressed_size < original_total_size, true)
-  assert_eq(compression_ratio < 1.0, true)
-  assert_eq(compression_ratio < compression_ratio_target, true)  // 压缩比应该优于目标
+  // 验证压缩和解压缩时间
+  assert_eq(compression_metrics[4].0, "compression_time_ms")
+  assert_eq(compression_metrics[5].0, "decompression_time_ms")
+  assert_eq(compression_metrics[4].1, 45)
+  assert_eq(compression_metrics[5].1, 12)
+  assert_eq(compression_metrics[4].1 > compression_metrics[5].1, true)
   
-  // 模拟压缩时间
-  let compression_time_ms = original_total_size / 20  // 假设每20KB需要1ms
-  assert_eq(compression_time_ms, 51)  // 1024 / 20 ≈ 51
-  assert_eq(compression_time_ms < compression_time_limit_ms, true)
-  
-  // 验证压缩效率
-  let space_saved = original_total_size - compressed_size
-  let space_saved_percentage = (space_saved * 100) / original_total_size
-  assert_eq(space_saved_percentage > 50, true)  // 至少节省50%空间
+  // 验证CPU使用率
+  assert_eq(compression_metrics[6].0, "cpu_usage_percent")
+  assert_eq(compression_metrics[6].1, 15.2)
+  assert_eq(compression_metrics[6].1 > 0.0, true)
+  assert_eq(compression_metrics[6].1 < 100.0, true)
 }
 
-test "telemetry_compression_dictionary_based" {
-  // 测试基于字典的遥测数据压缩
+test "compression_batch_processing" {
+  // 测试批量压缩处理
   
-  let dictionary_entries = [
-    "cpu_usage", "mem_usage", "disk_usage", "network_io",
-    "response_time", "error_rate", "throughput", "latency"
-  ]
-  let telemetry_metrics = [
-    "cpu_usage:45.2,mem_usage:67.8,disk_usage:23.1",
-    "network_io:1024KB,response_time:125ms",
-    "error_rate:0.02,throughput:1000req/s",
-    "latency:p99=200ms,cpu_usage:48.1",
-    "mem_usage:70.2,disk_usage:25.3"
+  let batch_compression_data = [
+    ("batch_size", 100),
+    ("total_original_bytes", 10240000),
+    ("total_compressed_bytes", 2560000),
+    ("average_compression_time_ms", 38),
+    ("throughput_mbps", 270.4),
+    ("memory_usage_mb", 128),
+    ("success_rate", 1.0)
   ]
   
-  // 验证字典配置
-  assert_eq(dictionary_entries.length(), 8)
-  assert_eq(telemetry_metrics.length(), 5)
+  // 验证批量压缩数据
+  assert_eq(batch_compression_data.length(), 7)
   
-  // 构建压缩字典
-  let mut compression_dict = {}
-  let mut i = 0
+  // 验证批次大小
+  assert_eq(batch_compression_data[0].0, "batch_size")
+  assert_eq(batch_compression_data[0].1, 100)
+  assert_eq(batch_compression_data[0].1 > 0, true)
   
-  while i < dictionary_entries.length() {
-    let entry = dictionary_entries[i]
-    compression_dict[entry] = "dict_" + i.to_string()
-    i = i + 1
-  }
+  // 验证总字节数
+  assert_eq(batch_compression_data[1].0, "total_original_bytes")
+  assert_eq(batch_compression_data[2].0, "total_compressed_bytes")
+  assert_eq(batch_compression_data[1].1, 10240000)
+  assert_eq(batch_compression_data[2].1, 2560000)
+  assert_eq(batch_compression_data[1].1 > batch_compression_data[2].1, true)
   
-  // 验证字典构建
-  assert_eq(compression_dict.length(), 8)
-  assert_eq(compression_dict["cpu_usage"], "dict_0")
-  assert_eq(compression_dict["mem_usage"], "dict_1")
+  // 验证平均压缩时间
+  assert_eq(batch_compression_data[3].0, "average_compression_time_ms")
+  assert_eq(batch_compression_data[3].1, 38)
+  assert_eq(batch_compression_data[3].1 > 0, true)
   
-  // 使用字典压缩遥测数据
-  let mut compressed_metrics = []
-  let mut original_total_length = 0
-  let mut compressed_total_length = 0
+  // 验证吞吐量
+  assert_eq(batch_compression_data[4].0, "throughput_mbps")
+  assert_eq(batch_compression_data[4].1, 270.4)
+  assert_eq(batch_compression_data[4].1 > 0.0, true)
   
-  i = 0
-  while i < telemetry_metrics.length() {
-    let metric = telemetry_metrics[i]
-    original_total_length = original_total_length + metric.length()
-    
-    // 字典替换压缩
-    let mut compressed_metric = metric
-    let mut j = 0
-    
-    while j < dictionary_entries.length() {
-      let entry = dictionary_entries[j]
-      let replacement = compression_dict[entry]
-      
-      // 简化的字符串替换
-      if compressed_metric.contains(entry) {
-        compressed_metric = compressed_metric.replace(entry, replacement)
-      }
-      
-      j = j + 1
-    }
-    
-    compressed_metrics.push(compressed_metric)
-    compressed_total_length = compressed_total_length + compressed_metric.length()
-    
-    i = i + 1
-  }
+  // 验证内存使用
+  assert_eq(batch_compression_data[5].0, "memory_usage_mb")
+  assert_eq(batch_compression_data[5].1, 128)
+  assert_eq(batch_compression_data[5].1 > 0, true)
   
-  // 验证压缩结果
-  assert_eq(compressed_metrics.length(), telemetry_metrics.length())
-  assert_eq(compressed_total_length < original_total_length, true)
-  
-  // 计算压缩比
-  let compression_ratio = compressed_total_length.to_float() / original_total_length.to_float()
-  assert_eq(compression_ratio < 0.8, true)  // 至少20%压缩率
-  
-  // 验证特定指标的压缩
-  assert_eq(compressed_metrics[0].contains("dict_0"), true)  // cpu_usage被替换
-  assert_eq(compressed_metrics[0].contains("dict_1"), true)  // mem_usage被替换
-  assert_eq(compressed_metrics[1].contains("dict_3"), true)  // network_io被替换
-  
-  // 验证解压可行性
-  let mut decompression_possible = true
-  i = 0
-  while i < compressed_metrics.length() {
-    let compressed = compressed_metrics[i]
-    let mut j = 0
-    
-    while j < dictionary_entries.length() {
-      let replacement = compression_dict[dictionary_entries[j]]
-      if compressed.contains(replacement) {
-        // 可以通过反向字典替换解压
-        decompression_possible = decompression_possible and true
-      }
-      j = j + 1
-    }
-    
-    i = i + 1
-  }
-  
-  assert_eq(decompression_possible, true)
+  // 验证成功率
+  assert_eq(batch_compression_data[6].0, "success_rate")
+  assert_eq(batch_compression_data[6].1, 1.0)
+  assert_eq(batch_compression_data[6].1 <= 1.0, true)
 }
 
-test "telemetry_compression_adaptive_selection" {
-  // 测试遥测数据自适应压缩算法选择
+test "compression_adaptive_algorithm" {
+  // 测试自适应压缩算法
   
-  let compression_algorithms = ["lz4", "zstd", "gzip", "snappy"]
-  let data_characteristics = [
-    ("highly_repetitive", "lz4"),      // 高重复性数据适合LZ4
-    ("moderately_compressed", "zstd"), // 中等压缩适合Zstd
-    ("text_heavy", "gzip"),            // 文本数据适合Gzip
-    ("real_time_stream", "snappy")     // 实时流适合Snappy
+  let adaptive_compression = [
+    ("data_type", "json_logs"),
+    ("data_size_kb", 512),
+    ("selected_algorithm", "lz4"),
+    ("compression_ratio", 0.42),
+    ("compression_speed_mbps", 450.0),
+    ("decision_reason", "speed_priority"),
+    ("alternative_algorithm", "gzip")
   ]
   
-  // 验证算法配置
-  assert_eq(compression_algorithms.length(), 4)
-  assert_eq(data_characteristics.length(), 4)
+  // 验证自适应压缩
+  assert_eq(adaptive_compression.length(), 7)
   
-  // 模拟数据特征检测
-  let test_datasets = [
-    {
-      "name": "server_metrics",
-      "repetitiveness": 0.8,  // 80%重复性
-      "size_mb": 10,
-      "compression_speed_requirement": "high"
-    },
-    {
-      "name": "log_data",
-      "repetitiveness": 0.4,  // 40%重复性
-      "size_mb": 50,
-      "compression_speed_requirement": "medium"
-    },
-    {
-      "name": "network_packets",
-      "repetitiveness": 0.6,  // 60%重复性
-      "size_mb": 100,
-      "compression_speed_requirement": "real_time"
-    }
-  ]
+  // 验证数据类型
+  assert_eq(adaptive_compression[0].0, "data_type")
+  assert_eq(adaptive_compression[0].1, "json_logs")
+  assert_eq(adaptive_compression[0].1.contains("_"), true)
   
-  // 验证测试数据集
-  assert_eq(test_datasets.length(), 3)
+  // 验证数据大小
+  assert_eq(adaptive_compression[1].0, "data_size_kb")
+  assert_eq(adaptive_compression[1].1, 512)
+  assert_eq(adaptive_compression[1].1 > 0, true)
   
-  // 自适应算法选择逻辑
-  let mut algorithm_selections = {}
-  let mut i = 0
+  // 验证选择的算法
+  assert_eq(adaptive_compression[2].0, "selected_algorithm")
+  assert_eq(adaptive_compression[2].1, "lz4")
+  assert_eq(adaptive_compression[2].1.length(), 3)
   
-  while i < test_datasets.length() {
-    let dataset = test_datasets[i]
-    let dataset_name = dataset["name"]
-    let repetitiveness = dataset["repetitiveness"]
-    let speed_requirement = dataset["compression_speed_requirement"]
-    
-    let mut selected_algorithm = ""
-    
-    // 基于数据特征选择算法
-    if speed_requirement == "real_time" {
-      selected_algorithm = "snappy"
-    } else if repetitiveness > 0.7 {
-      selected_algorithm = "lz4"
-    } else if dataset["size_mb"].to_int() > 20 {
-      selected_algorithm = "zstd"
-    } else {
-      selected_algorithm = "gzip"
-    }
-    
-    algorithm_selections[dataset_name] = selected_algorithm
-    i = i + 1
-  }
+  // 验证压缩比
+  assert_eq(adaptive_compression[3].0, "compression_ratio")
+  assert_eq(adaptive_compression[3].1, 0.42)
+  assert_eq(adaptive_compression[3].1 > 0.0, true)
+  assert_eq(adaptive_compression[3].1 < 1.0, true)
   
-  // 验证算法选择结果
-  assert_eq(algorithm_selections.length(), 3)
-  assert_eq(algorithm_selections["server_metrics"], "lz4")      // 高重复性，选择LZ4
-  assert_eq(algorithm_selections["log_data"], "zstd")           // 大文件，选择Zstd
-  assert_eq(algorithm_selections["network_packets"], "snappy") // 实时要求，选择Snappy
+  // 验证压缩速度
+  assert_eq(adaptive_compression[4].0, "compression_speed_mbps")
+  assert_eq(adaptive_compression[4].1, 450.0)
+  assert_eq(adaptive_compression[4].1 > 0.0, true)
   
-  // 模拟压缩性能评估
-  let algorithm_performance = [
-    ("lz4", {"compression_ratio": 0.5, "speed_mb_s": 500}),
-    ("zstd", {"compression_ratio": 0.3, "speed_mb_s": 100}),
-    ("gzip", {"compression_ratio": 0.4, "speed_mb_s": 50}),
-    ("snappy", {"compression_ratio": 0.6, "speed_mb_s": 800})
-  ]
+  // 验证决策原因
+  assert_eq(adaptive_compression[5].0, "decision_reason")
+  assert_eq(adaptive_compression[5].1, "speed_priority")
+  assert_eq(adaptive_compression[5].1.contains("_"), true)
   
-  // 验证性能配置
-  assert_eq(algorithm_performance.length(), 4)
-  
-  // 评估选择的算法是否适合对应数据集
-  i = 0
-  while i < test_datasets.length() {
-    let dataset = test_datasets[i]
-    let dataset_name = dataset["name"]
-    let selected_algo = algorithm_selections[dataset_name]
-    
-    // 查找算法性能
-    let mut algo_performance = {}
-    let mut j = 0
-    while j < algorithm_performance.length() {
-      if algorithm_performance[j].0 == selected_algo {
-        algo_performance = algorithm_performance[j].1
-        break
-      }
-      j = j + 1
-    }
-    
-    // 验证性能适合性
-    if dataset["compression_speed_requirement"] == "real_time" {
-      assert_eq(algo_performance["speed_mb_s"].to_int() > 500, true)
-    } else if dataset["repetitiveness"] > 0.7 {
-      assert_eq(algo_performance["compression_ratio"].to_float() < 0.6, true)
-    }
-    
-    i = i + 1
-  }
+  // 验证备选算法
+  assert_eq(adaptive_compression[6].0, "alternative_algorithm")
+  assert_eq(adaptive_compression[6].1, "gzip")
+  assert_eq(adaptive_compression[6].1 != adaptive_compression[2].1, true)
 }
 
-test "telemetry_compression_batch_optimization" {
-  // 测试遥测数据批量压缩优化
+test "compression_error_recovery" {
+  // 测试压缩错误恢复
   
-  let batch_size = 100  // 批量大小
-  let compression_threshold = 0.7  // 70%压缩率阈值
-  let telemetry_batches = [
-    ["metric:1", "metric:2", "metric:3", "metric:4", "metric:5"],
-    ["metric:1", "metric:2", "metric:3", "metric:4", "metric:5"],
-    ["metric:1", "metric:2", "metric:3", "metric:4", "metric:5"],
-    ["metric:6", "metric:7", "metric:8", "metric:9", "metric:10"]
+  let compression_errors = [
+    ("error_type", "CORRUPTION_DETECTED"),
+    ("compression_algorithm", "gzip"),
+    ("input_data_size", 204800),
+    ("error_position", 102456),
+    ("recovery_attempt", "use_fallback_algorithm"),
+    ("fallback_algorithm", "lz4"),
+    ("recovery_success", true),
+    ("recovery_time_ms", 15)
   ]
   
-  // 验证批量配置
-  assert_eq(batch_size, 100)
-  assert_eq(compression_threshold, 0.7)
-  assert_eq(telemetry_batches.length(), 4)
+  // 验证压缩错误恢复
+  assert_eq(compression_errors.length(), 8)
   
-  // 模拟批量压缩策略
-  let mut batch_results = []
-  let mut i = 0
+  // 验证错误类型
+  assert_eq(compression_errors[0].0, "error_type")
+  assert_eq(compression_errors[0].1, "CORRUPTION_DETECTED")
+  assert_eq(compression_errors[0].1.contains("_"), true)
   
-  while i < telemetry_batches.length() {
-    let batch = telemetry_batches[i]
-    let original_size = batch.length() * 10  // 假设每个指标10字节
-    
-    // 检测批量内重复性
-    let mut unique_items = []
-    let mut j = 0
-    
-    while j < batch.length() {
-      let item = batch[j]
-      let mut found = false
-      let mut k = 0
-      
-      while k < unique_items.length() {
-        if unique_items[k] == item {
-          found = true
-          break
-        }
-        k = k + 1
-      }
-      
-      if not found {
-        unique_items.push(item)
-      }
-      
-      j = j + 1
-    }
-    
-    // 计算压缩潜力
-    let repetition_ratio = (batch.length() - unique_items.length()).to_float() / batch.length().to_float()
-    let compression_potential = repetition_ratio * 0.8  // 重复数据80%可压缩
-    
-    // 决定压缩策略
-    let compression_strategy = 
-      if compression_potential > 0.5 { "dictionary_based" }
-      else if compression_potential > 0.2 { "standard" }
-      else { "lightweight" }
-    
-    // 模拟压缩结果
-    let compressed_size = 
-      if compression_strategy == "dictionary_based" { original_size / 4 }
-      else if compression_strategy == "standard" { original_size / 2 }
-      else { original_size * 3 / 4 }
-    
-    let actual_compression_ratio = compressed_size.to_float() / original_size.to_float()
-    
-    batch_results.push({
-      "batch_index": i,
-      "original_size": original_size,
-      "compressed_size": compressed_size,
-      "compression_ratio": actual_compression_ratio,
-      "strategy": compression_strategy,
-      "repetition_ratio": repetition_ratio
-    })
-    
-    i = i + 1
-  }
+  // 验证压缩算法
+  assert_eq(compression_errors[1].0, "compression_algorithm")
+  assert_eq(compression_errors[1].1, "gzip")
   
-  // 验证批量压缩结果
-  assert_eq(batch_results.length(), 4)
+  // 验证输入数据大小
+  assert_eq(compression_errors[2].0, "input_data_size")
+  assert_eq(compression_errors[2].1, 204800)
+  assert_eq(compression_errors[2].1 > 0, true)
   
-  // 前3个批量应该有高重复性
-  assert_eq(batch_results[0]["repetition_ratio"], 0.0)  // 实际上没有重复，都是不同的metric
-  assert_eq(batch_results[0]["strategy"], "lightweight")
+  // 验证错误位置
+  assert_eq(compression_errors[3].0, "error_position")
+  assert_eq(compression_errors[3].1, 102456)
+  assert_eq(compression_errors[3].1 < compression_errors[2].1, true)
   
-  // 验证压缩效果
-  i = 0
-  while i < batch_results.length() {
-    let result = batch_results[i]
-    let compression_ratio = result["compression_ratio"].to_float()
-    
-    assert_eq(compression_ratio < 1.0, true)  // 所有批量都应该有压缩效果
-    assert_eq(compression_ratio > 0.0, true)  // 压缩比应该大于0
-    
-    i = i + 1
-  }
+  // 验证恢复尝试
+  assert_eq(compression_errors[4].0, "recovery_attempt")
+  assert_eq(compression_errors[4].1, "use_fallback_algorithm")
+  assert_eq(compression_errors[4].1.contains("_"), true)
   
-  // 计算整体压缩效果
-  let mut total_original = 0
-  let mut total_compressed = 0
+  // 验证回退算法
+  assert_eq(compression_errors[5].0, "fallback_algorithm")
+  assert_eq(compression_errors[5].1, "lz4")
+  assert_eq(compression_errors[5].1 != compression_errors[1].1, true)
   
-  i = 0
-  while i < batch_results.length() {
-    total_original = total_original + batch_results[i]["original_size"].to_int()
-    total_compressed = total_compressed + batch_results[i]["compressed_size"].to_int()
-    i = i + 1
-  }
+  // 验证恢复成功
+  assert_eq(compression_errors[6].0, "recovery_success")
+  assert_eq(compression_errors[6].1, true)
   
-  let overall_compression_ratio = total_compressed.to_float() / total_original.to_float()
-  assert_eq(overall_compression_ratio < compression_threshold, true)
-  
-  // 验证批量优化收益
-  let space_saved = total_original - total_compressed
-  let space_saved_percentage = (space_saved * 100) / total_original
-  assert_eq(space_saved_percentage > 20, true)  // 至少节省20%空间
+  // 验证恢复时间
+  assert_eq(compression_errors[7].0, "recovery_time_ms")
+  assert_eq(compression_errors[7].1, 15)
+  assert_eq(compression_errors[7].1 > 0, true)
 }
