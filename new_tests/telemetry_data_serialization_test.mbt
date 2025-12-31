@@ -1,661 +1,411 @@
-// 遥测数据序列化测试用例
+// 遥测数据序列化与反序列化测试用例
 
-test "telemetry_json_serialization" {
-  // 测试遥测JSON序列化
+test "telemetry_attribute_value_serialization" {
+  // 测试遥测属性值序列化与反序列化
   
-  let json_config = {
-    "pretty_print": false,
-    "include_null_values": false,
-    "max_depth": 10,
-    "escape_unicode": true,
-    "validate_schema": true
-  }
+  // 测试字符串属性
+  let string_attr = ("http.method", common::AttributeValue::string("GET"))
+  assert_eq(string_attr.0, "http.method")
+  assert_eq(string_attr.1 |> common::AttributeValue::string_value |> some, "GET")
   
-  // 验证JSON配置
-  assert_eq(json_config["pretty_print"], "false")
-  assert_eq(json_config["include_null_values"], "false")
-  assert_eq(json_config["max_depth"], "10")
-  assert_eq(json_config["escape_unicode"], "true")
-  assert_eq(json_config["validate_schema"], "true")
+  // 测试整数属性
+  let int_attr = ("http.status_code", common::AttributeValue::int(200L))
+  assert_eq(int_attr.0, "http.status_code")
+  assert_eq(int_attr.1 |> common::AttributeValue::int_value |> some, 200L)
   
-  // 模拟遥测数据
-  let telemetry_data = {
-    "timestamp": 1703123450,
-    "service_name": "payment-service",
-    "trace_id": "abc123def456",
-    "span_id": "789ghi012jkl",
-    "metrics": {
-      "cpu_usage": 75.5,
-      "memory_usage": 1024,
-      "request_count": 1500
-    },
-    "tags": {
-      "environment": "production",
-      "version": "1.2.3"
+  // 测试浮点数属性
+  let float_attr = ("response.time", common::AttributeValue::float(125.5))
+  assert_eq(float_attr.0, "response.time")
+  assert_eq(float_attr.1 |> common::AttributeValue::float_value |> some, 125.5)
+  
+  // 测试布尔属性
+  let bool_attr = ("cache.hit", common::AttributeValue::bool(true))
+  assert_eq(bool_attr.0, "cache.hit")
+  assert_eq(bool_attr.1 |> common::AttributeValue::bool_value |> some, true)
+  
+  // 测试数组属性
+  let string_array_attr = ("tags", common::AttributeValue::array_string(["web", "api", "v1"]))
+  assert_eq(string_array_attr.0, "tags")
+  let array_value = string_array_attr.1 |> common::AttributeValue::array_string_value |> some
+  assert_eq(array_value.length(), 3)
+  assert_eq(array_value[0], "web")
+  assert_eq(array_value[1], "api")
+  assert_eq(array_value[2], "v1")
+  
+  // 测试整数数组属性
+  let int_array_attr = ("status_codes", common::AttributeValue::array_int([200L, 404L, 500L]))
+  assert_eq(int_array_attr.0, "status_codes")
+  let int_array_value = int_array_attr.1 |> common::AttributeValue::array_int_value |> some
+  assert_eq(int_array_value.length(), 3)
+  assert_eq(int_array_value[0], 200L)
+  assert_eq(int_array_value[1], 404L)
+  assert_eq(int_array_value[2], 500L)
+  
+  // 验证属性数量
+  let all_attributes = [string_attr, int_attr, float_attr, bool_attr, string_array_attr, int_array_attr]
+  assert_eq(all_attributes.length(), 6)
+  
+  // 模拟序列化过程
+  let mut serialized_data = []
+  let mut i = 0
+  while i < all_attributes.length() {
+    let attr = all_attributes[i]
+    let serialized_item = attr.0 + ":" + match attr.1 {
+      common::StringValue(v) => "string:" + v
+      common::IntValue(v) => "int:" + v.to_string()
+      common::FloatValue(v) => "float:" + v.to_string()
+      common::BoolValue(v) => "bool:" + (if v { "true" } else { "false" })
+      common::ArrayStringValue(arr) => {
+        let mut joined = ""
+        let mut j = 0
+        while j < arr.length() {
+          if j > 0 { joined = joined + "," }
+          joined = joined + arr[j]
+          j = j + 1
+        }
+        "array_string:" + joined
+      }
+      common::ArrayIntValue(arr) => {
+        let mut joined = ""
+        let mut j = 0
+        while j < arr.length() {
+          if j > 0 { joined = joined + "," }
+          joined = joined + arr[j].to_string()
+          j = j + 1
+        }
+        "array_int:" + joined
+      }
+      _ => "unknown"
     }
+    serialized_data.push(serialized_item)
+    i = i + 1
   }
   
-  // 验证遥测数据
-  assert_eq(telemetry_data["timestamp"], "1703123450")
-  assert_eq(telemetry_data["service_name"], "payment-service")
-  assert_eq(telemetry_data["trace_id"], "abc123def456")
-  assert_eq(telemetry_data["metrics"]["cpu_usage"], "75.5")
-  
-  // 测试JSON序列化
-  let json_output = {
-    "serialized": true,
-    "size_bytes": 256,
-    "serialization_time_ms": 5,
-    "validation_passed": true
-  }
-  
-  // 验证JSON序列化结果
-  assert_eq(json_output["serialized"], "true")
-  assert_eq(json_output["size_bytes"], "256")
-  assert_eq(json_output["serialization_time_ms"], "5")
-  assert_eq(json_output["validation_passed"], "true")
-  
-  // 测试JSON反序列化
-  let deserialization_result = {
-    "deserialized": true,
-    "data_integrity": "preserved",
-    "field_count": 8,
-    "deserialization_time_ms": 3,
-    "missing_fields": 0
-  }
-  
-  // 验证JSON反序列化结果
-  assert_eq(deserialization_result["deserialized"], "true")
-  assert_eq(deserialization_result["data_integrity"], "preserved")
-  assert_eq(deserialization_result["field_count"], "8")
-  assert_eq(deserialization_result["deserialization_time_ms"], "3")
-  assert_eq(deserialization_result["missing_fields"], "0")
-  
-  // 测试序列化性能
-  let serialization_performance = {
-    "batch_size": 1000,
-    "total_time_ms": 450,
-    "avg_time_per_record_ms": 0.45,
-    "throughput_records_per_sec": 2222,
-    "memory_usage_mb": 15
-  }
-  
-  // 验证序列化性能
-  assert_eq(serialization_performance["batch_size"], "1000")
-  assert_eq(serialization_performance["total_time_ms"], "450")
-  assert_eq(serialization_performance["avg_time_per_record_ms"], "0.45")
-  
-  // 检查序列化吞吐量
-  let throughput = serialization_performance["throughput_records_per_sec"].to_int()
-  assert_eq(throughput >= 1000, true)  // 吞吐量至少1000记录/秒
-  
-  // 检查内存使用效率
-  let memory_per_record = serialization_performance["memory_usage_mb"].to_float() / 
-                         serialization_performance["batch_size"].to_float()
-  
-  // 验证内存使用效率
-  assert_eq(memory_per_record > 0, true)
-  assert_eq(memory_per_record <= 0.1, true)  // 每条记录内存使用不超过0.1MB
-  
-  // 测试嵌套对象序列化
-  let nested_object_test = {
-    "nested_levels": 3,
-    "total_fields": 15,
-    "serialization_success": true,
-    "deserialization_success": true,
-    "data_preservation": "complete"
-  }
-  
-  // 验证嵌套对象测试
-  assert_eq(nested_object_test["nested_levels"], "3")
-  assert_eq(nested_object_test["total_fields"], "15")
-  assert_eq(nested_object_test["serialization_success"], "true")
-  assert_eq(nested_object_test["deserialization_success"], "true")
-  
-  // 检查嵌套深度是否在限制内
-  let depth_within_limit = nested_object_test["nested_levels"].to_int() <= json_config["max_depth"].to_int()
-  assert_eq(depth_within_limit, true)  // 3 <= 10
+  // 验证序列化结果
+  assert_eq(serialized_data.length(), 6)
+  assert_eq(serialized_data[0], "http.method:string:GET")
+  assert_eq(serialized_data[1], "http.status_code:int:200")
+  assert_eq(serialized_data[2], "response.time:float:125.5")
+  assert_eq(serialized_data[3], "cache.hit:bool:true")
+  assert_eq(serialized_data[4], "tags:array_string:web,api,v1")
+  assert_eq(serialized_data[5], "status_codes:array_int:200,404,500")
 }
 
-test "telemetry_binary_serialization" {
-  // 测试遥测二进制序列化
+test "telemetry_span_serialization" {
+  // 测试Span序列化
   
-  let binary_config = {
-    "format": "protobuf",
-    "compression": "gzip",
-    "endianness": "little",
-    "version": 2,
-    "checksum_enabled": true
+  let span_context = trace::SpanContext::{
+    trace_id: [0x0a_byte, 0xf7_byte, 0x65_byte, 0x19_byte, 0x16_byte, 0xcd_byte, 0x43_byte, 0xdd_byte,
+               0x84_byte, 0x48_byte, 0xeb_byte, 0x21_byte, 0x1c_byte, 0x80_byte, 0x31_byte, 0x9c_byte],
+    span_id: [0xb7_byte, 0xad_byte, 0x6b_byte, 0x71_byte, 0x69_byte, 0x20_byte, 0x33_byte, 0x31_byte],
+    trace_flags: 0x01_byte,
+    trace_state: "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
   }
   
-  // 验证二进制配置
-  assert_eq(binary_config["format"], "protobuf")
-  assert_eq(binary_config["compression"], "gzip")
-  assert_eq(binary_config["endianness"], "little")
-  assert_eq(binary_config["version"], "2")
-  assert_eq(binary_config["checksum_enabled"], "true")
-  
-  // 模拟二进制序列化测试
-  let binary_serialization_test = {
-    "original_size_bytes": 1024,
-    "compressed_size_bytes": 384,
-    "compression_ratio": 0.375,
-    "serialization_time_ms": 2,
-    "compression_time_ms": 1
+  let span = trace::Span::{
+    name: "http.request",
+    context: span_context,
+    kind: trace::Server,
+    parent_span_id: Some([0x00_byte, 0x00_byte, 0x00_byte, 0x00_byte, 0x00_byte, 0x00_byte, 0x00_byte, 0x00_byte]),
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200500000000L),
+    status: trace::Ok,
+    status_description: Some("Request completed successfully"),
+    attributes: [
+      ("http.method", common::AttributeValue::string("POST")),
+      ("http.url", common::AttributeValue::string("https://api.example.com/users")),
+      ("http.status_code", common::AttributeValue::int(201L)),
+      ("user.id", common::AttributeValue::int(12345L))
+    ],
+    events: [
+      trace::SpanEvent::{
+        name: "database.query",
+        timestamp_unix_nanos: 1640995200100000000L,
+        attributes: [
+          ("db.statement", common::AttributeValue::string("SELECT * FROM users WHERE id = ?")),
+          ("db.duration_ms", common::AttributeValue::float(25.3))
+        ]
+      }
+    ],
+    links: []
   }
   
-  // 验证二进制序列化测试
-  assert_eq(binary_serialization_test["original_size_bytes"], "1024")
-  assert_eq(binary_serialization_test["compressed_size_bytes"], "384")
-  assert_eq(binary_serialization_test["compression_ratio"], "0.375")
+  // 验证Span基本属性
+  assert_eq(span.name, "http.request")
+  assert_eq(span.kind, trace::Server)
+  assert_eq(span.status, trace::Ok)
+  assert_eq(span.attributes.length(), 4)
+  assert_eq(span.events.length(), 1)
+  assert_eq(span.links.length(), 0)
   
-  // 检查压缩效率
-  let compression_ratio = binary_serialization_test["compression_ratio"].to_float()
-  assert_eq(compression_ratio < 0.5, true)  // 压缩比小于0.5（压缩后大小小于原大小的一半）
-  assert_eq(compression_ratio > 0.1, true)  // 压缩比大于0.1（避免过度压缩）
+  // 验证时间戳
+  assert_eq(span.start_time_unix_nanos, 1640995200000000000L)
+  assert_eq(span.end_time_unix_nanos |> some, 1640995200500000000L)
   
-  // 检查序列化性能
-  let total_serialization_time = binary_serialization_test["serialization_time_ms"].to_int() + 
-                                 binary_serialization_test["compression_time_ms"].to_int()
+  // 验证Span ID和Trace ID长度
+  assert_eq(span.context.trace_id.length(), 16)
+  assert_eq(span.context.span_id.length(), 8)
   
-  // 验证序列化性能
-  assert_eq(total_serialization_time, 3)  // 2 + 1
-  assert_eq(total_serialization_time <= 10, true)  // 总序列化时间不超过10ms
+  // 模拟Span序列化为JSON格式
+  let span_json = "{"
+    + "\"name\":\"" + span.name + "\"," 
+    + "\"kind\":\"Server\"," 
+    + "\"status\":\"Ok\"," 
+    + "\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\"," 
+    + "\"span_id\":\"b7ad6b7169203331\"," 
+    + "\"start_time_unix_nanos\":" + span.start_time_unix_nanos.to_string() + "," 
+    + "\"end_time_unix_nanos\":" + (span.end_time_unix_nanos |> some).to_string() + "," 
+    + "\"attributes_count\":" + span.attributes.length().to_string() + "," 
+    + "\"events_count\":" + span.events.length().to_string() 
+    + "}"
   
-  // 测试二进制反序列化
-  let binary_deserialization_test = {
-    "compressed_size_bytes": 384,
-    "decompressed_size_bytes": 1024,
-    "decompression_time_ms": 1,
-    "deserialization_time_ms": 2,
-    "data_integrity": "verified"
-  }
+  // 验证JSON包含必要字段
+  assert_eq(span_json.contains("\"name\":\"http.request\""), true)
+  assert_eq(span_json.contains("\"kind\":\"Server\""), true)
+  assert_eq(span_json.contains("\"status\":\"Ok\""), true)
+  assert_eq(span_json.contains("\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\""), true)
+  assert_eq(span_json.contains("\"span_id\":\"b7ad6b7169203331\""), true)
+  assert_eq(span_json.contains("\"attributes_count\":4"), true)
+  assert_eq(span_json.contains("\"events_count\":1"), true)
+}
+
+test "telemetry_metric_serialization" {
+  // 测试Metric序列化
   
-  // 验证二进制反序列化测试
-  assert_eq(binary_deserialization_test["compressed_size_bytes"], "384")
-  assert_eq(binary_deserialization_test["decompressed_size_bytes"], "1024")
-  assert_eq(binary_deserialization_test["data_integrity"], "verified")
+  // 创建测试指标
+  let counter_instrument = metrics::NoopCounter::{}
+  let histogram_instrument = metrics::NoopHistogram::{}
+  let gauge_instrument = metrics::NoopGauge::{}
   
-  // 检查大小恢复
-  let size_recovery = binary_deserialization_test["decompressed_size_bytes"].to_int() == 
-                     binary_serialization_test["original_size_bytes"].to_int()
-  assert_eq(size_recovery, true)  // 大小完全恢复
-  
-  // 检查反序列化性能
-  let total_deserialization_time = binary_deserialization_test["decompression_time_ms"].to_int() + 
-                                   binary_deserialization_test["deserialization_time_ms"].to_int()
-  
-  // 验证反序列化性能
-  assert_eq(total_deserialization_time, 3)  // 1 + 2
-  assert_eq(total_deserialization_time <= 10, true)  // 总反序列化时间不超过10ms
-  
-  // 测试二进制格式兼容性
-  let format_compatibility_test = [
-    {
-      "version": 1,
-      "can_read": true,
-      "can_write": false,
-      "conversion_needed": true
+  // 模拟指标测量数据
+  let counter_measurements = [
+    metrics::Measurement::{
+      value: 100.0,
+      attributes: [
+        ("http.method", common::AttributeValue::string("GET")),
+        ("http.status_code", common::AttributeValue::int(200L))
+      ]
     },
-    {
-      "version": 2,
-      "can_read": true,
-      "can_write": true,
-      "conversion_needed": false
-    },
-    {
-      "version": 3,
-      "can_read": false,
-      "can_write": false,
-      "conversion_needed": true
+    metrics::Measurement::{
+      value: 50.0,
+      attributes: [
+        ("http.method", common::AttributeValue::string("POST")),
+        ("http.status_code", common::AttributeValue::int(201L))
+      ]
     }
   ]
   
-  // 验证格式兼容性测试
-  assert_eq(format_compatibility_test.length(), 3)
-  
-  // 检查当前版本的兼容性
-  let current_version = binary_config["version"].to_int()
-  let mut current_version_compatible = false
-  
-  let mut i = 0
-  while i < format_compatibility_test.length() {
-    let version_info = format_compatibility_test[i]
-    if version_info["version"] == current_version.to_string() {
-      current_version_compatible = version_info["can_read"] == "true" and 
-                                   version_info["can_write"] == "true"
-      break
-    }
-    i = i + 1
-  }
-  
-  // 验证当前版本兼容性
-  assert_eq(current_version_compatible, true)  // 当前版本应该完全兼容
-  
-  // 测试二进制校验和验证
-  let checksum_test = {
-    "data_size_bytes": 2048,
-    "checksum_algorithm": "crc32",
-    "calculated_checksum": "a1b2c3d4",
-    "received_checksum": "a1b2c3d4",
-    "verification_result": "passed"
-  }
-  
-  // 验证校验和测试
-  assert_eq(checksum_test["data_size_bytes"], "2048")
-  assert_eq(checksum_test["checksum_algorithm"], "crc32")
-  assert_eq(checksum_test["calculated_checksum"], "a1b2c3d4")
-  assert_eq(checksum_test["received_checksum"], "a1b2c3d4")
-  
-  // 检查校验和验证
-  let checksum_valid = checksum_test["calculated_checksum"] == checksum_test["received_checksum"]
-  assert_eq(checksum_valid, true)  // 校验和匹配
-  
-  // 验证验证结果
-  assert_eq(checksum_test["verification_result"], "passed")
-}
-
-test "telemetry_serialization_format_comparison" {
-  // 测试遥测序列化格式比较
-  
-  let format_comparison_data = [
-    {
-      "format": "json",
-      "size_bytes": 512,
-      "serialization_time_ms": 5,
-      "deserialization_time_ms": 3,
-      "cpu_usage_percent": 15,
-      "memory_usage_mb": 8,
-      "human_readable": true
+  let histogram_measurements = [
+    metrics::Measurement::{
+      value: 125.5,
+      attributes: [
+        ("operation", common::AttributeValue::string("database.query")),
+        ("table", common::AttributeValue::string("users"))
+      ]
     },
-    {
-      "format": "protobuf",
-      "size_bytes": 256,
-      "serialization_time_ms": 2,
-      "deserialization_time_ms": 2,
-      "cpu_usage_percent": 8,
-      "memory_usage_mb": 4,
-      "human_readable": false
+    metrics::Measurement::{
+      value: 89.2,
+      attributes: [
+        ("operation", common::AttributeValue::string("database.query")),
+        ("table", common::AttributeValue::string("orders"))
+      ]
     },
-    {
-      "format": "msgpack",
-      "size_bytes": 320,
-      "serialization_time_ms": 3,
-      "deserialization_time_ms": 2,
-      "cpu_usage_percent": 10,
-      "memory_usage_mb": 5,
-      "human_readable": false
-    },
-    {
-      "format": "avro",
-      "size_bytes": 288,
-      "serialization_time_ms": 3,
-      "deserialization_time_ms": 4,
-      "cpu_usage_percent": 12,
-      "memory_usage_mb": 6,
-      "human_readable": false
+    metrics::Measurement::{
+      value: 234.7,
+      attributes: [
+        ("operation", common::AttributeValue::string("api.call")),
+        ("endpoint", common::AttributeValue::string("/users"))
+      ]
     }
   ]
   
-  // 验证格式比较数据
-  assert_eq(format_comparison_data.length(), 4)
-  
-  // 比较序列化大小
-  let mut min_size = 999999
-  let mut min_size_format = ""
-  let mut max_size = 0
-  let mut max_size_format = ""
-  
-  let mut i = 0
-  while i < format_comparison_data.length() {
-    let format_data = format_comparison_data[i]
-    let size = format_data["size_bytes"].to_int()
-    
-    if size < min_size {
-      min_size = size
-      min_size_format = format_data["format"]
-    }
-    
-    if size > max_size {
-      max_size = size
-      max_size_format = format_data["format"]
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证大小比较结果
-  assert_eq(min_size, 256)           // protobuf最小
-  assert_eq(min_size_format, "protobuf")
-  assert_eq(max_size, 512)           // json最大
-  assert_eq(max_size_format, "json")
-  
-  // 计算大小压缩比
-  let size_compression_ratio = min_size.to_float() / max_size.to_float()
-  assert_eq(size_compression_ratio, 0.5)  // 256/512 = 0.5
-  
-  // 比较序列化速度
-  let mut min_serialization_time = 999999
-  let mut fastest_serialization_format = ""
-  
-  let mut i = 0
-  while i < format_comparison_data.length() {
-    let format_data = format_comparison_data[i]
-    let time = format_data["serialization_time_ms"].to_int()
-    
-    if time < min_serialization_time {
-      min_serialization_time = time
-      fastest_serialization_format = format_data["format"]
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证序列化速度比较
-  assert_eq(min_serialization_time, 2)  // 最快序列化时间
-  assert_eq(fastest_serialization_format, "protobuf")  // protobuf最快
-  
-  // 比较反序列化速度
-  let mut min_deserialization_time = 999999
-  let mut fastest_deserialization_format = ""
-  
-  let mut i = 0
-  while i < format_comparison_data.length() {
-    let format_data = format_comparison_data[i]
-    let time = format_data["deserialization_time_ms"].to_int()
-    
-    if time < min_deserialization_time {
-      min_deserialization_time = time
-      fastest_deserialization_format = format_data["format"]
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证反序列化速度比较
-  assert_eq(min_deserialization_time, 2)  // 最快反序列化时间
-  
-  // 检查是否有多个格式具有相同的最快反序列化速度
-  let mut fastest_formats = []
-  let mut i = 0
-  while i < format_comparison_data.length() {
-    let format_data = format_comparison_data[i]
-    let time = format_data["deserialization_time_ms"].to_int()
-    
-    if time == min_deserialization_time {
-      fastest_formats.push(format_data["format"])
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证最快反序列化格式
-  assert_eq(fastest_formats.length() >= 2, true)  // 至少有2个格式具有相同的最快速度
-  
-  // 比较CPU使用率
-  let mut min_cpu_usage = 999999
-  let mut lowest_cpu_format = ""
-  
-  let mut i = 0
-  while i < format_comparison_data.length() {
-    let format_data = format_comparison_data[i]
-    let cpu = format_data["cpu_usage_percent"].to_int()
-    
-    if cpu < min_cpu_usage {
-      min_cpu_usage = cpu
-      lowest_cpu_format = format_data["format"]
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证CPU使用率比较
-  assert_eq(min_cpu_usage, 8)  // 最低CPU使用率
-  assert_eq(lowest_cpu_format, "protobuf")  // protobuf CPU使用率最低
-  
-  // 比较内存使用
-  let mut min_memory_usage = 999999
-  let mut lowest_memory_format = ""
-  
-  let mut i = 0
-  while i < format_comparison_data.length() {
-    let format_data = format_comparison_data[i]
-    let memory = format_data["memory_usage_mb"].to_int()
-    
-    if memory < min_memory_usage {
-      min_memory_usage = memory
-      lowest_memory_format = format_data["format"]
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证内存使用比较
-  assert_eq(min_memory_usage, 4)  // 最低内存使用
-  assert_eq(lowest_memory_format, "protobuf")  // protobuf内存使用最低
-  
-  // 检查可读性格式
-  let mut human_readable_formats = []
-  let mut i = 0
-  while i < format_comparison_data.length() {
-    let format_data = format_comparison_data[i]
-    if format_data["human_readable"] == "true" {
-      human_readable_formats.push(format_data["format"])
-    }
-    i = i + 1
-  }
-  
-  // 验证可读性格式
-  assert_eq(human_readable_formats.length(), 1)  // 只有1个格式可读
-  assert_eq(human_readable_formats[0], "json")  // json是可读的
-}
-
-test "telemetry_serialization_error_handling" {
-  // 测试遥测序列化错误处理
-  
-  let error_handling_config = {
-    "max_retry_attempts": 3,
-    "fallback_format": "json",
-    "error_log_enabled": true,
-    "partial_serialization_allowed": true,
-    "max_error_rate_percent": 5
-  }
-  
-  // 验证错误处理配置
-  assert_eq(error_handling_config["max_retry_attempts"], "3")
-  assert_eq(error_handling_config["fallback_format"], "json")
-  assert_eq(error_handling_config["error_log_enabled"], "true")
-  assert_eq(error_handling_config["partial_serialization_allowed"], "true")
-  assert_eq(error_handling_config["max_error_rate_percent"], "5")
-  
-  // 模拟序列化错误场景
-  let serialization_error_scenarios = [
-    {
-      "error_type": "invalid_data_type",
-      "original_format": "protobuf",
-      "fallback_used": true,
-      "fallback_format": "json",
-      "retry_attempts": 2,
-      "final_result": "success"
+  let gauge_measurements = [
+    metrics::Measurement::{
+      value: 1024.0,
+      attributes: [
+        ("metric.type", common::AttributeValue::string("memory.usage")),
+        ("unit", common::AttributeValue::string("bytes"))
+      ]
     },
-    {
-      "error_type": "data_too_large",
-      "original_format": "json",
-      "fallback_used": true,
-      "fallback_format": "msgpack",
-      "retry_attempts": 1,
-      "final_result": "success"
-    },
-    {
-      "error_type": "circular_reference",
-      "original_format": "avro",
-      "fallback_used": true,
-      "fallback_format": "json",
-      "retry_attempts": 3,
-      "final_result": "partial_success"
-    },
-    {
-      "error_type": "schema_mismatch",
-      "original_format": "protobuf",
-      "fallback_used": false,
-      "fallback_format": "none",
-      "retry_attempts": 3,
-      "final_result": "failed"
+    metrics::Measurement::{
+      value: 75.2,
+      attributes: [
+        ("metric.type", common::AttributeValue::string("cpu.usage")),
+        ("unit", common::AttributeValue::string("percent"))
+      ]
     }
   ]
   
-  // 验证序列化错误场景
-  assert_eq(serialization_error_scenarios.length(), 4)
+  // 验证测量数据
+  assert_eq(counter_measurements.length(), 2)
+  assert_eq(histogram_measurements.length(), 3)
+  assert_eq(gauge_measurements.length(), 2)
   
-  // 测试错误处理机制
-  let mut successful_recoveries = 0
-  let mut partial_recoveries = 0
-  let mut total_failures = 0
-  let mut total_retry_attempts = 0
+  // 验证具体测量值
+  assert_eq(counter_measurements[0].value, 100.0)
+  assert_eq(histogram_measurements[1].value, 89.2)
+  assert_eq(gauge_measurements[0].value, 1024.0)
   
-  let mut i = 0
-  while i < serialization_error_scenarios.length() {
-    let scenario = serialization_error_scenarios[i]
-    total_retry_attempts = total_retry_attempts + scenario["retry_attempts"].to_int()
-    
-    if scenario["final_result"] == "success" {
-      successful_recoveries = successful_recoveries + 1
-    } else if scenario["final_result"] == "partial_success" {
-      partial_recoveries = partial_recoveries + 1
-    } else if scenario["final_result"] == "failed" {
-      total_failures = total_failures + 1
+  // 验证属性
+  assert_eq(counter_measurements[0].attributes.length(), 2)
+  assert_eq(histogram_measurements[0].attributes.length(), 2)
+  assert_eq(gauge_measurements[0].attributes.length(), 2)
+  
+  // 模拟指标序列化
+  let serialize_measurements = fn(measurements: Array[metrics::Measurement]) -> String {
+    let mut result = "["
+    let mut i = 0
+    while i < measurements.length() {
+      if i > 0 { result = result + "," }
+      let m = measurements[i]
+      result = result + "{\"value\":" + m.value.to_string() + ",\"attributes\":["
+      let mut j = 0
+      while j < m.attributes.length() {
+        if j > 0 { result = result + "," }
+        let attr = m.attributes[j]
+        result = result + "{\"key\":\"" + attr.0 + "\",\"value\":\""
+        result = result + match attr.1 {
+          common::StringValue(v) => "string:" + v
+          common::IntValue(v) => "int:" + v.to_string()
+          common::FloatValue(v) => "float:" + v.to_string()
+          common::BoolValue(v) => "bool:" + (if v { "true" } else { "false" })
+          _ => "unknown"
+        }
+        result = result + "\"}"
+        j = j + 1
+      }
+      result = result + "]}"
+      i = i + 1
     }
-    
-    // 验证重试次数不超过限制
-    let retry_within_limit = scenario["retry_attempts"].to_int() <= 
-                            error_handling_config["max_retry_attempts"].to_int()
-    assert_eq(retry_within_limit, true)
-    
-    i = i + 1
+    result = result + "]"
+    result
   }
   
-  // 验证错误处理统计
-  assert_eq(successful_recoveries, 2)  // 2个成功恢复
-  assert_eq(partial_recoveries, 1)     // 1个部分恢复
-  assert_eq(total_failures, 1)         // 1个完全失败
-  assert_eq(total_retry_attempts, 9)   // 2 + 1 + 3 + 3
+  // 序列化各类指标
+  let counter_json = serialize_measurements(counter_measurements)
+  let histogram_json = serialize_measurements(histogram_measurements)
+  let gauge_json = serialize_measurements(gauge_measurements)
   
-  // 计算恢复率
-  let total_scenarios = serialization_error_scenarios.length()
-  let recovery_rate = ((successful_recoveries + partial_recoveries) * 100) / total_scenarios
+  // 验证序列化结果
+  assert_eq(counter_json.contains("\"value\":100.0"), true)
+  assert_eq(counter_json.contains("\"value\":50.0"), true)
+  assert_eq(counter_json.contains("http.method"), true)
+  assert_eq(counter_json.contains("http.status_code"), true)
   
-  // 验证恢复率
-  assert_eq(recovery_rate, 75)  // (2 + 1)/4 * 100 = 75
-  assert_eq(recovery_rate >= 70, true)  // 恢复率至少70%
+  assert_eq(histogram_json.contains("\"value\":125.5"), true)
+  assert_eq(histogram_json.contains("\"value\":89.2"), true)
+  assert_eq(histogram_json.contains("\"value\":234.7"), true)
+  assert_eq(histogram_json.contains("database.query"), true)
+  assert_eq(histogram_json.contains("api.call"), true)
   
-  // 测试降级机制
-  let fallback_mechanism_test = {
-    "primary_format_failures": 15,
-    "fallback_activations": 12,
-    "fallback_success_rate": 80,
-    "most_used_fallback": "json",
-    "fallback_formats_used": ["json", "msgpack", "protobuf"]
-  }
+  assert_eq(gauge_json.contains("\"value\":1024.0"), true)
+  assert_eq(gauge_json.contains("\"value\":75.2"), true)
+  assert_eq(gauge_json.contains("memory.usage"), true)
+  assert_eq(gauge_json.contains("cpu.usage"), true)
   
-  // 验证降级机制测试
-  assert_eq(fallback_mechanism_test["primary_format_failures"], "15")
-  assert_eq(fallback_mechanism_test["fallback_activations"], "12")
-  assert_eq(fallback_mechanism_test["fallback_success_rate"], "80")
+  // 验证JSON格式正确性
+  assert_eq(counter_json.starts_with("["), true)
+  assert_eq(counter_json.ends_with("]"), true)
+  assert_eq(histogram_json.starts_with("["), true)
+  assert_eq(histogram_json.ends_with("]"), true)
+  assert_eq(gauge_json.starts_with("["), true)
+  assert_eq(gauge_json.ends_with("]"), true)
+}
+
+test "telemetry_resource_serialization" {
+  // 测试Resource序列化
   
-  // 检查降级激活率
-  let fallback_activation_rate = (fallback_mechanism_test["fallback_activations"].to_int() * 100) / 
-                                fallback_mechanism_test["primary_format_failures"].to_int()
+  let basic_resource = common::Resource::default("payment-service")
+  assert_eq(basic_resource.service_name, "payment-service")
+  assert_eq(basic_resource.telemetry_sdk_name, "azimuth")
+  assert_eq(basic_resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(basic_resource.service_version |> some |> is_none, true)
+  assert_eq(basic_resource.attributes.length(), 0)
   
-  // 验证降级激活率
-  assert_eq(fallback_activation_rate, 80)  // 12/15 * 100 = 80
-  assert_eq(fallback_activation_rate >= 70, true)  // 降级激活率至少70%
-  
-  // 检查降级成功率
-  let fallback_success_rate = fallback_mechanism_test["fallback_success_rate"].to_int()
-  assert_eq(fallback_success_rate >= 75, true)  // 降级成功率至少75%
-  
-  // 验证最常用的降级格式
-  assert_eq(fallback_mechanism_test["most_used_fallback"], "json")
-  assert_eq(fallback_mechanism_test["most_used_fallback"], error_handling_config["fallback_format"])
-  
-  // 测试部分序列化处理
-  let partial_serialization_test = {
-    "total_data_fields": 20,
-    "successfully_serialized": 17,
-    "failed_fields": 3,
-    "partial_result_accepted": true,
-    "data_loss_percent": 15
-  }
-  
-  // 验证部分序列化测试
-  assert_eq(partial_serialization_test["total_data_fields"], "20")
-  assert_eq(partial_serialization_test["successfully_serialized"], "17")
-  assert_eq(partial_serialization_test["failed_fields"], "3")
-  
-  // 检查数据丢失率
-  let data_loss_percent = partial_serialization_test["data_loss_percent"].to_int()
-  let calculated_data_loss = (partial_serialization_test["failed_fields"].to_int() * 100) / 
-                            partial_serialization_test["total_data_fields"].to_int()
-  
-  // 验证数据丢失率
-  assert_eq(calculated_data_loss, 15)  // 3/20 * 100 = 15
-  assert_eq(data_loss_percent, calculated_data_loss)
-  assert_eq(data_loss_percent <= 25, true)  // 数据丢失率不超过25%
-  
-  // 检查部分序列化是否被接受
-  let partial_serialization_allowed = error_handling_config["partial_serialization_allowed"] == "true"
-  let partial_result_accepted = partial_serialization_test["partial_result_accepted"] == "true"
-  
-  // 验证部分序列化处理
-  if partial_serialization_allowed {
-    assert_eq(partial_result_accepted, true)  // 如果允许部分序列化，结果应该被接受
-  }
-  
-  // 测试错误日志记录
-  let error_logging_test = {
-    "serialization_errors": 8,
-    "errors_logged": 8,
-    "log_entries_sample": [
-      {"timestamp": 1703123450, "error_type": "invalid_data_type", "severity": "warning"},
-      {"timestamp": 1703123451, "error_type": "data_too_large", "severity": "warning"},
-      {"timestamp": 1703123452, "error_type": "circular_reference", "severity": "error"}
+  let enhanced_resource = common::Resource::{
+    service_name: "user-service",
+    service_version: Some("2.1.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("service.instance.id", common::AttributeValue::string("instance-001")),
+      ("deployment.environment", common::AttributeValue::string("production")),
+      ("host.name", common::AttributeValue::string("web-server-01")),
+      ("process.pid", common::AttributeValue::int(12345L)),
+      ("process.command", common::AttributeValue::string("/usr/bin/node")),
+      ("availability.zone", common::AttributeValue::string("us-west-2a")),
+      ("cloud.provider", common::AttributeValue::string("aws")),
+      ("cloud.region", common::AttributeValue::string("us-west-2")),
+      ("kubernetes.namespace", common::AttributeValue::string("default")),
+      ("kubernetes.pod.name", common::AttributeValue::string("user-service-7d4f8c9b-xyz"))
     ]
   }
   
-  // 验证错误日志测试
-  assert_eq(error_logging_test["serialization_errors"], "8")
-  assert_eq(error_logging_test["errors_logged"], "8")
-  assert_eq(error_logging_test["log_entries_sample"].length(), 3)
+  // 验证增强资源
+  assert_eq(enhanced_resource.service_name, "user-service")
+  assert_eq(enhanced_resource.service_version |> some, "2.1.0")
+  assert_eq(enhanced_resource.attributes.length(), 10)
   
-  // 检查错误日志记录率
-  let logging_rate = (error_logging_test["errors_logged"].to_int() * 100) / 
-                    error_logging_test["serialization_errors"].to_int()
+  // 验证特定属性
+  assert_eq(enhanced_resource.attributes[0].0, "service.instance.id")
+  assert_eq(enhanced_resource.attributes[0].1 |> common::AttributeValue::string_value |> some, "instance-001")
+  assert_eq(enhanced_resource.attributes[3].0, "process.pid")
+  assert_eq(enhanced_resource.attributes[3].1 |> common::AttributeValue::int_value |> some, 12345L)
   
-  // 验证错误日志记录率
-  assert_eq(logging_rate, 100)  // 8/8 * 100 = 100
-  assert_eq(logging_rate >= 95, true)  // 错误日志记录率至少95%
-  
-  // 检查日志条目完整性
-  let mut i = 0
-  while i < error_logging_test["log_entries_sample"].length() {
-    let log_entry = error_logging_test["log_entries_sample"][i]
+  // 模拟Resource序列化
+  let serialize_resource = fn(resource: common::Resource) -> String {
+    let mut result = "{"
+    result = result + "\"service_name\":\"" + resource.service_name + "\"," 
+    result = result + "\"telemetry_sdk_name\":\"" + resource.telemetry_sdk_name + "\"," 
+    result = result + "\"telemetry_sdk_version\":\"" + resource.telemetry_sdk_version + "\"," 
     
-    // 验证每个日志条目的必要字段
-    assert_eq(log_entry.contains_key("timestamp"), true)
-    assert_eq(log_entry.contains_key("error_type"), true)
-    assert_eq(log_entry.contains_key("severity"), true)
+    match resource.service_version {
+      Some(version) => result = result + "\"service_version\":\"" + version + "\"," 
+      None => result = result + "\"service_version\":null," 
+    }
     
-    // 验证字段值不为空
-    assert_eq(log_entry["timestamp"] != "", true)
-    assert_eq(log_entry["error_type"] != "", true)
-    assert_eq(log_entry["severity"] != "", true)
-    
-    i = i + 1
+    result = result + "\"attributes\":["
+    let mut i = 0
+    while i < resource.attributes.length() {
+      if i > 0 { result = result + "," }
+      let attr = resource.attributes[i]
+      result = result + "{\"key\":\"" + attr.0 + "\",\"value\":\""
+      result = result + match attr.1 {
+        common::StringValue(v) => "string:" + v
+        common::IntValue(v) => "int:" + v.to_string()
+        common::FloatValue(v) => "float:" + v.to_string()
+        common::BoolValue(v) => "bool:" + (if v { "true" } else { "false" })
+        _ => "unknown"
+      }
+      result = result + "\"}"
+      i = i + 1
+    }
+    result = result + "]}"
+    result
   }
   
-  // 检查错误日志是否启用
-  let error_log_enabled = error_handling_config["error_log_enabled"] == "true"
-  if error_log_enabled {
-    assert_eq(error_logging_test["errors_logged"] > 0, true)  // 如果启用了错误日志，应该有日志记录
-  }
+  // 序列化资源
+  let basic_json = serialize_resource(basic_resource)
+  let enhanced_json = serialize_resource(enhanced_resource)
+  
+  // 验证基本资源序列化
+  assert_eq(basic_json.contains("\"service_name\":\"payment-service\""), true)
+  assert_eq(basic_json.contains("\"telemetry_sdk_name\":\"azimuth\""), true)
+  assert_eq(basic_json.contains("\"telemetry_sdk_version\":\"0.1.0\""), true)
+  assert_eq(basic_json.contains("\"service_version\":null"), true)
+  assert_eq(basic_json.contains("\"attributes\":[]"), true)
+  
+  // 验证增强资源序列化
+  assert_eq(enhanced_json.contains("\"service_name\":\"user-service\""), true)
+  assert_eq(enhanced_json.contains("\"service_version\":\"2.1.0\""), true)
+  assert_eq(enhanced_json.contains("\"attributes\":[{"), true)
+  assert_eq(enhanced_json.contains("service.instance.id"), true)
+  assert_eq(enhanced_json.contains("deployment.environment"), true)
+  assert_eq(enhanced_json.contains("kubernetes.pod.name"), true)
+  
+  // 验证属性数量
+  let basic_attr_count = basic_json.split("\"key\"").length() - 1
+  let enhanced_attr_count = enhanced_json.split("\"key\"").length() - 1
+  assert_eq(basic_attr_count, 0)
+  assert_eq(enhanced_attr_count, 10)
 }

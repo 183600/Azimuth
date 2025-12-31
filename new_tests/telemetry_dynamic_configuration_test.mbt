@@ -1,516 +1,609 @@
 // 遥测动态配置测试用例
 
 test "telemetry_config_hot_reload" {
-  // 测试遥测配置热重载功能
+  // 测试遥测配置热重载
   
-  let config_version = "1.2.0"
-  let reload_interval_seconds = 30
-  let config_change_detection = "file_watch"
+  // 定义配置数据结构
+  type TelemetryConfig = {
+    sampling_rate: Double,
+    batch_size: Int,
+    flush_interval_ms: Int64,
+    enable_compression: Bool,
+    export_timeout_ms: Int64,
+    max_queue_size: Int,
+    retry_count: Int,
+    backoff_multiplier: Double
+  }
   
-  // 验证热重载配置
-  assert_eq(config_version, "1.2.0")
-  assert_eq(reload_interval_seconds, 30)
-  assert_eq(config_change_detection, "file_watch")
+  // 初始配置
+  let initial_config = TelemetryConfig {
+    sampling_rate: 0.1,
+    batch_size: 100,
+    flush_interval_ms: 5000L,
+    enable_compression: true,
+    export_timeout_ms: 10000L,
+    max_queue_size: 1000,
+    retry_count: 3,
+    backoff_multiplier: 2.0
+  }
   
-  // 模拟配置文件变化
-  let config_changes = [
-    {
-      "timestamp": 1703123450,
-      "section": "sampling",
-      "key": "rate",
-      "old_value": "0.1",
-      "new_value": "0.2"
-    },
-    {
-      "timestamp": 1703123480,
-      "section": "buffer",
-      "key": "size",
-      "old_value": "1000",
-      "new_value": "1500"
-    },
-    {
-      "timestamp": 1703123510,
-      "section": "export",
-      "key": "endpoint",
-      "old_value": "http://old-endpoint",
-      "new_value": "http://new-endpoint"
-    }
-  ]
+  // 验证初始配置
+  assert_eq(initial_config.sampling_rate, 0.1)
+  assert_eq(initial_config.batch_size, 100)
+  assert_eq(initial_config.flush_interval_ms, 5000L)
+  assert_eq(initial_config.enable_compression, true)
+  assert_eq(initial_config.export_timeout_ms, 10000L)
+  assert_eq(initial_config.max_queue_size, 1000)
+  assert_eq(initial_config.retry_count, 3)
+  assert_eq(initial_config.backoff_multiplier, 2.0)
   
-  // 验证配置变化
+  // 配置变更历史
+  type ConfigChange = {
+    timestamp: Int64,
+    field_name: String,
+    old_value: String,
+    new_value: String,
+    change_reason: String
+  }
+  
+  let mut config_changes = []
+  
+  // 模拟配置变更1: 提高采样率
+  let updated_config_1 = TelemetryConfig {
+    sampling_rate: 0.5,  // 从0.1提高到0.5
+    batch_size: initial_config.batch_size,
+    flush_interval_ms: initial_config.flush_interval_ms,
+    enable_compression: initial_config.enable_compression,
+    export_timeout_ms: initial_config.export_timeout_ms,
+    max_queue_size: initial_config.max_queue_size,
+    retry_count: initial_config.retry_count,
+    backoff_multiplier: initial_config.backoff_multiplier
+  }
+  
+  // 记录变更
+  config_changes.push(ConfigChange {
+    timestamp: 1640995200,
+    field_name: "sampling_rate",
+    old_value: initial_config.sampling_rate.to_string(),
+    new_value: updated_config_1.sampling_rate.to_string(),
+    change_reason: "High traffic period - increase sampling for better observability"
+  })
+  
+  // 验证第一次变更
+  assert_eq(updated_config_1.sampling_rate, 0.5)
+  assert_eq(updated_config_1.batch_size, 100)  // 其他字段保持不变
+  
+  // 模拟配置变更2: 增加批处理大小
+  let updated_config_2 = TelemetryConfig {
+    sampling_rate: updated_config_1.sampling_rate,
+    batch_size: 500,  // 从100增加到500
+    flush_interval_ms: updated_config_1.flush_interval_ms,
+    enable_compression: updated_config_1.enable_compression,
+    export_timeout_ms: updated_config_1.export_timeout_ms,
+    max_queue_size: updated_config_1.max_queue_size,
+    retry_count: updated_config_1.retry_count,
+    backoff_multiplier: updated_config_1.backoff_multiplier
+  }
+  
+  // 记录变更
+  config_changes.push(ConfigChange {
+    timestamp: 1640995300,
+    field_name: "batch_size",
+    old_value: updated_config_1.batch_size.to_string(),
+    new_value: updated_config_2.batch_size.to_string(),
+    change_reason: "Optimize for high throughput - increase batch size"
+  })
+  
+  // 验证第二次变更
+  assert_eq(updated_config_2.sampling_rate, 0.5)  // 保持之前的变更
+  assert_eq(updated_config_2.batch_size, 500)
+  
+  // 模拟配置变更3: 禁用压缩
+  let updated_config_3 = TelemetryConfig {
+    sampling_rate: updated_config_2.sampling_rate,
+    batch_size: updated_config_2.batch_size,
+    flush_interval_ms: updated_config_2.flush_interval_ms,
+    enable_compression: false,  // 从true改为false
+    export_timeout_ms: updated_config_2.export_timeout_ms,
+    max_queue_size: updated_config_2.max_queue_size,
+    retry_count: updated_config_2.retry_count,
+    backoff_multiplier: updated_config_2.backoff_multiplier
+  }
+  
+  // 记录变更
+  config_changes.push(ConfigChange {
+    timestamp: 1640995400,
+    field_name: "enable_compression",
+    old_value: updated_config_2.enable_compression.to_string(),
+    new_value: updated_config_3.enable_compression.to_string(),
+    change_reason: "CPU constraints - disable compression to reduce overhead"
+  })
+  
+  // 验证第三次变更
+  assert_eq(updated_config_3.sampling_rate, 0.5)
+  assert_eq(updated_config_3.batch_size, 500)
+  assert_eq(updated_config_3.enable_compression, false)
+  
+  // 验证变更历史
   assert_eq(config_changes.length(), 3)
-  assert_eq(config_changes[0].section, "sampling")
-  assert_eq(config_changes[0].new_value, "0.2")
+  assert_eq(config_changes[0].field_name, "sampling_rate")
+  assert_eq(config_changes[1].field_name, "batch_size")
+  assert_eq(config_changes[2].field_name, "enable_compression")
   
-  // 模拟配置重载过程
-  let mut current_config = {
-    "sampling.rate": "0.1",
-    "buffer.size": "1000",
-    "export.endpoint": "http://old-endpoint",
-    "version": "1.1.0"
-  }
+  // 验证变更值
+  assert_eq(config_changes[0].old_value, "0.1")
+  assert_eq(config_changes[0].new_value, "0.5")
+  assert_eq(config_changes[1].old_value, "100")
+  assert_eq(config_changes[1].new_value, "500")
+  assert_eq(config_changes[2].old_value, "true")
+  assert_eq(config_changes[2].new_value, "false")
   
-  let mut reload_history = []
-  let mut i = 0
+  // 验证变更时间戳递增
+  assert_eq(config_changes[1].timestamp > config_changes[0].timestamp, true)
+  assert_eq(config_changes[2].timestamp > config_changes[1].timestamp, true)
   
-  while i < config_changes.length() {
-    let change = config_changes[i]
-    let config_key = change.section + "." + change.key
-    
-    // 检查配置是否真的发生了变化
-    let config_changed = current_config[config_key] != change.new_value
-    
-    if config_changed {
-      // 应用新配置
-      let old_value = current_config[config_key]
-      current_config[config_key] = change.new_value
-      current_config["version"] = config_version
-      
-      // 记录重载历史
-      reload_history.push({
-        "timestamp": change.timestamp,
-        "key": config_key,
-        "old_value": old_value,
-        "new_value": change.new_value,
-        "success": true
-      })
+  // 模拟配置验证
+  let validate_config = fn(config: TelemetryConfig) -> Bool {
+    // 采样率必须在0-1之间
+    if config.sampling_rate < 0.0 or config.sampling_rate > 1.0 {
+      return false
     }
     
-    i = i + 1
-  }
-  
-  // 验证配置重载结果
-  assert_eq(reload_history.length(), 3)
-  assert_eq(current_config["sampling.rate"], "0.2")
-  assert_eq(current_config["buffer.size"], "1500")
-  assert_eq(current_config["export.endpoint"], "http://new-endpoint")
-  assert_eq(current_config["version"], config_version)
-  
-  // 验证重载历史记录
-  i = 0
-  while i < reload_history.length() {
-    let history = reload_history[i]
-    assert_eq(history.success, true)
-    assert_eq(history.old_value != history.new_value, true)
-    i = i + 1
-  }
-  
-  // 测试配置验证
-  let validation_rules = [
-    {"key": "sampling.rate", "type": "float", "min": "0.0", "max": "1.0"},
-    {"key": "buffer.size", "type": "int", "min": "100", "max": "10000"},
-    {"key": "export.endpoint", "type": "url", "pattern": "http.*"}
-  ]
-  
-  // 验证配置规则
-  assert_eq(validation_rules.length(), 3)
-  
-  // 验证当前配置是否符合规则
-  i = 0
-  while i < validation_rules.length() {
-    let rule = validation_rules[i]
-    let key = rule.key
-    let config_value = current_config[key]
-    let mut is_valid = true
-    
-    if rule.type == "float" {
-      let value = config_value.to_float()
-      is_valid = value >= rule.min.to_float() and value <= rule.max.to_float()
-    } else if rule.type == "int" {
-      let value = config_value.to_int()
-      is_valid = value >= rule.min.to_int() and value <= rule.max.to_int()
-    } else if rule.type == "url" {
-      is_valid = config_value.starts_with("http")
+    // 批处理大小必须在1-10000之间
+    if config.batch_size < 1 or config.batch_size > 10000 {
+      return false
     }
     
-    assert_eq(is_valid, true)
-    i = i + 1
-  }
-}
-
-test "telemetry_config_rollback" {
-  // 测试遥测配置回滚功能
-  
-  let backup_retention_count = 5
-  let rollback_timeout_seconds = 60
-  let health_check_interval_seconds = 10
-  
-  // 验证回滚配置
-  assert_eq(backup_retention_count, 5)
-  assert_eq(rollback_timeout_seconds, 60)
-  assert_eq(health_check_interval_seconds, 10)
-  
-  // 模拟配置历史备份
-  let config_history = [
-    {
-      "version": "1.0.0",
-      "timestamp": 1703123300,
-      "config": {"sampling.rate": "0.1", "buffer.size": "1000"}
-    },
-    {
-      "version": "1.1.0", 
-      "timestamp": 1703123360,
-      "config": {"sampling.rate": "0.15", "buffer.size": "1200"}
-    },
-    {
-      "version": "1.2.0",
-      "timestamp": 1703123420,
-      "config": {"sampling.rate": "0.2", "buffer.size": "1500"}
-    }
-  ]
-  
-  // 验证配置历史
-  assert_eq(config_history.length(), 3)
-  assert_eq(config_history[0].version, "1.0.0")
-  assert_eq(config_history[2].version, "1.2.0")
-  
-  // 模拟配置更新失败场景
-  let failed_config_update = {
-    "version": "1.3.0",
-    "timestamp": 1703123480,
-    "config": {"sampling.rate": "invalid_value", "buffer.size": "2000"}
-  }
-  
-  // 验证失败配置
-  assert_eq(failed_config_update.version, "1.3.0")
-  assert_eq(failed_config_update.config["sampling.rate"], "invalid_value")
-  
-  // 模拟配置验证失败
-  let config_validation_failed = true
-  let should_rollback = config_validation_failed
-  
-  // 验证回滚触发条件
-  assert_eq(should_rollback, true)
-  
-  // 执行回滚操作
-  let mut rollback_success = false
-  let mut rollback_version = ""
-  
-  if should_rollback and config_history.length() > 0 {
-    // 回滚到上一个稳定版本
-    let last_stable_config = config_history[config_history.length() - 1]
-    rollback_version = last_stable_config.version
-    rollback_success = true
-  }
-  
-  // 验证回滚结果
-  assert_eq(rollback_success, true)
-  assert_eq(rollback_version, "1.2.0")
-  
-  // 验证回滚后的配置
-  let rolled_back_config = config_history[config_history.length() - 1].config
-  assert_eq(rolled_back_config["sampling.rate"], "0.2")
-  assert_eq(rolled_back_config["buffer.size"], "1500")
-  
-  // 测试健康检查驱动的回滚
-  let health_metrics = [
-    {"timestamp": 1703123490, "cpu_usage": 95, "memory_usage": 90},  // 高负载
-    {"timestamp": 1703123500, "cpu_usage": 98, "memory_usage": 92},  // 持续高负载
-    {"timestamp": 1703123510, "cpu_usage": 99, "memory_usage": 95}   // 极高负载
-  ]
-  
-  // 验证健康指标
-  assert_eq(health_metrics.length(), 3)
-  
-  // 检查是否需要基于健康指标回滚
-  let health_threshold = {"cpu": 90, "memory": 85}
-  let mut consecutive_unhealthy_count = 0
-  let mut i = 0
-  
-  while i < health_metrics.length() {
-    let metric = health_metrics[i]
-    let cpu_unhealthy = metric.cpu_usage > health_threshold.cpu
-    let memory_unhealthy = metric.memory_usage > health_threshold.memory
-    
-    if cpu_unhealthy or memory_unhealthy {
-      consecutive_unhealthy_count = consecutive_unhealthy_count + 1
+    // 刷新间隔必须大于0
+    if config.flush_interval_ms <= 0L {
+      return false
     }
     
-    i = i + 1
+    // 导出超时必须大于刷新间隔
+    if config.export_timeout_ms <= config.flush_interval_ms {
+      return false
+    }
+    
+    // 队列大小必须大于批处理大小
+    if config.max_queue_size <= config.batch_size {
+      return false
+    }
+    
+    // 重试次数必须非负
+    if config.retry_count < 0 {
+      return false
+    }
+    
+    // 退避倍数必须大于等于1
+    if config.backoff_multiplier < 1.0 {
+      return false
+    }
+    
+    true
   }
   
-  // 验证健康检查结果
-  assert_eq(consecutive_unhealthy_count, 3)
+  // 验证所有配置
+  assert_eq(validate_config(initial_config), true)
+  assert_eq(validate_config(updated_config_1), true)
+  assert_eq(validate_config(updated_config_2), true)
+  assert_eq(validate_config(updated_config_3), true)
   
-  // 基于健康检查决定是否回滚
-  let health_based_rollback_needed = consecutive_unhealthy_count >= 3
-  assert_eq(health_based_rollback_needed, true)
-  
-  // 执行健康检查驱动的回滚
-  let mut health_rollback_version = ""
-  if health_based_rollback_needed {
-    health_rollback_version = config_history[config_history.length() - 2].version  // 回滚到更早版本
+  // 测试无效配置
+  let invalid_config_1 = TelemetryConfig {
+    sampling_rate: -0.1,  // 无效：负采样率
+    batch_size: 100,
+    flush_interval_ms: 5000L,
+    enable_compression: true,
+    export_timeout_ms: 10000L,
+    max_queue_size: 1000,
+    retry_count: 3,
+    backoff_multiplier: 2.0
   }
   
-  assert_eq(health_rollback_version, "1.1.0")
+  let invalid_config_2 = TelemetryConfig {
+    sampling_rate: 0.5,
+    batch_size: 0,  // 无效：批处理大小为0
+    flush_interval_ms: 5000L,
+    enable_compression: true,
+    export_timeout_ms: 10000L,
+    max_queue_size: 1000,
+    retry_count: 3,
+    backoff_multiplier: 2.0
+  }
+  
+  // 验证无效配置被拒绝
+  assert_eq(validate_config(invalid_config_1), false)
+  assert_eq(validate_config(invalid_config_2), false)
 }
 
 test "telemetry_config_environment_override" {
-  // 测试遥测配置环境变量覆盖
+  // 测试环境变量配置覆盖
   
-  let base_config = {
-    "sampling.rate": "0.1",
-    "buffer.size": "1000",
-    "export.endpoint": "http://default-endpoint",
-    "log.level": "INFO"
+  // 定义配置层次结构
+  type ConfigLayer = {
+    name: String,
+    priority: Int,
+    config: TelemetryConfig
   }
   
-  let environment_overrides = [
-    {"env_var": "TELEMETRY_SAMPLING_RATE", "config_key": "sampling.rate", "value": "0.3"},
-    {"env_var": "TELEMETRY_BUFFER_SIZE", "config_key": "buffer.size", "value": "2000"},
-    {"env_var": "TELEMETRY_LOG_LEVEL", "config_key": "log.level", "value": "DEBUG"}
+  // 基础配置（最低优先级）
+  let base_config = TelemetryConfig {
+    sampling_rate: 0.1,
+    batch_size: 100,
+    flush_interval_ms: 5000L,
+    enable_compression: true,
+    export_timeout_ms: 10000L,
+    max_queue_size: 1000,
+    retry_count: 3,
+    backoff_multiplier: 2.0
+  }
+  
+  // 环境配置（中等优先级）
+  let env_config = TelemetryConfig {
+    sampling_rate: 0.3,  // 环境覆盖
+    batch_size: base_config.batch_size,
+    flush_interval_ms: base_config.flush_interval_ms,
+    enable_compression: base_config.enable_compression,
+    export_timeout_ms: base_config.export_timeout_ms,
+    max_queue_size: base_config.max_queue_size,
+    retry_count: base_config.retry_count,
+    backoff_multiplier: base_config.backoff_multiplier
+  }
+  
+  // 运行时配置（最高优先级）
+  let runtime_config = TelemetryConfig {
+    sampling_rate: env_config.sampling_rate,
+    batch_size: 200,  // 运行时覆盖
+    flush_interval_ms: env_config.flush_interval_ms,
+    enable_compression: env_config.enable_compression,
+    export_timeout_ms: env_config.export_timeout_ms,
+    max_queue_size: env_config.max_queue_size,
+    retry_count: env_config.retry_count,
+    backoff_multiplier: env_config.backoff_multiplier
+  }
+  
+  // 配置层次
+  let config_layers = [
+    ConfigLayer { name: "base", priority: 1, config: base_config },
+    ConfigLayer { name: "environment", priority: 2, config: env_config },
+    ConfigLayer { name: "runtime", priority: 3, config: runtime_config }
   ]
   
-  // 验证基础配置
-  assert_eq(base_config["sampling.rate"], "0.1")
-  assert_eq(base_config["buffer.size"], "1000")
-  assert_eq(base_config["export.endpoint"], "http://default-endpoint")
-  assert_eq(base_config["log.level"], "INFO")
+  // 验证配置层次
+  assert_eq(config_layers.length(), 3)
+  assert_eq(config_layers[0].priority, 1)
+  assert_eq(config_layers[1].priority, 2)
+  assert_eq(config_layers[2].priority, 3)
   
-  // 验证环境覆盖配置
-  assert_eq(environment_overrides.length(), 3)
-  assert_eq(environment_overrides[0].env_var, "TELEMETRY_SAMPLING_RATE")
-  assert_eq(environment_overrides[0].config_key, "sampling.rate")
-  
-  // 应用环境变量覆盖
-  let mut final_config = base_config
-  let mut applied_overrides = []
-  
+  // 按优先级排序配置层
+  let mut sorted_layers = config_layers
+  // 简单的冒泡排序
   let mut i = 0
-  while i < environment_overrides.length() {
-    let override_config = environment_overrides[i]
-    let config_key = override_config.config_key
-    let override_value = override_config.value
+  while i < sorted_layers.length() {
+    let mut j = 0
+    while j < sorted_layers.length() - i - 1 {
+      if sorted_layers[j].priority > sorted_layers[j + 1].priority {
+        let temp = sorted_layers[j]
+        sorted_layers[j] = sorted_layers[j + 1]
+        sorted_layers[j + 1] = temp
+      }
+      j = j + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证排序结果
+  assert_eq(sorted_layers[0].name, "base")
+  assert_eq(sorted_layers[1].name, "environment")
+  assert_eq(sorted_layers[2].name, "runtime")
+  
+  // 合并配置（高优先级覆盖低优先级）
+  let merge_configs = fn(layers: Array[ConfigLayer]) -> TelemetryConfig {
+    let mut result = layers[0].config
     
-    // 检查环境变量是否存在（简化：假设都存在）
-    let env_var_exists = true
-    
-    if env_var_exists {
-      let original_value = final_config[config_key]
-      final_config[config_key] = override_value
+    let mut i = 1
+    while i < layers.length() {
+      let layer = layers[i].config
       
-      applied_overrides.push({
-        "env_var": override_config.env_var,
-        "config_key": config_key,
-        "original_value": original_value,
-        "override_value": override_value
-      })
+      // 只有非默认值才覆盖
+      if layer.sampling_rate != 0.1 {  // 假设0.1是默认值
+        result.sampling_rate = layer.sampling_rate
+      }
+      
+      if layer.batch_size != 100 {  // 假设100是默认值
+        result.batch_size = layer.batch_size
+      }
+      
+      if layer.flush_interval_ms != 5000L {  // 假设5000是默认值
+        result.flush_interval_ms = layer.flush_interval_ms
+      }
+      
+      if layer.enable_compression != true {  // 假设true是默认值
+        result.enable_compression = layer.enable_compression
+      }
+      
+      if layer.export_timeout_ms != 10000L {  // 假设10000是默认值
+        result.export_timeout_ms = layer.export_timeout_ms
+      }
+      
+      if layer.max_queue_size != 1000 {  // 假设1000是默认值
+        result.max_queue_size = layer.max_queue_size
+      }
+      
+      if layer.retry_count != 3 {  // 假设3是默认值
+        result.retry_count = layer.retry_count
+      }
+      
+      if layer.backoff_multiplier != 2.0 {  // 假设2.0是默认值
+        result.backoff_multiplier = layer.backoff_multiplier
+      }
+      
+      i = i + 1
     }
     
-    i = i + 1
+    result
   }
   
-  // 验证覆盖结果
-  assert_eq(applied_overrides.length(), 3)
-  assert_eq(final_config["sampling.rate"], "0.3")  // 被覆盖
-  assert_eq(final_config["buffer.size"], "2000")   // 被覆盖
-  assert_eq(final_config["log.level"], "DEBUG")    // 被覆盖
-  assert_eq(final_config["export.endpoint"], "http://default-endpoint")  // 未覆盖
+  // 合并配置
+  let merged_config = merge_configs(sorted_layers)
   
-  // 验证覆盖记录
-  i = 0
-  while i < applied_overrides.length() {
-    let override = applied_overrides[i]
-    assert_eq(override.original_value != override.override_value, true)
-    i = i + 1
+  // 验证合并结果
+  assert_eq(merged_config.sampling_rate, 0.3)  // 来自环境配置
+  assert_eq(merged_config.batch_size, 200)     // 来自运行时配置
+  assert_eq(merged_config.flush_interval_ms, 5000L)  // 来自基础配置
+  assert_eq(merged_config.enable_compression, true)   // 来自基础配置
+  
+  // 验证配置来源追踪
+  type ConfigSource = {
+    field_name: String,
+    value: String,
+    source_layer: String
   }
   
-  // 测试配置优先级
-  let config_priority_order = [
-    "environment_variables",
-    "command_line_arguments", 
-    "config_file",
-    "default_values"
-  ]
+  let mut config_sources = []
   
-  // 验证优先级顺序
-  assert_eq(config_priority_order.length(), 4)
-  assert_eq(config_priority_order[0], "environment_variables")
+  // 追踪配置来源
+  config_sources.push(ConfigSource {
+    field_name: "sampling_rate",
+    value: merged_config.sampling_rate.to_string(),
+    source_layer: "environment"
+  })
   
-  // 模拟多级配置覆盖
-  let cli_overrides = [
-    {"config_key": "buffer.size", "value": "2500"},
-    {"config_key": "export.endpoint", "value": "http://cli-endpoint"}
-  ]
+  config_sources.push(ConfigSource {
+    field_name: "batch_size",
+    value: merged_config.batch_size.to_string(),
+    source_layer: "runtime"
+  })
   
-  // 应用CLI覆盖（优先级高于环境变量）
-  i = 0
-  while i < cli_overrides.length() {
-    let cli_override = cli_overrides[i]
-    final_config[cli_override.config_key] = cli_override.value
-    i = i + 1
-  }
+  config_sources.push(ConfigSource {
+    field_name: "flush_interval_ms",
+    value: merged_config.flush_interval_ms.to_string(),
+    source_layer: "base"
+  })
   
-  // 验证最终配置优先级
-  assert_eq(final_config["sampling.rate"], "0.3")        // 环境变量覆盖
-  assert_eq(final_config["buffer.size"], "2500")         // CLI覆盖（优先级最高）
-  assert_eq(final_config["export.endpoint"], "http://cli-endpoint")  // CLI覆盖
-  assert_eq(final_config["log.level"], "DEBUG")          // 环境变量覆盖
+  // 验证配置来源
+  assert_eq(config_sources.length(), 3)
+  assert_eq(config_sources[0].source_layer, "environment")
+  assert_eq(config_sources[1].source_layer, "runtime")
+  assert_eq(config_sources[2].source_layer, "base")
   
-  // 验证优先级应用逻辑
-  let mut override_sources = {}
-  override_sources["sampling.rate"] = "environment_variables"
-  override_sources["buffer.size"] = "command_line_arguments"
-  override_sources["export.endpoint"] = "command_line_arguments"
-  override_sources["log.level"] = "environment_variables"
+  // 生成配置层次报告
+  let hierarchy_report = "Configuration Hierarchy Report:\n"
+    + "Base Layer (Priority 1):\n"
+    + "  - sampling_rate: " + base_config.sampling_rate.to_string() + "\n"
+    + "  - batch_size: " + base_config.batch_size.to_string() + "\n"
+    + "Environment Layer (Priority 2):\n"
+    + "  - sampling_rate: " + env_config.sampling_rate.to_string() + " (override)\n"
+    + "Runtime Layer (Priority 3):\n"
+    + "  - batch_size: " + runtime_config.batch_size.to_string() + " (override)\n"
+    + "Merged Configuration:\n"
+    + "  - sampling_rate: " + merged_config.sampling_rate.to_string() + " (from environment)\n"
+    + "  - batch_size: " + merged_config.batch_size.to_string() + " (from runtime)\n"
+    + "  - flush_interval_ms: " + merged_config.flush_interval_ms.to_string() + " (from base)"
   
-  // 检查优先级顺序是否正确
-  let env_priority = config_priority_order.index_of("environment_variables")
-  let cli_priority = config_priority_order.index_of("command_line_arguments")
-  
-  assert_eq(cli_priority < env_priority, true)  // CLI优先级更高
+  // 验证报告内容
+  assert_eq(hierarchy_report.contains("Base Layer (Priority 1)"), true)
+  assert_eq(hierarchy_report.contains("Environment Layer (Priority 2)"), true)
+  assert_eq(hierarchy_report.contains("Runtime Layer (Priority 3)"), true)
+  assert_eq(hierarchy_report.contains("Merged Configuration:"), true)
+  assert_eq(hierarchy_report.contains("from environment"), true)
+  assert_eq(hierarchy_report.contains("from runtime"), true)
+  assert_eq(hierarchy_report.contains("from base"), true)
 }
 
-test "telemetry_config_validation_schema" {
-  // 测试遥测配置模式验证
+test "telemetry_config_a_b_testing" {
+  // 测试配置A/B测试
   
-  let config_schema = {
-    "type": "object",
-    "properties": {
-      "sampling": {
-        "type": "object",
-        "properties": {
-          "rate": {"type": "number", "minimum": 0.0, "maximum": 1.0},
-          "strategy": {"type": "string", "enum": ["probability", "fixed", "adaptive"]}
-        },
-        "required": ["rate"]
-      },
-      "buffer": {
-        "type": "object", 
-        "properties": {
-          "size": {"type": "integer", "minimum": 100, "maximum": 10000},
-          "flush_interval": {"type": "integer", "minimum": 1, "maximum": 300}
-        },
-        "required": ["size"]
-      },
-      "export": {
-        "type": "object",
-        "properties": {
-          "endpoint": {"type": "string", "pattern": "^https?://.*"},
-          "format": {"type": "string", "enum": ["json", "protobuf", "avro"]}
-        },
-        "required": ["endpoint"]
-      }
-    },
-    "required": ["sampling", "buffer"]
+  // 定义实验配置
+  type ExperimentConfig = {
+    experiment_id: String,
+    experiment_name: String,
+    traffic_split_percentage: Int,
+    config_variant: TelemetryConfig
   }
   
-  // 验证配置模式结构
-  assert_eq(config_schema.type, "object")
-  assert_eq(config_schema.required.length(), 2)  // sampling和buffer是必需的
+  // 控制组配置（A组）
+  let control_config = TelemetryConfig {
+    sampling_rate: 0.1,
+    batch_size: 100,
+    flush_interval_ms: 5000L,
+    enable_compression: true,
+    export_timeout_ms: 10000L,
+    max_queue_size: 1000,
+    retry_count: 3,
+    backoff_multiplier: 2.0
+  }
   
-  // 测试有效配置
-  let valid_config = {
-    "sampling": {
-      "rate": 0.1,
-      "strategy": "probability"
-    },
-    "buffer": {
-      "size": 1000,
-      "flush_interval": 30
-    },
-    "export": {
-      "endpoint": "https://telemetry.example.com",
-      "format": "json"
+  // 实验组配置（B组）
+  let experiment_config_variant = TelemetryConfig {
+    sampling_rate: 0.2,  // 提高采样率
+    batch_size: 200,     // 增加批处理大小
+    flush_interval_ms: 3000L,  // 减少刷新间隔
+    enable_compression: true,
+    export_timeout_ms: 8000L,   // 减少超时时间
+    max_queue_size: 1500,       // 增加队列大小
+    retry_count: 2,             // 减少重试次数
+    backoff_multiplier: 1.5     // 减少退避倍数
+  }
+  
+  // 定义实验
+  let experiments = [
+    ExperimentConfig {
+      experiment_id: "exp-001",
+      experiment_name: "high_sampling_experiment",
+      traffic_split_percentage: 50,  // 50%流量
+      config_variant: experiment_config_variant
     }
+  ]
+  
+  // 验证实验配置
+  assert_eq(experiments.length(), 1)
+  assert_eq(experiments[0].experiment_id, "exp-001")
+  assert_eq(experiments[0].traffic_split_percentage, 50)
+  
+  // 模拟请求分配
+  type RequestAssignment = {
+    request_id: String,
+    assigned_group: String,
+    config: TelemetryConfig
   }
   
-  // 验证有效配置
-  assert_eq(valid_config.sampling.rate, 0.1)
-  assert_eq(valid_config.buffer.size, 1000)
-  assert_eq(valid_config.export.endpoint, "https://telemetry.example.com")
+  let mut request_assignments = []
   
-  // 模拟配置验证
-  let mut validation_errors = []
-  
-  // 检查必需字段
-  let required_sections = config_schema.required
+  // 模拟100个请求的分配
   let mut i = 0
-  while i < required_sections.length() {
-    let section = required_sections[i]
-    if not valid_config.contains(section) {
-      validation_errors.push("Missing required section: " + section)
-    }
-    i = i + 1
-  }
-  
-  // 检查字段类型和约束
-  let sampling_config = valid_config.sampling
-  if sampling_config.rate < 0.0 or sampling_config.rate > 1.0 {
-    validation_errors.push("sampling.rate must be between 0.0 and 1.0")
-  }
-  
-  let buffer_config = valid_config.buffer
-  if buffer_config.size < 100 or buffer_config.size > 10000 {
-    validation_errors.push("buffer.size must be between 100 and 10000")
-  }
-  
-  let export_config = valid_config.export
-  if not export_config.endpoint.starts_with("http") {
-    validation_errors.push("export.endpoint must be a valid HTTP/HTTPS URL")
-  }
-  
-  // 验证有效配置通过验证
-  assert_eq(validation_errors.length(), 0)
-  
-  // 测试无效配置
-  let invalid_config = {
-    "sampling": {
-      "rate": 1.5,  // 超出范围
-      "strategy": "invalid_strategy"  // 无效枚举值
-    },
-    "buffer": {
-      "size": 50  // 低于最小值
-    }
-    // 缺少必需的export.endpoint
-  }
-  
-  // 重新验证无效配置
-  validation_errors = []
-  
-  // 检查必需字段
-  i = 0
-  while i < required_sections.length() {
-    let section = required_sections[i]
-    if not invalid_config.contains(section) {
-      validation_errors.push("Missing required section: " + section)
-    }
-    i = i + 1
-  }
-  
-  // 检查采样配置
-  if invalid_config.sampling.rate > 1.0 {
-    validation_errors.push("sampling.rate exceeds maximum value 1.0")
-  }
-  
-  // 检查缓冲区配置
-  if invalid_config.buffer.size < 100 {
-    validation_errors.push("buffer.size below minimum value 100")
-  }
-  
-  // 验证无效配置产生错误
-  assert_eq(validation_errors.length() > 0, true)
-  assert_eq(validation_errors.length(), 3)  // 应该有3个验证错误
-  
-  // 测试配置修复建议
-  let mut fix_suggestions = []
-  i = 0
-  while i < validation_errors.length() {
-    let error = validation_errors[i]
+  while i < 100 {
+    let request_id = "req-" + i.to_string()
+    let hash_value = request_id.length() * 7  // 简单哈希
+    let traffic_percentage = experiments[0].traffic_split_percentage
     
-    if error.contains("sampling.rate") {
-      fix_suggestions.push("Set sampling.rate to a value between 0.0 and 1.0")
-    } else if error.contains("buffer.size") {
-      fix_suggestions.push("Set buffer.size to a value between 100 and 10000")
-    } else if error.contains("export.endpoint") {
-      fix_suggestions.push("Add export.endpoint with a valid HTTP/HTTPS URL")
+    let assigned_group = if (hash_value % 100) < traffic_percentage {
+      "experiment"
+    } else {
+      "control"
     }
+    
+    let assigned_config = if assigned_group == "experiment" {
+      experiments[0].config_variant
+    } else {
+      control_config
+    }
+    
+    request_assignments.push(RequestAssignment {
+      request_id: request_id,
+      assigned_group: assigned_group,
+      config: assigned_config
+    })
     
     i = i + 1
   }
   
-  // 验证修复建议
-  assert_eq(fix_suggestions.length(), 3)
-  assert_eq(fix_suggestions[0].contains("sampling.rate"), true)
-  assert_eq(fix_suggestions[1].contains("buffer.size"), true)
+  // 验证请求分配
+  assert_eq(request_assignments.length(), 100)
+  
+  // 统计分组结果
+  let mut control_count = 0
+  let mut experiment_count = 0
+  
+  i = 0
+  while i < request_assignments.length() {
+    let assignment = request_assignments[i]
+    if assignment.assigned_group == "control" {
+      control_count = control_count + 1
+    } else {
+      experiment_count = experiment_count + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证分组比例（允许一定误差）
+  let control_percentage = control_count.to_double() / 100.0 * 100.0
+  let experiment_percentage = experiment_count.to_double() / 100.0 * 100.0
+  
+  assert_eq(control_percentage > 40.0 and control_percentage < 60.0, true)
+  assert_eq(experiment_percentage > 40.0 and experiment_percentage < 60.0, true)
+  assert_eq(control_count + experiment_count, 100)
+  
+  // 模拟性能指标收集
+  type PerformanceMetrics = {
+    group_name: String,
+    request_count: Int64,
+    avg_latency_ms: Double,
+    error_rate: Double,
+    throughput_rps: Double,
+    cpu_usage: Double,
+    memory_usage: Double
+  }
+  
+  let control_metrics = PerformanceMetrics {
+    group_name: "control",
+    request_count: control_count.to_int64(),
+    avg_latency_ms: 125.5,
+    error_rate: 2.1,
+    throughput_rps: 850.5,
+    cpu_usage: 45.2,
+    memory_usage: 512.0
+  }
+  
+  let experiment_metrics = PerformanceMetrics {
+    group_name: "experiment",
+    request_count: experiment_count.to_int64(),
+    avg_latency_ms: 98.3,   // 更低的延迟
+    error_rate: 1.8,        // 更低的错误率
+    throughput_rps: 920.7,  // 更高的吞吐量
+    cpu_usage: 52.1,        // 更高的CPU使用率
+    memory_usage: 680.5     // 更高的内存使用率
+  }
+  
+  // 验证性能指标
+  assert_eq(control_metrics.group_name, "control")
+  assert_eq(experiment_metrics.group_name, "experiment")
+  assert_eq(experiment_metrics.avg_latency_ms < control_metrics.avg_latency_ms, true)
+  assert_eq(experiment_metrics.error_rate < control_metrics.error_rate, true)
+  assert_eq(experiment_metrics.throughput_rps > control_metrics.throughput_rps, true)
+  
+  // 计算改进百分比
+  let latency_improvement = (control_metrics.avg_latency_ms - experiment_metrics.avg_latency_ms) 
+                           / control_metrics.avg_latency_ms * 100.0
+  let error_rate_improvement = (control_metrics.error_rate - experiment_metrics.error_rate) 
+                              / control_metrics.error_rate * 100.0
+  let throughput_improvement = (experiment_metrics.throughput_rps - control_metrics.throughput_rps) 
+                              / control_metrics.throughput_rps * 100.0
+  
+  // 验证改进计算
+  assert_eq(latency_improvement > 0.0, true)
+  assert_eq(error_rate_improvement > 0.0, true)
+  assert_eq(throughput_improvement > 0.0, true)
+  
+  // 生成A/B测试报告
+  let ab_test_report = "A/B Test Experiment Report:\n"
+    + "Experiment ID: " + experiments[0].experiment_id + "\n"
+    + "Experiment Name: " + experiments[0].experiment_name + "\n"
+    + "Traffic Split: " + experiments[0].traffic_split_percentage.to_string() + "% / " 
+    + (100 - experiments[0].traffic_split_percentage).to_string() + "%\n"
+    + "Request Distribution:\n"
+    + "  - Control Group: " + control_count.to_string() + " requests (" + control_percentage.to_string() + "%)\n"
+    + "  - Experiment Group: " + experiment_count.to_string() + " requests (" + experiment_percentage.to_string() + "%)\n"
+    + "Performance Comparison:\n"
+    + "  - Latency: " + control_metrics.avg_latency_ms.to_string() + "ms -> " 
+    + experiment_metrics.avg_latency_ms.to_string() + "ms (" + latency_improvement.to_string() + "% improvement)\n"
+    + "  - Error Rate: " + control_metrics.error_rate.to_string() + "% -> " 
+    + experiment_metrics.error_rate.to_string() + "% (" + error_rate_improvement.to_string() + "% improvement)\n"
+    + "  - Throughput: " + control_metrics.throughput_rps.to_string() + " rps -> " 
+    + experiment_metrics.throughput_rps.to_string() + " rps (" + throughput_improvement.to_string() + "% improvement)\n"
+    + "Resource Usage:\n"
+    + "  - Control CPU: " + control_metrics.cpu_usage.to_string() + "%\n"
+    + "  - Experiment CPU: " + experiment_metrics.cpu_usage.to_string() + "%\n"
+    + "  - Control Memory: " + control_metrics.memory_usage.to_string() + "MB\n"
+    + "  - Experiment Memory: " + experiment_metrics.memory_usage.to_string() + "MB"
+  
+  // 验证报告内容
+  assert_eq(ab_test_report.contains("Experiment ID: exp-001"), true)
+  assert_eq(ab_test_report.contains("high_sampling_experiment"), true)
+  assert_eq(ab_test_report.contains("Traffic Split: 50% / 50%"), true)
+  assert_eq(ab_test_report.contains("Control Group:"), true)
+  assert_eq(ab_test_report.contains("Experiment Group:"), true)
+  assert_eq(ab_test_report.contains("Performance Comparison:"), true)
+  assert_eq(ab_test_report.contains("improvement"), true)
+  assert_eq(ab_test_report.contains("Resource Usage:"), true)
 }
