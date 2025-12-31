@@ -67,6 +67,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_74656c656d657472795f656e68616e6365645f66656174757265735f746573742e6d6274_6, ["telemetry_resource_limits"]),
     7: (__test_74656c656d657472795f656e68616e6365645f66656174757265735f746573742e6d6274_7, ["telemetry_data_integrity"]),
   },
+  "telemetry_edge_cases_test.mbt": {
+    0: (__test_74656c656d657472795f656467655f63617365735f746573742e6d6274_0, ["telemetry_extreme_load_conditions"]),
+    1: (__test_74656c656d657472795f656467655f63617365735f746573742e6d6274_1, ["telemetry_data_integrity_validation"]),
+  },
   "telemetry_comprehensive_new_test.mbt": {
     0: (__test_74656c656d657472795f636f6d70726568656e736976655f6e65775f746573742e6d6274_0, ["telemetry_data_compression"]),
     1: (__test_74656c656d657472795f636f6d70726568656e736976655f6e65775f746573742e6d6274_1, ["telemetry_cache_mechanism"]),
