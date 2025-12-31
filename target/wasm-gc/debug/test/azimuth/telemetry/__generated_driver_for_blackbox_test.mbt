@@ -437,6 +437,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_74656c656d657472795f6931386e5f737570706f72745f6e65775f746573742e6d6274_5, ["i18n_error_message_localization"]),
     6: (__test_74656c656d657472795f6931386e5f737570706f72745f6e65775f746573742e6d6274_6, ["i18n_attribute_name_translation"]),
   },
+  "telemetry_i18n_new_test.mbt": {
+    0: (__test_74656c656d657472795f6931386e5f6e65775f746573742e6d6274_0, ["trace_i18n_support"]),
+    1: (__test_74656c656d657472795f6931386e5f6e65775f746573742e6d6274_1, ["metrics_i18n_support"]),
+    2: (__test_74656c656d657472795f6931386e5f6e65775f746573742e6d6274_2, ["logs_i18n_support"]),
+    3: (__test_74656c656d657472795f6931386e5f6e65775f746573742e6d6274_3, ["attribute_i18n_support"]),
+    4: (__test_74656c656d657472795f6931386e5f6e65775f746573742e6d6274_4, ["resource_i18n_support"]),
+    5: (__test_74656c656d657472795f6931386e5f6e65775f746573742e6d6274_5, ["cross_api_i18n_consistency"]),
+    6: (__test_74656c656d657472795f6931386e5f6e65775f746573742e6d6274_6, ["i18n_special_characters_handling"]),
+    7: (__test_74656c656d657472795f6931386e5f6e65775f746573742e6d6274_7, ["i18n_unicode_support"]),
+  },
   "telemetry_i18n_data_format_test.mbt": {
     0: (__test_74656c656d657472795f6931386e5f646174615f666f726d61745f746573742e6d6274_0, ["multilingual_log_message_processing"]),
     1: (__test_74656c656d657472795f6931386e5f646174615f666f726d61745f746573742e6d6274_1, ["cultural_number_formatting"]),
