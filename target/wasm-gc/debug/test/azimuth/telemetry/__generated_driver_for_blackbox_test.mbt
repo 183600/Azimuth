@@ -441,11 +441,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f76616c69646174696f6e5f746573742e6d6274_6, ["cross_tenant_data_leak_prevention"]),
   },
   "telemetry_multi_tenant_isolation_test.mbt": {
-    0: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_0, ["telemetry_tenant_data_isolation"]),
-    1: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_1, ["telemetry_tenant_resource_limits"]),
-    2: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_2, ["telemetry_tenant_configuration_isolation"]),
-    3: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_3, ["telemetry_tenant_api_isolation"]),
-    4: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_4, ["telemetry_tenant_billing_isolation"]),
+    0: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_0, ["multi_tenant_data_isolation"]),
+    1: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_1, ["multi_tenant_resource_quota_management"]),
+    2: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_2, ["multi_tenant_performance_isolation"]),
+    3: (__test_74656c656d657472795f6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_3, ["multi_tenant_security_isolation"]),
   },
   "telemetry_metrics_aggregation_test.mbt": {
     0: (__test_74656c656d657472795f6d6574726963735f6167677265676174696f6e5f746573742e6d6274_0, ["counter_aggregation"]),
