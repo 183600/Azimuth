@@ -62,64 +62,89 @@ test "telemetry_configuration_management" {
   assert_eq(config_keys.length(), config_values.length())
   assert_eq(config_keys.length(), config_types.length())
   
-  // 创建配置映射
-  let mut config_map = Map::new()
+  // 创建配置数组对
+  let config_pairs = []
   let mut i = 0
   while i < config_keys.length() {
-    config_map.insert(config_keys[i], config_values[i])
+    config_pairs.push((config_keys[i], config_values[i]))
     i = i + 1
   }
   
-  // 验证配置映射
-  assert_eq(config_map.size(), 4)
-  assert_eq(config_map.get("sampling.rate"), Some("0.1"))
-  assert_eq(config_map.get("batch.size"), Some("100"))
-  assert_eq(config_map.get("export.interval"), Some("60"))
-  assert_eq(config_map.get("compression.enabled"), Some("true"))
+  // 验证配置数组对
+  assert_eq(config_pairs.length(), 4)
+  assert_eq(config_pairs[0].0, "sampling.rate")
+  assert_eq(config_pairs[0].1, "0.1")
+  assert_eq(config_pairs[1].0, "batch.size")
+  assert_eq(config_pairs[1].1, "100")
+  assert_eq(config_pairs[2].0, "export.interval")
+  assert_eq(config_pairs[2].1, "60")
+  assert_eq(config_pairs[3].0, "compression.enabled")
+  assert_eq(config_pairs[3].1, "true")
   
-  // 测试配置更新
-  config_map.insert("sampling.rate", "0.2")
-  assert_eq(config_map.get("sampling.rate"), Some("0.2"))
+  // 测试配置更新 - 查找并更新采样率
+  let mut updated_pairs = []
+  i = 0
+  while i < config_pairs.length() {
+    let (key, value) = config_pairs[i]
+    if key == "sampling.rate" {
+      updated_pairs.push((key, "0.2"))
+    } else {
+      updated_pairs.push((key, value))
+    }
+    i = i + 1
+  }
+  
+  // 验证配置更新
+  assert_eq(updated_pairs[0].0, "sampling.rate")
+  assert_eq(updated_pairs[0].1, "0.2")
 }
 
 test "telemetry_cache_mechanism" {
   // 测试遥测缓存机制
   
   let cache_size = 1000
-  let mut cache = Map::new()
-  let mut access_count = Map::new()
+  let cache_keys = []
+  let cache_values = []
+  let access_counts = []
   
   // 模拟缓存填充
   let mut i = 0
   while i < cache_size {
     let key = "metric_" + i.to_string()
     let value = "value_" + i.to_string()
-    cache.insert(key, value)
-    access_count.insert(key, 0)
+    cache_keys.push(key)
+    cache_values.push(value)
+    access_counts.push(0)
     i = i + 1
   }
   
   // 验证缓存填充
-  assert_eq(cache.size(), cache_size)
-  assert_eq(access_count.size(), cache_size)
+  assert_eq(cache_keys.length(), cache_size)
+  assert_eq(cache_values.length(), cache_size)
+  assert_eq(access_counts.length(), cache_size)
   
   // 模拟缓存访问
   let access_keys = ["metric_0", "metric_100", "metric_500", "metric_999"]
   let mut i = 0
   while i < access_keys.length() {
-    let key = access_keys[i]
-    if let Some(_) = cache.get(key) {
-      let current_count = access_count.get(key).unwrap_or("0").to_int()
-      access_count.insert(key, (current_count + 1).to_string())
+    let access_key = access_keys[i]
+    // 查找并更新访问计数
+    let mut j = 0
+    while j < cache_keys.length() {
+      if cache_keys[j] == access_key {
+        access_counts[j] = access_counts[j] + 1
+        break
+      }
+      j = j + 1
     }
     i = i + 1
   }
   
   // 验证缓存访问计数
-  assert_eq(access_count.get("metric_0"), Some("1"))
-  assert_eq(access_count.get("metric_100"), Some("1"))
-  assert_eq(access_count.get("metric_500"), Some("1"))
-  assert_eq(access_count.get("metric_999"), Some("1"))
+  assert_eq(access_counts[0], 1)  // metric_0
+  assert_eq(access_counts[100], 1) // metric_100
+  assert_eq(access_counts[500], 1) // metric_500
+  assert_eq(access_counts[999], 1) // metric_999
 }
 
 test "telemetry_data_export" {
@@ -138,7 +163,7 @@ test "telemetry_data_export" {
   assert_eq(export_formats.contains("prometheus"), true)
   
   // 测试JSON格式导出
-  let json_export = "{"
+  let json_export = "{" 
   let mut i = 0
   while i < metric_data.length() {
     let (name, value, timestamp) = metric_data[i]
@@ -184,7 +209,7 @@ test "telemetry_health_check" {
   assert_eq(health_components.length(), health_metrics.length())
   
   // 创建健康检查报告
-  let mut health_report = []
+  let health_report = []
   let mut i = 0
   while i < health_components.length() {
     let component = health_components[i]
