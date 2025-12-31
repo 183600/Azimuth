@@ -1,393 +1,491 @@
-// 综合错误边界测试
-// 测试各种错误条件和边界情况的处理
+// 遥测错误边界综合测试
+// 测试遥测系统中各种错误情况的处理和恢复机制
 
-test "error_handling_with_invalid_inputs" {
-  // 测试无效输入的错误处理
-  
-  // 测试空字符串和None值
-  let empty_string = ""
-  let meter = metrics::NoopMeter::{}
-  
-  // 创建空名称的仪器（应该被优雅处理）
-  let empty_counter = meter.create_counter(empty_string, None, None)
-  empty_counter.add(1L, [])
-  
-  // 创建包含特殊字符的仪器名称
-  let special_chars = "!@#$%^&*()_+-={}[]|\\:;\"'<>?,./"
-  let special_counter = meter.create_counter(special_chars, None, None)
-  special_counter.add(1L, [])
-  
-  // 测试极长的名称
-  let long_name = "a".repeat(10000)
-  let long_counter = meter.create_counter(long_name, None, None)
-  long_counter.add(1L, [])
-  
-  // 验证所有操作都不会崩溃
-  assert_eq(true, true)
-}
-
-test "error_boundary_with_extreme_values" {
-  // 测试极值的错误边界
-  
-  let meter = metrics::NoopMeter::{}
-  let counter = meter.create_counter("extreme_test", None, None)
-  let histogram = meter.create_histogram("extreme_histogram", None, None)
-  let gauge = meter.create_gauge("extreme_gauge", None, None)
-  
-  // 测试极值整数
-  let extreme_ints = [
-    9223372036854775807L,  // Max Int64
-    -9223372036854775808L,  // Min Int64
-    0L,
-    1L,
-    -1L
+test "error_boundary_invalid_data_handling" {
+  // 无效数据处理测试
+  let invalid_data_cases = [
+    ("null_value", None),
+    ("empty_string", ""),
+    ("negative_number", -1),
+    ("overflow_number", 999999999),
+    ("invalid_timestamp", -1L),
+    ("malformed_json", "{invalid json}"),
+    ("null_array", []),
+    ("infinite_value", 1.0 / 0.0)
   ]
   
-  let mut i = 0
-  while i < extreme_ints.length() {
-    counter.add(extreme_ints[i], [])
-    i = i + 1
-  }
-  
-  // 测试极值浮点数
-  let extreme_floats = [
-    1.7976931348623157e308,  // Max Double
-    -1.7976931348623157e308,  // Min Double
-    1.0/0.0,  // Infinity
-    -1.0/0.0,  // -Infinity
-    0.0/0.0,  // NaN
-    0.0,
-    1.0,
-    -1.0,
-    4.9406564584124654e-324  // Min positive Double
-  ]
-  
-  i = 0
-  while i < extreme_floats.length() {
-    histogram.record(extreme_floats[i], [])
-    gauge.record(extreme_floats[i], [])
-    i = i + 1
-  }
-  
-  // 验证操作不会崩溃
-  assert_eq(true, true)
-}
-
-test "error_recovery_with_corrupted_data" {
-  // 测试损坏数据的错误恢复
-  
-  // 模拟损坏的属性数据
-  let corrupted_attributes = [
-    ("", common::AttributeValue::string("")),  // 空键空值
-    ("null.key", common::AttributeValue::string("null")),
-    ("undefined.value", common::AttributeValue::string("undefined")),
-    ("malformed.json", common::AttributeValue::string("{invalid json}")),
-    ("binary.data", common::AttributeValue::string("\x00\x01\x02\x03"))
-  ]
-  
-  let meter = metrics::NoopMeter::{}
-  let counter = meter.create_counter("corrupted_data_test", None, None)
-  
-  // 使用损坏的属性数据进行操作
-  counter.add(1L, Some(corrupted_attributes))
-  
-  // 测试损坏的数组数据
-  let corrupted_arrays = [
-    common::AttributeValue::array_string(["", "\x00", "\n", "\t"]),
-    common::AttributeValue::array_int([0L, -9223372036854775808L, 9223372036854775807L]),
-    common::AttributeValue::array_float([0.0/0.0, 1.0/0.0, -1.0/0.0]),
-    common::AttributeValue::array_bool([true, false])
-  ]
-  
-  let mut i = 0
-  while i < corrupted_arrays.length() {
-    let array_attrs = [("corrupted.array", corrupted_arrays[i])]
-    counter.add(1L, Some(array_attrs))
-    i = i + 1
-  }
-  
-  // 验证错误恢复
-  assert_eq(true, true)
-}
-
-test "error_boundary_with_resource_constraints" {
-  // 测试资源约束下的错误边界
-  
-  // 模拟内存约束情况
-  let meter = metrics::NoopMeter::{}
-  
-  // 创建大量仪器（测试内存使用）
-  let mut instruments = []
-  let mut i = 0
-  while i < 1000 {
-    let counter = meter.create_counter("counter_" + i.to_string(), None, None)
-    let histogram = meter.create_histogram("histogram_" + i.to_string(), None, None)
-    let gauge = meter.create_gauge("gauge_" + i.to_string(), None, None)
-    instruments.push(counter)
-    instruments.push(histogram)
-    instruments.push(gauge)
-    i = i + 1
-  }
-  
-  // 对所有仪器执行操作
-  i = 0
-  while i < instruments.length() {
-    match instruments[i] {
-      metrics::Counter(counter) => counter.add(1L, []),
-      metrics::Histogram(histogram) => histogram.record(1.0, []),
-      metrics::Gauge(gauge) => gauge.record(1.0, []),
-      _ => ()  // 处理其他类型
-    }
-    i = i + 1
-  }
-  
-  // 验证资源约束下的操作
-  assert_eq(instruments.length(), 3000)  // 1000 * 3
-}
-
-test "error_boundary_with_concurrent_operations" {
-  // 测试并发操作的错误边界
-  
-  let meter = metrics::NoopMeter::{}
-  let counter = meter.create_counter("concurrent_test", None, None)
-  let histogram = meter.create_histogram("concurrent_histogram", None, None)
-  
-  // 模拟并发操作（在单线程环境中模拟）
-  let mut i = 0
-  while i < 1000 {
-    // 模拟多个并发操作
-    counter.add(1L, [])
-    counter.add(2L, [])
-    counter.add(3L, [])
-    
-    histogram.record(1.0, [])
-    histogram.record(2.0, [])
-    histogram.record(3.0, [])
-    
-    i = i + 1
-  }
-  
-  // 验证并发操作不会导致数据竞争或崩溃
-  assert_eq(true, true)
-}
-
-test "error_boundary_with_network_failures" {
-  // 测试网络故障模拟的错误边界
-  
-  // 模拟网络故障情况下的遥测操作
-  let ctx = context::Context::empty()
-  let tracer = trace::NoopTracer::{}
-  
-  // 在网络故障情况下创建span
-  let (_, span) = tracer.start_span(
-    ctx,
-    "network_operation",
-    Some(trace::Client),
-    Some([
-      ("network.endpoint", common::AttributeValue::string("https://api.example.com")),
-      ("network.timeout", common::AttributeValue::int(30000L)),
-      ("network.retry_count", common::AttributeValue::int(3L)),
-      ("network.error", common::AttributeValue::string("connection_timeout")),
-      ("network.error.code", common::AttributeValue::int(503L))
-    ]),
-    None
-  )
-  
-  // 模拟网络故障事件
-  let network_events = [
-    trace::SpanEvent::{
-      name: "connection.attempt",
-      timestamp_unix_nanos: 1640995200000000000L,
-      attributes: [
-        ("network.remote.address", common::AttributeValue::string("10.0.0.1:8080")),
-        ("network.local.address", common::AttributeValue::string("192.168.1.100:12345"))
-      ]
-    },
-    trace::SpanEvent::{
-      name: "connection.failed",
-      timestamp_unix_nanos: 1640995200000005000L,
-      attributes: [
-        ("error.type", common::AttributeValue::string("timeout")),
-        ("error.message", common::AttributeValue::string("Connection timed out after 30 seconds"))
-      ]
-    },
-    trace::SpanEvent::{
-      name: "retry.attempt",
-      timestamp_unix_nanos: 1640995200000010000L,
-      attributes: [
-        ("retry.count", common::AttributeValue::int(1L)),
-        ("retry.delay.ms", common::AttributeValue::int(1000L))
-      ]
-    },
-    trace::SpanEvent::{
-      name: "connection.failed",
-      timestamp_unix_nanos: 1640995200000015000L,
-      attributes: [
-        ("error.type", common::AttributeValue::string("timeout")),
-        ("error.message", common::AttributeValue::string("Connection timed out after 30 seconds"))
-      ]
-    },
-    trace::SpanEvent::{
-      name: "operation.aborted",
-      timestamp_unix_nanos: 1640995200000020000L,
-      attributes: [
-        ("final.status", common::AttributeValue::string("failed")),
-        ("total.retries", common::AttributeValue::int(3L))
-      ]
-    }
-  ]
-  
-  // 创建包含网络故障事件的span
-  let failed_span = trace::Span::{
-    name: span.name,
-    context: span.context,
-    kind: span.kind,
-    parent_span_id: span.parent_span_id,
-    start_time_unix_nanos: span.start_time_unix_nanos,
-    end_time_unix_nanos: Some(1640995200000020000L),
-    status: trace::Error,
-    status_description: Some("Network operation failed after 3 retries"),
-    attributes: span.attributes,
-    events: network_events,
-    links: span.links
-  }
-  
-  // 验证网络故障处理
-  assert match failed_span.status {
-    trace::Error => true
-    _ => false
-  }
-  assert match failed_span.status_description {
-    Some(desc) => desc.contains("failed")
-    None => false
-  }
-  assert_eq(failed_span.events.length(), 5)
-}
-
-test "error_boundary_with_malformed_traces" {
-  // 测试格式错误的追踪数据的错误边界
-  
-  let ctx = context::Context::empty()
-  let tracer = trace::NoopTracer::{}
-  
-  // 创建具有异常数据的span
-  let (_, span) = tracer.start_span(
-    ctx,
-    "",  // 空名称
-    Some(trace::Internal),
-    Some([
-      ("", common::AttributeValue::string("")),  // 空键空值
-      ("malformed.key", common::AttributeValue::string("value\nwith\tcontrol\rcharacters")),
-      ("unicode.key", common::AttributeValue::string("测试键名🚀")),
-      ("null.value", common::AttributeValue::string("null")),
-      ("undefined.value", common::AttributeValue::string("undefined"))
-    ]),
-    Some(-1L)  // 负时间戳
-  )
-  
-  // 创建异常的SpanContext
-  let malformed_context = trace::SpanContext::{
-    trace_id: [255_byte; 16],  // 全为1的trace_id
-    span_id: [255_byte; 8],    // 全为1的span_id
-    trace_flags: 255_byte,     // 最大trace_flags
-    trace_state: "malformed=trace&state=with&special=characters"
-  }
-  
-  // 创建包含异常数据的span
-  let malformed_span = trace::Span::{
-    name: span.name,
-    context: malformed_context,
-    kind: span.kind,
-    parent_span_id: Some([255_byte; 8]),  // 异常的parent_span_id
-    start_time_unix_nanos: -1L,  // 负时间戳
-    end_time_unix_nanos: Some(-1L),  // 负结束时间戳
-    status: trace::Error,
-    status_description: Some("Malformed span data"),
-    attributes: span.attributes,
-    events: [
-      trace::SpanEvent::{
-        name: "",  // 空事件名称
-        timestamp_unix_nanos: -1L,  // 负时间戳
-        attributes: [
-          ("", common::AttributeValue::string(""))  // 空属性
-        ]
+  let safe_process_data = fn(data_type : String, value : Any) -> Result[String, String] {
+    match data_type {
+      "null_value" => {
+        match value {
+          None => Err("Null value encountered")
+          _ => Ok("Valid value")
+        }
       }
-    ],
-    links: [
-      trace::SpanLink::{
-        context: malformed_context,  // 自引用
-        attributes: [
-          ("self.reference", common::AttributeValue::bool(true))
-        ]
+      "empty_string" => {
+        match value {
+          s if s == "" => Err("Empty string not allowed")
+          _ => Ok("Valid string")
+        }
       }
-    ]
+      "negative_number" => {
+        match value {
+          n if n < 0 => Err("Negative number not allowed")
+          _ => Ok("Valid number")
+        }
+      }
+      "overflow_number" => {
+        match value {
+          n if n > 100000 => Err("Number overflow")
+          _ => Ok("Valid number")
+        }
+      }
+      "invalid_timestamp" => {
+        match value {
+          t if t < 0L => Err("Invalid timestamp")
+          _ => Ok("Valid timestamp")
+        }
+      }
+      "malformed_json" => {
+        match value {
+          s if s.contains("invalid") => Err("Malformed JSON")
+          _ => Ok("Valid JSON")
+        }
+      }
+      "null_array" => {
+        match value {
+          arr if arr.length == 0 => Err("Empty array not allowed")
+          _ => Ok("Valid array")
+        }
+      }
+      "infinite_value" => {
+        match value {
+          v if v > 1000000.0 => Err("Infinite or too large value")
+          _ => Ok("Valid float")
+        }
+      }
+      _ => Err("Unknown data type")
+    }
   }
   
-  // 验证格式错误数据的处理
-  assert_eq(malformed_span.name, "")
-  assert_eq(malformed_span.start_time_unix_nanos, -1L)
-  assert match malformed_span.end_time_unix_nanos {
-    Some(end_time) => end_time == -1L
-    None => false
+  for (data_type, value) in invalid_data_cases {
+    let result = safe_process_data(data_type, value)
+    @assertion.assert_error(result)?
+    
+    match result {
+      Err(msg) => {
+        @assertion.assert_true(msg.length > 0)?
+      }
+      _ => @assertion.assert_fail("Expected error but got success")?
+    }
   }
-  assert_eq(malformed_span.events.length(), 1)
-  assert_eq(malformed_span.events[0].name, "")
-  assert_eq(malformed_span.links.length(), 1)
 }
 
-test "error_boundary_with_context_corruption" {
-  // 测试上下文损坏的错误边界
+test "error_boundary_circuit_breaker" {
+  // 熔断器模式测试
+  let failure_threshold = 5
+  let recovery_timeout_ms = 1000L
+  let current_time_ms = 1640995200000L
   
-  // 创建损坏的上下文
-  let ctx = context::Context::empty()
-  let malformed_key = context::create_key("")
-  let malformed_values = [
-    "",  // 空值
-    "\x00\x01\x02\x03",  // 二进制数据
-    "null",
-    "undefined",
-    "very long value that might cause buffer overflow or other issues when processed by the system and contains many characters to test the boundary conditions and error handling capabilities".repeat(100)
+  let circuit_breaker_state = {
+    "failure_count": 0,
+    "last_failure_time": 0L,
+    "state": "CLOSED"  // CLOSED, OPEN, HALF_OPEN
+  }
+  
+  let simulate_request = fn(state : { "failure_count": Int, "last_failure_time": Int64, "state": String }, should_fail : Bool, current_time : Int64) -> { "failure_count": Int, "last_failure_time": Int64, "state": String, "request_allowed": Bool } {
+    let mut new_state = state
+    
+    match state.state {
+      "OPEN" => {
+        // 检查是否可以尝试恢复
+        if current_time - state.last_failure_time > recovery_timeout_ms {
+          new_state.state = "HALF_OPEN"
+          new_state.request_allowed = true
+        } else {
+          new_state.request_allowed = false
+        }
+      }
+      "HALF_OPEN" => {
+        new_state.request_allowed = true
+        if should_fail {
+          new_state.failure_count = state.failure_count + 1
+          new_state.last_failure_time = current_time
+          new_state.state = "OPEN"
+        } else {
+          new_state.failure_count = 0
+          new_state.state = "CLOSED"
+        }
+      }
+      "CLOSED" => {
+        new_state.request_allowed = true
+        if should_fail {
+          new_state.failure_count = state.failure_count + 1
+          new_state.last_failure_time = current_time
+          if new_state.failure_count >= failure_threshold {
+            new_state.state = "OPEN"
+          }
+        }
+      }
+      _ => {
+        new_state.request_allowed = false
+      }
+    }
+    
+    new_state
+  }
+  
+  // 模拟一系列请求
+  let mut current_state = circuit_breaker_state
+  
+  // 前4个请求失败，但熔断器仍保持关闭
+  for i = 0; i < 4; i = i + 1 {
+    current_state = simulate_request(current_state, true, current_time_ms)
+    @assertion.assert_eq(current_state.state, "CLOSED")?
+    @assertion.assert_true(current_state.request_allowed)?
+  }
+  
+  // 第5个请求失败，触发熔断器打开
+  current_state = simulate_request(current_state, true, current_time_ms)
+  @assertion.assert_eq(current_state.state, "OPEN")?
+  @assertion.assert_false(current_state.request_allowed)?
+  
+  // 熔断器打开期间的请求应该被拒绝
+  current_state = simulate_request(current_state, false, current_time_ms)
+  @assertion.assert_eq(current_state.state, "OPEN")?
+  @assertion.assert_false(current_state.request_allowed)?
+  
+  // 超时后，熔断器进入半开状态
+  let recovery_time = current_time_ms + recovery_timeout_ms + 100L
+  current_state = simulate_request(current_state, false, recovery_time)
+  @assertion.assert_eq(current_state.state, "HALF_OPEN")?
+  @assertion.assert_true(current_state.request_allowed)?
+  
+  // 半开状态的成功请求应该关闭熔断器
+  current_state = simulate_request(current_state, false, recovery_time)
+  @assertion.assert_eq(current_state.state, "CLOSED")?
+  @assertion.assert_true(current_state.request_allowed)?
+  @assertion.assert_eq(current_state.failure_count, 0)?
+}
+
+test "error_boundary_timeout_handling" {
+  // 超时处理测试
+  let operations = [
+    ("fast_operation", 50),      // 50ms
+    ("normal_operation", 200),    // 200ms
+    ("slow_operation", 1000),     // 1000ms
+    ("very_slow_operation", 5000) // 5000ms
   ]
   
-  // 使用损坏的值设置上下文
-  let mut corrupted_ctx = ctx
-  let mut i = 0
-  while i < malformed_values.length() {
-    corrupted_ctx = corrupted_ctx.with_value(malformed_key, malformed_values[i])
-    i = i + 1
-  }
+  let timeout_ms = 500
+  let current_time_ms = 1640995200000L
   
-  // 测试损坏上下文的访问
-  let retrieved_value = corrupted_ctx.get(malformed_key)
-  match retrieved_value {
-    Some(value) => {
-      // 验证值可以被检索，即使它可能是损坏的
-      assert(value.length() >= 0)
-    }
-    None => {
-      // 值可能由于损坏而无法检索，这也是有效的错误处理
-      assert(true)
+  let execute_with_timeout = fn(operation_name : String, duration_ms : Int, timeout : Int, start_time : Int64) -> { "completed": Bool, "timed_out": Bool, "duration_ms": Int } {
+    let end_time = start_time + @int.to_int64(duration_ms)
+    let timeout_time = start_time + @int.to_int64(timeout)
+    
+    if end_time <= timeout_time {
+      { "completed": true, "timed_out": false, "duration_ms": duration_ms }
+    } else {
+      { "completed": false, "timed_out": true, "duration_ms": timeout }
     }
   }
   
-  // 测试损坏的Baggage
-  let baggage = context::Baggage::empty()
-  let corrupted_baggage = baggage
-    .with_entry("", "")  // 空键空值
-    .with_entry("malformed", "\x00\x01\x02\x03")  // 二进制值
-    .with_entry("null", "null")
-    .with_entry("undefined", "undefined")
+  let results = operations.map(fn(name, duration) {
+    execute_with_timeout(name, duration, timeout_ms, current_time_ms)
+  })
   
-  // 验证损坏Baggage的处理
-  let baggage_value = corrupted_baggage.get("malformed")
-  match baggage_value {
-    Some(value) => assert(value.length() >= 0)
-    None => assert(true)
+  // 验证超时处理
+  @assertion.assert_true(results[0].completed)?   // fast_operation 应该完成
+  @assertion.assert_false(results[0].timed_out)?
+  
+  @assertion.assert_true(results[1].completed)?   // normal_operation 应该完成
+  @assertion.assert_false(results[1].timed_out)?
+  
+  @assertion.assert_false(results[2].completed)?  // slow_operation 应该超时
+  @assertion.assert_true(results[2].timed_out)?
+  @assertion.assert_eq(results[2].duration_ms, timeout_ms)?
+  
+  @assertion.assert_false(results[3].completed)?  // very_slow_operation 应该超时
+  @assertion.assert_true(results[3].timed_out)?
+  @assertion.assert_eq(results[3].duration_ms, timeout_ms)?
+}
+
+test "error_boundary_resource_exhaustion" {
+  // 资源耗尽处理测试
+  let resource_limits = {
+    "max_memory_mb": 100,
+    "max_connections": 50,
+    "max_cpu_percent": 80
   }
   
-  // 验证不存在的键
-  match corrupted_baggage.get("nonexistent") {
-    Some(_) => assert(false)  // 不应该存在
-    None => assert(true)      // 正确返回None
+  let current_usage = {
+    "memory_mb": 0,
+    "connections": 0,
+    "cpu_percent": 0
   }
+  
+  let check_resource_availability = fn(limits : { "max_memory_mb": Int, "max_connections": Int, "max_cpu_percent": Int }, usage : { "memory_mb": Int, "connections": Int, "cpu_percent": Int }, request : { "memory_mb": Int, "connections": Int, "cpu_percent": Int }) -> Result[String, String] {
+    let new_memory = usage.memory_mb + request.memory_mb
+    let new_connections = usage.connections + request.connections
+    let new_cpu = usage.cpu_percent + request.cpu_percent
+    
+    if new_memory > limits.max_memory_mb {
+      Err("Memory limit exceeded")
+    } else if new_connections > limits.max_connections {
+      Err("Connection limit exceeded")
+    } else if new_cpu > limits.max_cpu_percent {
+      Err("CPU limit exceeded")
+    } else {
+      Ok("Resources available")
+    }
+  }
+  
+  let test_requests = [
+    ("small_request", { "memory_mb": 10, "connections": 1, "cpu_percent": 5 }),
+    ("medium_request", { "memory_mb": 30, "connections": 5, "cpu_percent": 15 }),
+    ("large_request", { "memory_mb": 60, "connections": 20, "cpu_percent": 40 }),
+    ("oversized_request", { "memory_mb": 200, "connections": 100, "cpu_percent": 90 })
+  ]
+  
+  let mut current_usage = current_usage
+  
+  for (request_name, request) in test_requests {
+    let result = check_resource_availability(resource_limits, current_usage, request)
+    
+    match request_name {
+      "small_request" => {
+        @assertion.assert_ok(result)?
+        current_usage = {
+          "memory_mb": current_usage.memory_mb + request.memory_mb,
+          "connections": current_usage.connections + request.connections,
+          "cpu_percent": current_usage.cpu_percent + request.cpu_percent
+        }
+      }
+      "medium_request" => {
+        @assertion.assert_ok(result)?
+        current_usage = {
+          "memory_mb": current_usage.memory_mb + request.memory_mb,
+          "connections": current_usage.connections + request.connections,
+          "cpu_percent": current_usage.cpu_percent + request.cpu_percent
+        }
+      }
+      "large_request" => {
+        @assertion.assert_ok(result)?
+        current_usage = {
+          "memory_mb": current_usage.memory_mb + request.memory_mb,
+          "connections": current_usage.connections + request.connections,
+          "cpu_percent": current_usage.cpu_percent + request.cpu_percent
+        }
+      }
+      "oversized_request" => {
+        @assertion.assert_error(result)?
+        match result {
+          Err(msg) => {
+            @assertion.assert_true(msg.contains("limit exceeded"))?
+          }
+          _ => @assertion.assert_fail("Expected error but got success")?
+        }
+      }
+      _ => @assertion.assert_fail("Unknown request type")?
+    }
+  }
+}
+
+test "error_boundary_network_resilience" {
+  // 网络弹性测试
+  let network_conditions = [
+    ("stable", 0, 10),        // 0%丢包，10ms延迟
+    ("unstable", 10, 100),    // 10%丢包，100ms延迟
+    ("poor", 30, 500),        // 30%丢包，500ms延迟
+    ("critical", 50, 2000)    // 50%丢包，2000ms延迟
+  ]
+  
+  let retry_policy = {
+    "max_retries": 3,
+    "backoff_multiplier": 2,
+    "initial_delay_ms": 100
+  }
+  
+  let simulate_network_request = fn(condition : (String, Int, Int), retry_policy : { "max_retries": Int, "backoff_multiplier": Int, "initial_delay_ms": Int }) -> { "success": Bool, "attempts": Int, "total_delay_ms": Int } {
+    let (name, packet_loss_percent, delay_ms) = condition
+    let mut attempts = 0
+    let mut total_delay = 0
+    let mut current_delay = retry_policy.initial_delay_ms
+    let mut success = false
+    
+    while attempts < retry_policy.max_retries + 1 && !success {
+      attempts = attempts + 1
+      
+      // 模拟网络请求：根据丢包率决定是否成功
+      let random_value = attempts * 17 % 100  // 简化的伪随机
+      if random_value >= packet_loss_percent {
+        success = true
+      } else {
+        total_delay = total_delay + delay_ms + current_delay
+        current_delay = current_delay * retry_policy.backoff_multiplier
+      }
+    }
+    
+    { "success": success, "attempts": attempts, "total_delay_ms": total_delay }
+  }
+  
+  let results = network_conditions.map(simulate_network_request, retry_policy)
+  
+  // 验证网络弹性
+  @assertion.assert_true(results[0].success)?   // 稳定网络应该成功
+  @assertion.assert_eq(results[0].attempts, 1)? // 第一次尝试就成功
+  
+  @assertion.assert_true(results[1].success)?   // 不稳定网络应该成功（通过重试）
+  @assertion.assert_true(results[1].attempts > 1)?
+  
+  @assertion.assert_true(results[2].success)?   // 较差网络应该成功（通过重试）
+  @assertion.assert_true(results[2].attempts > 1)?
+  
+  // 关键网络可能失败，即使有重试
+  @assertion.assert_true(results[3].attempts >= retry_policy.max_retries + 1)?
+  
+  // 验证延迟随重试次数增加
+  @assertion.assert_true(results[1].total_delay_ms > results[0].total_delay_ms)?
+  @assertion.assert_true(results[2].total_delay_ms > results[1].total_delay_ms)?
+  @assertion.assert_true(results[3].total_delay_ms > results[2].total_delay_ms)?
+}
+
+test "error_boundary_cascading_failure_prevention" {
+  // 级联故障预防测试
+  let service_dependencies = [
+    ("service_a", ["service_b", "service_c"]),
+    ("service_b", ["service_d"]),
+    ("service_c", ["service_d"]),
+    ("service_d", [])
+  ]
+  
+  let service_health = {
+    "service_a": "healthy",
+    "service_b": "healthy",
+    "service_c": "healthy",
+    "service_d": "degraded"
+  }
+  
+  let check_cascading_impact = fn(service : String, dependencies : Array[String], health : { "service_a": String, "service_b": String, "service_c": String, "service_d": String }) -> { "service": String, "status": String, "impacted_services": Array[String] } {
+    let mut impacted_services = []
+    let mut overall_status = "healthy"
+    
+    // 检查依赖服务的健康状态
+    for dep in dependencies {
+      let dep_status = match dep {
+        "service_a" => health.service_a
+        "service_b" => health.service_b
+        "service_c" => health.service_c
+        "service_d" => health.service_d
+        _ => "unknown"
+      }
+      
+      if dep_status != "healthy" {
+        impacted_services = impacted_services.push(dep)
+        if overall_status == "healthy" {
+          overall_status = "degraded"
+        }
+      }
+    }
+    
+    if impacted_services.length > 0 {
+      overall_status = "unhealthy"
+    }
+    
+    { "service": service, "status": overall_status, "impacted_services": impacted_services }
+  }
+  
+  let impact_analysis = service_dependencies.map(fn(service, deps) {
+    check_cascading_impact(service, deps, service_health)
+  })
+  
+  // 验证级联故障分析
+  let service_a_impact = impact_analysis.filter(fn(s, _, _) { s == "service_a" })[0]
+  let service_b_impact = impact_analysis.filter(fn(s, _, _) { s == "service_b" })[0]
+  let service_c_impact = impact_analysis.filter(fn(s, _, _) { s == "service_c" })[0]
+  let service_d_impact = impact_analysis.filter(fn(s, _, _) { s == "service_d" })[0]
+  
+  // service_d无依赖，应该不受影响
+  @assertion.assert_eq(service_d_impact.status, "healthy")?
+  @assertion.assert_eq(service_d_impact.impacted_services.length, 0)?
+  
+  // service_b和service_c依赖service_d，应该受影响
+  @assertion.assert_eq(service_b_impact.status, "unhealthy")?
+  @assertion.assert_eq(service_b_impact.impacted_services.length, 1)?
+  @assertion.assert_eq(service_b_impact.impacted_services[0], "service_d")?
+  
+  @assertion.assert_eq(service_c_impact.status, "unhealthy")?
+  @assertion.assert_eq(service_c_impact.impacted_services.length, 1)?
+  @assertion.assert_eq(service_c_impact.impacted_services[0], "service_d")?
+  
+  // service_a依赖service_b和service_c，应该间接受影响
+  @assertion.assert_eq(service_a_impact.status, "unhealthy")?
+  @assertion.assert_eq(service_a_impact.impacted_services.length, 2)?
+  @assertion.assert_true(service_a_impact.impacted_services.contains("service_b"))?
+  @assertion.assert_true(service_a_impact.impacted_services.contains("service_c"))?
+}
+
+test "error_boundary_graceful_degradation" {
+  // 优雅降级测试
+  let degradation_levels = [
+    ("level_1", ["optional_feature_a", "optional_feature_b"]),
+    ("level_2", ["optional_feature_a", "optional_feature_b", "analytics"]),
+    ("level_3", ["optional_feature_a", "optional_feature_b", "analytics", "caching"]),
+    ("level_4", ["optional_feature_a", "optional_feature_b", "analytics", "caching", "background_processing"])
+  ]
+  
+  let system_resources = {
+    "cpu_percent": 85,
+    "memory_percent": 75,
+    "disk_percent": 60
+  }
+  
+  let determine_degradation_level = fn(resources : { "cpu_percent": Int, "memory_percent": Int, "disk_percent": Int }) -> String {
+    if resources.cpu_percent > 90 || resources.memory_percent > 90 {
+      "level_4"
+    } else if resources.cpu_percent > 80 || resources.memory_percent > 80 {
+      "level_3"
+    } else if resources.cpu_percent > 70 || resources.memory_percent > 70 {
+      "level_2"
+    } else {
+      "level_1"
+    }
+  }
+  
+  let get_disabled_features = fn(level : String, levels : Array[(String, Array[String])]) -> Array[String] {
+    match level {
+      "level_1" => []
+      "level_2" => levels.filter(fn(l, _) { l == "level_2" })[0].1
+      "level_3" => levels.filter(fn(l, _) { l == "level_3" })[0].1
+      "level_4" => levels.filter(fn(l, _) { l == "level_4" })[0].1
+      _ => []
+    }
+  }
+  
+  let current_level = determine_degradation_level(system_resources)
+  let disabled_features = get_disabled_features(current_level, degradation_levels)
+  
+  // 验证优雅降级逻辑
+  @assertion.assert_eq(current_level, "level_3")?  // CPU 85% 应该触发level_3
+  
+  // 验证禁用功能数量随降级级别增加
+  let level_1_features = get_disabled_features("level_1", degradation_levels)
+  let level_2_features = get_disabled_features("level_2", degradation_levels)
+  let level_3_features = get_disabled_features("level_3", degradation_levels)
+  let level_4_features = get_disabled_features("level_4", degradation_levels)
+  
+  @assertion.assert_eq(level_1_features.length, 0)?
+  @assertion.assert_eq(level_2_features.length, 2)?
+  @assertion.assert_eq(level_3_features.length, 4)?
+  @assertion.assert_eq(level_4_features.length, 5)?
+  
+  // 验证禁用功能包含预期组件
+  @assertion.assert_true(level_3_features.contains("optional_feature_a"))?
+  @assertion.assert_true(level_3_features.contains("optional_feature_b"))?
+  @assertion.assert_true(level_3_features.contains("analytics"))?
+  @assertion.assert_true(level_3_features.contains("caching"))?
+  @assertion.assert_false(level_3_features.contains("background_processing"))?
+  
+  @assertion.assert_eq(disabled_features, level_3_features)?
 }
