@@ -1,643 +1,563 @@
-// 遥测生命周期管理测试用例
+// 遥测数据生命周期管理测试用例
 
-test "telemetry_service_initialization" {
-  // 测试遥测服务初始化
+test "telemetry_data_creation" {
+  // 测试遥测数据创建
   
-  let service_config = {
-    "service_name": "api-gateway",
-    "service_version": "1.2.3",
-    "environment": "production",
-    "telemetry_enabled": true,
-    "auto_start": true,
-    "graceful_shutdown_timeout_ms": 30000
+  let telemetry_data_template = {
+    "metric_name": "",
+    "metric_value": 0.0,
+    "timestamp": 0,
+    "tags": {},
+    "resource": {},
+    "status": "created"
   }
   
-  // 验证服务配置
-  assert_eq(service_config["service_name"], "api-gateway")
-  assert_eq(service_config["service_version"], "1.2.3")
-  assert_eq(service_config["environment"], "production")
-  assert_eq(service_config["telemetry_enabled"], "true")
-  assert_eq(service_config["auto_start"], "true")
-  assert_eq(service_config["graceful_shutdown_timeout_ms"], "30000")
+  // 验证数据模板
+  assert_eq(telemetry_data_template["metric_name"], "")
+  assert_eq(telemetry_data_template["metric_value"], 0.0)
+  assert_eq(telemetry_data_template["timestamp"], 0)
+  assert_eq(telemetry_data_template["status"], "created")
   
-  // 模拟服务初始化阶段
-  let initialization_phases = [
-    ("config_validation", 100),
-    ("resource_allocation", 200),
-    ("connection_establishment", 500),
-    ("component_registration", 150),
-    ("health_check", 50)
-  ]
-  
-  // 验证初始化阶段
-  assert_eq(initialization_phases.length(), 5)
-  assert_eq(initialization_phases[0].0, "config_validation")
-  assert_eq(initialization_phases[1].0, "resource_allocation")
-  assert_eq(initialization_phases[2].0, "connection_establishment")
-  assert_eq(initialization_phases[3].0, "component_registration")
-  assert_eq(initialization_phases[4].0, "health_check")
-  
-  // 模拟初始化时间计算
-  let mut total_initialization_time = 0
-  let mut i = 0
-  
-  while i < initialization_phases.length() {
-    let phase_time = initialization_phases[i].1
-    total_initialization_time = total_initialization_time + phase_time
-    i = i + 1
-  }
-  
-  // 验证初始化时间
-  assert_eq(total_initialization_time, 1000)  // 100 + 200 + 500 + 150 + 50
-  assert_eq(total_initialization_time < 5000, true)  // 合理的初始化时间
-  
-  // 测试初始化状态
-  let initialization_states = ["NOT_STARTED", "INITIALIZING", "READY", "FAILED"]
-  let current_state = "READY"
-  
-  // 验证初始化状态
-  assert_eq(initialization_states.contains(current_state), true)
-  assert_eq(current_state, "READY")
-  
-  // 模拟组件注册
-  let telemetry_components = [
-    ("metrics_collector", true),
-    ("trace_exporter", true),
-    ("log_processor", true),
-    ("health_monitor", true),
-    ("config_manager", true)
-  ]
-  
-  // 验证组件注册
-  assert_eq(telemetry_components.length(), 5)
-  
-  let mut registered_components = 0
-  let mut i = 0
-  while i < telemetry_components.length() {
-    let component = telemetry_components[i]
-    if component.1 {
-      registered_components = registered_components + 1
+  // 创建具体的遥测数据
+  let telemetry_instances = [
+    {
+      "metric_name": "cpu_usage",
+      "metric_value": 45.2,
+      "timestamp": 1703123456,
+      "tags": {"host": "server1", "region": "us-east"},
+      "resource": {"service": "web-api"},
+      "status": "created"
+    },
+    {
+      "metric_name": "memory_usage",
+      "metric_value": 67.8,
+      "timestamp": 1703123457,
+      "tags": {"host": "server1", "region": "us-east"},
+      "resource": {"service": "web-api"},
+      "status": "created"
+    },
+    {
+      "metric_name": "disk_io",
+      "metric_value": 123.4,
+      "timestamp": 1703123458,
+      "tags": {"host": "server2", "region": "us-west"},
+      "resource": {"service": "database"},
+      "status": "created"
     }
+  ]
+  
+  // 验证遥测数据实例
+  assert_eq(telemetry_instances.length(), 3)
+  assert_eq(telemetry_instances[0]["metric_name"], "cpu_usage")
+  assert_eq(telemetry_instances[1]["metric_name"], "memory_usage")
+  assert_eq(telemetry_instances[2]["metric_name"], "disk_io")
+  
+  // 验证数据完整性
+  let mut i = 0
+  while i < telemetry_instances.length() {
+    let data = telemetry_instances[i]
+    assert_eq(data["metric_name"] != "", true)
+    assert_eq(data["metric_value"] > 0.0, true)
+    assert_eq(data["timestamp"] > 0, true)
+    assert_eq(data["status"], "created")
     i = i + 1
   }
   
-  // 验证注册结果
-  assert_eq(registered_components, 5)
-  assert_eq(registered_components == telemetry_components.length(), true)
+  // 验证时间戳递增
+  assert_eq(telemetry_instances[0]["timestamp"] < telemetry_instances[1]["timestamp"], true)
+  assert_eq(telemetry_instances[1]["timestamp"] < telemetry_instances[2]["timestamp"], true)
   
-  // 测试初始化完成验证
-  let initialization_complete = 
-    current_state == "READY" and 
-    registered_components == telemetry_components.length() and
-    total_initialization_time < 5000
-  
-  assert_eq(initialization_complete, true)
+  // 验证标签和资源信息
+  assert_eq(telemetry_instances[0]["tags"]["host"], "server1")
+  assert_eq(telemetry_instances[2]["tags"]["host"], "server2")
+  assert_eq(telemetry_instances[0]["resource"]["service"], "web-api")
+  assert_eq(telemetry_instances[2]["resource"]["service"], "database")
 }
 
-test "telemetry_service_runtime_management" {
-  // 测试遥测服务运行时管理
+test "telemetry_data_processing" {
+  // 测试遥测数据处理
   
-  let runtime_config = {
-    "health_check_interval_ms": 30000,
-    "metrics_collection_interval_ms": 10000,
-    "batch_export_interval_ms": 60000,
-    "max_memory_usage_mb": 512,
-    "max_cpu_usage_percent": 80
-  }
-  
-  // 验证运行时配置
-  assert_eq(runtime_config["health_check_interval_ms"], "30000")
-  assert_eq(runtime_config["metrics_collection_interval_ms"], "10000")
-  assert_eq(runtime_config["batch_export_interval_ms"], "60000")
-  assert_eq(runtime_config["max_memory_usage_mb"], "512")
-  assert_eq(runtime_config["max_cpu_usage_percent"], "80")
-  
-  // 模拟运行时监控指标
-  let runtime_metrics = {
-    "uptime_seconds": 3600,
-    "memory_usage_mb": 256,
-    "cpu_usage_percent": 45,
-    "active_connections": 25,
-    "processed_requests": 10000,
-    "error_count": 15
-  }
-  
-  // 验证运行时指标
-  assert_eq(runtime_metrics["uptime_seconds"], "3600")
-  assert_eq(runtime_metrics["memory_usage_mb"], "256")
-  assert_eq(runtime_metrics["cpu_usage_percent"], "45")
-  assert_eq(runtime_metrics["active_connections"], "25")
-  assert_eq(runtime_metrics["processed_requests"], "10000")
-  assert_eq(runtime_metrics["error_count"], "15")
-  
-  // 测试健康检查
-  let health_checks = [
-    ("database_connection", true),
-    ("external_api", true),
-    ("memory_usage", true),
-    ("disk_space", true),
-    ("cpu_usage", true)
+  let raw_telemetry_data = [
+    {"metric_name": "cpu_usage", "metric_value": 45.2, "timestamp": 1703123456, "status": "created"},
+    {"metric_name": "memory_usage", "metric_value": 67.8, "timestamp": 1703123457, "status": "created"},
+    {"metric_name": "network_io", "metric_value": 89.1, "timestamp": 1703123458, "status": "created"},
+    {"metric_name": "disk_io", "metric_value": 123.4, "timestamp": 1703123459, "status": "created"}
   ]
   
-  // 验证健康检查项目
-  assert_eq(health_checks.length(), 5)
+  // 验证原始数据
+  assert_eq(raw_telemetry_data.length(), 4)
   
-  let mut healthy_checks = 0
+  // 数据处理阶段
+  let processing_stages = [
+    "validation",
+    "normalization",
+    "enrichment",
+    "aggregation",
+    "filtering"
+  ]
+  
+  // 验证处理阶段
+  assert_eq(processing_stages.length(), 5)
+  
+  // 模拟数据处理流程
+  let mut processed_data = []
   let mut i = 0
-  while i < health_checks.length() {
-    let check = health_checks[i]
-    if check.1 {
-      healthy_checks = healthy_checks + 1
-    }
-    i = i + 1
-  }
   
-  // 验证健康状态
-  assert_eq(healthy_checks, 5)
-  let service_healthy = healthy_checks == health_checks.length()
-  assert_eq(service_healthy, true)
-  
-  // 测试性能监控
-  let performance_metrics = {
-    "avg_response_time_ms": 125,
-    "p95_response_time_ms": 250,
-    "p99_response_time_ms": 500,
-    "throughput_rps": 1000,
-    "error_rate_percent": 0.15
-  }
-  
-  // 验证性能指标
-  assert_eq(performance_metrics["avg_response_time_ms"], "125")
-  assert_eq(performance_metrics["p95_response_time_ms"], "250")
-  assert_eq(performance_metrics["p99_response_time_ms"], "500")
-  assert_eq(performance_metrics["throughput_rps"], "1000")
-  assert_eq(performance_metrics["error_rate_percent"], "0.15")
-  
-  // 检查性能阈值
-  let max_avg_response_time = 200
-  let max_p95_response_time = 400
-  let min_throughput = 500
-  let max_error_rate = 1.0
-  
-  let performance_acceptable = 
-    performance_metrics["avg_response_time_ms"].to_int() <= max_avg_response_time and
-    performance_metrics["p95_response_time_ms"].to_int() <= max_p95_response_time and
-    performance_metrics["throughput_rps"].to_int() >= min_throughput and
-    performance_metrics["error_rate_percent"].to_double() <= max_error_rate
-  
-  // 验证性能状态
-  assert_eq(performance_acceptable, true)
-  
-  // 测试动态配置更新
-  let config_updates = [
-    ("metrics_collection_interval_ms", 15000),  // 从10000增加到15000
-    ("batch_export_interval_ms", 45000),        // 从60000减少到45000
-    ("max_memory_usage_mb", 768)                // 从512增加到768
-  ]
-  
-  // 验证配置更新
-  assert_eq(config_updates.length(), 3)
-  assert_eq(config_updates[0].1, "15000")
-  assert_eq(config_updates[1].1, "45000")
-  assert_eq(config_updates[2].1, "768")
-  
-  // 模拟配置更新应用
-  let mut updated_config = runtime_config
-  let mut i = 0
-  while i < config_updates.length() {
-    let key = config_updates[i].0
-    let value = config_updates[i].1
-    updated_config[key] = value
-    i = i + 1
-  }
-  
-  // 验证配置更新结果
-  assert_eq(updated_config["metrics_collection_interval_ms"], "15000")
-  assert_eq(updated_config["batch_export_interval_ms"], "45000")
-  assert_eq(updated_config["max_memory_usage_mb"], "768")
-}
-
-test "telemetry_service_graceful_shutdown" {
-  // 测试遥测服务优雅关闭
-  
-  let shutdown_config = {
-    "shutdown_timeout_ms": 30000,
-    "drain_timeout_ms": 10000,
-    "force_shutdown_after_ms": 60000,
-    "save_state_on_shutdown": true,
-    "cleanup_resources": true
-  }
-  
-  // 验证关闭配置
-  assert_eq(shutdown_config["shutdown_timeout_ms"], "30000")
-  assert_eq(shutdown_config["drain_timeout_ms"], "10000")
-  assert_eq(shutdown_config["force_shutdown_after_ms"], "60000")
-  assert_eq(shutdown_config["save_state_on_shutdown"], "true")
-  assert_eq(shutdown_config["cleanup_resources"], "true")
-  
-  // 模拟关闭阶段
-  let shutdown_phases = [
-    ("stop_accepting_new_requests", 1000),
-    ("drain_active_requests", 8000),
-    ("flush_pending_data", 3000),
-    ("save_persistent_state", 2000),
-    ("cleanup_resources", 5000),
-    ("close_connections", 1000)
-  ]
-  
-  // 验证关闭阶段
-  assert_eq(shutdown_phases.length(), 6)
-  assert_eq(shutdown_phases[0].0, "stop_accepting_new_requests")
-  assert_eq(shutdown_phases[1].0, "drain_active_requests")
-  assert_eq(shutdown_phases[2].0, "flush_pending_data")
-  
-  // 计算总关闭时间
-  let mut total_shutdown_time = 0
-  let mut i = 0
-  while i < shutdown_phases.length() {
-    let phase_time = shutdown_phases[i].1
-    total_shutdown_time = total_shutdown_time + phase_time
-    i = i + 1
-  }
-  
-  // 验证关闭时间
-  assert_eq(total_shutdown_time, 20000)  // 1000 + 8000 + 3000 + 2000 + 5000 + 1000
-  assert_eq(total_shutdown_time <= shutdown_config["shutdown_timeout_ms"].to_int(), true)
-  
-  // 测试状态保存
-  let state_to_save = {
-    "service_metrics": {
-      "total_requests_processed": 50000,
-      "total_errors": 125,
-      "uptime_seconds": 7200
-    },
-    "component_states": {
-      "metrics_collector": "STOPPED",
-      "trace_exporter": "STOPPED",
-      "log_processor": "STOPPED"
-    },
-    "pending_data": {
-      "unsent_metrics": 25,
-      "unsent_traces": 10,
-      "unsent_logs": 50
-    }
-  }
-  
-  // 验证状态数据
-  assert_eq(state_to_save["service_metrics"]["total_requests_processed"], "50000")
-  assert_eq(state_to_save["service_metrics"]["total_errors"], "125")
-  assert_eq(state_to_save["component_states"]["metrics_collector"], "STOPPED")
-  assert_eq(state_to_save["pending_data"]["unsent_metrics"], "25")
-  
-  // 模拟状态保存成功
-  let state_saved = true
-  let state_file_size = 2048  // bytes
-  
-  // 验证状态保存
-  assert_eq(state_saved, true)
-  assert_eq(state_file_size > 0, true)
-  assert_eq(state_file_size < 10240, true)  // 合理的文件大小
-  
-  // 测试资源清理
-  let resources_to_cleanup = [
-    ("memory_buffers", true),
-    ("file_handles", true),
-    ("network_connections", true),
-    ("thread_pools", true),
-    ("temporary_files", true)
-  ]
-  
-  // 验证资源清理列表
-  assert_eq(resources_to_cleanup.length(), 5)
-  
-  let mut cleaned_resources = 0
-  let mut i = 0
-  while i < resources_to_cleanup.length() {
-    let resource = resources_to_cleanup[i]
-    if resource.1 {
-      cleaned_resources = cleaned_resources + 1
-    }
-    i = i + 1
-  }
-  
-  // 验证清理结果
-  assert_eq(cleaned_resources, 5)
-  assert_eq(cleaned_resources == resources_to_cleanup.length(), true)
-  
-  // 测试关闭状态验证
-  let shutdown_states = ["RUNNING", "SHUTTING_DOWN", "STOPPED", "FAILED"]
-  let final_state = "STOPPED"
-  
-  // 验证关闭状态
-  assert_eq(shutdown_states.contains(final_state), true)
-  assert_eq(final_state, "STOPPED")
-  
-  // 验证优雅关闭完成条件
-  let graceful_shutdown_complete = 
-    final_state == "STOPPED" and
-    total_shutdown_time <= shutdown_config["shutdown_timeout_ms"].to_int() and
-    state_saved and
-    cleaned_resources == resources_to_cleanup.length()
-  
-  assert_eq(graceful_shutdown_complete, true)
-}
-
-test "telemetry_service_restart_recovery" {
-  // 测试遥测服务重启恢复
-  
-  let restart_config = {
-    "auto_restart_enabled": true,
-    "max_restart_attempts": 3,
-    "restart_delay_ms": 5000,
-    "backoff_multiplier": 2.0,
-    "max_restart_delay_ms": 30000
-  }
-  
-  // 验证重启配置
-  assert_eq(restart_config["auto_restart_enabled"], "true")
-  assert_eq(restart_config["max_restart_attempts"], "3")
-  assert_eq(restart_config["restart_delay_ms"], "5000")
-  assert_eq(restart_config["backoff_multiplier"], "2.0")
-  assert_eq(restart_config["max_restart_delay_ms"], "30000")
-  
-  // 模拟重启场景
-  let restart_scenarios = [
-    ("memory_leak_detected", true),
-    ("connection_pool_exhausted", true),
-    ("configuration_error", false),
-    ("critical_component_failure", true),
-    ("manual_restart", true)
-  ]
-  
-  // 验证重启场景
-  assert_eq(restart_scenarios.length(), 5)
-  assert_eq(restart_scenarios[0].1, true)   // 内存泄漏需要重启
-  assert_eq(restart_scenarios[1].1, true)   // 连接池耗尽需要重启
-  assert_eq(restart_scenarios[2].1, false)  // 配置错误不需要重启
-  
-  // 测试重启延迟计算
-  let restart_attempt = 2
-  let base_delay = restart_config["restart_delay_ms"].to_int()
-  let backoff_multiplier = restart_config["backoff_multiplier"].to_double()
-  let max_delay = restart_config["max_restart_delay_ms"].to_int()
-  
-  let calculated_delay = (base_delay.to_double() * (backoff_multiplier ^ (restart_attempt - 1))).to_int()
-  let actual_restart_delay = calculated_delay.min(max_delay)
-  
-  // 验证重启延迟
-  assert_eq(restart_attempt, 2)
-  assert_eq(base_delay, 5000)
-  assert_eq(calculated_delay, 10000)  // 5000 * 2.0^(2-1) = 10000
-  assert_eq(actual_restart_delay, 10000)
-  assert_eq(actual_restart_delay <= max_delay, true)
-  
-  // 测试状态恢复
-  let saved_state = {
-    "service_metrics": {
-      "total_requests_processed": 50000,
-      "total_errors": 125,
-      "uptime_seconds": 7200
-    },
-    "pending_data": {
-      "unsent_metrics": 25,
-      "unsent_traces": 10,
-      "unsent_logs": 50
-    },
-    "last_checkpoint_time": 1703123456789
-  }
-  
-  // 验证保存的状态
-  assert_eq(saved_state["service_metrics"]["total_requests_processed"], "50000")
-  assert_eq(saved_state["pending_data"]["unsent_metrics"], "25")
-  assert_eq(saved_state["last_checkpoint_time"], "1703123456789")
-  
-  // 模拟状态恢复
-  let state_recovery_successful = true
-  let recovered_metrics = saved_state["service_metrics"]
-  let recovered_pending_data = saved_state["pending_data"]
-  
-  // 验证状态恢复
-  assert_eq(state_recovery_successful, true)
-  assert_eq(recovered_metrics["total_requests_processed"], "50000")
-  assert_eq(recovered_pending_data["unsent_metrics"], "25")
-  
-  // 测试重启后的健康检查
-  let post_restart_health_checks = [
-    ("service_initialization", true),
-    ("component_registration", true),
-    ("connection_establishment", true),
-    ("data_processing", true),
-    ("health_monitoring", true)
-  ]
-  
-  // 验证重启后健康检查
-  assert_eq(post_restart_health_checks.length(), 5)
-  
-  let mut post_restart_healthy_checks = 0
-  let mut i = 0
-  while i < post_restart_health_checks.length() {
-    let check = post_restart_health_checks[i]
-    if check.1 {
-      post_restart_healthy_checks = post_restart_healthy_checks + 1
-    }
-    i = i + 1
-  }
-  
-  // 验证重启后健康状态
-  assert_eq(post_restart_healthy_checks, 5)
-  let service_healthy_after_restart = post_restart_healthy_checks == post_restart_health_checks.length()
-  assert_eq(service_healthy_after_restart, true)
-  
-  // 测试重启历史记录
-  let restart_history = [
-    {"timestamp": 1703120000000, "reason": "memory_leak_detected", "success": true},
-    {"timestamp": 1703120300000, "reason": "connection_pool_exhausted", "success": true},
-    {"timestamp": 1703120600000, "reason": "critical_component_failure", "success": false}
-  ]
-  
-  // 验证重启历史
-  assert_eq(restart_history.length(), 3)
-  assert_eq(restart_history[0]["reason"], "memory_leak_detected")
-  assert_eq(restart_history[0]["success"], "true")
-  assert_eq(restart_history[2]["success"], "false")
-  
-  // 统计重启成功率
-  let mut successful_restarts = 0
-  let mut i = 0
-  while i < restart_history.length() {
-    if restart_history[i]["success"] == "true" {
-      successful_restarts = successful_restarts + 1
-    }
-    i = i + 1
-  }
-  
-  let restart_success_rate = (successful_restarts * 100) / restart_history.length()
-  
-  // 验证重启成功率
-  assert_eq(successful_restarts, 2)
-  assert_eq(restart_success_rate, 66)  // 2/3 * 100 = 66.66
-  assert_eq(restart_success_rate > 50, true)  // 成功率应该超过50%
-}
-
-test "telemetry_service_version_migration" {
-  // 测试遥测服务版本迁移
-  
-  let migration_config = {
-    "current_version": "2.1.0",
-    "target_version": "2.2.0",
-    "migration_timeout_ms": 600000,
-    "rollback_enabled": true,
-    "data_consistency_check": true
-  }
-  
-  // 验证迁移配置
-  assert_eq(migration_config["current_version"], "2.1.0")
-  assert_eq(migration_config["target_version"], "2.2.0")
-  assert_eq(migration_config["migration_timeout_ms"], "600000")
-  assert_eq(migration_config["rollback_enabled"], "true")
-  assert_eq(migration_config["data_consistency_check"], "true")
-  
-  // 模拟迁移步骤
-  let migration_steps = [
-    ("pre_migration_backup", 30000),
-    ("schema_migration", 120000),
-    ("data_migration", 180000),
-    ("configuration_update", 15000),
-    ("service_restart", 60000),
-    ("post_migration_validation", 45000)
-  ]
-  
-  // 验证迁移步骤
-  assert_eq(migration_steps.length(), 6)
-  assert_eq(migration_steps[0].0, "pre_migration_backup")
-  assert_eq(migration_steps[1].0, "schema_migration")
-  assert_eq(migration_steps[2].0, "data_migration")
-  
-  // 计算总迁移时间
-  let mut total_migration_time = 0
-  let mut i = 0
-  while i < migration_steps.length() {
-    let step_time = migration_steps[i].1
-    total_migration_time = total_migration_time + step_time
-    i = i + 1
-  }
-  
-  // 验证迁移时间
-  assert_eq(total_migration_time, 450000)  // 30000 + 120000 + 180000 + 15000 + 60000 + 45000
-  assert_eq(total_migration_time <= migration_config["migration_timeout_ms"].to_int(), true)
-  
-  // 测试数据迁移
-  let data_migration_tasks = [
-    ("metrics_data", 1000000, true),
-    ("trace_data", 500000, true),
-    ("log_data", 2000000, true),
-    ("configuration_data", 1000, true)
-  ]
-  
-  // 验证数据迁移任务
-  assert_eq(data_migration_tasks.length(), 4)
-  
-  let mut total_records_migrated = 0
-  let mut successful_migrations = 0
-  let mut i = 0
-  while i < data_migration_tasks.length() {
-    let task = data_migration_tasks[i]
-    let record_count = task.1
-    let migration_success = task.2
+  while i < raw_telemetry_data.length() {
+    let data = raw_telemetry_data]
+    let mut current_data = data
     
-    total_records_migrated = total_records_migrated + record_count
-    if migration_success {
-      successful_migrations = successful_migrations + 1
+    // 验证阶段
+    if current_data["metric_value"] > 0.0 and current_data["metric_value"] < 200.0 {
+      current_data["validation_status"] = "passed"
+    } else {
+      current_data["validation_status"] = "failed"
+    }
+    
+    // 标准化阶段
+    current_data["normalized_value"] = current_data["metric_value"] / 100.0
+    
+    // 丰富阶段
+    current_data["processing_timestamp"] = 1703123460
+    current_data["data_source"] = "system_monitor"
+    
+    // 聚合阶段（简化）
+    current_data["aggregation_window"] = "1m"
+    
+    // 过滤阶段
+    if current_data["metric_value"] > 50.0 {
+      current_data["filter_status"] = "included"
+    } else {
+      current_data["filter_status"] = "excluded"
+    }
+    
+    // 更新状态
+    current_data["status"] = "processed"
+    
+    processed_data.push(current_data)
+    i = i + 1
+  }
+  
+  // 验证处理结果
+  assert_eq(processed_data.length(), 4)
+  
+  i = 0
+  while i < processed_data.length() {
+    let data = processed_data[i]
+    assert_eq(data["status"], "processed")
+    assert_eq(data["validation_status"], "passed")
+    assert_eq(data["normalized_value"] > 0.0, true)
+    assert_eq(data["processing_timestamp"], 1703123460)
+    assert_eq(data["data_source"], "system_monitor")
+    i = i + 1
+  }
+  
+  // 验证过滤结果
+  let mut included_count = 0
+  let mut excluded_count = 0
+  i = 0
+  while i < processed_data.length() {
+    if processed_data[i]["filter_status"] == "included" {
+      included_count = included_count + 1
+    } else {
+      excluded_count = excluded_count + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(included_count, 3)  // cpu_usage, memory_usage, network_io, disk_io中大于50的有3个
+  assert_eq(excluded_count, 1)  // cpu_usage小于50被排除
+}
+
+test "telemetry_data_storage" {
+  // 测试遥测数据存储
+  
+  let telemetry_for_storage = [
+    {
+      "id": "tel_001",
+      "metric_name": "cpu_usage",
+      "metric_value": 45.2,
+      "timestamp": 1703123456,
+      "storage_location": "",
+      "compression_applied": false,
+      "status": "processed"
+    },
+    {
+      "id": "tel_002",
+      "metric_name": "memory_usage",
+      "metric_value": 67.8,
+      "timestamp": 1703123457,
+      "storage_location": "",
+      "compression_applied": false,
+      "status": "processed"
+    }
+  ]
+  
+  // 验证待存储数据
+  assert_eq(telemetry_for_storage.length(), 2)
+  
+  // 存储配置
+  let storage_config = {
+    "primary_storage": "local_disk",
+    "backup_storage": "cloud_storage",
+    "compression_enabled": true,
+    "compression_algorithm": "gzip",
+    "retention_days": 90
+  }
+  
+  // 验证存储配置
+  assert_eq(storage_config["primary_storage"], "local_disk")
+  assert_eq(storage_config["compression_enabled"], true)
+  
+  // 模拟数据存储过程
+  let mut stored_data = []
+  let mut i = 0
+  
+  while i < telemetry_for_storage.length() {
+    let data = telemetry_for_storage[i]
+    
+    // 确定存储位置
+    let storage_path = "/telemetry/data/" + data["metric_name"] + "/" + data["id"] + ".json"
+    data["storage_location"] = storage_path
+    
+    // 应用压缩
+    if storage_config["compression_enabled"] {
+      data["compression_applied"] = true
+      data["compressed_size"] = 128  // 假设压缩后大小
+    }
+    
+    // 设置存储时间戳
+    data["storage_timestamp"] = 1703123465
+    
+    // 更新状态
+    data["status"] = "stored"
+    
+    stored_data.push(data)
+    i = i + 1
+  }
+  
+  // 验证存储结果
+  assert_eq(stored_data.length(), 2)
+  
+  i = 0
+  while i < stored_data.length() {
+    let data = stored_data[i]
+    assert_eq(data["status"], "stored")
+    assert_eq(data["storage_location"].contains("/telemetry/data/"), true)
+    assert_eq(data["compression_applied"], true)
+    assert_eq(data["storage_timestamp"], 1703123465)
+    i = i + 1
+  }
+  
+  // 验证存储路径唯一性
+  assert_eq(stored_data[0]["storage_location"] != stored_data[1]["storage_location"], true)
+  
+  // 验证备份存储
+  let mut backup_data = []
+  i = 0
+  while i < stored_data.length() {
+    let data = stored_data[i]
+    let backup_path = "s3://telemetry-backup/" + data["metric_name"] + "/" + data["id"] + ".json.gz"
+    
+    let backup_entry = {
+      "original_id": data["id"],
+      "backup_location": backup_path,
+      "backup_timestamp": 1703123470,
+      "backup_status": "completed"
+    }
+    
+    backup_data.push(backup_entry)
+    i = i + 1
+  }
+  
+  // 验证备份结果
+  assert_eq(backup_data.length(), 2)
+  assert_eq(backup_data[0]["backup_status"], "completed")
+  assert_eq(backup_data[1]["backup_status"], "completed")
+}
+
+test "telemetry_data_archival" {
+  // 测试遥测数据归档
+  
+  let telemetry_for_archival = [
+    {
+      "id": "tel_001",
+      "metric_name": "cpu_usage",
+      "timestamp": 1703123456,
+      "age_days": 95,
+      "status": "stored",
+      "archived": false
+    },
+    {
+      "id": "tel_002",
+      "metric_name": "memory_usage",
+      "timestamp": 1703123457,
+      "age_days": 85,
+      "status": "stored",
+      "archived": false
+    },
+    {
+      "id": "tel_003",
+      "metric_name": "network_io",
+      "timestamp": 1703123458,
+      "age_days": 105,
+      "status": "stored",
+      "archived": false
+    }
+  ]
+  
+  // 验证待归档数据
+  assert_eq(telemetry_for_archival.length(), 3)
+  
+  // 归档策略
+  let archival_policy = {
+    "hot_storage_days": 30,
+    "warm_storage_days": 60,
+    "cold_storage_days": 90,
+    "archive_threshold_days": 90,
+    "compression_for_archive": true,
+    "archive_format": "parquet"
+  }
+  
+  // 验证归档策略
+  assert_eq(archival_policy["archive_threshold_days"], 90)
+  assert_eq(archival_policy["compression_for_archive"], true)
+  
+  // 确定需要归档的数据
+  let mut archival_candidates = []
+  let mut i = 0
+  
+  while i < telemetry_for_archival.length() {
+    let data = telemetry_for_archival[i]
+    if data["age_days"] >= archival_policy["archive_threshold_days"] {
+      archival_candidates.push(data)
+    }
+    i = i + 1
+  }
+  
+  // 验证归档候选
+  assert_eq(archival_candidates.length(), 2)  // 95天和105天的数据需要归档
+  
+  // 执行归档过程
+  let mut archived_data = []
+  i = 0
+  while i < archival_candidates.length() {
+    let data = archival_candidates[i]
+    
+    // 确定归档存储位置
+    let archive_location = "/telemetry/archive/" + data["metric_name"] + "/" + data["id"] + ".parquet"
+    
+    // 应用归档压缩
+    let archive_size = 64  // 假设归档后大小
+    
+    // 创建归档记录
+    let archive_record = {
+      "original_id": data["id"],
+      "archive_location": archive_location,
+      "archive_timestamp": 1703123500,
+      "archive_size": archive_size,
+      "compression_ratio": 0.5,
+      "status": "archived"
+    }
+    
+    archived_data.push(archive_record)
+    
+    // 更新原始数据状态
+    data["archived"] = true
+    data["status"] = "archived"
+    
+    i = i + 1
+  }
+  
+  // 验证归档结果
+  assert_eq(archived_data.length(), 2)
+  
+  i = 0
+  while i < archived_data.length() {
+    let archive = archived_data[i]
+    assert_eq(archive["status"], "archived")
+    assert_eq(archive["archive_location"].contains("/telemetry/archive/"), true)
+    assert_eq(archive["archive_size"], 64)
+    assert_eq(archive["compression_ratio"], 0.5)
+    i = i + 1
+  }
+  
+  // 验证原始数据状态更新
+  let mut archived_count = 0
+  i = 0
+  while i < telemetry_for_archival.length() {
+    if telemetry_for_archival[i]["archived"] {
+      archived_count = archived_count + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(archived_count, 2)
+  
+  // 验证存储空间节省
+  let original_total_size = 256  // 假设原始总大小
+  let archived_total_size = archived_data[0]["archive_size"] + archived_data[1]["archive_size"]
+  let space_saved = original_total_size - archived_total_size
+  let space_saved_percentage = (space_saved * 100) / original_total_size
+  
+  assert_eq(space_saved, 128)
+  assert_eq(space_saved_percentage, 50)
+}
+
+test "telemetry_data_deletion" {
+  // 测试遥测数据删除
+  
+  let telemetry_for_deletion = [
+    {
+      "id": "tel_001",
+      "metric_name": "cpu_usage",
+      "timestamp": 1703123456,
+      "age_days": 400,
+      "status": "archived",
+      "retention_policy": "standard"
+    },
+    {
+      "id": "tel_002",
+      "metric_name": "memory_usage",
+      "timestamp": 1703123457,
+      "age_days": 350,
+      "status": "archived",
+      "retention_policy": "extended"
+    },
+    {
+      "id": "tel_003",
+      "metric_name": "network_io",
+      "timestamp": 1703123458,
+      "age_days": 500,
+      "status": "archived",
+      "retention_policy": "standard"
+    }
+  ]
+  
+  // 验证待删除数据
+  assert_eq(telemetry_for_deletion.length(), 3)
+  
+  // 删除策略
+  let deletion_policy = {
+    "standard_retention_days": 365,
+    "extended_retention_days": 730,
+    "audit_retention_days": 2555,  // 7年
+    "soft_delete_enabled": true,
+    "hard_delete_after_days": 30
+  }
+  
+  // 验证删除策略
+  assert_eq(deletion_policy["standard_retention_days"], 365)
+  assert_eq(deletion_policy["extended_retention_days"], 730)
+  
+  // 确定需要删除的数据
+  let mut deletion_candidates = []
+  let mut i = 0
+  
+  while i < telemetry_for_deletion.length() {
+    let data = telemetry_for_deletion[i]
+    let retention_days = 
+      if data["retention_policy"] == "standard" { deletion_policy["standard_retention_days"] }
+      else if data["retention_policy"] == "extended" { deletion_policy["extended_retention_days"] }
+      else { deletion_policy["standard_retention_days"] }
+    
+    if data["age_days"] > retention_days {
+      deletion_candidates.push(data)
     }
     
     i = i + 1
   }
   
-  // 验证数据迁移结果
-  assert_eq(total_records_migrated, 3501000)  // 1000000 + 500000 + 2000000 + 1000
-  assert_eq(successful_migrations, 4)
-  assert_eq(successful_migrations == data_migration_tasks.length(), true)
+  // 验证删除候选
+  assert_eq(deletion_candidates.length(), 2)  // 400天和500天的标准策略数据需要删除
   
-  // 测试迁移后验证
-  let post_migration_validations = [
-    ("data_integrity_check", true),
-    ("performance_benchmark", true),
-    ("compatibility_test", true),
-    ("functionality_test", true),
-    ("rollback_capability_test", true)
-  ]
+  // 执行软删除过程
+  let mut soft_deleted_data = []
+  i = 0
+  while i < deletion_candidates.length() {
+    let data = deletion_candidates[i]
+    
+    // 创建删除记录
+    let deletion_record = {
+      "original_id": data["id"],
+      "deletion_timestamp": 1703123600,
+      "deletion_reason": "retention_policy_expired",
+      "deletion_type": "soft",
+      "scheduled_hard_delete": 1703123600 + deletion_policy["hard_delete_after_days"] * 24 * 3600
+    }
+    
+    soft_deleted_data.push(deletion_record)
+    
+    // 更新原始数据状态
+    data["status"] = "soft_deleted"
+    data["deletion_timestamp"] = 1703123600
+    
+    i = i + 1
+  }
   
-  // 验证迁移后检查
-  assert_eq(post_migration_validations.length(), 5)
+  // 验证软删除结果
+  assert_eq(soft_deleted_data.length(), 2)
   
-  let mut passed_validations = 0
-  let mut i = 0
-  while i < post_migration_validations.length() {
-    let validation = post_migration_validations[i]
-    if validation.1 {
-      passed_validations = passed_validations + 1
+  i = 0
+  while i < soft_deleted_data.length() {
+    let deletion = soft_deleted_data[i]
+    assert_eq(deletion["deletion_type"], "soft")
+    assert_eq(deletion["deletion_reason"], "retention_policy_expired")
+    assert_eq(deletion["scheduled_hard_delete"] > deletion["deletion_timestamp"], true)
+    i = i + 1
+  }
+  
+  // 验证原始数据状态更新
+  let mut soft_deleted_count = 0
+  i = 0
+  while i < telemetry_for_deletion.length() {
+    if telemetry_for_deletion[i]["status"] == "soft_deleted" {
+      soft_deleted_count = soft_deleted_count + 1
     }
     i = i + 1
   }
   
-  // 验证迁移后检查结果
-  assert_eq(passed_validations, 5)
-  let migration_successful = passed_validations == post_migration_validations.length()
-  assert_eq(migration_successful, true)
+  assert_eq(soft_deleted_count, 2)
   
-  // 测试回滚机制
-  let rollback_scenarios = [
-    ("data_corruption_detected", true),
-    ("performance_degradation", true),
-    ("critical_errors", true),
-    ("timeout_exceeded", true),
-    ("manual_rollback", false)
-  ]
+  // 模拟硬删除过程（软删除30天后）
+  let current_time = 1703123600 + deletion_policy["hard_delete_after_days"] * 24 * 3600 + 86400  // 31天后
   
-  // 验证回滚场景
-  assert_eq(rollback_scenarios.length(), 5)
-  assert_eq(rollback_scenarios[0].1, true)  // 数据损坏需要回滚
-  assert_eq(rollback_scenarios[4].1, false) // 手动回滚不是自动触发
-  
-  // 模拟回滚执行
-  let rollback_enabled = migration_config["rollback_enabled"] == "true"
-  let rollback_steps = [
-    ("stop_new_version", 5000),
-    ("restore_backup", 60000),
-    ("restore_configuration", 10000),
-    ("restart_old_version", 15000),
-    ("validate_rollback", 10000)
-  ]
-  
-  // 验证回滚步骤
-  assert_eq(rollback_enabled, true)
-  assert_eq(rollback_steps.length(), 5)
-  
-  // 计算回滚时间
-  let mut total_rollback_time = 0
-  let mut i = 0
-  while i < rollback_steps.length() {
-    let step_time = rollback_steps[i].1
-    total_rollback_time = total_rollback_time + step_time
+  let mut hard_deleted_data = []
+  i = 0
+  while i < soft_deleted_data.length() {
+    let deletion = soft_deleted_data[i]
+    
+    if current_time >= deletion["scheduled_hard_delete"] {
+      let hard_deletion_record = {
+        "original_id": deletion["original_id"],
+        "hard_deletion_timestamp": current_time,
+        "deletion_type": "hard",
+        "data_completely_removed": true
+      }
+      
+      hard_deleted_data.push(hard_deletion_record)
+    }
+    
     i = i + 1
   }
   
-  // 验证回滚时间
-  assert_eq(total_rollback_time, 100000)  // 5000 + 60000 + 10000 + 15000 + 10000
-  assert_eq(total_rollback_time < migration_config["migration_timeout_ms"].to_int(), true)
+  // 验证硬删除结果
+  assert_eq(hard_deleted_data.length(), 2)
   
-  // 测试版本兼容性
-  let version_compatibility_matrix = [
-    ("2.0.0", "2.1.0", true),
-    ("2.1.0", "2.2.0", true),
-    ("2.0.0", "2.2.0", false),  // 跨版本升级不直接兼容
-    ("2.2.0", "2.1.0", true),   // 向后兼容
-    ("2.1.0", "2.0.0", true)    // 向后兼容
-  ]
+  i = 0
+  while i < hard_deleted_data.length() {
+    let deletion = hard_deleted_data[i]
+    assert_eq(deletion["deletion_type"], "hard")
+    assert_eq(deletion["data_completely_removed"], true)
+    i = i + 1
+  }
   
-  // 验证版本兼容性
-  assert_eq(version_compatibility_matrix.length(), 5)
-  assert_eq(version_compatibility_matrix[0].2, true)   // 2.0.0 -> 2.1.0 兼容
-  assert_eq(version_compatibility_matrix[1].2, true)   // 2.1.0 -> 2.2.0 兼容
-  assert_eq(version_compatibility_matrix[2].2, false)  // 2.0.0 -> 2.2.0 不直接兼容
+  // 验证生命周期完整性
+  let lifecycle_stages = ["created", "processed", "stored", "archived", "soft_deleted", "hard_deleted"]
+  assert_eq(lifecycle_stages.length(), 6)
+  
+  // 验证数据从创建到删除的完整生命周期
+  let complete_lifecycle_data = telemetry_for_deletion[0]  // cpu_usage数据
+  assert_eq(complete_lifecycle_data["status"], "soft_deleted")
+  assert_eq(complete_lifecycle_data["age_days"] > deletion_policy["standard_retention_days"], true)
 }
