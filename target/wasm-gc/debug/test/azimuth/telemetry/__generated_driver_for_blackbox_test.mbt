@@ -94,6 +94,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     9: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f746573742e6d6274_9, ["span_context_with_multiple_children"]),
     10: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f746573742e6d6274_10, ["span_context_deep_hierarchy"]),
   },
+  "trace_context_propagation_enhanced_test.mbt": {
+    0: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f656e68616e6365645f746573742e6d6274_0, ["trace_context_propagation_basic"]),
+    1: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f656e68616e6365645f746573742e6d6274_1, ["trace_context_serialization"]),
+    2: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f656e68616e6365645f746573742e6d6274_2, ["distributed_tracing_flow"]),
+    3: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f656e68616e6365645f746573742e6d6274_3, ["trace_context_baggage_propagation"]),
+    4: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f656e68616e6365645f746573742e6d6274_4, ["trace_sampling_decision"]),
+    5: (__test_74726163655f636f6e746578745f70726f7061676174696f6e5f656e68616e6365645f746573742e6d6274_5, ["cross_service_trace_headers"]),
+  },
   "trace_concurrent_safety_test.mbt": {
     0: (__test_74726163655f636f6e63757272656e745f7361666574795f746573742e6d6274_0, ["trace_concurrent_span_creation"]),
   },
@@ -730,6 +738,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_6d6574726963735f6167677265676174696f6e5f746573742e6d6274_3, ["metric_rate_calculation"]),
     4: (__test_6d6574726963735f6167677265676174696f6e5f746573742e6d6274_4, ["metric_percentile_calculation"]),
     5: (__test_6d6574726963735f6167677265676174696f6e5f746573742e6d6274_5, ["metric_aggregation_with_labels"]),
+  },
+  "metrics_aggregation_boundary_test.mbt": {
+    0: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_0, ["counter_aggregation_basic"]),
+    1: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_1, ["histogram_aggregation_quantiles"]),
+    2: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_2, ["gauge_value_changes"]),
+    3: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_3, ["up_down_counter_deltas"]),
+    4: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_4, ["metric_boundary_conditions"]),
+    5: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_5, ["metric_attribute_cardinality"]),
+    6: (__test_6d6574726963735f6167677265676174696f6e5f626f756e646172795f746573742e6d6274_6, ["metric_time_window_aggregation"]),
   },
   "metrics_advanced_boundary_test.mbt": {
     0: (__test_6d6574726963735f616476616e6365645f626f756e646172795f746573742e6d6274_0, ["metrics_advanced_boundary_conditions"]),
