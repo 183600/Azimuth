@@ -2188,6 +2188,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_5, ["binary_data_encoding"]),
     6: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_6, ["data_compression_formats"]),
   },
+  "data_serialization_comprehensive_test.mbt": {
+    0: (__test_646174615f73657269616c697a6174696f6e5f636f6d70726568656e736976655f746573742e6d6274_0, ["attribute_value_serialization_roundtrip"]),
+    1: (__test_646174615f73657269616c697a6174696f6e5f636f6d70726568656e736976655f746573742e6d6274_1, ["resource_serialization_format"]),
+    2: (__test_646174615f73657269616c697a6174696f6e5f636f6d70726568656e736976655f746573742e6d6274_2, ["span_context_serialization"]),
+    3: (__test_646174615f73657269616c697a6174696f6e5f636f6d70726568656e736976655f746573742e6d6274_3, ["span_serialization_comprehensive"]),
+    4: (__test_646174615f73657269616c697a6174696f6e5f636f6d70726568656e736976655f746573742e6d6274_4, ["measurement_serialization_format"]),
+    5: (__test_646174615f73657269616c697a6174696f6e5f636f6d70726568656e736976655f746573742e6d6274_5, ["complex_attribute_serialization"]),
+    6: (__test_646174615f73657269616c697a6174696f6e5f636f6d70726568656e736976655f746573742e6d6274_6, ["serialization_format_compatibility"]),
+    7: (__test_646174615f73657269616c697a6174696f6e5f636f6d70726568656e736976655f746573742e6d6274_7, ["data_integrity_serialization"]),
+  },
   "data_privacy_test.mbt": {
     0: (__test_646174615f707269766163795f746573742e6d6274_0, ["personal_identifiable_information_pii_handling"]),
     1: (__test_646174615f707269766163795f746573742e6d6274_1, ["financial_data_protection"]),
