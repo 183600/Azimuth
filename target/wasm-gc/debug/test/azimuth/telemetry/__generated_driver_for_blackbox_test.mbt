@@ -205,6 +205,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_74656c656d657472795f74696d655f73796e635f707265636973696f6e5f746573742e6d6274_4, ["telemetry_time_interval_precision"]),
     5: (__test_74656c656d657472795f74696d655f73796e635f707265636973696f6e5f746573742e6d6274_5, ["telemetry_time_sequence_consistency"]),
   },
+  "telemetry_time_sync_new_test.mbt": {
+    0: (__test_74656c656d657472795f74696d655f73796e635f6e65775f746573742e6d6274_0, ["telemetry_time_sync_precision"]),
+    1: (__test_74656c656d657472795f74696d655f73796e635f6e65775f746573742e6d6274_1, ["telemetry_time_sync_timezone"]),
+    2: (__test_74656c656d657472795f74696d655f73796e635f6e65775f746573742e6d6274_2, ["telemetry_time_sync_clock_skew"]),
+    3: (__test_74656c656d657472795f74696d655f73796e635f6e65775f746573742e6d6274_3, ["telemetry_time_sync_ntp_protocol"]),
+    4: (__test_74656c656d657472795f74696d655f73796e635f6e65775f746573742e6d6274_4, ["telemetry_time_sync_monotonic_clock"]),
+    5: (__test_74656c656d657472795f74696d655f73796e635f6e65775f746573742e6d6274_5, ["telemetry_time_sync_drift_compensation"]),
+    6: (__test_74656c656d657472795f74696d655f73796e635f6e65775f746573742e6d6274_6, ["telemetry_time_sync_batch_processing"]),
+    7: (__test_74656c656d657472795f74696d655f73796e635f6e65775f746573742e6d6274_7, ["telemetry_time_sync_network_partition"]),
+  },
   "telemetry_system_test.mbt": {
     0: (__test_74656c656d657472795f73797374656d5f746573742e6d6274_0, ["telemetry_data_validation"]),
     1: (__test_74656c656d657472795f73797374656d5f746573742e6d6274_1, ["concurrent_telemetry_processing"]),
