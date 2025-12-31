@@ -1415,6 +1415,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_6e6574776f726b5f706172746974696f6e5f726573696c69656e63655f616476616e6365645f746573742e6d6274_3, ["data_replication_consistency"]),
     4: (__test_6e6574776f726b5f706172746974696f6e5f726573696c69656e63655f616476616e6365645f746573742e6d6274_4, ["partition_recovery_validation"]),
   },
+  "network_communication_test.mbt": {
+    0: (__test_6e6574776f726b5f636f6d6d756e69636174696f6e5f746573742e6d6274_0, ["network_endpoint_connectivity"]),
+    1: (__test_6e6574776f726b5f636f6d6d756e69636174696f6e5f746573742e6d6274_1, ["network_timeout_handling"]),
+    2: (__test_6e6574776f726b5f636f6d6d756e69636174696f6e5f746573742e6d6274_2, ["network_retry_mechanism"]),
+    3: (__test_6e6574776f726b5f636f6d6d756e69636174696f6e5f746573742e6d6274_3, ["network_data_compression"]),
+    4: (__test_6e6574776f726b5f636f6d6d756e69636174696f6e5f746573742e6d6274_4, ["network_connection_pooling"]),
+    5: (__test_6e6574776f726b5f636f6d6d756e69636174696f6e5f746573742e6d6274_5, ["network_error_recovery"]),
+  },
   "multi_tenant_isolation_test.mbt": {
     0: (__test_6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_0, ["resource_tenant_isolation"]),
     1: (__test_6d756c74695f74656e616e745f69736f6c6174696f6e5f746573742e6d6274_1, ["context_tenant_isolation"]),
