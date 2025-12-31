@@ -1,197 +1,253 @@
-// 遥测数据序列化/反序列化增强测试用例
-// 测试各种复杂数据结构的序列化和反序列化功能
+// 遥测序列化增强测试用例
+// 测试Azimuth Telemetry数据序列化和反序列化功能
 
-test "complex_telemetry_data_serialization" {
-  // 测试复杂遥测数据的序列化功能
+test "telemetry_basic_serialization" {
+  // 测试遥测基本数据序列化
   
-  // 创建复杂的遥测数据结构
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let parent_span_id = "a1b2c3d4e5f67890"
-  let timestamp = 1703112000000000L  // 纳秒时间戳
+  // 基本数据类型序列化
+  let string_value = "telemetry_event"
+  let int_value = 42L
+  let float_value = 3.14159
+  let bool_value = true
   
-  // 验证时间戳转换
-  let timestamp_seconds = timestamp / 1000000000L
-  assert_eq(timestamp_seconds, 1703112000L)
+  // 模拟序列化过程
+  let serialize_string = fn(s : String) -> String {
+    "\"{" + s + "}\""
+  }
   
-  // 创建属性映射
-  let attributes = [
-    ("http.method", "GET"),
-    ("http.url", "https://api.example.com/users"),
-    ("http.status_code", "200"),
-    ("user.id", "12345"),
-    ("service.name", "user-service"),
-    ("service.version", "1.0.0")
+  let serialize_int = fn(i : Int64) -> String {
+    i.to_string()
+  }
+  
+  let serialize_float = fn(f : Float) -> String {
+    f.to_string()
+  }
+  
+  let serialize_bool = fn(b : Bool) -> String {
+    if b { "true" } else { "false" }
+  }
+  
+  // 执行序列化
+  let serialized_string = serialize_string(string_value)
+  let serialized_int = serialize_int(int_value)
+  let serialized_float = serialize_float(float_value)
+  let serialized_bool = serialize_bool(bool_value)
+  
+  // 验证序列化结果
+  assert_eq(serialized_string, "\"{telemetry_event}\"")
+  assert_eq(serialized_int, "42")
+  assert_eq(serialized_float.contains("3.14"), true)
+  assert_eq(serialized_bool, "true")
+  
+  // 验证序列化长度
+  assert_eq(serialized_string.length(), 17)
+  assert_eq(serialized_int.length(), 2)
+  assert_eq(serialized_float.length() >= 4, true)
+  assert_eq(serialized_bool.length(), 4)
+}
+
+test "telemetry_complex_object_serialization" {
+  // 测试遥测复杂对象序列化
+  
+  // 模拟遥测事件对象
+  let telemetry_event = {
+    "trace_id" => "0af7651916cd43dd8448eb211c80319c",
+    "span_id" => "b7ad6b7169203331",
+    "event_name" => "user_action",
+    "timestamp" => "1634567890123",
+    "attributes" => "user_id:12345,action:click"
+  }
+  
+  // 模拟对象序列化
+  let serialize_object = fn(obj : Array[(String, String)]) -> String {
+    let pairs = obj.map(fn(pair) {
+      let (key, value) = pair
+      key + ":" + value
+    })
+    "{" + pairs.join(",") + "}"
+  }
+  
+  let serialized_event = serialize_object(telemetry_event)
+  
+  // 验证序列化结果包含所有必要字段
+  assert_eq(serialized_event.has_prefix("{"), true)
+  assert_eq(serialized_event.has_suffix("}"), true)
+  assert_eq(serialized_event.contains("trace_id:0af7651916cd43dd8448eb211c80319c"), true)
+  assert_eq(serialized_event.contains("span_id:b7ad6b7169203331"), true)
+  assert_eq(serialized_event.contains("event_name:user_action"), true)
+  assert_eq(serialized_event.contains("timestamp:1634567890123"), true)
+  assert_eq(serialized_event.contains("attributes:user_id:12345,action:click"), true)
+  
+  // 验证字段分隔符
+  let comma_count = serialized_event.fold(0, fn(acc, char) { 
+    if char == ',' { acc + 1 } else { acc } 
+  })
+  assert_eq(comma_count, 4) // 5个字段应该有4个逗号分隔
+}
+
+test "telemetry_array_serialization" {
+  // 测试遥测数组序列化
+  
+  // 模拟遥测指标数组
+  let metric_values = [10.5, 15.2, 8.7, 12.3, 9.8]
+  let metric_names = ["cpu_usage", "memory_usage", "disk_io", "network_io", "cache_hit_rate"]
+  
+  // 数组序列化函数
+  let serialize_array = fn(arr : Array[String]) -> String {
+    "[" + arr.join(",") + "]"
+  }
+  
+  let serialize_float_array = fn(arr : Array[Float]) -> String {
+    let string_values = arr.map(fn(f) { f.to_string() })
+    "[" + string_values.join(",") + "]"
+  }
+  
+  // 执行序列化
+  let serialized_names = serialize_array(metric_names)
+  let serialized_values = serialize_float_array(metric_values)
+  
+  // 验证序列化结果
+  assert_eq(serialized_names.has_prefix("["), true)
+  assert_eq(serialized_names.has_suffix("]"), true)
+  assert_eq(serialized_values.has_prefix("["), true)
+  assert_eq(serialized_values.has_suffix("]"), true)
+  
+  // 验证数组内容
+  assert_eq(serialized_names.contains("cpu_usage"), true)
+  assert_eq(serialized_names.contains("memory_usage"), true)
+  assert_eq(serialized_values.contains("10.5"), true)
+  assert_eq(serialized_values.contains("15.2"), true)
+  
+  // 验证元素分隔符
+  let name_commas = serialized_names.fold(0, fn(acc, char) { 
+    if char == ',' { acc + 1 } else { acc } 
+  })
+  let value_commas = serialized_values.fold(0, fn(acc, char) { 
+    if char == ',' { acc + 1 } else { acc } 
+  })
+  
+  assert_eq(name_commas, 4) // 5个元素应该有4个逗号
+  assert_eq(value_commas, 4)
+}
+
+test "telemetry_deserialization_validation" {
+  // 测试遥测反序列化验证
+  
+  // 有效的序列化数据
+  let valid_serialized_data = "{\"trace_id\":\"abc123\",\"timestamp\":1634567890,\"status\":\"success\"}"
+  
+  // 无效的序列化数据
+  let invalid_serialized_data = "{\"trace_id\":\"abc123\",\"timestamp\":invalid,\"status\":}"
+  
+  // 模拟反序列化验证函数
+  let validate_serialized_data = fn(data : String) -> Bool {
+    let has_braces = data.has_prefix("{") && data.has_suffix("}")
+    let has_valid_quotes = data.split("\"").length() >= 7 // 至少3对引号
+    let has_valid_structure = data.contains(":") && data.contains(",")
+    
+    has_braces && has_valid_quotes && has_valid_structure
+  }
+  
+  // 验证数据有效性
+  assert_eq(validate_serialized_data(valid_serialized_data), true)
+  assert_eq(validate_serialized_data(invalid_serialized_data), false)
+  
+  // 模拟简单反序列化
+  let simple_deserialize = fn(data : String) -> Array[(String, String)] {
+    if !validate_serialized_data(data) { 
+      return [] 
+    }
+    
+    let content = data.substring(1, data.length() - 2) // 移除大括号
+    let pairs = content.split(",")
+    
+    pairs.map(fn(pair) {
+      let key_value = pair.split(":")
+      let key = key_value[0].replace("\"", "")
+      let value = key_value[1].replace("\"", "")
+      (key, value)
+    })
+  }
+  
+  // 执行反序列化
+  let deserialized_data = simple_deserialize(valid_serialized_data)
+  
+  // 验证反序列化结果
+  assert_eq(deserialized_data.length(), 3)
+  
+  let trace_id_pair = deserialized_data.find(fn(pair) { pair.0 == "trace_id" }).unwrap()
+  let timestamp_pair = deserialized_data.find(fn(pair) { pair.0 == "timestamp" }).unwrap()
+  let status_pair = deserialized_data.find(fn(pair) { pair.0 == "status" }).unwrap()
+  
+  assert_eq(trace_id_pair.1, "abc123")
+  assert_eq(timestamp_pair.1, "1634567890")
+  assert_eq(status_pair.1, "success")
+}
+
+test "telemetry_serialization_compatibility" {
+  // 测试遥测序列化兼容性
+  
+  // 版本1的序列化格式
+  let v1_format = {
+    "format_version" => "1.0",
+    "field_separator" => ",",
+    "key_value_separator" => ":",
+    "string_quotation" => "\""
+  }
+  
+  // 版本2的序列化格式（改进版）
+  let v2_format = {
+    "format_version" => "2.0",
+    "field_separator" => ";",
+    "key_value_separator" => "=",
+    "string_quotation" => "'"
+  }
+  
+  // 模拟版本兼容性序列化器
+  let serialize_with_version = fn(data : Array[(String, String)], version : String) -> String {
+    let format = if version == "1.0" { v1_format } else { v2_format }
+    
+    let pairs = data.map(fn(pair) {
+      let (key, value) = pair
+      format["string_quotation"] + key + format["string_quotation"] + 
+      format["key_value_separator"] + 
+      format["string_quotation"] + value + format["string_quotation"]
+    })
+    
+    format["string_quotation"] + format["format_version"] + format["string_quotation"] + 
+    format["field_separator"] + 
+    pairs.join(format["field_separator"])
+  }
+  
+  // 测试数据
+  let test_data = [
+    ("trace_id", "abc123"),
+    ("status", "success")
   ]
   
-  // 验证属性数量
-  assert_eq(attributes.length(), 6)
+  // 执行不同版本的序列化
+  let v1_serialized = serialize_with_version(test_data, "1.0")
+  let v2_serialized = serialize_with_version(test_data, "2.0")
   
-  // 模拟序列化为JSON字符串
-  let serialized = "{"
-    + "\"trace_id\":\"" + trace_id + "\"," 
-    + "\"span_id\":\"" + span_id + "\"," 
-    + "\"parent_span_id\":\"" + parent_span_id + "\"," 
-    + "\"timestamp\":" + timestamp.to_string() + "," 
-    + "\"attributes\":{" 
-    + "\"http.method\":\"GET\"," 
-    + "\"http.url\":\"https://api.example.com/users\"," 
-    + "\"http.status_code\":\"200\"," 
-    + "\"user.id\":\"12345\"," 
-    + "\"service.name\":\"user-service\"," 
-    + "\"service.version\":\"1.0.0\"" 
-    + "}" 
-    + "}"
+  // 验证版本1格式
+  assert_eq(v1_serialized.contains("\"1.0\","), true)
+  assert_eq(v1_serialized.contains("\":\""), true)
+  assert_eq(v1_serialized.contains("\",\""), true)
   
-  // 验证序列化结果包含必要字段
-  assert_eq(serialized.contains("\"trace_id\":"), true)
-  assert_eq(serialized.contains("\"span_id\":"), true)
-  assert_eq(serialized.contains("\"timestamp\":"), true)
-  assert_eq(serialized.contains("\"attributes\":"), true)
-  assert_eq(serialized.contains("user-service"), true)
-}
-
-test "telemetry_data_deserialization_validation" {
-  // 测试遥测数据反序列化的验证功能
+  // 验证版本2格式
+  assert_eq(v2_serialized.contains("'2.0';"), true)
+  assert_eq(v2_serialized.contains("'='"), true)
+  assert_eq(v2_serialized.contains("';'"), true)
   
-  // 模拟JSON格式的遥测数据
-  let json_data = "{"
-    + "\"trace_id\":\"1234567890abcdef1234567890abcdef\"," 
-    + "\"span_id\":\"abcdef1234567890\"," 
-    + "\"name\":\"HTTP GET /api/users\"," 
-    + "\"timestamp\":1703112000000000," 
-    + "\"duration\":150000," 
-    + "\"status\":\"OK\"," 
-    + "\"attributes\":{" 
-    + "\"http.method\":\"GET\"," 
-    + "\"http.target\":\"/api/users\"," 
-    + "\"http.status_code\":200," 
-    + "\"net.host.name\":\"api.example.com\"," 
-    + "\"net.host.port\":443" 
-    + "}" 
-    + "}"
+  // 模拟版本检测
+  let detect_version = fn(data : String) -> String {
+    if data.contains("\"1.0\"") { "1.0" }
+    else if data.contains("'2.0'") { "2.0" }
+    else { "unknown" }
+  }
   
-  // 验证JSON数据完整性
-  assert_eq(json_data.contains("\"trace_id\":"), true)
-  assert_eq(json_data.contains("\"span_id\":"), true)
-  assert_eq(json_data.contains("\"name\":"), true)
-  assert_eq(json_data.contains("\"timestamp\":"), true)
-  assert_eq(json_data.contains("\"duration\":"), true)
-  assert_eq(json_data.contains("\"status\":"), true)
-  assert_eq(json_data.contains("\"attributes\":"), true)
-  
-  // 验证trace_id格式（32个十六进制字符）
-  assert_eq(json_data.contains("1234567890abcdef1234567890abcdef"), true)
-  
-  // 验证span_id格式（16个十六进制字符）
-  assert_eq(json_data.contains("abcdef1234567890"), true)
-  
-  // 验证时间戳是数字
-  assert_eq(json_data.contains("1703112000000000"), true)
-  
-  // 验证HTTP状态码
-  assert_eq(json_data.contains("\"http.status_code\":200"), true)
-}
-
-test "binary_serialization_format_test" {
-  // 测试二进制序列化格式
-  
-  // 创建测试数据
-  let trace_id = "00112233445566778899aabbccddeeff"
-  let span_id = "ffee_ddcc_bbaa_9988"
-  let flags = 1
-  
-  // 验证trace_id长度和格式
-  assert_eq(trace_id.length(), 32)
-  assert_eq(trace_id.has_prefix("0011"), true)
-  assert_eq(trace_id.has_suffix("efff"), true)
-  
-  // 模拟二进制数据结构
-  let binary_data = [
-    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-    0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff,  // trace_id (16 bytes)
-    0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0x99, 0x88,  // span_id (8 bytes)
-    0x01  // flags (1 byte)
-  ]
-  
-  // 验证二进制数据长度
-  assert_eq(binary_data.length(), 25)  // 16 + 8 + 1
-  
-  // 验证特定字节值
-  assert_eq(binary_data[0], 0x00)
-  assert_eq(binary_data[15], 0xff)
-  assert_eq(binary_data[16], 0xff)
-  assert_eq(binary_data[23], 0x88)
-  assert_eq(binary_data[24], 0x01)
-}
-
-test "serialization_error_handling" {
-  // 测试序列化错误处理
-  
-  // 测试空的trace_id
-  let empty_trace_id = ""
-  assert_eq(empty_trace_id.length(), 0)
-  
-  // 测试无效的span_id（太短）
-  let short_span_id = "123"
-  assert_eq(short_span_id.length(), 3)
-  assert_eq(short_span_id.length() < 16, true)
-  
-  // 测试无效的十六进制字符
-  let invalid_hex = "xyz123456789abcdef"
-  assert_eq(invalid_hex.contains("xyz"), true)
-  
-  // 测试负时间戳
-  let negative_timestamp = -1000L
-  assert_eq(negative_timestamp < 0L, true)
-  
-  // 测试过大的属性值
-  let large_attribute_value = "x" * 10000  // 创建一个很长的字符串
-  assert_eq(large_attribute_value.length(), 10000)
-  assert_eq(large_attribute_value.length() > 8192, true)  // 超过常见限制
-}
-
-test "cross_format_serialization_compatibility" {
-  // 测试跨格式序列化兼容性
-  
-  // 原始数据
-  let service_name = "payment-service"
-  let operation_name = "process_payment"
-  let duration_ms = 250L
-  let status = "SUCCESS"
-  
-  // JSON格式
-  let json_format = "{"
-    + "\"service\":\"" + service_name + "\"," 
-    + "\"operation\":\"" + operation_name + "\"," 
-    + "\"duration\":" + duration_ms.to_string() + "," 
-    + "\"status\":\"" + status + "\"" 
-    + "}"
-  
-  // 键值对格式
-  let kv_format = "service=" + service_name
-    + " operation=" + operation_name
-    + " duration=" + duration_ms.to_string()
-    + " status=" + status
-  
-  // 验证两种格式都包含相同的信息
-  assert_eq(json_format.contains(service_name), true)
-  assert_eq(kv_format.contains(service_name), true)
-  
-  assert_eq(json_format.contains(operation_name), true)
-  assert_eq(kv_format.contains(operation_name), true)
-  
-  assert_eq(json_format.contains("250"), true)
-  assert_eq(kv_format.contains("250"), true)
-  
-  assert_eq(json_format.contains(status), true)
-  assert_eq(kv_format.contains(status), true)
-  
-  // 验证格式特征
-  assert_eq(json_format.contains("{"), true)
-  assert_eq(json_format.contains("}"), true)
-  assert_eq(json_format.contains("\""), true)
-  
-  assert_eq(kv_format.contains("service="), true)
-  assert_eq(kv_format.contains("operation="), true)
+  // 验证版本检测
+  assert_eq(detect_version(v1_serialized), "1.0")
+  assert_eq(detect_version(v2_serialized), "2.0")
+  assert_eq(detect_version("invalid_data"), "unknown")
 }
