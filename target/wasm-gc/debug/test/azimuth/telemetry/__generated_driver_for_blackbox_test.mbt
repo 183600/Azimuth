@@ -1328,6 +1328,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_7265616c5f776f726c645f75736167655f746573742e6d6274_2, ["batch_processing_scenario"]),
     3: (__test_7265616c5f776f726c645f75736167655f746573742e6d6274_3, ["error_handling_scenario"]),
   },
+  "real_world_usage_scenario_test.mbt": {
+    0: (__test_7265616c5f776f726c645f75736167655f7363656e6172696f5f746573742e6d6274_0, ["web_request_telemetry_scenario"]),
+    1: (__test_7265616c5f776f726c645f75736167655f7363656e6172696f5f746573742e6d6274_1, ["microservice_telemetry_propagation_scenario"]),
+    2: (__test_7265616c5f776f726c645f75736167655f7363656e6172696f5f746573742e6d6274_2, ["batch_processing_telemetry_scenario"]),
+  },
   "real_world_scenario_test.mbt": {
     0: (__test_7265616c5f776f726c645f7363656e6172696f5f746573742e6d6274_0, ["web_request_telemetry_scenario"]),
     1: (__test_7265616c5f776f726c645f7363656e6172696f5f746573742e6d6274_1, ["microservice_communication_scenario"]),
