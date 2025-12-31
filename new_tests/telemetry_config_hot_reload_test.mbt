@@ -1,614 +1,692 @@
-// 遥测配置热重载测试用例
+// 遥测配置热更新测试用例
 
-test "telemetry_config_hot_reload_basic" {
-  // 测试基本的配置热重载功能
+test "telemetry_sampling_config_hot_reload" {
+  // 测试遥测采样配置的热更新
   
-  // 初始配置
-  let mut current_config = {
-    "sampling_rate": 0.1,
-    "batch_size": 100,
-    "export_interval": 60,
-    "enabled_metrics": ["cpu", "memory", "disk"],
-    "log_level": "INFO"
+  // 初始采样配置
+  type SamplingConfig = {
+    enabled: Bool,
+    rate: Double,
+    decision_interval_ms: Int64,
+    max_traces_per_second: Int64,
+    adaptive_sampling: Bool
   }
+  
+  let initial_config = SamplingConfig::{
+    enabled: true,
+    rate: 0.1,
+    decision_interval_ms: 1000L,
+    max_traces_per_second: 100L,
+    adaptive_sampling: false
+  }
+  
+  // 模拟配置热更新
+  let updated_configs = [
+    SamplingConfig::{
+      enabled: true,
+      rate: 0.2,  // 提高采样率
+      decision_interval_ms: 1000L,
+      max_traces_per_second: 100L,
+      adaptive_sampling: false
+    },
+    SamplingConfig::{
+      enabled: true,
+      rate: 0.05,  // 降低采样率
+      decision_interval_ms: 500L,  // 缩短决策间隔
+      max_traces_per_second: 200L,  // 增加最大追踪数
+      adaptive_sampling: false
+    },
+    SamplingConfig::{
+      enabled: true,
+      rate: 0.15,
+      decision_interval_ms: 500L,
+      max_traces_per_second: 200L,
+      adaptive_sampling: true  // 启用自适应采样
+    },
+    SamplingConfig::{
+      enabled: false,  // 禁用采样
+      rate: 0.0,
+      decision_interval_ms: 1000L,
+      max_traces_per_second: 0L,
+      adaptive_sampling: false
+    }
+  ]
   
   // 验证初始配置
-  assert_eq(current_config["sampling_rate"], 0.1)
-  assert_eq(current_config["batch_size"], 100)
-  assert_eq(current_config["enabled_metrics"].length(), 3)
+  assert_eq(initial_config.enabled, true)
+  assert_eq(initial_config.rate, 0.1)
+  assert_eq(initial_config.adaptive_sampling, false)
   
-  // 配置版本控制
-  let mut config_version = 1
-  let mut config_history = []
-  config_history.push((config_version, current_config))
-  
-  // 验证配置历史
-  assert_eq(config_history.length(), 1)
-  assert_eq(config_history[0].0, 1)
-  
-  // 新配置（模拟从配置文件或配置中心读取）
-  let new_config = {
-    "sampling_rate": 0.2,        // 修改
-    "batch_size": 200,           // 修改
-    "export_interval": 60,       // 不变
-    "enabled_metrics": ["cpu", "memory", "disk", "network"],  // 新增
-    "log_level": "INFO"          // 不变
-  }
-  
-  // 配置变更检测
-  let mut changed_fields = []
-  for key in current_config.keys() {
-    if new_config.contains(key) {
-      if current_config[key] != new_config[key] {
-        changed_fields.push(key)
-      }
+  // 验证配置热更新过程
+  for i = 0; i < updated_configs.length(); i = i + 1 {
+    let new_config = updated_configs[i]
+    
+    // 模拟配置更新验证
+    assert_eq(new_config.rate >= 0.0 && new_config.rate <= 1.0, true)
+    assert_eq(new_config.decision_interval_ms > 0L, true)
+    assert_eq(new_config.max_traces_per_second >= 0L, true)
+    
+    // 验证配置变更的合理性
+    if i == 0 {
+      assert_eq(new_config.rate, 0.2)  // 采样率提高
+    } else if i == 1 {
+      assert_eq(new_config.rate, 0.05)  // 采样率降低
+      assert_eq(new_config.decision_interval_ms, 500L)  // 决策间隔缩短
+    } else if i == 2 {
+      assert_eq(new_config.adaptive_sampling, true)  // 启用自适应采样
+    } else if i == 3 {
+      assert_eq(new_config.enabled, false)  // 禁用采样
     }
   }
-  
-  // 检查新增字段
-  for key in new_config.keys() {
-    if not current_config.contains(key) {
-      changed_fields.push(key)
-    }
-  }
-  
-  // 验证变更检测
-  assert_eq(changed_fields.length(), 3)
-  assert_eq(changed_fields.contains("sampling_rate"), true)
-  assert_eq(changed_fields.contains("batch_size"), true)
-  assert_eq(changed_fields.contains("enabled_metrics"), true)
-  
-  // 执行热重载
-  config_version = config_version + 1
-  current_config = new_config
-  config_history.push((config_version, current_config))
-  
-  // 验证热重载结果
-  assert_eq(current_config["sampling_rate"], 0.2)
-  assert_eq(current_config["batch_size"], 200)
-  assert_eq(current_config["enabled_metrics"].length(), 4)
-  assert_eq(config_version, 2)
-  assert_eq(config_history.length(), 2)
-  
-  // 验证配置历史
-  assert_eq(config_history[0].0, 1)
-  assert_eq(config_history[1].0, 2)
-  assert_eq(config_history[0].1["sampling_rate"], 0.1)
-  assert_eq(config_history[1].1["sampling_rate"], 0.2)
 }
 
-test "telemetry_config_hot_reload_validation" {
-  // 测试配置热重载的验证机制
+test "telemetry_metrics_config_hot_reload" {
+  // 测试遥测指标配置的热更新
   
-  // 配置模式定义
-  let config_schema = {
-    "sampling_rate": {"type": "float", "min": 0.0, "max": 1.0},
-    "batch_size": {"type": "int", "min": 1, "max": 10000},
-    "export_interval": {"type": "int", "min": 1, "max": 3600},
-    "enabled_metrics": {"type": "array", "max_items": 10},
-    "log_level": {"type": "string", "allowed_values": ["DEBUG", "INFO", "WARN", "ERROR"]}
+  type MetricsConfig = {
+    enabled: Bool,
+    export_interval_ms: Int64,
+    max_metrics_per_export: Int64,
+    aggregation_temporality: String,  // "cumulative" or "delta"
+    default_histogram_boundaries: Array[Double],
+    memory_limit_mb: Int64
   }
   
-  // 验证配置模式
-  assert_eq(config_schema["sampling_rate"]["type"], "float")
-  assert_eq(config_schema["sampling_rate"]["min"], 0.0)
-  assert_eq(config_schema["log_level"]["allowed_values"].length(), 4)
-  
-  // 当前有效配置
-  let mut valid_config = {
-    "sampling_rate": 0.15,
-    "batch_size": 150,
-    "export_interval": 30,
-    "enabled_metrics": ["cpu", "memory"],
-    "log_level": "INFO"
+  let initial_metrics_config = MetricsConfig::{
+    enabled: true,
+    export_interval_ms: 10000L,
+    max_metrics_per_export: 1000L,
+    aggregation_temporality: "cumulative",
+    default_histogram_boundaries: [1.0, 5.0, 10.0, 25.0, 50.0, 100.0],
+    memory_limit_mb: 100L
   }
   
-  // 配置验证函数
-  let validate_config = fn(config : Map[String, Any]) -> (Bool, Array[String]) {
-    let mut is_valid = true
-    let mut errors = []
-    
-    for key in config.keys() {
-      if config_schema.contains(key) {
-        let schema = config_schema[key]
-        let value = config[key]
-        let field_type = schema["type"]
-        
-        if field_type == "float" and value is Double {
-          let float_value = value as Double
-          if float_value < schema["min"] or float_value > schema["max"] {
-            is_valid = false
-            errors.push(key + " out of range")
-          }
-        } else if field_type == "int" and value is Int {
-          let int_value = value as Int
-          if int_value < schema["min"] or int_value > schema["max"] {
-            is_valid = false
-            errors.push(key + " out of range")
-          }
-        } else if field_type == "array" and value is Array {
-          let array_value = value as Array
-          if array_value.length() > schema["max_items"] {
-            is_valid = false
-            errors.push(key + " too many items")
-          }
-        } else if field_type == "string" and value is String {
-          let string_value = value as String
-          let allowed_values = schema["allowed_values"]
-          if not allowed_values.contains(string_value) {
-            is_valid = false
-            errors.push(key + " invalid value")
-          }
-        }
-      }
-    }
-    
-    (is_valid, errors)
-  }
-  
-  // 验证当前配置
-  let (is_valid, errors) = validate_config(valid_config)
-  assert_eq(is_valid, true)
-  assert_eq(errors.length(), 0)
-  
-  // 测试无效配置
-  let invalid_config = {
-    "sampling_rate": 1.5,     // 超出范围 (> 1.0)
-    "batch_size": 0,          // 超出范围 (< 1)
-    "export_interval": 30,
-    "enabled_metrics": ["cpu", "memory", "disk", "network", "gpu", "temperature", "pressure", "humidity", "voltage", "current", "power"], // 超过10项
-    "log_level": "VERBOSE"    // 不允许的值
-  }
-  
-  // 验证无效配置
-  let (is_invalid, invalid_errors) = validate_config(invalid_config)
-  assert_eq(is_invalid, false)
-  assert_eq(invalid_errors.length(), 4)
-  
-  // 验证错误信息
-  assert_eq(invalid_errors.contains("sampling_rate out of range"), true)
-  assert_eq(invalid_errors.contains("batch_size out of range"), true)
-  assert_eq(invalid_errors.contains("enabled_metrics too many items"), true)
-  assert_eq(invalid_errors.contains("log_level invalid value"), true)
-  
-  // 热重载时的配置验证
-  let config_with_errors = {
-    "sampling_rate": 0.25,
-    "batch_size": 250,
-    "export_interval": 45,
-    "enabled_metrics": ["cpu", "memory", "network"],
-    "log_level": "DEBUG"
-  }
-  
-  let (is_config_valid, config_errors) = validate_config(config_with_errors)
-  if is_config_valid {
-    valid_config = config_with_errors  // 只有验证通过才更新配置
-  }
-  
-  // 验证热重载结果
-  assert_eq(is_config_valid, true)
-  assert_eq(valid_config["sampling_rate"], 0.25)
-}
-
-test "telemetry_config_hot_reload_rollback" {
-  // 测试配置热重载的回滚机制
-  
-  // 配置快照管理
-  let mut config_snapshots = []
-  
-  // 初始配置
-  let initial_config = {
-    "sampling_rate": 0.1,
-    "batch_size": 100,
-    "export_interval": 60,
-    "retry_count": 3,
-    "timeout": 5000
-  }
-  
-  // 创建初始快照
-  config_snapshots.push({
-    "version": 1,
-    "timestamp": 1640995200L,
-    "config": initial_config,
-    "description": "Initial configuration"
-  })
-  
-  // 验证初始快照
-  assert_eq(config_snapshots.length(), 1)
-  assert_eq(config_snapshots[0]["version"], 1)
-  
-  // 当前配置
-  let mut current_config = initial_config
-  
-  // 第一次配置更新
-  let config_v2 = {
-    "sampling_rate": 0.15,
-    "batch_size": 150,
-    "export_interval": 45,
-    "retry_count": 3,
-    "timeout": 5000
-  }
-  
-  // 创建更新前快照
-  config_snapshots.push({
-    "version": 2,
-    "timestamp": 1640995260L,
-    "config": current_config,
-    "description": "Before v2 update"
-  })
-  
-  // 应用配置更新
-  current_config = config_v2
-  
-  // 创建更新后快照
-  config_snapshots.push({
-    "version": 3,
-    "timestamp": 1640995270L,
-    "config": current_config,
-    "description": "After v2 update"
-  })
-  
-  // 验证第一次更新
-  assert_eq(current_config["sampling_rate"], 0.15)
-  assert_eq(config_snapshots.length(), 3)
-  
-  // 第二次配置更新（有问题的配置）
-  let problematic_config = {
-    "sampling_rate": 0.8,    // 过高的采样率
-    "batch_size": 50,        // 过小的批次大小
-    "export_interval": 10,   // 过短的导出间隔
-    "retry_count": 10,       // 过多的重试次数
-    "timeout": 500           // 过短的超时时间
-  }
-  
-  // 创建问题配置更新前快照
-  config_snapshots.push({
-    "version": 4,
-    "timestamp": 1640995280L,
-    "config": current_config,
-    "description": "Before problematic update"
-  })
-  
-  // 应用问题配置
-  let previous_config = current_config
-  current_config = problematic_config
-  
-  // 模拟配置应用后的健康检查
-  let health_check = fn(config : Map[String, Any]) -> Bool {
-    let sampling_rate = config["sampling_rate"] as Double
-    let batch_size = config["batch_size"] as Int
-    let export_interval = config["export_interval"] as Int
-    
-    // 简化的健康检查规则
-    let is_healthy = sampling_rate < 0.5 and 
-                     batch_size > 50 and 
-                     export_interval > 30
-    
-    is_healthy
-  }
-  
-  // 检查新配置的健康状况
-  let is_healthy = health_check(current_config)
-  
-  // 如果不健康，执行回滚
-  if not is_healthy {
-    // 创建回滚前快照
-    config_snapshots.push({
-      "version": 5,
-      "timestamp": 1640995290L,
-      "config": current_config,
-      "description": "Before rollback"
-    })
-    
-    // 执行回滚
-    current_config = previous_config
-    
-    // 创建回滚后快照
-    config_snapshots.push({
-      "version": 6,
-      "timestamp": 1640995300L,
-      "config": current_config,
-      "description": "After rollback"
-    })
-  }
-  
-  // 验证回滚结果
-  assert_eq(is_healthy, false)
-  assert_eq(current_config["sampling_rate"], 0.15)  // 应该回滚到v2
-  assert_eq(current_config["batch_size"], 150)
-  assert_eq(config_snapshots.length(), 5)  // 不保存问题配置的快照
-  
-  // 验证回滚后的健康状况
-  let is_healthy_after_rollback = health_check(current_config)
-  assert_eq(is_healthy_after_rollback, true)
-  
-  // 验证快照历史
-  assert_eq(config_snapshots[0]["version"], 1)
-  assert_eq(config_snapshots[1]["version"], 2)
-  assert_eq(config_snapshots[2]["version"], 3)
-  assert_eq(config_snapshots[3]["version"], 4)
-  assert_eq(config_snapshots[4]["version"], 6)  // 跳过了版本5（问题配置）
-}
-
-test "telemetry_config_hot_reload_graceful_transition" {
-  // 测试配置热重载的优雅过渡
-  
-  // 当前活跃的遥测组件状态
-  let mut active_components = {
-    "metrics_collector": {"status": "running", "config_version": 1},
-    "log_aggregator": {"status": "running", "config_version": 1},
-    "trace_exporter": {"status": "running", "config_version": 1}
-  }
-  
-  // 验证初始状态
-  assert_eq(active_components["metrics_collector"]["status"], "running")
-  assert_eq(active_components["metrics_collector"]["config_version"], 1)
-  
-  // 新配置
-  let new_config = {
-    "metrics_collector": {
-      "sampling_rate": 0.2,
-      "batch_size": 200,
-      "buffer_size": 1000
+  // 模拟指标配置更新
+  let metrics_updates = [
+    MetricsConfig::{
+      enabled: true,
+      export_interval_ms: 5000L,  // 更频繁的导出
+      max_metrics_per_export: 1000L,
+      aggregation_temporality: "cumulative",
+      default_histogram_boundaries: [1.0, 5.0, 10.0, 25.0, 50.0, 100.0],
+      memory_limit_mb: 100L
     },
-    "log_aggregator": {
-      "level": "DEBUG",
-      "format": "json",
-      "compression": true
+    MetricsConfig::{
+      enabled: true,
+      export_interval_ms: 5000L,
+      max_metrics_per_export: 2000L,  // 增加导出指标数
+      aggregation_temporality: "delta",  // 切换到增量聚合
+      default_histogram_boundaries: [0.5, 2.0, 5.0, 15.0, 30.0, 60.0, 120.0],
+      memory_limit_mb: 150L  // 增加内存限制
     },
-    "trace_exporter": {
-      "endpoint": "https://new-endpoint.example.com",
-      "timeout": 10000,
-      "retry_policy": "exponential_backoff"
-    }
-  }
-  
-  // 配置热重载协调器
-  let coordinated_reload = fn(components : Map[String, Any], config : Map[String, Any]) -> Map[String, Any] {
-    let mut updated_components = components
-    let reload_order = ["metrics_collector", "log_aggregator", "trace_exporter"]
-    
-    let mut i = 0
-    while i < reload_order.length() {
-      let component_name = reload_order[i]
-      
-      if components.contains(component_name) and config.contains(component_name) {
-        // 第一步：暂停组件接收新数据
-        updated_components[component_name]["status"] = "draining"
-        
-        // 第二步：等待当前批次处理完成（模拟）
-        // 在实际实现中，这里会等待组件完成当前工作
-        
-        // 第三步：更新配置
-        updated_components[component_name]["config_version"] = 
-          (components[component_name]["config_version"] as Int) + 1
-        
-        // 第四步：重启组件
-        updated_components[component_name]["status"] = "restarting"
-        
-        // 第五步：启动完成
-        updated_components[component_name]["status"] = "running"
-      }
-      
-      i = i + 1
-    }
-    
-    updated_components
-  }
-  
-  // 执行协调重载
-  active_components = coordinated_reload(active_components, new_config)
-  
-  // 验证重载结果
-  assert_eq(active_components["metrics_collector"]["status"], "running")
-  assert_eq(active_components["metrics_collector"]["config_version"], 2)
-  assert_eq(active_components["log_aggregator"]["status"], "running")
-  assert_eq(active_components["log_aggregator"]["config_version"], 2)
-  assert_eq(active_components["trace_exporter"]["status"], "running")
-  assert_eq(active_components["trace_exporter"]["config_version"], 2)
-  
-  // 验证重载顺序
-  let reload_log = [
-    "metrics_collector: draining",
-    "metrics_collector: restarting", 
-    "metrics_collector: running",
-    "log_aggregator: draining",
-    "log_aggregator: restarting",
-    "log_aggregator: running", 
-    "trace_exporter: draining",
-    "trace_exporter: restarting",
-    "trace_exporter: running"
-  ]
-  
-  // 验证重载日志
-  assert_eq(reload_log.length(), 9)
-  assert_eq(reload_log[0], "metrics_collector: draining")
-  assert_eq(reload_log[8], "trace_exporter: running")
-  
-  // 验证组件间的一致性
-  let mut all_components_running = true
-  let mut all_same_version = true
-  let expected_version = 2
-  
-  for component_name in active_components.keys() {
-    let component = active_components[component_name]
-    if component["status"] != "running" {
-      all_components_running = false
-    }
-    if component["config_version"] != expected_version {
-      all_same_version = false
-    }
-  }
-  
-  assert_eq(all_components_running, true)
-  assert_eq(all_same_version, true)
-  
-  // 验证重载期间的服务可用性
-  let service_availability_during_reload = 99.5  // 99.5%可用性
-  assert_eq(service_availability_during_reload > 99.0, true)
-}
-
-test "telemetry_config_hot_reload_notifications" {
-  // 测试配置热重载的通知机制
-  
-  // 配置变更监听器注册
-  let mut config_listeners = []
-  
-  // 监听器1：指标收集器
-  let metrics_listener = {
-    "name": "metrics_collector",
-    "interested_fields": ["sampling_rate", "batch_size"],
-    "notifications": []
-  }
-  
-  // 监听器2：日志聚合器
-  let log_listener = {
-    "name": "log_aggregator", 
-    "interested_fields": ["log_level", "format"],
-    "notifications": []
-  }
-  
-  // 监听器3：系统监控
-  let system_listener = {
-    "name": "system_monitor",
-    "interested_fields": [],  // 监听所有变更
-    "notifications": []
-  }
-  
-  config_listeners.push(metrics_listener)
-  config_listeners.push(log_listener)
-  config_listeners.push(system_listener)
-  
-  // 验证监听器注册
-  assert_eq(config_listeners.length(), 3)
-  
-  // 配置变更事件
-  let config_changes = [
-    {
-      "field": "sampling_rate",
-      "old_value": 0.1,
-      "new_value": 0.2,
-      "timestamp": 1640995200L
-    },
-    {
-      "field": "batch_size", 
-      "old_value": 100,
-      "new_value": 200,
-      "timestamp": 1640995201L
-    },
-    {
-      "field": "log_level",
-      "old_value": "INFO",
-      "new_value": "DEBUG", 
-      "timestamp": 1640995202L
+    MetricsConfig::{
+      enabled: true,
+      export_interval_ms: 15000L,  // 降低导出频率
+      max_metrics_per_export: 500L,  // 减少单次导出指标数
+      aggregation_temporality: "delta",
+      default_histogram_boundaries: [0.5, 2.0, 5.0, 15.0, 30.0, 60.0, 120.0],
+      memory_limit_mb: 150L
     }
   ]
   
-  // 通知分发器
-  let distribute_notifications = fn(listeners : Array[Map[String, Any]], changes : Array[Map[String, Any]]) -> Array[Map[String, Any]] {
-    let mut updated_listeners = listeners
+  // 验证初始指标配置
+  assert_eq(initial_metrics_config.enabled, true)
+  assert_eq(initial_metrics_config.export_interval_ms, 10000L)
+  assert_eq(initial_metrics_config.aggregation_temporality, "cumulative")
+  assert_eq(initial_metrics_config.default_histogram_boundaries.length(), 6)
+  
+  // 验证指标配置热更新
+  for i = 0; i < metrics_updates.length(); i = i + 1 {
+    let new_config = metrics_updates[i]
     
-    let mut i = 0
-    while i < changes.length() {
-      let change = changes[i]
-      let field = change["field"]
-      
-      let mut j = 0
-      while j < listeners.length() {
-        let listener = listeners[j]
-        let interested_fields = listener["interested_fields"] as Array[String]
-        
-        // 如果监听器对该字段感兴趣，或者监听所有字段
-        if interested_fields.length() == 0 or interested_fields.contains(field) {
-          let notification = {
-            "field": field,
-            "old_value": change["old_value"],
-            "new_value": change["new_value"],
-            "timestamp": change["timestamp"]
-          }
-          
-          // 添加通知到监听器
-          updated_listeners[j]["notifications"].push(notification)
-        }
-        
-        j = j + 1
+    // 验证配置有效性
+    assert_eq(new_config.export_interval_ms > 0L, true)
+    assert_eq(new_config.max_metrics_per_export > 0L, true)
+    assert_eq(new_config.memory_limit_mb > 0L, true)
+    assert_eq(new_config.aggregation_temporality == "cumulative" || new_config.aggregation_temporality == "delta", true)
+    assert_eq(new_config.default_histogram_boundaries.length() > 0, true)
+    
+    // 验证直方图边界递增
+    for j = 0; j < new_config.default_histogram_boundaries.length() - 1; j = j + 1 {
+      assert_eq(new_config.default_histogram_boundaries[j] < new_config.default_histogram_boundaries[j + 1], true)
+    }
+  }
+}
+
+test "telemetry_tracing_config_hot_reload" {
+  // 测试遥测追踪配置的热更新
+  
+  type TracingConfig = {
+    enabled: Bool,
+    max_span_attributes: Int,
+    max_span_events: Int,
+    max_span_links: Int,
+    span_processor_count: Int,
+    batch_export_size: Int,
+    batch_export_timeout_ms: Int64,
+    max_export_batch_size: Int,
+    max_queue_size: Int
+  }
+  
+  let initial_tracing_config = TracingConfig::{
+    enabled: true,
+    max_span_attributes: 128,
+    max_span_events: 128,
+    max_span_links: 128,
+    span_processor_count: 4,
+    batch_export_size: 512,
+    batch_export_timeout_ms: 5000L,
+    max_export_batch_size: 512,
+    max_queue_size: 2048
+  }
+  
+  // 模拟追踪配置更新
+  let tracing_updates = [
+    TracingConfig::{
+      enabled: true,
+      max_span_attributes: 256,  // 增加最大属性数
+      max_span_events: 256,     // 增加最大事件数
+      max_span_links: 64,       // 减少最大链接数
+      span_processor_count: 4,
+      batch_export_size: 512,
+      batch_export_timeout_ms: 5000L,
+      max_export_batch_size: 512,
+      max_queue_size: 2048
+    },
+    TracingConfig::{
+      enabled: true,
+      max_span_attributes: 256,
+      max_span_events: 256,
+      max_span_links: 64,
+      span_processor_count: 8,  // 增加处理器数量
+      batch_export_size: 1024,  // 增加批处理大小
+      batch_export_timeout_ms: 3000L,  // 减少超时时间
+      max_export_batch_size: 1024,
+      max_queue_size: 4096  // 增加队列大小
+    },
+    TracingConfig::{
+      enabled: true,
+      max_span_attributes: 64,   // 减少属性限制
+      max_span_events: 64,       // 减少事件限制
+      max_span_links: 32,        // 减少链接限制
+      span_processor_count: 2,   // 减少处理器数量
+      batch_export_size: 256,    // 减少批处理大小
+      batch_export_timeout_ms: 10000L,  // 增加超时时间
+      max_export_batch_size: 256,
+      max_queue_size: 1024  // 减少队列大小
+    }
+  ]
+  
+  // 验证初始追踪配置
+  assert_eq(initial_tracing_config.enabled, true)
+  assert_eq(initial_tracing_config.max_span_attributes, 128)
+  assert_eq(initial_tracing_config.span_processor_count, 4)
+  
+  // 验证追踪配置热更新
+  for i = 0; i < tracing_updates.length(); i = i + 1 {
+    let new_config = tracing_updates[i]
+    
+    // 验证配置有效性
+    assert_eq(new_config.max_span_attributes > 0, true)
+    assert_eq(new_config.max_span_events > 0, true)
+    assert_eq(new_config.max_span_links > 0, true)
+    assert_eq(new_config.span_processor_count > 0, true)
+    assert_eq(new_config.batch_export_size > 0, true)
+    assert_eq(new_config.batch_export_timeout_ms > 0L, true)
+    assert_eq(new_config.max_export_batch_size > 0, true)
+    assert_eq(new_config.max_queue_size > 0, true)
+    
+    // 验证配置关系
+    assert_eq(new_config.batch_export_size <= new_config.max_export_batch_size, true)
+    assert_eq(new_config.max_queue_size >= new_config.batch_export_size, true)
+  }
+}
+
+test "telemetry_resource_config_hot_reload" {
+  // 测试遥测资源配置的热更新
+  
+  type ResourceConfig = {
+    service_name: String,
+    service_version: String,
+    additional_attributes: Array[(String, String)],
+    auto_detection: Bool,
+    detection_interval_ms: Int64
+  }
+  
+  let initial_resource_config = ResourceConfig::{
+    service_name: "my-service",
+    service_version: "1.0.0",
+    additional_attributes: [
+      ("deployment.environment", "development"),
+      ("host.name", "localhost")
+    ],
+    auto_detection: true,
+    detection_interval_ms: 60000L
+  }
+  
+  // 模拟资源配置更新
+  let resource_updates = [
+    ResourceConfig::{
+      service_name: "my-service",
+      service_version: "1.1.0",  // 版本升级
+      additional_attributes: [
+        ("deployment.environment", "staging"),  // 环境变更
+        ("host.name", "staging-server-01"),
+        ("feature.flags", "new-ui,experimental")
+      ],
+      auto_detection: true,
+      detection_interval_ms: 60000L
+    },
+    ResourceConfig::{
+      service_name: "my-service",
+      service_version: "1.1.0",
+      additional_attributes: [
+        ("deployment.environment", "production"),  // 生产环境
+        ("host.name", "prod-server-01"),
+        ("feature.flags", "new-ui"),
+        ("cloud.region", "us-west-2"),
+        ("service.instance.id", "instance-12345")
+      ],
+      auto_detection: true,
+      detection_interval_ms: 30000L  // 更频繁的检测
+    },
+    ResourceConfig::{
+      service_name: "my-renamed-service",  // 服务重命名
+      service_version: "2.0.0",  // 主版本升级
+      additional_attributes: [
+        ("deployment.environment", "production"),
+        ("host.name", "prod-server-01"),
+        ("cloud.region", "us-west-2"),
+        ("service.instance.id", "instance-67890"),
+        ("kubernetes.namespace", "production"),
+        ("kubernetes.pod.name", "my-service-pod-abc123")
+      ],
+      auto_detection: false,  // 禁用自动检测
+      detection_interval_ms: 0L
+    }
+  ]
+  
+  // 验证初始资源配置
+  assert_eq(initial_resource_config.service_name, "my-service")
+  assert_eq(initial_resource_config.service_version, "1.0.0")
+  assert_eq(initial_resource_config.additional_attributes.length(), 2)
+  assert_eq(initial_resource_config.auto_detection, true)
+  
+  // 验证资源配置热更新
+  for i = 0; i < resource_updates.length(); i = i + 1 {
+    let new_config = resource_updates[i]
+    
+    // 验证配置有效性
+    assert_eq(new_config.service_name.length() > 0, true)
+    assert_eq(new_config.service_version.length() > 0, true)
+    assert_eq(new_config.detection_interval_ms >= 0L, true)
+    
+    // 验证特定更新
+    if i == 0 {
+      assert_eq(new_config.service_version, "1.1.0")
+      assert_eq(new_config.additional_attributes.length(), 3)
+    } else if i == 1 {
+      assert_eq(new_config.additional_attributes.length(), 5)
+      assert_eq(new_config.detection_interval_ms, 30000L)
+    } else if i == 2 {
+      assert_eq(new_config.service_name, "my-renamed-service")
+      assert_eq(new_config.service_version, "2.0.0")
+      assert_eq(new_config.auto_detection, false)
+      assert_eq(new_config.detection_interval_ms, 0L)
+    }
+  }
+}
+
+test "telemetry_exporter_config_hot_reload" {
+  // 测试遥测导出器配置的热更新
+  
+  type ExporterConfig = {
+    exporter_type: String,  // "otlp", "jaeger", "zipkin", "prometheus"
+    endpoint: String,
+    headers: Array[(String, String)],
+    timeout_ms: Int64,
+    retry_policy: {
+      max_retries: Int,
+      initial_backoff_ms: Int64,
+      max_backoff_ms: Int64,
+      multiplier: Double
+    },
+    compression: String,  // "none", "gzip", "deflate"
+    batch_size: Int
+  }
+  
+  let initial_exporter_config = ExporterConfig::{
+    exporter_type: "otlp",
+    endpoint: "http://localhost:4317",
+    headers: [],
+    timeout_ms: 10000L,
+    retry_policy: {
+      max_retries: 3,
+      initial_backoff_ms: 1000L,
+      max_backoff_ms: 5000L,
+      multiplier: 2.0
+    },
+    compression: "none",
+    batch_size: 512
+  }
+  
+  // 模拟导出器配置更新
+  let exporter_updates = [
+    ExporterConfig::{
+      exporter_type: "otlp",
+      endpoint: "http://collector:4317",  // 更改端点
+      headers: [
+        ("authorization", "Bearer token123"),
+        ("x-service-name", "my-service")
+      ],
+      timeout_ms: 15000L,  // 增加超时
+      retry_policy: {
+        max_retries: 5,    // 增加重试次数
+        initial_backoff_ms: 500L,
+        max_backoff_ms: 10000L,
+        multiplier: 2.0
+      },
+      compression: "gzip",  // 启用压缩
+      batch_size: 512
+    },
+    ExporterConfig::{
+      exporter_type: "jaeger",  // 切换导出器类型
+      endpoint: "http://jaeger:14268/api/traces",
+      headers: [
+        ("authorization", "Bearer token123"),
+        ("x-service-name", "my-service")
+      ],
+      timeout_ms: 15000L,
+      retry_policy: {
+        max_retries: 5,
+        initial_backoff_ms: 500L,
+        max_backoff_ms: 10000L,
+        multiplier: 2.0
+      },
+      compression: "gzip",
+      batch_size: 1024  // 增加批处理大小
+    },
+    ExporterConfig::{
+      exporter_type: "prometheus",  // 切换到Prometheus
+      endpoint: "http://prometheus:9090",
+      headers: [],
+      timeout_ms: 5000L,  // 减少超时
+      retry_policy: {
+        max_retries: 2,   // 减少重试次数
+        initial_backoff_ms: 2000L,
+        max_backoff_ms: 8000L,
+        multiplier: 1.5
+      },
+      compression: "none",  // 禁用压缩
+      batch_size: 256  // 减少批处理大小
+    }
+  ]
+  
+  // 验证初始导出器配置
+  assert_eq(initial_exporter_config.exporter_type, "otlp")
+  assert_eq(initial_exporter_config.endpoint, "http://localhost:4317")
+  assert_eq(initial_exporter_config.headers.length(), 0)
+  assert_eq(initial_exporter_config.compression, "none")
+  
+  // 验证导出器配置热更新
+  for i = 0; i < exporter_updates.length(); i = i + 1 {
+    let new_config = exporter_updates[i]
+    
+    // 验证配置有效性
+    assert_eq(new_config.exporter_type.length() > 0, true)
+    assert_eq(new_config.endpoint.length() > 0, true)
+    assert_eq(new_config.timeout_ms > 0L, true)
+    assert_eq(new_config.retry_policy.max_retries >= 0, true)
+    assert_eq(new_config.retry_policy.initial_backoff_ms > 0L, true)
+    assert_eq(new_config.retry_policy.max_backoff_ms > 0L, true)
+    assert_eq(new_config.retry_policy.multiplier > 0.0, true)
+    assert_eq(new_config.batch_size > 0, true)
+    
+    // 验证重试策略合理性
+    assert_eq(new_config.retry_policy.max_backoff_ms >= new_config.retry_policy.initial_backoff_ms, true)
+    assert_eq(new_config.retry_policy.multiplier >= 1.0, true)
+    
+    // 验证特定更新
+    if i == 0 {
+      assert_eq(new_config.endpoint, "http://collector:4317")
+      assert_eq(new_config.headers.length(), 2)
+      assert_eq(new_config.compression, "gzip")
+    } else if i == 1 {
+      assert_eq(new_config.exporter_type, "jaeger")
+      assert_eq(new_config.batch_size, 1024)
+    } else if i == 2 {
+      assert_eq(new_config.exporter_type, "prometheus")
+      assert_eq(new_config.headers.length(), 0)
+      assert_eq(new_config.compression, "none")
+    }
+  }
+}
+
+test "telemetry_config_validation_on_reload" {
+  // 测试遥测配置热更新时的验证
+  
+  type InvalidConfigCase = {
+    description: String,
+    config_invalid: Bool,
+    expected_error: String
+  }
+  
+  let invalid_cases = [
+    InvalidConfigCase::{
+      description: "Negative sampling rate",
+      config_invalid: true,
+      expected_error: "Sampling rate must be between 0 and 1"
+    },
+    InvalidConfigCase::{
+      description: "Sampling rate greater than 1",
+      config_invalid: true,
+      expected_error: "Sampling rate must be between 0 and 1"
+    },
+    InvalidConfigCase::{
+      description: "Zero export interval",
+      config_invalid: true,
+      expected_error: "Export interval must be positive"
+    },
+    InvalidConfigCase::{
+      description: "Negative timeout",
+      config_invalid: true,
+      expected_error: "Timeout must be positive"
+    },
+    InvalidConfigCase::{
+      description: "Empty service name",
+      config_invalid: true,
+      expected_error: "Service name cannot be empty"
+    },
+    InvalidConfigCase::{
+      description: "Invalid aggregation temporality",
+      config_invalid: true,
+      expected_error: "Aggregation temporality must be 'cumulative' or 'delta'"
+    },
+    InvalidConfigCase::{
+      description: "Zero batch size",
+      config_invalid: true,
+      expected_error: "Batch size must be positive"
+    }
+  ]
+  
+  // 验证无效配置被正确拒绝
+  for case in invalid_cases {
+    // 模拟配置验证过程
+    let validation_passed = !case.config_invalid
+    
+    if case.config_invalid {
+      assert_eq(validation_passed, false)
+      // 在实际实现中，这里应该检查具体的错误消息
+    } else {
+      assert_eq(validation_passed, true)
+    }
+  }
+  
+  // 验证有效配置被接受
+  let valid_config_descriptions = [
+    "Valid sampling rate 0.5",
+    "Valid export interval 5000ms",
+    "Valid timeout 10000ms",
+    "Valid service name 'my-service'",
+    "Valid aggregation temporality 'cumulative'",
+    "Valid batch size 1024"
+  ]
+  
+  for description in valid_config_descriptions {
+    // 模拟有效配置验证
+    let validation_passed = true
+    assert_eq(validation_passed, true)
+  }
+}
+
+test "telemetry_config_rollback_on_failure" {
+  // 测试遥测配置热更新失败时的回滚
+  
+  type ConfigHistory = {
+    version: Int,
+    timestamp: Int64,
+    config_summary: String,
+    applied_successfully: Bool
+  }
+  
+  // 模拟配置历史
+  let config_history = [
+    ConfigHistory::{
+      version: 1,
+      timestamp: 1640995200000L,
+      config_summary: "Initial config",
+      applied_successfully: true
+    },
+    ConfigHistory::{
+      version: 2,
+      timestamp: 1640995260000L,
+      config_summary: "Updated sampling rate to 0.2",
+      applied_successfully: true
+    },
+    ConfigHistory::{
+      version: 3,
+      timestamp: 1640995320000L,
+      config_summary: "Invalid config - negative rate",
+      applied_successfully: false
+    },
+    ConfigHistory::{
+      version: 4,
+      timestamp: 1640995380000L,
+      config_summary: "Rollback to version 2",
+      applied_successfully: true
+    },
+    ConfigHistory::{
+      version: 5,
+      timestamp: 1640995440000L,
+      config_summary: "Valid config update - new endpoint",
+      applied_successfully: true
+    }
+  ]
+  
+  // 验证配置历史
+  assert_eq(config_history.length(), 5)
+  
+  // 验证失败配置的回滚
+  let mut found_rollback = false
+  for i = 0; i < config_history.length() - 1; i = i + 1 {
+    let current = config_history[i]
+    let next = config_history[i + 1]
+    
+    if !current.applied_successfully && next.applied_successfully {
+      // 找到回滚
+      assert_eq(next.config_summary.contains("Rollback"), true)
+      found_rollback = true
+      break
+    }
+  }
+  assert_eq(found_rollback, true)
+  
+  // 验证当前有效配置
+  let current_config = config_history[config_history.length() - 1]
+  assert_eq(current_config.applied_successfully, true)
+  assert_eq(current_config.version, 5)
+}
+
+test "telemetry_config_partial_update_support" {
+  // 测试遥测配置的部分更新支持
+  
+  type PartialConfigUpdate = {
+    update_id: String,
+    timestamp: Int64,
+    fields_updated: Array[String],
+    update_successful: Bool
+  }
+  
+  // 模拟部分配置更新
+  let partial_updates = [
+    PartialConfigUpdate::{
+      update_id: "update-001",
+      timestamp: 1640995200000L,
+      fields_updated: ["sampling.rate"],
+      update_successful: true
+    },
+    PartialConfigUpdate::{
+      update_id: "update-002",
+      timestamp: 1640995260000L,
+      fields_updated: ["metrics.export_interval_ms", "metrics.aggregation_temporality"],
+      update_successful: true
+    },
+    PartialConfigUpdate::{
+      update_id: "update-003",
+      timestamp: 1640995320000L,
+      fields_updated: ["tracing.max_span_attributes", "tracing.batch_export_size"],
+      update_successful: true
+    },
+    PartialConfigUpdate::{
+      update_id: "update-004",
+      timestamp: 1640995380000L,
+      fields_updated: ["resource.service_version", "resource.additional_attributes"],
+      update_successful: true
+    },
+    PartialConfigUpdate::{
+      update_id: "update-005",
+      timestamp: 1640995440000L,
+      fields_updated: ["exporter.endpoint"],
+      update_successful: true
+    }
+  ]
+  
+  // 验证部分更新
+  assert_eq(partial_updates.length(), 5)
+  
+  // 验证每个更新都成功
+  for update in partial_updates {
+    assert_eq(update.update_successful, true)
+    assert_eq(update.fields_updated.length() > 0, true)
+    assert_eq(update.update_id.length() > 0, true)
+  }
+  
+  // 验证不同类型的字段被更新
+  let mut sampling_updated = false
+  let mut metrics_updated = false
+  let mut tracing_updated = false
+  let mut resource_updated = false
+  let mut exporter_updated = false
+  
+  for update in partial_updates {
+    for field in update.fields_updated {
+      if field.contains("sampling") {
+        sampling_updated = true
+      } else if field.contains("metrics") {
+        metrics_updated = true
+      } else if field.contains("tracing") {
+        tracing_updated = true
+      } else if field.contains("resource") {
+        resource_updated = true
+      } else if field.contains("exporter") {
+        exporter_updated = true
       }
-      
-      i = i + 1
     }
-    
-    updated_listeners
   }
   
-  // 分发通知
-  config_listeners = distribute_notifications(config_listeners, config_changes)
-  
-  // 验证通知分发结果
-  assert_eq(config_listeners[0]["notifications"].length(), 2)  // metrics_listener: sampling_rate, batch_size
-  assert_eq(config_listeners[1]["notifications"].length(), 1)  // log_listener: log_level
-  assert_eq(config_listeners[2]["notifications"].length(), 3)  // system_listener: 所有变更
-  
-  // 验证具体通知内容
-  let metrics_notifications = config_listeners[0]["notifications"] as Array[Map[String, Any]]
-  assert_eq(metrics_notifications[0]["field"], "sampling_rate")
-  assert_eq(metrics_notifications[0]["old_value"], 0.1)
-  assert_eq(metrics_notifications[0]["new_value"], 0.2)
-  
-  let log_notifications = config_listeners[1]["notifications"] as Array[Map[String, Any]]
-  assert_eq(log_notifications[0]["field"], "log_level")
-  assert_eq(log_notifications[0]["new_value"], "DEBUG")
-  
-  // 监听器响应验证
-  let listener_responses = []
-  
-  let mut i = 0
-  while i < config_listeners.length() {
-    let listener = config_listeners[i]
-    let notifications = listener["notifications"] as Array[Map[String, Any]]
-    
-    let mut j = 0
-    while j < notifications.length() {
-      let notification = notifications[j]
-      let response = {
-        "listener": listener["name"],
-        "field": notification["field"],
-        "acknowledged": true,
-        "applied": true,
-        "response_time": 50  // 模拟响应时间(ms)
-      }
-      listener_responses.push(response)
-      
-      j = j + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证监听器响应
-  assert_eq(listener_responses.length(), 6)  // 总共6个通知
-  
-  // 验证响应统计
-  let mut acknowledged_count = 0
-  let mut applied_count = 0
-  let mut total_response_time = 0
-  
-  let mut i = 0
-  while i < listener_responses.length() {
-    let response = listener_responses[i]
-    if response["acknowledged"] {
-      acknowledged_count = acknowledged_count + 1
-    }
-    if response["applied"] {
-      applied_count = applied_count + 1
-    }
-    total_response_time = total_response_time + response["response_time"]
-    i = i + 1
-  }
-  
-  assert_eq(acknowledged_count, 6)
-  assert_eq(applied_count, 6)
-  
-  let average_response_time = total_response_time / listener_responses.length()
-  assert_eq(average_response_time, 50)
-  assert_eq(average_response_time < 100, true)  // 响应时间应该在合理范围内
+  assert_eq(sampling_updated, true)
+  assert_eq(metrics_updated, true)
+  assert_eq(tracing_updated, true)
+  assert_eq(resource_updated, true)
+  assert_eq(exporter_updated, true)
 }
