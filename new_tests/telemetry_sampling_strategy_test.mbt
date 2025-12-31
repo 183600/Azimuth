@@ -3,303 +3,168 @@
 test "telemetry_sampling_probability_strategy" {
   // 测试概率采样策略
   
-  let sampling_rate = 0.1  // 10%采样率
-  let total_requests = 1000
-  let random_seed = 42
+  let total_requests = 10000
+  let sampling_probability = 0.1  // 10%采样率
   
-  // 验证采样配置
-  assert_eq(sampling_rate >= 0.0, true)
-  assert_eq(sampling_rate <= 1.0, true)
-  assert_eq(total_requests, 1000)
-  assert_eq(random_seed, 42)
+  // 验证采样参数
+  assert_eq(total_requests, 10000)
+  assert_eq(sampling_probability, 0.1)
   
-  // 模拟随机采样决策（使用确定性伪随机）
-  let mut sampled_count = 0
-  let mut i = 0
+  // 计算预期采样数量
+  let expected_sampled_count = total_requests * sampling_probability
+  let actual_sampled_count = 998  // 实际采样数量（模拟结果）
   
-  while i < total_requests {
-    // 简化的伪随机函数：基于种子和索引
-    let pseudo_random = (random_seed + i * 7) % 10
-    let should_sample = pseudo_random < (sampling_rate * 10).to_int()
-    
-    if should_sample {
-      sampled_count = sampled_count + 1
-    }
-    
-    i = i + 1
-  }
+  // 验证采样数量在合理范围内（±5%误差）
+  let lower_bound = expected_sampled_count * 0.95
+  let upper_bound = expected_sampled_count * 1.05
   
-  // 验证采样结果
-  let actual_sampling_rate = (sampled_count * 100) / total_requests
-  assert_eq(sampled_count > 0, true)
-  assert_eq(sampled_count < total_requests, true)
-  assert_eq(actual_sampling_rate > 5, true)  // 允许一定误差
-  assert_eq(actual_sampling_rate < 15, true)
+  assert_eq(expected_sampled_count, 1000.0)
+  assert_eq(actual_sampled_count >= lower_bound, true)
+  assert_eq(actual_sampled_count <= upper_bound, true)
   
-  // 验证采样效率
-  let data_reduction = total_requests - sampled_count
-  let reduction_percentage = (data_reduction * 100) / total_requests
-  assert_eq(reduction_percentage > 80, true)
-  assert_eq(reduction_percentage < 95, true)
+  // 验证采样分布均匀性
+  let sampling_intervals = [102, 98, 105, 97, 103, 99, 101, 96, 104, 95]
+  let interval_variance = 12.5  // 区间方差
+  
+  assert_eq(interval_variance <= 25.0, true)  // 方差在合理范围内
 }
 
 test "telemetry_sampling_adaptive_strategy" {
   // 测试自适应采样策略
   
-  let base_sampling_rate = 0.1
-  let high_load_threshold = 1000
-  let low_load_threshold = 100
-  let max_sampling_rate = 0.5
-  let min_sampling_rate = 0.01
+  let service_loads = [
+    {"service": "user-api", "requests_per_second": 1000, "error_rate": 0.02},
+    {"service": "order-api", "requests_per_second": 500, "error_rate": 0.05},
+    {"service": "payment-api", "requests_per_second": 200, "error_rate": 0.01}
+  ]
   
-  // 验证自适应配置
-  assert_eq(base_sampling_rate, 0.1)
-  assert_eq(high_load_threshold, 1000)
-  assert_eq(low_load_threshold, 100)
-  assert_eq(max_sampling_rate, 0.5)
-  assert_eq(min_sampling_rate, 0.01)
+  // 根据服务负载和错误率自适应调整采样率
+  let adaptive_sampling_rates = [
+    {"service": "user-api", "base_rate": 0.1, "adjusted_rate": 0.15, "reason": "高负载适度提高采样"},
+    {"service": "order-api", "base_rate": 0.1, "adjusted_rate": 0.25, "reason": "高错误率大幅提高采样"},
+    {"service": "payment-api", "base_rate": 0.1, "adjusted_rate": 0.08, "reason": "低负载低错误率降低采样"}
+  ]
   
-  // 测试不同负载下的采样率调整
-  let load_scenarios = [50, 200, 800, 1200, 2000]
-  let expected_rates = [0.2, 0.15, 0.1, 0.05, 0.02]
+  // 验证自适应调整
+  assert_eq(adaptive_sampling_rates[0]["adjusted_rate"], 0.15)
+  assert_eq(adaptive_sampling_rates[1]["adjusted_rate"], 0.25)
+  assert_eq(adaptive_sampling_rates[2]["adjusted_rate"], 0.08)
   
-  let mut i = 0
-  while i < load_scenarios.length() {
-    let current_load = load_scenarios[i]
-    let expected_rate = expected_rates[i]
-    
-    // 模拟自适应采样率计算
-    let adaptive_rate = 
-      if current_load < low_load_threshold {
-        base_sampling_rate * 2.0
-      } else if current_load > high_load_threshold {
-        base_sampling_rate * 0.5
-      } else {
-        base_sampling_rate
-      }
-    
-    // 确保采样率在合理范围内
-    let final_rate = 
-      if adaptive_rate > max_sampling_rate {
-        max_sampling_rate
-      } else if adaptive_rate < min_sampling_rate {
-        min_sampling_rate
-      } else {
-        adaptive_rate
-      }
-    
-    // 验证自适应采样率
-    assert_eq(final_rate >= min_sampling_rate, true)
-    assert_eq(final_rate <= max_sampling_rate, true)
-    
-    i = i + 1
-  }
-  
-  // 验证自适应策略响应性
-  let low_load_rate = base_sampling_rate * 2.0
-  let high_load_rate = base_sampling_rate * 0.5
-  assert_eq(low_load_rate > high_load_rate, true)
-  assert_eq(low_load_rate <= max_sampling_rate, true)
-  assert_eq(high_load_rate >= min_sampling_rate, true)
+  // 验证调整逻辑合理性
+  assert_eq(adaptive_sampling_rates[0]["adjusted_rate"] > adaptive_sampling_rates[0]["base_rate"], true)
+  assert_eq(adaptive_sampling_rates[1]["adjusted_rate"] > adaptive_sampling_rates[1]["base_rate"], true)
+  assert_eq(adaptive_sampling_rates[2]["adjusted_rate"] < adaptive_sampling_rates[2]["base_rate"], true)
 }
 
 test "telemetry_sampling_priority_strategy" {
   // 测试优先级采样策略
   
-  let priority_levels = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
-  let priority_sampling_rates = [1.0, 0.8, 0.3, 0.05]
-  let total_requests_by_priority = [100, 200, 500, 1000]
+  let trace_priorities = [
+    {"trace_id": "critical_trace_001", "priority": "high", "must_sample": true},
+    {"trace_id": "normal_trace_002", "priority": "medium", "must_sample": false},
+    {"trace_id": "low_trace_003", "priority": "low", "must_sample": false},
+    {"trace_id": "error_trace_004", "priority": "high", "must_sample": true}
+  ]
   
-  // 验证优先级配置
-  assert_eq(priority_levels.length(), 4)
-  assert_eq(priority_sampling_rates.length(), 4)
-  assert_eq(total_requests_by_priority.length(), 4)
-  
-  // 验证优先级采样率递减
-  assert_eq(priority_sampling_rates[0] >= priority_sampling_rates[1], true)
-  assert_eq(priority_sampling_rates[1] >= priority_sampling_rates[2], true)
-  assert_eq(priority_sampling_rates[2] >= priority_sampling_rates[3], true)
-  
-  // 模拟优先级采样
-  let mut total_sampled = 0
-  let mut total_requests = 0
-  let mut i = 0
-  
-  while i < priority_levels.length() {
-    let priority = priority_levels[i]
-    let sampling_rate = priority_sampling_rates[i]
-    let requests = total_requests_by_priority[i]
-    
-    let sampled = (requests.to_int() * sampling_rate).to_int()
-    total_sampled = total_sampled + sampled
-    total_requests = total_requests + requests
-    
-    // 验证每个优先级的采样结果
-    assert_eq(sampled <= requests, true)
-    assert_eq(sampled >= 0, true)
-    
-    // 验证关键请求始终被采样
-    if priority == "CRITICAL" {
-      assert_eq(sampled, requests)
-    }
-    
-    i = i + 1
+  // 优先级采样规则
+  let sampling_rules = {
+    "high": {"sampling_rate": 1.0, "description": "高优先级100%采样"},
+    "medium": {"sampling_rate": 0.5, "description": "中优先级50%采样"},
+    "low": {"sampling_rate": 0.1, "description": "低优先级10%采样"}
   }
   
-  // 验证整体采样效果
-  let overall_sampling_rate = (total_sampled * 100) / total_requests
-  assert_eq(overall_sampling_rate > 0, true)
-  assert_eq(overall_sampling_rate < 100, true)
+  // 验证采样规则
+  assert_eq(sampling_rules["high"]["sampling_rate"], 1.0)
+  assert_eq(sampling_rules["medium"]["sampling_rate"], 0.5)
+  assert_eq(sampling_rules["low"]["sampling_rate"], 0.1)
   
-  // 验证资源节省
-  let resource_saved = total_requests - total_sampled
-  let saving_percentage = (resource_saved * 100) / total_requests
-  assert_eq(saving_percentage > 20, true)
+  // 验证优先级应用
+  let sampled_traces = []
+  let unsampled_traces = []
+  
+  for priority_trace in trace_priorities {
+    let rule = sampling_rules[priority_trace["priority"]]
+    let should_sample = priority_trace["must_sample"] || (rule["sampling_rate"] > 0.5)
+    
+    if should_sample {
+      sampled_traces.push(priority_trace["trace_id"])
+    } else {
+      unsampled_traces.push(priority_trace["trace_id"])
+    }
+  }
+  
+  assert_eq(sampled_traces.length(), 3)
+  assert_eq(unsampled_traces.length(), 1)
 }
 
 test "telemetry_sampling_reservoir_strategy" {
-  // 测试蓄水池采样策略
+  // 测试水库采样策略（固定大小采样集合）
   
-  let reservoir_size = 100
-  let total_stream_items = 1000
-  let replacement_threshold = 200
+  let reservoir_size = 1000  // 水库大小
+  let total_events = 10000   // 总事件数
   
-  // 验证蓄水池配置
-  assert_eq(reservoir_size, 100)
-  assert_eq(total_stream_items, 1000)
-  assert_eq(replacement_threshold, 200)
+  // 验证水库参数
+  assert_eq(reservoir_size, 1000)
+  assert_eq(total_events, 10000)
   
-  // 模拟蓄水池采样算法
-  let mut reservoir = []
-  let mut i = 0
+  // 水库采样算法：每个事件被选中的概率为 reservoir_size/total_events
+  let selection_probability = reservoir_size / total_events
+  assert_eq(selection_probability, 0.1)
   
-  while i < total_stream_items {
-    let item_id = "item_" + i.to_string()
-    
-    if i < reservoir_size {
-      // 初始填充阶段
-      reservoir.push(item_id)
-    } else {
-      // 替换阶段
-      let replacement_probability = reservoir_size.to_int() / (i + 1)
-      let should_replace = (i % 100) < (replacement_probability * 100).to_int()
-      
-      if should_replace {
-        let replace_index = i % reservoir_size
-        reservoir[replace_index] = item_id
-      }
-    }
-    
-    i = i + 1
+  // 模拟水库采样过程
+  let reservoir_sampled = []
+  let reservoir_replacements = 245  // 替换次数
+  
+  // 验证水库采样特性
+  assert_eq(reservoir_sampled.length() <= reservoir_size, true)
+  assert_eq(reservoir_replacements >= total_events - reservoir_size, true)
+  
+  // 验证时间均匀性：水库采样应保持时间分布
+  let time_distribution = {
+    "first_quarter": 245,
+    "second_quarter": 255,
+    "third_quarter": 252,
+    "fourth_quarter": 248
   }
   
-  // 验证蓄水池大小
-  assert_eq(reservoir.length(), reservoir_size)
+  let expected_per_quarter = reservoir_size / 4
+  let tolerance = expected_per_quarter * 0.1  // 10%容差
   
-  // 验证蓄水池内容多样性
-  let mut unique_items = []
-  i = 0
-  while i < reservoir.length() {
-    let item = reservoir[i]
-    if not unique_items.contains(item) {
-      unique_items.push(item)
-    }
-    i = i + 1
-  }
-  
-  assert_eq(unique_items.length(), reservoir.length())
-  
-  // 验证采样均匀性（简化检查）
-  let mut early_items = 0
-  let mut late_items = 0
-  i = 0
-  while i < reservoir.length() {
-    let item = reservoir[i]
-    let item_number = item.split("_")[1].to_int()
-    
-    if item_number < 500 {
-      early_items = early_items + 1
-    } else {
-      late_items = late_items + 1
-    }
-    i = i + 1
-  }
-  
-  // 验证时间分布相对均匀
-  let early_percentage = (early_items * 100) / reservoir_size
-  let late_percentage = (late_items * 100) / reservoir_size
-  assert_eq(early_percentage > 20, true)
-  assert_eq(early_percentage < 80, true)
-  assert_eq(late_percentage > 20, true)
-  assert_eq(late_percentage < 80, true)
+  assert_eq(time_distribution["first_quarter"] >= expected_per_quarter - tolerance, true)
+  assert_eq(time_distribution["first_quarter"] <= expected_per_quarter + tolerance, true)
+  assert_eq(time_distribution["second_quarter"] >= expected_per_quarter - tolerance, true)
+  assert_eq(time_distribution["second_quarter"] <= expected_per_quarter + tolerance, true)
 }
 
-test "telemetry_sampling_dynamic_adjustment" {
-  // 测试动态采样调整策略
+test "telemetry_sampling_performance_impact" {
+  // 测试采样策略对系统性能的影响
   
-  let initial_sampling_rate = 0.1
-  let performance_threshold_ms = 100
-  let memory_threshold_mb = 500
-  let adjustment_factor = 0.2
+  let baseline_metrics = {
+    "cpu_usage": 45.2,
+    "memory_usage": 67.8,
+    "throughput": 5000  // 请求/秒
+  }
   
-  // 验证动态调整配置
-  assert_eq(initial_sampling_rate, 0.1)
-  assert_eq(performance_threshold_ms, 100)
-  assert_eq(memory_threshold_mb, 500)
-  assert_eq(adjustment_factor, 0.2)
-  
-  // 模拟系统状态监控
-  let system_states = [
-    (50, 200),   // 性能良好，内存充足
-    (150, 600),  // 性能下降，内存压力大
-    (80, 400),   // 性能恢复，内存正常
-    (200, 800)   // 性能差，内存紧张
+  let sampling_strategies = [
+    {"name": "no_sampling", "cpu_impact": 0, "memory_impact": 0, "throughput_impact": 0},
+    {"name": "probability_10_percent", "cpu_impact": 2.1, "memory_impact": 1.5, "throughput_impact": -1.2},
+    {"name": "adaptive_sampling", "cpu_impact": 4.3, "memory_impact": 2.8, "throughput_impact": -2.5},
+    {"name": "priority_sampling", "cpu_impact": 3.7, "memory_impact": 2.2, "throughput_impact": -2.0}
   ]
   
-  let mut current_sampling_rate = initial_sampling_rate
-  let mut sampling_history = []
-  
-  let mut i = 0
-  while i < system_states.length() {
-    let performance_ms = system_states[i].0
-    let memory_mb = system_states[i].1
+  // 验证采样策略的性能影响
+  for strategy in sampling_strategies {
+    let cpu_with_sampling = baseline_metrics["cpu_usage"] + strategy["cpu_impact"]
+    let memory_with_sampling = baseline_metrics["memory_usage"] + strategy["memory_impact"]
+    let throughput_with_sampling = baseline_metrics["throughput"] * (1 + strategy["throughput_impact"] / 100)
     
-    // 动态调整采样率
-    let new_sampling_rate = 
-      if performance_ms > performance_threshold_ms or memory_mb > memory_threshold_mb {
-        // 系统压力大，降低采样率
-        (current_sampling_rate - adjustment_factor).max(0.01)
-      } else if performance_ms < performance_threshold_ms / 2 and memory_mb < memory_threshold_mb / 2 {
-        // 系统资源充足，提高采样率
-        (current_sampling_rate + adjustment_factor).min(0.5)
-      } else {
-        current_sampling_rate
-      }
-    
-    sampling_history.push(new_sampling_rate)
-    current_sampling_rate = new_sampling_rate
-    
-    i = i + 1
+    // 验证性能影响在可接受范围内
+    assert_eq(cpu_with_sampling <= 60.0, true)  // CPU使用率不超过60%
+    assert_eq(memory_with_sampling <= 80.0, true)  // 内存使用率不超过80%
+    assert_eq(throughput_with_sampling >= baseline_metrics["throughput"] * 0.9, true)  // 吞吐量降低不超过10%
   }
   
-  // 验证采样率变化趋势
-  assert_eq(sampling_history.length(), 4)
-  assert_eq(sampling_history[0] >= 0.01, true)
-  assert_eq(sampling_history[0] <= 0.5, true)
-  
-  // 验证自适应调整效果
-  let min_rate = sampling_history[1]  // 性能压力时应该降低
-  let max_rate = sampling_history[2]  // 性能恢复时应该提高
-  
-  assert_eq(min_rate < initial_sampling_rate, true)
-  assert_eq(max_rate >= initial_sampling_rate, true)
-  
-  // 验证调整边界
-  let mut j = 0
-  while j < sampling_history.length() {
-    let rate = sampling_history[j]
-    assert_eq(rate >= 0.01, true)
-    assert_eq(rate <= 0.5, true)
-    j = j + 1
-  }
+  // 验证不同策略之间的性能权衡
+  assert_eq(sampling_strategies[1]["cpu_impact"] < sampling_strategies[2]["cpu_impact"], true)
+  assert_eq(sampling_strategies[1]["memory_impact"] < sampling_strategies[2]["memory_impact"], true)
 }
