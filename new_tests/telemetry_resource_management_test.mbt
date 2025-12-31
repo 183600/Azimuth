@@ -1,469 +1,495 @@
-// 遥测资源管理测试用例
+// 资源管理测试用例
+// 测试遥测系统的资源分配、监控、限制和优化功能
 
-test "resource_basic_creation_and_properties" {
-  // 测试资源的基本创建和属性
+test "resource_allocation" {
+  // 测试资源分配功能
   
-  // 创建默认资源
-  let default_resource = azimuth::telemetry::api::common::Resource::default("test-service")
-  
-  // 验证默认资源属性
-  assert_eq(default_resource.service_name, "test-service")
-  assert_eq(default_resource.service_version, None)
-  assert_eq(default_resource.telemetry_sdk_name, "azimuth")
-  assert_eq(default_resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(default_resource.attributes.length(), 0)
-  
-  // 创建带版本的服务资源
-  let versioned_resource = azimuth::telemetry::api::common::Resource::default("api-service")
-  let with_version = azimuth::telemetry::api::common::Resource::{
-    service_name: versioned_resource.service_name,
-    service_version: Some("2.1.0"),
-    telemetry_sdk_name: versioned_resource.telemetry_sdk_name,
-    telemetry_sdk_version: versioned_resource.telemetry_sdk_version,
-    attributes: versioned_resource.attributes
-  }
-  
-  // 验证带版本的资源
-  assert_eq(with_version.service_name, "api-service")
-  assert_eq(with_version.service_version.unwrap(), "2.1.0")
-  assert_eq(with_version.telemetry_sdk_name, "azimuth")
-  assert_eq(with_version.telemetry_sdk_version, "0.1.0")
-}
-
-test "resource_with_attributes" {
-  // 测试带属性的资源
-  
-  // 创建资源属性
-  let resource_attributes = [
-    ("service.instance.id", azimuth::telemetry::api::common::AttributeValue::string("instance-12345")),
-    ("service.namespace", azimuth::telemetry::api::common::AttributeValue::string("production")),
-    ("host.name", azimuth::telemetry::api::common::AttributeValue::string("web-server-01")),
-    ("host.arch", azimuth::telemetry::api::common::AttributeValue::string("amd64")),
-    ("os.type", azimuth::telemetry::api::common::AttributeValue::string("linux")),
-    ("os.version", azimuth::telemetry::api::common::AttributeValue::string("5.15.0")),
-    ("deployment.environment", azimuth::telemetry::api::common::AttributeValue::string("prod")),
-    ("cloud.provider", azimuth::telemetry::api::common::AttributeValue::string("aws")),
-    ("cloud.region", azimuth::telemetry::api::common::AttributeValue::string("us-west-2")),
-    ("cloud.availability_zone", azimuth::telemetry::api::common::AttributeValue::string("us-west-2a"))
+  let resource_pools = [
+    ("cpu_pool", 80, "percent"),
+    ("memory_pool", 4096, "MB"),
+    ("disk_pool", 102400, "MB"),
+    ("network_pool", 1000, "Mbps")
   ]
   
-  // 创建带属性的完整资源
-  let full_resource = azimuth::telemetry::api::common::Resource::{
-    service_name: "payment-service",
-    service_version: Some("1.5.2"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: resource_attributes
-  }
-  
-  // 验证资源属性
-  assert_eq(full_resource.service_name, "payment-service")
-  assert_eq(full_resource.service_version.unwrap(), "1.5.2")
-  assert_eq(full_resource.attributes.length(), 10)
-  
-  // 验证特定属性
-  for attr in full_resource.attributes {
-    let (key, value) = attr
-    match key {
-      "service.instance.id" => {
-        match value {
-          StringValue(id) => assert_eq(id, "instance-12345")
-          _ => assert_eq(false, true)
-        }
-      }
-      "service.namespace" => {
-        match value {
-          StringValue(ns) => assert_eq(ns, "production")
-          _ => assert_eq(false, true)
-        }
-      }
-      "host.name" => {
-        match value {
-          StringValue(host) => assert_eq(host, "web-server-01")
-          _ => assert_eq(false, true)
-        }
-      }
-      "cloud.region" => {
-        match value {
-          StringValue(region) => assert_eq(region, "us-west-2")
-          _ => assert_eq(false, true)
-        }
-      }
-      _ => assert_eq(true, true)  // 其他属性也是有效的
-    }
-  }
-}
-
-test "resource_merging_and_combination" {
-  // 测试资源的合并和组合
-  
-  // 创建基础资源
-  let base_resource = azimuth::telemetry::api::common::Resource::default("base-service")
-  
-  // 创建扩展属性
-  let additional_attributes = [
-    ("custom.attribute.1", azimuth::telemetry::api::common::AttributeValue::string("value1")),
-    ("custom.attribute.2", azimuth::telemetry::api::common::AttributeValue::int(42L)),
-    ("custom.attribute.3", azimuth::telemetry::api::common::AttributeValue::bool(true)),
-    ("custom.attribute.4", azimuth::telemetry::api::common::AttributeValue::array_string(["a", "b", "c"]))
+  let resource_requests = [
+    ("data_collector", ("cpu", 20), ("memory", 512)),
+    ("data_processor", ("cpu", 30), ("memory", 1024)),
+    ("alert_manager", ("cpu", 10), ("memory", 256)),
+    ("reporting_service", ("cpu", 15), ("memory", 512))
   ]
   
-  // 创建合并后的资源（模拟合并逻辑）
-  let merged_attributes = []
+  // 验证资源池
+  assert_eq(resource_pools.length(), 4)
   
-  // 添加基础资源属性（空）
-  for attr in base_resource.attributes {
-    merged_attributes.push(attr)
-  }
-  
-  // 添加额外属性
-  for attr in additional_attributes {
-    merged_attributes.push(attr)
-  }
-  
-  let merged_resource = azimuth::telemetry::api::common::Resource::{
-    service_name: base_resource.service_name,
-    service_version: Some("1.0.0"),
-    telemetry_sdk_name: base_resource.telemetry_sdk_name,
-    telemetry_sdk_version: base_resource.telemetry_sdk_version,
-    attributes: merged_attributes
-  }
-  
-  // 验证合并结果
-  assert_eq(merged_resource.service_name, "base-service")
-  assert_eq(merged_resource.service_version.unwrap(), "1.0.0")
-  assert_eq(merged_resource.attributes.length(), 4)
-  
-  // 验证合并的属性
-  assert_eq(merged_resource.attributes[0], ("custom.attribute.1", azimuth::telemetry::api::common::AttributeValue::string("value1")))
-  assert_eq(merged_resource.attributes[1], ("custom.attribute.2", azimuth::telemetry::api::common::AttributeValue::int(42L)))
-  assert_eq(merged_resource.attributes[2], ("custom.attribute.3", azimuth::telemetry::api::common::AttributeValue::bool(true)))
-}
-
-test "resource_detection_and_auto_configuration" {
-  // 测试资源检测和自动配置
-  
-  // 模拟不同环境下的资源配置
-  let environments = ["development", "staging", "production", "testing"]
-  
-  for env in environments {
-    let env_specific_attributes = [
-      ("deployment.environment", azimuth::telemetry::api::common::AttributeValue::string(env)),
-      ("service.namespace", azimuth::telemetry::api::common::AttributeValue::string(env + "-namespace")),
-      ("log.level", azimuth::telemetry::api::common::AttributeValue::string(if env == "production" { "WARN" } else { "DEBUG" })),
-      ("metrics.enabled", azimuth::telemetry::api::common::AttributeValue::bool(true)),
-      ("tracing.enabled", azimuth::telemetry::api::common::AttributeValue::bool(true))
-    ]
+  let mut i = 0
+  while i < resource_pools.length() {
+    let pool_name = resource_pools[i].0
+    let pool_capacity = resource_pools[i].1
+    let pool_unit = resource_pools[i].2
     
-    let env_resource = azimuth::telemetry::api::common::Resource::{
-      service_name: "multi-env-service",
-      service_version: Some("2.0.0"),
-      telemetry_sdk_name: "azimuth",
-      telemetry_sdk_version: "0.1.0",
-      attributes: env_specific_attributes
+    // 验证池名称
+    assert_eq(pool_name.length() > 0, true)
+    assert_eq(pool_name.has_suffix("_pool"), true)
+    
+    // 验证池容量
+    assert_eq(pool_capacity > 0, true)
+    
+    // 验证单位
+    assert_eq(pool_unit.length() > 0, true)
+    
+    i = i + 1
+  }
+  
+  // 计算总资源请求
+  let mut total_cpu_requested = 0
+  let mut total_memory_requested = 0
+  
+  i = 0
+  while i < resource_requests.length() {
+    let cpu_request = resource_requests[i].1.1
+    let memory_request = resource_requests[i].2.1
+    
+    total_cpu_requested = total_cpu_requested + cpu_request
+    total_memory_requested = total_memory_requested + memory_request
+    
+    i = i + 1
+  }
+  
+  // 验证资源请求
+  assert_eq(total_cpu_requested, 75) // 20+30+10+15
+  assert_eq(total_memory_requested, 2304) // 512+1024+256+512
+  
+  // 检查资源分配可行性
+  let cpu_pool_capacity = resource_pools[0].1
+  let memory_pool_capacity = resource_pools[1].1
+  
+  assert_eq(total_cpu_requested <= cpu_pool_capacity, true) // 75 <= 80
+  assert_eq(total_memory_requested <= memory_pool_capacity, true) // 2304 <= 4096
+}
+
+test "resource_monitoring" {
+  // 测试资源监控功能
+  
+  let resource_usage = [
+    ("cpu_usage", 65.5, "percent"),
+    ("memory_usage", 3072.0, "MB"),
+    ("disk_usage", 51200.0, "MB"),
+    ("network_usage", 450.0, "Mbps")
+  ]
+  
+  let resource_limits = [
+    ("cpu_limit", 80.0, "percent"),
+    ("memory_limit", 4096.0, "MB"),
+    ("disk_limit", 102400.0, "MB"),
+    ("network_limit", 1000.0, "Mbps")
+  ]
+  
+  // 计算资源利用率
+  let mut utilization_rates = []
+  
+  let mut i = 0
+  while i < resource_usage.length() {
+    let usage_name = resource_usage[i].0
+    let usage_value = resource_usage[i].1
+    
+    // 查找对应的限制
+    let mut j = 0
+    while j < resource_limits.length() {
+      let limit_name = resource_limits[j].0
+      let limit_value = resource_limits[j].1
+      
+      if usage_name.has_prefix(limit_name.substring(0, limit_name.length() - 6)) {
+        let utilization = usage_value / limit_value * 100.0
+        utilization_rates.push((usage_name, utilization))
+        break
+      }
+      
+      j = j + 1
     }
     
-    // 验证环境特定配置
-    assert_eq(env_resource.service_name, "multi-env-service")
-    assert_eq(env_resource.attributes.length(), 5)
-    
-    // 查找环境属性
-    let mut found_env = false
-    for attr in env_resource.attributes {
-      let (key, value) = attr
-      if key == "deployment.environment" {
-        match value {
-          StringValue(env_value) => {
-            assert_eq(env_value, env)
-            found_env = true
-          }
-          _ => assert_eq(false, true)
-        }
-      }
-    }
-    assert_eq(found_env, true)
+    i = i + 1
   }
+  
+  // 验证利用率计算
+  assert_eq(utilization_rates.length(), 4)
+  
+  // CPU: 65.5/80.0 = 81.875%
+  assert_eq(utilization_rates[0].0, "cpu_usage")
+  assert_eq(utilization_rates[0].1 > 80.0, true)
+  assert_eq(utilization_rates[0].1 < 85.0, true)
+  
+  // 内存: 3072/4096 = 75%
+  assert_eq(utilization_rates[1].0, "memory_usage")
+  assert_eq(utilization_rates[1].1, 75.0)
+  
+  // 磁盘: 51200/102400 = 50%
+  assert_eq(utilization_rates[2].0, "disk_usage")
+  assert_eq(utilization_rates[2].1, 50.0)
+  
+  // 网络: 450/1000 = 45%
+  assert_eq(utilization_rates[3].0, "network_usage")
+  assert_eq(utilization_rates[3].1, 45.0)
+  
+  // 检查资源警告
+  let warning_threshold = 80.0
+  let mut resource_warnings = []
+  
+  i = 0
+  while i < utilization_rates.length() {
+    if utilization_rates[i].1 >= warning_threshold {
+      resource_warnings.push(utilization_rates[i].0)
+    }
+    i = i + 1
+  }
+  
+  // 验证警告（CPU超过80%）
+  assert_eq(resource_warnings.length(), 1)
+  assert_eq(resourceWarnings[0], "cpu_usage")
 }
 
-test "resource_cloud_platform_detection" {
-  // 测试云平台资源检测
+test "resource_limiting" {
+  // 测试资源限制功能
   
-  // 模拟不同云平台的资源配置
-  let cloud_configs = [
-    {
-      provider: "aws",
-      region: "us-east-1",
-      availability_zone: "us-east-1a",
-      instance_id: "i-1234567890abcdef0",
-      instance_type: "t3.medium"
-    },
-    {
-      provider: "gcp",
-      region: "us-central1",
-      availability_zone: "us-central1-a",
-      instance_id: "1234567890123456789",
-      instance_type: "n1-standard-1"
-    },
-    {
-      provider: "azure",
-      region: "eastus",
-      availability_zone: "eastus-1",
-      instance_id: "vm-12345",
-      instance_type: "Standard_B2s"
-    }
+  let service_limits = [
+    ("data_collector", ("cpu", 25), ("memory", 1024)),
+    ("data_processor", ("cpu", 35), ("memory", 2048)),
+    ("alert_manager", ("cpu", 15), ("memory", 512))
   ]
   
-  for config in cloud_configs {
-    let cloud_attributes = [
-      ("cloud.provider", azimuth::telemetry::api::common::AttributeValue::string(config.provider)),
-      ("cloud.region", azimuth::telemetry::api::common::AttributeValue::string(config.region)),
-      ("cloud.availability_zone", azimuth::telemetry::api::common::AttributeValue::string(config.availability_zone)),
-      ("cloud.instance.id", azimuth::telemetry::api::common::AttributeValue::string(config.instance_id)),
-      ("cloud.instance.type", azimuth::telemetry::api::common::AttributeValue::string(config.instance_type)),
-      ("host.name", azimuth::telemetry::api::common::AttributeValue::string(config.instance_id)),
-      ("service.instance.id", azimuth::telemetry::api::common::AttributeValue::string(config.instance_id))
-    ]
+  let current_usage = [
+    ("data_collector", ("cpu", 28), ("memory", 1024)),
+    ("data_processor", ("cpu", 30), ("memory", 2048)),
+    ("alert_manager", ("cpu", 10), ("memory", 512))
+  ]
+  
+  // 检查资源限制违规
+  let mut limit_violations = []
+  
+  let mut i = 0
+  while i < service_limits.length() {
+    let service_name = service_limits[i].0
+    let cpu_limit = service_limits[i].1.1
+    let memory_limit = service_limits[i].2.1
     
-    let cloud_resource = azimuth::telemetry::api::common::Resource::{
-      service_name: "cloud-service",
-      service_version: Some("3.0.0"),
-      telemetry_sdk_name: "azimuth",
-      telemetry_sdk_version: "0.1.0",
-      attributes: cloud_attributes
-    }
-    
-    // 验证云平台配置
-    assert_eq(cloud_resource.service_name, "cloud-service")
-    assert_eq(cloud_resource.attributes.length(), 7)
-    
-    // 验证云提供商属性
-    let mut found_provider = false
-    for attr in cloud_resource.attributes {
-      let (key, value) = attr
-      if key == "cloud.provider" {
-        match value {
-          StringValue(provider) => {
-            assert_eq(provider, config.provider)
-            found_provider = true
-          }
-          _ => assert_eq(false, true)
+    // 查找当前使用情况
+    let mut j = 0
+    while j < current_usage.length() {
+      if current_usage[j].0 == service_name {
+        let cpu_usage = current_usage[j].1.1
+        let memory_usage = current_usage[j].2.1
+        
+        // 检查CPU限制
+        if cpu_usage > cpu_limit {
+          limit_violations.push((service_name, "cpu", cpu_usage, cpu_limit))
         }
+        
+        // 检查内存限制
+        if memory_usage > memory_limit {
+          limit_violations.push((service_name, "memory", memory_usage, memory_limit))
+        }
+        
+        break
       }
+      j = j + 1
     }
-    assert_eq(found_provider, true)
+    
+    i = i + 1
   }
+  
+  // 验证限制违规检测
+  assert_eq(limit_violations.length(), 1)
+  assert_eq(limit_violations[0].0, "data_collector")
+  assert_eq(limit_violations[0].1, "cpu")
+  assert_eq(limit_violations[0].2, 28) // 当前使用
+  assert_eq(limit_violations[0].3, 25) // 限制
 }
 
-test "resource_container_environment" {
-  // 测试容器环境下的资源配置
+test "resource_optimization" {
+  // 测试资源优化功能
   
-  // 模拟容器环境（Docker/Kubernetes）
-  let container_attributes = [
-    ("container.name", azimuth::telemetry::api::common::AttributeValue::string("app-container")),
-    ("container.id", azimuth::telemetry::api::common::AttributeValue::string("abc123def456")),
-    ("container.image.name", azimuth::telemetry::api::common::AttributeValue::string("myapp:1.2.3")),
-    ("container.image.tag", azimuth::telemetry::api::common::AttributeValue::string("1.2.3")),
-    ("k8s.pod.name", azimuth::telemetry::api::common::AttributeValue::string("myapp-pod-7d4b8c9f-1234")),
-    ("k8s.namespace.name", azimuth::telemetry::api::common::AttributeValue::string("production")),
-    ("k8s.deployment.name", azimuth::telemetry::api::common::AttributeValue::string("myapp-deployment")),
-    ("k8s.node.name", azimuth::telemetry::api::common::AttributeValue::string("worker-node-3")),
-    ("k8s.cluster.name", azimuth::telemetry::api::common::AttributeValue::string("prod-cluster"))
+  let optimization_targets = [
+    ("cpu_efficiency", 85.0, "percent"),
+    ("memory_efficiency", 75.0, "percent"),
+    ("disk_efficiency", 70.0, "percent")
   ]
   
-  let container_resource = azimuth::telemetry::api::common::Resource::{
-    service_name: "containerized-app",
-    service_version: Some("1.2.3"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: container_attributes
-  }
+  let current_metrics = [
+    ("cpu_efficiency", 78.5, "percent"),
+    ("memory_efficiency", 82.0, "percent"),
+    ("disk_efficiency", 65.0, "percent")
+  ]
   
-  // 验证容器资源配置
-  assert_eq(container_resource.service_name, "containerized-app")
-  assert_eq(container_resource.service_version.unwrap(), "1.2.3")
-  assert_eq(container_resource.attributes.length(), 9)
+  // 计算优化差距
+  let mut optimization_gaps = []
   
-  // 验证容器特定属性
-  let mut found_container_id = false
-  let mut found_pod_name = false
-  
-  for attr in container_resource.attributes {
-    let (key, value) = attr
-    if key == "container.id" {
-      match value {
-        StringValue(id) => {
-          assert_eq(id, "abc123def456")
-          found_container_id = true
-        }
-        _ => assert_eq(false, true)
+  let mut i = 0
+  while i < optimization_targets.length() {
+    let target_name = optimization_targets[i].0
+    let target_value = optimization_targets[i].1
+    
+    // 查找当前指标
+    let mut j = 0
+    while j < current_metrics.length() {
+      if current_metrics[j].0 == target_name {
+        let current_value = current_metrics[j].1
+        let gap = target_value - current_value
+        
+        optimization_gaps.push((target_name, current_value, target_value, gap))
+        break
       }
-    } else if key == "k8s.pod.name" {
-      match value {
-        StringValue(pod) => {
-          assert_eq(pod, "myapp-pod-7d4b8c9f-1234")
-          found_pod_name = true
-        }
-        _ => assert_eq(false, true)
-      }
+      j = j + 1
     }
+    
+    i = i + 1
   }
   
-  assert_eq(found_container_id, true)
-  assert_eq(found_pod_name, true)
+  // 验证优化差距计算
+  assert_eq(optimization_gaps.length(), 3)
+  
+  // CPU效率差距: 85.0 - 78.5 = 6.5%
+  assert_eq(optimization_gaps[0].0, "cpu_efficiency")
+  assert_eq(optimization_gaps[0].1, 78.5) // 当前值
+  assert_eq(optimization_gaps[0].2, 85.0) // 目标值
+  assert_eq(optimization_gaps[0].3, 6.5) // 差距
+  
+  // 内存效率: 当前已超过目标
+  assert_eq(optimization_gaps[1].0, "memory_efficiency")
+  assert_eq(optimization_gaps[1].1, 82.0) // 当前值
+  assert_eq(optimization_gaps[1].2, 75.0) // 目标值
+  assert_eq(optimization_gaps[1].3, -7.0) // 负差距表示已超过目标
+  
+  // 磁盘效率差距: 70.0 - 65.0 = 5.0%
+  assert_eq(optimization_gaps[2].0, "disk_efficiency")
+  assert_eq(optimization_gaps[2].1, 65.0) // 当前值
+  assert_eq(optimization_gaps[2].2, 70.0) // 目标值
+  assert_eq(optimization_gaps[2].3, 5.0) // 差距
+  
+  // 确定优化优先级（差距最大的优先级最高）
+  let mut prioritized_gaps = []
+  i = 0
+  while i < optimization_gaps.length() {
+    if optimization_gaps[i].3 > 0 { // 只考虑需要改进的
+      prioritized_gaps.push(optimization_gaps[i])
+    }
+    i = i + 1
+  }
+  
+  // 验证优化优先级
+  assert_eq(prioritized_gaps.length(), 2) // CPU和磁盘需要改进
+  
+  // CPU优化优先级更高（差距更大）
+  assert_eq(prioritized_gaps[0].0, "cpu_efficiency")
+  assert_eq(prioritized_gaps[1].0, "disk_efficiency")
 }
 
-test "resource_resource_lifecycle_management" {
-  // 测试资源生命周期管理
+test "resource_scaling" {
+  // 测试资源扩展功能
   
-  // 模拟资源创建、更新和销毁
+  let load_metrics = [
+    ("request_rate", 500, "req/s"),
+    ("cpu_utilization", 85, "percent"),
+    ("response_time", 850, "ms"),
+    ("queue_length", 1000, "requests")
+  ]
   
-  // 1. 创建初始资源
-  let initial_resource = azimuth::telemetry::api::common::Resource::default("lifecycle-service")
-  assert_eq(initial_resource.service_name, "lifecycle-service")
-  assert_eq(initial_resource.attributes.length(), 0)
+  let scaling_thresholds = [
+    ("request_rate", 1000, "req/s"),
+    ("cpu_utilization", 80, "percent"),
+    ("response_time", 500, "ms"),
+    ("queue_length", 500, "requests")
+  ]
   
-  // 2. 更新资源（添加版本）
-  let updated_resource_v1 = azimuth::telemetry::api::common::Resource::{
-    service_name: initial_resource.service_name,
-    service_version: Some("1.0.0"),
-    telemetry_sdk_name: initial_resource.telemetry_sdk_name,
-    telemetry_sdk_version: initial_resource.telemetry_sdk_version,
-    attributes: initial_resource.attributes
+  let current_resources = [
+    ("instances", 3, "count"),
+    ("cpu_cores", 6, "cores"),
+    ("memory_mb", 6144, "MB")
+  ]
+  
+  // 检查是否需要扩展
+  let mut scaling_triggers = []
+  
+  let mut i = 0
+  while i < load_metrics.length() {
+    let metric_name = load_metrics[i].0
+    let metric_value = load_metrics[i].1
+    
+    // 查找对应的阈值
+    let mut j = 0
+    while j < scaling_thresholds.length() {
+      if scaling_thresholds[j].0 == metric_name {
+        let threshold_value = scaling_thresholds[j].1
+        
+        if metric_value > threshold_value {
+          scaling_triggers.push((metric_name, metric_value, threshold_value))
+        }
+        
+        break
+      }
+      j = j + 1
+    }
+    
+    i = i + 1
   }
   
-  // 3. 添加属性
-  let with_attributes = azimuth::telemetry::api::common::Resource::{
-    service_name: updated_resource_v1.service_name,
-    service_version: updated_resource_v1.service_version,
-    telemetry_sdk_name: updated_resource_v1.telemetry_sdk_name,
-    telemetry_sdk_version: updated_resource_v1.telemetry_sdk_version,
-    attributes: [
-      ("initial.attribute", azimuth::telemetry::api::common::AttributeValue::string("initial_value"))
-    ]
+  // 验证扩展触发器
+  assert_eq(scaling_triggers.length(), 3) // CPU、响应时间和队列长度超过阈值
+  
+  assert_eq(scaling_triggers[0].0, "cpu_utilization")
+  assert_eq(scaling_triggers[0].1, 85)
+  assert_eq(scaling_triggers[0].2, 80)
+  
+  assert_eq(scaling_triggers[1].0, "response_time")
+  assert_eq(scaling_triggers[1].1, 850)
+  assert_eq(scaling_triggers[1].2, 500)
+  
+  assert_eq(scaling_triggers[2].0, "queue_length")
+  assert_eq(scaling_triggers[2].1, 1000)
+  assert_eq(scaling_triggers[2].2, 500)
+  
+  // 计算扩展后的资源
+  let scaling_factor = 2 // 扩展2倍
+  
+  let mut scaled_resources = []
+  i = 0
+  while i < current_resources.length() {
+    let resource_name = current_resources[i].0
+    let current_value = current_resources[i].1
+    let resource_unit = current_resources[i].2
+    
+    let scaled_value = current_value * scaling_factor
+    scaled_resources.push((resource_name, scaled_value, resource_unit))
+    
+    i = i + 1
   }
   
-  // 4. 版本升级
-  let upgraded_resource = azimuth::telemetry::api::common::Resource::{
-    service_name: with_attributes.service_name,
-    service_version: Some("2.0.0"),
-    telemetry_sdk_name: with_attributes.telemetry_sdk_name,
-    telemetry_sdk_version: with_attributes.telemetry_sdk_version,
-    attributes: with_attributes.attributes
-  }
+  // 验证扩展结果
+  assert_eq(scaled_resources.length(), 3)
   
-  // 5. 添加更多属性
-  let final_resource = azimuth::telemetry::api::common::Resource::{
-    service_name: upgraded_resource.service_name,
-    service_version: upgraded_resource.service_version,
-    telemetry_sdk_name: upgraded_resource.telemetry_sdk_name,
-    telemetry_sdk_version: upgraded_resource.telemetry_sdk_version,
-    attributes: [
-      ("initial.attribute", azimuth::telemetry::api::common::AttributeValue::string("initial_value")),
-      ("version.upgrade", azimuth::telemetry::api::common::AttributeValue::string("upgraded_to_v2")),
-      ("lifecycle.status", azimuth::telemetry::api::common::AttributeValue::string("active"))
-    ]
-  }
+  assert_eq(scaled_resources[0].0, "instances")
+  assert_eq(scaled_resources[0].1, 6) // 3 * 2 = 6
+  assert_eq(scaled_resources[0].2, "count")
   
-  // 验证生命周期各个阶段
-  assert_eq(initial_resource.service_version, None)
-  assert_eq(updated_resource_v1.service_version.unwrap(), "1.0.0")
-  assert_eq(with_attributes.attributes.length(), 1)
-  assert_eq(upgraded_resource.service_version.unwrap(), "2.0.0")
-  assert_eq(final_resource.attributes.length(), 3)
-  assert_eq(final_resource.service_version.unwrap(), "2.0.0")
+  assert_eq(scaled_resources[1].0, "cpu_cores")
+  assert_eq(scaled_resources[1].1, 12) // 6 * 2 = 12
+  assert_eq(scaled_resources[1].2, "cores")
+  
+  assert_eq(scaled_resources[2].0, "memory_mb")
+  assert_eq(scaled_resources[2].1, 12288) // 6144 * 2 = 12288
+  assert_eq(scaled_resources[2].2, "MB")
 }
 
-test "resource_validation_and_constraints" {
-  // 测试资源验证和约束
+test "resource_cleanup" {
+  // 测试资源清理功能
   
-  // 测试有效的服务名称
-  let valid_service_names = [
-    "my-service",
-    "my_service",
-    "myservice",
-    "service123",
-    "a.b.c.d",
-    "service-with-dashes"
+  let active_resources = [
+    ("temp_file_1", "/tmp/telemetry_001.tmp", 1024),
+    ("temp_file_2", "/tmp/telemetry_002.tmp", 2048),
+    ("cache_entry_1", "cache_key_001", 512),
+    ("cache_entry_2", "cache_key_002", 256),
+    ("connection_1", "conn_001", 1),
+    ("connection_2", "conn_002", 1)
   ]
   
-  for name in valid_service_names {
-    let resource = azimuth::telemetry::api::common::Resource::default(name)
-    assert_eq(resource.service_name, name)
-    assert_eq(resource.service_name.length() > 0, true)
-  }
-  
-  // 测试有效的版本字符串
-  let valid_versions = [
-    "1.0.0",
-    "2.1.3",
-    "10.20.30",
-    "1.0.0-alpha",
-    "1.0.0-beta.2",
-    "1.0.0+build.123"
+  let resource_ages = [
+    ("temp_file_1", 3600), // 1小时
+    ("temp_file_2", 7200), // 2小时
+    ("cache_entry_1", 300), // 5分钟
+    ("cache_entry_2", 1800), // 30分钟
+    ("connection_1", 60), // 1分钟
+    ("connection_2", 1200) // 20分钟
   ]
   
-  for version in valid_versions {
-    let resource_with_version = azimuth::telemetry::api::common::Resource::{
-      service_name: "version-test-service",
-      service_version: Some(version),
-      telemetry_sdk_name: "azimuth",
-      telemetry_sdk_version: "0.1.0",
-      attributes: []
+  let cleanup_policies = [
+    ("temp_file", 1800), // 30分钟后清理
+    ("cache_entry", 600), // 10分钟后清理
+    ("connection", 300) // 5分钟后清理
+  ]
+  
+  // 确定需要清理的资源
+  let mut resources_to_cleanup = []
+  
+  let mut i = 0
+  while i < active_resources.length() {
+    let resource_id = active_resources[i].0
+    
+    // 确定资源类型
+    let mut resource_type = ""
+    if resource_id.has_prefix("temp_file") {
+      resource_type = "temp_file"
+    } else if resource_id.has_prefix("cache_entry") {
+      resource_type = "cache_entry"
+    } else if resource_id.has_prefix("connection") {
+      resource_type = "connection"
     }
-    assert_eq(resource_with_version.service_version.unwrap(), version)
-  }
-  
-  // 测试属性约束
-  let constrained_attributes = [
-    ("empty.string", azimuth::telemetry::api::common::AttributeValue::string("")),
-    ("zero.int", azimuth::telemetry::api::common::AttributeValue::int(0L)),
-    ("negative.int", azimuth::telemetry::api::common::AttributeValue::int(-1L)),
-    ("zero.float", azimuth::telemetry::api::common::AttributeValue::float(0.0)),
-    ("negative.float", azimuth::telemetry::api::common::AttributeValue::float(-1.0)),
-    ("false.bool", azimuth::telemetry::api::common::AttributeValue::bool(false)),
-    ("empty.array", azimuth::telemetry::api::common::AttributeValue::array_string([]))
-  ]
-  
-  let constrained_resource = azimuth::telemetry::api::common::Resource::{
-    service_name: "constraint-test-service",
-    service_version: Some("1.0.0"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: constrained_attributes
-  }
-  
-  // 验证约束属性
-  assert_eq(constrained_resource.attributes.length(), 7)
-  
-  // 验证特定约束值
-  for attr in constrained_resource.attributes {
-    let (key, value) = attr
-    match key {
-      "empty.string" => {
-        match value {
-          StringValue(s) => assert_eq(s, "")
-          _ => assert_eq(false, true)
-        }
+    
+    // 查找资源年龄
+    let mut resource_age = 0
+    let mut j = 0
+    while j < resource_ages.length() {
+      if resource_ages[j].0 == resource_id {
+        resource_age = resource_ages[j].1
+        break
       }
-      "zero.int" => {
-        match value {
-          IntValue(i) => assert_eq(i, 0L)
-          _ => assert_eq(false, true)
-        }
-      }
-      "false.bool" => {
-        match value {
-          BoolValue(b) => assert_eq(b, false)
-          _ => assert_eq(false, true)
-        }
-      }
-      "empty.array" => {
-        match value {
-          ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-          _ => assert_eq(false, true)
-        }
-      }
-      _ => assert_eq(true, true)
+      j = j + 1
     }
+    
+    // 查找清理策略
+    let mut cleanup_age = 0
+    j = 0
+    while j < cleanup_policies.length() {
+      if cleanup_policies[j].0 == resource_type {
+        cleanup_age = cleanup_policies[j].1
+        break
+      }
+      j = j + 1
+    }
+    
+    // 检查是否需要清理
+    if resource_age > cleanup_age {
+      resources_to_cleanup.push((resource_id, resource_type, resource_age, cleanup_age))
+    }
+    
+    i = i + 1
   }
+  
+  // 验证清理结果
+  assert_eq(resources_to_cleanup.length(), 3) // temp_file_1, cache_entry_2, connection_2
+  
+  assert_eq(resources_to_cleanup[0].0, "temp_file_1")
+  assert_eq(resources_to_cleanup[0].1, "temp_file")
+  assert_eq(resources_to_cleanup[0].2, 3600) // 资源年龄
+  assert_eq(resources_to_cleanup[0].3, 1800) // 清理策略
+  
+  assert_eq(resources_to_cleanup[1].0, "cache_entry_2")
+  assert_eq(resources_to_cleanup[1].1, "cache_entry")
+  assert_eq(resources_to_cleanup[1].2, 1800)
+  assert_eq(resources_to_cleanup[1].3, 600)
+  
+  assert_eq(resources_to_cleanup[2].0, "connection_2")
+  assert_eq(resources_to_cleanup[2].1, "connection")
+  assert_eq(resources_to_cleanup[2].2, 1200)
+  assert_eq(resources_to_cleanup[2].3, 300)
+  
+  // 计算清理后释放的资源量
+  let mut freed_memory = 0
+  i = 0
+  while i < resources_to_cleanup.length() {
+    let resource_id = resources_to_cleanup[i].0
+    
+    // 查找资源大小
+    let mut j = 0
+    while j < active_resources.length() {
+      if active_resources[j].0 == resource_id {
+        freed_memory = freed_memory + active_resources[j].2
+        break
+      }
+      j = j + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证释放的资源量
+  assert_eq(freed_memory, 2048 + 256 + 1) // temp_file_2 + cache_entry_2 + connection_2
+  assert_eq(freed_memory, 2305)
 }
