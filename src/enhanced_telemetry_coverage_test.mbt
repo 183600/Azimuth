@@ -57,38 +57,32 @@ test "telemetry_data_serialization_formats" {
 test "telemetry_configuration_dynamic_updates" {
   // 测试遥测配置动态更新
   
-  let initial_config = {
-    "sampling_rate": 0.1,
-    "batch_size": 100,
-    "export_interval": 60,
-    "max_buffer_size": 1000
-  }
+  let initial_sampling_rate = 0.1
+  let initial_batch_size = 100
+  let initial_export_interval = 60
+  let initial_max_buffer_size = 1000
   
-  let updated_config = {
-    "sampling_rate": 0.2,
-    "batch_size": 200,
-    "export_interval": 30,
-    "max_buffer_size": 2000
-  }
+  let updated_sampling_rate = 0.2
+  let updated_batch_size = 200
+  let updated_export_interval = 30
+  let updated_max_buffer_size = 2000
   
   // 验证初始配置
-  assert_eq(initial_config["sampling_rate"], "0.1")
-  assert_eq(initial_config["batch_size"], "100")
-  assert_eq(initial_config["export_interval"], "60")
+  assert_eq(initial_sampling_rate, 0.1)
+  assert_eq(initial_batch_size, 100)
+  assert_eq(initial_export_interval, 60)
   
   // 验证配置更新
-  assert_eq(updated_config["sampling_rate"], "0.2")
-  assert_eq(updated_config["batch_size"], "200")
-  assert_eq(updated_config["export_interval"], "30")
+  assert_eq(updated_sampling_rate, 0.2)
+  assert_eq(updated_batch_size, 200)
+  assert_eq(updated_export_interval, 30)
   
   // 验证配置有效性
-  let new_sampling_rate = updated_config["sampling_rate"].to_double()
-  assert_eq(new_sampling_rate > 0.0, true)
-  assert_eq(new_sampling_rate <= 1.0, true)
+  assert_eq(updated_sampling_rate > 0.0, true)
+  assert_eq(updated_sampling_rate <= 1.0, true)
   
-  let new_batch_size = updated_config["batch_size"].to_int()
-  assert_eq(new_batch_size > 0, true)
-  assert_eq(new_batch_size <= 10000, true)
+  assert_eq(updated_batch_size > 0, true)
+  assert_eq(updated_batch_size <= 10000, true)
 }
 
 test "telemetry_performance_benchmarks" {
@@ -146,21 +140,25 @@ test "telemetry_performance_benchmarks" {
 test "telemetry_error_handling_resilience" {
   // 测试遥测错误处理和恢复能力
   
-  let error_scenarios = [
-    ("network_timeout", 408, "Request timeout after 30 seconds"),
-    ("connection_refused", 503, "Unable to connect to telemetry server"),
-    ("data_validation", 400, "Invalid metric format detected"),
-    ("buffer_overflow", 507, "Telemetry buffer exceeded maximum size")
+  let error_types = ["network_timeout", "connection_refused", "data_validation", "buffer_overflow"]
+  let error_codes = [408, 503, 400, 507]
+  let error_messages = [
+    "Request timeout after 30 seconds",
+    "Unable to connect to telemetry server",
+    "Invalid metric format detected",
+    "Telemetry buffer exceeded maximum size"
   ]
   
   // 验证错误场景
-  assert_eq(error_scenarios.length(), 4)
+  assert_eq(error_types.length(), 4)
+  assert_eq(error_codes.length(), 4)
+  assert_eq(error_messages.length(), 4)
   
   let mut i = 0
-  while i < error_scenarios.length() {
-    let error_type = error_scenarios[i].0
-    let error_code = error_scenarios[i].1
-    let error_message = error_scenarios[i].2
+  while i < error_types.length() {
+    let error_type = error_types[i]
+    let error_code = error_codes[i]
+    let error_message = error_messages[i]
     
     // 验证错误类型
     assert_eq(error_type.length() > 0, true)
