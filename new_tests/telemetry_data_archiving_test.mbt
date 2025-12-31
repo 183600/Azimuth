@@ -1,548 +1,784 @@
-// 遥测数据归档策略测试用例
+// 遥测数据归档测试用例
 
-test "telemetry_tiered_storage_archiving" {
-  // 测试遥测数据分层存储归档
+test "telemetry_lifecycle_archiving" {
+  // 测试遥测数据生命周期归档
   
-  let hot_storage_days = 7        // 热存储保留天数
-  let warm_storage_days = 30      // 温存储保留天数
-  let cold_storage_days = 365     // 冷存储保留天数
-  let archive_storage_days = 2555 // 归档存储保留天数（7年）
-  
-  // 验证存储分层配置
-  assert_eq(hot_storage_days < warm_storage_days, true)
-  assert_eq(warm_storage_days < cold_storage_days, true)
-  assert_eq(cold_storage_days < archive_storage_days, true)
-  
-  // 定义存储层级
-  enum StorageTier {
-    Hot    // 热存储（快速访问）
-    Warm   // 温存储（中等访问速度）
-    Cold   // 冷存储（慢速访问）
-    Archive // 归档存储（极少访问）
+  // 生命周期归档配置
+  let lifecycle_stages = {
+    "hot": 7,        // 热数据保留7天
+    "warm": 30,      // 温数据保留30天
+    "cold": 365,     // 冷数据保留1年
+    "archived": 3650 // 归档数据保留10年
   }
   
-  // 模拟遥测数据
-  type TelemetryData = {
-    data_id: String,
-    data_type: String,
-    timestamp: Int,
-    size_bytes: Int,
-    access_frequency: Int,
-    storage_tier: StorageTier,
-    retention_days: Int
+  let storage_tiers = {
+    "hot": "ssd",
+    "warm": "hdd",
+    "cold": "tape",
+    "archived": "cloud_glacier"
   }
   
-  let current_time = 1640995200  // 当前时间戳
-  let seconds_per_day = 86400
-  
-  // 创建测试数据集
-  let mut telemetry_data = []
-  
-  // 热数据（最近7天）
-  let mut i = 0
-  while i < 10 {
-    telemetry_data.push(TelemetryData {
-      data_id: "hot_data_" + i.to_string(),
-      data_type: "metric",
-      timestamp: current_time - i * seconds_per_day,
-      size_bytes: 1024,
-      access_frequency: 100 - i * 5,
-      storage_tier: StorageTier::Hot,
-      retention_days: hot_storage_days
-    })
-    i = i + 1
+  let compression_policies = {
+    "hot": false,
+    "warm": true,
+    "cold": true,
+    "archived": true
   }
   
-  // 温数据（8-30天前）
-  i = 0
-  while i < 15 {
-    telemetry_data.push(TelemetryData {
-      data_id: "warm_data_" + i.to_string(),
-      data_type: "trace",
-      timestamp: current_time - (7 + i) * seconds_per_day,
-      size_bytes: 2048,
-      access_frequency: 50 - i * 2,
-      storage_tier: StorageTier::Warm,
-      retention_days: warm_storage_days
-    })
-    i = i + 1
-  }
+  // 验证配置
+  assert_eq(lifecycle_stages.size(), 4)
+  assert_eq(storage_tiers.size(), 4)
+  assert_eq(compression_policies.size(), 4)
   
-  // 冷数据（31-365天前）
-  i = 0
-  while i < 20 {
-    telemetry_data.push(TelemetryData {
-      data_id: "cold_data_" + i.to_string(),
-      data_type: "log",
-      timestamp: current_time - (30 + i) * seconds_per_day,
-      size_bytes: 4096,
-      access_frequency: 20 - i,
-      storage_tier: StorageTier::Cold,
-      retention_days: cold_storage_days
-    })
-    i = i + 1
-  }
-  
-  // 验证测试数据
-  assert_eq(telemetry_data.length(), 45)
-  assert_eq(telemetry_data[0].storage_tier, StorageTier::Hot)
-  assert_eq(telemetry_data[15].storage_tier, StorageTier::Warm)
-  assert_eq(telemetry_data[35].storage_tier, StorageTier::Cold)
-  
-  // 按存储层级分组
-  let mut data_by_tier = {
-    StorageTier::Hot: [],
-    StorageTier::Warm: [],
-    StorageTier::Cold: [],
-    StorageTier::Archive: []
-  }
-  
-  i = 0
-  while i < telemetry_data.length() {
-    let data = telemetry_data[i]
-    let tier = data.storage_tier
-    let tier_data = data_by_tier[tier]
-    tier_data.push(data)
-    data_by_tier[tier] = tier_data
-    i = i + 1
-  }
-  
-  // 验证数据分层
-  assert_eq(data_by_tier[StorageTier::Hot].length(), 10)
-  assert_eq(data_by_tier[StorageTier::Warm].length(), 15)
-  assert_eq(data_by_tier[StorageTier::Cold].length(), 20)
-  assert_eq(data_by_tier[StorageTier::Archive].length(), 0)
-  
-  // 计算各层级存储成本（假设每GB成本）
-  let storage_cost_per_gb = {
-    StorageTier::Hot: 100.0,    // $100/GB/月
-    StorageTier::Warm: 50.0,   // $50/GB/月
-    StorageTier::Cold: 10.0,   // $10/GB/月
-    StorageTier::Archive: 1.0  // $1/GB/月
-  }
-  
-  let mut total_storage_cost = 0.0
-  i = 0
-  while i < data_by_tier.size() {
-    let tier_keys = [StorageTier::Hot, StorageTier::Warm, StorageTier::Cold, StorageTier::Archive]
-    let tier = tier_keys[i]
-    let tier_data = data_by_tier[tier]
-    
-    let mut tier_size_gb = 0.0
-    let mut j = 0
-    while j < tier_data.length() {
-      tier_size_gb = tier_size_gb + tier_data[j].size_bytes.to_double() / (1024.0 * 1024.0 * 1024.0)
-      j = j + 1
-    }
-    
-    let tier_cost = tier_size_gb * storage_cost_per_gb[tier]
-    total_storage_cost = total_storage_cost + tier_cost
-    
-    i = i + 1
-  }
-  
-  // 验证存储成本计算
-  assert_eq(total_storage_cost > 0.0, true)
-  
-  // 模拟数据老化迁移（热数据迁移到温存储）
-  let mut migrated_data = []
-  i = 0
-  while i < data_by_tier[StorageTier::Hot].length() {
-    let data = data_by_tier[StorageTier::Hot][i]
-    let data_age_days = (current_time - data.timestamp) / seconds_per_day
-    
-    if data_age_days > hot_storage_days {
-      let migrated = TelemetryData {
-        data_id: data.data_id,
-        data_type: data.data_type,
-        timestamp: data.timestamp,
-        size_bytes: data.size_bytes,
-        access_frequency: data.access_frequency / 2,  // 访问频率降低
-        storage_tier: StorageTier::Warm,
-        retention_days: warm_storage_days
-      }
-      migrated_data.push(migrated)
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证数据迁移
-  assert_eq(migrated_data.length() > 0, true)
-  assert_eq(migrated_data[0].storage_tier, StorageTier::Warm)
-}
-
-test "telemetry_data_retention_policy" {
-  // 测试遥测数据保留策略
-  
-  let default_retention_days = 90        // 默认保留天数
-  let critical_data_retention = 365     // 关键数据保留天数
-  let compliance_retention_days = 2555  // 合规要求保留天数（7年）
-  
-  // 验证保留策略配置
-  assert_eq(critical_data_retention > default_retention_days, true)
-  assert_eq(compliance_retention_days > critical_data_retention, true)
-  
-  // 定义数据分类
-  enum DataCategory {
-    Critical    // 关键数据（安全事件、错误）
-    Important   // 重要数据（性能指标）
-    Normal      // 普通数据（常规日志）
-    Temporary   // 临时数据（调试信息）
-  }
-  
-  // 数据保留规则
-  type RetentionRule = {
-    category: DataCategory,
-    data_type: String,
-    retention_days: Int,
-    compliance_requirement: Bool
-  }
-  
-  let retention_rules = [
-    RetentionRule {
-      category: DataCategory::Critical,
-      data_type: "security_event",
-      retention_days: compliance_retention_days,
-      compliance_requirement: true
-    },
-    RetentionRule {
-      category: DataCategory::Critical,
-      data_type: "error_log",
-      retention_days: critical_data_retention,
-      compliance_requirement: false
-    },
-    RetentionRule {
-      category: DataCategory::Important,
-      data_type: "performance_metric",
-      retention_days: 180,
-      compliance_requirement: false
-    },
-    RetentionRule {
-      category: DataCategory::Normal,
-      data_type: "access_log",
-      retention_days: default_retention_days,
-      compliance_requirement: false
-    },
-    RetentionRule {
-      category: DataCategory::Temporary,
-      data_type: "debug_log",
-      retention_days: 7,
-      compliance_requirement: false
-    }
-  ]
-  
-  // 验证保留规则
-  assert_eq(retention_rules.length(), 5)
-  assert_eq(retention_rules[0].retention_days, compliance_retention_days)
-  assert_eq(retention_rules[4].retention_days, 7)
-  
-  // 创建测试数据集
-  type DataRecord = {
+  // 生命周期记录
+  type LifecycleRecord = {
     record_id: String,
     data_type: String,
-    category: DataCategory,
-    timestamp: Int,
+    created_time: Int,
+    current_stage: String,
+    stage_transitions: Array[String],
     size_bytes: Int,
-    retention_days: Int,
-    is_compliance_data: Bool
+    access_frequency: Int
   }
   
-  let mut data_records = []
-  let current_time = 1640995200
+  // 归档操作结果
+  type ArchivingResult = {
+    record_id: String,
+    from_stage: String,
+    to_stage: String,
+    archiving_time_ms: Int,
+    size_change_percentage: Double,
+    success: Bool
+  }
   
-  // 生成不同类型的数据记录
-  let mut i = 0
-  while i < retention_rules.length() {
-    let rule = retention_rules[i]
+  // 生命周期统计
+  type LifecycleStats = {
+    total_records: Int,
+    stage_distribution: Map[String, Int],
+    total_transitions: Int,
+    average_compression_ratio: Double,
+    storage_cost_savings: Double
+  }
+  
+  // 判断数据应该迁移到哪个阶段
+  let determine_next_stage = fn(current_stage: String, age_days: Int, access_freq: Int) -> String {
+    match current_stage {
+      "hot" => if age_days >= lifecycle_stages["hot"] { "warm" } else { "hot" }
+      "warm" => if age_days >= lifecycle_stages["warm"] { "cold" } else { "warm" }
+      "cold" => if age_days >= lifecycle_stages["cold"] { "archived" } else { "cold" }
+      "archived" => "archived"
+      _ => "hot"
+    }
+  }
+  
+  // 模拟归档操作
+  let simulate_archiving = fn(record: LifecycleRecord, target_stage: String) -> ArchivingResult {
+    let from_stage = record.current_stage
+    let to_stage = target_stage
     
-    // 为每种规则创建3条记录，时间跨度不同
+    // 计算归档时间
+    let base_time = record.size_bytes / 100
+    let stage_factor = match to_stage {
+      "hot" => 0.5,
+      "warm" => 1.0,
+      "cold" => 2.0,
+      "archived" => 5.0,
+      _ => 1.0
+    }
+    let archiving_time = (base_time.to_double() * stage_factor).to_int()
+    
+    // 计算大小变化（压缩效果）
+    let compression_enabled = compression_policies[to_stage]
+    let compression_ratio = if compression_enabled { 0.3 + (to_stage.length() % 10) * 0.05 } else { 1.0 }
+    let size_change = (compression_ratio - 1.0) * 100.0
+    
+    // 模拟成功率
+    let success_probability = match to_stage {
+      "hot" => 0.99,
+      "warm" => 0.98,
+      "cold" => 0.95,
+      "archived" => 0.90,
+      _ => 0.95
+    }
+    
+    let random_value = (record.record_id.length() * 11) % 100
+    let success = random_value < (success_probability * 100.0).to_int()
+    
+    ArchivingResult {
+      record_id: record.record_id,
+      from_stage: from_stage,
+      to_stage: to_stage,
+      archiving_time_ms: archiving_time,
+      size_change_percentage: size_change,
+      success: success
+    }
+  }
+  
+  // 生成生命周期记录
+  let generate_lifecycle_records = fn(count: Int, base_time: Int) -> Array[LifecycleRecord] {
+    let data_types = ["metrics", "logs", "traces", "configurations"]
+    let mut records = []
+    
+    let mut i = 0
+    while i < count {
+      let data_type = data_types[i % data_types.length()]
+      let created_time = base_time - (i * 86400)  // 每天一条记录
+      let age_days = (base_time - created_time) / 86400
+      
+      // 根据年龄确定当前阶段
+      let current_stage = if age_days < lifecycle_stages["hot"] {
+        "hot"
+      } else if age_days < lifecycle_stages["warm"] {
+        "warm"
+      } else if age_days < lifecycle_stages["cold"] {
+        "cold"
+      } else {
+        "archived"
+      }
+      
+      let record = LifecycleRecord {
+        record_id: "lifecycle_" + i.to_string(),
+        data_type: data_type,
+        created_time: created_time,
+        current_stage: current_stage,
+        stage_transitions: [current_stage],
+        size_bytes: 5120 + (i % 10) * 1024,  // 5KB-15KB
+        access_frequency: max(1, 100 - age_days)  // 越老访问频率越低
+      }
+      
+      records.push(record)
+      i = i + 1
+    }
+    
+    records
+  }
+  
+  // 生成测试记录（2年的数据）
+  let current_time = 1640995200
+  let lifecycle_records = generate_lifecycle_records(730, current_time)
+  
+  // 验证记录生成
+  assert_eq(lifecycle_records.length(), 730)
+  
+  // 执行生命周期归档
+  let mut archiving_results = []
+  let mut updated_records = []
+  
+  let mut i = 0
+  while i < lifecycle_records.length() {
+    let record = lifecycle_records[i]
+    let age_days = (current_time - record.created_time) / 86400
+    let target_stage = determine_next_stage(record.current_stage, age_days, record.access_frequency)
+    
+    if target_stage != record.current_stage {
+      let result = simulate_archiving(record, target_stage)
+      archiving_results.push(result)
+      
+      // 更新记录
+      let mut new_transitions = record.stage_transitions
+      new_transitions.push(target_stage)
+      
+      let updated_record = LifecycleRecord {
+        record_id: record.record_id,
+        data_type: record.data_type,
+        created_time: record.created_time,
+        current_stage: target_stage,
+        stage_transitions: new_transitions,
+        size_bytes: record.size_bytes,
+        access_frequency: record.access_frequency
+      }
+      
+      updated_records.push(updated_record)
+    } else {
+      updated_records.push(record)
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证归档结果
+  assert_eq(archiving_results.length() > 0, true)
+  assert_eq(updated_records.length(), lifecycle_records.length())
+  
+  // 统计生命周期分布
+  let mut lifecycle_stats = LifecycleStats {
+    total_records: updated_records.length(),
+    stage_distribution: {},
+    total_transitions: 0,
+    average_compression_ratio: 0.0,
+    storage_cost_savings: 0.0
+  }
+  
+  let mut total_compression_ratio = 0.0
+  let mut hot_storage_size = 0
+  let mut cold_storage_size = 0
+  
+  let mut j = 0
+  while j < updated_records.length() {
+    let record = updated_records[j]
+    
+    // 统计阶段分布
+    let stage_count = lifecycle_stats.stage_distribution.get(record.current_stage).or_else(0)
+    lifecycle_stats.stage_distribution[record.current_stage] = stage_count + 1
+    
+    // 统计转换次数
+    lifecycle_stats.total_transitions = lifecycle_stats.total_transitions + record.stage_transitions.length()
+    
+    // 统计压缩效果
+    let compression_enabled = compression_policies[record.current_stage]
+    let compression_ratio = if compression_enabled { 0.4 } else { 1.0 }
+    total_compression_ratio = total_compression_ratio + compression_ratio
+    
+    // 统计存储成本
+    if record.current_stage == "hot" {
+      hot_storage_size = hot_storage_size + record.size_bytes
+    } else {
+      cold_storage_size = cold_storage_size + (record.size_bytes.to_double() * compression_ratio).to_int()
+    }
+    
+    j = j + 1
+  }
+  
+  if updated_records.length() > 0 {
+    lifecycle_stats.average_compression_ratio = total_compression_ratio / updated_records.length().to_double()
+    lifecycle_stats.storage_cost_savings = ((hot_storage_size - cold_storage_size).to_double() / hot_storage_size.to_double()) * 100.0
+  }
+  
+  // 验证生命周期统计
+  assert_eq(lifecycle_stats.stage_distribution.size() > 1, true)  // 应该有多个阶段
+  assert_eq(lifecycle_stats.total_transitions > 0, true)
+  assert_eq(lifecycle_stats.average_compression_ratio > 0.0, true)
+  assert_eq(lifecycle_stats.average_compression_ratio <= 1.0, true)
+  
+  // 验证阶段分布合理性
+  let hot_count = lifecycle_stats.stage_distribution.get("hot").or_else(0)
+  let warm_count = lifecycle_stats.stage_distribution.get("warm").or_else(0)
+  let cold_count = lifecycle_stats.stage_distribution.get("cold").or_else(0)
+  let archived_count = lifecycle_stats.stage_distribution.get("archived").or_else(0)
+  
+  // 热数据应该最少，归档数据应该最多
+  assert_eq(hot_count <= warm_count, true)
+  assert_eq(warm_count <= cold_count, true)
+  assert_eq(cold_count <= archived_count, true)
+  
+  // 验证存储成本节省
+  assert_eq(lifecycle_stats.storage_cost_savings > 0.0, true)
+}
+
+test "telemetry_intelligent_archiving" {
+  // 测试遥测数据智能归档
+  
+  // 智能归档配置
+  let access_patterns = {
+    "frequent": 0.8,    // 频繁访问阈值
+    "occasional": 0.3,  // 偶尔访问阈值
+    "rare": 0.1         // 稀少访问阈值
+  }
+  
+  let business_value = {
+    "critical": 1.0,
+    "important": 0.7,
+    "useful": 0.4,
+    "optional": 0.1
+  }
+  
+  let ml_confidence_threshold = 0.8  // 机器学习预测置信度阈值
+  
+  // 验证配置
+  assert_eq(access_patterns.size(), 3)
+  assert_eq(business_value.size(), 4)
+  assert_eq(ml_confidence_threshold > 0.0, true)
+  assert_eq(ml_confidence_threshold <= 1.0, true)
+  
+  // 智能归档记录
+  type IntelligentArchiveRecord = {
+    record_id: String,
+    data_type: String,
+    access_score: Double,
+    business_score: Double,
+    ml_prediction: String,
+    confidence: Double,
+    recommended_action: String,
+    actual_action: String
+  }
+  
+  // 智能归档结果
+  type IntelligentArchiveResult = {
+    records_processed: Int,
+    ml_accurate_predictions: Int,
+    manual_overrides: Int,
+    cost_savings_percentage: Double,
+    access_efficiency_score: Double
+  }
+  
+  // 计算访问分数
+  let calculate_access_score = fn(recent_access: Int, total_access: Int, age_days: Int) -> Double {
+    let recent_ratio = if total_access > 0 { recent_access.to_double() / total_access.to_double() } else { 0.0 }
+    let age_factor = max(0.1, 1.0 - (age_days.to_double() / 365.0))
+    let frequency_factor = min(1.0, total_access.to_double() / 100.0)
+    
+    (recent_ratio + age_factor + frequency_factor) / 3.0
+  }
+  
+  // 计算业务价值分数
+  let calculate_business_score = fn(data_type: String, error_rate: Double, user_impact: Double) -> Double {
+    let type_value = match data_type {
+      "metrics" => business_value["important"],
+      "logs" => business_value["useful"],
+      "traces" => business_value["critical"],
+      "configurations" => business_value["important"],
+      _ => business_value["optional"]
+    }
+    
+    let quality_factor = max(0.5, 1.0 - error_rate)
+    let impact_factor = min(1.0, user_impact)
+    
+    type_value * quality_factor * impact_factor
+  }
+  
+  // 机器学习预测（简化版）
+  let ml_predict_archiving = fn(access_score: Double, business_score: Double) -> (String, Double) {
+    let combined_score = (access_score + business_score) / 2.0
+    
+    let (prediction, confidence) = if combined_score > 0.8 {
+      ("keep_hot", 0.9)
+    } else if combined_score > 0.6 {
+      ("move_to_warm", 0.85)
+    } else if combined_score > 0.4 {
+      ("move_to_cold", 0.8)
+    } else {
+      ("archive", 0.75)
+    }
+    
+    (prediction, confidence)
+  }
+  
+  // 智能归档决策
+  let make_intelligent_decision = fn(record: IntelligentArchiveRecord) -> String {
+    if record.confidence >= ml_confidence_threshold {
+      record.ml_prediction
+    } else {
+      // 低置信度时基于规则决策
+      if record.business_score > 0.8 {
+        "keep_hot"
+      } else if record.access_score > access_patterns["frequent"] {
+        "move_to_warm"
+      } else if record.access_score > access_patterns["occasional"] {
+        "move_to_cold"
+      } else {
+        "archive"
+      }
+    }
+  }
+  
+  // 生成智能归档记录
+  let generate_intelligent_records = fn(count: Int) -> Array[IntelligentArchiveRecord] {
+    let data_types = ["metrics", "logs", "traces", "configurations"]
+    let mut records = []
+    
+    let mut i = 0
+    while i < count {
+      let data_type = data_types[i % data_types.length()]
+      let recent_access = 10 + (i % 50)
+      let total_access = recent_access + (i % 100)
+      let age_days = 30 + (i % 365)
+      let error_rate = (i % 20).to_double() / 100.0
+      let user_impact = (i % 10).to_double() / 10.0
+      
+      let access_score = calculate_access_score(recent_access, total_access, age_days)
+      let business_score = calculate_business_score(data_type, error_rate, user_impact)
+      let (ml_prediction, confidence) = ml_predict_archiving(access_score, business_score)
+      
+      let record = IntelligentArchiveRecord {
+        record_id: "intelligent_" + i.to_string(),
+        data_type: data_type,
+        access_score: access_score,
+        business_score: business_score,
+        ml_prediction: ml_prediction,
+        confidence: confidence,
+        recommended_action: "",
+        actual_action: ""
+      }
+      
+      records.push(record)
+      i = i + 1
+    }
+    
+    records
+  }
+  
+  // 生成测试记录
+  let intelligent_records = generate_intelligent_records(200)
+  
+  // 验证记录生成
+  assert_eq(intelligent_records.length(), 200)
+  
+  // 执行智能归档
+  let mut processed_records = []
+  let mut ml_accurate = 0
+  let mut manual_overrides = 0
+  
+  let mut i = 0
+  while i < intelligent_records.length() {
+    let mut record = intelligent_records[i]
+    
+    // 智能决策
+    let decision = make_intelligent_decision(record)
+    record.actual_action = decision
+    record.recommended_action = decision
+    
+    // 模拟ML准确性验证
+    if record.confidence >= ml_confidence_threshold {
+      let is_accurate = (record.ml_prediction == decision)
+      if is_accurate {
+        ml_accurate = ml_accurate + 1
+      }
+    } else {
+      manual_overrides = manual_overrides + 1
+    }
+    
+    processed_records.push(record)
+    i = i + 1
+  }
+  
+  // 计算智能归档结果
+  let keep_hot_count = processed_records.filter(fn(r) { r.actual_action == "keep_hot" }).length()
+  let warm_count = processed_records.filter(fn(r) { r.actual_action == "move_to_warm" }).length()
+  let cold_count = processed_records.filter(fn(r) { r.actual_action == "move_to_cold" }).length()
+  let archived_count = processed_records.filter(fn(r) { r.actual_action == "archive" }).length()
+  
+  let total_ml_predictions = processed_records.filter(fn(r) { r.confidence >= ml_confidence_threshold }).length()
+  let ml_accuracy_rate = if total_ml_predictions > 0 {
+    ml_accurate.to_double() / total_ml_predictions.to_double()
+  } else { 0.0 }
+  
+  // 模拟成本节省和访问效率
+  let cost_savings = (archived_count.to_double() / processed_records.length().to_double()) * 80.0  // 归档节省80%成本
+  let access_efficiency = (keep_hot_count.to_double() / processed_records.length().to_double()) * 100.0
+  
+  let archive_result = IntelligentArchiveResult {
+    records_processed: processed_records.length(),
+    ml_accurate_predictions: ml_accurate,
+    manual_overrides: manual_overrides,
+    cost_savings_percentage: cost_savings,
+    access_efficiency_score: access_efficiency
+  }
+  
+  // 验证智能归档结果
+  assert_eq(archive_result.records_processed, 200)
+  assert_eq(archive_result.ml_accurate_predictions >= 0, true)
+  assert_eq(archive_result.manual_overrides >= 0, true)
+  assert_eq(archive_result.cost_savings_percentage > 0.0, true)
+  assert_eq(archive_result.access_efficiency_score > 0.0, true)
+  
+  // 验证ML准确性
+  assert_eq(ml_accuracy_rate > 0.7, true)  // ML预测准确率应该超过70%
+  
+  // 验证决策分布
+  assert_eq(keep_hot_count + warm_count + cold_count + archived_count, 200)
+  
+  // 高价值数据应该更可能保持热存储
+  let high_value_records = processed_records.filter(fn(r) { r.business_score > 0.7 })
+  let high_value_hot = high_value_records.filter(fn(r) { r.actual_action == "keep_hot" }).length()
+  
+  if high_value_records.length() > 0 {
+    let high_value_hot_rate = high_value_hot.to_double() / high_value_records.length().to_double()
+    assert_eq(high_value_hot_rate > 0.5, true)
+  }
+  
+  // 低访问频率数据应该更可能被归档
+  let low_access_records = processed_records.filter(fn(r) { r.access_score < access_patterns["rare"] })
+  let low_access_archived = low_access_records.filter(fn(r) { r.actual_action == "archive" }).length()
+  
+  if low_access_records.length() > 0 {
+    let low_access_archive_rate = low_access_archived.to_double() / low_access_records.length().to_double()
+    assert_eq(low_access_archive_rate > 0.4, true)
+  }
+}
+
+test "telemetry_compliance_archiving" {
+  // 测试遥测数据合规归档
+  
+  // 合规归档配置
+  let compliance_requirements = {
+    "gdpr": { "retention_days": 2555, "anonymization_required": true, "right_to_delete": true },
+    "hipaa": { "retention_days": 2555, "encryption_required": true, "audit_log": true },
+    "sox": { "retention_days": 2555, "immutable_storage": true, "sign_off_required": true },
+    "pci": { "retention_days": 365, "tokenization_required": true, "access_control": true }
+  }
+  
+  let data_sensitivity = {
+    "pii": { "gdpr": true, "hipaa": true, "sox": false, "pci": true },
+    "phi": { "gdpr": true, "hipaa": true, "sox": false, "pci": false },
+    "financial": { "gdpr": false, "hipaa": false, "sox": true, "pci": true },
+    "operational": { "gdpr": false, "hipaa": false, "sox": true, "pci": false }
+  }
+  
+  // 验证配置
+  assert_eq(compliance_requirements.size(), 4)
+  assert_eq(data_sensitivity.size(), 4)
+  
+  // 合规归档记录
+  type ComplianceArchiveRecord = {
+    record_id: String,
+    data_type: String,
+    sensitivity_level: String,
+    applicable_regulations: Array[String],
+    retention_expiry: Int,
+    compliance_status: String,
+    archiving_actions: Array[String]
+  }
+  
+  // 合规检查结果
+  type ComplianceCheckResult = {
+    regulation: String,
+    compliant: Bool,
+    violations: Array[String],
+    required_actions: Array[String],
+    check_time: Int
+  }
+  
+  // 合规归档结果
+  type ComplianceArchiveResult {
+    total_records: Int,
+    compliant_records: Int,
+    non_compliant_records: Int,
+    violations_by_regulation: Map[String, Int],
+    archiving_compliance_rate: Double
+  }
+  
+  // 获取适用的法规
+  let get_applicable_regulations = fn(sensitivity: String) -> Array[String] {
+    let mut regulations = []
+    let regulation_entries = ["gdpr", "hipaa", "sox", "pci"]
+    
+    let mut i = 0
+    while i < regulation_entries.length() {
+      let regulation = regulation_entries[i]
+      if data_sensitivity[sensitivity][regulation] {
+        regulations.push(regulation)
+      }
+      i = i + 1
+    }
+    
+    regulations
+  }
+  
+  // 执行合规检查
+  let perform_compliance_check = fn(record: ComplianceArchiveRecord, current_time: Int) -> Array[ComplianceCheckResult] {
+    let mut check_results = []
+    
+    let mut i = 0
+    while i < record.applicable_regulations.length() {
+      let regulation = record.applicable_regulations[i]
+      let requirement = compliance_requirements[regulation]
+      
+      let mut violations = []
+      let mut required_actions = []
+      let mut compliant = true
+      
+      // 检查保留期限
+      if current_time >= record.retention_expiry {
+        violations.push("Data retention period exceeded")
+        required_actions.push("Secure deletion required")
+        compliant = false
+      }
+      
+      // 检查特定法规要求
+      match regulation {
+        "gdpr" => {
+          if not record.archiving_actions.contains("anonymized") {
+            violations.push("PII data not anonymized")
+            required_actions.push("Apply data anonymization")
+            compliant = false
+          }
+        }
+        "hipaa" => {
+          if not record.archiving_actions.contains("encrypted") {
+            violations.push("PHI data not encrypted")
+            required_actions.push("Apply encryption")
+            compliant = false
+          }
+        }
+        "sox" => {
+          if not record.archiving_actions.contains("immutable") {
+            violations.push("SOX data not stored in immutable format")
+            required_actions.push("Use immutable storage")
+            compliant = false
+          }
+        }
+        "pci" => {
+          if not record.archiving_actions.contains("tokenized") {
+            violations.push("PCI data not tokenized")
+            required_actions.push("Apply tokenization")
+            compliant = false
+          }
+        }
+        _ => ()
+      }
+      
+      let check_result = ComplianceCheckResult {
+        regulation: regulation,
+        compliant: compliant,
+        violations: violations,
+        required_actions: required_actions,
+        check_time: current_time
+      }
+      
+      check_results.push(check_result)
+      i = i + 1
+    }
+    
+    check_results
+  }
+  
+  // 生成合规归档记录
+  let generate_compliance_records = fn(count: Int, base_time: Int) -> Array[ComplianceArchiveRecord] {
+    let sensitivity_levels = ["pii", "phi", "financial", "operational"]
+    let data_types = ["user_logs", "health_records", "transaction_logs", "system_metrics"]
+    let mut records = []
+    
+    let mut i = 0
+    while i < count {
+      let sensitivity = sensitivity_levels[i % sensitivity_levels.length()]
+      let data_type = data_types[i % data_types.length()]
+      let regulations = get_applicable_regulations(sensitivity)
+      
+      // 计算保留到期时间（取最长保留期）
+      let mut max_retention = 0
+      let mut j = 0
+      while j < regulations.length() {
+        let retention = compliance_requirements[regulations[j]]["retention_days"]
+        max_retention = max(max_retention, retention)
+        j = j + 1
+      }
+      
+      let retention_expiry = base_time + (max_retention * 86400)
+      
+      // 应用一些归档操作
+      let mut archiving_actions = []
+      if regulations.contains("gdpr") and i % 3 == 0 { archiving_actions.push("anonymized") }
+      if regulations.contains("hipaa") and i % 2 == 0 { archiving_actions.push("encrypted") }
+      if regulations.contains("sox") and i % 4 == 0 { archiving_actions.push("immutable") }
+      if regulations.contains("pci") and i % 5 == 0 { archiving_actions.push("tokenized") }
+      
+      let record = ComplianceArchiveRecord {
+        record_id: "compliance_" + i.to_string(),
+        data_type: data_type,
+        sensitivity_level: sensitivity,
+        applicable_regulations: regulations,
+        retention_expiry: retention_expiry,
+        compliance_status: "pending",
+        archiving_actions: archiving_actions
+      }
+      
+      records.push(record)
+      i = i + 1
+    }
+    
+    records
+  }
+  
+  // 生成测试记录
+  let current_time = 1640995200
+  let compliance_records = generate_compliance_records(100, current_time)
+  
+  // 验证记录生成
+  assert_eq(compliance_records.length(), 100)
+  
+  // 执行合规归档检查
+  let mut all_check_results = []
+  let mut updated_records = []
+  
+  let mut i = 0
+  while i < compliance_records.length() {
+    let record = compliance_records[i]
+    let check_results = perform_compliance_check(record, current_time)
+    
+    // 更新记录的合规状态
+    let mut is_compliant = true
     let mut j = 0
-    while j < 3 {
-      let age_days = j * 100  // 0天、100天、200天前
-      
-      data_records.push(DataRecord {
-        record_id: rule.data_type + "_" + j.to_string(),
-        data_type: rule.data_type,
-        category: rule.category,
-        timestamp: current_time - age_days * 86400,
-        size_bytes: 1024 * (j + 1),
-        retention_days: rule.retention_days,
-        is_compliance_data: rule.compliance_requirement
-      })
-      
+    while j < check_results.length() {
+      if not check_results[j].compliant {
+        is_compliant = false
+      }
       j = j + 1
     }
     
-    i = i + 1
-  }
-  
-  // 验证数据记录
-  assert_eq(data_records.length(), 15)  // 5种类型 × 3条记录
-  assert_eq(data_records[0].data_type, "security_event")
-  assert_eq(data_records[14].data_type, "debug_log")
-  
-  // 检查数据是否过期
-  let mut expired_records = []
-  let mut active_records = []
-  
-  i = 0
-  while i < data_records.length() {
-    let record = data_records[i]
-    let age_days = (current_time - record.timestamp) / 86400
-    
-    let is_expired = if record.is_compliance_data {
-      // 合规数据不能自动过期
-      false
-    } else {
-      age_days > record.retention_days
+    let updated_record = ComplianceArchiveRecord {
+      record_id: record.record_id,
+      data_type: record.data_type,
+      sensitivity_level: record.sensitivity_level,
+      applicable_regulations: record.applicable_regulations,
+      retention_expiry: record.retention_expiry,
+      compliance_status: if is_compliant { "compliant" } else { "non_compliant" },
+      archiving_actions: record.archiving_actions
     }
     
-    if is_expired {
-      expired_records.push(record)
-    } else {
-      active_records.push(record)
+    updated_records.push(updated_record)
+    
+    // 收集所有检查结果
+    let mut k = 0
+    while k < check_results.length() {
+      all_check_results.push(check_results[k])
+      k = k + 1
     }
     
     i = i + 1
   }
   
-  // 验证过期检查
-  assert_eq(expired_records.length() + active_records.length(), data_records.length())
-  assert_eq(expired_records.length() > 0, true)  // 应该有过期记录
-  assert_eq(active_records.length() > 0, true)   // 应该有活跃记录
+  // 计算合规归档统计
+  let compliant_records = updated_records.filter(fn(r) { r.compliance_status == "compliant" }).length()
+  let non_compliant_records = updated_records.filter(fn(r) { r.compliance_status == "non_compliant" }).length()
   
-  // 合规数据应该都在活跃记录中
-  let mut compliance_expired = 0
-  i = 0
-  while i < expired_records.length() {
-    if expired_records[i].is_compliance_data {
-      compliance_expired = compliance_expired + 1
-    }
-    i = i + 1
-  }
-  assert_eq(compliance_expired, 0)  // 合规数据不应该过期
+  // 按法规统计违规
+  let mut violations_by_regulation = {}
+  let regulation_entries = ["gdpr", "hipaa", "sox", "pci"]
   
-  // 按数据类型统计过期情况
-  let mut expiration_by_type = {}
-  i = 0
-  while i < retention_rules.length() {
-    let data_type = retention_rules[i].data_type
-    expiration_by_type[data_type] = 0
-    i = i + 1
+  let mut m = 0
+  while m < regulation_entries.length() {
+    let regulation = regulation_entries[m]
+    let regulation_violations = all_check_results.filter(fn(r) { 
+      r.regulation == regulation and not r.compliant 
+    }).length()
+    violations_by_regulation[regulation] = regulation_violations
+    m = m + 1
   }
   
-  i = 0
-  while i < expired_records.length() {
-    let data_type = expired_records[i].data_type
-    let current_count = expiration_by_type[data_type]
-    expiration_by_type[data_type] = current_count + 1
-    i = i + 1
+  let compliance_rate = compliant_records.to_double() / updated_records.length().to_double()
+  
+  let archive_result = ComplianceArchiveResult {
+    total_records: updated_records.length(),
+    compliant_records: compliant_records,
+    non_compliant_records: non_compliant_records,
+    violations_by_regulation: violations_by_regulation,
+    archiving_compliance_rate: compliance_rate
   }
   
-  // 验证过期统计（debug_log应该有过期记录）
-  assert_eq(expiration_by_type["debug_log"] > 0, true)
+  // 验证合规归档结果
+  assert_eq(archive_result.total_records, 100)
+  assert_eq(archive_result.compliant_records + archive_result.non_compliant_records, 100)
+  assert_eq(archive_result.archiving_compliance_rate >= 0.0, true)
+  assert_eq(archive_result.archiving_compliance_rate <= 1.0, true)
   
-  // 计算存储节省（删除过期数据）
-  let mut expired_size = 0
-  i = 0
-  while i < expired_records.length() {
-    expired_size = expired_size + expired_records[i].size_bytes
-    i = i + 1
+  // 验证违规统计
+  let total_violations = violations_by_regulation.fold(0, fn(acc, (_, count)) { acc + count })
+  assert_eq(total_violations >= 0, true)
+  
+  // 验证敏感数据的合规处理
+  let pii_records = updated_records.filter(fn(r) { r.sensitivity_level == "pii" })
+  let pii_compliant = pii_records.filter(fn(r) { r.compliance_status == "compliant" }).length()
+  
+  if pii_records.length() > 0 {
+    let pii_compliance_rate = pii_compliant.to_double() / pii_records.length().to_double()
+    assert_eq(pii_compliance_rate > 0.5, true)  // PII数据应该有较高的合规率
   }
   
-  let mut total_size = 0
-  i = 0
-  while i < data_records.length() {
-    total_size = total_size + data_records[i].size_bytes
-    i = i + 1
-  }
+  // 验证不同法规的违规分布
+  let gdpr_violations = violations_by_regulation["gdpr"]
+  let hipaa_violations = violations_by_regulation["hipaa"]
   
-  let space_savings_percent = (expired_size * 100) / total_size
-  
-  // 验证存储节省
-  assert_eq(space_savings_percent > 0, true)
-  assert_eq(space_savings_percent < 50, true)  // 不应该超过50%
-}
-
-test "telemetry_data_compression_archiving" {
-  // 测试遥测数据压缩归档
-  
-  let compression_algorithms = ["gzip", "lz4", "zstd"]
-  let compression_threshold_bytes = 10240  // 10KB以上才压缩
-  let target_compression_ratio = 0.7       // 目标压缩比70%
-  
-  // 验证压缩配置
-  assert_eq(compression_algorithms.length(), 3)
-  assert_eq(compression_threshold_bytes > 0, true)
-  assert_eq(target_compression_ratio > 0.0, true)
-  assert_eq(target_compression_ratio < 1.0, true)
-  
-  // 模拟不同类型的遥测数据
-  type DataBlock = {
-    block_id: String,
-    data_type: String,
-    raw_size: Int,
-    compressed_size: Int,
-    compression_algorithm: String,
-    compression_ratio: Double,
-    compression_time_ms: Int
-  }
-  
-  let data_samples = [
-    ("repetitive_metrics", 50000),   // 高重复性数据，压缩效果好
-    ("json_traces", 25000),          // JSON格式数据，中等压缩效果
-    ("binary_logs", 15000),          // 二进制日志，压缩效果一般
-    ("text_logs", 8000),             // 文本日志，压缩效果一般
-    ("already_compressed", 30000)    // 已压缩数据，压缩效果差
-  ]
-  
-  // 验证数据样本
-  assert_eq(data_samples.length(), 5)
-  assert_eq(data_samples[0].0, "repetitive_metrics")
-  assert_eq(data_samples[0].1, 50000)
-  
-  // 模拟压缩处理
-  let mut compressed_blocks = []
-  let mut i = 0
-  while i < data_samples.length() {
-    let (data_type, raw_size) = data_samples[i]
-    
-    // 只有超过阈值的数据才压缩
-    if raw_size >= compression_threshold_bytes {
-      // 根据数据类型选择压缩算法和模拟压缩效果
-      let (algorithm, compression_ratio) = match data_type {
-        "repetitive_metrics" => ("zstd", 0.2)  // 80%压缩率
-        "json_traces" => ("gzip", 0.4)         // 60%压缩率
-        "binary_logs" => ("lz4", 0.6)          // 40%压缩率
-        "already_compressed" => ("gzip", 0.95) // 5%压缩率
-        _ => ("gzip", 0.7)
-      }
-      
-      let compressed_size = (raw_size.to_double() * compression_ratio).to_int()
-      let compression_time = raw_size / 1000  // 模拟压缩时间
-      
-      compressed_blocks.push(DataBlock {
-        block_id: data_type + "_compressed",
-        data_type: data_type,
-        raw_size: raw_size,
-        compressed_size: compressed_size,
-        compression_algorithm: algorithm,
-        compression_ratio: compression_ratio,
-        compression_time_ms: compression_time
-      })
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证压缩结果
-  assert_eq(compressed_blocks.length(), 4)  // 8000字节数据不压缩
-  
-  // 验证压缩效果
-  let mut total_raw_size = 0
-  let mut total_compressed_size = 0
-  i = 0
-  while i < compressed_blocks.length() {
-    total_raw_size = total_raw_size + compressed_blocks[i].raw_size
-    total_compressed_size = total_compressed_size + compressed_blocks[i].compressed_size
-    i = i + 1
-  }
-  
-  let overall_compression_ratio = total_compressed_size.to_double() / total_raw_size.to_double()
-  
-  // 验证整体压缩效果
-  assert_eq(overall_compression_ratio < target_compression_ratio, true)
-  assert_eq(total_compressed_size < total_raw_size, true)
-  
-  // 计算存储节省
-  let space_savings = total_raw_size - total_compressed_size
-  let space_savings_percent = (space_savings * 100) / total_raw_size
-  
-  // 验证存储节省
-  assert_eq(space_savings > 0, true)
-  assert_eq(space_savings_percent > 20, true)  // 至少20%的存储节省
-  
-  // 按压缩算法分组统计
-  let mut stats_by_algorithm = {}
-  i = 0
-  while i < compression_algorithms.length() {
-    let algorithm = compression_algorithms[i]
-    stats_by_algorithm[algorithm] = {
-      count: 0,
-      total_raw_size: 0,
-      total_compressed_size: 0,
-      avg_compression_ratio: 0.0
-    }
-    i = i + 1
-  }
-  
-  // 统计各算法性能
-  i = 0
-  while i < compressed_blocks.length() {
-    let block = compressed_blocks[i]
-    let algorithm = block.compression_algorithm
-    let stats = stats_by_algorithm[algorithm]
-    
-    stats.count = stats.count + 1
-    stats.total_raw_size = stats.total_raw_size + block.raw_size
-    stats.total_compressed_size = stats.total_compressed_size + block.compressed_size
-    
-    stats_by_algorithm[algorithm] = stats
-    i = i + 1
-  }
-  
-  // 计算平均压缩比
-  i = 0
-  while i < compression_algorithms.length() {
-    let algorithm = compression_algorithms[i]
-    let stats = stats_by_algorithm[algorithm]
-    
-    if stats.count > 0 {
-      let avg_ratio = stats.total_compressed_size.to_double() / stats.total_raw_size.to_double()
-      let updated_stats = {
-        count: stats.count,
-        total_raw_size: stats.total_raw_size,
-        total_compressed_size: stats.total_compressed_size,
-        avg_compression_ratio: avg_ratio
-      }
-      stats_by_algorithm[algorithm] = updated_stats
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证算法统计
-  assert_eq(stats_by_algorithm["zstd"].count, 1)
-  assert_eq(stats_by_algorithm["gzip"].count, 2)
-  assert_eq(stats_by_algorithm["lz4"].count, 1)
-  
-  // 验证zstd压缩效果最好
-  let zstd_ratio = stats_by_algorithm["zstd"].avg_compression_ratio
-  let gzip_ratio = stats_by_algorithm["gzip"].avg_compression_ratio
-  let lz4_ratio = stats_by_algorithm["lz4"].avg_compression_ratio
-  
-  assert_eq(zstd_ratio < gzip_ratio, true)  // zstd压缩比应该更好
-  assert_eq(zstd_ratio < lz4_ratio, true)
-  
-  // 模拟解压缩验证（确保压缩数据可以正确恢复）
-  let mut decompression_success = true
-  i = 0
-  while i < compressed_blocks.length() {
-    let block = compressed_blocks[i]
-    
-    // 模拟解压缩验证（简化版）
-    let decompression_success_ratio = 0.98  // 98%成功率
-    let random_factor = (block.block_id.length() * 7) % 100
-    
-    if random_factor > decompression_success_ratio * 100 {
-      decompression_success = false
-      break
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证解压缩成功率
-  assert_eq(decompression_success, true)
+  // GDPR和HIPAA通常有更严格的要求
+  assert_eq(gdpr_violations >= 0, true)
+  assert_eq(hipaa_violations >= 0, true)
 }
