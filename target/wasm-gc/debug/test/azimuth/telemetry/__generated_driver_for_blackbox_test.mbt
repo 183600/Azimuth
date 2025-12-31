@@ -1333,6 +1333,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_706572666f726d616e63655f72656772657373696f6e5f746573742e6d6274_5, ["resource_operations_performance"]),
     6: (__test_706572666f726d616e63655f72656772657373696f6e5f746573742e6d6274_6, ["memory_usage_regression"]),
   },
+  "performance_optimization_test.mbt": {
+    0: (__test_706572666f726d616e63655f6f7074696d697a6174696f6e5f746573742e6d6274_0, ["memory_pool_allocation"]),
+    1: (__test_706572666f726d616e63655f6f7074696d697a6174696f6e5f746573742e6d6274_1, ["cpu_utilization_optimization"]),
+    2: (__test_706572666f726d616e63655f6f7074696d697a6174696f6e5f746573742e6d6274_2, ["response_time_optimization"]),
+    3: (__test_706572666f726d616e63655f6f7074696d697a6174696f6e5f746573742e6d6274_3, ["cache_performance_optimization"]),
+    4: (__test_706572666f726d616e63655f6f7074696d697a6174696f6e5f746573742e6d6274_4, ["data_compression_performance"]),
+    5: (__test_706572666f726d616e63655f6f7074696d697a6174696f6e5f746573742e6d6274_5, ["concurrent_processing_optimization"]),
+  },
   "performance_memory_efficiency_test.mbt": {
     0: (__test_706572666f726d616e63655f6d656d6f72795f656666696369656e63795f746573742e6d6274_0, ["memory_efficiency_attribute_storage"]),
   },
