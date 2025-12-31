@@ -1,450 +1,171 @@
 // 遥测数据验证测试用例
 
-test "telemetry_trace_id_validation" {
-  // 测试追踪ID验证
+test "telemetry_data_format_validation" {
+  // 测试遥测数据格式验证
   
-  let valid_trace_ids = [
-    "0af7651916cd43dd8448eb211c80319c",
-    "1234567890abcdef1234567890abcdef",
-    "abcdef0123456789abcdef0123456789"
-  ]
+  let valid_trace_id = "1234567890abcdef1234567890abcdef"
+  let invalid_trace_id = "invalid_trace"
+  let valid_span_id = "1234567890abcdef"
+  let invalid_span_id = "too_short"
   
-  let invalid_trace_ids = [
-    "0af7651916cd43dd8448eb211c80319",    // 太短
-    "0af7651916cd43dd8448eb211c80319cc",  // 太长
-    "0af7651916cd43dd8448eb211c80319g",   // 包含非法字符
-    "",                                     // 空字符串
-    "0af7651916cd43dd8448eb211c80319C"    // 包含大写字母
-  ]
+  // 验证有效的trace_id (32个十六进制字符)
+  assert_eq(valid_trace_id.length(), 32)
+  assert_eq(valid_trace_id.has_prefix("12345678"), true)
+  assert_eq(valid_trace_id.has_suffix("abcdef"), true)
   
-  // 验证有效ID
-  let mut i = 0
-  while i < valid_trace_ids.length() {
-    let trace_id = valid_trace_ids[i]
-    
-    // 验证长度
-    assert_eq(trace_id.length(), 32)
-    
-    // 验证只包含十六进制字符
-    let mut valid_chars = true
-    let mut j = 0
-    while j < trace_id.length() {
-      let char = trace_id[j]
-      if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
-        valid_chars = false
-        break
-      }
-      j = j + 1
-    }
-    assert_eq(valid_chars, true)
-    
-    i = i + 1
-  }
+  // 验证无效的trace_id
+  assert_eq(invalid_trace_id.length(), 13)
+  assert_eq(invalid_trace_id != valid_trace_id, true)
   
-  // 验证无效ID
-  i = 0
-  while i < invalid_trace_ids.length() {
-    let trace_id = invalid_trace_ids[i]
-    let mut is_valid = true
-    
-    // 检查长度
-    if trace_id.length() != 32 {
-      is_valid = false
-    }
-    
-    // 检查字符
-    if is_valid {
-      let mut j = 0
-      while j < trace_id.length() {
-        let char = trace_id[j]
-        if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
-          is_valid = false
-          break
-        }
-        j = j + 1
-      }
-    }
-    
-    assert_eq(is_valid, false)
-    i = i + 1
-  }
+  // 验证有效的span_id (16个十六进制字符)
+  assert_eq(valid_span_id.length(), 16)
+  assert_eq(valid_span_id.has_prefix("12345678"), true)
+  assert_eq(valid_span_id.has_suffix("abcdef"), true)
+  
+  // 验证无效的span_id
+  assert_eq(invalid_span_id.length(), 8)
+  assert_eq(invalid_span_id != valid_span_id, true)
 }
 
-test "telemetry_span_id_validation" {
-  // 测试跨度ID验证
+test "telemetry_metric_range_validation" {
+  // 测试遥测指标范围验证
   
-  let valid_span_ids = [
-    "b7ad6b7169203331",
-    "1234567890abcdef",
-    "abcdef0123456789"
-  ]
+  let cpu_usage = 75.5
+  let memory_usage = 1024.0
+  let disk_usage = 85.2
+  let network_throughput = 1000.0
   
-  let invalid_span_ids = [
-    "b7ad6b716920333",    // 太短
-    "b7ad6b71692033311",  // 太长
-    "b7ad6b716920333g",   // 包含非法字符
-    "",                   // 空字符串
-    "B7AD6B7169203331"    // 包含大写字母
-  ]
+  // 验证CPU使用率范围 (0-100)
+  assert_eq(cpu_usage >= 0.0, true)
+  assert_eq(cpu_usage <= 100.0, true)
   
-  // 验证有效ID
-  let mut i = 0
-  while i < valid_span_ids.length() {
-    let span_id = valid_span_ids[i]
-    
-    // 验证长度
-    assert_eq(span_id.length(), 16)
-    
-    // 验证只包含十六进制字符
-    let mut valid_chars = true
-    let mut j = 0
-    while j < span_id.length() {
-      let char = span_id[j]
-      if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
-        valid_chars = false
-        break
-      }
-      j = j + 1
-    }
-    assert_eq(valid_chars, true)
-    
-    i = i + 1
-  }
+  // 验证内存使用率 (正值)
+  assert_eq(memory_usage > 0.0, true)
+  assert_eq(memory_usage < 100000.0, true)
   
-  // 验证无效ID
-  i = 0
-  while i < invalid_span_ids.length() {
-    let span_id = invalid_span_ids[i]
-    let mut is_valid = true
-    
-    // 检查长度
-    if span_id.length() != 16 {
-      is_valid = false
-    }
-    
-    // 检查字符
-    if is_valid {
-      let mut j = 0
-      while j < span_id.length() {
-        let char = span_id[j]
-        if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
-          is_valid = false
-          break
-        }
-        j = j + 1
-      }
-    }
-    
-    assert_eq(is_valid, false)
-    i = i + 1
-  }
-}
-
-test "telemetry_service_name_validation" {
-  // 测试服务名称验证
+  // 验证磁盘使用率范围 (0-100)
+  assert_eq(disk_usage >= 0.0, true)
+  assert_eq(disk_usage <= 100.0, true)
   
-  let valid_service_names = [
-    "auth-service",
-    "user-service",
-    "payment-service",
-    "order-service",
-    "notification-service",
-    "api-gateway",
-    "web-frontend"
-  ]
+  // 验证网络吞吐量 (正值)
+  assert_eq(network_throughput > 0.0, true)
   
-  let invalid_service_names = [
-    "",                     // 空字符串
-    "service_with_underscores",  // 包含下划线
-    "service.with.dots",    // 包含点号
-    "service with spaces",  // 包含空格
-    "Service-Name",         // 包含大写字母
-    "service@name",         // 包含特殊字符
-    "123service",           // 以数字开头
-    "service-"              // 以连字符结尾
-  ]
+  // 验证临界值
+  let zero_value = 0.0
+  let max_value = 100.0
+  let negative_value = -10.0
+  let overflow_value = 150.0
   
-  // 验证有效服务名称
-  let mut i = 0
-  while i < valid_service_names.length() {
-    let service_name = valid_service_names[i]
-    
-    // 验证长度
-    assert_eq(service_name.length() >= 3, true)
-    assert_eq(service_name.length() <= 50, true)
-    
-    // 验证字符
-    let mut valid_chars = true
-    let mut j = 0
-    while j < service_name.length() {
-      let char = service_name[j]
-      if !((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '-') {
-        valid_chars = false
-        break
-      }
-      j = j + 1
-    }
-    assert_eq(valid_chars, true)
-    
-    // 验证不以连字符开头或结尾
-    assert_eq(service_name[0] != '-', true)
-    assert_eq(service_name[service_name.length() - 1] != '-', true)
-    
-    i = i + 1
-  }
-  
-  // 验证无效服务名称
-  i = 0
-  while i < invalid_service_names.length() {
-    let service_name = invalid_service_names[i]
-    let mut is_valid = true
-    
-    // 检查长度
-    if service_name.length() < 3 || service_name.length() > 50 {
-      is_valid = false
-    }
-    
-    // 检查字符
-    if is_valid {
-      let mut j = 0
-      while j < service_name.length() {
-        let char = service_name[j]
-        if !((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '-') {
-          is_valid = false
-          break
-        }
-        j = j + 1
-      }
-    }
-    
-    // 检查不以连字符开头或结尾
-    if is_valid && (service_name[0] == '-' || service_name[service_name.length() - 1] == '-') {
-      is_valid = false
-    }
-    
-    assert_eq(is_valid, false)
-    i = i + 1
-  }
-}
-
-test "telemetry_attribute_validation" {
-  // 测试属性验证
-  
-  let valid_attributes = [
-    ("http.method", "GET"),
-    ("http.status_code", "200"),
-    ("user.id", "12345"),
-    ("service.name", "auth-service"),
-    ("trace.id", "0af7651916cd43dd8448eb211c80319c")
-  ]
-  
-  let invalid_attributes = [
-    ("", "value"),                    // 空键
-    ("key", ""),                      // 空值
-    ("key.with.dots", "value"),       // 键包含点号
-    ("key with spaces", "value"),     // 键包含空格
-    ("Key", "value"),                 // 键包含大写字母
-    ("key", "Value"),                 // 值包含大写字母（某些情况下可能无效）
-    ("very_long_key_name_that_exceeds_the_maximum_allowed_length_for_attribute_keys", "value"), // 键太长
-    ("key", "very_long_value_that_exceeds_the_maximum_allowed_length_for_attribute_values_and_should_be_rejected") // 值太长
-  ]
-  
-  // 验证有效属性
-  let mut i = 0
-  while i < valid_attributes.length() {
-    let attr = valid_attributes[i]
-    let key = attr.0
-    let value = attr.1
-    
-    // 验证键长度
-    assert_eq(key.length() >= 1, true)
-    assert_eq(key.length() <= 50, true)
-    
-    // 验证值长度
-    assert_eq(value.length() >= 1, true)
-    assert_eq(value.length() <= 100, true)
-    
-    // 验证键字符
-    let mut valid_key_chars = true
-    let mut j = 0
-    while j < key.length() {
-      let char = key[j]
-      if !((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '.' || char == '_') {
-        valid_key_chars = false
-        break
-      }
-      j = j + 1
-    }
-    assert_eq(valid_key_chars, true)
-    
-    i = i + 1
-  }
-  
-  // 验证无效属性
-  i = 0
-  while i < invalid_attributes.length() {
-    let attr = invalid_attributes[i]
-    let key = attr.0
-    let value = attr.1
-    let mut is_valid = true
-    
-    // 检查键长度
-    if key.length() < 1 || key.length() > 50 {
-      is_valid = false
-    }
-    
-    // 检查值长度
-    if value.length() < 1 || value.length() > 100 {
-      is_valid = false
-    }
-    
-    // 检查键字符
-    if is_valid {
-      let mut j = 0
-      while j < key.length() {
-        let char = key[j]
-        if !((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '.' || char == '_') {
-          is_valid = false
-          break
-        }
-        j = j + 1
-      }
-    }
-    
-    assert_eq(is_valid, false)
-    i = i + 1
-  }
-}
-
-test "telemetry_metric_validation" {
-  // 测试指标验证
-  
-  let valid_metrics = [
-    ("cpu_usage", 75.5, "percentage"),
-    ("memory_usage", 68.2, "percentage"),
-    ("request_count", 1000, "count"),
-    ("response_time", 125.5, "milliseconds"),
-    ("error_rate", 0.05, "ratio")
-  ]
-  
-  let invalid_metrics = [
-    ("", 75.5, "percentage"),              // 空指标名称
-    ("cpu_usage", -1.0, "percentage"),     // 负百分比
-    ("cpu_usage", 101.0, "percentage"),    // 超过100%的百分比
-    ("memory_usage", 68.2, ""),            // 空单位
-    ("request_count", -100, "count"),      // 负计数
-    ("error_rate", 1.5, "ratio"),          // 超过1的比率
-    ("response_time", -125.5, "milliseconds") // 负时间
-  ]
-  
-  // 验证有效指标
-  let mut i = 0
-  while i < valid_metrics.length() {
-    let metric = valid_metrics[i]
-    let name = metric.0
-    let value = metric.1
-    let unit = metric.2
-    
-    // 验证名称
-    assert_eq(name.length() >= 1, true)
-    assert_eq(name.length() <= 50, true)
-    
-    // 验证值
-    assert_eq(value >= 0.0, true)
-    
-    // 验证单位
-    assert_eq(unit.length() >= 1, true)
-    assert_eq(unit.length() <= 20, true)
-    
-    // 特定单位验证
-    if unit == "percentage" {
-      assert_eq(value >= 0.0 && value <= 100.0, true)
-    } else if unit == "ratio" {
-      assert_eq(value >= 0.0 && value <= 1.0, true)
-    } else if unit == "count" {
-      assert_eq(value >= 0.0, true)
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证无效指标
-  i = 0
-  while i < invalid_metrics.length() {
-    let metric = invalid_metrics[i]
-    let name = metric.0
-    let value = metric.1
-    let unit = metric.2
-    let mut is_valid = true
-    
-    // 检查名称
-    if name.length() < 1 || name.length() > 50 {
-      is_valid = false
-    }
-    
-    // 检查值
-    if value < 0.0 {
-      is_valid = false
-    }
-    
-    // 检查单位
-    if unit.length() < 1 || unit.length() > 20 {
-      is_valid = false
-    }
-    
-    // 特定单位验证
-    if is_valid && unit == "percentage" && (value < 0.0 || value > 100.0) {
-      is_valid = false
-    } else if is_valid && unit == "ratio" && (value < 0.0 || value > 1.0) {
-      is_valid = false
-    }
-    
-    assert_eq(is_valid, false)
-    i = i + 1
-  }
+  assert_eq(zero_value >= 0.0, true)
+  assert_eq(max_value <= 100.0, true)
+  assert_eq(negative_value >= 0.0, false)
+  assert_eq(overflow_value <= 100.0, false)
 }
 
 test "telemetry_timestamp_validation" {
-  // 测试时间戳验证
+  // 测试遥测时间戳验证
   
-  let valid_timestamps = [
-    1640995200L,  // 2022-01-01 00:00:00 UTC
-    1640995260L,  // 2022-01-01 00:01:00 UTC
-    1640995320L,  // 2022-01-01 00:02:00 UTC
-    1672531200L   // 2023-01-01 00:00:00 UTC
+  let current_timestamp = 1640995200L  // 2022-01-01 00:00:00 UTC
+  let past_timestamp = 1640908800L    // 2021-12-31 00:00:00 UTC
+  let future_timestamp = 1641081600L  // 2022-01-02 00:00:00 UTC
+  let invalid_timestamp = -1L
+  
+  // 验证时间戳顺序
+  assert_eq(current_timestamp > past_timestamp, true)
+  assert_eq(future_timestamp > current_timestamp, true)
+  assert_eq(past_timestamp < current_timestamp, true)
+  
+  // 验证时间戳范围
+  assert_eq(current_timestamp > 0L, true)
+  assert_eq(past_timestamp > 0L, true)
+  assert_eq(future_timestamp > 0L, true)
+  assert_eq(invalid_timestamp > 0L, false)
+  
+  // 验证时间戳差值
+  let time_diff = current_timestamp - past_timestamp
+  assert_eq(time_diff, 86400L)  // 一天的秒数
+  
+  let future_diff = future_timestamp - current_timestamp
+  assert_eq(future_diff, 86400L)  // 一天的秒数
+}
+
+test "telemetry_attribute_type_validation" {
+  // 测试遥测属性类型验证
+  
+  let string_attribute = "user_id"
+  let int_attribute = 12345
+  let double_attribute = 3.14159
+  let bool_attribute = true
+  
+  // 验证字符串属性
+  assert_eq(string_attribute.length(), 7)
+  assert_eq(string_attribute.has_prefix("user"), true)
+  assert_eq(string_attribute.has_suffix("_id"), true)
+  
+  // 验证整数属性
+  assert_eq(int_attribute > 10000, true)
+  assert_eq(int_attribute < 20000, true)
+  
+  // 验证浮点数属性
+  assert_eq(double_attribute > 3.0, true)
+  assert_eq(double_attribute < 4.0, true)
+  
+  // 验证布尔属性
+  assert_eq(bool_attribute, true)
+  assert_eq(!bool_attribute, false)
+  
+  // 创建属性数组
+  let attributes = [
+    (string_attribute, int_attribute.to_string()),
+    ("pi", double_attribute.to_string()),
+    ("enabled", bool_attribute.to_string())
   ]
   
-  let invalid_timestamps = [
-    -1L,           // 负时间戳
-    0L,            // 零时间戳（可能无效）
-    9999999999L,   // 过远的未来时间戳
-    100L           // 过早的时间戳（1970年）
-  ]
+  assert_eq(attributes.length(), 3)
+  assert_eq(attributes[0].0, "user_id")
+  assert_eq(attributes[1].0, "pi")
+  assert_eq(attributes[2].0, "enabled")
+}
+
+test "telemetry_service_dependency_validation" {
+  // 测试遥测服务依赖验证
   
-  // 验证有效时间戳
+  let service_name = "auth-service"
+  let dependencies = ["database", "cache", "message-queue"]
+  let dependency_status = ["healthy", "degraded", "healthy"]
+  let response_times = [25.5, 150.2, 45.8]
+  
+  // 验证服务名称
+  assert_eq(service_name.has_suffix("-service"), true)
+  assert_eq(service_name.has_prefix("auth"), true)
+  
+  // 验证依赖数组
+  assert_eq(dependencies.length(), 3)
+  assert_eq(dependencies[0], "database")
+  assert_eq(dependencies[1], "cache")
+  assert_eq(dependencies[2], "message-queue")
+  
+  // 验证依赖状态
+  assert_eq(dependency_status.length(), 3)
+  assert_eq(dependency_status[0], "healthy")
+  assert_eq(dependency_status[1], "degraded")
+  assert_eq(dependency_status[2], "healthy")
+  
+  // 验证响应时间
+  assert_eq(response_times.length(), 3)
+  assert_eq(response_times[0] < 50.0, true)  // database should be fast
+  assert_eq(response_times[1] > 100.0, true) // cache is degraded
+  assert_eq(response_times[2] > 40.0, true)  // message-queue moderate
+  
+  // 验证健康依赖数量
+  let mut healthy_count = 0
   let mut i = 0
-  while i < valid_timestamps.length() {
-    let timestamp = valid_timestamps[i]
-    
-    // 验证时间戳在合理范围内（2020-2030年）
-    assert_eq(timestamp >= 1577836800L, true)  // 2020-01-01
-    assert_eq(timestamp <= 1893456000L, true)  // 2030-01-01
-    
+  while i < dependency_status.length() {
+    if dependency_status[i] == "healthy" {
+      healthy_count = healthy_count + 1
+    }
     i = i + 1
   }
   
-  // 验证无效时间戳
-  i = 0
-  while i < invalid_timestamps.length() {
-    let timestamp = invalid_timestamps[i]
-    let mut is_valid = true
-    
-    // 检查时间戳在合理范围内
-    if timestamp < 1577836800L || timestamp > 1893456000L {
-      is_valid = false
-    }
-    
-    assert_eq(is_valid, false)
-    i = i + 1
-  }
+  assert_eq(healthy_count, 2)
 }

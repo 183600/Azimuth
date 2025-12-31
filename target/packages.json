@@ -63,6 +63,19 @@
             "Release",
             "Debug"
           ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/telemetry_enhanced_features_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
         }
       },
       "mbt-md-files": {},
@@ -3607,6 +3620,19 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_i18n_data_format_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth/telemetry/telemetry_i18n_new_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
