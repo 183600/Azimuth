@@ -69,6 +69,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_74656c656d657472795f656467655f636f6d707574696e675f746573742e6d6274_2, ["edge_data_locality_optimization"]),
     3: (__test_74656c656d657472795f656467655f636f6d707574696e675f746573742e6d6274_3, ["edge_offline_capability"]),
   },
+  "telemetry_blockchain_integration_test.mbt": {
+    0: (__test_74656c656d657472795f626c6f636b636861696e5f696e746567726174696f6e5f746573742e6d6274_0, ["blockchain_transaction_telemetry"]),
+    1: (__test_74656c656d657472795f626c6f636b636861696e5f696e746567726174696f6e5f746573742e6d6274_1, ["smart_contract_telemetry"]),
+    2: (__test_74656c656d657472795f626c6f636b636861696e5f696e746567726174696f6e5f746573742e6d6274_2, ["defi_protocol_telemetry"]),
+    3: (__test_74656c656d657472795f626c6f636b636861696e5f696e746567726174696f6e5f746573742e6d6274_3, ["nft_marketplace_telemetry"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
