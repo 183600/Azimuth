@@ -1349,6 +1349,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_73657269616c697a6174696f6e5f666f726d61745f636f6d70726568656e736976655f746573742e6d6274_6, ["cross_format_data_integrity"]),
     7: (__test_73657269616c697a6174696f6e5f666f726d61745f636f6d70726568656e736976655f746573742e6d6274_7, ["batch_serialization_optimization"]),
   },
+  "serialization_config_enhanced_test.mbt": {
+    0: (__test_73657269616c697a6174696f6e5f636f6e6669675f656e68616e6365645f746573742e6d6274_0, ["serialization_json_format_compatibility"]),
+    1: (__test_73657269616c697a6174696f6e5f636f6e6669675f656e68616e6365645f746573742e6d6274_1, ["serialization_protobuf_format_simulation"]),
+    2: (__test_73657269616c697a6174696f6e5f636f6e6669675f656e68616e6365645f746573742e6d6274_2, ["serialization_xml_format_handling"]),
+    3: (__test_73657269616c697a6174696f6e5f636f6e6669675f656e68616e6365645f746573742e6d6274_3, ["configuration_dynamic_updates"]),
+    4: (__test_73657269616c697a6174696f6e5f636f6e6669675f656e68616e6365645f746573742e6d6274_4, ["configuration_validation_rules"]),
+    5: (__test_73657269616c697a6174696f6e5f636f6e6669675f656e68616e6365645f746573742e6d6274_5, ["configuration_environment_override"]),
+    6: (__test_73657269616c697a6174696f6e5f636f6e6669675f656e68616e6365645f746573742e6d6274_6, ["configuration_format_conversion"]),
+  },
   "serialization_compatibility_test.mbt": {
     0: (__test_73657269616c697a6174696f6e5f636f6d7061746962696c6974795f746573742e6d6274_0, ["attribute_value_serialization"]),
     1: (__test_73657269616c697a6174696f6e5f636f6d7061746962696c6974795f746573742e6d6274_1, ["log_record_json_serialization"]),
