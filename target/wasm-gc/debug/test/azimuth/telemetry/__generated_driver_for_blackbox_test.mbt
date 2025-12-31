@@ -658,6 +658,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_74656c656d657472795f646174615f66696c746572696e675f746573742e6d6274_6, ["telemetry_data_time_window_filtering"]),
     7: (__test_74656c656d657472795f646174615f66696c746572696e675f746573742e6d6274_7, ["telemetry_data_privacy_filtering"]),
   },
+  "telemetry_data_filtering_new_test.mbt": {
+    0: (__test_74656c656d657472795f646174615f66696c746572696e675f6e65775f746573742e6d6274_0, ["telemetry_data_filtering_by_severity"]),
+    1: (__test_74656c656d657472795f646174615f66696c746572696e675f6e65775f746573742e6d6274_1, ["telemetry_data_filtering_by_time_range"]),
+    2: (__test_74656c656d657472795f646174615f66696c746572696e675f6e65775f746573742e6d6274_2, ["telemetry_data_filtering_by_attributes"]),
+    3: (__test_74656c656d657472795f646174615f66696c746572696e675f6e65775f746573742e6d6274_3, ["telemetry_data_filtering_by_value_range"]),
+    4: (__test_74656c656d657472795f646174615f66696c746572696e675f6e65775f746573742e6d6274_4, ["telemetry_data_filtering_by_pattern"]),
+    5: (__test_74656c656d657472795f646174615f66696c746572696e675f6e65775f746573742e6d6274_5, ["telemetry_data_filtering_sampling"]),
+    6: (__test_74656c656d657472795f646174615f66696c746572696e675f6e65775f746573742e6d6274_6, ["telemetry_data_filtering_combined"]),
+    7: (__test_74656c656d657472795f646174615f66696c746572696e675f6e65775f746573742e6d6274_7, ["telemetry_data_filtering_performance"]),
+  },
   "telemetry_data_export_test.mbt": {
     0: (__test_74656c656d657472795f646174615f6578706f72745f746573742e6d6274_0, ["telemetry_export_json_format"]),
     1: (__test_74656c656d657472795f646174615f6578706f72745f746573742e6d6274_1, ["telemetry_export_prometheus_format"]),
