@@ -350,6 +350,14 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_74656c656d657472795f7265736f757263655f6d6f6e69746f72696e675f746573742e6d6274_5, ["telemetry_resource_monitoring_connection_pool"]),
     6: (__test_74656c656d657472795f7265736f757263655f6d6f6e69746f72696e675f746573742e6d6274_6, ["telemetry_resource_monitoring_gc_metrics"]),
   },
+  "telemetry_resource_management_test.mbt": {
+    0: (__test_74656c656d657472795f7265736f757263655f6d616e6167656d656e745f746573742e6d6274_0, ["memory_pool_management"]),
+    1: (__test_74656c656d657472795f7265736f757263655f6d616e6167656d656e745f746573742e6d6274_1, ["buffer_size_optimization"]),
+    2: (__test_74656c656d657472795f7265736f757263655f6d616e6167656d656e745f746573742e6d6274_2, ["cpu_usage_optimization"]),
+    3: (__test_74656c656d657472795f7265736f757263655f6d616e6167656d656e745f746573742e6d6274_3, ["network_bandwidth_management"]),
+    4: (__test_74656c656d657472795f7265736f757263655f6d616e6167656d656e745f746573742e6d6274_4, ["disk_io_optimization"]),
+    5: (__test_74656c656d657472795f7265736f757263655f6d616e6167656d656e745f746573742e6d6274_5, ["resource_monitoring_and_alerting"]),
+  },
   "telemetry_resource_management_new_test.mbt": {
     0: (__test_74656c656d657472795f7265736f757263655f6d616e6167656d656e745f6e65775f746573742e6d6274_0, ["trace_resource_lifecycle"]),
     1: (__test_74656c656d657472795f7265736f757263655f6d616e6167656d656e745f6e65775f746573742e6d6274_1, ["metrics_resource_lifecycle"]),
