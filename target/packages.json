@@ -194,19 +194,6 @@
             "Debug"
           ]
         },
-        "/home/runner/work/Azimuth/Azimuth/src/telemetry_config_management_test.mbt": {
-          "backend": [
-            "Wasm",
-            "WasmGC",
-            "Js",
-            "Native",
-            "LLVM"
-          ],
-          "optlevel": [
-            "Release",
-            "Debug"
-          ]
-        },
         "/home/runner/work/Azimuth/Azimuth/src/telemetry_configuration_test.mbt": {
           "backend": [
             "Wasm",
@@ -299,19 +286,6 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/telemetry_enhanced_test.mbt": {
-          "backend": [
-            "Wasm",
-            "WasmGC",
-            "Js",
-            "Native",
-            "LLVM"
-          ],
-          "optlevel": [
-            "Release",
-            "Debug"
-          ]
-        },
-        "/home/runner/work/Azimuth/Azimuth/src/telemetry_error_handling_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -454,19 +428,6 @@
             "Debug"
           ]
         },
-        "/home/runner/work/Azimuth/Azimuth/src/telemetry_performance_test.mbt": {
-          "backend": [
-            "Wasm",
-            "WasmGC",
-            "Js",
-            "Native",
-            "LLVM"
-          ],
-          "optlevel": [
-            "Release",
-            "Debug"
-          ]
-        },
         "/home/runner/work/Azimuth/Azimuth/src/telemetry_realtime_processing_test.mbt": {
           "backend": [
             "Wasm",
@@ -559,19 +520,6 @@
           ]
         },
         "/home/runner/work/Azimuth/Azimuth/src/telemetry_serialization_compatibility_test.mbt": {
-          "backend": [
-            "Wasm",
-            "WasmGC",
-            "Js",
-            "Native",
-            "LLVM"
-          ],
-          "optlevel": [
-            "Release",
-            "Debug"
-          ]
-        },
-        "/home/runner/work/Azimuth/Azimuth/src/telemetry_serialization_test.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",

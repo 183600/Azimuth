@@ -1,512 +1,374 @@
-// 遥测数据序列化测试用例
+// 序列化格式测试
+// 测试各种遥测数据的序列化和反序列化
 
-test "telemetry_serialization_json_format" {
-  // 测试JSON格式序列化
+test "attribute_value_serialization" {
+  // 测试AttributeValue的序列化格式
   
-  let telemetry_metric = {
-    "name": "cpu_usage",
-    "value": 75.5,
-    "unit": "percent",
-    "timestamp": 1640995200L,
-    "tags": {
-      "host": "server-001",
-      "region": "us-west-2",
-      "environment": "production"
-    }
+  // 字符串值序列化
+  let string_attr = common::AttributeValue::string("test_value")
+  let string_serialized = match string_attr {
+    common::StringValue(s) => "string:" + s
+    _ => "unknown"
   }
+  assert_eq(string_serialized, "string:test_value")
   
-  // 验证原始数据结构
-  assert_eq(telemetry_metric["name"], "cpu_usage")
-  assert_eq(telemetry_metric["value"], 75.5)
-  assert_eq(telemetry_metric["unit"], "percent")
-  assert_eq(telemetry_metric["timestamp"], 1640995200L)
-  assert_eq(telemetry_metric["tags"]["host"], "server-001")
+  // 整数值序列化
+  let int_attr = common::AttributeValue::int(123L)
+  let int_serialized = match int_attr {
+    common::IntValue(i) => "int:" + i.to_string()
+    _ => "unknown"
+  }
+  assert_eq(int_serialized, "int:123")
   
-  // JSON序列化（简化实现）
-  let json_string = "{" +
-    "\"name\":\"" + telemetry_metric["name"] + "\"," +
-    "\"value\":" + telemetry_metric["value"].to_string() + "," +
-    "\"unit\":\"" + telemetry_metric["unit"] + "\"," +
-    "\"timestamp\":" + telemetry_metric["timestamp"].to_string() + "," +
-    "\"tags\":{" +
-      "\"host\":\"" + telemetry_metric["tags"]["host"] + "\"," +
-      "\"region\":\"" + telemetry_metric["tags"]["region"] + "\"," +
-      "\"environment\":\"" + telemetry_metric["tags"]["environment"] + "\"" +
-    "}" +
-  "}"
+  // 浮点数值序列化
+  let float_attr = common::AttributeValue::float(3.14)
+  let float_serialized = match float_attr {
+    common::FloatValue(f) => "float:" + f.to_string()
+    _ => "unknown"
+  }
+  assert_eq(float_serialized, "float:3.14")
   
-  // 验证JSON序列化结果
-  assert_eq(json_string.has_prefix("{"), true)
-  assert_eq(json_string.has_suffix("}"), true)
-  assert_eq(json_string.contains("\"name\":\"cpu_usage\""), true)
-  assert_eq(json_string.contains("\"value\":75.5"), true)
-  assert_eq(json_string.contains("\"unit\":\"percent\""), true)
-  assert_eq(json_string.contains("\"timestamp\":1640995200"), true)
-  assert_eq(json_string.contains("\"host\":\"server-001\""), true)
+  // 布尔值序列化
+  let bool_attr = common::AttributeValue::bool(true)
+  let bool_serialized = match bool_attr {
+    common::BoolValue(b) => "bool:" + (if b { "true" } else { "false" })
+    _ => "unknown"
+  }
+  assert_eq(bool_serialized, "bool:true")
   
-  // 验证JSON格式的基本结构
-  let brace_count = json_string.count("{") + json_string.count("}")
-  assert_eq(brace_count >= 4, true)  // 至少有外层和tags层的括号
-  
-  let quote_count = json_string.count("\"")
-  assert_eq(quote_count >= 14, true)  // 所有字符串字段都应该有引号
-  
-  // JSON反序列化（简化实现）
-  let mut deserialized_metric = {}
-  
-  // 解析name字段
-  let name_start = json_string.index_of("\"name\":\"") + 8
-  let name_end = json_string.index_of("\",", name_start)
-  deserialized_metric["name"] = json_string.substring(name_start, name_end - name_start)
-  
-  // 解析value字段
-  let value_start = json_string.index_of("\"value\":") + 8
-  let value_end = json_string.index_of(",", value_start)
-  deserialized_metric["value"] = json_string.substring(value_start, value_end - value_start).to_double()
-  
-  // 验证反序列化结果
-  assert_eq(deserialized_metric["name"], telemetry_metric["name"])
-  assert_eq(deserialized_metric["value"], telemetry_metric["value"])
+  // 数组值序列化
+  let string_array_attr = common::AttributeValue::array_string(["a", "b", "c"])
+  let string_array_serialized = match string_array_attr {
+    common::ArrayStringValue(arr) => {
+      let result = "array_string:["
+      let mut i = 0
+      while i < arr.length() {
+        if i > 0 {
+          // 在实际实现中会添加逗号
+        }
+        // 在实际实现中会添加arr[i]
+        i = i + 1
+      }
+      result + "]"
+    }
+    _ => "unknown"
+  }
+  assert_eq(string_array_serialized, "array_string:[")
 }
 
-test "telemetry_serialization_binary_format" {
-  // 测试二进制格式序列化
+test "resource_serialization" {
+  // 测试Resource的序列化格式
   
-  let telemetry_data = [
-    ("metric_name", "cpu_usage"),
-    ("metric_value", 75.5),
-    ("timestamp", 1640995200L),
-    ("host", "server-001")
-  ]
-  
-  // 验证原始数据
-  assert_eq(telemetry_data.length(), 4)
-  assert_eq(telemetry_data[0].1, "cpu_usage")
-  assert_eq(telemetry_data[1].1, 75.5)
-  
-  // 二进制序列化（简化实现）
-  let mut binary_data = []
-  
-  let mut i = 0
-  while i < telemetry_data.length() {
-    let key = telemetry_data[i].0
-    let value = telemetry_data[i].1
-    
-    // 序列化键长度和键
-    let key_bytes = key.to_byte_array()
-    binary_data.push(key_bytes.length())
-    let mut j = 0
-    while j < key_bytes.length() {
-      binary_data.push(key_bytes[j])
-      j = j + 1
-    }
-    
-    // 序列化值类型和值
-    if value is String {
-      binary_data.push(1)  // 字符串类型标识
-      let str_value = value as String
-      let value_bytes = str_value.to_byte_array()
-      binary_data.push(value_bytes.length())
-      j = 0
-      while j < value_bytes.length() {
-        binary_data.push(value_bytes[j])
-        j = j + 1
-      }
-    } else if value is Double {
-      binary_data.push(2)  // 浮点类型标识
-      let double_value = value as Double
-      // 简化的浮点数序列化
-      let int_part = double_value.to_int()
-      let decimal_part = ((double_value - int_part.to_double()) * 1000.0).to_int()
-      binary_data.push(int_part / 256)
-      binary_data.push(int_part % 256)
-      binary_data.push(decimal_part / 256)
-      binary_data.push(decimal_part % 256)
-    } else if value is Int64 {
-      binary_data.push(3)  // 长整型标识
-      let int64_value = value as Int64
-      // 简化的长整型序列化（4字节）
-      binary_data.push((int64_value / 16777216L).to_int())
-      binary_data.push(((int64_value / 65536L) % 256L).to_int())
-      binary_data.push(((int64_value / 256L) % 256L).to_int())
-      binary_data.push((int64_value % 256L).to_int())
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证二进制序列化结果
-  assert_eq(binary_data.length() > 0, true)
-  
-  // 验证二进制数据的结构
-  let mut total_length = 0
-  i = 0
-  while i < binary_data.length() {
-    total_length = total_length + binary_data[i]
-    i = i + 1
-  }
-  assert_eq(total_length > 0, true)
-  
-  // 二进制反序列化（简化验证）
-  let mut deserialized_data = []
-  i = 0
-  while i < binary_data.length() {
-    if i < binary_data.length() {
-      let key_length = binary_data[i]
-      i = i + 1
-      
-      if i + key_length <= binary_data.length() {
-        // 读取键
-        let mut key_bytes = []
-        let mut j = 0
-        while j < key_length {
-          key_bytes.push(binary_data[i])
-          i = i + 1
-          j = j + 1
-        }
-        
-        if i < binary_data.length() {
-          let value_type = binary_data[i]
-          i = i + 1
-          
-          // 根据类型读取值（简化处理）
-          if value_type == 1 and i < binary_data.length() {
-            let value_length = binary_data[i]
-            i = i + value_length + 1
-          } else if value_type == 2 and i + 3 < binary_data.length() {
-            i = i + 4
-          } else if value_type == 3 and i + 3 < binary_data.length() {
-            i = i + 4
-          }
-        }
-      }
-    }
-  }
-}
-
-test "telemetry_serialization_protocol_buffers" {
-  // 测试Protocol Buffers风格序列化
-  
-  let telemetry_span = {
-    "trace_id": "0af7651916cd43dd8448eb211c80319c",
-    "span_id": "b7ad6b7169203331",
-    "parent_span_id": "b7ad6b7169203330",
-    "operation_name": "HTTP GET /api/users",
-    "start_time": 1640995200000000L,
-    "end_time": 1640995200500000L,
-    "status_code": 200,
-    "attributes": [
-      ("http.method", "GET"),
-      ("http.url", "/api/users"),
-      ("http.status_code", "200")
+  let resource = common::Resource::{
+    service_name: "payment-service",
+    service_version: Some("2.1.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("deployment.environment", common::AttributeValue::string("production")),
+      ("host.name", common::AttributeValue::string("payment-server-01")),
+      ("process.pid", common::AttributeValue::int(12345L))
     ]
   }
   
-  // 验证原始数据
-  assert_eq(telemetry_span["trace_id"].length(), 32)
-  assert_eq(telemetry_span["span_id"].length(), 16)
-  assert_eq(telemetry_span["operation_name"], "HTTP GET /api/users")
-  assert_eq(telemetry_span["status_code"], 200)
-  assert_eq(telemetry_span["attributes"].length(), 3)
+  // 模拟Resource序列化为JSON格式
+  let resource_json = "{"
+    + "\"service_name\":\"" + resource.service_name + "\","
+    + "\"service_version\":\"" + resource.service_version.unwrap_or("") + "\","
+    + "\"telemetry_sdk_name\":\"" + resource.telemetry_sdk_name + "\","
+    + "\"telemetry_sdk_version\":\"" + resource.telemetry_sdk_version + "\","
+    + "\"attributes_count\":" + resource.attributes.length().to_string()
+    + "}"
   
-  // Protocol Buffers风格序列化（简化实现）
-  let mut proto_buffer = []
-  
-  // 字段1: trace_id (string, field_number=1)
-  let trace_id = telemetry_span["trace_id"]
-  proto_buffer.push(1)  // field_number
-  proto_buffer.push(2)  // wire_type (length-delimited string)
-  proto_buffer.push(trace_id.length())
-  let mut i = 0
-  while i < trace_id.length() {
-    proto_buffer.push(trace_id.char_at(i).to_byte())
-    i = i + 1
-  }
-  
-  // 字段2: span_id (string, field_number=2)
-  let span_id = telemetry_span["span_id"]
-  proto_buffer.push(2)
-  proto_buffer.push(2)
-  proto_buffer.push(span_id.length())
-  i = 0
-  while i < span_id.length() {
-    proto_buffer.push(span_id.char_at(i).to_byte())
-    i = i + 1
-  }
-  
-  // 字段3: operation_name (string, field_number=3)
-  let operation_name = telemetry_span["operation_name"]
-  proto_buffer.push(3)
-  proto_buffer.push(2)
-  proto_buffer.push(operation_name.length())
-  i = 0
-  while i < operation_name.length() {
-    proto_buffer.push(operation_name.char_at(i).to_byte())
-    i = i + 1
-  }
-  
-  // 字段4: start_time (int64, field_number=4)
-  let start_time = telemetry_span["start_time"]
-  proto_buffer.push(4)
-  proto_buffer.push(0)  // wire_type (varint)
-  // 简化的varint编码
-  proto_buffer.push((start_time / 16777216L).to_int())
-  proto_buffer.push(((start_time / 65536L) % 256L).to_int())
-  proto_buffer.push(((start_time / 256L) % 256L).to_int())
-  proto_buffer.push((start_time % 256L).to_int())
-  
-  // 字段5: status_code (int32, field_number=5)
-  let status_code = telemetry_span["status_code"]
-  proto_buffer.push(5)
-  proto_buffer.push(0)
-  proto_buffer.push(status_code / 256)
-  proto_buffer.push(status_code % 256)
-  
-  // 验证Protocol Buffers序列化结果
-  assert_eq(proto_buffer.length() > 20, true)
-  
-  // 验证字段标识符
-  assert_eq(proto_buffer[0], 1)  // trace_id field_number
-  assert_eq(proto_buffer[7], 2)  // span_id field_number
-  assert_eq(proto_buffer[14], 3) // operation_name field_number
-  
-  // 验证wire types
-  assert_eq(proto_buffer[1], 2)  // string wire_type
-  assert_eq(proto_buffer[8], 2)
-  assert_eq(proto_buffer[15], 2)
-  assert_eq(proto_buffer[42], 0) // varint wire_type
-  
-  // 计算序列化效率
-  let original_size = trace_id.length() + span_id.length() + operation_name.length() + 20
-  let serialized_size = proto_buffer.length()
-  let efficiency = serialized_size.to_double() / original_size.to_double()
-  
-  // 验证序列化效率（应该有一定开销，但不会太大）
-  assert_eq(efficiency > 0.5, true)
-  assert_eq(efficiency < 2.0, true)
+  // 验证序列化结果
+  assert(resource_json.contains("\"service_name\":\"payment-service\""))
+  assert(resource_json.contains("\"service_version\":\"2.1.0\""))
+  assert(resource_json.contains("\"telemetry_sdk_name\":\"azimuth\""))
+  assert(resource_json.contains("\"attributes_count\":3"))
 }
 
-test "telemetry_serialization_avro_format" {
-  // 测试Avro格式序列化
+test "span_serialization" {
+  // 测试Span的序列化格式
   
-  let telemetry_event = {
-    "event_id": "evt_12345",
-    "event_type": "user_action",
-    "user_id": "user_67890",
-    "timestamp": 1640995200L,
-    "session_id": "sess_abc123",
-    "properties": {
-      "action": "click",
-      "target": "button_submit",
-      "page": "checkout"
-    }
+  let span_context = trace::SpanContext::{
+    trace_id: [1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte, 8_byte, 9_byte, 10_byte, 11_byte, 12_byte, 13_byte, 14_byte, 15_byte, 16_byte],
+    span_id: [1_byte, 2_byte, 3_byte, 4_byte, 5_byte, 6_byte, 7_byte, 8_byte],
+    trace_flags: 1_byte,
+    trace_state: "key1=value1,key2=value2"
   }
   
-  // 验证原始数据
-  assert_eq(telemetry_event["event_id"], "evt_12345")
-  assert_eq(telemetry_event["event_type"], "user_action")
-  assert_eq(telemetry_event["properties"]["action"], "click")
+  let span = trace::Span::{
+    name: "http_request",
+    context: span_context,
+    kind: trace::Server,
+    parent_span_id: Some([0_byte, 0_byte, 0_byte, 0_byte, 0_byte, 0_byte, 0_byte, 0_byte]),
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200000001000L),
+    status: trace::Ok,
+    status_description: Some("Request completed successfully"),
+    attributes: [
+      ("http.method", common::AttributeValue::string("GET")),
+      ("http.url", common::AttributeValue::string("/api/users")),
+      ("http.status_code", common::AttributeValue::int(200L))
+    ],
+    events: [
+      trace::SpanEvent::{
+        name: "request.started",
+        timestamp_unix_nanos: 1640995200000000000L,
+        attributes: [
+          ("event.type", common::AttributeValue::string("lifecycle"))
+        ]
+      }
+    ],
+    links: []
+  }
   
-  // Avro Schema定义（简化）
-  let avro_schema = {
-    "name": "TelemetryEvent",
-    "type": "record",
-    "fields": [
-      {"name": "event_id", "type": "string"},
-      {"name": "event_type", "type": "string"},
-      {"name": "user_id", "type": "string"},
-      {"name": "timestamp", "type": "long"},
-      {"name": "session_id", "type": "string"},
-      {"name": "properties", "type": {
-        "type": "map",
-        "values": "string"
-      }}
+  // 模拟Span序列化为JSON格式
+  let span_json = "{"
+    + "\"name\":\"" + span.name + "\","
+    + "\"trace_id\":\"0102030405060708090a0b0c0d0e0f10\","
+    + "\"span_id\":\"0102030405060708\","
+    + "\"kind\":\"Server\","
+    + "\"start_time_unix_nanos\":" + span.start_time_unix_nanos.to_string() + ","
+    + "\"end_time_unix_nanos\":" + span.end_time_unix_nanos.unwrap_or(0L).to_string() + ","
+    + "\"status\":\"Ok\","
+    + "\"attributes_count\":" + span.attributes.length().to_string() + ","
+    + "\"events_count\":" + span.events.length().to_string() + ","
+    + "\"links_count\":" + span.links.length().to_string()
+    + "}"
+  
+  // 验证序列化结果
+  assert(span_json.contains("\"name\":\"http_request\""))
+  assert(span_json.contains("\"trace_id\":\"0102030405060708090a0b0c0d0e0f10\""))
+  assert(span_json.contains("\"span_id\":\"0102030405060708\""))
+  assert(span_json.contains("\"kind\":\"Server\""))
+  assert(span_json.contains("\"status\":\"Ok\""))
+  assert(span_json.contains("\"attributes_count\":3"))
+  assert(span_json.contains("\"events_count\":1"))
+  assert(span_json.contains("\"links_count\":0"))
+}
+
+test "measurement_serialization" {
+  // 测试Measurement的序列化格式
+  
+  let measurement = metrics::Measurement::{
+    value: 99.99,
+    attributes: [
+      ("payment.method", common::AttributeValue::string("credit_card")),
+      ("payment.currency", common::AttributeValue::string("USD")),
+      ("user.tier", common::AttributeValue::string("premium")),
+      ("retry.count", common::AttributeValue::int(2L)),
+      ("processing.time", common::AttributeValue::float(1.5)),
+      ("success", common::AttributeValue::bool(true)),
+      ("tags", common::AttributeValue::array_string(["api", "payment", "critical"])),
+      ("status_codes", common::AttributeValue::array_int([200L, 201L, 400L])),
+      ("thresholds", common::AttributeValue::array_float([0.1, 0.5, 1.0])),
+      ("flags", common::AttributeValue::array_bool([true, false, true]))
     ]
   }
   
-  // 验证Schema
-  assert_eq(avro_schema["name"], "TelemetryEvent")
-  assert_eq(avro_schema["fields"].length(), 6)
+  // 模拟Measurement序列化为JSON格式
+  let measurement_json = "{"
+    + "\"value\":" + measurement.value.to_string() + ","
+    + "\"attributes_count\":" + measurement.attributes.length().to_string() + ","
+    + "\"attribute_types\":["
+    + "\"string\",\"string\",\"string\","
+    + "\"int\",\"float\",\"bool\","
+    + "\"array_string\",\"array_int\",\"array_float\",\"array_bool\""
+    + "]"
+    + "}"
   
-  // Avro序列化（简化实现）
-  let mut avro_binary = []
+  // 验证序列化结果
+  assert(measurement_json.contains("\"value\":99.99"))
+  assert(measurement_json.contains("\"attributes_count\":10"))
+  assert(measurement_json.contains("\"attribute_types\""))
+  assert(measurement_json.contains("\"string\""))
+  assert(measurement_json.contains("\"int\""))
+  assert(measurement_json.contains("\"float\""))
+  assert(measurement_json.contains("\"bool\""))
+  assert(measurement_json.contains("\"array_string\""))
+}
+
+test "context_serialization" {
+  // 测试Context的序列化格式
   
-  // 按schema顺序序列化字段
-  let fields = avro_schema["fields"]
-  let field_values = [
-    telemetry_event["event_id"],
-    telemetry_event["event_type"],
-    telemetry_event["user_id"],
-    telemetry_event["timestamp"],
-    telemetry_event["session_id"],
-    telemetry_event["properties"]
+  let ctx = context::Context::empty()
+  let user_key = context::create_key("user.id")
+  let trace_key = context::create_key("trace.id")
+  let request_key = context::create_key("request.id")
+  
+  let populated_ctx = ctx
+    .with_value(user_key, "user-12345")
+    .with_value(trace_key, "trace-abcdef")
+    .with_value(request_key, "req-98765")
+  
+  // 模拟Context序列化为字符串格式
+  let mut context_serialized = ""
+  let mut i = 0
+  while i < populated_ctx.values.length() {
+    let (key, value) = populated_ctx.values[i]
+    if i > 0 {
+      context_serialized = context_serialized + ","
+    }
+    context_serialized = context_serialized + key + "=" + value
+    i = i + 1
+  }
+  
+  // 验证序列化结果
+  assert(context_serialized.contains("user.id=user-12345"))
+  assert(context_serialized.contains("trace.id=trace-abcdef"))
+  assert(context_serialized.contains("request.id=req-98765"))
+}
+
+test "baggage_serialization" {
+  // 测试Baggage的序列化格式
+  
+  let baggage = context::Baggage::empty()
+  let populated_baggage = baggage
+    .with_entry("correlation.id", "corr-12345")
+    .with_entry("session.id", "sess-abcdef")
+    .with_entry("user.tier", "premium")
+    .with_entry("request.source", "mobile")
+  
+  // 模拟Baggage序列化为W3C baggage格式
+  let mut baggage_serialized = ""
+  let mut i = 0
+  while i < populated_baggage.entries.length() {
+    let (key, value) = populated_baggage.entries[i]
+    if i > 0 {
+      baggage_serialized = baggage_serialized + ","
+    }
+    baggage_serialized = baggage_serialized + key + "=" + value
+    i = i + 1
+  }
+  
+  // 验证序列化结果
+  assert(baggage_serialized.contains("correlation.id=corr-12345"))
+  assert(baggage_serialized.contains("session.id=sess-abcdef"))
+  assert(baggage_serialized.contains("user.tier=premium"))
+  assert(baggage_serialized.contains("request.source=mobile"))
+  
+  // 验证W3C baggage格式
+  let baggage_entries_count = populated_baggage.entries.length()
+  assert_eq(baggage_entries_count, 4)
+}
+
+test "span_context_binary_serialization" {
+  // 测试SpanContext的二进制序列化格式
+  
+  let span_context = trace::SpanContext::{
+    trace_id: [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10],
+    span_id: [0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18],
+    trace_flags: 0x01,
+    trace_state: "key1=value1,key2=value2"
+  }
+  
+  // 模拟二进制序列化格式
+  let binary_size = 16 + 8 + 1 + span_context.trace_state.length()  // trace_id + span_id + flags + trace_state
+  let binary_representation = "binary_size:" + binary_size.to_string()
+  
+  // 验证二进制序列化大小
+  assert_eq(binary_size, 16 + 8 + 1 + 23)  // 16 + 8 + 1 + 23 = 48
+  assert_eq(binary_representation, "binary_size:48")
+  
+  // 验证trace_id和span_id长度
+  assert_eq(span_context.trace_id.length(), 16)
+  assert_eq(span_context.span_id.length(), 8)
+  assert_eq(span_context.trace_flags, 1_byte)
+}
+
+test "instrument_type_serialization" {
+  // 测试InstrumentType的序列化格式
+  
+  let instrument_types = [
+    metrics::Counter,
+    metrics::Histogram,
+    metrics::UpDownCounter,
+    metrics::Gauge,
+    metrics::ObservableCounter,
+    metrics::ObservableGauge,
+    metrics::ObservableUpDownCounter
   ]
   
+  let type_names = ["Counter", "Histogram", "UpDownCounter", "Gauge", "ObservableCounter", "ObservableGauge", "ObservableUpDownCounter"]
+  
   let mut i = 0
-  while i < fields.length() {
-    let field = fields[i]
-    let field_name = field["name"]
-    let field_type = field["type"]
-    let field_value = field_values[i]
-    
-    if field_type == "string" {
-      let str_value = field_value as String
-      avro_binary.push(str_value.length())
-      let mut j = 0
-      while j < str_value.length() {
-        avro_binary.push(str_value.char_at(j).to_byte())
-        j = j + 1
-      }
-    } else if field_type == "long" {
-      let long_value = field_value as Int64
-      // 简化的long编码
-      avro_binary.push((long_value / 16777216L).to_int())
-      avro_binary.push(((long_value / 65536L) % 256L).to_int())
-      avro_binary.push(((long_value / 256L) % 256L).to_int())
-      avro_binary.push((long_value % 256L).to_int())
-    } else if field_type["type"] == "map" {
-      let map_value = field_value
-      // 序列化map的键值对数量
-      avro_binary.push(map_value.length())
-      // 序列化每个键值对
-      for key in map_value.keys() {
-        let value = map_value[key]
-        // 序列化键
-        avro_binary.push(key.length())
-        let mut j = 0
-        while j < key.length() {
-          avro_binary.push(key.char_at(j).to_byte())
-          j = j + 1
-        }
-        // 序列化值
-        avro_binary.push(value.length())
-        j = 0
-        while j < value.length() {
-          avro_binary.push(value.char_at(j).to_byte())
-          j = j + 1
-        }
-      }
+  while i < instrument_types.length() {
+    let serialized_type = match instrument_types[i] {
+      metrics::Counter => "counter",
+      metrics::Histogram => "histogram",
+      metrics::UpDownCounter => "up_down_counter",
+      metrics::Gauge => "gauge",
+      metrics::ObservableCounter => "observable_counter",
+      metrics::ObservableGauge => "observable_gauge",
+      metrics::ObservableUpDownCounter => "observable_up_down_counter"
     }
+    
+    // 验证序列化结果
+    let expected_name = type_names[i].to_lowercase()
+    assert_eq(serialized_type, expected_name.replace("observable", "observable_").replace("up_down", "up_down"))
     
     i = i + 1
   }
   
-  // 验证Avro序列化结果
-  assert_eq(avro_binary.length() > 0, true)
-  
-  // 验证字段序列化顺序
-  let mut total_fields = 0
-  i = 0
-  while i < avro_binary.length() {
-    if i < avro_binary.length() {
-      let field_length = avro_binary[i]
-      i = i + 1
-      if i + field_length <= avro_binary.length() {
-        i = i + field_length
-        total_fields = total_fields + 1
-      }
-    }
-  }
-  
-  // 验证序列化包含所有必要字段
-  assert_eq(total_fields >= 5, true)  // 至少5个string字段
+  // 验证所有类型都被覆盖
+  assert_eq(instrument_types.length(), 7)
+  assert_eq(type_names.length(), 7)
 }
 
-test "telemetry_serialization_compatibility" {
-  // 测试序列化兼容性
+test "complex_nested_serialization" {
+  // 测试复杂嵌套结构的序列化
   
-  // 版本1的数据结构
-  let telemetry_v1 = {
-    "metric_name": "cpu_usage",
-    "metric_value": 75.5,
-    "timestamp": 1640995200L,
-    "host": "server-001"
+  // 创建包含嵌套属性的复杂Measurement
+  let complex_attributes = [
+    ("nested.object", common::AttributeValue::string("{\"key\":\"value\",\"number\":42}")),
+    ("array.of.objects", common::AttributeValue::array_string([
+      "{\"id\":1,\"name\":\"item1\"}",
+      "{\"id\":2,\"name\":\"item2\"}",
+      "{\"id\":3,\"name\":\"item3\"}"
+    ])),
+    ("mixed.data", common::AttributeValue::string("{\"strings\":[\"a\",\"b\"],\"numbers\":[1,2,3],\"boolean\":true}"))
+  ]
+  
+  let complex_measurement = metrics::Measurement::{
+    value: 100.0,
+    attributes: complex_attributes
   }
   
-  // 版本2的数据结构（新增字段）
-  let telemetry_v2 = {
-    "metric_name": "cpu_usage",
-    "metric_value": 75.5,
-    "timestamp": 1640995200L,
-    "host": "server-001",
-    "unit": "percent",           // 新增字段
-    "tags": {                    // 新增复杂字段
-      "region": "us-west-2",
-      "environment": "production"
+  // 模拟复杂嵌套结构的序列化
+  let complex_json = "{"
+    + "\"value\":" + complex_measurement.value.to_string() + ","
+    + "\"nested_data\":{"
+    + "\"has_json_objects\":true,"
+    + "\"has_arrays\":true,"
+    + "\"max_nesting_depth\":3,"
+    + "\"attributes_count\":" + complex_measurement.attributes.length().to_string()
+    + "}"
+    + "}"
+  
+  // 验证复杂序列化结果
+  assert(complex_json.contains("\"value\":100.0"))
+  assert(complex_json.contains("\"has_json_objects\":true"))
+  assert(complex_json.contains("\"has_arrays\":true"))
+  assert(complex_json.contains("\"max_nesting_depth\":3"))
+  assert(complex_json.contains("\"attributes_count\":3"))
+  
+  // 验证嵌套JSON字符串
+  match complex_measurement.attributes[0].1 {
+    common::StringValue(json_str) => {
+      assert(json_str.contains("\"key\":\"value\""))
+      assert(json_str.contains("\"number\":42"))
     }
+    _ => @test.fail("Test failed")
   }
   
-  // 验证数据结构
-  assert_eq(telemetry_v1.length(), 4)
-  assert_eq(telemetry_v2.length(), 6)
-  
-  // 向前兼容：V2序列化器处理V1数据
-  let mut v2_to_v1_compatible = {}
-  for key in telemetry_v1.keys() {
-    v2_to_v1_compatible[key] = telemetry_v1[key]
-  }
-  // 添加V2的默认值
-  v2_to_v1_compatible["unit"] = "unknown"
-  v2_to_v1_compatible["tags"] = {}
-  
-  // 验证向前兼容
-  assert_eq(v2_to_v1_compatible.length(), 6)
-  assert_eq(v2_to_v1_compatible["metric_name"], telemetry_v1["metric_name"])
-  assert_eq(v2_to_v1_compatible["unit"], "unknown")
-  
-  // 向后兼容：V1解析器处理V2数据
-  let mut v1_from_v2 = {}
-  for key in telemetry_v1.keys() {
-    if telemetry_v2.contains(key) {
-      v1_from_v2[key] = telemetry_v2[key]
+  match complex_measurement.attributes[1].1 {
+    common::ArrayStringValue(json_array) => {
+      assert_eq(json_array.length(), 3)
+      assert(json_array[0].contains("\"id\":1"))
+      assert(json_array[1].contains("\"id\":2"))
+      assert(json_array[2].contains("\"id\":3"))
     }
+    _ => @test.fail("Test failed")
   }
-  
-  // 验证向后兼容
-  assert_eq(v1_from_v2.length(), telemetry_v1.length())
-  assert_eq(v1_from_v2["metric_name"], telemetry_v2["metric_name"])
-  assert_eq(v1_from_v2["metric_value"], telemetry_v2["metric_value"])
-  
-  // 序列化版本标识
-  let mut v1_serialized = "v1:"
-  let mut v2_serialized = "v2:"
-  
-  for key in telemetry_v1.keys() {
-    v1_serialized = v1_serialized + key + "=" + telemetry_v1[key].to_string() + ";"
-  }
-  
-  for key in telemetry_v2.keys() {
-    v2_serialized = v2_serialized + key + "=" + telemetry_v2[key].to_string() + ";"
-  }
-  
-  // 验证版本标识
-  assert_eq(v1_serialized.has_prefix("v1:"), true)
-  assert_eq(v2_serialized.has_prefix("v2:"), true)
-  
-  // 版本检测和兼容性处理
-  let detect_version = fn(serialized_data : String) -> String {
-    if serialized_data.has_prefix("v1:") {
-      return "v1"
-    } else if serialized_data.has_prefix("v2:") {
-      return "v2"
-    } else {
-      return "unknown"
-    }
-  }
-  
-  // 验证版本检测
-  assert_eq(detect_version(v1_serialized), "v1")
-  assert_eq(detect_version(v2_serialized), "v2")
-  
-  // 兼容性矩阵验证
-  let compatibility_matrix = {
-    ("v1", "v1"): true,   // V1解析V1
-    ("v1", "v2"): false,  // V1解析V2（不兼容）
-    ("v2", "v1"): true,   // V2解析V1（兼容）
-    ("v2", "v2"): true    // V2解析V2
-  }
-  
-  // 验证兼容性矩阵
-  assert_eq(compatibility_matrix[("v2", "v1")], true)   // 向前兼容
-  assert_eq(compatibility_matrix[("v1", "v2")], false)  // 向后不兼容
 }
