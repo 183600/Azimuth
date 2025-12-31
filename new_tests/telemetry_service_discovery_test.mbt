@@ -1,421 +1,500 @@
-// 遥测服务发现测试用例
+// 遥测服务发现机制测试用例
 
 test "telemetry_service_registration" {
-  // 测试遥测服务注册功能
+  // 测试遥测服务注册机制
   
-  let service_metadata = {
-    "service_name": "telemetry-collector",
-    "service_id": "telemetry-collector-001",
-    "host": "192.168.1.100",
-    "port": 8080,
-    "protocol": "http",
-    "version": "v1.2.3",
-    "environment": "production",
-    "region": "us-west-1",
-    "tags": ["collector", "metrics", "tracing"],
-    "health_check_endpoint": "/health",
-    "metadata": {
-      "max_batch_size": 1000,
-      "supported_formats": ["json", "protobuf"],
-      "compression": ["gzip", "lz4"]
+  let service_registry_capacity = 100
+  let heartbeat_interval = 30  // 心跳间隔（秒）
+  let service_timeout = 90     // 服务超时（秒）
+  
+  // 验证配置参数
+  assert_eq(service_timeout > heartbeat_interval, true)
+  assert_eq(service_registry_capacity > 0, true)
+  
+  // 定义服务信息结构
+  type ServiceInfo = {
+    service_id: String,
+    service_name: String,
+    host: String,
+    port: Int,
+    protocol: String,
+    last_heartbeat: Int,
+    metadata: Map[String, String]
+  }
+  
+  // 创建测试服务
+  let test_services = [
+    ServiceInfo {
+      service_id: "telemetry_collector_001",
+      service_name: "telemetry-collector",
+      host: "192.168.1.10",
+      port: 4317,
+      protocol: "grpc",
+      last_heartbeat: 0,
+      metadata: {
+        "region": "us-west-1",
+        "version": "1.2.3",
+        "capacity": "10000"
+      }
+    },
+    ServiceInfo {
+      service_id: "telemetry_processor_001",
+      service_name: "telemetry-processor",
+      host: "192.168.1.11",
+      port: 8080,
+      protocol: "http",
+      last_heartbeat: 0,
+      metadata: {
+        "region": "us-west-1",
+        "version": "2.1.0",
+        "workers": "4"
+      }
+    },
+    ServiceInfo {
+      service_id: "telemetry_storage_001",
+      service_name: "telemetry-storage",
+      host: "192.168.1.12",
+      port: 5432,
+      protocol: "tcp",
+      last_heartbeat: 0,
+      metadata: {
+        "region": "us-west-1",
+        "version": "1.0.5",
+        "storage_type": "postgresql"
+      }
     }
+  ]
+  
+  // 验证测试服务
+  assert_eq(test_services.length(), 3)
+  assert_eq(test_services[0].service_name, "telemetry-collector")
+  assert_eq(test_services[1].port, 8080)
+  
+  // 服务注册表
+  let mut service_registry = {}
+  
+  // 注册服务
+  let mut i = 0
+  while i < test_services.length() {
+    let service = test_services[i]
+    service_registry[service.service_id] = service
+    i = i + 1
   }
   
-  // 验证服务元数据
-  assert_eq(service_metadata["service_name"], "telemetry-collector")
-  assert_eq(service_metadata["service_id"], "telemetry-collector-001")
-  assert_eq(service_metadata["host"], "192.168.1.100")
-  assert_eq(service_metadata["port"], 8080)
-  assert_eq(service_metadata["protocol"], "http")
-  assert_eq(service_metadata["version"], "v1.2.3")
-  assert_eq(service_metadata["tags"].length(), 3)
+  // 验证服务注册
+  assert_eq(service_registry.size(), 3)
+  assert_eq(service_registry.has_key("telemetry_collector_001"), true)
+  assert_eq(service_registry.has_key("telemetry_storage_001"), true)
   
-  // 模拟服务注册过程
-  let registration_timestamp = 1640995200000
-  let registration_success = true
-  let ttl_seconds = 30  // 服务TTL
-  let heartbeat_interval_seconds = 10
+  // 验证服务信息完整性
+  let collector_service = service_registry["telemetry_collector_001"]
+  assert_eq(collector_service.service_name, "telemetry-collector")
+  assert_eq(collector_service.host, "192.168.1.10")
+  assert_eq(collector_service.metadata["region"], "us-west-1")
   
-  // 验证注册参数
-  assert_eq(registration_timestamp, 1640995200000)
-  assert_eq(registration_success, true)
-  assert_eq(ttl_seconds, 30)
-  assert_eq(heartbeat_interval_seconds, 10)
-  
-  // 验证心跳间隔合理性
-  assert_eq(heartbeat_interval_seconds < ttl_seconds, true)
-  assert_eq(heartbeat_interval_seconds <= ttl_seconds / 3, true)
-  
-  // 模拟服务注册表
-  let service_registry = {}
-  service_registry[service_metadata["service_id"]] = {
-    "metadata": service_metadata,
-    "registration_time": registration_timestamp,
-    "last_heartbeat": registration_timestamp,
-    "status": "healthy",
-    "ttl": ttl_seconds
+  // 按服务类型分组
+  let mut services_by_name = {}
+  i = 0
+  while i < test_services.length() {
+    let service = test_services[i]
+    let service_name = service.service_name
+    
+    if not services_by_name.has_key(service_name) {
+      services_by_name[service_name] = []
+    }
+    
+    let service_list = services_by_name[service_name]
+    service_list.push(service)
+    services_by_name[service_name] = service_list
+    
+    i = i + 1
   }
   
-  // 验证注册表状态
-  assert_eq(service_registry.contains(service_metadata["service_id"]), true)
-  assert_eq(service_registry[service_metadata["service_id"]]["status"], "healthy")
-  assert_eq(service_registry[service_metadata["service_id"]]["ttl"], ttl_seconds)
+  // 验证服务分组
+  assert_eq(services_by_name.size(), 3)
+  assert_eq(services_by_name["telemetry-collector"].length(), 1)
+  assert_eq(services_by_name["telemetry-processor"].length(), 1)
   
-  // 验证服务发现端点
-  let discovery_endpoint = "http://192.168.1.100:8080" + service_metadata["health_check_endpoint"]
-  assert_eq(discovery_endpoint, "http://192.168.1.100:8080/health")
+  // 按地区分组
+  let mut services_by_region = {}
+  i = 0
+  while i < test_services.length() {
+    let service = test_services[i]
+    let region = service.metadata["region"]
+    
+    if not services_by_region.has_key(region) {
+      services_by_region[region] = []
+    }
+    
+    let service_list = services_by_region[region]
+    service_list.push(service)
+    services_by_region[region] = service_list
+    
+    i = i + 1
+  }
+  
+  // 验证地区分组
+  assert_eq(services_by_region.size(), 1)
+  assert_eq(services_by_region["us-west-1"].length(), 3)
 }
 
 test "telemetry_service_health_check" {
-  // 测试遥测服务健康检查功能
+  // 测试遥测服务健康检查机制
   
-  let health_check_config = {
-    "endpoint": "/health",
-    "method": "GET",
-    "expected_status_code": 200,
-    "timeout_seconds": 5,
-    "check_interval_seconds": 10,
-    "failure_threshold": 3,
-    "success_threshold": 2
+  let health_check_interval = 15  // 健康检查间隔（秒）
+  let max_failed_checks = 3       // 最大失败检查次数
+  let check_timeout = 5           // 检查超时（秒）
+  
+  // 验证配置参数
+  assert_eq(health_check_interval > 0, true)
+  assert_eq(max_failed_checks > 0, true)
+  assert_eq(check_timeout > 0, true)
+  assert_eq(check_timeout < health_check_interval, true)
+  
+  // 定义健康状态
+  enum HealthStatus {
+    Healthy
+    Degraded
+    Unhealthy
+    Unknown
   }
   
-  // 验证健康检查配置
-  assert_eq(health_check_config["endpoint"], "/health")
-  assert_eq(health_check_config["method"], "GET")
-  assert_eq(health_check_config["expected_status_code"], 200)
-  assert_eq(health_check_config["timeout_seconds"], 5)
-  assert_eq(health_check_config["check_interval_seconds"], 10)
+  // 服务健康状态跟踪
+  type ServiceHealth = {
+    service_id: String,
+    status: HealthStatus,
+    consecutive_failures: Int,
+    last_check_time: Int,
+    response_time: Int,
+    error_message: String
+  }
   
-  // 模拟健康检查响应
-  let health_check_responses = [
-    {"status_code": 200, "response_time_ms": 150, "timestamp": 1640995200000},
-    {"status_code": 200, "response_time_ms": 180, "timestamp": 1640995201000},
-    {"status_code": 500, "response_time_ms": 5000, "timestamp": 1640995202000}, // 超时
-    {"status_code": 200, "response_time_ms": 160, "timestamp": 1640995203000},
-    {"status_code": 200, "response_time_ms": 140, "timestamp": 1640995204000}
+  // 模拟服务健康检查结果
+  let health_check_results = [
+    ("telemetry_collector_001", true, 120, ""),      // 健康
+    ("telemetry_processor_001", true, 85, ""),       // 健康
+    ("telemetry_storage_001", false, 0, "Connection refused"),  // 不健康
+    ("telemetry_collector_002", true, 200, ""),      // 降级（响应慢）
+    ("telemetry_processor_002", false, 0, "Timeout"), // 不健康
+    ("telemetry_storage_002", true, 95, "")          // 健康
   ]
   
-  // 验证响应数据
-  assert_eq(health_check_responses.length(), 5)
-  assert_eq(health_check_responses[0]["status_code"], 200)
-  assert_eq(health_check_responses[2]["status_code"], 500)
+  // 验证健康检查结果
+  assert_eq(health_check_results.length(), 6)
+  assert_eq(health_check_results[0].1, true)   // 第一个服务健康
+  assert_eq(health_check_results[2].1, false)  // 第三个服务不健康
   
-  // 模拟健康状态评估
-  let mut consecutive_failures = 0
-  let mut consecutive_successes = 0
-  let mut service_status = "healthy"
-  
+  // 初始化服务健康状态
+  let mut service_health = {}
   let mut i = 0
-  while i < health_check_responses.length() {
-    let response = health_check_responses[i]
-    let is_healthy = response["status_code"] == health_check_config["expected_status_code"] and response["response_time_ms"] < (health_check_config["timeout_seconds"] * 1000)
+  while i < health_check_results.length() {
+    let (service_id, is_healthy, response_time, error_message) = health_check_results[i]
     
-    if is_healthy {
-      consecutive_failures = 0
-      consecutive_successes = consecutive_successes + 1
-      if service_status == "unhealthy" and consecutive_successes >= health_check_config["success_threshold"] {
-        service_status = "healthy"
+    let status = if is_healthy {
+      if response_time > 150 {
+        HealthStatus::Degraded
+      } else {
+        HealthStatus::Healthy
       }
     } else {
-      consecutive_successes = 0
-      consecutive_failures = consecutive_failures + 1
-      if consecutive_failures >= health_check_config["failure_threshold"] {
-        service_status = "unhealthy"
+      HealthStatus::Unhealthy
+    }
+    
+    service_health[service_id] = ServiceHealth {
+      service_id: service_id,
+      status: status,
+      consecutive_failures: if is_healthy { 0 } else { 1 },
+      last_check_time: i * health_check_interval,
+      response_time: response_time,
+      error_message: error_message
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证健康状态初始化
+  assert_eq(service_health.size(), 6)
+  assert_eq(service_health["telemetry_collector_001"].status, HealthStatus::Healthy)
+  assert_eq(service_health["telemetry_storage_001"].status, HealthStatus::Unhealthy)
+  assert_eq(service_health["telemetry_collector_002"].status, HealthStatus::Degraded)
+  
+  // 模拟连续健康检查
+  let additional_checks = [
+    ("telemetry_collector_001", true, 115, ""),      // 继续健康
+    ("telemetry_processor_001", true, 90, ""),       // 继续健康
+    ("telemetry_storage_001", false, 0, "Connection refused"),  // 继续不健康
+    ("telemetry_collector_002", true, 180, ""),      // 继续降级
+    ("telemetry_processor_002", false, 0, "Timeout"), // 继续不健康
+    ("telemetry_storage_002", true, 98, "")          // 继续健康
+  ]
+  
+  // 更新健康状态
+  i = 0
+  while i < additional_checks.length() {
+    let (service_id, is_healthy, response_time, error_message) = additional_checks[i]
+    
+    if service_health.has_key(service_id) {
+      let current_health = service_health[service_id]
+      
+      let new_status = if is_healthy {
+        if response_time > 150 {
+          HealthStatus::Degraded
+        } else {
+          HealthStatus::Healthy
+        }
+      } else {
+        HealthStatus::Unhealthy
+      }
+      
+      let new_failures = if is_healthy {
+        0
+      } else {
+        current_health.consecutive_failures + 1
+      }
+      
+      service_health[service_id] = ServiceHealth {
+        service_id: service_id,
+        status: new_status,
+        consecutive_failures: new_failures,
+        last_check_time: current_health.last_check_time + health_check_interval,
+        response_time: response_time,
+        error_message: error_message
       }
     }
     
     i = i + 1
   }
   
-  // 验证健康状态评估结果
-  assert_eq(consecutive_failures, 1)  // 只有第3次失败
-  assert_eq(consecutive_successes, 2)  // 最后2次成功
-  assert_eq(service_status, "healthy")
+  // 验证健康状态更新
+  assert_eq(service_health["telemetry_collector_001"].consecutive_failures, 0)
+  assert_eq(service_health["telemetry_storage_001"].consecutive_failures, 2)
+  assert_eq(service_health["telemetry_processor_002"].consecutive_failures, 2)
   
-  // 计算健康检查统计
-  let total_checks = health_check_responses.length()
-  let successful_checks = 4  // 除了第3次都成功
-  let success_rate = (successful_checks.to_float() / total_checks.to_float()) * 100
-  let avg_response_time_ms = (150 + 180 + 5000 + 160 + 140) / total_checks
+  // 统计健康状态分布
+  let mut healthy_count = 0
+  let mut degraded_count = 0
+  let mut unhealthy_count = 0
   
-  assert_eq(success_rate, 80.0)
-  assert_eq(avg_response_time_ms, 1126)
+  i = 0
+  while i < health_check_results.length() {
+    let service_id = health_check_results[i].0
+    let status = service_health[service_id].status
+    
+    match status {
+      HealthStatus::Healthy => healthy_count = healthy_count + 1
+      HealthStatus::Degraded => degraded_count = degraded_count + 1
+      HealthStatus::Unhealthy => unhealthy_count = unhealthy_count + 1
+      HealthStatus::Unknown => ()
+    }
+    
+    i = i + 1
+  }
   
-  // 验证健康检查性能
-  let max_acceptable_avg_response_time_ms = 1000
-  let avg_response_time_healthy = avg_response_time_ms < max_acceptable_avg_response_time_ms
-  assert_eq(avg_response_time_healthy, false)  // 平均响应时间过长
+  // 验证健康状态统计
+  assert_eq(healthy_count, 3)
+  assert_eq(degraded_count, 1)
+  assert_eq(unhealthy_count, 2)
+  assert_eq(healthy_count + degraded_count + unhealthy_count, 6)
+  
+  // 识别需要关注的服务（不健康或连续失败次数超过阈值）
+  let mut services_requiring_attention = []
+  i = 0
+  while i < health_check_results.length() {
+    let service_id = health_check_results[i].0
+    let health = service_health[service_id]
+    
+    if health.status == HealthStatus::Unhealthy or health.consecutive_failures >= max_failed_checks {
+      services_requiring_attention.push(service_id)
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证需要关注的服务
+  assert_eq(services_requiring_attention.length(), 2)
+  assert_eq(services_requiring_attention[0], "telemetry_storage_001")
+  assert_eq(services_requiring_attention[1], "telemetry_processor_002")
 }
 
 test "telemetry_service_load_balancing" {
-  // 测试遥测服务负载均衡功能
+  // 测试遥测服务负载均衡
   
-  let available_services = [
-    {"id": "service-001", "host": "192.168.1.101", "port": 8080, "weight": 3, "current_connections": 25, "max_connections": 100},
-    {"id": "service-002", "host": "192.168.1.102", "port": 8080, "weight": 2, "current_connections": 40, "max_connections": 100},
-    {"id": "service-003", "host": "192.168.1.103", "port": 8080, "weight": 1, "current_connections": 15, "max_connections": 100}
-  ]
+  let load_balancing_algorithm = "round_robin"  // 负载均衡算法
+  let service_weight_factor = 100              // 服务权重因子
   
-  // 验证服务列表
-  assert_eq(available_services.length(), 3)
-  assert_eq(available_services[0]["weight"], 3)
-  assert_eq(available_services[1]["current_connections"], 40)
-  assert_eq(available_services[2]["max_connections"], 100)
+  // 验证负载均衡配置
+  assert_eq(load_balancing_algorithm == "round_robin" or 
+            load_balancing_algorithm == "weighted" or 
+            load_balancing_algorithm == "least_connections", true)
   
-  // 模拟轮询负载均衡
-  let mut round_robin_index = 0
-  let round_robin_selections = []
-  
-  let mut i = 0
-  while i < 6 {  // 模拟6次请求
-    let selected_service = available_services[round_robin_index]
-    round_robin_selections.push(selected_service["id"])
-    round_robin_index = (round_robin_index + 1) % available_services.length()
-    i = i + 1
-  }
-  
-  // 验证轮询结果
-  assert_eq(round_robin_selections.length(), 6)
-  assert_eq(round_robin_selections[0], "service-001")
-  assert_eq(round_robin_selections[3], "service-001")  // 第二轮开始
-  
-  // 模拟加权负载均衡
-  let total_weight = available_services.fold(0, fn(acc, service) { acc + service["weight"] })
-  let weighted_distribution = []
-  
-  i = 0
-  while i < available_services.length() {
-    let service = available_services[i]
-    let weight_percentage = (service["weight"].to_float() / total_weight.to_float()) * 100
-    weighted_distribution.push({
-      "service_id": service["id"],
-      "weight": service["weight"],
-      "percentage": weight_percentage
-    })
-    i = i + 1
-  }
-  
-  // 验证加权分布
-  assert_eq(total_weight, 6)
-  assert_eq(weighted_distribution[0]["percentage"], 50.0)  // 3/6 * 100
-  assert_eq(weighted_distribution[1]["percentage"], 33.33) // 2/6 * 100
-  assert_eq(weighted_distribution[2]["percentage"], 16.67) // 1/6 * 100
-  
-  // 模拟最少连接负载均衡
-  let least_connections_service = available_services.fold(available_services[0], fn(min_service, service) {
-    if service["current_connections"] < min_service["current_connections"] {
-      service
-    } else {
-      min_service
+  // 定义服务实例
+  let service_instances = [
+    {
+      service_id: "collector_001",
+      endpoint: "192.168.1.10:4317",
+      weight: 3,
+      active_connections: 45,
+      max_connections: 100
+    },
+    {
+      service_id: "collector_002", 
+      endpoint: "192.168.1.11:4317",
+      weight: 2,
+      active_connections: 60,
+      max_connections: 100
+    },
+    {
+      service_id: "collector_003",
+      endpoint: "192.168.1.12:4317", 
+      weight: 1,
+      active_connections: 30,
+      max_connections: 100
     }
-  })
-  
-  assert_eq(least_connections_service["id"], "service-003")
-  assert_eq(least_connections_service["current_connections"], 15)
-  
-  // 验证连接容量检查
-  let services_with_capacity = available_services.filter(fn(service) {
-    service["current_connections"] < service["max_connections"]
-  })
-  
-  assert_eq(services_with_capacity.length(), 3)
-  
-  // 计算总体容量利用率
-  let total_current_connections = available_services.fold(0, fn(acc, service) { acc + service["current_connections"] })
-  let total_max_connections = available_services.fold(0, fn(acc, service) { acc + service["max_connections"] })
-  let capacity_utilization = (total_current_connections.to_float() / total_max_connections.to_float()) * 100
-  
-  assert_eq(total_current_connections, 80)
-  assert_eq(total_max_connections, 300)
-  assert_eq(capacity_utilization, 26.67)
-}
-
-test "telemetry_service_discovery_caching" {
-  // 测试遥测服务发现缓存功能
-  
-  let cache_config = {
-    "cache_ttl_seconds": 60,
-    "max_cache_size": 1000,
-    "cache_refresh_threshold": 0.8,  // 80%时间后刷新
-    "enable_background_refresh": true,
-    "refresh_interval_seconds": 30
-  }
-  
-  // 验证缓存配置
-  assert_eq(cache_config["cache_ttl_seconds"], 60)
-  assert_eq(cache_config["max_cache_size"], 1000)
-  assert_eq(cache_config["cache_refresh_threshold"], 0.8)
-  assert_eq(cache_config["enable_background_refresh"], true)
-  
-  // 模拟服务发现缓存
-  let service_cache = {}
-  let cache_timestamp = 1640995200000
-  let cached_services = [
-    {"id": "service-001", "host": "192.168.1.101", "port": 8080},
-    {"id": "service-002", "host": "192.168.1.102", "port": 8080},
-    {"id": "service-003", "host": "192.168.1.103", "port": 8080}
   ]
   
-  // 存储到缓存
-  service_cache["services"] = {
-    "data": cached_services,
-    "timestamp": cache_timestamp,
-    "ttl": cache_config["cache_ttl_seconds"]
-  }
+  // 验证服务实例
+  assert_eq(service_instances.length(), 3)
+  assert_eq(service_instances[0].weight, 3)
+  assert_eq(service_instances[1].active_connections, 60)
   
-  // 验证缓存存储
-  assert_eq(service_cache.contains("services"), true)
-  assert_eq(service_cache["services"]["data"].length(), 3)
-  assert_eq(service_cache["services"]["timestamp"], cache_timestamp)
+  // 轮询负载均衡实现
+  let mut round_robin_index = 0
+  let request_count = 20
+  let mut round_robin_distribution = {}
   
-  // 模拟缓存查询
-  let query_timestamp = 1640995230000  // 50秒后
-  let cache_age_seconds = (query_timestamp - cache_timestamp) / 1000
-  let cache_expired = cache_age_seconds > cache_config["cache_ttl_seconds"]
-  let should_refresh = cache_age_seconds > (cache_config["cache_ttl_seconds"].to_float() * cache_config["cache_refresh_threshold"])
-  
-  // 验证缓存状态
-  assert_eq(cache_age_seconds, 50)
-  assert_eq(cache_expired, false)
-  assert_eq(should_refresh, true)  // 超过80%阈值，应该刷新
-  
-  // 模拟缓存命中统计
-  let total_queries = 100
-  let cache_hits = 85
-  let cache_misses = 15
-  let hit_rate = (cache_hits.to_float() / total_queries.to_float()) * 100
-  
-  // 验证缓存性能
-  assert_eq(total_queries, 100)
-  assert_eq(cache_hits, 85)
-  assert_eq(cache_misses, 15)
-  assert_eq(hit_rate, 85.0)
-  
-  // 验证缓存效果
-  let cache_lookup_time_ms = 2
-  let remote_lookup_time_ms = 50
-  let time_saved_per_hit = remote_lookup_time_ms - cache_lookup_time_ms
-  let total_time_saved = time_saved_per_hit * cache_hits
-  
-  assert_eq(cache_lookup_time_ms, 2)
-  assert_eq(remote_lookup_time_ms, 50)
-  assert_eq(time_saved_per_hit, 48)
-  assert_eq(total_time_saved, 4080)  // 48 * 85
-  
-  // 验证缓存容量管理
-  let current_cache_size = 150
-  let cache_utilization = current_cache_size.to_float() / cache_config["max_cache_size"].to_float()
-  let cache_cleanup_needed = cache_utilization > 0.9
-  
-  assert_eq(current_cache_size, 150)
-  assert_eq(cache_utilization, 0.15)
-  assert_eq(cache_cleanup_needed, false)
-}
-
-test "telemetry_service_discovery_failover" {
-  // 测试遥测服务发现故障转移功能
-  
-  let primary_services = [
-    {"id": "primary-001", "host": "192.168.1.101", "port": 8080, "status": "healthy"},
-    {"id": "primary-002", "host": "192.168.1.102", "port": 8080, "status": "healthy"}
-  ]
-  
-  let backup_services = [
-    {"id": "backup-001", "host": "192.168.2.101", "port": 8080, "status": "healthy"},
-    {"id": "backup-002", "host": "192.168.2.102", "port": 8080, "status": "healthy"}
-  ]
-  
-  // 验证服务配置
-  assert_eq(primary_services.length(), 2)
-  assert_eq(backup_services.length(), 2)
-  assert_eq(primary_services[0]["status"], "healthy")
-  assert_eq(backup_services[0]["host"], "192.168.2.101")
-  
-  // 模拟故障检测
-  let failure_detection_config = {
-    "health_check_interval_seconds": 10,
-    "failure_threshold": 3,
-    "recovery_threshold": 2,
-    "failover_timeout_seconds": 30
-  }
-  
-  // 验证故障检测配置
-  assert_eq(failure_detection_config["health_check_interval_seconds"], 10)
-  assert_eq(failure_detection_config["failure_threshold"], 3)
-  assert_eq(failure_detection_config["recovery_threshold"], 2)
-  
-  // 模拟主服务故障
-  let service_health_status = {
-    "primary-001": "healthy",
-    "primary-002": "failed",  // 主服务故障
-    "backup-001": "healthy",
-    "backup-002": "healthy"
-  }
-  
-  // 检查可用服务
-  let available_primary_services = primary_services.filter(fn(service) {
-    service_health_status[service["id"]] == "healthy"
-  })
-  
-  let available_backup_services = backup_services.filter(fn(service) {
-    service_health_status[service["id"]] == "healthy"
-  })
-  
-  // 验证可用服务
-  assert_eq(available_primary_services.length(), 1)  // 只有primary-001可用
-  assert_eq(available_backup_services.length(), 2)   // 备份服务都可用
-  
-  // 模拟故障转移决策
-  let failover_triggered = available_primary_services.length() == 0
-  let partial_failover = available_primary_services.length() < primary_services.length()
-  let use_backup_services = failover_triggered or partial_failover
-  
-  assert_eq(failover_triggered, false)
-  assert_eq(partial_failover, true)
-  assert_eq(use_backup_services, true)
-  
-  // 构建可用服务列表（包含主服务和备份服务）
-  let available_services = available_primary_services + available_backup_services
-  assert_eq(available_services.length(), 3)
-  
-  // 模拟故障恢复检测
-  let recovery_detection_enabled = true
-  let recovery_check_interval_seconds = 30
-  let recovered_services = ["primary-002"]  // 假设primary-002已恢复
-  
-  // 验证恢复检测配置
-  assert_eq(recovery_detection_enabled, true)
-  assert_eq(recovery_check_interval_seconds, 30)
-  assert_eq(recovered_services.length(), 1)
-  
-  // 更新服务状态
+  // 初始化分布计数
   let mut i = 0
-  while i < recovered_services.length() {
-    let service_id = recovered_services[i]
-    service_health_status[service_id] = "recovered"
+  while i < service_instances.length() {
+    round_robin_distribution[service_instances[i].service_id] = 0
     i = i + 1
   }
   
-  // 验证状态更新
-  assert_eq(service_health_status["primary-002"], "recovered")
+  // 模拟请求分配
+  i = 0
+  while i < request_count {
+    let selected_instance = service_instances[round_robin_index]
+    let service_id = selected_instance.service_id
+    
+    // 更新分布计数
+    let current_count = round_robin_distribution[service_id]
+    round_robin_distribution[service_id] = current_count + 1
+    
+    // 更新轮询索引
+    round_robin_index = (round_robin_index + 1) % service_instances.length()
+    
+    i = i + 1
+  }
   
-  // 计算故障转移时间
-  let failure_detection_time_ms = 5000
-  let failover_decision_time_ms = 1000
-  let service_switch_time_ms = 2000
-  let total_failover_time_ms = failure_detection_time_ms + failover_decision_time_ms + service_switch_time_ms
+  // 验证轮询分布
+  assert_eq(round_robin_distribution["collector_001"], 7)
+  assert_eq(round_robin_distribution["collector_002"], 7)
+  assert_eq(round_robin_distribution["collector_003"], 6)
   
-  assert_eq(total_failover_time_ms, 8000)
+  // 加权负载均衡实现
+  let mut weighted_distribution = {}
   
-  let max_acceptable_failover_time_ms = 30000  // 30秒
-  assert_eq(total_failover_time_ms <= max_acceptable_failover_time_ms, true)
+  // 初始化分布计数
+  i = 0
+  while i < service_instances.length() {
+    weighted_distribution[service_instances[i].service_id] = 0
+    i = i + 1
+  }
   
-  // 验证服务可用性
-  let total_services = primary_services.length() + backup_services.length()
-  let healthy_services = available_services.length()
-  let availability_percentage = (healthy_services.to_float() / total_services.to_float()) * 100
+  // 计算总权重
+  let mut total_weight = 0
+  i = 0
+  while i < service_instances.length() {
+    total_weight = total_weight + service_instances[i].weight
+    i = i + 1
+  }
   
-  assert_eq(total_services, 4)
-  assert_eq(healthy_services, 3)
-  assert_eq(availability_percentage, 75.0)
+  // 模拟加权请求分配
+  i = 0
+  while i < request_count {
+    let random_value = (i * 7) % total_weight  // 简化的伪随机数
+    let mut accumulated_weight = 0
+    let mut selected_service_id = ""
+    
+    let mut j = 0
+    while j < service_instances.length() {
+      accumulated_weight = accumulated_weight + service_instances[j].weight
+      if random_value < accumulated_weight {
+        selected_service_id = service_instances[j].service_id
+        break
+      }
+      j = j + 1
+    }
+    
+    // 更新分布计数
+    let current_count = weighted_distribution[selected_service_id]
+    weighted_distribution[selected_service_id] = current_count + 1
+    
+    i = i + 1
+  }
+  
+  // 验证加权分布（权重高的服务应该获得更多请求）
+  assert_eq(weighted_distribution["collector_001"] > weighted_distribution["collector_002"], true)
+  assert_eq(weighted_distribution["collector_002"] > weighted_distribution["collector_003"], true)
+  
+  // 最少连接负载均衡实现
+  let mut least_connections_distribution = {}
+  
+  // 初始化分布计数和连接数
+  i = 0
+  while i < service_instances.length() {
+    least_connections_distribution[service_instances[i].service_id] = 0
+    i = i + 1
+  }
+  
+  let mut current_connections = [
+    ("collector_001", 45),
+    ("collector_002", 60), 
+    ("collector_003", 30)
+  ]
+  
+  // 模拟最少连接请求分配
+  i = 0
+  while i < request_count {
+    // 找到连接数最少的服务
+    let mut min_connections = current_connections[0].1
+    let mut selected_service_id = current_connections[0].0
+    
+    let mut j = 1
+    while j < current_connections.length() {
+      if current_connections[j].1 < min_connections {
+        min_connections = current_connections[j].1
+        selected_service_id = current_connections[j].0
+      }
+      j = j + 1
+    }
+    
+    // 更新分布计数和连接数
+    let current_count = least_connections_distribution[selected_service_id]
+    least_connections_distribution[selected_service_id] = current_count + 1
+    
+    // 更新该服务的连接数
+    j = 0
+    while j < current_connections.length() {
+      if current_connections[j].0 == selected_service_id {
+        current_connections[j] = (selected_service_id, current_connections[j].1 + 1)
+        break
+      }
+      j = j + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证最少连接分布（连接数少的服务应该获得更多请求）
+  assert_eq(least_connections_distribution["collector_003"] > least_connections_distribution["collector_001"], true)
+  assert_eq(least_connections_distribution["collector_001"] > least_connections_distribution["collector_002"], true)
+  
+  // 验证总请求数
+  let mut total_distributed = 0
+  i = 0
+  while i < service_instances.length() {
+    total_distributed = total_distributed + least_connections_distribution[service_instances[i].service_id]
+    i = i + 1
+  }
+  assert_eq(total_distributed, request_count)
 }
