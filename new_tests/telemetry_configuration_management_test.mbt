@@ -1,463 +1,315 @@
-// 配置管理测试用例
-// 测试遥测系统的配置加载、验证、更新和持久化功能
+// 遥测配置管理测试用例
 
-test "configuration_loading" {
-  // 测试配置加载功能
+test "configuration_loading_validation" {
+  // 测试配置加载验证
   
-  let config_data = [
-    ("telemetry.enabled", "true"),
-    ("telemetry.interval", "30"),
-    ("telemetry.endpoint", "https://api.telemetry.com/v1/metrics"),
-    ("telemetry.api_key", "abc123def456"),
-    ("telemetry.batch_size", "100"),
-    ("telemetry.timeout", "5000")
-  ]
-  
-  // 验证配置数据
-  assert_eq(config_data.length(), 6)
-  
-  // 验证每个配置项
-  let mut i = 0
-  while i < config_data.length() {
-    let key = config_data[i].0
-    let value = config_data[i].1
-    
-    // 验证键格式
-    assert_eq(key.length() > 0, true)
-    assert_eq(key.contains("."), true)
-    
-    // 验证值不为空
-    assert_eq(value.length() > 0, true)
-    
-    i = i + 1
+  let default_config = {
+    "service_name": "telemetry_service",
+    "version": "1.0.0",
+    "sampling_rate": 1.0,
+    "batch_size": 100,
+    "export_interval_ms": 5000,
+    "enabled_features": ["metrics", "traces", "logs"]
   }
   
-  // 验证特定配置项
-  assert_eq(config_data[0].0, "telemetry.enabled")
-  assert_eq(config_data[0].1, "true")
+  let user_config = {
+    "service_name": "my_telemetry_service",
+    "sampling_rate": 0.5,
+    "batch_size": 200,
+    "export_interval_ms": 10000
+  }
   
-  assert_eq(config_data[2].0, "telemetry.endpoint")
-  assert_eq(config_data[2].1.has_prefix("https://"), true)
+  // 模拟配置合并逻辑
+  let merged_config = {
+    "service_name": user_config.service_name,
+    "version": default_config.version,
+    "sampling_rate": user_config.sampling_rate,
+    "batch_size": user_config.batch_size,
+    "export_interval_ms": user_config.export_interval_ms,
+    "enabled_features": default_config.enabled_features
+  }
   
-  assert_eq(config_data[4].0, "telemetry.batch_size")
-  assert_eq(config_data[4].1.to_int(), 100)
+  // 验证配置合并结果
+  assert_eq(merged_config.service_name, "my_telemetry_service")
+  assert_eq(merged_config.version, "1.0.0")  // 来自默认配置
+  assert_eq(merged_config.sampling_rate, 0.5)
+  assert_eq(merged_config.batch_size, 200)
+  assert_eq(merged_config.export_interval_ms, 10000)
+  assert_eq(merged_config.enabled_features.length(), 3)
 }
 
-test "configuration_validation" {
-  // 测试配置验证功能
+test "configuration_validation_rules" {
+  // 测试配置验证规则
   
-  let valid_configs = [
-    ("telemetry.enabled", "true", "boolean"),
-    ("telemetry.interval", "30", "integer"),
-    ("telemetry.timeout", "5000", "integer"),
-    ("telemetry.endpoint", "https://api.example.com", "url"),
-    ("telemetry.api_key", "abc123def456", "string")
+  let test_configs = [
+    {
+      "config": {"sampling_rate": 1.5}, "valid": false, "reason": "sampling_rate > 1.0"}
+    },
+    {
+      "config": {"sampling_rate": -0.1}, "valid": false, "reason": "sampling_rate < 0.0"
+    },
+    {
+      "config": {"sampling_rate": 0.5}, "valid": true, "reason": "valid sampling_rate"
+    },
+    {
+      "config": {"batch_size": 0}, "valid": false, "reason": "batch_size <= 0"
+    },
+    {
+      "config": {"batch_size": 10000}, "valid": true, "reason": "valid batch_size"
+    },
+    {
+      "config": {"export_interval_ms": 100}, "valid": false, "reason": "export_interval_ms < 1000"
+    },
+    {
+      "config": {"export_interval_ms": 5000}, "valid": true, "reason": "valid export_interval_ms"
+    }
   ]
   
-  let invalid_configs = [
-    ("telemetry.enabled", "yes", "boolean"), // 无效布尔值
-    ("telemetry.interval", "-5", "integer"), // 负数
-    ("telemetry.timeout", "0", "integer"), // 零值
-    ("telemetry.endpoint", "not-a-url", "url"), // 无效URL
-    ("telemetry.api_key", "", "string") // 空字符串
-  ]
-  
-  // 验证有效配置
+  // 验证配置规则
+  let mut validation_results = []
   let mut i = 0
-  while i < valid_configs.length() {
-    let key = valid_configs[i].0
-    let value = valid_configs[i].1
-    let type_expected = valid_configs[i].2
-    
+  while i < test_configs.length() {
+    let test_case = test_configs[i]
+    let config = test_case.config
     let mut is_valid = true
+    let mut validation_errors = []
     
-    if type_expected == "boolean" {
-      is_valid = value == "true" or value == "false"
-    } else if type_expected == "integer" {
-      let int_value = value.to_int()
-      is_valid = int_value > 0
-    } else if type_expected == "url" {
-      is_valid = value.has_prefix("http://") or value.has_prefix("https://")
-    } else if type_expected == "string" {
-      is_valid = value.length() > 0
+    // 验证采样率
+    if config.contains("sampling_rate") {
+      let sampling_rate = config["sampling_rate"]
+      if sampling_rate < 0.0 or sampling_rate > 1.0 {
+        is_valid = false
+        validation_errors.push("invalid_sampling_rate")
+      }
     }
     
-    assert_eq(is_valid, true)
+    // 验证批量大小
+    if config.contains("batch_size") {
+      let batch_size = config["batch_size"]
+      if batch_size <= 0 {
+        is_valid = false
+        validation_errors.push("invalid_batch_size")
+      }
+    }
+    
+    // 验证导出间隔
+    if config.contains("export_interval_ms") {
+      let export_interval = config["export_interval_ms"]
+      if export_interval < 1000 {
+        is_valid = false
+        validation_errors.push("invalid_export_interval")
+      }
+    }
+    
+    let result = {
+      "expected_valid": test_case.valid,
+      "actual_valid": is_valid,
+      "validation_errors": validation_errors
+    }
+    validation_results.push(result)
     i = i + 1
   }
   
-  // 检测无效配置
-  let mut validation_errors = []
-  i = 0
-  while i < invalid_configs.length() {
-    let key = invalid_configs[i].0
-    let value = invalid_configs[i].1
-    let type_expected = invalid_configs[i].2
-    
-    let mut is_valid = true
-    let mut error_reason = ""
-    
-    if type_expected == "boolean" {
-      if not (value == "true" or value == "false") {
-        is_valid = false
-        error_reason = "invalid_boolean"
-      }
-    } else if type_expected == "integer" {
-      let int_value = value.to_int()
-      if int_value <= 0 {
-        is_valid = false
-        error_reason = "invalid_integer"
-      }
-    } else if type_expected == "url" {
-      if not (value.has_prefix("http://") or value.has_prefix("https://")) {
-        is_valid = false
-        error_reason = "invalid_url"
-      }
-    } else if type_expected == "string" {
-      if value.length() == 0 {
-        is_valid = false
-        error_reason = "empty_string"
-      }
-    }
-    
-    if not is_valid {
-      validation_errors.push((key, error_reason))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证错误检测结果
-  assert_eq(validation_errors.length(), 5)
-  assert_eq(validation_errors[0].1, "invalid_boolean")
-  assert_eq(validation_errors[1].1, "invalid_integer")
-  assert_eq(validation_errors[2].1, "invalid_integer")
-  assert_eq(validation_errors[3].1, "invalid_url")
-  assert_eq(validation_errors[4].1, "empty_string")
+  // 验证验证结果
+  assert_eq(validation_results.length(), 7)
+  assert_eq(validation_results[0].actual_valid, false)
+  assert_eq(validation_results[2].actual_valid, true)
+  assert_eq(validation_results[4].actual_valid, true)
+  assert_eq(validation_results[6].actual_valid, true)
 }
 
-test "configuration_update" {
-  // 测试配置更新功能
+test "configuration_hot_reload" {
+  // 测试配置热重载
   
-  let initial_config = [
-    ("telemetry.enabled", "true"),
-    ("telemetry.interval", "30"),
-    ("telemetry.batch_size", "100")
+  let initial_config = {
+    "sampling_rate": 1.0,
+    "batch_size": 100,
+    "export_interval_ms": 5000,
+    "debug_mode": false
+  }
+  
+  let updated_configs = [
+    {
+      "timestamp": 1001000,
+      "changes": {"sampling_rate": 0.8},
+      "expected": {"sampling_rate": 0.8, "batch_size": 100, "export_interval_ms": 5000, "debug_mode": false}
+    },
+    {
+      "timestamp": 1002000,
+      "changes": {"batch_size": 200, "debug_mode": true},
+      "expected": {"sampling_rate": 0.8, "batch_size": 200, "export_interval_ms": 5000, "debug_mode": true}
+    },
+    {
+      "timestamp": 1003000,
+      "changes": {"export_interval_ms": 10000},
+      "expected": {"sampling_rate": 0.8, "batch_size": 200, "export_interval_ms": 10000, "debug_mode": true}
+    }
   ]
   
-  let config_updates = [
-    ("telemetry.interval", "60"), // 更新间隔
-    ("telemetry.batch_size", "200"), // 更新批次大小
-    ("telemetry.timeout", "10000") // 新增配置项
-  ]
+  // 模拟配置热重载过程
+  let mut current_config = initial_config
+  let mut reload_history = []
   
-  // 应用配置更新
-  let mut updated_config = []
-  
-  // 首先复制初始配置
   let mut i = 0
-  while i < initial_config.length() {
-    updated_config.push(initial_config[i])
-    i = i + 1
-  }
-  
-  // 然后应用更新
-  i = 0
-  while i < config_updates.length() {
-    let update_key = config_updates[i].0
-    let update_value = config_updates[i].1
+  while i < updated_configs.length() {
+    let update = updated_configs[i]
+    let changes = update.changes
     
-    // 查找是否已存在该配置项
-    let mut found = false
-    let mut j = 0
-    while j < updated_config.length() {
-      if updated_config[j].0 == update_key {
-        updated_config[j] = (update_key, update_value)
-        found = true
-        break
-      }
-      j = j + 1
+    // 应用配置变更
+    if changes.contains("sampling_rate") {
+      current_config = { current_config | "sampling_rate": changes["sampling_rate"] }
+    }
+    if changes.contains("batch_size") {
+      current_config = { current_config | "batch_size": changes["batch_size"] }
+    }
+    if changes.contains("export_interval_ms") {
+      current_config = { current_config | "export_interval_ms": changes["export_interval_ms"] }
+    }
+    if changes.contains("debug_mode") {
+      current_config = { current_config | "debug_mode": changes["debug_mode"] }
     }
     
-    // 如果不存在，添加新配置项
-    if not found {
-      updated_config.push((update_key, update_value))
+    let reload_event = {
+      "timestamp": update.timestamp,
+      "config": current_config
     }
-    
+    reload_history.push(reload_event)
     i = i + 1
   }
   
-  // 验证更新结果
-  assert_eq(updated_config.length(), 4) // 原来3个 + 新增1个
+  // 验证热重载结果
+  assert_eq(reload_history.length(), 3)
   
-  // 验证更新的值
-  let mut i = 0
-  while i < updated_config.length() {
-    let key = updated_config[i].0
-    let value = updated_config[i].1
-    
-    if key == "telemetry.interval" {
-      assert_eq(value, "60")
-    } else if key == "telemetry.batch_size" {
-      assert_eq(value, "200")
-    } else if key == "telemetry.timeout" {
-      assert_eq(value, "10000")
-    } else if key == "telemetry.enabled" {
-      assert_eq(value, "true") // 未改变
-    }
-    
-    i = i + 1
-  }
-}
-
-test "configuration_persistence" {
-  // 测试配置持久化功能
+  // 验证第一次重载
+  assert_eq(reload_history[0].config.sampling_rate, 0.8)
+  assert_eq(reload_history[0].config.batch_size, 100)
   
-  let runtime_config = [
-    ("telemetry.enabled", "true"),
-    ("telemetry.interval", "30"),
-    ("telemetry.endpoint", "https://api.telemetry.com"),
-    ("telemetry.last_sync", "1640995200")
-  ]
+  // 验证第二次重载
+  assert_eq(reload_history[1].config.sampling_rate, 0.8)
+  assert_eq(reload_history[1].config.batch_size, 200)
+  assert_eq(reload_history[1].config.debug_mode, true)
   
-  // 模拟配置序列化
-  let mut serialized_config = ""
-  let mut i = 0
-  while i < runtime_config.length() {
-    let key = runtime_config[i].0
-    let value = runtime_config[i].1
-    
-    serialized_config = serialized_config + key + "=" + value
-    if i < runtime_config.length() - 1 {
-      serialized_config = serialized_config + "\n"
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证序列化结果
-  assert_eq(serialized_config.contains("telemetry.enabled=true"), true)
-  assert_eq(serialized_config.contains("telemetry.interval=30"), true)
-  assert_eq(serialized_config.contains("telemetry.endpoint=https://api.telemetry.com"), true)
-  assert_eq(serialized_config.contains("telemetry.last_sync=1640995200"), true)
-  
-  // 模拟配置反序列化
-  let lines = serialized_config.split("\n")
-  let mut deserialized_config = []
-  
-  i = 0
-  while i < lines.length() {
-    let line = lines[i]
-    if line.length() > 0 {
-      let parts = line.split("=")
-      if parts.length() == 2 {
-        deserialized_config.push((parts[0], parts[1]))
-      }
-    }
-    i = i + 1
-  }
-  
-  // 验证反序列化结果
-  assert_eq(deserialized_config.length(), runtime_config.length())
-  
-  i = 0
-  while i < deserialized_config.length() {
-    let orig_key = runtime_config[i].0
-    let orig_value = runtime_config[i].1
-    let deser_key = deserialized_config[i].0
-    let deser_value = deserialized_config[i].1
-    
-    assert_eq(orig_key, deser_key)
-    assert_eq(orig_value, deser_value)
-    
-    i = i + 1
-  }
+  // 验证第三次重载
+  assert_eq(reload_history[2].config.export_interval_ms, 10000)
+  assert_eq(reload_history[2].config.debug_mode, true)
 }
 
 test "configuration_environment_override" {
-  // 测试环境变量配置覆盖功能
+  // 测试配置环境覆盖
   
-  let default_config = [
-    ("telemetry.enabled", "false"),
-    ("telemetry.endpoint", "http://localhost:8080"),
-    ("telemetry.debug", "false")
-  ]
-  
-  let env_overrides = [
-    ("TELEMETRY_ENABLED", "true"),
-    ("TELEMETRY_ENDPOINT", "https://prod.telemetry.com"),
-    ("TELEMETRY_API_KEY", "prod-key-123")
-  ]
-  
-  // 应用环境变量覆盖
-  let mut final_config = []
-  
-  // 首先复制默认配置
-  let mut i = 0
-  while i < default_config.length() {
-    final_config.push(default_config[i])
-    i = i + 1
+  let base_config = {
+    "service_name": "telemetry_service",
+    "environment": "development",
+    "log_level": "info",
+    "endpoint": "http://localhost:8080",
+    "timeout_ms": 5000
   }
   
-  // 然后应用环境变量覆盖
-  i = 0
-  while i < env_overrides.length() {
-    let env_key = env_overrides[i].0
-    let env_value = env_overrides[i].1
-    
-    // 将环境变量名转换为配置键
-    let config_key = "telemetry." + env_key.substring(11).to_lower()
-    
-    // 查找并更新对应的配置项
-    let mut found = false
-    let mut j = 0
-    while j < final_config.length() {
-      if final_config[j].0 == config_key {
-        final_config[j] = (config_key, env_value)
-        found = true
-        break
+  let environment_overrides = [
+    {
+      "environment": "production",
+      "overrides": {
+        "log_level": "warn",
+        "endpoint": "https://telemetry.prod.com",
+        "timeout_ms": 10000
       }
-      j = j + 1
+    },
+    {
+      "environment": "staging",
+      "overrides": {
+        "endpoint": "https://telemetry.staging.com",
+        "timeout_ms": 7500
+      }
     }
-    
-    // 如果不存在，添加新配置项
-    if not found {
-      final_config.push((config_key, env_value))
-    }
-    
-    i = i + 1
-  }
+  ]
   
-  // 验证覆盖结果
-  assert_eq(final_config.length(), 4) // 原来3个 + 新增1个
-  
-  // 验证覆盖的值
+  // 模拟环境配置覆盖
+  let mut environment_configs = []
   let mut i = 0
-  while i < final_config.length() {
-    let key = final_config[i].0
-    let value = final_config[i].1
+  while i < environment_overrides.length() {
+    let env_override = environment_overrides[i]
+    let env_name = env_override.environment
+    let overrides = env_override.overrides
     
-    if key == "telemetry.enabled" {
-      assert_eq(value, "true") // 被环境变量覆盖
-    } else if key == "telemetry.endpoint" {
-      assert_eq(value, "https://prod.telemetry.com") // 被环境变量覆盖
-    } else if key == "telemetry.debug" {
-      assert_eq(value, "false") // 未被覆盖
-    } else if key == "telemetry.api_key" {
-      assert_eq(value, "prod-key-123") // 新增的配置项
+    // 应用环境覆盖
+    let env_config = {
+      "service_name": base_config.service_name,
+      "environment": env_name,
+      "log_level": overrides.get("log_level").unwrap_or(base_config.log_level),
+      "endpoint": overrides.get("endpoint").unwrap_or(base_config.endpoint),
+      "timeout_ms": overrides.get("timeout_ms").unwrap_or(base_config.timeout_ms)
     }
-    
+    environment_configs.push(env_config)
     i = i + 1
   }
+  
+  // 验证环境配置覆盖
+  assert_eq(environment_configs.length(), 2)
+  
+  // 验证生产环境配置
+  let prod_config = environment_configs[0]
+  assert_eq(prod_config.environment, "production")
+  assert_eq(prod_config.log_level, "warn")
+  assert_eq(prod_config.endpoint, "https://telemetry.prod.com")
+  assert_eq(prod_config.timeout_ms, 10000)
+  
+  // 验证预发布环境配置
+  let staging_config = environment_configs[1]
+  assert_eq(staging_config.environment, "staging")
+  assert_eq(staging_config.log_level, "info")  // 未覆盖，使用基础配置
+  assert_eq(staging_config.endpoint, "https://telemetry.staging.com")
+  assert_eq(staging_config.timeout_ms, 7500)
 }
 
-test "configuration_schema_validation" {
-  // 测试配置模式验证功能
+test "configuration_feature_flags" {
+  // 测试配置功能开关
   
-  let config_schema = [
-    ("telemetry.enabled", "boolean", "required"),
-    ("telemetry.interval", "integer", "required"),
-    ("telemetry.endpoint", "url", "optional"),
-    ("telemetry.api_key", "string", "optional"),
-    ("telemetry.batch_size", "integer", "optional")
-  ]
+  let feature_flag_config = {
+    "features": {
+      "advanced_metrics": true,
+      "distributed_tracing": true,
+      "real_time_monitoring": false,
+      "auto_sampling": true,
+      "compression": false,
+      "custom_exporters": true
+    },
+    "feature_toggles": {
+      "experimental_features": false,
+      "debug_mode": true,
+      "verbose_logging": false
+    }
+  }
   
-  let test_config = [
-    ("telemetry.enabled", "true"),
-    ("telemetry.interval", "30"),
-    ("telemetry.endpoint", "https://api.example.com"),
-    ("telemetry.batch_size", "100")
-  ]
+  // 功能开关检查函数
+  let check_feature = fn(config: Map[String, Bool], feature_name: String) -> Bool {
+    config.contains(feature_name) and config[feature_name]
+  }
   
-  // 验证配置是否符合模式
-  let mut schema_violations = []
+  // 验证功能开关
+  let features = feature_flag_config.features
+  let toggles = feature_flag_config.feature_toggles
   
-  // 检查必需字段
+  assert_eq(check_feature(features, "advanced_metrics"), true)
+  assert_eq(check_feature(features, "distributed_tracing"), true)
+  assert_eq(check_feature(features, "real_time_monitoring"), false)
+  assert_eq(check_feature(features, "auto_sampling"), true)
+  assert_eq(check_feature(features, "compression"), false)
+  assert_eq(check_feature(features, "custom_exporters"), true)
+  
+  assert_eq(check_feature(toggles, "experimental_features"), false)
+  assert_eq(check_feature(toggles, "debug_mode"), true)
+  assert_eq(check_feature(toggles, "verbose_logging"), false)
+  
+  // 计算启用的功能数量
+  let mut enabled_features = 0
+  let feature_names = ["advanced_metrics", "distributed_tracing", "real_time_monitoring", "auto_sampling", "compression", "custom_exporters"]
   let mut i = 0
-  while i < config_schema.length() {
-    let schema_key = config_schema[i].0
-    let schema_type = config_schema[i].1
-    let schema_requirement = config_schema[i].2
-    
-    if schema_requirement == "required" {
-      // 检查必需字段是否存在
-      let mut found = false
-      let mut j = 0
-      while j < test_config.length() {
-        if test_config[j].0 == schema_key {
-          found = true
-          
-          // 简单类型验证
-          let value = test_config[j].1
-          let mut type_valid = true
-          
-          if schema_type == "boolean" {
-            type_valid = value == "true" or value == "false"
-          } else if schema_type == "integer" {
-            let int_value = value.to_int()
-            type_valid = int_value > 0
-          } else if schema_type == "url" {
-            type_valid = value.has_prefix("http://") or value.has_prefix("https://")
-          } else if schema_type == "string" {
-            type_valid = value.length() > 0
-          }
-          
-          if not type_valid {
-            schema_violations.push((schema_key, "invalid_type"))
-          }
-          
-          break
-        }
-        j = j + 1
-      }
-      
-      if not found {
-        schema_violations.push((schema_key, "missing_required"))
-      }
+  while i < feature_names.length() {
+    if check_feature(features, feature_names[i]) {
+      enabled_features = enabled_features + 1
     }
-    
     i = i + 1
   }
   
-  // 验证模式验证结果
-  assert_eq(schema_violations.length(), 0) // 所有必需字段都存在且类型正确
-  
-  // 测试缺少必需字段的情况
-  let incomplete_config = [
-    ("telemetry.endpoint", "https://api.example.com"),
-    ("telemetry.batch_size", "100")
-  ]
-  
-  // 重新验证不完整配置
-  schema_violations = []
-  i = 0
-  while i < config_schema.length() {
-    let schema_key = config_schema[i].0
-    let schema_requirement = config_schema[i].2
-    
-    if schema_requirement == "required" {
-      let mut found = false
-      let mut j = 0
-      while j < incomplete_config.length() {
-        if incomplete_config[j].0 == schema_key {
-          found = true
-          break
-        }
-        j = j + 1
-      }
-      
-      if not found {
-        schema_violations.push((schema_key, "missing_required"))
-      }
-    }
-    
-    i = i + 1
-  }
-  
-  // 应该检测到缺少的必需字段
-  assert_eq(schema_violations.length(), 2)
-  assert_eq(schema_violations[0].0, "telemetry.enabled")
-  assert_eq(schema_violations[0].1, "missing_required")
-  assert_eq(schema_violations[1].0, "telemetry.interval")
-  assert_eq(schema_violations[1].1, "missing_required")
+  assert_eq(enabled_features, 4)
 }
