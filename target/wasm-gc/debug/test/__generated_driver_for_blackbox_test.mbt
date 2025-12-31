@@ -57,6 +57,12 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "telemetry_time_sync_test.mbt": {
+    0: (__test_74656c656d657472795f74696d655f73796e635f746573742e6d6274_0, ["telemetry_time_synchronization_precision"]),
+    1: (__test_74656c656d657472795f74696d655f73796e635f746573742e6d6274_1, ["telemetry_ntp_server_monitoring"]),
+    2: (__test_74656c656d657472795f74696d655f73796e635f746573742e6d6274_2, ["telemetry_timezone_handling"]),
+    3: (__test_74656c656d657472795f74696d655f73796e635f746573742e6d6274_3, ["telemetry_timestamp_consistency"]),
+  },
   "telemetry_serialization_test.mbt": {
     0: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_0, ["telemetry_json_serialization"]),
     1: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_1, ["telemetry_protobuf_format_validation"]),
