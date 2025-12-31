@@ -2524,6 +2524,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f746573742e6d6274_5, ["configuration_encryption_security"]),
     6: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f746573742e6d6274_6, ["configuration_environment_specific"]),
   },
+  "configuration_management_dynamic_test.mbt": {
+    0: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_0, ["resource_configuration_dynamic_update"]),
+    1: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_1, ["tracer_configuration_hot_reload"]),
+    2: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_2, ["meter_configuration_dynamic_switching"]),
+    3: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_3, ["attribute_configuration_batch_update"]),
+    4: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_4, ["context_configuration_inheritance"]),
+    5: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_5, ["sampling_configuration_dynamic_adjustment"]),
+    6: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_6, ["instrumentation_scope_configuration"]),
+    7: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_7, ["configuration_validation_and_defaults"]),
+    8: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f64796e616d69635f746573742e6d6274_8, ["configuration_persistence_and_recovery"]),
+  },
   "configuration_management_comprehensive_test.mbt": {
     0: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_0, ["dynamic_configuration_updates"]),
     1: (__test_636f6e66696775726174696f6e5f6d616e6167656d656e745f636f6d70726568656e736976655f746573742e6d6274_1, ["hot_reload_configuration"]),
