@@ -1784,6 +1784,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_677261636566756c5f73687574646f776e5f746573742e6d6274_4, ["shutdown_timeout_and_force_termination"]),
     5: (__test_677261636566756c5f73687574646f776e5f746573742e6d6274_5, ["shutdown_completion_and_reporting"]),
   },
+  "gdpr_compliance_comprehensive_test.mbt": {
+    0: (__test_676470725f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_0, ["gdpr_data_minimization_principle"]),
+    1: (__test_676470725f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_1, ["gdpr_data_anonymization"]),
+    2: (__test_676470725f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_2, ["gdpr_consent_management"]),
+    3: (__test_676470725f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_3, ["gdpr_data_retention_policy"]),
+    4: (__test_676470725f636f6d706c69616e63655f636f6d70726568656e736976655f746573742e6d6274_4, ["gdpr_right_to_be_forgotten"]),
+  },
   "failure_recovery_resilience_test.mbt": {
     0: (__test_6661696c7572655f7265636f766572795f726573696c69656e63655f746573742e6d6274_0, ["network partition resilience"]),
     1: (__test_6661696c7572655f7265636f766572795f726573696c69656e63655f746573742e6d6274_1, ["exporter failure recovery"]),
