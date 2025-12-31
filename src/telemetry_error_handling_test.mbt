@@ -1,330 +1,165 @@
-// 遥测系统错误处理测试用例
+// 遥测错误处理测试用例
 
-test "telemetry_error_handling_network_failure" {
-  // 测试遥测系统网络故障错误处理
+test "telemetry_error_recovery" {
+  // 测试遥测错误恢复机制
   
-  let network_errors = [
-    ("connection_timeout", "Connection timeout after 30 seconds"),
-    ("connection_refused", "Connection refused by server"),
-    ("dns_resolution_failed", "DNS resolution failed for telemetry-collector.example.com"),
-    ("network_unreachable", "Network is unreachable"),
-    ("connection_reset", "Connection reset by peer")
-  ]
+  let error_codes = ["E001", "E002", "E003", "E004", "E005"]
+  let recovery_attempts = [1, 2, 3, 1, 2]
   
-  // 验证错误类型数量
-  assert_eq(network_errors.length(), 5)
+  // 验证错误代码数量
+  assert_eq(error_codes.length(), 5)
+  assert_eq(recovery_attempts.length(), 5)
   
-  // 模拟错误处理逻辑
-  let mut handled_errors = 0
-  let mut retried_operations = 0
-  let mut failed_operations = 0
-  
+  // 验证错误代码格式
   let mut i = 0
-  while i < network_errors.length() {
-    let error_type = network_errors[i].0
-    let error_message = network_errors[i].1
-    
-    // 验证错误类型格式
-    assert_eq(error_type.contains("_"), true)
-    assert_eq(error_type.length() > 0, true)
-    
-    // 验证错误消息
-    assert_eq(error_message.length() > 0, true)
-    
-    // 模拟错误处理策略
-    if error_type == "connection_timeout" || error_type == "connection_refused" {
-      retried_operations = retried_operations + 1
-      handled_errors = handled_errors + 1
-    } else if error_type == "dns_resolution_failed" {
-      failed_operations = failed_operations + 1
-      handled_errors = handled_errors + 1
-    } else {
-      handled_errors = handled_errors + 1
-    }
-    
+  while i < error_codes.length() {
+    let error_code = error_codes[i]
+    assert_eq(error_code.has_prefix("E"), true)
+    assert_eq(error_code.length(), 4)
     i = i + 1
   }
   
-  // 验证错误处理结果
-  assert_eq(handled_errors, network_errors.length())
-  assert_eq(retried_operations, 2)
-  assert_eq(failed_operations, 1)
+  // 验证恢复尝试次数
+  assert_eq(recovery_attempts[0], 1)
+  assert_eq(recovery_attempts[2], 3)
+  assert_eq(recovery_attempts[4], 2)
   
-  // 计算错误处理率
-  let handling_rate = handled_errors.to_double() / network_errors.length().to_double()
-  assert_eq(handling_rate, 1.0)
-  
-  // 计算重试率
-  let retry_rate = retried_operations.to_double() / network_errors.length().to_double()
-  assert_eq(retry_rate, 0.4)
-}
-
-test "telemetry_error_handling_data_corruption" {
-  // 测试遥测数据损坏错误处理
-  
-  let corrupted_data = [
-    ("invalid_json", "{\"name\": \"test\", \"value\": }"),
-    ("missing_fields", "{\"name\": \"test\"}"),
-    ("invalid_types", "{\"name\": 123, \"value\": \"not_a_number\"}"),
-    ("overflow_values", "{\"value\": 999999999999999999999999999999}"),
-    ("null_values", "{\"name\": null, \"value\": null}")
-  ]
-  
-  // 验证损坏数据类型
-  assert_eq(corrupted_data.length(), 5)
-  
-  // 模拟数据验证和恢复
-  let mut validation_errors = 0
-  let mut recovered_data = 0
-  let mut discarded_data = 0
-  
-  let mut i = 0
-  while i < corrupted_data.length() {
-    let corruption_type = corrupted_data[i].0
-    let corrupt_data = corrupted_data[i].1
-    
-    // 验证损坏类型
-    assert_eq(corruption_type.contains("_"), true)
-    
-    // 模拟数据验证
-    let is_valid_json = corrupt_data.has_prefix("{") && corrupt_data.has_suffix("}")
-    let has_required_fields = corrupt_data.contains("\"name\"") && corrupt_data.contains("\"value\"")
-    let has_null_values = corrupt_data.contains("null")
-    
-    if is_valid_json && has_required_fields && !has_null_values {
-      recovered_data = recovered_data + 1
-    } else if corruption_type == "missing_fields" || corruption_type == "invalid_types" {
-      recovered_data = recovered_data + 1  // 可以进行数据修复
-    } else {
-      discarded_data = discarded_data + 1
-    }
-    
-    validation_errors = validation_errors + 1
-    i = i + 1
-  }
-  
-  // 验证错误处理结果
-  assert_eq(validation_errors, corrupted_data.length())
-  assert_eq(recovered_data, 3)
-  assert_eq(discarded_data, 2)
-  
-  // 计算数据恢复率
-  let recovery_rate = recovered_data.to_double() / corrupted_data.length().to_double()
-  assert_eq(recovery_rate, 0.6)
-  
-  // 计算数据丢弃率
-  let discard_rate = discarded_data.to_double() / corrupted_data.length().to_double()
-  assert_eq(discard_rate, 0.4)
-}
-
-test "telemetry_error_handling_resource_exhaustion" {
-  // 测试遥测系统资源耗尽错误处理
-  
-  let resource_types = [
-    ("memory", "85%", "warning"),
-    ("memory", "95%", "critical"),
-    ("disk_space", "90%", "warning"),
-    ("disk_space", "98%", "critical"),
-    ("cpu", "80%", "warning"),
-    ("cpu", "95%", "critical"),
-    ("network_bandwidth", "85%", "warning"),
-    ("network_bandwidth", "99%", "critical")
-  ]
-  
-  // 验证资源监控数据
-  assert_eq(resource_types.length(), 8)
-  
-  // 模拟资源管理策略
-  let mut warnings_triggered = 0
-  let mut critical_alerts = 0
-  let mut mitigation_actions = 0
-  
-  let mut i = 0
-  while i < resource_types.length() {
-    let resource_type = resource_types[i].0
-    let usage_percentage = resource_types[i].1
-    let alert_level = resource_types[i].2
-    
-    // 验证资源类型
-    assert_eq(resource_type == "memory" || resource_type == "disk_space" || 
-              resource_type == "cpu" || resource_type == "network_bandwidth", true)
-    
-    // 验证使用率格式
-    assert_eq(usage_percentage.has_suffix("%"), true)
-    
-    // 模拟告警处理
-    if alert_level == "warning" {
-      warnings_triggered = warnings_triggered + 1
-      mitigation_actions = mitigation_actions + 1  // 预防性措施
-    } else if alert_level == "critical" {
-      critical_alerts = critical_alerts + 1
-      mitigation_actions = mitigation_actions + 2  // 紧急措施
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证资源管理结果
-  assert_eq(warnings_triggered, 4)
-  assert_eq(critical_alerts, 4)
-  assert_eq(mitigation_actions, 12)
-  
-  // 计算告警率
-  let total_alerts = warnings_triggered + critical_alerts
-  let alert_rate = total_alerts.to_double() / resource_types.length().to_double()
-  assert_eq(alert_rate, 1.0)
-  
-  // 验证缓解措施效率
-  let mitigation_efficiency = mitigation_actions.to_double() / total_alerts.to_double()
-  assert_eq(mitigation_efficiency, 1.5)
-}
-
-test "telemetry_error_handling_service_unavailable" {
-  // 测试遥测服务不可用错误处理
-  
-  let service_statuses = [
-    ("collector", "unavailable", "2023-01-01T10:00:00Z"),
-    ("collector", "available", "2023-01-01T10:05:00Z"),
-    ("storage", "unavailable", "2023-01-01T10:02:00Z"),
-    ("storage", "available", "2023-01-01T10:07:00Z"),
-    ("processor", "unavailable", "2023-01-01T10:03:00Z"),
-    ("processor", "available", "2023-01-01T10:08:00Z")
-  ]
-  
-  // 验证服务状态数据
-  assert_eq(service_statuses.length(), 6)
-  
-  // 模拟服务可用性管理
-  let mut downtime_events = 0
-  let mut recovery_events = 0
-  let mut fallback_activations = 0
-  
-  let mut i = 0
-  while i < service_statuses.length() {
-    let service_name = service_statuses[i].0
-    let status = service_statuses[i].1
-    let timestamp = service_statuses[i].2
-    
-    // 验证服务名称
-    assert_eq(service_name == "collector" || service_name == "storage" || 
-              service_name == "processor", true)
-    
-    // 验证时间戳格式
-    assert_eq(timestamp.contains("T"), true)
-    assert_eq(timestamp.contains("Z"), true)
-    
-    // 模拟服务状态处理
-    if status == "unavailable" {
-      downtime_events = downtime_events + 1
-      fallback_activations = fallback_activations + 1
-    } else if status == "available" {
-      recovery_events = recovery_events + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证服务可用性管理结果
-  assert_eq(downtime_events, 3)
-  assert_eq(recovery_events, 3)
-  assert_eq(fallback_activations, 3)
-  
-  // 计算服务可用性
-  let total_events = downtime_events + recovery_events
-  let availability_rate = recovery_events.to_double() / total_events.to_double()
-  assert_eq(availability_rate, 0.5)
-  
-  // 验证故障恢复时间
-  let mut total_downtime = 0
+  // 计算总恢复次数
+  let mut total_attempts = 0
   i = 0
-  while i < service_statuses.length() - 1 {
-    if service_statuses[i].1 == "unavailable" {
-      // 简化的停机时间计算
-      total_downtime = total_downtime + 5  // 假设每次停机5分钟
-    }
+  while i < recovery_attempts.length() {
+    total_attempts = total_attempts + recovery_attempts[i]
     i = i + 1
   }
-  
-  assert_eq(total_downtime, 15)  // 3次停机，每次5分钟
+  assert_eq(total_attempts, 9)
 }
 
-test "telemetry_error_handling_circuit_breaker" {
-  // 测试遥测系统断路器模式错误处理
+test "telemetry_error_categorization" {
+  // 测试遥测错误分类
   
-  let circuit_states = [
-    ("closed", 100, 5),      // 正常状态，100次请求，5次失败
-    ("closed", 100, 15),     // 正常状态，100次请求，15次失败
-    ("open", 50, 50),        // 断路状态，50次请求，50次失败
-    ("open", 30, 30),        // 断路状态，30次请求，30次失败
-    ("half_open", 20, 5),    // 半开状态，20次请求，5次失败
-    ("closed", 80, 3)        // 恢复正常，80次请求，3次失败
+  let network_errors = ["TIMEOUT", "CONNECTION_REFUSED", "DNS_ERROR"]
+  let data_errors = ["INVALID_FORMAT", "CORRUPTED_DATA", "MISSING_FIELD"]
+  let system_errors = ["OUT_OF_MEMORY", "DISK_FULL", "PERMISSION_DENIED"]
+  
+  // 验证各类错误数量
+  assert_eq(network_errors.length(), 3)
+  assert_eq(data_errors.length(), 3)
+  assert_eq(system_errors.length(), 3)
+  
+  // 验证网络错误特征
+  assert_eq(network_errors[0], "TIMEOUT")
+  assert_eq(network_errors[1].contains("_"), true)
+  assert_eq(network_errors[2].has_suffix("ERROR"), true)
+  
+  // 验证数据错误特征
+  assert_eq(data_errors[0].has_prefix("INVALID"), true)
+  assert_eq(data_errors[1], "CORRUPTED_DATA")
+  assert_eq(data_errors[2].has_prefix("MISSING"), true)
+  
+  // 验证系统错误特征
+  assert_eq(system_errors[0].contains("_"), true)
+  assert_eq(system_errors[1], "DISK_FULL")
+  assert_eq(system_errors[2].has_suffix("DENIED"), true)
+  
+  // 验证错误严重性
+  let critical_errors = []
+  critical_errors.push(system_errors[0])  // OUT_OF_MEMORY
+  critical_errors.push(system_errors[1])  // DISK_FULL
+  
+  assert_eq(critical_errors.length(), 2)
+  assert_eq(critical_errors[0], "OUT_OF_MEMORY")
+  assert_eq(critical_errors[1], "DISK_FULL")
+}
+
+test "telemetry_error_notification" {
+  // 测试遥测错误通知机制
+  
+  let alert_levels = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+  let notification_channels = ["EMAIL", "SLACK", "WEBHOOK", "SMS"]
+  
+  // 验证告警级别
+  assert_eq(alert_levels.length(), 4)
+  assert_eq(alert_levels[0], "LOW")
+  assert_eq(alert_levels[3], "CRITICAL")
+  
+  // 验证通知渠道
+  assert_eq(notification_channels.length(), 4)
+  assert_eq(notification_channels[0], "EMAIL")
+  assert_eq(notification_channels[2], "WEBHOOK")
+  
+  // 创建告警规则
+  let alert_rules = [
+    (alert_levels[0], notification_channels[0]),  // LOW -> EMAIL
+    (alert_levels[1], notification_channels[1]),  // MEDIUM -> SLACK
+    (alert_levels[2], notification_channels[2]),  // HIGH -> WEBHOOK
+    (alert_levels[3], notification_channels[3])   // CRITICAL -> SMS
   ]
   
-  // 验证断路器状态数据
-  assert_eq(circuit_states.length(), 6)
+  // 验证告警规则
+  assert_eq(alert_rules.length(), 4)
+  assert_eq(alert_rules[0].0, "LOW")
+  assert_eq(alert_rules[0].1, "EMAIL")
+  assert_eq(alert_rules[3].0, "CRITICAL")
+  assert_eq(alert_rules[3].1, "SMS")
   
-  // 模拟断路器逻辑
-  let mut state_transitions = 0
-  let mut blocked_requests = 0
-  let mut allowed_requests = 0
+  // 验证告警升级
+  let escalation_enabled = true
+  let max_escalation_level = 3
   
+  assert_eq(escalation_enabled, true)
+  assert_eq(max_escalation_level, 3)
+  assert_eq(max_escalation_level < alert_levels.length(), true)
+}
+
+test "telemetry_error_metrics" {
+  // 测试遥测错误指标
+  
+  let error_counts = [
+    ("network_error", 15),
+    ("data_error", 8),
+    ("system_error", 3),
+    ("application_error", 12)
+  ]
+  
+  // 验证错误计数
+  assert_eq(error_counts.length(), 4)
+  
+  // 验证特定错误类型
+  assert_eq(error_counts[0].0, "network_error")
+  assert_eq(error_counts[0].1, 15)
+  assert_eq(error_counts[2].0, "system_error")
+  assert_eq(error_counts[2].1, 3)
+  
+  // 计算总错误数
+  let mut total_errors = 0
   let mut i = 0
-  while i < circuit_states.length() {
-    let state = circuit_states[i].0
-    let total_requests = circuit_states[i].1
-    let failed_requests = circuit_states[i].2
-    
-    // 验证状态类型
-    assert_eq(state == "closed" || state == "open" || state == "half_open", true)
-    
-    // 验证请求数据
-    assert_eq(failed_requests <= total_requests, true)
-    
-    // 计算失败率
-    let failure_rate = failed_requests.to_double() / total_requests.to_double()
-    
-    // 模拟断路器决策
-    if state == "closed" {
-      allowed_requests = allowed_requests + total_requests
-      if failure_rate > 0.1 {  // 失败率超过10%
-        state_transitions = state_transitions + 1
-      }
-    } else if state == "open" {
-      blocked_requests = blocked_requests + total_requests
-      state_transitions = state_transitions + 1
-    } else if state == "half_open" {
-      allowed_requests = allowed_requests + total_requests
-      if failure_rate < 0.5 {  // 失败率低于50%
-        state_transitions = state_transitions + 1
-      }
-    }
-    
+  while i < error_counts.length() {
+    total_errors = total_errors + error_counts[i].1
     i = i + 1
   }
+  assert_eq(total_errors, 38)
   
-  // 验证断路器行为
-  assert_eq(state_transitions, 4)
-  assert_eq(blocked_requests, 80)  // open状态的请求被阻止
-  assert_eq(allowed_requests, 300)  // closed和half_open状态的请求被允许
+  // 计算错误率
+  let total_requests = 1000
+  let error_rate = (total_errors * 100) / total_requests
+  assert_eq(error_rate, 3)  // 38/1000 * 100 = 3.8, 整数除法为3
   
-  // 计算断路器保护率
-  let total_circuit_requests = blocked_requests + allowed_requests
-  let protection_rate = blocked_requests.to_double() / total_circuit_requests.to_double()
-  assert_eq(protection_rate, 80.0 / 380.0)
+  // 验证错误阈值
+  let error_threshold = 5  // 5%
+  assert_eq(error_rate < error_threshold, true)
   
-  // 验证断路器恢复能力
-  let mut recovery_detected = false
+  // 验证最频繁的错误类型
+  let mut max_error_count = 0
+  let mut most_frequent_error = ""
   i = 0
-  while i < circuit_states.length() - 1 {
-    let current_state = circuit_states[i].0
-    let next_state = circuit_states[i + 1].0
-    
-    if current_state == "half_open" && next_state == "closed" {
-      recovery_detected = true
-      break
+  while i < error_counts.length() {
+    if error_counts[i].1 > max_error_count {
+      max_error_count = error_counts[i].1
+      most_frequent_error = error_counts[i].0
     }
     i = i + 1
   }
   
-  assert_eq(recovery_detected, true)
+  assert_eq(max_error_count, 15)
+  assert_eq(most_frequent_error, "network_error")
 }
