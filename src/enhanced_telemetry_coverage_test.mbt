@@ -186,42 +186,35 @@ test "telemetry_error_handling_resilience" {
 test "telemetry_resource_utilization_monitoring" {
   // 测试遥测资源利用率监控
   
-  let resource_metrics = {
-    "memory_usage_mb": 512,
-    "cpu_usage_percent": 65.5,
-    "disk_usage_gb": 120.8,
-    "network_io_mb": 1024.5,
-    "open_file_descriptors": 256
-  }
+  let memory_usage_mb = 512
+  let cpu_usage_percent = 65.5
+  let disk_usage_gb = 120.8
+  let network_io_mb = 1024.5
+  let open_file_descriptors = 256
   
   // 验证内存使用
-  let memory_usage = resource_metrics["memory_usage_mb"].to_int()
-  assert_eq(memory_usage > 0, true)
-  assert_eq(memory_usage < 8192, true)
+  assert_eq(memory_usage_mb > 0, true)
+  assert_eq(memory_usage_mb < 8192, true)
   
   // 验证CPU使用率
-  let cpu_usage = resource_metrics["cpu_usage_percent"].to_double()
-  assert_eq(cpu_usage >= 0.0, true)
-  assert_eq(cpu_usage <= 100.0, true)
+  assert_eq(cpu_usage_percent >= 0.0, true)
+  assert_eq(cpu_usage_percent <= 100.0, true)
   
   // 验证磁盘使用
-  let disk_usage = resource_metrics["disk_usage_gb"].to_double()
-  assert_eq(disk_usage > 0.0, true)
-  assert_eq(disk_usage < 10000.0, true)
+  assert_eq(disk_usage_gb > 0.0, true)
+  assert_eq(disk_usage_gb < 10000.0, true)
   
   // 验证网络IO
-  let network_io = resource_metrics["network_io_mb"].to_double()
-  assert_eq(network_io >= 0.0, true)
+  assert_eq(network_io_mb >= 0.0, true)
   
   // 验证文件描述符
-  let file_descriptors = resource_metrics["open_file_descriptors"].to_int()
-  assert_eq(file_descriptors > 0, true)
-  assert_eq(file_descriptors < 65536, true)
+  assert_eq(open_file_descriptors > 0, true)
+  assert_eq(open_file_descriptors < 65536, true)
   
   // 验证资源阈值
-  assert_eq(memory_usage < 1024, true)  // 内存使用不超过1GB
-  assert_eq(cpu_usage < 80.0, true)     // CPU使用率不超过80%
-  assert_eq(file_descriptors < 1000, true)  // 文件描述符不超过1000
+  assert_eq(memory_usage_mb < 1024, true)  // 内存使用不超过1GB
+  assert_eq(cpu_usage_percent < 80.0, true)     // CPU使用率不超过80%
+  assert_eq(open_file_descriptors < 1000, true)  // 文件描述符不超过1000
 }
 
 test "telemetry_data_aggregation_windowing" {
@@ -280,25 +273,29 @@ test "telemetry_data_aggregation_windowing" {
 test "telemetry_cross_service_correlation" {
   // 测试跨服务遥测关联
   
-  let service_chain = [
-    ("api-gateway", "span-001", "HTTP POST /api/v1/data"),
-    ("auth-service", "span-002", "JWT validation"),
-    ("user-service", "span-003", "User profile lookup"),
-    ("data-service", "span-004", "Database query execution"),
-    ("cache-service", "span-005", "Redis cache check")
+  let service_names = ["api-gateway", "auth-service", "user-service", "data-service", "cache-service"]
+  let span_ids = ["span-001", "span-002", "span-003", "span-004", "span-005"]
+  let operations = [
+    "HTTP POST /api/v1/data",
+    "JWT validation",
+    "User profile lookup",
+    "Database query execution",
+    "Redis cache check"
   ]
   
   let correlation_id = "corr-123456789"
   let request_id = "req-abcdef987"
   
   // 验证服务链
-  assert_eq(service_chain.length(), 5)
+  assert_eq(service_names.length(), 5)
+  assert_eq(span_ids.length(), 5)
+  assert_eq(operations.length(), 5)
   
   let mut i = 0
-  while i < service_chain.length() {
-    let service_name = service_chain[i].0
-    let span_id = service_chain[i].1
-    let operation = service_chain[i].2
+  while i < service_names.length() {
+    let service_name = service_names[i]
+    let span_id = span_ids[i]
+    let operation = operations[i]
     
     // 验证服务名称
     assert_eq(service_name.has_suffix("-service"), true)
