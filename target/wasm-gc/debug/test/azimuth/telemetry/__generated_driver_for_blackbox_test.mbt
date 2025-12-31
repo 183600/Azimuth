@@ -215,6 +215,12 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_74656c656d657472795f646174615f76616c69646174696f6e5f746573742e6d6274_1, ["data_validation_span_id_format"]),
     2: (__test_74656c656d657472795f646174615f76616c69646174696f6e5f746573742e6d6274_2, ["data_validation_attribute_values"]),
   },
+  "telemetry_data_aggregation_test.mbt": {
+    0: (__test_74656c656d657472795f646174615f6167677265676174696f6e5f746573742e6d6274_0, ["telemetry_counter_aggregation"]),
+    1: (__test_74656c656d657472795f646174615f6167677265676174696f6e5f746573742e6d6274_1, ["telemetry_histogram_aggregation"]),
+    2: (__test_74656c656d657472795f646174615f6167677265676174696f6e5f746573742e6d6274_2, ["telemetry_gauge_aggregation"]),
+    3: (__test_74656c656d657472795f646174615f6167677265676174696f6e5f746573742e6d6274_3, ["telemetry_time_series_aggregation"]),
+  },
   "telemetry_cross_platform_compatibility_test.mbt": {
     0: (__test_74656c656d657472795f63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_0, ["cross_platform_time_handling"]),
     1: (__test_74656c656d657472795f63726f73735f706c6174666f726d5f636f6d7061746962696c6974795f746573742e6d6274_1, ["cross_platform_file_path_handling"]),
