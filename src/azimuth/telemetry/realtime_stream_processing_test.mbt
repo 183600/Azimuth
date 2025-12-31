@@ -1,294 +1,500 @@
-// 实时流处理测试用例
+// 遥测数据实时流处理测试
+// 测试遥测系统在高并发实时数据流场景下的处理能力
 
-test "real_time_stream_processing_pipeline" {
-  // 测试实时流处理管道
+test "realtime_stream_processing_high_throughput" {
+  // 测试高吞吐量实时流处理
   
-  let pipeline_stages = ["ingestion", "parsing", "enrichment", "filtering", "aggregation", "export"]
-  let stage_throughput = [10000, 9500, 9000, 8500, 8000, 7500] // 每秒处理事件数
+  let stream_buffer_size = 10000
+  let processing_batch_size = 100
+  let base_timestamp = 1640995200000000000L
   
-  // 验证管道阶段
-  assert_eq(pipeline_stages.length(), 6)
-  assert_eq(pipeline_stages[0], "ingestion")
-  assert_eq(pipeline_stages[5], "export")
-  
-  // 验证阶段吞吐量
-  assert_eq(stage_throughput.length(), 6)
-  assert_eq(stage_throughput[0], 10000) // 接入阶段吞吐量最高
-  assert_eq(stage_throughput[5], 7500)  // 导出阶段吞吐量最低
-  
-  // 计算管道整体吞吐量（瓶颈阶段决定）
-  let mut min_throughput = stage_throughput[0]
-  let mut bottleneck_stage = pipeline_stages[0]
-  
-  let mut i = 1
-  while i < stage_throughput.length() {
-    if stage_throughput[i] < min_throughput {
-      min_throughput = stage_throughput[i]
-      bottleneck_stage = pipeline_stages[i]
-    }
-    i = i + 1
-  }
-  
-  // 验证瓶颈识别
-  assert_eq(min_throughput, 7500)
-  assert_eq(bottleneck_stage, "export")
-  
-  // 模拟流数据事件
-  let stream_events = []
-  let mut event_id = 50000
+  // 模拟实时数据流
+  let telemetry_stream = []
   let mut i = 0
-  while i < 1000 {
-    let event = "stream_event_" + event_id.to_string() + "_timestamp_" + i.to_string()
-    stream_events.push(event)
-    event_id = event_id + 1
-    i = i + 1
-  }
   
-  // 验证流事件
-  assert_eq(stream_events.length(), 1000)
-  assert_eq(stream_events[0], "stream_event_50000_timestamp_0")
-  assert_eq(stream_events[999], "stream_event_50999_timestamp_999")
-  
-  // 计算处理时间
-  let total_events = stream_events.length().to_double()
-  let processing_time = total_events / min_throughput.to_double() // 秒
-  
-  // 验证处理时间
-  assert_eq(processing_time, 0.13333333333333333) // 1000 / 7500 = 0.133秒
-}
-
-test "windowed_stream_aggregation" {
-  // 测试窗口化流聚合
-  
-  let window_types = ["tumbling", "sliding", "session", "global"]
-  let window_sizes = [60, 300, 900, 3600] // 秒
-  
-  // 验证窗口类型
-  assert_eq(window_types.length(), 4)
-  assert_eq(window_types[0], "tumbling")
-  assert_eq(window_types[3], "global")
-  
-  // 验证窗口大小
-  assert_eq(window_sizes.length(), 4)
-  assert_eq(window_sizes[0], 60)   // 1分钟
-  assert_eq(window_sizes[3], 3600) // 1小时
-  
-  // 模拟带时间戳的流数据
-  let timed_events = []
-  let mut base_timestamp = 1640995200L // 基准时间戳
-  let mut i = 0
-  while i < 500 {
-    let timestamp = base_timestamp + (i * 10L) // 每10秒一个事件
-    let value = i.to_double() * 1.5
-    timed_events.push((timestamp, value))
-    i = i + 1
-  }
-  
-  // 验证时间事件
-  assert_eq(timed_events.length(), 500)
-  assert_eq(timed_events[0].0, 1640995200L)
-  assert_eq(timed_events[499].0, 1640995200L + 4990L)
-  
-  // 计算1分钟窗口的聚合
-  let window_1m = 60 // 1分钟窗口
-  let window_count = 6 // 6个1分钟窗口
-  
-  // 模拟窗口聚合结果
-  let window_aggregates = []
-  let mut window_start = base_timestamp
-  
-  let mut i = 0
-  while i < window_count {
-    let window_end = window_start + window_1m.to_long()
-    let mut window_sum = 0.0
-    let mut window_event_count = 0
+  while i < stream_buffer_size {
+    // 创建不同类型的遥测数据
+    let data_type = i % 3
     
-    // 计算窗口内的数据
-    let mut j = 0
-    while j < timed_events.length() {
-      let event_timestamp = timed_events[j].0
-      let event_value = timed_events[j].1
-      
-      if event_timestamp >= window_start && event_timestamp < window_end {
-        window_sum = window_sum + event_value
-        window_event_count = window_event_count + 1
+    match data_type {
+      0 => {
+        // Span数据
+        let span = trace::Span::{
+          name: "realtime_operation_" + i.to_string(),
+          context: trace::SpanContext::{
+            trace_id: [for j = 0; j < 16; j = j + 1].map(fn(j) { ((i + j) % 256) |> byte }),
+            span_id: [for j = 0; j < 8; j = j + 1].map(fn(j) { ((i * 2 + j) % 256) |> byte }),
+            trace_flags: 1_byte,
+            trace_state: "sampled=1"
+          },
+          kind: trace::Internal,
+          parent_span_id: None,
+          start_time_unix_nanos: base_timestamp + (i.to_int64() * 1000000L),
+          end_time_unix_nanos: Some(base_timestamp + (i.to_int64() * 1000000L) + 50000000L),
+          status: trace::Ok,
+          status_description: None,
+          attributes: [
+            ("stream.index", common::AttributeValue::int(i.to_int64())),
+            ("stream.type", common::AttributeValue::string("realtime")),
+            ("processing.priority", common::AttributeValue::int((i % 5).to_int64()))
+          ],
+          events: [],
+          links: []
+        }
+        telemetry_stream.push(("span", span))
       }
+      1 => {
+        // Metric数据
+        let metric = metrics::MetricData::{
+          name: "realtime_metric_" + (i % 10).to_string(),
+          description: "Realtime metric for stream processing",
+          unit: "operations",
+          metric_type: metrics::Counter,
+          data: metrics::CounterData::{
+            value: i.to_int64(),
+            attributes: [
+              ("stream.batch", common::AttributeValue::string("batch_" + (i / 100).to_string())),
+              ("stream.priority", common::AttributeValue::string("priority_" + (i % 3).to_string()))
+            ]
+          },
+          timestamp_unix_nanos: base_timestamp + (i.to_int64() * 1000000L)
+        }
+        telemetry_stream.push(("metric", metric))
+      }
+      2 => {
+        // Log数据
+        let log = logs::LogRecord::{
+          timestamp_unix_nanos: base_timestamp + (i.to_int64() * 1000000L),
+          observed_timestamp_unix_nanos: Some(base_timestamp + (i.to_int64() * 1000000L) + 100000L),
+          severity_number: logs::Info,
+          severity_text: Some("INFO"),
+          body: Some("Realtime log message " + i.to_string()),
+          attributes: [
+            ("log.stream_id", common::AttributeValue::string("stream_" + (i % 50).to_string())),
+            ("log.sequence", common::AttributeValue::int(i.to_int64()))
+          ],
+          trace_id: Some([for j = 0; j < 16; j = j + 1].map(fn(j) { ((i + j) % 256) |> byte })),
+          span_id: Some([for j = 0; j < 8; j = j + 1].map(fn(j) { ((i * 3 + j) % 256) |> byte })),
+          trace_flags: Some(1_byte),
+          resource: Some(common::Resource::default("realtime-stream-service")),
+          instrumentation_scope: Some(common::InstrumentationScope::{
+            name: "realtime-processor",
+            version: Some("1.0.0"),
+            schema_url: None
+          })
+        }
+        telemetry_stream.push(("log", log))
+      }
+      _ => @test.fail("Invalid data type")
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证流数据创建
+  assert_eq(telemetry_stream.length(), stream_buffer_size)
+  
+  // 模拟批处理
+  let processed_batches = []
+  let mut batch_start = 0
+  
+  while batch_start < telemetry_stream.length() {
+    let batch_end = batch_start + processing_batch_size
+    if batch_end > telemetry_stream.length() {
+      batch_end = telemetry_stream.length()
+    }
+    
+    let current_batch = []
+    let mut j = batch_start
+    while j < batch_end {
+      current_batch.push(telemetry_stream[j])
       j = j + 1
     }
     
-    let window_avg = if window_event_count > 0 {
-      window_sum / window_event_count.to_double()
-    } else {
-      0.0
-    }
+    // 模拟批处理逻辑
+    let span_count = current_batch.filter(fn(item) { item.0 == "span" }).length()
+    let metric_count = current_batch.filter(fn(item) { item.0 == "metric" }).length()
+    let log_count = current_batch.filter(fn(item) { item.0 == "log" }).length()
     
-    window_aggregates.push((window_start, window_end, window_event_count, window_avg))
-    window_start = window_end
-    i = i + 1
+    processed_batches.push((span_count, metric_count, log_count))
+    batch_start = batch_start + processing_batch_size
   }
   
-  // 验证窗口聚合
-  assert_eq(window_aggregates.length(), 6)
-  assert_eq(window_aggregates[0].2 > 0, true) // 第一个窗口有事件
-  assert_eq(window_aggregates[0].3 > 0.0, true) // 第一个窗口平均值大于0
+  // 验证批处理结果
+  assert_eq(processed_batches.length(), (stream_buffer_size + processing_batch_size - 1) / processing_batch_size)
+  
+  // 验证数据类型分布
+  let mut total_spans = 0
+  let mut total_metrics = 0
+  let mut total_logs = 0
+  
+  let mut k = 0
+  while k < processed_batches.length() {
+    let (span_count, metric_count, log_count) = processed_batches[k]
+    total_spans = total_spans + span_count
+    total_metrics = total_metrics + metric_count
+    total_logs = total_logs + log_count
+    k = k + 1
+  }
+  
+  assert_eq(total_spans + total_metrics + total_logs, stream_buffer_size)
+  assert_eq(total_spans > 0, true)
+  assert_eq(total_metrics > 0, true)
+  assert_eq(total_logs > 0, true)
 }
 
-test "stream_filtering_and_routing" {
-  // 测试流过滤和路由
+test "realtime_stream_processing_backpressure" {
+  // 测试实时流处理的背压控制
   
-  let filter_types = ["attribute", "threshold", "pattern", "time_based"]
-  let route_destinations = ["high_priority", "normal_priority", "archive", "alert"]
+  let max_queue_size = 5000
+  let high_watermark = 4000
+  let low_watermark = 1000
+  let production_rate = 100
+  let consumption_rate = 80
   
-  // 验证过滤器类型
-  assert_eq(filter_types.length(), 4)
-  assert_eq(filter_types[0], "attribute")
-  assert_eq(filter_types[3], "time_based")
+  // 模拟生产者-消费者模式
+  let telemetry_queue = []
+  let mut produced_count = 0
+  let mut consumed_count = 0
+  let mut backpressure_active = false
+  let mut dropped_messages = 0
   
-  // 验证路由目标
-  assert_eq(route_destinations.length(), 4)
-  assert_eq(route_destinations[0], "high_priority")
-  assert_eq(route_destinations[3], "alert")
-  
-  // 模拟流事件属性
-  let stream_data = [
-    ("event_1", "error", 500, 1640995200L),
-    ("event_2", "info", 200, 1640995210L),
-    ("event_3", "warning", 400, 1640995220L),
-    ("event_4", "error", 503, 1640995230L),
-    ("event_5", "info", 200, 1640995240L)
-  ]
-  
-  // 验证流数据
-  assert_eq(stream_data.length(), 5)
-  assert_eq(stream_data[0].0, "event_1")
-  assert_eq(stream_data[0].1, "error")
-  assert_eq(stream_data[0].2, 500)
-  
-  // 应用过滤器：错误级别事件
-  let error_events = []
-  let mut i = 0
-  while i < stream_data.length() {
-    if stream_data[i].1 == "error" {
-      error_events.push(stream_data[i])
+  // 模拟生产过程
+  let mut production_cycles = 0
+  while production_cycles < 100 {
+    let mut i = 0
+    while i < production_rate {
+      // 检查背压
+      if telemetry_queue.length() >= high_watermark {
+        backpressure_active = true
+        // 在背压状态下丢弃部分消息
+        if telemetry_queue.length() >= max_queue_size {
+          dropped_messages = dropped_messages + 1
+        } else {
+          let telemetry_item = ("data_" + (produced_count + i).to_string(), 
+                               common::AttributeValue::int((produced_count + i).to_int64()))
+          telemetry_queue.push(telemetry_item)
+        }
+      } else {
+        backpressure_active = false
+        let telemetry_item = ("data_" + (produced_count + i).to_string(), 
+                             common::AttributeValue::int((produced_count + i).to_int64()))
+        telemetry_queue.push(telemetry_item)
+      }
+      i = i + 1
     }
-    i = i + 1
+    
+    produced_count = produced_count + production_rate
+    
+    // 模拟消费过程
+    let mut j = 0
+    while j < consumption_rate && telemetry_queue.length() > 0 {
+      telemetry_queue.pop_front()
+      consumed_count = consumed_count + 1
+      j = j + 1
+    }
+    
+    // 检查背压恢复
+    if backpressure_active && telemetry_queue.length() <= low_watermark {
+      backpressure_active = false
+    }
+    
+    production_cycles = production_cycles + 1
   }
   
-  // 验证错误事件过滤
-  assert_eq(error_events.length(), 2)
-  assert_eq(error_events[0].0, "event_1")
-  assert_eq(error_events[1].0, "event_4")
+  // 验证背压控制效果
+  assert_eq(produced_count, 100 * production_rate)
+  assert_eq(consumed_count > 0, true)
+  assert_eq(dropped_messages >= 0, true)
+  assert_eq(telemetry_queue.length() <= max_queue_size, true)
   
-  // 应用阈值过滤器：状态码 >= 400
-  let high_status_events = []
-  i = 0
-  while i < stream_data.length() {
-    if stream_data[i].2 >= 400 {
-      high_status_events.push(stream_data[i])
-    }
-    i = i + 1
-  }
-  
-  // 验证高状态码事件
-  assert_eq(high_status_events.length(), 3)
-  assert_eq(high_status_events[0].1, "error")
-  assert_eq(high_status_events[1].1, "warning")
-  assert_eq(high_status_events[2].1, "error")
-  
-  // 路由决策
-  let routed_events = []
-  i = 0
-  while i < stream_data.length() {
-    let event = stream_data[i]
-    let destination = if event.1 == "error" {
-      "alert"
-    } else if event.2 >= 400 {
-      "high_priority"
-    } else {
-      "normal_priority"
-    }
-    routed_events.push(event, destination)
-    i = i + 1
-  }
-  
-  // 验证路由结果
-  assert_eq(routed_events.length(), 5)
-  assert_eq(routed_events[0].1, "alert")    // event_1是错误
-  assert_eq(routed_events[1].1, "normal_priority") // event_2是正常
-  assert_eq(routed_events[2].1, "high_priority")   // event_3是警告
+  // 验证背压状态切换
+  assert_eq(backpressure_active == (telemetry_queue.length() > low_watermark), true)
 }
 
-test "stream_backpressure_handling" {
-  // 测试流背压处理
+test "realtime_stream_processing_windowing" {
+  // 测试实时流处理的时间窗口
   
-  let backpressure_strategies = ["drop", "buffer", "throttle", "replicate"]
-  let buffer_sizes = [1000, 5000, 10000, 50000]
+  let window_size_ms = 1000L  // 1秒窗口
+  let sliding_interval_ms = 200L  // 200ms滑动间隔
+  let total_duration_ms = 5000L  // 5秒总持续时间
+  let event_rate = 50  // 每秒50个事件
   
-  // 验证背压策略
-  assert_eq(backpressure_strategies.length(), 4)
-  assert_eq(backpressure_strategies[0], "drop")
-  assert_eq(backpressure_strategies[3], "replicate")
+  let base_time = 1640995200000L  // 毫秒时间戳
+  let total_events = (total_duration_ms / 1000L) * event_rate.to_int64()
   
-  // 验证缓冲区大小
-  assert_eq(buffer_sizes.length(), 4)
-  assert_eq(buffer_sizes[0], 1000)
-  assert_eq(buffer_sizes[3], 50000)
-  
-  // 模拟生产者和消费者速率
-  let producer_rate = 12000 // 每秒生产12000个事件
-  let consumer_rate = 8000  // 每秒消费8000个事件
-  let rate_difference = producer_rate - consumer_rate
-  
-  // 验证速率差异
-  assert_eq(rate_difference, 4000) // 生产比消费快4000事件/秒
-  
-  // 模拟缓冲区填充
-  let buffer_fill_rates = []
+  // 生成时间序列事件
+  let time_series_events = []
   let mut i = 0
-  while i < buffer_sizes.length() {
-    let buffer_size = buffer_sizes[i]
-    let fill_time = buffer_size.to_double() / rate_difference.to_double()
-    buffer_fill_rates.push((buffer_size, fill_time))
+  
+  while i < total_events.to_int() {
+    let event_time = base_time + (i.to_int64() * 1000L / event_rate.to_int64())
+    let event = (
+      "event_" + i.to_string(),
+      event_time,
+      common::AttributeValue::int(i.to_int64())
+    )
+    time_series_events.push(event)
     i = i + 1
   }
   
-  // 验证缓冲区填充时间
-  assert_eq(buffer_fill_rates.length(), 4)
-  assert_eq(buffer_fill_rates[0].1, 0.25)  // 1000/4000 = 0.25秒填满
-  assert_eq(buffer_fill_rates[3].1, 12.5)  // 50000/4000 = 12.5秒填满
+  // 验证事件生成
+  assert_eq(time_series_events.length(), total_events.to_int())
   
-  // 模拟背压处理效果
-  let strategy_effectiveness = [
-    ("drop", 0.95, 0.05),        // (策略, 吞吐量保持率, 数据丢失率)
-    ("buffer", 0.80, 0.0),
-    ("throttle", 0.67, 0.0),
-    ("replicate", 0.90, 0.0)
-  ]
+  // 滑动窗口处理
+  let sliding_windows = []
+  let mut current_window_start = base_time
   
-  // 验证策略效果
-  assert_eq(strategy_effectiveness.length(), 4)
-  assert_eq(strategy_effectiveness[0].1, 0.95) // drop策略保持95%吞吐量
-  assert_eq(strategy_effectiveness[0].2, 0.05) // 但丢失5%数据
-  assert_eq(strategy_effectiveness[2].1, 0.67) // throttle策略降到67%吞吐量
-  
-  // 选择最优策略
-  let mut best_strategy = strategy_effectiveness[0]
-  let mut max_score = 0.0
-  
-  let mut i = 0
-  while i < strategy_effectiveness.length() {
-    let strategy = strategy_effectiveness[i]
-    // 综合分数：吞吐量保持率 - 数据丢失率 * 2 (丢失数据的惩罚更高)
-    let score = strategy.1 - strategy.2 * 2.0
+  while current_window_start + window_size_ms <= base_time + total_duration_ms {
+    let window_end = current_window_start + window_size_ms
     
-    if score > max_score {
-      max_score = score
-      best_strategy = strategy
+    // 收集窗口内的事件
+    let window_events = time_series_events.filter(fn(event) {
+      let (_, event_time, _) = event
+      event_time >= current_window_start && event_time < window_end
+    })
+    
+    // 计算窗口统计
+    let event_count = window_events.length()
+    let sum_values = window_events.fold(0L, fn(acc, event) {
+      let (_, _, value) = event
+      match value {
+        common::IntValue(v) => acc + v
+        _ => acc
+      }
+    })
+    
+    let avg_value = if event_count > 0 { 
+      sum_values / event_count.to_int64() 
+    } else { 
+      0L 
     }
+    
+    sliding_windows.push((current_window_start, window_end, event_count, sum_values, avg_value))
+    current_window_start = current_window_start + sliding_interval_ms
+  }
+  
+  // 验证滑动窗口
+  assert_eq(sliding_windows.length() > 0, true)
+  
+  // 验证窗口时间范围
+  let mut j = 0
+  while j < sliding_windows.length() - 1 {
+    let (start1, _, _, _, _) = sliding_windows[j]
+    let (start2, _, _, _, _) = sliding_windows[j + 1]
+    assert_eq(start2 - start1, sliding_interval_ms)
+    j = j + 1
+  }
+  
+  // 验证窗口统计
+  let mut total_windowed_events = 0
+  let mut k = 0
+  while k < sliding_windows.length() {
+    let (_, _, event_count, _, _) = sliding_windows[k]
+    total_windowed_events = total_windowed_events + event_count
+    k = k + 1
+  }
+  
+  assert_eq(total_windowed_events > 0, true)
+}
+
+test "realtime_stream_processing_aggregation" {
+  // 测试实时流处理的聚合功能
+  
+  let aggregation_window_ms = 500L
+  let total_events = 2000
+  let base_time = 1640995200000L
+  
+  // 生成带有多维度属性的事件
+  let multi_dimensional_events = []
+  let mut i = 0
+  
+  while i < total_events {
+    let event_time = base_time + (i.to_int64() * 1000000L)  // 纳秒时间戳
+    
+    let dimensions = [
+      ("service", ["api", "database", "cache", "queue"][i % 4]),
+      ("region", ["us-east", "us-west", "eu-west", "ap-southeast"][i % 4]),
+      ("environment", ["prod", "staging", "dev"][i % 3]),
+      ("operation", ["read", "write", "delete", "update"][i % 4])
+    ]
+    
+    let event = (
+      "metric_" + i.to_string(),
+      event_time,
+      i.to_double() * 1.5,  // 指标值
+      dimensions
+    )
+    multi_dimensional_events.push(event)
     i = i + 1
   }
   
-  // 验证最优策略选择
-  assert_eq(best_strategy.0, "buffer" || best_strategy.0 == "throttle" || best_strategy.0 == "replicate", true)
-  assert_eq(max_score > 0.0, true)
+  // 验证事件生成
+  assert_eq(multi_dimensional_events.length(), total_events)
+  
+  // 按时间窗口和维度聚合
+  let aggregation_results = []
+  let window_count = 10
+  let events_per_window = total_events / window_count
+  
+  let mut window_index = 0
+  while window_index < window_count {
+    let window_start = window_index * events_per_window
+    let window_end = if window_index < window_count - 1 {
+      (window_index + 1) * events_per_window
+    } else {
+      total_events
+    }
+    
+    // 收集窗口内事件
+    let window_events = []
+    let mut j = window_start
+    while j < window_end {
+      window_events.push(multi_dimensional_events[j])
+      j = j + 1
+    }
+    
+    // 按维度分组聚合
+    let dimension_groups = {}
+    
+    let mut k = 0
+    while k < window_events.length() {
+      let (_, _, value, dimensions) = window_events[k]
+      
+      // 创建维度组合键
+      let dimension_key = dimensions.fold("", fn(acc, dim) {
+        let (key, val) = dim
+        acc + key + "=" + val + ";"
+      })
+      
+      // 更新聚合统计
+      if dimension_groups.contains(dimension_key) {
+        let (count, sum, min, max) = dimension_groups[dimension_key]?
+        dimension_groups[dimension_key] = (count + 1, sum + value, 
+                                          if value < min { value } else { min },
+                                          if value > max { value } else { max })
+      } else {
+        dimension_groups[dimension_key] = (1, value, value, value)
+      }
+      
+      k = k + 1
+    }
+    
+    // 计算聚合结果
+    let group_results = []
+    let group_keys = dimension_groups.keys()
+    let mut m = 0
+    while m < group_keys.length() {
+      let key = group_keys[m]
+      let (count, sum, min, max) = dimension_groups[key]?
+      let avg = sum / count.to_double()
+      group_results.push((key, count, sum, min, max, avg))
+      m = m + 1
+    }
+    
+    aggregation_results.push((window_index, group_results))
+    window_index = window_index + 1
+  }
+  
+  // 验证聚合结果
+  assert_eq(aggregation_results.length(), window_count)
+  
+  // 验证每个窗口都有聚合结果
+  let mut n = 0
+  while n < aggregation_results.length() {
+    let (_, group_results) = aggregation_results[n]
+    assert_eq(group_results.length() > 0, true)
+    
+    // 验证聚合统计的正确性
+    let mut o = 0
+    while o < group_results.length() {
+      let (_, count, sum, min, max, avg) = group_results[o]
+      assert_eq(count > 0, true)
+      assert_eq(sum >= 0.0, true)
+      assert_eq(min <= max, true)
+      assert_eq(avg >= min && avg <= max, true)
+      o = o + 1
+    }
+    
+    n = n + 1
+  }
+}
+
+test "realtime_stream_processing_error_recovery" {
+  // 测试实时流处理的错误恢复
+  
+  let total_events = 1000
+  let error_rate = 0.05  // 5%错误率
+  let max_retry_attempts = 3
+  let base_time = 1640995200000L
+  
+  // 模拟处理失败的事件
+  let events_with_errors = []
+  let mut i = 0
+  
+  while i < total_events {
+    let should_fail = (i.to_double() / total_events.to_double()) < error_rate
+    let event = (
+      "event_" + i.to_string(),
+      base_time + (i.to_int64() * 1000000L),
+      should_fail,
+      0  // 重试次数
+    )
+    events_with_errors.push(event)
+    i = i + 1
+  }
+  
+  // 验证事件创建
+  assert_eq(events_with_errors.length(), total_events)
+  
+  // 模拟处理和重试逻辑
+  let processed_events = []
+  let failed_events = []
+  let retry_counts = {}
+  
+  let mut j = 0
+  while j < events_with_errors.length() {
+    let (event_id, timestamp, should_fail, retry_count) = events_with_errors[j]
+    
+    if should_fail && retry_count < max_retry_attempts {
+      // 重试事件
+      let retry_event = (event_id, timestamp, should_fail, retry_count + 1)
+      events_with_errors.push(retry_event)
+      
+      // 记录重试次数
+      let current_count = if retry_counts.contains(event_id) {
+        retry_counts[event_id]?
+      } else {
+        0
+      }
+      retry_counts[event_id] = current_count + 1
+    } else if should_fail && retry_count >= max_retry_attempts {
+      // 最终失败
+      failed_events.push((event_id, timestamp, retry_count))
+    } else {
+      // 成功处理
+      processed_events.push((event_id, timestamp))
+    }
+    
+    j = j + 1
+  }
+  
+  // 验证处理结果
+  assert_eq(processed_events.length() + failed_events.length(), total_events)
+  
+  // 验证重试统计
+  let total_retries = retry_counts.values().fold(0, fn(acc, count) { acc + count })
+  assert_eq(total_retries > 0, true)
+  
+  // 验证失败事件的重试次数
+  let mut k = 0
+  while k < failed_events.length() {
+    let (_, _, retry_count) = failed_events[k]
+    assert_eq(retry_count, max_retry_attempts)
+    k = k + 1
+  }
+  
+  // 验证错误率控制
+  let actual_error_rate = failed_events.length().to_double() / total_events.to_double()
+  assert_eq(actual_error_rate <= error_rate * 2.0, true)  // 允许一定的误差
 }
