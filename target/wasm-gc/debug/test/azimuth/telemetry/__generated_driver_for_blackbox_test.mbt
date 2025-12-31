@@ -3091,6 +3091,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_6170695f636f6e746578745f6f7065726174696f6e735f746573742e6d6274_7, ["context_and_baggage_integration"]),
     8: (__test_6170695f636f6e746578745f6f7065726174696f6e735f746573742e6d6274_8, ["context_value_overwrite_behavior"]),
   },
+  "api_compatibility_enhanced_test.mbt": {
+    0: (__test_6170695f636f6d7061746962696c6974795f656e68616e6365645f746573742e6d6274_0, ["api_version_compatibility_trace"]),
+    1: (__test_6170695f636f6d7061746962696c6974795f656e68616e6365645f746573742e6d6274_1, ["api_version_compatibility_metrics"]),
+    2: (__test_6170695f636f6d7061746962696c6974795f656e68616e6365645f746573742e6d6274_2, ["api_version_compatibility_logs"]),
+    3: (__test_6170695f636f6d7061746962696c6974795f656e68616e6365645f746573742e6d6274_3, ["api_attribute_compatibility"]),
+    4: (__test_6170695f636f6d7061746962696c6974795f656e68616e6365645f746573742e6d6274_4, ["api_data_format_compatibility"]),
+    5: (__test_6170695f636f6d7061746962696c6974795f656e68616e6365645f746573742e6d6274_5, ["api_error_handling_compatibility"]),
+    6: (__test_6170695f636f6d7061746962696c6974795f656e68616e6365645f746573742e6d6274_6, ["api_configuration_compatibility"]),
+  },
   "api_common_attributes_test.mbt": {
     0: (__test_6170695f636f6d6d6f6e5f617474726962757465735f746573742e6d6274_0, ["attribute_value_string_type"]),
     1: (__test_6170695f636f6d6d6f6e5f617474726962757465735f746573742e6d6274_1, ["attribute_value_numeric_types"]),
