@@ -7,5 +7,6 @@
   "authors": [
     "Azimuth Team"
   ],
-  "source": "src"
+  "source": "src",
+  "test": ["new_tests"]
 }

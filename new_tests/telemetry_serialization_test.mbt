@@ -8,7 +8,7 @@ test "telemetry_data_serialization_json" {
   let metric_timestamp = 1672531200  // 2023-01-01 00:00:00
   
   // 构建JSON格式的遥测数据
-  let json_data = "{"
+  let mut json_data = "{"
   json_data = json_data + "\"name\":\"" + metric_name + "\","
   json_data = json_data + "\"value\":" + metric_value.to_string() + ","
   json_data = json_data + "\"timestamp\":" + metric_timestamp.to_string()
@@ -86,8 +86,12 @@ test "telemetry_data_serialization_compression" {
     compressed_data = compressed_data + current_char.to_string()
     
     // 跳过连续重复的字符
-    while i + 1 < original_length and original_data[i + 1] == current_char {
-      i = i + 1
+    while i + 1 < original_length {
+      if original_data[i + 1] == current_char {
+        i = i + 1
+      } else {
+        break
+      }
     }
     i = i + 1
   }
@@ -154,10 +158,22 @@ test "telemetry_data_serialization_batch" {
   assert_eq(comma_count, batch_size - 1)
   
   // 验证批量大小
-  assert_eq(batch_data.contains("memory_usage") and 
-           batch_data.contains("disk_usage") and 
-           batch_data.contains("network_io") and 
-           batch_data.contains("cpu_temperature"), true)
+  let contains_memory = batch_data.contains("memory_usage")
+  let contains_disk = batch_data.contains("disk_usage")
+  let contains_network = batch_data.contains("network_io")
+  let contains_cpu = batch_data.contains("cpu_temperature")
+  
+  let mut contains_all = contains_memory
+  if contains_all {
+    contains_all = contains_disk
+  }
+  if contains_all {
+    contains_all = contains_network
+  }
+  if contains_all {
+    contains_all = contains_cpu
+  }
+  assert_eq(contains_all, true)
 }
 
 test "telemetry_data_serialization_binary" {
@@ -165,7 +181,7 @@ test "telemetry_data_serialization_binary" {
   
   let metric_types = [1, 2, 3, 4]  // 1=Counter, 2=Gauge, 3=Histogram, 4=Summary
   let metric_names = ["request_count", "response_time", "latency_distribution", "error_rate"]
-  let metric_values = [1000, 150, 200, 0.05]
+  let metric_values = [1000, 150, 200, 0]
   
   // 构建二进制格式数据（简化为十六进制字符串表示）
   let mut binary_data = ""
@@ -176,7 +192,7 @@ test "telemetry_data_serialization_binary" {
     let metric_value = metric_values[i]
     
     // 添加类型标识符（1字节）
-    binary_data = binary_data + metric_type.to_string(16) + "|"
+    binary_data = binary_data + metric_type.to_string() + "|"
     
     // 添加名称长度和名称
     binary_data = binary_data + metric_name.length().to_string() + "|" + metric_name + "|"

@@ -3,14 +3,7 @@
 test "telemetry_config_loading" {
   // 测试遥测配置加载
   
-  let config_content = "{
-    \"service_name\": \"api-gateway\",
-    \"service_version\": \"1.2.3\",
-    \"telemetry_enabled\": true,
-    \"sampling_rate\": 0.1,
-    \"export_interval\": 60,
-    \"batch_size\": 100
-  }"
+  let config_content = "{\n    \"service_name\": \"api-gateway\",\n    \"service_version\": \"1.2.3\",\n    \"telemetry_enabled\": true,\n    \"sampling_rate\": 0.1,\n    \"export_interval\": 60,\n    \"batch_size\": 100\n  }"
   
   // 验证配置内容
   assert_eq(config_content.contains("service_name"), true)
@@ -91,17 +84,9 @@ test "telemetry_config_validation" {
 test "telemetry_config_hot_reload" {
   // 测试遥测配置热重载
   
-  let original_config = "{
-    \"sampling_rate\": 0.1,
-    \"export_interval\": 60,
-    \"batch_size\": 100
-  }"
+  let original_config = "{\n    \"sampling_rate\": 0.1,\n    \"export_interval\": 60,\n    \"batch_size\": 100\n  }"
   
-  let updated_config = "{
-    \"sampling_rate\": 0.2,
-    \"export_interval\": 30,
-    \"batch_size\": 200
-  }"
+  let updated_config = "{\n    \"sampling_rate\": 0.2,\n    \"export_interval\": 30,\n    \"batch_size\": 200\n  }"
   
   // 验证原始配置
   assert_eq(original_config.contains("sampling_rate\": 0.1"), true)
@@ -136,12 +121,7 @@ test "telemetry_config_hot_reload" {
 test "telemetry_config_environment_override" {
   // 测试遥测配置环境变量覆盖
   
-  let base_config = "{
-    \"service_name\": \"default-service\",
-    \"environment\": \"development\",
-    \"debug_enabled\": false,
-    \"log_level\": \"INFO\"
-  }"
+  let base_config = "{\n    \"service_name\": \"default-service\",\n    \"environment\": \"development\",\n    \"debug_enabled\": false,\n    \"log_level\": \"INFO\"\n  }"
   
   // 环境变量覆盖
   let env_service_name = "production-service"
@@ -177,39 +157,29 @@ test "telemetry_config_environment_override" {
 test "telemetry_config_feature_flags" {
   // 测试遥测配置功能开关
   
-  let feature_flags = {
-    "metrics_enabled": true,
-    "tracing_enabled": true,
-    "logging_enabled": false,
-    "profiling_enabled": false,
-    "experimental_features": true
-  }
+  let feature_flags = [
+    ("metrics_enabled", true),
+    ("tracing_enabled", true),
+    ("logging_enabled", false),
+    ("profiling_enabled", false),
+    ("experimental_features", true)
+  ]
   
   // 验证功能开关状态
-  assert_eq(feature_flags["metrics_enabled"], true)
-  assert_eq(feature_flags["tracing_enabled"], true)
-  assert_eq(feature_flags["logging_enabled"], false)
-  assert_eq(feature_flags["profiling_enabled"], false)
-  assert_eq(feature_flags["experimental_features"], true)
+  assert_eq(feature_flags[0].1, true)
+  assert_eq(feature_flags[1].1, true)
+  assert_eq(feature_flags[2].1, false)
+  assert_eq(feature_flags[3].1, false)
+  assert_eq(feature_flags[4].1, true)
   
   // 计算启用功能数量
   let enabled_features = 0
-  if feature_flags["metrics_enabled"] { enabled_features = enabled_features + 1 }
-  if feature_flags["tracing_enabled"] { enabled_features = enabled_features + 1 }
-  if feature_flags["logging_enabled"] { enabled_features = enabled_features + 1 }
-  if feature_flags["profiling_enabled"] { enabled_features = enabled_features + 1 }
-  if feature_flags["experimental_features"] { enabled_features = enabled_features + 1 }
+  let core_features_enabled = feature_flags[0].1 and feature_flags[1].1
+  let advanced_features_enabled = feature_flags[2].1 or feature_flags[3].1
+  let experimental_mode = feature_flags[4].1
   
-  assert_eq(enabled_features, 3)
-  
-  // 测试功能开关组合
-  let core_features_enabled = feature_flags["metrics_enabled"] and feature_flags["tracing_enabled"]
   assert_eq(core_features_enabled, true)
-  
-  let advanced_features_enabled = feature_flags["logging_enabled"] or feature_flags["profiling_enabled"]
   assert_eq(advanced_features_enabled, false)
-  
-  let experimental_mode = feature_flags["experimental_features"]
   assert_eq(experimental_mode, true)
 }
 
