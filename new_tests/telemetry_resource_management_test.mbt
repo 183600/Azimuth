@@ -1,785 +1,756 @@
 // 遥测资源管理测试用例
 
-test "telemetry_memory_pool_management" {
-  // 测试遥测内存池管理
+test "telemetry_resource_memory_management" {
+  // 测试遥测系统内存管理
   
-  let memory_pool_config = {
-    "pool_size_mb": 256,
-    "block_size_kb": 64,
-    "max_blocks_per_allocation": 16,
-    "gc_threshold_percent": 80,
-    "auto_compaction_enabled": true
+  // 模拟内存池管理
+  let mut memory_pool = {
+    "total_capacity": 1024 * 1024,  // 1MB
+    "allocated": 0,
+    "available": 1024 * 1024,
+    "allocations": []
   }
   
-  // 验证内存池配置
-  assert_eq(memory_pool_config["pool_size_mb"], "256")
-  assert_eq(memory_pool_config["block_size_kb"], "64")
-  assert_eq(memory_pool_config["max_blocks_per_allocation"], "16")
-  assert_eq(memory_pool_config["gc_threshold_percent"], "80")
-  assert_eq(memory_pool_config["auto_compaction_enabled"], "true")
+  // 验证初始内存池状态
+  assert_eq(memory_pool["total_capacity"], 1024 * 1024)
+  assert_eq(memory_pool["allocated"], 0)
+  assert_eq(memory_pool["available"], 1024 * 1024)
+  assert_eq(memory_pool["allocations"].length(), 0)
   
-  // 模拟内存池分配
-  let pool_size_mb = memory_pool_config["pool_size_mb"].to_int()
-  let block_size_kb = memory_pool_config["block_size_kb"].to_int()
-  let total_blocks = (pool_size_mb * 1024) / block_size_kb
-  
-  // 验证块数量计算
-  assert_eq(pool_size_mb, 256)
-  assert_eq(block_size_kb, 64)
-  assert_eq(total_blocks, 4096)  // (256 * 1024) / 64 = 4096
-  
-  // 模拟内存分配请求
-  let allocation_requests = [
-    {"request_id": "req_001", "size_kb": 128, "blocks_needed": 2, "status": "allocated"},
-    {"request_id": "req_002", "size_kb": 256, "blocks_needed": 4, "status": "allocated"},
-    {"request_id": "req_003", "size_kb": 1024, "blocks_needed": 16, "status": "allocated"},
-    {"request_id": "req_004", "size_kb": 512, "blocks_needed": 8, "status": "allocated"},
-    {"request_id": "req_005", "size_kb": 2048, "blocks_needed": 32, "status": "failed"}  // 超出限制
+  // 遥测数据缓冲区分配
+  let telemetry_buffers = [
+    {"id": "buffer_1", "size": 1024, "type": "metrics"},
+    {"id": "buffer_2", "size": 2048, "type": "logs"},
+    {"id": "buffer_3", "size": 4096, "type": "traces"},
+    {"id": "buffer_4", "size": 8192, "type": "events"}
   ]
   
-  // 验证分配请求
-  assert_eq(allocation_requests.length(), 5)
-  
-  // 统计分配结果
-  let mut allocated_blocks = 0
-  let mut failed_requests = 0
-  let mut successful_requests = 0
-  
+  // 分配内存缓冲区
   let mut i = 0
-  while i < allocation_requests.length() {
-    let request = allocation_requests[i]
-    let status = request["status"]
-    let blocks_needed = request["blocks_needed"].to_int()
+  while i < telemetry_buffers.length() {
+    let buffer = telemetry_buffers[i]
+    let buffer_size = buffer["size"]
     
-    if status == "allocated" {
-      allocated_blocks = allocated_blocks + blocks_needed
-      successful_requests = successful_requests + 1
-    } else if status == "failed" {
-      failed_requests = failed_requests + 1
+    if memory_pool["available"] >= buffer_size {
+      // 分配内存
+      memory_pool["allocated"] = memory_pool["allocated"] + buffer_size
+      memory_pool["available"] = memory_pool["available"] - buffer_size
+      memory_pool["allocations"].push({
+        "id": buffer["id"],
+        "size": buffer_size,
+        "type": buffer["type"],
+        "timestamp": 1640995200L + i
+      })
     }
     
     i = i + 1
   }
   
-  // 验证分配统计
-  assert_eq(allocated_blocks, 30)  // 2 + 4 + 16 + 8
-  assert_eq(successful_requests, 4)
-  assert_eq(failed_requests, 1)
+  // 验证内存分配结果
+  assert_eq(memory_pool["allocations"].length(), 4)
+  assert_eq(memory_pool["allocated"], 1024 + 2048 + 4096 + 8192)
+  assert_eq(memory_pool["available"], 1024 * 1024 - (1024 + 2048 + 4096 + 8192))
   
-  // 检查内存使用率
-  let memory_usage_percent = (allocated_blocks * 100) / total_blocks
-  assert_eq(memory_usage_percent, 0)  // 30/4096 * 100 = 0.73
+  // 内存使用率计算
+  let memory_usage_rate = (memory_pool["allocated"].to_double() / memory_pool["total_capacity"].to_double()) * 100.0
   
-  // 测试内存释放
-  let deallocation_operations = [
-    {"request_id": "req_001", "blocks_freed": 2, "status": "freed"},
-    {"request_id": "req_003", "blocks_freed": 16, "status": "freed"}
+  // 验证内存使用率
+  assert_eq(memory_usage_rate > 0.0, true)
+  assert_eq(memory_usage_rate < 5.0, true)  // 应该小于5%
+  
+  // 内存清理：释放最旧的缓冲区
+  let oldest_allocation = memory_pool["allocations"][0]
+  let released_size = oldest_allocation["size"]
+  
+  memory_pool["allocated"] = memory_pool["allocated"] - released_size
+  memory_pool["available"] = memory_pool["available"] + released_size
+  memory_pool["allocations"].remove(0)
+  
+  // 验证内存释放结果
+  assert_eq(memory_pool["allocations"].length(), 3)
+  assert_eq(memory_pool["available"], 1024 * 1024 - (2048 + 4096 + 8192))
+  
+  // 内存碎片整理（简化模拟）
+  let fragmented_allocations = [
+    {"id": "frag_1", "size": 512, "offset": 0},
+    {"id": "frag_2", "size": 1024, "offset": 1024},
+    {"id": "frag_3", "size": 256, "offset": 3072}
   ]
-  
-  // 验证释放操作
-  assert_eq(deallocation_operations.length(), 2)
-  
-  // 统计释放结果
-  let mut total_blocks_freed = 0
-  let mut i = 0
-  while i < deallocation_operations.length() {
-    let operation = deallocation_operations[i]
-    if operation["status"] == "freed" {
-      total_blocks_freed = total_blocks_freed + operation["blocks_freed"].to_int()
-    }
-    i = i + 1
-  }
-  
-  // 验证释放统计
-  assert_eq(total_blocks_freed, 18)  // 2 + 16
-  
-  // 计算释放后的内存使用
-  let remaining_allocated_blocks = allocated_blocks - total_blocks_freed
-  let remaining_memory_usage_percent = (remaining_allocated_blocks * 100) / total_blocks
-  
-  // 验证释放后状态
-  assert_eq(remaining_allocated_blocks, 12)  // 30 - 18
-  assert_eq(remaining_memory_usage_percent, 0)  // 12/4096 * 100 = 0.29
-  
-  // 测试垃圾回收触发
-  let gc_threshold = memory_pool_config["gc_threshold_percent"].to_int()
-  let high_memory_usage_scenario = [
-    {"scenario": "normal_usage", "usage_percent": 45, "gc_triggered": false},
-    {"scenario": "high_usage", "usage_percent": 85, "gc_triggered": true},
-    {"scenario": "critical_usage", "usage_percent": 95, "gc_triggered": true}
-  ]
-  
-  // 验证垃圾回收触发条件
-  assert_eq(gc_threshold, 80)
-  
-  let mut i = 0
-  while i < high_memory_usage_scenario.length() {
-    let scenario = high_memory_usage_scenario[i]
-    let usage_percent = scenario["usage_percent"].to_int()
-    let gc_triggered = scenario["gc_triggered"] == "true"
-    let should_trigger_gc = usage_percent >= gc_threshold
-    
-    // 验证GC触发逻辑
-    assert_eq(gc_triggered, should_trigger_gc)
-    
-    i = i + 1
-  }
-  
-  // 测试内存池碎片整理
-  let fragmentation_metrics = {
-    "total_blocks": 4096,
-    "free_blocks": 4084,
-    "fragmented_blocks": 156,
-    "largest_free_segment": 2048,
-    "fragmentation_ratio": 0.038
-  }
-  
-  // 验证碎片化指标
-  assert_eq(fragmentation_metrics["total_blocks"], "4096")
-  assert_eq(fragmentation_metrics["free_blocks"], "4084")
-  assert_eq(fragmentation_metrics["fragmented_blocks"], "156")
-  assert_eq(fragmentation_metrics["largest_free_segment"], "2048")
   
   // 计算碎片化程度
-  let fragmentation_ratio = fragmentation_metrics["fragmentation_ratio"].to_double()
-  let max_acceptable_fragmentation = 0.1  // 10%
-  
-  // 验证碎片化程度
-  assert_eq(fragmentation_ratio, 0.038)
-  let compaction_needed = fragmentation_ratio > max_acceptable_fragmentation
-  assert_eq(compaction_needed, false)  // 3.8% < 10%
-  
-  // 测试内存池性能
-  let pool_performance = {
-    "allocation_requests_per_second": 10000,
-    "average_allocation_time_us": 5,
-    "deallocation_requests_per_second": 9500,
-    "average_deallocation_time_us": 3,
-    "memory_efficiency_percent": 95
+  let mut total_fragmented_size = 0
+  let mut total_allocated_size = 0
+  i = 0
+  while i < fragmented_allocations.length() {
+    total_fragmented_size = total_fragmented_size + fragmented_allocations[i]["size"]
+    total_allocated_size = total_allocated_size + fragmented_allocations[i]["size"] + 
+                           (fragmented_allocations[i]["offset"] - (i > 0 ? fragmented_allocations[i-1]["offset"] + fragmented_allocations[i-1]["size"] : 0))
+    i = i + 1
   }
   
-  // 验证性能指标
-  assert_eq(pool_performance["allocation_requests_per_second"], "10000")
-  assert_eq(pool_performance["average_allocation_time_us"], "5")
-  assert_eq(pool_performance["deallocation_requests_per_second"], "9500")
-  assert_eq(pool_performance["average_deallocation_time_us"], "3")
-  assert_eq(pool_performance["memory_efficiency_percent"], "95")
+  let fragmentation_ratio = (total_fragmented_size.to_double() / total_allocated_size.to_double()) * 100.0
   
-  // 验证性能要求
-  let alloc_time_us = pool_performance["average_allocation_time_us"].to_int()
-  let dealloc_time_us = pool_performance["average_deallocation_time_us"].to_int()
-  let efficiency = pool_performance["memory_efficiency_percent"].to_int()
-  
-  assert_eq(alloc_time_us <= 10, true)    // 分配时间应小于10微秒
-  assert_eq(dealloc_time_us <= 10, true)  // 释放时间应小于10微秒
-  assert_eq(efficiency >= 90, true)       // 内存效率应至少90%
+  // 验证碎片化分析
+  assert_eq(fragmentation_ratio > 50.0, true)  // 高碎片化
+  assert_eq(fragmentation_ratio < 100.0, true)
 }
 
-test "telemetry_connection_pool_management" {
-  // 测试遥测连接池管理
+test "telemetry_resource_cpu_management" {
+  // 测试遥测系统CPU资源管理
   
-  let connection_pool_config = {
-    "max_connections": 100,
-    "min_connections": 10,
-    "connection_timeout_ms": 5000,
-    "idle_timeout_seconds": 300,
-    "health_check_interval_seconds": 60
+  // CPU资源分配表
+  let mut cpu_allocation = {
+    "total_cores": 4,
+    "allocated_cores": 0,
+    "available_cores": 4,
+    "processes": []
   }
   
-  // 验证连接池配置
-  assert_eq(connection_pool_config["max_connections"], "100")
-  assert_eq(connection_pool_config["min_connections"], "10")
-  assert_eq(connection_pool_config["connection_timeout_ms"], "5000")
-  assert_eq(connection_pool_config["idle_timeout_seconds"], "300")
-  assert_eq(connection_pool_config["health_check_interval_seconds"], "60")
+  // 验证初始CPU状态
+  assert_eq(cpu_allocation["total_cores"], 4)
+  assert_eq(cpu_allocation["allocated_cores"], 0)
   
-  // 模拟连接池状态
-  let pool_state = {
-    "total_connections": 75,
-    "active_connections": 45,
-    "idle_connections": 30,
-    "pending_requests": 8,
-    "failed_connections": 2
-  }
-  
-  // 验证连接池状态
-  assert_eq(pool_state["total_connections"], "75")
-  assert_eq(pool_state["active_connections"], "45")
-  assert_eq(pool_state["idle_connections"], "30")
-  assert_eq(pool_state["pending_requests"], "8")
-  assert_eq(pool_state["failed_connections"], "2")
-  
-  // 检查连接池健康状态
-  let total_connections = pool_state["total_connections"].to_int()
-  let active_connections = pool_state["active_connections"].to_int()
-  let idle_connections = pool_state["idle_connections"].to_int()
-  let max_connections = connection_pool_config["max_connections"].to_int()
-  
-  // 验证连接计数一致性
-  assert_eq(active_connections + idle_connections, total_connections)
-  assert_eq(total_connections <= max_connections, true)
-  
-  // 计算连接使用率
-  let connection_utilization = (active_connections * 100) / total_connections
-  assert_eq(connection_utilization, 60)  // 45/75 * 100 = 60
-  
-  // 测试连接分配
-  let connection_requests = [
-    {"request_id": "conn_req_001", "status": "granted", "wait_time_ms": 10},
-    {"request_id": "conn_req_002", "status": "granted", "wait_time_ms": 5},
-    {"request_id": "conn_req_003", "status": "queued", "wait_time_ms": 0},
-    {"request_id": "conn_req_004", "status": "granted", "wait_time_ms": 15},
-    {"request_id": "conn_req_005", "status": "timeout", "wait_time_ms": 5000}
+  // 遥测任务列表
+  let telemetry_tasks = [
+    {
+      "name": "metrics_collector",
+      "cpu_required": 0.5,
+      "priority": "high",
+      "max_execution_time": 100
+    },
+    {
+      "name": "log_aggregator", 
+      "cpu_required": 1.0,
+      "priority": "medium",
+      "max_execution_time": 200
+    },
+    {
+      "name": "trace_processor",
+      "cpu_required": 0.8,
+      "priority": "high", 
+      "max_execution_time": 150
+    },
+    {
+      "name": "data_exporter",
+      "cpu_required": 0.3,
+      "priority": "low",
+      "max_execution_time": 50
+    }
   ]
   
-  // 验证连接请求
-  assert_eq(connection_requests.length(), 5)
-  
-  // 统计请求结果
-  let mut granted_requests = 0
-  let mut queued_requests = 0
-  let mut timeout_requests = 0
-  let mut total_wait_time = 0
-  
+  // 按优先级排序任务
+  let mut sorted_tasks = telemetry_tasks
   let mut i = 0
-  while i < connection_requests.length() {
-    let request = connection_requests[i]
-    let status = request["status"]
-    let wait_time = request["wait_time_ms"].to_int()
+  while i < sorted_tasks.length() - 1 {
+    let mut j = 0
+    while j < sorted_tasks.length() - i - 1 {
+      let task1_priority = sorted_tasks[j]["priority"]
+      let task2_priority = sorted_tasks[j + 1]["priority"]
+      
+      let priority_order = fn(p : String) -> Int {
+        if p == "high" { 1 } else if p == "medium" { 2 } else { 3 }
+      }
+      
+      if priority_order(task1_priority) > priority_order(task2_priority) {
+        let temp = sorted_tasks[j]
+        sorted_tasks[j] = sorted_tasks[j + 1]
+        sorted_tasks[j + 1] = temp
+      }
+      j = j + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证任务排序
+  assert_eq(sorted_tasks[0]["priority"], "high")
+  assert_eq(sorted_tasks[1]["priority"], "high")
+  assert_eq(sorted_tasks[2]["priority"], "medium")
+  assert_eq(sorted_tasks[3]["priority"], "low")
+  
+  // CPU资源分配
+  i = 0
+  while i < sorted_tasks.length() {
+    let task = sorted_tasks[i]
+    let cpu_required = task["cpu_required"]
     
-    if status == "granted" {
-      granted_requests = granted_requests + 1
-      total_wait_time = total_wait_time + wait_time
-    } else if status == "queued" {
-      queued_requests = queued_requests + 1
-    } else if status == "timeout" {
-      timeout_requests = timeout_requests + 1
+    if cpu_allocation["available_cores"] >= cpu_required {
+      // 分配CPU
+      cpu_allocation["allocated_cores"] = cpu_allocation["allocated_cores"] + cpu_required
+      cpu_allocation["available_cores"] = cpu_allocation["available_cores"] - cpu_required
+      
+      cpu_allocation["processes"].push({
+        "name": task["name"],
+        "cpu_allocated": cpu_required,
+        "priority": task["priority"],
+        "start_time": 1640995200L + i * 10
+      })
     }
     
     i = i + 1
   }
   
-  // 验证请求统计
-  assert_eq(granted_requests, 3)
-  assert_eq(queued_requests, 1)
-  assert_eq(timeout_requests, 1)
+  // 验证CPU分配结果
+  assert_eq(cpu_allocation["processes"].length(), 4)
+  assert_eq(cpu_allocation["allocated_cores"], 0.5 + 1.0 + 0.8 + 0.3)
+  assert_eq(cpu_allocation["available_cores"], 4.0 - (0.5 + 1.0 + 0.8 + 0.3))
   
-  // 计算平均等待时间
-  if granted_requests > 0 {
-    let avg_wait_time = total_wait_time / granted_requests
-    assert_eq(avg_wait_time, 10)  // (10+5+15)/3 = 10
-    assert_eq(avg_wait_time < 100, true)  // 平均等待时间应小于100ms
-  }
+  // CPU使用率计算
+  let cpu_usage_rate = (cpu_allocation["allocated_cores"].to_double() / cpu_allocation["total_cores"].to_double()) * 100.0
   
-  // 测试连接回收
-  let connection_reclamation = {
-    "idle_threshold_seconds": 300,
-    "current_time": 1703123456,
-    "idle_connections": [
-      {"conn_id": "conn_001", "last_used": 1703123156, "reclaimed": true},  // 300秒前
-      {"conn_id": "conn_002", "last_used": 1703123256, "reclaimed": false}, // 200秒前
-      {"conn_id": "conn_003", "last_used": 1703123056, "reclaimed": true},  // 400秒前
-      {"conn_id": "conn_004", "last_used": 1703123356, "reclaimed": false}  // 100秒前
-    ]
-  }
+  // 验证CPU使用率
+  assert_eq(cpu_usage_rate > 50.0, true)
+  assert_eq(cpu_usage_rate < 100.0, true)
   
-  // 验证连接回收配置
-  assert_eq(connection_reclamation["idle_threshold_seconds"], "300")
+  // 模拟CPU时间片调度
+  let time_slice = 10  // 10ms时间片
+  let mut scheduling_queue = cpu_allocation["processes"]
   
-  // 统计回收结果
-  let idle_connections = connection_reclamation["idle_connections"]
-  let mut reclaimed_connections = 0
-  
-  let mut i = 0
-  while i < idle_connections.length() {
-    let conn = idle_connections[i]
-    if conn["reclaimed"] == "true" {
-      reclaimed_connections = reclaimed_connections + 1
-    }
-    i = i + 1
-  }
-  
-  // 验证回收统计
-  assert_eq(reclaimed_connections, 2)
-  let reclamation_rate = (reclaimed_connections * 100) / idle_connections.length()
-  assert_eq(reclamation_rate, 50)  // 2/4 * 100 = 50
-  
-  // 测试连接健康检查
-  let health_check_results = [
-    {"conn_id": "conn_001", "check_time": 1703123450, "status": "healthy", "response_time_ms": 5},
-    {"conn_id": "conn_002", "check_time": 1703123450, "status": "healthy", "response_time_ms": 8},
-    {"conn_id": "conn_003", "check_time": 1703123450, "status": "unhealthy", "response_time_ms": 5000},
-    {"conn_id": "conn_004", "check_time": 1703123450, "status": "healthy", "response_time_ms": 3},
-    {"conn_id": "conn_005", "check_time": 1703123450, "status": "unhealthy", "response_time_ms": 0}  // 连接失败
-  ]
-  
-  // 验证健康检查结果
-  assert_eq(health_check_results.length(), 5)
-  
-  // 统计健康状态
-  let mut healthy_connections = 0
-  let mut unhealthy_connections = 0
-  let mut total_response_time = 0
-  
-  let mut i = 0
-  while i < health_check_results.length() {
-    let result = health_check_results[i]
-    let status = result["status"]
-    let response_time = result["response_time_ms"].to_int()
-    
-    if status == "healthy" {
-      healthy_connections = healthy_connections + 1
-      total_response_time = total_response_time + response_time
-    } else {
-      unhealthy_connections = unhealthy_connections + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证健康统计
-  assert_eq(healthy_connections, 3)
-  assert_eq(unhealthy_connections, 2)
-  
-  // 计算健康连接的平均响应时间
-  if healthy_connections > 0 {
-    let avg_response_time = total_response_time / healthy_connections
-    assert_eq(avg_response_time, 5)  // (5+8+3)/3 = 5.33
-    assert_eq(avg_response_time < 50, true)  // 平均响应时间应小于50ms
-  }
-  
-  // 计算连接池健康率
-  let total_checked = health_check_results.length()
-  let health_rate = (healthy_connections * 100) / total_checked
-  assert_eq(health_rate, 60)  // 3/5 * 100 = 60
-  assert_eq(health_rate >= 50, true)  // 健康率应至少50%
-  
-  // 测试连接池扩展
-  let pool_scaling = {
-    "current_size": 75,
-    "max_size": 100,
-    "min_size": 10,
-    "scale_up_threshold": 80,
-    "scale_down_threshold": 30
-  }
-  
-  // 验证扩展配置
-  assert_eq(pool_scaling["current_size"], "75")
-  assert_eq(pool_scaling["max_size"], "100")
-  assert_eq(pool_scaling["min_size"], "10")
-  assert_eq(pool_scaling["scale_up_threshold"], "80")
-  assert_eq(pool_scaling["scale_down_threshold"], "30")
-  
-  // 检查扩展条件
-  let current_size = pool_scaling["current_size"].to_int()
-  let utilization = connection_utilization  // 之前计算的60%
-  let scale_up_threshold = pool_scaling["scale_up_threshold"].to_int()
-  let scale_down_threshold = pool_scaling["scale_down_threshold"].to_int()
-  
-  let should_scale_up = utilization >= scale_up_threshold and current_size < pool_scaling["max_size"].to_int()
-  let should_scale_down = utilization <= scale_down_threshold and current_size > pool_scaling["min_size"].to_int()
-  
-  // 验证扩展决策
-  assert_eq(should_scale_up, false)  // 60% < 80%
-  assert_eq(should_scale_down, false)  // 60% > 30%
-}
-
-test "telemetry_thread_pool_management" {
-  // 测试遥测线程池管理
-  
-  let thread_pool_config = {
-    "core_threads": 10,
-    "max_threads": 50,
-    "keep_alive_time_seconds": 60,
-    "queue_capacity": 1000,
-    "rejection_policy": "caller_runs"
-  }
-  
-  // 验证线程池配置
-  assert_eq(thread_pool_config["core_threads"], "10")
-  assert_eq(thread_pool_config["max_threads"], "50")
-  assert_eq(thread_pool_config["keep_alive_time_seconds"], "60")
-  assert_eq(thread_pool_config["queue_capacity"], "1000")
-  assert_eq(thread_pool_config["rejection_policy"], "caller_runs")
-  
-  // 模拟线程池状态
-  let pool_status = {
-    "active_threads": 25,
-    "idle_threads": 5,
-    "pool_size": 30,
-    "queue_size": 150,
-    "completed_tasks": 50000,
-    "rejected_tasks": 25
-  }
-  
-  // 验证线程池状态
-  assert_eq(pool_status["active_threads"], "25")
-  assert_eq(pool_status["idle_threads"], "5")
-  assert_eq(pool_status["pool_size"], "30")
-  assert_eq(pool_status["queue_size"], "150")
-  assert_eq(pool_status["completed_tasks"], "50000")
-  assert_eq(pool_status["rejected_tasks"], "25")
-  
-  // 检查线程池状态一致性
-  let active_threads = pool_status["active_threads"].to_int()
-  let idle_threads = pool_status["idle_threads"].to_int()
-  let pool_size = pool_status["pool_size"].to_int()
-  
-  assert_eq(active_threads + idle_threads, pool_size)
-  
-  let core_threads = thread_pool_config["core_threads"].to_int()
-  let max_threads = thread_pool_config["max_threads"].to_int()
-  
-  assert_eq(pool_size >= core_threads, true)
-  assert_eq(pool_size <= max_threads, true)
-  
-  // 测试任务提交
-  let task_submissions = [
-    {"task_id": "task_001", "type": "metrics_collection", "status": "completed", "execution_time_ms": 45},
-    {"task_id": "task_002", "type": "data_export", "status": "completed", "execution_time_ms": 120},
-    {"task_id": "task_003", "type": "health_check", "status": "queued", "execution_time_ms": 0},
-    {"task_id": "task_004", "type": "cleanup", "status": "completed", "execution_time_ms": 25},
-    {"task_id": "task_005", "type": "metrics_collection", "status": "rejected", "execution_time_ms": 0}
-  ]
-  
-  // 验证任务提交
-  assert_eq(task_submissions.length(), 5)
-  
-  // 统计任务状态
-  let mut completed_tasks = 0
-  let mut queued_tasks = 0
-  let mut rejected_tasks = 0
   let mut total_execution_time = 0
-  
-  let mut i = 0
-  while i < task_submissions.length() {
-    let task = task_submissions[i]
-    let status = task["status"]
-    let execution_time = task["execution_time_ms"].to_int()
-    
-    if status == "completed" {
-      completed_tasks = completed_tasks + 1
-      total_execution_time = total_execution_time + execution_time
-    } else if status == "queued" {
-      queued_tasks = queued_tasks + 1
-    } else if status == "rejected" {
-      rejected_tasks = rejected_tasks + 1
-    }
-    
+  i = 0
+  while i < scheduling_queue.length() {
+    let process = scheduling_queue[i]
+    let execution_time = process["cpu_allocated"] * time_slice
+    total_execution_time = total_execution_time + execution_time
     i = i + 1
   }
   
-  // 验证任务统计
-  assert_eq(completed_tasks, 3)
-  assert_eq(queued_tasks, 1)
-  assert_eq(rejected_tasks, 1)
+  // 验证调度时间计算
+  assert_eq(total_execution_time > 0, true)
   
-  // 计算平均执行时间
-  if completed_tasks > 0 {
-    let avg_execution_time = total_execution_time / completed_tasks
-    assert_eq(avg_execution_time, 63)  // (45+120+25)/3 = 63.33
-    assert_eq(avg_execution_time < 200, true)  // 平均执行时间应小于200ms
-  }
-  
-  // 计算任务完成率
-  let total_submitted_tasks = task_submissions.length()
-  let completion_rate = (completed_tasks * 100) / total_submitted_tasks
-  assert_eq(completion_rate, 60)  // 3/5 * 100 = 60
-  assert_eq(completion_rate >= 50, true)  // 完成率应至少50%
-  
-  // 测试线程池扩展
-  let scaling_scenarios = [
-    {
-      "scenario": "load_increase",
-      "current_threads": 30,
-      "queue_size": 800,
-      "expected_action": "scale_up",
-      "target_threads": 35
-    },
-    {
-      "scenario": "load_decrease",
-      "current_threads": 25,
-      "queue_size": 50,
-      "expected_action": "scale_down",
-      "target_threads": 20
-    },
-    {
-      "scenario": "stable_load",
-      "current_threads": 30,
-      "queue_size": 200,
-      "expected_action": "maintain",
-      "target_threads": 30
-    }
-  ]
-  
-  // 验证扩展场景
-  assert_eq(scaling_scenarios.length(), 3)
-  
-  let mut i = 0
-  while i < scaling_scenarios.length() {
-    let scenario = scaling_scenarios[i]
-    let current_threads = scenario["current_threads"].to_int()
-    let queue_size = scenario["queue_size"].to_int()
-    let expected_action = scenario["expected_action"]
-    let target_threads = scenario["target_threads"].to_int()
-    
-    // 简化的扩展逻辑
-    let should_scale_up = queue_size > 500 and current_threads < max_threads
-    let should_scale_down = queue_size < 100 and current_threads > core_threads
-    
-    let actual_action = 
-      if should_scale_up { "scale_up" }
-      else if should_scale_down { "scale_down" }
-      else { "maintain" }
-    
-    // 验证扩展决策
-    assert_eq(actual_action, expected_action)
-    
+  // CPU负载均衡
+  let mut load_balance_score = 0.0
+  i = 0
+  while i < scheduling_queue.length() {
+    let process = scheduling_queue[i]
+    let cpu_load = process["cpu_allocated"]
+    load_balance_score = load_balance_score + cpu_load
     i = i + 1
   }
   
-  // 测试线程回收
-  let thread_reclamation = {
-    "keep_alive_time": thread_pool_config["keep_alive_time_seconds"],
-    "idle_threads": [
-      {"thread_id": "thread_001", "idle_time_seconds": 120, "reclaimed": true},
-      {"thread_id": "thread_002", "idle_time_seconds": 45, "reclaimed": false},
-      {"thread_id": "thread_003", "idle_time_seconds": 180, "reclaimed": true},
-      {"thread_id": "thread_004", "idle_time_seconds": 30, "reclaimed": false}
-    ]
-  }
+  load_balance_score = load_balance_score / scheduling_queue.length().to_double()
   
-  // 验证线程回收配置
-  assert_eq(thread_reclamation["keep_alive_time"], "60")
-  
-  // 统计回收结果
-  let idle_threads = thread_reclamation["idle_threads"]
-  let mut reclaimed_threads = 0
-  
-  let mut i = 0
-  while i < idle_threads.length() {
-    let thread = idle_threads[i]
-    if thread["reclaimed"] == "true" {
-      reclaimed_threads = reclaimed_threads + 1
-    }
-    i = i + 1
-  }
-  
-  // 验证回收统计
-  assert_eq(reclaimed_threads, 2)
-  let reclamation_rate = (reclaimed_threads * 100) / idle_threads.length()
-  assert_eq(reclamation_rate, 50)  // 2/4 * 100 = 50
-  
-  // 测试线程池性能指标
-  let performance_metrics = {
-    "tasks_per_second": 1000,
-    "avg_task_execution_time_ms": 50,
-    "thread_utilization_percent": 75,
-    "queue_wait_time_ms": 25,
-    "rejection_rate_percent": 0.5
-  }
-  
-  // 验证性能指标
-  assert_eq(performance_metrics["tasks_per_second"], "1000")
-  assert_eq(performance_metrics["avg_task_execution_time_ms"], "50")
-  assert_eq(performance_metrics["thread_utilization_percent"], "75")
-  assert_eq(performance_metrics["queue_wait_time_ms"], "25")
-  assert_eq(performance_metrics["rejection_rate_percent"], "0.5")
-  
-  // 验证性能要求
-  let tasks_per_second = performance_metrics["tasks_per_second"].to_int()
-  let avg_execution_time = performance_metrics["avg_task_execution_time_ms"].to_int()
-  let thread_utilization = performance_metrics["thread_utilization_percent"].to_int()
-  let queue_wait_time = performance_metrics["queue_wait_time_ms"].to_int()
-  let rejection_rate = performance_metrics["rejection_rate_percent"].to_double()
-  
-  assert_eq(tasks_per_second >= 500, true)        // 吞吐量应至少500任务/秒
-  assert_eq(avg_execution_time < 100, true)       // 平均执行时间应小于100ms
-  assert_eq(thread_utilization >= 50, true)       // 线程利用率应至少50%
-  assert_eq(thread_utilization <= 90, true)       // 线程利用率应不超过90%
-  assert_eq(queue_wait_time < 100, true)          // 队列等待时间应小于100ms
-  assert_eq(rejection_rate <= 5.0, true)          // 拒绝率应不超过5%
+  // 验证负载均衡
+  assert_eq(load_balance_score > 0.0, true)
+  assert_eq(load_balance_score < 2.0, true)
 }
 
-test "telemetry_disk_space_management" {
-  // 测试遥测磁盘空间管理
+test "telemetry_resource_disk_io_management" {
+  // 测试遥测系统磁盘I/O管理
   
-  let disk_config = {
-    "data_directory": "/var/lib/telemetry",
-    "max_disk_usage_percent": 80,
-    "cleanup_threshold_percent": 85,
-    "retention_days": 30,
-    "auto_cleanup_enabled": true
+  // 磁盘I/O配置
+  let mut disk_io_config = {
+    "max_concurrent_writes": 10,
+    "max_concurrent_reads": 20,
+    "write_buffer_size": 64 * 1024,  // 64KB
+    "read_buffer_size": 32 * 1024,   // 32KB
+    "active_operations": []
   }
   
-  // 验证磁盘配置
-  assert_eq(disk_config["data_directory"], "/var/lib/telemetry")
-  assert_eq(disk_config["max_disk_usage_percent"], "80")
-  assert_eq(disk_config["cleanup_threshold_percent"], "85")
-  assert_eq(disk_config["retention_days"], "30")
-  assert_eq(disk_config["auto_cleanup_enabled"], "true")
+  // 验证初始配置
+  assert_eq(disk_io_config["max_concurrent_writes"], 10)
+  assert_eq(disk_io_config["write_buffer_size"], 64 * 1024)
   
-  // 模拟磁盘使用情况
-  let disk_usage = {
-    "total_space_gb": 1000,
-    "used_space_gb": 750,
-    "available_space_gb": 250,
-    "telemetry_data_gb": 600,
-    "temp_files_gb": 50,
-    "log_files_gb": 100
-  }
-  
-  // 验证磁盘使用情况
-  assert_eq(disk_usage["total_space_gb"], "1000")
-  assert_eq(disk_usage["used_space_gb"], "750")
-  assert_eq(disk_usage["available_space_gb"], "250")
-  assert_eq(disk_usage["telemetry_data_gb"], "600")
-  assert_eq(disk_usage["temp_files_gb"], "50")
-  assert_eq(disk_usage["log_files_gb"], "100")
-  
-  // 检查磁盘空间一致性
-  let total_space = disk_usage["total_space_gb"].to_int()
-  let used_space = disk_usage["used_space_gb"].to_int()
-  let available_space = disk_usage["available_space_gb"].to_int()
-  let telemetry_data = disk_usage["telemetry_data_gb"].to_int()
-  let temp_files = disk_usage["temp_files_gb"].to_int()
-  let log_files = disk_usage["log_files_gb"].to_int()
-  
-  assert_eq(used_space + available_space, total_space)
-  assert_eq(telemetry_data + temp_files + log_files, 750)  // 600 + 50 + 100 = 750
-  
-  // 计算磁盘使用率
-  let disk_usage_percent = (used_space * 100) / total_space
-  assert_eq(disk_usage_percent, 75)  // 750/1000 * 100 = 75
-  
-  // 检查是否需要清理
-  let max_usage = disk_config["max_disk_usage_percent"].to_int()
-  let cleanup_threshold = disk_config["cleanup_threshold_percent"].to_int()
-  
-  let cleanup_needed = disk_usage_percent >= cleanup_threshold
-  let warning_issued = disk_usage_percent >= max_usage
-  
-  // 验证清理条件
-  assert_eq(cleanup_needed, false)  // 75% < 85%
-  assert_eq(warning_issued, false)  // 75% < 80%
-  
-  // 测试文件分类清理
-  let file_cleanup_categories = [
-    {"category": "temp_files", "size_gb": 50, "retention_days": 7, "cleanup_priority": "high"},
-    {"category": "log_files", "size_gb": 100, "retention_days": 14, "cleanup_priority": "medium"},
-    {"category": "old_metrics", "size_gb": 200, "retention_days": 30, "cleanup_priority": "low"},
-    {"category": "archived_data", "size_gb": 150, "retention_days": 90, "cleanup_priority": "low"}
+  // 遥测数据写入操作
+  let write_operations = [
+    {
+      "id": "write_001",
+      "data_size": 1024,
+      "priority": "high",
+      "operation_type": "metrics"
+    },
+    {
+      "id": "write_002", 
+      "data_size": 2048,
+      "priority": "medium",
+      "operation_type": "logs"
+    },
+    {
+      "id": "write_003",
+      "data_size": 4096,
+      "priority": "low",
+      "operation_type": "traces"
+    },
+    {
+      "id": "write_004",
+      "data_size": 8192,
+      "priority": "high",
+      "operation_type": "events"
+    }
   ]
   
-  // 验证文件分类
-  assert_eq(file_cleanup_categories.length(), 4)
-  
-  // 按优先级排序清理
-  let high_priority_size = 50   // temp_files
-  let medium_priority_size = 100 // log_files
-  let low_priority_size = 350    // old_metrics + archived_data
-  
-  // 验证优先级分类
-  assert_eq(high_priority_size, 50)
-  assert_eq(medium_priority_size, 100)
-  assert_eq(low_priority_size, 350)
-  
-  // 测试清理策略
-  let cleanup_strategies = [
-    {"strategy": "lru_eviction", "effectiveness_percent": 85, "performance_impact": "low"},
-    {"strategy": "time_based_retention", "effectiveness_percent": 90, "performance_impact": "medium"},
-    {"strategy": "size_based_cleanup", "effectiveness_percent": 80, "performance_impact": "low"},
-    {"strategy": "compression", "effectiveness_percent": 60, "performance_impact": "high"}
-  ]
-  
-  // 验证清理策略
-  assert_eq(cleanup_strategies.length(), 4)
-  
-  // 选择最佳策略（平衡效果和性能影响）
-  let mut best_strategy = ""
-  let mut best_score = -1
-  
+  // I/O操作队列管理
+  let mut io_queue = []
   let mut i = 0
-  while i < cleanup_strategies.length() {
-    let strategy = cleanup_strategies[i]
-    let effectiveness = strategy["effectiveness_percent"].to_int()
-    let performance_impact = strategy["performance_impact"]
+  while i < write_operations.length() {
+    io_queue.push(write_operations[i])
+    i = i + 1
+  }
+  
+  // 验证I/O队列
+  assert_eq(io_queue.length(), 4)
+  
+  // 执行I/O操作（受并发限制）
+  let mut completed_operations = []
+  let mut active_write_count = 0
+  
+  i = 0
+  while i < io_queue.length() {
+    let operation = io_queue[i]
     
-    // 简化评分：效果 - 性能影响权重
-    let impact_penalty = 
-      if performance_impact == "low" { 10 }
-      else if performance_impact == "medium" { 20 }
-      else { 30 }
-    
-    let score = effectiveness - impact_penalty
-    
-    if score > best_score {
-      best_score = score
-      best_strategy = strategy["strategy"]
+    if active_write_count < disk_io_config["max_concurrent_writes"] {
+      // 开始I/O操作
+      active_write_count = active_write_count + 1
+      
+      disk_io_config["active_operations"].push({
+        "id": operation["id"],
+        "start_time": 1640995200L + i * 5,
+        "status": "running"
+      })
+      
+      // 模拟I/O完成
+      let io_duration = operation["data_size"] / 1024  // 简化计算
+      let completion_time = 1640995200L + i * 5 + io_duration
+      
+      completed_operations.push({
+        "id": operation["id"],
+        "data_size": operation["data_size"],
+        "duration": io_duration,
+        "completion_time": completion_time
+      })
+      
+      active_write_count = active_write_count - 1
     }
     
     i = i + 1
   }
   
-  // 验证策略选择
-  assert_eq(best_score >= 0, true)
-  assert_eq(best_strategy != "", true)
+  // 验证I/O操作执行
+  assert_eq(completed_operations.length(), 4)
+  assert_eq(disk_io_config["active_operations"].length(), 4)
   
-  // 测试磁盘空间监控
-  let monitoring_metrics = {
-    "check_interval_seconds": 300,
-    "alert_threshold_percent": 90,
-    "critical_threshold_percent": 95,
-    "historical_usage_trend": "increasing",
-    "predicted_full_date": "2024-02-15"
+  // 计算I/O吞吐量
+  let mut total_data_written = 0
+  let mut total_io_time = 0
+  i = 0
+  while i < completed_operations.length() {
+    total_data_written = total_data_written + completed_operations[i]["data_size"]
+    total_io_time = total_io_time + completed_operations[i]["duration"]
+    i = i + 1
   }
   
-  // 验证监控指标
-  assert_eq(monitoring_metrics["check_interval_seconds"], "300")
-  assert_eq(monitoring_metrics["alert_threshold_percent"], "90")
-  assert_eq(monitoring_metrics["critical_threshold_percent"], "95")
-  assert_eq(monitoring_metrics["historical_usage_trend"], "increasing")
-  assert_eq(monitoring_metrics["predicted_full_date"], "2024-02-15")
+  let throughput = total_data_written.to_double() / total_io_time.to_double()
   
-  // 测试空间预测
-  let current_usage = disk_usage_percent
-  let trend_growth_rate_per_day = 2  // 每天2%增长率
-  let days_until_full = ((100 - current_usage) / trend_growth_rate_per_day).to_int()
+  // 验证I/O吞吐量
+  assert_eq(throughput > 0.0, true)
+  assert_eq(total_data_written, 1024 + 2048 + 4096 + 8192)
   
-  // 验证空间预测
-  assert_eq(days_until_full, 12)  // (100 - 75) / 2 = 12.5
-  assert_eq(days_until_full > 7, true)  // 至少还有一周时间
-  
-  // 测试清理执行效果
-  let cleanup_execution = {
-    "cleanup_started": "2024-01-01T02:00:00Z",
-    "cleanup_completed": "2024-01-01T02:15:00Z",
-    "duration_minutes": 15,
-    "space_freed_gb": 125,
-    "files_deleted": 5000,
-    "cleanup_success": true
+  // 磁盘空间管理
+  let mut disk_space = {
+    "total_capacity": 1024 * 1024 * 1024,  // 1GB
+    "used_space": 0,
+    "available_space": 1024 * 1024 * 1024,
+    "data_files": []
   }
   
-  // 验证清理执行
-  assert_eq(cleanup_execution["duration_minutes"], "15")
-  assert_eq(cleanup_execution["space_freed_gb"], "125")
-  assert_eq(cleanup_execution["files_deleted"], "5000")
-  assert_eq(cleanup_execution["cleanup_success"], "true")
+  // 创建数据文件
+  i = 0
+  while i < completed_operations.length() {
+    let operation = completed_operations[i]
+    let file_size = operation["data_size"]
+    
+    if disk_space["available_space"] >= file_size {
+      disk_space["used_space"] = disk_space["used_space"] + file_size
+      disk_space["available_space"] = disk_space["available_space"] - file_size
+      
+      disk_space["data_files"].push({
+        "id": "file_" + operation["id"],
+        "size": file_size,
+        "created_time": operation["completion_time"]
+      })
+    }
+    
+    i = i + 1
+  }
   
-  // 计算清理效果
-  let space_freed = cleanup_execution["space_freed_gb"].to_int()
-  let new_usage = used_space - space_freed
-  let new_usage_percent = (new_usage * 100) / total_space
+  // 验证磁盘空间管理
+  assert_eq(disk_space["data_files"].length(), 4)
+  assert_eq(disk_space["used_space"], total_data_written)
   
-  // 验证清理效果
-  assert_eq(new_usage, 625)  // 750 - 125
-  assert_eq(new_usage_percent, 62)  // 625/1000 * 100 = 62.5
-  assert_eq(new_usage_percent < disk_usage_percent, true)  // 使用率应该降低
+  // 磁盘使用率计算
+  let disk_usage_rate = (disk_space["used_space"].to_double() / disk_space["total_capacity"].to_double()) * 100.0
   
-  // 验证清理效率
-  let duration_minutes = cleanup_execution["duration_minutes"].to_int()
-  let cleanup_rate = space_freed / duration_minutes
+  // 验证磁盘使用率
+  assert_eq(disk_usage_rate > 0.0, true)
+  assert_eq(disk_usage_rate < 1.0, true)  // 应该小于1%
+}
+
+test "telemetry_resource_network_management" {
+  // 测试遥测系统网络资源管理
   
-  assert_eq(cleanup_rate, 8)  // 125/15 = 8.33
-  assert_eq(cleanup_rate > 5, true)  // 清理速率应超过5GB/分钟
+  // 网络连接池配置
+  let mut connection_pool = {
+    "max_connections": 100,
+    "active_connections": 0,
+    "available_connections": 100,
+    "connections": []
+  }
+  
+  // 验证初始连接池状态
+  assert_eq(connection_pool["max_connections"], 100)
+  assert_eq(connection_pool["active_connections"], 0)
+  
+  // 遥测网络传输请求
+  let network_requests = [
+    {
+      "id": "req_001",
+      "destination": "collector.example.com",
+      "port": 4317,
+      "data_size": 5120,
+      "protocol": "http",
+      "priority": "high"
+    },
+    {
+      "id": "req_002",
+      "destination": "backup.example.com", 
+      "port": 4318,
+      "data_size": 10240,
+      "protocol": "grpc",
+      "priority": "medium"
+    },
+    {
+      "id": "req_003",
+      "destination": "analytics.example.com",
+      "port": 4319,
+      "data_size": 2560,
+      "protocol": "http",
+      "priority": "low"
+    }
+  ]
+  
+  // 网络连接管理
+  let mut active_connections = []
+  let mut i = 0
+  while i < network_requests.length() {
+    let request = network_requests[i]
+    
+    if connection_pool["available_connections"] > 0 {
+      // 建立连接
+      connection_pool["active_connections"] = connection_pool["active_connections"] + 1
+      connection_pool["available_connections"] = connection_pool["available_connections"] - 1
+      
+      let connection = {
+        "id": "conn_" + request["id"],
+        "destination": request["destination"],
+        "port": request["port"],
+        "protocol": request["protocol"],
+        "established_time": 1640995200L + i * 2,
+        "status": "active"
+      }
+      
+      connection_pool["connections"].push(connection)
+      active_connections.push(connection)
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证连接建立
+  assert_eq(connection_pool["active_connections"], 3)
+  assert_eq(connection_pool["available_connections"], 97)
+  assert_eq(active_connections.length(), 3)
+  
+  // 网络带宽管理
+  let mut bandwidth_allocation = {
+    "total_bandwidth": 1024 * 1024,  // 1MB/s
+    "allocated_bandwidth": 0,
+    "available_bandwidth": 1024 * 1024,
+    "streams": []
+  }
+  
+  // 分配带宽给活跃连接
+  i = 0
+  while i < active_connections.length() {
+    let connection = active_connections[i]
+    let request = network_requests[i]
+    let required_bandwidth = request["data_size"] / 10  // 假设10秒传输完成
+    
+    if bandwidth_allocation["available_bandwidth"] >= required_bandwidth {
+      bandwidth_allocation["allocated_bandwidth"] = bandwidth_allocation["allocated_bandwidth"] + required_bandwidth
+      bandwidth_allocation["available_bandwidth"] = bandwidth_allocation["available_bandwidth"] - required_bandwidth
+      
+      bandwidth_allocation["streams"].push({
+        "connection_id": connection["id"],
+        "allocated_bandwidth": required_bandwidth,
+        "data_size": request["data_size"]
+      })
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证带宽分配
+  assert_eq(bandwidth_allocation["streams"].length(), 3)
+  assert_eq(bandwidth_allocation["allocated_bandwidth"] > 0, true)
+  
+  // 网络延迟监控
+  let mut latency_metrics = []
+  i = 0
+  while i < active_connections.length() {
+    let connection = active_connections[i]
+    
+    // 模拟网络延迟测量
+    let base_latency = 50  // 基础延迟50ms
+    let protocol_overhead = if connection["protocol"] == "http" { 10 } else { 5 }
+    let data_size_factor = network_requests[i]["data_size"] / 1024  // 每KB增加1ms延迟
+    
+    let total_latency = base_latency + protocol_overhead + data_size_factor
+    
+    latency_metrics.push({
+      "connection_id": connection["id"],
+      "destination": connection["destination"],
+      "latency_ms": total_latency,
+      "measured_time": 1640995200L + i * 3
+    })
+    
+    i = i + 1
+  }
+  
+  // 验证延迟测量
+  assert_eq(latency_metrics.length(), 3)
+  
+  // 计算平均延迟
+  let mut total_latency = 0
+  i = 0
+  while i < latency_metrics.length() {
+    total_latency = total_latency + latency_metrics[i]["latency_ms"]
+    i = i + 1
+  }
+  
+  let average_latency = total_latency / latency_metrics.length()
+  
+  // 验证延迟统计
+  assert_eq(average_latency > 50, true)
+  assert_eq(average_latency < 200, true)
+  
+  // 网络错误处理
+  let mut network_errors = []
+  
+  // 模拟网络错误
+  if latency_metrics[0]["latency_ms"] > 100 {
+    network_errors.push({
+      "connection_id": latency_metrics[0]["connection_id"],
+      "error_type": "timeout",
+      "error_message": "Connection timeout",
+      "timestamp": 1640995200L
+    })
+  }
+  
+  // 验证错误处理
+  if network_errors.length() > 0 {
+    // 释放失败的连接
+    let failed_connection_id = network_errors[0]["connection_id"]
+    
+    let mut j = 0
+    while j < connection_pool["connections"].length() {
+      if connection_pool["connections"][j]["id"] == failed_connection_id {
+        connection_pool["connections"].remove(j)
+        connection_pool["active_connections"] = connection_pool["active_connections"] - 1
+        connection_pool["available_connections"] = connection_pool["available_connections"] + 1
+        break
+      }
+      j = j + 1
+    }
+  }
+  
+  // 验证错误恢复
+  assert_eq(connection_pool["active_connections"] + connection_pool["available_connections"], connection_pool["max_connections"])
+}
+
+test "telemetry_resource_scaling_management" {
+  // 测试遥测系统资源扩展管理
+  
+  // 资源扩展配置
+  let mut scaling_config = {
+    "min_instances": 2,
+    "max_instances": 10,
+    "current_instances": 2,
+    "cpu_threshold_high": 80.0,
+    "cpu_threshold_low": 30.0,
+    "memory_threshold_high": 85.0,
+    "memory_threshold_low": 40.0,
+    "scale_up_cooldown": 300,  // 5分钟
+    "scale_down_cooldown": 600  // 10分钟
+  }
+  
+  // 验证初始扩展配置
+  assert_eq(scaling_config["current_instances"], scaling_config["min_instances"])
+  
+  // 模拟资源使用监控
+  let mut resource_metrics = []
+  let mut i = 0
+  while i < 10 {
+    let cpu_usage = 50.0 + (i * 5.0)  // 50% -> 95%
+    let memory_usage = 60.0 + (i * 4.0)  // 60% -> 96%
+    
+    resource_metrics.push({
+      "timestamp": 1640995200L + i * 60,  // 每分钟一个指标
+      "cpu_usage": cpu_usage,
+      "memory_usage": memory_usage,
+      "request_rate": 100 + i * 20
+    })
+    
+    i = i + 1
+  }
+  
+  // 验证资源指标
+  assert_eq(resource_metrics.length(), 10)
+  assert_eq(resource_metrics[0]["cpu_usage"], 50.0)
+  assert_eq(resource_metrics[9]["cpu_usage"], 95.0)
+  
+  // 扩展决策逻辑
+  let should_scale_up = fn(metrics : Array[Map[String, Any]], config : Map[String, Any]) -> Bool {
+    if metrics.length() < 3 {
+      return false
+    }
+    
+    let recent_metrics = metrics.slice(metrics.length() - 3, metrics.length())
+    let mut avg_cpu = 0.0
+    let mut avg_memory = 0.0
+    
+    let mut i = 0
+    while i < recent_metrics.length() {
+      avg_cpu = avg_cpu + recent_metrics[i]["cpu_usage"]
+      avg_memory = avg_memory + recent_metrics[i]["memory_usage"]
+      i = i + 1
+    }
+    
+    avg_cpu = avg_cpu / recent_metrics.length().to_double()
+    avg_memory = avg_memory / recent_metrics.length().to_double()
+    
+    let cpu_threshold = config["cpu_threshold_high"]
+    let memory_threshold = config["memory_threshold_high"]
+    
+    avg_cpu > cpu_threshold or avg_memory > memory_threshold
+  }
+  
+  let should_scale_down = fn(metrics : Array[Map[String, Any]], config : Map[String, Any]) -> Bool {
+    if metrics.length() < 5 or config["current_instances"] <= config["min_instances"] {
+      return false
+    }
+    
+    let recent_metrics = metrics.slice(metrics.length() - 5, metrics.length())
+    let mut avg_cpu = 0.0
+    let mut avg_memory = 0.0
+    
+    let mut i = 0
+    while i < recent_metrics.length() {
+      avg_cpu = avg_cpu + recent_metrics[i]["cpu_usage"]
+      avg_memory = avg_memory + recent_metrics[i]["memory_usage"]
+      i = i + 1
+    }
+    
+    avg_cpu = avg_cpu / recent_metrics.length().to_double()
+    avg_memory = avg_memory / recent_metrics.length().to_double()
+    
+    let cpu_threshold = config["cpu_threshold_low"]
+    let memory_threshold = config["memory_threshold_low"]
+    
+    avg_cpu < cpu_threshold and avg_memory < memory_threshold
+  }
+  
+  // 模拟扩展决策
+  let mut scaling_events = []
+  
+  i = 3
+  while i < resource_metrics.length() {
+    let current_metrics = resource_metrics.slice(0, i + 1)
+    
+    if scaling_config["current_instances"] < scaling_config["max_instances"] and 
+       should_scale_up(current_metrics, scaling_config) {
+      // 扩展
+      scaling_config["current_instances"] = scaling_config["current_instances"] + 1
+      
+      scaling_events.push({
+        "timestamp": resource_metrics[i]["timestamp"],
+        "action": "scale_up",
+        "instance_count": scaling_config["current_instances"],
+        "cpu_usage": resource_metrics[i]["cpu_usage"],
+        "memory_usage": resource_metrics[i]["memory_usage"]
+      })
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证扩展事件
+  assert_eq(scaling_events.length() > 0, true)
+  assert_eq(scaling_config["current_instances"] > 2, true)
+  
+  // 扩展成本分析
+  let mut total_cost = 0.0
+  let cost_per_instance_per_hour = 0.05  // 每实例每小时0.05美元
+  
+  i = 0
+  while i < scaling_events.length() {
+    let event = scaling_events[i]
+    let instance_count = event["instance_count"]
+    let duration_hours = 1.0  // 简化计算，假设每个事件持续1小时
+    total_cost = total_cost + (instance_count * cost_per_instance_per_hour * duration_hours)
+    i = i + 1
+  }
+  
+  // 验证成本计算
+  assert_eq(total_cost > 0.0, true)
+  
+  // 性能改进分析
+  let mut performance_improvements = []
+  
+  i = 1
+  while i < scaling_events.length() {
+    let prev_event = scaling_events[i - 1]
+    let current_event = scaling_events[i]
+    
+    let prev_instances = prev_event["instance_count"]
+    let current_instances = current_event["instance_count"]
+    
+    if current_instances > prev_instances {
+      let scaling_factor = current_instances.to_double() / prev_instances.to_double()
+      let performance_gain = (scaling_factor - 1.0) * 100.0
+      
+      performance_improvements.push({
+        "timestamp": current_event["timestamp"],
+        "instances_before": prev_instances,
+        "instances_after": current_instances,
+        "performance_improvement_percent": performance_gain
+      })
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证性能改进
+  if performance_improvements.length() > 0 {
+    assert_eq(performance_improvements[0]["performance_improvement_percent"] > 0.0, true)
+  }
+  
+  // 资源利用率优化
+  let mut utilization_efficiency = 0.0
+  let mut total_cpu_utilization = 0.0
+  let mut total_memory_utilization = 0.0
+  
+  i = 0
+  while i < resource_metrics.length() {
+    total_cpu_utilization = total_cpu_utilization + resource_metrics[i]["cpu_usage"]
+    total_memory_utilization = total_memory_utilization + resource_metrics[i]["memory_usage"]
+    i = i + 1
+  }
+  
+  let avg_cpu_utilization = total_cpu_utilization / resource_metrics.length().to_double()
+  let avg_memory_utilization = total_memory_utilization / resource_metrics.length().to_double()
+  
+  utilization_efficiency = (avg_cpu_utilization + avg_memory_utilization) / 2.0
+  
+  // 验证资源利用率
+  assert_eq(utilization_efficiency > 50.0, true)
+  assert_eq(utilization_efficiency < 100.0, true)
 }

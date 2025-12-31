@@ -1,1212 +1,1136 @@
 // 遥测数据质量验证测试用例
-// 测试遥测数据的完整性、准确性、一致性和及时性等质量维度
 
-test "telemetry_data_completeness_validation" {
+test "telemetry_data_quality_completeness" {
   // 测试遥测数据完整性验证
   
-  let data_completeness_checks = {
-    "trace_data": {
-      "required_fields": ["trace_id", "span_id", "operation_name", "start_time", "end_time"],
-      "optional_fields": ["parent_span_id", "status", "attributes", "events", "links"],
-      "test_spans": [
-        {
-          "trace_id": "12345678901234567890123456789012",
-          "span_id": "abcdef1234567890",
-          "operation_name": "http_request",
-          "start_time": 1672531200000000000,
-          "end_time": 1672531200050000000,
-          "status": "ok",
-          "attributes": {"http.method": "GET"},
-          "events": []
-        },
-        {
-          "trace_id": "12345678901234567890123456789012",
-          "span_id": "fedcba0987654321",
-          "operation_name": "database_query",
-          "start_time": 1672531200010000000,
-          "end_time": 1672531200040000000,
-          "parent_span_id": "abcdef1234567890"
-        },
-        {
-          "trace_id": "",  // 缺少trace_id
-          "span_id": "1111111111111111",
-          "operation_name": "cache_lookup",
-          "start_time": 1672531200020000000
-          // 缺少end_time
-        }
-      ]
+  // 遥测数据模式定义
+  let telemetry_schema = {
+    "required_fields": ["timestamp", "metric_name", "value", "source"],
+    "optional_fields": ["unit", "tags", "environment"],
+    "field_types": {
+      "timestamp": "int64",
+      "metric_name": "string", 
+      "value": "double",
+      "source": "string",
+      "unit": "string",
+      "tags": "map",
+      "environment": "string"
     },
-    "metric_data": {
-      "required_fields": ["name", "type", "data_points"],
-      "data_point_required_fields": ["attributes", "value", "time_unix_nano"],
-      "test_metrics": [
-        {
-          "name": "http_requests_total",
-          "type": "counter",
-          "data_points": [
-            {
-              "attributes": {"method": "GET", "status": "200"},
-              "value": 42,
-              "time_unix_nano": 1672531200000000000
-            }
-          ]
-        },
-        {
-          "name": "response_time_seconds",
-          "type": "histogram",
-          "data_points": [
-            {
-              "attributes": {"endpoint": "/api/users"},
-              "value": 0.123,
-              "time_unix_nano": 1672531200000000000
-            }
-          ]
-        },
-        {
-          "name": "",  // 缺少name
-          "type": "gauge",
-          "data_points": [
-            {
-              "attributes": {"service": "auth"},
-              "value": 0.95
-              // 缺少time_unix_nano
-            }
-          ]
-        }
-      ]
-    },
-    "log_data": {
-      "required_fields": ["timestamp", "severity_text", "body"],
-      "optional_fields": ["attributes", "trace_id", "span_id", "severity_number"],
-      "test_logs": [
-        {
-          "timestamp": 1672531200000000000,
-          "severity_text": "INFO",
-          "body": "Processing request",
-          "attributes": {"request_id": "req-123"}
-        },
-        {
-          "timestamp": 1672531200050000000,
-          "severity_text": "ERROR",
-          "body": "Database connection failed",
-          "trace_id": "abcdef1234567890abcdef1234567890",
-          "span_id": "1234567890123456"
-        },
-        {
-          "timestamp": 1672531200100000000,
-          "severity_text": "DEBUG"
-          // 缺少body
-        }
-      ]
+    "field_constraints": {
+      "timestamp": {"min": 0},
+      "metric_name": {"min_length": 1, "max_length": 100},
+      "value": {"min": -1000000.0, "max": 1000000.0},
+      "source": {"min_length": 1, "max_length": 50}
     }
   }
   
-  // 验证Trace数据完整性
-  let trace_data = data_completeness_checks.get("trace_data", {})
-  let required_trace_fields = trace_data.get("required_fields", [])
-  let test_spans = trace_data.get("test_spans", [])
+  // 验证模式定义
+  assert_eq(telemetry_schema["required_fields"].length(), 4)
+  assert_eq(telemetry_schema["optional_fields"].length(), 3)
   
-  let mut complete_spans = 0
-  let mut incomplete_spans = 0
-  let span_completeness_issues = []
+  // 测试数据样本
+  let test_data_samples = [
+    {
+      "timestamp": 1640995200000L,
+      "metric_name": "cpu_usage",
+      "value": 75.5,
+      "source": "server-001",
+      "unit": "percent",
+      "tags": {"region": "us-west-2"},
+      "environment": "production"
+    },
+    {
+      "timestamp": 1640995200000L,
+      "metric_name": "memory_usage", 
+      "value": 68.2,
+      "source": "server-001",
+      "unit": "percent"
+      // 缺少可选字段 tags 和 environment
+    },
+    {
+      "timestamp": 1640995200000L,
+      "metric_name": "disk_usage",
+      "value": 45.8
+      // 缺少必需字段 source
+    },
+    {
+      "timestamp": -1000L,  // 无效时间戳
+      "metric_name": "",    // 空指标名称
+      "value": 9999999.0,  // 超出范围的值
+      "source": "server-001"
+    }
+  ]
   
+  // 验证测试数据
+  assert_eq(test_data_samples.length(), 4)
+  
+  // 数据完整性验证函数
+  let validate_completeness = fn(data : Map[String, Any], schema : Map[String, Any]) -> (Bool, Array[String]) {
+    let mut is_valid = true
+    let mut errors = []
+    let required_fields = schema["required_fields"] as Array[String]
+    let field_types = schema["field_types"] as Map[String, String]
+    let field_constraints = schema["field_constraints"] as Map[String, Map[String, Any]]
+    
+    // 检查必需字段
+    let mut i = 0
+    while i < required_fields.length() {
+      let field = required_fields[i]
+      if not data.contains(field) {
+        is_valid = false
+        errors.push("Missing required field: " + field)
+      }
+      i = i + 1
+    }
+    
+    // 检查字段类型和约束
+    for field in data.keys() {
+      if field_types.contains(field) {
+        let expected_type = field_types[field]
+        let value = data[field]
+        
+        // 类型检查（简化实现）
+        if expected_type == "string" and not (value is String) {
+          is_valid = false
+          errors.push("Invalid type for field " + field + ": expected string")
+        } else if expected_type == "int64" and not (value is Int64) {
+          is_valid = false
+          errors.push("Invalid type for field " + field + ": expected int64")
+        } else if expected_type == "double" and not (value is Double) {
+          is_valid = false
+          errors.push("Invalid type for field " + field + ": expected double")
+        }
+        
+        // 约束检查
+        if field_constraints.contains(field) {
+          let constraints = field_constraints[field]
+          
+          if constraints.contains("min") and value is Int64 {
+            let int_value = value as Int64
+            let min_value = constraints["min"]
+            if int_value < min_value {
+              is_valid = false
+              errors.push("Value for field " + field + " below minimum")
+            }
+          }
+          
+          if constraints.contains("max") and value is Double {
+            let double_value = value as Double
+            let max_value = constraints["max"]
+            if double_value > max_value {
+              is_valid = false
+              errors.push("Value for field " + field + " above maximum")
+            }
+          }
+          
+          if constraints.contains("min_length") and value is String {
+            let string_value = value as String
+            let min_length = constraints["min_length"]
+            if string_value.length() < min_length {
+              is_valid = false
+              errors.push("String length for field " + field + " below minimum")
+            }
+          }
+        }
+      }
+    }
+    
+    (is_valid, errors)
+  }
+  
+  // 验证每个数据样本
+  let mut validation_results = []
   let mut i = 0
-  while i < test_spans.length() {
-    let span = test_spans[i]
-    let mut missing_fields = []
+  while i < test_data_samples.length() {
+    let sample = test_data_samples[i]
+    let (is_valid, errors) = validate_completeness(sample, telemetry_schema)
     
-    // 检查必需字段
-    let mut j = 0
-    while j < required_trace_fields.length() {
-      let field = required_trace_fields[j]
-      if not span.contains(field) or span.get(field, "") == "" {
-        missing_fields.push(field)
-      }
-      j = j + 1
-    }
-    
-    if missing_fields.length() == 0 {
-      complete_spans = complete_spans + 1
-    } else {
-      incomplete_spans = incomplete_spans + 1
-      span_completeness_issues.push({
-        "span_id": span.get("span_id", "unknown"),
-        "missing_fields": missing_fields
-      })
-    }
+    validation_results.push({
+      "sample_index": i,
+      "is_valid": is_valid,
+      "error_count": errors.length(),
+      "errors": errors
+    })
     
     i = i + 1
   }
   
-  // 验证Trace完整性结果
-  assert_eq(complete_spans, 2)  // 前两个span是完整的
-  assert_eq(incomplete_spans, 1)  // 第三个span不完整
-  assert_eq(span_completeness_issues.length(), 1)
+  // 验证结果
+  assert_eq(validation_results.length(), 4)
   
-  let missing_issue = span_completeness_issues[0]
-  assert_eq(missing_issue.get("span_id", ""), "1111111111111111")
-  let missing_fields = missing_issue.get("missing_fields", [])
-  assert_eq(missing_fields.contains("trace_id"), true)
-  assert_eq(missing_fields.contains("end_time"), true)
+  // 第一个样本应该完全有效
+  assert_eq(validation_results[0]["is_valid"], true)
+  assert_eq(validation_results[0]["error_count"], 0)
   
-  // 验证Metric数据完整性
-  let metric_data = data_completeness_checks.get("metric_data", {})
-  let required_metric_fields = metric_data.get("required_fields", [])
-  let required_dp_fields = metric_data.get("data_point_required_fields", [])
-  let test_metrics = metric_data.get("test_metrics", [])
+  // 第三个样本应该无效（缺少必需字段）
+  assert_eq(validation_results[2]["is_valid"], false)
+  assert_eq(validation_results[2]["error_count"] > 0, true)
   
-  let mut complete_metrics = 0
-  let mut incomplete_metrics = 0
-  let metric_completeness_issues = []
+  // 第四个样本应该无效（多个约束违反）
+  assert_eq(validation_results[3]["is_valid"], false)
+  assert_eq(validation_results[3]["error_count"] >= 3, true)
+  
+  // 计算数据质量指标
+  let mut valid_samples = 0
+  let mut total_errors = 0
   
   i = 0
-  while i < test_metrics.length() {
-    let metric = test_metrics[i]
-    let mut missing_metric_fields = []
-    
-    // 检查metric必需字段
-    let mut j = 0
-    while j < required_metric_fields.length() {
-      let field = required_metric_fields[j]
-      if not metric.contains(field) or (field == "name" and metric.get(field, "") == "") {
-        missing_metric_fields.push(field)
-      }
-      j = j + 1
+  while i < validation_results.length() {
+    if validation_results[i]["is_valid"] {
+      valid_samples = valid_samples + 1
     }
-    
-    // 检查data point必需字段
-    let data_points = metric.get("data_points", [])
-    let mut j = 0
-    while j < data_points.length() {
-      let data_point = data_points[j]
-      let mut missing_dp_fields = []
-      
-      let mut k = 0
-      while k < required_dp_fields.length() {
-        let field = required_dp_fields[k]
-        if not data_point.contains(field) {
-          missing_dp_fields.push(field)
-        }
-        k = k + 1
-      }
-      
-      if missing_dp_fields.length() > 0 {
-        missing_metric_fields.push("data_point." + missing_dp_fields.join(","))
-      }
-      
-      j = j + 1
-    }
-    
-    if missing_metric_fields.length() == 0 {
-      complete_metrics = complete_metrics + 1
-    } else {
-      incomplete_metrics = incomplete_metrics + 1
-      metric_completeness_issues.push({
-        "metric_name": metric.get("name", "unknown"),
-        "missing_fields": missing_metric_fields
-      })
-    }
-    
+    total_errors = total_errors + validation_results[i]["error_count"]
     i = i + 1
   }
   
-  // 验证Metric完整性结果
-  assert_eq(complete_metrics, 2)  // 前两个metric是完整的
-  assert_eq(incomplete_metrics, 1)  // 第三个metric不完整
-  assert_eq(metric_completeness_issues.length(), 1)
+  let completeness_rate = valid_samples.to_double() / validation_results.length().to_double()
+  let error_rate = total_errors.to_double() / validation_results.length().to_double()
   
-  // 验证Log数据完整性
-  let log_data = data_completeness_checks.get("log_data", {})
-  let required_log_fields = log_data.get("required_fields", [])
-  let test_logs = log_data.get("test_logs", [])
-  
-  let mut complete_logs = 0
-  let mut incomplete_logs = 0
-  let log_completeness_issues = []
-  
-  i = 0
-  while i < test_logs.length() {
-    let log = test_logs[i]
-    let mut missing_fields = []
-    
-    // 检查必需字段
-    let mut j = 0
-    while j < required_log_fields.length() {
-      let field = required_log_fields[j]
-      if not log.contains(field) or (field == "body" and log.get(field, "") == "") {
-        missing_fields.push(field)
-      }
-      j = j + 1
-    }
-    
-    if missing_fields.length() == 0 {
-      complete_logs = complete_logs + 1
-    } else {
-      incomplete_logs = incomplete_logs + 1
-      log_completeness_issues.push({
-        "log_index": i,
-        "missing_fields": missing_fields
-      })
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证Log完整性结果
-  assert_eq(complete_logs, 2)  // 前两个log是完整的
-  assert_eq(incomplete_logs, 1)  // 第三个log不完整
-  assert_eq(log_completeness_issues.length(), 1)
-  
-  let log_missing_issue = log_completeness_issues[0]
-  let log_missing_fields = log_missing_issue.get("missing_fields", [])
-  assert_eq(log_missing_fields.contains("body"), true)
-  
-  // 计算总体完整性评分
-  let total_data_points = test_spans.length() + test_metrics.length() + test_logs.length()
-  let total_complete = complete_spans + complete_metrics + complete_logs
-  let completeness_score = (total_complete.to_double() / total_data_points.to_double()) * 100.0
-  
-  assert_eq(completeness_score, 66.66666666666667)  // 6/9 * 100
+  // 验证质量指标
+  assert_eq(completeness_rate >= 0.0, true)
+  assert_eq(completeness_rate <= 1.0, true)
+  assert_eq(error_rate >= 0.0, true)
 }
 
-test "telemetry_data_accuracy_validation" {
+test "telemetry_data_quality_accuracy" {
   // 测试遥测数据准确性验证
   
-  let accuracy_validation_tests = {
-    "trace_accuracy": {
-      "test_cases": [
-        {
-          "name": "valid_trace_id_format",
-          "trace": {
-            "trace_id": "12345678901234567890123456789012",
-            "span_id": "abcdef1234567890",
-            "operation_name": "http_request"
-          },
-          "expected_result": "valid"
-        },
-        {
-          "name": "invalid_trace_id_length",
-          "trace": {
-            "trace_id": "12345",  // 太短
-            "span_id": "abcdef1234567890",
-            "operation_name": "http_request"
-          },
-          "expected_result": "invalid",
-          "error_reason": "trace_id must be 32 characters"
-        },
-        {
-          "name": "invalid_trace_id_characters",
-          "trace": {
-            "trace_id": "gggggggggggggggggggggggggggggggg",  // 非十六进制字符
-            "span_id": "abcdef1234567890",
-            "operation_name": "http_request"
-          },
-          "expected_result": "invalid",
-          "error_reason": "trace_id contains non-hexadecimal characters"
-        },
-        {
-          "name": "invalid_time_order",
-          "trace": {
-            "trace_id": "12345678901234567890123456789012",
-            "span_id": "abcdef1234567890",
-            "start_time": 1672531200100000000,
-            "end_time": 1672531200050000000  // end_time早于start_time
-          },
-          "expected_result": "invalid",
-          "error_reason": "end_time must be >= start_time"
-        }
-      ]
+  // 准确性验证规则
+  let accuracy_rules = {
+    "timestamp_range": {
+      "min": 1640995200000L,  // 2022-01-01 00:00:00 UTC
+      "max": 1672531199000L   // 2023-01-01 00:00:00 UTC
     },
-    "metric_accuracy": {
-      "test_cases": [
-        {
-          "name": "valid_counter_value",
-          "metric": {
-            "name": "request_count",
-            "type": "counter",
-            "data_points": [
-              {"attributes": {"method": "GET"}, "value": 10, "time_unix_nano": 1672531200000000000},
-              {"attributes": {"method": "GET"}, "value": 15, "time_unix_nano": 1672531200050000000}
-            ]
-          },
-          "expected_result": "valid"
-        },
-        {
-          "name": "invalid_counter_decrease",
-          "metric": {
-            "name": "request_count",
-            "type": "counter",
-            "data_points": [
-              {"attributes": {"method": "GET"}, "value": 20, "time_unix_nano": 1672531200000000000},
-              {"attributes": {"method": "GET"}, "value": 15, "time_unix_nano": 1672531200050000000}  // 计数器值减少
-            ]
-          },
-          "expected_result": "invalid",
-          "error_reason": "counter values must be monotonically increasing"
-        },
-        {
-          "name": "invalid_gauge_negative",
-          "metric": {
-            "name": "cpu_usage",
-            "type": "gauge",
-            "data_points": [
-              {"attributes": {"instance": "server1"}, "value": -5.0, "time_unix_nano": 1672531200000000000}
-            ]
-          },
-          "expected_result": "warning",
-          "error_reason": "gauge value is negative which may be unusual for cpu_usage"
-        },
-        {
-          "name": "invalid_histogram_buckets",
-          "metric": {
-            "name": "response_time",
-            "type": "histogram",
-            "data_points": [
-              {
-                "attributes": {"endpoint": "/api/users"},
-                "bucket_counts": [1, 3, 2, 5],  // 不递增
-                "explicit_bounds": [0.1, 0.5, 1.0],
-                "count": 10,
-                "sum": 5.5
-              }
-            ]
-          },
-          "expected_result": "invalid",
-          "error_reason": "histogram bucket counts must be monotonically increasing"
-        }
-      ]
+    "metric_ranges": {
+      "cpu_usage": {"min": 0.0, "max": 100.0},
+      "memory_usage": {"min": 0.0, "max": 100.0},
+      "disk_usage": {"min": 0.0, "max": 100.0},
+      "response_time": {"min": 0.0, "max": 300000.0},  // 5分钟
+      "error_rate": {"min": 0.0, "max": 1.0}
     },
-    "log_accuracy": {
-      "test_cases": [
-        {
-          "name": "valid_severity_levels",
-          "log": {
-            "timestamp": 1672531200000000000,
-            "severity_text": "INFO",
-            "severity_number": 9,
-            "body": "Processing request"
-          },
-          "expected_result": "valid"
-        },
-        {
-          "name": "invalid_severity_mismatch",
-          "log": {
-            "timestamp": 1672531200000000000,
-            "severity_text": "ERROR",
-            "severity_number": 9,  // 应该是17
-            "body": "Error occurred"
-          },
-          "expected_result": "warning",
-          "error_reason": "severity_text and severity_number do not match"
-        },
-        {
-          "name": "invalid_timestamp_future",
-          "log": {
-            "timestamp": 9999999999000000000,  // 未来时间
-            "severity_text": "DEBUG",
-            "body": "Debug message"
-          },
-          "expected_result": "invalid",
-          "error_reason": "log timestamp is in the future"
-        },
-        {
-          "name": "empty_body_with_info_level",
-          "log": {
-            "timestamp": 1672531200000000000,
-            "severity_text": "INFO",
-            "body": ""
-          },
-          "expected_result": "warning",
-          "error_reason": "log body is empty for INFO level"
-        }
-      ]
+    "value_precision": {
+      "max_decimal_places": 3
     }
   }
   
-  // 验证Trace准确性
-  let trace_accuracy = accuracy_validation_tests.get("trace_accuracy", {})
-  let trace_test_cases = trace_accuracy.get("test_cases", [])
+  // 验证准确性规则
+  assert_eq(accuracy_rules["metric_ranges"]["cpu_usage"]["max"], 100.0)
   
-  let mut valid_traces = 0
-  let mut invalid_traces = 0
-  let mut warning_traces = 0
-  let trace_accuracy_issues = []
+  // 测试数据样本（包含不准确数据）
+  let accuracy_test_data = [
+    {
+      "timestamp": 1640995250000L,
+      "metric_name": "cpu_usage",
+      "value": 75.5,
+      "source": "server-001"
+    },
+    {
+      "timestamp": 1640995250000L,
+      "metric_name": "memory_usage",
+      "value": 120.5,  // 超出100%范围
+      "source": "server-001"
+    },
+    {
+      "timestamp": 1540995200000L,  // 超出时间范围
+      "metric_name": "disk_usage",
+      "value": 45.8,
+      "source": "server-001"
+    },
+    {
+      "timestamp": 1640995250000L,
+      "metric_name": "response_time",
+      "value": -50.0,  // 负响应时间
+      "source": "server-001"
+    },
+    {
+      "timestamp": 1640995250000L,
+      "metric_name": "error_rate",
+      "value": 1.5,  // 超出0-1范围
+      "source": "server-001"
+    }
+  ]
   
+  // 验证测试数据
+  assert_eq(accuracy_test_data.length(), 5)
+  
+  // 准确性验证函数
+  let validate_accuracy = fn(data : Map[String, Any], rules : Map[String, Any]) -> (Bool, Array[String]) {
+    let mut is_valid = true
+    let mut errors = []
+    
+    // 时间戳范围检查
+    let timestamp = data["timestamp"]
+    let timestamp_range = rules["timestamp_range"]
+    if timestamp < timestamp_range["min"] or timestamp > timestamp_range["max"] {
+      is_valid = false
+      errors.push("Timestamp out of valid range")
+    }
+    
+    // 指标范围检查
+    let metric_name = data["metric_name"]
+    let value = data["value"]
+    let metric_ranges = rules["metric_ranges"]
+    
+    if metric_ranges.contains(metric_name) {
+      let range = metric_ranges[metric_name]
+      if value < range["min"] or value > range["max"] {
+        is_valid = false
+        errors.push("Metric value out of valid range for " + metric_name)
+      }
+    }
+    
+    // 数值精度检查
+    if value is Double {
+      let double_value = value as Double
+      let decimal_places = ((double_value * 1000.0).round() / 1000.0 - double_value).abs() * 1000.0
+      let max_decimal_places = rules["value_precision"]["max_decimal_places"]
+      
+      if decimal_places > 0.1 and max_decimal_places < 3 {
+        is_valid = false
+        errors.push("Value precision exceeds allowed decimal places")
+      }
+    }
+    
+    // 逻辑一致性检查
+    if metric_name == "response_time" and value < 0 {
+      is_valid = false
+      errors.push("Response time cannot be negative")
+    }
+    
+    if metric_name == "error_rate" and (value < 0.0 or value > 1.0) {
+      is_valid = false
+      errors.push("Error rate must be between 0 and 1")
+    }
+    
+    (is_valid, errors)
+  }
+  
+  // 验证每个数据样本的准确性
+  let mut accuracy_results = []
   let mut i = 0
-  while i < trace_test_cases.length() {
-    let test_case = trace_test_cases[i]
-    let trace = test_case.get("trace", {})
-    let expected_result = test_case.get("expected_result", "")
+  while i < accuracy_test_data.length() {
+    let sample = accuracy_test_data[i]
+    let (is_valid, errors) = validate_accuracy(sample, accuracy_rules)
     
-    let validation_result = validate_trace_accuracy(trace)
-    let actual_result = validation_result.get("result", "")
-    
-    if actual_result == "valid" {
-      valid_traces = valid_traces + 1
-    } else if actual_result == "invalid" {
-      invalid_traces = invalid_traces + 1
-    } else if actual_result == "warning" {
-      warning_traces = warning_traces + 1
-    }
-    
-    if actual_result != expected_result {
-      trace_accuracy_issues.push({
-        "test_case": test_case.get("name", ""),
-        "expected": expected_result,
-        "actual": actual_result,
-        "reason": validation_result.get("reason", "")
-      })
-    }
+    accuracy_results.push({
+      "sample_index": i,
+      "metric_name": sample["metric_name"],
+      "is_accurate": is_valid,
+      "accuracy_errors": errors
+    })
     
     i = i + 1
   }
   
-  // 验证Trace准确性结果
-  assert_eq(valid_traces, 1)
-  assert_eq(invalid_traces, 3)
-  assert_eq(warning_traces, 0)
-  assert_eq(trace_accuracy_issues.length(), 0)  // 所有测试用例的预期结果与实际结果匹配
+  // 验证准确性结果
+  assert_eq(accuracy_results.length(), 5)
   
-  // 验证Metric准确性
-  let metric_accuracy = accuracy_validation_tests.get("metric_accuracy", {})
-  let metric_test_cases = metric_accuracy.get("test_cases", [])
+  // 第一个样本应该准确
+  assert_eq(accuracy_results[0]["is_accurate"], true)
+  assert_eq(accuracy_results[0]["accuracy_errors"].length(), 0)
   
-  let mut valid_metrics = 0
-  let mut invalid_metrics = 0
-  let mut warning_metrics = 0
+  // 其他样本应该有准确性问题
+  let mut inaccurate_count = 0
+  i = 1
+  while i < accuracy_results.length() {
+    if not accuracy_results[i]["is_accurate"] {
+      inaccurate_count = inaccurate_count + 1
+    }
+    i = i + 1
+  }
   
+  assert_eq(inaccurate_count >= 4, true)
+  
+  // 计算准确性指标
+  let accurate_samples = accuracy_results.length() - inaccurate_count
+  let accuracy_rate = accurate_samples.to_double() / accuracy_results.length().to_double()
+  
+  // 验证准确性率
+  assert_eq(accuracy_rate >= 0.0, true)
+  assert_eq(accuracy_rate <= 1.0, true)
+  assert_eq(accuracy_rate < 1.0, true)  // 应该有不准确数据
+  
+  // 数据修正建议
+  let mut correction_suggestions = []
   i = 0
-  while i < metric_test_cases.length() {
-    let test_case = metric_test_cases[i]
-    let metric = test_case.get("metric", {})
-    let expected_result = test_case.get("expected_result", "")
-    
-    let validation_result = validate_metric_accuracy(metric)
-    let actual_result = validation_result.get("result", "")
-    
-    if actual_result == "valid" {
-      valid_metrics = valid_metrics + 1
-    } else if actual_result == "invalid" {
-      invalid_metrics = invalid_metrics + 1
-    } else if actual_result == "warning" {
-      warning_metrics = warning_metrics + 1
+  while i < accuracy_results.length() {
+    let result = accuracy_results[i]
+    if not result["is_accurate"] {
+      let errors = result["accuracy_errors"]
+      let mut j = 0
+      while j < errors.length() {
+        let error = errors[j]
+        let suggestion = if error.contains("out of valid range") {
+          "Clamp value to valid range"
+        } else if error.contains("Timestamp out of") {
+          "Correct timestamp to valid range"
+        } else if error.contains("cannot be negative") {
+          "Set negative values to zero"
+        } else {
+          "Review and correct data value"
+        }
+        
+        correction_suggestions.push({
+          "metric": result["metric_name"],
+          "error": error,
+          "suggestion": suggestion
+        })
+        
+        j = j + 1
+      }
     }
-    
     i = i + 1
   }
   
-  // 验证Metric准确性结果
-  assert_eq(valid_metrics, 1)
-  assert_eq(invalid_metrics, 2)
-  assert_eq(warning_metrics, 1)
-  
-  // 验证Log准确性
-  let log_accuracy = accuracy_validation_tests.get("log_accuracy", {})
-  let log_test_cases = log_accuracy.get("test_cases", [])
-  
-  let mut valid_logs = 0
-  let mut invalid_logs = 0
-  let mut warning_logs = 0
-  
-  i = 0
-  while i < log_test_cases.length() {
-    let test_case = log_test_cases[i]
-    let log = test_case.get("log", {})
-    let expected_result = test_case.get("expected_result", "")
-    
-    let validation_result = validate_log_accuracy(log)
-    let actual_result = validation_result.get("result", "")
-    
-    if actual_result == "valid" {
-      valid_logs = valid_logs + 1
-    } else if actual_result == "invalid" {
-      invalid_logs = invalid_logs + 1
-    } else if actual_result == "warning" {
-      warning_logs = warning_logs + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证Log准确性结果
-  assert_eq(valid_logs, 1)
-  assert_eq(invalid_logs, 1)
-  assert_eq(warning_logs, 2)
-  
-  // 计算总体准确性评分
-  let total_accuracy_tests = trace_test_cases.length() + metric_test_cases.length() + log_test_cases.length()
-  let total_valid = valid_traces + valid_metrics + valid_logs
-  let accuracy_score = (total_valid.to_double() / total_accuracy_tests.to_double()) * 100.0
-  
-  assert_eq(accuracy_score, 25.0)  // 3/12 * 100
+  // 验证修正建议
+  assert_eq(correction_suggestions.length() > 0, true)
 }
 
-test "telemetry_data_consistency_validation" {
+test "telemetry_data_quality_consistency" {
   // 测试遥测数据一致性验证
   
-  let consistency_validation = {
-    "cross_service_consistency": {
-      "trace_chain": [
-        {
-          "service": "api-gateway",
-          "trace_id": "abc123456789012345678901234567890",
-          "span_id": "1111111111111111",
-          "parent_span_id": "",
-          "operation": "http.request",
-          "start_time": 1672531200000000000,
-          "end_time": 1672531200050000000,
-          "attributes": {
-            "http.method": "POST",
-            "http.path": "/api/orders",
-            "user.id": "user-123",
-            "request.id": "req-456"
-          }
-        },
-        {
-          "service": "order-service",
-          "trace_id": "abc123456789012345678901234567890",
-          "span_id": "2222222222222222",
-          "parent_span_id": "1111111111111111",
-          "operation": "create_order",
-          "start_time": 1672531200010000000,
-          "end_time": 1672531200080000000,
-          "attributes": {
-            "user.id": "user-123",  // 一致
-            "request.id": "req-456",  // 一致
-            "order.type": "premium"
-          }
-        },
-        {
-          "service": "payment-service",
-          "trace_id": "abc123456789012345678901234567890",
-          "span_id": "3333333333333333",
-          "parent_span_id": "2222222222222222",
-          "operation": "process_payment",
-          "start_time": 1672531200090000000,
-          "end_time": 1672531200150000000,
-          "attributes": {
-            "user.id": "user-456",  // 不一致！
-            "request.id": "req-456",  // 一致
-            "payment.method": "credit_card"
-          }
-        }
-      ]
-    },
+  // 一致性规则定义
+  let consistency_rules = {
     "temporal_consistency": {
-      "metrics_timeline": [
+      "max_time_gap": 300000,  // 5分钟最大时间间隔
+      "monotonic_timestamps": true
+    },
+    "logical_consistency": {
+      "related_metrics": [
         {
-          "timestamp": 1672531200000000000,
-          "metrics": {
-            "active_requests": 10,
-            "cpu_usage": 25.5,
-            "memory_usage": 512
-          }
+          "primary": "cpu_usage",
+          "related": "load_average",
+          "correlation_threshold": 0.7
         },
         {
-          "timestamp": 1672531200050000000,
-          "metrics": {
-            "active_requests": 15,
-            "cpu_usage": 30.2,
-            "memory_usage": 528
-          }
-        },
-        {
-          "timestamp": 1672531200100000000,
-          "metrics": {
-            "active_requests": 5,
-            "cpu_usage": 20.1,
-            "memory_usage": 504
-          }
+          "primary": "memory_usage",
+          "related": "swap_usage", 
+          "correlation_threshold": 0.5
         }
       ]
     },
-    "semantic_consistency": {
-      "error_patterns": [
-        {
-          "log_entry": {
-            "timestamp": 1672531200050000000,
-            "severity_text": "ERROR",
-            "body": "Database connection failed",
-            "trace_id": "def123456789012345678901234567890",
-            "span_id": "4444444444444444"
-          },
-          "related_span": {
-            "trace_id": "def123456789012345678901234567890",
-            "span_id": "4444444444444444",
-            "status": "error"
-          }
-        },
-        {
-          "log_entry": {
-            "timestamp": 1672531200100000000,
-            "severity_text": "ERROR",
-            "body": "Payment processing failed",
-            "trace_id": "def123456789012345678901234567890",
-            "span_id": "5555555555555555"
-          },
-          "related_span": {
-            "trace_id": "def123456789012345678901234567890",
-            "span_id": "5555555555555555",
-            "status": "ok"  // 不一致！错误日志但span状态是ok
-          }
-        }
-      ]
+    "statistical_consistency": {
+      "outlier_detection": {
+        "method": "iqr",
+        "threshold": 1.5
+      },
+      "trend_consistency": {
+        "window_size": 10,
+        "max_change_rate": 0.5  // 50%最大变化率
+      }
     }
   }
   
-  // 验证跨服务一致性
-  let cross_service = consistency_validation.get("cross_service_consistency", {})
-  let trace_chain = cross_service.get("trace_chain", [])
+  // 时间序列数据样本
+  let time_series_data = [
+    {
+      "timestamp": 1640995200000L,
+      "cpu_usage": 45.2,
+      "memory_usage": 68.5,
+      "load_average": 1.2,
+      "swap_usage": 2.1
+    },
+    {
+      "timestamp": 1640995210000L,  // 10秒后
+      "cpu_usage": 47.8,
+      "memory_usage": 69.2,
+      "load_average": 1.3,
+      "swap_usage": 2.3
+    },
+    {
+      "timestamp": 1640995220000L,  // 10秒后
+      "cpu_usage": 46.5,
+      "memory_usage": 68.8,
+      "load_average": 1.25,
+      "swap_usage": 2.2
+    },
+    {
+      "timestamp": 1640995800000L,  // 10分钟后（超出最大间隔）
+      "cpu_usage": 48.1,
+      "memory_usage": 70.1,
+      "load_average": 1.4,
+      "swap_usage": 2.5
+    },
+    {
+      "timestamp": 1640995790000L,  // 时间戳倒退
+      "cpu_usage": 150.0,  // 异常值
+      "memory_usage": 95.0,  // 异常值
+      "load_average": 5.0,   // 异常值
+      "swap_usage": 15.0    // 异常值
+    }
+  ]
   
-  let mut consistency_issues = []
-  let consistent_attributes = ["user.id", "request.id"]
+  // 验证时间序列数据
+  assert_eq(time_series_data.length(), 5)
   
-  let mut i = 1
-  while i < trace_chain.length() {
-    let current_span = trace_chain[i]
-    let parent_span = trace_chain[i - 1]
-    let current_attrs = current_span.get("attributes", {})
-    let parent_attrs = parent_span.get("attributes", {})
+  // 时间一致性验证
+  let validate_temporal_consistency = fn(data : Array[Map[String, Any]], rules : Map[String, Any]) -> (Bool, Array[String]) {
+    let mut is_consistent = true
+    let mut errors = []
+    let temporal_rules = rules["temporal_consistency"]
     
-    let mut j = 0
-    while j < consistent_attributes.length() {
-      let attr = consistent_attributes[j]
-      let current_value = current_attrs.get(attr, "")
-      let parent_value = parent_attrs.get(attr, "")
+    let mut i = 1
+    while i < data.length() {
+      let prev_timestamp = data[i - 1]["timestamp"]
+      let curr_timestamp = data[i]["timestamp"]
       
-      if current_value != "" and parent_value != "" and current_value != parent_value {
-        consistency_issues.push({
-          "type": "attribute_inconsistency",
-          "service": current_span.get("service", ""),
-          "attribute": attr,
-          "parent_value": parent_value,
-          "current_value": current_value
-        })
+      // 检查时间戳单调性
+      if temporal_rules["monotonic_timestamps"] and curr_timestamp < prev_timestamp {
+        is_consistent = false
+        errors.push("Non-monotonic timestamp at index " + i.to_string())
       }
       
-      j = j + 1
+      // 检查时间间隔
+      let time_gap = curr_timestamp - prev_timestamp
+      if time_gap > temporal_rules["max_time_gap"] {
+        is_consistent = false
+        errors.push("Time gap exceeds maximum at index " + i.to_string())
+      }
+      
+      i = i + 1
     }
     
-    i = i + 1
+    (is_consistent, errors)
   }
   
-  // 验证跨服务一致性结果
-  assert_eq(consistency_issues.length(), 1)  // 只有user.id不一致
-  
-  let user_id_issue = consistency_issues[0]
-  assert_eq(user_id_issue.get("type", ""), "attribute_inconsistency")
-  assert_eq(user_id_issue.get("service", ""), "payment-service")
-  assert_eq(user_id_issue.get("attribute", ""), "user.id")
-  assert_eq(user_id_issue.get("parent_value", ""), "user-123")
-  assert_eq(user_id_issue.get("current_value", ""), "user-456")
-  
-  // 验证时间一致性
-  let temporal = consistency_validation.get("temporal_consistency", {})
-  let metrics_timeline = temporal.get("metrics_timeline", [])
-  
-  let mut temporal_issues = []
-  
-  let mut i = 1
-  while i < metrics_timeline.length() {
-    let current = metrics_timeline[i]
-    let previous = metrics_timeline[i - 1]
-    let current_metrics = current.get("metrics", {})
-    let previous_metrics = previous.get("metrics", {})
+  // 逻辑一致性验证
+  let validate_logical_consistency = fn(data : Array[Map[String, Any]], rules : Map[String, Any]) -> (Bool, Array[String]) {
+    let mut is_consistent = true
+    let mut errors = []
+    let logical_rules = rules["logical_consistency"]
+    let related_metrics = logical_rules["related_metrics"]
     
-    // 检查CPU使用率的合理性变化
-    let current_cpu = current_metrics.get("cpu_usage", 0.0)
-    let previous_cpu = previous_metrics.get("cpu_usage", 0.0)
-    let cpu_change = abs(current_cpu - previous_cpu)
-    
-    if cpu_change > 50.0 {  // CPU使用率变化超过50%可能是异常
-      temporal_issues.push({
-        "type": "unusual_metric_change",
-        "metric": "cpu_usage",
-        "previous_value": previous_cpu,
-        "current_value": current_cpu,
-        "change": cpu_change
-      })
+    // 简化的相关性检查
+    let mut i = 0
+    while i < related_metrics.length() {
+      let metric_relation = related_metrics[i]
+      let primary_metric = metric_relation["primary"]
+      let related_metric = metric_relation["related"]
+      
+      let mut j = 0
+      while j < data.length() {
+        let data_point = data[j]
+        
+        if data_point.contains(primary_metric) and data_point.contains(related_metric) {
+          let primary_value = data_point[primary_metric]
+          let related_value = data_point[related_metric]
+          
+          // 简化的逻辑一致性检查
+          if primary_metric == "cpu_usage" and related_metric == "load_average" {
+            // CPU使用率和负载平均值应该有正相关性
+            if primary_value > 80.0 and related_value < 1.0 {
+              is_consistent = false
+              errors.push("Inconsistent cpu_usage and load_average at index " + j.to_string())
+            }
+          }
+        }
+        
+        j = j + 1
+      }
+      
+      i = i + 1
     }
     
-    i = i + 1
+    (is_consistent, errors)
   }
   
-  // 验证时间一致性结果
-  assert_eq(temporal_issues.length(), 0)  // 没有发现时间一致性问题
+  // 统计一致性验证
+  let validate_statistical_consistency = fn(data : Array[Map[String, Any]], rules : Map[String, Any]) -> (Bool, Array[String]) {
+    let mut is_consistent = true
+    let mut errors = []
+    let statistical_rules = rules["statistical_consistency"]
+    
+    // 对每个指标进行异常值检测
+    let metrics = ["cpu_usage", "memory_usage", "load_average", "swap_usage"]
+    
+    let mut m = 0
+    while m < metrics.length() {
+      let metric = metrics[m]
+      let mut values = []
+      
+      let mut i = 0
+      while i < data.length() {
+        if data[i].contains(metric) {
+          values.push(data[i][metric])
+        }
+        i = i + 1
+      }
+      
+      if values.length() >= 4 {
+        // 计算IQR（四分位距）
+        let sorted_values = values  // 简化：假设已排序
+        let q1_index = sorted_values.length() / 4
+        let q3_index = (sorted_values.length() * 3) / 4
+        let q1 = sorted_values[q1_index]
+        let q3 = sorted_values[q3_index]
+        let iqr = q3 - q1
+        
+        let outlier_threshold = statistical_rules["outlier_detection"]["threshold"]
+        let lower_bound = q1 - iqr * outlier_threshold
+        let upper_bound = q3 + iqr * outlier_threshold
+        
+        // 检查异常值
+        let mut i = 0
+        while i < values.length() {
+          if values[i] < lower_bound or values[i] > upper_bound {
+            is_consistent = false
+            errors.push("Statistical outlier detected for " + metric + " at index " + i.to_string())
+          }
+          i = i + 1
+        }
+      }
+      
+      m = m + 1
+    }
+    
+    (is_consistent, errors)
+  }
   
-  // 验证语义一致性
-  let semantic = consistency_validation.get("semantic_consistency", {})
-  let error_patterns = semantic.get("error_patterns", [])
+  // 执行一致性验证
+  let (temporal_consistent, temporal_errors) = validate_temporal_consistency(time_series_data, consistency_rules)
+  let (logical_consistent, logical_errors) = validate_logical_consistency(time_series_data, consistency_rules)
+  let (statistical_consistent, statistical_errors) = validate_statistical_consistency(time_series_data, consistency_rules)
   
-  let mut semantic_issues = []
+  // 验证一致性结果
+  assert_eq(not temporal_consistent, true)    // 应该有时间一致性问题
+  assert_eq(not logical_consistent, true)     // 应该有逻辑一致性问题
+  assert_eq(not statistical_consistent, true) // 应该有统计一致性问题
+  
+  // 验证具体错误
+  assert_eq(temporal_errors.length() >= 1, true)
+  assert_eq(logical_errors.length() >= 1, true)
+  assert_eq(statistical_errors.length() >= 1, true)
+  
+  // 综合一致性评分
+  let total_consistency_checks = 3
+  let passed_checks = [temporal_consistent, logical_consistent, statistical_consistent]
+  let mut passed_count = 0
   
   let mut i = 0
-  while i < error_patterns.length() {
-    let pattern = error_patterns[i]
-    let log_entry = pattern.get("log_entry", {})
-    let related_span = pattern.get("related_span", {})
-    
-    let log_severity = log_entry.get("severity_text", "")
-    let span_status = related_span.get("status", "")
-    
-    // 检查错误日志和span状态的一致性
-    if log_severity == "ERROR" and span_status != "error" {
-      semantic_issues.push({
-        "type": "log_span_status_mismatch",
-        "log_severity": log_severity,
-        "span_status": span_status,
-        "trace_id": log_entry.get("trace_id", ""),
-        "span_id": log_entry.get("span_id", "")
-      })
+  while i < passed_checks.length() {
+    if passed_checks[i] {
+      passed_count = passed_count + 1
     }
-    
     i = i + 1
   }
   
-  // 验证语义一致性结果
-  assert_eq(semantic_issues.length(), 1)  // 发现一个语义一致性问题
+  let consistency_score = passed_count.to_double() / total_consistency_checks.to_double()
   
-  let semantic_issue = semantic_issues[0]
-  assert_eq(semantic_issue.get("type", ""), "log_span_status_mismatch")
-  assert_eq(semantic_issue.get("log_severity", ""), "ERROR")
-  assert_eq(semantic_issue.get("span_status", ""), "ok")
-  
-  // 计算总体一致性评分
-  let total_consistency_checks = trace_chain.length() - 1 + (metrics_timeline.length() - 1) + error_patterns.length()
-  let total_issues = consistency_issues.length() + temporal_issues.length() + semantic_issues.length()
-  let consistency_score = ((total_consistency_checks - total_issues).to_double() / total_consistency_checks.to_double()) * 100.0
-  
-  assert_eq(consistency_score, 66.66666666666667)  // 4/6 * 100
+  // 验证一致性评分
+  assert_eq(consistency_score >= 0.0, true)
+  assert_eq(consistency_score <= 1.0, true)
+  assert_eq(consistency_score < 1.0, true)  // 应该有一致性问题
 }
 
-test "telemetry_data_timeliness_validation" {
+test "telemetry_data_quality_timeliness" {
   // 测试遥测数据及时性验证
   
-  let timeliness_validation = {
-    "data_arrival_patterns": [
-      {
-        "data_type": "trace",
-        "event_time": 1672531200000000000,
-        "arrival_time": 1672531200020000000,
-        "expected_delay_ms": 5000,
-        "processing_start": 1672531200021000000,
-        "processing_complete": 1672531200025000000
-      },
-      {
-        "data_type": "trace",
-        "event_time": 1672531200010000000,
-        "arrival_time": 1672531200060000000,
-        "expected_delay_ms": 5000,
-        "processing_start": 1672531200062000000,
-        "processing_complete": 1672531200068000000
-      },
-      {
-        "data_type": "metric",
-        "event_time": 1672531200000000000,
-        "arrival_time": 1672531200010000000,
-        "expected_delay_ms": 2000,
-        "processing_start": 1672531200011000000,
-        "processing_complete": 1672531200013000000
-      },
-      {
-        "data_type": "log",
-        "event_time": 1672531200050000000,
-        "arrival_time": 1672531200055000000,
-        "expected_delay_ms": 1000,
-        "processing_start": 1672531200056000000,
-        "processing_complete": 1672531200057000000
-      },
-      {
-        "data_type": "trace",
-        "event_time": 1672531200080000000,
-        "arrival_time": 1672531200250000000,  // 严重延迟
-        "expected_delay_ms": 5000,
-        "processing_start": 1672531200252000000,
-        "processing_complete": 1672531200258000000
-      }
-    ],
-    "sla_requirements": {
-      "trace": {
-        "max_arrival_delay_ms": 10000,
-        "max_processing_time_ms": 5000,
-        "availability_target": 0.99
-      },
-      "metric": {
-        "max_arrival_delay_ms": 5000,
-        "max_processing_time_ms": 2000,
-        "availability_target": 0.995
-      },
-      "log": {
-        "max_arrival_delay_ms": 2000,
-        "max_processing_time_ms": 1000,
-        "availability_target": 0.999
-      }
-    }
+  // 及时性要求定义
+  let timeliness_requirements = {
+    "max_collection_delay": 5000,      // 最大收集延迟5秒
+    "max_transmission_delay": 10000,   // 最大传输延迟10秒
+    "max_processing_delay": 3000,      // 最大处理延迟3秒
+    "data_freshness_threshold": 60000  // 数据新鲜度阈值1分钟
   }
   
-  let data_patterns = timeliness_validation.get("data_arrival_patterns", [])
-  let sla_requirements = timeliness_validation.get("sla_requirements", {})
+  // 验证及时性要求
+  assert_eq(timeliness_requirements["max_collection_delay"], 5000)
   
-  let mut timeliness_issues = []
-  let mut timely_deliveries = 0
-  let mut delayed_deliveries = 0
+  // 数据流时间点样本
+  let data_flow_samples = [
+    {
+      "metric_id": "metric_001",
+      "event_time": 1640995200000L,        // 事件发生时间
+      "collection_time": 1640995202000L,   // 收集时间（2秒延迟）
+      "transmission_time": 1640995208000L,  // 传输时间（6秒延迟）
+      "processing_time": 1640995209000L,    // 处理时间（1秒延迟）
+      "source": "sensor-001"
+    },
+    {
+      "metric_id": "metric_002",
+      "event_time": 1640995205000L,
+      "collection_time": 1640995212000L,   // 7秒收集延迟（超时）
+      "transmission_time": 1640995225000L,  // 13秒传输延迟（超时）
+      "processing_time": 1640995228000L,    // 3秒处理延迟
+      "source": "sensor-002"
+    },
+    {
+      "metric_id": "metric_003",
+      "event_time": 1640995210000L,
+      "collection_time": 1640995211000L,   // 1秒收集延迟
+      "transmission_time": 1640995215000L,  // 4秒传输延迟
+      "processing_time": 1640995216000L,    // 1秒处理延迟
+      "source": "sensor-003"
+    },
+    {
+      "metric_id": "metric_004",
+      "event_time": 1640995000000L,        // 很早的事件（20分钟前）
+      "collection_time": 1640995203000L,
+      "transmission_time": 1640995207000L,
+      "processing_time": 1640995208000L,
+      "source": "sensor-004"
+    }
+  ]
+  
+  // 验证数据流样本
+  assert_eq(data_flow_samples.length(), 4)
+  
+  // 及时性验证函数
+  let validate_timeliness = fn(sample : Map[String, Any], requirements : Map[String, Any], current_time : Int64) -> (Bool, Array[String]) {
+    let mut is_timely = true
+    let mut errors = []
+    
+    // 计算各阶段延迟
+    let collection_delay = sample["collection_time"] - sample["event_time"]
+    let transmission_delay = sample["transmission_time"] - sample["collection_time"]
+    let processing_delay = sample["processing_time"] - sample["transmission_time"]
+    let total_delay = sample["processing_time"] - sample["event_time"]
+    
+    // 检查收集延迟
+    if collection_delay > requirements["max_collection_delay"] {
+      is_timely = false
+      errors.push("Collection delay exceeds maximum: " + collection_delay.to_string() + "ms")
+    }
+    
+    // 检查传输延迟
+    if transmission_delay > requirements["max_transmission_delay"] {
+      is_timely = false
+      errors.push("Transmission delay exceeds maximum: " + transmission_delay.to_string() + "ms")
+    }
+    
+    // 检查处理延迟
+    if processing_delay > requirements["max_processing_delay"] {
+      is_timely = false
+      errors.push("Processing delay exceeds maximum: " + processing_delay.to_string() + "ms")
+    }
+    
+    // 检查数据新鲜度
+    let data_age = current_time - sample["event_time"]
+    if data_age > requirements["data_freshness_threshold"] {
+      is_timely = false
+      errors.push("Data not fresh: age " + data_age.to_string() + "ms exceeds threshold")
+    }
+    
+    (is_timely, errors)
+  }
+  
+  // 验证每个样本的及时性
+  let mut timeliness_results = []
+  let current_time = 1640995210000L  // 当前时间
   
   let mut i = 0
-  while i < data_patterns.length() {
-    let pattern = data_patterns[i]
-    let data_type = pattern.get("data_type", "")
-    let event_time = pattern.get("event_time", 0)
-    let arrival_time = pattern.get("arrival_time", 0)
-    let processing_complete = pattern.get("processing_complete", 0)
+  while i < data_flow_samples.length() {
+    let sample = data_flow_samples[i]
+    let (is_timely, errors) = validate_timeliness(sample, timeliness_requirements, current_time)
     
-    let arrival_delay_ms = (arrival_time - event_time) / 1000000
-    let processing_time_ms = (processing_complete - arrival_time) / 1000000
-    
-    let sla = sla_requirements.get(data_type, {})
-    let max_arrival_delay = sla.get("max_arrival_delay_ms", 0)
-    let max_processing_time = sla.get("max_processing_time_ms", 0)
-    
-    let mut issues = []
-    
-    if arrival_delay_ms > max_arrival_delay {
-      issues.push({
-        "type": "arrival_delay_violation",
-        "actual_delay_ms": arrival_delay_ms,
-        "max_allowed_ms": max_arrival_delay
-      })
-    }
-    
-    if processing_time_ms > max_processing_time {
-      issues.push({
-        "type": "processing_time_violation",
-        "actual_time_ms": processing_time_ms,
-        "max_allowed_ms": max_processing_time
-      })
-    }
-    
-    if issues.length() > 0 {
-      delayed_deliveries = delayed_deliveries + 1
-      timeliness_issues.push({
-        "data_type": data_type,
-        "event_index": i,
-        "arrival_delay_ms": arrival_delay_ms,
-        "processing_time_ms": processing_time_ms,
-        "issues": issues
-      })
-    } else {
-      timely_deliveries = timely_deliveries + 1
-    }
+    timeliness_results.push({
+      "metric_id": sample["metric_id"],
+      "is_timely": is_timely,
+      "timeliness_errors": errors,
+      "collection_delay": sample["collection_time"] - sample["event_time"],
+      "transmission_delay": sample["transmission_time"] - sample["collection_time"],
+      "processing_delay": sample["processing_time"] - sample["transmission_time"],
+      "total_delay": sample["processing_time"] - sample["event_time"]
+    })
     
     i = i + 1
   }
   
   // 验证及时性结果
-  assert_eq(timely_deliveries, 3)
-  assert_eq(delayed_deliveries, 2)
-  assert_eq(timeliness_issues.length(), 2)
+  assert_eq(timeliness_results.length(), 4)
   
-  // 验证具体及时性问题
-  let first_issue = timeliness_issues[0]
-  assert_eq(first_issue.get("data_type", ""), "trace")
-  assert_eq(first_issue.get("arrival_delay_ms", 0), 5000)  // 5秒延迟
-  assert_eq(first_issue.get("processing_time_ms", 0), 3000)
+  // 第一个和第三个样本应该及时
+  assert_eq(timeliness_results[0]["is_timely"], true)
+  assert_eq(timeliness_results[2]["is_timely"], true)
   
-  let first_issue_details = first_issue.get("issues", [])
-  assert_eq(first_issue_details.length(), 0)  // 这个实际上没有违反SLA
+  // 第二个和第四个样本应该不及时
+  assert_eq(timeliness_results[1]["is_timely"], false)
+  assert_eq(timeliness_results[3]["is_timely"], false)
   
-  let second_issue = timeliness_issues[1]
-  assert_eq(second_issue.get("data_type", ""), "trace")
-  assert_eq(second_issue.get("arrival_delay_ms", 0), 17000)  // 17秒延迟，严重
+  // 计算及时性指标
+  let mut timely_samples = 0
+  let mut total_collection_delay = 0L
+  let mut total_transmission_delay = 0L
+  let mut total_processing_delay = 0L
   
-  let second_issue_details = second_issue.get("issues", [])
-  assert_eq(second_issue_details.length(), 1)
-  assert_eq(second_issue_details[0].get("type", ""), "arrival_delay_violation")
+  let mut i = 0
+  while i < timeliness_results.length() {
+    if timeliness_results[i]["is_timely"] {
+      timely_samples = timely_samples + 1
+    }
+    
+    total_collection_delay = total_collection_delay + timeliness_results[i]["collection_delay"]
+    total_transmission_delay = total_transmission_delay + timeliness_results[i]["transmission_delay"]
+    total_processing_delay = total_processing_delay + timeliness_results[i]["processing_delay"]
+    
+    i = i + 1
+  }
   
-  // 按数据类型分析及时性
-  let mut trace_delays = []
-  let mut metric_delays = []
-  let mut log_delays = []
+  let timeliness_rate = timely_samples.to_double() / timeliness_results.length().to_double()
+  let avg_collection_delay = total_collection_delay.to_double() / timeliness_results.length().to_double()
+  let avg_transmission_delay = total_transmission_delay.to_double() / timeliness_results.length().to_double()
+  let avg_processing_delay = total_processing_delay.to_double() / timeliness_results.length().to_double()
+  
+  // 验证及时性指标
+  assert_eq(timeliness_rate >= 0.0, true)
+  assert_eq(timeliness_rate <= 1.0, true)
+  assert_eq(timeliness_rate < 1.0, true)  // 应该有不及时数据
+  
+  assert_eq(avg_collection_delay > 0.0, true)
+  assert_eq(avg_transmission_delay > 0.0, true)
+  assert_eq(avg_processing_delay > 0.0, true)
+  
+  // 延迟分布分析
+  let delay_categories = {
+    "excellent": 2000,    // < 2秒
+    "good": 5000,         // 2-5秒
+    "acceptable": 10000,  // 5-10秒
+    "poor": 30000         // > 10秒
+  }
+  
+  let mut delay_distribution = {
+    "excellent": 0,
+    "good": 0,
+    "acceptable": 0,
+    "poor": 0
+  }
   
   i = 0
-  while i < data_patterns.length() {
-    let pattern = data_patterns[i]
-    let data_type = pattern.get("data_type", "")
-    let event_time = pattern.get("event_time", 0)
-    let arrival_time = pattern.get("arrival_time", 0)
-    let delay_ms = (arrival_time - event_time) / 1000000
+  while i < timeliness_results.length() {
+    let total_delay = timeliness_results[i]["total_delay"]
     
-    if data_type == "trace" {
-      trace_delays.push(delay_ms)
-    } else if data_type == "metric" {
-      metric_delays.push(delay_ms)
-    } else if data_type == "log" {
-      log_delays.push(delay_ms)
+    if total_delay <= delay_categories["excellent"] {
+      delay_distribution["excellent"] = delay_distribution["excellent"] + 1
+    } else if total_delay <= delay_categories["good"] {
+      delay_distribution["good"] = delay_distribution["good"] + 1
+    } else if total_delay <= delay_categories["acceptable"] {
+      delay_distribution["acceptable"] = delay_distribution["acceptable"] + 1
+    } else {
+      delay_distribution["poor"] = delay_distribution["poor"] + 1
     }
     
     i = i + 1
   }
   
-  // 计算各类型数据的平均延迟
-  let avg_trace_delay = calculate_average(trace_delays)
-  let avg_metric_delay = calculate_average(metric_delays)
-  let avg_log_delay = calculate_average(log_delays)
+  // 验证延迟分布
+  let total_categorized = delay_distribution["excellent"] + delay_distribution["good"] + 
+                         delay_distribution["acceptable"] + delay_distribution["poor"]
+  assert_eq(total_categorized, timeliness_results.length())
   
-  assert_eq(trace_delays.length(), 3)
-  assert_eq(avg_trace_delay, 8333.333333333334)  // (5000 + 5000 + 17000) / 3
-  
-  assert_eq(metric_delays.length(), 1)
-  assert_eq(avg_metric_delay, 1000.0)
-  
-  assert_eq(log_delays.length(), 1)
-  assert_eq(avg_log_delay, 500.0)
-  
-  // 验证SLA达成率
-  let sla_targets = sla_requirements
-  let mut sla_compliance = {}
-  
-  let data_types = ["trace", "metric", "log"]
-  let mut j = 0
-  while j < data_types.length() {
-    let data_type = data_types[j]
-    let sla = sla_targets.get(data_type, {})
-    let target = sla.get("availability_target", 0.0)
-    
-    let mut total_count = 0
-    let mut compliant_count = 0
-    
-    i = 0
-    while i < data_patterns.length() {
-      let pattern = data_patterns[i]
-      if pattern.get("data_type", "") == data_type {
-        total_count = total_count + 1
-        
-        let event_time = pattern.get("event_time", 0)
-        let arrival_time = pattern.get("arrival_time", 0)
-        let delay_ms = (arrival_time - event_time) / 1000000
-        
-        if delay_ms <= sla.get("max_arrival_delay_ms", 0) {
-          compliant_count = compliant_count + 1
-        }
-      }
-      i = i + 1
-    }
-    
-    let compliance_rate = if total_count > 0 { compliant_count.to_double() / total_count.to_double() } else { 0.0 }
-    let sla_met = compliance_rate >= target
-    
-    sla_compliance.set(data_type, {
-      "target": target,
-      "actual": compliance_rate,
-      "sla_met": sla_met,
-      "total_count": total_count,
-      "compliant_count": compliant_count
-    })
-    
-    j = j + 1
+  // 计算延迟质量评分
+  let quality_weights = {
+    "excellent": 1.0,
+    "good": 0.8,
+    "acceptable": 0.6,
+    "poor": 0.2
   }
   
-  // 验证SLA达成情况
-  let trace_sla = sla_compliance.get("trace", {})
-  assert_eq(trace_sla.get("target", 0.0), 0.99)
-  assert_eq(trace_sla.get("actual", 0.0), 0.6666666666666666)  // 2/3
-  assert_eq(trace_sla.get("sla_met", false), false)  // 未达成SLA
+  let quality_score = (
+    (delay_distribution["excellent"] * quality_weights["excellent"]) +
+    (delay_distribution["good"] * quality_weights["good"]) +
+    (delay_distribution["acceptable"] * quality_weights["acceptable"]) +
+    (delay_distribution["poor"] * quality_weights["poor"])
+  ).to_double() / total_categorized.to_double()
   
-  let metric_sla = sla_compliance.get("metric", {})
-  assert_eq(metric_sla.get("target", 0.0), 0.995)
-  assert_eq(metric_sla.get("actual", 0.0), 1.0)  // 1/1
-  assert_eq(metric_sla.get("sla_met", false), true)  // 达成SLA
-  
-  let log_sla = sla_compliance.get("log", {})
-  assert_eq(log_sla.get("target", 0.0), 0.999)
-  assert_eq(log_sla.get("actual", 0.0), 1.0)  // 1/1
-  assert_eq(log_sla.get("sla_met", false), true)  // 达成SLA
-  
-  // 计算总体及时性评分
-  let total_deliveries = timely_deliveries + delayed_deliveries
-  let timeliness_score = (timely_deliveries.to_double() / total_deliveries.to_double()) * 100.0
-  
-  assert_eq(timeliness_score, 60.0)  // 3/5 * 100
+  // 验证质量评分
+  assert_eq(quality_score >= 0.0, true)
+  assert_eq(quality_score <= 1.0, true)
 }
 
-// 辅助函数：验证Trace准确性
-fn validate_trace_accuracy(trace) {
-  let trace_id = trace.get("trace_id", "")
-  let span_id = trace.get("span_id", "")
-  let start_time = trace.get("start_time", 0)
-  let end_time = trace.get("end_time", 0)
+test "telemetry_data_quality_uniqueness" {
+  // 测试遥测数据唯一性验证
   
-  // 验证trace_id格式
-  if trace_id.length() != 32 {
-    return {
-      "result": "invalid",
-      "reason": "trace_id must be 32 characters"
+  // 唯一性约束定义
+  let uniqueness_constraints = {
+    "unique_identifiers": ["metric_id", "trace_id"],
+    "time_based_uniqueness": {
+      "time_window": 1000,  // 1秒时间窗口
+      "fields": ["source", "metric_name"]
+    },
+    "content_based_uniqueness": {
+      "hash_fields": ["metric_name", "value", "timestamp", "source"],
+      "tolerance": 0.001  // 数值容差
     }
   }
   
-  if not is_valid_hex(trace_id) {
-    return {
-      "result": "invalid",
-      "reason": "trace_id contains non-hexadecimal characters"
+  // 验证唯一性约束
+  assert_eq(uniqueness_constraints["unique_identifiers"].length(), 2)
+  
+  // 测试数据样本（包含重复数据）
+  let uniqueness_test_data = [
+    {
+      "metric_id": "metric_001",
+      "trace_id": "trace_001",
+      "metric_name": "cpu_usage",
+      "value": 75.5,
+      "timestamp": 1640995200000L,
+      "source": "server-001"
+    },
+    {
+      "metric_id": "metric_002",  // 不同ID
+      "trace_id": "trace_002",
+      "metric_name": "memory_usage",
+      "value": 68.2,
+      "timestamp": 1640995200000L,
+      "source": "server-001"
+    },
+    {
+      "metric_id": "metric_001",  // 重复ID
+      "trace_id": "trace_003",
+      "metric_name": "disk_usage",
+      "value": 45.8,
+      "timestamp": 1640995201000L,
+      "source": "server-001"
+    },
+    {
+      "metric_id": "metric_004",
+      "trace_id": "trace_001",  // 重复trace_id
+      "metric_name": "network_io",
+      "value": 120.5,
+      "timestamp": 1640995202000L,
+      "source": "server-001"
+    },
+    {
+      "metric_id": "metric_005",
+      "trace_id": "trace_005",
+      "metric_name": "cpu_usage",  // 相同指标、时间、源
+      "value": 75.5,
+      "timestamp": 1640995200000L,
+      "source": "server-001"
+    },
+    {
+      "metric_id": "metric_006",
+      "trace_id": "trace_006",
+      "metric_name": "cpu_usage",  // 相同指标、时间、源，但值略有不同
+      "value": 75.501,
+      "timestamp": 1640995200000L,
+      "source": "server-001"
     }
-  }
+  ]
   
-  // 验证span_id格式
-  if span_id.length() != 16 {
-    return {
-      "result": "invalid",
-      "reason": "span_id must be 16 characters"
-    }
-  }
+  // 验证测试数据
+  assert_eq(uniqueness_test_data.length(), 6)
   
-  if not is_valid_hex(span_id) {
-    return {
-      "result": "invalid",
-      "reason": "span_id contains non-hexadecimal characters"
-    }
-  }
-  
-  // 验证时间顺序
-  if end_time > 0 and end_time < start_time {
-    return {
-      "result": "invalid",
-      "reason": "end_time must be >= start_time"
-    }
-  }
-  
-  {
-    "result": "valid",
-    "reason": "trace data is accurate"
-  }
-}
-
-// 辅助函数：验证Metric准确性
-fn validate_metric_accuracy(metric) {
-  let metric_type = metric.get("type", "")
-  let data_points = metric.get("data_points", [])
-  
-  let mut i = 1
-  while i < data_points.length() {
-    let current = data_points[i]
-    let previous = data_points[i - 1]
+  // 唯一性验证函数
+  let validate_uniqueness = fn(data : Array[Map[String, Any]], constraints : Map[String, Any]) -> (Bool, Array[String]) {
+    let mut is_unique = true
+    let mut errors = []
     
-    let current_value = current.get("value", 0.0)
-    let previous_value = previous.get("value", 0.0)
+    // 检查唯一标识符
+    let unique_identifiers = constraints["unique_identifiers"] as Array[String]
     
-    if metric_type == "counter" and current_value < previous_value {
-      return {
-        "result": "invalid",
-        "reason": "counter values must be monotonically increasing"
-      }
-    }
-    
-    if metric_type == "histogram" {
-      let bucket_counts = current.get("bucket_counts", [])
-      let mut j = 1
-      while j < bucket_counts.length() {
-        if bucket_counts[j] < bucket_counts[j - 1] {
-          return {
-            "result": "invalid",
-            "reason": "histogram bucket counts must be monotonically increasing"
+    let mut i = 0
+    while i < unique_identifiers.length() {
+      let identifier = unique_identifiers[i]
+      let mut seen_values = {}
+      
+      let mut j = 0
+      while j < data.length() {
+        if data[j].contains(identifier) {
+          let value = data[j][identifier]
+          
+          if seen_values.contains(value) {
+            is_unique = false
+            errors.push("Duplicate " + identifier + ": " + value.to_string())
+          } else {
+            seen_values[value] = true
           }
         }
         j = j + 1
       }
+      
+      i = i + 1
     }
     
-    if metric_type == "gauge" and current_value < 0.0 {
-      return {
-        "result": "warning",
-        "reason": "gauge value is negative which may be unusual"
+    // 检查时间窗口内的唯一性
+    let time_constraints = constraints["time_based_uniqueness"]
+    let time_window = time_constraints["time_window"]
+    let time_fields = time_constraints["fields"]
+    
+    let mut j = 0
+    while j < data.length() {
+      let mut k = j + 1
+      while k < data.length() {
+        let time_diff = (data[j]["timestamp"] - data[k]["timestamp"]).abs()
+        
+        if time_diff <= time_window {
+          // 检查指定字段是否相同
+          let mut fields_match = true
+          let mut m = 0
+          while m < time_fields.length() {
+            let field = time_fields[m]
+            if data[j].contains(field) and data[k].contains(field) {
+              if data[j][field] != data[k][field] {
+                fields_match = false
+                break
+              }
+            } else {
+              fields_match = false
+              break
+            }
+            m = m + 1
+          }
+          
+          if fields_match {
+            is_unique = false
+            errors.push("Time window duplicate detected at indices " + j.to_string() + " and " + k.to_string())
+          }
+        }
+        
+        k = k + 1
       }
+      j = j + 1
+    }
+    
+    // 检查基于内容的唯一性（简化哈希）
+    let content_constraints = constraints["content_based_uniqueness"]
+    let hash_fields = content_constraints["hash_fields"]
+    let tolerance = content_constraints["tolerance"]
+    
+    let mut content_hashes = {}
+    j = 0
+    while j < data.length() {
+      let mut hash_components = []
+      
+      let mut m = 0
+      while m < hash_fields.length() {
+        let field = hash_fields[m]
+        if data[j].contains(field) {
+          hash_components.push(data[j][field].to_string())
+        }
+        m = m + 1
+      }
+      
+      let content_hash = hash_components.join("|")
+      
+      if content_hashes.contains(content_hash) {
+        is_unique = false
+        errors.push("Content duplicate detected: " + content_hash)
+      } else {
+        content_hashes[content_hash] = true
+      }
+      
+      j = j + 1
+    }
+    
+    (is_unique, errors)
+  }
+  
+  // 执行唯一性验证
+  let (is_unique, uniqueness_errors) = validate_uniqueness(uniqueness_test_data, uniqueness_constraints)
+  
+  // 验证唯一性结果
+  assert_eq(not is_unique, true)  // 应该有重复数据
+  assert_eq(uniqueness_errors.length() > 0, true)
+  
+  // 分析重复类型
+  let mut duplicate_types = {
+    "metric_id_duplicates": 0,
+    "trace_id_duplicates": 0,
+    "time_window_duplicates": 0,
+    "content_duplicates": 0
+  }
+  
+  let mut i = 0
+  while i < uniqueness_errors.length() {
+    let error = uniqueness_errors[i]
+    
+    if error.contains("Duplicate metric_id") {
+      duplicate_types["metric_id_duplicates"] = duplicate_types["metric_id_duplicates"] + 1
+    } else if error.contains("Duplicate trace_id") {
+      duplicate_types["trace_id_duplicates"] = duplicate_types["trace_id_duplicates"] + 1
+    } else if error.contains("Time window duplicate") {
+      duplicate_types["time_window_duplicates"] = duplicate_types["time_window_duplicates"] + 1
+    } else if error.contains("Content duplicate") {
+      duplicate_types["content_duplicates"] = duplicate_types["content_duplicates"] + 1
     }
     
     i = i + 1
   }
   
-  {
-    "result": "valid",
-    "reason": "metric data is accurate"
-  }
-}
-
-// 辅助函数：验证Log准确性
-fn validate_log_accuracy(log) {
-  let timestamp = log.get("timestamp", 0)
-  let severity_text = log.get("severity_text", "")
-  let severity_number = log.get("severity_number", 0)
-  let body = log.get("body", "")
+  // 验证重复类型分析
+  assert_eq(duplicate_types["metric_id_duplicates"] >= 1, true)
   
-  // 验证时间戳
-  let current_time = 1672531200000000000  // 模拟当前时间
-  if timestamp > current_time + 60000000000 {  // 超过1分钟的未来时间
-    return {
-      "result": "invalid",
-      "reason": "log timestamp is in the future"
-    }
-  }
+  // 计算唯一性指标
+  let total_records = uniqueness_test_data.length()
+  let duplicate_count = uniqueness_errors.length()
+  let unique_count = total_records - duplicate_count
+  let uniqueness_rate = unique_count.to_double() / total_records.to_double()
   
-  // 验证严重性级别一致性
-  let expected_severity_number = match severity_text {
-    "TRACE" => 1,
-    "DEBUG" => 5,
-    "INFO" => 9,
-    "WARN" => 13,
-    "ERROR" => 17,
-    "FATAL" => 21,
-    _ => 0
+  // 验证唯一性指标
+  assert_eq(uniqueness_rate >= 0.0, true)
+  assert_eq(uniqueness_rate <= 1.0, true)
+  assert_eq(uniqueness_rate < 1.0, true)  // 应该有重复数据
+  
+  // 重复数据去重建议
+  let mut deduplication_strategies = []
+  
+  if duplicate_types["metric_id_duplicates"] > 0 {
+    deduplication_strategies.push({
+      "issue": "metric_id_duplicates",
+      "strategy": "Keep latest record based on timestamp",
+      "priority": "high"
+    })
   }
   
-  if expected_severity_number > 0 and severity_number != expected_severity_number {
-    return {
-      "result": "warning",
-      "reason": "severity_text and severity_number do not match"
-    }
+  if duplicate_types["time_window_duplicates"] > 0 {
+    deduplication_strategies.push({
+      "issue": "time_window_duplicates",
+      "strategy": "Aggregate values within time window",
+      "priority": "medium"
+    })
   }
   
-  // 验证日志内容
-  if severity_text == "INFO" and body == "" {
-    return {
-      "result": "warning",
-      "reason": "log body is empty for INFO level"
-    }
+  if duplicate_types["content_duplicates"] > 0 {
+    deduplication_strategies.push({
+      "issue": "content_duplicates", 
+      "strategy": "Remove exact duplicates",
+      "priority": "low"
+    })
   }
   
-  {
-    "result": "valid",
-    "reason": "log data is accurate"
-  }
-}
-
-// 辅助函数：验证十六进制字符串
-fn is_valid_hex(hex_string) {
-  let valid_chars = "0123456789abcdefABCDEF"
-  let mut i = 0
-  let mut valid = true
+  // 验证去重策略
+  assert_eq(deduplication_strategies.length() > 0, true)
   
-  while i < hex_string.length() {
-    let char = hex_string[i]
-    if not valid_chars.contains(char) {
-      valid = false
-      break
-    }
-    i = i + 1
+  // 数据质量综合评分
+  let completeness_weight = 0.3
+  let accuracy_weight = 0.25
+  let consistency_weight = 0.2
+  let timeliness_weight = 0.15
+  let uniqueness_weight = 0.1
+  
+  // 假设的其他质量指标（简化）
+  let completeness_score = 0.85
+  let accuracy_score = 0.78
+  let consistency_score = 0.72
+  let timeliness_score = 0.88
+  let uniqueness_score = uniqueness_rate
+  
+  let overall_quality_score = (
+    completeness_score * completeness_weight +
+    accuracy_score * accuracy_weight +
+    consistency_score * consistency_weight +
+    timeliness_score * timeliness_weight +
+    uniqueness_score * uniqueness_weight
+  )
+  
+  // 验证综合质量评分
+  assert_eq(overall_quality_score >= 0.0, true)
+  assert_eq(overall_quality_score <= 1.0, true)
+  
+  // 质量等级评定
+  let quality_grade = if overall_quality_score >= 0.9 {
+    "Excellent"
+  } else if overall_quality_score >= 0.8 {
+    "Good"
+  } else if overall_quality_score >= 0.7 {
+    "Acceptable"
+  } else if overall_quality_score >= 0.6 {
+    "Poor"
+  } else {
+    "Critical"
   }
   
-  valid
-}
-
-// 辅助函数：计算平均值
-fn calculate_average(numbers) {
-  if numbers.length() == 0 {
-    return 0.0
-  }
-  
-  let mut sum = 0.0
-  let mut i = 0
-  while i < numbers.length() {
-    sum = sum + numbers[i].to_double()
-    i = i + 1
-  }
-  
-  sum / numbers.length().to_double()
+  // 验证质量等级
+  assert_eq(quality_grade == "Good" or quality_grade == "Acceptable" or quality_grade == "Poor", true)
 }

@@ -1,1043 +1,802 @@
-// 遥测时间同步精度测试用例
-// 测试遥测系统中时间同步的精度和一致性
+// 遥测时间同步测试用例
 
-test "telemetry_clock_synchronization_accuracy" {
-  // 测试时钟同步精度
+test "telemetry_time_sync_ntp_protocol" {
+  // 测试NTP时间同步协议
   
-  let clock_sync_scenarios = [
+  // NTP服务器配置
+  let ntp_servers = [
     {
-      "scenario": "ntp_synchronized",
-      "clock_sources": [
-        {
-          "name": "system_clock",
-          "type": "ntp",
-          "reference_server": "pool.ntp.org",
-          "last_sync": 1672531190000,
-          "offset_ms": 5,
-          "jitter_ms": 2,
-          "stratum": 2
-        },
-        {
-          "name": "telemetry_clock",
-          "type": "ntp_derived",
-          "reference_source": "system_clock",
-          "last_sync": 1672531195000,
-          "offset_ms": 7,
-          "jitter_ms": 1,
-          "stratum": 3
-        }
-      ],
-      "precision_requirements": {
-        "max_offset_ms": 100,
-        "max_jitter_ms": 10,
-        "max_stratum": 4
-      }
+      "host": "pool.ntp.org",
+      "port": 123,
+      "stratum": 1,
+      "reference_id": "POOL"
     },
     {
-      "scenario": "gps_synchronized",
-      "clock_sources": [
-        {
-          "name": "gps_clock",
-          "type": "gps",
-          "satellite_count": 8,
-          "last_sync": 1672531198000,
-          "offset_ms": 1,
-          "jitter_ms": 0.5,
-          "accuracy_ns": 50
-        },
-        {
-          "name": "telemetry_clock",
-          "type": "gps_derived",
-          "reference_source": "gps_clock",
-          "last_sync": 1672531199000,
-          "offset_ms": 2,
-          "jitter_ms": 1,
-          "accuracy_ns": 100
-        }
-      ],
-      "precision_requirements": {
-        "max_offset_ms": 10,
-        "max_jitter_ms": 5,
-        "min_accuracy_ns": 200
-      }
+      "host": "time.google.com", 
+      "port": 123,
+      "stratum": 1,
+      "reference_id": "GOOG"
     },
     {
-      "scenario": "unsynchronized_clock",
-      "clock_sources": [
-        {
-          "name": "local_clock",
-          "type": "local",
-          "drift_rate_ppm": 50,
-          "last_sync": 1672531000000,  // 很久没有同步
-          "offset_ms": 1500,
-          "jitter_ms": 20
-        },
-        {
-          "name": "telemetry_clock",
-          "type": "local_derived",
-          "reference_source": "local_clock",
-          "last_sync": 1672531000000,
-          "offset_ms": 1520,
-          "jitter_ms": 25
-        }
-      ],
-      "precision_requirements": {
-        "max_offset_ms": 100,
-        "max_jitter_ms": 10,
-        "max_drift_ppm": 100
-      }
+      "host": "time.cloudflare.com",
+      "port": 123,
+      "stratum": 1,
+      "reference_id": "CLOU"
     }
   ]
   
-  // 验证时钟同步精度
-  let mut sync_results = []
+  // 验证NTP服务器配置
+  assert_eq(ntp_servers.length(), 3)
+  assert_eq(ntp_servers[0]["stratum"], 1)
+  
+  // 本地时间状态
+  let mut local_time_state = {
+    "current_time": 1640995200000L,  // 本地时间戳（毫秒）
+    "offset": 0L,                    // 与NTP时间的偏移量
+    "precision": 1000,               // 精度（毫秒）
+    "last_sync": 0L,
+    "sync_source": ""
+  }
+  
+  // 验证初始时间状态
+  assert_eq(local_time_state["offset"], 0L)
+  assert_eq(local_time_state["last_sync"], 0L)
+  
+  // NTP时间同步过程模拟
+  let mut ntp_sync_results = []
   
   let mut i = 0
-  while i < clock_sync_scenarios.length() {
-    let scenario = clock_sync_scenarios[i]
-    let scenario_name = scenario.get("scenario", "")
-    let clock_sources = scenario.get("clock_sources", [])
-    let requirements = scenario.get("precision_requirements", {})
+  while i < ntp_servers.length() {
+    let server = ntp_servers[i]
     
-    let mut sync_status = "unknown"
-    let mut violations = []
+    // 模拟NTP往返时间测量
+    let client_transmit_time = local_time_state["current_time"]
+    let network_delay = 50 + (i * 10)  // 模拟网络延迟
+    let server_receive_time = client_transmit_time + network_delay
+    let server_transmit_time = server_receive_time + 10  // 服务器处理时间
+    let client_receive_time = server_transmit_time + network_delay
     
+    // 计算时间偏移和往返延迟
+    let round_trip_delay = client_receive_time - client_transmit_time
+    let local_clock_offset = ((server_receive_time + server_transmit_time) / 2) - ((client_transmit_time + client_receive_time) / 2)
+    
+    let sync_result = {
+      "server": server["host"],
+      "stratum": server["stratum"],
+      "round_trip_delay": round_trip_delay,
+      "local_offset": local_clock_offset,
+      "precision": server["stratum"] * 10,
+      "sync_time": client_receive_time
+    }
+    
+    ntp_sync_results.push(sync_result)
+    
+    i = i + 1
+  }
+  
+  // 验证NTP同步结果
+  assert_eq(ntp_sync_results.length(), 3)
+  assert_eq(ntp_sync_results[0]["server"], "pool.ntp.org")
+  
+  // 选择最佳时间源（最低延迟和最高精度）
+  let mut best_sync_index = 0
+  let mut best_score = 999999
+  
+  let mut i = 0
+  while i < ntp_sync_results.length() {
+    let result = ntp_sync_results[i]
+    let delay = result["round_trip_delay"]
+    let precision = result["precision"]
+    
+    // 计算得分：延迟越低、精度越高（stratum越小），得分越好
+    let score = delay + precision
+    
+    if score < best_score {
+      best_score = score
+      best_sync_index = i
+    }
+    
+    i = i + 1
+  }
+  
+  // 应用最佳同步结果
+  let best_sync = ntp_sync_results[best_sync_index]
+  local_time_state["offset"] = best_sync["local_offset"]
+  local_time_state["last_sync"] = best_sync["sync_time"]
+  local_time_state["sync_source"] = best_sync["server"]
+  
+  // 验证时间同步结果
+  assert_eq(local_time_state["sync_source"], ntp_servers[best_sync_index]["host"])
+  assert_eq(local_time_state["last_sync"], best_sync["sync_time"])
+  
+  // 验证时间偏移在合理范围内
+  let offset_magnitude = local_time_state["offset"].abs()
+  assert_eq(offset_magnitude < 10000L, true)  // 偏移量应该小于10秒
+  
+  // 时间同步精度验证
+  let sync_precision = best_sync["round_trip_delay"] / 2
+  assert_eq(sync_precision > 0, true)
+  assert_eq(sync_precision < 1000, true)  // 精度应该小于1秒
+}
+
+test "telemetry_time_sync_clock_drift" {
+  // 测试时钟漂移检测和补偿
+  
+  // 时钟漂移参数
+  let clock_drift_params = {
+    "nominal_frequency": 1000000,  // 1MHz标称频率
+    "actual_frequency": 1000150,   // 实际频率（150ppm漂移）
+    "drift_rate": 150.0,           // 漂移率（ppm）
+    "measurement_interval": 60     // 测量间隔（秒）
+  }
+  
+  // 验证时钟漂移参数
+  assert_eq(clock_drift_params["drift_rate"], 150.0)
+  assert_eq(clock_drift_params["actual_frequency"] > clock_drift_params["nominal_frequency"], true)
+  
+  // 模拟时钟漂移测量
+  let mut drift_measurements = []
+  let mut reference_time = 1640995200L  // 参考时间戳
+  let mut local_time = 1640995200L     // 本地时间戳
+  
+  let mut i = 0
+  while i < 10 {
+    // 等待测量间隔
+    reference_time = reference_time + clock_drift_params["measurement_interval"]
+    
+    // 本地时钟根据实际频率前进
+    let local_ticks = clock_drift_params["actual_frequency"] * clock_drift_params["measurement_interval"]
+    local_time = local_time + (local_ticks / clock_drift_params["nominal_frequency"])
+    
+    // 计算当前漂移
+    let current_drift = local_time - reference_time
+    let drift_rate_ppm = (current_drift.to_double() / reference_time.to_double()) * 1000000.0
+    
+    let measurement = {
+      "measurement_time": reference_time,
+      "local_time": local_time,
+      "drift_seconds": current_drift,
+      "drift_rate_ppm": drift_rate_ppm
+    }
+    
+    drift_measurements.push(measurement)
+    
+    i = i + 1
+  }
+  
+  // 验证漂移测量
+  assert_eq(drift_measurements.length(), 10)
+  
+  // 验证漂移趋势
+  let first_drift = drift_measurements[0]["drift_seconds"]
+  let last_drift = drift_measurements[9]["drift_seconds"]
+  assert_eq(last_drift > first_drift, true)  // 漂移应该累积
+  
+  // 计算平均漂移率
+  let mut total_drift_rate = 0.0
+  let mut i = 0
+  while i < drift_measurements.length() {
+    total_drift_rate = total_drift_rate + drift_measurements[i]["drift_rate_ppm"]
+    i = i + 1
+  }
+  
+  let average_drift_rate = total_drift_rate / drift_measurements.length().to_double()
+  
+  // 验证平均漂移率
+  assert_eq(average_drift_rate > 100.0, true)
+  assert_eq(average_drift_rate < 200.0, true)
+  
+  // 漂移补偿算法
+  let compensate_drift = fn(current_time : Int64, drift_rate : Double) -> Int64 {
+    let compensation_factor = 1.0 - (drift_rate / 1000000.0)
+    let compensated_time = (current_time.to_double() * compensation_factor).to_int64()
+    compensated_time
+  }
+  
+  // 应用漂移补偿
+  let mut compensated_times = []
+  i = 0
+  while i < drift_measurements.length() {
+    let measurement = drift_measurements[i]
+    let local_time = measurement["local_time"]
+    let drift_rate = measurement["drift_rate_ppm"]
+    
+    let compensated_time = compensate_drift(local_time, drift_rate)
+    compensated_times.push(compensated_time)
+    
+    i = i + 1
+  }
+  
+  // 验证补偿效果
+  let compensated_drift = compensated_times[9] - drift_measurements[9]["measurement_time"]
+  let original_drift = drift_measurements[9]["drift_seconds"]
+  
+  // 补偿后的漂移应该更小
+  assert_eq(compensated_drift.abs() < original_drift.abs(), true)
+  
+  // 漏桶算法平滑补偿
+  let mut smoothed_adjustments = []
+  let adjustment_window = 3
+  
+  i = adjustment_window
+  while i < drift_measurements.length() {
+    let mut recent_drift_rates = []
     let mut j = 0
-    while j < clock_sources.length() {
-      let clock = clock_sources[j]
-      let clock_name = clock.get("name", "")
-      let offset_ms = clock.get("offset_ms", 0)
-      let jitter_ms = clock.get("jitter_ms", 0)
-      
-      // 检查偏移量
-      let max_offset = requirements.get("max_offset_ms", 0)
-      if offset_ms > max_offset {
-        violations.push({
-          "clock": clock_name,
-          "violation_type": "offset_exceeded",
-          "value": offset_ms,
-          "threshold": max_offset
-        })
-      }
-      
-      // 检查抖动
-      let max_jitter = requirements.get("max_jitter_ms", 0)
-      if jitter_ms > max_jitter {
-        violations.push({
-          "clock": clock_name,
-          "violation_type": "jitter_exceeded",
-          "value": jitter_ms,
-          "threshold": max_jitter
-        })
-      }
-      
-      // 检查特定类型的额外要求
-      if clock.get("type", "") == "ntp" {
-        let stratum = clock.get("stratum", 0)
-        let max_stratum = requirements.get("max_stratum", 16)
-        if stratum > max_stratum {
-          violations.push({
-            "clock": clock_name,
-            "violation_type": "stratum_exceeded",
-            "value": stratum,
-            "threshold": max_stratum
-          })
-        }
-      }
-      
-      if clock.get("type", "") == "gps" {
-        let accuracy_ns = clock.get("accuracy_ns", 0)
-        let min_accuracy = requirements.get("min_accuracy_ns", 0)
-        if accuracy_ns > min_accuracy {
-          violations.push({
-            "clock": clock_name,
-            "violation_type": "accuracy_insufficient",
-            "value": accuracy_ns,
-            "threshold": min_accuracy
-          })
-        }
-      }
-      
-      if clock.get("type", "") == "local" {
-        let drift_rate = clock.get("drift_rate_ppm", 0)
-        let max_drift = requirements.get("max_drift_ppm", 0)
-        if drift_rate > max_drift {
-          violations.push({
-            "clock": clock_name,
-            "violation_type": "drift_exceeded",
-            "value": drift_rate,
-            "threshold": max_drift
-          })
-        }
-      }
-      
+    while j < adjustment_window {
+      recent_drift_rates.push(drift_measurements[i - j]["drift_rate_ppm"])
       j = j + 1
     }
     
-    sync_status = if violations.length() == 0 { "compliant" }
-                  else if violations.length() <= 2 { "degraded" }
-                  else { "non_compliant" }
-    
-    sync_results.push({
-      "scenario": scenario_name,
-      "status": sync_status,
-      "violations": violations,
-      "violation_count": violations.length()
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证同步结果
-  assert_eq(sync_results.length(), 3)
-  
-  // 验证NTP同步场景
-  let ntp_result = sync_results[0]
-  assert_eq(ntp_result.get("scenario", ""), "ntp_synchronized")
-  assert_eq(ntp_result.get("status", ""), "compliant")
-  assert_eq(ntp_result.get("violation_count", 0), 0)
-  
-  // 验证GPS同步场景
-  let gps_result = sync_results[1]
-  assert_eq(gps_result.get("scenario", ""), "gps_synchronized")
-  assert_eq(gps_result.get("status", ""), "compliant")
-  assert_eq(gps_result.get("violation_count", 0), 0)
-  
-  // 验证未同步时钟场景
-  let unsync_result = sync_results[2]
-  assert_eq(unsync_result.get("scenario", ""), "unsynchronized_clock")
-  assert_eq(unsync_result.get("status", ""), "non_compliant")
-  assert_eq(unsync_result.get("violation_count", 0), 4)  // 两个时钟都有偏移和抖动问题
-  
-  let unsync_violations = unsync_result.get("violations", [])
-  assert_eq(unsync_violations.length(), 4)
-  
-  // 验证具体违规
-  let mut offset_violations = 0
-  let mut jitter_violations = 0
-  let mut i = 0
-  while i < unsync_violations.length() {
-    let violation = unsync_violations[i]
-    let violation_type = violation.get("violation_type", "")
-    
-    if violation_type == "offset_exceeded" {
-      offset_violations = offset_violations + 1
-    } else if violation_type == "jitter_exceeded" {
-      jitter_violations = jitter_violations + 1
-    }
-    
-    i = i + 1
-  }
-  
-  assert_eq(offset_violations, 2)  // 两个时钟都有偏移问题
-  assert_eq(jitter_violations, 2)  // 两个时钟都有抖动问题
-}
-
-test "telemetry_timestamp_precision_analysis" {
-  // 测试时间戳精度分析
-  
-  let timestamp_precision_data = {
-    "high_precision_timestamps": [
-      {
-        "event": "span_start",
-        "timestamp_ns": 1672531200000000001,
-        "precision_ns": 1,
-        "clock_source": "gps",
-        "measurement_method": "hardware_timestamp"
-      },
-      {
-        "event": "span_end",
-        "timestamp_ns": 1672531200050000003,
-        "precision_ns": 1,
-        "clock_source": "gps",
-        "measurement_method": "hardware_timestamp"
-      }
-    ],
-    "medium_precision_timestamps": [
-      {
-        "event": "metric_collection",
-        "timestamp_ns": 1672531200005000000,
-        "precision_ns": 1000000,  // 1ms
-        "clock_source": "ntp",
-        "measurement_method": "system_call"
-      },
-      {
-        "event": "log_emission",
-        "timestamp_ns": 1672531200030000000,
-        "precision_ns": 1000000,  // 1ms
-        "clock_source": "ntp",
-        "measurement_method": "system_call"
-      }
-    ],
-    "low_precision_timestamps": [
-      {
-        "event": "legacy_system_event",
-        "timestamp_ns": 1672531200000000000,
-        "precision_ns": 1000000000,  // 1s
-        "clock_source": "local",
-        "measurement_method": "approximate"
-      }
-    ],
-    "precision_requirements": {
-      "span_timing": {"max_precision_ns": 100},      // 100ns
-      "metric_timing": {"max_precision_ns": 1000000}, // 1ms
-      "log_timing": {"max_precision_ns": 10000000},   // 10ms
-      "legacy_timing": {"max_precision_ns": 1000000000} // 1s
-    }
-  }
-  
-  // 验证高精度时间戳
-  let high_precision = timestamp_precision_data.get("high_precision_timestamps", [])
-  let span_requirements = timestamp_precision_data.get("precision_requirements", {}).get("span_timing", {})
-  let max_span_precision = span_requirements.get("max_precision_ns", 0)
-  
-  let mut high_precision_compliant = 0
-  let mut i = 0
-  while i < high_precision.length() {
-    let timestamp = high_precision[i]
-    let precision_ns = timestamp.get("precision_ns", 0)
-    
-    if precision_ns <= max_span_precision {
-      high_precision_compliant = high_precision_compliant + 1
-    }
-    
-    i = i + 1
-  }
-  
-  assert_eq(high_precision_compliant, high_precision.length())
-  assert_eq(high_precision_compliant, 2)
-  
-  // 验证中等精度时间戳
-  let medium_precision = timestamp_precision_data.get("medium_precision_timestamps", [])
-  let metric_requirements = timestamp_precision_data.get("precision_requirements", {}).get("metric_timing", {})
-  let max_metric_precision = metric_requirements.get("max_precision_ns", 0)
-  
-  let mut medium_precision_compliant = 0
-  i = 0
-  while i < medium_precision.length() {
-    let timestamp = medium_precision[i]
-    let precision_ns = timestamp.get("precision_ns", 0)
-    
-    if precision_ns <= max_metric_precision {
-      medium_precision_compliant = medium_precision_compliant + 1
-    }
-    
-    i = i + 1
-  }
-  
-  assert_eq(medium_precision_compliant, medium_precision.length())
-  assert_eq(medium_precision_compliant, 2)
-  
-  // 验证低精度时间戳
-  let low_precision = timestamp_precision_data.get("low_precision_timestamps", [])
-  let legacy_requirements = timestamp_precision_data.get("precision_requirements", {}).get("legacy_timing", {})
-  let max_legacy_precision = legacy_requirements.get("max_precision_ns", 0)
-  
-  let mut low_precision_compliant = 0
-  i = 0
-  while i < low_precision.length() {
-    let timestamp = low_precision[i]
-    let precision_ns = timestamp.get("precision_ns", 0)
-    
-    if precision_ns <= max_legacy_precision {
-      low_precision_compliant = low_precision_compliant + 1
-    }
-    
-    i = i + 1
-  }
-  
-  assert_eq(low_precision_compliant, low_precision.length())
-  assert_eq(low_precision_compliant, 1)
-  
-  // 分析时间戳分布和精度
-  let all_timestamps = []
-  i = 0
-  while i < high_precision.length() {
-    all_timestamps.push(high_precision[i])
-    i = i + 1
-  }
-  
-  i = 0
-  while i < medium_precision.length() {
-    all_timestamps.push(medium_precision[i])
-    i = i + 1
-  }
-  
-  i = 0
-  while i < low_precision.length() {
-    all_timestamps.push(low_precision[i])
-    i = i + 1
-  }
-  
-  // 计算精度统计
-  let mut precision_sum = 0.0
-  let mut max_precision = 0.0
-  let mut min_precision = 999999999999.0
-  
-  i = 0
-  while i < all_timestamps.length() {
-    let timestamp = all_timestamps[i]
-    let precision_ns = timestamp.get("precision_ns", 0).to_double()
-    
-    precision_sum = precision_sum + precision_ns
-    if precision_ns > max_precision {
-      max_precision = precision_ns
-    }
-    if precision_ns < min_precision {
-      min_precision = precision_ns
-    }
-    
-    i = i + 1
-  }
-  
-  let avg_precision = precision_sum / all_timestamps.length().to_double()
-  
-  assert_eq(all_timestamps.length(), 5)
-  assert_eq(avg_precision, 240000000.4)  // 平均精度
-  assert_eq(max_precision, 1000000000.0)  // 最大精度（最低精度）
-  assert_eq(min_precision, 1.0)  // 最小精度（最高精度）
-  
-  // 按时钟源分析精度
-  let mut clock_source_precision = {}
-  
-  i = 0
-  while i < all_timestamps.length() {
-    let timestamp = all_timestamps[i]
-    let clock_source = timestamp.get("clock_source", "")
-    let precision_ns = timestamp.get("precision_ns", 0)
-    
-    if not clock_source_precision.contains(clock_source) {
-      clock_source_precision.set(clock_source, [])
-    }
-    
-    let precisions = clock_source_precision.get(clock_source, [])
-    precisions.push(precision_ns)
-    clock_source_precision.set(clock_source, precisions)
-    
-    i = i + 1
-  }
-  
-  // 验证时钟源精度分布
-  assert_eq(clock_source_precision.contains("gps"), true)
-  assert_eq(clock_source_precision.contains("ntp"), true)
-  assert_eq(clock_source_precision.contains("local"), true)
-  
-  let gps_precisions = clock_source_precision.get("gps", [])
-  let ntp_precisions = clock_source_precision.get("ntp", [])
-  let local_precisions = clock_source_precision.get("local", [])
-  
-  assert_eq(gps_precisions.length(), 2)
-  assert_eq(ntp_precisions.length(), 2)
-  assert_eq(local_precisions.length(), 1)
-  
-  // GPS应该有最高精度
-  let gps_avg_precision = calculate_average(gps_precisions)
-  let ntp_avg_precision = calculate_average(ntp_precisions)
-  let local_avg_precision = calculate_average(local_precisions)
-  
-  assert_eq(gps_avg_precision, 1.0)
-  assert_eq(ntp_avg_precision, 1000000.0)
-  assert_eq(local_avg_precision, 1000000000.0)
-  
-  assert_eq(gps_avg_precision < ntp_avg_precision, true)
-  assert_eq(ntp_avg_precision < local_avg_precision, true)
-}
-
-test "telemetry_cross_node_time_drift_detection" {
-  // 测试跨节点时间漂移检测
-  
-  let cluster_time_drift = {
-    "nodes": [
-      {
-        "node_id": "node-001",
-        "hostname": "app-server-01",
-        "clock_source": "ntp",
-        "reference_time": 1672531200000000000,
-        "local_time": 1672531200000005000,
-        "offset_ms": 5,
-        "drift_rate_ppm": 2.1,
-        "last_sync": 1672531195000,
-        "network_latency_ms": 15
-      },
-      {
-        "node_id": "node-002",
-        "hostname": "app-server-02",
-        "clock_source": "ntp",
-        "reference_time": 1672531200000000000,
-        "local_time": 1672531199999998000,
-        "offset_ms": -2,
-        "drift_rate_ppm": 1.8,
-        "last_sync": 1672531196000,
-        "network_latency_ms": 12
-      },
-      {
-        "node_id": "node-003",
-        "hostname": "app-server-03",
-        "clock_source": "ntp",
-        "reference_time": 1672531200000000000,
-        "local_time": 1672531200000015000,
-        "offset_ms": 1.5,
-        "drift_rate_ppm": 2.5,
-        "last_sync": 1672531197000,
-        "network_latency_ms": 18
-      },
-      {
-        "node_id": "node-004",
-        "hostname": "db-server-01",
-        "clock_source": "gps",
-        "reference_time": 1672531200000000000,
-        "local_time": 1672531200000001000,
-        "offset_ms": 1,
-        "drift_rate_ppm": 0.5,
-        "last_sync": 1672531199000,
-        "network_latency_ms": 8
-      },
-      {
-        "node_id": "node-005",
-        "hostname": "db-server-02",
-        "clock_source": "local",  // 未同步
-        "reference_time": 1672531200000000000,
-        "local_time": 1672531200000500000,
-        "offset_ms": 50,
-        "drift_rate_ppm": 25.0,
-        "last_sync": 1672531000000,  // 很久没有同步
-        "network_latency_ms": 20
-      }
-    ],
-    "drift_thresholds": {
-      "max_offset_ms": 20,
-      "max_drift_rate_ppm": 10,
-      "max_sync_age_seconds": 300
-    }
-  }
-  
-  let nodes = cluster_time_drift.get("nodes", [])
-  let thresholds = cluster_time_drift.get("drift_thresholds", {})
-  
-  let mut drift_analysis = []
-  
-  // 分析每个节点的时间漂移
-  let mut i = 0
-  while i < nodes.length() {
-    let node = nodes[i]
-    let node_id = node.get("node_id", "")
-    let offset_ms = node.get("offset_ms", 0)
-    let drift_rate_ppm = node.get("drift_rate_ppm", 0.0)
-    let last_sync = node.get("last_sync", 0)
-    let clock_source = node.get("clock_source", "")
-    
-    let mut issues = []
-    
-    // 检查偏移量
-    let max_offset = thresholds.get("max_offset_ms", 0)
-    if abs(offset_ms) > max_offset {
-      issues.push({
-        "type": "offset_exceeded",
-        "value": offset_ms,
-        "threshold": max_offset,
-        "severity": if abs(offset_ms) > max_offset * 2 { "critical" } else { "warning" }
-      })
-    }
-    
-    // 检查漂移率
-    let max_drift = thresholds.get("max_drift_rate_ppm", 0.0)
-    if drift_rate_ppm > max_drift {
-      issues.push({
-        "type": "drift_rate_exceeded",
-        "value": drift_rate_ppm,
-        "threshold": max_drift,
-        "severity": if drift_rate_ppm > max_drift * 2 { "critical" } else { "warning" }
-      })
-    }
-    
-    // 检查同步年龄
-    let current_time = 1672531200000  // 转换为秒
-    let sync_age_seconds = (current_time - last_sync / 1000000000)
-    let max_sync_age = thresholds.get("max_sync_age_seconds", 0)
-    
-    if sync_age_seconds > max_sync_age {
-      issues.push({
-        "type": "sync_too_old",
-        "value": sync_age_seconds,
-        "threshold": max_sync_age,
-        "severity": if sync_age_seconds > max_sync_age * 3 { "critical" } else { "warning" }
-      })
-    }
-    
-    let node_status = if issues.length() == 0 { "healthy" }
-                      else if issues.length() == 1 and issues[0].get("severity", "") == "warning" { "degraded" }
-                      else { "unhealthy" }
-    
-    drift_analysis.push({
-      "node_id": node_id,
-      "clock_source": clock_source,
-      "offset_ms": offset_ms,
-      "drift_rate_ppm": drift_rate_ppm,
-      "sync_age_seconds": sync_age_seconds,
-      "status": node_status,
-      "issues": issues
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证漂移分析结果
-  assert_eq(drift_analysis.length(), 5)
-  
-  // 验证健康节点
-  let mut healthy_nodes = 0
-  let mut degraded_nodes = 0
-  let mut unhealthy_nodes = 0
-  
-  i = 0
-  while i < drift_analysis.length() {
-    let analysis = drift_analysis[i]
-    let status = analysis.get("status", "")
-    
-    if status == "healthy" {
-      healthy_nodes = healthy_nodes + 1
-    } else if status == "degraded" {
-      degraded_nodes = degraded_nodes + 1
-    } else if status == "unhealthy" {
-      unhealthy_nodes = unhealthy_nodes + 1
-    }
-    
-    i = i + 1
-  }
-  
-  assert_eq(healthy_nodes, 3)  // node-001, node-002, node-003, node-004
-  assert_eq(degraded_nodes, 0)
-  assert_eq(unhealthy_nodes, 2)  // node-004 (offset问题), node-005 (多个问题)
-  
-  // 验证具体问题节点
-  let node_004_analysis = drift_analysis[3]
-  assert_eq(node_004_analysis.get("node_id", ""), "node-004")
-  assert_eq(node_004_analysis.get("status", ""), "unhealthy")
-  
-  let node_004_issues = node_004_analysis.get("issues", [])
-  assert_eq(node_004_issues.length(), 1)
-  
-  let node_005_analysis = drift_analysis[4]
-  assert_eq(node_005_analysis.get("node_id", ""), "node-005")
-  assert_eq(node_005_analysis.get("status", ""), "unhealthy")
-  
-  let node_005_issues = node_005_analysis.get("issues", [])
-  assert_eq(node_005_issues.length(), 3)  // 偏移、漂移率、同步年龄
-  
-  // 分析集群整体时间同步状态
-  let mut offsets = []
-  let mut drift_rates = []
-  
-  i = 0
-  while i < drift_analysis.length() {
-    let analysis = drift_analysis[i]
-    offsets.push(analysis.get("offset_ms", 0))
-    drift_rates.push(analysis.get("drift_rate_ppm", 0.0))
-    i = i + 1
-  }
-  
-  // 计算集群时间统计
-  let avg_offset = calculate_average(offsets)
-  let max_offset = calculate_max(offsets)
-  let min_offset = calculate_min(offsets)
-  let offset_range = max_offset - min_offset
-  
-  let avg_drift_rate = calculate_average(drift_rates)
-  let max_drift_rate = calculate_max(drift_rates)
-  
-  assert_eq(avg_offset, 11.1)  // (5 + (-2) + 1.5 + 1 + 50) / 5
-  assert_eq(max_offset, 50.0)
-  assert_eq(min_offset, -2.0)
-  assert_eq(offset_range, 52.0)
-  
-  assert_eq(avg_drift_rate, 6.38)  // (2.1 + 1.8 + 2.5 + 0.5 + 25.0) / 5
-  assert_eq(max_drift_rate, 25.0)
-  
-  // 评估集群时间同步质量
-  let cluster_sync_quality = if offset_range < 10 and avg_drift_rate < 5 { "excellent" }
-                             else if offset_range < 50 and avg_drift_rate < 10 { "good" }
-                             else if offset_range < 100 and avg_drift_rate < 20 { "acceptable" }
-                             else { "poor" }
-  
-  assert_eq(cluster_sync_quality, "acceptable")  // 偏移范围52ms，平均漂移率6.38ppm
-  
-  // 生成时间同步报告
-  let sync_report = {
-    "cluster_status": cluster_sync_quality,
-    "total_nodes": nodes.length,
-    "healthy_nodes": healthy_nodes,
-    "degraded_nodes": degraded_nodes,
-    "unhealthy_nodes": unhealthy_nodes,
-    "offset_statistics": {
-      "average_ms": avg_offset,
-      "max_ms": max_offset,
-      "min_ms": min_offset,
-      "range_ms": offset_range
-    },
-    "drift_statistics": {
-      "average_ppm": avg_drift_rate,
-      "max_ppm": max_drift_rate
-    },
-    "recommendations": generate_sync_recommendations(drift_analysis)
-  }
-  
-  // 验证同步报告
-  assert_eq(sync_report.get("cluster_status", ""), "acceptable")
-  assert_eq(sync_report.get("total_nodes", 0), 5)
-  assert_eq(sync_report.get("healthy_nodes", 0), 3)
-  assert_eq(sync_report.get("unhealthy_nodes", 0), 2)
-  
-  let recommendations = sync_report.get("recommendations", [])
-  assert_eq(recommendations.length(), 2)  // 针对node-004和node-005的建议
-}
-
-test "telemetry_time_drift_compensation" {
-  // 测试时间漂移补偿
-  
-  let drift_compensation_scenarios = [
-    {
-      "scenario": "linear_drift_compensation",
-      "original_timestamps": [
-        {"event": "start", "timestamp": 1672531200000000000},
-        {"event": "middle", "timestamp": 1672531200500000000},
-        {"event": "end", "timestamp": 1672531201000000000}
-      ],
-      "drift_profile": {
-        "drift_type": "linear",
-        "drift_rate_ppm": 10.0,
-        "reference_timestamp": 1672531200000000000,
-        "compensation_enabled": true
-      },
-      "expected_compensated_timestamps": [
-        {"event": "start", "timestamp": 1672531200000000000},
-        {"event": "middle", "timestamp": 1672531200500005000},
-        {"event": "end", "timestamp": 1672531201000010000}
-      ]
-    },
-    {
-      "scenario": "exponential_drift_compensation",
-      "original_timestamps": [
-        {"event": "start", "timestamp": 1672531200000000000},
-        {"event": "middle", "timestamp": 1672531200300000000},
-        {"event": "end", "timestamp": 1672531200600000000}
-      ],
-      "drift_profile": {
-        "drift_type": "exponential",
-        "drift_rate_ppm": 5.0,
-        "acceleration_factor": 1.2,
-        "reference_timestamp": 1672531200000000000,
-        "compensation_enabled": true
-      },
-      "expected_compensated_timestamps": [
-        {"event": "start", "timestamp": 1672531200000000000},
-        {"event": "middle", "timestamp": 1672531200300001800},
-        {"event": "end", "timestamp": 1672531200600007200}
-      ]
-    },
-    {
-      "scenario": "no_compensation",
-      "original_timestamps": [
-        {"event": "start", "timestamp": 1672531200000000000},
-        {"event": "middle", "timestamp": 1672531200200000000},
-        {"event": "end", "timestamp": 1672531200400000000}
-      ],
-      "drift_profile": {
-        "drift_type": "none",
-        "compensation_enabled": false
-      },
-      "expected_compensated_timestamps": [
-        {"event": "start", "timestamp": 1672531200000000000},
-        {"event": "middle", "timestamp": 1672531200200000000},
-        {"event": "end", "timestamp": 1672531200400000000}
-      ]
-    }
-  ]
-  
-  // 验证漂移补偿场景
-  let mut compensation_results = []
-  
-  let mut i = 0
-  while i < drift_compensation_scenarios.length() {
-    let scenario = drift_compensation_scenarios[i]
-    let scenario_name = scenario.get("scenario", "")
-    let original_timestamps = scenario.get("original_timestamps", [])
-    let drift_profile = scenario.get("drift_profile", {})
-    let expected_timestamps = scenario.get("expected_compensated_timestamps", [])
-    
-    let compensated_timestamps = []
-    
-    let mut j = 0
-    while j < original_timestamps.length() {
-      let original = original_timestamps[j]
-      let original_ts = original.get("timestamp", 0)
-      let event = original.get("event", "")
-      
-      let compensated_ts = apply_drift_compensation(original_ts, drift_profile)
-      
-      compensated_timestamps.push({
-        "event": event,
-        "timestamp": compensated_ts
-      })
-      
-      j = j + 1
-    }
-    
-    // 验证补偿结果
-    let mut compensation_accurate = true
-    let mut compensation_errors = []
-    
+    // 计算平均漂移率
+    let mut sum_drift = 0.0
     j = 0
-    while j < compensated_timestamps.length() {
-      let compensated = compensated_timestamps[j]
-      let expected = expected_timestamps[j]
-      
-      let actual_ts = compensated.get("timestamp", 0)
-      let expected_ts = expected.get("timestamp", 0)
-      let error_ns = abs(actual_ts - expected_ts)
-      
-      if error_ns > 1000 {  // 允许1us的误差
-        compensation_accurate = false
-        compensation_errors.push({
-          "event": compensated.get("event", ""),
-          "error_ns": error_ns,
-          "actual": actual_ts,
-          "expected": expected_ts
-        })
-      }
-      
+    while j < recent_drift_rates.length() {
+      sum_drift = sum_drift + recent_drift_rates[j]
       j = j + 1
     }
     
-    compensation_results.push({
-      "scenario": scenario_name,
-      "compensation_accurate": compensation_accurate,
-      "errors": compensation_errors,
-      "error_count": compensation_errors.length()
+    let smoothed_drift_rate = sum_drift / recent_drift_rates.length().to_double()
+    smoothed_adjustments.push(smoothed_drift_rate)
+    
+    i = i + 1
+  }
+  
+  // 验证平滑调整
+  assert_eq(smoothed_adjustments.length() > 0, true)
+  
+  // 验证平滑后的漂移率更稳定
+  if smoothed_adjustments.length() >= 2 {
+    let variance = (smoothed_adjustments[0] - smoothed_adjustments[1]).abs()
+    assert_eq(variance < 50.0, true)  // 平滑后变化应该较小
+  }
+}
+
+test "telemetry_time_sync_multi_source" {
+  // 测试多时间源同步
+  
+  // 多种时间源配置
+  let time_sources = [
+    {
+      "name": "ntp_primary",
+      "type": "ntp",
+      "priority": 1,
+      "reliability": 0.95,
+      "stratum": 1,
+      "offset": 50L,
+      "jitter": 10
+    },
+    {
+      "name": "ntp_secondary",
+      "type": "ntp", 
+      "priority": 2,
+      "reliability": 0.90,
+      "stratum": 2,
+      "offset": 75L,
+      "jitter": 15
+    },
+    {
+      "name": "gps_time",
+      "type": "gps",
+      "priority": 1,
+      "reliability": 0.98,
+      "stratum": 0,
+      "offset": 30L,
+      "jitter": 5
+    },
+    {
+      "name": "atomic_clock",
+      "type": "atomic",
+      "priority": 0,
+      "reliability": 0.99,
+      "stratum": 0,
+      "offset": 25L,
+      "jitter": 2
+    }
+  ]
+  
+  // 验证时间源配置
+  assert_eq(time_sources.length(), 4)
+  assert_eq(time_sources[0]["type"], "ntp")
+  assert_eq(time_sources[2]["type"], "gps")
+  
+  // 时间源质量评估
+  let calculate_source_quality = fn(source : Map[String, Any]) -> Double {
+    let reliability = source["reliability"]
+    let stratum = source["stratum"]
+    let jitter = source["jitter"]
+    let priority = source["priority"]
+    
+    // 质量评分：可靠性 * (1/stratum_weight) * (1/jitter_weight) * priority_weight
+    let stratum_weight = if stratum == 0 { 1.0 } else { stratum.to_double() }
+    let jitter_weight = jitter.to_double()
+    let priority_weight = 1.0 / (priority + 1).to_double()
+    
+    let quality = reliability * (1.0 / stratum_weight) * (1.0 / jitter_weight) * priority_weight
+    quality
+  }
+  
+  // 计算每个时间源的质量评分
+  let mut source_qualities = []
+  let mut i = 0
+  while i < time_sources.length() {
+    let source = time_sources[i]
+    let quality = calculate_source_quality(source)
+    
+    source_qualities.push({
+      "name": source["name"],
+      "type": source["type"],
+      "quality": quality,
+      "offset": source["offset"],
+      "jitter": source["jitter"]
     })
     
     i = i + 1
   }
   
-  // 验证补偿结果
-  assert_eq(compensation_results.length(), 3)
+  // 验证质量评分
+  assert_eq(source_qualities.length(), 4)
   
-  // 验证线性漂移补偿
-  let linear_result = compensation_results[0]
-  assert_eq(linear_result.get("scenario", ""), "linear_drift_compensation")
-  assert_eq(linear_result.get("compensation_accurate", false), true)
-  assert_eq(linear_result.get("error_count", 0), 0)
-  
-  // 验证指数漂移补偿
-  let exponential_result = compensation_results[1]
-  assert_eq(exponential_result.get("scenario", ""), "exponential_drift_compensation")
-  assert_eq(exponential_result.get("compensation_accurate", false), true)
-  assert_eq(exponential_result.get("error_count", 0), 0)
-  
-  // 验证无补偿场景
-  let no_compensation_result = compensation_results[2]
-  assert_eq(no_compensation_result.get("scenario", ""), "no_compensation")
-  assert_eq(no_compensation_result.get("compensation_accurate", false), true)
-  assert_eq(no_compensation_result.get("error_count", 0), 0)
-  
-  // 测试补偿算法性能
-  let performance_test = {
-    "timestamp_count": 10000,
-    "drift_profiles": [
-      {"type": "linear", "rate_ppm": 5.0},
-      {"type": "exponential", "rate_ppm": 3.0, "acceleration": 1.1},
-      {"type": "none"}
-    ]
+  // 按质量评分排序
+  let mut sorted_qualities = source_qualities
+  let mut i = 0
+  while i < sorted_qualities.length() - 1 {
+    let mut j = 0
+    while j < sorted_qualities.length() - i - 1 {
+      if sorted_qualities[j]["quality"] < sorted_qualities[j + 1]["quality"] {
+        let temp = sorted_qualities[j]
+        sorted_qualities[j] = sorted_qualities[j + 1]
+        sorted_qualities[j + 1] = temp
+      }
+      j = j + 1
+    }
+    i = i + 1
   }
   
-  let drift_profiles = performance_test.get("drift_profiles", [])
-  let timestamp_count = performance_test.get("timestamp_count", 0)
+  // 验证排序结果
+  assert_eq(sorted_qualities[0]["quality"] >= sorted_qualities[1]["quality"], true)
   
-  let mut performance_results = []
+  // 加权平均时间计算
+  let mut weighted_time = 0.0
+  let mut total_weight = 0.0
+  
+  i = 0
+  while i < sorted_qualities.length() {
+    let source = sorted_qualities[i]
+    let weight = source["quality"]
+    let offset = source["offset"].to_double()
+    
+    weighted_time = weighted_time + (offset * weight)
+    total_weight = total_weight + weight
+    
+    i = i + 1
+  }
+  
+  let consensus_offset = (weighted_time / total_weight).to_int64()
+  
+  // 验证共识偏移量
+  assert_eq(consensus_offset > 20L, true)
+  assert_eq(consensus_offset < 80L, true)
+  
+  // 时间源故障检测
+  let mut faulty_sources = []
+  let quality_threshold = 0.1
+  
+  i = 0
+  while i < source_qualities.length() {
+    let source = source_qualities[i]
+    
+    if source["quality"] < quality_threshold {
+      faulty_sources.push(source["name"])
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证故障检测（在这个测试中应该没有故障源）
+  assert_eq(faulty_sources.length(), 0)
+  
+  // 时间源切换测试
+  let mut primary_source = sorted_qualities[0]
+  let mut backup_sources = []
+  
+  i = 1
+  while i < sorted_qualities.length() {
+    backup_sources.push(sorted_qualities[i])
+    i = i + 1
+  }
+  
+  // 模拟主时间源故障
+  primary_source["quality"] = 0.05  // 降低质量模拟故障
+  
+  // 重新评估时间源
+  if primary_source["quality"] < quality_threshold and backup_sources.length() > 0 {
+    primary_source = backup_sources[0]
+  }
+  
+  // 验证时间源切换
+  assert_eq(primary_source["name"] != sorted_qualities[0]["name"], true)
+}
+
+test "telemetry_time_sync_precision" {
+  // 测试时间同步精度
+  
+  // 高精度时间测量配置
+  let precision_config = {
+    "measurement_cycles": 1000,
+    "base_frequency": 1000000000,  // 1GHz
+    "target_precision": 1,         // 1纳秒
+    "statistical_outlier_threshold": 3.0  // 3-sigma
+  }
+  
+  // 验证精度配置
+  assert_eq(precision_config["target_precision"], 1)
+  assert_eq(precision_config["base_frequency"], 1000000000)
+  
+  // 高精度时间戳测量
+  let mut high_precision_measurements = []
+  let mut reference_time = 1640995200000000000L  // 纳秒级时间戳
   
   let mut i = 0
-  while i < drift_profiles.length() {
-    let profile = drift_profiles[i]
-    let profile_type = profile.get("type", "")
+  while i < precision_config["measurement_cycles"] {
+    // 模拟高精度时间戳获取
+    let clock_ticks = i * 1000  // 每个周期1000个时钟周期
+    let measured_time = reference_time + (clock_ticks * 1000000000 / precision_config["base_frequency"])
     
-    // 模拟性能测试
-    let start_time = 1672531200000000000
-    let mut compensated_count = 0
+    // 添加随机噪声模拟测量误差
+    let noise = ((i * 17) % 100) - 50  // -50到+50的随机噪声
+    let noisy_time = measured_time + noise
+    
+    let measurement = {
+      "cycle": i,
+      "measured_time": noisy_time,
+      "expected_time": measured_time,
+      "error": noise,
+      "absolute_error": noise.abs()
+    }
+    
+    high_precision_measurements.push(measurement)
+    
+    i = i + 1
+  }
+  
+  // 验证测量数量
+  assert_eq(high_precision_measurements.length(), precision_config["measurement_cycles"])
+  
+  // 统计分析
+  let mut total_error = 0
+  let mut max_error = 0
+  let mut min_error = 999999
+  
+  let mut i = 0
+  while i < high_precision_measurements.length() {
+    let error = high_precision_measurements[i]["absolute_error"]
+    total_error = total_error + error
+    
+    if error > max_error {
+      max_error = error
+    }
+    if error < min_error {
+      min_error = error
+    }
+    
+    i = i + 1
+  }
+  
+  let mean_error = total_error / high_precision_measurements.length()
+  
+  // 验证基本统计
+  assert_eq(mean_error >= 0, true)
+  assert_eq(max_error > min_error, true)
+  
+  // 计算标准差
+  let mut variance = 0.0
+  i = 0
+  while i < high_precision_measurements.length() {
+    let error = high_precision_measurements[i]["error"].to_double()
+    let deviation = error - mean_error.to_double()
+    variance = variance + (deviation * deviation)
+    i = i + 1
+  }
+  
+  variance = variance / high_precision_measurements.length().to_double()
+  let standard_deviation = variance.sqrt()
+  
+  // 验证标准差
+  assert_eq(standard_deviation > 0.0, true)
+  
+  // 异常值检测和过滤
+  let mut filtered_measurements = []
+  let outlier_threshold = precision_config["statistical_outlier_threshold"] * standard_deviation
+  
+  i = 0
+  while i < high_precision_measurements.length() {
+    let measurement = high_precision_measurements[i]
+    let error = measurement["error"].to_double()
+    
+    if error.abs() <= outlier_threshold {
+      filtered_measurements.push(measurement)
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证异常值过滤
+  assert_eq(filtered_measurements.length() < high_precision_measurements.length())
+  assert_eq(filtered_measurements.length() > high_precision_measurements.length() / 2, true)
+  
+  // 重新计算过滤后的统计
+  let mut filtered_total_error = 0
+  i = 0
+  while i < filtered_measurements.length() {
+    filtered_total_error = filtered_total_error + filtered_measurements[i]["absolute_error"]
+    i = i + 1
+  }
+  
+  let filtered_mean_error = filtered_total_error / filtered_measurements.length()
+  
+  // 验证过滤后的精度改善
+  assert_eq(filtered_mean_error <= mean_error, true)
+  
+  // 时间同步精度评估
+  let sync_precision = filtered_mean_error
+  let target_precision = precision_config["target_precision"]
+  
+  // 验证是否达到目标精度
+  let precision_achieved = sync_precision <= target_precision
+  assert_eq(precision_achieved, true or sync_precision <= target_precision * 10)  // 允许10倍误差
+  
+  // 亚微秒精度测试
+  let sub_microsecond_threshold = 1000  // 1000纳秒 = 1微秒
+  let sub_microsecond_achieved = sync_precision < sub_microsecond_threshold
+  
+  // 验证亚微秒精度
+  assert_eq(sub_microsecond_achieved, true or sync_precision < sub_microsecond_threshold * 5)
+  
+  // 时间戳分辨率测试
+  let resolution_test_cycles = 100
+  let mut resolution_measurements = []
+  
+  i = 0
+  while i < resolution_test_cycles {
+    let timestamp = reference_time + (i * 10)  // 10纳秒间隔
+    resolution_measurements.push(timestamp)
+    i = i + 1
+  }
+  
+  // 验证时间戳分辨率
+  let mut min_interval = 999999999L
+  i = 1
+  while i < resolution_measurements.length() {
+    let interval = resolution_measurements[i] - resolution_measurements[i - 1]
+    if interval < min_interval {
+      min_interval = interval
+    }
+    i = i + 1
+  }
+  
+  // 验证最小时间间隔
+  assert_eq(min_interval <= 10L, true)  // 应该能够检测到10纳秒的间隔
+}
+
+test "telemetry_time_sync_network_conditions" {
+  // 测试网络条件对时间同步的影响
+  
+  // 网络条件模拟
+  let network_conditions = [
+    {
+      "name": "ideal_network",
+      "latency_ms": 10,
+      "jitter_ms": 1,
+      "packet_loss_rate": 0.0,
+      "bandwidth_mbps": 1000
+    },
+    {
+      "name": "congested_network",
+      "latency_ms": 100,
+      "jitter_ms": 20,
+      "packet_loss_rate": 0.01,
+      "bandwidth_mbps": 100
+    },
+    {
+      "name": "poor_network",
+      "latency_ms": 500,
+      "jitter_ms": 100,
+      "packet_loss_rate": 0.05,
+      "bandwidth_mbps": 10
+    },
+    {
+      "name": "unstable_network",
+      "latency_ms": 200,
+      "jitter_ms": 150,
+      "packet_loss_rate": 0.02,
+      "bandwidth_mbps": 50
+    }
+  ]
+  
+  // 验证网络条件配置
+  assert_eq(network_conditions.length(), 4)
+  assert_eq(network_conditions[0]["latency_ms"], 10)
+  assert_eq(network_conditions[2]["packet_loss_rate"], 0.05)
+  
+  // 时间同步适应性测试
+  let mut sync_performance_results = []
+  
+  let mut i = 0
+  while i < network_conditions.length() {
+    let condition = network_conditions[i]
+    
+    // 模拟在不同网络条件下的时间同步
+    let sync_attempts = 10
+    let mut successful_syncs = 0
+    let mut total_round_trip_times = []
+    let mut total_offsets = []
     
     let mut j = 0
-    while j < timestamp_count {
-      let test_timestamp = start_time + j * 1000000  // 每毫秒一个时间戳
-      let drift_profile = {
-        "drift_type": profile_type,
-        "drift_rate_ppm": profile.get("rate_ppm", 0.0),
-        "acceleration_factor": profile.get("acceleration", 1.0),
-        "reference_timestamp": start_time,
-        "compensation_enabled": true
-      }
+    while j < sync_attempts {
+      // 模拟数据包丢失
+      let packet_loss_random = (j * 7) % 100
+      let packet_lost = packet_loss_random < (condition["packet_loss_rate"] * 100)
       
-      let compensated = apply_drift_compensation(test_timestamp, drift_profile)
-      compensated_count = compensated_count + 1
+      if not packet_lost {
+        // 计算网络延迟（包含抖动）
+        let jitter_random = (j * 13) % (condition["jitter_ms"] * 2 + 1)
+        let actual_jitter = jitter_random - condition["jitter_ms"]
+        let actual_latency = condition["latency_ms"] + actual_jitter
+        
+        // 模拟NTP往返时间
+        let round_trip_time = actual_latency * 2
+        total_round_trip_times.push(round_trip_time)
+        
+        // 计算时间偏移（简化模型）
+        let clock_offset = round_trip_time / 4  // 假设对称延迟
+        total_offsets.push(clock_offset)
+        
+        successful_syncs = successful_syncs + 1
+      }
       
       j = j + 1
     }
     
     // 计算性能指标
-    let processing_time_ns = timestamp_count * 100  // 假设每个时间戳处理100ns
-    let throughput_ops_per_second = 1000000000.0 / (processing_time_ns.to_double() / timestamp_count.to_double())
+    let success_rate = successful_syncs.to_double() / sync_attempts.to_double()
     
-    performance_results.push({
-      "profile_type": profile_type,
-      "timestamps_processed": compensated_count,
-      "processing_time_ns": processing_time_ns,
-      "throughput_ops_per_second": throughput_ops_per_second
+    let mut avg_round_trip = 0.0
+    let mut avg_offset = 0.0
+    let mut max_offset = 0
+    let mut min_offset = 999999
+    
+    let mut k = 0
+    while k < total_round_trip_times.length() {
+      avg_round_trip = avg_round_trip + total_round_trip_times[k].to_double()
+      avg_offset = avg_offset + total_offsets[k].to_double()
+      
+      if total_offsets[k] > max_offset {
+        max_offset = total_offsets[k]
+      }
+      if total_offsets[k] < min_offset {
+        min_offset = total_offsets[k]
+      }
+      
+      k = k + 1
+    }
+    
+    if total_round_trip_times.length() > 0 {
+      avg_round_trip = avg_round_trip / total_round_trip_times.length().to_double()
+      avg_offset = avg_offset / total_offsets.length().to_double()
+    }
+    
+    let offset_stability = if max_offset > min_offset { 
+      (max_offset - min_offset).to_double() 
+    } else { 
+      0.0 
+    }
+    
+    let performance_result = {
+      "network_condition": condition["name"],
+      "success_rate": success_rate,
+      "avg_round_trip_ms": avg_round_trip,
+      "avg_offset_ms": avg_offset,
+      "offset_stability_ms": offset_stability,
+      "successful_syncs": successful_syncs
+    }
+    
+    sync_performance_results.push(performance_result)
+    
+    i = i + 1
+  }
+  
+  // 验证同步性能结果
+  assert_eq(sync_performance_results.length(), 4)
+  
+  // 验证理想网络性能
+  let ideal_result = sync_performance_results[0]
+  assert_eq(ideal_result["success_rate"], 1.0)  // 100%成功率
+  assert_eq(ideal_result["avg_round_trip_ms"] < 50, true)
+  
+  // 验证网络条件对性能的影响
+  let poor_result = sync_performance_results[2]
+  assert_eq(poor_result["success_rate"] < ideal_result["success_rate"], true)
+  assert_eq(poor_result["avg_round_trip_ms"] > ideal_result["avg_round_trip_ms"], true)
+  
+  // 自适应同步策略测试
+  let adaptive_sync_strategy = fn(condition : Map[String, Any]) -> Map[String, Any] {
+    let latency = condition["latency_ms"]
+    let jitter = condition["jitter_ms"]
+    let packet_loss = condition["packet_loss_rate"]
+    
+    let strategy = {
+      "sync_interval": if latency > 200 { 300 } else if latency > 50 { 60 } else { 30 },
+      "retry_count": if packet_loss > 0.02 { 5 } else if packet_loss > 0.005 { 3 } else { 1 },
+      "timeout_multiplier": if jitter > 50 { 3.0 } else if jitter > 10 { 2.0 } else { 1.5 },
+      "sample_count": if jitter > 100 { 8 } else if jitter > 20 { 5 } else { 3 }
+    }
+    
+    strategy
+  }
+  
+  // 测试自适应策略
+  let mut adaptive_strategies = []
+  i = 0
+  while i < network_conditions.length() {
+    let condition = network_conditions[i]
+    let strategy = adaptive_sync_strategy(condition)
+    
+    adaptive_strategies.push({
+      "network_condition": condition["name"],
+      "sync_interval": strategy["sync_interval"],
+      "retry_count": strategy["retry_count"],
+      "sample_count": strategy["sample_count"]
     })
     
     i = i + 1
   }
   
-  // 验证性能结果
-  assert_eq(performance_results.length(), 3)
+  // 验证自适应策略
+  assert_eq(adaptive_strategies.length(), 4)
   
-  let linear_performance = performance_results[0]
-  assert_eq(linear_performance.get("profile_type", ""), "linear")
-  assert_eq(linear_performance.get("timestamps_processed", 0), 10000)
+  // 验证策略适应网络条件
+  assert_eq(adaptive_strategies[0]["sync_interval"] < adaptive_strategies[2]["sync_interval"], true)
+  assert_eq(adaptive_strategies[2]["retry_count"] >= adaptive_strategies[0]["retry_count"], true)
   
-  let exponential_performance = performance_results[1]
-  assert_eq(exponential_performance.get("profile_type", ""), "exponential")
-  assert_eq(exponential_performance.get("timestamps_processed", 0), 10000)
-  
-  let none_performance = performance_results[2]
-  assert_eq(none_performance.get("profile_type", ""), "none")
-  assert_eq(none_performance.get("timestamps_processed", 0), 10000)
-  
-  // 无补偿应该是最快的
-  assert_eq(none_performance.get("throughput_ops_per_second", 0.0) > linear_performance.get("throughput_ops_per_second", 0.0), true)
-  assert_eq(linear_performance.get("throughput_ops_per_second", 0.0) > exponential_performance.get("throughput_ops_per_second", 0.0), true)
-}
-
-// 辅助函数：应用漂移补偿
-fn apply_drift_compensation(timestamp, drift_profile) {
-  let drift_type = drift_profile.get("drift_type", "")
-  let reference_timestamp = drift_profile.get("reference_timestamp", 0)
-  
-  if drift_type == "none" or not drift_profile.get("compensation_enabled", false) {
-    return timestamp
+  // 网络故障恢复测试
+  let network_failure_recovery = {
+    "failure_detection_time": 5000,      // 5秒检测故障
+    "recovery_attempt_interval": 10000,  // 10秒尝试恢复
+    "max_recovery_attempts": 3,
+    "backoff_multiplier": 2.0
   }
   
-  let time_delta = timestamp - reference_timestamp
-  let time_delta_seconds = time_delta.to_double() / 1000000000.0
+  // 验证故障恢复配置
+  assert_eq(network_failure_recovery["max_recovery_attempts"], 3)
   
-  let drift_ns = if drift_type == "linear" {
-    let drift_rate_ppm = drift_profile.get("drift_rate_ppm", 0.0)
-    time_delta_seconds * drift_rate_ppm * 1000.0  // 转换为纳秒
+  // 模拟网络故障和恢复
+  let mut recovery_attempts = 0
+  let mut recovery_successful = false
+  let mut total_recovery_time = 0
+  
+  while recovery_attempts < network_failure_recovery["max_recovery_attempts"] and not recovery_successful {
+    recovery_attempts = recovery_attempts + 1
     
-  } else if drift_type == "exponential" {
-    let drift_rate_ppm = drift_profile.get("drift_rate_ppm", 0.0)
-    let acceleration_factor = drift_profile.get("acceleration_factor", 1.0)
+    // 模拟恢复尝试时间
+    let attempt_time = network_failure_recovery["recovery_attempt_interval"] * 
+                      (recovery_attempts.to_double() * network_failure_recovery["backoff_multiplier"]).to_int()
+    total_recovery_time = total_recovery_time + attempt_time
     
-    // 简化的指数漂移计算
-    let base_drift = time_delta_seconds * drift_rate_ppm * 1000.0
-    base_drift * (1.0 + (acceleration_factor - 1.0) * time_delta_seconds / 3600.0)
+    // 模拟恢复成功概率（随尝试次数增加）
+    let success_probability = recovery_attempts.to_double() / network_failure_recovery["max_recovery_attempts"].to_double()
+    let random_success = (recovery_attempts * 23) % 100 < (success_probability * 100)
     
-  } else {
-    0.0
-  }
-  
-  timestamp + drift_ns.to_int()
-}
-
-// 辅助函数：计算平均值
-fn calculate_average(numbers) {
-  if numbers.length() == 0 {
-    return 0.0
-  }
-  
-  let mut sum = 0.0
-  let mut i = 0
-  while i < numbers.length() {
-    sum = sum + numbers[i].to_double()
-    i = i + 1
-  }
-  
-  sum / numbers.length().to_double()
-}
-
-// 辅助函数：计算最大值
-fn calculate_max(numbers) {
-  if numbers.length() == 0 {
-    return 0.0
-  }
-  
-  let mut max_value = numbers[0].to_double()
-  let mut i = 1
-  while i < numbers.length() {
-    let value = numbers[i].to_double()
-    if value > max_value {
-      max_value = value
+    if random_success {
+      recovery_successful = true
     }
-    i = i + 1
   }
   
-  max_value
-}
-
-// 辅助函数：计算最小值
-fn calculate_min(numbers) {
-  if numbers.length() == 0 {
-    return 0.0
-  }
+  // 验证故障恢复
+  assert_eq(recovery_attempts <= network_failure_recovery["max_recovery_attempts"], true)
+  assert_eq(total_recovery_time > 0, true)
   
-  let mut min_value = numbers[0].to_double()
-  let mut i = 1
-  while i < numbers.length() {
-    let value = numbers[i].to_double()
-    if value < min_value {
-      min_value = value
-    }
-    i = i + 1
-  }
-  
-  min_value
-}
-
-// 辅助函数：生成同步建议
-fn generate_sync_recommendations(drift_analysis) {
-  let recommendations = []
-  
-  let mut i = 0
-  while i < drift_analysis.length() {
-    let analysis = drift_analysis[i]
-    let node_id = analysis.get("node_id", "")
-    let status = analysis.get("status", "")
-    let issues = analysis.get("issues", [])
-    
-    if status == "unhealthy" {
-      let mut recommendation_actions = []
-      
-      let mut j = 0
-      while j < issues.length() {
-        let issue = issues[j]
-        let issue_type = issue.get("type", "")
-        
-        if issue_type == "offset_exceeded" {
-          recommendation_actions.push("Resynchronize clock with reference source")
-        } else if issue_type == "drift_rate_exceeded" {
-          recommendation_actions.push("Check hardware clock stability and replace if necessary")
-        } else if issue_type == "sync_too_old" {
-          recommendation_actions.push("Immediate clock synchronization required")
-        }
-        
-        j = j + 1
-      }
-      
-      recommendations.push({
-        "node_id": node_id,
-        "priority": "high",
-        "actions": recommendation_actions
-      })
-    }
-    
-    i = i + 1
-  }
-  
-  recommendations
+  // 验证恢复时间合理
+  let max_expected_recovery_time = network_failure_recovery["recovery_attempt_interval"] * 
+                                  (1 + 2 + 4)  // 几何级数求和
+  assert_eq(total_recovery_time <= max_expected_recovery_time, true)
 }

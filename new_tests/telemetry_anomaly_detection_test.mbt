@@ -1,390 +1,429 @@
 // 遥测异常检测测试用例
 
-test "telemetry_statistical_anomaly_detection" {
-  // 测试遥测统计异常检测
+test "telemetry_anomaly_detection_statistical" {
+  // 测试基于统计的异常检测
   
-  let statistical_config = {
-    "algorithm": "z_score",
-    "threshold": 2.5,
-    "window_size": 100,
-    "min_samples": 30
-  }
-  
-  // 验证统计检测配置
-  assert_eq(statistical_config["algorithm"], "z_score")
-  assert_eq(statistical_config["threshold"], "2.5")
-  assert_eq(statistical_config["window_size"], "100")
-  assert_eq(statistical_config["min_samples"], "30")
-  
-  // 模拟正常和异常数据
-  let metric_data = [
-    45.2, 46.8, 44.9, 47.1, 45.6, 46.3, 44.7, 45.9, 46.5, 45.1,  // 正常范围
-    46.2, 45.8, 44.3, 47.5, 45.4, 46.7, 44.1, 45.7, 46.9, 45.3,  // 正常范围
-    95.2,  // 异常值
-    46.1, 45.5, 44.8, 47.2, 45.0, 46.6, 44.5, 45.8, 46.4, 45.2,  // 恢复正常
-    12.3,  // 异常值
-    46.0, 45.9, 44.6, 47.3, 45.7, 46.8, 44.9, 45.6, 46.2, 45.4   // 恢复正常
+  let metric_values = [
+    45.2, 47.8, 46.5, 48.1, 44.9, 47.2, 46.8, 45.5, 47.1, 46.3,
+    48.5, 46.7, 45.8, 47.4, 46.1, 89.2, 47.6, 45.9, 47.3, 46.4
   ]
   
   // 验证数据
-  assert_eq(metric_data.length(), 32)
+  assert_eq(metric_values.length(), 20)
+  assert_eq(metric_values[15], 89.2)  // 异常值
   
-  // 使用前20个数据点作为训练集
-  let training_size = 20
+  // 计算均值
   let mut sum = 0.0
   let mut i = 0
-  
-  while i < training_size {
-    sum = sum + metric_data[i]
+  while i < metric_values.length() {
+    sum = sum + metric_values[i]
     i = i + 1
   }
-  
-  let mean = sum / training_size.to_float()
+  let mean = sum / metric_values.length().to_double()
   
   // 计算标准差
-  let mut variance_sum = 0.0
-  let mut i = 0
-  
-  while i < training_size {
-    let value = metric_data[i]
-    let diff = value - mean
-    variance_sum = variance_sum + (diff * diff)
+  let mut variance = 0.0
+  i = 0
+  while i < metric_values.length() {
+    let deviation = metric_values[i] - mean
+    variance = variance + deviation * deviation
     i = i + 1
   }
-  
-  let variance = variance_sum / training_size.to_float()
+  variance = variance / metric_values.length().to_double()
   let std_dev = variance.sqrt()
   
-  // 验证基础统计量
-  assert_eq(mean > 40.0 and mean < 50.0, true)
-  assert_eq(std_dev > 0.0 and std_dev < 5.0, true)
+  // 验证统计量
+  assert_eq(mean > 40.0, true)
+  assert_eq(mean < 60.0, true)
+  assert_eq(std_dev > 0.0, true)
   
-  // 检测异常
-  let threshold = statistical_config["threshold"].to_float()
+  // 3-sigma规则检测异常
+  let threshold = 3.0 * std_dev
   let mut anomalies = []
   
-  let mut i = training_size
-  while i < metric_data.length() {
-    let value = metric_data[i]
-    let z_score = (value - mean) / std_dev
-    let is_anomaly = z_score.abs() > threshold
+  i = 0
+  while i < metric_values.length() {
+    let value = metric_values[i]
+    let z_score = (value - mean).abs() / std_dev
     
-    if is_anomaly {
-      anomalies.push({
-        "index": i,
-        "value": value,
-        "z_score": z_score,
-        "mean": mean,
-        "std_dev": std_dev
-      })
+    if z_score > 3.0 {
+      anomalies.push((i, value, z_score))
     }
     
     i = i + 1
   }
   
   // 验证异常检测结果
-  assert_eq(anomalies.length(), 2)  // 检测到2个异常
+  assert_eq(anomalies.length(), 1)
+  assert_eq(anomalies[0].0, 15)        // 索引15
+  assert_eq(anomalies[0].1, 89.2)      // 异常值
+  assert_eq(anomalies[0].2 > 3.0, true) // Z-score大于3
   
-  // 验证第一个异常（高值）
-  assert_eq(anomalies[0]["index"], 20)
-  assert_eq(anomalies[0]["value"], 95.2)
-  assert_eq(anomalies[0]["z_score"] > threshold, true)
-  
-  // 验证第二个异常（低值）
-  assert_eq(anomalies[1]["index"], 26)
-  assert_eq(anomalies[1]["value"], 12.3)
-  assert_eq(anomalies[1]["z_score"].abs() > threshold, true)
-  
-  // 测试动态阈值调整
-  let dynamic_threshold_enabled = true
-  let mut adjusted_threshold = threshold
-  
-  if dynamic_threshold_enabled {
-    // 根据历史误报率调整阈值
-    let false_positive_rate = 0.05  // 5%误报率
-    let target_false_positive_rate = 0.01  // 1%目标误报率
-    
-    if false_positive_rate > target_false_positive_rate {
-      adjusted_threshold = threshold * 1.2  // 提高阈值
-    }
-  }
-  
-  // 验证动态阈值调整
-  assert_eq(adjusted_threshold > threshold, true)
+  // 验证异常值的显著性
+  let anomaly_value = anomalies[0].1
+  assert_eq(anomaly_value > mean + threshold, true)
 }
 
-test "telemetry_pattern_based_anomaly_detection" {
-  // 测试遥测基于模式的异常检测
+test "telemetry_anomaly_detection_moving_average" {
+  // 测试基于移动平均的异常检测
   
-  let pattern_config = {
-    "algorithm": "seasonal_decomposition",
-    "season_length": 24,  // 24小时季节周期
-    "trend_window": 168,  // 7天趋势窗口
-    "threshold": 3.0
-  }
-  
-  // 验证模式检测配置
-  assert_eq(pattern_config["algorithm"], "seasonal_decomposition")
-  assert_eq(pattern_config["season_length"], "24")
-  assert_eq(pattern_config["trend_window"], "168")
-  assert_eq(pattern_config["threshold"], "3.0")
-  
-  // 模拟具有日周期性的数据
-  let seasonal_data = [
-    // 第1天（正常模式）
-    20.5, 19.8, 18.2, 17.5, 16.9, 17.2, 18.5, 22.1, 28.3, 35.7,
-    42.8, 48.9, 52.3, 54.7, 55.2, 53.8, 49.6, 43.7, 37.2, 31.5,
-    26.8, 23.1, 21.4, 20.8,
-    // 第2天（正常模式）
-    20.2, 19.5, 18.0, 17.3, 16.8, 17.0, 18.3, 21.9, 28.1, 35.5,
-    42.6, 48.7, 52.1, 54.5, 55.0, 53.6, 49.4, 43.5, 37.0, 31.3,
-    26.6, 22.9, 21.2, 20.6,
-    // 第3天（异常模式）
-    20.3, 19.6, 18.1, 17.4, 75.2,  // 异常：早高峰异常高
-    17.1, 18.4, 21.8, 28.0, 35.4, 42.5, 48.6, 52.0, 54.4, 54.9,
-    53.5, 49.3, 43.4, 36.9, 31.2, 26.5, 22.8, 21.1, 20.5
+  let time_series = [
+    100, 102, 98, 105, 101, 99, 103, 97, 104, 102,
+    98, 101, 150, 99, 103, 96, 105, 101, 98, 102
   ]
   
-  // 验证季节性数据
-  assert_eq(seasonal_data.length(), 69)
+  // 验证时间序列数据
+  assert_eq(time_series.length(), 20)
+  assert_eq(time_series[12], 150)  // 异常值
   
-  let season_length = pattern_config["season_length"].to_int()
+  // 计算移动平均
+  let window_size = 5
+  let mut moving_averages = []
   
-  // 计算季节性模式（使用前两天数据）
-  let mut seasonal_pattern = []
+  let mut i = window_size - 1
+  while i < time_series.length() {
+    let mut window_sum = 0.0
+    let mut j = 0
+    while j < window_size {
+      window_sum = window_sum + time_series[i - j].to_double()
+      j = j + 1
+    }
+    let avg = window_sum / window_size.to_double()
+    moving_averages.push(avg)
+    i = i + 1
+  }
+  
+  // 验证移动平均计算
+  assert_eq(moving_averages.length(), 16)  // 20 - 5 + 1
+  
+  // 检测异常（偏离移动平均超过阈值）
+  let threshold_percentage = 30.0  // 30%阈值
+  let mut detected_anomalies = []
+  
+  i = 0
+  while i < moving_averages.length() {
+    let actual_index = i + window_size - 1
+    let actual_value = time_series[actual_index].to_double()
+    let expected_value = moving_averages[i]
+    
+    let deviation_percentage = ((actual_value - expected_value).abs() / expected_value) * 100.0
+    
+    if deviation_percentage > threshold_percentage {
+      detected_anomalies.push((actual_index, actual_value, expected_value, deviation_percentage))
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证异常检测结果
+  assert_eq(detected_anomalies.length(), 1)
+  assert_eq(detected_anomalies[0].0, 12)        // 索引12
+  assert_eq(detected_anomalies[0].1, 150.0)     // 实际值
+  assert_eq(detected_anomalies[0].3 > 30.0, true) // 偏差百分比大于30%
+  
+  // 验证移动平均的平滑性
+  let mut i = 1
+  while i < moving_averages.length() {
+    let prev_avg = moving_averages[i - 1]
+    let curr_avg = moving_averages[i]
+    
+    // 移动平均变化应该相对平滑
+    let avg_change = (curr_avg - prev_avg).abs()
+    assert_eq(avg_change < 20.0, true)
+    
+    i = i + 1
+  }
+}
+
+test "telemetry_anomaly_detection_pattern_based" {
+  // 测试基于模式的异常检测
+  
+  let log_patterns = [
+    "INFO: User login successful",
+    "INFO: User logout", 
+    "INFO: User login successful",
+    "WARN: Slow database query detected",
+    "INFO: User login successful",
+    "INFO: User logout",
+    "ERROR: Database connection failed",
+    "INFO: User login successful",
+    "INFO: User logout",
+    "INFO: User login successful",
+    "ERROR: Database connection failed",
+    "ERROR: Database connection failed",
+    "CRITICAL: System out of memory",
+    "INFO: User login successful",
+    "INFO: User logout"
+  ]
+  
+  // 验证日志模式
+  assert_eq(log_patterns.length(), 15)
+  
+  // 统计不同级别的日志
+  let mut log_levels = {
+    "INFO": 0,
+    "WARN": 0,
+    "ERROR": 0,
+    "CRITICAL": 0
+  }
   
   let mut i = 0
-  while i < season_length {
-    let day1_val = seasonal_data[i]
-    let day2_val = seasonal_data[i + season_length]
-    let seasonal_avg = (day1_val + day2_val) / 2.0
-    seasonal_pattern.push(seasonal_avg)
-    i = i + 1
-  }
-  
-  // 验证季节性模式
-  assert_eq(seasonal_pattern.length(), 24)
-  
-  // 检测第三天的异常
-  let day3_start = season_length * 2
-  let threshold = pattern_config["threshold"].to_float()
-  let mut pattern_anomalies = []
-  
-  let mut i = day3_start
-  while i < seasonal_data.length() {
-    let hour_of_day = i - day3_start
-    let expected_value = seasonal_pattern[hour_of_day]
-    let actual_value = seasonal_data[i]
+  while i < log_patterns.length() {
+    let log_entry = log_patterns[i]
+    let level = log_entry.split(":")[0]
     
-    // 计算偏差
-    let deviation = (actual_value - expected_value).abs()
-    let relative_deviation = deviation / expected_value
-    
-    // 检查是否为异常
-    if relative_deviation > (threshold / 10.0) {  // 转换为相对阈值
-      pattern_anomalies.push({
-        "index": i,
-        "hour_of_day": hour_of_day,
-        "expected": expected_value,
-        "actual": actual_value,
-        "deviation": deviation,
-        "relative_deviation": relative_deviation
-      })
+    if log_levels.contains(level) {
+      log_levels[level] = log_levels[level] + 1
     }
     
     i = i + 1
   }
   
-  // 验证模式异常检测结果
-  assert_eq(pattern_anomalies.length(), 1)  // 检测到1个异常
+  // 验证日志级别统计
+  assert_eq(log_levels["INFO"], 9)
+  assert_eq(log_levels["WARN"], 1)
+  assert_eq(log_levels["ERROR"], 3)
+  assert_eq(log_levels["CRITICAL"], 1)
   
-  // 验证异常详情
-  assert_eq(pattern_anomalies[0]["hour_of_day"], 4)  // 第4小时
-  assert_eq(pattern_anomalies[0]["expected"] > 16.0 and pattern_anomalies[0]["expected"] < 18.0, true)
-  assert_eq(pattern_anomalies[0]["actual"], 75.2)
-  assert_eq(pattern_anomalies[0]["relative_deviation"] > 3.0, true)
+  // 检测异常模式
+  let mut anomalies = []
   
-  // 测试趋势检测
-  let trend_window = pattern_config["trend_window"].to_int()
-  
-  // 简化的趋势检测：检查最近几个点的趋势
-  let recent_data = seasonal_data.slice(seasonal_data.length() - 5, 5)
-  let mut trend_sum = 0.0
-  
-  let mut i = 1
-  while i < recent_data.length() {
-    let diff = recent_data[i] - recent_data[i - 1]
-    trend_sum = trend_sum + diff
+  // 异常模式1: 连续ERROR
+  let mut consecutive_errors = 0
+  i = 0
+  while i < log_patterns.length() {
+    let log_entry = log_patterns[i]
+    if log_entry.has_prefix("ERROR") {
+      consecutive_errors = consecutive_errors + 1
+      if consecutive_errors >= 2 {
+        anomalies.push(("consecutive_errors", i, log_entry))
+      }
+    } else {
+      consecutive_errors = 0
+    }
     i = i + 1
   }
   
-  let avg_trend = trend_sum / (recent_data.length() - 1).to_float()
-  
-  // 验证趋势计算
-  assert_eq(avg_trend > -5.0 and avg_trend < 5.0, true)  // 趋势应该在合理范围内
-}
-
-test "telemetry_machine_learning_anomaly_detection" {
-  // 测试遥测机器学习异常检测
-  
-  let ml_config = {
-    "algorithm": "isolation_forest",
-    "contamination_rate": 0.1,
-    "n_estimators": 100,
-    "max_samples": "auto"
+  // 异常模式2: CRITICAL级别日志
+  i = 0
+  while i < log_patterns.length() {
+    let log_entry = log_patterns[i]
+    if log_entry.has_prefix("CRITICAL") {
+      anomalies.push(("critical_log", i, log_entry))
+    }
+    i = i + 1
   }
   
-  // 验证机器学习检测配置
-  assert_eq(ml_config["algorithm"], "isolation_forest")
-  assert_eq(ml_config["contamination_rate"], "0.1")
-  assert_eq(ml_config["n_estimators"], "100")
-  assert_eq(ml_config["max_samples"], "auto")
+  // 验证异常检测结果
+  assert_eq(anomalies.length(), 3)  // 1个连续ERROR + 1个CRITICAL + 1个连续ERROR
   
-  // 模拟多维度指标数据
-  let multidimensional_data = [
-    {"cpu": 45.2, "memory": 60.5, "network": 120.3, "disk": 25.8},  // 正常
-    {"cpu": 46.8, "memory": 62.1, "network": 118.7, "disk": 26.2},  // 正常
-    {"cpu": 44.9, "memory": 59.8, "network": 122.1, "disk": 25.1},  // 正常
-    {"cpu": 47.1, "memory": 63.4, "network": 119.5, "disk": 27.3},  // 正常
-    {"cpu": 45.6, "memory": 61.2, "network": 121.8, "disk": 24.9},  // 正常
-    {"cpu": 95.2, "memory": 85.7, "network": 450.6, "disk": 95.3},  // 异常
-    {"cpu": 46.3, "memory": 60.8, "network": 120.9, "disk": 26.1},  // 正常
-    {"cpu": 44.7, "memory": 58.9, "network": 123.4, "disk": 24.7},  // 正常
-    {"cpu": 15.3, "memory": 35.2, "network": 45.8, "disk": 12.1},   // 异常
-    {"cpu": 45.9, "memory": 61.7, "network": 119.8, "disk": 25.6}   // 正常
+  // 验证特定异常
+  assert_eq(anomalies[0].0, "consecutive_errors")
+  assert_eq(anomalies[1].0, "consecutive_errors")
+  assert_eq(anomalies[2].0, "critical_log")
+  
+  // 计算异常严重程度
+  let mut severity_score = 0
+  i = 0
+  while i < anomalies.length() {
+    let anomaly_type = anomalies[i].0
+    
+    if anomaly_type == "critical_log" {
+      severity_score = severity_score + 10
+    } else if anomaly_type == "consecutive_errors" {
+      severity_score = severity_score + 5
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证异常严重程度
+  assert_eq(severity_score, 20)  // 2*5 + 1*10
+  assert_eq(severity_score > 15, true)  // 高严重程度
+}
+
+test "telemetry_anomaly_detection_seasonal" {
+  // 测试季节性异常检测
+  
+  let hourly_metrics = [
+    10, 12, 15, 25, 45, 68, 85, 92, 88, 75,  // 0-9时 (工作时间)
+    65, 58, 52, 48, 42, 38, 35, 32, 28, 22,  // 10-19时 (下班时间)
+    18, 15, 12, 10                           // 20-23时 (夜间)
   ]
   
-  // 验证多维度数据
-  assert_eq(multidimensional_data.length(), 10)
+  // 验证小时指标数据
+  assert_eq(hourly_metrics.length(), 24)
   
-  // 计算每个维度的统计量
-  let dimensions = ["cpu", "memory", "network", "disk"]
-  let mut dimension_stats = {}
+  // 计算每个时间段的基准值
+  let work_hours_avg = (85 + 92 + 88 + 75).to_double() / 4.0  // 9-12时高峰
+  let evening_hours_avg = (35 + 32 + 28 + 22).to_double() / 4.0  // 16-19时
+  let night_hours_avg = (18 + 15 + 12 + 10).to_double() / 4.0  // 20-23时
   
-  let mut d = 0
-  while d < dimensions.length() {
-    let dim = dimensions[d]
+  // 验证基准值
+  assert_eq(work_hours_avg > evening_hours_avg, true)
+  assert_eq(evening_hours_avg > night_hours_avg, true)
+  
+  // 模拟异常数据（在夜间出现工作时间级别的负载）
+  let anomalous_data = hourly_metrics
+  anomalous_data[21] = 80  // 21时出现异常高负载
+  
+  // 季节性异常检测
+  let mut seasonal_anomalies = []
+  let threshold_factor = 2.0  // 阈值因子
+  
+  let mut i = 0
+  while i < anomalous_data.length() {
+    let hour = i
+    let value = anomalous_data[i].to_double()
     
-    // 计算平均值
+    let expected_value = if hour >= 9 and hour <= 12 {
+      work_hours_avg
+    } else if hour >= 16 and hour <= 19 {
+      evening_hours_avg
+    } else if hour >= 20 or hour <= 6 {
+      night_hours_avg
+    } else {
+      (work_hours_avg + night_hours_avg) / 2.0  // 过渡时间
+    }
+    
+    if value > expected_value * threshold_factor {
+      seasonal_anomalies.push((hour, value, expected_value))
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证季节性异常检测结果
+  assert_eq(seasonal_anomalies.length(), 1)
+  assert_eq(seasonal_anomalies[0].0, 21)        // 21时
+  assert_eq(seasonal_anomalies[0].1, 80.0)      // 异常值
+  assert_eq(seasonal_anomalies[0].2, night_hours_avg) // 期望值
+  
+  // 验证异常的显著性
+  let anomaly_ratio = seasonal_anomalies[0].1 / seasonal_anomalies[0].2
+  assert_eq(anomaly_ratio > threshold_factor, true)
+  
+  // 计算季节性模式强度
+  let pattern_strength = (work_hours_avg - night_hours_avg) / work_hours_avg
+  assert_eq(pattern_strength > 0.5, true)  // 强季节性模式
+}
+
+test "telemetry_anomaly_detection_multivariate" {
+  // 测试多元异常检测
+  
+  let system_metrics = [
+    (75.2, 68.5, 45.8),   // CPU, Memory, Disk
+    (78.1, 72.3, 48.2),
+    (76.5, 69.8, 46.1),
+    (77.8, 71.2, 47.5),
+    (74.9, 67.9, 44.8),
+    (95.5, 95.2, 85.3),   // 异常点
+    (76.2, 70.1, 46.9),
+    (75.8, 68.7, 45.3),
+    (77.1, 71.5, 47.8),
+    (76.4, 69.4, 46.2)
+  ]
+  
+  // 验证多元数据
+  assert_eq(system_metrics.length(), 10)
+  assert_eq(system_metrics[4].0, 74.9)   // 正常点
+  assert_eq(system_metrics[5].0, 95.5)   // 异常点
+  
+  // 计算每个维度的均值和标准差
+  let dimensions = 3
+  let mut means = []
+  let mut std_devs = []
+  
+  let mut dim = 0
+  while dim < dimensions {
     let mut sum = 0.0
     let mut i = 0
-    while i < multidimensional_data.length() {
-      sum = sum + multidimensional_data[i][dim].to_float()
+    while i < system_metrics.length() {
+      if dim == 0 {
+        sum = sum + system_metrics[i].0.to_double()
+      } else if dim == 1 {
+        sum = sum + system_metrics[i].1.to_double()
+      } else if dim == 2 {
+        sum = sum + system_metrics[i].2.to_double()
+      }
       i = i + 1
     }
-    let mean = sum / multidimensional_data.length().to_float()
+    let mean = sum / system_metrics.length().to_double()
+    means.push(mean)
     
     // 计算标准差
-    let mut variance_sum = 0.0
-    let mut i = 0
-    while i < multidimensional_data.length() {
-      let value = multidimensional_data[i][dim].to_float()
-      let diff = value - mean
-      variance_sum = variance_sum + (diff * diff)
+    let mut variance = 0.0
+    i = 0
+    while i < system_metrics.length() {
+      let value = if dim == 0 {
+        system_metrics[i].0.to_double()
+      } else if dim == 1 {
+        system_metrics[i].1.to_double()
+      } else {
+        system_metrics[i].2.to_double()
+      }
+      let deviation = value - mean
+      variance = variance + deviation * deviation
       i = i + 1
     }
-    let variance = variance_sum / multidimensional_data.length().to_float()
-    let std_dev = variance.sqrt()
+    variance = variance / system_metrics.length().to_double()
+    std_devs.push(variance.sqrt())
     
-    dimension_stats[dim] = {"mean": mean, "std_dev": std_dev}
-    d = d + 1
+    dim = dim + 1
   }
   
-  // 验证维度统计量
-  assert_eq(dimension_stats.size(), 4)
-  assert_eq(dimension_stats["cpu"]["mean"] > 40.0, true)
-  assert_eq(dimension_stats["memory"]["mean"] > 50.0, true)
+  // 验证统计量
+  assert_eq(means.length(), 3)
+  assert_eq(std_devs.length(), 3)
   
-  // 模拟孤立森林异常检测（简化版）
-  let contamination_rate = ml_config["contamination_rate"].to_float()
-  let expected_anomalies = Int::from_float(multidimensional_data.length().to_float() * contamination_rate)
-  
-  // 计算每个数据点的异常分数（简化的马氏距离）
-  let mut anomaly_scores = []
+  // 马氏距离异常检测
+  let mut mahalanobis_distances = []
   
   let mut i = 0
-  while i < multidimensional_data.length() {
-    let data_point = multidimensional_data[i]
-    let mut score = 0.0
+  while i < system_metrics.length() {
+    let cpu = system_metrics[i].0.to_double()
+    let memory = system_metrics[i].1.to_double()
+    let disk = system_metrics[i].2.to_double()
     
-    // 计算各维度的z-score平方和
-    let mut d = 0
-    while d < dimensions.length() {
-      let dim = dimensions[d]
-      let value = data_point[dim].to_float()
-      let mean = dimension_stats[dim]["mean"]
-      let std_dev = dimension_stats[dim]["std_dev"]
-      
-      if std_dev > 0.0 {
-        let z_score = (value - mean) / std_dev
-        score = score + (z_score * z_score)
-      }
-      
-      d = d + 1
-    }
+    // 简化的马氏距离计算（假设维度独立）
+    let cpu_z = (cpu - means[0]) / std_devs[0]
+    let memory_z = (memory - means[1]) / std_devs[1]
+    let disk_z = (disk - means[2]) / std_devs[2]
     
-    anomaly_scores.push(score)
+    let mahalanobis_dist = (cpu_z * cpu_z + memory_z * memory_z + disk_z * disk_z).sqrt()
+    mahalanobis_distances.push(mahalanobis_dist)
+    
     i = i + 1
   }
   
-  // 根据分数确定异常（分数最高的为异常）
-  let mut indexed_scores = []
-  let mut i = 0
-  while i < anomaly_scores.length() {
-    indexed_scores.push({"index": i, "score": anomaly_scores[i]})
-    i = i + 1
-  }
+  // 验证马氏距离计算
+  assert_eq(mahalanobis_distances.length(), system_metrics.length())
   
-  // 按分数排序（简化：手动识别最高分）
-  let mut max_score = 0.0
-  let mut max_score_index = 0
-  let mut second_max_score = 0.0
-  let mut second_max_score_index = 0
+  // 检测异常（马氏距离超过阈值）
+  let threshold = 3.0  // 3-sigma阈值
+  let mut multivariate_anomalies = []
   
-  let mut i = 0
-  while i < indexed_scores.length() {
-    let score = indexed_scores[i]["score"]
-    if score > max_score {
-      second_max_score = max_score
-      second_max_score_index = max_score_index
-      max_score = score
-      max_score_index = indexed_scores[i]["index"]
-    } else if score > second_max_score {
-      second_max_score = score
-      second_max_score_index = indexed_scores[i]["index"]
+  i = 0
+  while i < mahalanobis_distances.length() {
+    if mahalanobis_distances[i] > threshold {
+      multivariate_anomalies.push((i, mahalanobis_distances[i]))
     }
     i = i + 1
   }
   
-  // 验证异常检测结果
-  let detected_anomalies = [max_score_index, second_max_score_index]
-  assert_eq(detected_anomalies.length(), 2)
+  // 验证多元异常检测结果
+  assert_eq(multivariate_anomalies.length(), 1)
+  assert_eq(multivariate_anomalies[0].0, 5)  // 索引5（异常点）
+  assert_eq(multivariate_anomalies[0].1 > threshold, true)
   
-  // 验证检测到的异常点
-  assert_eq(detected_anomalies.contains(5), true)  // 第5个点（高值异常）
-  assert_eq(detected_anomalies.contains(8), true)  // 第8个点（低值异常）
+  // 验证异常点的多维度特征
+  let anomaly_index = multivariate_anomalies[0].0
+  let anomaly_cpu = system_metrics[anomaly_index].0
+  let anomaly_memory = system_metrics[anomaly_index].1
+  let anomaly_disk = system_metrics[anomaly_index].2
   
-  // 测试模型更新
-  let model_update_enabled = true
-  let update_threshold = 50  // 50个新样本后更新模型
-  
-  if model_update_enabled {
-    let new_samples_count = 60
-    let should_update_model = new_samples_count >= update_threshold
-    
-    // 验证模型更新逻辑
-    assert_eq(should_update_model, true)
-    
-    // 模拟模型更新过程
-    let model_update_steps = [
-      "collect_new_samples",
-      "validate_data_quality",
-      "retrain_model",
-      "validate_model_performance",
-      "deploy_updated_model"
-    ]
-    
-    // 验证模型更新步骤
-    assert_eq(model_update_steps.length(), 5)
-  }
+  // 异常点在所有维度上都应该显著偏离均值
+  assert_eq(anomaly_cpu > means[0] + 2.0 * std_devs[0], true)
+  assert_eq(anomaly_memory > means[1] + 2.0 * std_devs[1], true)
+  assert_eq(anomaly_disk > means[2] + 2.0 * std_devs[2], true)
 }
