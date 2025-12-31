@@ -1,587 +1,792 @@
-// 遥测跨服务传播测试用例
+// 遥测跨服务数据传播测试用例
+// 测试遥测数据在不同服务之间的传播能力，包括分布式追踪和上下文传播
 
-test "telemetry_cross_service_trace_propagation" {
-  // 测试跨服务链路追踪传播
+test "telemetry_w3c_trace_context_propagation" {
+  // 测试W3C Trace Context传播
   
+  let original_trace_context = {
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+    "tracestate": "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+  }
+  
+  // 解析traceparent头
+  let traceparent_parts = original_trace_context.get("traceparent", "").split("-")
+  assert_eq(traceparent_parts.length(), 4)
+  assert_eq(traceparent_parts[0], "00")  // version
+  assert_eq(traceparent_parts[1], "0af7651916cd43dd8448eb211c80319c")  // trace_id
+  assert_eq(traceparent_parts[2], "b7ad6b7169203331")  // span_id
+  assert_eq(traceparent_parts[3], "01")  // flags
+  
+  // 验证trace_id格式（32个十六进制字符）
+  let trace_id = traceparent_parts[1]
+  assert_eq(trace_id.length(), 32)
+  assert_eq(is_valid_hex(trace_id), true)
+  
+  // 验证span_id格式（16个十六进制字符）
+  let span_id = traceparent_parts[2]
+  assert_eq(span_id.length(), 16)
+  assert_eq(is_valid_hex(span_id), true)
+  
+  // 验证flags
+  let flags = traceparent_parts[3]
+  assert_eq(flags.length(), 2)
+  let sampled_flag = flags[1] == '1'
+  assert_eq(sampled_flag, true)
+  
+  // 解析tracestate头
+  let tracestate = original_trace_context.get("tracestate", "")
+  let tracestate_entries = tracestate.split(",")
+  
+  assert_eq(tracestate_entries.length(), 2)
+  assert_eq(tracestate_entries[0], "rojo=00f067aa0ba902b7")
+  assert_eq(tracestate_entries[1], "congo=t61rcWkgMzE")
+  
+  // 模拟服务间传播
+  let service_a_to_b_headers = {
+    "traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+    "tracestate": "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE",
+    "x-request-id": "req-12345",
+    "user-agent": "service-a/1.0.0"
+  }
+  
+  // 服务B接收并生成新的span
+  let service_b_span_id = generate_span_id()
+  let service_b_traceparent = "00-0af7651916cd43dd8448eb211c80319c-" + service_b_span_id + "-01"
+  
+  // 服务B传播给服务C
+  let service_b_to_c_headers = {
+    "traceparent": service_b_traceparent,
+    "tracestate": "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE,service_b=added_value",
+    "x-request-id": "req-12345",
+    "x-service-b-timestamp": "1672531200"
+  }
+  
+  // 验证传播的traceparent
+  let b_to_c_traceparent = service_b_to_c_headers.get("traceparent", "")
+  let b_to_c_parts = b_to_c_traceparent.split("-")
+  
+  assert_eq(b_to_c_parts[1], trace_id)  // trace_id应该保持不变
+  assert_eq(b_to_c_parts[2], service_b_span_id)  // span_id应该是服务B生成的
+  assert_eq(b_to_c_parts[3], "01")  // flags应该保持
+  
+  // 验证tracestate的更新
+  let b_to_c_tracestate = service_b_to_c_headers.get("tracestate", "")
+  let b_to_c_entries = b_to_c_tracestate.split(",")
+  
+  assert_eq(b_to_c_entries.length(), 3)  // 增加了一个新的条目
+  assert_eq(b_to_c_entries[0], "rojo=00f067aa0ba902b7")
+  assert_eq(b_to_c_entries[1], "congo=t61rcWkgMzE")
+  assert_eq(b_to_c_entries[2], "service_b=added_value")
+  
+  // 模拟服务链路追踪
   let service_chain = [
     {
-      "service_name": "api-gateway",
-      "span_id": "span_gateway_001",
-      "parent_span_id": null,
-      "operation_name": "handle_request",
-      "trace_id": "trace_12345",
-      "trace_state": "vendor1=abc123,vendor2=def456"
+      "service_name": "gateway",
+      "span_id": "b7ad6b7169203331",
+      "parent_span_id": "",
+      "operation": "http.request",
+      "start_time": 1672531200000000000,
+      "end_time": 1672531200050000000,
+      "duration_ms": 5
+    },
+    {
+      "service_name": "auth-service",
+      "span_id": service_b_span_id,
+      "parent_span_id": "b7ad6b7169203331",
+      "operation": "authenticate",
+      "start_time": 1672531200010000000,
+      "end_time": 1672531200040000000,
+      "duration_ms": 3
     },
     {
       "service_name": "user-service",
-      "span_id": "span_user_001",
-      "parent_span_id": "span_gateway_001",
-      "operation_name": "authenticate_user",
-      "trace_id": "trace_12345",
-      "trace_state": "vendor1=abc123,vendor2=def456"
-    },
-    {
-      "service_name": "order-service",
-      "span_id": "span_order_001",
-      "parent_span_id": "span_user_001",
-      "operation_name": "create_order",
-      "trace_id": "trace_12345",
-      "trace_state": "vendor1=abc123,vendor2=def456"
-    },
-    {
-      "service_name": "payment-service",
-      "span_id": "span_payment_001",
-      "parent_span_id": "span_order_001",
-      "operation_name": "process_payment",
-      "trace_id": "trace_12345",
-      "trace_state": "vendor1=abc123,vendor2=def456"
+      "span_id": generate_span_id(),
+      "parent_span_id": service_b_span_id,
+      "operation": "get_user_profile",
+      "start_time": 1672531200020000000,
+      "end_time": 1672531200080000000,
+      "duration_ms": 6
     }
   ]
   
-  // 验证服务链
-  assert_eq(service_chain.length(), 4)
-  assert_eq(service_chain[0]["service_name"], "api-gateway")
-  assert_eq(service_chain[3]["operation_name"], "process_payment")
+  // 验证服务链路
+  assert_eq(service_chain.length(), 3)
   
-  // 验证链路追踪一致性
-  let trace_consistency_issues = []
+  // 验证父子关系
+  assert_eq(service_chain[1].get("parent_span_id", ""), service_chain[0].get("span_id", ""))
+  assert_eq(service_chain[2].get("parent_span_id", ""), service_chain[1].get("span_id", ""))
   
-  // 检查所有服务使用相同的trace_id
-  let expected_trace_id = "trace_12345"
-  for service in service_chain {
-    if service["trace_id"] != expected_trace_id {
-      trace_consistency_issues.push({
-        "type": "trace_id_mismatch",
-        "service": service["service_name"],
-        "expected": expected_trace_id,
-        "actual": service["trace_id"]
-      })
-    }
-  }
+  // 验证时间顺序
+  assert_eq(service_chain[0].get("start_time", 0) <= service_chain[1].get("start_time", 0), true)
+  assert_eq(service_chain[1].get("start_time", 0) <= service_chain[2].get("start_time", 0), true)
   
-  // 检查trace_state一致性
-  let expected_trace_state = "vendor1=abc123,vendor2=def456"
-  for service in service_chain {
-    if service["trace_state"] != expected_trace_state {
-      trace_consistency_issues.push({
-        "type": "trace_state_mismatch",
-        "service": service["service_name"],
-        "expected": expected_trace_state,
-        "actual": service["trace_state"]
-      })
-    }
-  }
+  // 计算总链路时间
+  let chain_start_time = service_chain[0].get("start_time", 0)
+  let chain_end_time = service_chain[2].get("end_time", 0)
+  let total_chain_duration = (chain_end_time - chain_start_time) / 1000000  // 转换为毫秒
   
-  // 检查父子关系
-  for i = 1; i < service_chain.length(); i = i + 1 {
-    let current_service = service_chain[i]
-    let expected_parent = service_chain[i-1]["span_id"]
-    
-    if current_service["parent_span_id"] != expected_parent {
-      trace_consistency_issues.push({
-        "type": "parent_span_mismatch",
-        "service": current_service["service_name"],
-        "expected_parent": expected_parent,
-        "actual_parent": current_service["parent_span_id"]
-      })
-    }
-  }
-  
-  // 验证链路追踪一致性
-  assert_eq(trace_consistency_issues.length(), 0)
-  
-  // 测试链路追踪传播格式
-  let propagation_formats = {
-    "traceparent": "00-trace_12345-span_gateway_001-01",
-    "tracestate": "vendor1=abc123,vendor2=def456",
-    "baggage": "user_id=user123,session_id=session456"
-  }
-  
-  // 验证传播格式
-  assert_eq(propagation_formats["traceparent"], "00-trace_12345-span_gateway_001-01")
-  assert_eq(propagation_formats["tracestate"], "vendor1=abc123,vendor2=def456")
-  assert_eq(propagation_formats["baggage"], "user_id=user123,session_id=session456")
-  
-  // 模拟格式解析
-  let parsed_traceparent = {
-    "version": "00",
-    "trace_id": "trace_12345",
-    "parent_id": "span_gateway_001",
-    "flags": "01"
-  }
-  
-  // 验证解析结果
-  assert_eq(parsed_traceparent["version"], "00")
-  assert_eq(parsed_traceparent["trace_id"], "trace_12345")
-  assert_eq(parsed_traceparent["parent_id"], "span_gateway_001")
+  assert_eq(total_chain_duration, 8)  // 8毫秒总链路时间
 }
 
-test "telemetry_cross_service_baggage_propagation" {
-  // 测试跨服务行李传播
+test "telemetry_baggage_propagation" {
+  // 测试Baggage传播
   
-  let initial_baggage = {
-    "user_id": "user123",
-    "session_id": "session456",
-    "request_id": "req789",
-    "tenant_id": "tenant001"
+  let original_baggage = {
+    "user-id": "user-12345",
+    "tenant-id": "tenant-67890",
+    "request-source": "mobile-app",
+    "session-id": "session-abcdef",
+    "feature-flags": "new-ui,experimental-api"
   }
   
-  // 验证初始行李
-  assert_eq(initial_baggage["user_id"], "user123")
-  assert_eq(initial_baggage["session_id"], "session456")
+  // 转换为HTTP头格式
+  let baggage_header = encode_baggage_header(original_baggage)
   
-  // 服务链中的行李传播
-  let baggage_propagation = [
+  // 验证编码结果
+  assert_eq(baggage_header.contains("user-id=user-12345"), true)
+  assert_eq(baggage_header.contains("tenant-id=tenant-67890"), true)
+  assert_eq(baggage_header.contains("request-source=mobile-app"), true)
+  assert_eq(baggage_header.contains("session-id=session-abcdef"), true)
+  assert_eq(baggage_header.contains("feature-flags=new-ui,experimental-api"), true)
+  
+  // 解析baggage头
+  let parsed_baggage = decode_baggage_header(baggage_header)
+  
+  // 验证解析结果
+  assert_eq(parsed_baggage.get("user-id", ""), "user-12345")
+  assert_eq(parsed_baggage.get("tenant-id", ""), "tenant-67890")
+  assert_eq(parsed_baggage.get("request-source", ""), "mobile-app")
+  assert_eq(parsed_baggage.get("session-id", ""), "session-abcdef")
+  assert_eq(parsed_baggage.get("feature-flags", ""), "new-ui,experimental-api")
+  
+  // 模拟服务间baggage传播
+  let service_flow = [
     {
       "service": "api-gateway",
       "received_baggage": {},
-      "added_baggage": {"request_id": "req789"},
-      "propagated_baggage": {"request_id": "req789"}
-    },
-    {
-      "service": "user-service",
-      "received_baggage": {"request_id": "req789"},
-      "added_baggage": {"user_id": "user123"},
-      "propagated_baggage": {"request_id": "req789", "user_id": "user123"}
+      "added_baggage": {"gateway-version": "2.1.0"},
+      "removed_baggage": [],
+      "forwarded_baggage": {}
     },
     {
       "service": "order-service",
-      "received_baggage": {"request_id": "req789", "user_id": "user123"},
-      "added_baggage": {"tenant_id": "tenant001"},
-      "propagated_baggage": {"request_id": "req789", "user_id": "user123", "tenant_id": "tenant001"}
+      "received_baggage": {"user-id": "user-12345", "tenant-id": "tenant-67890"},
+      "added_baggage": {"order-type": "premium", "processing-priority": "high"},
+      "removed_baggage": [],
+      "forwarded_baggage": {}
     },
     {
       "service": "payment-service",
-      "received_baggage": {"request_id": "req789", "user_id": "user123", "tenant_id": "tenant001"},
-      "added_baggage": {"session_id": "session456"},
-      "propagated_baggage": {"request_id": "req789", "user_id": "user123", "tenant_id": "tenant001", "session_id": "session456"}
+      "received_baggage": {"user-id": "user-12345", "tenant-id": "tenant-67890", "order-type": "premium"},
+      "added_baggage": {"payment-method": "credit-card", "currency": "USD"},
+      "removed_baggage": ["processing-priority"],  // 移除敏感信息
+      "forwarded_baggage": {}
     }
   ]
   
-  // 验证行李传播
-  assert_eq(baggage_propagation.length(), 4)
-  assert_eq(baggage_propagation[0]["service"], "api-gateway")
-  assert_eq(baggage_propagation[3]["propagated_baggage"].length(), 4)
+  // 模拟baggage在服务链中的传播
+  let mut current_baggage = original_baggage
   
-  // 检查行李传播完整性
-  let baggage_integrity_issues = []
-  
-  for i = 1; i < baggage_propagation.length(); i = i + 1 {
-    let current_service = baggage_propagation[i]
-    let previous_service = baggage_propagation[i-1]
+  let mut i = 0
+  while i < service_flow.length() {
+    let service = service_flow[i]
+    let service_name = service.get("service", "")
     
-    // 检查接收的行李是否与上一个服务传播的匹配
-    let received_keys = current_service["received_baggage"].keys()
-    let propagated_keys = previous_service["propagated_baggage"].keys()
+    // 服务接收当前baggage
+    service.set("received_baggage", current_baggage)
     
-    for key in propagated_keys {
-      if !received_keys.contains(key) {
-        baggage_integrity_issues.push({
-          "type": "missing_baggage_item",
-          "service": current_service["service"],
-          "missing_key": key
-        })
-      }
+    // 服务添加新的baggage项
+    let added = service.get("added_baggage", {})
+    let added_keys = added.keys()
+    let mut j = 0
+    
+    while j < added_keys.length() {
+      let key = added_keys[j]
+      current_baggage.set(key, added.get(key, ""))
+      j = j + 1
     }
     
-    // 检查行李值是否一致
-    for key in current_service["received_baggage"].keys() {
-      if previous_service["propagated_baggage"].contains_key(key) {
-        let received_value = current_service["received_baggage"][key]
-        let propagated_value = previous_service["propagated_baggage"][key]
-        
-        if received_value != propagated_value {
-          baggage_integrity_issues.push({
-            "type": "baggage_value_mismatch",
-            "service": current_service["service"],
-            "key": key,
-            "expected": propagated_value,
-            "actual": received_value
-          })
+    // 服务移除baggage项
+    let removed = service.get("removed_baggage", [])
+    let mut k = 0
+    
+    while k < removed.length() {
+      let key = removed[k]
+      current_baggage.remove(key)
+      k = k + 1
+    }
+    
+    // 服务转发更新后的baggage
+    service.set("forwarded_baggage", current_baggage)
+    
+    i = i + 1
+  }
+  
+  // 验证传播结果
+  let gateway_service = service_flow[0]
+  let order_service = service_flow[1]
+  let payment_service = service_flow[2]
+  
+  // 验证gateway服务
+  let gateway_received = gateway_service.get("received_baggage", {})
+  let gateway_forwarded = gateway_service.get("forwarded_baggage", {})
+  
+  assert_eq(gateway_received.get("user-id", ""), "user-12345")
+  assert_eq(gateway_forwarded.get("gateway-version", ""), "2.1.0")
+  
+  // 验证order服务
+  let order_received = order_service.get("received_baggage", {})
+  let order_forwarded = order_service.get("forwarded_baggage", {})
+  
+  assert_eq(order_received.get("gateway-version", ""), "2.1.0")
+  assert_eq(order_forwarded.get("order-type", ""), "premium")
+  assert_eq(order_forwarded.get("processing-priority", ""), "high")
+  
+  // 验证payment服务
+  let payment_received = payment_service.get("received_baggage", {})
+  let payment_forwarded = payment_service.get("forwarded_baggage", {})
+  
+  assert_eq(payment_received.get("order-type", ""), "premium")
+  assert_eq(payment_forwarded.get("payment-method", ""), "credit-card")
+  assert_eq(payment_forwarded.get("currency", ""), "USD")
+  
+  // 验证敏感信息被移除
+  assert_eq(payment_forwarded.contains("processing-priority"), false)
+  
+  // 验证原始信息仍然存在
+  assert_eq(payment_forwarded.get("user-id", ""), "user-12345")
+  assert_eq(payment_forwarded.get("tenant-id", ""), "tenant-67890")
+  
+  // 测试baggage大小限制
+  let large_baggage = {}
+  let mut i = 0
+  while i < 100 {  // 创建100个baggage项
+    large_baggage.set("key-" + i.to_string(), "value-" + i.to_string())
+    i = i + 1
+  }
+  
+  let large_baggage_header = encode_baggage_header(large_baggage)
+  
+  // 验证大小限制（假设最大8KB）
+  let max_baggage_size = 8192
+  let truncated_baggage = truncate_baggage(large_baggage_header, max_baggage_size)
+  
+  assert_eq(truncated_baggage.length() <= max_baggage_size, true)
+  assert_eq(truncated_baggage.contains("..."), true)  // 应该包含截断标记
+}
+
+test "telemetry_cross_service_metrics_correlation" {
+  // 测试跨服务指标关联
+  
+  let distributed_transaction = {
+    "transaction_id": "txn-abc123",
+    "trace_id": "def45678901234567890123456789012",
+    "start_time": 1672531200000000000,
+    "services": [
+      {
+        "name": "api-gateway",
+        "span_id": "1111111111111111",
+        "metrics": {
+          "request_count": 1,
+          "request_duration_ms": 15,
+          "cpu_usage_percent": 25.5,
+          "memory_usage_mb": 128
+        },
+        "attributes": {
+          "http.method": "POST",
+          "http.path": "/api/orders",
+          "http.status_code": 200
+        }
+      },
+      {
+        "name": "order-service",
+        "span_id": "2222222222222222",
+        "metrics": {
+          "request_count": 1,
+          "request_duration_ms": 45,
+          "database_query_count": 3,
+          "database_duration_ms": 20,
+          "cpu_usage_percent": 65.2,
+          "memory_usage_mb": 256
+        },
+        "attributes": {
+          "operation": "create_order",
+          "order_type": "premium",
+          "customer_tier": "gold"
+        }
+      },
+      {
+        "name": "payment-service",
+        "span_id": "3333333333333333",
+        "metrics": {
+          "request_count": 1,
+          "request_duration_ms": 120,
+          "external_api_calls": 2,
+          "external_api_duration_ms": 85,
+          "cpu_usage_percent": 45.8,
+          "memory_usage_mb": 192
+        },
+        "attributes": {
+          "payment_method": "credit_card",
+          "payment_gateway": "stripe",
+          "currency": "USD",
+          "amount": 99.99
         }
       }
-    }
+    ]
   }
   
-  // 验证行李传播完整性
-  assert_eq(baggage_integrity_issues.length(), 0)
+  // 验证分布式事务结构
+  assert_eq(distributed_transaction.get("transaction_id", ""), "txn-abc123")
+  assert_eq(distributed_transaction.get("trace_id", ""), "def45678901234567890123456789012")
   
-  // 测试行李格式化
-  let baggage_format = "user_id=user123,session_id=session456,request_id=req789,tenant_id=tenant001"
+  let services = distributed_transaction.get("services", [])
+  assert_eq(services.length(), 3)
   
-  // 验证行李格式化
-  assert_eq(baggage_format.contains("user_id=user123"), true)
-  assert_eq(baggage_format.contains("session_id=session456"), true)
-  assert_eq(baggage_format.split(",").length(), 4)
-}
-
-test "telemetry_cross_service_context_propagation" {
-  // 测试跨服务上下文传播
+  // 计算跨服务指标汇总
+  let mut total_request_count = 0
+  let mut total_request_duration = 0
+  let mut max_cpu_usage = 0.0
+  let mut total_memory_usage = 0
+  let mut service_durations = []
   
-  let correlation_context = {
-    "correlation_id": "corr_12345",
-    "causation_id": "cause_67890",
-    "conversation_id": "conv_11111",
-    "origin_service": "web-client",
-    "user_context": {
-      "user_id": "user123",
-      "user_type": "premium",
-      "permissions": ["read", "write", "admin"]
-    },
-    "business_context": {
-      "order_id": "order_999",
-      "payment_method": "credit_card",
-      "currency": "USD"
-    }
-  }
-  
-  // 验证关联上下文
-  assert_eq(correlation_context["correlation_id"], "corr_12345")
-  assert_eq(correlation_context["user_context"]["user_type"], "premium")
-  assert_eq(correlation_context["business_context"]["order_id"], "order_999")
-  
-  // 上下文传播链
-  let context_propagation_chain = [
-    {
-      "service": "api-gateway",
-      "received_context": {},
-      "context_enrichment": {
-        "request_timestamp": 1634567890123,
-        "client_ip": "192.168.1.100",
-        "user_agent": "Mozilla/5.0..."
-      },
-      "forwarded_context": correlation_context
-    },
-    {
-      "service": "user-service",
-      "received_context": correlation_context,
-      "context_enrichment": {
-        "authentication_method": "oauth2",
-        "auth_timestamp": 1634567890150,
-        "user_roles": ["user", "premium"]
-      },
-      "forwarded_context": correlation_context
-    },
-    {
-      "service": "order-service",
-      "received_context": correlation_context,
-      "context_enrichment": {
-        "order_validation": "passed",
-        "inventory_checked": true,
-        "pricing_calculated": true
-      },
-      "forwarded_context": correlation_context
-    }
-  ]
-  
-  // 验证上下文传播链
-  assert_eq(context_propagation_chain.length(), 3)
-  assert_eq(context_propagation_chain[0]["service"], "api-gateway")
-  assert_eq(context_propagation_chain[1]["context_enrichment"]["authentication_method"], "oauth2")
-  
-  // 检查上下文传播一致性
-  let context_consistency_issues = []
-  
-  for i = 1; i < context_propagation_chain.length(); i = i + 1 {
-    let current_service = context_propagation_chain[i]
-    let previous_service = context_propagation_chain[i-1]
+  let mut i = 0
+  while i < services.length() {
+    let service = services[i]
+    let service_name = service.get("name", "")
+    let metrics = service.get("metrics", {})
     
-    // 检查核心上下文字段是否保持一致
-    let core_context_keys = ["correlation_id", "causation_id", "conversation_id", "origin_service"]
+    total_request_count = total_request_count + metrics.get("request_count", 0)
+    total_request_duration = total_request_duration + metrics.get("request_duration_ms", 0)
     
-    for key in core_context_keys {
-      let received_value = current_service["received_context"][key]
-      let forwarded_value = previous_service["forwarded_context"][key]
-      
-      if received_value != forwarded_value {
-        context_consistency_issues.push({
-          "type": "core_context_mismatch",
-          "service": current_service["service"],
-          "key": key,
-          "expected": forwarded_value,
-          "actual": received_value
-        })
-      }
-    }
-  }
-  
-  // 验证上下文传播一致性
-  assert_eq(context_consistency_issues.length(), 0)
-  
-  // 测试上下文序列化
-  let serialized_context = JSON.stringify(correlation_context)
-  let context_size_bytes = serialized_context.length()
-  
-  // 验证上下文序列化
-  assert_eq(context_size_bytes > 0, true)
-  assert_eq(context_size_bytes < 8192, true)  // 上下文大小应小于8KB
-  
-  // 测试上下文压缩（对于大型上下文）
-  let context_compression_threshold = 1024  // 1KB
-  let compression_needed = context_size_bytes > context_compression_threshold
-  let compressed_context_size = compression_needed ? context_size_bytes * 0.6 : context_size_bytes
-  
-  // 验证上下文压缩逻辑
-  assert_eq(compression_needed, false)  // 假设当前上下文小于阈值
-  assert_eq(compressed_context_size, context_size_bytes)
-}
-
-test "telemetry_cross_service_metric_propagation" {
-  // 测试跨服务指标传播
-  
-  let service_metrics = [
-    {
-      "service_name": "api-gateway",
-      "metrics": {
-        "request_count": 1000,
-        "error_rate": 0.02,
-        "avg_response_time": 125.5,
-        "p95_response_time": 250.0
-      },
-      "generated_at": 1634567890123
-    },
-    {
-      "service_name": "user-service",
-      "metrics": {
-        "request_count": 800,
-        "error_rate": 0.01,
-        "avg_response_time": 85.2,
-        "p95_response_time": 150.0
-      },
-      "generated_at": 1634567890150
-    },
-    {
-      "service_name": "order-service",
-      "metrics": {
-        "request_count": 600,
-        "error_rate": 0.015,
-        "avg_response_time": 200.8,
-        "p95_response_time": 400.0
-      },
-      "generated_at": 1634567890180
-    }
-  ]
-  
-  // 验证服务指标
-  assert_eq(service_metrics.length(), 3)
-  assert_eq(service_metrics[0]["service_name"], "api-gateway")
-  assert_eq(service_metrics[1]["metrics"]["error_rate"], 0.01)
-  
-  // 聚合指标计算
-  let aggregated_metrics = {
-    "total_request_count": 0,
-    "weighted_error_rate": 0.0,
-    "weighted_avg_response_time": 0.0,
-    "max_p95_response_time": 0.0
-  }
-  
-  let total_requests = 0
-  
-  for service_metric in service_metrics {
-    let metrics = service_metric["metrics"]
-    let request_count = metrics["request_count"]
-    
-    total_requests = total_requests + request_count
-    aggregated_metrics["total_request_count"] = aggregated_metrics["total_request_count"] + request_count
-    aggregated_metrics["weighted_error_rate"] = aggregated_metrics["weighted_error_rate"] + (metrics["error_rate"] * request_count)
-    aggregated_metrics["weighted_avg_response_time"] = aggregated_metrics["weighted_avg_response_time"] + (metrics["avg_response_time"] * request_count)
-    aggregated_metrics["max_p95_response_time"] = Math.max(aggregated_metrics["max_p95_response_time"], metrics["p95_response_time"])
-  }
-  
-  // 计算加权平均值
-  if total_requests > 0 {
-    aggregated_metrics["weighted_error_rate"] = aggregated_metrics["weighted_error_rate"] / total_requests
-    aggregated_metrics["weighted_avg_response_time"] = aggregated_metrics["weighted_avg_response_time"] / total_requests
-  }
-  
-  // 验证聚合指标
-  assert_eq(aggregated_metrics["total_request_count"], 2400)
-  assert_eq(aggregated_metrics["weighted_error_rate"], 0.015833333333333335)
-  assert_eq(aggregated_metrics["weighted_avg_response_time"], 136.08333333333334)
-  assert_eq(aggregated_metrics["max_p95_response_time"], 400.0)
-  
-  // 测试指标传播格式
-  let metric_propagation_format = {
-    "header": {
-      "format_version": "1.0",
-      "timestamp": 1634567890200,
-      "source_service": "order-service"
-    },
-    "metrics": service_metrics[2]["metrics"],
-    "correlation_id": "corr_12345",
-    "trace_id": "trace_12345"
-  }
-  
-  // 验证指标传播格式
-  assert_eq(metric_propagation_format["header"]["format_version"], "1.0")
-  assert_eq(metric_propagation_format["metrics"]["request_count"], 600)
-  assert_eq(metric_propagation_format["correlation_id"], "corr_12345")
-  
-  // 测试指标传播验证
-  let metric_validation_rules = {
-    "required_fields": ["request_count", "error_rate", "avg_response_time"],
-    "value_constraints": {
-      "request_count": {"min": 0, "max": 1000000},
-      "error_rate": {"min": 0.0, "max": 1.0},
-      "avg_response_time": {"min": 0.0, "max": 10000.0}
-    }
-  }
-  
-  // 验证指标
-  let metrics_validation_passed = true
-  let validation_errors = []
-  
-  for required_field in metric_validation_rules["required_fields"] {
-    if !service_metrics[0]["metrics"].contains_key(required_field) {
-      validation_errors.push("Missing required field: " + required_field)
-      metrics_validation_passed = false
-    }
-  }
-  
-  // 验证值约束
-  let constraints = metric_validation_rules["value_constraints"]
-  for field_name in constraints.keys() {
-    let value = service_metrics[0]["metrics"][field_name]
-    let constraint = constraints[field_name]
-    
-    if value < constraint["min"] || value > constraint["max"] {
-      validation_errors.push("Value constraint violation for field: " + field_name)
-      metrics_validation_passed = false
-    }
-  }
-  
-  // 验证指标验证结果
-  assert_eq(metrics_validation_passed, true)
-  assert_eq(validation_errors.length(), 0)
-}
-
-test "telemetry_cross_service_propagation_error_handling" {
-  // 测试跨服务传播错误处理
-  
-  let propagation_error_scenarios = [
-    {
-      "scenario": "missing_trace_context",
-      "error_type": "context_missing",
-      "recovery_action": "generate_new_context",
-      "impact": "trace_continuity_lost"
-    },
-    {
-      "scenario": "corrupted_baggage",
-      "error_type": "data_corruption",
-      "recovery_action": "use_partial_baggage",
-      "impact": "some_context_lost"
-    },
-    {
-      "scenario": "format_incompatibility",
-      "error_type": "version_mismatch",
-      "recovery_action": "format_conversion",
-      "impact": "performance_degradation"
-    },
-    {
-      "scenario": "size_limit_exceeded",
-      "error_type": "resource_limit",
-      "recovery_action": "context_truncation",
-      "impact": "some_data_dropped"
-    }
-  ]
-  
-  // 验证错误场景
-  assert_eq(propagation_error_scenarios.length(), 4)
-  assert_eq(propagation_error_scenarios[0]["error_type"], "context_missing")
-  assert_eq(propagation_error_scenarios[1]["recovery_action"], "use_partial_baggage")
-  
-  // 测试错误处理机制
-  let error_handling_results = []
-  
-  for scenario in propagation_error_scenarios {
-    let error_detected = true
-    let recovery_successful = false
-    let fallback_activated = false
-    
-    // 模拟错误处理
-    match scenario["error_type"] {
-      "context_missing" => {
-        // 生成新的上下文
-        recovery_successful = true
-      }
-      "data_corruption" => {
-        // 使用部分行李数据
-        recovery_successful = true
-      }
-      "version_mismatch" => {
-        // 尝试格式转换
-        recovery_successful = true
-      }
-      "resource_limit" => {
-        // 截断上下文
-        recovery_successful = true
-      }
-      _ => {
-        fallback_activated = true
-      }
+    let cpu_usage = metrics.get("cpu_usage_percent", 0.0)
+    if cpu_usage > max_cpu_usage {
+      max_cpu_usage = cpu_usage
     }
     
-    error_handling_results.push({
-      "scenario": scenario["scenario"],
-      "error_type": scenario["error_type"],
-      "recovery_successful": recovery_successful,
-      "fallback_activated": fallback_activated,
-      "impact": scenario["impact"]
+    total_memory_usage = total_memory_usage + metrics.get("memory_usage_mb", 0)
+    
+    service_durations.push({
+      "service": service_name,
+      "duration_ms": metrics.get("request_duration_ms", 0)
     })
+    
+    i = i + 1
   }
   
-  // 验证错误处理结果
-  for result in error_handling_results {
-    assert_eq(result["recovery_successful"], true)
-    assert_eq(result["fallback_activated"], false)
+  // 验证汇总指标
+  assert_eq(total_request_count, 3)
+  assert_eq(total_request_duration, 180)  // 15 + 45 + 120
+  assert_eq(max_cpu_usage, 65.2)  // order-service有最高的CPU使用率
+  assert_eq(total_memory_usage, 576)  // 128 + 256 + 192
+  
+  // 计算服务间时间分布
+  let mut total_percentage = 0.0
+  i = 0
+  while i < service_durations.length() {
+    let duration_info = service_durations[i]
+    let duration = duration_info.get("duration_ms", 0)
+    let percentage = (duration.to_double() / total_request_duration.to_double()) * 100.0
+    duration_info.set("percentage", percentage)
+    total_percentage = total_percentage + percentage
+    i = i + 1
   }
   
-  // 测试错误报告机制
-  let error_report = {
-    "timestamp": 1634567890500,
-    "service_name": "order-service",
-    "error_details": {
-      "error_type": "context_missing",
-      "error_message": "No trace context found in incoming request",
-      "recovery_action": "generate_new_context",
-      "new_trace_id": "trace_new_12345"
-    },
-    "impact_assessment": {
-      "trace_continuity": "lost",
-      "data_completeness": "partial",
-      "performance_impact": "minimal"
+  // 验证百分比总和
+  assert_eq(abs(total_percentage - 100.0) < 0.01, true)
+  
+  // 验证具体服务的时间占比
+  let gateway_duration = service_durations[0]
+  let order_duration = service_durations[1]
+  let payment_duration = service_durations[2]
+  
+  assert_eq(gateway_duration.get("percentage", 0.0), 8.33)  // 15/180 * 100
+  assert_eq(order_duration.get("percentage", 0.0), 25.0)   // 45/180 * 100
+  assert_eq(payment_duration.get("percentage", 0.0), 66.67) // 120/180 * 100
+  
+  // 测试跨服务错误传播和关联
+  let error_scenario = {
+    "transaction_id": "txn-error-456",
+    "trace_id": "error78901234567890123456789012345678",
+    "error_chain": [
+      {
+        "service": "api-gateway",
+        "span_id": "aaaa111111111111",
+        "error": {
+          "type": "timeout",
+          "message": "Upstream service timeout",
+          "timestamp": 1672531200050000000,
+          "recovered": false
+        }
+      },
+      {
+        "service": "inventory-service",
+        "span_id": "bbbb222222222222",
+        "error": {
+          "type": "database_error",
+          "message": "Connection to database failed",
+          "timestamp": 1672531200080000000,
+          "recovered": true,
+          "retry_count": 3
+        }
+      },
+      {
+        "service": "notification-service",
+        "span_id": "cccc333333333333",
+        "error": {
+          "type": "external_service_error",
+          "message": "Email service unavailable",
+          "timestamp": 1672531200150000000,
+          "recovered": true,
+          "fallback_used": true
+        }
+      }
+    ]
+  }
+  
+  // 分析错误链
+  let error_chain = error_scenario.get("error_chain", [])
+  assert_eq(error_chain.length(), 3)
+  
+  // 统计错误类型
+  let mut timeout_errors = 0
+  let mut database_errors = 0
+  let mut external_service_errors = 0
+  let mut recovered_errors = 0
+  let mut unrecovered_errors = 0
+  
+  let mut i = 0
+  while i < error_chain.length() {
+    let error_info = error_chain[i]
+    let error = error_info.get("error", {})
+    let error_type = error.get("type", "")
+    let recovered = error.get("recovered", false)
+    
+    if error_type == "timeout" {
+      timeout_errors = timeout_errors + 1
+    } else if error_type == "database_error" {
+      database_errors = database_errors + 1
+    } else if error_type == "external_service_error" {
+      external_service_errors = external_service_errors + 1
     }
+    
+    if recovered {
+      recovered_errors = recovered_errors + 1
+    } else {
+      unrecovered_errors = unrecovered_errors + 1
+    }
+    
+    i = i + 1
   }
   
-  // 验证错误报告
-  assert_eq(error_report["service_name"], "order-service")
-  assert_eq(error_report["error_details"]["error_type"], "context_missing")
-  assert_eq(error_report["error_details"]["new_trace_id"], "trace_new_12345")
-  assert_eq(error_report["impact_assessment"]["trace_continuity"], "lost")
+  // 验证错误统计
+  assert_eq(timeout_errors, 1)
+  assert_eq(database_errors, 1)
+  assert_eq(external_service_errors, 1)
+  assert_eq(recovered_errors, 2)
+  assert_eq(unrecovered_errors, 1)
   
-  // 测试错误监控和告警
-  let error_monitoring = {
-    "error_threshold_per_minute": 10,
-    "current_error_count": 3,
-    "alert_triggered": false,
-    "last_error_timestamp": 1634567890500
+  // 计算错误恢复率
+  let total_errors = error_chain.length()
+  let recovery_rate = recovered_errors.to_double() / total_errors.to_double()
+  assert_eq(recovery_rate, 0.6666666666666666)  // 2/3
+}
+
+test "telemetry_cross_protocol_propagation" {
+  // 测试跨协议传播（HTTP -> gRPC -> Message Queue）
+  
+  let http_request = {
+    "method": "POST",
+    "url": "https://api.example.com/v1/orders",
+    "headers": {
+      "traceparent": "00-abc123456789012345678901234567890-def1234567890123-01",
+      "tracestate": "vendor=acme,env=production",
+      "baggage": "user-id=user-789,session-id=session-456",
+      "x-request-id": "req-http-001",
+      "content-type": "application/json"
+    },
+    "body": "{\"product_id\": \"prod-123\", \"quantity\": 2}",
+    "timestamp": 1672531200000000000
   }
   
-  // 验证错误监控
-  assert_eq(error_monitoring["error_threshold_per_minute"], 10)
-  assert_eq(error_monitoring["current_error_count"], 3)
-  assert_eq(error_monitoring["alert_triggered"], false)
-  
-  // 测试错误阈值触发
-  let high_error_scenario = {
-    "error_threshold_per_minute": 10,
-    "current_error_count": 12,  // 超过阈值
-    "alert_triggered": true,
-    "alert_level": "warning"
+  // HTTP到gRPC的传播
+  let grpc_request = {
+    "method": "/orderService/CreateOrder",
+    "metadata": {
+      "traceparent": "00-abc123456789012345678901234567890-def1234567890123-01",
+      "tracestate": "vendor=acme,env=production",
+      "baggage": "user-id=user-789,session-id=session-456,protocol=http",
+      "x-request-id": "req-http-001",
+      "user-agent": "order-service/1.0.0"
+    },
+    "payload": {
+      "product_id": "prod-123",
+      "quantity": 2,
+      "user_id": "user-789"
+    },
+    "timestamp": 1672531200020000000
   }
   
-  // 验证错误阈值触发
-  assert_eq(high_error_scenario["current_error_count"], 12)
-  assert_eq(high_error_scenario["alert_triggered"], true)
-  assert_eq(high_error_scenario["alert_level"], "warning")
+  // 验证HTTP到gRPC的传播
+  let http_headers = http_request.get("headers", {})
+  let grpc_metadata = grpc_request.get("metadata", {})
+  
+  assert_eq(grpc_metadata.get("traceparent", ""), http_headers.get("traceparent", ""))
+  assert_eq(grpc_metadata.get("tracestate", ""), http_headers.get("tracestate", ""))
+  assert_eq(grpc_metadata.get("x-request-id", ""), http_headers.get("x-request-id", ""))
+  
+  // 验证baggage的增强
+  let http_baggage = http_headers.get("baggage", "")
+  let grpc_baggage = grpc_metadata.get("baggage", "")
+  
+  assert_eq(grpc_baggage.contains(http_baggage), true)
+  assert_eq(grpc_baggage.contains("protocol=http"), true)
+  
+  // gRPC到Message Queue的传播
+  let message_queue_event = {
+    "topic": "order_events",
+    "event_type": "order_created",
+    "headers": {
+      "traceparent": "00-abc123456789012345678901234567890-ghi7890123456789-01",
+      "tracestate": "vendor=acme,env=production",
+      "baggage": "user-id=user-789,session-id=session-456,protocol=http,protocol=grpc",
+      "x-request-id": "req-http-001",
+      "event-source": "order-service",
+      "content-type": "application/json"
+    },
+    "payload": {
+      "order_id": "order-456",
+      "user_id": "user-789",
+      "product_id": "prod-123",
+      "quantity": 2,
+      "status": "created",
+      "timestamp": 1672531200050000000
+    },
+    "timestamp": 1672531200050000000
+  }
+  
+  // 验证gRPC到Message Queue的传播
+  let mq_headers = message_queue_event.get("headers", {})
+  
+  // trace_id应该保持不变，span_id应该更新
+  let mq_traceparent = mq_headers.get("traceparent", "")
+  let mq_traceparent_parts = mq_traceparent.split("-")
+  let http_traceparent_parts = http_headers.get("traceparent", "").split("-")
+  
+  assert_eq(mq_traceparent_parts[1], http_traceparent_parts[1])  // trace_id相同
+  assert_eq(mq_traceparent_parts[2], "ghi7890123456789")  // 新的span_id
+  assert_eq(mq_traceparent_parts[3], "01")  // flags相同
+  
+  // 验证baggage的累积
+  let mq_baggage = mq_headers.get("baggage", "")
+  assert_eq(mq_baggage.contains("protocol=http"), true)
+  assert_eq(mq_baggage.contains("protocol=grpc"), true)
+  
+  // 验证请求ID的持续传播
+  assert_eq(mq_headers.get("x-request-id", ""), "req-http-001")
+  
+  // 模拟异步处理后的响应传播
+  let async_response = {
+    "response_to": "order-456",
+    "headers": {
+      "traceparent": "00-abc123456789012345678901234567890-jkl0123456789012-01",
+      "tracestate": "vendor=acme,env=production",
+      "baggage": "user-id=user-789,session-id=session-456,protocol=http,protocol=grpc,protocol=mq",
+      "x-request-id": "req-http-001",
+      "correlation-id": "corr-789",
+      "async-operation": "inventory_check"
+    },
+    "result": {
+      "success": true,
+      "inventory_available": true,
+      "reserved_quantity": 2
+    },
+    "timestamp": 1672531200100000000
+  }
+  
+  // 验证异步响应传播
+  let response_headers = async_response.get("headers", {})
+  let response_traceparent = response_headers.get("traceparent", "")
+  let response_traceparent_parts = response_traceparent.split("-")
+  
+  assert_eq(response_traceparent_parts[1], http_traceparent_parts[1])  // trace_id仍然相同
+  assert_eq(response_traceparent_parts[2], "jkl0123456789012")  // 又一个新的span_id
+  
+  // 验证协议链的累积
+  let response_baggage = response_headers.get("baggage", "")
+  assert_eq(response_baggage.contains("protocol=mq"), true)
+  
+  // 测试跨协议的上下文清理
+  let context_cleanup = {
+    "original_headers": {
+      "traceparent": "00-abc123456789012345678901234567890-def1234567890123-01",
+      "tracestate": "vendor=acme,env=production,sensitive=data",
+      "baggage": "user-id=user-789,password=secret123,session-id=session-456",
+      "authorization": "Bearer token123"
+    },
+    "cleanup_rules": {
+      "tracestate": ["sensitive"],
+      "baggage": ["password"],
+      "headers": ["authorization"]
+    },
+    "cleaned_headers": {}
+  }
+  
+  // 执行上下文清理
+  let original_headers = context_cleanup.get("original_headers", {})
+  let cleanup_rules = context_cleanup.get("cleanup_rules", {})
+  let mut cleaned_headers = {}
+  
+  // 清理tracestate
+  let original_tracestate = original_headers.get("tracestate", "")
+  let tracestate_entries = original_tracestate.split(",")
+  let mut clean_tracestate_entries = []
+  
+  let mut i = 0
+  while i < tracestate_entries.length() {
+    let entry = tracestate_entries[i]
+    let entry_parts = entry.split("=")
+    let entry_key = entry_parts[0]
+    
+    let mut should_remove = false
+    let mut j = 0
+    let sensitive_keys = cleanup_rules.get("tracestate", [])
+    
+    while j < sensitive_keys.length() {
+      if entry_key == sensitive_keys[j] {
+        should_remove = true
+        break
+      }
+      j = j + 1
+    }
+    
+    if not should_remove {
+      clean_tracestate_entries.push(entry)
+    }
+    
+    i = i + 1
+  }
+  
+  cleaned_headers.set("tracestate", clean_tracestate_entries.join(","))
+  
+  // 清理baggage
+  let original_baggage = original_headers.get("baggage", "")
+  let baggage_entries = original_baggage.split(",")
+  let mut clean_baggage_entries = []
+  
+  i = 0
+  while i < baggage_entries.length() {
+    let entry = baggage_entries[i]
+    let entry_parts = entry.split("=")
+    let entry_key = entry_parts[0]
+    
+    let mut should_remove = false
+    let mut j = 0
+    let sensitive_baggage_keys = cleanup_rules.get("baggage", [])
+    
+    while j < sensitive_baggage_keys.length() {
+      if entry_key == sensitive_baggage_keys[j] {
+        should_remove = true
+        break
+      }
+      j = j + 1
+    }
+    
+    if not should_remove {
+      clean_baggage_entries.push(entry)
+    }
+    
+    i = i + 1
+  }
+  
+  cleaned_headers.set("baggage", clean_baggage_entries.join(","))
+  
+  // 保留非敏感的headers
+  cleaned_headers.set("traceparent", original_headers.get("traceparent", ""))
+  
+  // 验证清理结果
+  assert_eq(cleaned_headers.get("traceparent", ""), original_headers.get("traceparent", ""))
+  assert_eq(cleaned_headers.get("tracestate", ""), "vendor=acme,env=production")
+  assert_eq(cleaned_headers.get("baggage", ""), "user-id=user-789,session-id=session-456")
+  assert_eq(cleaned_headers.contains("authorization"), false)
+  
+  context_cleanup.set("cleaned_headers", cleaned_headers)
+}
+
+// 辅助函数：生成span ID
+fn generate_span_id() {
+  let characters = "0123456789abcdef"
+  let mut result = ""
+  let mut i = 0
+  
+  while i < 16 {
+    let index = (i * 3) % 16  // 简化的伪随机数生成
+    result = result + characters[index].to_string()
+    i = i + 1
+  }
+  
+  result
+}
+
+// 辅助函数：验证十六进制字符串
+fn is_valid_hex(hex_string) {
+  let valid_chars = "0123456789abcdefABCDEF"
+  let mut i = 0
+  let mut valid = true
+  
+  while i < hex_string.length() {
+    let char = hex_string[i]
+    if not valid_chars.contains(char) {
+      valid = false
+      break
+    }
+    i = i + 1
+  }
+  
+  valid
+}
+
+// 辅助函数：编码baggage头
+fn encode_baggage_header(baggage_map) {
+  let entries = []
+  let keys = baggage_map.keys()
+  let mut i = 0
+  
+  while i < keys.length() {
+    let key = keys[i]
+    let value = baggage_map.get(key, "")
+    entries.push(key + "=" + value)
+    i = i + 1
+  }
+  
+  entries.join(",")
+}
+
+// 辅助函数：解码baggage头
+fn decode_baggage_header(baggage_header) {
+  let result = {}
+  let entries = baggage_header.split(",")
+  let mut i = 0
+  
+  while i < entries.length() {
+    let entry = entries[i]
+    let parts = entry.split("=")
+    
+    if parts.length() == 2 {
+      result.set(parts[0], parts[1])
+    }
+    
+    i = i + 1
+  }
+  
+  result
+}
+
+// 辅助函数：截断baggage
+fn truncate_baggage(baggage_string, max_size) {
+  if baggage_string.length() <= max_size {
+    baggage_string
+  } else {
+    baggage_string.substring(0, max_size - 3) + "..."
+  }
 }
