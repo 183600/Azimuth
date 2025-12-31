@@ -316,6 +316,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     1: (__test_73796e7461785f76616c69646174696f6e5f746573742e6d6274_1, ["string_operations_check"]),
     2: (__test_73796e7461785f76616c69646174696f6e5f746573742e6d6274_2, ["array_operations_check"]),
   },
+  "standalone_test_validation.mbt": {
+  },
   "simple_new_telemetry_test.mbt": {
     0: (__test_73696d706c655f6e65775f74656c656d657472795f746573742e6d6274_0, ["simple_telemetry_validation"]),
     1: (__test_73696d706c655f6e65775f74656c656d657472795f746573742e6d6274_1, ["telemetry_metrics_validation"]),

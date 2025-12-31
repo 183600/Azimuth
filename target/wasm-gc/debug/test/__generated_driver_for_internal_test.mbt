@@ -57,6 +57,16 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "standalone_test_validation.mbt": {
+    0: (__test_7374616e64616c6f6e655f746573745f76616c69646174696f6e2e6d6274_0, ["container_environment_validation"]),
+    1: (__test_7374616e64616c6f6e655f746573745f76616c69646174696f6e2e6d6274_1, ["microservice_communication_validation"]),
+    2: (__test_7374616e64616c6f6e655f746573745f76616c69646174696f6e2e6d6274_2, ["timezone_handling_validation"]),
+    3: (__test_7374616e64616c6f6e655f746573745f76616c69646174696f6e2e6d6274_3, ["compression_optimization_validation"]),
+    4: (__test_7374616e64616c6f6e655f746573745f76616c69646174696f6e2e6d6274_4, ["service_discovery_validation"]),
+    5: (__test_7374616e64616c6f6e655f746573745f76616c69646174696f6e2e6d6274_5, ["load_balancing_validation"]),
+    6: (__test_7374616e64616c6f6e655f746573745f76616c69646174696f6e2e6d6274_6, ["edge_computing_latency_validation"]),
+    7: (__test_7374616e64616c6f6e655f746573745f76616c69646174696f6e2e6d6274_7, ["quantum_computing_validation"]),
+  },
   "main.mbt": {
   },
 }
