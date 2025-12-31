@@ -1955,6 +1955,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_646174615f747970655f626f756e646172795f636f6e646974696f6e735f746573742e6d6274_8, ["measurement_boundary_conditions"]),
     9: (__test_646174615f747970655f626f756e646172795f636f6e646974696f6e735f746573742e6d6274_9, ["attribute_key_boundary_conditions"]),
   },
+  "data_transformation_test.mbt": {
+    0: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_0, ["metric_value_type_conversion"]),
+    1: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_1, ["timestamp_format_conversion"]),
+    2: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_2, ["attribute_value_serialization"]),
+    3: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_3, ["json_format_conversion"]),
+    4: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_4, ["prometheus_format_conversion"]),
+    5: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_5, ["binary_data_encoding"]),
+    6: (__test_646174615f7472616e73666f726d6174696f6e5f746573742e6d6274_6, ["data_compression_formats"]),
+  },
   "data_privacy_test.mbt": {
     0: (__test_646174615f707269766163795f746573742e6d6274_0, ["personal_identifiable_information_pii_handling"]),
     1: (__test_646174615f707269766163795f746573742e6d6274_1, ["financial_data_protection"]),
