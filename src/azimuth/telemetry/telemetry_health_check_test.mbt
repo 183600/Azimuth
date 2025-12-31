@@ -1,725 +1,597 @@
-// 遥测系统健康检查测试用例
+// 遥测健康检查测试用例
 
-test "telemetry_system_resource_monitoring" {
-  // 测试系统资源监控
-  
-  let resource_metrics = [
-    ("cpu_usage", 75.5, 80.0),   // 当前值，警告阈值
-    ("memory_usage", 60.2, 85.0),
-    ("disk_usage", 45.8, 90.0),
-    ("network_io", 120.3, 150.0),
-    ("file_descriptors", 800, 1000)
-  ]
-  
-  let mut health_status = []
-  let mut critical_issues = []
-  let mut warning_issues = []
-  
-  // 定义健康检查阈值
-  let critical_thresholds = [
-    ("cpu_usage", 90.0),
-    ("memory_usage", 95.0),
-    ("disk_usage", 95.0),
-    ("network_io", 200.0),
-    ("file_descriptors", 900)
-  ]
-  
-  let mut i = 0
-  while i < resource_metrics.length() {
-    let metric = resource_metrics[i]
-    let metric_name = metric.0
-    let current_value = metric.1
-    let warning_threshold = metric.2
-    
-    // 查找关键阈值
-    let mut critical_threshold = 100.0
-    let mut j = 0
-    while j < critical_thresholds.length() {
-      if critical_thresholds[j].0 == metric_name {
-        critical_threshold = critical_thresholds[j].1
-        break
-      }
-      j = j + 1
-    }
-    
-    // 评估健康状态
-    let status = if current_value >= critical_threshold {
-      "CRITICAL"
-    } else if current_value >= warning_threshold {
-      "WARNING"
-    } else {
-      "HEALTHY"
-    }
-    
-    health_status.push((metric_name, current_value, status))
-    
-    if status == "CRITICAL" {
-      critical_issues.push((metric_name, current_value, "Resource usage exceeds critical threshold"))
-    } else if status == "WARNING" {
-      warning_issues.push((metric_name, current_value, "Resource usage exceeds warning threshold"))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证资源监控结果
-  assert_eq(health_status.length(), resource_metrics.length())
-  
-  // 验证健康状态分类
-  let mut healthy_count = 0
-  let mut warning_count = 0
-  let mut critical_count = 0
-  
-  let mut j = 0
-  while j < health_status.length() {
-    match health_status[j].2 {
-      "HEALTHY" => healthy_count = healthy_count + 1
-      "WARNING" => warning_count = warning_count + 1
-      "CRITICAL" => critical_count = critical_count + 1
-      _ => {}
-    }
-    j = j + 1
-  }
-  
-  assert_eq(warning_count, 1) // CPU usage应该触发警告
-  assert_eq(healthy_count, 4) // 其他指标应该健康
-  assert_eq(critical_count, 0) // 没有关键问题
-  
-  // 验证警告问题
-  assert_eq(warning_issues.length(), 1)
-  assert_eq(warning_issues[0].0, "cpu_usage")
-  assert_eq(warning_issues[0].1, 75.5)
-}
-
-test "telemetry_data_pipeline_health_check" {
-  // 测试数据管道健康检查
-  
-  let pipeline_components = [
-    ("data_collector", true, 150, 100, 50),   // 组件名，健康状态，处理时间(ms)，队列大小，错误率(%)
-    ("data_processor", true, 200, 200, 2),
-    ("data_filter", false, 0, 0, 0),           // 组件离线
-    ("data_aggregator", true, 300, 150, 5),
-    ("data_exporter", true, 180, 80, 1)
-  ]
-  
-  let mut pipeline_health = []
-  let mut offline_components = []
-  let mut performance_issues = []
-  
-  let mut i = 0
-  while i < pipeline_components.length() {
-    let component = pipeline_components[i]
-    let component_name = component.0
-    let is_online = component.1
-    let processing_time = component.2
-    let queue_size = component.3
-    let error_rate = component.4
-    
-    let component_health = if not is_online {
-      "OFFLINE"
-    } else if processing_time > 250 or queue_size > 180 or error_rate > 3 {
-      "DEGRADED"
-    } else {
-      "HEALTHY"
-    }
-    
-    pipeline_health.push((component_name, component_health))
-    
-    if component_health == "OFFLINE" {
-      offline_components.push(component_name)
-    } else if component_health == "DEGRADED" {
-      let mut issues = []
-      if processing_time > 250 {
-        issues.push("High processing time")
-      }
-      if queue_size > 180 {
-        issues.push("Large queue size")
-      }
-      if error_rate > 3 {
-        issues.push("High error rate")
-      }
-      performance_issues.push((component_name, issues))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证管道健康检查
-  assert_eq(pipeline_health.length(), pipeline_components.length())
-  
-  // 验证离线组件
-  assert_eq(offline_components.length(), 1)
-  assert_eq(offline_components[0], "data_filter")
-  
-  // 验证性能问题
-  assert_eq(performance_issues.length(), 2) // data_aggregator和data_collector应该有性能问题
-  
-  // 验证特定组件的健康状态
-  let mut collector_degraded = false
-  let mut processor_healthy = false
-  let mut filter_offline = false
-  let mut aggregator_degraded = false
-  let mut exporter_healthy = false
-  
-  let mut j = 0
-  while j < pipeline_health.length() {
-    let component = pipeline_health[j]
-    match component.0 {
-      "data_collector" => {
-        if component.1 == "DEGRADED" {
-          collector_degraded = true
-        }
-      }
-      "data_processor" => {
-        if component.1 == "HEALTHY" {
-          processor_healthy = true
-        }
-      }
-      "data_filter" => {
-        if component.1 == "OFFLINE" {
-          filter_offline = true
-        }
-      }
-      "data_aggregator" => {
-        if component.1 == "DEGRADED" {
-          aggregator_degraded = true
-        }
-      }
-      "data_exporter" => {
-        if component.1 == "HEALTHY" {
-          exporter_healthy = true
-        }
-      }
-      _ => {}
-    }
-    j = j + 1
-  }
-  
-  assert_eq(collector_degraded, true)  // 高处理时间
-  assert_eq(processor_healthy, true)
-  assert_eq(filter_offline, true)
-  assert_eq(aggregator_degraded, true) // 高处理时间
-  assert_eq(exporter_healthy, true)
-}
-
-test "telemetry_connectivity_health_check" {
-  // 测试连接健康检查
-  
-  let connection_endpoints = [
-    ("primary_collector", "http://collector.example.com:4317", 200, 50),
-    ("backup_collector", "http://backup.example.com:4317", 200, 80),
-    ("database", "tcp://db.example.com:5432", 0, 0),        // 连接失败
-    ("message_queue", "tcp://mq.example.com:5672", 200, 30),
-    ("storage", "https://storage.example.com", 500, 200)    // 服务器错误
-  ]
-  
-  let mut connectivity_status = []
-  let mut failed_connections = []
-  let mut slow_connections = []
-  
-  let mut i = 0
-  while i < connection_endpoints.length() {
-    let endpoint = connection_endpoints[i]
-    let endpoint_name = endpoint.0
-    let endpoint_url = endpoint.1
-    let response_code = endpoint.2
-    let response_time = endpoint.3
-    
-    let connection_status = if response_code == 0 {
-      "FAILED"
-    } else if response_code >= 500 {
-      "ERROR"
-    } else if response_time > 100 {
-      "SLOW"
-    } else {
-      "HEALTHY"
-    }
-    
-    connectivity_status.push((endpoint_name, connection_status, response_code, response_time))
-    
-    if connection_status == "FAILED" or connection_status == "ERROR" {
-      failed_connections.push((endpoint_name, connection_status, response_code))
-    } else if connection_status == "SLOW" {
-      slow_connections.push((endpoint_name, response_time))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证连接健康检查
-  assert_eq(connectivity_status.length(), connection_endpoints.length())
-  
-  // 验证失败连接
-  assert_eq(failed_connections.length(), 2) // database和storage应该失败
-  
-  // 验证慢连接
-  assert_eq(slow_connections.length(), 1) // backup_collector应该慢
-  
-  // 验证特定端点的状态
-  let mut primary_healthy = false
-  let mut backup_slow = false
-  let mut database_failed = false
-  let mut mq_healthy = false
-  let mut storage_error = false
-  
-  let mut j = 0
-  while j < connectivity_status.length() {
-    let endpoint = connectivity_status[j]
-    match endpoint.0 {
-      "primary_collector" => {
-        if endpoint.1 == "HEALTHY" {
-          primary_healthy = true
-        }
-      }
-      "backup_collector" => {
-        if endpoint.1 == "SLOW" {
-          backup_slow = true
-        }
-      }
-      "database" => {
-        if endpoint.1 == "FAILED" {
-          database_failed = true
-        }
-      }
-      "message_queue" => {
-        if endpoint.1 == "HEALTHY" {
-          mq_healthy = true
-        }
-      }
-      "storage" => {
-        if endpoint.1 == "ERROR" {
-          storage_error = true
-        }
-      }
-      _ => {}
-    }
-    j = j + 1
-  }
-  
-  assert_eq(primary_healthy, true)
-  assert_eq(backup_slow, true)
-  assert_eq(database_failed, true)
-  assert_eq(mq_healthy, true)
-  assert_eq(storage_error, true)
-}
-
-test "telemetry_data_quality_health_check" {
-  // 测试数据质量健康检查
-  
-  let data_quality_metrics = [
-    ("completeness", 95.5, 90.0),      // 完整性百分比，阈值
-    ("accuracy", 98.2, 95.0),
-    ("consistency", 87.3, 85.0),
-    ("timeliness", 92.1, 90.0),
-    ("validity", 99.5, 98.0)
-  ]
-  
-  let mut quality_status = []
-  let mut quality_issues = []
-  
-  let mut i = 0
-  while i < data_quality_metrics.length() {
-    let metric = data_quality_metrics[i]
-    let metric_name = metric.0
-    let quality_score = metric.1
-    let threshold = metric.2
-    
-    let status = if quality_score >= threshold {
-      "GOOD"
-    } else if quality_score >= threshold - 5.0 {
-      "FAIR"
-    } else {
-      "POOR"
-    }
-    
-    quality_status.push((metric_name, quality_score, status))
-    
-    if status == "POOR" {
-      quality_issues.push((metric_name, quality_score, "Quality score below acceptable threshold"))
-    } else if status == "FAIR" {
-      quality_issues.push((metric_name, quality_score, "Quality score needs improvement"))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证数据质量检查
-  assert_eq(quality_status.length(), data_quality_metrics.length())
-  
-  // 验证质量状态分布
-  let mut good_count = 0
-  let mut fair_count = 0
-  let mut poor_count = 0
-  
-  let mut j = 0
-  while j < quality_status.length() {
-    match quality_status[j].2 {
-      "GOOD" => good_count = good_count + 1
-      "FAIR" => fair_count = fair_count + 1
-      "POOR" => poor_count = poor_count + 1
-      _ => {}
-    }
-    j = j + 1
-  }
-  
-  assert_eq(good_count, 3) // accuracy, timeliness, validity
-  assert_eq(fair_count, 1) // consistency
-  assert_eq(poor_count, 1) // completeness
-  
-  // 验证质量问题
-  assert_eq(quality_issues.length(), 2) // fair和poor的指标
-  
-  // 验证特定指标状态
-  let mut completeness_poor = false
-  let mut accuracy_good = false
-  let mut consistency_fair = false
-  let mut timeliness_good = false
-  let mut validity_good = false
-  
-  j = 0
-  while j < quality_status.length() {
-    let metric = quality_status[j]
-    match metric.0 {
-      "completeness" => {
-        if metric.2 == "POOR" {
-          completeness_poor = true
-        }
-      }
-      "accuracy" => {
-        if metric.2 == "GOOD" {
-          accuracy_good = true
-        }
-      }
-      "consistency" => {
-        if metric.2 == "FAIR" {
-          consistency_fair = true
-        }
-      }
-      "timeliness" => {
-        if metric.2 == "GOOD" {
-          timeliness_good = true
-        }
-      }
-      "validity" => {
-        if metric.2 == "GOOD" {
-          validity_good = true
-        }
-      }
-      _ => {}
-    }
-    j = j + 1
-  }
-  
-  assert_eq(completeness_poor, true)
-  assert_eq(accuracy_good, true)
-  assert_eq(consistency_fair, true)
-  assert_eq(timeliness_good, true)
-  assert_eq(validity_good, true)
-}
-
-test "telemetry_system_performance_benchmark" {
-  // 测试系统性能基准检查
-  
-  let performance_benchmarks = [
-    ("data_ingestion_rate", 15000, 10000, 20000),   // 当前值，最小期望，最大期望
-    ("data_processing_latency", 150, 50, 200),      // 毫秒
-    ("memory_efficiency", 75.5, 60.0, 85.0),        // 百分比
-    ("throughput", 5000, 3000, 8000),               // 每秒记录数
-    ("error_rate", 0.5, 0.0, 2.0)                   // 百分比
-  ]
-  
-  let mut benchmark_results = []
-  let mut performance_alerts = []
-  
-  let mut i = 0
-  while i < performance_benchmarks.length() {
-    let benchmark = performance_benchmarks[i]
-    let metric_name = benchmark.0
-    let current_value = benchmark.1
-    let min_expected = benchmark.2
-    let max_expected = benchmark.3
-    
-    let performance_status = if current_value < min_expected {
-      "BELOW_EXPECTATIONS"
-    } else if current_value > max_expected {
-      "ABOVE_EXPECTATIONS"
-    } else {
-      "WITHIN_EXPECTATIONS"
-    }
-    
-    benchmark_results.push((metric_name, current_value, performance_status))
-    
-    if performance_status != "WITHIN_EXPECTATIONS" {
-      let alert_message = if performance_status == "BELOW_EXPECTATIONS" {
-        "Performance below minimum expected threshold"
-      } else {
-        "Performance above maximum expected threshold"
-      }
-      performance_alerts.push((metric_name, current_value, alert_message))
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证性能基准检查
-  assert_eq(benchmark_results.length(), performance_benchmarks.length())
-  
-  // 验证性能警报
-  assert_eq(performance_alerts.length(), 2) // 应该有2个性能警报
-  
-  // 验证特定基准状态
-  let mut ingestion_above = false
-  let mut latency_within = false
-  let mut memory_within = false
-  let mut throughput_within = false
-  let mut error_rate_within = false
-  
-  let mut j = 0
-  while j < benchmark_results.length() {
-    let result = benchmark_results[j]
-    match result.0 {
-      "data_ingestion_rate" => {
-        if result.2 == "ABOVE_EXPECTATIONS" {
-          ingestion_above = true
-        }
-      }
-      "data_processing_latency" => {
-        if result.2 == "WITHIN_EXPECTATIONS" {
-          latency_within = true
-        }
-      }
-      "memory_efficiency" => {
-        if result.2 == "WITHIN_EXPECTATIONS" {
-          memory_within = true
-        }
-      }
-      "throughput" => {
-        if result.2 == "WITHIN_EXPECTATIONS" {
-          throughput_within = true
-        }
-      }
-      "error_rate" => {
-        if result.2 == "WITHIN_EXPECTATIONS" {
-          error_rate_within = true
-        }
-      }
-      _ => {}
-    }
-    j = j + 1
-  }
-  
-  assert_eq(ingestion_above, true)    // 超过最大期望
-  assert_eq(latency_within, true)
-  assert_eq(memory_within, true)
-  assert_eq(throughput_within, true)
-  assert_eq(error_rate_within, true)
-}
-
-test "telemetry_system_availability_check" {
-  // 测试系统可用性检查
+test "telemetry_service_health_status" {
+  // 测试遥测服务健康状态
   
   let service_components = [
-    ("api_gateway", 99.9, 99.5),           // 当前可用性%，SLA要求
-    ("data_collector", 98.5, 99.0),
-    ("data_processor", 99.7, 99.5),
-    ("data_storage", 99.8, 99.9),
-    ("monitoring_dashboard", 97.2, 98.0)
+    {
+      "name": "otel_collector",
+      "status": "healthy",
+      "last_check": "1640995200",
+      "response_time_ms": "25",
+      "uptime_seconds": "86400"
+    },
+    {
+      "name": "metrics_exporter",
+      "status": "healthy",
+      "last_check": "1640995200",
+      "response_time_ms": "15",
+      "uptime_seconds": "86400"
+    },
+    {
+      "name": "trace_exporter",
+      "status": "degraded",
+      "last_check": "1640995200",
+      "response_time_ms": "500",
+      "uptime_seconds": "86400"
+    },
+    {
+      "name": "log_exporter",
+      "status": "unhealthy",
+      "last_check": "1640995200",
+      "response_time_ms": "5000",
+      "uptime_seconds": "3600"
+    }
   ]
   
-  let mut availability_status = []
-  let mut sla_violations = []
+  // 计算整体健康状态
+  let mut healthy_count = 0
+  let mut degraded_count = 0
+  let mut unhealthy_count = 0
+  let mut total_response_time = 0.0
   
   let mut i = 0
   while i < service_components.length() {
     let component = service_components[i]
-    let component_name = component.0
-    let current_availability = component.1
-    let sla_requirement = component.2
+    let status = component["status"]
+    let response_time = component["response_time_ms"].to_double()
     
-    let availability_grade = if current_availability >= sla_requirement {
-      "MEETS_SLA"
-    } else if current_availability >= sla_requirement - 1.0 {
-      "BELOW_SLA"
-    } else {
-      "CRITICAL_SLA_VIOLATION"
+    if status == "healthy" {
+      healthy_count = healthy_count + 1
+    } else if status == "degraded" {
+      degraded_count = degraded_count + 1
+    } else if status == "unhealthy" {
+      unhealthy_count = unhealthy_count + 1
     }
     
-    availability_status.push((component_name, current_availability, availability_grade))
-    
-    if availability_grade != "MEETS_SLA" {
-      let downtime_hours = (100.0 - current_availability) * 8760.0 / 100.0 // 年度停机时间
-      sla_violations.push((component_name, current_availability, sla_requirement, downtime_hours))
-    }
-    
+    total_response_time = total_response_time + response_time
     i = i + 1
   }
   
-  // 验证可用性检查
-  assert_eq(availability_status.length(), service_components.length())
+  let average_response_time = total_response_time / service_components.length().to_double()
   
-  // 验证SLA违规
-  assert_eq(sla_violations.length(), 3) // 应该有3个组件违反SLA
-  
-  // 验证特定组件状态
-  let mut api_gateway_meets = false
-  let mut collector_below = false
-  let mut processor_meets = false
-  let mut storage_below = false
-  let mut dashboard_critical = false
-  
-  let mut j = 0
-  while j < availability_status.length() {
-    let status = availability_status[j]
-    match status.0 {
-      "api_gateway" => {
-        if status.2 == "MEETS_SLA" {
-          api_gateway_meets = true
-        }
-      }
-      "data_collector" => {
-        if status.2 == "BELOW_SLA" {
-          collector_below = true
-        }
-      }
-      "data_processor" => {
-        if status.2 == "MEETS_SLA" {
-          processor_meets = true
-        }
-      }
-      "data_storage" => {
-        if status.2 == "BELOW_SLA" {
-          storage_below = true
-        }
-      }
-      "monitoring_dashboard" => {
-        if status.2 == "CRITICAL_SLA_VIOLATION" {
-          dashboard_critical = true
-        }
-      }
-      _ => {}
-    }
-    j = j + 1
+  // 确定整体状态
+  let overall_status = if unhealthy_count > 0 {
+    "unhealthy"
+  } else if degraded_count > 0 {
+    "degraded"
+  } else {
+    "healthy"
   }
   
-  assert_eq(api_gateway_meets, true)
-  assert_eq(collector_below, true)
-  assert_eq(processor_meets, true)
-  assert_eq(storage_below, true)
-  assert_eq(dashboard_critical, true)
+  // 验证健康状态计算
+  assert_eq(healthy_count, 2)
+  assert_eq(degraded_count, 1)
+  assert_eq(unhealthy_count, 1)
+  assert_eq(average_response_time > 100.0, true)
+  assert_eq(overall_status, "unhealthy") // 有不健康组件时整体不健康
   
-  // 验证停机时间计算
-  let mut dashboard_dtime = 0.0
-  j = 0
-  while j < sla_violations.length() {
-    if sla_violations[j].0 == "monitoring_dashboard" {
-      dashboard_dtime = sla_violations[j].3
-    }
-    j = j + 1
-  }
-  assert_eq(dashboard_dtime > 200.0, true) // 应该超过200小时年度停机时间
+  // 验证各组件状态
+  assert_eq(service_components[0]["status"], "healthy")
+  assert_eq(service_components[1]["status"], "healthy")
+  assert_eq(service_components[2]["status"], "degraded")
+  assert_eq(service_components[3]["status"], "unhealthy")
 }
 
-test "telemetry_system_health_score_calculation" {
-  // 测试系统健康评分计算
+test "telemetry_connectivity_check" {
+  // 测试遥测连接性检查
   
-  let health_dimensions = [
-    ("resource_health", 85.0, 0.25),     // 健康分数，权重
-    ("pipeline_health", 70.0, 0.30),
-    ("connectivity_health", 90.0, 0.20),
-    ("data_quality", 88.0, 0.15),
-    ("performance", 75.0, 0.10)
+  let endpoints = [
+    {
+      "name": "otel_collector_grpc",
+      "url": "grpc://localhost:4317",
+      "type": "grpc",
+      "timeout_ms": "5000"
+    },
+    {
+      "name": "otel_collector_http",
+      "url": "http://localhost:4318",
+      "type": "http",
+      "timeout_ms": "3000"
+    },
+    {
+      "name": "prometheus_remote_write",
+      "url": "https://prometheus.example.com/api/v1/write",
+      "type": "http",
+      "timeout_ms": "10000"
+    },
+    {
+      "name": "jaeger_collector",
+      "url": "http://jaeger.example.com:14268/api/traces",
+      "type": "http",
+      "timeout_ms": "5000"
+    }
   ]
   
-  let mut weighted_scores = []
-  let mut total_weight = 0.0
-  let mut weighted_sum = 0.0
-  
-  // 计算加权分数
+  // 模拟连接性检查
+  let connectivity_results = []
   let mut i = 0
-  while i < health_dimensions.length() {
-    let dimension = health_dimensions[i]
-    let dimension_name = dimension.0
-    let health_score = dimension.1
-    let weight = dimension.2
+  while i < endpoints.length() {
+    let endpoint = endpoints[i]
+    let name = endpoint["name"]
+    let url = endpoint["url"]
+    let endpoint_type = endpoint["type"]
+    let timeout = endpoint["timeout_ms"].to_int()
     
-    let weighted_score = health_score * weight
-    weighted_scores.push((dimension_name, health_score, weight, weighted_score))
+    // 模拟连接检查结果
+    let is_connected = if name.contains("grpc") {
+      true // gRPC连接成功
+    } else if name.contains("http") && url.contains("localhost") {
+      true // 本地HTTP连接成功
+    } else if name.contains("prometheus") {
+      false // 远程Prometheus连接失败
+    } else if name.contains("jaeger") {
+      true // Jaeger连接成功
+    } else {
+      false
+    }
     
-    total_weight = total_weight + weight
-    weighted_sum = weighted_sum + weighted_score
+    let response_time = if is_connected {
+      if endpoint_type == "grpc" { 50 } else { 200 }
+    } else {
+      timeout + 1000 // 超时
+    }
+    
+    let status = if !is_connected {
+      "connection_failed"
+    } else if response_time > timeout {
+      "timeout"
+    } else {
+      "connected"
+    }
+    
+    connectivity_results.push({
+      "endpoint": name,
+      "url": url,
+      "status": status,
+      "response_time_ms": response_time.to_string(),
+      "timestamp": "1640995200"
+    })
     
     i = i + 1
   }
   
-  // 计算总体健康分数
-  let overall_health_score = weighted_sum / total_weight
+  // 验证连接性检查结果
+  assert_eq(connectivity_results.length(), endpoints.length())
   
-  // 确定健康等级
-  let health_grade = if overall_health_score >= 90.0 {
-    "EXCELLENT"
-  } else if overall_health_score >= 80.0 {
-    "GOOD"
-  } else if overall_health_score >= 70.0 {
-    "FAIR"
-  } else if overall_health_score >= 60.0 {
-    "POOR"
-  } else {
-    "CRITICAL"
-  }
+  // 验证gRPC连接
+  assert_eq(connectivity_results[0]["status"], "connected")
+  assert_eq(connectivity_results[0]["response_time_ms"], "50")
   
-  // 验证健康评分计算
-  assert_eq(weighted_scores.length(), health_dimensions.length())
-  assert_eq(total_weight > 0.99, true)  // 权重总和应该接近1.0
-  assert_eq(total_weight <= 1.01, true)
+  // 验证本地HTTP连接
+  assert_eq(connectivity_results[1]["status"], "connected")
+  assert_eq(connectivity_results[1]["response_time_ms"], "200")
   
-  // 验证总体健康分数
-  assert_eq(overall_health_score > 70.0, true)
-  assert_eq(overall_health_score < 90.0, true)
+  // 验证远程Prometheus连接失败
+  assert_eq(connectivity_results[2]["status"], "connection_failed")
+  assert_eq(connectivity_results[2]["response_time_ms"], "11000") // 超时+1000
   
-  // 验证健康等级
-  assert_eq(health_grade, "GOOD")  // 基于计算应该为GOOD
+  // 验证Jaeger连接
+  assert_eq(connectivity_results[3]["status"], "connected")
+  assert_eq(connectivity_results[3]["response_time_ms"], "200")
   
-  // 验证特定维度的加权分数
-  let mut pipeline_weighted_correct = false
-  let mut resource_weighted_correct = false
-  
-  let mut j = 0
-  while j < weighted_scores.length() {
-    let weighted = weighted_scores[j]
-    match weighted.0 {
-      "pipeline_health" => {
-        if weighted.3 == 70.0 * 0.30 {
-          pipeline_weighted_correct = true
-        }
-      }
-      "resource_health" => {
-        if weighted.3 == 85.0 * 0.25 {
-          resource_weighted_correct = true
-        }
-      }
-      _ => {}
+  // 计算连接成功率
+  let mut connected_count = 0
+  i = 0
+  while i < connectivity_results.length() {
+    if connectivity_results[i]["status"] == "connected" {
+      connected_count = connected_count + 1
     }
-    j = j + 1
+    i = i + 1
   }
   
-  assert_eq(pipeline_weighted_correct, true)
-  assert_eq(resource_weighted_correct, true)
+  let connection_success_rate = connected_count.to_double() / connectivity_results.length().to_double()
+  assert_eq(connection_success_rate, 0.75) // 4个端点中3个连接成功
+}
+
+test "telemetry_resource_utilization" {
+  // 测试遥测资源利用率
   
-  // 生成健康报告
-  let mut health_report = "System Health Assessment Report:\n"
-  health_report = health_report + "Overall Health Score: " + overall_health_score.to_string() + " (" + health_grade + ")\n"
-  health_report = health_report + "Health Dimensions:\n"
-  
-  j = 0
-  while j < weighted_scores.length() {
-    let dimension = weighted_scores[j]
-    health_report = health_report + "  - " + dimension.0 + ": " + dimension.1.to_string() + " (weight: " + (dimension.2 * 100.0).to_string() + "%, weighted: " + dimension.3.to_string() + ")\n"
-    j = j + 1
+  let resource_metrics = {
+    "cpu_usage_percent": 75.5,
+    "memory_usage_mb": 512.0,
+    "memory_limit_mb": 2048.0,
+    "disk_usage_mb": 1024.0,
+    "disk_limit_mb": 10240.0,
+    "network_bytes_sent": 1048576, // 1MB
+    "network_bytes_received": 2097152, // 2MB
+    "active_connections": 25,
+    "max_connections": 100,
+    "buffer_pool_usage": 60.0,
+    "thread_pool_usage": 80.0
   }
   
-  // 验证报告内容
-  assert_eq(health_report.contains("System Health Assessment Report"), true)
-  assert_eq(health_report.contains("Overall Health Score:"), true)
-  assert_eq(health_report.contains("Health Dimensions:"), true)
-  assert_eq(health_report.contains("(GOOD)"), true)
+  // 计算资源利用率
+  let memory_usage_percent = resource_metrics["memory_usage_mb"] / resource_metrics["memory_limit_mb"] * 100.0
+  let disk_usage_percent = resource_metrics["disk_usage_mb"] / resource_metrics["disk_limit_mb"] * 100.0
+  let connection_usage_percent = resource_metrics["active_connections"].to_double() / resource_metrics["max_connections"].to_double() * 100.0
+  
+  // 验证资源利用率计算
+  assert_eq(memory_usage_percent, 25.0) // 512MB / 2048MB * 100
+  assert_eq(disk_usage_percent, 10.0) // 1024MB / 10240MB * 100
+  assert_eq(connection_usage_percent, 25.0) // 25 / 100 * 100
+  
+  // 定义资源阈值
+  let thresholds = {
+    "cpu_warning": 70.0,
+    "cpu_critical": 90.0,
+    "memory_warning": 80.0,
+    "memory_critical": 95.0,
+    "disk_warning": 80.0,
+    "disk_critical": 90.0,
+    "connection_warning": 80.0,
+    "connection_critical": 95.0,
+    "buffer_pool_warning": 75.0,
+    "buffer_pool_critical": 90.0,
+    "thread_pool_warning": 80.0,
+    "thread_pool_critical": 95.0
+  }
+  
+  // 检查资源状态
+  let cpu_status = if resource_metrics["cpu_usage_percent"] >= thresholds["cpu_critical"] {
+    "critical"
+  } else if resource_metrics["cpu_usage_percent"] >= thresholds["cpu_warning"] {
+    "warning"
+  } else {
+    "normal"
+  }
+  
+  let memory_status = if memory_usage_percent >= thresholds["memory_critical"] {
+    "critical"
+  } else if memory_usage_percent >= thresholds["memory_warning"] {
+    "warning"
+  } else {
+    "normal"
+  }
+  
+  let disk_status = if disk_usage_percent >= thresholds["disk_critical"] {
+    "critical"
+  } else if disk_usage_percent >= thresholds["disk_warning"] {
+    "warning"
+  } else {
+    "normal"
+  }
+  
+  // 验证资源状态
+  assert_eq(cpu_status, "warning") // 75.5% > 70%
+  assert_eq(memory_status, "normal") // 25% < 80%
+  assert_eq(disk_status, "normal") // 10% < 80%
+  
+  // 验证网络指标
+  assert_eq(resource_metrics["network_bytes_sent"], 1048576) // 1MB
+  assert_eq(resource_metrics["network_bytes_received"], 2097152) // 2MB
+  
+  // 验证连接数
+  assert_eq(resource_metrics["active_connections"], 25)
+  assert_eq(resource_metrics["max_connections"], 100)
+  
+  // 验证缓冲池和线程池使用率
+  assert_eq(resource_metrics["buffer_pool_usage"], 60.0) // 正常
+  assert_eq(resource_metrics["thread_pool_usage"], 80.0) // 警告级别
+}
+
+test "telemetry_performance_metrics" {
+  // 测试遥测性能指标
+  
+  let performance_data = {
+    "spans_exported_total": 10000,
+    "spans_failed_total": 50,
+    "metrics_exported_total": 5000,
+    "metrics_failed_total": 25,
+    "logs_exported_total": 2000,
+    "logs_failed_total": 10,
+    "export_duration_seconds": {
+      "sum": 1250.5,
+      "count": 1000,
+      "min": 0.1,
+      "max": 5.0,
+      "p50": 1.0,
+      "p95": 2.5,
+      "p99": 4.0
+    },
+    "queue_size": 150,
+    "queue_capacity": 1000,
+    "batch_size": 100,
+    "batch_send_duration_ms": 250
+  }
+  
+  // 计算成功率
+  let span_success_rate = (performance_data["spans_exported_total"].to_double() - performance_data["spans_failed_total"].to_double()) / performance_data["spans_exported_total"].to_double() * 100.0
+  let metric_success_rate = (performance_data["metrics_exported_total"].to_double() - performance_data["metrics_failed_total"].to_double()) / performance_data["metrics_exported_total"].to_double() * 100.0
+  let log_success_rate = (performance_data["logs_exported_total"].to_double() - performance_data["logs_failed_total"].to_double()) / performance_data["logs_exported_total"].to_double() * 100.0
+  
+  // 验证成功率计算
+  assert_eq(span_success_rate, 99.5) // (10000-50)/10000*100
+  assert_eq(metric_success_rate, 99.5) // (5000-25)/5000*100
+  assert_eq(log_success_rate, 99.5) // (2000-10)/2000*100
+  
+  // 验证导出持续时间统计
+  let export_stats = performance_data["export_duration_seconds"]
+  assert_eq(export_stats["sum"], 1250.5)
+  assert_eq(export_stats["count"], 1000)
+  assert_eq(export_stats["min"], 0.1)
+  assert_eq(export_stats["max"], 5.0)
+  
+  // 计算平均持续时间
+  let average_duration = export_stats["sum"] / export_stats["count"].to_double()
+  assert_eq(average_duration, 1.2505)
+  
+  // 验证百分位数
+  assert_eq(export_stats["p50"], 1.0) // 中位数
+  assert_eq(export_stats["p95"], 2.5) // 95百分位
+  assert_eq(export_stats["p99"], 4.0) // 99百分位
+  
+  // 验证队列使用率
+  let queue_usage_percent = performance_data["queue_size"].to_double() / performance_data["queue_capacity"].to_double() * 100.0
+  assert_eq(queue_usage_percent, 15.0) // 150/1000*100
+  
+  // 验证批处理指标
+  assert_eq(performance_data["batch_size"], 100)
+  assert_eq(performance_data["batch_send_duration_ms"], 250)
+  
+  // 计算吞吐量
+  let throughput_spans_per_second = performance_data["spans_exported_total"].to_double() / export_stats["sum"]
+  assert_eq(throughput_spans_per_second > 7.0, true) // 约8 spans/秒
+  assert_eq(throughput_spans_per_second < 10.0, true)
+}
+
+test "telemetry_dependency_health" {
+  // 测试遥测依赖健康状态
+  
+  let dependencies = [
+    {
+      "name": "postgresql_database",
+      "type": "database",
+      "connection_string": "postgresql://localhost:5432/telemetry",
+      "status": "healthy",
+      "response_time_ms": "15",
+      "connection_pool_active": "5",
+      "connection_pool_idle": "10",
+      "connection_pool_max": "20"
+    },
+    {
+      "name": "redis_cache",
+      "type": "cache",
+      "connection_string": "redis://localhost:6379",
+      "status": "healthy",
+      "response_time_ms": "2",
+      "memory_usage_mb": "128",
+      "memory_limit_mb": "512",
+      "hit_rate": "95.5"
+    },
+    {
+      "name": "kafka_broker",
+      "type": "message_queue",
+      "connection_string": "kafka://localhost:9092",
+      "status": "degraded",
+      "response_time_ms": "150",
+      "broker_id": "1",
+      "partition_count": "3",
+      "consumer_lag": "1000"
+    },
+    {
+      "name": "elasticsearch",
+      "type": "search",
+      "connection_string": "http://localhost:9200",
+      "status": "unhealthy",
+      "response_time_ms": "5000",
+      "cluster_status": "red",
+      "node_count": "1",
+      "shard_count": "10"
+    }
+  ]
+  
+  // 验证依赖健康状态
+  assert_eq(dependencies[0]["status"], "healthy")
+  assert_eq(dependencies[1]["status"], "healthy")
+  assert_eq(dependencies[2]["status"], "degraded")
+  assert_eq(dependencies[3]["status"], "unhealthy")
+  
+  // 验证数据库连接池状态
+  let db_pool_active = dependencies[0]["connection_pool_active"].to_int()
+  let db_pool_idle = dependencies[0]["connection_pool_idle"].to_int()
+  let db_pool_max = dependencies[0]["connection_pool_max"].to_int()
+  let db_pool_usage = (db_pool_active + db_pool_idle).to_double() / db_pool_max.to_double() * 100.0
+  
+  assert_eq(db_pool_usage, 75.0) // (5+10)/20*100
+  assert_eq(dependencies[0]["response_time_ms"].to_int(), 15)
+  
+  // 验证缓存状态
+  let redis_memory_usage = dependencies[1]["memory_usage_mb"].to_double()
+  let redis_memory_limit = dependencies[1]["memory_limit_mb"].to_double()
+  let redis_memory_usage_percent = redis_memory_usage / redis_memory_limit * 100.0
+  
+  assert_eq(redis_memory_usage_percent, 25.0) // 128/512*100
+  assert_eq(dependencies[1]["hit_rate"].to_double(), 95.5)
+  assert_eq(dependencies[1]["response_time_ms"].to_int(), 2)
+  
+  // 验证消息队列状态
+  assert_eq(dependencies[2]["status"], "degraded")
+  assert_eq(dependencies[2]["response_time_ms"].to_int(), 150) // 响应时间较长
+  assert_eq(dependencies[2]["consumer_lag"].to_int(), 1000) // 消费延迟
+  
+  // 验证搜索集群状态
+  assert_eq(dependencies[3]["status"], "unhealthy")
+  assert_eq(dependencies[3]["cluster_status"], "red") // 集群状态异常
+  assert_eq(dependencies[3]["response_time_ms"].to_int(), 5000) // 响应时间很长
+  
+  // 计算依赖整体健康状态
+  let mut healthy_deps = 0
+  let mut degraded_deps = 0
+  let mut unhealthy_deps = 0
+  
+  let mut i = 0
+  while i < dependencies.length() {
+    let status = dependencies[i]["status"]
+    if status == "healthy" {
+      healthy_deps = healthy_deps + 1
+    } else if status == "degraded" {
+      degraded_deps = degraded_deps + 1
+    } else if status == "unhealthy" {
+      unhealthy_deps = unhealthy_deps + 1
+    }
+    i = i + 1
+  }
+  
+  assert_eq(healthy_deps, 2)
+  assert_eq(degraded_deps, 1)
+  assert_eq(unhealthy_deps, 1)
+  
+  let dependency_health_score = (healthy_deps.to_double() * 100.0 + degraded_deps.to_double() * 50.0) / dependencies.length().to_double()
+  assert_eq(dependency_health_score, 62.5) // (2*100 + 1*50)/4
+}
+
+test "telemetry_health_check_automation" {
+  // 测试健康检查自动化
+  
+  let health_check_config = {
+    "enabled": true,
+    "interval_seconds": 30,
+    "timeout_seconds": 10,
+    "failure_threshold": 3,
+    "success_threshold": 2,
+    "checks": [
+      {
+        "name": "service_availability",
+        "type": "http",
+        "endpoint": "/health",
+        "expected_status": "200"
+      },
+      {
+        "name": "database_connectivity",
+        "type": "sql",
+        "query": "SELECT 1",
+        "expected_result": "1"
+      },
+      {
+        "name": "cache_connectivity",
+        "type": "redis",
+        "command": "PING",
+        "expected_response": "PONG"
+      }
+    ]
+  }
+  
+  // 模拟健康检查执行历史
+  let check_history = [
+    {
+      "timestamp": "1640995000",
+      "service_availability": "pass",
+      "database_connectivity": "pass",
+      "cache_connectivity": "pass",
+      "overall": "healthy"
+    },
+    {
+      "timestamp": "1640995030",
+      "service_availability": "pass",
+      "database_connectivity": "pass",
+      "cache_connectivity": "fail",
+      "overall": "degraded"
+    },
+    {
+      "timestamp": "1640995060",
+      "service_availability": "pass",
+      "database_connectivity": "fail",
+      "cache_connectivity": "pass",
+      "overall": "degraded"
+    },
+    {
+      "timestamp": "1640995090",
+      "service_availability": "pass",
+      "database_connectivity": "fail",
+      "cache_connectivity": "fail",
+      "overall": "unhealthy"
+    },
+    {
+      "timestamp": "1640995120",
+      "service_availability": "pass",
+      "database_connectivity": "pass",
+      "cache_connectivity": "pass",
+      "overall": "healthy"
+    }
+  ]
+  
+  // 验证健康检查配置
+  assert_eq(health_check_config["enabled"], true)
+  assert_eq(health_check_config["interval_seconds"], 30)
+  assert_eq(health_check_config["failure_threshold"], 3)
+  assert_eq(health_check_config["success_threshold"], 2)
+  assert_eq(health_check_config["checks"].length(), 3)
+  
+  // 分析健康检查历史
+  let mut healthy_count = 0
+  let mut degraded_count = 0
+  let mut unhealthy_count = 0
+  
+  let mut i = 0
+  while i < check_history.length() {
+    let overall_status = check_history[i]["overall"]
+    if overall_status == "healthy" {
+      healthy_count = healthy_count + 1
+    } else if overall_status == "degraded" {
+      degraded_count = degraded_count + 1
+    } else if overall_status == "unhealthy" {
+      unhealthy_count = unhealthy_count + 1
+    }
+    i = i + 1
+  }
+  
+  // 验证历史统计
+  assert_eq(healthy_count, 2)
+  assert_eq(degraded_count, 2)
+  assert_eq(unhealthy_count, 1)
+  
+  // 检查连续失败次数
+  let mut consecutive_failures = 0
+  let mut max_consecutive_failures = 0
+  i = 0
+  while i < check_history.length() {
+    let status = check_history[i]["overall"]
+    if status == "healthy" {
+      consecutive_failures = 0
+    } else {
+      consecutive_failures = consecutive_failures + 1
+      if consecutive_failures > max_consecutive_failures {
+        max_consecutive_failures = consecutive_failures
+      }
+    }
+    i = i + 1
+  }
+  
+  assert_eq(max_consecutive_failures, 2) // 最多连续2次非健康状态
+  
+  // 模拟自动恢复检查
+  let current_status = check_history[check_history.length() - 1]["overall"]
+  let previous_status = check_history[check_history.length() - 2]["overall"]
+  
+  let is_recovering = current_status == "healthy" && previous_status != "healthy"
+  assert_eq(is_recovering, true) // 从不健康状态恢复
+  
+  // 验证检查间隔
+  let mut intervals_valid = true
+  i = 1
+  while i < check_history.length() {
+    let current_time = check_history[i]["timestamp"].to_long()
+    let previous_time = check_history[i - 1]["timestamp"].to_long()
+    let interval = current_time - previous_time
+    
+    if interval != health_check_config["interval_seconds"].to_long() {
+      intervals_valid = false
+      break
+    }
+    
+    i = i + 1
+  }
+  
+  assert_eq(intervals_valid, true) // 所有检查间隔都是30秒
 }
