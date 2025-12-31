@@ -16,7 +16,7 @@ test "trace_span_creation_and_lifecycle" {
     ctx, 
     "test-operation",
     trace::Internal,
-    [("http.method", "GET"), ("http.url", "/api/test")]
+    [("http.method", common::AttributeValue::string("GET")), ("http.url", common::AttributeValue::string("/api/test"))]
   )
   
   // 验证Span基本属性
@@ -46,7 +46,7 @@ test "trace_span_hierarchy_and_parenting" {
     ctx,
     "parent-operation",
     trace::Server,
-    [("service.name", "api-gateway")]
+    [("service.name", common::AttributeValue::string("api-gateway"))]
   )
   
   // 创建子Span
@@ -54,7 +54,7 @@ test "trace_span_hierarchy_and_parenting" {
     parent_ctx,
     "child-operation", 
     trace::Client,
-    [("db.statement", "SELECT * FROM users")]
+    [("db.statement", common::AttributeValue::string("SELECT * FROM users"))]
   )
   
   // 验证父子关系

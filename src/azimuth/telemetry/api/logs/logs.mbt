@@ -18,12 +18,12 @@ pub struct LogRecord {
   severity_number : SeverityNumber
   severity_text : String?
   body : String?
-  attributes : Array[(String, common::AttributeValue)]
+  attributes : Array[(String, AttributeValue)]
   trace_id : Array[Byte]?
   span_id : Array[Byte]?
   trace_flags : Byte?
-  resource : Resource?
-  instrumentation_scope : InstrumentationScope?
+  resource : common::Resource?
+  instrumentation_scope : common::InstrumentationScope?
 }
 
 pub trait Logger {
@@ -91,8 +91,8 @@ pub struct LogRecordBuilder {
   trace_id : Array[Byte]?
   span_id : Array[Byte]?
   trace_flags : Byte?
-  resource : Resource?
-  instrumentation_scope : InstrumentationScope?
+  resource : common::Resource?
+  instrumentation_scope : common::InstrumentationScope?
 }
 
 pub fn LogRecordBuilder::new() -> LogRecordBuilder {
