@@ -1,376 +1,389 @@
-// 跨API集成综合测试
-// 测试Metrics、Logs、Trace API之间的集成和协作
+// 跨API集成测试 - 测试trace、metrics、logs三个API的协作
+// 验证Azimuth Telemetry各组件之间的无缝集成和数据一致性
 
-test "metrics_logs_trace_correlation" {
-  // 创建共享的资源信息
-  let resource = @azimuth.telemetry.api.common.Resource::default("user-service")
+test "trace_metrics_logs_integration" {
+  // 测试trace、metrics、logs三个API的完整集成
   
-  // 创建共享的instrumentation scope
-  let instrumentation_scope = @azimuth.telemetry.api.common.InstrumentationScope::{
-    name: "authentication",
-    version: Some("v1.2.3"),
-    schema_url: Some("http://example.com/auth-schema")
-  }
+  // 1. 设置基础上下文和资源
+  let ctx = context::Context::empty()
+  let resource = common::Resource::default("integrated-service")
+  let correlation_key = context::create_key("correlation.id")
+  let ctx_with_correlation = ctx.with_value(correlation_key, "corr-integration-001")
   
-  // 创建共享的属性集合
-  let common_attributes = [
-    ("service.name", @azimuth.telemetry.api.common.AttributeValue::string("user-service")),
-    ("service.version", @azimuth.telemetry.api.common.AttributeValue::string("v1.2.3")),
-    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("user_login")),
-    ("user.id", @azimuth.telemetry.api.common.AttributeValue::string("12345"))
-  ]
+  // 2. 创建Tracer和Meter
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
   
-  // Metrics API - 创建指标仪器
-  let metrics_provider = NoopMeterProvider::{}
-  let metrics_meter = metrics_provider.get_meter("auth_meter", Some("1.0.0"))
-  let login_counter = metrics_meter.create_counter("user_login_attempts")
-  let login_duration = metrics_meter.create_histogram("login_duration_ms")
-  let active_sessions = metrics_meter.create_up_down_counter("active_sessions")
-  let memory_usage = metrics_meter.create_gauge("memory_usage_bytes")
+  let tracer = tracer_provider.get_tracer("integration-test", "1.0.0")
+  let meter = meter_provider.get_meter("integration-test", "1.0.0")
+  let logger = logger_provider.get_logger("integration-test", "1.0.0")
   
-  // Logs API - 创建日志记录器
-  let logs_provider = NoopLoggerProvider::{}
-  let logger = logs_provider.get_logger("auth_logger", Some("1.0.0"))
+  // 3. 启动一个span进行分布式追踪
+  let (ctx_with_span, span) = tracer.start_span(
+    ctx_with_correlation,
+    "integrated_operation",
+    trace::Server,
+    [
+      ("operation.type", common::AttributeValue::string("user_request")),
+      ("service.version", common::AttributeValue::string("2.1.0"))
+    ],
+    1640995200000000000L  // 2022-01-01 00:00:00 UTC in nanoseconds
+  )
   
-  // Trace API - 创建追踪器
-  let trace_provider = NoopTracerProvider::{}
-  let tracer = trace_provider.get_tracer("auth_tracer", Some("1.0.0"))
+  // 验证span创建
+  assert_eq(span.name, "integrated_operation")
+  assert_eq(span.kind, trace::Server)
+  assert_eq(span.attributes.length(), 2)
+  assert_eq(span.start_time_unix_nanos, 1640995200000000000L)
   
-  // 模拟用户登录流程
-  let ctx = @azimuth.telemetry.api.context.Context::empty()
+  // 4. 在span上下文中创建和更新metrics
+  let request_counter = meter.create_counter("http_requests_total", "count", "Total HTTP requests")
+  let response_histogram = meter.create_histogram("http_response_duration_ms", "ms", "HTTP response duration")
+  let active_connections = meter.create_up_down_counter("active_connections", "count", "Active connections")
   
-  // 1. 开始追踪span
-  let (trace_ctx, login_span) = tracer.start_span(ctx, "user_login", 
-    kind: Some(Server), 
-    attributes: Some(common_attributes))
+  // 记录metrics
+  request_counter.add(1L, [
+    ("method", common::AttributeValue::string("GET")),
+    ("endpoint", common::AttributeValue::string("/api/users")),
+    ("status_code", common::AttributeValue::int(200L))
+  ])
   
-  // 2. 记录登录尝试指标
-  login_counter.add(1L, Some(common_attributes))
+  response_histogram.record(125.5, [
+    ("method", common::AttributeValue::string("GET")),
+    ("endpoint", common::AttributeValue::string("/api/users"))
+  ])
   
-  // 3. 记录开始登录日志
-  logger.info("User login attempt started", Some(common_attributes))
+  active_connections.add(1L)
   
-  // 4. 模拟登录处理时间
-  let processing_time = 150.0  // 150ms
-  login_duration.record(processing_time, Some(common_attributes))
+  // 验证metrics创建成功（No-op实现）
+  assert_eq(true, true)  // 如果没有异常，说明metrics操作成功
   
-  // 5. 更新活跃会话
-  active_sessions.add(1L, Some(common_attributes))
-  
-  // 6. 记录内存使用情况
-  memory_usage.record(128.0 * 1024.0 * 1024.0, Some(common_attributes))  // 128MB
-  
-  // 7. 记录成功登录日志
-  let success_attributes = common_attributes + [
-    ("login.status", @azimuth.telemetry.api.common.AttributeValue::string("success")),
-    ("session.id", @azimuth.telemetry.api.common.AttributeValue::string("sess_67890"))
-  ]
-  logger.info("User login completed successfully", Some(success_attributes))
-  
-  // 8. 记录成功登录指标
-  login_counter.add(1L, Some(success_attributes))
-  
-  @test.succeed()
-}
-
-test "error_scenario_cross_api_handling" {
-  // 创建共享的错误属性
-  let error_attributes = [
-    ("service.name", @azimuth.telemetry.api.common.AttributeValue::string("payment-service")),
-    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("process_payment")),
-    ("error.type", @azimuth.telemetry.api.common.AttributeValue::string("payment_gateway_error")),
-    ("error.code", @azimuth.telemetry.api.common.AttributeValue::int(500)),
-    ("retry.count", @azimuth.telemetry.api.common.AttributeValue::int(3))
-  ]
-  
-  // 初始化所有API
-  let metrics_provider = NoopMeterProvider::{}
-  let metrics_meter = metrics_provider.get_meter("payment_meter")
-  let error_counter = metrics_meter.create_counter("payment_errors")
-  let retry_counter = metrics_meter.create_counter("payment_retries")
-  
-  let logs_provider = NoopLoggerProvider::{}
-  let logger = logs_provider.get_logger("payment_logger")
-  
-  let trace_provider = NoopTracerProvider::{}
-  let tracer = trace_provider.get_tracer("payment_tracer")
-  
-  // 模拟支付处理错误场景
-  let ctx = @azimuth.telemetry.api.context.Context::empty()
-  
-  // 开始支付处理span
-  let (payment_ctx, payment_span) = tracer.start_span(ctx, "payment_processing", 
-    kind: Some(Server), 
-    attributes: Some(error_attributes))
-  
-  // 记录错误指标
-  error_counter.add(1L, Some(error_attributes))
-  retry_counter.add(3L, Some(error_attributes))
-  
-  // 记录错误日志
-  logger.error("Payment processing failed after 3 retries", Some(error_attributes))
-  
-  // 创建详细的错误日志记录
-  let detailed_error_log = LogRecord::builder()
-    .timestamp(1640995200000000000L)
-    .severity(Error)
-    .body("Payment gateway timeout: Unable to process transaction")
-    .with_attribute("service.name", @azimuth.telemetry.api.common.AttributeValue::string("payment-service"))
-    .with_attribute("operation", @azimuth.telemetry.api.common.AttributeValue::string("process_payment"))
-    .with_attribute("error.type", @azimuth.telemetry.api.common.AttributeValue::string("timeout"))
-    .with_attribute("gateway", @azimuth.telemetry.api.common.AttributeValue::string("stripe"))
-    .with_attribute("transaction.id", @azimuth.telemetry.api.common.AttributeValue::string("txn_12345"))
-    .with_attribute("amount", @azimuth.telemetry.api.common.AttributeValue::float(99.99))
-    .with_attribute("currency", @azimuth.telemetry.api.common.AttributeValue::string("USD"))
-    .with_attribute("retry.count", @azimuth.telemetry.api.common.AttributeValue::int(3))
-    .with_attribute("timeout.ms", @azimuth.telemetry.api.common.AttributeValue::int(30000))
+  // 5. 在span上下文中记录结构化日志
+  let log_record = logs::LogRecord::builder()
+    .timestamp(1640995200123456789L)
+    .severity(logs::Info)
+    .body("HTTP request processed successfully")
+    .with_attribute("http.method", common::AttributeValue::string("GET"))
+    .with_attribute("http.url", common::AttributeValue::string("/api/users"))
+    .with_attribute("http.status_code", common::AttributeValue::int(200L))
+    .with_attribute("duration_ms", common::AttributeValue::float(125.5))
+    .with_attribute("user.id", common::AttributeValue::string("user-12345"))
+    .with_attribute("trace.id", common::AttributeValue::array_string([
+      "0af7651916cd43dd8448eb211c80319c"
+    ]))
     .build()
   
-  // 在真实实现中，这里应该发送日志记录
-  // logger.emit(detailed_error_log)
+  logger.emit(log_record)
+  logger.info("User operation completed", [
+    ("operation", common::AttributeValue::string("get_user")),
+    ("user.id", common::AttributeValue::string("user-12345")),
+    ("success", common::AttributeValue::bool(true))
+  ])
   
-  @test.succeed()
+  // 验证日志记录创建
+  assert_eq(log_record.severity_number, logs::Info)
+  assert_eq(log_record.body.unwrap(), "HTTP request processed successfully")
+  assert_eq(log_record.attributes.length(), 7)
+  
+  // 6. 验证上下文传播和数据一致性
+  let propagated_correlation = ctx_with_span.get(correlation_key)
+  assert_eq(propagated_correlation.unwrap(), "corr-integration-001")
+  
+  // 7. 完成span
+  let completed_span = trace::Span::{
+    ..span,
+    end_time_unix_nanos: Some(1640995200125456789L),
+    status: trace::Ok,
+    status_description: Some("Operation completed successfully"),
+    events: [
+      trace::SpanEvent::{
+        name: "request_received",
+        timestamp_unix_nanos: 1640995200000000000L,
+        attributes: [
+          ("event.type", common::AttributeValue::string("request_start"))
+        ]
+      },
+      trace::SpanEvent::{
+        name: "response_sent",
+        timestamp_unix_nanos: 1640995200123456789L,
+        attributes: [
+          ("event.type", common::AttributeValue::string("request_end")),
+          ("response.status", common::AttributeValue::int(200L))
+        ]
+      }
+    ]
+  }
+  
+  // 验证span完成
+  assert_eq(completed_span.end_time_unix_nanos.unwrap(), 1640995200125456789L)
+  assert_eq(completed_span.status, trace::Ok)
+  assert_eq(completed_span.events.length(), 2)
+  
+  // 8. 清理连接
+  active_connections.add(-1L)
 }
 
-test "high_concurrency_cross_api_scenario" {
-  // 模拟高并发场景下的跨API使用
+test "cross_api_context_propagation" {
+  // 测试跨API的上下文传播
   
-  // 初始化API
-  let metrics_provider = NoopMeterProvider::{}
-  let metrics_meter = metrics_provider.get_meter("high_concurrency_meter")
-  let request_counter = metrics_meter.create_counter("http_requests")
-  let request_duration = metrics_meter.create_histogram("request_duration_ms")
-  let concurrent_requests = metrics_meter.create_up_down_counter("concurrent_requests")
+  // 创建初始上下文
+  let ctx = context::Context::empty()
+  let trace_id_key = context::create_key("trace.id")
+  let user_id_key = context::create_key("user.id")
+  let request_id_key = context::create_key("request.id")
   
-  let logs_provider = NoopLoggerProvider::{}
-  let logger = logs_provider.get_logger("high_concurrency_logger")
+  // 设置上下文值
+  let ctx_enriched = ctx
+    .with_value(trace_id_key, "trace-123456789")
+    .with_value(user_id_key, "user-987654321")
+    .with_value(request_id_key, "req-abcdef")
   
-  let trace_provider = NoopTracerProvider::{}
-  let tracer = trace_provider.get_tracer("high_concurrency_tracer")
+  // 创建tracer和logger
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
+  let tracer = tracer_provider.get_tracer("context-test")
+  let logger = logger_provider.get_logger("context-test")
   
-  // 模拟100个并发请求
+  // 在 enriched 上下文中创建span
+  let (ctx_with_span, span) = tracer.start_span(
+    ctx_enriched,
+    "context_propagation_test",
+    trace::Internal,
+    [
+      ("user.id", common::AttributeValue::string("user-987654321")),
+      ("request.id", common::AttributeValue::string("req-abcdef"))
+    ]
+  )
+  
+  // 验证上下文传播
+  assert_eq(ctx_with_span.get(trace_id_key).unwrap(), "trace-123456789")
+  assert_eq(ctx_with_span.get(user_id_key).unwrap(), "user-987654321")
+  assert_eq(ctx_with_span.get(request_id_key).unwrap(), "req-abcdef")
+  
+  // 记录包含上下文信息的日志
+  logger.info("Operation with propagated context", [
+    ("trace.id", common::AttributeValue::string("trace-123456789")),
+    ("user.id", common::AttributeValue::string("user-987654321")),
+    ("request.id", common::AttributeValue::string("req-abcdef")),
+    ("span.name", common::AttributeValue::string("context_propagation_test"))
+  ])
+  
+  // 验证span属性与上下文一致性
+  let mut found_user_id = false
+  let mut found_request_id = false
+  
   let mut i = 0
-  while i < 100 {
-    let request_id = "req_" + i.to_string()
-    let request_attributes = [
-      ("request.id", @azimuth.telemetry.api.common.AttributeValue::string(request_id)),
-      ("endpoint", @azimuth.telemetry.api.common.AttributeValue::string("/api/data")),
-      ("method", @azimuth.telemetry.api.common.AttributeValue::string("GET")),
-      ("user.agent", @azimuth.telemetry.api.common.AttributeValue::string("Mozilla/5.0")),
-      ("client.ip", @azimuth.telemetry.api.common.AttributeValue::string("192.168.1." + (100 + i).to_string()))
-    ]
-    
-    // 开始请求追踪
-    let ctx = @azimuth.telemetry.api.context.Context::empty()
-    let (request_ctx, request_span) = tracer.start_span(ctx, "http_request", 
-      kind: Some(Server), 
-      attributes: Some(request_attributes))
-    
-    // 增加并发请�计数
-    concurrent_requests.add(1L, Some(request_attributes))
-    
-    // 记录请求指标
-    request_counter.add(1L, Some(request_attributes))
-    
-    // 记录请求日志
-    logger.debug("Processing request: " + request_id, Some(request_attributes))
-    
-    // 模拟请求处理时间
-    let processing_time = 50.0 + (i % 100).to_float()  // 50-149ms
-    request_duration.record(processing_time, Some(request_attributes))
-    
-    // 记录完成日志
-    let completion_attributes = request_attributes + [
-      ("duration.ms", @azimuth.telemetry.api.common.AttributeValue::float(processing_time)),
-      ("status.code", @azimuth.telemetry.api.common.AttributeValue::int(200))
-    ]
-    logger.debug("Request completed: " + request_id, Some(completion_attributes))
-    
-    // 减少并发请�计数
-    concurrent_requests.add(-1L, Some(request_attributes))
-    
+  while i < span.attributes.length() {
+    let (key, value) = span.attributes[i]
+    if key == "user.id" {
+      match value {
+        common::StringValue(uid) => {
+          assert_eq(uid, "user-987654321")
+          found_user_id = true
+        }
+        _ => assert_eq(false, true, "Expected string value for user.id")
+      }
+    }
+    if key == "request.id" {
+      match value {
+        common::StringValue(rid) => {
+          assert_eq(rid, "req-abcdef")
+          found_request_id = true
+        }
+        _ => assert_eq(false, true, "Expected string value for request.id")
+      }
+    }
     i = i + 1
   }
   
-  @test.succeed()
+  assert_eq(found_user_id, true)
+  assert_eq(found_request_id, true)
 }
 
-test "distributed_system_cross_api_integration" {
-  // 模拟分布式系统中的跨API集成
+test "cross_api_error_handling_integration" {
+  // 测试跨API的错误处理集成
   
-  // 服务A: API Gateway
-  let gateway_metrics_provider = NoopMeterProvider::{}
-  let gateway_meter = gateway_metrics_provider.get_meter("gateway_meter")
-  let gateway_requests = gateway_meter.create_counter("gateway_requests")
-  let gateway_latency = gateway_meter.create_histogram("gateway_latency_ms")
+  let ctx = context::Context::empty()
+  let error_key = context::create_key("error.context")
+  let ctx_with_error = ctx.with_value(error_key, "database_connection_failed")
   
-  let gateway_logs_provider = NoopLoggerProvider::{}
-  let gateway_logger = gateway_logs_provider.get_logger("gateway_logger")
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
   
-  let gateway_trace_provider = NoopTracerProvider::{}
-  let gateway_tracer = gateway_trace_provider.get_tracer("gateway_tracer")
+  let tracer = tracer_provider.get_tracer("error-test")
+  let meter = meter_provider.get_meter("error-test")
+  let logger = logger_provider.get_logger("error-test")
   
-  // 服务B: User Service
-  let user_metrics_provider = NoopMeterProvider::{}
-  let user_meter = user_metrics_provider.get_meter("user_meter")
-  let user_operations = user_meter.create_counter("user_operations")
+  // 创建错误span
+  let (ctx_with_error_span, error_span) = tracer.start_span(
+    ctx_with_error,
+    "failing_operation",
+    trace::Internal,
+    [
+      ("error.type", common::AttributeValue::string("database_error")),
+      ("error.retry_count", common::AttributeValue::int(3L))
+    ]
+  )
   
-  let user_logs_provider = NoopLoggerProvider::{}
-  let user_logger = user_logs_provider.get_logger("user_logger")
+  // 记录错误metrics
+  let error_counter = meter.create_counter("errors_total", "count", "Total errors")
+  let retry_histogram = meter.create_histogram("error_retry_attempts", "count", "Error retry attempts")
   
-  let user_trace_provider = NoopTracerProvider::{}
-  let user_tracer = user_trace_provider.get_tracer("user_tracer")
+  error_counter.add(1L, [
+    ("error.type", common::AttributeValue::string("database_error")),
+    ("operation", common::AttributeValue::string("failing_operation"))
+  ])
   
-  // 服务C: Database Service
-  let db_metrics_provider = NoopMeterProvider::{}
-  let db_meter = db_metrics_provider.get_meter("db_meter")
-  let db_queries = db_meter.create_counter("db_queries")
-  let db_query_time = db_meter.create_histogram("db_query_time_ms")
+  retry_histogram.record(3.0, [
+    ("error.type", common::AttributeValue::string("database_error"))
+  ])
   
-  let db_logs_provider = NoopLoggerProvider::{}
-  let db_logger = db_logs_provider.get_logger("db_logger")
+  // 记录错误日志
+  logger.error("Database operation failed after 3 retries", [
+    ("error.type", common::AttributeValue::string("database_error")),
+    ("error.message", common::AttributeValue::string("Connection timeout")),
+    ("retry.count", common::AttributeValue::int(3L)),
+    ("operation.duration_ms", common::AttributeValue::float(5000.0))
+  ])
   
-  // 模拟分布式请求流
-  let ctx = @azimuth.telemetry.api.context.Context::empty()
-  
-  // 1. API Gateway接收请求
-  let gateway_attributes = [
-    ("service", @azimuth.telemetry.api.common.AttributeValue::string("api-gateway")),
-    ("endpoint", @azimuth.telemetry.api.common.AttributeValue::string("/api/users/123")),
-    ("method", @azimuth.telemetry.api.common.AttributeValue::string("GET"))
-  ]
-  
-  let (gateway_ctx, gateway_span) = gateway_tracer.start_span(ctx, "gateway_request", 
-    kind: Some(Server), 
-    attributes: Some(gateway_attributes))
-  
-  gateway_requests.add(1L, Some(gateway_attributes))
-  gateway_logger.info("Request received at gateway", Some(gateway_attributes))
-  
-  // 2. 转发到User Service
-  let user_attributes = [
-    ("service", @azimuth.telemetry.api.common.AttributeValue::string("user-service")),
-    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("get_user")),
-    ("user.id", @azimuth.telemetry.api.common.AttributeValue::string("123"))
-  ]
-  
-  let (user_ctx, user_span) = user_tracer.start_span(gateway_ctx, "user_service_request", 
-    kind: Some(Client), 
-    attributes: Some(user_attributes))
-  
-  user_operations.add(1L, Some(user_attributes))
-  user_logger.info("Processing user request", Some(user_attributes))
-  
-  // 3. 查询数据库
-  let db_attributes = [
-    ("service", @azimuth.telemetry.api.common.AttributeValue::string("database-service")),
-    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("select_user")),
-    ("table", @azimuth.telemetry.api.common.AttributeValue::string("users")),
-    ("query.type", @azimuth.telemetry.api.common.AttributeValue::string("SELECT"))
-  ]
-  
-  let (db_ctx, db_span) = user_tracer.start_span(user_ctx, "database_query", 
-    kind: Some(Client), 
-    attributes: Some(db_attributes))
-  
-  db_queries.add(1L, Some(db_attributes))
-  db_query_time.record(25.0, Some(db_attributes))
-  db_logger.debug("Executing database query", Some(db_attributes))
-  
-  // 4. 返回响应链
-  let db_response_attributes = db_attributes + [
-    ("rows.returned", @azimuth.telemetry.api.common.AttributeValue::int(1)),
-    ("query.duration", @azimuth.telemetry.api.common.AttributeValue::float(25.0))
-  ]
-  db_logger.debug("Database query completed", Some(db_response_attributes))
-  
-  let user_response_attributes = user_attributes + [
-    ("response.status", @azimuth.telemetry.api.common.AttributeValue::int(200)),
-    ("user.found", @azimuth.telemetry.api.common.AttributeValue::bool(true))
-  ]
-  user_logger.info("User request completed", Some(user_response_attributes))
-  
-  let gateway_response_attributes = gateway_attributes + [
-    ("response.status", @azimuth.telemetry.api.common.AttributeValue::int(200)),
-    ("total.duration", @azimuth.telemetry.api.common.AttributeValue::float(75.0))
-  ]
-  gateway_latency.record(75.0, Some(gateway_response_attributes))
-  gateway_logger.info("Gateway request completed", Some(gateway_response_attributes))
-  
-  @test.succeed()
-}
-
-test "resource_and_instrumentation_scope_propagation" {
-  // 测试资源和instrumentation scope在不同API间的传播
-  
-  // 创建共享资源
-  let resource = @azimuth.telemetry.api.common.Resource::{
-    service_name: "order-service",
-    service_version: Some("v2.1.0"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: [
-      ("deployment.environment", @azimuth.telemetry.api.common.AttributeValue::string("production")),
-      ("datacenter", @azimuth.telemetry.api.common.AttributeValue::string("us-west-2")),
-      ("instance.id", @azimuth.telemetry.api.common.AttributeValue::string("i-1234567890abcdef0"))
+  // 创建错误状态的span
+  let failed_span = trace::Span::{
+    ..error_span,
+    end_time_unix_nanos: Some(1640995205000000000L),
+    status: trace::Error,
+    status_description: Some("Database connection failed after 3 retries"),
+    events: [
+      trace::SpanEvent::{
+        name: "error",
+        timestamp_unix_nanos: 1640995205000000000L,
+        attributes: [
+          ("error.type", common::AttributeValue::string("database_error")),
+          ("error.message", common::AttributeValue::string("Connection timeout")),
+          ("exception.stacktrace", common::AttributeValue::string("TimeoutException: Connection timeout after 30s"))
+        ]
+      }
     ]
   }
   
-  // 创建共享instrumentation scope
-  let instrumentation_scope = @azimuth.telemetry.api.common.InstrumentationScope::{
-    name: "order_processing",
-    version: Some("v1.5.2"),
-    schema_url: Some("http://example.com/order-schema")
+  // 验证错误处理集成
+  assert_eq(failed_span.status, trace::Error)
+  assert_eq(failed_span.status_description.unwrap(), "Database connection failed after 3 retries")
+  assert_eq(failed_span.events.length(), 1)
+  
+  let error_event = failed_span.events[0]
+  assert_eq(error_event.name, "error")
+  assert_eq(error_event.attributes.length(), 3)
+  
+  // 验证上下文中的错误信息
+  assert_eq(ctx_with_error_span.get(error_key).unwrap(), "database_connection_failed")
+}
+
+test "cross_api_performance_correlation" {
+  // 测试跨API的性能数据关联
+  
+  let ctx = context::Context::empty()
+  let operation_start = 1640995200000000000L  // 纳秒时间戳
+  let operation_end = 1640995200250000000L    // 250ms后
+  
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = tracer_provider.get_tracer("performance-test")
+  let meter = meter_provider.get_meter("performance-test")
+  let logger = logger_provider.get_logger("performance-test")
+  
+  // 创建性能追踪span
+  let (ctx_with_perf, perf_span) = tracer.start_span(
+    ctx,
+    "performance_operation",
+    trace::Internal,
+    [
+      ("operation.type", common::AttributeValue::string("database_query")),
+      ("db.statement", common::AttributeValue::string("SELECT * FROM users WHERE id = ?"))
+    ],
+    operation_start
+  )
+  
+  // 记录性能metrics
+  let duration_histogram = meter.create_histogram("operation_duration_ms", "ms", "Operation duration")
+  let throughput_counter = meter.create_counter("operations_total", "count", "Total operations")
+  
+  let duration_ms = (operation_end - operation_start).to_double() / 1000000.0  // 转换为毫秒
+  duration_histogram.record(duration_ms, [
+    ("operation.type", common::AttributeValue::string("database_query")),
+    ("db.table", common::AttributeValue::string("users"))
+  ])
+  
+  throughput_counter.add(1L, [
+    ("operation.type", common::AttributeValue::string("database_query")),
+    ("status", common::AttributeValue::string("success"))
+  ])
+  
+  // 记录性能日志
+  logger.info("Performance operation completed", [
+    ("operation.type", common::AttributeValue::string("database_query")),
+    ("duration_ms", common::AttributeValue::float(duration_ms)),
+    ("rows.processed", common::AttributeValue::int(150L)),
+    ("cache.hit", common::AttributeValue::bool(true))
+  ])
+  
+  // 完成性能span
+  let completed_perf_span = trace::Span::{
+    ..perf_span,
+    end_time_unix_nanos: Some(operation_end),
+    status: trace::Ok,
+    events: [
+      trace::SpanEvent::{
+        name: "performance_metrics",
+        timestamp_unix_nanos: operation_end,
+        attributes: [
+          ("duration_ms", common::AttributeValue::float(duration_ms)),
+          ("throughput_ops_per_sec", common::AttributeValue::float(4.0)),  // 1op/250ms = 4ops/sec
+          ("memory_usage_mb", common::AttributeValue::float(12.5))
+        ]
+      }
+    ]
   }
   
-  // 使用共享配置初始化所有API
-  let metrics_provider = NoopMeterProvider::{}
-  let metrics_meter = metrics_provider.get_meter("order_meter")
-  let order_counter = metrics_meter.create_counter("orders_processed")
-  let order_value = metrics_meter.create_histogram("order_value_usd")
+  // 验证性能数据关联
+  assert_eq(completed_perf_span.end_time_unix_nanos.unwrap(), operation_end)
+  assert_eq(completed_perf_span.status, trace::Ok)
   
-  let logs_provider = NoopLoggerProvider::{}
-  let logger = logs_provider.get_logger("order_logger")
+  let perf_event = completed_perf_span.events[0]
+  assert_eq(perf_event.name, "performance_metrics")
   
-  let trace_provider = NoopTracerProvider::{}
-  let tracer = trace_provider.get_tracer("order_tracer")
+  // 验证性能指标一致性
+  let mut found_duration = false
+  let mut found_throughput = false
   
-  // 创建包含资源信息的属性
-  let resource_aware_attributes = [
-    ("service.name", @azimuth.telemetry.api.common.AttributeValue::string(resource.service_name)),
-    ("service.version", @azimuth.telemetry.api.common.AttributeValue::string(resource.service_version.unwrap_or("unknown"))),
-    ("instrumentation.name", @azimuth.telemetry.api.common.AttributeValue::string(instrumentation_scope.name)),
-    ("instrumentation.version", @azimuth.telemetry.api.common.AttributeValue::string(instrumentation_scope.version.unwrap_or("unknown")))
-  ]
+  let mut i = 0
+  while i < perf_event.attributes.length() {
+    let (key, value) = perf_event.attributes[i]
+    if key == "duration_ms" {
+      match value {
+        common::FloatValue(d) => {
+          assert_eq(d, duration_ms)
+          found_duration = true
+        }
+        _ => assert_eq(false, true, "Expected float value for duration_ms")
+      }
+    }
+    if key == "throughput_ops_per_sec" {
+      match value {
+        common::FloatValue(t) => {
+          assert_eq(t, 4.0)
+          found_throughput = true
+        }
+        _ => assert_eq(false, true, "Expected float value for throughput")
+      }
+    }
+    i = i + 1
+  }
   
-  // 模拟订单处理
-  let ctx = @azimuth.telemetry.api.context.Context::empty()
-  let (order_ctx, order_span) = tracer.start_span(ctx, "process_order", 
-    kind: Some(Internal), 
-    attributes: Some(resource_aware_attributes))
-  
-  // 记录订单指标
-  order_counter.add(1L, Some(resource_aware_attributes))
-  order_value.record(99.99, Some(resource_aware_attributes))
-  
-  // 记录订单日志
-  let order_log = LogRecord::builder()
-    .timestamp(1640995200000000000L)
-    .severity(Info)
-    .body("Order processed successfully")
-    .with_attribute("service.name", @azimuth.telemetry.api.common.AttributeValue::string(resource.service_name))
-    .with_attribute("order.id", @azimuth.telemetry.api.common.AttributeValue::string("order_12345"))
-    .with_attribute("customer.id", @azimuth.telemetry.api.common.AttributeValue::string("cust_67890"))
-    .with_attribute("order.amount", @azimuth.telemetry.api.common.AttributeValue::float(99.99))
-    .with_attribute("order.currency", @azimuth.telemetry.api.common.AttributeValue::string("USD"))
-    .with_attribute("datacenter", @azimuth.telemetry.api.common.AttributeValue::string("us-west-2"))
-    .build()
-  
-  // 在真实实现中，应该设置资源和instrumentation scope
-  // let order_log_with_resource = { order_log | resource = Some(resource), instrumentation_scope = Some(instrumentation_scope) }
-  // logger.emit(order_log_with_resource)
-  
-  logger.info("Order processing completed", Some(resource_aware_attributes))
-  
-  @test.succeed()
+  assert_eq(found_duration, true)
+  assert_eq(found_throughput, true)
+  assert_eq(duration_ms, 250.0)
 }
