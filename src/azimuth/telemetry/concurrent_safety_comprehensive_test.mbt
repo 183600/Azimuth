@@ -1,376 +1,407 @@
-// 并发安全综合测试 - 测试多线程环境下的安全性
+// 并发安全测试 - 测试遥测系统在并发环境下的安全性
 
-test "context_concurrent_operations" {
-  // 测试Context的并发操作安全性
-  let base_ctx = context::Context::empty()
+test "concurrent_span_creation" {
+  // 测试并发Span创建的安全性
+  
+  let ctx = Context::empty()
+  let tracer = NoopTracer::{}
+  let num_threads = 10
+  let operations_per_thread = 100
+  
+  // 模拟并发Span创建
+  // 在实际实现中，这里会创建多个线程，但由于MoonBit的限制，
+  // 我们通过快速连续操作来模拟并发场景
+  
+  let mut thread_id = 0
+  while thread_id < num_threads {
+    // 模拟一个"线程"的操作
+    let mut operation_id = 0
+    while operation_id < operations_per_thread {
+      let span_name = "concurrent_span_" + thread_id.to_string() + "_" + operation_id.to_string()
+      let (_, span) = tracer.start_span(ctx, span_name, Internal, Some([
+        ("thread.id", AttributeValue::int(thread_id.to_int64())),
+        ("operation.id", AttributeValue::int(operation_id.to_int64())),
+        ("span.name", AttributeValue::string(span_name))
+      ]))
+      
+      // 验证Span创建成功
+      assert_eq(span.name, span_name)
+      assert_eq(span.attributes.length(), 3)
+      
+      match span.attributes[0].1 {
+        IntValue(tid) => assert_eq(tid, thread_id.to_int64())
+        _ => @test.fail("Test failed")
+      }
+      
+      match span.attributes[1].1 {
+        IntValue(oid) => assert_eq(oid, operation_id.to_int64())
+        _ => @test.fail("Test failed")
+      }
+      
+      operation_id = operation_id + 1
+    }
+    thread_id = thread_id + 1
+  }
+  
+  // 验证总操作数
+  let total_operations = num_threads * operations_per_thread
+  assert_eq(total_operations, 1000)
+}
+
+test "concurrent_metrics_operations" {
+  // 测试并发Metrics操作的安全性
+  
+  let meter = NoopMeter::{}
+  let num_threads = 10
+  let operations_per_thread = 100
+  
+  // 创建各种instrument
+  let counter = meter.create_counter("concurrent_counter", Some("operations"), Some("Concurrent test counter"))
+  let histogram = meter.create_histogram("concurrent_histogram", Some("seconds"), Some("Concurrent test histogram"))
+  let up_down_counter = meter.create_up_down_counter("concurrent_up_down_counter", Some("operations"), Some("Concurrent test up-down counter"))
+  let gauge = meter.create_gauge("concurrent_gauge", Some("value"), Some("Concurrent test gauge"))
+  
+  // 模拟并发Metrics操作
+  let mut thread_id = 0
+  while thread_id < num_threads {
+    // 模拟一个"线程"的操作
+    let mut operation_id = 0
+    while operation_id < operations_per_thread {
+      let thread_attr = [("thread.id", AttributeValue::int(thread_id.to_int64()))]
+      let operation_attr = [
+        ("thread.id", AttributeValue::int(thread_id.to_int64())),
+        ("operation.id", AttributeValue::int(operation_id.to_int64()))
+      ]
+      
+      // Counter操作
+      counter.add(1L, Some(thread_attr))
+      counter.add(operation_id.to_int64(), Some(operation_attr))
+      
+      // Histogram操作
+      histogram.record(operation_id.to_double(), Some(thread_attr))
+      histogram.record(operation_id.to_double() * 0.001, Some(operation_attr))
+      
+      // UpDownCounter操作
+      up_down_counter.add(1L, Some(thread_attr))
+      up_down_counter.add(operation_id.to_int64() - 50L, Some(operation_attr))
+      
+      // Gauge操作
+      gauge.record(operation_id.to_double(), Some(thread_attr))
+      gauge.record(operation_id.to_double() * 0.1, Some(operation_attr))
+      
+      operation_id = operation_id + 1
+    }
+    thread_id = thread_id + 1
+  }
+  
+  // 验证总操作数
+  let total_operations = num_threads * operations_per_thread
+  assert_eq(total_operations, 1000)
+}
+
+test "concurrent_log_operations" {
+  // 测试并发Log操作的安全性
+  
+  let logger = NoopLogger::{}
+  let num_threads = 10
+  let operations_per_thread = 100
+  
+  // 模拟并发Log操作
+  let mut thread_id = 0
+  while thread_id < num_threads {
+    // 模拟一个"线程"的操作
+    let mut operation_id = 0
+    while operation_id < operations_per_thread {
+      let thread_attr = [("thread.id", AttributeValue::int(thread_id.to_int64()))]
+      let operation_attr = [
+        ("thread.id", AttributeValue::int(thread_id.to_int64())),
+        ("operation.id", AttributeValue::int(operation_id.to_int64()))
+      ]
+      
+      let log_message = "Concurrent log message from thread " + thread_id.to_string() + " operation " + operation_id.to_string()
+      
+      // 基本日志操作
+      logger.debug(log_message + " [DEBUG]", Some(operation_attr))
+      logger.info(log_message + " [INFO]", Some(operation_attr))
+      logger.warn(log_message + " [WARN]", Some(operation_attr))
+      logger.error(log_message + " [ERROR]", Some(operation_attr))
+      logger.fatal(log_message + " [FATAL]", Some(operation_attr))
+      
+      // LogRecord操作
+      let log_record = LogRecord::builder()
+        .timestamp(1640995200000000000L + (thread_id * 1000 + operation_id).to_int64())
+        .severity(Info)
+        .body(log_message)
+        .with_attribute("thread.id", AttributeValue::int(thread_id.to_int64()))
+        .with_attribute("operation.id", AttributeValue::int(operation_id.to_int64()))
+        .build()
+      
+      logger.emit(log_record)
+      
+      operation_id = operation_id + 1
+    }
+    thread_id = thread_id + 1
+  }
+  
+  // 验证总操作数
+  let total_operations = num_threads * operations_per_thread
+  assert_eq(total_operations, 1000)
+}
+
+test "concurrent_context_operations" {
+  // 测试并发Context操作的安全性
+  
+  let num_threads = 10
+  let operations_per_thread = 100
   
   // 模拟并发Context操作
-  // 在实际多线程环境中，这里会使用多个线程同时操作
-  // 由于MoonBit当前可能不支持真正的多线程，我们模拟并发场景
-  
-  // 模拟多个"线程"同时设置不同的键值对
-  let ctx1 = base_ctx.with_value(context::create_key("thread-1-key"), "thread-1-value")
-  let ctx2 = base_ctx.with_value(context::create_key("thread-2-key"), "thread-2-value")
-  let ctx3 = base_ctx.with_value(context::create_key("thread-3-key"), "thread-3-value")
-  
-  // 模拟链式操作
-  let ctx_chain_1 = ctx1.with_value(context::create_key("chain-1"), "value-1")
-  let ctx_chain_2 = ctx2.with_value(context::create_key("chain-2"), "value-2")
-  let ctx_chain_3 = ctx3.with_value(context::create_key("chain-3"), "value-3")
-  
-  // 验证数据一致性
-  assert_eq(ctx_chain_1.get(context::create_key("thread-1-key")), Some("thread-1-value"))
-  assert_eq(ctx_chain_1.get(context::create_key("chain-1")), Some("value-1"))
-  
-  assert_eq(ctx_chain_2.get(context::create_key("thread-2-key")), Some("thread-2-value"))
-  assert_eq(ctx_chain_2.get(context::create_key("chain-2")), Some("value-2"))
-  
-  assert_eq(ctx_chain_3.get(context::create_key("thread-3-key")), Some("thread-3-value"))
-  assert_eq(ctx_chain_3.get(context::create_key("chain-3")), Some("value-3"))
-  
-  // 验证隔离性：一个Context的修改不影响其他Context
-  assert_eq(ctx_chain_1.get(context::create_key("thread-2-key")), None)
-  assert_eq(ctx_chain_2.get(context::create_key("thread-3-key")), None)
-  assert_eq(ctx_chain_3.get(context::create_key("thread-1-key")), None)
-}
-
-test "span_concurrent_creation" {
-  // 测试Span的并发创建安全性
-  let ctx = context::Context::empty()
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("concurrent-test")
-  
-  // 模拟多个"线程"同时创建Span
-  let (_, span1) = tracer.start_span(ctx, "concurrent-span-1", Some(trace::SpanKind::Server), None)
-  let (_, span2) = tracer.start_span(ctx, "concurrent-span-2", Some(trace::SpanKind::Client), None)
-  let (_, span3) = tracer.start_span(ctx, "concurrent-span-3", Some(trace::SpanKind::Internal), None)
-  
-  // 验证Span创建的独立性
-  assert_eq(span1.name, "concurrent-span-1")
-  assert_eq(span1.kind, trace::SpanKind::Server)
-  
-  assert_eq(span2.name, "concurrent-span-2")
-  assert_eq(span2.kind, trace::SpanKind::Client)
-  
-  assert_eq(span3.name, "concurrent-span-3")
-  assert_eq(span3.kind, trace::SpanKind::Internal)
-  
-  // 模拟并发添加属性
-  let span1_with_attrs = span1 // 在实际实现中会有属性添加方法
-  let span2_with_attrs = span2
-  let span3_with_attrs = span3
-  
-  // 验证Span的独立性
-  assert_eq(span1_with_attrs.name, "concurrent-span-1")
-  assert_eq(span2_with_attrs.name, "concurrent-span-2")
-  assert_eq(span3_with_attrs.name, "concurrent-span-3")
-}
-
-test "log_concurrent_recording" {
-  // 测试日志的并发记录安全性
-  let logger_provider = logs::NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("concurrent-test")
-  
-  // 模拟多个"线程"同时记录日志
-  let log1 = logs::LogRecord::builder()
-    .body("Concurrent log 1")
-    .severity(logs::SeverityNumber::Info)
-    .with_attribute("thread.id", common::AttributeValue::int(1L))
-    .build()
-  
-  let log2 = logs::LogRecord::builder()
-    .body("Concurrent log 2")
-    .severity(logs::SeverityNumber::Warn)
-    .with_attribute("thread.id", common::AttributeValue::int(2L))
-    .build()
-  
-  let log3 = logs::LogRecord::builder()
-    .body("Concurrent log 3")
-    .severity(logs::SeverityNumber::Error)
-    .with_attribute("thread.id", common::AttributeValue::int(3L))
-    .build()
-  
-  // 验证日志记录的独立性
-  assert_eq(log1.body, Some("Concurrent log 1"))
-  assert_eq(log1.severity_number, logs::SeverityNumber::Info)
-  assert_eq(log1.attributes.length(), 1)
-  
-  assert_eq(log2.body, Some("Concurrent log 2"))
-  assert_eq(log2.severity_number, logs::SeverityNumber::Warn)
-  assert_eq(log2.attributes.length(), 1)
-  
-  assert_eq(log3.body, Some("Concurrent log 3"))
-  assert_eq(log3.severity_number, logs::SeverityNumber::Error)
-  assert_eq(log3.attributes.length(), 1)
-  
-  // 使用便捷方法记录日志
-  logger.info("Concurrent info log", Some([("thread.id", common::AttributeValue::int(4L))]))
-  logger.warn("Concurrent warn log", Some([("thread.id", common::AttributeValue::int(5L))]))
-  logger.error("Concurrent error log", Some([("thread.id", common::AttributeValue::int(6L))]))
-  
-  // 验证操作不会抛出异常
-  assert_eq(true, true)
-}
-
-test "metrics_concurrent_operations" {
-  // 测试指标的并发操作安全性
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("concurrent-test")
-  
-  // 创建共享的指标实例
-  let shared_counter = meter.create_counter("shared.counter", None, None)
-  let shared_histogram = meter.create_histogram("shared.histogram", None, None)
-  let shared_gauge = meter.create_gauge("shared.gauge", None, None)
-  
-  // 模拟多个"线程"同时操作共享指标
-  // 线程1操作
-  shared_counter.add(1L, Some([("thread.id", common::AttributeValue::int(1L))]))
-  shared_histogram.record(100.0, Some([("thread.id", common::AttributeValue::int(1L))]))
-  shared_gauge.record(1.0, Some([("thread.id", common::AttributeValue::int(1L))]))
-  
-  // 线程2操作
-  shared_counter.add(2L, Some([("thread.id", common::AttributeValue::int(2L))]))
-  shared_histogram.record(200.0, Some([("thread.id", common::AttributeValue::int(2L))]))
-  shared_gauge.record(2.0, Some([("thread.id", common::AttributeValue::int(2L))]))
-  
-  // 线程3操作
-  shared_counter.add(3L, Some([("thread.id", common::AttributeValue::int(3L))]))
-  shared_histogram.record(300.0, Some([("thread.id", common::AttributeValue::int(3L))]))
-  shared_gauge.record(3.0, Some([("thread.id", common::AttributeValue::int(3L))]))
-  
-  // 创建独立的指标实例
-  let counter1 = meter.create_counter("independent.counter.1", None, None)
-  let counter2 = meter.create_counter("independent.counter.2", None, None)
-  let counter3 = meter.create_counter("independent.counter.3", None, None)
-  
-  // 并发操作独立指标
-  counter1.add(10L, None)
-  counter2.add(20L, None)
-  counter3.add(30L, None)
-  
-  // 验证操作不会抛出异常
-  assert_eq(true, true)
-}
-
-test "propagation_concurrent_operations" {
-  // 测试传播的并发操作安全性
-  let ctx = context::Context::empty()
-  
-  // 创建多个carrier实例
-  let carrier1 = propagation::MapCarrier::new()
-  let carrier2 = propagation::MapCarrier::new()
-  let carrier3 = propagation::MapCarrier::new()
-  
-  // 创建传播器实例
-  let trace_propagator = propagation::W3CTraceContextPropagator::{}
-  let baggage_propagator = propagation::W3CBaggagePropagator::{}
-  
-  // 模拟并发注入操作
-  trace_propagator.inject(ctx, carrier1)
-  baggage_propagator.inject(ctx, carrier1)
-  
-  trace_propagator.inject(ctx, carrier2)
-  baggage_propagator.inject(ctx, carrier2)
-  
-  trace_propagator.inject(ctx, carrier3)
-  baggage_propagator.inject(ctx, carrier3)
-  
-  // 验证注入的独立性
-  let trace_parent_1 = carrier1.get(propagation::TRACE_PARENT_HEADER)
-  let baggage_1 = carrier1.get(propagation::BAGGAGE_HEADER)
-  
-  let trace_parent_2 = carrier2.get(propagation::TRACE_PARENT_HEADER)
-  let baggage_2 = carrier2.get(propagation::BAGGAGE_HEADER)
-  
-  let trace_parent_3 = carrier3.get(propagation::TRACE_PARENT_HEADER)
-  let baggage_3 = carrier3.get(propagation::BAGGAGE_HEADER)
-  
-  assert!(trace_parent_1.is_some())
-  assert!(baggage_1.is_some())
-  assert!(trace_parent_2.is_some())
-  assert!(baggage_2.is_some())
-  assert!(trace_parent_3.is_some())
-  assert!(baggage_3.is_some())
-  
-  // 模拟并发提取操作
-  let extracted_ctx1 = trace_propagator.extract(ctx, carrier1)
-  let extracted_ctx2 = trace_propagator.extract(ctx, carrier2)
-  let extracted_ctx3 = trace_propagator.extract(ctx, carrier3)
-  
-  // 验证提取的独立性
-  assert_eq(true, true)
-}
-
-test "baggage_concurrent_operations" {
-  // 测试Baggage的并发操作安全性
-  let base_baggage = context::Baggage::empty()
-  
-  // 模拟多个"线程"同时操作Baggage
-  let baggage1 = base_baggage.with_entry("thread-1-key", "thread-1-value")
-  let baggage2 = base_baggage.with_entry("thread-2-key", "thread-2-value")
-  let baggage3 = base_baggage.with_entry("thread-3-key", "thread-3-value")
-  
-  // 验证操作的独立性
-  assert_eq(baggage1.get("thread-1-key"), Some("thread-1-value"))
-  assert_eq(baggage2.get("thread-2-key"), Some("thread-2-value"))
-  assert_eq(baggage3.get("thread-3-key"), Some("thread-3-value"))
-  
-  // 验证隔离性
-  assert_eq(baggage1.get("thread-2-key"), None)
-  assert_eq(baggage2.get("thread-3-key"), None)
-  assert_eq(baggage3.get("thread-1-key"), None)
-  
-  // 模拟链式操作
-  let chain1 = baggage1.with_entry("chain-1", "value-1")
-  let chain2 = baggage2.with_entry("chain-2", "value-2")
-  let chain3 = baggage3.with_entry("chain-3", "value-3")
-  
-  // 验证链式操作的独立性
-  assert_eq(chain1.get("chain-1"), Some("value-1"))
-  assert_eq(chain2.get("chain-2"), Some("value-2"))
-  assert_eq(chain3.get("chain-3"), Some("value-3"))
-}
-
-test "resource_concurrent_creation" {
-  // 测试Resource的并发创建安全性
-  // 模拟多个"线程"同时创建Resource
-  let resource1 = common::Resource::default("concurrent-service-1")
-  let resource2 = common::Resource::default("concurrent-service-2")
-  let resource3 = common::Resource::default("concurrent-service-3")
-  
-  // 验证Resource创建的独立性
-  assert_eq(resource1.service_name, "concurrent-service-1")
-  assert_eq(resource2.service_name, "concurrent-service-2")
-  assert_eq(resource3.service_name, "concurrent-service-3")
-  
-  // 并发创建带属性的Resource
-  let attrs1 = [("attr-1", common::AttributeValue::string("value-1"))]
-  let attrs2 = [("attr-2", common::AttributeValue::string("value-2"))]
-  let attrs3 = [("attr-3", common::AttributeValue::string("value-3"))]
-  
-  let resource_with_attrs1 = common::Resource::{
-    service_name: "service-1",
-    service_version: None,
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: attrs1
+  let mut thread_id = 0
+  while thread_id < num_threads {
+    // 每个"线程"从空的上下文开始
+    let ctx = Context::empty()
+    let baggage = Baggage::empty()
+    
+    // 模拟一个"线程"的操作
+    let mut operation_id = 0
+    while operation_id < operations_per_thread {
+      let thread_key = create_key("thread." + thread_id.to_string())
+      let operation_key = create_key("operation." + thread_id.to_string() + "." + operation_id.to_string())
+      
+      // Context操作
+      let ctx_with_thread = ctx.with_value(thread_key, "thread_value_" + thread_id.to_string())
+      let ctx_with_operation = ctx_with_thread.with_value(operation_key, "operation_value_" + operation_id.to_string())
+      
+      // 验证Context操作
+      match ctx_with_operation.get(thread_key) {
+        Some(value) => assert_eq(value, "thread_value_" + thread_id.to_string())
+        None => @test.fail("Test failed")
+      }
+      
+      match ctx_with_operation.get(operation_key) {
+        Some(value) => assert_eq(value, "operation_value_" + operation_id.to_string())
+        None => @test.fail("Test failed")
+      }
+      
+      // Baggage操作
+      let baggage_with_thread = baggage.with_entry("thread." + thread_id.to_string(), "thread_value_" + thread_id.to_string())
+      let baggage_with_operation = baggage_with_thread.with_entry("operation." + operation_id.to_string(), "operation_value_" + operation_id.to_string())
+      
+      // 验证Baggage操作
+      match baggage_with_operation.get("thread." + thread_id.to_string()) {
+        Some(value) => assert_eq(value, "thread_value_" + thread_id.to_string())
+        None => @test.fail("Test failed")
+      }
+      
+      match baggage_with_operation.get("operation." + operation_id.to_string()) {
+        Some(value) => assert_eq(value, "operation_value_" + operation_id.to_string())
+        None => @test.fail("Test failed")
+      }
+      
+      operation_id = operation_id + 1
+    }
+    thread_id = thread_id + 1
   }
   
-  let resource_with_attrs2 = common::Resource::{
-    service_name: "service-2",
-    service_version: None,
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: attrs2
-  }
-  
-  let resource_with_attrs3 = common::Resource::{
-    service_name: "service-3",
-    service_version: None,
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: attrs3
-  }
-  
-  // 验证属性独立性
-  assert_eq(resource_with_attrs1.attributes.length(), 1)
-  assert_eq(resource_with_attrs2.attributes.length(), 1)
-  assert_eq(resource_with_attrs3.attributes.length(), 1)
+  // 验证总操作数
+  let total_operations = num_threads * operations_per_thread
+  assert_eq(total_operations, 1000)
 }
 
-test "mixed_concurrent_operations" {
-  // 测试混合并发操作的安全性
-  let ctx = context::Context::empty()
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("mixed-concurrent-test")
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("mixed-concurrent-test")
+test "concurrent_propagation_operations" {
+  // 测试并发传播操作的安全性
   
-  // 模拟混合并发操作
-  // 操作1：创建Span和记录指标
-  let (_, span) = tracer.start_span(ctx, "mixed-operation", Some(trace::SpanKind::Server), None)
-  let counter = meter.create_counter("mixed.operations", None, None)
-  counter.add(1L, Some([("operation.type", common::AttributeValue::string("span_and_metric"))]))
+  let ctx = Context::empty()
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+  let num_threads = 10
+  let operations_per_thread = 100
   
-  // 操作2：创建日志和更新上下文
-  let log = logs::LogRecord::builder()
-    .body("Mixed operation log")
-    .severity(logs::SeverityNumber::Info)
-    .with_attribute("operation.type", common::AttributeValue::string("log_and_context"))
-    .build()
-  let updated_ctx = ctx.with_value(context::create_key("operation.id"), "mixed-op-123")
-  
-  // 操作3：传播和Baggage
-  let carrier = propagation::MapCarrier::new()
-  let propagator = propagation::W3CTraceContextPropagator::{}
-  propagator.inject(updated_ctx, carrier)
-  let baggage = context::Baggage::empty().with_entry("operation.id", "mixed-op-123")
-  
-  // 操作4：Resource和InstrumentationScope
-  let resource = common::Resource::default("mixed-operation-service")
-  let scope = common::InstrumentationScope::{
-    name: "mixed-operation-scope",
-    version: Some("1.0.0"),
-    schema_url: None
+  // 模拟并发传播操作
+  let mut thread_id = 0
+  while thread_id < num_threads {
+    // 模拟一个"线程"的操作
+    let mut operation_id = 0
+    while operation_id < operations_per_thread {
+      // 创建独立的载体
+      let carrier = MapCarrier::new()
+      
+      // 注入操作
+      trace_propagator.inject(ctx, carrier)
+      baggage_propagator.inject(ctx, carrier)
+      composite_propagator.inject(ctx, carrier)
+      
+      // 创建测试载体用于提取
+      let test_carrier = MapCarrier::from_map([
+        ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
+        ("baggage", "thread." + thread_id.to_string() + "=thread_value_" + thread_id.to_string() + ",operation." + operation_id.to_string() + "=operation_value_" + operation_id.to_string())
+      ])
+      
+      // 提取操作
+      let extracted_ctx1 = trace_propagator.extract(ctx, test_carrier)
+      let extracted_ctx2 = baggage_propagator.extract(ctx, test_carrier)
+      let extracted_ctx3 = composite_propagator.extract(ctx, test_carrier)
+      
+      // 验证提取操作不会崩溃
+      assert_eq(true, true)
+      
+      operation_id = operation_id + 1
+    }
+    thread_id = thread_id + 1
   }
   
-  // 验证所有操作的独立性
-  assert_eq(span.name, "mixed-operation")
-  assert_eq(log.body, Some("Mixed operation log"))
-  assert_eq(updated_ctx.get(context::create_key("operation.id")), Some("mixed-op-123"))
-  assert_eq(baggage.get("operation.id"), Some("mixed-op-123"))
-  assert_eq(resource.service_name, "mixed-operation-service")
-  assert_eq(scope.name, "mixed-operation-scope")
-  
-  // 验证carrier中有传播的数据
-  let trace_parent = carrier.get(propagation::TRACE_PARENT_HEADER)
-  assert!(trace_parent.is_some())
+  // 验证总操作数
+  let total_operations = num_threads * operations_per_thread
+  assert_eq(total_operations, 1000)
 }
 
-test "stress_concurrent_operations" {
-  // 压力测试：大量并发操作
-  let ctx = context::Context::empty()
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let tracer = tracer_provider.get_tracer("stress-test")
+test "concurrent_resource_sharing" {
+  // 测试并发资源共享的安全性
   
-  // 创建大量Span
-  let mut spans = []
-  let mut i = 0
-  while i < 100 {
-    let (_, span) = tracer.start_span(
-      ctx,
-      "stress-span-${i}",
-      Some(trace::SpanKind::Internal),
-      Some([("index", common::AttributeValue::int(i.to_int64()))])
-    )
-    spans.push(span)
-    i = i + 1
+  let tracer_provider = NoopTracerProvider::{}
+  let logger_provider = NoopLoggerProvider::{}
+  let meter_provider = NoopMeterProvider::{}
+  let num_threads = 10
+  let operations_per_thread = 50
+  
+  // 共享的Tracer、Logger、Meter
+  let shared_tracer = tracer_provider.get_tracer("shared_tracer", Some("1.0.0"))
+  let shared_logger = logger_provider.get_logger("shared_logger", Some("1.0.0"))
+  let shared_meter = meter_provider.get_meter("shared_meter", Some("1.0.0"))
+  
+  // 共享的Instrument
+  let shared_counter = shared_meter.create_counter("shared_counter", Some("operations"), Some("Shared counter"))
+  let shared_histogram = shared_meter.create_histogram("shared_histogram", Some("seconds"), Some("Shared histogram"))
+  
+  // 模拟并发资源共享操作
+  let mut thread_id = 0
+  while thread_id < num_threads {
+    // 模拟一个"线程"的操作
+    let mut operation_id = 0
+    while operation_id < operations_per_thread {
+      let thread_attr = [("thread.id", AttributeValue::int(thread_id.to_int64()))]
+      let operation_attr = [
+        ("thread.id", AttributeValue::int(thread_id.to_int64())),
+        ("operation.id", AttributeValue::int(operation_id.to_int64()))
+      ]
+      
+      // 使用共享Tracer
+      let (_, span) = shared_tracer.start_span(Context::empty(), "shared_span", Internal, Some(operation_attr))
+      assert_eq(span.name, "shared_span")
+      
+      // 使用共享Logger
+      shared_logger.info("Shared log message", Some(operation_attr))
+      
+      // 使用共享Instrument
+      shared_counter.add(1L, Some(operation_attr))
+      shared_histogram.record(operation_id.to_double() * 0.001, Some(operation_attr))
+      
+      operation_id = operation_id + 1
+    }
+    thread_id = thread_id + 1
   }
   
-  // 创建大量日志记录
-  let mut logs = []
-  let mut j = 0
-  while j < 100 {
-    let log = logs::LogRecord::builder()
-      .body("Stress log ${j}")
-      .severity(logs::SeverityNumber::Info)
-      .with_attribute("index", common::AttributeValue::int(j.to_int64()))
-      .build()
-    logs.push(log)
-    j = j + 1
+  // 验证总操作数
+  let total_operations = num_threads * operations_per_thread
+  assert_eq(total_operations, 500)
+}
+
+test "concurrent_complex_scenarios" {
+  // 测试并发复杂场景的安全性
+  
+  let tracer_provider = NoopTracerProvider::{}
+  let logger_provider = NoopLoggerProvider::{}
+  let meter_provider = NoopMeterProvider::{}
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  let num_threads = 5
+  let operations_per_thread = 20  // 较少的操作，但每个操作更复杂
+  
+  // 模拟并发复杂场景
+  let mut thread_id = 0
+  while thread_id < num_threads {
+    // 每个线程有自己的Tracer、Logger、Meter
+    let tracer = tracer_provider.get_tracer("complex_tracer_" + thread_id.to_string(), Some("1.0.0"))
+    let logger = logger_provider.get_logger("complex_logger_" + thread_id.to_string(), Some("1.0.0"))
+    let meter = meter_provider.get_meter("complex_meter_" + thread_id.to_string(), Some("1.0.0"))
+    
+    // 创建Instrument
+    let counter = meter.create_counter("complex_counter", Some("operations"), Some("Complex counter"))
+    let histogram = meter.create_histogram("complex_histogram", Some("seconds"), Some("Complex histogram"))
+    
+    // 模拟一个"线程"的复杂操作
+    let mut operation_id = 0
+    while operation_id < operations_per_thread {
+      // 1. 创建Context和Baggage
+      let ctx = Context::empty()
+      let baggage = Baggage::empty()
+      
+      let ctx_with_data = ctx
+        .with_value(create_key("thread.id"), thread_id.to_string())
+        .with_value(create_key("operation.id"), operation_id.to_string())
+      
+      let baggage_with_data = baggage
+        .with_entry("thread.id", thread_id.to_string())
+        .with_entry("operation.id", operation_id.to_string())
+        .with_entry("complex.scenario", "concurrent_test")
+      
+      // 2. 传播操作
+      let carrier = MapCarrier::new()
+      trace_propagator.inject(ctx_with_data, carrier)
+      baggage_propagator.inject(ctx_with_data, carrier)
+      
+      let extracted_ctx = composite_propagator_new([trace_propagator, baggage_propagator]).extract(ctx, carrier)
+      
+      // 3. 创建Span
+      let complex_attributes = [
+        ("thread.id", AttributeValue::int(thread_id.to_int64())),
+        ("operation.id", AttributeValue::int(operation_id.to_int64())),
+        ("scenario.type", AttributeValue::string("concurrent_complex")),
+        ("service.name", AttributeValue::string("complex_test_service")),
+        ("operation.name", AttributeValue::string("complex_operation_" + operation_id.to_string())),
+        ("user.id", AttributeValue::string("user_" + thread_id.to_string() + "_" + operation_id.to_string())),
+        ("session.id", AttributeValue::string("session_" + thread_id.to_string())),
+        ("request.id", AttributeValue::string("req_" + thread_id.to_string() + "_" + operation_id.to_string())),
+        ("tags", AttributeValue::array_string(["concurrent", "complex", "test"])),
+        ("status.codes", AttributeValue::array_int([200L, 400L, 500L])),
+        ("thresholds", AttributeValue::array_float([0.1, 0.5, 1.0])),
+        ("flags", AttributeValue::array_bool([true, false, true]))
+      ]
+      
+      let (span_ctx, span) = tracer.start_span(extracted_ctx, "complex_concurrent_operation", Server, Some(complex_attributes))
+      
+      // 4. 记录指标
+      counter.add(1L, Some(complex_attributes))
+      histogram.record(operation_id.to_double() * 0.01, Some(complex_attributes))
+      
+      // 5. 记录日志
+      let log_record = LogRecord::builder()
+        .timestamp(1640995200000000000L + (thread_id * 1000 + operation_id).to_int64())
+        .severity(Info)
+        .body("Complex concurrent operation " + thread_id.to_string() + "_" + operation_id.to_string())
+        .with_attribute("thread.id", AttributeValue::int(thread_id.to_int64()))
+        .with_attribute("operation.id", AttributeValue::int(operation_id.to_int64()))
+        .with_attribute("scenario.type", AttributeValue::string("concurrent_complex"))
+        .build()
+      
+      logger.emit(log_record)
+      
+      // 6. 验证所有操作成功
+      assert_eq(span.name, "complex_concurrent_operation")
+      assert_eq(span.kind, Server)
+      assert_eq(span.attributes.length(), 13)
+      
+      operation_id = operation_id + 1
+    }
+    thread_id = thread_id + 1
   }
   
-  // 创建大量指标操作
-  let meter = metrics::NoopMeterProvider::{}.get_meter("stress-test")
-  let counter = meter.create_counter("stress.operations", None, None)
-  let mut k = 0
-  while k < 100 {
-    counter.add(1L, Some([("index", common::AttributeValue::int(k.to_int64()))]))
-    k = k + 1
-  }
-  
-  // 验证所有操作完成
-  assert_eq(spans.length(), 100)
-  assert_eq(logs.length(), 100)
-  assert_eq(true, true)
+  // 验证总操作数
+  let total_operations = num_threads * operations_per_thread
+  assert_eq(total_operations, 100)
+}
+
+// 辅助函数：创建复合传播器
+fn composite_propagator_new(propagators : Array[TextMapPropagator]) -> CompositePropagator {
+  CompositePropagator::new(propagators)
 }

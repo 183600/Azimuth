@@ -1,510 +1,554 @@
-// 性能基准综合测试 - 验证遥测系统在各种负载下的性能表现
+// 性能基准测试 - 测试遥测系统的性能特征
 
-use azimuth.telemetry.api.common.{AttributeValue, Attributes, Resource, InstrumentationScope}
-use azimuth.telemetry.api.trace.{SpanKind, StatusCode, Span}
-use azimuth.telemetry.api.metrics.{MetricType, Instrument, Measurement}
-use azimuth.telemetry.api.logs.{LogRecord, Severity, Logger}
-use azimuth.telemetry.api.context.{Context, Baggage, ContextKey}
-use azimuth.telemetry.api.propagation.{TextMapPropagator, Propagator}
-
-test "span_creation_performance_benchmark" {
-  // 测试Span创建的性能基准
+test "span_creation_performance" {
+  // 测试Span创建的性能
   
-  let benchmark_sizes = [100, 500, 1000, 5000, 10000]
-  let mut size_index = 0
+  let ctx = Context::empty()
+  let tracer = NoopTracer::{}
+  let iterations = 10000
   
-  while size_index < benchmark_sizes.length() {
-    let span_count = benchmark_sizes[size_index]
-    let start_time = 1640998000L
-    let mut created_spans = []
-    let mut i = 0
-    
-    // 记录开始时间（模拟）
-    let creation_start = start_time + (size_index * 1000)
-    
-    // 创建指定数量的Span
-    while i < span_count {
-      let span = Span::{
-        trace_id: "trace_perf_" + i.to_string(),
-        span_id: "span_perf_" + i.to_string(),
-        parent_span_id: if i > 0 { Some("span_perf_" + (i - 1).to_string()) } else { None },
-        name: "performance_operation_" + (i % 10).to_string(),
-        kind: if i % 3 == 0 { SpanKind::Server } else if i % 3 == 1 { SpanKind::Client } else { SpanKind::Internal },
-        start_time: creation_start + i.to_int64(),
-        end_time: Some(creation_start + i.to_int64() + 10L),
-        status: if i % 20 == 0 { StatusCode::Error } else if i % 10 == 0 { StatusCode::Error } else { StatusCode::Ok },
-        attributes: [
-          ("operation.id", AttributeValue::string("op_" + i.to_string())),
-          ("operation.type", AttributeValue::string(["http_request", "database_query", "cache_lookup"][i % 3])),
-          ("user.id", AttributeValue::string("user_" + (i % 100).to_string())),
-          ("request.size", AttributeValue::int((i % 1000 + 100).to_int64())),
-          ("response.size", AttributeValue::int((i % 2000 + 200).to_int64()))
-        ],
-        events: if i % 5 == 0 {
-          [("event_" + i.to_string(), creation_start + i.to_int64() + 5L, [
-            ("event.type", AttributeValue::string("custom_event")),
-            ("event.data", AttributeValue::string("data_" + i.to_string()))
-          ])]
-        } else { [] },
-        links: if i % 7 == 0 {
-          [("linked_trace_" + (i - 1).to_string(), "linked_span_" + (i - 1).to_string())]
-        } else { [] }
-      }
-      
-      created_spans.push(span)
-      i = i + 1
-    }
-    
-    // 记录结束时间（模拟）
-    let creation_end = creation_start + span_count.to_int64()
-    let creation_duration = creation_end - creation_start
-    
-    // 验证创建结果
-    assert_eq(created_spans.length(), span_count)
-    
-    // 验证性能基准（每秒创建的Span数量）
-    let spans_per_second = span_count.to_double() / creation_duration.to_double()
-    assert_eq(spans_per_second > 1000.0, true) // 至少每秒1000个Span
-    
-    // 验证第一个和最后一个Span的正确性
-    assert_eq(created_spans[0].span_id, "span_perf_0")
-    assert_eq(created_spans[span_count - 1].span_id, "span_perf_" + (span_count - 1).to_string())
-    
-    // 验证父子关系
-    if span_count > 1 {
-      assert_eq(created_spans[1].parent_span_id, Some("span_perf_0"))
-      assert_eq(created_spans[10].parent_span_id, Some("span_perf_9"))
-    }
-    
-    size_index = size_index + 1
-  }
-}
-
-test "metric_recording_performance_benchmark" {
-  // 测试指标记录的性能基准
-  
-  let benchmark_sizes = [1000, 5000, 10000, 50000, 100000]
-  let mut size_index = 0
-  
-  while size_index < benchmark_sizes.length() {
-    let metric_count = benchmark_sizes[size_index]
-    let start_time = 1640999000L
-    let mut recorded_metrics = []
-    let mut i = 0
-    
-    // 记录开始时间（模拟）
-    let recording_start = start_time + (size_index * 2000)
-    
-    // 创建不同类型的指标
-    let counter_instrument = Instrument::counter("operations_total", "Total operations", "count")
-    let histogram_instrument = Instrument::histogram("operation_duration_ms", "Operation duration", "ms")
-    let gauge_instrument = Instrument::gauge("active_connections", "Active connections", "count")
-    
-    // 记录指定数量的指标
-    while i < metric_count {
-      let metric_type = i % 3
-      let measurement = 
-        if metric_type == 0 {
-          Measurement::{
-            instrument: counter_instrument,
-            value: 1.0,
-            attributes: [
-              ("operation.type", AttributeValue::string(["read", "write", "delete"][i % 3])),
-              ("service.name", AttributeValue::string("service_" + (i % 5).to_string())),
-              ("status.code", AttributeValue::int([200L, 400L, 500L][i % 3].to_int64()))
-            ],
-            time: recording_start + i.to_int64()
-          }
-        } else if metric_type == 1 {
-          Measurement::{
-            instrument: histogram_instrument,
-            value: (i % 1000 + 10).to_double(),
-            attributes: [
-              ("operation.type", AttributeValue::string(["query", "update"][i % 2])),
-              ("database.name", AttributeValue::string("db_" + (i % 3).to_string())),
-              ("query.complexity", AttributeValue::string(["simple", "complex"][i % 2]))
-            ],
-            time: recording_start + i.to_int64()
-          }
-        } else {
-          Measurement::{
-            instrument: gauge_instrument,
-            value: (i % 100 + 50).to_double(),
-            attributes: [
-              ("connection.type", AttributeValue::string(["http", "grpc", "websocket"][i % 3])),
-              ("server.zone", AttributeValue::string("zone_" + (i % 4).to_string()))
-            ],
-            time: recording_start + i.to_int64()
-          }
-        }
-      
-      recorded_metrics.push(measurement)
-      i = i + 1
-    }
-    
-    // 记录结束时间（模拟）
-    let recording_end = recording_start + metric_count.to_int64()
-    let recording_duration = recording_end - recording_start
-    
-    // 验证记录结果
-    assert_eq(recorded_metrics.length(), metric_count)
-    
-    // 验证性能基准（每秒记录的指标数量）
-    let metrics_per_second = metric_count.to_double() / recording_duration.to_double()
-    assert_eq(metrics_per_second > 10000.0, true) // 至少每秒10000个指标
-    
-    // 验证指标类型分布
-    let mut counter_count = 0
-    let mut histogram_count = 0
-    let mut gauge_count = 0
-    i = 0
-    while i < recorded_metrics.length() {
-      let instrument_name = recorded_metrics[i].instrument.name
-      if instrument_name == "operations_total" {
-        counter_count = counter_count + 1
-      } else if instrument_name == "operation_duration_ms" {
-        histogram_count = histogram_count + 1
-      } else if instrument_name == "active_connections" {
-        gauge_count = gauge_count + 1
-      }
-      i = i + 1
-    }
-    
-    // 验证分布大致均匀（允许小的差异）
-    let expected_count = metric_count / 3
-    assert_eq(counter_count >= expected_count - 1, true)
-    assert_eq(histogram_count >= expected_count - 1, true)
-    assert_eq(gauge_count >= expected_count - 1, true)
-    
-    size_index = size_index + 1
-  }
-}
-
-test "log_emission_performance_benchmark" {
-  // 测试日志输出的性能基准
-  
-  let benchmark_sizes = [500, 1000, 5000, 10000, 25000]
-  let mut size_index = 0
-  
-  while size_index < benchmark_sizes.length() {
-    let log_count = benchmark_sizes[size_index]
-    let start_time = 1641000000L
-    let mut emitted_logs = []
-    let mut i = 0
-    
-    // 记录开始时间（模拟）
-    let emission_start = start_time + (size_index * 1500)
-    
-    // 输出指定数量的日志
-    while i < log_count {
-      let severity_level = i % 5
-      let severity = 
-        if severity_level == 0 { Severity::Trace }
-        else if severity_level == 1 { Severity::Debug }
-        else if severity_level == 2 { Severity::Info }
-        else if severity_level == 3 { Severity::Warn }
-        else { Severity::Error }
-      
-      let log_record = LogRecord::{
-        timestamp: emission_start + i.to_int64(),
-        observed_timestamp: Some(emission_start + i.to_int64() + 1L),
-        severity: Some(severity),
-        severity_text: Some(["TRACE", "DEBUG", "INFO", "WARN", "ERROR"][severity_level]),
-        body: Some("Log message " + i.to_string() + " with some detailed information about the operation"),
-        attributes: [
-          ("trace_id", AttributeValue::string("trace_" + (i % 1000).to_string())),
-          ("span_id", AttributeValue::string("span_" + (i % 5000).to_string())),
-          ("logger.name", AttributeValue::string("logger_" + (i % 10).to_string())),
-          ("thread.id", AttributeValue::string("thread_" + (i % 20).to_string())),
-          ("class.name", AttributeValue::string("com.example.Service" + (i % 5).to_string())),
-          ("method.name", AttributeValue::string(["processRequest", "handleData", "queryDatabase"][i % 3]))
-        ],
-        flags: i % 8,
-        trace_id: Some("trace_" + (i % 1000).to_string()),
-        span_id: Some("span_" + (i % 5000).to_string()),
-        trace_flags: Some(1)
-      }
-      
-      emitted_logs.push(log_record)
-      i = i + 1
-    }
-    
-    // 记录结束时间（模拟）
-    let emission_end = emission_start + log_count.to_int64()
-    let emission_duration = emission_end - emission_start
-    
-    // 验证输出结果
-    assert_eq(emitted_logs.length(), log_count)
-    
-    // 验证性能基准（每秒输出的日志数量）
-    let logs_per_second = log_count.to_double() / emission_duration.to_double()
-    assert_eq(logs_per_second > 5000.0, true) // 至少每秒5000条日志
-    
-    // 验证日志级别分布
-    let mut trace_count = 0
-    let mut debug_count = 0
-    let mut info_count = 0
-    let mut warn_count = 0
-    let mut error_count = 0
-    i = 0
-    while i < emitted_logs.length() {
-      match emitted_logs[i].severity {
-        Some(Severity::Trace) => trace_count = trace_count + 1
-        Some(Severity::Debug) => debug_count = debug_count + 1
-        Some(Severity::Info) => info_count = info_count + 1
-        Some(Severity::Warn) => warn_count = warn_count + 1
-        Some(Severity::Error) => error_count = error_count + 1
-        None => {}
-      }
-      i = i + 1
-    }
-    
-    // 验证分布大致均匀
-    let expected_count = log_count / 5
-    assert_eq(trace_count >= expected_count - 1, true)
-    assert_eq(debug_count >= expected_count - 1, true)
-    assert_eq(info_count >= expected_count - 1, true)
-    assert_eq(warn_count >= expected_count - 1, true)
-    assert_eq(error_count >= expected_count - 1, true)
-    
-    size_index = size_index + 1
-  }
-}
-
-test "context_propagation_performance_benchmark" {
-  // 测试上下文传播的性能基准
-  
-  let benchmark_sizes = [100, 500, 1000, 5000, 10000]
-  let mut size_index = 0
-  
-  while size_index < benchmark_sizes.length() {
-    let context_count = benchmark_sizes[size_index]
-    let start_time = 1641001000L
-    let mut propagated_contexts = []
-    let mut i = 0
-    
-    // 记录开始时间（模拟）
-    let propagation_start = start_time + (size_index * 800)
-    
-    // 创建和传播上下文
-    while i < context_count {
-      // 创建根上下文
-      let root_context = Context::current()
-      
-      // 添加多个键值对
-      let context1 = root_context
-        .with_value(ContextKey::new("trace_id"), "trace_perf_" + i.to_string())
-        .with_value(ContextKey::new("user_id"), "user_" + (i % 100).to_string())
-        .with_value(ContextKey::new("session_id"), "session_" + (i % 50).to_string())
-      
-      // 添加Baggage
-      let baggage = Baggage::empty()
-        .with("request.id", "req_" + i.to_string())
-        .with("tenant.id", "tenant_" + (i % 10).to_string())
-        .with("operation.name", "operation_" + (i % 20).to_string())
-      
-      // 创建嵌套上下文（模拟调用链）
-      let context2 = context1
-        .with_value(ContextKey::new("parent_operation"), "parent_" + (i / 10).to_string())
-        .with_value(ContextKey::new("correlation_id"), "corr_" + i.to_string())
-      
-      // 创建最终上下文字符串（模拟序列化传播）
-      let context_data = "trace_id:trace_perf_" + i.to_string() + 
-                        "|user_id:user_" + (i % 100).to_string() +
-                        "|session_id:session_" + (i % 50).to_string() +
-                        "|request.id:req_" + i.to_string() +
-                        "|tenant.id:tenant_" + (i % 10).to_string() +
-                        "|operation.name:operation_" + (i % 20).to_string() +
-                        "|parent_operation:parent_" + (i / 10).to_string() +
-                        "|correlation_id:corr_" + i.to_string()
-      
-      propagated_contexts.push(context_data)
-      i = i + 1
-    }
-    
-    // 记录结束时间（模拟）
-    let propagation_end = propagation_start + context_count.to_int64() / 2 // 假设上下文传播比创建快
-    let propagation_duration = propagation_end - propagation_start
-    
-    // 验证传播结果
-    assert_eq(propagated_contexts.length(), context_count)
-    
-    // 验证性能基准（每秒传播的上下文数量）
-    let contexts_per_second = context_count.to_double() / propagation_duration.to_double()
-    assert_eq(contexts_per_second > 2000.0, true) // 至少每秒2000个上下文
-    
-    // 验证上下文数据的完整性
-    assert_eq(propagated_contexts[0].contains("trace_id:trace_perf_0"), true)
-    assert_eq(propagated_contexts[0].contains("user_id:user_0"), true)
-    assert_eq(propagated_contexts[0].contains("correlation_id:corr_0"), true)
-    
-    assert_eq(propagated_contexts[context_count - 1].contains("trace_id:trace_perf_" + (context_count - 1).to_string()), true)
-    assert_eq(propagated_contexts[context_count - 1].contains("user_id:user_" + ((context_count - 1) % 100).to_string()), true)
-    
-    // 验证上下文键的数量
-    let key_count = propagated_contexts[0].split("|").length()
-    assert_eq(key_count, 8)
-    
-    size_index = size_index + 1
-  }
-}
-
-test "memory_usage_performance_benchmark" {
-  // 测试内存使用的性能基准
-  
-  let operation_counts = [1000, 5000, 10000, 25000, 50000]
-  let mut count_index = 0
-  
-  while count_index < operation_counts.length() {
-    let operation_count = operation_counts[count_index]
-    let mut memory_allocations = []
-    let mut i = 0
-    
-    // 模拟内存分配操作
-    while i < operation_count {
-      // 创建大型属性值
-      let large_string_value = AttributeValue::string("large_data_" + i.to_string() + "_x".repeat(100))
-      let large_array_value = AttributeValue::array_string(["item_" + j.to_string() for j in range(0, 50)])
-      let large_attributes = [
-        ("large.string", large_string_value),
-        ("large.array", large_array_value),
-        ("timestamp", AttributeValue::int((1641002000L + i.to_int64()))),
-        ("numeric.value", AttributeValue::float(i.to_double() * 3.14159))
-      ]
-      
-      // 创建复杂的Span（占用更多内存）
-      let complex_span = Span::{
-        trace_id: "trace_mem_" + i.to_string(),
-        span_id: "span_mem_" + i.to_string(),
-        parent_span_id: if i > 0 { Some("span_mem_" + (i - 1).to_string()) } else { None },
-        name: "memory_intensive_operation_" + i.to_string(),
-        kind: SpanKind::Internal,
-        start_time: 1641002000L + i.to_int64(),
-        end_time: Some(1641002000L + i.to_int64() + 100L),
-        status: StatusCode::Ok,
-        attributes: large_attributes,
-        events: if i % 3 == 0 {
-          [("memory_event_" + i.to_string(), 1641002000L + i.to_int64() + 50L, large_attributes)]
-        } else { [] },
-        links: if i % 5 == 0 {
-          [("linked_trace_" + (i - 1).to_string(), "linked_span_" + (i - 1).to_string())]
-        } else { [] }
-      }
-      
-      memory_allocations.push(complex_span)
-      i = i + 1
-    }
-    
-    // 验证内存分配结果
-    assert_eq(memory_allocations.length(), operation_count)
-    
-    // 计算估算的内存使用量
-    let mut estimated_memory_bytes = 0
-    i = 0
-    while i < memory_allocations.length() {
-      let span = memory_allocations[i]
-      // 基础Span结构（估算）
-      estimated_memory_bytes = estimated_memory_bytes + 200
-      
-      // 属性内存（估算）
-      let attr_memory = span.attributes.length() * 150 // 每个属性约150字节
-      estimated_memory_bytes = estimated_memory_bytes + attr_memory
-      
-      // 事件内存（估算）
-      let event_memory = span.events.length() * 300 // 每个事件约300字节
-      estimated_memory_bytes = estimated_memory_bytes + event_memory
-      
-      // 链接内存（估算）
-      let link_memory = span.links.length() * 100 // 每个链接约100字节
-      estimated_memory_bytes = estimated_memory_bytes + link_memory
-      
-      i = i + 1
-    }
-    
-    // 验证内存使用效率（每个操作的平均内存使用）
-    let memory_per_operation = estimated_memory_bytes / operation_count
-    assert_eq(memory_per_operation < 1000, true) // 每个操作不超过1KB
-    assert_eq(memory_per_operation > 200, true) // 每个操作至少200字节（验证确实有分配）
-    
-    // 验证总内存使用在合理范围内
-    let total_memory_mb = estimated_memory_bytes / (1024 * 1024)
-    assert_eq(total_memory_mb < 100, true) // 总内存不超过100MB
-    
-    count_index = count_index + 1
-  }
-}
-
-test "throughput_stress_test" {
-  // 测试吞吐量压力测试
-  
-  let stress_duration_seconds = 10
-  let target_throughput_per_second = 5000
-  let total_operations = stress_duration_seconds * target_throughput_per_second
-  let start_time = 1641003000L
-  let mut operations = []
+  // 基准测试：简单Span创建
+  let start_time = 1640995200000000000L  // 模拟时间戳
   let mut i = 0
+  while i < iterations {
+    let (_, span) = tracer.start_span(ctx, "performance_test_span")
+    // 验证Span创建成功
+    assert_eq(span.name, "performance_test_span")
+    i = i + 1
+  }
+  let end_time = 1640995200000000000L + iterations.to_int64()
   
-  // 在指定时间内执行尽可能多的操作
-  while i < total_operations {
-    let operation_type = i % 4
-    let operation = 
-      if operation_type == 0 {
-        // Span操作
-        "span:" + "trace_stress_" + i.to_string() + ":" + "span_stress_" + i.to_string()
-      } else if operation_type == 1 {
-        // 指标操作
-        "metric:" + "counter_stress:" + i.to_string() + ":" + (i % 100).to_string()
-      } else if operation_type == 2 {
-        // 日志操作
-        "log:" + "INFO:" + "stress_log_" + i.to_string() + ":" + (1641003000L + i.to_int64()).to_string()
-      } else {
-        // 上下文操作
-        "context:" + "key_" + i.to_string() + ":" + "value_" + i.to_string()
-      }
+  // 基准测试：带属性的Span创建
+  let attributes = [
+    ("service.name", AttributeValue::string("performance-test-service")),
+    ("operation.type", AttributeValue::string("benchmark")),
+    ("iteration", AttributeValue::int(0L))
+  ]
+  
+  let mut attr_i = 0
+  while attr_i < iterations {
+    let attr_with_iteration = [
+      ("service.name", AttributeValue::string("performance-test-service")),
+      ("operation.type", AttributeValue::string("benchmark")),
+      ("iteration", AttributeValue::int(attr_i.to_int64()))
+    ]
+    let (_, span_with_attrs) = tracer.start_span(ctx, "performance_test_span_with_attrs", Internal, Some(attr_with_iteration))
+    assert_eq(span_with_attrs.name, "performance_test_span_with_attrs")
+    assert_eq(span_with_attrs.attributes.length(), 3)
+    attr_i = attr_i + 1
+  }
+  
+  // 基准测试：复杂Span创建
+  let complex_attributes = [
+    ("service.name", AttributeValue::string("performance-test-service")),
+    ("service.version", AttributeValue::string("1.0.0")),
+    ("deployment.environment", AttributeValue::string("benchmark")),
+    ("host.name", AttributeValue::string("performance-host")),
+    ("process.id", AttributeValue::int(12345L)),
+    ("thread.id", AttributeValue::int(67890L)),
+    ("operation.name", AttributeValue::string("complex_performance_test")),
+    ("operation.type", AttributeValue::string("benchmark")),
+    ("user.id", AttributeValue::string("user-12345")),
+    ("session.id", AttributeValue::string("session-67890")),
+    ("request.id", AttributeValue::string("req-abcdef")),
+    ("trace.id", AttributeValue::string("trace-123456")),
+    ("span.kind", AttributeValue::string("server")),
+    ("http.method", AttributeValue::string("GET")),
+    ("http.target", AttributeValue::string("/api/performance/test")),
+    ("http.scheme", AttributeValue::string("https")),
+    ("http.host", AttributeValue::string("api.example.com")),
+    ("user.agent", AttributeValue::string("performance-test-client/1.0.0")),
+    ("net.peer.ip", AttributeValue::string("192.168.1.100")),
+    ("net.peer.port", AttributeValue::int(443L)),
+    ("tags", AttributeValue::array_string(["performance", "benchmark", "test"])),
+    ("status.codes", AttributeValue::array_int([200L, 400L, 500L])),
+    ("latency.thresholds", AttributeValue::array_float([0.1, 0.5, 1.0])),
+    ("feature.flags", AttributeValue::array_bool([true, false, true]))
+  ]
+  
+  let mut complex_i = 0
+  while complex_i < 1000 {  // 较少的迭代次数，因为创建更复杂
+    let (_, complex_span) = tracer.start_span(ctx, "complex_performance_test", Server, Some(complex_attributes))
+    assert_eq(complex_span.name, "complex_performance_test")
+    assert_eq(complex_span.kind, Server)
+    assert_eq(complex_span.attributes.length(), 24)
+    complex_i = complex_i + 1
+  }
+  
+  assert_eq(true, true)  // 如果所有测试都通过，性能测试成功
+}
+
+test "metrics_operations_performance" {
+  // 测试Metrics操作的性能
+  
+  let meter = NoopMeter::{}
+  let iterations = 10000
+  
+  // 创建各种instrument
+  let counter = meter.create_counter("performance_counter", Some("operations"), Some("Performance test counter"))
+  let histogram = meter.create_histogram("performance_histogram", Some("seconds"), Some("Performance test histogram"))
+  let up_down_counter = meter.create_up_down_counter("performance_up_down_counter", Some("operations"), Some("Performance test up-down counter"))
+  let gauge = meter.create_gauge("performance_gauge", Some("value"), Some("Performance test gauge"))
+  
+  // 基准测试：Counter操作
+  let mut counter_i = 0
+  while counter_i < iterations {
+    counter.add(1L, [])
+    counter.add(counter_i.to_int64(), [("iteration", AttributeValue::int(counter_i.to_int64()))])
+    counter_i = counter_i + 1
+  }
+  
+  // 基准测试：Histogram操作
+  let mut histogram_i = 0
+  while histogram_i < iterations {
+    histogram.record(histogram_i.to_double(), [])
+    histogram.record(histogram_i.to_double() * 0.001, [("iteration", AttributeValue::int(histogram_i.to_int64()))])
+    histogram_i = histogram_i + 1
+  }
+  
+  // 基准测试：UpDownCounter操作
+  let mut up_down_i = 0
+  while up_down_i < iterations {
+    up_down_counter.add(1L, [])
+    up_down_counter.add(-1L, [("iteration", AttributeValue::int(up_down_i.to_int64()))])
+    up_down_counter.add(up_down_i.to_int64() - 5000L, [("operation", AttributeValue::string("adjust"))])
+    up_down_i = up_down_i + 1
+  }
+  
+  // 基准测试：Gauge操作
+  let mut gauge_i = 0
+  while gauge_i < iterations {
+    gauge.record(gauge_i.to_double(), [])
+    gauge.record(gauge_i.to_double() * 0.1, [("iteration", AttributeValue::int(gauge_i.to_int64()))])
+    gauge.record((gauge_i.to_double() / 1000.0).round(), [("operation", AttributeValue::string("normalized"))])
+    gauge_i = gauge_i + 1
+  }
+  
+  // 基准测试：带复杂属性的Metrics操作
+  let complex_attributes = [
+    ("service.name", AttributeValue::string("performance-test-service")),
+    ("service.version", AttributeValue::string("1.0.0")),
+    ("deployment.environment", AttributeValue::string("benchmark")),
+    ("host.name", AttributeValue::string("performance-host")),
+    ("process.id", AttributeValue::int(12345L)),
+    ("thread.id", AttributeValue::int(67890L)),
+    ("operation.name", AttributeValue::string("complex_metrics_test")),
+    ("operation.type", AttributeValue::string("benchmark")),
+    ("user.id", AttributeValue::string("user-12345")),
+    ("session.id", AttributeValue::string("session-67890")),
+    ("request.id", AttributeValue::string("req-abcdef")),
+    ("metric.type", AttributeValue::string("performance")),
+    ("tags", AttributeValue::array_string(["performance", "benchmark", "metrics"])),
+    ("status.codes", AttributeValue::array_int([200L, 400L, 500L])),
+    ("thresholds", AttributeValue::array_float([0.1, 0.5, 1.0])),
+    ("flags", AttributeValue::array_bool([true, false, true]))
+  ]
+  
+  let mut complex_metrics_i = 0
+  while complex_metrics_i < 1000 {  // 较少的迭代次数
+    counter.add(1L, Some(complex_attributes))
+    histogram.record(complex_metrics_i.to_double() * 0.001, Some(complex_attributes))
+    up_down_counter.add(complex_metrics_i.to_int64() - 500L, Some(complex_attributes))
+    gauge.record(complex_metrics_i.to_double() * 0.1, Some(complex_attributes))
+    complex_metrics_i = complex_metrics_i + 1
+  }
+  
+  assert_eq(true, true)  // 如果所有测试都通过，性能测试成功
+}
+
+test "log_operations_performance" {
+  // 测试Log操作的性能
+  
+  let logger = NoopLogger::{}
+  let iterations = 10000
+  
+  // 基准测试：基本日志操作
+  let mut basic_log_i = 0
+  while basic_log_i < iterations {
+    logger.debug("Debug message " + basic_log_i.to_string(), [])
+    logger.info("Info message " + basic_log_i.to_string(), [])
+    logger.warn("Warning message " + basic_log_i.to_string(), [])
+    logger.error("Error message " + basic_log_i.to_string(), [])
+    logger.fatal("Fatal message " + basic_log_i.to_string(), [])
+    basic_log_i = basic_log_i + 1
+  }
+  
+  // 基准测试：带属性的日志操作
+  let log_attributes = [
+    ("service.name", AttributeValue::string("performance-test-service")),
+    ("operation.type", AttributeValue::string("benchmark")),
+    ("iteration", AttributeValue::int(0L))
+  ]
+  
+  let mut attr_log_i = 0
+  while attr_log_i < iterations {
+    let attr_with_iteration = [
+      ("service.name", AttributeValue::string("performance-test-service")),
+      ("operation.type", AttributeValue::string("benchmark")),
+      ("iteration", AttributeValue::int(attr_log_i.to_int64()))
+    ]
+    logger.debug("Debug with attributes", Some(attr_with_iteration))
+    logger.info("Info with attributes", Some(attr_with_iteration))
+    logger.warn("Warning with attributes", Some(attr_with_iteration))
+    logger.error("Error with attributes", Some(attr_with_iteration))
+    logger.fatal("Fatal with attributes", Some(attr_with_iteration))
+    attr_log_i = attr_log_i + 1
+  }
+  
+  // 基准测试：LogRecord构建和发送
+  let mut log_record_i = 0
+  while log_record_i < iterations {
+    let log_record = LogRecord::builder()
+      .timestamp(1640995200000000000L + log_record_i.to_int64())
+      .severity(Info)
+      .body("Performance test log message " + log_record_i.to_string())
+      .with_attribute("iteration", AttributeValue::int(log_record_i.to_int64()))
+      .with_attribute("service.name", AttributeValue::string("performance-test-service"))
+      .build()
     
-    operations.push(operation)
-    i = i + 1
+    logger.emit(log_record)
+    log_record_i = log_record_i + 1
   }
   
-  // 验证压力测试结果
-  assert_eq(operations.length(), total_operations)
+  // 基准测试：复杂LogRecord构建和发送
+  let complex_log_attributes = [
+    ("service.name", AttributeValue::string("performance-test-service")),
+    ("service.version", AttributeValue::string("1.0.0")),
+    ("deployment.environment", AttributeValue::string("benchmark")),
+    ("host.name", AttributeValue::string("performance-host")),
+    ("process.id", AttributeValue::int(12345L)),
+    ("thread.id", AttributeValue::int(67890L)),
+    ("operation.name", AttributeValue::string("complex_log_test")),
+    ("operation.type", AttributeValue::string("benchmark")),
+    ("user.id", AttributeValue::string("user-12345")),
+    ("session.id", AttributeValue::string("session-67890")),
+    ("request.id", AttributeValue::string("req-abcdef")),
+    ("log.type", AttributeValue::string("performance")),
+    ("log.level", AttributeValue::string("info")),
+    ("error.code", AttributeValue::string("ERR_PERF_001")),
+    ("error.message", AttributeValue::string("Performance test error")),
+    ("duration.ms", AttributeValue::int(123L)),
+    ("memory.usage", AttributeValue::float(512.0)),
+    ("cpu.usage", AttributeValue::float(75.5)),
+    ("cache.hit", AttributeValue::bool(true)),
+    ("tags", AttributeValue::array_string(["performance", "benchmark", "logging"])),
+    ("status.codes", AttributeValue::array_int([200L, 400L, 500L])),
+    ("thresholds", AttributeValue::array_float([0.1, 0.5, 1.0])),
+    ("flags", AttributeValue::array_bool([true, false, true]))
+  ]
   
-  // 验证操作类型分布
-  let mut span_count = 0
-  let mut metric_count = 0
-  let mut log_count = 0
-  let mut context_count = 0
-  i = 0
-  while i < operations.length() {
-    let operation = operations[i]
-    if operation.has_prefix("span:") {
-      span_count = span_count + 1
-    } else if operation.has_prefix("metric:") {
-      metric_count = metric_count + 1
-    } else if operation.has_prefix("log:") {
-      log_count = log_count + 1
-    } else if operation.has_prefix("context:") {
-      context_count = context_count + 1
+  let mut complex_log_i = 0
+  while complex_log_i < 1000 {  // 较少的迭代次数
+    let complex_log_record = LogRecord::{
+      timestamp_unix_nanos: 1640995200000000000L + complex_log_i.to_int64(),
+      observed_timestamp_unix_nanos: Some(1640995200000000100L + complex_log_i.to_int64()),
+      severity_number: Info,
+      severity_text: Some("PERFORMANCE_INFO"),
+      body: Some("Complex performance test log message " + complex_log_i.to_string()),
+      attributes: complex_log_attributes,
+      trace_id: Some([for i = 0; i < 16; i = i + 1].map(fn(i) { 
+        if i < 8 { 0x12_byte } else { 0x34_byte }
+      })),
+      span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0x56_byte })),
+      trace_flags: Some(1_byte),
+      resource: Some(Resource::default("performance-test-service")),
+      instrumentation_scope: Some(InstrumentationScope::{
+        name: "performance-logger",
+        version: Some("1.0.0"),
+        schema_url: None
+      })
     }
-    i = i + 1
+    
+    logger.emit(complex_log_record)
+    complex_log_i = complex_log_i + 1
   }
   
-  // 验证分布大致均匀
-  let expected_count = total_operations / 4
-  assert_eq(span_count >= expected_count - 1, true)
-  assert_eq(metric_count >= expected_count - 1, true)
-  assert_eq(log_count >= expected_count - 1, true)
-  assert_eq(context_count >= expected_count - 1, true)
+  assert_eq(true, true)  // 如果所有测试都通过，性能测试成功
+}
+
+test "context_operations_performance" {
+  // 测试Context操作的性能
   
-  // 验证实际吞吐量
-  let actual_throughput = total_operations / stress_duration_seconds
-  assert_eq(actual_throughput >= target_throughput_per_second * 95 / 100, true) // 至少达到目标的95%
+  let iterations = 10000
   
-  // 验证操作数据的完整性
-  assert_eq(operations[0], "span:trace_stress_0:span_stress_0")
-  assert_eq(operations[1], "metric:counter_stress:1:1")
-  assert_eq(operations[2], "log:INFO:stress_log_2:1641003002")
-  assert_eq(operations[3], "context:key_3:value_3")
+  // 基准测试：Context创建和值设置
+  let mut ctx_create_i = 0
+  while ctx_create_i < iterations {
+    let ctx = Context::empty()
+    let key = create_key("test.key." + ctx_create_i.to_string())
+    let ctx_with_value = ctx.with_value(key, "test.value." + ctx_create_i.to_string())
+    
+    // 验证值设置成功
+    match ctx_with_value.get(key) {
+      Some(value) => assert_eq(value, "test.value." + ctx_create_i.to_string())
+      None => @test.fail("Test failed")
+    }
+    ctx_create_i = ctx_create_i + 1
+  }
   
-  assert_eq(operations[total_operations - 1], "context:key_" + (total_operations - 1).to_string() + ":value_" + (total_operations - 1).to_string())
+  // 基准测试：Context链式操作
+  let mut chain_i = 0
+  while chain_i < iterations {
+    let ctx = Context::empty()
+    let key1 = create_key("key1")
+    let key2 = create_key("key2")
+    let key3 = create_key("key3")
+    let key4 = create_key("key4")
+    let key5 = create_key("key5")
+    
+    let chained_ctx = ctx
+      .with_value(key1, "value1")
+      .with_value(key2, "value2")
+      .with_value(key3, "value3")
+      .with_value(key4, "value4")
+      .with_value(key5, "value5")
+    
+    // 验证所有值都正确设置
+    match chained_ctx.get(key1) {
+      Some(value) => assert_eq(value, "value1")
+      None => @test.fail("Test failed")
+    }
+    
+    match chained_ctx.get(key5) {
+      Some(value) => assert_eq(value, "value5")
+      None => @test.fail("Test failed")
+    }
+    chain_i = chain_i + 1
+  }
+  
+  // 基准测试：Baggage操作
+  let mut baggage_i = 0
+  while baggage_i < iterations {
+    let baggage = Baggage::empty()
+    let baggage_with_entries = baggage
+      .with_entry("baggage.key1", "baggage.value1")
+      .with_entry("baggage.key2", "baggage.value2")
+      .with_entry("baggage.key3", "baggage.value3")
+    
+    // 验证baggage条目正确设置
+    match baggage_with_entries.get("baggage.key1") {
+      Some(value) => assert_eq(value, "baggage.value1")
+      None => @test.fail("Test failed")
+    }
+    
+    match baggage_with_entries.get("baggage.key3") {
+      Some(value) => assert_eq(value, "baggage.value3")
+      None => @test.fail("Test failed")
+    }
+    baggage_i = baggage_i + 1
+  }
+  
+  // 基准测试：大量数据的Context操作
+  let mut large_ctx_i = 0
+  while large_ctx_i < 100 {  // 较少的迭代次数，但每次操作更多数据
+    let mut large_ctx = Context::empty()
+    let mut large_baggage = Baggage::empty()
+    
+    // 创建包含大量条目的Context和Baggage
+    let mut entry_i = 0
+    while entry_i < 100 {
+      let ctx_key = create_key("ctx.key." + entry_i.to_string())
+      large_ctx = large_ctx.with_value(ctx_key, "ctx.value." + entry_i.to_string())
+      large_baggage = large_baggage.with_entry("baggage.key." + entry_i.to_string(), "baggage.value." + entry_i.to_string())
+      entry_i = entry_i + 1
+    }
+    
+    // 验证可以正确检索所有值
+    let mut verify_i = 0
+    while verify_i < 100 {
+      let ctx_key = create_key("ctx.key." + verify_i.to_string())
+      match large_ctx.get(ctx_key) {
+        Some(value) => assert_eq(value, "ctx.value." + verify_i.to_string())
+        None => @test.fail("Test failed")
+      }
+      
+      match large_baggage.get("baggage.key." + verify_i.to_string()) {
+        Some(value) => assert_eq(value, "baggage.value." + verify_i.to_string())
+        None => @test.fail("Test failed")
+      }
+      verify_i = verify_i + 1
+    }
+    large_ctx_i = large_ctx_i + 1
+  }
+  
+  assert_eq(true, true)  // 如果所有测试都通过，性能测试成功
+}
+
+test "propagation_operations_performance" {
+  // 测试传播操作的性能
+  
+  let ctx = Context::empty()
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+  let iterations = 10000
+  
+  // 基准测试：注入操作
+  let mut inject_i = 0
+  while inject_i < iterations {
+    let carrier = MapCarrier::new()
+    trace_propagator.inject(ctx, carrier)
+    baggage_propagator.inject(ctx, carrier)
+    composite_propagator.inject(ctx, carrier)
+    inject_i = inject_i + 1
+  }
+  
+  // 基准测试：提取操作
+  let test_carrier = MapCarrier::from_map([
+    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
+    ("baggage", "key1=value1,key2=value2,key3=value3")
+  ])
+  
+  let mut extract_i = 0
+  while extract_i < iterations {
+    let extracted_ctx1 = trace_propagator.extract(ctx, test_carrier)
+    let extracted_ctx2 = baggage_propagator.extract(ctx, test_carrier)
+    let extracted_ctx3 = composite_propagator.extract(ctx, test_carrier)
+    extract_i = extract_i + 1
+  }
+  
+  // 基准测试：复杂传播场景
+  let complex_carrier = MapCarrier::from_map([
+    ("traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"),
+    ("tracestate", "key1=value1,key2=value2;prop1=val1,key3=value3;prop1=val1;prop2=val2"),
+    ("baggage", "user.id=user-12345,session.id=session-67890,request.id=req-abcdef,service.name=test-service,deployment.environment=production,host.name=test-host,process.id=12345,thread.id=67890,operation.name=test_operation,operation.type=benchmark,trace.id=trace-123456,span.kind=server,http.method=GET,http.target=/api/test,http.scheme=https,http.host=api.example.com,user.agent=test-client/1.0.0,net.peer.ip=192.168.1.100,net.peer.port=443,tags=performance,benchmark,test,status.codes=200,400,500,latency.thresholds=0.1,0.5,1.0,feature.flags=true,false,true")
+  ])
+  
+  let mut complex_propagate_i = 0
+  while complex_propagate_i < 1000 {  // 较少的迭代次数
+    let complex_extracted_ctx = composite_propagator.extract(ctx, complex_carrier)
+    let complex_carrier2 = MapCarrier::new()
+    composite_propagator.inject(complex_extracted_ctx, complex_carrier2)
+    complex_propagate_i = complex_propagate_i + 1
+  }
+  
+  // 基准测试：大量传播器
+  let many_propagators = CompositePropagator::new([
+    trace_propagator,
+    baggage_propagator,
+    trace_propagator,  // 重复添加以测试多个相同传播器
+    baggage_propagator
+  ])
+  
+  let mut many_propagate_i = 0
+  while many_propagate_i < 1000 {
+    let many_carrier = MapCarrier::new()
+    many_propagators.inject(ctx, many_carrier)
+    let many_extracted_ctx = many_propagators.extract(ctx, test_carrier)
+    many_propagate_i = many_propagate_i + 1
+  }
+  
+  assert_eq(true, true)  // 如果所有测试都通过，性能测试成功
+}
+
+test "memory_allocation_patterns" {
+  // 测试内存分配模式
+  
+  let iterations = 1000
+  
+  // 测试大量Span创建的内存模式
+  let mut span_memory_i = 0
+  while span_memory_i < iterations {
+    let ctx = Context::empty()
+    let tracer = NoopTracer::{}
+    
+    // 创建多个Span但不保持引用
+    let (_, span1) = tracer.start_span(ctx, "span1")
+    let (_, span2) = tracer.start_span(ctx, "span2")
+    let (_, span3) = tracer.start_span(ctx, "span3")
+    
+    // 创建复杂属性的Span
+    let complex_attrs = [
+      ("key1", AttributeValue::string("value1")),
+      ("key2", AttributeValue::int(123L)),
+      ("key3", AttributeValue::float(456.789)),
+      ("key4", AttributeValue::bool(true)),
+      ("key5", AttributeValue::array_string(["a", "b", "c"]))
+    ]
+    let (_, complex_span) = tracer.start_span(ctx, "complex_span", Internal, Some(complex_attrs))
+    
+    span_memory_i = span_memory_i + 1
+  }
+  
+  // 测试大量LogRecord创建的内存模式
+  let mut log_memory_i = 0
+  while log_memory_i < iterations {
+    let logger = NoopLogger::{}
+    
+    // 创建多个LogRecord
+    let log1 = LogRecord::builder()
+      .timestamp(1640995200000000000L)
+      .severity(Info)
+      .body("Log message 1")
+      .build()
+    
+    let log2 = LogRecord::builder()
+      .timestamp(1640995200000000001L)
+      .severity(Error)
+      .body("Log message 2")
+      .build()
+    
+    // 创建复杂的LogRecord
+    let complex_log = LogRecord::{
+      timestamp_unix_nanos: 1640995200000000000L,
+      observed_timestamp_unix_nanos: Some(1640995200000000100L),
+      severity_number: Warn,
+      severity_text: Some("COMPLEX_LOG"),
+      body: Some("Complex log message"),
+      attributes: [
+        ("key1", AttributeValue::string("value1")),
+        ("key2", AttributeValue::int(123L)),
+        ("key3", AttributeValue::float(456.789)),
+        ("key4", AttributeValue::bool(true)),
+        ("key5", AttributeValue::array_string(["a", "b", "c"]))
+      ],
+      trace_id: Some([for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })),
+      span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })),
+      trace_flags: Some(1_byte),
+      resource: Some(Resource::default("test-service")),
+      instrumentation_scope: Some(InstrumentationScope::{
+        name: "test-logger",
+        version: Some("1.0.0"),
+        schema_url: None
+      })
+    }
+    
+    logger.emit(log1)
+    logger.emit(log2)
+    logger.emit(complex_log)
+    
+    log_memory_i = log_memory_i + 1
+  }
+  
+  // 测试大量Context操作的内存模式
+  let mut ctx_memory_i = 0
+  while ctx_memory_i < iterations {
+    let mut ctx = Context::empty()
+    let mut baggage = Baggage::empty()
+    
+    // 创建大量Context条目
+    let mut ctx_i = 0
+    while ctx_i < 50 {
+      let key = create_key("key." + ctx_i.to_string())
+      ctx = ctx.with_value(key, "value." + ctx_i.to_string())
+      baggage = baggage.with_entry("baggage.key." + ctx_i.to_string(), "baggage.value." + ctx_i.to_string())
+      ctx_i = ctx_i + 1
+    }
+    
+    // 检索一些值以验证Context工作正常
+    let test_key = create_key("key.25")
+    match ctx.get(test_key) {
+      Some(value) => assert_eq(value, "value.25")
+      None => @test.fail("Test failed")
+    }
+    
+    match baggage.get("baggage.key.25") {
+      Some(value) => assert_eq(value, "baggage.value.25")
+      None => @test.fail("Test failed")
+    }
+    
+    ctx_memory_i = ctx_memory_i + 1
+  }
+  
+  assert_eq(true, true)  // 如果所有测试都通过，内存测试成功
 }

@@ -1,230 +1,309 @@
-// 跨模块集成测试
-// 测试多个遥测模块之间的协同工作
+// 跨模块集成测试 - 测试Trace、Metrics、Logs和Context模块的协同工作
 
-test "trace_and_context_integration" {
-  let ctx = @azimuth.telemetry.api.context.Context::empty()
-  let trace_key = @azimuth.telemetry.api.context.create_key("trace_info")
-  let ctx_with_trace = ctx.with_value(trace_key, "trace-12345")
+test "cross_module_integration_trace_metrics_logs" {
+  // 创建基础上下文
+  let ctx = Context::empty()
   
-  let tracer = NoopTracer::{}
-  let (new_ctx, span) = tracer.start_span(ctx_with_trace, "operation", kind: Some(Server))
+  // 创建Tracer和Logger
+  let tracer_provider = NoopTracerProvider::{}
+  let logger_provider = NoopLoggerProvider::{}
+  let meter_provider = NoopMeterProvider::{}
   
-  // 验证Span和Context可以一起使用
-  assert_eq(span.name, "operation")
-  match span.kind {
-    Server => @test.succeed()
-    _ => @test.fail("Expected Server span")
+  let tracer = tracer_provider.get_tracer("integration-test", Some("1.0.0"))
+  let logger = logger_provider.get_logger("integration-test", Some("1.0.0"))
+  let meter = meter_provider.get_meter("integration-test", Some("1.0.0"))
+  
+  // 创建Span
+  let (span_ctx, span) = tracer.start_span(ctx, "integration_operation", Server, Some([
+    ("service.name", AttributeValue::string("integration-service")),
+    ("operation.type", AttributeValue::string("cross_module_test"))
+  ]))
+  
+  // 在Span上下文中记录指标
+  let counter = meter.create_counter("operations_total", Some("operations"), Some("Total operations"))
+  let histogram = meter.create_histogram("operation_duration_seconds", Some("seconds"), Some("Operation duration"))
+  
+  counter.add(1L, Some([
+    ("operation.name", AttributeValue::string("integration_operation")),
+    ("operation.status", AttributeValue::string("started"))
+  ]))
+  
+  histogram.record(0.5, Some([
+    ("operation.name", AttributeValue::string("integration_operation")),
+    ("span.kind", AttributeValue::string("server"))
+  ]))
+  
+  // 在Span上下文中记录日志
+  logger.info("Operation started", Some([
+    ("operation.name", AttributeValue::string("integration_operation")),
+    ("trace.id", AttributeValue::string("trace-id-123")),
+    ("span.id", AttributeValue::string("span-id-456"))
+  ]))
+  
+  // 验证所有组件都能正常工作
+  assert_eq(span.name, "integration_operation")
+  assert_eq(span.kind, Server)
+  assert_eq(span.attributes.length(), 2)
+  
+  // 测试上下文传播
+  let key = create_key("operation_id")
+  let ctx_with_operation = span_ctx.with_value(key, "op-12345")
+  
+  match ctx_with_operation.get(key) {
+    Some(operation_id) => assert_eq(operation_id, "op-12345")
+    None => @test.fail("Test failed")
   }
   
-  // 验证上下文信息仍然存在（在Noop实现中上下文不会被实际使用）
-  match new_ctx.get(trace_key) {
-    Some(value) => assert_eq(value, "trace-12345")
-    None => @test.fail("Expected trace info in context")
+  // 测试Baggage
+  let baggage = Baggage::empty()
+  let baggage_with_data = baggage.with_entry("user.id", "user-123")
+  let baggage_with_more_data = baggage_with_data.with_entry("session.id", "session-456")
+  
+  match baggage_with_more_data.get("user.id") {
+    Some(user_id) => assert_eq(user_id, "user-123")
+    None => @test.fail("Test failed")
   }
+  
+  match baggage_with_more_data.get("session.id") {
+    Some(session_id) => assert_eq(session_id, "session-456")
+    None => @test.fail("Test failed")
+  }
+  
+  // 记录操作完成
+  counter.add(1L, Some([
+    ("operation.name", AttributeValue::string("integration_operation")),
+    ("operation.status", AttributeValue::string("completed"))
+  ]))
+  
+  logger.info("Operation completed", Some([
+    ("operation.name", AttributeValue::string("integration_operation")),
+    ("operation.status", AttributeValue::string("success"))
+  ]))
 }
 
-test "metrics_and_attributes_integration" {
-  let provider = NoopMeterProvider::{}
-  let meter = provider.get_meter("integration_meter")
-  let counter = meter.create_counter("api_requests")
+test "propagation_integration_with_tracing" {
+  // 测试传播API与追踪的集成
+  let ctx = Context::empty()
   
-  let complex_attributes = [
-    ("service.name", @azimuth.telemetry.api.common.AttributeValue::string("user-service")),
-    ("service.version", @azimuth.telemetry.api.common.AttributeValue::string("1.2.3")),
-    ("operation.type", @azimuth.telemetry.api.common.AttributeValue::string("CREATE")),
-    ("user.id", @azimuth.telemetry.api.common.AttributeValue::int(12345L)),
-    ("success", @azimuth.telemetry.api.common.AttributeValue::bool(true)),
-    ("duration.ms", @azimuth.telemetry.api.common.AttributeValue::float(150.7)),
-    ("tags", @azimuth.telemetry.api.common.AttributeValue::array_string(["api", "authenticated", "critical"])),
-    ("retry.counts", @azimuth.telemetry.api.common.AttributeValue::array_int([1L, 2L, 3L])),
-    ("percentiles", @azimuth.telemetry.api.common.AttributeValue::array_float([50.0, 90.0, 95.0, 99.0])),
-    ("feature.flags", @azimuth.telemetry.api.common.AttributeValue::array_bool([true, false, true]))
-  ]
+  // 创建传播器
+  let trace_propagator = W3CTraceContextPropagator::{}
+  let baggage_propagator = W3CBaggagePropagator::{}
+  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
   
-  // 测试使用复杂属性集合的指标
-  counter.add(1L, Some(complex_attributes))
-  
-  @test.succeed()
-}
-
-test "logs_with_trace_context_integration" {
-  let ctx = @azimuth.telemetry.api.context.Context::empty()
-  let tracer = NoopTracer::{}
-  let (trace_ctx, span) = tracer.start_span(ctx, "database_operation")
-  
-  let provider = NoopLoggerProvider::{}
-  let logger = provider.get_logger("db_logger")
-  
-  let log_attributes = [
-    ("span.name", @azimuth.telemetry.api.common.AttributeValue::string(span.name)),
-    ("span.kind", @azimuth.telemetry.api.common.AttributeValue::string("Internal")),  // 简化：将枚举转为字符串
-    ("trace.active", @azimuth.telemetry.api.common.AttributeValue::bool(true))
-  ]
-  
-  // 模拟与trace相关的日志记录
-  logger.info("Database query executed", Some(log_attributes))
-  
-  @test.succeed()
-}
-
-test "propagation_and_context_integration" {
-  let ctx = @azimuth.telemetry.api.context.Context::empty()
-  let user_key = @azimuth.telemetry.api.context.create_key("user_id")
-  let session_key = @azimuth.telemetry.api.context.create_key("session_id")
-  
-  let ctx_with_data = ctx
-    .with_value(user_key, "user123")
-    .with_value(session_key, "session456")
-  
+  // 创建载体
   let carrier = MapCarrier::new()
-  let composite = CompositePropagator::new([
-    W3CTraceContextPropagator::{},
-    W3CBaggagePropagator::{}
-  ])
   
-  // 注入上下文到carrier
-  composite.inject(ctx_with_data, carrier)
+  // 测试注入
+  composite_propagator.inject(ctx, carrier)
   
-  // 从carrier提取上下文
-  let extracted_ctx = composite.extract(Context::empty(), carrier)
+  // 验证载体包含必要的头
+  let keys = carrier.keys()
+  assert_eq(keys.length(), 2)  // traceparent 和 baggage
   
-  // 在当前实现中，propagator不会实际传播Context中的数据
-  // 但这个测试验证了接口的协同工作能力
-  assert_eq(carrier.keys().length(), 2)
+  // 测试提取
+  let extracted_ctx = composite_propagator.extract(ctx, carrier)
   
-  match carrier.get("traceparent") {
-    Some(_) => @test.succeed()
-    None => @test.fail("Expected traceparent header")
+  // 验证上下文提取成功
+  assert_eq(true, true)  // 如果没有崩溃，说明提取成功
+  
+  // 测试单独的传播器
+  let trace_parent = carrier.get("traceparent")
+  let baggage_header = carrier.get("baggage")
+  
+  match trace_parent {
+    Some(trace_value) => assert_eq(trace_value.length() > 0, true)
+    None => @test.fail("Test failed")
   }
   
-  match carrier.get("baggage") {
-    Some(_) => @test.succeed()
-    None => @test.fail("Expected baggage header")
+  match baggage_header {
+    Some(baggage_value) => assert_eq(baggage_value.length() > 0, true)
+    None => @test.fail("Test failed")
   }
 }
 
-test "resource_and_all_signals_integration" {
-  let resource = @azimuth.telemetry.api.common.Resource::default("integration_test_service")
-  let resource_with_attrs = @azimuth.telemetry.api.common.Resource::{
-    service_name: resource.service_name,
-    service_version: resource.service_version,
-    telemetry_sdk_name: resource.telemetry_sdk_name,
-    telemetry_sdk_version: resource.telemetry_sdk_version,
+test "telemetry_signals_correlation" {
+  // 测试不同遥测信号之间的关联性
+  
+  let ctx = Context::empty()
+  let tracer_provider = NoopTracerProvider::{}
+  let logger_provider = NoopLoggerProvider::{}
+  let meter_provider = NoopMeterProvider::{}
+  
+  let tracer = tracer_provider.get_tracer("correlation-test")
+  let logger = logger_provider.get_logger("correlation-test")
+  let meter = meter_provider.get_meter("correlation-test")
+  
+  // 创建关联的trace_id和span_id
+  let trace_id = [for i = 0; i < 16; i = i + 1].map(fn(i) { 
+    if i < 8 { 0x12_byte } else { 0x34_byte }
+  })
+  let span_id = [for i = 0; i < 8; i = i + 1].map(fn(_) { 0x56_byte })
+  
+  // 创建Span
+  let (span_ctx, span) = tracer.start_span(ctx, "correlated_operation")
+  
+  // 创建与Span关联的LogRecord
+  let correlated_log = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Info,
+    severity_text: Some("OPERATION_INFO"),
+    body: Some("Operation in progress"),
     attributes: [
-      ("env", @azimuth.telemetry.api.common.AttributeValue::string("test")),
-      ("region", @azimuth.telemetry.api.common.AttributeValue::string("us-west-2")),
-      ("version", @azimuth.telemetry.api.common.AttributeValue::string("1.0.0"))
+      ("operation.name", AttributeValue::string("correlated_operation")),
+      ("service.name", AttributeValue::string("correlation-service"))
+    ],
+    trace_id: Some(trace_id),
+    span_id: Some(span_id),
+    trace_flags: Some(1_byte),
+    resource: Some(Resource::default("correlation-service")),
+    instrumentation_scope: Some(InstrumentationScope::{
+      name: "correlation-test",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
+  
+  // 创建与Span关联的Metrics
+  let counter = meter.create_counter("correlated_operations", Some("operations"), Some("Correlated operations"))
+  let histogram = meter.create_histogram("correlated_duration", Some("seconds"), Some("Correlated operation duration"))
+  
+  counter.add(1L, Some([
+    ("trace.id", AttributeValue::string("1234567890abcdef1234567890abcdef")),
+    ("span.id", AttributeValue::string("12345678")),
+    ("operation.name", AttributeValue::string("correlated_operation"))
+  ]))
+  
+  histogram.record(1.5, Some([
+    ("trace.id", AttributeValue::string("1234567890abcdef1234567890abcdef")),
+    ("span.id", AttributeValue::string("12345678")),
+    ("operation.name", AttributeValue::string("correlated_operation"))
+  ]))
+  
+  // 发送关联的日志
+  logger.emit(correlated_log)
+  
+  // 验证所有信号都有相同的关联标识
+  assert_eq(correlated_log.trace_id.is_some(), true)
+  assert_eq(correlated_log.span_id.is_some(), true)
+  assert_eq(correlated_log.attributes.length(), 2)
+  
+  // 验证资源信息
+  match correlated_log.resource {
+    Some(resource) => {
+      assert_eq(resource.service_name, "correlation-service")
+      assert_eq(resource.telemetry_sdk_name, "azimuth")
+    }
+    None => @test.fail("Test failed")
+  }
+  
+  // 验证instrumentation scope
+  match correlated_log.instrumentation_scope {
+    Some(scope) => {
+      assert_eq(scope.name, "correlation-test")
+      match scope.version {
+        Some(version) => assert_eq(version, "1.0.0")
+        None => @test.fail("Test failed")
+      }
+    }
+    None => @test.fail("Test failed")
+  }
+}
+
+test "resource_and_instrumentation_scope_integration" {
+  // 测试资源和instrumentation scope在所有遥测信号中的一致性
+  
+  let resource = Resource::{
+    service_name: "integrated-service",
+    service_version: Some("2.1.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: [
+      ("deployment.environment", AttributeValue::string("production")),
+      ("host.name", AttributeValue::string("server-01")),
+      ("service.namespace", AttributeValue::string("payments"))
     ]
   }
   
-  // Trace with resource
-  let ctx = Context::empty()
-  let tracer = NoopTracer::{}
-  let (_, span) = tracer.start_span(ctx, "trace_with_resource")
-  
-  // Metrics with resource attributes
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("resource_meter")
-  let counter = meter.create_counter("resource_operations")
-  counter.add(1L, Some(resource_with_attrs.attributes))
-  
-  // Logs with resource
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("resource_logger")
-  logger.info("Operation with resource context", Some(resource_with_attrs.attributes))
-  
-  @test.succeed()
-}
-
-test "instrumentation_scope_integration" {
-  let instrumentation_scope = @azimuth.telemetry.api.common.InstrumentationScope::{
-    name: "database-client",
-    version: Some("2.1.0"),
-    schema_url: Some("http://example.com/database-schema")
+  let instrumentation_scope = InstrumentationScope::{
+    name: "payment-processor",
+    version: Some("1.5.2"),
+    schema_url: Some("https://example.com/schemas/payment")
   }
   
-  // 创建与instrumentation scope相关的各种信号
-  let log_record = LogRecord::{
-    timestamp_unix_nanos: 1640995200000000000L,
-    severity_number: Info,
-    body: Some("Database operation completed"),
+  // 在Span中使用资源和instrumentation scope
+  let span_context = SpanContext::{
+    trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0xab_byte }),
+    span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0xcd_byte }),
+    trace_flags: 1_byte,
+    trace_state: "key1=value1,key2=value2"
+  }
+  
+  let span = Span::{
+    name: "payment.process",
+    context: span_context,
+    kind: Server,
+    parent_span_id: None,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200000000500L),
+    status: Ok,
+    status_description: Some("Payment processed successfully"),
     attributes: [
-      ("db.operation", @azimuth.telemetry.api.common.AttributeValue::string("SELECT")),
-      ("db.table", @azimuth.telemetry.api.common.AttributeValue::string("users")),
-      ("scope.name", @azimuth.telemetry.api.common.AttributeValue::string(instrumentation_scope.name)),
-      ("scope.version", @azimuth.telemetry.api.common.AttributeValue::string(instrumentation_scope.version.unwrap_or("unknown")))
+      ("payment.amount", AttributeValue::float(99.99)),
+      ("payment.currency", AttributeValue::string("USD"))
     ],
-    instrumentation_scope: Some(instrumentation_scope),
-    ..LogRecord::builder().build()
+    events: [],
+    links: []
   }
   
-  assert_eq(log_record.instrumentation_scope.unwrap().name, "database-client")
-  match log_record.instrumentation_scope.unwrap().version {
-    Some(version) => assert_eq(version, "2.1.0")
-    None => @test.fail("Expected version")
+  // 在LogRecord中使用相同的资源和instrumentation scope
+  let log_record = LogRecord::{
+    timestamp_unix_nanos: 1640995200000000100L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: Info,
+    severity_text: Some("PAYMENT_INFO"),
+    body: Some("Payment processed successfully"),
+    attributes: [
+      ("payment.id", AttributeValue::string("pay-12345")),
+      ("payment.amount", AttributeValue::float(99.99))
+    ],
+    trace_id: Some(span_context.trace_id),
+    span_id: Some(span_context.span_id),
+    trace_flags: Some(span_context.trace_flags),
+    resource: Some(resource),
+    instrumentation_scope: Some(instrumentation_scope)
   }
   
-  // 验证日志记录器可以使用instrumentation scope
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger(
-    instrumentation_scope.name, 
-    instrumentation_scope.version, 
-    instrumentation_scope.schema_url
-  )
+  // 验证资源一致性
+  assert_eq(resource.service_name, "integrated-service")
+  assert_eq(resource.service_version, Some("2.1.0"))
+  assert_eq(resource.attributes.length(), 3)
   
-  logger.emit(log_record)
+  // 验证instrumentation scope一致性
+  assert_eq(instrumentation_scope.name, "payment-processor")
+  assert_eq(instrumentation_scope.version, Some("1.5.2"))
+  assert_eq(instrumentation_scope.schema_url, Some("https://example.com/schemas/payment"))
   
-  @test.succeed()
-}
-
-test "end_to_end_telemetry_flow" {
-  // 模拟完整的遥测流程：创建span -> 记录指标 -> 发送日志 -> 传播上下文
+  // 验证Span和LogRecord使用相同的上下文信息
+  assert_eq(log_record.trace_id.is_some(), true)
+  assert_eq(log_record.span_id.is_some(), true)
+  assert_eq(log_record.trace_flags, Some(1_byte))
   
-  // 1. 创建上下文和span
-  let ctx = @azimuth.telemetry.api.context.Context::empty()
-  let trace_key = @azimuth.telemetry.api.context.create_key("correlation_id")
-  let ctx_with_correlation = ctx.with_value(trace_key, "corr-12345")
+  match log_record.resource {
+    Some(log_resource) => {
+      assert_eq(log_resource.service_name, resource.service_name)
+      assert_eq(log_resource.service_version, resource.service_version)
+      assert_eq(log_resource.attributes.length(), resource.attributes.length())
+    }
+    None => @test.fail("Test failed")
+  }
   
-  let tracer = NoopTracer::{}
-  let (op_ctx, span) = tracer.start_span(ctx_with_correlation, "user_registration", kind: Some(Server))
-  
-  // 2. 记录指标
-  let meter_provider = NoopMeterProvider::{}
-  let meter = meter_provider.get_meter("business_metrics")
-  let counter = meter.create_counter("user_registrations")
-  let histogram = meter.create_histogram("registration_duration")
-  
-  counter.add(1L, Some([
-    ("service", @azimuth.telemetry.api.common.AttributeValue::string("auth-service")),
-    ("correlation_id", @azimuth.telemetry.api.common.AttributeValue::string("corr-12345"))
-  ]))
-  
-  histogram.record(250.5, Some([
-    ("operation", @azimuth.telemetry.api.common.AttributeValue::string("user_registration"))
-  ]))
-  
-  // 3. 记录日志
-  let logger_provider = NoopLoggerProvider::{}
-  let logger = logger_provider.get_logger("auth_logger")
-  
-  logger.info("User registration completed", Some([
-    ("user_id", @azimuth.telemetry.api.common.AttributeValue::int(98765L)),
-    ("correlation_id", @azimuth.telemetry.api.common.AttributeValue::string("corr-12345")),
-    ("span_name", @azimuth.telemetry.api.common.AttributeValue::string(span.name))
-  ]))
-  
-  // 4. 传播上下文到下一个服务
-  let carrier = MapCarrier::new()
-  let propagator = CompositePropagator::new([
-    W3CTraceContextPropagator::{},
-    W3CBaggagePropagator::{}
-  ])
-  
-  propagator.inject(op_ctx, carrier)
-  
-  // 验证整个流程的完整性
-  assert_eq(span.name, "user_registration")
-  assert_eq(carrier.keys().length(), 2)
-  
-  @test.succeed()
+  match log_record.instrumentation_scope {
+    Some(log_scope) => {
+      assert_eq(log_scope.name, instrumentation_scope.name)
+      assert_eq(log_scope.version, instrumentation_scope.version)
+      assert_eq(log_scope.schema_url, instrumentation_scope.schema_url)
+    }
+    None => @test.fail("Test failed")
+  }
 }

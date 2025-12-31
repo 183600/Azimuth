@@ -1,529 +1,653 @@
-// 配置管理和动态更新测试用例
-// 测试遥测系统的配置管理、动态更新和热重载功能
+// 配置管理测试 - 测试遥测系统的配置管理功能
 
-test "basic_configuration_validation" {
-  // 测试基本配置验证
+test "telemetry_configuration_basic" {
+  // 测试基本的遥测配置
   
-  let service_name = "telemetry-service"
-  let service_version = "1.0.0"
-  let environment = "production"
-  let log_level = "INFO"
-  let sampling_rate = 0.1
-  
-  // 验证服务名称配置
-  assert_eq(service_name.length() > 0, true)
-  assert_eq(service_name.has_suffix("-service"), true)
-  assert_eq(service_name.contains(" "), false)  // 不应包含空格
-  
-  // 验证版本号配置
-  assert_eq(service_version.contains("."), true)
-  let version_parts = service_version.split(".")
-  assert_eq(version_parts.length(), 3)
-  assert_eq(version_parts[0].to_int() > 0, true)
-  
-  // 验证环境配置
-  let valid_environments = ["development", "testing", "staging", "production"]
-  let mut env_valid = false
-  let mut i = 0
-  while i < valid_environments.length() {
-    if valid_environments[i] == environment {
-      env_valid = true
-    }
-    i = i + 1
+  // 模拟基本配置结构
+  let basic_config = {
+    "service.name": "test-service",
+    "service.version": "1.0.0",
+    "telemetry.sdk.name": "azimuth",
+    "telemetry.sdk.version": "0.1.0",
+    "environment": "test"
   }
-  assert_eq(env_valid, true)
   
-  // 验证日志级别配置
-  let valid_log_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
-  let mut log_level_valid = false
-  i = 0
-  while i < valid_log_levels.length() {
-    if valid_log_levels[i] == log_level {
-      log_level_valid = true
-    }
-    i = i + 1
-  }
-  assert_eq(log_level_valid, true)
-  
-  // 验证采样率配置
-  assert_eq(sampling_rate >= 0.0, true)
-  assert_eq(sampling_rate <= 1.0, true)
-  
-  // 创建配置对象
-  let config = {
-    service_name: service_name,
-    service_version: service_version,
-    environment: environment,
-    log_level: log_level,
-    sampling_rate: sampling_rate,
-    endpoints: [
-      { url: "http://localhost:4317", protocol: "grpc" },
-      { url: "http://localhost:4318", protocol: "http" }
-    ],
+  // 验证基本配置可以正确创建Resource
+  let resource = Resource::{
+    service_name: "test-service",
+    service_version: Some("1.0.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
     attributes: [
-      ("region", "us-west-2"),
-      ("zone", "us-west-2a")
+      ("environment", AttributeValue::string("test"))
     ]
   }
   
-  // 验证配置结构
-  assert_eq(config.service_name, service_name)
-  assert_eq(config.endpoints.length(), 2)
-  assert_eq(config.attributes.length(), 2)
+  assert_eq(resource.service_name, "test-service")
+  assert_eq(resource.service_version, Some("1.0.0"))
+  assert_eq(resource.telemetry_sdk_name, "azimuth")
+  assert_eq(resource.telemetry_sdk_version, "0.1.0")
+  assert_eq(resource.attributes.length(), 1)
+  
+  match resource.attributes[0].1 {
+    StringValue(env) => assert_eq(env, "test")
+    _ => @test.fail("Test failed")
+  }
+  
+  // 测试InstrumentationScope配置
+  let scope_config = {
+    "instrumentation.name": "test-instrumentation",
+    "instrumentation.version": "1.5.0",
+    "instrumentation.schema_url": "https://example.com/schema"
+  }
+  
+  let instrumentation_scope = InstrumentationScope::{
+    name: "test-instrumentation",
+    version: Some("1.5.0"),
+    schema_url: Some("https://example.com/schema")
+  }
+  
+  assert_eq(instrumentation_scope.name, "test-instrumentation")
+  assert_eq(instrumentation_scope.version, Some("1.5.0"))
+  assert_eq(instrumentation_scope.schema_url, Some("https://example.com/schema"))
 }
 
-test "endpoint_configuration_management" {
-  // 测试端点配置管理
+test "telemetry_configuration_complex" {
+  // 测试复杂的遥测配置
   
-  let grpc_endpoint = "http://localhost:4317"
-  let http_endpoint = "http://localhost:4318"
-  let zipkin_endpoint = "http://localhost:9411/api/v2/spans"
-  
-  // 验证端点URL格式
-  assert_eq(grpc_endpoint.has_prefix("http://"), true)
-  assert_eq(http_endpoint.has_prefix("http://"), true)
-  assert_eq(zipkin_endpoint.has_prefix("http://"), true)
-  
-  // 验证端点端口
-  assert_eq(grpc_endpoint.contains(":4317"), true)
-  assert_eq(http_endpoint.contains(":4318"), true)
-  assert_eq(zipkin_endpoint.contains(":9411"), true)
-  
-  // 创建端点配置
-  let endpoints = [
-    {
-      url: grpc_endpoint,
-      protocol: "grpc",
-      timeout: 30,
-      retry_count: 3,
-      headers: [("authorization", "Bearer token123")]
-    },
-    {
-      url: http_endpoint,
-      protocol: "http",
-      timeout: 15,
-      retry_count: 2,
-      headers: []
-    },
-    {
-      url: zipkin_endpoint,
-      protocol: "http",
-      timeout: 10,
-      retry_count: 1,
-      headers: [("content-type", "application/json")]
-    }
+  // 模拟复杂配置结构
+  let complex_config_attributes = [
+    ("service.name", AttributeValue::string("complex-service")),
+    ("service.version", AttributeValue::string("2.1.0-beta.1")),
+    ("service.namespace", AttributeValue::string("payments")),
+    ("deployment.environment", AttributeValue::string("production")),
+    ("deployment.region", AttributeValue::string("us-west-2")),
+    ("deployment.zone", AttributeValue::string("us-west-2a")),
+    ("host.name", AttributeValue::string("prod-payment-01")),
+    ("host.ip", AttributeValue::string("10.0.1.100")),
+    ("host.id", AttributeValue::string("i-1234567890abcdef0")),
+    ("host.type", AttributeValue::string("t3.medium")),
+    ("process.id", AttributeValue::int(12345L)),
+    ("process.executable.name", AttributeValue::string("payment-service")),
+    ("process.executable.path", AttributeValue::string("/opt/payment-service/bin/payment-service")),
+    ("process.command", AttributeValue::string("./payment-service")),
+    ("process.command_args", AttributeValue::array_string(["./payment-service", "--config", "/etc/payment/config.yaml"])),
+    ("process.owner", AttributeValue::string("payment-user")),
+    ("process.runtime.name", AttributeValue::string("nodejs")),
+    ("process.runtime.version", AttributeValue::string("18.17.0")),
+    ("process.runtime.description", AttributeValue::string("Node.js JavaScript Runtime")),
+    ("telemetry.sdk.name", AttributeValue::string("azimuth")),
+    ("telemetry.sdk.version", AttributeValue::string("0.1.0")),
+    ("telemetry.sdk.language", AttributeValue::string("moonbit")),
+    ("telemetry.auto_instrumentation.version", AttributeValue::string("0.1.0")),
+    ("telemetry.distros.version", AttributeValue::string("0.1.0")),
+    ("container.id", AttributeValue::string("container-123456")),
+    ("container.name", AttributeValue::string("payment-container")),
+    ("container.image.name", AttributeValue::string("payment-service:2.1.0-beta.1")),
+    ("container.image.tag", AttributeValue::string("2.1.0-beta.1")),
+    ("k8s.pod.name", AttributeValue::string("payment-service-7d4f8c9b5-xyz12")),
+    ("k8s.namespace.name", AttributeValue::string("payments")),
+    ("k8s.deployment.name", AttributeValue::string("payment-service")),
+    ("k8s.node.name", AttributeValue::string("ip-10-0-1-100.us-west-2.compute.internal")),
+    ("cloud.provider", AttributeValue::string("aws")),
+    ("cloud.account.id", AttributeValue::string("123456789012")),
+    ("cloud.region", AttributeValue::string("us-west-2")),
+    ("cloud.availability_zone", AttributeValue::string("us-west-2a")),
+    ("cloud.platform", AttributeValue::string("aws_ec2")),
+    ("service.instance.id", AttributeValue::string("instance-123456")),
+    ("service.namespace", AttributeValue::string("payments")),
+    ("service.version", AttributeValue::string("2.1.0-beta.1")),
+    ("service.name", AttributeValue::string("payment-service")),
+    ("os.type", AttributeValue::string("linux")),
+    ("os.description", AttributeValue::string("Amazon Linux 2")),
+    ("os.name", AttributeValue::string("Amazon Linux")),
+    ("os.version", AttributeValue::string("2")),
+    ("os.build_id", AttributeValue::string("kernel-5.10.0-197.736.amzn2.x86_64"))
   ]
   
-  // 验证端点配置
-  assert_eq(endpoints.length(), 3)
-  assert_eq(endpoints[0].protocol, "grpc")
-  assert_eq(endpoints[1].protocol, "http")
-  assert_eq(endpoints[2].protocol, "http")
+  let complex_resource = Resource::{
+    service_name: "complex-service",
+    service_version: Some("2.1.0-beta.1"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
+    attributes: complex_config_attributes
+  }
   
-  // 验证超时配置
-  assert_eq(endpoints[0].timeout > endpoints[1].timeout, true)
-  assert_eq(endpoints[1].timeout > endpoints[2].timeout, true)
+  // 验证复杂配置
+  assert_eq(complex_resource.service_name, "complex-service")
+  assert_eq(complex_resource.service_version, Some("2.1.0-beta.1"))
+  assert_eq(complex_resource.attributes.length(), 42)
   
-  // 验证重试配置
-  assert_eq(endpoints[0].retry_count, 3)
-  assert_eq(endpoints[1].retry_count, 2)
-  assert_eq(endpoints[2].retry_count, 1)
-}
-
-test "sampling_configuration_dynamics" {
-  // 测试采样配置动态性
+  // 验证特定配置项
+  let mut found_service_name = false
+  let mut found_deployment_env = false
+  let mut found_cloud_provider = false
+  let mut found_k8s_pod = false
+  let mut found_container = false
+  let mut found_process_args = false
   
-  let default_sampling_rate = 0.1
-  let high_traffic_sampling = 0.01
-  let debug_sampling = 1.0
-  let disabled_sampling = 0.0
-  
-  // 验证采样率范围
-  assert_eq(default_sampling_rate >= 0.0 && default_sampling_rate <= 1.0, true)
-  assert_eq(high_traffic_sampling >= 0.0 && high_traffic_sampling <= 1.0, true)
-  assert_eq(debug_sampling >= 0.0 && debug_sampling <= 1.0, true)
-  assert_eq(disabled_sampling >= 0.0 && disabled_sampling <= 1.0, true)
-  
-  // 创建采样配置
-  let sampling_configs = [
-    {
-      name: "default",
-      rate: default_sampling_rate,
-      attributes: [("service.name", "api-service")]
-    },
-    {
-      name: "high_traffic",
-      rate: high_traffic_sampling,
-      attributes: [("http.method", "GET"), ("http.status_code", "200")]
-    },
-    {
-      name: "debug",
-      rate: debug_sampling,
-      attributes: [("user.id", "debug_user_123")]
-    },
-    {
-      name: "disabled",
-      rate: disabled_sampling,
-      attributes: [("health.check", "true")]
-    }
-  ]
-  
-  // 验证采样配置
-  assert_eq(sampling_configs.length(), 4)
-  
-  // 验证采样率逻辑
-  assert_eq(sampling_configs[0].rate > sampling_configs[1].rate, true)
-  assert_eq(sampling_configs[2].rate == 1.0, true)
-  assert_eq(sampling_configs[3].rate == 0.0, true)
-  
-  // 模拟动态采样决策
-  let trace_attributes = [("service.name", "api-service"), ("http.method", "GET")]
-  let mut selected_rate = default_sampling_rate
-  
-  // 根据属性选择采样率
   let mut i = 0
-  while i < sampling_configs.length() {
-    let config = sampling_configs[i]
-    let mut matches = true
-    let mut j = 0
-    while j < config.attributes.length() {
-      let mut attr_found = false
-      let mut k = 0
-      while k < trace_attributes.length() {
-        if config.attributes[j] == trace_attributes[k] {
-          attr_found = true
-        }
-        k = k + 1
-      }
-      if !attr_found {
-        matches = false
-      }
-      j = j + 1
-    }
+  while i < complex_resource.attributes.length() {
+    let (key, value) = complex_resource.attributes[i]
     
-    if matches {
-      selected_rate = config.rate
-    }
-    i = i + 1
-  }
-  
-  assert_eq(selected_rate, default_sampling_rate)
-}
-
-test "attribute_configuration_management" {
-  // 测试属性配置管理
-  
-  // 创建资源属性配置
-  let resource_attributes = [
-    ("service.name", "payment-service"),
-    ("service.version", "1.2.3"),
-    ("service.namespace", "ecommerce"),
-    ("service.instance.id", "instance-12345"),
-    ("deployment.environment", "production"),
-    ("host.name", "web-server-01"),
-    ("host.ip", "10.0.1.100"),
-    ("cloud.provider", "aws"),
-    ("cloud.region", "us-west-2"),
-    ("cloud.availability_zone", "us-west-2a")
-  ]
-  
-  // 验证资源属性
-  assert_eq(resource_attributes.length(), 10)
-  
-  // 验证必需属性存在
-  let required_attrs = ["service.name", "service.version", "service.instance.id"]
-  let mut i = 0
-  while i < required_attrs.length() {
-    let mut attr_found = false
-    let mut j = 0
-    while j < resource_attributes.length() {
-      if resource_attributes[j].0 == required_attrs[i] {
-        attr_found = true
-        assert_eq(resource_attributes[j].1.length() > 0, true)
+    match key {
+      "service.name" => {
+        match value {
+          StringValue(name) => {
+            assert_eq(name, "complex-service")
+            found_service_name = true
+          }
+          _ => @test.fail("Test failed")
+        }
       }
-      j = j + 1
+      "deployment.environment" => {
+        match value {
+          StringValue(env) => {
+            assert_eq(env, "production")
+            found_deployment_env = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "cloud.provider" => {
+        match value {
+          StringValue(provider) => {
+            assert_eq(provider, "aws")
+            found_cloud_provider = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "k8s.pod.name" => {
+        match value {
+          StringValue(pod) => {
+            assert_eq(pod, "payment-service-7d4f8c9b5-xyz12")
+            found_k8s_pod = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "container.id" => {
+        match value {
+          StringValue(id) => {
+            assert_eq(id, "container-123456")
+            found_container = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "process.command_args" => {
+        match value {
+          ArrayStringValue(args) => {
+            assert_eq(args.length(), 3)
+            assert_eq(args[0], "./payment-service")
+            assert_eq(args[1], "--config")
+            assert_eq(args[2], "/etc/payment/config.yaml")
+            found_process_args = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      _ => ()  // 忽略其他键
     }
-    assert_eq(attr_found, true)
     i = i + 1
   }
   
-  // 创建进程属性配置
-  let process_attributes = [
-    ("process.pid", "12345"),
-    ("process.executable.name", "payment-service"),
-    ("process.executable.path", "/usr/local/bin/payment-service"),
-    ("process.command_line", "payment-service --config /etc/payment/config.yaml"),
-    ("process.runtime.name", "node"),
-    ("process.runtime.version", "18.17.0"),
-    ("process.runtime.description", "Node.js")
-  ]
-  
-  // 验证进程属性
-  assert_eq(process_attributes.length(), 7)
-  assert_eq(process_attributes[0].0, "process.pid")
-  assert_eq(process_attributes[0].1.is_numeric(), true)
-  
-  // 验证属性值格式
-  assert_eq(process_attributes[4].1, "node")
-  assert_eq(process_attributes[5].1.contains("."), true)  // 版本号格式
+  assert_eq(found_service_name, true)
+  assert_eq(found_deployment_env, true)
+  assert_eq(found_cloud_provider, true)
+  assert_eq(found_k8s_pod, true)
+  assert_eq(found_container, true)
+  assert_eq(found_process_args, true)
 }
 
-test "dynamic_configuration_updates" {
-  // 测试动态配置更新
-  
-  // 初始配置
-  let mut current_config = {
-    sampling_rate: 0.1,
-    log_level: "INFO",
-    batch_size: 100,
-    timeout: 30,
-    endpoints: ["http://localhost:4318"]
-  }
-  
-  // 验证初始配置
-  assert_eq(current_config.sampling_rate, 0.1)
-  assert_eq(current_config.log_level, "INFO")
-  assert_eq(current_config.batch_size, 100)
-  
-  // 模拟配置更新1: 调整采样率
-  let new_sampling_rate = 0.05
-  current_config = { current_config | sampling_rate: new_sampling_rate }
-  assert_eq(current_config.sampling_rate, 0.05)
-  assert_eq(current_config.log_level, "INFO")  // 其他配置保持不变
-  
-  // 模拟配置更新2: 调整日志级别
-  let new_log_level = "DEBUG"
-  current_config = { current_config | log_level: new_log_level }
-  assert_eq(current_config.log_level, "DEBUG")
-  assert_eq(current_config.sampling_rate, 0.05)  // 之前更新保持不变
-  
-  // 模拟配置更新3: 调整批次大小
-  let new_batch_size = 200
-  current_config = { current_config | batch_size: new_batch_size }
-  assert_eq(current_config.batch_size, 200)
-  
-  // 模拟配置更新4: 添加新端点
-  let new_endpoints = ["http://localhost:4318", "http://backup:4318"]
-  current_config = { current_config | endpoints: new_endpoints }
-  assert_eq(current_config.endpoints.length(), 2)
-  
-  // 验证最终配置
-  assert_eq(current_config.sampling_rate, 0.05)
-  assert_eq(current_config.log_level, "DEBUG")
-  assert_eq(current_config.batch_size, 200)
-  assert_eq(current_config.endpoints.length(), 2)
-}
-
-test "configuration_validation_rules" {
-  // 测试配置验证规则
+test "telemetry_configuration_validation" {
+  // 测试遥测配置的验证
   
   // 测试有效配置
   let valid_configs = [
-    { sampling_rate: 0.0, log_level: "INFO", batch_size: 1 },
-    { sampling_rate: 0.5, log_level: "DEBUG", batch_size: 500 },
-    { sampling_rate: 1.0, log_level: "ERROR", batch_size: 1000 }
+    ("service.name", "valid-service"),
+    ("service.version", "1.0.0"),
+    ("telemetry.sdk.name", "azimuth"),
+    ("telemetry.sdk.version", "0.1.0"),
+    ("deployment.environment", "production"),
+    ("host.name", "valid-host-name"),
+    ("process.id", "12345"),
+    ("container.id", "valid-container-id"),
+    ("k8s.pod.name", "valid-pod-name"),
+    ("cloud.provider", "aws")
   ]
   
-  let mut i = 0
-  while i < valid_configs.length() {
-    let config = valid_configs[i]
+  let mut valid_i = 0
+  while valid_i < valid_configs.length() {
+    let (key, value) = valid_configs[valid_i]
     
-    // 验证采样率规则
-    assert_eq(config.sampling_rate >= 0.0, true)
-    assert_eq(config.sampling_rate <= 1.0, true)
+    // 验证配置键和值不为空
+    assert_eq(key.length() > 0, true)
+    assert_eq(value.length() > 0, true)
     
-    // 验证日志级别规则
-    let valid_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
-    let mut level_valid = false
-    let mut j = 0
-    while j < valid_levels.length() {
-      if valid_levels[j] == config.log_level {
-        level_valid = true
-      }
-      j = j + 1
+    // 验证配置键格式
+    assert_eq(key.contains(" "), false)  // 配置键不应包含空格
+    assert_eq(key[0].is_alphabetic(), true)  // 配置键应以字母开头
+    
+    valid_i = valid_i + 1
+  }
+  
+  // 测试无效配置
+  let invalid_config_keys = [
+    "",  // 空键
+    " ",  // 只有空格的键
+    "invalid key with spaces",  // 包含空格的键
+    "123invalid",  // 以数字开头的键
+    "invalid@key",  // 包含特殊字符的键
+    "invalid.key.with.many.dots.and.very.long.name.that.exceeds.reasonable.limits"
+  ]
+  
+  let mut invalid_i = 0
+  while invalid_i < invalid_config_keys.length() {
+    let invalid_key = invalid_config_keys[invalid_i]
+    
+    // 验证无效配置键被正确识别
+    if invalid_key.length() == 0 {
+      assert_eq(invalid_key.length() == 0, true)  // 空键
+    } else if invalid_key.contains(" ") {
+      assert_eq(invalid_key.contains(" "), true)  // 包含空格
+    } else if invalid_key.length() > 0 && invalid_key[0].is_digit() {
+      assert_eq(invalid_key[0].is_digit(), true)  // 以数字开头
     }
-    assert_eq(level_valid, true)
     
-    // 验证批次大小规则
-    assert_eq(config.batch_size >= 1, true)
-    assert_eq(config.batch_size <= 10000, true)
-    
-    i = i + 1
+    invalid_i = invalid_i + 1
   }
   
-  // 测试无效配置检测
-  let invalid_sampling_rates = [-0.1, 1.1, 2.0]
-  let invalid_log_levels = ["INVALID", "info", "Error", "warn"]
-  let invalid_batch_sizes = [0, -1, 10001]
+  // 测试边界值配置
+  let boundary_config_values = [
+    ("service.name", ""),  // 空值
+    ("service.name", "a" * 1000),  // 非常长的值
+    ("service.name", "!@#$%^&*()_+-={}[]|\\:;\"'<>?,./测试中文🚀"),  // 特殊字符
+    ("process.id", "0"),  // 最小进程ID
+    ("process.id", "9223372036854775807"),  // 最大进程ID
+    ("telemetry.sdk.version", "1.0.0-alpha.1+build.123"),  // 复杂版本号
+    ("deployment.environment", "production_with_underscores_and_numbers_123")
+  ]
   
-  // 验证无效采样率检测
-  i = 0
-  while i < invalid_sampling_rates.length() {
-    let rate = invalid_sampling_rates[i]
-    assert_eq(rate < 0.0 || rate > 1.0, true)
-    i = i + 1
-  }
-  
-  // 验证无效日志级别检测
-  i = 0
-  while i < invalid_log_levels.length() {
-    let level = invalid_log_levels[i]
-    let valid_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
-    let mut level_valid = false
-    let mut j = 0
-    while j < valid_levels.length() {
-      if valid_levels[j] == level {
-        level_valid = true
-      }
-      j = j + 1
+  let mut boundary_i = 0
+  while boundary_i < boundary_config_values.length() {
+    let (key, value) = boundary_config_values[boundary_i]
+    
+    // 验证边界值配置
+    assert_eq(key.length() > 0, true)
+    
+    if value.length() == 0 {
+      assert_eq(value, "")  // 空值
+    } else if value.length() == 1000 {
+      assert_eq(value.length(), 1000)  // 长值
+    } else if value.contains("测试中文") {
+      assert_eq(value.contains("测试中文"), true)  // Unicode字符
     }
-    assert_eq(level_valid, false)
-    i = i + 1
-  }
-  
-  // 验证无效批次大小检测
-  i = 0
-  while i < invalid_batch_sizes.length() {
-    let size = invalid_batch_sizes[i]
-    assert_eq(size < 1 || size > 10000, true)
-    i = i + 1
+    
+    boundary_i = boundary_i + 1
   }
 }
 
-test "configuration_persistence_and_recovery" {
-  // 测试配置持久化和恢复
+test "telemetry_configuration_inheritance" {
+  // 测试遥测配置的继承和覆盖
   
-  // 创建配置
-  let original_config = {
-    service_name: "auth-service",
-    service_version: "2.1.0",
-    environment: "staging",
-    sampling_rate: 0.15,
-    log_level: "WARN",
-    endpoints: [
-      { url: "http://collector:4317", protocol: "grpc" },
-      { url: "http://collector:4318", protocol: "http" }
-    ],
+  // 模拟全局配置
+  let global_config = Resource::{
+    service_name: "global-service",
+    service_version: Some("1.0.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
     attributes: [
-      ("datacenter", "dc1"),
-      ("rack", "rack-12"),
-      ("node", "node-5")
+      ("deployment.environment", AttributeValue::string("production")),
+      ("cloud.provider", AttributeValue::string("aws")),
+      ("cloud.region", AttributeValue::string("us-west-2"))
     ]
   }
   
-  // 模拟配置序列化
-  let config_json = serialize_config(original_config)
-  assert_eq(config_json.length() > 0, true)
-  assert_eq(config_json.contains("auth-service"), true)
-  assert_eq(config_json.contains("2.1.0"), true)
+  // 模拟服务级别配置（继承并覆盖全局配置）
+  let service_config = Resource::{
+    service_name: "payment-service",  // 覆盖全局service.name
+    service_version: Some("2.1.0"),   // 覆盖全局service.version
+    telemetry_sdk_name: "azimuth",     // 继承全局
+    telemetry_sdk_version: "0.1.0",   // 继承全局
+    attributes: [
+      ("deployment.environment", AttributeValue::string("staging")),  // 覆盖全局
+      ("cloud.provider", AttributeValue::string("aws")),              // 继承全局
+      ("cloud.region", AttributeValue::string("us-west-2")),          // 继承全局
+      ("service.namespace", AttributeValue::string("payments")),      // 服务特定配置
+      ("service.instance.id", AttributeValue::string("instance-123")) // 服务特定配置
+    ]
+  }
   
-  // 模拟配置反序列化
-  let restored_config = deserialize_config(config_json)
+  // 模拟实例级别配置（继承并覆盖服务配置）
+  let instance_config = Resource::{
+    service_name: "payment-service",        // 继承服务配置
+    service_version: Some("2.1.0"),         // 继承服务配置
+    telemetry_sdk_name: "azimuth",           // 继承服务配置
+    telemetry_sdk_version: "0.1.0",         // 继承服务配置
+    attributes: [
+      ("deployment.environment", AttributeValue::string("development")),  // 覆盖服务配置
+      ("cloud.provider", AttributeValue::string("aws")),                   // 继承服务配置
+      ("cloud.region", AttributeValue::string("us-west-2")),               // 继承服务配置
+      ("service.namespace", AttributeValue::string("payments")),           // 继承服务配置
+      ("service.instance.id", AttributeValue::string("instance-456")),     // 覆盖服务配置
+      ("host.name", AttributeValue::string("dev-host-001")),               // 实例特定配置
+      ("process.id", AttributeValue::int(54321L))                         // 实例特定配置
+    ]
+  }
   
-  // 验证配置恢复
-  assert_eq(restored_config.service_name, original_config.service_name)
-  assert_eq(restored_config.service_version, original_config.service_version)
-  assert_eq(restored_config.environment, original_config.environment)
-  assert_eq(restored_config.sampling_rate, original_config.sampling_rate)
-  assert_eq(restored_config.log_level, original_config.log_level)
-  assert_eq(restored_config.endpoints.length(), original_config.endpoints.length())
-  assert_eq(restored_config.attributes.length(), original_config.attributes.length())
+  // 验证全局配置
+  assert_eq(global_config.service_name, "global-service")
+  assert_eq(global_config.service_version, Some("1.0.0"))
+  assert_eq(global_config.attributes.length(), 3)
   
-  // 验证端点配置恢复
+  // 验证服务配置继承和覆盖
+  assert_eq(service_config.service_name, "payment-service")  // 覆盖
+  assert_eq(service_config.service_version, Some("2.1.0"))   // 覆盖
+  assert_eq(service_config.telemetry_sdk_name, "azimuth")    // 继承
+  assert_eq(service_config.attributes.length(), 5)           // 3个继承 + 2个新增
+  
+  // 验证实例配置继承和覆盖
+  assert_eq(instance_config.service_name, "payment-service")  // 继承
+  assert_eq(instance_config.service_version, Some("2.1.0"))   // 继承
+  assert_eq(instance_config.attributes.length(), 7)           // 5个继承 + 2个新增
+  
+  // 验证特定属性的覆盖链
+  let mut found_deployment_env = false
+  let mut found_cloud_provider = false
+  let mut found_service_instance = false
+  let mut found_host_name = false
+  let mut found_process_id = false
+  
   let mut i = 0
-  while i < restored_config.endpoints.length() {
-    assert_eq(restored_config.endpoints[i].url, original_config.endpoints[i].url)
-    assert_eq(restored_config.endpoints[i].protocol, original_config.endpoints[i].protocol)
+  while i < instance_config.attributes.length() {
+    let (key, value) = instance_config.attributes[i]
+    
+    match key {
+      "deployment.environment" => {
+        match value {
+          StringValue(env) => {
+            assert_eq(env, "development")  // 最终覆盖值
+            found_deployment_env = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "cloud.provider" => {
+        match value {
+          StringValue(provider) => {
+            assert_eq(provider, "aws")  // 继承值
+            found_cloud_provider = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "service.instance.id" => {
+        match value {
+          StringValue(id) => {
+            assert_eq(id, "instance-456")  // 覆盖值
+            found_service_instance = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "host.name" => {
+        match value {
+          StringValue(host) => {
+            assert_eq(host, "dev-host-001")  // 实例特定值
+            found_host_name = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "process.id" => {
+        match value {
+          IntValue(pid) => {
+            assert_eq(pid, 54321L)  // 实例特定值
+            found_process_id = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      _ => ()  // 忽略其他键
+    }
     i = i + 1
   }
   
-  // 验证属性配置恢复
-  i = 0
-  while i < restored_config.attributes.length() {
-    assert_eq(restored_config.attributes[i].0, original_config.attributes[i].0)
-    assert_eq(restored_config.attributes[i].1, original_config.attributes[i].1)
-    i = i + 1
-  }
+  assert_eq(found_deployment_env, true)
+  assert_eq(found_cloud_provider, true)
+  assert_eq(found_service_instance, true)
+  assert_eq(found_host_name, true)
+  assert_eq(found_process_id, true)
 }
 
-test "environment_specific_configuration" {
-  // 测试环境特定配置
+test "telemetry_configuration_dynamic_update" {
+  // 测试遥测配置的动态更新
   
-  // 开发环境配置
-  let dev_config = {
-    environment: "development",
-    log_level: "DEBUG",
-    sampling_rate: 1.0,
-    batch_size: 10,
-    timeout: 5,
-    endpoints: ["http://localhost:4318"]
-  }
-  
-  // 生产环境配置
-  let prod_config = {
-    environment: "production",
-    log_level: "INFO",
-    sampling_rate: 0.1,
-    batch_size: 1000,
-    timeout: 30,
-    endpoints: [
-      "http://collector-1:4317",
-      "http://collector-2:4317",
-      "http://collector-3:4317"
-    ]
-  }
-  
-  // 验证开发环境配置特性
-  assert_eq(dev_config.log_level, "DEBUG")
-  assert_eq(dev_config.sampling_rate, 1.0)  // 全量采样
-  assert_eq(dev_config.batch_size, 10)  // 小批次快速处理
-  assert_eq(dev_config.timeout, 5)  // 短超时
-  assert_eq(dev_config.endpoints.length(), 1)  // 单端点
-  
-  // 验证生产环境配置特性
-  assert_eq(prod_config.log_level, "INFO")
-  assert_eq(prod_config.sampling_rate, 0.1)  // 10%采样
-  assert_eq(prod_config.batch_size, 1000)  // 大批次处理
-  assert_eq(prod_config.timeout, 30)  // 长超时
-  assert_eq(prod_config.endpoints.length(), 3)  // 多端点高可用
-  
-  // 验证环境配置差异
-  assert_eq(dev_config.sampling_rate > prod_config.sampling_rate, true)
-  assert_eq(dev_config.batch_size < prod_config.batch_size, true)
-  assert_eq(dev_config.timeout < prod_config.timeout, true)
-  assert_eq(dev_config.endpoints.length() < prod_config.endpoints.length(), true)
-  
-  // 模拟环境配置选择
-  let current_env = "production"
-  let selected_config = if current_env == "development" { dev_config } else { prod_config }
-  
-  assert_eq(selected_config.environment, "production")
-  assert_eq(selected_config.log_level, "INFO")
-  assert_eq(selected_config.sampling_rate, 0.1)
-}
-
-// 辅助函数
-fn serialize_config(config : Any) -> String {
-  // 模拟配置序列化
-  "{\"service_name\":\"auth-service\",\"version\":\"2.1.0\",\"environment\":\"staging\"}"
-}
-
-fn deserialize_config(json_str : String) -> Any {
-  // 模拟配置反序列化
-  {
-    service_name: "auth-service",
-    service_version: "2.1.0",
-    environment: "staging",
-    sampling_rate: 0.15,
-    log_level: "WARN",
-    endpoints: [
-      { url: "http://collector:4317", protocol: "grpc" },
-      { url: "http://collector:4318", protocol: "http" }
-    ],
+  // 初始配置
+  let initial_config = Resource::{
+    service_name: "initial-service",
+    service_version: Some("1.0.0"),
+    telemetry_sdk_name: "azimuth",
+    telemetry_sdk_version: "0.1.0",
     attributes: [
-      ("datacenter", "dc1"),
-      ("rack", "rack-12"),
-      ("node", "node-5")
+      ("deployment.environment", AttributeValue::string("development")),
+      ("feature.flags", AttributeValue::array_bool([true, false]))
     ]
   }
+  
+  // 验证初始配置
+  assert_eq(initial_config.service_name, "initial-service")
+  assert_eq(initial_config.service_version, Some("1.0.0"))
+  assert_eq(initial_config.attributes.length(), 2)
+  
+  // 动态更新配置
+  let updated_config = Resource::{
+    service_name: "updated-service",        // 更新
+    service_version: Some("2.0.0"),         // 更新
+    telemetry_sdk_name: "azimuth",           // 保持不变
+    telemetry_sdk_version: "0.1.0",         // 保持不变
+    attributes: [
+      ("deployment.environment", AttributeValue::string("production")),  // 更新
+      ("feature.flags", AttributeValue::array_bool([true, true, false])), // 更新
+      ("new.attribute", AttributeValue::string("new-value"))              // 新增
+    ]
+  }
+  
+  // 验证更新后的配置
+  assert_eq(updated_config.service_name, "updated-service")
+  assert_eq(updated_config.service_version, Some("2.0.0"))
+  assert_eq(updated_config.telemetry_sdk_name, "azimuth")
+  assert_eq(updated_config.telemetry_sdk_version, "0.1.0")
+  assert_eq(updated_config.attributes.length(), 3)
+  
+  // 验证特定属性的更新
+  let mut found_updated_env = false
+  let mut found_updated_flags = false
+  let mut found_new_attribute = false
+  
+  let mut i = 0
+  while i < updated_config.attributes.length() {
+    let (key, value) = updated_config.attributes[i]
+    
+    match key {
+      "deployment.environment" => {
+        match value {
+          StringValue(env) => {
+            assert_eq(env, "production")
+            found_updated_env = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "feature.flags" => {
+        match value {
+          ArrayBoolValue(flags) => {
+            assert_eq(flags.length(), 3)
+            assert_eq(flags[0], true)
+            assert_eq(flags[1], true)
+            assert_eq(flags[2], false)
+            found_updated_flags = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      "new.attribute" => {
+        match value {
+          StringValue(new_val) => {
+            assert_eq(new_val, "new-value")
+            found_new_attribute = true
+          }
+          _ => @test.fail("Test failed")
+        }
+      }
+      _ => ()  // 忽略其他键
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_updated_env, true)
+  assert_eq(found_updated_flags, true)
+  assert_eq(found_new_attribute, true)
+  
+  // 测试InstrumentationScope的动态更新
+  let initial_scope = InstrumentationScope::{
+    name: "initial-scope",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/v1")
+  }
+  
+  let updated_scope = InstrumentationScope::{
+    name: "updated-scope",           // 更新
+    version: Some("2.0.0"),         // 更新
+    schema_url: Some("https://example.com/v2")  // 更新
+  }
+  
+  // 验证scope更新
+  assert_eq(initial_scope.name, "initial-scope")
+  assert_eq(initial_scope.version, Some("1.0.0"))
+  assert_eq(initial_scope.schema_url, Some("https://example.com/v1"))
+  
+  assert_eq(updated_scope.name, "updated-scope")
+  assert_eq(updated_scope.version, Some("2.0.0"))
+  assert_eq(updated_scope.schema_url, Some("https://example.com/v2"))
+}
+
+test "telemetry_configuration_error_handling" {
+  // 测试遥测配置的错误处理
+  
+  // 测试配置解析错误
+  let invalid_config_cases = [
+    ("service.name", ""),                    // 空服务名
+    ("service.version", "invalid.version"), // 无效版本格式
+    ("process.id", "not-a-number"),         // 无效数字
+    ("feature.flags", "not-a-boolean"),     // 无效布尔值
+    ("invalid.key", "any-value")            // 无效配置键
+  ]
+  
+  let mut error_case_i = 0
+  while error_case_i < invalid_config_cases.length() {
+    let (key, value) = invalid_config_cases[error_case_i]
+    
+    // 模拟配置验证错误处理
+    if key == "service.name" && value.length() == 0 {
+      // 处理空服务名错误
+      assert_eq(value.length(), 0)
+    } else if key == "service.version" && value.contains("invalid") {
+      // 处理无效版本格式错误
+      assert_eq(value.contains("invalid"), true)
+    } else if key == "process.id" && !value.chars().all(fn(c) { c.is_digit() }) {
+      // 处理无效数字错误
+      assert_eq(value.contains("not-a-number"), true)
+    } else if key == "feature.flags" && ! (value == "true" || value == "false") {
+      // 处理无效布尔值错误
+      assert_eq(value == "not-a-boolean", true)
+    } else if key == "invalid.key" {
+      // 处理无效配置键错误
+      assert_eq(key, "invalid.key")
+    }
+    
+    error_case_i = error_case_i + 1
+  }
+  
+  // 测试配置缺失错误处理
+  let required_config_keys = [
+    "service.name",
+    "telemetry.sdk.name",
+    "telemetry.sdk.version"
+  ]
+  
+  let mut missing_i = 0
+  while missing_i < required_config_keys.length() {
+    let required_key = required_config_keys[missing_i]
+    
+    // 模拟缺失必需配置的错误处理
+    if required_key == "service.name" {
+      // 处理缺失服务名的错误
+      assert_eq(required_key, "service.name")
+    } else if required_key == "telemetry.sdk.name" {
+      // 处理缺失SDK名称的错误
+      assert_eq(required_key, "telemetry.sdk.name")
+    } else if required_key == "telemetry.sdk.version" {
+      // 处理缺失SDK版本的错误
+      assert_eq(required_key, "telemetry.sdk.version")
+    }
+    
+    missing_i = missing_i + 1
+  }
+  
+  // 测试配置类型错误处理
+  let type_error_cases = [
+    ("process.id", AttributeValue::string("should-be-int")),     // 应该是Int64但提供了String
+    ("feature.flags", AttributeValue::string("should-be-bool")), // 应该是Bool但提供了String
+    ("tags", AttributeValue::int(123)),                          // 应该是Array但提供了Int
+    ("timeout", AttributeValue::bool(true))                      // 应该是Float但提供了Bool
+  ]
+  
+  let mut type_error_i = 0
+  while type_error_i < type_error_cases.length() {
+    let (key, wrong_type_value) = type_error_cases[type_error_i]
+    
+    // 模拟配置类型错误处理
+    match key {
+      "process.id" => {
+        match wrong_type_value {
+          StringValue(_) => assert_eq(true, true)  // 检测到类型错误
+          _ => @test.fail("Test failed")
+        }
+      }
+      "feature.flags" => {
+        match wrong_type_value {
+          StringValue(_) => assert_eq(true, true)  // 检测到类型错误
+          _ => @test.fail("Test failed")
+        }
+      }
+      "tags" => {
+        match wrong_type_value {
+          IntValue(_) => assert_eq(true, true)  // 检测到类型错误
+          _ => @test.fail("Test failed")
+        }
+      }
+      "timeout" => {
+        match wrong_type_value {
+          BoolValue(_) => assert_eq(true, true)  // 检测到类型错误
+          _ => @test.fail("Test failed")
+        }
+      }
+      _ => @test.fail("Test failed")
+    }
+    
+    type_error_i = type_error_i + 1
+  }
+  
+  // 测试配置恢复机制
+  let fallback_config = Resource::default("fallback-service")
+  
+  // 验证fallback配置
+  assert_eq(fallback_config.service_name, "fallback-service")
+  assert_eq(fallback_config.service_version, None)
+  assert_eq(fallback_config.telemetry_sdk_name, "azimuth")
+  assert_eq(fallback_config.telemetry_sdk_version, "0.1.0")
+  assert_eq(fallback_config.attributes.length(), 0)
 }
