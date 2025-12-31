@@ -64,6 +64,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_74656c656d657472795f7363616c6162696c6974795f746573742e6d6274_3, ["telemetry_data_aggregation"]),
     4: (__test_74656c656d657472795f7363616c6162696c6974795f746573742e6d6274_4, ["telemetry_error_handling"]),
   },
+  "telemetry_resource_limits_comprehensive_test.mbt": {
+    0: (__test_74656c656d657472795f7265736f757263655f6c696d6974735f636f6d70726568656e736976655f746573742e6d6274_0, ["telemetry_resource_limits_memory_constraints"]),
+    1: (__test_74656c656d657472795f7265736f757263655f6c696d6974735f636f6d70726568656e736976655f746573742e6d6274_1, ["telemetry_resource_limits_cpu_constraints"]),
+    2: (__test_74656c656d657472795f7265736f757263655f6c696d6974735f636f6d70726568656e736976655f746573742e6d6274_2, ["telemetry_resource_limits_storage_constraints"]),
+  },
   "telemetry_performance_comprehensive_test.mbt": {
     0: (__test_74656c656d657472795f706572666f726d616e63655f636f6d70726568656e736976655f746573742e6d6274_0, ["telemetry_performance_high_concurrency"]),
     1: (__test_74656c656d657472795f706572666f726d616e63655f636f6d70726568656e736976655f746573742e6d6274_1, ["telemetry_performance_memory_efficiency"]),
