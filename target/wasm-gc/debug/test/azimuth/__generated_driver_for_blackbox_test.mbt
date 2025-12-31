@@ -57,6 +57,12 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "telemetry_edge_computing_test.mbt": {
+    0: (__test_74656c656d657472795f656467655f636f6d707574696e675f746573742e6d6274_0, ["edge_device_telemetry_collection"]),
+    1: (__test_74656c656d657472795f656467655f636f6d707574696e675f746573742e6d6274_1, ["edge_fog_computing_integration"]),
+    2: (__test_74656c656d657472795f656467655f636f6d707574696e675f746573742e6d6274_2, ["edge_data_locality_optimization"]),
+    3: (__test_74656c656d657472795f656467655f636f6d707574696e675f746573742e6d6274_3, ["edge_offline_capability"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
