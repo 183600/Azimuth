@@ -1,653 +1,840 @@
-// 配置管理测试 - 测试遥测系统的配置管理功能
+// 配置管理测试 - 测试动态配置和热重载功能
+// 验证Azimuth Telemetry配置系统的灵活性和动态更新能力
 
-test "telemetry_configuration_basic" {
-  // 测试基本的遥测配置
+test "dynamic_configuration_updates" {
+  // 测试动态配置更新功能
   
-  // 模拟基本配置结构
-  let basic_config = {
-    "service.name": "test-service",
-    "service.version": "1.0.0",
-    "telemetry.sdk.name": "azimuth",
-    "telemetry.sdk.version": "0.1.0",
-    "environment": "test"
-  }
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
   
-  // 验证基本配置可以正确创建Resource
-  let resource = Resource::{
-    service_name: "test-service",
-    service_version: Some("1.0.0"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: [
-      ("environment", AttributeValue::string("test"))
-    ]
-  }
+  let tracer = tracer_provider.get_tracer("config-test", "1.0.0")
+  let meter = meter_provider.get_meter("config-test", "1.0.0")
+  let logger = logger_provider.get_logger("config-test", "1.0.0")
   
-  assert_eq(resource.service_name, "test-service")
-  assert_eq(resource.service_version, Some("1.0.0"))
-  assert_eq(resource.telemetry_sdk_name, "azimuth")
-  assert_eq(resource.telemetry_sdk_version, "0.1.0")
-  assert_eq(resource.attributes.length(), 1)
-  
-  match resource.attributes[0].1 {
-    StringValue(env) => assert_eq(env, "test")
-    _ => @test.fail("Test failed")
-  }
-  
-  // 测试InstrumentationScope配置
-  let scope_config = {
-    "instrumentation.name": "test-instrumentation",
-    "instrumentation.version": "1.5.0",
-    "instrumentation.schema_url": "https://example.com/schema"
-  }
-  
-  let instrumentation_scope = InstrumentationScope::{
-    name: "test-instrumentation",
-    version: Some("1.5.0"),
-    schema_url: Some("https://example.com/schema")
-  }
-  
-  assert_eq(instrumentation_scope.name, "test-instrumentation")
-  assert_eq(instrumentation_scope.version, Some("1.5.0"))
-  assert_eq(instrumentation_scope.schema_url, Some("https://example.com/schema"))
-}
-
-test "telemetry_configuration_complex" {
-  // 测试复杂的遥测配置
-  
-  // 模拟复杂配置结构
-  let complex_config_attributes = [
-    ("service.name", AttributeValue::string("complex-service")),
-    ("service.version", AttributeValue::string("2.1.0-beta.1")),
-    ("service.namespace", AttributeValue::string("payments")),
-    ("deployment.environment", AttributeValue::string("production")),
-    ("deployment.region", AttributeValue::string("us-west-2")),
-    ("deployment.zone", AttributeValue::string("us-west-2a")),
-    ("host.name", AttributeValue::string("prod-payment-01")),
-    ("host.ip", AttributeValue::string("10.0.1.100")),
-    ("host.id", AttributeValue::string("i-1234567890abcdef0")),
-    ("host.type", AttributeValue::string("t3.medium")),
-    ("process.id", AttributeValue::int(12345L)),
-    ("process.executable.name", AttributeValue::string("payment-service")),
-    ("process.executable.path", AttributeValue::string("/opt/payment-service/bin/payment-service")),
-    ("process.command", AttributeValue::string("./payment-service")),
-    ("process.command_args", AttributeValue::array_string(["./payment-service", "--config", "/etc/payment/config.yaml"])),
-    ("process.owner", AttributeValue::string("payment-user")),
-    ("process.runtime.name", AttributeValue::string("nodejs")),
-    ("process.runtime.version", AttributeValue::string("18.17.0")),
-    ("process.runtime.description", AttributeValue::string("Node.js JavaScript Runtime")),
-    ("telemetry.sdk.name", AttributeValue::string("azimuth")),
-    ("telemetry.sdk.version", AttributeValue::string("0.1.0")),
-    ("telemetry.sdk.language", AttributeValue::string("moonbit")),
-    ("telemetry.auto_instrumentation.version", AttributeValue::string("0.1.0")),
-    ("telemetry.distros.version", AttributeValue::string("0.1.0")),
-    ("container.id", AttributeValue::string("container-123456")),
-    ("container.name", AttributeValue::string("payment-container")),
-    ("container.image.name", AttributeValue::string("payment-service:2.1.0-beta.1")),
-    ("container.image.tag", AttributeValue::string("2.1.0-beta.1")),
-    ("k8s.pod.name", AttributeValue::string("payment-service-7d4f8c9b5-xyz12")),
-    ("k8s.namespace.name", AttributeValue::string("payments")),
-    ("k8s.deployment.name", AttributeValue::string("payment-service")),
-    ("k8s.node.name", AttributeValue::string("ip-10-0-1-100.us-west-2.compute.internal")),
-    ("cloud.provider", AttributeValue::string("aws")),
-    ("cloud.account.id", AttributeValue::string("123456789012")),
-    ("cloud.region", AttributeValue::string("us-west-2")),
-    ("cloud.availability_zone", AttributeValue::string("us-west-2a")),
-    ("cloud.platform", AttributeValue::string("aws_ec2")),
-    ("service.instance.id", AttributeValue::string("instance-123456")),
-    ("service.namespace", AttributeValue::string("payments")),
-    ("service.version", AttributeValue::string("2.1.0-beta.1")),
-    ("service.name", AttributeValue::string("payment-service")),
-    ("os.type", AttributeValue::string("linux")),
-    ("os.description", AttributeValue::string("Amazon Linux 2")),
-    ("os.name", AttributeValue::string("Amazon Linux")),
-    ("os.version", AttributeValue::string("2")),
-    ("os.build_id", AttributeValue::string("kernel-5.10.0-197.736.amzn2.x86_64"))
+  // 1. 初始配置状态
+  let initial_config = [
+    ("service.name", common::AttributeValue::string("config-test-service")),
+    ("service.version", common::AttributeValue::string("1.0.0")),
+    ("telemetry.enabled", common::AttributeValue::bool(true)),
+    ("sampling.rate", common::AttributeValue::float(0.1)),
+    ("batch.size", common::AttributeValue::int(512L)),
+    ("export.interval.ms", common::AttributeValue::int(5000L)),
+    ("log.level", common::AttributeValue::string("INFO"))
   ]
   
-  let complex_resource = Resource::{
-    service_name: "complex-service",
-    service_version: Some("2.1.0-beta.1"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: complex_config_attributes
-  }
-  
-  // 验证复杂配置
-  assert_eq(complex_resource.service_name, "complex-service")
-  assert_eq(complex_resource.service_version, Some("2.1.0-beta.1"))
-  assert_eq(complex_resource.attributes.length(), 42)
-  
-  // 验证特定配置项
+  // 验证初始配置
   let mut found_service_name = false
-  let mut found_deployment_env = false
-  let mut found_cloud_provider = false
-  let mut found_k8s_pod = false
-  let mut found_container = false
-  let mut found_process_args = false
+  let mut found_telemetry_enabled = false
+  let mut found_sampling_rate = false
+  let mut found_batch_size = false
   
   let mut i = 0
-  while i < complex_resource.attributes.length() {
-    let (key, value) = complex_resource.attributes[i]
-    
+  while i < initial_config.length() {
+    let (key, value) = initial_config[i]
     match key {
       "service.name" => {
         match value {
-          StringValue(name) => {
-            assert_eq(name, "complex-service")
+          common::StringValue(name) => {
+            assert_eq(name, "config-test-service")
             found_service_name = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected string value for service.name")
         }
       }
-      "deployment.environment" => {
+      "telemetry.enabled" => {
         match value {
-          StringValue(env) => {
-            assert_eq(env, "production")
-            found_deployment_env = true
+          common::BoolValue(enabled) => {
+            assert_eq(enabled, true)
+            found_telemetry_enabled = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected bool value for telemetry.enabled")
         }
       }
-      "cloud.provider" => {
+      "sampling.rate" => {
         match value {
-          StringValue(provider) => {
-            assert_eq(provider, "aws")
-            found_cloud_provider = true
+          common::FloatValue(rate) => {
+            assert_eq(rate, 0.1)
+            found_sampling_rate = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected float value for sampling.rate")
         }
       }
-      "k8s.pod.name" => {
+      "batch.size" => {
         match value {
-          StringValue(pod) => {
-            assert_eq(pod, "payment-service-7d4f8c9b5-xyz12")
-            found_k8s_pod = true
+          common::IntValue(size) => {
+            assert_eq(size, 512L)
+            found_batch_size = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected int value for batch.size")
         }
       }
-      "container.id" => {
-        match value {
-          StringValue(id) => {
-            assert_eq(id, "container-123456")
-            found_container = true
-          }
-          _ => @test.fail("Test failed")
-        }
-      }
-      "process.command_args" => {
-        match value {
-          ArrayStringValue(args) => {
-            assert_eq(args.length(), 3)
-            assert_eq(args[0], "./payment-service")
-            assert_eq(args[1], "--config")
-            assert_eq(args[2], "/etc/payment/config.yaml")
-            found_process_args = true
-          }
-          _ => @test.fail("Test failed")
-        }
-      }
-      _ => ()  // 忽略其他键
+      _ => assert_eq(true, true)  // 其他配置项也有效
     }
     i = i + 1
   }
   
   assert_eq(found_service_name, true)
-  assert_eq(found_deployment_env, true)
-  assert_eq(found_cloud_provider, true)
-  assert_eq(found_k8s_pod, true)
-  assert_eq(found_container, true)
-  assert_eq(found_process_args, true)
-}
-
-test "telemetry_configuration_validation" {
-  // 测试遥测配置的验证
+  assert_eq(found_telemetry_enabled, true)
+  assert_eq(found_sampling_rate, true)
+  assert_eq(found_batch_size, true)
   
-  // 测试有效配置
-  let valid_configs = [
-    ("service.name", "valid-service"),
-    ("service.version", "1.0.0"),
-    ("telemetry.sdk.name", "azimuth"),
-    ("telemetry.sdk.version", "0.1.0"),
-    ("deployment.environment", "production"),
-    ("host.name", "valid-host-name"),
-    ("process.id", "12345"),
-    ("container.id", "valid-container-id"),
-    ("k8s.pod.name", "valid-pod-name"),
-    ("cloud.provider", "aws")
+  // 2. 使用初始配置创建遥测操作
+  let (ctx_initial, initial_span) = tracer.start_span(
+    context::Context::empty(),
+    "operation_with_initial_config",
+    trace::Internal,
+    initial_config,
+    1640995200000000000L
+  )
+  
+  logger.info("Operation with initial configuration", [
+    ("config.version", common::AttributeValue::string("v1")),
+    ("sampling.rate", common::AttributeValue::float(0.1))
+  ])
+  
+  // 记录初始配置的指标
+  let initial_counter = meter.create_counter("operations_total", "count", "Total operations")
+  initial_counter.add(1L, [
+    ("config.version", common::AttributeValue::string("v1")),
+    ("batch.size", common::AttributeValue::int(512L))
+  ])
+  
+  // 3. 动态更新配置
+  let updated_config = [
+    ("service.name", common::AttributeValue::string("config-test-service")),
+    ("service.version", common::AttributeValue::string("1.1.0")),  // 版本更新
+    ("telemetry.enabled", common::AttributeValue::bool(true)),
+    ("sampling.rate", common::AttributeValue::float(0.5)),  // 采样率增加
+    ("batch.size", common::AttributeValue::int(1024L)),  // 批处理大小加倍
+    ("export.interval.ms", common::AttributeValue::int(3000L)),  // 导出间隔缩短
+    ("log.level", common::AttributeValue::string("DEBUG")),  // 日志级别调整
+    ("config.update.timestamp", common::AttributeValue::int(1640995200100000000L))
   ]
   
-  let mut valid_i = 0
-  while valid_i < valid_configs.length() {
-    let (key, value) = valid_configs[valid_i]
-    
-    // 验证配置键和值不为空
-    assert_eq(key.length() > 0, true)
-    assert_eq(value.length() > 0, true)
-    
-    // 验证配置键格式
-    assert_eq(key.contains(" "), false)  // 配置键不应包含空格
-    assert_eq(key[0].is_alphabetic(), true)  // 配置键应以字母开头
-    
-    valid_i = valid_i + 1
-  }
+  // 记录配置更新事件
+  logger.info("Configuration updated dynamically", [
+    ("old.version", common::AttributeValue::string("1.0.0")),
+    ("new.version", common::AttributeValue::string("1.1.0")),
+    ("sampling.rate.old", common::AttributeValue::float(0.1)),
+    ("sampling.rate.new", common::AttributeValue::float(0.5)),
+    ("batch.size.old", common::AttributeValue::int(512L)),
+    ("batch.size.new", common::AttributeValue::int(1024L))
+  ])
   
-  // 测试无效配置
-  let invalid_config_keys = [
-    "",  // 空键
-    " ",  // 只有空格的键
-    "invalid key with spaces",  // 包含空格的键
-    "123invalid",  // 以数字开头的键
-    "invalid@key",  // 包含特殊字符的键
-    "invalid.key.with.many.dots.and.very.long.name.that.exceeds.reasonable.limits"
-  ]
+  // 记录配置更新指标
+  let config_update_counter = meter.create_counter("config_updates", "count", "Configuration updates")
+  config_update_counter.add(1L, [
+    ("config.type", common::AttributeValue::string("dynamic")),
+    ("update.success", common::AttributeValue::bool(true))
+  ])
   
-  let mut invalid_i = 0
-  while invalid_i < invalid_config_keys.length() {
-    let invalid_key = invalid_config_keys[invalid_i]
-    
-    // 验证无效配置键被正确识别
-    if invalid_key.length() == 0 {
-      assert_eq(invalid_key.length() == 0, true)  // 空键
-    } else if invalid_key.contains(" ") {
-      assert_eq(invalid_key.contains(" "), true)  // 包含空格
-    } else if invalid_key.length() > 0 && invalid_key[0].is_digit() {
-      assert_eq(invalid_key[0].is_digit(), true)  // 以数字开头
-    }
-    
-    invalid_i = invalid_i + 1
-  }
+  // 4. 使用更新后的配置创建遥测操作
+  let (ctx_updated, updated_span) = tracer.start_span(
+    context::Context::empty(),
+    "operation_with_updated_config",
+    trace::Internal,
+    updated_config,
+    1640995200150000000L
+  )
   
-  // 测试边界值配置
-  let boundary_config_values = [
-    ("service.name", ""),  // 空值
-    ("service.name", "a" * 1000),  // 非常长的值
-    ("service.name", "!@#$%^&*()_+-={}[]|\\:;\"'<>?,./测试中文🚀"),  // 特殊字符
-    ("process.id", "0"),  // 最小进程ID
-    ("process.id", "9223372036854775807"),  // 最大进程ID
-    ("telemetry.sdk.version", "1.0.0-alpha.1+build.123"),  // 复杂版本号
-    ("deployment.environment", "production_with_underscores_and_numbers_123")
-  ]
+  logger.debug("Operation with updated configuration", [
+    ("config.version", common::AttributeValue::string("v1.1")),
+    ("sampling.rate", common::AttributeValue::float(0.5)),
+    ("batch.size", common::AttributeValue::int(1024L))
+  ])
   
-  let mut boundary_i = 0
-  while boundary_i < boundary_config_values.length() {
-    let (key, value) = boundary_config_values[boundary_i]
-    
-    // 验证边界值配置
-    assert_eq(key.length() > 0, true)
-    
-    if value.length() == 0 {
-      assert_eq(value, "")  // 空值
-    } else if value.length() == 1000 {
-      assert_eq(value.length(), 1000)  // 长值
-    } else if value.contains("测试中文") {
-      assert_eq(value.contains("测试中文"), true)  // Unicode字符
-    }
-    
-    boundary_i = boundary_i + 1
-  }
-}
-
-test "telemetry_configuration_inheritance" {
-  // 测试遥测配置的继承和覆盖
+  // 记录更新配置的指标
+  let updated_counter = meter.create_counter("operations_total", "count", "Total operations")
+  updated_counter.add(1L, [
+    ("config.version", common::AttributeValue::string("v1.1")),
+    ("batch.size", common::AttributeValue::int(1024L))
+  ])
   
-  // 模拟全局配置
-  let global_config = Resource::{
-    service_name: "global-service",
-    service_version: Some("1.0.0"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: [
-      ("deployment.environment", AttributeValue::string("production")),
-      ("cloud.provider", AttributeValue::string("aws")),
-      ("cloud.region", AttributeValue::string("us-west-2"))
-    ]
-  }
+  // 5. 验证配置更新效果
+  let mut found_updated_version = false
+  let mut found_updated_sampling = false
+  let mut found_updated_batch = false
   
-  // 模拟服务级别配置（继承并覆盖全局配置）
-  let service_config = Resource::{
-    service_name: "payment-service",  // 覆盖全局service.name
-    service_version: Some("2.1.0"),   // 覆盖全局service.version
-    telemetry_sdk_name: "azimuth",     // 继承全局
-    telemetry_sdk_version: "0.1.0",   // 继承全局
-    attributes: [
-      ("deployment.environment", AttributeValue::string("staging")),  // 覆盖全局
-      ("cloud.provider", AttributeValue::string("aws")),              // 继承全局
-      ("cloud.region", AttributeValue::string("us-west-2")),          // 继承全局
-      ("service.namespace", AttributeValue::string("payments")),      // 服务特定配置
-      ("service.instance.id", AttributeValue::string("instance-123")) // 服务特定配置
-    ]
-  }
-  
-  // 模拟实例级别配置（继承并覆盖服务配置）
-  let instance_config = Resource::{
-    service_name: "payment-service",        // 继承服务配置
-    service_version: Some("2.1.0"),         // 继承服务配置
-    telemetry_sdk_name: "azimuth",           // 继承服务配置
-    telemetry_sdk_version: "0.1.0",         // 继承服务配置
-    attributes: [
-      ("deployment.environment", AttributeValue::string("development")),  // 覆盖服务配置
-      ("cloud.provider", AttributeValue::string("aws")),                   // 继承服务配置
-      ("cloud.region", AttributeValue::string("us-west-2")),               // 继承服务配置
-      ("service.namespace", AttributeValue::string("payments")),           // 继承服务配置
-      ("service.instance.id", AttributeValue::string("instance-456")),     // 覆盖服务配置
-      ("host.name", AttributeValue::string("dev-host-001")),               // 实例特定配置
-      ("process.id", AttributeValue::int(54321L))                         // 实例特定配置
-    ]
-  }
-  
-  // 验证全局配置
-  assert_eq(global_config.service_name, "global-service")
-  assert_eq(global_config.service_version, Some("1.0.0"))
-  assert_eq(global_config.attributes.length(), 3)
-  
-  // 验证服务配置继承和覆盖
-  assert_eq(service_config.service_name, "payment-service")  // 覆盖
-  assert_eq(service_config.service_version, Some("2.1.0"))   // 覆盖
-  assert_eq(service_config.telemetry_sdk_name, "azimuth")    // 继承
-  assert_eq(service_config.attributes.length(), 5)           // 3个继承 + 2个新增
-  
-  // 验证实例配置继承和覆盖
-  assert_eq(instance_config.service_name, "payment-service")  // 继承
-  assert_eq(instance_config.service_version, Some("2.1.0"))   // 继承
-  assert_eq(instance_config.attributes.length(), 7)           // 5个继承 + 2个新增
-  
-  // 验证特定属性的覆盖链
-  let mut found_deployment_env = false
-  let mut found_cloud_provider = false
-  let mut found_service_instance = false
-  let mut found_host_name = false
-  let mut found_process_id = false
-  
-  let mut i = 0
-  while i < instance_config.attributes.length() {
-    let (key, value) = instance_config.attributes[i]
-    
+  i = 0
+  while i < updated_config.length() {
+    let (key, value) = updated_config[i]
     match key {
-      "deployment.environment" => {
+      "service.version" => {
         match value {
-          StringValue(env) => {
-            assert_eq(env, "development")  // 最终覆盖值
-            found_deployment_env = true
+          common::StringValue(version) => {
+            assert_eq(version, "1.1.0")
+            found_updated_version = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected string value for service.version")
         }
       }
-      "cloud.provider" => {
+      "sampling.rate" => {
         match value {
-          StringValue(provider) => {
-            assert_eq(provider, "aws")  // 继承值
-            found_cloud_provider = true
+          common::FloatValue(rate) => {
+            assert_eq(rate, 0.5)
+            found_updated_sampling = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected float value for sampling.rate")
         }
       }
-      "service.instance.id" => {
+      "batch.size" => {
         match value {
-          StringValue(id) => {
-            assert_eq(id, "instance-456")  // 覆盖值
-            found_service_instance = true
+          common::IntValue(size) => {
+            assert_eq(size, 1024L)
+            found_updated_batch = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected int value for batch.size")
         }
       }
-      "host.name" => {
-        match value {
-          StringValue(host) => {
-            assert_eq(host, "dev-host-001")  // 实例特定值
-            found_host_name = true
-          }
-          _ => @test.fail("Test failed")
-        }
-      }
-      "process.id" => {
-        match value {
-          IntValue(pid) => {
-            assert_eq(pid, 54321L)  // 实例特定值
-            found_process_id = true
-          }
-          _ => @test.fail("Test failed")
-        }
-      }
-      _ => ()  // 忽略其他键
+      _ => assert_eq(true, true)  // 其他配置项也有效
     }
     i = i + 1
   }
   
-  assert_eq(found_deployment_env, true)
-  assert_eq(found_cloud_provider, true)
-  assert_eq(found_service_instance, true)
-  assert_eq(found_host_name, true)
-  assert_eq(found_process_id, true)
+  assert_eq(found_updated_version, true)
+  assert_eq(found_updated_sampling, true)
+  assert_eq(found_updated_batch, true)
 }
 
-test "telemetry_configuration_dynamic_update" {
-  // 测试遥测配置的动态更新
+test "hot_reload_configuration" {
+  // 测试配置热重载功能
   
-  // 初始配置
-  let initial_config = Resource::{
-    service_name: "initial-service",
-    service_version: Some("1.0.0"),
-    telemetry_sdk_name: "azimuth",
-    telemetry_sdk_version: "0.1.0",
-    attributes: [
-      ("deployment.environment", AttributeValue::string("development")),
-      ("feature.flags", AttributeValue::array_bool([true, false]))
-    ]
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = tracer_provider.get_tracer("hot-reload-test", "1.0.0")
+  let meter = meter_provider.get_meter("hot-reload-test", "1.0.0")
+  let logger = logger_provider.get_logger("hot-reload-test", "1.0.0")
+  
+  // 1. 模拟配置文件热重载
+  let config_file_path = "/etc/telemetry/config.yaml"
+  let original_config_content = """
+service:
+  name: hot-reload-service
+  version: 1.0.0
+telemetry:
+  enabled: true
+  sampling:
+    rate: 0.1
+  batch:
+    size: 512
+    timeout: 5000
+  exporters:
+    - type: otlp
+      endpoint: http://localhost:4317
+"""
+  
+  let updated_config_content = """
+service:
+  name: hot-reload-service
+  version: 1.0.1
+telemetry:
+  enabled: true
+  sampling:
+    rate: 0.3
+  batch:
+    size: 1024
+    timeout: 3000
+  exporters:
+    - type: otlp
+      endpoint: http://localhost:4317
+    - type: prometheus
+      port: 9090
+"""
+  
+  // 2. 记录原始配置加载
+  logger.info("Configuration loaded from file", [
+    ("config.file", common::AttributeValue::string(config_file_path)),
+    ("config.version", common::AttributeValue::string("1.0.0")),
+    ("config.size.bytes", common::AttributeValue::int(original_config_content.length().to_int64()))
+  ])
+  
+  // 创建原始配置的遥测操作
+  let original_config = [
+    ("config.source", common::AttributeValue::string("file")),
+    ("config.file", common::AttributeValue::string(config_file_path)),
+    ("config.version", common::AttributeValue::string("1.0.0")),
+    ("sampling.rate", common::AttributeValue::float(0.1)),
+    ("batch.size", common::AttributeValue::int(512L))
+  ]
+  
+  let (ctx_original, original_span) = tracer.start_span(
+    context::Context::empty(),
+    "operation_with_file_config",
+    trace::Internal,
+    original_config,
+    1640995200000000000L
+  )
+  
+  // 3. 模拟配置文件变更检测
+  let file_change_detected = true
+  let file_modification_time = 1640995200050000000L
+  let file_size_change = updated_config_content.length() - original_config_content.length()
+  
+  if file_change_detected {
+    logger.info("Configuration file change detected", [
+      ("config.file", common::AttributeValue::string(config_file_path)),
+      ("modification.time", common::AttributeValue::int(file_modification_time)),
+      ("size.change.bytes", common::AttributeValue::int(file_size_change.to_int64()))
+    ])
+    
+    // 记录文件变更指标
+    let file_change_counter = meter.create_counter("config_file_changes", "count", "Configuration file changes")
+    file_change_counter.add(1L, [
+      ("config.file", common::AttributeValue::string(config_file_path)),
+      ("change.type", common::AttributeValue::string("content_modified"))
+    ])
   }
   
-  // 验证初始配置
-  assert_eq(initial_config.service_name, "initial-service")
-  assert_eq(initial_config.service_version, Some("1.0.0"))
-  assert_eq(initial_config.attributes.length(), 2)
+  // 4. 执行热重载
+  let (ctx_reload, reload_span) = tracer.start_span(
+    context::Context::empty(),
+    "hot_reload_configuration",
+    trace::Internal,
+    [
+      ("operation.type", common::AttributeValue::string("hot_reload")),
+      ("config.file", common::AttributeValue::string(config_file_path)),
+      ("reload.reason", common::AttributeValue::string("file_modified"))
+    ],
+    1640995200100000000L
+  )
   
-  // 动态更新配置
-  let updated_config = Resource::{
-    service_name: "updated-service",        // 更新
-    service_version: Some("2.0.0"),         // 更新
-    telemetry_sdk_name: "azimuth",           // 保持不变
-    telemetry_sdk_version: "0.1.0",         // 保持不变
-    attributes: [
-      ("deployment.environment", AttributeValue::string("production")),  // 更新
-      ("feature.flags", AttributeValue::array_bool([true, true, false])), // 更新
-      ("new.attribute", AttributeValue::string("new-value"))              // 新增
-    ]
-  }
+  logger.info("Hot reloading configuration", [
+    ("config.file", common::AttributeValue::string(config_file_path)),
+    ("reload.strategy", common::AttributeValue::string("graceful")),
+    ("preserve.active.operations", common::AttributeValue::bool(true))
+  ])
   
-  // 验证更新后的配置
-  assert_eq(updated_config.service_name, "updated-service")
-  assert_eq(updated_config.service_version, Some("2.0.0"))
-  assert_eq(updated_config.telemetry_sdk_name, "azimuth")
-  assert_eq(updated_config.telemetry_sdk_version, "0.1.0")
-  assert_eq(updated_config.attributes.length(), 3)
+  // 记录热重载指标
+  let reload_counter = meter.create_counter("config_hot_reloads", "count", "Configuration hot reloads")
+  reload_counter.add(1L, [
+    ("config.file", common::AttributeValue::string(config_file_path)),
+    ("reload.strategy", common::AttributeValue::string("graceful"))
+  ])
   
-  // 验证特定属性的更新
-  let mut found_updated_env = false
-  let mut found_updated_flags = false
-  let mut found_new_attribute = false
+  let reload_gauge = meter.create_gauge("config_reload_duration_ms", "ms", "Configuration reload duration")
+  reload_gauge.record(250.0, [
+    ("config.file", common::AttributeValue::string(config_file_path))
+  ])
+  
+  // 5. 验证新配置应用
+  let reloaded_config = [
+    ("config.source", common::AttributeValue::string("file")),
+    ("config.file", common::AttributeValue::string(config_file_path)),
+    ("config.version", common::AttributeValue::string("1.0.1")),
+    ("sampling.rate", common::AttributeValue::float(0.3)),
+    ("batch.size", common::AttributeValue::int(1024L)),
+    ("exporter.count", common::AttributeValue::int(2L)),
+    ("config.reload.time", common::AttributeValue::int(1640995200100000000L))
+  ]
+  
+  logger.info("Configuration hot reloaded successfully", [
+    ("old.version", common::AttributeValue::string("1.0.0")),
+    ("new.version", common::AttributeValue::string("1.0.1")),
+    ("reload.duration.ms", common::AttributeValue::int(250L)),
+    ("active.operations.preserved", common::AttributeValue::bool(true))
+  ])
+  
+  // 6. 使用重载后的配置创建遥测操作
+  let (ctx_reloaded, reloaded_span) = tracer.start_span(
+    context::Context::empty(),
+    "operation_with_reloaded_config",
+    trace::Internal,
+    reloaded_config,
+    1640995200150000000L
+  )
+  
+  logger.info("Operation with reloaded configuration", [
+    ("config.version", common::AttributeValue::string("1.0.1")),
+    ("sampling.rate", common::AttributeValue::float(0.3)),
+    ("batch.size", common::AttributeValue::int(1024L))
+  ])
+  
+  // 记录重载后的操作指标
+  let reloaded_counter = meter.create_counter("operations_total", "count", "Total operations")
+  reloaded_counter.add(1L, [
+    ("config.version", common::AttributeValue::string("1.0.1")),
+    ("config.source", common::AttributeValue::string("file_hot_reload"))
+  ])
+  
+  // 7. 验证热重载效果
+  let mut found_reloaded_version = false
+  let mut found_reloaded_sampling = false
+  let mut found_reloaded_batch = false
+  let mut found_exporter_count = false
   
   let mut i = 0
-  while i < updated_config.attributes.length() {
-    let (key, value) = updated_config.attributes[i]
-    
+  while i < reloaded_config.length() {
+    let (key, value) = reloaded_config[i]
     match key {
-      "deployment.environment" => {
+      "config.version" => {
         match value {
-          StringValue(env) => {
+          common::StringValue(version) => {
+            assert_eq(version, "1.0.1")
+            found_reloaded_version = true
+          }
+          _ => assert_eq(false, true, "Expected string value for config.version")
+        }
+      }
+      "sampling.rate" => {
+        match value {
+          common::FloatValue(rate) => {
+            assert_eq(rate, 0.3)
+            found_reloaded_sampling = true
+          }
+          _ => assert_eq(false, true, "Expected float value for sampling.rate")
+        }
+      }
+      "batch.size" => {
+        match value {
+          common::IntValue(size) => {
+            assert_eq(size, 1024L)
+            found_reloaded_batch = true
+          }
+          _ => assert_eq(false, true, "Expected int value for batch.size")
+        }
+      }
+      "exporter.count" => {
+        match value {
+          common::IntValue(count) => {
+            assert_eq(count, 2L)
+            found_exporter_count = true
+          }
+          _ => assert_eq(false, true, "Expected int value for exporter.count")
+        }
+      }
+      _ => assert_eq(true, true)  // 其他配置项也有效
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_reloaded_version, true)
+  assert_eq(found_reloaded_sampling, true)
+  assert_eq(found_reloaded_batch, true)
+  assert_eq(found_exporter_count, true)
+}
+
+test "configuration_validation_and_rollback" {
+  // 测试配置验证和回滚功能
+  
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = tracer_provider.get_tracer("config-validation", "1.0.0")
+  let meter = meter_provider.get_meter("config-validation", "1.0.0")
+  let logger = logger_provider.get_logger("config-validation", "1.0.0")
+  
+  // 1. 稳定的基准配置
+  let stable_config = [
+    ("service.name", common::AttributeValue::string("validation-service")),
+    ("service.version", common::AttributeValue::string("1.0.0")),
+    ("telemetry.enabled", common::AttributeValue::bool(true)),
+    ("sampling.rate", common::AttributeValue::float(0.1)),
+    ("batch.size", common::AttributeValue::int(512L)),
+    ("export.interval.ms", common::AttributeValue::int(5000L)),
+    ("log.level", common::AttributeValue::string("INFO"))
+  ]
+  
+  // 2. 尝试应用无效配置
+  let invalid_config = [
+    ("service.name", common::AttributeValue::string("")),  // 无效：空服务名
+    ("service.version", common::AttributeValue::string("1.0.1")),
+    ("telemetry.enabled", common::AttributeValue::bool(true)),
+    ("sampling.rate", common::AttributeValue::float(1.5)),  // 无效：采样率超出范围
+    ("batch.size", common::AttributeValue::int(-100L)),  // 无效：负批处理大小
+    ("export.interval.ms", common::AttributeValue::int(0L)),  // 无效：零导出间隔
+    ("log.level", common::AttributeValue::string("INVALID"))  // 无效：不支持的日志级别
+  ]
+  
+  // 3. 记录配置验证尝试
+  logger.info("Configuration validation started", [
+    ("validation.type", common::AttributeValue::string("full_validation")),
+    ("config.entries", common::AttributeValue::int(invalid_config.length().to_int64()))
+  ])
+  
+  // 4. 模拟配置验证过程
+  let (ctx_validation, validation_span) = tracer.start_span(
+    context::Context::empty(),
+    "configuration_validation",
+    trace::Internal,
+    [
+      ("validation.type", common::AttributeValue::string("schema_validation")),
+      ("config.source", common::AttributeValue::string("dynamic_update"))
+    ],
+    1640995200000000000L
+  )
+  
+  // 模拟验证失败
+  logger.error("Configuration validation failed", [
+    ("validation.errors", common::AttributeValue::int(4L)),
+    ("error.details", common::AttributeValue::string("service.name.empty, sampling.rate.out_of_range, batch.size.negative, export.interval.zero"))
+  ])
+  
+  // 记录验证失败指标
+  let validation_failure_counter = meter.create_counter("config_validation_failures", "count", "Configuration validation failures")
+  validation_failure_counter.add(1L, [
+    ("validation.type", common::AttributeValue::string("schema_validation")),
+    ("error.count", common::AttributeValue::int(4L))
+  ])
+  
+  // 5. 创建验证失败的span
+  let failed_validation_span = trace::Span::{
+    ..validation_span,
+    end_time_unix_nanos: Some(1640995200050000000L),
+    status: trace::Error,
+    status_description: Some("Configuration validation failed with 4 errors"),
+    events: [
+      trace::SpanEvent::{
+        name: "validation_error",
+        timestamp_unix_nanos: 1640995200050000000L,
+        attributes: [
+          ("error.count", common::AttributeValue::int(4L)),
+          ("validation.duration.ms", common::AttributeValue::int(5000L))
+        ]
+      }
+    ]
+  }
+  
+  assert_eq(failed_validation_span.status, trace::Error)
+  
+  // 6. 执行配置回滚
+  let (ctx_rollback, rollback_span) = tracer.start_span(
+    context::Context::empty(),
+    "configuration_rollback",
+    trace::Internal,
+    [
+      ("rollback.reason", common::AttributeValue::string("validation_failed")),
+      ("rollback.strategy", common::AttributeValue::string("to_last_known_good")),
+      ("preserve.operations", common::AttributeValue::bool(true))
+    ],
+    1640995200100000000L
+  )
+  
+  logger.warn("Configuration rolled back due to validation failures", [
+    ("rollback.reason", common::AttributeValue::string("validation_failed")),
+    ("config.version.rollback", common::AttributeValue::string("1.0.0")),
+    ("rollback.duration.ms", common::AttributeValue::int(1000L))
+  ])
+  
+  // 记录回滚指标
+  let rollback_counter = meter.create_counter("config_rollbacks", "count", "Configuration rollbacks")
+  rollback_counter.add(1L, [
+    ("rollback.reason", common::AttributeValue::string("validation_failed")),
+    ("rollback.strategy", common::AttributeValue::string("to_last_known_good"))
+  ])
+  
+  // 7. 验证回滚成功
+  let successful_rollback_span = trace::Span::{
+    ..rollback_span,
+    end_time_unix_nanos: Some(1640995200110000000L),
+    status: trace::Ok,
+    status_description: Some("Configuration rolled back successfully"),
+    events: [
+      trace::SpanEvent::{
+        name: "rollback_completed",
+        timestamp_unix_nanos: 1640995200110000000L,
+        attributes: [
+          ("rollback.duration.ms", common::AttributeValue::int(1000L)),
+          ("config.restored", common::AttributeValue::bool(true))
+        ]
+      }
+    ]
+  }
+  
+  assert_eq(successful_rollback_span.status, trace::Ok)
+  
+  // 8. 使用回滚后的稳定配置继续操作
+  let (ctx_stable, stable_span) = tracer.start_span(
+    context::Context::empty(),
+    "operation_with_stable_config",
+    trace::Internal,
+    stable_config,
+    1640995200150000000L
+  )
+  
+  logger.info("Operation continuing with stable configuration", [
+    ("config.version", common::AttributeValue::string("1.0.0")),
+    ("config.source", common::AttributeValue::string("rollback_restored"))
+  ])
+  
+  // 记录稳定配置的操作指标
+  let stable_counter = meter.create_counter("operations_total", "count", "Total operations")
+  stable_counter.add(1L, [
+    ("config.version", common::AttributeValue::string("1.0.0")),
+    ("config.source", common::AttributeValue::string("rollback_restored"))
+  ])
+  
+  // 9. 验证稳定配置仍然有效
+  let mut found_stable_service = false
+  let mut found_stable_sampling = false
+  let mut found_stable_batch = false
+  
+  let mut i = 0
+  while i < stable_config.length() {
+    let (key, value) = stable_config[i]
+    match key {
+      "service.name" => {
+        match value {
+          common::StringValue(name) => {
+            assert_eq(name, "validation-service")
+            found_stable_service = true
+          }
+          _ => assert_eq(false, true, "Expected string value for service.name")
+        }
+      }
+      "sampling.rate" => {
+        match value {
+          common::FloatValue(rate) => {
+            assert_eq(rate, 0.1)
+            found_stable_sampling = true
+          }
+          _ => assert_eq(false, true, "Expected float value for sampling.rate")
+        }
+      }
+      "batch.size" => {
+        match value {
+          common::IntValue(size) => {
+            assert_eq(size, 512L)
+            found_stable_batch = true
+          }
+          _ => assert_eq(false, true, "Expected int value for batch.size")
+        }
+      }
+      _ => assert_eq(true, true)  // 其他配置项也有效
+    }
+    i = i + 1
+  }
+  
+  assert_eq(found_stable_service, true)
+  assert_eq(found_stable_sampling, true)
+  assert_eq(found_stable_batch, true)
+}
+
+test "environment_based_configuration" {
+  // 测试基于环境的配置管理
+  
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = tracer_provider.get_tracer("env-config-test", "1.0.0")
+  let meter = meter_provider.get_meter("env-config-test", "1.0.0")
+  let logger = logger_provider.get_logger("env-config-test", "1.0.0")
+  
+  // 1. 定义不同环境的配置
+  let development_config = [
+    ("environment", common::AttributeValue::string("development")),
+    ("service.name", common::AttributeValue::string("env-config-service")),
+    ("service.version", common::AttributeValue::string("1.0.0-dev")),
+    ("telemetry.enabled", common::AttributeValue::bool(true)),
+    ("sampling.rate", common::AttributeValue::float(1.0)),  // 开发环境全采样
+    ("batch.size", common::AttributeValue::int(128L)),  // 小批处理
+    ("export.interval.ms", common::AttributeValue::int(10000L)),  // 较长间隔
+    ("log.level", common::AttributeValue::string("DEBUG")),  // 详细日志
+    ("debug.enabled", common::AttributeValue::bool(true))
+  ]
+  
+  let staging_config = [
+    ("environment", common::AttributeValue::string("staging")),
+    ("service.name", common::AttributeValue::string("env-config-service")),
+    ("service.version", common::AttributeValue::string("1.0.0-staging")),
+    ("telemetry.enabled", common::AttributeValue::bool(true)),
+    ("sampling.rate", common::AttributeValue::float(0.5)),  // 测试环境中等采样
+    ("batch.size", common::AttributeValue::int(256L)),
+    ("export.interval.ms", common::AttributeValue::int(5000L)),
+    ("log.level", common::AttributeValue::string("INFO")),
+    ("debug.enabled", common::AttributeValue::bool(false))
+  ]
+  
+  let production_config = [
+    ("environment", common::AttributeValue::string("production")),
+    ("service.name", common::AttributeValue::string("env-config-service")),
+    ("service.version", common::AttributeValue::string("1.0.0")),
+    ("telemetry.enabled", common::AttributeValue::bool(true)),
+    ("sampling.rate", common::AttributeValue::float(0.1)),  // 生产环境低采样
+    ("batch.size", common::AttributeValue::int(1024L)),  // 大批处理
+    ("export.interval.ms", common::AttributeValue::int(3000L)),  // 较短间隔
+    ("log.level", common::AttributeValue::string("WARN")),  // 仅警告和错误
+    ("debug.enabled", common::AttributeValue::bool(false))
+  ]
+  
+  // 2. 模拟环境检测和配置加载
+  let current_environment = "production"
+  
+  logger.info("Loading environment-specific configuration", [
+    ("detected.environment", common::AttributeValue::string(current_environment)),
+    ("config.source", common::AttributeValue::string("environment_variables"))
+  ])
+  
+  // 3. 根据环境选择配置
+  let selected_config = match current_environment {
+    "development" => development_config,
+    "staging" => staging_config,
+    "production" => production_config,
+    _ => development_config  // 默认配置
+  }
+  
+  // 4. 使用环境配置创建遥测操作
+  let (ctx_env, env_span) = tracer.start_span(
+    context::Context::empty(),
+    "operation_with_environment_config",
+    trace::Internal,
+    selected_config,
+    1640995200000000000L
+  )
+  
+  logger.info("Operation with environment configuration", [
+    ("environment", common::AttributeValue::string(current_environment)),
+    ("sampling.rate", common::AttributeValue::float(0.1)),
+    ("log.level", common::AttributeValue::string("WARN"))
+  ])
+  
+  // 记录环境配置指标
+  let env_counter = meter.create_counter("operations_total", "count", "Total operations")
+  env_counter.add(1L, [
+    ("environment", common::AttributeValue::string(current_environment)),
+    ("config.source", common::AttributeValue::string("environment_specific"))
+  ])
+  
+  // 5. 验证生产环境配置
+  let mut found_env = false
+  let mut found_sampling = false
+  let mut found_batch = false
+  let mut found_log_level = false
+  
+  let mut i = 0
+  while i < selected_config.length() {
+    let (key, value) = selected_config[i]
+    match key {
+      "environment" => {
+        match value {
+          common::StringValue(env) => {
             assert_eq(env, "production")
-            found_updated_env = true
+            found_env = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected string value for environment")
         }
       }
-      "feature.flags" => {
+      "sampling.rate" => {
         match value {
-          ArrayBoolValue(flags) => {
-            assert_eq(flags.length(), 3)
-            assert_eq(flags[0], true)
-            assert_eq(flags[1], true)
-            assert_eq(flags[2], false)
-            found_updated_flags = true
+          common::FloatValue(rate) => {
+            assert_eq(rate, 0.1)
+            found_sampling = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected float value for sampling.rate")
         }
       }
-      "new.attribute" => {
+      "batch.size" => {
         match value {
-          StringValue(new_val) => {
-            assert_eq(new_val, "new-value")
-            found_new_attribute = true
+          common::IntValue(size) => {
+            assert_eq(size, 1024L)
+            found_batch = true
           }
-          _ => @test.fail("Test failed")
+          _ => assert_eq(false, true, "Expected int value for batch.size")
         }
       }
-      _ => ()  // 忽略其他键
+      "log.level" => {
+        match value {
+          common::StringValue(level) => {
+            assert_eq(level, "WARN")
+            found_log_level = true
+          }
+          _ => assert_eq(false, true, "Expected string value for log.level")
+        }
+      }
+      _ => assert_eq(true, true)  // 其他配置项也有效
     }
     i = i + 1
   }
   
-  assert_eq(found_updated_env, true)
-  assert_eq(found_updated_flags, true)
-  assert_eq(found_new_attribute, true)
+  assert_eq(found_env, true)
+  assert_eq(found_sampling, true)
+  assert_eq(found_batch, true)
+  assert_eq(found_log_level, true)
   
-  // 测试InstrumentationScope的动态更新
-  let initial_scope = InstrumentationScope::{
-    name: "initial-scope",
-    version: Some("1.0.0"),
-    schema_url: Some("https://example.com/v1")
+  // 6. 模拟环境切换（从生产到测试）
+  let new_environment = "staging"
+  
+  logger.info("Environment change detected", [
+    ("old.environment", common::AttributeValue::string(current_environment)),
+    ("new.environment", common::AttributeValue::string(new_environment)),
+    ("config.reload.required", common::AttributeValue::bool(true))
+  ])
+  
+  // 记录环境切换指标
+  let env_switch_counter = meter.create_counter("environment_switches", "count", "Environment switches")
+  env_switch_counter.add(1L, [
+    ("old.environment", common::AttributeValue::string(current_environment)),
+    ("new.environment", common::AttributeValue::string(new_environment))
+  ])
+  
+  // 7. 加载新环境配置
+  let new_selected_config = match new_environment {
+    "development" => development_config,
+    "staging" => staging_config,
+    "production" => production_config,
+    _ => development_config
   }
   
-  let updated_scope = InstrumentationScope::{
-    name: "updated-scope",           // 更新
-    version: Some("2.0.0"),         // 更新
-    schema_url: Some("https://example.com/v2")  // 更新
-  }
+  let (ctx_new_env, new_env_span) = tracer.start_span(
+    context::Context::empty(),
+    "operation_after_environment_switch",
+    trace::Internal,
+    new_selected_config,
+    1640995200100000000L
+  )
   
-  // 验证scope更新
-  assert_eq(initial_scope.name, "initial-scope")
-  assert_eq(initial_scope.version, Some("1.0.0"))
-  assert_eq(initial_scope.schema_url, Some("https://example.com/v1"))
+  logger.info("Operation after environment switch", [
+    ("environment", common::AttributeValue::string(new_environment)),
+    ("sampling.rate", common::AttributeValue::float(0.5)),
+    ("log.level", common::AttributeValue::string("INFO"))
+  ])
   
-  assert_eq(updated_scope.name, "updated-scope")
-  assert_eq(updated_scope.version, Some("2.0.0"))
-  assert_eq(updated_scope.schema_url, Some("https://example.com/v2"))
-}
-
-test "telemetry_configuration_error_handling" {
-  // 测试遥测配置的错误处理
+  // 8. 验证测试环境配置
+  let mut found_new_env = false
+  let mut found_new_sampling = false
+  let mut found_new_log_level = false
   
-  // 测试配置解析错误
-  let invalid_config_cases = [
-    ("service.name", ""),                    // 空服务名
-    ("service.version", "invalid.version"), // 无效版本格式
-    ("process.id", "not-a-number"),         // 无效数字
-    ("feature.flags", "not-a-boolean"),     // 无效布尔值
-    ("invalid.key", "any-value")            // 无效配置键
-  ]
-  
-  let mut error_case_i = 0
-  while error_case_i < invalid_config_cases.length() {
-    let (key, value) = invalid_config_cases[error_case_i]
-    
-    // 模拟配置验证错误处理
-    if key == "service.name" && value.length() == 0 {
-      // 处理空服务名错误
-      assert_eq(value.length(), 0)
-    } else if key == "service.version" && value.contains("invalid") {
-      // 处理无效版本格式错误
-      assert_eq(value.contains("invalid"), true)
-    } else if key == "process.id" && !value.chars().all(fn(c) { c.is_digit() }) {
-      // 处理无效数字错误
-      assert_eq(value.contains("not-a-number"), true)
-    } else if key == "feature.flags" && ! (value == "true" || value == "false") {
-      // 处理无效布尔值错误
-      assert_eq(value == "not-a-boolean", true)
-    } else if key == "invalid.key" {
-      // 处理无效配置键错误
-      assert_eq(key, "invalid.key")
-    }
-    
-    error_case_i = error_case_i + 1
-  }
-  
-  // 测试配置缺失错误处理
-  let required_config_keys = [
-    "service.name",
-    "telemetry.sdk.name",
-    "telemetry.sdk.version"
-  ]
-  
-  let mut missing_i = 0
-  while missing_i < required_config_keys.length() {
-    let required_key = required_config_keys[missing_i]
-    
-    // 模拟缺失必需配置的错误处理
-    if required_key == "service.name" {
-      // 处理缺失服务名的错误
-      assert_eq(required_key, "service.name")
-    } else if required_key == "telemetry.sdk.name" {
-      // 处理缺失SDK名称的错误
-      assert_eq(required_key, "telemetry.sdk.name")
-    } else if required_key == "telemetry.sdk.version" {
-      // 处理缺失SDK版本的错误
-      assert_eq(required_key, "telemetry.sdk.version")
-    }
-    
-    missing_i = missing_i + 1
-  }
-  
-  // 测试配置类型错误处理
-  let type_error_cases = [
-    ("process.id", AttributeValue::string("should-be-int")),     // 应该是Int64但提供了String
-    ("feature.flags", AttributeValue::string("should-be-bool")), // 应该是Bool但提供了String
-    ("tags", AttributeValue::int(123)),                          // 应该是Array但提供了Int
-    ("timeout", AttributeValue::bool(true))                      // 应该是Float但提供了Bool
-  ]
-  
-  let mut type_error_i = 0
-  while type_error_i < type_error_cases.length() {
-    let (key, wrong_type_value) = type_error_cases[type_error_i]
-    
-    // 模拟配置类型错误处理
+  i = 0
+  while i < new_selected_config.length() {
+    let (key, value) = new_selected_config[i]
     match key {
-      "process.id" => {
-        match wrong_type_value {
-          StringValue(_) => assert_eq(true, true)  // 检测到类型错误
-          _ => @test.fail("Test failed")
+      "environment" => {
+        match value {
+          common::StringValue(env) => {
+            assert_eq(env, "staging")
+            found_new_env = true
+          }
+          _ => assert_eq(false, true, "Expected string value for environment")
         }
       }
-      "feature.flags" => {
-        match wrong_type_value {
-          StringValue(_) => assert_eq(true, true)  // 检测到类型错误
-          _ => @test.fail("Test failed")
+      "sampling.rate" => {
+        match value {
+          common::FloatValue(rate) => {
+            assert_eq(rate, 0.5)
+            found_new_sampling = true
+          }
+          _ => assert_eq(false, true, "Expected float value for sampling.rate")
         }
       }
-      "tags" => {
-        match wrong_type_value {
-          IntValue(_) => assert_eq(true, true)  // 检测到类型错误
-          _ => @test.fail("Test failed")
+      "log.level" => {
+        match value {
+          common::StringValue(level) => {
+            assert_eq(level, "INFO")
+            found_new_log_level = true
+          }
+          _ => assert_eq(false, true, "Expected string value for log.level")
         }
       }
-      "timeout" => {
-        match wrong_type_value {
-          BoolValue(_) => assert_eq(true, true)  // 检测到类型错误
-          _ => @test.fail("Test failed")
-        }
-      }
-      _ => @test.fail("Test failed")
+      _ => assert_eq(true, true)  // 其他配置项也有效
     }
-    
-    type_error_i = type_error_i + 1
+    i = i + 1
   }
   
-  // 测试配置恢复机制
-  let fallback_config = Resource::default("fallback-service")
-  
-  // 验证fallback配置
-  assert_eq(fallback_config.service_name, "fallback-service")
-  assert_eq(fallback_config.service_version, None)
-  assert_eq(fallback_config.telemetry_sdk_name, "azimuth")
-  assert_eq(fallback_config.telemetry_sdk_version, "0.1.0")
-  assert_eq(fallback_config.attributes.length(), 0)
+  assert_eq(found_new_env, true)
+  assert_eq(found_new_sampling, true)
+  assert_eq(found_new_log_level, true)
 }

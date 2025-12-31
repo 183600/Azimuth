@@ -1,293 +1,632 @@
-// 边界条件和异常值测试用例
-// 测试遥测系统在极端条件下的稳定性和正确性
+// 边界条件测试 - 测试极端值和异常输入处理
+// 验证Azimuth Telemetry在边界条件和异常情况下的稳定性
 
-test "trace_id_boundary_conditions" {
-  // 测试trace ID的边界条件
+test "attribute_value_boundary_conditions" {
+  // 测试属性值的边界条件
   
-  // 有效trace ID (32个十六进制字符)
-  let valid_trace_id = "0af7651916cd43dd8448eb211c80319c"
-  assert_eq(valid_trace_id.length(), 32)
-  
-  // 测试全0的trace ID
-  let zero_trace_id = "00000000000000000000000000000000"
-  assert_eq(zero_trace_id.length(), 32)
-  assert_eq(zero_trace_id.contains("0"), true)
-  assert_eq(zero_trace_id.contains("1"), false)
-  
-  // 测试全F的trace ID (最大值)
-  let max_trace_id = "ffffffffffffffffffffffffffffffff"
-  assert_eq(max_trace_id.length(), 32)
-  assert_eq(max_trace_id.contains("f"), true)
-  
-  // 验证trace ID格式
-  let hex_chars = "0123456789abcdef"
-  let mut i = 0
-  while i < valid_trace_id.length() {
-    let char = valid_trace_id[i]
-    assert_eq(hex_chars.contains(char.to_string()), true)
-    i = i + 1
+  // 1. 测试空字符串和极长字符串
+  let empty_string_attr = common::AttributeValue::string("")
+  match empty_string_attr {
+    common::StringValue(s) => {
+      assert_eq(s.length(), 0)
+      assert_eq(s, "")
+    }
+    _ => assert_eq(false, true, "Expected StringValue for empty string")
   }
-}
-
-test "span_id_boundary_conditions" {
-  // 测试span ID的边界条件
   
-  // 有效span ID (16个十六进制字符)
-  let valid_span_id = "b7ad6b7169203331"
-  assert_eq(valid_span_id.length(), 16)
-  
-  // 测试全0的span ID
-  let zero_span_id = "0000000000000000"
-  assert_eq(zero_span_id.length(), 16)
-  
-  // 测试全F的span ID (最大值)
-  let max_span_id = "ffffffffffffffff"
-  assert_eq(max_span_id.length(), 16)
-  
-  // 测试边界值转换
-  let hex_value = "8000000000000000"  // 2^63
-  assert_eq(hex_value.length(), 16)
-  assert_eq(hex_value[0], '8')
-  assert_eq(hex_value[1], '0')
-}
-
-test "metric_values_boundary" {
-  // 测试指标值的边界条件
-  
-  // 测试零值
-  let zero_metric = 0.0
-  assert_eq(zero_metric, 0.0)
-  assert_eq(zero_metric > 0.0, false)
-  assert_eq(zero_metric < 0.0, false)
-  
-  // 测试极大值
-  let large_metric = 999999999.9
-  assert_eq(large_metric > 100000000.0, true)
-  
-  // 测试极小正值
-  let tiny_metric = 0.0000001
-  assert_eq(tiny_metric > 0.0, true)
-  assert_eq(tiny_metric < 0.000001, true)
-  
-  // 测试负值 (如果支持)
-  let negative_metric = -42.5
-  assert_eq(negative_metric < 0.0, true)
-  assert_eq(negative_metric > -100.0, true)
-}
-
-test "attribute_length_boundaries" {
-  // 测试属性长度的边界条件
-  
-  // 空字符串
-  let empty_string = ""
-  assert_eq(empty_string.length(), 0)
-  
-  // 单字符
-  let single_char = "a"
-  assert_eq(single_char.length(), 1)
-  
-  // 长字符串 (测试系统处理能力)
-  let mut long_string = ""
+  // 创建一个非常长的字符串（模拟边界条件）
+  let very_long_string = ""
   let mut i = 0
   while i < 1000 {
-    long_string = long_string + "x"
+    very_long_string = very_long_string + "a"
     i = i + 1
   }
-  assert_eq(long_string.length(), 1000)
-  assert_eq(long_string.has_prefix("xxx"), true)
-  assert_eq(long_string.has_suffix("xxx"), true)
   
-  // 测试包含特殊字符的字符串
-  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
-  assert_eq(special_chars.length(), 29)
-  assert_eq(special_chars.contains("!"), true)
-  assert_eq(special_chars.contains("?"), true)
-}
-
-test "array_size_boundaries" {
-  // 测试数组大小的边界条件
+  let long_string_attr = common::AttributeValue::string(very_long_string)
+  match long_string_attr {
+    common::StringValue(s) => {
+      assert_eq(s.length(), 1000)
+      assert_eq(s.has_prefix("aaa"), true)
+    }
+    _ => assert_eq(false, true, "Expected StringValue for long string")
+  }
   
-  // 空数组
-  let empty_array = []
-  assert_eq(empty_array.length(), 0)
+  // 2. 测试极值整数
+  let max_int_attr = common::AttributeValue::int(9223372036854775807L)  // Int64最大值
+  match max_int_attr {
+    common::IntValue(n) => {
+      assert_eq(n, 9223372036854775807L)
+      assert_eq(n > 0L, true)
+    }
+    _ => assert_eq(false, true, "Expected IntValue for max int")
+  }
   
-  // 单元素数组
-  let single_element = [42]
-  assert_eq(single_element.length(), 1)
-  assert_eq(single_element[0], 42)
+  let min_int_attr = common::AttributeValue::int(-9223372036854775808L)  // Int64最小值
+  match min_int_attr {
+    common::IntValue(n) => {
+      assert_eq(n, -9223372036854775808L)
+      assert_eq(n < 0L, true)
+    }
+    _ => assert_eq(false, true, "Expected IntValue for min int")
+  }
   
-  // 大数组 (测试内存限制)
-  let mut large_array = []
+  let zero_int_attr = common::AttributeValue::int(0L)
+  match zero_int_attr {
+    common::IntValue(n) => {
+      assert_eq(n, 0L)
+    }
+    _ => assert_eq(false, true, "Expected IntValue for zero")
+  }
+  
+  // 3. 测试极值浮点数
+  let max_float_attr = common::AttributeValue::float(1.7976931348623157e+308)  // Double最大值
+  match max_float_attr {
+    common::FloatValue(f) => {
+      assert_eq(f > 1.0e+308, true)
+    }
+    _ => assert_eq(false, true, "Expected FloatValue for max float")
+  }
+  
+  let min_positive_float_attr = common::AttributeValue::float(2.2250738585072014e-308)  // 最小正双精度
+  match min_positive_float_attr {
+    common::FloatValue(f) => {
+      assert_eq(f > 0.0, true)
+      assert_eq(f < 1.0e-307, true)
+    }
+    _ => assert_eq(false, true, "Expected FloatValue for min positive float")
+  }
+  
+  let zero_float_attr = common::AttributeValue::float(0.0)
+  match zero_float_attr {
+    common::FloatValue(f) => {
+      assert_eq(f, 0.0)
+    }
+    _ => assert_eq(false, true, "Expected FloatValue for zero")
+  }
+  
+  let negative_zero_attr = common::AttributeValue::float(-0.0)
+  match negative_zero_attr {
+    common::FloatValue(f) => {
+      assert_eq(f, -0.0)
+    }
+    _ => assert_eq(false, true, "Expected FloatValue for negative zero")
+  }
+  
+  let infinity_attr = common::AttributeValue::float(1.0 / 0.0)  // 正无穷
+  match infinity_attr {
+    common::FloatValue(f) => {
+      assert_eq(f > 1.0e+308, true)  // 检查是否为无穷大
+    }
+    _ => assert_eq(false, true, "Expected FloatValue for infinity")
+  }
+  
+  let negative_infinity_attr = common::AttributeValue::float(-1.0 / 0.0)  // 负无穷
+  match negative_infinity_attr {
+    common::FloatValue(f) => {
+      assert_eq(f < -1.0e+308, true)  // 检查是否为负无穷大
+    }
+    _ => assert_eq(false, true, "Expected FloatValue for negative infinity")
+  }
+  
+  // 4. 测试NaN值
+  let nan_attr = common::AttributeValue::float(0.0 / 0.0)  // NaN
+  match nan_attr {
+    common::FloatValue(f) => {
+      // NaN不等于任何值，包括它自己
+      assert_eq(f != f, true)
+    }
+    _ => assert_eq(false, true, "Expected FloatValue for NaN")
+  }
+  
+  // 5. 测试极小和极大的数组
+  let empty_array_attr = common::AttributeValue::array_string([])
+  match empty_array_attr {
+    common::ArrayStringValue(arr) => {
+      assert_eq(arr.length(), 0)
+    }
+    _ => assert_eq(false, true, "Expected ArrayStringValue for empty array")
+  }
+  
+  let single_element_array_attr = common::AttributeValue::array_int([42L])
+  match single_element_array_attr {
+    common::ArrayIntValue(arr) => {
+      assert_eq(arr.length(), 1)
+      assert_eq(arr[0], 42L)
+    }
+    _ => assert_eq(false, true, "Expected ArrayIntValue for single element array")
+  }
+  
+  // 创建大数组
+  let large_int_array = [] : Array[Int64]
   let mut i = 0
   while i < 10000 {
-    large_array.push(i)
+    large_int_array.push(i.to_int64())
     i = i + 1
   }
-  assert_eq(large_array.length(), 10000)
-  assert_eq(large_array[0], 0)
-  assert_eq(large_array[9999], 9999)
-}
-
-test "timestamp_boundary_conditions" {
-  // 测试时间戳边界条件
   
-  // Unix纪元时间
-  let epoch_timestamp = 0L
-  assert_eq(epoch_timestamp, 0L)
-  
-  // 当前时间附近的时间戳
-  let recent_timestamp = 1640995200L  // 2022-01-01 00:00:00 UTC
-  assert_eq(recent_timestamp > 1600000000L, true)
-  assert_eq(recent_timestamp < 1700000000L, true)
-  
-  // 未来时间戳
-  let future_timestamp = 4102444800L  // 2100-01-01 00:00:00 UTC
-  assert_eq(future_timestamp > recent_timestamp, true)
-  
-  // 时间戳转换验证
-  let timestamp_str = recent_timestamp.to_string()
-  assert_eq(timestamp_str.length(), 10)
-  assert_eq(timestamp_str.contains("1640995200"), true)
-}
-
-test "error_code_boundaries" {
-  // 测试错误码边界条件
-  
-  // 标准HTTP错误码
-  let http_errors = [400, 401, 403, 404, 500, 502, 503]
-  assert_eq(http_errors.length(), 7)
-  assert_eq(http_errors[0], 400)
-  assert_eq(http_errors[6], 503)
-  
-  // 边界错误码
-  let min_error = 100
-  let max_error = 599
-  assert_eq(min_error < http_errors[0], true)
-  assert_eq(max_error > http_errors[6], true)
-  
-  // 自定义错误码范围
-  let custom_errors = []
-  let mut i = 600
-  while i <= 699 {
-    custom_errors.push(i)
-    i = i + 1
+  let large_array_attr = common::AttributeValue::array_int(large_int_array)
+  match large_array_attr {
+    common::ArrayIntValue(arr) => {
+      assert_eq(arr.length(), 10000)
+      assert_eq(arr[0], 0L)
+      assert_eq(arr[9999], 9999L)
+    }
+    _ => assert_eq(false, true, "Expected ArrayIntValue for large array")
   }
-  assert_eq(custom_errors.length(), 100)
-  assert_eq(custom_errors[0], 600)
-  assert_eq(custom_errors[99], 699)
 }
 
-test "sampling_rate_boundaries" {
-  // 测试采样率边界条件
+test "span_timestamp_boundary_conditions" {
+  // 测试span时间戳的边界条件
   
-  // 0% 采样率
-  let zero_sampling = 0.0
-  assert_eq(zero_sampling >= 0.0, true)
-  assert_eq(zero_sampling <= 1.0, true)
+  // 1. 测试最小时间戳（Unix纪元）
+  let min_timestamp = 0L
+  let span_with_min_time = trace::Span::{
+    name: "min_time_span",
+    context: trace::SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: trace::Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: min_timestamp,
+    end_time_unix_nanos: Some(min_timestamp + 1000L),
+    status: trace::Ok,
+    status_description: None,
+    attributes: [],
+    events: [],
+    links: []
+  }
   
-  // 100% 采样率
-  let full_sampling = 1.0
-  assert_eq(full_sampling >= 0.0, true)
-  assert_eq(full_sampling <= 1.0, true)
+  assert_eq(span_with_min_time.start_time_unix_nanos, 0L)
+  assert_eq(span_with_min_time.end_time_unix_nanos.unwrap(), 1000L)
   
-  // 边界采样率
-  let min_sampling = 0.000001
-  let max_sampling = 0.999999
-  assert_eq(min_sampling > 0.0, true)
-  assert_eq(max_sampling < 1.0, true)
+  // 2. 测试最大合理时间戳（遥远的未来）
+  let max_timestamp = 253402300799999999999L  // 9999-12-31 23:59:59.999999999 UTC
+  let span_with_max_time = trace::Span::{
+    name: "max_time_span",
+    context: trace::SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: trace::Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: max_timestamp - 1000000L,
+    end_time_unix_nanos: Some(max_timestamp),
+    status: trace::Ok,
+    status_description: None,
+    attributes: [],
+    events: [],
+    links: []
+  }
   
-  // 验证采样率计算
-  let sampling_decisions = []
+  assert_eq(span_with_max_time.start_time_unix_nanos, max_timestamp - 1000000L)
+  assert_eq(span_with_max_time.end_time_unix_nanos.unwrap(), max_timestamp)
+  
+  // 3. 测试负时间戳（Unix纪元之前）
+  let negative_timestamp = -86400000000000L  // 1969-12-31 00:00:00 UTC
+  let span_with_negative_time = trace::Span::{
+    name: "negative_time_span",
+    context: trace::SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: trace::Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: negative_timestamp,
+    end_time_unix_nanos: Some(negative_timestamp + 1000000L),
+    status: trace::Ok,
+    status_description: None,
+    attributes: [],
+    events: [],
+    links: []
+  }
+  
+  assert_eq(span_with_negative_time.start_time_unix_nanos, negative_timestamp)
+  assert_eq(span_with_negative_time.end_time_unix_nanos.unwrap(), negative_timestamp + 1000000L)
+  
+  // 4. 测试零持续时间span
+  let zero_duration_span = trace::Span::{
+    name: "zero_duration_span",
+    context: trace::SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: trace::Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200000000000L),  // 相同时间戳
+    status: trace::Ok,
+    status_description: None,
+    attributes: [],
+    events: [],
+    links: []
+  }
+  
+  assert_eq(zero_duration_span.start_time_unix_nanos, zero_duration_span.end_time_unix_nanos.unwrap())
+  
+  // 5. 测试极长持续时间span
+  let long_duration_start = 1640995200000000000L
+  let long_duration_end = 253402300799999999999L  // 约8000年
+  let long_duration_span = trace::Span::{
+    name: "long_duration_span",
+    context: trace::SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: trace::Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: long_duration_start,
+    end_time_unix_nanos: Some(long_duration_end),
+    status: trace::Ok,
+    status_description: None,
+    attributes: [],
+    events: [],
+    links: []
+  }
+  
+  assert_eq(long_duration_span.end_time_unix_nanos.unwrap() > long_duration_span.start_time_unix_nanos, true)
+  
+  // 6. 测试无效时间顺序（结束时间早于开始时间）
+  let invalid_time_span = trace::Span::{
+    name: "invalid_time_span",
+    context: trace::SpanContext::{
+      trace_id: [for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte }),
+      span_id: [for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte }),
+      trace_flags: 0_byte,
+      trace_state: ""
+    },
+    kind: trace::Internal,
+    parent_span_id: None,
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995100000000000L),  // 早于开始时间
+    status: trace::Error,
+    status_description: Some("Invalid time order"),
+    attributes: [],
+    events: [],
+    links: []
+  }
+  
+  assert_eq(invalid_time_span.status, trace::Error)
+  assert_eq(invalid_time_span.end_time_unix_nanos.unwrap() < invalid_time_span.start_time_unix_nanos, true)
+}
+
+test "context_capacity_boundary_conditions" {
+  // 测试上下文容量的边界条件
+  
+  // 1. 测试空上下文
+  let empty_context = context::Context::empty()
+  assert_eq(empty_context.values.length(), 0)
+  
+  let empty_baggage = context::Baggage::empty()
+  assert_eq(empty_baggage.entries.length(), 0)
+  
+  // 2. 测试单元素上下文
+  let single_key = context::create_key("single_key")
+  let single_context = empty_context.with_value(single_key, "single_value")
+  assert_eq(single_context.values.length(), 1)
+  assert_eq(single_context.get(single_key).unwrap(), "single_value")
+  
+  let single_baggage = empty_baggage.with_entry("single_entry", "single_value")
+  assert_eq(single_baggage.entries.length(), 1)
+  assert_eq(single_baggage.get("single_entry").unwrap(), "single_value")
+  
+  // 3. 测试大容量上下文
+  let large_context = empty_context
+  let large_baggage = empty_baggage
+  
+  // 添加大量上下文值
   let mut i = 0
   while i < 1000 {
-    // 模拟采样决策
-    let decision = i % 2 == 0  // 50% 采样
-    sampling_decisions.push(decision)
+    let key = context::create_key("key_" + i.to_string())
+    large_context = large_context.with_value(key, "value_" + i.to_string())
+    large_baggage = large_baggage.with_entry("entry_" + i.to_string(), "value_" + i.to_string())
     i = i + 1
   }
   
-  // 计算实际采样率
-  let mut sampled_count = 0
-  i = 0
-  while i < sampling_decisions.length() {
-    if sampling_decisions[i] {
-      sampled_count = sampled_count + 1
-    }
-    i = i + 1
-  }
+  assert_eq(large_context.values.length(), 1000)
+  assert_eq(large_baggage.entries.length(), 1000)
   
-  let actual_rate = sampled_count.to_double() / sampling_decisions.length().to_double()
-  assert_eq(actual_rate >= 0.4, true)
-  assert_eq(actual_rate <= 0.6, true)
-}
-
-test "resource_limits_boundaries" {
-  // 测试资源限制边界条件
+  // 验证边界值
+  assert_eq(large_context.get(context::create_key("key_0")).unwrap(), "value_0")
+  assert_eq(large_context.get(context::create_key("key_999")).unwrap(), "value_999")
+  assert_eq(large_baggage.get("entry_0").unwrap(), "value_0")
+  assert_eq(large_baggage.get("entry_999").unwrap(), "value_999")
   
-  // 标签数量限制
-  let max_tags = 128
-  let tag_count = 128
-  assert_eq(tag_count <= max_tags, true)
-  
-  // 测试标签数量边界
-  let mut tags = []
-  let mut i = 0
-  while i < max_tags {
-    tags.push("tag-" + i.to_string())
-    i = i + 1
-  }
-  assert_eq(tags.length(), max_tags)
-  
-  // 属性值长度限制
-  let max_attr_length = 1024
-  let attr_value = "x"
-  let mut long_attr = ""
+  // 4. 测试极长的键和值
+  let very_long_key = ""
+  let very_long_value = ""
   let mut j = 0
-  while j < max_attr_length {
-    long_attr = long_attr + attr_value
+  while j < 100 {
+    very_long_key = very_long_key + "k"
+    very_long_value = very_long_value + "v"
     j = j + 1
   }
-  assert_eq(long_attr.length(), max_attr_length)
   
-  // 批次大小限制
-  let max_batch_size = 10000
-  let batch_size = 5000
-  assert_eq(batch_size <= max_batch_size, true)
-  assert_eq(batch_size > 0, true)
+  let long_key_context = empty_context.with_value(context::create_key(very_long_key), very_long_value)
+  assert_eq(long_key_context.values.length(), 1)
+  assert_eq(long_key_context.get(context::create_key(very_long_key)).unwrap(), very_long_value)
+  
+  let long_key_baggage = empty_baggage.with_entry(very_long_key, very_long_value)
+  assert_eq(long_key_baggage.entries.length(), 1)
+  assert_eq(long_key_baggage.get(very_long_key).unwrap(), very_long_value)
+  
+  // 5. 测试特殊字符键和值
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?`~ \t\n\r"
+  let special_key_context = empty_context.with_value(context::create_key(special_chars), special_chars)
+  assert_eq(special_key_context.get(context::create_key(special_chars)).unwrap(), special_chars)
+  
+  let special_key_baggage = empty_baggage.with_entry(special_chars, special_chars)
+  assert_eq(special_key_baggage.get(special_chars).unwrap(), special_chars)
+  
+  // 6. 测试Unicode字符
+  let unicode_key = "键_测试_🔑"
+  let unicode_value = "值_测试_📊"
+  let unicode_context = empty_context.with_value(context::create_key(unicode_key), unicode_value)
+  assert_eq(unicode_context.get(context::create_key(unicode_key)).unwrap(), unicode_value)
+  
+  let unicode_baggage = empty_baggage.with_entry(unicode_key, unicode_value)
+  assert_eq(unicode_baggage.get(unicode_key).unwrap(), unicode_value)
 }
 
-test "numeric_precision_boundaries" {
-  // 测试数值精度边界条件
+test "log_record_boundary_conditions" {
+  // 测试日志记录的边界条件
   
-  // 整数精度测试
-  let max_int = 2147483647  // 2^31 - 1
-  let min_int = -2147483648  // -2^31
-  assert_eq(max_int > 0, true)
-  assert_eq(min_int < 0, true)
+  // 1. 测试空日志记录
+  let empty_log = logs::LogRecord::{
+    timestamp_unix_nanos: 0L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: logs::Info,
+    severity_text: None,
+    body: None,
+    attributes: [],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
   
-  // 长整数精度测试
-  let max_long = 9223372036854775807L  // 2^63 - 1
-  let min_long = -9223372036854775808L  // -2^63
-  assert_eq(max_long > 0L, true)
-  assert_eq(min_long < 0L, true)
+  assert_eq(empty_log.timestamp_unix_nanos, 0L)
+  assert_eq(empty_log.observed_timestamp_unix_nanos, None)
+  assert_eq(empty_log.severity_number, logs::Info)
+  assert_eq(empty_log.severity_text, None)
+  assert_eq(empty_log.body, None)
+  assert_eq(empty_log.attributes.length(), 0)
   
-  // 浮点数精度测试
-  let precise_double = 3.141592653589793
-  let very_small = 1.0e-10
-  let very_large = 1.0e+10
+  // 2. 测试极长日志消息
+  let very_long_message = ""
+  let mut i = 0
+  while i < 10000 {
+    very_long_message = very_long_message + "log_message_line_" + i.to_string() + "\n"
+    i = i + 1
+  }
   
-  assert_eq(precise_double > 3.14, true)
-  assert_eq(precise_double < 3.15, true)
-  assert_eq(very_small > 0.0, true)
-  assert_eq(very_small < 0.000000001, true)
-  assert_eq(very_large > 1000000000.0, true)
+  let long_log = logs::LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: Some(1640995200000001000L),
+    severity_number: logs::Error,
+    severity_text: Some("ERROR"),
+    body: Some(very_long_message),
+    attributes: [
+      ("message.length", common::AttributeValue::int(very_long_message.length().to_int64()))
+    ],
+    trace_id: Some([for i = 0; i < 16; i = i + 1].map(fn(_) { 0_byte })),
+    span_id: Some([for i = 0; i < 8; i = i + 1].map(fn(_) { 0_byte })),
+    trace_flags: Some(1_byte),
+    resource: Some(common::Resource::default("test-service")),
+    instrumentation_scope: Some(common::InstrumentationScope::{
+      name: "test-logger",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
+  }
   
-  // 数值转换测试
-  let int_to_double = max_int.to_double()
-  let double_to_int = int_to_double.to_int()
-  assert_eq(double_to_int, max_int)
+  match long_log.body {
+    Some(message) => {
+      assert_eq(message.length() > 100000, true)  // 验证消息确实很长
+      assert_eq(message.contains("log_message_line_0"), true)
+      assert_eq(message.contains("log_message_line_9999"), true)
+    }
+    None => assert_eq(false, true, "Expected Some(String) for body")
+  }
   
-  let long_to_string = max_long.to_string()
-  assert_eq(long_to_string.length(), 19)
-  assert_eq(long_to_string.contains("9223372036854775807"), true)
+  // 3. 测试所有严重性级别
+  let severity_levels = [
+    (logs::Trace, "TRACE"),
+    (logs::Debug, "DEBUG"),
+    (logs::Info, "INFO"),
+    (logs::Warn, "WARN"),
+    (logs::Error, "ERROR"),
+    (logs::Fatal, "FATAL")
+  ]
+  
+  let mut i = 0
+  while i < severity_levels.length() {
+    let (severity_num, severity_text) = severity_levels[i]
+    let severity_log = logs::LogRecord::{
+      timestamp_unix_nanos: 1640995200000000000L + i.to_int64(),
+      observed_timestamp_unix_nanos: None,
+      severity_number: severity_num,
+      severity_text: Some(severity_text),
+      body: Some("Test message for " + severity_text),
+      attributes: [
+        ("severity.level", common::AttributeValue::string(severity_text))
+      ],
+      trace_id: None,
+      span_id: None,
+      trace_flags: None,
+      resource: None,
+      instrumentation_scope: None
+    }
+    
+    assert_eq(severity_log.severity_number, severity_num)
+    assert_eq(severity_log.severity_text.unwrap(), severity_text)
+    i = i + 1
+  }
+  
+  // 4. 测试包含大量属性的日志
+  let many_attributes = [] : Array[(String, common::AttributeValue)]
+  let mut j = 0
+  while j < 1000 {
+    many_attributes.push(("attr_" + j.to_string(), common::AttributeValue::string("value_" + j.to_string())))
+    j = j + 1
+  }
+  
+  let many_attrs_log = logs::LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: logs::Info,
+    severity_text: Some("INFO"),
+    body: Some("Log with many attributes"),
+    attributes: many_attributes,
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  assert_eq(many_attrs_log.attributes.length(), 1000)
+  assert_eq(many_attrs_log.attributes[0].0, "attr_0")
+  assert_eq(many_attrs_log.attributes[999].0, "attr_999")
+  
+  // 5. 测试包含特殊字符的日志
+  let special_chars_log = logs::LogRecord::{
+    timestamp_unix_nanos: 1640995200000000000L,
+    observed_timestamp_unix_nanos: None,
+    severity_number: logs::Warn,
+    severity_text: Some("WARN"),
+    body: Some("Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?`~ \t\n\r Unicode: 测试 🚀"),
+    attributes: [
+      ("special.chars", common::AttributeValue::string("!@#$%^&*()")),
+      ("unicode.chars", common::AttributeValue::string("测试 🚀")),
+      ("newline", common::AttributeValue::string("line1\nline2")),
+      ("tab", common::AttributeValue::string("col1\tcol2"))
+    ],
+    trace_id: None,
+    span_id: None,
+    trace_flags: None,
+    resource: None,
+    instrumentation_scope: None
+  }
+  
+  match special_chars_log.body {
+    Some(message) => {
+      assert_eq(message.contains("!@#$%^&*()"), true)
+      assert_eq(message.contains("测试 🚀"), true)
+      assert_eq(message.contains("\n"), true)
+      assert_eq(message.contains("\t"), true)
+    }
+    None => assert_eq(false, true, "Expected Some(String) for body with special chars")
+  }
+}
+
+test "metrics_boundary_conditions" {
+  // 测试指标的边界条件
+  
+  // 1. 测试极值指标计数
+  let max_counter = metrics::NoopCounter::{}
+  max_counter.add(9223372036854775807L)  // Int64最大值
+  
+  let min_counter = metrics::NoopCounter::{}
+  min_counter.add(-9223372036854775808L)  // Int64最小值
+  
+  let zero_counter = metrics::NoopCounter::{}
+  zero_counter.add(0L)
+  
+  // 2. 测试极值指标记录
+  let max_histogram = metrics::NoopHistogram::{}
+  max_histogram.record(1.7976931348623157e+308)  // Double最大值
+  
+  let min_histogram = metrics::NoopHistogram::{}
+  min_histogram.record(2.2250738585072014e-308)  // 最小正双精度
+  
+  let zero_histogram = metrics::NoopHistogram::{}
+  zero_histogram.record(0.0)
+  
+  let negative_histogram = metrics::NoopHistogram::{}
+  negative_histogram.record(-1.7976931348623157e+308)  // 负最大值
+  
+  // 3. 测试无穷大和NaN指标
+  let infinity_histogram = metrics::NoopHistogram::{}
+  infinity_histogram.record(1.0 / 0.0)  // 正无穷
+  
+  let negative_infinity_histogram = metrics::NoopHistogram::{}
+  negative_infinity_histogram.record(-1.0 / 0.0)  // 负无穷
+  
+  let nan_histogram = metrics::NoopHistogram::{}
+  nan_histogram.record(0.0 / 0.0)  // NaN
+  
+  // 4. 测试极大量属性
+  let many_attrs_counter = metrics::NoopCounter::{}
+  let many_attrs = [] : Array[(String, common::AttributeValue)]
+  let mut i = 0
+  while i < 1000 {
+    many_attrs.push(("attr_" + i.to_string(), common::AttributeValue::int(i.to_int64())))
+    i = i + 1
+  }
+  many_attrs_counter.add(1L, many_attrs)
+  
+  // 5. 测试极长属性键和值
+  let very_long_key = ""
+  let very_long_value = ""
+  let mut j = 0
+  while j < 100 {
+    very_long_key = very_long_key + "k"
+    very_long_value = very_long_value + "v"
+    j = j + 1
+  }
+  
+  let long_key_counter = metrics::NoopCounter::{}
+  long_key_counter.add(1L, [(very_long_key, common::AttributeValue::string(very_long_value))])
+  
+  // 6. 测试特殊字符属性
+  let special_chars_counter = metrics::NoopCounter::{}
+  special_chars_counter.add(1L, [
+    ("special.chars", common::AttributeValue::string("!@#$%^&*()")),
+    ("unicode.chars", common::AttributeValue::string("测试 🚀")),
+    ("empty.value", common::AttributeValue::string("")),
+    ("null.like", common::AttributeValue::string("null"))
+  ])
+  
+  // 7. 测试混合类型属性
+  let mixed_type_histogram = metrics::NoopHistogram::{}
+  mixed_type_histogram.record(42.0, [
+    ("string.attr", common::AttributeValue::string("test")),
+    ("int.attr", common::AttributeValue::int(42L)),
+    ("float.attr", common::AttributeValue::float(3.14)),
+    ("bool.attr", common::AttributeValue::bool(true)),
+    ("array.string", common::AttributeValue::array_string(["a", "b", "c"])),
+    ("array.int", common::AttributeValue::array_int([1L, 2L, 3L])),
+    ("array.float", common::AttributeValue::array_float([1.1, 2.2, 3.3])),
+    ("array.bool", common::AttributeValue::array_bool([true, false, true]))
+  ])
+  
+  // 8. 测试UpDownCounter的极值
+  let up_down_counter = metrics::NoopUpDownCounter::{}
+  up_down_counter.add(9223372036854775807L)  // 最大正值
+  up_down_counter.add(-9223372036854775808L)  // 最小负值
+  up_down_counter.add(0L)  // 零值
+  
+  // 9. 测试Gauge的极值
+  let gauge = metrics::NoopGauge::{}
+  gauge.record(1.7976931348623157e+308)  // 最大值
+  gauge.record(-1.7976931348623157e+308)  // 最小值
+  gauge.record(0.0)  // 零值
+  gauge.record(1.0 / 0.0)  // 无穷大
+  gauge.record(-1.0 / 0.0)  // 负无穷大
+  gauge.record(0.0 / 0.0)  // NaN
+  
+  // 所有操作都应该成功（No-op实现不会抛出异常）
+  assert_eq(true, true)
 }

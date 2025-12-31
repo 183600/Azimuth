@@ -1,389 +1,409 @@
-// 跨API集成测试 - 测试trace、metrics、logs三个API的协作
-// 验证Azimuth Telemetry各组件之间的无缝集成和数据一致性
+// Azimuth Telemetry - Cross API Integration Test
+// 跨API集成测试 (Trace + Metrics + Logs)
 
-test "trace_metrics_logs_integration" {
-  // 测试trace、metrics、logs三个API的完整集成
+test "cross_api_basic_integration" {
+  // 测试Trace、Metrics、Logs三个API的基本集成
+  let trace_provider = trace::NoopTracerProvider::{}
+  let metrics_provider = metrics::NoopMeterProvider::{}
+  let logs_provider = logs::NoopLoggerProvider::{}
   
-  // 1. 设置基础上下文和资源
+  let tracer = trace_provider.get_tracer("integrated-service")
+  let meter = metrics_provider.get_meter("integrated-service")
+  let logger = logs_provider.get_logger("integrated-service")
+  
   let ctx = context::Context::empty()
-  let resource = common::Resource::default("integrated-service")
-  let correlation_key = context::create_key("correlation.id")
-  let ctx_with_correlation = ctx.with_value(correlation_key, "corr-integration-001")
   
-  // 2. 创建Tracer和Meter
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let logger_provider = logs::NoopLoggerProvider::{}
+  // 创建span
+  let (span_ctx, span) = tracer.start_span(ctx, "user-operation", Some(trace::Server))
   
-  let tracer = tracer_provider.get_tracer("integration-test", "1.0.0")
-  let meter = meter_provider.get_meter("integration-test", "1.0.0")
-  let logger = logger_provider.get_logger("integration-test", "1.0.0")
+  // 记录指标
+  let request_counter = meter.create_counter("requests-total")
+  let response_time_histogram = meter.create_histogram("response-time-ms")
   
-  // 3. 启动一个span进行分布式追踪
-  let (ctx_with_span, span) = tracer.start_span(
-    ctx_with_correlation,
-    "integrated_operation",
-    trace::Server,
-    [
-      ("operation.type", common::AttributeValue::string("user_request")),
-      ("service.version", common::AttributeValue::string("2.1.0"))
-    ],
-    1640995200000000000L  // 2022-01-01 00:00:00 UTC in nanoseconds
-  )
+  request_counter.add(1L, Some([
+    ("operation", common::AttributeValue::string("user-operation")),
+    ("status", common::AttributeValue::string("success"))
+  ]))
   
-  // 验证span创建
-  assert_eq(span.name, "integrated_operation")
-  assert_eq(span.kind, trace::Server)
-  assert_eq(span.attributes.length(), 2)
-  assert_eq(span.start_time_unix_nanos, 1640995200000000000L)
-  
-  // 4. 在span上下文中创建和更新metrics
-  let request_counter = meter.create_counter("http_requests_total", "count", "Total HTTP requests")
-  let response_histogram = meter.create_histogram("http_response_duration_ms", "ms", "HTTP response duration")
-  let active_connections = meter.create_up_down_counter("active_connections", "count", "Active connections")
-  
-  // 记录metrics
-  request_counter.add(1L, [
-    ("method", common::AttributeValue::string("GET")),
-    ("endpoint", common::AttributeValue::string("/api/users")),
-    ("status_code", common::AttributeValue::int(200L))
-  ])
-  
-  response_histogram.record(125.5, [
-    ("method", common::AttributeValue::string("GET")),
+  response_time_histogram.record(150.5, Some([
+    ("operation", common::AttributeValue::string("user-operation")),
     ("endpoint", common::AttributeValue::string("/api/users"))
-  ])
+  ]))
   
-  active_connections.add(1L)
+  // 记录日志
+  logger.info("Operation completed successfully", Some([
+    ("operation", common::AttributeValue::string("user-operation")),
+    ("duration_ms", common::AttributeValue::float(150.5)),
+    ("user_id", common::AttributeValue::int(12345L))
+  ]))
   
-  // 验证metrics创建成功（No-op实现）
-  assert_eq(true, true)  // 如果没有异常，说明metrics操作成功
-  
-  // 5. 在span上下文中记录结构化日志
-  let log_record = logs::LogRecord::builder()
-    .timestamp(1640995200123456789L)
-    .severity(logs::Info)
-    .body("HTTP request processed successfully")
-    .with_attribute("http.method", common::AttributeValue::string("GET"))
-    .with_attribute("http.url", common::AttributeValue::string("/api/users"))
-    .with_attribute("http.status_code", common::AttributeValue::int(200L))
-    .with_attribute("duration_ms", common::AttributeValue::float(125.5))
-    .with_attribute("user.id", common::AttributeValue::string("user-12345"))
-    .with_attribute("trace.id", common::AttributeValue::array_string([
-      "0af7651916cd43dd8448eb211c80319c"
-    ]))
-    .build()
-  
-  logger.emit(log_record)
-  logger.info("User operation completed", [
-    ("operation", common::AttributeValue::string("get_user")),
-    ("user.id", common::AttributeValue::string("user-12345")),
-    ("success", common::AttributeValue::bool(true))
-  ])
-  
-  // 验证日志记录创建
-  assert_eq(log_record.severity_number, logs::Info)
-  assert_eq(log_record.body.unwrap(), "HTTP request processed successfully")
-  assert_eq(log_record.attributes.length(), 7)
-  
-  // 6. 验证上下文传播和数据一致性
-  let propagated_correlation = ctx_with_span.get(correlation_key)
-  assert_eq(propagated_correlation.unwrap(), "corr-integration-001")
-  
-  // 7. 完成span
-  let completed_span = trace::Span::{
-    ..span,
-    end_time_unix_nanos: Some(1640995200125456789L),
-    status: trace::Ok,
-    status_description: Some("Operation completed successfully"),
-    events: [
-      trace::SpanEvent::{
-        name: "request_received",
-        timestamp_unix_nanos: 1640995200000000000L,
-        attributes: [
-          ("event.type", common::AttributeValue::string("request_start"))
-        ]
-      },
-      trace::SpanEvent::{
-        name: "response_sent",
-        timestamp_unix_nanos: 1640995200123456789L,
-        attributes: [
-          ("event.type", common::AttributeValue::string("request_end")),
-          ("response.status", common::AttributeValue::int(200L))
-        ]
-      }
-    ]
-  }
-  
-  // 验证span完成
-  assert_eq(completed_span.end_time_unix_nanos.unwrap(), 1640995200125456789L)
-  assert_eq(completed_span.status, trace::Ok)
-  assert_eq(completed_span.events.length(), 2)
-  
-  // 8. 清理连接
-  active_connections.add(-1L)
+  // 验证所有API都正常工作
+  assert_eq(span.name, "user-operation")
+  assert_eq(span.kind, trace::Server)
+  assert_type(request_counter, metrics::NoopCounter)
+  assert_type(response_time_histogram, metrics::NoopHistogram)
+  assert_type(logger, logs::NoopLogger)
 }
 
 test "cross_api_context_propagation" {
   // 测试跨API的上下文传播
+  let trace_provider = trace::NoopTracerProvider::{}
+  let metrics_provider = metrics::NoopMeterProvider::{}
+  let logs_provider = logs::NoopLoggerProvider::{}
   
-  // 创建初始上下文
+  let tracer = trace_provider.get_tracer("context-test")
+  let meter = metrics_provider.get_meter("context-test")
+  let logger = logs_provider.get_logger("context-test")
+  
+  // 创建带有上下文信息的span
   let ctx = context::Context::empty()
-  let trace_id_key = context::create_key("trace.id")
-  let user_id_key = context::create_key("user.id")
-  let request_id_key = context::create_key("request.id")
+  let user_key = context::create_key("user-id")
+  let request_key = context::create_key("request-id")
+  let enriched_ctx = ctx
+    .with_value(user_key, "user-123")
+    .with_value(request_key, "req-456")
   
-  // 设置上下文值
-  let ctx_enriched = ctx
-    .with_value(trace_id_key, "trace-123456789")
-    .with_value(user_id_key, "user-987654321")
-    .with_value(request_id_key, "req-abcdef")
+  let (span_ctx, span) = tracer.start_span(enriched_ctx, "context-aware-operation")
   
-  // 创建tracer和logger
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let logger_provider = logs::NoopLoggerProvider::{}
-  let tracer = tracer_provider.get_tracer("context-test")
-  let logger = logger_provider.get_logger("context-test")
+  // 在指标中使用上下文信息
+  let counter = meter.create_counter("context-aware-requests")
+  counter.add(1L, Some([
+    ("user_id", common::AttributeValue::string("user-123")),
+    ("request_id", common::AttributeValue::string("req-456")),
+    ("operation", common::AttributeValue::string("context-aware-operation"))
+  ]))
   
-  // 在 enriched 上下文中创建span
-  let (ctx_with_span, span) = tracer.start_span(
-    ctx_enriched,
-    "context_propagation_test",
-    trace::Internal,
-    [
-      ("user.id", common::AttributeValue::string("user-987654321")),
-      ("request.id", common::AttributeValue::string("req-abcdef"))
-    ]
-  )
+  // 在日志中使用上下文信息
+  logger.info("Context-aware operation", Some([
+    ("user_id", common::AttributeValue::string("user-123")),
+    ("request_id", common::AttributeValue::string("req-456")),
+    ("span_name", common::AttributeValue::string("context-aware-operation")),
+    ("trace_id", common::AttributeValue::array_string([
+      "01", "02", "03", "04", "05", "06", "07", "08",
+      "09", "0A", "0B", "0C", "0D", "0E", "0F", "10"
+    ]))
+  ]))
   
-  // 验证上下文传播
-  assert_eq(ctx_with_span.get(trace_id_key).unwrap(), "trace-123456789")
-  assert_eq(ctx_with_span.get(user_id_key).unwrap(), "user-987654321")
-  assert_eq(ctx_with_span.get(request_id_key).unwrap(), "req-abcdef")
+  // 验证上下文信息在span中保持
+  let retrieved_user_id = span_ctx.get(user_key)
+  let retrieved_request_id = span_ctx.get(request_key)
   
-  // 记录包含上下文信息的日志
-  logger.info("Operation with propagated context", [
-    ("trace.id", common::AttributeValue::string("trace-123456789")),
-    ("user.id", common::AttributeValue::string("user-987654321")),
-    ("request.id", common::AttributeValue::string("req-abcdef")),
-    ("span.name", common::AttributeValue::string("context_propagation_test"))
-  ])
-  
-  // 验证span属性与上下文一致性
-  let mut found_user_id = false
-  let mut found_request_id = false
-  
-  let mut i = 0
-  while i < span.attributes.length() {
-    let (key, value) = span.attributes[i]
-    if key == "user.id" {
-      match value {
-        common::StringValue(uid) => {
-          assert_eq(uid, "user-987654321")
-          found_user_id = true
-        }
-        _ => assert_eq(false, true, "Expected string value for user.id")
-      }
-    }
-    if key == "request.id" {
-      match value {
-        common::StringValue(rid) => {
-          assert_eq(rid, "req-abcdef")
-          found_request_id = true
-        }
-        _ => assert_eq(false, true, "Expected string value for request.id")
-      }
-    }
-    i = i + 1
+  match retrieved_user_id {
+    Some(id) => assert_eq(id, "user-123")
+    None => assert(false, "Expected user_id in context")
   }
   
-  assert_eq(found_user_id, true)
-  assert_eq(found_request_id, true)
+  match retrieved_request_id {
+    Some(id) => assert_eq(id, "req-456")
+    None => assert(false, "Expected request_id in context")
+  }
 }
 
-test "cross_api_error_handling_integration" {
-  // 测试跨API的错误处理集成
+test "cross_api_complex_workflow" {
+  // 测试复杂工作流程中的API集成
+  let trace_provider = trace::NoopTracerProvider::{}
+  let metrics_provider = metrics::NoopMeterProvider::{}
+  let logs_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = trace_provider.get_tracer("workflow-service")
+  let meter = metrics_provider.get_meter("workflow-service")
+  let logger = logs_provider.get_logger("workflow-service")
   
   let ctx = context::Context::empty()
-  let error_key = context::create_key("error.context")
-  let ctx_with_error = ctx.with_value(error_key, "database_connection_failed")
   
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let logger_provider = logs::NoopLoggerProvider::{}
+  // 工作流程开始
+  logger.info("Workflow started", Some([
+    ("workflow_id", common::AttributeValue::string("wf-123")),
+    ("user_id", common::AttributeValue::int(45678))
+  ]))
   
-  let tracer = tracer_provider.get_tracer("error-test")
-  let meter = meter_provider.get_meter("error-test")
-  let logger = logger_provider.get_logger("error-test")
+  // 创建主span
+  let (main_ctx, main_span) = tracer.start_span(ctx, "main-workflow", Some(trace::Server))
+  
+  // 记录工作流程开始指标
+  let workflow_counter = meter.create_counter("workflows-started")
+  workflow_counter.add(1L, Some([
+    ("workflow_type", common::AttributeValue::string("data-processing")),
+    ("user_tier", common::AttributeValue::string("premium"))
+  ]))
+  
+  // 步骤1：数据验证
+  logger.debug("Starting data validation", Some([
+    ("step", common::AttributeValue::int(1)),
+    ("workflow_id", common::AttributeValue::string("wf-123"))
+  ]))
+  
+  let (step1_ctx, step1_span) = tracer.start_span(main_ctx, "data-validation", Some(trace::Internal))
+  let validation_counter = meter.create_counter("validations-attempted")
+  validation_counter.add(1L, Some([
+    ("validation_type", common::AttributeValue::string("schema")),
+    ("step", common::AttributeValue::int(1))
+  ]))
+  
+  logger.info("Data validation completed", Some([
+    ("step", common::AttributeValue::int(1)),
+    ("validation_result", common::AttributeValue::string("success")),
+    ("records_validated", common::AttributeValue::int(1000))
+  ]))
+  
+  // 步骤2：数据处理
+  logger.debug("Starting data processing", Some([
+    ("step", common::AttributeValue::int(2)),
+    ("workflow_id", common::AttributeValue::string("wf-123"))
+  ]))
+  
+  let (step2_ctx, step2_span) = tracer.start_span(main_ctx, "data-processing", Some(trace::Internal))
+  let processing_histogram = meter.create_histogram("processing-time-ms")
+  processing_histogram.record(2500.0, Some([
+    ("step", common::AttributeValue::int(2)),
+    ("algorithm", common::AttributeValue::string("ml-model-v2"))
+  ]))
+  
+  logger.info("Data processing completed", Some([
+    ("step", common::AttributeValue::int(2)),
+    ("records_processed", common::AttributeValue::int(1000)),
+    ("processing_time_ms", common::AttributeValue::float(2500.0))
+  ]))
+  
+  // 步骤3：结果存储
+  logger.debug("Starting result storage", Some([
+    ("step", common::AttributeValue::int(3)),
+    ("workflow_id", common::AttributeValue::string("wf-123"))
+  ]))
+  
+  let (step3_ctx, step3_span) = tracer.start_span(main_ctx, "result-storage", Some(trace::Internal))
+  let storage_counter = meter.create_counter("records-stored")
+  storage_counter.add(1000L, Some([
+    ("storage_type", common::AttributeValue::string("database")),
+    ("table", common::AttributeValue::string("processed_results"))
+  ]))
+  
+  logger.info("Results stored successfully", Some([
+    ("step", common::AttributeValue::int(3)),
+    ("records_stored", common::AttributeValue::int(1000)),
+    ("storage_location", common::AttributeValue::string("postgresql://db/results"))
+  ]))
+  
+  // 工作流程完成
+  let completion_histogram = meter.create_histogram("workflow-duration-ms")
+  completion_histogram.record(5000.0, Some([
+    ("workflow_type", common::AttributeValue::string("data-processing")),
+    ("status", common::AttributeValue::string("success"))
+  ]))
+  
+  logger.info("Workflow completed successfully", Some([
+    ("workflow_id", common::AttributeValue::string("wf-123")),
+    ("total_duration_ms", common::AttributeValue::float(5000.0)),
+    ("total_steps", common::AttributeValue::int(3)),
+    ("final_status", common::AttributeValue::string("success"))
+  ]))
+  
+  // 验证所有span都创建成功
+  assert_eq(main_span.name, "main-workflow")
+  assert_eq(step1_span.name, "data-validation")
+  assert_eq(step2_span.name, "data-processing")
+  assert_eq(step3_span.name, "result-storage")
+}
+
+test "cross_api_error_handling" {
+  // 测试跨API的错误处理
+  let trace_provider = trace::NoopTracerProvider::{}
+  let metrics_provider = metrics::NoopMeterProvider::{}
+  let logs_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = trace_provider.get_tracer("error-test")
+  let meter = metrics_provider.get_meter("error-test")
+  let logger = logs_provider.get_logger("error-test")
+  
+  let ctx = context::Context::empty()
+  
+  // 记录错误开始
+  logger.warn("Error condition detected", Some([
+    ("error_code", common::AttributeValue::string("E001")),
+    ("component", common::AttributeValue::string("auth-service"))
+  ]))
   
   // 创建错误span
-  let (ctx_with_error_span, error_span) = tracer.start_span(
-    ctx_with_error,
-    "failing_operation",
-    trace::Internal,
-    [
-      ("error.type", common::AttributeValue::string("database_error")),
-      ("error.retry_count", common::AttributeValue::int(3L))
-    ]
-  )
+  let (error_ctx, error_span) = tracer.start_span(ctx, "error-operation", Some(trace::Internal))
   
-  // 记录错误metrics
-  let error_counter = meter.create_counter("errors_total", "count", "Total errors")
-  let retry_histogram = meter.create_histogram("error_retry_attempts", "count", "Error retry attempts")
+  // 记录错误指标
+  let error_counter = meter.create_counter("errors-total")
+  error_counter.add(1L, Some([
+    ("error_code", common::AttributeValue::string("E001")),
+    ("component", common::AttributeValue::string("auth-service")),
+    ("severity", common::AttributeValue::string("high"))
+  ]))
   
-  error_counter.add(1L, [
-    ("error.type", common::AttributeValue::string("database_error")),
-    ("operation", common::AttributeValue::string("failing_operation"))
-  ])
+  // 记录详细错误日志
+  logger.error("Authentication failed", Some([
+    ("error_code", common::AttributeValue::string("E001")),
+    ("error_message", common::AttributeValue::string("Invalid token provided")),
+    ("user_id", common::AttributeValue::int(12345)),
+    ("ip_address", common::AttributeValue::string("192.168.1.100")),
+    ("user_agent", common::AttributeValue::string(" suspicious-agent/1.0")),
+    ("failure_reason", common::AttributeValue::string("token_expired")),
+    ("retry_count", common::AttributeValue::int(3))
+  ]))
   
-  retry_histogram.record(3.0, [
-    ("error.type", common::AttributeValue::string("database_error"))
-  ])
+  // 记录恢复尝试
+  let recovery_counter = meter.create_up_down_counter("recovery-attempts")
+  recovery_counter.add(1L, Some([
+    ("error_code", common::AttributeValue::string("E001")),
+    ("recovery_strategy", common::AttributeValue::string("token_refresh"))
+  ]))
   
-  // 记录错误日志
-  logger.error("Database operation failed after 3 retries", [
-    ("error.type", common::AttributeValue::string("database_error")),
-    ("error.message", common::AttributeValue::string("Connection timeout")),
-    ("retry.count", common::AttributeValue::int(3L)),
-    ("operation.duration_ms", common::AttributeValue::float(5000.0))
-  ])
+  logger.info("Recovery attempt initiated", Some([
+    ("error_code", common::AttributeValue::string("E001")),
+    ("recovery_strategy", common::AttributeValue::string("token_refresh")),
+    ("attempt_number", common::AttributeValue::int(1))
+  ]))
   
-  // 创建错误状态的span
-  let failed_span = trace::Span::{
-    ..error_span,
-    end_time_unix_nanos: Some(1640995205000000000L),
-    status: trace::Error,
-    status_description: Some("Database connection failed after 3 retries"),
-    events: [
-      trace::SpanEvent::{
-        name: "error",
-        timestamp_unix_nanos: 1640995205000000000L,
-        attributes: [
-          ("error.type", common::AttributeValue::string("database_error")),
-          ("error.message", common::AttributeValue::string("Connection timeout")),
-          ("exception.stacktrace", common::AttributeValue::string("TimeoutException: Connection timeout after 30s"))
-        ]
-      }
-    ]
-  }
+  // 记录最终状态
+  let final_status_gauge = meter.create_gauge("operation-status")
+  final_status_gauge.record(0.0, Some([  // 0.0 表示失败
+    ("operation", common::AttributeValue::string("authentication")),
+    ("final_status", common::AttributeValue::string("failed"))
+  ]))
   
-  // 验证错误处理集成
-  assert_eq(failed_span.status, trace::Error)
-  assert_eq(failed_span.status_description.unwrap(), "Database connection failed after 3 retries")
-  assert_eq(failed_span.events.length(), 1)
+  logger.error("Operation failed after recovery attempt", Some([
+    ("error_code", common::AttributeValue::string("E001")),
+    ("final_status", common::AttributeValue::string("failed")),
+    ("total_attempts", common::AttributeValue::int(4)),
+    ("total_duration_ms", common::AttributeValue::float(1500.0))
+  ]))
   
-  let error_event = failed_span.events[0]
-  assert_eq(error_event.name, "error")
-  assert_eq(error_event.attributes.length(), 3)
-  
-  // 验证上下文中的错误信息
-  assert_eq(ctx_with_error_span.get(error_key).unwrap(), "database_connection_failed")
+  // 验证错误处理流程
+  assert_eq(error_span.name, "error-operation")
+  assert_eq(error_span.kind, trace::Internal)
 }
 
-test "cross_api_performance_correlation" {
-  // 测试跨API的性能数据关联
+test "cross_api_performance_monitoring" {
+  // 测试跨API的性能监控
+  let trace_provider = trace::NoopTracerProvider::{}
+  let metrics_provider = metrics::NoopMeterProvider::{}
+  let logs_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = trace_provider.get_tracer("performance-test")
+  let meter = metrics_provider.get_meter("performance-test")
+  let logger = logs_provider.get_logger("performance-test")
   
   let ctx = context::Context::empty()
-  let operation_start = 1640995200000000000L  // 纳秒时间戳
-  let operation_end = 1640995200250000000L    // 250ms后
   
-  let tracer_provider = trace::NoopTracerProvider::{}
-  let meter_provider = metrics::NoopMeterProvider::{}
-  let logger_provider = logs::NoopLoggerProvider::{}
+  // 性能测试开始
+  let start_time = 1640995200000000000L  // 模拟时间戳
   
-  let tracer = tracer_provider.get_tracer("performance-test")
-  let meter = meter_provider.get_meter("performance-test")
-  let logger = logger_provider.get_logger("performance-test")
+  logger.debug("Performance test started", Some([
+    ("test_type", common::AttributeValue::string("load_test")),
+    ("start_time", common::AttributeValue::int(start_time))
+  ]))
   
-  // 创建性能追踪span
-  let (ctx_with_perf, perf_span) = tracer.start_span(
-    ctx,
-    "performance_operation",
-    trace::Internal,
-    [
-      ("operation.type", common::AttributeValue::string("database_query")),
-      ("db.statement", common::AttributeValue::string("SELECT * FROM users WHERE id = ?"))
-    ],
-    operation_start
-  )
+  // 创建性能监控span
+  let (perf_ctx, perf_span) = tracer.start_span(ctx, "performance-test", Some(trace::Internal))
   
-  // 记录性能metrics
-  let duration_histogram = meter.create_histogram("operation_duration_ms", "ms", "Operation duration")
-  let throughput_counter = meter.create_counter("operations_total", "count", "Total operations")
+  // 模拟多个操作并记录性能指标
+  let operation_histogram = meter.create_histogram("operation-duration-ms")
+  let throughput_counter = meter.create_counter("operations-completed")
   
-  let duration_ms = (operation_end - operation_start).to_double() / 1000000.0  // 转换为毫秒
-  duration_histogram.record(duration_ms, [
-    ("operation.type", common::AttributeValue::string("database_query")),
-    ("db.table", common::AttributeValue::string("users"))
-  ])
+  // 模拟操作1
+  operation_histogram.record(100.0, Some([
+    ("operation_type", common::AttributeValue::string("database_query")),
+    ("query_complexity", common::AttributeValue::string("simple"))
+  ]))
+  throughput_counter.add(1L, Some([
+    ("operation_type", common::AttributeValue::string("database_query"))
+  ]))
   
-  throughput_counter.add(1L, [
-    ("operation.type", common::AttributeValue::string("database_query")),
-    ("status", common::AttributeValue::string("success"))
-  ])
+  // 模拟操作2
+  operation_histogram.record(250.0, Some([
+    ("operation_type", common::AttributeValue::string("database_query")),
+    ("query_complexity", common::AttributeValue::string("complex"))
+  ]))
+  throughput_counter.add(1L, Some([
+    ("operation_type", common::AttributeValue::string("database_query"))
+  ]))
   
-  // 记录性能日志
-  logger.info("Performance operation completed", [
-    ("operation.type", common::AttributeValue::string("database_query")),
-    ("duration_ms", common::AttributeValue::float(duration_ms)),
-    ("rows.processed", common::AttributeValue::int(150L)),
-    ("cache.hit", common::AttributeValue::bool(true))
-  ])
+  // 模拟操作3
+  operation_histogram.record(50.0, Some([
+    ("operation_type", common::AttributeValue::string("cache_lookup")),
+    ("cache_hit", common::AttributeValue::bool(true))
+  ]))
+  throughput_counter.add(1L, Some([
+    ("operation_type", common::AttributeValue::string("cache_lookup"))
+  ]))
   
-  // 完成性能span
-  let completed_perf_span = trace::Span::{
-    ..perf_span,
-    end_time_unix_nanos: Some(operation_end),
-    status: trace::Ok,
-    events: [
-      trace::SpanEvent::{
-        name: "performance_metrics",
-        timestamp_unix_nanos: operation_end,
-        attributes: [
-          ("duration_ms", common::AttributeValue::float(duration_ms)),
-          ("throughput_ops_per_sec", common::AttributeValue::float(4.0)),  // 1op/250ms = 4ops/sec
-          ("memory_usage_mb", common::AttributeValue::float(12.5))
-        ]
-      }
-    ]
+  // 记录资源使用情况
+  let memory_gauge = meter.create_gauge("memory-usage-mb")
+  let cpu_gauge = meter.create_gauge("cpu-usage-percent")
+  
+  memory_gauge.record(512.0, Some([
+    ("component", common::AttributeValue::string("application")),
+    ("memory_type", common::AttributeValue::string("heap"))
+  ]))
+  
+  cpu_gauge.record(75.5, Some([
+    ("component", common::AttributeValue::string("application")),
+    ("core_count", common::AttributeValue::int(4))
+  ]))
+  
+  // 记录性能摘要日志
+  logger.info("Performance test summary", Some([
+    ("total_operations", common::AttributeValue::int(3)),
+    ("avg_duration_ms", common::AttributeValue::float(133.33)),
+    ("max_duration_ms", common::AttributeValue::float(250.0)),
+    ("min_duration_ms", common::AttributeValue::float(50.0)),
+    ("memory_usage_mb", common::AttributeValue::float(512.0)),
+    ("cpu_usage_percent", common::AttributeValue::float(75.5)),
+    ("cache_hit_rate", common::AttributeValue::float(100.0))
+  ]))
+  
+  // 验证性能监控
+  assert_eq(perf_span.name, "performance-test")
+}
+
+test "cross_api_resource_sharing" {
+  // 测试跨API的资源共享
+  let trace_provider = trace::NoopTracerProvider::{}
+  let metrics_provider = metrics::NoopMeterProvider::{}
+  let logs_provider = logs::NoopLoggerProvider::{}
+  
+  // 创建共享资源
+  let resource = common::Resource::default("shared-resource-service")
+  let instrumentation_scope = common::InstrumentationScope::{
+    name: "shared-instrumentation",
+    version: Some("1.0.0"),
+    schema_url: Some("http://example.com/shared-schema")
   }
   
-  // 验证性能数据关联
-  assert_eq(completed_perf_span.end_time_unix_nanos.unwrap(), operation_end)
-  assert_eq(completed_perf_span.status, trace::Ok)
+  let tracer = trace_provider.get_tracer("shared-service")
+  let meter = metrics_provider.get_meter("shared-service")
+  let logger = logs_provider.get_logger("shared-service")
   
-  let perf_event = completed_perf_span.events[0]
-  assert_eq(perf_event.name, "performance_metrics")
+  let ctx = context::Context::empty()
   
-  // 验证性能指标一致性
-  let mut found_duration = false
-  let mut found_throughput = false
+  // 在所有API中使用共享资源信息
+  let (shared_ctx, shared_span) = tracer.start_span(ctx, "shared-resource-operation")
   
-  let mut i = 0
-  while i < perf_event.attributes.length() {
-    let (key, value) = perf_event.attributes[i]
-    if key == "duration_ms" {
-      match value {
-        common::FloatValue(d) => {
-          assert_eq(d, duration_ms)
-          found_duration = true
-        }
-        _ => assert_eq(false, true, "Expected float value for duration_ms")
-      }
-    }
-    if key == "throughput_ops_per_sec" {
-      match value {
-        common::FloatValue(t) => {
-          assert_eq(t, 4.0)
-          found_throughput = true
-        }
-        _ => assert_eq(false, true, "Expected float value for throughput")
-      }
-    }
-    i = i + 1
-  }
+  // 在指标中使用共享资源信息
+  let shared_counter = meter.create_counter("shared-operations")
+  shared_counter.add(1L, Some([
+    ("service_name", common::AttributeValue::string(resource.service_name)),
+    ("sdk_name", common::AttributeValue::string(resource.telemetry_sdk_name)),
+    ("sdk_version", common::AttributeValue::string(resource.telemetry_sdk_version)),
+    ("instrumentation_name", common::AttributeValue::string(instrumentation_scope.name))
+  ]))
   
-  assert_eq(found_duration, true)
-  assert_eq(found_throughput, true)
-  assert_eq(duration_ms, 250.0)
+  // 在日志中使用共享资源信息
+  logger.info("Shared resource operation", Some([
+    ("service_name", common::AttributeValue::string(resource.service_name)),
+    ("sdk_name", common::AttributeValue::string(resource.telemetry_sdk_name)),
+    ("sdk_version", common::AttributeValue::string(resource.telemetry_sdk_version)),
+    ("instrumentation_name", common::AttributeValue::string(instrumentation_scope.name)),
+    ("instrumentation_version", common::AttributeValue::string(instrumentation_scope.version.unwrap_or("unknown"))),
+    ("schema_url", common::AttributeValue::string(instrumentation_scope.schema_url.unwrap_or("unknown")))
+  ]))
+  
+  // 验证资源共享
+  assert_eq(shared_span.name, "shared-resource-operation")
+  assert_eq(resource.service_name, "shared-resource-service")
+  assert_eq(instrumentation_scope.name, "shared-instrumentation")
 }

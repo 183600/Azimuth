@@ -1,501 +1,630 @@
-// 真实世界场景综合测试 - 模拟实际应用中的遥测使用场景
-
-use azimuth.telemetry.api.common.{AttributeValue, Attributes, Resource, InstrumentationScope}
-use azimuth.telemetry.api.trace.{SpanKind, StatusCode, Span}
-use azimuth.telemetry.api.metrics.{MetricType, Instrument, Measurement}
-use azimuth.telemetry.api.logs.{LogRecord, Severity, Logger}
-use azimuth.telemetry.api.context.{Context, Baggage, ContextKey}
-use azimuth.telemetry.api.propagation.{TextMapPropagator, Propagator}
+// 实际使用场景测试 - 模拟电商应用的完整遥测流程
+// 测试真实世界场景中Azimuth Telemetry的端到端应用
 
 test "ecommerce_user_journey_telemetry" {
-  // 测试电子商务网站用户完整购物流程的遥测
+  // 模拟电商用户从浏览到购买的完整旅程的遥测数据收集
   
-  // 1. 用户访问网站 - 创建根Span
-  let user_id = "user_12345"
-  let session_id = "session_abc123"
-  let trace_id = "trace_ecomm_" + user_id
+  // 1. 初始化电商服务遥测
+  let ctx = context::Context::empty()
+  let resource = common::Resource::default("ecommerce-platform")
   
-  let root_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_user_entry",
-    parent_span_id: None,
-    name: "user_session",
-    kind: SpanKind::Server,
-    start_time: 1640996000L,
-    end_time: None,
-    status: StatusCode::Unset,
-    attributes: [
-      ("user.id", AttributeValue::string(user_id)),
-      ("session.id", AttributeValue::string(session_id)),
-      ("user.agent", AttributeValue::string("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")),
-      ("ip.address", AttributeValue::string("192.168.1.100")),
-      ("landing.page", AttributeValue::string("/home"))
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = tracer_provider.get_tracer("ecommerce-service", "2.1.0")
+  let meter = meter_provider.get_meter("ecommerce-service", "2.1.0")
+  let logger = logger_provider.get_logger("ecommerce-service", "2.1.0")
+  
+  // 设置用户会话上下文
+  let session_key = context::create_key("session.id")
+  let user_key = context::create_key("user.id")
+  let device_key = context::create_key("device.type")
+  
+  let ctx_session = ctx
+    .with_value(session_key, "sess_abc123def456")
+    .with_value(user_key, "user_789012")
+    .with_value(device_key, "mobile")
+  
+  // 2. 用户浏览商品阶段
+  let (ctx_browse, browse_span) = tracer.start_span(
+    ctx_session,
+    "user_browse_products",
+    trace::Server,
+    [
+      ("user.id", common::AttributeValue::string("user_789012")),
+      ("session.id", common::AttributeValue::string("sess_abc123def456")),
+      ("page.category", common::AttributeValue::string("electronics")),
+      ("page.type", common::AttributeValue::string("product_list"))
     ],
-    events: [],
-    links: []
-  }
+    1640995200000000000L
+  )
   
-  // 2. 用户浏览商品 - 创建子Span
-  let browse_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_browse_products",
-    parent_span_id: Some("span_user_entry"),
-    name: "browse_products",
-    kind: SpanKind::Internal,
-    start_time: 1640996050L,
-    end_time: Some(1640996150L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("category", AttributeValue::string("electronics")),
-      ("page.number", AttributeValue::int(1L)),
-      ("products.viewed", AttributeValue::int(20L)),
-      ("search.query", AttributeValue::string("smartphone")),
-      ("filter.brand", AttributeValue::string("Samsung"))
-    ],
+  // 记录浏览metrics
+  let page_view_counter = meter.create_counter("page_views_total", "count", "Total page views")
+  let search_histogram = meter.create_histogram("search_response_time_ms", "ms", "Search response time")
+  
+  page_view_counter.add(1L, [
+    ("page.category", common::AttributeValue::string("electronics")),
+    ("user.segment", common::AttributeValue::string("premium")),
+    ("device.type", common::AttributeValue::string("mobile"))
+  ])
+  
+  search_histogram.record(85.2, [
+    ("search.type", common::AttributeValue::string("category_browse")),
+    ("results.count", common::AttributeValue::int(48L))
+  ])
+  
+  logger.info("User browsing electronics category", [
+    ("user.id", common::AttributeValue::string("user_789012")),
+    ("category", common::AttributeValue::string("electronics")),
+    ("products.viewed", common::AttributeValue::int(48L)),
+    ("page.load_time_ms", common::AttributeValue::float(85.2))
+  ])
+  
+  // 3. 用户查看商品详情
+  let (ctx_detail, detail_span) = tracer.start_span(
+    ctx_browse,
+    "view_product_detail",
+    trace::Internal,
+    [
+      ("product.id", common::AttributeValue::string("prod_smartphone_001")),
+      ("product.category", common::AttributeValue::string("electronics")),
+      ("product.brand", common::AttributeValue::string("TechCorp"))
+    ]
+  )
+  
+  let product_view_counter = meter.create_counter("product_views_total", "count", "Product views")
+  let inventory_gauge = meter.create_gauge("product_inventory_count", "count", "Product inventory")
+  
+  product_view_counter.add(1L, [
+    ("product.id", common::AttributeValue::string("prod_smartphone_001")),
+    ("product.category", common::AttributeValue::string("electronics"))
+  ])
+  
+  inventory_gauge.record(25.0, [
+    ("product.id", common::AttributeValue::string("prod_smartphone_001")),
+    ("warehouse.region", common::AttributeValue::string("us-west-2"))
+  ])
+  
+  logger.info("Product detail view", [
+    ("product.id", common::AttributeValue::string("prod_smartphone_001")),
+    ("product.price", common::AttributeValue::float(699.99)),
+    ("stock.available", common::AttributeValue::bool(true)),
+    ("user.favorited", common::AttributeValue::bool(false))
+  ])
+  
+  // 4. 用户添加到购物车
+  let (ctx_cart, cart_span) = tracer.start_span(
+    ctx_detail,
+    "add_to_cart",
+    trace::Internal,
+    [
+      ("product.id", common::AttributeValue::string("prod_smartphone_001")),
+      ("quantity", common::AttributeValue::int(1L)),
+      ("cart.source", common::AttributeValue::string("product_page"))
+    ]
+  )
+  
+  let cart_counter = meter.create_counter("cart_operations_total", "count", "Cart operations")
+  let cart_value_gauge = meter.create_gauge("cart_total_value", "currency", "Cart total value")
+  
+  cart_counter.add(1L, [
+    ("operation", common::AttributeValue::string("add_item")),
+    ("product.id", common::AttributeValue::string("prod_smartphone_001")),
+    ("user.id", common::AttributeValue::string("user_789012"))
+  ])
+  
+  cart_value_gauge.record(699.99, [
+    ("user.id", common::AttributeValue::string("user_789012")),
+    ("currency", common::AttributeValue::string("USD"))
+  ])
+  
+  logger.info("Item added to cart", [
+    ("product.id", common::AttributeValue::string("prod_smartphone_001")),
+    ("quantity", common::AttributeValue::int(1L)),
+    ("cart.total_items", common::AttributeValue::int(1L)),
+    ("cart.total_value", common::AttributeValue::float(699.99))
+  ])
+  
+  // 5. 用户进入结账流程
+  let (ctx_checkout, checkout_span) = tracer.start_span(
+    ctx_cart,
+    "checkout_process",
+    trace::Client,
+    [
+      ("checkout.type", common::AttributeValue::string("standard")),
+      ("payment.method", common::AttributeValue::string("credit_card")),
+      ("shipping.method", common::AttributeValue::string("express"))
+    ]
+  )
+  
+  let checkout_counter = meter.create_counter("checkout_initiated_total", "count", "Checkout initiated")
+  let payment_histogram = meter.create_histogram("payment_processing_time_ms", "ms", "Payment processing time")
+  
+  checkout_counter.add(1L, [
+    ("user.id", common::AttributeValue::string("user_789012")),
+    ("checkout.flow", common::AttributeValue::string("mobile_standard"))
+  ])
+  
+  // 6. 支付处理（模拟支付服务调用）
+  let (ctx_payment, payment_span) = tracer.start_span(
+    ctx_checkout,
+    "payment_processing",
+    trace::Client,
+    [
+      ("payment.provider", common::AttributeValue::string("stripe")),
+      ("payment.type", common::AttributeValue::string("credit_card")),
+      ("amount", common::AttributeValue::float(699.99))
+    ]
+  )
+  
+  payment_histogram.record(1250.5, [
+    ("payment.provider", common::AttributeValue::string("stripe")),
+    ("payment.status", common::AttributeValue::string("success"))
+  ])
+  
+  logger.info("Payment processed successfully", [
+    ("payment.id", common::AttributeValue::string("pay_xyz789")),
+    ("amount", common::AttributeValue::float(699.99)),
+    ("currency", common::AttributeValue::string("USD")),
+    ("payment.method", common::AttributeValue::string("credit_card"))
+  ])
+  
+  // 7. 订单创建和确认
+  let (ctx_order, order_span) = tracer.start_span(
+    ctx_payment,
+    "create_order",
+    trace::Internal,
+    [
+      ("order.id", common::AttributeValue::string("order_20220101_001")),
+      ("order.total", common::AttributeValue::float(699.99)),
+      ("order.items_count", common::AttributeValue::int(1L))
+    ]
+  )
+  
+  let order_counter = meter.create_counter("orders_created_total", "count", "Orders created")
+  let revenue_counter = meter.create_counter("revenue_total", "currency", "Total revenue")
+  
+  order_counter.add(1L, [
+    ("order.type", common::AttributeValue::string("online")),
+    ("user.segment", common::AttributeValue::string("premium"))
+  ])
+  
+  revenue_counter.add(69999, [  // 以分为单位
+    ("currency", common::AttributeValue::string("USD")),
+    ("product.category", common::AttributeValue::string("electronics"))
+  ])
+  
+  logger.info("Order created successfully", [
+    ("order.id", common::AttributeValue::string("order_20220101_001")),
+    ("user.id", common::AttributeValue::string("user_789012")),
+    ("order.total", common::AttributeValue::float(699.99)),
+    ("items.count", common::AttributeValue::int(1L)),
+    ("estimated.delivery", common::AttributeValue::string("2022-01-03"))
+  ])
+  
+  // 8. 完成整个用户旅程的根span
+  let completed_journey_span = trace::Span::{
+    ..browse_span,
+    end_time_unix_nanos: Some(1640995200450000000L),  // 450ms后完成
+    status: trace::Ok,
+    status_description: Some("User journey completed successfully"),
     events: [
-      ("product_click", 1640996100L, [
-        ("product.id", AttributeValue::string("prod_samsung_123")),
-        ("product.name", AttributeValue::string("Samsung Galaxy S23")),
-        ("product.price", AttributeValue::float(799.99))
-      ])
+      trace::SpanEvent::{
+        name: "journey_completed",
+        timestamp_unix_nanos: 1640995200450000000L,
+        attributes: [
+          ("total_duration_ms", common::AttributeValue::float(450.0)),
+          ("pages.viewed", common::AttributeValue::int(5L)),
+          ("products.viewed", common::AttributeValue::int(48L)),
+          ("cart.items", common::AttributeValue::int(1L)),
+          ("order.value", common::AttributeValue::float(699.99)),
+          ("conversion", common::AttributeValue::bool(true))
+        ]
+      }
     ],
-    links: []
+    links: [
+      trace::SpanLink::{
+        context: trace::SpanContext::{
+          trace_id: [for i = 0; i < 16; i = i + 1].map(fn(i) { (i % 256) |> to_int64 |> Int64::to_byte }),
+          span_id: [for i = 0; i < 8; i = i + 1].map(fn(i) { (i % 256) |> to_int64 |> Int64::to_byte }),
+          trace_flags: 1_byte,
+          trace_state: "user_id=user_789012"
+        },
+        attributes: [
+          ("linked.operation", common::AttributeValue::string("user_recommendation")),
+          ("recommendation.score", common::AttributeValue::float(0.85))
+        ]
+      }
+    ]
   }
   
-  // 3. 记录浏览指标
-  let browse_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("page_views_total", "Total page views", "count"),
-      value: 1.0,
-      attributes: [
-        ("page.type", AttributeValue::string("product_list")),
-        ("user.id", AttributeValue::string(user_id)),
-        ("category", AttributeValue::string("electronics"))
-      ],
-      time: 1640996050L
-    },
-    Measurement::{
-      instrument: Instrument::histogram("page_load_time_ms", "Page load time in milliseconds", "ms"),
-      value: 850.0,
-      attributes: [
-        ("page.type", AttributeValue::string("product_list")),
-        ("cache.hit", AttributeValue::bool(true))
-      ],
-      time: 1640996050L
+  // 验证整个用户旅程的遥测数据
+  assert_eq(completed_journey_span.name, "user_browse_products")
+  assert_eq(completed_journey_span.status, trace::Ok)
+  assert_eq(completed_journey_span.events.length(), 1)
+  assert_eq(completed_journey_span.links.length(), 1)
+  
+  let journey_event = completed_journey_span.events[0]
+  assert_eq(journey_event.name, "journey_completed")
+  
+  // 验证关键业务指标
+  let mut found_conversion = false
+  let mut found_order_value = false
+  
+  let mut i = 0
+  while i < journey_event.attributes.length() {
+    let (key, value) = journey_event.attributes[i]
+    if key == "conversion" {
+      match value {
+        common::BoolValue(conv) => {
+          assert_eq(conv, true)
+          found_conversion = true
+        }
+        _ => assert_eq(false, true, "Expected bool value for conversion")
+      }
     }
-  ]
-  
-  // 4. 用户添加商品到购物车
-  let cart_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_add_to_cart",
-    parent_span_id: Some("span_user_entry"),
-    name: "add_to_cart",
-    kind: SpanKind::Client,
-    start_time: 1640996200L,
-    end_time: Some(1640996220L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("product.id", AttributeValue::string("prod_samsung_123")),
-      ("product.name", AttributeValue::string("Samsung Galaxy S23")),
-      ("product.price", AttributeValue::float(799.99)),
-      ("quantity", AttributeValue::int(1L)),
-      ("cart.total_items", AttributeValue::int(1L)),
-      ("cart.total_value", AttributeValue::float(799.99))
-    ],
-    events: [
-      ("cart_updated", 1640996210L, [
-        ("cart.id", AttributeValue::string("cart_789xyz")),
-        ("previous.total", AttributeValue::float(0.0)),
-        ("new.total", AttributeValue::float(799.99))
-      ])
-    ],
-    links: []
-  }
-  
-  // 5. 记录购物车操作日志
-  let cart_log = LogRecord::{
-    timestamp: 1640996220L,
-    observed_timestamp: Some(1640996221L),
-    severity: Some(Severity::Info),
-    severity_text: Some("INFO"),
-    body: Some("Product added to shopping cart successfully"),
-    attributes: [
-      ("trace_id", AttributeValue::string(trace_id)),
-      ("user.id", AttributeValue::string(user_id)),
-      ("product.id", AttributeValue::string("prod_samsung_123")),
-      ("cart.id", AttributeValue::string("cart_789xyz")),
-      ("cart.value", AttributeValue::float(799.99)),
-      ("promotion.applied", AttributeValue::bool(false))
-    ],
-    flags: 0,
-    trace_id: Some(trace_id),
-    span_id: Some("span_add_to_cart"),
-    trace_flags: Some(1)
-  }
-  
-  // 6. 用户结账流程
-  let checkout_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_checkout",
-    parent_span_id: Some("span_user_entry"),
-    name: "checkout_process",
-    kind: SpanKind::Server,
-    start_time: 1640996300L,
-    end_time: Some(1640996450L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("checkout.step", AttributeValue::string("payment")),
-      ("payment.method", AttributeValue::string("credit_card")),
-      ("payment.gateway", AttributeValue::string("stripe")),
-      ("currency", AttributeValue::string("USD")),
-      ("order.total", AttributeValue::float(799.99)),
-      ("tax.amount", AttributeValue::float(64.0)),
-      ("shipping.amount", AttributeValue::float(10.0))
-    ],
-    events: [
-      ("payment_started", 1640996350L, [
-        ("payment.id", AttributeValue::string("pay_xyz789")),
-        ("amount", AttributeValue::float(799.99))
-      ]),
-      ("payment_completed", 1640996400L, [
-        ("payment.id", AttributeValue::string("pay_xyz789")),
-        ("transaction.id", AttributeValue::string("txn_abc123")),
-        ("auth.code", AttributeValue::string("123456"))
-      ]),
-      ("order_created", 1640996450L, [
-        ("order.id", AttributeValue::string("order_456def")),
-        ("order.status", AttributeValue::string("confirmed"))
-      ])
-    ],
-    links: []
-  }
-  
-  // 7. 记录结账指标
-  let checkout_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("checkout_started_total", "Total checkouts started", "count"),
-      value: 1.0,
-      attributes: [
-        ("user.id", AttributeValue::string(user_id)),
-        ("payment.method", AttributeValue::string("credit_card"))
-      ],
-      time: 1640996300L
-    },
-    Measurement::{
-      instrument: Instrument::counter("checkout_completed_total", "Total checkouts completed", "count"),
-      value: 1.0,
-      attributes: [
-        ("user.id", AttributeValue::string(user_id)),
-        ("payment.method", AttributeValue::string("credit_card")),
-        ("payment.gateway", AttributeValue::string("stripe"))
-      ],
-      time: 1640996450L
-    },
-    Measurement::{
-      instrument: Instrument::histogram("checkout_duration_ms", "Checkout process duration", "ms"),
-      value: 150.0,
-      attributes: [
-        ("payment.method", AttributeValue::string("credit_card")),
-        ("items.count", AttributeValue::int(1L))
-      ],
-      time: 1640996450L
+    if key == "order.value" {
+      match value {
+        common::FloatValue(val) => {
+          assert_eq(val, 699.99)
+          found_order_value = true
+        }
+        _ => assert_eq(false, true, "Expected float value for order.value")
+      }
     }
-  ]
-  
-  // 8. 记录订单确认日志
-  let order_log = LogRecord::{
-    timestamp: 1640996450L,
-    observed_timestamp: Some(1640996451L),
-    severity: Some(Severity::Info),
-    severity_text: Some("INFO"),
-    body: Some("Order created and payment processed successfully"),
-    attributes: [
-      ("trace_id", AttributeValue::string(trace_id)),
-      ("user.id", AttributeValue::string(user_id)),
-      ("order.id", AttributeValue::string("order_456def")),
-      ("order.total", AttributeValue::float(873.99)),
-      ("payment.method", AttributeValue::string("credit_card")),
-      ("shipping.address", AttributeValue::string("123 Main St, City, State 12345"))
-    ],
-    flags: 0,
-    trace_id: Some(trace_id),
-    span_id: Some("span_checkout"),
-    trace_flags: Some(1)
+    i = i + 1
   }
   
-  // 9. 验证用户旅程的遥测数据一致性
-  assert_eq(root_span.trace_id, trace_id)
-  assert_eq(browse_span.trace_id, trace_id)
-  assert_eq(cart_span.trace_id, trace_id)
-  assert_eq(checkout_span.trace_id, trace_id)
-  
-  assert_eq(cart_log.trace_id, Some(trace_id))
-  assert_eq(order_log.trace_id, Some(trace_id))
-  
-  // 验证用户ID在所有遥测数据中的一致性
-  let root_user = root_span.attributes[0]
-  match root_user.1 {
-    StringValue(uid) => assert_eq(uid, user_id)
-    _ => assert_eq(false, true)
-  }
-  
-  let log_user = order_log.attributes[1]
-  match log_user.1 {
-    StringValue(uid) => assert_eq(uid, user_id)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证时间线的正确性
-  assert_eq(root_span.start_time < browse_span.start_time, true)
-  assert_eq(browse_span.end_time.unwrap() < cart_span.start_time, true)
-  assert_eq(cart_span.end_time.unwrap() < checkout_span.start_time, true)
-  assert_eq(checkout_span.end_time.unwrap() == order_log.timestamp, true)
-  
-  // 验证业务逻辑的正确性
-  let checkout_total = checkout_span.attributes[4]
-  match checkout_total.1 {
-    FloatValue(total) => assert_eq(total, 799.99)
-    _ => assert_eq(false, true)
-  }
-  
-  let order_total = order_log.attributes[2]
-  match order_total.1 {
-    FloatValue(total) => assert_eq(total, 873.99) // 799.99 + 64.0 + 10.0
-    _ => assert_eq(false, true)
-  }
+  assert_eq(found_conversion, true)
+  assert_eq(found_order_value, true)
 }
 
-test "microservice_request_flow_telemetry" {
-  // 测试微服务架构中请求流转的遥测
+test "ecommerce_inventory_management_telemetry" {
+  // 模拟电商库存管理系统的遥测数据收集
   
-  let trace_id = "trace_microservice_abc"
-  let request_id = "req_xyz123"
+  let ctx = context::Context::empty()
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
   
-  // 1. API Gateway入口
-  let gateway_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_gateway",
-    parent_span_id: None,
-    name: "api_gateway_request",
-    kind: SpanKind::Server,
-    start_time: 1640997000L,
-    end_time: Some(1640997020L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("http.method", AttributeValue::string("POST")),
-      ("http.url", AttributeValue::string("/api/v1/orders")),
-      ("http.scheme", AttributeValue::string("https")),
-      ("http.host", AttributeValue::string("api.example.com")),
-      ("user.agent", AttributeValue::string("MobileApp/1.0")),
-      ("client.ip", AttributeValue::string("10.0.0.1")),
-      ("request.id", AttributeValue::string(request_id))
+  let tracer = tracer_provider.get_tracer("inventory-service", "1.5.0")
+  let meter = meter_provider.get_meter("inventory-service", "1.5.0")
+  let logger = logger_provider.get_logger("inventory-service", "1.5.0")
+  
+  // 库存同步操作
+  let (ctx_sync, sync_span) = tracer.start_span(
+    ctx,
+    "inventory_sync",
+    trace::Internal,
+    [
+      ("sync.type", common::AttributeValue::string("full_sync")),
+      ("warehouse.count", common::AttributeValue::int(5L)),
+      ("product.count", common::AttributeValue::int(10000L))
     ],
+    1640995800000000000L
+  )
+  
+  let inventory_gauge = meter.create_gauge("inventory_levels", "count", "Current inventory levels")
+  let sync_counter = meter.create_counter("inventory_sync_operations", "count", "Inventory sync operations")
+  
+  // 模拟不同产品的库存水平
+  inventory_gauge.record(25.0, [
+    ("product.id", common::AttributeValue::string("prod_smartphone_001")),
+    ("warehouse.id", common::AttributeValue::string("wh_seattle")),
+    ("category", common::AttributeValue::string("electronics"))
+  ])
+  
+  inventory_gauge.record(150.0, [
+    ("product.id", common::AttributeValue::string("prod_laptop_002")),
+    ("warehouse.id", common::AttributeValue::string("wh_seattle")),
+    ("category", common::AttributeValue::string("electronics"))
+  ])
+  
+  inventory_gauge.record(500.0, [
+    ("product.id", common::AttributeValue::string("prod_headphones_003")),
+    ("warehouse.id", common::AttributeValue::string("wh_la")),
+    ("category", common::AttributeValue::string("electronics"))
+  ])
+  
+  sync_counter.add(1L, [
+    ("sync.type", common::AttributeValue::string("full_sync")),
+    ("duration_minutes", common::AttributeValue::int(15L))
+  ])
+  
+  logger.info("Inventory sync completed", [
+    ("products.synced", common::AttributeValue::int(10000L)),
+    ("warehouses.synced", common::AttributeValue::int(5L)),
+    ("discrepancies.found", common::AttributeValue::int(12L)),
+    ("sync.duration_minutes", common::AttributeValue::int(15L))
+  ])
+  
+  // 库存预警检查
+  let (ctx_alert, alert_span) = tracer.start_span(
+    ctx_sync,
+    "inventory_alert_check",
+    trace::Internal,
+    [
+      ("alert.type", common::AttributeValue::string("low_stock")),
+      ("threshold.percentage", common::AttributeValue::int(20L))
+    ]
+  )
+  
+  let low_stock_counter = meter.create_counter("low_stock_alerts", "count", "Low stock alerts")
+  let out_of_stock_counter = meter.create_counter("out_of_stock_events", "count", "Out of stock events")
+  
+  // 模拟低库存预警
+  low_stock_counter.add(3L, [
+    ("warehouse.id", common::AttributeValue::string("wh_seattle")),
+    ("category", common::AttributeValue::string("electronics"))
+  ])
+  
+  out_of_stock_counter.add(1L, [
+    ("product.id", common::AttributeValue::string("prod_tablet_004")),
+    ("warehouse.id", common::AttributeValue::string("wh_chicago"))
+  ])
+  
+  logger.warn("Low stock alerts generated", [
+    ("products.low_stock", common::AttributeValue::int(3L)),
+    ("products.out_of_stock", common::AttributeValue::int(1L)),
+    ("warehouse.most_affected", common::AttributeValue::string("wh_seattle"))
+  ])
+  
+  // 自动补货操作
+  let (ctx_restock, restock_span) = tracer.start_span(
+    ctx_alert,
+    "automatic_restock",
+    trace::Client,
+    [
+      ("restock.type", common::AttributeValue::string("automatic")),
+      ("supplier.count", common::AttributeValue::int(2L))
+    ]
+  )
+  
+  let restock_counter = meter.create_counter("restock_orders", "count", "Restock orders created")
+  let restock_value_counter = meter.create_counter("restock_value", "currency", "Restock order value")
+  
+  restock_counter.add(2L, [
+    ("restock.type", common::AttributeValue::string("automatic")),
+    ("priority", common::AttributeValue::string("high"))
+  ])
+  
+  restock_value_counter.add(15000, [  // $150.00
+    ("currency", common::AttributeValue::string("USD")),
+    ("supplier", common::AttributeValue::string("tech_supplies_inc"))
+  ])
+  
+  logger.info("Automatic restock orders created", [
+    ("orders.created", common::AttributeValue::int(2L)),
+    ("total.value", common::AttributeValue::float(150.00)),
+    ("expected.delivery_days", common::AttributeValue::int(3L))
+  ])
+  
+  // 完成库存管理流程
+  let completed_sync_span = trace::Span::{
+    ..sync_span,
+    end_time_unix_nanos: Some(1640995890000000000L),  // 15分钟后完成
+    status: trace::Ok,
+    status_description: Some("Inventory management cycle completed"),
     events: [
-      ("auth_required", 1640997005L, [
-        ("auth.type", AttributeValue::string("jwt")),
-        ("auth.token.id", AttributeValue::string("token_456"))
-      ])
-    ],
-    links: []
+      trace::SpanEvent::{
+        name: "sync_summary",
+        timestamp_unix_nanos: 1640995890000000000L,
+        attributes: [
+          ("products.processed", common::AttributeValue::int(10000L)),
+          ("alerts.generated", common::AttributeValue::int(4L)),
+          ("restock.orders", common::AttributeValue::int(2L)),
+          ("sync.accuracy", common::AttributeValue::float(99.8))
+        ]
+      }
+    ]
   }
   
-  // 2. 认证服务调用
-  let auth_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_auth_service",
-    parent_span_id: Some("span_gateway"),
-    name: "authenticate_user",
-    kind: SpanKind::Client,
-    start_time: 1640997010L,
-    end_time: Some(1640997015L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("auth-service")),
-      ("service.version", AttributeValue::string("2.3.1")),
-      ("rpc.system", AttributeValue::string("grpc")),
-      ("rpc.service", AttributeValue::string("AuthService")),
-      ("rpc.method", AttributeValue::string("ValidateToken")),
-      ("user.id", AttributeValue::string("user_789")),
-      ("token.valid", AttributeValue::bool(true))
-    ],
-    events: [],
-    links: []
-  }
+  // 验证库存管理遥测数据
+  assert_eq(completed_sync_span.name, "inventory_sync")
+  assert_eq(completed_sync_span.status, trace::Ok)
+  assert_eq(completed_sync_span.events.length(), 1)
   
-  // 3. 订单服务调用
-  let order_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_order_service",
-    parent_span_id: Some("span_gateway"),
-    name: "create_order",
-    kind: SpanKind::Client,
-    start_time: 1640997015L,
-    end_time: Some(1640997018L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("order-service")),
-      ("service.version", AttributeValue::string("1.5.2")),
-      ("rpc.system", AttributeValue::string("http")),
-      ("http.method", AttributeValue::string("POST")),
-      ("http.url", AttributeValue::string("http://order-service:8080/orders")),
-      ("order.type", AttributeValue::string("purchase")),
-      ("order.items_count", AttributeValue::int(3L))
-    ],
-    events: [],
-    links: []
-  }
+  let sync_summary = completed_sync_span.events[0]
+  assert_eq(sync_summary.name, "sync_summary")
   
-  // 4. 库存服务调用
-  let inventory_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_inventory_service",
-    parent_span_id: Some("span_order_service"),
-    name: "check_inventory",
-    kind: SpanKind::Client,
-    start_time: 1640997016L,
-    end_time: Some(1640997017L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("inventory-service")),
-      ("service.version", AttributeValue::string("3.1.0")),
-      ("rpc.system", AttributeValue::string("grpc")),
-      ("rpc.service", AttributeValue::string("InventoryService")),
-      ("rpc.method", AttributeValue::string("CheckAvailability")),
-      ("product.id", AttributeValue::string("prod_123")),
-      ("quantity.requested", AttributeValue::int(2L)),
-      ("quantity.available", AttributeValue::int(15L)),
-      ("inventory.sufficient", AttributeValue::bool(true))
-    ],
-    events: [],
-    links: []
-  }
+  // 验证关键库存指标
+  let mut found_accuracy = false
+  let mut found_alerts = false
   
-  // 5. 支付服务调用
-  let payment_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_payment_service",
-    parent_span_id: Some("span_order_service"),
-    name: "process_payment",
-    kind: SpanKind::Client,
-    start_time: 1640997017L,
-    end_time: Some(1640997018L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("payment-service")),
-      ("service.version", AttributeValue::string("4.0.1")),
-      ("rpc.system", AttributeValue::string("http")),
-      ("http.method", AttributeValue::string("POST")),
-      ("http.url", AttributeValue::string("http://payment-service:9090/payments")),
-      ("payment.method", AttributeValue::string("credit_card")),
-      ("payment.amount", AttributeValue::float(299.99)),
-      ("currency", AttributeValue::string("USD")),
-      ("payment.gateway", AttributeValue::string("stripe"))
-    ],
-    events: [
-      ("payment_authorized", 1640997017L, [
-        ("transaction.id", AttributeValue::string("txn_abc123")),
-        ("auth.code", AttributeValue::string("987654"))
-      ])
-    ],
-    links: []
-  }
-  
-  // 6. 记录微服务调用指标
-  let service_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("service_requests_total", "Total service requests", "count"),
-      value: 1.0,
-      attributes: [
-        ("service.name", AttributeValue::string("auth-service")),
-        ("rpc.method", AttributeValue::string("ValidateToken")),
-        ("http.status_code", AttributeValue::int(200L))
-      ],
-      time: 1640997015L
-    },
-    Measurement::{
-      instrument: Instrument::counter("service_requests_total", "Total service requests", "count"),
-      value: 1.0,
-      attributes: [
-        ("service.name", AttributeValue::string("order-service")),
-        ("rpc.method", AttributeValue::string("CreateOrder")),
-        ("http.status_code", AttributeValue::int(201L))
-      ],
-      time: 1640997018L
-    },
-    Measurement::{
-      instrument: Instrument::histogram("service_request_duration_ms", "Service request duration", "ms"),
-      value: 5.0,
-      attributes: [
-        ("service.name", AttributeValue::string("auth-service")),
-        ("rpc.method", AttributeValue::string("ValidateToken"))
-      ],
-      time: 1640997015L
-    },
-    Measurement::{
-      instrument: Instrument::histogram("service_request_duration_ms", "Service request duration", "ms"),
-      value: 1.0,
-      attributes: [
-        ("service.name", AttributeValue::string("inventory-service")),
-        ("rpc.method", AttributeValue::string("CheckAvailability"))
-      ],
-      time: 1640997017L
+  let mut i = 0
+  while i < sync_summary.attributes.length() {
+    let (key, value) = sync_summary.attributes[i]
+    if key == "sync.accuracy" {
+      match value {
+        common::FloatValue(accuracy) => {
+          assert_eq(accuracy, 99.8)
+          found_accuracy = true
+        }
+        _ => assert_eq(false, true, "Expected float value for sync.accuracy")
+      }
     }
-  ]
+    if key == "alerts.generated" {
+      match value {
+        common::IntValue(alerts) => {
+          assert_eq(alerts, 4L)
+          found_alerts = true
+        }
+        _ => assert_eq(false, true, "Expected int value for alerts.generated")
+      }
+    }
+    i = i + 1
+  }
   
-  // 7. 记录微服务调用日志
-  let microservice_log = LogRecord::{
-    timestamp: 1640997020L,
-    observed_timestamp: Some(1640997021L),
-    severity: Some(Severity::Info),
-    severity_text: Some("INFO"),
-    body: Some("Microservice request flow completed successfully"),
-    attributes: [
-      ("trace_id", AttributeValue::string(trace_id)),
-      ("request.id", AttributeValue::string(request_id)),
-      ("services.involved", AttributeValue::array_string(["auth-service", "order-service", "inventory-service", "payment-service"])),
-      ("total.duration_ms", AttributeValue::float(20.0)),
-      ("order.created", AttributeValue::bool(true)),
-      ("payment.processed", AttributeValue::bool(true))
+  assert_eq(found_accuracy, true)
+  assert_eq(found_alerts, true)
+}
+
+test "ecommerce_recommendation_engine_telemetry" {
+  // 模拟电商推荐引擎的遥测数据收集
+  
+  let ctx = context::Context::empty()
+  let tracer_provider = trace::NoopTracerProvider::{}
+  let meter_provider = metrics::NoopMeterProvider::{}
+  let logger_provider = logs::NoopLoggerProvider::{}
+  
+  let tracer = tracer_provider.get_tracer("recommendation-service", "3.2.0")
+  let meter = meter_provider.get_meter("recommendation-service", "3.2.0")
+  let logger = logger_provider.get_logger("recommendation-service", "3.2.0")
+  
+  // 推荐生成流程
+  let (ctx_recommend, recommend_span) = tracer.start_span(
+    ctx,
+    "generate_recommendations",
+    trace::Internal,
+    [
+      ("user.id", common::AttributeValue::string("user_789012")),
+      ("recommendation.type", common::AttributeValue::string("product_recommendations")),
+      ("algorithm.version", common::AttributeValue::string("collaborative_v3"))
     ],
-    flags: 0,
-    trace_id: Some(trace_id),
-    span_id: Some("span_gateway"),
-    trace_flags: Some(1)
+    1640996000000000000L
+  )
+  
+  let recommendation_counter = meter.create_counter("recommendations_generated", "count", "Recommendations generated")
+  let ml_latency_histogram = meter.create_histogram("ml_inference_latency_ms", "ms", "ML inference latency")
+  
+  // 模拟ML模型推理
+  ml_latency_histogram.record(125.3, [
+    ("model.type", common::AttributeValue::string("collaborative_filtering")),
+    ("model.version", common::AttributeValue::string("v3.2.1"))
+  ])
+  
+  recommendation_counter.add(10L, [
+    ("user.segment", common::AttributeValue::string("premium")),
+    ("recommendation.context", common::AttributeValue::string("product_page"))
+  ])
+  
+  logger.info("Product recommendations generated", [
+    ("user.id", common::AttributeValue::string("user_789012")),
+    ("recommendations.count", common::AttributeValue::int(10L)),
+    ("model.version", common::AttributeValue::string("collaborative_v3")),
+    ("inference.time_ms", common::AttributeValue::float(125.3))
+  ])
+  
+  // A/B测试跟踪
+  let (ctx_abtest, abtest_span) = tracer.start_span(
+    ctx_recommend,
+    "ab_test_tracking",
+    trace::Internal,
+    [
+      ("experiment.id", common::AttributeValue::string("exp_rec_algo_2022q1")),
+      ("variant", common::AttributeValue::string("treatment")),
+      ("user.cohort", common::AttributeValue::string("premium_mobile"))
+    ]
+  )
+  
+  let ab_test_counter = meter.create_counter("ab_test_impressions", "count", "A/B test impressions")
+  let click_through_rate = meter.create_histogram("recommendation_ctr", "percentage", "Recommendation CTR")
+  
+  ab_test_counter.add(1L, [
+    ("experiment.id", common::AttributeValue::string("exp_rec_algo_2022q1")),
+    ("variant", common::AttributeValue::string("treatment"))
+  ])
+  
+  click_through_rate.record(15.5, [
+    ("recommendation.type", common::AttributeValue::string("product_recommendations")),
+    ("user.segment", common::AttributeValue::string("premium"))
+  ])
+  
+  logger.info("A/B test impression recorded", [
+    ("experiment.id", common::AttributeValue::string("exp_rec_algo_2022q1")),
+    ("variant", common::AttributeValue::string("treatment")),
+    ("user.id", common::AttributeValue::string("user_789012"))
+  ])
+  
+  // 推荐效果跟踪
+  let (ctx_tracking, tracking_span) = tracer.start_span(
+    ctx_abtest,
+    "recommendation_feedback",
+    trace::Internal,
+    [
+      ("feedback.type", common::AttributeValue::string("click")),
+      ("recommendation.id", common::AttributeValue::string("rec_123456"))
+    ]
+  )
+  
+  let feedback_counter = meter.create_counter("recommendation_feedback", "count", "Recommendation feedback")
+  let conversion_gauge = meter.create_gauge("recommendation_conversion_rate", "percentage", "Recommendation conversion rate")
+  
+  feedback_counter.add(1L, [
+    ("feedback.type", common::AttributeValue::string("click")),
+    ("recommendation.position", common::AttributeValue::int(2L))
+  ])
+  
+  conversion_gauge.record(12.5, [
+    ("recommendation.algorithm", common::AttributeValue::string("collaborative_v3")),
+    ("time.frame", common::AttributeValue::string("24h"))
+  ])
+  
+  logger.info("Recommendation feedback recorded", [
+    ("user.id", common::AttributeValue::string("user_789012")),
+    ("recommendation.id", common::AttributeValue::string("rec_123456")),
+    ("feedback.type", common::AttributeValue::string("click")),
+    ("position", common::AttributeValue::int(2L))
+  ])
+  
+  // 完成推荐引擎流程
+  let completed_recommend_span = trace::Span::{
+    ..recommend_span,
+    end_time_unix_nanos: Some(1640996000150000000L),  // 150ms后完成
+    status: trace::Ok,
+    status_description: Some("Recommendation generation completed"),
+    events: [
+      trace::SpanEvent::{
+        name: "recommendation_summary",
+        timestamp_unix_nanos: 1640996000150000000L,
+        attributes: [
+          ("recommendations.generated", common::AttributeValue::int(10L)),
+          ("ml.inference.time_ms", common::AttributeValue::float(125.3)),
+          ("ab.test.variant", common::AttributeValue::string("treatment")),
+          ("expected.ctr", common::AttributeValue::float(15.5))
+        ]
+      }
+    ]
   }
   
-  // 8. 验证微服务调用链的完整性
-  assert_eq(gateway_span.trace_id, trace_id)
-  assert_eq(auth_span.parent_span_id, Some("span_gateway"))
-  assert_eq(order_span.parent_span_id, Some("span_gateway"))
-  assert_eq(inventory_span.parent_span_id, Some("span_order_service"))
-  assert_eq(payment_span.parent_span_id, Some("span_order_service"))
+  // 验证推荐引擎遥测数据
+  assert_eq(completed_recommend_span.name, "generate_recommendations")
+  assert_eq(completed_recommend_span.status, trace::Ok)
+  assert_eq(completed_recommend_span.events.length(), 1)
   
-  // 验证调用时间线
-  assert_eq(gateway_span.start_time <= auth_span.start_time, true)
-  assert_eq(auth_span.end_time.unwrap() <= order_span.start_time, true)
-  assert_eq(order_span.start_time <= inventory_span.start_time, true)
-  assert_eq(inventory_span.end_time.unwrap() <= payment_span.start_time, true)
-  assert_eq(payment_span.end_time.unwrap() <= gateway_span.end_time.unwrap(), true)
+  let rec_summary = completed_recommend_span.events[0]
+  assert_eq(rec_summary.name, "recommendation_summary")
   
-  // 验证服务版本信息
-  let auth_version = auth_span.attributes[1]
-  match auth_version.1 {
-    StringValue(version) => assert_eq(version, "2.3.1")
-    _ => assert_eq(false, true)
+  // 验证关键推荐指标
+  let mut found_recommendations = false
+  let mut found_ctr = false
+  
+  let mut i = 0
+  while i < rec_summary.attributes.length() {
+    let (key, value) = rec_summary.attributes[i]
+    if key == "recommendations.generated" {
+      match value {
+        common::IntValue(rec_count) => {
+          assert_eq(rec_count, 10L)
+          found_recommendations = true
+        }
+        _ => assert_eq(false, true, "Expected int value for recommendations.generated")
+      }
+    }
+    if key == "expected.ctr" {
+      match value {
+        common::FloatValue(ctr) => {
+          assert_eq(ctr, 15.5)
+          found_ctr = true
+        }
+        _ => assert_eq(false, true, "Expected float value for expected.ctr")
+      }
+    }
+    i = i + 1
   }
   
-  // 验证请求ID的传播
-  let gateway_request_id = gateway_span.attributes[6]
-  match gateway_request_id.1 {
-    StringValue(req_id) => assert_eq(req_id, request_id)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证库存检查的业务逻辑
-  let inventory_check = inventory_span.attributes[6]
-  match inventory_check.1 {
-    BoolValue(sufficient) => assert_eq(sufficient, true)
-    _ => assert_eq(false, true)
-  }
+  assert_eq(found_recommendations, true)
+  assert_eq(found_ctr, true)
 }

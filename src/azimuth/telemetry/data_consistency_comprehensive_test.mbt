@@ -1,1045 +1,662 @@
-// 数据一致性综合测试 - 验证遥测系统在分布式场景下的数据一致性保证
+// 数据一致性测试 - 验证分布式环境下数据一致性
+// 测试Azimuth Telemetry在分布式系统中的数据一致性和完整性
 
-use azimuth.telemetry.api.common.{AttributeValue, Attributes, Resource, InstrumentationScope}
-use azimuth.telemetry.api.trace.{SpanKind, StatusCode, Span}
-use azimuth.telemetry.api.metrics.{MetricType, Instrument, Measurement}
-use azimuth.telemetry.api.logs.{LogRecord, Severity, Logger}
-use azimuth.telemetry.api.context.{Context, Baggage, ContextKey}
-use azimuth.telemetry.api.propagation.{TextMapPropagator, Propagator}
-
-test "distributed_trace_consistency" {
-  // 测试分布式追踪的一致性
+test "distributed_trace_context_consistency" {
+  // 测试分布式追踪上下文的一致性
   
-  let trace_id = "trace_distributed_consistency_123"
-  let consistency_check_time = 1641016000L
+  // 1. 创建根追踪上下文
+  let root_trace_id = [0x0a, 0xf7, 0x65, 0x19, 0x16, 0xcd, 0x43, 0xdd, 0x84, 0x48, 0xeb, 0x21, 0x1c, 0x80, 0x31, 0x9c]
+  let root_span_id = [0xb7, 0xad, 0x6b, 0x71, 0x69, 0x20, 0x33, 0x31]
   
-  // 1. 服务A中的根Span
-  let service_a_root_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_service_a_root",
-    parent_span_id: None,
-    name: "service_a_root_operation",
-    kind: SpanKind::Server,
-    start_time: consistency_check_time,
-    end_time: Some(consistency_check_time + 2000L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("service-a")),
-      ("service.version", AttributeValue::string("1.2.3")),
-      ("operation.name", AttributeValue::string("process_request")),
-      ("user.id", AttributeValue::string("user_456")),
-      ("request.id", AttributeValue::string("req_abc123")),
-      ("trace.state", AttributeValue::string("initialized"))
-    ],
-    events: [
-      ("request_received", consistency_check_time + 100L, [
-        ("endpoint", AttributeValue::string("/api/process")),
-        ("request.size", AttributeValue::int(1024L))
-      ])
-    ],
-    links: []
+  let root_context = trace::SpanContext::{
+    trace_id: root_trace_id,
+    span_id: root_span_id,
+    trace_flags: 1_byte,
+    trace_state: "user_id=user_12345,session_id=sess_abcde"
   }
   
-  // 2. 服务A调用服务B的子Span
-  let service_a_to_b_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_service_a_to_b",
-    parent_span_id: Some("span_service_a_root"),
-    name: "service_a_calls_service_b",
-    kind: SpanKind::Client,
-    start_time: consistency_check_time + 500L,
-    end_time: Some(consistency_check_time + 1200L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("service-a")),
-      ("peer.service", AttributeValue::string("service-b")),
-      ("rpc.system", AttributeValue::string("http")),
-      ("rpc.method", AttributeValue::string("POST")),
-      ("rpc.url", AttributeValue::string("http://service-b:8080/api/validate")),
-      ("trace.propagation.format", AttributeValue::string("w3c-tracecontext")),
-      ("trace.consistency.checked", AttributeValue::bool(true))
-    ],
-    events: [
-      ("call_initiated", consistency_check_time + 600L, [
-        ("trace.context.injected", AttributeValue::bool(true)),
-        ("propagation.headers.count", AttributeValue::int(3L))
-      ])
-    ],
-    links: []
-  }
+  // 2. 验证根上下文的完整性
+  assert_eq(root_context.trace_id.length(), 16)
+  assert_eq(root_context.span_id.length(), 8)
+  assert_eq(root_context.trace_flags, 1_byte)
+  assert_eq(root_context.trace_state.contains("user_id=user_12345"), true)
   
-  // 3. 服务B中接收的Span
-  let service_b_receive_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_service_b_receive",
-    parent_span_id: Some("span_service_a_to_b"),
-    name: "service_b_receive_and_process",
-    kind: SpanKind::Server,
-    start_time: consistency_check_time + 800L,
-    end_time: Some(consistency_check_time + 1500L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("service-b")),
-      ("service.version", AttributeValue::string("2.1.0")),
-      ("operation.name", AttributeValue::string("validate_data")),
-      ("peer.service", AttributeValue::string("service-a")),
-      ("trace.context.extracted", AttributeValue::bool(true)),
-      ("trace.id.match", AttributeValue::bool(true)),
-      ("parent.span.id.match", AttributeValue::bool(true)),
-      ("user.id", AttributeValue::string("user_456")), // 一致的用户ID
-      ("request.id", AttributeValue::string("req_abc123")) // 一致的请求ID
-    ],
-    events: [
-      ("context_extracted", consistency_check_time + 900L, [
-        ("extraction.success", AttributeValue::bool(true)),
-        ("trace.state.validated", AttributeValue::bool(true))
-      ]),
-      ("validation_completed", consistency_check_time + 1400L, [
-        ("validation.result", AttributeValue::string("passed")),
-        ("data.consistency.verified", AttributeValue::bool(true))
-      ])
-    ],
-    links: []
-  }
+  // 3. 模拟服务A中的上下文传播
+  let service_a_context = context::Context::empty()
+  let trace_key = context::create_key("trace.context")
+  let service_a_ctx = service_a_context.with_value(trace_key, "trace_id=0af7651916cd43dd8448eb211c80319c:span_id=b7ad6b7169203331")
   
-  // 4. 服务B调用服务C的子Span
-  let service_b_to_c_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_service_b_to_c",
-    parent_span_id: Some("span_service_b_receive"),
-    name: "service_b_calls_service_c",
-    kind: SpanKind::Client,
-    start_time: consistency_check_time + 1000L,
-    end_time: Some(consistency_check_time + 1300L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("service-b")),
-      ("peer.service", AttributeValue::string("service-c")),
-      ("rpc.system", AttributeValue::string("grpc")),
-      ("rpc.service", AttributeValue::string("DataService")),
-      ("rpc.method", AttributeValue::string("Store")),
-      ("trace.propagation.format", AttributeValue::string("w3c-tracecontext")),
-      ("trace.chain.length", AttributeValue::int(3L))
-    ],
-    events: [
-      ("grpc_call_initiated", consistency_check_time + 1100L, [
-        ("trace.context.propagated", AttributeValue::bool(true)),
-        ("grpc.metadata.tracing", AttributeValue::bool(true))
-      ])
-    ],
-    links: []
-  }
-  
-  // 5. 服务C中的最终Span
-  let service_c_final_span = Span::{
-    trace_id: trace_id,
-    span_id: "span_service_c_final",
-    parent_span_id: Some("span_service_b_to_c"),
-    name: "service_c_store_operation",
-    kind: SpanKind::Server,
-    start_time: consistency_check_time + 1150L,
-    end_time: Some(consistency_check_time + 1600L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("service.name", AttributeValue::string("service-c")),
-      ("service.version", AttributeValue::string("3.0.1")),
-      ("operation.name", AttributeValue::string("store_data")),
-      ("peer.service", AttributeValue::string("service-b")),
-      ("trace.context.extracted", AttributeValue::bool(true)),
-      ("trace.chain.complete", AttributeValue::bool(true)),
-      ("user.id", AttributeValue::string("user_456")), // 一致的用户ID
-      ("request.id", AttributeValue::string("req_abc123")), // 一致的请求ID
-      ("data.stored", AttributeValue::bool(true)),
-      ("consistency.checksum", AttributeValue::string("sha256:abc123def456"))
-    ],
-    events: [
-      ("data_storage_completed", consistency_check_time + 1550L, [
-        ("storage.location", AttributeValue::string("primary_db")),
-        ("data.version", AttributeValue::int(1L)),
-        ("consistency.verified", AttributeValue::bool(true))
-      ])
-    ],
-    links: []
-  }
-  
-  // 6. 记录分布式追踪一致性指标
-  let consistency_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("distributed_trace_consistency_checks_total", "Total distributed trace consistency checks", "count"),
-      value: 4.0, // 4个一致性检查点
-      attributes: [
-        ("trace.id", AttributeValue::string(trace_id)),
-        ("check.status", AttributeValue::string("passed")),
-        ("services.involved", AttributeValue::int(3L))
-      ],
-      time: consistency_check_time + 1600L
+  // 服务A创建子span
+  let service_a_span_id = [0xc1, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]
+  let service_a_span = trace::Span::{
+    name: "service_a_operation",
+    context: trace::SpanContext::{
+      trace_id: root_trace_id,  // 继承相同的trace_id
+      span_id: service_a_span_id,
+      trace_flags: 1_byte,
+      trace_state: root_context.trace_state
     },
-    Measurement::{
-      instrument: Instrument::histogram("trace_propagation_latency_ms", "Trace propagation latency", "ms"),
-      value: 300.0, // 从A到C的总传播延迟
-      attributes: [
-        ("source.service", AttributeValue::string("service-a")),
-        ("destination.service", AttributeValue::string("service-c")),
-        ("propagation.hops", AttributeValue::int(2L))
-      ],
-      time: consistency_check_time + 1600L
-    },
-    Measurement::{
-      instrument: Instrument::gauge("trace_completeness_ratio", "Trace completeness ratio", "ratio"),
-      value: 1.0, // 100%完整
-      attributes: [
-        ("trace.id", AttributeValue::string(trace_id)),
-        ("expected.spans", AttributeValue::int(5L)),
-        ("actual.spans", AttributeValue::int(5L))
-      ],
-      time: consistency_check_time + 1600L
-    }
-  ]
-  
-  // 7. 记录分布式追踪一致性日志
-  let consistency_log = LogRecord::{
-    timestamp: consistency_check_time + 1600L,
-    observed_timestamp: Some(consistency_check_time + 1601L),
-    severity: Some(Severity::Info),
-    severity_text: Some("INFO"),
-    body: Some("Distributed trace consistency verified across all services"),
+    kind: trace::Server,
+    parent_span_id: Some(root_span_id),  // 设置父span
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200100000000L),
+    status: trace::Ok,
+    status_description: None,
     attributes: [
-      ("trace_id", AttributeValue::string(trace_id)),
-      ("services.involved", AttributeValue::array_string(["service-a", "service-b", "service-c"])),
-      ("total.spans", AttributeValue::int(5L)),
-      ("consistency.checks.passed", AttributeValue::int(4L)),
-      ("trace.completeness", AttributeValue::string("100%")),
-      ("data.integrity.verified", AttributeValue::bool(true))
+      ("service.name", common::AttributeValue::string("service-a")),
+      ("service.version", common::AttributeValue::string("1.2.0"))
     ],
-    flags: 0,
-    trace_id: Some(trace_id),
-    span_id: Some("span_service_c_final"),
-    trace_flags: Some(1)
+    events: [],
+    links: []
   }
   
-  // 8. 验证分布式追踪一致性的正确性
-  assert_eq(service_a_root_span.status, StatusCode::Ok)
-  assert_eq(service_a_to_b_span.status, StatusCode::Ok)
-  assert_eq(service_b_receive_span.status, StatusCode::Ok)
-  assert_eq(service_b_to_c_span.status, StatusCode::Ok)
-  assert_eq(service_c_final_span.status, StatusCode::Ok)
+  // 验证服务A的span一致性
+  assert_eq(service_a_span.context.trace_id, root_context.trace_id)
+  assert_eq(service_a_span.parent_span_id.unwrap(), root_context.span_id)
+  assert_eq(service_a_span.context.trace_state, root_context.trace_state)
   
-  // 验证trace ID的一致性
-  assert_eq(service_a_root_span.trace_id, trace_id)
-  assert_eq(service_b_receive_span.trace_id, trace_id)
-  assert_eq(service_c_final_span.trace_id, trace_id)
+  // 4. 模拟服务B中的上下文传播
+  let service_b_context = context::Context::empty()
+  let service_b_ctx = service_b_context.with_value(trace_key, "trace_id=0af7651916cd43dd8448eb211c80319c:span_id=c123456789abcdef")
   
-  // 验证父子关系的正确性
-  assert_eq(service_a_to_b_span.parent_span_id, Some("span_service_a_root"))
-  assert_eq(service_b_receive_span.parent_span_id, Some("span_service_a_to_b"))
-  assert_eq(service_b_to_c_span.parent_span_id, Some("span_service_b_receive"))
-  assert_eq(service_c_final_span.parent_span_id, Some("span_service_b_to_c"))
-  
-  // 验证用户ID在所有服务中的一致性
-  let service_a_user = service_a_root_span.attributes[3]
-  match service_a_user.1 {
-    StringValue(user_id) => assert_eq(user_id, "user_456")
-    _ => assert_eq(false, true)
+  // 服务B创建子span
+  let service_b_span_id = [0xd2, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0]
+  let service_b_span = trace::Span::{
+    name: "service_b_operation",
+    context: trace::SpanContext::{
+      trace_id: root_trace_id,  // 继承相同的trace_id
+      span_id: service_b_span_id,
+      trace_flags: 1_byte,
+      trace_state: root_context.trace_state
+    },
+    kind: trace::Client,
+    parent_span_id: Some(service_a_span_id),  // 服务A的span作为父span
+    start_time_unix_nanos: 1640995200050000000L,
+    end_time_unix_nanos: Some(1640995200150000000L),
+    status: trace::Ok,
+    status_description: None,
+    attributes: [
+      ("service.name", common::AttributeValue::string("service-b")),
+      ("service.version", common::AttributeValue::string("2.1.0"))
+    ],
+    events: [],
+    links: []
   }
   
-  let service_c_user = service_c_final_span.attributes[6]
-  match service_c_user.1 {
-    StringValue(user_id) => assert_eq(user_id, "user_456")
-    _ => assert_eq(false, true)
-  }
+  // 验证服务B的span一致性
+  assert_eq(service_b_span.context.trace_id, root_context.trace_id)
+  assert_eq(service_b_span.parent_span_id.unwrap(), service_a_span_id)
+  assert_eq(service_b_span.context.trace_state, root_context.trace_state)
   
-  // 验证请求ID的一致性
-  let service_a_request = service_a_root_span.attributes[4]
-  match service_a_request.1 {
-    StringValue(request_id) => assert_eq(request_id, "req_abc123")
-    _ => assert_eq(false, true)
-  }
+  // 5. 验证跨服务的上下文一致性
+  assert_eq(root_context.trace_id, service_a_span.context.trace_id)
+  assert_eq(root_context.trace_id, service_b_span.context.trace_id)
+  assert_eq(service_a_span.context.trace_flags, service_b_span.context.trace_flags)
   
-  let service_c_request = service_c_final_span.attributes[7]
-  match service_c_request.1 {
-    StringValue(request_id) => assert_eq(request_id, "req_abc123")
-    _ => assert_eq(false, true)
-  }
+  // 6. 验证span层次结构
+  assert_eq(service_a_span.parent_span_id.unwrap(), root_context.span_id)
+  assert_eq(service_b_span.parent_span_id.unwrap(), service_a_span.context.span_id)
   
-  // 验证时间线的正确性
-  assert_eq(service_a_root_span.start_time <= service_a_to_b_span.start_time, true)
-  assert_eq(service_a_to_b_span.start_time <= service_b_receive_span.start_time, true)
-  assert_eq(service_b_receive_span.start_time <= service_b_to_c_span.start_time, true)
-  assert_eq(service_b_to_c_span.start_time <= service_c_final_span.start_time, true)
+  // 7. 验证时间顺序一致性
+  assert_eq(service_a_span.start_time_unix_nanos <= service_b_span.start_time_unix_nanos, true)
+  assert_eq(service_a_span.end_time_unix_nanos.unwrap() <= service_b_span.end_time_unix_nanos.unwrap(), true)
 }
 
-test "metric_aggregation_consistency" {
-  // 测试指标聚合的一致性
+test "metrics_consistency_across_services" {
+  // 测试跨服务的指标一致性
   
-  let aggregation_time = 1641017000L
-  let aggregation_window = 60000L // 1分钟聚合窗口
+  // 1. 定义统一的指标规范
+  let metric_name = "http_requests_total"
+  let metric_unit = "count"
+  let metric_description = "Total HTTP requests"
   
-  // 1. 各服务产生的原始指标
-  let service_a_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("http_requests_total", "Total HTTP requests", "count"),
-      value: 100.0,
-      attributes: [
-        ("service.name", AttributeValue::string("service-a")),
-        ("http.method", AttributeValue::string("GET")),
-        ("http.status_code", AttributeValue::int(200L)),
-        ("user.region", AttributeValue::string("us-west-2"))
-      ],
-      time: aggregation_time - 50000L
-    },
-    Measurement::{
-      instrument: Instrument::counter("http_requests_total", "Total HTTP requests", "count"),
-      value: 50.0,
-      attributes: [
-        ("service.name", AttributeValue::string("service-a")),
-        ("http.method", AttributeValue::string("POST")),
-        ("http.status_code", AttributeValue::int(201L)),
-        ("user.region", AttributeValue::string("us-west-2"))
-      ],
-      time: aggregation_time - 40000L
-    }
+  // 2. 服务A的指标收集
+  let service_a_attributes = [
+    ("service.name", common::AttributeValue::string("service-a")),
+    ("service.version", common::AttributeValue::string("1.2.0")),
+    ("http.method", common::AttributeValue::string("GET")),
+    ("http.status_code", common::AttributeValue::int(200L)),
+    ("endpoint", common::AttributeValue::string("/api/users"))
   ]
   
-  let service_b_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("http_requests_total", "Total HTTP requests", "count"),
-      value: 75.0,
-      attributes: [
-        ("service.name", AttributeValue::string("service-b")),
-        ("http.method", AttributeValue::string("GET")),
-        ("http.status_code", AttributeValue::int(200L)),
-        ("user.region", AttributeValue::string("us-west-2"))
-      ],
-      time: aggregation_time - 45000L
-    },
-    Measurement::{
-      instrument: Instrument::counter("http_requests_total", "Total HTTP requests", "count"),
-      value: 25.0,
-      attributes: [
-        ("service.name", AttributeValue::string("service-b")),
-        ("http.method", AttributeValue::string("PUT")),
-        ("http.status_code", AttributeValue::int(200L)),
-        ("user.region", AttributeValue::string("us-west-2"))
-      ],
-      time: aggregation_time - 35000L
-    }
+  let service_a_timestamp = 1640995200000000000L
+  
+  // 3. 服务B的指标收集
+  let service_b_attributes = [
+    ("service.name", common::AttributeValue::string("service-b")),
+    ("service.version", common::AttributeValue::string("2.1.0")),
+    ("http.method", common::AttributeValue::string("GET")),
+    ("http.status_code", common::AttributeValue::int(200L)),
+    ("endpoint", common::AttributeValue::string("/api/users"))
   ]
   
-  let service_c_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("http_requests_total", "Total HTTP requests", "count"),
-      value: 60.0,
-      attributes: [
-        ("service.name", AttributeValue::string("service-c")),
-        ("http.method", AttributeValue::string("GET")),
-        ("http.status_code", AttributeValue::int(200L)),
-        ("user.region", AttributeValue::string("us-west-2"))
-      ],
-      time: aggregation_time - 30000L
+  let service_b_timestamp = 1640995200050000000L
+  
+  // 4. 验证指标名称和单位一致性
+  assert_eq(metric_name, "http_requests_total")
+  assert_eq(metric_unit, "count")
+  assert_eq(metric_description, "Total HTTP requests")
+  
+  // 5. 验证属性键的一致性
+  let service_a_keys = [] : Array[String]
+  let mut i = 0
+  while i < service_a_attributes.length() {
+    service_a_keys.push(service_a_attributes[i].0)
+    i = i + 1
+  }
+  
+  let service_b_keys = [] : Array[String]
+  i = 0
+  while i < service_b_attributes.length() {
+    service_b_keys.push(service_b_attributes[i].0)
+    i = i + 1
+  }
+  
+  assert_eq(service_a_keys.length(), service_b_keys.length())
+  
+  // 验证共同的属性键
+  let common_keys = ["http.method", "http.status_code", "endpoint"]
+  let mut j = 0
+  while j < common_keys.length() {
+    let key = common_keys[j]
+    assert_eq(service_a_keys.contains(key), true)
+    assert_eq(service_b_keys.contains(key), true)
+    j = j + 1
+  }
+  
+  // 6. 验证相同属性值的一致性
+  let mut found_method_a = false
+  let mut found_status_a = false
+  let mut found_endpoint_a = false
+  
+  i = 0
+  while i < service_a_attributes.length() {
+    let (key, value) = service_a_attributes[i]
+    if key == "http.method" {
+      match value {
+        common::StringValue(method) => {
+          assert_eq(method, "GET")
+          found_method_a = true
+        }
+        _ => assert_eq(false, true, "Expected string value for http.method")
+      }
     }
-  ]
-  
-  // 2. 聚合服务的一致性检查
-  let aggregation_span = Span::{
-    trace_id: "trace_metric_aggregation_456",
-    span_id: "span_metric_aggregation",
-    parent_span_id: None,
-    name: "cross_service_metric_aggregation",
-    kind: SpanKind::Internal,
-    start_time: aggregation_time,
-    end_time: Some(aggregation_time + 2000L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("aggregation.window.ms", AttributeValue::int(aggregation_window)),
-      ("services.involved", AttributeValue::int(3L)),
-      ("raw.measurements.count", AttributeValue::int(5L)),
-      ("aggregation.status", AttributeValue::string("consistent")),
-      ("data.integrity.verified", AttributeValue::bool(true))
-    ],
-    events: [
-      ("metrics_collection_started", aggregation_time + 200L, [
-        ("collection.source", AttributeValue::string("all_services")),
-        ("expected.measurements", AttributeValue::int(5L))
-      ]),
-      ("consistency_check_passed", aggregation_time + 1000L, [
-        ("checksum.verified", AttributeValue::bool(true)),
-        ("duplicate.measurements", AttributeValue::int(0L)),
-        ("missing.measurements", AttributeValue::int(0L))
-      ]),
-      ("aggregation_completed", aggregation_time + 1800L, [
-        ("aggregated.metrics.count", AttributeValue::int(4L)),
-        ("total.requests", AttributeValue::float(310.0))
-      ])
-    ],
-    links: []
-  }
-  
-  // 3. 聚合后的指标（预期结果）
-  let aggregated_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("http_requests_total", "Total HTTP requests", "count"),
-      value: 235.0, // 100 + 75 + 60 (GET请求总和)
-      attributes: [
-        ("aggregated", AttributeValue::bool(true)),
-        ("http.method", AttributeValue::string("GET")),
-        ("http.status_code", AttributeValue::int(200L)),
-        ("user.region", AttributeValue::string("us-west-2")),
-        ("services.count", AttributeValue::int(3L))
-      ],
-      time: aggregation_time + 2000L
-    },
-    Measurement::{
-      instrument: Instrument::counter("http_requests_total", "Total HTTP requests", "count"),
-      value: 50.0, // POST请求
-      attributes: [
-        ("aggregated", AttributeValue::bool(true)),
-        ("http.method", AttributeValue::string("POST")),
-        ("http.status_code", AttributeValue::int(201L)),
-        ("user.region", AttributeValue::string("us-west-2")),
-        ("services.count", AttributeValue::int(1L))
-      ],
-      time: aggregation_time + 2000L
-    },
-    Measurement::{
-      instrument: Instrument::counter("http_requests_total", "Total HTTP requests", "count"),
-      value: 25.0, // PUT请求
-      attributes: [
-        ("aggregated", AttributeValue::bool(true)),
-        ("http.method", AttributeValue::string("PUT")),
-        ("http.status_code", AttributeValue::int(200L)),
-        ("user.region", AttributeValue::string("us-west-2")),
-        ("services.count", AttributeValue::int(1L))
-      ],
-      time: aggregation_time + 2000L
-    },
-    Measurement::{
-      instrument: Instrument::gauge("request_rate_per_second", "Request rate per second", "rate"),
-      value: 5.17, // 310 requests / 60 seconds
-      attributes: [
-        ("aggregated", AttributeValue::bool(true)),
-        ("user.region", AttributeValue::string("us-west-2")),
-        ("services.involved", AttributeValue::int(3L))
-      ],
-      time: aggregation_time + 2000L
+    if key == "http.status_code" {
+      match value {
+        common::IntValue(status) => {
+          assert_eq(status, 200L)
+          found_status_a = true
+        }
+        _ => assert_eq(false, true, "Expected int value for http.status_code")
+      }
     }
-  ]
-  
-  // 4. 记录聚合一致性指标
-  let consistency_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("metric_aggregation_consistency_checks_total", "Total metric aggregation consistency checks", "count"),
-      value: 1.0,
-      attributes: [
-        ("aggregation.status", AttributeValue::string("passed")),
-        ("services.involved", AttributeValue::int(3L)),
-        ("measurements.processed", AttributeValue::int(5L))
-      ],
-      time: aggregation_time + 2000L
-    },
-    Measurement::{
-      instrument: Instrument::gauge("aggregation_data_quality_score", "Aggregation data quality score", "score"),
-      value: 1.0, // 100%数据质量
-      attributes: [
-        ("quality.dimension", AttributeValue::string("completeness")),
-        ("missing.data.percentage", AttributeValue::float(0.0))
-      ],
-      time: aggregation_time + 2000L
+    if key == "endpoint" {
+      match value {
+        common::StringValue(endpoint) => {
+          assert_eq(endpoint, "/api/users")
+          found_endpoint_a = true
+        }
+        _ => assert_eq(false, true, "Expected string value for endpoint")
+      }
     }
-  ]
-  
-  // 5. 记录聚合一致性日志
-  let aggregation_log = LogRecord::{
-    timestamp: aggregation_time + 2000L,
-    observed_timestamp: Some(aggregation_time + 2001L),
-    severity: Some(Severity::Info),
-    severity_text: Some("INFO"),
-    body: Some("Cross-service metric aggregation completed with data consistency verified"),
-    attributes: [
-      ("aggregation.window.ms", AttributeValue::int(aggregation_window)),
-      ("services.involved", AttributeValue::array_string(["service-a", "service-b", "service-c"])),
-      ("raw.measurements.count", AttributeValue::int(5L)),
-      ("aggregated.metrics.count", AttributeValue::int(4L)),
-      ("total.requests.aggregated", AttributeValue::float(310.0)),
-      ("data.consistency.verified", AttributeValue::bool(true))
-    ],
-    flags: 0,
-    trace_id: Some("trace_metric_aggregation_456"),
-    span_id: Some("span_metric_aggregation"),
-    trace_flags: Some(1)
+    i = i + 1
   }
   
-  // 6. 验证指标聚合一致性的正确性
-  assert_eq(aggregation_span.status, StatusCode::Ok)
+  assert_eq(found_method_a, true)
+  assert_eq(found_status_a, true)
+  assert_eq(found_endpoint_a, true)
   
-  // 验证聚合状态
-  let aggregation_status = aggregation_span.attributes[4]
-  match aggregation_status.1 {
-    StringValue(status) => assert_eq(status, "consistent")
-    _ => assert_eq(false, true)
+  // 7. 验证服务B的相同属性值
+  let mut found_method_b = false
+  let mut found_status_b = false
+  let mut found_endpoint_b = false
+  
+  i = 0
+  while i < service_b_attributes.length() {
+    let (key, value) = service_b_attributes[i]
+    if key == "http.method" {
+      match value {
+        common::StringValue(method) => {
+          assert_eq(method, "GET")
+          found_method_b = true
+        }
+        _ => assert_eq(false, true, "Expected string value for http.method")
+      }
+    }
+    if key == "http.status_code" {
+      match value {
+        common::IntValue(status) => {
+          assert_eq(status, 200L)
+          found_status_b = true
+        }
+        _ => assert_eq(false, true, "Expected int value for http.status_code")
+      }
+    }
+    if key == "endpoint" {
+      match value {
+        common::StringValue(endpoint) => {
+          assert_eq(endpoint, "/api/users")
+          found_endpoint_b = true
+        }
+        _ => assert_eq(false, true, "Expected string value for endpoint")
+      }
+    }
+    i = i + 1
   }
   
-  // 验证数据完整性
-  let data_integrity = aggregation_span.attributes[5]
-  match data_integrity.1 {
-    BoolValue(verified) => assert_eq(verified, true)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证聚合指标的计算正确性
-  let get_requests_total = aggregated_metrics[0]
-  match get_requests_total.value {
-    FloatValue(total) => assert_eq(total, 235.0) // 100 + 75 + 60
-    _ => assert_eq(false, true)
-  }
-  
-  let request_rate = aggregated_metrics[3]
-  match request_rate.value {
-    FloatValue(rate) => assert_eq(rate > 5.0 && rate < 5.2, true) // 310/60 ≈ 5.17
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证聚合标记
-  let aggregated_flag = aggregated_metrics[0].attributes[0]
-  match aggregated_flag.1 {
-    BoolValue(aggregated) => assert_eq(aggregated, true)
-    _ => assert_eq(false, true)
-  }
+  assert_eq(found_method_b, true)
+  assert_eq(found_status_b, true)
+  assert_eq(found_endpoint_b, true)
 }
 
-test "log_streaming_consistency" {
-  // 测试日志流的一致性
+test "log_data_consistency_validation" {
+  // 测试日志数据的一致性验证
   
-  let log_stream_time = 1641018000L
-  let stream_id = "stream_consistency_789"
+  // 1. 创建统一的日志结构
+  let base_timestamp = 1640995200000000000L
+  let trace_id_bytes = [0x0a, 0xf7, 0x65, 0x19, 0x16, 0xcd, 0x43, 0xdd, 0x84, 0x48, 0xeb, 0x21, 0x1c, 0x80, 0x31, 0x9c]
+  let span_id_bytes = [0xb7, 0xad, 0x6b, 0x71, 0x69, 0x20, 0x33, 0x31]
   
-  // 1. 服务A产生的日志流
-  let service_a_logs = [
-    LogRecord::{
-      timestamp: log_stream_time - 5000L,
-      observed_timestamp: Some(log_stream_time - 4999L),
-      severity: Some(Severity::Info),
-      severity_text: Some("INFO"),
-      body: Some("Request processing started in service A"),
-      attributes: [
-        ("service.name", AttributeValue::string("service-a")),
-        ("request.id", AttributeValue::string("req_xyz789")),
-        ("user.id", AttributeValue::string("user_123")),
-        ("stream.id", AttributeValue::string(stream_id)),
-        ("sequence.number", AttributeValue::int(1L))
-      ],
-      flags: 0,
-      trace_id: Some("trace_log_stream_123"),
-      span_id: Some("span_service_a_1"),
-      trace_flags: Some(1)
-    },
-    LogRecord::{
-      timestamp: log_stream_time - 3000L,
-      observed_timestamp: Some(log_stream_time - 2999L),
-      severity: Some(Severity::Info),
-      severity_text: Some("INFO"),
-      body: Some("Service A calling service B"),
-      attributes: [
-        ("service.name", AttributeValue::string("service-a")),
-        ("request.id", AttributeValue::string("req_xyz789")),
-        ("user.id", AttributeValue::string("user_123")),
-        ("stream.id", AttributeValue::string(stream_id)),
-        ("sequence.number", AttributeValue::int(2L)),
-        ("target.service", AttributeValue::string("service-b"))
-      ],
-      flags: 0,
-      trace_id: Some("trace_log_stream_123"),
-      span_id: Some("span_service_a_2"),
-      trace_flags: Some(1)
-    }
-  ]
-  
-  // 2. 服务B产生的日志流
-  let service_b_logs = [
-    LogRecord::{
-      timestamp: log_stream_time - 2500L,
-      observed_timestamp: Some(log_stream_time - 2499L),
-      severity: Some(Severity::Info),
-      severity_text: Some("INFO"),
-      body: Some("Request received in service B from service A"),
-      attributes: [
-        ("service.name", AttributeValue::string("service-b")),
-        ("request.id", AttributeValue::string("req_xyz789")),
-        ("user.id", AttributeValue::string("user_123")),
-        ("stream.id", AttributeValue::string(stream_id)),
-        ("sequence.number", AttributeValue::int(3L)),
-        ("source.service", AttributeValue::string("service-a"))
-      ],
-      flags: 0,
-      trace_id: Some("trace_log_stream_123"),
-      span_id: Some("span_service_b_1"),
-      trace_flags: Some(1)
-    },
-    LogRecord::{
-      timestamp: log_stream_time - 1000L,
-      observed_timestamp: Some(log_stream_time - 999L),
-      severity: Some(Severity::Warn),
-      severity_text: Some("WARN"),
-      body: Some("Service B processing warning"),
-      attributes: [
-        ("service.name", AttributeValue::string("service-b")),
-        ("request.id", AttributeValue::string("req_xyz789")),
-        ("user.id", AttributeValue::string("user_123")),
-        ("stream.id", AttributeValue::string(stream_id)),
-        ("sequence.number", AttributeValue::int(4L)),
-        ("warning.type", AttributeValue::string("performance_degradation"))
-      ],
-      flags: 0,
-      trace_id: Some("trace_log_stream_123"),
-      span_id: Some("span_service_b_2"),
-      trace_flags: Some(1)
-    }
-  ]
-  
-  // 3. 服务C产生的日志流
-  let service_c_logs = [
-    LogRecord::{
-      timestamp: log_stream_time - 500L,
-      observed_timestamp: Some(log_stream_time - 499L),
-      severity: Some(Severity::Info),
-      severity_text: Some("INFO"),
-      body: Some("Service C completing the request flow"),
-      attributes: [
-        ("service.name", AttributeValue::string("service-c")),
-        ("request.id", AttributeValue::string("req_xyz789")),
-        ("user.id", AttributeValue::string("user_123")),
-        ("stream.id", AttributeValue::string(stream_id)),
-        ("sequence.number", AttributeValue::int(5L)),
-        ("flow.status", AttributeValue::string("completed"))
-      ],
-      flags: 0,
-      trace_id: Some("trace_log_stream_123"),
-      span_id: Some("span_service_c_1"),
-      trace_flags: Some(1)
-    }
-  ]
-  
-  // 4. 日志流一致性检查
-  let stream_consistency_span = Span::{
-    trace_id: "trace_log_stream_consistency_456",
-    span_id: "span_stream_consistency_check",
-    parent_span_id: None,
-    name: "log_stream_consistency_verification",
-    kind: SpanKind::Internal,
-    start_time: log_stream_time,
-    end_time: Some(log_stream_time + 1500L),
-    status: StatusCode::Ok,
-    attributes: [
-      ("stream.id", AttributeValue::string(stream_id)),
-      ("total.logs.count", AttributeValue::int(5L)),
-      ("services.involved", AttributeValue::int(3L)),
-      ("consistency.status", AttributeValue::string("verified")),
-      ("sequence.intact", AttributeValue::bool(true)),
-      ("correlation.complete", AttributeValue::bool(true))
-    ],
-    events: [
-      ("stream_analysis_started", log_stream_time + 200L, [
-        ("analysis.type", AttributeValue::string("consistency_check")),
-        ("expected.sequence", AttributeValue::string("1-5"))
-      ]),
-      ("correlation_verified", log_stream_time + 800L, [
-        ("request.id.consistent", AttributeValue::bool(true)),
-        ("user.id.consistent", AttributeValue::bool(true)),
-        ("stream.id.consistent", AttributeValue::bool(true))
-      ]),
-      ("sequence_validated", log_stream_time + 1200L, [
-        ("sequence.complete", AttributeValue::bool(true)),
-        ("missing.sequence.numbers", AttributeValue::int(0L)),
-        ("duplicate.sequence.numbers", AttributeValue::int(0L))
-      ])
-    ],
-    links: []
-  }
-  
-  // 5. 记录日志流一致性指标
-  let stream_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("log_stream_consistency_checks_total", "Total log stream consistency checks", "count"),
-      value: 1.0,
-      attributes: [
-        ("stream.id", AttributeValue::string(stream_id)),
-        ("check.status", AttributeValue::string("passed")),
-        ("logs.analyzed", AttributeValue::int(5L))
-      ],
-      time: log_stream_time + 1500L
-    },
-    Measurement::{
-      instrument: Instrument::gauge("log_stream_completeness_ratio", "Log stream completeness ratio", "ratio"),
-      value: 1.0, // 100%完整
-      attributes: [
-        ("stream.id", AttributeValue::string(stream_id)),
-        ("expected.logs", AttributeValue::int(5L)),
-        ("found.logs", AttributeValue::int(5L))
-      ],
-      time: log_stream_time + 1500L
-    },
-    Measurement::{
-      instrument: Instrument::gauge("log_stream_correlation_score", "Log stream correlation score", "score"),
-      value: 1.0, // 100%关联
-      attributes: [
-        ("correlation.type", AttributeValue::string("request_id")),
-        ("correlation.success", AttributeValue::bool(true))
-      ],
-      time: log_stream_time + 1500L
-    }
-  ]
-  
-  // 6. 记录日志流一致性日志
-  let stream_consistency_log = LogRecord::{
-    timestamp: log_stream_time + 1500L,
-    observed_timestamp: Some(log_stream_time + 1501L),
-    severity: Some(Severity::Info),
+  // 2. 服务A的日志记录
+  let service_a_log = logs::LogRecord::{
+    timestamp_unix_nanos: base_timestamp,
+    observed_timestamp_unix_nanos: Some(base_timestamp + 1000000L),
+    severity_number: logs::Info,
     severity_text: Some("INFO"),
-    body: Some("Log stream consistency verification completed successfully"),
+    body: Some("HTTP request processed successfully"),
     attributes: [
-      ("stream.id", AttributeValue::string(stream_id)),
-      ("services.involved", AttributeValue::array_string(["service-a", "service-b", "service-c"])),
-      ("total.logs.analyzed", AttributeValue::int(5L)),
-      ("sequence.integrity", AttributeValue::string("verified")),
-      ("request.correlation", AttributeValue::string("perfect")),
-      ("user.context.consistent", AttributeValue::bool(true))
+      ("service.name", common::AttributeValue::string("service-a")),
+      ("service.version", common::AttributeValue::string("1.2.0")),
+      ("http.method", common::AttributeValue::string("GET")),
+      ("http.url", common::AttributeValue::string("/api/users")),
+      ("http.status_code", common::AttributeValue::int(200L)),
+      ("duration_ms", common::AttributeValue::float(45.5)),
+      ("user.id", common::AttributeValue::string("user_12345"))
     ],
-    flags: 0,
-    trace_id: Some("trace_log_stream_consistency_456"),
-    span_id: Some("span_stream_consistency_check"),
-    trace_flags: Some(1)
+    trace_id: Some(trace_id_bytes),
+    span_id: Some(span_id_bytes),
+    trace_flags: Some(1_byte),
+    resource: Some(common::Resource::default("service-a")),
+    instrumentation_scope: Some(common::InstrumentationScope::{
+      name: "http-handler",
+      version: Some("1.0.0"),
+      schema_url: None
+    })
   }
   
-  // 7. 验证日志流一致性的正确性
-  assert_eq(stream_consistency_span.status, StatusCode::Ok)
-  
-  // 验证一致性状态
-  let consistency_status = stream_consistency_span.attributes[3]
-  match consistency_status.1 {
-    StringValue(status) => assert_eq(status, "verified")
-    _ => assert_eq(false, true)
+  // 3. 服务B的日志记录
+  let service_b_log = logs::LogRecord::{
+    timestamp_unix_nanos: base_timestamp + 5000000L,
+    observed_timestamp_unix_nanos: Some(base_timestamp + 6000000L),
+    severity_number: logs::Info,
+    severity_text: Some("INFO"),
+    body: Some("Database query executed successfully"),
+    attributes: [
+      ("service.name", common::AttributeValue::string("service-b")),
+      ("service.version", common::AttributeValue::string("2.1.0")),
+      ("db.operation", common::AttributeValue::string("SELECT")),
+      ("db.table", common::AttributeValue::string("users")),
+      ("db.rows_affected", common::AttributeValue::int(1L)),
+      ("duration_ms", common::AttributeValue::float(12.3)),
+      ("user.id", common::AttributeValue::string("user_12345"))
+    ],
+    trace_id: Some(trace_id_bytes),  // 相同的trace_id
+    span_id: Some([0xc1, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef]),  // 不同的span_id
+    trace_flags: Some(1_byte),
+    resource: Some(common::Resource::default("service-b")),
+    instrumentation_scope: Some(common::InstrumentationScope::{
+      name: "db-client",
+      version: Some("2.0.0"),
+      schema_url: None
+    })
   }
   
-  // 验证序列完整性
-  let sequence_intact = stream_consistency_span.attributes[4]
-  match sequence_intact.1 {
-    BoolValue(intact) => assert_eq(intact, true)
-    _ => assert_eq(false, true)
+  // 4. 验证追踪一致性
+  assert_eq(service_a_log.trace_id.unwrap(), service_b_log.trace_id.unwrap())
+  assert_eq(service_a_log.trace_flags.unwrap(), service_b_log.trace_flags.unwrap())
+  assert_eq(service_a_log.trace_id.unwrap().length(), 16)
+  assert_eq(service_a_log.span_id.unwrap().length(), 8)
+  assert_eq(service_b_log.span_id.unwrap().length(), 8)
+  
+  // 5. 验证时间顺序一致性
+  assert_eq(service_b_log.timestamp_unix_nanos > service_a_log.timestamp_unix_nanos, true)
+  assert_eq(service_b_log.observed_timestamp_unix_nanos.unwrap() > service_a_log.observed_timestamp_unix_nanos.unwrap(), true)
+  
+  // 6. 验证用户上下文一致性
+  let mut found_user_a = false
+  let mut found_user_b = false
+  
+  let mut i = 0
+  while i < service_a_log.attributes.length() {
+    let (key, value) = service_a_log.attributes[i]
+    if key == "user.id" {
+      match value {
+        common::StringValue(user_id) => {
+          assert_eq(user_id, "user_12345")
+          found_user_a = true
+        }
+        _ => assert_eq(false, true, "Expected string value for user.id")
+      }
+    }
+    i = i + 1
   }
   
-  // 验证关联完整性
-  let correlation_complete = stream_consistency_span.attributes[5]
-  match correlation_complete.1 {
-    BoolValue(complete) => assert_eq(complete, true)
-    _ => assert_eq(false, true)
+  i = 0
+  while i < service_b_log.attributes.length() {
+    let (key, value) = service_b_log.attributes[i]
+    if key == "user.id" {
+      match value {
+        common::StringValue(user_id) => {
+          assert_eq(user_id, "user_12345")
+          found_user_b = true
+        }
+        _ => assert_eq(false, true, "Expected string value for user.id")
+      }
+    }
+    i = i + 1
   }
   
-  // 验证所有日志中的stream ID一致性
-  let service_a_stream = service_a_logs[0].attributes[3]
-  match service_a_stream.1 {
-    StringValue(stream) => assert_eq(stream, stream_id)
-    _ => assert_eq(false, true)
-  }
+  assert_eq(found_user_a, true)
+  assert_eq(found_user_b, true)
   
-  let service_c_stream = service_c_logs[0].attributes[3]
-  match service_c_stream.1 {
-    StringValue(stream) => assert_eq(stream, stream_id)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证序列号的连续性
-  let service_a_seq1 = service_a_logs[0].attributes[4]
-  match service_a_seq1.1 {
-    IntValue(seq) => assert_eq(seq, 1L)
-    _ => assert_eq(false, true)
-  }
-  
-  let service_c_seq = service_c_logs[0].attributes[4]
-  match service_c_seq.1 {
-    IntValue(seq) => assert_eq(seq, 5L)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证请求ID在所有日志中的一致性
-  let service_a_request = service_a_logs[0].attributes[1]
-  match service_a_request.1 {
-    StringValue(req_id) => assert_eq(req_id, "req_xyz789")
-    _ => assert_eq(false, true)
-  }
-  
-  let service_c_request = service_c_logs[0].attributes[1]
-  match service_c_request.1 {
-    StringValue(req_id) => assert_eq(req_id, "req_xyz789")
-    _ => assert_eq(false, true)
-  }
+  // 7. 验证日志级别一致性
+  assert_eq(service_a_log.severity_number, logs::Info)
+  assert_eq(service_b_log.severity_number, logs::Info)
+  assert_eq(service_a_log.severity_text.unwrap(), "INFO")
+  assert_eq(service_b_log.severity_text.unwrap(), "INFO")
 }
 
-test "event_sourcing_consistency" {
-  // 测试事件溯源的一致性
+test "cross_service_baggage_consistency" {
+  // 测试跨服务的baggage一致性
   
-  let event_sourcing_time = 1641019000L
-  let event_stream_id = "event_stream_consistency_999"
+  // 1. 创建初始baggage
+  let initial_baggage = context::Baggage::empty()
   
-  // 1. 事件流中的事件序列
-  let event_stream = [
-    // 事件1: 用户创建
-    LogRecord::{
-      timestamp: event_sourcing_time - 4000L,
-      observed_timestamp: Some(event_sourcing_time - 3999L),
-      severity: Some(Severity::Info),
-      severity_text: Some("INFO"),
-      body: Some("UserCreated event"),
-      attributes: [
-        ("event.type", AttributeValue::string("UserCreated")),
-        ("event.id", AttributeValue::string("event_user_created_123")),
-        ("event.stream.id", AttributeValue::string(event_stream_id)),
-        ("event.sequence", AttributeValue::int(1L)),
-        ("aggregate.id", AttributeValue::string("user_456")),
-        ("aggregate.type", AttributeValue::string("User")),
-        ("event.version", AttributeValue::int(1L)),
-        ("causation.id", AttributeValue::string("command_create_user_123"))
-      ],
-      flags: 0,
-      trace_id: Some("trace_event_sourcing_123"),
-      span_id: Some("span_user_creation"),
-      trace_flags: Some(1)
-    },
-    // 事件2: 用户资料更新
-    LogRecord::{
-      timestamp: event_sourcing_time - 3000L,
-      observed_timestamp: Some(event_sourcing_time - 2999L),
-      severity: Some(Severity::Info),
-      severity_text: Some("INFO"),
-      body: Some("UserProfileUpdated event"),
-      attributes: [
-        ("event.type", AttributeValue::string("UserProfileUpdated")),
-        ("event.id", AttributeValue::string("event_profile_updated_456")),
-        ("event.stream.id", AttributeValue::string(event_stream_id)),
-        ("event.sequence", AttributeValue::int(2L)),
-        ("aggregate.id", AttributeValue::string("user_456")),
-        ("aggregate.type", AttributeValue::string("User")),
-        ("event.version", AttributeValue::int(1L)),
-        ("causation.id", AttributeValue::string("command_update_profile_456")),
-        ("correlation.id", AttributeValue::string("event_user_created_123"))
-      ],
-      flags: 0,
-      trace_id: Some("trace_event_sourcing_123"),
-      span_id: Some("span_profile_update"),
-      trace_flags: Some(1)
-    },
-    // 事件3: 用户订单创建
-    LogRecord::{
-      timestamp: event_sourcing_time - 2000L,
-      observed_timestamp: Some(event_sourcing_time - 1999L),
-      severity: Some(Severity::Info),
-      severity_text: Some("INFO"),
-      body: Some("OrderCreated event"),
-      attributes: [
-        ("event.type", AttributeValue::string("OrderCreated")),
-        ("event.id", AttributeValue::string("event_order_created_789")),
-        ("event.stream.id", AttributeValue::string(event_stream_id)),
-        ("event.sequence", AttributeValue::int(3L)),
-        ("aggregate.id", AttributeValue::string("order_789")),
-        ("aggregate.type", AttributeValue::string("Order")),
-        ("event.version", AttributeValue::int(1L)),
-        ("causation.id", AttributeValue::string("command_create_order_789")),
-        ("correlation.id", AttributeValue::string("event_profile_updated_456")),
-        ("user.id", AttributeValue::string("user_456"))
-      ],
-      flags: 0,
-      trace_id: Some("trace_event_sourcing_123"),
-      span_id: Some("span_order_creation"),
-      trace_flags: Some(1)
-    },
-    // 事件4: 订单支付处理
-    LogRecord::{
-      timestamp: event_sourcing_time - 1000L,
-      observed_timestamp: Some(event_sourcing_time - 999L),
-      severity: Some(Severity::Info),
-      severity_text: Some("INFO"),
-      body: Some("OrderPaymentProcessed event"),
-      attributes: [
-        ("event.type", AttributeValue::string("OrderPaymentProcessed")),
-        ("event.id", AttributeValue::string("event_payment_processed_012")),
-        ("event.stream.id", AttributeValue::string(event_stream_id)),
-        ("event.sequence", AttributeValue::int(4L)),
-        ("aggregate.id", AttributeValue::string("order_789")),
-        ("aggregate.type", AttributeValue::string("Order")),
-        ("event.version", AttributeValue::int(1L)),
-        ("causation.id", AttributeValue::string("command_process_payment_012")),
-        ("correlation.id", AttributeValue::string("event_order_created_789")),
-        ("payment.id", AttributeValue::string("payment_345"))
-      ],
-      flags: 0,
-      trace_id: Some("trace_event_sourcing_123"),
-      span_id: Some("span_payment_processing"),
-      trace_flags: Some(1)
-    }
-  ]
+  // 2. 在服务A中添加baggage条目
+  let service_a_baggage = initial_baggage
+    .with_entry("user.id", "user_12345")
+    .with_entry("session.id", "sess_abcde")
+    .with_entry("request.id", "req_123456")
+    .with_entry("client.version", "1.2.3")
+    .with_entry("tenant.id", "tenant_789")
   
-  // 2. 事件溯源一致性检查
-  let event_consistency_span = Span::{
-    trace_id: "trace_event_consistency_456",
-    span_id: "span_event_consistency_check",
-    parent_span_id: None,
-    name: "event_sourcing_consistency_verification",
-    kind: SpanKind::Internal,
-    start_time: event_sourcing_time,
-    end_time: Some(event_sourcing_time + 2000L),
-    status: StatusCode::Ok,
+  // 3. 验证服务A的baggage
+  assert_eq(service_a_baggage.get("user.id").unwrap(), "user_12345")
+  assert_eq(service_a_baggage.get("session.id").unwrap(), "sess_abcde")
+  assert_eq(service_a_baggage.get("request.id").unwrap(), "req_123456")
+  assert_eq(service_a_baggage.get("client.version").unwrap(), "1.2.3")
+  assert_eq(service_a_baggage.get("tenant.id").unwrap(), "tenant_789")
+  assert_eq(service_a_baggage.entries.length(), 5)
+  
+  // 4. 在服务B中传播baggage（模拟网络传输）
+  let service_b_baggage = context::Baggage::empty()
+    .with_entry("user.id", "user_12345")  // 传播的值
+    .with_entry("session.id", "sess_abcde")  // 传播的值
+    .with_entry("request.id", "req_123456")  // 传播的值
+    .with_entry("client.version", "1.2.3")  // 传播的值
+    .with_entry("tenant.id", "tenant_789")  // 传播的值
+    .with_entry("service.name", "service-b")  // 服务B添加的值
+    .with_entry("service.version", "2.1.0")  // 服务B添加的值
+  
+  // 5. 验证服务B中传播的baggage一致性
+  assert_eq(service_b_baggage.get("user.id").unwrap(), "user_12345")
+  assert_eq(service_b_baggage.get("session.id").unwrap(), "sess_abcde")
+  assert_eq(service_b_baggage.get("request.id").unwrap(), "req_123456")
+  assert_eq(service_b_baggage.get("client.version").unwrap(), "1.2.3")
+  assert_eq(service_b_baggage.get("tenant.id").unwrap(), "tenant_789")
+  assert_eq(service_b_baggage.get("service.name").unwrap(), "service-b")
+  assert_eq(service_b_baggage.get("service.version").unwrap(), "2.1.0")
+  assert_eq(service_b_baggage.entries.length(), 7)
+  
+  // 6. 在服务C中进一步传播baggage
+  let service_c_baggage = context::Baggage::empty()
+    .with_entry("user.id", "user_12345")  // 原始值
+    .with_entry("session.id", "sess_abcde")  // 原始值
+    .with_entry("request.id", "req_123456")  // 原始值
+    .with_entry("client.version", "1.2.3")  // 原始值
+    .with_entry("tenant.id", "tenant_789")  // 原始值
+    .with_entry("service.name", "service-c")  // 服务C的值
+    .with_entry("service.version", "3.0.1")  // 服务C的值
+    .with_entry("region", "us-west-2")  // 服务C添加的值
+  
+  // 7. 验证跨服务baggage一致性
+  let critical_entries = ["user.id", "session.id", "request.id", "tenant.id"]
+  let mut i = 0
+  while i < critical_entries.length() {
+    let entry = critical_entries[i]
+    
+    let service_a_value = service_a_baggage.get(entry).unwrap()
+    let service_b_value = service_b_baggage.get(entry).unwrap()
+    let service_c_value = service_c_baggage.get(entry).unwrap()
+    
+    assert_eq(service_a_value, service_b_value)
+    assert_eq(service_b_value, service_c_value)
+    assert_eq(service_a_value, service_c_value)
+    
+    i = i + 1
+  }
+  
+  // 8. 验证baggage完整性
+  assert_eq(service_a_baggage.entries.length(), 5)
+  assert_eq(service_b_baggage.entries.length(), 7)
+  assert_eq(service_c_baggage.entries.length(), 8)
+  
+  // 9. 验证特定服务条目不冲突
+  assert_eq(service_b_baggage.get("service.name").unwrap(), "service-b")
+  assert_eq(service_c_baggage.get("service.name").unwrap(), "service-c")
+  assert_eq(service_b_baggage.get("service.version").unwrap(), "2.1.0")
+  assert_eq(service_c_baggage.get("service.version").unwrap(), "3.0.1")
+}
+
+test "data_integrity_across_serialization" {
+  // 测试跨序列化的数据完整性
+  
+  // 1. 创建复杂的遥测数据结构
+  let original_trace_id = [0x0a, 0xf7, 0x65, 0x19, 0x16, 0xcd, 0x43, 0xdd, 0x84, 0x48, 0xeb, 0x21, 0x1c, 0x80, 0x31, 0x9c]
+  let original_span_id = [0xb7, 0xad, 0x6b, 0x71, 0x69, 0x20, 0x33, 0x31]
+  
+  let original_span = trace::Span::{
+    name: "test_operation",
+    context: trace::SpanContext::{
+      trace_id: original_trace_id,
+      span_id: original_span_id,
+      trace_flags: 1_byte,
+      trace_state: "user_id=user_12345,session_id=sess_abcde"
+    },
+    kind: trace::Server,
+    parent_span_id: Some([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+    start_time_unix_nanos: 1640995200000000000L,
+    end_time_unix_nanos: Some(1640995200100000000L),
+    status: trace::Ok,
+    status_description: Some("Operation completed successfully"),
     attributes: [
-      ("event.stream.id", AttributeValue::string(event_stream_id)),
-      ("total.events.count", AttributeValue::int(4L)),
-      ("aggregates.involved", AttributeValue::int(2L)), // User and Order aggregates
-      ("consistency.status", AttributeValue::string("verified")),
-      ("causality.chain.intact", AttributeValue::bool(true)),
-      ("event.sequence.valid", AttributeValue::bool(true)),
-      ("snapshot.consistent", AttributeValue::bool(true))
+      ("string.attr", common::AttributeValue::string("test_value")),
+      ("int.attr", common::AttributeValue::int(42L)),
+      ("float.attr", common::AttributeValue::float(3.14159)),
+      ("bool.attr", common::AttributeValue::bool(true)),
+      ("array.string", common::AttributeValue::array_string(["a", "b", "c"])),
+      ("array.int", common::AttributeValue::array_int([1L, 2L, 3L])),
+      ("array.float", common::AttributeValue::array_float([1.1, 2.2, 3.3])),
+      ("array.bool", common::AttributeValue::array_bool([true, false, true]))
     ],
     events: [
-      ("event_stream_analysis_started", event_sourcing_time + 200L, [
-        ("analysis.scope", AttributeValue::string("full_stream")),
-        ("expected.events", AttributeValue::int(4L))
-      ]),
-      ("causality_chain_verified", event_sourcing_time + 800L, [
-        ("chain.length", AttributeValue::int(4L)),
-        ("broken.links", AttributeValue::int(0L)),
-        ("circular.dependencies", AttributeValue::int(0L))
-      ]),
-      ("aggregate_state_reconstructed", event_sourcing_time + 1400L, [
-        ("user.aggregate.version", AttributeValue::int(2L)),
-        ("order.aggregate.version", AttributeValue::int(2L)),
-        ("state.reconstruction.success", AttributeValue::bool(true))
-      ]),
-      ("snapshot_consistency_checked", event_sourcing_time + 1800L, [
-        ("snapshot.version", AttributeValue::int(1L)),
-        ("snapshot.matches.events", AttributeValue::bool(true))
-      ])
+      trace::SpanEvent::{
+        name: "test_event",
+        timestamp_unix_nanos: 1640995200050000000L,
+        attributes: [
+          ("event.string", common::AttributeValue::string("event_value")),
+          ("event.int", common::AttributeValue::int(100L))
+        ]
+      }
     ],
-    links: []
+    links: [
+      trace::SpanLink::{
+        context: trace::SpanContext::{
+          trace_id: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+          span_id: [0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11],
+          trace_flags: 1_byte,
+          trace_state: "linked=true"
+        },
+        attributes: [
+          ("link.attr", common::AttributeValue::string("link_value"))
+        ]
+      }
+    ]
   }
   
-  // 3. 记录事件溯源一致性指标
-  let event_metrics = [
-    Measurement::{
-      instrument: Instrument::counter("event_sourcing_consistency_checks_total", "Total event sourcing consistency checks", "count"),
-      value: 1.0,
-      attributes: [
-        ("event.stream.id", AttributeValue::string(event_stream_id)),
-        ("check.status", AttributeValue::string("passed")),
-        ("events.analyzed", AttributeValue::int(4L))
-      ],
-      time: event_sourcing_time + 2000L
-    },
-    Measurement::{
-      instrument: Instrument::gauge("event_stream_integrity_score", "Event stream integrity score", "score"),
-      value: 1.0, // 100%完整性
-      attributes: [
-        ("event.stream.id", AttributeValue::string(event_stream_id)),
-        ("integrity.dimension", AttributeValue::string("sequence")),
-        ("missing.events", AttributeValue::int(0L))
-      ],
-      time: event_sourcing_time + 2000L
-    },
-    Measurement::{
-      instrument: Instrument::gauge("causality_chain_strength", "Causality chain strength", "strength"),
-      value: 1.0, // 100%强因果关系
-      attributes: [
-        ("event.stream.id", AttributeValue::string(event_stream_id)),
-        ("chain.length", AttributeValue::int(4L)),
-        ("broken.links", AttributeValue::int(0L))
-      ],
-      time: event_sourcing_time + 2000L
+  // 2. 模拟序列化为字符串（简化版JSON）
+  let serialized = "{"
+  serialized = serialized + "\"name\":\"" + original_span.name + "\","
+  serialized = serialized + "\"trace_id\":\"" + "0af7651916cd43dd8448eb211c80319c" + "\","
+  serialized = serialized + "\"span_id\":\"" + "b7ad6b7169203331" + "\","
+  serialized = serialized + "\"kind\":\"Server\","
+  serialized = serialized + "\"start_time\":" + original_span.start_time_unix_nanos.to_string() + ","
+  serialized = serialized + "\"end_time\":" + original_span.end_time_unix_nanos.unwrap().to_string() + ","
+  serialized = serialized + "\"status\":\"Ok\","
+  serialized = serialized + "\"attributes_count\":" + original_span.attributes.length().to_string() + ","
+  serialized = serialized + "\"events_count\":" + original_span.events.length().to_string() + ","
+  serialized = serialized + "\"links_count\":" + original_span.links.length().to_string()
+  serialized = serialized + "}"
+  
+  // 3. 验证序列化数据的完整性
+  assert_eq(serialized.contains("\"name\":\"test_operation\""), true)
+  assert_eq(serialized.contains("\"trace_id\":\"0af7651916cd43dd8448eb211c80319c\""), true)
+  assert_eq(serialized.contains("\"span_id\":\"b7ad6b7169203331\""), true)
+  assert_eq(serialized.contains("\"kind\":\"Server\""), true)
+  assert_eq(serialized.contains("\"status\":\"Ok\""), true)
+  assert_eq(serialized.contains("\"attributes_count\":8"), true)
+  assert_eq(serialized.contains("\"events_count\":1"), true)
+  assert_eq(serialized.contains("\"links_count\":1"), true)
+  
+  // 4. 模拟反序列化（验证关键数据）
+  let deserialized_name = "test_operation"
+  let deserialized_trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let deserialized_span_id = "b7ad6b7169203331"
+  let deserialized_kind = "Server"
+  let deserialized_status = "Ok"
+  let deserialized_attributes_count = 8
+  let deserialized_events_count = 1
+  let deserialized_links_count = 1
+  
+  // 5. 验证反序列化数据的完整性
+  assert_eq(deserialized_name, original_span.name)
+  assert_eq(deserialized_trace_id, "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(deserialized_span_id, "b7ad6b7169203331")
+  assert_eq(deserialized_kind, "Server")
+  assert_eq(deserialized_status, "Ok")
+  assert_eq(deserialized_attributes_count, original_span.attributes.length())
+  assert_eq(deserialized_events_count, original_span.events.length())
+  assert_eq(deserialized_links_count, original_span.links.length())
+  
+  // 6. 验证复杂数据类型的完整性
+  let mut found_string_attr = false
+  let mut found_int_attr = false
+  let mut found_float_attr = false
+  let mut found_bool_attr = false
+  let mut found_array_string = false
+  let mut found_array_int = false
+  let mut found_array_float = false
+  let mut found_array_bool = false
+  
+  let mut i = 0
+  while i < original_span.attributes.length() {
+    let (key, value) = original_span.attributes[i]
+    match key {
+      "string.attr" => {
+        match value {
+          common::StringValue(s) => {
+            assert_eq(s, "test_value")
+            found_string_attr = true
+          }
+          _ => assert_eq(false, true, "Expected StringValue for string.attr")
+        }
+      }
+      "int.attr" => {
+        match value {
+          common::IntValue(n) => {
+            assert_eq(n, 42L)
+            found_int_attr = true
+          }
+          _ => assert_eq(false, true, "Expected IntValue for int.attr")
+        }
+      }
+      "float.attr" => {
+        match value {
+          common::FloatValue(f) => {
+            assert_eq(f > 3.14 && f < 3.15, true)
+            found_float_attr = true
+          }
+          _ => assert_eq(false, true, "Expected FloatValue for float.attr")
+        }
+      }
+      "bool.attr" => {
+        match value {
+          common::BoolValue(b) => {
+            assert_eq(b, true)
+            found_bool_attr = true
+          }
+          _ => assert_eq(false, true, "Expected BoolValue for bool.attr")
+        }
+      }
+      "array.string" => {
+        match value {
+          common::ArrayStringValue(arr) => {
+            assert_eq(arr.length(), 3)
+            assert_eq(arr[0], "a")
+            assert_eq(arr[1], "b")
+            assert_eq(arr[2], "c")
+            found_array_string = true
+          }
+          _ => assert_eq(false, true, "Expected ArrayStringValue for array.string")
+        }
+      }
+      "array.int" => {
+        match value {
+          common::ArrayIntValue(arr) => {
+            assert_eq(arr.length(), 3)
+            assert_eq(arr[0], 1L)
+            assert_eq(arr[1], 2L)
+            assert_eq(arr[2], 3L)
+            found_array_int = true
+          }
+          _ => assert_eq(false, true, "Expected ArrayIntValue for array.int")
+        }
+      }
+      "array.float" => {
+        match value {
+          common::ArrayFloatValue(arr) => {
+            assert_eq(arr.length(), 3)
+            assert_eq(arr[0] > 1.0 && arr[0] < 1.2, true)
+            assert_eq(arr[1] > 2.1 && arr[1] < 2.3, true)
+            assert_eq(arr[2] > 3.2 && arr[2] < 3.4, true)
+            found_array_float = true
+          }
+          _ => assert_eq(false, true, "Expected ArrayFloatValue for array.float")
+        }
+      }
+      "array.bool" => {
+        match value {
+          common::ArrayBoolValue(arr) => {
+            assert_eq(arr.length(), 3)
+            assert_eq(arr[0], true)
+            assert_eq(arr[1], false)
+            assert_eq(arr[2], true)
+            found_array_bool = true
+          }
+          _ => assert_eq(false, true, "Expected ArrayBoolValue for array.bool")
+        }
+      }
+      _ => assert_eq(false, true, "Unexpected attribute key: " + key)
     }
-  ]
-  
-  // 4. 记录事件溯源一致性日志
-  let event_consistency_log = LogRecord::{
-    timestamp: event_sourcing_time + 2000L,
-    observed_timestamp: Some(event_sourcing_time + 2001L),
-    severity: Some(Severity::Info),
-    severity_text: Some("INFO"),
-    body: Some("Event sourcing consistency verification completed successfully"),
-    attributes: [
-      ("event.stream.id", AttributeValue::string(event_stream_id)),
-      ("total.events.analyzed", AttributeValue::int(4L)),
-      ("aggregates.involved", AttributeValue::array_string(["User", "Order"])),
-      ("causality.chain.verified", AttributeValue::bool(true)),
-      ("event.sequence.intact", AttributeValue::bool(true)),
-      ("aggregate.state.reconstructed", AttributeValue::bool(true)),
-      ("snapshot.consistency.verified", AttributeValue::bool(true))
-    ],
-    flags: 0,
-    trace_id: Some("trace_event_consistency_456"),
-    span_id: Some("span_event_consistency_check"),
-    trace_flags: Some(1)
+    i = i + 1
   }
   
-  // 5. 验证事件溯源一致性的正确性
-  assert_eq(event_consistency_span.status, StatusCode::Ok)
-  
-  // 验证一致性状态
-  let consistency_status = event_consistency_span.attributes[3]
-  match consistency_status.1 {
-    StringValue(status) => assert_eq(status, "verified")
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证因果链完整性
-  let causality_intact = event_consistency_span.attributes[4]
-  match causality_intact.1 {
-    BoolValue(intact) => assert_eq(intact, true)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证事件序列有效性
-  let sequence_valid = event_consistency_span.attributes[5]
-  match sequence_valid.1 {
-    BoolValue(valid) => assert_eq(valid, true)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证事件流ID的一致性
-  let first_event_stream = event_stream[0].attributes[2]
-  match first_event_stream.1 {
-    StringValue(stream) => assert_eq(stream, event_stream_id)
-    _ => assert_eq(false, true)
-  }
-  
-  let last_event_stream = event_stream[3].attributes[2]
-  match last_event_stream.1 {
-    StringValue(stream) => assert_eq(stream, event_stream_id)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证事件序列的连续性
-  let event1_seq = event_stream[0].attributes[3]
-  match event1_seq.1 {
-    IntValue(seq) => assert_eq(seq, 1L)
-    _ => assert_eq(false, true)
-  }
-  
-  let event4_seq = event_stream[3].attributes[3]
-  match event4_seq.1 {
-    IntValue(seq) => assert_eq(seq, 4L)
-    _ => assert_eq(false, true)
-  }
-  
-  // 验证因果关系的正确性
-  let event2_correlation = event_stream[1].attributes[8]
-  match event2_correlation.1 {
-    StringValue(correlation) => assert_eq(correlation, "event_user_created_123")
-    _ => assert_eq(false, true)
-  }
-  
-  let event3_correlation = event_stream[2].attributes[8]
-  match event3_correlation.1 {
-    StringValue(correlation) => assert_eq(correlation, "event_profile_updated_456")
-    _ => assert_eq(false, true)
-  }
-  
-  let event4_correlation = event_stream[3].attributes[8]
-  match event4_correlation.1 {
-    StringValue(correlation) => assert_eq(correlation, "event_order_created_789")
-    _ => assert_eq(false, true)
-  }
+  assert_eq(found_string_attr, true)
+  assert_eq(found_int_attr, true)
+  assert_eq(found_float_attr, true)
+  assert_eq(found_bool_attr, true)
+  assert_eq(found_array_string, true)
+  assert_eq(found_array_int, true)
+  assert_eq(found_array_float, true)
+  assert_eq(found_array_bool, true)
 }

@@ -35,14 +35,14 @@ pub trait Gauge {
 }
 
 pub trait Meter {
-  create_counter(name : String, unit? : String, description? : String) -> metrics::Counter
-  create_histogram(name : String, unit? : String, description? : String) -> metrics::Histogram
-  create_up_down_counter(name : String, unit? : String, description? : String) -> metrics::UpDownCounter
-  create_gauge(name : String, unit? : String, description? : String) -> metrics::Gauge
+  create_counter(name : String, unit? : String, description? : String) -> Counter
+  create_histogram(name : String, unit? : String, description? : String) -> Histogram
+  create_up_down_counter(name : String, unit? : String, description? : String) -> UpDownCounter
+  create_gauge(name : String, unit? : String, description? : String) -> Gauge
 }
 
 pub trait MeterProvider {
-  get_meter(name : String, version? : String, schema_url? : String) -> metrics::Meter
+  get_meter(name : String, version? : String, schema_url? : String) -> Meter
 }
 
 // No-op实现
@@ -80,20 +80,20 @@ pub fn NoopGauge::record(value : Double, attributes? : Array[(String, AttributeV
   // No-op implementation
 }
 
-pub fn NoopMeter::create_counter(name : String, unit? : String, description? : String) -> metrics::NoopCounter {
-  metrics::NoopCounter::{}
+pub fn NoopMeter::create_counter(name : String, unit? : String, description? : String) -> NoopCounter {
+  NoopCounter::{}
 }
 
-pub fn NoopMeter::create_histogram(name : String, unit? : String, description? : String) -> metrics::NoopHistogram {
-  metrics::NoopHistogram::{}
+pub fn NoopMeter::create_histogram(name : String, unit? : String, description? : String) -> NoopHistogram {
+  NoopHistogram::{}
 }
 
-pub fn NoopMeter::create_up_down_counter(name : String, unit? : String, description? : String) -> metrics::NoopUpDownCounter {
-  metrics::NoopUpDownCounter::{}
+pub fn NoopMeter::create_up_down_counter(name : String, unit? : String, description? : String) -> NoopUpDownCounter {
+  NoopUpDownCounter::{}
 }
 
-pub fn NoopMeter::create_gauge(name : String, unit? : String, description? : String) -> metrics::NoopGauge {
-  metrics::NoopGauge::{}
+pub fn NoopMeter::create_gauge(name : String, unit? : String, description? : String) -> NoopGauge {
+  NoopGauge::{}
 }
 
 pub fn NoopMeterProvider::get_meter(name : String, version? : String, schema_url? : String) -> NoopMeter {

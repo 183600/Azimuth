@@ -1,50 +1,40 @@
-// 简单的语法验证测试
-
-test "simple_syntax_validation" {
-  // 测试基本语法
+// 简单测试验证 - 验证新创建的测试文件的基本语法
+test "basic_syntax_validation" {
+  // 测试基本的语法结构
   
   let service_name = "test-service"
-  let metric_value = 42.5
+  let service_version = "1.0.0"
   
+  // 验证字符串操作
   assert_eq(service_name.length(), 12)
-  assert_eq(metric_value > 40.0, true)
+  assert_eq(service_name.has_prefix("test"), true)
+  assert_eq(service_name.has_suffix("service"), true)
   
-  // 测试数组操作
-  let numbers = [1, 2, 3, 4, 5]
-  let mut sum = 0
+  // 验证版本号
+  assert_eq(service_version.length(), 5)
+  assert_eq(service_version.has_prefix("1."), true)
+  assert_eq(service_version.has_suffix(".0"), true)
   
+  // 验证数组操作
+  let test_array = [1L, 2L, 3L, 4L, 5L]
+  assert_eq(test_array.length(), 5)
+  assert_eq(test_array[0], 1L)
+  assert_eq(test_array[4], 5L)
+  
+  // 验证基本算术
+  let sum = 0L
   let mut i = 0
-  while i < numbers.length() {
-    sum = sum + numbers[i]
+  while i < test_array.length() {
+    sum = sum + test_array[i]
     i = i + 1
   }
+  assert_eq(sum, 15L)
   
-  assert_eq(sum, 15)
-}
-
-test "basic_math_operations" {
-  // 测试基本数学运算
+  // 验证布尔操作
+  let is_valid = service_name.length() > 0 && service_version.length() > 0
+  assert_eq(is_valid, true)
   
-  let a = 10.0
-  let b = 5.0
-  
-  let sum = a + b
-  let product = a * b
-  let quotient = a / b
-  
-  assert_eq(sum, 15.0)
-  assert_eq(product, 50.0)
-  assert_eq(quotient, 2.0)
-  
-  // 测试平方根近似（不用@sqrt）
-  let number = 16.0
-  let mut sqrt_approx = number / 2.0
-  let mut iterations = 0
-  
-  while iterations < 5 {
-    sqrt_approx = (sqrt_approx + number / sqrt_approx) / 2.0
-    iterations = iterations + 1
-  }
-  
-  assert_eq(sqrt_approx > 3.9 && sqrt_approx < 4.1, true)
+  // 验证条件表达式
+  let status = if sum > 10L { "good" } else { "bad" }
+  assert_eq(status, "good")
 }

@@ -22,8 +22,8 @@ pub struct LogRecord {
   trace_id : Array[Byte]?
   span_id : Array[Byte]?
   trace_flags : Byte?
-  resource : common::Resource?
-  instrumentation_scope : common::InstrumentationScope?
+  resource : Resource?
+  instrumentation_scope : InstrumentationScope?
 }
 
 pub trait Logger {
