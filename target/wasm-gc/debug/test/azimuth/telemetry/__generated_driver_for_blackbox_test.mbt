@@ -471,6 +471,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_74656c656d657472795f6d657461646174615f6d616e6167656d656e745f746573742e6d6274_5, ["telemetry_metadata_retention_policy"]),
     6: (__test_74656c656d657472795f6d657461646174615f6d616e6167656d656e745f746573742e6d6274_6, ["telemetry_metadata_access_control"]),
   },
+  "telemetry_memory_management_test.mbt": {
+    0: (__test_74656c656d657472795f6d656d6f72795f6d616e6167656d656e745f746573742e6d6274_0, ["telemetry_memory_management_basic_allocation"]),
+    1: (__test_74656c656d657472795f6d656d6f72795f6d616e6167656d656e745f746573742e6d6274_1, ["telemetry_memory_management_allocation_failure"]),
+    2: (__test_74656c656d657472795f6d656d6f72795f6d616e6167656d656e745f746573742e6d6274_2, ["telemetry_memory_management_deallocation"]),
+    3: (__test_74656c656d657472795f6d656d6f72795f6d616e6167656d656e745f746573742e6d6274_3, ["telemetry_memory_management_garbage_collection"]),
+    4: (__test_74656c656d657472795f6d656d6f72795f6d616e6167656d656e745f746573742e6d6274_4, ["telemetry_memory_management_peak_usage_tracking"]),
+    5: (__test_74656c656d657472795f6d656d6f72795f6d616e6167656d656e745f746573742e6d6274_5, ["telemetry_memory_management_large_data_structures"]),
+    6: (__test_74656c656d657472795f6d656d6f72795f6d616e6167656d656e745f746573742e6d6274_6, ["telemetry_memory_management_memory_efficiency"]),
+  },
   "telemetry_load_balancing_test.mbt": {
     0: (__test_74656c656d657472795f6c6f61645f62616c616e63696e675f746573742e6d6274_0, ["round_robin_balancing"]),
     1: (__test_74656c656d657472795f6c6f61645f62616c616e63696e675f746573742e6d6274_1, ["weighted_round_robin_balancing"]),
