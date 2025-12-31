@@ -1022,6 +1022,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_64697374726962757465645f74726163696e675f636f6e746578745f746573742e6d6274_4, ["trace_context_serialization"]),
     5: (__test_64697374726962757465645f74726163696e675f636f6e746578745f746573742e6d6274_5, ["context_extraction_validation"]),
   },
+  "data_validation_test.mbt": {
+    0: (__test_646174615f76616c69646174696f6e5f746573742e6d6274_0, ["telemetry_data_validation_patterns"]),
+    1: (__test_646174615f76616c69646174696f6e5f746573742e6d6274_1, ["telemetry_data_integrity_checks"]),
+    2: (__test_646174615f76616c69646174696f6e5f746573742e6d6274_2, ["telemetry_data_range_validation"]),
+    3: (__test_646174615f76616c69646174696f6e5f746573742e6d6274_3, ["telemetry_data_format_validation"]),
+    4: (__test_646174615f76616c69646174696f6e5f746573742e6d6274_4, ["telemetry_data_consistency_validation"]),
+    5: (__test_646174615f76616c69646174696f6e5f746573742e6d6274_5, ["telemetry_data_sequence_validation"]),
+    6: (__test_646174615f76616c69646174696f6e5f746573742e6d6274_6, ["telemetry_data_type_validation"]),
+    7: (__test_646174615f76616c69646174696f6e5f746573742e6d6274_7, ["telemetry_data_boundary_validation"]),
+  },
   "data_privacy_test.mbt": {
     0: (__test_646174615f707269766163795f746573742e6d6274_0, ["personal_identifiable_information_pii_handling"]),
     1: (__test_646174615f707269766163795f746573742e6d6274_1, ["financial_data_protection"]),
