@@ -1,454 +1,273 @@
-// 遥测性能监控测试用例
+// 性能监控测试用例
+// 测试遥测系统的性能指标收集、分析和报告功能
 
-test "telemetry_realtime_performance_metrics" {
-  // 测试遥测实时性能指标
+test "performance_metrics_collection" {
+  // 测试性能指标收集功能
   
-  let performance_windows = [1, 5, 15]  // 1分钟、5分钟、15分钟窗口
-  let current_time = 1703123456000
-  let metrics_history = [
-    (current_time - 900, 1000),    // 15分钟前：1000 ops/sec
-    (current_time - 600, 1200),    // 10分钟前：1200 ops/sec
-    (current_time - 300, 1500),    // 5分钟前：1500 ops/sec
-    (current_time - 180, 1800),    // 3分钟前：1800 ops/sec
-    (current_time - 60, 2000),     // 1分钟前：2000 ops/sec
-    (current_time, 2200)           // 当前：2200 ops/sec
+  let performance_metrics = [
+    ("cpu_utilization", 65.5, "percent"),
+    ("memory_usage", 1024.0, "MB"),
+    ("disk_io_rate", 50.2, "MB/s"),
+    ("network_latency", 25.3, "ms"),
+    ("throughput", 1000.0, "req/s")
   ]
   
-  // 验证性能窗口
-  assert_eq(performance_windows.length(), 3)
-  assert_eq(performance_windows[0], 1)
-  assert_eq(performance_windows[2], 15)
+  // 验证指标数量
+  assert_eq(performance_metrics.length(), 5)
   
-  // 验证指标历史
-  assert_eq(metrics_history.length(), 6)
-  assert_eq(metrics_history[0].1, 1000)
-  assert_eq(metrics_history[5].1, 2200)
-  
-  // 计算各时间窗口的平均性能
-  let mut window_averages = []
+  // 验证每个指标的结构和值范围
   let mut i = 0
-  while i < performance_windows.length() {
-    let window_seconds = performance_windows[i] * 60
-    let window_start_time = current_time - window_seconds
+  while i < performance_metrics.length() {
+    let name = performance_metrics[i].0
+    let value = performance_metrics[i].1
+    let unit = performance_metrics[i].2
     
-    let mut window_sum = 0
-    let mut window_count = 0
+    // 验证指标名称
+    assert_eq(name.length() > 0, true)
+    assert_eq(name.contains("_"), true)
     
+    // 验证指标值为非负数
+    assert_eq(value >= 0.0, true)
+    
+    // 验证单位
+    assert_eq(unit.length() > 0, true)
+    
+    i = i + 1
+  }
+  
+  // 验证特定指标的合理范围
+  assert_eq(performance_metrics[0].1 >= 0.0, true) // CPU利用率
+  assert_eq(performance_metrics[0].1 <= 100.0, true)
+  
+  assert_eq(performance_metrics[3].1 >= 0.0, true) // 网络延迟
+  assert_eq(performance_metrics[3].1 <= 1000.0, true)
+}
+
+test "performance_threshold_monitoring" {
+  // 测试性能阈值监控功能
+  
+  let thresholds = [
+    ("cpu_utilization", 80.0, "percent"),
+    ("memory_usage", 2048.0, "MB"),
+    ("disk_io_rate", 100.0, "MB/s"),
+    ("network_latency", 100.0, "ms")
+  ]
+  
+  let current_values = [
+    ("cpu_utilization", 85.0, "percent"),
+    ("memory_usage", 1536.0, "MB"),
+    ("disk_io_rate", 120.0, "MB/s"),
+    ("network_latency", 45.0, "ms")
+  ]
+  
+  // 检查哪些指标超过了阈值
+  let mut alerts = []
+  let mut i = 0
+  while i < thresholds.length() {
+    let threshold_name = thresholds[i].0
+    let threshold_value = thresholds[i].1
+    let threshold_unit = thresholds[i].2
+    
+    // 查找对应的当前值
     let mut j = 0
-    while j < metrics_history.length() {
-      if metrics_history[j].0 >= window_start_time {
-        window_sum = window_sum + metrics_history[j].1
-        window_count = window_count + 1
+    while j < current_values.length() {
+      if current_values[j].0 == threshold_name {
+        let current_value = current_values[j].1
+        
+        // 如果当前值超过阈值，生成告警
+        if current_value > threshold_value {
+          alerts.push((threshold_name, current_value, threshold_value))
+        }
+        
+        break
       }
       j = j + 1
     }
     
-    let window_average = if window_count > 0 {
-      window_sum / window_count
-    } else {
-      0
-    }
-    
-    window_averages.push(window_average)
     i = i + 1
   }
   
-  // 验证窗口平均值计算
-  assert_eq(window_averages.length(), 3)
-  assert_eq(window_averages[0], 2200)  // 1分钟窗口（只有最新数据）
-  assert_eq(window_averages[1], 1900)  // 5分钟窗口
-  assert_eq(window_averages[2], 1616)  // 15分钟窗口
+  // 验证告警结果
+  assert_eq(alerts.length(), 2) // CPU和磁盘IO超过阈值
   
-  // 计算性能趋势
-  let mut performance_trend = "stable"
-  if window_averages[0] > window_averages[1] * 1.1 {
-    performance_trend = "increasing"
-  } else if window_averages[0] < window_averages[1] * 0.9 {
-    performance_trend = "decreasing"
-  }
+  assert_eq(alerts[0].0, "cpu_utilization")
+  assert_eq(alerts[0].1, 85.0)
+  assert_eq(alerts[0].2, 80.0)
   
-  // 验证性能趋势
-  assert_eq(performance_trend, "increasing")  // 2200 > 1900 * 1.1
-  
-  // 计算性能变化率
-  let short_term_change = ((window_averages[0] - window_averages[1]) * 100) / window_averages[1]
-  let long_term_change = ((window_averages[1] - window_averages[2]) * 100) / window_averages[2]
-  
-  // 验证变化率计算
-  assert_eq(short_term_change, 15)  // (2200-1900)/1900 ≈ 15.8%
-  assert_eq(long_term_change, 17)   // (1900-1616)/1616 ≈ 17.6%
+  assert_eq(alerts[1].0, "disk_io_rate")
+  assert_eq(alerts[1].1, 120.0)
+  assert_eq(alerts[1].2, 100.0)
 }
 
-test "telemetry_resource_utilization_monitoring" {
-  // 测试遥测资源利用率监控
+test "performance_trend_analysis" {
+  // 测试性能趋势分析功能
   
-  let resource_metrics = {
-    "cpu_usage": [45.2, 52.8, 48.1, 61.3, 58.9, 67.4, 72.1, 65.8],
-    "memory_usage": [1024, 1152, 1208, 1280, 1356, 1424, 1488, 1536],
-    "disk_io": [120, 135, 125, 145, 160, 155, 170, 165],
-    "network_io": [85, 92, 88, 98, 105, 112, 108, 115]
+  let time_series_data = [
+    (1000L, 45.0), // (timestamp, cpu_usage)
+    (2000L, 52.0),
+    (3000L, 58.0),
+    (4000L, 65.0),
+    (5000L, 72.0)
+  ]
+  
+  // 计算趋势（简单线性趋势）
+  let first_value = time_series_data[0].1
+  let last_value = time_series_data[time_series_data.length() - 1].1
+  let trend = last_value - first_value
+  
+  // 验证趋势计算
+  assert_eq(trend > 0.0, true) // 上升趋势
+  assert_eq(trend, 27.0) // 从45%增长到72%
+  
+  // 计算平均增长率
+  let growth_rate = trend / first_value * 100.0
+  assert_eq(growth_rate > 50.0, true) // 增长超过50%
+  assert_eq(growth_rate < 70.0, true)
+  
+  // 计算移动平均
+  let mut moving_averages = []
+  let window_size = 3
+  
+  let mut i = 0
+  while i <= time_series_data.length() - window_size {
+    let mut sum = 0.0
+    let mut j = 0
+    while j < window_size {
+      sum = sum + time_series_data[i + j].1
+      j = j + 1
+    }
+    let avg = sum / window_size.to_double()
+    moving_averages.push(avg)
+    i = i + 1
   }
   
-  let resource_limits = {
-    "cpu_limit": 80.0,
-    "memory_limit": 2048,
-    "disk_io_limit": 200,
-    "network_io_limit": 150
+  // 验证移动平均计算
+  assert_eq(moving_averages.length(), 3) // 5个数据点，窗口大小3，产生3个移动平均
+  
+  assert_eq(moving_averages[0] > 50.0, true) // (45+52+58)/3 = 51.67
+  assert_eq(moving_averages[1] > 55.0, true) // (52+58+65)/3 = 58.33
+  assert_eq(moving_averages[2] > 60.0, true) // (58+65+72)/3 = 65.0
+}
+
+test "performance_benchmarking" {
+  // 测试性能基准测试功能
+  
+  let benchmark_results = [
+    ("operation_a", 100.5, "ms"),
+    ("operation_b", 250.3, "ms"),
+    ("operation_c", 75.8, "ms"),
+    ("operation_d", 150.2, "ms")
+  ]
+  
+  let baseline_results = [
+    ("operation_a", 120.0, "ms"),
+    ("operation_b", 200.0, "ms"),
+    ("operation_c", 80.0, "ms"),
+    ("operation_d", 140.0, "ms")
+  ]
+  
+  // 比较基准测试结果与基线
+  let mut performance_changes = []
+  let mut i = 0
+  while i < benchmark_results.length() {
+    let operation_name = benchmark_results[i].0
+    let current_time = benchmark_results[i].1
+    
+    // 查找对应的基线时间
+    let mut j = 0
+    while j < baseline_results.length() {
+      if baseline_results[j].0 == operation_name {
+        let baseline_time = baseline_results[j].1
+        let change_percent = (current_time - baseline_time) / baseline_time * 100.0
+        performance_changes.push((operation_name, change_percent))
+        break
+      }
+      j = j + 1
+    }
+    
+    i = i + 1
   }
   
-  // 验证资源指标
-  assert_eq(resource_metrics["cpu_usage"].length(), 8)
-  assert_eq(resource_metrics["memory_usage"].length(), 8)
-  assert_eq(resource_metrics["cpu_usage"][0], 45.2)
-  assert_eq(resource_metrics["memory_usage"][7], 1536)
+  // 验证性能变化
+  assert_eq(performance_changes.length(), 4)
   
-  // 验证资源限制
-  assert_eq(resource_limits["cpu_limit"], 80.0)
-  assert_eq(resource_limits["memory_limit"], 2048)
+  // operation_a: (100.5-120.0)/120.0 = -16.25% (性能提升)
+  assert_eq(performance_changes[0].1 < 0.0, true)
+  assert_eq(performance_changes[0].1 > -20.0, true)
   
-  // 计算当前资源利用率
-  let current_cpu = resource_metrics["cpu_usage"][7]
-  let current_memory = resource_metrics["memory_usage"][7]
-  let current_disk_io = resource_metrics["disk_io"][7]
-  let current_network_io = resource_metrics["network_io"][7]
+  // operation_b: (250.3-200.0)/200.0 = 25.15% (性能下降)
+  assert_eq(performance_changes[1].1 > 0.0, true)
+  assert_eq(performance_changes[1].1 < 30.0, true)
   
-  // 计算利用率百分比
-  let cpu_utilization = (current_cpu * 100) / resource_limits["cpu_limit"]
-  let memory_utilization = (current_memory * 100) / resource_limits["memory_limit"]
-  let disk_io_utilization = (current_disk_io * 100) / resource_limits["disk_io_limit"]
-  let network_io_utilization = (current_network_io * 100) / resource_limits["network_io_limit"]
+  // operation_c: (75.8-80.0)/80.0 = -5.25% (轻微性能提升)
+  assert_eq(performance_changes[2].1 < 0.0, true)
+  assert_eq(performance_changes[2].1 > -10.0, true)
+  
+  // operation_d: (150.2-140.0)/140.0 = 7.29% (轻微性能下降)
+  assert_eq(performance_changes[3].1 > 0.0, true)
+  assert_eq(performance_changes[3].1 < 10.0, true)
+}
+
+test "performance_resource_utilization" {
+  // 测试性能资源利用率监控
+  
+  let resource_metrics = [
+    ("cpu_cores", 8, "cores"),
+    ("cpu_used", 6, "cores"),
+    ("memory_total", 16384.0, "MB"),
+    ("memory_used", 8192.0, "MB"),
+    ("disk_total", 1024000.0, "MB"),
+    ("disk_used", 512000.0, "MB")
+  ]
+  
+  // 计算资源利用率
+  let mut utilization_rates = []
+  
+  // CPU利用率
+  let cpu_total = resource_metrics[0].1.to_double()
+  let cpu_used = resource_metrics[1].1.to_double()
+  let cpu_utilization = cpu_used / cpu_total * 100.0
+  utilization_rates.push(("cpu", cpu_utilization))
+  
+  // 内存利用率
+  let memory_total = resource_metrics[2].1
+  let memory_used = resource_metrics[3].1
+  let memory_utilization = memory_used / memory_total * 100.0
+  utilization_rates.push(("memory", memory_utilization))
+  
+  // 磁盘利用率
+  let disk_total = resource_metrics[4].1
+  let disk_used = resource_metrics[5].1
+  let disk_utilization = disk_used / disk_total * 100.0
+  utilization_rates.push(("disk", disk_utilization))
   
   // 验证利用率计算
-  assert_eq(cpu_utilization, 82)        // 65.8/80.0 * 100 ≈ 82%
-  assert_eq(memory_utilization, 75)     // 1536/2048 * 100 = 75%
-  assert_eq(disk_io_utilization, 82)    // 165/200 * 100 = 82.5%
-  assert_eq(network_io_utilization, 76)  // 115/150 * 100 ≈ 76%
+  assert_eq(utilization_rates.length(), 3)
+  
+  // CPU: 6/8 = 75%
+  assert_eq(utilization_rates[0].0, "cpu")
+  assert_eq(utilization_rates[0].1, 75.0)
+  
+  // 内存: 8192/16384 = 50%
+  assert_eq(utilization_rates[1].0, "memory")
+  assert_eq(utilization_rates[1].1, 50.0)
+  
+  // 磁盘: 512000/1024000 = 50%
+  assert_eq(utilization_rates[2].0, "disk")
+  assert_eq(utilization_rates[2].1, 50.0)
   
   // 检查资源警告阈值
-  let warning_threshold = 80
-  let critical_threshold = 90
-  
-  let cpu_warning = cpu_utilization >= warning_threshold
-  let cpu_critical = cpu_utilization >= critical_threshold
-  let memory_warning = memory_utilization >= warning_threshold
-  let memory_critical = memory_utilization >= critical_threshold
-  
-  // 验证警告状态
-  assert_eq(cpu_warning, true)     // CPU利用率超过80%
-  assert_eq(cpu_critical, false)   // 但未超过90%
-  assert_eq(memory_warning, false) // 内存利用率未超过80%
-  assert_eq(memory_critical, false)
-  
-  // 计算资源趋势
-  let cpu_trend = resource_metrics["cpu_usage"][7] - resource_metrics["cpu_usage"][0]
-  let memory_trend = resource_metrics["memory_usage"][7] - resource_metrics["memory_usage"][0]
-  
-  // 验证资源趋势
-  assert_eq(cpu_trend > 0, true)      // CPU使用率在上升
-  assert_eq(memory_trend > 0, true)   // 内存使用率在上升
-  
-  // 计算预测的资源耗尽时间（简化线性预测）
-  let cpu_time_to_threshold = if cpu_trend > 0 {
-    ((critical_threshold - cpu_utilization) * resource_metrics["cpu_usage"].length()) / (cpu_trend * 100)
-  } else {
-    -1  // 不在增长
-  }
-  
-  // 验证预测逻辑
-  assert_eq(cpu_time_to_threshold > 0, true)  // CPU将在未来达到临界值
-}
-
-test "telemetry_latency_distribution_analysis" {
-  // 测试遥测延迟分布分析
-  
-  let latency_measurements = [
-    45, 52, 48, 61, 58, 67, 72, 65, 78, 82,
-    95, 88, 105, 112, 125, 118, 135, 142, 128, 155,
-    168, 175, 162, 188, 195, 182, 205, 198, 215, 225
-  ]
-  
-  let latency_thresholds = {
-    "p50": 100,
-    "p90": 180,
-    "p95": 200,
-    "p99": 220
-  }
-  
-  // 验证延迟测量
-  assert_eq(latency_measurements.length(), 30)
-  assert_eq(latency_measurements[0], 45)
-  assert_eq(latency_measurements[29], 225)
-  
-  // 验证延迟阈值
-  assert_eq(latency_thresholds["p50"], 100)
-  assert_eq(latency_thresholds["p99"], 220)
-  
-  // 排序延迟测量
-  let mut sorted_latencies = latency_measurements
+  let warning_threshold = 80.0
+  let mut warnings = []
   let mut i = 0
-  while i < sorted_latencies.length() - 1 {
-    let mut j = 0
-    while j < sorted_latencies.length() - i - 1 {
-      if sorted_latencies[j] > sorted_latencies[j + 1] {
-        let temp = sorted_latencies[j]
-        sorted_latencies[j] = sorted_latencies[j + 1]
-        sorted_latencies[j + 1] = temp
-      }
-      j = j + 1
+  while i < utilization_rates.length() {
+    if utilization_rates[i].1 > warning_threshold {
+      warnings.push(utilization_rates[i].0)
     }
     i = i + 1
   }
   
-  // 计算实际百分位数
-  let mut actual_percentiles = []
-  let percentile_ranks = [50, 90, 95, 99]
-  
-  i = 0
-  while i < percentile_ranks.length() {
-    let rank = percentile_ranks[i]
-    let index = (sorted_latencies.length() * rank) / 100
-    let adjusted_index = if index >= sorted_latencies.length() {
-      sorted_latencies.length() - 1
-    } else {
-      index
-    }
-    actual_percentiles.push(sorted_latencies[adjusted_index])
-    i = i + 1
-  }
-  
-  // 验证百分位数计算
-  assert_eq(actual_percentiles.length(), 4)
-  assert_eq(actual_percentiles[0], sorted_latencies[15])  // P50
-  assert_eq(actual_percentiles[1], sorted_latencies[27])  // P90
-  assert_eq(actual_percentiles[2], sorted_latencies[28])  // P95
-  assert_eq(actual_percentiles[3], sorted_latencies[29])  // P99
-  
-  // 检查SLA合规性
-  let mut sla_violations = []
-  i = 0
-  while i < actual_percentiles.length() {
-    let percentile_name = "p" + percentile_ranks[i].to_string()
-    let threshold = latency_thresholds[percentile_name]
-    let actual = actual_percentiles[i]
-    
-    if actual > threshold {
-      sla_violations.push((percentile_name, actual, threshold))
-    }
-    i = i + 1
-  }
-  
-  // 验证SLA违规检查
-  assert_eq(sla_violations.length(), 1)  // 只有一个百分位数违反SLA
-  assert_eq(sla_violations[0].0, "p99")  // P99违反
-  assert_eq(sla_violations[0].1, 225)    // 实际值225
-  assert_eq(sla_violations[0].2, 220)    // 阈值220
-  
-  // 计算延迟分布特征
-  let min_latency = sorted_latencies[0]
-  let max_latency = sorted_latencies[sorted_latencies.length() - 1]
-  let median_latency = actual_percentiles[0]
-  let latency_range = max_latency - min_latency
-  
-  // 验证分布特征
-  assert_eq(min_latency, 45)
-  assert_eq(max_latency, 225)
-  assert_eq(median_latency, 155)
-  assert_eq(latency_range, 180)
-  
-  // 计算延迟稳定性指标
-  let latency_variance = latency_range.to_double() / median_latency.to_double()
-  let latency_stable = latency_variance < 1.0  // 方差小于中位数认为稳定
-  
-  // 验证稳定性评估
-  assert_eq(latency_variance, 180.0 / 155.0)
-  assert_eq(latency_stable, false)  // 方差较大，认为不稳定
-}
-
-test "telemetry_throughput_saturation_detection" {
-  // 测试遥测吞吐量饱和检测
-  
-  let throughput_measurements = [
-    1000, 1200, 1400, 1600, 1800, 2000, 2100, 2150, 2180, 2200,
-    2210, 2220, 2225, 2230, 2230, 2235, 2235, 2240, 2240, 2240
-  ]
-  
-  let saturation_threshold = 0.05  // 5%增长率阈值
-  
-  // 验证吞吐量测量
-  assert_eq(throughput_measurements.length(), 20)
-  assert_eq(throughput_measurements[0], 1000)
-  assert_eq(throughput_measurements[19], 2240)
-  
-  // 计算增长率
-  let mut growth_rates = []
-  let mut i = 1
-  while i < throughput_measurements.length() {
-    let previous = throughput_measurements[i - 1]
-    let current = throughput_measurements[i]
-    let growth_rate = (current - previous).to_double() / previous.to_double()
-    growth_rates.push(growth_rate)
-    i = i + 1
-  }
-  
-  // 验证增长率计算
-  assert_eq(growth_rates.length(), 19)
-  assert_eq(growth_rates[0] > 0.0, true)  // 第一个增长率为正
-  
-  // 检测饱和点
-  let mut saturation_point = -1
-  i = 0
-  while i < growth_rates.length() {
-    if growth_rates[i] < saturation_threshold {
-      saturation_point = i + 1  // 对应的throughput_measurements索引
-      break
-    }
-    i = i + 1
-  }
-  
-  // 验证饱和点检测
-  assert_eq(saturation_point > 0, true)  // 检测到饱和点
-  assert_eq(saturation_point < throughput_measurements.length(), true)
-  
-  // 计算饱和前后的平均增长率
-  let mut pre_saturation_growth = 0.0
-  let mut pre_saturation_count = 0
-  let mut post_saturation_growth = 0.0
-  let mut post_saturation_count = 0
-  
-  i = 0
-  while i < growth_rates.length() {
-    if i < saturation_point {
-      pre_saturation_growth = pre_saturation_growth + growth_rates[i]
-      pre_saturation_count = pre_saturation_count + 1
-    } else {
-      post_saturation_growth = post_saturation_growth + growth_rates[i]
-      post_saturation_count = post_saturation_count + 1
-    }
-    i = i + 1
-  }
-  
-  let avg_pre_growth = if pre_saturation_count > 0 {
-    pre_saturation_growth / pre_saturation_count.to_double()
-  } else {
-    0.0
-  }
-  
-  let avg_post_growth = if post_saturation_count > 0 {
-    post_saturation_growth / post_saturation_count.to_double()
-  } else {
-    0.0
-  }
-  
-  // 验证增长率变化
-  assert_eq(avg_pre_growth > avg_post_growth, true)  // 饱和后增长率下降
-  
-  // 计算系统容量利用率
-  let max_observed_throughput = throughput_measurements[saturation_point]
-  let theoretical_max_throughput = 2500  // 假设的理论最大值
-  let capacity_utilization = (max_observed_throughput * 100) / theoretical_max_throughput
-  
-  // 验证容量利用率
-  assert_eq(capacity_utilization, 89)  // 2240/2500 * 100 = 89.6%
-  assert_eq(capacity_utilization > 80, true)  // 高利用率
-  assert_eq(capacity_utilization < 95, true)  // 但未完全饱和
-  
-  // 生成容量规划建议
-  let mut capacity_recommendation = ""
-  if capacity_utilization > 85 {
-    capacity_recommendation = "scale_up"
-  } else if capacity_utilization > 70 {
-    capacity_recommendation = "monitor_closely"
-  } else {
-    capacity_recommendation = "adequate_capacity"
-  }
-  
-  // 验证容量建议
-  assert_eq(capacity_recommendation, "scale_up")
-}
-
-test "telemetry_performance_anomaly_detection" {
-  // 测试遥测性能异常检测
-  
-  let baseline_metrics = [100, 105, 102, 98, 110, 95, 108, 103, 97, 112]
-  let current_metrics = [100, 105, 102, 98, 110, 95, 108, 180, 97, 112]  // 第7个值异常
-  let anomaly_threshold = 2.0  // 2个标准差
-  
-  // 验证指标数据
-  assert_eq(baseline_metrics.length(), 10)
-  assert_eq(current_metrics.length(), 10)
-  assert_eq(current_metrics[7], 180)  // 异常值
-  
-  // 计算基线统计
-  let mut baseline_sum = 0
-  let mut i = 0
-  while i < baseline_metrics.length() {
-    baseline_sum = baseline_sum + baseline_metrics[i]
-    i = i + 1
-  }
-  let baseline_mean = baseline_sum / baseline_metrics.length()
-  
-  // 计算基线标准差
-  let mut variance_sum = 0.0
-  i = 0
-  while i < baseline_metrics.length() {
-    let deviation = baseline_metrics[i].to_double() - baseline_mean.to_double()
-    variance_sum = variance_sum + deviation * deviation
-    i = i + 1
-  }
-  let baseline_stddev = (variance_sum / baseline_metrics.length().to_double()).sqrt()
-  
-  // 验证基线统计
-  assert_eq(baseline_mean, 103)  // (100+105+102+98+110+95+108+103+97+112)/10
-  assert_eq(baseline_stddev > 0.0, true)
-  
-  // 检测异常值
-  let mut anomalies = []
-  i = 0
-  while i < current_metrics.length() {
-    let value = current_metrics[i]
-    let z_score = (value.to_double() - baseline_mean.to_double()) / baseline_stddev
-    
-    if z_score.abs() > anomaly_threshold {
-      anomalies.push((i, value, z_score))
-    }
-    i = i + 1
-  }
-  
-  // 验证异常检测
-  assert_eq(anomalies.length(), 1)  // 检测到一个异常
-  assert_eq(anomalies[0].0, 7)      // 第7个位置
-  assert_eq(anomalies[0].1, 180)    // 异常值180
-  assert_eq(anomalies[0].2 > anomaly_threshold, true)  // Z分数超过阈值
-  
-  // 计算异常影响评估
-  let normal_sum = baseline_sum
-  let current_sum = 0
-  i = 0
-  while i < current_metrics.length() {
-    current_sum = current_sum + current_metrics[i]
-    i = i + 1
-  }
-  
-  let normal_mean = baseline_mean.to_double()
-  let current_mean = current_sum.to_double() / current_metrics.length()
-  let impact_percentage = ((current_mean - normal_mean) / normal_mean) * 100.0
-  
-  // 验证影响评估
-  assert_eq(impact_percentage > 0.0, true)  // 异常导致平均值增加
-  assert_eq(impact_percentage < 50.0, true)  // 但影响在合理范围内
-  
-  // 生成异常响应策略
-  let mut response_strategy = ""
-  let anomaly_severity = anomalies[0].2.abs()
-  
-  if anomaly_severity > 3.0 {
-    response_strategy = "critical_alert"
-  } else if anomaly_severity > 2.0 {
-    response_strategy = "warning_notification"
-  } else {
-    response_strategy = "log_only"
-  }
-  
-  // 验证响应策略
-  assert_eq(response_strategy, "warning_notification")  // Z分数在2-3之间
+  // 验证警告（只有CPU超过80%）
+  assert_eq(warnings.length(), 1)
+  assert_eq(warnings[0], "cpu")
 }

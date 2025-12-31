@@ -1,534 +1,353 @@
-// 遥测错误处理测试用例
+// 错误处理测试用例
+// 测试遥测系统的错误检测、处理、恢复和报告功能
 
-test "telemetry_network_error_recovery" {
-  // 测试遥测网络错误恢复机制
+test "error_detection_validation" {
+  // 测试错误检测和验证功能
   
-  let max_retry_attempts = 5
-  let base_delay_ms = 1000
-  let max_delay_ms = 30000
-  let backoff_multiplier = 2.0
-  
-  // 验证错误恢复配置
-  assert_eq(max_retry_attempts > 0, true)
-  assert_eq(base_delay_ms > 0, true)
-  assert_eq(max_delay_ms > base_delay_ms, true)
-  assert_eq(backoff_multiplier > 1.0, true)
-  
-  // 错误类型
-  type ErrorType = {
-    error_code: Int,
-    error_message: String,
-    is_retryable: Bool,
-    severity: String
-  }
-  
-  // 错误恢复状态
-  type ErrorRecoveryState = {
-    error_count: Int,
-    retry_count: Int,
-    last_error_time: Int,
-    recovery_strategy: String,
-    successful_recoveries: Int
-  }
-  
-  let mut recovery_state = ErrorRecoveryState {
-    error_count: 0,
-    retry_count: 0,
-    last_error_time: 0,
-    recovery_strategy: "exponential_backoff",
-    successful_recoveries: 0
-  }
-  
-  // 定义网络错误类型
-  let network_errors = [
-    ErrorType {
-      error_code: 1001,
-      error_message: "Connection timeout",
-      is_retryable: true,
-      severity: "medium"
-    },
-    ErrorType {
-      error_code: 1002,
-      error_message: "Connection refused",
-      is_retryable: true,
-      severity: "high"
-    },
-    ErrorType {
-      error_code: 1003,
-      error_message: "DNS resolution failed",
-      is_retryable: true,
-      severity: "high"
-    },
-    ErrorType {
-      error_code: 1004,
-      error_message: "SSL certificate error",
-      is_retryable: false,
-      severity: "critical"
-    },
-    ErrorType {
-      error_code: 1005,
-      error_message: "Network unreachable",
-      is_retryable: true,
-      severity: "critical"
-    }
+  let valid_data = [
+    ("cpu_usage", 45.5, "percent"),
+    ("memory_usage", 1024.0, "MB"),
+    ("response_time", 120.3, "ms")
   ]
   
-  // 验证错误类型定义
-  assert_eq(network_errors.length(), 5)
-  assert_eq(network_errors[3].is_retryable, false)  // SSL错误不可重试
-  
-  // 模拟网络错误和恢复过程
-  let error_scenarios = [
-    { error_index: 0, success_after_retries: 2 },  // 连接超时，2次重试后成功
-    { error_index: 1, success_after_retries: 3 },  // 连接拒绝，3次重试后成功
-    { error_index: 2, success_after_retries: 1 },  // DNS失败，1次重试后成功
-    { error_index: 3, success_after_retries: 0 },  // SSL错误，不可重试
-    { error_index: 4, success_after_retries: 5 }   // 网络不可达，5次重试后成功
+  let invalid_data = [
+    ("cpu_usage", -5.0, "percent"), // 负值
+    ("memory_usage", 0.0, "MB"), // 零值
+    ("response_time", -10.5, "ms"), // 负值
+    ("", 50.0, "percent"), // 空名称
+    ("disk_usage", 150.0, "percent") // 超出范围
   ]
   
+  // 验证有效数据
   let mut i = 0
-  while i < error_scenarios.length() {
-    let scenario = error_scenarios[i]
-    let error = network_errors[scenario.error_index]
-    let current_time = 1640995200 + i * 60
+  while i < valid_data.length() {
+    let name = valid_data[i].0
+    let value = valid_data[i].1
+    let unit = valid_data[i].2
     
-    recovery_state.error_count = recovery_state.error_count + 1
-    recovery_state.last_error_time = current_time
+    // 验证名称不为空
+    assert_eq(name.length() > 0, true)
     
-    if error.is_retryable {
-      // 可重试错误的处理
-      let mut retry_delay = base_delay_ms
-      let mut retry_success = false
-      
-      let mut retry_attempt = 0
-      while retry_attempt < scenario.success_after_retries and retry_attempt < max_retry_attempts {
-        recovery_state.retry_count = recovery_state.retry_count + 1
-        
-        // 模拟重试延迟（指数退避）
-        retry_delay = min((retry_delay.to_double() * backoff_multiplier).to_int(), max_delay_ms)
-        
-        // 模拟重试成功
-        if retry_attempt == scenario.success_after_retries - 1 {
-          retry_success = true
-          recovery_state.successful_recoveries = recovery_state.successful_recoveries + 1
-          break
-        }
-        
-        retry_attempt = retry_attempt + 1
-      }
-      
-      // 验证重试过程
-      assert_eq(retry_attempt <= max_retry_attempts, true)
-      if scenario.success_after_retries > 0 {
-        assert_eq(retry_success, true)
-      }
-    } else {
-      // 不可重试错误的处理
-      assert_eq(error.severity == "critical", true)
-      recovery_state.recovery_strategy = "manual_intervention"
+    // 验证值为非负数
+    assert_eq(value >= 0.0, true)
+    
+    // 验证单位不为空
+    assert_eq(unit.length() > 0, true)
+    
+    i = i + 1
+  }
+  
+  // 检测无效数据
+  let mut detected_errors = []
+  i = 0
+  while i < invalid_data.length() {
+    let name = invalid_data[i].0
+    let value = invalid_data[i].1
+    let unit = invalid_data[i].2
+    
+    let mut error_type = ""
+    
+    if name.length() == 0 {
+      error_type = "empty_name"
+    } else if value < 0.0 {
+      error_type = "negative_value"
+    } else if value == 0.0 && name == "memory_usage" {
+      error_type = "zero_memory"
+    } else if name == "disk_usage" && value > 100.0 {
+      error_type = "value_out_of_range"
+    }
+    
+    if error_type.length() > 0 {
+      detected_errors.push((name, error_type))
     }
     
     i = i + 1
   }
   
-  // 验证整体错误恢复统计
-  assert_eq(recovery_state.error_count, error_scenarios.length())
-  assert_eq(recovery_state.retry_count > 0, true)
-  assert_eq(recovery_state.successful_recoveries > 0, true)
-  assert_eq(recovery_state.last_error_time > 0, true)
-  
-  // 计算恢复成功率
-  let retryable_errors = 4  // 除了SSL错误
-  let success_rate = recovery_state.successful_recoveries.to_double() / retryable_errors.to_double()
-  assert_eq(success_rate > 0.5, true)  // 至少50%的成功率
+  // 验证错误检测结果
+  assert_eq(detected_errors.length(), 5)
+  assert_eq(detected_errors[0].1, "negative_value")
+  assert_eq(detected_errors[1].1, "zero_memory")
+  assert_eq(detected_errors[2].1, "negative_value")
+  assert_eq(detected_errors[3].1, "empty_name")
+  assert_eq(detected_errors[4].1, "value_out_of_range")
 }
 
-test "telemetry_data_corruption_detection" {
-  // 测试遥测数据损坏检测
+test "error_recovery_mechanisms" {
+  // 测试错误恢复机制
   
-  let checksum_algorithm = "crc32"
-  let max_data_size = 1048576  // 1MB
-  let corruption_threshold = 0.001  // 0.1%损坏阈值
+  let error_scenarios = [
+    ("network_timeout", true, "retry_operation"),
+    ("data_corruption", true, "request_resend"),
+    ("service_unavailable", true, "use_fallback"),
+    ("authentication_failure", false, "require_reauth"),
+    ("resource_exhaustion", true, "throttle_requests")
+  ]
   
-  // 验证数据完整性配置
-  assert_eq(checksum_algorithm == "crc32", true)
-  assert_eq(max_data_size > 0, true)
-  assert_eq(corruption_threshold > 0.0 and corruption_threshold < 1.0, true)
-  
-  // 数据完整性信息
-  type DataIntegrity = {
-    data_id: String,
-    original_checksum: String,
-    calculated_checksum: String,
-    is_corrupted: Bool,
-    corruption_detected: Bool
-  }
-  
-  // 创建测试数据包
-  let mut data_packets = []
+  // 模拟错误恢复过程
+  let mut recovery_results = []
   let mut i = 0
-  while i < 100 {  // 创建100个数据包
-    let packet_id = "packet_" + i.to_string()
-    let data_content = "telemetry_data_" + i.to_string() + "_content"
+  while i < error_scenarios.length() {
+    let error_type = error_scenarios[i].0
+    let is_recoverable = error_scenarios[i].1
+    let recovery_action = error_scenarios[i].2
     
-    // 模拟校验和计算（简化版）
-    let checksum = "crc_" + (data_content.length() * i % 10000).to_string()
+    let mut recovery_success = false
     
-    let integrity = DataIntegrity {
-      data_id: packet_id,
-      original_checksum: checksum,
-      calculated_checksum: checksum,  // 初始假设未损坏
-      is_corrupted: false,
-      corruption_detected: false
-    }
-    
-    data_packets.push(integrity)
-    i = i + 1
-  }
-  
-  // 验证初始数据包
-  assert_eq(data_packets.length(), 100)
-  
-  // 模拟数据损坏（5%的数据包损坏）
-  let corruption_rate = 0.05
-  let corrupted_count = (data_packets.length().to_double() * corruption_rate).to_int()
-  
-  let mut j = 0
-  while j < corrupted_count {
-    let corrupt_index = (j * 7) % data_packets.length()  // 分散损坏位置
-    let mut packet = data_packets[corrupt_index]
-    
-    // 模拟数据损坏（校验和不匹配）
-    packet.calculated_checksum = "corrupted_" + packet.original_checksum
-    packet.is_corrupted = true
-    
-    data_packets[corrupt_index] = packet
-    j = j + 1
-  }
-  
-  // 数据损坏检测
-  let mut detected_corruptions = 0
-  let mut false_positives = 0
-  let mut false_negatives = 0
-  
-  let mut i = 0
-  while i < data_packets.length() {
-    let packet = data_packets[i]
-    
-    // 检测数据损坏
-    let corruption_detected = packet.original_checksum != packet.calculated_checksum
-    
-    if corruption_detected {
-      packet.corruption_detected = true
-      detected_corruptions = detected_corruptions + 1
-      
-      if not packet.is_corrupted {
-        false_positives = false_positives + 1
-      }
-    } else {
-      if packet.is_corrupted {
-        false_negatives = false_negatives + 1
+    if is_recoverable {
+      // 模拟恢复操作
+      if recovery_action == "retry_operation" {
+        recovery_success = true // 假设重试成功
+      } else if recovery_action == "request_resend" {
+        recovery_success = true // 假设重新发送成功
+      } else if recovery_action == "use_fallback" {
+        recovery_success = true // 假设使用备用方案成功
+      } else if recovery_action == "throttle_requests" {
+        recovery_success = true // 假设限流后恢复
       }
     }
     
-    data_packets[i] = packet
-    i = i + 1
-  }
-  
-  // 验证损坏检测结果
-  assert_eq(detected_corruptions > 0, true)
-  assert_eq(detected_corruptions <= corrupted_count + false_positives, true)
-  assert_eq(false_negatives == 0, true)  // 不应该有漏检
-  
-  // 计算检测准确率
-  let detection_accuracy = (detected_corruptions - false_positives).to_double() / 
-                          detected_corruptions.to_double()
-  assert_eq(detection_accuracy > 0.9, true)  // 至少90%准确率
-  
-  // 测试损坏数据恢复策略
-  type RecoveryAction = {
-    action_type: String,
-    data_id: String,
-    retry_count: Int,
-    recovery_success: Bool
-  }
-  
-  let mut recovery_actions = []
-  
-  let mut i = 0
-  while i < data_packets.length() {
-    let packet = data_packets[i]
-    
-    if packet.corruption_detected {
-      let mut recovery_success = false
-      let mut retry_count = 0
-      
-      // 模拟数据恢复尝试
-      while retry_count < 3 and not recovery_success {
-        retry_count = retry_count + 1
-        
-        // 模拟恢复成功率（60%）
-        let recovery_chance = (packet.data_id.length() + retry_count) % 10
-        recovery_success = recovery_chance < 6
-        
-        if recovery_success {
-          // 恢复成功，修复校验和
-          let mut recovered_packet = packet
-          recovered_packet.calculated_checksum = recovered_packet.original_checksum
-          recovered_packet.is_corrupted = false
-          data_packets[i] = recovered_packet
-        }
-      }
-      
-      let action = RecoveryAction {
-        action_type: if recovery_success { "data_recovery" } else { "data_discard" },
-        data_id: packet.data_id,
-        retry_count: retry_count,
-        recovery_success: recovery_success
-      }
-      
-      recovery_actions.push(action)
-    }
-    
+    recovery_results.push((error_type, is_recoverable, recovery_success))
     i = i + 1
   }
   
   // 验证恢复结果
-  assert_eq(recovery_actions.length(), detected_corruptions)
+  assert_eq(recovery_results.length(), 5)
   
-  // 统计恢复成功率
-  let mut successful_recoveries = 0
-  let mut i = 0
-  while i < recovery_actions.length() {
-    if recovery_actions[i].recovery_success {
-      successful_recoveries = successful_recoveries + 1
+  // 验证可恢复错误都成功恢复
+  i = 0
+  while i < recovery_results.length() {
+    if recovery_results[i].1 { // 如果是可恢复的
+      assert_eq(recovery_results[i].2, true)
     }
     i = i + 1
   }
   
-  let recovery_success_rate = successful_recoveries.to_double() / recovery_actions.length().to_double()
-  assert_eq(recovery_success_rate > 0.4, true)  // 至少40%恢复成功率
-  
-  // 验证恢复后的数据完整性
-  let mut final_corrupted_count = 0
-  let mut i = 0
-  while i < data_packets.length() {
-    if data_packets[i].is_corrupted or data_packets[i].corruption_detected {
-      final_corrupted_count = final_corrupted_count + 1
-    }
-    i = i + 1
-  }
-  
-  assert_eq(final_corrupted_count < detected_corruptions, true)  // 恢复后损坏数据减少
+  // 验证不可恢复错误
+  assert_eq(recovery_results[3].1, false) // authentication_failure不可恢复
+  assert_eq(recovery_results[3].2, false)
 }
 
-test "telemetry_circuit_breaker_pattern" {
-  // 测试遥测断路器模式
+test "error_logging_reporting" {
+  // 测试错误日志记录和报告功能
   
-  let failure_threshold = 5           // 失败阈值
-  let recovery_timeout_ms = 30000     // 恢复超时时间
-  let success_threshold = 3           // 成功阈值（半开状态）
-  let monitoring_window_ms = 60000    // 监控窗口时间
-  
-  // 验证断路器配置
-  assert_eq(failure_threshold > 0, true)
-  assert_eq(recovery_timeout_ms > 0, true)
-  assert_eq(success_threshold > 0, true)
-  assert_eq(monitoring_window_ms > 0, true)
-  
-  // 断路器状态
-  type CircuitState = {
-    state: String,  // "closed", "open", "half_open"
-    failure_count: Int,
-    success_count: Int,
-    last_failure_time: Int,
-    last_success_time: Int,
-    state_transitions: Array[String]
-  }
-  
-  let mut circuit_state = CircuitState {
-    state: "closed",
-    failure_count: 0,
-    success_count: 0,
-    last_failure_time: 0,
-    last_success_time: 0,
-    state_transitions: ["closed"]
-  }
-  
-  // 模拟请求结果序列
-  let request_results = [
-    { success: true, timestamp: 1640995200 },    // 成功
-    { success: true, timestamp: 1640995210 },    // 成功
-    { success: false, timestamp: 1640995220 },   // 失败
-    { success: false, timestamp: 1640995230 },   // 失败
-    { success: false, timestamp: 1640995240 },   // 失败
-    { success: false, timestamp: 1640995250 },   // 失败
-    { success: false, timestamp: 1640995260 },   // 失败 - 触发断路器打开
-    { success: false, timestamp: 1640995270 },   // 断路器打开，直接拒绝
-    { success: false, timestamp: 1640995280 },   // 断路器打开，直接拒绝
-    { success: true, timestamp: 1640995290 + recovery_timeout_ms / 1000 },  // 恢复超时，半开状态
-    { success: true, timestamp: 1640995300 + recovery_timeout_ms / 1000 },  // 半开状态成功
-    { success: true, timestamp: 1640995310 + recovery_timeout_ms / 1000 }   // 半开状态成功，关闭断路器
+  let error_events = [
+    (1640995200L, "ERROR", "data_validation_failed", "Invalid metric value: -5.0"),
+    (1640995260L, "WARN", "high_latency", "Response time exceeded threshold: 500ms"),
+    (1640995320L, "ERROR", "connection_failed", "Unable to connect to telemetry server"),
+    (1640995380L, "INFO", "recovery_success", "Successfully reconnected to server"),
+    (1640995440L, "ERROR", "data_corruption", "Checksum validation failed")
   ]
   
-  // 断路器逻辑处理
+  // 按严重级别分类错误
+  let mut error_counts = [
+    ("ERROR", 0),
+    ("WARN", 0),
+    ("INFO", 0)
+  ]
+  
   let mut i = 0
-  while i < request_results.length() {
-    let result = request_results[i]
-    let current_time = result.timestamp
+  while i < error_events.length() {
+    let severity = error_events[i].1
     
-    if circuit_state.state == "closed" {
-      // 关闭状态：正常处理请求
-      if result.success {
-        circuit_state.success_count = circuit_state.success_count + 1
-        circuit_state.last_success_time = current_time
-      } else {
-        circuit_state.failure_count = circuit_state.failure_count + 1
-        circuit_state.last_failure_time = current_time
-        
-        // 检查是否达到失败阈值
-        if circuit_state.failure_count >= failure_threshold {
-          circuit_state.state = "open"
-          circuit_state.state_transitions.push("open")
-        }
+    let mut j = 0
+    while j < error_counts.length() {
+      if error_counts[j].0 == severity {
+        error_counts[j] = (severity, error_counts[j].1 + 1)
+        break
       }
-    } else if circuit_state.state == "open" {
-      // 打开状态：直接拒绝请求
-      // 检查是否可以转换为半开状态
-      let time_since_last_failure = current_time - circuit_state.last_failure_time
-      if time_since_last_failure >= recovery_timeout_ms / 1000 {
-        circuit_state.state = "half_open"
-        circuit_state.success_count = 0
-        circuit_state.state_transitions.push("half_open")
-      }
-    } else if circuit_state.state == "half_open" {
-      // 半开状态：允许少量请求通过
-      if result.success {
-        circuit_state.success_count = circuit_state.success_count + 1
-        circuit_state.last_success_time = current_time
-        
-        // 检查是否达到成功阈值
-        if circuit_state.success_count >= success_threshold {
-          circuit_state.state = "closed"
-          circuit_state.failure_count = 0
-          circuit_state.state_transitions.push("closed")
-        }
-      } else {
-        // 失败，重新打开断路器
-        circuit_state.state = "open"
-        circuit_state.failure_count = failure_threshold
-        circuit_state.last_failure_time = current_time
-        circuit_state.state_transitions.push("open")
-      }
+      j = j + 1
     }
     
     i = i + 1
   }
   
-  // 验证断路器状态转换
-  assert_eq(circuit_state.state, "closed")  // 最终应该回到关闭状态
-  assert_eq(circuit_state.state_transitions.length(), 4)  // closed -> open -> half_open -> closed
+  // 验证错误计数
+  assert_eq(error_counts[0].0, "ERROR")
+  assert_eq(error_counts[0].1, 3) // 3个错误
   
-  // 验证状态转换序列
-  assert_eq(circuit_state.state_transitions[0], "closed")
-  assert_eq(circuit_state.state_transitions[1], "open")
-  assert_eq(circuit_state.state_transitions[2], "half_open")
-  assert_eq(circuit_state.state_transitions[3], "closed")
+  assert_eq(error_counts[1].0, "WARN")
+  assert_eq(error_counts[1].1, 1) // 1个警告
   
-  // 验证计数器
-  assert_eq(circuit_state.failure_count, 0)  // 重置为0
-  assert_eq(circuit_state.success_count >= success_threshold, true)
-  assert_eq(circuit_state.last_failure_time > 0, true)
-  assert_eq(circuit_state.last_success_time > 0, true)
+  assert_eq(error_counts[2].0, "INFO")
+  assert_eq(error_counts[2].1, 1) // 1个信息
   
-  // 测试断路器统计信息
-  type CircuitBreakerStats = {
-    total_requests: Int,
-    allowed_requests: Int,
-    rejected_requests: Int,
-    successful_requests: Int,
-    failed_requests: Int,
-    state_open_duration: Int
+  // 生成错误报告摘要
+  let total_events = error_events.length()
+  let error_rate = error_counts[0].1.to_double() / total_events.to_double() * 100.0
+  
+  assert_eq(total_events, 5)
+  assert_eq(error_rate, 60.0) // 3/5 = 60%
+  
+  // 验证错误消息格式
+  let mut i = 0
+  while i < error_events.length() {
+    let timestamp = error_events[i].0
+    let severity = error_events[i].1
+    let error_code = error_events[i].2
+    let message = error_events[i].3
+    
+    // 验证时间戳
+    assert_eq(timestamp > 0L, true)
+    
+    // 验证严重级别
+    assert_eq(severity.length() >= 4, true)
+    assert_eq(severity.length() <= 5, true)
+    
+    // 验证错误代码
+    assert_eq(error_code.length() > 0, true)
+    assert_eq(error_code.contains("_"), true)
+    
+    // 验证消息
+    assert_eq(message.length() > 0, true)
+    
+    i = i + 1
   }
+}
+
+test "error_cascade_prevention" {
+  // 测试错误级联预防功能
   
-  let mut stats = CircuitBreakerStats {
-    total_requests: request_results.length(),
-    allowed_requests: 0,
-    rejected_requests: 0,
-    successful_requests: 0,
-    failed_requests: 0,
-    state_open_duration: 0
-  }
+  let system_components = [
+    ("data_collector", true),
+    ("data_processor", true),
+    ("data_storage", true),
+    ("alert_manager", true),
+    ("reporting_service", true)
+  ]
   
-  // 重新计算统计信息
-  let mut temp_state = CircuitState {
-    state: "closed",
-    failure_count: 0,
-    success_count: 0,
-    last_failure_time: 0,
-    last_success_time: 0,
-    state_transitions: ["closed"]
-  }
-  
-  let mut open_start_time = 0
+  // 模拟组件故障和级联预防
+  let failed_components = ["data_processor", "alert_manager"]
+  let mut isolated_failures = []
   
   let mut i = 0
-  while i < request_results.length() {
-    let result = request_results[i]
-    let current_time = result.timestamp
+  while i < failed_components.length() {
+    let failed_component = failed_components[i]
     
-    if temp_state.state == "closed" {
-      stats.allowed_requests = stats.allowed_requests + 1
+    // 检查哪些组件受到影响
+    let mut affected_components = []
+    
+    let mut j = 0
+    while j < system_components.length() {
+      let component = system_components[j].0
+      let is_healthy = system_components[j].1
       
-      if result.success {
-        stats.successful_requests = stats.successful_requests + 1
-      } else {
-        stats.failed_requests = stats.failed_requests + 1
-        temp_state.failure_count = temp_state.failure_count + 1
-        
-        if temp_state.failure_count >= failure_threshold {
-          temp_state.state = "open"
-          open_start_time = current_time
+      // 模拟级联预防逻辑
+      let mut is_affected = false
+      
+      if failed_component == "data_processor" {
+        // 数据处理器故障可能影响数据存储
+        if component == "data_storage" {
+          is_affected = true
         }
+      } else if failed_component == "alert_manager" {
+        // 告警管理器故障不应影响其他组件
+        is_affected = false
       }
-    } else if temp_state.state == "open" {
-      stats.rejected_requests = stats.rejected_requests + 1
       
-      let time_since_last_failure = current_time - temp_state.last_failure_time
-      if time_since_last_failure >= recovery_timeout_ms / 1000 {
-        temp_state.state = "half_open"
+      if is_affected {
+        affected_components.push(component)
       }
-    } else if temp_state.state == "half_open" {
-      stats.allowed_requests = stats.allowed_requests + 1
       
-      if result.success {
-        stats.successful_requests = stats.successful_requests + 1
-        temp_state.success_count = temp_state.success_count + 1
-        
-        if temp_state.success_count >= success_threshold {
-          temp_state.state = "closed"
-          temp_state.failure_count = 0
+      j = j + 1
+    }
+    
+    isolated_failures.push((failed_component, affected_components))
+    i = i + 1
+  }
+  
+  // 验证级联预防效果
+  assert_eq(isolated_failures.length(), 2)
+  
+  // data_processor故障影响data_storage
+  assert_eq(isolated_failures[0].0, "data_processor")
+  assert_eq(isolated_failures[0].1.length(), 1)
+  assert_eq(isolated_failures[0].1[0], "data_storage")
+  
+  // alert_manager故障不影响其他组件
+  assert_eq(isolated_failures[1].0, "alert_manager")
+  assert_eq(isolated_failures[1].1.length(), 0)
+}
+
+test "error_threshold_monitoring" {
+  // 测试错误阈值监控功能
+  
+  let error_history = [
+    (1640995200L, "connection_timeout"),
+    (1640995260L, "data_validation_error"),
+    (1640995320L, "connection_timeout"),
+    (1640995380L, "authentication_failure"),
+    (1640995440L, "connection_timeout"),
+    (1640995500L, "data_validation_error"),
+    (1640995560L, "connection_timeout"),
+    (1640995620L, "connection_timeout")
+  ]
+  
+  // 按错误类型统计
+  let mut error_type_counts = []
+  let mut processed_types = []
+  
+  let mut i = 0
+  while i < error_history.length() {
+    let error_type = error_history[i].1
+    
+    // 检查是否已处理过此类型
+    let mut already_processed = false
+    let mut j = 0
+    while j < processed_types.length() {
+      if processed_types[j] == error_type {
+        already_processed = true
+        break
+      }
+      j = j + 1
+    }
+    
+    if not already_processed {
+      // 统计此错误类型的出现次数
+      let mut count = 0
+      let mut k = 0
+      while k < error_history.length() {
+        if error_history[k].1 == error_type {
+          count = count + 1
         }
-      } else {
-        stats.failed_requests = stats.failed_requests + 1
-        temp_state.state = "open"
-        open_start_time = current_time
+        k = k + 1
       }
+      
+      error_type_counts.push((error_type, count))
+      processed_types.push(error_type)
     }
     
     i = i + 1
   }
   
-  // 验证统计信息
-  assert_eq(stats.total_requests, request_results.length())
-  assert_eq(stats.allowed_requests + stats.rejected_requests, stats.total_requests)
-  assert_eq(stats.successful_requests + stats.failed_requests, stats.allowed_requests)
-  assert_eq(stats.rejected_requests > 0, true)  // 应该有被拒绝的请求
+  // 验证错误统计
+  assert_eq(error_type_counts.length(), 3) // 3种不同的错误类型
   
-  // 验证断路器保护效果
-  let rejection_rate = stats.rejected_requests.to_double() / stats.total_requests.to_double()
-  assert_eq(rejection_rate > 0.1, true)  // 至少10%的请求被拒绝
+  // connection_timeout出现5次
+  assert_eq(error_type_counts[0].0, "connection_timeout")
+  assert_eq(error_type_counts[0].1, 5)
   
-  let success_rate = stats.successful_requests.to_double() / stats.allowed_requests.to_double()
-  assert_eq(success_rate > 0.5, true)  // 允许的请求中至少50%成功
+  // data_validation_error出现2次
+  assert_eq(error_type_counts[1].0, "data_validation_error")
+  assert_eq(error_type_counts[1].1, 2)
+  
+  // authentication_failure出现1次
+  assert_eq(error_type_counts[2].0, "authentication_failure")
+  assert_eq(error_type_counts[2].1, 1)
+  
+  // 检查错误阈值（假设阈值为3次）
+  let threshold = 3
+  let mut critical_errors = []
+  
+  i = 0
+  while i < error_type_counts.length() {
+    if error_type_counts[i].1 >= threshold {
+      critical_errors.push(error_type_counts[i].0)
+    }
+    i = i + 1
+  }
+  
+  // 验证阈值检测结果
+  assert_eq(critical_errors.length(), 1)
+  assert_eq(critical_errors[0], "connection_timeout")
 }

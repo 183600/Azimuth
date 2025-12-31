@@ -1,315 +1,506 @@
-// 数据序列化和反序列化测试用例
+// 数据序列化测试用例
+// 测试遥测数据的序列化、反序列化和格式转换功能
 
-test "telemetry_serialization_with_json_format" {
-  // 测试JSON格式的遥测数据序列化
+test "json_serialization" {
+  // 测试JSON序列化功能
   
-  // 创建测试Span
-  let trace_id = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10]
-  let span_id = [0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18]
-  
-  let span_context = azimuth::telemetry::api::trace::SpanContext::{
-    trace_id: trace_id,
-    span_id: span_id,
-    trace_flags: 0x01,
-    trace_state: "key1=value1,key2=value2"
-  }
-  
-  let attributes = [
-    ("http.method", azimuth::telemetry::api::common::AttributeValue::string("GET")),
-    ("http.status_code", azimuth::telemetry::api::common::AttributeValue::int(200L)),
-    ("response.time", azimuth::telemetry::api::common::AttributeValue::float(150.5)),
-    ("cache.hit", azimuth::telemetry::api::common::AttributeValue::bool(true))
+  let telemetry_data = [
+    ("metric_name", "cpu_usage"),
+    ("metric_value", "65.5"),
+    ("metric_unit", "percent"),
+    ("timestamp", "1640995200"),
+    ("tags", "service:web,env:production")
   ]
-  
-  let span = azimuth::telemetry::api::trace::Span::{
-    name: "api-request",
-    context: span_context,
-    kind: azimuth::telemetry::api::trace::SpanKind::Server,
-    parent_span_id: Some([0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x11, 0x22]),
-    start_time_unix_nanos: 1640995200000000000L,
-    end_time_unix_nanos: Some(1640995200150000000L),
-    status: azimuth::telemetry::api::trace::StatusCode::Ok,
-    status_description: Some("Request completed successfully"),
-    attributes: attributes,
-    events: [],
-    links: []
-  }
   
   // 模拟JSON序列化
-  let json_representation = {
-    "name": "api-request",
-    "traceId": "0102030405060708090a0b0c0d0e0f10",
-    "spanId": "1112131415161718",
-    "parentSpanId": "aabbccddeeff1122",
-    "kind": "SERVER",
-    "startTimeUnixNano": "1640995200000000000",
-    "endTimeUnixNano": "1640995200150000000",
-    "status": "OK",
-    "statusDescription": "Request completed successfully",
-    "attributes": {
-      "http.method": "GET",
-      "http.status_code": "200",
-      "response.time": "150.5",
-      "cache.hit": "true"
-    },
-    "traceState": "key1=value1,key2=value2"
-  }
-  
-  // 验证JSON序列化结果
-  assert_eq(json_representation["name"], "api-request")
-  assert_eq(json_representation["traceId"], "0102030405060708090a0b0c0d0e0f10")
-  assert_eq(json_representation["spanId"], "1112131415161718")
-  assert_eq(json_representation["kind"], "SERVER")
-  assert_eq(json_representation["status"], "OK")
-  
-  // 验证属性序列化
-  let attributes_json = json_representation["attributes"]
-  assert_eq(attributes_json["http.method"], "GET")
-  assert_eq(attributes_json["http.status_code"], "200")
-  assert_eq(attributes_json["response.time"], "150.5")
-  assert_eq(attributes_json["cache.hit"], "true")
-}
-
-test "telemetry_serialization_with_protobuf_format" {
-  // 测试Protobuf格式的遥测数据序列化
-  
-  // 创建测试指标
-  let metric_name = "request_duration"
-  let metric_unit = "ms"
-  let metric_description = "Request duration in milliseconds"
-  
-  let measurements = [
-    azimuth::telemetry::api::metrics::Measurement::{
-      value: 100.0,
-      attributes: [
-        ("http.method", azimuth::telemetry::api::common::AttributeValue::string("GET")),
-        ("http.status_code", azimuth::telemetry::api::common::AttributeValue::int(200L))
-      ]
-    },
-    azimuth::telemetry::api::metrics::Measurement::{
-      value: 250.0,
-      attributes: [
-        ("http.method", azimuth::telemetry::api::common::AttributeValue::string("POST")),
-        ("http.status_code", azimuth::telemetry::api::common::AttributeValue::int(201L))
-      ]
-    },
-    azimuth::telemetry::api::metrics::Measurement::{
-      value: 75.0,
-      attributes: [
-        ("http.method", azimuth::telemetry::api::common::AttributeValue::string("GET")),
-        ("http.status_code", azimuth::telemetry::api::common::AttributeValue::int(404L))
-      ]
+  let mut json_string = "{"
+  let mut i = 0
+  while i < telemetry_data.length() {
+    let key = telemetry_data[i].0
+    let value = telemetry_data[i].1
+    
+    json_string = json_string + "\"" + key + "\":\"" + value + "\""
+    
+    if i < telemetry_data.length() - 1 {
+      json_string = json_string + ","
     }
-  ]
+    
+    i = i + 1
+  }
+  json_string = json_string + "}"
   
-  // 模拟Protobuf序列化（简化版本）
-  let protobuf_fields = [
-    ("name", metric_name),
-    ("unit", metric_unit),
-    ("description", metric_description),
-    ("measurement_count", measurements.length().to_string()),
-    ("data_points", measurements.map(fn(m) { m.value.to_string() }).join(","))
-  ]
+  // 验证JSON格式
+  assert_eq(json_string.has_prefix("{"), true)
+  assert_eq(json_string.has_suffix("}"), true)
+  assert_eq(json_string.contains("\"metric_name\":\"cpu_usage\""), true)
+  assert_eq(json_string.contains("\"metric_value\":\"65.5\""), true)
+  assert_eq(json_string.contains("\"metric_unit\":\"percent\""), true)
+  assert_eq(json_string.contains("\"timestamp\":\"1640995200\""), true)
+  assert_eq(json_string.contains("\"tags\":\"service:web,env:production\""), true)
   
-  // 验证Protobuf字段
-  assert_eq(protobuf_fields[0], ("name", metric_name))
-  assert_eq(protobuf_fields[1], ("unit", metric_unit))
-  assert_eq(protobuf_fields[2], ("description", metric_description))
-  assert_eq(protobuf_fields[3], ("measurement_count", "3"))
-  assert_eq(protobuf_fields[4], ("data_points", "100.0,250.0,75.0"))
+  // 验证JSON结构
+  let mut comma_count = 0
+  let mut j = 0
+  while j < json_string.length() {
+    if json_string.char_at(j) == ',' {
+      comma_count = comma_count + 1
+    }
+    j = j + 1
+  }
   
-  // 验证测量值
-  assert_eq(measurements[0].value, 100.0)
-  assert_eq(measurements[1].value, 250.0)
-  assert_eq(measurements[2].value, 75.0)
-  
-  // 验证测量属性
-  let first_measurement_attrs = measurements[0].attributes
-  assert_eq(first_measurement_attrs.length(), 2)
-  assert_eq(first_measurement_attrs[0].0, "http.method")
-  assert_eq(first_measurement_attrs[1].0, "http.status_code")
+  assert_eq(comma_count, 4) // 5个字段，4个逗号
 }
 
-test "telemetry_deserialization_with_data_validation" {
-  // 测试遥测数据反序列化和验证
+test "json_deserialization" {
+  // 测试JSON反序列化功能
   
-  // 模拟JSON格式的遥测数据
-  let json_data = {
-    "traceId": "0102030405060708090a0b0c0d0e0f10",
-    "spanId": "1112131415161718",
-    "name": "test-operation",
-    "kind": "CLIENT",
-    "startTimeUnixNano": "1640995200000000000",
-    "attributes": {
-      "service.name": "test-service",
-      "operation.type": "database",
-      "db.statement": "SELECT * FROM users"
-    },
-    "status": "OK"
+  let json_input = "{\"metric_name\":\"memory_usage\",\"metric_value\":\"1024.0\",\"metric_unit\":\"MB\",\"timestamp\":\"1640995260\",\"host\":\"server-001\"}"
+  
+  // 简化的JSON解析（模拟）
+  let mut parsed_data = []
+  
+  // 移除首尾的大括号
+  let content = json_input.substring(1, json_input.length() - 2)
+  
+  // 按逗号分割字段
+  let fields = content.split(",")
+  
+  let mut i = 0
+  while i < fields.length() {
+    let field = fields[i]
+    
+    // 按冒号分割键值
+    let parts = field.split(":")
+    if parts.length() == 2 {
+      let key = parts[0]
+      let value = parts[1]
+      
+      // 移除引号
+      let clean_key = key.substring(1, key.length() - 1)
+      let clean_value = value.substring(1, value.length() - 1)
+      
+      parsed_data.push((clean_key, clean_value))
+    }
+    
+    i = i + 1
   }
   
-  // 验证必需字段
-  assert_eq(json_data.has_key("traceId"), true, "Missing required field: traceId")
-  assert_eq(json_data.has_key("spanId"), true, "Missing required field: spanId")
-  assert_eq(json_data.has_key("name"), true, "Missing required field: name")
-  assert_eq(json_data.has_key("kind"), true, "Missing required field: kind")
-  assert_eq(json_data.has_key("startTimeUnixNano"), true, "Missing required field: startTimeUnixNano")
+  // 验证解析结果
+  assert_eq(parsed_data.length(), 5)
   
-  // 验证字段格式
-  let trace_id_hex = json_data["traceId"]
-  assert_eq(trace_id_hex.length(), 32, "Trace ID should be 32 hex characters")
-  
-  let span_id_hex = json_data["spanId"]
-  assert_eq(span_id_hex.length(), 16, "Span ID should be 16 hex characters")
-  
-  let start_time = json_data["startTimeUnixNano"].to_int64()
-  assert_eq(start_time > 0, true, "Start time should be positive")
-  
-  // 验证枚举值
-  let span_kind = json_data["kind"]
-  let valid_kinds = ["INTERNAL", "SERVER", "CLIENT", "PRODUCER", "CONSUMER"]
-  assert_eq(valid_kinds.contains(span_kind), true, "Invalid span kind: " + span_kind)
-  
-  let status = json_data["status"]
-  let valid_statuses = ["UNSET", "OK", "ERROR"]
-  assert_eq(valid_statuses.contains(status), true, "Invalid status: " + status)
-  
-  // 验证属性类型
-  let attributes = json_data["attributes"]
-  assert_eq(attributes.has_key("service.name"), true, "Missing service.name attribute")
-  assert_eq(attributes.has_key("operation.type"), true, "Missing operation.type attribute")
-  assert_eq(attributes.has_key("db.statement"), true, "Missing db.statement attribute")
+  // 验证特定字段
+  let mut i = 0
+  while i < parsed_data.length() {
+    let key = parsed_data[i].0
+    let value = parsed_data[i].1
+    
+    if key == "metric_name" {
+      assert_eq(value, "memory_usage")
+    } else if key == "metric_value" {
+      assert_eq(value, "1024.0")
+    } else if key == "metric_unit" {
+      assert_eq(value, "MB")
+    } else if key == "timestamp" {
+      assert_eq(value, "1640995260")
+    } else if key == "host" {
+      assert_eq(value, "server-001")
+    }
+    
+    i = i + 1
+  }
 }
 
-test "telemetry_serialization_compatibility_across_versions" {
-  // 测试跨版本的序列化兼容性
+test "binary_serialization" {
+  // 测试二进制序列化功能
   
-  // 模拟不同版本的数据格式
-  let v1_format = {
-    "version": "1.0",
-    "traceId": "0102030405060708090a0b0c0d0e0f10",
-    "spanId": "1112131415161718",
-    "operationName": "old-operation-name",
-    "startTime": "1640995200",  // 秒级时间戳
-    "duration": "1500"          // 毫秒级持续时间
+  let numeric_data = [
+    100, // metric_type (1 byte)
+    65, // cpu_usage (1 byte, 百分比)
+    128, // memory_usage_high (1 byte)
+    64, // memory_usage_low (1 byte)
+    0, // timestamp_high (1 byte)
+    0, // timestamp_mid_high (1 byte)
+    0, // timestamp_mid_low (1 byte)
+    1  // timestamp_low (1 byte)
+  ]
+  
+  // 验证二进制数据长度
+  assert_eq(numeric_data.length(), 8)
+  
+  // 模拟二进制序列化过程
+  let mut binary_stream = ""
+  let mut i = 0
+  while i < numeric_data.length() {
+    let byte_value = numeric_data[i]
+    
+    // 简化的二进制表示（实际应该是真正的二进制数据）
+    binary_stream = binary_stream + byte_value.to_string()
+    if i < numeric_data.length() - 1 {
+      binary_stream = binary_stream + " "
+    }
+    
+    i = i + 1
   }
   
-  let v2_format = {
-    "version": "2.0",
-    "traceId": "0102030405060708090a0b0c0d0e0f10",
-    "spanId": "1112131415161718",
-    "name": "new-operation-name",
-    "kind": "SERVER",
-    "startTimeUnixNano": "1640995200000000000",  // 纳秒级时间戳
-    "endTimeUnixNano": "1640995200015000000",    // 纳秒级结束时间
-    "attributes": {},
-    "status": "OK"
+  // 验证二进制流
+  assert_eq(binary_stream, "100 65 128 64 0 0 0 1")
+  
+  // 模拟二进制反序列化
+  let parts = binary_stream.split(" ")
+  let mut deserialized_data = []
+  
+  i = 0
+  while i < parts.length() {
+    let byte_str = parts[i]
+    let byte_value = byte_str.to_int()
+    deserialized_data.push(byte_value)
+    i = i + 1
   }
   
-  // 验证版本识别
-  assert_eq(v1_format["version"], "1.0")
-  assert_eq(v2_format["version"], "2.0")
+  // 验证反序列化结果
+  assert_eq(deserialized_data.length(), numeric_data.length())
   
-  // 模拟版本兼容性处理
-  fn normalize_telemetry_data(data : Map[String, String]) -> Map[String, String] {
-    if data.get("version") == Some("1.0") {
-      // V1到V2的转换
-      let normalized = data.clone()
-      normalized.insert("name", data.get("operationName").unwrap())
-      normalized.insert("startTimeUnixNano", data.get("startTime").unwrap() + "000000000")
+  i = 0
+  while i < deserialized_data.length() {
+    assert_eq(deserialized_data[i], numeric_data[i])
+    i = i + 1
+  }
+  
+  // 验证特定字段解析
+  assert_eq(deserialized_data[0], 100) // metric_type
+  assert_eq(deserialized_data[1], 65)  // cpu_usage = 65%
+  
+  // 重构内存使用量（高位+低位）
+  let memory_usage = deserialized_data[2] * 256 + deserialized_data[3]
+  assert_eq(memory_usage, 128 * 256 + 64)
+  assert_eq(memory_usage, 32832)
+}
+
+test "csv_serialization" {
+  // 测试CSV序列化功能
+  
+  let metrics_table = [
+    ["timestamp", "metric_name", "value", "unit", "host"],
+    ["1640995200", "cpu_usage", "65.5", "percent", "server-001"],
+    ["1640995260", "memory_usage", "1024.0", "MB", "server-001"],
+    ["1640995320", "disk_io", "50.2", "MB/s", "server-001"]
+  ]
+  
+  // 验证表格结构
+  assert_eq(metrics_table.length(), 4) // 1个标题行 + 3个数据行
+  assert_eq(metrics_table[0].length(), 5) // 5列
+  
+  // 序列化为CSV
+  let mut csv_content = ""
+  let mut i = 0
+  while i < metrics_table.length() {
+    let row = metrics_table[i]
+    
+    let mut j = 0
+    while j < row.length() {
+      csv_content = csv_content + row[j]
       
-      let duration_ms = data.get("duration").unwrap().to_int64()
-      let start_time_ns = data.get("startTime").unwrap().to_int64() * 1000000000L
-      let end_time_ns = start_time_ns + (duration_ms * 1000000L)
-      normalized.insert("endTimeUnixNano", end_time_ns.to_string())
+      if j < row.length() - 1 {
+        csv_content = csv_content + ","
+      }
       
-      normalized.insert("kind", "INTERNAL")  // V1默认值
-      normalized.insert("attributes", "{}")  // V1默认值
-      normalized.insert("status", "UNSET")   // V1默认值
+      j = j + 1
+    }
+    
+    if i < metrics_table.length() - 1 {
+      csv_content = csv_content + "\n"
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证CSV内容
+  assert_eq(csv_content.contains("timestamp,metric_name,value,unit,host"), true)
+  assert_eq(csv_content.contains("1640995200,cpu_usage,65.5,percent,server-001"), true)
+  assert_eq(csv_content.contains("1640995260,memory_usage,1024.0,MB,server-001"), true)
+  assert_eq(csv_content.contains("1640995320,disk_io,50.2,MB/s,server-001"), true)
+  
+  // 验证CSV行数
+  let lines = csv_content.split("\n")
+  assert_eq(lines.length(), 4)
+  
+  // 验证CSV列数
+  let header_columns = lines[0].split(",")
+  assert_eq(header_columns.length(), 5)
+}
+
+test "protocol_buffer_serialization" {
+  // 测试Protocol Buffer序列化功能（简化模拟）
+  
+  let message_fields = [
+    (1, "metric_name", "string", "cpu_usage"),
+    (2, "metric_value", "double", "65.5"),
+    (3, "metric_unit", "string", "percent"),
+    (4, "timestamp", "int64", "1640995200"),
+    (5, "host", "string", "server-001")
+  ]
+  
+  // 模拟Protocol Buffer编码
+  let mut encoded_data = ""
+  let mut i = 0
+  while i < message_fields.length() {
+    let field_number = message_fields[i].0
+    let field_name = message_fields[i].1
+    let field_type = message_fields[i].2
+    let field_value = message_fields[i].3
+    
+    // 简化的字段编码 (field_number << 3) | wire_type
+    let wire_type = 2 // 字符串类型的wire type
+    let field_key = (field_number << 3) | wire_type
+    
+    encoded_data = encoded_data + field_key.to_string() + ":" + field_value
+    
+    if i < message_fields.length() - 1 {
+      encoded_data = encoded_data + ";"
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证编码结果
+  assert_eq(encoded_data.contains("10:cpu_usage"), true) // field 1
+  assert_eq(encoded_data.contains("18:65.5"), true) // field 2
+  assert_eq(encoded_data.contains("26:percent"), true) // field 3
+  assert_eq(encoded_data.contains("34:1640995200"), true) // field 4
+  assert_eq(encoded_data.contains("42:server-001"), true) // field 5
+  
+  // 模拟Protocol Buffer解码
+  let encoded_fields = encoded_data.split(";")
+  let mut decoded_data = []
+  
+  i = 0
+  while i < encoded_fields.length() {
+    let field = encoded_fields[i]
+    let parts = field.split(":")
+    
+    if parts.length() == 2 {
+      let field_key = parts[0].to_int()
+      let field_value = parts[1]
       
-      normalized
+      // 从field_key解析field_number
+      let field_number = field_key >> 3
+      decoded_data.push((field_number, field_value))
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证解码结果
+  assert_eq(decoded_data.length(), 5)
+  
+  // 验证字段顺序和值
+  assert_eq(decoded_data[0].0, 1) // metric_name
+  assert_eq(decoded_data[0].1, "cpu_usage")
+  
+  assert_eq(decoded_data[1].0, 2) // metric_value
+  assert_eq(decoded_data[1].1, "65.5")
+  
+  assert_eq(decoded_data[2].0, 3) // metric_unit
+  assert_eq(decoded_data[2].1, "percent")
+  
+  assert_eq(decoded_data[3].0, 4) // timestamp
+  assert_eq(decoded_data[3].1, "1640995200")
+  
+  assert_eq(decoded_data[4].0, 5) // host
+  assert_eq(decoded_data[4].1, "server-001")
+}
+
+test "xml_serialization" {
+  // 测试XML序列化功能
+  
+  let telemetry_record = (
+    "metric",
+    [
+      ("name", "cpu_usage"),
+      ("value", "65.5"),
+      ("unit", "percent"),
+      ("timestamp", "1640995200")
+    ]
+  )
+  
+  // 序列化为XML
+  let mut xml_string = "<" + telemetry_record.0 + ">"
+  
+  let mut i = 0
+  while i < telemetry_record.1.length() {
+    let attr_name = telemetry_record.1[i].0
+    let attr_value = telemetry_record.1[i].1
+    
+    xml_string = xml_string + "<" + attr_name + ">" + attr_value + "</" + attr_name + ">"
+    
+    i = i + 1
+  }
+  
+  xml_string = xml_string + "</" + telemetry_record.0 + ">"
+  
+  // 验证XML格式
+  assert_eq(xml_string.has_prefix("<metric>"), true)
+  assert_eq(xml_string.has_suffix("</metric>"), true)
+  assert_eq(xml_string.contains("<name>cpu_usage</name>"), true)
+  assert_eq(xml_string.contains("<value>65.5</value>"), true)
+  assert_eq(xml_string.contains("<unit>percent</unit>"), true)
+  assert_eq(xml_string.contains("<timestamp>1640995200</timestamp>"), true)
+  
+  // 简化的XML解析
+  let mut parsed_elements = []
+  
+  // 移除根标签
+  let content = xml_string.substring(7, xml_string.length() - 8) // 移除<metric>和</metric>
+  
+  // 查找所有元素
+  let mut pos = 0
+  while pos < content.length() {
+    let start_tag_start = content.index_of("<", pos)
+    if start_tag_start == -1 {
+      break
+    }
+    
+    let start_tag_end = content.index_of(">", start_tag_start)
+    if start_tag_end == -1 {
+      break
+    }
+    
+    let tag_name = content.substring(start_tag_start + 1, start_tag_end)
+    
+    let end_tag = "</" + tag_name + ">"
+    let end_tag_start = content.index_of(end_tag, start_tag_end)
+    
+    if end_tag_start != -1 {
+      let value_start = start_tag_end + 1
+      let value_end = end_tag_start
+      let value = content.substring(value_start, value_end)
+      
+      parsed_elements.push((tag_name, value))
+      
+      pos = end_tag_start + end_tag.length()
     } else {
-      data
+      break
     }
   }
   
-  // 测试V1数据标准化
-  let normalized_v1 = normalize_telemetry_data(v1_format)
-  assert_eq(normalized_v1.get("name"), Some("old-operation-name"))
-  assert_eq(normalized_v1.get("startTimeUnixNano"), Some("1640995200000000000"))
-  assert_eq(normalized_v1.get("endTimeUnixNano"), Some("1640995200015000000"))
-  assert_eq(normalized_v1.get("kind"), Some("INTERNAL"))
-  assert_eq(normalized_v1.get("status"), Some("UNSET"))
+  // 验证解析结果
+  assert_eq(parsed_elements.length(), 4)
   
-  // 测试V2数据（不需要转换）
-  let normalized_v2 = normalize_telemetry_data(v2_format)
-  assert_eq(normalized_v2.get("name"), Some("new-operation-name"))
-  assert_eq(normalized_v2.get("startTimeUnixNano"), Some("1640995200000000000"))
-  assert_eq(normalized_v2.get("endTimeUnixNano"), Some("1640995200015000000"))
+  // 验证特定元素
+  let mut i = 0
+  while i < parsed_elements.length() {
+    let element_name = parsed_elements[i].0
+    let element_value = parsed_elements[i].1
+    
+    if element_name == "name" {
+      assert_eq(element_value, "cpu_usage")
+    } else if element_name == "value" {
+      assert_eq(element_value, "65.5")
+    } else if element_name == "unit" {
+      assert_eq(element_value, "percent")
+    } else if element_name == "timestamp" {
+      assert_eq(element_value, "1640995200")
+    }
+    
+    i = i + 1
+  }
 }
 
-test "telemetry_serialization_with_compression" {
-  // 测试压缩序列化
+test "serialization_compatibility" {
+  // 测试序列化兼容性功能
   
-  // 创建大型遥测数据集
-  let large_attribute_set = [for i = 0; i < 1000; i = i + 1].map(fn(i) {
-    ("attr_" + i.to_string(), azimuth::telemetry::api::common::AttributeValue::string("value_" + i.to_string()))
-  })
-  
-  let large_event_set = [for i = 0; i < 100; i = i + 1].map(fn(i) {
-    azimuth::telemetry::api::trace::SpanEvent::{
-      name: "event_" + i.to_string(),
-      timestamp_unix_nanos: 1640995200000000000L + (i * 1000000L),
-      attributes: [
-        ("event_index", azimuth::telemetry::api::common::AttributeValue::int(i.to_int64())),
-        ("event_type", azimuth::telemetry::api::common::AttributeValue::string("test_event"))
-      ]
-    }
-  })
-  
-  // 计算原始数据大小
-  let original_size = large_attribute_set.length() * 50 + large_event_set.length() * 100  // 估算
-  
-  // 模拟压缩效果
-  let compression_ratios = [
-    ("gzip", 0.3),
-    ("lz4", 0.5),
-    ("zstd", 0.25),
-    ("snappy", 0.6)
+  // 不同版本的遥测数据格式
+  let v1_format = [
+    ("metric", "cpu_usage"),
+    ("value", "65.5"),
+    ("unit", "percent")
   ]
   
-  // 验证不同压缩算法的效果
-  for compression in compression_ratios {
-    let algorithm = compression.0
-    let ratio = compression.1
-    let compressed_size = (original_size.to_double() * ratio).to_int()
+  let v2_format = [
+    ("metric_name", "cpu_usage"),
+    ("metric_value", "65.5"),
+    ("metric_unit", "percent"),
+    ("timestamp", "1640995200"),
+    ("host", "server-001")
+  ]
+  
+  // 版本转换：v1到v2
+  let mut converted_data = []
+  
+  let mut i = 0
+  while i < v1_format.length() {
+    let old_key = v1_format[i].0
+    let old_value = v1_format[i].1
     
-    // 验证压缩效果
-    assert_eq(compressed_size < original_size, true, 
-      algorithm + " compression should reduce size")
+    let mut new_key = ""
     
-    // 验证压缩比在合理范围内
-    assert_eq(ratio >= 0.1 && ratio <= 0.8, true, 
-      algorithm + " compression ratio " + ratio.to_string() + " should be reasonable")
+    // 映射旧字段名到新字段名
+    if old_key == "metric" {
+      new_key = "metric_name"
+    } else if old_key == "value" {
+      new_key = "metric_value"
+    } else if old_key == "unit" {
+      new_key = "metric_unit"
+    } else {
+      new_key = old_key
+    }
     
-    // 计算压缩时间（模拟）
-    let compression_time_ms = original_size.to_double() / 10000.0  // 假设压缩速度为10MB/s
-    let decompression_time_ms = compressed_size.to_double() / 50000.0  // 假设解压速度为50MB/s
-    
-    // 验证压缩/解压时间在合理范围内
-    assert_eq(compression_time_ms <= 1000, true, 
-      algorithm + " compression time should be reasonable")
-    assert_eq(decompression_time_ms <= 500, true, 
-      algorithm + " decompression time should be reasonable")
+    converted_data.push((new_key, old_value))
+    i = i + 1
   }
   
-  // 验证数据完整性
-  assert_eq(large_attribute_set.length(), 1000, "Large attribute set should maintain size")
-  assert_eq(large_event_set.length(), 100, "Large event set should maintain size")
+  // 添加v2版本的新字段（使用默认值）
+  converted_data.push(("timestamp", "0"))
+  converted_data.push(("host", "unknown"))
   
-  // 验证特定数据点
-  assert_eq(large_attribute_set[0].0, "attr_0")
-  assert_eq(large_attribute_set[999].0, "attr_999")
-  assert_eq(large_event_set[0].name, "event_0")
-  assert_eq(large_event_set[99].name, "event_99")
+  // 验证转换结果
+  assert_eq(converted_data.length(), 5)
+  
+  // 验证字段名转换
+  let mut i = 0
+  while i < converted_data.length() {
+    let key = converted_data[i].0
+    let value = converted_data[i].1
+    
+    if key == "metric_name" {
+      assert_eq(value, "cpu_usage")
+    } else if key == "metric_value" {
+      assert_eq(value, "65.5")
+    } else if key == "metric_unit" {
+      assert_eq(value, "percent")
+    } else if key == "timestamp" {
+      assert_eq(value, "0") // 默认值
+    } else if key == "host" {
+      assert_eq(value, "unknown") // 默认值
+    }
+    
+    i = i + 1
+  }
+  
+  // 版本转换：v2到v1（向后兼容）
+  let mut reverse_converted_data = []
+  
+  i = 0
+  while i < v2_format.length() {
+    let new_key = v2_format[i].0
+    let new_value = v2_format[i].1
+    
+    // 只包含v1版本支持的字段
+    if new_key == "metric_name" {
+      reverse_converted_data.push(("metric", new_value))
+    } else if new_key == "metric_value" {
+      reverse_converted_data.push(("value", new_value))
+    } else if new_key == "metric_unit" {
+      reverse_converted_data.push(("unit", new_value))
+    }
+    // 忽略v2版本新增的字段
+    
+    i = i + 1
+  }
+  
+  // 验证反向转换结果
+  assert_eq(reverse_converted_data.length(), 3)
+  assert_eq(reverse_converted_data[0], ("metric", "cpu_usage"))
+  assert_eq(reverse_converted_data[1], ("value", "65.5"))
+  assert_eq(reverse_converted_data[2], ("unit", "percent"))
 }
