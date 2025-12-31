@@ -303,6 +303,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_74656c656d657472795f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_4, ["resource_serialization_deserialization"]),
     5: (__test_74656c656d657472795f73657269616c697a6174696f6e5f666f726d61745f746573742e6d6274_5, ["cross_format_data_consistency"]),
   },
+  "telemetry_serialization_enhanced_test.mbt": {
+    0: (__test_74656c656d657472795f73657269616c697a6174696f6e5f656e68616e6365645f746573742e6d6274_0, ["complex_telemetry_data_serialization"]),
+    1: (__test_74656c656d657472795f73657269616c697a6174696f6e5f656e68616e6365645f746573742e6d6274_1, ["telemetry_data_deserialization_validation"]),
+    2: (__test_74656c656d657472795f73657269616c697a6174696f6e5f656e68616e6365645f746573742e6d6274_2, ["binary_serialization_format_test"]),
+    3: (__test_74656c656d657472795f73657269616c697a6174696f6e5f656e68616e6365645f746573742e6d6274_3, ["serialization_error_handling"]),
+    4: (__test_74656c656d657472795f73657269616c697a6174696f6e5f656e68616e6365645f746573742e6d6274_4, ["cross_format_serialization_compatibility"]),
+  },
   "telemetry_serialization_compatibility_new_test.mbt": {
     0: (__test_74656c656d657472795f73657269616c697a6174696f6e5f636f6d7061746962696c6974795f6e65775f746573742e6d6274_0, ["attribute_serialization_compatibility"]),
     1: (__test_74656c656d657472795f73657269616c697a6174696f6e5f636f6d7061746962696c6974795f6e65775f746573742e6d6274_1, ["span_serialization_compatibility"]),
