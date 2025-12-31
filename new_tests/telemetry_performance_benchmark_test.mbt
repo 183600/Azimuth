@@ -1,421 +1,481 @@
-// 遥测系统性能基准测试用例
+// 性能基准测试用例
 
-test "telemetry_throughput_benchmark" {
-  // 测试遥测系统吞吐量基准
+test "span_creation_performance_benchmark" {
+  // Span创建性能基准测试
   
-  let test_duration_seconds = 60
-  let expected_metrics_per_second = 1000
-  let concurrent_producers = 5
+  let tracer = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("benchmark-tracer")
+  let ctx = azimuth::telemetry::api::context::Context::empty()
   
-  // 验证测试参数
-  assert_eq(test_duration_seconds, 60)
-  assert_eq(expected_metrics_per_second, 1000)
-  assert_eq(concurrent_producers, 5)
+  // 基准测试：创建1000个Span
+  let start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
   
-  // 模拟数据生产
-  let mut total_metrics_produced = 0
-  let mut producer_metrics = []
-  let mut i = 0
-  
-  while i < concurrent_producers {
-    let producer_id = i
-    let metrics_per_second = expected_metrics_per_second / concurrent_producers
-    let producer_total = metrics_per_second * test_duration_seconds
-    
-    producer_metrics.push({
-      "producer_id": producer_id,
-      "metrics_per_second": metrics_per_second,
-      "total_metrics": producer_total
-    })
-    
-    total_metrics_produced = total_metrics_produced + producer_total
-    i = i + 1
+  for i = 0; i < 1000; i = i + 1 {
+    let (_, span) = tracer.start_span(
+      ctx,
+      "benchmark.span." + i.to_string(),
+      azimuth::telemetry::api::trace::SpanKind::Server
+    )
+    span.end()
   }
   
-  // 验证生产者配置
-  assert_eq(producer_metrics.length(), 5)
-  assert_eq(producer_metrics[0].metrics_per_second, 200)
-  assert_eq(producer_metrics[4].metrics_per_second, 200)
+  let end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let total_duration = end_time - start_time
+  let avg_duration_per_span = total_duration.to_float() / 1000.0
   
-  // 验证总指标数
-  assert_eq(total_metrics_produced, 60000)
+  // 性能断言：每个Span创建和结束应该在合理时间内完成
+  assert_eq(avg_duration_per_span < 100_000.0, true)  // 小于100微秒每个Span
   
-  // 模拟系统处理能力
-  let system_processing_capacity = 800  // 每秒处理800个指标
-  let actual_processed_metrics = system_processing_capacity * test_duration_seconds
-  let processing_backlog = total_metrics_produced - actual_processed_metrics
-  
-  // 验证处理能力
-  assert_eq(system_processing_capacity, 800)
-  assert_eq(actual_processed_metrics, 48000)
-  assert_eq(processing_backlog, 12000)
-  
-  // 计算吞吐量指标
-  let actual_throughput = actual_processed_metrics / test_duration_seconds
-  let throughput_efficiency = (actual_throughput * 100) / expected_metrics_per_second
-  let backlog_percentage = (processing_backlog * 100) / total_metrics_produced
-  
-  // 验证吞吐量指标
-  assert_eq(actual_throughput, 800)
-  assert_eq(throughput_efficiency, 80)
-  assert_eq(backlog_percentage, 20)
-  
-  // 评估系统性能
-  let performance_excellent = throughput_efficiency >= 95
-  let performance_good = throughput_efficiency >= 80 and throughput_efficiency < 95
-  let performance_poor = throughput_efficiency < 80
-  
-  // 验证性能评估
-  assert_eq(performance_excellent, false)
-  assert_eq(performance_good, true)
-  assert_eq(performance_poor, false)
+  // 总时间应该在合理范围内
+  assert_eq(total_duration < 100_000_000, true)  // 小于100毫秒总共
 }
 
-test "telemetry_latency_benchmark" {
-  // 测试遥测系统延迟基准
+test "span_attribute_performance_benchmark" {
+  // Span属性设置性能基准测试
   
-  let latency_samples = [
-    12, 15, 8, 25, 18, 22, 14, 19, 16, 13,
-    21, 17, 11, 24, 20, 9, 23, 26, 10, 27
-  ]
+  let tracer = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("attribute-benchmark-tracer")
+  let ctx = azimuth::telemetry::api::context::Context::empty()
   
-  // 验证延迟样本
-  assert_eq(latency_samples.length(), 20)
-  assert_eq(latency_samples[0], 12)
-  assert_eq(latency_samples[19], 27)
+  let (_, span) = tracer.start_span(
+    ctx,
+    "attribute.benchmark.span",
+    azimuth::telemetry::api::trace::SpanKind::Server
+  )
   
-  // 计算延迟统计
-  let mut sum = 0
-  let mut min_latency = latency_samples[0]
-  let mut max_latency = latency_samples[0]
-  let mut i = 0
+  // 基准测试：设置100个属性
+  let start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
   
-  while i < latency_samples.length() {
-    let latency = latency_samples[i]
-    sum = sum + latency
-    
-    if latency < min_latency {
-      min_latency = latency
-    }
-    if latency > max_latency {
-      max_latency = latency
-    }
-    
-    i = i + 1
+  for i = 0; i < 100; i = i + 1 {
+    span.set_attribute(
+      "attr." + i.to_string(),
+      azimuth::telemetry::api::common::AttributeValue::String("value." + i.to_string())
+    )
   }
   
-  let average_latency = sum / latency_samples.length()
-  let latency_range = max_latency - min_latency
+  let end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let total_duration = end_time - start_time
+  let avg_duration_per_attribute = total_duration.to_float() / 100.0
   
-  // 验证基本统计
-  assert_eq(average_latency, 17)
-  assert_eq(min_latency, 8)
-  assert_eq(max_latency, 27)
-  assert_eq(latency_range, 19)
+  // 性能断言：每个属性设置应该在合理时间内完成
+  assert_eq(avg_duration_per_attribute < 10_000.0, true)  // 小于10微秒每个属性
   
-  // 排序计算百分位数
-  let mut sorted_latencies = latency_samples
-  i = 0
-  while i < sorted_latencies.length() - 1 {
-    let mut j = 0
-    while j < sorted_latencies.length() - i - 1 {
-      if sorted_latencies[j] > sorted_latencies[j + 1] {
-        let temp = sorted_latencies[j]
-        sorted_latencies[j] = sorted_latencies[j + 1]
-        sorted_latencies[j + 1] = temp
+  span.end()
+}
+
+test "context_propagation_performance_benchmark" {
+  // 上下文传播性能基准测试
+  
+  let propagator = azimuth::telemetry::api::propagation::W3CTraceContextPropagator::new()
+  
+  // 创建包含丰富上下文的Context
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_id = "00f067aa0ba902b7"
+  let span_context = azimuth::telemetry::api::trace::SpanContext::new(trace_id, span_id, true, false)
+  
+  let ctx = azimuth::telemetry::api::context::Context::empty()
+    .with_value(azimuth::telemetry::api::context::create_key("span_context"), span_context)
+    .with_value(azimuth::telemetry::api::context::create_key("user_id"), "user123")
+    .with_value(azimuth::telemetry::api::context::create_key("tenant_id"), "tenant456")
+    .with_value(azimuth::telemetry::api::context::create_key("request_id"), "req789")
+  
+  // 基准测试：1000次注入操作
+  let start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 1000; i = i + 1 {
+    let carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+    propagator.inject(ctx, carrier)
+  }
+  
+  let end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let total_duration = end_time - start_time
+  let avg_duration_per_inject = total_duration.to_float() / 1000.0
+  
+  // 性能断言：每次注入应该在合理时间内完成
+  assert_eq(avg_duration_per_inject < 50_000.0, true)  // 小于50微秒每次注入
+  
+  // 基准测试：1000次提取操作
+  let carrier = azimuth::telemetry::api::propagation::TextMapCarrier::new()
+  propagator.inject(ctx, carrier)
+  
+  let extract_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 1000; i = i + 1 {
+    propagator.extract(carrier)
+  }
+  
+  let extract_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let extract_total_duration = extract_end_time - extract_start_time
+  let avg_duration_per_extract = extract_total_duration.to_float() / 1000.0
+  
+  // 性能断言：每次提取应该在合理时间内完成
+  assert_eq(avg_duration_per_extract < 50_000.0, true)  // 小于50微秒每次提取
+}
+
+test "metric_recording_performance_benchmark" {
+  // 指标记录性能基准测试
+  
+  let meter = azimuth::telemetry::api::metrics::MeterProvider::global().get_meter("benchmark-meter")
+  
+  let counter = meter.create_counter("benchmark.counter", "Benchmark counter", "operations")
+  let histogram = meter.create_histogram("benchmark.histogram", "Benchmark histogram", "ms")
+  let gauge = meter.create_gauge("benchmark.gauge", "Benchmark gauge", "bytes")
+  
+  let attrs = azimuth::telemetry::api::common::Attributes::empty()
+    .with("operation", azimuth::telemetry::api::common::AttributeValue::String("benchmark"))
+    .with("service", azimuth::telemetry::api::common::AttributeValue::String("test-service"))
+  
+  // 基准测试：计数器记录
+  let counter_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 10000; i = i + 1 {
+    counter.add(1, attrs)
+  }
+  
+  let counter_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let counter_duration = counter_end_time - counter_start_time
+  let avg_counter_duration = counter_duration.to_float() / 10000.0
+  
+  // 性能断言：每次计数器记录应该很快
+  assert_eq(avg_counter_duration < 5_000.0, true)  // 小于5微秒每次记录
+  
+  // 基准测试：直方图记录
+  let histogram_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 10000; i = i + 1 {
+    histogram.record(i.to_float(), attrs)
+  }
+  
+  let histogram_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let histogram_duration = histogram_end_time - histogram_start_time
+  let avg_histogram_duration = histogram_duration.to_float() / 10000.0
+  
+  // 性能断言：每次直方图记录应该合理
+  assert_eq(avg_histogram_duration < 10_000.0, true)  // 小于10微秒每次记录
+  
+  // 基准测试：仪表记录
+  let gauge_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 10000; i = i + 1 {
+    gauge.record(i.to_int64(), attrs)
+  }
+  
+  let gauge_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let gauge_duration = gauge_end_time - gauge_start_time
+  let avg_gauge_duration = gauge_duration.to_float() / 10000.0
+  
+  // 性能断言：每次仪表记录应该很快
+  assert_eq(avg_gauge_duration < 5_000.0, true)  // 小于5微秒每次记录
+}
+
+test "log_emission_performance_benchmark" {
+  // 日志发射性能基准测试
+  
+  let logger = azimuth::telemetry::api::logs::LoggerProvider::global().get_logger("benchmark-logger")
+  
+  let attrs = azimuth::telemetry::api::common::Attributes::empty()
+    .with("component", azimuth::telemetry::api::common::AttributeValue::String("benchmark"))
+    .with("operation", azimuth::telemetry::api::common::AttributeValue::String("test"))
+  
+  // 基准测试：单个日志发射
+  let single_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 10000; i = i + 1 {
+    let log_record = azimuth::telemetry::api::logs::LogRecord::new(
+      timestamp=azimuth::telemetry::sdk::platform::time::current_unix_nanos(),
+      observed_timestamp=azimuth::telemetry::sdk::platform::time::current_unix_nanos(),
+      severity_number=azimuth::telemetry::api::logs::SeverityNumber::Info,
+      severity_text="INFO",
+      body="Benchmark log message " + i.to_string(),
+      attributes=attrs,
+      trace_id=None,
+      span_id=None,
+      trace_flags=None
+    )
+    
+    logger.emit(log_record)
+  }
+  
+  let single_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let single_duration = single_end_time - single_start_time
+  let avg_single_duration = single_duration.to_float() / 10000.0
+  
+  // 性能断言：每次日志发射应该合理
+  assert_eq(avg_single_duration < 20_000.0, true)  // 小于20微秒每次日志
+  
+  // 基准测试：批量日志发射
+  let batch_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  let mut batch_logs = []
+  for i = 0; i < 1000; i = i + 1 {
+    let log_record = azimuth::telemetry::api::logs::LogRecord::new(
+      timestamp=azimuth::telemetry::sdk::platform::time::current_unix_nanos(),
+      observed_timestamp=azimuth::telemetry::sdk::platform::time::current_unix_nanos(),
+      severity_number=azimuth::telemetry::api::logs::SeverityNumber::Info,
+      severity_text="INFO",
+      body="Batch benchmark log " + i.to_string(),
+      attributes=attrs,
+      trace_id=None,
+      span_id=None,
+      trace_flags=None
+    )
+    
+    batch_logs.push(log_record)
+  }
+  
+  logger.emit_batch(batch_logs)
+  
+  let batch_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let batch_duration = batch_end_time - batch_start_time
+  let avg_batch_duration = batch_duration.to_float() / 1000.0
+  
+  // 性能断言：批量操作应该更高效
+  assert_eq(avg_batch_duration < avg_single_duration, true)
+}
+
+test "attribute_operations_performance_benchmark" {
+  // 属性操作性能基准测试
+  
+  // 基准测试：属性创建
+  let create_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  let mut attrs_list = []
+  for i = 0; i < 1000; i = i + 1 {
+    let attrs = azimuth::telemetry::api::common::Attributes::empty()
+      .with("attr1", azimuth::telemetry::api::common::AttributeValue::String("value1"))
+      .with("attr2", azimuth::telemetry::api::common::AttributeValue::Int64(i))
+      .with("attr3", azimuth::telemetry::api::common::AttributeValue::Bool(i % 2 == 0))
+      .with("attr4", azimuth::telemetry::api::common::AttributeValue::Float64(i.to_float() * 1.5))
+    
+    attrs_list.push(attrs)
+  }
+  
+  let create_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let create_duration = create_end_time - create_start_time
+  let avg_create_duration = create_duration.to_float() / 1000.0
+  
+  // 性能断言：属性创建应该合理
+  assert_eq(avg_create_duration < 50_000.0, true)  // 小于50微秒每次创建
+  
+  // 基准测试：属性查找
+  let lookup_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 1000; i = i + 1 {
+    let attrs = attrs_list[i]
+    attrs.get("attr1")
+    attrs.get("attr2")
+    attrs.get("attr3")
+    attrs.get("attr4")
+    attrs.get("nonexistent")  // 不存在的键
+  }
+  
+  let lookup_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let lookup_duration = lookup_end_time - lookup_start_time
+  let avg_lookup_duration = lookup_duration.to_float() / 5000.0  // 5次查找每个属性集合
+  
+  // 性能断言：属性查找应该很快
+  assert_eq(avg_lookup_duration < 5_000.0, true)  // 小于5微秒每次查找
+  
+  // 基准测试：属性合并
+  let merge_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 500; i = i + 1 {
+    let attrs1 = attrs_list[i * 2]
+    let attrs2 = attrs_list[i * 2 + 1]
+    attrs1.merge(attrs2)
+  }
+  
+  let merge_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let merge_duration = merge_end_time - merge_start_time
+  let avg_merge_duration = merge_duration.to_float() / 500.0
+  
+  // 性能断言：属性合并应该合理
+  assert_eq(avg_merge_duration < 100_000.0, true)  // 小于100微秒每次合并
+}
+
+test "sampling_performance_benchmark" {
+  // 采样性能基准测试
+  
+  let samplers = [
+    azimuth::telemetry::sdk::trace::AlwaysOnSampler::new(),
+    azimuth::telemetry::sdk::trace::AlwaysOffSampler::new(),
+    azimuth::telemetry::sdk::trace::TraceIdRatioBasedSampler::new(0.1),
+    azimuth::telemetry::sdk::trace::TraceIdRatioBasedSampler::new(0.5),
+    azimuth::telemetry::sdk::trace::TraceIdRatioBasedSampler::new(0.9)
+  ]
+  
+  let trace_id = "4bf92f3577b34da6a3ce929d0e0e4736"
+  let span_name = "benchmark.span"
+  let span_kind = azimuth::telemetry::api::trace::SpanKind::Server
+  let attributes = azimuth::telemetry::api::common::Attributes::empty()
+  let parent_context = None
+  
+  for sampler in samplers {
+    let sampler_name = match sampler {
+      AlwaysOnSampler(_) => "AlwaysOn",
+      AlwaysOffSampler(_) => "AlwaysOff",
+      TraceIdRatioBasedSampler(_) => "TraceIdRatio",
+      _ => "Unknown"
+    }
+    
+    // 基准测试：10000次采样决策
+    let start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+    
+    for i = 0; i < 10000; i = i + 1 {
+      sampler.should_sample(
+        parent_context,
+        trace_id + i.to_string(),
+        span_name,
+        span_kind,
+        attributes
+      )
+    }
+    
+    let end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+    let duration = end_time - start_time
+    let avg_duration = duration.to_float() / 10000.0
+    
+    // 性能断言：采样决策应该很快
+    assert_eq(avg_duration < 10_000.0, true)  // 小于10微秒每次决策
+  }
+}
+
+test "serialization_performance_benchmark" {
+  // 序列化性能基准测试
+  
+  // 创建复杂的数据结构
+  let complex_resource = azimuth::telemetry::api::common::Resource::builder()
+    .with("service.name", azimuth::telemetry::api::common::AttributeValue::String("complex-service"))
+    .with("service.version", azimuth::telemetry::api::common::AttributeValue::String("1.2.3"))
+    .with("deployment.environment", azimuth::telemetry::api::common::AttributeValue::String("production"))
+    .with("host.name", azimuth::telemetry::api::common::AttributeValue::String("prod-server-01"))
+    .with("cloud.provider", azimuth::telemetry::api::common::AttributeValue::String("aws"))
+    .with("cloud.region", azimuth::telemetry::api::common::AttributeValue::String("us-west-2"))
+    .build()
+  
+  // 基准测试：资源序列化
+  let serialize_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 1000; i = i + 1 {
+    let serialized = complex_resource.to_json()
+    // 防止编译器优化掉序列化操作
+    assert_eq(serialized.length() > 0, true)
+  }
+  
+  let serialize_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let serialize_duration = serialize_end_time - serialize_start_time
+  let avg_serialize_duration = serialize_duration.to_float() / 1000.0
+  
+  // 性能断言：序列化应该合理
+  assert_eq(avg_serialize_duration < 100_000.0, true)  // 小于100微秒每次序列化
+  
+  // 基准测试：资源反序列化
+  let serialized = complex_resource.to_json()
+  
+  let deserialize_start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  for i = 0; i < 1000; i = i + 1 {
+    let deserialized = azimuth::telemetry::api::common::Resource::from_json(serialized)
+    // 防止编译器优化掉反序列化操作
+    assert_eq(deserialized.attributes.size() > 0, true)
+  }
+  
+  let deserialize_end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let deserialize_duration = deserialize_end_time - deserialize_start_time
+  let avg_deserialize_duration = deserialize_duration.to_float() / 1000.0
+  
+  // 性能断言：反序列化应该合理
+  assert_eq(avg_deserialize_duration < 100_000.0, true)  // 小于100微秒每次反序列化
+}
+
+test "memory_allocation_benchmark" {
+  // 内存分配基准测试
+  
+  // 测试大量Span创建的内存使用
+  let initial_memory = azimuth::telemetry::sdk::platform::memory::get_allocated_bytes()
+  
+  let tracer = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("memory-benchmark-tracer")
+  let ctx = azimuth::telemetry::api::context::Context::empty()
+  
+  let spans = []
+  
+  // 创建10000个Span
+  for i = 0; i < 10000; i = i + 1 {
+    let (_, span) = tracer.start_span(
+      ctx,
+      "memory.benchmark.span." + i.to_string(),
+      azimuth::telemetry::api::trace::SpanKind::Server
+    )
+    
+    // 为每个Span添加一些属性
+    span.set_attribute("iteration", azimuth::telemetry::api::common::AttributeValue::Int64(i))
+    span.set_attribute("operation", azimuth::telemetry::api::common::AttributeValue::String("memory_test"))
+    
+    spans.push(span)
+  }
+  
+  let after_creation_memory = azimuth::telemetry::sdk::platform::memory::get_allocated_bytes()
+  let memory_per_span = (after_creation_memory - initial_memory).to_float() / 10000.0
+  
+  // 内存断言：每个Span的内存使用应该合理
+  assert_eq(memory_per_span < 10_000.0, true)  // 小于10KB每个Span
+  
+  // 结束所有Span并检查内存回收
+  for span in spans {
+    span.end()
+  }
+  
+  // 强制垃圾回收（如果支持）
+  azimuth::telemetry::sdk::platform::memory::force_gc()
+  
+  let after_cleanup_memory = azimuth::telemetry::sdk::platform::memory::get_allocated_bytes()
+  let memory_recovered = after_creation_memory - after_cleanup_memory
+  
+  // 内存回收断言：应该回收大部分内存
+  assert_eq(memory_recovered > (after_creation_memory - initial_memory) * 0.7, true)  // 至少回收70%
+}
+
+test "concurrent_performance_benchmark" {
+  // 并发性能基准测试
+  
+  let tracer = azimuth::telemetry::api::trace::TracerProvider::global().get_tracer("concurrent-benchmark-tracer")
+  let ctx = azimuth::telemetry::api::context::Context::empty()
+  
+  // 模拟10个并发线程，每个创建1000个Span
+  let num_threads = 10
+  let spans_per_thread = 1000
+  
+  let start_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  
+  // 使用任务组进行并发操作
+  let task_group = azimuth::telemetry::sdk::platform::async::TaskGroup::new()
+  
+  for thread_id = 0; thread_id < num_threads; thread_id = thread_id + 1 {
+    task_group.spawn(async {
+      for i = 0; i < spans_per_thread; i = i + 1 {
+        let (_, span) = tracer.start_span(
+          ctx,
+          "concurrent.span." + thread_id.to_string() + "." + i.to_string(),
+          azimuth::telemetry::api::trace::SpanKind::Server
+        )
+        
+        span.set_attribute("thread_id", azimuth::telemetry::api::common::AttributeValue::Int64(thread_id))
+        span.set_attribute("iteration", azimuth::telemetry::api::common::AttributeValue::Int64(i))
+        
+        span.end()
       }
-      j = j + 1
-    }
-    i = i + 1
+    })
   }
   
-  // 计算百分位数
-  let p50_index = sorted_latencies.length() / 2
-  let p90_index = (sorted_latencies.length() * 90) / 100
-  let p95_index = (sorted_latencies.length() * 95) / 100
-  let p99_index = (sorted_latencies.length() * 99) / 100
+  task_group.wait_all()
   
-  let p50_latency = sorted_latencies[p50_index]
-  let p90_latency = sorted_latencies[p90_index]
-  let p95_latency = sorted_latencies[p95_index]
-  let p99_latency = sorted_latencies[p99_index]
+  let end_time = azimuth::telemetry::sdk::platform::time::current_unix_nanos()
+  let total_duration = end_time - start_time
+  let total_spans = num_threads * spans_per_thread
+  let avg_duration_per_span = total_duration.to_float() / total_spans.to_float()
   
-  // 验证百分位数
-  assert_eq(p50_latency, 17)
-  assert_eq(p90_latency, 25)
-  assert_eq(p95_latency, 26)
-  assert_eq(p99_latency, 27)
+  // 并发性能断言：并发情况下每个Span的处理时间应该仍然合理
+  assert_eq(avg_duration_per_span < 200_000.0, true)  // 小于200微秒每个Span（并发情况下会慢一些）
   
-  // 定义延迟阈值
-  let excellent_threshold = 10
-  let good_threshold = 20
-  let acceptable_threshold = 50
-  
-  // 评估延迟性能
-  let latency_excellent = p95_latency <= excellent_threshold
-  let latency_good = p95_latency <= good_threshold
-  let latency_acceptable = p95_latency <= acceptable_threshold
-  
-  // 验证延迟评估
-  assert_eq(latency_excellent, false)
-  assert_eq(latency_good, true)
-  assert_eq(latency_acceptable, true)
-  
-  // 计算延迟分布
-  let mut excellent_count = 0
-  let mut good_count = 0
-  let mut acceptable_count = 0
-  let mut poor_count = 0
-  i = 0
-  
-  while i < latency_samples.length() {
-    let latency = latency_samples[i]
-    if latency <= excellent_threshold {
-      excellent_count = excellent_count + 1
-    } else if latency <= good_threshold {
-      good_count = good_count + 1
-    } else if latency <= acceptable_threshold {
-      acceptable_count = acceptable_count + 1
-    } else {
-      poor_count = poor_count + 1
-    }
-    i = i + 1
-  }
-  
-  // 验证延迟分布
-  assert_eq(excellent_count, 5)
-  assert_eq(good_count, 11)
-  assert_eq(acceptable_count, 4)
-  assert_eq(poor_count, 0)
-  
-  // 计算延迟质量评分
-  let excellent_percentage = (excellent_count * 100) / latency_samples.length()
-  let good_percentage = (good_count * 100) / latency_samples.length()
-  let overall_quality_score = (excellent_percentage * 3 + good_percentage * 2 + acceptable_percentage) / 6
-  
-  // 验证质量评分
-  assert_eq(excellent_percentage, 25)
-  assert_eq(good_percentage, 55)
-  assert_eq(overall_quality_score, 55)
-}
-
-test "telemetry_memory_usage_benchmark" {
-  // 测试遥测系统内存使用基准
-  
-  let memory_samples = [
-    1024, 1156, 1089, 1234, 1178, 1298, 1123, 1256, 1198, 1078,
-    1312, 1245, 1098, 1289, 1156, 1034, 1278, 1321, 1067, 1302
-  ]
-  
-  // 验证内存样本 (MB)
-  assert_eq(memory_samples.length(), 20)
-  assert_eq(memory_samples[0], 1024)
-  assert_eq(memory_samples[19], 1302)
-  
-  // 计算内存使用统计
-  let mut sum = 0
-  let mut min_memory = memory_samples[0]
-  let mut max_memory = memory_samples[0]
-  let mut i = 0
-  
-  while i < memory_samples.length() {
-    let memory = memory_samples[i]
-    sum = sum + memory
-    
-    if memory < min_memory {
-      min_memory = memory
-    }
-    if memory > max_memory {
-      max_memory = memory
-    }
-    
-    i = i + 1
-  }
-  
-  let average_memory = sum / memory_samples.length()
-  let memory_range = max_memory - min_memory
-  let memory_variance = max_memory - min_memory
-  
-  // 验证内存统计
-  assert_eq(average_memory, 1196)
-  assert_eq(min_memory, 1024)
-  assert_eq(max_memory, 1321)
-  assert_eq(memory_range, 297)
-  
-  // 定义内存阈值 (MB)
-  let baseline_memory = 1000
-  let warning_threshold = 1500
-  let critical_threshold = 2000
-  
-  // 验证内存阈值
-  assert_eq(baseline_memory, 1000)
-  assert_eq(warning_threshold, 1500)
-  assert_eq(critical_threshold, 2000)
-  
-  // 评估内存使用
-  let memory_usage_efficient = average_memory <= baseline_memory + 200
-  let memory_usage_acceptable = average_memory <= warning_threshold
-  let memory_usage_concerning = average_memory > warning_threshold and average_memory <= critical_threshold
-  let memory_usage_critical = average_memory > critical_threshold
-  
-  // 验证内存使用评估
-  assert_eq(memory_usage_efficient, false)
-  assert_eq(memory_usage_acceptable, true)
-  assert_eq(memory_usage_concerning, false)
-  assert_eq(memory_usage_critical, false)
-  
-  // 计算内存增长率
-  let initial_memory = memory_samples[0]
-  let final_memory = memory_samples[memory_samples.length() - 1]
-  let memory_growth = final_memory - initial_memory
-  let memory_growth_rate = (memory_growth * 100) / initial_memory
-  
-  // 验证内存增长
-  assert_eq(initial_memory, 1024)
-  assert_eq(final_memory, 1302)
-  assert_eq(memory_growth, 278)
-  assert_eq(memory_growth_rate, 27)
-  
-  // 评估内存增长趋势
-  let growth_stable = memory_growth_rate <= 10
-  let growth_moderate = memory_growth_rate > 10 and memory_growth_rate <= 30
-  let growth_concerning = memory_growth_rate > 30 and memory_growth_rate <= 50
-  let growth_critical = memory_growth_rate > 50
-  
-  // 验证增长趋势评估
-  assert_eq(growth_stable, false)
-  assert_eq(growth_moderate, true)
-  assert_eq(growth_concerning, false)
-  assert_eq(growth_critical, false)
-  
-  // 计算内存使用效率
-  let memory_efficiency_score = if memory_usage_acceptable {
-    if memory_usage_efficient {
-      100
-    } else {
-      80
-    }
-  } else {
-    40
-  }
-  
-  // 验证内存效率评分
-  assert_eq(memory_efficiency_score, 80)
-}
-
-test "telemetry_cpu_utilization_benchmark" {
-  // 测试遥测系统CPU利用率基准
-  
-  let cpu_samples = [
-    45.2, 52.1, 48.7, 61.3, 55.8, 58.9, 47.6, 63.2, 51.4, 49.7,
-    67.8, 59.3, 46.5, 62.1, 54.9, 44.3, 65.7, 68.2, 43.8, 66.4
-  ]
-  
-  // 验证CPU样本 (百分比)
-  assert_eq(cpu_samples.length(), 20)
-  assert_eq(cpu_samples[0], 45.2)
-  assert_eq(cpu_samples[19], 66.4)
-  
-  // 计算CPU使用统计
-  let mut sum = 0.0
-  let mut min_cpu = cpu_samples[0]
-  let mut max_cpu = cpu_samples[0]
-  let mut i = 0
-  
-  while i < cpu_samples.length() {
-    let cpu = cpu_samples[i]
-    sum = sum + cpu
-    
-    if cpu < min_cpu {
-      min_cpu = cpu
-    }
-    if cpu > max_cpu {
-      max_cpu = cpu
-    }
-    
-    i = i + 1
-  }
-  
-  let average_cpu = sum / cpu_samples.length().to_double()
-  let cpu_range = max_cpu - min_cpu
-  
-  // 验证CPU统计
-  assert_eq(average_cpu > 55.0, true)
-  assert_eq(average_cpu < 60.0, true)
-  assert_eq(min_cpu, 43.8)
-  assert_eq(max_cpu, 68.2)
-  assert_eq(cpu_range, 24.4)
-  
-  // 定义CPU使用阈值
-  let optimal_range_min = 40.0
-  let optimal_range_max = 70.0
-  let warning_threshold = 80.0
-  let critical_threshold = 90.0
-  
-  // 验证CPU阈值
-  assert_eq(optimal_range_min, 40.0)
-  assert_eq(optimal_range_max, 70.0)
-  assert_eq(warning_threshold, 80.0)
-  assert_eq(critical_threshold, 90.0)
-  
-  // 评估CPU使用
-  let cpu_usage_optimal = average_cpu >= optimal_range_min and average_cpu <= optimal_range_max
-  let cpu_usage_warning = average_cpu > optimal_range_max and average_cpu <= warning_threshold
-  let cpu_usage_critical = average_cpu > warning_threshold
-  
-  // 验证CPU使用评估
-  assert_eq(cpu_usage_optimal, true)
-  assert_eq(cpu_usage_warning, false)
-  assert_eq(cpu_usage_critical, false)
-  
-  // 计算CPU使用分布
-  let mut optimal_count = 0
-  let mut underutilized_count = 0
-  let mut warning_count = 0
-  let mut critical_count = 0
-  i = 0
-  
-  while i < cpu_samples.length() {
-    let cpu = cpu_samples[i]
-    if cpu >= optimal_range_min and cpu <= optimal_range_max {
-      optimal_count = optimal_count + 1
-    } else if cpu < optimal_range_min {
-      underutilized_count = underutilized_count + 1
-    } else if cpu <= warning_threshold {
-      warning_count = warning_count + 1
-    } else {
-      critical_count = critical_count + 1
-    }
-    i = i + 1
-  }
-  
-  // 验证CPU使用分布
-  assert_eq(optimal_count, 18)
-  assert_eq(underutilized_count, 2)
-  assert_eq(warning_count, 0)
-  assert_eq(critical_count, 0)
-  
-  // 计算CPU使用效率
-  let optimal_percentage = (optimal_count * 100) / cpu_samples.length()
-  let cpu_efficiency_score = if cpu_usage_optimal {
-    optimal_percentage
-  } else {
-    optimal_percentage / 2
-  }
-  
-  // 验证CPU效率评分
-  assert_eq(optimal_percentage, 90)
-  assert_eq(cpu_efficiency_score, 90)
-  
-  // 计算CPU稳定性指标
-  let cpu_stability = if cpu_range <= 20.0 {
-    "stable"
-  } else if cpu_range <= 30.0 {
-    "moderate"
-  } else {
-    "unstable"
-  }
-  
-  // 验证CPU稳定性
-  assert_eq(cpu_stability, "moderate")
+  // 并发效率断言：总时间应该显著少于串行执行时间
+  let serial_estimate = total_spans.to_float() * 100_000.0  // 假设串行每个Span需要100微秒
+  assert_eq(total_duration.to_float() < serial_estimate * 0.8, true)  // 并发应该至少快20%
 }
