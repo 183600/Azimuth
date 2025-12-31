@@ -58,11 +58,11 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
   "telemetry_serialization_test.mbt": {
-    0: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_0, ["telemetry_data_serialization_json"]),
-    1: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_1, ["telemetry_data_serialization_protobuf"]),
-    2: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_2, ["telemetry_data_deserialization_json"]),
-    3: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_3, ["telemetry_data_serialization_compatibility"]),
-    4: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_4, ["telemetry_serialization_performance"]),
+    0: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_0, ["telemetry_json_serialization"]),
+    1: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_1, ["telemetry_protobuf_serialization"]),
+    2: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_2, ["telemetry_avro_serialization"]),
+    3: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_3, ["telemetry_compression_serialization"]),
+    4: (__test_74656c656d657472795f73657269616c697a6174696f6e5f746573742e6d6274_4, ["telemetry_binary_serialization"]),
   },
   "telemetry_serialization_compatibility_test.mbt": {
     0: (__test_74656c656d657472795f73657269616c697a6174696f6e5f636f6d7061746962696c6974795f746573742e6d6274_0, ["telemetry_serialization_backward_compatibility"]),
