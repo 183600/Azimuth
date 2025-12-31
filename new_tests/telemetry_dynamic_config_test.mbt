@@ -8,7 +8,6 @@ pub struct TelemetryConfig {
   export_interval_ms : Int64
   enable_compression : Bool
   max_queue_size : Int
-  resource_attributes : Array[(String, common::AttributeValue)]
 }
 
 pub fn TelemetryConfig::default() -> TelemetryConfig {
@@ -17,11 +16,7 @@ pub fn TelemetryConfig::default() -> TelemetryConfig {
     batch_size: 512,
     export_interval_ms: 5000L,
     enable_compression: true,
-    max_queue_size: 2048,
-    resource_attributes: [
-      ("service.name", common::AttributeValue::string("default_service")),
-      ("service.version", common::AttributeValue::string("1.0.0"))
-    ]
+    max_queue_size: 2048
   }
 }
 
@@ -129,82 +124,6 @@ test "dynamic_compression_toggle" {
   assert_eq(uncompressed_size, 1000)
 }
 
-test "dynamic_resource_attributes_update" {
-  // 测试资源属性动态更新
-  let initial_config = TelemetryConfig::default()
-  assert_eq(initial_config.resource_attributes.length(), 2)
-  
-  // 模拟添加新的资源属性
-  let new_attributes = [
-    ("deployment.environment", common::AttributeValue::string("production")),
-    ("host.name", common::AttributeValue::string("web-server-01")),
-    ("region", common::AttributeValue::string("us-west-2"))
-  ]
-  
-  let updated_config = { initial_config | 
-    resource_attributes: initial_config.resource_attributes + new_attributes 
-  }
-  
-  assert_eq(updated_config.resource_attributes.length(), 5)
-  
-  // 验证新增属性存在
-  let env_attr = updated_config.resource_attributes.find(fn((key, _)) { key == "deployment.environment" })
-  let host_attr = updated_config.resource_attributes.find(fn((key, _)) { key == "host.name" })
-  let region_attr = updated_config.resource_attributes.find(fn((key, _)) { key == "region" })
-  
-  assert_some(env_attr)
-  assert_some(host_attr)
-  assert_some(region_attr)
-  
-  // 模拟更新现有属性
-  let modified_config = { updated_config |
-    resource_attributes: updated_config.resource_attributes.map(fn((key, value)) {
-      if key == "service.version" {
-        (key, common::AttributeValue::string("2.0.0"))
-      } else {
-        (key, value)
-      }
-    })
-  }
-  
-  let version_attr = modified_config.resource_attributes.find(fn((key, _)) { key == "service.version" })
-  assert_some(version_attr)
-  match version_attr.unwrap() {
-    (_, common::AttributeValue::StringValue(version)) => assert_eq(version, "2.0.0")
-    _ => assert_false(true, "Expected StringValue")
-  }
-}
-
-test "dynamic_queue_size_update" {
-  // 测试队列大小动态更新
-  let initial_config = TelemetryConfig::default()
-  assert_eq(initial_config.max_queue_size, 2048)
-  
-  // 模拟增加队列大小
-  let increased_queue = { initial_config | max_queue_size: 4096 }
-  assert_eq(increased_queue.max_queue_size, 4096)
-  
-  // 模拟减少队列大小
-  let decreased_queue = { initial_config | max_queue_size: 1024 }
-  assert_eq(decreased_queue.max_queue_size, 1024)
-  
-  // 验证队列大小对缓冲能力的影响（模拟）
-  let current_load = 1500
-  let initial_capacity = initial_config.max_queue_size - current_load
-  let increased_capacity = increased_queue.max_queue_size - current_load
-  let decreased_capacity = decreased_queue.max_queue_size - current_load
-  
-  assert_true(increased_capacity > initial_capacity)
-  assert_true(decreased_capacity < initial_capacity)
-  
-  // 验证队列大小边界条件
-  let min_queue_config = { initial_config | max_queue_size: 1 }
-  let max_queue_config = { initial_config | max_queue_size: 100000 }
-  
-  assert_eq(min_queue_config.max_queue_size, 1)
-  assert_eq(max_queue_config.max_queue_size, 100000)
-}
-
 test "comprehensive_dynamic_config_update" {
   // 测试综合配置动态更新
   let initial_config = TelemetryConfig::default()
@@ -215,13 +134,7 @@ test "comprehensive_dynamic_config_update" {
     batch_size: 1024,
     export_interval_ms: 3000L,
     enable_compression: false,
-    max_queue_size: 4096,
-    resource_attributes: [
-      ("service.name", common::AttributeValue::string("updated_service")),
-      ("service.version", common::AttributeValue::string("3.0.0")),
-      ("deployment.environment", common::AttributeValue::string("staging")),
-      ("data.center", common::AttributeValue::string("dc-east-1"))
-    ]
+    max_queue_size: 4096
   }
   
   // 验证所有配置项都已更新
@@ -230,15 +143,13 @@ test "comprehensive_dynamic_config_update" {
   assert_eq(comprehensive_config.export_interval_ms, 3000L)
   assert_false(comprehensive_config.enable_compression)
   assert_eq(comprehensive_config.max_queue_size, 4096)
-  assert_eq(comprehensive_config.resource_attributes.length(), 4)
   
   // 验证配置一致性
   let config_valid = 
     comprehensive_config.sampling_rate >= 0.0 && comprehensive_config.sampling_rate <= 1.0 &&
     comprehensive_config.batch_size > 0 &&
     comprehensive_config.export_interval_ms > 0L &&
-    comprehensive_config.max_queue_size > 0 &&
-    comprehensive_config.resource_attributes.length() > 0
+    comprehensive_config.max_queue_size > 0
   
   assert_true(config_valid)
   

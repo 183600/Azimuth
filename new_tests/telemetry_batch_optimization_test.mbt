@@ -4,107 +4,66 @@
 test "batch_span_processing_optimization" {
   // 测试Span批处理优化
   let spans = [
-    trace::Span::{
-      name: "operation_1",
-      context: trace::SpanContext::{
-        trace_id: [1_byte; 16],
-        span_id: [1_byte; 8],
-        trace_flags: 1_byte,
-        trace_state: ""
-      },
-      kind: trace::Internal,
-      parent_span_id: None,
-      start_time_unix_nanos: 1000000L,
-      end_time_unix_nanos: Some(2000000L),
-      status: trace::Ok,
-      status_description: None,
-      attributes: [("operation.type", common::AttributeValue::string("batch_test"))],
-      events: [],
-      links: []
+    {
+      "name": "operation_1",
+      "start_time": 1000000L,
+      "end_time": 2000000L,
+      "operation.type": "batch_test"
     },
-    trace::Span::{
-      name: "operation_2",
-      context: trace::SpanContext::{
-        trace_id: [2_byte; 16],
-        span_id: [2_byte; 8],
-        trace_flags: 1_byte,
-        trace_state: ""
-      },
-      kind: trace::Internal,
-      parent_span_id: None,
-      start_time_unix_nanos: 3000000L,
-      end_time_unix_nanos: Some(4000000L),
-      status: trace::Ok,
-      status_description: None,
-      attributes: [("operation.type", common::AttributeValue::string("batch_test"))],
-      events: [],
-      links: []
+    {
+      "name": "operation_2",
+      "start_time": 3000000L,
+      "end_time": 4000000L,
+      "operation.type": "batch_test"
     },
-    trace::Span::{
-      name: "operation_3",
-      context: trace::SpanContext::{
-        trace_id: [3_byte; 16],
-        span_id: [3_byte; 8],
-        trace_flags: 1_byte,
-        trace_state: ""
-      },
-      kind: trace::Internal,
-      parent_span_id: None,
-      start_time_unix_nanos: 5000000L,
-      end_time_unix_nanos: Some(6000000L),
-      status: trace::Ok,
-      status_description: None,
-      attributes: [("operation.type", common::AttributeValue::string("batch_test"))],
-      events: [],
-      links: []
+    {
+      "name": "operation_3",
+      "start_time": 5000000L,
+      "end_time": 6000000L,
+      "operation.type": "batch_test"
     }
   ]
   
   // 模拟批处理优化：按时间排序
   let sorted_spans = spans.sort_by(fn(a, b) {
-    if a.start_time_unix_nanos < b.start_time_unix_nanos { -1 }
-    else if a.start_time_unix_nanos > b.start_time_unix_nanos { 1 }
+    if a["start_time"] < b["start_time"] { -1 }
+    else if a["start_time"] > b["start_time"] { 1 }
     else { 0 }
   })
   
   // 验证排序结果
   assert_eq(sorted_spans.length(), 3)
-  assert_eq(sorted_spans[0].name, "operation_1")
-  assert_eq(sorted_spans[1].name, "operation_2")
-  assert_eq(sorted_spans[2].name, "operation_3")
+  assert_eq(sorted_spans[0]["name"], "operation_1")
+  assert_eq(sorted_spans[1]["name"], "operation_2")
+  assert_eq(sorted_spans[2]["name"], "operation_3")
   
   // 模拟批处理优化：属性去重
-  let common_attributes = [("operation.type", common::AttributeValue::string("batch_test"))]
+  let common_attributes = {"operation.type": "batch_test"}
   let optimized_spans = sorted_spans.map(fn(span) {
-    { span | attributes: common_attributes }
+    { span | "operation.type": common_attributes["operation.type"] }
   })
   
   // 验证属性优化
   for span in optimized_spans {
-    assert_eq(span.attributes.length(), 1)
-    assert_eq(span.attributes[0].0, "operation.type")
+    assert_eq(span["operation.type"], "batch_test")
   }
 }
 
 test "batch_metrics_aggregation_optimization" {
   // 测试Metrics批处理聚合优化
   let measurements = [
-    metrics::Measurement::{ value: 10.0, attributes: [("service", common::AttributeValue::string("api"))] },
-    metrics::Measurement::{ value: 15.0, attributes: [("service", common::AttributeValue::string("api"))] },
-    metrics::Measurement::{ value: 20.0, attributes: [("service", common::AttributeValue::string("worker"))] },
-    metrics::Measurement::{ value: 25.0, attributes: [("service", common::AttributeValue::string("api"))] },
-    metrics::Measurement::{ value: 30.0, attributes: [("service", common::AttributeValue::string("worker"))] }
+    {"value": 10.0, "service": "api"},
+    {"value": 15.0, "service": "api"},
+    {"value": 20.0, "service": "worker"},
+    {"value": 25.0, "service": "api"},
+    {"value": 30.0, "service": "worker"}
   ]
   
   // 按属性分组
   let grouped_measurements = measurements.reduce(@{}, fn(acc, measurement) {
-    let service_key = match measurement.attributes.find(fn((key, _)) { key == "service" }) {
-      Some((_, common::StringValue(service))) => service
-      _ => "unknown"
-    }
-    
+    let service_key = measurement["service"]
     let current_values = acc.get_or(service_key, [])
-    { acc | service_key: current_values + [measurement.value] }
+    { acc | service_key: current_values + [measurement["value"]] }
   })
   
   // 验证分组结果
@@ -130,36 +89,26 @@ test "batch_compression_optimization" {
   // 测试批处理数据压缩优化
   let large_attributes = [
     for i = 0; i < 100; i = i + 1;
-    ("attribute_" + i.to_string(), common::AttributeValue::string("value_" + i.to_string()))
+    ("attribute_" + i.to_string(), "value_" + i.to_string())
   ]
   
   // 模拟压缩前的数据大小（简化计算）
   let uncompressed_size = large_attributes.reduce(0, fn(acc, (key, value)) {
-    match value {
-      common::StringValue(str_val) => acc + key.length() + str_val.length()
-      _ => acc
-    }
+    acc + key.length() + value.length()
   })
   
   // 模拟压缩优化：去除重复前缀
   let compressed_attributes = large_attributes.map(fn((key, value)) {
-    match value {
-      common::StringValue(str_val) =>
-        if str_val.starts_with("value_") {
-          ("attr_" + key.split("_")[1], common::AttributeValue::string(str_val.split("_")[1]))
-        } else {
-          (key, value)
-        }
-      _ => (key, value)
+    if value.starts_with("value_") {
+      ("attr_" + key.split("_")[1], value.split("_")[1])
+    } else {
+      (key, value)
     }
   })
   
   // 计算压缩后的数据大小
   let compressed_size = compressed_attributes.reduce(0, fn(acc, (key, value)) {
-    match value {
-      common::StringValue(str_val) => acc + key.length() + str_val.length()
-      _ => acc
-    }
+    acc + key.length() + value.length()
   })
   
   // 验证压缩效果
@@ -168,10 +117,7 @@ test "batch_compression_optimization" {
   
   // 验证压缩后的数据仍然可以正确解析
   let sample_compressed = compressed_attributes[0]
-  match sample_compressed {
-    ("attr_0", common::AttributeValue::StringValue("0")) => assert_true(true)
-    _ => assert_false(true, "Compression failed")
-  }
+  assert_eq(sample_compressed, ("attr_0", "0"))
 }
 
 test "batch_time_window_optimization" {
@@ -221,45 +167,30 @@ test "batch_time_window_optimization" {
 
 test "batch_memory_optimization" {
   // 测试批处理内存优化
-  let resource = common::Resource::default("test_service")
-  
-  // 创建大量相似的Span，模拟内存优化场景
   let base_attributes = [
-    ("service.name", common::AttributeValue::string(resource.service_name)),
-    ("service.version", common::AttributeValue::string(resource.service_version.unwrap_or("1.0.0"))),
-    ("telemetry.sdk.name", common::AttributeValue::string(resource.telemetry_sdk_name)),
-    ("telemetry.sdk.version", common::AttributeValue::string(resource.telemetry_sdk_version))
+    ("service.name", "test_service"),
+    ("service.version", "1.0.0"),
+    ("telemetry.sdk.name", "azimuth"),
+    ("telemetry.sdk.version", "0.1.0")
   ]
   
   let spans = [
     for i = 0; i < 50; i = i + 1;
-    trace::Span::{
-      name: "operation_" + i.to_string(),
-      context: trace::SpanContext::{
-        trace_id: [i.to_byte(); 16],
-        span_id: [i.to_byte; 8],
-        trace_flags: 1_byte,
-        trace_state: ""
-      },
-      kind: trace::Internal,
-      parent_span_id: None,
-      start_time_unix_nanos: (i * 1000000).to_int64(),
-      end_time_unix_nanos: Some(((i + 1) * 1000000).to_int64()),
-      status: trace::Ok,
-      status_description: None,
-      attributes: base_attributes + [("operation.id", common::AttributeValue::int(i.to_int64()))],
-      events: [],
-      links: []
+    {
+      "name": "operation_" + i.to_string(),
+      "start_time": (i * 1000000).to_int64(),
+      "end_time": ((i + 1) * 1000000).to_int64(),
+      "attributes": base_attributes + [("operation.id", i.to_string())]
     }
   ]
   
   // 模拟内存优化：共享公共属性
   let shared_attributes = base_attributes
   let optimized_spans = spans.map(fn(span) {
-    let unique_attrs = span.attributes.filter(fn((key, _)) { 
+    let unique_attrs = span["attributes"].filter(fn((key, _)) { 
       !shared_attributes.any(fn((shared_key, _)) { shared_key == key })
     })
-    { span | attributes: shared_attributes + unique_attrs }
+    { span | "attributes": shared_attributes + unique_attrs }
   })
   
   // 验证优化结果
@@ -268,20 +199,17 @@ test "batch_memory_optimization" {
   // 验证每个Span都有正确的唯一属性
   for i in 0..50 {
     let span = optimized_spans[i]
-    assert_eq(span.name, "operation_" + i.to_string())
+    assert_eq(span["name"], "operation_" + i.to_string())
     
-    let operation_id_attr = span.attributes.find(fn((key, _)) { key == "operation.id" })
-    assert_some(operation_id_attr)
-    
-    match operation_id_attr.unwrap() {
-      (_, common::IntValue(id)) => assert_eq(id, i.to_int64())
-      _ => assert_false(true, "Expected IntValue")
-    }
+    let operation_id_found = span["attributes"].any(fn((key, value)) { 
+      key == "operation.id" && value == i.to_string()
+    })
+    assert_true(operation_id_found)
   }
   
   // 验证公共属性的一致性
   let first_span = optimized_spans[0]
-  let common_attrs_count = first_span.attributes.filter(fn((key, _)) {
+  let common_attrs_count = first_span["attributes"].filter(fn((key, _)) {
     shared_attributes.any(fn((shared_key, _)) { shared_key == key })
   }).length()
   

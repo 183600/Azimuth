@@ -5,5 +5,12 @@
   "license": "MIT",
   "authors": [
     "Azimuth Team"
+  ],
+  "deps": [
+    "azimuth/telemetry/api/common",
+    "azimuth/telemetry/api/trace",
+    "azimuth/telemetry/api/metrics",
+    "azimuth/telemetry/api/context",
+    "azimuth/telemetry/api/propagation"
   ]
 }
