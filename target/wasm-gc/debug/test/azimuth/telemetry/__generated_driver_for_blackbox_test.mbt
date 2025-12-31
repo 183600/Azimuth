@@ -1707,6 +1707,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     6: (__test_706572666f726d616e63655f62656e63686d61726b5f696e746567726174696f6e5f746573742e6d6274_6, ["performance_large_payload_benchmark"]),
     7: (__test_706572666f726d616e63655f62656e63686d61726b5f696e746567726174696f6e5f746573742e6d6274_7, ["performance_resource_cleanup_benchmark"]),
   },
+  "performance_benchmark_enhanced_test.mbt": {
+    0: (__test_706572666f726d616e63655f62656e63686d61726b5f656e68616e6365645f746573742e6d6274_0, ["performance_metrics_collection_benchmark"]),
+    1: (__test_706572666f726d616e63655f62656e63686d61726b5f656e68616e6365645f746573742e6d6274_1, ["performance_trace_creation_benchmark"]),
+    2: (__test_706572666f726d616e63655f62656e63686d61726b5f656e68616e6365645f746573742e6d6274_2, ["performance_log_processing_benchmark"]),
+    3: (__test_706572666f726d616e63655f62656e63686d61726b5f656e68616e6365645f746573742e6d6274_3, ["performance_data_serialization_benchmark"]),
+    4: (__test_706572666f726d616e63655f62656e63686d61726b5f656e68616e6365645f746573742e6d6274_4, ["performance_memory_allocation_benchmark"]),
+    5: (__test_706572666f726d616e63655f62656e63686d61726b5f656e68616e6365645f746573742e6d6274_5, ["performance_concurrent_operations_benchmark"]),
+    6: (__test_706572666f726d616e63655f62656e63686d61726b5f656e68616e6365645f746573742e6d6274_6, ["performance_aggregation_operations_benchmark"]),
+  },
   "performance_benchmark_comprehensive_test.mbt": {
     0: (__test_706572666f726d616e63655f62656e63686d61726b5f636f6d70726568656e736976655f746573742e6d6274_0, ["performance_trace_api_benchmark"]),
     1: (__test_706572666f726d616e63655f62656e63686d61726b5f636f6d70726568656e736976655f746573742e6d6274_1, ["performance_metrics_api_benchmark"]),
