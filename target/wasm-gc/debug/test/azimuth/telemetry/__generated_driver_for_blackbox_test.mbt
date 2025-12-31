@@ -141,6 +141,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_74696d657374616d705f636f6e73697374656e63795f746573742e6d6274_4, ["timestamp synchronization test"]),
     5: (__test_74696d657374616d705f636f6e73697374656e63795f746573742e6d6274_5, ["timestamp range validation"]),
   },
+  "time_synchronization_timezone_test.mbt": {
+    0: (__test_74696d655f73796e6368726f6e697a6174696f6e5f74696d657a6f6e655f746573742e6d6274_0, ["nanosecond_precision_timestamps"]),
+    1: (__test_74696d655f73796e6368726f6e697a6174696f6e5f74696d657a6f6e655f746573742e6d6274_1, ["timezone_aware_logging"]),
+    2: (__test_74696d655f73796e6368726f6e697a6174696f6e5f74696d657a6f6e655f746573742e6d6274_2, ["leap_second_handling"]),
+    3: (__test_74696d655f73796e6368726f6e697a6174696f6e5f74696d657a6f6e655f746573742e6d6274_3, ["daylight_saving_time_transitions"]),
+    4: (__test_74696d655f73796e6368726f6e697a6174696f6e5f74696d657a6f6e655f746573742e6d6274_4, ["time_drift_detection"]),
+    5: (__test_74696d655f73796e6368726f6e697a6174696f6e5f74696d657a6f6e655f746573742e6d6274_5, ["timestamp_boundary_conditions"]),
+    6: (__test_74696d655f73796e6368726f6e697a6174696f6e5f74696d657a6f6e655f746573742e6d6274_6, ["high_frequency_timestamps"]),
+  },
   "time_synchronization_test.mbt": {
     0: (__test_74696d655f73796e6368726f6e697a6174696f6e5f746573742e6d6274_0, ["timestamp_precision_and_format"]),
     1: (__test_74696d655f73796e6368726f6e697a6174696f6e5f746573742e6d6274_1, ["span_timestamp_synchronization"]),
