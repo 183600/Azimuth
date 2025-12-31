@@ -416,6 +416,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_74656c656d657472795f706572666f726d616e63655f6e65775f746573742e6d6274_4, ["attribute_operations_performance_benchmark"]),
     5: (__test_74656c656d657472795f706572666f726d616e63655f6e65775f746573742e6d6274_5, ["memory_usage_performance_benchmark"]),
   },
+  "telemetry_performance_benchmark_test.mbt": {
+    0: (__test_74656c656d657472795f706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_0, ["telemetry_performance_benchmark_trace_creation"]),
+    1: (__test_74656c656d657472795f706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_1, ["telemetry_performance_benchmark_metric_collection"]),
+    2: (__test_74656c656d657472795f706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_2, ["telemetry_performance_benchmark_log_processing"]),
+    3: (__test_74656c656d657472795f706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_3, ["telemetry_performance_benchmark_attribute_processing"]),
+    4: (__test_74656c656d657472795f706572666f726d616e63655f62656e63686d61726b5f746573742e6d6274_4, ["telemetry_performance_benchmark_memory_allocation"]),
+  },
   "telemetry_network_partition_tolerance_test.mbt": {
     0: (__test_74656c656d657472795f6e6574776f726b5f706172746974696f6e5f746f6c6572616e63655f746573742e6d6274_0, ["network_partition_detection"]),
     1: (__test_74656c656d657472795f6e6574776f726b5f706172746974696f6e5f746f6c6572616e63655f746573742e6d6274_1, ["partition_tolerant_data_collection"]),
