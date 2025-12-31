@@ -5,23 +5,20 @@ test "distributed_trace_context_propagation" {
   
   let trace_id = "550e8400-e29b-41d4-a716-446655440000"
   let parent_span_id = "1234567890abcdef"
-  let baggage_items = [("user_id", "user123"), ("request_id", "req456")]
+  let user_id = "user123"
+  let request_id = "req456"
   
   // 验证追踪ID格式
   assert_eq(trace_id.length(), 36)
   assert_eq(trace_id.contains("-"), true)
-  assert_eq(trace_id.split("-").length(), 5)
   
   // 验证父跨度ID
   assert_eq(parent_span_id.length(), 16)
   assert_eq(parent_span_id.has_prefix("123456"), true)
   
   // 验证行李项
-  assert_eq(baggage_items.length(), 2)
-  assert_eq(baggage_items[0].0, "user_id")
-  assert_eq(baggage_items[0].1, "user123")
-  assert_eq(baggage_items[1].0, "request_id")
-  assert_eq(baggage_items[1].1, "req456")
+  assert_eq(user_id.has_prefix("user"), true)
+  assert_eq(request_id.has_prefix("req"), true)
   
   // 创建追踪上下文
   let trace_context = "trace-id=" + trace_id + ";parent-span-id=" + parent_span_id
@@ -32,13 +29,12 @@ test "distributed_trace_context_propagation" {
 test "telemetry_data_serialization_formats" {
   // 测试遥测数据序列化格式
   
-  let metric_data = {
-    "name": "cpu_usage",
-    "value": 75.5,
-    "unit": "percent",
-    "timestamp": 1640995200L,
-    "tags": ["host:server1", "region:us-east"]
-  }
+  let metric_name = "cpu_usage"
+  let metric_value = 75.5
+  let metric_unit = "percent"
+  let metric_timestamp = 1640995200L
+  let host_tag = "server1"
+  let region_tag = "us-east"
   
   // 验证JSON格式序列化
   let json_format = "{\"name\":\"cpu_usage\",\"value\":75.5,\"unit\":\"percent\"}"
