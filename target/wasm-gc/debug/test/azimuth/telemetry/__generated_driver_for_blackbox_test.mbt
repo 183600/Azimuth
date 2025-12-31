@@ -932,6 +932,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_74656c656d657472795f636f6e6669675f746573742e6d6274_3, ["configuration_validation_and_constraints"]),
     4: (__test_74656c656d657472795f636f6e6669675f746573742e6d6274_4, ["configuration_export_and_import"]),
   },
+  "telemetry_config_management_enhanced_test.mbt": {
+    0: (__test_74656c656d657472795f636f6e6669675f6d616e6167656d656e745f656e68616e6365645f746573742e6d6274_0, ["telemetry_config_validation"]),
+    1: (__test_74656c656d657472795f636f6e6669675f6d616e6167656d656e745f656e68616e6365645f746573742e6d6274_1, ["telemetry_config_hierarchy"]),
+    2: (__test_74656c656d657472795f636f6e6669675f6d616e6167656d656e745f656e68616e6365645f746573742e6d6274_2, ["telemetry_config_dynamic_update"]),
+    3: (__test_74656c656d657472795f636f6e6669675f6d616e6167656d656e745f656e68616e6365645f746573742e6d6274_3, ["telemetry_config_environment_specific"]),
+    4: (__test_74656c656d657472795f636f6e6669675f6d616e6167656d656e745f656e68616e6365645f746573742e6d6274_4, ["telemetry_config_feature_flags"]),
+  },
   "telemetry_config_hot_reload_test.mbt": {
     0: (__test_74656c656d657472795f636f6e6669675f686f745f72656c6f61645f746573742e6d6274_0, ["config_hot_reload_basic_functionality"]),
     1: (__test_74656c656d657472795f636f6e6669675f686f745f72656c6f61645f746573742e6d6274_1, ["config_validation_on_reload"]),
