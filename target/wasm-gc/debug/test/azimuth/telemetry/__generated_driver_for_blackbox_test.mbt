@@ -1463,6 +1463,13 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_6d756c74695f74656e616e745f69736f6c6174696f6e5f73656375726974795f746573742e6d6274_3, ["tenant_data_encryption_isolation"]),
     4: (__test_6d756c74695f74656e616e745f69736f6c6174696f6e5f73656375726974795f746573742e6d6274_4, ["tenant_audit_logging"]),
   },
+  "monitoring_health_check_test.mbt": {
+    0: (__test_6d6f6e69746f72696e675f6865616c74685f636865636b5f746573742e6d6274_0, ["system_health_indicators"]),
+    1: (__test_6d6f6e69746f72696e675f6865616c74685f636865636b5f746573742e6d6274_1, ["service_availability_check"]),
+    2: (__test_6d6f6e69746f72696e675f6865616c74685f636865636b5f746573742e6d6274_2, ["alert_threshold_configuration"]),
+    3: (__test_6d6f6e69746f72696e675f6865616c74685f636865636b5f746573742e6d6274_3, ["metric_collection_intervals"]),
+    4: (__test_6d6f6e69746f72696e675f6865616c74685f636865636b5f746573742e6d6274_4, ["dashboard_widget_configuration"]),
+  },
   "mixed_signals_correlation_test.mbt": {
     0: (__test_6d697865645f7369676e616c735f636f7272656c6174696f6e5f746573742e6d6274_0, ["mixed signals correlation test"]),
     1: (__test_6d697865645f7369676e616c735f636f7272656c6174696f6e5f746573742e6d6274_1, ["cross-signal attribute consistency test"]),
