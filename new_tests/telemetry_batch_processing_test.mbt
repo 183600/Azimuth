@@ -1,448 +1,372 @@
 // 遥测数据批处理测试用例
 
-test "telemetry_batch_buffer_management" {
-  // 测试遥测数据批处理缓冲区管理
+test "telemetry_batch_accumulation" {
+  // 测试遥测数据批次累积功能
   
-  let buffer_capacity = 1000  // 缓冲区容量
-  let flush_threshold = 800   // 刷新阈值
-  let flush_interval_ms = 5000  // 刷新间隔
-  let incoming_data_rate = 50  // 每秒50个数据点
-  
-  // 验证缓冲区配置
-  assert_eq(buffer_capacity, 1000)
-  assert_eq(flush_threshold, 800)
-  assert_eq(flush_interval_ms, 5000)
-  assert_eq(incoming_data_rate, 50)
-  
-  // 模拟数据流入
-  let mut buffer_size = 0
-  let mut total_flushed = 0
-  let mut flush_count = 0
-  let mut time_elapsed = 0
-  
-  let simulation_duration_seconds = 30
-  let mut i = 0
-  
-  while i < simulation_duration_seconds {
-    // 数据流入
-    let incoming_count = incoming_data_rate
-    buffer_size = buffer_size + incoming_count
-    
-    // 检查是否需要刷新
-    let should_flush_by_size = buffer_size >= flush_threshold
-    let should_flush_by_time = (time_elapsed % flush_interval_ms) == 0 and time_elapsed > 0
-    
-    if should_flush_by_size or should_flush_by_time {
-      total_flushed = total_flushed + buffer_size
-      buffer_size = 0
-      flush_count = flush_count + 1
-    }
-    
-    // 确保缓冲区不溢出
-    if buffer_size > buffer_capacity {
-      // 强制刷新防止溢出
-      total_flushed = total_flushed + buffer_size
-      buffer_size = 0
-      flush_count = flush_count + 1
-    }
-    
-    time_elapsed = time_elapsed + 1000  // 每秒推进
-    i = i + 1
+  let batch_config = {
+    "max_batch_size": 1000,
+    "max_wait_time_ms": 5000,
+    "max_batch_memory_mb": 50,
+    "flush_trigger_conditions": ["size", "time", "memory"]
   }
   
-  // 验证缓冲区管理结果
-  assert_eq(buffer_size <= buffer_capacity, true)
-  assert_eq(flush_count > 0, true)
-  assert_eq(total_flushed > 0, true)
+  // 验证批次配置
+  assert_eq(batch_config["max_batch_size"], 1000)
+  assert_eq(batch_config["max_wait_time_ms"], 5000)
+  assert_eq(batch_config["max_batch_memory_mb"], 50)
+  assert_eq(batch_config["flush_trigger_conditions"].length(), 3)
   
-  // 计算总数据处理量
-  let total_data_processed = total_flushed + buffer_size
-  let expected_total_data = simulation_duration_seconds * incoming_data_rate
-  assert_eq(total_data_processed, expected_total_data)
+  // 模拟数据累积过程
+  let mut current_batch = []
+  let mut batch_start_time = 1640995200000
+  let mut accumulated_count = 0
+  let mut accumulated_memory_kb = 0
   
-  // 验证刷新效率
-  let avg_flush_size = total_flushed / flush_count
-  assert_eq(avg_flush_size >= flush_threshold, true)
-  
-  // 验证缓冲区利用率
-  let max_utilization = flush_threshold.to_float() / buffer_capacity.to_float()
-  assert_eq(max_utilization, 0.8)  // 80%利用率
-}
-
-test "telemetry_batch_size_optimization" {
-  // 测试遥测数据批处理大小优化
-  
-  let min_batch_size = 10
-  let max_batch_size = 1000
-  let target_processing_time_ms = 100
-  let processing_overhead_per_batch = 5  // 每批处理开销
-  
-  // 测试不同批处理大小的性能
-  let batch_sizes = [10, 50, 100, 200, 500, 1000]
-  let processing_time_per_item = 1  // 每项处理时间（毫秒）
-  
-  // 验证批处理大小配置
-  assert_eq(min_batch_size, 10)
-  assert_eq(max_batch_size, 1000)
-  assert_eq(target_processing_time_ms, 100)
-  assert_eq(batch_sizes.length(), 6)
-  
-  // 计算各批处理大小的性能
-  let mut performance_results = []
-  let mut i = 0
-  
-  while i < batch_sizes.length() {
-    let batch_size = batch_sizes[i]
-    let total_processing_time = processing_overhead_per_batch + (batch_size * processing_time_per_item)
-    let throughput = batch_size.to_float() / total_processing_time.to_float()
-    let efficiency = batch_size.to_float() / total_processing_time.to_float()
-    
-    performance_results.push({
-      "batch_size": batch_size,
-      "total_time": total_processing_time,
-      "throughput": throughput,
-      "efficiency": efficiency
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证性能计算结果
-  assert_eq(performance_results.length(), 6)
-  
-  // 找到最优批处理大小
-  let mut optimal_batch_size = min_batch_size
-  let mut max_throughput = 0.0
-  let mut j = 0
-  
-  while j < performance_results.length() {
-    let result = performance_results[j]
-    let throughput = result["throughput"].to_float()
-    
-    if throughput > max_throughput {
-      max_throughput = throughput
-      optimal_batch_size = result["batch_size"]
-    }
-    
-    j = j + 1
-  }
-  
-  // 验证最优批处理大小
-  assert_eq(optimal_batch_size > min_batch_size, true)
-  assert_eq(optimal_batch_size <= max_batch_size, true)
-  
-  // 验证处理时间约束
-  let optimal_result = performance_results[0]  // 简化：假设第一个是最优的
-  assert_eq(optimal_result["total_time"] <= target_processing_time_ms, true)
-  
-  // 测试动态批处理大小调整
-  let system_load_factors = [0.5, 0.7, 0.9, 1.1, 1.3]  // 系统负载因子
-  let mut adaptive_batch_sizes = []
-  
-  i = 0
-  while i < system_load_factors.length() {
-    let load_factor = system_load_factors[i]
-    let adaptive_size = 
-      if load_factor < 0.8 { max_batch_size }
-      else if load_factor < 1.0 { 500 }
-      else if load_factor < 1.2 { 200 }
-      else { min_batch_size }
-    
-    adaptive_batch_sizes.push(adaptive_size)
-    i = i + 1
-  }
-  
-  // 验证自适应调整
-  assert_eq(adaptive_batch_sizes.length(), 5)
-  assert_eq(adaptive_batch_sizes[0], max_batch_size)  // 低负载时大批处理
-  assert_eq(adaptive_batch_sizes[4], min_batch_size)  // 高负载时小批处理
-}
-
-test "telemetry_batch_priority_queue" {
-  // 测试遥测数据批处理优先级队列
-  
-  let priority_levels = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
-  let priority_weights = [4, 3, 2, 1]  // 优先级权重
-  let batch_capacity = 50
-  
-  // 验证优先级配置
-  assert_eq(priority_levels.length(), 4)
-  assert_eq(priority_weights.length(), 4)
-  assert_eq(batch_capacity, 50)
-  
-  // 模拟不同优先级的数据流入
-  let incoming_data = [
-    ("metric_1", "CRITICAL", 1703123450),
-    ("metric_2", "MEDIUM", 1703123451),
-    ("metric_3", "HIGH", 1703123452),
-    ("metric_4", "LOW", 1703123453),
-    ("metric_5", "CRITICAL", 1703123454),
-    ("metric_6", "HIGH", 1703123455),
-    ("metric_7", "MEDIUM", 1703123456),
-    ("metric_8", "CRITICAL", 1703123457)
+  // 添加数据项到批次
+  let data_items = [
+    {"metric": "cpu_usage", "value": 75.5, "timestamp": 1640995201000, "size_kb": 2},
+    {"metric": "memory_usage", "value": 68.2, "timestamp": 1640995202000, "size_kb": 2},
+    {"metric": "disk_io", "value": 1250, "timestamp": 1640995203000, "size_kb": 3}
   ]
   
-  // 验证输入数据
-  assert_eq(incoming_data.length(), 8)
-  
-  // 按优先级分组数据
-  let mut priority_queues = {}
   let mut i = 0
-  
-  while i < priority_levels.length() {
-    let priority = priority_levels[i]
-    priority_queues[priority] = []
+  while i < data_items.length() {
+    current_batch.push(data_items[i])
+    accumulated_count = accumulated_count + 1
+    accumulated_memory_kb = accumulated_memory_kb + data_items[i]["size_kb"]
     i = i + 1
   }
   
-  // 将数据分配到对应优先级队列
-  i = 0
-  while i < incoming_data.length() {
-    let data = incoming_data[i]
-    let priority = data.1
-    let queue = priority_queues[priority]
-    queue.push(data)
-    i = i + 1
-  }
+  // 验证累积结果
+  assert_eq(current_batch.length(), 3)
+  assert_eq(accumulated_count, 3)
+  assert_eq(accumulated_memory_kb, 7)
   
-  // 验证优先级队列分配
-  assert_eq(priority_queues["CRITICAL"].length(), 3)
-  assert_eq(priority_queues["HIGH"].length(), 2)
-  assert_eq(priority_queues["MEDIUM"].length(), 2)
-  assert_eq(priority_queues["LOW"].length(), 1)
+  // 检查触发条件
+  let size_trigger_reached = accumulated_count >= batch_config["max_batch_size"]
+  let time_trigger_reached = false  // 简化处理，假设时间未到
+  let memory_trigger_reached = (accumulated_memory_kb / 1024) >= batch_config["max_batch_memory_mb"]
+  let should_flush = size_trigger_reached or time_trigger_reached or memory_trigger_reached
   
-  // 基于优先级权重构建批处理
-  let mut batch_allocation = {}
-  let mut remaining_capacity = batch_capacity
+  assert_eq(size_trigger_reached, false)
+  assert_eq(time_trigger_reached, false)
+  assert_eq(memory_trigger_reached, false)
+  assert_eq(should_flush, false)
   
-  i = 0
-  while i < priority_levels.length() and remaining_capacity > 0 {
-    let priority = priority_levels[i]
-    let weight = priority_weights[i]
-    let queue = priority_queues[priority]
-    
-    let allocated_capacity = (remaining_capacity * weight) / 10  // 权重分配
-    let actual_allocation = 
-      if allocated_capacity < queue.length() { allocated_capacity }
-      else { queue.length() }
-    
-    batch_allocation[priority] = actual_allocation
-    remaining_capacity = remaining_capacity - actual_allocation
-    
-    i = i + 1
-  }
+  // 验证批次状态
+  let batch_active = true
+  let batch_healthy = accumulated_memory_kb < (batch_config["max_batch_memory_mb"] * 1024)
   
-  // 验证批处理分配
-  assert_eq(batch_allocation["CRITICAL"], 20)  // 最高优先级获得最多空间
-  assert_eq(batch_allocation["HIGH"], 15)
-  assert_eq(batch_allocation["MEDIUM"], 10)
-  assert_eq(batch_allocation["LOW"], 5)
-  
-  // 验证总分配不超过容量
-  let mut total_allocated = 0
-  i = 0
-  while i < priority_levels.length() {
-    total_allocated = total_allocated + batch_allocation[priority_levels[i]]
-    i = i + 1
-  }
-  assert_eq(total_allocated <= batch_capacity, true)
-  
-  // 模拟批处理执行顺序
-  let mut execution_order = []
-  i = 0
-  while i < priority_levels.length() {
-    let priority = priority_levels[i]
-    let allocation = batch_allocation[priority]
-    
-    let mut j = 0
-    while j < allocation {
-      execution_order.push(priority)
-      j = j + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证执行顺序（高优先级先执行）
-  assert_eq(execution_order[0], "CRITICAL")
-  assert_eq(execution_order[execution_order.length() - 1], "LOW")
-  
-  // 验证优先级保证
-  let critical_count = 0
-  let high_count = 0
-  let medium_count = 0
-  let low_count = 0
-  
-  i = 0
-  while i < execution_order.length() {
-    let priority = execution_order[i]
-    if priority == "CRITICAL" { critical_count = critical_count + 1 }
-    else if priority == "HIGH" { high_count = high_count + 1 }
-    else if priority == "MEDIUM" { medium_count = medium_count + 1 }
-    else if priority == "LOW" { low_count = low_count + 1 }
-    i = i + 1
-  }
-  
-  assert_eq(critical_count, 20)
-  assert_eq(high_count, 15)
-  assert_eq(medium_count, 10)
-  assert_eq(low_count, 5)
+  assert_eq(batch_active, true)
+  assert_eq(batch_healthy, true)
 }
 
-test "telemetry_batch_error_handling" {
-  // 测试遥测数据批处理错误处理
+test "telemetry_batch_flush_strategies" {
+  // 测试遥测数据批次刷新策略
   
-  let batch_size = 100
-  let max_retry_attempts = 3
-  let error_rate = 0.1  // 10%错误率
-  let dead_letter_queue_enabled = true
-  
-  // 验证错误处理配置
-  assert_eq(batch_size, 100)
-  assert_eq(max_retry_attempts, 3)
-  assert_eq(error_rate, 0.1)
-  assert_eq(dead_letter_queue_enabled, true)
-  
-  // 模拟批处理操作和错误
-  let batch_operations = [
-    ("batch_1", "success"),
-    ("batch_2", "network_error"),
-    ("batch_3", "success"),
-    ("batch_4", "validation_error"),
-    ("batch_5", "timeout_error"),
-    ("batch_6", "success")
+  let flush_strategies = [
+    {
+      "name": "time_based",
+      "config": {"interval_ms": 5000},
+      "description": "基于时间间隔的刷新"
+    },
+    {
+      "name": "size_based", 
+      "config": {"max_records": 1000},
+      "description": "基于记录数量的刷新"
+    },
+    {
+      "name": "memory_based",
+      "config": {"max_memory_mb": 50},
+      "description": "基于内存使用的刷新"
+    },
+    {
+      "name": "hybrid",
+      "config": {
+        "interval_ms": 5000,
+        "max_records": 1000,
+        "max_memory_mb": 50
+      },
+      "description": "混合策略刷新"
+    }
   ]
   
-  // 验证批处理操作
-  assert_eq(batch_operations.length(), 6)
+  // 验证刷新策略配置
+  assert_eq(flush_strategies.length(), 4)
+  assert_eq(flush_strategies[0]["name"], "time_based")
+  assert_eq(flush_strategies[3]["name"], "hybrid")
   
-  // 模拟错误处理流程
-  let mut successful_batches = []
-  let mut failed_batches = []
-  let mut retry_batches = []
-  let mut dead_letter_batches = []
+  // 模拟不同策略的触发条件
+  let current_batch_state = {
+    "record_count": 750,
+    "memory_usage_mb": 35,
+    "time_since_last_flush_ms": 3000,
+    "batch_start_time": 1640995200000
+  }
   
+  // 检查各策略是否触发
+  let time_based_triggered = current_batch_state["time_since_last_flush_ms"] >= flush_strategies[0]["config"]["interval_ms"]
+  let size_based_triggered = current_batch_state["record_count"] >= flush_strategies[1]["config"]["max_records"]
+  let memory_based_triggered = current_batch_state["memory_usage_mb"] >= flush_strategies[2]["config"]["max_memory_mb"]
+  
+  // 混合策略检查
+  let hybrid_config = flush_strategies[3]["config"]
+  let hybrid_time_triggered = current_batch_state["time_since_last_flush_ms"] >= hybrid_config["interval_ms"]
+  let hybrid_size_triggered = current_batch_state["record_count"] >= hybrid_config["max_records"]
+  let hybrid_memory_triggered = current_batch_state["memory_usage_mb"] >= hybrid_config["max_memory_mb"]
+  let hybrid_triggered = hybrid_time_triggered or hybrid_size_triggered or hybrid_memory_triggered
+  
+  // 验证触发状态
+  assert_eq(time_based_triggered, false)
+  assert_eq(size_based_triggered, false)
+  assert_eq(memory_based_triggered, false)
+  assert_eq(hybrid_triggered, false)
+  
+  // 模拟达到触发条件的情况
+  let triggered_batch_state = {
+    "record_count": 1200,  // 超过大小限制
+    "memory_usage_mb": 55, // 超过内存限制
+    "time_since_last_flush_ms": 6000 // 超过时间限制
+  }
+  
+  let size_based_triggered_now = triggered_batch_state["record_count"] >= flush_strategies[1]["config"]["max_records"]
+  let memory_based_triggered_now = triggered_batch_state["memory_usage_mb"] >= flush_strategies[2]["config"]["max_memory_mb"]
+  let time_based_triggered_now = triggered_batch_state["time_since_last_flush_ms"] >= flush_strategies[0]["config"]["interval_ms"]
+  
+  assert_eq(size_based_triggered_now, true)
+  assert_eq(memory_based_triggered_now, true)
+  assert_eq(time_based_triggered_now, true)
+  
+  // 验证策略优先级
+  let strategy_priority = ["memory_based", "size_based", "time_based"]
+  assert_eq(strategy_priority[0], "memory_based")
+  assert_eq(strategy_priority.length(), 3)
+}
+
+test "telemetry_batch_compression" {
+  // 测试遥测数据批次压缩功能
+  
+  let batch_data = [
+    {"metric": "cpu_usage", "value": 75.5, "host": "server-01", "timestamp": 1640995201000},
+    {"metric": "memory_usage", "value": 68.2, "host": "server-01", "timestamp": 1640995202000},
+    {"metric": "disk_io", "value": 1250, "host": "server-01", "timestamp": 1640995203000},
+    {"metric": "network_io", "value": 850, "host": "server-01", "timestamp": 1640995204000},
+    {"metric": "response_time", "value": 120, "host": "server-01", "timestamp": 1640995205000}
+  ]
+  
+  // 验证批次数据
+  assert_eq(batch_data.length(), 5)
+  assert_eq(batch_data[0]["metric"], "cpu_usage")
+  assert_eq(batch_data[4]["value"], 120)
+  
+  // 计算原始批次大小
+  let mut raw_batch_size = 0
   let mut i = 0
-  while i < batch_operations.length() {
-    let batch_id = batch_operations[i].0
-    let result = batch_operations[i].1
-    let mut retry_count = 0
-    let mut final_result = result
+  while i < batch_data.length() {
+    raw_batch_size = raw_batch_size + 80  // 假设每条记录80字节
+    i = i + 1
+  }
+  
+  // 模拟批次压缩
+  let compression_config = {
+    "algorithm": "gzip",
+    "compression_level": 6,
+    "min_batch_size_for_compression": 1000  // 最小1KB才压缩
+  }
+  
+  // 验证压缩配置
+  assert_eq(compression_config["algorithm"], "gzip")
+  assert_eq(compression_config["compression_level"], 6)
+  assert_eq(compression_config["min_batch_size_for_compression"], 1000)
+  
+  // 检查是否应该压缩
+  let should_compress = raw_batch_size >= compression_config["min_batch_size_for_compression"]
+  assert_eq(should_compress, false)  // 当前批次太小，不压缩
+  
+  // 模拟大批次压缩
+  let large_batch_size = 10000  // 10KB批次
+  let large_batch_should_compress = large_batch_size >= compression_config["min_batch_size_for_compression"]
+  assert_eq(large_batch_should_compress, true)
+  
+  // 模拟压缩效果
+  let compression_ratio = 0.65
+  let compressed_size = (large_batch_size.to_float() * compression_ratio).to_int()
+  let compression_time_ms = 15
+  let space_saved = large_batch_size - compressed_size
+  
+  assert_eq(compression_ratio, 0.65)
+  assert_eq(compressed_size < large_batch_size, true)
+  assert_eq(compression_time_ms, 15)
+  assert_eq(space_saved, 3500)
+  
+  // 验证压缩性能
+  let compression_throughput_mb_per_sec = (large_batch_size / 1024) / (compression_time_ms / 1000)
+  assert_eq(compression_throughput_mb_per_sec > 0, true)
+}
+
+test "telemetry_batch_retry_mechanism" {
+  // 测试遥测数据批次重试机制
+  
+  let batch_retry_config = {
+    "max_retry_attempts": 3,
+    "initial_backoff_ms": 1000,
+    "max_backoff_ms": 10000,
+    "backoff_multiplier": 2.0,
+    "retryable_errors": ["timeout", "connection_error", "server_error"],
+    "non_retryable_errors": ["authentication_error", "invalid_data"]
+  }
+  
+  // 验证重试配置
+  assert_eq(batch_retry_config["max_retry_attempts"], 3)
+  assert_eq(batch_retry_config["initial_backoff_ms"], 1000)
+  assert_eq(batch_retry_config["max_backoff_ms"], 10000)
+  assert_eq(batch_retry_config["backoff_multiplier"], 2.0)
+  assert_eq(batch_retry_config["retryable_errors"].length(), 3)
+  
+  // 模拟批次发送失败和重试过程
+  let batch_id = "batch-12345"
+  let mut retry_count = 0
+  let mut retry_attempts = []
+  let mut final_success = false
+  
+  // 模拟重试序列
+  let error_sequence = ["timeout", "connection_error", "success"]
+  let mut i = 0
+  
+  while i < error_sequence.length() and retry_count < batch_retry_config["max_retry_attempts"] {
+    let error = error_sequence[i]
+    let is_retryable = batch_retry_config["retryable_errors"].contains(error)
     
-    // 重试逻辑
-    while retry_count < max_retry_attempts and final_result != "success" {
+    if error == "success" {
+      final_success = true
+      break
+    } else if is_retryable and retry_count < batch_retry_config["max_retry_attempts"] {
       retry_count = retry_count + 1
-      
-      // 模拟重试成功率递增
-      let retry_success_probability = 0.3 + (retry_count * 0.2)
-      let random_factor = (retry_count * 7 + 10) % 10
-      let retry_success = random_factor < (retry_success_probability * 10).to_int()
-      
-      if retry_success {
-        final_result = "success"
-      }
-    }
-    
-    // 根据最终结果分类
-    if final_result == "success" {
-      successful_batches.push(batch_id)
+      let backoff_time = batch_retry_config["initial_backoff_ms"] * (batch_retry_config["backoff_multiplier"].to_int() ** (retry_count - 1))
+      backoff_time = backoff_time.min(batch_retry_config["max_backoff_ms"])
+      retry_attempts.push({"attempt": retry_count, "error": error, "backoff_ms": backoff_time})
     } else {
-      failed_batches.push(batch_id)
-      
-      if dead_letter_queue_enabled {
-        dead_letter_batches.push(batch_id)
-      } else {
-        retry_batches.push(batch_id)
-      }
+      break
     }
     
     i = i + 1
   }
   
-  // 验证错误处理结果
-  assert_eq(successful_batches.length() + failed_batches.length(), batch_operations.length())
-  assert_eq(successful_batches.length() > 0, true)
-  assert_eq(failed_batches.length() > 0, true)
+  // 验证重试结果
+  assert_eq(retry_count, 2)
+  assert_eq(retry_attempts.length(), 2)
+  assert_eq(final_success, true)
   
-  // 验证死信队列
-  if dead_letter_queue_enabled {
-    assert_eq(dead_letter_batches.length(), failed_batches.length())
-    assert_eq(retry_batches.length(), 0)
-  } else {
-    assert_eq(retry_batches.length(), failed_batches.length())
-    assert_eq(dead_letter_batches.length(), 0)
+  // 验证退避策略
+  assert_eq(retry_attempts[0]["backoff_ms"], 1000)  // 第一次重试
+  assert_eq(retry_attempts[1]["backoff_ms"], 2000)  // 第二次重试，2倍退避
+  
+  // 验证非重试错误处理
+  let non_retryable_error = "authentication_error"
+  let is_non_retryable = batch_retry_config["non_retryable_errors"].contains(non_retryable_error)
+  assert_eq(is_non_retryable, true)
+  
+  // 验证重试统计
+  let total_retry_time_ms = retry_attempts[0]["backoff_ms"] + retry_attempts[1]["backoff_ms"]
+  assert_eq(total_retry_time_ms, 3000)
+  
+  let max_acceptable_total_retry_time_ms = 30000  // 30秒
+  assert_eq(total_retry_time_ms <= max_acceptable_total_retry_time_ms, true)
+}
+
+test "telemetry_batch_parallel_processing" {
+  // 测试遥测数据批次并行处理功能
+  
+  let parallel_config = {
+    "max_concurrent_batches": 5,
+    "worker_pool_size": 3,
+    "queue_size": 100,
+    "batch_timeout_ms": 30000
   }
   
-  // 计算批处理成功率
-  let success_rate = (successful_batches.length() * 100) / batch_operations.length()
-  assert_eq(success_rate > 50, true)  // 至少50%成功率
+  // 验证并行配置
+  assert_eq(parallel_config["max_concurrent_batches"], 5)
+  assert_eq(parallel_config["worker_pool_size"], 3)
+  assert_eq(parallel_config["queue_size"], 100)
+  assert_eq(parallel_config["batch_timeout_ms"], 30000)
   
-  // 测试错误恢复策略
-  let error_recovery_strategies = [
-    ("network_error", "retry_with_backoff"),
-    ("validation_error", "skip_invalid_records"),
-    ("timeout_error", "increase_timeout"),
-    ("unknown_error", "log_and_continue")
+  // 模拟批次队列
+  let batch_queue = [
+    {"id": "batch-001", "size": 800, "priority": "high"},
+    {"id": "batch-002", "size": 1200, "priority": "normal"},
+    {"id": "batch-003", "size": 600, "priority": "low"},
+    {"id": "batch-004", "size": 900, "priority": "normal"},
+    {"id": "batch-005", "size": 1500, "priority": "high"}
   ]
   
-  // 验证恢复策略
-  assert_eq(error_recovery_strategies.length(), 4)
+  // 验证批次队列
+  assert_eq(batch_queue.length(), 5)
+  assert_eq(batch_queue[0]["priority"], "high")
+  assert_eq(batch_queue[4]["size"], 1500)
   
-  // 应用恢复策略
-  let mut recovery_actions = []
-  i = 0
-  while i < failed_batches.length() {
-    let batch_id = failed_batches[i]
+  // 模拟并行处理
+  let mut active_workers = 0
+  let mut processing_batches = []
+  let mut completed_batches = []
+  let mut queue_index = 0
+  
+  // 分配批次给工作线程
+  while queue_index < batch_queue.length() and active_workers < parallel_config["worker_pool_size"] {
+    let batch = batch_queue[queue_index]
+    processing_batches.push(batch)
+    active_workers = active_workers + 1
+    queue_index = queue_index + 1
+  }
+  
+  // 验证初始分配
+  assert_eq(active_workers, 3)
+  assert_eq(processing_batches.length(), 3)
+  assert_eq(processing_batches[0]["id"], "batch-001")
+  assert_eq(processing_batches[2]["id"], "batch-003")
+  
+  // 模拟批次完成
+  let completed_batch_ids = ["batch-001", "batch-003"]
+  let mut i = 0
+  while i < completed_batch_ids.length() {
+    let completed_id = completed_batch_ids[i]
     
-    // 查找对应的错误类型（简化处理）
-    let mut error_type = "unknown_error"
+    // 从处理中移除
     let mut j = 0
-    while j < batch_operations.length() {
-      if batch_operations[j].0 == batch_id and batch_operations[j].1 != "success" {
-        error_type = batch_operations[j].1
+    while j < processing_batches.length() {
+      if processing_batches[j]["id"] == completed_id {
+        completed_batches.push(processing_batches[j])
+        processing_batches.remove(j)
+        active_workers = active_workers - 1
         break
       }
       j = j + 1
     }
     
-    // 查找恢复策略
-    let mut recovery_strategy = "log_and_continue"
-    j = 0
-    while j < error_recovery_strategies.length() {
-      if error_recovery_strategies[j].0 == error_type {
-        recovery_strategy = error_recovery_strategies[j].1
-        break
-      }
-      j = j + 1
-    }
-    
-    recovery_actions.push({
-      "batch_id": batch_id,
-      "error_type": error_type,
-      "recovery_strategy": recovery_strategy
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证恢复策略应用
-  assert_eq(recovery_actions.length(), failed_batches.length())
-  
-  // 检查特定错误的恢复策略
-  i = 0
-  while i < recovery_actions.length() {
-    let action = recovery_actions[i]
-    let error_type = action["error_type"]
-    let strategy = action["recovery_strategy"]
-    
-    if error_type == "network_error" {
-      assert_eq(strategy, "retry_with_backoff")
-    } else if error_type == "validation_error" {
-      assert_eq(strategy, "skip_invalid_records")
-    } else if error_type == "timeout_error" {
-      assert_eq(strategy, "increase_timeout")
+    // 从队列分配新批次
+    if queue_index < batch_queue.length() {
+      let new_batch = batch_queue[queue_index]
+      processing_batches.push(new_batch)
+      active_workers = active_workers + 1
+      queue_index = queue_index + 1
     }
     
     i = i + 1
   }
+  
+  // 验证处理结果
+  assert_eq(completed_batches.length(), 2)
+  assert_eq(processing_batches.length(), 3)  // 重新分配后仍保持3个
+  assert_eq(active_workers, 3)
+  
+  // 验证优先级处理
+  let high_priority_batches = batch_queue.filter(fn(batch) { batch["priority"] == "high" })
+  assert_eq(high_priority_batches.length(), 2)
+  
+  // 验证并行处理性能
+  let sequential_processing_time_ms = 5000  // 串行处理时间
+  let parallel_processing_time_ms = 2000    // 并行处理时间
+  let performance_improvement = (sequential_processing_time_ms - parallel_processing_time_ms).to_float() / sequential_processing_time_ms.to_float()
+  
+  assert_eq(performance_improvement, 0.6)  // 60%的性能提升
+  assert_eq(performance_improvement > 0.5, true)
 }
