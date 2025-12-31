@@ -320,12 +320,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_74656c656d657472795f73616d706c696e675f746573742e6d6274_4, ["sampling_parent_child_relationship"]),
   },
   "telemetry_sampling_strategy_test.mbt": {
-    0: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_0, ["telemetry_probability_sampling"]),
-    1: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_1, ["telemetry_fixed_rate_sampling"]),
-    2: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_2, ["telemetry_adaptive_sampling"]),
-    3: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_3, ["telemetry_priority_sampling"]),
-    4: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_4, ["telemetry_reservoir_sampling"]),
-    5: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_5, ["telemetry_sampling_consistency"]),
+    0: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_0, ["sampling_strategy_probability_based"]),
+    1: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_1, ["sampling_strategy_adaptive_rate"]),
+    2: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_2, ["sampling_strategy_attribute_based"]),
+    3: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_3, ["sampling_strategy_composite"]),
+    4: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f746573742e6d6274_4, ["sampling_strategy_parent_based"]),
   },
   "telemetry_sampling_strategy_new_test.mbt": {
     0: (__test_74656c656d657472795f73616d706c696e675f73747261746567795f6e65775f746573742e6d6274_0, ["sampling_strategy_probability_based"]),
