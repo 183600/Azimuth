@@ -1,7 +1,8 @@
 // Azimuth Telemetry - Logs API
 // 结构化日志记录
 
-
+use azimuth.telemetry.api.common
+use azimuth.telemetry.api.context
 
 pub enum SeverityNumber {
   Trace
@@ -91,8 +92,8 @@ pub struct LogRecordBuilder {
   trace_id : Array[Byte]?
   span_id : Array[Byte]?
   trace_flags : Byte?
-  resource : common::Resource?
-  instrumentation_scope : common::InstrumentationScope?
+  resource : Resource?
+  instrumentation_scope : InstrumentationScope?
 }
 
 pub fn LogRecordBuilder::new() -> LogRecordBuilder {

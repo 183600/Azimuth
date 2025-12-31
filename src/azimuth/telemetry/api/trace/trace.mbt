@@ -1,7 +1,8 @@
 // Azimuth Telemetry - Trace API
 // 分布式链路追踪
 
-
+use azimuth.telemetry.api.common
+use azimuth.telemetry.api.context
 
 pub enum SpanKind {
   Internal
@@ -33,7 +34,7 @@ pub struct Span {
   end_time_unix_nanos : Int64?
   status : StatusCode
   status_description : String?
-  attributes : Array[(String, common::AttributeValue)]
+  attributes : Array[(String, AttributeValue)]
   events : Array[SpanEvent]
   links : Array[SpanLink]
 }
@@ -41,12 +42,12 @@ pub struct Span {
 pub struct SpanEvent {
   name : String
   timestamp_unix_nanos : Int64
-  attributes : Array[(String, common::AttributeValue)]
+  attributes : Array[(String, AttributeValue)]
 }
 
 pub struct SpanLink {
   context : SpanContext
-  attributes : Array[(String, common::AttributeValue)]
+  attributes : Array[(String, AttributeValue)]
 }
 
 pub trait Tracer {
@@ -54,13 +55,13 @@ pub trait Tracer {
     ctx : context::Context,
     name : String,
     kind? : SpanKind,
-    attributes? : Array[(String, common::AttributeValue)],
+    attributes? : Array[(String, AttributeValue)],
     start_time_unix_nanos? : Int64
   ) -> (context::Context, Span)
 }
 
 pub trait TracerProvider {
-  get_tracer(name : String, version? : String) -> trace::Tracer
+  get_tracer(name : String, version? : String) -> Tracer
 }
 
 // No-op实现（默认实现）

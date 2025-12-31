@@ -786,6 +786,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_73696d706c655f776f726b696e675f746573742e6d6274_2, ["numeric operations"]),
     3: (__test_73696d706c655f776f726b696e675f746573742e6d6274_3, ["conditional logic"]),
   },
+  "simple_verification_test.mbt": {
+    0: (__test_73696d706c655f766572696669636174696f6e5f746573742e6d6274_0, ["simple_verification"]),
+  },
   "simple_validation_test.mbt": {
     0: (__test_73696d706c655f76616c69646174696f6e5f746573742e6d6274_0, ["basic_string_operations"]),
     1: (__test_73696d706c655f76616c69646174696f6e5f746573742e6d6274_1, ["array_operations"]),
@@ -1908,12 +1911,9 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_63726f73735f6170695f696e746567726174696f6e5f746573742e6d6274_8, ["attribute_type_consistency_across_apis"]),
   },
   "cross_api_integration_comprehensive_test.mbt": {
-    0: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_0, ["cross_api_basic_integration"]),
-    1: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_1, ["cross_api_context_propagation"]),
-    2: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_2, ["cross_api_complex_workflow"]),
-    3: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_3, ["cross_api_error_handling"]),
-    4: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_4, ["cross_api_performance_monitoring"]),
-    5: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_5, ["cross_api_resource_sharing"]),
+    0: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_0, ["cross_api_integration_trace_logs_metrics"]),
+    1: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_1, ["cross_api_context_propagation_integration"]),
+    2: (__test_63726f73735f6170695f696e746567726174696f6e5f636f6d70726568656e736976655f746573742e6d6274_2, ["cross_api_error_handling_integration"]),
   },
   "cross_api_integration_advanced_test.mbt": {
     0: (__test_63726f73735f6170695f696e746567726174696f6e5f616476616e6365645f746573742e6d6274_0, ["trace_logs_integration"]),
