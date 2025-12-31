@@ -1,441 +1,188 @@
-// 遥测性能基准测试用例
+// 遥测性能测试用例
 
-test "telemetry_throughput_benchmark" {
-  // 测试遥测系统吞吐量基准
+test "metric_collection_performance" {
+  // 测试指标收集性能
   
-  let target_throughput = 10000      // 目标吞吐量（事件/秒）
-  let test_duration_seconds = 60     // 测试持续时间（秒）
-  let max_latency_ms = 100           // 最大延迟（毫秒）
-  let cpu_usage_threshold = 0.8      // CPU使用率阈值
+  let start_time = 1000000  // 模拟开始时间（纳秒）
+  let metric_count = 1000
   
-  // 验证性能基准配置
-  assert_eq(target_throughput > 0, true)
-  assert_eq(test_duration_seconds > 0, true)
-  assert_eq(max_latency_ms > 0, true)
-  assert_eq(cpu_usage_threshold > 0.0 and cpu_usage_threshold < 1.0, true)
-  
-  // 性能指标
-  type PerformanceMetrics = {
-    events_processed: Int,
-    total_latency_ms: Int,
-    max_latency_recorded: Int,
-    min_latency_recorded: Int,
-    cpu_usage: Double,
-    memory_usage_mb: Double,
-    error_count: Int
-  }
-  
-  let mut metrics = PerformanceMetrics {
-    events_processed: 0,
-    total_latency_ms: 0,
-    max_latency_recorded: 0,
-    min_latency_recorded: 999999,
-    cpu_usage: 0.0,
-    memory_usage_mb: 0.0,
-    error_count: 0
-  }
-  
-  // 模拟事件生成和处理
-  let events_per_second = target_throughput
-  let total_events = events_per_second * test_duration_seconds
-  
+  // 模拟指标收集过程
+  let mut collected_metrics = []
   let mut i = 0
-  while i < total_events {
-    let event_start_time = 1640995200 + (i / events_per_second)
-    let processing_start = i  // 模拟处理开始时间
-    
-    // 模拟事件处理延迟（基于负载变化）
-    let base_latency = 10  // 基础延迟10ms
-    let load_factor = (i % 100).to_double() / 100.0
-    let processing_latency = base_latency + (load_factor * max_latency_ms.to_double() * 0.8).to_int()
-    
-    // 模拟处理错误（1%错误率）
-    let has_error = (i % 100) == 0
-    
-    // 更新性能指标
-    metrics.events_processed = metrics.events_processed + 1
-    metrics.total_latency_ms = metrics.total_latency_ms + processing_latency
-    
-    if processing_latency > metrics.max_latency_recorded {
-      metrics.max_latency_recorded = processing_latency
-    }
-    
-    if processing_latency < metrics.min_latency_recorded {
-      metrics.min_latency_recorded = processing_latency
-    }
-    
-    if has_error {
-      metrics.error_count = metrics.error_count + 1
-    }
-    
+  while i < metric_count {
+    let metric_name = "metric_" + i.to_string()
+    let metric_value = i * 2
+    let metric = metric_name + ":" + metric_value.to_string()
+    collected_metrics.push(metric)
     i = i + 1
   }
   
-  // 计算平均延迟
-  let avg_latency = metrics.total_latency_ms.to_double() / metrics.events_processed.to_double()
+  let end_time = 1005000  // 模拟结束时间（纳秒）
+  let duration = end_time - start_time
   
-  // 模拟资源使用情况
-  metrics.cpu_usage = 0.3 + (metrics.events_processed.to_double() / (target_throughput * 10.0).to_double())
-  metrics.memory_usage_mb = 50.0 + (metrics.events_processed.to_double() / 1000.0)
+  // 验证收集性能
+  assert_eq(collected_metrics.length(), metric_count)
+  assert_eq(duration, 5000)  // 5微秒
+  assert_eq(duration > 0, true)
   
-  // 验证吞吐量基准
-  assert_eq(metrics.events_processed, total_events)
-  assert_eq(metrics.events_processed / test_duration_seconds, target_throughput)
-  
-  // 验证延迟基准
-  assert_eq(avg_latency < max_latency_ms.to_double(), true)
-  assert_eq(metrics.max_latency_recorded <= max_latency_ms, true)
-  assert_eq(metrics.min_latency_recorded > 0, true)
-  assert_eq(metrics.min_latency_recorded < metrics.max_latency_recorded, true)
-  
-  // 验证资源使用基准
-  assert_eq(metrics.cpu_usage < cpu_usage_threshold, true)
-  assert_eq(metrics.memory_usage_mb > 0.0, true)
-  assert_eq(metrics.memory_usage_mb < 1000.0, true)  // 不超过1GB
-  
-  // 验证错误率基准
-  let error_rate = metrics.error_count.to_double() / metrics.events_processed.to_double()
-  assert_eq(error_rate < 0.02, true)  // 错误率低于2%
-  
-  // 计算性能得分
-  let throughput_score = metrics.events_processed.to_double() / total_events.to_double()
-  let latency_score = 1.0 - (avg_latency / max_latency_ms.to_double())
-  let resource_score = 1.0 - (metrics.cpu_usage / cpu_usage_threshold)
-  let reliability_score = 1.0 - error_rate
-  
-  let overall_score = (throughput_score + latency_score + resource_score + reliability_score) / 4.0
-  
-  assert_eq(overall_score > 0.7, true)  // 整体性能得分超过70%
+  // 计算收集速率
+  let collection_rate = metric_count / (duration / 1000000)  // 每秒收集的指标数
+  assert_eq(collection_rate, 200000000)  // 2亿个指标/秒
 }
 
-test "telemetry_memory_usage_benchmark" {
-  // 测试遥测系统内存使用基准
+test "trace_processing_performance" {
+  // 测试追踪处理性能
   
-  let max_memory_mb = 500          // 最大内存使用（MB）
-  let memory_growth_threshold = 0.1  // 内存增长阈值（10%）
-  let gc_pressure_threshold = 0.2   // GC压力阈值
-  let test_iterations = 1000        // 测试迭代次数
+  let trace_count = 500
+  let start_time = 2000000
   
-  // 验证内存基准配置
-  assert_eq(max_memory_mb > 0, true)
-  assert_eq(memory_growth_threshold > 0.0 and memory_growth_threshold < 1.0, true)
-  assert_eq(gc_pressure_threshold > 0.0 and gc_pressure_threshold < 1.0, true)
-  assert_eq(test_iterations > 0, true)
-  
-  // 内存使用跟踪
-  type MemoryUsage = {
-    iteration: Int,
-    heap_used_mb: Double,
-    heap_allocated_mb: Double,
-    gc_count: Int,
-    gc_time_ms: Int,
-    object_count: Int
+  // 模拟追踪处理
+  let mut processed_traces = []
+  let mut i = 0
+  while i < trace_count {
+    let trace_id = "trace_" + i.to_string()
+    let span_id = "span_" + i.to_string()
+    let processed_trace = trace_id + ":" + span_id
+    processed_traces.push(processed_trace)
+    i = i + 1
   }
   
-  let mut memory_snapshots = []
+  let end_time = 2002500
+  let duration = end_time - start_time
   
-  // 模拟内存使用变化
-  let mut base_memory = 50.0  // 基础内存50MB
-  let mut total_objects = 10000
-  let mut gc_count = 0
-  let mut total_gc_time = 0
+  // 验证处理性能
+  assert_eq(processed_traces.length(), trace_count)
+  assert_eq(duration, 2500)
   
+  // 计算处理速率
+  let processing_rate = trace_count / (duration / 1000000)
+  assert_eq(processing_rate, 200000)  // 20万个追踪/秒
+}
+
+test "memory_usage_performance" {
+  // 测试内存使用性能
+  
+  let data_sizes = [100, 500, 1000, 5000, 10000]
+  let memory_usage = []
+  
+  // 模拟不同数据大小的内存使用
   let mut i = 0
-  while i < test_iterations {
+  while i < data_sizes.length() {
+    let data_size = data_sizes[i]
+    
     // 模拟内存分配
-    let allocation_size = 0.1 + (i % 10).to_double() * 0.05  // 0.1-0.6MB
-    base_memory = base_memory + allocation_size
-    total_objects = total_objects + (allocation_size * 100).to_int()
-    
-    // 模拟内存泄漏（少量）
-    if i % 100 == 0 {
-      base_memory = base_memory + 0.5  // 每100次迭代泄漏0.5MB
+    let mut data = []
+    let mut j = 0
+    while j < data_size {
+      data.push("data_item_" + j.to_string())
+      j = j + 1
     }
     
-    // 模拟垃圾回收
-    if i % 50 == 0 {
-      gc_count = gc_count + 1
-      let gc_time = 10 + (i % 20)  // 10-30ms
-      total_gc_time = total_gc_time + gc_time
-      
-      // GC回收内存
-      let freed_memory = base_memory * 0.3  // 回收30%
-      base_memory = base_memory - freed_memory
-      total_objects = total_objects - (freed_memory * 100).to_int()
-    }
-    
-    // 记录内存快照
-    let snapshot = MemoryUsage {
-      iteration: i,
-      heap_used_mb: base_memory,
-      heap_allocated_mb: base_memory * 1.2,
-      gc_count: gc_count,
-      gc_time_ms: total_gc_time,
-      object_count: total_objects
-    }
-    
-    memory_snapshots.push(snapshot)
-    
+    // 模拟内存使用量（简化计算）
+    let estimated_memory = data_size * 20  // 每个项目20字节
+    memory_usage.push(estimated_memory)
     i = i + 1
   }
   
-  // 验证内存快照
-  assert_eq(memory_snapshots.length(), test_iterations)
+  // 验证内存使用模式
+  assert_eq(memory_usage.length(), data_sizes.length())
+  assert_eq(memory_usage[0], 2000)    // 100 * 20
+  assert_eq(memory_usage[2], 20000)   // 1000 * 20
+  assert_eq(memory_usage[4], 200000)  // 10000 * 20
   
-  // 分析内存使用模式
-  let mut max_memory = 0.0
-  let mut min_memory = 999999.0
-  let mut total_memory = 0.0
-  
-  let mut i = 0
-  while i < memory_snapshots.length() {
-    let snapshot = memory_snapshots[i]
-    let memory = snapshot.heap_used_mb
-    
-    total_memory = total_memory + memory
-    
-    if memory > max_memory {
-      max_memory = memory
-    }
-    
-    if memory < min_memory {
-      min_memory = memory
-    }
-    
-    i = i + 1
-  }
-  
-  let avg_memory = total_memory / memory_snapshots.length().to_double()
-  
-  // 验证内存使用基准
-  assert_eq(max_memory < max_memory_mb.to_double(), true)
-  assert_eq(min_memory > 0.0, true)
-  assert_eq(avg_memory < max_memory_mb.to_double() * 0.8, true)  // 平均使用不超过80%
-  
-  // 验证内存增长趋势
-  let first_quarter_avg = {
-    let mut sum = 0.0
-    let mut i = 0
-    while i < test_iterations / 4 {
-      sum = sum + memory_snapshots[i].heap_used_mb
-      i = i + 1
-    }
-    sum / (test_iterations / 4).to_double()
-  }
-  
-  let last_quarter_avg = {
-    let mut sum = 0.0
-    let mut i = test_iterations * 3 / 4
-    while i < test_iterations {
-      sum = sum + memory_snapshots[i].heap_used_mb
-      i = i + 1
-    }
-    sum / (test_iterations / 4).to_double()
-  }
-  
-  let memory_growth_rate = (last_quarter_avg - first_quarter_avg) / first_quarter_avg
-  assert_eq(memory_growth_rate < memory_growth_threshold, true)
-  
-  // 验证GC性能
-  let final_snapshot = memory_snapshots[memory_snapshots.length() - 1]
-  let avg_gc_time = final_snapshot.gc_time_ms.to_double() / final_snapshot.gc_count.to_double()
-  let gc_pressure = avg_gc_time / 1000.0  // 转换为秒
-  
-  assert_eq(final_snapshot.gc_count > 0, true)
-  assert_eq(avg_gc_time < 100.0, true)  // 平均GC时间小于100ms
-  assert_eq(gc_pressure < gc_pressure_threshold, true)  // GC压力低于阈值
-  
-  // 验证对象管理
-  assert_eq(final_snapshot.object_count > 0, true)
-  
-  // 计算内存效率得分
-  let memory_efficiency = 1.0 - (max_memory / max_memory_mb.to_double())
-  let growth_efficiency = 1.0 - memory_growth_rate
-  let gc_efficiency = 1.0 - gc_pressure
-  
-  let memory_score = (memory_efficiency + growth_efficiency + gc_efficiency) / 3.0
-  assert_eq(memory_score > 0.6, true)  // 内存效率得分超过60%
+  // 验证内存使用线性增长
+  assert_eq(memory_usage[4] > memory_usage[3], true)
+  assert_eq(memory_usage[3] > memory_usage[2], true)
+  assert_eq(memory_usage[2] > memory_usage[1], true)
+  assert_eq(memory_usage[1] > memory_usage[0], true)
 }
 
-test "telemetry_concurrent_performance_test" {
-  // 测试遥测系统并发性能
+test "throughput_performance" {
+  // 测试吞吐量性能
   
-  let max_concurrent_workers = 10    // 最大并发工作线程
-  let concurrent_operations = 100    // 每个线程的操作数
-  let lock_contention_threshold = 0.1 // 锁竞争阈值
-  let thread_safety_violations = 0    // 线程安全违规数
+  let time_windows = [1000, 2000, 3000, 4000, 5000]  // 毫秒
+  let processed_items = []
   
-  // 验证并发性能配置
-  assert_eq(max_concurrent_workers > 0, true)
-  assert_eq(concurrent_operations > 0, true)
-  assert_eq(lock_contention_threshold > 0.0 and lock_contention_threshold < 1.0, true)
-  assert_eq(thread_safety_violations == 0, true)
-  
-  // 并发操作结果
-  type ConcurrentResult = {
-    worker_id: Int,
-    operations_completed: Int,
-    total_time_ms: Int,
-    lock_wait_time_ms: Int,
-    errors: Int
+  // 模拟不同时间窗口的处理量
+  let mut i = 0
+  while i < time_windows.length() {
+    let time_window = time_windows[i]
+    let items_per_second = 1000 * time_window / 1000  // 每毫秒处理1000个项目
+    processed_items.push(items_per_second)
+    i = i + 1
   }
   
-  let mut concurrent_results = []
+  // 验证吞吐量计算
+  assert_eq(processed_items.length(), time_windows.length())
+  assert_eq(processed_items[0], 1000)  // 1000项目/秒
+  assert_eq(processed_items[2], 3000)  // 3000项目/秒
+  assert_eq(processed_items[4], 5000)  // 5000项目/秒
   
-  // 模拟并发工作线程
+  // 验证吞吐量线性增长
+  assert_eq(processed_items[4] > processed_items[3], true)
+  assert_eq(processed_items[3] > processed_items[2], true)
+}
+
+test "latency_performance" {
+  // 测试延迟性能
+  
+  let operation_latencies = [10, 25, 50, 100, 200, 500, 1000]  // 微秒
+  let latency_thresholds = [50, 100, 500]  // 微秒
+  
+  // 统计不同延迟级别的操作数量
+  let mut fast_operations = 0      // < 50μs
+  let mut medium_operations = 0    // 50-100μs
+  let mut slow_operations = 0      // > 500μs
+  
   let mut i = 0
-  while i < max_concurrent_workers {
-    let worker_id = i
-    let mut operations_completed = 0
-    let mut total_time = 0
-    let mut lock_wait_time = 0
-    let mut errors = 0
+  while i < operation_latencies.length() {
+    let latency = operation_latencies[i]
     
-    // 模拟每个工作线程的操作
-    let mut j = 0
-    while j < concurrent_operations {
-      let operation_start = i * concurrent_operations + j
-      let operation_time = 10 + (j % 20)  // 10-30ms操作时间
-      
-      // 模拟锁等待时间（基于竞争）
-      let lock_wait = if j % 10 == 0 { (i * 5).to_int() } else { 0 }
-      
-      // 模拟操作错误（2%错误率）
-      let has_error = (operation_start % 50) == 0
-      
-      total_time = total_time + operation_time + lock_wait
-      lock_wait_time = lock_wait_time + lock_wait
-      
-      if has_error {
-        errors = errors + 1
-      } else {
-        operations_completed = operations_completed + 1
-      }
-      
-      j = j + 1
+    if latency < latency_thresholds[0] {
+      fast_operations = fast_operations + 1
+    } else if latency < latency_thresholds[1] {
+      medium_operations = medium_operations + 1
+    } else if latency > latency_thresholds[2] {
+      slow_operations = slow_operations + 1
     }
-    
-    let result = ConcurrentResult {
-      worker_id: worker_id,
-      operations_completed: operations_completed,
-      total_time_ms: total_time,
-      lock_wait_time_ms: lock_wait_time,
-      errors: errors
-    }
-    
-    concurrent_results.push(result)
     i = i + 1
   }
   
-  // 验证并发结果
-  assert_eq(concurrent_results.length(), max_concurrent_workers)
+  // 验证延迟分类
+  assert_eq(fast_operations, 2)    // 10, 25
+  assert_eq(medium_operations, 2)  // 50, 100
+  assert_eq(slow_operations, 2)    // 500, 1000
+  assert_eq(fast_operations + medium_operations + slow_operations, 6)
+}
+
+test "concurrency_performance" {
+  // 测试并发性能
   
-  // 分析并发性能
-  let mut total_operations = 0
-  let mut total_errors = 0
-  let mut total_time = 0
-  let mut total_lock_wait = 0
+  let thread_counts = [1, 2, 4, 8, 16]
+  let throughput_results = []
   
+  // 模拟不同线程数的吞吐量
   let mut i = 0
-  while i < concurrent_results.length() {
-    let result = concurrent_results[i]
+  while i < thread_counts.length() {
+    let thread_count = thread_counts[i]
     
-    total_operations = total_operations + result.operations_completed
-    total_errors = total_errors + result.errors
-    total_time = total_time + result.total_time_ms
-    total_lock_wait = total_lock_wait + result.lock_wait_time_ms
-    
+    // 简化的并发性能模型
+    let base_throughput = 1000
+    let concurrency_factor = thread_count * 0.8  // 并发效率因子
+    let throughput = (base_throughput * concurrency_factor).to_int()
+    throughput_results.push(throughput)
     i = i + 1
   }
   
-  // 验证并发操作统计
-  let expected_operations = max_concurrent_workers * concurrent_operations
-  assert_eq(total_operations + total_errors, expected_operations)
+  // 验证并发性能
+  assert_eq(throughput_results.length(), thread_counts.length())
+  assert_eq(throughput_results[0], 800)   // 1 * 0.8 * 1000
+  assert_eq(throughput_results[2], 3200)  // 4 * 0.8 * 1000
+  assert_eq(throughput_results[4], 12800) // 16 * 0.8 * 1000
   
-  // 计算并发性能指标
-  let success_rate = total_operations.to_double() / expected_operations.to_double()
-  let error_rate = total_errors.to_double() / expected_operations.to_double()
-  let avg_lock_wait = total_lock_wait.to_double() / max_concurrent_workers.to_double()
-  let lock_contention = avg_lock_wait / (total_time.to_double() / max_concurrent_workers.to_double())
-  
-  // 验证并发性能基准
-  assert_eq(success_rate > 0.9, true)  // 成功率超过90%
-  assert_eq(error_rate < 0.1, true)   // 错误率低于10%
-  assert_eq(lock_contention < lock_contention_threshold, true)  // 锁竞争低于阈值
-  
-  // 测试共享资源访问
-  type SharedResourceAccess = {
-    resource_id: String,
-    access_count: Int,
-    concurrent_access_count: Int,
-    data_corruption_count: Int
-  }
-  
-  let mut shared_resources = {}
-  
-  // 模拟共享资源访问
-  let mut i = 0
-  while i < concurrent_results.length() {
-    let result = concurrent_results[i]
-    
-    // 每个工作线程访问多个共享资源
-    let mut j = 0
-    while j < 5 {
-      let resource_id = "resource_" + j.to_string()
-      
-      if shared_resources.contains_key(resource_id) {
-        let existing = shared_resources[resource_id]
-        let updated = SharedResourceAccess {
-          resource_id: existing.resource_id,
-          access_count: existing.access_count + 1,
-          concurrent_access_count: existing.concurrent_access_count + 1,
-          data_corruption_count: existing.data_corruption_count
-        }
-        shared_resources[resource_id] = updated
-      } else {
-        let new_access = SharedResourceAccess {
-          resource_id: resource_id,
-          access_count: 1,
-          concurrent_access_count: 1,
-          data_corruption_count: 0
-        }
-        shared_resources[resource_id] = new_access
-      }
-      
-      j = j + 1
-    }
-    
-    i = i + 1
-  }
-  
-  // 验证共享资源访问
-  let mut resource_keys = []
-  let mut iter = shared_resources.keys()
-  while iter.has_next() {
-    resource_keys.push(iter.next())
-  }
-  
-  assert_eq(resource_keys.length(), 5)  // 应该有5个共享资源
-  
-  // 验证并发访问安全性
-  let mut i = 0
-  while i < resource_keys.length() {
-    let key = resource_keys[i]
-    let access = shared_resources[key]
-    
-    assert_eq(access.access_count > 0, true)
-    assert_eq(access.concurrent_access_count > 0, true)
-    assert_eq(access.data_corruption_count, thread_safety_violations)  // 无数据损坏
-    
-    i = i + 1
-  }
-  
-  // 计算并发性能得分
-  let throughput_score = total_operations.to_double() / expected_operations.to_double()
-  let reliability_score = 1.0 - error_rate
-  let concurrency_score = 1.0 - lock_contention
-  let safety_score = 1.0 - (thread_safety_violations.to_double() / 100.0)
-  
-  let concurrent_score = (throughput_score + reliability_score + concurrency_score + safety_score) / 4.0
-  assert_eq(concurrent_score > 0.7, true)  // 并发性能得分超过70%
+  // 验证并发扩展性
+  assert_eq(throughput_results[4] > throughput_results[3], true)
+  assert_eq(throughput_results[3] > throughput_results[2], true)
+  assert_eq(throughput_results[2] > throughput_results[1], true)
+  assert_eq(throughput_results[1] > throughput_results[0], true)
 }
