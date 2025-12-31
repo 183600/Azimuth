@@ -21,6 +21,19 @@
             "Release",
             "Debug"
           ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/src/standalone_test_validation.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
         }
       },
       "wbtest-files": {},

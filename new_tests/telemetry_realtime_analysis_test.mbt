@@ -1,842 +1,764 @@
 // 遥测数据实时分析测试用例
 
-test "telemetry_realtime_anomaly_detection" {
-  // 测试遥测实时异常检测
+test "telemetry_realtime_stream_processing" {
+  // 测试遥测数据实时流处理
   
-  let metric_streams = [
-    {"metric_id": "cpu_usage", "current_value": 85.2, "historical_mean": 45.5, "historical_std": 8.3, "threshold_type": "statistical"},
-    {"metric_id": "memory_usage", "current_value": 78.9, "historical_mean": 65.2, "historical_std": 5.1, "threshold_type": "statistical"},
-    {"metric_id": "response_time", "current_value": 250.0, "historical_mean": 120.0, "historical_std": 30.0, "threshold_type": "statistical"},
-    {"metric_id": "error_rate", "current_value": 0.05, "historical_mean": 0.01, "historical_std": 0.005, "threshold_type": "statistical"},
-    {"metric_id": "throughput", "current_value": 800.0, "historical_mean": 1000.0, "historical_std": 100.0, "threshold_type": "statistical"}
+  let stream_config = {
+    "batch_size": 100,
+    "processing_window_ms": 1000,
+    "max_latency_ms": 500,
+    "buffer_size": 10000,
+    "processing_threads": 4
+  }
+  
+  // 验证流处理配置
+  assert_eq(stream_config["batch_size"], 100)
+  assert_eq(stream_config["processing_window_ms"], 1000)
+  assert_eq(stream_config["max_latency_ms"], 500)
+  
+  // 实时数据流类型
+  type TelemetryStream = {
+    stream_id: String,
+    event_type: String,
+    timestamp: Int,
+    data_payload: Map[String, String],
+    processing_latency_ms: Int,
+    processed: Bool
+  }
+  
+  // 创建实时流处理测试场景
+  let stream_scenarios = [
+    // 高频事件流
+    TelemetryStream {
+      stream_id: "stream_high_freq",
+      event_type: "metric_update",
+      timestamp: 1640995200000,
+      data_payload: { "service": "api-gateway", "metric": "request_count", "value": "150" },
+      processing_latency_ms: 0,
+      processed: false
+    },
+    // 低频但重要的事件流
+    TelemetryStream {
+      stream_id: "stream_critical",
+      event_type: "error_alert",
+      timestamp: 1640995200100,
+      data_payload: { "service": "payment-service", "error": "connection_timeout", "severity": "high" },
+      processing_latency_ms: 0,
+      processed: false
+    },
+    // 批量事件流
+    TelemetryStream {
+      stream_id: "stream_batch",
+      event_type: "log_batch",
+      timestamp: 1640995200200,
+      data_payload: { "service": "user-service", "log_count": "500", "level": "info" },
+      processing_latency_ms: 0,
+      processed: false
+    },
+    // 实时追踪流
+    TelemetryStream {
+      stream_id: "stream_trace",
+      event_type: "trace_update",
+      timestamp: 1640995200300,
+      data_payload: { "trace_id": "trace_001", "span_id": "span_001", "status": "active" },
+      processing_latency_ms: 0,
+      processed: false
+    },
+    // 性能指标流
+    TelemetryStream {
+      stream_id: "stream_performance",
+      event_type: "performance_metric",
+      timestamp: 1640995200400,
+      data_payload: { "service": "database", "cpu_usage": "75", "memory_usage": "68" },
+      processing_latency_ms: 0,
+      processed: false
+    }
   ]
   
-  // 验证指标流
-  assert_eq(metric_streams.length(), 5)
-  assert_eq(metric_streams[0].metric_id, "cpu_usage")
-  assert_eq(metric_streams[4].current_value, 800.0)
+  // 验证流处理场景
+  assert_eq(stream_scenarios.length(), 5)
   
-  // 异常检测参数
-  let anomaly_threshold_sigma = 2.5  // 2.5个标准差
-  let detection_confidence_threshold = 0.8
+  // 实时流处理函数
+  let process_stream = fn(stream: TelemetryStream) -> TelemetryStream {
+    let current_time = 1640995200500
+    let processing_latency = current_time - stream.timestamp
+    
+    // 模拟处理延迟
+    let actual_latency = if stream.event_type == "error_alert" {
+      50  // 高优先级事件快速处理
+    } else if stream.event_type == "trace_update" {
+      100  // 中等优先级
+    } else {
+      200  // 普通优先级
+    }
+    
+    TelemetryStream {
+      stream_id: stream.stream_id,
+      event_type: stream.event_type,
+      timestamp: stream.timestamp,
+      data_payload: stream.data_payload,
+      processing_latency_ms: actual_latency,
+      processed: true
+    }
+  }
   
-  // 验证异常检测参数
-  assert_eq(anomaly_threshold_sigma, 2.5)
-  assert_eq(detection_confidence_threshold, 0.8)
-  
-  // 实时异常检测算法
-  let anomaly_detection_results = []
+  // 执行实时流处理
+  let mut processed_streams = []
   let mut i = 0
+  while i < stream_scenarios.length() {
+    let processed = process_stream(stream_scenarios[i])
+    processed_streams.push(processed)
+    i = i + 1
+  }
   
-  while i < metric_streams.length() {
-    let metric = metric_streams[i]
-    let metric_id = metric.metric_id
-    let current_value = metric.current_value
-    let historical_mean = metric.historical_mean
-    let historical_std = metric.historical_std
+  // 验证流处理结果
+  assert_eq(processed_streams.length(), 5)
+  
+  // 统计处理延迟
+  let mut total_latency = 0
+  let mut high_priority_count = 0
+  let mut latency_violations = 0
+  
+  i = 0
+  while i < processed_streams.length() {
+    let stream = processed_streams[i]
+    total_latency = total_latency + stream.processing_latency_ms
     
-    // 计算Z分数
-    let z_score = (current_value - historical_mean).abs() / historical_std
-    
-    // 判断是否异常
-    let is_anomaly = z_score >= anomaly_threshold_sigma
-    
-    // 计算异常严重程度
-    let severity = if z_score >= 4.0 {
-      "critical"
-    } else if z_score >= 3.0 {
-      "high"
-    } else if z_score >= 2.5 {
-      "medium"
-    } else if z_score >= 2.0 {
-      "low"
-    } else {
-      "normal"
+    if stream.event_type == "error_alert" {
+      high_priority_count = high_priority_count + 1
     }
     
-    // 计算检测置信度
-    let detection_confidence = if z_score >= 4.0 {
-      0.95
-    } else if z_score >= 3.0 {
-      0.9
-    } else if z_score >= 2.5 {
-      0.85
-    } else if z_score >= 2.0 {
-      0.7
-    } else {
-      0.5
+    if stream.processing_latency_ms > stream_config["max_latency_ms"] {
+      latency_violations = latency_violations + 1
     }
     
-    // 确定响应动作
-    let response_action = if is_anomaly and detection_confidence >= detection_confidence_threshold {
-      if severity == "critical" {
-        "immediate_alert"
-      } else if severity == "high" {
-        "urgent_investigation"
-      } else if severity == "medium" {
-        "schedule_analysis"
-      } else {
-        "monitor_closely"
-      }
-    } else {
-      "no_action"
+    i = i + 1
+  }
+  
+  let average_latency = total_latency / processed_streams.length()
+  
+  // 验证处理延迟统计
+  assert_eq(high_priority_count, 1)        // 应该有1个高优先级事件
+  assert_eq(latency_violations, 0)         // 不应该有延迟违规
+  assert_eq(average_latency < 300, true)   // 平均延迟应该小于300ms
+  
+  // 流聚合分析
+  type StreamAggregation = {
+    aggregation_type: String,
+    time_window_ms: Int,
+    event_count: Int,
+    aggregated_value: Double,
+    aggregation_timestamp: Int
+  }
+  
+  let aggregation_scenarios = [
+    StreamAggregation {
+      aggregation_type: "request_rate",
+      time_window_ms: 60000,  // 1分钟
+      event_count: 1500,
+      aggregated_value: 0.0,
+      aggregation_timestamp: 1640995200000
+    },
+    StreamAggregation {
+      aggregation_type: "error_rate",
+      time_window_ms: 60000,
+      event_count: 15,
+      aggregated_value: 0.0,
+      aggregation_timestamp: 1640995200000
+    },
+    StreamAggregation {
+      aggregation_type: "response_time_avg",
+      time_window_ms: 60000,
+      event_count: 1200,
+      aggregated_value: 0.0,
+      aggregation_timestamp: 1640995200000
+    },
+    StreamAggregation {
+      aggregation_type: "throughput",
+      time_window_ms: 60000,
+      event_count: 3000,
+      aggregated_value: 0.0,
+      aggregation_timestamp: 1640995200000
+    }
+  ]
+  
+  // 流聚合计算函数
+  let calculate_aggregation = fn(aggregation: StreamAggregation) -> StreamAggregation {
+    let time_window_seconds = aggregation.time_window_ms / 1000
+    let mut aggregated_value = 0.0
+    
+    if aggregation.aggregation_type == "request_rate" {
+      // 每秒请求数
+      aggregated_value = aggregation.event_count.to_double() / time_window_seconds.to_double()
+    } else if aggregation.aggregation_type == "error_rate" {
+      // 错误率百分比
+      let total_requests = 1500  // 假设总请求数
+      aggregated_value = (aggregation.event_count.to_double() / total_requests.to_double()) * 100.0
+    } else if aggregation.aggregation_type == "response_time_avg" {
+      // 平均响应时间（毫秒）
+      let total_response_time = 180000  // 假设总响应时间
+      aggregated_value = total_response_time.to_double() / aggregation.event_count.to_double()
+    } else if aggregation.aggregation_type == "throughput" {
+      // 吞吐量（每秒操作数）
+      aggregated_value = aggregation.event_count.to_double() / time_window_seconds.to_double()
     }
     
-    anomaly_detection_results.push({
-      "metric_id": metric_id,
-      "current_value": current_value,
-      "z_score": z_score,
-      "is_anomaly": is_anomaly,
-      "severity": severity,
-      "detection_confidence": detection_confidence,
-      "response_action": response_action
-    })
+    StreamAggregation {
+      aggregation_type: aggregation.aggregation_type,
+      time_window_ms: aggregation.time_window_ms,
+      event_count: aggregation.event_count,
+      aggregated_value: aggregated_value,
+      aggregation_timestamp: aggregation.aggregation_timestamp
+    }
+  }
+  
+  // 执行流聚合计算
+  let mut aggregation_results = []
+  let mut i = 0
+  while i < aggregation_scenarios.length() {
+    let result = calculate_aggregation(aggregation_scenarios[i])
+    aggregation_results.push(result)
+    i = i + 1
+  }
+  
+  // 验证流聚合结果
+  assert_eq(aggregation_results.length(), 4)
+  
+  // 验证聚合值
+  let request_rate_result = aggregation_results[0]
+  assert_eq(request_rate_result.aggregation_type, "request_rate")
+  assert_eq(request_rate_result.aggregated_value, 25.0)  // 1500/60 = 25 req/sec
+  
+  let error_rate_result = aggregation_results[1]
+  assert_eq(error_rate_result.aggregation_type, "error_rate")
+  assert_eq(error_rate_result.aggregated_value, 1.0)    // 15/1500 * 100 = 1%
+  
+  let response_time_result = aggregation_results[2]
+  assert_eq(response_time_result.aggregation_type, "response_time_avg")
+  assert_eq(response_time_result.aggregated_value, 150.0)  // 180000/1200 = 150ms
+  
+  let throughput_result = aggregation_results[3]
+  assert_eq(throughput_result.aggregation_type, "throughput")
+  assert_eq(throughput_result.aggregated_value, 50.0)    // 3000/60 = 50 ops/sec
+  
+  // 实时异常检测
+  type AnomalyDetection = {
+    metric_name: String,
+    current_value: Double,
+    baseline_value: Double,
+    threshold_percent: Double,
+    anomaly_detected: Bool,
+    anomaly_score: Double
+  }
+  
+  let anomaly_scenarios = [
+    // 正常指标
+    AnomalyDetection {
+      metric_name: "cpu_usage",
+      current_value: 45.0,
+      baseline_value: 40.0,
+      threshold_percent: 50.0,
+      anomaly_detected: false,
+      anomaly_score: 0.0
+    },
+    // 异常高CPU使用率
+    AnomalyDetection {
+      metric_name: "cpu_usage",
+      current_value: 85.0,
+      baseline_value: 40.0,
+      threshold_percent: 50.0,
+      anomaly_detected: false,
+      anomaly_score: 0.0
+    },
+    // 异常响应时间
+    AnomalyDetection {
+      metric_name: "response_time",
+      current_value: 800.0,
+      baseline_value: 200.0,
+      threshold_percent: 100.0,
+      anomaly_detected: false,
+      anomaly_score: 0.0
+    },
+    // 异常错误率
+    AnomalyDetection {
+      metric_name: "error_rate",
+      current_value: 15.0,
+      baseline_value: 2.0,
+      threshold_percent: 200.0,
+      anomaly_detected: false,
+      anomaly_score: 0.0
+    },
+    // 异常内存使用
+    AnomalyDetection {
+      metric_name: "memory_usage",
+      current_value: 95.0,
+      baseline_value: 60.0,
+      threshold_percent: 50.0,
+      anomaly_detected: false,
+      anomaly_score: 0.0
+    }
+  ]
+  
+  // 异常检测函数
+  let detect_anomaly = fn(anomaly: AnomalyDetection) -> AnomalyDetection {
+    let deviation = (anomaly.current_value - anomaly.baseline_value).abs()
+    let percent_deviation = (deviation / anomaly.baseline_value) * 100.0
+    let anomaly_detected = percent_deviation > anomaly.threshold_percent
     
+    // 计算异常分数（0-1之间）
+    let anomaly_score = if anomaly_detected {
+      min(1.0, percent_deviation / (anomaly.threshold_percent * 2.0))
+    } else {
+      0.0
+    }
+    
+    AnomalyDetection {
+      metric_name: anomaly.metric_name,
+      current_value: anomaly.current_value,
+      baseline_value: anomaly.baseline_value,
+      threshold_percent: anomaly.threshold_percent,
+      anomaly_detected: anomaly_detected,
+      anomaly_score: anomaly_score
+    }
+  }
+  
+  // 执行异常检测
+  let mut anomaly_results = []
+  let mut i = 0
+  while i < anomaly_scenarios.length() {
+    let result = detect_anomaly(anomaly_scenarios[i])
+    anomaly_results.push(result)
     i = i + 1
   }
   
   // 验证异常检测结果
-  assert_eq(anomaly_detection_results.length(), 5)
+  assert_eq(anomaly_results.length(), 5)
   
-  // 验证具体指标异常检测结果
-  assert_eq(anomaly_detection_results[0].metric_id, "cpu_usage")
-  assert_eq(anomaly_detection_results[0].z_score > 4.0, true)  // (85.2-45.5)/8.3 ≈ 4.78
-  assert_eq(anomaly_detection_results[0].is_anomaly, true)
-  assert_eq(anomaly_detection_results[0].severity, "critical")
-  assert_eq(anomaly_detection_results[0].response_action, "immediate_alert")
-  
-  assert_eq(anomaly_detection_results[1].metric_id, "memory_usage")
-  assert_eq(anomaly_detection_results[1].z_score > 2.5, true)  // (78.9-65.2)/5.1 ≈ 2.69
-  assert_eq(anomaly_detection_results[1].is_anomaly, true)
-  assert_eq(anomaly_detection_results[1].severity, "medium")
-  assert_eq(anomaly_detection_results[1].response_action, "schedule_analysis")
-  
-  assert_eq(anomaly_detection_results[4].metric_id, "throughput")
-  assert_eq(anomaly_detection_results[4].z_score > 1.5, true)  // (800-1000)/100 = 2.0
-  assert_eq(anomaly_detection_results[4].is_anomaly, false)  // 低于阈值
-  assert_eq(anomaly_detection_results[4].severity, "normal")
-  
-  // 计算整体异常检测效果
+  // 统计异常检测结果
   let mut anomaly_count = 0
-  let mut critical_anomalies = 0
-  let mut high_confidence_detections = 0
-  let mut immediate_alerts = 0
-  i = 0
+  let mut high_severity_count = 0
+  let mut total_anomaly_score = 0.0
   
-  while i < anomaly_detection_results.length() {
-    if anomaly_detection_results[i].is_anomaly {
+  i = 0
+  while i < anomaly_results.length() {
+    let result = anomaly_results[i]
+    
+    if result.anomaly_detected {
       anomaly_count = anomaly_count + 1
     }
     
-    if anomaly_detection_results[i].severity == "critical" {
-      critical_anomalies = critical_anomalies + 1
+    if result.anomaly_score > 0.7 {
+      high_severity_count = high_severity_count + 1
     }
     
-    if anomaly_detection_results[i].detection_confidence >= detection_confidence_threshold {
-      high_confidence_detections = high_confidence_detections + 1
-    }
-    
-    if anomaly_detection_results[i].response_action == "immediate_alert" {
-      immediate_alerts = immediate_alerts + 1
-    }
+    total_anomaly_score = total_anomaly_score + result.anomaly_score
     
     i = i + 1
   }
   
-  let anomaly_rate = (anomaly_count * 100) / anomaly_detection_results.length()
-  let critical_anomaly_rate = (critical_anomalies * 100) / anomaly_detection_results.length()
-  let detection_confidence_rate = (high_confidence_detections * 100) / anomaly_detection_results.length()
+  // 验证异常检测统计
+  assert_eq(anomaly_count, 4)           // 应该检测到4个异常
+  assert_eq(high_severity_count, 3)     // 应该有3个高严重性异常
+  assert_eq(total_anomaly_score > 0.0, true)  // 总异常分数应该大于0
   
-  // 验证整体异常检测效果
-  assert_eq(anomaly_count, 3)
-  assert_eq(anomaly_rate, 60)
-  assert_eq(critical_anomalies, 1)
-  assert_eq(critical_anomaly_rate, 20)
-  assert_eq(immediate_alerts, 1)
+  // 验证特定异常
+  let normal_cpu = anomaly_results[0]
+  assert_eq(normal_cpu.metric_name, "cpu_usage")
+  assert_eq(normal_cpu.anomaly_detected, false)  // 正常CPU不应该被检测为异常
   
-  // 评估异常检测效果
-  let detection_effectiveness = if detection_confidence_rate >= 80 and critical_anomaly_rate <= 25 {
-    "excellent"
-  } else if detection_confidence_rate >= 70 and critical_anomaly_rate <= 30 {
-    "good"
-  } else if detection_confidence_rate >= 60 and critical_anomaly_rate <= 40 {
-    "acceptable"
-  } else {
-    "needs_improvement"
-  }
-  
-  // 验证异常检测效果
-  assert_eq(detection_effectiveness, "good")
+  let high_cpu = anomaly_results[1]
+  assert_eq(high_cpu.metric_name, "cpu_usage")
+  assert_eq(high_cpu.anomaly_detected, true)     // 高CPU应该被检测为异常
+  assert_eq(high_cpu.anomaly_score > 0.5, true)  // 异常分数应该较高
 }
 
 test "telemetry_realtime_pattern_recognition" {
-  // 测试遥测实时模式识别
+  // 测试遥测数据实时模式识别
   
-  let pattern_sequences = [
-    {"sequence_id": "seq_001", "pattern_type": "seasonal", "data_points": [100, 120, 140, 130, 110, 90, 100, 120], "expected_period": 7},
-    {"sequence_id": "seq_002", "pattern_type": "trend", "data_points": [50, 55, 62, 68, 75, 82, 88, 95], "trend_direction": "increasing"},
-    {"sequence_id": "seq_003", "pattern_type": "spike", "data_points": [30, 32, 35, 180, 33, 31, 29, 30], "spike_position": 3},
-    {"sequence_id": "seq_004", "pattern_type": "random", "data_points": [45, 78, 23, 89, 34, 67, 12, 56], "pattern_strength": "weak"}
+  let pattern_config = {
+    "pattern_window_ms": 300000,  // 5分钟窗口
+    "min_pattern_occurrences": 3,
+    "pattern_confidence_threshold": 0.8,
+    "max_pattern_length": 10
+  }
+  
+  // 验证模式识别配置
+  assert_eq(pattern_config["pattern_window_ms"], 300000)
+  assert_eq(pattern_config["min_pattern_occurrences"], 3)
+  assert_eq(pattern_config["pattern_confidence_threshold"], 0.8)
+  
+  // 模式识别类型
+  type TelemetryPattern = {
+    pattern_id: String,
+    pattern_type: String,
+    sequence: Array[String],
+    occurrence_count: Int,
+    confidence_score: Double,
+    time_window_ms: Int
+  }
+  
+  // 创建模式识别测试场景
+  let pattern_scenarios = [
+    // 周期性性能下降模式
+    TelemetryPattern {
+      pattern_id: "pattern_001",
+      pattern_type: "periodic_degradation",
+      sequence: ["high_cpu", "memory_spike", "response_time_increase", "error_burst"],
+      occurrence_count: 0,
+      confidence_score: 0.0,
+      time_window_ms: 300000
+    },
+    // 级联故障模式
+    TelemetryPattern {
+      pattern_id: "pattern_002",
+      pattern_type: "cascade_failure",
+      sequence: ["service_timeout", "dependency_failure", "circuit_breaker_open", "service_unavailable"],
+      occurrence_count: 0,
+      confidence_score: 0.0,
+      time_window_ms: 120000
+    },
+    // 负载突增模式
+    TelemetryPattern {
+      pattern_id: "pattern_003",
+      pattern_type: "load_spike",
+      sequence: ["request_increase", "queue_buildup", "latency_increase", "resource_exhaustion"],
+      occurrence_count: 0,
+      confidence_score: 0.0,
+      time_window_ms: 60000
+    },
+    // 内存泄漏模式
+    TelemetryPattern {
+      pattern_id: "pattern_004",
+      pattern_type: "memory_leak",
+      sequence: ["gradual_memory_increase", "gc_frequency_increase", "oom_risk", "process_restart"],
+      occurrence_count: 0,
+      confidence_score: 0.0,
+      time_window_ms: 1800000
+    },
+    // 网络分区模式
+    TelemetryPattern {
+      pattern_id: "pattern_005",
+      pattern_type: "network_partition",
+      sequence: ["connection_timeout", "retry_attempts", "partial_service_availability", "full_network_isolation"],
+      occurrence_count: 0,
+      confidence_score: 0.0,
+      time_window_ms: 90000
+    }
   ]
   
-  // 验证模式序列
-  assert_eq(pattern_sequences.length(), 4)
-  assert_eq(pattern_sequences[0].pattern_type, "seasonal")
-  assert_eq(pattern_sequences[3].data_points.length(), 8)
+  // 验证模式识别场景
+  assert_eq(pattern_scenarios.length(), 5)
   
-  // 模式识别参数
-  let correlation_threshold = 0.7
-  let trend_detection_window = 4
-  let spike_detection_factor = 3.0
+  // 模式识别函数
+  let recognize_pattern = fn(pattern: TelemetryPattern) -> TelemetryPattern {
+    // 模拟模式出现次数（基于模式类型）
+    let occurrence_count = if pattern.pattern_type == "periodic_degradation" {
+      5  // 周期性模式出现较频繁
+    } else if pattern.pattern_type == "cascade_failure" {
+      2  // 级联故障较少见
+    } else if pattern.pattern_type == "load_spike" {
+      4  // 负载突增较常见
+    } else if pattern.pattern_type == "memory_leak" {
+      3  // 内存泄漏中等频率
+    } else {
+      1  // 其他模式较少见
+    }
+    
+    // 计算置信度分数
+    let max_possible_occurrences = 10
+    let confidence_score = occurrence_count.to_double() / max_possible_occurrences.to_double()
+    
+    TelemetryPattern {
+      pattern_id: pattern.pattern_id,
+      pattern_type: pattern.pattern_type,
+      sequence: pattern.sequence,
+      occurrence_count: occurrence_count,
+      confidence_score: confidence_score,
+      time_window_ms: pattern.time_window_ms
+    }
+  }
   
-  // 验证模式识别参数
-  assert_eq(correlation_threshold, 0.7)
-  assert_eq(trend_detection_window, 4)
-  assert_eq(spike_detection_factor, 3.0)
-  
-  // 实时模式识别算法
-  let pattern_recognition_results = []
+  // 执行模式识别
+  let mut recognized_patterns = []
   let mut i = 0
-  
-  while i < pattern_sequences.length() {
-    let sequence = pattern_sequences[i]
-    let sequence_id = sequence.sequence_id
-    let pattern_type = sequence.pattern_type
-    let data_points = sequence.data_points
-    
-    // 季节性模式检测
-    let seasonal_strength = if pattern_type == "seasonal" {
-      let expected_period = sequence.expected_period
-      let mut max_correlation = 0.0
-      
-      let mut period = 2
-      while period <= data_points.length() / 2 {
-        let mut correlation_sum = 0.0
-        let mut count = 0
-        
-        let mut j = period
-        while j < data_points.length() {
-          let diff = (data_points[j] - data_points[j - period]).abs()
-          correlation_sum = correlation_sum + (1.0 / (1.0 + diff.to_double()))
-          count = count + 1
-          j = j + period
-        }
-        
-        let correlation = if count > 0 {
-          correlation_sum / count.to_double()
-        } else {
-          0.0
-        }
-        
-        if correlation > max_correlation {
-          max_correlation = correlation
-        }
-        
-        period = period + 1
-      }
-      
-      max_correlation
-    } else {
-      0.0
-    }
-    
-    // 趋势模式检测
-    let trend_strength = if pattern_type == "trend" {
-      let mut trend_sum = 0
-      let mut count = 0
-      
-      let mut j = 1
-      while j < trend_detection_window {
-        trend_sum = trend_sum + (data_points[j] - data_points[j - 1])
-        count = count + 1
-        j = j + 1
-      }
-      
-      let avg_trend = if count > 0 {
-        trend_sum / count
-      } else {
-        0
-      }
-      
-      let trend_consistency = if avg_trend > 0 {
-        let mut consistent_count = 0
-        let mut j = 1
-        while j < data_points.length() {
-          if data_points[j] - data_points[j - 1] > 0 {
-            consistent_count = consistent_count + 1
-          }
-          j = j + 1
-        }
-        consistent_count.to_double() / (data_points.length() - 1).to_double()
-      } else if avg_trend < 0 {
-        let mut consistent_count = 0
-        let mut j = 1
-        while j < data_points.length() {
-          if data_points[j] - data_points[j - 1] < 0 {
-            consistent_count = consistent_count + 1
-          }
-          j = j + 1
-        }
-        consistent_count.to_double() / (data_points.length() - 1).to_double()
-      } else {
-        0.0
-      }
-      
-      trend_consistency
-    } else {
-      0.0
-    }
-    
-    // 峰值模式检测
-    let spike_strength = if pattern_type == "spike" {
-      let mut sum = 0
-      let mut j = 0
-      while j < data_points.length() {
-        sum = sum + data_points[j]
-        j = j + 1
-      }
-      let mean = sum / data_points.length()
-      
-      let mut variance_sum = 0
-      j = 0
-      while j < data_points.length() {
-        let diff = data_points[j] - mean
-        variance_sum = variance_sum + diff * diff
-        j = j + 1
-      }
-      let variance = variance_sum / data_points.length()
-      let std_dev = variance.sqrt().to_double()
-      
-      let mut max_deviation = 0.0
-      j = 0
-      while j < data_points.length() {
-        let deviation = (data_points[j] - mean).abs().to_double() / std_dev
-        if deviation > max_deviation {
-          max_deviation = deviation
-        }
-        j = j + 1
-      }
-      
-      if max_deviation >= spike_detection_factor {
-        1.0
-      } else {
-        max_deviation / spike_detection_factor
-      }
-    } else {
-      0.0
-    }
-    
-    // 综合模式强度
-    let overall_pattern_strength = if pattern_type == "seasonal" {
-      seasonal_strength
-    } else if pattern_type == "trend" {
-      trend_strength
-    } else if pattern_type == "spike" {
-      spike_strength
-    } else {
-      0.2  // 随机模式默认低强度
-    }
-    
-    // 模式置信度
-    let pattern_confidence = if overall_pattern_strength >= 0.8 {
-      "high"
-    } else if overall_pattern_strength >= 0.6 {
-      "medium"
-    } else if overall_pattern_strength >= 0.4 {
-      "low"
-    } else {
-      "very_low"
-    }
-    
-    // 预测能力评估
-    let prediction_capability = if overall_pattern_strength >= 0.7 {
-      "strong"
-    } else if overall_pattern_strength >= 0.5 {
-      "moderate"
-    } else if overall_pattern_strength >= 0.3 {
-      "weak"
-    } else {
-      "none"
-    }
-    
-    pattern_recognition_results.push({
-      "sequence_id": sequence_id,
-      "pattern_type": pattern_type,
-      "seasonal_strength": seasonal_strength,
-      "trend_strength": trend_strength,
-      "spike_strength": spike_strength,
-      "overall_pattern_strength": overall_pattern_strength,
-      "pattern_confidence": pattern_confidence,
-      "prediction_capability": prediction_capability
-    })
-    
+  while i < pattern_scenarios.length() {
+    let recognized = recognize_pattern(pattern_scenarios[i])
+    recognized_patterns.push(recognized)
     i = i + 1
   }
   
   // 验证模式识别结果
-  assert_eq(pattern_recognition_results.length(), 4)
+  assert_eq(recognized_patterns.length(), 5)
   
-  // 验证具体序列模式识别结果
-  assert_eq(pattern_recognition_results[0].sequence_id, "seq_001")
-  assert_eq(pattern_recognition_results[0].pattern_type, "seasonal")
-  assert_eq(pattern_recognition_results[0].seasonal_strength > 0.5, true)
-  assert_eq(pattern_recognition_results[0].pattern_confidence, "medium")
-  
-  assert_eq(pattern_recognition_results[1].sequence_id, "seq_002")
-  assert_eq(pattern_recognition_results[1].pattern_type, "trend")
-  assert_eq(pattern_recognition_results[1].trend_strength, 1.0)  // 完全一致的增长趋势
-  assert_eq(pattern_recognition_results[1].pattern_confidence, "high")
-  
-  assert_eq(pattern_recognition_results[2].sequence_id, "seq_003")
-  assert_eq(pattern_recognition_results[2].pattern_type, "spike")
-  assert_eq(pattern_recognition_results[2].spike_strength, 1.0)  // 明显的峰值
-  assert_eq(pattern_recognition_results[2].prediction_capability, "strong")
-  
-  // 计算整体模式识别效果
+  // 统计模式识别结果
   let mut high_confidence_patterns = 0
-  let mut strong_prediction_patterns = 0
-  let mut total_pattern_strength = 0.0
-  i = 0
+  let mut total_occurrences = 0
+  let mut average_confidence = 0.0
   
-  while i < pattern_recognition_results.length() {
-    if pattern_recognition_results[i].pattern_confidence == "high" {
+  i = 0
+  while i < recognized_patterns.length() {
+    let pattern = recognized_patterns[i]
+    
+    total_occurrences = total_occurrences + pattern.occurrence_count
+    average_confidence = average_confidence + pattern.confidence_score
+    
+    if pattern.confidence_score >= pattern_config["pattern_confidence_threshold"] {
       high_confidence_patterns = high_confidence_patterns + 1
     }
     
-    if pattern_recognition_results[i].prediction_capability == "strong" {
-      strong_prediction_patterns = strong_prediction_patterns + 1
-    }
-    
-    total_pattern_strength = total_pattern_strength + pattern_recognition_results[i].overall_pattern_strength
     i = i + 1
   }
   
-  let average_pattern_strength = total_pattern_strength / pattern_recognition_results.length().to_double()
-  let high_confidence_rate = (high_confidence_patterns * 100) / pattern_recognition_results.length()
-  let strong_prediction_rate = (strong_prediction_patterns * 100) / pattern_recognition_results.length()
+  average_confidence = average_confidence / recognized_patterns.length().to_double()
   
-  // 验证整体模式识别效果
-  assert_eq(average_pattern_strength > 0.5, true)
-  assert_eq(high_confidence_patterns, 2)
-  assert_eq(high_confidence_rate, 50)
-  assert_eq(strong_prediction_patterns, 2)
-  assert_eq(strong_prediction_rate, 50)
+  // 验证模式识别统计
+  assert_eq(high_confidence_patterns, 4)     // 应该有4个高置信度模式
+  assert_eq(total_occurrences, 15)           // 总出现次数应该是15
+  assert_eq(average_confidence > 0.5, true)  // 平均置信度应该超过0.5
   
-  // 评估模式识别效果
-  let recognition_effectiveness = if average_pattern_strength >= 0.7 and high_confidence_rate >= 60 {
-    "excellent"
-  } else if average_pattern_strength >= 0.6 and high_confidence_rate >= 40 {
-    "good"
-  } else if average_pattern_strength >= 0.5 and high_confidence_rate >= 30 {
-    "acceptable"
-  } else {
-    "needs_improvement"
+  // 实时预测分析
+  type PredictiveAnalysis = {
+    prediction_type: String,
+    prediction_horizon_ms: Int,
+    input_metrics: Array[String],
+    predicted_value: Double,
+    confidence_level: Double,
+    prediction_timestamp: Int
   }
   
-  // 验证模式识别效果
-  assert_eq(recognition_effectiveness, "good")
-}
-
-test "telemetry_realtime_correlation_analysis" {
-  // 测试遥测实时关联分析
-  
-  let metric_pairs = [
-    {"pair_id": "pair_001", "metric_a": "cpu_usage", "metric_b": "response_time", "a_values": [45, 52, 68, 75, 82], "b_values": [120, 135, 180, 210, 245]},
-    {"pair_id": "pair_002", "metric_a": "memory_usage", "metric_b": "error_rate", "a_values": [65, 68, 72, 78, 82], "b_values": [0.01, 0.012, 0.018, 0.025, 0.035]},
-    {"pair_id": "pair_003", "metric_a": "throughput", "metric_b": "cpu_usage", "a_values": [800, 950, 1100, 1250, 1400], "b_values": [35, 42, 58, 72, 85]},
-    {"pair_id": "pair_004", "metric_a": "disk_io", "metric_b": "network_latency", "a_values": [50, 55, 48, 52, 58], "b_values": [25, 22, 28, 24, 20]}
+  let prediction_scenarios = [
+    // 故障预测
+    PredictiveAnalysis {
+      prediction_type: "service_failure",
+      prediction_horizon_ms: 600000,  // 10分钟
+      input_metrics: ["error_rate", "response_time", "cpu_usage"],
+      predicted_value: 0.0,
+      confidence_level: 0.0,
+      prediction_timestamp: 1640995200000
+    },
+    // 容量预测
+    PredictiveAnalysis {
+      prediction_type: "capacity_exhaustion",
+      prediction_horizon_ms: 1800000,  // 30分钟
+      input_metrics: ["memory_usage", "disk_usage", "request_rate"],
+      predicted_value: 0.0,
+      confidence_level: 0.0,
+      prediction_timestamp: 1640995200000
+    },
+    // 性能预测
+    PredictiveAnalysis {
+      prediction_type: "performance_degradation",
+      prediction_horizon_ms: 900000,  // 15分钟
+      input_metrics: ["queue_depth", "latency_trend", "resource_contention"],
+      predicted_value: 0.0,
+      confidence_level: 0.0,
+      prediction_timestamp: 1640995200000
+    },
+    // 负载预测
+    PredictiveAnalysis {
+      prediction_type: "load_spike",
+      prediction_horizon_ms: 300000,  // 5分钟
+      input_metrics: ["request_trend", "historical_patterns", "seasonal_factors"],
+      predicted_value: 0.0,
+      confidence_level: 0.0,
+      prediction_timestamp: 1640995200000
+    }
   ]
   
-  // 验证指标对
-  assert_eq(metric_pairs.length(), 4)
-  assert_eq(metric_pairs[0].metric_a, "cpu_usage")
-  assert_eq(metric_pairs[3].metric_b, "network_latency")
+  // 预测分析函数
+  let perform_prediction = fn(prediction: PredictiveAnalysis) -> PredictiveAnalysis {
+    let mut predicted_value = 0.0
+    let mut confidence_level = 0.0
+    
+    if prediction.prediction_type == "service_failure" {
+      predicted_value = 0.75  // 75%故障概率
+      confidence_level = 0.85
+    } else if prediction.prediction_type == "capacity_exhaustion" {
+      predicted_value = 0.60  // 60%容量耗尽概率
+      confidence_level = 0.70
+    } else if prediction.prediction_type == "performance_degradation" {
+      predicted_value = 0.45  // 45%性能下降概率
+      confidence_level = 0.65
+    } else if prediction.prediction_type == "load_spike" {
+      predicted_value = 0.80  // 80%负载突增概率
+      confidence_level = 0.90
+    }
+    
+    PredictiveAnalysis {
+      prediction_type: prediction.prediction_type,
+      prediction_horizon_ms: prediction.prediction_horizon_ms,
+      input_metrics: prediction.input_metrics,
+      predicted_value: predicted_value,
+      confidence_level: confidence_level,
+      prediction_timestamp: prediction.prediction_timestamp
+    }
+  }
   
-  // 关联分析参数
-  let correlation_threshold_strong = 0.8
-  let correlation_threshold_moderate = 0.5
-  let significance_level = 0.05
-  
-  // 验证关联分析参数
-  assert_eq(correlation_threshold_strong, 0.8)
-  assert_eq(correlation_threshold_moderate, 0.5)
-  
-  // 实时关联分析算法
-  let correlation_analysis_results = []
+  // 执行预测分析
+  let mut prediction_results = []
   let mut i = 0
-  
-  while i < metric_pairs.length() {
-    let pair = metric_pairs[i]
-    let pair_id = pair.pair_id
-    let metric_a = pair.metric_a
-    let metric_b = pair.metric_b
-    let a_values = pair.a_values
-    let b_values = pair.b_values
-    
-    // 计算均值
-    let mut sum_a = 0
-    let mut sum_b = 0
-    let mut j = 0
-    
-    while j < a_values.length() {
-      sum_a = sum_a + a_values[j]
-      sum_b = sum_b + b_values[j]
-      j = j + 1
-    }
-    
-    let mean_a = sum_a.to_double() / a_values.length().to_double()
-    let mean_b = sum_b.to_double() / b_values.length().to_double()
-    
-    // 计算协方差和方差
-    let mut covariance = 0.0
-    let mut variance_a = 0.0
-    let mut variance_b = 0.0
-    j = 0
-    
-    while j < a_values.length() {
-      let diff_a = a_values[j].to_double() - mean_a
-      let diff_b = b_values[j].to_double() - mean_b
-      
-      covariance = covariance + diff_a * diff_b
-      variance_a = variance_a + diff_a * diff_a
-      variance_b = variance_b + diff_b * diff_b
-      
-      j = j + 1
-    }
-    
-    // 计算皮尔逊相关系数
-    let correlation_coefficient = if variance_a > 0.0 and variance_b > 0.0 {
-      covariance / (variance_a.sqrt() * variance_b.sqrt())
-    } else {
-      0.0
-    }
-    
-    // 确定关联强度
-    let correlation_strength = if correlation_coefficient.abs() >= correlation_threshold_strong {
-      "strong"
-    } else if correlation_coefficient.abs() >= correlation_threshold_moderate {
-      "moderate"
-    } else if correlation_coefficient.abs() >= 0.3 {
-      "weak"
-    } else {
-      "negligible"
-    }
-    
-    // 确定关联方向
-    let correlation_direction = if correlation_coefficient > 0.1 {
-      "positive"
-    } else if correlation_coefficient < -0.1 {
-      "negative"
-    } else {
-      "neutral"
-    }
-    
-    // 计算统计显著性（简化版）
-    let sample_size = a_values.length()
-    let t_statistic = correlation_coefficient * ((sample_size - 2).to_double() / (1.0 - correlation_coefficient * correlation_coefficient)).sqrt()
-    let is_significant = t_statistic.abs() > 2.0  // 简化的显著性检验
-    
-    // 确定因果关系可能性
-    let causal_relationship_likelihood = if correlation_coefficient.abs() >= 0.8 and is_significant {
-      "high"
-    } else if correlation_coefficient.abs() >= 0.6 and is_significant {
-      "medium"
-    } else if correlation_coefficient.abs() >= 0.4 {
-      "low"
-    } else {
-      "very_low"
-    }
-    
-    correlation_analysis_results.push({
-      "pair_id": pair_id,
-      "metric_a": metric_a,
-      "metric_b": metric_b,
-      "correlation_coefficient": correlation_coefficient,
-      "correlation_strength": correlation_strength,
-      "correlation_direction": correlation_direction,
-      "is_significant": is_significant,
-      "causal_relationship_likelihood": causal_relationship_likelihood
-    })
-    
-    i = i + 1
-  }
-  
-  // 验证关联分析结果
-  assert_eq(correlation_analysis_results.length(), 4)
-  
-  // 验证具体指标对关联分析结果
-  assert_eq(correlation_analysis_results[0].pair_id, "pair_001")
-  assert_eq(correlation_analysis_results[0].metric_a, "cpu_usage")
-  assert_eq(correlation_analysis_results[0].metric_b, "response_time")
-  assert_eq(correlation_analysis_results[0].correlation_coefficient > 0.9, true)  // 强正相关
-  assert_eq(correlation_analysis_results[0].correlation_strength, "strong")
-  assert_eq(correlation_analysis_results[0].correlation_direction, "positive")
-  assert_eq(correlation_analysis_results[0].causal_relationship_likelihood, "high")
-  
-  assert_eq(correlation_analysis_results[1].pair_id, "pair_002")
-  assert_eq(correlation_analysis_results[1].metric_a, "memory_usage")
-  assert_eq(correlation_analysis_results[1].metric_b, "error_rate")
-  assert_eq(correlation_analysis_results[1].correlation_coefficient > 0.8, true)  // 强正相关
-  assert_eq(correlation_analysis_results[1].correlation_strength, "strong")
-  
-  assert_eq(correlation_analysis_results[3].pair_id, "pair_004")
-  assert_eq(correlation_analysis_results[3].correlation_coefficient < -0.5, true)  // 负相关
-  assert_eq(correlation_analysis_results[3].correlation_direction, "negative")
-  
-  // 计算整体关联分析效果
-  let mut strong_correlations = 0
-  let mut significant_correlations = 0
-  let mut positive_correlations = 0
-  let mut negative_correlations = 0
-  let mut total_correlation_strength = 0.0
-  i = 0
-  
-  while i < correlation_analysis_results.length() {
-    if correlation_analysis_results[i].correlation_strength == "strong" {
-      strong_correlations = strong_correlations + 1
-    }
-    
-    if correlation_analysis_results[i].is_significant {
-      significant_correlations = significant_correlations + 1
-    }
-    
-    if correlation_analysis_results[i].correlation_direction == "positive" {
-      positive_correlations = positive_correlations + 1
-    } else if correlation_analysis_results[i].correlation_direction == "negative" {
-      negative_correlations = negative_correlations + 1
-    }
-    
-    total_correlation_strength = total_correlation_strength + correlation_analysis_results[i].correlation_coefficient.abs()
-    i = i + 1
-  }
-  
-  let average_correlation_strength = total_correlation_strength / correlation_analysis_results.length().to_double()
-  let strong_correlation_rate = (strong_correlations * 100) / correlation_analysis_results.length()
-  let significance_rate = (significant_correlations * 100) / correlation_analysis_results.length()
-  
-  // 验证整体关联分析效果
-  assert_eq(strong_correlations, 3)
-  assert_eq(strong_correlation_rate, 75)
-  assert_eq(significant_correlations, 3)
-  assert_eq(significance_rate, 75)
-  assert_eq(average_correlation_strength > 0.7, true)
-  
-  // 评估关联分析效果
-  let correlation_analysis_effectiveness = if average_correlation_strength >= 0.7 and significance_rate >= 70 {
-    "excellent"
-  } else if average_correlation_strength >= 0.6 and significance_rate >= 60 {
-    "good"
-  } else if average_correlation_strength >= 0.5 and significance_rate >= 50 {
-    "acceptable"
-  } else {
-    "needs_improvement"
-  }
-  
-  // 验证关联分析效果
-  assert_eq(correlation_analysis_effectiveness, "excellent")
-}
-
-test "telemetry_realtime_predictive_analysis" {
-  // 测试遥测实时预测分析
-  
-  let prediction_targets = [
-    {"target_id": "target_001", "metric": "cpu_usage", "historical_data": [45, 48, 52, 55, 58, 62, 65, 68], "prediction_horizon": 3},
-    {"target_id": "target_002", "metric": "memory_usage", "historical_data": [65, 66, 68, 70, 72, 75, 78, 80], "prediction_horizon": 2},
-    {"target_id": "target_003", "metric": "disk_usage", "historical_data": [70, 71, 70, 72, 73, 72, 74, 75], "prediction_horizon": 4},
-    {"target_id": "target_004", "metric": "network_traffic", "historical_data": [100, 150, 120, 180, 140, 200, 160, 220], "prediction_horizon": 3}
-  ]
-  
-  // 验证预测目标
-  assert_eq(prediction_targets.length(), 4)
-  assert_eq(prediction_targets[0].metric, "cpu_usage")
-  assert_eq(prediction_targets[3].prediction_horizon, 3)
-  
-  // 预测分析参数
-  let confidence_threshold = 0.7
-  let trend_weight = 0.6
-  let seasonal_weight = 0.4
-  
-  // 验证预测分析参数
-  assert_eq(confidence_threshold, 0.7)
-  assert_eq(trend_weight, 0.6)
-  
-  // 实时预测分析算法
-  let predictive_analysis_results = []
-  let mut i = 0
-  
-  while i < prediction_targets.length() {
-    let target = prediction_targets[i]
-    let target_id = target.target_id
-    let metric = target.metric
-    let historical_data = target.historical_data
-    let prediction_horizon = target.prediction_horizon
-    
-    // 简单线性趋势预测
-    let mut trend_slope = 0.0
-    let mut j = 1
-    while j < historical_data.length() {
-      trend_slope = trend_slope + (historical_data[j] - historical_data[j - 1]).to_double()
-      j = j + 1
-    }
-    trend_slope = trend_slope / (historical_data.length() - 1).to_double()
-    
-    // 计算最近趋势（更重视近期数据）
-    let mut recent_trend_slope = 0.0
-    let recent_window = 3
-    j = historical_data.length() - recent_window
-    while j < historical_data.length() {
-      recent_trend_slope = recent_trend_slope + (historical_data[j] - historical_data[j - 1]).to_double()
-      j = j + 1
-    }
-    recent_trend_slope = recent_trend_slope / (recent_window - 1).to_double()
-    
-    // 加权趋势预测
-    let weighted_trend = trend_slope * trend_weight + recent_trend_slope * (1.0 - trend_weight)
-    
-    // 生成预测值
-    let mut predictions = []
-    let last_value = historical_data[historical_data.length() - 1].to_double()
-    j = 1
-    while j <= prediction_horizon {
-      let predicted_value = last_value + weighted_trend * j.to_double()
-      predictions.push(predicted_value)
-      j = j + 1
-    }
-    
-    // 计算预测置信度
-    let trend_consistency = if trend_slope.abs() < 1.0 {
-      0.9  // 稳定趋势
-    } else if trend_slope.abs() < 5.0 {
-      0.7  // 中等变化
-    } else {
-      0.5  // 高变化
-    }
-    
-    let data_quality = if historical_data.length() >= 8 {
-      0.9  // 充足数据
-    } else if historical_data.length() >= 5 {
-      0.7  // 中等数据
-    } else {
-      0.5  // 数据不足
-    }
-    
-    let prediction_confidence = trend_consistency * data_quality
-    
-    // 检测预测风险
-    let last_value_f = historical_data[historical_data.length() - 1].to_double()
-    let predicted_max = predictions[0]
-    let risk_level = if predicted_max > last_value_f * 1.5 {
-      "high"
-    } else if predicted_max > last_value_f * 1.2 {
-      "medium"
-    } else if predicted_max > last_value_f * 1.1 {
-      "low"
-    } else {
-      "minimal"
-    }
-    
-    // 预测准确性评估（基于历史拟合）
-    let mut fitting_error = 0.0
-    j = 1
-    while j < historical_data.length() {
-      let expected_value = historical_data[0].to_double() + weighted_trend * j.to_double()
-      let actual_value = historical_data[j].to_double()
-      fitting_error = fitting_error + (expected_value - actual_value).abs()
-      j = j + 1
-    }
-    
-    let average_fitting_error = fitting_error / (historical_data.length() - 1).to_double()
-    let accuracy_score = if average_fitting_error < 2.0 {
-      "high"
-    } else if average_fitting_error < 5.0 {
-      "medium"
-    } else {
-      "low"
-    }
-    
-    predictive_analysis_results.push({
-      "target_id": target_id,
-      "metric": metric,
-      "trend_slope": trend_slope,
-      "weighted_trend": weighted_trend,
-      "predictions": predictions,
-      "prediction_confidence": prediction_confidence,
-      "risk_level": risk_level,
-      "accuracy_score": accuracy_score
-    })
-    
+  while i < prediction_scenarios.length() {
+    let result = perform_prediction(prediction_scenarios[i])
+    prediction_results.push(result)
     i = i + 1
   }
   
   // 验证预测分析结果
-  assert_eq(predictive_analysis_results.length(), 4)
+  assert_eq(prediction_results.length(), 4)
   
-  // 验证具体目标预测分析结果
-  assert_eq(predictive_analysis_results[0].target_id, "target_001")
-  assert_eq(predictive_analysis_results[0].metric, "cpu_usage")
-  assert_eq(predictive_analysis_results[0].trend_slope > 3.0, true)  // 上升趋势
-  assert_eq(predictive_analysis_results[0].predictions.length(), 3)
-  assert_eq(predictive_analysis_results[0].prediction_confidence > 0.6, true)
-  assert_eq(predictive_analysis_results[0].risk_level, "low")
-  
-  assert_eq(predictive_analysis_results[2].target_id, "target_003")
-  assert_eq(predictive_analysis_results[2].metric, "disk_usage")
-  assert_eq(predictive_analysis_results[2].trend_slope > 0.0, true)  // 缓慢上升趋势
-  assert_eq(predictive_analysis_results[2].accuracy_score, "high")
-  
-  assert_eq(predictive_analysis_results[3].target_id, "target_004")
-  assert_eq(predictive_analysis_results[3].metric, "network_traffic")
-  assert_eq(predictive_analysis_results[3].risk_level, "medium")  // 波动较大
-  
-  // 计算整体预测分析效果
-  let mut high_confidence_predictions = 0
+  // 统计预测结果
   let mut high_risk_predictions = 0
-  let mut high_accuracy_predictions = 0
-  let mut average_prediction_confidence = 0.0
-  i = 0
+  let mut high_confidence_predictions = 0
+  let mut average_predicted_risk = 0.0
   
-  while i < predictive_analysis_results.length() {
-    if predictive_analysis_results[i].prediction_confidence >= confidence_threshold {
-      high_confidence_predictions = high_confidence_predictions + 1
-    }
+  i = 0
+  while i < prediction_results.length() {
+    let result = prediction_results[i]
     
-    if predictive_analysis_results[i].risk_level == "high" or predictive_analysis_results[i].risk_level == "medium" {
+    average_predicted_risk = average_predicted_risk + result.predicted_value
+    
+    if result.predicted_value > 0.7 {
       high_risk_predictions = high_risk_predictions + 1
     }
     
-    if predictive_analysis_results[i].accuracy_score == "high" {
-      high_accuracy_predictions = high_accuracy_predictions + 1
+    if result.confidence_level > 0.8 {
+      high_confidence_predictions = high_confidence_predictions + 1
     }
     
-    average_prediction_confidence = average_prediction_confidence + predictive_analysis_results[i].prediction_confidence
     i = i + 1
   }
   
-  average_prediction_confidence = average_prediction_confidence / predictive_analysis_results.length().to_double()
-  let confidence_rate = (high_confidence_predictions * 100) / predictive_analysis_results.length()
-  let risk_rate = (high_risk_predictions * 100) / predictive_analysis_results.length()
-  let accuracy_rate = (high_accuracy_predictions * 100) / predictive_analysis_results.length()
+  average_predicted_risk = average_predicted_risk / prediction_results.length().to_double()
   
-  // 验证整体预测分析效果
-  assert_eq(high_confidence_predictions, 3)
-  assert_eq(confidence_rate, 75)
-  assert_eq(high_risk_predictions, 2)
-  assert_eq(risk_rate, 50)
-  assert_eq(high_accuracy_predictions, 2)
-  assert_eq(accuracy_rate, 50)
-  assert_eq(average_prediction_confidence > 0.6, true)
+  // 验证预测统计
+  assert_eq(high_risk_predictions, 2)          // 应该有2个高风险预测
+  assert_eq(high_confidence_predictions, 2)    // 应该有2个高置信度预测
+  assert_eq(average_predicted_risk > 0.5, true) // 平均预测风险应该超过0.5
   
-  // 评估预测分析效果
-  let prediction_effectiveness = if average_prediction_confidence >= 0.7 and accuracy_rate >= 60 {
-    "excellent"
-  } else if average_prediction_confidence >= 0.6 and accuracy_rate >= 50 {
-    "good"
-  } else if average_prediction_confidence >= 0.5 and accuracy_rate >= 40 {
-    "acceptable"
-  } else {
-    "needs_improvement"
+  // 实时关联分析
+  type CorrelationAnalysis = {
+    correlation_type: String,
+    metric_a: String,
+    metric_b: String,
+    correlation_coefficient: Double,
+    significance_level: Double,
+    time_window_ms: Int
   }
   
-  // 验证预测分析效果
-  assert_eq(prediction_effectiveness, "good")
+  let correlation_scenarios = [
+    // CPU与响应时间相关性
+    CorrelationAnalysis {
+      correlation_type: "positive_correlation",
+      metric_a: "cpu_usage",
+      metric_b: "response_time",
+      correlation_coefficient: 0.0,
+      significance_level: 0.0,
+      time_window_ms: 300000
+    },
+    // 错误率与吞吐量负相关性
+    CorrelationAnalysis {
+      correlation_type: "negative_correlation",
+      metric_a: "error_rate",
+      metric_b: "throughput",
+      correlation_coefficient: 0.0,
+      significance_level: 0.0,
+      time_window_ms: 300000
+    },
+    // 内存使用与GC频率相关性
+    CorrelationAnalysis {
+      correlation_type: "positive_correlation",
+      metric_a: "memory_usage",
+      metric_b: "gc_frequency",
+      correlation_coefficient: 0.0,
+      significance_level: 0.0,
+      time_window_ms: 600000
+    },
+    // 网络延迟与重试率相关性
+    CorrelationAnalysis {
+      correlation_type: "positive_correlation",
+      metric_a: "network_latency",
+      metric_b: "retry_rate",
+      correlation_coefficient: 0.0,
+      significance_level: 0.0,
+      time_window_ms: 180000
+    }
+  ]
+  
+  // 相关性分析函数
+  let analyze_correlation = fn(correlation: CorrelationAnalysis) -> CorrelationAnalysis {
+    let mut correlation_coefficient = 0.0
+    let mut significance_level = 0.0
+    
+    if correlation.correlation_type == "positive_correlation" {
+      // 模拟正相关性
+      if correlation.metric_a == "cpu_usage" and correlation.metric_b == "response_time" {
+        correlation_coefficient = 0.82
+        significance_level = 0.95
+      } else if correlation.metric_a == "memory_usage" and correlation.metric_b == "gc_frequency" {
+        correlation_coefficient = 0.75
+        significance_level = 0.90
+      } else if correlation.metric_a == "network_latency" and correlation.metric_b == "retry_rate" {
+        correlation_coefficient = 0.68
+        significance_level = 0.85
+      }
+    } else if correlation.correlation_type == "negative_correlation" {
+      // 模拟负相关性
+      correlation_coefficient = -0.73
+      significance_level = 0.92
+    }
+    
+    CorrelationAnalysis {
+      correlation_type: correlation.correlation_type,
+      metric_a: correlation.metric_a,
+      metric_b: correlation.metric_b,
+      correlation_coefficient: correlation_coefficient,
+      significance_level: significance_level,
+      time_window_ms: correlation.time_window_ms
+    }
+  }
+  
+  // 执行相关性分析
+  let mut correlation_results = []
+  let mut i = 0
+  while i < correlation_scenarios.length() {
+    let result = analyze_correlation(correlation_scenarios[i])
+    correlation_results.push(result)
+    i = i + 1
+  }
+  
+  // 验证相关性分析结果
+  assert_eq(correlation_results.length(), 4)
+  
+  // 统计相关性结果
+  let mut strong_correlations = 0
+  let mut positive_correlations = 0
+  let mut negative_correlations = 0
+  let mut high_significance_count = 0
+  
+  i = 0
+  while i < correlation_results.length() {
+    let result = correlation_results[i]
+    
+    if result.correlation_coefficient.abs() > 0.7 {
+      strong_correlations = strong_correlations + 1
+    }
+    
+    if result.correlation_coefficient > 0 {
+      positive_correlations = positive_correlations + 1
+    } else if result.correlation_coefficient < 0 {
+      negative_correlations = negative_correlations + 1
+    }
+    
+    if result.significance_level > 0.9 {
+      high_significance_count = high_significance_count + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证相关性统计
+  assert_eq(strong_correlations, 3)        // 应该有3个强相关性
+  assert_eq(positive_correlations, 3)      // 应该有3个正相关
+  assert_eq(negative_correlations, 1)      // 应该有1个负相关
+  assert_eq(high_significance_count, 3)    // 应该有3个高显著性相关性
 }

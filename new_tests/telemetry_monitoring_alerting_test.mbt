@@ -1,745 +1,654 @@
-// 遥测监控告警测试用例
+// 遥测系统监控告警测试用例
 
-test "telemetry_metric_monitoring" {
-  // 测试遥测指标监控
+test "telemetry_system_monitoring_dashboard" {
+  // 测试遥测系统监控仪表板
   
-  let metric_monitoring_config = {
-    "collection_interval_seconds": 30,
-    "evaluation_window_minutes": 5,
-    "max_metrics_per_service": 100,
-    "retention_days": 30,
-    "aggregation_enabled": true
+  let monitoring_config = {
+    "dashboard_refresh_interval_seconds": 30,
+    "metric_retention_hours": 24,
+    "alert_evaluation_interval_seconds": 60,
+    "max_dashboard_widgets": 20,
+    "critical_alert_threshold": 0.9
   }
   
-  // 验证指标监控配置
-  assert_eq(metric_monitoring_config["collection_interval_seconds"], "30")
-  assert_eq(metric_monitoring_config["evaluation_window_minutes"], "5")
-  assert_eq(metric_monitoring_config["max_metrics_per_service"], "100")
-  assert_eq(metric_monitoring_config["retention_days"], "30")
-  assert_eq(metric_monitoring_config["aggregation_enabled"], "true")
+  // 验证监控配置
+  assert_eq(monitoring_config["dashboard_refresh_interval_seconds"], 30)
+  assert_eq(monitoring_config["alert_evaluation_interval_seconds"], 60)
+  assert_eq(monitoring_config["max_dashboard_widgets"], 20)
   
-  // 模拟指标监控数据
-  let metric_monitoring_data = {
-    "services_monitored": 15,
-    "total_metrics_collected": 1200,
-    "active_alerts": 8,
-    "resolved_alerts_today": 25,
-    "avg_collection_time_ms": 150
+  // 监控指标类型
+  type MonitoringMetric = {
+    metric_id: String,
+    metric_name: String,
+    metric_type: String,
+    current_value: Double,
+    unit: String,
+    threshold_warning: Double,
+    threshold_critical: Double,
+    status: String,
+    trend: String
   }
   
-  // 验证指标监控数据
-  assert_eq(metric_monitoring_data["services_monitored"], "15")
-  assert_eq(metric_monitoring_data["total_metrics_collected"], "1200")
-  assert_eq(metric_monitoring_data["active_alerts"], "8")
-  assert_eq(metric_monitoring_data["resolved_alerts_today"], "25")
-  
-  // 检查平均指标数
-  let avg_metrics_per_service = metric_monitoring_data["total_metrics_collected"].to_int() / 
-                               metric_monitoring_data["services_monitored"].to_int()
-  
-  // 验证平均指标数
-  assert_eq(avg_metrics_per_service, 80)  // 1200/15 = 80
-  assert_eq(avg_metrics_per_service <= metric_monitoring_config["max_metrics_per_service"].to_int(), true)  // 80 <= 100
-  
-  // 检查收集时间
-  let avg_collection_time = metric_monitoring_data["avg_collection_time_ms"].to_int()
-  assert_eq(avg_collection_time <= 1000, true)  // 平均收集时间不超过1秒
-  
-  // 测试指标阈值监控
-  let threshold_monitoring_test = [
-    {
-      "metric_name": "cpu_usage",
-      "threshold_value": 80,
-      "current_value": 75,
-      "operator": "greater_than",
-      "alert_status": "normal"
+  // 创建监控指标测试场景
+  let metric_scenarios = [
+    // CPU使用率
+    MonitoringMetric {
+      metric_id: "metric_001",
+      metric_name: "cpu_usage",
+      metric_type: "gauge",
+      current_value: 75.5,
+      unit: "percent",
+      threshold_warning: 70.0,
+      threshold_critical: 90.0,
+      status: "normal",
+      trend: "increasing"
     },
-    {
-      "metric_name": "memory_usage",
-      "threshold_value": 90,
-      "current_value": 92,
-      "operator": "greater_than",
-      "alert_status": "critical"
+    // 内存使用率
+    MonitoringMetric {
+      metric_id: "metric_002",
+      metric_name: "memory_usage",
+      metric_type: "gauge",
+      current_value: 92.3,
+      unit: "percent",
+      threshold_warning: 80.0,
+      threshold_critical: 95.0,
+      status: "normal",
+      trend: "stable"
     },
-    {
-      "metric_name": "response_time",
-      "threshold_value": 500,
-      "current_value": 450,
-      "operator": "greater_than",
-      "alert_status": "normal"
+    // 请求速率
+    MonitoringMetric {
+      metric_id: "metric_003",
+      metric_name: "request_rate",
+      metric_type: "counter",
+      current_value: 1250.5,
+      unit: "req/sec",
+      threshold_warning: 1000.0,
+      threshold_critical: 2000.0,
+      status: "normal",
+      trend: "increasing"
     },
-    {
-      "metric_name": "error_rate",
-      "threshold_value": 5,
-      "current_value": 8,
-      "operator": "greater_than",
-      "alert_status": "warning"
+    // 错误率
+    MonitoringMetric {
+      metric_id: "metric_004",
+      metric_name: "error_rate",
+      metric_type: "gauge",
+      current_value: 8.7,
+      unit: "percent",
+      threshold_warning: 5.0,
+      threshold_critical: 10.0,
+      status: "normal",
+      trend: "decreasing"
+    },
+    // 响应时间
+    MonitoringMetric {
+      metric_id: "metric_005",
+      metric_name: "response_time",
+      metric_type: "histogram",
+      current_value: 450.2,
+      unit: "ms",
+      threshold_warning: 300.0,
+      threshold_critical: 1000.0,
+      status: "normal",
+      trend: "stable"
     }
   ]
   
-  // 验证阈值监控测试
-  assert_eq(threshold_monitoring_test.length(), 4)
+  // 验证指标场景
+  assert_eq(metric_scenarios.length(), 5)
   
-  // 检查阈值评估逻辑
-  let mut critical_alerts = 0
-  let mut warning_alerts = 0
-  let mut normal_metrics = 0
-  
-  let mut i = 0
-  while i < threshold_monitoring_test.length() {
-    let metric = threshold_monitoring_test[i]
-    let threshold = metric["threshold_value"].to_int()
-    let current = metric["current_value"].to_int()
-    let operator = metric["operator"]
-    let alert_status = metric["alert_status"]
+  // 监控状态评估函数
+  let evaluate_metric_status = fn(metric: MonitoringMetric) -> MonitoringMetric {
+    let mut status = "normal"
     
-    // 评估阈值
-    let mut should_alert = false
-    if operator == "greater_than" and current > threshold {
-      should_alert = true
+    // 根据阈值评估状态
+    if metric.current_value >= metric.threshold_critical {
+      status = "critical"
+    } else if metric.current_value >= metric.threshold_warning {
+      status = "warning"
     }
     
-    // 验证告警状态
-    if should_alert {
-      assert_eq(alert_status != "normal", true)
-      if alert_status == "critical" {
-        critical_alerts = critical_alerts + 1
-      } else if alert_status == "warning" {
-        warning_alerts = warning_alerts + 1
-      }
-    } else {
-      assert_eq(alert_status, "normal")
-      normal_metrics = normal_metrics + 1
+    MonitoringMetric {
+      metric_id: metric.metric_id,
+      metric_name: metric.metric_name,
+      metric_type: metric.metric_type,
+      current_value: metric.current_value,
+      unit: metric.unit,
+      threshold_warning: metric.threshold_warning,
+      threshold_critical: metric.threshold_critical,
+      status: status,
+      trend: metric.trend
+    }
+  }
+  
+  // 执行监控状态评估
+  let mut evaluated_metrics = []
+  let mut i = 0
+  while i < metric_scenarios.length() {
+    let evaluated = evaluate_metric_status(metric_scenarios[i])
+    evaluated_metrics.push(evaluated)
+    i = i + 1
+  }
+  
+  // 验证监控评估结果
+  assert_eq(evaluated_metrics.length(), 5)
+  
+  // 统计监控状态
+  let mut normal_count = 0
+  let mut warning_count = 0
+  let mut critical_count = 0
+  let mut increasing_trends = 0
+  let mut total_critical_threshold_breaches = 0
+  
+  i = 0
+  while i < evaluated_metrics.length() {
+    let metric = evaluated_metrics[i]
+    
+    if metric.status == "normal" {
+      normal_count = normal_count + 1
+    } else if metric.status == "warning" {
+      warning_count = warning_count + 1
+    } else if metric.status == "critical" {
+      critical_count = critical_count + 1
+    }
+    
+    if metric.trend == "increasing" {
+      increasing_trends = increasing_trends + 1
+    }
+    
+    if metric.current_value >= metric.threshold_critical {
+      total_critical_threshold_breaches = total_critical_threshold_breaches + 1
+    }
+    
+    i = i + 1
+  }
+  
+  // 验证监控统计
+  assert_eq(normal_count, 2)          // 应该有2个正常指标
+  assert_eq(warning_count, 3)         // 应该有3个警告指标
+  assert_eq(critical_count, 0)        // 应该没有关键指标
+  assert_eq(increasing_trends, 2)     // 应该有2个上升趋势
+  assert_eq(total_critical_threshold_breaches, 0)  // 应该没有超过关键阈值
+  
+  // 仪表板组件测试
+  type DashboardWidget = {
+    widget_id: String,
+    widget_type: String,
+    title: String,
+    data_source: String,
+    refresh_rate_seconds: Int,
+    visible: Bool,
+    position: Map[String, Int]
+  }
+  
+  let dashboard_widgets = [
+    DashboardWidget {
+      widget_id: "widget_001",
+      widget_type: "metric_chart",
+      title: "CPU Usage",
+      data_source: "cpu_usage",
+      refresh_rate_seconds: 30,
+      visible: true,
+      position: { "row": 1, "col": 1 }
+    },
+    DashboardWidget {
+      widget_id: "widget_002",
+      widget_type: "metric_chart",
+      title: "Memory Usage",
+      data_source: "memory_usage",
+      refresh_rate_seconds: 30,
+      visible: true,
+      position: { "row": 1, "col": 2 }
+    },
+    DashboardWidget {
+      widget_id: "widget_003",
+      widget_type: "alert_panel",
+      title: "Active Alerts",
+      data_source: "alerts",
+      refresh_rate_seconds: 60,
+      visible: true,
+      position: { "row": 2, "col": 1 }
+    },
+    DashboardWidget {
+      widget_id: "widget_004",
+      widget_type: "service_map",
+      title: "Service Topology",
+      data_source: "services",
+      refresh_rate_seconds: 300,
+      visible: true,
+      position: { "row": 2, "col": 2 }
+    }
+  ]
+  
+  // 验证仪表板组件
+  assert_eq(dashboard_widgets.length(), 4)
+  
+  // 统计仪表板组件
+  let mut visible_widgets = 0
+  let mut chart_widgets = 0
+  let mut total_refresh_rate = 0
+  
+  i = 0
+  while i < dashboard_widgets.length() {
+    let widget = dashboard_widgets[i]
+    
+    if widget.visible {
+      visible_widgets = visible_widgets + 1
+    }
+    
+    if widget.widget_type == "metric_chart" {
+      chart_widgets = chart_widgets + 1
+    }
+    
+    total_refresh_rate = total_refresh_rate + widget.refresh_rate_seconds
+    
+    i = i + 1
+  }
+  
+  // 验证仪表板统计
+  assert_eq(visible_widgets, 4)        // 所有组件都应该可见
+  assert_eq(chart_widgets, 2)          // 应该有2个图表组件
+  assert_eq(total_refresh_rate > 0, true)  // 总刷新率应该大于0
+}
+
+test "telemetry_system_alerting_rules" {
+  // 测试遥测系统告警规则
+  
+  let alerting_config = {
+    "alert_severity_levels": ["info", "warning", "critical", "emergency"],
+    "alert_grouping_enabled": true,
+    "alert_suppression_window_minutes": 15,
+    "max_alerts_per_minute": 100,
+    "alert_retention_days": 30
+  }
+  
+  // 验证告警配置
+  assert_eq(alerting_config["alert_severity_levels"].length(), 4)
+  assert_eq(alerting_config["alert_grouping_enabled"], true)
+  assert_eq(alerting_config["max_alerts_per_minute"], 100)
+  
+  // 告警规则类型
+  type AlertRule = {
+    rule_id: String,
+    rule_name: String,
+    metric_name: String,
+    condition: String,
+    threshold: Double,
+    severity: String,
+    duration_minutes: Int,
+    enabled: Bool,
+    alert_count: Int
+  }
+  
+  // 创建告警规则测试场景
+  let alert_rule_scenarios = [
+    // 高CPU使用率告警
+    AlertRule {
+      rule_id: "rule_001",
+      rule_name: "High CPU Usage",
+      metric_name: "cpu_usage",
+      condition: "greater_than",
+      threshold: 80.0,
+      severity: "warning",
+      duration_minutes: 5,
+      enabled: true,
+      alert_count: 0
+    },
+    // 关键内存使用告警
+    AlertRule {
+      rule_id: "rule_002",
+      rule_name: "Critical Memory Usage",
+      metric_name: "memory_usage",
+      condition: "greater_than",
+      threshold: 95.0,
+      severity: "critical",
+      duration_minutes: 2,
+      enabled: true,
+      alert_count: 0
+    },
+    // 高错误率告警
+    AlertRule {
+      rule_id: "rule_003",
+      rule_name: "High Error Rate",
+      metric_name: "error_rate",
+      condition: "greater_than",
+      threshold: 10.0,
+      severity: "critical",
+      duration_minutes: 3,
+      enabled: true,
+      alert_count: 0
+    },
+    // 响应时间告警
+    AlertRule {
+      rule_id: "rule_004",
+      rule_name: "High Response Time",
+      metric_name: "response_time",
+      condition: "greater_than",
+      threshold: 1000.0,
+      severity: "warning",
+      duration_minutes: 5,
+      enabled: true,
+      alert_count: 0
+    },
+    // 服务不可用告警
+    AlertRule {
+      rule_id: "rule_005",
+      rule_name: "Service Unavailable",
+      metric_name: "service_availability",
+      condition: "less_than",
+      threshold: 99.0,
+      severity: "emergency",
+      duration_minutes: 1,
+      enabled: true,
+      alert_count: 0
+    }
+  ]
+  
+  // 验证告警规则场景
+  assert_eq(alert_rule_scenarios.length(), 5)
+  
+  // 告警规则评估函数
+  let evaluate_alert_rule = fn(rule: AlertRule, current_value: Double) -> AlertRule {
+    let mut alert_triggered = false
+    
+    // 根据条件评估告警
+    if rule.condition == "greater_than" and current_value > rule.threshold {
+      alert_triggered = true
+    } else if rule.condition == "less_than" and current_value < rule.threshold {
+      alert_triggered = true
+    }
+    
+    let alert_count = if alert_triggered { rule.alert_count + 1 } else { 0 }
+    
+    AlertRule {
+      rule_id: rule.rule_id,
+      rule_name: rule.rule_name,
+      metric_name: rule.metric_name,
+      condition: rule.condition,
+      threshold: rule.threshold,
+      severity: rule.severity,
+      duration_minutes: rule.duration_minutes,
+      enabled: rule.enabled,
+      alert_count: alert_count
+    }
+  }
+  
+  // 模拟当前指标值并评估告警规则
+  let current_metric_values = {
+    "cpu_usage": 85.5,
+    "memory_usage": 96.2,
+    "error_rate": 12.8,
+    "response_time": 850.0,
+    "service_availability": 98.5
+  }
+  
+  // 执行告警规则评估
+  let mut evaluated_rules = []
+  let mut i = 0
+  while i < alert_rule_scenarios.length() {
+    let rule = alert_rule_scenarios[i]
+    let current_value = current_metric_values[rule.metric_name]
+    let evaluated = evaluate_alert_rule(rule, current_value)
+    evaluated_rules.push(evaluated)
+    i = i + 1
+  }
+  
+  // 验证告警规则评估结果
+  assert_eq(evaluated_rules.length(), 5)
+  
+  // 统计告警规则结果
+  let mut triggered_rules = 0
+  let mut critical_alerts = 0
+  let mut emergency_alerts = 0
+  let mut total_alert_count = 0
+  
+  i = 0
+  while i < evaluated_rules.length() {
+    let rule = evaluated_rules[i]
+    
+    if rule.alert_count > 0 {
+      triggered_rules = triggered_rules + 1
+      total_alert_count = total_alert_count + rule.alert_count
+    }
+    
+    if rule.severity == "critical" and rule.alert_count > 0 {
+      critical_alerts = critical_alerts + 1
+    }
+    
+    if rule.severity == "emergency" and rule.alert_count > 0 {
+      emergency_alerts = emergency_alerts + 1
     }
     
     i = i + 1
   }
   
   // 验证告警统计
-  assert_eq(critical_alerts, 1)  // 1个严重告警
-  assert_eq(warning_alerts, 1)   // 1个警告告警
-  assert_eq(normal_metrics, 2)   // 2个正常指标
+  assert_eq(triggered_rules, 4)        // 应该有4个规则被触发
+  assert_eq(critical_alerts, 2)        // 应该有2个关键告警
+  assert_eq(emergency_alerts, 1)       // 应该有1个紧急告警
+  assert_eq(total_alert_count, 4)      // 总告警数应该是4
   
-  // 测试指标趋势分析
-  let trend_analysis_test = {
-    "metric_name": "cpu_usage",
-    "time_window_hours": 24,
-    "data_points": 48,
-    "trend_direction": "increasing",
-    "trend_strength": 0.75,
-    "anomaly_detected": true
+  // 验证特定告警规则
+  let cpu_rule = evaluated_rules[0]
+  assert_eq(cpu_rule.rule_name, "High CPU Usage")
+  assert_eq(cpu_rule.alert_count > 0, true)  // CPU告警应该被触发
+  
+  let memory_rule = evaluated_rules[1]
+  assert_eq(memory_rule.rule_name, "Critical Memory Usage")
+  assert_eq(memory_rule.alert_count > 0, true)  // 内存告警应该被触发
+  assert_eq(memory_rule.severity, "critical")   // 应该是关键级别
+  
+  let response_rule = evaluated_rules[3]
+  assert_eq(response_rule.rule_name, "High Response Time")
+  assert_eq(response_rule.alert_count, 0)       // 响应时间告警不应该被触发（850 < 1000）
+  
+  // 告警通知测试
+  type AlertNotification = {
+    notification_id: String,
+    alert_rule_id: String,
+    severity: String,
+    message: String,
+    channels: Array[String],
+    sent: Bool,
+    send_timestamp: Int
   }
   
-  // 验证趋势分析测试
-  assert_eq(trend_analysis_test["metric_name"], "cpu_usage")
-  assert_eq(trend_analysis_test["time_window_hours"], "24")
-  assert_eq(trend_analysis_test["data_points"], "48")
-  assert_eq(trend_analysis_test["trend_direction"], "increasing")
-  
-  // 检查数据点密度
-  let data_points_per_hour = trend_analysis_test["data_points"].to_int() / 
-                             trend_analysis_test["time_window_hours"].to_int()
-  
-  // 验证数据点密度
-  assert_eq(data_points_per_hour, 2)  // 48/24 = 2
-  assert_eq(data_points_per_hour >= 1, true)  // 至少每小时1个数据点
-  
-  // 检查趋势强度
-  let trend_strength = trend_analysis_test["trend_strength"].to_float()
-  assert_eq(trend_strength >= 0.0, true)  // 趋势强度在合理范围内
-  assert_eq(trend_strength <= 1.0, true)
-  
-  // 检查异常检测
-  let anomaly_detected = trend_analysis_test["anomaly_detected"] == "true"
-  assert_eq(anomaly_detected, true)  // 检测到异常
-  
-  // 测试指标聚合
-  let aggregation_test = {
-    "source_metrics": 10,
-    "aggregation_type": "average",
-    "aggregation_interval_minutes": 5,
-    "aggregated_points": 288,
-    "aggregation_time_ms": 50
-  }
-  
-  // 验证聚合测试
-  assert_eq(aggregation_test["source_metrics"], "10")
-  assert_eq(aggregation_test["aggregation_type"], "average")
-  assert_eq(aggregation_test["aggregation_interval_minutes"], "5")
-  assert_eq(aggregation_test["aggregated_points"], "288")
-  
-  // 检查聚合点数计算
-  let hours_in_day = 24
-  let points_per_hour = 60 / aggregation_test["aggregation_interval_minutes"].to_int()
-  let expected_aggregated_points = hours_in_day * points_per_hour
-  
-  // 验证聚合点数
-  assert_eq(expected_aggregated_points, 288)  // 24 * (60/5) = 24 * 12 = 288
-  assert_eq(aggregation_test["aggregated_points"].to_int(), expected_aggregated_points)
-  
-  // 检查聚合性能
-  let aggregation_time = aggregation_test["aggregation_time_ms"].to_int()
-  assert_eq(aggregation_time <= 100, true)  // 聚合时间不超过100ms
-  
-  // 检查聚合效率
-  let aggregation_efficiency = aggregation_test["source_metrics"].to_float() / 
-                               aggregation_time.to_float()
-  
-  // 验证聚合效率
-  assert_eq(aggregation_efficiency > 0.1, true)  // 聚合效率大于0.1指标/毫秒
-}
-
-test "telemetry_alert_generation" {
-  // 测试遥测告警生成
-  
-  let alert_config = {
-    "severity_levels": ["info", "warning", "critical"],
-    "alert_cooldown_minutes": 15,
-    "max_alerts_per_minute": 10,
-    "escalation_enabled": true,
-    "auto_resolve_enabled": true
-  }
-  
-  // 验证告警配置
-  assert_eq(alert_config["severity_levels"].length(), 3)
-  assert_eq(alert_config["alert_cooldown_minutes"], "15")
-  assert_eq(alert_config["max_alerts_per_minute"], "10")
-  assert_eq(alert_config["escalation_enabled"], "true")
-  assert_eq(alert_config["auto_resolve_enabled"], "true")
-  
-  // 模拟告警生成测试
-  let alert_generation_test = {
-    "alerts_generated_today": 45,
-    "alerts_by_severity": {
-      "info": 20,
-      "warning": 15,
-      "critical": 10
+  let notification_scenarios = [
+    AlertNotification {
+      notification_id: "notification_001",
+      alert_rule_id: "rule_001",
+      severity: "warning",
+      message: "CPU usage is above threshold",
+      channels: ["email", "slack"],
+      sent: false,
+      send_timestamp: 0
     },
-    "false_positives": 3,
-    "avg_alert_generation_time_ms": 25,
-    "alert_suppression_count": 8
-  }
-  
-  // 验证告警生成测试
-  assert_eq(alert_generation_test["alerts_generated_today"], "45")
-  assert_eq(alert_generation_test["alerts_by_severity"]["info"], "20")
-  assert_eq(alert_generation_test["alerts_by_severity"]["warning"], "15")
-  assert_eq(alert_generation_test["alerts_by_severity"]["critical"], "10")
-  assert_eq(alert_generation_test["false_positives"], "3")
-  
-  // 检查告警总数
-  let total_alerts_by_severity = alert_generation_test["alerts_by_severity"]["info"].to_int() + 
-                                alert_generation_test["alerts_by_severity"]["warning"].to_int() + 
-                                alert_generation_test["alerts_by_severity"]["critical"].to_int()
-  
-  // 验证告警总数
-  assert_eq(total_alerts_by_severity, 45)  // 20 + 15 + 10
-  assert_eq(total_alerts_by_severity, alert_generation_test["alerts_generated_today"].to_int())
-  
-  // 检查误报率
-  let false_positive_rate = (alert_generation_test["false_positives"].to_int() * 100) / 
-                           alert_generation_test["alerts_generated_today"].to_int()
-  
-  // 验证误报率
-  assert_eq(false_positive_rate, 6)  // 3/45 * 100 = 6.6，取整为6
-  assert_eq(false_positive_rate <= 10, true)  // 误报率不超过10%
-  
-  // 检查告警生成时间
-  let avg_alert_generation_time = alert_generation_test["avg_alert_generation_time_ms"].to_int()
-  assert_eq(avg_alert_generation_time <= 100, true)  // 平均告警生成时间不超过100ms
-  
-  // 测试告警规则引擎
-  let alert_rules_test = [
-    {
-      "rule_name": "high_cpu_usage",
-      "condition": "cpu_usage > 90",
-      "severity": "critical",
-      "duration_minutes": 5,
-      "enabled": true,
-      "triggered_today": 8
+    AlertNotification {
+      notification_id: "notification_002",
+      alert_rule_id: "rule_002",
+      severity: "critical",
+      message: "Memory usage is critically high",
+      channels: ["email", "slack", "sms", "pagerduty"],
+      sent: false,
+      send_timestamp: 0
     },
-    {
-      "rule_name": "memory_leak",
-      "condition": "memory_usage_increasing and memory_usage > 80",
-      "severity": "warning",
-      "duration_minutes": 15,
-      "enabled": true,
-      "triggered_today": 3
+    AlertNotification {
+      notification_id: "notification_003",
+      alert_rule_id: "rule_003",
+      severity: "critical",
+      message: "Error rate is above critical threshold",
+      channels: ["email", "slack", "pagerduty"],
+      sent: false,
+      send_timestamp: 0
     },
-    {
-      "rule_name": "disk_space_low",
-      "condition": "disk_usage > 95",
-      "severity": "critical",
-      "duration_minutes": 2,
-      "enabled": false,
-      "triggered_today": 0
+    AlertNotification {
+      notification_id: "notification_004",
+      alert_rule_id: "rule_005",
+      severity: "emergency",
+      message: "Service availability is below threshold",
+      channels: ["email", "slack", "sms", "pagerduty", "phone"],
+      sent: false,
+      send_timestamp: 0
     }
   ]
   
-  // 验证告警规则测试
-  assert_eq(alert_rules_test.length(), 3)
-  
-  // 检查规则统计
-  let mut enabled_rules = 0
-  let mut disabled_rules = 0
-  let mut total_triggers = 0
-  
-  let mut i = 0
-  while i < alert_rules_test.length() {
-    let rule = alert_rules_test[i]
-    total_triggers = total_triggers + rule["triggered_today"].to_int()
+  // 告警通知发送函数
+  let send_alert_notification = fn(notification: AlertNotification) -> AlertNotification {
+    let current_time = 1640995200000
     
-    if rule["enabled"] == "true" {
-      enabled_rules = enabled_rules + 1
+    // 根据严重程度确定发送延迟
+    let send_delay = if notification.severity == "emergency" {
+      0    // 紧急告警立即发送
+    } else if notification.severity == "critical" {
+      30   // 关键告警30秒内发送
+    } else if notification.severity == "warning" {
+      60   // 警告告警60秒内发送
     } else {
-      disabled_rules = disabled_rules + 1
+      300  // 其他告警5分钟内发送
     }
     
-    // 验证规则字段完整性
-    assert_eq(rule["rule_name"] != "", true)
-    assert_eq(rule["condition"] != "", true)
-    assert_eq(rule["severity"] != "", true)
-    assert_eq(rule["duration_minutes"].to_int() > 0, true)
-    
-    i = i + 1
-  }
-  
-  // 验证规则统计
-  assert_eq(enabled_rules, 2)  // 2个启用规则
-  assert_eq(disabled_rules, 1)  // 1个禁用规则
-  assert_eq(total_triggers, 11)  // 8 + 3 + 0
-  
-  // 检查规则触发率
-  let rule_trigger_rate = (total_triggers * 100) / (enabled_rules * 24)  // 假设24小时
-  assert_eq(rule_trigger_rate >= 0, true)  // 触发率合理
-  
-  // 测试告警去重
-  let alert_deduplication_test = {
-    "similar_alerts_received": 25,
-    "deduplicated_alerts": 15,
-    "unique_alerts_sent": 10,
-    "deduplication_rate_percent": 60,
-    "time_window_minutes": 30
-  }
-  
-  // 验证告警去重测试
-  assert_eq(alert_deduplication_test["similar_alerts_received"], "25")
-  assert_eq(alert_deduplication_test["deduplicated_alerts"], "15")
-  assert_eq(alert_deduplication_test["unique_alerts_sent"], "10")
-  
-  // 检查去重计算
-  let expected_unique_alerts = alert_deduplication_test["similar_alerts_received"].to_int() - 
-                               alert_deduplication_test["deduplicated_alerts"].to_int()
-  
-  // 验证去重计算
-  assert_eq(expected_unique_alerts, 10)  // 25 - 15
-  assert_eq(expected_unique_alerts, alert_deduplication_test["unique_alerts_sent"].to_int())
-  
-  // 检查去重率
-  let deduplication_rate = alert_deduplication_test["deduplication_rate_percent"].to_int()
-  assert_eq(deduplication_rate, 60)  // 15/25 * 100 = 60
-  assert_eq(deduplication_rate >= 50, true)  // 去重率至少50%
-  
-  // 测试告警抑制
-  let alert_suppression_test = {
-    "suppression_rules": 5,
-    "alerts_suppressed_today": 12,
-    "suppression_reasons": {
-      "maintenance_window": 5,
-      "known_issue": 4,
-      "dependency_failure": 3
-    },
-    "avg_suppression_time_ms": 5
-  }
-  
-  // 验证告警抑制测试
-  assert_eq(alert_suppression_test["suppression_rules"], "5")
-  assert_eq(alert_suppression_test["alerts_suppressed_today"], "12")
-  assert_eq(alert_suppression_test["suppression_reasons"]["maintenance_window"], "5")
-  
-  // 检查抑制原因统计
-  let total_suppression_reasons = alert_suppression_test["suppression_reasons"]["maintenance_window"].to_int() + 
-                                 alert_suppression_test["suppression_reasons"]["known_issue"].to_int() + 
-                                 alert_suppression_test["suppression_reasons"]["dependency_failure"].to_int()
-  
-  // 验证抑制原因统计
-  assert_eq(total_suppression_reasons, 12)  // 5 + 4 + 3
-  assert_eq(total_suppression_reasons, alert_suppression_test["alerts_suppressed_today"].to_int())
-  
-  // 检查抑制性能
-  let avg_suppression_time = alert_suppression_test["avg_suppression_time_ms"].to_int()
-  assert_eq(avg_suppression_time <= 20, true)  // 平均抑制时间不超过20ms
-}
-
-test "telemetry_notification_system" {
-  // 测试遥测通知系统
-  
-  let notification_config = {
-    "channels": ["email", "slack", "sms"],
-    "retry_attempts": 3,
-    "timeout_seconds": 30,
-    "rate_limit_per_minute": 20,
-    "template_enabled": true
-  }
-  
-  // 验证通知配置
-  assert_eq(notification_config["channels"].length(), 3)
-  assert_eq(notification_config["retry_attempts"], "3")
-  assert_eq(notification_config["timeout_seconds"], "30")
-  assert_eq(notification_config["rate_limit_per_minute"], "20")
-  assert_eq(notification_config["template_enabled"], "true")
-  
-  // 模拟通知系统测试
-  let notification_system_test = {
-    "notifications_sent_today": 125,
-    "successful_deliveries": 118,
-    "failed_deliveries": 7,
-    "avg_delivery_time_seconds": 3,
-    "channel_performance": {
-      "email": {"sent": 60, "delivered": 58, "failed": 2},
-      "slack": {"sent": 45, "delivered": 42, "failed": 3},
-      "sms": {"sent": 20, "delivered": 18, "failed": 2}
+    AlertNotification {
+      notification_id: notification.notification_id,
+      alert_rule_id: notification.alert_rule_id,
+      severity: notification.severity,
+      message: notification.message,
+      channels: notification.channels,
+      sent: true,
+      send_timestamp: current_time + send_delay * 1000
     }
   }
   
-  // 验证通知系统测试
-  assert_eq(notification_system_test["notifications_sent_today"], "125")
-  assert_eq(notification_system_test["successful_deliveries"], "118")
-  assert_eq(notification_system_test["failed_deliveries"], "7")
-  
-  // 检查总通知数
-  let total_channel_notifications = notification_system_test["channel_performance"]["email"]["sent"].to_int() + 
-                                   notification_system_test["channel_performance"]["slack"]["sent"].to_int() + 
-                                   notification_system_test["channel_performance"]["sms"]["sent"].to_int()
-  
-  // 验证总通知数
-  assert_eq(total_channel_notifications, 125)  // 60 + 45 + 20
-  assert_eq(total_channel_notifications, notification_system_test["notifications_sent_today"].to_int())
-  
-  // 检查总成功投递
-  let total_successful_deliveries = notification_system_test["channel_performance"]["email"]["delivered"].to_int() + 
-                                    notification_system_test["channel_performance"]["slack"]["delivered"].to_int() + 
-                                    notification_system_test["channel_performance"]["sms"]["delivered"].to_int()
-  
-  // 验证总成功投递
-  assert_eq(total_successful_deliveries, 118)  // 58 + 42 + 18
-  assert_eq(total_successful_deliveries, notification_system_test["successful_deliveries"].to_int())
-  
-  // 检查投递成功率
-  let delivery_success_rate = (notification_system_test["successful_deliveries"].to_int() * 100) / 
-                             notification_system_test["notifications_sent_today"].to_int()
-  
-  // 验证投递成功率
-  assert_eq(delivery_success_rate, 94)  // 118/125 * 100 = 94.4
-  assert_eq(delivery_success_rate >= 90, true)  // 投递成功率至少90%
-  
-  // 检查平均投递时间
-  let avg_delivery_time = notification_system_test["avg_delivery_time_seconds"].to_int()
-  assert_eq(avg_delivery_time <= notification_config["timeout_seconds"].to_int() / 2, true)  // 平均投递时间不超过超时时间的一半
-  
-  // 测试通知渠道性能
-  let channel_performance_test = []
-  let mut channel_names = []
-  let mut j = 0
-  while j < notification_system_test["channel_performance"].size() {
-    channel_names.push(notification_system_test["channel_performance"].keys()[j])
-    j = j + 1
-  }
-  
+  // 执行告警通知发送
+  let mut sent_notifications = []
   let mut i = 0
-  while i < channel_names.length() {
-    let channel = channel_names[i]
-    let channel_data = notification_system_test["channel_performance"][channel]
-    let sent = channel_data["sent"].to_int()
-    let delivered = channel_data["delivered"].to_int()
-    let failed = channel_data["failed"].to_int()
-    
-    let success_rate = (delivered * 100) / sent
-    
-    // 验证渠道性能
-    assert_eq(sent > 0, true)
-    assert_eq(delivered > 0, true)
-    assert_eq(success_rate >= 80, true)  // 每个渠道成功率至少80%
-    
-    channel_performance_test.push({
-      "channel": channel,
-      "success_rate": success_rate
-    })
-    
+  while i < notification_scenarios.length() {
+    let sent = send_alert_notification(notification_scenarios[i])
+    sent_notifications.push(sent)
     i = i + 1
   }
   
-  // 验证渠道性能测试
-  assert_eq(channel_performance_test.length(), 3)
+  // 验证告警通知结果
+  assert_eq(sent_notifications.length(), 4)
   
-  // 找出最佳性能渠道
-  let mut max_success_rate = 0
-  let mut best_channel = ""
+  // 统计通知结果
+  let mut sent_count = 0
+  let mut emergency_notifications = 0
+  let mut critical_notifications = 0
+  let mut total_channels = 0
   
-  let mut i = 0
-  while i < channel_performance_test.length() {
-    let perf = channel_performance_test[i]
-    if perf["success_rate"] > max_success_rate {
-      max_success_rate = perf["success_rate"]
-      best_channel = perf["channel"]
+  i = 0
+  while i < sent_notifications.length() {
+    let notification = sent_notifications[i]
+    
+    if notification.sent {
+      sent_count = sent_count + 1
     }
+    
+    if notification.severity == "emergency" {
+      emergency_notifications = emergency_notifications + 1
+    }
+    
+    if notification.severity == "critical" {
+      critical_notifications = critical_notifications + 1
+    }
+    
+    total_channels = total_channels + notification.channels.length()
+    
     i = i + 1
   }
   
-  // 验证最佳性能渠道
-  assert_eq(max_success_rate >= 90, true)  // 最佳渠道成功率至少90%
-  assert_eq(best_channel != "", true)      // 有最佳渠道
+  // 验证通知统计
+  assert_eq(sent_count, 4)               // 所有通知都应该被发送
+  assert_eq(emergency_notifications, 1)  // 应该有1个紧急通知
+  assert_eq(critical_notifications, 2)   // 应该有2个关键通知
+  assert_eq(total_channels, 13)          // 总通道数应该是13
   
-  // 测试通知模板系统
-  let notification_template_test = {
-    "templates_available": 15,
-    "templates_used_today": 8,
-    "template_rendering_time_ms": 15,
-    "template_errors": 1,
-    "dynamic_content_insertions": 125
+  // 告警抑制测试
+  type AlertSuppression = {
+    suppression_id: String,
+    rule_id: String,
+    suppression_reason: String,
+    suppression_duration_minutes: Int,
+    start_time: Int,
+    active: Bool
   }
   
-  // 验证通知模板测试
-  assert_eq(notification_template_test["templates_available"], "15")
-  assert_eq(notification_template_test["templates_used_today"], "8")
-  assert_eq(notification_template_test["template_rendering_time_ms"], "15")
-  
-  // 检查模板使用率
-  let template_usage_rate = (notification_template_test["templates_used_today"].to_int() * 100) / 
-                           notification_template_test["templates_available"].to_int()
-  
-  // 验证模板使用率
-  assert_eq(template_usage_rate, 53)  // 8/15 * 100 = 53.3
-  assert_eq(template_usage_rate >= 30, true)  // 模板使用率至少30%
-  
-  // 检查模板渲染时间
-  let template_rendering_time = notification_template_test["template_rendering_time_ms"].to_int()
-  assert_eq(template_rendering_time <= 100, true)  // 模板渲染时间不超过100ms
-  
-  // 检查模板错误率
-  let template_error_rate = (notification_template_test["template_errors"].to_int() * 100) / 
-                           notification_template_test["templates_used_today"].to_int()
-  
-  // 验证模板错误率
-  assert_eq(template_error_rate, 12)  // 1/8 * 100 = 12.5
-  assert_eq(template_error_rate <= 20, true)  // 模板错误率不超过20%
-  
-  // 检查动态内容插入
-  let dynamic_content_insertions = notification_template_test["dynamic_content_insertions"].to_int()
-  assert_eq(dynamic_content_insertions > 0, true)  // 有动态内容插入
-  
-  // 测试通知限流
-  let notification_rate_limiting_test = {
-    "rate_limit_per_minute": 20,
-    "notifications_attempted": 55,
-    "notifications_sent": 40,
-    "notifications_throttled": 15,
-    "throttling_time_window_minutes": 3
-  }
-  
-  // 验证通知限流测试
-  assert_eq(notification_rate_limiting_test["rate_limit_per_minute"], "20")
-  assert_eq(notification_rate_limiting_test["notifications_attempted"], "55")
-  assert_eq(notification_rate_limiting_test["notifications_sent"], "40")
-  assert_eq(notification_rate_limiting_test["notifications_throttled"], "15")
-  
-  // 检查限流计算
-  let expected_notifications_sent = notification_rate_limiting_test["rate_limit_per_minute"].to_int() * 
-                                   notification_rate_limiting_test["throttling_time_window_minutes"].to_int()
-  
-  // 验证限流计算
-  assert_eq(expected_notifications_sent, 60)  // 20 * 3
-  assert_eq(notification_rate_limiting_test["notifications_sent"].to_int() <= expected_notifications_sent, true)  // 实际发送不超过限制
-  
-  // 检查限流率
-  let throttling_rate = (notification_rate_limiting_test["notifications_throttled"].to_int() * 100) / 
-                       notification_rate_limiting_test["notifications_attempted"].to_int()
-  
-  // 验证限流率
-  assert_eq(throttling_rate, 27)  // 15/55 * 100 = 27.2
-  assert_eq(throttling_rate >= 20, true)  // 限流率至少20%（说明限流机制在工作）
-}
-
-test "telemetry_alert_escalation" {
-  // 测试遥测告警升级
-  
-  let escalation_config = {
-    "escalation_levels": 3,
-    "level_1_timeout_minutes": 15,
-    "level_2_timeout_minutes": 30,
-    "level_3_timeout_minutes": 60,
-    "auto_escalation_enabled": true
-  }
-  
-  // 验证升级配置
-  assert_eq(escalation_config["escalation_levels"], "3")
-  assert_eq(escalation_config["level_1_timeout_minutes"], "15")
-  assert_eq(escalation_config["level_2_timeout_minutes"], "30")
-  assert_eq(escalation_config["level_3_timeout_minutes"], "60")
-  assert_eq(escalation_config["auto_escalation_enabled"], "true")
-  
-  // 模拟告警升级测试
-  let alert_escalation_test = {
-    "alerts_escalated_today": 12,
-    "escalation_by_level": {
-      "level_1": 8,
-      "level_2": 3,
-      "level_3": 1
+  let suppression_scenarios = [
+    AlertSuppression {
+      suppression_id: "suppression_001",
+      rule_id: "rule_001",
+      suppression_reason: "maintenance_window",
+      suppression_duration_minutes: 60,
+      start_time: 1640995200000,
+      active: false
     },
-    "avg_resolution_time_minutes": 45,
-    "escalation_success_rate_percent": 85
-  }
-  
-  // 验证告警升级测试
-  assert_eq(alert_escalation_test["alerts_escalated_today"], "12")
-  assert_eq(alert_escalation_test["escalation_by_level"]["level_1"], "8")
-  assert_eq(alert_escalation_test["escalation_by_level"]["level_2"], "3")
-  assert_eq(alert_escalation_test["escalation_by_level"]["level_3"], "1")
-  
-  // 检查总升级数
-  let total_escalations = alert_escalation_test["escalation_by_level"]["level_1"].to_int() + 
-                          alert_escalation_test["escalation_by_level"]["level_2"].to_int() + 
-                          alert_escalation_test["escalation_by_level"]["level_3"].to_int()
-  
-  // 验证总升级数
-  assert_eq(total_escalations, 12)  // 8 + 3 + 1
-  assert_eq(total_escalations, alert_escalation_test["alerts_escalated_today"].to_int())
-  
-  // 检查升级成功率
-  let escalation_success_rate = alert_escalation_test["escalation_success_rate_percent"].to_int()
-  assert_eq(escalation_success_rate >= 80, true)  // 升级成功率至少80%
-  
-  // 检查平均解决时间
-  let avg_resolution_time = alert_escalation_test["avg_resolution_time_minutes"].to_int()
-  assert_eq(avg_resolution_time <= 120, true)  // 平均解决时间不超过2小时
-  
-  // 测试升级路径
-  let escalation_path_test = [
-    {
-      "alert_id": "ALT-001",
-      "initial_severity": "warning",
-      "escalation_history": [
-        {"level": 1, "timestamp": 1703123450, "recipient": "team_lead", "action": "notified"},
-        {"level": 2, "timestamp": 1703123540, "recipient": "manager", "action": "notified"},
-        {"level": 3, "timestamp": 1703123720, "recipient": "director", "action": "resolved"}
-      ],
-      "total_escalation_time_minutes": 45
-    },
-    {
-      "alert_id": "ALT-002",
-      "initial_severity": "critical",
-      "escalation_history": [
-        {"level": 2, "timestamp": 1703124000, "recipient": "manager", "action": "notified"},
-        {"level": 3, "timestamp": 1703124300, "recipient": "director", "action": "notified"}
-      ],
-      "total_escalation_time_minutes": 30
+    AlertSuppression {
+      suppression_id: "suppression_002",
+      rule_id: "rule_003",
+      suppression_reason: "known_issue",
+      suppression_duration_minutes: 30,
+      start_time: 1640995200000,
+      active: false
     }
   ]
   
-  // 验证升级路径测试
-  assert_eq(escalation_path_test.length(), 2)
+  // 告警抑制激活函数
+  let activate_suppression = fn(suppression: AlertSuppression, current_time: Int) -> AlertSuppression {
+    let end_time = suppression.start_time + suppression.suppression_duration_minutes * 60 * 1000
+    let active = current_time >= suppression.start_time and current_time <= end_time
+    
+    AlertSuppression {
+      suppression_id: suppression.suppression_id,
+      rule_id: suppression.rule_id,
+      suppression_reason: suppression.suppression_reason,
+      suppression_duration_minutes: suppression.suppression_duration_minutes,
+      start_time: suppression.start_time,
+      active: active
+    }
+  }
   
-  // 检查升级路径逻辑
+  // 执行告警抑制激活
+  let current_time = 1640995230000  // 5分钟后
+  let mut active_suppressions = []
   let mut i = 0
-  while i < escalation_path_test.length() {
-    let alert = escalation_path_test[i]
-    let escalation_history = alert["escalation_history"]
+  while i < suppression_scenarios.length() {
+    let activated = activate_suppression(suppression_scenarios[i], current_time)
+    active_suppressions.push(activated)
+    i = i + 1
+  }
+  
+  // 验证告警抑制结果
+  assert_eq(active_suppressions.length(), 2)
+  
+  // 统计抑制结果
+  let mut active_suppression_count = 0
+  let mut suppressed_rules = {}
+  
+  i = 0
+  while i < active_suppressions.length() {
+    let suppression = active_suppressions[i]
     
-    // 验证升级历史完整性
-    assert_eq(escalation_history.length() > 0, true)
-    
-    // 检查升级时间顺序
-    let mut j = 1
-    while j < escalation_history.length() {
-      let prev_level = escalation_history[j - 1]
-      let curr_level = escalation_history[j]
-      
-      // 验证时间递增
-      assert_eq(prev_level["timestamp"].to_int() < curr_level["timestamp"].to_int(), true)
-      
-      // 验证级别递增
-      assert_eq(prev_level["level"].to_int() < curr_level["level"].to_int(), true)
-      
-      j = j + 1
+    if suppression.active {
+      active_suppression_count = active_suppression_count + 1
+      suppressed_rules[suppression.rule_id] = true
     }
     
     i = i + 1
   }
   
-  // 测试升级策略
-  let escalation_strategy_test = {
-    "strategies_defined": 5,
-    "strategies_triggered": 3,
-    "strategy_types": {
-      "time_based": 8,
-      "severity_based": 3,
-      "acknowledgment_based": 1
-    },
-    "custom_rules_triggered": 2
+  // 验证抑制统计
+  assert_eq(active_suppression_count, 2)        // 应该有2个活跃抑制
+  assert_eq(suppressed_rules.size(), 2)          // 应该有2个规则被抑制
+  
+  // 验证被抑制的告警规则不会产生通知
+  let mut suppressed_alerts = 0
+  i = 0
+  while i < evaluated_rules.length() {
+    let rule = evaluated_rules[i]
+    if suppressed_rules.contains(rule.rule_id) and rule.alert_count > 0 {
+      suppressed_alerts = suppressed_alerts + 1
+    }
+    i = i + 1
   }
   
-  // 验证升级策略测试
-  assert_eq(escalation_strategy_test["strategies_defined"], "5")
-  assert_eq(escalation_strategy_test["strategies_triggered"], "3")
-  assert_eq(escalation_strategy_test["strategy_types"]["time_based"], "8")
-  
-  // 检查策略触发率
-  let strategy_trigger_rate = (escalation_strategy_test["strategies_triggered"].to_int() * 100) / 
-                             escalation_strategy_test["strategies_defined"].to_int()
-  
-  // 验证策略触发率
-  assert_eq(strategy_trigger_rate, 60)  // 3/5 * 100 = 60
-  assert_eq(strategy_trigger_rate >= 40, true)  // 策略触发率至少40%
-  
-  // 检查策略类型统计
-  let total_strategy_triggers = escalation_strategy_test["strategy_types"]["time_based"].to_int() + 
-                               escalation_strategy_test["strategy_types"]["severity_based"].to_int() + 
-                               escalation_strategy_test["strategy_types"]["acknowledgment_based"].to_int()
-  
-  // 验证策略类型统计
-  assert_eq(total_strategy_triggers, 12)  // 8 + 3 + 1
-  assert_eq(total_strategy_triggers > 0, true)  // 有策略触发
-  
-  // 检查自定义规则触发
-  let custom_rules_triggered = escalation_strategy_test["custom_rules_triggered"].to_int()
-  assert_eq(custom_rules_triggered > 0, true)  // 有自定义规则触发
-  
-  // 测试升级效果评估
-  let escalation_effectiveness_test = {
-    "escalated_alerts": 12,
-    "resolved_after_escalation": 10,
-    "resolution_time_reduction_percent": 40,
-    "escalation_satisfaction_score": 4.2,
-    "false_escalations": 1
-  }
-  
-  // 验证升级效果评估测试
-  assert_eq(escalation_effectiveness_test["escalated_alerts"], "12")
-  assert_eq(escalation_effectiveness_test["resolved_after_escalation"], "10")
-  assert_eq(escalation_effectiveness_test["resolution_time_reduction_percent"], "40")
-  
-  // 检查升级解决率
-  let escalation_resolution_rate = (escalation_effectiveness_test["resolved_after_escalation"].to_int() * 100) / 
-                                  escalation_effectiveness_test["escalated_alerts"].to_int()
-  
-  // 验证升级解决率
-  assert_eq(escalation_resolution_rate, 83)  // 10/12 * 100 = 83.3
-  assert_eq(escalation_resolution_rate >= 75, true)  // 升级解决率至少75%
-  
-  // 检查解决时间减少
-  let resolution_time_reduction = escalation_effectiveness_test["resolution_time_reduction_percent"].to_int()
-  assert_eq(resolution_time_reduction >= 20, true)  // 解决时间减少至少20%
-  
-  // 检查升级满意度
-  let escalation_satisfaction_score = escalation_effectiveness_test["escalation_satisfaction_score"].to_float()
-  assert_eq(escalation_satisfaction_score >= 3.0, true)  // 升级满意度至少3.0（5分制）
-  assert_eq(escalation_satisfaction_score <= 5.0, true)  // 升级满意度不超过5.0
-  
-  // 检查错误升级率
-  let false_escalation_rate = (escalation_effectiveness_test["false_escalations"].to_int() * 100) / 
-                              escalation_effectiveness_test["escalated_alerts"].to_int()
-  
-  // 验证错误升级率
-  assert_eq(false_escalation_rate, 8)  // 1/12 * 100 = 8.3
-  assert_eq(false_escalation_rate <= 15, true)  // 错误升级率不超过15%
+  assert_eq(suppressed_alerts, 2)  // 应该有2个告警被抑制
 }
