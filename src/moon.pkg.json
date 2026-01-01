@@ -9,6 +9,6 @@
     "azimuth/telemetry": "*"
   },
   "test": {
-    "test": ["top.mbt", "premium_moonbit_tests.mbt", "advanced_specialized_tests.mbt", "additional_focused_tests.mbt", "additional_moonbit_tests.mbt", "new_enhanced_moonbit_tests.mbt"]
+    "test": ["top.mbt", "premium_moonbit_tests.mbt", "advanced_specialized_tests.mbt", "additional_focused_tests.mbt", "additional_moonbit_tests.mbt", "new_enhanced_moonbit_tests.mbt", "advanced_moonbit_test_cases.mbt"]
   }
 }
