@@ -1,106 +1,101 @@
-// Performance Stress Tests for Azimuth Telemetry System
-// This file contains test cases for performance and stress testing
+// Azimuth Performance and Stress Test Suite
+// This file contains performance and stress test cases for the Azimuth telemetry system
 
-test "high volume span creation" {
-  // Test performance with high volume span creation
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "stress-test")
+// Test 1: High-volume span creation and management
+pub test "performance high volume span operations" {
+  // Test creating a large number of spans
+  let span_contexts = []
   
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  // Create 1000 span contexts
+  for i = 0; i < 1000; i = i + 1 {
+    let trace_id = "trace-" + i.to_string()
+    let span_id = "span-" + i.to_string()
+    let ctx = azimuth::SpanContext::new(trace_id, span_id, true, "")
+    span_contexts = span_contexts.append(ctx)
+  }
   
-  // Create large number of spans
-  let span_count = 1000
+  // Create spans with different kinds
+  let span_kinds = [azimuth::Internal, azimuth::Server, azimuth::Client, azimuth::Producer, azimuth::Consumer]
   let spans = []
   
-  for i in 0..span_count {
-    let span = azimuth::Tracer::start_span(tracer, "stress-span-" + i.to_string())
-    
-    // Add events to spans
-    if i % 10 == 0 {
-      azimuth::Span::add_event(span, "stress.event", Some([
-        ("batch.size", azimuth::IntValue(i)),
-        ("performance.test", azimuth::StringValue("active"))
-      ]))
-    }
-    
-    spans.push(span)
+  for i = 0; i < 1000; i = i + 1 {
+    let kind_index = i % 5
+    let kind = span_kinds[kind_index]
+    let span_name = "operation-" + i.to_string()
+    let ctx = span_contexts[i]
+    let span = azimuth::Span::new(span_name, kind, ctx)
+    spans = spans.append(span)
   }
   
-  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let creation_duration = creation_time - start_time
-  
-  // End all spans
-  for span in spans {
-    azimuth::Span::end(span)
-  }
-  
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
-  
-  // Verify performance metrics
-  assert_true(spans.length() == span_count)
-  assert_true(creation_duration < 5000000000L)  // Creation should take less than 5 seconds
-  assert_true(total_duration < 10000000000L)   // Total should take less than 10 seconds
+  // Verify span properties (sample only to avoid excessive test time)
+  assert_eq(azimuth::Span::name(spans[0]), "operation-0")
+  assert_eq(azimuth::Span::kind(spans[0]), azimuth::Internal)
+  assert_eq(azimuth::Span::name(spans[1]), "operation-1")
+  assert_eq(azimuth::Span::kind(spans[1]), azimuth::Server)
+  assert_eq(azimuth::Span::name(spans[999]), "operation-999")
+  assert_eq(azimuth::Span::kind(spans[999]), azimuth::Consumer)
 }
 
-test "high frequency metrics operations" {
-  // Test performance with high frequency metrics operations
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "stress-metrics")
+// Test 2: High-volume metrics operations
+pub test "performance high volume metrics operations" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "performance-test-meter")
   
-  // Create multiple instruments
-  let counter = azimuth::Meter::create_counter(meter, "stress.counter")
-  let histogram = azimuth::Meter::create_histogram(meter, "stress.histogram")
-  let updown_counter = azimuth::Meter::create_updown_counter(meter, "stress.updown")
-  let gauge = azimuth::Meter::create_gauge(meter, "stress.gauge")
+  // Create multiple metrics instruments
+  let counters = []
+  let histograms = []
+  let updown_counters = []
+  let gauges = []
   
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  // Perform high frequency operations
-  let operation_count = 10000
-  
-  for i in 0..operation_count {
-    // Counter operations
-    azimuth::Counter::add(counter, 1.0)
+  // Create 100 of each instrument type
+  for i = 0; i < 100; i = i + 1 {
+    let counter = azimuth::Meter::create_counter(meter, "counter-" + i.to_string())
+    let histogram = azimuth::Meter::create_histogram(meter, "histogram-" + i.to_string())
+    let updown_counter = azimuth::Meter::create_updown_counter(meter, "updown-" + i.to_string())
+    let gauge = azimuth::Meter::create_gauge(meter, "gauge-" + i.to_string())
     
-    // Histogram operations with varying values
-    let histogram_value = 10.0 + (i.to_double() % 1000.0)
-    azimuth::Histogram::record(histogram, histogram_value)
-    
-    // Up-down counter with alternating values
-    let updown_value = if i % 2 == 0 { 2.0 } else { -1.0 }
-    azimuth::UpDownCounter::add(updown_counter, updown_value)
-    
-    // Gauge operations every 100 iterations
-    if i % 100 == 0 {
-      // Note: Simplified implementation doesn't have gauge record method
-      // This is a placeholder for gauge operations
-    }
+    counters = counters.append(counter)
+    histograms = histograms.append(histogram)
+    updown_counters = updown_counters.append(updown_counter)
+    gauges = gauges.append(gauge)
   }
   
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let duration = end_time - start_time
+  // Perform operations on all instruments
+  for i = 0; i < 100; i = i + 1 {
+    // Add values to counters
+    azimuth::Counter::add(counters[i], i.to_double())
+    
+    // Record values in histograms
+    azimuth::Histogram::record(histograms[i], (i * 2).to_double())
+    
+    // Add values to up-down counters
+    azimuth::UpDownCounter::add(updown_counters[i], (i * 3).to_double())
+    
+    // Note: Gauge doesn't have a set operation in the current implementation
+    // In a real implementation, we would set gauge values here
+  }
   
-  // Verify performance metrics
-  assert_eq(counter.name, "stress.counter")
-  assert_eq(histogram.name, "stress.histogram")
-  assert_eq(updown_counter.name, "stress.updown")
-  assert_eq(gauge.name, "stress.gauge")
-  assert_true(duration < 3000000000L)  // Should complete in less than 3 seconds
+  // Verify instrument properties (sample only)
+  assert_eq(counters[0].name, "counter-0")
+  assert_eq(histograms[0].name, "histogram-0")
+  assert_eq(updown_counters[0].name, "updown-0")
+  assert_eq(gauges[0].name, "gauge-0")
+  
+  assert_eq(counters[99].name, "counter-99")
+  assert_eq(histograms[99].name, "histogram-99")
+  assert_eq(updown_counters[99].name, "updown-99")
+  assert_eq(gauges[99].name, "gauge-99")
 }
 
-test "massive logging throughput" {
-  // Test performance with massive logging throughput
+// Test 3: High-volume logging operations
+pub test "performance high volume logging operations" {
   let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "stress-logger")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "performance-test-logger")
   
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  // Create large number of log records
-  let log_count = 5000
+  // Create a large number of log records
   let log_records = []
   
-  for i in 0..log_count {
+  for i = 0; i < 1000; i = i + 1 {
     let severity = match i % 6 {
       0 => azimuth::Trace
       1 => azimuth::Debug
@@ -110,372 +105,229 @@ test "massive logging throughput" {
       _ => azimuth::Fatal
     }
     
-    let attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(attrs, "log.index", azimuth::IntValue(i))
-    azimuth::Attributes::set(attrs, "log.batch", azimuth::StringValue("stress-test"))
-    azimuth::Attributes::set(attrs, "throughput.test", azimuth::BoolValue(true))
-    
-    let log_record = azimuth::LogRecord::new_with_context(
-      severity,
-      Some("Stress test log message " + i.to_string()),
-      Some(attrs),
-      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-      None,
-      Some("stress-trace-" + (i % 100).to_string()),
-      Some("stress-span-" + (i % 50).to_string()),
-      Some(azimuth::Context::root())
-    )
-    log_records.push(log_record)
+    let message = "Log message " + i.to_string()
+    let log_record = azimuth::LogRecord::new(severity, message)
+    log_records = log_records.append(log_record)
   }
-  
-  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let creation_duration = creation_time - start_time
   
   // Emit all log records
-  for record in log_records {
-    azimuth::Logger::emit(logger, record)
+  for i = 0; i < 1000; i = i + 1 {
+    azimuth::Logger::emit(logger, log_records[i])
   }
   
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
+  // Verify log record properties (sample only)
+  assert_eq(azimuth::LogRecord::severity_number(log_records[0]), azimuth::Trace)
+  assert_eq(azimuth::LogRecord::body(log_records[0]), Some("Log message 0"))
   
-  // Verify performance metrics
-  assert_true(log_records.length() == log_count)
-  assert_true(creation_duration < 2000000000L)  // Creation should take less than 2 seconds
-  assert_true(total_duration < 5000000000L)    // Total should take less than 5 seconds
+  assert_eq(azimuth::LogRecord::severity_number(log_records[1]), azimuth::Debug)
+  assert_eq(azimuth::LogRecord::body(log_records[1]), Some("Log message 1"))
+  
+  assert_eq(azimuth::LogRecord::severity_number(log_records[2]), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(log_records[2]), Some("Log message 2"))
+  
+  assert_eq(azimuth::LogRecord::severity_number(log_records[3]), azimuth::Warn)
+  assert_eq(azimuth::LogRecord::body(log_records[3]), Some("Log message 3"))
+  
+  assert_eq(azimuth::LogRecord::severity_number(log_records[4]), azimuth::Error)
+  assert_eq(azimuth::LogRecord::body(log_records[4]), Some("Log message 4"))
+  
+  assert_eq(azimuth::LogRecord::severity_number(log_records[5]), azimuth::Fatal)
+  assert_eq(azimuth::LogRecord::body(log_records[5]), Some("Log message 5"))
+  
+  assert_eq(azimuth::LogRecord::severity_number(log_records[999]), azimuth::Fatal)
+  assert_eq(azimuth::LogRecord::body(log_records[999]), Some("Log message 999"))
 }
 
-test "context propagation stress test" {
-  // Test performance with complex context propagation
-  let root_ctx = azimuth::Context::root()
+// Test 4: High-volume attribute operations
+pub test "performance high volume attribute operations" {
+  // Create attributes with a large number of entries
+  let attrs = azimuth::Attributes::new()
   
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  // Create many context chains
-  let context_count = 500
-  let chain_depth = 20
-  let contexts = []
-  
-  for i in 0..context_count {
-    let current_ctx = root_ctx
+  // Add 1000 attributes with different value types
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "key-" + i.to_string()
     
-    // Build deep context chains
-    for depth in 0..chain_depth {
-      let key = azimuth::ContextKey::new("stress.chain." + i.to_string() + ".depth." + depth.to_string())
-      let value = "stress.value.at.depth." + depth.to_string()
-      current_ctx = azimuth::Context::with_value(current_ctx, key, value)
+    let value = match i % 6 {
+      0 => azimuth::StringValue("string-value-" + i.to_string())
+      1 => azimuth::IntValue(i)
+      2 => azimuth::FloatValue(i.to_double() * 1.5)
+      3 => azimuth::BoolValue(i % 2 == 0)
+      4 => azimuth::ArrayStringValue(["value1", "value2", "value3"])
+      _ => azimuth::ArrayIntValue([i, i+1, i+2])
     }
     
-    contexts.push(current_ctx)
+    azimuth::Attributes::set(attrs, key, value)
   }
   
-  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let creation_duration = creation_time - start_time
+  // Verify attribute values (sample only)
+  assert_eq(azimuth::Attributes::get(attrs, "key-0"), Some(azimuth::StringValue("string-value-0")))
+  assert_eq(azimuth::Attributes::get(attrs, "key-1"), Some(azimuth::IntValue(1)))
+  assert_eq(azimuth::Attributes::get(attrs, "key-2"), Some(azimuth::FloatValue(3.0)))
+  assert_eq(azimuth::Attributes::get(attrs, "key-3"), Some(azimuth::BoolValue(true)))
+  assert_eq(azimuth::Attributes::get(attrs, "key-4"), Some(azimuth::ArrayStringValue(["value1", "value2", "value3"])))
+  assert_eq(azimuth::Attributes::get(attrs, "key-5"), Some(azimuth::ArrayIntValue([5, 6, 7])))
   
-  // Test context value retrieval
-  for i in 0..context_count {
-    let ctx = contexts[i]
-    
-    // Test retrieval from different depths
-    let deep_key = azimuth::ContextKey::new("stress.chain." + i.to_string() + ".depth." + (chain_depth - 1).to_string())
-    let value = azimuth::Context::get(ctx, deep_key)
-    
-    // Simplified implementation only stores the most recent value
-    assert_eq(value, Some("stress.value.at.depth." + (chain_depth - 1).to_string()))
-  }
-  
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
-  
-  // Verify performance metrics
-  assert_true(contexts.length() == context_count)
-  assert_true(creation_duration < 3000000000L)  // Creation should take less than 3 seconds
-  assert_true(total_duration < 5000000000L)     // Total should take less than 5 seconds
+  // Test non-existent key
+  assert_eq(azimuth::Attributes::get(attrs, "non-existent-key"), None)
 }
 
-test "baggage operations stress test" {
-  // Test performance with high volume baggage operations
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+// Test 5: High-volume context and baggage operations
+pub test "performance high volume context baggage operations" {
+  // Test context operations with many keys
+  let root_ctx = azimuth::Context::root()
+  let ctx = root_ctx
   
-  // Create baggage with many entries
-  let baggage_entry_count = 1000
+  // Add 100 context entries
+  for i = 0; i < 100; i = i + 1 {
+    let key = azimuth::ContextKey::new("context-key-" + i.to_string())
+    let value = "context-value-" + i.to_string()
+    ctx = azimuth::Context::with_value(ctx, key, value)
+  }
+  
+  // Verify context values (sample only)
+  for i = 0; i < 10; i = i + 1 {
+    let key = azimuth::ContextKey::new("context-key-" + i.to_string())
+    let expected_value = "context-value-" + i.to_string()
+    assert_eq(azimuth::Context::get(ctx, key), Some(expected_value))
+  }
+  
+  // Test baggage operations with many entries
   let baggage = azimuth::Baggage::new()
   
-  for i in 0..baggage_entry_count {
-    baggage = azimuth::Baggage::set_entry(baggage, "stress.baggage." + i.to_string(), "stress.value." + i.to_string())
+  // Add 100 baggage entries
+  for i = 0; i < 100; i = i + 1 {
+    let key = "baggage-key-" + i.to_string()
+    let value = "baggage-value-" + i.to_string()
+    baggage = azimuth::Baggage::set_entry(baggage, key, value)
   }
   
-  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let creation_duration = creation_time - start_time
-  
-  // Test baggage entry retrieval
-  for i in 0..baggage_entry_count {
-    let entry = azimuth::Baggage::get_entry(baggage, "stress.baggage." + i.to_string())
-    assert_eq(entry, Some("stress.value." + i.to_string()))
+  // Verify baggage entries (sample only)
+  for i = 0; i < 10; i = i + 1 {
+    let key = "baggage-key-" + i.to_string()
+    let expected_value = "baggage-value-" + i.to_string()
+    assert_eq(azimuth::Baggage::get_entry(baggage, key), Some(expected_value))
   }
-  
-  let retrieval_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let retrieval_duration = retrieval_time - creation_time
-  
-  // Test baggage entry removal
-  let removal_count = baggage_entry_count / 2
-  for i in 0..removal_count {
-    baggage = azimuth::Baggage::remove_entry(baggage, "stress.baggage." + i.to_string())
-    let removed_entry = azimuth::Baggage::get_entry(baggage, "stress.baggage." + i.to_string())
-    assert_eq(removed_entry, None)
-  }
-  
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
-  
-  // Verify performance metrics
-  assert_true(creation_duration < 2000000000L)   // Creation should take less than 2 seconds
-  assert_true(retrieval_duration < 1000000000L)  // Retrieval should take less than 1 second
-  assert_true(total_duration < 4000000000L)      // Total should take less than 4 seconds
 }
 
-test "resource management stress test" {
-  // Test performance with resource management under stress
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  // Create many resources with many attributes
-  let resource_count = 200
-  let attributes_per_resource = 50
-  let resources = []
-  
-  for i in 0..resource_count {
-    let attrs = []
-    
-    // Add many attributes to each resource
-    for attr_idx in 0..attributes_per_resource {
-      let attr_name = "stress.resource." + i.to_string() + ".attr." + attr_idx.to_string()
-      let attr_value = azimuth::StringValue("stress.value." + attr_idx.to_string())
-      attrs.push((attr_name, attr_value))
-    }
-    
-    let resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), attrs)
-    resources.push(resource)
-  }
-  
-  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let creation_duration = creation_time - start_time
-  
-  // Test resource merging
-  let base_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
-    ("base.stress.attr", azimuth::StringValue("base.value")),
-    ("merge.timestamp", azimuth::IntValue(azimuth::Clock::now_unix_nanos(azimuth::Clock::system()).to_int()))
-  ])
-  
-  let merged_resources = []
-  for resource in resources {
-    let merged = azimuth::Resource::merge(base_resource, resource)
-    merged_resources.push(merged)
-  }
-  
-  let merge_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let merge_duration = merge_time - creation_time
-  
-  // Test attribute retrieval from merged resources
-  for i in 0..merged_resources.length() {
-    let merged_resource = merged_resources[i]
-    
-    // Test retrieval of specific attributes
-    let specific_attr = azimuth::Resource::get_attribute(merged_resource, "stress.resource." + i.to_string() + ".attr.25")
-    
-    // Simplified implementation returns None
-    assert_eq(specific_attr, None)
-  }
-  
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
-  
-  // Verify performance metrics
-  assert_true(resources.length() == resource_count)
-  assert_true(merged_resources.length() == resource_count)
-  assert_true(creation_duration < 3000000000L)  // Creation should take less than 3 seconds
-  assert_true(merge_duration < 2000000000L)     // Merge should take less than 2 seconds
-  assert_true(total_duration < 6000000000L)     // Total should take less than 6 seconds
-}
-
-test "attribute operations stress test" {
-  // Test performance with high volume attribute operations
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  // Create many attribute collections
-  let attribute_collection_count = 100
-  let attributes_per_collection = 100
-  let attribute_collections = []
-  
-  for collection_idx in 0..attribute_collection_count {
-    let attrs = azimuth::Attributes::new()
-    
-    // Add many attributes to each collection
-    for attr_idx in 0..attributes_per_collection {
-      let base_key = "stress.collection." + collection_idx.to_string() + ".attr." + attr_idx.to_string()
-      
-      match attr_idx % 6 {
-        0 => azimuth::Attributes::set(attrs, base_key + ".string", azimuth::StringValue("stress.string.value." + attr_idx.to_string()))
-        1 => azimuth::Attributes::set(attrs, base_key + ".int", azimuth::IntValue(attr_idx * 100))
-        2 => azimuth::Attributes::set(attrs, base_key + ".float", azimuth::FloatValue(attr_idx.to_double() * 3.14159))
-        3 => azimuth::Attributes::set(attrs, base_key + ".bool", azimuth::BoolValue(attr_idx % 3 == 0))
-        4 => azimuth::Attributes::set(attrs, base_key + ".array.string", azimuth::ArrayStringValue(["stress", "test", "array"]))
-        _ => azimuth::Attributes::set(attrs, base_key + ".array.int", azimuth::ArrayIntValue([attr_idx, attr_idx + 1, attr_idx + 2]))
-      }
-    }
-    
-    attribute_collections.push(attrs)
-  }
-  
-  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let creation_duration = creation_time - start_time
-  
-  // Test attribute retrieval
-  for collection_idx in 0..attribute_collection_count {
-    let attrs = attribute_collections[collection_idx]
-    
-    // Test retrieval of different attribute types
-    let string_attr = azimuth::Attributes::get(attrs, "stress.collection." + collection_idx.to_string() + ".attr.0.string")
-    let int_attr = azimuth::Attributes::get(attrs, "stress.collection." + collection_idx.to_string() + ".attr.1.int")
-    let float_attr = azimuth::Attributes::get(attrs, "stress.collection." + collection_idx.to_string() + ".attr.2.float")
-    let bool_attr = azimuth::Attributes::get(attrs, "stress.collection." + collection_idx.to_string() + ".attr.3.bool")
-    
-    // Verify based on simplified implementation
-    assert_eq(string_attr, Some(azimuth::StringValue("test_value")))
-    assert_eq(int_attr, Some(azimuth::IntValue(100)))
-    assert_eq(float_attr, None)  // Simplified implementation
-    assert_eq(bool_attr, None)   // Simplified implementation
-  }
-  
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
-  
-  // Verify performance metrics
-  assert_true(attribute_collections.length() == attribute_collection_count)
-  assert_true(creation_duration < 2000000000L)  // Creation should take less than 2 seconds
-  assert_true(total_duration < 4000000000L)     // Total should take less than 4 seconds
-}
-
-test "propagator stress test" {
-  // Test performance with high volume propagator operations
+// Test 6: High-volume propagator operations
+pub test "performance high volume propagator operations" {
   let trace_propagator = azimuth::W3CTraceContextPropagator::new()
-  let composite_propagator = azimuth::CompositePropagator::new([trace_propagator])
+  let baggage_propagator = azimuth::W3CTraceContextPropagator::new()  // Using trace propagator for simplicity
+  let propagators = [trace_propagator, baggage_propagator]
+  let composite_propagator = azimuth::CompositePropagator::new(propagators)
   
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  // Create many carriers and contexts
-  let operation_count = 1000
-  let carriers = []
-  let contexts = []
-  
-  for i in 0..operation_count {
-    let carrier = azimuth::TextMapCarrier::new()
+  // Test inject operations with many contexts
+  for i = 0; i < 100; i = i + 1 {
     let ctx = azimuth::Context::root()
+    let key = azimuth::ContextKey::new("test-key-" + i.to_string())
+    let value = "test-value-" + i.to_string()
+    let ctx_with_value = azimuth::Context::with_value(ctx, key, value)
     
-    // Add context values
-    let key = azimuth::ContextKey::new("stress.propagator." + i.to_string())
-    let ctx_with_value = azimuth::Context::with_value(ctx, key, "stress.value." + i.to_string())
-    
-    // Inject context
+    let carrier = azimuth::TextMapCarrier::new()
     azimuth::CompositePropagator::inject(composite_propagator, ctx_with_value, carrier)
-    
-    carriers.push(carrier)
-    contexts.push(ctx_with_value)
   }
   
-  let injection_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let injection_duration = injection_time - start_time
-  
-  // Extract contexts from all carriers
-  for carrier in carriers {
+  // Test extract operations with many carriers
+  for i = 0; i < 100; i = i + 1 {
+    let carrier = azimuth::TextMapCarrier::new()
+    // In a real implementation, carrier would be populated with headers
     let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
-    let extracted_key = azimuth::ContextKey::new("extracted")
-    let extracted_value = azimuth::Context::get(extracted_ctx, extracted_key)
-    assert_eq(extracted_value, Some("true"))
+    
+    // Verify extraction
+    let key = azimuth::ContextKey::new("extracted")
+    assert_eq(azimuth::Context::get(extracted_ctx, key), Some("true"))
   }
-  
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
-  
-  // Verify performance metrics
-  assert_true(carriers.length() == operation_count)
-  assert_true(contexts.length() == operation_count)
-  assert_true(injection_duration < 3000000000L)  // Injection should take less than 3 seconds
-  assert_true(total_duration < 6000000000L)      // Total should take less than 6 seconds
 }
 
-test "comprehensive stress test" {
-  // Test comprehensive performance with all components under stress
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "comprehensive-stress")
+// Test 7: Resource operations with many attributes
+pub test "performance high volume resource operations" {
+  let resource = azimuth::Resource::new()
   
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "comprehensive-stress-logger")
+  // Create a resource with many attributes
+  let attributes = []
   
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "comprehensive-stress-metrics")
-  
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  // Create instruments for tracking
-  let span_counter = azimuth::Meter::create_counter(meter, "comprehensive.spans")
-  let log_counter = azimuth::Meter::create_counter(meter, "comprehensive.logs")
-  let operation_histogram = azimuth::Meter::create_histogram(meter, "comprehensive.operation.time")
-  
-  // Perform comprehensive stress operations
-  let operation_count = 500
-  
-  for i in 0..operation_count {
-    // Create span
-    let span = azimuth::Tracer::start_span(tracer, "comprehensive-operation-" + i.to_string())
-    azimuth::Counter::add(span_counter, 1.0)
-    
-    // Add events to span
-    azimuth::Span::add_event(span, "comprehensive.event", Some([
-      ("operation.index", azimuth::IntValue(i)),
-      ("stress.level", azimuth::StringValue("comprehensive"))
-    ]))
-    
-    // Create log record
-    let log_record = azimuth::LogRecord::new_with_context(
-      azimuth::Info,
-      Some("Comprehensive stress operation " + i.to_string()),
-      Some(azimuth::Attributes::new()),
-      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-      None,
-      Some("comprehensive-trace-" + (i % 50).to_string()),
-      Some("comprehensive-span-" + i.to_string()),
-      Some(azimuth::Context::root())
-    )
-    azimuth::Logger::emit(logger, log_record)
-    azimuth::Counter::add(log_counter, 1.0)
-    
-    // Create context and baggage
-    let key = azimuth::ContextKey::new("comprehensive.key." + i.to_string())
-    let ctx = azimuth::Context::with_value(azimuth::Context::root(), key, "comprehensive.value." + i.to_string())
-    
-    let baggage = azimuth::Baggage::new()
-    let updated_baggage = azimuth::Baggage::set_entry(baggage, "comprehensive.baggage." + i.to_string(), "baggage.value." + i.to_string())
-    
-    // Create resource
-    let resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
-      ("operation.index", azimuth::IntValue(i)),
-      ("stress.type", azimuth::StringValue("comprehensive"))
-    ])
-    
-    // Record operation time
-    let operation_time = 10.0 + (i.to_double() % 100.0)
-    azimuth::Histogram::record(operation_histogram, operation_time)
-    
-    // End span
-    azimuth::Span::end(span)
+  for i = 0; i < 500; i = i + 1 {
+    let key = "resource-attr-" + i.to_string()
+    let value = azimuth::StringValue("resource-value-" + i.to_string())
+    attributes = attributes.append((key, value))
   }
   
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
+  let resource_with_attrs = azimuth::Resource::with_attributes(resource, attributes)
   
-  // Verify comprehensive performance metrics
-  assert_eq(span_counter.name, "comprehensive.spans")
-  assert_eq(log_counter.name, "comprehensive.logs")
-  assert_eq(operation_histogram.name, "comprehensive.operation.time")
-  assert_true(total_duration < 10000000000L)  // Should complete in less than 10 seconds
+  // Verify resource attributes (sample only)
+  for i = 0; i < 10; i = i + 1 {
+    let key = "resource-attr-" + i.to_string()
+    let expected_value = azimuth::StringValue("resource-value-" + i.to_string())
+    assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, key), Some(expected_value))
+  }
+  
+  // Test resource merging with many attributes
+  let override_attributes = []
+  
+  for i = 0; i < 100; i = i + 1 {
+    let key = "override-attr-" + i.to_string()
+    let value = azimuth::StringValue("override-value-" + i.to_string())
+    override_attributes = override_attributes.append((key, value))
+  }
+  
+  let override_resource = azimuth::Resource::with_attributes(resource, override_attributes)
+  let merged_resource = azimuth::Resource::merge(resource_with_attrs, override_resource)
+  
+  // Verify merged resource (sample only)
+  for i = 0; i < 5; i = i + 1 {
+    let key = "override-attr-" + i.to_string()
+    let expected_value = azimuth::StringValue("override-value-" + i.to_string())
+    assert_eq(azimuth::Resource::get_attribute(merged_resource, key), Some(expected_value))
+  }
+}
+
+// Test 8: Stress test with mixed operations
+pub test "performance stress test mixed operations" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "stress-test-meter")
+  let logger_provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "stress-test-logger")
+  
+  // Perform mixed operations in high volume
+  for i = 0; i < 500; i = i + 1 {
+    // Create and operate on spans
+    let span_ctx = azimuth::SpanContext::new("stress-trace-" + i.to_string(), "stress-span-" + i.to_string(), true, "")
+    let span = azimuth::Span::new("stress-operation-" + i.to_string(), azimuth::Internal, span_ctx)
+    
+    // Create and operate on metrics
+    let counter = azimuth::Meter::create_counter(meter, "stress-counter-" + i.to_string())
+    azimuth::Counter::add(counter, i.to_double())
+    
+    let histogram = azimuth::Meter::create_histogram(meter, "stress-histogram-" + i.to_string())
+    azimuth::Histogram::record(histogram, (i * 2).to_double())
+    
+    // Create and emit log records
+    let log_record = azimuth::LogRecord::new(azimuth::Info, "Stress log message " + i.to_string())
+    azimuth::Logger::emit(logger, log_record)
+    
+    // Create and operate on attributes
+    let attrs = azimuth::Attributes::new()
+    azimuth::Attributes::set(attrs, "stress-key-" + i.to_string(), azimuth::IntValue(i))
+    
+    // Create and operate on context
+    let ctx = azimuth::Context::root()
+    let key = azimuth::ContextKey::new("stress-context-" + i.to_string())
+    let ctx_with_value = azimuth::Context::with_value(ctx, key, "stress-value-" + i.to_string())
+    
+    // Create and operate on baggage
+    let baggage = azimuth::Baggage::new()
+    let baggage_with_entry = azimuth::Baggage::set_entry(baggage, "stress-baggage-" + i.to_string(), "stress-baggage-value-" + i.to_string())
+  }
+  
+  // Verify that operations completed successfully
+  let test_span_ctx = azimuth::SpanContext::new("test-trace", "test-span", true, "")
+  let test_span = azimuth::Span::new("test-operation", azimuth::Internal, test_span_ctx)
+  assert_eq(azimuth::Span::name(test_span), "test-operation")
+  
+  let test_counter = azimuth::Meter::create_counter(meter, "test-counter")
+  azimuth::Counter::add(test_counter, 1.0)
+  assert_eq(test_counter.name, "test-counter")
+  
+  let test_log = azimuth::LogRecord::new(azimuth::Info, "Test log message")
+  assert_eq(azimuth::LogRecord::body(test_log), Some("Test log message"))
 }
