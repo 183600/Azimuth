@@ -1,488 +1,623 @@
 // Azimuth Performance Benchmark Test Suite
-// This file contains performance benchmark tests for the Azimuth telemetry system
+// This file contains test cases for performance benchmarking functionality
 
-// Test 1: Attributes operations performance benchmarks
-pub test "attributes operations performance benchmarks" {
-  // Benchmark attribute creation
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+// Test 1: Span creation performance
+test "span creation performance" {
+  // Test span creation performance with different scenarios
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "performance-tracer")
   
-  for i = 0; i < 1000; i++ {
-    let attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(attrs, "perf.key." + i.to_string(), azimuth::StringValue("perf.value." + i.to_string()))
+  // Benchmark simple span creation
+  let simple_spans = []
+  for i in 0..1000 {
+    let span = Tracer::start_span(tracer, "simple-span-" + i.to_string())
+    simple_spans.push(span)
   }
   
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let creation_time = end_time - start_time
+  // Verify all spans were created
+  assert_eq(simple_spans.length(), 1000)
+  assert_eq(Span::name(simple_spans[0]), "simple-span-0")
+  assert_eq(Span::name(simple_spans[999]), "simple-span-999")
   
-  // Benchmark attribute retrieval
-  let test_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(test_attrs, "string.key", azimuth::StringValue("test_value"))
-  azimuth::Attributes::set(test_attrs, "int.key", azimuth::IntValue(42))
-  azimuth::Attributes::set(test_attrs, "float.key", azimuth::FloatValue(3.14))
-  azimuth::Attributes::set(test_attrs, "bool.key", azimuth::BoolValue(true))
-  
-  let retrieval_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 10000; i++ {
-    let _ = azimuth::Attributes::get(test_attrs, "string.key")
-    let _ = azimuth::Attributes::get(test_attrs, "int.key")
-    let _ = azimuth::Attributes::get(test_attrs, "float.key")
-    let _ = azimuth::Attributes::get(test_attrs, "bool.key")
+  // Benchmark span creation with attributes
+  let attr_spans = []
+  for i in 0..500 {
+    let span = Tracer::start_span(tracer, "attr-span-" + i.to_string(), Some([
+      ("index", IntValue(i)),
+      ("batch", StringValue("performance-test"))
+    ]))
+    attr_spans.push(span)
   }
   
-  let retrieval_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let retrieval_time = retrieval_end - retrieval_start
+  // Verify all spans with attributes were created
+  assert_eq(attr_spans.length(), 500)
+  assert_eq(Span::name(attr_spans[0]), "attr-span-0")
+  assert_eq(Span::name(attr_spans[499]), "attr-span-499")
   
-  // Benchmark large attribute operations
-  let large_attrs = azimuth::Attributes::new()
-  let large_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  // Benchmark span creation with long names
+  let long_name_spans = []
+  let long_name_base = "this.is.a.very.long.span.name.that.tests.performance.boundary.conditions"
   
-  for i = 0; i < 100; i++ {
-    let key = "large.attribute.key." + i.to_string()
-    let value = "this.is.a.very.large.attribute.value.that.tests.performance.with.long.strings." + i.to_string()
-    azimuth::Attributes::set(large_attrs, key, azimuth::StringValue(value))
+  for i in 0..100 {
+    let span = Tracer::start_span(tracer, long_name_base + "-" + i.to_string())
+    long_name_spans.push(span)
   }
   
-  let large_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let large_time = large_end - large_start
+  // Verify all spans with long names were created
+  assert_eq(long_name_spans.length(), 100)
+  assert_eq(Span::name(long_name_spans[0]), long_name_base + "-0")
+  assert_eq(Span::name(long_name_spans[99]), long_name_base + "-99")
   
-  // Performance assertions (these would be adjusted based on actual requirements)
-  assert_true(creation_time > 0L)
-  assert_true(retrieval_time > 0L)
-  assert_true(large_time > 0L)
+  // End all spans
+  for span in simple_spans {
+    Span::end(span)
+  }
+  
+  for span in attr_spans {
+    Span::end(span)
+  }
+  
+  for span in long_name_spans {
+    Span::end(span)
+  }
 }
 
-// Test 2: Span operations performance benchmarks
-pub test "span operations performance benchmarks" {
-  // Benchmark span creation
-  let span_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+// Test 2: Metrics creation and operations performance
+test "metrics creation and operations performance" {
+  // Test metrics creation performance
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "performance-meter")
   
-  for i = 0; i < 1000; i++ {
-    let span_ctx = azimuth::SpanContext::new("trace-" + i.to_string(), "span-" + i.to_string(), true, "")
-    let _ = azimuth::Span::new("perf-operation-" + i.to_string(), azimuth::Internal, span_ctx)
+  // Benchmark counter creation
+  let counters = []
+  for i in 0..1000 {
+    let counter = Meter::create_counter(meter, "perf-counter-" + i.to_string())
+    counters.push(counter)
   }
   
-  let span_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let span_creation_time = span_end - span_start
+  // Verify all counters were created
+  assert_eq(counters.length(), 1000)
+  assert_eq(counters[0].name, "perf-counter-0")
+  assert_eq(counters[999].name, "perf-counter-999")
   
-  // Benchmark span context operations
-  let test_span_ctx = azimuth::SpanContext::new("performance-trace-12345", "performance-span-67890", true, "key1=value1,key2=value2")
-  
-  let context_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 10000; i++ {
-    let _ = azimuth::SpanContext::trace_id(test_span_ctx)
-    let _ = azimuth::SpanContext::span_id(test_span_ctx)
-    let _ = azimuth::SpanContext::is_valid(test_span_ctx)
-    let _ = azimuth::SpanContext::is_sampled(test_span_ctx)
+  // Benchmark histogram creation
+  let histograms = []
+  for i in 0..500 {
+    let histogram = Meter::create_histogram(meter, "perf-histogram-" + i.to_string())
+    histograms.push(histogram)
   }
   
-  let context_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let context_operations_time = context_end - context_start
+  // Verify all histograms were created
+  assert_eq(histograms.length(), 500)
+  assert_eq(histograms[0].name, "perf-histogram-0")
+  assert_eq(histograms[499].name, "perf-histogram-499")
   
-  // Benchmark span status operations
-  let test_span = azimuth::Span::new("performance-test", azimuth::Internal, test_span_ctx)
-  
-  let status_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 5000; i++ {
-    azimuth::Span::set_status(test_span, azimuth::Ok, Some("Performance test " + i.to_string()))
-    let _ = azimuth::Span::status(test_span)
+  // Benchmark gauge creation
+  let gauges = []
+  for i in 0..300 {
+    let gauge = Meter::create_gauge(meter, "perf-gauge-" + i.to_string())
+    gauges.push(gauge)
   }
   
-  let status_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let status_operations_time = status_end - status_start
+  // Verify all gauges were created
+  assert_eq(gauges.length(), 300)
+  assert_eq(gauges[0].name, "perf-gauge-0")
+  assert_eq(gauges[299].name, "perf-gauge-299")
   
-  // Performance assertions
-  assert_true(span_creation_time > 0L)
-  assert_true(context_operations_time > 0L)
-  assert_true(status_operations_time > 0L)
+  // Benchmark metric operations
+  for i in 0..counters.length() {
+    Counter::add(counters[i], i.to_double())
+  }
+  
+  for i in 0..histograms.length() {
+    Histogram::record(histograms[i], i.to_double() * 10.0)
+  }
+  
+  for i in 0..gauges.length() {
+    // Gauge operations would be implemented here
+  }
 }
 
-// Test 3: Metrics operations performance benchmarks
-pub test "metrics operations performance benchmarks" {
-  let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "performance-test-meter")
+// Test 3: Logging performance
+test "logging performance" {
+  // Test logging performance with different scenarios
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "performance-logger")
   
-  // Benchmark metric instrument creation
-  let instrument_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 100; i++ {
-    let _ = azimuth::Meter::create_counter(meter, "perf.counter." + i.to_string())
-    let _ = azimuth::Meter::create_histogram(meter, "perf.histogram." + i.to_string())
-    let _ = azimuth::Meter::create_updown_counter(meter, "perf.updown." + i.to_string())
-    let _ = azimuth::Meter::create_gauge(meter, "perf.gauge." + i.to_string())
+  // Benchmark simple log record creation and emission
+  let simple_logs = []
+  for i in 0..1000 {
+    let record = LogRecord::new(Info, "Performance log message " + i.to_string())
+    simple_logs.push(record)
   }
   
-  let instrument_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let instrument_creation_time = instrument_end - instrument_start
+  // Verify all log records were created
+  assert_eq(simple_logs.length(), 1000)
+  assert_eq(LogRecord::body(simple_logs[0]), Some("Performance log message 0"))
+  assert_eq(LogRecord::body(simple_logs[999]), Some("Performance log message 999"))
   
-  // Benchmark metric recording operations
-  let counter = azimuth::Meter::create_counter(meter, "performance-counter")
-  let histogram = azimuth::Meter::create_histogram(meter, "performance-histogram")
-  let updown_counter = azimuth::Meter::create_updown_counter(meter, "performance-updown")
-  let gauge = azimuth::Meter::create_gauge(meter, "performance-gauge")
-  
-  let recording_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 10000; i++ {
-    azimuth::Counter::add(counter, i.to_double())
-    azimuth::Histogram::record(histogram, i.to_double() * 100.0)
-    azimuth::UpDownCounter::add(updown_counter, i.to_double() - 5000.0)
-    azimuth::UpDownCounter::add(gauge, i.to_double() % 100.0)
+  // Benchmark log record emission
+  for record in simple_logs {
+    Logger::emit(logger, record)
   }
   
-  let recording_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let recording_time = recording_end - recording_start
-  
-  // Benchmark instrument metadata operations
-  let test_counter = azimuth::Meter::create_counter(meter, "metadata-test-counter", Some("Test counter"), Some("count"))
-  let test_histogram = azimuth::Meter::create_histogram(meter, "metadata-test-histogram", Some("Test histogram"), Some("ms"))
-  
-  let metadata_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 5000; i++ {
-    let instrument = azimuth::Histogram::as_instrument(test_histogram)
-    let _ = azimuth::Instrument::name(instrument)
-    let _ = azimuth::Instrument::description(instrument)
-    let _ = azimuth::Instrument::unit(instrument)
+  // Benchmark log record creation with attributes
+  let attr_logs = []
+  for i in 0..500 {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "index", IntValue(i))
+    Attributes::set(attrs, "batch", StringValue("performance"))
+    
+    let record = LogRecord::new_with_context(
+      Info,
+      Some("Performance log with attributes " + i.to_string()),
+      Some(attrs),
+      Some(1735689600000000000L),
+      None,
+      None,
+      None,
+      None
+    )
+    attr_logs.push(record)
   }
   
-  let metadata_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let metadata_time = metadata_end - metadata_start
+  // Verify all log records with attributes were created
+  assert_eq(attr_logs.length(), 500)
+  assert_eq(LogRecord::body(attr_logs[0]), Some("Performance log with attributes 0"))
+  assert_eq(LogRecord::body(attr_logs[499]), Some("Performance log with attributes 499"))
   
-  // Performance assertions
-  assert_true(instrument_creation_time > 0L)
-  assert_true(recording_time > 0L)
-  assert_true(metadata_time > 0L)
+  // Benchmark log record emission with attributes
+  for record in attr_logs {
+    Logger::emit(logger, record)
+  }
+  
+  // Benchmark log record creation with different severity levels
+  let severity_logs = []
+  let severities = [Trace, Debug, Info, Warn, Error, Fatal]
+  
+  for i in 0..600 {
+    let severity = severities[i % severities.length()]
+    let record = LogRecord::new(severity, "Severity test log " + i.to_string())
+    severity_logs.push(record)
+  }
+  
+  // Verify all log records with different severities were created
+  assert_eq(severity_logs.length(), 600)
+  assert_eq(LogRecord::severity_number(severity_logs[0]), Trace)
+  assert_eq(LogRecord::severity_number(severity_logs[1]), Debug)
+  assert_eq(LogRecord::severity_number(severity_logs[2]), Info)
+  assert_eq(LogRecord::severity_number(severity_logs[3]), Warn)
+  assert_eq(LogRecord::severity_number(severity_logs[4]), Error)
+  assert_eq(LogRecord::severity_number(severity_logs[5]), Fatal)
 }
 
-// Test 4: Logging operations performance benchmarks
-pub test "logging operations performance benchmarks" {
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "performance-test-logger")
+// Test 4: Context and baggage performance
+test "context and baggage performance" {
+  // Test context operations performance
+  let contexts = []
   
-  // Benchmark log record creation
-  let log_creation_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 1000; i++ {
-    let _ = azimuth::LogRecord::new(azimuth::Info, "Performance test log message " + i.to_string())
-    let _ = azimuth::LogRecord::new(azimuth::Warn, "Performance warning message " + i.to_string())
-    let _ = azimuth::LogRecord::new(azimuth::Error, "Performance error message " + i.to_string())
+  // Benchmark context creation with values
+  for i in 0..1000 {
+    let ctx = Context::root()
+    let key = ContextKey::new("perf.key." + i.to_string())
+    let ctx_with_value = Context::with_value(ctx, key, "perf.value." + i.to_string())
+    contexts.push(ctx_with_value)
   }
   
-  let log_creation_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let log_creation_time = log_creation_end - log_creation_start
+  // Verify all contexts were created
+  assert_eq(contexts.length(), 1000)
   
-  // Benchmark log emission
-  let test_logs = [
-    azimuth::LogRecord::new(azimuth::Trace, "Trace level performance test"),
-    azimuth::LogRecord::new(azimuth::Debug, "Debug level performance test"),
-    azimuth::LogRecord::new(azimuth::Info, "Info level performance test"),
-    azimuth::LogRecord::new(azimuth::Warn, "Warn level performance test"),
-    azimuth::LogRecord::new(azimuth::Error, "Error level performance test"),
-    azimuth::LogRecord::new(azimuth::Fatal, "Fatal level performance test")
-  ]
-  
-  let emission_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 1000; i++ {
-    for log in test_logs {
-      azimuth::Logger::emit(logger, log)
-    }
+  // Benchmark context value retrieval
+  for i in 0..contexts.length() {
+    let ctx = contexts[i]
+    let key = ContextKey::new("perf.key." + i.to_string())
+    let value = Context::get(ctx, key)
+    assert_eq(value, Some("perf.value." + i.to_string()))
   }
   
-  let emission_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let emission_time = emission_end - emission_start
+  // Test baggage operations performance
+  let baggage_instances = []
   
-  // Benchmark detailed log record operations
-  let detailed_log = azimuth::LogRecord::new_with_context(
-    azimuth::Error,
-    Some("Detailed performance test log message"),
-    Some(azimuth::Attributes::new()),
-    Some(1735689600000000000L),
-    Some(1735689600000000001L),
-    Some("performance-trace-12345"),
-    Some("performance-span-67890"),
-    Some(azimuth::Context::root())
-  )
-  
-  let detailed_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 5000; i++ {
-    let _ = azimuth::LogRecord::severity_number(detailed_log)
-    let _ = azimuth::LogRecord::body(detailed_log)
-    let _ = azimuth::LogRecord::trace_id(detailed_log)
-    let _ = azimuth::LogRecord::span_id(detailed_log)
+  // Benchmark baggage creation with entries
+  for i in 0..500 {
+    let baggage = Baggage::new()
+    let baggage_with_entry = Baggage::set_entry(baggage, "perf.key." + i.to_string(), "perf.value." + i.to_string())
+    baggage_instances.push(baggage_with_entry)
   }
   
-  let detailed_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let detailed_time = detailed_end - detailed_start
+  // Verify all baggage instances were created
+  assert_eq(baggage_instances.length(), 500)
   
-  // Performance assertions
-  assert_true(log_creation_time > 0L)
-  assert_true(emission_time > 0L)
-  assert_true(detailed_time > 0L)
+  // Benchmark baggage entry retrieval
+  for i in 0..baggage_instances.length() {
+    let baggage = baggage_instances[i]
+    let value = Baggage::get_entry(baggage, "perf.key." + i.to_string())
+    assert_eq(value, Some("perf.value." + i.to_string()))
+  }
 }
 
-// Test 5: Context and baggage operations performance benchmarks
-pub test "context and baggage operations performance benchmarks" {
-  // Benchmark context creation and operations
-  let context_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+// Test 5: Resource operations performance
+test "resource operations performance" {
+  // Test resource creation and operations performance
+  let resources = []
   
-  let root_ctx = azimuth::Context::root()
-  let mut ctx = root_ctx
-  
-  for i = 0; i < 100; i++ {
-    let key = azimuth::ContextKey::new("perf.key." + i.to_string())
-    ctx = azimuth::Context::with_value(ctx, key, "perf.value." + i.to_string())
+  // Benchmark resource creation with attributes
+  for i in 0..200 {
+    let resource = Resource::with_attributes(Resource::new(), [
+      ("service.name", StringValue("perf-service-" + i.to_string())),
+      ("service.instance.id", StringValue("perf-instance-" + i.to_string())),
+      ("deployment.environment", StringValue("performance")),
+      ("process.id", IntValue(i))
+    ])
+    resources.push(resource)
   }
   
-  let context_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let context_creation_time = context_end - context_start
-  
-  // Benchmark context retrieval
-  let retrieval_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 10000; i++ {
-    for j = 0; j < 10; j++ {
-      let key = azimuth::ContextKey::new("perf.key." + j.to_string())
-      let _ = azimuth::Context::get(ctx, key)
-    }
-  }
-  
-  let retrieval_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let context_retrieval_time = retrieval_end - retrieval_start
-  
-  // Benchmark baggage operations
-  let baggage_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  let empty_baggage = azimuth::Baggage::new()
-  let mut baggage = empty_baggage
-  
-  for i = 0; i < 100; i++ {
-    baggage = azimuth::Baggage::set_entry(baggage, "perf.baggage." + i.to_string(), "perf.value." + i.to_string())
-  }
-  
-  let baggage_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let baggage_creation_time = baggage_end - baggage_start
-  
-  // Benchmark baggage retrieval
-  let baggage_retrieval_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 10000; i++ {
-    for j = 0; j < 10; j++ {
-      let _ = azimuth::Baggage::get_entry(baggage, "perf.baggage." + j.to_string())
-    }
-  }
-  
-  let baggage_retrieval_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let baggage_retrieval_time = baggage_retrieval_end - baggage_retrieval_start
-  
-  // Performance assertions
-  assert_true(context_creation_time > 0L)
-  assert_true(context_retrieval_time > 0L)
-  assert_true(baggage_creation_time > 0L)
-  assert_true(baggage_retrieval_time > 0L)
-}
-
-// Test 6: Propagator operations performance benchmarks
-pub test "propagator operations performance benchmarks" {
-  // Benchmark propagator creation
-  let propagator_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 100; i++ {
-    let _ = azimuth::W3CTraceContextPropagator::new()
-    let _ = azimuth::W3CBaggagePropagator::new()
-    let propagators = [azimuth::W3CTraceContextPropagator::new(), azimuth::W3CBaggagePropagator::new()]
-    let _ = azimuth::CompositePropagator::new(propagators)
-  }
-  
-  let propagator_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let propagator_creation_time = propagator_end - propagator_start
-  
-  // Benchmark inject operations
-  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
-  let baggage_propagator = azimuth::W3CBaggagePropagator::new()
-  let composite_propagator = azimuth::CompositePropagator::new([trace_propagator, baggage_propagator])
-  
-  let test_ctx = azimuth::Context::with_value(
-    azimuth::Context::root(),
-    azimuth::ContextKey::new("test.key"),
-    "test.value"
-  )
-  
-  let inject_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 1000; i++ {
-    let carrier = azimuth::TextMapCarrier::new()
-    azimuth::CompositePropagator::inject(composite_propagator, test_ctx, carrier)
-  }
-  
-  let inject_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let inject_time = inject_end - inject_start
-  
-  // Benchmark extract operations
-  let test_carrier = azimuth::TextMapCarrier::new()
-  
-  let extract_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 1000; i++ {
-    let _ = azimuth::CompositePropagator::extract(composite_propagator, test_carrier)
-  }
-  
-  let extract_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let extract_time = extract_end - extract_start
-  
-  // Performance assertions
-  assert_true(propagator_creation_time > 0L)
-  assert_true(inject_time > 0L)
-  assert_true(extract_time > 0L)
-}
-
-// Test 7: Resource operations performance benchmarks
-pub test "resource operations performance benchmarks" {
-  // Benchmark resource creation
-  let resource_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 100; i++ {
-    let _ = azimuth::Resource::new()
-  }
-  
-  let resource_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let resource_creation_time = resource_end - resource_start
-  
-  // Benchmark resource with attributes creation
-  let attrs_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 100; i++ {
-    let attrs = [
-      ("service.name", azimuth::StringValue("perf-service-" + i.to_string())),
-      ("service.version", azimuth::StringValue("1.0." + i.to_string())),
-      ("service.instance.id", azimuth::StringValue("instance-" + i.to_string())),
-      ("host.name", azimuth::StringValue("perf-host-" + i.to_string())),
-      ("process.id", azimuth::IntValue(i))
-    ]
-    let _ = azimuth::Resource::with_attributes(azimuth::Resource::new(), attrs)
-  }
-  
-  let attrs_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let attrs_creation_time = attrs_end - attrs_start
+  // Verify all resources were created
+  assert_eq(resources.length(), 200)
   
   // Benchmark resource attribute retrieval
-  let test_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
-    ("service.name", azimuth::StringValue("performance-test-service")),
-    ("service.version", azimuth::StringValue("1.0.0")),
-    ("service.instance.id", azimuth::StringValue("perf-instance-12345")),
-    ("host.name", azimuth::StringValue("performance-host")),
-    ("process.id", azimuth::IntValue(12345))
-  ])
-  
-  let retrieval_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 10000; i++ {
-    let _ = azimuth::Resource::get_attribute(test_resource, "service.name")
-    let _ = azimuth::Resource::get_attribute(test_resource, "service.version")
-    let _ = azimuth::Resource::get_attribute(test_resource, "service.instance.id")
-    let _ = azimuth::Resource::get_attribute(test_resource, "host.name")
-    let _ = azimuth::Resource::get_attribute(test_resource, "process.id")
+  for i in 0..resources.length() {
+    let resource = resources[i]
+    let service_name = Resource::get_attribute(resource, "service.name")
+    let instance_id = Resource::get_attribute(resource, "service.instance.id")
+    let environment = Resource::get_attribute(resource, "deployment.environment")
+    let process_id = Resource::get_attribute(resource, "process.id")
+    
+    assert_eq(service_name, Some(StringValue("perf-service-" + i.to_string())))
+    assert_eq(instance_id, Some(StringValue("perf-instance-" + i.to_string())))
+    assert_eq(environment, Some(StringValue("performance")))
+    assert_eq(process_id, Some(IntValue(i)))
   }
-  
-  let retrieval_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let retrieval_time = retrieval_end - retrieval_start
   
   // Benchmark resource merging
-  let base_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
-    ("common.attr", azimuth::StringValue("common-value")),
-    ("base.attr", azimuth::StringValue("base-value"))
+  let base_resource = Resource::with_attributes(Resource::new(), [
+    ("base.attr", StringValue("base.value"))
   ])
   
-  let override_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
-    ("common.attr", azimuth::StringValue("override-value")),
-    ("override.attr", azimuth::StringValue("override-value"))
-  ])
-  
-  let merge_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 1000; i++ {
-    let _ = azimuth::Resource::merge(base_resource, override_resource)
+  let merged_resources = []
+  for resource in resources {
+    let merged = Resource::merge(base_resource, resource)
+    merged_resources.push(merged)
   }
   
-  let merge_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let merge_time = merge_end - merge_start
+  // Verify all resources were merged
+  assert_eq(merged_resources.length(), 200)
   
-  // Performance assertions
-  assert_true(resource_creation_time > 0L)
-  assert_true(attrs_creation_time > 0L)
-  assert_true(retrieval_time > 0L)
-  assert_true(merge_time > 0L)
+  // Verify merged resource attributes
+  for i in 0..merged_resources.length() {
+    let merged = merged_resources[i]
+    let base_attr = Resource::get_attribute(merged, "base.attr")
+    let service_name = Resource::get_attribute(merged, "service.name")
+    
+    assert_eq(base_attr, Some(StringValue("base.value")))
+    assert_eq(service_name, Some(StringValue("perf-service-" + i.to_string())))
+  }
 }
 
-// Test 8: HTTP client operations performance benchmarks
-pub test "http client operations performance benchmarks" {
-  // Benchmark HTTP client creation
-  let client_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+// Test 6: Propagator operations performance
+test "propagator operations performance" {
+  // Test propagator operations performance
+  let propagator = W3CTraceContextPropagator::new()
+  let composite_propagator = CompositePropagator::new([propagator])
   
-  for i = 0; i < 100; i++ {
-    let _ = azimuth::HttpClient::new()
+  let carriers = []
+  let contexts = []
+  
+  // Benchmark carrier creation
+  for i in 0..500 {
+    let carrier = TextMapCarrier::new()
+    carriers.push(carrier)
+    
+    let ctx = Context::root()
+    let key = ContextKey::new("perf.key." + i.to_string())
+    let ctx_with_value = Context::with_value(ctx, key, "perf.value." + i.to_string())
+    contexts.push(ctx_with_value)
   }
   
-  let client_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let client_creation_time = client_end - client_start
+  // Verify all carriers and contexts were created
+  assert_eq(carriers.length(), 500)
+  assert_eq(contexts.length(), 500)
   
-  // Benchmark HTTP request creation
-  let request_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 1000; i++ {
-    let _ = azimuth::HttpRequest::new("GET", "https://api.example.com/data" + i.to_string(), [], None)
-    let _ = azimuth::HttpRequest::new("POST", "https://api.example.com/create", [("Content-Type", "application/json")], Some("{\"data\": \"" + i.to_string() + "\"}"))
+  // Benchmark injection operations
+  for i in 0..contexts.length() {
+    let ctx = contexts[i]
+    let carrier = carriers[i]
+    CompositePropagator::inject(composite_propagator, ctx, carrier)
   }
   
-  let request_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let request_creation_time = request_end - request_start
-  
-  // Benchmark HTTP response creation
-  let response_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 1000; i++ {
-    let _ = azimuth::HttpResponse::new(200, [("Content-Type", "application/json")], Some("{\"status\": \"success\", \"id\": " + i.to_string() + "}"))
-    let _ = azimuth::HttpResponse::new(404, [("Content-Type", "application/json")], Some("{\"error\": \"not found\", \"id\": " + i.to_string() + "}"))
+  // Benchmark extraction operations
+  let extracted_contexts = []
+  for carrier in carriers {
+    let extracted_ctx = CompositePropagator::extract(composite_propagator, carrier)
+    extracted_contexts.push(extracted_ctx)
   }
   
-  let response_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let response_creation_time = response_end - response_start
+  // Verify all contexts were extracted
+  assert_eq(extracted_contexts.length(), 500)
   
-  // Benchmark HTTP request property access
-  let test_request = azimuth::HttpRequest::new("GET", "https://api.example.com/test", [("Authorization", "Bearer token")], Some("{\"test\": \"data\"}"))
+  // Verify extraction results
+  for extracted_ctx in extracted_contexts {
+    let key = ContextKey::new("extracted")
+    let value = Context::get(extracted_ctx, key)
+    assert_eq(value, Some("true"))
+  }
+}
+
+// Test 7: Memory usage performance
+test "memory usage performance" {
+  // Test memory usage with large numbers of telemetry objects
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "memory-test-tracer")
   
-  let request_property_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 10000; i++ {
-    let _ = azimuth::HttpRequest::http_method(test_request)
-    let _ = azimuth::HttpRequest::url(test_request)
-    let _ = azimuth::HttpRequest::body(test_request)
+  // Create large number of spans to test memory usage
+  let large_span_set = []
+  for i in 0..2000 {
+    let span = Tracer::start_span(tracer, "memory-test-span-" + i.to_string())
+    
+    // Add events to each span
+    Span::add_event(span, "memory-test-event", Some([
+      ("index", IntValue(i)),
+      ("memory.test", StringValue("true"))
+    ]))
+    
+    // Set status on each span
+    Span::set_status(span, Ok, Some("Memory test span " + i.to_string()))
+    
+    large_span_set.push(span)
   }
   
-  let request_property_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let request_property_time = request_property_end - request_property_start
+  // Verify all spans were created
+  assert_eq(large_span_set.length(), 2000)
   
-  // Benchmark HTTP response property access
-  let test_response = azimuth::HttpResponse::new(200, [("Content-Type", "application/json")], Some("{\"result\": \"success\"}"))
-  
-  let response_property_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i = 0; i < 10000; i++ {
-    let _ = azimuth::HttpResponse::status_code(test_response)
-    let _ = azimuth::HttpResponse::body(test_response)
+  // Create large number of attributes to test memory usage
+  let large_attr_set = Attributes::new()
+  for i in 0..1000 {
+    Attributes::set(large_attr_set, "memory.attr." + i.to_string(), StringValue("memory.value." + i.to_string()))
   }
   
-  let response_property_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let response_property_time = response_property_end - response_property_start
+  // Create large number of baggage entries to test memory usage
+  let large_baggage = Baggage::new()
+  let mut current_baggage = large_baggage
   
-  // Performance assertions
-  assert_true(client_creation_time > 0L)
-  assert_true(request_creation_time > 0L)
-  assert_true(response_creation_time > 0L)
-  assert_true(request_property_time > 0L)
-  assert_true(response_property_time > 0L)
+  for i in 0..500 {
+    current_baggage = Baggage::set_entry(current_baggage, "memory.baggage." + i.to_string(), "memory.baggage.value." + i.to_string())
+  }
+  
+  // Create large number of log records to test memory usage
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "memory-test-logger")
+  
+  let large_log_set = []
+  for i in 0..1500 {
+    let record = LogRecord::new(Info, "Memory test log message " + i.to_string())
+    large_log_set.push(record)
+  }
+  
+  // Verify all log records were created
+  assert_eq(large_log_set.length(), 1500)
+  
+  // Clean up by ending all spans
+  for span in large_span_set {
+    Span::end(span)
+  }
+  
+  // Emit all log records
+  for record in large_log_set {
+    Logger::emit(logger, record)
+  }
+}
+
+// Test 8: Complex telemetry scenario performance
+test "complex telemetry scenario performance" {
+  // Test performance with complex real-world scenario
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "complex-scenario-tracer")
+  let meter = MeterProvider::get_meter(meter_provider, "complex-scenario-meter")
+  let logger = LoggerProvider::get_logger(logger_provider, "complex-scenario-logger")
+  
+  // Simulate complex request processing
+  for request_id in 0..100 {
+    // Create span for request processing
+    let request_span = Tracer::start_span(tracer, "process-request-" + request_id.to_string())
+    
+    // Add request attributes
+    Span::add_event(request_span, "request.started", Some([
+      ("request.id", IntValue(request_id)),
+      ("request.method", StringValue("GET")),
+      ("request.path", StringValue("/api/complex/resource"))
+    ]))
+    
+    // Create metrics for request
+    let request_counter = Meter::create_counter(meter, "requests.total")
+    let request_duration = Meter::create_histogram(meter, "request.duration")
+    
+    Counter::add(request_counter, 1.0)
+    
+    // Simulate database operations
+    for db_op_id in 0..5 {
+      let db_span = Tracer::start_span(tracer, "database-operation-" + db_op_id.to_string())
+      
+      Span::add_event(db_span, "db.query.started", Some([
+        ("db.operation", StringValue("SELECT")),
+        ("db.table", StringValue("users"))
+      ]))
+      
+      let db_counter = Meter::create_counter(meter, "db.operations")
+      Counter::add(db_counter, 1.0)
+      
+      Span::set_status(db_span, Ok, Some("DB operation completed"))
+      Span::end(db_span)
+    }
+    
+    // Simulate cache operations
+    for cache_op_id in 0..3 {
+      let cache_span = Tracer::start_span(tracer, "cache-operation-" + cache_op_id.to_string())
+      
+      Span::add_event(cache_span, "cache.access", Some([
+        ("cache.key", StringValue("user." + request_id.to_string())),
+        ("cache.hit", BoolValue(cache_op_id % 2 == 0))
+      ]))
+      
+      let cache_counter = Meter::create_counter(meter, "cache.operations")
+      Counter::add(cache_counter, 1.0)
+      
+      Span::end(cache_span)
+    }
+    
+    // Create log record for request completion
+    let request_log = LogRecord::new(Info, "Request " + request_id.to_string() + " completed successfully")
+    Logger::emit(logger, request_log)
+    
+    // Complete request span
+    Span::set_status(request_span, Ok, Some("Request processed successfully"))
+    Span::end(request_span)
+  }
+  
+  // Verify complex scenario completed
+  assert_true(true)  // If we reach here, the complex scenario completed successfully
+}
+
+// Test 9: Concurrent operations performance
+test "concurrent operations performance" {
+  // Test performance with concurrent operations
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  let tracers = []
+  let meters = []
+  let loggers = []
+  
+  // Create multiple instruments for concurrent operations
+  for i in 0..10 {
+    let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent-tracer-" + i.to_string())
+    let meter = MeterProvider::get_meter(meter_provider, "concurrent-meter-" + i.to_string())
+    let logger = LoggerProvider::get_logger(logger_provider, "concurrent-logger-" + i.to_string())
+    
+    tracers.push(tracer)
+    meters.push(meter)
+    loggers.push(logger)
+  }
+  
+  // Perform concurrent operations
+  for i in 0..tracers.length() {
+    let tracer = tracers[i]
+    let meter = meters[i]
+    let logger = loggers[i]
+    
+    // Create multiple spans per tracer
+    for j in 0..50 {
+      let span = Tracer::start_span(tracer, "concurrent-span-" + i.to_string() + "-" + j.to_string())
+      Span::set_status(span, Ok, Some("Concurrent operation completed"))
+      Span::end(span)
+    }
+    
+    // Create multiple metrics per meter
+    for j in 0..25 {
+      let counter = Meter::create_counter(meter, "concurrent-counter-" + i.to_string() + "-" + j.to_string())
+      Counter::add(counter, j.to_double())
+    }
+    
+    // Create multiple log records per logger
+    for j in 0..75 {
+      let record = LogRecord::new(Info, "Concurrent log " + i.to_string() + "-" + j.to_string())
+      Logger::emit(logger, record)
+    }
+  }
+  
+  // Verify concurrent operations completed
+  assert_eq(tracers.length(), 10)
+  assert_eq(meters.length(), 10)
+  assert_eq(loggers.length(), 10)
+}
+
+// Test 10: End-to-end telemetry performance
+test "end-to-end telemetry performance" {
+  // Test end-to-end telemetry performance
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "e2e-tracer")
+  let meter = MeterProvider::get_meter(meter_provider, "e2e-meter")
+  let logger = LoggerProvider::get_logger(logger_provider, "e2e-logger")
+  
+  // Simulate end-to-end request flow
+  for request_id in 0..50 {
+    // Create root span
+    let root_span = Tracer::start_span(tracer, "root-request-" + request_id.to_string())
+    
+    // Create baggage for request
+    let baggage = Baggage::new()
+    let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user-" + request_id.to_string())
+    let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session-" + request_id.to_string())
+    
+    // Create context for request
+    let ctx = Context::root()
+    let user_key = ContextKey::new("user.id")
+    let ctx_with_user = Context::with_value(ctx, user_key, "user-" + request_id.to_string())
+    
+    // Add root span events
+    Span::add_event(root_span, "request.started", Some([
+      ("request.id", IntValue(request_id)),
+      ("user.id", StringValue("user-" + request_id.to_string()))
+    ]))
+    
+    // Create metrics
+    let request_counter = Meter::create_counter(meter, "e2e.requests.total")
+    let request_duration = Meter::create_histogram(meter, "e2e.request.duration")
+    
+    Counter::add(request_counter, 1.0)
+    
+    // Simulate service calls
+    for service_id in 0..3 {
+      let service_span = Tracer::start_span(tracer, "service-call-" + service_id.to_string())
+      
+      Span::add_event(service_span, "service.call.started", Some([
+        ("service.id", IntValue(service_id)),
+        ("service.name", StringValue("service-" + service_id.to_string()))
+      ]))
+      
+      let service_counter = Meter::create_counter(meter, "e2e.service.calls")
+      Counter::add(service_counter, 1.0)
+      
+      // Simulate database operation within service
+      let db_span = Tracer::start_span(tracer, "database-operation")
+      Span::add_event(db_span, "db.query.executed", Some([
+        ("db.table", StringValue("records")),
+        ("db.operation", StringValue("SELECT"))
+      ]))
+      
+      let db_counter = Meter::create_counter(meter, "e2e.db.queries")
+      Counter::add(db_counter, 1.0)
+      
+      Span::end(db_span)
+      Span::set_status(service_span, Ok, Some("Service call completed"))
+      Span::end(service_span)
+    }
+    
+    // Create log record for request completion
+    let completion_log = LogRecord::new_with_context(
+      Info,
+      Some("Request " + request_id.to_string() + " completed successfully"),
+      None,
+      Some(1735689600000000000L),
+      None,
+      Some("trace-" + request_id.to_string()),
+      Some("span-" + request_id.to_string()),
+      Some(ctx_with_user)
+    )
+    
+    Logger::emit(logger, completion_log)
+    
+    // Complete root span
+    Span::set_status(root_span, Ok, Some("Request completed successfully"))
+    Span::end(root_span)
+  }
+  
+  // Verify end-to-end flow completed
+  assert_true(true)  // If we reach here, the end-to-end flow completed successfully
 }

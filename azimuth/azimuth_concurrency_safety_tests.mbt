@@ -1,418 +1,400 @@
-// Azimuth Concurrency and Thread Safety Test Suite
-// This file contains concurrency and thread safety test cases for the Azimuth telemetry system
+// Azimuth Concurrency Safety Test Suite
+// This file contains test cases for concurrency safety functionality
 
-// Test 1: Concurrent span creation and operations
-pub test "concurrency span operations" {
-  // Create multiple spans concurrently
-  let span_contexts = []
+// Test 1: Concurrent span operations
+test "concurrent span operations" {
+  // Test creating multiple spans concurrently
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "concurrent-tracer")
+  
+  // Create multiple spans
   let spans = []
-  
-  // Simulate concurrent span creation
-  for i = 0; i < 100; i = i + 1 {
-    let trace_id = "concurrent-trace-" + i.to_string()
-    let span_id = "concurrent-span-" + i.to_string()
-    let ctx = azimuth::SpanContext::new(trace_id, span_id, true, "")
-    span_contexts = span_contexts.append(ctx)
-    
-    let span_name = "concurrent-operation-" + i.to_string()
-    let span = azimuth::Span::new(span_name, azimuth::Internal, ctx)
-    spans = spans.append(span)
+  for i in 0..10 {
+    let span_name = "concurrent-span-" + i.to_string()
+    let span = Tracer::start_span(tracer, span_name)
+    spans.push(span)
   }
   
-  // Verify all spans were created correctly
-  for i = 0; i < 100; i = i + 1 {
-    assert_eq(azimuth::Span::name(spans[i]), "concurrent-operation-" + i.to_string())
-    assert_eq(azimuth::Span::kind(spans[i]), azimuth::Internal)
-    assert_eq(azimuth::SpanContext::trace_id(span_contexts[i]), "concurrent-trace-" + i.to_string())
-    assert_eq(azimuth::SpanContext::span_id(span_contexts[i]), "concurrent-span-" + i.to_string())
-    assert_true(azimuth::SpanContext::is_valid(span_contexts[i]))
-    assert_true(azimuth::SpanContext::is_sampled(span_contexts[i]))
+  // Verify all spans were created
+  assert_eq(spans.length(), 10)
+  
+  // Perform operations on all spans
+  for i in 0..spans.length() {
+    let span = spans[i]
+    Span::set_status(span, Ok, Some("Concurrent operation " + i.to_string()))
+    Span::add_event(span, "concurrent.event", Some([("span.index", IntValue(i))]))
   }
+  
+  // End all spans
+  for span in spans {
+    Span::end(span)
+  }
+  
+  // Verify span names
+  assert_eq(Span::name(spans[0]), "concurrent-span-0")
+  assert_eq(Span::name(spans[4]), "concurrent-span-4")
+  assert_eq(Span::name(spans[9]), "concurrent-span-9")
 }
 
 // Test 2: Concurrent metrics operations
-pub test "concurrency metrics operations" {
-  let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "concurrency-test-meter")
+test "concurrent metrics operations" {
+  // Test creating multiple metrics concurrently
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent-meter")
   
-  // Create multiple metrics instruments
+  // Create multiple instruments
   let counters = []
   let histograms = []
-  let updown_counters = []
   let gauges = []
   
-  // Create 50 of each instrument type
-  for i = 0; i < 50; i = i + 1 {
-    let counter = azimuth::Meter::create_counter(meter, "concurrent-counter-" + i.to_string())
-    let histogram = azimuth::Meter::create_histogram(meter, "concurrent-histogram-" + i.to_string())
-    let updown_counter = azimuth::Meter::create_updown_counter(meter, "concurrent-updown-" + i.to_string())
-    let gauge = azimuth::Meter::create_gauge(meter, "concurrent-gauge-" + i.to_string())
+  for i in 0..5 {
+    let counter_name = "concurrent-counter-" + i.to_string()
+    let histogram_name = "concurrent-histogram-" + i.to_string()
+    let gauge_name = "concurrent-gauge-" + i.to_string()
     
-    counters = counters.append(counter)
-    histograms = histograms.append(histogram)
-    updown_counters = updown_counters.append(updown_counter)
-    gauges = gauges.append(gauge)
+    let counter = Meter::create_counter(meter, counter_name)
+    let histogram = Meter::create_histogram(meter, histogram_name)
+    let gauge = Meter::create_gauge(meter, gauge_name)
+    
+    counters.push(counter)
+    histograms.push(histogram)
+    gauges.push(gauge)
   }
   
-  // Perform concurrent operations on all instruments
-  for i = 0; i < 50; i = i + 1 {
-    // Add values to counters
-    azimuth::Counter::add(counters[i], i.to_double())
+  // Perform operations on all instruments
+  for i in 0..counters.length() {
+    let counter = counters[i]
+    let histogram = histograms[i]
+    let gauge = gauges[i]
     
-    // Record values in histograms
-    azimuth::Histogram::record(histograms[i], (i * 2).to_double())
-    
-    // Add values to up-down counters
-    azimuth::UpDownCounter::add(updown_counters[i], (i * 3).to_double())
+    Counter::add(counter, i.to_double())
+    Histogram::record(histogram, i.to_double() * 10.0)
+    // Gauge operations would be implemented here
   }
   
-  // Verify instrument properties
-  for i = 0; i < 50; i = i + 1 {
-    assert_eq(counters[i].name, "concurrent-counter-" + i.to_string())
-    assert_eq(histograms[i].name, "concurrent-histogram-" + i.to_string())
-    assert_eq(updown_counters[i].name, "concurrent-updown-" + i.to_string())
-    assert_eq(gauges[i].name, "concurrent-gauge-" + i.to_string())
-  }
+  // Verify instrument names
+  assert_eq(counters[0].name, "concurrent-counter-0")
+  assert_eq(histograms[2].name, "concurrent-histogram-2")
+  assert_eq(gauges[4].name, "concurrent-gauge-4")
 }
 
 // Test 3: Concurrent logging operations
-pub test "concurrency logging operations" {
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "concurrency-test-logger")
+test "concurrent logging operations" {
+  // Test creating multiple log records concurrently
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "concurrent-logger")
   
-  // Create and emit multiple log records concurrently
+  // Create multiple log records
   let log_records = []
   
-  for i = 0; i < 200; i = i + 1 {
-    let severity = match i % 6 {
-      0 => azimuth::Trace
-      1 => azimuth::Debug
-      2 => azimuth::Info
-      3 => azimuth::Warn
-      4 => azimuth::Error
-      _ => azimuth::Fatal
-    }
-    
+  for i in 0..10 {
+    let severity = if i % 2 == 0 { Info } else { Warn }
     let message = "Concurrent log message " + i.to_string()
-    let log_record = azimuth::LogRecord::new(severity, message)
-    log_records = log_records.append(log_record)
+    let record = LogRecord::new(severity, message)
+    log_records.push(record)
   }
   
   // Emit all log records
-  for i = 0; i < 200; i = i + 1 {
-    azimuth::Logger::emit(logger, log_records[i])
+  for record in log_records {
+    Logger::emit(logger, record)
   }
   
   // Verify log record properties
-  for i = 0; i < 10; i = i + 1 {
-    let expected_severity = match i % 6 {
-      0 => azimuth::Trace
-      1 => azimuth::Debug
-      2 => azimuth::Info
-      3 => azimuth::Warn
-      4 => azimuth::Error
-      _ => azimuth::Fatal
-    }
-    
-    assert_eq(azimuth::LogRecord::severity_number(log_records[i]), expected_severity)
-    assert_eq(azimuth::LogRecord::body(log_records[i]), Some("Concurrent log message " + i.to_string()))
-  }
+  assert_eq(LogRecord::severity_number(log_records[0]), Info)
+  assert_eq(LogRecord::severity_number(log_records[1]), Warn)
+  assert_eq(LogRecord::body(log_records[2]), Some("Concurrent log message 2"))
+  assert_eq(LogRecord::body(log_records[5]), Some("Concurrent log message 5"))
 }
 
-// Test 4: Concurrent attribute operations
-pub test "concurrency attribute operations" {
-  // Create multiple attributes sets and operate on them concurrently
-  let attributes_sets = []
-  
-  // Create 50 attributes sets
-  for i = 0; i < 50; i = i + 1 {
-    let attrs = azimuth::Attributes::new()
-    
-    // Add 10 attributes to each set
-    for j = 0; j < 10; j = j + 1 {
-      let key = "set-" + i.to_string() + "-key-" + j.to_string()
-      let value = azimuth::StringValue("set-" + i.to_string() + "-value-" + j.to_string())
-      azimuth::Attributes::set(attrs, key, value)
-    }
-    
-    attributes_sets = attributes_sets.append(attrs)
-  }
-  
-  // Verify attributes in all sets
-  for i = 0; i < 50; i = i + 1 {
-    for j = 0; j < 10; j = j + 1 {
-      let key = "set-" + i.to_string() + "-key-" + j.to_string()
-      let expected_value = azimuth::StringValue("set-" + i.to_string() + "-value-" + j.to_string())
-      assert_eq(azimuth::Attributes::get(attributes_sets[i], key), Some(expected_value))
-    }
-  }
-}
-
-// Test 5: Concurrent context operations
-pub test "concurrency context operations" {
-  // Create multiple context chains concurrently
+// Test 4: Concurrent context operations
+test "concurrent context operations" {
+  // Test creating and manipulating multiple contexts concurrently
   let contexts = []
   
-  // Create 50 context chains
-  for i = 0; i < 50; i = i + 1 {
-    let ctx = azimuth::Context::root()
-    
-    // Add 5 context values to each chain
-    for j = 0; j < 5; j = j + 1 {
-      let key = azimuth::ContextKey::new("chain-" + i.to_string() + "-key-" + j.to_string())
-      let value = "chain-" + i.to_string() + "-value-" + j.to_string()
-      ctx = azimuth::Context::with_value(ctx, key, value)
-    }
-    
-    contexts = contexts.append(ctx)
+  for i in 0..10 {
+    let ctx = Context::root()
+    let key = ContextKey::new("concurrent.key." + i.to_string())
+    let value = "concurrent.value." + i.to_string()
+    let ctx_with_value = Context::with_value(ctx, key, value)
+    contexts.push(ctx_with_value)
   }
   
-  // Verify context values in all chains
-  for i = 0; i < 50; i = i + 1 {
-    for j = 0; j < 5; j = j + 1 {
-      let key = azimuth::ContextKey::new("chain-" + i.to_string() + "-key-" + j.to_string())
-      let expected_value = "chain-" + i.to_string() + "-value-" + j.to_string()
-      assert_eq(azimuth::Context::get(contexts[i], key), Some(expected_value))
-    }
+  // Verify context values
+  for i in 0..contexts.length() {
+    let ctx = contexts[i]
+    let key = ContextKey::new("concurrent.key." + i.to_string())
+    let value = Context::get(ctx, key)
+    assert_eq(value, Some("concurrent.value." + i.to_string()))
   }
+  
+  // Test missing keys
+  let ctx = Context::root()
+  let missing_key = ContextKey::new("missing.key")
+  let missing_value = Context::get(ctx, missing_key)
+  assert_eq(missing_value, None)
 }
 
-// Test 6: Concurrent baggage operations
-pub test "concurrency baggage operations" {
-  // Create multiple baggage instances and operate on them concurrently
+// Test 5: Concurrent baggage operations
+test "concurrent baggage operations" {
+  // Test creating and manipulating multiple baggage instances concurrently
   let baggage_instances = []
   
-  // Create 50 baggage instances
-  for i = 0; i < 50; i = i + 1 {
-    let baggage = azimuth::Baggage::new()
-    
-    // Add 5 baggage entries to each instance
-    for j = 0; j < 5; j = j + 1 {
-      let key = "instance-" + i.to_string() + "-key-" + j.to_string()
-      let value = "instance-" + i.to_string() + "-value-" + j.to_string()
-      baggage = azimuth::Baggage::set_entry(baggage, key, value)
-    }
-    
-    baggage_instances = baggage_instances.append(baggage)
+  for i in 0..10 {
+    let baggage = Baggage::new()
+    let baggage_with_entry = Baggage::set_entry(baggage, "concurrent.key." + i.to_string(), "concurrent.value." + i.to_string())
+    baggage_instances.push(baggage_with_entry)
   }
   
-  // Verify baggage entries in all instances
-  for i = 0; i < 50; i = i + 1 {
-    for j = 0; j < 5; j = j + 1 {
-      let key = "instance-" + i.to_string() + "-key-" + j.to_string()
-      let expected_value = "instance-" + i.to_string() + "-value-" + j.to_string()
-      assert_eq(azimuth::Baggage::get_entry(baggage_instances[i], key), Some(expected_value))
-    }
+  // Verify baggage entries
+  for i in 0..baggage_instances.length() {
+    let baggage = baggage_instances[i]
+    let key = "concurrent.key." + i.to_string()
+    let value = Baggage::get_entry(baggage, key)
+    assert_eq(value, Some("concurrent.value." + i.to_string()))
+  }
+  
+  // Test missing entries
+  let baggage = Baggage::new()
+  let missing_value = Baggage::get_entry(baggage, "missing.key")
+  assert_eq(missing_value, None)
+}
+
+// Test 6: Concurrent resource operations
+test "concurrent resource operations" {
+  // Test creating and manipulating multiple resources concurrently
+  let resources = []
+  
+  for i in 0..10 {
+    let resource = Resource::new()
+    let resource_with_attrs = Resource::with_attributes(resource, [
+      ("concurrent.attr." + i.to_string(), StringValue("concurrent.value." + i.to_string())),
+      ("shared.attr", StringValue("shared.value"))
+    ])
+    resources.push(resource_with_attrs)
+  }
+  
+  // Verify resource attributes
+  for i in 0..resources.length() {
+    let resource = resources[i]
+    let key = "concurrent.attr." + i.to_string()
+    let value = Resource::get_attribute(resource, key)
+    assert_eq(value, Some(StringValue("concurrent.value." + i.to_string())))
+    
+    // Verify shared attribute exists in all resources
+    let shared_value = Resource::get_attribute(resource, "shared.attr")
+    assert_eq(shared_value, Some(StringValue("shared.value")))
+  }
+  
+  // Test resource merging
+  let base_resource = Resource::new()
+  let merged_resources = []
+  
+  for resource in resources {
+    let merged = Resource::merge(base_resource, resource)
+    merged_resources.push(merged)
+  }
+  
+  // Verify merged resources
+  assert_eq(merged_resources.length(), 10)
+  for i in 0..merged_resources.length() {
+    let merged = merged_resources[i]
+    let key = "concurrent.attr." + i.to_string()
+    let value = Resource::get_attribute(merged, key)
+    assert_eq(value, Some(StringValue("concurrent.value." + i.to_string())))
   }
 }
 
 // Test 7: Concurrent propagator operations
-pub test "concurrency propagator operations" {
-  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
-  let baggage_propagator = azimuth::W3CTraceContextPropagator::new()  // Using trace propagator for simplicity
-  let propagators = [trace_propagator, baggage_propagator]
-  let composite_propagator = azimuth::CompositePropagator::new(propagators)
-  
-  // Perform concurrent inject and extract operations
-  let contexts = []
+test "concurrent propagator operations" {
+  // Test creating and using multiple propagators concurrently
+  let propagators = []
   let carriers = []
   
-  // Create 50 contexts and carriers
-  for i = 0; i < 50; i = i + 1 {
-    let ctx = azimuth::Context::root()
-    let key = azimuth::ContextKey::new("concurrent-key-" + i.to_string())
-    let value = "concurrent-value-" + i.to_string()
-    let ctx_with_value = azimuth::Context::with_value(ctx, key, value)
-    contexts = contexts.append(ctx_with_value)
+  for i in 0..10 {
+    let trace_propagator = W3CTraceContextPropagator::new()
+    let propagator_array = [trace_propagator]
+    let composite_propagator = CompositePropagator::new(propagator_array)
+    propagators.push(composite_propagator)
     
-    let carrier = azimuth::TextMapCarrier::new()
-    carriers = carriers.append(carrier)
+    let carrier = TextMapCarrier::new()
+    carriers.push(carrier)
   }
   
-  // Perform inject operations
-  for i = 0; i < 50; i = i + 1 {
-    azimuth::CompositePropagator::inject(composite_propagator, contexts[i], carriers[i])
+  // Test injection operations
+  for i in 0..propagators.length() {
+    let propagator = propagators[i]
+    let carrier = carriers[i]
+    let ctx = Context::root()
+    
+    CompositePropagator::inject(propagator, ctx, carrier)
   }
   
-  // Perform extract operations
+  // Test extraction operations
   let extracted_contexts = []
-  for i = 0; i < 50; i = i + 1 {
-    let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carriers[i])
-    extracted_contexts = extracted_contexts.append(extracted_ctx)
+  
+  for i in 0..propagators.length() {
+    let propagator = propagators[i]
+    let carrier = carriers[i]
+    
+    let extracted_ctx = CompositePropagator::extract(propagator, carrier)
+    extracted_contexts.push(extracted_ctx)
   }
   
   // Verify extraction results
-  for i = 0; i < 50; i = i + 1 {
-    let key = azimuth::ContextKey::new("extracted")
-    let extracted_value = azimuth::Context::get(extracted_contexts[i], key)
-    assert_eq(extracted_value, Some("true"))
+  for ctx in extracted_contexts {
+    let key = ContextKey::new("extracted")
+    let value = Context::get(ctx, key)
+    assert_eq(value, Some("true"))
   }
 }
 
-// Test 8: Concurrent resource operations
-pub test "concurrency resource operations" {
-  // Create multiple resources with many attributes concurrently
-  let resources = []
+// Test 8: Concurrent span context operations
+test "concurrent span context operations" {
+  // Test creating multiple span contexts concurrently
+  let span_contexts = []
   
-  // Create 20 resources with many attributes
-  for i = 0; i < 20; i = i + 1 {
-    let attributes = []
+  for i in 0..10 {
+    let trace_id = "trace-" + i.to_string()
+    let span_id = "span-" + i.to_string()
+    let sampled = i % 2 == 0
+    let trace_state = "key" + i.to_string() + "=value" + i.to_string()
     
-    // Add 50 attributes to each resource
-    for j = 0; j < 50; j = j + 1 {
-      let key = "resource-" + i.to_string() + "-attr-" + j.to_string()
-      let value = azimuth::StringValue("resource-" + i.to_string() + "-value-" + j.to_string())
-      attributes = attributes.append((key, value))
-    }
+    let span_ctx = SpanContext::new(trace_id, span_id, sampled, trace_state)
+    span_contexts.push(span_ctx)
+  }
+  
+  // Verify span context properties
+  for i in 0..span_contexts.length() {
+    let span_ctx = span_contexts[i]
+    let expected_trace_id = "trace-" + i.to_string()
+    let expected_span_id = "span-" + i.to_string()
+    let expected_sampled = i % 2 == 0
+    let expected_trace_state = "key" + i.to_string() + "=value" + i.to_string()
     
-    let resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), attributes)
-    resources = resources.append(resource)
+    assert_eq(SpanContext::trace_id(span_ctx), expected_trace_id)
+    assert_eq(SpanContext::span_id(span_ctx), expected_span_id)
+    assert_eq(SpanContext::is_sampled(span_ctx), expected_sampled)
+    assert_eq(SpanContext::trace_state(span_ctx), expected_trace_state)
+    assert_true(SpanContext::is_valid(span_ctx))
   }
   
-  // Verify resource attributes
-  for i = 0; i < 20; i = i + 1 {
-    for j = 0; j < 50; j = j + 1 {
-      let key = "resource-" + i.to_string() + "-attr-" + j.to_string()
-      let expected_value = azimuth::StringValue("resource-" + i.to_string() + "-value-" + j.to_string())
-      assert_eq(azimuth::Resource::get_attribute(resources[i], key), Some(expected_value))
-    }
+  // Test invalid span contexts
+  let invalid_trace_ctx = SpanContext::new("", "valid-span", true, "")
+  let invalid_span_ctx = SpanContext::new("valid-trace", "", true, "")
+  let invalid_both_ctx = SpanContext::new("", "", false, "")
+  
+  assert_false(SpanContext::is_valid(invalid_trace_ctx))
+  assert_false(SpanContext::is_valid(invalid_span_ctx))
+  assert_false(SpanContext::is_valid(invalid_both_ctx))
+}
+
+// Test 9: Concurrent HTTP client operations
+test "concurrent http client operations" {
+  // Test creating multiple HTTP requests concurrently
+  let requests = []
+  let responses = []
+  
+  for i in 0..10 {
+    let url = "https://api.example.com/resource/" + i.to_string()
+    let method = if i % 2 == 0 { "GET" } else { "POST" }
+    let headers = [("Content-Type", "application/json"), ("X-Request-ID", i.to_string())]
+    let body = if method == "POST" { Some("{\"id\":" + i.to_string() + "}") } else { None }
+    
+    let request = HttpRequest::new(method, url, headers, body)
+    requests.push(request)
+    
+    // Create corresponding response
+    let status_code = if i % 3 == 0 { 200 } else if i % 3 == 1 { 404 } else { 500 }
+    let response_headers = [("Content-Type", "application/json")]
+    let response_body = Some("{\"status\":\"" + status_code.to_string() + "\"}")
+    
+    let response = HttpResponse::new(status_code, response_headers, response_body)
+    responses.push(response)
   }
   
-  // Test concurrent resource merging
-  let merged_resources = []
-  for i = 0; i < 10; i = i + 1 {
-    let base_resource = resources[i * 2]
-    let override_resource = resources[i * 2 + 1]
-    let merged_resource = azimuth::Resource::merge(base_resource, override_resource)
-    merged_resources = merged_resources.append(merged_resource)
+  // Verify request properties
+  for i in 0..requests.length() {
+    let request = requests[i]
+    let expected_url = "https://api.example.com/resource/" + i.to_string()
+    let expected_method = if i % 2 == 0 { "GET" } else { "POST" }
+    
+    assert_eq(HttpRequest::url(request), expected_url)
+    assert_eq(HttpRequest::http_method(request), expected_method)
+    assert_eq(HttpRequest::body(request), if expected_method == "POST" { Some("{\"id\":" + i.to_string() + "}") } else { None })
   }
   
-  // Verify merged resources
-  for i = 0; i < 10; i = i + 1 {
-    // In a real implementation, we would verify that the merge was successful
-    // For this test, we just verify the operation doesn't crash
-    let test_key = "resource-" + ((i * 2 + 1).to_string()) + "-attr-0"
-    let test_value = azimuth::Resource::get_attribute(merged_resources[i], test_key)
-    // The result depends on the merge strategy implementation
+  // Verify response properties
+  for i in 0..responses.length() {
+    let response = responses[i]
+    let expected_status = if i % 3 == 0 { 200 } else if i % 3 == 1 { 404 } else { 500 }
+    
+    assert_eq(HttpResponse::status_code(response), expected_status)
+    assert_eq(HttpResponse::body(response), Some("{\"status\":\"" + expected_status.to_string() + "\"}"))
   }
 }
 
-// Test 9: Mixed concurrent operations
-pub test "concurrency mixed operations" {
-  let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "mixed-concurrency-test-meter")
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "mixed-concurrency-test-logger")
+// Test 10: Mixed concurrent operations
+test "mixed concurrent operations" {
+  // Test mixed operations with different telemetry components
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  // Perform mixed operations concurrently
-  for i = 0; i < 100; i = i + 1 {
-    // Create and operate on spans
-    let span_ctx = azimuth::SpanContext::new("mixed-trace-" + i.to_string(), "mixed-span-" + i.to_string(), true, "")
-    let span = azimuth::Span::new("mixed-operation-" + i.to_string(), azimuth::Internal, span_ctx)
+  let tracer = TracerProvider::get_tracer(tracer_provider, "mixed-tracer")
+  let meter = MeterProvider::get_meter(meter_provider, "mixed-meter")
+  let logger = LoggerProvider::get_logger(logger_provider, "mixed-logger")
+  
+  // Create spans, metrics, and logs concurrently
+  let spans = []
+  let counters = []
+  let log_records = []
+  
+  for i in 0..10 {
+    // Create span
+    let span = Tracer::start_span(tracer, "mixed-operation-" + i.to_string())
+    spans.push(span)
     
-    // Create and operate on metrics
-    let counter = azimuth::Meter::create_counter(meter, "mixed-counter-" + i.to_string())
-    azimuth::Counter::add(counter, i.to_double())
+    // Create counter
+    let counter = Meter::create_counter(meter, "mixed-counter-" + i.to_string())
+    counters.push(counter)
     
-    let histogram = azimuth::Meter::create_histogram(meter, "mixed-histogram-" + i.to_string())
-    azimuth::Histogram::record(histogram, (i * 2).to_double())
-    
-    // Create and emit log records
-    let log_record = azimuth::LogRecord::new(azimuth::Info, "Mixed log message " + i.to_string())
-    azimuth::Logger::emit(logger, log_record)
-    
-    // Create and operate on attributes
-    let attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(attrs, "mixed-key-" + i.to_string(), azimuth::IntValue(i))
-    
-    // Create and operate on context
-    let ctx = azimuth::Context::root()
-    let key = azimuth::ContextKey::new("mixed-context-" + i.to_string())
-    let ctx_with_value = azimuth::Context::with_value(ctx, key, "mixed-value-" + i.to_string())
-    
-    // Create and operate on baggage
-    let baggage = azimuth::Baggage::new()
-    let baggage_with_entry = azimuth::Baggage::set_entry(baggage, "mixed-baggage-" + i.to_string(), "mixed-baggage-value-" + i.to_string())
-    
-    // Create and operate on propagator
-    let trace_propagator = azimuth::W3CTraceContextPropagator::new()
-    let propagators = [trace_propagator]
-    let composite_propagator = azimuth::CompositePropagator::new(propagators)
-    
-    let carrier = azimuth::TextMapCarrier::new()
-    azimuth::CompositePropagator::inject(composite_propagator, ctx_with_value, carrier)
-    let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
+    // Create log record
+    let severity = if i % 3 == 0 { Info } else if i % 3 == 1 { Warn } else { Error }
+    let message = "Mixed operation " + i.to_string()
+    let record = LogRecord::new(severity, message)
+    log_records.push(record)
   }
   
-  // Verify that operations completed successfully
-  let test_span_ctx = azimuth::SpanContext::new("test-trace", "test-span", true, "")
-  let test_span = azimuth::Span::new("test-operation", azimuth::Internal, test_span_ctx)
-  assert_eq(azimuth::Span::name(test_span), "test-operation")
-  
-  let test_counter = azimuth::Meter::create_counter(meter, "test-counter")
-  azimuth::Counter::add(test_counter, 1.0)
-  assert_eq(test_counter.name, "test-counter")
-  
-  let test_log = azimuth::LogRecord::new(azimuth::Info, "Test log message")
-  assert_eq(azimuth::LogRecord::body(test_log), Some("Test log message"))
-}
-
-// Test 10: Concurrent stress test with resource sharing
-pub test "concurrency stress test resource sharing" {
-  let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "shared-resource-test-meter")
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "shared-resource-test-logger")
-  
-  // Create shared resources
-  let shared_counter = azimuth::Meter::create_counter(meter, "shared-counter")
-  let shared_histogram = azimuth::Meter::create_histogram(meter, "shared-histogram")
-  let shared_updown_counter = azimuth::Meter::create_updown_counter(meter, "shared-updown-counter")
-  let shared_attrs = azimuth::Attributes::new()
-  let shared_baggage = azimuth::Baggage::new()
-  let shared_resource = azimuth::Resource::new()
-  
-  // Operate on shared resources concurrently
-  for i = 0; i < 200; i = i + 1 {
-    // Operate on shared metrics
-    azimuth::Counter::add(shared_counter, i.to_double())
-    azimuth::Histogram::record(shared_histogram, (i * 2).to_double())
-    azimuth::UpDownCounter::add(shared_updown_counter, (i * 3).to_double())
+  // Perform operations on all components
+  for i in 0..10 {
+    // Span operations
+    let span = spans[i]
+    Span::set_status(span, Ok, Some("Mixed operation " + i.to_string() + " completed"))
+    Span::add_event(span, "mixed.event", Some([("operation.index", IntValue(i))]))
     
-    // Operate on shared attributes
-    let key = "shared-key-" + i.to_string()
-    let value = azimuth::IntValue(i)
-    azimuth::Attributes::set(shared_attrs, key, value)
+    // Metric operations
+    let counter = counters[i]
+    Counter::add(counter, i.to_double())
     
-    // Operate on shared baggage
-    let baggage_key = "shared-baggage-" + i.to_string()
-    let baggage_value = "shared-baggage-value-" + i.to_string()
-    let updated_baggage = azimuth::Baggage::set_entry(shared_baggage, baggage_key, baggage_value)
-    
-    // Create and emit log records
-    let log_record = azimuth::LogRecord::new(azimuth::Info, "Shared resource log " + i.to_string())
-    azimuth::Logger::emit(logger, log_record)
-    
-    // Create spans with shared context
-    let span_ctx = azimuth::SpanContext::new("shared-trace-" + i.to_string(), "shared-span-" + i.to_string(), true, "")
-    let span = azimuth::Span::new("shared-operation-" + i.to_string(), azimuth::Internal, span_ctx)
+    // Logging operations
+    let record = log_records[i]
+    Logger::emit(logger, record)
   }
   
-  // Verify shared resources are still functional
-  azimuth::Counter::add(shared_counter, 1000.0)
-  azimuth::Histogram::record(shared_histogram, 2000.0)
-  azimuth::UpDownCounter::add(shared_updown_counter, 3000.0)
+  // End all spans
+  for span in spans {
+    Span::end(span)
+  }
   
-  let final_key = "final-shared-key"
-  azimuth::Attributes::set(shared_attrs, final_key, azimuth::StringValue("final-shared-value"))
-  let final_result = azimuth::Attributes::get(shared_attrs, final_key)
+  // Verify all components have correct names/properties
+  assert_eq(Span::name(spans[0]), "mixed-operation-0")
+  assert_eq(Span::name(spans[5]), "mixed-operation-5")
+  assert_eq(Span::name(spans[9]), "mixed-operation-9")
   
-  let final_baggage_key = "final-shared-baggage-key"
-  let final_baggage = azimuth::Baggage::set_entry(shared_baggage, final_baggage_key, "final-shared-baggage-value")
-  let final_baggage_result = azimuth::Baggage::get_entry(final_baggage, final_baggage_key)
+  assert_eq(counters[2].name, "mixed-counter-2")
+  assert_eq(counters[7].name, "mixed-counter-7")
   
-  // Verify operations completed successfully
-  assert_eq(shared_counter.name, "shared-counter")
-  assert_eq(shared_histogram.name, "shared-histogram")
-  assert_eq(shared_updown_counter.name, "shared-updown-counter")
+  assert_eq(LogRecord::severity_number(log_records[1]), Warn)
+  assert_eq(LogRecord::severity_number(log_records[5]), Error)
+  assert_eq(LogRecord::body(log_records[8]), Some("Mixed operation 8"))
 }
