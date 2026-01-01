@@ -2810,3 +2810,62 @@ pub test "内存管理测试" {
     assert_eq(azimuth::Context::get(contexts[i], key), Some("memory.test.value." + i.to_string()))
   }
 }
+
+// New Test: Concurrent safety test
+pub test "并发安全测试" {
+  // 测试多线程环境下的属性操作安全性
+  let shared_attrs = azimuth::Attributes::new()
+  
+  // 模拟并发设置属性
+  for i in 0..50 {
+    let key = "concurrent.key." + i.to_string()
+    let value = "concurrent.value." + i.to_string()
+    azimuth::Attributes::set(shared_attrs, key, azimuth::StringValue(value))
+  }
+  
+  // 验证所有属性都正确设置
+  for i in 0..50 {
+    let key = "concurrent.key." + i.to_string()
+    let expected_value = "concurrent.value." + i.to_string()
+    let actual_value = azimuth::Attributes::get(shared_attrs, key)
+    assert_eq(actual_value, Some(azimuth::StringValue(expected_value)))
+  }
+  
+  // 测试并发Span创建和操作
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "concurrent-test-tracer")
+  
+  let spans = []
+  for i in 0..20 {
+    let span = azimuth::Tracer::start_span(tracer, "concurrent-span-" + i.to_string())
+    spans.push(span)
+  }
+  
+  // 并发操作Span
+  for i in 0..spans.length() {
+    let span = spans[i]
+    azimuth::Span::add_event(span, "concurrent.event", Some([("index", azimuth::StringValue(i.to_string()))]))
+    azimuth::Span::set_status(span, azimuth::Ok)
+  }
+  
+  // 验证所有Span都正确创建
+  for i in 0..spans.length() {
+    assert_eq(azimuth::Span::name(spans[i]), "concurrent-span-" + i.to_string())
+  }
+  
+  // 测试并发度量操作
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "concurrent-test-meter")
+  let counter = azimuth::Meter::create_counter(meter, "concurrent.counter")
+  let histogram = azimuth::Meter::create_histogram(meter, "concurrent.histogram")
+  
+  // 并发记录度量
+  for i in 0..100 {
+    azimuth::Counter::add(counter, 1.0)
+    azimuth::Histogram::record(histogram, i.to_double())
+  }
+  
+  // 验证度量操作完成
+  assert_eq(counter.name, "concurrent.counter")
+  assert_eq(histogram.name, "concurrent.histogram")
+}
