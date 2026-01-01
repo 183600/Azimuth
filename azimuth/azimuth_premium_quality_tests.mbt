@@ -1,498 +1,477 @@
-// Premium Quality Test Suite for Azimuth Telemetry System
-// This file contains 10 high-quality test cases covering critical functionality
+// Azimuth Premium Quality Test Suite
+// 高质量遥测系统测试用例 - 涵盖核心功能、边界条件和错误处理
 
-// Test 1: Cross-service tracing consistency
-pub test "跨服务追踪一致性测试" {
-  // 创建根追踪上下文
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let root_span_id = "b7ad6b7169203331"
-  let root_span_ctx = SpanContext::new(trace_id, root_span_id, true, "service=frontend")
+// 测试1: 遥测上下文传播的完整性
+test "telemetry_context_propagation_integrity" {
+  // 创建父级上下文
+  let parent_ctx = azimuth::SpanContext::new("trace-001", "span-parent", true, "env=production,service=api")
   
-  // 服务A创建子Span
-  let service_a_span_id = "c8ad6b7169203332"
-  let service_a_span_ctx = SpanContext::new(trace_id, service_a_span_id, true, "service=service-a,parent=" + root_span_id)
+  // 创建子级span并验证上下文传播
+  let child_span = azimuth::Span::new("child-operation", azimuth::Internal, parent_ctx)
+  let child_ctx = azimuth::Span::get_context(child_span)
   
-  // 服务B创建子Span
-  let service_b_span_id = "d9ad6b7169203333"
-  let service_b_span_ctx = SpanContext::new(trace_id, service_b_span_id, true, "service=service-b,parent=" + service_a_span_id)
+  // 验证trace ID的一致性
+  assert_eq(azimuth::SpanContext::get_trace_id(child_ctx), "trace-001")
+  assert_not_eq(azimuth::SpanContext::get_span_id(child_ctx), "span-parent")
   
-  // 验证Trace ID在所有服务中保持一致
-  assert_eq(SpanContext::trace_id(root_span_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service_a_span_ctx), trace_id)
-  assert_eq(SpanContext::trace_id(service_b_span_ctx), trace_id)
+  // 验证baggage项的正确传播
+  let propagated_baggage = azimuth::SpanContext::get_baggage(child_ctx)
+  assert_true(propagated_baggage.contains("env=production"))
+  assert_true(propagated_baggage.contains("service=api"))
   
-  // 验证Span ID唯一性
-  assert_true(SpanContext::span_id(root_span_ctx) != SpanContext::span_id(service_a_span_ctx))
-  assert_true(SpanContext::span_id(service_a_span_ctx) != SpanContext::span_id(service_b_span_ctx))
-  assert_true(SpanContext::span_id(root_span_ctx) != SpanContext::span_id(service_b_span_ctx))
+  // 测试深层嵌套的上下文传播
+  let grandchild_span = azimuth::Span::new("grandchild-operation", azimuth::Client, child_ctx)
+  let grandchild_ctx = azimuth::Span::get_context(grandchild_span)
   
-  // 验证采样标志一致性
-  assert_true(SpanContext::is_sampled(root_span_ctx))
-  assert_true(SpanContext::is_sampled(service_a_span_ctx))
-  assert_true(SpanContext::is_sampled(service_b_span_ctx))
-  
-  // 验证 baggage 传播
-  let baggage = Baggage::new()
-  let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
-  let final_baggage = Baggage::set_entry(updated_baggage, "request.id", "req-67890")
-  
-  assert_eq(Baggage::get_entry(final_baggage, "user.id"), Some("12345"))
-  assert_eq(Baggage::get_entry(final_baggage, "request.id"), Some("req-67890"))
+  // 验证三代之间的trace ID一致性
+  assert_eq(azimuth::SpanContext::get_trace_id(grandchild_ctx), "trace-001")
+  assert_not_eq(azimuth::SpanContext::get_span_id(grandchild_ctx), "span-parent")
+  assert_not_eq(azimuth::SpanContext::get_span_id(grandchild_ctx), azimuth::SpanContext::get_span_id(child_ctx))
 }
 
-// Test 2: Metrics aggregation accuracy
-pub test "度量聚合准确性测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "aggregation-test")
+// 测试2: 性能指标聚合的准确性
+test "metrics_aggregation_accuracy" {
+  // 创建测试用的指标收集器
+  let metrics_collector = azimuth::Metrics::new_collector("test-service")
   
-  // 创建计数器并记录多个值
-  let counter = Meter::create_counter(meter, "http.requests.total")
-  Counter::add(counter, 10.0)
-  Counter::add(counter, 20.0)
-  Counter::add(counter, 30.0)
+  // 记录不同类型的指标
+  azimuth::Metrics::record_counter(metrics_collector, "requests_total", 10, ["method:GET", "status:200"])
+  azimuth::Metrics::record_counter(metrics_collector, "requests_total", 5, ["method:POST", "status:201"])
+  azimuth::Metrics::record_counter(metrics_collector, "requests_total", 2, ["method:GET", "status:404"])
   
-  // 创建直方图并记录值
-  let histogram = Meter::create_histogram(meter, "response.time")
-  Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 200.0)
-  Histogram::record(histogram, 300.0)
-  Histogram::record(histogram, 400.0)
-  Histogram::record(histogram, 500.0)
+  azimuth::Metrics::record_histogram(metrics_collector, "response_time_ms", 150.0, ["endpoint:/api/data"])
+  azimuth::Metrics::record_histogram(metrics_collector, "response_time_ms", 200.0, ["endpoint:/api/data"])
+  azimuth::Metrics::record_histogram(metrics_collector, "response_time_ms", 100.0, ["endpoint:/api/data"])
   
-  // 创建UpDown计数器
-  let updown_counter = Meter::create_updown_counter(meter, "active.connections")
-  UpDownCounter::add(updown_counter, 5.0)
-  UpDownCounter::add(updown_counter, 3.0)
-  UpDownCounter::add(updown_counter, -2.0)
+  azimuth::Metrics::record_gauge(metrics_collector, "active_connections", 25)
+  azimuth::Metrics::record_gauge(metrics_collector, "active_connections", 30)
+  azimuth::Metrics::record_gauge(metrics_collector, "active_connections", 20)
   
-  // 创建仪表
-  let gauge = Meter::create_gauge(meter, "memory.usage")
+  // 验证计数器聚合
+  let get_counter = azimuth::Metrics::get_counter(metrics_collector, "requests_total", ["method:GET"])
+  assert_eq(get_counter, 12)  // 10 + 2
   
-  // 验证度量名称和描述
-  assert_eq(counter.name, "http.requests.total")
-  assert_eq(histogram.name, "response.time")
-  assert_eq(updown_counter.name, "active.connections")
-  assert_eq(gauge.name, "memory.usage")
+  let post_counter = azimuth::Metrics::get_counter(metrics_collector, "requests_total", ["method:POST"])
+  assert_eq(post_counter, 5)
   
-  // 验证度量操作不会导致错误
-  assert_true(true)
+  // 验证直方图统计
+  let histogram_stats = azimuth::Metrics::get_histogram_stats(metrics_collector, "response_time_ms", ["endpoint:/api/data"])
+  assert_eq(histogram_stats.count, 3)
+  assert_eq(histogram_stats.sum, 450.0)
+  assert_eq(histogram_stats.min, 100.0)
+  assert_eq(histogram_stats.max, 200.0)
+  
+  // 验证仪表盘最新值
+  let current_gauge = azimuth::Metrics::get_gauge(metrics_collector, "active_connections")
+  assert_eq(current_gauge, 20)  // 应该是最后设置的值
 }
 
-// Test 3: Log record time series analysis
-pub test "日志记录时间序列分析测试" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "time-series-test")
-  let base_timestamp = 1735689600000000000L
+// 测试3: 分布式追踪的一致性验证
+test "distributed_tracing_consistency" {
+  // 模拟分布式系统中的多个服务
+  let service_a_trace = azimuth::Trace::start("service-a-operation")
+  let service_a_context = azimuth::Trace::get_context(service_a_trace)
   
-  // 创建时间序列日志记录
-  let log_records = []
-  for i in 0..10 {
-    let timestamp = base_timestamp + (i * 1000000L)  // 每个日志间隔1毫秒
-    let severity = match i {
-      0..2 => Info
-      3..5 => Warn
-      _ => Error
-    }
-    
-    let record = LogRecord::new_with_context(
-      severity,
-      Some("Time series log " + i.to_string()),
-      Some(Attributes::new()),
-      Some(timestamp),
-      Some(timestamp + 1000L),
-      Some("time-series-trace"),
-      Some("time-series-span-" + i.to_string()),
-      Some(Context::root())
-    )
-    log_records.push(record)
-    Logger::emit(logger, record)
-  }
+  // 服务A调用服务B
+  let service_b_headers = azimuth::Propagator::inject(service_a_context)
+  let service_b_context = azimuth::Propagator::extract(service_b_headers)
+  let service_b_trace = azimuth::Trace::continue("service-b-operation", service_b_context)
   
-  // 验证日志记录数量
-  assert_eq(log_records.length(), 10)
+  // 服务B调用服务C
+  let service_c_headers = azimuth::Propagator::inject(azimuth::Trace::get_context(service_b_trace))
+  let service_c_context = azimuth::Propagator::extract(service_c_headers)
+  let service_c_trace = azimuth::Trace::continue("service-c-operation", service_c_context)
   
-  // 验证时间戳递增
-  for i in 1..log_records.length() {
-    let current_record = log_records[i]
-    let previous_record = log_records[i-1]
-    
-    // 注意：在简化实现中，我们无法直接访问时间戳
-    // 这里主要验证记录创建和发射不会出错
-    assert_true(true)
-  }
+  // 验证所有服务的trace ID一致
+  let trace_id_a = azimuth::SpanContext::get_trace_id(azimuth::Trace::get_context(service_a_trace))
+  let trace_id_b = azimuth::SpanContext::get_trace_id(azimuth::Trace::get_context(service_b_trace))
+  let trace_id_c = azimuth::SpanContext::get_trace_id(azimuth::Trace::get_context(service_c_trace))
   
-  // 验证不同严重级别的日志
-  let info_count = 3
-  let warn_count = 3
-  let error_count = 4
-  assert_eq(info_count + warn_count + error_count, 10)
+  assert_eq(trace_id_a, trace_id_b)
+  assert_eq(trace_id_b, trace_id_c)
+  
+  // 验证父子关系
+  let span_a = azimuth::Trace::get_root_span(service_a_trace)
+  let span_b = azimuth::Trace::get_root_span(service_b_trace)
+  let span_c = azimuth::Trace::get_root_span(service_c_trace)
+  
+  let parent_b = azimuth::Span::get_parent_span_id(span_b)
+  let parent_c = azimuth::Span::get_parent_span_id(span_c)
+  
+  assert_eq(parent_b, azimuth::Span::get_span_id(span_a))
+  assert_eq(parent_c, azimuth::Span::get_span_id(span_b))
+  
+  // 完成追踪并验证完整性
+  azimuth::Trace::finish(service_a_trace)
+  azimuth::Trace::finish(service_b_trace)
+  azimuth::Trace::finish(service_c_trace)
+  
+  // 验证所有span都被正确记录
+  let completed_spans = azimuth::Trace::get_completed_spans()
+  assert_eq(completed_spans.length(), 3)
 }
 
-// Test 4: Resource management memory leak prevention
-pub test "资源管理内存泄漏防护测试" {
-  // 创建多个资源并验证它们能被正确管理
-  let resources = []
-  
-  // 创建100个资源对象
-  for i in 0..100 {
-    let resource = Resource::with_attributes(Resource::new(), [
-      ("service.name", StringValue("service-" + i.to_string())),
-      ("service.instance.id", StringValue("instance-" + i.to_string()))
-    ])
-    resources.push(resource)
+// 测试4: 错误处理和恢复机制
+test "error_handling_and_recovery" {
+  // 测试span创建时的错误处理
+  let invalid_span_result = azimuth::Span::new("", azimuth::Internal, azimuth::SpanContext::empty())
+  match invalid_span_result {
+    Ok(_) => assert_false(true, "Expected error for empty span name")
+    Err(error) => assert_true(error.contains("span name cannot be empty"))
   }
   
-  // 验证资源创建
-  assert_eq(resources.length(), 100)
-  
-  // 验证资源属性
-  for i in 0..10 {
-    let resource = resources[i]
-    let service_name = Resource::get_attribute(resource, "service.name")
-    let instance_id = Resource::get_attribute(resource, "service.instance.id")
-    
-    // 在简化实现中，我们无法直接验证属性值
-    // 这里主要验证资源操作不会导致错误
-    assert_true(true)
+  // 测试属性设置的错误处理
+  let valid_span = azimuth::Span::new("valid-operation", azimuth::Internal, azimuth::SpanContext::empty()) |> unwrap
+  let null_key_result = azimuth::Span::set_attribute(valid_span, "", StringValue("value"))
+  match null_key_result {
+    Ok(_) => assert_false(true, "Expected error for empty attribute key")
+    Err(error) => assert_true(error.contains("attribute key cannot be empty"))
   }
   
-  // 创建多个Span并验证它们能被正确结束
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "memory-leak-test")
-  let spans = []
-  
-  // 创建100个Span
-  for i in 0..100 {
-    let span = Tracer::start_span(tracer, "memory-test-span-" + i.to_string())
-    spans.push(span)
+  // 测试过长的属性值处理
+  let long_value = "x" * 10000  // 创建一个很长的字符串
+  let long_value_result = azimuth::Span::set_attribute(valid_span, "long.key", StringValue(long_value))
+  match long_value_result {
+    Ok(_) => assert_false(true, "Expected error for attribute value too long")
+    Err(error) => assert_true(error.contains("attribute value exceeds maximum length"))
   }
   
-  // 验证Span创建
-  assert_eq(spans.length(), 100)
-  
-  // 结束所有Span
-  for span in spans {
-    Span::end(span)
+  // 测试恢复机制 - 确保错误后span仍然可用
+  let recovery_result = azimuth::Span::set_attribute(valid_span, "recovery.test", StringValue("success"))
+  match recovery_result {
+    Ok(_) => assert_true(true, "Span should recover from previous errors")
+    Err(_) => assert_false(true, "Span should be functional after error handling")
   }
-  
-  // 验证操作完成
-  assert_true(true)
 }
 
-// Test 5: Concurrent safety testing
-pub test "并发安全性测试" {
-  // 创建共享资源
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent-test")
-  let counter = Meter::create_counter(meter, "concurrent.counter")
+// 测试5: 并发安全性验证
+test "concurrent_safety_verification" {
+  // 创建共享的遥测资源
+  let shared_collector = azimuth::Metrics::new_collector("concurrent-test")
+  let shared_tracer = azimuth::Tracer::new("concurrent-service")
   
   // 模拟并发操作
-  let operations = 1000
+  let concurrent_operations = []
   
-  // 执行多次并发计数器操作
-  for i in 0..operations {
-    Counter::add(counter, 1.0)
+  // 并发记录指标
+  for i in range(0, 100) {
+    let operation = {
+      let metric_name = "concurrent_counter_" + i.to_string()
+      azimuth::Metrics::record_counter(shared_collector, metric_name, 1, ["thread:" + i.to_string()])
+    }
+    concurrent_operations.push(operation)
   }
   
-  // 验证计数器操作完成
-  assert_true(true)
+  // 并发创建span
+  for i in range(0, 50) {
+    let operation = {
+      let span_name = "concurrent_span_" + i.to_string()
+      let span = azimuth::Tracer::start_span(shared_tracer, span_name) |> unwrap
+      azimuth::Span::set_attribute(span, "concurrent.id", IntValue(i)) |> ignore
+      azimuth::Tracer::finish_span(shared_tracer, span)
+    }
+    concurrent_operations.push(operation)
+  }
   
-  // 创建多个Tracer并执行并发操作
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent-tracer")
+  // 执行所有并发操作（在实际实现中这里会使用真正的并发机制）
+  for operation in concurrent_operations {
+    operation()
+  }
   
-  // 创建多个Span
-  let spans = []
-  for i in 0..100 {
-    let span = Tracer::start_span(tracer, "concurrent-span-" + i.to_string())
-    spans.push(span)
+  // 验证数据完整性
+  let total_metrics = azimuth::Metrics::get_all_metrics(shared_collector)
+  assert_eq(total_metrics.length(), 100)  // 确保所有指标都被记录
+  
+  let total_spans = azimuth::Tracer::get_completed_spans(shared_tracer)
+  assert_eq(total_spans.length(), 50)  // 确保所有span都被完成
+  
+  // 验证没有数据损坏
+  for metric in total_metrics {
+    let metric_value = azimuth::Metrics::get_metric_value(shared_collector, metric.name)
+    assert_eq(metric_value, 1)  // 每个指标应该只被记录一次
+  }
+}
+
+// 测试6: 内存管理和资源清理
+test "memory_management_and_cleanup" {
+  // 创建大量临时资源
+  let temp_resources = []
+  
+  for i in range(0, 1000) {
+    let temp_span = azimuth::Span::new("temp-span-" + i.to_string(), azimuth::Internal, azimuth::SpanContext::empty()) |> unwrap
+    let temp_metrics = azimuth::Metrics::new_collector("temp-collector-" + i.to_string())
     
-    // 为每个Span添加事件
-    Span::add_event(span, "concurrent-event", Some([("iteration", StringValue(i.to_string()))]))
+    // 添加一些属性和指标
+    azimuth::Span::set_attribute(temp_span, "temp.id", IntValue(i)) |> ignore
+    azimuth::Metrics::record_counter(temp_metrics, "temp.counter", i, [])
+    
+    temp_resources.push((temp_span, temp_metrics))
   }
   
-  // 结束所有Span
-  for span in spans {
-    Span::end(span)
+  // 验证资源创建成功
+  assert_eq(temp_resources.length(), 1000)
+  
+  // 清理所有资源
+  for (span, collector) in temp_resources {
+    azimuth::Span::finish(span)
+    azimuth::Metrics::cleanup(collector)
   }
   
-  // 验证并发操作完成
-  assert_true(true)
+  // 验证资源被正确清理
+  let active_spans = azimuth::Span::get_active_count()
+  assert_eq(active_spans, 0)  // 所有span应该被清理
+  
+  let active_collectors = azimuth::Metrics::get_active_collector_count()
+  assert_eq(active_collectors, 0)  // 所有收集器应该被清理
+  
+  // 验证内存没有泄漏（在实际实现中这里会检查内存使用情况）
+  let memory_usage = azimuth::System::get_memory_usage()
+  assert_true(memory_usage < 100 * 1024 * 1024)  // 应该小于100MB
 }
 
-// Test 6: Serialization/deserialization integrity
-pub test "序列化反序列化完整性测试" {
-  // 创建复杂的属性集合
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "string.key", StringValue("test string"))
-  Attributes::set(attrs, "int.key", IntValue(42))
-  Attributes::set(attrs, "float.key", FloatValue(3.14159))
-  Attributes::set(attrs, "bool.key", BoolValue(true))
-  Attributes::set(attrs, "array.string", ArrayStringValue(["a", "b", "c"]))
-  Attributes::set(attrs, "array.int", ArrayIntValue([1, 2, 3]))
+// 测试7: 配置动态更新测试
+test "dynamic_configuration_updates" {
+  // 创建初始配置
+  let initial_config = azimuth::Config::new()
+  azimuth::Config::set_sampling_rate(initial_config, 0.1)  // 10%采样率
+  azimuth::Config::set_max_attributes(initial_config, 100)
+  azimuth::Config::set_max_events(initial_config, 50)
   
-  // 验证属性设置
-  let string_val = Attributes::get(attrs, "string.key")
-  let int_val = Attributes::get(attrs, "int.key")
+  // 创建使用初始配置的tracer
+  let tracer = azimuth::Tracer::with_config(initial_config)
   
-  // 在简化实现中，我们验证基本操作不会出错
-  assert_true(true)
+  // 验证初始配置生效
+  assert_eq(azimuth::Tracer::get_sampling_rate(tracer), 0.1)
+  assert_eq(azimuth::Tracer::get_max_attributes(tracer), 100)
+  assert_eq(azimuth::Tracer::get_max_events(tracer), 50)
   
-  // 创建复杂的Span上下文
-  let span_ctx = SpanContext::new("trace-123", "span-456", true, "key1=value1,key2=value2")
+  // 动态更新配置
+  azimuth::Config::set_sampling_rate(initial_config, 0.5)  // 更新到50%采样率
+  azimuth::Config::set_max_attributes(initial_config, 200)
+  azimuth::Config::set_max_events(initial_config, 100)
   
-  // 验证Span上下文属性
-  assert_eq(SpanContext::trace_id(span_ctx), "trace-123")
-  assert_eq(SpanContext::span_id(span_ctx), "span-456")
-  assert_true(SpanContext::is_sampled(span_ctx))
-  assert_true(SpanContext::is_valid(span_ctx))
+  // 通知tracer配置已更新
+  azimuth::Tracer::update_config(tracer, initial_config)
   
-  // 创建复杂的Resource
-  let resource_attrs = [
-    ("service.name", StringValue("test-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123")),
-    ("deployment.environment", StringValue("test")),
-    ("host.name", StringValue("test-host"))
-  ]
+  // 验证配置更新生效
+  assert_eq(azimuth::Tracer::get_sampling_rate(tracer), 0.5)
+  assert_eq(azimuth::Tracer::get_max_attributes(tracer), 200)
+  assert_eq(azimuth::Tracer::get_max_events(tracer), 100)
   
-  let resource = Resource::with_attributes(Resource::new(), resource_attrs)
+  // 测试配置验证
+  let invalid_config_result = azimuth::Config::set_sampling_rate(initial_config, 1.5)  // 无效采样率
+  match invalid_config_result {
+    Ok(_) => assert_false(true, "Expected error for invalid sampling rate")
+    Err(error) => assert_true(error.contains("sampling rate must be between 0 and 1"))
+  }
   
-  // 验证Resource创建
-  assert_true(true)
+  // 测试配置持久化
+  let config_data = azimuth::Config::serialize(initial_config)
+  let restored_config = azimuth::Config::deserialize(config_data) |> unwrap
+  
+  assert_eq(azimuth::Config::get_sampling_rate(restored_config), 0.5)
+  assert_eq(azimuth::Config::get_max_attributes(restored_config), 200)
+  assert_eq(azimuth::Config::get_max_events(restored_config), 100)
 }
 
-// Test 7: Internationalization support
-pub test "国际化支持测试" {
-  // 测试多语言字符串处理
-  let test_strings = [
-    "English: Hello, World!",
-    "中文: 你好，世界！",
-    "Español: ¡Hola, Mundo!",
-    "Français: Bonjour, le monde!",
-    "Deutsch: Hallo, Welt!",
-    "日本語: こんにちは、世界！",
-    "한국어: 안녕하세요, 세계!",
-    "Русский: Привет, мир!",
-    "العربية: مرحبا بالعالم!",
-    "हिन्दी: नमस्ते दुनिया!"
-  ]
+// 测试8: 序列化和反序列化完整性
+test "serialization_deserialization_integrity" {
+  // 创建复杂的遥测数据
+  let original_span = azimuth::Span::new("serialization-test", azimuth::Server, azimuth::SpanContext::new("trace-123", "span-456", true, "env=test")) |> unwrap
   
-  // 创建包含多语言内容的属性
-  let attrs = Attributes::new()
-  for i in 0..test_strings.length() {
-    let key = "message." + i.to_string()
-    Attributes::set(attrs, key, StringValue(test_strings[i]))
-  }
+  // 添加各种类型的属性
+  azimuth::Span::set_attribute(original_span, "string.attr", StringValue("test value")) |> ignore
+  azimuth::Span::set_attribute(original_span, "int.attr", IntValue(42)) |> ignore
+  azimuth::Span::set_attribute(original_span, "float.attr", FloatValue(3.14159)) |> ignore
+  azimuth::Span::set_attribute(original_span, "bool.attr", BoolValue(true)) |> ignore
+  azimuth::Span::set_attribute(original_span, "array.attr", ArrayStringValue(["item1", "item2", "item3"])) |> ignore
   
-  // 验证多语言属性设置
-  assert_true(true)
-  
-  // 创建包含多语言内容的日志记录
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "i18n-test")
-  
-  for message in test_strings {
-    let record = LogRecord::new(Info, message)
-    Logger::emit(logger, record)
-  }
-  
-  // 验证多语言日志记录
-  assert_true(true)
-  
-  // 测试Unicode和特殊字符
-  let special_strings = [
-    "Emoji: 🚀🌍💻",
-    "Math: ∑∏∫∆∇∂",
-    "Currency: $€£¥₹₽₩",
-    "Symbols: ★☆♠♣♥♦",
-    "Arrows: ←→↑↓↖↗↘↙",
-    "Mixed: 测试🚀Test∑∏123"
-  ]
-  
-  for special in special_strings {
-    let record = LogRecord::new(Info, special)
-    Logger::emit(logger, record)
-  }
-  
-  // 验证特殊字符处理
-  assert_true(true)
-}
-
-// Test 8: Error boundary and recovery
-pub test "错误边界和恢复测试" {
-  // 测试空值和null处理
-  let empty_attrs = Attributes::new()
-  assert_eq(Attributes::get(empty_attrs, ""), None)
-  assert_eq(Attributes::get(empty_attrs, "nonexistent"), None)
-  
-  // 测试极值处理
-  let extreme_attrs = Attributes::new()
-  Attributes::set(extreme_attrs, "max.int", IntValue(2147483647))
-  Attributes::set(extreme_attrs, "min.int", IntValue(-2147483648))
-  Attributes::set(extreme_attrs, "max.float", FloatValue(1.7976931348623157e+308))
-  Attributes::set(extreme_attrs, "min.float", FloatValue(-1.7976931348623157e+308))
-  
-  // 验证极值处理
-  assert_true(true)
-  
-  // 测试边界Span上下文
-  let empty_trace_ctx = SpanContext::new("", "span123", true, "")
-  assert_false(SpanContext::is_valid(empty_trace_ctx))
-  
-  let empty_span_ctx = SpanContext::new("trace123", "", true, "")
-  assert_false(SpanContext::is_valid(empty_span_ctx))
-  
-  let both_empty_ctx = SpanContext::new("", "", false, "")
-  assert_false(SpanContext::is_valid(both_empty_ctx))
-  assert_false(SpanContext::is_sampled(both_empty_ctx))
-  
-  // 测试错误恢复
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error-recovery-test")
-  
-  // 创建Span并设置错误状态
-  let span = Tracer::start_span(tracer, "error-test-span")
-  Span::set_status(span, Error)
-  Span::record_exception(span, "Test exception", None)
-  Span::end(span)
-  
-  // 验证错误处理
-  assert_true(true)
-  
-  // 测试日志错误处理
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "error-logger")
-  
-  let error_record = LogRecord::new_with_context(
-    Error,
-    Some("Error occurred during processing"),
-    Some(Attributes::new()),
-    Some(1735689600000000000L),
-    None,
-    Some("error-trace"),
-    Some("error-span"),
-    Some(Context::root())
-  )
-  
-  Logger::emit(logger, error_record)
-  
-  // 验证错误日志处理
-  assert_true(true)
-}
-
-// Test 9: Performance benchmark testing
-pub test "性能基准测试" {
-  // 测试大量Span创建和操作的性能
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "performance-test")
-  
-  let start_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 创建大量Span
-  let spans = []
-  for i in 0..100 {
-    let span = Tracer::start_span(tracer, "perf-span-" + i.to_string())
-    spans.push(span)
-  }
-  
-  // 批量操作Span
-  for span in spans {
-    Span::add_event(span, "performance.event", Some([("iteration", StringValue("test"))]))
-    Span::set_status(span, Ok)
-  }
-  
-  // 批量结束Span
-  for span in spans {
-    Span::end(span)
-  }
-  
-  let end_time = Clock::now_unix_nanos(Clock::system())
-  let duration = end_time - start_time
-  
-  // 验证性能在合理范围内
-  assert_true(duration < 10000000000L)  // 小于10秒
-  assert_eq(spans.length(), 100)
-  
-  // 测试度量操作性能
-  let meter_start = Clock::now_unix_nanos(Clock::system())
-  
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "perf-meter")
-  let counter = Meter::create_counter(meter, "perf-counter")
-  let histogram = Meter::create_histogram(meter, "perf-histogram")
-  
-  // 大量度量操作
-  for i in 0..500 {
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, i.to_double())
-  }
-  
-  let meter_end = Clock::now_unix_nanos(Clock::system())
-  let meter_duration = meter_end - meter_start
-  
-  assert_true(meter_duration < 5000000000L)  // 小于5秒
-}
-
-// Test 10: Configuration dynamic updates
-pub test "配置动态更新测试" {
-  // 测试动态配置更新场景
-  let initial_provider = TracerProvider::default()
-  let initial_tracer = TracerProvider::get_tracer(initial_provider, "initial-service")
-  let initial_span = Tracer::start_span(initial_tracer, "initial-operation")
-  
-  // 验证初始配置
-  assert_eq(Span::name(initial_span), "initial-operation")
-  assert_eq(Span::kind(initial_span), Internal)
-  
-  // 模拟配置更新 - 创建新的TracerProvider
-  let updated_provider = TracerProvider::default()
-  let updated_tracer = TracerProvider::get_tracer(updated_provider, "updated-service", Some("2.0.0"))
-  let updated_span = Tracer::start_span(updated_tracer, "updated-operation")
-  
-  // 验证更新后的配置
-  assert_eq(Span::name(updated_span), "updated-operation")
-  assert_eq(Tracer::instrumentation_scope(updated_tracer).name, "updated-service")
-  assert_eq(Tracer::instrumentation_scope(updated_tracer).version, Some("2.0.0"))
-  
-  // 测试度量配置动态更新
-  let initial_meter_provider = MeterProvider::default()
-  let initial_meter = MeterProvider::get_meter(initial_meter_provider, "initial-meter")
-  let initial_counter = Meter::create_counter(initial_meter, "initial.counter", Some("Initial counter"), Some("count"))
-  
-  // 验证初始度量配置
-  assert_eq(initial_counter.name, "initial.counter")
-  assert_eq(initial_counter.description, Some("Initial counter"))
-  assert_eq(initial_counter.unit, Some("count"))
-  
-  // 模拟度量配置更新
-  let updated_meter_provider = MeterProvider::default()
-  let updated_meter = MeterProvider::get_meter(updated_meter_provider, "updated-meter", Some("2.0.0"))
-  let updated_counter = Meter::create_counter(updated_meter, "updated.counter", Some("Updated counter"), Some("items"))
-  
-  // 验证更新后的度量配置
-  assert_eq(updated_counter.name, "updated.counter")
-  assert_eq(updated_counter.description, Some("Updated counter"))
-  assert_eq(updated_counter.unit, Some("items"))
-  
-  // 测试资源配置动态更新
-  let initial_resource = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("initial-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("config.source", StringValue("static"))
+  // 添加事件
+  azimuth::Span::add_event(original_span, "test-event", [
+    ("event.key1", StringValue("event.value1")),
+    ("event.key2", IntValue(123))
   ])
   
-  // 验证初始资源配置
-  assert_true(true)
+  // 设置状态
+  azimuth::Span::set_status(original_span, azimuth::Status::Ok)
   
-  // 模拟资源配置更新
-  let updated_resource = Resource::with_attributes(Resource::new(), [
-    ("service.name", StringValue("updated-service")),
-    ("service.version", StringValue("2.0.0")),
-    ("config.source", StringValue("dynamic")),
-    ("config.last.update", StringValue("2025-12-28T00:00:00Z"))
-  ])
+  // 序列化span
+  let serialized_data = azimuth::Span::serialize(original_span)
+  assert_true(serialized_data.length() > 0)
   
-  // 验证更新后的资源配置
-  assert_true(true)
+  // 反序列化span
+  let deserialized_span = azimuth::Span::deserialize(serialized_data) |> unwrap
+  
+  // 验证反序列化的完整性
+  assert_eq(azimuth::Span::get_name(deserialized_span), azimuth::Span::get_name(original_span))
+  assert_eq(azimuth::Span::get_kind(deserialized_span), azimuth::Span::get_kind(original_span))
+  
+  let original_ctx = azimuth::Span::get_context(original_span)
+  let deserialized_ctx = azimuth::Span::get_context(deserialized_span)
+  
+  assert_eq(azimuth::SpanContext::get_trace_id(deserialized_ctx), azimuth::SpanContext::get_trace_id(original_ctx))
+  assert_eq(azimuth::SpanContext::get_span_id(deserialized_ctx), azimuth::SpanContext::get_span_id(original_ctx))
+  
+  // 验证属性完整性
+  let original_attrs = azimuth::Span::get_attributes(original_span)
+  let deserialized_attrs = azimuth::Span::get_attributes(deserialized_span)
+  
+  assert_eq(original_attrs.length(), deserialized_attrs.length())
+  
+  for (key, value) in original_attrs {
+    let deserialized_value = azimuth::Attributes::get(deserialized_attrs, key) |> unwrap
+    match (value, deserialized_value) {
+      (StringValue(orig), StringValue(deser)) => assert_eq(orig, deser)
+      (IntValue(orig), IntValue(deser)) => assert_eq(orig, deser)
+      (FloatValue(orig), FloatValue(deser)) => assert_eq(orig, deser)
+      (BoolValue(orig), BoolValue(deser)) => assert_eq(orig, deser)
+      (ArrayStringValue(orig), ArrayStringValue(deser)) => {
+        assert_eq(orig.length(), deser.length())
+        for i in range(0, orig.length()) {
+          assert_eq(orig[i], deser[i])
+        }
+      }
+      _ => assert_false(true, "Attribute type mismatch")
+    }
+  }
+  
+  // 验证事件完整性
+  let original_events = azimuth::Span::get_events(original_span)
+  let deserialized_events = azimuth::Span::get_events(deserialized_span)
+  
+  assert_eq(original_events.length(), deserialized_events.length())
+  assert_eq(azimuth::Event::get_name(original_events[0]), azimuth::Event::get_name(deserialized_events[0]))
+  
+  // 验证状态完整性
+  assert_eq(azimuth::Span::get_status(original_span), azimuth::Span::get_status(deserialized_span))
+}
+
+// 测试9: 国际化和本地化文本处理
+test "internationalization_localization_handling" {
+  // 测试多语言属性值
+  let multilingual_span = azimuth::Span::new("国际化测试", azimuth::Internal, azimuth::SpanContext::empty()) |> unwrap
+  
+  // 添加各种语言的属性
+  azimuth::Span::set_attribute(multilingual_span, "chinese.name", StringValue("张三")) |> ignore
+  azimuth::Span::set_attribute(multilingual_span, "japanese.name", StringValue("田中太郎")) |> ignore
+  azimuth::Span::set_attribute(multilingual_span, "korean.name", StringValue("김철수")) |> ignore
+  azimuth::Span::set_attribute(multilingual_span, "arabic.name", StringValue("أحمد محمد")) |> ignore
+  azimuth::Span::set_attribute(multilingual_span, "russian.name", StringValue("Иван Петров")) |> ignore
+  azimuth::Span::set_attribute(multilingual_span, "emoji.test", StringValue("🚀🌟💻🔧")) |> ignore
+  
+  // 测试混合语言的文本
+  let mixed_text = "Hello 世界! こんにちは 안녕하세요! مرحبا Привет!"
+  azimuth::Span::set_attribute(multilingual_span, "mixed.text", StringValue(mixed_text)) |> ignore
+  
+  // 测试从右到左的文本
+  let rtl_text = "مرحبا بالعالم"
+  azimuth::Span::set_attribute(multilingual_span, "rtl.text", StringValue(rtl_text)) |> ignore
+  
+  // 验证文本处理正确性
+  let attrs = azimuth::Span::get_attributes(multilingual_span)
+  
+  let chinese_name = azimuth::Attributes::get(attrs, "chinese.name") |> unwrap
+  match chinese_name {
+    StringValue(name) => assert_eq(name, "张三")
+    _ => assert_false(true, "Expected StringValue")
+  }
+  
+  let emoji_test = azimuth::Attributes::get(attrs, "emoji.test") |> unwrap
+  match emoji_test {
+    StringValue(emojis) => assert_true(emojis.contains("🚀"))
+    _ => assert_false(true, "Expected StringValue")
+  }
+  
+  let mixed_text_attr = azimuth::Attributes::get(attrs, "mixed.text") |> unwrap
+  match mixed_text_attr {
+    StringValue(text) => {
+      assert_true(text.contains("Hello"))
+      assert_true(text.contains("世界"))
+      assert_true(text.contains("こんにちは"))
+      assert_true(text.contains("안녕하세요"))
+    }
+    _ => assert_false(true, "Expected StringValue")
+  }
+  
+  // 测试文本长度和字节长度处理
+  let chinese_attr = azimuth::Attributes::get(attrs, "chinese.name") |> unwrap
+  match chinese_attr {
+    StringValue(text) => {
+      assert_eq(text.length(), 2)  // 字符长度
+      assert_eq(text.byte_length(), 6)  // UTF-8字节长度
+    }
+    _ => assert_false(true, "Expected StringValue")
+  }
+  
+  // 测试本地化错误消息
+  let localized_error = azimuth::Error::new_with_localized_message("validation.error", "zh-CN", "验证失败")
+  assert_eq(azimuth::Error::get_message(localized_error, "zh-CN"), "验证失败")
+  assert_eq(azimuth::Error::get_message(localized_error, "en-US"), "Validation error")
+  assert_eq(azimuth::Error::get_message(localized_error, "ja-JP"), "検証エラー")
+}
+
+// 测试10: 资源生命周期和依赖管理
+test "resource_lifecycle_and_dependency_management" {
+  // 创建资源依赖图
+  let root_resource = azimuth::Resource::new("root-service", "v1.0.0")
+  let child_resource1 = azimuth::Resource::with_parent("child-service-1", "v1.1.0", root_resource)
+  let child_resource2 = azimuth::Resource::with_parent("child-service-2", "v1.2.0", root_resource)
+  let grandchild_resource = azimuth::Resource::with_parent("grandchild-service", "v1.0.1", child_resource1)
+  
+  // 验证资源层次结构
+  assert_eq(azimuth::Resource::get_parent(root_resource), None)
+  assert_eq(azimuth::Resource::get_parent(child_resource1), Some(root_resource))
+  assert_eq(azimuth::Resource::get_parent(child_resource2), Some(root_resource))
+  assert_eq(azimuth::Resource::get_parent(grandchild_resource), Some(child_resource1))
+  
+  // 验证资源依赖关系
+  let root_dependencies = azimuth::Resource::get_dependencies(root_resource)
+  assert_eq(root_dependencies.length(), 2)  // 两个子资源
+  assert_true(root_dependencies.contains(child_resource1))
+  assert_true(root_dependencies.contains(child_resource2))
+  
+  let child1_dependencies = azimuth::Resource::get_dependencies(child_resource1)
+  assert_eq(child1_dependencies.length(), 1)  // 一个孙资源
+  assert_true(child1_dependencies.contains(grandchild_resource))
+  
+  // 测试资源状态管理
+  assert_eq(azimuth::Resource::get_state(root_resource), azimuth::ResourceState::Initialized)
+  assert_eq(azimuth::Resource::get_state(child_resource1), azimuth::ResourceState::Initialized)
+  
+  // 启动根资源（应该级联启动所有子资源）
+  azimuth::Resource::start(root_resource)
+  assert_eq(azimuth::Resource::get_state(root_resource), azimuth::ResourceState::Running)
+  assert_eq(azimuth::Resource::get_state(child_resource1), azimuth::ResourceState::Running)
+  assert_eq(azimuth::Resource::get_state(child_resource2), azimuth::ResourceState::Running)
+  assert_eq(azimuth::Resource::get_state(grandchild_resource), azimuth::ResourceState::Running)
+  
+  // 测试资源健康检查
+  let root_health = azimuth::Resource::check_health(root_resource)
+  assert_eq(root_health.status, azimuth::HealthStatus::Healthy)
+  
+  // 模拟子资源故障
+  azimuth::Resource::simulate_failure(child_resource2, "Connection timeout")
+  let child2_health = azimuth::Resource::check_health(child_resource2)
+  assert_eq(child2_health.status, azimuth::HealthStatus::Unhealthy)
+  assert_eq(child2_health.error, "Connection timeout")
+  
+  // 验证故障传播
+  let root_health_after_failure = azimuth::Resource::check_health(root_resource)
+  assert_eq(root_health_after_failure.status, azimuth::HealthStatus::Degraded)
+  
+  // 测试资源优雅关闭
+  let shutdown_result = azimuth::Resource::shutdown_gracefully(root_resource, 5000)  // 5秒超时
+  match shutdown_result {
+    Ok(_) => {
+      assert_eq(azimuth::Resource::get_state(root_resource), azimuth::ResourceState::Stopped)
+      assert_eq(azimuth::Resource::get_state(child_resource1), azimuth::ResourceState::Stopped)
+      assert_eq(azimuth::Resource::get_state(child_resource2), azimuth::ResourceState::Stopped)
+      assert_eq(azimuth::Resource::get_state(grandchild_resource), azimuth::ResourceState::Stopped)
+    }
+    Err(error) => assert_false(true, "Graceful shutdown should succeed: " + error)
+  }
+  
+  // 验证资源清理
+  let active_resources = azimuth::Resource::get_active_resources()
+  assert_eq(active_resources.length(), 0)  // 所有资源应该被清理
 }
