@@ -4,40 +4,54 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main   # 连续运行依赖 push 到 main 再次触发
+      - master
 
 concurrency:
-  group: iflow-autoflow
+  group: iflow-autoflow-${{ github.ref }}
   cancel-in-progress: true
 
-# 这里的 permissions 仅影响 GITHUB_TOKEN；我们实际用 PAT 推送，但保留 contents: write 更稳妥
 permissions:
   contents: write
 
 jobs:
   run-5h:
     runs-on: ubuntu-latest
-    timeout-minutes: 360   # 6 小时上限，主任务跑 5 小时，留 1 小时提交/收尾
+    timeout-minutes: 360
     env:
       RUN_HOURS: 5
-      WORK_BRANCH: main
-      # iFlow CLI 的无交互认证
+      WORK_BRANCH: master
+      RELEASE_MARKER_FILE: .git/azimuth_release_tag
+
       IFLOW_API_KEY: ${{ secrets.IFLOW_API_KEY }}
       IFLOW_BASE_URL: https://apis.iflow.cn/v1
       IFLOW_MODEL_NAME: glm-4.6
+
+      GH_TOKEN: ${{ github.token }}
+
+      # 你需要在 GitHub Secrets 里配置它
+      GITEE_REMOTE_URL: ${{ secrets.GITEE_REMOTE_URL }}
+
+      # 可选：如需走镜像（更适合国内网络），把它改成你的镜像地址
+      # 例如：https://mirrors.tuna.tsinghua.edu.cn/hackage/
+      CABAL_MIRROR_URL: ""
+
+      # 可选：强制 cabal 使用 curl 传输（CI 上通常更稳）
+      CABAL_TRANSPORT: "curl"
+
     steps:
       - name: Checkout with PAT
         uses: actions/checkout@v4
         with:
-          # 必须用 PAT，这样 push 才会再次触发工作流
           token: ${{ secrets.IFLOW_PAT }}
           fetch-depth: 0
 
-      - name: Ensure main branch and git identity
+      - name: Ensure branch and git identity
         shell: bash
         run: |
-          git switch main || git checkout -b main
-          git pull --ff-only || true
+          set -euo pipefail
+          BRANCH="${WORK_BRANCH:-master}"
+          git fetch origin "${BRANCH}" --prune
+          git checkout -B "${BRANCH}" "origin/${BRANCH}"
           git config user.name "iflow-bot"
           git config user.email "iflow-bot@users.noreply.github.com"
 
@@ -47,69 +61,129 @@ jobs:
           node-version: '22'
 
       - name: Install iFlow CLI
+        shell: bash
         run: |
+          set -euo pipefail
           npm i -g @iflow-ai/iflow-cli@latest
           iflow --version
 
       - name: Verify IFLOW_API_KEY is present
+        shell: bash
         run: |
-          test -n "$IFLOW_API_KEY" || { echo "Missing IFLOW_API_KEY secret"; exit 1; }
+          set -euo pipefail
+          test -n "${IFLOW_API_KEY:-}" || { echo "Missing IFLOW_API_KEY secret"; exit 1; }
 
-      # ==================== MoonBit（替换 Haskell/Cabal） ====================
+      - name: Verify GITEE_REMOTE_URL is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${GITEE_REMOTE_URL:-}" || { echo "Missing GITEE_REMOTE_URL secret"; exit 1; }
 
-      - name: Cache MoonBit toolchain & build outputs
+      - name: Setup Haskell (GHC + Cabal)
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: 'latest'
+          cabal-version: 'latest'
+          # 关键：不要让 setup action 内部自动 cabal update
+          cabal-update: false
+
+      - name: Show tool versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          ghc --version
+          cabal --version
+
+      - name: Cache cabal (store + index) and dist-newstyle
         uses: actions/cache@v4
         with:
           path: |
-            ~/.moon
-            target
-          key: moonbit-${{ runner.os }}-${{ hashFiles('**/moon.mod.json','**/moon.pkg.json') }}
+            ~/.cabal/store
+            ~/.cabal/packages
+            dist-newstyle
+          key: cabal-${{ runner.os }}-${{ hashFiles('**/*.cabal','cabal.project*') }}
           restore-keys: |
-            moonbit-${{ runner.os }}-
+            cabal-${{ runner.os }}-
 
-      - name: Setup MoonBit (moon toolchain)
+      - name: Configure cabal (http-transport + optional mirror)
         shell: bash
         run: |
           set -euo pipefail
 
-          # 确保 PATH 里有默认安装目录（MoonBit toolchain 默认在 ~/.moon/bin）
-          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
-
-          # 若已从 cache 恢复且 moon 已存在，就不重复安装
-          if command -v moon >/dev/null 2>&1; then
-            moon version || true
-            exit 0
+          mkdir -p ~/.cabal
+          if [ ! -f ~/.cabal/config ]; then
+            cabal user-config init
           fi
 
-          # 官方安装方式：安装 MoonBit CLI/toolchain
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          # 使用 curl 作为 http 传输（cabal 识别的是 http-transport）
+          if [ "${CABAL_TRANSPORT:-}" = "curl" ]; then
+            if ! grep -qE '^[[:space:]]*http-transport:[[:space:]]*curl[[:space:]]*$' ~/.cabal/config; then
+              printf '\nhttp-transport: curl\n' >> ~/.cabal/config
+            fi
+          fi
 
-          # 再验证一次（新 PATH 会在后续 step 生效；这里也尽量直接跑一次）
-          export PATH="$HOME/.moon/bin:$PATH"
-          moon version
+          # 可选：切换到镜像（仅当 CABAL_MIRROR_URL 非空）
+          if [ -n "${CABAL_MIRROR_URL:-}" ]; then
+            # 兼容缩进：匹配任何以 url: 开头且包含 hackage.haskell.org 的行
+            sed -i -E "s#^([[:space:]]*url:[[:space:]]*).*(hackage\\.haskell\\.org).*#\\1${CABAL_MIRROR_URL}#g" ~/.cabal/config || true
+          fi
 
-      # ==================== 继续沿用你的 loop（文件名不改） ====================
+      - name: Cabal update (retry, ignore project)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5; do
+            echo "cabal update attempt $i"
+            if cabal update --ignore-project; then
+              exit 0
+            fi
+            sleep $((i * 5))
+          done
+          echo "cabal update failed after retries" >&2
+          exit 1
 
       - name: Make loop script executable
+        shell: bash
         run: |
+          set -euo pipefail
           chmod +x scripts/typus_cabal_loop.sh
 
       - name: Run for ${{ env.RUN_HOURS }} hours
         shell: bash
         run: |
-          # 运行 5 小时，到点给脚本发 TERM；你的脚本会清理并退出
-          timeout --signal=TERM $(( ${RUN_HOURS} * 3600 )) bash scripts/typus_cabal_loop.sh || true
+          set -euo pipefail
+          timeout --signal=TERM $(( RUN_HOURS * 3600 )) bash scripts/typus_cabal_loop.sh || true
 
-      - name: Commit & push after ${RUN_HOURS}h
+      - name: Commit & push once (GitHub + Gitee)
         if: always()
         shell: bash
         run: |
-          set -e
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No changes to commit."
+          set -euo pipefail
+          BRANCH="${WORK_BRANCH:-master}"
+
+          # 确保 gitee 远端存在（不打印 URL，避免日志泄漏）
+          if git remote get-url gitee >/dev/null 2>&1; then
+            git remote set-url gitee "${GITEE_REMOTE_URL}"
           else
-            git commit -m "ci: ${RUN_HOURS}h batch update (run $GITHUB_RUN_ID)"
-            # 使用 checkout 时注入的 PAT 远端凭据推送到 main
-            git push origin HEAD:main
+            git remote add gitee "${GITEE_REMOTE_URL}"
           fi
+
+          # 最后统一提交一次（如果有 staged 变更）
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "ci: ${RUN_HOURS}h batch update (run $GITHUB_RUN_ID)" || true
+          fi
+
+          # marker 可能在 env 指定路径，也可能在真实 gitdir 下（兼容 worktree 场景）
+          MARKER_FILE="${RELEASE_MARKER_FILE}"
+          if [[ ! -f "${MARKER_FILE}" ]]; then
+            GIT_DIR_REAL="$(git rev-parse --git-dir 2>/dev/null || echo ".git")"
+            MARKER_FILE="${GIT_DIR_REAL%/}/azimuth_release_tag"
+          fi
+          if [[ -f "${MARKER_FILE}" ]]; then
+            echo "Release tag prepared: $(cat "${MARKER_FILE}")"
+          fi
+
+          # 推送到 GitHub（origin）和 Gitee（gitee）
+          git push origin "HEAD:${BRANCH}" --follow-tags
+          git push gitee "HEAD:${BRANCH}" --follow-tags --force
