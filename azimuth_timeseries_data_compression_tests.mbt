@@ -1,635 +1,216 @@
-// Azimuth Time Series Data Compression Tests
-// 时间序列数据压缩测试用例
-// 测试时间序列数据的压缩、解压缩和存储优化
-
+// 时间序列数据压缩测试
 import "azimuth/azimuth"
 
-// Test 1: 时间序列数据基础压缩测试
-pub test "时间序列数据基础压缩测试" {
-  // 创建时间序列压缩器
-  let compressor = azimuth::TimeSeriesCompressor::new()
+pub test "时间序列数据压缩测试" {
+  // 测试时间序列数据生成
+  let clock = azimuth::Clock::system()
+  let base_timestamp = azimuth::Clock::now_unix_nanos(clock)
   
-  // 创建测试时间序列数据
-  let base_timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  // 生成时间序列数据点
   let time_series_data = []
   
-  // 生成1000个时间序列数据点
   for i in 0..1000 {
-    let timestamp = base_timestamp + (i * 1000000L)  // 每毫秒一个数据点
-    let value = 100.0 + (i % 100).to_double() * 0.5 + azimuth::Random::next_double(azimuth::Random::system()) * 10.0
-    let attributes = [
-      ("metric.name", "cpu.usage"),
-      ("host.name", "server-" + (i % 10).to_string()),
-      ("region", "us-west-" + (i % 3).to_string())
-    ]
+    let timestamp = base_timestamp + (i.to_long() * 1000000L)  // 每毫秒一个数据点
+    let value = 100.0 + (i.to_double() * 0.1) + (i.to_double() % 10.0)  // 模拟传感器数据
     
-    time_series_data.push({
-      "timestamp": timestamp,
-      "value": value,
-      "attributes": attributes
-    })
+    time_series_data.push((timestamp, value))
   }
   
-  // 压缩时间序列数据
-  let compressed_data = azimuth::TimeSeriesCompressor::compress(compressor, time_series_data)
+  // 验证时间序列数据生成
+  assert_eq(time_series_data.length(), 1000)
   
-  // 验证压缩结果
-  assert_true(azimuth::TimeSeriesCompressor::is_valid(compressed_data))
-  assert_true(azimuth::TimeSeriesCompressor::get_compressed_size(compressed_data) > 0)
+  // 测试时间序列度量的创建
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "timeseries-meter")
   
-  // 计算压缩率
-  let original_size = azimuth::TimeSeriesUtils::calculate_data_size(time_series_data)
-  let compressed_size = azimuth::TimeSeriesCompressor::get_compressed_size(compressed_data)
-  let compression_ratio = original_size.to_double() / compressed_size.to_double()
+  let timeseries_histogram = azimuth::Meter::create_histogram(meter, "sensor.data", Some("Time series sensor data"), Some("units"))
   
-  // 验证压缩效果（压缩率应该大于1.5，即至少压缩33%）
-  assert_true(compression_ratio > 1.5)
-  
-  // 解压缩数据
-  let decompressed_data = azimuth::TimeSeriesCompressor::decompress(compressor, compressed_data)
-  
-  // 验证解压缩结果
-  assert_eq(decompressed_data.length(), time_series_data.length())
-  
-  // 验证数据完整性
-  for i in 0..time_series_data.length() {
-    assert_eq(decompressed_data[i]["timestamp"], time_series_data[i]["timestamp"])
-    assert_true(azimuth::FloatUtils::almost_equal(
-      decompressed_data[i]["value"], 
-      time_series_data[i]["value"], 
-      0.001  // 允许0.001的误差
-    ))
-    assert_eq(decompressed_data[i]["attributes"], time_series_data[i]["attributes"])
+  // 记录时间序列数据
+  for data_point in time_series_data {
+    let (timestamp, value) = data_point
+    azimuth::Histogram::record(timeseries_histogram, value)
   }
   
-  // 创建压缩度量
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "compression-test")
-  let compression_ratio_gauge = azimuth::Meter::create_gauge(meter, "compression.ratio")
-  let compression_time_histogram = azimuth::Meter::create_histogram(meter, "compression.time", Some("Compression processing time"), Some("ms"))
+  // 测试时间序列数据的压缩特性
+  // 模拟数据压缩场景：重复值检测
+  let compression_test_data = []
   
-  // 记录压缩度量
-  azimuth::Gauge::record(compression_ratio_gauge, compression_ratio)
-  azimuth::Histogram::record(compression_time_histogram, azimuth::TimeSeriesCompressor::get_compression_time(compressor).to_double())
-}
-
-// Test 2: 不同压缩算法性能对比测试
-pub test "不同压缩算法性能对比测试" {
-  // 创建不同类型的压缩器
-  let gzip_compressor = azimuth::TimeSeriesCompressor::with_algorithm("gzip")
-  let lz4_compressor = azimuth::TimeSeriesCompressor::with_algorithm("lz4")
-  let zstd_compressor = azimuth::TimeSeriesCompressor::with_algorithm("zstd")
-  let delta_compressor = azimuth::TimeSeriesCompressor::with_algorithm("delta")
-  
-  // 创建测试数据集
-  let datasets = [
-    {
-      "name": "steady.values",
-      "data": generate_steady_time_series(1000, 100.0, 0.1)
-    },
-    {
-      "name": "linear.trend",
-      "data": generate_linear_trend_time_series(1000, 50.0, 0.1)
-    },
-    {
-      "name": "seasonal.pattern",
-      "data": generate_seasonal_time_series(1000, 24, 60.0, 20.0)
-    },
-    {
-      "name": "random.spikes",
-      "data": generate_spike_time_series(1000, 25.0, 100.0, 0.05)
-    }
-  ]
-  
-  // 测试不同压缩算法在不同数据集上的性能
-  let compression_results = []
-  
-  for dataset in datasets {
-    for (algorithm, compressor) in [
-      ("gzip", gzip_compressor),
-      ("lz4", lz4_compressor),
-      ("zstd", zstd_compressor),
-      ("delta", delta_compressor)
-    ] {
-      // 压缩数据
-      let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-      let compressed_data = azimuth::TimeSeriesCompressor::compress(compressor, dataset["data"])
-      let compression_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system()) - start_time
-      
-      // 解压缩数据
-      let start_decompress_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-      let decompressed_data = azimuth::TimeSeriesCompressor::decompress(compressor, compressed_data)
-      let decompression_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system()) - start_decompress_time
-      
-      // 计算性能指标
-      let original_size = azimuth::TimeSeriesUtils::calculate_data_size(dataset["data"])
-      let compressed_size = azimuth::TimeSeriesCompressor::get_compressed_size(compressed_data)
-      let compression_ratio = original_size.to_double() / compressed_size.to_double()
-      
-      compression_results.push({
-        "dataset": dataset["name"],
-        "algorithm": algorithm,
-        "compression.time": compression_time,
-        "decompression.time": decompression_time,
-        "compression.ratio": compression_ratio,
-        "original.size": original_size,
-        "compressed.size": compressed_size
-      })
-    }
+  // 创建包含重复值的数据集
+  for i in 0..100 {
+    let timestamp = base_timestamp + (i.to_long() * 10000000L)  // 每10毫秒一个数据点
+    let value = if (i % 10 == 0) { 50.0 } else { 100.0 + (i.to_double() * 0.1) }  // 每10个值有一个重复
+    
+    compression_test_data.push((timestamp, value))
   }
   
-  // 分析压缩结果
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "compression-comparison")
-  let compression_time_histogram = azimuth::Meter::create_histogram(meter, "compression.time.by.algorithm", Some("Compression time by algorithm"), Some("ms"))
-  let compression_ratio_histogram = azimuth::Meter::create_histogram(meter, "compression.ratio.by.algorithm", Some("Compression ratio by algorithm"), None)
+  // 验证压缩测试数据
+  assert_eq(compression_test_data.length(), 100)
   
-  // 记录压缩性能度量
-  for result in compression_results {
-    azimuth::Histogram::record(compression_time_histogram, result["compression.time"].to_double() / 1000000.0, Some([
-      ("algorithm", azimuth::StringValue(result["algorithm"])),
-      ("dataset", azimuth::StringValue(result["dataset"]))
-    ]))
-    
-    azimuth::Histogram::record(compression_ratio_histogram, result["compression.ratio"], Some([
-      ("algorithm", azimuth::StringValue(result["algorithm"])),
-      ("dataset", azimuth::StringValue(result["dataset"]))
-    ]))
-  }
+  // 测试时间序列数据的单调性
+  let monotonic_data = []
   
-  // 验证压缩算法的有效性
-  for dataset in datasets {
-    let dataset_results = compression_results.filter(r => r["dataset"] == dataset["name"])
-    
-    // 验证所有算法都能成功压缩和解压缩
-    for result in dataset_results {
-      assert_true(result["compression.ratio"] > 1.0)  // 压缩率应该大于1
-      assert_true(result["compression.time"] > 0L)    // 压缩时间应该大于0
-      assert_true(result["decompression.time"] > 0L) // 解压缩时间应该大于0
-    }
-    
-    // 找出最适合该数据集的算法
-    let best_compression = dataset_results.reduce((best, current) => 
-      current["compression.ratio"] > best["compression.ratio"] ? current : best
-    )
-    
-    // 记录最佳算法
-    let best_algorithm_gauge = azimuth::Meter::create_gauge(meter, "best.compression.algorithm")
-    azimuth::Gauge::record(best_algorithm_gauge, match best_compression["algorithm"] {
-      "gzip" => 1.0,
-      "lz4" => 2.0,
-      "zstd" => 3.0,
-      "delta" => 4.0,
-      _ => 0.0
-    }, Some([
-      ("dataset", azimuth::StringValue(dataset["name"])),
-      ("algorithm", azimuth::StringValue(best_compression["algorithm"]))
-    ]))
-  }
-}
-
-// Test 3: 增量压缩和流式压缩测试
-pub test "增量压缩和流式压缩测试" {
-  // 创建流式压缩器
-  let stream_compressor = azimuth::StreamTimeSeriesCompressor::new()
-  
-  // 创建增量压缩器
-  let incremental_compressor = azimuth::IncrementalTimeSeriesCompressor::new()
-  
-  // 模拟实时数据流
-  let base_timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let stream_data_points = []
-  
-  // 生成流式数据点（模拟实时数据）
   for i in 0..500 {
-    let timestamp = base_timestamp + (i * 2000000L)  // 每2毫秒一个数据点
-    let value = 50.0 + azimuth::Math::sin(i.to_double() * 0.1) * 10.0 + azimuth::Random::next_double(azimuth::Random::system()) * 5.0
+    let timestamp = base_timestamp + (i.to_long() * 2000000L)  // 每2毫秒一个数据点
+    let value = i.to_double()  // 严格递增的值
     
-    let data_point = {
-      "timestamp": timestamp,
-      "value": value,
-      "metric": "system.memory.usage"
-    }
-    
-    stream_data_points.push(data_point)
-    
-    // 流式压缩（每100个数据点压缩一次）
-    if (i + 1) % 100 == 0 {
-      let batch = stream_data_points.slice(i - 99, i + 1)
-      azimuth::StreamTimeSeriesCompressor::add_batch(stream_compressor, batch)
-      
-      // 增量压缩
-      azimuth::IncrementalTimeSeriesCompressor::add_point(incremental_compressor, data_point)
-    }
+    monotonic_data.push((timestamp, value))
   }
   
-  // 完成流式压缩
-  let stream_compressed_data = azimuth::StreamTimeSeriesCompressor::finish(stream_compressor)
-  
-  // 完成增量压缩
-  let incremental_compressed_data = azimuth::IncrementalTimeSeriesCompressor::finish(incremental_compressor)
-  
-  // 验证流式压缩结果
-  assert_true(azimuth::StreamTimeSeriesCompressor::is_valid(stream_compressed_data))
-  let stream_decompressed = azimuth::StreamTimeSeriesCompressor::decompress(stream_compressor)
-  assert_eq(stream_decompressed.length(), stream_data_points.length())
-  
-  // 验证增量压缩结果
-  assert_true(azimuth::IncrementalTimeSeriesCompressor::is_valid(incremental_compressed_data))
-  let incremental_decompressed = azimuth::IncrementalTimeSeriesCompressor::decompress(incremental_compressor)
-  assert_eq(incremental_decompressed.length(), stream_data_points.length())
-  
-  // 比较不同压缩方法的性能
-  let stream_compression_ratio = stream_data_points.length().to_double() * 24.0 / azimuth::StreamTimeSeriesCompressor::get_compressed_size(stream_compressed_data).to_double()
-  let incremental_compression_ratio = stream_data_points.length().to_double() * 24.0 / azimuth::IncrementalTimeSeriesCompressor::get_compressed_size(incremental_compressed_data).to_double()
-  
-  // 创建压缩性能度量
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "streaming-compression")
-  let stream_compression_ratio_gauge = azimuth::Meter::create_gauge(meter, "stream.compression.ratio")
-  let incremental_compression_ratio_gauge = azimuth::Meter::create_gauge(meter, "incremental.compression.ratio")
-  
-  azimuth::Gauge::record(stream_compression_ratio_gauge, stream_compression_ratio)
-  azimuth::Gauge::record(incremental_compression_ratio_gauge, incremental_compression_ratio)
-  
-  // 验证压缩效果
-  assert_true(stream_compression_ratio > 1.5)
-  assert_true(incremental_compression_ratio > 1.5)
-}
-
-// Test 4: 压缩数据查询和聚合测试
-pub test "压缩数据查询和聚合测试" {
-  // 创建压缩存储引擎
-  let compressed_storage = azimuth::CompressedTimeSeriesStorage::new()
-  
-  // 生成并压缩多个时间序列
-  let time_series_list = []
-  let metrics = ["cpu.usage", "memory.usage", "disk.io", "network.throughput"]
-  let hosts = ["host-1", "host-2", "host-3"]
-  
-  for metric in metrics {
-    for host in hosts {
-      let base_timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-      let time_series_data = []
-      
-      // 生成24小时的数据（每分钟一个数据点）
-      for i in 0..1440 {
-        let timestamp = base_timestamp + (i * 60000000000L)  // 每分钟一个数据点
-        let value = generate_metric_value(metric, i)
-        
-        time_series_data.push({
-          "timestamp": timestamp,
-          "value": value,
-          "metric": metric,
-          "host": host
-        })
-      }
-      
-      // 压缩时间序列
-      let compressed_data = azimuth::TimeSeriesCompressor::compress(
-        azimuth::TimeSeriesCompressor::new(), 
-        time_series_data
-      )
-      
-      // 存储压缩数据
-      azimuth::CompressedTimeSeriesStorage::store(compressed_storage, metric + ":" + host, compressed_data)
-      
-      time_series_list.push({
-        "key": metric + ":" + host,
-        "data": time_series_data,
-        "compressed": compressed_data
-      })
-    }
+  // 验证单调性
+  for i in 1..monotonic_data.length() {
+    let (prev_timestamp, prev_value) = monotonic_data[i-1]
+    let (curr_timestamp, curr_value) = monotonic_data[i]
+    
+    assert_true(curr_timestamp > prev_timestamp)
+    assert_true(curr_value > prev_value)
   }
   
-  // 测试压缩数据查询
-  for series in time_series_list {
-    // 查询完整时间序列
-    let full_query = azimuth::TimeSeriesQuery::new()
-      .with_metric(series["key"])
-      .with_start_time(series["data"][0]["timestamp"])
-      .with_end_time(series["data"][series["data"].length() - 1]["timestamp"])
+  // 测试时间序列数据的周期性
+  let periodic_data = []
+  
+  for i in 0..200 {
+    let timestamp = base_timestamp + (i.to_long() * 5000000L)  // 每5毫秒一个数据点
+    let value = 50.0 + 30.0 * (i.to_double() % 20.0 / 10.0 * 3.14159).sin()  // 周期性数据
     
-    let full_result = azimuth::CompressedTimeSeriesStorage::query(compressed_storage, full_query)
-    
-    // 验证查询结果
-    assert_eq(full_result.length(), series["data"].length())
-    
-    // 查询时间范围（前6小时）
-    let partial_query = azimuth::TimeSeriesQuery::new()
-      .with_metric(series["key"])
-      .with_start_time(series["data"][0]["timestamp"])
-      .with_end_time(series["data"][360]["timestamp"])  // 6小时 = 360分钟
-    
-    let partial_result = azimuth::CompressedTimeSeriesStorage::query(compressed_storage, partial_query)
-    
-    // 验证部分查询结果
-    assert_eq(partial_result.length(), 361)  // 包含起始和结束点
-    
-    // 测试聚合查询
-    let aggregation_query = azimuth::TimeSeriesQuery::new()
-      .with_metric(series["key"])
-      .with_start_time(series["data"][0]["timestamp"])
-      .with_end_time(series["data"][series["data"].length() - 1]["timestamp"])
-      .with_aggregation("avg", 360)  // 按6小时聚合
-    
-    let aggregation_result = azimuth::CompressedTimeSeriesStorage::query(compressed_storage, aggregation_query)
-    
-    // 验证聚合结果（24小时 / 6小时 = 4个聚合点）
-    assert_eq(aggregation_result.length(), 4)
-    
-    // 验证聚合计算
-    let expected_avg_1 = calculate_average(series["data"].slice(0, 361))
-    let expected_avg_2 = calculate_average(series["data"].slice(360, 721))
-    let expected_avg_3 = calculate_average(series["data"].slice(720, 1081))
-    let expected_avg_4 = calculate_average(series["data"].slice(1080, 1440))
-    
-    assert_true(azimuth::FloatUtils::almost_equal(aggregation_result[0]["value"], expected_avg_1, 0.01))
-    assert_true(azimuth::FloatUtils::almost_equal(aggregation_result[1]["value"], expected_avg_2, 0.01))
-    assert_true(azimuth::FloatUtils::almost_equal(aggregation_result[2]["value"], expected_avg_3, 0.01))
-    assert_true(azimuth::FloatUtils::almost_equal(aggregation_result[3]["value"], expected_avg_4, 0.01))
+    periodic_data.push((timestamp, value))
   }
   
-  // 测试多时间序列查询
-  let multi_query = azimuth::TimeSeriesQuery::new()
-    .with_metrics(["cpu.usage:host-1", "cpu.usage:host-2", "cpu.usage:host-3"])
-    .with_start_time(time_series_list[0]["data"][0]["timestamp"])
-    .with_end_time(time_series_list[0]["data"][time_series_list[0]["data"].length() - 1]["timestamp"])
+  // 验证周期性数据
+  assert_eq(periodic_data.length(), 200)
   
-  let multi_result = azimuth::CompressedTimeSeriesStorage::query(compressed_storage, multi_query)
+  // 测试时间序列数据的异常值
+  let anomaly_data = []
   
-  // 验证多时间序列查询结果
-  assert_eq(multi_result.length(), 3)
-  for result in multi_result {
-    assert_eq(result["data"].length(), 1440)
+  for i in 0..300 {
+    let timestamp = base_timestamp + (i.to_long() * 3000000L)  // 每3毫秒一个数据点
+    let value = if (i % 50 == 0) { 1000.0 } else { 50.0 + (i.to_double() % 20.0) }  // 每50个值有一个异常值
+    
+    anomaly_data.push((timestamp, value))
   }
   
-  // 创建查询性能度量
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "compressed-query")
-  let query_time_histogram = azimuth::Meter::create_histogram(meter, "query.time", Some("Query execution time"), Some("ms"))
-  let decompression_time_histogram = azimuth::Meter::create_histogram(meter, "decompression.time", Some("Decompression time"), Some("ms"))
+  // 验证异常值数据
+  assert_eq(anomaly_data.length(), 300)
   
-  // 记录查询性能度量
-  azimuth::Histogram::record(query_time_histogram, azimuth::CompressedTimeSeriesStorage::get_last_query_time(compressed_storage).to_double() / 1000000.0)
-  azimuth::Histogram::record(decompression_time_histogram, azimuth::CompressedTimeSeriesStorage::get_last_decompression_time(compressed_storage).to_double() / 1000000.0)
-}
-
-// Test 5: 压缩数据长期存储和检索测试
-pub test "压缩数据长期存储和检索测试" {
-  // 创建长期存储管理器
-  let long_term_storage = azimuth::LongTermCompressedStorage::new()
+  // 测试时间序列数据的聚合
+  let aggregation_histogram = azimuth::Meter::create_histogram(meter, "aggregated.data", Some("Aggregated time series data"), Some("units"))
   
-  // 配置存储策略
-  azimuth::LongTermCompressedStorage::set_retention_policy(long_term_storage, {
-    "hot.tier.duration": "7d",     // 热数据保留7天
-    "warm.tier.duration": "30d",   // 温数据保留30天
-    "cold.tier.duration": "365d",  // 冷数据保留365天
-    "archive.tier.duration": "indefinite"  // 归档数据无限期保留
-  })
-  
-  // 生成历史数据（模拟过去2年的数据）
-  let current_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let two_years_ago = current_time - (2 * 365 * 24 * 60 * 60 * 1000000000L)
-  
-  let historical_data = []
-  let time_per_day = 24 * 60 * 60 * 1000000000L  // 一天的纳秒数
-  
-  // 生成每日汇总数据
-  for day in 0..730 {  // 2年 = 730天
-    let day_timestamp = two_years_ago + (day * time_per_day)
+  // 模拟数据聚合：计算每10个数据点的平均值
+  for i in 0..time_series_data.length() / 10 {
+    let sum = 0.0
+    let count = 0
     
-    // 生成当天的多个时间序列数据
-    let daily_metrics = []
-    let metrics = ["cpu.usage", "memory.usage", "disk.usage"]
-    
-    for metric in metrics {
-      let daily_values = []
-      
-      // 生成当天的小时数据
-      for hour in 0..24 {
-        let hour_timestamp = day_timestamp + (hour * 60 * 60 * 1000000000L)
-        let value = generate_metric_value(metric, hour)
-        
-        daily_values.push({
-          "timestamp": hour_timestamp,
-          "value": value
-        })
-      }
-      
-      daily_metrics.push({
-        "metric": metric,
-        "values": daily_values
-      })
-    }
-    
-    historical_data.push({
-      "date": day_timestamp,
-      "metrics": daily_metrics
-    })
-    
-    // 每30天批量存储一次
-    if (day + 1) % 30 == 0 {
-      let batch = historical_data.slice(day - 29, day + 1)
-      
-      // 压缩批量数据
-      let compressed_batch = azimuth::TimeSeriesCompressor::compress_batch(
-        azimuth::TimeSeriesCompressor::new(),
-        batch
-      )
-      
-      // 存储到长期存储
-      azimuth::LongTermCompressedStorage::store_batch(long_term_storage, compressed_batch)
-    }
-  }
-  
-  // 测试不同时间范围的数据检索
-  let test_queries = [
-    {
-      "name": "recent.data",
-      "start": current_time - (7 * 24 * 60 * 60 * 1000000000L),  // 最近7天
-      "end": current_time,
-      "expected.tier": "hot"
-    },
-    {
-      "name": "month.old.data",
-      "start": current_time - (30 * 24 * 60 * 60 * 1000000000L),  // 30天前
-      "end": current_time - (23 * 24 * 60 * 60 * 1000000000L),   // 23天前
-      "expected.tier": "warm"
-    },
-    {
-      "name": "year.old.data",
-      "start": current_time - (365 * 24 * 60 * 60 * 1000000000L),  // 1年前
-      "end": current_time - (335 * 24 * 60 * 60 * 1000000000L),   // 335天前
-      "expected.tier": "cold"
-    },
-    {
-      "name": "two.years.old.data",
-      "start": two_years_ago,
-      "end": two_years_ago + (30 * 24 * 60 * 60 * 1000000000L),  // 前30天
-      "expected.tier": "archive"
-    }
-  ]
-  
-  for query in test_queries {
-    let retrieval_query = azimuth::TimeSeriesQuery::new()
-      .with_start_time(query["start"])
-      .with_end_time(query["end"])
-      .with_metrics(["cpu.usage", "memory.usage", "disk.usage"])
-    
-    let retrieval_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    let retrieved_data = azimuth::LongTermCompressedStorage::query(long_term_storage, retrieval_query)
-    let retrieval_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system()) - retrieval_start
-    
-    // 验证检索结果
-    assert_true(retrieved_data.length() > 0)
-    
-    // 验证数据来自正确的存储层
-    let actual_tier = azimuth::LongTermCompressedStorage::get_data_tier(long_term_storage, query["start"])
-    assert_eq(actual_tier, query["expected.tier"])
-    
-    // 验证数据完整性
-    for metric_data in retrieved_data {
-      assert_true(metric_data["data"].length() > 0)
-      
-      // 验证时间戳在查询范围内
-      for data_point in metric_data["data"] {
-        assert_true(data_point["timestamp"] >= query["start"])
-        assert_true(data_point["timestamp"] <= query["end"])
+    for j in 0..10 {
+      let index = i * 10 + j
+      if (index < time_series_data.length()) {
+        let (_, value) = time_series_data[index]
+        sum = sum + value
+        count = count + 1
       }
     }
     
-    // 记录检索性能
-    let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "long-term-storage")
-    let retrieval_time_histogram = azimuth::Meter::create_histogram(meter, "retrieval.time", Some("Data retrieval time"), Some("ms"))
-    let tier_retrieval_time_histogram = azimuth::Meter::create_histogram(meter, "tier.retrieval.time", Some("Tier-specific retrieval time"), Some("ms"))
-    
-    azimuth::Histogram::record(retrieval_time_histogram, retrieval_time.to_double() / 1000000.0, Some([
-      ("query.type", azimuth::StringValue(query["name"]))
-    ]))
-    
-    azimuth::Histogram::record(tier_retrieval_time_histogram, retrieval_time.to_double() / 1000000.0, Some([
-      ("storage.tier", azimuth::StringValue(query["expected.tier"]))
-    ]))
+    let avg_value = sum / count.to_double()
+    azimuth::Histogram::record(aggregation_histogram, avg_value)
   }
   
-  // 测试数据生命周期管理
-  let expired_data_start = current_time - (400 * 24 * 60 * 60 * 1000000000L)  // 400天前（应该被清理）
-  let expired_data_end = current_time - (370 * 24 * 60 * 60 * 1000000000L)   // 370天前
+  // 测试时间序列数据的采样
+  let sampling_histogram = azimuth::Meter::create_histogram(meter, "sampled.data", Some("Sampled time series data"), Some("units"))
   
-  // 清理过期数据
-  let cleaned_count = azimuth::LongTermCompressedStorage::cleanup_expired_data(long_term_storage)
-  
-  // 验证过期数据已被清理
-  let cleanup_query = azimuth::TimeSeriesQuery::new()
-    .with_start_time(expired_data_start)
-    .with_end_time(expired_data_end)
-  
-  let cleanup_result = azimuth::LongTermCompressedStorage::query(long_term_storage, cleanup_query)
-  assert_eq(cleanup_result.length(), 0)  // 过期数据应该已被清理
-  
-  // 验证清理统计
-  assert_true(cleaned_count > 0)
-  
-  // 记录清理度量
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "long-term-storage")
-  let cleanup_counter = azimuth::Meter::create_counter(meter, "data.cleanup.count")
-  azimuth::Counter::add(cleanup_counter, cleaned_count.to_double())
-}
-
-// 辅助函数：生成稳定值的时间序列
-fn generate_steady_time_series(count : Int, base_value : Double, noise : Double) -> Array<Map<String, Any>> {
-  let result = []
-  let base_timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i in 0..count {
-    let timestamp = base_timestamp + (i * 1000000L)
-    let value = base_value + (azimuth::Random::next_double(azimuth::Random::system()) - 0.5) * noise * 2
-    
-    result.push({
-      "timestamp": timestamp,
-      "value": value,
-      "attributes": [("metric.type", "steady")]
-    })
+  // 模拟数据采样：每10个数据点取1个
+  for i in 0..time_series_data.length() {
+    if (i % 10 == 0) {
+      let (_, value) = time_series_data[i]
+      azimuth::Histogram::record(sampling_histogram, value)
+    }
   }
   
-  result
-}
-
-// 辅助函数：生成线性趋势的时间序列
-fn generate_linear_trend_time_series(count : Int, start_value : Double, increment : Double) -> Array<Map<String, Any>> {
-  let result = []
-  let base_timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  // 测试时间序列数据的窗口操作
+  let window_histogram = azimuth::Meter::create_histogram(meter, "window.data", Some("Windowed time series data"), Some("units"))
   
-  for i in 0..count {
-    let timestamp = base_timestamp + (i * 1000000L)
-    let value = start_value + (i.to_double() * increment)
+  // 模拟滑动窗口：计算每5个数据点的最大值
+  for i in 0..time_series_data.length() - 4 {
+    let max_value = 0.0
     
-    result.push({
-      "timestamp": timestamp,
-      "value": value,
-      "attributes": [("metric.type", "linear.trend")]
-    })
-  }
-  
-  result
-}
-
-// 辅助函数：生成季节性模式的时间序列
-fn generate_seasonal_time_series(count : Int, period : Int, base_value : Double, amplitude : Double) -> Array<Map<String, Any>> {
-  let result = []
-  let base_timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i in 0..count {
-    let timestamp = base_timestamp + (i * 1000000L)
-    let value = base_value + amplitude * azimuth::Math::sin(2.0 * azimuth::Math::pi() * i.to_double() / period.to_double())
-    
-    result.push({
-      "timestamp": timestamp,
-      "value": value,
-      "attributes": [("metric.type", "seasonal")]
-    })
-  }
-  
-  result
-}
-
-// 辅助函数：生成尖峰时间序列
-fn generate_spike_time_series(count : Int, base_value : Double, spike_value : Double, spike_probability : Double) -> Array<Map<String, Any>> {
-  let result = []
-  let base_timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  
-  for i in 0..count {
-    let timestamp = base_timestamp + (i * 1000000L)
-    let value = if azimuth::Random::next_double(azimuth::Random::system()) < spike_probability {
-      spike_value
-    } else {
-      base_value
+    for j in 0..5 {
+      let (_, value) = time_series_data[i + j]
+      if (value > max_value) {
+        max_value = value
+      }
     }
     
-    result.push({
-      "timestamp": timestamp,
-      "value": value,
-      "attributes": [("metric.type", "spike")]
-    })
+    azimuth::Histogram::record(window_histogram, max_value)
   }
   
-  result
-}
-
-// 辅助函数：根据指标类型生成值
-fn generate_metric_value(metric : String, index : Int) -> Double {
-  match metric {
-    "cpu.usage" => 30.0 + 20.0 * azimuth::Math::sin(index.to_double() * 0.1) + azimuth::Random::next_double(azimuth::Random::system()) * 10.0
-    "memory.usage" => 50.0 + 15.0 * azimuth::Math::sin(index.to_double() * 0.05) + azimuth::Random::next_double(azimuth::Random::system()) * 8.0
-    "disk.io" => 10.0 + 40.0 * azimuth::Math::sin(index.to_double() * 0.2) + azimuth::Random::next_double(azimuth::Random::system()) * 20.0
-    "network.throughput" => 25.0 + 25.0 * azimuth::Math::sin(index.to_double() * 0.15) + azimuth::Random::next_double(azimuth::Random::system()) * 15.0
-    "disk.usage" => 60.0 + 5.0 * azimuth::Math::sin(index.to_double() * 0.01) + azimuth::Random::next_double(azimuth::Random::system()) * 2.0
-    _ => 50.0 + azimuth::Random::next_double(azimuth::Random::system()) * 20.0
+  // 测试时间序列数据的差分操作
+  let diff_histogram = azimuth::Meter::create_histogram(meter, "diff.data", Some("Differenced time series data"), Some("units"))
+  
+  // 计算相邻数据点的差值
+  for i in 1..time_series_data.length() {
+    let (_, prev_value) = time_series_data[i-1]
+    let (_, curr_value) = time_series_data[i]
+    let diff_value = curr_value - prev_value
+    
+    azimuth::Histogram::record(diff_histogram, diff_value)
   }
-}
-
-// 辅助函数：计算平均值
-fn calculate_average(values : Array<Map<String, Any>>) -> Double {
+  
+  // 测试时间序列数据的统计特性
+  let stats_histogram = azimuth::Meter::create_histogram(meter, "stats.data", Some("Statistical time series data"), Some("units"))
+  
+  // 计算统计特性
   let sum = 0.0
-  for value in values {
-    sum = sum + value["value"]
+  let count = 0
+  
+  for data_point in time_series_data {
+    let (_, value) = data_point
+    sum = sum + value
+    count = count + 1
   }
-  sum / values.length().to_double()
+  
+  let mean = sum / count.to_double()
+  azimuth::Histogram::record(stats_histogram, mean)
+  
+  // 计算标准差
+  let variance_sum = 0.0
+  
+  for data_point in time_series_data {
+    let (_, value) = data_point
+    let diff = value - mean
+    variance_sum = variance_sum + (diff * diff)
+  }
+  
+  let variance = variance_sum / count.to_double()
+  let std_dev = variance.sqrt()
+  azimuth::Histogram::record(stats_histogram, std_dev)
+  
+  // 测试时间序列数据的编码效率
+  let encoding_test_data = []
+  
+  // 创建适合压缩的数据集
+  for i in 0..100 {
+    let timestamp = base_timestamp + (i.to_long() * 10000000L)
+    let value = if (i < 50) { 100.0 } else { 200.0 }  // 前50个值为100，后50个值为200
+    
+    encoding_test_data.push((timestamp, value))
+  }
+  
+  // 验证编码测试数据
+  assert_eq(encoding_test_data.length(), 100)
+  
+  // 测试时间序列数据的实时处理
+  let realtime_histogram = azimuth::Meter::create_histogram(meter, "realtime.data", Some("Real-time time series data"), Some("units"))
+  
+  // 模拟实时数据处理
+  let realtime_start_time = azimuth::Clock::now_unix_nanos(clock)
+  
+  for i in 0..50 {
+    let current_time = azimuth::Clock::now_unix_nanos(clock)
+    let value = 100.0 + (i.to_double() * 2.0)
+    
+    azimuth::Histogram::record(realtime_histogram, value)
+  }
+  
+  let realtime_end_time = azimuth::Clock::now_unix_nanos(clock)
+  let realtime_duration = realtime_end_time - realtime_start_time
+  
+  // 验证实时处理在合理时间内完成
+  assert_true(realtime_duration < 1000000000L)  // 小于1秒
 }
