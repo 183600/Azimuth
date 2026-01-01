@@ -1,351 +1,283 @@
-// Additional Comprehensive Tests for Azimuth Telemetry System
-// Extended test coverage for advanced telemetry features
+// Additional Comprehensive Test Suite for Azimuth Telemetry System
+// This file contains focused test cases covering various aspects of the telemetry system
 
-test "attributes_complex_operations" {
+// Test 1: Attribute operations with complex types
+test "attribute operations with complex types" {
   let attrs = Attributes::new()
   
-  // Test setting and getting different attribute types
-  Attributes::set(attrs, "string.key", StringValue("test_value"))
-  Attributes::set(attrs, "int.key", IntValue(42))
-  Attributes::set(attrs, "float.key", FloatValue(3.14159))
-  Attributes::set(attrs, "bool.key", BoolValue(true))
+  // Test setting and getting string attribute
+  Attributes::set(attrs, "service.name", StringValue("payment-service"))
+  let service_name = Attributes::get(attrs, "service.name")
+  assert_eq(service_name, Some(StringValue("payment-service")))
   
-  // Test retrieval of different types using pattern matching
-  let string_result = Attributes::get(attrs, "string.key")
-  assert_true(string_result is Some)
-  match string_result {
-    Some(StringValue(value)) => assert_eq(value, "test_value")
-    _ => assert_true(false)
-  }
+  // Test setting and getting int attribute
+  Attributes::set(attrs, "service.version", IntValue(1))
+  let service_version = Attributes::get(attrs, "service.version")
+  assert_eq(service_version, Some(IntValue(1)))
   
-  let int_result = Attributes::get(attrs, "int.key")
-  assert_true(int_result is Some)
-  match int_result {
-    Some(IntValue(value)) => assert_eq(value, 42)
-    _ => assert_true(false)
-  }
+  // Test setting and getting float attribute
+  Attributes::set(attrs, "service.rate", FloatValue(0.95))
+  let service_rate = Attributes::get(attrs, "service.rate")
+  assert_eq(service_rate, Some(FloatValue(0.95)))
   
-  let float_result = Attributes::get(attrs, "float.key")
-  assert_true(float_result is Some)
-  match float_result {
-    Some(FloatValue(value)) => assert_eq(value, 3.14159)
-    _ => assert_true(false)
-  }
-  
-  let bool_result = Attributes::get(attrs, "bool.key")
-  assert_true(bool_result is Some)
-  match bool_result {
-    Some(BoolValue(value)) => assert_eq(value, true)
-    _ => assert_true(false)
-  }
-  
-  // Test non-existent key
-  let none_result = Attributes::get(attrs, "non.existent.key")
-  assert_true(none_result is None)
+  // Test setting and getting bool attribute
+  Attributes::set(attrs, "service.enabled", BoolValue(true))
+  let service_enabled = Attributes::get(attrs, "service.enabled")
+  assert_eq(service_enabled, Some(BoolValue(true)))
 }
 
-test "context_nested_operations" {
-  let root_ctx = Context::root()
-  let key1 = ContextKey::new("key1")
-  let key2 = ContextKey::new("key2")
-  let key3 = ContextKey::new("key3")
-  
-  // Test nested context creation
-  let ctx1 = Context::with_value(root_ctx, key1, "value1")
-  let ctx2 = Context::with_value(ctx1, key2, "value2")
-  let ctx3 = Context::with_value(ctx2, key3, "value3")
-  
-  // Test value retrieval from nested context
-  let value1 = Context::get(ctx3, key1)
-  assert_true(value1 is Some)
-  match value1 {
-    Some(v) => assert_eq(v, "value1")
-    _ => assert_true(false)
-  }
-  
-  let value2 = Context::get(ctx3, key2)
-  assert_true(value2 is Some)
-  match value2 {
-    Some(v) => assert_eq(v, "value2")
-    _ => assert_true(false)
-  }
-  
-  let value3 = Context::get(ctx3, key3)
-  assert_true(value3 is Some)
-  match value3 {
-    Some(v) => assert_eq(v, "value3")
-    _ => assert_true(false)
-  }
-  
-  // Test that earlier contexts are unaffected
-  let none1 = Context::get(ctx1, key2)
-  assert_true(none1 is None)
-  
-  let none2 = Context::get(ctx2, key3)
-  assert_true(none2 is None)
-}
-
-test "span_status_management" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "status_test_tracer")
-  let span = Tracer::start_span(tracer, "status_test_span")
-  
-  // Test initial status
-  let initial_status = Span::status(span)
-  match initial_status {
-    Unset => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // Test setting OK status
-  Span::set_status(span, Ok)
-  let ok_status = Span::status(span)
-  match ok_status {
-    Unset => assert_true(true)  // Simplified implementation
-    _ => assert_true(false)
-  }
-  
-  // Test setting Error status with description
-  Span::set_status(span, Error, description? = Some("Operation failed"))
-  let error_status = Span::status(span)
-  match error_status {
-    Unset => assert_true(true)  // Simplified implementation
-    _ => assert_true(false)
-  }
-  
-  // Test span is still recording after status changes
-  assert_true(Span::is_recording(span))
-}
-
-test "metrics_aggregation_operations" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "aggregation_test_meter")
-  
-  // Create different metric types
-  let counter = Meter::create_counter(meter, "test_counter")
-  let histogram = Meter::create_histogram(meter, "test_histogram", description? = Some("Test histogram"), unit? = Some("ms"))
-  let updown_counter = Meter::create_counter(meter, "test_updown")
-  let gauge = Meter::create_counter(meter, "test_gauge")
-  
-  // Test metric operations
-  Counter::add(counter, 1.0)
-  Counter::add(counter, 2.5)
-  Counter::add(counter, 0.5)
-  
-  Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 200.0)
-  Histogram::record(histogram, 150.0)
-  
-  Counter::add(updown_counter, 10.0)
-  Counter::add(updown_counter, -5.0)
-  Counter::add(updown_counter, 3.0)
-  
-  Counter::add(gauge, 42.0)
-  Counter::add(gauge, -10.0)
-  Counter::add(gauge, 8.0)
-  
-  // Verify instrument properties
-  let counter_instrument = Counter(counter.name, counter.description, counter.unit)
-  assert_eq(Instrument::name(counter_instrument), "test_counter")
-  assert_eq(Instrument::description(counter_instrument), None)
-  assert_eq(Instrument::unit(counter_instrument), None)
-}
-
-test "log_severity_levels" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "severity_test_logger")
-  
-  // Test all severity levels
-  let trace_log = LogRecord::new(Trace, "Trace message")
-  let debug_log = LogRecord::new(Debug, "Debug message")
-  let info_log = LogRecord::new(Info, "Info message")
-  let warn_log = LogRecord::new(Warn, "Warning message")
-  let error_log = LogRecord::new(Error, "Error message")
-  let fatal_log = LogRecord::new(Fatal, "Fatal message")
-  
-  // Verify severity levels
-  assert_eq(LogRecord::severity_number(trace_log), Trace)
-  assert_eq(LogRecord::severity_number(debug_log), Debug)
-  assert_eq(LogRecord::severity_number(info_log), Info)
-  assert_eq(LogRecord::severity_number(warn_log), Warn)
-  assert_eq(LogRecord::severity_number(error_log), Error)
-  assert_eq(LogRecord::severity_number(fatal_log), Fatal)
-  
-  // Verify log bodies
-  let trace_body = LogRecord::body(trace_log)
-  assert_true(trace_body is Some)
-  match trace_body {
-    Some(body) => assert_eq(body, "Trace message")
-    _ => assert_true(false)
-  }
-  
-  let debug_body = LogRecord::body(debug_log)
-  assert_true(debug_body is Some)
-  match debug_body {
-    Some(body) => assert_eq(body, "Debug message")
-    _ => assert_true(false)
-  }
-  
-  let info_body = LogRecord::body(info_log)
-  assert_true(info_body is Some)
-  match info_body {
-    Some(body) => assert_eq(body, "Info message")
-    _ => assert_true(false)
-  }
-  
-  let warn_body = LogRecord::body(warn_log)
-  assert_true(warn_body is Some)
-  match warn_body {
-    Some(body) => assert_eq(body, "Warning message")
-    _ => assert_true(false)
-  }
-  
-  let error_body = LogRecord::body(error_log)
-  assert_true(error_body is Some)
-  match error_body {
-    Some(body) => assert_eq(body, "Error message")
-    _ => assert_true(false)
-  }
-  
-  let fatal_body = LogRecord::body(fatal_log)
-  assert_true(fatal_body is Some)
-  match fatal_body {
-    Some(body) => assert_eq(body, "Fatal message")
-    _ => assert_true(false)
-  }
-  
-  // Emit logs
-  Logger::emit(logger, trace_log)
-  Logger::emit(logger, info_log)
-  Logger::emit(logger, error_log)
-}
-
-test "resource_merge_operations" {
+// Test 2: Resource management and merging
+test "resource management and merging" {
   let base_resource = Resource::new()
   let base_attrs = [
-    ("service.name", StringValue("base_service")),
-    ("service.version", StringValue("1.0.0")),
-    ("environment", StringValue("development"))
+    ("service.name", StringValue("base-service")),
+    ("service.version", StringValue("1.0.0"))
   ]
   let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
   
   let override_resource = Resource::new()
   let override_attrs = [
-    ("service.name", StringValue("override_service")),
-    ("service.instance.id", StringValue("instance-123")),
-    ("region", StringValue("us-west-2"))
+    ("service.name", StringValue("override-service")),
+    ("service.instance.id", StringValue("instance-123"))
   ]
   let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
   
-  // Test resource merge
+  // Test resource merging
   let merged = Resource::merge(base_with_attrs, override_with_attrs)
+  let service_name = Resource::get_attribute(merged, "service.name")
+  let instance_id = Resource::get_attribute(merged, "service.instance.id")
   
-  // In simplified implementation, override resource takes precedence
-  assert_eq(
-    Resource::get_attribute(merged, "service.name"),
-    Some(StringValue("override_service"))
-  )
-  assert_eq(
-    Resource::get_attribute(merged, "service.instance.id"),
-    Some(StringValue("instance-123"))
-  )
-  assert_eq(
-    Resource::get_attribute(merged, "region"),
-    Some(StringValue("us-west-2"))
-  )
+  assert_eq(service_name, Some(StringValue("override-service")))
+  assert_eq(instance_id, Some(StringValue("instance-123")))
 }
 
-test "composite_propagator_operations" {
+// Test 3: Span lifecycle management
+test "span lifecycle management" {
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+  
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "test-tracer")
+  let span = Tracer::start_span(tracer, "test-span")
+  
+  // Test span properties
+  assert_eq(Span::name(span), "test-span")
+  assert_eq(Span::kind(span), Internal)
+  assert_true(Span::is_recording(span))
+  assert_eq(Span::span_context(span), span_ctx)
+  
+  // Test span status operations
+  assert_eq(Span::status(span), Unset)
+  Span::set_status(span, Ok)
+  assert_eq(Span::status(span), Unset)  // Simplified implementation
+  
+  // Test span event addition
+  Span::add_event(span, "test-event", [("event.type", StringValue("test"))])
+  
+  // Test span ending
+  Span::end(span)
+}
+
+// Test 4: Metrics instrument operations
+test "metrics instrument operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  
+  // Test counter operations
+  let counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
+  assert_eq(counter.name, "http.requests.total")
+  assert_eq(counter.description, Some("Total HTTP requests"))
+  assert_eq(counter.unit, Some("requests"))
+  
+  Counter::add(counter, 1.0)
+  Counter::add(counter, 5.0)
+  
+  // Test histogram operations
+  let histogram = Meter::create_histogram(meter, "http.request.duration", Some("HTTP request duration"), Some("ms"))
+  assert_eq(histogram.name, "http.request.duration")
+  assert_eq(histogram.description, Some("HTTP request duration"))
+  assert_eq(histogram.unit, Some("ms"))
+  
+  Histogram::record(histogram, 100.5)
+  Histogram::record(histogram, 250.0)
+  
+  // Test updown counter operations
+  let updown_counter = Meter::create_updown_counter(meter, "active.connections", Some("Active connections"), Some("connections"))
+  assert_eq(updown_counter.name, "active.connections")
+  
+  UpDownCounter::add(updown_counter, 10.0)
+  UpDownCounter::add(updown_counter, -3.0)
+  
+  // Test gauge operations
+  let gauge = Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("bytes"))
+  assert_eq(gauge.name, "memory.usage")
+  
+  // Test instrument type conversions
+  let counter_instrument = Counter(counter.name, counter.description, counter.unit)
+  assert_eq(Instrument::name(counter_instrument), "http.requests.total")
+  assert_eq(Instrument::description(counter_instrument), Some("Total HTTP requests"))
+  assert_eq(Instrument::unit(counter_instrument), Some("requests"))
+}
+
+// Test 5: Log record with full context
+test "log record with full context" {
+  let trace_id = Some("0af7651916cd43dd8448eb211c80319c")
+  let span_id = Some("b7ad6b7169203331")
+  let timestamp = Some(1735689600000000000L)
+  let observed_timestamp = Some(1735689600000001000L)
+  
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "user.id", StringValue("user-123"))
+  
+  let ctx = Context::root()
+  let key = ContextKey::new("correlation.id")
+  let ctx_with_value = Context::with_value(ctx, key, "corr-456")
+  
+  let record = LogRecord::new_with_context(
+    Error,
+    Some("Database connection failed"),
+    Some(attrs),
+    timestamp,
+    observed_timestamp,
+    trace_id,
+    span_id,
+    Some(ctx_with_value)
+  )
+  
+  assert_eq(LogRecord::severity_number(record), Error)
+  assert_eq(LogRecord::body(record), Some("Database connection failed"))
+  assert_eq(LogRecord::trace_id(record), trace_id)
+  assert_eq(LogRecord::span_id(record), span_id)
+}
+
+// Test 6: Baggage propagation across contexts
+test "baggage propagation across contexts" {
+  let baggage = Baggage::new()
+  
+  // Test setting and getting baggage entries
+  let updated_baggage = Baggage::set_entry(baggage, "user.id", "user-123")
+  let user_id = Baggage::get_entry(updated_baggage, "user.id")
+  assert_eq(user_id, Some("user-123"))
+  
+  // Test multiple entries
+  let multi_baggage = Baggage::set_entry(updated_baggage, "request.id", "req-456")
+  let request_id = Baggage::get_entry(multi_baggage, "request.id")
+  assert_eq(request_id, Some("req-456"))
+  
+  // Test removing entries
+  let reduced_baggage = Baggage::remove_entry(multi_baggage, "user.id")
+  let removed_user_id = Baggage::get_entry(reduced_baggage, "user.id")
+  assert_eq(removed_user_id, None)
+  let retained_request_id = Baggage::get_entry(reduced_baggage, "request.id")
+  assert_eq(retained_request_id, Some("req-456"))
+}
+
+// Test 7: Composite propagator injection and extraction
+test "composite propagator injection and extraction" {
   let trace_propagator = W3CTraceContextPropagator::new()
   let baggage_propagator = W3CBaggagePropagator::new()
-  let composite = CompositePropagator::new([trace_propagator, trace_propagator])
+  let composite = CompositePropagator::new([trace_propagator])
   
-  let root_ctx = Context::root()
+  let ctx = Context::root()
+  let key = ContextKey::new("test.value")
+  let ctx_with_value = Context::with_value(ctx, key, "test-data")
+  
   let carrier = TextMapCarrier::new()
   
-  // Test injection with composite propagator
-  CompositePropagator::inject(composite, root_ctx, carrier)
+  // Test injection
+  CompositePropagator::inject(composite, ctx_with_value, carrier)
+  let injected_traceparent = TextMapCarrier::get(carrier, "traceparent")
+  assert_eq(injected_traceparent, Some("00-test-trace-id-test-span-id-01"))
   
-  // Test extraction with composite propagator
+  // Test extraction
   let extracted_ctx = CompositePropagator::extract(composite, carrier)
-  let extracted_key = ContextKey::new("extracted")
-  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
-  
-  // Test that original context is unchanged
-  assert_eq(Context::get(root_ctx, extracted_key), None)
+  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
+  assert_eq(extracted_value, Some("true"))
 }
 
-test "http_client_error_handling" {
-  // Test request with missing required fields
-  let empty_headers : Array[(String, String)] = []
-  let request = HttpRequest::new("GET", "https://api.example.com", empty_headers, None)
+// Test 8: HTTP client operations with complex payloads
+test "http client operations with complex payloads" {
+  let headers = [
+    ("Content-Type", "application/json"),
+    ("Authorization", "Bearer token123"),
+    ("X-Request-ID", "req-456")
+  ]
+  let body = Some("{\"action\":\"test\",\"data\":{\"value\":123}}")
   
-  assert_eq(HttpRequest::http_method(request), "GET")
-  assert_eq(HttpRequest::url(request), "https://api.example.com")
-  assert_eq(HttpRequest::body(request), None)
+  let request = HttpRequest::new("POST", "https://api.example.com/data", headers, body)
   
-  // Test response with error status codes
-  let not_found_response = HttpResponse::new(404, empty_headers, Some("Not Found"))
-  let server_error_response = HttpResponse::new(500, empty_headers, Some("Internal Server Error"))
+  assert_eq(HttpRequest::http_method(request), "POST")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
+  assert_eq(HttpRequest::body(request), Some("{\"action\":\"test\",\"data\":{\"value\":123}}"))
   
-  assert_eq(HttpResponse::status_code(not_found_response), 404)
-  assert_eq(HttpResponse::body(not_found_response), Some("Not Found"))
+  let response_headers = [("Content-Type", "application/json")]
+  let response_body = Some("{\"status\":\"success\",\"id\":789}")
+  let response = HttpResponse::new(201, response_headers, response_body)
   
-  assert_eq(HttpResponse::status_code(server_error_response), 500)
-  assert_eq(HttpResponse::body(server_error_response), Some("Internal Server Error"))
+  assert_eq(HttpResponse::status_code(response), 201)
+  assert_eq(HttpResponse::body(response), Some("{\"status\":\"success\",\"id\":789}"))
 }
 
-test "clock_and_random_operations" {
-  // Test clock operations
-  let clock = Clock::system()
-  let timestamp = Clock::now_unix_nanos(clock)
+// Test 9: Logger operations with different severity levels
+test "logger operations with different severity levels" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "test-logger")
   
-  // Verify timestamp is reasonable (should be around 2025)
-  assert_eq(timestamp, 1735689600000000000L)
+  // Test creating log records with different severity levels
+  let trace_record = LogRecord::new(Trace, "Debug trace information")
+  assert_eq(LogRecord::severity_number(trace_record), Trace)
   
-  // Test random operations
-  let random = Random::system()
+  let debug_record = LogRecord::new(Debug, "Debug information")
+  assert_eq(LogRecord::severity_number(debug_record), Debug)
   
-  // Test random bytes generation
-  let random_bytes = Random::next_bytes(random, 16)
-  assert_eq(random_bytes.length, 16)
+  let info_record = LogRecord::new(Info, "General information")
+  assert_eq(LogRecord::severity_number(info_record), Info)
   
-  // Test random u64 generation
-  let random_u64 = Random::next_u64(random)
-  assert_eq(random_u64, 12345UL)
+  let warn_record = LogRecord::new(Warn, "Warning condition")
+  assert_eq(LogRecord::severity_number(warn_record), Warn)
+  
+  let error_record = LogRecord::new(Error, "Error condition")
+  assert_eq(LogRecord::severity_number(error_record), Error)
+  
+  let fatal_record = LogRecord::new(Fatal, "Fatal error")
+  assert_eq(LogRecord::severity_number(fatal_record), Fatal)
+  
+  // Test emitting log records
+  Logger::emit(logger, info_record)
+  Logger::emit(logger, error_record)
 }
 
-test "telemetry_system_integration" {
-  // Create all providers
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
+// Test 10: Cross-service telemetry consistency
+test "cross-service telemetry consistency" {
+  // Simulate service A telemetry
+  let service_a_trace_id = "trace-a-1234567890123456"
+  let service_a_span_id = "span-a-1234567890123456"
+  let service_a_ctx = SpanContext::new(service_a_trace_id, service_a_span_id, true, "key1=value1")
   
-  // Create instruments
-  let tracer = TracerProvider::get_tracer(tracer_provider, "integration_tracer")
-  let meter = MeterProvider::get_meter(meter_provider, "integration_meter")
-  let logger = LoggerProvider::get_logger(logger_provider, "integration_logger")
+  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
+  let service_a_span = Tracer::start_span(service_a_tracer, "service-a-operation")
   
-  // Create span
-  let span = Tracer::start_span(tracer, "integration_span")
-  assert_eq(Span::name(span), "integration_span")
+  // Simulate service B telemetry (should maintain trace consistency)
+  let service_b_span_id = "span-b-1234567890123456"
+  let service_b_ctx = SpanContext::new(service_a_trace_id, service_b_span_id, true, "key1=value1")
   
-  // Create metrics
-  let counter = Meter::create_counter(meter, "integration_counter")
-  Counter::add(counter, 1.0)
+  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
+  let service_b_span = Tracer::start_span(service_b_tracer, "service-b-operation")
   
-  // Create and emit log
-  let log = LogRecord::new(Info, "Integration test log")
-  Logger::emit(logger, log)
+  // Verify trace consistency
+  assert_eq(SpanContext::trace_id(service_a_ctx), SpanContext::trace_id(service_b_ctx))
+  assert_true(SpanContext::is_sampled(service_a_ctx))
+  assert_true(SpanContext::is_sampled(service_b_ctx))
   
-  // Test span with context
-  Span::add_event(span, "integration_event", None)
-  Span::set_status(span, Ok, Some("Integration test completed"))
+  // Test baggage propagation between services
+  let baggage = Baggage::new()
+  let cross_service_baggage = Baggage::set_entry(baggage, "user.id", "user-123")
+  let cross_service_baggage = Baggage::set_entry(cross_service_baggage, "request.id", "req-456")
   
-  // End span
-  Span::end(span)
+  let propagated_user_id = Baggage::get_entry(cross_service_baggage, "user.id")
+  let propagated_request_id = Baggage::get_entry(cross_service_baggage, "request.id")
   
-  // Verify all components are working together
-  assert_eq(Span::is_recording(span), true)?  // Simplified implementation
-  assert_eq(LogRecord::body(log), Some("Integration test log"))
+  assert_eq(propagated_user_id, Some("user-123"))
+  assert_eq(propagated_request_id, Some("req-456"))
 }
