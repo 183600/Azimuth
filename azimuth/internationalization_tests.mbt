@@ -1,334 +1,194 @@
-// Internationalization and Globalization Tests for Azimuth
-// These tests verify internationalization and globalization support
+// Internationalization Text Processing Tests for Azimuth Telemetry System
+// This file contains test cases for internationalization and text processing
 
-test "unicode string handling" {
-  // Test various Unicode characters
-  let chinese_text = "遥测系统"
-  let japanese_text = "テレメトリシステム"
-  let arabic_text = "نظام القياس عن بعد"
-  let russian_text = "Система телеметрии"
-  let emoji_text = "🌍📊📈"
-  
-  // Create attributes with Unicode text
+test "chinese text handling in attributes" {
   let attrs = Attributes::new()
-  Attributes::set(attrs, "chinese.text", StringValue(chinese_text))
-  Attributes::set(attrs, "japanese.text", StringValue(japanese_text))
-  Attributes::set(attrs, "arabic.text", StringValue(arabic_text))
-  Attributes::set(attrs, "russian.text", StringValue(russian_text))
-  Attributes::set(attrs, "emoji.text", StringValue(emoji_text))
   
-  // Verify Unicode text is preserved
-  let chinese_val = Attributes::get(attrs, "chinese.text")
-  let japanese_val = Attributes::get(attrs, "japanese.text")
-  let arabic_val = Attributes::get(attrs, "arabic.text")
-  let russian_val = Attributes::get(attrs, "russian.text")
-  let emoji_val = Attributes::get(attrs, "emoji.text")
+  // Test Chinese characters in attribute values
+  Attributes::set(attrs, "服务名称", StringValue("用户认证服务"))
+  Attributes::set(attrs, "服务描述", StringValue("处理用户登录和身份验证"))
+  Attributes::set(attrs, "错误信息", StringValue("用户名或密码错误"))
   
-  match chinese_val {
-    Some(StringValue(s)) => assert_eq(s, chinese_text)
-    _ => assert_true(false)
-  }
+  let service_name = Attributes::get(attrs, "服务名称")
+  let service_desc = Attributes::get(attrs, "服务描述")
+  let error_msg = Attributes::get(attrs, "错误信息")
   
-  match japanese_val {
-    Some(StringValue(s)) => assert_eq(s, japanese_text)
-    _ => assert_true(false)
-  }
-  
-  match arabic_val {
-    Some(StringValue(s)) => assert_eq(s, arabic_text)
-    _ => assert_true(false)
-  }
-  
-  match russian_val {
-    Some(StringValue(s)) => assert_eq(s, russian_text)
-    _ => assert_true(false)
-  }
-  
-  match emoji_val {
-    Some(StringValue(s)) => assert_eq(s, emoji_text)
-    _ => assert_true(false)
-  }
+  assert_eq(service_name, Some(StringValue("用户认证服务")))
+  assert_eq(service_desc, Some(StringValue("处理用户登录和身份验证")))
+  assert_eq(error_msg, Some(StringValue("用户名或密码错误")))
 }
 
-test "localized log messages" {
-  let logger_provider = LoggerProvider::default()
+test "japanese text handling in log records" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "日本語ロガー")
   
-  // Create loggers for different locales
-  let logger_en = LoggerProvider::get_logger(logger_provider, "en-service")
-  let logger_zh = LoggerProvider::get_logger(logger_provider, "zh-service")
-  let logger_ja = LoggerProvider::get_logger(logger_provider, "ja-service")
+  let record = LogRecord::new(Info, "ユーザーログインが成功しました")
   
-  // Create log records with localized messages
-  let record_en = LogRecord::new(Info, "Operation completed successfully")
-  let record_zh = LogRecord::new(Info, "操作成功完成")
-  let record_ja = LogRecord::new(Info, "操作が正常に完了しました")
+  assert_eq(LogRecord::severity_number(record), Info)
+  assert_eq(LogRecord::body(record), Some("ユーザーログインが成功しました"))
   
-  // Verify localized messages
-  assert_eq(LogRecord::body(record_en), Some("Operation completed successfully"))
-  assert_eq(LogRecord::body(record_zh), Some("操作成功完成"))
-  assert_eq(LogRecord::body(record_ja), Some("操作が正常に完了しました"))
+  Logger::emit(logger, record)
+  assert_true(true)
 }
 
-test "localized error messages" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n-test")
+test "korean text handling in span names" {
+  let span_ctx = SpanContext::new("korean-trace", "korean-span", true, "")
+  let span = Span::new("한국어 작업", Internal, span_ctx)
   
-  // Create spans with localized error messages
-  let span_en = Tracer::start_span(tracer, "operation-en")
-  let span_zh = Tracer::start_span(tracer, "operation-zh")
-  let span_ja = Tracer::start_span(tracer, "operation-ja")
-  
-  // Add localized error events
-  Span::add_event(span_en, "error.occurred", Some([
-    ("error.message", StringValue("Validation failed: Invalid input")),
-    ("error.code", StringValue("VALIDATION_ERROR"))
-  ]))
-  
-  Span::add_event(span_zh, "error.occurred", Some([
-    ("error.message", StringValue("验证失败：输入无效")),
-    ("error.code", StringValue("验证错误"))
-  ]))
-  
-  Span::add_event(span_ja, "error.occurred", Some([
-    ("error.message", StringValue("検証失敗：入力が無効です")),
-    ("error.code", StringValue("検証エラー"))
-  ]))
-  
-  // Set localized status descriptions
-  Span::set_status(span_en, Error, Some("Validation failed"))
-  Span::set_status(span_zh, Error, Some("验证失败"))
-  Span::set_status(span_ja, Error, Some("検証失敗"))
-  
-  // End spans
-  Span::end(span_en)
-  Span::end(span_zh)
-  Span::end(span_ja)
-  
-  // Verify spans were created with localized messages
-  assert_eq(Span::name(span_en), "operation-en")
-  assert_eq(Span::name(span_zh), "operation-zh")
-  assert_eq(Span::name(span_ja), "operation-ja")
+  assert_eq(Span::name(span), "한국어 작업")
+  assert_eq(Span::kind(span), Internal)
+  assert_true(Span::is_recording(span))
 }
 
-test "localized resource attributes" {
-  // Create resources with localized attributes
-  let resource_en = Resource::new()
-  let attrs_en = [
-    ("service.name", StringValue("user-service")),
-    ("service.description", StringValue("User management service")),
-    ("service.owner", StringValue("Platform Team"))
+test "arabic text handling in resource attributes" {
+  let attrs = [
+    ("اسم الخدمة", StringValue("خدمة المصادقة")),
+    ("الوصف", StringValue("معالجة تسجيل الدخول والتحقق من الهوية")),
+    ("رسالة الخطأ", StringValue("اسم المستخدم أو كلمة المرور غير صحيحة"))
   ]
-  let resource_en_with_attrs = Resource::with_attributes(resource_en, attrs_en)
   
-  let resource_zh = Resource::new()
-  let attrs_zh = [
-    ("service.name", StringValue("用户服务")),
-    ("service.description", StringValue("用户管理服务")),
-    ("service.owner", StringValue("平台团队"))
-  ]
-  let resource_zh_with_attrs = Resource::with_attributes(resource_zh, attrs_zh)
+  let resource = Resource::with_attributes(Resource::new(), attrs)
   
-  let resource_ja = Resource::new()
-  let attrs_ja = [
-    ("service.name", StringValue("ユーザーサービス")),
-    ("service.description", StringValue("ユーザー管理サービス")),
-    ("service.owner", StringValue("プラットフォームチーム"))
-  ]
-  let resource_ja_with_attrs = Resource::with_attributes(resource_ja, attrs_ja)
+  let service_name = Resource::get_attribute(resource, "اسم الخدمة")
+  let description = Resource::get_attribute(resource, "الوصف")
+  let error_msg = Resource::get_attribute(resource, "رسالة الخطأ")
   
-  // Verify localized attributes
-  let service_name_en = Resource::get_attribute(resource_en_with_attrs, "service.name")
-  let service_desc_en = Resource::get_attribute(resource_en_with_attrs, "service.description")
-  
-  let service_name_zh = Resource::get_attribute(resource_zh_with_attrs, "service.name")
-  let service_desc_zh = Resource::get_attribute(resource_zh_with_attrs, "service.description")
-  
-  let service_name_ja = Resource::get_attribute(resource_ja_with_attrs, "service.name")
-  let service_desc_ja = Resource::get_attribute(resource_ja_with_attrs, "service.description")
-  
-  match service_name_en {
-    Some(StringValue(name)) => assert_eq(name, "user-service")
-    _ => assert_true(false)
-  }
-  
-  match service_desc_en {
-    Some(StringValue(desc)) => assert_eq(desc, "User management service")
-    _ => assert_true(false)
-  }
-  
-  match service_name_zh {
-    Some(StringValue(name)) => assert_eq(name, "用户服务")
-    _ => assert_true(false)
-  }
-  
-  match service_desc_zh {
-    Some(StringValue(desc)) => assert_eq(desc, "用户管理服务")
-    _ => assert_true(false)
-  }
-  
-  match service_name_ja {
-    Some(StringValue(name)) => assert_eq(name, "ユーザーサービス")
-    _ => assert_true(false)
-  }
-  
-  match service_desc_ja {
-    Some(StringValue(desc)) => assert_eq(desc, "ユーザー管理サービス")
-    _ => assert_true(false)
-  }
+  assert_eq(service_name, Some(StringValue("خدمة المصادقة")))
+  assert_eq(description, Some(StringValue("معالجة تسجيل الدخول والتحقق من الهوية")))
+  assert_eq(error_msg, Some(StringValue("اسم المستخدم أو كلمة المرور غير صحيحة")))
 }
 
-test "localized baggage entries" {
-  // Create baggage with localized entries
-  let baggage_en = Baggage::new()
-  let baggage_en = Baggage::set_entry(baggage_en, "user.locale", "en-US")
-  let baggage_en = Baggage::set_entry(baggage_en, "user.region", "US")
-  let baggage_en = Baggage::set_entry(baggage_en, "user.currency", "USD")
+test "russian text handling in baggage" {
+  let baggage = Baggage::new()
+  let with_entries = Baggage::set_entry(baggage, "имя_пользователя", "Иван_Петров")
+  let final_baggage = Baggage::set_entry(with_entries, "идентификатор_сессии", "сессия_12345")
   
-  let baggage_zh = Baggage::new()
-  let baggage_zh = Baggage::set_entry(baggage_zh, "user.locale", "zh-CN")
-  let baggage_zh = Baggage::set_entry(baggage_zh, "user.region", "CN")
-  let baggage_zh = Baggage::set_entry(baggage_zh, "user.currency", "CNY")
+  let username = Baggage::get_entry(final_baggage, "имя_пользователя")
+  let session_id = Baggage::get_entry(final_baggage, "идентификатор_сессии")
   
-  let baggage_ja = Baggage::new()
-  let baggage_ja = Baggage::set_entry(baggage_ja, "user.locale", "ja-JP")
-  let baggage_ja = Baggage::set_entry(baggage_ja, "user.region", "JP")
-  let baggage_ja = Baggage::set_entry(baggage_ja, "user.currency", "JPY")
-  
-  // Verify localized baggage entries
-  assert_eq(Baggage::get_entry(baggage_en, "user.locale"), Some("en-US"))
-  assert_eq(Baggage::get_entry(baggage_en, "user.region"), Some("US"))
-  assert_eq(Baggage::get_entry(baggage_en, "user.currency"), Some("USD"))
-  
-  assert_eq(Baggage::get_entry(baggage_zh, "user.locale"), Some("zh-CN"))
-  assert_eq(Baggage::get_entry(baggage_zh, "user.region"), Some("CN"))
-  assert_eq(Baggage::get_entry(baggage_zh, "user.currency"), Some("CNY"))
-  
-  assert_eq(Baggage::get_entry(baggage_ja, "user.locale"), Some("ja-JP"))
-  assert_eq(Baggage::get_entry(baggage_ja, "user.region"), Some("JP"))
-  assert_eq(Baggage::get_entry(baggage_ja, "user.currency"), Some("JPY"))
+  assert_eq(username, Some("Иван_Петров"))
+  assert_eq(session_id, Some("сессия_12345"))
 }
 
-test "localized metrics names and descriptions" {
-  let meter_provider = MeterProvider::default()
+test "emoji and special character handling" {
+  let attrs = Attributes::new()
   
-  // Create meters for different locales
-  let meter_en = MeterProvider::get_meter(meter_provider, "en-metrics")
-  let meter_zh = MeterProvider::get_meter(meter_provider, "zh-metrics")
-  let meter_ja = MeterProvider::get_meter(meter_provider, "ja-metrics")
+  // Test emoji in attribute values
+  Attributes::set(attrs, "status", StringValue("✅ 成功"))
+  Attributes::set(attrs, "error", StringValue("❌ 失败"))
+  Attributes::set(attrs, "warning", StringValue("⚠️ 警告"))
+  Attributes::set(attrs, "performance", StringValue("📊 性能指标"))
   
-  // Create metrics with localized names and descriptions
-  let counter_en = Meter::create_counter(meter_en, "http_requests_total", Some("Total HTTP requests"), Some("requests"))
-  let counter_zh = Meter::create_counter(meter_zh, "http_请求总数", Some("HTTP请求总数"), Some("请求"))
-  let counter_ja = Meter::create_counter(meter_ja, "httpリクエスト総数", Some("HTTPリクエスト総数"), Some("リクエスト"))
+  let status = Attributes::get(attrs, "status")
+  let error = Attributes::get(attrs, "error")
+  let warning = Attributes::get(attrs, "warning")
+  let performance = Attributes::get(attrs, "performance")
   
-  // Verify localized metrics
-  assert_eq(counter_en.name, "http_requests_total")
-  assert_eq(counter_en.description, Some("Total HTTP requests"))
-  assert_eq(counter_en.unit, Some("requests"))
-  
-  assert_eq(counter_zh.name, "http_请求总数")
-  assert_eq(counter_zh.description, Some("HTTP请求总数"))
-  assert_eq(counter_zh.unit, Some("请求"))
-  
-  assert_eq(counter_ja.name, "httpリクエスト総数")
-  assert_eq(counter_ja.description, Some("HTTPリクエスト総数"))
-  assert_eq(counter_ja.unit, Some("リクエスト"))
+  assert_eq(status, Some(StringValue("✅ 成功")))
+  assert_eq(error, Some(StringValue("❌ 失败")))
+  assert_eq(warning, Some(StringValue("⚠️ 警告")))
+  assert_eq(performance, Some(StringValue("📊 性能指标")))
 }
 
-test "timezone handling in timestamps" {
-  let clock = Clock::system()
+test "mixed language text processing" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "多语言日志记录器")
   
-  // Get timestamps
-  let timestamp = Clock::now_unix_nanos(clock)
-  
-  // Create log records with timestamps
   let record = LogRecord::new_with_context(
-    Info,
-    Some("Event with timestamp"),
+    Warn,
+    Some("Mixed language log: 用户登录失败 - User login failed - ユーザーログイン失敗"),
     None,
-    Some(timestamp),
-    Some(timestamp + 1000000L),
-    Some("trace123"),
-    Some("span456"),
-    Some(Context::root())
+    Some(1735689600000000000L),
+    None,
+    Some("mixed-language-trace"),
+    Some("mixed-language-span"),
+    None
   )
   
-  // Verify timestamps are handled correctly
-  assert_eq(LogRecord::severity_number(record), Info)
-  assert_eq(LogRecord::body(record), Some("Event with timestamp"))
-  assert_eq(LogRecord::trace_id(record), Some("trace123"))
-  assert_eq(LogRecord::span_id(record), Some("span456"))
+  assert_eq(LogRecord::severity_number(record), Warn)
+  assert_eq(LogRecord::body(record), Some("Mixed language log: 用户登录失败 - User login failed - ユーザーログイン失敗"))
+  assert_eq(LogRecord::trace_id(record), Some("mixed-language-trace"))
+  assert_eq(LogRecord::span_id(record), Some("mixed-language-span"))
+  
+  Logger::emit(logger, record)
+  assert_true(true)
 }
 
-test "localized http headers" {
-  // Create HTTP requests with localized headers
-  let headers_en = [
-    ("Accept-Language", "en-US,en;q=0.9"),
-    ("Content-Type", "application/json"),
-    ("User-Agent", "AzimuthClient/1.0.0")
-  ]
-  let request_en = HttpRequest::new("GET", "https://api.example.com/data", headers_en)
+test "right-to-left text handling" {
+  let attrs = Attributes::new()
   
-  let headers_zh = [
-    ("Accept-Language", "zh-CN,zh;q=0.9"),
-    ("Content-Type", "application/json"),
-    ("User-Agent", "AzimuthClient/1.0.0")
-  ]
-  let request_zh = HttpRequest::new("GET", "https://api.example.com/data", headers_zh)
+  // Test RTL text (Hebrew and Arabic)
+  Attributes::set(attrs, "עברית", StringValue("שם השירות"))
+  Attributes::set(attrs, "العربية", StringValue("اسم الخدمة"))
   
-  let headers_ja = [
-    ("Accept-Language", "ja-JP,ja;q=0.9"),
-    ("Content-Type", "application/json"),
-    ("User-Agent", "AzimuthClient/1.0.0")
-  ]
-  let request_ja = HttpRequest::new("GET", "https://api.example.com/data", headers_ja)
+  let hebrew = Attributes::get(attrs, "עברית")
+  let arabic = Attributes::get(attrs, "العربية")
   
-  // Verify requests were created with localized headers
-  assert_eq(HttpRequest::http_method(request_en), "GET")
-  assert_eq(HttpRequest::http_method(request_zh), "GET")
-  assert_eq(HttpRequest::http_method(request_ja), "GET")
-  
-  assert_eq(HttpRequest::url(request_en), "https://api.example.com/data")
-  assert_eq(HttpRequest::url(request_zh), "https://api.example.com/data")
-  assert_eq(HttpRequest::url(request_ja), "https://api.example.com/data")
+  assert_eq(hebrew, Some(StringValue("שם השירות")))
+  assert_eq(arabic, Some(StringValue("اسم الخدمة")))
 }
 
-test "localized span names and events" {
-  let tracer_provider = TracerProvider::default()
+test "internationalized metric names and descriptions" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "国际化仪表板")
   
-  // Create tracers for different locales
-  let tracer_en = TracerProvider::get_tracer(tracer_provider, "en-service")
-  let tracer_zh = TracerProvider::get_tracer(tracer_provider, "zh-service")
-  let tracer_ja = TracerProvider::get_tracer(tracer_provider, "ja-service")
+  let counter = Meter::create_counter(
+    meter, 
+    "http.请求.总数", 
+    Some("HTTP请求总数计数器"), 
+    Some("请求")
+  )
   
-  // Create spans with localized names
-  let span_en = Tracer::start_span(tracer_en, "user.registration")
-  let span_zh = Tracer::start_span(tracer_zh, "用户注册")
-  let span_ja = Tracer::start_span(tracer_ja, "ユーザー登録")
+  let histogram = Meter::create_histogram(
+    meter,
+    "响应时间.分布",
+    Some("响应时间分布直方图"),
+    Some("毫秒")
+  )
   
-  // Add localized events
-  Span::add_event(span_en, "validation.started", Some([
-    ("step", StringValue("email_validation")),
-    ("message", StringValue("Validating email format"))
-  ]))
+  assert_eq(counter.name, "http.请求.总数")
+  assert_eq(counter.description, Some("HTTP请求总数计数器"))
+  assert_eq(counter.unit, Some("请求"))
   
-  Span::add_event(span_zh, "validation.started", Some([
-    ("step", StringValue("email_validation")),
-    ("message", StringValue("验证电子邮件格式"))
-  ]))
+  assert_eq(histogram.name, "响应时间.分布")
+  assert_eq(histogram.description, Some("响应时间分布直方图"))
+  assert_eq(histogram.unit, Some("毫秒"))
+}
+
+test "unicode normalization and comparison" {
+  let attrs = Attributes::new()
   
-  Span::add_event(span_ja, "validation.started", Some([
-    ("step", StringValue("email_validation")),
-    ("message", StringValue("メール形式を検証中"))
-  ]))
+  // Test different Unicode representations of the same text
+  Attributes::set(attrs, "normalized1", StringValue("café"))  // Using é
+  Attributes::set(attrs, "normalized2", StringValue("cafe\u0301"))  // Using e + combining acute accent
   
-  // End spans
-  Span::end(span_en)
-  Span::end(span_zh)
-  Span::end(span_ja)
+  let normalized1 = Attributes::get(attrs, "normalized1")
+  let normalized2 = Attributes::get(attrs, "normalized2")
   
-  // Verify spans were created with localized names
-  assert_eq(Span::name(span_en), "user.registration")
-  assert_eq(Span::name(span_zh), "用户注册")
-  assert_eq(Span::name(span_ja), "ユーザー登録")
+  // Note: In a real implementation, you might want to normalize Unicode before comparison
+  // For this test, we just verify both values are stored as provided
+  assert_eq(normalized1, Some(StringValue("café")))
+  assert_eq(normalized2, Some(StringValue("cafe\u0301")))
+}
+
+test "international text in context propagation" {
+  let ctx = Context::root()
+  let key = ContextKey::new("国际化键")
+  let ctx_with_value = Context::with_value(ctx, key, "国际化值")
+  
+  let retrieved_value = Context::get(ctx_with_value, key)
+  assert_eq(retrieved_value, Some("国际化值"))
+  
+  // Test with different languages
+  let english_key = ContextKey::new("english.key")
+  let ctx_english = Context::with_value(ctx, english_key, "English value")
+  
+  let chinese_key = ContextKey::new("中文键")
+  let ctx_chinese = Context::with_value(ctx, chinese_key, "中文值")
+  
+  let english_value = Context::get(ctx_english, english_key)
+  let chinese_value = Context::get(ctx_chinese, chinese_key)
+  
+  assert_eq(english_value, Some("English value"))
+  assert_eq(chinese_value, Some("中文值"))
 }

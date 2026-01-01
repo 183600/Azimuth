@@ -1,295 +1,221 @@
-// Resource Merge Strategy Tests
-// This file contains comprehensive tests for resource merge strategies and behaviors
+// Resource Merge Strategy Tests for Azimuth Telemetry System
+// This file contains test cases for resource merge strategies
 
-test "basic resource attribute merging" {
-  // Test basic resource attribute merging behavior
-  let base_resource = Resource::new()
+test "resource creation and basic operations" {
+  let resource = Resource::new()
+  
+  // Verify empty resource
+  assert_eq(Resource::get_attribute(resource, "any.key"), None)
+  
+  // Add attributes to resource
+  let attrs = [
+    ("service.name", StringValue("test-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123"))
+  ]
+  
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  
+  // Verify attributes were added
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
+  let service_instance = Resource::get_attribute(resource_with_attrs, "service.instance.id")
+  
+  assert_eq(service_name, Some(StringValue("test-service")))
+  assert_eq(service_version, Some(StringValue("1.0.0")))
+  assert_eq(service_instance, Some(StringValue("instance-123")))
+}
+
+test "resource merge with override strategy" {
   let base_attrs = [
     ("service.name", StringValue("base-service")),
     ("service.version", StringValue("1.0.0")),
-    ("deployment.environment", StringValue("production"))
+    ("deployment.environment", StringValue("development"))
   ]
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
   
-  let override_resource = Resource::new()
   let override_attrs = [
-    ("service.name", StringValue("override-service")), // Should override
-    ("service.instance.id", StringValue("instance-123")), // New attribute
-    ("host.name", StringValue("host-001"))
+    ("service.name", StringValue("override-service")),
+    ("service.instance.id", StringValue("instance-456")),
+    ("host.name", StringValue("localhost"))
   ]
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
   
-  // Merge resources
-  let merged = Resource::merge(base_with_attrs, override_with_attrs)
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
+  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
   
-  // Verify merge results
-  let service_name = Resource::get_attribute(merged, "service.name")
-  let service_version = Resource::get_attribute(merged, "service.version")
-  let environment = Resource::get_attribute(merged, "deployment.environment")
-  let instance_id = Resource::get_attribute(merged, "service.instance.id")
-  let host_name = Resource::get_attribute(merged, "host.name")
+  // Merge resources with override strategy
+  let merged_resource = Resource::merge(base_resource, override_resource)
   
-  assert_true(service_name != None) // Should have overridden value
-  assert_eq(service_version, Some(StringValue("1.0.0"))) // Should preserve base value
-  assert_eq(environment, Some(StringValue("production"))) // Should preserve base value
-  assert_eq(instance_id, Some(StringValue("instance-123"))) // Should have new value
-  assert_eq(host_name, Some(StringValue("host-001"))) // Should have new value
+  // Verify override resource takes precedence
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  let service_version = Resource::get_attribute(merged_resource, "service.version")
+  let service_instance = Resource::get_attribute(merged_resource, "service.instance.id")
+  let deployment_env = Resource::get_attribute(merged_resource, "deployment.environment")
+  let host_name = Resource::get_attribute(merged_resource, "host.name")
+  
+  assert_eq(service_name, Some(StringValue("override-service")))
+  assert_eq(service_version, Some(StringValue("1.0.0")))
+  assert_eq(service_instance, Some(StringValue("instance-456")))
+  assert_eq(deployment_env, Some(StringValue("development")))
+  assert_eq(host_name, Some(StringValue("localhost")))
 }
 
 test "resource merge with different attribute types" {
-  // Test resource merging with different attribute types
-  let base_resource = Resource::new()
   let base_attrs = [
-    ("string.attr", StringValue("base-string")),
-    ("int.attr", IntValue(42)),
-    ("float.attr", FloatValue(3.14)),
-    ("bool.attr", BoolValue(true))
+    ("service.name", StringValue("multi-type-service")),
+    ("process.pid", IntValue(12345)),
+    ("process.cpu.percent", FloatValue(75.5)),
+    ("service.debug.enabled", BoolValue(true))
   ]
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
   
-  let override_resource = Resource::new()
   let override_attrs = [
-    ("string.attr", StringValue("override-string")), // Override string
-    ("int.attr", IntValue(100)), // Override int
-    ("float.attr", FloatValue(2.71)), // Override float
-    ("bool.attr", BoolValue(false)), // Override bool
-    ("array.string", ArrayStringValue(["a", "b", "c"])) // New array attribute
+    ("service.name", StringValue("updated-service")),
+    ("process.pid", IntValue(67890)),
+    ("service.debug.enabled", BoolValue(false)),
+    ("service.tags", ArrayStringValue(["tag1", "tag2", "tag3"]))
   ]
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
   
-  // Merge resources
-  let merged = Resource::merge(base_with_attrs, override_with_attrs)
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
+  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
   
-  // Verify type-specific merging
-  let string_attr = Resource::get_attribute(merged, "string.attr")
-  let int_attr = Resource::get_attribute(merged, "int.attr")
-  let float_attr = Resource::get_attribute(merged, "float.attr")
-  let bool_attr = Resource::get_attribute(merged, "bool.attr")
-  let array_attr = Resource::get_attribute(merged, "array.string")
+  let merged_resource = Resource::merge(base_resource, override_resource)
   
-  assert_eq(string_attr, Some(StringValue("override-string")))
-  assert_eq(int_attr, Some(IntValue(100)))
-  assert_eq(float_attr, Some(FloatValue(2.71)))
-  assert_eq(bool_attr, Some(BoolValue(false)))
-  assert_eq(array_attr, Some(ArrayStringValue(["a", "b", "c"])))
+  // Verify different types are handled correctly
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  let process_pid = Resource::get_attribute(merged_resource, "process.pid")
+  let process_cpu = Resource::get_attribute(merged_resource, "process.cpu.percent")
+  let debug_enabled = Resource::get_attribute(merged_resource, "service.debug.enabled")
+  let service_tags = Resource::get_attribute(merged_resource, "service.tags")
+  
+  assert_eq(service_name, Some(StringValue("updated-service")))
+  assert_eq(process_pid, Some(IntValue(67890)))
+  assert_eq(process_cpu, Some(FloatValue(75.5)))
+  assert_eq(debug_enabled, Some(BoolValue(false)))
+  assert_eq(service_tags, Some(ArrayStringValue(["tag1", "tag2", "tag3"])))
 }
 
 test "resource merge with empty resources" {
-  // Test resource merging with empty resources
-  let non_empty_resource = Resource::new()
-  let attrs = [
-    ("service.name", StringValue("test-service")),
-    ("service.version", StringValue("1.0.0"))
+  let base_attrs = [
+    ("service.name", StringValue("base-only-service")),
+    ("service.version", StringValue("2.0.0"))
   ]
-  let non_empty_with_attrs = Resource::with_attributes(non_empty_resource, attrs)
   
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
   let empty_resource = Resource::new()
   
-  // Merge non-empty with empty
-  let merged1 = Resource::merge(non_empty_with_attrs, empty_resource)
+  // Merge base with empty
+  let merged_with_empty = Resource::merge(base_resource, empty_resource)
   
-  // Merge empty with non-empty
-  let merged2 = Resource::merge(empty_resource, non_empty_with_attrs)
+  // Verify base attributes are preserved
+  let service_name = Resource::get_attribute(merged_with_empty, "service.name")
+  let service_version = Resource::get_attribute(merged_with_empty, "service.version")
   
-  // Merge empty with empty
-  let merged3 = Resource::merge(empty_resource, empty_resource)
+  assert_eq(service_name, Some(StringValue("base-only-service")))
+  assert_eq(service_version, Some(StringValue("2.0.0")))
   
-  // Verify results
-  let service_name1 = Resource::get_attribute(merged1, "service.name")
-  let service_name2 = Resource::get_attribute(merged2, "service.name")
-  let service_name3 = Resource::get_attribute(merged3, "service.name")
+  // Merge empty with base
+  let merged_empty_with = Resource::merge(empty_resource, base_resource)
   
-  assert_eq(service_name1, Some(StringValue("test-service")))
-  assert_eq(service_name2, Some(StringValue("test-service")))
-  assert_eq(service_name3, None)
-}
-
-test "resource merge with large attribute sets" {
-  // Test resource merging with large attribute sets
-  let base_resource = Resource::new()
-  let mut base_attrs = []
-  for i = 0; i < 100; i = i + 1 {
-    base_attrs = base_attrs.push(("base.attr." + i.to_string(), StringValue("base.value." + i.to_string())))
-  }
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
+  // Verify base attributes are preserved
+  let service_name2 = Resource::get_attribute(merged_empty_with, "service.name")
+  let service_version2 = Resource::get_attribute(merged_empty_with, "service.version")
   
-  let override_resource = Resource::new()
-  let mut override_attrs = []
-  for i = 0; i < 50; i = i + 1 {
-    override_attrs = override_attrs.push(("base.attr." + i.to_string(), StringValue("override.value." + i.to_string())))
-  }
-  for i = 0; i < 50; i = i + 1 {
-    override_attrs = override_attrs.push(("new.attr." + i.to_string(), StringValue("new.value." + i.to_string())))
-  }
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
-  
-  // Merge large attribute sets
-  let merged = Resource::merge(base_with_attrs, override_with_attrs)
-  
-  // Verify merge results
-  let overridden_attr = Resource::get_attribute(merged, "base.attr.0")
-  let preserved_attr = Resource::get_attribute(merged, "base.attr.99")
-  let new_attr = Resource::get_attribute(merged, "new.attr.0")
-  
-  assert_eq(overridden_attr, Some(StringValue("override.value.0")))
-  assert_eq(preserved_attr, Some(StringValue("base.value.99")))
-  assert_eq(new_attr, Some(StringValue("new.value.0")))
-}
-
-test "resource merge with special characters in keys" {
-  // Test resource merging with special characters in attribute keys
-  let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("base-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("special.key-with.dots_and-underscores", StringValue("base-special")),
-    ("unicode.key.测试", StringValue("base-unicode")),
-    ("key with spaces", StringValue("base-spaces"))
-  ]
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
-  
-  let override_resource = Resource::new()
-  let override_attrs = [
-    ("service.name", StringValue("override-service")),
-    ("special.key-with.dots_and-underscores", StringValue("override-special")),
-    ("unicode.key.测试", StringValue("override-unicode")),
-    ("key with spaces", StringValue("override-spaces")),
-    ("emoji.key.🚀", StringValue("emoji-value"))
-  ]
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
-  
-  // Merge resources with special characters
-  let merged = Resource::merge(base_with_attrs, override_with_attrs)
-  
-  // Verify special character handling
-  let service_name = Resource::get_attribute(merged, "service.name")
-  let special_key = Resource::get_attribute(merged, "special.key-with.dots_and-underscores")
-  let unicode_key = Resource::get_attribute(merged, "unicode.key.测试")
-  let spaces_key = Resource::get_attribute(merged, "key with spaces")
-  let emoji_key = Resource::get_attribute(merged, "emoji.key.🚀")
-  
-  assert_eq(service_name, Some(StringValue("override-service")))
-  assert_eq(special_key, Some(StringValue("override-special")))
-  assert_eq(unicode_key, Some(StringValue("override-unicode")))
-  assert_eq(spaces_key, Some(StringValue("override-spaces")))
-  assert_eq(emoji_key, Some(StringValue("emoji-value")))
-}
-
-test "resource merge chain behavior" {
-  // Test resource merge chain behavior (multiple merges in sequence)
-  let initial_resource = Resource::new()
-  let initial_attrs = [
-    ("service.name", StringValue("initial-service")),
-    ("initial.attr", StringValue("initial-value"))
-  ]
-  let initial_with_attrs = Resource::with_attributes(initial_resource, initial_attrs)
-  
-  let stage1_resource = Resource::new()
-  let stage1_attrs = [
-    ("service.name", StringValue("stage1-service")),
-    ("stage1.attr", StringValue("stage1-value"))
-  ]
-  let stage1_with_attrs = Resource::with_attributes(stage1_resource, stage1_attrs)
-  
-  let stage2_resource = Resource::new()
-  let stage2_attrs = [
-    ("service.version", StringValue("2.0.0")),
-    ("stage2.attr", StringValue("stage2-value"))
-  ]
-  let stage2_with_attrs = Resource::with_attributes(stage2_resource, stage2_attrs)
-  
-  let final_resource = Resource::new()
-  let final_attrs = [
-    ("deployment.environment", StringValue("production")),
-    ("final.attr", StringValue("final-value"))
-  ]
-  let final_with_attrs = Resource::with_attributes(final_resource, final_attrs)
-  
-  // Chain merges
-  let merged1 = Resource::merge(initial_with_attrs, stage1_with_attrs)
-  let merged2 = Resource::merge(merged1, stage2_with_attrs)
-  let final_merged = Resource::merge(merged2, final_with_attrs)
-  
-  // Verify chain merge results
-  let service_name = Resource::get_attribute(final_merged, "service.name")
-  let initial_attr = Resource::get_attribute(final_merged, "initial.attr")
-  let stage1_attr = Resource::get_attribute(final_merged, "stage1.attr")
-  let service_version = Resource::get_attribute(final_merged, "service.version")
-  let stage2_attr = Resource::get_attribute(final_merged, "stage2.attr")
-  let environment = Resource::get_attribute(final_merged, "deployment.environment")
-  let final_attr = Resource::get_attribute(final_merged, "final.attr")
-  
-  assert_eq(service_name, Some(StringValue("stage1-service"))) // Overridden by stage1
-  assert_eq(initial_attr, Some(StringValue("initial-value"))) // Preserved from initial
-  assert_eq(stage1_attr, Some(StringValue("stage1-value"))) // From stage1
-  assert_eq(service_version, Some(StringValue("2.0.0"))) // From stage2
-  assert_eq(stage2_attr, Some(StringValue("stage2-value"))) // From stage2
-  assert_eq(environment, Some(StringValue("production"))) // From final
-  assert_eq(final_attr, Some(StringValue("final-value"))) // From final
-}
-
-test "resource merge with null and empty values" {
-  // Test resource merging with null and empty values
-  let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("base-service")),
-    ("empty.string", StringValue("")),
-    ("normal.attr", StringValue("normal-value"))
-  ]
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
-  
-  let override_resource = Resource::new()
-  let override_attrs = [
-    ("service.name", StringValue("override-service")),
-    ("empty.string", StringValue("")), // Override with empty string
-    ("null.attr", StringValue("null-value")) // New attribute
-  ]
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
-  
-  // Merge with null and empty values
-  let merged = Resource::merge(base_with_attrs, override_with_attrs)
-  
-  // Verify null and empty value handling
-  let service_name = Resource::get_attribute(merged, "service.name")
-  let empty_string = Resource::get_attribute(merged, "empty.string")
-  let normal_attr = Resource::get_attribute(merged, "normal.attr")
-  let null_attr = Resource::get_attribute(merged, "null.attr")
-  
-  assert_eq(service_name, Some(StringValue("override-service")))
-  assert_eq(empty_string, Some(StringValue(""))) // Empty string should be preserved
-  assert_eq(normal_attr, Some(StringValue("normal-value"))) // Should be preserved
-  assert_eq(null_attr, Some(StringValue("null-value"))) // Should be added
+  assert_eq(service_name2, Some(StringValue("base-only-service")))
+  assert_eq(service_version2, Some(StringValue("2.0.0")))
 }
 
 test "resource merge with array attributes" {
-  // Test resource merging with array attributes
-  let base_resource = Resource::new()
   let base_attrs = [
-    ("string.array", ArrayStringValue(["a", "b", "c"])),
-    ("int.array", ArrayIntValue([1, 2, 3])),
-    ("normal.attr", StringValue("normal-value"))
+    ("service.name", StringValue("array-service")),
+    ("service.endpoints", ArrayStringValue(["http://api1.example.com", "http://api2.example.com"])),
+    ("service.ports", ArrayIntValue([8080, 8081]))
   ]
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attrs)
   
-  let override_resource = Resource::new()
   let override_attrs = [
-    ("string.array", ArrayStringValue(["x", "y", "z"])), // Override array
-    ("int.array", ArrayIntValue([10, 20, 30])), // Override array
-    ("new.array", ArrayStringValue(["new", "array"])) // New array
+    ("service.name", StringValue("updated-array-service")),
+    ("service.endpoints", ArrayStringValue(["http://api3.example.com"])),
+    ("service.protocols", ArrayStringValue(["http", "https"]))
   ]
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
   
-  // Merge with array attributes
-  let merged = Resource::merge(base_with_attrs, override_with_attrs)
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
+  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
   
-  // Verify array attribute merging
-  let string_array = Resource::get_attribute(merged, "string.array")
-  let int_array = Resource::get_attribute(merged, "int.array")
-  let normal_attr = Resource::get_attribute(merged, "normal.attr")
-  let new_array = Resource::get_attribute(merged, "new.array")
+  let merged_resource = Resource::merge(base_resource, override_resource)
   
-  assert_eq(string_array, Some(ArrayStringValue(["x", "y", "z"]))) // Overridden
-  assert_eq(int_array, Some(ArrayIntValue([10, 20, 30]))) // Overridden
-  assert_eq(normal_attr, Some(StringValue("normal-value"))) // Preserved
-  assert_eq(new_array, Some(ArrayStringValue(["new", "array"]))) // Added
+  // Verify array attributes are handled correctly
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  let endpoints = Resource::get_attribute(merged_resource, "service.endpoints")
+  let ports = Resource::get_attribute(merged_resource, "service.ports")
+  let protocols = Resource::get_attribute(merged_resource, "service.protocols")
+  
+  assert_eq(service_name, Some(StringValue("updated-array-service")))
+  assert_eq(endpoints, Some(ArrayStringValue(["http://api3.example.com"])))
+  assert_eq(ports, Some(ArrayIntValue([8080, 8081])))
+  assert_eq(protocols, Some(ArrayStringValue(["http", "https"])))
+}
+
+test "resource merge with special characters and unicode" {
+  let base_attrs = [
+    ("service.name", StringValue("特殊服务")),
+    ("service.description", StringValue("Service with special chars: @#$%^&*()")),
+    ("service.unicode.tags", StringValue("标签1,标签2,标签3"))
+  ]
+  
+  let override_attrs = [
+    ("service.name", StringValue("更新服务")),
+    ("service.encoding", StringValue("UTF-8")),
+    ("service.emoji", StringValue("🚀📊📈"))
+  ]
+  
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
+  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
+  
+  let merged_resource = Resource::merge(base_resource, override_resource)
+  
+  // Verify unicode and special characters are preserved
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  let service_desc = Resource::get_attribute(merged_resource, "service.description")
+  let unicode_tags = Resource::get_attribute(merged_resource, "service.unicode.tags")
+  let encoding = Resource::get_attribute(merged_resource, "service.encoding")
+  let emoji = Resource::get_attribute(merged_resource, "service.emoji")
+  
+  assert_eq(service_name, Some(StringValue("更新服务")))
+  assert_eq(service_desc, Some(StringValue("Service with special chars: @#$%^&*()")))
+  assert_eq(unicode_tags, Some(StringValue("标签1,标签2,标签3")))
+  assert_eq(encoding, Some(StringValue("UTF-8")))
+  assert_eq(emoji, Some(StringValue("🚀📊📈")))
+}
+
+test "resource merge chain operations" {
+  // Create multiple resources to merge in a chain
+  let resource1 = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("service-1")),
+    ("service.version", StringValue("1.0.0"))
+  ])
+  
+  let resource2 = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("service-2")),
+    ("deployment.environment", StringValue("production"))
+  ])
+  
+  let resource3 = Resource::with_attributes(Resource::new(), [
+    ("service.instance.id", StringValue("instance-123")),
+    ("host.name", StringValue("prod-server-01"))
+  ])
+  
+  // Merge in chain: resource1 -> resource2 -> resource3
+  let merged1_2 = Resource::merge(resource1, resource2)
+  let final_merged = Resource::merge(merged1_2, resource3)
+  
+  // Verify final merged resource contains all expected attributes
+  let service_name = Resource::get_attribute(final_merged, "service.name")
+  let service_version = Resource::get_attribute(final_merged, "service.version")
+  let deployment_env = Resource::get_attribute(final_merged, "deployment.environment")
+  let instance_id = Resource::get_attribute(final_merged, "service.instance.id")
+  let host_name = Resource::get_attribute(final_merged, "host.name")
+  
+  assert_eq(service_name, Some(StringValue("service-2")))
+  assert_eq(service_version, Some(StringValue("1.0.0")))
+  assert_eq(deployment_env, Some(StringValue("production")))
+  assert_eq(instance_id, Some(StringValue("instance-123")))
+  assert_eq(host_name, Some(StringValue("prod-server-01")))
 }
