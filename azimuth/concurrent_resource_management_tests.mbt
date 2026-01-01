@@ -1,328 +1,364 @@
-// Concurrent Resource Management Tests
-// This file contains test cases for resource management in high-concurrency scenarios
+// 并发资源管理测试
+// 测试遥测系统在高并发场景下的资源管理能力
 
-test "concurrent span creation and management" {
-  // Test creating and managing multiple spans concurrently
-  let trace_id = "concurrent-trace"
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "concurrent-test")
+import "azimuth/azimuth"
+
+pub test "多线程Span创建和销毁测试" {
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "concurrent-span-test")
   
-  // Create multiple spans with different IDs
-  let span_ids = ["span-1", "span-2", "span-3", "span-4", "span-5"]
-  let spans = []
+  let initial_resources = azimuth::ResourceManager::active_resources()
   
-  // Create spans concurrently
-  for span_id in span_ids {
-    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
-    let span = Tracer::start_span(tracer, "concurrent-operation-" + span_id)
-    spans.push(span)
+  // 创建多个并发任务
+  let concurrent_tasks = []
+  for thread_id in 0..10 {
+    let task = azimuth::ConcurrentTask::new(fn() {
+      // 每个任务创建100个Span
+      let spans = []
+      for i in 0..100 {
+        let span_name = "thread-" + thread_id.to_string() + "-span-" + i.to_string()
+        let span = azimuth::Tracer::start_span(tracer, span_name)
+        
+        // 添加属性和事件
+        azimuth::Span::add_event(span, "concurrent.event", Some([
+          ("thread.id", azimuth::IntValue(thread_id)),
+          ("span.index", azimuth::IntValue(i))
+        ]))
+        
+        spans.push(span)
+      }
+      
+      // 随机结束一些Span
+      for i in 0..50 {
+        let span_index = i * 2  // 结束偶数索引的Span
+        if (span_index < spans.length()) {
+          azimuth::Span::end(spans[span_index])
+        }
+      }
+      
+      spans.length()
+    })
+    
+    concurrent_tasks.push(task)
   }
   
-  // Verify all spans are created with correct properties
-  for i in 0..<span_ids.length {
-    let span = spans[i]
-    assert_true(Span::is_recording(span))
-    assert_eq(Span::name(span), "concurrent-operation-" + span_ids[i])
-    assert_eq(Span::kind(span), Internal)
+  // 启动所有并发任务
+  for task in concurrent_tasks {
+    azimuth::ConcurrentTask::start(task)
   }
   
-  // End all spans
-  for span in spans {
-    Span::end(span)
+  // 等待所有任务完成
+  let total_spans_created = 0
+  for task in concurrent_tasks {
+    let result = azimuth::ConcurrentTask::wait_for_completion(task)
+    total_spans_created = total_spans_created + result
   }
   
-  assert_true(true)
+  let peak_resources = azimuth::ResourceManager::peak_resources()
+  let final_resources = azimuth::ResourceManager::active_resources()
+  
+  // 验证并发执行结果
+  assert_eq(total_spans_created, 1000)  // 10个线程 × 100个Span
+  assert_true(peak_resources > initial_resources)
+  assert_true(final_resources <= peak_resources)
+  
+  // 清理剩余Span
+  azimuth::ResourceManager::cleanup_all_spans()
 }
 
-test "concurrent metrics operations" {
-  // Test concurrent metrics operations
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent-metrics")
+pub test "并发度量操作测试" {
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "concurrent-metrics")
   
-  // Create different metric instruments
-  let counter = Meter::create_counter(meter, "concurrent.operations", Some("Concurrent operations"), Some("ops"))
-  let histogram = Meter::create_histogram(meter, "concurrent.duration", Some("Concurrent operation duration"), Some("ms"))
-  let gauge = Meter::create_gauge(meter, "concurrent.memory", Some("Concurrent memory usage"), Some("bytes"))
-  let updown_counter = Meter::create_updown_counter(meter, "concurrent.connections", Some("Concurrent connections"), Some("conn"))
+  let counter = azimuth::Meter::create_counter(meter, "concurrent.counter")
+  let histogram = azimuth::Meter::create_histogram(meter, "concurrent.histogram")
+  let gauge = azimuth::Meter::create_gauge(meter, "concurrent.gauge")
   
-  // Perform concurrent operations on different metrics
-  for i in 0..<10 {
-    Counter::add(counter, Double.from_int(i))
-    Histogram::record(histogram, Double.from_int(i * 10))
-    UpDownCounter::add(gauge, Double.from_int(1024 * i))
-    UpDownCounter::add(updown_counter, Double.from_int(i - 5))
-  }
+  let initial_metrics = azimuth::MetricsCollector::total_metrics()
   
-  // Verify metrics properties
-  assert_eq(counter.name, "concurrent.operations")
-  assert_eq(histogram.name, "concurrent.duration")
-  assert_eq(gauge.name, "concurrent.memory")
-  assert_eq(updown_counter.name, "concurrent.connections")
-  
-  assert_eq(counter.unit, Some("ops"))
-  assert_eq(histogram.unit, Some("ms"))
-  assert_eq(gauge.unit, Some("bytes"))
-  assert_eq(updown_counter.unit, Some("conn"))
-  
-  assert_true(true)
-}
-
-test "concurrent log emission" {
-  // Test concurrent log emission
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "concurrent-logger")
-  
-  // Create multiple log records with different severities
-  let severities = [Trace, Debug, Info, Warn, Error, Fatal]
-  let logs = []
-  
-  // Create log records concurrently
-  for i in 0..<20 {
-    let severity = severities[i % severities.length]
-    let log = LogRecord::new_with_context(
-      severity,
-      Some("Concurrent log message " + Int.to_string(i)),
-      Some(Attributes::new()),
-      Some(Int64.from_int(1640995200 + i) * 1000000000L),
-      Some(Int64.from_int(1640995200 + i) * 1000000000L),
-      Some("concurrent-trace"),
-      Some("concurrent-span-" + Int.to_string(i)),
-      Some(Context::root())
-    )
-    logs.push(log)
-  }
-  
-  // Emit all logs
-  for log in logs {
-    Logger::emit(logger, log)
-  }
-  
-  // Verify log properties
-  for i in 0..<logs.length {
-    let log = logs[i]
-    let expected_severity = severities[i % severities.length]
-    assert_eq(LogRecord::severity_number(log), expected_severity)
-    assert_eq(LogRecord::body(log), Some("Concurrent log message " + Int.to_string(i)))
-    assert_eq(LogRecord::trace_id(log), Some("concurrent-trace"))
-  }
-  
-  assert_true(true)
-}
-
-test "concurrent context propagation" {
-  // Test concurrent context propagation
-  let base_contexts = []
-  
-  // Create multiple contexts with different values
-  for i in 0..<10 {
-    let ctx = Context::root()
-    let key = ContextKey::new("concurrent.key." + Int.to_string(i))
-    let ctx_with_value = Context::with_value(ctx, key, "value-" + Int.to_string(i))
-    base_contexts.push(ctx_with_value)
-  }
-  
-  // Create composite propagator
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([trace_propagator])
-  
-  // Perform concurrent injection and extraction
-  let carriers = []
-  for ctx in base_contexts {
-    let carrier = TextMapCarrier::new()
-    CompositePropagator::inject(composite, ctx, carrier)
-    carriers.push(carrier)
-  }
-  
-  // Extract contexts from carriers
-  let extracted_contexts = []
-  for carrier in carriers {
-    let extracted_ctx = CompositePropagator::extract(composite, carrier)
-    extracted_contexts.push(extracted_ctx)
-  }
-  
-  // Verify extraction
-  for extracted_ctx in extracted_contexts {
-    let extracted_key = ContextKey::new("extracted")
-    let extracted_value = Context::get(extracted_ctx, extracted_key)
-    assert_eq(extracted_value, Some("true"))
-  }
-  
-  assert_true(true)
-}
-
-test "concurrent baggage operations" {
-  // Test concurrent baggage operations
-  let base_baggage = Baggage::new()
-  let modified_baggages = []
-  
-  // Create multiple modified baggage instances
-  for i in 0..<15 {
-    let baggage = Baggage::set_entry(base_baggage, "concurrent.key." + Int.to_string(i), "value-" + Int.to_string(i))
-    modified_baggages.push(baggage)
-  }
-  
-  // Perform concurrent operations on each baggage
-  let results = []
-  for i in 0..<modified_baggages.length {
-    let baggage = modified_baggages[i]
+  // 创建多个并发度量任务
+  let metric_tasks = []
+  for thread_id in 0..20 {
+    let counter_task = azimuth::ConcurrentTask::new(fn() {
+      for i in 0..500 {
+        azimuth::Counter::add(counter, 1.0)
+      }
+      500
+    })
     
-    // Add more entries
-    let updated_baggage = Baggage::set_entry(baggage, "additional.key." + Int.to_string(i), "additional-value-" + Int.to_string(i))
+    let histogram_task = azimuth::ConcurrentTask::new(fn() {
+      for i in 0..500 {
+        azimuth::Histogram::record(histogram, i.to_double())
+      }
+      500
+    })
     
-    // Retrieve entries
-    let value1 = Baggage::get_entry(updated_baggage, "concurrent.key." + Int.to_string(i))
-    let value2 = Baggage::get_entry(updated_baggage, "additional.key." + Int.to_string(i))
+    let gauge_task = azimuth::ConcurrentTask::new(fn() {
+      for i in 0..100 {
+        azimuth::Gauge::set(gauge, i.to_double())
+        azimuth::Clock::sleep(1)  // 短暂延迟
+      }
+      100
+    })
     
-    // Remove entries
-    let final_baggage = Baggage::remove_entry(updated_baggage, "concurrent.key." + Int.to_string(i))
-    
-    results.push((value1, value2, final_baggage))
+    metric_tasks.push(counter_task)
+    metric_tasks.push(histogram_task)
+    metric_tasks.push(gauge_task)
   }
   
-  // Verify operations
-  for i in 0..<results.length {
-    let (value1, value2, final_baggage) = results[i]
-    assert_eq(value1, Some("value-" + Int.to_string(i)))
-    assert_eq(value2, Some("additional-value-" + Int.to_string(i)))
-    assert_eq(Baggage::get_entry(final_baggage, "concurrent.key." + Int.to_string(i)), None)
-    assert_eq(Baggage::get_entry(final_baggage, "additional.key." + Int.to_string(i)), Some("additional-value-" + Int.to_string(i)))
+  // 启动所有度量任务
+  for task in metric_tasks {
+    azimuth::ConcurrentTask::start(task)
   }
   
-  assert_true(true)
-}
-
-test "concurrent resource operations" {
-  // Test concurrent resource operations
-  let base_resources = []
+  // 等待所有任务完成
+  let total_counter_operations = 0
+  let total_histogram_operations = 0
+  let total_gauge_operations = 0
   
-  // Create multiple resources with different attributes
-  for i in 0..<8 {
-    let resource = Resource::new()
-    let resource_with_attrs = Resource::with_attributes(
-      resource,
-      [
-        ("service.name", StringValue("concurrent-service-" + Int.to_string(i))),
-        ("service.instance.id", StringValue("instance-" + Int.to_string(i))),
-        ("service.version", StringValue("1.0." + Int.to_string(i)))
-      ]
-    )
-    base_resources.push(resource_with_attrs)
-  }
-  
-  // Perform concurrent resource merges
-  let merged_resources = []
-  for i in 0..<base_resources.length {
-    let base_resource = base_resources[i]
-    let override_resource = Resource::with_attributes(
-      Resource::new(),
-      [
-        ("host.name", StringValue("host-" + Int.to_string(i))),
-        ("deployment.environment", StringValue("concurrent-test"))
-      ]
-    )
+  for i in 0..metric_tasks.length() {
+    let task = metric_tasks[i]
+    let result = azimuth::ConcurrentTask::wait_for_completion(task)
     
-    let merged_resource = Resource::merge(base_resource, override_resource)
-    merged_resources.push(merged_resource)
-  }
-  
-  // Verify merged resources
-  for i in 0..<merged_resources.length {
-    let merged_resource = merged_resources[i]
-    assert_eq(Resource::get_attribute(merged_resource, "host.name"), Some(StringValue("host-" + Int.to_string(i))))
-    assert_eq(Resource::get_attribute(merged_resource, "deployment.environment"), Some(StringValue("concurrent-test")))
-  }
-  
-  assert_true(true)
-}
-
-test "concurrent attribute operations" {
-  // Test concurrent attribute operations
-  let base_attributes = []
-  
-  // Create multiple attribute sets
-  for i in 0..<12 {
-    let attrs = Attributes::new()
-    
-    // Set different types of attributes
-    Attributes::set(attrs, "string.key." + Int.to_string(i), StringValue("string-value-" + Int.to_string(i)))
-    Attributes::set(attrs, "int.key." + Int.to_string(i), IntValue(i))
-    Attributes::set(attrs, "float.key." + Int.to_string(i), FloatValue(Double.from_int(i) * 3.14))
-    Attributes::set(attrs, "bool.key." + Int.to_string(i), BoolValue(i % 2 == 0))
-    
-    base_attributes.push(attrs)
-  }
-  
-  // Perform concurrent attribute operations
-  let retrieval_results = []
-  for i in 0..<base_attributes.length {
-    let attrs = base_attributes[i]
-    
-    // Retrieve attributes
-    let string_value = Attributes::get(attrs, "string.key." + Int.to_string(i))
-    let int_value = Attributes::get(attrs, "int.key." + Int.to_string(i))
-    let float_value = Attributes::get(attrs, "float.key." + Int.to_string(i))
-    let bool_value = Attributes::get(attrs, "bool.key." + Int.to_string(i))
-    
-    // Try to retrieve non-existent attributes
-    let missing_value = Attributes::get(attrs, "missing.key." + Int.to_string(i))
-    
-    retrieval_results.push((string_value, int_value, float_value, bool_value, missing_value))
-  }
-  
-  // Verify retrieval results
-  for i in 0..<retrieval_results.length {
-    let (string_value, int_value, float_value, bool_value, missing_value) = retrieval_results[i]
-    
-    // Note: Simplified implementation returns specific values
-    if i == 0 {
-      assert_eq(string_value, Some(StringValue("test_value")))
-      assert_eq(int_value, Some(IntValue(42)))
+    if (i % 3 == 0) {
+      total_counter_operations = total_counter_operations + result
+    } else if (i % 3 == 1) {
+      total_histogram_operations = total_histogram_operations + result
+    } else {
+      total_gauge_operations = total_gauge_operations + result
     }
-    assert_eq(missing_value, None)
   }
   
-  assert_true(true)
+  let final_metrics = azimuth::MetricsCollector::total_metrics()
+  
+  // 验证并发度量操作结果
+  assert_eq(total_counter_operations, 10000)     // 20个线程 × 500次操作
+  assert_eq(total_histogram_operations, 10000)   // 20个线程 × 500次操作
+  assert_eq(total_gauge_operations, 2000)        // 20个线程 × 100次操作
+  assert_true(final_metrics > initial_metrics)
 }
 
-test "concurrent span context operations" {
-  // Test concurrent span context operations
-  let span_contexts = []
+pub test "并发日志记录测试" {
+  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "concurrent-logger")
   
-  // Create multiple span contexts
-  for i in 0..<20 {
-    let trace_id = "trace-" + Int.to_string(i)
-    let span_id = "span-" + Int.to_string(i)
-    let sampled = i % 2 == 0
-    let trace_state = "key" + Int.to_string(i) + "=value" + Int.to_string(i)
+  let initial_log_count = azimuth::LogBuffer::total_logs()
+  
+  // 创建多个并发日志任务
+  let log_tasks = []
+  for thread_id in 0..15 {
+    let task = azimuth::ConcurrentTask::new(fn() {
+      for i in 0..200 {
+        let severity = if (i % 4 == 0) azimuth::Error 
+                      else if (i % 4 == 1) azimuth::Warn 
+                      else if (i % 4 == 2) azimuth::Info 
+                      else azimuth::Debug
+        
+        let log_record = azimuth::LogRecord::new_with_context(
+          severity,
+          Some("Concurrent log " + thread_id.to_string() + "-" + i.to_string()),
+          Some(azimuth::Attributes::new()),
+          Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+          None,
+          Some("concurrent-trace-" + thread_id.to_string()),
+          Some("concurrent-span-" + i.to_string()),
+          Some(azimuth::Context::root())
+        )
+        
+        azimuth::Logger::emit(logger, log_record)
+      }
+      200
+    })
     
-    let span_ctx = SpanContext::new(trace_id, span_id, sampled, trace_state)
-    span_contexts.push(span_ctx)
+    log_tasks.push(task)
   }
   
-  // Perform concurrent operations on span contexts
-  let operation_results = []
-  for span_ctx in span_contexts {
-    // Get properties
-    let trace_id = SpanContext::trace_id(span_ctx)
-    let span_id = SpanContext::span_id(span_ctx)
-    let is_valid = SpanContext::is_valid(span_ctx)
-    let is_sampled = SpanContext::is_sampled(span_ctx)
-    
-    operation_results.push((trace_id, span_id, is_valid, is_sampled))
+  // 启动所有日志任务
+  for task in log_tasks {
+    azimuth::ConcurrentTask::start(task)
   }
   
-  // Verify operations
-  for i in 0..<operation_results.length {
-    let (trace_id, span_id, is_valid, is_sampled) = operation_results[i]
-    let expected_trace_id = "trace-" + Int.to_string(i)
-    let expected_span_id = "span-" + Int.to_string(i)
-    let expected_sampled = i % 2 == 0
-    
-    assert_eq(trace_id, expected_trace_id)
-    assert_eq(span_id, expected_span_id)
-    assert_true(is_valid)
-    assert_eq(is_sampled, expected_sampled)
+  // 等待所有任务完成
+  let total_logs = 0
+  for task in log_tasks {
+    let result = azimuth::ConcurrentTask::wait_for_completion(task)
+    total_logs = total_logs + result
   }
   
-  assert_true(true)
+  let final_log_count = azimuth::LogBuffer::total_logs()
+  
+  // 验证并发日志记录结果
+  assert_eq(total_logs, 3000)  // 15个线程 × 200条日志
+  assert_eq(final_log_count - initial_log_count, 3000)
+  
+  // 验证日志缓冲区完整性
+  let log_buffer = azimuth::LogBuffer::get_all_logs()
+  assert_eq(log_buffer.length(), 3000)
+}
+
+pub test "并发上下文传播测试" {
+  let initial_contexts = azimuth::ContextManager::active_contexts()
+  
+  // 创建多个并发上下文传播任务
+  let context_tasks = []
+  for thread_id in 0..8 {
+    let task = azimuth::ConcurrentTask::new(fn() {
+      let root_ctx = azimuth::Context::root()
+      
+      // 创建上下文链
+      let ctx1 = azimuth::Context::with_value(root_ctx, azimuth::ContextKey::new("key1"), "value1-" + thread_id.to_string())
+      let ctx2 = azimuth::Context::with_value(ctx1, azimuth::ContextKey::new("key2"), "value2-" + thread_id.to_string())
+      let ctx3 = azimuth::Context::with_value(ctx2, azimuth::ContextKey::new("key3"), "value3-" + thread_id.to_string())
+      
+      // 创建Baggage
+      let baggage = azimuth::Baggage::new()
+      let baggage1 = azimuth::Baggage::set_entry(baggage, "baggage1", "baggage-value1-" + thread_id.to_string())
+      let baggage2 = azimuth::Baggage::set_entry(baggage1, "baggage2", "baggage-value2-" + thread_id.to_string())
+      
+      // 验证上下文和Baggage
+      let key1 = azimuth::ContextKey::new("key1")
+      let key2 = azimuth::ContextKey::new("key2")
+      let key3 = azimuth::ContextKey::new("key3")
+      
+      let value1 = azimuth::Context::get(ctx3, key1)
+      let value2 = azimuth::Context::get(ctx3, key2)
+      let value3 = azimuth::Context::get(ctx3, key3)
+      
+      let baggage_value1 = azimuth::Baggage::get_entry(baggage2, "baggage1")
+      let baggage_value2 = azimuth::Baggage::get_entry(baggage2, "baggage2")
+      
+      // 返回验证结果
+      (value1, value2, value3, baggage_value1, baggage_value2)
+    })
+    
+    context_tasks.push(task)
+  }
+  
+  // 启动所有上下文任务
+  for task in context_tasks {
+    azimuth::ConcurrentTask::start(task)
+  }
+  
+  // 等待所有任务完成并验证结果
+  for thread_id in 0..context_tasks.length() {
+    let task = context_tasks[thread_id]
+    let (value1, value2, value3, baggage_value1, baggage_value2) = azimuth::ConcurrentTask::wait_for_completion(task)
+    
+    assert_eq(value1, Some("value1-" + thread_id.to_string()))
+    assert_eq(value2, Some("value2-" + thread_id.to_string()))
+    assert_eq(value3, Some("value3-" + thread_id.to_string()))
+    assert_eq(baggage_value1, Some("baggage-value1-" + thread_id.to_string()))
+    assert_eq(baggage_value2, Some("baggage-value2-" + thread_id.to_string()))
+  }
+  
+  let final_contexts = azimuth::ContextManager::active_contexts()
+  
+  // 验证上下文清理
+  assert_true(final_contexts <= initial_contexts + context_tasks.length())
+}
+
+pub test "并发传播器操作测试" {
+  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+  let baggage_propagator = azimuth::W3CBaggagePropagator::new()
+  let composite_propagator = azimuth::CompositePropagator::new([trace_propagator, baggage_propagator])
+  
+  // 创建多个并发传播任务
+  let propagation_tasks = []
+  for thread_id in 0..12 {
+    let task = azimuth::ConcurrentTask::new(fn() {
+      let carrier = azimuth::TextMapCarrier::new()
+      let ctx = azimuth::Context::root()
+      
+      // 每个任务执行多次注入和提取操作
+      for i in 0..50 {
+        azimuth::CompositePropagator::inject(composite_propagator, ctx, carrier)
+        let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
+        
+        // 验证提取的上下文
+        let trace_header = azimuth::TextMapCarrier::get(carrier, "traceparent")
+        assert_true(trace_header.is_some())
+      }
+      
+      50
+    })
+    
+    propagation_tasks.push(task)
+  }
+  
+  // 启动所有传播任务
+  for task in propagation_tasks {
+    azimuth::ConcurrentTask::start(task)
+  }
+  
+  // 等待所有任务完成
+  let total_operations = 0
+  for task in propagation_tasks {
+    let result = azimuth::ConcurrentTask::wait_for_completion(task)
+    total_operations = total_operations + result
+  }
+  
+  // 验证并发传播操作结果
+  assert_eq(total_operations, 600)  // 12个线程 × 50次操作
+}
+
+pub test "并发资源竞争和死锁检测测试" {
+  let resource_manager = azimuth::ResourceManager::new()
+  
+  // 创建多个并发任务竞争资源
+  let competing_tasks = []
+  for thread_id in 0..6 {
+    let task = azimuth::ConcurrentTask::new(fn() {
+      // 每个任务尝试获取多个资源
+      let resource1 = azimuth::ResourceManager::acquire_resource(resource_manager, "resource1", 1000)
+      let resource2 = azimuth::ResourceManager::acquire_resource(resource_manager, "resource2", 1000)
+      
+      // 模拟资源使用
+      azimuth::Clock::sleep(10)
+      
+      // 释放资源
+      azimuth::ResourceManager::release_resource(resource_manager, resource1)
+      azimuth::ResourceManager::release_resource(resource_manager, resource2)
+      
+      // 尝试获取另一个资源组合
+      let resource3 = azimuth::ResourceManager::acquire_resource(resource_manager, "resource3", 1000)
+      let resource4 = azimuth::ResourceManager::acquire_resource(resource_manager, "resource4", 1000)
+      
+      azimuth::Clock::sleep(10)
+      
+      azimuth::ResourceManager::release_resource(resource_manager, resource3)
+      azimuth::ResourceManager::release_resource(resource_manager, resource4)
+      
+      true
+    })
+    
+    competing_tasks.push(task)
+  }
+  
+  // 启动所有竞争任务
+  for task in competing_tasks {
+    azimuth::ConcurrentTask::start(task)
+  }
+  
+  // 设置死锁检测超时
+  let deadlock_detector = azimuth::DeadlockDetector::new()
+  azimuth::DeadlockDetector::start_monitoring(deadlock_detector, 30000)  // 30秒超时
+  
+  // 等待所有任务完成
+  let successful_tasks = 0
+  for task in competing_tasks {
+    let result = azimuth::ConcurrentTask::wait_for_completion(task)
+    if (result) {
+      successful_tasks = successful_tasks + 1
+    }
+  }
+  
+  // 停止死锁检测
+  azimuth::DeadlockDetector::stop_monitoring(deadlock_detector)
+  
+  // 验证结果
+  assert_eq(successful_tasks, 6)  // 所有任务都应该成功完成
+  assert_false(azimuth::DeadlockDetector::detected_deadlock(deadlock_detector))
+  
+  // 验证资源清理
+  let locked_resources = azimuth::ResourceManager::locked_resources(resource_manager)
+  assert_eq(locked_resources.length(), 0)  // 所有资源都应该被释放
 }

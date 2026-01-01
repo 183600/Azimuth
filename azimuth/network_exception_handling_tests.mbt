@@ -1,262 +1,207 @@
-// Network Exception Handling Tests
-// This file contains test cases for handling network exceptions in telemetry operations
+// 网络异常处理测试
+// 测试遥测系统在网络异常情况下的处理能力
 
-test "http client timeout handling" {
-  // Test handling of HTTP client timeouts
-  let client = HttpClient::new()
+import "azimuth/azimuth"
+
+pub test "HTTP客户端超时处理测试" {
+  let http_client = azimuth::HttpClient::with_timeout_config(5000)  // 5秒超时
   
-  // Create a request that might timeout
-  let headers = [("Content-Type", "application/json")]
-  let request = HttpRequest::new("GET", "https://slow-api.example.com/timeout", headers)
+  // 测试正常请求
+  let normal_headers = [("Content-Type", "application/json")]
+  let normal_request = azimuth::HttpRequest::new("GET", "https://httpbin.org/delay/1", normal_headers, None)
+  let normal_response = azimuth::HttpClient::execute(http_client, normal_request)
   
-  // Verify request properties
-  assert_eq(HttpRequest::http_method(request), "GET")
-  assert_eq(HttpRequest::url(request), "https://slow-api.example.com/timeout")
-  assert_eq(HttpRequest::body(request), None)
+  assert_eq(azimuth::HttpResponse::status_code(normal_response), 200)
   
-  // Simulate timeout response
-  let timeout_response = HttpResponse::new(408, [("Error", "Request Timeout")], Some("{\"error\": \"Request timeout\"}"))
+  // 测试超时请求
+  let timeout_request = azimuth::HttpRequest::new("GET", "https://httpbin.org/delay/10", normal_headers, None)
+  let timeout_response = azimuth::HttpClient::execute(http_client, timeout_request)
   
-  // Verify timeout response
-  assert_eq(HttpResponse::status_code(timeout_response), 408)
-  assert_eq(HttpResponse::body(timeout_response), Some("{\"error\": \"Request timeout\"}"))
-  
-  assert_true(true)
+  // 应该收到超时错误
+  assert_eq(azimuth::HttpResponse::status_code(timeout_response), 408)  // Request Timeout
 }
 
-test "network connection failure handling" {
-  // Test handling of network connection failures
-  let client = HttpClient::new()
+pub test "网络连接重试机制测试" {
+  let retry_client = azimuth::HttpClient::with_retry_config(3, 1000)  // 重试3次，间隔1秒
   
-  // Create a request to an unreachable endpoint
-  let headers = [("User-Agent", "telemetry-client/1.0")]
-  let request = HttpRequest::new("POST", "https://unreachable-service.example.com/api", headers, Some("{\"data\": \"test\"}"))
+  // 测试可重试的错误
+  let retry_headers = [("Content-Type", "application/json")]
+  let retry_request = azimuth::HttpRequest::new("GET", "https://httpbin.org/status/503", retry_headers, None)
+  let retry_response = azimuth::HttpClient::execute(retry_client, retry_request)
   
-  // Verify request properties
-  assert_eq(HttpRequest::http_method(request), "POST")
-  assert_eq(HttpRequest::url(request), "https://unreachable-service.example.com/api")
-  assert_eq(HttpRequest::body(request), Some("{\"data\": \"test\"}"))
+  // 应该尝试重试并最终返回错误
+  assert_true(azimuth::HttpResponse::status_code(retry_response) >= 500)
   
-  // Simulate connection failure response
-  let connection_error_response = HttpResponse::new(503, [("Error", "Service Unavailable")], Some("{\"error\": \"Connection failed\"}"))
-  
-  // Verify error response
-  assert_eq(HttpResponse::status_code(connection_error_response), 503)
-  assert_eq(HttpResponse::body(connection_error_response), Some("{\"error\": \"Connection failed\"}"))
-  
-  assert_true(true)
+  // 验证重试次数
+  let retry_count = azimuth::HttpClient::get_retry_count(retry_client)
+  assert_true(retry_count >= 1)
 }
 
-test "telemetry data transmission with network errors" {
-  // Test telemetry data transmission when network errors occur
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "network-error-test")
+pub test "遥测数据导出网络异常处理测试" {
+  let exporter = azimuth::TelemetryExporter::with_endpoint("https://invalid-endpoint.example.com/telemetry")
   
-  // Create log records that should be transmitted
-  let log1 = LogRecord::new(Info, "Starting telemetry transmission")
-  let log2 = LogRecord::new(Warn, "Network instability detected")
-  let log3 = LogRecord::new(Error, "Failed to transmit telemetry data")
-  let log4 = LogRecord::new(Info, "Retrying telemetry transmission")
-  let log5 = LogRecord::new(Info, "Telemetry transmission completed")
+  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "network-test")
+  let span = azimuth::Tracer::start_span(tracer, "network-exception-test")
   
-  // Emit logs (simulating transmission attempts)
-  Logger::emit(logger, log1)
-  Logger::emit(logger, log2)
-  Logger::emit(logger, log3)
-  Logger::emit(logger, log4)
-  Logger::emit(logger, log5)
+  // 尝试导出到无效端点
+  let export_result = azimuth::TelemetryExporter::export_span(exporter, span)
   
-  // Verify log properties
-  assert_eq(LogRecord::severity_number(log1), Info)
-  assert_eq(LogRecord::severity_number(log2), Warn)
-  assert_eq(LogRecord::severity_number(log3), Error)
-  assert_eq(LogRecord::severity_number(log4), Info)
-  assert_eq(LogRecord::severity_number(log5), Info)
+  // 应该处理网络错误
+  assert_false(azimuth::TelemetryExporter::is_success(export_result))
+  assert_true(azimuth::TelemetryExporter::is_network_error(export_result))
   
-  assert_eq(LogRecord::body(log1), Some("Starting telemetry transmission"))
-  assert_eq(LogRecord::body(log2), Some("Network instability detected"))
-  assert_eq(LogRecord::body(log3), Some("Failed to transmit telemetry data"))
-  assert_eq(LogRecord::body(log4), Some("Retrying telemetry transmission"))
-  assert_eq(LogRecord::body(log5), Some("Telemetry transmission completed"))
+  // 测试备用端点
+  let fallback_exporter = azimuth::TelemetryExporter::with_fallback_endpoints([
+    "https://invalid-endpoint.example.com/telemetry",
+    "https://httpbin.org/post"  // 有效端点
+  ])
   
-  assert_true(true)
+  let fallback_result = azimuth::TelemetryExporter::export_span(fallback_exporter, span)
+  
+  // 应该成功使用备用端点
+  assert_true(azimuth::TelemetryExporter::is_success(fallback_result))
 }
 
-test "context propagation with network interruptions" {
-  // Test context propagation when network interruptions occur
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite = CompositePropagator::new([trace_propagator])
+pub test "部分网络故障处理测试" {
+  let batch_exporter = azimuth::BatchTelemetryExporter::new()
   
-  // Create original context
-  let original_ctx = Context::root()
-  let trace_key = ContextKey::new("trace.id")
-  let ctx_with_trace = Context::with_value(original_ctx, trace_key, "network-interruption-trace")
+  // 创建多个Span
+  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "partial-failure-test")
+  let spans = []
   
-  // Inject context into carrier
-  let carrier = TextMapCarrier::new()
-  CompositePropagator::inject(composite, ctx_with_trace, carrier)
+  for i in 0..10 {
+    let span = azimuth::Tracer::start_span(tracer, "partial-span-" + i.to_string())
+    spans.push(span)
+  }
   
-  // Simulate network interruption during transmission
-  // (In a real scenario, the carrier might be partially transmitted)
-  
-  // Extract context from carrier (simulating after network recovery)
-  let extracted_ctx = CompositePropagator::extract(composite, carrier)
-  let extracted_trace = Context::get(extracted_ctx, trace_key)
-  
-  // Verify context is still recoverable after interruption
-  assert_eq(extracted_trace, Some("true")) // Based on simplified implementation
-  
-  assert_true(true)
-}
-
-test "metrics collection during network outages" {
-  // Test metrics collection when network is unavailable
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "network-outage-test")
-  
-  // Create metrics to track network operations
-  let request_counter = Meter::create_counter(meter, "network.requests.total", Some("Total network requests"), Some("requests"))
-  let error_counter = Meter::create_counter(meter, "network.errors.total", Some("Total network errors"), Some("errors"))
-  let retry_counter = Meter::create_counter(meter, "network.retries.total", Some("Total network retries"), Some("retries"))
-  let latency_histogram = Meter::create_histogram(meter, "network.latency", Some("Network latency"), Some("ms"))
-  
-  // Simulate network operations during outage
-  Counter::add(request_counter, 10.0)  // 10 requests attempted
-  Counter::add(error_counter, 8.0)    // 8 errors due to outage
-  Counter::add(retry_counter, 15.0)   // 15 retries attempted
-  
-  // Record latencies (including timeouts)
-  Histogram::record(latency, 5000.0)  // 5 second timeout
-  Histogram::record(latency, 10000.0) // 10 second timeout
-  Histogram::record(latency, 30000.0) // 30 second timeout
-  
-  // Verify metrics properties
-  assert_eq(request_counter.name, "network.requests.total")
-  assert_eq(error_counter.name, "network.errors.total")
-  assert_eq(retry_counter.name, "network.retries.total")
-  assert_eq(latency_histogram.name, "network.latency")
-  
-  assert_eq(request_counter.unit, Some("requests"))
-  assert_eq(error_counter.unit, Some("errors"))
-  assert_eq(retry_counter.unit, Some("retries"))
-  assert_eq(latency_histogram.unit, Some("ms"))
-  
-  assert_true(true)
-}
-
-test "span lifecycle with network failures" {
-  // Test span lifecycle when network failures occur
-  let span_ctx = SpanContext::new("network-failure-trace", "network-failure-span", true, "")
-  let span = Span::new("network-operation", Server, span_ctx)
-  
-  // Add events for different network failure scenarios
-  Span::add_event(span, "connection.started", Some([("endpoint", StringValue("https://api.example.com"))]))
-  Span::add_event(span, "connection.failed", Some([("error", StringValue("Connection refused"))]))
-  Span::add_event(span, "retry.attempted", Some([("attempt", IntValue(1))]))
-  Span::add_event(span, "retry.failed", Some([("error", StringValue("Timeout"))]))
-  Span::add_event(span, "retry.attempted", Some([("attempt", IntValue(2))]))
-  Span::add_event(span, "connection.established", Some([("duration.ms", IntValue(15000))]))
-  Span::add_event(span, "operation.completed", Some([("status", StringValue("success"))]))
-  
-  // Set span status based on network operations
-  Span::set_status(span, Ok, Some("Operation succeeded after retries"))
-  
-  // Verify span properties
-  assert_eq(Span::name(span), "network-operation")
-  assert_eq(Span::kind(span), Server)
-  assert_true(Span::is_recording(span))
-  
-  // End span
-  Span::end(span)
-  
-  assert_true(true)
-}
-
-test "baggage propagation with network errors" {
-  // Test baggage propagation when network errors occur
-  let baggage = Baggage::new()
-  
-  // Add baggage entries that should survive network failures
-  let baggage1 = Baggage::set_entry(baggage, "request.id", "req-12345")
-  let baggage2 = Baggage::set_entry(baggage1, "user.id", "user-67890")
-  let baggage3 = Baggage::set_entry(baggage2, "retry.count", "3")
-  let baggage4 = Baggage::set_entry(baggage3, "error.code", "NETWORK_ERROR")
-  let baggage5 = Baggage::set_entry(baggage4, "recovery.strategy", "exponential_backoff")
-  
-  // Simulate network failure and recovery
-  // (In a real scenario, baggage might be buffered during network failures)
-  
-  // Verify baggage entries are preserved
-  assert_eq(Baggage::get_entry(baggage5, "request.id"), Some("req-12345"))
-  assert_eq(Baggage::get_entry(baggage5, "user.id"), Some("user-67890"))
-  assert_eq(Baggage::get_entry(baggage5, "retry.count"), Some("3"))
-  assert_eq(Baggage::get_entry(baggage5, "error.code"), Some("NETWORK_ERROR"))
-  assert_eq(Baggage::get_entry(baggage5, "recovery.strategy"), Some("exponential_backoff"))
-  
-  assert_true(true)
-}
-
-test "resource attributes during network degradation" {
-  // Test resource attributes when network is degraded
-  let resource = Resource::new()
-  let resource_with_attrs = Resource::with_attributes(
-    resource,
-    [
-      ("service.name", StringValue("network-degraded-service")),
-      ("service.version", StringValue("1.0.0")),
-      ("network.status", StringValue("degraded")),
-      ("network.latency", StringValue("high")),
-      ("network.error.rate", StringValue("0.25")),
-      ("network.retry.rate", StringValue("0.15"))
-    ]
+  // 模拟部分导出失败
+  let partial_result = azimuth::BatchTelemetryExporter::export_with_failure_simulation(
+    batch_exporter, 
+    spans, 
+    0.3  // 30%失败率
   )
   
-  // Verify resource attributes reflect network status
-  assert_eq(Resource::get_attribute(resource_with_attrs, "service.name"), Some(StringValue("network-degraded-service")))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "network.status"), Some(StringValue("degraded")))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "network.latency"), Some(StringValue("high")))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "network.error.rate"), Some(StringValue("0.25")))
-  assert_eq(Resource::get_attribute(resource_with_attrs, "network.retry.rate"), Some(StringValue("0.15")))
+  // 验证部分成功处理
+  let success_count = azimuth::BatchTelemetryExporter::success_count(partial_result)
+  let failure_count = azimuth::BatchTelemetryExporter::failure_count(partial_result)
   
-  assert_true(true)
+  assert_true(success_count > 0)
+  assert_true(failure_count > 0)
+  assert_eq(success_count + failure_count, 10)
+  
+  // 验证失败的Span被正确记录
+  let failed_spans = azimuth::BatchTelemetryExporter::failed_spans(partial_result)
+  assert_eq(failed_spans.length(), failure_count)
 }
 
-test "exponential backoff strategy for network retries" {
-  // Test exponential backoff strategy for network retries
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "backoff-test")
+pub test "网络断开和恢复测试" {
+  let resilient_exporter = azimuth::ResilientTelemetryExporter::new()
   
-  // Simulate exponential backoff with logs
-  let initial_delay = 1000L // 1 second
-  let max_delay = 30000L    // 30 seconds
+  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "resilience-test")
   
-  // Create logs for each retry attempt with increasing delays
-  let attempt1_log = LogRecord::new(Warn, "Network request failed, retrying in 1s")
-  let attempt2_log = LogRecord::new(Warn, "Network request failed, retrying in 2s")
-  let attempt3_log = LogRecord::new(Warn, "Network request failed, retrying in 4s")
-  let attempt4_log = LogRecord::new(Warn, "Network request failed, retrying in 8s")
-  let attempt5_log = LogRecord::new(Warn, "Network request failed, retrying in 16s")
-  let attempt6_log = LogRecord::new(Error, "Network request failed after 5 retries, giving up")
+  // 模拟网络断开
+  azimuth::ResilientTelemetryExporter::simulate_network_disconnect(resilient_exporter)
   
-  // Emit logs
-  Logger::emit(logger, attempt1_log)
-  Logger::emit(logger, attempt2_log)
-  Logger::emit(logger, attempt3_log)
-  Logger::emit(logger, attempt4_log)
-  Logger::emit(logger, attempt5_log)
-  Logger::emit(logger, attempt6_log)
+  // 在网络断开时尝试导出
+  let span1 = azimuth::Tracer::start_span(tracer, "disconnected-span")
+  let disconnected_result = azimuth::ResilientTelemetryExporter::export_span(resilient_exporter, span1)
   
-  // Verify log messages
-  assert_eq(LogRecord::body(attempt1_log), Some("Network request failed, retrying in 1s"))
-  assert_eq(LogRecord::body(attempt2_log), Some("Network request failed, retrying in 2s"))
-  assert_eq(LogRecord::body(attempt3_log), Some("Network request failed, retrying in 4s"))
-  assert_eq(LogRecord::body(attempt4_log), Some("Network request failed, retrying in 8s"))
-  assert_eq(LogRecord::body(attempt5_log), Some("Network request failed, retrying in 16s"))
-  assert_eq(LogRecord::body(attempt6_log), Some("Network request failed after 5 retries, giving up"))
+  // 应该缓存导出数据
+  assert_false(azimuth::ResilientTelemetryExporter::is_success(disconnected_result))
+  assert_eq(azimuth::ResilientTelemetryExporter::cached_count(resilient_exporter), 1)
   
-  // Verify log severities
-  assert_eq(LogRecord::severity_number(attempt1_log), Warn)
-  assert_eq(LogRecord::severity_number(attempt6_log), Error)
+  // 创建更多Span
+  for i in 0..5 {
+    let span = azimuth::Tracer::start_span(tracer, "cached-span-" + i.to_string())
+    azimuth::ResilientTelemetryExporter::export_span(resilient_exporter, span)
+  }
   
-  assert_true(true)
+  // 验证缓存的数据量
+  assert_eq(azimuth::ResilientTelemetryExporter::cached_count(resilient_exporter), 6)
+  
+  // 模拟网络恢复
+  azimuth::ResilientTelemetryExporter::simulate_network_reconnect(resilient_exporter)
+  
+  // 触发缓存数据导出
+  let flush_result = azimuth::ResilientTelemetryExporter::flush_cached_data(resilient_exporter)
+  
+  // 验证缓存数据成功导出
+  assert_true(azimuth::ResilientTelemetryExporter::is_success(flush_result))
+  assert_eq(azimuth::ResilientTelemetryExporter::cached_count(resilient_exporter), 0)
+}
+
+pub test "网络性能降级测试" {
+  let adaptive_exporter = azimuth::AdaptiveTelemetryExporter::new()
+  
+  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "adaptive-test")
+  
+  // 测试正常网络条件下的性能
+  let normal_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  for i in 0..20 {
+    let span = azimuth::Tracer::start_span(tracer, "normal-span-" + i.to_string())
+    azimuth::AdaptiveTelemetryExporter::export_span(adaptive_exporter, span)
+  }
+  
+  let normal_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let normal_duration = normal_end - normal_start
+  
+  // 模拟网络性能降级
+  azimuth::AdaptiveTelemetryExporter::simulate_slow_network(adaptive_exporter, 2000)  // 2秒延迟
+  
+  // 测试网络降级后的性能
+  let degraded_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  for i in 0..20 {
+    let span = azimuth::Tracer::start_span(tracer, "degraded-span-" + i.to_string())
+    azimuth::AdaptiveTelemetryExporter::export_span(adaptive_exporter, span)
+  }
+  
+  let degraded_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let degraded_duration = degraded_end - degraded_start
+  
+  // 验证自适应调整
+  assert_true(degraded_duration > normal_duration)  // 降级后应该更慢
+  
+  // 验证自适应策略调整
+  let batch_size = azimuth::AdaptiveTelemetryExporter::get_batch_size(adaptive_exporter)
+  let retry_delay = azimuth::AdaptiveTelemetryExporter::get_retry_delay(adaptive_exporter)
+  
+  // 在网络降级时应该调整批处理大小和重试延迟
+  assert_true(batch_size < 20)  // 批处理大小应该减小
+  assert_true(retry_delay > 1000)  // 重试延迟应该增加
+}
+
+pub test "网络认证和安全异常处理测试" {
+  let secure_exporter = azimuth::SecureTelemetryExporter::with_auth_token("test-token")
+  
+  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "security-test")
+  let span = azimuth::Tracer::start_span(tracer, "security-span")
+  
+  // 测试无效认证令牌
+  let invalid_exporter = azimuth::SecureTelemetryExporter::with_auth_token("invalid-token")
+  let auth_result = azimuth::SecureTelemetryExporter::export_span(invalid_exporter, span)
+  
+  // 应该收到认证错误
+  assert_false(azimuth::SecureTelemetryExporter::is_success(auth_result))
+  assert_true(azimuth::SecureTelemetryExporter::is_auth_error(auth_result))
+  
+  // 测试令牌刷新机制
+  let refreshed_exporter = azimuth::SecureTelemetryExporter::with_token_refresh("initial-token")
+  
+  // 模拟令牌过期
+  azimuth::SecureTelemetryExporter::simulate_token_expiry(refreshed_exporter)
+  
+  let refresh_result = azimuth::SecureTelemetryExporter::export_span(refreshed_exporter, span)
+  
+  // 应该自动刷新令牌并成功导出
+  assert_true(azimuth::SecureTelemetryExporter::is_success(refresh_result))
+  assert_true(azimuth::SecureTelemetryExporter::was_token_refreshed(refreshed_exporter))
+  
+  // 测试SSL/TLS错误处理
+  let tls_exporter = azimuth::SecureTelemetryExporter::with_tls_validation()
+  let tls_result = azimuth::SecureTelemetryExporter::export_span(tls_exporter, span)
+  
+  // 应该正确处理TLS验证
+  assert_true(azimuth::SecureTelemetryExporter::has_tls_validation(tls_exporter))
 }
