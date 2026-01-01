@@ -57,24 +57,17 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "simple_moonbit_tests.mbt": {
-    0: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_0, ["attributes basic operations"]),
-    1: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_1, ["span context validation"]),
-    2: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_2, ["context value operations"]),
-    3: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_3, ["metrics counter operations"]),
-    4: (__test_73696d706c655f6d6f6f6e6269745f74657374732e6d6274_4, ["log record creation"]),
-  },
-  "high_quality_tests.mbt": {
-    0: (__test_686967685f7175616c6974795f74657374732e6d6274_0, ["span context advanced validation"]),
-    1: (__test_686967685f7175616c6974795f74657374732e6d6274_1, ["context value chain operations"]),
-    2: (__test_686967685f7175616c6974795f74657374732e6d6274_2, ["metrics instrument creation cascade"]),
-    3: (__test_686967685f7175616c6974795f74657374732e6d6274_3, ["attribute value type spectrum"]),
-    4: (__test_686967685f7175616c6974795f74657374732e6d6274_4, ["resource attribute hierarchy"]),
-    5: (__test_686967685f7175616c6974795f74657374732e6d6274_5, ["log record severity progression"]),
-    6: (__test_686967685f7175616c6974795f74657374732e6d6274_6, ["baggage entry lifecycle"]),
-    7: (__test_686967685f7175616c6974795f74657374732e6d6274_7, ["text map carrier operations"]),
-    8: (__test_686967685f7175616c6974795f74657374732e6d6274_8, ["http client request response cycle"]),
-    9: (__test_686967685f7175616c6974795f74657374732e6d6274_9, ["clock random temporal sequence"]),
+  "simple_additional_tests.mbt": {
+    0: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_0, ["基础属性操作测试"]),
+    1: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_1, ["上下文操作测试"]),
+    2: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_2, ["Span上下文操作测试"]),
+    3: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_3, ["Baggage操作测试"]),
+    4: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_4, ["基础度量操作测试"]),
+    5: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_5, ["日志记录操作测试"]),
+    6: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_6, ["资源操作测试"]),
+    7: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_7, ["HTTP客户端操作测试"]),
+    8: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_8, ["时钟和随机数操作测试"]),
+    9: (__test_73696d706c655f6164646974696f6e616c5f74657374732e6d6274_9, ["文本映射载体操作测试"]),
   },
   "azimuth.mbt": {
   },

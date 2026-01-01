@@ -22,6 +22,32 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_test/azimuth_comprehensive_enhanced_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_test/enhanced_quality_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_test/new_enhanced_tests.mbt": {
           "backend": [
             "Wasm",
@@ -133,7 +159,7 @@
             "Debug"
           ]
         },
-        "/home/runner/work/Azimuth/Azimuth/simple_test/high_quality_tests.mbt": {
+        "/home/runner/work/Azimuth/Azimuth/simple_test/simple_additional_tests.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -145,8 +171,38 @@
             "Release",
             "Debug"
           ]
-        },
-        "/home/runner/work/Azimuth/Azimuth/simple_test/simple_moonbit_tests.mbt": {
+        }
+      },
+      "wbtest-files": {},
+      "test-files": {
+        "/home/runner/work/Azimuth/Azimuth/simple_test/basic_test.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        }
+      },
+      "mbt-md-files": {},
+      "deps": [],
+      "wbtest-deps": [],
+      "test-deps": [],
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/simple_test/simple_test.mi"
+    },
+    {
+      "is-main": false,
+      "is-third-party": false,
+      "root-path": "/home/runner/work/Azimuth/Azimuth/src",
+      "root": "azimuth/telemetry",
+      "rel": "src",
+      "files": {
+        "/home/runner/work/Azimuth/Azimuth/src/top.mbt": {
           "backend": [
             "Wasm",
             "WasmGC",
@@ -166,7 +222,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/simple_test/simple_test.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/src/src.mi"
     },
     {
       "is-main": false,

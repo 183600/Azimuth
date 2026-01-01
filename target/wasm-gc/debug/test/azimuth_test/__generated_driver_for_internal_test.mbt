@@ -87,6 +87,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     4: (__test_656e68616e6365645f7175616c6974795f74657374732e6d6274_4, ["时间序列和时序操作测试"]),
     5: (__test_656e68616e6365645f7175616c6974795f74657374732e6d6274_5, ["配置动态更新测试"]),
   },
+  "azimuth_comprehensive_enhanced_tests.mbt": {
+    0: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_0, ["attributes operations with different value types"]),
+    1: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_1, ["span lifecycle management"]),
+    2: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_2, ["baggage propagation across contexts"]),
+    3: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_3, ["resource management and merging"]),
+    4: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_4, ["composite propagator injection and extraction"]),
+    5: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_5, ["advanced log record with full context"]),
+    6: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_6, ["metrics operations with different instrument types"]),
+    7: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_7, ["context chain propagation with multiple values"]),
+  },
   "azimuth.mbt": {
   },
 }
