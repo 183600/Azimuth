@@ -81,6 +81,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_62617369635f74657374732e6d6274_7, ["array indexing and slicing"]),
     8: (__test_62617369635f74657374732e6d6274_8, ["negative number operations"]),
   },
+  "advanced_quality_tests.mbt": {
+    0: (__test_616476616e6365645f7175616c6974795f74657374732e6d6274_0, ["time series temporal operations"]),
+    1: (__test_616476616e6365645f7175616c6974795f74657374732e6d6274_1, ["batch log processing efficiency"]),
+    2: (__test_616476616e6365645f7175616c6974795f74657374732e6d6274_2, ["data integrity validation across operations"]),
+    3: (__test_616476616e6365645f7175616c6974795f74657374732e6d6274_3, ["memory management and resource cleanup"]),
+    4: (__test_616476616e6365645f7175616c6974795f74657374732e6d6274_4, ["dynamic configuration management"]),
+    5: (__test_616476616e6365645f7175616c6974795f74657374732e6d6274_5, ["error boundary and resilience patterns"]),
+    6: (__test_616476616e6365645f7175616c6974795f74657374732e6d6274_6, ["performance benchmark operations"]),
+    7: (__test_616476616e6365645f7175616c6974795f74657374732e6d6274_7, ["high concurrency stress scenarios"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED

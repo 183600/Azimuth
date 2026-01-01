@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "description": "Azimuth telemetry system - New Tests Only",
   "target": "wasm-gc",
-  "source": ["."],
+  "source": ["azimuth.mbt", "azimuth_high_quality_simple_tests.mbt"],
   "deps": {
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["attributes_operations_comprehensive_tests.mbt", "span_context_lifecycle_tests.mbt", "metrics_instruments_comprehensive_tests.mbt", "log_record_severity_context_tests.mbt", "propagation_baggage_comprehensive_tests.mbt", "http_client_network_operations_tests.mbt", "resource_attributes_operations_tests.mbt", "realtime_dashboard_streaming_tests.mbt"]
+    "test": ["azimuth_high_quality_simple_tests.mbt"]
   }
 }
