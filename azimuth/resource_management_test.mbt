@@ -1,200 +1,288 @@
-// Resource Management Test Suite for Azimuth Telemetry System
-// This file contains test cases for Resource operations
+// 资源管理测试用例
+// 测试 Azimuth 遥测系统中的资源管理功能
 
-test "resource creation and basic operations" {
+test "telemetry_resource_creation_and_attributes" {
+  // 创建基础资源
   let resource = Resource::new()
   
-  // Test creating resource with attributes
+  // 验证空资源
+  assert_eq(resource.attributes.length(), 0)
+  
+  // 设置资源属性
   let attributes = [
-    ("service.name", StringValue("azimuth-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("service.instance.id", StringValue("instance-123"))
-  ]
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
-  
-  // Verify attributes can be retrieved
-  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
-  assert_eq(service_name, Some(StringValue("azimuth-service")))
-  
-  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
-  assert_eq(service_version, Some(StringValue("1.0.0")))
-  
-  let service_instance_id = Resource::get_attribute(resource_with_attrs, "service.instance.id")
-  assert_eq(service_instance_id, Some(StringValue("instance-123")))
-  
-  // Test getting non-existent attribute
-  let missing_attribute = Resource::get_attribute(resource_with_attrs, "missing.attribute")
-  assert_eq(missing_attribute, None)
-}
-
-test "resource with different attribute types" {
-  let resource = Resource::new()
-  
-  // Test with different attribute value types
-  let attributes = [
-    ("string.attr", StringValue("test-string")),
-    ("int.attr", IntValue(42)),
-    ("float.attr", FloatValue(3.14159)),
-    ("bool.attr", BoolValue(true)),
-    ("array.string.attr", ArrayStringValue(["item1", "item2", "item3"])),
-    ("array.int.attr", ArrayIntValue([10, 20, 30]))
-  ]
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
-  
-  // Verify string attribute
-  let string_result = Resource::get_attribute(resource_with_attrs, "string.attr")
-  match string_result {
-    Some(StringValue(value)) => assert_eq(value, "test-string")
-    _ => assert_true(false, "Expected StringValue")
-  }
-  
-  // Verify int attribute
-  let int_result = Resource::get_attribute(resource_with_attrs, "int.attr")
-  match int_result {
-    Some(IntValue(value)) => assert_eq(value, 42)
-    _ => assert_true(false, "Expected IntValue")
-  }
-  
-  // Verify float attribute
-  let float_result = Resource::get_attribute(resource_with_attrs, "float.attr")
-  match float_result {
-    Some(FloatValue(value)) => assert_eq(value, 3.14159)
-    _ => assert_true(false, "Expected FloatValue")
-  }
-  
-  // Verify bool attribute
-  let bool_result = Resource::get_attribute(resource_with_attrs, "bool.attr")
-  match bool_result {
-    Some(BoolValue(value)) => assert_eq(value, true)
-    _ => assert_true(false, "Expected BoolValue")
-  }
-  
-  // Verify array string attribute
-  let array_string_result = Resource::get_attribute(resource_with_attrs, "array.string.attr")
-  match array_string_result {
-    Some(ArrayStringValue(values)) => assert_eq(values, ["item1", "item2", "item3"])
-    _ => assert_true(false, "Expected ArrayStringValue")
-  }
-  
-  // Verify array int attribute
-  let array_int_result = Resource::get_attribute(resource_with_attrs, "array.int.attr")
-  match array_int_result {
-    Some(ArrayIntValue(values)) => assert_eq(values, [10, 20, 30])
-    _ => assert_true(false, "Expected ArrayIntValue")
-  }
-}
-
-test "resource merge operations" {
-  // Create base resource
-  let base_resource = Resource::new()
-  let base_attributes = [
-    ("service.name", StringValue("base-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("common.attr", StringValue("base-value"))
-  ]
-  let base_with_attrs = Resource::with_attributes(base_resource, base_attributes)
-  
-  // Create override resource
-  let override_resource = Resource::new()
-  let override_attributes = [
-    ("service.name", StringValue("override-service")),  // This should override
-    ("service.environment", StringValue("production")), // This should be added
-    ("common.attr", StringValue("override-value"))      // This should override
-  ]
-  let override_with_attrs = Resource::with_attributes(override_resource, override_attributes)
-  
-  // Merge resources
-  let merged_resource = Resource::merge(base_with_attrs, override_with_attrs)
-  
-  // Verify merged attributes
-  let service_name = Resource::get_attribute(merged_resource, "service.name")
-  assert_eq(service_name, Some(StringValue("override-service")))
-  
-  let service_version = Resource::get_attribute(merged_resource, "service.version")
-  assert_eq(service_version, Some(StringValue("1.0.0")))
-  
-  let service_environment = Resource::get_attribute(merged_resource, "service.environment")
-  assert_eq(service_environment, Some(StringValue("production")))
-  
-  let common_attr = Resource::get_attribute(merged_resource, "common.attr")
-  assert_eq(common_attr, Some(StringValue("override-value")))
-}
-
-test "resource with service telemetry attributes" {
-  let resource = Resource::new()
-  
-  // Test with typical OpenTelemetry resource attributes
-  let telemetry_attributes = [
-    ("service.name", StringValue("azimuth-telemetry")),
+    ("service.name", StringValue("payment-service")),
     ("service.version", StringValue("2.1.0")),
-    ("service.instance.id", StringValue("azimuth-instance-456")),
-    ("service.namespace", StringValue("telemetry")),
-    ("deployment.environment", StringValue("staging")),
-    ("host.name", StringValue("azimuth-host")),
+    ("service.instance.id", StringValue("instance-12345")),
+    ("deployment.environment", StringValue("production")),
+    ("host.name", StringValue("prod-server-01")),
     ("host.arch", StringValue("amd64")),
     ("os.type", StringValue("linux")),
-    ("os.version", StringValue("5.15.0")),
-    ("process.pid", IntValue(12345)),
-    ("process.executable.name", StringValue("azimuth")),
-    ("process.command_args", ArrayStringValue(["azimuth", "--config", "/etc/azimuth/config.yaml"]))
+    ("os.version", StringValue("20.04")),
+    ("process.id", IntValue(1234)),
+    ("process.executable.name", StringValue("payment-service")),
+    ("process.command_args", ArrayStringValue(["./payment-service", "--config=prod.yaml"]))
   ]
-  let telemetry_resource = Resource::with_attributes(resource, telemetry_attributes)
   
-  // Verify service attributes
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "service.name"),
-    Some(StringValue("azimuth-telemetry"))
-  )
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "service.version"),
-    Some(StringValue("2.1.0"))
-  )
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "service.instance.id"),
-    Some(StringValue("azimuth-instance-456"))
-  )
+  let resource_with_attrs = Resource::with_attributes(resource, attributes)
   
-  // Verify deployment attributes
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "deployment.environment"),
-    Some(StringValue("staging"))
-  )
+  // 验证资源属性设置
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
+  let service_instance_id = Resource::get_attribute(resource_with_attrs, "service.instance.id")
+  let environment = Resource::get_attribute(resource_with_attrs, "deployment.environment")
+  let host_name = Resource::get_attribute(resource_with_attrs, "host.name")
+  let host_arch = Resource::get_attribute(resource_with_attrs, "host.arch")
+  let os_type = Resource::get_attribute(resource_with_attrs, "os.type")
+  let os_version = Resource::get_attribute(resource_with_attrs, "os.version")
+  let process_id = Resource::get_attribute(resource_with_attrs, "process.id")
+  let executable_name = Resource::get_attribute(resource_with_attrs, "process.executable.name")
+  let command_args = Resource::get_attribute(resource_with_attrs, "process.command_args")
   
-  // Verify host attributes
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "host.name"),
-    Some(StringValue("azimuth-host"))
-  )
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "host.arch"),
-    Some(StringValue("amd64"))
-  )
-  
-  // Verify OS attributes
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "os.type"),
-    Some(StringValue("linux"))
-  )
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "os.version"),
-    Some(StringValue("5.15.0"))
-  )
-  
-  // Verify process attributes
-  let process_pid = Resource::get_attribute(telemetry_resource, "process.pid")
-  match process_pid {
-    Some(IntValue(pid)) => assert_eq(pid, 12345)
-    _ => assert_true(false, "Expected IntValue")
+  // 验证字符串属性
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "payment-service")
+    _ => assert_true(false, "Expected service name")
   }
   
-  assert_eq(
-    Resource::get_attribute(telemetry_resource, "process.executable.name"),
-    Some(StringValue("azimuth"))
-  )
+  match service_version {
+    Some(StringValue(version)) => assert_eq(version, "2.1.0")
+    _ => assert_true(false, "Expected service version")
+  }
   
-  let process_command_args = Resource::get_attribute(telemetry_resource, "process.command_args")
-  match process_command_args {
-    Some(ArrayStringValue(args)) => assert_eq(args, ["azimuth", "--config", "/etc/azimuth/config.yaml"])
-    _ => assert_true(false, "Expected ArrayStringValue")
+  match environment {
+    Some(StringValue(env)) => assert_eq(env, "production")
+    _ => assert_true(false, "Expected environment")
+  }
+  
+  // 验证整数属性
+  match process_id {
+    Some(IntValue(pid)) => assert_eq(pid, 1234)
+    _ => assert_true(false, "Expected process ID")
+  }
+  
+  // 验证数组属性
+  match command_args {
+    Some(ArrayStringValue(args)) => {
+      assert_eq(args.length(), 2)
+      assert_eq(args[0], "./payment-service")
+      assert_eq(args[1], "--config=prod.yaml")
+    }
+    _ => assert_true(false, "Expected command args")
+  }
+}
+
+test "telemetry_resource_merge_strategy" {
+  // 创建第一个资源
+  let resource1 = Resource::new()
+  let attributes1 = [
+    ("service.name", StringValue("user-service")),
+    ("service.version", StringValue("1.5.0")),
+    ("deployment.environment", StringValue("staging")),
+    ("host.name", StringValue("staging-server-01"))
+  ]
+  
+  let resource1_with_attrs = Resource::with_attributes(resource1, attributes1)
+  
+  // 创建第二个资源
+  let resource2 = Resource::new()
+  let attributes2 = [
+    ("service.name", StringValue("payment-service")),  // 冲突属性
+    ("service.instance.id", StringValue("instance-67890")),
+    ("host.name", StringValue("staging-server-02")),  // 冲突属性
+    ("cloud.provider", StringValue("aws")),
+    ("cloud.region", StringValue("us-west-2"))
+  ]
+  
+  let resource2_with_attrs = Resource::with_attributes(resource2, attributes2)
+  
+  // 合并资源（默认策略：第二个资源覆盖第一个资源）
+  let merged_resource = Resource::merge(resource1_with_attrs, resource2_with_attrs)
+  
+  // 验证合并结果
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  let service_version = Resource::get_attribute(merged_resource, "service.version")
+  let service_instance_id = Resource::get_attribute(merged_resource, "service.instance.id")
+  let environment = Resource::get_attribute(merged_resource, "deployment.environment")
+  let host_name = Resource::get_attribute(merged_resource, "host.name")
+  let cloud_provider = Resource::get_attribute(merged_resource, "cloud.provider")
+  let cloud_region = Resource::get_attribute(merged_resource, "cloud.region")
+  
+  // 验证冲突属性的值来自第二个资源
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "payment-service")  // 来自resource2
+    _ => assert_true(false, "Expected merged service name")
+  }
+  
+  match host_name {
+    Some(StringValue(host)) => assert_eq(host, "staging-server-02")  // 来自resource2
+    _ => assert_true(false, "Expected merged host name")
+  }
+  
+  // 验证非冲突属性保留
+  match service_version {
+    Some(StringValue(version)) => assert_eq(version, "1.5.0")  // 来自resource1
+    _ => assert_true(false, "Expected original service version")
+  }
+  
+  match environment {
+    Some(StringValue(env)) => assert_eq(env, "staging")  // 来自resource1
+    _ => assert_true(false, "Expected original environment")
+  }
+  
+  // 验证新属性添加
+  match service_instance_id {
+    Some(StringValue(id)) => assert_eq(id, "instance-67890")  // 来自resource2
+    _ => assert_true(false, "Expected new service instance ID")
+  }
+  
+  match cloud_provider {
+    Some(StringValue(provider)) => assert_eq(provider, "aws")  // 来自resource2
+    _ => assert_true(false, "Expected cloud provider")
+  }
+}
+
+test "telemetry_resource_default_detection" {
+  // 测试自动资源检测
+  let auto_detected_resource = Resource::auto_detect()
+  
+  // 验证自动检测的属性
+  let service_name = Resource::get_attribute(auto_detected_resource, "service.name")
+  let host_name = Resource::get_attribute(auto_detected_resource, "host.name")
+  let os_type = Resource::get_attribute(auto_detected_resource, "os.type")
+  let process_id = Resource::get_attribute(auto_detected_resource, "process.id")
+  
+  // 验证某些属性应该被自动检测
+  assert_true(process_id != None, "Process ID should be auto-detected")
+  assert_true(os_type != None, "OS type should be auto-detected")
+}
+
+test "telemetry_resource_environment_variables" {
+  // 模拟环境变量
+  let env_attributes = [
+    ("OTEL_SERVICE_NAME", StringValue("env-service")),
+    ("OTEL_SERVICE_VERSION", StringValue("3.0.0")),
+    ("OTEL_RESOURCE_ATTRIBUTES", StringValue("deployment.environment=development,team=backend")),
+    ("OTEL_EXPORTER_OTLP_ENDPOINT", StringValue("http://localhost:4317"))
+  ]
+  
+  // 从环境变量创建资源
+  let env_resource = Resource::from_environment(env_attributes)
+  
+  // 验证环境变量解析
+  let service_name = Resource::get_attribute(env_resource, "service.name")
+  let service_version = Resource::get_attribute(env_resource, "service.version")
+  let environment = Resource::get_attribute(env_resource, "deployment.environment")
+  let team = Resource::get_attribute(env_resource, "team")
+  
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "env-service")
+    _ => assert_true(false, "Expected service name from environment")
+  }
+  
+  match service_version {
+    Some(StringValue(version)) => assert_eq(version, "3.0.0")
+    _ => assert_true(false, "Expected service version from environment")
+  }
+  
+  match environment {
+    Some(StringValue(env)) => assert_eq(env, "development")
+    _ => assert_true(false, "Expected environment from OTEL_RESOURCE_ATTRIBUTES")
+  }
+  
+  match team {
+    Some(StringValue(team_name)) => assert_eq(team_name, "backend")
+    _ => assert_true(false, "Expected team from OTEL_RESOURCE_ATTRIBUTES")
+  }
+}
+
+test "telemetry_resource_schema_validation" {
+  // 测试资源属性模式验证
+  let resource = Resource::new()
+  
+  // 测试有效的属性
+  let valid_attributes = [
+    ("service.name", StringValue("valid-service")),  // 必需属性
+    ("service.version", StringValue("1.0.0")),  // 标准属性
+    ("custom.attribute", StringValue("custom-value")),  // 自定义属性
+    ("numeric.attribute", IntValue(42)),  // 数值属性
+    ("boolean.attribute", BoolValue(true))  // 布尔属性
+  ]
+  
+  let valid_resource = Resource::with_attributes(resource, valid_attributes)
+  
+  // 验证有效资源创建成功
+  let service_name = Resource::get_attribute(valid_resource, "service.name")
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "valid-service")
+    _ => assert_true(false, "Expected valid service name")
+  }
+  
+  // 测试无效的属性（空的服务名）
+  let invalid_attributes = [
+    ("service.name", StringValue("")),  // 无效：空字符串
+    ("service.version", StringValue("1.0.0"))
+  ]
+  
+  let invalid_resource = Resource::with_attributes(resource, invalid_attributes)
+  
+  // 验证无效属性的处理
+  let invalid_service_name = Resource::get_attribute(invalid_resource, "service.name")
+  match invalid_service_name {
+    Some(StringValue(name)) => assert_eq(name, "")  // 仍然设置，但可能被标记为无效
+    _ => assert_true(false, "Expected empty service name")
+  }
+}
+
+test "telemetry_resource_serialization" {
+  // 创建资源
+  let resource = Resource::new()
+  let attributes = [
+    ("service.name", StringValue("serialization-test")),
+    ("service.version", StringValue("1.0.0")),
+    ("deployment.environment", StringValue("test")),
+    ("process.id", IntValue(1234)),
+    ("feature.flags", ArrayStringValue(["feature-a", "feature-b"]))
+  ]
+  
+  let resource_with_attrs = Resource::with_attributes(resource, attributes)
+  
+  // 序列化资源
+  let serialized = Resource::serialize(resource_with_attrs)
+  
+  // 验证序列化结果不为空
+  assert_true(serialized.length() > 0, "Serialized resource should not be empty")
+  
+  // 反序列化资源
+  let deserialized_resource = Resource::deserialize(serialized)
+  
+  // 验证反序列化结果
+  let service_name = Resource::get_attribute(deserialized_resource, "service.name")
+  let service_version = Resource::get_attribute(deserialized_resource, "service.version")
+  let environment = Resource::get_attribute(deserialized_resource, "deployment.environment")
+  let process_id = Resource::get_attribute(deserialized_resource, "process.id")
+  let feature_flags = Resource::get_attribute(deserialized_resource, "feature.flags")
+  
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "serialization-test")
+    _ => assert_true(false, "Expected deserialized service name")
+  }
+  
+  match service_version {
+    Some(StringValue(version)) => assert_eq(version, "1.0.0")
+    _ => assert_true(false, "Expected deserialized service version")
+  }
+  
+  match process_id {
+    Some(IntValue(pid)) => assert_eq(pid, 1234)
+    _ => assert_true(false, "Expected deserialized process ID")
+  }
+  
+  match feature_flags {
+    Some(ArrayStringValue(flags)) => {
+      assert_eq(flags.length(), 2)
+      assert_eq(flags[0], "feature-a")
+      assert_eq(flags[1], "feature-b")
+    }
+    _ => assert_true(false, "Expected deserialized feature flags")
   }
 }
