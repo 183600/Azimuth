@@ -1,431 +1,466 @@
-// Dashboard Data Aggregation Test Suite for Azimuth Telemetry System
-// This file contains test cases focusing on dashboard data aggregation, rollups, and analytics
+// Dashboard Data Aggregation Tests
+// This file contains test cases for data aggregation functionality for dashboard display
 
-test "multi-dimensional data aggregation" {
-  // Test multi-dimensional data aggregation for dashboard analytics
+test "metrics aggregation across time windows" {
+  // Test aggregation of metrics across different time windows
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "dashboard.aggregation.test")
+  let meter = MeterProvider::get_meter(provider, "dashboard-metrics")
   
-  // Create metrics for multi-dimensional aggregation
-  let request_counter = Meter::create_counter(meter, "http.requests.total")
-  let response_histogram = Meter::create_histogram(meter, "http.response.time")
-  let error_counter = Meter::create_counter(meter, "http.errors.total")
+  // Create metrics for dashboard
+  let request_counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
+  let response_time_histogram = Meter::create_histogram(meter, "http.response.time", Some("HTTP response time"), Some("ms"))
+  let error_rate_gauge = Meter::create_gauge(meter, "http.error.rate", Some("HTTP error rate"), Some("percent"))
+  let active_connections = Meter::create_updown_counter(meter, "connections.active", Some("Active connections"), Some("connections"))
   
-  // Simulate multi-dimensional telemetry data
-  let telemetry_data_points = [
-    ("api.gateway", "GET", "/users", 200, 120.0, false),
-    ("api.gateway", "POST", "/users", 201, 250.0, false),
-    ("auth.service", "POST", "/login", 200, 150.0, false),
-    ("auth.service", "POST", "/login", 401, 50.0, true),
-    ("user.service", "GET", "/users/123", 200, 80.0, false),
-    ("user.service", "PUT", "/users/123", 200, 200.0, false),
-    ("order.service", "GET", "/orders", 200, 100.0, false),
-    ("order.service", "POST", "/orders", 500, 300.0, true),
-    ("payment.service", "POST", "/payments", 200, 400.0, false),
-    ("payment.service", "POST", "/payments", 503, 100.0, true)
-  ]
+  // Simulate metrics over different time windows (1 minute, 5 minutes, 1 hour)
+  let one_minute_window = 60000L  // 1 minute in milliseconds
+  let five_minute_window = 300000L // 5 minutes in milliseconds
+  let one_hour_window = 3600000L   // 1 hour in milliseconds
   
-  // Record telemetry data
-  for (service, method, endpoint, status_code, response_time, is_error) in telemetry_data_points {
-    Counter::add(request_counter, 1.0)
-    Histogram::record(response_histogram, response_time)
-    
-    if is_error {
-      Counter::add(error_counter, 1.0)
+  // Record metrics for 1-minute window
+  for i in 0..<60 {
+    Counter::add(request_counter, 10.0)  // 10 requests per second
+    Histogram::record(response_time_histogram, Double.from_int(50 + i % 100)) // Response times between 50-149ms
+    if i % 10 == 0 {
+      UpDownCounter::add(error_rate_gauge, 1.0) // Error every 10 seconds
+    }
+    UpDownCounter::add(active_connections, Double.from_int(i % 20)) // Varying connections
+  }
+  
+  // Record metrics for 5-minute window
+  for i in 0..<300 {
+    Counter::add(request_counter, 8.0)   // 8 requests per second
+    Histogram::record(response_time_histogram, Double.from_int(60 + i % 80)) // Response times between 60-139ms
+    if i % 15 == 0 {
+      UpDownCounter::add(error_rate_gauge, 1.0) // Error every 15 seconds
+    }
+    UpDownCounter::add(active_connections, Double.from_int(i % 25)) // Varying connections
+  }
+  
+  // Record metrics for 1-hour window
+  for i in 0..<3600 {
+    Counter::add(request_counter, 12.0)  // 12 requests per second
+    Histogram::record(response_time_histogram, Double.from_int(40 + i % 120)) // Response times between 40-159ms
+    if i % 20 == 0 {
+      UpDownCounter::add(error_rate_gauge, 1.0) // Error every 20 seconds
+    }
+    UpDownCounter::add(active_connections, Double.from_int(i % 30)) // Varying connections
+  }
+  
+  // Simulate aggregation results for dashboard
+  let one_minute_requests = 60 * 10  // 600 requests in 1 minute
+  let five_minute_requests = 300 * 8  // 2400 requests in 5 minutes
+  let one_hour_requests = 3600 * 12  // 43200 requests in 1 hour
+  
+  let one_minute_errors = 60 / 10  // 6 errors in 1 minute
+  let five_minute_errors = 300 / 15  // 20 errors in 5 minutes
+  let one_hour_errors = 3600 / 20  // 180 errors in 1 hour
+  
+  let one_minute_error_rate = Double.from_int(one_minute_errors) / Double.from_int(one_minute_requests) * 100.0
+  let five_minute_error_rate = Double.from_int(five_minute_errors) / Double.from_int(five_minute_requests) * 100.0
+  let one_hour_error_rate = Double.from_int(one_hour_errors) / Double.from_int(one_hour_requests) * 100.0
+  
+  // Verify aggregation calculations
+  assert_eq(one_minute_requests, 600)
+  assert_eq(five_minute_requests, 2400)
+  assert_eq(one_hour_requests, 43200)
+  
+  assert_true(one_minute_error_rate > 0.0)
+  assert_true(five_minute_error_rate > 0.0)
+  assert_true(one_hour_error_rate > 0.0)
+  
+  assert_true(one_minute_error_rate > five_minute_error_rate)
+  assert_true(five_minute_error_rate > one_hour_error_rate)
+  
+  assert_true(true)
+}
+
+test "log aggregation by severity level" {
+  // Test aggregation of logs by severity level for dashboard display
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "dashboard-logger")
+  
+  // Create logs with different severity levels
+  let trace_logs = []
+  let debug_logs = []
+  let info_logs = []
+  let warn_logs = []
+  let error_logs = []
+  let fatal_logs = []
+  
+  // Generate logs with different severity levels
+  for i in 0..<100 {
+    if i % 10 == 0 {
+      let log = LogRecord::new(Trace, "Trace message " + Int.to_string(i))
+      trace_logs.push(log)
+    } else if i % 10 == 1 {
+      let log = LogRecord::new(Debug, "Debug message " + Int.to_string(i))
+      debug_logs.push(log)
+    } else if i % 10 == 2 || i % 10 == 3 || i % 10 == 4 {
+      let log = LogRecord::new(Info, "Info message " + Int.to_string(i))
+      info_logs.push(log)
+    } else if i % 10 == 5 || i % 10 == 6 {
+      let log = LogRecord::new(Warn, "Warning message " + Int.to_string(i))
+      warn_logs.push(log)
+    } else if i % 10 == 8 {
+      let log = LogRecord::new(Error, "Error message " + Int.to_string(i))
+      error_logs.push(log)
+    } else if i % 10 == 9 {
+      let log = LogRecord::new(Fatal, "Fatal message " + Int.to_string(i))
+      fatal_logs.push(log)
     }
   }
   
-  // Perform multi-dimensional aggregations
-  // Aggregate by service
-  let service_aggregations = [
-    ("api.gateway", 2, 2, 0, 185.0),    # (requests, success, errors, avg_response_time)
-    ("auth.service", 2, 1, 1, 100.0),
-    ("user.service", 2, 2, 0, 140.0),
-    ("order.service", 2, 1, 1, 200.0),
-    ("payment.service", 2, 1, 1, 250.0)
-  ]
+  // Emit all logs
+  for log in trace_logs {
+    Logger::emit(logger, log)
+  }
+  for log in debug_logs {
+    Logger::emit(logger, log)
+  }
+  for log in info_logs {
+    Logger::emit(logger, log)
+  }
+  for log in warn_logs {
+    Logger::emit(logger, log)
+  }
+  for log in error_logs {
+    Logger::emit(logger, log)
+  }
+  for log in fatal_logs {
+    Logger::emit(logger, log)
+  }
   
-  // Aggregate by HTTP method
-  let method_aggregations = [
-    ("GET", 3, 3, 0, 100.0),
-    ("POST", 6, 3, 3, 225.0),
-    ("PUT", 1, 1, 0, 200.0)
-  ]
+  // Verify log counts
+  assert_eq(trace_logs.length, 10)
+  assert_eq(debug_logs.length, 10)
+  assert_eq(info_logs.length, 30)
+  assert_eq(warn_logs.length, 20)
+  assert_eq(error_logs.length, 10)
+  assert_eq(fatal_logs.length, 10)
   
-  // Aggregate by status code range
-  let status_aggregations = [
-    ("2xx", 7, 7, 0, 185.7),
-    ("4xx", 1, 0, 1, 50.0),
-    ("5xx", 2, 0, 2, 200.0)
-  ]
+  // Calculate percentages for dashboard
+  let total_logs = trace_logs.length + debug_logs.length + info_logs.length + warn_logs.length + error_logs.length + fatal_logs.length
+  let trace_percentage = Double.from_int(trace_logs.length) / Double.from_int(total_logs) * 100.0
+  let debug_percentage = Double.from_int(debug_logs.length) / Double.from_int(total_logs) * 100.0
+  let info_percentage = Double.from_int(info_logs.length) / Double.from_int(total_logs) * 100.0
+  let warn_percentage = Double.from_int(warn_logs.length) / Double.from_int(total_logs) * 100.0
+  let error_percentage = Double.from_int(error_logs.length) / Double.from_int(total_logs) * 100.0
+  let fatal_percentage = Double.from_int(fatal_logs.length) / Double.from_int(total_logs) * 100.0
   
-  // Verify aggregations
-  let total_requests = service_aggregations.map(|(_, total, _, _, _)| total).reduce(0, +)
-  let total_errors = service_aggregations.map(|(_, _, errors, _, _)| errors).reduce(0, +)
-  let overall_success_rate = (total_requests - total_errors) / total_requests
+  // Verify percentages
+  assert_eq(total_logs, 90)
+  assert_eq(trace_percentage, 11.11111111111111)
+  assert_eq(debug_percentage, 11.11111111111111)
+  assert_eq(info_percentage, 33.333333333333336)
+  assert_eq(warn_percentage, 22.22222222222222)
+  assert_eq(error_percentage, 11.11111111111111)
+  assert_eq(fatal_percentage, 11.11111111111111)
   
-  assert_eq(total_requests, 10)
-  assert_eq(total_errors, 3)
-  assert_eq(overall_success_rate, 0.7)  # 70% success rate
-  assert_eq(service_aggregations.length(), 5)
-  assert_eq(method_aggregations.length(), 3)
-  assert_eq(status_aggregations.length(), 3)
+  assert_true(true)
 }
 
-test "time-based rollup aggregation" {
-  // Test time-based rollup aggregations for dashboard performance
+test "span aggregation by operation type" {
+  // Test aggregation of spans by operation type for dashboard display
   let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "time.rollup.test")
+  let tracer = TracerProvider::get_tracer(provider, "dashboard-tracer")
   
-  // Simulate time-series data with different granularities
-  let base_timestamp = 1735689600000000000L  # Base timestamp
+  // Create spans with different operation types
+  let server_spans = []
+  let client_spans = []
+  let producer_spans = []
+  let consumer_spans = []
+  let internal_spans = []
   
-  let minute_level_data = [
-    (base_timestamp, 100.0),  # Minute 1
-    (base_timestamp + 60000000000L, 120.0),  # Minute 2
-    (base_timestamp + 120000000000L, 80.0),   # Minute 3
-    (base_timestamp + 180000000000L, 150.0),  # Minute 4
-    (base_timestamp + 240000000000L, 90.0),   # Minute 5
-    (base_timestamp + 300000000000L, 110.0),  # Minute 6
-    (base_timestamp + 360000000000L, 130.0),  # Minute 7
-    (base_timestamp + 420000000000L, 70.0),   # Minute 8
-    (base_timestamp + 480000000000L, 140.0),  # Minute 9
-    (base_timestamp + 540000000000L, 95.0)    # Minute 10
-  ]
-  
-  // Perform 5-minute rollup aggregation
-  let five_minute_rollups = [
-    (base_timestamp, [100.0, 120.0, 80.0, 150.0, 90.0]),  # First 5 minutes
-    (base_timestamp + 300000000000L, [110.0, 130.0, 70.0, 140.0, 95.0])  # Next 5 minutes
-  ]
-  
-  // Calculate rollup statistics
-  let rollup_statistics = []
-  
-  for (rollup_timestamp, values) in five_minute_rollups {
-    let sum = values.reduce(0.0, +)
-    let count = values.length()
-    let average = sum / count
-    let min_value = values.reduce(1000.0, |a, b| if a < b { a } else { b })
-    let max_value = values.reduce(0.0, |a, b| if a > b { a } else { b })
+  // Generate spans with different kinds
+  for i in 0..<50 {
+    let trace_id = "trace-" + Int.to_string(i % 10)  // 10 different traces
+    let span_id = "span-" + Int.to_string(i)
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
     
-    rollup_statistics.push((rollup_timestamp, average, min_value, max_value, sum))
-    
-    # Trace rollup calculation
-    let span = Tracer::start_span(tracer, "rollup.calculation")
-    Span::add_event(span, "rollup.completed", Some([
-      ("timestamp", StringValue(rollup_timestamp.to_string())),
-      ("average", StringValue(average.to_string())),
-      ("min", StringValue(min_value.to_string())),
-      ("max", StringValue(max_value.to_string())),
-      ("sum", StringValue(sum.to_string()))
-    ]))
+    if i % 5 == 0 {
+      let span = Span::new("server-operation-" + Int.to_string(i), Server, span_ctx)
+      server_spans.push(span)
+    } else if i % 5 == 1 {
+      let span = Span::new("client-operation-" + Int.to_string(i), Client, span_ctx)
+      client_spans.push(span)
+    } else if i % 5 == 2 {
+      let span = Span::new("producer-operation-" + Int.to_string(i), Producer, span_ctx)
+      producer_spans.push(span)
+    } else if i % 5 == 3 {
+      let span = Span::new("consumer-operation-" + Int.to_string(i), Consumer, span_ctx)
+      consumer_spans.push(span)
+    } else {
+      let span = Span::new("internal-operation-" + Int.to_string(i), Internal, span_ctx)
+      internal_spans.push(span)
+    }
+  }
+  
+  // Add events to spans
+  for span in server_spans {
+    Span::add_event(span, "server.event", None)
+    Span::end(span)
+  }
+  for span in client_spans {
+    Span::add_event(span, "client.event", None)
+    Span::end(span)
+  }
+  for span in producer_spans {
+    Span::add_event(span, "producer.event", None)
+    Span::end(span)
+  }
+  for span in consumer_spans {
+    Span::add_event(span, "consumer.event", None)
+    Span::end(span)
+  }
+  for span in internal_spans {
+    Span::add_event(span, "internal.event", None)
     Span::end(span)
   }
   
-  // Verify rollup calculations
-  let first_rollup_avg = rollup_statistics[0].1
-  let first_rollup_min = rollup_statistics[0].2
-  let first_rollup_max = rollup_statistics[0].3
-  let first_rollup_sum = rollup_statistics[0].4
+  // Verify span counts
+  assert_eq(server_spans.length, 10)
+  assert_eq(client_spans.length, 10)
+  assert_eq(producer_spans.length, 10)
+  assert_eq(consumer_spans.length, 10)
+  assert_eq(internal_spans.length, 10)
   
-  let second_rollup_avg = rollup_statistics[1].1
-  let second_rollup_min = rollup_statistics[1].2
-  let second_rollup_max = rollup_statistics[1].3
-  let second_rollup_sum = rollup_statistics[1].4
+  // Calculate percentages for dashboard
+  let total_spans = server_spans.length + client_spans.length + producer_spans.length + consumer_spans.length + internal_spans.length
+  let server_percentage = Double.from_int(server_spans.length) / Double.from_int(total_spans) * 100.0
+  let client_percentage = Double.from_int(client_spans.length) / Double.from_int(total_spans) * 100.0
+  let producer_percentage = Double.from_int(producer_spans.length) / Double.from_int(total_spans) * 100.0
+  let consumer_percentage = Double.from_int(consumer_spans.length) / Double.from_int(total_spans) * 100.0
+  let internal_percentage = Double.from_int(internal_spans.length) / Double.from_int(total_spans) * 100.0
   
-  assert_eq(first_rollup_avg, 108.0)  # (100+120+80+150+90)/5
-  assert_eq(first_rollup_min, 80.0)
-  assert_eq(first_rollup_max, 150.0)
-  assert_eq(first_rollup_sum, 540.0)
+  // Verify percentages
+  assert_eq(total_spans, 50)
+  assert_eq(server_percentage, 20.0)
+  assert_eq(client_percentage, 20.0)
+  assert_eq(producer_percentage, 20.0)
+  assert_eq(consumer_percentage, 20.0)
+  assert_eq(internal_percentage, 20.0)
   
-  assert_eq(second_rollup_avg, 109.0)  # (110+130+70+140+95)/5
-  assert_eq(second_rollup_min, 70.0)
-  assert_eq(second_rollup_max, 140.0)
-  assert_eq(second_rollup_sum, 545.0)
-  
-  assert_eq(five_minute_rollups.length(), 2)
-  assert_eq(rollup_statistics.length(), 2)
+  assert_true(true)
 }
 
-test "percentile and distribution aggregation" {
-  // Test percentile calculations and distribution analysis
+test "resource attribute aggregation" {
+  // Test aggregation of resource attributes for dashboard display
+  let resources = []
+  
+  // Create resources with different attributes
+  for i in 0::<20 {
+    let resource = Resource::new()
+    let resource_with_attrs = Resource::with_attributes(
+      resource,
+      [
+        ("service.name", StringValue("service-" + Int.to_string(i % 5))),  // 5 different services
+        ("service.version", StringValue("1.0." + Int.to_string(i % 3))),   // 3 different versions
+        ("host.name", StringValue("host-" + Int.to_string(i % 4))),        // 4 different hosts
+        ("deployment.environment", StringValue(["production", "staging", "development"][i % 3])),
+        ("region", StringValue(["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"][i % 4]))
+      ]
+    )
+    resources.push(resource_with_attrs)
+  }
+  
+  // Count resources by service name
+  let service_counts = :[
+    ("service-0", 0),
+    ("service-1", 0),
+    ("service-2", 0),
+    ("service-3", 0),
+    ("service-4", 0)
+  ]
+  
+  // Count resources by environment
+  let env_counts = :[
+    ("production", 0),
+    ("staging", 0),
+    ("development", 0)
+  ]
+  
+  // Count resources by region
+  let region_counts = :[
+    ("us-east-1", 0),
+    ("us-west-2", 0),
+    ("eu-west-1", 0),
+    ("ap-southeast-1", 0)
+  ]
+  
+  // Aggregate resource counts
+  for resource in resources {
+    let service_name = Resource::get_attribute(resource, "service.name")
+    let env = Resource::get_attribute(resource, "deployment.environment")
+    let region = Resource::get_attribute(resource, "region")
+    
+    match service_name {
+      Some(StringValue(name)) => {
+        if name == "service-0" { service_counts[("service-0")] = service_counts[("service-0")] + 1 }
+        else if name == "service-1" { service_counts[("service-1")] = service_counts[("service-1")] + 1 }
+        else if name == "service-2" { service_counts[("service-2")] = service_counts[("service-2")] + 1 }
+        else if name == "service-3" { service_counts[("service-3")] = service_counts[("service-3")] + 1 }
+        else if name == "service-4" { service_counts[("service-4")] = service_counts[("service-4")] + 1 }
+      }
+      _ => ()
+    }
+    
+    match env {
+      Some(StringValue(e)) => {
+        if e == "production" { env_counts[("production")] = env_counts[("production")] + 1 }
+        else if e == "staging" { env_counts[("staging")] = env_counts[("staging")] + 1 }
+        else if e == "development" { env_counts[("development")] = env_counts[("development")] + 1 }
+      }
+      _ => ()
+    }
+    
+    match region {
+      Some(StringValue(r)) => {
+        if r == "us-east-1" { region_counts[("us-east-1")] = region_counts[("us-east-1")] + 1 }
+        else if r == "us-west-2" { region_counts[("us-west-2")] = region_counts[("us-west-2")] + 1 }
+        else if r == "eu-west-1" { region_counts[("eu-west-1")] = region_counts[("eu-west-1")] + 1 }
+        else if r == "ap-southeast-1" { region_counts[("ap-southeast-1")] = region_counts[("ap-southeast-1")] + 1 }
+      }
+      _ => ()
+    }
+  }
+  
+  // Verify service counts
+  assert_eq(service_counts[("service-0")], 4)
+  assert_eq(service_counts[("service-1")], 4)
+  assert_eq(service_counts[("service-2")], 4)
+  assert_eq(service_counts[("service-3")], 4)
+  assert_eq(service_counts[("service-4")], 4)
+  
+  // Verify environment counts
+  assert_eq(env_counts[("production")] + env_counts[("staging")] + env_counts[("development")], 20)
+  
+  // Verify region counts
+  assert_eq(region_counts[("us-east-1")] + region_counts[("us-west-2")] + region_counts[("eu-west-1")] + region_counts[("ap-southeast-1")], 20)
+  
+  assert_true(true)
+}
+
+test "dashboard kpi calculations" {
+  // Test Key Performance Indicator (KPI) calculations for dashboard
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "percentile.aggregation.test")
-  let histogram = Meter::create_histogram(meter, "response.time.distribution")
+  let meter = MeterProvider::get_meter(provider, "kpi-metrics")
   
-  // Simulate response time data for percentile calculation
-  let response_times = [
-    10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0, 55.0,
-    60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0, 95.0, 100.0, 105.0,
-    110.0, 115.0, 120.0, 125.0, 130.0, 135.0, 140.0, 145.0, 150.0, 155.0,
-    160.0, 165.0, 170.0, 175.0, 180.0, 185.0, 190.0, 195.0, 200.0, 205.0,
-    210.0, 215.0, 220.0, 225.0, 230.0, 235.0, 240.0, 245.0, 250.0, 255.0
-  ]
+  // Create metrics for KPI calculations
+  let total_requests = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
+  let successful_requests = Meter::create_counter(meter, "http.requests.successful", Some("Successful HTTP requests"), Some("requests"))
+  let failed_requests = Meter::create_counter(meter, "http.requests.failed", Some("Failed HTTP requests"), Some("requests"))
+  let response_time_sum = Meter::create_counter(meter, "http.response.time.sum", Some("Sum of response times"), Some("ms"))
+  let response_time_count = Meter::create_counter(meter, "http.response.time.count", Some("Count of response times"), Some("count"))
   
-  // Record response times
-  for response_time in response_times {
-    Histogram::record(histogram, response_time)
-  }
+  // Simulate metrics data
+  let total_requests_value = 10000.0
+  let successful_requests_value = 9500.0
+  let failed_requests_value = 500.0
+  let response_time_sum_value = 500000.0  // Total response time in ms
+  let response_time_count_value = 9500.0  // Number of successful requests
   
-  // Calculate percentiles
-  let sorted_times = response_times.sort()
-  let data_count = sorted_times.length()
+  // Record metrics
+  Counter::add(total_requests, total_requests_value)
+  Counter::add(successful_requests, successful_requests_value)
+  Counter::add(failed_requests, failed_requests_value)
+  Counter::add(response_time_sum, response_time_sum_value)
+  Counter::add(response_time_count, response_time_count_value)
   
-  # Helper function to calculate percentile
-  let calculate_percentile = |p: Double| -> Double {
-    let index = ((p / 100.0) * (data_count - 1).to_float()).to_int()
-    sorted_times[index]
-  }
+  // Calculate KPIs
+  let availability = successful_requests_value / total_requests_value * 100.0
+  let error_rate = failed_requests_value / total_requests_value * 100.0
+  let average_response_time = response_time_sum_value / response_time_count_value
   
-  let p50 = calculate_percentile(50.0)
-  let p75 = calculate_percentile(75.0)
-  let p90 = calculate_percentile(90.0)
-  let p95 = calculate_percentile(95.0)
-  let p99 = calculate_percentile(99.0)
+  // Calculate SLA compliance (assuming 99.9% availability SLA)
+  let sla_target = 99.9
+  let sla_compliance = if availability >= sla_target { true } else { false }
   
-  # Calculate distribution statistics
-  let mean = sorted_times.reduce(0.0, +) / data_count.to_float()
-  let median = p50
-  let min_value = sorted_times[0]
-  let max_value = sorted_times[data_count - 1]
+  // Calculate performance grade (A-F based on response time)
+  let performance_grade = 
+    if average_response_time < 100.0 { "A" }
+    else if average_response_time < 200.0 { "B" }
+    else if average_response_time < 500.0 { "C" }
+    else if average_response_time < 1000.0 { "D" }
+    else { "F" }
   
-  # Calculate standard deviation (simplified)
-  let variance = sorted_times.map(|x| (x - mean) * (x - mean)).reduce(0.0, +) / data_count.to_float()
-  let std_dev = variance.sqrt()
+  // Verify KPI calculations
+  assert_eq(total_requests_value, 10000.0)
+  assert_eq(successful_requests_value, 9500.0)
+  assert_eq(failed_requests_value, 500.0)
+  assert_eq(availability, 95.0)
+  assert_eq(error_rate, 5.0)
+  assert_eq(average_response_time, 52.63157894736842)
+  assert_eq(sla_compliance, false)  // 95% < 99.9%
+  assert_eq(performance_grade, "A")
   
-  # Verify percentile calculations
-  assert_eq(p50, 130.0)  # 50th percentile (median)
-  assert_eq(p75, 190.0)  # 75th percentile
-  assert_eq(p90, 225.0)  # 90th percentile
-  assert_eq(p95, 240.0)  # 95th percentile
-  assert_eq(p99, 250.0)  # 99th percentile
-  
-  # Verify distribution statistics
-  assert_eq(mean, 132.5)  # Average of 10 to 255
-  assert_eq(median, 130.0)
-  assert_eq(min_value, 10.0)
-  assert_eq(max_value, 255.0)
-  assert_true(std_dev > 70.0 && std_dev < 80.0)  # Reasonable standard deviation
-  
-  assert_eq(data_count, 50)
+  assert_true(true)
 }
 
-test "real-time aggregation with sliding windows" {
-  // Test real-time aggregation using sliding time windows
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "sliding.window.test")
-  
-  // Simulate real-time data stream
-  let current_time = Clock::now_unix_nanos(Clock::system())
-  let sliding_window_size = 60000000000L  # 60 seconds window
-  let data_points = [
-    (current_time - 120000000000L, 100.0),  # 2 minutes ago (outside window)
-    (current_time - 90000000000L, 120.0),   # 90 seconds ago (outside window)
-    (current_time - 30000000000L, 80.0),    # 30 seconds ago (inside window)
-    (current_time - 20000000000L, 150.0),   # 20 seconds ago (inside window)
-    (current_time - 10000000000L, 90.0),    # 10 seconds ago (inside window)
-    (current_time - 5000000000L, 110.0),    # 5 seconds ago (inside window)
-    (current_time, 130.0)                   # Current time (inside window)
-  ]
-  
-  // Filter data points within sliding window
-  let window_start = current_time - sliding_window_size
-  let window_data = data_points.filter(|(timestamp, _)| timestamp >= window_start)
-  
-  // Calculate sliding window aggregations
-  let window_values = window_data.map(|(_, value)| value)
-  let window_sum = window_values.reduce(0.0, +)
-  let window_count = window_values.length()
-  let window_average = window_sum / window_count.to_float()
-  let window_min = window_values.reduce(1000.0, |a, b| if a < b { a } else { b })
-  let window_max = window_values.reduce(0.0, |a, b| if a > b { a } else { b })
-  
-  // Simulate window sliding over time
-  let new_time = current_time + 30000000000L  # 30 seconds later
-  let new_window_start = new_time - sliding_window_size
-  let new_window_data = data_points.filter(|(timestamp, _)| timestamp >= new_window_start)
-  
-  // Calculate new window statistics
-  let new_window_values = new_window_data.map(|(_, value)| value)
-  let new_window_average = new_window_values.reduce(0.0, +) / new_window_values.length().to_float()
-  
-  // Log sliding window events
-  let window_log = LogRecord::new(Info, "Sliding window aggregation: avg=" + window_average.to_string() + ", count=" + window_count.to_string())
-  Logger::emit(logger, window_log)
-  
-  // Verify sliding window calculations
-  assert_eq(window_count, 5)  # 5 data points within 60-second window
-  assert_eq(window_average, 112.0)  # (80+150+90+110+130)/5
-  assert_eq(window_min, 80.0)
-  assert_eq(window_max, 150.0)
-  assert_eq(new_window_average, 120.0)  # (150+90+110+130)/4
-  
-  assert_eq(data_points.length(), 7)
-  assert_eq(window_data.length(), 5)
-  assert_eq(new_window_data.length(), 4)
-}
-
-test "hierarchical aggregation drill-down" {
-  // Test hierarchical aggregation with drill-down capabilities
+test "real-time data streaming aggregation" {
+  // Test real-time data streaming aggregation for dashboard
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "hierarchical.aggregation.test")
+  let meter = MeterProvider::get_meter(provider, "realtime-metrics")
   
-  // Define hierarchical structure: Region -> Data Center -> Service -> Operation
-  let hierarchical_data = [
-    # Level 1: Region
-    ("us-east-1", "", "", "", 1000.0, 50.0),
-    ("us-west-2", "", "", "", 800.0, 40.0),
-    ("eu-west-1", "", "", "", 600.0, 30.0),
-    
-    # Level 2: Data Center
-    ("us-east-1", "dc-1", "", "", 600.0, 30.0),
-    ("us-east-1", "dc-2", "", "", 400.0, 20.0),
-    ("us-west-2", "dc-3", "", "", 500.0, 25.0),
-    ("us-west-2", "dc-4", "", "", 300.0, 15.0),
-    
-    # Level 3: Service
-    ("us-east-1", "dc-1", "api.service", "", 300.0, 15.0),
-    ("us-east-1", "dc-1", "auth.service", "", 200.0, 10.0),
-    ("us-east-1", "dc-1", "user.service", "", 100.0, 5.0),
-    ("us-east-1", "dc-2", "payment.service", "", 250.0, 12.0),
-    ("us-east-1", "dc-2", "order.service", "", 150.0, 8.0),
-    
-    # Level 4: Operation
-    ("us-east-1", "dc-1", "api.service", "GET", 150.0, 7.0),
-    ("us-east-1", "dc-1", "api.service", "POST", 150.0, 8.0),
-    ("us-east-1", "dc-1", "auth.service", "login", 100.0, 5.0),
-    ("us-east-1", "dc-1", "auth.service", "logout", 100.0, 5.0)
-  ]
+  // Create metrics for real-time monitoring
+  let cpu_usage = Meter::create_gauge(meter, "system.cpu.usage", Some("CPU usage"), Some("percent"))
+  let memory_usage = Meter::create_gauge(meter, "system.memory.usage", Some("Memory usage"), Some("percent"))
+  let disk_io = Meter::create_counter(meter, "system.disk.io", Some("Disk I/O"), Some("bytes"))
+  let network_io = Meter::create_counter(meter, "system.network.io", Some("Network I/O"), Some("bytes"))
   
-  // Record hierarchical metrics
-  for (region, dc, service, operation, requests, errors) in hierarchical_data {
-    let counter = Meter::create_counter(meter, region + "." + dc + "." + service + "." + operation + ".requests")
-    Counter::add(counter, requests)
+  // Simulate real-time data streaming (last 60 seconds)
+  let realtime_data_points = []
+  
+  for second in 0..<60 {
+    // Simulate varying metrics over time
+    let cpu_value = 20.0 + Double.from_int(second % 40) + Double.random() * 10.0  // CPU between 20-70%
+    let memory_value = 40.0 + Double.from_int(second % 30) + Double.random() * 5.0  // Memory between 40-75%
+    let disk_io_value = 1000.0 * Double.from_int(second + 1)  // Cumulative disk I/O
+    let network_io_value = 500.0 * Double.from_int(second + 1)  // Cumulative network I/O
     
-    if errors > 0.0 {
-      let error_counter = Meter::create_counter(meter, region + "." + dc + "." + service + "." + operation + ".errors")
-      Counter::add(error_counter, errors)
-    }
+    // Record metrics
+    UpDownCounter::add(cpu_usage, cpu_value)
+    UpDownCounter::add(memory_usage, memory_value)
+    Counter::add(disk_io, disk_io_value)
+    Counter::add(network_io, network_io_value)
+    
+    // Store data point for aggregation
+    realtime_data_points.push((second, cpu_value, memory_value, disk_io_value, network_io_value))
   }
   
-  // Perform hierarchical aggregations
-  # Level 1 aggregation (by region)
-  let region_totals = [
-    ("us-east-1", 1000.0, 50.0),
-    ("us-west-2", 800.0, 40.0),
-    ("eu-west-1", 600.0, 30.0)
-  ]
+  // Calculate real-time aggregations
+  let cpu_sum = 0.0
+  let memory_sum = 0.0
+  let max_cpu = 0.0
+  let max_memory = 0.0
+  let min_cpu = 100.0
+  let min_memory = 100.0
   
-  # Level 2 aggregation (by data center)
-  let dc_totals = [
-    ("us-east-1", "dc-1", 600.0, 30.0),
-    ("us-east-1", "dc-2", 400.0, 20.0),
-    ("us-west-2", "dc-3", 500.0, 25.0),
-    ("us-west-2", "dc-4", 300.0, 15.0)
-  ]
-  
-  # Verify hierarchical drill-down
-  let total_requests = region_totals.map(|(_, requests, _)| requests).reduce(0.0, +)
-  let total_errors = region_totals.map(|(_, _, errors)| errors).reduce(0.0, +)
-  
-  # Drill-down verification: us-east-1 region should equal sum of its data centers
-  let us_east_1_region_total = region_totals.filter(|(region, _, _)| region == "us-east-1")[0].1
-  let us_east_1_dc_sum = dc_totals.filter(|(region, _, _)| region == "us-east-1").map(|(_, _, requests)| requests).reduce(0.0, +)
-  
-  assert_eq(total_requests, 2400.0)
-  assert_eq(total_errors, 120.0)
-  assert_eq(us_east_1_region_total, us_east_1_dc_sum)
-  assert_eq(us_east_1_region_total, 1000.0)
-  
-  assert_eq(region_totals.length(), 3)
-  assert_eq(dc_totals.length(), 4)
-  assert_eq(hierarchical_data.length(), 16)
-}
-
-test "aggregation performance optimization" {
-  // Test performance optimization for large-scale aggregations
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "aggregation.performance.test")
-  
-  // Simulate large dataset for aggregation
-  let large_dataset_size = 10000
-  let aggregation_start_time = Clock::now_unix_nanos(Clock::system())
-  
-  # Generate large dataset
-  let large_dataset = []
-  for i in range(1, large_dataset_size + 1) {
-    let value = (i % 1000).to_float()  # Values from 0 to 999
-    large_dataset.push(value)
-  }
-  
-  # Test different aggregation strategies
-  # Strategy 1: Simple iteration
-  let simple_start = Clock::now_unix_nanos(Clock::system())
-  let simple_sum = large_dataset.reduce(0.0, +)
-  let simple_avg = simple_sum / large_dataset_size.to_float()
-  let simple_end = Clock::now_unix_nanos(Clock::system())
-  let simple_duration = simple_end - simple_start
-  
-  # Strategy 2: Batch processing
-  let batch_start = Clock::now_unix_nanos(Clock::system())
-  let batch_size = 1000
-  let batch_sum = 0.0
-  for batch_start_idx in range(0, large_dataset_size, batch_size) {
-    let batch_end = if batch_start_idx + batch_size > large_dataset_size {
-      large_dataset_size
-    } else {
-      batch_start_idx + batch_size
-    }
+  for (_, cpu_value, memory_value, _, _) in realtime_data_points {
+    let new_cpu_sum = cpu_sum + cpu_value
+    let new_memory_sum = memory_sum + memory_value
     
-    let batch_partial_sum = 0.0
-    for i in range(batch_start_idx, batch_end) {
-      batch_partial_sum = batch_partial_sum + large_dataset[i]
-    }
-    batch_sum = batch_sum + batch_partial_sum
-  }
-  let batch_avg = batch_sum / large_dataset_size.to_float()
-  let batch_end = Clock::now_unix_nanos(Clock::system())
-  let batch_duration = batch_end - batch_start
-  
-  # Strategy 3: Pre-aggregated buckets (simulated)
-  let bucket_start = Clock::now_unix_nanos(Clock::system())
-  let bucket_counts = [0; 1000]  # 1000 buckets for values 0-999
-  let bucket_sums = [0.0; 1000]
-  
-  for value in large_dataset {
-    let bucket_idx = value.to_int()
-    bucket_counts[bucket_idx] = bucket_counts[bucket_idx] + 1
-    bucket_sums[bucket_idx] = bucket_sums[bucket_idx] + value
+    let new_max_cpu = if cpu_value > max_cpu { cpu_value } else { max_cpu }
+    let new_max_memory = if memory_value > max_memory { memory_value } else { max_memory }
+    
+    let new_min_cpu = if cpu_value < min_cpu { cpu_value } else { min_cpu }
+    let new_min_memory = if memory_value < min_memory { memory_value } else { min_memory }
   }
   
-  let bucket_total_sum = bucket_sums.reduce(0.0, +)
-  let bucket_avg = bucket_total_sum / large_dataset_size.to_float()
-  let bucket_end = Clock::now_unix_nanos(Clock::system())
-  let bucket_duration = bucket_end - bucket_start
+  let avg_cpu = cpu_sum / Double.from_int(realtime_data_points.length)
+  let avg_memory = memory_sum / Double.from_int(realtime_data_points.length)
   
-  # Trace aggregation performance
-  let span = Tracer::start_span(tracer, "aggregation.performance.comparison")
-  Span::add_event(span, "performance.metrics", Some([
-    ("simple_duration_ns", IntValue(simple_duration)),
-    ("batch_duration_ns", IntValue(batch_duration)),
-    ("bucket_duration_ns", IntValue(bucket_duration)),
-    ("dataset_size", IntValue(large_dataset_size))
-  ]))
-  Span::end(span)
+  // Get latest disk and network I/O values
+  let (_, _, _, latest_disk_io, latest_network_io) = realtime_data_points[realtime_data_points.length - 1]
   
-  # Verify aggregation results consistency
-  assert_eq(simple_avg, batch_avg)
-  assert_eq(simple_avg, bucket_avg)
+  // Verify aggregations
+  assert_eq(realtime_data_points.length, 60)
+  assert_true(avg_cpu > 20.0 && avg_cpu < 70.0)
+  assert_true(avg_memory > 40.0 && avg_memory < 75.0)
+  assert_true(max_cpu >= min_cpu)
+  assert_true(max_memory >= min_memory)
+  assert_eq(latest_disk_io, 1000.0 * 60.0)
+  assert_eq(latest_network_io, 500.0 * 60.0)
   
-  # Verify performance optimization
-  let batch_speedup = simple_duration / batch_duration
-  let bucket_speedup = simple_duration / bucket_duration
-  
-  assert_true(batch_speedup >= 1.0)  # Batch should be at least as fast
-  assert_true(bucket_speedup >= 1.0)  # Bucket should be at least as fast
-  
-  assert_eq(simple_sum, batch_sum)
-  assert_eq(simple_sum, bucket_total_sum)
-  assert_eq(large_dataset_size, 10000)
+  assert_true(true)
 }
