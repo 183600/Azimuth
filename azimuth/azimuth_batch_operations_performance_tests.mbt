@@ -1,361 +1,477 @@
-// Batch Operations Performance Tests - 批量操作性能测试
-// 测试批量处理遥测数据的性能和效率
+// Azimuth Batch Operations Performance Tests
+// This file contains tests for batch operations performance in the Azimuth telemetry system
 
-pub test "批量Span创建和操作性能测试" {
+// Test 1: Large-scale span batch operations
+pub test "large-scale span batch operations" {
   let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "batch-span-test")
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "batch-performance-test")
   
-  // 测试不同批量大小的性能
-  let batch_sizes = [100, 500, 1000, 2000, 5000]
+  // Configure batch processor for performance testing
+  let batch_config = azimuth::BatchSpanProcessorConfig::new()
+    .with_max_queue_size(10000)
+    .with_max_export_batch_size(1000)
+    .with_schedule_delay(100)  # 100ms for faster testing
+    .with_export_timeout(5000)  # 5 seconds
   
-  for batch_size in batch_sizes {
-    let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let batch_processor = azimuth::BatchSpanProcessor::builder(batch_config)
+    .build()
+  
+  // Performance test: Create and end 1000 spans
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let spans = []
+  for i = 0; i < 1000; i = i + 1 {
+    let span_name = "batch.span." + i.to_string()
+    let span = azimuth::Tracer::start_span(tracer, span_name)
     
-    // 批量创建Spans
-    let spans = []
-    for i in 0..batch_size {
-      let span = azimuth::Tracer::start_span(tracer, "batch-span-" + i.to_string())
-      spans.push(span)
+    # Add attributes
+    azimuth::Span::set_attribute(span, "span.index", azimuth::IntValue(i))
+    azimuth::Span::set_attribute(span, "batch.test", azimuth::BoolValue(true))
+    
+    # Add events for some spans
+    if i % 10 == 0 {
+      azimuth::Span::add_event(span, "batch.event", Some([
+        ("event.index", azimuth::StringValue(i.to_string())),
+        ("event.type", azimuth::StringValue("milestone"))
+      ]))
     }
     
-    let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量操作Spans
-    for i in 0..batch_size {
-      let span = spans[i]
-      azimuth::Span::add_event(span, "batch.event", Some([("batch.id", azimuth::StringValue(i.to_string()))]))
-      azimuth::Span::set_attribute(span, "batch.index", azimuth::IntValue(i))
-      azimuth::Span::set_attribute(span, "batch.size", azimuth::IntValue(batch_size))
-    }
-    
-    let operation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量结束Spans
-    for span in spans {
-      azimuth::Span::end(span)
-    }
-    
-    let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 计算性能指标
-    let creation_duration = creation_time - start_time
-    let operation_duration = operation_time - creation_time
-    let end_duration = end_time - operation_time
-    let total_duration = end_time - start_time
-    
-    // 验证性能在合理范围内
-    let creation_rate = batch_size.to_double() / (creation_duration.to_double() / 1000000000.0)
-    let operation_rate = batch_size.to_double() / (operation_duration.to_double() / 1000000000.0)
-    let end_rate = batch_size.to_double() / (end_duration.to_double() / 1000000000.0)
-    
-    assert_true(creation_rate > 1000.0)  // 至少每秒创建1000个spans
-    assert_true(operation_rate > 2000.0)  // 至少每秒操作2000个spans
-    assert_true(end_rate > 5000.0)  // 至少每秒结束5000个spans
-    
-    // 验证内存使用合理
-    assert_true(total_duration < 10000000000L)  // 总时间小于10秒
+    spans.push(span)
   }
+  
+  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # End all spans in batch
+  for span in spans {
+    azimuth::Span::end(span)
+  }
+  
+  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Calculate performance metrics
+  let creation_duration = (creation_time - start_time).to_double() / 1000000.0  # Convert to milliseconds
+  let end_duration = (end_time - creation_time).to_double() / 1000000.0
+  let total_duration = (end_time - start_time).to_double() / 1000000.0
+  
+  # Verify performance expectations
+  assert_true(creation_duration < 1000.0)  # Should create 1000 spans in less than 1 second
+  assert_true(end_duration < 500.0)        # Should end 1000 spans in less than 500ms
+  assert_true(total_duration < 1500.0)     # Total operation should be less than 1.5 seconds
+  
+  # Calculate spans per second
+  let spans_per_second = 1000.0 / (total_duration / 1000.0)
+  assert_true(spans_per_second > 500.0)    # Should handle at least 500 spans/second
+  
+  # Force flush and measure export performance
+  let flush_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let flush_result = azimuth::BatchSpanProcessor::force_flush(batch_processor)
+  let flush_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  assert_true(flush_result)
+  
+  let flush_duration = (flush_end - flush_start).to_double() / 1000000.0
+  assert_true(flush_duration < 5000.0)     # Flush should complete in less than 5 seconds
+  
+  # Verify batch processor statistics
+  let processor_stats = azimuth::BatchSpanProcessor::get_statistics(batch_processor)
+  assert_true(processor_stats.total_spans >= 1000)
+  assert_true(processor_stats.queue_size >= 0)
+  assert_true(processor_stats.export_count >= 1)
+  assert_true(processor_stats.average_export_time > 0.0)
 }
 
-pub test "批量属性操作性能测试" {
-  // 测试不同属性数量的批量操作性能
-  let attribute_counts = [10, 50, 100, 200, 500]
+// Test 2: Batch metric operations performance
+pub test "batch metric operations performance" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "batch-metric-test")
   
-  for attr_count in attribute_counts {
-    let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量创建属性
-    let attributes = azimuth::Attributes::new()
-    
-    for i in 0..attr_count {
-      let key = "attr." + i.to_string()
-      let value = azimuth::StringValue("value." + i.to_string())
-      azimuth::Attributes::set(attributes, key, value)
-    }
-    
-    let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量读取属性
-    let retrieved_values = []
-    for i in 0..attr_count {
-      let key = "attr." + i.to_string()
-      let value = azimuth::Attributes::get(attributes, key)
-      retrieved_values.push(value)
-    }
-    
-    let read_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量更新属性
-    for i in 0..attr_count {
-      let key = "attr." + i.to_string()
-      let new_value = azimuth::StringValue("updated.value." + i.to_string())
-      azimuth::Attributes::set(attributes, key, new_value)
-    }
-    
-    let update_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 验证性能
-    let creation_duration = creation_time - start_time
-    let read_duration = read_time - creation_time
-    let update_duration = update_time - read_time
-    
-    let creation_rate = attr_count.to_double() / (creation_duration.to_double() / 1000000000.0)
-    let read_rate = attr_count.to_double() / (read_duration.to_double() / 1000000000.0)
-    let update_rate = attr_count.to_double() / (update_duration.to_double() / 1000000000.0)
-    
-    assert_true(creation_rate > 5000.0)  // 至少每秒创建5000个属性
-    assert_true(read_rate > 10000.0)  // 至少每秒读取10000个属性
-    assert_true(update_rate > 5000.0)  // 至少每秒更新5000个属性
-    
-    // 验证数据完整性
-    assert_true(retrieved_values.length() == attr_count)
+  # Create various metrics for batch testing
+  let counter = azimuth::Meter::create_counter(meter, "batch.counter", Some("Batch counter"), Some("count"))
+  let histogram = azimuth::Meter::create_histogram(meter, "batch.histogram", Some("Batch histogram"), Some("ms"))
+  let gauge = azimuth::Meter::create_gauge(meter, "batch.gauge", Some("Batch gauge"), Some("percent"))
+  
+  # Performance test: Batch metric recordings
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Batch counter operations
+  for i = 0; i < 5000; i = i + 1 {
+    azimuth::Counter::add(counter, 1, [
+      ("batch.index", azimuth::IntValue(i)),
+      ("batch.type", azimuth::StringValue("counter")),
+      ("batch.size", azimuth::IntValue(100))
+    ])
   }
+  
+  let counter_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Batch histogram operations
+  for i = 0; i < 5000; i = i + 1 {
+    let value = (i % 1000).to_double()
+    azimuth::Histogram::record(histogram, value, [
+      ("batch.index", azimuth::IntValue(i)),
+      ("batch.type", azimuth::StringValue("histogram"))
+    ])
+  }
+  
+  let histogram_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Batch gauge operations
+  for i = 0; i < 5000; i = i + 1 {
+    let value = (i % 100).to_long()
+    azimuth::Gauge::set(gauge, value, [
+      ("batch.index", azimuth::IntValue(i)),
+      ("batch.type", azimuth::StringValue("gauge"))
+    ])
+  }
+  
+  let gauge_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Calculate performance metrics
+  let counter_duration = (counter_time - start_time).to_double() / 1000000.0
+  let histogram_duration = (histogram_time - counter_time).to_double() / 1000000.0
+  let gauge_duration = (gauge_time - histogram_time).to_double() / 1000000.0
+  let total_duration = (gauge_time - start_time).to_double() / 1000000.0
+  
+  # Verify performance expectations
+  assert_true(counter_duration < 1000.0)     # 5000 counter operations in < 1s
+  assert_true(histogram_duration < 1000.0)  # 5000 histogram operations in < 1s
+  assert_true(gauge_duration < 1000.0)      # 5000 gauge operations in < 1s
+  assert_true(total_duration < 3000.0)      # Total operations in < 3s
+  
+  # Calculate operations per second
+  let counter_ops_per_sec = 5000.0 / (counter_duration / 1000.0)
+  let histogram_ops_per_sec = 5000.0 / (histogram_duration / 1000.0)
+  let gauge_ops_per_sec = 5000.0 / (gauge_duration / 1000.0)
+  
+  assert_true(counter_ops_per_sec > 5000.0)    # At least 5000 counter ops/sec
+  assert_true(histogram_ops_per_sec > 5000.0) # At least 5000 histogram ops/sec
+  assert_true(gauge_ops_per_sec > 5000.0)     # At least 5000 gauge ops/sec
+  
+  # Test batch metric export performance
+  let export_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let export_result = azimuth::MeterProvider::export(provider)
+  let export_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let export_duration = (export_end - export_start).to_double() / 1000000.0
+  assert_true(export_duration < 2000.0)  # Export should complete in < 2 seconds
 }
 
-pub test "批量度量操作性能测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "batch-metrics-test")
-  
-  // 创建不同类型的度量仪器
-  let counter = azimuth::Meter::create_counter(meter, "batch.counter")
-  let histogram = azimuth::Meter::create_histogram(meter, "batch.histogram")
-  let updown_counter = azimuth::Meter::create_updown_counter(meter, "batch.updown.counter")
-  let gauge = azimuth::Meter::create_gauge(meter, "batch.gauge")
-  
-  // 测试不同批量大小的度量操作
-  let batch_sizes = [1000, 5000, 10000, 20000]
-  
-  for batch_size in batch_sizes {
-    let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量Counter操作
-    for i in 0..batch_size {
-      azimuth::Counter::add(counter, 1.0)
-    }
-    
-    let counter_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量Histogram操作
-    for i in 0..batch_size {
-      let value = 100.0 + (i.to_double() * 0.1)
-      azimuth::Histogram::record(histogram, value)
-    }
-    
-    let histogram_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量UpDownCounter操作
-    for i in 0..batch_size {
-      if i % 2 == 0 {
-        azimuth::UpDownCounter::add(updown_counter, 1.0)
-      } else {
-        azimuth::UpDownCounter::add(updown_counter, -1.0)
-      }
-    }
-    
-    let updown_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量Gauge操作（模拟设置值）
-    for i in 0..batch_size {
-      let value = 50.0 + (i.to_double() % 100.0)
-      // 注意：当前简化实现可能没有Gauge的set方法，这里模拟操作
-    }
-    
-    let gauge_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 计算性能指标
-    let counter_duration = counter_time - start_time
-    let histogram_duration = histogram_time - counter_time
-    let updown_duration = updown_time - histogram_time
-    let gauge_duration = gauge_time - updown_time
-    
-    let counter_rate = batch_size.to_double() / (counter_duration.to_double() / 1000000000.0)
-    let histogram_rate = batch_size.to_double() / (histogram_duration.to_double() / 1000000000.0)
-    let updown_rate = batch_size.to_double() / (updown_duration.to_double() / 1000000000.0)
-    let gauge_rate = batch_size.to_double() / (gauge_duration.to_double() / 1000000000.0)
-    
-    // 验证性能指标
-    assert_true(counter_rate > 10000.0)  // 至少每秒10000次counter操作
-    assert_true(histogram_rate > 5000.0)  // 至少每秒5000次histogram操作
-    assert_true(updown_rate > 8000.0)  // 至少每秒8000次updown counter操作
-    assert_true(gauge_rate > 5000.0)  // 至少每秒5000次gauge操作
-  }
-}
-
-pub test "批量日志操作性能测试" {
+// Test 3: Batch log operations performance
+pub test "batch log operations performance" {
   let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "batch-logs-test")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "batch-log-test")
   
-  // 测试不同批量大小的日志操作
-  let batch_sizes = [1000, 5000, 10000, 25000]
+  # Configure batch log processor
+  let log_batch_config = azimuth::BatchLogProcessorConfig::new()
+    .with_max_queue_size(5000)
+    .with_max_export_batch_size(500)
+    .with_schedule_delay(50)   # 50ms for faster testing
+    .with_export_timeout(3000) # 3 seconds
   
-  for batch_size in batch_sizes {
-    let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let log_batch_processor = azimuth::BatchLogProcessor::new(log_batch_config)
+  
+  # Performance test: Create and emit 2000 log records
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let log_records = []
+  let severity_levels = [azimuth::Trace, azimuth::Debug, azimuth::Info, azimuth::Warn, azimuth::Error, azimuth::Fatal]
+  
+  for i = 0; i < 2000; i = i + 1 {
+    let severity = severity_levels[i % severity_levels.length()]
+    let message = "Batch log message " + i.to_string()
     
-    // 批量创建简单日志
-    for i in 0..batch_size {
-      let log_record = azimuth::LogRecord::new(azimuth::Info, "Batch log message " + i.to_string())
-      azimuth::Logger::emit(logger, log_record)
+    let log_record = azimuth::LogRecord::new(severity, message)
+    azimuth::LogRecord::set_attribute(log_record, "log.index", azimuth::IntValue(i))
+    azimuth::LogRecord::set_attribute(log_record, "batch.test", azimuth::BoolValue(true))
+    
+    # Add context for some logs
+    if i % 20 == 0 {
+      let trace_id = "trace-" + i.to_string()
+      let span_id = "span-" + i.to_string()
+      azimuth::LogRecord::set_trace_id(log_record, trace_id)
+      azimuth::LogRecord::set_span_id(log_record, span_id)
     }
     
-    let simple_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量创建带属性的日志
-    for i in 0..batch_size {
-      let attributes = azimuth::Attributes::new()
-      azimuth::Attributes::set(attributes, "log.id", azimuth::IntValue(i))
-      azimuth::Attributes::set(attributes, "log.batch", azimuth::StringValue("batch-" + batch_size.to_string()))
-      
-      let log_record = azimuth::LogRecord::new_with_context(
-        azimuth::Info,
-        Some("Detailed log message " + i.to_string()),
-        Some(attributes),
-        Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-        None,
-        Some("trace-" + i.to_string()),
-        Some("span-" + i.to_string()),
-        Some(azimuth::Context::root())
-      )
-      azimuth::Logger::emit(logger, log_record)
+    log_records.push(log_record)
+  }
+  
+  let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Emit all log records
+  for log_record in log_records {
+    azimuth::Logger::emit(logger, log_record)
+  }
+  
+  let emit_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Calculate performance metrics
+  let creation_duration = (creation_time - start_time).to_double() / 1000000.0
+  let emit_duration = (emit_time - creation_time).to_double() / 1000000.0
+  let total_duration = (emit_time - start_time).to_double() / 1000000.0
+  
+  # Verify performance expectations
+  assert_true(creation_duration < 500.0)   # Create 2000 logs in < 500ms
+  assert_true(emit_duration < 1000.0)      # Emit 2000 logs in < 1s
+  assert_true(total_duration < 1500.0)     # Total operation in < 1.5s
+  
+  # Calculate logs per second
+  let logs_per_second = 2000.0 / (total_duration / 1000.0)
+  assert_true(logs_per_second > 1000.0)    # Should handle at least 1000 logs/second
+  
+  # Force flush and measure export performance
+  let flush_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let flush_result = azimuth::BatchLogProcessor::force_flush(log_batch_processor)
+  let flush_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  assert_true(flush_result)
+  
+  let flush_duration = (flush_end - flush_start).to_double() / 1000000.0
+  assert_true(flush_duration < 3000.0)     # Flush should complete in < 3 seconds
+  
+  # Verify log processor statistics
+  let processor_stats = azimuth::BatchLogProcessor::get_statistics(log_batch_processor)
+  assert_true(processor_stats.total_logs >= 2000)
+  assert_true(processor_stats.queue_size >= 0)
+  assert_true(processor_stats.export_count >= 1)
+  assert_true(processor_stats.average_export_time > 0.0)
+}
+
+// Test 4: Batch attribute operations performance
+pub test "batch attribute operations performance" {
+  # Test performance of batch attribute operations on spans and resources
+  
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "batch-attr-test")
+  
+  # Create a span for attribute testing
+  let span = azimuth::Tracer::start_span(tracer, "batch.attribute.test")
+  
+  # Performance test: Batch attribute setting
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Set 1000 attributes on the span
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "attr." + i.to_string()
+    let value = "value." + i.to_string()
+    azimuth::Span::set_attribute(span, key, azimuth::StringValue(value))
+  }
+  
+  let set_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Test batch attribute retrieval
+  let retrieved_values = []
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "attr." + i.to_string()
+    let value = azimuth::Span::get_attribute(span, key)
+    retrieved_values.push(value)
+  }
+  
+  let get_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Calculate performance metrics
+  let set_duration = (set_time - start_time).to_double() / 1000000.0
+  let get_duration = (get_time - set_time).to_double() / 1000000.0
+  let total_duration = (get_time - start_time).to_double() / 1000000.0
+  
+  # Verify performance expectations
+  assert_true(set_duration < 500.0)   # Set 1000 attributes in < 500ms
+  assert_true(get_duration < 200.0)   # Get 1000 attributes in < 200ms
+  assert_true(total_duration < 700.0) # Total operation in < 700ms
+  
+  # Calculate operations per second
+  let set_ops_per_sec = 1000.0 / (set_duration / 1000.0)
+  let get_ops_per_sec = 1000.0 / (get_duration / 1000.0)
+  
+  assert_true(set_ops_per_sec > 2000.0)  # At least 2000 attribute sets/sec
+  assert_true(get_ops_per_sec > 5000.0)  # At least 5000 attribute gets/sec
+  
+  # Verify all values were retrieved correctly
+  assert_eq(retrieved_values.length(), 1000)
+  for i in 0..1000 {
+    match retrieved_values[i] {
+      Some(azimuth::StringValue(value)) => assert_eq(value, "value." + i.to_string())
+      _ => assert_true(false)
     }
-    
-    let detailed_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量创建不同严重级别的日志
-    let severity_levels = [azimuth::Trace, azimuth::Debug, azimuth::Info, azimuth::Warn, azimuth::Error]
-    
-    for i in 0..batch_size {
-      let severity = severity_levels[i % severity_levels.length()]
-      let log_record = azimuth::LogRecord::new(severity, "Severity log " + i.to_string())
-      azimuth::Logger::emit(logger, log_record)
+  }
+  
+  azimuth::Span::end(span)
+  
+  # Test resource attribute batch operations
+  let resource = azimuth::Resource::new()
+  
+  let resource_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Set 500 resource attributes
+  let resource_attrs = []
+  for i = 0; i < 500; i = i + 1 {
+    let key = "resource.attr." + i.to_string()
+    let value = "resource.value." + i.to_string()
+    resource_attrs.push((key, azimuth::StringValue(value)))
+  }
+  
+  let enriched_resource = azimuth::Resource::with_attributes(resource, resource_attrs)
+  
+  let resource_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let resource_duration = (resource_end - resource_start).to_double() / 1000000.0
+  assert_true(resource_duration < 300.0)  # Set 500 resource attributes in < 300ms
+  
+  # Test batch resource attribute retrieval
+  let retrieval_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let retrieved_resource_attrs = []
+  for i = 0; i < 500; i = i + 1 {
+    let key = "resource.attr." + i.to_string()
+    let value = azimuth::Resource::get_attribute(enriched_resource, key)
+    retrieved_resource_attrs.push(value)
+  }
+  
+  let retrieval_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let retrieval_duration = (retrieval_end - retrieval_start).to_double() / 1000000.0
+  assert_true(retrieval_duration < 150.0)  # Get 500 resource attributes in < 150ms
+  
+  # Verify resource attribute retrieval
+  assert_eq(retrieved_resource_attrs.length(), 500)
+  for i in 0..500 {
+    match retrieved_resource_attrs[i] {
+      Some(azimuth::StringValue(value)) => assert_eq(value, "resource.value." + i.to_string())
+      _ => assert_true(false)
     }
-    
-    let severity_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 计算性能指标
-    let simple_duration = simple_time - start_time
-    let detailed_duration = detailed_time - simple_time
-    let severity_duration = severity_time - detailed_time
-    
-    let simple_rate = batch_size.to_double() / (simple_duration.to_double() / 1000000000.0)
-    let detailed_rate = batch_size.to_double() / (detailed_duration.to_double() / 1000000000.0)
-    let severity_rate = batch_size.to_double() / (severity_duration.to_double() / 1000000000.0)
-    
-    // 验证性能指标
-    assert_true(simple_rate > 20000.0)  // 至少每秒20000条简单日志
-    assert_true(detailed_rate > 5000.0)  // 至少每秒5000条详细日志
-    assert_true(severity_rate > 15000.0)  // 至少每秒15000条不同级别日志
   }
 }
 
-pub test "批量资源合并性能测试" {
-  // 测试不同数量资源的合并性能
-  let resource_counts = [10, 50, 100, 200, 500]
+// Test 5: Batch context and baggage operations performance
+pub test "batch context and baggage operations performance" {
+  # Test performance of batch context and baggage operations
   
-  for resource_count in resource_counts {
-    let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 创建多个资源
-    let resources = []
-    for i in 0..resource_count {
-      let attributes = [
-        ("service.name", azimuth::StringValue("service-" + i.to_string())),
-        ("service.version", azimuth::StringValue("1.0." + i.to_string())),
-        ("service.instance.id", azimuth::StringValue("instance-" + i.to_string())),
-        ("environment", azimuth::StringValue("test")),
-        ("region", azimuth::StringValue("region-" + (i % 10).to_string()))
-      ]
-      
-      let resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), attributes)
-      resources.push(resource)
-    }
-    
-    let creation_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量合并资源
-    let merged_resource = azimuth::Resource::new()
-    for resource in resources {
-      merged_resource = azimuth::Resource::merge(merged_resource, resource)
-    }
-    
-    let merge_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 验证合并后的属性
-    let service_name = azimuth::Resource::get_attribute(merged_resource, "service.name")
-    let environment = azimuth::Resource::get_attribute(merged_resource, "environment")
-    let region = azimuth::Resource::get_attribute(merged_resource, "region")
-    
-    assert_true(service_name != None)
-    assert_true(environment != None)
-    assert_true(region != None)
-    
-    // 计算性能指标
-    let creation_duration = creation_time - start_time
-    let merge_duration = merge_time - creation_time
-    
-    let creation_rate = resource_count.to_double() / (creation_duration.to_double() / 1000000000.0)
-    let merge_rate = resource_count.to_double() / (merge_duration.to_double() / 1000000000.0)
-    
-    // 验证性能指标
-    assert_true(creation_rate > 1000.0)  // 至少每秒创建1000个资源
-    assert_true(merge_rate > 500.0)  // 至少每秒合并500个资源
+  let root_ctx = azimuth::Context::root()
+  
+  # Performance test: Batch context operations
+  let context_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Create context with 1000 key-value pairs
+  let ctx_with_values = ref root_ctx
+  for i = 0; i < 1000; i = i + 1 {
+    let key = azimuth::ContextKey::new("context.key." + i.to_string())
+    let value = "context.value." + i.to_string()
+    ctx_with_values = azimuth::Context::with_value(ctx_with_values, key, value)
   }
-}
-
-pub test "批量传播操作性能测试" {
-  // 创建复合传播器
-  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
-  let baggage_propagator = azimuth::W3CBaggagePropagator::new()
-  let propagators = [trace_propagator, baggage_propagator]
-  let composite_propagator = azimuth::CompositePropagator::new(propagators)
   
-  // 测试不同批量大小的传播操作
-  let batch_sizes = [1000, 5000, 10000, 20000]
+  let context_set_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  for batch_size in batch_sizes {
-    let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量注入操作
-    let carriers = []
-    for i in 0..batch_size {
-      let carrier = azimuth::TextMapCarrier::new()
-      let ctx = azimuth::Context::root()
-      
-      // 添加上下文值
-      let key = azimuth::ContextKey::new("operation.id")
-      let ctx_with_value = azimuth::Context::with_value(ctx, key, i.to_string())
-      
-      // 添加baggage
-      let baggage = azimuth::Baggage::new()
-      let baggage_with_entry = azimuth::Baggage::set_entry(baggage, "request.id", "req-" + i.to_string())
-      
-      // 注入到载体
-      azimuth::CompositePropagator::inject(composite_propagator, ctx_with_value, carrier)
-      carriers.push(carrier)
-    }
-    
-    let inject_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 批量提取操作
-    let extracted_contexts = []
-    for carrier in carriers {
-      let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
-      extracted_contexts.push(extracted_ctx)
-    }
-    
-    let extract_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-    
-    // 验证提取的上下文
-    assert_true(extracted_contexts.length() == batch_size)
-    
-    // 计算性能指标
-    let inject_duration = inject_time - start_time
-    let extract_duration = extract_time - inject_time
-    
-    let inject_rate = batch_size.to_double() / (inject_duration.to_double() / 1000000000.0)
-    let extract_rate = batch_size.to_double() / (extract_duration.to_double() / 1000000000.0)
-    
-    // 验证性能指标
-    assert_true(inject_rate > 5000.0)  // 至少每秒5000次注入操作
-    assert_true(extract_rate > 3000.0)  // 至少每秒3000次提取操作
+  # Test batch context retrieval
+  let retrieved_context_values = []
+  for i = 0; i < 1000; i = i + 1 {
+    let key = azimuth::ContextKey::new("context.key." + i.to_string())
+    let value = azimuth::Context::get(ctx_with_values, key)
+    retrieved_context_values.push(value)
   }
+  
+  let context_get_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Calculate context performance metrics
+  let context_set_duration = (context_set_time - context_start).to_double() / 1000000.0
+  let context_get_duration = (context_get_time - context_set_time).to_double() / 1000000.0
+  let context_total_duration = (context_get_time - context_start).to_double() / 1000000.0
+  
+  # Verify context performance expectations
+  assert_true(context_set_duration < 1000.0)  # Set 1000 context values in < 1s
+  assert_true(context_get_duration < 500.0)   # Get 1000 context values in < 500ms
+  assert_true(context_total_duration < 1500.0) # Total operation in < 1.5s
+  
+  # Calculate context operations per second
+  let context_set_ops_per_sec = 1000.0 / (context_set_duration / 1000.0)
+  let context_get_ops_per_sec = 1000.0 / (context_get_duration / 1000.0)
+  
+  assert_true(context_set_ops_per_sec > 1000.0)  # At least 1000 context sets/sec
+  assert_true(context_get_ops_per_sec > 2000.0)  # At least 2000 context gets/sec
+  
+  # Verify all context values were retrieved correctly
+  assert_eq(retrieved_context_values.length(), 1000)
+  for i in 0..1000 {
+    match retrieved_context_values[i] {
+      Some(value) => assert_eq(value, "context.value." + i.to_string())
+      None => assert_true(false)
+    }
+  }
+  
+  # Performance test: Batch baggage operations
+  let baggage_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Create baggage with 500 entries
+  let baggage_with_entries = ref azimuth::Baggage::new()
+  for i = 0; i < 500; i = i + 1 {
+    let key = "baggage.key." + i.to_string()
+    let value = "baggage.value." + i.to_string()
+    baggage_with_entries = azimuth::Baggage::set_entry(baggage_with_entries, key, value)
+  }
+  
+  let baggage_set_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Test batch baggage retrieval
+  let retrieved_baggage_values = []
+  for i = 0; i < 500; i = i + 1 {
+    let key = "baggage.key." + i.to_string()
+    let value = azimuth::Baggage::get_entry(baggage_with_entries, key)
+    retrieved_baggage_values.push(value)
+  }
+  
+  let baggage_get_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Calculate baggage performance metrics
+  let baggage_set_duration = (baggage_set_time - baggage_start).to_double() / 1000000.0
+  let baggage_get_duration = (baggage_get_time - baggage_set_time).to_double() / 1000000.0
+  let baggage_total_duration = (baggage_get_time - baggage_start).to_double() / 1000000.0
+  
+  # Verify baggage performance expectations
+  assert_true(baggage_set_duration < 800.0)   # Set 500 baggage entries in < 800ms
+  assert_true(baggage_get_duration < 400.0)   # Get 500 baggage entries in < 400ms
+  assert_true(baggage_total_duration < 1200.0) # Total operation in < 1.2s
+  
+  # Calculate baggage operations per second
+  let baggage_set_ops_per_sec = 500.0 / (baggage_set_duration / 1000.0)
+  let baggage_get_ops_per_sec = 500.0 / (baggage_get_duration / 1000.0)
+  
+  assert_true(baggage_set_ops_per_sec > 600.0)   # At least 600 baggage sets/sec
+  assert_true(baggage_get_ops_per_sec > 1200.0)  # At least 1200 baggage gets/sec
+  
+  # Verify all baggage values were retrieved correctly
+  assert_eq(retrieved_baggage_values.length(), 500)
+  for i in 0..500 {
+    match retrieved_baggage_values[i] {
+      Some(value) => assert_eq(value, "baggage.value." + i.to_string())
+      None => assert_true(false)
+    }
+  }
+  
+  # Test batch baggage serialization/deserialization performance
+  let serialization_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Serialize baggage to string
+  let serialized_baggage = azimuth::Baggage::serialize(baggage_with_entries)
+  
+  let serialization_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Deserialize baggage from string
+  let deserialization_start = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  let deserialized_baggage = azimuth::Baggage::deserialize(serialized_baggage)
+  
+  let deserialization_end = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  
+  # Calculate serialization performance metrics
+  let serialization_duration = (serialization_end - serialization_start).to_double() / 1000000.0
+  let deserialization_duration = (deserialization_end - deserialization_start).to_double() / 1000000.0
+  
+  # Verify serialization performance expectations
+  assert_true(serialization_duration < 200.0)      # Serialize 500 entries in < 200ms
+  assert_true(deserialization_duration < 300.0)   # Deserialize 500 entries in < 300ms
+  
+  # Verify serialization/deserialization correctness
+  assert_true(serialized_baggage.length() > 0)
+  
+  # Check that deserialized baggage has the same number of entries
+  let deserialized_count = azimuth::Baggage::get_entry_count(deserialized_baggage)
+  assert_eq(deserialized_count, 500)
 }

@@ -1,353 +1,260 @@
-// Aggregated metrics operations tests for Azimuth telemetry system
-import "azimuth/azimuth"
+// Azimuth Aggregated Metrics Operations Tests
+// This file contains tests for aggregated metrics operations in the Azimuth telemetry system
 
-// Test 1: Basic counter aggregation
-pub test "基本计数器聚合测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "aggregation-test")
+// Test 1: Counter aggregation operations
+pub test "aggregated counter operations" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "aggregated-test-meter")
   
-  // 创建多个计数器
-  let request_counter = azimuth::Meter::create_counter(meter, "http.requests")
-  let error_counter = azimuth::Meter::create_counter(meter, "http.errors")
-  let success_counter = azimuth::Meter::create_counter(meter, "http.success")
+  // Create multiple counters for aggregation
+  let counter1 = azimuth::Meter::create_counter(meter, "request.count", Some("Total requests"), Some("count"))
+  let counter2 = azimuth::Meter::create_counter(meter, "error.count", Some("Total errors"), Some("count"))
+  let counter3 = azimuth::Meter::create_counter(meter, "success.count", Some("Total successes"), Some("count"))
   
-  // 模拟不同时间段的请求
-  for hour in 1..25 {
-    let requests_in_hour = hour * 10
-    let errors_in_hour = if (hour % 4 == 0) { hour } else { 0 }
-    let success_in_hour = requests_in_hour - errors_in_hour
-    
-    // 更新计数器
-    for i in 1..(requests_in_hour + 1) {
-      azimuth::Counter::add(request_counter, 1.0)
-    }
-    
-    for i in 1..(errors_in_hour + 1) {
-      azimuth::Counter::add(error_counter, 1.0)
-    }
-    
-    for i in 1..(success_in_hour + 1) {
-      azimuth::Counter::add(success_counter, 1.0)
-    }
-  }
-  
-  // 验证计数器创建
-  assert_eq(request_counter.name, "http.requests")
-  assert_eq(error_counter.name, "http.errors")
-  assert_eq(success_counter.name, "http.success")
-}
-
-// Test 2: Histogram aggregation with percentiles
-pub test "直方图百分位数聚合测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "percentile-test")
-  
-  let response_histogram = azimuth::Meter::create_histogram(meter, "response.time")
-  
-  // 模拟不同响应时间分布
-  let response_times = [
-    10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105,
-    110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190, 195, 200,
-    250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000
-  ]
-  
-  // 记录响应时间
-  for time in response_times {
-    azimuth::Histogram::record(response_histogram, time.to_double())
-  }
-  
-  // 验证直方图创建
-  assert_eq(response_histogram.name, "response.time")
-  
-  // 模拟百分位数计算（在实际实现中，这应该由度量系统处理）
-  let sorted_times = response_times.sort()
-  let p50_index = sorted_times.length() / 2
-  let p95_index = (sorted_times.length() * 95) / 100
-  let p99_index = (sorted_times.length() * 99) / 100
-  
-  assert_true(p50_index > 0)
-  assert_true(p95_index < sorted_times.length())
-  assert_true(p99_index < sorted_times.length())
-}
-
-// Test 3: Multi-dimensional aggregation
-pub test "多维聚合测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "multi-dimensional-test")
-  
-  // 创建按维度分类的度量
-  let api_counter = azimuth::Meter::create_counter(meter, "api.requests")
-  let db_counter = azimuth::Meter::create_counter(meter, "db.queries")
-  let cache_counter = azimuth::Meter::create_counter(meter, "cache.hits")
-  
-  let api_latency = azimuth::Meter::create_histogram(meter, "api.latency")
-  let db_latency = azimuth::Meter::create_histogram(meter, "db.latency")
-  let cache_latency = azimuth::Meter::create_histogram(meter, "cache.latency")
-  
-  // 模拟不同操作的度量
-  let operations = ["GET", "POST", "PUT", "DELETE"]
-  let services = ["user", "order", "payment", "inventory"]
-  
-  for service in services {
-    for operation in operations {
-      // 模拟API请求
-      for i in 1..11 {
-        azimuth::Counter::add(api_counter, 1.0)
-        let latency = 50.0 + (i.to_double() * 5.0) + (operation.length().to_double() * 2.0)
-        azimuth::Histogram::record(api_latency, latency)
-      }
-      
-      // 模拟数据库查询
-      for i in 1..6 {
-        azimuth::Counter::add(db_counter, 1.0)
-        let latency = 20.0 + (i.to_double() * 3.0) + (service.length().to_double() * 1.5)
-        azimuth::Histogram::record(db_latency, latency)
-      }
-      
-      // 模拟缓存访问
-      for i in 1..8 {
-        azimuth::Counter::add(cache_counter, 1.0)
-        let latency = 1.0 + (i.to_double() * 0.2)
-        azimuth::Histogram::record(cache_latency, latency)
-      }
-    }
-  }
-  
-  // 验证多维度量创建
-  assert_eq(api_counter.name, "api.requests")
-  assert_eq(db_counter.name, "db.queries")
-  assert_eq(cache_counter.name, "cache.hits")
-  assert_eq(api_latency.name, "api.latency")
-  assert_eq(db_latency.name, "db.latency")
-  assert_eq(cache_latency.name, "cache.latency")
-}
-
-// Test 4: Time window aggregation
-pub test "时间窗口聚合测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "time-window-test")
-  
-  // 创建不同时间窗口的度量
-  let minute_counter = azimuth::Meter::create_counter(meter, "requests.per.minute")
-  let hour_counter = azimuth::Meter::create_counter(meter, "requests.per.hour")
-  let day_counter = azimuth::Meter::create_counter(meter, "requests.per.day")
-  
-  let minute_histogram = azimuth::Meter::create_histogram(meter, "latency.per.minute")
-  let hour_histogram = azimuth::Meter::create_histogram(meter, "latency.per.hour")
-  
-  // 模拟24小时的数据
-  for hour in 1..25 {
-    let hourly_requests = hour * 20  // 每小时递增的请求数
-    
-    // 每小时的数据
-    for minute in 1..61 {
-      let minute_requests = hourly_requests / 60
-      
-      // 每分钟的数据
-      for i in 1..(minute_requests + 1) {
-        azimuth::Counter::add(minute_counter, 1.0)
-        azimuth::Counter::add(hour_counter, 1.0)
-        azimuth::Counter::add(day_counter, 1.0)
-        
-        // 记录延迟
-        let minute_latency = 50.0 + (minute.to_double() * 0.5) + (i.to_double() * 0.1)
-        let hour_latency = 50.0 + (hour.to_double() * 2.0) + (i.to_double() * 0.2)
-        
-        azimuth::Histogram::record(minute_histogram, minute_latency)
-        azimuth::Histogram::record(hour_histogram, hour_latency)
-      }
-    }
-  }
-  
-  // 验证时间窗口度量
-  assert_eq(minute_counter.name, "requests.per.minute")
-  assert_eq(hour_counter.name, "requests.per.hour")
-  assert_eq(day_counter.name, "requests.per.day")
-  assert_eq(minute_histogram.name, "latency.per.minute")
-  assert_eq(hour_histogram.name, "latency.per.hour")
-}
-
-// Test 5: Rate and ratio aggregation
-pub test "率和比率聚合测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "rate-ratio-test")
-  
-  // 创建基础计数器
-  let total_requests = azimuth::Meter::create_counter(meter, "requests.total")
-  let success_requests = azimuth::Meter::create_counter(meter, "requests.success")
-  let error_requests = azimuth::Meter::create_counter(meter, "requests.error")
-  
-  let total_operations = azimuth::Meter::create_counter(meter, "operations.total")
-  let fast_operations = azimuth::Meter::create_counter(meter, "operations.fast")
-  let slow_operations = azimuth::Meter::create_counter(meter, "operations.slow")
-  
-  // 模拟请求和操作
-  for i in 1..101 {
-    // 模拟请求
-    azimuth::Counter::add(total_requests, 1.0)
-    
-    if (i % 10 == 0) {
-      azimuth::Counter::add(error_requests, 1.0)
+  // Simulate metric recordings
+  for i = 0; i < 100; i = i + 1 {
+    azimuth::Counter::add(counter1, 1, [("endpoint", "api/v1/users"), ("method", "GET")])
+    if i % 10 == 0 {
+      azimuth::Counter::add(counter2, 1, [("endpoint", "api/v1/users"), ("method", "GET"), ("error.type", "timeout")])
     } else {
-      azimuth::Counter::add(success_requests, 1.0)
+      azimuth::Counter::add(counter3, 1, [("endpoint", "api/v1/users"), ("method", "GET")])
     }
+  }
+  
+  // Test aggregation by time window
+  let time_window = 60000000000L  // 60 seconds in nanoseconds
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let end_time = start_time + time_window
+  
+  // Aggregate counters within time window
+  let aggregated_counters = azimuth::Aggregator::aggregate_counters_by_time([counter1, counter2, counter3], start_time, end_time)
+  
+  // Verify aggregation results
+  assert_true(aggregated_counters.length() >= 3)
+  
+  // Test aggregation by attributes
+  let attribute_filter = [("endpoint", "api/v1/users")]
+  let filtered_counters = azimuth::Aggregator::filter_by_attributes([counter1, counter2, counter3], attribute_filter)
+  
+  assert_true(filtered_counters.length() >= 3)
+  
+  // Test rate calculation
+  let rate1 = azimuth::Aggregator::calculate_rate(counter1, start_time, end_time)
+  let rate2 = azimuth::Aggregator::calculate_rate(counter2, start_time, end_time)
+  let rate3 = azimuth::Aggregator::calculate_rate(counter3, start_time, end_time)
+  
+  assert_true(rate1 > 0.0)
+  assert_true(rate2 >= 0.0)
+  assert_true(rate3 > 0.0)
+  
+  // Test percentage calculation
+  let error_rate = azimuth::Aggregator::calculate_percentage(counter2, counter1)
+  let success_rate = azimuth::Aggregator::calculate_percentage(counter3, counter1)
+  
+  assert_true(error_rate >= 0.0 && error_rate <= 100.0)
+  assert_true(success_rate >= 0.0 && success_rate <= 100.0)
+  assert_eq(error_rate + success_rate, 100.0)
+}
+
+// Test 2: Histogram aggregation operations
+pub test "aggregated histogram operations" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "histogram-test-meter")
+  
+  // Create histograms for response times
+  let response_time_histogram = azimuth::Meter::create_histogram(meter, "response.time", Some("Response time distribution"), Some("ms"))
+  let cpu_usage_histogram = azimuth::Meter::create_histogram(meter, "cpu.usage", Some("CPU usage distribution"), Some("percent"))
+  
+  // Simulate response time recordings
+  let response_times = [10, 25, 50, 75, 100, 150, 200, 300, 500, 1000]
+  for i = 0; i < 1000; i = i + 1 {
+    let response_time = response_times[i % response_times.length()]
+    azimuth::Histogram::record(response_time_histogram, response_time.to_double(), [("endpoint", "api/v1/data")])
+  }
+  
+  // Simulate CPU usage recordings
+  for i = 0; i < 500; i = i + 1 {
+    let cpu_usage = (i % 100).to_double()
+    azimuth::Histogram::record(cpu_usage_histogram, cpu_usage, [("instance", "server-1")])
+  }
+  
+  // Test percentile calculations
+  let p50 = azimuth::Aggregator::calculate_percentile(response_time_histogram, 50.0)
+  let p95 = azimuth::Aggregator::calculate_percentile(response_time_histogram, 95.0)
+  let p99 = azimuth::Aggregator::calculate_percentile(response_time_histogram, 99.0)
+  
+  assert_true(p50 > 0.0)
+  assert_true(p95 >= p50)
+  assert_true(p99 >= p95)
+  
+  // Test histogram statistics
+  let stats = azimuth::Aggregator::calculate_histogram_stats(response_time_histogram)
+  assert_true(stats.count > 0)
+  assert_true(stats.sum > 0.0)
+  assert_true(stats.min >= 0.0)
+  assert_true(stats.max >= stats.min)
+  assert_true(stats.mean >= stats.min && stats.mean <= stats.max)
+  
+  // Test histogram bucket aggregation
+  let buckets = azimuth::Aggregator::get_histogram_buckets(response_time_histogram)
+  assert_true(buckets.length() > 0)
+  
+  // Verify bucket boundaries and counts
+  for bucket in buckets {
+    assert_true(bucket.upper_bound >= 0.0)
+    assert_true(bucket.count >= 0)
+  }
+  
+  // Test multi-histogram aggregation
+  let aggregated_histograms = azimuth::Aggregator::aggregate_histograms([response_time_histogram, cpu_usage_histogram])
+  assert_true(aggregated_histograms.length() >= 2)
+}
+
+// Test 3: Gauge aggregation operations
+pub test "aggregated gauge operations" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "gauge-test-meter")
+  
+  // Create gauges for system metrics
+  let memory_gauge = azimuth::Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("bytes"))
+  let disk_gauge = azimuth::Meter::create_gauge(meter, "disk.usage", Some("Disk usage"), Some("bytes"))
+  let network_gauge = azimuth::Meter::create_gauge(meter, "network.throughput", Some("Network throughput"), Some("bps"))
+  
+  // Simulate gauge recordings over time
+  let time_series = []
+  for i = 0; i < 60; i = i + 1 {  // 60 data points
+    let timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
     
-    // 模拟操作
-    azimuth::Counter::add(total_operations, 1.0)
+    // Simulate memory usage (gradual increase with occasional drops)
+    let memory_usage = (1024 * 1024 * 1024).to_long() + (i * 10 * 1024 * 1024).to_long()  // Base 1GB + incremental
+    if i % 10 == 0 { memory_usage = memory_usage - (100 * 1024 * 1024).to_long() }  // Occasional drop
     
-    if (i % 3 == 0) {
-      azimuth::Counter::add(slow_operations, 1.0)
+    // Simulate disk usage (steady increase)
+    let disk_usage = (500 * 1024 * 1024 * 1024).to_long() + (i * 1024 * 1024).to_long()  // Base 500GB + incremental
+    
+    // Simulate network throughput (variable)
+    let network_throughput = (1000000 + (i % 100) * 10000).to_long()  // Variable between 1Mbps and 2Mbps
+    
+    azimuth::Gauge::set(memory_gauge, memory_usage, [("instance", "server-1")])
+    azimuth::Gauge::set(disk_gauge, disk_usage, [("instance", "server-1")])
+    azimuth::Gauge::set(network_gauge, network_throughput, [("instance", "server-1")])
+    
+    time_series.push((timestamp, memory_usage, disk_usage, network_throughput))
+  }
+  
+  // Test time series aggregation
+  let memory_time_series = azimuth::Aggregator::extract_time_series(memory_gauge, "instance", "server-1")
+  let disk_time_series = azimuth::Aggregator::extract_time_series(disk_gauge, "instance", "server-1")
+  let network_time_series = azimuth::Aggregator::extract_time_series(network_gauge, "instance", "server-1")
+  
+  assert_true(memory_time_series.length() >= 60)
+  assert_true(disk_time_series.length() >= 60)
+  assert_true(network_time_series.length() >= 60)
+  
+  // Test trend analysis
+  let memory_trend = azimuth::Aggregator::calculate_trend(memory_time_series)
+  let disk_trend = azimuth::Aggregator::calculate_trend(disk_time_series)
+  let network_trend = azimuth::Aggregator::calculate_trend(network_time_series)
+  
+  // Memory should generally increase (positive trend)
+  assert_true(memory_trend >= 0.0)
+  // Disk should steadily increase (positive trend)
+  assert_true(disk_trend > 0.0)
+  // Network throughput should be variable (could be positive or negative)
+  assert_true(network_trend >= -100.0 && network_trend <= 100.0)
+  
+  // Test anomaly detection
+  let memory_anomalies = azimuth::Aggregator::detect_anomalies(memory_time_series, 2.0)  // 2 standard deviations
+  let disk_anomalies = azimuth::Aggregator::detect_anomalies(disk_time_series, 2.0)
+  let network_anomalies = azimuth::Aggregator::detect_anomalies(network_time_series, 2.0)
+  
+  // Memory should have some anomalies due to occasional drops
+  assert_true(memory_anomalies.length() >= 5)
+  // Disk should have fewer anomalies (steady increase)
+  assert_true(disk_anomalies.length() <= 2)
+  // Network should have some anomalies due to variability
+  assert_true(network_anomalies.length() >= 3)
+}
+
+// Test 4: Cross-metric aggregation and correlation
+pub test "cross-metric aggregation and correlation" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "correlation-test-meter")
+  
+  // Create related metrics
+  let request_counter = azimuth::Meter::create_counter(meter, "request.count", Some("Request count"), Some("count"))
+  let response_time_histogram = azimuth::Meter::create_histogram(meter, "response.time", Some("Response time"), Some("ms"))
+  let error_counter = azimuth::Meter::create_counter(meter, "error.count", Some("Error count"), Some("count"))
+  let cpu_gauge = azimuth::Meter::create_gauge(meter, "cpu.usage", Some("CPU usage"), Some("percent"))
+  
+  // Simulate correlated metrics
+  for i = 0; i < 100; i = i + 1 {
+    let endpoint = if i % 3 == 0 { "api/v1/heavy" } else { "api/v1/light" }
+    let cpu_usage = if i % 3 == 0 { 80.0 + (i % 20).to_double() } else { 20.0 + (i % 10).to_double() }
+    let response_time = if i % 3 == 0 { 500.0 + (i % 200).to_double() } else { 50.0 + (i % 50).to_double() }
+    
+    // Record metrics
+    azimuth::Counter::add(request_counter, 1, [("endpoint", endpoint)])
+    azimuth::Histogram::record(response_time_histogram, response_time, [("endpoint", endpoint)])
+    azimuth::Gauge::set(cpu_gauge, cpu_usage.to_long(), [("endpoint", endpoint)])
+    
+    // Simulate errors under high load
+    if i % 3 == 0 && i % 10 == 0 {
+      azimuth::Counter::add(error_counter, 1, [("endpoint", endpoint), ("error.type", "timeout")])
+    }
+  }
+  
+  // Test metric correlation
+  let correlations = azimuth::Aggregator::calculate_correlations([
+    ("request.count", request_counter),
+    ("response.time", response_time_histogram),
+    ("error.count", error_counter),
+    ("cpu.usage", cpu_gauge)
+  ])
+  
+  assert_true(correlations.length() >= 6)  // At least 6 correlation pairs
+  
+  // Find and verify specific correlations
+  let request_response_corr = azimuth::Aggregator::find_correlation(correlations, "request.count", "response.time")
+  let cpu_error_corr = azimuth::Aggregator::find_correlation(correlations, "cpu.usage", "error.count")
+  
+  assert_true(request_response_corr is Some)
+  assert_true(cpu_error_corr is Some)
+  
+  // High response times should correlate with high CPU usage
+  match request_response_corr {
+    Some(corr) => assert_true(corr.coefficient >= 0.0)  // Positive correlation expected
+    None => assert_true(false)
+  }
+  
+  // High CPU usage should correlate with more errors
+  match cpu_error_corr {
+    Some(corr) => assert_true(corr.coefficient >= 0.0)  // Positive correlation expected
+    None => assert_true(false)
+  }
+  
+  // Test metric grouping and aggregation
+  let grouped_metrics = azimuth::Aggregator::group_by_attributes([
+    ("request.count", request_counter),
+    ("response.time", response_time_histogram),
+    ("error.count", error_counter),
+    ("cpu.usage", cpu_gauge)
+  ], ["endpoint"])
+  
+  assert_true(grouped_metrics.length() >= 2)  // At least 2 endpoints
+  
+  // Verify group statistics
+  for group in grouped_metrics {
+    let group_key = group.attributes["endpoint"]
+    assert_true(group_key == "api/v1/heavy" || group_key == "api/v1/light")
+    
+    // Heavy endpoint should have higher metrics
+    if group_key == "api/v1/heavy" {
+      assert_true(group.metrics["response.time"].mean > 500.0)
+      assert_true(group.metrics["cpu.usage"].mean > 80.0)
     } else {
-      azimuth::Counter::add(fast_operations, 1.0)
+      assert_true(group.metrics["response.time"].mean < 100.0)
+      assert_true(group.metrics["cpu.usage"].mean < 30.0)
     }
   }
-  
-  // 验证计数器创建
-  assert_eq(total_requests.name, "requests.total")
-  assert_eq(success_requests.name, "requests.success")
-  assert_eq(error_requests.name, "requests.error")
-  assert_eq(total_operations.name, "operations.total")
-  assert_eq(fast_operations.name, "operations.fast")
-  assert_eq(slow_operations.name, "operations.slow")
-  
-  // 模拟比率计算（在实际实现中，这应该由度量系统处理）
-  // 成功率 = success_requests / total_requests
-  // 错误率 = error_requests / total_requests
-  // 快速操作率 = fast_operations / total_operations
-  // 慢速操作率 = slow_operations / total_operations
-}
-
-// Test 6: Aggregated gauge metrics
-pub test "聚合仪表度量测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "gauge-aggregation-test")
-  
-  // 创建各种仪表度量
-  let cpu_usage = azimuth::Meter::create_gauge(meter, "system.cpu.usage")
-  let memory_usage = azimuth::Meter::create_gauge(meter, "system.memory.usage")
-  let disk_usage = azimuth::Meter::create_gauge(meter, "system.disk.usage")
-  let network_in = azimuth::Meter::create_gauge(meter, "system.network.in")
-  let network_out = azimuth::Meter::create_gauge(meter, "system.network.out")
-  
-  // 模拟系统资源使用率变化
-  for time_point in 1..61 {
-    // 模拟CPU使用率变化（20%到80%之间）
-    let cpu_value = 20.0 + (time_point.to_double() * 1.0) + (5.0 * (time_point % 3).to_double())
-    if (cpu_value > 80.0) { cpu_value = 80.0 }
-    
-    // 模拟内存使用率变化（30%到70%之间）
-    let memory_value = 30.0 + (time_point.to_double() * 0.5) + (3.0 * (time_point % 4).to_double())
-    if (memory_value > 70.0) { memory_value = 70.0 }
-    
-    // 模拟磁盘使用率变化（40%到60%之间）
-    let disk_value = 40.0 + (time_point.to_double() * 0.2) + (2.0 * (time_point % 5).to_double())
-    if (disk_value > 60.0) { disk_value = 60.0 }
-    
-    // 模拟网络流量
-    let network_in_value = 100.0 + (time_point.to_double() * 10.0) + (50.0 * (time_point % 2).to_double())
-    let network_out_value = 80.0 + (time_point.to_double() * 8.0) + (40.0 * (time_point % 2).to_double())
-    
-    // 注意：在简化实现中，Gauge可能没有record方法，这里主要测试结构创建
-  }
-  
-  // 验证仪表度量创建
-  assert_eq(cpu_usage.name, "system.cpu.usage")
-  assert_eq(memory_usage.name, "system.memory.usage")
-  assert_eq(disk_usage.name, "system.disk.usage")
-  assert_eq(network_in.name, "system.network.in")
-  assert_eq(network_out.name, "system.network.out")
-}
-
-// Test 7: Cross-service aggregation
-pub test "跨服务聚合测试" {
-  let services = ["auth", "payment", "user", "order", "inventory", "notification", "analytics"]
-  let service_metrics = []
-  
-  for service in services {
-    let meter_provider = azimuth::MeterProvider::default()
-    let meter = azimuth::MeterProvider::get_meter(meter_provider, service + "-service")
-    
-    // 为每个服务创建度量
-    let service_requests = azimuth::Meter::create_counter(meter, service + ".requests")
-    let service_errors = azimuth::Meter::create_counter(meter, service + ".errors")
-    let service_latency = azimuth::Meter::create_histogram(meter, service + ".latency")
-    
-    // 模拟服务指标
-    let request_count = service.length() * 15  // 基于服务名称长度的请求量
-    let error_rate = 0.05  // 5%错误率
-    
-    for i in 1..(request_count + 1) {
-      azimuth::Counter::add(service_requests, 1.0)
-      
-      if (i % 20 == 0) {  // 5%错误率
-        azimuth::Counter::add(service_errors, 1.0)
-      }
-      
-      let latency = 50.0 + (service.length().to_double() * 5.0) + (i.to_double() * 0.2)
-      azimuth::Histogram::record(service_latency, latency)
-    }
-    
-    service_metrics.push((service_requests, service_errors, service_latency))
-  }
-  
-  // 验证跨服务度量
-  assert_true(service_metrics.length() == 7)
-  
-  for (requests, errors, latency) in service_metrics {
-    assert_true(requests.name.contains(".requests"))
-    assert_true(errors.name.contains(".errors"))
-    assert_true(latency.name.contains(".latency"))
-  }
-}
-
-// Test 8: Aggregation with attributes filtering
-pub test "属性过滤聚合测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "filtering-test")
-  
-  // 创建带属性过滤的度量
-  let api_requests = azimuth::Meter::create_counter(meter, "api.requests")
-  let api_latency = azimuth::Meter::create_histogram(meter, "api.latency")
-  
-  // 模拟不同属性的请求
-  let endpoints = ["/users", "/orders", "/payments", "/products", "/inventory"]
-  let methods = ["GET", "POST", "PUT", "DELETE"]
-  let status_codes = [200, 201, 400, 401, 404, 500]
-  
-  for endpoint in endpoints {
-    for method in methods {
-      for status_code in status_codes {
-        let request_count = match status_code {
-          200 | 201 => 10,
-          400 | 401 | 404 => 2,
-          500 => 1,
-          _ => 0
-        }
-        
-        // 模拟请求
-        for i in 1..(request_count + 1) {
-          azimuth::Counter::add(api_requests, 1.0)
-          
-          let latency = match status_code {
-            200 | 201 => 50.0 + (endpoint.length().to_double() * 2.0),
-            400 | 401 | 404 => 100.0 + (endpoint.length().to_double() * 3.0),
-            500 => 200.0 + (endpoint.length().to_double() * 5.0),
-            _ => 0.0
-          }
-          
-          azimuth::Histogram::record(api_latency, latency)
-        }
-      }
-    }
-  }
-  
-  // 验证带过滤的度量
-  assert_eq(api_requests.name, "api.requests")
-  assert_eq(api_latency.name, "api.latency")
-  
-  // 模拟属性过滤聚合（在实际实现中，这应该由度量系统处理）
-  // 按端点聚合：/users, /orders, /payments等
-  // 按方法聚合：GET, POST, PUT, DELETE
-  // 按状态码聚合：2xx, 4xx, 5xx
-  // 按组合属性聚合：GET /users 200, POST /orders 201等
 }

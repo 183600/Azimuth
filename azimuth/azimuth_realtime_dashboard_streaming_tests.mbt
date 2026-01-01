@@ -1,755 +1,496 @@
-// Azimuth Real-time Dashboard Streaming Comprehensive Test Suite
-// This file contains comprehensive test cases for real-time dashboard and streaming functionality
+// Azimuth Real-time Dashboard Streaming Tests
+// This file contains tests for real-time dashboard streaming functionality in the Azimuth telemetry system
 
 // Test 1: Real-time metrics streaming
 pub test "real-time metrics streaming" {
-  // Create meter provider for streaming metrics
   let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "streaming-metrics-meter")
+  let meter = azimuth::MeterProvider::get_meter(provider, "realtime-dashboard-test")
   
-  // Create streaming metrics
-  let request_counter = azimuth::Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
-  let response_time_histogram = azimuth::Meter::create_histogram(meter, "http.response.time", Some("HTTP response time"), Some("ms"))
-  let active_connections_gauge = azimuth::Meter::create_gauge(meter, "http.connections.active", Some("Active HTTP connections"), Some("connections"))
-  let error_rate_counter = azimuth::Meter::create_counter(meter, "http.errors.total", Some("Total HTTP errors"), Some("errors"))
+  // Configure streaming dashboard
+  let dashboard_config = azimuth::DashboardConfig::new()
+    .with_update_interval(1000)  // 1 second updates
+    .with_buffer_size(100)
+    .with_max_data_points(1000)
+    .with_compression_enabled(true)
   
-  // Simulate real-time metrics streaming
-  let base_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let one_second_nanos = 1000000000L
+  let dashboard = azimuth::RealtimeDashboard::new(dashboard_config)
   
-  // Stream metrics for 10 seconds
-  for i = 0; i < 10; i++ {
-    // Simulate request count
-    let request_count = 100.0 + 10.0 * i.to_double()
-    azimuth::Counter::add(request_counter, request_count)
+  // Create metrics for streaming
+  let request_counter = azimuth::Meter::create_counter(meter, "dashboard.requests", Some("Dashboard requests"), Some("count"))
+  let response_time_histogram = azimuth::Meter::create_histogram(meter, "dashboard.response_time", Some("Response time"), Some("ms"))
+  let cpu_gauge = azimuth::Meter::create_gauge(meter, "dashboard.cpu", Some("CPU usage"), Some("percent"))
+  let memory_gauge = azimuth::Meter::create_gauge(meter, "dashboard.memory", Some("Memory usage"), Some("bytes"))
+  
+  // Register metrics with dashboard
+  azimuth::RealtimeDashboard::register_metric(dashboard, "requests", request_counter)
+  azimuth::RealtimeDashboard::register_metric(dashboard, "response_time", response_time_histogram)
+  azimuth::RealtimeDashboard::register_metric(dashboard, "cpu", cpu_gauge)
+  azimuth::RealtimeDashboard::register_metric(dashboard, "memory", memory_gauge)
+  
+  // Start streaming
+  let stream_handle = azimuth::RealtimeDashboard::start_streaming(dashboard)
+  
+  // Simulate real-time data generation
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let duration = 5000000000L  // 5 seconds
+  
+  while azimuth::Clock::now_unix_nanos(azimuth::Clock::system()) - start_time < duration {
+    // Generate request count
+    azimuth::Counter::add(request_counter, 1, [("endpoint", "api/dashboard"), ("method", "GET")])
     
-    // Simulate response time
-    let response_time = 50.0 + 5.0 * i.to_double()
-    azimuth::Histogram::record(response_time_histogram, response_time)
+    // Generate response time
+    let response_time = 50.0 + (azimuth::Clock::now_unix_millis(azimuth::Clock::system()) % 200).to_double()
+    azimuth::Histogram::record(response_time_histogram, response_time, [("endpoint", "api/dashboard")])
     
-    // Simulate active connections
-    let active_connections = 50.0 + 2.0 * i.to_double()
-    azimuth::UpDownCounter::add(active_connections_gauge, active_connections)
+    // Generate CPU usage
+    let cpu_usage = 20.0 + (azimuth::Clock::now_unix_millis(azimuth::Clock::system()) % 60).to_double()
+    azimuth::Gauge::set(cpu_gauge, cpu_usage.to_long(), [("instance", "dashboard-server")])
     
-    // Simulate error rate
-    let error_count = 5.0 + i.to_double()
-    azimuth::Counter::add(error_rate_counter, error_count)
+    // Generate memory usage
+    let memory_usage = (1024 * 1024 * 1024).to_long() + (azimuth::Clock::now_unix_millis(azimuth::Clock::system()) % 100 * 1024 * 1024).to_long()
+    azimuth::Gauge::set(memory_gauge, memory_usage, [("instance", "dashboard-server")])
+    
+    // Wait for next update interval
+    azimuth::Clock::sleep(100)  // 100ms
   }
   
-  // Verify metrics were recorded
-  assert_eq(request_counter.name, "http.requests.total")
-  assert_eq(request_counter.description, Some("Total HTTP requests"))
-  assert_eq(request_counter.unit, Some("requests"))
+  // Stop streaming
+  azimuth::RealtimeDashboard::stop_streaming(dashboard, stream_handle)
   
-  assert_eq(response_time_histogram.name, "http.response.time")
-  assert_eq(response_time_histogram.description, Some("HTTP response time"))
-  assert_eq(response_time_histogram.unit, Some("ms"))
+  // Verify streaming metrics
+  let streaming_stats = azimuth::RealtimeDashboard::get_streaming_statistics(dashboard)
+  assert_true(streaming_stats.total_updates >= 5)  // At least 5 updates in 5 seconds
+  assert_true(streaming_stats.data_points_sent >= 20)  // At least 4 metrics * 5 updates
+  assert_true(streaming_stats.bytes_transferred > 0)
+  assert_true(streaming_stats.average_update_time > 0.0)
   
-  assert_eq(active_connections_gauge.name, "http.connections.active")
-  assert_eq(active_connections_gauge.description, Some("Active HTTP connections"))
-  assert_eq(active_connections_gauge.unit, Some("connections"))
+  // Test data retrieval
+  let requests_data = azimuth::RealtimeDashboard::get_metric_data(dashboard, "requests")
+  let response_time_data = azimuth::RealtimeDashboard::get_metric_data(dashboard, "response_time")
+  let cpu_data = azimuth::RealtimeDashboard::get_metric_data(dashboard, "cpu")
+  let memory_data = azimuth::RealtimeDashboard::get_metric_data(dashboard, "memory")
   
-  assert_eq(error_rate_counter.name, "http.errors.total")
-  assert_eq(error_rate_counter.description, Some("Total HTTP errors"))
-  assert_eq(error_rate_counter.unit, Some("errors"))
-  
-  // Test high-frequency metrics streaming
-  for i = 0; i < 1000; i++ {
-    azimuth::Counter::add(request_counter, 1.0)
-    azimuth::Histogram::record(response_time_histogram, 100.0 + i.to_double())
-    azimuth::UpDownCounter::add(active_connections_gauge, i.to_double() % 100.0)
-    azimuth::Counter::add(error_rate_counter, i.to_double() % 10.0)
-  }
-  
-  // Test metrics with different data types
-  let int_counter = azimuth::Meter::create_counter(meter, "int.metric", Some("Integer metric"), Some("count"))
-  let float_gauge = azimuth::Meter::create_gauge(meter, "float.metric", Some("Float metric"), Some("value"))
-  
-  azimuth::Counter::add(int_counter, 42.0)
-  azimuth::UpDownCounter::add(float_gauge, 3.14159)
-  
-  assert_eq(int_counter.name, "int.metric")
-  assert_eq(float_gauge.name, "float.metric")
+  assert_true(requests_data.length() >= 5)
+  assert_true(response_time_data.length() >= 5)
+  assert_true(cpu_data.length() >= 5)
+  assert_true(memory_data.length() >= 5)
 }
 
-// Test 2: Real-time log streaming
-pub test "real-time log streaming" {
-  // Create logger provider for streaming logs
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "streaming-logger")
-  
-  // Simulate real-time log streaming
-  let base_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let one_second_nanos = 1000000000L
-  
-  // Stream logs for 10 seconds
-  for i = 0; i < 10; i++ {
-    let timestamp = base_time + i.to_int64() * one_second_nanos
-    
-    // Create log records with different severity levels
-    let info_log = azimuth::LogRecord::new_with_context(
-      azimuth::Info,
-      Some("Info log message " + i.to_string()),
-      None,
-      Some(timestamp),
-      Some(timestamp + 1000000L),
-      Some("realtime-trace-12345"),
-      Some("realtime-span-" + i.to_string()),
-      Some(azimuth::Context::root())
-    )
-    
-    let warn_log = azimuth::LogRecord::new_with_context(
-      azimuth::Warn,
-      Some("Warning log message " + i.to_string()),
-      None,
-      Some(timestamp + one_second_nanos),
-      Some(timestamp + one_second_nanos + 1000000L),
-      Some("realtime-trace-12345"),
-      Some("realtime-warn-span-" + i.to_string()),
-      Some(azimuth::Context::root())
-    )
-    
-    let error_log = azimuth::LogRecord::new_with_context(
-      azimuth::Error,
-      Some("Error log message " + i.to_string()),
-      None,
-      Some(timestamp + 2 * one_second_nanos),
-      Some(timestamp + 2 * one_second_nanos + 1000000L),
-      Some("realtime-trace-12345"),
-      Some("realtime-error-span-" + i.to_string()),
-      Some(azimuth::Context::root())
-    )
-    
-    // Emit log records
-    azimuth::Logger::emit(logger, info_log)
-    azimuth::Logger::emit(logger, warn_log)
-    azimuth::Logger::emit(logger, error_log)
-  }
-  
-  // Verify log records
-  assert_eq(logger.scope.name, "streaming-logger")
-  
-  // Test high-frequency log streaming
-  for i = 0; i < 1000; i++ {
-    let timestamp = base_time + i.to_int64() * 1000000L  // 1ms intervals
-    
-    let high_freq_log = azimuth::LogRecord::new_with_context(
-      azimuth::Debug,
-      Some("High-frequency log message " + i.to_string()),
-      None,
-      Some(timestamp),
-      Some(timestamp + 1000L),
-      Some("highfreq-trace-12345"),
-      Some("highfreq-span-" + i.to_string()),
-      Some(azimuth::Context::root())
-    )
-    
-    azimuth::Logger::emit(logger, high_freq_log)
-  }
-  
-  // Test logs with special characters
-  let special_log = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("Log with special characters: !@#$%^&*()_+-=[]{}|;':\",./<>?"),
-    None,
-    Some(base_time),
-    Some(base_time + 1000000L),
-    Some("special-trace-12345"),
-    Some("special-span-67890"),
-    Some(azimuth::Context::root())
-  )
-  
-  azimuth::Logger::emit(logger, special_log)
-  
-  // Test logs with Unicode characters
-  let unicode_log = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("日志包含中文字符 и русские символы и العربية"),
-    None,
-    Some(base_time),
-    Some(base_time + 1000000L),
-    Some("unicode-trace-12345"),
-    Some("unicode-span-67890"),
-    Some(azimuth::Context::root())
-  )
-  
-  azimuth::Logger::emit(logger, unicode_log)
-  
-  // Test logs with very long messages
-  let very_long_message = "This is a very long log message that tests streaming integrity. ".repeat(100)
-  let long_log = azimuth::LogRecord::new_with_context(
-    azimuth::Error,
-    Some(very_long_message),
-    None,
-    Some(base_time),
-    Some(base_time + 1000000L),
-    Some("long-trace-12345"),
-    Some("long-span-67890"),
-    Some(azimuth::Context::root())
-  )
-  
-  azimuth::Logger::emit(logger, long_log)
-}
-
-// Test 3: Real-time span streaming
-pub test "real-time span streaming" {
-  // Create tracer provider for streaming spans
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "streaming-tracer")
-  
-  // Simulate real-time span streaming
-  let base_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let one_second_nanos = 1000000000L
-  
-  // Create root span
-  let root_span_ctx = azimuth::SpanContext::new("realtime-trace-12345", "root-span-67890", true, "")
-  let root_span = azimuth::Span::new("root-operation", azimuth::Server, root_span_ctx)
-  
-  // Stream child spans for 10 seconds
-  for i = 0; i < 10; i++ {
-    let child_span_id = "child-span-" + i.to_string()
-    let child_span_ctx = azimuth::SpanContext::new("realtime-trace-12345", child_span_id, true, "")
-    let child_span = azimuth::Span::new("child-operation-" + i.to_string(), azimuth::Client, child_span_ctx)
-    
-    // Add events to child span
-    azimuth::Span::add_event(child_span, "Child span started", None)
-    azimuth::Span::add_event(child_span, "Child span processing", None)
-    azimuth::Span::add_event(child_span, "Child span completed", None)
-    
-    // Set span status
-    azimuth::Span::set_status(child_span, azimuth::Ok, Some("Child operation completed successfully"))
-    
-    // End child span
-    azimuth::Span::end(child_span)
-  }
-  
-  // Add events to root span
-  azimuth::Span::add_event(root_span, "Root span started", None)
-  azimuth::Span::add_event(root_span, "Root span processing children", None)
-  azimuth::Span::add_event(root_span, "Root span completed", None)
-  
-  // Set root span status
-  azimuth::Span::set_status(root_span, azimuth::Ok, Some("Root operation completed successfully"))
-  
-  // End root span
-  azimuth::Span::end(root_span)
-  
-  // Verify span properties
-  assert_eq(azimuth::Span::name(root_span), "root-operation")
-  assert_eq(azimuth::Span::kind(root_span), azimuth::Server)
-  assert_eq(azimuth::SpanContext::trace_id(azimuth::Span::span_context(root_span)), "realtime-trace-12345")
-  assert_eq(azimuth::SpanContext::span_id(azimuth::Span::span_context(root_span)), "root-span-67890")
-  
-  // Test high-frequency span creation
-  for i = 0; i < 100; i++ {
-    let high_freq_span_id = "highfreq-span-" + i.to_string()
-    let high_freq_span_ctx = azimuth::SpanContext::new("highfreq-trace-12345", high_freq_span_id, true, "")
-    let high_freq_span = azimuth::Span::new("highfreq-operation-" + i.to_string(), azimuth::Internal, high_freq_span_ctx)
-    
-    azimuth::Span::add_event(high_freq_span, "High-frequency span event", None)
-    azimuth::Span::set_status(high_freq_span, azimuth::Ok, None)
-    azimuth::Span::end(high_freq_span)
-  }
-  
-  // Test spans with special characters
-  let special_span_id = "special-span-with@chars"
-  let special_span_ctx = azimuth::SpanContext::new("special-trace-12345", special_span_id, true, "")
-  let special_span = azimuth::Span::new("special-operation-with@chars", azimuth::Producer, special_span_ctx)
-  
-  azimuth::Span::add_event(special_span, "Special span event", None)
-  azimuth::Span::set_status(special_span, azimuth::Error, Some("Special span error"))
-  azimuth::Span::end(special_span)
-  
-  // Test spans with Unicode characters
-  let unicode_span_id = "unicode-span-中文"
-  let unicode_span_ctx = azimuth::SpanContext::new("unicode-trace-12345", unicode_span_id, true, "")
-  let unicode_span = azimuth::Span::new("unicode-operation-中文", azimuth::Consumer, unicode_span_ctx)
-  
-  azimuth::Span::add_event(unicode_span, "Unicode span event", None)
-  azimuth::Span::set_status(unicode_span, azimuth::Ok, Some("Unicode span completed"))
-  azimuth::Span::end(unicode_span)
-}
-
-// Test 4: Real-time dashboard data aggregation
-pub test "real-time dashboard data aggregation" {
-  // Create metrics for dashboard aggregation
+// Test 2: WebSocket streaming for live updates
+pub test "websocket streaming for live updates" {
   let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "dashboard-metrics-meter")
+  let meter = azimuth::MeterProvider::get_meter(provider, "websocket-test")
   
-  let cpu_usage_gauge = azimuth::Meter::create_gauge(meter, "system.cpu.usage", Some("CPU usage percentage"), Some("percent"))
-  let memory_usage_gauge = azimuth::Meter::create_gauge(meter, "system.memory.usage", Some("Memory usage percentage"), Some("percent"))
-  let disk_io_counter = azimuth::Meter::create_counter(meter, "system.disk.io", Some("Disk I/O operations"), Some("operations"))
-  let network_io_counter = azimuth::Meter::create_counter(meter, "system.network.io", Some("Network I/O bytes"), Some("bytes"))
+  // Configure WebSocket server
+  let ws_config = azimuth::WebSocketConfig::new()
+    .with_port(8080)
+    .with_path("/telemetry")
+    .with_max_connections(100)
+    .with_heartbeat_interval(30000)  // 30 seconds
+    .with_message_buffer_size(1024)
   
-  // Simulate real-time dashboard data
-  let base_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let one_second_nanos = 1000000000L
+  let ws_server = azimuth::WebSocketServer::new(ws_config)
   
-  // Aggregate data for 60 seconds (1 minute)
-  let mut cpu_sum = 0.0
-  let mut memory_sum = 0.0
-  let mut disk_io_sum = 0.0
-  let mut network_io_sum = 0.0
+  // Start WebSocket server
+  let server_handle = azimuth::WebSocketServer::start(ws_server)
   
-  for i = 0; i < 60; i++ {
-    // Simulate CPU usage (oscillating between 20% and 80%)
-    let cpu_usage = 50.0 + 30.0 * ((2.0 * 3.141592653589793 * i.to_double() / 60.0).sin())
-    azimuth::UpDownCounter::add(cpu_usage_gauge, cpu_usage)
-    cpu_sum = cpu_sum + cpu_usage
+  // Create metrics for WebSocket streaming
+  let active_users = azimuth::Meter::create_gauge(meter, "active.users", Some("Active users"), Some("count"))
+  let message_rate = azimuth::Meter::create_counter(meter, "message.rate", Some("Message rate"), Some("msg/s"))
+  let error_rate = azimuth::Meter::create_counter(meter, "error.rate", Some("Error rate"), Some("errors/s"))
+  
+  // Configure WebSocket streaming
+  let ws_stream = azimuth::WebSocketStreamer::new(ws_server)
+  azimuth::WebSocketStreamer::add_metric(ws_stream, "active_users", active_users)
+  azimuth::WebSocketStreamer::add_metric(ws_stream, "message_rate", message_rate)
+  azimuth::WebSocketStreamer::add_metric(ws_stream, "error_rate", error_rate)
+  
+  // Start streaming to WebSocket clients
+  let stream_handle = azimuth::WebSocketStreamer::start(ws_stream)
+  
+  // Simulate WebSocket clients
+  let clients = []
+  for i = 0; i < 5; i = i + 1 {
+    let client = azimuth::WebSocketClient::new("ws://localhost:8080/telemetry")
+    let client_id = "client-" + i.to_string()
+    azimuth::WebSocketClient::connect(client, client_id)
+    clients.push(client)
+  }
+  
+  // Simulate real-time data updates
+  for i = 0; i < 20; i = i + 1 {
+    // Update active users
+    let user_count = 100 + (i % 50)
+    azimuth::Gauge::set(active_users, user_count.to_long(), [("service", "chat")])
     
-    // Simulate memory usage (gradually increasing)
-    let memory_usage = 40.0 + 0.5 * i.to_double()
-    azimuth::UpDownCounter::add(memory_usage_gauge, memory_usage)
-    memory_sum = memory_sum + memory_usage
+    // Update message rate
+    let msg_count = 10 + (i % 20)
+    azimuth::Counter::add(message_rate, msg_count.to_long(), [("service", "chat")])
     
-    // Simulate disk I/O (random bursts)
-    let disk_io = if i % 10 == 0 { 100.0 } else { 10.0 }
-    azimuth::Counter::add(disk_io_counter, disk_io)
-    disk_io_sum = disk_io_sum + disk_io
+    // Update error rate
+    if i % 10 == 0 {
+      azimuth::Counter::add(error_rate, 1, [("service", "chat"), ("error.type", "timeout")])
+    }
     
-    // Simulate network I/O (steady stream with occasional spikes)
-    let network_io = 1000.0 + if i % 15 == 0 { 5000.0 } else { 0.0 }
-    azimuth::Counter::add(network_io_counter, network_io)
-    network_io_sum = network_io_sum + network_io
+    // Broadcast updates to clients
+    azimuth::WebSocketStreamer::broadcast(ws_stream)
+    
+    // Wait for next update
+    azimuth::Clock::sleep(200)  // 200ms
   }
   
-  // Calculate aggregated metrics
-  let cpu_average = cpu_sum / 60.0
-  let memory_average = memory_sum / 60.0
-  let disk_io_total = disk_io_sum
-  let network_io_total = network_io_sum
+  // Verify client connections and message delivery
+  let server_stats = azimuth::WebSocketServer::get_statistics(ws_server)
+  assert_true(server_stats.active_connections >= 5)
+  assert_true(server_stats.total_messages_sent >= 20 * 5)  // 20 updates * 5 clients
+  assert_true(server_stats.total_bytes_transferred > 0)
   
-  // Verify aggregation results
-  assert_true(cpu_average >= 20.0 && cpu_average <= 80.0)
-  assert_true(memory_average >= 40.0 && memory_average <= 70.0)
-  assert_eq(disk_io_total, 100.0 * 6.0 + 10.0 * 54.0)  // 6 bursts of 100 + 54 normal of 10
-  assert_eq(network_io_total, 1000.0 * 60.0 + 5000.0 * 4.0)  // 60 normal of 1000 + 4 spikes of 5000
-  
-  // Test dashboard data with different time windows
-  // 5-second window
-  let mut cpu_5s_sum = 0.0
-  for i = 0; i < 5; i++ {
-    let cpu_usage = 50.0 + 30.0 * ((2.0 * 3.141592653589793 * i.to_double() / 5.0).sin())
-    cpu_5s_sum = cpu_5s_sum + cpu_usage
-  }
-  let cpu_5s_average = cpu_5s_sum / 5.0
-  
-  // 30-second window
-  let mut cpu_30s_sum = 0.0
-  for i = 0; i < 30; i++ {
-    let cpu_usage = 50.0 + 30.0 * ((2.0 * 3.141592653589793 * i.to_double() / 30.0).sin())
-    cpu_30s_sum = cpu_30s_sum + cpu_usage
-  }
-  let cpu_30s_average = cpu_30s_sum / 30.0
-  
-  // Verify time window aggregations
-  assert_true(cpu_5s_average >= 20.0 && cpu_5s_average <= 80.0)
-  assert_true(cpu_30s_average >= 20.0 && cpu_30s_average <= 80.0)
-  
-  // Test dashboard data with percentiles
-  let response_time_histogram = azimuth::Meter::create_histogram(meter, "http.response.time.percentiles", Some("Response time for percentile calculation"), Some("ms"))
-  
-  // Generate response times with known distribution
-  let response_times = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
-  
-  for i = 0; i < 100; i++ {
-    let response_time = response_times[i % response_times.length]
-    azimuth::Histogram::record(response_time_histogram, response_time)
+  // Verify client message reception
+  for client in clients {
+    let client_stats = azimuth::WebSocketClient::get_statistics(client)
+    assert_true(client_stats.messages_received >= 20)
+    assert_true(client_stats.bytes_received > 0)
+    assert_true(client_stats.connection_duration > 0)
   }
   
-  // Calculate percentiles (simplified)
-  let p50_index = (response_times.length * 50) / 100
-  let p95_index = (response_times.length * 95) / 100
-  let p99_index = (response_times.length * 99) / 100
+  // Test message format and content
+  let sample_client = clients[0]
+  let messages = azimuth::WebSocketClient::get_messages(sample_client)
+  assert_true(messages.length() >= 20)
   
-  let p50_value = if p50_index < response_times.length { response_times[p50_index] } else { response_times[response_times.length - 1] }
-  let p95_value = if p95_index < response_times.length { response_times[p95_index] } else { response_times[response_times.length - 1] }
-  let p99_value = if p99_index < response_times.length { response_times[p99_index] } else { response_times[response_times.length - 1] }
+  // Verify message structure
+  for message in messages.take(5) {
+    assert_true(message.contains("active_users"))
+    assert_true(message.contains("message_rate"))
+    assert_true(message.contains("timestamp"))
+    assert_true(message.contains("data"))
+  }
   
-  // Verify percentile calculations
-  assert_eq(p50_value, 50.0)
-  assert_eq(p95_value, 100.0)
-  assert_eq(p99_value, 100.0)
+  // Clean up
+  azimuth::WebSocketStreamer::stop(ws_stream, stream_handle)
+  for client in clients {
+    azimuth::WebSocketClient::disconnect(client)
+  }
+  azimuth::WebSocketServer::stop(ws_server, server_handle)
 }
 
-// Test 5: Real-time dashboard alerting
-pub test "real-time dashboard alerting" {
+// Test 3: Real-time alerting and notifications
+pub test "real-time alerting and notifications" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "alerting-test")
+  
+  // Configure alerting system
+  let alert_config = azimuth::AlertConfig::new()
+    .with_evaluation_interval(5000)  // 5 seconds
+    .with_notification_channels(["email", "slack", "webhook"])
+    .with_cooldown_period(30000)     // 30 seconds
+    .with_max_alerts_per_hour(100)
+  
+  let alert_manager = azimuth::AlertManager::new(alert_config)
+  
   // Create metrics for alerting
-  let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "alerting-metrics-meter")
+  let error_rate = azimuth::Meter::create_counter(meter, "error.rate", Some("Error rate"), Some("errors/min"))
+  let response_time = azimuth::Meter::create_histogram(meter, "response.time", Some("Response time"), Some("ms"))
+  let cpu_usage = azimuth::Meter::create_gauge(meter, "cpu.usage", Some("CPU usage"), Some("percent"))
+  let memory_usage = azimuth::Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("percent"))
   
-  let error_rate_counter = azimuth::Meter::create_counter(meter, "http.errors.rate", Some("HTTP error rate"), Some("errors"))
-  let latency_histogram = azimuth::Meter::create_histogram(meter, "http.request.latency", Some("Request latency"), Some("ms"))
-  let queue_size_gauge = azimuth::Meter::create_gauge(meter, "system.queue.size", Some("Queue size"), Some("items"))
+  // Configure alert rules
+  let error_rate_rule = azimuth::AlertRule::new("high_error_rate")
+    .with_metric("error.rate")
+    .with_condition("rate > 10")
+    .with_duration("5m")
+    .with_severity("critical")
+    .with_message("Error rate is too high: {{value}} errors/min")
   
-  // Simulate alerting scenarios
-  let base_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let response_time_rule = azimuth::AlertRule::new("slow_response")
+    .with_metric("response.time")
+    .with_condition("p95 > 1000")
+    .with_duration("2m")
+    .with_severity("warning")
+    .with_message("Response time is slow: {{value}}ms")
   
-  // Scenario 1: High error rate alert
-  for i = 0; i < 100; i++ {
-    let error_count = if i < 10 { 0.0 } else { 5.0 }  // Error rate spikes after 10 iterations
-    azimuth::Counter::add(error_rate_counter, error_count)
+  let cpu_rule = azimuth::AlertRule::new("high_cpu")
+    .with_metric("cpu.usage")
+    .with_condition("value > 80")
+    .with_duration("1m")
+    .with_severity("warning")
+    .with_message("CPU usage is high: {{value}}%")
+  
+  let memory_rule = azimuth::AlertRule::new("high_memory")
+    .with_metric("memory.usage")
+    .with_condition("value > 90")
+    .with_duration("30s")
+    .with_severity("critical")
+    .with_message("Memory usage is critical: {{value}}%")
+  
+  // Register alert rules
+  azimuth::AlertManager::add_rule(alert_manager, error_rate_rule)
+  azimuth::AlertManager::add_rule(alert_manager, response_time_rule)
+  azimuth::AlertManager::add_rule(alert_manager, cpu_rule)
+  azimuth::AlertManager::add_rule(alert_manager, memory_rule)
+  
+  // Start alert evaluation
+  let alert_handle = azimuth::AlertManager::start_evaluation(alert_manager)
+  
+  // Simulate metrics that trigger alerts
+  for i = 0; i < 30; i = i + 1 {
+    // Generate high error rate (will trigger after 5 minutes in real scenario, but we'll trigger immediately for testing)
+    azimuth::Counter::add(error_rate, 15, [("service", "api"), ("endpoint", "/data")])
+    
+    // Generate slow response times
+    let slow_response = 1200.0 + (i % 200).to_double()
+    azimuth::Histogram::record(response_time, slow_response, [("service", "api"), ("endpoint", "/data")])
+    
+    // Generate high CPU usage
+    let high_cpu = 85.0 + (i % 10).to_double()
+    azimuth::Gauge::set(cpu_usage, high_cpu.to_long(), [("instance", "server-1")])
+    
+    // Generate high memory usage
+    let high_memory = 92.0 + (i % 5).to_double()
+    azimuth::Gauge::set(memory_usage, high_memory.to_long(), [("instance", "server-1")])
+    
+    // Wait for next evaluation cycle
+    azimuth::Clock::sleep(1000)  // 1 second
   }
   
-  // Scenario 2: High latency alert
-  for i = 0; i < 50; i++ {
-    let latency = if i < 20 { 100.0 } else { 1000.0 }  // Latency spikes after 20 iterations
-    azimuth::Histogram::record(latency_histogram, latency)
+  // Force alert evaluation
+  azimuth::AlertManager::evaluate_now(alert_manager)
+  
+  // Check for triggered alerts
+  let active_alerts = azimuth::AlertManager::get_active_alerts(alert_manager)
+  assert_true(active_alerts.length() >= 2)  // At least CPU and memory alerts should trigger
+  
+  // Verify alert details
+  for alert in active_alerts {
+    assert_true(alert.rule_name == "high_cpu" || alert.rule_name == "high_memory" || 
+               alert.rule_name == "high_error_rate" || alert.rule_name == "slow_response")
+    assert_true(alert.severity == "warning" || alert.severity == "critical")
+    assert_true(alert.message.length() > 0)
+    assert_true(alert.triggered_at > 0)
   }
   
-  // Scenario 3: Queue size alert
-  for i = 0; i < 30; i++ {
-    let queue_size = if i < 15 { i.to_double() } else { 100.0 - i.to_double() }  // Queue grows then shrinks
-    azimuth::UpDownCounter::add(queue_size_gauge, queue_size)
-  }
-  
-  // Create alert conditions
-  let error_rate_threshold = 5.0  // 5 errors per iteration
-  let latency_threshold = 500.0   // 500ms
-  let queue_size_threshold = 50.0  // 50 items
-  
-  // Check alert conditions (simplified)
-  let error_rate_alert = true  // Would be calculated from actual metrics
-  let latency_alert = true    // Would be calculated from actual metrics
-  let queue_size_alert = true  // Would be calculated from actual metrics
-  
-  // Verify alert conditions
-  assert_true(error_rate_alert)
-  assert_true(latency_alert)
-  assert_true(queue_size_alert)
+  // Test notification delivery
+  let notification_stats = azimuth::AlertManager::get_notification_statistics(alert_manager)
+  assert_true(notification_stats.total_notifications >= active_alerts.length() * 3)  # 3 channels per alert
+  assert_true(notification_stats.successful_notifications >= 0)
+  assert_true(notification_stats.failed_notifications >= 0)
   
   // Test alert resolution
-  // Simulate metrics returning to normal
-  for i = 0; i < 20; i++ {
-    azimuth::Counter::add(error_rate_counter, 0.0)  // No errors
-    azimuth::Histogram::record(latency_histogram, 50.0)  // Low latency
-    azimuth::UpDownCounter::add(queue_size_gauge, 5.0)  // Small queue
+  // Generate normal metrics to resolve alerts
+  for i = 0; i < 10; i = i + 1 {
+    azimuth::Counter::add(error_rate, 2, [("service", "api"), ("endpoint", "/data")])
+    azimuth::Histogram::record(response_time, 200.0, [("service", "api"), ("endpoint", "/data")])
+    azimuth::Gauge::set(cpu_usage, 45.to_long(), [("instance", "server-1")])
+    azimuth::Gauge::set(memory_usage, 60.to_long(), [("instance", "server-1")])
+    azimuth::Clock::sleep(1000)
   }
   
-  // Check if alerts would be resolved
-  let error_rate_resolved = true  // Would be calculated from actual metrics
-  let latency_resolved = true    // Would be calculated from actual metrics
-  let queue_size_resolved = true  // Would be calculated from actual metrics
+  // Force evaluation to resolve alerts
+  azimuth::AlertManager::evaluate_now(alert_manager)
   
-  // Verify alert resolution
-  assert_true(error_rate_resolved)
-  assert_true(latency_resolved)
-  assert_true(queue_size_resolved)
+  // Check resolved alerts
+  let resolved_alerts = azimuth::AlertManager::get_resolved_alerts(alert_manager)
+  assert_true(resolved_alerts.length() >= 1)
   
-  // Test alert with different severity levels
-  let critical_alert = "Critical: System down"
-  let warning_alert = "Warning: High latency detected"
-  let info_alert = "Info: Scheduled maintenance"
-  
-  // Create log records for alerts
-  let logger_provider = azimuth::LoggerProvider::default()
-  let alert_logger = azimuth::LoggerProvider::get_logger(logger_provider, "alert-logger")
-  
-  let critical_log = azimuth::LogRecord::new_with_context(
-    azimuth::Error,
-    Some(critical_alert),
-    None,
-    Some(base_time),
-    Some(base_time + 1000000L),
-    Some("alert-trace-12345"),
-    Some("alert-span-67890"),
-    Some(azimuth::Context::root())
-  )
-  
-  let warning_log = azimuth::LogRecord::new_with_context(
-    azimuth::Warn,
-    Some(warning_alert),
-    None,
-    Some(base_time + one_second_nanos),
-    Some(base_time + one_second_nanos + 1000000L),
-    Some("alert-trace-12345"),
-    Some("alert-warning-span-67890"),
-    Some(azimuth::Context::root())
-  )
-  
-  let info_log = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some(info_alert),
-    None,
-    Some(base_time + 2 * one_second_nanos),
-    Some(base_time + 2 * one_second_nanos + 1000000L),
-    Some("alert-trace-12345"),
-    Some("alert-info-span-67890"),
-    Some(azimuth::Context::root())
-  )
-  
-  // Emit alert logs
-  azimuth::Logger::emit(alert_logger, critical_log)
-  azimuth::Logger::emit(alert_logger, warning_log)
-  azimuth::Logger::emit(alert_logger, info_log)
-  
-  // Verify alert logs
-  assert_eq(azimuth::LogRecord::severity_number(critical_log), azimuth::Error)
-  assert_eq(azimuth::LogRecord::severity_number(warning_log), azimuth::Warn)
-  assert_eq(azimuth::LogRecord::severity_number(info_log), azimuth::Info)
+  // Clean up
+  azimuth::AlertManager::stop_evaluation(alert_manager, alert_handle)
 }
 
-// Test 6: Real-time dashboard data buffering
-pub test "real-time dashboard data buffering" {
-  // Create metrics for buffering
+// Test 4: Dashboard widget rendering and updates
+pub test "dashboard widget rendering and updates" {
   let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "buffering-metrics-meter")
+  let meter = azimuth::MeterProvider::get_meter(provider, "widget-test")
   
-  let buffer_counter = azimuth::Meter::create_counter(meter, "buffer.items", Some("Buffered items"), Some("items"))
-  let buffer_size_gauge = azimuth::Meter::create_gauge(meter, "buffer.size", Some("Buffer size"), Some("bytes"))
-  let buffer_utilization_gauge = azimuth::Meter::create_gauge(meter, "buffer.utilization", Some("Buffer utilization"), Some("percent"))
+  // Create dashboard with widgets
+  let dashboard = azimuth::Dashboard::new("Test Dashboard")
   
-  // Simulate buffer filling and draining
-  let buffer_capacity = 1000.0
-  let base_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  // Create metrics for widgets
+  let total_requests = azimuth::Meter::create_counter(meter, "total.requests", Some("Total requests"), Some("count"))
+  let avg_response_time = azimuth::Meter::create_histogram(meter, "avg.response.time", Some("Average response time"), Some("ms"))
+  let error_percentage = azimuth::Meter::create_counter(meter, "error.percentage", Some("Error percentage"), Some("percent"))
+  let active_services = azimuth::Meter::create_gauge(meter, "active.services", Some("Active services"), Some("count"))
   
-  // Fill buffer
-  for i = 0; i < 500; i++ {
-    let item_size = 100.0  // 100 bytes per item
-    azimuth::Counter::add(buffer_counter, 1.0)
-    azimuth::UpDownCounter::add(buffer_size_gauge, item_size)
+  // Create widgets
+  let counter_widget = azimuth::CounterWidget::new("Total Requests", total_requests)
+    .with_format("number")
+    .with_unit("requests")
+    .with_color("#00ff00")
+  
+  let gauge_widget = azimuth::GaugeWidget::new("Response Time", avg_response_time)
+    .with_min(0)
+    .with_max(2000)
+    .with_thresholds([
+      ("green", 500),
+      ("yellow", 1000),
+      ("red", 1500)
+    ])
+  
+  let pie_widget = azimuth::PieWidget::new("Error Distribution", error_percentage)
+    .with_segments([
+      ("Success", "#00ff00"),
+      ("Client Error", "#ffff00"),
+      ("Server Error", "#ff0000")
+    ])
+  
+  let status_widget = azimuth::StatusWidget::new("Service Status", active_services)
+    .with_good_threshold(5)
+    .with_warning_threshold(3)
+    .with_critical_threshold(1)
+  
+  // Add widgets to dashboard
+  azimuth::Dashboard::add_widget(dashboard, counter_widget)
+  azimuth::Dashboard::add_widget(dashboard, gauge_widget)
+  azimuth::Dashboard::add_widget(dashboard, pie_widget)
+  azimuth::Dashboard::add_widget(dashboard, status_widget)
+  
+  // Configure dashboard layout
+  azimuth::Dashboard::set_layout(dashboard, [
+    [("Total Requests", 2, 1)],  // 2 columns, 1 row
+    [("Response Time", 1, 1), ("Error Distribution", 1, 1)],  // 2 widgets side by side
+    [("Service Status", 2, 1)]   # 2 columns, 1 row
+  ])
+  
+  // Start dashboard updates
+  let update_handle = azimuth::Dashboard::start_updates(dashboard, 2000)  # 2 second updates
+  
+  // Generate data for widgets
+  for i = 0; i < 20; i = i + 1 {
+    // Update total requests
+    azimuth::Counter::add(total_requests, 10, [("service", "web"), ("method", "GET")])
     
-    let utilization = (i + 1).to_double() * item_size / buffer_capacity * 100.0
-    azimuth::UpDownCounter::add(buffer_utilization_gauge, utilization)
-  }
-  
-  // Drain buffer
-  for i = 0; i < 300; i++ {
-    let item_size = 100.0  // 100 bytes per item
-    azimuth::UpDownCounter::add(buffer_size_gauge, -item_size)
+    // Update response time
+    let response_time = 100.0 + (i % 400).to_double()
+    azimuth::Histogram::record(avg_response_time, response_time, [("service", "web")])
     
-    let remaining_items = 500 - (i + 1)
-    let utilization = remaining_items.to_double() * item_size / buffer_capacity * 100.0
-    azimuth::UpDownCounter::add(buffer_utilization_gauge, utilization)
-  }
-  
-  // Fill buffer again
-  for i = 0; i < 800; i++ {
-    let item_size = 100.0  // 100 bytes per item
-    azimuth::Counter::add(buffer_counter, 1.0)
-    azimuth::UpDownCounter::add(buffer_size_gauge, item_size)
-    
-    let total_items = 500 - 300 + (i + 1)
-    let utilization = total_items.to_double() * item_size / buffer_capacity * 100.0
-    azimuth::UpDownCounter::add(buffer_utilization_gauge, utilization)
-  }
-  
-  // Verify buffer metrics
-  assert_eq(buffer_counter.name, "buffer.items")
-  assert_eq(buffer_size_gauge.name, "buffer.size")
-  assert_eq(buffer_utilization_gauge.name, "buffer.utilization")
-  
-  // Test buffer overflow scenario
-  let overflow_buffer_counter = azimuth::Meter::create_counter(meter, "buffer.overflow", Some("Buffer overflow events"), Some("events"))
-  let overflow_buffer_size_gauge = azimuth::Meter::create_gauge(meter, "overflow.buffer.size", Some("Overflow buffer size"), Some("bytes"))
-  
-  // Simulate buffer overflow
-  for i = 0; i < 1200; i++ {  // Exceed capacity of 1000 items
-    let item_size = 100.0  // 100 bytes per item
-    
-    if i >= 1000 {
-      azimuth::Counter::add(overflow_buffer_counter, 1.0)
-      azimuth::UpDownCounter::add(overflow_buffer_size_gauge, item_size)
-    }
-    
-    azimuth::Counter::add(buffer_counter, 1.0)
-    azimuth::UpDownCounter::add(buffer_size_gauge, item_size)
-  }
-  
-  // Verify overflow metrics
-  assert_eq(overflow_buffer_counter.name, "buffer.overflow")
-  assert_eq(overflow_buffer_size_gauge.name, "overflow.buffer.size")
-  
-  // Test buffer with different item sizes
-  let variable_size_counter = azimuth::Meter::create_counter(meter, "variable.size.items", Some("Variable size items"), Some("items"))
-  let variable_size_gauge = azimuth::Meter::create_gauge(meter, "variable.size.buffer", Some("Variable size buffer"), Some("bytes"))
-  
-  // Add items with different sizes
-  let item_sizes = [50.0, 100.0, 200.0, 400.0, 800.0]
-  
-  for i = 0; i < 100; i++ {
-    let item_size = item_sizes[i % item_sizes.length]
-    azimuth::Counter::add(variable_size_counter, 1.0)
-    azimuth::UpDownCounter::add(variable_size_gauge, item_size)
-  }
-  
-  // Verify variable size metrics
-  assert_eq(variable_size_counter.name, "variable.size.items")
-  assert_eq(variable_size_gauge.name, "variable.size.buffer")
-}
-
-// Test 7: Real-time dashboard data retention
-pub test "real-time dashboard data retention" {
-  // Create metrics for retention testing
-  let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "retention-metrics-meter")
-  
-  let retention_counter = azimuth::Meter::create_counter(meter, "retention.items", Some("Retained items"), Some("items"))
-  let retention_size_gauge = azimuth::Meter::create_gauge(meter, "retention.size", Some("Retention size"), Some("bytes"))
-  let retention_age_gauge = azimuth::Meter::create_gauge(meter, "retention.age", Some("Data age"), Some("seconds"))
-  
-  // Simulate data retention over time
-  let base_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let one_second_nanos = 1000000000L
-  let one_minute_nanos = 60 * one_second_nanos
-  let one_hour_nanos = 60 * one_minute_nanos
-  
-  // Add data with different ages
-  for i = 0; i < 100; i++ {
-    let item_size = 100.0  // 100 bytes per item
-    let item_age = i.to_double()  // Age in seconds
-    
-    azimuth::Counter::add(retention_counter, 1.0)
-    azimuth::UpDownCounter::add(retention_size_gauge, item_size)
-    azimuth::UpDownCounter::add(retention_age_gauge, item_age)
-  }
-  
-  // Simulate data expiration (remove old data)
-  let retention_period = 30.0  // 30 seconds
-  let expired_items = 30  // Items older than 30 seconds
-  
-  for i = 0; i < expired_items; i++ {
-    let item_size = 100.0  // 100 bytes per item
-    let item_age = i.to_double()  // Age in seconds
-    
-    azimuth::UpDownCounter::add(retention_size_gauge, -item_size)
-    azimuth::UpDownCounter::add(retention_age_gauge, -item_age)
-  }
-  
-  // Verify retention metrics
-  assert_eq(retention_counter.name, "retention.items")
-  assert_eq(retention_size_gauge.name, "retention.size")
-  assert_eq(retention_age_gauge.name, "retention.age")
-  
-  // Test retention with different data types
-  let logs_retention_counter = azimuth::Meter::create_counter(meter, "logs.retention.items", Some("Retained logs"), Some("logs"))
-  let traces_retention_counter = azimuth::Meter::create_counter(meter, "traces.retention.items", Some("Retained traces"), Some("traces"))
-  let metrics_retention_counter = azimuth::Meter::create_counter(meter, "metrics.retention.items", Some("Retained metrics"), Some("metrics"))
-  
-  // Add different data types
-  for i = 0; i < 1000; i++ {
-    if i % 3 == 0 {
-      azimuth::Counter::add(logs_retention_counter, 1.0)
-    } else if i % 3 == 1 {
-      azimuth::Counter::add(traces_retention_counter, 1.0)
+    // Update error percentage
+    if i % 10 == 0 {
+      azimuth::Counter::add(error_percentage, 1, [("service", "web"), ("error.type", "500")])
     } else {
-      azimuth::Counter::add(metrics_retention_counter, 1.0)
+      azimuth::Counter::add(error_percentage, 9, [("service", "web"), ("status", "200")])
     }
+    
+    // Update active services
+    let service_count = 3 + (i % 5)
+    azimuth::Gauge::set(active_services, service_count.to_long(), [("environment", "production")])
+    
+    azimuth::Clock::sleep(500)  # 500ms
   }
   
-  // Verify different data type metrics
-  assert_eq(logs_retention_counter.name, "logs.retention.items")
-  assert_eq(traces_retention_counter.name, "traces.retention.items")
-  assert_eq(metrics_retention_counter.name, "metrics.retention.items")
+  // Test widget rendering
+  let dashboard_html = azimuth::Dashboard::render_html(dashboard)
+  assert_true(dashboard_html.contains("Total Requests"))
+  assert_true(dashboard_html.contains("Response Time"))
+  assert_true(dashboard_html.contains("Error Distribution"))
+  assert_true(dashboard_html.contains("Service Status"))
   
-  // Test retention with different policies
-  let hot_retention_counter = azimuth::Meter::create_counter(meter, "hot.retention.items", Some("Hot retention items"), Some("items"))
-  let warm_retention_counter = azimuth::Meter::create_counter(meter, "warm.retention.items", Some("Warm retention items"), Some("items"))
-  let cold_retention_counter = azimuth::Meter::create_counter(meter, "cold.retention.items", Some("Cold retention items"), Some("items"))
+  // Test widget data
+  let counter_data = azimuth::Dashboard::get_widget_data(dashboard, "Total Requests")
+  let gauge_data = azimuth::Dashboard::get_widget_data(dashboard, "Response Time")
+  let pie_data = azimuth::Dashboard::get_widget_data(dashboard, "Error Distribution")
+  let status_data = azimuth::Dashboard::get_widget_data(dashboard, "Service Status")
   
-  // Add data with different retention policies
-  for i = 0; i < 1000; i++ {
-    if i < 100 {
-      azimuth::Counter::add(hot_retention_counter, 1.0)  // Hot data: last 100 items
-    } else if i < 500 {
-      azimuth::Counter::add(warm_retention_counter, 1.0)  // Warm data: items 100-500
-    } else {
-      azimuth::Counter::add(cold_retention_counter, 1.0)  // Cold data: items 500-1000
-    }
-  }
+  assert_true(counter_data.value > 0)
+  assert_true(gauge_data.value > 0.0)
+  assert_true(pie_data.segments.length() >= 2)
+  assert_true(status_data.status == "good" || status_data.status == "warning" || status_data.status == "critical")
   
-  // Verify different retention policy metrics
-  assert_eq(hot_retention_counter.name, "hot.retention.items")
-  assert_eq(warm_retention_counter.name, "warm.retention.items")
-  assert_eq(cold_retention_counter.name, "cold.retention.items")
+  // Test dashboard export
+  let json_export = azimuth::Dashboard::export_json(dashboard)
+  assert_true(json_export.contains("widgets"))
+  assert_true(json_export.contains("layout"))
+  assert_true(json_export.contains("data"))
+  
+  let csv_export = azimuth::Dashboard::export_csv(dashboard)
+  assert_true(csv_export.contains("Total Requests"))
+  assert_true(csv_export.contains("Response Time"))
+  assert_true(csv_export.contains("timestamp"))
+  
+  // Clean up
+  azimuth::Dashboard::stop_updates(dashboard, update_handle)
 }
 
-// Test 8: Real-time dashboard performance monitoring
-pub test "real-time dashboard performance monitoring" {
-  // Create metrics for performance monitoring
+// Test 5: Real-time data aggregation and rollups
+pub test "real-time data aggregation and rollups" {
   let provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(provider, "performance-metrics-meter")
+  let meter = azimuth::MeterProvider::get_meter(provider, "aggregation-test")
   
-  let dashboard_request_counter = azimuth::Meter::create_counter(meter, "dashboard.requests", Some("Dashboard requests"), Some("requests"))
-  let dashboard_response_time_histogram = azimuth::Meter::create_histogram(meter, "dashboard.response.time", Some("Dashboard response time"), Some("ms"))
-  let dashboard_error_counter = azimuth::Meter::create_counter(meter, "dashboard.errors", Some("Dashboard errors"), Some("errors"))
-  let dashboard_active_users_gauge = azimuth::Meter::create_gauge(meter, "dashboard.active.users", Some("Active dashboard users"), Some("users"))
+  // Configure aggregation engine
+  let agg_config = azimuth::AggregationConfig::new()
+    .with_window_size(60000)      # 1 minute windows
+    .with_rollup_intervals([300000, 900000, 3600000])  # 5min, 15min, 1hour
+    .with_retention_period(86400000)  # 24 hours
+    .with_max_series(10000)
   
-  // Simulate dashboard performance monitoring
-  let base_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let one_second_nanos = 1000000000L
+  let aggregation_engine = azimuth::AggregationEngine::new(agg_config)
   
-  // Simulate dashboard requests over time
-  for i = 0; i < 100; i++ {
-    // Simulate request count (varying by time of day)
-    let hour_of_day = i % 24
-    let base_requests = 100.0
-    let peak_multiplier = if hour_of_day >= 9 && hour_of_day <= 17 { 2.0 } else { 0.5 }
-    let request_count = base_requests * peak_multiplier
-    
-    azimuth::Counter::add(dashboard_request_counter, request_count)
-    
-    // Simulate response time (increases with load)
-    let base_response_time = 100.0
-    let load_factor = request_count / 200.0  // Normalize by max expected requests
-    let response_time = base_response_time * (1.0 + load_factor)
-    
-    azimuth::Histogram::record(dashboard_response_time_histogram, response_time)
-    
-    // Simulate errors (increases with load)
-    let base_error_rate = 0.01  // 1% base error rate
-    let error_rate = base_error_rate * (1.0 + load_factor * 2.0)  // Error rate increases with load
-    let error_count = request_count * error_rate
-    
-    azimuth::Counter::add(dashboard_error_counter, error_count)
-    
-    // Simulate active users (varies by time of day)
-    let base_users = 50.0
-    let user_multiplier = if hour_of_day >= 9 && hour_of_day <= 17 { 3.0 } else { 0.3 }
-    let active_users = base_users * user_multiplier
-    
-    azimuth::UpDownCounter::add(dashboard_active_users_gauge, active_users)
-  }
+  // Create metrics for aggregation
+  let request_counter = azimuth::Meter::create_counter(meter, "requests", Some("Requests"), Some("count"))
+  let latency_histogram = azimuth::Meter::create_histogram(meter, "latency", Some("Latency"), Some("ms"))
+  let error_counter = azimuth::Meter::create_counter(meter, "errors", Some("Errors"), Some("count"))
   
-  // Verify performance metrics
-  assert_eq(dashboard_request_counter.name, "dashboard.requests")
-  assert_eq(dashboard_response_time_histogram.name, "dashboard.response.time")
-  assert_eq(dashboard_error_counter.name, "dashboard.errors")
-  assert_eq(dashboard_active_users_gauge.name, "dashboard.active.users")
+  // Register metrics for aggregation
+  azimuth::AggregationEngine::register_metric(aggregation_engine, "requests", request_counter)
+  azimuth::AggregationEngine::register_metric(aggregation_engine, "latency", latency_histogram)
+  azimuth::AggregationEngine::register_metric(aggregation_engine, "errors", error_counter)
   
-  // Test performance with concurrent users
-  let concurrent_users_gauge = azimuth::Meter::create_gauge(meter, "dashboard.concurrent.users", Some("Concurrent users"), Some("users"))
-  let concurrent_requests_counter = azimuth::Meter::create_counter(meter, "dashboard.concurrent.requests", Some("Concurrent requests"), Some("requests"))
+  // Start aggregation
+  let agg_handle = azimuth::AggregationEngine::start(aggregation_engine)
   
-  // Simulate concurrent users
-  for i = 0; i < 10; i++ {
-    let concurrent_users = 100.0 + i.to_double() * 10.0  // Increasing concurrent users
-    azimuth::UpDownCounter::add(concurrent_users_gauge, concurrent_users)
+  // Generate high-frequency data
+  for i = 0; i < 300; i = i + 1 {
+    let endpoint = if i % 3 == 0 { "/api/users" } else if i % 3 == 1 { "/api/orders" } else { "/api/products" }
+    let response_time = 50.0 + (i % 500).to_double()
     
-    // Each user makes multiple requests
-    for j = 0; j < 5; j++ {
-      azimuth::Counter::add(concurrent_requests_counter, 1.0)
+    azimuth::Counter::add(request_counter, 1, [("endpoint", endpoint), ("method", "GET")])
+    azimuth::Histogram::record(latency_histogram, response_time, [("endpoint", endpoint)])
+    
+    if i % 20 == 0 {
+      azimuth::Counter::add(error_counter, 1, [("endpoint", endpoint), ("error.type", "timeout")])
     }
-  }
-  
-  // Verify concurrent metrics
-  assert_eq(concurrent_users_gauge.name, "dashboard.concurrent.users")
-  assert_eq(concurrent_requests_counter.name, "dashboard.concurrent.requests")
-  
-  // Test performance under load
-  let load_test_counter = azimuth::Meter::create_counter(meter, "load.test.requests", Some("Load test requests"), Some("requests"))
-  let load_test_time_histogram = azimuth::Meter::create_histogram(meter, "load.test.response.time", Some("Load test response time"), Some("ms"))
-  
-  // Simulate load test
-  for i = 0; i < 1000; i++ {
-    azimuth::Counter::add(load_test_counter, 1.0)
     
-    // Response time increases with load
-    let response_time = 50.0 + i.to_double() * 0.1
-    azimuth::Histogram::record(load_test_time_histogram, response_time)
+    azimuth::Clock::sleep(100)  # 100ms
   }
   
-  // Verify load test metrics
-  assert_eq(load_test_counter.name, "load.test.requests")
-  assert_eq(load_test_time_histogram.name, "load.test.response.time")
+  # Force aggregation
+  azimuth::AggregationEngine::aggregate_now(aggregation_engine)
+  
+  # Test aggregated data
+  let minute_data = azimuth::AggregationEngine::get_data(aggregation_engine, "1m")
+  let five_minute_data = azimuth::AggregationEngine::get_data(aggregation_engine, "5m")
+  let fifteen_minute_data = azimuth::AggregationEngine::get_data(aggregation_engine, "15m")
+  let hour_data = azimuth::AggregationEngine::get_data(aggregation_engine, "1h")
+  
+  assert_true(minute_data.length() >= 1)
+  assert_true(five_minute_data.length() >= 1)
+  assert_true(fifteen_minute_data.length() >= 1)
+  assert_true(hour_data.length() >= 0)  # May be empty if not enough data
+  
+  # Test aggregated statistics
+  let request_stats = azimuth::AggregationEngine::get_statistics(aggregation_engine, "requests")
+  let latency_stats = azimuth::AggregationEngine::get_statistics(aggregation_engine, "latency")
+  let error_stats = azimuth::AggregationEngine::get_statistics(aggregation_engine, "errors")
+  
+  assert_true(request_stats.sum >= 300)  # At least 300 requests
+  assert_true(latency_stats.count >= 300)  # At least 300 latency measurements
+  assert_true(error_stats.sum >= 15)  # At least 15 errors (300/20)
+  assert_true(latency_stats.avg >= 50.0 && latency_stats.avg <= 550.0)  # Reasonable average
+  
+  # Test rollup data
+  let rollups = azimuth::AggregationEngine::get_rollups(aggregation_engine)
+  assert_true(rollups.length() >= 3)  # 5min, 15min, 1hour
+  
+  for rollup in rollups {
+    assert_true(rollup.interval == 300000 || rollup.interval == 900000 || rollup.interval == 3600000)
+    assert_true(rollup.data_points.length() >= 1)
+  }
+  
+  # Test aggregation performance
+  let perf_stats = azimuth::AggregationEngine::get_performance_statistics(aggregation_engine)
+  assert_true(perf_stats.aggregation_time_avg > 0.0)
+  assert_true(perf_stats.aggregation_time_max >= perf_stats.aggregation_time_avg)
+  assert_true(perf_stats.memory_usage > 0)
+  assert_true(perf_stats.series_count >= 3)  # At least 3 metrics
+  
+  # Clean up
+  azimuth::AggregationEngine::stop(aggregation_engine, agg_handle)
 }

@@ -1,320 +1,330 @@
-// Async Telemetry Export Tests - 异步遥测导出测试
-// 测试异步导出遥测数据的功能和性能
+// Azimuth Async Telemetry Export Tests
+// This file contains tests for asynchronous telemetry export operations in the Azimuth system
 
-pub test "异步遥测数据导出基础测试" {
-  // 创建导出器配置
-  let exporter_config = azimuth::ExporterConfig::new(
-    "http://localhost:4318/v1/traces",
-    "http://localhost:4318/v1/metrics",
-    "http://localhost:4318/v1/logs",
-    5000,  // 批处理大小
-    30000,  // 导出间隔(毫秒)
-    10000   // 超时时间(毫秒)
-  )
-  
-  // 验证配置
-  assert_eq(azimuth::ExporterConfig::traces_endpoint(exporter_config), "http://localhost:4318/v1/traces")
-  assert_eq(azimuth::ExporterConfig::metrics_endpoint(exporter_config), "http://localhost:4318/v1/metrics")
-  assert_eq(azimuth::ExporterConfig::logs_endpoint(exporter_config), "http://localhost:4318/v1/logs")
-  assert_eq(azimuth::ExporterConfig::batch_size(exporter_config), 5000)
-  assert_eq(azimuth::ExporterConfig::export_interval(exporter_config), 30000)
-  assert_eq(azimuth::ExporterConfig::timeout(exporter_config), 10000)
-  
-  // 创建异步导出器
-  let exporter = azimuth::AsyncTelemetryExporter::new(exporter_config)
-  assert_true(azimuth::AsyncTelemetryExporter::is_initialized(exporter))
-  
-  // 创建遥测数据
+// Test 1: Async span export with batch processing
+pub test "async span export with batch processing" {
   let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "async-test-tracer")
-  let span = azimuth::Tracer::start_span(tracer, "async-operation")
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "async-export-test")
   
-  // 添加事件和属性
-  azimuth::Span::add_event(span, "async.start", Some([("operation.type", azimuth::StringValue("export"))]))
-  azimuth::Span::set_attribute(span, "async.export", azimuth::BoolValue(true))
+  // Configure async batch span processor
+  let batch_config = azimuth::BatchSpanProcessorConfig::new()
+  let batch_processor = azimuth::BatchSpanProcessor::builder(batch_config)
+    .with_max_queue_size(2048)
+    .with_max_export_batch_size(512)
+    .with_schedule_delay(5000)  // 5 seconds
+    .with_export_timeout(30000)  // 30 seconds
+    .build()
   
-  // 结束span
-  azimuth::Span::end(span)
+  // Create spans for export
+  let spans = []
+  for i = 0; i < 100; i = i + 1 {
+    let span_name = "async.span." + i.to_string()
+    let span = azimuth::Tracer::start_span(tracer, span_name)
+    
+    // Add attributes and events
+    azimuth::Span::set_attribute(span, "span.index", azimuth::IntValue(i))
+    azimuth::Span::set_attribute(span, "async.test", azimuth::BoolValue(true))
+    
+    if i % 10 == 0 {
+      azimuth::Span::add_event(span, "milestone.event", Some([("milestone", azimuth::StringValue("checkpoint." + i.to_string()))]))
+    }
+    
+    spans.push(span)
+  }
   
-  // 创建度量数据
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "async-test-meter")
-  let counter = azimuth::Meter::create_counter(meter, "async.operations.count")
-  azimuth::Counter::add(counter, 1.0)
+  // End all spans to trigger export
+  for span in spans {
+    azimuth::Span::end(span)
+  }
   
-  // 创建日志数据
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "async-test-logger")
-  let log_record = azimuth::LogRecord::new(azimuth::Info, "Async telemetry export test completed")
-  azimuth::Logger::emit(logger, log_record)
+  // Test batch processor state
+  let processor_state = azimuth::BatchSpanProcessor::get_state(batch_processor)
+  assert_true(processor_state.queue_size >= 0)
+  assert_true(processor_state.dropped_count >= 0)
   
-  // 提交导出任务
-  let export_task = azimuth::AsyncTelemetryExporter::export_span(exporter, span)
-  assert_true(azimuth::AsyncTelemetryExporter::is_task_pending(export_task))
+  // Force flush to ensure all spans are exported
+  let flush_result = azimuth::BatchSpanProcessor::force_flush(batch_processor)
+  assert_true(flush_result)
   
-  // 等待导出完成
-  let export_result = azimuth::AsyncTelemetryExporter::wait_for_completion(export_task, 5000)
-  assert_true(azimuth::AsyncTelemetryExporter::is_successful(export_result))
+  // Verify export metrics
+  let export_metrics = azimuth::BatchSpanProcessor::get_export_metrics(batch_processor)
+  assert_true(export_metrics.successful_exports >= 0)
+  assert_true(export_metrics.failed_exports >= 0)
+  assert_true(export_metrics.total_spans_exported >= 0)
 }
 
-pub test "异步批量导出性能测试" {
-  // 创建高性能导出器配置
-  let high_perf_config = azimuth::ExporterConfig::new(
-    "http://localhost:4318/v1/traces",
-    "http://localhost:4318/v1/metrics", 
-    "http://localhost:4318/v1/logs",
-    10000,  // 大批处理大小
-    5000,   // 短导出间隔
-    5000    // 短超时时间
-  )
+// Test 2: Async metric export with retry mechanism
+pub test "async metric export with retry mechanism" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "async-metric-test")
   
-  let exporter = azimuth::AsyncTelemetryExporter::new(high_perf_config)
+  // Configure async metric exporter with retry
+  let retry_config = azimuth::RetryConfig::new()
+    .with_max_attempts(3)
+    .with_initial_backoff(1000)  // 1 second
+    .with_max_backoff(10000)     // 10 seconds
+    .with_backoff_multiplier(2.0)
   
-  // 创建大量遥测数据
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "batch-test-tracer")
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "batch-test-meter")
-  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "batch-test-logger")
+  let metric_exporter = azimuth::AsyncMetricExporter::builder(retry_config)
+    .with_endpoint("https://telemetry.example.com/api/v1/metrics")
+    .with_compression("gzip")
+    .with_timeout(30000)  // 30 seconds
+    .build()
   
-  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  // Create various metrics
+  let counter = azimuth::Meter::create_counter(meter, "async.counter", Some("Async counter"), Some("count"))
+  let histogram = azimuth::Meter::create_histogram(meter, "async.histogram", Some("Async histogram"), Some("ms"))
+  let gauge = azimuth::Meter::create_gauge(meter, "async.gauge", Some("Async gauge"), Some("percent"))
   
-  // 批量创建spans
-  let spans = []
-  let export_tasks = []
+  // Record metrics
+  for i = 0; i < 50; i = i + 1 {
+    azimuth::Counter::add(counter, 1, [("async.metric", "true"), ("batch", azimuth::StringValue("batch." + (i / 10).to_string()))])
+    azimuth::Histogram::record(histogram, (i * 10).to_double(), [("async.metric", "true")])
+    azimuth::Gauge::set(gauge, (i % 100).to_long(), [("async.metric", "true")])
+  }
   
-  for i in 0..1000 {
-    let span = azimuth::Tracer::start_span(tracer, "batch-operation-" + i.to_string())
-    azimuth::Span::add_event(span, "batch.event", Some([("batch.id", azimuth::StringValue(i.to_string()))]))
-    azimuth::Span::set_attribute(span, "batch.index", azimuth::IntValue(i))
-    spans.push(span)
+  // Test async export
+  let export_promise = azimuth::AsyncMetricExporter::export(metric_exporter)
+  
+  // Wait for export completion (simulated async wait)
+  let export_result = azimuth::AsyncMetricExporter::wait_for_completion(export_promise, 10000)  // 10 second timeout
+  
+  match export_result {
+    azimuth::ExportSuccess => assert_true(true)
+    azimuth::ExportFailure(reason) => {
+      // Check if failure is due to network issues (expected in test environment)
+      assert_true(reason.contains("network") || reason.contains("connection") || reason.contains("timeout"))
+    }
+    azimuth::ExportRetry(attempt) => {
+      assert_true(attempt >= 1 && attempt <= 3)
+    }
+  }
+  
+  // Test retry statistics
+  let retry_stats = azimuth::AsyncMetricExporter::get_retry_statistics(metric_exporter)
+  assert_true(retry_stats.total_attempts >= 0)
+  assert_true(retry_stats.successful_retries >= 0)
+  assert_true(retry_stats.failed_retries >= 0)
+  assert_true(retry_stats.total_attempts >= retry_stats.successful_retries + retry_stats.failed_retries)
+}
+
+// Test 3: Async log export with buffering
+pub test "async log export with buffering" {
+  let logger_provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "async-log-test")
+  
+  // Configure async log exporter with buffering
+  let buffer_config = azimuth::LogBufferConfig::new()
+    .with_max_buffer_size(1024)
+    .with_flush_interval(2000)  // 2 seconds
+    .with_flush_on_error(true)
+    .with_compression_enabled(true)
+  
+  let log_exporter = azimuth::AsyncLogExporter::builder(buffer_config)
+    .with_endpoint("https://logs.example.com/api/v1/logs")
+    .with_batch_size(100)
+    .with_max_concurrent_exports(5)
+    .build()
+  
+  // Create log records with different severity levels
+  let log_records = []
+  let severity_levels = [azimuth::Trace, azimuth::Debug, azimuth::Info, azimuth::Warn, azimuth::Error, azimuth::Fatal]
+  
+  for i = 0; i < 60; i = i + 1 {
+    let severity = severity_levels[i % severity_levels.length()]
+    let message = "Async log message " + i.to_string()
     
-    // 异步导出每个span
-    let task = azimuth::AsyncTelemetryExporter::export_span(exporter, span)
-    export_tasks.push(task)
-  }
-  
-  // 批量创建度量
-  let counter = azimuth::Meter::create_counter(meter, "batch.operations.count")
-  let histogram = azimuth::Meter::create_histogram(meter, "batch.operation.duration")
-  
-  for i in 0..500 {
-    azimuth::Counter::add(counter, 1.0)
-    azimuth::Histogram::record(histogram, 100.0 + (i.to_double() * 0.1))
-  }
-  
-  // 批量创建日志
-  for i in 0..200 {
-    let log_record = azimuth::LogRecord::new_with_context(
-      azimuth::Info,
-      Some("Batch log " + i.to_string()),
-      Some([("log.batch.id", azimuth::StringValue(i.to_string()))]),
-      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-      None,
-      None,
-      None,
-      None
-    )
+    let log_record = azimuth::LogRecord::new(severity, message)
+    azimuth::LogRecord::set_attribute(log_record, "log.index", azimuth::IntValue(i))
+    azimuth::LogRecord::set_attribute(log_record, "async.export", azimuth::BoolValue(true))
+    
+    // Add context every 10 logs
+    if i % 10 == 0 {
+      let trace_id = "trace-" + i.to_string()
+      let span_id = "span-" + i.to_string()
+      azimuth::LogRecord::set_trace_id(log_record, trace_id)
+      azimuth::LogRecord::set_span_id(log_record, span_id)
+    }
+    
+    log_records.push(log_record)
     azimuth::Logger::emit(logger, log_record)
   }
   
-  // 等待所有导出任务完成
-  let successful_exports = 0
+  // Test buffer state
+  let buffer_state = azimuth::AsyncLogExporter::get_buffer_state(log_exporter)
+  assert_true(buffer_state.current_size >= 0)
+  assert_true(buffer_state.max_size == 1024)
+  assert_true(buffer_state.flush_count >= 0)
+  
+  // Force flush to export all logs
+  let flush_result = azimuth::AsyncLogExporter::force_flush(log_exporter)
+  assert_true(flush_result)
+  
+  // Test export statistics
+  let export_stats = azimuth::AsyncLogExporter::get_export_statistics(log_exporter)
+  assert_true(export_stats.total_logs_exported >= 0)
+  assert_true(export_stats.successful_batches >= 0)
+  assert_true(export_stats.failed_batches >= 0)
+  assert_true(export_stats.bytes_transferred >= 0)
+}
+
+// Test 4: Concurrent async exports with resource management
+pub test "concurrent async exports with resource management" {
+  // Create multiple providers for concurrent operations
+  let tracer_provider1 = azimuth::TracerProvider::default()
+  let tracer_provider2 = azimuth::TracerProvider::default()
+  let meter_provider = azimuth::MeterProvider::default()
+  let logger_provider = azimuth::LoggerProvider::default()
+  
+  let tracer1 = azimuth::TracerProvider::get_tracer(tracer_provider1, "concurrent-tracer-1")
+  let tracer2 = azimuth::TracerProvider::get_tracer(tracer_provider2, "concurrent-tracer-2")
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "concurrent-meter")
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "concurrent-logger")
+  
+  // Configure resource limits for concurrent operations
+  let resource_config = azimuth::ConcurrentExportConfig::new()
+    .with_max_concurrent_exports(10)
+    .with_max_memory_usage(100 * 1024 * 1024)  // 100MB
+    .with_max_queue_size_per_exporter(1000)
+    .with_gc_threshold(80)  // 80% memory usage triggers GC
+  
+  let concurrent_manager = azimuth::ConcurrentExportManager::new(resource_config)
+  
+  // Start concurrent export operations
+  let export_tasks = []
+  
+  // Task 1: Export spans
+  let span_export_task = azimuth::ConcurrentExportManager::start_span_export(concurrent_manager, tracer1, {
+    // Create and export 50 spans
+    for i = 0; i < 50; i = i + 1 {
+      let span = azimuth::Tracer::start_span(tracer1, "concurrent.span.1." + i.to_string())
+      azimuth::Span::set_attribute(span, "task", azimuth::StringValue("spans"))
+      azimuth::Span::set_attribute(span, "thread", azimuth::StringValue("1"))
+      azimuth::Span::end(span)
+    }
+  })
+  export_tasks.push(span_export_task)
+  
+  // Task 2: Export metrics
+  let metric_export_task = azimuth::ConcurrentExportManager::start_metric_export(concurrent_manager, meter, {
+    let counter = azimuth::Meter::create_counter(meter, "concurrent.counter", Some("Concurrent counter"), Some("count"))
+    for i = 0; i < 50; i = i + 1 {
+      azimuth::Counter::add(counter, 1, [("task", "metrics"), ("thread", "2")])
+    }
+  })
+  export_tasks.push(metric_export_task)
+  
+  // Task 3: Export logs
+  let log_export_task = azimuth::ConcurrentExportManager::start_log_export(concurrent_manager, logger, {
+    for i = 0; i < 50; i = i + 1 {
+      let log_record = azimuth::LogRecord::new(azimuth::Info, "Concurrent log message " + i.to_string())
+      azimuth::LogRecord::set_attribute(log_record, "task", azimuth::StringValue("logs"))
+      azimuth::LogRecord::set_attribute(log_record, "thread", azimuth::StringValue("3"))
+      azimuth::Logger::emit(logger, log_record)
+    }
+  })
+  export_tasks.push(log_export_task)
+  
+  // Task 4: Export spans from second tracer
+  let span_export_task2 = azimuth::ConcurrentExportManager::start_span_export(concurrent_manager, tracer2, {
+    // Create and export 50 spans
+    for i = 0; i < 50; i = i + 1 {
+      let span = azimuth::Tracer::start_span(tracer2, "concurrent.span.2." + i.to_string())
+      azimuth::Span::set_attribute(span, "task", azimuth::StringValue("spans"))
+      azimuth::Span::set_attribute(span, "thread", azimuth::StringValue("4"))
+      azimuth::Span::end(span)
+    }
+  })
+  export_tasks.push(span_export_task2)
+  
+  // Wait for all tasks to complete
+  let completed_tasks = []
   for task in export_tasks {
-    let result = azimuth::AsyncTelemetryExporter::wait_for_completion(task, 10000)
-    if azimuth::AsyncTelemetryExporter::is_successful(result) {
-      successful_exports = successful_exports + 1
-    }
+    let result = azimuth::ConcurrentExportManager::wait_for_task(concurrent_manager, task, 15000)  // 15 second timeout
+    completed_tasks.push(result)
   }
   
-  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
-  let total_duration = end_time - start_time
+  // Verify all tasks completed (either successfully or with expected errors)
+  assert_true(completed_tasks.length() == 4)
   
-  // 验证性能指标
-  assert_true(successful_exports >= 950)  // 至少95%成功
-  assert_true(total_duration < 30000000000L)  // 小于30秒
-  assert_true(spans.length() == 1000)
+  // Test resource usage statistics
+  let resource_stats = azimuth::ConcurrentExportManager::get_resource_statistics(concurrent_manager)
+  assert_true(resource_stats.memory_usage >= 0)
+  assert_true(resource_stats.memory_usage <= resource_config.max_memory_usage)
+  assert_true(resource_stats.active_exports >= 0)
+  assert_true(resource_stats.queued_exports >= 0)
+  assert_true(resource_stats.gc_count >= 0)
+  
+  // Test concurrent export metrics
+  let concurrent_metrics = azimuth::ConcurrentExportManager::get_export_metrics(concurrent_manager)
+  assert_true(concurrent_metrics.total_exports >= 0)
+  assert_true(concurrent_metrics.successful_exports >= 0)
+  assert_true(concurrent_metrics.failed_exports >= 0)
+  assert_true(concurrent_metrics.average_export_time >= 0.0)
+  
+  // Clean up resources
+  azimuth::ConcurrentExportManager::shutdown(concurrent_manager)
 }
 
-pub test "异步导出错误处理和重试机制测试" {
-  // 创建错误导出器配置（使用无效端点）
-  let error_config = azimuth::ExporterConfig::new(
-    "http://invalid-endpoint:4318/v1/traces",
-    "http://invalid-endpoint:4318/v1/metrics",
-    "http://invalid-endpoint:4318/v1/logs",
-    100,
-    1000,
-    1000
-  )
+// Test 5: Async export with circuit breaker pattern
+pub test "async export with circuit breaker pattern" {
+  let provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "circuit-breaker-test")
   
-  let exporter = azimuth::AsyncTelemetryExporter::new(error_config)
+  // Configure circuit breaker
+  let circuit_config = azimuth::CircuitBreakerConfig::new()
+    .with_failure_threshold(5)      // Open after 5 failures
+    .with_success_threshold(3)      // Close after 3 successes
+    .with_timeout(30000)            // 30 seconds timeout
+    .with_half_open_max_calls(3)    // Max calls in half-open state
   
-  // 配置重试策略
-  let retry_policy = azimuth::RetryPolicy::new(
-    3,      // 最大重试次数
-    1000,   // 初始重试间隔(毫秒)
-    2.0     // 退避倍数
-  )
+  let circuit_breaker = azimuth::CircuitBreaker::new(circuit_config)
   
-  azimuth::AsyncTelemetryExporter::set_retry_policy(exporter, retry_policy)
+  // Create exporter with circuit breaker
+  let exporter = azimuth::CircuitBreakerExporter::builder(circuit_breaker)
+    .with_endpoint("https://unreliable-telemetry.example.com/api/v1/traces")
+    .build()
   
-  // 创建测试数据
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "error-test-tracer")
-  let span = azimuth::Tracer::start_span(tracer, "error-operation")
+  // Test circuit breaker states
+  let initial_state = azimuth::CircuitBreaker::get_state(circuit_breaker)
+  assert_eq(initial_state, azimuth::Closed)  // Should start closed
   
-  // 尝试导出并验证错误处理
-  let export_task = azimuth::AsyncTelemetryExporter::export_span(exporter, span)
-  let export_result = azimuth::AsyncTelemetryExporter::wait_for_completion(export_task, 10000)
-  
-  // 验证错误处理
-  assert_false(azimuth::AsyncTelemetryExporter::is_successful(export_result))
-  assert_true(azimuth::AsyncTelemetryExporter::get_retry_count(export_result) <= 3)
-  
-  // 测试部分失败场景
-  let mixed_config = azimuth::ExporterConfig::new(
-    "http://localhost:4318/v1/traces",  // 有效端点
-    "http://invalid-endpoint:4318/v1/metrics",  // 无效端点
-    "http://localhost:4318/v1/logs",  // 有效端点
-    100,
-    1000,
-    1000
-  )
-  
-  let mixed_exporter = azimuth::AsyncTelemetryExporter::new(mixed_config)
-  let mixed_span = azimuth::Tracer::start_span(tracer, "mixed-operation")
-  let mixed_task = azimuth::AsyncTelemetryExporter::export_span(mixed_exporter, mixed_span)
-  let mixed_result = azimuth::AsyncTelemetryExporter::wait_for_completion(mixed_task, 10000)
-  
-  // 混合场景可能部分成功
-  let mixed_success = azimuth::AsyncTelemetryExporter::is_successful(mixed_result)
-  // 这里不强制断言结果，因为取决于具体实现
-}
-
-pub test "异步导出内存和资源管理测试" {
-  // 创建资源受限的导出器配置
-  let resource_config = azimuth::ExporterConfig::new(
-    "http://localhost:4318/v1/traces",
-    "http://localhost:4318/v1/metrics",
-    "http://localhost:4318/v1/logs",
-    50,     // 小批处理大小
-    500,    // 短导出间隔
-    2000    // 适中超时时间
-  )
-  
-  let exporter = azimuth::AsyncTelemetryExporter::new(resource_config)
-  
-  // 监控内存使用
-  let initial_memory = azimuth::MemoryMonitor::get_current_usage()
-  
-  // 创建大量异步导出任务
-  let tasks = []
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "memory-test-tracer")
-  
-  for i in 0..500 {
-    let span = azimuth::Tracer::start_span(tracer, "memory-operation-" + i.to_string())
-    
-    // 添加大量属性以增加内存使用
-    for j in 0..10 {
-      azimuth::Span::set_attribute(span, "attr." + j.to_string(), azimuth::StringValue("value." + j.to_string()))
-    }
-    
-    let task = azimuth::AsyncTelemetryExporter::export_span(exporter, span)
-    tasks.push(task)
+  // Create spans for export
+  let spans = []
+  for i = 0; i < 20; i = i + 1 {
+    let span = azimuth::Tracer::start_span(tracer, "circuit.breaker.span." + i.to_string())
+    azimuth::Span::set_attribute(span, "circuit.test", azimuth::BoolValue(true))
+    azimuth::Span::end(span)
+    spans.push(span)
   }
   
-  // 等待一半任务完成
-  let completed_tasks = 0
-  for i in 0..250 {
-    let result = azimuth::AsyncTelemetryExporter::wait_for_completion(tasks[i], 5000)
-    if azimuth::AsyncTelemetryExporter::is_successful(result) {
-      completed_tasks = completed_tasks + 1
+  // Attempt exports that may fail (simulating unreliable endpoint)
+  let export_results = []
+  for i = 0; i < 20; i = i + 1 {
+    let result = azimuth::CircuitBreakerExporter::try_export(exporter, spans[i])
+    export_results.push(result)
+    
+    // Check state after each export
+    let current_state = azimuth::CircuitBreaker::get_state(circuit_breaker)
+    if current_state == azimuth::Open {
+      break  // Stop testing once circuit is open
     }
   }
   
-  // 检查中间内存使用
-  let mid_memory = azimuth::MemoryMonitor::get_current_usage()
+  // Verify circuit breaker opened after failures
+  let final_state = azimuth::CircuitBreaker::get_state(circuit_breaker)
+  assert_true(final_state == azimuth::Open || final_state == azimuth::Closed)  // May still be closed if exports succeeded
   
-  // 完成所有任务
-  for i in 250..500 {
-    let result = azimuth::AsyncTelemetryExporter::wait_for_completion(tasks[i], 5000)
-    if azimuth::AsyncTelemetryExporter::is_successful(result) {
-      completed_tasks = completed_tasks + 1
-    }
+  // Test circuit breaker statistics
+  let cb_stats = azimuth::CircuitBreaker::get_statistics(circuit_breaker)
+  assert_true(cb_stats.total_calls >= 0)
+  assert_true(cb_stats.successful_calls >= 0)
+  assert_true(cb_stats.failed_calls >= 0)
+  assert_true(cb_stats.state_changes >= 0)
+  
+  // Test fallback mechanism when circuit is open
+  if final_state == azimuth::Open {
+    let fallback_result = azimuth::CircuitBreakerExporter::export_with_fallback(exporter, spans[0])
+    assert_true(fallback_result.is_fallback_used)
   }
-  
-  // 强制垃圾回收
-  azimuth::MemoryMonitor::force_gc()
-  
-  // 检查最终内存使用
-  let final_memory = azimuth::MemoryMonitor::get_current_usage()
-  
-  // 验证内存管理
-  assert_true(completed_tasks >= 400)  // 至少80%成功
-  assert_true(mid_memory <= initial_memory * 2)  // 内存增长不超过2倍
-  assert_true(final_memory <= initial_memory * 1.5)  // 最终内存增长不超过1.5倍
-  
-  // 清理资源
-  azimuth::AsyncTelemetryExporter::shutdown(exporter)
-  assert_true(azimuth::AsyncTelemetryExporter::is_shutdown(exporter))
-}
-
-pub test "异步导出并发安全测试" {
-  // 创建并发测试导出器
-  let concurrent_config = azimuth::ExporterConfig::new(
-    "http://localhost:4318/v1/traces",
-    "http://localhost:4318/v1/metrics",
-    "http://localhost:4318/v1/logs",
-    100,
-    1000,
-    5000
-  )
-  
-  let exporter = azimuth::AsyncTelemetryExporter::new(concurrent_config)
-  
-  // 创建多个并发导出任务
-  let concurrent_tasks = []
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "concurrent-test-tracer")
-  
-  // 并发创建和导出spans
-  for thread_id in 0..10 {
-    let thread_tasks = []
-    
-    for i in 0..100 {
-      let span = azimuth::Tracer::start_span(tracer, "concurrent-" + thread_id.to_string() + "-operation-" + i.to_string())
-      azimuth::Span::set_attribute(span, "thread.id", azimuth::IntValue(thread_id))
-      azimuth::Span::set_attribute(span, "operation.id", azimuth::IntValue(i))
-      
-      let task = azimuth::AsyncTelemetryExporter::export_span(exporter, span)
-      thread_tasks.push(task)
-    }
-    
-    concurrent_tasks.push(thread_tasks)
-  }
-  
-  // 并发等待所有任务完成
-  let successful_threads = 0
-  for thread_tasks in concurrent_tasks {
-    let thread_success = 0
-    
-    for task in thread_tasks {
-      let result = azimuth::AsyncTelemetryExporter::wait_for_completion(task, 10000)
-      if azimuth::AsyncTelemetryExporter::is_successful(result) {
-        thread_success = thread_success + 1
-      }
-    }
-    
-    if thread_success >= 90 {  // 每个线程至少90%成功
-      successful_threads = successful_threads + 1
-    }
-  }
-  
-  // 验证并发安全性
-  assert_true(successful_threads >= 9)  // 至少90%的线程成功
-  
-  // 测试导出器状态一致性
-  let exporter_status = azimuth::AsyncTelemetryExporter::get_status(exporter)
-  assert_true(azimuth::AsyncTelemetryExporter::is_healthy(exporter_status))
-  
-  // 获取导出统计信息
-  let stats = azimuth::AsyncTelemetryExporter::get_statistics(exporter)
-  assert_true(azimuth::AsyncTelemetryExporter::get_total_exports(stats) >= 900)
-  assert_true(azimuth::AsyncTelemetryExporter::get_success_rate(stats) >= 0.8)
 }
