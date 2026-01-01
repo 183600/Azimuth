@@ -95,6 +95,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     34: (__test_746f702e6d6274_34, ["内存管理测试"]),
     35: (__test_746f702e6d6274_35, ["并发安全测试"]),
   },
+  "simple_new_tests.mbt": {
+    0: (__test_73696d706c655f6e65775f74657374732e6d6274_0, ["资源合并策略测试"]),
+    1: (__test_73696d706c655f6e65775f74657374732e6d6274_1, ["内存管理和资源清理测试"]),
+    2: (__test_73696d706c655f6e65775f74657374732e6d6274_2, ["高并发遥测一致性测试"]),
+    3: (__test_73696d706c655f6e65775f74657374732e6d6274_3, ["网络安全遥测测试"]),
+    4: (__test_73696d706c655f6e65775f74657374732e6d6274_4, ["时间序列数据压缩测试"]),
+    5: (__test_73696d706c655f6e65775f74657374732e6d6274_5, ["遥测数据生命周期管理测试"]),
+    6: (__test_73696d706c655f6e65775f74657374732e6d6274_6, ["错误边界和恢复测试"]),
+    7: (__test_73696d706c655f6e65775f74657374732e6d6274_7, ["微服务架构遥测集成测试"]),
+  },
   "premium_moonbit_tests.mbt": {
     0: (__test_7072656d69756d5f6d6f6f6e6269745f74657374732e6d6274_0, ["resource management and cleanup"]),
     1: (__test_7072656d69756d5f6d6f6f6e6269745f74657374732e6d6274_1, ["time series operations"]),
@@ -139,6 +149,31 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_636f6d70726568656e736976655f6d6f6f6e6269745f74657374732e6d6274_7, ["跨服务追踪和多Span管理"]),
     8: (__test_636f6d70726568656e736976655f6d6f6f6e6269745f74657374732e6d6274_8, ["性能度量和时间窗口操作"]),
     9: (__test_636f6d70726568656e736976655f6d6f6f6e6269745f74657374732e6d6274_9, ["综合集成测试"]),
+  },
+  "azimuth_timeseries_data_compression_tests.mbt": {
+    0: (__test_617a696d7574685f74696d657365726965735f646174615f636f6d7072657373696f6e5f74657374732e6d6274_0, ["时间序列数据压缩测试"]),
+  },
+  "azimuth_telemetry_data_lifecycle_management_tests.mbt": {
+    0: (__test_617a696d7574685f74656c656d657472795f646174615f6c6966656379636c655f6d616e6167656d656e745f74657374732e6d6274_0, ["遥测数据生命周期管理测试"]),
+  },
+  "azimuth_resource_merge_strategy_tests.mbt": {
+    0: (__test_617a696d7574685f7265736f757263655f6d657267655f73747261746567795f74657374732e6d6274_0, ["资源合并策略测试"]),
+    1: (__test_617a696d7574685f7265736f757263655f6d657267655f73747261746567795f74657374732e6d6274_1, ["资源合并策略测试"]),
+  },
+  "azimuth_network_security_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f6e6574776f726b5f73656375726974795f74656c656d657472795f74657374732e6d6274_0, ["网络安全遥测测试"]),
+  },
+  "azimuth_microservice_architecture_telemetry_integration_tests.mbt": {
+    0: (__test_617a696d7574685f6d6963726f736572766963655f6172636869746563747572655f74656c656d657472795f696e746567726174696f6e5f74657374732e6d6274_0, ["微服务架构遥测集成测试"]),
+  },
+  "azimuth_memory_management_resource_cleanup_tests.mbt": {
+    0: (__test_617a696d7574685f6d656d6f72795f6d616e6167656d656e745f7265736f757263655f636c65616e75705f74657374732e6d6274_0, ["内存管理和资源清理测试"]),
+  },
+  "azimuth_high_concurrency_telemetry_consistency_tests.mbt": {
+    0: (__test_617a696d7574685f686967685f636f6e63757272656e63795f74656c656d657472795f636f6e73697374656e63795f74657374732e6d6274_0, ["高并发遥测一致性测试"]),
+  },
+  "azimuth_error_boundary_tests.mbt": {
+    0: (__test_617a696d7574685f6572726f725f626f756e646172795f74657374732e6d6274_0, ["错误边界和恢复测试"]),
   },
   "advanced_specialized_tests.mbt": {
     0: (__test_616476616e6365645f7370656369616c697a65645f74657374732e6d6274_0, ["moonbit语言特性深度测试"]),
