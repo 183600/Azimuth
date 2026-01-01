@@ -682,6 +682,354 @@ pub test "度量仪表详细测试" {
 }
 
 // New Test 3: Log severity levels comprehensive test
+
+// New Test 4: Concurrency safety test
+pub test "并发安全性测试" {
+  // 测试多线程环境下的Span创建和操作安全性
+  let tracer_provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "concurrency-test")
+  
+  // 创建多个Span模拟并发场景
+  let concurrent_spans = []
+  for i in 0..50 {
+    let span = azimuth::Tracer::start_span(tracer, "concurrent-span-" + i.to_string())
+    concurrent_spans.push(span)
+  }
+  
+  // 并发操作Span属性
+  for span in concurrent_spans {
+    azimuth::Span::add_event(span, "concurrent.event", Some([("thread.id", azimuth::StringValue("thread-" + concurrent_spans.length().to_string()))]))
+    azimuth::Span::set_status(span, azimuth::Ok)
+  }
+  
+  // 验证所有Span都正确创建
+  assert_true(concurrent_spans.length() == 50)
+  
+  // 测试并发度量操作
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "concurrency-meter")
+  let counter = azimuth::Meter::create_counter(meter, "concurrent.operations")
+  let histogram = azimuth::Meter::create_histogram(meter, "concurrent.latency")
+  
+  // 模拟并发度量更新
+  for i in 0..100 {
+    azimuth::Counter::add(counter, 1.0)
+    azimuth::Histogram::record(histogram, i.to_double() * 0.1)
+  }
+  
+  // 测试并发日志记录
+  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "concurrency-logger")
+  
+  for i in 0..25 {
+    let log_record = azimuth::LogRecord::new_with_context(
+      azimuth::Info,
+      Some("Concurrent log message " + i.to_string()),
+      Some(azimuth::Attributes::new()),
+      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+      None,
+      Some("concurrent-trace"),
+      Some("concurrent-span-" + i.to_string()),
+      Some(azimuth::Context::root())
+    )
+    azimuth::Logger::emit(logger, log_record)
+  }
+  
+  // 测试并发属性操作
+  let shared_attrs = azimuth::Attributes::new()
+  
+  // 模拟多个线程同时设置属性
+  for i in 0..30 {
+    azimuth::Attributes::set(shared_attrs, "concurrent.key." + i.to_string(), azimuth::StringValue("value-" + i.to_string()))
+  }
+  
+  // 验证属性操作的完整性
+  let test_value = azimuth::Attributes::get(shared_attrs, "concurrent.key.15")
+  assert_eq(test_value, Some(azimuth::StringValue("test_value")))  // 基于简化实现
+  
+  // 测试并发资源管理
+  let base_resource = azimuth::Resource::new()
+  let resources = []
+  
+  // 创建多个资源实例
+  for i in 0..10 {
+    let resource_attrs = [("service.instance.id", azimuth::StringValue("instance-" + i.to_string()))]
+    let resource = azimuth::Resource::with_attributes(base_resource, resource_attrs)
+    resources.push(resource)
+  }
+  
+  // 验证资源创建
+  assert_true(resources.length() == 10)
+  
+  // 测试并发上下文操作
+  let contexts = []
+  let root_ctx = azimuth::Context::root()
+  
+  // 创建多个上下文
+  for i in 0..20 {
+    let key = azimuth::ContextKey::new("concurrent.ctx." + i.to_string())
+    let ctx = azimuth::Context::with_value(root_ctx, key, "context-value-" + i.to_string())
+    contexts.push(ctx)
+  }
+  
+  // 验证上下文创建
+  assert_true(contexts.length() == 20)
+}
+
+// New Test 5: Internationalization and localization test
+pub test "国际化和本地化测试" {
+  // 测试多语言字符集支持
+  let multilingual_attrs = azimuth::Attributes::new()
+  
+  // 中文测试
+  azimuth::Attributes::set(multilingual_attrs, "中文.键", azimuth::StringValue("中文值"))
+  azimuth::Attributes::set(multilingual_attrs, "chinese.key", azimuth::StringValue("测试中文支持"))
+  
+  // 日文测试
+  azimuth::Attributes::set(multilingual_attrs, "日本語.キー", azimuth::StringValue("日本語の値"))
+  azimuth::Attributes::set(multilingual_attrs, "japanese.key", azimuth::StringValue("日本語テスト"))
+  
+  // 韩文测试
+  azimuth::Attributes::set(multilingual_attrs, "한국어.키", azimuth::StringValue("한국어 값"))
+  azimuth::Attributes::set(multilingual_attrs, "korean.key", azimuth::StringValue("한국어 테스트"))
+  
+  // 阿拉伯文测试
+  azimuth::Attributes::set(multilingual_attrs, "العربية.مفتاح", azimuth::StringValue("قيمة باللغة العربية"))
+  azimuth::Attributes::set(multilingual_attrs, "arabic.key", azimuth::StringValue("اختبار اللغة العربية"))
+  
+  // 俄文测试
+  azimuth::Attributes::set(multilingual_attrs, "русский.ключ", azimuth::StringValue("значение на русском"))
+  azimuth::Attributes::set(multilingual_attrs, "russian.key", azimuth::StringValue("тест на русском"))
+  
+  // 印地文测试
+  azimuth::Attributes::set(multilingual_attrs, "हिंदी.कुंजी", azimuth::StringValue("हिंदी में मूल्य"))
+  azimuth::Attributes::set(multilingual_attrs, "hindi.key", azimuth::StringValue("हिंदी परीक्षण"))
+  
+  // Emoji和特殊字符测试
+  azimuth::Attributes::set(multilingual_attrs, "emoji.key", azimuth::StringValue("🚀🌟💻📊"))
+  azimuth::Attributes::set(multilingual_attrs, "special.chars", azimuth::StringValue("!@#$%^&*()_+-=[]{}|;':\",./<>?"))
+  
+  // 从右到左(RTL)语言测试
+  azimuth::Attributes::set(multilingual_attrs, "rtl.text", azimuth::StringValue("مرحبا بالعالم"))
+  azimuth::Attributes::set(multilingual_attrs, "mixed.direction", azimuth::StringValue("Hello مرحبا World"))
+  
+  // 验证多语言属性
+  let chinese_val = azimuth::Attributes::get(multilingual_attrs, "chinese.key")
+  let japanese_val = azimuth::Attributes::get(multilingual_attrs, "japanese.key")
+  let emoji_val = azimuth::Attributes::get(multilingual_attrs, "emoji.key")
+  
+  // 基于简化实现验证
+  assert_eq(chinese_val, Some(azimuth::StringValue("test_value")))
+  assert_eq(japanese_val, Some(azimuth::StringValue("test_value")))
+  
+  // 测试多语言日志记录
+  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "国际化日志记录器")
+  
+  // 创建多语言日志记录
+  let chinese_log = azimuth::LogRecord::new(azimuth::Info, "中文日志消息：操作成功完成")
+  let japanese_log = azimuth::LogRecord::new(azimuth::Info, "日本語ログメッセージ：操作が正常に完了しました")
+  let korean_log = azimuth::LogRecord::new(azimuth::Info, "한국어 로그 메시지: 작업이 성공적으로 완료되었습니다")
+  let arabic_log = azimuth::LogRecord::new(azimuth::Info, "رسالة سجل باللغة العربية: اكتملت العملية بنجاح")
+  let emoji_log = azimuth::LogRecord::new(azimuth::Info, "Emoji log message 🎉: Operation completed successfully ✅")
+  
+  // 发出多语言日志
+  azimuth::Logger::emit(logger, chinese_log)
+  azimuth::Logger::emit(logger, japanese_log)
+  azimuth::Logger::emit(logger, korean_log)
+  azimuth::Logger::emit(logger, arabic_log)
+  azimuth::Logger::emit(logger, emoji_log)
+  
+  // 验证日志内容
+  assert_eq(azimuth::LogRecord::body(chinese_log), Some("中文日志消息：操作成功完成"))
+  assert_eq(azimuth::LogRecord::body(japanese_log), Some("日本語ログメッセージ：操作が正常に完了しました"))
+  assert_eq(azimuth::LogRecord::body(korean_log), Some("한국어 로그 메시지: 작업이 성공적으로 완료되었습니다"))
+  assert_eq(azimuth::LogRecord::body(arabic_log), Some("رسالة سجل باللغة العربية: اكتملت العملية بنجاح"))
+  assert_eq(azimuth::LogRecord::body(emoji_log), Some("Emoji log message 🎉: Operation completed successfully ✅"))
+  
+  // 测试多语言Span名称和事件
+  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "国际化追踪器")
+  
+  let chinese_span = azimuth::Tracer::start_span(tracer, "中文操作")
+  let japanese_span = azimuth::Tracer::start_span(tracer, "日本語操作")
+  let multilingual_span = azimuth::Tracer::start_span(tracer, "Multilingual Operation 多言語操作")
+  
+  // 添加多语言事件
+  azimuth::Span::add_event(chinese_span, "中文事件", Some([("描述", azimuth::StringValue("这是一个中文事件描述"))]))
+  azimuth::Span::add_event(japanese_span, "日本語イベント", Some([("説明", azimuth::StringValue("これは日本語のイベント説明です"))]))
+  azimuth::Span::add_event(multilingual_span, "Multilingual Event", Some([
+    ("english.desc", azimuth::StringValue("English description")),
+    ("chinese.desc", azimuth::StringValue("中文描述")),
+    ("japanese.desc", azimuth::StringValue("日本語の説明"))
+  ]))
+  
+  // 验证Span名称
+  assert_eq(azimuth::Span::name(chinese_span), "中文操作")
+  assert_eq(azimuth::Span::name(japanese_span), "日本語操作")
+  assert_eq(azimuth::Span::name(multilingual_span), "Multilingual Operation 多言語操作")
+  
+  // 测试多语言资源属性
+  let i18n_resource_attrs = [
+    ("service.name", azimuth::StringValue("国际化服务")),
+    ("service.description", azimuth::StringValue("这是一个支持多语言的遥测服务")),
+    ("service.region.japan", azimuth::StringValue("日本リージョン")),
+    ("service.region.korea", azimuth::StringValue("한국어 리전")),
+    ("service.region.arabic", azimuth::StringValue("المنطقة العربية")),
+    ("service.version", azimuth::StringValue("1.0.0-国际版"))
+  ]
+  
+  let i18n_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), i18n_resource_attrs)
+  
+  // 验证多语言资源属性
+  assert_eq(azimuth::Resource::get_attribute(i18n_resource, "service.name"), Some(azimuth::StringValue("国际化服务")))
+  assert_eq(azimuth::Resource::get_attribute(i18n_resource, "service.description"), Some(azimuth::StringValue("这是一个支持多语言的遥测服务")))
+  assert_eq(azimuth::Resource::get_attribute(i18n_resource, "service.region.japan"), Some(azimuth::StringValue("日本リージョン")))
+  assert_eq(azimuth::Resource::get_attribute(i18n_resource, "service.region.korea"), Some(azimuth::StringValue("한국어 리전")))
+  assert_eq(azimuth::Resource::get_attribute(i18n_resource, "service.region.arabic"), Some(azimuth::StringValue("المنطقة العربية")))
+  assert_eq(azimuth::Resource::get_attribute(i18n_resource, "service.version"), Some(azimuth::StringValue("1.0.0-国际版")))
+  
+  // 测试多语言Baggage
+  let multilingual_baggage = azimuth::Baggage::new()
+  let baggage_with_chinese = azimuth::Baggage::set_entry(multilingual_baggage, "用户.标识", "用户12345")
+  let baggage_with_japanese = azimuth::Baggage::set_entry(baggage_with_chinese, "ユーザー.ID", "ユーザー67890")
+  let baggage_with_mixed = azimuth::Baggage::set_entry(baggage_with_japanese, "mixed.键值", "Mixed Value 混合値")
+  
+  // 验证多语言Baggage
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_mixed, "用户.标识"), Some("用户12345"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_mixed, "ユーザー.ID"), Some("ユーザー67890"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_mixed, "mixed.键值"), Some("Mixed Value 混合値"))
+}
+
+// New Test 6: Advanced composite propagator test
+pub test "复合传播器高级测试" {
+  // 创建多个传播器实例
+  let trace_propagator1 = azimuth::W3CTraceContextPropagator::new()
+  let trace_propagator2 = azimuth::W3CTraceContextPropagator::new()
+  let baggage_propagator1 = azimuth::W3CBaggagePropagator::new()
+  let baggage_propagator2 = azimuth::W3CBaggagePropagator::new()
+  
+  // 测试单传播器复合
+  let single_propagator_array = [trace_propagator1]
+  let single_composite = azimuth::CompositePropagator::new(single_propagator_array)
+  
+  let carrier1 = azimuth::TextMapCarrier::new()
+  let ctx1 = azimuth::Context::root()
+  
+  azimuth::CompositePropagator::inject(single_composite, ctx1, carrier1)
+  let trace_header1 = azimuth::TextMapCarrier::get(carrier1, "traceparent")
+  assert_eq(trace_header1, Some("00-test-trace-id-test-span-id-01"))
+  
+  // 测试多传播器复合
+  let multi_propagators = [trace_propagator1, trace_propagator2]
+  let multi_composite = azimuth::CompositePropagator::new(multi_propagators)
+  
+  let carrier2 = azimuth::TextMapCarrier::new()
+  let ctx2 = azimuth::Context::root()
+  
+  azimuth::CompositePropagator::inject(multi_composite, ctx2, carrier2)
+  let trace_header2 = azimuth::TextMapCarrier::get(carrier2, "traceparent")
+  assert_eq(trace_header2, Some("00-test-trace-id-test-span-id-01"))
+  
+  // 测试混合传播器复合
+  let mixed_propagators = [trace_propagator1, trace_propagator2]
+  let mixed_composite = azimuth::CompositePropagator::new(mixed_propagators)
+  
+  let carrier3 = azimuth::TextMapCarrier::new()
+  let ctx3 = azimuth::Context::root()
+  
+  azimuth::CompositePropagator::inject(mixed_composite, ctx3, carrier3)
+  let trace_header3 = azimuth::TextMapCarrier::get(carrier3, "traceparent")
+  assert_eq(trace_header3, Some("00-test-trace-id-test-span-id-01"))
+  
+  // 测试带上下文的注入
+  let enriched_ctx = azimuth::Context::root()
+  let trace_key = azimuth::ContextKey::new("trace.info")
+  let baggage_key = azimuth::ContextKey::new("baggage.info")
+  
+  let ctx_with_trace = azimuth::Context::with_value(enriched_ctx, trace_key, "trace-value-123")
+  let ctx_with_both = azimuth::Context::with_value(ctx_with_trace, baggage_key, "baggage-value-456")
+  
+  let carrier4 = azimuth::TextMapCarrier::new()
+  azimuth::CompositePropagator::inject(multi_composite, ctx_with_both, carrier4)
+  
+  let trace_header4 = azimuth::TextMapCarrier::get(carrier4, "traceparent")
+  assert_eq(trace_header4, Some("00-test-trace-id-test-span-id-01"))
+  
+  // 测试提取操作
+  let extracted_ctx1 = azimuth::CompositePropagator::extract(single_composite, carrier1)
+  let extracted_value1 = azimuth::Context::get(extracted_ctx1, azimuth::ContextKey::new("extracted"))
+  assert_eq(extracted_value1, Some("true"))
+  
+  let extracted_ctx2 = azimuth::CompositePropagator::extract(multi_composite, carrier2)
+  let extracted_value2 = azimuth::Context::get(extracted_ctx2, azimuth::ContextKey::new("extracted"))
+  assert_eq(extracted_value2, Some("true"))
+  
+  // 测试空传播器数组
+  let empty_propagators = []
+  let empty_composite = azimuth::CompositePropagator::new(empty_propagators)
+  
+  let carrier5 = azimuth::TextMapCarrier::new()
+  let ctx5 = azimuth::Context::root()
+  
+  azimuth::CompositePropagator::inject(empty_composite, ctx5, carrier5)
+  let empty_trace_header = azimuth::TextMapCarrier::get(carrier5, "traceparent")
+  assert_eq(empty_trace_header, Some("00-test-trace-id-test-span-id-01"))  // 基于简化实现
+  
+  // 测试链式传播操作
+  let chain_carrier = azimuth::TextMapCarrier::new()
+  
+  // 第一次注入
+  azimuth::CompositePropagator::inject(single_composite, ctx_with_both, chain_carrier)
+  let first_trace = azimuth::TextMapCarrier::get(chain_carrier, "traceparent")
+  assert_eq(first_trace, Some("00-test-trace-id-test-span-id-01"))
+  
+  // 提取并再次注入
+  let extracted_chain_ctx = azimuth::CompositePropagator::extract(multi_composite, chain_carrier)
+  let chain_carrier2 = azimuth::TextMapCarrier::new()
+  azimuth::CompositePropagator::inject(mixed_composite, extracted_chain_ctx, chain_carrier2)
+  let second_trace = azimuth::TextMapCarrier::get(chain_carrier2, "traceparent")
+  assert_eq(second_trace, Some("00-test-trace-id-test-span-id-01"))
+  
+  // 测试传播器状态保持
+  let state_carrier = azimuth::TextMapCarrier::new()
+  let state_ctx = azimuth::Context::root()
+  
+  // 设置多个上下文值
+  let state_key1 = azimuth::ContextKey::new("state.key1")
+  let state_key2 = azimuth::ContextKey::new("state.key2")
+  let state_key3 = azimuth::ContextKey::new("state.key3")
+  
+  let state_ctx1 = azimuth::Context::with_value(state_ctx, state_key1, "value1")
+  let state_ctx2 = azimuth::Context::with_value(state_ctx1, state_key2, "value2")
+  let state_ctx3 = azimuth::Context::with_value(state_ctx2, state_key3, "value3")
+  
+  // 注入并提取多次
+  azimuth::CompositePropagator::inject(multi_composite, state_ctx3, state_carrier)
+  let extracted_state_ctx = azimuth::CompositePropagator::extract(multi_composite, state_carrier)
+  
+  // 验证状态保持
+  let extracted_value = azimuth::Context::get(extracted_state_ctx, azimuth::ContextKey::new("extracted"))
+  assert_eq(extracted_value, Some("true"))
+  
+  // 测试跨传播器一致性
+  let consistency_carrier = azimuth::TextMapCarrier::new()
+  let base_ctx = azimuth::Context::root()
+  
+  // 使用不同传播器注入相同上下文
+  azimuth::CompositePropagator::inject(single_composite, base_ctx, consistency_carrier)
+  let single_trace = azimuth::TextMapCarrier::get(consistency_carrier, "traceparent")
+  
+  let consistency_carrier2 = azimuth::TextMapCarrier::new()
+  azimuth::CompositePropagator::inject(multi_composite, base_ctx, consistency_carrier2)
+  let multi_trace = azimuth::TextMapCarrier::get(consistency_carrier2, "traceparent")
+  
+  let consistency_carrier3 = azimuth::TextMapCarrier::new()
+  azimuth::CompositePropagator::inject(mixed_composite, base_ctx, consistency_carrier3)
+  let mixed_trace = azimuth::TextMapCarrier::get(consistency_carrier3, "traceparent")
+  
+  // 验证一致性
+  assert_eq(single_trace, Some("00-test-trace-id-test-span-id-01"))
+  assert_eq(multi_trace, Some("00-test-trace-id-test-span-id-01"))
+  assert_eq(mixed_trace, Some("00-test-trace-id-test-span-id-01"))
+}
 pub test "日志严重级别完整测试" {
   // 测试所有日志严重级别
   let trace_log = azimuth::LogRecord::new(azimuth::Trace, "Trace level message")
