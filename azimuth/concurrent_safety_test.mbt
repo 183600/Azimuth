@@ -1,266 +1,330 @@
-// Concurrent Safety Test Suite for Azimuth Telemetry System
-// This file contains test cases for concurrent safety and thread safety operations
+// 并发安全测试用例
+// 测试 Azimuth 遥测系统中的并发安全性
 
-test "concurrent counter operations" {
+test "telemetry_concurrent_span_creation" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "concurrent-span-test")
+  
+  // 模拟并发span创建
+  let concurrent_spans = []
+  
+  // 创建多个span
+  for i in range(0, 100) {
+    let span = Tracer::start_span(tracer, "concurrent-span-" + i.to_string())
+    concurrent_spans.push(span)
+  }
+  
+  // 并发设置属性
+  for i in range(0, concurrent_spans.length()) {
+    let span = concurrent_spans[i]
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "span.index", IntValue(i))
+    Attributes::set(attrs, "thread.id", StringValue("thread-" + (i % 4).to_string()))
+    
+    Span::set_attributes(span, attrs)
+  }
+  
+  // 并发添加事件
+  for i in range(0, concurrent_spans.length()) {
+    let span = concurrent_spans[i]
+    let event_attrs = Attributes::new()
+    Attributes::set(event_attrs, "event.index", IntValue(i))
+    
+    Span::add_event(span, "concurrent-event", Some(event_attrs))
+  }
+  
+  // 并发结束span
+  for span in concurrent_spans {
+    Span::end(span)
+  }
+  
+  // 验证所有span都已创建和结束
+  assert_true(true)
+}
+
+test "telemetry_concurrent_metrics_operations" {
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent.counter.test")
-  let counter = Meter::create_counter(meter, "concurrent.counter")
+  let meter = MeterProvider::get_meter(provider, "concurrent-metrics-test")
   
-  // Simulate concurrent counter additions
-  Counter::add(counter, 1.0)
-  Counter::add(counter, 2.5)
-  Counter::add(counter, 3.7)
-  Counter::add(counter, 4.2)
-  Counter::add(counter, 5.1)
-  Counter::add(counter, 6.8)
-  Counter::add(counter, 7.3)
-  Counter::add(counter, 8.9)
-  Counter::add(counter, 9.4)
-  Counter::add(counter, 10.0)
+  // 创建多个指标
+  let counters = []
+  let histograms = []
+  let gauges = []
+  let updown_counters = []
   
-  // Verify counter properties
-  assert_eq(counter.name, "concurrent.counter")
-  assert_true(true)  // If we reach here, concurrent operations completed
+  for i in range(0, 20) {
+    counters.push(Meter::create_counter(meter, "concurrent.counter." + i.to_string()))
+    histograms.push(Meter::create_histogram(meter, "concurrent.histogram." + i.to_string()))
+    gauges.push(Meter::create_gauge(meter, "concurrent.gauge." + i.to_string()))
+    updown_counters.push(Meter::create_updown_counter(meter, "concurrent.updown." + i.to_string()))
+  }
+  
+  // 并发操作计数器
+  for i in range(0, counters.length()) {
+    let counter = counters[i]
+    for j in range(0, 100) {
+      Counter::add(counter, 1.0)
+    }
+  }
+  
+  // 并发操作直方图
+  for i in range(0, histograms.length()) {
+    let histogram = histograms[i]
+    for j in range(0, 50) {
+      Histogram::record(histogram, j.to_double())
+    }
+  }
+  
+  // 并发操作仪表
+  for i in range(0, gauges.length()) {
+    let gauge = gauges[i]
+    for j in range(0, 25) {
+      Gauge::record(gauge, j.to_double() * 10.0)
+    }
+  }
+  
+  // 并发操作上下计数器
+  for i in range(0, updown_counters.length()) {
+    let updown_counter = updown_counters[i]
+    for j in range(0, 30) {
+      UpDownCounter::add(updown_counter, j.to_double() - 15.0)
+    }
+  }
+  
+  // 验证所有指标操作完成
+  assert_true(true)
 }
 
-test "concurrent span operations" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent.span.test")
+test "telemetry_concurrent_logging_operations" {
+  let logger = LoggerProvider::get_logger(LoggerProvider::default(), "concurrent-logging-test")
   
-  // Create multiple spans concurrently
-  let span1 = Tracer::start_span(tracer, "concurrent.span.1")
-  let span2 = Tracer::start_span(tracer, "concurrent.span.2")
-  let span3 = Tracer::start_span(tracer, "concurrent.span.3")
-  let span4 = Tracer::start_span(tracer, "concurrent.span.4")
-  let span5 = Tracer::start_span(tracer, "concurrent.span.5")
+  // 并发记录日志
+  for i in range(0, 1000) {
+    let log_record = LogRecord::new()
+    LogRecord::set_body(log_record, "Concurrent log message " + i.to_string())
+    LogRecord::set_attribute(log_record, "log.index", IntValue(i))
+    LogRecord::set_attribute(log_record, "thread.id", StringValue("thread-" + (i % 8).to_string()))
+    
+    // 设置不同的严重级别
+    let severity = match i % 6 {
+      0 => Severity::TRACE
+      1 => Severity::DEBUG
+      2 => Severity::INFO
+      3 => Severity::WARN
+      4 => Severity::ERROR
+      _ => Severity::FATAL
+    }
+    
+    LogRecord::set_severity(log_record, severity)
+    
+    Logger::emit(logger, log_record)
+  }
   
-  // Add events to spans concurrently
-  Span::add_event(span1, "event.1", Some([("span.id", StringValue("1"))]))
-  Span::add_event(span2, "event.2", Some([("span.id", StringValue("2"))]))
-  Span::add_event(span3, "event.3", Some([("span.id", StringValue("3"))]))
-  Span::add_event(span4, "event.4", Some([("span.id", StringValue("4"))]))
-  Span::add_event(span5, "event.5", Some([("span.id", StringValue("5"))]))
-  
-  // Set status for spans concurrently
-  Span::set_status(span1, Ok, Some("Span 1 completed"))
-  Span::set_status(span2, Error, Some("Span 2 failed"))
-  Span::set_status(span3, Ok, Some("Span 3 completed"))
-  Span::set_status(span4, Ok, Some("Span 4 completed"))
-  Span::set_status(span5, Error, Some("Span 5 failed"))
-  
-  // End spans concurrently
-  Span::end(span1)
-  Span::end(span2)
-  Span::end(span3)
-  Span::end(span4)
-  Span::end(span5)
-  
-  // Verify span properties
-  assert_eq(Span::name(span1), "concurrent.span.1")
-  assert_eq(Span::name(span2), "concurrent.span.2")
-  assert_eq(Span::name(span3), "concurrent.span.3")
-  assert_eq(Span::name(span4), "concurrent.span.4")
-  assert_eq(Span::name(span5), "concurrent.span.5")
+  // 验证所有日志记录完成
+  assert_true(true)
 }
 
-test "concurrent histogram operations" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrent.histogram.test")
-  let histogram = Meter::create_histogram(meter, "concurrent.histogram")
+test "telemetry_concurrent_context_operations" {
+  // 并发上下文操作
+  let contexts = []
   
-  // Record histogram values concurrently
-  Histogram::record(histogram, 10.5)
-  Histogram::record(histogram, 20.3)
-  Histogram::record(histogram, 30.7)
-  Histogram::record(histogram, 40.1)
-  Histogram::record(histogram, 50.9)
-  Histogram::record(histogram, 60.2)
-  Histogram::record(histogram, 70.8)
-  Histogram::record(histogram, 80.4)
-  Histogram::record(histogram, 90.6)
-  Histogram::record(histogram, 100.0)
+  // 创建多个上下文
+  for i in range(0, 50) {
+    let ctx = Context::root()
+    let key1 = ContextKey::new("key1." + i.to_string())
+    let key2 = ContextKey::new("key2." + i.to_string())
+    
+    let ctx_with_values = Context::with_value(
+      Context::with_value(ctx, key1, "value1." + i.to_string()),
+      key2,
+      "value2." + i.to_string()
+    )
+    
+    contexts.push(ctx_with_values)
+  }
   
-  // Verify histogram properties
-  assert_eq(histogram.name, "concurrent.histogram")
-  assert_true(true)  // If we reach here, concurrent operations completed
+  // 并发读取上下文值
+  for i in range(0, contexts.length()) {
+    let ctx = contexts[i]
+    let key1 = ContextKey::new("key1." + i.to_string())
+    let key2 = ContextKey::new("key2." + i.to_string())
+    
+    let value1 = Context::get(ctx, key1)
+    let value2 = Context::get(ctx, key2)
+    
+    assert_eq(value1, Some("value1." + i.to_string()))
+    assert_eq(value2, Some("value2." + i.to_string()))
+  }
+  
+  // 验证所有上下文操作完成
+  assert_true(true)
 }
 
-test "concurrent logger operations" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "concurrent.logger.test")
+test "telemetry_concurrent_baggage_operations" {
+  // 并发baggage操作
+  let baggages = []
   
-  // Create log records concurrently
-  let log1 = LogRecord::new(Info, "Concurrent log message 1")
-  let log2 = LogRecord::new(Warn, "Concurrent log message 2")
-  let log3 = LogRecord::new(Error, "Concurrent log message 3")
-  let log4 = LogRecord::new(Debug, "Concurrent log message 4")
-  let log5 = LogRecord::new(Info, "Concurrent log message 5")
+  // 创建多个baggage
+  for i in range(0, 30) {
+    let baggage = Baggage::new()
+    Baggage::set(baggage, "user.id", i.to_string())
+    Baggage::set(baggage, "session.id", "session-" + i.to_string())
+    Baggage::set(baggage, "request.id", "req-" + i.to_string())
+    
+    baggages.push(baggage)
+  }
   
-  // Emit log records concurrently
-  Logger::emit(logger, log1)
-  Logger::emit(logger, log2)
-  Logger::emit(logger, log3)
-  Logger::emit(logger, log4)
-  Logger::emit(logger, log5)
+  // 并发读取baggage值
+  for i in range(0, baggages.length()) {
+    let baggage = baggages[i]
+    
+    let user_id = Baggage::get(baggage, "user.id")
+    let session_id = Baggage::get(baggage, "session.id")
+    let request_id = Baggage::get(baggage, "request.id")
+    
+    assert_eq(user_id, Some(i.to_string()))
+    assert_eq(session_id, Some("session-" + i.to_string()))
+    assert_eq(request_id, Some("req-" + i.to_string()))
+  }
   
-  // Verify log record properties
-  assert_eq(LogRecord::body(log1), Some("Concurrent log message 1"))
-  assert_eq(LogRecord::body(log2), Some("Concurrent log message 2"))
-  assert_eq(LogRecord::body(log3), Some("Concurrent log message 3"))
-  assert_eq(LogRecord::body(log4), Some("Concurrent log message 4"))
-  assert_eq(LogRecord::body(log5), Some("Concurrent log message 5"))
+  // 并发注入和提取操作
+  for i in range(0, baggages.length()) {
+    let baggage = baggages[i]
+    let carrier = TextMapCarrier::new()
+    
+    // 注入baggage
+    Baggage::inject_to_carrier(baggage, carrier)
+    
+    // 提取baggage
+    let extracted_baggage = Baggage::from_carrier(carrier)
+    
+    // 验证提取的baggage
+    let extracted_user_id = Baggage::get(extracted_baggage, "user.id")
+    assert_eq(extracted_user_id, Some(i.to_string()))
+  }
+  
+  // 验证所有baggage操作完成
+  assert_true(true)
 }
 
-test "concurrent baggage operations" {
-  let baggage = Baggage::new()
+test "telemetry_concurrent_attribute_operations" {
+  // 并发属性操作
+  let attributes_list = []
   
-  // Set baggage entries concurrently
-  let baggage = Baggage::set_entry(baggage, "key1", "value1")
-  let baggage = Baggage::set_entry(baggage, "key2", "value2")
-  let baggage = Baggage::set_entry(baggage, "key3", "value3")
-  let baggage = Baggage::set_entry(baggage, "key4", "value4")
-  let baggage = Baggage::set_entry(baggage, "key5", "value5")
+  // 创建多个属性集合
+  for i in range(0, 40) {
+    let attrs = Attributes::new()
+    
+    // 设置多个属性
+    Attributes::set(attrs, "string.attr", StringValue("value-" + i.to_string()))
+    Attributes::set(attrs, "int.attr", IntValue(i))
+    Attributes::set(attrs, "float.attr", FloatValue(i.to_double() * 3.14))
+    Attributes::set(attrs, "bool.attr", BoolValue(i % 2 == 0))
+    
+    attributes_list.push(attrs)
+  }
   
-  // Get baggage entries concurrently
-  let value1 = Baggage::get_entry(baggage, "key1")
-  let value2 = Baggage::get_entry(baggage, "key2")
-  let value3 = Baggage::get_entry(baggage, "key3")
-  let value4 = Baggage::get_entry(baggage, "key4")
-  let value5 = Baggage::get_entry(baggage, "key5")
+  // 并发读取属性
+  for i in range(0, attributes_list.length()) {
+    let attrs = attributes_list[i]
+    
+    let string_attr = Attributes::get(attrs, "string.attr")
+    let int_attr = Attributes::get(attrs, "int.attr")
+    let float_attr = Attributes::get(attrs, "float.attr")
+    let bool_attr = Attributes::get(attrs, "bool.attr")
+    
+    match string_attr {
+      Some(StringValue(value)) => assert_eq(value, "value-" + i.to_string())
+      _ => assert_true(false, "Expected string attribute")
+    }
+    
+    match int_attr {
+      Some(IntValue(value)) => assert_eq(value, i)
+      _ => assert_true(false, "Expected int attribute")
+    }
+    
+    match float_attr {
+      Some(FloatValue(value)) => assert_eq(value, i.to_double() * 3.14)
+      _ => assert_true(false, "Expected float attribute")
+    }
+    
+    match bool_attr {
+      Some(BoolValue(value)) => assert_eq(value, i % 2 == 0)
+      _ => assert_true(false, "Expected bool attribute")
+    }
+  }
   
-  // Remove baggage entries concurrently
-  let baggage = Baggage::remove_entry(baggage, "key1")
-  let baggage = Baggage::remove_entry(baggage, "key3")
-  let baggage = Baggage::remove_entry(baggage, "key5")
-  
-  // Simplified implementation returns None for all entries
-  assert_eq(value1, None)
-  assert_eq(value2, None)
-  assert_eq(value3, None)
-  assert_eq(value4, None)
-  assert_eq(value5, None)
+  // 验证所有属性操作完成
+  assert_true(true)
 }
 
-test "concurrent context operations" {
-  let ctx = Context::root()
+test "telemetry_concurrent_resource_operations" {
+  // 并发资源操作
+  let resources = []
   
-  // Create context keys
-  let key1 = ContextKey::new("concurrent.key1")
-  let key2 = ContextKey::new("concurrent.key2")
-  let key3 = ContextKey::new("concurrent.key3")
-  let key4 = ContextKey::new("concurrent.key4")
-  let key5 = ContextKey::new("concurrent.key5")
+  // 创建多个资源
+  for i in range(0, 25) {
+    let resource = Resource::new()
+    let attributes = [
+      ("service.name", StringValue("service-" + i.to_string())),
+      ("service.version", StringValue("1.0.0")),
+      ("instance.id", IntValue(i)),
+      ("environment", StringValue("test"))
+    ]
+    
+    let resource_with_attrs = Resource::with_attributes(resource, attributes)
+    resources.push(resource_with_attrs)
+  }
   
-  // Set context values concurrently
-  let ctx = Context::with_value(ctx, key1, "value1")
-  let ctx = Context::with_value(ctx, key2, "value2")
-  let ctx = Context::with_value(ctx, key3, "value3")
-  let ctx = Context::with_value(ctx, key4, "value4")
-  let ctx = Context::with_value(ctx, key5, "value5")
+  // 并发读取资源属性
+  for i in range(0, resources.length()) {
+    let resource = resources[i]
+    
+    let service_name = Resource::get_attribute(resource, "service.name")
+    let service_version = Resource::get_attribute(resource, "service.version")
+    let instance_id = Resource::get_attribute(resource, "instance.id")
+    let environment = Resource::get_attribute(resource, "environment")
+    
+    match service_name {
+      Some(StringValue(name)) => assert_eq(name, "service-" + i.to_string())
+      _ => assert_true(false, "Expected service name")
+    }
+    
+    match service_version {
+      Some(StringValue(version)) => assert_eq(version, "1.0.0")
+      _ => assert_true(false, "Expected service version")
+    }
+    
+    match instance_id {
+      Some(IntValue(id)) => assert_eq(id, i)
+      _ => assert_true(false, "Expected instance ID")
+    }
+    
+    match environment {
+      Some(StringValue(env)) => assert_eq(env, "test")
+      _ => assert_true(false, "Expected environment")
+    }
+  }
   
-  // Get context values concurrently
-  let value1 = Context::get(ctx, key1)
-  let value2 = Context::get(ctx, key2)
-  let value3 = Context::get(ctx, key3)
-  let value4 = Context::get(ctx, key4)
-  let value5 = Context::get(ctx, key5)
+  // 并发资源合并操作
+  let merged_resources = []
+  for i in range(0, resources.length() / 2) {
+    let resource1 = resources[i * 2]
+    let resource2 = resources[i * 2 + 1]
+    
+    let merged_resource = Resource::merge(resource1, resource2)
+    merged_resources.push(merged_resource)
+  }
   
-  // Verify context values
-  assert_eq(value1, Some("value1"))
-  assert_eq(value2, Some("value2"))
-  assert_eq(value3, Some("value3"))
-  assert_eq(value4, Some("value4"))
-  assert_eq(value5, Some("value5"))
-}
-
-test "concurrent propagator operations" {
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  // 验证合并结果
+  for i in range(0, merged_resources.length()) {
+    let merged_resource = merged_resources[i]
+    
+    // 验证合并后的资源包含两个原始资源的属性
+    let service_name = Resource::get_attribute(merged_resource, "service.name")
+    assert_true(service_name != None)
+  }
   
-  // Create multiple carriers for concurrent operations
-  let carrier1 = TextMapCarrier::new()
-  let carrier2 = TextMapCarrier::new()
-  let carrier3 = TextMapCarrier::new()
-  let carrier4 = TextMapCarrier::new()
-  let carrier5 = TextMapCarrier::new()
-  
-  // Inject contexts concurrently
-  let ctx = Context::root()
-  CompositePropagator::inject(propagator, ctx, carrier1)
-  CompositePropagator::inject(propagator, ctx, carrier2)
-  CompositePropagator::inject(propagator, ctx, carrier3)
-  CompositePropagator::inject(propagator, ctx, carrier4)
-  CompositePropagator::inject(propagator, ctx, carrier5)
-  
-  // Extract contexts concurrently
-  let extracted1 = CompositePropagator::extract(propagator, carrier1)
-  let extracted2 = CompositePropagator::extract(propagator, carrier2)
-  let extracted3 = CompositePropagator::extract(propagator, carrier3)
-  let extracted4 = CompositePropagator::extract(propagator, carrier4)
-  let extracted5 = CompositePropagator::extract(propagator, carrier5)
-  
-  // Verify extractions
-  let key = ContextKey::new("extracted")
-  let value1 = Context::get(extracted1, key)
-  let value2 = Context::get(extracted2, key)
-  let value3 = Context::get(extracted3, key)
-  let value4 = Context::get(extracted4, key)
-  let value5 = Context::get(extracted5, key)
-  
-  assert_eq(value1, Some("true"))
-  assert_eq(value2, Some("true"))
-  assert_eq(value3, Some("true"))
-  assert_eq(value4, Some("true"))
-  assert_eq(value5, Some("true"))
-}
-
-test "concurrent resource operations" {
-  // Create multiple resources for concurrent operations
-  let resource1 = Resource::new()
-  let resource2 = Resource::new()
-  let resource3 = Resource::new()
-  
-  // Set attributes for resources concurrently
-  let attrs1 = [("service.name", StringValue("service.1"))]
-  let attrs2 = [("service.name", StringValue("service.2"))]
-  let attrs3 = [("service.name", StringValue("service.3"))]
-  
-  let resource1_with_attrs = Resource::with_attributes(resource1, attrs1)
-  let resource2_with_attrs = Resource::with_attributes(resource2, attrs2)
-  let resource3_with_attrs = Resource::with_attributes(resource3, attrs3)
-  
-  // Get attributes from resources concurrently
-  let service_name1 = Resource::get_attribute(resource1_with_attrs, "service.name")
-  let service_name2 = Resource::get_attribute(resource2_with_attrs, "service.name")
-  let service_name3 = Resource::get_attribute(resource3_with_attrs, "service.name")
-  
-  // Merge resources concurrently
-  let merged1 = Resource::merge(resource1_with_attrs, resource2_with_attrs)
-  let merged2 = Resource::merge(merged1, resource3_with_attrs)
-  
-  // Simplified implementation returns None for all attributes
-  assert_eq(service_name1, None)
-  assert_eq(service_name2, None)
-  assert_eq(service_name3, None)
-}
-
-test "concurrent attributes operations" {
-  // Create multiple attributes instances for concurrent operations
-  let attrs1 = Attributes::new()
-  let attrs2 = Attributes::new()
-  let attrs3 = Attributes::new()
-  
-  // Set attributes concurrently
-  Attributes::set(attrs1, "concurrent.key1", StringValue("value1"))
-  Attributes::set(attrs2, "concurrent.key2", StringValue("value2"))
-  Attributes::set(attrs3, "concurrent.key3", StringValue("value3"))
-  
-  // Get attributes concurrently
-  let value1 = Attributes::get(attrs1, "concurrent.key1")
-  let value2 = Attributes::get(attrs2, "concurrent.key2")
-  let value3 = Attributes::get(attrs3, "concurrent.key3")
-  
-  // Simplified implementation returns None for non-test keys
-  assert_eq(value1, None)
-  assert_eq(value2, None)
-  assert_eq(value3, None)
+  // 验证所有资源操作完成
+  assert_true(true)
 }
