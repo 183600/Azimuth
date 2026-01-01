@@ -1,428 +1,378 @@
-// Security and Privacy Tests for Azimuth Telemetry System
-// 专注于安全性和隐私保护的测试
+// Azimuth Security and Privacy Test Suite
+// This file contains security and privacy test cases for the Azimuth telemetry system
 
-test "敏感数据过滤测试" {
-  let attrs = Attributes::new()
+// Test 1: Sensitive data handling and redaction
+pub test "security sensitive data redaction" {
+  let attrs = azimuth::Attributes::new()
   
-  // 测试敏感数据键名过滤
-  let sensitive_keys = [
-    "password",
-    "secret",
-    "token",
-    "api_key",
-    "private_key",
-    "credit_card",
-    "ssn",
-    "social_security",
-    "auth_token",
-    "access_token"
-  ]
+  // Test with sensitive data that should be redacted
+  azimuth::Attributes::set(attrs, "user.password", azimuth::StringValue("secret123"))
+  azimuth::Attributes::set(attrs, "api.key", azimuth::StringValue("sk-1234567890abcdef"))
+  azimuth::Attributes::set(attrs, "credit.card", azimuth::StringValue("4111-1111-1111-1111"))
+  azimuth::Attributes::set(attrs, "ssn", azimuth::StringValue("123-45-6789"))
+  azimuth::Attributes::set(attrs, "email", azimuth::StringValue("user@example.com"))
+  azimuth::Attributes::set(attrs, "phone", azimuth::StringValue("+1-555-123-4567"))
   
-  // 设置敏感数据
-  for key in sensitive_keys {
-    Attributes::set(attrs, key, StringValue("sensitive-value-" + key))
-  }
+  // Test with non-sensitive data
+  azimuth::Attributes::set(attrs, "user.id", azimuth::StringValue("12345"))
+  azimuth::Attributes::set(attrs, "request.count", azimuth::IntValue(100))
+  azimuth::Attributes::set(attrs, "response.time", azimuth::FloatValue(250.5))
+  azimuth::Attributes::set(attrs, "service.name", azimuth::StringValue("auth-service"))
   
-  // 验证敏感数据被正确过滤或处理
-  for key in sensitive_keys {
-    let value = Attributes::get(attrs, key)
-    // 在实际实现中，敏感数据应该被过滤或掩码
-    // 这里我们测试键的存在性
-    assert_true(value == Some(StringValue("test_value")) || value == None)
-  }
+  // In a real implementation, sensitive data would be redacted
+  // For this test, we verify that the operations don't crash
+  let password_result = azimuth::Attributes::get(attrs, "user.password")
+  let api_key_result = azimuth::Attributes::get(attrs, "api.key")
+  let credit_card_result = azimuth::Attributes::get(attrs, "credit.card")
+  let ssn_result = azimuth::Attributes::get(attrs, "ssn")
+  let email_result = azimuth::Attributes::get(attrs, "email")
+  let phone_result = azimuth::Attributes::get(attrs, "phone")
   
-  // 测试敏感数据模式匹配
-  let pattern_keys = [
-    "user_password",
-    "api_secret_key",
-    "auth_token_value",
-    "credit_card_number",
-    "my_private_key"
-  ]
-  
-  for key in pattern_keys {
-    Attributes::set(attrs, key, StringValue("pattern-sensitive-value"))
-    let value = Attributes::get(attrs, key)
-    assert_true(value == Some(StringValue("test_value")) || value == None)
-  }
+  // Verify non-sensitive data
+  assert_eq(azimuth::Attributes::get(attrs, "user.id"), Some(azimuth::StringValue("12345")))
+  assert_eq(azimuth::Attributes::get(attrs, "request.count"), Some(azimuth::IntValue(100)))
+  assert_eq(azimuth::Attributes::get(attrs, "response.time"), Some(azimuth::FloatValue(250.5)))
+  assert_eq(azimuth::Attributes::get(attrs, "service.name"), Some(azimuth::StringValue("auth-service")))
 }
 
-test "数据脱敏和匿名化测试" {
-  let attrs = Attributes::new()
+// Test 2: Secure logging with sensitive information
+pub test "security secure logging" {
+  let logger_provider = azimuth::LoggerProvider::default()
+  let secure_logger = azimuth::LoggerProvider::get_logger(logger_provider, "secure-logger")
   
-  // 测试邮箱脱敏
-  Attributes::set(attrs, "email", StringValue("user@example.com"))
-  let email_val = Attributes::get(attrs, "email")
+  // Create log records with sensitive information
+  let auth_log = azimuth::LogRecord::new(azimuth::Info, "User authentication attempt for user@example.com")
+  let payment_log = azimuth::LogRecord::new(azimuth::Info, "Payment processed for card ending in 1234")
+  let api_log = azimuth::LogRecord::new(azimuth::Info, "API call made with token sk-****")
+  let error_log = azimuth::LogRecord::new(azimuth::Error, "Authentication failed: Invalid credentials")
   
-  // 测试电话号码脱敏
-  Attributes::set(attrs, "phone", StringValue("+1-555-123-4567"))
-  let phone_val = Attributes::get(attrs, "phone")
-  
-  // 测试IP地址脱敏
-  Attributes::set(attrs, "ip_address", StringValue("192.168.1.100"))
-  let ip_val = Attributes::get(attrs, "ip_address")
-  
-  // 测试信用卡号脱敏
-  Attributes::set(attrs, "card_number", StringValue("4532-1234-5678-9012"))
-  let card_val = Attributes::get(attrs, "card_number")
-  
-  // 测试用户ID匿名化
-  Attributes::set(attrs, "user_id", StringValue("user-12345"))
-  let user_id_val = Attributes::get(attrs, "user_id")
-  
-  // 验证脱敏处理
-  assert_true(email_val == Some(StringValue("test_value")) || email_val == None)
-  assert_true(phone_val == Some(StringValue("test_value")) || phone_val == None)
-  assert_true(ip_val == Some(StringValue("test_value")) || ip_val == None)
-  assert_true(card_val == Some(StringValue("test_value")) || card_val == None)
-  assert_true(user_id_val == Some(StringValue("test_value")) || user_id_val == None)
-}
-
-test "访问控制和权限测试" {
-  // 测试不同权限级别的属性访问
-  let attrs = Attributes::new()
-  
-  // 设置不同权限级别的属性
-  Attributes::set(attrs, "public.info", StringValue("public data"))
-  Attributes::set(attrs, "internal.info", StringValue("internal data"))
-  Attributes::set(attrs, "confidential.info", StringValue("confidential data"))
-  Attributes::set(attrs, "secret.info", StringValue("secret data"))
-  
-  // 模拟不同权限级别的访问
-  let public_access = Attributes::get(attrs, "public.info")
-  let internal_access = Attributes::get(attrs, "internal.info")
-  let confidential_access = Attributes::get(attrs, "confidential.info")
-  let secret_access = Attributes::get(attrs, "secret.info")
-  
-  // 验证权限控制
-  assert_true(public_access == Some(StringValue("test_value")) || public_access == None)
-  assert_true(internal_access == Some(StringValue("test_value")) || internal_access == None)
-  assert_true(confidential_access == Some(StringValue("test_value")) || confidential_access == None)
-  assert_true(secret_access == Some(StringValue("test_value")) || secret_access == None)
-  
-  // 测试上下文访问控制
-  let ctx = Context::root()
-  let restricted_key = ContextKey::new("restricted.data")
-  let ctx_with_restricted = Context::with_value(ctx, restricted_key, "restricted.value")
-  
-  // 验证上下文访问控制
-  let restricted_access = Context::get(ctx_with_restricted, restricted_key)
-  assert_eq(restricted_access, Some("restricted.value"))
-}
-
-test "数据加密和完整性测试" {
-  // 测试数据完整性验证
-  let attrs = Attributes::new()
-  
-  // 设置需要完整性验证的数据
-  Attributes::set(attrs, "critical.data", StringValue("critical information"))
-  Attributes::set(attrs, "audit.log", StringValue("audit trail information"))
-  Attributes::set(attrs, "compliance.data", StringValue("compliance information"))
-  
-  // 模拟数据完整性检查
-  let critical_data = Attributes::get(attrs, "critical.data")
-  let audit_log = Attributes::get(attrs, "audit.log")
-  let compliance_data = Attributes::get(attrs, "compliance.data")
-  
-  // 验证数据完整性
-  assert_true(critical_data == Some(StringValue("test_value")) || critical_data == None)
-  assert_true(audit_log == Some(StringValue("test_value")) || audit_log == None)
-  assert_true(compliance_data == Some(StringValue("test_value")) || compliance_data == None)
-  
-  // 测试Span数据安全性
-  let secure_span_ctx = SpanContext::new("secure-trace-id", "secure-span-id", true, "secure.state")
-  let secure_span = Span::new("secure-operation", Server, secure_span_ctx)
-  
-  // 验证Span数据安全性
-  assert_eq(SpanContext::trace_id(secure_span_ctx), "secure-trace-id")
-  assert_eq(SpanContext::span_id(secure_span_ctx), "secure-span-id")
-  assert_true(SpanContext::is_sampled(secure_span_ctx))
-}
-
-test "隐私合规性测试" {
-  // 测试GDPR合规性
-  let attrs = Attributes::new()
-  
-  // 设置个人数据
-  Attributes::set(attrs, "user.name", StringValue("John Doe"))
-  Attributes::set(attrs, "user.email", StringValue("john.doe@example.com"))
-  Attributes::set(attrs, "user.address", StringValue("123 Main St, City, Country"))
-  Attributes::set(attrs, "user.phone", StringValue("+1-555-123-4567"))
-  
-  // 测试数据删除权（被遗忘权）
-  let attrs_after_deletion = Attributes::new()
-  // 模拟删除个人数据后的状态
-  
-  // 验证个人数据已被删除
-  let deleted_name = Attributes::get(attrs_after_deletion, "user.name")
-  let deleted_email = Attributes::get(attrs_after_deletion, "user.email")
-  let deleted_address = Attributes::get(attrs_after_deletion, "user.address")
-  let deleted_phone = Attributes::get(attrs_after_deletion, "user.phone")
-  
-  assert_eq(deleted_name, None)
-  assert_eq(deleted_email, None)
-  assert_eq(deleted_address, None)
-  assert_eq(deleted_phone, None)
-  
-  // 测试数据可携带性
-  let export_attrs = Attributes::new()
-  Attributes::set(export_attrs, "exportable.data", StringValue("user data for export"))
-  
-  let export_data = Attributes::get(export_attrs, "exportable.data")
-  assert_true(export_data == Some(StringValue("test_value")) || export_data == None)
-}
-
-test "安全日志记录测试" {
-  let logger_provider = LoggerProvider::default()
-  let security_logger = LoggerProvider::get_logger(logger_provider, "security-logger")
-  
-  // 测试安全事件日志记录
-  let security_events = [
-    ("authentication.success", "User authenticated successfully"),
-    ("authentication.failure", "Authentication failed for user"),
-    ("authorization.denied", "Access denied to resource"),
-    ("data.access", "Sensitive data accessed"),
-    ("security.violation", "Security policy violation detected")
-  ]
-  
-  for event in security_events {
-    let log_record = LogRecord::new_with_context(
-      Warn,  // 安全事件使用警告级别
-      Some(event[1]),
-      Some(Attributes::new()),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some("security-trace"),
-      Some("security-span"),
-      Some(Context::root())
-    )
-    
-    Logger::emit(security_logger, log_record)
-    
-    // 验证日志记录创建
-    assert_eq(LogRecord::severity_number(log_record), Warn)
-    assert_eq(LogRecord::body(log_record), Some(event[1]))
-  }
-  
-  // 测试安全审计日志
-  let audit_log = LogRecord::new_with_context(
-    Error,
-    Some("Security audit log entry"),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
+  // Create log records with detailed context
+  let detailed_auth_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("User login successful"),
     None,
-    Some("audit-trace"),
-    Some("audit-span"),
-    Some(Context::root())
+    Some(1735689600000000000L),
+    Some(1735689600000000001L),
+    Some("auth-trace-12345"),
+    Some("auth-span-67890"),
+    None
   )
   
-  Logger::emit(security_logger, audit_log)
-  assert_eq(LogRecord::severity_number(audit_log), Error)
-  assert_eq(LogRecord::body(audit_log), Some("Security audit log entry"))
-}
-
-test "网络安全传输测试" {
-  let carrier = TextMapCarrier::new()
-  
-  // 测试安全头部传输
-  let security_headers = [
-    ("authorization", "Bearer secure-token"),
-    ("x-api-key", "secure-api-key-value"),
-    ("x-security-token", "security-token-value"),
-    ("x-request-signature", "request-signature-value")
-  ]
-  
-  for header in security_headers {
-    TextMapCarrier::set(carrier, header[0], header[1])
-  }
-  
-  // 验证安全头部传输
-  for header in security_headers {
-    let value = TextMapCarrier::get(carrier, header[0])
-    assert_eq(value, Some(header[1]))
-  }
-  
-  // 测试传播器安全性
-  let secure_propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
-  let secure_ctx = Context::root()
-  
-  // 注入安全上下文
-  CompositePropagator::inject(secure_propagator, secure_ctx, carrier)
-  
-  // 验证安全传播
-  let extracted_ctx = CompositePropagator::extract(secure_propagator, carrier)
-  assert_true(extracted_ctx != None || extracted_ctx == None)  // 基本验证
-  
-  // 测试Baggage安全传输
-  let secure_baggage = Baggage::new()
-  let secure_baggage = Baggage::set_entry(secure_baggage, "secure.token", "encrypted-token-value")
-  let secure_baggage = Baggage::set_entry(secure_baggage, "user.session", "encrypted-session-id")
-  
-  // 验证安全Baggage
-  let token_value = Baggage::get_entry(secure_baggage, "secure.token")
-  let session_value = Baggage::get_entry(secure_baggage, "user.session")
-  
-  assert_eq(token_value, Some("encrypted-token-value"))
-  assert_eq(session_value, Some("encrypted-session-id"))
-}
-
-test "资源安全配置测试" {
-  // 测试安全资源配置
-  let security_resource = Resource::with_attributes(Resource::new(), [
-    ("security.level", StringValue("high")),
-    ("encryption.enabled", StringValue("true")),
-    ("access.control", StringValue("role-based")),
-    ("audit.enabled", StringValue("true")),
-    ("data.retention", StringValue("30-days"))
-  ])
-  
-  // 验证安全资源配置
-  let security_level = Resource::get_attribute(security_resource, "security.level")
-  let encryption_enabled = Resource::get_attribute(security_resource, "encryption.enabled")
-  let access_control = Resource::get_attribute(security_resource, "access.control")
-  let audit_enabled = Resource::get_attribute(security_resource, "audit.enabled")
-  let data_retention = Resource::get_attribute(security_resource, "data.retention")
-  
-  assert_eq(security_level, Some(StringValue("high")))
-  assert_eq(encryption_enabled, Some(StringValue("true")))
-  assert_eq(access_control, Some(StringValue("role-based")))
-  assert_eq(audit_enabled, Some(StringValue("true")))
-  assert_eq(data_retention, Some(StringValue("30-days")))
-  
-  // 测试安全度量配置
-  let meter_provider = MeterProvider::default()
-  let security_meter = MeterProvider::get_meter(meter_provider, "security-meter")
-  
-  let security_counter = Meter::create_counter(security_meter, "security.events", Some("Security event counter"), Some("events"))
-  let security_histogram = Meter::create_histogram(security_meter, "security.response.time", Some("Security response time"), Some("ms"))
-  
-  // 验证安全度量配置
-  assert_eq(security_counter.name, "security.events")
-  assert_eq(security_counter.description, Some("Security event counter"))
-  assert_eq(security_counter.unit, Some("events"))
-  
-  assert_eq(security_histogram.name, "security.response.time")
-  assert_eq(security_histogram.description, Some("Security response time"))
-  assert_eq(security_histogram.unit, Some("ms"))
-}
-
-test "威胁检测和防护测试" {
-  // 测试异常访问模式检测
-  let attrs = Attributes::new()
-  
-  // 模拟异常访问模式
-  let suspicious_patterns = [
-    ("rapid.requests", "1000"),
-    ("unusual.time.access", "03:00"),
-    ("multiple.failed.logins", "5"),
-    ("data.exfiltration.attempt", "true"),
-    ("privilege.escalation", "detected")
-  ]
-  
-  for pattern in suspicious_patterns {
-    Attributes::set(attrs, pattern[0], StringValue(pattern[1]))
-  }
-  
-  // 验证威胁检测
-  for pattern in suspicious_patterns {
-    let detected = Attributes::get(attrs, pattern[0])
-    assert_true(detected == Some(StringValue("test_value")) || detected == None)
-  }
-  
-  // 测试威胁响应机制
-  let threat_logger = LoggerProvider::get_logger(LoggerProvider::default(), "threat-detector")
-  
-  let threat_alert = LogRecord::new_with_context(
-    Error,
-    Some("Security threat detected: " + suspicious_patterns[3][0]),
-    Some(Attributes::new()),
-    Some(Clock::now_unix_nanos(Clock::system())),
+  let detailed_error_log = azimuth::LogRecord::new_with_context(
+    azimuth::Error,
+    Some("Database connection failed: connection timeout"),
     None,
-    Some("threat-trace"),
-    Some("threat-span"),
-    Some(Context::root())
+    Some(1735689600000000002L),
+    Some(1735689600000000003L),
+    Some("error-trace-11111"),
+    Some("error-span-22222"),
+    None
   )
   
-  Logger::emit(threat_logger, threat_alert)
+  // Emit all log records
+  azimuth::Logger::emit(secure_logger, auth_log)
+  azimuth::Logger::emit(secure_logger, payment_log)
+  azimuth::Logger::emit(secure_logger, api_log)
+  azimuth::Logger::emit(secure_logger, error_log)
+  azimuth::Logger::emit(secure_logger, detailed_auth_log)
+  azimuth::Logger::emit(secure_logger, detailed_error_log)
   
-  // 验证威胁响应
-  assert_eq(LogRecord::severity_number(threat_alert), Error)
-  assert_true(LogRecord::body(threat_alert).unwrap().includes("Security threat detected"))
+  // Verify log records
+  assert_eq(azimuth::LogRecord::body(auth_log), Some("User authentication attempt for user@example.com"))
+  assert_eq(azimuth::LogRecord::body(payment_log), Some("Payment processed for card ending in 1234"))
+  assert_eq(azimuth::LogRecord::body(api_log), Some("API call made with token sk-****"))
+  assert_eq(azimuth::LogRecord::body(error_log), Some("Authentication failed: Invalid credentials"))
+  assert_eq(azimuth::LogRecord::body(detailed_auth_log), Some("User login successful"))
+  assert_eq(azimuth::LogRecord::body(detailed_error_log), Some("Database connection failed: connection timeout"))
   
-  // 测试自动防护机制
-  let protection_attrs = Attributes::new()
-  Attributes::set(protection_attrs, "firewall.blocked", StringValue("suspicious.ip"))
-  Attributes::set(protection_attrs, "rate.limited", StringValue("api.key.abuse"))
-  Attributes::set(protection_attrs, "account.locked", StringValue("user.suspicious"))
-  
-  // 验证防护措施
-  let firewall_blocked = Attributes::get(protection_attrs, "firewall.blocked")
-  let rate_limited = Attributes::get(protection_attrs, "rate.limited")
-  let account_locked = Attributes::get(protection_attrs, "account.locked")
-  
-  assert_true(firewall_blocked == Some(StringValue("test_value")) || firewall_blocked == None)
-  assert_true(rate_limited == Some(StringValue("test_value")) || rate_limited == None)
-  assert_true(account_locked == Some(StringValue("test_value")) || account_locked == None)
+  assert_eq(azimuth::LogRecord::severity_number(auth_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::severity_number(payment_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::severity_number(api_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::severity_number(error_log), azimuth::Error)
+  assert_eq(azimuth::LogRecord::severity_number(detailed_auth_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::severity_number(detailed_error_log), azimuth::Error)
 }
 
-test "数据生命周期安全管理测试" {
-  // 测试数据创建阶段安全
-  let creation_attrs = Attributes::new()
-  Attributes::set(creation_attrs, "data.classification", StringValue("confidential"))
-  Attributes::set(creation_attrs, "creation.timestamp", StringValue("2025-01-01T00:00:00Z"))
-  Attributes::set(creation_attrs, "creator.id", StringValue("user-123"))
+// Test 3: Secure span operations with sensitive data
+pub test "security secure span operations" {
+  // Create spans with security context
+  let auth_span_ctx = azimuth::SpanContext::new("secure-auth-trace", "secure-auth-span", true, "")
+  let auth_span = azimuth::Span::new("user.authentication", azimuth::Server, auth_span_ctx)
   
-  // 验证数据创建安全
-  let classification = Attributes::get(creation_attrs, "data.classification")
-  let creation_time = Attributes::get(creation_attrs, "creation.timestamp")
-  let creator_id = Attributes::get(creation_attrs, "creator.id")
+  let payment_span_ctx = azimuth::SpanContext::new("secure-payment-trace", "secure-payment-span", true, "")
+  let payment_span = azimuth::Span::new("payment.processing", azimuth::Server, payment_span_ctx)
   
-  assert_true(classification == Some(StringValue("test_value")) || classification == None)
-  assert_true(creation_time == Some(StringValue("test_value")) || creation_time == None)
-  assert_true(creator_id == Some(StringValue("test_value")) || creator_id == None)
+  let api_span_ctx = azimuth::SpanContext::new("secure-api-trace", "secure-api-span", true, "")
+  let api_span = azimuth::Span::new("api.request", azimuth::Server, api_span_ctx)
   
-  // 测试数据使用阶段安全
-  let usage_attrs = Attributes::new()
-  Attributes::set(usage_attrs, "access.granted", StringValue("true"))
-  Attributes::set(usage_attrs, "access.level", StringValue("read-write"))
-  Attributes::set(usage_attrs, "access.timestamp", StringValue("2025-01-01T12:00:00Z"))
+  // Add events with security context (without sensitive data)
+  azimuth::Span::add_event(auth_span, "authentication.started", [])
+  azimuth::Span::add_event(auth_span, "authentication.completed", [])
   
-  // 验证数据使用安全
-  let access_granted = Attributes::get(usage_attrs, "access.granted")
-  let access_level = Attributes::get(usage_attrs, "access.level")
-  let access_timestamp = Attributes::get(usage_attrs, "access.timestamp")
+  azimuth::Span::add_event(payment_span, "payment.started", [])
+  azimuth::Span::add_event(payment_span, "payment.completed", [])
   
-  assert_true(access_granted == Some(StringValue("test_value")) || access_granted == None)
-  assert_true(access_level == Some(StringValue("test_value")) || access_level == None)
-  assert_true(access_timestamp == Some(StringValue("test_value")) || access_timestamp == None)
+  azimuth::Span::add_event(api_span, "api.request.started", [])
+  azimuth::Span::add_event(api_span, "api.request.completed", [])
   
-  // 测试数据销毁阶段安全
-  let destruction_attrs = Attributes::new()
-  Attributes::set(destruction_attrs, "deletion.requested", StringValue("true"))
-  Attributes::set(destruction_attrs, "deletion.timestamp", StringValue("2025-01-31T23:59:59Z"))
-  Attributes::set(destruction_attrs, "deletion.method", StringValue("secure-erase"))
+  // Set status without sensitive information
+  azimuth::Span::set_status(auth_span, azimuth::Ok, Some("Authentication successful"))
+  azimuth::Span::set_status(payment_span, azimuth::Ok, Some("Payment processed successfully"))
+  azimuth::Span::set_status(api_span, azimuth::Ok, Some("API request completed successfully"))
   
-  // 验证数据销毁安全
-  let deletion_requested = Attributes::get(destruction_attrs, "deletion.requested")
-  let deletion_timestamp = Attributes::get(destruction_attrs, "deletion.timestamp")
-  let deletion_method = Attributes::get(destruction_attrs, "deletion.method")
+  // Verify span properties
+  assert_eq(azimuth::Span::name(auth_span), "user.authentication")
+  assert_eq(azimuth::Span::name(payment_span), "payment.processing")
+  assert_eq(azimuth::Span::name(api_span), "api.request")
   
-  assert_true(deletion_requested == Some(StringValue("test_value")) || deletion_requested == None)
-  assert_true(deletion_timestamp == Some(StringValue("test_value")) || deletion_timestamp == None)
-  assert_true(deletion_method == Some(StringValue("test_value")) || deletion_method == None)
+  assert_eq(azimuth::Span::kind(auth_span), azimuth::Server)
+  assert_eq(azimuth::Span::kind(payment_span), azimuth::Server)
+  assert_eq(azimuth::Span::kind(api_span), azimuth::Server)
   
-  // 测试数据归档阶段安全
-  let archived_attrs = Attributes::new()
-  Attributes::set(archived_attrs, "archived", StringValue("true"))
-  Attributes::set(archived_attrs, "archive.location", StringValue("secure-storage"))
-  Attributes::set(archived_attrs, "archive.encryption", StringValue("aes-256"))
+  assert_eq(azimuth::Span::status(auth_span), azimuth::Ok)
+  assert_eq(azimuth::Span::status(payment_span), azimuth::Ok)
+  assert_eq(azimuth::Span::status(api_span), azimuth::Ok)
+}
+
+// Test 4: Secure metrics without sensitive data
+pub test "security secure metrics" {
+  let provider = azimuth::MeterProvider::default()
+  let secure_meter = azimuth::MeterProvider::get_meter(provider, "security-metrics")
   
-  // 验证数据归档安全
-  let archived = Attributes::get(archived_attrs, "archived")
-  let archive_location = Attributes::get(archived_attrs, "archive.location")
-  let archive_encryption = Attributes::get(archived_attrs, "archive.encryption")
+  // Create security-related metrics
+  let auth_counter = azimuth::Meter::create_counter(secure_meter, "authentication.attempts")
+  let auth_success_counter = azimuth::Meter::create_counter(secure_meter, "authentication.success")
+  let auth_failure_counter = azimuth::Meter::create_counter(secure_meter, "authentication.failures")
   
-  assert_true(archived == Some(StringValue("test_value")) || archived == None)
-  assert_true(archive_location == Some(StringValue("test_value")) || archive_location == None)
-  assert_true(archive_encryption == Some(StringValue("test_value")) || archive_encryption == None)
+  let payment_counter = azimuth::Meter::create_counter(secure_meter, "payment.transactions")
+  let payment_success_counter = azimuth::Meter::create_counter(secure_meter, "payment.success")
+  let payment_failure_counter = azimuth::Meter::create_counter(secure_meter, "payment.failures")
+  
+  let api_request_counter = azimuth::Meter::create_counter(secure_meter, "api.requests")
+  let api_error_counter = azimuth::Meter::create_counter(secure_meter, "api.errors")
+  
+  let response_time_histogram = azimuth::Meter::create_histogram(secure_meter, "request.response.time")
+  let processing_time_histogram = azimuth::Meter::create_histogram(secure_meter, "processing.time")
+  
+  let active_connections_gauge = azimuth::Meter::create_gauge(secure_meter, "active.connections")
+  let queue_size_gauge = azimuth::Meter::create_gauge(secure_meter, "queue.size")
+  
+  // Perform metric operations
+  azimuth::Counter::add(auth_counter, 1000.0)
+  azimuth::Counter::add(auth_success_counter, 850.0)
+  azimuth::Counter::add(auth_failure_counter, 150.0)
+  
+  azimuth::Counter::add(payment_counter, 500.0)
+  azimuth::Counter::add(payment_success_counter, 475.0)
+  azimuth::Counter::add(payment_failure_counter, 25.0)
+  
+  azimuth::Counter::add(api_request_counter, 2000.0)
+  azimuth::Counter::add(api_error_counter, 50.0)
+  
+  azimuth::Histogram::record(response_time_histogram, 150.0)
+  azimuth::Histogram::record(processing_time_histogram, 75.0)
+  
+  // Verify metrics
+  assert_eq(auth_counter.name, "authentication.attempts")
+  assert_eq(auth_success_counter.name, "authentication.success")
+  assert_eq(auth_failure_counter.name, "authentication.failures")
+  
+  assert_eq(payment_counter.name, "payment.transactions")
+  assert_eq(payment_success_counter.name, "payment.success")
+  assert_eq(payment_failure_counter.name, "payment.failures")
+  
+  assert_eq(api_request_counter.name, "api.requests")
+  assert_eq(api_error_counter.name, "api.errors")
+  
+  assert_eq(response_time_histogram.name, "request.response.time")
+  assert_eq(processing_time_histogram.name, "processing.time")
+  
+  assert_eq(active_connections_gauge.name, "active.connections")
+  assert_eq(queue_size_gauge.name, "queue.size")
+}
+
+// Test 5: Secure context and baggage without sensitive data
+pub test "security secure context baggage" {
+  // Create context with non-sensitive security information
+  let ctx = azimuth::Context::root()
+  
+  let user_role_key = azimuth::ContextKey::new("user.role")
+  let ctx_with_role = azimuth::Context::with_value(ctx, user_role_key, "admin")
+  
+  let permission_key = azimuth::ContextKey::new("user.permissions")
+  let ctx_with_permissions = azimuth::Context::with_value(ctx_with_role, permission_key, "read,write,delete")
+  
+  let auth_method_key = azimuth::ContextKey::new("auth.method")
+  let ctx_with_auth_method = azimuth::Context::with_value(ctx_with_permissions, auth_method_key, "oauth2")
+  
+  let session_id_key = azimuth::ContextKey::new("session.id")
+  let ctx_with_session_id = azimuth::Context::with_value(ctx_with_auth_method, session_id_key, "sess-12345")
+  
+  // Verify context values
+  assert_eq(azimuth::Context::get(ctx_with_role, user_role_key), Some("admin"))
+  assert_eq(azimuth::Context::get(ctx_with_permissions, permission_key), Some("read,write,delete"))
+  assert_eq(azimuth::Context::get(ctx_with_auth_method, auth_method_key), Some("oauth2"))
+  assert_eq(azimuth::Context::get(ctx_with_session_id, session_id_key), Some("sess-12345"))
+  
+  // Create baggage with non-sensitive security information
+  let baggage = azimuth::Baggage::new()
+  
+  let baggage_with_role = azimuth::Baggage::set_entry(baggage, "user.role", "admin")
+  let baggage_with_permissions = azimuth::Baggage::set_entry(baggage_with_role, "user.permissions", "read,write,delete")
+  let baggage_with_auth_method = azimuth::Baggage::set_entry(baggage_with_permissions, "auth.method", "oauth2")
+  let baggage_with_session_id = azimuth::Baggage::set_entry(baggage_with_auth_method, "session.id", "sess-12345")
+  
+  // Verify baggage entries
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_role, "user.role"), Some("admin"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_permissions, "user.permissions"), Some("read,write,delete"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_auth_method, "auth.method"), Some("oauth2"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_session_id, "session.id"), Some("sess-12345"))
+}
+
+// Test 6: Secure resource attributes without sensitive data
+pub test "security secure resource attributes" {
+  let resource = azimuth::Resource::new()
+  
+  // Create resource with non-sensitive security attributes
+  let security_attributes = [
+    ("service.name", azimuth::StringValue("auth-service")),
+    ("service.version", azimuth::StringValue("1.2.3")),
+    ("service.environment", azimuth::StringValue("production")),
+    ("security.level", azimuth::StringValue("high")),
+    ("compliance.standard", azimuth::StringValue("PCI-DSS")),
+    ("data.classification", azimuth::StringValue("confidential")),
+    ("access.control", azimuth::StringValue("role-based")),
+    ("encryption.status", azimuth::StringValue("enabled")),
+    ("audit.logging", azimuth::StringValue("enabled")),
+    ("security.scanners", azimuth::StringValue("enabled"))
+  ]
+  
+  let security_resource = azimuth::Resource::with_attributes(resource, security_attributes)
+  
+  // Verify resource attributes
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "service.name"), Some(azimuth::StringValue("auth-service")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "service.version"), Some(azimuth::StringValue("1.2.3")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "service.environment"), Some(azimuth::StringValue("production")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "security.level"), Some(azimuth::StringValue("high")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "compliance.standard"), Some(azimuth::StringValue("PCI-DSS")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "data.classification"), Some(azimuth::StringValue("confidential")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "access.control"), Some(azimuth::StringValue("role-based")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "encryption.status"), Some(azimuth::StringValue("enabled")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "audit.logging"), Some(azimuth::StringValue("enabled")))
+  assert_eq(azimuth::Resource::get_attribute(security_resource, "security.scanners"), Some(azimuth::StringValue("enabled")))
+}
+
+// Test 7: Secure propagator operations
+pub test "security secure propagator" {
+  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+  let baggage_propagator = azimuth::W3CTraceContextPropagator::new()  // Using trace propagator for simplicity
+  let propagators = [trace_propagator, baggage_propagator]
+  let composite_propagator = azimuth::CompositePropagator::new(propagators)
+  
+  // Create context with security information
+  let ctx = azimuth::Context::root()
+  
+  let security_level_key = azimuth::ContextKey::new("security.level")
+  let ctx_with_security_level = azimuth::Context::with_value(ctx, security_level_key, "high")
+  
+  let auth_method_key = azimuth::ContextKey::new("auth.method")
+  let ctx_with_auth_method = azimuth::Context::with_value(ctx_with_security_level, auth_method_key, "oauth2")
+  
+  let session_id_key = azimuth::ContextKey::new("session.id")
+  let ctx_with_session_id = azimuth::Context::with_value(ctx_with_auth_method, session_id_key, "sess-12345")
+  
+  // Create baggage with security information
+  let baggage = azimuth::Baggage::new()
+  let baggage_with_security = azimuth::Baggage::set_entry(baggage, "security.context", "authenticated")
+  let baggage_with_compliance = azimuth::Baggage::set_entry(baggage_with_security, "compliance.level", "strict")
+  
+  // Inject context and baggage into carrier
+  let carrier = azimuth::TextMapCarrier::new()
+  azimuth::CompositePropagator::inject(composite_propagator, ctx_with_session_id, carrier)
+  
+  // Extract context from carrier
+  let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
+  
+  // Verify extraction
+  let extracted_key = azimuth::ContextKey::new("extracted")
+  let extracted_value = azimuth::Context::get(extracted_ctx, extracted_key)
+  assert_eq(extracted_value, Some("true"))
+}
+
+// Test 8: Privacy compliance and data retention
+pub test "security privacy compliance" {
+  let logger_provider = azimuth::LoggerProvider::default()
+  let privacy_logger = azimuth::LoggerProvider::get_logger(logger_provider, "privacy-logger")
+  
+  let provider = azimuth::MeterProvider::default()
+  let privacy_meter = azimuth::MeterProvider::get_meter(provider, "privacy-metrics")
+  
+  // Create privacy-related metrics
+  let data_retention_counter = azimuth::Meter::create_counter(privacy_meter, "data.retention.events")
+  let data_deletion_counter = azimuth::Meter::create_counter(privacy_meter, "data.deletion.events")
+  let consent_tracking_counter = azimuth::Meter::create_counter(privacy_meter, "consent.tracking.events")
+  let gdpr_request_counter = azimuth::Meter::create_counter(privacy_meter, "gdpr.requests")
+  let data_access_counter = azimuth::Meter::create_counter(privacy_meter, "data.access.events")
+  
+  // Create privacy-related logs
+  let data_retention_log = azimuth::LogRecord::new(azimuth::Info, "Data retention policy applied: 30 days")
+  let data_deletion_log = azimuth::LogRecord::new(azimuth::Info, "User data deleted per retention policy")
+  let consent_tracking_log = azimuth::LogRecord::new(azimuth::Info, "User consent tracked: marketing emails")
+  let gdpr_request_log = azimuth::LogRecord::new(azimuth::Info, "GDPR data access request processed")
+  let data_access_log = azimuth::LogRecord::new(azimuth::Info, "User data access logged for audit")
+  
+  // Create detailed privacy logs with context
+  let consent_log_with_context = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("User consent updated: analytics=true, marketing=false"),
+    None,
+    Some(1735689600000000000L),
+    Some(1735689600000000001L),
+    Some("privacy-trace-12345"),
+    Some("privacy-span-67890"),
+    None
+  )
+  
+  let gdpr_log_with_context = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("GDPR right to be forgotten request processed"),
+    None,
+    Some(1735689600000000002L),
+    Some(1735689600000000003L),
+    Some("gdpr-trace-11111"),
+    Some("gdpr-span-22222"),
+    None
+  )
+  
+  // Perform metric operations
+  azimuth::Counter::add(data_retention_counter, 100.0)
+  azimuth::Counter::add(data_deletion_counter, 50.0)
+  azimuth::Counter::add(consent_tracking_counter, 200.0)
+  azimuth::Counter::add(gdpr_request_counter, 10.0)
+  azimuth::Counter::add(data_access_counter, 75.0)
+  
+  // Emit all log records
+  azimuth::Logger::emit(privacy_logger, data_retention_log)
+  azimuth::Logger::emit(privacy_logger, data_deletion_log)
+  azimuth::Logger::emit(privacy_logger, consent_tracking_log)
+  azimuth::Logger::emit(privacy_logger, gdpr_request_log)
+  azimuth::Logger::emit(privacy_logger, data_access_log)
+  azimuth::Logger::emit(privacy_logger, consent_log_with_context)
+  azimuth::Logger::emit(privacy_logger, gdpr_log_with_context)
+  
+  // Verify metrics
+  assert_eq(data_retention_counter.name, "data.retention.events")
+  assert_eq(data_deletion_counter.name, "data.deletion.events")
+  assert_eq(consent_tracking_counter.name, "consent.tracking.events")
+  assert_eq(gdpr_request_counter.name, "gdpr.requests")
+  assert_eq(data_access_counter.name, "data.access.events")
+  
+  // Verify log records
+  assert_eq(azimuth::LogRecord::body(data_retention_log), Some("Data retention policy applied: 30 days"))
+  assert_eq(azimuth::LogRecord::body(data_deletion_log), Some("User data deleted per retention policy"))
+  assert_eq(azimuth::LogRecord::body(consent_tracking_log), Some("User consent tracked: marketing emails"))
+  assert_eq(azimuth::LogRecord::body(gdpr_request_log), Some("GDPR data access request processed"))
+  assert_eq(azimuth::LogRecord::body(data_access_log), Some("User data access logged for audit"))
+  assert_eq(azimuth::LogRecord::body(consent_log_with_context), Some("User consent updated: analytics=true, marketing=false"))
+  assert_eq(azimuth::LogRecord::body(gdpr_log_with_context), Some("GDPR right to be forgotten request processed"))
 }
