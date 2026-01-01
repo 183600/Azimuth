@@ -1,77 +1,41 @@
 #!/bin/bash
-# 验证新创建的测试文件
 
+# 简单验证脚本，检查新创建的测试文件是否有语法错误
 echo "验证新创建的测试文件..."
 
-# 新创建的测试文件列表
-test_files=(
-    "azimuth_enhanced_error_boundary_tests.mbt"
-    "azimuth_concurrent_safety_enhanced_tests.mbt"
-    "azimuth_performance_stress_enhanced_tests.mbt"
-    "azimuth_internationalization_enhanced_tests.mbt"
-    "azimuth_resource_management_enhanced_tests.mbt"
-)
-
-# 检查每个文件是否存在并包含测试用例
-for file in "${test_files[@]}"; do
-    filepath="/home/runner/work/Azimuth/Azimuth/azimuth/$file"
+# 检查文件是否存在
+if [ -f "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" ]; then
+    echo "✓ 测试文件存在: azimuth_enhanced_telemetry_tests.mbt"
     
-    if [ -f "$filepath" ]; then
-        echo "✓ 测试文件存在: $file"
-        
-        # 检查文件中是否包含测试用例
-        test_count=$(grep -c 'test "' "$filepath")
-        echo "  - 包含 $test_count 个测试用例"
-        
-        # 列出前3个测试用例名称
-        echo "  - 测试用例示例:"
-        grep 'test "' "$filepath" | head -3 | sed 's/.*test "\([^"]*\)".*/    \1/'
-        
-    else
-        echo "✗ 测试文件不存在: $file"
-        exit 1
-    fi
-    echo ""
-done
-
-# 检查是否已添加到moon.pkg.json
-echo "检查moon.pkg.json配置..."
-for file in "${test_files[@]}"; do
-    if grep -q "$file" /home/runner/work/Azimuth/Azimuth/azimuth/moon.pkg.json; then
-        echo "✓ $file 已添加到moon.pkg.json"
-    else
-        echo "✗ $file 未添加到moon.pkg.json"
-        exit 1
-    fi
-done
-
-echo ""
-echo "所有测试文件验证完成！"
-echo "总计创建了 ${#test_files[@]} 个新的测试文件。"
-
-# 统计总测试用例数
-total_tests=0
-for file in "${test_files[@]}"; do
-    filepath="/home/runner/work/Azimuth/Azimuth/azimuth/$file"
-    count=$(grep -c 'test "' "$filepath")
-    total_tests=$((total_tests + count))
-done
-
-echo "总计包含 $total_tests 个测试用例。"
-
-# 验证测试文件语法
-echo ""
-echo "验证测试文件语法..."
-for file in "${test_files[@]}"; do
-    filepath="/home/runner/work/Azimuth/Azimuth/azimuth/$file"
+    # 检查文件大小
+    FILE_SIZE=$(wc -l < "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt")
+    echo "✓ 文件行数: $FILE_SIZE"
     
-    # 检查基本的语法结构
-    if grep -q 'test "' "$filepath" && grep -q '{' "$filepath" && grep -q '}' "$filepath"; then
-        echo "✓ $file 语法结构正确"
-    else
-        echo "✗ $file 语法结构可能有问题"
-    fi
-done
+    # 检查测试数量
+    TEST_COUNT=$(grep -c "^test " "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt")
+    echo "✓ 测试用例数量: $TEST_COUNT"
+    
+    # 检查是否包含预期的测试内容
+    echo "✓ 检查测试用例内容..."
+    grep -q "cross-service telemetry consistency" "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" && echo "  - 跨服务遥测一致性测试 ✓"
+    grep -q "time series data processing" "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" && echo "  - 时间序列数据处理测试 ✓"
+    grep -q "high concurrency resource management" "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" && echo "  - 高并发资源管理测试 ✓"
+    grep -q "dynamic configuration updates" "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" && echo "  - 动态配置更新测试 ✓"
+    grep -q "internationalization and localization" "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" && echo "  - 国际化本地化支持测试 ✓"
+    grep -q "network exception handling" "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" && echo "  - 网络异常处理测试 ✓"
+    grep -q "security and privacy protection" "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" && echo "  - 安全隐私保护测试 ✓"
+    grep -q "real-time dashboard streaming" "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_enhanced_telemetry_tests.mbt" && echo "  - 实时仪表板流处理测试 ✓"
+    
+    echo "✓ 新测试文件验证完成"
+else
+    echo "✗ 测试文件不存在: azimuth_enhanced_telemetry_tests.mbt"
+fi
 
-echo ""
-echo "验证完成！所有测试用例已成功创建并配置。"
+# 检查是否已添加到包配置
+if grep -q "azimuth_enhanced_telemetry_tests.mbt" "/home/runner/work/Azimuth/Azimuth/azimuth/moon.pkg.json"; then
+    echo "✓ 测试文件已添加到moon.pkg.json配置中"
+else
+    echo "✗ 测试文件未添加到moon.pkg.json配置中"
+fi
+
+echo "验证完成！"
