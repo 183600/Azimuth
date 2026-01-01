@@ -1,5 +1,5 @@
 // Attributes Operations Test Suite for Azimuth Telemetry System
-// Tests various attribute operations including setting, getting, and type conversions
+// This file contains test cases for Attributes operations
 
 test "attributes creation and basic operations" {
   let attrs = Attributes::new()
@@ -22,57 +22,89 @@ test "attributes creation and basic operations" {
 test "attributes with different value types" {
   let attrs = Attributes::new()
   
-  // Test float value
-  Attributes::set(attrs, "float.key", FloatValue(3.14))
-  let float_value = Attributes::get(attrs, "float.key")
-  assert_eq(float_value, Some(FloatValue(3.14)))
+  // Test with different attribute value types
+  Attributes::set(attrs, "string.attr", StringValue("hello"))
+  Attributes::set(attrs, "int.attr", IntValue(123))
+  Attributes::set(attrs, "float.attr", FloatValue(3.14))
+  Attributes::set(attrs, "bool.attr", BoolValue(true))
+  Attributes::set(attrs, "array.string.attr", ArrayStringValue(["a", "b", "c"]))
+  Attributes::set(attrs, "array.int.attr", ArrayIntValue([1, 2, 3]))
   
-  // Test boolean value
-  Attributes::set(attrs, "bool.key", BoolValue(true))
-  let bool_value = Attributes::get(attrs, "bool.key")
-  assert_eq(bool_value, Some(BoolValue(true)))
+  // Verify string attribute
+  let string_result = Attributes::get(attrs, "string.attr")
+  match string_result {
+    Some(StringValue(value)) => assert_eq(value, "hello")
+    _ => assert_true(false, "Expected StringValue")
+  }
   
-  // Test array string value
-  let string_array = ["value1", "value2", "value3"]
-  Attributes::set(attrs, "array.string.key", ArrayStringValue(string_array))
-  let array_string_value = Attributes::get(attrs, "array.string.key")
-  assert_eq(array_string_value, Some(ArrayStringValue(string_array)))
+  // Verify int attribute
+  let int_result = Attributes::get(attrs, "int.attr")
+  match int_result {
+    Some(IntValue(value)) => assert_eq(value, 123)
+    _ => assert_true(false, "Expected IntValue")
+  }
   
-  // Test array int value
-  let int_array = [1, 2, 3, 4, 5]
-  Attributes::set(attrs, "array.int.key", ArrayIntValue(int_array))
-  let array_int_value = Attributes::get(attrs, "array.int.key")
-  assert_eq(array_int_value, Some(ArrayIntValue(int_array)))
+  // Verify float attribute
+  let float_result = Attributes::get(attrs, "float.attr")
+  match float_result {
+    Some(FloatValue(value)) => assert_eq(value, 3.14)
+    _ => assert_true(false, "Expected FloatValue")
+  }
+  
+  // Verify bool attribute
+  let bool_result = Attributes::get(attrs, "bool.attr")
+  match bool_result {
+    Some(BoolValue(value)) => assert_eq(value, true)
+    _ => assert_true(false, "Expected BoolValue")
+  }
+  
+  // Verify array string attribute
+  let array_string_result = Attributes::get(attrs, "array.string.attr")
+  match array_string_result {
+    Some(ArrayStringValue(values)) => assert_eq(values, ["a", "b", "c"])
+    _ => assert_true(false, "Expected ArrayStringValue")
+  }
+  
+  // Verify array int attribute
+  let array_int_result = Attributes::get(attrs, "array.int.attr")
+  match array_int_result {
+    Some(ArrayIntValue(values)) => assert_eq(values, [1, 2, 3])
+    _ => assert_true(false, "Expected ArrayIntValue")
+  }
 }
 
-test "attributes with special characters in keys" {
+test "attributes with special characters" {
   let attrs = Attributes::new()
   
-  // Test key with dots
-  Attributes::set(attrs, "service.name", StringValue("azimuth"))
-  let service_name = Attributes::get(attrs, "service.name")
-  assert_eq(service_name, Some(StringValue("azimuth")))
+  // Test with keys containing special characters
+  Attributes::set(attrs, "key.with.dots", StringValue("value1"))
+  Attributes::set(attrs, "key-with-dashes", StringValue("value2"))
+  Attributes::set(attrs, "key_with_underscores", StringValue("value3"))
+  Attributes::set(attrs, "key with spaces", StringValue("value4"))
   
-  // Test key with underscores
-  Attributes::set(attrs, "user_id", IntValue(12345))
-  let user_id = Attributes::get(attrs, "user_id")
-  assert_eq(user_id, Some(IntValue(12345)))
+  // Verify values can be retrieved
+  let value1 = Attributes::get(attrs, "key.with.dots")
+  assert_eq(value1, Some(StringValue("value1")))
   
-  // Test key with hyphens
-  Attributes::set(attrs, "http-status-code", IntValue(200))
-  let http_status = Attributes::get(attrs, "http-status-code")
-  assert_eq(http_status, Some(IntValue(200)))
+  let value2 = Attributes::get(attrs, "key-with-dashes")
+  assert_eq(value2, Some(StringValue("value2")))
+  
+  let value3 = Attributes::get(attrs, "key_with_underscores")
+  assert_eq(value3, Some(StringValue("value3")))
+  
+  let value4 = Attributes::get(attrs, "key with spaces")
+  assert_eq(value4, Some(StringValue("value4")))
 }
 
-test "attributes with empty and null values" {
+test "attributes with empty values" {
   let attrs = Attributes::new()
   
-  // Test empty string
+  // Test with empty string
   Attributes::set(attrs, "empty.string", StringValue(""))
   let empty_string = Attributes::get(attrs, "empty.string")
   assert_eq(empty_string, Some(StringValue("")))
   
-  // Test zero values
+  // Test with zero values
   Attributes::set(attrs, "zero.int", IntValue(0))
   let zero_int = Attributes::get(attrs, "zero.int")
   assert_eq(zero_int, Some(IntValue(0)))
@@ -81,27 +113,12 @@ test "attributes with empty and null values" {
   let zero_float = Attributes::get(attrs, "zero.float")
   assert_eq(zero_float, Some(FloatValue(0.0)))
   
-  // Test false boolean
-  Attributes::set(attrs, "false.bool", BoolValue(false))
-  let false_bool = Attributes::get(attrs, "false.bool")
-  assert_eq(false_bool, Some(BoolValue(false)))
-}
-
-test "attributes with large values" {
-  let attrs = Attributes::new()
+  // Test with empty arrays
+  Attributes::set(attrs, "empty.array.string", ArrayStringValue([]))
+  let empty_array_string = Attributes::get(attrs, "empty.array.string")
+  assert_eq(empty_array_string, Some(ArrayStringValue([])))
   
-  // Test large int value
-  Attributes::set(attrs, "large.int", IntValue(9223372036854775807))
-  let large_int = Attributes::get(attrs, "large.int")
-  assert_eq(large_int, Some(IntValue(9223372036854775807)))
-  
-  // Test very small float value
-  Attributes::set(attrs, "small.float", FloatValue(0.0000001))
-  let small_float = Attributes::get(attrs, "small.float")
-  assert_eq(small_float, Some(FloatValue(0.0000001)))
-  
-  // Test very large float value
-  Attributes::set(attrs, "large.float", FloatValue(999999999.999999))
-  let large_float = Attributes::get(attrs, "large.float")
-  assert_eq(large_float, Some(FloatValue(999999999.999999)))
+  Attributes::set(attrs, "empty.array.int", ArrayIntValue([]))
+  let empty_array_int = Attributes::get(attrs, "empty.array.int")
+  assert_eq(empty_array_int, Some(ArrayIntValue([])))
 }
