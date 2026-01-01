@@ -1,203 +1,324 @@
-// Attribute Value Type Conversion Test Cases for Azimuth Telemetry System
-// Testing attribute value type conversions and operations
+// 属性值类型转换测试用例
+// 测试各种属性值类型之间的转换和操作
 
-test "attribute value string operations" {
-  let string_attr = StringValue("test.value")
-  let string_array_attr = ArrayStringValue(["item1", "item2", "item3"])
+test "字符串属性值转换" {
+  // 测试字符串属性值的创建和操作
+  let string_value = StringValue("test-string")
   
-  // Test string attribute creation
-  assert_eq(string_attr, StringValue("test.value"))
-  
-  // Test string array attribute creation
-  assert_eq(string_array_attr, ArrayStringValue(["item1", "item2", "item3"]))
-  
-  // Test string attribute comparisons
-  let another_string = StringValue("test.value")
-  let different_string = StringValue("different.value")
-  
-  assert_eq(string_attr, another_string)
-  assert_true(string_attr != different_string)
-}
-
-test "attribute value numeric operations" {
-  let int_attr = IntValue(42)
-  let float_attr = FloatValue(3.14159)
-  let int_array_attr = ArrayIntValue([1, 2, 3, 4, 5])
-  
-  // Test numeric attribute creation
-  assert_eq(int_attr, IntValue(42))
-  assert_eq(float_attr, FloatValue(3.14159))
-  assert_eq(int_array_attr, ArrayIntValue([1, 2, 3, 4, 5]))
-  
-  // Test numeric attribute comparisons
-  assert_eq(int_attr, IntValue(42))
-  assert_eq(float_attr, FloatValue(3.14159))
-  
-  // Test different numeric values
-  assert_true(int_attr != IntValue(43))
-  assert_true(float_attr != FloatValue(2.71828))
-}
-
-test "attribute value boolean operations" {
-  let true_attr = BoolValue(true)
-  let false_attr = BoolValue(false)
-  
-  // Test boolean attribute creation
-  assert_eq(true_attr, BoolValue(true))
-  assert_eq(false_attr, BoolValue(false))
-  
-  // Test boolean attribute comparisons
-  assert_true(true_attr != false_attr)
-  assert_eq(true_attr, BoolValue(true))
-  assert_eq(false_attr, BoolValue(false))
-}
-
-test "attribute value type discrimination" {
-  let string_attr = StringValue("test")
-  let int_attr = IntValue(123)
-  let float_attr = FloatValue(45.67)
-  let bool_attr = BoolValue(true)
-  let string_array_attr = ArrayStringValue(["a", "b"])
-  let int_array_attr = ArrayIntValue([1, 2, 3])
-  
-  // Test that different types are not equal
-  assert_true(string_attr != int_attr)
-  assert_true(int_attr != float_attr)
-  assert_true(float_attr != bool_attr)
-  assert_true(bool_attr != string_array_attr)
-  assert_true(string_array_attr != int_array_attr)
-  
-  // Test that same types with same values are equal
-  assert_eq(string_attr, StringValue("test"))
-  assert_eq(int_attr, IntValue(123))
-  assert_eq(float_attr, FloatValue(45.67))
-  assert_eq(bool_attr, BoolValue(true))
-}
-
-test "attribute value edge cases" {
-  // Test empty string
-  let empty_string = StringValue("")
-  assert_eq(empty_string, StringValue(""))
-  
-  // Test zero values
-  let zero_int = IntValue(0)
-  let zero_float = FloatValue(0.0)
-  assert_eq(zero_int, IntValue(0))
-  assert_eq(zero_float, FloatValue(0.0))
-  
-  // Test negative values
-  let negative_int = IntValue(-42)
-  let negative_float = FloatValue(-3.14)
-  assert_eq(negative_int, IntValue(-42))
-  assert_eq(negative_float, FloatValue(-3.14))
-  
-  // Test very large values
-  let large_int = IntValue(2147483647)
-  let large_float = FloatValue(1.7976931348623157e+308)
-  assert_eq(large_int, IntValue(2147483647))
-  assert_eq(large_float, FloatValue(1.7976931348623157e+308))
-}
-
-test "attribute value array operations" {
-  let empty_string_array = ArrayStringValue([])
-  let empty_int_array = ArrayIntValue([])
-  
-  let single_string_array = ArrayStringValue(["single"])
-  let single_int_array = ArrayIntValue([42])
-  
-  let multi_string_array = ArrayStringValue(["first", "second", "third"])
-  let multi_int_array = ArrayIntValue([1, 2, 3, 4, 5])
-  
-  // Test empty arrays
-  assert_eq(empty_string_array, ArrayStringValue([]))
-  assert_eq(empty_int_array, ArrayIntValue([]))
-  
-  // Test single element arrays
-  assert_eq(single_string_array, ArrayStringValue(["single"]))
-  assert_eq(single_int_array, ArrayIntValue([42]))
-  
-  // Test multi-element arrays
-  assert_eq(multi_string_array, ArrayStringValue(["first", "second", "third"]))
-  assert_eq(multi_int_array, ArrayIntValue([1, 2, 3, 4, 5]))
-  
-  // Test array inequality
-  assert_true(empty_string_array != single_string_array)
-  assert_true(single_int_array != multi_int_array)
-  assert_true(multi_string_array != ArrayStringValue(["first", "second"]))
-}
-
-test "attribute value with attributes integration" {
+  // 创建属性集合
   let attrs = Attributes::new()
+  Attributes::set(attrs, "string.key", string_value)
   
-  // Test setting different attribute value types
-  Attributes::set(attrs, "string.key", StringValue("string.value"))
-  Attributes::set(attrs, "int.key", IntValue(100))
-  Attributes::set(attrs, "float.key", FloatValue(99.99))
-  Attributes::set(attrs, "bool.key", BoolValue(true))
-  Attributes::set(attrs, "string.array.key", ArrayStringValue(["a", "b", "c"]))
-  Attributes::set(attrs, "int.array.key", ArrayIntValue([10, 20, 30]))
+  // 获取属性值
+  let retrieved_value = Attributes::get(attrs, "string.key")
+  assert_eq(retrieved_value, Some(StringValue("test-string")))
   
-  // Test retrieving attribute values
-  let string_value = Attributes::get(attrs, "string.key")
-  let int_value = Attributes::get(attrs, "int.key")
-  let float_value = Attributes::get(attrs, "float.key")
-  let bool_value = Attributes::get(attrs, "bool.key")
-  let string_array_value = Attributes::get(attrs, "string.array.key")
-  let int_array_value = Attributes::get(attrs, "int.array.key")
+  // 测试特殊字符串
+  let empty_string = StringValue("")
+  let whitespace_string = StringValue("   ")
+  let unicode_string = StringValue("测试字符串")
+  let special_chars_string = StringValue("!@#$%^&*()")
   
-  // Note: Simplified implementation only returns specific values
-  assert_eq(string_value, Some(StringValue("test_value")))
-  assert_eq(int_value, Some(IntValue(42)))
+  Attributes::set(attrs, "empty.string", empty_string)
+  Attributes::set(attrs, "whitespace.string", whitespace_string)
+  Attributes::set(attrs, "unicode.string", unicode_string)
+  Attributes::set(attrs, "special.chars.string", special_chars_string)
   
-  // Verify operations complete without errors
+  assert_eq(Attributes::get(attrs, "empty.string"), Some(empty_string))
+  assert_eq(Attributes::get(attrs, "whitespace.string"), Some(whitespace_string))
+  assert_eq(Attributes::get(attrs, "unicode.string"), Some(unicode_string))
+  assert_eq(Attributes::get(attrs, "special.chars.string"), Some(special_chars_string))
+  
   assert_true(true)
 }
 
-test "attribute value special characters and encoding" {
-  // Test strings with special characters
-  let unicode_string = StringValue("测试中文")
-  let special_chars = StringValue("special!@#$%^&*()chars")
-  let whitespace_string = StringValue("  spaces		and\nnewlines  ")
-  let json_string = StringValue("{\"key\": \"value\", \"number\": 123}")
-  let url_string = StringValue("https://example.com/path?param=value&other=test")
+test "整数属性值转换" {
+  // 测试整数属性值的创建和操作
+  let int_value = IntValue(42)
   
-  // Test that all strings are created successfully
-  assert_eq(unicode_string, StringValue("测试中文"))
-  assert_eq(special_chars, StringValue("special!@#$%^&*()chars"))
-  assert_eq(whitespace_string, StringValue("  spaces		and\nnewlines  "))
-  assert_eq(json_string, StringValue("{\"key\": \"value\", \"number\": 123}"))
-  assert_eq(url_string, StringValue("https://example.com/path?param=value&other=test"))
+  // 创建属性集合
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "int.key", int_value)
   
-  // Test arrays with special characters
-  let unicode_array = ArrayStringValue(["测试", "中文", "数组"])
-  let special_chars_array = ArrayStringValue(["!@#", "$%^", "&*()"])
+  // 获取属性值
+  let retrieved_value = Attributes::get(attrs, "int.key")
+  assert_eq(retrieved_value, Some(IntValue(42)))
   
-  assert_eq(unicode_array, ArrayStringValue(["测试", "中文", "数组"]))
-  assert_eq(special_chars_array, ArrayStringValue(["!@#", "$%^", "&*()"]))
+  // 测试边界整数
+  let zero_int = IntValue(0)
+  let negative_int = IntValue(-42)
+  let max_int = IntValue(2147483647)
+  let min_int = IntValue(-2147483648)
+  
+  Attributes::set(attrs, "zero.int", zero_int)
+  Attributes::set(attrs, "negative.int", negative_int)
+  Attributes::set(attrs, "max.int", max_int)
+  Attributes::set(attrs, "min.int", min_int)
+  
+  assert_eq(Attributes::get(attrs, "zero.int"), Some(zero_int))
+  assert_eq(Attributes::get(attrs, "negative.int"), Some(negative_int))
+  assert_eq(Attributes::get(attrs, "max.int"), Some(max_int))
+  assert_eq(Attributes::get(attrs, "min.int"), Some(min_int))
+  
+  assert_true(true)
 }
 
-test "attribute value precision and numeric limits" {
-  // Test floating point precision
-  let precise_float = FloatValue(3.14159265358979323846)
-  let scientific_float = FloatValue(1.23e-10)
-  let large_scientific = FloatValue(1.23e+20)
+test "浮点数属性值转换" {
+  // 测试浮点数属性值的创建和操作
+  let float_value = FloatValue(3.14)
   
-  assert_eq(precise_float, FloatValue(3.14159265358979323846))
-  assert_eq(scientific_float, FloatValue(1.23e-10))
-  assert_eq(large_scientific, FloatValue(1.23e+20))
+  // 创建属性集合
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "float.key", float_value)
   
-  // Test integer limits
-  let min_int = IntValue(-2147483648)
-  let max_int = IntValue(2147483647)
+  // 获取属性值
+  let retrieved_value = Attributes::get(attrs, "float.key")
+  assert_eq(retrieved_value, Some(FloatValue(3.14)))
   
-  assert_eq(min_int, IntValue(-2147483648))
-  assert_eq(max_int, IntValue(2147483647))
+  // 测试特殊浮点数
+  let zero_float = FloatValue(0.0)
+  let negative_float = FloatValue(-3.14)
+  let small_float = FloatValue(0.000001)
+  let large_float = FloatValue(1000000.0)
+  let scientific_float = FloatValue(1.23e-4)
   
-  // Test edge case floats
-  let infinity_positive = FloatValue(1.0/0.0)
-  let infinity_negative = FloatValue(-1.0/0.0)
-  let nan_value = FloatValue(0.0/0.0)
+  Attributes::set(attrs, "zero.float", zero_float)
+  Attributes::set(attrs, "negative.float", negative_float)
+  Attributes::set(attrs, "small.float", small_float)
+  Attributes::set(attrs, "large.float", large_float)
+  Attributes::set(attrs, "scientific.float", scientific_float)
   
-  // Test that these values are created (even if they represent special float values)
-  assert_true(true)  // If creation succeeds, test passes
+  assert_eq(Attributes::get(attrs, "zero.float"), Some(zero_float))
+  assert_eq(Attributes::get(attrs, "negative.float"), Some(negative_float))
+  assert_eq(Attributes::get(attrs, "small.float"), Some(small_float))
+  assert_eq(Attributes::get(attrs, "large.float"), Some(large_float))
+  assert_eq(Attributes::get(attrs, "scientific.float"), Some(scientific_float))
+  
+  assert_true(true)
+}
+
+test "布尔属性值转换" {
+  // 测试布尔属性值的创建和操作
+  let bool_value_true = BoolValue(true)
+  let bool_value_false = BoolValue(false)
+  
+  // 创建属性集合
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "bool.true.key", bool_value_true)
+  Attributes::set(attrs, "bool.false.key", bool_value_false)
+  
+  // 获取属性值
+  let retrieved_true = Attributes::get(attrs, "bool.true.key")
+  let retrieved_false = Attributes::get(attrs, "bool.false.key")
+  
+  assert_eq(retrieved_true, Some(BoolValue(true)))
+  assert_eq(retrieved_false, Some(BoolValue(false)))
+  
+  assert_true(true)
+}
+
+test "字符串数组属性值转换" {
+  // 测试字符串数组属性值的创建和操作
+  let string_array_value = ArrayStringValue(["a", "b", "c"])
+  
+  // 创建属性集合
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "string.array.key", string_array_value)
+  
+  // 获取属性值
+  let retrieved_value = Attributes::get(attrs, "string.array.key")
+  assert_eq(retrieved_value, Some(ArrayStringValue(["a", "b", "c"])))
+  
+  // 测试特殊字符串数组
+  let empty_array = ArrayStringValue([])
+  let single_element_array = ArrayStringValue(["single"])
+  let unicode_array = ArrayStringValue(["测试", "字符串", "数组"])
+  let special_chars_array = ArrayStringValue(["!@#", "$%^", "&*()"])
+  
+  Attributes::set(attrs, "empty.array", empty_array)
+  Attributes::set(attrs, "single.element.array", single_element_array)
+  Attributes::set(attrs, "unicode.array", unicode_array)
+  Attributes::set(attrs, "special.chars.array", special_chars_array)
+  
+  assert_eq(Attributes::get(attrs, "empty.array"), Some(empty_array))
+  assert_eq(Attributes::get(attrs, "single.element.array"), Some(single_element_array))
+  assert_eq(Attributes::get(attrs, "unicode.array"), Some(unicode_array))
+  assert_eq(Attributes::get(attrs, "special.chars.array"), Some(special_chars_array))
+  
+  assert_true(true)
+}
+
+test "整数数组属性值转换" {
+  // 测试整数数组属性值的创建和操作
+  let int_array_value = ArrayIntValue([1, 2, 3])
+  
+  // 创建属性集合
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "int.array.key", int_array_value)
+  
+  // 获取属性值
+  let retrieved_value = Attributes::get(attrs, "int.array.key")
+  assert_eq(retrieved_value, Some(ArrayIntValue([1, 2, 3])))
+  
+  // 测试特殊整数数组
+  let empty_int_array = ArrayIntValue([])
+  let single_int_array = ArrayIntValue([42])
+  let negative_int_array = ArrayIntValue([-1, -2, -3])
+  let mixed_int_array = ArrayIntValue([0, 1, -1, 2147483647, -2147483648])
+  
+  Attributes::set(attrs, "empty.int.array", empty_int_array)
+  Attributes::set(attrs, "single.int.array", single_int_array)
+  Attributes::set(attrs, "negative.int.array", negative_int_array)
+  Attributes::set(attrs, "mixed.int.array", mixed_int_array)
+  
+  assert_eq(Attributes::get(attrs, "empty.int.array"), Some(empty_int_array))
+  assert_eq(Attributes::get(attrs, "single.int.array"), Some(single_int_array))
+  assert_eq(Attributes::get(attrs, "negative.int.array"), Some(negative_int_array))
+  assert_eq(Attributes::get(attrs, "mixed.int.array"), Some(mixed_int_array))
+  
+  assert_true(true)
+}
+
+test "混合属性值类型转换" {
+  // 测试混合不同类型的属性值
+  let attrs = Attributes::new()
+  
+  // 添加不同类型的属性
+  Attributes::set(attrs, "string.value", StringValue("test"))
+  Attributes::set(attrs, "int.value", IntValue(42))
+  Attributes::set(attrs, "float.value", FloatValue(3.14))
+  Attributes::set(attrs, "bool.value", BoolValue(true))
+  Attributes::set(attrs, "string.array.value", ArrayStringValue(["a", "b", "c"]))
+  Attributes::set(attrs, "int.array.value", ArrayIntValue([1, 2, 3]))
+  
+  // 验证所有类型的属性值
+  assert_eq(Attributes::get(attrs, "string.value"), Some(StringValue("test")))
+  assert_eq(Attributes::get(attrs, "int.value"), Some(IntValue(42)))
+  assert_eq(Attributes::get(attrs, "float.value"), Some(FloatValue(3.14)))
+  assert_eq(Attributes::get(attrs, "bool.value"), Some(BoolValue(true)))
+  assert_eq(Attributes::get(attrs, "string.array.value"), Some(ArrayStringValue(["a", "b", "c"])))
+  assert_eq(Attributes::get(attrs, "int.array.value"), Some(ArrayIntValue([1, 2, 3])))
+  
+  // 测试覆盖不同类型的值
+  Attributes::set(attrs, "string.value", StringValue("updated"))
+  Attributes::set(attrs, "int.value", IntValue(100))
+  
+  assert_eq(Attributes::get(attrs, "string.value"), Some(StringValue("updated")))
+  assert_eq(Attributes::get(attrs, "int.value"), Some(IntValue(100)))
+  
+  assert_true(true)
+}
+
+test "属性值类型边界条件" {
+  // 测试属性值类型的边界条件
+  let attrs = Attributes::new()
+  
+  // 测试极长字符串
+  let long_string = "a" * 1000
+  Attributes::set(attrs, "long.string", StringValue(long_string))
+  assert_eq(Attributes::get(attrs, "long.string"), Some(StringValue(long_string)))
+  
+  // 测试大整数
+  let large_int = IntValue(2147483647)
+  Attributes::set(attrs, "large.int", large_int)
+  assert_eq(Attributes::get(attrs, "large.int"), Some(large_int))
+  
+  // 测试小整数
+  let small_int = IntValue(-2147483648)
+  Attributes::set(attrs, "small.int", small_int)
+  assert_eq(Attributes::get(attrs, "small.int"), Some(small_int))
+  
+  // 测试极大浮点数
+  let large_float = FloatValue(1.7976931348623157e+308)
+  Attributes::set(attrs, "large.float", large_float)
+  assert_eq(Attributes::get(attrs, "large.float"), Some(large_float))
+  
+  // 测试极小浮点数
+  let small_float = FloatValue(2.2250738585072014e-308)
+  Attributes::set(attrs, "small.float", small_float)
+  assert_eq(Attributes::get(attrs, "small.float"), Some(small_float))
+  
+  // 测试大数组
+  let large_string_array = ArrayStringValue(["item" + i.to_string() for i in range(0, 100)])
+  Attributes::set(attrs, "large.string.array", large_string_array)
+  assert_eq(Attributes::get(attrs, "large.string.array"), Some(large_string_array))
+  
+  let large_int_array = ArrayIntValue([i for i in range(0, 100)])
+  Attributes::set(attrs, "large.int.array", large_int_array)
+  assert_eq(Attributes::get(attrs, "large.int.array"), Some(large_int_array))
+  
+  assert_true(true)
+}
+
+test "属性值类型转换错误处理" {
+  // 测试属性值类型转换的错误处理
+  let attrs = Attributes::new()
+  
+  // 测试不存在的键
+  assert_eq(Attributes::get(attrs, "nonexistent.key"), None)
+  
+  // 测试空属性集合
+  let empty_attrs = Attributes::new()
+  assert_eq(empty_attrs.values.length(), 0)
+  assert_eq(Attributes::get(empty_attrs, "any.key"), None)
+  
+  // 测试覆盖不同类型的值
+  Attributes::set(attrs, "test.key", StringValue("string"))
+  assert_eq(Attributes::get(attrs, "test.key"), Some(StringValue("string")))
+  
+  Attributes::set(attrs, "test.key", IntValue(42))
+  assert_eq(Attributes::get(attrs, "test.key"), Some(IntValue(42)))
+  
+  Attributes::set(attrs, "test.key", FloatValue(3.14))
+  assert_eq(Attributes::get(attrs, "test.key"), Some(FloatValue(3.14)))
+  
+  Attributes::set(attrs, "test.key", BoolValue(true))
+  assert_eq(Attributes::get(attrs, "test.key"), Some(BoolValue(true)))
+  
+  Attributes::set(attrs, "test.key", ArrayStringValue(["a", "b", "c"]))
+  assert_eq(Attributes::get(attrs, "test.key"), Some(ArrayStringValue(["a", "b", "c"])))
+  
+  Attributes::set(attrs, "test.key", ArrayIntValue([1, 2, 3]))
+  assert_eq(Attributes::get(attrs, "test.key"), Some(ArrayIntValue([1, 2, 3])))
+  
+  assert_true(true)
+}
+
+test "属性值类型转换性能" {
+  // 测试属性值类型转换的性能
+  let attrs = Attributes::new()
+  
+  // 测试大量属性设置
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "key" + i.to_string()
+    let value = StringValue("value" + i.to_string())
+    Attributes::set(attrs, key, value)
+  }
+  
+  // 测试大量属性获取
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "key" + i.to_string()
+    let expected_value = StringValue("value" + i.to_string())
+    assert_eq(Attributes::get(attrs, key), Some(expected_value))
+  }
+  
+  // 测试不同类型的混合操作
+  for i = 0; i < 100; i = i + 1 {
+    let string_key = "string.key" + i.to_string()
+    let int_key = "int.key" + i.to_string()
+    let float_key = "float.key" + i.to_string()
+    let bool_key = "bool.key" + i.to_string()
+    
+    Attributes::set(attrs, string_key, StringValue("string" + i.to_string()))
+    Attributes::set(attrs, int_key, IntValue(i))
+    Attributes::set(attrs, float_key, FloatValue(i * 1.1))
+    Attributes::set(attrs, bool_key, BoolValue(i % 2 == 0))
+    
+    assert_eq(Attributes::get(attrs, string_key), Some(StringValue("string" + i.to_string())))
+    assert_eq(Attributes::get(attrs, int_key), Some(IntValue(i)))
+    assert_eq(Attributes::get(attrs, float_key), Some(FloatValue(i * 1.1)))
+    assert_eq(Attributes::get(attrs, bool_key), Some(BoolValue(i % 2 == 0)))
+  }
+  
+  assert_true(true)
 }
