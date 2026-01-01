@@ -1,312 +1,269 @@
-// 错误边界测试用例
-// 测试 Azimuth 遥测系统中的错误处理和边界条件
+// Boundary Condition Error Handling Tests
+// This file contains comprehensive tests for boundary conditions and error handling
 
-test "span_context_invalid_values" {
-  // 测试空的trace_id
-  let empty_trace_ctx = SpanContext::new("", "1234567890abcdef", true, "")
-  assert_false(SpanContext::is_valid(empty_trace_ctx))
-  
-  // 测试空的span_id
-  let empty_span_ctx = SpanContext::new("1234567890abcdef1234567890abcdef", "", true, "")
-  assert_false(SpanContext::is_valid(empty_span_ctx))
-  
-  // 测试两者都为空
+test "span context with invalid trace and span IDs" {
+  // Test span context creation with invalid trace and span IDs
+  let empty_trace_ctx = SpanContext::new("", "valid_span_id", true, "")
+  let empty_span_ctx = SpanContext::new("valid_trace_id", "", true, "")
   let both_empty_ctx = SpanContext::new("", "", true, "")
+  
+  // Verify invalid contexts are properly detected
+  assert_false(SpanContext::is_valid(empty_trace_ctx))
+  assert_false(SpanContext::is_valid(empty_span_ctx))
   assert_false(SpanContext::is_valid(both_empty_ctx))
   
-  // 测试无效长度的trace_id
-  let short_trace_ctx = SpanContext::new("short", "1234567890abcdef", true, "")
-  assert_false(SpanContext::is_valid(short_trace_ctx))
+  // Test with null-like values
+  let null_trace_ctx = SpanContext::new("00000000000000000000000000000000", "valid_span_id", true, "")
+  let null_span_ctx = SpanContext::new("valid_trace_id", "0000000000000000", true, "")
   
-  // 测试无效长度的span_id
-  let short_span_ctx = SpanContext::new("1234567890abcdef1234567890abcdef", "short", true, "")
-  assert_false(SpanContext::is_valid(short_span_ctx))
+  // These should still be considered invalid
+  assert_false(SpanContext::is_valid(null_trace_ctx))
+  assert_false(SpanContext::is_valid(null_span_ctx))
 }
 
-test "attributes_null_and_empty_values" {
+test "attribute value type conversion edge cases" {
+  // Test attribute value type conversion with edge cases
   let attrs = Attributes::new()
   
-  // 测试空字符串值
-  Attributes::set(attrs, "empty.string", StringValue(""))
-  let empty_result = Attributes::get(attrs, "empty.string")
+  // Test with extreme integer values
+  Attributes::set(attrs, "max.int", IntValue(2147483647))
+  Attributes::set(attrs, "min.int", IntValue(-2147483648))
   
-  match empty_result {
-    Some(StringValue(value)) => assert_eq(value, "")
-    _ => assert_true(false, "Expected empty string value")
-  }
+  let max_int = Attributes::get(attrs, "max.int")
+  let min_int = Attributes::get(attrs, "min.int")
   
-  // 测试获取不存在的键
-  let non_existent = Attributes::get(attrs, "non.existent.key")
-  assert_eq(non_existent, None)
+  assert_eq(max_int, Some(IntValue(2147483647)))
+  assert_eq(min_int, Some(IntValue(-2147483648)))
   
-  // 测试特殊字符键
-  Attributes::set(attrs, "special.key!@#$%", StringValue("special_value"))
-  let special_result = Attributes::get(attrs, "special.key!@#$%")
+  // Test with extreme float values
+  Attributes::set(attrs, "max.float", FloatValue(1.7976931348623157e+308))
+  Attributes::set(attrs, "min.float", FloatValue(-1.7976931348623157e+308))
+  Attributes::set(attrs, "inf.float", FloatValue(1.0 / 0.0))
+  Attributes::set(attrs, "neg.inf.float", FloatValue(-1.0 / 0.0))
+  Attributes::set(attrs, "nan.float", FloatValue(0.0 / 0.0))
   
-  match special_result {
-    Some(StringValue(value)) => assert_eq(value, "special_value")
-    _ => assert_true(false, "Expected special character key value")
-  }
+  let max_float = Attributes::get(attrs, "max.float")
+  let min_float = Attributes::get(attrs, "min.float")
+  let inf_float = Attributes::get(attrs, "inf.float")
+  let neg_inf_float = Attributes::get(attrs, "neg.inf.float")
+  let nan_float = Attributes::get(attrs, "nan.float")
+  
+  assert_true(max_float != None)
+  assert_true(min_float != None)
+  assert_true(inf_float != None)
+  assert_true(neg_inf_float != None)
+  assert_true(nan_float != None)
 }
 
-test "context_operations_edge_cases" {
+test "log record with extremely long content" {
+  // Test log record with extremely long content
+  let very_long_string = "This is an extremely long log message that exceeds normal limits. ".repeat(1000)
+  let record = LogRecord::new(Error, very_long_string)
+  
+  // Verify the log record handles long content
+  assert_eq(LogRecord::severity_number(record), Error)
+  assert_eq(LogRecord::body(record), Some(very_long_string))
+  
+  // Test with empty and whitespace-only content
+  let empty_record = LogRecord::new(Info, "")
+  let whitespace_record = LogRecord::new(Warn, "   \n\t   ")
+  
+  assert_eq(LogRecord::body(empty_record), Some(""))
+  assert_eq(LogRecord::body(whitespace_record), Some("   \n\t   "))
+}
+
+test "context operations with null and empty values" {
+  // Test context operations with null and empty values
   let ctx = Context::root()
-  
-  // 测试空键
   let empty_key = ContextKey::new("")
-  let ctx_with_empty_key = Context::with_value(ctx, empty_key, "empty_key_value")
-  let empty_key_result = Context::get(ctx_with_empty_key, empty_key)
-  assert_eq(empty_key_result, Some("empty_key_value"))
+  let null_key = ContextKey::new("null.key")
+  let empty_value = ""
   
-  // 测试空值
-  let normal_key = ContextKey::new("normal.key")
-  let ctx_with_empty_value = Context::with_value(ctx, normal_key, "")
-  let empty_value_result = Context::get(ctx_with_empty_value, normal_key)
-  assert_eq(empty_value_result, Some(""))
+  // Test with empty key
+  let ctx_with_empty_key = Context::with_value(ctx, empty_key, "test.value")
+  let retrieved_empty = Context::get(ctx_with_empty_key, empty_key)
   
-  // 测试长键和值
-  let long_key = ContextKey::new("this.is.a.very.long.key.that.might.be.used.in.some.scenarios")
-  let long_value = "this.is.a.very.long.value.that.contains.a.lot.of.information"
-  let ctx_with_long = Context::with_value(ctx, long_key, long_value)
-  let long_result = Context::get(ctx_with_long, long_key)
-  assert_eq(long_result, Some(long_value))
+  // Test with empty value
+  let ctx_with_empty_value = Context::with_value(ctx, null_key, empty_value)
+  let retrieved_empty_value = Context::get(ctx_with_empty_value, null_key)
   
-  // 测试特殊字符
-  let special_key = ContextKey::new("key.with.special.chars!@#$%^&*()")
-  let special_value = "value.with.special.chars!@#$%^&*()"
-  let ctx_with_special = Context::with_value(ctx, special_key, special_value)
-  let special_result = Context::get(ctx_with_special, special_key)
-  assert_eq(special_result, Some(special_value))
+  // Test retrieval of non-existent keys
+  let missing_key = ContextKey::new("non.existent.key")
+  let missing_value = Context::get(ctx, missing_key)
+  
+  assert_true(retrieved_empty != None)
+  assert_eq(retrieved_empty_value, Some(""))
+  assert_eq(missing_value, None)
 }
 
-test "log_record_boundary_conditions" {
-  // 测试空消息
-  let empty_message = LogRecord::new(Info, "")
-  assert_eq(LogRecord::body(empty_message), Some(""))
-  
-  // 测试非常长的消息
-  let long_message = "This is a very long log message that contains a lot of detail. ".repeat(100)
-  let long_record = LogRecord::new(Error, long_message)
-  assert_eq(LogRecord::body(long_record), Some(long_message))
-  
-  // 测试包含特殊字符的消息
-  let special_chars = "Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?\\"
-  let special_record = LogRecord::new(Warn, special_chars)
-  assert_eq(LogRecord::body(special_record), Some(special_chars))
-  
-  // 测试Unicode字符
-  let unicode_message = "Unicode test: 中文测试 🚀 emoji test ñáéíóú"
-  let unicode_record = LogRecord::new(Info, unicode_message)
-  assert_eq(LogRecord::body(unicode_record), Some(unicode_message))
-  
-  // 测试换行符和其他控制字符
-  let control_chars = "Line 1\nLine 2\tTabbed\rCarriage return"
-  let control_record = LogRecord::new(Debug, control_chars)
-  assert_eq(LogRecord::body(control_record), Some(control_chars))
-}
-
-test "meter_instrument_boundary_conditions" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "boundary.test")
-  
-  // 测试空名称
-  let empty_name_counter = Meter::create_counter(meter, "")
-  assert_eq(empty_name_counter.name, "")
-  
-  // 测试非常长的名称
-  let long_name = "this.is.a.very.long.instrument.name.that.exceeds.normal.expectations".repeat(10)
-  let long_name_counter = Meter::create_counter(meter, long_name)
-  assert_eq(long_name_counter.name, long_name)
-  
-  // 测试特殊字符名称
-  let special_name = "test.counter!@#$%^&*()"
-  let special_counter = Meter::create_counter(meter, special_name)
-  assert_eq(special_counter.name, special_name)
-  
-  // 测试极限值
-  let counter = Meter::create_counter(meter, "boundary.counter")
-  Counter::add(counter, 0.0)
-  Counter::add(counter, -1.0)
-  Counter::add(counter, 999999999.0)
-  Counter::add(counter, -999999999.0)
-  Counter::add(counter, 0.0000001)
-  Counter::add(counter, -0.0000001)
-  
-  // 测试直方图极限值
-  let histogram = Meter::create_histogram(meter, "boundary.histogram")
-  Histogram::record(histogram, 0.0)
-  Histogram::record(histogram, -1.0)
-  Histogram::record(histogram, 999999999.0)
-  Histogram::record(histogram, 0.0000001)
-  
-  assert_true(true)
-}
-
-test "text_map_carrier_boundary_conditions" {
-  let carrier = TextMapCarrier::new()
-  
-  // 测试空键和值
-  TextMapCarrier::set(carrier, "", "")
-  let empty_key_result = TextMapCarrier::get(carrier, "")
-  assert_eq(empty_key_result, None)
-  
-  // 测试长键和值
-  let long_key = "this.is.a.very.long.header.name.that.might.be.used".repeat(10)
-  let long_value = "this.is.a.very.long.header.value.that.contains.a.lot.of.data".repeat(10)
-  TextMapCarrier::set(carrier, long_key, long_value)
-  let long_key_result = TextMapCarrier::get(carrier, long_key)
-  assert_eq(long_key_result, None)
-  
-  // 测试特殊字符键和值
-  let special_key = "X-Special-Header!@#$%^&*()"
-  let special_value = "Special value with !@#$%^&*() characters"
-  TextMapCarrier::set(carrier, special_key, special_value)
-  let special_result = TextMapCarrier::get(carrier, special_key)
-  assert_eq(special_result, None)
-  
-  // 测试Unicode键和值
-  let unicode_key = "X-Unicode-Header-中文"
-  let unicode_value = "Unicode value with 中文 and 🚀 emoji"
-  TextMapCarrier::set(carrier, unicode_key, unicode_value)
-  let unicode_result = TextMapCarrier::get(carrier, unicode_key)
-  assert_eq(unicode_result, None)
-}
-
-test "baggage_operations_boundary_conditions" {
+test "baggage operations with special characters" {
+  // Test baggage operations with special characters and edge cases
   let baggage = Baggage::new()
   
-  // 测试空键和值
-  let baggage1 = Baggage::set_entry(baggage, "", "")
-  let empty_key_result = Baggage::get_entry(baggage1, "")
-  assert_eq(empty_key_result, None)
+  // Test with special characters in keys and values
+  let special_key = "special.key.with.dots.and-underscores_and@symbols"
+  let special_value = "value with spaces & special chars!@#$%^&*(){}[]|\\:;\"'<>?,./"
   
-  // 测试长键和值
-  let long_key = "this.is.a.very.long.baggage.key.that.exceeds.expectations".repeat(10)
-  let long_value = "this.is.a.very.long.baggage.value.with.lots.of.data".repeat(10)
-  let baggage2 = Baggage::set_entry(baggage1, long_key, long_value)
-  let long_key_result = Baggage::get_entry(baggage2, long_key)
-  assert_eq(long_key_result, None)
+  baggage = Baggage::set_entry(baggage, special_key, special_value)
+  let retrieved_special = Baggage::get_entry(baggage, special_key)
   
-  // 测试特殊字符键和值
-  let special_key = "special.key!@#$%^&*()"
-  let special_value = "special.value!@#$%^&*()"
-  let baggage3 = Baggage::set_entry(baggage2, special_key, special_value)
-  let special_result = Baggage::get_entry(baggage3, special_key)
-  assert_eq(special_result, None)
+  // Test with Unicode characters
+  let unicode_key = "unicode.键"
+  let unicode_value = "Unicode 值 with émojis 🚀🎉 and accent café"
   
-  // 测试Unicode键和值
-  let unicode_key = "unicode.key.中文"
-  let unicode_value = "unicode.value.中文.🚀"
-  let baggage4 = Baggage::set_entry(baggage3, unicode_key, unicode_value)
-  let unicode_result = Baggage::get_entry(baggage4, unicode_key)
-  assert_eq(unicode_result, None)
+  baggage = Baggage::set_entry(baggage, unicode_key, unicode_value)
+  let retrieved_unicode = Baggage::get_entry(baggage, unicode_key)
+  
+  // Test with very long key and value
+  let long_key = "very.long.key.".repeat(100)
+  let long_value = "very.long.value.".repeat(100)
+  
+  baggage = Baggage::set_entry(baggage, long_key, long_value)
+  let retrieved_long = Baggage::get_entry(baggage, long_key)
+  
+  assert_eq(retrieved_special, Some(special_value))
+  assert_eq(retrieved_unicode, Some(unicode_value))
+  assert_eq(retrieved_long, Some(long_value))
 }
 
-test "resource_operations_boundary_conditions" {
-  let resource = Resource::new()
-  
-  // 测试空属性名和值
-  let empty_attrs = [("", StringValue(""))]
-  let resource_with_empty = Resource::with_attributes(resource, empty_attrs)
-  let empty_result = Resource::get_attribute(resource_with_empty, "")
-  assert_eq(empty_result, None)
-  
-  // 测试长属性名和值
-  let long_name = "this.is.a.very.long.attribute.name.that.exceeds.expectations".repeat(10)
-  let long_value = "this.is.a.very.long.attribute.value.with.lots.of.data".repeat(10)
-  let long_attrs = [(long_name, StringValue(long_value))]
-  let resource_with_long = Resource::with_attributes(resource, long_attrs)
-  let long_result = Resource::get_attribute(resource_with_long, long_name)
-  assert_eq(long_result, None)
-  
-  // 测试特殊字符属性名和值
-  let special_name = "special.attribute!@#$%^&*()"
-  let special_value = "special.attribute.value!@#$%^&*()"
-  let special_attrs = [(special_name, StringValue(special_value))]
-  let resource_with_special = Resource::with_attributes(resource, special_attrs)
-  let special_result = Resource::get_attribute(resource_with_special, special_name)
-  assert_eq(special_result, None)
-  
-  // 测试Unicode属性名和值
-  let unicode_name = "unicode.attribute.中文"
-  let unicode_value = "unicode.attribute.value.中文.🚀"
-  let unicode_attrs = [(unicode_name, StringValue(unicode_value))]
-  let resource_with_unicode = Resource::with_attributes(resource, unicode_attrs)
-  let unicode_result = Resource::get_attribute(resource_with_unicode, unicode_name)
-  assert_eq(unicode_result, None)
-}
-
-test "propagation_boundary_conditions" {
-  let ctx = Context::root()
+test "text map carrier with malformed headers" {
+  // Test text map carrier with malformed headers
   let carrier = TextMapCarrier::new()
   
-  // 测试空载体上的传播
-  let empty_carrier = TextMapCarrier::new()
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CTraceContextPropagator::new()
+  // Test with malformed traceparent headers
+  TextMapCarrier::set(carrier, "traceparent", "") // Empty
+  TextMapCarrier::set(carrier, "traceparent", "malformed-header") // Malformed
+  TextMapCarrier::set(carrier, "traceparent", "00-too-short") // Too short
+  TextMapCarrier::set(carrier, "traceparent", "00-11112222333344445555666677778888-aaaabbbbccccdddd-03") // Invalid flags
   
-  let propagators = [trace_propagator, baggage_propagator]
-  let composite = CompositePropagator::new(propagators)
+  // Test retrieval of malformed headers
+  let empty_header = TextMapCarrier::get(carrier, "traceparent")
+  let malformed_header = TextMapCarrier::get(carrier, "traceparent")
   
-  let extracted_from_empty = CompositePropagator::extract(composite, empty_carrier)
-  let empty_result = Context::get(extracted_from_empty, ContextKey::new("extracted"))
-  assert_eq(empty_result, Some("true"))
+  // Test with headers containing null bytes and special characters
+  TextMapCarrier::set(carrier, "special.header", "value\x00with\x00null\x00bytes")
+  TextMapCarrier::set(carrier, "unicode.header", "Unicode value with 🚀 emojis")
   
-  // 测试无效格式的头部
-  TextMapCarrier::set(carrier, "traceparent", "invalid-format")
-  TextMapCarrier::set(carrier, "baggage", "invalid-baggage-format")
+  let special_header = TextMapCarrier::get(carrier, "special.header")
+  let unicode_header = TextMapCarrier::get(carrier, "unicode.header")
   
-  let extracted_from_invalid = CompositePropagator::extract(composite, carrier)
-  let invalid_result = Context::get(extracted_from_invalid, ContextKey::new("extracted"))
-  assert_eq(invalid_result, Some("true"))
-  
-  // 测试空头部值
-  let empty_value_carrier = TextMapCarrier::new()
-  TextMapCarrier::set(empty_value_carrier, "traceparent", "")
-  TextMapCarrier::set(empty_value_carrier, "baggage", "")
-  
-  let extracted_from_empty_values = CompositePropagator::extract(composite, empty_value_carrier)
-  let empty_values_result = Context::get(extracted_from_empty_values, ContextKey::new("extracted"))
-  assert_eq(empty_values_result, Some("true"))
+  // Verify headers are stored and retrieved (even if malformed)
+  assert_true(empty_header != None)
+  assert_true(malformed_header != None)
+  assert_true(special_header != None)
+  assert_true(unicode_header != None)
 }
 
-test "span_operations_boundary_conditions" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "boundary.test")
+test "resource operations with extreme attribute counts" {
+  // Test resource operations with extreme numbers of attributes
+  let resource = Resource::new()
   
-  // 测试空名称的span
-  let empty_span = Tracer::start_span(tracer, "")
-  assert_eq(Span::name(empty_span), "")
+  // Create large number of attributes
+  let mut large_attrs = []
+  for i = 0; i < 1000; i = i + 1 {
+    large_attrs = large_attrs.push(("attr." + i.to_string(), StringValue("value." + i.to_string())))
+  }
   
-  // 测试长名称的span
-  let long_name = "this.is.a.very.long.span.name.that.exceeds.expectations".repeat(10)
-  let long_span = Tracer::start_span(tracer, long_name)
-  assert_eq(Span::name(long_span), long_name)
+  let resource_with_many_attrs = Resource::with_attributes(resource, large_attrs)
   
-  // 测试特殊字符名称的span
-  let special_name = "span.name!@#$%^&*()"
-  let special_span = Tracer::start_span(tracer, special_name)
-  assert_eq(Span::name(special_span), special_name)
+  // Test retrieval of attributes from large resource
+  let first_attr = Resource::get_attribute(resource_with_many_attrs, "attr.0")
+  let middle_attr = Resource::get_attribute(resource_with_many_attrs, "attr.500")
+  let last_attr = Resource::get_attribute(resource_with_many_attrs, "attr.999")
+  let missing_attr = Resource::get_attribute(resource_with_many_attrs, "attr.1000")
   
-  // 测试Unicode名称的span
-  let unicode_name = "span.name.中文.🚀"
-  let unicode_span = Tracer::start_span(tracer, unicode_name)
-  assert_eq(Span::name(unicode_span), unicode_name)
+  // Test merge of resources with many attributes
+  let override_resource = Resource::new()
+  let mut override_attrs = []
+  for i = 0; i < 500; i = i + 1 {
+    override_attrs = override_attrs.push(("override.attr." + i.to_string(), StringValue("override.value." + i.to_string())))
+  }
+  let override_with_attrs = Resource::with_attributes(override_resource, override_attrs)
   
-  // 测试span状态操作
-  Span::set_status(empty_span, Error)
-  Span::set_status(long_span, Ok)
-  Span::set_status(special_span, Unset)
+  let merged = Resource::merge(resource_with_many_attrs, override_with_attrs)
+  let merged_attr = Resource::get_attribute(merged, "override.attr.0")
   
-  Span::add_event(empty_span, "empty span event")
-  Span::add_event(long_span, "long span event")
-  Span::add_event(special_span, "special span event")
-  Span::add_event(unicode_span, "unicode span event")
+  assert_eq(first_attr, Some(StringValue("value.0")))
+  assert_eq(middle_attr, Some(StringValue("value.500")))
+  assert_eq(last_attr, Some(StringValue("value.999")))
+  assert_eq(missing_attr, None)
+  assert_eq(merged_attr, Some(StringValue("override.value.0")))
+}
+
+test "metrics with extreme values" {
+  // Test metrics with extreme values
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "extreme-test")
+  let counter = Meter::create_counter(meter, "extreme.counter")
+  let histogram = Meter::create_histogram(meter, "extreme.histogram")
+  let updown_counter = Meter::create_updown_counter(meter, "extreme.updown")
   
-  Span::end(empty_span)
-  Span::end(long_span)
-  Span::end(special_span)
-  Span::end(unicode_span)
+  // Test with extreme counter values
+  Counter::add(counter, 1.7976931348623157e+308) // Max double
+  Counter::add(counter, -1.7976931348623157e+308) // Min double
+  Counter::add(counter, 1.0 / 0.0) // Infinity
+  Counter::add(counter, -1.0 / 0.0) // Negative infinity
+  Counter::add(counter, 0.0 / 0.0) // NaN
   
+  // Test with extreme histogram values
+  Histogram::record(histogram, 1.7976931348623157e+308)
+  Histogram::record(histogram, -1.7976931348623157e+308)
+  Histogram::record(histogram, 1.0 / 0.0)
+  Histogram::record(histogram, -1.0 / 0.0)
+  Histogram::record(histogram, 0.0 / 0.0)
+  
+  // Test with extreme updown counter values
+  UpDownCounter::add(updown_counter, 1.7976931348623157e+308)
+  UpDownCounter::add(updown_counter, -1.7976931348623157e+308)
+  
+  // Verify operations complete without errors
   assert_true(true)
+}
+
+test "span operations with invalid states" {
+  // Test span operations with invalid states
+  let invalid_ctx = SpanContext::new("", "", false, "")
+  let span = Span::new("test.span", Internal, invalid_ctx)
+  
+  // Test operations on invalid span
+  let span_name = Span::name(span)
+  let span_kind = Span::kind(span)
+  let is_recording = Span::is_recording(span)
+  let span_context = Span::span_context(span)
+  
+  // Test status and event operations
+  Span::set_status(span, Error, "Test error")
+  Span::add_event(span, "Test event")
+  Span::end(span)
+  
+  // Verify operations handle invalid state gracefully
+  assert_eq(span_name, "test.span")
+  assert_eq(span_kind, Internal)
+  assert_true(is_recording) // Even with invalid context
+  assert_false(SpanContext::is_valid(span_context))
+}
+
+test "propagator operations with invalid data" {
+  // Test propagator operations with invalid data
+  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
+  let ctx = Context::root()
+  
+  // Test with invalid carrier
+  let empty_carrier = TextMapCarrier::new()
+  let invalid_carrier = TextMapCarrier::new()
+  TextMapCarrier::set(invalid_carrier, "traceparent", "invalid-traceparent-format")
+  
+  // Test injection and extraction with invalid data
+  CompositePropagator::inject(propagator, ctx, empty_carrier)
+  let extracted_from_empty = CompositePropagator::extract(propagator, empty_carrier)
+  
+  CompositePropagator::inject(propagator, ctx, invalid_carrier)
+  let extracted_from_invalid = CompositePropagator::extract(propagator, invalid_carrier)
+  
+  // Test with null context
+  CompositePropagator::inject(propagator, ctx, invalid_carrier)
+  
+  // Verify operations handle invalid data gracefully
+  assert_true(extracted_from_empty != Context::root())
+  assert_true(extracted_from_invalid != Context::root())
 }
