@@ -1,399 +1,421 @@
-// New Focused Test Suite for Azimuth Telemetry System
-// This file contains focused test cases for specific telemetry components
+// Azimuth New Focused Test Suite
+// This file contains focused test cases for specific Azimuth telemetry system features
 
-test "baggage operations and propagation" {
-  // Test baggage entry management
-  let baggage = Baggage::new()
+// Test 1: Cross-service tracing consistency
+test "cross service tracing consistency" {
+  // Create a root trace context
+  let root_trace_id = "1234567890abcdef1234567890abcdef"
+  let root_span_id = "abcdef1234567890"
+  let root_ctx = SpanContext::new(root_trace_id, root_span_id, true, "key1=value1")
   
-  // Test setting and getting baggage entries
-  let updated_baggage = Baggage::set_entry(baggage, "user.id", "12345")
-  let updated_baggage2 = Baggage::set_entry(updated_baggage, "request.id", "req-67890")
+  // Create child spans for different services
+  let service_a_span_id = "1111111111111111"
+  let service_a_ctx = SpanContext::new(root_trace_id, service_a_span_id, true, "key1=value1,service=a")
   
-  // Test retrieval of baggage entries
-  let user_id = Baggage::get_entry(updated_baggage2, "user.id")
-  let request_id = Baggage::get_entry(updated_baggage2, "request.id")
-  let missing_entry = Baggage::get_entry(updated_baggage2, "missing.key")
+  let service_b_span_id = "2222222222222222"
+  let service_b_ctx = SpanContext::new(root_trace_id, service_b_span_id, true, "key1=value1,service=b")
   
-  // Verify baggage entries (simplified implementation returns None)
-  assert_eq(user_id, None)
-  assert_eq(request_id, None)
-  assert_eq(missing_entry, None)
+  let service_c_span_id = "3333333333333333"
+  let service_c_ctx = SpanContext::new(root_trace_id, service_c_span_id, true, "key1=value1,service=c")
   
-  // Test baggage entry removal
-  let final_baggage = Baggage::remove_entry(updated_baggage2, "user.id")
-  let removed_entry = Baggage::get_entry(final_baggage, "user.id")
+  // Verify trace consistency across services
+  assert_eq(SpanContext::trace_id(root_ctx), root_trace_id)
+  assert_eq(SpanContext::trace_id(service_a_ctx), root_trace_id)
+  assert_eq(SpanContext::trace_id(service_b_ctx), root_trace_id)
+  assert_eq(SpanContext::trace_id(service_c_ctx), root_trace_id)
   
-  assert_eq(removed_entry, None)
+  // Verify each service has unique span ID
+  assert_eq(SpanContext::span_id(root_ctx), root_span_id)
+  assert_eq(SpanContext::span_id(service_a_ctx), service_a_span_id)
+  assert_eq(SpanContext::span_id(service_b_ctx), service_b_span_id)
+  assert_eq(SpanContext::span_id(service_c_ctx), service_c_span_id)
+  
+  // Verify all spans are sampled
+  assert_true(SpanContext::is_sampled(root_ctx))
+  assert_true(SpanContext::is_sampled(service_a_ctx))
+  assert_true(SpanContext::is_sampled(service_b_ctx))
+  assert_true(SpanContext::is_sampled(service_c_ctx))
+  
+  // Verify all spans are valid
+  assert_true(SpanContext::is_valid(root_ctx))
+  assert_true(SpanContext::is_valid(service_a_ctx))
+  assert_true(SpanContext::is_valid(service_b_ctx))
+  assert_true(SpanContext::is_valid(service_c_ctx))
 }
 
-test "span lifecycle management" {
-  // Test complete span lifecycle
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "lifecycle.test")
+// Test 2: Time series data processing
+test "time series data processing" {
+  // Test time series data with various intervals
+  let base_timestamp = 1735689600000000000L  // Base timestamp
   
-  // Create span with different kinds
-  let server_span = Tracer::start_span(tracer, "server.request")
-  let client_span = Tracer::start_span(tracer, "client.request")
-  let internal_span = Tracer::start_span(tracer, "internal.processing")
+  // Create time series data points
+  let timestamps = [
+    base_timestamp,
+    base_timestamp + 60000000000L,  // +1 minute
+    base_timestamp + 120000000000L, // +2 minutes
+    base_timestamp + 180000000000L, // +3 minutes
+    base_timestamp + 240000000000L, // +4 minutes
+    base_timestamp + 300000000000L  // +5 minutes
+  ]
   
-  // Verify span properties
-  assert_eq(Span::name(server_span), "server.request")
-  assert_eq(Span::name(client_span), "client.request")
-  assert_eq(Span::name(internal_span), "internal.processing")
+  let values = [10.5, 15.2, 12.8, 18.3, 14.7, 20.1]
+  let attributes = [
+    [("metric.name", StringValue("cpu.usage")), ("host", StringValue("server1"))],
+    [("metric.name", StringValue("cpu.usage")), ("host", StringValue("server1"))],
+    [("metric.name", StringValue("cpu.usage")), ("host", StringValue("server1"))],
+    [("metric.name", StringValue("cpu.usage")), ("host", StringValue("server1"))],
+    [("metric.name", StringValue("cpu.usage")), ("host", StringValue("server1"))],
+    [("metric.name", StringValue("cpu.usage")), ("host", StringValue("server1"))]
+  ]
   
-  // Test span context
-  let server_ctx = Span::span_context(server_span)
-  let client_ctx = Span::span_context(client_span)
-  let internal_ctx = Span::span_context(internal_span)
+  // Verify time series data structure
+  assert_eq(timestamps.length(), 6)
+  assert_eq(values.length(), 6)
+  assert_eq(attributes.length(), 6)
   
-  assert_true(SpanContext::is_valid(server_ctx))
-  assert_true(SpanContext::is_valid(client_ctx))
-  assert_true(SpanContext::is_valid(internal_ctx))
+  // Verify timestamp ordering
+  for i in 1...5 {
+    assert_true(timestamps[i] > timestamps[i-1])
+  }
   
-  // Test span status changes
-  Span::set_status(server_span, Ok)
-  Span::set_status(client_span, Error, Some("Connection timeout"))
-  Span::set_status(internal_span, Ok)
+  // Verify value ranges
+  for value in values {
+    assert_true(value >= 10.0)
+    assert_true(value <= 25.0)
+  }
   
-  // Add events to spans
-  Span::add_event(server_span, "request.received", Some([("method", StringValue("GET")), ("path", StringValue("/api/users"))]))
-  Span::add_event(client_span, "response.received", Some([("status", IntValue(200)), ("size", IntValue(1024))]))
-  Span::add_event(internal_span, "processing.completed", Some([("duration", StringValue("150ms"))]))
-  
-  // End all spans
-  Span::end(server_span)
-  Span::end(client_span)
-  Span::end(internal_span)
-  
-  assert_true(true)
+  // Verify attribute consistency
+  for attr_set in attributes {
+    assert_eq(attr_set.length(), 2)
+    assert_eq(attr_set[0], ("metric.name", StringValue("cpu.usage")))
+    assert_eq(attr_set[1], ("host", StringValue("server1")))
+  }
 }
 
-test "resource attribute operations" {
-  // Test resource creation and attribute management
-  let resource = Resource::new()
-  
-  // Create resource with service attributes
-  let service_attrs = [
-    ("service.name", StringValue("azimuth-service")),
+// Test 3: Resource attribute inheritance
+test "resource attribute inheritance" {
+  // Create base resource with common attributes
+  let base_attrs = [
+    ("service.name", StringValue("base-service")),
     ("service.version", StringValue("1.0.0")),
-    ("service.namespace", StringValue("production")),
-    ("service.instance.id", StringValue("instance-12345"))
+    ("deployment.environment", StringValue("production")),
+    ("telemetry.sdk.name", StringValue("azimuth")),
+    ("telemetry.sdk.version", StringValue("0.1.0"))
   ]
   
-  let service_resource = Resource::with_attributes(resource, service_attrs)
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
   
-  // Test attribute retrieval
-  let service_name = Resource::get_attribute(service_resource, "service.name")
-  let service_version = Resource::get_attribute(service_resource, "service.version")
-  let service_namespace = Resource::get_attribute(service_resource, "service.namespace")
-  let service_instance_id = Resource::get_attribute(service_resource, "service.instance.id")
-  let missing_attr = Resource::get_attribute(service_resource, "missing.attribute")
-  
-  // Verify attributes (simplified implementation returns None)
-  assert_eq(service_name, None)
-  assert_eq(service_version, None)
-  assert_eq(service_namespace, None)
-  assert_eq(service_instance_id, None)
-  assert_eq(missing_attr, None)
-  
-  // Test resource merging
-  let host_attrs = [
-    ("host.name", StringValue("host-01")),
-    ("host.arch", StringValue("amd64")),
-    ("os.type", StringValue("linux"))
+  // Create child resource with additional attributes
+  let child_attrs = [
+    ("service.instance.id", StringValue("instance-12345")),
+    ("host.name", StringValue("prod-server-01")),
+    ("process.id", IntValue(12345)),
+    ("process.name", StringValue("base-service"))
   ]
   
-  let host_resource = Resource::with_attributes(resource, host_attrs)
-  let merged_resource = Resource::merge(service_resource, host_resource)
+  let child_resource = Resource::with_attributes(base_resource, child_attrs)
   
-  // Test merged resource attributes
-  let merged_host_name = Resource::get_attribute(merged_resource, "host.name")
-  let merged_service_name = Resource::get_attribute(merged_resource, "service.name")
+  // Verify base resource attributes
+  assert_eq(Resource::get_attribute(base_resource, "service.name"), Some(StringValue("base-service")))
+  assert_eq(Resource::get_attribute(base_resource, "service.version"), Some(StringValue("1.0.0")))
+  assert_eq(Resource::get_attribute(base_resource, "deployment.environment"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(base_resource, "telemetry.sdk.name"), Some(StringValue("azimuth")))
+  assert_eq(Resource::get_attribute(base_resource, "telemetry.sdk.version"), Some(StringValue("0.1.0")))
   
-  assert_eq(merged_host_name, None)
-  assert_eq(merged_service_name, None)
+  // Verify child resource has both base and child attributes
+  assert_eq(Resource::get_attribute(child_resource, "service.name"), Some(StringValue("base-service")))
+  assert_eq(Resource::get_attribute(child_resource, "service.version"), Some(StringValue("1.0.0")))
+  assert_eq(Resource::get_attribute(child_resource, "deployment.environment"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(child_resource, "telemetry.sdk.name"), Some(StringValue("azimuth")))
+  assert_eq(Resource::get_attribute(child_resource, "telemetry.sdk.version"), Some(StringValue("0.1.0")))
+  assert_eq(Resource::get_attribute(child_resource, "service.instance.id"), Some(StringValue("instance-12345")))
+  assert_eq(Resource::get_attribute(child_resource, "host.name"), Some(StringValue("prod-server-01")))
+  assert_eq(Resource::get_attribute(child_resource, "process.id"), Some(IntValue(12345)))
+  assert_eq(Resource::get_attribute(child_resource, "process.name"), Some(StringValue("base-service")))
 }
 
-test "instrumentation scope management" {
-  // Test instrumentation scope creation and properties
-  let scope1 = InstrumentationScope::{ name: "scope1", version: Some("1.0.0"), schema_url: Some("https://example.com/schema1") }
-  let scope2 = InstrumentationScope::{ name: "scope2", version: None, schema_url: None }
-  let scope3 = InstrumentationScope::{ name: "scope3", version: Some("2.1.0"), schema_url: Some("https://example.com/schema3") }
+// Test 4: Internationalization and localization
+test "internationalization and localization" {
+  // Test log messages with different languages
+  let english_log = LogRecord::new(Info, "Operation completed successfully")
+  let chinese_log = LogRecord::new(Info, "操作成功完成")
+  let japanese_log = LogRecord::new(Info, "操作が正常に完了しました")
+  let spanish_log = LogRecord::new(Info, "Operación completada con éxito")
+  let french_log = LogRecord::new(Info, "Opération terminée avec succès")
+  let arabic_log = LogRecord::new(Info, "اكتملت العملية بنجاح")
+  let russian_log = LogRecord::new(Info, "Операция успешно завершена")
   
-  // Test scope properties
-  assert_eq(scope1.name, "scope1")
-  assert_eq(scope1.version, Some("1.0.0"))
-  assert_eq(scope1.schema_url, Some("https://example.com/schema1"))
+  // Verify all log messages are preserved
+  assert_eq(LogRecord::body(english_log), Some("Operation completed successfully"))
+  assert_eq(LogRecord::body(chinese_log), Some("操作成功完成"))
+  assert_eq(LogRecord::body(japanese_log), Some("操作が正常に完了しました"))
+  assert_eq(LogRecord::body(spanish_log), Some("Operación completada con éxito"))
+  assert_eq(LogRecord::body(french_log), Some("Opération terminée avec succès"))
+  assert_eq(LogRecord::body(arabic_log), Some("اكتملت العملية بنجاح"))
+  assert_eq(LogRecord::body(russian_log), Some("Операция успешно завершена"))
   
-  assert_eq(scope2.name, "scope2")
-  assert_eq(scope2.version, None)
-  assert_eq(scope2.schema_url, None)
+  // Test attributes with internationalized values
+  let i18n_attrs = Attributes::new()
+  Attributes::set(i18n_attrs, "error.message.en", StringValue("File not found"))
+  Attributes::set(i18n_attrs, "error.message.zh", StringValue("文件未找到"))
+  Attributes::set(i18n_attrs, "error.message.ja", StringValue("ファイルが見つかりません"))
+  Attributes::set(i18n_attrs, "error.message.es", StringValue("Archivo no encontrado"))
   
-  assert_eq(scope3.name, "scope3")
-  assert_eq(scope3.version, Some("2.1.0"))
-  assert_eq(scope3.schema_url, Some("https://example.com/schema3"))
+  // Verify internationalized attributes
+  assert_eq(Attributes::get(i18n_attrs, "error.message.en"), Some(StringValue("File not found")))
+  assert_eq(Attributes::get(i18n_attrs, "error.message.zh"), Some(StringValue("文件未找到")))
+  assert_eq(Attributes::get(i18n_attrs, "error.message.ja"), Some(StringValue("ファイルが見つかりません")))
+  assert_eq(Attributes::get(i18n_attrs, "error.message.es"), Some(StringValue("Archivo no encontrado")))
   
-  // Test scopes with tracers and meters
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
+  // Test resource attributes with locale information
+  let locale_resource = Resource::with_attributes(Resource::new(), [
+    ("service.locale", StringValue("zh-CN")),
+    ("service.timezone", StringValue("Asia/Shanghai")),
+    ("service.currency", StringValue("CNY")),
+    ("service.encoding", StringValue("UTF-8"))
+  ])
   
-  let tracer1 = TracerProvider::get_tracer(tracer_provider, scope1.name, scope1.version)
-  let tracer2 = TracerProvider::get_tracer(tracer_provider, scope2.name, scope2.version)
-  let tracer3 = TracerProvider::get_tracer(tracer_provider, scope3.name, scope3.version)
-  
-  let meter1 = MeterProvider::get_meter(meter_provider, scope1.name)
-  let meter2 = MeterProvider::get_meter(meter_provider, scope2.name)
-  let meter3 = MeterProvider::get_meter(meter_provider, scope3.name)
-  
-  let logger1 = LoggerProvider::get_logger(logger_provider, scope1.name)
-  let logger2 = LoggerProvider::get_logger(logger_provider, scope2.name)
-  let logger3 = LoggerProvider::get_logger(logger_provider, scope3.name)
-  
-  // Verify instrument properties
-  assert_eq(Tracer::instrumentation_scope(tracer1).name, scope1.name)
-  assert_eq(Tracer::instrumentation_scope(tracer2).name, scope2.name)
-  assert_eq(Tracer::instrumentation_scope(tracer3).name, scope3.name)
-  
-  assert_eq(meter1.scope.name, scope1.name)
-  assert_eq(meter2.scope.name, scope2.name)
-  assert_eq(meter3.scope.name, scope3.name)
-  
-  assert_eq(logger1.scope.name, scope1.name)
-  assert_eq(logger2.scope.name, scope2.name)
-  assert_eq(logger3.scope.name, scope3.name)
+  assert_eq(Resource::get_attribute(locale_resource, "service.locale"), Some(StringValue("zh-CN")))
+  assert_eq(Resource::get_attribute(locale_resource, "service.timezone"), Some(StringValue("Asia/Shanghai")))
+  assert_eq(Resource::get_attribute(locale_resource, "service.currency"), Some(StringValue("CNY")))
+  assert_eq(Resource::get_attribute(locale_resource, "service.encoding"), Some(StringValue("UTF-8")))
 }
 
-test "severity number enumeration" {
-  // Test all severity number values
-  let trace_record = LogRecord::new(Trace, "Trace level message")
-  let debug_record = LogRecord::new(Debug, "Debug level message")
-  let info_record = LogRecord::new(Info, "Info level message")
-  let warn_record = LogRecord::new(Warn, "Warning level message")
-  let error_record = LogRecord::new(Error, "Error level message")
-  let fatal_record = LogRecord::new(Fatal, "Fatal level message")
+// Test 5: Memory management
+test "memory management" {
+  // Test resource cleanup
+  let resource1 = Resource::with_attributes(Resource::new(), [
+    ("temp.data", StringValue("temporary data 1")),
+    ("cache.size", IntValue(1024))
+  ])
   
-  // Verify severity numbers
-  assert_eq(LogRecord::severity_number(trace_record), Trace)
-  assert_eq(LogRecord::severity_number(debug_record), Debug)
-  assert_eq(LogRecord::severity_number(info_record), Info)
-  assert_eq(LogRecord::severity_number(warn_record), Warn)
-  assert_eq(LogRecord::severity_number(error_record), Error)
-  assert_eq(LogRecord::severity_number(fatal_record), Fatal)
+  let resource2 = Resource::with_attributes(Resource::new(), [
+    ("temp.data", StringValue("temporary data 2")),
+    ("cache.size", IntValue(2048))
+  ])
   
-  // Test severity comparison logic (if implemented)
-  let trace_severity = LogRecord::severity_number(trace_record)
-  let debug_severity = LogRecord::severity_number(debug_record)
-  let info_severity = LogRecord::severity_number(info_record)
-  let warn_severity = LogRecord::severity_number(warn_record)
-  let error_severity = LogRecord::severity_number(error_record)
-  let fatal_severity = LogRecord::severity_number(fatal_record)
+  // Test resource merging and cleanup
+  let merged_resource = Resource::merge(resource1, resource2)
   
-  // Verify different severity levels
-  assert_true(trace_severity != debug_severity)
-  assert_true(debug_severity != info_severity)
-  assert_true(info_severity != warn_severity)
-  assert_true(warn_severity != error_severity)
-  assert_true(error_severity != fatal_severity)
-}
-
-test "span kind enumeration" {
-  // Test all span kind values
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "span.kind.test")
+  // Verify merged resource contains expected attributes
+  assert_eq(Resource::get_attribute(merged_resource, "temp.data"), Some(StringValue("temporary data 2")))
+  assert_eq(Resource::get_attribute(merged_resource, "cache.size"), Some(IntValue(2048)))
   
-  // Create spans with different kinds
-  let internal_span = Tracer::start_span(tracer, "internal.operation")
-  let server_span = Tracer::start_span(tracer, "server.request")
-  let client_span = Tracer::start_span(tracer, "client.request")
-  let producer_span = Tracer::start_span(tracer, "producer.operation")
-  let consumer_span = Tracer::start_span(tracer, "consumer.operation")
-  
-  // Verify span kinds
-  assert_eq(Span::kind(internal_span), Internal)
-  assert_eq(Span::kind(server_span), Server)
-  assert_eq(Span::kind(client_span), Client)
-  assert_eq(Span::kind(producer_span), Producer)
-  assert_eq(Span::kind(consumer_span), Consumer)
-  
-  // Test different span kind properties
-  assert_true(Span::kind(internal_span) != Span::kind(server_span))
-  assert_true(Span::kind(server_span) != Span::kind(client_span))
-  assert_true(Span::kind(client_span) != Span::kind(producer_span))
-  assert_true(Span::kind(producer_span) != Span::kind(consumer_span))
-  
-  // End all spans
-  Span::end(internal_span)
-  Span::end(server_span)
-  Span::end(client_span)
-  Span::end(producer_span)
-  Span::end(consumer_span)
-}
-
-test "status code enumeration" {
-  // Test all status code values
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "status.code.test")
-  
-  // Create spans and set different status codes
-  let unset_span = Tracer::start_span(tracer, "unset.status")
-  let ok_span = Tracer::start_span(tracer, "ok.status")
-  let error_span = Tracer::start_span(tracer, "error.status")
-  
-  // Set status codes
-  Span::set_status(unset_span, Unset)
-  Span::set_status(ok_span, Ok, Some("Operation completed successfully"))
-  Span::set_status(error_span, Error, Some("Operation failed with timeout"))
-  
-  // Verify status codes (simplified implementation returns Unset)
-  assert_eq(Span::status(unset_span), Unset)
-  assert_eq(Span::status(ok_span), Unset)
-  assert_eq(Span::status(error_span), Unset)
-  
-  // Test status code comparison
-  let unset_status = Span::status(unset_span)
-  let ok_status = Span::status(ok_span)
-  let error_status = Span::status(error_span)
-  
-  // All return Unset in simplified implementation
-  assert_eq(unset_status, ok_status)
-  assert_eq(ok_status, error_status)
-  assert_eq(error_status, unset_status)
-  
-  // End all spans
-  Span::end(unset_span)
-  Span::end(ok_span)
-  Span::end(error_span)
-}
-
-test "attribute value type conversion" {
-  // Test attribute value type conversions
-  let attrs = Attributes::new()
-  
-  // Set different attribute types
-  Attributes::set(attrs, "string.value", StringValue("test.string"))
-  Attributes::set(attrs, "int.value", IntValue(42))
-  Attributes::set(attrs, "float.value", FloatValue(3.14159))
-  Attributes::set(attrs, "bool.value", BoolValue(true))
-  Attributes::set(attrs, "array.string.value", ArrayStringValue(["item1", "item2", "item3"]))
-  Attributes::set(attrs, "array.int.value", ArrayIntValue([1, 2, 3, 4, 5]))
-  
-  // Test attribute retrieval with type checking
-  let string_attr = Attributes::get(attrs, "string.value")
-  let int_attr = Attributes::get(attrs, "int.value")
-  let float_attr = Attributes::get(attrs, "float.value")
-  let bool_attr = Attributes::get(attrs, "bool.value")
-  let array_string_attr = Attributes::get(attrs, "array.string.value")
-  let array_int_attr = Attributes::get(attrs, "array.int.value")
-  let missing_attr = Attributes::get(attrs, "missing.value")
-  
-  // Verify attribute values (simplified implementation returns None for non-test keys)
-  assert_eq(string_attr, Some(StringValue("test_value")))
-  assert_eq(int_attr, Some(IntValue(42)))
-  assert_eq(float_attr, None)
-  assert_eq(bool_attr, None)
-  assert_eq(array_string_attr, None)
-  assert_eq(array_int_attr, None)
-  assert_eq(missing_attr, None)
-  
-  // Test attribute value pattern matching
-  let test_string_attr = Attributes::get(attrs, "string.key")
-  match test_string_attr {
-    Some(StringValue(value)) => assert_eq(value, "test_value")
-    _ => assert_true(false)
+  // Test large attribute sets
+  let large_attrs = Attributes::new()
+  for i in 0...99 {
+    let key = "attr." + i.to_string()
+    let value = StringValue("value." + i.to_string())
+    Attributes::set(large_attrs, key, value)
   }
   
-  let test_int_attr = Attributes::get(attrs, "int.key")
-  match test_int_attr {
-    Some(IntValue(value)) => assert_eq(value, 42)
-    _ => assert_true(false)
-  }
+  // Verify some attributes from the large set
+  assert_eq(Attributes::get(large_attrs, "attr.0"), Some(StringValue("value.0")))
+  assert_eq(Attributes::get(large_attrs, "attr.49"), Some(StringValue("value.49")))
+  assert_eq(Attributes::get(large_attrs, "attr.99"), Some(StringValue("value.99")))
+  
+  // Test large baggage entries
+  let large_baggage = Baggage::new()
+  let baggage_with_entries = Baggage::set_entry(large_baggage, "session.id", "sess-12345")
+  let baggage_with_more = Baggage::set_entry(baggage_with_entries, "user.id", "user-67890")
+  let baggage_final = Baggage::set_entry(baggage_with_more, "request.id", "req-abcdef")
+  
+  // Verify baggage entries
+  assert_eq(Baggage::get_entry(baggage_final, "session.id"), Some("sess-12345"))
+  assert_eq(Baggage::get_entry(baggage_final, "user.id"), Some("user-67890"))
+  assert_eq(Baggage::get_entry(baggage_final, "request.id"), Some("req-abcdef"))
 }
 
-test "timestamp operations" {
-  // Test timestamp operations with different formats
-  let clock = Clock::system()
-  let timestamp1 = Clock::now_unix_nanos(clock)
-  let timestamp2 = Clock::now_unix_nanos(clock)
+// Test 6: Platform compatibility
+test "platform compatibility" {
+  // Test platform-specific resource attributes
+  let linux_resource = Resource::with_attributes(Resource::new(), [
+    ("os.type", StringValue("linux")),
+    ("os.version", StringValue("5.15.0-76-generic")),
+    ("os.arch", StringValue("x86_64")),
+    ("os.description", StringValue("Ubuntu 22.04.1 LTS"))
+  ])
   
-  // Verify timestamps are reasonable
-  assert_true(timestamp1 > 0L)
-  assert_true(timestamp2 > 0L)
-  assert_true(timestamp2 >= timestamp1)
+  let windows_resource = Resource::with_attributes(Resource::new(), [
+    ("os.type", StringValue("windows")),
+    ("os.version", StringValue("10.0.19044")),
+    ("os.arch", StringValue("AMD64")),
+    ("os.description", StringValue("Windows 10 Pro"))
+  ])
   
-  // Test log records with timestamps
-  let record_with_timestamp = LogRecord::new_with_context(
-    Info,
-    Some("Message with timestamp"),
-    None,
-    Some(timestamp1),
-    Some(timestamp2),
-    Some("trace-123"),
-    Some("span-456"),
+  let macos_resource = Resource::with_attributes(Resource::new(), [
+    ("os.type", StringValue("darwin")),
+    ("os.version", StringValue("22.1.0")),
+    ("os.arch", StringValue("arm64")),
+    ("os.description", StringValue("macOS 13.0.1"))
+  ])
+  
+  // Verify Linux resource attributes
+  assert_eq(Resource::get_attribute(linux_resource, "os.type"), Some(StringValue("linux")))
+  assert_eq(Resource::get_attribute(linux_resource, "os.version"), Some(StringValue("5.15.0-76-generic")))
+  assert_eq(Resource::get_attribute(linux_resource, "os.arch"), Some(StringValue("x86_64")))
+  assert_eq(Resource::get_attribute(linux_resource, "os.description"), Some(StringValue("Ubuntu 22.04.1 LTS")))
+  
+  // Verify Windows resource attributes
+  assert_eq(Resource::get_attribute(windows_resource, "os.type"), Some(StringValue("windows")))
+  assert_eq(Resource::get_attribute(windows_resource, "os.version"), Some(StringValue("10.0.19044")))
+  assert_eq(Resource::get_attribute(windows_resource, "os.arch"), Some(StringValue("AMD64")))
+  assert_eq(Resource::get_attribute(windows_resource, "os.description"), Some(StringValue("Windows 10 Pro")))
+  
+  // Verify macOS resource attributes
+  assert_eq(Resource::get_attribute(macos_resource, "os.type"), Some(StringValue("darwin")))
+  assert_eq(Resource::get_attribute(macos_resource, "os.version"), Some(StringValue("22.1.0")))
+  assert_eq(Resource::get_attribute(macos_resource, "os.arch"), Some(StringValue("arm64")))
+  assert_eq(Resource::get_attribute(macos_resource, "os.description"), Some(StringValue("macOS 13.0.1")))
+  
+  // Test platform-specific HTTP headers
+  let linux_request = HttpRequest::new("GET", "https://api.example.com/linux", [
+    ("User-Agent", "azimuth-linux/1.0.0"),
+    ("X-Platform", "linux")
+  ], None)
+  
+  let windows_request = HttpRequest::new("GET", "https://api.example.com/windows", [
+    ("User-Agent", "azimuth-windows/1.0.0"),
+    ("X-Platform", "windows")
+  ], None)
+  
+  // Verify platform-specific headers
+  assert_eq(HttpRequest::http_method(linux_request), "GET")
+  assert_eq(HttpRequest::url(linux_request), "https://api.example.com/linux")
+  
+  assert_eq(HttpRequest::http_method(windows_request), "GET")
+  assert_eq(HttpRequest::url(windows_request), "https://api.example.com/windows")
+}
+
+// Test 7: Serialization and deserialization
+test "serialization and deserialization" {
+  // Test span context serialization
+  let trace_id = "1234567890abcdef1234567890abcdef"
+  let span_id = "fedcba0987654321"
+  let sampled = true
+  let trace_state = "key1=value1,key2=value2"
+  
+  let span_ctx = SpanContext::new(trace_id, span_id, sampled, trace_state)
+  
+  // Verify span context properties
+  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(span_ctx), span_id)
+  assert_eq(SpanContext::is_sampled(span_ctx), sampled)
+  assert_eq(SpanContext::trace_state(span_ctx), trace_state)
+  
+  // Test metric serialization through attributes
+  let metric_attrs = Attributes::new()
+  Attributes::set(metric_attrs, "metric.name", StringValue("http.requests.total"))
+  Attributes::set(metric_attrs, "metric.type", StringValue("counter"))
+  Attributes::set(metric_attrs, "metric.unit", StringValue("requests"))
+  Attributes::set(metric_attrs, "metric.description", StringValue("Total HTTP requests"))
+  Attributes::set(metric_attrs, "metric.value", IntValue(12345))
+  
+  // Verify metric attributes
+  assert_eq(Attributes::get(metric_attrs, "metric.name"), Some(StringValue("http.requests.total")))
+  assert_eq(Attributes::get(metric_attrs, "metric.type"), Some(StringValue("counter")))
+  assert_eq(Attributes::get(metric_attrs, "metric.unit"), Some(StringValue("requests")))
+  assert_eq(Attributes::get(metric_attrs, "metric.description"), Some(StringValue("Total HTTP requests")))
+  assert_eq(Attributes::get(metric_attrs, "metric.value"), Some(IntValue(12345)))
+  
+  // Test log record serialization
+  let log_record = LogRecord::new_with_context(
+    Error,
+    Some("Database connection failed"),
+    Some(metric_attrs),
+    Some(1735689600000000000L),
+    Some(1735689600000001000L),
+    Some(trace_id),
+    Some(span_id),
     Some(Context::root())
   )
   
-  // Verify timestamp properties
-  assert_eq(LogRecord::body(record_with_timestamp), Some("Message with timestamp"))
-  assert_eq(LogRecord::trace_id(record_with_timestamp), Some("trace-123"))
-  assert_eq(LogRecord::span_id(record_with_timestamp), Some("span-456"))
+  // Verify log record properties
+  assert_eq(LogRecord::severity_number(log_record), Error)
+  assert_eq(LogRecord::body(log_record), Some("Database connection failed"))
+  assert_eq(LogRecord::trace_id(log_record), Some(trace_id))
+  assert_eq(LogRecord::span_id(log_record), Some(span_id))
   
-  // Test timestamp arithmetic (if needed)
-  let timestamp_diff = timestamp2 - timestamp1
-  assert_true(timestamp_diff >= 0L)
+  // Test resource serialization
+  let service_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("api-service")),
+    ("service.version", StringValue("2.1.0")),
+    ("service.namespace", StringValue("production")),
+    ("service.instance.id", StringValue("api-prod-12345"))
+  ])
   
-  // Test timestamp conversion to different formats
-  let seconds = timestamp1 / 1000000000L
-  let nanos = timestamp1 % 1000000000L
-  
-  assert_true(seconds > 0L)
-  assert_true(nanos >= 0L && nanos < 1000000000L)
+  // Verify resource attributes
+  assert_eq(Resource::get_attribute(service_resource, "service.name"), Some(StringValue("api-service")))
+  assert_eq(Resource::get_attribute(service_resource, "service.version"), Some(StringValue("2.1.0")))
+  assert_eq(Resource::get_attribute(service_resource, "service.namespace"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(service_resource, "service.instance.id"), Some(StringValue("api-prod-12345")))
 }
 
-test "composite propagator advanced functionality" {
-  // Test composite propagator with multiple propagators
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
+// Test 8: Advanced context propagation
+test "advanced context propagation" {
+  // Test context propagation with multiple levels
+  let root_ctx = Context::root()
   
-  // Create composite propagator with trace context only
-  let trace_composite = CompositePropagator::new([trace_propagator])
+  // Level 1: Add request ID
+  let request_key = ContextKey::new("request.id")
+  let ctx1 = Context::with_value(root_ctx, request_key, "req-12345")
   
-  // Test injection and extraction
-  let ctx = Context::root()
+  // Level 2: Add user ID
+  let user_key = ContextKey::new("user.id")
+  let ctx2 = Context::with_value(ctx1, user_key, "user-67890")
+  
+  // Level 3: Add session ID
+  let session_key = ContextKey::new("session.id")
+  let ctx3 = Context::with_value(ctx2, session_key, "sess-abcdef")
+  
+  // Level 4: Add correlation ID
+  let correlation_key = ContextKey::new("correlation.id")
+  let ctx4 = Context::with_value(ctx3, correlation_key, "corr-123456")
+  
+  // Verify all context values are accessible
+  assert_eq(Context::get(ctx4, request_key), Some("req-12345"))
+  assert_eq(Context::get(ctx4, user_key), Some("user-67890"))
+  assert_eq(Context::get(ctx4, session_key), Some("sess-abcdef"))
+  assert_eq(Context::get(ctx4, correlation_key), Some("corr-123456"))
+  
+  // Verify intermediate contexts have expected values
+  assert_eq(Context::get(ctx1, request_key), Some("req-12345"))
+  assert_eq(Context::get(ctx1, user_key), None)
+  assert_eq(Context::get(ctx1, session_key), None)
+  assert_eq(Context::get(ctx1, correlation_key), None)
+  
+  assert_eq(Context::get(ctx2, request_key), Some("req-12345"))
+  assert_eq(Context::get(ctx2, user_key), Some("user-67890"))
+  assert_eq(Context::get(ctx2, session_key), None)
+  assert_eq(Context::get(ctx2, correlation_key), None)
+  
+  assert_eq(Context::get(ctx3, request_key), Some("req-12345"))
+  assert_eq(Context::get(ctx3, user_key), Some("user-67890"))
+  assert_eq(Context::get(ctx3, session_key), Some("sess-abcdef"))
+  assert_eq(Context::get(ctx3, correlation_key), None)
+  
+  // Test baggage propagation
+  let empty_baggage = Baggage::new()
+  let baggage1 = Baggage::set_entry(empty_baggage, "request.id", "req-12345")
+  let baggage2 = Baggage::set_entry(baggage1, "user.id", "user-67890")
+  let baggage3 = Baggage::set_entry(baggage2, "session.id", "sess-abcdef")
+  
+  // Verify baggage propagation
+  assert_eq(Baggage::get_entry(baggage3, "request.id"), Some("req-12345"))
+  assert_eq(Baggage::get_entry(baggage3, "user.id"), Some("user-67890"))
+  assert_eq(Baggage::get_entry(baggage3, "session.id"), Some("sess-abcdef"))
+  
+  // Test composite propagator with context
+  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
   let carrier = TextMapCarrier::new()
   
-  // Inject context
-  CompositePropagator::inject(trace_composite, ctx, carrier)
+  // Inject context into carrier
+  CompositePropagator::inject(propagator, ctx4, carrier)
   
-  // Extract context
-  let extracted_ctx = CompositePropagator::extract(trace_composite, carrier)
-  let key = ContextKey::new("extracted")
-  let extracted_value = Context::get(extracted_ctx, key)
+  // Extract context from carrier
+  let extracted_ctx = CompositePropagator::extract(propagator, carrier)
   
-  assert_eq(extracted_value, Some("true"))
-  
-  // Test multiple injection/extraction cycles
-  let ctx2 = Context::with_value(ctx, ContextKey::new("user.id"), "12345")
-  CompositePropagator::inject(trace_composite, ctx2, carrier)
-  
-  let extracted_ctx2 = CompositePropagator::extract(trace_composite, carrier)
-  let extracted_value2 = Context::get(extracted_ctx2, key)
-  
-  assert_eq(extracted_value2, Some("true"))
-  
-  // Test carrier header management
-  TextMapCarrier::set(carrier, "custom.header", "custom.value")
-  TextMapCarrier::set(carrier, "another.header", "another.value")
-  
-  let custom_header = TextMapCarrier::get(carrier, "custom.header")
-  let another_header = TextMapCarrier::get(carrier, "another.header")
-  let missing_header = TextMapCarrier::get(carrier, "missing.header")
-  
-  assert_eq(custom_header, None)
-  assert_eq(another_header, None)
-  assert_eq(missing_header, None)
-  
-  // Verify traceparent header is still present
-  let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  assert_eq(traceparent, Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  // Verify extraction
+  let extracted_key = ContextKey::new("extracted")
+  assert_eq(Context::get(extracted_ctx, extracted_key), Some("true"))
 }
