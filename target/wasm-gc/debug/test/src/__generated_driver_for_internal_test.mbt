@@ -95,6 +95,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     34: (__test_746f702e6d6274_34, ["内存管理测试"]),
     35: (__test_746f702e6d6274_35, ["并发安全测试"]),
   },
+  "azimuth_advanced_comprehensive_tests.mbt": {
+    0: (__test_617a696d7574685f616476616e6365645f636f6d70726568656e736976655f74657374732e6d6274_0, ["error handling and recovery mechanisms"]),
+    1: (__test_617a696d7574685f616476616e6365645f636f6d70726568656e736976655f74657374732e6d6274_1, ["resource cleanup and memory management"]),
+    2: (__test_617a696d7574685f616476616e6365645f636f6d70726568656e736976655f74657374732e6d6274_2, ["concurrent operations safety"]),
+    3: (__test_617a696d7574685f616476616e6365645f636f6d70726568656e736976655f74657374732e6d6274_3, ["dynamic configuration updates"]),
+    4: (__test_617a696d7574685f616476616e6365645f636f6d70726568656e736976655f74657374732e6d6274_4, ["time series data operations"]),
+    5: (__test_617a696d7574685f616476616e6365645f636f6d70726568656e736976655f74657374732e6d6274_5, ["telemetry data export functionality"]),
+    6: (__test_617a696d7574685f616476616e6365645f636f6d70726568656e736976655f74657374732e6d6274_6, ["sampling strategies and decision making"]),
+    7: (__test_617a696d7574685f616476616e6365645f636f6d70726568656e736976655f74657374732e6d6274_7, ["boundary conditions and edge cases"]),
+  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
