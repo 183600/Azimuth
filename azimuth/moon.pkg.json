@@ -32,5 +32,6 @@
         "azimuth_core_functionality_tests.mbt",
                 "../azimuth_advanced_telemetry_comprehensive_tests.mbt",
                 "azimuth_premium_comprehensive_tests.mbt",
-                "azimuth_advanced_moonbit_test_suite.mbt"
+                "azimuth_advanced_moonbit_test_suite.mbt",
+                "azimuth_specialized_telemetry_tests.mbt"
             ]  }}
