@@ -45,5 +45,9 @@
         "azimuth_premium_core_tests.mbt",
         "../azimuth_specialized_moonbit_tests.mbt",
         "../azimuth_advanced_comprehensive_moonbit_tests.mbt",
-        "azimuth_enhanced_comprehensive_test_suite.mbt"
+        "azimuth_enhanced_comprehensive_test_suite.mbt",
+        "azimuth_performance_stress_tests.mbt",
+        "azimuth_boundary_condition_edge_tests.mbt",
+        "azimuth_cross_component_integration_tests.mbt",
+        "azimuth_context_propagation_advanced_tests.mbt"
             ]  }}

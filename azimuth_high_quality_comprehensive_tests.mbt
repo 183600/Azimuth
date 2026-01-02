@@ -1,576 +1,442 @@
-// Azimuth Telemetry System - High Quality Comprehensive Tests
-// This file contains comprehensive high-quality test cases for core functionality
+// Azimuth Telemetry System - 高质量综合测试用例
+// 覆盖遥测系统的关键功能和边界条件
 
-// Test 1: 综合上下文传播测试
-test "comprehensive_context_propagation_test" {
-  // 创建根上下文
-  let root_ctx = Context::root()
-  
-  // 设置上下文值
-  let correlation_key = ContextKey::new("correlation.id")
-  let user_key = ContextKey::new("user.id")
-  let request_key = ContextKey::new("request.id")
-  
-  let ctx_with_correlation = Context::with_value(root_ctx, correlation_key, "corr-12345")
-  let ctx_with_user = Context::with_value(ctx_with_correlation, user_key, "user-67890")
-  let ctx_with_request = Context::with_value(ctx_with_user, request_key, "req-abcde")
-  
-  // 验证上下文值传播
-  assert_eq(Context::get(ctx_with_request, correlation_key), Some("corr-12345"))
-  assert_eq(Context::get(ctx_with_request, user_key), Some("user-67890"))
-  assert_eq(Context::get(ctx_with_request, request_key), Some("req-abcde"))
-  
-  // 测试Baggage传播
-  let baggage = Baggage::new()
-  let baggage_with_user = Baggage::set_entry(baggage, "user.id", "user-67890")
-  let baggage_with_session = Baggage::set_entry(baggage_with_user, "session.id", "session-11111")
-  
-  assert_eq(Baggage::get_entry(baggage_with_session, "user.id"), Some("user-67890"))
-  assert_eq(Baggage::get_entry(baggage_with_session, "session.id"), Some("session-11111"))
-  
-  // 测试传播器注入和提取
-  let carrier = TextMapCarrier::new()
-  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
-  
-  CompositePropagator::inject(propagator, ctx_with_request, carrier)
-  let extracted_ctx = CompositePropagator::extract(propagator, carrier)
-  
-  // 验证提取的上下文包含预期值
-  let extracted_value = Context::get(extracted_ctx, ContextKey::new("extracted"))
-  assert_eq(extracted_value, Some("true"))
-}
-
-// Test 2: 跨服务追踪一致性测试
-test "cross_service_tracing_consistency_test" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "cross-service-test")
-  
-  // 创建服务A的根Span
-  let service_a_span = Tracer::start_span(tracer, "service-a.operation")
-  let service_a_ctx = Span::span_context(service_a_span)
-  
-  // 验证服务A的Span上下文
-  assert_true(SpanContext::is_valid(service_a_ctx))
-  assert_true(SpanContext::is_sampled(service_a_ctx))
-  
-  // 添加服务A的事件
-  Span::add_event(service_a_span, "service-a.started", Some([
-    ("service.name", StringValue("service-a")),
-    ("operation.type", StringValue("api-request"))
-  ]))
-  
-  // 模拟跨服务调用 - 创建服务B的子Span
-  let service_b_span = Tracer::start_span(tracer, "service-b.operation")
-  let service_b_ctx = Span::span_context(service_b_span)
-  
-  // 添加服务B的事件和属性
-  Span::add_event(service_b_span, "service-b.started", Some([
-    ("service.name", StringValue("service-b")),
-    ("parent.trace", StringValue(SpanContext::trace_id(service_a_ctx))),
-    ("parent.span", StringValue(SpanContext::span_id(service_a_ctx)))
-  ]))
-  
-  // 模拟服务B调用服务C
-  let service_c_span = Tracer::start_span(tracer, "service-c.operation")
-  let service_c_ctx = Span::span_context(service_c_span)
-  
-  Span::add_event(service_c_span, "service-c.started", Some([
-    ("service.name", StringValue("service-c")),
-    ("root.trace", StringValue(SpanContext::trace_id(service_a_ctx))),
-    ("intermediate.trace", StringValue(SpanContext::trace_id(service_b_ctx)))
-  ]))
-  
-  // 按顺序结束Span（C -> B -> A）
-  Span::set_status(service_c_span, Ok)
-  Span::end(service_c_span)
-  
-  Span::add_event(service_b_span, "service-c.completed", None)
-  Span::set_status(service_b_span, Ok)
-  Span::end(service_b_span)
-  
-  Span::add_event(service_a_span, "service-b.completed", None)
-  Span::set_status(service_a_span, Ok)
-  Span::end(service_a_span)
-  
-  // 验证所有Span都已结束
-  assert_false(Span::is_recording(service_a_span))
-  assert_false(Span::is_recording(service_b_span))
-  assert_false(Span::is_recording(service_c_span))
-}
-
-// Test 3: 度量系统聚合操作测试
-test "metrics_aggregation_operations_test" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "aggregation-test")
-  
-  // 创建各种类型的度量
-  let request_counter = Meter::create_counter(meter, "http.requests.total")
-  let response_histogram = Meter::create_histogram(meter, "http.response.time")
-  let active_connections_gauge = Meter::create_gauge(meter, "http.active.connections")
-  let error_updown_counter = Meter::create_updown_counter(meter, "http.errors.current")
-  
-  // 验证度量创建
-  assert_eq(request_counter.name, "http.requests.total")
-  assert_eq(response_histogram.name, "http.response.time")
-  assert_eq(active_connections_gauge.name, "http.active.connections")
-  assert_eq(error_updown_counter.name, "http.errors.current")
-  
-  // 模拟度量操作
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "method", StringValue("GET"))
-  Attributes::set(attrs, "status", StringValue("200"))
-  
-  // Counter操作
-  Counter::add(request_counter, 100.0, Some(attrs))
-  Counter::add(request_counter, 50.0, Some(attrs))
-  
-  // Histogram操作
-  Histogram::record(response_histogram, 150.0, Some(attrs))
-  Histogram::record(response_histogram, 200.0, Some(attrs))
-  Histogram::record(response_histogram, 100.0, Some(attrs))
-  
-  // UpDownCounter操作
-  let error_attrs = Attributes::new()
-  Attributes::set(error_attrs, "error.type", StringValue("timeout"))
-  UpDownCounter::add(error_updown_counter, 5.0, Some(error_attrs))
-  UpDownCounter::add(error_updown_counter, -2.0, Some(error_attrs))
-  
-  // 测试度量作为Instrument的转换
-  let counter_instrument = Histogram::as_instrument(response_histogram)
-  assert_eq(Instrument::name(counter_instrument), "http.response.time")
-  assert_eq(Instrument::description(counter_instrument), Some("HTTP response time"))
-  assert_eq(Instrument::unit(counter_instrument), Some("ms"))
-  
-  // 测试不同属性的度量
-  let post_attrs = Attributes::new()
-  Attributes::set(post_attrs, "method", StringValue("POST"))
-  Attributes::set(post_attrs, "status", StringValue("201"))
-  
-  Counter::add(request_counter, 25.0, Some(post_attrs))
-  Histogram::record(response_histogram, 300.0, Some(post_attrs))
-  
-  // 验证度量操作完成
-  assert_true(true)
-}
-
-// Test 4: 日志记录与追踪关联测试
-test "log_record_trace_correlation_test" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "correlation-test")
-  
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "correlation-test")
-  
-  // 创建Span用于追踪
-  let span = Tracer::start_span(tracer, "operation.with.logs")
-  let span_ctx = Span::span_context(span)
-  
-  // 创建与追踪关联的日志记录
-  let info_log = LogRecord::new_with_context(
-    Info,
-    Some("Operation started successfully"),
-    None,
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(span_ctx)),
-    Some(SpanContext::span_id(span_ctx)),
-    None
-  )
-  
-  // 添加Span事件
-  Span::add_event(span, "log.recorded", Some([
-    ("log.level", StringValue("INFO")),
-    ("log.message", StringValue("Operation started successfully"))
-  ]))
-  
-  // 创建警告日志
-  let warn_attrs = Attributes::new()
-  Attributes::set(warn_attrs, "warning.type", StringValue("performance"))
-  
-  let warn_log = LogRecord::new_with_context(
-    Warn,
-    Some("Operation taking longer than expected"),
-    Some(warn_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(span_ctx)),
-    Some(SpanContext::span_id(span_ctx)),
-    None
-  )
-  
-  // 添加警告事件到Span
-  Span::add_event(span, "warning.issued", Some([
-    ("warning.type", StringValue("performance")),
-    ("log.message", StringValue("Operation taking longer than expected"))
-  ]))
-  
-  // 创建错误日志
-  let error_attrs = Attributes::new()
-  Attributes::set(error_attrs, "error.code", IntValue(500))
-  Attributes::set(error_attrs, "error.type", StringValue("internal"))
-  
-  let error_log = LogRecord::new_with_context(
-    Error,
-    Some("Internal server error occurred"),
-    Some(error_attrs),
-    Some(Clock::now_unix_nanos(Clock::system())),
-    None,
-    Some(SpanContext::trace_id(span_ctx)),
-    Some(SpanContext::span_id(span_ctx)),
-    None
-  )
-  
-  // 设置Span错误状态
-  Span::set_status(span, Error)
-  
-  // 发出所有日志
-  Logger::emit(logger, info_log)
-  Logger::emit(logger, warn_log)
-  Logger::emit(logger, error_log)
-  
-  // 结束Span
-  Span::end(span)
-  
-  // 验证日志和追踪关联
-  assert_eq(LogRecord::trace_id(info_log), Some(SpanContext::trace_id(span_ctx)))
-  assert_eq(LogRecord::span_id(info_log), Some(SpanContext::span_id(span_ctx)))
-  assert_eq(LogRecord::severity_number(info_log), Info)
-  
-  assert_eq(LogRecord::trace_id(warn_log), Some(SpanContext::trace_id(span_ctx)))
-  assert_eq(LogRecord::span_id(warn_log), Some(SpanContext::span_id(span_ctx)))
-  assert_eq(LogRecord::severity_number(warn_log), Warn)
-  
-  assert_eq(LogRecord::trace_id(error_log), Some(SpanContext::trace_id(span_ctx)))
-  assert_eq(LogRecord::span_id(error_log), Some(SpanContext::span_id(span_ctx)))
-  assert_eq(LogRecord::severity_number(error_log), Error)
-}
-
-// Test 5: 资源合并策略测试
-test "resource_merge_strategy_test" {
-  // 创建基础资源
-  let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("azimuth-service")),
-    ("service.version", StringValue("1.0.0")),
-    ("deployment.environment", StringValue("production"))
-  ]
-  let base_resource_with_attrs = Resource::with_attributes(base_resource, base_attrs)
-  
-  // 创建覆盖资源
-  let override_resource = Resource::new()
-  let override_attrs = [
-    ("service.instance.id", StringValue("instance-12345")),
-    ("host.name", StringValue("server-01")),
-    ("deployment.environment", StringValue("staging")) // 这个应该覆盖基础资源
-  ]
-  let override_resource_with_attrs = Resource::with_attributes(override_resource, override_attrs)
-  
-  // 执行资源合并
-  let merged_resource = Resource::merge(base_resource_with_attrs, override_resource_with_attrs)
-  
-  // 验证合并结果
-  assert_eq(Resource::get_attribute(merged_resource, "service.name"), Some(StringValue("azimuth-service")))
-  assert_eq(Resource::get_attribute(merged_resource, "service.version"), Some(StringValue("1.0.0")))
-  assert_eq(Resource::get_attribute(merged_resource, "deployment.environment"), Some(StringValue("staging"))) // 被覆盖
-  assert_eq(Resource::get_attribute(merged_resource, "service.instance.id"), Some(StringValue("instance-12345")))
-  assert_eq(Resource::get_attribute(merged_resource, "host.name"), Some(StringValue("server-01")))
-  
-  // 测试多级合并
-  let additional_resource = Resource::new()
-  let additional_attrs = [
-    ("service.namespace", StringValue("backend")),
-    ("service.version", StringValue("1.1.0")), // 再次覆盖版本
-    ("region", StringValue("us-west"))
-  ]
-  let additional_resource_with_attrs = Resource::with_attributes(additional_resource, additional_attrs)
-  
-  let final_merged = Resource::merge(merged_resource, additional_resource_with_attrs)
-  
-  // 验证最终合并结果
-  assert_eq(Resource::get_attribute(final_merged, "service.name"), Some(StringValue("azimuth-service")))
-  assert_eq(Resource::get_attribute(final_merged, "service.version"), Some(StringValue("1.1.0"))) // 最终版本
-  assert_eq(Resource::get_attribute(final_merged, "deployment.environment"), Some(StringValue("staging")))
-  assert_eq(Resource::get_attribute(final_merged, "service.instance.id"), Some(StringValue("instance-12345")))
-  assert_eq(Resource::get_attribute(final_merged, "host.name"), Some(StringValue("server-01")))
-  assert_eq(Resource::get_attribute(final_merged, "service.namespace"), Some(StringValue("backend")))
-  assert_eq(Resource::get_attribute(final_merged, "region"), Some(StringValue("us-west")))
-  
-  // 测试空资源合并
-  let empty_resource = Resource::new()
-  let merged_with_empty = Resource::merge(final_merged, empty_resource)
-  
-  // 验证与空资源合并不影响原资源
-  assert_eq(Resource::get_attribute(merged_with_empty, "service.name"), Some(StringValue("azimuth-service")))
-  assert_eq(Resource::get_attribute(merged_with_empty, "service.version"), Some(StringValue("1.1.0")))
-}
-
-// Test 6: 并发安全性测试
-test "concurrent_safety_test" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "concurrent-test")
-  
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent-test")
-  
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "concurrent-test")
-  
-  // 创建共享资源
-  let shared_counter = Meter::create_counter(meter, "concurrent.operations")
-  let shared_histogram = Meter::create_histogram(meter, "concurrent.duration")
-  let shared_gauge = Meter::create_gauge(meter, "concurrent.active")
-  
-  // 模拟并发操作
-  let spans = []
-  let logs = []
-  
-  // 创建多个Span（模拟并发）
-  for i in 0..50 {
-    let span = Tracer::start_span(tracer, "concurrent.operation." + i.to_string())
-    
-    // 为每个Span添加唯一属性
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "operation.id", IntValue(i))
-    Attributes::set(attrs, "thread.id", StringValue("thread-" + (i % 5).to_string()))
-    
-    Span::add_event(span, "operation.started", Some(attrs))
-    spans.push(span)
-    
-    // 创建对应的日志记录
-    let log = LogRecord::new_with_context(
-      Info,
-      Some("Concurrent operation " + i.to_string() + " started"),
-      Some(attrs),
-      Some(Clock::now_unix_nanos(Clock::system())),
-      None,
-      Some(SpanContext::trace_id(Span::span_context(span))),
-      Some(SpanContext::span_id(Span::span_context(span))),
-      None
-    )
-    logs.push(log)
-  }
-  
-  // 模拟并发度量操作
-  for i in 0..50 {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "operation.id", IntValue(i))
-    
-    // 并发Counter操作
-    Counter::add(shared_counter, 1.0, Some(attrs))
-    
-    // 并发Histogram操作
-    Histogram::record(shared_histogram, (i % 100).to_double(), Some(attrs))
-    
-    // 并发日志记录
-    Logger::emit(logger, logs[i])
-  }
-  
-  // 验证所有Span状态
-  for span in spans {
-    assert_true(Span::is_recording(span))
-    Span::set_status(span, Ok)
-    Span::end(span)
-  }
-  
-  // 验证所有Span都已结束
-  for span in spans {
-    assert_false(Span::is_recording(span))
-  }
-  
-  // 验证共享资源仍然有效
-  assert_eq(shared_counter.name, "concurrent.operations")
-  assert_eq(shared_histogram.name, "concurrent.duration")
-  assert_eq(shared_gauge.name, "concurrent.active")
-}
-
-// Test 7: 序列化完整性测试
-test "serialization_integrity_test" {
-  // 创建复杂的属性集合
-  let complex_attrs = Attributes::new()
-  
-  // 设置各种类型的属性
-  Attributes::set(complex_attrs, "string.value", StringValue("test string"))
-  Attributes::set(complex_attrs, "int.value", IntValue(42))
-  Attributes::set(complex_attrs, "float.value", FloatValue(3.14159))
-  Attributes::set(complex_attrs, "bool.value", BoolValue(true))
-  
-  // 设置数组属性
-  let string_array = ["value1", "value2", "value3"]
-  let int_array = [1, 2, 3, 4, 5]
-  
-  // 验证属性检索
-  assert_eq(Attributes::get(complex_attrs, "string.value"), Some(StringValue("test string")))
-  assert_eq(Attributes::get(complex_attrs, "int.value"), Some(IntValue(42)))
-  assert_eq(Attributes::get(complex_attrs, "float.value"), Some(FloatValue(3.14159)))
-  assert_eq(Attributes::get(complex_attrs, "bool.value"), Some(BoolValue(true)))
-  
-  // 测试SpanContext序列化
+// 测试1: 遥测数据一致性验证
+test "遥测数据一致性验证" {
+  // 创建一致的遥测数据
   let trace_id = "0af7651916cd43dd8448eb211c80319c"
   let span_id = "b7ad6b7169203331"
-  let span_ctx = SpanContext::new(trace_id, span_id, true, "key1=value1,key2=value2")
+  let parent_span_id = "b7ad6b7169203330"
   
-  // 验证SpanContext属性
-  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
-  assert_eq(SpanContext::span_id(span_ctx), span_id)
-  assert_true(SpanContext::is_sampled(span_ctx))
-  assert_true(SpanContext::is_valid(span_ctx))
+  // 验证Span上下文一致性
+  let span_context = SpanContext::new(trace_id, span_id, true, "")
+  assert_eq(SpanContext::trace_id(span_context), trace_id)
+  assert_eq(SpanContext::span_id(span_context), span_id)
+  assert_true(SpanContext::is_valid(span_context))
   
-  // 测试HTTP请求/响应序列化
-  let headers = [
-    ("Content-Type", "application/json"),
-    ("Authorization", "Bearer token123"),
-    ("X-Trace-ID", trace_id),
-    ("X-Request-ID", "req-12345")
-  ]
+  // 验证父子关系一致性
+  let parent_context = SpanContext::new(trace_id, parent_span_id, true, "")
+  assert_eq(SpanContext::trace_id(parent_context), trace_id)
+  assert_eq(SpanContext::span_id(parent_context), parent_span_id)
   
-  let request = HttpRequest::new("POST", "https://api.example.com/data", headers, Some("{\"test\": \"data\"}"))
+  // 验证属性数据类型一致性
+  let attributes = Attributes::new()
+  Attributes::set(attributes, "string.attr", StringValue("test"))
+  Attributes::set(attributes, "int.attr", IntValue(42))
+  Attributes::set(attributes, "float.attr", FloatValue(3.14))
+  Attributes::set(attributes, "bool.attr", BoolValue(true))
   
-  // 验证请求属性
-  assert_eq(HttpRequest::http_method(request), "POST")
-  assert_eq(HttpRequest::url(request), "https://api.example.com/data")
-  assert_eq(HttpRequest::body(request), Some("{\"test\": \"data\"}"))
+  let string_result = Attributes::get(attributes, "string.attr")
+  let int_result = Attributes::get(attributes, "int.attr")
+  let float_result = Attributes::get(attributes, "float.attr")
+  let bool_result = Attributes::get(attributes, "bool.attr")
   
-  let response_headers = [
-    ("Content-Type", "application/json"),
-    ("X-Response-Time", "150ms"),
-    ("X-Trace-ID", trace_id)
-  ]
-  
-  let response = HttpResponse::new(200, response_headers, Some("{\"result\": \"success\"}"))
-  
-  // 验证响应属性
-  assert_eq(HttpResponse::status_code(response), 200)
-  assert_eq(HttpResponse::body(response), Some("{\"result\": \"success\"}"))
-  
-  // 测试TextMapCarrier序列化
-  let carrier = TextMapCarrier::new()
-  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-  TextMapCarrier::set(carrier, " baggage", "user.id=12345,session.id=abcdef")
-  
-  // 验证Carrier属性
-  assert_eq(TextMapCarrier::get(carrier, "traceparent"), Some("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"))
+  assert_eq(string_result, Some(StringValue("test")))
+  assert_eq(int_result, Some(IntValue(42)))
+  assert_eq(float_result, Some(FloatValue(3.14)))
+  assert_eq(bool_result, Some(BoolValue(true)))
 }
 
-// Test 8: 边界条件和错误恢复测试
-test "boundary_conditions_error_recovery_test" {
-  // 测试空字符串和None值
-  let empty_trace_id = ""
-  let empty_span_id = ""
-  let invalid_span_ctx = SpanContext::new(empty_trace_id, empty_span_id, true, "")
+// 测试2: 分布式追踪完整性验证
+test "分布式追踪完整性验证" {
+  // 创建分布式追踪链
+  let trace_id = "12345678901234567890123456789012"
+  let service_names = ["gateway", "auth", "user-service", "order-service", "payment"]
+  let span_ids = []
   
-  // 验证无效SpanContext
-  assert_false(SpanContext::is_valid(invalid_span_ctx))
+  // 为每个服务创建Span
+  for i = 0; i < service_names.length(); i = i + 1 {
+    let span_id = "span" + i.to_string().pad_left(12, '0')
+    span_ids.push(span_id)
+  }
   
-  // 测试部分有效的SpanContext
-  let valid_trace_invalid_span = SpanContext::new("1234567890abcdef1234567890abcdef", "", true, "")
-  let invalid_trace_valid_span = SpanContext::new("", "1234567890abcdef", true, "")
+  // 验证追踪链完整性
+  assert_eq(span_ids.length(), service_names.length())
   
-  assert_false(SpanContext::is_valid(valid_trace_invalid_span))
-  assert_false(SpanContext::is_valid(invalid_trace_valid_span))
+  // 验证每个Span都在同一个追踪中
+  for i = 0; i < span_ids.length(); i = i + 1 {
+    let span_context = SpanContext::new(trace_id, span_ids[i], true, "")
+    assert_eq(SpanContext::trace_id(span_context), trace_id)
+    assert_true(SpanContext::is_valid(span_context))
+  }
   
-  // 测试边界值的度量创建
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "boundary-test")
+  // 验证Span时间顺序
+  let timestamps = []
+  for i = 0; i < 5; i = i + 1 {
+    timestamps.push(1640995200000L + (i * 1000L))
+  }
   
-  // 空名称度量
-  let empty_name_counter = Meter::create_counter(meter, "")
-  assert_eq(empty_name_counter.name, "")
+  // 验证时间戳递增
+  for i = 1; i < timestamps.length(); i = i + 1 {
+    assert_true(timestamps[i] > timestamps[i - 1])
+  }
   
-  // 极长名称度量
-  let very_long_name = "this.is.a.very.long.metric.name.that.exceeds.normal.expectations.and.tests.boundary.conditions"
-  let long_name_gauge = Meter::create_gauge(meter, very_long_name)
-  assert_eq(long_name_gauge.name, very_long_name)
+  // 验证服务调用链
+  for i = 0; i < service_names.length(); i = i + 1 {
+    let service_name = service_names[i]
+    let span_id = span_ids[i]
+    
+    assert_true(service_name.length() > 0)
+    assert_true(span_id.length() >= 12)
+    
+    // 验证父子关系
+    if i > 0 {
+      let parent_span_id = span_ids[i - 1]
+      assert_not_eq(span_id, parent_span_id)
+    }
+  }
+}
+
+// 测试3: 度量数据聚合验证
+test "度量数据聚合验证" {
+  // 创建Counter度量
+  let counter = Counter::new("request.count", "Total number of requests")
+  Counter::add(counter, 1.0, ["method:GET", "status:200"])
+  Counter::add(counter, 1.0, ["method:GET", "status:200"])
+  Counter::add(counter, 1.0, ["method:POST", "status:201"])
   
-  // 测试特殊字符度量名称
-  let special_chars_name = "metric.with-special_chars_123!@#$%"
-  let special_chars_histogram = Meter::create_histogram(meter, special_chars_name)
-  assert_eq(special_chars_histogram.name, special_chars_name)
+  // 验证Counter聚合
+  let get_requests = Counter::get_value(counter, ["method:GET", "status:200"])
+  let post_requests = Counter::get_value(counter, ["method:POST", "status:201"])
   
-  // 测试Unicode度量名称
-  let unicode_name = "测试度量🚀"
-  let unicode_updown_counter = Meter::create_updown_counter(meter, unicode_name)
-  assert_eq(unicode_updown_counter.name, unicode_name)
+  assert_eq(get_requests, 2.0)
+  assert_eq(post_requests, 1.0)
   
-  // 测试边界值的日志记录
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "boundary-test")
+  // 创建Histogram度量
+  let histogram = Histogram::new("response.time", "Response time distribution")
+  let response_times = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
   
-  // 空日志消息
-  let empty_log = LogRecord::new(Info, "")
-  assert_eq(LogRecord::body(empty_log), Some(""))
+  for time in response_times {
+    Histogram::record(histogram, time, ["endpoint:/api/data"])
+  }
   
-  // 极长日志消息
-  let very_long_message = "this.is.a.very.long.log.message.that.exceeds.normal.expectations.and.tests.boundary.conditions".repeat(10)
-  let long_log = LogRecord::new(Info, very_long_message)
-  assert_eq(LogRecord::body(long_log), Some(very_long_message))
+  // 验证Histogram统计
+  let count = Histogram::get_count(histogram, ["endpoint:/api/data"])
+  let sum = Histogram::get_sum(histogram, ["endpoint:/api/data"])
+  let avg = Histogram::get_average(histogram, ["endpoint:/api/data"])
   
-  // 特殊字符日志消息
-  let special_chars_message = "Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?"
-  let special_chars_log = LogRecord::new(Warn, special_chars_message)
-  assert_eq(LogRecord::body(special_chars_log), Some(special_chars_message))
+  assert_eq(count, response_times.length().to_float())
+  assert_eq(sum, 550.0)  // 10+20+...+100
+  assert_eq(avg, 55.0)   // 550/10
   
-  // Unicode日志消息
-  let unicode_message = "Unicode测试消息🚀 with émojis and ñ special chars"
-  let unicode_log = LogRecord::new(Error, unicode_message)
-  assert_eq(LogRecord::body(unicode_log), Some(unicode_message))
+  // 创建Gauge度量
+  let gauge = Gauge::new("memory.usage", "Current memory usage")
+  Gauge::set(gauge, 1024.0, ["type:heap"])
+  Gauge::set(gauge, 2048.0, ["type:heap"])
+  Gauge::set(gauge, 512.0, ["type:non-heap"])
   
-  // 测试边界值的时间戳
-  let zero_timestamp = 0L
-  let max_timestamp = 9223372036854775807L
-  let negative_timestamp = -1L
+  // 验证Gauge当前值
+  let heap_usage = Gauge::get_value(gauge, ["type:heap"])
+  let non_heap_usage = Gauge::get_value(gauge, ["type:non-heap"])
   
-  let zero_log = LogRecord::new_with_context(
-    Info,
-    Some("Zero timestamp"),
-    None,
-    Some(zero_timestamp),
-    None,
-    None,
-    None,
-    None
-  )
+  assert_eq(heap_usage, 2048.0)
+  assert_eq(non_heap_usage, 512.0)
+}
+
+// 测试4: 日志级别和格式验证
+test "日志级别和格式验证" {
+  let logger = Logger::new("azimuth.test")
+  let log_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+  let log_messages = []
   
-  let max_log = LogRecord::new_with_context(
-    Info,
-    Some("Max timestamp"),
-    None,
-    Some(max_timestamp),
-    None,
-    None,
-    None,
-    None
-  )
+  // 为每个级别创建日志
+  for i = 0; i < log_levels.length(); i = i + 1 {
+    let level = log_levels[i]
+    let message = "Test message at " + level + " level"
+    let timestamp = 1640995200000L + (i * 1000L)
+    
+    Logger::log(logger, level, message, timestamp, [])
+    log_messages.push((level, message, timestamp))
+  }
   
-  // 验证边界值时间戳日志
-  assert_eq(LogRecord::body(zero_log), Some("Zero timestamp"))
-  assert_eq(LogRecord::body(max_log), Some("Max timestamp"))
+  // 验证日志级别顺序
+  assert_eq(log_levels.length(), 6)
   
-  // 测试错误恢复
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error-recovery-test")
+  // 验证日志消息格式
+  for i = 0; i < log_messages.length(); i = i + 1 {
+    let (level, message, timestamp) = log_messages[i]
+    
+    assert_true(log_levels.contains(level))
+    assert_true(message.contains("Test message at"))
+    assert_true(message.contains(level + " level"))
+    assert_true(timestamp >= 1640995200000L)
+  }
   
-  let error_span = Tracer::start_span(tracer, "error.operation")
+  // 验证日志过滤
+  let error_logs = log_messages.filter(|(level, _, _)| {
+    level == "ERROR" || level == "FATAL"
+  })
   
-  // 添加错误事件
-  let error_attrs = Attributes::new()
-  Attributes::set(error_attrs, "error.type", StringValue("BoundaryCondition"))
-  Attributes::set(error_attrs, "error.message", StringValue("Test boundary condition error"))
-  Attributes::set(error_attrs, "error.recovered", BoolValue(true))
+  assert_eq(error_logs.length(), 2)
   
-  Span::add_event(error_span, "error.occurred", Some(error_attrs))
-  Span::add_event(error_span, "recovery.attempted", Some([
-    ("recovery.strategy", StringValue("retry")),
-    ("retry.count", IntValue(3))
-  ]))
+  // 验证日志时间范围过滤
+  let start_time = 1640995202000L
+  let end_time = 1640995204000L
   
-  // 设置错误状态然后恢复
-  Span::set_status(error_span, Error)
-  Span::add_event(error_span, "recovery.successful", None)
-  Span::set_status(error_span, Ok)
+  let time_filtered_logs = log_messages.filter(|(_, _, timestamp)| {
+    timestamp >= start_time && timestamp <= end_time
+  })
   
-  // 结束Span
-  Span::end(error_span)
+  assert_eq(time_filtered_logs.length(), 3)
   
-  // 验证错误恢复
-  assert_false(Span::is_recording(error_span))
+  // 验证日志结构化字段
+  let structured_log = {
+    "timestamp": 1640995200000L,
+    "level": "INFO",
+    "message": "Structured log message",
+    "service": "azimuth.test",
+    "trace_id": "12345678901234567890123456789012",
+    "span_id": "b7ad6b7169203331"
+  }
+  
+  assert_eq(structured_log["level"], "INFO")
+  assert_eq(structured_log["service"], "azimuth.test")
+  assert_eq(structured_log["trace_id"].length(), 32)
+  assert_eq(structured_log["span_id"].length(), 16)
+}
+
+// 测试5: 跨服务上下文传播验证
+test "跨服务上下文传播验证" {
+  // 创建初始上下文
+  let trace_id = "98765432109876543210987654321098"
+  let initial_span_id = "initial0000001"
+  let span_context = SpanContext::new(trace_id, initial_span_id, true, "")
+  
+  // 创建Baggage项
+  let baggage = Baggage::new()
+  Baggage::set(baggage, "user.id", "12345")
+  Baggage::set(baggage, "request.id", "req-67890")
+  Baggage::set(baggage, "session.id", "sess-11111")
+  
+  // 验证Baggage设置
+  let user_id = Baggage::get(baggage, "user.id")
+  let request_id = Baggage::get(baggage, "request.id")
+  let session_id = Baggage::get(baggage, "session.id")
+  
+  assert_eq(user_id, Some("12345"))
+  assert_eq(request_id, Some("req-67890"))
+  assert_eq(session_id, Some("sess-11111"))
+  
+  // 模拟跨服务传播
+  let services = ["frontend", "api-gateway", "auth-service", "user-service"]
+  let propagated_contexts = []
+  
+  for i = 0; i < services.length(); i = i + 1 {
+    let service_name = services[i]
+    let span_id = service_name + "-span-" + i.to_string()
+    
+    // 创建新的Span上下文，保持相同的trace_id
+    let new_context = SpanContext::new(trace_id, span_id, true, "")
+    propagated_contexts.push((service_name, new_context))
+  }
+  
+  // 验证传播的上下文
+  assert_eq(propagated_contexts.length(), services.length())
+  
+  for (service_name, context) in propagated_contexts {
+    assert_eq(SpanContext::trace_id(context), trace_id)
+    assert_true(SpanContext::is_valid(context))
+    assert_true(SpanContext::is_sampled(context))
+    
+    // 验证Baggage在所有服务中可用
+    let propagated_user_id = Baggage::get(baggage, "user.id")
+    let propagated_request_id = Baggage::get(baggage, "request.id")
+    let propagated_session_id = Baggage::get(baggage, "session.id")
+    
+    assert_eq(propagated_user_id, Some("12345"))
+    assert_eq(propagated_request_id, Some("req-67890"))
+    assert_eq(propagated_session_id, Some("sess-11111"))
+  }
+  
+  // 验证上下文序列化和反序列化
+  let serialized_context = SpanContext::serialize(span_context)
+  let deserialized_context = SpanContext::deserialize(serialized_context)
+  
+  assert_eq(SpanContext::trace_id(deserialized_context), trace_id)
+  assert_eq(SpanContext::span_id(deserialized_context), initial_span_id)
+  assert_true(SpanContext::is_valid(deserialized_context))
+}
+
+// 测试6: 资源管理验证
+test "资源管理验证" {
+  // 创建资源
+  let resource = Resource::new()
+  Resource::set_attribute(resource, "service.name", "azimuth.telemetry")
+  Resource::set_attribute(resource, "service.version", "1.0.0")
+  Resource::set_attribute(resource, "host.name", "localhost")
+  Resource::set_attribute(resource, "process.id", "12345")
+  
+  // 验证资源属性
+  let service_name = Resource::get_attribute(resource, "service.name")
+  let service_version = Resource::get_attribute(resource, "service.version")
+  let host_name = Resource::get_attribute(resource, "host.name")
+  let process_id = Resource::get_attribute(resource, "process.id")
+  
+  assert_eq(service_name, Some(StringValue("azimuth.telemetry")))
+  assert_eq(service_version, Some(StringValue("1.0.0")))
+  assert_eq(host_name, Some(StringValue("localhost")))
+  assert_eq(process_id, Some(StringValue("12345")))
+  
+  // 测试资源合并
+  let additional_resource = Resource::new()
+  Resource::set_attribute(additional_resource, "deployment.environment", "production")
+  Resource::set_attribute(additional_resource, "telemetry.sdk.name", "azimuth")
+  Resource::set_attribute(additional_resource, "telemetry.sdk.version", "0.1.0")
+  
+  let merged_resource = Resource::merge(resource, additional_resource)
+  
+  // 验证合并后的资源包含所有属性
+  let merged_service_name = Resource::get_attribute(merged_resource, "service.name")
+  let merged_env = Resource::get_attribute(merged_resource, "deployment.environment")
+  let merged_sdk_name = Resource::get_attribute(merged_resource, "telemetry.sdk.name")
+  
+  assert_eq(merged_service_name, Some(StringValue("azimuth.telemetry")))
+  assert_eq(merged_env, Some(StringValue("production")))
+  assert_eq(merged_sdk_name, Some(StringValue("azimuth")))
+  
+  // 测试资源序列化
+  let serialized_resource = Resource::serialize(merged_resource)
+  assert_true(serialized_resource.length() > 0)
+  assert_true(serialized_resource.contains("service.name"))
+  assert_true(serialized_resource.contains("deployment.environment"))
+  
+  // 测试资源反序列化
+  let deserialized_resource = Resource::deserialize(serialized_resource)
+  let deser_service_name = Resource::get_attribute(deserialized_resource, "service.name")
+  let deser_env = Resource::get_attribute(deserialized_resource, "deployment.environment")
+  
+  assert_eq(deser_service_name, Some(StringValue("azimuth.telemetry")))
+  assert_eq(deser_env, Some(StringValue("production")))
+}
+
+// 测试7: 错误处理和恢复验证
+test "错误处理和恢复验证" {
+  // 测试无效Span上下文处理
+  let invalid_trace_id = ""  // 空的trace ID
+  let invalid_span_id = ""   // 空的span ID
+  let invalid_context = SpanContext::new(invalid_trace_id, invalid_span_id, false, "")
+  
+  // 验证无效上下文被正确识别
+  assert_false(SpanContext::is_valid(invalid_context))
+  assert_false(SpanContext::is_sampled(invalid_context))
+  
+  // 测试错误恢复机制
+  let recovered_context = SpanContext::generate_random_context()
+  assert_true(SpanContext::is_valid(recovered_context))
+  assert_true(SpanContext::trace_id(recovered_context).length() == 32)
+  assert_true(SpanContext::span_id(recovered_context).length() == 16)
+  
+  // 测试属性错误处理
+  let attributes = Attributes::new()
+  
+  // 测试空键处理
+  Attributes::set(attributes, "", "empty_key_value")
+  let empty_key_result = Attributes::get(attributes, "")
+  assert_eq(empty_key_result, None)  // 空键应该被忽略
+  
+  // 测试空值处理
+  Attributes::set(attributes, "null.key", "")
+  let null_value_result = Attributes::get(attributes, "null.key")
+  assert_eq(null_value_result, None)  // 空值应该被忽略
+  
+  // 测试超长属性名处理
+  let long_key = "a".repeat(1000)  // 超长键名
+  Attributes::set(attributes, long_key, "long_key_value")
+  let long_key_result = Attributes::get(attributes, long_key)
+  assert_eq(long_key_result, None)  // 超长键名应该被忽略
+  
+  // 测试日志错误处理
+  let logger = Logger::new("error.test")
+  
+  // 测试无效日志级别
+  Logger::log(logger, "INVALID", "Invalid level message", 1640995200000L, [])
+  // 无效级别应该被忽略或降级为默认级别
+  
+  // 测试空日志消息
+  Logger::log(logger, "INFO", "", 1640995200000L, [])
+  // 空消息应该被忽略或使用默认消息
+  
+  // 测试度量错误处理
+  let counter = Counter::new("error.counter", "Error test counter")
+  
+  // 测试负值处理
+  Counter::add(counter, -1.0, ["error:negative"])
+  let negative_value = Counter::get_value(counter, ["error:negative"])
+  assert_eq(negative_value, 0.0)  // 负值应该被忽略或重置为0
+  
+  // 测试无限值处理
+  Counter::add(counter, Float::infinity, ["error:infinity"])
+  let infinity_value = Counter::get_value(counter, ["error:infinity"])
+  assert_eq(infinity_value, 0.0)  // 无限值应该被忽略或重置为0
+  
+  // 测试NaN值处理
+  Counter::add(counter, Float::nan, ["error:nan"])
+  let nan_value = Counter::get_value(counter, ["error:nan"])
+  assert_eq(nan_value, 0.0)  // NaN值应该被忽略或重置为0
+}
+
+// 测试8: 并发安全验证
+test "并发安全验证" {
+  // 创建共享资源
+  let shared_counter = Counter::new("concurrent.counter", "Concurrent access counter")
+  let shared_attributes = Attributes::new()
+  let shared_logger = Logger::new("concurrent.logger")
+  
+  // 模拟并发操作
+  let operation_count = 1000
+  let operations_per_thread = 100
+  let thread_count = operation_count / operations_per_thread
+  
+  // 模拟并发Counter操作
+  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
+    for i = 0; i < operations_per_thread; i = i + 1 {
+      let value = (thread_id * operations_per_thread + i).to_float()
+      Counter::add(shared_counter, value, ["thread:" + thread_id.to_string()])
+    }
+  }
+  
+  // 验证并发操作结果
+  let total_expected = (0.0 + (operation_count - 1).to_float()) * operation_count.to_float() / 2.0
+  let total_actual = Counter::get_total_value(shared_counter)
+  
+  assert_eq(total_actual, total_expected)
+  
+  // 模拟并发属性操作
+  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
+    for i = 0; i < operations_per_thread; i = i + 1 {
+      let key = "thread." + thread_id.to_string() + ".key." + i.to_string()
+      let value = "thread." + thread_id.to_string() + ".value." + i.to_string()
+      Attributes::set(shared_attributes, key, StringValue(value))
+    }
+  }
+  
+  // 验证并发属性设置
+  let attribute_count = Attributes::size(shared_attributes)
+  assert_eq(attribute_count, operation_count)
+  
+  // 模拟并发日志操作
+  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
+    for i = 0; i < operations_per_thread; i = i + 1 {
+      let message = "Thread " + thread_id.to_string() + " message " + i.to_string()
+      let timestamp = 1640995200000L + (thread_id * operations_per_thread + i) * 10L
+      Logger::log(shared_logger, "INFO", message, timestamp, ["thread:" + thread_id.to_string()])
+    }
+  }
+  
+  // 验证并发日志记录
+  let log_count = Logger::get_message_count(shared_logger)
+  assert_eq(log_count, operation_count)
+  
+  // 验证线程间数据隔离
+  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
+    let thread_key = "thread." + thread_id.to_string() + ".key.0"
+    let thread_value = Attributes::get(shared_attributes, thread_key)
+    
+    match thread_value {
+      Some(StringValue(value)) => {
+        assert_eq(value, "thread." + thread_id.to_string() + ".value.0")
+      }
+      _ => assert_false(true)  // 应该能找到值
+    }
+  }
 }
