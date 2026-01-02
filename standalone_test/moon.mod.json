@@ -1,0 +1,7 @@
+{
+  "name": "azimuth_standalone",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "license": "MIT",
+  "description": "Standalone test package for Azimuth telemetry system"
+}

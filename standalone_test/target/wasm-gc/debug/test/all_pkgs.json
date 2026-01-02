@@ -1,0 +1,9 @@
+{
+  "packages": [
+    {
+      "root": "azimuth_standalone",
+      "rel": "",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/standalone_test/target/wasm-gc/debug/test/azimuth_standalone.mi"
+    }
+  ]
+}

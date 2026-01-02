@@ -57,39 +57,15 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "new_focused_test_suite.mbt": {
-  },
-  "new_enhanced_tests.mbt": {
-  },
-  "enhanced_test_suite.mbt": {
-  },
-  "enhanced_quality_tests.mbt": {
-  },
-  "azimuth_specialized_comprehensive_tests.mbt": {
-  },
-  "azimuth_premium_technical_tests.mbt": {
-  },
-  "azimuth_premium_comprehensive_tests.mbt": {
-  },
-  "azimuth_new_tests.mbt": {
-  },
-  "azimuth_new_focused_tests.mbt": {
-  },
-  "azimuth_new_comprehensive_moonbit_tests.mbt": {
-  },
-  "azimuth_focused_telemetry_tests.mbt": {
-  },
-  "azimuth_focused_moonbit_tests.mbt": {
-  },
-  "azimuth_enhanced_moonbit_tests.mbt": {
-  },
-  "azimuth_enhanced_core_tests.mbt": {
-  },
   "azimuth_comprehensive_test_suite.mbt": {
-  },
-  "azimuth_comprehensive_enhanced_tests.mbt": {
-  },
-  "azimuth_advanced_lifecycle_tests.mbt": {
+    0: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_0, ["attribute value type conversion"]),
+    1: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_1, ["span lifecycle management"]),
+    2: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_2, ["metrics dashboard functionality"]),
+    3: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_3, ["distributed tracing consistency"]),
+    4: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_4, ["cross-service propagation"]),
+    5: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_5, ["log record severity levels"]),
+    6: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_6, ["resource merge strategy"]),
+    7: (__test_617a696d7574685f636f6d70726568656e736976655f746573745f73756974652e6d6274_7, ["concurrent safety"]),
   },
   "azimuth.mbt": {
   },
@@ -169,7 +145,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/azimuth_test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth_standalone\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
