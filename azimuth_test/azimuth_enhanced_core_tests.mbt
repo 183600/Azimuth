@@ -332,7 +332,7 @@ test "时间相关功能测试" {
   // 创建多个带有不同时间戳的日志
   let logs = []
   for i = 0; i < 5; i = i + 1 {
-    let log_time = current_time + (i * 1000000L) // 每个日志间隔1ms
+    let log_time = current_time + (i.to_int64() * 1000000L) // 每个日志间隔1ms
     let log = LogRecord::new_with_context(
       Info,
       Some("Timed log " + i.to_string()),
@@ -385,17 +385,41 @@ test "资源和属性管理功能测试" {
   let merged_resource = Resource::merge(service_resource, host_resource)
   
   // 验证资源属性
-  assert_eq(Resource::get_attribute(service_resource, "service.name"), Some(StringValue("test.service")))
-  assert_eq(Resource::get_attribute(service_resource, "service.version"), Some(StringValue("1.0.0")))
-  assert_eq(Resource::get_attribute(service_resource, "service.instance.id"), Some(StringValue("instance-123")))
+  match Resource::get_attribute(service_resource, "service.name") {
+    Some(StringValue("test.service")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Resource::get_attribute(service_resource, "service.version") {
+    Some(StringValue("1.0.0")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Resource::get_attribute(service_resource, "service.instance.id") {
+    Some(StringValue("instance-123")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  assert_eq(Resource::get_attribute(host_resource, "host.name"), Some(StringValue("test-host")))
-  assert_eq(Resource::get_attribute(host_resource, "host.arch"), Some(StringValue("amd64")))
-  assert_eq(Resource::get_attribute(host_resource, "os.type"), Some(StringValue("linux")))
+  match Resource::get_attribute(host_resource, "host.name") {
+    Some(StringValue("test-host")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Resource::get_attribute(host_resource, "host.arch") {
+    Some(StringValue("amd64")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Resource::get_attribute(host_resource, "os.type") {
+    Some(StringValue("linux")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // 验证合并后的资源属性
-  assert_eq(Resource::get_attribute(merged_resource, "service.name"), Some(StringValue("test.service")))
-  assert_eq(Resource::get_attribute(merged_resource, "host.name"), Some(StringValue("test-host")))
+  match Resource::get_attribute(merged_resource, "service.name") {
+    Some(StringValue("test.service")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Resource::get_attribute(merged_resource, "host.name") {
+    Some(StringValue("test-host")) => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // 测试属性操作
   let attrs = Attributes::new()
@@ -405,11 +429,20 @@ test "资源和属性管理功能测试" {
   Attributes::set(attrs, "bool.attr", BoolValue(true))
   
   // 验证属性获取
-  assert_eq(Attributes::get(attrs, "string.key"), Some(StringValue("test_value")))
-  assert_eq(Attributes::get(attrs, "int.key"), Some(IntValue(42)))
+  match Attributes::get(attrs, "string.key") {
+    Some(StringValue("test_value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  match Attributes::get(attrs, "int.key") {
+    Some(IntValue(42)) => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // 测试不存在的属性
-  assert_eq(Attributes::get(attrs, "nonexistent.key"), None)
+  match Attributes::get(attrs, "nonexistent.key") {
+    None => assert_true(true)
+    _ => assert_true(false)
+  }
   
   // 测试属性数组
   let string_array_attr = ArrayStringValue(["item1", "item2", "item3"])
@@ -500,7 +533,10 @@ test "上下文传播和行李传递功能测试" {
   
   // 验证载体中的traceparent
   let traceparent = TextMapCarrier::get(carrier, "traceparent")
-  assert_true(traceparent is Some)
+  match traceparent {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
   
   assert_true(true)
 }
