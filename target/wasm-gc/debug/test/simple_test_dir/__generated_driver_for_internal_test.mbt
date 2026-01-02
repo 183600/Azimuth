@@ -57,6 +57,8 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
+  "main.mbt": {
+  },
   "azimuth_additional_test_cases.mbt": {
     0: (__test_617a696d7574685f6164646974696f6e616c5f746573745f63617365732e6d6274_0, ["span operations with different kinds"]),
     1: (__test_617a696d7574685f6164646974696f6e616c5f746573745f63617365732e6d6274_1, ["context operations with multiple keys"]),

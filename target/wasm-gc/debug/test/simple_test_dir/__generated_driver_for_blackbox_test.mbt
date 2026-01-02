@@ -60,6 +60,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "simple_test.mbt": {
     0: (__test_73696d706c655f746573742e6d6274_0, ["simple test case"]),
   },
+  "main.mbt": {
+  },
   "azimuth_additional_test_cases.mbt": {
   },
   "azimuth.mbt": {
