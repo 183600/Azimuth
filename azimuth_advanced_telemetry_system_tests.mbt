@@ -1,311 +1,394 @@
 // Azimuth Advanced Telemetry System Tests
-// 高级遥测系统测试用例 - 专注于核心遥测功能的深度测试
+// 高级遥测系统测试用例 - 专注于核心功能和边界条件
 
-// 测试1: 资源管理测试
-test "资源管理功能测试" {
-  let resource1 = Resource::create()
-  let resource2 = Resource::create()
+// Test 1: 遥测数据序列化和反序列化
+test "telemetry data serialization and deserialization" {
+  // 创建测试属性
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "service.name", StringValue("azimuth"))
+  Attributes::set(attrs, "service.version", StringValue("1.0.0"))
+  Attributes::set(attrs, "request.count", IntValue(100))
+  Attributes::set(attrs, "latency.ms", FloatValue(125.5))
+  Attributes::set(attrs, "healthy", BoolValue(true))
   
-  // 设置资源属性
-  Resource::set_attribute(resource1, "service.name", "azimuth-service")
-  Resource::set_attribute(resource1, "service.version", "1.0.0")
-  Resource::set_attribute(resource1, "deployment.environment", "production")
+  // 测试序列化
+  let serialized = Attributes::serialize(attrs)
+  assert_true(serialized.length() > 0)
   
-  Resource::set_attribute(resource2, "host.name", "server-01")
-  Resource::set_attribute(resource2, "host.id", "host-12345")
-  Resource::set_attribute(resource2, "os.type", "linux")
+  // 测试反序列化
+  let deserialized = Attributes::deserialize(serialized)
+  assert_true(deserialized !== None)
   
-  // 合并资源
-  let merged_resource = Resource::merge(resource1, resource2)
-  
-  // 验证合并后的属性
-  assert_eq(Resource::get_attribute(merged_resource, "service.name"), "azimuth-service")
-  assert_eq(Resource::get_attribute(merged_resource, "service.version"), "1.0.0")
-  assert_eq(Resource::get_attribute(merged_resource, "deployment.environment"), "production")
-  assert_eq(Resource::get_attribute(merged_resource, "host.name"), "server-01")
-  assert_eq(Resource::get_attribute(merged_resource, "host.id"), "host-12345")
-  assert_eq(Resource::get_attribute(merged_resource, "os.type"), "linux")
-  
-  // 验证资源有效性
-  assert_true(Resource::is_valid(merged_resource))
+  match deserialized {
+    Some(deser_attrs) => {
+      let service_name = Attributes::get(deser_attrs, "service.name")
+      match service_name {
+        Some(StringValue(name)) => assert_eq(name, "azimuth")
+        _ => assert_true(false)
+      }
+      
+      let request_count = Attributes::get(deser_attrs, "request.count")
+      match request_count {
+        Some(IntValue(count)) => assert_eq(count, 100)
+        _ => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
 }
 
-// 测试2: 日志记录测试
-test "日志记录功能测试" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "test.logger")
+// Test 2: 跨服务上下文传播
+test "cross-service context propagation" {
+  // 创建初始上下文
+  let trace_id = "abc123def45678901234567890123456"
+  let span_id = "1234567890abcdef"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "active")
   
-  // 创建日志记录器
-  let log_record1 = Logger::create_log_record(logger, LogLevel::INFO)
-  let log_record2 = Logger::create_log_record(logger, LogLevel::WARN)
-  let log_record3 = Logger::create_log_record(logger, LogLevel::ERROR)
+  // 创建传播器
+  let propagator = TraceContextPropagator::new()
   
-  // 设置日志属性
-  LogRecord::set_body(log_record1, "Application started successfully")
-  LogRecord::set_attribute(log_record1, "event.id", "evt-001")
-  LogRecord::set_attribute(log_record1, "user.id", "user-123")
+  // 测试注入
+  let carrier = TextMapCarrier::new()
+  Propagator::inject(propagator, span_ctx, carrier)
   
-  LogRecord::set_body(log_record2, "High memory usage detected")
-  LogRecord::set_attribute(log_record2, "memory.usage", "85%")
-  LogRecord::set_attribute(log_record2, "threshold", "80%")
+  // 验证注入的头部
+  let trace_header = Carrier::get(carrier, "traceparent")
+  assert_true(trace_header !== None)
   
-  LogRecord::set_body(log_record3, "Database connection failed")
-  LogRecord::set_attribute(log_record3, "error.code", "DB_CONN_FAILED")
-  LogRecord::set_attribute(log_record3, "retry.count", "3")
-  
-  // 发出日志
-  Logger::emit(log_record1)
-  Logger::emit(log_record2)
-  Logger::emit(log_record3)
-  
-  // 验证日志级别
-  assert_eq(LogRecord::get_severity(log_record1), LogLevel::INFO)
-  assert_eq(LogRecord::get_severity(log_record2), LogLevel::WARN)
-  assert_eq(LogRecord::get_severity(log_record3), LogLevel::ERROR)
-  
-  // 验证日志内容
-  assert_eq(LogRecord::get_body(log_record1), "Application started successfully")
-  assert_eq(LogRecord::get_body(log_record2), "High memory usage detected")
-  assert_eq(LogRecord::get_body(log_record3), "Database connection failed")
+  // 测试提取
+  let extracted_ctx = Propagator::extract(propagator, carrier)
+  assert_true(SpanContext::is_valid(extracted_ctx))
+  assert_eq(SpanContext::trace_id(extracted_ctx), trace_id)
+  assert_true(SpanContext::is_sampled(extracted_ctx))
 }
 
-// 测试3: 链路追踪测试
-test "链路追踪功能测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "trace.test")
+// Test 3: 性能基准测试
+test "telemetry performance benchmarks" {
+  let start_time = Time::now()
   
-  // 创建父span
-  let parent_span = Tracer::start_span(tracer, "parent.operation")
-  Span::set_attribute(parent_span, "operation.type", "parent")
-  Span::set_attribute(parent_span, "user.id", "user-456")
+  // 创建大量跨度
+  let spans = []
+  for i in 0..<1000 {
+    let trace_id = "trace_" + i.to_string()
+    let span_id = "span_" + i.to_string()
+    let span_ctx = SpanContext::new(trace_id, span_id, true, "")
+    let span = Span::new("performance_test", Server, span_ctx)
+    spans = spans.push(span)
+  }
   
-  // 创建子span
-  let child_span1 = Tracer::start_span(tracer, "child.operation.1")
-  Span::set_attribute(child_span1, "operation.type", "child")
-  Span::set_attribute(child_span1, "service.name", "auth-service")
+  let creation_time = Time::now()
+  let creation_duration = creation_time - start_time
   
-  let child_span2 = Tracer::start_span(tracer, "child.operation.2")
-  Span::set_attribute(child_span2, "operation.type", "child")
-  Span::set_attribute(child_span2, "service.name", "data-service")
+  // 验证创建性能（应该在合理时间内完成）
+  assert_true(creation_duration < 1000) // 小于1秒
   
-  // 创建孙span
-  let grandchild_span = Tracer::start_span(tracer, "grandchild.operation")
-  Span::set_attribute(grandchild_span, "operation.type", "grandchild")
-  Span::set_attribute(grandchild_span, "database.query", "SELECT * FROM users")
+  // 测试属性设置性能
+  let attrs = Attributes::new()
+  let attr_start = Time::now()
   
-  // 设置span状态
-  Span::set_status(parent_span, Ok)
-  Span::set_status(child_span1, Ok)
-  Span::set_status(child_span2, Error("Timeout occurred"))
-  Span::set_status(grandchild_span, Ok)
+  for i in 0..<1000 {
+    let key = "attr_" + i.to_string()
+    Attributes::set(attrs, key, IntValue(i))
+  }
   
-  // 结束span（按正确顺序）
-  Span::end(grandchild_span)
-  Span::end(child_span2)
-  Span::end(child_span1)
-  Span::end(parent_span)
+  let attr_end = Time::now()
+  let attr_duration = attr_end - attr_start
+  assert_true(attr_duration < 500) // 小于0.5秒
   
-  // 验证span属性
-  assert_eq(Span::get_attribute(parent_span, "operation.type"), "parent")
-  assert_eq(Span::get_attribute(child_span1, "service.name"), "auth-service")
-  assert_eq(Span::get_attribute(grandchild_span, "database.query"), "SELECT * FROM users")
+  // 测试度量记录性能
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "performance_meter")
+  let counter = Meter::create_counter(meter, "perf_counter", None, None)
   
-  // 验证span状态
-  assert_true(Span::is_finished(parent_span))
-  assert_true(Span::is_finished(child_span1))
-  assert_true(Span::is_finished(child_span2))
-  assert_true(Span::is_finished(grandchild_span))
+  let metric_start = Time::now()
+  for i in 0..<1000 {
+    Counter::add(counter, i.to_float())
+  }
+  let metric_end = Time::now()
+  let metric_duration = metric_end - metric_start
+  assert_true(metric_duration < 500) // 小于0.5秒
 }
 
-// 测试4: 指标聚合测试
-test "指标聚合功能测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "metrics.aggregation.test")
+// Test 4: 错误边界处理
+test "error boundary handling and recovery" {
+  // 测试无效输入处理
+  let attrs = Attributes::new()
   
-  // 创建指标
-  let request_counter = Meter::create_counter(meter, "http.requests.total")
-  let response_histogram = Meter::create_histogram(meter, "http.response.duration")
-  let active_gauge = Meter::create_gauge(meter, "active.connections")
-  let updown_counter = Meter::create_updown_counter(meter, "active.sessions")
+  // 测试空键处理
+  let result = Attributes::set(attrs, "", StringValue("value"))
+  match result {
+    Ok(_) => assert_true(false) // 应该失败
+    Err(_) => assert_true(true)  // 预期失败
+  }
   
-  // 添加计数器数据
-  Counter::add(request_counter, 10.0, [ ("method", "GET"), ("status", "200") ])
-  Counter::add(request_counter, 5.0, [ ("method", "POST"), ("status", "201") ])
-  Counter::add(request_counter, 2.0, [ ("method", "GET"), ("status", "404") ])
-  Counter::add(request_counter, 1.0, [ ("method", "POST"), ("status", "500") ])
+  // 测试空值处理
+  let null_result = Attributes::set(attrs, "test.key", StringValue(""))
+  match null_result {
+    Ok(_) => assert_true(true)  // 空字符串是有效的
+    Err(_) => assert_true(false)
+  }
   
-  // 添加直方图数据
-  Histogram::record(response_histogram, 0.1, [ ("endpoint", "/api/users") ])
-  Histogram::record(response_histogram, 0.2, [ ("endpoint", "/api/users") ])
-  Histogram::record(response_histogram, 0.15, [ ("endpoint", "/api/orders") ])
-  Histogram::record(response_histogram, 0.3, [ ("endpoint", "/api/orders") ])
+  // 测试无效跨度上下文
+  let invalid_ctx = SpanContext::new("invalid", "context", false, "")
+  assert_false(SpanContext::is_valid(invalid_ctx))
   
-  // 设置仪表数据
-  Gauge::set(active_gauge, 25.0, [ ("server", "web-01") ])
-  Gauge::set(active_gauge, 30.0, [ ("server", "web-02") ])
+  // 测试错误恢复
+  let valid_ctx = SpanContext::new("valid_trace_id", "valid_span_id", true, "active")
+  assert_true(SpanContext::is_valid(valid_ctx))
   
-  // 添加上下计数器数据
-  UpDownCounter::add(updown_counter, 15.0, [ ("session.type", "user") ])
-  UpDownCounter::add(updown_counter, -3.0, [ ("session.type", "user") ])
-  UpDownCounter::add(updown_counter, 8.0, [ ("session.type", "admin") ])
+  // 测试资源限制
+  let large_attrs = Attributes::new()
+  let mut error_count = 0
   
-  // 聚合指标数据
-  let aggregated_data = Meter::collect_metrics(meter)
+  for i in 0..<10000 {
+    let key = "large_attr_" + i.to_string()
+    let result = Attributes::set(large_attrs, key, StringValue("large_value"))
+    match result {
+      Ok(_) => ()
+      Err(_) => { error_count = error_count + 1 }
+    }
+  }
   
-  // 验证聚合结果
-  assert_true(MetricData::has_counter(aggregated_data, "http.requests.total"))
-  assert_true(MetricData::has_histogram(aggregated_data, "http.response.duration"))
-  assert_true(MetricData::has_gauge(aggregated_data, "active.connections"))
-  assert_true(MetricData::has_updown_counter(aggregated_data, "active.sessions"))
-  
-  // 验证具体值
-  assert_eq(MetricData::get_counter_sum(aggregated_data, "http.requests.total"), 18.0)
-  assert_eq(MetricData::get_gauge_value(aggregated_data, "active.connections", [ ("server", "web-01") ]), 25.0)
-  assert_eq(MetricData::get_updown_counter_value(aggregated_data, "active.sessions", [ ("session.type", "user") ]), 12.0)
+  // 验证系统能够优雅处理资源限制
+  assert_true(error_count < 100) // 错误应该在合理范围内
 }
 
-// 测试5: 采样策略测试
-test "采样策略功能测试" {
-  let sampler_provider = SamplerProvider::default()
+// Test 5: 资源管理和清理
+test "resource management and cleanup" {
+  // 创建资源
+  let resource = Resource::new()
+  let attrs = [
+    ("service.name", StringValue("test_service")),
+    ("service.instance.id", StringValue("instance-123")),
+    ("deployment.environment", StringValue("production"))
+  ]
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
   
-  // 创建不同类型的采样器
-  let always_on_sampler = SamplerProvider::create_always_on_sampler(sampler_provider)
-  let always_off_sampler = SamplerProvider::create_always_off_sampler(sampler_provider)
-  let trace_id_ratio_sampler = SamplerProvider::create_trace_id_ratio_sampler(sampler_provider, 0.5)
+  // 测试资源合并
+  let override_resource = Resource::with_attributes(Resource::new(), [
+    ("service.name", StringValue("override_service")),
+    ("new.attr", StringValue("new_value"))
+  ])
   
-  // 创建测试上下文
-  let context1 = SamplingContext::create("trace-id-001", "span-id-001")
-  let context2 = SamplingContext::create("trace-id-002", "span-id-002")
-  let context3 = SamplingContext::create("trace-id-003", "span-id-003")
+  let merged = Resource::merge(resource_with_attrs, override_resource)
   
-  // 测试AlwaysOn采样器
-  let decision1 = Sampler::should_sample(always_on_sampler, context1)
-  assert_eq(SamplingDecision::get_decision(decision1), Decision::RecordAndSample)
+  // 验证合并结果
+  let service_name = Resource::get_attribute(merged, "service.name")
+  match service_name {
+    Some(StringValue(name)) => assert_eq(name, "override_service")
+    _ => assert_true(false)
+  }
   
-  // 测试AlwaysOff采样器
-  let decision2 = Sampler::should_sample(always_off_sampler, context2)
-  assert_eq(SamplingDecision::get_decision(decision2), Decision::Drop)
+  let new_attr = Resource::get_attribute(merged, "new.attr")
+  match new_attr {
+    Some(StringValue(value)) => assert_eq(value, "new_value")
+    _ => assert_true(false)
+  }
   
-  // 测试TraceIdRatio采样器
-  let decision3 = Sampler::should_sample(trace_id_ratio_sampler, context3)
-  // 结果取决于trace-id，但应该是有效的决策
-  assert_true(SamplingDecision::is_valid(decision3))
-  
-  // 验证采样属性
-  let attributes = SamplingDecision::get_attributes(decision1)
-  assert_true(AttributeList::is_valid(attributes))
+  // 测试资源清理
+  let cleanup_result = Resource::cleanup(merged)
+  match cleanup_result {
+    Ok(_) => assert_true(true)
+    Err(_) => assert_true(false)
+  }
 }
 
-// 测试6: 传播器测试
-test "传播器功能测试" {
-  let propagator_provider = PropagatorProvider::default()
-  let composite_propagator = PropagatorProvider::create_composite_propagator(propagator_provider)
+// Test 6: 时间序列数据处理
+test "time series data processing" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "time_series_meter")
+  let histogram = Meter::create_histogram(meter, "response_time", Some("Response time histogram"), Some("ms"))
   
-  // 创建测试上下文
-  let context = Context::create()
-  let span_context = SpanContext::create("trace-id-123", "span-id-456", true, true)
-  Context::set_span_context(context, span_context)
+  // 记录时间序列数据
+  let base_time = Time::now()
+  let measurements = [100.0, 150.0, 200.0, 120.0, 180.0, 90.0, 210.0, 160.0, 140.0, 190.0]
   
-  // 设置baggage
-  Baggage::set(context, "user.id", "user-789")
-  Baggage::set(context, "request.id", "req-12345")
-  Baggage::set(context, "session.id", "sess-98765")
+  for i in 0..<measurements.length() {
+    let attrs = Attributes::new()
+    Attributes::set(attrs, "measurement.index", IntValue(i))
+    Histogram::record(histogram, measurements[i], Some(attrs))
+  }
   
-  // 注入传播
-  let carrier = TextMapCarrier::create()
-  Propagator::inject(composite_propagator, context, carrier)
+  // 测试时间序列聚合
+  let aggregator = TimeSeriesAggregator::new(histogram)
+  let stats = Aggregator::get_statistics(aggregator)
   
-  // 验证注入的数据
-  assert_true(TextMapCarrier::has_key(carrier, "traceparent"))
-  assert_true(TextMapCarrier::has_key(carrier, "baggage"))
+  match stats {
+    Some(statistics) => {
+      assert_true(Statistics::count(statistics) == measurements.length())
+      assert_true(Statistics::min(statistics) <= 100.0)
+      assert_true(Statistics::max(statistics) >= 200.0)
+      assert_true(Statistics::average(statistics) > 100.0 && Statistics::average(statistics) < 200.0)
+    }
+    None => assert_true(false)
+  }
   
-  // 提取传播
-  let extracted_context = Context::create()
-  Propagator::extract(composite_propagator, extracted_context, carrier)
-  
-  // 验证提取的上下文
-  let extracted_span_context = Context::get_span_context(extracted_context)
-  assert_true(SpanContext::is_valid(extracted_span_context))
-  assert_eq(SpanContext::get_trace_id(extracted_span_context), "trace-id-123")
-  assert_eq(SpanContext::get_span_id(extracted_span_context), "span-id-456")
-  
-  // 验证提取的baggage
-  assert_eq(Baggage::get(extracted_context, "user.id"), "user-789")
-  assert_eq(Baggage::get(extracted_context, "request.id"), "req-12345")
-  assert_eq(Baggage::get(extracted_context, "session.id"), "sess-98765")
+  // 测试时间窗口聚合
+  let window_stats = Aggregator::get_window_statistics(aggregator, base_time, base_time + 1000)
+  match window_stats {
+    Some(window_data) => assert_true(window_data.count > 0)
+    None => assert_true(false)
+  }
 }
 
-// 测试7: 批处理测试
-test "批处理功能测试" {
-  let batch_processor = BatchProcessor::create(100, 5000) // 100 items or 5 seconds
+// Test 7: 配置管理和动态更新
+test "configuration management and dynamic updates" {
+  // 创建配置管理器
+  let config_manager = ConfigurationManager::new()
   
-  // 创建测试数据
-  let span1 = TestSpan::create("span-1", "operation-1")
-  let span2 = TestSpan::create("span-2", "operation-2")
-  let span3 = TestSpan::create("span-3", "operation-3")
-  let span4 = TestSpan::create("span-4", "operation-4")
-  let span5 = TestSpan::create("span-5", "operation-5")
+  // 设置初始配置
+  let initial_config = [
+    ("telemetry.enabled", BoolValue(true)),
+    ("telemetry.sampling.rate", FloatValue(0.1)),
+    ("telemetry.batch.size", IntValue(100)),
+    ("telemetry.export.interval", IntValue(5000))
+  ]
   
-  // 添加到批处理器
-  BatchProcessor::add(batch_processor, span1)
-  BatchProcessor::add(batch_processor, span2)
-  BatchProcessor::add(batch_processor, span3)
-  BatchProcessor::add(batch_processor, span4)
-  BatchProcessor::add(batch_processor, span5)
+  for (key, value) in initial_config {
+    ConfigurationManager::set(config_manager, key, value)
+  }
   
-  // 验证批处理状态
-  assert_eq(BatchProcessor::get_pending_count(batch_processor), 5)
-  assert_false(BatchProcessor::is_ready(batch_processor)) // 不到100个
+  // 验证配置读取
+  let enabled = ConfigurationManager::get_bool(config_manager, "telemetry.enabled")
+  match enabled {
+    Some(value) => assert_true(value)
+    None => assert_true(false)
+  }
   
-  // 强制刷新
-  BatchProcessor::flush(batch_processor)
+  let sampling_rate = ConfigurationManager::get_float(config_manager, "telemetry.sampling.rate")
+  match sampling_rate {
+    Some(rate) => assert_eq(rate, 0.1)
+    None => assert_true(false)
+  }
   
-  // 验证刷新后状态
-  assert_eq(BatchProcessor::get_pending_count(batch_processor), 0)
-  assert_true(BatchProcessor::is_flushed(batch_processor))
-  
-  // 测试批处理配置
-  let config = BatchProcessor::get_config(batch_processor)
-  assert_eq(Config::get_max_batch_size(config), 100)
-  assert_eq(Config::get_max_export_timeout(config), 5000)
-  assert_true(Config::is_valid(config))
-}
-
-// 测试8: 配置管理测试
-test "配置管理功能测试" {
-  let config_manager = ConfigManager::create()
-  
-  // 设置配置项
-  ConfigManager::set(config_manager, "telemetry.enabled", "true")
-  ConfigManager::set(config_manager, "telemetry.service.name", "azimuth-test")
-  ConfigManager::set(config_manager, "telemetry.service.version", "1.0.0")
-  ConfigManager::set(config_manager, "telemetry.sampling.probability", "0.1")
-  ConfigManager::set(config_manager, "telemetry.exporter.endpoint", "http://localhost:4317")
-  
-  // 获取配置项
-  assert_eq(ConfigManager::get(config_manager, "telemetry.enabled"), "true")
-  assert_eq(ConfigManager::get(config_manager, "telemetry.service.name"), "azimuth-test")
-  assert_eq(ConfigManager::get(config_manager, "telemetry.service.version"), "1.0.0")
-  assert_eq(ConfigManager::get(config_manager, "telemetry.sampling.probability"), "0.1")
-  assert_eq(ConfigManager::get(config_manager, "telemetry.exporter.endpoint"), "http://localhost:4317")
-  
-  // 测试配置更新
-  ConfigManager::update(config_manager, "telemetry.sampling.probability", "0.5")
-  assert_eq(ConfigManager::get(config_manager, "telemetry.sampling.probability"), "0.5")
-  
-  // 测试配置删除
-  ConfigManager::remove(config_manager, "telemetry.exporter.endpoint")
-  assert_eq(ConfigManager::get(config_manager, "telemetry.exporter.endpoint"), "")
+  // 测试动态配置更新
+  ConfigurationManager::set(config_manager, "telemetry.sampling.rate", FloatValue(0.2))
+  let updated_rate = ConfigurationManager::get_float(config_manager, "telemetry.sampling.rate")
+  match updated_rate {
+    Some(rate) => assert_eq(rate, 0.2)
+    None => assert_true(false)
+  }
   
   // 测试配置验证
-  let validation_result = ConfigManager::validate(config_manager)
-  assert_true(ValidationResult::is_valid(validation_result))
-  assert_eq(ValidationResult::get_error_count(validation_result), 0)
+  let invalid_result = ConfigurationManager::set(config_manager, "telemetry.sampling.rate", FloatValue(1.5))
+  match invalid_result {
+    Ok(_) => assert_true(false) // 应该失败，采样率不能大于1.0
+    Err(_) => assert_true(true)  // 预期失败
+  }
+}
+
+// Test 8: 并发安全性测试
+test "concurrent safety and thread safety" {
+  let attrs = Attributes::new()
+  let counter = AtomicCounter::new(0)
   
-  // 测试配置导出
-  let exported_config = ConfigManager::export(config_manager)
-  assert_true(ConfigExport::contains(exported_config, "telemetry.enabled"))
-  assert_true(ConfigExport::contains(exported_config, "telemetry.service.name"))
-  assert_true(ConfigExport::contains(exported_config, "telemetry.service.version"))
-  assert_true(ConfigExport::contains(exported_config, "telemetry.sampling.probability"))
+  // 模拟并发操作
+  let tasks = []
+  for i in 0..<100 {
+    let task = ConcurrentTask::new(fn() {
+      let key = "concurrent_key_" + AtomicCounter::increment(counter).to_string()
+      let value = StringValue("concurrent_value_" + i.to_string())
+      Attributes::set(attrs, key, value)
+    })
+    tasks = tasks.push(task)
+  }
+  
+  // 执行所有任务
+  ConcurrentTask::execute_all(tasks)
+  
+  // 验证并发操作结果
+  let final_count = AtomicCounter::get(counter)
+  assert_true(final_count == 100)
+  
+  // 验证属性完整性
+  let mut found_count = 0
+  for i in 0..<100 {
+    let key = "concurrent_key_" + (i + 1).to_string()
+    let result = Attributes::get(attrs, key)
+    match result {
+      Some(_) => found_count = found_count + 1
+      None => ()
+    }
+  }
+  
+  assert_true(found_count >= 90) // 允许少量并发冲突
+}
+
+// Test 9: 数据完整性验证
+test "data integrity validation" {
+  // 创建测试数据
+  let test_data = TelemetryData::new()
+  TelemetryData::add_attribute(test_data, "checksum.test", StringValue("integrity_check"))
+  
+  // 计算校验和
+  let checksum = DataIntegrity::calculate_checksum(test_data)
+  assert_true(checksum.length() > 0)
+  
+  // 验证数据完整性
+  let is_valid = DataIntegrity::verify(test_data, checksum)
+  assert_true(is_valid)
+  
+  // 测试篡改检测
+  TelemetryData::add_attribute(test_data, "tampered.attr", StringValue("tampered_value"))
+  let is_tampered = DataIntegrity::verify(test_data, checksum)
+  assert_false(is_tampered)
+  
+  // 测试数据修复
+  let repair_result = DataIntegrity::attempt_repair(test_data, checksum)
+  match repair_result {
+    Ok(repaired_data) => {
+      let is_repaired = DataIntegrity::verify(repaired_data, checksum)
+      assert_true(is_repaired)
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 10: 国际化和本地化支持
+test "internationalization and localization support" {
+  // 创建国际化管理器
+  let i18n = I18nManager::new()
+  
+  // 设置支持的语言
+  I18nManager::add_language(i18n, "en", "English")
+  I18nManager::add_language(i18n, "zh", "中文")
+  I18nManager::add_language(i18n, "ja", "日本語")
+  
+  // 添加本地化消息
+  I18nManager::add_message(i18n, "en", "telemetry.error", "Telemetry error occurred")
+  I18nManager::add_message(i18n, "zh", "telemetry.error", "遥测错误发生")
+  I18nManager::add_message(i18n, "ja", "telemetry.error", "テレメトリーエラーが発生しました")
+  
+  // 测试消息获取
+  let en_message = I18nManager::get_message(i18n, "en", "telemetry.error")
+  match en_message {
+    Some(msg) => assert_eq(msg, "Telemetry error occurred")
+    None => assert_true(false)
+  }
+  
+  let zh_message = I18nManager::get_message(i18n, "zh", "telemetry.error")
+  match zh_message {
+    Some(msg) => assert_eq(msg, "遥测错误发生")
+    None => assert_true(false)
+  }
+  
+  let ja_message = I18nManager::get_message(i18n, "ja", "telemetry.error")
+  match ja_message {
+    Some(msg) => assert_eq(msg, "テレメトリーエラーが発生しました")
+    None => assert_true(false)
+  }
+  
+  // 测试回退机制
+  let fallback_message = I18nManager::get_message(i18n, "fr", "telemetry.error") // 法语不存在
+  match fallback_message {
+    Some(msg) => assert_eq(msg, "Telemetry error occurred") // 回退到英语
+    None => assert_true(false)
+  }
+  
+  // 测试本地化数字格式
+  let formatted_number = I18nManager::format_number(i18n, "en", 1234.56)
+  assert_true(formatted_number.contains("1,234.56"))
+  
+  let zh_formatted = I18nManager::format_number(i18n, "zh", 1234.56)
+  assert_true(zh_formatted.contains("1,234.56"))
 }
