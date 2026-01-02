@@ -1,528 +1,542 @@
-// Azimuth 国际化支持综合测试
-// 测试多语言环境下的遥测系统
+// Azimuth国际化支持测试用例
+// 测试Azimuth遥测系统的国际化和本地化功能
 
-test "多语言错误消息处理" {
-  // 测试多语言错误消息的处理
+test "多语言错误消息支持" {
+  // 创建国际化配置
+  let i18n_config = InternationalizationConfig::new()
+  InternationalizationConfig::set_default_locale(i18n_config, "en-US")
   
-  // 设置不同语言环境
-  I18n::set_locale("en-US")
-  let english_error = ErrorMessage::get("validation.failed")
-  assert_eq(english_error, "Validation failed")
+  // 加载不同语言的错误消息
+  InternationalizationConfig::load_language_pack(i18n_config, "en-US", [
+    ("error.connection.failed", "Connection to server failed"),
+    ("error.timeout.exceeded", "Request timeout exceeded"),
+    ("error.invalid.credentials", "Invalid authentication credentials"),
+    ("error.resource.not.found", "Requested resource not found"),
+    ("error.permission.denied", "Permission denied")
+  ])
   
-  I18n::set_locale("zh-CN")
-  let chinese_error = ErrorMessage::get("validation.failed")
-  assert_eq(chinese_error, "验证失败")
+  InternationalizationConfig::load_language_pack(i18n_config, "zh-CN", [
+    ("error.connection.failed", "连接服务器失败"),
+    ("error.timeout.exceeded", "请求超时"),
+    ("error.invalid.credentials", "无效的身份验证凭据"),
+    ("error.resource.not.found", "未找到请求的资源"),
+    ("error.permission.denied", "权限被拒绝")
+  ])
   
-  I18n::set_locale("ja-JP")
-  let japanese_error = ErrorMessage::get("validation.failed")
-  assert_eq(japanese_error, "検証に失敗しました")
+  InternationalizationConfig::load_language_pack(i18n_config, "ja-JP", [
+    ("error.connection.failed", "サーバーへの接続に失敗しました"),
+    ("error.timeout.exceeded", "リクエストタイムアウトを超えました"),
+    ("error.invalid.credentials", "無効な認証資格情報"),
+    ("error.resource.not.found", "要求されたリソースが見つかりません"),
+    ("error.permission.denied", "アクセス許可が拒否されました")
+  ])
   
-  I18n::set_locale("es-ES")
-  let spanish_error = ErrorMessage::get("validation.failed")
-  assert_eq(spanish_error, "Validación fallida")
+  // 测试英文错误消息
+  InternationalizationConfig::set_current_locale(i18n_config, "en-US")
+  let en_error_message = InternationalizationConfig::get_error_message(i18n_config, "error.connection.failed")
+  assert_eq(en_error_message, "Connection to server failed")
   
-  I18n::set_locale("fr-FR")
-  let french_error = ErrorMessage::get("validation.failed")
-  assert_eq(french_error, "La validation a échoué")
+  let en_timeout_message = InternationalizationConfig::get_error_message(i18n_config, "error.timeout.exceeded")
+  assert_eq(en_timeout_message, "Request timeout exceeded")
   
-  // 测试带参数的错误消息
-  I18n::set_locale("en-US")
-  let english_param_error = ErrorMessage::format("parameter.required", ["username"])
-  assert_eq(english_param_error, "Parameter 'username' is required")
+  // 测试中文错误消息
+  InternationalizationConfig::set_current_locale(i18n_config, "zh-CN")
+  let zh_error_message = InternationalizationConfig::get_error_message(i18n_config, "error.connection.failed")
+  assert_eq(zh_error_message, "连接服务器失败")
   
-  I18n::set_locale("zh-CN")
-  let chinese_param_error = ErrorMessage::format("parameter.required", ["username"])
-  assert_eq(chinese_param_error, "参数 'username' 是必需的")
+  let zh_timeout_message = InternationalizationConfig::get_error_message(i18n_config, "error.timeout.exceeded")
+  assert_eq(zh_timeout_message, "请求超时")
   
-  I18n::set_locale("ja-JP")
-  let japanese_param_error = ErrorMessage::format("parameter.required", ["username"])
-  assert_eq(japanese_param_error, "パラメータ 'username' は必須です")
+  // 测试日文错误消息
+  InternationalizationConfig::set_current_locale(i18n_config, "ja-JP")
+  let ja_error_message = InternationalizationConfig::get_error_message(i18n_config, "error.connection.failed")
+  assert_eq(ja_error_message, "サーバーへの接続に失敗しました")
+  
+  let ja_timeout_message = InternationalizationConfig::get_error_message(i18n_config, "error.timeout.exceeded")
+  assert_eq(ja_timeout_message, "リクエストタイムアウトを超えました")
+  
+  // 测试回退到默认语言
+  InternationalizationConfig::set_current_locale(i18n_config, "fr-FR")  // 未加载的语言
+  let fallback_message = InternationalizationConfig::get_error_message(i18n_config, "error.connection.failed")
+  assert_eq(fallback_message, "Connection to server failed")  // 应该回退到默认语言
+  
+  // 测试消息参数化
+  InternationalizationConfig::load_language_pack(i18n_config, "en-US", [
+    ("error.retry.attempt", "Retry attempt {0} of {1}")
+  ])
+  
+  InternationalizationConfig::load_language_pack(i18n_config, "zh-CN", [
+    ("error.retry.attempt", "重试第{0}次，共{1}次")
+  ])
+  
+  InternationalizationConfig::set_current_locale(i18n_config, "en-US")
+  let en_retry_message = InternationalizationConfig::get_formatted_error_message(
+    i18n_config, 
+    "error.retry.attempt", 
+    ["2", "5"]
+  )
+  assert_eq(en_retry_message, "Retry attempt 2 of 5")
+  
+  InternationalizationConfig::set_current_locale(i18n_config, "zh-CN")
+  let zh_retry_message = InternationalizationConfig::get_formatted_error_message(
+    i18n_config, 
+    "error.retry.attempt", 
+    ["2", "5"]
+  )
+  assert_eq(zh_retry_message, "重试第2次，共5次")
 }
 
-test "多语言日志记录" {
-  // 测试多语言日志记录
+test "多语言日志记录支持" {
+  // 创建国际化日志配置
+  let i18n_logger_config = InternationalizationLoggerConfig::new()
+  InternationalizationLoggerConfig::set_default_locale(i18n_logger_config, "en-US")
   
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "i18n.test")
+  // 加载不同语言的日志模板
+  InternationalizationLoggerConfig::load_log_templates(i18n_logger_config, "en-US", [
+    ("log.user.login", "User {0} logged in from {1}"),
+    ("log.operation.started", "Operation '{0}' started at {1}"),
+    ("log.error.occurred", "Error occurred in {0}: {1}"),
+    ("log.performance.metric", "Performance metric {0} recorded value {1}")
+  ])
   
-  // 设置不同语言环境并记录日志
-  I18n::set_locale("en-US")
-  let english_log = LogRecord::new(Info, "User authentication successful")
-  LogRecord::add_attribute(english_log, "locale", "en-US")
-  LogRecord::add_attribute(english_log, "message", "User logged in successfully")
-  LogRecord::add_attribute(english_log, "user.id", "user-12345")
+  InternationalizationLoggerConfig::load_log_templates(i18n_logger_config, "zh-CN", [
+    ("log.user.login", "用户 {0} 从 {1} 登录"),
+    ("log.operation.started", "操作 '{0}' 于 {1} 开始"),
+    ("log.error.occurred", "在 {0} 中发生错误：{1}"),
+    ("log.performance.metric", "性能指标 {0} 记录值 {1}")
+  ])
   
-  I18n::set_locale("zh-CN")
-  let chinese_log = LogRecord::new(Info, "用户认证成功")
-  LogRecord::add_attribute(chinese_log, "locale", "zh-CN")
-  LogRecord::add_attribute(chinese_log, "message", "用户登录成功")
-  LogRecord::add_attribute(chinese_log, "user.id", "user-67890")
+  InternationalizationLoggerConfig::load_log_templates(i18n_logger_config, "ja-JP", [
+    ("log.user.login", "ユーザー {0} が {1} からログインしました"),
+    ("log.operation.started", "操作 '{0}' が {1} に開始されました"),
+    ("log.error.occurred", "{0} でエラーが発生しました：{1}"),
+    ("log.performance.metric", "パフォーマンスメトリック {0} が値 {1} を記録しました")
+  ])
   
-  I18n::set_locale("ja-JP")
-  let japanese_log = LogRecord::new(Info, "ユーザー認証成功")
-  LogRecord::add_attribute(japanese_log, "locale", "ja-JP")
-  LogRecord::add_attribute(japanese_log, "message", "ユーザーログイン成功")
-  LogRecord::add_attribute(japanese_log, "user.id", "user-11111")
+  // 创建支持国际化的日志记录器
+  let logger = InternationalizationLogger::new(i18n_logger_config)
   
-  // 发射日志
-  Logger::emit(logger, english_log)
-  Logger::emit(logger, chinese_log)
-  Logger::emit(logger, japanese_log)
+  // 测试英文日志记录
+  InternationalizationLogger::set_locale(logger, "en-US")
+  let en_log_message = InternationalizationLogger::format_log_message(
+    logger, 
+    "log.user.login", 
+    ["john.doe", "192.168.1.100"]
+  )
+  assert_eq(en_log_message, "User john.doe logged in from 192.168.1.100")
   
-  // 验证日志内容
-  assert_eq(LogRecord::body(english_log), Some("User authentication successful"))
-  assert_eq(LogRecord::body(chinese_log), Some("用户认证成功"))
-  assert_eq(LogRecord::body(japanese_log), Some("ユーザー認証成功"))
+  // 测试中文日志记录
+  InternationalizationLogger::set_locale(logger, "zh-CN")
+  let zh_log_message = InternationalizationLogger::format_log_message(
+    logger, 
+    "log.user.login", 
+    ["john.doe", "192.168.1.100"]
+  )
+  assert_eq(zh_log_message, "用户 john.doe 从 192.168.1.100 登录")
   
-  // 测试多语言错误日志
-  I18n::set_locale("en-US")
-  let english_error_log = LogRecord::new(Error, "Database connection failed")
-  LogRecord::add_attribute(english_error_log, "error.code", "DB_CONN_001")
-  LogRecord::add_attribute(english_error_log, "error.message", "Unable to connect to database server")
+  // 测试日文日志记录
+  InternationalizationLogger::set_locale(logger, "ja-JP")
+  let ja_log_message = InternationalizationLogger::format_log_message(
+    logger, 
+    "log.user.login", 
+    ["john.doe", "192.168.1.100"]
+  )
+  assert_eq(ja_log_message, "ユーザー john.doe が 192.168.1.100 からログインしました")
   
-  I18n::set_locale("zh-CN")
-  let chinese_error_log = LogRecord::new(Error, "数据库连接失败")
-  LogRecord::add_attribute(chinese_error_log, "error.code", "DB_CONN_001")
-  LogRecord::add_attribute(chinese_error_log, "error.message", "无法连接到数据库服务器")
+  // 测试国际化日志记录器与标准日志系统的集成
+  let standard_logger = LoggerProvider::get_logger(LoggerProvider::default(), "i18n.test")
   
-  Logger::emit(logger, english_error_log)
-  Logger::emit(logger, chinese_error_log)
+  InternationalizationLogger::set_locale(logger, "en-US")
+  let en_log = LogRecord::new(Info, en_log_message)
+  LogRecord::add_attribute(en_log, "locale", "en-US")
+  Logger::emit(standard_logger, en_log)
+  
+  InternationalizationLogger::set_locale(logger, "zh-CN")
+  let zh_log = LogRecord::new(Info, zh_log_message)
+  LogRecord::add_attribute(zh_log, "locale", "zh-CN")
+  Logger::emit(standard_logger, zh_log)
+  
+  InternationalizationLogger::set_locale(logger, "ja-JP")
+  let ja_log = LogRecord::new(Info, ja_log_message)
+  LogRecord::add_attribute(ja_log, "locale", "ja-JP")
+  Logger::emit(standard_logger, ja_log)
+  
+  assert_true(true)
 }
 
-test "多语言Span属性和事件" {
-  // 测试多语言Span属性和事件
+test "本地化时间和日期格式" {
+  // 创建本地化时间配置
+  let locale_time_config = LocaleTimeConfig::new()
   
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "i18n.span.test")
+  // 测试不同地区的时间格式
+  LocaleTimeConfig::set_locale(locale_time_config, "en-US")
+  let us_time_format = LocaleTimeConfig::get_time_format(locale_time_config)
+  assert_eq(us_time_format, "h:mm:ss a")  // 12小时制，带AM/PM
   
-  // 创建英文Span
-  I18n::set_locale("en-US")
-  let english_span = Tracer::start_span(tracer, "user.authentication.process")
-  Span::set_attribute(english_span, "locale", "en-US")
-  Span::set_attribute(english_span, "service.name", "auth-service")
-  Span::set_attribute(english_span, "operation.name", "User Authentication")
-  Span::set_attribute(english_span, "description", "Process user login with email and password")
+  LocaleTimeConfig::set_locale(locale_time_config, "zh-CN")
+  let cn_time_format = LocaleTimeConfig::get_time_format(locale_time_config)
+  assert_eq(cn_time_format, "HH:mm:ss")  // 24小时制
   
-  // 添加英文事件
-  Span::add_event(english_span, "validation.started", [
-    ("field", "email"),
-    ("message", "Validating email format")
-  ])
+  LocaleTimeConfig::set_locale(locale_time_config, "ja-JP")
+  let jp_time_format = LocaleTimeConfig::get_time_format(locale_time_config)
+  assert_eq(jp_time_format, "HH:mm:ss")  // 24小时制
   
-  Span::add_event(english_span, "validation.completed", [
-    ("field", "email"),
-    ("result", "success"),
-    ("message", "Email format is valid")
-  ])
+  // 测试不同地区的日期格式
+  LocaleTimeConfig::set_locale(locale_time_config, "en-US")
+  let us_date_format = LocaleTimeConfig::get_date_format(locale_time_config)
+  assert_eq(us_date_format, "MM/dd/yyyy")  // 月/日/年
   
-  Span::add_event(english_span, "authentication.completed", [
-    ("result", "success"),
-    ("message", "User authenticated successfully")
-  ])
+  LocaleTimeConfig::set_locale(locale_time_config, "zh-CN")
+  let cn_date_format = LocaleTimeConfig::get_date_format(locale_time_config)
+  assert_eq(cn_date_format, "yyyy-MM-dd")  // 年-月-日
   
-  // 创建中文Span
-  I18n::set_locale("zh-CN")
-  let chinese_span = Tracer::start_span(tracer, "用户认证处理")
-  Span::set_attribute(chinese_span, "locale", "zh-CN")
-  Span::set_attribute(chinese_span, "service.name", "auth-service")
-  Span::set_attribute(chinese_span, "operation.name", "用户认证")
-  Span::set_attribute(chinese_span, "description", "使用邮箱和密码处理用户登录")
+  LocaleTimeConfig::set_locale(locale_time_config, "ja-JP")
+  let jp_date_format = LocaleTimeConfig::get_date_format(locale_time_config)
+  assert_eq(jp_date_format, "yyyy/MM/dd")  // 年/月/日
   
-  // 添加中文事件
-  Span::add_event(chinese_span, "验证开始", [
-    ("field", "email"),
-    ("message", "验证邮箱格式")
-  ])
+  // 测试时间戳格式化
+  let test_timestamp = 1735689600000000000L  // 2025-01-02T10:00:00Z
   
-  Span::add_event(chinese_span, "验证完成", [
-    ("field", "email"),
-    ("result", "成功"),
-    ("message", "邮箱格式有效")
-  ])
+  LocaleTimeConfig::set_locale(locale_time_config, "en-US")
+  let us_formatted_time = LocaleTimeConfig::format_timestamp(locale_time_config, test_timestamp)
+  assert_eq(us_formatted_time, "01/02/2025 10:00:00 AM")
   
-  Span::add_event(chinese_span, "认证完成", [
-    ("result", "成功"),
-    ("message", "用户认证成功")
-  ])
+  LocaleTimeConfig::set_locale(locale_time_config, "zh-CN")
+  let cn_formatted_time = LocaleTimeConfig::format_timestamp(locale_time_config, test_timestamp)
+  assert_eq(cn_formatted_time, "2025-01-02 10:00:00")
   
-  // 创建日文Span
-  I18n::set_locale("ja-JP")
-  let japanese_span = Tracer::start_span(tracer, "ユーザー認証処理")
-  Span::set_attribute(japanese_span, "locale", "ja-JP")
-  Span::set_attribute(japanese_span, "service.name", "auth-service")
-  Span::set_attribute(japanese_span, "operation.name", "ユーザー認証")
-  Span::set_attribute(japanese_span, "description", "メールとパスワードでユーザーログインを処理")
+  LocaleTimeConfig::set_locale(locale_time_config, "ja-JP")
+  let jp_formatted_time = LocaleTimeConfig::format_timestamp(locale_time_config, test_timestamp)
+  assert_eq(jp_formatted_time, "2025/01/02 10:00:00")
   
-  // 添加日文事件
-  Span::add_event(japanese_span, "検証開始", [
-    ("field", "email"),
-    ("message", "メール形式を検証")
-  ])
+  // 测试相对时间格式化
+  let current_timestamp = 1735689600000000000L
+  let past_timestamp = current_timestamp - 3600000000000L  // 1小时前
+  let future_timestamp = current_timestamp + 86400000000000L  // 1天后
   
-  Span::add_event(japanese_span, "検証完了", [
-    ("field", "email"),
-    ("result", "成功"),
-    ("message", "メール形式が有効です")
-  ])
+  LocaleTimeConfig::set_locale(locale_time_config, "en-US")
+  let us_relative_past = LocaleTimeConfig::format_relative_time(locale_time_config, past_timestamp, current_timestamp)
+  assert_eq(us_relative_past, "1 hour ago")
   
-  Span::add_event(japanese_span, "認証完了", [
-    ("result", "成功"),
-    ("message", "ユーザー認証が成功しました")
-  ])
+  let us_relative_future = LocaleTimeConfig::format_relative_time(locale_time_config, future_timestamp, current_timestamp)
+  assert_eq(us_relative_future, "in 1 day")
   
-  // 验证Span属性
-  assert_eq(Span::name(english_span), "user.authentication.process")
-  assert_eq(Span::name(chinese_span), "用户认证处理")
-  assert_eq(Span::name(japanese_span), "ユーザー認証処理")
+  LocaleTimeConfig::set_locale(locale_time_config, "zh-CN")
+  let cn_relative_past = LocaleTimeConfig::format_relative_time(locale_time_config, past_timestamp, current_timestamp)
+  assert_eq(cn_relative_past, "1小时前")
   
-  Span::end(english_span)
-  Span::end(chinese_span)
-  Span::end(japanese_span)
+  let cn_relative_future = LocaleTimeConfig::format_relative_time(locale_time_config, future_timestamp, current_timestamp)
+  assert_eq(cn_relative_future, "1天后")
+  
+  LocaleTimeConfig::set_locale(locale_time_config, "ja-JP")
+  let jp_relative_past = LocaleTimeConfig::format_relative_time(locale_time_config, past_timestamp, current_timestamp)
+  assert_eq(jp_relative_past, "1時間前")
+  
+  let jp_relative_future = LocaleTimeConfig::format_relative_time(locale_time_config, future_timestamp, current_timestamp)
+  assert_eq(jp_relative_future, "1日後")
 }
 
-test "多语言度量标签" {
-  // 测试多语言度量标签
+test "多语言度量数据显示" {
+  // 创建国际化度量配置
+  let i18n_metric_config = InternationalizationMetricConfig::new()
   
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "i18n.metrics.test")
-  
-  // 创建多语言计数器
-  let request_counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
-  
-  // 记录不同语言的请求
-  I18n::set_locale("en-US")
-  Counter::add_with_attributes(request_counter, 100.0, [
-    ("locale", "en-US"),
-    ("endpoint", "/api/users"),
-    ("method", "GET"),
-    ("status", "200"),
-    ("region", "us-west-2")
+  // 加载不同语言的度量名称和描述
+  InternationalizationMetricConfig::load_metric_translations(i18n_metric_config, "en-US", [
+    ("metric.cpu.usage", "CPU Usage", "Percentage of CPU utilization"),
+    ("metric.memory.usage", "Memory Usage", "Percentage of memory utilization"),
+    ("metric.request.count", "Request Count", "Total number of requests"),
+    ("metric.response.time", "Response Time", "Average response time in milliseconds"),
+    ("metric.error.rate", "Error Rate", "Percentage of requests resulting in errors")
   ])
   
-  I18n::set_locale("zh-CN")
-  Counter::add_with_attributes(request_counter, 50.0, [
-    ("locale", "zh-CN"),
-    ("endpoint", "/api/users"),
-    ("method", "GET"),
-    ("status", "200"),
-    ("region", "ap-northeast-1")
+  InternationalizationMetricConfig::load_metric_translations(i18n_metric_config, "zh-CN", [
+    ("metric.cpu.usage", "CPU使用率", "CPU利用率百分比"),
+    ("metric.memory.usage", "内存使用率", "内存利用率百分比"),
+    ("metric.request.count", "请求数量", "请求总数"),
+    ("metric.response.time", "响应时间", "平均响应时间（毫秒）"),
+    ("metric.error.rate", "错误率", "导致错误的请求百分比")
   ])
   
-  I18n::set_locale("ja-JP")
-  Counter::add_with_attributes(request_counter, 30.0, [
-    ("locale", "ja-JP"),
-    ("endpoint", "/api/users"),
-    ("method", "GET"),
-    ("status", "200"),
-    ("region", "ap-northeast-1")
+  InternationalizationMetricConfig::load_metric_translations(i18n_metric_config, "ja-JP", [
+    ("metric.cpu.usage", "CPU使用率", "CPU使用率の割合"),
+    ("metric.memory.usage", "メモリ使用率", "メモリ使用率の割合"),
+    ("metric.request.count", "リクエスト数", "リクエストの総数"),
+    ("metric.response.time", "応答時間", "平均応答時間（ミリ秒）"),
+    ("metric.error.rate", "エラー率", "エラーになったリクエストの割合")
   ])
   
-  // 创建多语言直方图
-  let response_time_histogram = Meter::create_histogram(meter, "http.request.duration", Some("HTTP request duration"), Some("ms"))
+  // 测试英文度量显示
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "en-US")
+  let en_cpu_name = InternationalizationMetricConfig::get_metric_name(i18n_metric_config, "metric.cpu.usage")
+  let en_cpu_desc = InternationalizationMetricConfig::get_metric_description(i18n_metric_config, "metric.cpu.usage")
   
-  // 记录不同语言的响应时间
-  I18n::set_locale("en-US")
-  Histogram::record_with_attributes(response_time_histogram, 125.5, [
-    ("locale", "en-US"),
-    ("endpoint", "/api/users"),
-    ("method", "GET"),
-    ("region", "us-west-2")
-  ])
+  assert_eq(en_cpu_name, "CPU Usage")
+  assert_eq(en_cpu_desc, "Percentage of CPU utilization")
   
-  I18n::set_locale("zh-CN")
-  Histogram::record_with_attributes(response_time_histogram, 245.8, [
-    ("locale", "zh-CN"),
-    ("endpoint", "/api/users"),
-    ("method", "GET"),
-    ("region", "ap-northeast-1")
-  ])
+  // 测试中文度量显示
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "zh-CN")
+  let zh_cpu_name = InternationalizationMetricConfig::get_metric_name(i18n_metric_config, "metric.cpu.usage")
+  let zh_cpu_desc = InternationalizationMetricConfig::get_metric_description(i18n_metric_config, "metric.cpu.usage")
   
-  I18n::set_locale("ja-JP")
-  Histogram::record_with_attributes(response_time_histogram, 185.3, [
-    ("locale", "ja-JP"),
-    ("endpoint", "/api/users"),
-    ("method", "GET"),
-    ("region", "ap-northeast-1")
-  ])
+  assert_eq(zh_cpu_name, "CPU使用率")
+  assert_eq(zh_cpu_desc, "CPU利用率百分比")
   
-  // 验证度量属性
-  assert_eq(request_counter.name, "http.requests.total")
-  assert_eq(response_time_histogram.name, "http.request.duration")
+  // 测试日文度量显示
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "ja-JP")
+  let ja_cpu_name = InternationalizationMetricConfig::get_metric_name(i18n_metric_config, "metric.cpu.usage")
+  let ja_cpu_desc = InternationalizationMetricConfig::get_metric_description(i18n_metric_config, "metric.cpu.usage")
+  
+  assert_eq(ja_cpu_name, "CPU使用率")
+  assert_eq(ja_cpu_desc, "CPU使用率の割合")
+  
+  // 测试度量值格式化
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "en-US")
+  let en_formatted_value = InternationalizationMetricConfig::format_metric_value(
+    i18n_metric_config, 
+    "metric.cpu.usage", 
+    75.2345
+  )
+  assert_eq(en_formatted_value, "75.23%")  // 英文使用点作为小数点
+  
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "zh-CN")
+  let zh_formatted_value = InternationalizationMetricConfig::format_metric_value(
+    i18n_metric_config, 
+    "metric.cpu.usage", 
+    75.2345
+  )
+  assert_eq(zh_formatted_value, "75.23%")  // 中文也使用点作为小数点
+  
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "ja-JP")
+  let ja_formatted_value = InternationalizationMetricConfig::format_metric_value(
+    i18n_metric_config, 
+    "metric.cpu.usage", 
+    75.2345
+  )
+  assert_eq(ja_formatted_value, "75.23%")  // 日文也使用点作为小数点
+  
+  // 测试大数字格式化
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "en-US")
+  let en_large_number = InternationalizationMetricConfig::format_metric_value(
+    i18n_metric_config, 
+    "metric.request.count", 
+    1234567.89
+  )
+  assert_eq(en_large_number, "1,234,567.89")  // 英文使用逗号作为千位分隔符
+  
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "zh-CN")
+  let zh_large_number = InternationalizationMetricConfig::format_metric_value(
+    i18n_metric_config, 
+    "metric.request.count", 
+    1234567.89
+  )
+  assert_eq(zh_large_number, "1,234,567.89")  // 中文也使用逗号作为千位分隔符
+  
+  InternationalizationMetricConfig::set_locale(i18n_metric_config, "ja-JP")
+  let ja_large_number = InternationalizationMetricConfig::format_metric_value(
+    i18n_metric_config, 
+    "metric.request.count", 
+    1234567.89
+  )
+  assert_eq(ja_large_number, "1,234,567.89")  // 日文也使用逗号作为千位分隔符
 }
 
-test "时区和日期时间格式化" {
-  // 测试不同时区和日期时间格式化
+test "多语言用户界面标签" {
+  // 创建国际化UI配置
+  let i18n_ui_config = InternationalizationUIConfig::new()
+  InternationalizationUIConfig::set_default_locale(i18n_ui_config, "en-US")
   
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timezone.test")
-  
-  // 设置UTC时区
-  TimeZone::set_timezone("UTC")
-  let utc_span = Tracer::start_span(tracer, "utc.operation")
-  Span::set_attribute(utc_span, "timezone", "UTC")
-  Span::set_attribute(utc_span, "timestamp", DateTime::format_now("yyyy-MM-dd HH:mm:ss z"))
-  
-  // 设置美国东部时区
-  TimeZone::set_timezone("America/New_York")
-  let est_span = Tracer::start_span(tracer, "est.operation")
-  Span::set_attribute(est_span, "timezone", "America/New_York")
-  Span::set_attribute(est_span, "timestamp", DateTime::format_now("yyyy-MM-dd HH:mm:ss z"))
-  
-  // 设置中国时区
-  TimeZone::set_timezone("Asia/Shanghai")
-  let cst_span = Tracer::start_span(tracer, "cst.operation")
-  Span::set_attribute(cst_span, "timezone", "Asia/Shanghai")
-  Span::set_attribute(cst_span, "timestamp", DateTime::format_now("yyyy-MM-dd HH:mm:ss z"))
-  
-  // 设置日本时区
-  TimeZone::set_timezone("Asia/Tokyo")
-  let jst_span = Tracer::start_span(tracer, "jst.operation")
-  Span::set_attribute(jst_span, "timezone", "Asia/Tokyo")
-  Span::set_attribute(jst_span, "timestamp", DateTime::format_now("yyyy-MM-dd HH:mm:ss z"))
-  
-  // 测试不同日期格式
-  I18n::set_locale("en-US")
-  let us_date = DateTime::format_now("MM/dd/yyyy HH:mm:ss a")
-  
-  I18n::set_locale("zh-CN")
-  let cn_date = DateTime::format_now("yyyy年MM月dd日 HH:mm:ss")
-  
-  I18n::set_locale("ja-JP")
-  let jp_date = DateTime::format_now("yyyy年MM月dd日 HH:mm:ss")
-  
-  I18n::set_locale("de-DE")
-  let de_date = DateTime::format_now("dd.MM.yyyy HH:mm:ss")
-  
-  // 验证日期格式
-  assert_true(us_date.contains("/"))
-  assert_true(cn_date.contains("年") && cn_date.contains("月") && cn_date.contains("日"))
-  assert_true(jp_date.contains("年") && jp_date.contains("月") && jp_date.contains("日"))
-  assert_true(de_date.contains("."))
-  
-  Span::end(utc_span)
-  Span::end(est_span)
-  Span::end(cst_span)
-  Span::end(jst_span)
-}
-
-test "多语言资源包加载" {
-  // 测试多语言资源包的加载和切换
-  
-  // 加载英文资源包
-  let en_bundle = ResourceBundle::load("en-US")
-  assert_true(ResourceBundle::is_loaded(en_bundle))
-  
-  // 加载中文资源包
-  let zh_bundle = ResourceBundle::load("zh-CN")
-  assert_true(ResourceBundle::is_loaded(zh_bundle))
-  
-  // 加载日文资源包
-  let ja_bundle = ResourceBundle::load("ja-JP")
-  assert_true(ResourceBundle::is_loaded(ja_bundle))
-  
-  // 测试资源包切换
-  I18n::set_resource_bundle(en_bundle)
-  let en_message = ResourceBundle::get_string(en_bundle, "telemetry.span.created")
-  assert_eq(en_message, "Span created")
-  
-  I18n::set_resource_bundle(zh_bundle)
-  let zh_message = ResourceBundle::get_string(zh_bundle, "telemetry.span.created")
-  assert_eq(zh_message, "Span已创建")
-  
-  I18n::set_resource_bundle(ja_bundle)
-  let ja_message = ResourceBundle::get_string(ja_bundle, "telemetry.span.created")
-  assert_eq(ja_message, "Spanが作成されました")
-  
-  // 测试资源包回退机制
-  let fallback_bundle = ResourceBundle::load("fr-FR")
-  I18n::set_resource_bundle(fallback_bundle)
-  
-  // 尝试获取不存在的键，应该回退到默认语言
-  let fallback_message = ResourceBundle::get_string(fallback_bundle, "telemetry.span.created")
-  assert_eq(fallback_message, "Span created")  // 回退到英文
-  
-  // 测试资源包热重载
-  let reloaded_bundle = ResourceBundle::reload("en-US")
-  assert_true(ResourceBundle::is_loaded(reloaded_bundle))
-  
-  // 验证重载后的资源
-  let reloaded_message = ResourceBundle::get_string(reloaded_bundle, "telemetry.span.created")
-  assert_eq(reloaded_message, "Span created")
-}
-
-test "多语言数字和货币格式化" {
-  // 测试多语言数字和货币格式化
-  
-  // 设置不同语言环境并格式化数字
-  I18n::set_locale("en-US")
-  let us_number = NumberFormat::format(1234567.89, "decimal")
-  let us_currency = NumberFormat::format(1234567.89, "currency")
-  let us_percent = NumberFormat::format(0.8547, "percent")
-  
-  assert_eq(us_number, "1,234,567.89")
-  assert_eq(us_currency, "$1,234,567.89")
-  assert_eq(us_percent, "85.47%")
-  
-  I18n::set_locale("zh-CN")
-  let cn_number = NumberFormat::format(1234567.89, "decimal")
-  let cn_currency = NumberFormat::format(1234567.89, "currency")
-  let cn_percent = NumberFormat::format(0.8547, "percent")
-  
-  assert_eq(cn_number, "1,234,567.89")
-  assert_eq(cn_currency, "¥1,234,567.89")
-  assert_eq(cn_percent, "85.47%")
-  
-  I18n::set_locale("ja-JP")
-  let ja_number = NumberFormat::format(1234567.89, "decimal")
-  let ja_currency = NumberFormat::format(1234567.89, "currency")
-  let ja_percent = NumberFormat::format(0.8547, "percent")
-  
-  assert_eq(ja_number, "1,234,567.89")
-  assert_eq(ja_currency, "¥1,234,568")
-  assert_eq(ja_percent, "85.47%")
-  
-  I18n::set_locale("de-DE")
-  let de_number = NumberFormat::format(1234567.89, "decimal")
-  let de_currency = NumberFormat::format(1234567.89, "currency")
-  let de_percent = NumberFormat::format(0.8547, "percent")
-  
-  assert_eq(de_number, "1.234.567,89")
-  assert_eq(de_currency, "1.234.567,89 €")
-  assert_eq(de_percent, "85,47 %")
-  
-  // 在遥测数据中使用格式化数字
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "formatting.test")
-  
-  let revenue_counter = Meter::create_counter(meter, "revenue.total", Some("Total revenue"), Some("currency"))
-  
-  I18n::set_locale("en-US")
-  Counter::add_with_attributes(revenue_counter, 1234567.89, [
-    ("locale", "en-US"),
-    ("currency", "USD"),
-    ("formatted_amount", "$1,234,567.89")
+  // 加载不同语言的UI标签
+  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "en-US", [
+    ("ui.dashboard.title", "Telemetry Dashboard"),
+    ("ui.metrics.section", "Metrics"),
+    ("ui.logs.section", "Logs"),
+    ("ui.traces.section", "Traces"),
+    ("ui.settings.title", "Settings"),
+    ("ui.button.refresh", "Refresh"),
+    ("ui.button.export", "Export"),
+    ("ui.filter.placeholder", "Search..."),
+    ("ui.table.column.timestamp", "Timestamp"),
+    ("ui.table.column.service", "Service"),
+    ("ui.table.column.operation", "Operation"),
+    ("ui.table.column.duration", "Duration")
   ])
   
-  I18n::set_locale("zh-CN")
-  Counter::add_with_attributes(revenue_counter, 1234567.89, [
-    ("locale", "zh-CN"),
-    ("currency", "CNY"),
-    ("formatted_amount", "¥1,234,567.89")
-  ])
-}
-
-test "多语言文本方向和布局" {
-  // 测试多语言文本方向和布局支持
-  
-  // 测试从左到右的语言
-  I18n::set_locale("en-US")
-  let ltr_text = TextDirection::process("Hello World")
-  assert_eq(TextDirection::get_direction(ltr_text), "LTR")
-  
-  I18n::set_locale("zh-CN")
-  let ltr_text_cn = TextDirection::process("你好世界")
-  assert_eq(TextDirection::get_direction(ltr_text_cn), "LTR")
-  
-  // 测试从右到左的语言
-  I18n::set_locale("ar-SA")
-  let rtl_text = TextDirection::process("مرحبا بالعالم")
-  assert_eq(TextDirection::get_direction(rtl_text), "RTL")
-  
-  I18n::set_locale("he-IL")
-  let rtl_text_he = TextDirection::process("שלום עולם")
-  assert_eq(TextDirection::get_direction(rtl_text_he), "RTL")
-  
-  // 测试混合方向文本
-  I18n::set_locale("en-US")
-  let mixed_text = TextDirection::process("Hello مرحبا World")
-  assert_eq(TextDirection::get_direction(mixed_text), "LTR")
-  
-  // 在Span中使用文本方向信息
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "text.direction.test")
-  
-  I18n::set_locale("en-US")
-  let ltr_span = Tracer::start_span(tracer, "LTR Text Processing")
-  Span::set_attribute(ltr_span, "text.direction", "LTR")
-  Span::set_attribute(ltr_span, "text.sample", "Hello World")
-  
-  I18n::set_locale("ar-SA")
-  let rtl_span = Tracer::start_span(tracer, "RTL Text Processing")
-  Span::set_attribute(rtl_span, "text.direction", "RTL")
-  Span::set_attribute(rtl_span, "text.sample", "مرحبا بالعالم")
-  
-  // 验证文本方向属性
-  assert_eq(Span::name(ltr_span), "LTR Text Processing")
-  assert_eq(Span::name(rtl_span), "RTL Text Processing")
-  
-  Span::end(ltr_span)
-  Span::end(rtl_span)
-}
-
-test "多语言字符编码处理" {
-  // 测试多语言字符编码处理
-  
-  // 测试不同语言的字符串
-  let english_text = "Hello World"
-  let chinese_text = "你好世界"
-  let japanese_text = "こんにちは世界"
-  let arabic_text = "مرحبا بالعالم"
-  let russian_text = "Привет мир"
-  let emoji_text = "Hello 🌍 World 🚀"
-  
-  // 测试UTF-8编码
-  let english_encoded = Encoding::encode_utf8(english_text)
-  let chinese_encoded = Encoding::encode_utf8(chinese_text)
-  let japanese_encoded = Encoding::encode_utf8(japanese_text)
-  let arabic_encoded = Encoding::encode_utf8(arabic_text)
-  let russian_encoded = Encoding::encode_utf8(russian_text)
-  let emoji_encoded = Encoding::encode_utf8(emoji_text)
-  
-  // 验证编码和解码
-  let english_decoded = Encoding::decode_utf8(english_encoded)
-  let chinese_decoded = Encoding::decode_utf8(chinese_encoded)
-  let japanese_decoded = Encoding::decode_utf8(japanese_encoded)
-  let arabic_decoded = Encoding::decode_utf8(arabic_encoded)
-  let russian_decoded = Encoding::decode_utf8(russian_encoded)
-  let emoji_decoded = Encoding::decode_utf8(emoji_encoded)
-  
-  assert_eq(english_decoded, english_text)
-  assert_eq(chinese_decoded, chinese_text)
-  assert_eq(japanese_decoded, japanese_text)
-  assert_eq(arabic_decoded, arabic_text)
-  assert_eq(russian_decoded, russian_text)
-  assert_eq(emoji_decoded, emoji_text)
-  
-  // 在遥测数据中使用多语言文本
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "encoding.test")
-  
-  let span = Tracer::start_span(tracer, "Multilingual Processing")
-  
-  Span::set_attribute(span, "english.text", english_text)
-  Span::set_attribute(span, "chinese.text", chinese_text)
-  Span::set_attribute(span, "japanese.text", japanese_text)
-  Span::set_attribute(span, "arabic.text", arabic_text)
-  Span::set_attribute(span, "russian.text", russian_text)
-  Span::set_attribute(span, "emoji.text", emoji_text)
-  
-  // 添加多语言事件
-  Span::add_event(span, "multilingual.processing", [
-    ("english", english_text),
-    ("chinese", chinese_text),
-    ("japanese", japanese_text),
-    ("arabic", arabic_text),
-    ("russian", russian_text),
-    ("emoji", emoji_text)
+  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "zh-CN", [
+    ("ui.dashboard.title", "遥测仪表板"),
+    ("ui.metrics.section", "度量"),
+    ("ui.logs.section", "日志"),
+    ("ui.traces.section", "追踪"),
+    ("ui.settings.title", "设置"),
+    ("ui.button.refresh", "刷新"),
+    ("ui.button.export", "导出"),
+    ("ui.filter.placeholder", "搜索..."),
+    ("ui.table.column.timestamp", "时间戳"),
+    ("ui.table.column.service", "服务"),
+    ("ui.table.column.operation", "操作"),
+    ("ui.table.column.duration", "持续时间")
   ])
   
-  Span::end(span)
+  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "ja-JP", [
+    ("ui.dashboard.title", "テレメトリーダッシュボード"),
+    ("ui.metrics.section", "メトリクス"),
+    ("ui.logs.section", "ログ"),
+    ("ui.traces.section", "トレース"),
+    ("ui.settings.title", "設定"),
+    ("ui.button.refresh", "更新"),
+    ("ui.button.export", "エクスポート"),
+    ("ui.filter.placeholder", "検索..."),
+    ("ui.table.column.timestamp", "タイムスタンプ"),
+    ("ui.table.column.service", "サービス"),
+    ("ui.table.column.operation", "操作"),
+    ("ui.table.column.duration", "期間")
+  ])
   
-  // 验证字符长度计算
-  assert_eq(StringUtils::length(english_text), 11)
-  assert_eq(StringUtils::length(chinese_text), 4)
-  assert_eq(StringUtils::length(japanese_text), 7)
-  assert_eq(StringUtils::length(arabic_text), 11)
-  assert_eq(StringUtils::length(russian_text), 11)
-  assert_eq(StringUtils::length(emoji_text), 15)
+  // 测试英文UI标签
+  InternationalizationUIConfig::set_locale(i18n_ui_config, "en-US")
+  let en_dashboard_title = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.dashboard.title")
+  assert_eq(en_dashboard_title, "Telemetry Dashboard")
+  
+  let en_refresh_button = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.button.refresh")
+  assert_eq(en_refresh_button, "Refresh")
+  
+  // 测试中文UI标签
+  InternationalizationUIConfig::set_locale(i18n_ui_config, "zh-CN")
+  let zh_dashboard_title = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.dashboard.title")
+  assert_eq(zh_dashboard_title, "遥测仪表板")
+  
+  let zh_refresh_button = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.button.refresh")
+  assert_eq(zh_refresh_button, "刷新")
+  
+  // 测试日文UI标签
+  InternationalizationUIConfig::set_locale(i18n_ui_config, "ja-JP")
+  let ja_dashboard_title = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.dashboard.title")
+  assert_eq(ja_dashboard_title, "テレメトリーダッシュボード")
+  
+  let ja_refresh_button = InternationalizationUIConfig::get_ui_text(i18n_ui_config, "ui.button.refresh")
+  assert_eq(ja_refresh_button, "更新")
+  
+  // 测试UI标签复数形式
+  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "en-US", [
+    ("ui.item.count", "{0} item", "{0} items")  // 单数和复数形式
+  ])
+  
+  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "zh-CN", [
+    ("ui.item.count", "{0} 项")  // 中文没有复数形式
+  ])
+  
+  InternationalizationUIConfig::load_ui_translations(i18n_ui_config, "ja-JP", [
+    ("ui.item.count", "{0} 項目")  // 日文没有复数形式
+  ])
+  
+  // 测试英文复数形式
+  InternationalizationUIConfig::set_locale(i18n_ui_config, "en-US")
+  let en_singular = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 1)
+  assert_eq(en_singular, "1 item")
+  
+  let en_plural = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 5)
+  assert_eq(en_plural, "5 items")
+  
+  // 测试中文（无复数形式）
+  InternationalizationUIConfig::set_locale(i18n_ui_config, "zh-CN")
+  let zh_singular = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 1)
+  assert_eq(zh_singular, "1 项")
+  
+  let zh_plural = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 5)
+  assert_eq(zh_plural, "5 项")
+  
+  // 测试日文（无复数形式）
+  InternationalizationUIConfig::set_locale(i18n_ui_config, "ja-JP")
+  let ja_singular = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 1)
+  assert_eq(ja_singular, "1 項目")
+  
+  let ja_plural = InternationalizationUIConfig::get_plural_ui_text(i18n_ui_config, "ui.item.count", 5)
+  assert_eq(ja_plural, "5 項目")
+}
+
+test "文化特定的格式化规则" {
+  // 创建文化特定格式化配置
+  let culture_config = CultureSpecificConfig::new()
+  
+  // 测试不同文化的数字格式化
+  CultureSpecificConfig::set_culture(culture_config, "en-US")
+  let us_number_format = CultureSpecificConfig::get_number_format(culture_config)
+  assert_eq(us_number_format.decimal_separator, ".")
+  assert_eq(us_number_format.thousands_separator, ",")
+  
+  CultureSpecificConfig::set_culture(culture_config, "de-DE")
+  let de_number_format = CultureSpecificConfig::get_number_format(culture_config)
+  assert_eq(de_number_format.decimal_separator, ",")
+  assert_eq(de_number_format.thousands_separator, ".")
+  
+  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
+  let cn_number_format = CultureSpecificConfig::get_number_format(culture_config)
+  assert_eq(cn_number_format.decimal_separator, ".")
+  assert_eq(cn_number_format.thousands_separator, ",")
+  
+  // 测试数字格式化
+  let test_number = 1234567.89
+  
+  CultureSpecificConfig::set_culture(culture_config, "en-US")
+  let us_formatted_number = CultureSpecificConfig::format_number(culture_config, test_number)
+  assert_eq(us_formatted_number, "1,234,567.89")
+  
+  CultureSpecificConfig::set_culture(culture_config, "de-DE")
+  let de_formatted_number = CultureSpecificConfig::format_number(culture_config, test_number)
+  assert_eq(de_formatted_number, "1.234.567,89")
+  
+  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
+  let cn_formatted_number = CultureSpecificConfig::format_number(culture_config, test_number)
+  assert_eq(cn_formatted_number, "1,234,567.89")
+  
+  // 测试货币格式化
+  CultureSpecificConfig::set_culture(culture_config, "en-US")
+  let us_currency = CultureSpecificConfig::format_currency(culture_config, 1234.56, "USD")
+  assert_eq(us_currency, "$1,234.56")
+  
+  CultureSpecificConfig::set_culture(culture_config, "de-DE")
+  let de_currency = CultureSpecificConfig::format_currency(culture_config, 1234.56, "EUR")
+  assert_eq(de_currency, "1.234,56 €")
+  
+  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
+  let cn_currency = CultureSpecificConfig::format_currency(culture_config, 1234.56, "CNY")
+  assert_eq(cn_currency, "¥1,234.56")
+  
+  // 测试百分比格式化
+  CultureSpecificConfig::set_culture(culture_config, "en-US")
+  let us_percentage = CultureSpecificConfig::format_percentage(culture_config, 0.7523)
+  assert_eq(us_percentage, "75.23%")
+  
+  CultureSpecificConfig::set_culture(culture_config, "de-DE")
+  let de_percentage = CultureSpecificConfig::format_percentage(culture_config, 0.7523)
+  assert_eq(de_percentage, "75,23%")
+  
+  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
+  let cn_percentage = CultureSpecificConfig::format_percentage(culture_config, 0.7523)
+  assert_eq(cn_percentage, "75.23%")
+  
+  // 测试文本方向性（RTL vs LTR）
+  CultureSpecificConfig::set_culture(culture_config, "en-US")
+  let us_text_direction = CultureSpecificConfig::get_text_direction(culture_config)
+  assert_eq(us_text_direction, "ltr")
+  
+  CultureSpecificConfig::set_culture(culture_config, "ar-SA")
+  let ar_text_direction = CultureSpecificConfig::get_text_direction(culture_config)
+  assert_eq(ar_text_direction, "rtl")
+  
+  CultureSpecificConfig::set_culture(culture_config, "he-IL")
+  let he_text_direction = CultureSpecificConfig::get_text_direction(culture_config)
+  assert_eq(he_text_direction, "rtl")
+  
+  // 测试文化特定的排序规则
+  CultureSpecificConfig::set_culture(culture_config, "en-US")
+  let us_sort_order = CultureSpecificConfig::get_sort_order(culture_config)
+  assert_eq(us_sort_order, "alphabetical")
+  
+  CultureSpecificConfig::set_culture(culture_config, "zh-CN")
+  let cn_sort_order = CultureSpecificConfig::get_sort_order(culture_config)
+  assert_eq(cn_sort_order, "pinyin")
+  
+  CultureSpecificConfig::set_culture(culture_config, "ja-JP")
+  let ja_sort_order = CultureSpecificConfig::get_sort_order(culture_config)
+  assert_eq(ja_sort_order, "hiragana")
 }

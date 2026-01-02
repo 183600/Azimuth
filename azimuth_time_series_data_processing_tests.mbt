@@ -1,502 +1,256 @@
-// Azimuth Time Series Data Processing Tests
-// 时间序列数据处理测试用例
+// Azimuth时间序列数据处理测试用例
+// 测试时间序列数据的收集、处理和分析功能
 
-test "time series data aggregation operations" {
-  // 测试时间序列数据聚合操作
-  let time_series_data = @azimuth.TimeSeriesData {
-    metric_name : "http.request.duration",
-    metric_type : @azimuth.MetricType::Histogram,
-    unit : "milliseconds",
-    data_points : [
-      @azimuth.DataPoint {
-        timestamp : 1640995200000L, // 2022-01-01 00:00:00
-        value : @azimuth.FloatValue(120.5),
-        attributes : [("endpoint", @azimuth.StringValue("/api/users"))]
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520060000L, // 2022-01-01 00:01:00
-        value : @azimuth.FloatValue(95.3),
-        attributes : [("endpoint", @azimuth.StringValue("/api/users"))]
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520120000L, // 2022-01-01 00:02:00
-        value : @azimuth.FloatValue(150.7),
-        attributes : [("endpoint", @azimuth.StringValue("/api/users"))]
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520180000L, // 2022-01-01 00:03:00
-        value : @azimuth.FloatValue(85.2),
-        attributes : [("endpoint", @azimuth.StringValue("/api/users"))]
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520240000L, // 2022-01-01 00:04:00
-        value : @azimuth.FloatValue(110.8),
-        attributes : [("endpoint", @azimuth.StringValue("/api/users"))]
-      }
-    ]
-  }
+test "时间序列数据创建和基本操作" {
+  // 创建时间序列数据点
+  let timestamp1 = 1735689600000000000L  // 2025-01-02T10:00:00Z
+  let timestamp2 = 1735689660000000000L  // 2025-01-02T10:01:00Z
+  let timestamp3 = 1735689720000000000L  // 2025-01-02T10:02:00Z
   
-  // 计算平均值
-  let avg_value = @azimuth.calculate_average(time_series_data)
-  assert_true(abs(avg_value - 112.5) < 0.1)
+  let data_point1 = TimeSeriesDataPoint::new(timestamp1, 42.5)
+  let data_point2 = TimeSeriesDataPoint::new(timestamp2, 45.8)
+  let data_point3 = TimeSeriesDataPoint::new(timestamp3, 41.2)
   
-  // 计算最大值
-  let max_value = @azimuth.calculate_max(time_series_data)
-  assert_true(abs(max_value - 150.7) < 0.1)
+  // 创建时间序列
+  let time_series = TimeSeries::new("cpu.usage", "percent")
+  TimeSeries::add_point(time_series, data_point1)
+  TimeSeries::add_point(time_series, data_point2)
+  TimeSeries::add_point(time_series, data_point3)
   
-  // 计算最小值
-  let min_value = @azimuth.calculate_min(time_series_data)
-  assert_true(abs(min_value - 85.2) < 0.1)
+  // 验证时间序列属性
+  assert_eq(TimeSeries::metric_name(time_series), "cpu.usage")
+  assert_eq(TimeSeries::unit(time_series), "percent")
+  assert_eq(TimeSeries::point_count(time_series), 3)
   
-  // 计算总和
-  let sum_value = @azimuth.calculate_sum(time_series_data)
-  assert_true(abs(sum_value - 562.5) < 0.1)
-  
-  // 计算百分位数
-  let p50_value = @azimuth.calculate_percentile(time_series_data, 50.0)
-  assert_true(abs(p50_value - 110.8) < 0.1)
-  
-  let p95_value = @azimuth.calculate_percentile(time_series_data, 95.0)
-  assert_true(abs(p95_value - 150.7) < 0.1)
-  
-  let p99_value = @azimuth.calculate_percentile(time_series_data, 99.0)
-  assert_true(abs(p99_value - 150.7) < 0.1)
+  // 验证数据点
+  let points = TimeSeries::get_points(time_series)
+  assert_eq(points.length(), 3)
+  assert_eq(points[0].value, 42.5)
+  assert_eq(points[1].value, 45.8)
+  assert_eq(points[2].value, 41.2)
 }
 
-test "time series data resampling and interpolation" {
-  // 测试时间序列数据重采样和插值
-  let high_frequency_data = @azimuth.TimeSeriesData {
-    metric_name : "cpu.usage",
-    metric_type : @azimuth.MetricType::Gauge,
-    unit : "percent",
-    data_points : [
-      @azimuth.DataPoint {
-        timestamp : 1640995200000L, // 00:00:00
-        value : @azimuth.FloatValue(25.5),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520300000L, // 00:00:30
-        value : @azimuth.FloatValue(35.2),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520600000L, // 00:01:00
-        value : @azimuth.FloatValue(45.8),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520900000L, // 00:01:30
-        value : @azimuth.FloatValue(40.1),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099521200000L, // 00:02:00
-        value : @azimuth.FloatValue(30.3),
-        attributes : []
-      }
-    ]
+test "时间序列数据聚合操作" {
+  // 创建多个数据点用于聚合测试
+  let base_timestamp = 1735689600000000000L
+  let time_series = TimeSeries::new("response.time", "milliseconds")
+  
+  // 添加数据点
+  for i in 0..=10 {
+    let timestamp = base_timestamp + (i * 60000000000L)  // 每分钟一个点
+    let value = 100.0 + (i.to_float() * 5.5)  // 递增值
+    let data_point = TimeSeriesDataPoint::new(timestamp, value)
+    TimeSeries::add_point(time_series, data_point)
   }
   
-  // 下采样到1分钟间隔
-  let downsampled_data = @azimuth.downsample_time_series(
-    high_frequency_data, 
-    @azimuth.ResamplingInterval::Minute, 
-    @azimuth.AggregationMethod::Average
-  )
+  // 测试平均值计算
+  let avg_value = TimeSeries::average(time_series)
+  assert_true(avg_value > 125.0 && avg_value < 130.0)
   
-  // 验证下采样结果
-  assert_eq(downsampled_data.data_points.length(), 3) // 3分钟的数据
+  // 测试最大值和最小值
+  let max_value = TimeSeries::maximum(time_series)
+  let min_value = TimeSeries::minimum(time_series)
+  assert_eq(max_value, 100.0 + (10.0 * 5.5))
+  assert_eq(min_value, 100.0)
   
-  // 验证第一个数据点 (00:00:00-00:00:59的平均值)
-  let first_point = downsampled_data.data_points[0]
-  assert_eq(first_point.timestamp, 1640995200000L)
-  match first_point.value {
-    @azimuth.FloatValue(v) => assert_true(abs(v - 30.35) < 0.1) // (25.5 + 35.2) / 2
-    _ => assert_true(false)
+  // 测试求和
+  let sum_value = TimeSeries::sum(time_series)
+  let expected_sum = 0.0
+  for i in 0..=10 {
+    expected_sum = expected_sum + (100.0 + (i.to_float() * 5.5))
   }
-  
-  // 验证第二个数据点 (00:01:00-00:01:59的平均值)
-  let second_point = downsampled_data.data_points[1]
-  assert_eq(second_point.timestamp, 164099520600000L)
-  match second_point.value {
-    @azimuth.FloatValue(v) => assert_true(abs(v - 42.95) < 0.1) // (45.8 + 40.1) / 2
-    _ => assert_true(false)
-  }
-  
-  // 验证第三个数据点 (00:02:00-00:02:59)
-  let third_point = downsampled_data.data_points[2]
-  assert_eq(third_point.timestamp, 164099521200000L)
-  match third_point.value {
-    @azimuth.FloatValue(v) => assert_eq(v, 30.3)
-    _ => assert_true(false)
-  }
-  
-  // 上采样到15秒间隔并使用线性插值
-  let upsampled_data = @azimuth.upsample_time_series(
-    high_frequency_data,
-    @azimuth.ResamplingInterval::Second(15),
-    @azimuth.InterpolationMethod::Linear
-  )
-  
-  // 验证上采样结果
-  assert_true(upsampled_data.data_points.length() > high_frequency_data.data_points.length())
-  
-  // 验证原始数据点保持不变
-  let original_timestamps = high_frequency_data.data_points.map(fn(dp) { dp.timestamp })
-  for timestamp in original_timestamps {
-    let upsampled_point = upsampled_data.data_points.filter(fn(dp) { dp.timestamp == timestamp })
-    assert_eq(upsampled_point.length(), 1)
-  }
-  
-  // 验证插值点在合理范围内
-  for point in upsampled_data.data_points {
-    match point.value {
-      @azimuth.FloatValue(v) => assert_true(v >= 25.0 && v <= 50.0)
-      _ => assert_true(false)
-    }
-  }
+  assert_eq(sum_value, expected_sum)
 }
 
-test "time series data compression and encoding" {
-  // 测试时间序列数据压缩和编码
-  let large_time_series = @azimuth.TimeSeriesData {
-    metric_name : "memory.heap.usage",
-    metric_type : @azimuth.MetricType::Gauge,
-    unit : "bytes",
-    data_points : [
-      @azimuth.DataPoint {
-        timestamp : 1640995200000L,
-        value : @azimuth.IntValue(1073741824), // 1GB
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520060000L,
-        value : @azimuth.IntValue(1082130432), // 1.01GB
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520120000L,
-        value : @azimuth.IntValue(1090519040), // 1.02GB
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520180000L,
-        value : @azimuth.IntValue(1077936128), // 1.003GB
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520240000L,
-        value : @azimuth.IntValue(1065353216), // 0.99GB
-        attributes : []
-      }
-    ]
+test "时间序列数据窗口操作" {
+  // 创建时间序列数据
+  let base_timestamp = 1735689600000000000L
+  let time_series = TimeSeries::new("memory.usage", "percent")
+  
+  // 添加24小时的数据点（每小时一个）
+  for i in 0..=23 {
+    let timestamp = base_timestamp + (i * 3600000000000L)  // 每小时一个点
+    let value = 50.0 + (10.0 * (@sin(i.to_float() * 0.5)))  // 模拟内存使用波动
+    let data_point = TimeSeriesDataPoint::new(timestamp, value)
+    TimeSeries::add_point(time_series, data_point)
   }
   
-  // 使用增量编码压缩
-  let delta_encoded = @azimuth.delta_encode_time_series(large_time_series)
+  // 测试时间窗口查询
+  let window_start = base_timestamp + (6 * 3600000000000L)  // 6小时后
+  let window_end = base_timestamp + (12 * 3600000000000L)   // 12小时后
   
-  // 验证增量编码结果
-  assert_eq(delta_encoded.data_points.length(), large_time_series.data_points.length())
+  let window_series = TimeSeries::get_window(time_series, window_start, window_end)
+  assert_eq(TimeSeries::point_count(window_series), 7)  // 包含边界点
   
-  // 第一个数据点应保持不变
-  match delta_encoded.data_points[0].value {
-    @azimuth.IntValue(v) => assert_eq(v, 1073741824)
-    _ => assert_true(false)
+  // 验证窗口内的数据点时间戳
+  let window_points = TimeSeries::get_points(window_series)
+  for point in window_points {
+    assert_true(point.timestamp >= window_start && point.timestamp <= window_end)
   }
   
-  // 后续数据点应为增量值
-  match delta_encoded.data_points[1].value {
-    @azimuth.IntValue(v) => assert_eq(v, 8388608) // 1082130432 - 1073741824
-    _ => assert_true(false)
+  // 测试滑动窗口平均值
+  let sliding_avg = TimeSeries::sliding_window_average(time_series, 4)  // 4小时滑动窗口
+  assert_eq(sliding_avg.length(), 20)  // 24-4个数据点
+  
+  // 验证第一个滑动平均值
+  let first_avg = sliding_avg[0]
+  let expected_first_avg = (50.0 + (10.0 * @sin(0.0 * 0.5)) + 
+                           50.0 + (10.0 * @sin(1.0 * 0.5)) + 
+                           50.0 + (10.0 * @sin(2.0 * 0.5)) + 
+                           50.0 + (10.0 * @sin(3.0 * 0.5))) / 4.0
+  assert_eq(first_avg, expected_first_avg)
+}
+
+test "时间序列数据压缩和采样" {
+  // 创建高频时间序列数据
+  let base_timestamp = 1735689600000000000L
+  let time_series = TimeSeries::new("high.frequency.metric", "value")
+  
+  // 添加每秒一个数据点，持续1小时
+  for i in 0..=3599 {
+    let timestamp = base_timestamp + (i * 1000000000L)  // 每秒一个点
+    let value = 100.0 + (10.0 * @sin(i.to_float() * 0.01))  // 模拟周期性变化
+    let data_point = TimeSeriesDataPoint::new(timestamp, value)
+    TimeSeries::add_point(time_series, data_point)
   }
   
-  match delta_encoded.data_points[2].value {
-    @azimuth.IntValue(v) => assert_eq(v, 8388608) // 1090519040 - 1082130432
-    _ => assert_true(false)
+  assert_eq(TimeSeries::point_count(time_series), 3600)
+  
+  // 测试时间序列降采样（每分钟取一个点）
+  let downsampled_series = TimeSeries::downsample(time_series, 60)  // 60秒间隔
+  assert_eq(TimeSeries::point_count(downsampled_series), 60)
+  
+  // 验证降采样后的数据点时间戳
+  let downsampled_points = TimeSeries::get_points(downsampled_series)
+  for i in 0..=59 {
+    let expected_timestamp = base_timestamp + (i * 60 * 1000000000L)
+    assert_eq(downsampled_points[i].timestamp, expected_timestamp)
   }
   
-  // 解码验证
-  let decoded_data = @azimuth.delta_decode_time_series(delta_encoded)
+  // 测试时间序列压缩（基于变化阈值）
+  let compressed_series = TimeSeries::compress_by_threshold(time_series, 2.0)  // 变化小于2.0的点被压缩
+  assert_true(TimeSeries::point_count(compressed_series) < TimeSeries::point_count(time_series))
   
-  // 验证解码结果与原始数据一致
-  assert_eq(decoded_data.data_points.length(), large_time_series.data_points.length())
-  for i in 0..large_time_series.data_points.length() {
-    assert_eq(decoded_data.data_points[i].timestamp, large_time_series.data_points[i].timestamp)
-    match decoded_data.data_points[i].value {
-      @azimuth.IntValue(decoded_val) => {
-        match large_time_series.data_points[i].value {
-          @azimuth.IntValue(original_val) => assert_eq(decoded_val, original_val)
-          _ => assert_true(false)
-        }
-      }
-      _ => assert_true(false)
-    }
+  // 验证压缩后的数据点保留了重要变化
+  let compressed_points = TimeSeries::get_points(compressed_series)
+  assert_true(compressed_points.length() > 10)  // 至少保留了一些关键点
+  assert_eq(compressed_points[0].timestamp, base_timestamp)  // 保留第一个点
+  assert_eq(compressed_points[compressed_points.length() - 1].timestamp, 
+           base_timestamp + (3599 * 1000000000L))  // 保留最后一个点
+}
+
+test "时间序列数据趋势分析" {
+  // 创建具有明显趋势的时间序列数据
+  let base_timestamp = 1735689600000000000L
+  let time_series = TimeSeries::new("growth.metric", "count")
+  
+  // 添加具有线性增长趋势的数据
+  for i in 0..=29 {
+    let timestamp = base_timestamp + (i * 3600000000000L)  // 每小时一个点
+    let trend_value = 100.0 + (i.to_float() * 5.0)  // 线性增长
+    let noise = (@random() * 10.0) - 5.0  // 添加随机噪声
+    let value = trend_value + noise
+    let data_point = TimeSeriesDataPoint::new(timestamp, value)
+    TimeSeries::add_point(time_series, data_point)
   }
   
-  // 使用XOR编码压缩
-  let xor_encoded = @azimuth.xor_encode_time_series(large_time_series)
+  // 测试线性趋势检测
+  let trend_analysis = TimeSeries::analyze_trend(time_series)
+  assert_eq(trend_analysis.trend_type, "increasing")
+  assert_true(trend_analysis.slope > 4.0 && trend_analysis.slope < 6.0)  // 接近5.0
+  assert_true(trend_analysis.confidence > 0.7)  // 高置信度
   
-  // 验证XOR编码结果
-  assert_eq(xor_encoded.data_points.length(), large_time_series.data_points.length())
+  // 测试季节性检测
+  let seasonal_series = TimeSeries::new("seasonal.metric", "value")
+  for i in 0..=47 {
+    let timestamp = base_timestamp + (i * 1800000000000L)  // 每30分钟一个点
+    let seasonal_value = 50.0 + (20.0 * @sin(i.to_float() * 0.261799))  // 24小时周期
+    let data_point = TimeSeriesDataPoint::new(timestamp, seasonal_value)
+    TimeSeries::add_point(seasonal_series, data_point)
+  }
   
-  // 解码验证
-  let xor_decoded = @azimuth.xor_decode_time_series(xor_encoded)
+  let seasonal_analysis = TimeSeries::analyze_seasonality(seasonal_series)
+  assert_eq(seasonal_analysis.has_seasonality, true)
+  assert_true(seasonal_analysis.period_hours > 22.0 && seasonal_analysis.period_hours < 26.0)  // 接近24小时
+}
+
+test "时间序列数据异常检测" {
+  // 创建包含异常值的时间序列数据
+  let base_timestamp = 1735689600000000000L
+  let time_series = TimeSeries::new("anomaly.test.metric", "value")
   
-  // 验证解码结果与原始数据一致
-  assert_eq(xor_decoded.data_points.length(), large_time_series.data_points.length())
-  for i in 0..large_time_series.data_points.length() {
-    assert_eq(xor_decoded.data_points[i].timestamp, large_time_series.data_points[i].timestamp)
-    match xor_decoded.data_points[i].value {
-      @azimuth.IntValue(decoded_val) => {
-        match large_time_series.data_points[i].value {
-          @azimuth.IntValue(original_val) => assert_eq(decoded_val, original_val)
-          _ => assert_true(false)
-        }
-      }
-      _ => assert_true(false)
-    }
+  // 添加正常数据点
+  for i in 0..=19 {
+    let timestamp = base_timestamp + (i * 60000000000L)  // 每分钟一个点
+    let normal_value = 50.0 + (@random() * 10.0) - 5.0  // 45-55之间的随机值
+    let data_point = TimeSeriesDataPoint::new(timestamp, normal_value)
+    TimeSeries::add_point(time_series, data_point)
+  }
+  
+  // 添加异常值
+  let anomaly_timestamp1 = base_timestamp + (7 * 60000000000L)
+  let anomaly_timestamp2 = base_timestamp + (15 * 60000000000L)
+  
+  let anomaly_point1 = TimeSeriesDataPoint::new(anomaly_timestamp1, 120.0)  // 高异常值
+  let anomaly_point2 = TimeSeriesDataPoint::new(anomaly_timestamp2, -20.0)  // 低异常值
+  
+  TimeSeries::add_point(time_series, anomaly_point1)
+  TimeSeries::add_point(time_series, anomaly_point2)
+  
+  // 测试异常检测
+  let anomalies = TimeSeries::detect_anomalies(time_series, 2.0)  // 2倍标准差阈值
+  
+  assert_eq(anomalies.length(), 2)  // 应该检测到两个异常值
+  
+  // 验证异常值的时间戳
+  let anomaly_timestamps = anomalies.map(fn(a) { a.timestamp })
+  assert_true(anomaly_timestamps.contains(anomaly_timestamp1))
+  assert_true(anomaly_timestamps.contains(anomaly_timestamp2))
+  
+  // 验证异常值的分数
+  for anomaly in anomalies {
+    assert_true(anomaly.anomaly_score > 2.0)
+    assert_eq(anomaly.expected_range.min, 45.0)  // 预期范围
+    assert_eq(anomaly.expected_range.max, 55.0)
   }
 }
 
-test "time series data windowing and tumbling operations" {
-  // 测试时间序列数据窗口和滚动操作
-  let streaming_data = @azimuth.TimeSeriesData {
-    metric_name : "request.count",
-    metric_type : @azimuth.MetricType::Counter,
-    unit : "requests",
-    data_points : [
-      @azimuth.DataPoint {
-        timestamp : 1640995200000L, // 00:00:00
-        value : @azimuth.IntValue(10),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520300000L, // 00:00:30
-        value : @azimuth.IntValue(15),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520600000L, // 00:01:00
-        value : @azimuth.IntValue(12),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520900000L, // 00:01:30
-        value : @azimuth.IntValue(18),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099521200000L, // 00:02:00
-        value : @azimuth.IntValue(25),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099521500000L, // 00:02:30
-        value : @azimuth.IntValue(20),
-        attributes : []
-      }
-    ]
+test "时间序列数据预测" {
+  // 创建历史数据用于预测测试
+  let base_timestamp = 1735689600000000000L
+  let time_series = TimeSeries::new("prediction.test.metric", "value")
+  
+  // 添加具有趋势和季节性的历史数据
+  for i in 0..=167 {  // 7天的数据（每小时一个点）
+    let timestamp = base_timestamp + (i * 3600000000000L)
+    let trend = 100.0 + (i.to_float() * 0.5)  // 缓慢增长趋势
+    let seasonal = 10.0 * @sin((i.to_float() / 24.0) * 2.0 * 3.14159)  // 24小时季节性
+    let noise = (@random() * 5.0) - 2.5  // 随机噪声
+    let value = trend + seasonal + noise
+    let data_point = TimeSeriesDataPoint::new(timestamp, value)
+    TimeSeries::add_point(time_series, data_point)
   }
   
-  // 滚动窗口操作 (1分钟窗口)
-  let tumbling_windows = @azimuth.create_tumbling_windows(
-    streaming_data,
-    @azimuth.WindowDuration::Minute(1),
-    @azimuth.AggregationMethod::Sum
-  )
+  // 测试短期预测（未来24小时）
+  let forecast = TimeSeries::forecast(time_series, 24)  // 预测24个点
+  assert_eq(forecast.length(), 24)
   
-  // 验证滚动窗口结果
-  assert_eq(tumbling_windows.length(), 3) // 3个1分钟窗口
-  
-  // 验证第一个窗口 (00:00:00-00:00:59)
-  let first_window = tumbling_windows[0]
-  assert_eq(first_window.start_time, 1640995200000L)
-  assert_eq(first_window.end_time, 164099520059999L)
-  match first_window.aggregated_value {
-    @azimuth.IntValue(v) => assert_eq(v, 25) // 10 + 15
-    _ => assert_true(false)
+  // 验证预测时间戳
+  let last_timestamp = base_timestamp + (167 * 3600000000000L)
+  for i in 0..=23 {
+    let expected_timestamp = last_timestamp + ((i + 1) * 3600000000000L)
+    assert_eq(forecast[i].timestamp, expected_timestamp)
   }
   
-  // 验证第二个窗口 (00:01:00-00:01:59)
-  let second_window = tumbling_windows[1]
-  assert_eq(second_window.start_time, 164099520600000L)
-  assert_eq(second_window.end_time, 164099520659999L)
-  match second_window.aggregated_value {
-    @azimuth.IntValue(v) => assert_eq(v, 30) // 12 + 18
-    _ => assert_true(false)
+  // 验证预测值的合理性
+  let last_value = 100.0 + (167.0 * 0.5)  // 最后一个趋势值
+  for prediction in forecast {
+    assert_true(prediction.value > 80.0 && prediction.value < 150.0)  // 合理范围
+    assert_true(prediction.confidence > 0.0 && prediction.confidence <= 1.0)  // 有效置信度
   }
   
-  // 验证第三个窗口 (00:02:00-00:02:59)
-  let third_window = tumbling_windows[2]
-  assert_eq(third_window.start_time, 164099521200000L)
-  assert_eq(third_window.end_time, 164099521259999L)
-  match third_window.aggregated_value {
-    @azimuth.IntValue(v) => assert_eq(v, 45) // 25 + 20
-    _ => assert_true(false)
-  }
-  
-  // 滑动窗口操作 (1分钟窗口，30秒滑动)
-  let sliding_windows = @azimuth.create_sliding_windows(
-    streaming_data,
-    @azimuth.WindowDuration::Minute(1),
-    @azimuth.SlideDuration::Second(30),
-    @azimuth.AggregationMethod::Average
-  )
-  
-  // 验证滑动窗口结果
-  assert_true(sliding_windows.length() > tumbling_windows.length())
-  
-  // 验证窗口重叠
-  for i in 1..sliding_windows.length() {
-    let current_window = sliding_windows[i]
-    let previous_window = sliding_windows[i-1]
-    
-    // 验证窗口时间顺序
-    assert_true(current_window.start_time > previous_window.start_time)
-    assert_true(current_window.end_time > previous_window.end_time)
-    
-    // 验证滑动间隔
-    assert_eq(current_window.start_time - previous_window.start_time, 30000L) // 30秒
-  }
-  
-  // 会话窗口操作 (基于超时的会话)
-  let session_windows = @azimuth.create_session_windows(
-    streaming_data,
-    @azimuth.SessionTimeout::Second(45), // 45秒超时
-    @azimuth.AggregationMethod::Sum
-  )
-  
-  // 验证会话窗口结果
-  assert_eq(session_windows.length(), 2) // 2个会话窗口
-  
-  // 验证第一个会话窗口 (00:00:00-00:01:30)
-  let first_session = session_windows[0]
-  assert_eq(first_session.start_time, 1640995200000L)
-  assert_eq(first_session.end_time, 164099520900000L)
-  match first_session.aggregated_value {
-    @azimuth.IntValue(v) => assert_eq(v, 55) // 10 + 15 + 12 + 18
-    _ => assert_true(false)
-  }
-  
-  // 验证第二个会话窗口 (00:02:00-00:02:30)
-  let second_session = session_windows[1]
-  assert_eq(second_session.start_time, 164099521200000L)
-  assert_eq(second_session.end_time, 164099521500000L)
-  match second_session.aggregated_value {
-    @azimuth.IntValue(v) => assert_eq(v, 45) // 25 + 20
-    _ => assert_true(false)
-  }
-}
-
-test "time series data anomaly detection" {
-  // 测试时间序列数据异常检测
-  let data_with_anomalies = @azimuth.TimeSeriesData {
-    metric_name : "response.time",
-    metric_type : @azimuth.MetricType::Gauge,
-    unit : "milliseconds",
-    data_points : [
-      @azimuth.DataPoint {
-        timestamp : 1640995200000L,
-        value : @azimuth.FloatValue(120.5),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520060000L,
-        value : @azimuth.FloatValue(125.3),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520120000L,
-        value : @azimuth.FloatValue(118.7),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520180000L,
-        value : @azimuth.FloatValue(450.2), // 异常值
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520240000L,
-        value : @azimuth.FloatValue(122.8),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520300000L,
-        value : @azimuth.FloatValue(119.4),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520360000L,
-        value : @azimuth.FloatValue(121.1),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520420000L,
-        value : @azimuth.FloatValue(35.5), // 异常值
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520480000L,
-        value : @azimuth.FloatValue(123.9),
-        attributes : []
-      },
-      @azimuth.DataPoint {
-        timestamp : 164099520540000L,
-        value : @azimuth.FloatValue(120.2),
-        attributes : []
-      }
-    ]
-  }
-  
-  // 使用Z-score方法检测异常
-  let zscore_threshold = 2.5
-  let zscore_anomalies = @azimuth.detect_anomalies_zscore(
-    data_with_anomalies,
-    zscore_threshold
-  )
-  
-  // 验证Z-score异常检测结果
-  assert_eq(zscore_anomalies.length(), 2) // 应该检测到2个异常值
-  
-  // 验证第一个异常值 (450.2)
-  let first_anomaly = zscore_anomalies[0]
-  assert_eq(first_anomaly.data_point.timestamp, 164099520180000L)
-  match first_anomaly.data_point.value {
-    @azimuth.FloatValue(v) => assert_eq(v, 450.2)
-    _ => assert_true(false)
-  }
-  assert_true(first_anomaly.z_score > zscore_threshold)
-  
-  // 验证第二个异常值 (35.5)
-  let second_anomaly = zscore_anomalies[1]
-  assert_eq(second_anomaly.data_point.timestamp, 164099520420000L)
-  match second_anomaly.data_point.value {
-    @azimuth.FloatValue(v) => assert_eq(v, 35.5)
-    _ => assert_true(false)
-  }
-  assert_true(abs(second_anomaly.z_score) > zscore_threshold)
-  
-  // 使用IQR方法检测异常
-  let iqr_anomalies = @azimuth.detect_anomalies_iqr(data_with_anomalies, 1.5)
-  
-  // 验证IQR异常检测结果
-  assert_true(iqr_anomalies.length() >= 1) // 至少检测到1个异常值
-  
-  // 使用移动平均方法检测异常
-  let moving_avg_anomalies = @azimuth.detect_anomalies_moving_average(
-    data_with_anomalies,
-    3, // 窗口大小
-    2.0 // 阈值倍数
-  )
-  
-  // 验证移动平均异常检测结果
-  assert_true(moving_avg_anomalies.length() >= 1) // 至少检测到1个异常值
-  
-  // 验证异常检测结果一致性
-  let anomaly_timestamps = zscore_anomalies.map(fn(a) { a.data_point.timestamp })
-  for anomaly in moving_avg_anomalies {
-    let timestamp = anomaly.data_point.timestamp
-    assert_true(anomaly_timestamps.contains(timestamp))
-  }
+  // 验证预测趋势延续性
+  let first_predicted = forecast[0].value
+  let last_predicted = forecast[23].value
+  assert_true(last_predicted > first_predicted)  // 应该继续增长趋势
 }

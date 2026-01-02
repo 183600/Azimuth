@@ -1,500 +1,548 @@
-// Azimuth 跨服务集成综合测试
-// 测试分布式追踪场景
+// Azimuth跨服务集成测试用例
+// 测试多个服务之间的遥测数据传递和一致性
 
-test "端到端分布式追踪" {
-  // 测试完整的端到端分布式追踪场景
+test "跨服务上下文传播" {
+  // 创建服务A的遥测上下文
+  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
+  let service_a_span = Tracer::start_span(service_a_tracer, "service-a.operation")
   
-  // 创建API网关服务
-  let gateway_tracer = TracerProvider::get_tracer(TracerProvider::default(), "api-gateway")
-  let gateway_span = Tracer::start_span(gateway_tracer, "gateway.request.processing")
+  // 设置服务A的span属性
+  Span::set_attribute(service_a_span, "service.name", "service-a")
+  Span::set_attribute(service_a_span, "service.version", "1.2.3")
+  Span::set_attribute(service_a_span, "operation.type", "user-authentication")
   
-  // 设置API网关属性
-  Span::set_attribute(gateway_span, "service.name", "api-gateway")
-  Span::set_attribute(gateway_span, "service.version", "1.2.3")
-  Span::set_attribute(gateway_span, "http.method", "GET")
-  Span::set_attribute(gateway_span, "http.url", "/api/user/profile")
-  Span::set_attribute(gateway_span, "http.scheme", "https")
-  Span::set_attribute(gateway_span, "http.host", "api.example.com")
-  Span::set_attribute(gateway_span, "http.user_agent", "Mozilla/5.0")
-  Span::set_attribute(gateway_span, "net.peer.ip", "192.168.1.100")
+  // 获取服务A的span上下文
+  let service_a_context = Span::span_context(service_a_span)
+  assert_true(SpanContext::is_valid(service_a_context))
   
-  // 添加API网关事件
-  Span::add_event(gateway_span, "request.received", [
-    ("timestamp", "2025-01-02T10:00:00Z"),
-    ("request.id", "req-12345")
-  ])
+  // 模拟跨服务调用：将上下文注入到HTTP头
+  let headers = []
+  let injected_headers = ContextPropagator::inject_to_headers(service_a_context, headers)
   
-  // 获取当前上下文
-  let ctx = SpanContext::current()
+  // 验证注入的头部包含必要的上下文信息
+  let trace_id_header = injected_headers.find(fn(h) { h.0 == "traceparent" })
+  assert_true(trace_id_header.is_some())
   
-  // 创建认证服务子span
-  let auth_tracer = TracerProvider::get_tracer(TracerProvider::default(), "auth-service")
-  let auth_span = Tracer::start_child_span_with_context(gateway_span, "auth.service.validation", ctx)
+  // 服务B接收请求并提取上下文
+  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
+  let extracted_context = ContextPropagator::extract_from_headers(injected_headers)
   
-  // 设置认证服务属性
-  Span::set_attribute(auth_span, "service.name", "auth-service")
-  Span::set_attribute(auth_span, "service.version", "2.1.0")
-  Span::set_attribute(auth_span, "auth.method", "jwt")
-  Span::set_attribute(auth_span, "auth.token.type", "bearer")
-  Span::set_attribute(auth_span, "auth.user.id", "user-67890")
-  Span::set_attribute(auth_span, "auth.session.id", "sess-abc123")
+  // 创建服务B的子span
+  let service_b_span = Tracer::start_span_with_parent(
+    service_b_tracer, 
+    "service-b.operation", 
+    extracted_context
+  )
   
-  // 添加认证服务事件
-  Span::add_event(auth_span, "token.validation.started", [
-    ("token.issuer", "auth.example.com"),
-    ("token.audience", "api.example.com")
-  ])
+  // 设置服务B的span属性
+  Span::set_attribute(service_b_span, "service.name", "service-b")
+  Span::set_attribute(service_b_span, "service.version", "2.1.0")
+  Span::set_attribute(service_b_span, "operation.type", "token-validation")
   
-  Span::add_event(auth_span, "token.validation.completed", [
-    ("validation.result", "success"),
-    ("token.expires", "2025-01-02T12:00:00Z")
-  ])
+  // 验证服务B的span与服务A的span属于同一个trace
+  let service_b_context = Span::span_context(service_b_span)
+  assert_eq(SpanContext::trace_id(service_a_context), SpanContext::trace_id(service_b_context))
+  assert_eq(SpanContext::span_id(service_a_context), SpanContext::parent_span_id(service_b_context))
   
-  // 结束认证服务span
-  Span::end(auth_span)
+  // 结束所有span
+  Span::end(service_b_span)
+  Span::end(service_a_span)
   
-  // 创建用户服务子span
-  let user_tracer = TracerProvider::get_tracer(TracerProvider::default(), "user-service")
-  let user_span = Tracer::start_child_span_with_context(gateway_span, "user.service.profile.fetch", ctx)
-  
-  // 设置用户服务属性
-  Span::set_attribute(user_span, "service.name", "user-service")
-  Span::set_attribute(user_span, "service.version", "3.0.1")
-  Span::set_attribute(user_span, "db.operation", "select")
-  Span::set_attribute(user_span, "db.table", "users")
-  Span::set_attribute(user_span, "db.query", "SELECT * FROM users WHERE id = ?")
-  Span::set_attribute(user_span, "db.statement", "prepared")
-  
-  // 添加用户服务事件
-  Span::add_event(user_span, "db.query.started", [
-    ("query.type", "select"),
-    ("table.name", "users")
-  ])
-  
-  Span::add_event(user_span, "db.query.completed", [
-    ("result.rows", "1"),
-    ("execution.time", "15ms")
-  ])
-  
-  // 结束用户服务span
-  Span::end(user_span)
-  
-  // 创建缓存服务子span
-  let cache_tracer = TracerProvider::get_tracer(TracerProvider::default(), "cache-service")
-  let cache_span = Tracer::start_child_span_with_context(gateway_span, "cache.service.check", ctx)
-  
-  // 设置缓存服务属性
-  Span::set_attribute(cache_span, "service.name", "cache-service")
-  Span::set_attribute(cache_span, "service.version", "1.5.2")
-  Span::set_attribute(cache_span, "cache.operation", "get")
-  Span::set_attribute(cache_span, "cache.key", "user.profile.67890")
-  Span::set_attribute(cache_span, "cache.hit", false)
-  
-  // 添加缓存服务事件
-  Span::add_event(cache_span, "cache.miss", [
-    ("cache.key", "user.profile.67890"),
-    ("cache.ttl", "3600")
-  ])
-  
-  Span::add_event(cache_span, "cache.set", [
-    ("cache.key", "user.profile.67890"),
-    ("cache.ttl", "3600"),
-    ("cache.size", "1024")
-  ])
-  
-  // 结束缓存服务span
-  Span::end(cache_span)
-  
-  // 添加API网关完成事件
-  Span::add_event(gateway_span, "response.generated", [
-    ("timestamp", "2025-01-02T10:00:05Z"),
-    ("response.status", "200"),
-    ("response.size", "2048")
-  ])
-  
-  // 设置API网关最终状态
-  Span::set_status(gateway_span, Ok, Some("Request processed successfully"))
-  Span::set_attribute(gateway_span, "http.status_code", 200)
-  
-  // 结束API网关span
-  Span::end(gateway_span)
-  
-  // 验证所有span都有有效的上下文
-  let gateway_ctx = Span::span_context(gateway_span)
-  let auth_ctx = Span::span_context(auth_span)
-  let user_ctx = Span::span_context(user_span)
-  let cache_ctx = Span::span_context(cache_span)
-  
-  assert_true(SpanContext::is_valid(gateway_ctx))
-  assert_true(SpanContext::is_valid(auth_ctx))
-  assert_true(SpanContext::is_valid(user_ctx))
-  assert_true(SpanContext::is_valid(cache_ctx))
-  
-  // 验证追踪ID一致性
-  assert_eq(SpanContext::trace_id(gateway_ctx), SpanContext::trace_id(auth_ctx))
-  assert_eq(SpanContext::trace_id(gateway_ctx), SpanContext::trace_id(user_ctx))
-  assert_eq(SpanContext::trace_id(gateway_ctx), SpanContext::trace_id(cache_ctx))
+  assert_true(true)
 }
 
-test "微服务链式调用追踪" {
-  // 测试微服务链式调用的追踪
+test "跨服务度量数据一致性" {
+  // 创建服务A和服务B的度量提供者
+  let service_a_meter = MeterProvider::get_meter(MeterProvider::default(), "service-a")
+  let service_b_meter = MeterProvider::get_meter(MeterProvider::default(), "service-b")
   
-  // 创建订单服务
-  let order_tracer = TracerProvider::get_tracer(TracerProvider::default(), "order-service")
-  let order_span = Tracer::start_span(order_tracer, "order.creation.process")
+  // 创建服务A的计数器
+  let service_a_requests = Meter::create_counter(
+    service_a_meter, 
+    "http.requests.total", 
+    Some("Total HTTP requests"), 
+    Some("count")
+  )
+  
+  // 创建服务B的计数器（相同名称和描述）
+  let service_b_requests = Meter::create_counter(
+    service_b_meter, 
+    "http.requests.total", 
+    Some("Total HTTP requests"), 
+    Some("count")
+  )
+  
+  // 服务A记录请求
+  Counter::add_with_attributes(service_a_requests, 1.0, [
+    ("method", "GET"),
+    ("endpoint", "/api/auth"),
+    ("status", "200"),
+    ("service", "service-a")
+  ])
+  
+  // 服务B记录请求（作为服务A调用的结果）
+  Counter::add_with_attributes(service_b_requests, 1.0, [
+    ("method", "POST"),
+    ("endpoint", "/api/validate"),
+    ("status", "200"),
+    ("service", "service-b")
+  ])
+  
+  // 创建跨服务关联的度量
+  let cross_service_meter = MeterProvider::get_meter(MeterProvider::default(), "cross-service")
+  let cross_service_latency = Meter::create_histogram(
+    cross_service_meter,
+    "cross.service.latency",
+    Some("Cross-service request latency"),
+    Some("milliseconds")
+  )
+  
+  // 记录跨服务延迟
+  Histogram::record_with_attributes(cross_service_latency, 125.5, [
+    ("source.service", "service-a"),
+    ("target.service", "service-b"),
+    ("operation", "user-authentication")
+  ])
+  
+  // 验证度量数据的一致性
+  assert_eq(service_a_requests.name, "http.requests.total")
+  assert_eq(service_b_requests.name, "http.requests.total")
+  assert_eq(service_a_requests.description, Some("Total HTTP requests"))
+  assert_eq(service_b_requests.description, Some("Total HTTP requests"))
+  assert_eq(service_a_requests.unit, Some("count"))
+  assert_eq(service_b_requests.unit, Some("count"))
+  
+  assert_true(true)
+}
+
+test "跨服务日志关联性" {
+  // 创建服务A的日志记录器
+  let service_a_logger = LoggerProvider::get_logger(LoggerProvider::default(), "service-a")
+  
+  // 创建服务A的span
+  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
+  let service_a_span = Tracer::start_span(service_a_tracer, "service-a.processing")
+  
+  // 服务A记录日志（与span关联）
+  let service_a_log = LogRecord::new(Info, "Processing user authentication request")
+  LogRecord::add_attribute(service_a_log, "user.id", "user-12345")
+  LogRecord::add_attribute(service_a_log, "request.id", "req-abc-123")
+  LogRecord::add_attribute(service_a_log, "trace.id", SpanContext::trace_id(Span::span_context(service_a_span)))
+  LogRecord::add_attribute(service_a_log, "span.id", SpanContext::span_id(Span::span_context(service_a_span)))
+  
+  Logger::emit(service_a_logger, service_a_log)
+  
+  // 模拟跨服务调用，传播上下文
+  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
+  let service_b_span = Tracer::start_span_with_parent(
+    service_b_tracer,
+    "service-b.validation",
+    Span::span_context(service_a_span)
+  )
+  
+  // 服务B记录日志（与span关联）
+  let service_b_logger = LoggerProvider::get_logger(LoggerProvider::default(), "service-b")
+  let service_b_log = LogRecord::new(Info, "Validating user token")
+  LogRecord::add_attribute(service_b_log, "user.id", "user-12345")
+  LogRecord::add_attribute(service_b_log, "request.id", "req-abc-123")
+  LogRecord::add_attribute(service_b_log, "trace.id", SpanContext::trace_id(Span::span_context(service_b_span)))
+  LogRecord::add_attribute(service_b_log, "span.id", SpanContext::span_id(Span::span_context(service_b_span)))
+  LogRecord::add_attribute(service_b_log, "parent.span.id", SpanContext::parent_span_id(Span::span_context(service_b_span)))
+  
+  Logger::emit(service_b_logger, service_b_log)
+  
+  // 验证日志关联性
+  assert_eq(LogRecord::body(service_a_log), Some("Processing user authentication request"))
+  assert_eq(LogRecord::body(service_b_log), Some("Validating user token"))
+  
+  // 验证trace ID一致性
+  let service_a_trace_id = LogRecord::get_attribute(service_a_log, "trace.id")
+  let service_b_trace_id = LogRecord::get_attribute(service_b_log, "trace.id")
+  
+  match (service_a_trace_id, service_b_trace_id) {
+    (Some(id_a), Some(id_b)) => assert_eq(id_a, id_b)
+    _ => assert_true(false)
+  }
+  
+  // 结束span
+  Span::end(service_b_span)
+  Span::end(service_a_span)
+  
+  assert_true(true)
+}
+
+test "分布式事务追踪" {
+  // 模拟分布式事务：用户下单流程
+  // 1. 订单服务创建订单
+  let order_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "order-service")
+  let order_span = Tracer::start_span(order_service_tracer, "order-service.create-order")
   
   Span::set_attribute(order_span, "service.name", "order-service")
-  Span::set_attribute(order_span, "order.id", "order-12345")
-  Span::set_attribute(order_span, "customer.id", "cust-67890")
-  Span::set_attribute(order_span, "order.total", 299.99)
+  Span::set_attribute(order_span, "user.id", "user-67890")
+  Span::set_attribute(order_span, "order.id", "order-xyz-456")
+  Span::set_attribute(order_span, "order.amount", "99.99")
   
-  // 库存服务调用
-  let inventory_tracer = TracerProvider::get_tracer(TracerProvider::default(), "inventory-service")
-  let inventory_span = Tracer::start_child_span(order_span, "inventory.check")
-  
-  Span::set_attribute(inventory_span, "service.name", "inventory-service")
-  Span::set_attribute(inventory_span, "product.id", "prod-11111")
-  Span::set_attribute(inventory_span, "requested.quantity", 2)
-  Span::set_attribute(inventory_span, "available.quantity", 5)
-  Span::set_attribute(inventory_span, "inventory.status", "available")
-  
-  Span::end(inventory_span)
-  
-  // 支付服务调用
-  let payment_tracer = TracerProvider::get_tracer(TracerProvider::default(), "payment-service")
-  let payment_span = Tracer::start_child_span(order_span, "payment.processing")
+  // 2. 支付服务处理支付
+  let payment_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "payment-service")
+  let payment_span = Tracer::start_span_with_parent(
+    payment_service_tracer,
+    "payment-service.process-payment",
+    Span::span_context(order_span)
+  )
   
   Span::set_attribute(payment_span, "service.name", "payment-service")
-  Span::set_attribute(payment_span, "payment.method", "credit_card")
-  Span::set_attribute(payment_span, "payment.amount", 299.99)
-  Span::set_attribute(payment_span, "payment.currency", "USD")
-  Span::set_attribute(payment_span, "payment.gateway", "stripe")
+  Span::set_attribute(payment_span, "user.id", "user-67890")
+  Span::set_attribute(payment_span, "order.id", "order-xyz-456")
+  Span::set_attribute(payment_span, "payment.amount", "99.99")
+  Span::set_attribute(payment_span, "payment.method", "credit-card")
   
-  // 银行服务子调用
-  let bank_tracer = TracerProvider::get_tracer(TracerProvider::default(), "bank-service")
-  let bank_span = Tracer::start_child_span(payment_span, "bank.authorization")
+  // 3. 库存服务扣减库存
+  let inventory_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "inventory-service")
+  let inventory_span = Tracer::start_span_with_parent(
+    inventory_service_tracer,
+    "inventory-service.reserve-items",
+    Span::span_context(payment_span)
+  )
   
-  Span::set_attribute(bank_span, "service.name", "bank-service")
-  Span::set_attribute(bank_span, "bank.transaction.id", "txn-99999")
-  Span::set_attribute(bank_span, "bank.auth.code", "123456")
-  Span::set_attribute(bank_span, "bank.result", "approved")
+  Span::set_attribute(inventory_span, "service.name", "inventory-service")
+  Span::set_attribute(inventory_span, "user.id", "user-67890")
+  Span::set_attribute(inventory_span, "order.id", "order-xyz-456")
+  Span::set_attribute(inventory_span, "item.id", "item-123")
+  Span::set_attribute(inventory_span, "quantity", "2")
   
-  Span::end(bank_span)
-  
-  Span::end(payment_span)
-  
-  // 物流服务调用
-  let shipping_tracer = TracerProvider::get_tracer(TracerProvider::default(), "shipping-service")
-  let shipping_span = Tracer::start_child_span(order_span, "shipping.arrangement")
-  
-  Span::set_attribute(shipping_span, "service.name", "shipping-service")
-  Span::set_attribute(shipping_span, "shipping.method", "express")
-  Span::set_attribute(shipping_span, "shipping.address", "123 Main St, City, State")
-  Span::set_attribute(shipping_span, "estimated.delivery", "2025-01-05")
-  
-  Span::end(shipping_span)
-  
-  // 通知服务调用
-  let notification_tracer = TracerProvider::get_tracer(TracerProvider::default(), "notification-service")
-  let notification_span = Tracer::start_child_span(order_span, "notification.send")
+  // 4. 通知服务发送确认
+  let notification_service_tracer = TracerProvider::get_tracer(TracerProvider::default(), "notification-service")
+  let notification_span = Tracer::start_span_with_parent(
+    notification_service_tracer,
+    "notification-service.send-confirmation",
+    Span::span_context(inventory_span)
+  )
   
   Span::set_attribute(notification_span, "service.name", "notification-service")
+  Span::set_attribute(notification_span, "user.id", "user-67890")
+  Span::set_attribute(notification_span, "order.id", "order-xyz-456")
   Span::set_attribute(notification_span, "notification.type", "email")
-  Span::set_attribute(notification_span, "notification.recipient", "customer@example.com")
-  Span::set_attribute(notification_span, "notification.template", "order_confirmation")
+  Span::set_attribute(notification_span, "notification.status", "sent")
   
+  // 验证分布式事务的追踪链
+  let order_context = Span::span_context(order_span)
+  let payment_context = Span::span_context(payment_span)
+  let inventory_context = Span::span_context(inventory_span)
+  let notification_context = Span::span_context(notification_span)
+  
+  // 验证所有span属于同一个trace
+  assert_eq(SpanContext::trace_id(order_context), SpanContext::trace_id(payment_context))
+  assert_eq(SpanContext::trace_id(payment_context), SpanContext::trace_id(inventory_context))
+  assert_eq(SpanContext::trace_id(inventory_context), SpanContext::trace_id(notification_context))
+  
+  // 验证父子关系
+  assert_eq(SpanContext::span_id(order_context), SpanContext::parent_span_id(payment_context))
+  assert_eq(SpanContext::span_id(payment_context), SpanContext::parent_span_id(inventory_context))
+  assert_eq(SpanContext::span_id(inventory_context), SpanContext::parent_span_id(notification_context))
+  
+  // 验证事务一致性属性
+  let order_user_id = Span::get_attribute(order_span, "user.id")
+  let payment_user_id = Span::get_attribute(payment_span, "user.id")
+  let inventory_user_id = Span::get_attribute(inventory_span, "user.id")
+  let notification_user_id = Span::get_attribute(notification_span, "user.id")
+  
+  match (order_user_id, payment_user_id, inventory_user_id, notification_user_id) {
+    (Some(uid1), Some(uid2), Some(uid3), Some(uid4)) => {
+      assert_eq(uid1, uid2)
+      assert_eq(uid2, uid3)
+      assert_eq(uid3, uid4)
+    }
+    _ => assert_true(false)
+  }
+  
+  // 结束所有span（按相反顺序）
   Span::end(notification_span)
-  
+  Span::end(inventory_span)
+  Span::end(payment_span)
   Span::end(order_span)
   
-  // 验证追踪链
-  let order_ctx = Span::span_context(order_span)
-  let inventory_ctx = Span::span_context(inventory_span)
-  let payment_ctx = Span::span_context(payment_span)
-  let bank_ctx = Span::span_context(bank_span)
-  let shipping_ctx = Span::span_context(shipping_span)
-  let notification_ctx = Span::span_context(notification_span)
-  
-  assert_eq(SpanContext::trace_id(order_ctx), SpanContext::trace_id(inventory_ctx))
-  assert_eq(SpanContext::trace_id(order_ctx), SpanContext::trace_id(payment_ctx))
-  assert_eq(SpanContext::trace_id(order_ctx), SpanContext::trace_id(bank_ctx))
-  assert_eq(SpanContext::trace_id(order_ctx), SpanContext::trace_id(shipping_ctx))
-  assert_eq(SpanContext::trace_id(order_ctx), SpanContext::trace_id(notification_ctx))
+  assert_true(true)
 }
 
-test "跨服务度量关联" {
-  // 测试跨服务度量数据的关联
+test "跨服务错误传播和处理" {
+  // 创建服务A的span
+  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
+  let service_a_span = Tracer::start_span(service_a_tracer, "service-a.operation")
   
-  // 创建不同服务的度量提供者
-  let api_meter = MeterProvider::get_meter(MeterProvider::default(), "api-gateway")
-  let auth_meter = MeterProvider::get_meter(MeterProvider::default(), "auth-service")
-  let user_meter = MeterProvider::get_meter(MeterProvider::default(), "user-service")
-  
-  // API网关度量
-  let api_request_counter = Meter::create_counter(api_meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
-  let api_response_time = Meter::create_histogram(api_meter, "http.request.duration", Some("HTTP request duration"), Some("ms"))
-  
-  Counter::add_with_attributes(api_request_counter, 1.0, [
-    ("service", "api-gateway"),
-    ("method", "GET"),
-    ("endpoint", "/api/user/profile"),
-    ("status", "200")
+  // 服务A记录正常操作
+  Span::add_event(service_a_span, "operation.started", [
+    ("operation.id", "op-123"),
+    ("operation.type", "data-processing")
   ])
   
-  Histogram::record_with_attributes(api_response_time, 125.5, [
-    ("service", "api-gateway"),
-    ("method", "GET"),
-    ("endpoint", "/api/user/profile")
+  // 模拟服务A调用服务B
+  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
+  let service_b_span = Tracer::start_span_with_parent(
+    service_b_tracer,
+    "service-b.operation",
+    Span::span_context(service_a_span)
+  )
+  
+  // 服务B发生错误
+  Span::set_status(service_b_span, Error, Some("Database connection failed"))
+  Span::add_event(service_b_span, "error.occurred", [
+    ("error.type", "DatabaseError"),
+    ("error.code", "DB_CONN_FAILED"),
+    ("error.message", "Unable to connect to database"),
+    ("retry.count", "3")
   ])
   
-  // 认证服务度量
-  let auth_counter = Meter::create_counter(auth_meter, "auth.operations.total", Some("Total auth operations"), Some("count"))
-  let auth_duration = Meter::create_histogram(auth_meter, "auth.operation.duration", Some("Auth operation duration"), Some("ms"))
+  // 服务B记录错误日志
+  let service_b_logger = LoggerProvider::get_logger(LoggerProvider::default(), "service-b")
+  let error_log = LogRecord::new(Error, "Database operation failed")
+  LogRecord::add_attribute(error_log, "error.type", "DatabaseError")
+  LogRecord::add_attribute(error_log, "error.code", "DB_CONN_FAILED")
+  LogRecord::add_attribute(error_log, "trace.id", SpanContext::trace_id(Span::span_context(service_b_span)))
+  LogRecord::add_attribute(error_log, "span.id", SpanContext::span_id(Span::span_context(service_b_span)))
   
-  Counter::add_with_attributes(auth_counter, 1.0, [
-    ("service", "auth-service"),
-    ("operation", "token_validation"),
-    ("result", "success"),
-    ("token.type", "jwt")
+  Logger::emit(service_b_logger, error_log)
+  
+  // 错误传播回服务A
+  Span::set_status(service_a_span, Error, Some("Dependent service error"))
+  Span::add_event(service_a_span, "error.propagated", [
+    ("source.service", "service-b"),
+    ("error.type", "DatabaseError"),
+    ("error.code", "DB_CONN_FAILED")
   ])
   
-  Histogram::record_with_attributes(auth_duration, 45.2, [
-    ("service", "auth-service"),
-    ("operation", "token_validation")
+  // 服务A记录错误度量
+  let service_a_meter = MeterProvider::get_meter(MeterProvider::default(), "service-a")
+  let error_counter = Meter::create_counter(
+    service_a_meter,
+    "operation.errors",
+    Some("Operation errors"),
+    Some("count")
+  )
+  
+  Counter::add_with_attributes(error_counter, 1.0, [
+    ("operation.type", "data-processing"),
+    ("error.type", "DatabaseError"),
+    ("source.service", "service-b")
   ])
   
-  // 用户服务度量
-  let user_db_counter = Meter::create_counter(user_meter, "db.queries.total", Some("Total DB queries"), Some("count"))
-  let user_db_duration = Meter::create_histogram(user_meter, "db.query.duration", Some("DB query duration"), Some("ms"))
+  // 验证错误传播的追踪链
+  let service_a_context = Span::span_context(service_a_span)
+  let service_b_context = Span::span_context(service_b_span)
   
-  Counter::add_with_attributes(user_db_counter, 1.0, [
-    ("service", "user-service"),
-    ("operation", "select"),
-    ("table", "users"),
-    ("result", "success")
-  ])
+  assert_eq(SpanContext::trace_id(service_a_context), SpanContext::trace_id(service_b_context))
+  assert_eq(SpanContext::span_id(service_a_context), SpanContext::parent_span_id(service_b_context))
   
-  Histogram::record_with_attributes(user_db_duration, 15.8, [
-    ("service", "user-service"),
-    ("operation", "select"),
-    ("table", "users")
-  ])
+  // 验证错误状态
+  assert_eq(Span::status_code(service_b_span), Error)
+  assert_eq(Span::status_code(service_a_span), Error)
   
-  // 验证度量数据
-  assert_eq(api_request_counter.name, "http.requests.total")
-  assert_eq(auth_counter.name, "auth.operations.total")
-  assert_eq(user_db_counter.name, "db.queries.total")
+  // 结束span
+  Span::end(service_b_span)
+  Span::end(service_a_span)
   
   assert_true(true)
 }
 
-test "跨服务日志关联" {
-  // 测试跨服务日志的关联
+test "跨服务性能监控" {
+  // 模拟微服务架构中的性能监控
+  let services = ["api-gateway", "user-service", "order-service", "payment-service"]
+  let tracers = []
+  let spans = []
   
-  // 创建不同服务的日志记录器
-  let api_logger = LoggerProvider::get_logger(LoggerProvider::default(), "api-gateway")
-  let auth_logger = LoggerProvider::get_logger(LoggerProvider::default(), "auth-service")
-  let user_logger = LoggerProvider::get_logger(LoggerProvider::default(), "user-service")
-  
-  // 创建关联ID
-  let correlation_id = "corr-" + Time::now().to_string()
-  let request_id = "req-" + Time::now().to_string()
-  let trace_id = "trace-" + Time::now().to_string()
-  
-  // API网关日志
-  let api_request_log = LogRecord::new(Info, "API request received")
-  LogRecord::add_attribute(api_request_log, "service.name", "api-gateway")
-  LogRecord::add_attribute(api_request_log, "correlation.id", correlation_id)
-  LogRecord::add_attribute(api_request_log, "request.id", request_id)
-  LogRecord::add_attribute(api_request_log, "trace.id", trace_id)
-  LogRecord::add_attribute(api_request_log, "http.method", "GET")
-  LogRecord::add_attribute(api_request_log, "http.url", "/api/user/profile")
-  LogRecord::add_attribute(api_request_log, "client.ip", "192.168.1.100")
-  
-  let api_response_log = LogRecord::new(Info, "API response sent")
-  LogRecord::add_attribute(api_response_log, "service.name", "api-gateway")
-  LogRecord::add_attribute(api_response_log, "correlation.id", correlation_id)
-  LogRecord::add_attribute(api_response_log, "request.id", request_id)
-  LogRecord::add_attribute(api_response_log, "trace.id", trace_id)
-  LogRecord::add_attribute(api_response_log, "http.status", "200")
-  LogRecord::add_attribute(api_response_log, "response.size", "2048")
-  LogRecord::add_attribute(api_response_log, "duration", "125ms")
-  
-  // 认证服务日志
-  let auth_log = LogRecord::new(Info, "Token validation successful")
-  LogRecord::add_attribute(auth_log, "service.name", "auth-service")
-  LogRecord::add_attribute(auth_log, "correlation.id", correlation_id)
-  LogRecord::add_attribute(auth_log, "request.id", request_id)
-  LogRecord::add_attribute(auth_log, "trace.id", trace_id)
-  LogRecord::add_attribute(auth_log, "auth.user.id", "user-67890")
-  LogRecord::add_attribute(auth_log, "auth.token.issuer", "auth.example.com")
-  LogRecord::add_attribute(auth_log, "auth.duration", "45ms")
-  
-  // 用户服务日志
-  let user_log = LogRecord::new(Info, "User profile retrieved")
-  LogRecord::add_attribute(user_log, "service.name", "user-service")
-  LogRecord::add_attribute(user_log, "correlation.id", correlation_id)
-  LogRecord::add_attribute(user_log, "request.id", request_id)
-  LogRecord::add_attribute(user_log, "trace.id", trace_id)
-  LogRecord::add_attribute(user_log, "db.query", "SELECT * FROM users WHERE id = ?")
-  LogRecord::add_attribute(user_log, "db.duration", "15ms")
-  LogRecord::add_attribute(user_log, "cache.hit", "false")
-  
-  // 发射日志
-  Logger::emit(api_logger, api_request_log)
-  Logger::emit(auth_logger, auth_log)
-  Logger::emit(user_logger, user_log)
-  Logger::emit(api_logger, api_response_log)
-  
-  // 验证日志记录
-  assert_eq(LogRecord::body(api_request_log), Some("API request received"))
-  assert_eq(LogRecord::body(auth_log), Some("Token validation successful"))
-  assert_eq(LogRecord::body(user_log), Some("User profile retrieved"))
-  assert_eq(LogRecord::body(api_response_log), Some("API response sent"))
-  
-  assert_true(true)
-}
-
-test "服务网格追踪" {
-  // 测试服务网格环境下的追踪
-  
-  // 创建入口网关span
-  let ingress_tracer = TracerProvider::get_tracer(TracerProvider::default(), "istio-ingressgateway")
-  let ingress_span = Tracer::start_span(ingress_tracer, "ingress.gateway.request")
-  
-  Span::set_attribute(ingress_span, "service.name", "istio-ingressgateway")
-  Span::set_attribute(ingress_span, "service.version", "1.15.0")
-  Span::set_attribute(ingress_span, "mesh.protocol", "http")
-  Span::set_attribute(ingress_span, "mesh.source.workload", "istio-ingressgateway")
-  Span::set_attribute(ingress_span, "mesh.source.namespace", "istio-system")
-  Span::set_attribute(ingress_span, "mesh.destination.workload", "frontend-service")
-  Span::set_attribute(ingress_span, "mesh.destination.namespace", "production")
-  
-  // 前端服务span
-  let frontend_tracer = TracerProvider::get_tracer(TracerProvider::default(), "frontend-service")
-  let frontend_span = Tracer::start_child_span(ingress_span, "frontend.service.request")
-  
-  Span::set_attribute(frontend_span, "service.name", "frontend-service")
-  Span::set_attribute(frontend_span, "service.version", "2.3.1")
-  Span::set_attribute(frontend_span, "mesh.source.workload", "istio-ingressgateway")
-  Span::set_attribute(frontend_span, "mesh.source.namespace", "istio-system")
-  Span::set_attribute(frontend_span, "mesh.destination.workload", "backend-service")
-  Span::set_attribute(frontend_span, "mesh.destination.namespace", "production")
-  
-  // 后端服务span
-  let backend_tracer = TracerProvider::get_tracer(TracerProvider::default(), "backend-service")
-  let backend_span = Tracer::start_child_span(frontend_span, "backend.service.processing")
-  
-  Span::set_attribute(backend_span, "service.name", "backend-service")
-  Span::set_attribute(backend_span, "service.version", "3.1.0")
-  Span::set_attribute(backend_span, "mesh.source.workload", "frontend-service")
-  Span::set_attribute(backend_span, "mesh.source.namespace", "production")
-  Span::set_attribute(backend_span, "mesh.destination.workload", "database-service")
-  Span::set_attribute(backend_span, "mesh.destination.namespace", "production")
-  
-  // 数据库服务span
-  let db_tracer = TracerProvider::get_tracer(TracerProvider::default(), "database-service")
-  let db_span = Tracer::start_child_span(backend_span, "database.service.query")
-  
-  Span::set_attribute(db_span, "service.name", "database-service")
-  Span::set_attribute(db_span, "service.version", "1.8.2")
-  Span::set_attribute(db_span, "mesh.source.workload", "backend-service")
-  Span::set_attribute(db_span, "mesh.source.namespace", "production")
-  Span::set_attribute(db_span, "db.operation", "select")
-  Span::set_attribute(db_span, "db.table", "products")
-  
-  Span::end(db_span)
-  Span::end(backend_span)
-  Span::end(frontend_span)
-  
-  // 创建出口网关span
-  let egress_tracer = TracerProvider::get_tracer(TracerProvider::default(), "istio-egressgateway")
-  let egress_span = Tracer::start_child_span(ingress_span, "egress.gateway.response")
-  
-  Span::set_attribute(egress_span, "service.name", "istio-egressgateway")
-  Span::set_attribute(egress_span, "service.version", "1.15.0")
-  Span::set_attribute(egress_span, "mesh.protocol", "http")
-  Span::set_attribute(egress_span, "mesh.source.workload", "frontend-service")
-  Span::set_attribute(egress_span, "mesh.source.namespace", "production")
-  Span::set_attribute(egress_span, "mesh.destination.workload", "external-client")
-  
-  Span::end(egress_span)
-  Span::end(ingress_span)
-  
-  // 验证服务网格追踪
-  let ingress_ctx = Span::span_context(ingress_span)
-  let frontend_ctx = Span::span_context(frontend_span)
-  let backend_ctx = Span::span_context(backend_span)
-  let db_ctx = Span::span_context(db_span)
-  let egress_ctx = Span::span_context(egress_span)
-  
-  assert_eq(SpanContext::trace_id(ingress_ctx), SpanContext::trace_id(frontend_ctx))
-  assert_eq(SpanContext::trace_id(ingress_ctx), SpanContext::trace_id(backend_ctx))
-  assert_eq(SpanContext::trace_id(ingress_ctx), SpanContext::trace_id(db_ctx))
-  assert_eq(SpanContext::trace_id(ingress_ctx), SpanContext::trace_id(egress_ctx))
-}
-
-test "异步消息追踪" {
-  // 测试异步消息传递的追踪
-  
-  // 创建消息生产者span
-  let producer_tracer = TracerProvider::get_tracer(TracerProvider::default(), "order-service")
-  let producer_span = Tracer::start_span(producer_tracer, "message.produce")
-  
-  Span::set_attribute(producer_span, "service.name", "order-service")
-  Span::set_attribute(producer_span, "messaging.system", "kafka")
-  Span::set_attribute(producer_span, "messaging.destination", "order.events")
-  Span::set_attribute(producer_span, "messaging.message_id", "msg-12345")
-  Span::set_attribute(producer_span, "messaging.message_type", "order.created")
-  Span::set_attribute(producer_span, "messaging.operation", "publish")
-  
-  // 注入追踪上下文到消息头
-  let message_headers = []
-  let trace_id = SpanContext::trace_id(Span::span_context(producer_span))
-  let span_id = SpanContext::span_id(Span::span_context(producer_span))
-  
-  message_headers = message_headers.push(("traceparent", "00-" + trace_id + "-" + span_id + "-01"))
-  message_headers = message_headers.push(("x-trace-id", trace_id))
-  message_headers = message_headers.push(("x-span-id", span_id))
-  
-  Span::end(producer_span)
-  
-  // 模拟消息传递和消费
-  let consumer_tracer = TracerProvider::get_tracer(TracerProvider::default(), "notification-service")
-  let consumer_span = Tracer::start_span(consumer_tracer, "message.consume")
-  
-  // 从消息头提取追踪上下文
-  let extracted_trace_id = message_headers.find(fn(h) { h.0 == "x-trace-id" })
-  let extracted_span_id = message_headers.find(fn(h) { h.0 == "x-span-id" })
-  
-  match extracted_trace_id {
-    Some((_, trace)) => Span::set_attribute(consumer_span, "messaging.trace_id", trace)
-    None => ()
+  // 创建各服务的span
+  for i in 0..=3 {
+    let service_name = services[i]
+    let tracer = TracerProvider::get_tracer(TracerProvider::default(), service_name)
+    let span_name = service_name + ".process-request"
+    
+    let span = if i == 0 {
+      // 第一个服务（API网关）创建根span
+      Tracer::start_span(tracer, span_name)
+    } else {
+      // 其他服务创建子span
+      Tracer::start_span_with_parent(tracer, span_name, Span::span_context(spans[i-1]))
+    }
+    
+    tracers = tracers.push(tracer)
+    spans = spans.push(span)
+    
+    // 设置服务属性
+    Span::set_attribute(span, "service.name", service_name)
+    Span::set_attribute(span, "request.id", "req-perf-123")
+    Span::set_attribute(span, "user.id", "user-perf-456")
   }
   
-  match extracted_span_id {
-    Some((_, span)) => Span::set_attribute(consumer_span, "messaging.parent_span_id", span)
-    None => ()
+  // 模拟各服务的处理时间
+  let processing_times = [50.5, 120.3, 85.7, 200.1]  // 毫秒
+  
+  for i in 0..=3 {
+    // 模拟处理时间
+    @sleep(processing_times[i].to_int())
+    
+    // 记录处理时间
+    let span = spans[i]
+    Span::set_attribute(span, "processing.time", processing_times[i])
+    
+    // 记录服务特定的度量
+    let meter = MeterProvider::get_meter(MeterProvider::default(), services[i])
+    let latency_histogram = Meter::create_histogram(
+      meter,
+      "request.latency",
+      Some("Request processing latency"),
+      Some("milliseconds")
+    )
+    
+    Histogram::record_with_attributes(latency_histogram, processing_times[i], [
+      ("service", services[i]),
+      ("operation", "process-request"),
+      ("endpoint", "/api/process")
+    ])
+    
+    // 记录吞吐量
+    let throughput_counter = Meter::create_counter(
+      meter,
+      "requests.processed",
+      Some("Processed requests"),
+      Some("count")
+    )
+    
+    Counter::add_with_attributes(throughput_counter, 1.0, [
+      ("service", services[i]),
+      ("status", "success")
+    ])
   }
   
-  Span::set_attribute(consumer_span, "service.name", "notification-service")
-  Span::set_attribute(consumer_span, "messaging.system", "kafka")
-  Span::set_attribute(consumer_span, "messaging.destination", "order.events")
-  Span::set_attribute(consumer_span, "messaging.message_id", "msg-12345")
-  Span::set_attribute(consumer_span, "messaging.operation", "receive")
-  Span::set_attribute(consumer_span, "messaging.consumer_group", "notification-consumers")
+  // 计算跨服务性能指标
+  let total_processing_time = processing_times.reduce(fn(acc, time) { acc + time }, 0.0)
+  let average_processing_time = total_processing_time / processing_times.length().to_float()
+  let max_processing_time = processing_times.reduce(fn(acc, time) { if time > acc { time } else { acc } }, 0.0)
   
-  // 创建通知处理子span
-  let notification_span = Tracer::start_child_span(consumer_span, "notification.process")
+  // 记录跨服务性能度量
+  let cross_service_meter = MeterProvider::get_meter(MeterProvider::default(), "cross-service")
+  let total_latency_histogram = Meter::create_histogram(
+    cross_service_meter,
+    "total.request.latency",
+    Some("Total end-to-end request latency"),
+    Some("milliseconds")
+  )
   
-  Span::set_attribute(notification_span, "service.name", "notification-service")
-  Span::set_attribute(notification_span, "notification.type", "email")
-  Span::set_attribute(notification_span, "notification.recipient", "customer@example.com")
-  Span::set_attribute(notification_span, "notification.template", "order_confirmation")
+  Histogram::record(total_latency_histogram, total_processing_time)
   
-  Span::end(notification_span)
-  Span::end(consumer_span)
+  // 验证性能指标
+  assert_true(total_processing_time > 400.0)  // 总处理时间应大于400ms
+  assert_true(average_processing_time > 100.0)  // 平均处理时间应大于100ms
+  assert_eq(max_processing_time, 200.1)  // 最大处理时间应为200.1ms
   
-  // 验证异步消息追踪
+  // 验证所有span属于同一个trace
+  let root_context = Span::span_context(spans[0])
+  for i in 1..=3 {
+    let context = Span::span_context(spans[i])
+    assert_eq(SpanContext::trace_id(root_context), SpanContext::trace_id(context))
+  }
+  
+  // 结束所有span（按相反顺序）
+  for i in [3, 2, 1, 0] {
+    Span::end(spans[i])
+  }
+  
   assert_true(true)
+}
+
+test "跨服务配置同步" {
+  // 创建配置管理器
+  let config_manager = CrossServiceConfigManager::new()
+  
+  // 注册服务
+  let services = ["auth-service", "user-service", "order-service"]
+  for service in services {
+    CrossServiceConfigManager::register_service(config_manager, service)
+  }
+  
+  // 设置全局配置
+  let global_config = [
+    ("telemetry.sampling.rate", "0.1"),
+    ("telemetry.batch.size", "100"),
+    ("telemetry.export.interval", "5000")
+  ]
+  
+  CrossServiceConfigManager::set_global_config(config_manager, global_config)
+  
+  // 设置服务特定配置
+  let auth_service_config = [
+    ("auth.token.expiry", "3600"),
+    ("auth.max.retry", "3")
+  ]
+  
+  CrossServiceConfigManager::set_service_config(config_manager, "auth-service", auth_service_config)
+  
+  // 验证配置获取
+  let auth_sampling_rate = CrossServiceConfigManager::get_config(
+    config_manager, 
+    "auth-service", 
+    "telemetry.sampling.rate"
+  )
+  
+  let auth_token_expiry = CrossServiceConfigManager::get_config(
+    config_manager, 
+    "auth-service", 
+    "auth.token.expiry"
+  )
+  
+  let user_sampling_rate = CrossServiceConfigManager::get_config(
+    config_manager, 
+    "user-service", 
+    "telemetry.sampling.rate"
+  )
+  
+  // 验证配置值
+  match auth_sampling_rate {
+    Some(value) => assert_eq(value, "0.1")
+    None => assert_true(false)
+  }
+  
+  match auth_token_expiry {
+    Some(value) => assert_eq(value, "3600")
+    None => assert_true(false)
+  }
+  
+  match user_sampling_rate {
+    Some(value) => assert_eq(value, "0.1")  // 应该回退到全局配置
+    None => assert_true(false)
+  }
+  
+  // 测试配置变更通知
+  let notification_received = @ref(false)
+  
+  CrossServiceConfigManager::subscribe_to_changes(
+    config_manager,
+    "telemetry.sampling.rate",
+    fn(service, key, old_value, new_value) {
+      notification_received := true
+      assert_eq(key, "telemetry.sampling.rate")
+      assert_eq(old_value, "0.1")
+      assert_eq(new_value, "0.2")
+    }
+  )
+  
+  // 更新配置
+  CrossServiceConfigManager::update_global_config(
+    config_manager,
+    "telemetry.sampling.rate",
+    "0.2"
+  )
+  
+  // 验证通知被触发
+  assert_true(notification_received)
+  
+  // 验证配置已更新
+  let updated_sampling_rate = CrossServiceConfigManager::get_config(
+    config_manager,
+    "auth-service",
+    "telemetry.sampling.rate"
+  )
+  
+  match updated_sampling_rate {
+    Some(value) => assert_eq(value, "0.2")
+    None => assert_true(false)
+  }
 }
