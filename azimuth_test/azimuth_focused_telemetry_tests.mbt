@@ -17,15 +17,15 @@ test "trace span lifecycle management" {
   assert_true(Span::is_recording(child_span))
   
   // Add events to child span
-  Span::add_event(child_span, "database.query", None)
-  Span::add_event(child_span, "cache.miss", None)
+  Span::add_event(child_span, "database.query")
+  Span::add_event(child_span, "cache.miss")
   
   // Set child span status and end
-  Span::set_status(child_span, Ok, None)
+  Span::set_status(child_span, Ok)
   Span::end(child_span)
   
   // End parent span
-  Span::set_status(parent_span, Ok, Some("Operation completed successfully"))
+  Span::set_status(parent_span, Ok)
   Span::end(parent_span)
   
   assert_true(true)
@@ -43,38 +43,34 @@ test "metrics aggregation and measurement" {
   )
   
   // Record measurements
-  Counter::add(request_counter, 1.0, None)
-  Counter::add(request_counter, 1.0, None)
-  Counter::add(request_counter, 1.0, None)
-  Counter::add(request_counter, 1.0, None)
+  Counter::add(request_counter, 1.0)
+  Counter::add(request_counter, 1.0)
+  Counter::add(request_counter, 1.0)
+  Counter::add(request_counter, 1.0)
   
   // Create histogram metric
   let response_time = Meter::create_histogram(
     meter,
-    "http.response.duration",
-    Some("HTTP response duration"),
-    Some("ms")
+    "http.response.duration"
   )
   
   // Record histogram measurements
-  Histogram::record(response_time, 120.5, None)
-  Histogram::record(response_time, 85.3, None)
-  Histogram::record(response_time, 200.1, None)
-  Histogram::record(response_time, 95.7, None)
+  Histogram::record(response_time, 120.5)
+  Histogram::record(response_time, 85.3)
+  Histogram::record(response_time, 200.1)
+  Histogram::record(response_time, 95.7)
   
   // Create up-down counter for active connections
   let active_connections = Meter::create_updown_counter(
     meter,
-    "http.connections.active",
-    Some("Active HTTP connections"),
-    Some("connections")
+    "http.connections.active"
   )
   
   // Simulate connection lifecycle
-  UpDownCounter::add(active_connections, 5.0, None)
-  UpDownCounter::add(active_connections, -2.0, None)
-  UpDownCounter::add(active_connections, 3.0, None)
-  UpDownCounter::add(active_connections, -1.0, None)
+  UpDownCounter::add(active_connections, 5.0)
+  UpDownCounter::add(active_connections, -2.0)
+  UpDownCounter::add(active_connections, 3.0)
+  UpDownCounter::add(active_connections, -1.0)
   
   assert_true(true)
 }
@@ -205,10 +201,10 @@ test "resource management and attribute merging" {
   let runtime_name = Resource::get_attribute(merged_resource, "process.runtime.name")
   
   // Note: Simplified implementation returns None for all attributes
-  assert_eq(service_name, None)
-  assert_eq(process_id, None)
-  assert_eq(service_version, None)
-  assert_eq(runtime_name, None)
+  assert_true(service_name is None)
+  assert_true(process_id is None)
+  assert_true(service_version is None)
+  assert_true(runtime_name is None)
   
   assert_true(true)
 }
@@ -276,9 +272,17 @@ test "attribute operations" {
   let missing_val = Attributes::get(attrs, "missing.key")
   
   // Verify attribute values
-  assert_eq(string_val, Some(StringValue("test_value")))
-  assert_eq(int_val, Some(IntValue(42)))
-  assert_eq(missing_val, None)
+  match string_val {
+    Some(StringValue("test_value")) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match int_val {
+    Some(IntValue(42)) => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  assert_true(missing_val is None)
 }
 
 test "log record severity levels" {
@@ -299,10 +303,33 @@ test "log record severity levels" {
   assert_eq(LogRecord::body(fatal_record), Some("Fatal message"))
   
   // Verify severity numbers
-  assert_eq(LogRecord::severity_number(trace_record), Trace)
-  assert_eq(LogRecord::severity_number(debug_record), Debug)
-  assert_eq(LogRecord::severity_number(info_record), Info)
-  assert_eq(LogRecord::severity_number(warn_record), Warn)
-  assert_eq(LogRecord::severity_number(error_record), Error)
-  assert_eq(LogRecord::severity_number(fatal_record), Fatal)
+  match LogRecord::severity_number(trace_record) {
+    Trace => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match LogRecord::severity_number(debug_record) {
+    Debug => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match LogRecord::severity_number(info_record) {
+    Info => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match LogRecord::severity_number(warn_record) {
+    Warn => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match LogRecord::severity_number(error_record) {
+    Error => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  match LogRecord::severity_number(fatal_record) {
+    Fatal => assert_true(true)
+    _ => assert_true(false)
+  }
 }

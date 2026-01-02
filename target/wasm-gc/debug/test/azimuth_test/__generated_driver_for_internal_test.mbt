@@ -141,6 +141,17 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f6e65775f666f63757365645f74657374732e6d6274_8, ["复合传播器链式操作测试"]),
     9: (__test_617a696d7574685f6e65775f666f63757365645f74657374732e6d6274_9, ["端到端遥测工作流测试"]),
   },
+  "azimuth_focused_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_0, ["trace span lifecycle management"]),
+    1: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_1, ["metrics aggregation and measurement"]),
+    2: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_2, ["structured logging with correlation"]),
+    3: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_3, ["context propagation across service boundaries"]),
+    4: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_4, ["resource management and attribute merging"]),
+    5: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_5, ["baggage propagation and manipulation"]),
+    6: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_6, ["span context validation"]),
+    7: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_7, ["attribute operations"]),
+    8: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_8, ["log record severity levels"]),
+  },
   "azimuth_comprehensive_enhanced_tests.mbt": {
     0: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_0, ["attributes operations with different value types"]),
     1: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_1, ["span lifecycle management"]),
