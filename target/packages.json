@@ -42,7 +42,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/azimuth_enhanced_test/azimuth_enhanced_test.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth_enhanced_test/azimuth_enhanced_test.mi"
     },
     {
       "is-main": false,
@@ -318,7 +318,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/azimuth_test/azimuth_test.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/azimuth_test/azimuth_test.mi"
     },
     {
       "is-main": false,
@@ -333,7 +333,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/core_tests/core_tests.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/core_tests/core_tests.mi"
     },
     {
       "is-main": false,
@@ -375,7 +375,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/new_test/new_test.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/new_test/new_test.mi"
     },
     {
       "is-main": false,
@@ -404,7 +404,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/new_test_dir/new_test_dir.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/new_test_dir/new_test_dir.mi"
     },
     {
       "is-main": false,
@@ -460,7 +460,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/practical_test/practical_test.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/practical_test/practical_test.mi"
     },
     {
       "is-main": false,
@@ -516,7 +516,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/simple_test/simple_test.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/simple_test/simple_test.mi"
     },
     {
       "is-main": false,
@@ -585,7 +585,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/simple_test_dir/simple_test_dir.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/simple_test_dir/simple_test_dir.mi"
     },
     {
       "is-main": false,
@@ -900,7 +900,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/src/src.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/src/src.mi"
     },
     {
       "is-main": false,
@@ -929,7 +929,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/standalone_simple_test/standalone_simple_test.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/standalone_simple_test/standalone_simple_test.mi"
     },
     {
       "is-main": false,
@@ -2740,7 +2740,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/azimuth/telemetry/telemetry.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/azimuth/telemetry/telemetry.mi"
     },
     {
       "is-main": false,
@@ -2755,7 +2755,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/azimuth/telemetry/advanced/advanced.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/azimuth/telemetry/advanced/advanced.mi"
     },
     {
       "is-main": false,
@@ -2784,7 +2784,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/azimuth/telemetry/basic-enhanced/basic-enhanced.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/azimuth/telemetry/basic-enhanced/basic-enhanced.mi"
     },
     {
       "is-main": false,
@@ -2813,7 +2813,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/azimuth/telemetry/comprehensive/comprehensive.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/azimuth/telemetry/comprehensive/comprehensive.mi"
     },
     {
       "is-main": false,
@@ -2881,7 +2881,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/azimuth/telemetry/enhanced/enhanced.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/azimuth/telemetry/enhanced/enhanced.mi"
     },
     {
       "is-main": false,
@@ -2896,7 +2896,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/azimuth/telemetry/extended/extended.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/azimuth/telemetry/extended/extended.mi"
     },
     {
       "is-main": false,
@@ -2911,7 +2911,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/azimuth/telemetry/high_quality/high_quality.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/azimuth/telemetry/high_quality/high_quality.mi"
     },
     {
       "is-main": false,
@@ -2940,7 +2940,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/enhanced_suite/enhanced_suite.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/enhanced_suite/enhanced_suite.mi"
     },
     {
       "is-main": false,
@@ -2995,7 +2995,7 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/tests/simple_test/simple_test.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/tests/simple_test/simple_test.mi"
     },
     {
       "is-main": false,
@@ -3037,11 +3037,11 @@
       "deps": [],
       "wbtest-deps": [],
       "test-deps": [],
-      "artifact": "/home/runner/work/Azimuth/Azimuth/target/native/release/check/working_tests/working_tests.mi"
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/working_tests/working_tests.mi"
     }
   ],
   "deps": [],
-  "backend": "native",
+  "backend": "wasm-gc",
   "opt_level": "release",
   "source": null
 }
