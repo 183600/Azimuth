@@ -4,55 +4,55 @@
 // 测试1: Span上下文基本操作
 test "span上下文基本操作测试" {
   // 创建有效的Span上下文
-  let span_ctx = azimuth::SpanContext::new("trace-123456789", "span-987654321", true, "key1=value1,key2=value2")
+  let span_ctx = SpanContext::new("trace-123456789", "span-987654321", true, "key1=value1,key2=value2")
   
   // 验证上下文基本属性
-  assert_eq(azimuth::SpanContext::trace_id(span_ctx), "trace-123456789")
-  assert_eq(azimuth::SpanContext::span_id(span_ctx), "span-987654321")
-  assert_true(azimuth::SpanContext::is_sampled(span_ctx))
-  assert_true(azimuth::SpanContext::is_valid(span_ctx))
+  assert_eq(SpanContext::trace_id(span_ctx), "trace-123456789")
+  assert_eq(SpanContext::span_id(span_ctx), "span-987654321")
+  assert_true(SpanContext::is_sampled(span_ctx))
+  assert_true(SpanContext::is_valid(span_ctx))
   
   // 测试无效上下文
-  let invalid_ctx1 = azimuth::SpanContext::new("", "span-987654321", true, "")
-  let invalid_ctx2 = azimuth::SpanContext::new("trace-123456789", "", true, "")
-  let invalid_ctx3 = azimuth::SpanContext::new("", "", false, "")
+  let invalid_ctx1 = SpanContext::new("", "span-987654321", true, "")
+  let invalid_ctx2 = SpanContext::new("trace-123456789", "", true, "")
+  let invalid_ctx3 = SpanContext::new("", "", false, "")
   
-  assert_false(azimuth::SpanContext::is_valid(invalid_ctx1))
-  assert_false(azimuth::SpanContext::is_valid(invalid_ctx2))
-  assert_false(azimuth::SpanContext::is_valid(invalid_ctx3))
+  assert_false(SpanContext::is_valid(invalid_ctx1))
+  assert_false(SpanContext::is_valid(invalid_ctx2))
+  assert_false(SpanContext::is_valid(invalid_ctx3))
 }
 
 // 测试2: 属性值类型转换
 test "属性值类型转换测试" {
   // 测试不同类型的属性值
-  let string_attr = azimuth::StringValue("test.string.value")
-  let int_attr = azimuth::IntValue(42)
-  let float_attr = azimuth::FloatValue(3.14159)
-  let bool_attr = azimuth::BoolValue(true)
-  let array_string_attr = azimuth::ArrayStringValue(["value1", "value2", "value3"])
-  let array_int_attr = azimuth::ArrayIntValue([1, 2, 3, 4, 5])
+  let string_attr = StringValue("test.string.value")
+  let int_attr = IntValue(42)
+  let float_attr = FloatValue(3.14159)
+  let bool_attr = BoolValue(true)
+  let array_string_attr = ArrayStringValue(["value1", "value2", "value3"])
+  let array_int_attr = ArrayIntValue([1, 2, 3, 4, 5])
   
   // 创建属性集合
-  let attrs = azimuth::Attributes::new()
+  let attrs = Attributes::new()
   
   // 设置和获取属性
-  azimuth::Attributes::set(attrs, "string.key", string_attr)
-  azimuth::Attributes::set(attrs, "int.key", int_attr)
-  azimuth::Attributes::set(attrs, "float.key", float_attr)
-  azimuth::Attributes::set(attrs, "bool.key", bool_attr)
+  Attributes::set(attrs, "string.key", string_attr)
+  Attributes::set(attrs, "int.key", int_attr)
+  Attributes::set(attrs, "float.key", float_attr)
+  Attributes::set(attrs, "bool.key", bool_attr)
   
   // 验证属性获取
-  let retrieved_string = azimuth::Attributes::get(attrs, "string.key")
-  let retrieved_int = azimuth::Attributes::get(attrs, "int.key")
-  let retrieved_missing = azimuth::Attributes::get(attrs, "missing.key")
+  let retrieved_string = Attributes::get(attrs, "string.key")
+  let retrieved_int = Attributes::get(attrs, "int.key")
+  let retrieved_missing = Attributes::get(attrs, "missing.key")
   
   match retrieved_string {
-    Some(azimuth::StringValue(value)) => assert_eq(value, "test_value")  // 基于简化实现
+    Some(StringValue(value)) => assert_eq(value, "test_value")  // 基于简化实现
     _ => assert_true(false)
   }
   
   match retrieved_int {
-    Some(azimuth::IntValue(value)) => assert_eq(value, 42)  // 基于简化实现
+    Some(IntValue(value)) => assert_eq(value, 42)  // 基于简化实现
     _ => assert_true(false)
   }
   
