@@ -1,592 +1,538 @@
-// Azimuth Edge Computing and IoT Telemetry Test Suite
-// 边缘计算和物联网遥测测试套件
+// Azimuth 边缘计算和IoT场景测试用例
+// 专注于边缘计算和物联网环境下的遥测数据收集和处理
 
-// Test 1: 资源受限环境下的遥测收集
-test "telemetry collection in resource-constrained environments" {
-  let edge_collector = @azimuth.EdgeCollector::new()
+// 测试1: 边缘设备遥测数据收集
+test "边缘设备遥测数据收集测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "edge.device")
   
-  // 配置资源限制
-  let resource_limits = @azimuth.ResourceLimits::new(
-    50 * 1024 * 1024,  // 50MB内存限制
-    100 * 1024 * 1024, // 100MB存储限制
-    2                  // 2个CPU核心限制
-  )
+  // 创建边缘设备遥测收集器
+  let edge_collector = EdgeTelemetryCollector::new(meter)
   
-  @azimuth.EdgeCollector::configure_limits(edge_collector, resource_limits)
+  // 创建边缘设备指标
+  let device_counter = Meter::create_counter(meter, "edge.device.events")
+  let sensor_gauge = Meter::create_gauge(meter, "edge.sensor.readings")
+  let battery_gauge = Meter::create_gauge(meter, "edge.device.battery")
   
-  // 创建轻量级遥测配置
-  let telemetry_config = @azimuth.TelemetryConfig::new()
-  @azimuth.TelemetryConfig::set_sampling_rate(telemetry_config, 0.1) // 10%采样率
-  @azimuth.TelemetryConfig::set_batch_size(telemetry_config, 10)     // 小批次大小
-  @azimuth.TelemetryConfig::set_flush_interval(telemetry_config, 5000) // 5秒刷新间隔
-  @azimuth.TelemetryConfig::enable_compression(telemetry_config, true) // 启用压缩
-  @azimuth.TelemetryConfig::set_compression_level(telemetry_config, 6) // 中等压缩级别
+  // 模拟多个边缘设备
+  let mut devices = []
+  for device_id in 0..=9 {
+    let device = EdgeDevice::new("edge-device-" + device_id.to_string(), [
+      ("device.type", StringValue("iot.sensor")),
+      ("location", StringValue("zone-" + (device_id % 3).to_string())),
+      ("firmware.version", StringValue("1.2." + device_id.to_string()))
+    ])
+    devices = devices.push(device)
+  }
   
-  @azimuth.EdgeCollector::configure_telemetry(edge_collector, telemetry_config)
+  // 收集边缘设备遥测数据
+  for device in devices {
+    // 模拟传感器读数
+    let sensor_reading = 20.0 + (Random::float() * 10.0)
+    let battery_level = 100.0 - (Random::float() * 20.0)
+    
+    EdgeTelemetryCollector::collect_sensor_data(edge_collector, device, sensor_reading)
+    EdgeTelemetryCollector::collect_battery_data(edge_collector, device, battery_level)
+    
+    // 更新指标
+    Counter::add(device_counter, 1.0)
+    Gauge::set(sensor_gauge, sensor_reading)
+    Gauge::set(battery_gauge, battery_level)
+  }
   
-  // 模拟IoT设备遥测数据
-  let mut device_metrics = []
-  for device_id in 0..=20 {
-    for reading in 0..=50 {
-      let metric = @azimuth.IoTMetric::new(
-        "device-#{device_id}",
-        "temperature",
-        @azimuth.FloatValue(20.0 + @azimuth.Random::next_float() * 15.0),
-        @azimuth.Time::now_unix_nanos(),
-        [
-          ("device.type", @azimuth.StringValue("sensor")),
-          ("location", @azimuth.StringValue("warehouse-#{device_id % 5}")),
-          ("firmware.version", @azimuth.StringValue("1.2.3"))
-        ]
-      )
-      device_metrics = device_metrics.push(metric)
+  // 验证边缘数据收集
+  let collection_results = EdgeTelemetryCollector::get_results(edge_collector)
+  assert_eq(collection_results.total_devices, 10)
+  assert_eq(collection_results.sensor_readings, 10)
+  assert_eq(collection_results.battery_readings, 10)
+  assert_eq(Counter::value(device_counter), 10.0)
+}
+
+// 测试2: 边缘节点资源监控
+test "边缘节点资源监控测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "edge.node")
+  
+  // 创建边缘节点资源监控器
+  let resource_monitor = EdgeResourceMonitor::new(meter)
+  
+  // 创建资源监控指标
+  let cpu_gauge = Meter::create_gauge(meter, "edge.node.cpu.usage")
+  let memory_gauge = Meter::create_gauge(meter, "edge.node.memory.usage")
+  let storage_gauge = Meter::create_gauge(meter, "edge.node.storage.usage")
+  let network_counter = Meter::create_counter(meter, "edge.node.network.bytes")
+  
+  // 模拟边缘节点
+  let mut edge_nodes = []
+  for node_id in 0..=4 {
+    let node = EdgeNode::new("edge-node-" + node_id.to_string(), [
+      ("node.type", StringValue("gateway")),
+      ("cpu.cores", IntValue(4)),
+      ("memory.total", IntValue(8192)),
+      ("storage.total", IntValue(65536))
+    ])
+    edge_nodes = edge_nodes.push(node)
+  }
+  
+  // 监控边缘节点资源
+  for node in edge_nodes {
+    // 模拟资源使用情况
+    let cpu_usage = 30.0 + (Random::float() * 40.0)
+    let memory_usage = 2048 + (Random::int(2048))
+    let storage_usage = 16384 + (Random::int(16384))
+    let network_bytes = 1024 + (Random::int(1024))
+    
+    EdgeResourceMonitor::update_cpu_usage(resource_monitor, node, cpu_usage)
+    EdgeResourceMonitor::update_memory_usage(resource_monitor, node, memory_usage)
+    EdgeResourceMonitor::update_storage_usage(resource_monitor, node, storage_usage)
+    EdgeResourceMonitor::update_network_usage(resource_monitor, node, network_bytes)
+    
+    // 更新指标
+    Gauge::set(cpu_gauge, cpu_usage)
+    Gauge::set(memory_gauge, memory_usage.to_float())
+    Gauge::set(storage_gauge, storage_usage.to_float())
+    Counter::add(network_counter, network_bytes.to_float())
+  }
+  
+  // 验证资源监控结果
+  let monitoring_results = EdgeResourceMonitor::get_results(resource_monitor)
+  assert_eq(monitoring_results.total_nodes, 5)
+  assert_true(monitoring_results.average_cpu_usage > 0.0)
+  assert_true(monitoring_results.total_memory_usage > 0.0)
+}
+
+// 测试3: 边缘计算离线数据处理
+test "边缘计算离线数据处理测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "edge.offline")
+  
+  // 创建边缘离线数据处理器
+  let offline_processor = EdgeOfflineProcessor::new(tracer)
+  
+  // 模拟网络断开情况下的数据处理
+  let offline_span = Tracer::start_span(tracer, "edge.offline.processing")
+  Span::set_attribute(offline_span, "network.status", StringValue("offline"))
+  Span::set_attribute(offline_span, "data.buffer.size", IntValue(1000))
+  
+  // 创建离线数据缓冲区
+  let mut offline_buffer = []
+  for i in 0..=99 {
+    let data_point = OfflineDataPoint::new(i.to_string(), [
+      ("timestamp", StringValue((Time::now() + i).to_string())),
+      ("sensor.value", FloatValue((i * 0.1).to_float())),
+      ("device.id", StringValue("device-" + (i % 5).to_string())),
+      ("offline.flag", BoolValue(true))
+    ])
+    offline_buffer = offline_buffer.push(data_point)
+  }
+  
+  // 离线处理数据
+  for data in offline_buffer {
+    EdgeOfflineProcessor::process_offline_data(offline_processor, data)
+  }
+  
+  // 模拟网络恢复后的数据同步
+  Span::add_event(offline_span, "network.restored", None)
+  Span::set_attribute(offline_span, "sync.status", StringValue("in_progress"))
+  
+  let sync_results = EdgeOfflineProcessor::sync_to_cloud(offline_processor)
+  
+  Span::set_attribute(offline_span, "sync.count", IntValue(sync_results.synced_count))
+  Span::set_status(offline_span, Ok)
+  Span::end(offline_span)
+  
+  // 验证离线处理结果
+  assert_eq(sync_results.buffer_size, 100)
+  assert_eq(sync_results.synced_count, 100)
+  assert_true(sync_results.sync_success)
+}
+
+// 测试4: 边缘设备健康状态监控
+test "边缘设备健康状态监控测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "edge.health")
+  
+  // 创建边缘设备健康监控器
+  let health_monitor = EdgeHealthMonitor::new(meter)
+  
+  // 创建健康状态指标
+  let health_gauge = Meter::create_gauge(meter, "edge.device.health.score")
+  let alert_counter = Meter::create_counter(meter, "edge.device.alerts")
+  let uptime_gauge = Meter::create_gauge(meter, "edge.device.uptime")
+  
+  // 模拟边缘设备健康状态
+  let mut device_health = []
+  for device_id in 0..=19 {
+    let health_score = 50.0 + (Random::float() * 50.0)
+    let uptime = 3600 + (Random::int(86400)) // 1小时到24小时的运行时间
+    let alert_count = Random::int(5)
+    
+    let health_status = DeviceHealth::new("device-" + device_id.to_string(), [
+      ("health.score", FloatValue(health_score)),
+      ("uptime.seconds", IntValue(uptime)),
+      ("alert.count", IntValue(alert_count)),
+      ("last.seen", StringValue(Time::now().to_string())),
+      ("status", StringValue(if health_score > 80.0 { "healthy" } else if health_score > 50.0 { "warning" } else { "critical" }))
+    ])
+    device_health = device_health.push(health_status)
+    
+    // 更新健康指标
+    Gauge::set(health_gauge, health_score)
+    Gauge::set(uptime_gauge, uptime.to_float())
+    Counter::add(alert_counter, alert_count.to_float())
+  }
+  
+  // 监控设备健康状态
+  for health in device_health {
+    EdgeHealthMonitor::update_health_status(health_monitor, health)
+  }
+  
+  // 验证健康监控结果
+  let health_results = EdgeHealthMonitor::get_results(health_monitor)
+  assert_eq(health_results.total_devices, 20)
+  assert_true(health_results.healthy_devices > 0)
+  assert_true(health_results.warning_devices > 0)
+  assert_true(health_results.critical_devices >= 0)
+}
+
+// 测试5: 边缘计算数据聚合
+test "边缘计算数据聚合测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "edge.aggregation")
+  
+  // 创建边缘数据聚合器
+  let data_aggregator = EdgeDataAggregator::new(meter)
+  
+  // 创建聚合指标
+  let aggregation_counter = Meter::create_counter(meter, "edge.aggregations")
+  let aggregated_gauge = Meter::create_gauge(meter, "edge.aggregated.points")
+  
+  // 模拟来自多个设备的数据流
+  let mut device_data_streams = []
+  for device_id in 0..=9 {
+    let device_stream = []
+    for reading_id in 0..=49 {
+      let data_point = DeviceDataPoint::new(device_id.to_string() + "-" + reading_id.to_string(), [
+        ("device.id", StringValue("device-" + device_id.to_string())),
+        ("reading.id", IntValue(reading_id)),
+        ("temperature", FloatValue(20.0 + (Random::float() * 10.0))),
+        ("humidity", FloatValue(40.0 + (Random::float() * 20.0))),
+        ("pressure", FloatValue(1000.0 + (Random::float() * 50.0))),
+        ("timestamp", StringValue((Time::now() + reading_id).to_string()))
+      ])
+      device_stream = device_stream.push(data_point)
     }
+    device_data_streams = device_data_streams.push(device_stream)
   }
   
-  // 测试资源使用情况
-  let initial_memory = @azimuth.EdgeCollector::get_memory_usage(edge_collector)
-  let initial_storage = @azimuth.EdgeCollector::get_storage_usage(edge_collector)
-  
-  // 收集遥测数据
-  for metric in device_metrics {
-    @azimuth.EdgeCollector::collect_metric(edge_collector, metric)
+  // 按时间窗口聚合数据
+  let time_windows = [0, 10, 20, 30, 40] // 5个时间窗口
+  for window_start in time_windows {
+    let window_end = window_start + 10
+    let mut window_data = []
+    
+    // 收集窗口内所有设备数据
+    for device_stream in device_data_streams {
+      for data_point in device_stream {
+        let reading_id = DeviceDataPoint::get_reading_id(data_point)
+        if reading_id >= window_start && reading_id < window_end {
+          window_data = window_data.push(data_point)
+        }
+      }
+    }
+    
+    // 聚合窗口数据
+    let aggregated_data = EdgeDataAggregator::aggregate_window(data_aggregator, window_data, window_start)
+    Counter::add(aggregation_counter, 1.0)
+    Gauge::set(aggregated_gauge, aggregated_data.point_count.to_float())
   }
   
-  let current_memory = @azimuth.EdgeCollector::get_memory_usage(edge_collector)
-  let current_storage = @azimuth.EdgeCollector::get_storage_usage(edge_collector)
-  
-  // 验证资源使用在限制范围内
-  assert_true(current_memory <= resource_limits.memory_limit)
-  assert_true(current_storage <= resource_limits.storage_limit)
-  
-  // 测试自适应采样
-  let adaptive_sampling = @azimuth.AdaptiveSampling::new()
-  @azimuth.AdaptiveSampling::configure_memory_threshold(adaptive_sampling, 40 * 1024 * 1024) // 40MB阈值
-  
-  if current_memory > 40 * 1024 * 1024 {
-    @azimuth.AdaptiveSampling::reduce_sampling_rate(adaptive_sampling, 0.05) // 降低到5%
-  }
-  
-  // 验证自适应采样效果
-  let adjusted_sampling_rate = @azimuth.AdaptiveSampling::get_current_rate(adaptive_sampling)
-  assert_true(adjusted_sampling_rate <= 0.1)
+  // 验证聚合结果
+  let aggregation_results = EdgeDataAggregator::get_results(data_aggregator)
+  assert_eq(aggregation_results.total_windows, 5)
+  assert_true(aggregation_results.total_aggregated_points > 0)
+  assert_eq(Counter::value(aggregation_counter), 5.0)
 }
 
-// Test 2: 离线模式和数据缓存
-test "offline mode and data caching" {
-  let edge_processor = @azimuth.EdgeProcessor::new()
+// 测试6: 边缘设备配置管理
+test "边缘设备配置管理测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "edge.config")
   
-  // 配置离线模式
-  let offline_config = @azimuth.OfflineConfig::new()
-  @azimuth.OfflineConfig::set_cache_size(offline_config, 10 * 1024 * 1024) // 10MB缓存
-  @azimuth.OfflineConfig::set_max_cache_duration(offline_config, 24 * 60 * 60 * 1000) // 24小时
-  @azimuth.OfflineConfig::enable_persistence(offline_config, true) // 启用持久化
-  @azimuth.OfflineConfig::set_persistence_path(offline_config, "/tmp/telemetry-cache")
+  // 创建边缘配置管理器
+  let config_manager = EdgeConfigManager::new(tracer)
   
-  @azimuth.EdgeProcessor::configure_offline_mode(edge_processor, offline_config)
-  
-  // 模拟网络断开
-  @azimuth.EdgeProcessor::simulate_network_disconnect(edge_processor)
-  
-  // 在离线模式下收集数据
-  let offline_spans = []
-  for i in 0..=100 {
-    let span = @azimuth.Span::new("offline-operation-#{i}", @azimuth.SpanKind::Internal, @azimuth.SpanContext::random())
-    @azimuth.Span::set_attribute(span, "mode", @azimuth.StringValue("offline"))
-    @azimuth.Span::set_attribute(span, "device.id", @azimuth.StringValue("edge-device-001"))
-    @azimuth.Span::add_event(span, "offline-event-#{i}", None)
-    offline_spans = offline_spans.push(span)
-  }
-  
-  // 处理离线数据
-  for span in offline_spans {
-    @azimuth.EdgeProcessor::process_span_offline(edge_processor, span)
-  }
-  
-  // 验证数据缓存
-  let cached_data = @azimuth.EdgeProcessor::get_cached_data(edge_processor)
-  assert_true(cached_data.length() > 0)
-  assert_eq(cached_data.length(), offline_spans.length())
-  
-  // 验证缓存大小
-  let cache_size = @azimuth.EdgeProcessor::get_cache_size(edge_processor)
-  assert_true(cache_size <= offline_config.cache_size)
-  
-  // 模拟网络恢复
-  @azimuth.EdgeProcessor::simulate_network_reconnect(edge_processor)
-  
-  // 测试数据同步
-  let sync_result = @azimuth.EdgeProcessor::sync_cached_data(edge_processor)
-  
-  // 验证同步结果
-  assert_true(sync_result.success)
-  assert_eq(sync_result.synced_count, cached_data.length())
-  assert_eq(sync_result.failed_count, 0)
-  
-  // 验证缓存清理
-  let remaining_cache = @azimuth.EdgeProcessor::get_cached_data(edge_processor)
-  assert_eq(remaining_cache.length(), 0)
-}
-
-// Test 3: 边缘AI分析和异常检测
-test "edge AI analysis and anomaly detection" {
-  let edge_ai = @azimuth.EdgeAI::new()
-  
-  // 配置AI模型
-  let ai_config = @azimuth.AIConfig::new()
-  @azimuth.AIConfig::set_model_type(ai_config, @azimuth.ModelType::AnomalyDetection)
-  @azimuth.AIConfig::set_model_path(ai_config, "/models/anomaly-detection.onnx")
-  @azimuth.AIConfig::set_inference_threads(ai_config, 1) // 单线程推理以节省资源
-  @azimuth.AIConfig::enable_quantization(ai_config, true) // 启用量化以减少内存使用
-  
-  @azimuth.EdgeAI::configure(edge_ai, ai_config)
-  
-  // 创建传感器数据流
-  let sensor_data_stream = @azimuth.SensorDataStream::new()
-  
-  // 生成正常数据
-  for i in 0..=200 {
-    let sensor_reading = @azimuth.SensorReading::new(
-      "temp-sensor-001",
-      @azimuth.FloatValue(25.0 + @azimuth.Random::next_float() * 2.0), // 正常温度范围
-      @azimuth.Time::now_unix_nanos(),
-      @azimuth.SensorType::Temperature
-    )
-    @azimuth.SensorDataStream::add_reading(sensor_data_stream, sensor_reading)
-  }
-  
-  // 生成异常数据
-  for i in 0..=10 {
-    let anomalous_reading = @azimuth.SensorReading::new(
-      "temp-sensor-001",
-      @azimuth.FloatValue(50.0 + @azimuth.Random::next_float() * 10.0), // 异常高温
-      @azimuth.Time::now_unix_nanos(),
-      @azimuth.SensorType::Temperature
-    )
-    @azimuth.SensorDataStream::add_reading(sensor_data_stream, anomalous_reading)
-  }
-  
-  // 执行异常检测
-  let anomaly_results = @azimuth.EdgeAI::detect_anomalies(edge_ai, sensor_data_stream)
-  
-  // 验证异常检测结果
-  assert_true(anomaly_results.length() > 0)
-  assert_true(anomaly_results.length() <= 10) // 最多检测到10个异常
-  
-  // 验证异常详情
-  for anomaly in anomaly_results {
-    assert_eq(@azimuth.AnomalyResult::sensor_id(anomaly), "temp-sensor-001")
-    assert_true(@azimuth.AnomalyResult::anomaly_score(anomaly) > 0.8) // 高异常分数
-    assert_eq(@azimuth.AnomalyResult::anomaly_type(anomaly), @azimuth.AnomalyType::TemperatureSpike)
-  }
-  
-  // 创建异常警报
-  for anomaly in anomaly_results {
-    let alert = @azimuth.Alert::new(
-      @azimuth.AlertSeverity::High,
-      "Temperature anomaly detected",
-      @azimuth.AnomalyResult::to_string(anomaly)
-    )
-    @azimuth.EdgeAI::send_alert(edge_ai, alert)
-  }
-  
-  // 验证警报发送
-  let alert_count = @azimuth.EdgeAI::get_alert_count(edge_ai)
-  assert_eq(alert_count, anomaly_results.length())
-}
-
-// Test 4: 多协议支持和设备兼容性
-test "multi-protocol support and device compatibility" {
-  let protocol_manager = @azimuth.ProtocolManager::new()
-  
-  // 配置支持的协议
-  let protocols = [
-    @azimuth.Protocol::new("MQTT", 1883, @azimuth.ProtocolType::PublishSubscribe),
-    @azimuth.Protocol::new("CoAP", 5683, @azimuth.ProtocolType::RequestResponse),
-    @azimuth.Protocol::new("HTTP", 80, @azimuth.ProtocolType::RequestResponse),
-    @azimuth.Protocol::new("LoRaWAN", 868, @azimuth.ProtocolType::WideAreaNetwork),
-    @azimuth.Protocol::new("Zigbee", 2405, @azimuth.ProtocolType::PersonalAreaNetwork)
+  // 模拟边缘设备配置
+  let device_configs = [
+    ("device-0", DeviceConfig::new([
+      ("sampling.rate", IntValue(1000)),
+      ("batch.size", IntValue(100)),
+      ("compression.enabled", BoolValue(true)),
+      ("encryption.key", StringValue("key-device-0"))
+    ])),
+    ("device-1", DeviceConfig::new([
+      ("sampling.rate", IntValue(500)),
+      ("batch.size", IntValue(50)),
+      ("compression.enabled", BoolValue(false)),
+      ("encryption.key", StringValue("key-device-1"))
+    ])),
+    ("device-2", DeviceConfig::new([
+      ("sampling.rate", IntValue(2000)),
+      ("batch.size", IntValue(200)),
+      ("compression.enabled", BoolValue(true)),
+      ("encryption.key", StringValue("key-device-2"))
+    ]))
   ]
   
-  for protocol in protocols {
-    @azimuth.ProtocolManager::register_protocol(protocol_manager, protocol)
+  // 配置管理操作
+  let config_span = Tracer::start_span(tracer, "edge.configuration.management")
+  
+  for (device_id, config) in device_configs {
+    // 应用配置到设备
+    EdgeConfigManager::apply_config(config_manager, device_id, config)
+    Span::add_event(config_span, "config.applied", Some("device: " + device_id))
   }
   
-  // 创建不同类型的设备
-  let mqtt_device = @azimuth.IoTDevice::new("mqtt-sensor-001", "MQTT Temperature Sensor")
-  @azimuth.IoTDevice::configure_protocol(mqtt_device, "MQTT", [
-    ("broker.host", "mqtt.edge.local"),
-    ("broker.port", "1883"),
-    ("topic.prefix", "sensors/temperature")
+  // 验证配置应用
+  for (device_id, expected_config) in device_configs {
+    let applied_config = EdgeConfigManager::get_config(config_manager, device_id)
+    assert_true(DeviceConfig::equals(applied_config, expected_config))
+  }
+  
+  // 动态更新配置
+  let updated_config = DeviceConfig::new([
+    ("sampling.rate", IntValue(1500)),
+    ("batch.size", IntValue(150)),
+    ("compression.enabled", BoolValue(true)),
+    ("encryption.key", StringValue("updated-key-device-1"))
   ])
   
-  let coap_device = @azimuth.IoTDevice::new("coap-actuator-001", "CoAP Smart Actuator")
-  @azimuth.IoTDevice::configure_protocol(coap_device, "CoAP", [
-    ("server.host", "coap.edge.local"),
-    ("server.port", "5683"),
-    ("resource.path", "/actuator/control")
-  ])
+  EdgeConfigManager::update_config(config_manager, "device-1", updated_config)
+  Span::add_event(config_span, "config.updated", Some("device: device-1"))
   
-  let lorawan_device = @azimuth.IoTDevice::new("lorawan-gateway-001", "LoRaWAN Gateway")
-  @azimuth.IoTDevice::configure_protocol(lorawan_device, "LoRaWAN", [
-    ("network.server", "lorawan.edge.local"),
-    ("app.key", "00112233445566778899AABBCCDDEEFF"),
-    ("dev.eui", "1122334455667788")
-  ])
+  // 验证配置更新
+  let current_config = EdgeConfigManager::get_config(config_manager, "device-1")
+  assert_eq(DeviceConfig::get_sampling_rate(current_config), 1500)
   
-  // 测试协议兼容性
-  let mqtt_compatible = @azimuth.ProtocolManager::check_compatibility(protocol_manager, mqtt_device)
-  let coap_compatible = @azimuth.ProtocolManager::check_compatibility(protocol_manager, coap_device)
-  let lorawan_compatible = @azimuth.ProtocolManager::check_compatibility(protocol_manager, lorawan_device)
+  Span::set_status(config_span, Ok)
+  Span::end(config_span)
   
-  assert_true(mqtt_compatible)
-  assert_true(coap_compatible)
-  assert_true(lorawan_compatible)
-  
-  // 模拟设备数据传输
-  let mqtt_data = @azimuth.TelemetryData::new(
-    @azimuth.TraceId::generate(),
-    @azimuth.SpanId::generate(),
-    [
-      ("device.id", @azimuth.StringValue("mqtt-sensor-001")),
-      ("protocol", @azimuth.StringValue("MQTT")),
-      ("temperature", @azimuth.FloatValue(23.5)),
-      ("humidity", @azimuth.FloatValue(45.2))
-    ]
-  )
-  
-  let coap_data = @azimuth.TelemetryData::new(
-    @azimuth.TraceId::generate(),
-    @azimuth.SpanId::generate(),
-    [
-      ("device.id", @azimuth.StringValue("coap-actuator-001")),
-      ("protocol", @azimuth.StringValue("CoAP")),
-      ("actuator.state", @azimuth.StringValue("active")),
-      ("power.consumption", @azimuth.FloatValue(12.3))
-    ]
-  )
-  
-  let lorawan_data = @azimuth.TelemetryData::new(
-    @azimuth.TraceId::generate(),
-    @azimuth.SpanId::generate(),
-    [
-      ("device.id", @azimuth.StringValue("lorawan-gateway-001")),
-      ("protocol", @azimuth.StringValue("LoRaWAN")),
-      ("signal.strength", @azimuth.IntValue(-85)),
-      ("packet.count", @azimuth.IntValue(150))
-    ]
-  )
-  
-  // 通过不同协议传输数据
-  let mqtt_result = @azimuth.ProtocolManager::transmit_data(protocol_manager, mqtt_device, mqtt_data)
-  let coap_result = @azimuth.ProtocolManager::transmit_data(protocol_manager, coap_device, coap_data)
-  let lorawan_result = @azimuth.ProtocolManager::transmit_data(protocol_manager, lorawan_device, lorawan_data)
-  
-  // 验证传输结果
-  assert_true(mqtt_result.success)
-  assert_true(coap_result.success)
-  assert_true(lorawan_result.success)
-  
-  // 验证协议统计
-  let mqtt_stats = @azimuth.ProtocolManager::get_protocol_stats(protocol_manager, "MQTT")
-  let coap_stats = @azimuth.ProtocolManager::get_protocol_stats(protocol_manager, "CoAP")
-  let lorawan_stats = @azimuth.ProtocolManager::get_protocol_stats(protocol_manager, "LoRaWAN")
-  
-  assert_eq(mqtt_stats.messages_sent, 1)
-  assert_eq(coap_stats.messages_sent, 1)
-  assert_eq(lorawan_stats.messages_sent, 1)
-  
-  assert_eq(mqtt_stats.bytes_transferred, @azimuth.TelemetryData::calculate_size(mqtt_data))
-  assert_eq(coap_stats.bytes_transferred, @azimuth.TelemetryData::calculate_size(coap_data))
-  assert_eq(lorawan_stats.bytes_transferred, @azimuth.TelemetryData::calculate_size(lorawan_data))
+  // 验证配置管理结果
+  let config_results = EdgeConfigManager::get_results(config_manager)
+  assert_eq(config_results.configured_devices, 3)
+  assert_eq(config_results.updated_configs, 1)
 }
 
-// Test 5: 边缘计算集群和负载均衡
-test "edge computing cluster and load balancing" {
-  let edge_cluster = @azimuth.EdgeCluster::new()
+// 测试7: 边缘计算安全监控
+test "边缘计算安全监控测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "edge.security")
   
-  // 创建边缘节点
-  let nodes = [
-    @azimuth.EdgeNode::new("edge-node-001", "192.168.1.10", 8080, @azimuth.NodeCapabilities::HighMemory),
-    @azimuth.EdgeNode::new("edge-node-002", "192.168.1.11", 8080, @azimuth.NodeCapabilities::HighCPU),
-    @azimuth.EdgeNode::new("edge-node-003", "192.168.1.12", 8080, @azimuth.NodeCapabilities::Balanced),
-    @azimuth.EdgeNode::new("edge-node-004", "192.168.1.13", 8080, @azimuth.NodeCapabilities::LowPower)
+  // 创建边缘安全监控器
+  let security_monitor = EdgeSecurityMonitor::new(meter)
+  
+  // 创建安全指标
+  let security_counter = Meter::create_counter(meter, "edge.security.events")
+  let threat_gauge = Meter::create_gauge(meter, "edge.threat.level")
+  let blocked_counter = Meter::create_counter(meter, "edge.blocked.requests")
+  
+  // 模拟安全事件
+  let mut security_events = []
+  for i in 0..=49 {
+    let is_threat = i % 7 == 0 // 每7个事件中有1个威胁
+    let event_type = if is_threat { "unauthorized.access" } else { "normal.operation" }
+    let threat_level = if is_threat { 8.0 + (Random::float() * 2.0) } else { 1.0 + (Random::float() * 2.0) }
+    
+    let security_event = SecurityEvent::new(i.to_string(), [
+      ("event.type", StringValue(event_type)),
+      ("threat.level", FloatValue(threat_level)),
+      ("source.ip", StringValue("192.168.1." + (i % 255).to_string())),
+      ("device.id", StringValue("device-" + (i % 10).to_string())),
+      ("timestamp", StringValue(Time::now().to_string())),
+      ("blocked", BoolValue(is_threat))
+    ])
+    security_events = security_events.push(security_event)
+    
+    // 更新安全指标
+    Counter::add(security_counter, 1.0)
+    Gauge::set(threat_gauge, threat_level)
+    if is_threat {
+      Counter::add(blocked_counter, 1.0)
+    }
+  }
+  
+  // 处理安全事件
+  for event in security_events {
+    EdgeSecurityMonitor::process_security_event(security_monitor, event)
+  }
+  
+  // 验证安全监控结果
+  let security_results = EdgeSecurityMonitor::get_results(security_monitor)
+  assert_eq(security_results.total_events, 50)
+  assert_true(security_results.threat_events > 0)
+  assert_true(security_results.blocked_events > 0)
+  assert_eq(Counter::value(security_counter), 50.0)
+  assert_eq(Counter::value(blocked_counter), security_results.blocked_events.to_float())
+}
+
+// 测试8: 边缘设备OTA更新监控
+test "边缘设备OTA更新监控测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "edge.ota")
+  
+  // 创建边缘OTA更新监控器
+  let ota_monitor = EdgeOTAMonitor::new(tracer)
+  
+  // 模拟OTA更新过程
+  let ota_span = Tracer::start_span(tracer, "edge.ota.update.process")
+  Span::set_attribute(ota_span, "update.version", StringValue("2.0.0"))
+  Span::set_attribute(ota_span, "target.devices", IntValue(5))
+  
+  // 模拟设备更新状态
+  let device_updates = [
+    ("device-0", "downloading", 0.0),
+    ("device-1", "installing", 50.0),
+    ("device-2", "completed", 100.0),
+    ("device-3", "failed", 25.0),
+    ("device-4", "downloading", 10.0)
   ]
   
-  for node in nodes {
-    @azimuth.EdgeCluster::add_node(edge_cluster, node)
+  for (device_id, status, progress) in device_updates {
+    let update_status = OTAUpdateStatus::new(device_id, [
+      ("status", StringValue(status)),
+      ("progress", FloatValue(progress)),
+      ("update.version", StringValue("2.0.0")),
+      ("start.time", StringValue(Time::now().to_string()))
+    ])
+    
+    EdgeOTAMonitor::update_device_status(ota_monitor, update_status)
+    Span::add_event(ota_span, "update.status.changed", Some("device: " + device_id + ", status: " + status))
   }
   
-  // 配置负载均衡策略
-  let load_balancer = @azimuth.LoadBalancer::new()
-  @azimuth.LoadBalancer::set_strategy(load_balancer, @azimuth.LoadBalancingStrategy::WeightedRoundRobin)
+  // 验证更新结果
+  let ota_results = EdgeOTAMonitor::get_results(ota_monitor)
+  assert_eq(ota_results.total_devices, 5)
+  assert_eq(ota_results.completed_updates, 1)
+  assert_eq(ota_results.failed_updates, 1)
+  assert_true(ota_results.in_progress_updates > 0)
   
-  // 设置节点权重
-  @azimuth.LoadBalancer::set_node_weight(load_balancer, "edge-node-001", 4) // 高内存节点权重高
-  @azimuth.LoadBalancer::set_node_weight(load_balancer, "edge-node-002", 3) // 高CPU节点权重中等
-  @azimuth.LoadBalancer::set_node_weight(load_balancer, "edge-node-003", 2) // 平衡节点权重较低
-  @azimuth.LoadBalancer::set_node_weight(load_balancer, "edge-node-004", 1) // 低功耗节点权重最低
-  
-  @azimuth.EdgeCluster::set_load_balancer(edge_cluster, load_balancer)
-  
-  // 模拟工作负载
-  let workloads = []
-  for i in 0..=100 {
-    let workload = @azimuth.Workload::new(
-      "workload-#{i}",
-      @azimuth.WorkloadType::TelemetryProcessing,
-      @azimuth.Intensity::Medium,
-      [
-        ("data.size", @azimuth.IntValue(1024 * (i % 10 + 1))),
-        ("processing.time", @azimuth.IntValue(100 * (i % 5 + 1))),
-        ("memory.required", @azimuth.IntValue(50 * (i % 8 + 1)))
-      ]
-    )
-    workloads = workloads.push(workload)
-  }
-  
-  // 分配工作负载
-  let mut node_assignments = @azimuth.StringMap::new()
-  for workload in workloads {
-    let assigned_node = @azimuth.EdgeCluster::assign_workload(edge_cluster, workload)
-    let current_count = @azimuth.StringMap::get(node_assignments, assigned_node)
-    let new_count = match current_count {
-      Some(count) => count + 1
-      None => 1
-    }
-    @azimuth.StringMap::set(node_assignments, assigned_node, new_count)
-  }
-  
-  // 验证负载分布
-  let node001_count = @azimuth.StringMap::get(node_assignments, "edge-node-001")
-  let node002_count = @azimuth.StringMap::get(node_assignments, "edge-node-002")
-  let node003_count = @azimuth.StringMap::get(node_assignments, "edge-node-003")
-  let node004_count = @azimuth.StringMap::get(node_assignments, "edge-node-004")
-  
-  // 高权重节点应该分配更多工作负载
-  assert_true(node001_count > node002_count)
-  assert_true(node002_count > node003_count)
-  assert_true(node003_count > node004_count)
-  
-  // 验证总工作负载分配
-  let total_assigned = node001_count + node002_count + node003_count + node004_count
-  assert_eq(total_assigned, workloads.length())
-  
-  // 测试节点故障转移
-  @azimuth.EdgeCluster::simulate_node_failure(edge_cluster, "edge-node-002")
-  
-  // 重新分配故障节点的工作负载
-  let failover_result = @azimuth.EdgeCluster::redistribute_workload(edge_cluster, "edge-node-002")
-  
-  // 验证故障转移结果
-  assert_true(failover_result.success)
-  assert_eq(failover_result.redistributed_count, node002_count)
-  
-  // 验证集群健康状态
-  let cluster_health = @azimuth.EdgeCluster::get_health_status(edge_cluster)
-  assert_eq(cluster_health.total_nodes, 4)
-  assert_eq(cluster_health.healthy_nodes, 3)
-  assert_eq(cluster_health.failed_nodes, 1)
-  assert_false(cluster_health.all_healthy)
+  Span::set_attribute(ota_span, "completed.devices", IntValue(ota_results.completed_updates))
+  Span::set_attribute(ota_span, "failed.devices", IntValue(ota_results.failed_updates))
+  Span::set_status(ota_span, Ok)
+  Span::end(ota_span)
 }
 
-// Test 6: 边缘云协同和数据同步
-test "edge-cloud collaboration and data synchronization" {
-  let edge_cloud_sync = @azimuth.EdgeCloudSync::new()
+// 测试9: 边缘计算网络连接监控
+test "边缘计算网络连接监控测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "edge.network")
   
-  // 配置边缘节点
-  let edge_node = @azimuth.EdgeNode::new("edge-primary", "10.0.1.100", 8080, @azimuth.NodeCapabilities::Balanced)
+  // 创建边缘网络连接监控器
+  let network_monitor = EdgeNetworkMonitor::new(meter)
   
-  // 配置云连接
-  let cloud_config = @azimuth.CloudConfig::new(
-    @azimuth.CloudProvider::AWS,
-    "us-west-2",
-    ["otel-collector.cloud.example.com:4317"],
-    @azimuth.AuthConfig::new(@azimuth.AuthType::API_Key, "cloud-api-key-12345")
-  )
+  // 创建网络指标
+  let connection_gauge = Meter::create_gauge(meter, "edge.network.connections")
+  let latency_histogram = Meter::create_histogram(meter, "edge.network.latency")
+  let bandwidth_gauge = Meter::create_gauge(meter, "edge.network.bandwidth")
+  let packet_loss_gauge = Meter::create_gauge(meter, "edge.network.packet.loss")
   
-  @azimuth.EdgeCloudSync::configure_cloud_connection(edge_cloud_sync, cloud_config)
-  
-  // 配置同步策略
-  let sync_strategy = @azimuth.SyncStrategy::new()
-  @azimuth.SyncStrategy::set_sync_mode(sync_strategy, @azimuth.SyncMode::Batch)
-  @azimuth.SyncStrategy::set_batch_size(sync_strategy, 50)
-  @azimuth.SyncStrategy::set_sync_interval(sync_strategy, 30000) // 30秒
-  @azimuth.SyncStrategy::enable_compression(sync_strategy, true)
-  @azimuth.SyncStrategy::enable_encryption(sync_strategy, true)
-  @azimuth.SyncStrategy::set_priority_attributes(sync_strategy, ["error", "critical", "high"])
-  
-  @azimuth.EdgeCloudSync::configure_sync_strategy(edge_cloud_sync, sync_strategy)
-  
-  // 创建边缘遥测数据
-  let edge_data = []
-  for i in 0..=200 {
-    let data_point = @azimuth.TelemetryData::new(
-      @azimuth.TraceId::generate(),
-      @azimuth.SpanId::generate(),
-      [
-        ("edge.node", @azimuth.StringValue("edge-primary")),
-        ("source", @azimuth.StringValue("iot-sensor")),
-        ("sensor.id", @azimuth.StringValue("sensor-#{i % 20}")),
-        ("metric.type", @azimuth.StringValue(if i % 3 == 0 { "temperature" } else if i % 3 == 1 { "humidity" } else { "pressure" })),
-        ("metric.value", @azimuth.FloatValue(20.0 + @azimuth.Random::next_float() * 30.0)),
-        ("timestamp", @azimuth.IntValue(@azimuth.Time::now_unix_nanos())),
-        ("priority", @azimuth.StringValue(if i % 10 == 0 { "high" } else if i % 10 == 1 { "critical" } else { "normal" })),
-        ("location", @azimuth.StringValue("warehouse-#{i % 5}"))
-      ]
-    )
-    edge_data = edge_data.push(data_point)
+  // 模拟网络连接状态
+  let mut network_connections = []
+  for connection_id in 0..=19 {
+    let latency = 10.0 + (Random::float() * 100.0)
+    let bandwidth = 1000.0 + (Random::float() * 9000.0)
+    let packet_loss = Random::float() * 5.0
+    let is_connected = Random::float() > 0.1 // 90%的连接率
+    
+    let connection = NetworkConnection::new("conn-" + connection_id.to_string(), [
+      ("connected", BoolValue(is_connected)),
+      ("latency.ms", FloatValue(latency)),
+      ("bandwidth.kbps", FloatValue(bandwidth)),
+      ("packet.loss.percent", FloatValue(packet_loss)),
+      ("remote.endpoint", StringValue("cloud-server-" + (connection_id % 3).to_string()))
+    ])
+    network_connections = network_connections.push(connection)
+    
+    // 更新网络指标
+    Gauge::set(connection_gauge, if is_connected { network_connections.length().to_float() } else { (network_connections.length() - 1).to_float() })
+    Histogram::record(latency_histogram, latency)
+    Gauge::set(bandwidth_gauge, bandwidth)
+    Gauge::set(packet_loss_gauge, packet_loss)
   }
   
-  // 处理边缘数据
-  for data in edge_data {
-    @azimuth.EdgeCloudSync::process_edge_data(edge_cloud_sync, data)
+  // 监控网络连接
+  for connection in network_connections {
+    EdgeNetworkMonitor::monitor_connection(network_monitor, connection)
   }
   
-  // 验证数据预处理
-  let processed_data = @azimuth.EdgeCloudSync::get_processed_data(edge_cloud_sync)
-  assert_eq(processed_data.length(), edge_data.length())
-  
-  // 执行数据同步
-  let sync_result = @azimuth.EdgeCloudSync::sync_to_cloud(edge_cloud_sync)
-  
-  // 验证同步结果
-  assert_true(sync_result.success)
-  assert_eq(sync_result.total_records, edge_data.length())
-  assert_eq(sync_result.synced_records, edge_data.length())
-  assert_eq(sync_result.failed_records, 0)
-  
-  // 验证数据优先级处理
-  let high_priority_count = edge_data.filter(fn(data) {
-    match @azimuth.TelemetryData::get_attribute(data, "priority") {
-      Some(@azimuth.StringValue(p)) => p == "high" || p == "critical"
-      _ => false
-    }
-  }).length()
-  
-  assert_true(sync_result.priority_records >= high_priority_count)
-  
-  // 测试增量同步
-  let new_edge_data = []
-  for i in 201..=250 {
-    let data_point = @azimuth.TelemetryData::new(
-      @azimuth.TraceId::generate(),
-      @azimuth.SpanId::generate(),
-      [
-        ("edge.node", @azimuth.StringValue("edge-primary")),
-        ("source", @azimuth.StringValue("iot-sensor")),
-        ("sensor.id", @azimuth.StringValue("sensor-#{i % 20}")),
-        ("metric.type", @azimuth.StringValue("temperature")),
-        ("metric.value", @azimuth.FloatValue(20.0 + @azimuth.Random::next_float() * 30.0)),
-        ("timestamp", @azimuth.IntValue(@azimuth.Time::now_unix_nanos()))
-      ]
-    )
-    new_edge_data = new_edge_data.push(data_point)
-  }
-  
-  // 处理新数据
-  for data in new_edge_data {
-    @azimuth.EdgeCloudSync::process_edge_data(edge_cloud_sync, data)
-  }
-  
-  // 执行增量同步
-  let incremental_sync_result = @azimuth.EdgeCloudSync::incremental_sync(edge_cloud_sync)
-  
-  // 验证增量同步结果
-  assert_true(incremental_sync_result.success)
-  assert_eq(incremental_sync_result.total_records, new_edge_data.length())
-  assert_eq(incremental_sync_result.synced_records, new_edge_data.length())
-  assert_true(incremental_sync_result.is_incremental)
-  
-  // 验证同步统计
-  let sync_stats = @azimuth.EdgeCloudSync::get_sync_statistics(edge_cloud_sync)
-  assert_true(sync_stats.total_syncs >= 2)
-  assert_true(sync_stats.total_records_synced >= edge_data.length() + new_edge_data.length())
-  assert_true(sync_stats.compression_ratio > 1.0)
-  assert_true(sync_stats.avg_sync_time > 0)
+  // 验证网络监控结果
+  let network_results = EdgeNetworkMonitor::get_results(network_monitor)
+  assert_eq(network_results.total_connections, 20)
+  assert_true(network_results.active_connections > 0)
+  assert_true(network_results.average_latency > 0.0)
+  assert_true(network_results.average_bandwidth > 0.0)
 }
 
-// Test 7: 低功耗模式和能源管理
-test "low-power mode and energy management" {
-  let energy_manager = @azimuth.EnergyManager::new()
+// 测试10: 边缘计算环境适配
+test "边缘计算环境适配测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "edge.adaptation")
   
-  // 配置能源管理
-  let energy_config = @azimuth.EnergyConfig::new()
-  @azimuth.EnergyConfig::set_power_source(energy_config, @azimuth.PowerSource::Battery)
-  @azimuth.EnergyConfig::set_battery_capacity(energy_config, 5000) // 5000mAh
-  @azimuth.EnergyConfig::set_low_power_threshold(energy_config, 20) // 20%电量阈值
-  @azimuth.EnergyConfig::enable_adaptive_scaling(energy_config, true)
+  // 创建边缘环境适配器
+  let environment_adapter = EdgeEnvironmentAdapter::new(meter)
   
-  @azimuth.EnergyManager::configure(energy_manager, energy_config)
+  // 创建环境适配指标
+  let adaptation_counter = Meter::create_counter(meter, "edge.adaptations")
+  let resource_gauge = Meter::create_gauge(meter, "edge.available.resources")
+  let performance_gauge = Meter::create_gauge(meter, "edge.performance.score")
   
-  // 模拟电池状态
-  @azimuth.EnergyManager::set_battery_level(energy_manager, 85) // 85%电量
+  // 模拟不同的边缘环境
+  let edge_environments = [
+    ("industrial", EdgeEnvironment::new([
+      ("temperature.range", StringValue("-40..85")),
+      ("humidity.range", StringValue("5..95")),
+      ("vibration.resistance", BoolValue(true)),
+      ("dust.protection", BoolValue(true)),
+      ("power.consumption", FloatValue(50.0))
+    ])),
+    ("outdoor", EdgeEnvironment::new([
+      ("temperature.range", StringValue("-30..70")),
+      ("humidity.range", StringValue("10..90")),
+      ("water.resistance", BoolValue(true)),
+      ("uv.resistance", BoolValue(true)),
+      ("power.consumption", FloatValue(30.0))
+    ])),
+    ("office", EdgeEnvironment::new([
+      ("temperature.range", StringValue("15..35")),
+      ("humidity.range", StringValue("30..70")),
+      ("noise.level", StringValue("low")),
+      ("power.consumption", FloatValue(15.0))
+    ]))
+  ]
   
-  // 正常模式下的遥测收集
-  let normal_mode_config = @azimuth.TelemetryConfig::new()
-  @azimuth.TelemetryConfig::set_sampling_rate(normal_mode_config, 1.0) // 100%采样
-  @azimuth.TelemetryConfig::set_batch_size(normal_mode_config, 100)
-  @azimuth.TelemetryConfig::set_flush_interval(normal_mode_config, 5000) // 5秒
-  @azimuth.TelemetryConfig::enable_compression(normal_mode_config, false)
+  // 环境适配测试
+  for (env_type, environment) in edge_environments {
+    // 模拟环境感知
+    let adaptation_result = EdgeEnvironmentAdapter::adapt_to_environment(environment_adapter, environment)
+    Counter::add(adaptation_counter, 1.0)
+    
+    // 更新资源指标
+    let available_resources = EdgeEnvironmentAdapter::calculate_available_resources(environment_adapter, environment)
+    Gauge::set(resource_gauge, available_resources.to_float())
+    
+    // 更新性能指标
+    let performance_score = EdgeEnvironmentAdapter::calculate_performance_score(environment_adapter, environment)
+    Gauge::set(performance_gauge, performance_score)
+    
+    // 验证适配结果
+    assert_true(adaptation_result.success)
+    assert_true(available_resources > 0.0)
+    assert_true(performance_score > 0.0)
+  }
   
-  // 低功耗模式下的遥测收集
-  let low_power_mode_config = @azimuth.TelemetryConfig::new()
-  @azimuth.TelemetryConfig::set_sampling_rate(low_power_mode_config, 0.1) // 10%采样
-  @azimuth.TelemetryConfig::set_batch_size(low_power_mode_config, 20)
-  @azimuth.TelemetryConfig::set_flush_interval(low_power_mode_config, 30000) // 30秒
-  @azimuth.TelemetryConfig::enable_compression(low_power_mode_config, true)
-  @azimuth.TelemetryConfig::set_compression_level(low_power_mode_config, 9) // 最高压缩
-  
-  // 测试正常模式
-  let normal_power_consumption = @azimuth.EnergyManager::measure_consumption(energy_manager, normal_mode_config)
-  
-  // 模拟低电量情况
-  @azimuth.EnergyManager::set_battery_level(energy_manager, 15) // 15%电量
-  
-  // 自动切换到低功耗模式
-  let adaptive_config = @azimuth.EnergyManager::get_adaptive_config(energy_manager)
-  
-  // 验证自适应配置
-  let adaptive_sampling_rate = @azimuth.TelemetryConfig::get_sampling_rate(adaptive_config)
-  let adaptive_batch_size = @azimuth.TelemetryConfig::get_batch_size(adaptive_config)
-  let adaptive_flush_interval = @azimuth.TelemetryConfig::get_flush_interval(adaptive_config)
-  
-  assert_true(adaptive_sampling_rate < 1.0)
-  assert_true(adaptive_batch_size < 100)
-  assert_true(adaptive_flush_interval > 5000)
-  assert_true(@azimuth.TelemetryConfig::is_compression_enabled(adaptive_config))
-  
-  // 测试低功耗模式
-  let low_power_consumption = @azimuth.EnergyManager::measure_consumption(energy_manager, adaptive_config)
-  
-  // 验证功耗降低
-  assert_true(low_power_consumption < normal_power_consumption)
-  let power_reduction = (normal_power_consumption - low_power_consumption) / normal_power_consumption
-  assert_true(power_reduction > 0.3) // 至少30%的功耗降低
-  
-  // 测试能源状态监控
-  let energy_status = @azimuth.EnergyManager::get_energy_status(energy_manager)
-  assert_eq(energy_status.battery_level, 15)
-  assert_eq(energy_status.power_source, @azimuth.PowerSource::Battery)
-  assert_eq(energy_status.mode, @azimuth.PowerMode::LowPower)
-  assert_true(energy_status.estimated_runtime_hours > 0)
-  
-  // 测试节能策略
-  let power_saving_strategies = @azimuth.EnergyManager::get_power_saving_strategies(energy_manager)
-  assert_true(power_saving_strategies.length() > 0)
-  
-  // 验证节能策略包含以下措施
-  let has_reduced_sampling = power_saving_strategies.some(fn(strategy) {
-    @azimuth.PowerSavingStrategy::type(strategy) == @azimuth.StrategyType::ReducedSampling
-  })
-  let has_increased_batching = power_saving_strategies.some(fn(strategy) {
-    @azimuth.PowerSavingStrategy::type(strategy) == @azimuth.StrategyType::IncreasedBatching
-  })
-  let has_compression = power_saving_strategies.some(fn(strategy) {
-    @azimuth.PowerSavingStrategy::type(strategy) == @azimuth.StrategyType::DataCompression
-  })
-  
-  assert_true(has_reduced_sampling)
-  assert_true(has_increased_batching)
-  assert_true(has_compression)
+  // 验证环境适配结果
+  let adaptation_results = EdgeEnvironmentAdapter::get_results(environment_adapter)
+  assert_eq(adaptation_results.adapted_environments, 3)
+  assert_true(adaptation_results.average_performance_score > 0.0)
+  assert_eq(Counter::value(adaptation_counter), 3.0)
 }
