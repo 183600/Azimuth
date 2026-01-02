@@ -1,0 +1,9 @@
+{
+  "packages": [
+    {
+      "root": "moon/test",
+      "rel": "single",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/build/single/single.mi"
+    }
+  ]
+}
