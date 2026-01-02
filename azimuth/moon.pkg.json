@@ -41,5 +41,7 @@
         "../azimuth_specialized_comprehensive_tests.mbt",
         "azimuth_comprehensive_quality_tests.mbt",
         "azimuth_new_comprehensive_test_suite.mbt",
-        "azimuth_enhanced_core_functionality_tests.mbt"
+        "azimuth_enhanced_core_functionality_tests.mbt",
+        "azimuth_premium_core_tests.mbt",
+        "../azimuth_specialized_moonbit_tests.mbt"
             ]  }}

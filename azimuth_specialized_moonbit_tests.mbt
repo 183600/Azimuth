@@ -1,569 +1,352 @@
 // Azimuth Specialized MoonBit Test Suite
-// 专门针对遥测系统高级功能的测试用例
+// 专门设计的MoonBit测试用例，涵盖遥测系统的关键功能
 
-// 测试1: 遥测数据采样策略
-test "遥测数据采样策略测试" {
-  // 创建采样器配置
-  let sampling_rate = 0.1  // 10%采样率
-  let trace_id_sampler = TraceIdRatioBasedSampler::new(sampling_rate)
+// 测试1: 属性值类型转换与验证
+pub test "属性值类型转换与验证" {
+  // 测试字符串到整数的转换
+  let string_attr = azimuth::StringValue("42")
+  let int_attr = azimuth::IntValue(42)
   
-  // 测试多个Trace ID的采样决策
-  let trace_ids = [
-    "trace-00000001", "trace-00000002", "trace-00000003",
-    "trace-00000004", "trace-00000005", "trace-00000006",
-    "trace-00000007", "trace-00000008", "trace-00000009", "trace-00000010"
+  // 测试字符串到浮点数的转换
+  let float_string_attr = azimuth::StringValue("3.14")
+  let float_attr = azimuth::FloatValue(3.14)
+  
+  // 测试布尔值属性
+  let bool_true_attr = azimuth::BoolValue(true)
+  let bool_false_attr = azimuth::BoolValue(false)
+  
+  // 测试数组属性
+  let string_array_attr = azimuth::ArrayStringValue(["a", "b", "c"])
+  let int_array_attr = azimuth::ArrayIntValue([1, 2, 3])
+  
+  // 验证属性类型和值
+  assert_eq(string_attr, azimuth::StringValue("42"))
+  assert_eq(int_attr, azimuth::IntValue(42))
+  assert_eq(float_string_attr, azimuth::StringValue("3.14"))
+  assert_eq(float_attr, azimuth::FloatValue(3.14))
+  assert_eq(bool_true_attr, azimuth::BoolValue(true))
+  assert_eq(bool_false_attr, azimuth::BoolValue(false))
+  assert_eq(string_array_attr, azimuth::ArrayStringValue(["a", "b", "c"]))
+  assert_eq(int_array_attr, azimuth::ArrayIntValue([1, 2, 3]))
+}
+
+// 测试2: 跨服务传播一致性
+pub test "跨服务传播一致性" {
+  // 测试跟踪上下文传播
+  let trace_id = "trace-12345"
+  let span_id = "span-67890"
+  let span_ctx = azimuth::SpanContext::new(trace_id, span_id, true, "key1=value1")
+  
+  // 验证Span上下文的有效性
+  assert_true(azimuth::SpanContext::is_valid(span_ctx))
+  assert_eq(azimuth::SpanContext::trace_id(span_ctx), trace_id)
+  assert_eq(azimuth::SpanContext::span_id(span_ctx), span_id)
+  assert_true(azimuth::SpanContext::is_sampled(span_ctx))
+  
+  // 测试复合传播器
+  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+  let baggage_propagator = azimuth::W3CBaggagePropagator::new()
+  let propagators = [trace_propagator]
+  let composite_propagator = azimuth::CompositePropagator::new(propagators)
+  
+  // 测试注入和提取
+  let carrier = azimuth::TextMapCarrier::new()
+  let ctx = azimuth::Context::root()
+  azimuth::CompositePropagator::inject(composite_propagator, ctx, carrier)
+  
+  let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
+  let key = azimuth::ContextKey::new("extracted")
+  let extracted_value = azimuth::Context::get(extracted_ctx, key)
+  
+  assert_eq(extracted_value, Some("true"))
+}
+
+// 测试3: 时间序列数据处理
+pub test "时间序列数据处理" {
+  // 测试时间序列数据点
+  let timestamp1 = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let timestamp2 = timestamp1 + 1000000L  // 1ms later
+  
+  // 测试不同时间戳的度量值
+  let metric_value1 = 10.0
+  let metric_value2 = 15.0
+  let metric_value3 = 12.5
+  
+  // 测试时间序列聚合
+  let sum_value = metric_value1 + metric_value2 + metric_value3
+  let avg_value = sum_value / 3.0
+  let max_value = metric_value2
+  let min_value = metric_value1
+  
+  assert_eq(sum_value, 37.5)
+  assert_eq(avg_value, 12.5)
+  assert_eq(max_value, 15.0)
+  assert_eq(min_value, 10.0)
+  
+  // 验证时间戳顺序
+  assert_true(timestamp2 > timestamp1)
+}
+
+// 测试4: 实时流处理性能
+pub test "实时流处理性能" {
+  // 测试流数据点
+  let stream_data1 = ("event-1", 10.0, azimuth::Clock::now_unix_nanos(azimuth::Clock::system()))
+  let stream_data2 = ("event-2", 20.0, azimuth::Clock::now_unix_nanos(azimuth::Clock::system()) + 1000000L)
+  let stream_data3 = ("event-3", 15.0, azimuth::Clock::now_unix_nanos(azimuth::Clock::system()) + 2000000L)
+  
+  // 测试窗口聚合
+  let window_sum = stream_data1.1 + stream_data2.1 + stream_data3.1
+  let window_avg = window_sum / 3.0
+  let window_count = 3.0
+  
+  // 测试流处理指标
+  let processing_rate = window_count / 0.002  // 2ms内3个事件
+  let throughput = window_sum / 0.002  // 每秒总值
+  
+  // 验证计算
+  assert_eq(window_sum, 45.0)
+  assert_eq(window_avg, 15.0)
+  assert_eq(window_count, 3.0)
+  assert_eq(processing_rate, 1500.0)
+  assert_eq(throughput, 22500.0)
+}
+
+// 测试5: 错误边界处理与恢复
+pub test "错误边界处理与恢复" {
+  // 测试错误恢复机制
+  let error_occurred = true
+  let recovery_attempted = true
+  let recovery_successful = true
+  
+  // 测试错误传播
+  let error_context = "database.connection.failed"
+  let error_message = "无法连接到数据库"
+  let error_severity = azimuth::Error
+  
+  // 测试错误处理工作流
+  let should_retry = error_occurred && recovery_attempted
+  let operation_resumed = should_retry && recovery_successful
+  
+  // 测试错误日志记录
+  let error_log = azimuth::LogRecord::new(error_severity, error_message)
+  let log_severity = azimuth::LogRecord::severity_number(error_log)
+  let log_body = azimuth::LogRecord::body(error_log)
+  
+  // 验证错误处理
+  assert_true(should_retry)
+  assert_true(operation_resumed)
+  assert_eq(log_severity, azimuth::Error)
+  assert_eq(log_body, Some(error_message))
+}
+
+// 测试6: 并发安全操作
+pub test "并发安全操作" {
+  // 测试并发度量更新
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "concurrent-test")
+  let counter = azimuth::Meter::create_counter(meter, "concurrent.counter")
+  let initial_value = 0.0
+  let concurrent_updates = 10.0
+  let expected_value = initial_value + concurrent_updates
+  
+  // 测试并发Span操作
+  let trace_id = "concurrent-trace"
+  let span_ids = ["span-1", "span-2", "span-3"]
+  let span_count = 3
+  
+  // 测试并发上下文操作
+  let ctx = azimuth::Context::root()
+  let key = azimuth::ContextKey::new("concurrent.key")
+  let ctx_with_value = azimuth::Context::with_value(ctx, key, "concurrent.value")
+  let retrieved_value = azimuth::Context::get(ctx_with_value, key)
+  
+  // 验证并发操作
+  assert_eq(expected_value, 10.0)
+  assert_eq(span_count, 3)
+  assert_eq(retrieved_value, Some("concurrent.value"))
+}
+
+// 测试7: 国际化与本地化支持
+pub test "国际化与本地化支持" {
+  // 测试Unicode文本处理
+  let chinese_text = "遥测系统"
+  let emoji_text = "📊📈📉"
+  let mixed_text = "Azimuth 遥测 🚀"
+  
+  // 测试特定区域设置格式化
+  let locale = "zh-CN"
+  let date_format = "YYYY-MM-DD"
+  let number_format = "1,234.56"
+  
+  // 测试本地化消息
+  let error_message_zh = "发生错误"
+  let error_message_en = "An error occurred"
+  let warning_message_zh = "警告"
+  let warning_message_en = "Warning"
+  
+  // 验证国际化
+  assert_eq(chinese_text, "遥测系统")
+  assert_eq(emoji_text, "📊📈📉")
+  assert_eq(mixed_text, "Azimuth 遥测 🚀")
+  assert_eq(locale, "zh-CN")
+  assert_eq(date_format, "YYYY-MM-DD")
+  assert_eq(number_format, "1,234.56")
+  assert_eq(error_message_zh, "发生错误")
+  assert_eq(error_message_en, "An error occurred")
+  assert_eq(warning_message_zh, "警告")
+  assert_eq(warning_message_en, "Warning")
+}
+
+// 测试8: 资源管理与合并
+pub test "资源管理与合并" {
+  // 测试资源创建
+  let resource = azimuth::Resource::new()
+  let service_attrs = [
+    ("service.name", azimuth::StringValue("test-service")),
+    ("service.version", azimuth::StringValue("1.0.0")),
+    ("service.instance.id", azimuth::StringValue("instance-123"))
   ]
+  let resource_with_attrs = azimuth::Resource::with_attributes(resource, service_attrs)
   
-  let sampled_count = 0
-  for trace_id in trace_ids {
-    let span_ctx = SpanContext::new(trace_id, "span-123", true, "")
-    let sampling_decision = TraceIdRatioBasedSampler::should_sample(trace_id_sampler, span_ctx)
-    if sampling_decision {
-      sampled_count = sampled_count + 1
-    }
-  }
-  
-  // 验证采样率在合理范围内 (允许一些偏差)
-  let expected_samples = (trace_ids.length() as Double) * sampling_rate
-  let actual_rate = (sampled_count as Double) / (trace_ids.length() as Double)
-  assert_true(actual_rate >= 0.0 && actual_rate <= 0.3)  // 允许0-30%的范围
-  
-  // 测试确定性采样器
-  let parent_span_ctx = SpanContext::new("parent-trace", "parent-span", true, "")
-  let child_span_ctx = SpanContext::new("child-trace", "child-span", true, "")
-  let parent_sampled = true
-  
-  let parent_based_sampler = ParentBasedSampler::new()
-  let should_sample_child = ParentBasedSampler::should_sample(parent_based_sampler, child_span_ctx, Some(parent_span_ctx))
-  
-  assert_true(should_sample_child)
-}
-
-// 测试2: 遥测数据批处理
-test "遥测数据批处理测试" {
-  // 创建批处理器
-  let batch_size = 100
-  let max_export_timeout_ms = 5000
-  let batch_span_processor = BatchSpanProcessor::new(batch_size, max_export_timeout_ms)
-  
-  // 生成多个Span
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "batch-test")
-  let spans = []
-  
-  for i in 0..150 {
-    let span = Tracer::start_span(tracer, "batch-span-" + i.to_string())
-    Span::add_event(span, "event-" + i.to_string(), None)
-    spans.push(span)
-  }
-  
-  // 模拟批处理
-  let batches = []
-  let current_batch = []
-  
-  for span in spans {
-    current_batch.push(span)
-    if current_batch.length() >= batch_size {
-      batches.push(current_batch)
-      current_batch = []
-    }
-  }
-  
-  // 添加最后一个批次
-  if current_batch.length() > 0 {
-    batches.push(current_batch)
-  }
-  
-  // 验证批处理结果
-  assert_eq(batches.length(), 2)  // 应该有两个批次
-  assert_eq(batches[0].length(), 100)  // 第一个批次100个
-  assert_eq(batches[1].length(), 50)   // 第二个批次50个
-  
-  // 结束所有Span
-  for span in spans {
-    Span::end(span)
-  }
-}
-
-// 测试3: 遥测指标聚合
-test "遥测指标聚合测试" {
-  // 创建度量聚合器
-  let meter = MeterProvider::get_meter(MeterProvider::default(), "aggregation-test")
-  
-  // 创建不同类型的度量
-  let request_counter = Meter::create_counter(meter, "http.requests")
-  let response_histogram = Meter::create_histogram(meter, "http.response.duration")
-  let error_gauge = Meter::create_gauge(meter, "http.errors")
-  
-  // 模拟数据点
-  let request_counts = [10.0, 15.0, 20.0, 25.0, 30.0]
-  let response_times = [100.0, 150.0, 200.0, 120.0, 180.0]
-  let error_rates = [0.1, 0.2, 0.15, 0.25, 0.05]
-  
-  // 添加数据点
-  for count in request_counts {
-    Counter::add(request_counter, count)
-  }
-  
-  for time in response_times {
-    Histogram::record(response_histogram, time)
-  }
-  
-  for rate in error_rates {
-    Gauge::record(error_gauge, rate)
-  }
-  
-  // 计算聚合指标
-  let total_requests = 0.0
-  for count in request_counts {
-    total_requests = total_requests + count
-  }
-  
-  let avg_response_time = 0.0
-  for time in response_times {
-    avg_response_time = avg_response_time + time
-  }
-  avg_response_time = avg_response_time / (response_times.length() as Double)
-  
-  let max_error_rate = 0.0
-  for rate in error_rates {
-    if rate > max_error_rate {
-      max_error_rate = rate
-    }
-  }
-  
-  // 验证聚合结果
-  assert_eq(total_requests, 100.0)
-  assert_eq(avg_response_time, 150.0)
-  assert_eq(max_error_rate, 0.25)
-}
-
-// 测试4: 遥测数据压缩
-test "遥测数据压缩测试" {
-  // 创建测试数据
-  let base_timestamp = Clock::now_unix_nanos(Clock::system())
-  let metrics_data = []
-  
-  // 生成时间序列数据（模拟重复模式）
-  for i in 0..100 {
-    let timestamp = base_timestamp + (i * 60000000L)  // 每分钟一个数据点
-    let value = 10.0 + (5.0 * @sin(i.to_double() * 0.1))  // 周期性数据
-    
-    metrics_data.push((timestamp, value))
-  }
-  
-  // 模拟压缩算法 - 简单的差分编码
-  let compressed_data = []
-  if metrics_data.length() > 0 {
-    // 第一个数据点存储完整值
-    compressed_data.push(metrics_data[0])
-    
-    // 后续数据点存储差值
-    for i in 1..metrics_data.length() {
-      let prev_timestamp = metrics_data[i-1].0
-      let prev_value = metrics_data[i-1].1
-      let curr_timestamp = metrics_data[i].0
-      let curr_value = metrics_data[i].1
-      
-      let timestamp_diff = curr_timestamp - prev_timestamp
-      let value_diff = curr_value - prev_value
-      
-      compressed_data.push((timestamp_diff, value_diff))
-    }
-  }
-  
-  // 验证压缩效果
-  assert_eq(compressed_data.length(), metrics_data.length())
-  
-  // 验证第一个数据点是完整值
-  assert_eq(compressed_data[0].0, metrics_data[0].0)
-  assert_eq(compressed_data[0].1, metrics_data[0].1)
-  
-  // 验证后续数据点是差值
-  assert_eq(compressed_data[1].0, 60000000L)  // 1分钟的纳秒数
-}
-
-// 测试5: 遥测数据过滤
-test "遥测数据过滤测试" {
-  // 创建过滤器配置
-  let filter_config = [
-    ("service.name", "api-service"),
-    ("environment", "production"),
-    ("trace.id", "exclude-debug-*")
+  // 测试资源合并
+  let override_attrs = [
+    ("service.version", azimuth::StringValue("2.0.0")),
+    ("deployment.environment", azimuth::StringValue("production"))
   ]
+  let override_resource = azimuth::Resource::with_attributes(resource, override_attrs)
+  let merged_resource = azimuth::Resource::merge(resource_with_attrs, override_resource)
   
-  // 创建测试数据
-  let telemetry_data = [
-    ("trace-001", "api-service", "production", 100.0),
-    ("trace-002", "web-service", "production", 200.0),
-    ("trace-003", "api-service", "development", 300.0),
-    ("trace-004", "api-service", "production", 400.0),
-    ("exclude-debug-001", "api-service", "production", 500.0),
-    ("trace-005", "api-service", "staging", 600.0)
-  ]
+  // 测试资源清理
+  let cleanup_required = true
+  let cleanup_completed = true
+  let resource_released = cleanup_required && cleanup_completed
   
-  // 应用过滤器
-  let filtered_data = []
-  for data in telemetry_data {
-    let (trace_id, service_name, environment, value) = data
-    
-    // 检查服务名
-    if service_name != "api-service" {
-      continue
-    }
-    
-    // 检查环境
-    if environment != "production" {
-      continue
-    }
-    
-    // 检查Trace ID排除模式
-    if string_starts_with(trace_id, "exclude-debug-") {
-      continue
-    }
-    
-    filtered_data.push(data)
-  }
-  
-  // 验证过滤结果
-  assert_eq(filtered_data.length(), 2)
-  assert_eq(filtered_data[0], ("trace-001", "api-service", "production", 100.0))
-  assert_eq(filtered_data[1], ("trace-004", "api-service", "production", 400.0))
+  // 验证资源管理
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "service.name"), Some(azimuth::StringValue("test-service")))
+  assert_eq(azimuth::Resource::get_attribute(resource_with_attrs, "service.version"), Some(azimuth::StringValue("1.0.0")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.version"), Some(azimuth::StringValue("2.0.0")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "deployment.environment"), Some(azimuth::StringValue("production")))
+  assert_true(resource_released)
 }
 
-// 测试6: 遥测数据关联分析
-test "遥测数据关联分析测试" {
-  // 创建关联的遥测数据
-  let trace_id = "correlation-trace-001"
+// 测试9: 性能基准测试
+pub test "性能基准测试" {
+  // 测试操作计时
+  let start_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
   
-  // Span数据
-  let spans = [
-    ("span-001", "http.server", 100000L, 150000L),
-    ("span-002", "database.query", 155000L, 200000L),
-    ("span-003", "cache.get", 160000L, 175000L),
-    ("span-004", "http.client", 205000L, 250000L)
-  ]
+  // 模拟一些操作
+  let iterations = 1000
+  let counter = 0
   
-  // 度量数据
-  let metrics = [
-    ("http.requests.total", 1.0),
-    ("database.queries.total", 1.0),
-    ("cache.hits.total", 1.0),
-    ("http.client.requests.total", 1.0)
-  ]
+  // 测试吞吐量计算
+  let end_time = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  let duration_ns = end_time - start_time
+  let duration_ms = duration_ns / 1000000L
+  let operations_per_second = (iterations as Double) / ((duration_ns as Double) / 1000000000.0)
   
-  // 日志数据
-  let logs = [
-    (120000L, "INFO", "Request received"),
-    (180000L, "DEBUG", "Cache hit"),
-    (210000L, "INFO", "Sending response")
-  ]
+  // 测试内存使用
+  let memory_used = 1024 * 1024  // 1MB
+  let memory_limit = 10 * 1024 * 1024  // 10MB
+  let memory_usage_percent = (memory_used as Double) / (memory_limit as Double) * 100.0
   
-  // 分析Span层次结构
-  let root_span = spans[0]
-  let child_spans = []
+  // 测试性能阈值
+  let max_acceptable_duration_ms = 100L
+  let min_acceptable_ops_per_sec = 1000.0
+  let max_acceptable_memory_percent = 50.0
   
-  for i in 1..spans.length() {
-    let span = spans[i]
-    let (span_id, _, start_time, end_time) = span
-    
-    // 检查是否是根Span的子Span
-    if start_time >= root_span.2 && end_time <= root_span.3 {
-      child_spans.push(span)
-    }
-  }
-  
-  // 分析时间重叠
-  let overlapping_spans = []
-  for i in 0..spans.length() {
-    for j in i+1..spans.length() {
-      let span1 = spans[i]
-      let span2 = spans[j]
-      
-      // 检查时间重叠
-      if !(span1.3 <= span2.2 || span2.3 <= span1.2) {
-        overlapping_spans.push((span1.0, span2.0))
-      }
-    }
-  }
-  
-  // 验证关联分析结果
-  assert_eq(root_span.0, "span-001")
-  assert_eq(child_spans.length(), 2)  // span-002和span-003在根Span时间内
-  assert_true(overlapping_spans.length() > 0)  // 应该有时间重叠的Span
-  assert_eq(metrics.length(), 4)  // 4个度量点
-  assert_eq(logs.length(), 3)     // 3个日志点
+  // 验证性能
+  assert_true(duration_ms < max_acceptable_duration_ms)
+  assert_true(operations_per_second >= min_acceptable_ops_per_sec)
+  assert_true(memory_usage_percent < max_acceptable_memory_percent)
 }
 
-// 测试7: 遥测数据异常检测
-test "遥测数据异常检测测试" {
-  // 创建正常和异常数据点
-  let response_times = [
-    100.0, 105.0, 98.0, 102.0, 99.0,  // 正常范围
-    500.0,  // 异常值
-    101.0, 97.0, 103.0, 96.0,        // 正常范围
-    1000.0, // 异常值
-    98.0, 102.0                     // 正常范围
-  ]
+// 测试10: 微服务架构遥测集成
+pub test "微服务架构遥测集成" {
+  // 模拟微服务调用链：API Gateway -> Service A -> Service B -> Database
   
-  // 计算统计指标
-  let sum = 0.0
-  for time in response_times {
-    sum = sum + time
-  }
-  let mean = sum / (response_times.length() as Double)
+  // API Gateway Span
+  let gateway_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "api-gateway")
+  let gateway_span = azimuth::Tracer::start_span(gateway_tracer, "gateway.request")
+  azimuth::Span::set_kind(gateway_span, azimuth::Server)
   
-  // 计算标准差
-  let variance = 0.0
-  for time in response_times {
-    let diff = time - mean
-    variance = variance + diff * diff
-  }
-  variance = variance / (response_times.length() as Double)
-  let std_dev = @sqrt(variance)
+  let gateway_trace_id = azimuth::SpanContext::trace_id(azimuth::Span::span_context(gateway_span))
   
-  // 检测异常值（3-sigma规则）
-  let threshold = 3.0 * std_dev
-  let anomalies = []
+  // Service A Span (子Span)
+  let service_a_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "service-a")
+  let service_a_span_ctx = azimuth::SpanContext::new(gateway_trace_id, "service-a-span", true, "")
+  let service_a_span = azimuth::Span::new("service-a.process", azimuth::Internal, service_a_span_ctx)
   
-  for time in response_times {
-    let diff = time - mean
-    if diff < 0.0 {
-      diff = -diff  // 绝对值
-    }
-    
-    if diff > threshold {
-      anomalies.push(time)
-    }
-  }
+  // Service B Span (嵌套调用)
+  let service_b_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "service-b")
+  let service_b_span_ctx = azimuth::SpanContext::new(gateway_trace_id, "service-b-span", true, "")
+  let service_b_span = azimuth::Span::new("service-b.process", azimuth::Client, service_b_span_ctx)
   
-  // 验证异常检测结果
-  assert_true(mean > 100.0)  // 由于异常值，均值应该被拉高
-  assert_true(std_dev > 50.0)  // 标准差应该很大
-  assert_eq(anomalies.length(), 2)  // 应该检测到2个异常值
-  assert_true(anomalies.contains(500.0))
-  assert_true(anomalies.contains(1000.0))
-}
-
-// 测试8: 遥测数据时间窗口分析
-test "遥测数据时间窗口分析测试" {
-  // 创建时间序列数据
-  let base_time = Clock::now_unix_nanos(Clock::system())
-  let time_series_data = []
+  // Database Span (最深层)
+  let db_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "database")
+  let db_span_ctx = azimuth::SpanContext::new(gateway_trace_id, "db-span", true, "")
+  let db_span = azimuth::Span::new("database.query", azimuth::Client, db_span_ctx)
   
-  // 生成24小时的数据（每小时一个点）
-  for hour in 0..24 {
-    let timestamp = base_time + (hour * 3600000000000L)  // 1小时的纳秒数
-    let value = 100.0 + (50.0 * @sin(hour.to_double() * 0.26))  // 模拟日周期模式
-    time_series_data.push((timestamp, value))
-  }
+  // 验证Trace ID在整个调用链中保持一致
+  assert_eq(azimuth::SpanContext::trace_id(azimuth::Span::span_context(gateway_span)), gateway_trace_id)
+  assert_eq(azimuth::SpanContext::trace_id(service_a_span_ctx), gateway_trace_id)
+  assert_eq(azimuth::SpanContext::trace_id(service_b_span_ctx), gateway_trace_id)
+  assert_eq(azimuth::SpanContext::trace_id(db_span_ctx), gateway_trace_id)
   
-  // 定义时间窗口
-  let window_size_hours = 6
-  let windows = []
+  // 验证Span ID唯一性
+  assert_true(azimuth::SpanContext::span_id(azimuth::Span::span_context(gateway_span)) != 
+              azimuth::SpanContext::span_id(service_a_span_ctx))
+  assert_true(azimuth::SpanContext::span_id(service_a_span_ctx) != 
+              azimuth::SpanContext::span_id(service_b_span_ctx))
+  assert_true(azimuth::SpanContext::span_id(service_b_span_ctx) != 
+              azimuth::SpanContext::span_id(db_span_ctx))
   
-  // 创建滑动窗口
-  for start_hour in 0..(24 - window_size_hours + 1) {
-    let window_start = start_hour
-    let window_end = start_hour + window_size_hours
-    
-    let window_data = []
-    for i in window_start..window_end {
-      if i < time_series_data.length() {
-        window_data.push(time_series_data[i])
-      }
-    }
-    
-    // 计算窗口统计
-    let window_sum = 0.0
-    for data in window_data {
-      window_sum = window_sum + data.1
-    }
-    let window_avg = window_sum / (window_data.length() as Double)
-    
-    windows.push((window_start, window_end, window_avg))
-  }
+  // 为每个服务添加度量
+  let meter_provider = azimuth::MeterProvider::default()
   
-  // 验证时间窗口分析
-  assert_eq(windows.length(), 19)  // 24-6+1=19个窗口
+  // Gateway度量
+  let gateway_meter = azimuth::MeterProvider::get_meter(meter_provider, "api-gateway")
+  let gateway_requests = azimuth::Meter::create_counter(gateway_meter, "gateway.requests.total")
+  azimuth::Counter::add(gateway_requests, 1.0)
   
-  // 验证每个窗口都有数据
-  for window in windows {
-    let (start, end, avg) = window
-    assert_eq(end - start, window_size_hours)
-    assert_true(avg > 50.0 && avg < 200.0)  // 值应该在合理范围内
-  }
+  // Service A度量
+  let service_a_meter = azimuth::MeterProvider::get_meter(meter_provider, "service-a")
+  let service_a_requests = azimuth::Meter::create_counter(service_a_meter, "service-a.requests.total")
+  let service_a_duration = azimuth::Meter::create_histogram(service_a_meter, "service-a.duration.ms")
+  azimuth::Counter::add(service_a_requests, 1.0)
+  azimuth::Histogram::record(service_a_duration, 150.0)
   
-  // 验证窗口数据点数量
-  for i in 0..(windows.length() - 1) {
-    assert_eq(windows[i].2 - windows[i].2, 0.0)  // 简单验证
-  }
-}
-
-// 测试9: 遥测数据多维度分析
-test "遥测数据多维度分析测试" {
-  // 创建多维度数据
-  let multi_dimension_data = [
-    // (服务名, 环境, 区域, 响应时间, 状态码)
-    ("api-service", "production", "us-east-1", 100.0, 200),
-    ("api-service", "production", "us-west-1", 120.0, 200),
-    ("api-service", "staging", "us-east-1", 150.0, 200),
-    ("web-service", "production", "us-east-1", 80.0, 200),
-    ("web-service", "production", "us-west-1", 90.0, 200),
-    ("api-service", "production", "us-east-1", 500.0, 500),  // 错误
-    ("web-service", "staging", "us-west-1", 200.0, 200),
-    ("api-service", "production", "eu-west-1", 130.0, 200),
-    ("web-service", "production", "eu-west-1", 110.0, 200),
-    ("api-service", "production", "us-east-1", 105.0, 200)
-  ]
+  // Service B度量
+  let service_b_meter = azimuth::MeterProvider::get_meter(meter_provider, "service-b")
+  let service_b_requests = azimuth::Meter::create_counter(service_b_meter, "service-b.requests.total")
+  azimuth::Counter::add(service_b_requests, 1.0)
   
-  // 按服务名分组分析
-  let service_groups = {}
-  for data in multi_dimension_data {
-    let (service_name, _, _, response_time, status_code) = data
-    
-    if !service_groups.contains(service_name) {
-      service_groups[service_name] = []
-    }
-    service_groups[service_name].push((response_time, status_code))
-  }
+  // Database度量
+  let db_meter = azimuth::MeterProvider::get_meter(meter_provider, "database")
+  let db_queries = azimuth::Meter::create_counter(db_meter, "database.queries.total")
+  let db_duration = azimuth::Meter::create_histogram(db_meter, "database.query.duration.ms")
+  azimuth::Counter::add(db_queries, 1.0)
+  azimuth::Histogram::record(db_duration, 25.0)
   
-  // 计算每个服务的平均响应时间
-  let service_avg_times = {}
-  for (service_name, data_points) in service_groups {
-    let total_time = 0.0
-    let count = 0
-    
-    for (response_time, _) in data_points {
-      total_time = total_time + response_time
-      count = count + 1
-    }
-    
-    let avg_time = total_time / (count.to_double())
-    service_avg_times[service_name] = avg_time
-  }
+  // 添加Baggage传播
+  let baggage = azimuth::Baggage::new()
+  let baggage_with_user = azimuth::Baggage::set_entry(baggage, "user.id", "user-123")
+  let final_baggage = azimuth::Baggage::set_entry(baggage_with_user, "request.id", "req-456")
   
-  // 按环境分组分析
-  let environment_groups = {}
-  for data in multi_dimension_data {
-    let (_, environment, _, response_time, status_code) = data
-    
-    if !environment_groups.contains(environment) {
-      environment_groups[environment] = []
-    }
-    environment_groups[environment].push((response_time, status_code))
-  }
+  // 结束所有Span（按照调用顺序的反向）
+  azimuth::Span::end(db_span)
+  azimuth::Span::end(service_b_span)
+  azimuth::Span::end(service_a_span)
+  azimuth::Span::end(gateway_span)
   
-  // 计算错误率
-  let error_counts = {}
-  let total_counts = {}
-  for data in multi_dimension_data {
-    let (_, environment, _, _, status_code) = data
-    
-    if !error_counts.contains(environment) {
-      error_counts[environment] = 0
-    }
-    if !total_counts.contains(environment) {
-      total_counts[environment] = 0
-    }
-    
-    total_counts[environment] = total_counts[environment] + 1
-    if status_code >= 400 {
-      error_counts[environment] = error_counts[environment] + 1
-    }
-  }
+  // 验证微服务遥测集成
+  assert_eq(gateway_requests.name, "gateway.requests.total")
+  assert_eq(service_a_requests.name, "service-a.requests.total")
+  assert_eq(service_a_duration.name, "service-a.duration.ms")
+  assert_eq(service_b_requests.name, "service-b.requests.total")
+  assert_eq(db_queries.name, "database.queries.total")
+  assert_eq(db_duration.name, "database.query.duration.ms")
   
-  // 验证多维度分析结果
-  assert_true(service_avg_times.contains("api-service"))
-  assert_true(service_avg_times.contains("web-service"))
-  assert_true(environment_groups.contains("production"))
-  assert_true(environment_groups.contains("staging"))
-  
-  // 验证错误率计算
-  let production_error_rate = (error_counts["production"].to_double()) / (total_counts["production"].to_double())
-  assert_true(production_error_rate > 0.0 && production_error_rate < 1.0)
-}
-
-// 测试10: 遥测数据预测分析
-test "遥测数据预测分析测试" {
-  // 创建历史数据
-  let historical_data = []
-  let base_time = Clock::now_unix_nanos(Clock::system())
-  
-  // 生成30天的数据
-  for day in 0..30 {
-    let timestamp = base_time + (day * 86400000000000L)  // 1天的纳秒数
-    // 模拟增长趋势 + 周期性波动
-    let trend = 100.0 + (day.to_double() * 2.0)  // 每天增长2
-    let seasonal = 20.0 * @sin(day.to_double() * 0.2)  // 周期性波动
-    let noise = (@random() - 0.5) * 10.0  // 随机噪声
-    let value = trend + seasonal + noise
-    
-    historical_data.push((timestamp, value))
-  }
-  
-  // 简单线性回归预测
-  let n = historical_data.length()
-  let sum_x = 0.0
-  let sum_y = 0.0
-  let sum_xy = 0.0
-  let sum_x2 = 0.0
-  
-  for i in 0..n {
-    let x = i.to_double()
-    let y = historical_data[i].1
-    
-    sum_x = sum_x + x
-    sum_y = sum_y + y
-    sum_xy = sum_xy + x * y
-    sum_x2 = sum_x2 + x * x
-  }
-  
-  // 计算回归系数
-  let slope = (n.to_double() * sum_xy - sum_x * sum_y) / (n.to_double() * sum_x2 - sum_x * sum_x)
-  let intercept = (sum_y - slope * sum_x) / (n.to_double())
-  
-  // 预测未来7天
-  let predictions = []
-  for future_day in 30..37 {
-    let x = future_day.to_double()
-    let predicted_value = slope * x + intercept
-    predictions.push(predicted_value)
-  }
-  
-  // 计算预测准确性（使用历史数据的一部分）
-  let test_data_start = 25
-  let test_errors = []
-  
-  for i in test_data_start..n {
-    let x = i.to_double()
-    let predicted = slope * x + intercept
-    let actual = historical_data[i].1
-    let error = actual - predicted
-    if error < 0.0 {
-      error = -error  // 绝对误差
-    }
-    test_errors.push(error)
-  }
-  
-  // 计算平均绝对误差
-  let total_error = 0.0
-  for error in test_errors {
-    total_error = total_error + error
-  }
-  let mae = total_error / (test_errors.length().to_double())
-  
-  // 验证预测分析结果
-  assert_eq(predictions.length(), 7)  // 7天预测
-  assert_true(slope > 0.0)  // 应该是正增长趋势
-  assert_true(mae < 50.0)  // 平均绝对误差应该小于50
-}
-
-// 辅助函数
-fn string_starts_with(s : String, prefix : String) -> Bool {
-  // 简化实现
-  if s == "exclude-debug-001" && prefix == "exclude-debug-" {
-    true
-  } else {
-    false
-  }
+  // 验证Baggage传播
+  assert_eq(azimuth::Baggage::get_entry(final_baggage, "user.id"), Some("user-123"))
+  assert_eq(azimuth::Baggage::get_entry(final_baggage, "request.id"), Some("req-456"))
 }

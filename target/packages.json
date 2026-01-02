@@ -165,6 +165,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_test/azimuth_specialized_comprehensive_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_test/enhanced_quality_tests.mbt": {
           "backend": [
             "Wasm",
