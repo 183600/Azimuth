@@ -1,7 +1,74 @@
-// Azimuth 企业级功能测试
-// 专注于测试多租户支持、配额管理和审计日志等企业级功能
+// Azimuth 高级功能测试 - 第二部分
+// 包含高级分析功能和企业级功能测试
 
-// 测试1: 多租户隔离和管理
+// 测试1: 机器学习模型集成
+test "机器学习模型集成测试" {
+  // 创建ML模型管理器
+  let ml_manager = @azimuth.analytics.MLModelManager.create({
+    "model.repository": "local",
+    "inference.engine": "onnx",
+    "cache.enabled": true,
+    "cache.size": 100
+  })
+  
+  // 验证ML管理器创建成功
+  assert_true(@azimuth.analytics.MLModelManager.is_valid(ml_manager))
+  
+  // 加载预训练的异常检测模型
+  let model_load_result = ml_manager.load_model("anomaly_detection", {
+    "model.path": "/models/anomaly_detection.onnx",
+    "model.version": "1.0.0",
+    "input.shape": [1, 10],
+    "output.shape": [1, 2]  // [normal, anomaly]概率
+  })
+  
+  // 验证模型加载成功
+  assert_true(model_load_result.success)
+  
+  // 准备测试数据
+  let normal_metrics = [
+    [10.5, 20.3, 15.7, 30.2, 25.1, 18.9, 22.4, 19.8, 21.3, 17.6],
+    [12.1, 18.7, 16.3, 28.9, 24.5, 20.2, 21.8, 18.5, 22.7, 19.1],
+    [11.3, 19.5, 14.9, 29.7, 23.8, 19.6, 22.1, 19.2, 21.9, 18.3]
+  ]
+  
+  let anomaly_metrics = [
+    [45.7, 80.3, 65.2, 90.1, 75.8, 85.4, 70.6, 88.9, 72.3, 82.1],
+    [50.2, 85.7, 70.4, 95.3, 80.1, 89.6, 75.2, 91.4, 77.8, 86.9]
+  ]
+  
+  // 测试正常数据的预测
+  for metrics in normal_metrics {
+    let prediction = ml_manager.predict("anomaly_detection", metrics)
+    
+    // 验证预测结果
+    assert_true(prediction.success)
+    assert_eq(prediction.output.length(), 2)
+    
+    // 正常数据应该有较高的正常概率
+    let normal_prob = prediction.output[0]
+    let anomaly_prob = prediction.output[1]
+    assert_true(normal_prob > 0.7)
+    assert_true(anomaly_prob < 0.3)
+  }
+  
+  // 测试异常数据的预测
+  for metrics in anomaly_metrics {
+    let prediction = ml_manager.predict("anomaly_detection", metrics)
+    
+    // 验证预测结果
+    assert_true(prediction.success)
+    assert_eq(prediction.output.length(), 2)
+    
+    // 异常数据应该有较高的异常概率
+    let normal_prob = prediction.output[0]
+    let anomaly_prob = prediction.output[1]
+    assert_true(normal_prob < 0.3)
+    assert_true(anomaly_prob > 0.7)
+  }
+}
+
+// 测试2: 多租户隔离和管理
 test "多租户隔离和管理测试" {
   // 创建多租户管理器
   let tenant_manager = @azimuth.enterprise.TenantManager.create({
@@ -36,21 +103,9 @@ test "多租户隔离和管理测试" {
     }
   })
   
-  let tenant3 = tenant_manager.create_tenant({
-    "id": "tenant-003",
-    "name": "Small Business LLC",
-    "plan": "basic",
-    "resource.limits": {
-      "max.spans.per.second": 1000,
-      "max.metrics.per.minute": 5000,
-      "max.storage.gb": 10
-    }
-  })
-  
   // 验证租户创建成功
   assert_true(tenant1.success)
   assert_true(tenant2.success)
-  assert_true(tenant3.success)
   
   // 获取租户信息
   let tenant1_info = tenant_manager.get_tenant("tenant-001")
@@ -79,7 +134,7 @@ test "多租户隔离和管理测试" {
   span2.end()
 }
 
-// 测试2: 资源配额管理
+// 测试3: 资源配额管理
 test "资源配额管理测试" {
   // 创建配额管理器
   let quota_manager = @azimuth.enterprise.QuotaManager.create({
@@ -97,13 +152,6 @@ test "资源配额管理测试" {
     "metrics.per.minute": 10000,
     "storage.gb": 50,
     "api.calls.per.day": 100000
-  })
-  
-  quota_manager.set_quota("tenant-002", {
-    "spans.per.second": 500,
-    "metrics.per.minute": 5000,
-    "storage.gb": 25,
-    "api.calls.per.day": 50000
   })
   
   // 测试配额检查
@@ -131,14 +179,9 @@ test "资源配额管理测试" {
   assert_true(warning_notification != null)
   assert_eq(warning_notification.metric, "spans.per.second")
   assert_true(warning_notification.usage_percentage > 0.8)
-  
-  // 测试配额重置
-  quota_manager.reset_quota("tenant-001", "spans.per.second")
-  let reset_usage = quota_manager.get_usage("tenant-001")
-  assert_eq(reset_usage["spans.per.second"].current, 0)
 }
 
-// 测试3: 企业级审计日志
+// 测试4: 企业级审计日志
 test "企业级审计日志测试" {
   // 创建审计日志管理器
   let audit_manager = @azimuth.enterprise.AuditManager.create({
@@ -181,26 +224,6 @@ test "企业级审计日志测试" {
       "resource.id": "high.error.rate",
       "action": "update",
       "changes": {"threshold": "5.0->3.0", "severity": "warning->critical"}
-    },
-    {
-      "timestamp": @azimuth.time.now() + 3000,
-      "event.type": "data.export",
-      "user.id": "user-002",
-      "tenant.id": "tenant-001",
-      "export.type": "csv",
-      "date.range": "30.days",
-      "record.count": 150000,
-      "result": "success"
-    },
-    {
-      "timestamp": @azimuth.time.now() + 4000,
-      "event.type": "permission.change",
-      "user.id": "admin-001",
-      "tenant.id": "tenant-001",
-      "target.user": "user-003",
-      "change.type": "role.grant",
-      "role": "viewer",
-      "result": "success"
     }
   ]
   
@@ -235,126 +258,6 @@ test "企业级审计日志测试" {
     let signature_valid = audit_manager.verify_signature(event)
     assert_true(signature_valid)
   }
-  
-  // 测试合规性报告
-  let compliance_report = audit_manager.generate_compliance_report({
-    "standard": "GDPR",
-    "tenant.id": "tenant-001",
-    "period": "last.30.days"
-  })
-  
-  // 验证合规性报告
-  assert_true(compliance_report.has_key("data.access.events"))
-  assert_true(compliance_report.has_key("data.export.events"))
-  assert_true(compliance_report.has_key("user.activity.events"))
-  assert_true(compliance_report.has_key("config.changes"))
-  
-  // 验证报告完整性
-  assert_true(compliance_report["data.access.events"] >= 0)
-  assert_true(compliance_report["data.export.events"] >= 0)
-}
-
-// 测试4: 企业级数据保留和归档
-test "企业级数据保留和归档测试" {
-  // 创建数据保留管理器
-  let retention_manager = @azimuth.enterprise.RetentionManager.create({
-    "default.retention.days": 90,
-    "cold.storage.enabled": true,
-    "archive.compression": "gzip",
-    "compliance.lock": true
-  })
-  
-  // 验证保留管理器创建成功
-  assert_true(@azimuth.enterprise.RetentionManager.is_valid(retention_manager))
-  
-  // 设置不同类型数据的保留策略
-  retention_manager.set_retention_policy("tracing.data", {
-    "retention.days": 30,
-    "cold.storage.after.days": 7,
-    "archive.compression": true
-  })
-  
-  retention_manager.set_retention_policy("metrics.data", {
-    "retention.days": 90,
-    "cold.storage.after days": 30,
-    "archive.compression": true,
-    "downsampling.enabled": true
-  })
-  
-  retention_manager.set_retention_policy("audit.logs", {
-    "retention.days": 2555,  // 7年
-    "cold.storage.after.days": 365,
-    "archive.compression": true,
-    "compliance.lock": true
-  })
-  
-  // 模拟不同时间的数据
-  let current_time = @azimuth.time.now()
-  let data_samples = [
-    {
-      "id": "data-001",
-      "type": "tracing.data",
-      "created_at": current_time - 5 * 24 * 60 * 60 * 1000,  // 5天前
-      "size.bytes": 1024
-    },
-    {
-      "id": "data-002",
-      "type": "tracing.data", 
-      "created_at": current_time - 10 * 24 * 60 * 60 * 1000,  // 10天前
-      "size.bytes": 2048
-    },
-    {
-      "id": "data-003",
-      "type": "metrics.data",
-      "created_at": current_time - 40 * 24 * 60 * 60 * 1000,  // 40天前
-      "size.bytes": 4096
-    },
-    {
-      "id": "data-004",
-      "type": "audit.logs",
-      "created_at": current_time - 400 * 24 * 60 * 60 * 1000,  // 400天前
-      "size.bytes": 8192
-    }
-  ]
-  
-  // 注册数据样本
-  for data in data_samples {
-    retention_manager.register_data(data)
-  }
-  
-  // 执行保留策略检查
-  let retention_result = retention_manager.enforce_retention_policies()
-  
-  // 验证保留结果
-  assert_true(retention_result.success)
-  assert_true(retention_result.processed_records > 0)
-  
-  // 验证数据分类
-  let hot_data = retention_manager.get_hot_storage_data()
-  let cold_data = retention_manager.get_cold_storage_data()
-  let archived_data = retention_manager.get_archived_data()
-  
-  // 验证数据分布
-  assert_true(hot_data.length() >= 0)
-  assert_true(cold_data.length() >= 0)
-  assert_true(archived_data.length() >= 0)
-  
-  // 验证追踪数据（10天前的应该移到冷存储）
-  let cold_tracing_data = cold_data.filter(d => d.type == "tracing.data")
-  assert_true(cold_tracing_data.length() > 0)
-  
-  // 验证度量数据（40天前的应该移到冷存储）
-  let cold_metrics_data = cold_data.filter(d => d.type == "metrics.data")
-  assert_true(cold_metrics_data.length() > 0)
-  
-  // 验证审计日志（400天前的仍在保留期内，但可能在冷存储）
-  let cold_audit_data = cold_data.filter(d => d.type == "audit.logs")
-  assert_true(cold_audit_data.length() > 0)
-  
-  // 测试数据恢复
-  let recovery_result = retention_manager.restore_data("data-002")
-  assert_true(recovery_result.success)
-  assert_eq(recovery_result.data.id, "data-002")
 }
 
 // 测试5: 企业级服务等级协议(SLA)管理
@@ -376,14 +279,6 @@ test "企业级服务等级协议管理测试" {
     "error.rate.target": 0.1,  // 错误率小于0.1%
     "data.retention.target": 30,  // 30天数据保留
     "support.response.time": 60  // 1小时内支持响应
-  })
-  
-  sla_manager.define_sla("tenant-002", {
-    "availability.target": 99.5,
-    "response.time.p99.target": 1000,
-    "error.rate.target": 0.5,
-    "data.retention.target": 15,
-    "support.response.time": 240
   })
   
   // 模拟一个月的服务指标数据
@@ -441,19 +336,4 @@ test "企业级服务等级协议管理测试" {
   assert_true(availability_violation != null)
   assert_eq(availability_violation.target, 99.9)
   assert_true(availability_violation.actual < availability_violation.target)
-  
-  // 测试补偿计算
-  let penalty_calculation = sla_manager.calculate_penalties("tenant-001")
-  assert_true(penalty_calculation.has_key("total.penalty"))
-  assert_true(penalty_calculation.has_key("service.credits"))
-  assert_true(penalty_calculation["total.penalty"] > 0)
-  
-  // 生成SLA报告
-  let sla_report = sla_manager.generate_sla_report("tenant-001", "monthly")
-  
-  // 验证SLA报告
-  assert_true(sla_report.has_key("executive.summary"))
-  assert_true(sla_report.has_key("detailed.metrics"))
-  assert_true(sla_report.has_key("violations"))
-  assert_true(sla_report.has_key("compensation.details"))
 }
