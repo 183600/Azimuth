@@ -59,40 +59,6 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
   "top.mbt": {
   },
-  "simple_new_tests.mbt": {
-  },
-  "premium_moonbit_tests.mbt": {
-  },
-  "new_enhanced_moonbit_tests.mbt": {
-  },
-  "focused_moonbit_tests.mbt": {
-  },
-  "comprehensive_moonbit_tests.mbt": {
-  },
-  "azimuth_timeseries_data_compression_tests.mbt": {
-  },
-  "azimuth_telemetry_data_lifecycle_management_tests.mbt": {
-  },
-  "azimuth_resource_merge_strategy_tests.mbt": {
-  },
-  "azimuth_network_security_telemetry_tests.mbt": {
-  },
-  "azimuth_microservice_architecture_telemetry_integration_tests.mbt": {
-  },
-  "azimuth_memory_management_resource_cleanup_tests.mbt": {
-  },
-  "azimuth_high_concurrency_telemetry_consistency_tests.mbt": {
-  },
-  "azimuth_error_boundary_tests.mbt": {
-  },
-  "advanced_specialized_tests.mbt": {
-  },
-  "advanced_moonbit_test_cases.mbt": {
-  },
-  "additional_moonbit_tests.mbt": {
-  },
-  "additional_focused_tests.mbt": {
-  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
