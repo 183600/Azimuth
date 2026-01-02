@@ -1,0 +1,17 @@
+{
+  "name": "azimuth/telemetry/new-core-tests",
+  "version": "0.1.0",
+  "description": "New core telemetry system tests",
+  "readme": "New core telemetry system tests for Azimuth",
+  "license": "MIT",
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/183600/Azimuth"
+  },
+  "authors": [],
+  "files": [],
+  "roots": [],
+  "compile": "new_core_tests",
+  "test": "new_core_tests"
+}

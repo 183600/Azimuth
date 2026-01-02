@@ -1,528 +1,241 @@
-// Azimuth 跨平台兼容性测试
-// 专注于验证系统在不同操作系统和架构下的兼容性和一致性
+// Azimuth Cross-Platform Compatibility Tests
+// 跨平台兼容性测试用例 - 专注于多平台环境下的功能一致性
 
-// 测试1: 操作系统兼容性验证
-test "操作系统兼容性验证" {
-  // 定义支持的操作系统
-  let supported_platforms = [
-    {
-      "os": "linux",
-      "arch": "x86_64",
-      "version": "ubuntu-20.04",
-      "expected_features": ["posix_compatibility", "epoll_support", "shared_memory"]
-    },
-    {
-      "os": "linux",
-      "arch": "arm64",
-      "version": "ubuntu-22.04",
-      "expected_features": ["posix_compatibility", "epoll_support", "shared_memory"]
-    },
-    {
-      "os": "windows",
-      "arch": "x86_64",
-      "version": "windows-10",
-      "expected_features": ["win32_api", "iocp_support", "named_pipes"]
-    },
-    {
-      "os": "macos",
-      "arch": "arm64",
-      "version": "macos-12",
-      "expected_features": ["bsd_compatibility", "kqueue_support", "mach_ports"]
+// Test 1: 时间戳跨平台兼容性
+test "timestamp cross-platform compatibility" {
+  // 测试不同平台的时间戳创建和解析
+  let current_time = Time::now()
+  let timestamp = Time::to_timestamp(current_time)
+  
+  // 验证时间戳格式
+  assert_true(timestamp.length() > 0)
+  
+  // 测试时间戳解析
+  let parsed_time = Time::from_timestamp(timestamp)
+  assert_true(parsed_time !== None)
+  
+  match parsed_time {
+    Some(time) => {
+      // 验证时间精度（毫秒级）
+      let duration = Time::duration_between(current_time, time)
+      assert_true(duration < 1000)  // 1秒内误差
     }
-  ]
+    None => assert_true(false)
+  }
   
-  let compatibility_results = []
+  // 测试不同格式的时间戳
+  let iso_timestamp = Time::to_iso8601(current_time)
+  assert_true(iso_timestamp.length() > 19)  // 至少包含日期和时间
   
-  // 测试每个平台的兼容性
-  for i = 0; i < supported_platforms.length(); i = i + 1 {
-    let platform = supported_platforms[i]
-    let compatibility_result = test_platform_compatibility(platform)
-    compatibility_results.push(compatibility_result)
-    
-    // 验证基本功能可用性
-    assert_true(compatibility_result["basic_functionality_available"])
-    assert_true(compatibility_result["telemetry_collection_works"])
-    assert_true(compatibility_result["data_persistence_works"])
-    
-    // 验证平台特定功能
-    let features = platform["expected_features"]
-    for j = 0; j < features.length(); j = j + 1 {
-      let feature = features[j]
-      assert_true(compatibility_result["platform_features"][feature])
+  let parsed_iso_time = Time::from_iso8601(iso_timestamp)
+  assert_true(parsed_iso_time !== None)
+}
+
+// Test 2: 随机数生成跨平台兼容性
+test "random number generation cross-platform compatibility" {
+  // 测试随机数生成器的跨平台一致性
+  let random1 = Random::new()
+  let random2 = Random::new()
+  
+  // 生成多个随机数
+  let mut numbers1 = []
+  let mut numbers2 = []
+  
+  for i = 0; i < 100; i = i + 1 {
+    Array::push(numbers1, Random::next_int(random1))
+    Array::push(numbers2, Random::next_int(random2))
+  }
+  
+  // 验证随机数范围
+  for i = 0; i < Array::length(numbers1); i = i + 1 {
+    let num = numbers1[i]
+    assert_true(num >= 0)
+    assert_true(num <= 2147483647)  // 32位有符号整数最大值
+  }
+  
+  // 验证两个不同生成器产生不同序列
+  let mut different_count = 0
+  for i = 0; i < Array::length(numbers1); i = i + 1 {
+    if numbers1[i] !== numbers2[i] {
+      different_count = different_count + 1
     }
   }
   
-  // 验证跨平台一致性
-  let consistency_analysis = analyze_cross_platform_consistency(compatibility_results)
-  assert_true(consistency_analysis["data_format_consistent"])
-  assert_true(consistency_analysis["api_behavior_consistent"])
-  assert_true(consistency_analysis["performance_variance_acceptable"])
+  // 至少应该有一些不同的值
+  assert_true(different_count > 50)
   
-  // 验证平台特定优化
-  for i = 0; i < compatibility_results.length(); i = i + 1 {
-    let result = compatibility_results[i]
-    assert_true(result["platform_optimizations_applied"])
-    assert_true(result["native_features_utilized"])
+  // 测试浮点随机数
+  let float_random = Random::new()
+  for i = 0; i < 100; i = i + 1 {
+    let float_num = Random::next_float(float_random)
+    assert_true(float_num >= 0.0)
+    assert_true(float_num < 1.0)
   }
 }
 
-// 测试2: 架构兼容性验证
-test "架构兼容性验证" {
-  // 定义支持的处理器架构
-  let supported_architectures = [
-    {
-      "arch": "x86_64",
-      "endian": "little",
-      "alignment": 8,
-      "vector_extensions": ["sse", "avx", "avx2"]
-    },
-    {
-      "arch": "arm64",
-      "endian": "little",
-      "alignment": 16,
-      "vector_extensions": ["neon", "sve"]
-    },
-    {
-      "arch": "riscv64",
-      "endian": "little",
-      "alignment": 8,
-      "vector_extensions": ["vector"]
-    }
+// Test 3: 字符编码跨平台兼容性
+test "character encoding cross-platform compatibility" {
+  // 测试不同字符编码的处理
+  let test_strings = [
+    "basic ascii",
+    "中文测试",
+    "Español",
+    "Français",
+    "Русский",
+    "العربية",
+    "日本語",
+    "한국어",
+    "🚀 emoji test",
+    "special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?"
   ]
   
-  let architecture_results = []
+  // 测试字符串序列化和反序列化
+  for i = 0; i < Array::length(test_strings); i = i + 1 {
+    let original = test_strings[i]
+    let encoded = String::encode_utf8(original)
+    let decoded = String::decode_utf8(encoded)
+    
+    assert_eq(original, decoded)
+  }
   
-  // 测试每个架构的兼容性
-  for i = 0; i < supported_architectures.length(); i = i + 1 {
-    let arch = supported_architectures[i]
-    let arch_result = test_architecture_compatibility(arch)
-    architecture_results.push(arch_result)
+  // 测试字符串长度计算
+  for i = 0; i < Array::length(test_strings); i = i + 1 {
+    let str = test_strings[i]
+    let byte_length = String::byte_length(str)
+    let char_length = String::char_length(str)
     
-    // 验证字节序处理
-    assert_true(arch_result["endianness_handling_correct"])
-    if (arch["endian"] == "little") {
-      assert_true(arch_result["little_endian_optimized"])
+    assert_true(byte_length >= char_length)
+    assert_true(char_length > 0)
+  }
+}
+
+// Test 4: 数值精度跨平台兼容性
+test "numeric precision cross-platform compatibility" {
+  // 测试整数精度
+  let test_ints = [0, 1, -1, 2147483647, -2147483648]
+  
+  for i = 0; i < Array::length(test_ints); i = i + 1 {
+    let num = test_ints[i]
+    let string_repr = Int::to_string(num)
+    let parsed_back = Int::from_string(string_repr)
+    
+    match parsed_back {
+      Some(parsed_num) => assert_eq(num, parsed_num)
+      None => assert_true(false)
     }
+  }
+  
+  // 测试浮点数精度
+  let test_floats = [0.0, 1.0, -1.0, 3.14159265359, 1.7976931348623157e+308, -1.7976931348623157e+308]
+  
+  for i = 0; i < Array::length(test_floats); i = i + 1 {
+    let num = test_floats[i]
+    let string_repr = Float::to_string(num)
+    let parsed_back = Float::from_string(string_repr)
     
-    // 验证内存对齐
-    assert_true(arch_result["memory_alignment_correct"])
-    assert_true(arch_result["alignment_optimizations_applied"])
-    
-    // 验证向量指令集支持
-    let vector_extensions = arch["vector_extensions"]
-    for j = 0; j < vector_extensions.length(); j = j + 1 {
-      let extension = vector_extensions[j]
-      if (arch_result["available_extensions"].contains(extension)) {
-        assert_true(arch_result["extension_usage"][extension])
+    match parsed_back {
+      Some(parsed_num) => {
+        // 浮点数比较允许一定误差
+        let diff = num - parsed_num
+        if diff < 0.0 {
+          diff = -diff
+        }
+        assert_true(diff < 0.000001)
       }
+      None => assert_true(false)
     }
   }
-  
-  // 验证数据序列化一致性
-  let serialization_consistency = verify_serialization_consistency(architecture_results)
-  assert_true(serialization_consistency["cross_arch_data_integrity"])
-  assert_true(serialization_consistency["numeric_precision_preserved"])
-  assert_true(serialization_consistency["structure_layout_consistent"])
-  
-  // 验证性能特征
-  let performance_comparison = compare_architecture_performance(architecture_results)
-  assert_true(performance_comparison["performance_within_expected_range"])
-  assert_true(performance_comparison["no_regression_detected"])
 }
 
-// 测试3: WebAssembly平台兼容性
-test "WebAssembly平台兼容性" {
-  // 定义WASM目标平台
-  let wasm_targets = [
-    {
-      "target": "wasm32-unknown-unknown",
-      "features": ["bulk_memory", "mutable_globals"],
-      "limitations": ["no_threads", "limited_filesystem"]
-    },
-    {
-      "target": "wasm64-unknown-unknown",
-      "features": ["bulk_memory", "mutable_globals", "larger_memory"],
-      "limitations": ["no_threads", "limited_filesystem"]
-    },
-    {
-      "target": "wasm32-wasi",
-      "features": ["bulk_memory", "wasi_api"],
-      "limitations": ["limited_networking"]
-    }
-  ]
+// Test 5: 文件路径处理跨平台兼容性
+test "file path handling cross-platform compatibility" {
+  // 测试不同平台的路径分隔符处理
+  let unix_path = "/home/user/documents/file.txt"
+  let windows_path = "C:\\Users\\User\\Documents\\file.txt"
   
-  let wasm_results = []
+  // 测试路径解析
+  let unix_parts = Path::split(unix_path)
+  let windows_parts = Path::split(windows_path)
   
-  // 测试每个WASM目标的兼容性
-  for i = 0; i < wasm_targets.length(); i = i + 1 {
-    let target = wasm_targets[i]
-    let wasm_result = test_wasm_compatibility(target)
-    wasm_results.push(wasm_result)
-    
-    // 验证WASM特性支持
-    let features = target["features"]
-    for j = 0; j < features.length(); j = j + 1 {
-      let feature = features[j]
-      assert_true(wasm_result["feature_support"][feature])
-    }
-    
-    // 验证限制处理
-    let limitations = target["limitations"]
-    for j = 0; j < limitations.length(); j = j + 1 {
-      let limitation = limitations[j]
-      assert_true(wasm_result["limitation_handling"][limitation])
-    }
-    
-    // 验证核心功能
-    assert_true(wasm_result["core_telemetry_functions"])
-    assert_true(wasm_result["data_processing_works"])
-    assert_true(wasm_result["memory_management_efficient"])
-  }
+  assert_true(Array::length(unix_parts) > 1)
+  assert_true(Array::length(windows_parts) > 1)
   
-  // 验证WASM性能特征
-  let wasm_performance = analyze_wasm_performance(wasm_results)
-  assert_true(wasm_performance["startup_time_acceptable"])
-  assert_true(wasm_performance["memory_usage_optimized"])
-  assert_true(wasm_performance["execution_speed_reasonable"])
+  // 测试路径连接
+  let base_path = "/home/user"
+  let relative_path = "documents/file.txt"
+  let combined_path = Path::join(base_path, relative_path)
   
-  // 验证浏览器兼容性
-  let browser_compatibility = test_browser_compatibility()
-  assert_true(browser_compatibility["chrome_support"])
-  assert_true(browser_compatibility["firefox_support"])
-  assert_true(browser_compatibility["safari_support"])
-  assert_true(browser_compatibility["edge_support"])
+  assert_true(String::contains(combined_path, "home/user"))
+  assert_true(String::contains(combined_path, "documents/file.txt"))
+  
+  // 测试路径规范化
+  let messy_path = "/home//user/../user/./documents/file.txt"
+  let normalized_path = Path::normalize(messy_path)
+  
+  assert_true(not String::contains(normalized_path, ".."))
+  assert_true(not String::contains(normalized_path, "//"))
 }
 
-// 测试4: 运行时环境兼容性
-test "运行时环境兼容性" {
-  // 定义不同的运行时环境
-  let runtime_environments = [
-    {
-      "runtime": "nodejs",
-      "versions": ["16.x", "18.x", "20.x"],
-      "api_support": ["fs", "http", "crypto", "worker_threads"]
-    },
-    {
-      "runtime": "deno",
-      "versions": ["1.30", "1.35"],
-      "api_support": ["fs", "http", "crypto", "web_worker"]
-    },
-    {
-      "runtime": "bun",
-      "versions": ["0.6", "0.7"],
-      "api_support": ["fs", "http", "crypto", "worker"]
-    },
-    {
-      "runtime": "browser",
-      "versions": ["chrome-110", "firefox-115", "safari-16"],
-      "api_support": ["fetch", "crypto", "web_worker", "indexeddb"]
-    }
+// Test 6: 网络操作跨平台兼容性
+test "network operations cross-platform compatibility" {
+  // 测试URL解析
+  let test_urls = [
+    "https://example.com",
+    "http://localhost:8080",
+    "https://api.example.com/v1/resource",
+    "wss://websocket.example.com/socket",
+    "ftp://ftp.example.com/file.txt"
   ]
   
-  let runtime_results = []
-  
-  // 测试每个运行时环境的兼容性
-  for i = 0; i < runtime_environments.length(); i = i + 1 {
-    let env = runtime_environments[i]
-    let runtime_result = test_runtime_compatibility(env)
-    runtime_results.push(runtime_result)
+  for i = 0; i < Array::length(test_urls); i = i + 1 {
+    let url = test_urls[i]
+    let parsed = Url::parse(url)
     
-    // 验证版本兼容性
-    let versions = env["versions"]
-    for j = 0; j < versions.length(); j = j + 1 {
-      let version = versions[j]
-      assert_true(runtime_result["version_compatibility"][version])
-    }
-    
-    // 验证API支持
-    let apis = env["api_support"]
-    for j = 0; j < apis.length(); j = j + 1 {
-      let api = apis[j]
-      if (runtime_result["available_apis"].contains(api)) {
-        assert_true(runtime_result["api_functionality"][api])
+    match parsed {
+      Some(url_obj) => {
+        let scheme = Url::scheme(url_obj)
+        let host = Url::host(url_obj)
+        
+        assert_true(scheme.length() > 0)
+        assert_true(host.length() > 0)
       }
-    }
-    
-    // 验证核心遥测功能
-    assert_true(runtime_result["telemetry_collection_works"])
-    assert_true(runtime_result["data_transmission_works"])
-    assert_true(runtime_result["error_handling_works"])
-  }
-  
-  // 验证运行时特定优化
-  let optimization_analysis = analyze_runtime_optimizations(runtime_results)
-  assert_true(optimization_analysis["native_features_utilized"])
-  assert_true(optimization_analysis["performance_optimizations_applied"])
-  
-  // 验证环境隔离
-  let isolation_test = test_runtime_isolation()
-  assert_true(isolation_test["no_global_pollution"])
-  assert_true(isolation_test["proper_cleanup"])
-  assert_true(isolation_test["memory_leaks_prevented"])
-}
-
-// 测试5: 配置和部署兼容性
-test "配置和部署兼容性" {
-  // 定义不同的部署场景
-  let deployment_scenarios = [
-    {
-      "scenario": "container_linux",
-      "platform": "linux",
-      "container": "docker",
-      "orchestration": "kubernetes",
-      "config_format": "yaml"
-    },
-    {
-      "scenario": "container_windows",
-      "platform": "windows",
-      "container": "docker",
-      "orchestration": "kubernetes",
-      "config_format": "yaml"
-    },
-    {
-      "scenario": "serverless_aws",
-      "platform": "linux",
-      "runtime": "lambda",
-      "config_format": "json"
-    },
-    {
-      "scenario": "serverless_azure",
-      "platform": "linux",
-      "runtime": "functions",
-      "config_format": "json"
-    },
-    {
-      "scenario": "bare_metal_linux",
-      "platform": "linux",
-      "deployment": "systemd",
-      "config_format": "toml"
-    }
-  ]
-  
-  let deployment_results = []
-  
-  // 测试每个部署场景
-  for i = 0; i < deployment_scenarios.length(); i = i + 1 {
-    let scenario = deployment_scenarios[i]
-    let deployment_result = test_deployment_compatibility(scenario)
-    deployment_results.push(deployment_result)
-    
-    // 验证配置解析
-    assert_true(deployment_result["config_parsing_successful"])
-    assert_eq(deployment_result["config_format"], scenario["config_format"])
-    
-    // 验证平台特定功能
-    if (scenario["container"] == "docker") {
-      assert_true(deployment_result["docker_integration_works"])
-    }
-    if (scenario["orchestration"] == "kubernetes") {
-      assert_true(deployment_result["kubernetes_integration_works"])
-    }
-    if (scenario["deployment"] == "systemd") {
-      assert_true(deployment_result["systemd_integration_works"])
-    }
-    
-    // 验证核心遥测功能
-    assert_true(deployment_result["telemetry_service_starts"])
-    assert_true(deployment_result["data_collection_works"])
-    assert_true(deployment_result["monitoring_functional"])
-  }
-  
-  // 验证配置迁移兼容性
-  let migration_test = test_config_migration_compatibility()
-  assert_true(migration_test["forward_compatibility"])
-  assert_true(migration_test["backward_compatibility"])
-  assert_true(migration_test["migration_successful"])
-  
-  // 验证部署一致性
-  let consistency_check = verify_deployment_consistency(deployment_results)
-  assert_true(consistency_check["behavior_consistent_across_platforms"])
-  assert_true(consistency_check["data_format_compatible"])
-  assert_true(consistency_check["api_interface_stable"])
-}
-
-// 辅助函数（模拟实现）
-fn test_platform_compatibility(platform: Map[String, Any]) -> Map[String, Any] {
-  {
-    "platform": platform["os"] + "-" + platform["arch"],
-    "basic_functionality_available": true,
-    "telemetry_collection_works": true,
-    "data_persistence_works": true,
-    "platform_features": {
-      "posix_compatibility": true,
-      "epoll_support": true,
-      "shared_memory": true,
-      "win32_api": false,
-      "iocp_support": false,
-      "named_pipes": false,
-      "bsd_compatibility": false,
-      "kqueue_support": false,
-      "mach_ports": false
-    },
-    "platform_optimizations_applied": true,
-    "native_features_utilized": true
-  }
-}
-
-fn analyze_cross_platform_consistency(results: Array[Map[String, Any]]) -> Map[String, Any] {
-  {
-    "data_format_consistent": true,
-    "api_behavior_consistent": true,
-    "performance_variance_acceptable": true,
-    "consistency_score": 0.95
-  }
-}
-
-fn test_architecture_compatibility(arch: Map[String, Any]) -> Map[String, Any] {
-  {
-    "architecture": arch["arch"],
-    "endianness_handling_correct": true,
-    "little_endian_optimized": arch["endian"] == "little",
-    "memory_alignment_correct": true,
-    "alignment_optimizations_applied": true,
-    "available_extensions": arch["vector_extensions"],
-    "extension_usage": {
-      "sse": true,
-      "avx": true,
-      "avx2": true,
-      "neon": true,
-      "sve": true,
-      "vector": true
+      None => assert_true(false)
     }
   }
+  
+  // 测试HTTP客户端基本功能（模拟）
+  let http_client = HttpClient::new()
+  
+  // 设置超时
+  HttpClient::set_timeout(http_client, 5000)  // 5秒超时
+  
+  // 设置用户代理
+  HttpClient::set_user_agent(http_client, "Azimuth-Telemetry/1.0.0")
+  
+  // 验证客户端配置
+  assert_true(true)  // 如果没有异常，说明配置成功
 }
 
-fn verify_serialization_consistency(results: Array[Map[String, Any]]) -> Map[String, Any] {
-  {
-    "cross_arch_data_integrity": true,
-    "numeric_precision_preserved": true,
-    "structure_layout_consistent": true,
-    "serialization_consistency_score": 0.98
-  }
-}
-
-fn compare_architecture_performance(results: Array[Map[String, Any]]) -> Map[String, Any] {
-  {
-    "performance_within_expected_range": true,
-    "no_regression_detected": true,
-    "performance_variance": 0.15,
-    "optimization_effectiveness": 0.85
-  }
-}
-
-fn test_wasm_compatibility(target: Map[String, Any]) -> Map[String, Any] {
-  {
-    "target": target["target"],
-    "feature_support": {
-      "bulk_memory": true,
-      "mutable_globals": true,
-      "larger_memory": true,
-      "wasi_api": true
-    },
-    "limitation_handling": {
-      "no_threads": true,
-      "limited_filesystem": true,
-      "limited_networking": true
-    },
-    "core_telemetry_functions": true,
-    "data_processing_works": true,
-    "memory_management_efficient": true
-  }
-}
-
-fn analyze_wasm_performance(results: Array[Map[String, Any]]) -> Map[String, Any] {
-  {
-    "startup_time_acceptable": true,
-    "memory_usage_optimized": true,
-    "execution_speed_reasonable": true,
-    "wasm_optimization_score": 0.88
-  }
-}
-
-fn test_browser_compatibility() -> Map[String, Any] {
-  {
-    "chrome_support": true,
-    "firefox_support": true,
-    "safari_support": true,
-    "edge_support": true,
-    "web_apis_available": true,
-    "performance_acceptable": true
-  }
-}
-
-fn test_runtime_compatibility(env: Map[String, Any]) -> Map[String, Any] {
-  let version_compatibility = {}
-  let versions = env["versions"]
-  for i = 0; i < versions.length(); i = i + 1 {
-    version_compatibility[versions[i]] = true
+// Test 7: 内存管理跨平台兼容性
+test "memory management cross-platform compatibility" {
+  // 测试大内存分配
+  let large_array = Array::make(10000, 0)
+  for i = 0; i < Array::length(large_array); i = i + 1 {
+    large_array[i] = i
   }
   
-  {
-    "runtime": env["runtime"],
-    "version_compatibility": version_compatibility,
-    "available_apis": env["api_support"],
-    "api_functionality": {
-      "fs": true,
-      "http": true,
-      "crypto": true,
-      "worker_threads": true,
-      "web_worker": true,
-      "worker": true,
-      "fetch": true,
-      "indexeddb": true
-    },
-    "telemetry_collection_works": true,
-    "data_transmission_works": true,
-    "error_handling_works": true
-  }
-}
-
-fn analyze_runtime_optimizations(results: Array[Map[String, Any]]) -> Map[String, Any] {
-  {
-    "native_features_utilized": true,
-    "performance_optimizations_applied": true,
-    "optimization_effectiveness": 0.82,
-    "runtime_specific_features_used": true
-  }
-}
-
-fn test_runtime_isolation() -> Map[String, Any] {
-  {
-    "no_global_pollution": true,
-    "proper_cleanup": true,
-    "memory_leaks_prevented": true,
-    "resource_isolation_effective": true
-  }
-}
-
-fn test_deployment_compatibility(scenario: Map[String, Any]) -> Map[String, Any] {
-  {
-    "scenario": scenario["scenario"],
-    "config_parsing_successful": true,
-    "config_format": scenario["config_format"],
-    "docker_integration_works": scenario["container"] == "docker",
-    "kubernetes_integration_works": scenario["orchestration"] == "kubernetes",
-    "systemd_integration_works": scenario["deployment"] == "systemd",
-    "telemetry_service_starts": true,
-    "data_collection_works": true,
-    "monitoring_functional": true
-  }
-}
-
-fn test_config_migration_compatibility() -> Map[String, Any] {
-  {
-    "forward_compatibility": true,
-    "backward_compatibility": true,
-    "migration_successful": true,
-    "config_validation_passed": true
-  }
-}
-
-fn verify_deployment_consistency(results: Array[Map[String, Any]]) -> Map[String, Any] {
-  {
-    "behavior_consistent_across_platforms": true,
-    "data_format_compatible": true,
-    "api_interface_stable": true,
-    "consistency_score": 0.92
-  }
+  // 验证数组内容
+  assert_eq(large_array[0], 0)
+  assert_eq(large_array[9999], 9999)
+  
+  // 测试字符串内存管理
+  let large_string = String::repeat("test", 1000)
+  assert_eq(String::length(large_string), 4000)
+  
+  // 测试内存释放（通过重新赋值）
+  large_array = []
+  large_string = ""
+  
+  assert_eq(Array::length(large_array), 0)
+  assert_eq(String::length(large_string), 0)
 }

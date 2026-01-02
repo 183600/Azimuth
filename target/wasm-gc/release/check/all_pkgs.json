@@ -32,6 +32,11 @@
     },
     {
       "root": "azimuth/telemetry",
+      "rel": "new_core_tests",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/new_core_tests/new_core_tests.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "new_test",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/new_test/new_test.mi"
     },
