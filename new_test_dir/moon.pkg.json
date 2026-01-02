@@ -1,0 +1,13 @@
+{
+  "name": "azimuth/new_test_dir",
+  "version": "0.1.0",
+  "description": "New test directory for Azimuth project",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["azimuth_basic_language_tests.mbt"]
+  }
+}

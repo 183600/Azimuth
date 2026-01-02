@@ -57,19 +57,17 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "simple_tests.mbt": {
-    0: (__test_73696d706c655f74657374732e6d6274_0, ["basic arithmetic operations"]),
-    1: (__test_73696d706c655f74657374732e6d6274_1, ["boolean logic operations"]),
-    2: (__test_73696d706c655f74657374732e6d6274_2, ["string operations"]),
-    3: (__test_73696d706c655f74657374732e6d6274_3, ["array operations"]),
-    4: (__test_73696d706c655f74657374732e6d6274_4, ["option type handling"]),
-  },
-  "additional_tests.mbt": {
-    0: (__test_6164646974696f6e616c5f74657374732e6d6274_0, ["numeric boundary conditions"]),
-    1: (__test_6164646974696f6e616c5f74657374732e6d6274_1, ["string comparisons"]),
-    2: (__test_6164646974696f6e616c5f74657374732e6d6274_2, ["array advanced operations"]),
-    3: (__test_6164646974696f6e616c5f74657374732e6d6274_3, ["tuple operations"]),
-    4: (__test_6164646974696f6e616c5f74657374732e6d6274_4, ["conditional expressions"]),
+  "azimuth_basic_language_tests.mbt": {
+    0: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_0, ["numeric operations"]),
+    1: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_1, ["string operations"]),
+    2: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_2, ["boolean operations"]),
+    3: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_3, ["array operations"]),
+    4: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_4, ["option type operations"]),
+    5: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_5, ["result type operations"]),
+    6: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_6, ["tuple operations"]),
+    7: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_7, ["function operations"]),
+    8: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_8, ["conditional expressions"]),
+    9: (__test_617a696d7574685f62617369635f6c616e67756167655f74657374732e6d6274_9, ["type conversions"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
@@ -147,7 +145,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth_standalone\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/new_test_dir\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }

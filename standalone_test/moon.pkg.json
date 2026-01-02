@@ -1,13 +1,13 @@
 {
-  "name": "azimuth_standalone",
+  "name": "standalone_test",
   "version": "0.1.0",
-  "description": "Standalone test package for Azimuth telemetry system",
+  "description": "Standalone test directory for MoonBit tests",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["azimuth_comprehensive_test_suite.mbt"]
+    "test": ["simple_tests.mbt", "additional_tests.mbt"]
   }
 }
