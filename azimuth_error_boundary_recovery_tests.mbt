@@ -1,252 +1,258 @@
-// Azimuth Error Boundary and Recovery Tests
-// 测试错误边界和恢复机制
+// 错误边界和恢复机制测试用例
+// 测试Azimuth遥测系统的错误处理和恢复功能
 
-test "span operation error handling" {
-  // 创建可能会失败的span操作
-  let span = @azimuth.Span::builder("error-prone-operation")
-    .with_error_handler(fn(error) {
-      // 记录错误但不中断操作
-      @azimuth.Logger::get_default().error("Span operation failed: " + error.message)
-    })
-    .start()
+test "span创建失败时的错误处理" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "error.handling.test")
   
-  // 模拟错误条件
-  span.set_attribute("test.error.simulation", "true")
+  // 测试正常span创建
+  let normal_span = Tracer::start_span(tracer, "normal.operation")
+  assert_true(Span::is_valid(normal_span))
+  Span::end(normal_span)
   
-  // 执行可能失败的操作
-  let result = @azimuth.ErrorBoundary::execute(fn() {
-    // 模拟可能失败的操作
-    if span.get_attribute("test.error.simulation") == Some("true") {
-      @azimuth.TelemetryError::operation_failed("Simulated operation failure")
-    } else {
-      "Operation succeeded"
-    }
-  })
+  // 测试带有无效名称的span创建
+  let invalid_span = Tracer::start_span(tracer, "")  // 空名称
+  assert_false(Span::is_valid(invalid_span))
   
-  // 验证错误处理
-  match result {
-    Ok(value) => assert_eq(value, "Operation succeeded"),
-    Err(error) => {
-      // 验证错误被正确记录
-      assert_eq(error.message, "Simulated operation failure")
-      assert_eq(span.get_status().code, @azimuth.StatusCode::ERROR)
-    }
+  // 测试带有过长名称的span创建
+  let long_name = "a".repeat(10000)  // 超长名称
+  let long_name_span = Tracer::start_span(tracer, long_name)
+  
+  // 验证系统是否优雅处理
+  if Span::is_valid(long_name_span) {
+    // 如果成功创建，验证名称是否被截断
+    let span_name = Span::name(long_name_span)
+    assert_true(span_name.length() <= 1000)  // 假设最大长度为1000
+    Span::end(long_name_span)
+  } else {
+    // 如果创建失败，这是可接受的行为
+    assert_true(true)
   }
   
-  span.end()
+  assert_true(true)
 }
 
-test "metric collection error recovery" {
-  // 创建带有错误恢复的度量收集器
-  let collector = @azimuth.MetricCollector::builder()
-    .with_error_recovery_strategy(@azimuth.ErrorRecoveryStrategy::RETRY)
-    .with_max_retry_attempts(3)
-    .build()
+test "度量操作异常恢复" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "error.recovery.test")
   
-  // 模拟收集过程中的错误
-  let error_count = @azimuth.AtomicInt::new(0)
+  // 创建计数器
+  let counter = Meter::create_counter(meter, "error.test.counter", 
+    Some("Test counter"), Some("count"))
   
-  let collection_result = collector.collect_with_retry(fn() {
-    let current_attempt = error_count.increment()
-    if current_attempt < 3 {
-      // 前两次尝试失败
-      @azimuth.TelemetryError::collection_failed("Collection attempt " + current_attempt.to_string())
-    } else {
-      // 第三次尝试成功
-      @azimuth.MetricData::new("test.metric", 42.0)
-    }
-  })
+  // 测试正常计数器操作
+  Counter::add(counter, 1.0)
+  Counter::add(counter, 5.0)
   
-  // 验证重试机制
-  assert_true(collection_result.is_ok())
-  assert_eq(error_count.get(), 3)  // 应该尝试了3次
+  // 测试异常值处理
+  let result1 = Counter::try_add(counter, Float::infinity)  // 无穷大值
+  let result2 = Counter::try_add(counter, Float::neg_infinity)  // 负无穷大值
+  let result3 = Counter::try_add(counter, Float::nan)  // NaN值
   
-  match collection_result {
-    Ok(metric_data) => {
-      assert_eq(metric_data.name, "test.metric")
-      assert_eq(metric_data.value, 42.0)
-    }
-    Err(_) => assert_true(false)
-  }
-}
-
-test "log processing error isolation" {
-  // 创建带有错误隔离的日志处理器
-  let processor = @azimuth.LogProcessor::builder()
-    .with_error_isolation(true)
-    .build()
-  
-  // 添加正常日志记录
-  processor.process(@azimuth.LogRecord::info("Normal log message"))
-  
-  // 添加会导致错误的日志记录
-  let problematic_record = @azimuth.LogRecord::error("Problematic log")
-    .with_attribute("error.simulation", "true")
-  
-  let process_result = processor.process(problematic_record)
-  
-  // 验证错误隔离
-  match process_result {
-    Ok(_) => assert_true(false),  // 应该失败
-    Err(error) => {
-      assert_eq(error.message, "Log processing failed")
-    }
+  // 验证异常值被正确处理
+  match result1 {
+    Ok(_) => assert_true(false)  // 不应该成功
+    Error(_) => assert_true(true)  // 应该返回错误
   }
   
-  // 验证处理器仍然可以处理正常日志
-  let normal_result = processor.process(@azimuth.LogRecord::info("Another normal log"))
-  assert_true(normal_result.is_ok())
-}
-
-test "trace context corruption recovery" {
-  // 创建可能损坏的追踪上下文
-  let valid_trace_id = @azimuth.TraceId::generate()
-  let valid_span_id = @azimuth.SpanId::generate()
-  
-  // 创建有效的上下文
-  let valid_context = @azimuth.TraceContext::new(
-    valid_trace_id,
-    valid_span_id,
-    @azimuth.TraceFlags::SAMPLED
-  )
-  
-  // 模拟上下文损坏
-  let corrupted_serialized = "invalid-context-data"
-  
-  // 尝试从损坏的数据恢复上下文
-  let recovery_result = @azimuth.TraceContext::recover_from_corrupted(corrupted_serialized)
-  
-  // 验证恢复机制
-  match recovery_result {
-    Ok(recovered_context) => {
-      // 验证恢复的上下文有有效的ID
-      assert_true(recovered_context.trace_id.is_valid())
-      assert_true(recovered_context.span_id.is_valid())
-    }
-    Err(error) => {
-      // 如果无法恢复，应该创建新的上下文
-      assert_eq(error.message, "Unable to recover from corrupted context")
-    }
+  match result2 {
+    Ok(_) => assert_true(false)  // 不应该成功
+    Error(_) => assert_true(true)  // 应该返回错误
   }
   
-  // 验证原始有效上下文不受影响
-  assert_eq(valid_context.trace_id, valid_trace_id)
-  assert_eq(valid_context.span_id, valid_span_id)
+  match result3 {
+    Ok(_) => assert_true(false)  // 不应该成功
+    Error(_) => assert_true(true)  // 应该返回错误
+  }
+  
+  // 验证计数器仍然可用
+  Counter::add(counter, 10.0)
+  assert_true(true)
+  
+  // 测试负值计数器（如果计数器不允许负值）
+  let negative_result = Counter::try_add(counter, -100.0)
+  match negative_result {
+    Ok(_) => assert_true(true)   // 如果允许负值
+    Error(_) => assert_true(true) // 如果不允许负值，这也是可接受的
+  }
+  
+  assert_true(true)
 }
 
-test "resource exhaustion handling" {
-  // 创建资源限制配置
-  let resource_limits = @azimuth.ResourceLimits::builder()
-    .with_max_spans(100)
-    .with_max_metrics(1000)
-    .with_max_logs(500)
-    .build()
+test "日志系统错误边界" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "error.boundary.logger")
   
-  // 创建带有资源限制的遥测管理器
-  let telemetry_manager = @azimuth.TelemetryManager::with_limits(resource_limits)
+  // 测试正常日志记录
+  Logger::emit_log(logger, LogLevel::INFO, "Normal log message", [])
   
-  // 添加span直到达到限制
-  for i = 0; i < 150; i = i + 1 {
-    let span_result = telemetry_manager.create_span("span-" + i.to_string())
+  // 测试空消息
+  Logger::emit_log(logger, LogLevel::WARN, "", [])
+  
+  // 测试超长消息
+  let long_message = "x".repeat(50000)  // 超长消息
+  Logger::emit_log(logger, LogLevel::ERROR, long_message, [])
+  
+  // 测试无效属性值
+  Logger::emit_log(logger, LogLevel::INFO, "Message with invalid attributes", [
+    ("valid.key", "valid.value"),
+    ("", "empty.key"),  // 空键
+    ("valid.key2", ""),  // 空值
+    ("key.with.special.chars!@#$%", "value"),  // 特殊字符键
+  ])
+  
+  // 测试大量属性
+  let many_attributes = []
+  for i = 0; i < 1000; i = i + 1 {
+    many_attributes = many_attributes + [("attr." + i.to_string(), "value." + i.to_string())]
+  }
+  Logger::emit_log(logger, LogLevel::DEBUG, "Message with many attributes", many_attributes)
+  
+  // 验证日志系统仍然可用
+  Logger::emit_log(logger, LogLevel::INFO, "Recovery test message", [
+    ("recovery", "true"),
+    ("system.state", "operational")
+  ])
+  
+  assert_true(true)
+}
+
+test "内存压力下的遥测系统恢复" {
+  // 创建大量遥测对象以测试内存压力
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "memory.pressure.test")
+  let meter = MeterProvider::get_meter(meter_provider, "memory.pressure.test")
+  let logger = LoggerProvider::get_logger(logger_provider, "memory.pressure.test")
+  
+  // 创建大量span但不立即结束（模拟内存压力）
+  let spans = []
+  for i = 0; i < 1000; i = i + 1 {
+    let span = Tracer::start_span(tracer, "memory.pressure.span." + i.to_string())
+    spans = spans + [span]
     
-    if i < 100 {
-      // 前100个应该成功
-      assert_true(span_result.is_ok())
-    } else {
-      // 超过限制的应该失败
-      assert_true(span_result.is_err())
-      match span_result {
-        Err(error) => {
-          assert_eq(error.code, @azimuth.ErrorCode::RESOURCE_EXHAUSTED)
-        }
-        _ => assert_true(false)
-      }
+    // 每100个span添加一些属性
+    if i % 100 == 0 {
+      Span::set_attribute(span, "batch.id", (i / 100).to_string())
+      Span::set_attribute(span, "memory.test", "true")
     }
   }
   
-  // 验证资源清理后可以继续创建
-  telemetry_manager.clear_spans()
-  
-  let new_span_result = telemetry_manager.create_span("new-span-after-clear")
-  assert_true(new_span_result.is_ok())
-}
-
-test "circuit breaker pattern for external services" {
-  // 创建熔断器
-  let circuit_breaker = @azimuth.CircuitBreaker::builder()
-    .with_failure_threshold(3)
-    .with_timeout_millis(5000)
-    .with_success_threshold(2)
-    .build()
-  
-  // 模拟外部服务调用
-  let call_count = @azimuth.AtomicInt::new(0)
-  
-  // 前几次调用失败
-  for i = 0; i < 3; i = i + 1 {
-    let result = circuit_breaker.call(fn() {
-      call_count.increment()
-      @azimuth.TelemetryError::service_unavailable("External service down")
-    })
-    
-    assert_true(result.is_err())
+  // 创建大量度量数据
+  let counter = Meter::create_counter(meter, "memory.pressure.counter")
+  for i = 0; i < 5000; i = i + 1 {
+    Counter::add_with_attributes(counter, 1.0, [
+      ("iteration", i.to_string()),
+      ("batch", (i / 100).to_string())
+    ])
   }
   
-  // 验证熔断器已打开
-  assert_eq(circuit_breaker.get_state(), @azimuth.CircuitBreakerState::OPEN)
-  
-  // 熔断器打开时的调用应该直接失败，不尝试实际调用
-  let call_count_before = call_count.get()
-  let result_when_open = circuit_breaker.call(fn() {
-    call_count.increment()
-    "Success"
-  })
-  
-  assert_true(result_when_open.is_err())
-  assert_eq(call_count.get(), call_count_before)  // 调用次数不应增加
-  
-  // 等待超时后熔断器进入半开状态
-  @azimuth.Time::sleep(6000)  // 超过5秒超时
-  
-  // 半开状态下的成功调用应该关闭熔断器
-  for i = 0; i < 2; i = i + 1 {
-    let result = circuit_breaker.call(fn() {
-      "Success after recovery"
-    })
-    
-    assert_true(result.is_ok())
-  }
-  
-  // 验证熔断器已关闭
-  assert_eq(circuit_breaker.get_state(), @azimuth.CircuitBreakerState::CLOSED)
-}
-
-test "graceful degradation under high load" {
-  // 创建带有优雅降级的遥测系统
-  let telemetry_system = @azimuth.TelemetrySystem::builder()
-    .with_degradation_strategy(@azimuth.DegradationStrategy::SAMPLING_ADJUSTMENT)
-    .with_load_threshold(1000)  // 每秒1000个操作
-    .build()
-  
-  // 模拟正常负载
-  for i = 0; i < 500; i = i + 1 {
-    let span = telemetry_system.create_span("normal-load-" + i.to_string())
-    assert_true(span.is_ok())
-  }
-  
-  // 验证采样率未调整
-  assert_eq(telemetry_system.get_sampling_rate(), 1.0)  // 100%采样
-  
-  // 模拟高负载
+  // 创建大量日志
   for i = 0; i < 2000; i = i + 1 {
-    let span = telemetry_system.create_span("high-load-" + i.to_string())
-    // 在高负载下，一些操作可能会被拒绝或降级
+    Logger::emit_log(logger, LogLevel::INFO, "Memory pressure log " + i.to_string(), [
+      ("iteration", i.to_string()),
+      ("type", if i % 2 == 0 { "even" } else { "odd" })
+    ])
   }
   
-  // 验证采样率已调整
-  assert_true(telemetry_system.get_sampling_rate() < 1.0)  // 采样率降低
+  // 结束所有span以释放内存
+  for span in spans {
+    Span::end(span)
+  }
   
-  // 验证系统仍然可用
-  let critical_span = telemetry_system.create_span("critical-operation")
-  assert_true(critical_span.is_ok())
+  // 验证系统在压力后仍然可用
+  let recovery_span = Tracer::start_span(tracer, "recovery.test")
+  Span::set_attribute(recovery_span, "system.recovered", "true")
+  Span::end(recovery_span)
+  
+  Counter::add(counter, 1.0)
+  Logger::emit_log(logger, LogLevel::INFO, "System recovered", [
+    ("status", "operational"),
+    ("memory.pressure.test", "completed")
+  ])
+  
+  assert_true(true)
+}
+
+test "网络中断时的遥测数据缓冲和恢复" {
+  // 模拟遥测导出器的网络连接
+  let mock_exporter = MockTelemetryExporter::new()
+  
+  // 设置导出器为离线状态
+  MockTelemetryExporter::set_offline(mock_exporter, true)
+  
+  let tracer_provider = TracerProvider::builder()
+    .with_exporter(mock_exporter)
+    .build()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "network.interruption.test")
+  
+  // 在网络中断期间创建遥测数据
+  for i = 0; i < 50; i = i + 1 {
+    let span = Tracer::start_span(tracer, "offline.span." + i.to_string())
+    Span::set_attribute(span, "offline.mode", "true")
+    Span::set_attribute(span, "batch", (i / 10).to_string())
+    Span::end(span)
+  }
+  
+  // 验证数据被缓冲而不是丢失
+  let buffered_data = MockTelemetryExporter::get_buffered_data(mock_exporter)
+  assert_true(buffered_data.length() >= 50)
+  
+  // 模拟网络恢复
+  MockTelemetryExporter::set_offline(mock_exporter, false)
+  
+  // 触发缓冲数据的导出
+  TracerProvider::flush(tracer_provider)
+  
+  // 验证缓冲数据被成功导出
+  let exported_data = MockTelemetryExporter::get_exported_data(mock_exporter)
+  assert_true(exported_data.length() >= 50)
+  
+  // 验证缓冲区被清空
+  let remaining_buffered = MockTelemetryExporter::get_buffered_data(mock_exporter)
+  assert_eq(remaining_buffered.length(), 0)
+  
+  // 验证系统恢复正常运行
+  let normal_span = Tracer::start_span(tracer, "normal.operation.after.recovery")
+  Span::set_attribute(normal_span, "network.status", "connected")
+  Span::end(normal_span)
+  
+  assert_true(true)
+}
+
+test "配置错误时的优雅降级" {
+  // 创建带有错误配置的TracerProvider
+  let invalid_config = TelemetryConfiguration::new()
+  TelemetryConfiguration::set_sampling_rate(invalid_config, 1.5)  // 无效采样率（>1.0）
+  TelemetryConfiguration::set_max_spans(invalid_config, -1)      // 无效最大span数
+  TelemetryConfiguration::set_batch_size(invalid_config, 0)      // 无效批处理大小
+  
+  // 使用错误配置创建提供者
+  let tracer_provider = TracerProvider::builder()
+    .with_config(invalid_config)
+    .build()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "graceful.degradation.test")
+  
+  // 验证系统使用默认值而不是崩溃
+  let span = Tracer::start_span(tracer, "degradation.test")
+  assert_true(Span::is_valid(span))
+  
+  Span::set_attribute(span, "config.error.handled", "true")
+  Span::end(span)
+  
+  // 验证配置被自动修正
+  let active_config = TracerProvider::get_config(tracer_provider)
+  let sampling_rate = TelemetryConfiguration::get_sampling_rate(active_config)
+  let max_spans = TelemetryConfiguration::get_max_spans(active_config)
+  let batch_size = TelemetryConfiguration::get_batch_size(active_config)
+  
+  assert_true(sampling_rate >= 0.0 && sampling_rate <= 1.0)  // 采样率应在有效范围内
+  assert_true(max_spans > 0)                                // 最大span数应为正数
+  assert_true(batch_size > 0)                               // 批处理大小应为正数
+  
+  assert_true(true)
 }

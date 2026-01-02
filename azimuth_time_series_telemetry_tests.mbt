@@ -1,372 +1,213 @@
-// Azimuth 时间序列数据遥测测试用例
-// 专注于时间序列数据处理的遥测功能测试
+// 时间序列数据处理测试用例
+// 测试Azimuth遥测系统的时间序列数据处理功能
 
-// 测试1: 时间序列数据收集基础测试
-test "时间序列数据收集基础测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timeseries.collector")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.metrics")
+test "时间序列数据点创建和基本操作" {
+  // 创建时间序列数据点
+  let timestamp1 = Timestamp::from_unix_millis(1641024000000)  // 2022-01-01 00:00:00 UTC
+  let timestamp2 = Timestamp::from_unix_millis(1641024060000)  // 2022-01-01 00:01:00 UTC
+  let timestamp3 = Timestamp::from_unix_millis(1641024120000)  // 2022-01-01 00:02:00 UTC
   
-  // 创建时间序列收集span
-  let collection_span = Tracer::start_span(tracer, "timeseries.data.collection")
-  Span::set_attribute(collection_span, "collection.source", StringValue("system.metrics"))
-  Span::set_attribute(collection_span, "collection.interval", IntValue(30))
-  Span::set_attribute(collection_span, "collection.retention", IntValue(86400))  // 24小时
+  let data_point1 = TimeSeriesDataPoint::new(timestamp1, 25.5)
+  let data_point2 = TimeSeriesDataPoint::new(timestamp2, 27.8)
+  let data_point3 = TimeSeriesDataPoint::new(timestamp3, 26.2)
   
-  // 创建时间序列指标
-  let data_points_collected = Meter::create_counter(meter, "timeseries.points.collected")
-  let collection_duration = Meter::create_histogram(meter, "timeseries.collection.duration")
-  let series_count = Meter::create_gauge(meter, "timeseries.series.count")
-  let storage_size = Meter::create_gauge(meter, "timeseries.storage.size")
+  // 验证数据点
+  assert_eq(TimeSeriesDataPoint::value(data_point1), 25.5)
+  assert_eq(TimeSeriesDataPoint::value(data_point2), 27.8)
+  assert_eq(TimeSeriesDataPoint::value(data_point3), 26.2)
   
-  // 模拟时间序列收集
-  Counter::add(data_points_collected, 10000.0)
-  Histogram::record(collection_duration, 2.5)
-  Histogram::record(collection_duration, 3.0)
-  Histogram::record(collection_duration, 2.2)
-  Gauge::set(series_count, 500.0)
-  Gauge::set(storage_size, 104857600.0)  // 100MB
+  assert_eq(TimeSeriesDataPoint::timestamp(data_point1), timestamp1)
+  assert_eq(TimeSeriesDataPoint::timestamp(data_point2), timestamp2)
+  assert_eq(TimeSeriesDataPoint::timestamp(data_point3), timestamp3)
   
-  // 添加收集事件
-  Span::add_event_with_attributes(collection_span, "collection.batch.completed", [
-    ("batch.id", StringValue("batch-001")),
-    ("batch.start.time", StringValue("2023-01-01T10:00:00Z")),
-    ("batch.end.time", StringValue("2023-01-01T10:00:30Z")),
-    ("data.points", IntValue(10000)),
-    ("series.count", IntValue(500))
-  ])
+  // 创建时间序列
+  let time_series = TimeSeries::new("cpu.usage", "percent")
+  TimeSeries::add_data_point(time_series, data_point1)
+  TimeSeries::add_data_point(time_series, data_point2)
+  TimeSeries::add_data_point(time_series, data_point3)
   
-  Span::end(collection_span)
+  // 验证时间序列
+  assert_eq(TimeSeries::name(time_series), "cpu.usage")
+  assert_eq(TimeSeries::unit(time_series), "percent")
+  assert_eq(TimeSeries::data_points_count(time_series), 3)
   
-  // 验证收集指标
-  assert_eq(Counter::value(data_points_collected), 10000.0)
-  assert_eq(Gauge::value(series_count), 500.0)
-  assert_eq(Gauge::value(storage_size), 104857600.0)
+  assert_true(true)
 }
 
-// 测试2: 时间序列数据聚合测试
-test "时间序列数据聚合测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timeseries.aggregation")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.aggregation.metrics")
+test "时间序列聚合操作" {
+  // 创建时间序列数据
+  let base_timestamp = Timestamp::from_unix_millis(1641024000000)
+  let time_series = TimeSeries::new("memory.usage", "percent")
   
-  // 创建聚合操作span
-  let aggregation_span = Tracer::start_span(tracer, "timeseries.data.aggregation")
-  Span::set_attribute(aggregation_span, "aggregation.type", StringValue("downsampling"))
-  Span::set_attribute(aggregation_span, "aggregation.window", StringValue("5m"))
-  Span::set_attribute(aggregation_span, "aggregation.function", StringValue("avg"))
+  // 添加多个数据点
+  for i = 0; i < 10; i = i + 1 {
+    let timestamp = Timestamp::from_unix_millis(1641024000000 + i * 60000)  // 每分钟一个点
+    let value = 50.0 + i.to_int().to_float() * 2.5  // 50.0, 52.5, 55.0, ...
+    let data_point = TimeSeriesDataPoint::new(timestamp, value)
+    TimeSeries::add_data_point(time_series, data_point)
+  }
   
-  // 创建聚合指标
-  let aggregations_performed = Meter::create_counter(meter, "timeseries.aggregations.performed")
-  let aggregation_duration = Meter::create_histogram(meter, "timeseries.aggregation.duration")
-  let points_input = Meter::create_histogram(meter, "timeseries.aggregation.points.input")
-  let points_output = Meter::create_histogram(meter, "timeseries.aggregation.points.output")
+  // 测试平均值聚合
+  let avg_value = TimeSeriesAggregator::average(time_series)
+  assert_true(avg_value > 60.0 && avg_value < 65.0)  // 大约62.5
   
-  // 模拟聚合操作
-  Counter::add(aggregations_performed, 100.0)
-  Histogram::record(aggregation_duration, 1.5)
-  Histogram::record(aggregation_duration, 2.0)
-  Histogram::record(points_input, 1000.0)
-  Histogram::record(points_input, 1200.0)
-  Histogram::record(points_output, 100.0)
-  Histogram::record(points_output, 120.0)
+  // 测试最大值聚合
+  let max_value = TimeSeriesAggregator::max(time_series)
+  assert_eq(max_value, 72.5)  // 最后一个值
   
-  // 添加聚合事件
-  Span::add_event_with_attributes(aggregation_span, "aggregation.window.processed", [
-    ("window.start", StringValue("2023-01-01T10:00:00Z")),
-    ("window.end", StringValue("2023-01-01T10:05:00Z")),
-    ("input.points", IntValue(1200)),
-    ("output.points", IntValue(120)),
-    ("compression.ratio", FloatValue(0.1))
-  ])
+  // 测试最小值聚合
+  let min_value = TimeSeriesAggregator::min(time_series)
+  assert_eq(min_value, 50.0)  // 第一个值
   
-  Span::end(aggregation_span)
+  // 测试总和聚合
+  let sum_value = TimeSeriesAggregator::sum(time_series)
+  assert_eq(sum_value, 625.0)  // 50.0 + 52.5 + ... + 72.5
   
-  // 验证聚合指标
-  assert_eq(Counter::value(aggregations_performed), 100.0)
+  // 测试计数聚合
+  let count_value = TimeSeriesAggregator::count(time_series)
+  assert_eq(count_value, 10)
+  
+  assert_true(true)
 }
 
-// 测试3: 时间序列数据压缩测试
-test "时间序列数据压缩测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timeseries.compression")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.compression.metrics")
+test "时间窗口聚合" {
+  // 创建跨越多小时的时序数据
+  let time_series = TimeSeries::new("request.rate", "requests_per_second")
   
-  // 创建压缩操作span
-  let compression_span = Tracer::start_span(tracer, "timeseries.data.compression")
-  Span::set_attribute(compression_span, "compression.algorithm", StringValue("gorilla"))
-  Span::set_attribute(compression_span, "compression.block.size", IntValue(1000))
+  // 添加24小时的数据，每小时一个点
+  for hour = 0; hour < 24; hour = hour + 1 {
+    let timestamp = Timestamp::from_unix_millis(1641024000000 + hour * 3600000)  // 每小时
+    let value = 100.0 + (hour.to_int().to_float() * 5.0)  // 递增的请求率
+    let data_point = TimeSeriesDataPoint::new(timestamp, value)
+    TimeSeries::add_data_point(time_series, data_point)
+  }
   
-  // 创建压缩指标
-  let compression_operations = Meter::create_counter(meter, "timeseries.compression.operations")
-  let compression_ratio = Meter::create_histogram(meter, "timeseries.compression.ratio")
-  let compression_duration = Meter::create_histogram(meter, "timeseries.compression.duration")
-  let original_size = Meter::create_histogram(meter, "timeseries.compression.original.size")
-  let compressed_size = Meter::create_histogram(meter, "timeseries.compression.compressed.size")
+  // 定义6小时的时间窗口
+  let window_start = Timestamp::from_unix_millis(1641024000000 + 6 * 3600000)  // 从第6小时开始
+  let window_end = Timestamp::from_unix_millis(1641024000000 + 12 * 3600000)    // 到第12小时结束
   
-  // 模拟压缩操作
-  Counter::add(compression_operations, 50.0)
-  Histogram::record(compression_ratio, 0.15)
-  Histogram::record(compression_ratio, 0.12)
-  Histogram::record(compression_duration, 0.5)
-  Histogram::record(compression_duration, 0.6)
-  Histogram::record(original_size, 1048576.0)  // 1MB
-  Histogram::record(compressed_size, 157286.0)  // 150KB
+  // 在时间窗口内进行聚合
+  let window_avg = TimeSeriesAggregator::average_in_window(time_series, window_start, window_end)
+  let window_max = TimeSeriesAggregator::max_in_window(time_series, window_start, window_end)
+  let window_min = TimeSeriesAggregator::min_in_window(time_series, window_start, window_end)
   
-  // 添加压缩事件
-  Span::add_event_with_attributes(compression_span, "compression.block.completed", [
-    ("block.id", StringValue("block-001")),
-    ("original.size", IntValue(1048576)),
-    ("compressed.size", IntValue(157286)),
-    ("compression.ratio", FloatValue(0.15)),
-    ("compression.time", FloatValue(0.55))
-  ])
+  // 验证窗口聚合结果
+  assert_true(window_avg > 135.0 && window_avg < 140.0)  // 大约137.5
+  assert_eq(window_max, 160.0)  // 第12小时的值
+  assert_eq(window_min, 130.0)  // 第6小时的值
   
-  Span::end(compression_span)
+  // 测试滑动窗口聚合
+  let sliding_avg = TimeSeriesAggregator::sliding_window_average(time_series, 3600000 * 4)  // 4小时窗口
+  assert_true(sliding_avg.length() > 0)
   
-  // 验证压缩指标
-  assert_eq(Counter::value(compression_operations), 50.0)
+  assert_true(true)
 }
 
-// 测试4: 时间序列数据查询测试
-test "时间序列数据查询测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timeseries.query")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.query.metrics")
+test "时间序列下采样" {
+  // 创建高频率时间序列数据
+  let high_freq_series = TimeSeries::new("cpu.temperature", "celsius")
   
-  // 创建查询操作span
-  let query_span = Tracer::start_span(tracer, "timeseries.data.query")
-  Span::set_attribute(query_span, "query.type", StringValue("range"))
-  Span::set_attribute(query_span, "query.start.time", StringValue("2023-01-01T09:00:00Z"))
-  Span::set_attribute(query_span, "query.end.time", StringValue("2023-01-01T10:00:00Z"))
-  Span::set_attribute(query_span, "query.series.count", IntValue(10))
+  // 添加每分钟一个点，持续24小时
+  for minute = 0; minute < 1440; minute = minute + 1 {  // 24 * 60 分钟
+    let timestamp = Timestamp::from_unix_millis(1641024000000 + minute * 60000)
+    // 模拟温度变化：基础温度 + 时间相关的波动 + 随机噪声
+    let base_temp = 60.0
+    let daily_variation = 10.0 * (minute.to_int().to_float() / 1440.0)  // 24小时内的线性增长
+    let noise = 5.0 * (minute % 10).to_int().to_float() / 10.0  // 每10分钟的周期性变化
+    let temperature = base_temp + daily_variation + noise
+    
+    let data_point = TimeSeriesDataPoint::new(timestamp, temperature)
+    TimeSeries::add_data_point(high_freq_series, data_point)
+  }
   
-  // 创建查询指标
-  let queries_executed = Meter::create_counter(meter, "timeseries.queries.executed")
-  let query_duration = Meter::create_histogram(meter, "timeseries.query.duration")
-  let points_returned = Meter::create_histogram(meter, "timeseries.query.points.returned")
-  let cache_hit_rate = Meter::create_gauge(meter, "timeseries.query.cache.hit.rate")
+  // 下采样到小时级别
+  let hourly_series = TimeSeriesDownsampler::downsample(
+    high_freq_series, 
+    3600000,  // 1小时窗口
+    DownsamplingStrategy::Average
+  )
   
-  // 模拟查询操作
-  Counter::add(queries_executed, 25.0)
-  Histogram::record(query_duration, 0.250)
-  Histogram::record(query_duration, 0.300)
-  Histogram::record(query_duration, 0.200)
-  Histogram::record(points_returned, 6000.0)
-  Histogram::record(points_returned, 7200.0)
-  Gauge::set(cache_hit_rate, 0.75)  // 75% 缓存命中率
+  // 验证下采样结果
+  assert_eq(TimeSeries::data_points_count(hourly_series), 24)  // 24小时，24个点
   
-  // 添加查询事件
-  Span::add_event_with_attributes(query_span, "query.execution.completed", [
-    ("query.id", StringValue("query-001")),
-    ("execution.time", FloatValue(0.250)),
-    ("points.scanned", IntValue(12000)),
-    ("points.returned", IntValue(6000)),
-    ("cache.hits", IntValue(15))
-  ])
+  // 验证第一个小时的平均值
+  let first_hour_points = TimeSeries::get_data_points_in_range(
+    hourly_series,
+    Timestamp::from_unix_millis(1641024000000),
+    Timestamp::from_unix_millis(1641024000000 + 3600000)
+  )
+  assert_eq(first_hour_points.length(), 1)
   
-  Span::end(query_span)
+  // 测试不同下采样策略
+  let max_downsampled = TimeSeriesDownsampler::downsample(
+    high_freq_series,
+    3600000,
+    DownsamplingStrategy::Max
+  )
   
-  // 验证查询指标
-  assert_eq(Counter::value(queries_executed), 25.0)
-  assert_eq(Gauge::value(cache_hit_rate), 0.75)
+  let min_downsampled = TimeSeriesDownsampler::downsample(
+    high_freq_series,
+    3600000,
+    DownsamplingStrategy::Min
+  )
+  
+  assert_eq(TimeSeries::data_points_count(max_downsampled), 24)
+  assert_eq(TimeSeries::data_points_count(min_downsampled), 24)
+  
+  assert_true(true)
 }
 
-// 测试5: 时间序列数据保留策略测试
-test "时间序列数据保留策略测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timeseries.retention")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.retention.metrics")
+test "时间序列异常检测" {
+  // 创建包含异常的时间序列数据
+  let anomaly_series = TimeSeries::new("network.latency", "milliseconds")
   
-  // 创建保留策略span
-  let retention_span = Tracer::start_span(tracer, "timeseries.data.retention.policy")
-  Span::set_attribute(retention_span, "retention.policy.name", StringValue("default"))
-  Span::set_attribute(retention_span, "retention.period", IntValue(2592000))  // 30天
-  Span::set_attribute(retention_span, "retention.resolution", StringValue("1m"))
+  // 添加正常数据点
+  for i = 0; i < 20; i = i + 1 {
+    let timestamp = Timestamp::from_unix_millis(1641024000000 + i * 60000)
+    let normal_latency = 50.0 + 10.0 * (i % 5).to_int().to_float()  // 50-90ms的正常范围
+    let data_point = TimeSeriesDataPoint::new(timestamp, normal_latency)
+    TimeSeries::add_data_point(anomaly_series, data_point)
+  }
   
-  // 创建保留策略指标
-  let retention_operations = Meter::create_counter(meter, "timeseries.retention.operations")
-  let data_expired = Meter::create_counter(meter, "timeseries.data.expired")
-  let data_archived = Meter::create_counter(meter, "timeseries.data.archived")
-  let retention_duration = Meter::create_histogram(meter, "timeseries.retention.duration")
-  let storage_reclaimed = Meter::create_histogram(meter, "timeseries.storage.reclaimed")
+  // 添加异常数据点
+  let anomaly_timestamp1 = Timestamp::from_unix_millis(1641024000000 + 20 * 60000)
+  let anomaly_point1 = TimeSeriesDataPoint::new(anomaly_timestamp1, 500.0)  // 异常高延迟
+  TimeSeries::add_data_point(anomaly_series, anomaly_point1)
   
-  // 模拟保留策略操作
-  Counter::add(retention_operations, 10.0)
-  Counter::add(data_expired, 100000.0)
-  Counter::add(data_archived, 50000.0)
-  Histogram::record(retention_duration, 120.5)
-  Histogram::record(retention_duration, 150.0)
-  Histogram::record(storage_reclaimed, 1073741824.0)  // 1GB
+  let anomaly_timestamp2 = Timestamp::from_unix_millis(1641024000000 + 22 * 60000)
+  let anomaly_point2 = TimeSeriesDataPoint::new(anomaly_timestamp2, 2.0)    // 异常低延迟
+  TimeSeries::add_data_point(anomaly_series, anomaly_point2)
   
-  // 添加保留策略事件
-  Span::add_event_with_attributes(retention_span, "retention.policy.executed", [
-    ("execution.time", StringValue("2023-01-01T02:00:00Z")),
-    ("data.points.expired", IntValue(100000)),
-    ("data.points.archived", IntValue(50000)),
-    ("storage.reclaimed", IntValue(1073741824)),
-    ("execution.duration", FloatValue(135.25))
-  ])
+  // 继续添加正常数据点
+  for i = 24; i < 30; i = i + 1 {
+    let timestamp = Timestamp::from_unix_millis(1641024000000 + i * 60000)
+    let normal_latency = 50.0 + 10.0 * (i % 5).to_int().to_float()
+    let data_point = TimeSeriesDataPoint::new(timestamp, normal_latency)
+    TimeSeries::add_data_point(anomaly_series, data_point)
+  }
   
-  Span::end(retention_span)
+  // 使用统计方法检测异常
+  let anomalies = TimeSeriesAnomalyDetector::detect_statistical_outliers(
+    anomaly_series, 
+    2.0  // 2个标准差阈值
+  )
   
-  // 验证保留策略指标
-  assert_eq(Counter::value(retention_operations), 10.0)
-  assert_eq(Counter::value(data_expired), 100000.0)
-  assert_eq(Counter::value(data_archived), 50000.0)
-}
-
-// 测试6: 时间序列数据降采样测试
-test "时间序列数据降采样测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timeseries.downsampling")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.downsampling.metrics")
+  // 验证异常检测结果
+  assert_true(anomalies.length() >= 2)  // 至少检测到2个异常点
   
-  // 创建降采样操作span
-  let downsampling_span = Tracer::start_span(tracer, "timeseries.data.downsampling")
-  Span::set_attribute(downsampling_span, "source.resolution", StringValue("10s"))
-  Span::set_attribute(downsampling_span, "target.resolution", StringValue("1m"))
-  Span::set_attribute(downsampling_span, "downsampling.rule", StringValue("avg"))
+  // 验证检测到的异常点
+  let anomaly_values = anomalies.map(fn(a) { TimeSeriesDataPoint::value(a) })
+  assert_true(anomaly_values.contains(500.0))
+  assert_true(anomaly_values.contains(2.0))
   
-  // 创建降采样指标
-  let downsampling_operations = Meter::create_counter(meter, "timeseries.downsampling.operations")
-  let downsampling_ratio = Meter::create_histogram(meter, "timeseries.downsampling.ratio")
-  let downsampling_duration = Meter::create_histogram(meter, "timeseries.downsampling.duration")
-  let points_processed = Meter::create_histogram(meter, "timeseries.downsampling.points.processed")
+  // 测试滑动窗口异常检测
+  let sliding_anomalies = TimeSeriesAnomalyDetector::detect_sliding_window_outliers(
+    anomaly_series,
+    600000,  // 10分钟窗口
+    3.0      // 3个标准差阈值
+  )
   
-  // 模拟降采样操作
-  Counter::add(downsampling_operations, 20.0)
-  Histogram::record(downsampling_ratio, 0.1)
-  Histogram::record(downsampling_ratio, 0.12)
-  Histogram::record(downsampling_duration, 5.5)
-  Histogram::record(downsampling_duration, 6.0)
-  Histogram::record(points_processed, 60000.0)
-  Histogram::record(points_processed, 72000.0)
+  assert_true(sliding_anomalies.length() > 0)
   
-  // 添加降采样事件
-  Span::add_event_with_attributes(downsampling_span, "downsampling.window.processed", [
-    ("window.start", StringValue("2023-01-01T09:00:00Z")),
-    ("window.end", StringValue("2023-01-01T10:00:00Z")),
-    ("input.points", IntValue(3600)),
-    ("output.points", IntValue(360)),
-    ("downsampling.ratio", FloatValue(0.1))
-  ])
-  
-  Span::end(downsampling_span)
-  
-  // 验证降采样指标
-  assert_eq(Counter::value(downsampling_operations), 20.0)
-}
-
-// 测试7: 时间序列数据索引测试
-test "时间序列数据索引测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timeseries.index")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.index.metrics")
-  
-  // 创建索引操作span
-  let index_span = Tracer::start_span(tracer, "timeseries.data.indexing")
-  Span::set_attribute(index_span, "index.type", StringValue("inverted"))
-  Span::set_attribute(index_span, "index.fields", StringValue("metric_name,labels"))
-  Span::set_attribute(index_span, "index.size", IntValue(104857600))  // 100MB
-  
-  // 创建索引指标
-  let index_operations = Meter::create_counter(meter, "timeseries.index.operations")
-  let index_build_duration = Meter::create_histogram(meter, "timeseries.index.build.duration")
-  let index_query_duration = Meter::create_histogram(meter, "timeseries.index.query.duration")
-  let index_hit_rate = Meter::create_gauge(meter, "timeseries.index.hit.rate")
-  
-  // 模拟索引操作
-  Counter::add(index_operations, 30.0)
-  Histogram::record(index_build_duration, 10.5)
-  Histogram::record(index_build_duration, 12.0)
-  Histogram::record(index_query_duration, 0.005)
-  Histogram::record(index_query_duration, 0.008)
-  Gauge::set(index_hit_rate, 0.95)  // 95% 索引命中率
-  
-  // 添加索引事件
-  Span::add_event_with_attributes(index_span, "index.build.completed", [
-    ("build.id", StringValue("build-001")),
-    ("build.time", FloatValue(11.25)),
-    ("documents.indexed", IntValue(1000000)),
-    ("index.size", IntValue(104857600)),
-    ("index.segments", IntValue(5))
-  ])
-  
-  Span::add_event_with_attributes(index_span, "index.query.executed", [
-    ("query.id", StringValue("query-001")),
-    ("query.time", FloatValue(0.006)),
-    ("documents.scanned", IntValue(100)),
-    ("documents.matched", IntValue(25))
-  ])
-  
-  Span::end(index_span)
-  
-  // 验证索引指标
-  assert_eq(Counter::value(index_operations), 30.0)
-  assert_eq(Gauge::value(index_hit_rate), 0.95)
-}
-
-// 测试8: 时间序列数据备份和恢复测试
-test "时间序列数据备份和恢复测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timeseries.backup")
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.backup.metrics")
-  
-  // 创建备份恢复span
-  let backup_span = Tracer::start_span(tracer, "timeseries.data.backup.and.restore")
-  Span::set_attribute(backup_span, "backup.type", StringValue("incremental"))
-  Span::set_attribute(backup_span, "backup.location", StringValue("s3://timeseries-backups/"))
-  Span::set_attribute(backup_span, "backup.compression", StringValue("gzip"))
-  
-  // 创建备份恢复指标
-  let backup_operations = Meter::create_counter(meter, "timeseries.backup.operations")
-  let restore_operations = Meter::create_counter(meter, "timeseries.restore.operations")
-  let backup_duration = Meter::create_histogram(meter, "timeseries.backup.duration")
-  let restore_duration = Meter::create_histogram(meter, "timeseries.restore.duration")
-  let backup_size = Meter::create_histogram(meter, "timeseries.backup.size")
-  let data_restored = Meter::create_counter(meter, "timeseries.data.restored")
-  
-  // 模拟备份恢复操作
-  Counter::add(backup_operations, 5.0)
-  Counter::add(restore_operations, 2.0)
-  Histogram::record(backup_duration, 300.5)
-  Histogram::record(backup_duration, 350.0)
-  Histogram::record(restore_duration, 420.0)
-  Histogram::record(restore_duration, 480.0)
-  Histogram::record(backup_size, 1073741824.0)  // 1GB
-  Histogram::record(backup_size, 2147483648.0)  // 2GB
-  Counter::add(data_restored, 5000000.0)
-  
-  // 添加备份恢复事件
-  Span::add_event_with_attributes(backup_span, "backup.operation.completed", [
-    ("backup.id", StringValue("backup-001")),
-    ("backup.start.time", StringValue("2023-01-01T01:00:00Z")),
-    ("backup.end.time", StringValue("2023-01-01T01:06:00Z")),
-    ("backup.size", IntValue(1073741824)),
-    ("data.points.backed.up", IntValue(10000000))
-  ])
-  
-  Span::add_event_with_attributes(backup_span, "restore.operation.completed", [
-    ("restore.id", StringValue("restore-001")),
-    ("restore.start.time", StringValue("2023-01-01T02:00:00Z")),
-    ("restore.end.time", StringValue("2023-01-01T02:08:00Z")),
-    ("data.points.restored", IntValue(5000000)),
-    ("restore.success", BoolValue(true))
-  ])
-  
-  Span::end(backup_span)
-  
-  // 验证备份恢复指标
-  assert_eq(Counter::value(backup_operations), 5.0)
-  assert_eq(Counter::value(restore_operations), 2.0)
-  assert_eq(Counter::value(data_restored), 5000000.0)
+  assert_true(true)
 }

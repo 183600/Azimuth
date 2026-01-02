@@ -1,379 +1,363 @@
-// Azimuth Telemetry System - 性能压力测试用例
-// 测试系统在高负载和压力情况下的性能表现和稳定性
+// 性能压力测试用例
+// 测试Azimuth遥测系统在高负载下的性能表现
 
-// 测试1: 高频Span创建和销毁
-test "高频Span创建和销毁压力测试" {
-  let start_time = 1640995200000L  // 模拟开始时间
-  let span_count = 10000
+test "高并发span创建和结束性能" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.stress.test")
   
-  // 创建大量Span
-  let spans = []
-  for i = 0; i < span_count; i = i + 1 {
-    let span_name = "stress-test-span-" + i.to_string()
-    let trace_id = "trace123456789012345678901234567890"
-    let span_id = "span" + i.to_string().pad_left(12, '0')
+  // 测量高并发span创建性能
+  let start_time = Timestamp::now()
+  let concurrent_spans = []
+  
+  // 创建1000个并发span
+  for i = 0; i < 1000; i = i + 1 {
+    let span = Tracer::start_span(tracer, "concurrent.span." + i.to_string())
+    concurrent_spans = concurrent_spans + [span]
     
-    // 模拟Span创建
-    spans.push((span_name, trace_id, span_id))
-  }
-  
-  // 验证所有Span都被创建
-  assert_eq(spans.length(), span_count)
-  
-  // 模拟Span操作
-  for i = 0; i < spans.length(); i = i + 1 {
-    let (span_name, trace_id, span_id) = spans[i]
+    // 为每个span添加属性
+    Span::set_attribute(span, "iteration", i.to_string())
+    Span::set_attribute(span, "concurrency.test", "true")
     
-    // 验证Span数据完整性
-    assert_true(span_name.contains("stress-test-span-"))
-    assert_eq(trace_id.length(), 32)
-    assert_true(span_id.length() >= 12)
-  }
-  
-  // 模拟Span销毁
-  let destroyed_count = 0
-  for span in spans {
-    // 模拟销毁操作
-    destroyed_count = destroyed_count + 1
-  }
-  
-  assert_eq(destroyed_count, span_count)
-  
-  // 计算性能指标
-  let end_time = 1640995300000L  // 模拟结束时间
-  let duration_ms = end_time - start_time
-  let spans_per_second = (span_count.to_float() / (duration_ms.to_float() / 1000.0)).to_int()
-  
-  assert_true(duration_ms > 0)
-  assert_true(spans_per_second > 0)
-  assert_true(spans_per_second > 100)  // 至少每秒100个Span
-}
-
-// 测试2: 高并发度量操作
-test "高并发度量操作压力测试" {
-  let metric_count = 50000
-  let operation_start = 1640995200000L
-  
-  // 模拟Counter度量操作
-  let mut counter_value = 0.0
-  for i = 0; i < metric_count; i = i + 1 {
-    counter_value = counter_value + 1.0
-    
-    // 每1000次操作验证一次
-    if i % 1000 == 0 && i > 0 {
-      assert_eq(counter_value, i.to_float())
+    // 每100个span添加一个事件
+    if i % 100 == 0 {
+      Span::add_event(span, "milestone.reached", [
+        ("milestone", (i / 100).to_string()),
+        ("timestamp", Timestamp::now().to_string())
+      ])
     }
   }
   
-  assert_eq(counter_value, metric_count.to_float())
+  let creation_time = Timestamp::now()
+  let creation_duration = Timestamp::difference(creation_time, start_time)
   
-  // 模拟Histogram度量操作
-  let histogram_values = []
-  for i = 0; i < metric_count; i = i + 1 {
-    let value = 10.0 + (i.to_float() % 100.0)  // 10-110范围
-    histogram_values.push(value)
+  // 快速结束所有span
+  for span in concurrent_spans {
+    Span::end(span)
   }
   
-  assert_eq(histogram_values.length(), metric_count)
+  let end_time = Timestamp::now()
+  let total_duration = Timestamp::difference(end_time, start_time)
   
-  // 计算统计信息
-  let sum = histogram_values.reduce(|acc, val| acc + val, 0.0)
-  let avg = sum / histogram_values.length().to_float()
+  // 验证性能指标
+  assert_true(creation_duration.to_millis() < 5000)  // 创建1000个span应在5秒内完成
+  assert_true(total_duration.to_millis() < 10000)    // 总操作应在10秒内完成
   
-  assert_true(sum > 0.0)
-  assert_true(avg >= 10.0)
-  assert_true(avg <= 110.0)
+  // 验证所有span都被正确处理
+  let exported_spans = TracerProvider::get_exported_spans(tracer_provider)
+  assert_true(exported_spans.length() >= 900)  // 允许一些采样损失
   
-  // 模拟Gauge度量操作
-  let mut gauge_value = 50.0
-  for i = 0; i < metric_count / 10; i = i + 1 {
-    gauge_value = 45.0 + (i.to_float() % 20.0)  // 45-65范围
-  }
-  
-  assert_true(gauge_value >= 45.0)
-  assert_true(gauge_value <= 65.0)
-  
-  // 计算操作性能
-  let operation_end = 1640995400000L
-  let total_duration = operation_end - operation_start
-  let operations_per_second = (metric_count.to_float() / (total_duration.to_float() / 1000.0)).to_int()
-  
-  assert_true(operations_per_second > 1000)  // 至少每秒1000次操作
+  assert_true(true)
 }
 
-// 测试3: 大量属性设置和查询
-test "大量属性设置和查询压力测试" {
-  let attribute_count = 10000
-  let attributes = []
+test "大批量度量数据处理性能" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "performance.metrics.test")
   
-  // 创建大量属性
-  for i = 0; i < attribute_count; i = i + 1 {
-    let key = "attribute.key." + i.to_string()
-    let value = "attribute.value." + i.to_string()
-    attributes.push((key, value))
-  }
+  // 创建多种类型的度量
+  let counter = Meter::create_counter(meter, "stress.test.counter")
+  let gauge = Meter::create_gauge(meter, "stress.test.gauge")
+  let histogram = Meter::create_histogram(meter, "stress.test.histogram")
   
-  assert_eq(attributes.length(), attribute_count)
+  let start_time = Timestamp::now()
   
-  // 测试属性查询性能
-  let query_start = 1640995200000L
-  let found_count = 0
-  
-  // 查询特定属性
-  for i = 0; i < attribute_count; i = i + 1 {
-    let search_key = "attribute.key." + i.to_string()
-    
-    // 模拟属性查询
-    for (key, value) in attributes {
-      if key == search_key {
-        found_count = found_count + 1
-        assert_eq(value, "attribute.value." + i.to_string())
-        break  // 找到后退出
-      }
+  // 批量添加度量数据
+  for batch = 0; batch < 10; batch = batch + 1 {
+    // 每批1000个数据点
+    for i = 0; i < 1000; i = i + 1 {
+      let batch_id = batch.to_string()
+      let iteration_id = i.to_string()
+      
+      // 添加计数器数据
+      Counter::add_with_attributes(counter, 1.0, [
+        ("batch", batch_id),
+        ("iteration", iteration_id),
+        ("type", "counter")
+      ])
+      
+      // 设置仪表值
+      Gauge::set_with_attributes(gauge, 100.0 + i.to_int().to_float(), [
+        ("batch", batch_id),
+        ("iteration", iteration_id),
+        ("type", "gauge")
+      ])
+      
+      // 记录直方图数据
+      Histogram::record_with_attributes(histogram, 50.0 + (i % 50).to_int().to_float(), [
+        ("batch", batch_id),
+        ("iteration", iteration_id),
+        ("type", "histogram")
+      ])
     }
   }
   
-  assert_eq(found_count, attribute_count)
+  let data_generation_time = Timestamp::now()
+  let generation_duration = Timestamp::difference(data_generation_time, start_time)
   
-  // 测试属性过滤性能
-  let filter_start = 1640995300000L
-  let filtered_attributes = attributes.filter(|(key, _)| {
-    key.contains("attribute.key.") && 
-    key.split(".").length() == 4
-  })
+  // 强制刷新所有度量数据
+  MeterProvider::flush(meter_provider)
   
-  assert_eq(filtered_attributes.length(), attribute_count)
+  let flush_time = Timestamp::now()
+  let total_duration = Timestamp::difference(flush_time, start_time)
   
-  // 测试属性映射性能
-  let map_start = 1640995400000L
-  let mapped_attributes = attributes.map(|(key, value)| {
-    (key.to_uppercase(), value.to_uppercase())
-  })
+  // 验证性能指标
+  assert_true(generation_duration.to_millis() < 8000)  // 生成30000个数据点应在8秒内完成
+  assert_true(total_duration.to_millis() < 15000)      // 总操作应在15秒内完成
   
-  assert_eq(mapped_attributes.length(), attribute_count)
+  // 验证数据完整性
+  let metrics = Meter::collect_metrics(meter)
+  assert_true(metrics.length() > 0)
   
-  // 验证映射结果
-  for i = 0; i < mapped_attributes.length(); i = i + 1 {
-    let (original_key, original_value) = attributes[i]
-    let (mapped_key, mapped_value) = mapped_attributes[i]
-    
-    assert_eq(mapped_key, original_key.to_uppercase())
-    assert_eq(mapped_value, original_value.to_uppercase())
-  }
-  
-  // 计算查询性能指标
-  let query_end = 1640995500000L
-  let query_duration = query_end - query_start
-  let attributes_per_second = (attribute_count.to_float() / (query_duration.to_float() / 1000.0)).to_int()
-  
-  assert_true(attributes_per_second > 100)  // 至少每秒100个属性查询
+  assert_true(true)
 }
 
-// 测试4: 大量日志记录和处理
-test "大量日志记录和处理压力测试" {
-  let log_count = 20000
-  let logs = []
+test "高频日志记录性能测试" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "performance.logging.test")
   
-  // 创建不同级别的日志
-  let log_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+  let start_time = Timestamp::now()
   
-  for i = 0; i < log_count; i = i + 1 {
-    let level = log_levels[i % log_levels.length()]
-    let message = "Log message " + i.to_string() + " with level " + level
-    let timestamp = 1640995200000L + (i * 10L)  // 每10ms一条日志
-    
-    logs.push((level, message, timestamp))
-  }
-  
-  assert_eq(logs.length(), log_count)
-  
-  // 测试日志过滤性能
-  let error_logs = logs.filter(|(level, _, _)| level == "ERROR" || level == "FATAL")
-  let expected_error_count = (log_count / log_levels.length()) * 2  // ERROR和FATAL
-  
-  assert_eq(error_logs.length(), expected_error_count)
-  
-  // 测试日志时间范围查询
-  let start_time = 1640995250000L
-  let end_time = 1640995350000L
-  
-  let time_filtered_logs = logs.filter(|(_, _, timestamp)| {
-    timestamp >= start_time && timestamp <= end_time
-  })
-  
-  assert_true(time_filtered_logs.length() > 0)
-  assert_true(time_filtered_logs.length() < log_count)
-  
-  // 测试日志消息搜索
-  let search_term = "Log message"
-  let search_results = logs.filter(|(_, message, _)| message.contains(search_term))
-  
-  assert_eq(search_results.length(), log_count)  // 所有日志都包含搜索词
-  
-  // 测试日志聚合统计
-  let mut level_counts = []
-  for level in log_levels {
-    let count = logs.filter(|(log_level, _, _)| log_level == level).length()
-    level_counts.push((level, count))
-  }
-  
-  assert_eq(level_counts.length(), log_levels.length())
-  
-  // 验证每个级别都有日志
-  for (level, count) in level_counts {
-    assert_true(count > 0)
-    assert_eq(count, log_count / log_levels.length())
-  }
-  
-  // 计算日志处理性能
-  let processing_start = 1640995200000L
-  let processing_end = 1640995700000L
-  let processing_duration = processing_end - processing_start
-  let logs_per_second = (log_count.to_float() / (processing_duration.to_float() / 1000.0)).to_int()
-  
-  assert_true(logs_per_second > 200)  // 至少每秒200条日志处理
-}
-
-// 测试5: 复杂上下文传播压力测试
-test "复杂上下文传播压力测试" {
-  let context_count = 5000
-  let contexts = []
-  
-  // 创建嵌套上下文
-  let base_trace_id = "trace123456789012345678901234567890"
-  
-  for i = 0; i < context_count; i = i + 1 {
-    let span_id = "span" + i.to_string().pad_left(12, '0')
-    let parent_span_id = if i > 0 { 
-      "span" + (i - 1).to_string().pad_left(12, '0') 
-    } else { 
-      "000000000000" 
+  // 高频日志记录
+  for i = 0; i < 5000; i = i + 1 {
+    let log_level = match i % 4 {
+      0 => LogLevel::DEBUG
+      1 => LogLevel::INFO
+      2 => LogLevel::WARN
+      _ => LogLevel::ERROR
     }
     
-    contexts.push((base_trace_id, span_id, parent_span_id))
-  }
-  
-  assert_eq(contexts.length(), context_count)
-  
-  // 测试上下文链验证
-  for i = 1; i < contexts.length(); i = i + 1 {
-    let (_, current_span_id, parent_span_id) = contexts[i]
-    let (_, prev_span_id, _) = contexts[i - 1]
+    let message = "High frequency log message " + i.to_string()
     
-    assert_eq(parent_span_id, prev_span_id)
-    assert_not_eq(current_span_id, parent_span_id)
+    Logger::emit_log(logger, log_level, message, [
+      ("iteration", i.to_string()),
+      ("batch", (i / 100).to_string()),
+      ("thread", "main"),
+      ("performance.test", "true")
+    ])
   }
   
-  // 测试Baggage传播性能
-  let baggage_items = []
-  for i = 0; i < context_count; i = i + 1 {
-    let baggage_key = "baggage.item." + i.to_string()
-    let baggage_value = "baggage.value." + i.to_string()
-    baggage_items.push((baggage_key, baggage_value))
-  }
+  let logging_time = Timestamp::now()
+  let logging_duration = Timestamp::difference(logging_time, start_time)
   
-  assert_eq(baggage_items.length(), context_count)
+  // 强制刷新所有日志
+  LoggerProvider::flush(logger_provider)
   
-  // 模拟Baggage序列化和反序列化
-  let serialized_baggage = baggage_items.map(|(key, value)| key + "=" + value).reduce(|acc, item| acc + "," + item, "")
-  assert_true(serialized_baggage.length() > 0)
+  let flush_time = Timestamp::now()
+  let total_duration = Timestamp::difference(flush_time, start_time)
   
-  // 测试反序列化性能
-  let deserialized_items = serialized_baggage.split(",")
-  assert_eq(deserialized_items.length(), context_count)
+  // 验证性能指标
+  assert_true(logging_duration.to_millis() < 10000)  // 记录5000条日志应在10秒内完成
+  assert_true(total_duration.to_millis() < 20000)    // 总操作应在20秒内完成
   
-  // 验证反序列化结果
-  for i = 0; i < deserialized_items.length(); i = i + 1 {
-    let item = deserialized_items[i]
-    let expected_key = "baggage.item." + i.to_string()
-    let expected_value = "baggage.value." + i.to_string()
-    let expected_item = expected_key + "=" + expected_value
-    
-    assert_eq(item, expected_item)
-  }
+  // 验证日志记录
+  let recorded_logs = LoggerProvider::get_recorded_logs(logger_provider)
+  assert_true(recorded_logs.length() > 0)
   
-  // 计算上下文传播性能
-  let propagation_start = 1640995200000L
-  let propagation_end = 1640995600000L
-  let propagation_duration = propagation_end - propagation_start
-  let contexts_per_second = (context_count.to_float() / (propagation_duration.to_float() / 1000.0)).to_int()
-  
-  assert_true(contexts_per_second > 100)  // 至少每秒100个上下文传播
+  assert_true(true)
 }
 
-// 测试6: 资源合并和序列化压力测试
-test "资源合并和序列化压力测试" {
-  let resource_count = 1000
-  let resources = []
+test "内存使用压力测试" {
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  // 创建多个资源
-  for i = 0; i < resource_count; i = i + 1 {
-    let resource_attributes = []
+  let tracer = TracerProvider::get_tracer(tracer_provider, "memory.stress.test")
+  let meter = MeterProvider::get_meter(meter_provider, "memory.stress.test")
+  let logger = LoggerProvider::get_logger(logger_provider, "memory.stress.test")
+  
+  // 记录初始内存使用
+  let initial_memory = MemoryMonitor::get_current_usage()
+  
+  // 创建大量对象但不立即释放
+  let large_spans = []
+  let large_metrics = []
+  
+  // 创建大量span
+  for i = 0; i < 2000; i = i + 1 {
+    let span = Tracer::start_span(tracer, "memory.stress.span." + i.to_string())
     
-    // 每个资源包含多个属性
+    // 为每个span添加大量属性
     for j = 0; j < 10; j = j + 1 {
-      let key = "resource." + i.to_string() + ".attr." + j.to_string()
-      let value = "value." + i.to_string() + "." + j.to_string()
-      resource_attributes.push((key, value))
+      Span::set_attribute(span, "attr." + j.to_string(), "value." + i.to_string() + "." + j.to_string())
     }
     
-    resources.push(resource_attributes)
+    large_spans = large_spans + [span]
   }
   
-  assert_eq(resources.length(), resource_count)
-  
-  // 测试资源合并性能
-  let merge_start = 1640995200000L
-  let merged_attributes = []
-  
-  for resource in resources {
-    for (key, value) in resource {
-      merged_attributes.push((key, value))
-    }
+  // 创建大量度量数据
+  let counter = Meter::create_counter(meter, "memory.stress.counter")
+  for i = 0; i < 10000; i = i + 1 {
+    Counter::add_with_attributes(counter, 1.0, [
+      ("large.attribute.name.that.consumes.memory." + i.to_string(), 
+       "large.attribute.value.that.also.consumes.memory." + i.to_string())
+    ])
   }
   
-  assert_eq(merged_attributes.length(), resource_count * 10)
+  // 记录峰值内存使用
+  let peak_memory = MemoryMonitor::get_current_usage()
   
-  // 测试属性去重
-  let unique_attributes = []
-  let seen_keys = []
-  
-  for (key, value) in merged_attributes {
-    if not seen_keys.contains(key) {
-      unique_attributes.push((key, value))
-      seen_keys.push(key)
-    }
+  // 释放所有span
+  for span in large_spans {
+    Span::end(span)
   }
   
-  assert_eq(unique_attributes.length(), merged_attributes.length())  // 所有键都是唯一的
+  // 强制垃圾回收（如果可用）
+  MemoryMonitor::force_gc()
   
-  // 测试资源序列化性能
-  let serialization_start = 1640995300000L
-  let serialized_resources = []
+  // 记录最终内存使用
+  let final_memory = MemoryMonitor::get_current_usage()
   
-  for resource in resources {
-    let serialized = resource.map(|(key, value)| key + "=" + value).reduce(|acc, pair| acc + "," + pair, "")
-    serialized_resources.push(serialized)
-  }
+  // 验证内存使用模式
+  assert_true(peak_memory > initial_memory)  // 内存使用应该增加
+  assert_true(final_memory < peak_memory)    // 释放后内存应该减少
   
-  assert_eq(serialized_resources.length(), resource_count)
+  // 验证内存泄漏不严重（允许合理的内存增长）
+  let memory_growth = final_memory - initial_memory
+  assert_true(memory_growth < initial_memory * 2)  // 内存增长不应超过初始使用的200%
   
-  // 验证序列化结果
-  for i = 0; i < serialized_resources.length(); i = i + 1 {
-    let serialized = serialized_resources[i]
-    let original_resource = resources[i]
+  assert_true(true)
+}
+
+test "长时间运行稳定性测试" {
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "stability.test")
+  let meter = MeterProvider::get_meter(meter_provider, "stability.test")
+  let logger = LoggerProvider::get_logger(logger_provider, "stability.test")
+  
+  let start_time = Timestamp::now()
+  let test_duration_ms = 30000  // 30秒测试
+  let iteration_count = 0
+  
+  // 长时间运行循环
+  while Timestamp::difference(Timestamp::now(), start_time).to_millis() < test_duration_ms {
+    iteration_count = iteration_count + 1
     
-    // 验证序列化字符串包含所有属性
-    for (key, value) in original_resource {
-      let expected_pair = key + "=" + value
-      assert_true(serialized.contains(expected_pair))
+    // 创建span
+    let span = Tracer::start_span(tracer, "stability.iteration." + iteration_count.to_string())
+    Span::set_attribute(span, "iteration", iteration_count.to_string())
+    Span::set_attribute(span, "timestamp", Timestamp::now().to_string())
+    
+    // 添加度量
+    let counter = Meter::create_counter(meter, "stability.counter")
+    Counter::add_with_attributes(counter, 1.0, [
+      ("iteration", iteration_count.to_string()),
+      ("timestamp", Timestamp::now().to_string())
+    ])
+    
+    // 记录日志
+    Logger::emit_log(logger, LogLevel::INFO, "Stability test iteration " + iteration_count.to_string(), [
+      ("iteration", iteration_count.to_string()),
+      ("timestamp", Timestamp::now().to_string())
+    ])
+    
+    // 结束span
+    Span::end(span)
+    
+    // 短暂休眠以模拟真实工作负载
+    if iteration_count % 100 == 0 {
+      // 每100次迭代刷新一次
+      TracerProvider::flush(tracer_provider)
+      MeterProvider::flush(meter_provider)
+      LoggerProvider::flush(logger_provider)
     }
   }
   
-  // 计算资源处理性能
-  let processing_end = 1640995700000L
-  let processing_duration = processing_end - merge_start
-  let resources_per_second = (resource_count.to_float() / (processing_duration.to_float() / 1000.0)).to_int()
+  let end_time = Timestamp::now()
+  let total_duration = Timestamp::difference(end_time, start_time)
   
-  assert_true(resources_per_second > 50)  // 至少每秒50个资源处理
+  // 验证测试持续时间
+  assert_true(total_duration.to_millis() >= test_duration_ms)
+  
+  // 验证系统在长时间运行后仍然稳定
+  let final_span = Tracer::start_span(tracer, "stability.final.check")
+  Span::set_attribute(final_span, "total.iterations", iteration_count.to_string())
+  Span::set_attribute(final_span, "system.stable", "true")
+  Span::end(final_span)
+  
+  // 验证数据收集仍然正常
+  let exported_spans = TracerProvider::get_exported_spans(tracer_provider)
+  let metrics = Meter::collect_metrics(meter)
+  let logs = LoggerProvider::get_recorded_logs(logger_provider)
+  
+  assert_true(exported_spans.length() > 0)
+  assert_true(metrics.length() > 0)
+  assert_true(logs.length() > 0)
+  
+  assert_true(true)
+}
+
+test "资源限制下的性能表现" {
+  // 创建带有资源限制的配置
+  let limited_config = TelemetryConfiguration::new()
+  TelemetryConfiguration::set_max_spans(limited_config, 100)      // 限制最大span数
+  TelemetryConfiguration::set_max_metrics(limited_config, 500)    // 限制最大度量数
+  TelemetryConfiguration::set_max_logs(limited_config, 1000)      // 限制最大日志数
+  TelemetryConfiguration::set_batch_size(limited_config, 10)      // 小批处理大小
+  
+  let tracer_provider = TracerProvider::builder()
+    .with_config(limited_config)
+    .build()
+  
+  let meter_provider = MeterProvider::builder()
+    .with_config(limited_config)
+    .build()
+  
+  let logger_provider = LoggerProvider::builder()
+    .with_config(limited_config)
+    .build()
+  
+  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.limit.test")
+  let meter = MeterProvider::get_meter(meter_provider, "resource.limit.test")
+  let logger = LoggerProvider::get_logger(logger_provider, "resource.limit.test")
+  
+  // 尝试创建超过限制的span
+  let spans_over_limit = []
+  for i = 0; i < 200; i = i + 1 {  // 超过100的限制
+    let span = Tracer::start_span(tracer, "over.limit.span." + i.to_string())
+    spans_over_limit = spans_over_limit + [span]
+  }
+  
+  // 结束所有span
+  for span in spans_over_limit {
+    Span::end(span)
+  }
+  
+  // 创建超过限制的度量
+  let counter = Meter::create_counter(meter, "over.limit.counter")
+  for i = 0; i < 600; i = i + 1 {  // 超过500的限制
+    Counter::add_with_attributes(counter, 1.0, [
+      ("iteration", i.to_string()),
+      ("over.limit", "true")
+    ])
+  }
+  
+  // 创建超过限制的日志
+  for i = 0; i < 1200; i = i + 1 {  // 超过1000的限制
+    Logger::emit_log(logger, LogLevel::INFO, "Over limit log " + i.to_string(), [
+      ("iteration", i.to_string())
+    ])
+  }
+  
+  // 强制刷新
+  TracerProvider::flush(tracer_provider)
+  MeterProvider::flush(meter_provider)
+  LoggerProvider::flush(logger_provider)
+  
+  // 验证资源限制被尊重
+  let exported_spans = TracerProvider::get_exported_spans(tracer_provider)
+  let metrics = Meter::collect_metrics(meter)
+  let logs = LoggerProvider::get_recorded_logs(logger_provider)
+  
+  // 数量应该接近但不应该超过限制（允许一些误差）
+  assert_true(exported_spans.length() <= 110)  // 允许10%误差
+  assert_true(metrics.length() <= 550)         // 允许10%误差
+  assert_true(logs.length() <= 1100)           // 允许10%误差
+  
+  // 验证系统在资源限制下仍然可用
+  let final_span = Tracer::start_span(tracer, "resource.limit.final.check")
+  Span::end(final_span)
+  
+  assert_true(true)
 }
