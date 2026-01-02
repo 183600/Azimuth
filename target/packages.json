@@ -620,6 +620,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth_advanced_telemetry_integration_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth_attributes_operations_tests.mbt": {
           "backend": [
             "Wasm",
@@ -789,6 +802,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/src/azimuth_simple_integration_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/src/azimuth_span_lifecycle_tests.mbt": {
           "backend": [
             "Wasm",
@@ -849,6 +875,35 @@
       "wbtest-deps": [],
       "test-deps": [],
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/src/src.mi"
+    },
+    {
+      "is-main": false,
+      "is-third-party": false,
+      "root-path": "/home/runner/work/Azimuth/Azimuth/standalone_simple_test",
+      "root": "azimuth/telemetry",
+      "rel": "standalone_simple_test",
+      "files": {
+        "/home/runner/work/Azimuth/Azimuth/standalone_simple_test/azimuth_simple_integration_tests.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        }
+      },
+      "wbtest-files": {},
+      "test-files": {},
+      "mbt-md-files": {},
+      "deps": [],
+      "wbtest-deps": [],
+      "test-deps": [],
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/standalone_simple_test/standalone_simple_test.mi"
     },
     {
       "is-main": false,

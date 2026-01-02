@@ -1,0 +1,13 @@
+{
+  "name": "azimuth/simple/test",
+  "version": "0.1.0",
+  "description": "Simple integration tests for Azimuth",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["azimuth_simple_integration_tests.mbt"]
+  }
+}

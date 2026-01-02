@@ -57,47 +57,17 @@ struct Moonbit_Test_Driver_Internal__TestCase {
 }
 
 let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No_Args_Map = {
-  "basic_tests.mbt": {
-  },
-  "azimuth_telemetry_serialization_tests.mbt": {
-  },
-  "azimuth_specialized_test_cases.mbt": {
-  },
-  "azimuth_span_lifecycle_tests.mbt": {
-  },
   "azimuth_simple_integration_tests.mbt": {
-  },
-  "azimuth_simple_additional_tests.mbt": {
-  },
-  "azimuth_resource_management_tests.mbt": {
-  },
-  "azimuth_performance_benchmark_tests.mbt": {
-  },
-  "azimuth_minimal_tests.mbt": {
-  },
-  "azimuth_integration_tests.mbt": {
-  },
-  "azimuth_error_handling_tests.mbt": {
-  },
-  "azimuth_enhanced_test_suite.mbt": {
-  },
-  "azimuth_core_functionality_tests.mbt": {
-  },
-  "azimuth_core_data_types_tests.mbt": {
-  },
-  "azimuth_context_propagation_tests.mbt": {
-  },
-  "azimuth_concurrent_safety_tests.mbt": {
-  },
-  "azimuth_basic_language_tests.mbt": {
-  },
-  "azimuth_attributes_operations_tests.mbt": {
-  },
-  "azimuth_advanced_telemetry_integration_tests.mbt": {
-  },
-  "azimuth_advanced_feature_tests.mbt": {
-  },
-  "azimuth_additional_tests.mbt": {
+    0: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_0, ["高阶函数和函数组合测试"]),
+    1: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_1, ["递归和算法实现测试"]),
+    2: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_2, ["数据结构操作测试"]),
+    3: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_3, ["字符串处理和模式匹配测试"]),
+    4: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_4, ["错误处理和边界情况测试"]),
+    5: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_5, ["枚举和模式匹配测试"]),
+    6: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_6, ["时间和日期概念模拟测试"]),
+    7: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_7, ["数据验证和处理测试"]),
+    8: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_8, ["简单的遥测概念模拟测试"]),
+    9: (__test_617a696d7574685f73696d706c655f696e746567726174696f6e5f74657374732e6d6274_9, ["数据转换和序列化测试"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
@@ -175,7 +145,7 @@ pub fn moonbit_test_driver_internal_do_execute(
     let message = message.escape()
     @moonbitlang/core/builtin.println("----- BEGIN MOON TEST RESULT -----")
     @moonbitlang/core/builtin.println(
-      "{\"package\": \"azimuth/telemetry/src\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
+      "{\"package\": \"azimuth/telemetry/standalone_simple_test\", \"filename\": \{file_name}, \"index\": \"\{index}\", \"test_name\": \{test_name}, \"message\": \{message}}",
     )
     @moonbitlang/core/builtin.println("----- END MOON TEST RESULT -----")
   }
