@@ -50,5 +50,6 @@
         "azimuth_boundary_condition_edge_tests.mbt",
         "azimuth_cross_component_integration_tests.mbt",
         "azimuth_context_propagation_advanced_tests.mbt",
-        "azimuth_specialized_comprehensive_tests.mbt"
+        "azimuth_specialized_comprehensive_tests.mbt",
+        "azimuth_advanced_feature_comprehensive_tests.mbt"
             ]  }}
