@@ -62,5 +62,6 @@
         "azimuth_memory_leak_protection_tests.mbt",
         "azimuth_data_consistency_validation_tests.mbt",
         "azimuth_complex_aggregation_algorithms_tests.mbt",
-        "azimuth_fault_recovery_mechanism_tests.mbt"
+        "azimuth_fault_recovery_mechanism_tests.mbt",
+        "azimuth_high_quality_comprehensive_test_suite.mbt"
             ]  }}
