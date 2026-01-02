@@ -1,298 +1,217 @@
 // Focused Telemetry Tests for Azimuth System
 // This file contains focused test cases covering core telemetry functionality
 
-// Test 1: Basic telemetry data collection and validation
-test "basic telemetry data collection" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "test.tracer")
+// Test 1: Basic span context operations
+test "basic span context operations" {
+  // Test span context creation and validation
+  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+  let span_id = "b7ad6b7169203331"
+  let span_ctx = SpanContext::new(trace_id, span_id, true, "key1=value1")
   
-  // Create a span with basic attributes
-  let span = Tracer::start_span(tracer, "test.operation")
-  Span::set_attribute(span, "user.id", StringValue("user-123"))
-  Span::set_attribute(span, "operation.type", StringValue("query"))
-  Span::set_attribute(span, "duration", IntValue(1000))
+  // Verify span context integrity
+  assert_eq(SpanContext::trace_id(span_ctx), trace_id)
+  assert_eq(SpanContext::span_id(span_ctx), span_id)
+  assert_true(SpanContext::is_sampled(span_ctx))
+  assert_true(SpanContext::is_valid(span_ctx))
   
-  // Verify span attributes
-  let user_id = Span::get_attribute(span, "user.id")
-  let op_type = Span::get_attribute(span, "operation.type")
-  let duration = Span::get_attribute(span, "duration")
-  
-  match user_id {
-    Some(StringValue("user-123")) => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match op_type {
-    Some(StringValue("query")) => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match duration {
-    Some(IntValue(1000)) => assert_true(true)
-    _ => assert_true(false)
-  }
+  // Test invalid span context
+  let invalid_ctx = SpanContext::new("", "span-123", true, "")
+  assert_false(SpanContext::is_valid(invalid_ctx))
 }
 
-// Test 2: Cross-service context propagation
-test "cross-service context propagation" {
-  let propagator = TraceContextPropagator::new()
-  let context = Context::current()
-  
-  // Inject context into carrier
-  let carrier = TextMapPropagator::new()
-  Propagator::inject(propagator, context, carrier)
-  
-  // Extract context from carrier
-  let extracted_context = Propagator::extract(propagator, carrier)
-  
-  // Verify trace context is preserved
-  let trace_id = Context::get_trace_id(extracted_context)
-  let span_id = Context::get_span_id(extracted_context)
-  
-  assert_true(trace_id.length() > 0)
-  assert_true(span_id.length() > 0)
-}
-
-// Test 3: Metrics aggregation and calculation
-test "metrics aggregation and calculation" {
+// Test 2: Metrics operations with different instruments
+test "metrics operations with different instruments" {
+  // Test metrics creation and operations
   let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "test.meter")
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let counter = Meter::create_counter(meter, "http.requests.total")
   
-  // Create counter instrument
-  let counter = Meter::create_counter(meter, "test.requests", Some("Test requests"), Some("count"))
+  // Test counter properties
+  assert_eq(counter.name, "http.requests.total")
   
-  // Record measurements
-  Counter::add(counter, 10.0)
-  Counter::add(counter, 20.0)
-  Counter::add(counter, 30.0)
+  // Test counter operations
+  Counter::add(counter, 1.0)
+  Counter::add(counter, 5.0)
+  Counter::add(counter, 10.5)
   
-  // Create histogram instrument
-  let histogram = Meter::create_histogram(meter, "test.latency", Some("Test latency"), Some("ms"))
-  
-  // Record latency measurements
+  // Test histogram
+  let histogram = Meter::create_histogram(meter, "response.time")
+  assert_eq(histogram.name, "response.time")
   Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 200.0)
-  Histogram::record(histogram, 300.0)
+  Histogram::record(histogram, 250.0)
   
-  // Verify metric instruments are created
-  assert_eq(counter.name, "test.requests")
-  assert_eq(histogram.name, "test.latency")
+  // Test updown counter
+  let updown_counter = Meter::create_updown_counter(meter, "active.connections")
+  assert_eq(updown_counter.name, "active.connections")
+  UpDownCounter::add(updown_counter, 5.0)
+  UpDownCounter::add(updown_counter, -2.0)
+  
+  // Test gauge
+  let gauge = Meter::create_gauge(meter, "cpu.usage")
+  assert_eq(gauge.name, "cpu.usage")
 }
 
-// Test 4: Structured logging with correlation
-test "structured logging with correlation" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "test.logger")
+// Test 3: Log record with context validation
+test "log record with context validation" {
+  // Test log record creation with context
+  let ctx = Context::root()
+  let key = ContextKey::new("correlation.id")
+  let ctx_with_value = Context::with_value(ctx, key, "corr-12345")
   
-  // Create log record with structured data
-  let record = LogRecord::new()
-  LogRecord::set_severity(record, Severity::INFO)
-  LogRecord::set_body(record, StringValue("User login successful"))
-  LogRecord::set_attribute(record, "user.id", StringValue("user-456"))
-  LogRecord::set_attribute(record, "ip.address", StringValue("192.168.1.1"))
-  LogRecord::set_attribute(record, "timestamp", IntValue(1640995200))
+  let record = LogRecord::new_with_context(
+    Warn,
+    Some("Warning with context"),
+    None,
+    Some(1735689600000000000L),
+    Some(1735689600000001000L),
+    Some("trace-123"),
+    Some("span-456"),
+    Some(ctx_with_value)
+  )
   
-  // Emit log record
-  Logger::emit(logger, record)
-  
-  // Verify log record attributes
-  let severity = LogRecord::get_severity(record)
-  let body = LogRecord::get_body(record)
-  let user_id = LogRecord::get_attribute(record, "user.id")
-  
-  assert_eq(severity, Severity::INFO)
-  
-  match body {
-    Some(StringValue("User login successful")) => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match user_id {
-    Some(StringValue("user-456")) => assert_true(true)
-    _ => assert_true(false)
-  }
+  assert_eq(LogRecord::severity_number(record), Warn)
+  assert_eq(LogRecord::body(record), Some("Warning with context"))
+  assert_eq(LogRecord::trace_id(record), Some("trace-123"))
+  assert_eq(LogRecord::span_id(record), Some("span-456"))
 }
 
-// Test 5: Resource management with environment detection
-test "resource management with environment detection" {
+// Test 4: Context propagation validation
+test "context propagation validation" {
+  // Test context propagation operations
+  let initial_ctx = Context::root()
+  let key = ContextKey::new("trace.id")
+  let ctx_with_trace = Context::with_value(initial_ctx, key, "trace-12345")
+  
+  // Test context value retrieval
+  let retrieved_value = Context::get(ctx_with_trace, key)
+  assert_eq(retrieved_value, Some("trace-12345"))
+  
+  // Test nested context
+  let nested_key = ContextKey::new("user.id")
+  let nested_ctx = Context::with_value(ctx_with_trace, nested_key, "user-67890")
+  
+  let retrieved_trace = Context::get(nested_ctx, key)
+  let retrieved_user = Context::get(nested_ctx, nested_key)
+  
+  assert_eq(retrieved_trace, Some("trace-12345"))
+  assert_eq(retrieved_user, Some("user-67890"))
+}
+
+// Test 5: Resource attributes operations
+test "resource attributes operations" {
+  // Test resource creation with attributes
   let resource = Resource::new()
-  
-  // Set environment-specific attributes
-  Resource::set_attribute(resource, "service.name", StringValue("azimuth.service"))
-  Resource::set_attribute(resource, "service.version", StringValue("1.0.0"))
-  Resource::set_attribute(resource, "deployment.environment", StringValue("production"))
-  Resource::set_attribute(resource, "host.name", StringValue("prod-server-01"))
-  
-  // Create resource with automatic detection
-  let auto_resource = Resource::detect_environment()
-  
-  // Merge resources
-  let merged_resource = Resource::merge(resource, auto_resource)
+  let attrs = [
+    ("service.name", "azimuth.service"),
+    ("service.version", "1.0.0"),
+    ("deployment.environment", "production")
+  ]
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
   
   // Verify resource attributes
-  let service_name = Resource::get_attribute(merged_resource, "service.name")
-  let environment = Resource::get_attribute(merged_resource, "deployment.environment")
+  assert_eq(Resource::get_attribute(resource_with_attrs, "service.name"), Some("azimuth.service"))
+  assert_eq(Resource::get_attribute(resource_with_attrs, "service.version"), Some("1.0.0"))
+  assert_eq(Resource::get_attribute(resource_with_attrs, "deployment.environment"), Some("production"))
   
-  match service_name {
-    Some(StringValue("azimuth.service")) => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match environment {
-    Some(StringValue("production")) => assert_true(true)
-    _ => assert_true(false)
-  }
+  // Test non-existent attribute
+  assert_eq(Resource::get_attribute(resource_with_attrs, "non.existent"), None)
 }
 
-// Test 6: Error handling and recovery
-test "error handling and recovery" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "error.test")
+// Test 6: Baggage operations
+test "baggage operations" {
+  // Test baggage creation and operations
+  let baggage = Baggage::new()
+  let baggage_with_entry = Baggage::set_entry(baggage, "user.id", "user-12345")
   
-  // Create span for error scenario
-  let span = Tracer::start_span(tracer, "error.prone.operation")
+  // Verify baggage entry
+  assert_eq(Baggage::get_entry(baggage_with_entry, "user.id"), Some("user-12345"))
   
-  // Simulate error scenario
-  let error_occurred = true
+  // Test multiple baggage entries
+  let baggage_multiple = Baggage::set_entry(baggage_with_entry, "request.id", "req-67890")
   
-  if error_occurred {
-    Span::set_status(span, StatusCode::ERROR)
-    Span::set_attribute(span, "error.type", StringValue("timeout"))
-    Span::set_attribute(span, "error.message", StringValue("Operation timed out after 30s"))
-    Span::add_event(span, "error.occurred", [
-      ("error.code", StringValue("TIMEOUT")),
-      ("retry.count", IntValue(3))
-    ])
-  }
+  assert_eq(Baggage::get_entry(baggage_multiple, "user.id"), Some("user-12345"))
+  assert_eq(Baggage::get_entry(baggage_multiple, "request.id"), Some("req-67890"))
   
-  // Verify error handling
-  let status = Span::get_status(span)
-  let error_type = Span::get_attribute(span, "error.type")
-  
-  assert_eq(status, StatusCode::ERROR)
-  
-  match error_type {
-    Some(StringValue("timeout")) => assert_true(true)
-    _ => assert_true(false)
-  }
+  // Test baggage removal
+  let baggage_removed = Baggage::delete_entry(baggage_multiple, "user.id")
+  assert_eq(Baggage::get_entry(baggage_removed, "user.id"), None)
+  assert_eq(Baggage::get_entry(baggage_removed, "request.id"), Some("req-67890"))
 }
 
-// Test 7: Performance optimization with batch operations
-test "performance optimization with batch operations" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "performance.test")
+// Test 7: Propagator operations
+test "propagator operations" {
+  // Test composite propagator
+  let text_map_propagator = TextMapPropagator::new()
+  let composite_propagator = CompositePropagator::new([text_map_propagator])
   
-  // Create multiple metric instruments
-  let counters = [
-    Meter::create_counter(meter, "batch.counter.1", Some("Batch counter 1"), Some("count")),
-    Meter::create_counter(meter, "batch.counter.2", Some("Batch counter 2"), Some("count")),
-    Meter::create_counter(meter, "batch.counter.3", Some("Batch counter 3"), Some("count"))
-  ]
+  // Test injection
+  let ctx = Context::root()
+  let carrier = TextMapCarrier::new()
+  Propagator::inject(composite_propagator, ctx, carrier)
   
-  // Perform batch operations
-  for i = 0; i < counters.length(); i = i + 1 {
-    for j = 0; j < 100; j = j + 1 {
-      Counter::add(counters[i], 1.0)
-    }
-  }
-  
-  // Verify batch operation results
-  assert_eq(counters.length(), 3)
-  
-  for i = 0; i < counters.length(); i = i + 1 {
-    match counters[i].name {
-      "batch.counter.1" => assert_true(true)
-      "batch.counter.2" => assert_true(true)
-      "batch.counter.3" => assert_true(true)
-      _ => assert_true(false)
-    }
-  }
+  // Test extraction
+  let extracted_ctx = Propagator::extract(composite_propagator, carrier)
+  assert_true(Context::is_valid(extracted_ctx))
 }
 
-// Test 8: Configuration management with validation
-test "configuration management with validation" {
-  let config = TelemetryConfig::new()
+// Test 8: Attribute value operations
+test "attribute value operations" {
+  // Test different attribute value types
+  let string_attr = StringValue("test.value")
+  let int_attr = IntValue(42)
+  let float_attr = FloatValue(3.14159)
+  let bool_attr = BoolValue(true)
   
-  // Set configuration values
-  TelemetryConfig::set_sampling_rate(config, 0.1)
-  TelemetryConfig::set_max_batch_size(config, 512)
-  TelemetryConfig::set_export_timeout(config, 30000)
-  TelemetryConfig::set_attribute_limit(config, 1000)
+  // Test attribute value conversion
+  assert_eq(AttributeValue::as_string(string_attr), Some("test.value"))
+  assert_eq(AttributeValue::as_int(int_attr), Some(42))
+  assert_eq(AttributeValue::as_float(float_attr), Some(3.14159))
+  assert_eq(AttributeValue::as_bool(bool_attr), Some(true))
   
-  // Validate configuration
-  let is_valid = TelemetryConfig::validate(config)
+  // Test array attributes
+  let string_array = ArrayStringValue(["item1", "item2", "item3"])
+  let int_array = ArrayIntValue([1, 2, 3, 4, 5])
   
-  // Get configuration values
-  let sampling_rate = TelemetryConfig::get_sampling_rate(config)
-  let max_batch_size = TelemetryConfig::get_max_batch_size(config)
-  let export_timeout = TelemetryConfig::get_export_timeout(config)
-  let attribute_limit = TelemetryConfig::get_attribute_limit(config)
-  
-  assert_true(is_valid)
-  assert_eq(sampling_rate, 0.1)
-  assert_eq(max_batch_size, 512)
-  assert_eq(export_timeout, 30000)
-  assert_eq(attribute_limit, 1000)
+  assert_eq(AttributeValue::as_string_array(string_array), Some(["item1", "item2", "item3"]))
+  assert_eq(AttributeValue::as_int_array(int_array), Some([1, 2, 3, 4, 5]))
 }
 
-// Test 9: Data serialization and deserialization
-test "data serialization and deserialization" {
-  let span_data = SpanData::new()
+// Test 9: Span kind and status operations
+test "span kind and status operations" {
+  // Test span kinds
+  let client_span = SpanKind::Client
+  let server_span = SpanKind::Server
+  let producer_span = SpanKind::Producer
+  let consumer_span = SpanKind::Consumer
   
-  // Set span data
-  SpanData::set_trace_id(span_data, "trace-123456789")
-  SpanData::set_span_id(span_data, "span-987654321")
-  SpanData::set_parent_span_id(span_data, "parent-555555555")
-  SpanData::set_operation_name(span_data, "test.operation")
-  SpanData::set_start_time(span_data, 1640995200000)
-  SpanData::set_end_time(span_data, 1640995201000)
-  SpanData::set_status(span_data, StatusCode::OK)
+  assert_eq(SpanKind::to_string(client_span), "CLIENT")
+  assert_eq(SpanKind::to_string(server_span), "SERVER")
+  assert_eq(SpanKind::to_string(producer_span), "PRODUCER")
+  assert_eq(SpanKind::to_string(consumer_span), "CONSUMER")
   
-  // Add attributes
-  SpanData::add_attribute(span_data, "service.name", StringValue("test.service"))
-  SpanData::add_attribute(span_data, "operation.type", StringValue("read"))
+  // Test status codes
+  let ok_status = StatusCode::Ok
+  let error_status = StatusCode::Error
   
-  // Serialize span data
-  let serialized = SpanData::serialize(span_data)
-  
-  // Deserialize span data
-  let deserialized = SpanData::deserialize(serialized)
-  
-  // Verify serialization/deserialization
-  let original_trace_id = SpanData::get_trace_id(span_data)
-  let restored_trace_id = SpanData::get_trace_id(deserialized)
-  
-  assert_eq(original_trace_id, restored_trace_id)
+  assert_eq(StatusCode::to_string(ok_status), "OK")
+  assert_eq(StatusCode::to_string(error_status), "ERROR")
 }
 
-// Test 10: Lifecycle management with cleanup
-test "lifecycle management with cleanup" {
-  let telemetry = TelemetrySystem::new()
+// Test 10: Telemetry configuration
+test "telemetry configuration" {
+  // Test configuration creation
+  let config = TelemetryConfig::default()
   
-  // Initialize telemetry system
-  TelemetrySystem::initialize(telemetry)
+  // Test configuration properties
+  assert_true(TelemetryConfig::is_enabled(config))
+  assert_eq(TelemetryConfig::get_sampling_rate(config), 1.0)
+  assert_eq(TelemetryConfig::get_max_batch_size(config), 512)
+  assert_eq(TelemetryConfig::get_export_timeout(config), 30000)
   
-  // Create providers
-  let tracer_provider = TelemetrySystem::get_tracer_provider(telemetry)
-  let meter_provider = TelemetrySystem::get_meter_provider(telemetry)
-  let logger_provider = TelemetrySystem::get_logger_provider(telemetry)
+  // Test configuration update
+  let updated_config = TelemetryConfig::with_sampling_rate(config, 0.5)
+  assert_eq(TelemetryConfig::get_sampling_rate(updated_config), 0.5)
   
-  // Create instruments
-  let tracer = TracerProvider::get_tracer(tracer_provider, "lifecycle.test")
-  let meter = MeterProvider::get_meter(meter_provider, "lifecycle.test")
-  let logger = LoggerProvider::get_logger(logger_provider, "lifecycle.test")
-  
-  // Verify providers are initialized
-  assert_true(tracer_provider != None)
-  assert_true(meter_provider != None)
-  assert_true(logger_provider != None)
-  
-  // Verify instruments are created
-  assert_true(tracer != None)
-  assert_true(meter != None)
-  assert_true(logger != None)
-  
-  // Shutdown telemetry system
-  let shutdown_result = TelemetrySystem::shutdown(telemetry)
-  assert_true(shutdown_result)
+  let final_config = TelemetryConfig::with_max_batch_size(updated_config, 1024)
+  assert_eq(TelemetryConfig::get_max_batch_size(final_config), 1024)
 }
