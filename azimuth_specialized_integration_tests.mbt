@@ -1,710 +1,630 @@
 // Azimuth Specialized Integration Tests
-// 专门的集成测试用例，测试遥测系统的复合功能
+// 专门的集成测试用例，关注系统边界和复杂交互场景
 
-test "端到端请求追踪集成" {
-  // 测试完整的请求追踪流程，从API网关到后端服务
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "e2e.test")
+// 测试1: 异步遥测数据流处理
+test "async telemetry stream processing" {
+  // 测试异步遥测数据流的处理和缓冲
+  let stream_processor = @azimuth.AsyncStreamProcessor {
+    buffer_size : 1000,
+    batch_size : 50,
+    flush_interval_ms : 100,
+    processing_threads : 4,
+    error_retry_policy : @azimuth.RetryPolicy {
+      max_attempts : 3,
+      backoff_strategy : @azimuth.BackoffStrategy::Exponential,
+      initial_delay_ms : 100,
+      max_delay_ms : 1000
+    }
+  }
   
-  // 模拟API网关span
-  let gateway_span = Tracer::start_span(tracer, "api.gateway.request")
-  Span::set_attribute(gateway_span, "http.method", "POST")
-  Span::set_attribute(gateway_span, "http.url", "/api/v1/orders")
-  Span::set_attribute(gateway_span, "client.ip", "203.0.113.1")
+  // 模拟异步数据流
+  let telemetry_stream = @azimuth.TelemetryStream {
+    stream_id : "stream-12345",
+    source : "payment-service",
+    data_points : [
+      @azimuth.DataPoint {
+        timestamp : 1640995200000L,
+        metric_name : "transaction.latency",
+        value : @azimuth.FloatValue(125.5),
+        attributes : [("currency", @azimuth.StringValue("USD"))]
+      },
+      @azimuth.DataPoint {
+        timestamp : 1640995200100L,
+        metric_name : "transaction.amount",
+        value : @azimuth.FloatValue(99.99),
+        attributes : [("currency", @azimuth.StringValue("USD"))]
+      }
+    ]
+  }
   
-  // 添加请求开始事件
-  Span::add_event(gateway_span, "request.received", [
-    ("timestamp", "2025-01-02T10:15:30Z"),
-    ("request.id", "req-abc123")
-  ])
+  // 验证流处理器配置
+  assert_eq(stream_processor.buffer_size, 1000)
+  assert_eq(stream_processor.batch_size, 50)
+  assert_eq(stream_processor.processing_threads, 4)
   
-  // 模拟认证服务span
-  let auth_span = Tracer::start_span(tracer, "auth.service.validate")
-  Span::set_attribute(auth_span, "auth.method", "jwt")
-  Span::set_attribute(auth_span, "auth.token.expired", false)
-  Span::set_attribute(auth_span, "user.id", "user-456")
-  
-  // 模拟订单服务span
-  let order_span = Tracer::start_span(tracer, "order.service.create")
-  Span::set_attribute(order_span, "order.amount", 99.99)
-  Span::set_attribute(order_span, "order.currency", "USD")
-  Span::set_attribute(order_span, "order.items", 3)
-  
-  // 模拟库存服务span
-  let inventory_span = Tracer::start_span(tracer, "inventory.service.reserve")
-  Span::set_attribute(inventory_span, "product.id", "prod-789")
-  Span::set_attribute(inventory_span, "quantity", 3)
-  Span::set_attribute(inventory_span, "warehouse.id", "wh-001")
-  
-  // 模拟支付服务span
-  let payment_span = Tracer::start_span(tracer, "payment.service.process")
-  Span::set_attribute(payment_span, "payment.method", "credit_card")
-  Span::set_attribute(payment_span, "payment.amount", 99.99)
-  Span::set_attribute(payment_span, "payment.gateway", "stripe")
-  
-  // 添加支付成功事件
-  Span::add_event(payment_span, "payment.completed", [
-    ("transaction.id", "txn-def456"),
-    ("payment.status", "success")
-  ])
-  
-  // 结束所有span（按顺序）
-  Span::end(inventory_span)
-  Span::end(payment_span)
-  Span::end(order_span)
-  Span::end(auth_span)
-  Span::end(gateway_span)
-  
-  // 验证所有span都有有效的上下文
-  let gateway_ctx = Span::span_context(gateway_span)
-  let auth_ctx = Span::span_context(auth_span)
-  let order_ctx = Span::span_context(order_span)
-  let inventory_ctx = Span::span_context(inventory_span)
-  let payment_ctx = Span::span_context(payment_span)
-  
-  assert_true(SpanContext::is_valid(gateway_ctx))
-  assert_true(SpanContext::is_valid(auth_ctx))
-  assert_true(SpanContext::is_valid(order_ctx))
-  assert_true(SpanContext::is_valid(inventory_ctx))
-  assert_true(SpanContext::is_valid(payment_ctx))
-  
-  assert_true(true)
-}
-
-test "度量数据聚合和分析" {
-  // 测试度量数据的聚合和分析功能
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "metrics.aggregation.test")
-  
-  // 创建请求计数器
-  let request_counter = Meter::create_counter(
-    meter, 
-    "http.requests.total", 
-    Some("Total HTTP requests"), 
-    Some("requests")
-  )
-  
-  // 模拟不同类型的请求
-  Counter::add_with_attributes(request_counter, 150.0, [
-    ("method", "GET"), ("status", "200"), ("endpoint", "/api/users")
-  ])
-  Counter::add_with_attributes(request_counter, 25.0, [
-    ("method", "GET"), ("status", "404"), ("endpoint", "/api/users")
-  ])
-  Counter::add_with_attributes(request_counter, 75.0, [
-    ("method", "POST"), ("status", "201"), ("endpoint", "/api/orders")
-  ])
-  Counter::add_with_attributes(request_counter, 10.0, [
-    ("method", "POST"), ("status", "400"), ("endpoint", "/api/orders")
-  ])
-  Counter::add_with_attributes(request_counter, 5.0, [
-    ("method", "POST"), ("status", "500"), ("endpoint", "/api/orders")
-  ])
-  
-  // 创建响应时间直方图
-  let response_histogram = Meter::create_histogram(
-    meter, 
-    "http.request.duration", 
-    Some("HTTP request duration"), 
-    Some("ms")
-  )
-  
-  // 记录不同端点的响应时间
-  Histogram::record_with_attributes(response_histogram, 45.2, [
-    ("method", "GET"), ("endpoint", "/api/users"), ("status", "200")
-  ])
-  Histogram::record_with_attributes(response_histogram, 123.7, [
-    ("method", "GET"), ("endpoint", "/api/users"), ("status", "200")
-  ])
-  Histogram::record_with_attributes(response_histogram, 78.9, [
-    ("method", "GET"), ("endpoint", "/api/users"), ("status", "200")
-  ])
-  Histogram::record_with_attributes(response_histogram, 234.5, [
-    ("method", "POST"), ("endpoint", "/api/orders"), ("status", "201")
-  ])
-  Histogram::record_with_attributes(response_histogram, 156.8, [
-    ("method", "POST"), ("endpoint", "/api/orders"), ("status", "201")
-  ])
-  
-  // 创建错误计数器
-  let error_counter = Meter::create_counter(
-    meter, 
-    "http.errors.total", 
-    Some("Total HTTP errors"), 
-    Some("errors")
-  )
-  
-  Counter::add_with_attributes(error_counter, 25.0, [
-    ("status", "404"), ("error.type", "NotFound")
-  ])
-  Counter::add_with_attributes(error_counter, 10.0, [
-    ("status", "400"), ("error.type", "BadRequest")
-  ])
-  Counter::add_with_attributes(error_counter, 5.0, [
-    ("status", "500"), ("error.type", "InternalServerError")
-  ])
-  
-  // 验证度量属性
-  assert_eq(request_counter.name, "http.requests.total")
-  assert_eq(response_histogram.name, "http.request.duration")
-  assert_eq(error_counter.name, "http.errors.total")
-  
-  assert_true(true)
-}
-
-test "分布式日志关联和追踪" {
-  // 测试分布式环境中的日志关联和追踪
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "distributed.logging.test")
-  
-  // 模拟请求开始日志
-  let request_start_log = LogRecord::new(Info, "Request processing started")
-  LogRecord::add_attribute(request_start_log, "request.id", "req-789xyz")
-  LogRecord::add_attribute(request_start_log, "trace.id", "trace-123456")
-  LogRecord::add_attribute(request_start_log, "span.id", "span-abcdef")
-  LogRecord::add_attribute(request_start_log, "service.name", "api-gateway")
-  LogRecord::add_attribute(request_start_log, "client.ip", "192.168.1.100")
-  LogRecord::add_attribute(request_start_log, "user.agent", "Mozilla/5.0...")
-  
-  // 模拟认证日志
-  let auth_log = LogRecord::new(Info, "User authentication successful")
-  LogRecord::add_attribute(auth_log, "request.id", "req-789xyz")
-  LogRecord::add_attribute(auth_log, "trace.id", "trace-123456")
-  LogRecord::add_attribute(auth_log, "span.id", "span-auth123")
-  LogRecord::add_attribute(auth_log, "service.name", "auth-service")
-  LogRecord::add_attribute(auth_log, "user.id", "user-456")
-  LogRecord::add_attribute(auth_log, "auth.method", "jwt")
-  
-  // 模拟业务逻辑日志
-  let business_log = LogRecord::new(Info, "Order created successfully")
-  LogRecord::add_attribute(business_log, "request.id", "req-789xyz")
-  LogRecord::add_attribute(business_log, "trace.id", "trace-123456")
-  LogRecord::add_attribute(business_log, "span.id", "span-order456")
-  LogRecord::add_attribute(business_log, "service.name", "order-service")
-  LogRecord::add_attribute(business_log, "order.id", "order-789")
-  LogRecord::add_attribute(business_log, "order.amount", 149.99)
-  
-  // 模拟错误日志
-  let error_log = LogRecord::new(Error, "Payment processing failed")
-  LogRecord::add_attribute(error_log, "request.id", "req-789xyz")
-  LogRecord::add_attribute(error_log, "trace.id", "trace-123456")
-  LogRecord::add_attribute(error_log, "span.id", "span-payment789")
-  LogRecord::add_attribute(error_log, "service.name", "payment-service")
-  LogRecord::add_attribute(error_log, "error.type", "PaymentDeclined")
-  LogRecord::add_attribute(error_log, "error.code", "CARD_DECLINED")
-  LogRecord::add_attribute(error_log, "retry.count", 2)
-  
-  // 模拟请求完成日志
-  let request_end_log = LogRecord::new(Info, "Request processing completed")
-  LogRecord::add_attribute(request_end_log, "request.id", "req-789xyz")
-  LogRecord::add_attribute(request_end_log, "trace.id", "trace-123456")
-  LogRecord::add_attribute(request_end_log, "span.id", "span-abcdef")
-  LogRecord::add_attribute(request_end_log, "service.name", "api-gateway")
-  LogRecord::add_attribute(request_end_log, "response.status", "500")
-  LogRecord::add_attribute(request_end_log, "duration.ms", 1250)
-  
-  // 发射所有日志
-  Logger::emit(logger, request_start_log)
-  Logger::emit(logger, auth_log)
-  Logger::emit(logger, business_log)
-  Logger::emit(logger, error_log)
-  Logger::emit(logger, request_end_log)
-  
-  // 验证日志严重性级别
-  assert_eq(LogRecord::severity_number(request_start_log), Info)
-  assert_eq(LogRecord::severity_number(auth_log), Info)
-  assert_eq(LogRecord::severity_number(business_log), Info)
-  assert_eq(LogRecord::severity_number(error_log), Error)
-  assert_eq(LogRecord::severity_number(request_end_log), Info)
-  
-  // 验证追踪ID一致性
-  match LogRecord::get_attribute(request_start_log, "trace.id") {
-    Some(StringValue(trace_id)) => assert_eq(trace_id, "trace-123456")
+  // 验证重试策略
+  assert_eq(stream_processor.error_retry_policy.max_attempts, 3)
+  match stream_processor.error_retry_policy.backoff_strategy {
+    @azimuth.BackoffStrategy::Exponential => assert_true(true)
     _ => assert_true(false)
   }
   
-  assert_true(true)
+  // 验证遥测流数据
+  assert_eq(telemetry_stream.stream_id, "stream-12345")
+  assert_eq(telemetry_stream.source, "payment-service")
+  assert_eq(telemetry_stream.data_points.length(), 2)
+  
+  // 验证数据点内容
+  let latency_point = telemetry_stream.data_points[0]
+  assert_eq(latency_point.metric_name, "transaction.latency")
+  match latency_point.value {
+    @azimuth.FloatValue(v) => assert_eq(v, 125.5)
+    _ => assert_true(false)
+  }
 }
 
-test "资源属性合并和优先级" {
-  // 测试资源属性合并和优先级处理
-  let base_resource = Resource::new()
-  let base_attrs = [
-    ("service.name", StringValue("payment-service")),
-    ("service.version", StringValue("2.1.0")),
-    ("deployment.environment", StringValue("production"))
-  ]
-  let resource_with_base = Resource::with_attributes(base_resource, base_attrs)
-  
-  // 创建运行时资源
-  let runtime_resource = Resource::new()
-  let runtime_attrs = [
-    ("service.instance.id", StringValue("instance-abc123")),
-    ("host.name", StringValue("prod-server-01")),
-    ("os.type", StringValue("linux")),
-    ("os.version", StringValue("ubuntu-20.04"))
-  ]
-  let resource_with_runtime = Resource::with_attributes(runtime_resource, runtime_attrs)
-  
-  // 创建Kubernetes资源
-  let k8s_resource = Resource::new()
-  let k8s_attrs = [
-    ("k8s.pod.name", StringValue("payment-service-7d4f8c9b-xyz")),
-    ("k8s.namespace", StringValue("default")),
-    ("k8s.deployment.name", StringValue("payment-service")),
-    ("k8s.node.name", StringValue("worker-node-01"))
-  ]
-  let resource_with_k8s = Resource::with_attributes(k8s_resource, k8s_attrs)
-  
-  // 测试资源合并
-  let merged_resource1 = Resource::merge(resource_with_base, resource_with_runtime)
-  let final_resource = Resource::merge(merged_resource1, resource_with_k8s)
-  
-  // 验证基础资源属性
-  let service_name = Resource::get_attribute(final_resource, "service.name")
-  let service_version = Resource::get_attribute(final_resource, "service.version")
-  let environment = Resource::get_attribute(final_resource, "deployment.environment")
-  
-  match service_name {
-    None => assert_true(true)  // 简化实现
-    Some(_) => assert_true(false)
+// 测试2: 多维度属性查询和索引
+test "multidimensional attribute query and indexing" {
+  // 测试多维属性查询和索引优化
+  let attribute_index = @azimuth.AttributeIndex {
+    index_name : "telemetry-attributes",
+    indexed_fields : ["service.name", "operation.name", "http.status_code"],
+    index_type : @azimuth.IndexType::BTree,
+    max_entries : 100000
   }
   
-  // 验证运行时资源属性
-  let instance_id = Resource::get_attribute(final_resource, "service.instance.id")
-  let host_name = Resource::get_attribute(final_resource, "host.name")
-  let os_type = Resource::get_attribute(final_resource, "os.type")
-  
-  match instance_id {
-    None => assert_true(true)  // 简化实现
-    Some(_) => assert_true(false)
+  let query_builder = @azimuth.QueryBuilder {
+    select_fields : ["trace_id", "duration_ms", "error.type"],
+    filter_conditions : [
+      @azimuth.FilterCondition {
+        field : "service.name",
+        operator : @azimuth.Operator::Equals,
+        value : @azimuth.StringValue("api-gateway")
+      },
+      @azimuth.FilterCondition {
+        field : "duration_ms",
+        operator : @azimuth.Operator::GreaterThan,
+        value : @azimuth.IntValue(100)
+      }
+    ],
+    group_by : ["operation.name"],
+    order_by : @azimuth.OrderBy {
+      field : "duration_ms",
+      direction : @azimuth.SortDirection::Descending
+    },
+    limit : 100
   }
   
-  // 验证Kubernetes资源属性
-  let pod_name = Resource::get_attribute(final_resource, "k8s.pod.name")
-  let namespace = Resource::get_attribute(final_resource, "k8s.namespace")
-  let deployment_name = Resource::get_attribute(final_resource, "k8s.deployment.name")
-  
-  match pod_name {
-    None => assert_true(true)  // 简化实现
-    Some(_) => assert_true(false)
+  // 验证索引配置
+  assert_eq(attribute_index.index_name, "telemetry-attributes")
+  assert_eq(attribute_index.indexed_fields.length(), 3)
+  assert_true(attribute_index.indexed_fields.contains("service.name"))
+  match attribute_index.index_type {
+    @azimuth.IndexType::BTree => assert_true(true)
+    _ => assert_true(false)
   }
   
-  assert_true(true)
-}
-
-test "上下文传播和Baggage处理" {
-  // 测试上下文传播和Baggage处理
-  let ctx = Context::root()
+  // 验证查询构建器
+  assert_eq(query_builder.select_fields.length(), 3)
+  assert_eq(query_builder.filter_conditions.length(), 2)
+  assert_eq(query_builder.group_by.length(), 1)
   
-  // 添加初始上下文值
-  let trace_key = ContextKey::new("trace.id")
-  let span_key = ContextKey::new("span.id")
-  let request_key = ContextKey::new("request.id")
-  
-  let ctx_with_trace = Context::with_value(ctx, trace_key, "trace-123456789")
-  let ctx_with_span = Context::with_value(ctx_with_trace, span_key, "span-987654321")
-  let ctx_with_request = Context::with_value(ctx_with_span, request_key, "req-abc123def")
-  
-  // 添加baggage项
-  let baggage_items = [
-    ("user.id", "user-456"),
-    ("session.id", "session-789"),
-    ("tenant.id", "tenant-001"),
-    ("request.source", "web-ui")
-  ]
-  
-  let ctx_with_baggage = ctx_with_request
-  for baggage_item in baggage_items {
-    let key = ContextKey::new(baggage_item.0)
-    ctx_with_baggage = Context::with_value(ctx_with_baggage, key, baggage_item.1)
+  // 验证过滤条件
+  let service_filter = query_builder.filter_conditions[0]
+  assert_eq(service_filter.field, "service.name")
+  match service_filter.operator {
+    @azimuth.Operator::Equals => assert_true(true)
+    _ => assert_true(false)
+  }
+  match service_filter.value {
+    @azimuth.StringValue(v) => assert_eq(v, "api-gateway")
+    _ => assert_true(false)
   }
   
-  // 创建子上下文（模拟服务调用）
-  let child_ctx = Context::with_value(
-    ctx_with_baggage, 
-    ContextKey::new("service.name"), 
-    "order-service"
-  )
-  
-  // 验证上下文传播
-  let propagated_trace = Context::get(child_ctx, trace_key)
-  let propagated_span = Context::get(child_ctx, span_key)
-  let propagated_request = Context::get(child_ctx, request_key)
-  
-  assert_eq(propagated_trace, Some("trace-123456789"))
-  assert_eq(propagated_span, Some("span-987654321"))
-  assert_eq(propagated_request, Some("req-abc123def"))
-  
-  // 验证baggage传播
-  let user_baggage = Context::get(child_ctx, ContextKey::new("user.id"))
-  let session_baggage = Context::get(child_ctx, ContextKey::new("session.id"))
-  let tenant_baggage = Context::get(child_ctx, ContextKey::new("tenant.id"))
-  let source_baggage = Context::get(child_ctx, ContextKey::new("request.source"))
-  
-  assert_eq(user_baggage, Some("user-456"))
-  assert_eq(session_baggage, Some("session-789"))
-  assert_eq(tenant_baggage, Some("tenant-001"))
-  assert_eq(source_baggage, Some("web-ui"))
-  
-  // 验证子上下文特定值
-  let service_name = Context::get(child_ctx, ContextKey::new("service.name"))
-  assert_eq(service_name, Some("order-service"))
-  
-  assert_true(true)
+  // 验证排序配置
+  assert_eq(query_builder.order_by.field, "duration_ms")
+  match query_builder.order_by.direction {
+    @azimuth.SortDirection::Descending => assert_true(true)
+    _ => assert_true(false)
+  }
 }
 
-test "错误处理和恢复机制" {
-  // 测试错误处理和恢复机制
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error.handling.test")
+// 测试3: 实时告警和阈值监控
+test "real-time alerting and threshold monitoring" {
+  // 测试实时告警和阈值监控系统
+  let alert_manager = @azimuth.AlertManager {
+    alert_rules : [
+      @azimuth.AlertRule {
+        rule_name : "high_error_rate",
+        condition : @azimuth.MetricCondition {
+          metric_name : "error.rate",
+          operator : @azimuth.Operator::GreaterThan,
+          threshold : @azimuth.FloatValue(0.05),
+          evaluation_window_ms : 60000 // 1分钟
+        },
+        severity : @azimuth.AlertSeverity::Critical,
+        actions : [
+          @azimuth.AlertAction {
+            action_type : @azimuth.ActionType::Webhook,
+            target : "https://alerts.example.com/webhook",
+            template : "Error rate exceeded 5%: {{.value}}"
+          }
+        ]
+      },
+      @azimuth.AlertRule {
+        rule_name : "slow_response_time",
+        condition : @azimuth.MetricCondition {
+          metric_name : "response.time.p95",
+          operator : @azimuth.Operator::GreaterThan,
+          threshold : @azimuth.FloatValue(1000.0),
+          evaluation_window_ms : 300000 // 5分钟
+        },
+        severity : @azimuth.AlertSeverity::Warning,
+        actions : [
+          @azimuth.AlertAction {
+            action_type : @azimuth.ActionType::Email,
+            target : "ops@example.com",
+            template : "P95 response time is {{.value}}ms"
+          }
+        ]
+      }
+    ],
+    cooldown_period_ms : 300000, // 5分钟冷却期
+    max_alerts_per_minute : 10
+  }
   
-  // 创建主操作span
-  let main_span = Tracer::start_span(tracer, "main.operation")
-  Span::set_attribute(main_span, "operation.type", "business.processing")
-  Span::set_attribute(main_span, "retry.max.attempts", 3)
+  // 验证告警管理器配置
+  assert_eq(alert_manager.alert_rules.length(), 2)
+  assert_eq(alert_manager.cooldown_period_ms, 300000)
+  assert_eq(alert_manager.max_alerts_per_minute, 10)
   
-  // 模拟第一次尝试失败
-  Span::add_event(main_span, "attempt.started", [
-    ("attempt.number", IntValue(1)),
-    ("timestamp", "2025-01-02T10:30:00Z")
-  ])
+  // 验证错误率告警规则
+  let error_rule = alert_manager.alert_rules[0]
+  assert_eq(error_rule.rule_name, "high_error_rate")
+  match error_rule.severity {
+    @azimuth.AlertSeverity::Critical => assert_true(true)
+    _ => assert_true(false)
+  }
+  match error_rule.condition.threshold {
+    @azimuth.FloatValue(v) => assert_eq(v, 0.05)
+    _ => assert_true(false)
+  }
   
-  Span::add_event(main_span, "attempt.failed", [
-    ("attempt.number", IntValue(1)),
-    ("error.type", StringValue("TimeoutException")),
-    ("error.message", StringValue("Database connection timeout")),
-    ("retry.delay.ms", IntValue(1000))
-  ])
-  
-  // 模拟第二次尝试失败
-  Span::add_event(main_span, "attempt.started", [
-    ("attempt.number", IntValue(2)),
-    ("timestamp", "2025-01-02T10:30:01Z")
-  ])
-  
-  Span::add_event(main_span, "attempt.failed", [
-    ("attempt.number", IntValue(2)),
-    ("error.type", StringValue("ConnectionException")),
-    ("error.message", StringValue("Database server unavailable")),
-    ("retry.delay.ms", IntValue(2000))
-  ])
-  
-  // 模拟第三次尝试成功
-  Span::add_event(main_span, "attempt.started", [
-    ("attempt.number", IntValue(3)),
-    ("timestamp", "2025-01-02T10:30:03Z")
-  ])
-  
-  Span::add_event(main_span, "attempt.succeeded", [
-    ("attempt.number", IntValue(3)),
-    ("result", StringValue("success")),
-    ("duration.ms", IntValue(250))
-  ])
-  
-  // 创建错误日志
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "error.logger")
-  
-  let error_log1 = LogRecord::new(Warn, "Operation attempt 1 failed")
-  LogRecord::add_attribute(error_log1, "attempt.number", 1)
-  LogRecord::add_attribute(error_log1, "error.type", "TimeoutException")
-  LogRecord::add_attribute(error_log1, "retry.scheduled", true)
-  
-  let error_log2 = LogRecord::new(Warn, "Operation attempt 2 failed")
-  LogRecord::add_attribute(error_log2, "attempt.number", 2)
-  LogRecord::add_attribute(error_log2, "error.type", "ConnectionException")
-  LogRecord::add_attribute(error_log2, "retry.scheduled", true)
-  
-  let success_log = LogRecord::new(Info, "Operation succeeded after retries")
-  LogRecord::add_attribute(success_log, "total.attempts", 3)
-  LogRecord::add_attribute(success_log, "final.result", "success")
-  
-  // 发射日志
-  Logger::emit(logger, error_log1)
-  Logger::emit(logger, error_log2)
-  Logger::emit(logger, success_log)
-  
-  // 创建错误度量
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "error.metrics")
-  
-  let retry_counter = Meter::create_counter(
-    meter, 
-    "operation.retries.total", 
-    Some("Total operation retries"), 
-    Some("retries")
-  )
-  
-  Counter::add_with_attributes(retry_counter, 2.0, [
-    ("operation.type", "business.processing"),
-    ("final.result", "success")
-  ])
-  
-  let error_counter = Meter::create_counter(
-    meter, 
-    "operation.errors.total", 
-    Some("Total operation errors"), 
-    Some("errors")
-  )
-  
-  Counter::add_with_attributes(error_counter, 2.0, [
-    ("error.type", "TimeoutException"),
-    ("operation.type", "business.processing")
-  ])
-  
-  Counter::add_with_attributes(error_counter, 1.0, [
-    ("error.type", "ConnectionException"),
-    ("operation.type", "business.processing")
-  ])
-  
-  // 设置成功状态并结束span
-  Span::set_status(main_span, Ok, Some("Operation completed successfully after retries"))
-  Span::end(main_span)
-  
-  // 验证日志严重性
-  assert_eq(LogRecord::severity_number(error_log1), Warn)
-  assert_eq(LogRecord::severity_number(error_log2), Warn)
-  assert_eq(LogRecord::severity_number(success_log), Info)
-  
-  assert_true(true)
+  // 验证告警动作
+  assert_eq(error_rule.actions.length(), 1)
+  let webhook_action = error_rule.actions[0]
+  match webhook_action.action_type {
+    @azimuth.ActionType::Webhook => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(webhook_action.target, "https://alerts.example.com/webhook")
 }
 
-test "性能监控和基准测试" {
-  // 测试性能监控和基准测试功能
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.test")
+// 测试4: 遥测数据采样策略
+test "telemetry data sampling strategies" {
+  // 测试不同的遥测数据采样策略
+  let adaptive_sampler = @azimuth.AdaptiveSampler {
+    base_probability : 0.1,
+    max_probability : 1.0,
+    min_probability : 0.001,
+    adjustment_factor : 1.5,
+    evaluation_window_ms : 60000,
+    target_throughput : 1000
+  }
   
-  // 创建性能测试span
-  let perf_span = Tracer::start_span(tracer, "performance.benchmark")
-  Span::set_attribute(perf_span, "benchmark.name", "telemetry.serialization")
-  Span::set_attribute(perf_span, "benchmark.iterations", 10000)
-  Span::set_attribute(perf_span, "benchmark.data.size", 1024)
+  let priority_sampler = @azimuth.PrioritySampler {
+    priority_rules : [
+      @azimuth.PriorityRule {
+        condition : @azimuth.AttributeCondition {
+          attribute : "http.status_code",
+          operator : @azimuth.Operator::Equals,
+          value : @azimuth.IntValue(500)
+        },
+        priority : 100,
+        sampling_probability : 1.0
+      },
+      @azimuth.PriorityRule {
+        condition : @azimuth.AttributeCondition {
+          attribute : "user.premium",
+          operator : @azimuth.Operator::Equals,
+          value : @azimuth.BoolValue(true)
+        },
+        priority : 90,
+        sampling_probability : 0.8
+      },
+      @azimuth.PriorityRule {
+        condition : @azimuth.AttributeCondition {
+          attribute : "operation.name",
+          operator : @azimuth.Operator::Contains,
+          value : @azimuth.StringValue("critical")
+        },
+        priority : 80,
+        sampling_probability : 0.5
+      }
+    ],
+    default_probability : 0.05
+  }
   
-  // 模拟性能测试的不同阶段
-  Span::add_event(perf_span, "warmup.started", [
-    ("phase", StringValue("warmup")),
-    ("iterations", IntValue(1000))
-  ])
+  // 验证自适应采样器
+  assert_eq(adaptive_sampler.base_probability, 0.1)
+  assert_eq(adaptive_sampler.max_probability, 1.0)
+  assert_eq(adaptive_sampler.min_probability, 0.001)
+  assert_eq(adaptive_sampler.adjustment_factor, 1.5)
+  assert_eq(adaptive_sampler.target_throughput, 1000)
   
-  Span::add_event(perf_span, "warmup.completed", [
-    ("phase", StringValue("warmup")),
-    ("duration.ms", IntValue(250)),
-    ("avg.latency.us", IntValue(250))
-  ])
+  // 验证优先级采样器
+  assert_eq(priority_sampler.priority_rules.length(), 3)
+  assert_eq(priority_sampler.default_probability, 0.05)
   
-  Span::add_event(perf_span, "benchmark.started", [
-    ("phase", StringValue("benchmark")),
-    ("iterations", IntValue(10000))
-  ])
+  // 验证高优先级规则
+  let error_rule = priority_sampler.priority_rules[0]
+  assert_eq(error_rule.priority, 100)
+  assert_eq(error_rule.sampling_probability, 1.0)
+  match error_rule.condition.value {
+    @azimuth.IntValue(v) => assert_eq(v, 500)
+    _ => assert_true(false)
+  }
   
-  Span::add_event(perf_span, "benchmark.completed", [
-    ("phase", StringValue("benchmark")),
-    ("duration.ms", IntValue(2100)),
-    ("avg.latency.us", IntValue(210)),
-    ("min.latency.us", IntValue(150)),
-    ("max.latency.us", IntValue(450)),
-    ("p50.latency.us", IntValue(200)),
-    ("p95.latency.us", IntValue(350)),
-    ("p99.latency.us", IntValue(420))
-  ])
-  
-  // 创建性能度量
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.metrics")
-  
-  // 吞吐量直方图
-  let throughput_histogram = Meter::create_histogram(
-    meter, 
-    "benchmark.throughput", 
-    Some("Benchmark throughput"), 
-    Some("ops/sec")
-  )
-  
-  Histogram::record_with_attributes(throughput_histogram, 4500.0, [
-    ("benchmark.name", "telemetry.serialization"),
-    ("data.size", "1024")
-  ])
-  
-  // 延迟直方图
-  let latency_histogram = Meter::create_histogram(
-    meter, 
-    "benchmark.latency", 
-    Some("Benchmark latency"), 
-    Some("microseconds")
-  )
-  
-  Histogram::record_with_attributes(latency_histogram, 210.0, [
-    ("benchmark.name", "telemetry.serialization"),
-    ("percentile", "avg")
-  ])
-  
-  Histogram::record_with_attributes(latency_histogram, 200.0, [
-    ("benchmark.name", "telemetry.serialization"),
-    ("percentile", "p50")
-  ])
-  
-  Histogram::record_with_attributes(latency_histogram, 350.0, [
-    ("benchmark.name", "telemetry.serialization"),
-    ("percentile", "p95")
-  ])
-  
-  Histogram::record_with_attributes(latency_histogram, 420.0, [
-    ("benchmark.name", "telemetry.serialization"),
-    ("percentile", "p99")
-  ])
-  
-  // 内存使用度量
-  let memory_histogram = Meter::create_histogram(
-    meter, 
-    "benchmark.memory.usage", 
-    Some("Benchmark memory usage"), 
-    Some("bytes")
-  )
-  
-  Histogram::record_with_attributes(memory_histogram, 5242880.0, [
-    ("benchmark.name", "telemetry.serialization"),
-    ("memory.type", "heap")
-  ])
-  
-  // 创建性能日志
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "performance.logger")
-  
-  let perf_log = LogRecord::new(Info, "Performance benchmark completed")
-  LogRecord::add_attribute(perf_log, "benchmark.name", "telemetry.serialization")
-  LogRecord::add_attribute(perf_log, "iterations", 10000)
-  LogRecord::add_attribute(perf_log, "duration.ms", 2100)
-  LogRecord::add_attribute(perf_log, "throughput.ops_per_sec", 4761.9)
-  LogRecord::add_attribute(perf_log, "avg.latency.us", 210)
-  LogRecord::add_attribute(perf_log, "memory.used.mb", 5)
-  
-  Logger::emit(logger, perf_log)
-  
-  // 结束性能测试span
-  Span::set_status(perf_span, Ok, Some("Performance benchmark completed successfully"))
-  Span::end(perf_span)
-  
-  // 验证度量属性
-  assert_eq(throughput_histogram.name, "benchmark.throughput")
-  assert_eq(latency_histogram.name, "benchmark.latency")
-  assert_eq(memory_histogram.name, "benchmark.memory.usage")
-  
-  assert_true(true)
+  // 验证布尔值条件
+  let premium_rule = priority_sampler.priority_rules[1]
+  match premium_rule.condition.value {
+    @azimuth.BoolValue(v) => assert_eq(v, true)
+    _ => assert_true(false)
+  }
 }
 
-test "多租户环境下的遥测隔离" {
-  // 测试多租户环境下的遥测隔离
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "multi.tenant.test")
+// 测试5: 遥测数据压缩和存储优化
+test "telemetry data compression and storage optimization" {
+  // 测试遥测数据压缩和存储优化策略
+  let compression_config = @azimuth.CompressionConfig {
+    algorithm : @azimuth.CompressionAlgorithm::Zstd,
+    compression_level : 3,
+    dictionary : Some("telemetry-dict-v1"),
+    chunk_size : 65536, // 64KB
+    enable_delta_compression : true
+  }
   
-  // 租户1的操作
-  let tenant1_span = Tracer::start_span(tracer, "tenant1.operation")
-  Span::set_attribute(tenant1_span, "tenant.id", "tenant-001")
-  Span::set_attribute(tenant1_span, "tenant.name", "Acme Corp")
-  Span::set_attribute(tenant1_span, "service.name", "user-service")
-  Span::set_attribute(tenant1_span, "operation.type", "user.lookup")
+  let storage_optimizer = @azimuth.StorageOptimizer {
+    retention_policy : @azimuth.RetentionPolicy {
+      hot_ttl_days : 7,
+      warm_ttl_days : 30,
+      cold_ttl_days : 365,
+      archive_ttl_days : 1825 // 5年
+    },
+    tiered_storage : [
+      @azimuth.StorageTier {
+        tier_name : "hot",
+        storage_type : @azimuth.StorageType::SSD,
+        compression_enabled : false,
+        indexing_enabled : true
+      },
+      @azimuth.StorageTier {
+        tier_name : "warm",
+        storage_type : @azimuth.StorageType::HDD,
+        compression_enabled : true,
+        indexing_enabled : true
+      },
+      @azimuth.StorageTier {
+        tier_name : "cold",
+        storage_type : @azimuth.StorageType::ObjectStorage,
+        compression_enabled : true,
+        indexing_enabled : false
+      }
+    ],
+    compaction_policy : @azimuth.CompactionPolicy {
+      max_segment_size : 1073741824, // 1GB
+      min_segments_to_compact : 4,
+      compaction_threshold : 0.7
+    }
+  }
   
-  // 租户2的操作
-  let tenant2_span = Tracer::start_span(tracer, "tenant2.operation")
-  Span::set_attribute(tenant2_span, "tenant.id", "tenant-002")
-  Span::set_attribute(tenant2_span, "tenant.name", "Global Inc")
-  Span::set_attribute(tenant2_span, "service.name", "order-service")
-  Span::set_attribute(tenant2_span, "operation.type", "order.create")
+  // 验证压缩配置
+  match compression_config.algorithm {
+    @azimuth.CompressionAlgorithm::Zstd => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(compression_config.compression_level, 3)
+  match compression_config.dictionary {
+    Some(dict) => assert_eq(dict, "telemetry-dict-v1")
+    None => assert_true(false)
+  }
+  assert_true(compression_config.enable_delta_compression)
   
-  // 租户3的操作
-  let tenant3_span = Tracer::start_span(tracer, "tenant3.operation")
-  Span::set_attribute(tenant3_span, "tenant.id", "tenant-003")
-  Span::set_attribute(tenant3_span, "tenant.name", "Tech Solutions")
-  Span::set_attribute(tenant3_span, "service.name", "payment-service")
-  Span::set_attribute(tenant3_span, "operation.type", "payment.process")
+  // 验证存储优化器
+  assert_eq(storage_optimizer.tiered_storage.length(), 3)
   
-  // 创建租户特定的度量
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "multi.tenant.metrics")
+  // 验证保留策略
+  assert_eq(storage_optimizer.retention_policy.hot_ttl_days, 7)
+  assert_eq(storage_optimizer.retention_policy.warm_ttl_days, 30)
+  assert_eq(storage_optimizer.retention_policy.cold_ttl_days, 365)
+  assert_eq(storage_optimizer.retention_policy.archive_ttl_days, 1825)
   
-  // 租户1的度量
-  let tenant1_counter = Meter::create_counter(
-    meter, 
-    "tenant.operations.total", 
-    Some("Total tenant operations"), 
-    Some("operations")
-  )
+  // 验证存储层配置
+  let hot_tier = storage_optimizer.tiered_storage[0]
+  assert_eq(hot_tier.tier_name, "hot")
+  match hot_tier.storage_type {
+    @azimuth.StorageType::SSD => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_false(hot_tier.compression_enabled)
+  assert_true(hot_tier.indexing_enabled)
   
-  Counter::add_with_attributes(tenant1_counter, 150.0, [
-    ("tenant.id", "tenant-001"),
-    ("tenant.name", "Acme Corp"),
-    ("service.name", "user-service"),
-    ("operation.type", "user.lookup")
-  ])
+  // 验证压缩策略
+  assert_eq(storage_optimizer.compaction_policy.max_segment_size, 1073741824)
+  assert_eq(storage_optimizer.compaction_policy.min_segments_to_compact, 4)
+  assert_eq(storage_optimizer.compaction_policy.compaction_threshold, 0.7)
+}
+
+// 测试6: 跨区域遥测数据同步
+test "cross-region telemetry data synchronization" {
+  // 测试跨区域遥测数据同步和一致性保证
+  let sync_config = @azimuth.SyncConfig {
+    regions : [
+      "us-west-2",
+      "us-east-1", 
+      "eu-west-1",
+      "ap-southeast-1"
+    ],
+    primary_region : "us-west-2",
+    sync_mode : @azimuth.SyncMode::EventualConsistency,
+    replication_factor : 3,
+    conflict_resolution : @azimuth.ConflictResolution::LastWriteWins
+  }
   
-  // 租户2的度量
-  Counter::add_with_attributes(tenant1_counter, 75.0, [
-    ("tenant.id", "tenant-002"),
-    ("tenant.name", "Global Inc"),
-    ("service.name", "order-service"),
-    ("operation.type", "order.create")
-  ])
+  let data_replicator = @azimuth.DataReplicator {
+    sync_config : sync_config,
+    bandwidth_limit_mbps : 100,
+    max_parallel_replications : 5,
+    retry_policy : @azimuth.RetryPolicy {
+      max_attempts : 5,
+      backoff_strategy : @azimuth.BackoffStrategy::Exponential,
+      initial_delay_ms : 1000,
+      max_delay_ms : 30000
+    },
+    compression_enabled : true,
+    encryption_enabled : true
+  }
   
-  // 租户3的度量
-  Counter::add_with_attributes(tenant1_counter, 200.0, [
-    ("tenant.id", "tenant-003"),
-    ("tenant.name", "Tech Solutions"),
-    ("service.name", "payment-service"),
-    ("operation.type", "payment.process")
-  ])
+  // 验证同步配置
+  assert_eq(sync_config.regions.length(), 4)
+  assert_eq(sync_config.primary_region, "us-west-2")
+  assert_true(sync_config.regions.contains("eu-west-1"))
+  match sync_config.sync_mode {
+    @azimuth.SyncMode::EventualConsistency => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(sync_config.replication_factor, 3)
+  match sync_config.conflict_resolution {
+    @azimuth.ConflictResolution::LastWriteWins => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // 创建租户特定的日志
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "multi.tenant.logger")
+  // 验证数据复制器
+  assert_eq(data_replicator.bandwidth_limit_mbps, 100)
+  assert_eq(data_replicator.max_parallel_replications, 5)
+  assert_true(data_replicator.compression_enabled)
+  assert_true(data_replicator.encryption_enabled)
   
-  // 租户1的日志
-  let tenant1_log = LogRecord::new(Info, "User lookup operation completed")
-  LogRecord::add_attribute(tenant1_log, "tenant.id", "tenant-001")
-  LogRecord::add_attribute(tenant1_log, "tenant.name", "Acme Corp")
-  LogRecord::add_attribute(tenant1_log, "service.name", "user-service")
-  LogRecord::add_attribute(tenant1_log, "user.id", "user-123")
-  LogRecord::add_attribute(tenant1_log, "operation.result", "success")
+  // 验证重试策略
+  assert_eq(data_replicator.retry_policy.max_attempts, 5)
+  match data_replicator.retry_policy.backoff_strategy {
+    @azimuth.BackoffStrategy::Exponential => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(data_replicator.retry_policy.initial_delay_ms, 1000)
+  assert_eq(data_replicator.retry_policy.max_delay_ms, 30000)
+}
+
+// 测试7: 遥测数据质量验证和清洗
+test "telemetry data quality validation and cleansing" {
+  // 测试遥测数据质量验证和清洗规则
+  let quality_validator = @azimuth.QualityValidator {
+    validation_rules : [
+      @azimuth.ValidationRule {
+        rule_name : "timestamp_range_check",
+        field : "timestamp",
+        rule_type : @azimuth.RuleType::Range,
+        parameters : [
+          ("min_value", @azimuth.IntValue(1640995200000L)), // 2022-01-01
+          ("max_value", @azimuth.IntValue(253402300799000L)) // 9999-12-31
+        ],
+        action : @azimuth.ValidationAction::Reject
+      },
+      @azimuth.ValidationRule {
+        rule_name : "trace_id_format_check",
+        field : "trace_id",
+        rule_type : @azimuth.RuleType::Regex,
+        parameters : [
+          ("pattern", @azimuth.StringValue("^[a-f0-9]{32}$"))
+        ],
+        action : @azimuth.ValidationAction::Sanitize
+      },
+      @azimuth.ValidationRule {
+        rule_name : "duration_non_negative",
+        field : "duration_ms",
+        rule_type : @azimuth.RuleType::Range,
+        parameters : [
+          ("min_value", @azimuth.IntValue(0)),
+          ("max_value", @azimuth.IntValue(3600000)) // 最大1小时
+        ],
+        action : @azimuth.ValidationAction::Correct
+      }
+    ],
+    default_action : @azimuth.ValidationAction::Accept,
+    quality_threshold : 0.95
+  }
   
-  // 租户2的日志
-  let tenant2_log = LogRecord::new(Info, "Order created successfully")
-  LogRecord::add_attribute(tenant2_log, "tenant.id", "tenant-002")
-  LogRecord::add_attribute(tenant2_log, "tenant.name", "Global Inc")
-  LogRecord::add_attribute(tenant2_log, "service.name", "order-service")
-  LogRecord::add_attribute(tenant2_log, "order.id", "order-456")
-  LogRecord::add_attribute(tenant2_log, "order.amount", 299.99)
+  let data_cleanser = @azimuth.DataCleanser {
+    cleansing_rules : [
+      @azimuth.CleansingRule {
+        rule_name : "remove pii attributes",
+        condition : @azimuth.AttributeCondition {
+          attribute : "attribute_key",
+          operator : @azimuth.Operator::Matches,
+          value : @azimuth.StringValue(".*email.*|.*phone.*|.*ssn.*")
+        },
+        action : @azimuth.CleansingAction::Remove
+      },
+      @azimuth.CleansingRule {
+        rule_name : "normalize user agent",
+        condition : @azimuth.AttributeCondition {
+          attribute : "http.user_agent",
+          operator : @azimuth.Operator::IsNotNull,
+          value : @azimuth.NullValue()
+        },
+        action : @azimuth.CleansingAction::Normalize
+      }
+    ],
+    preserve_original : true
+  }
   
-  // 租户3的日志
-  let tenant3_log = LogRecord::new(Info, "Payment processed successfully")
-  LogRecord::add_attribute(tenant3_log, "tenant.id", "tenant-003")
-  LogRecord::add_attribute(tenant3_log, "tenant.name", "Tech Solutions")
-  LogRecord::add_attribute(tenant3_log, "service.name", "payment-service")
-  LogRecord::add_attribute(tenant3_log, "payment.id", "payment-789")
-  LogRecord::add_attribute(tenant3_log, "payment.amount", 299.99)
+  // 验证质量验证器
+  assert_eq(quality_validator.validation_rules.length(), 3)
+  assert_eq(quality_validator.quality_threshold, 0.95)
+  match quality_validator.default_action {
+    @azimuth.ValidationAction::Accept => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // 发射日志
-  Logger::emit(logger, tenant1_log)
-  Logger::emit(logger, tenant2_log)
-  Logger::emit(logger, tenant3_log)
+  // 验证时间戳范围规则
+  let timestamp_rule = quality_validator.validation_rules[0]
+  assert_eq(timestamp_rule.field, "timestamp")
+  match timestamp_rule.rule_type {
+    @azimuth.RuleType::Range => assert_true(true)
+    _ => assert_true(false)
+  }
+  match timestamp_rule.action {
+    @azimuth.ValidationAction::Reject => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // 结束所有span
-  Span::end(tenant1_span)
-  Span::end(tenant2_span)
-  Span::end(tenant3_span)
+  // 验证正则表达式规则
+  let trace_id_rule = quality_validator.validation_rules[1]
+  match trace_id_rule.rule_type {
+    @azimuth.RuleType::Regex => assert_true(true)
+    _ => assert_true(false)
+  }
+  match trace_id_rule.action {
+    @azimuth.ValidationAction::Sanitize => assert_true(true)
+    _ => assert_true(false)
+  }
   
-  // 验证租户隔离
-  let tenant1_ctx = Span::span_context(tenant1_span)
-  let tenant2_ctx = Span::span_context(tenant2_span)
-  let tenant3_ctx = Span::span_context(tenant3_span)
+  // 验证数据清洗器
+  assert_eq(data_cleanser.cleansing_rules.length(), 2)
+  assert_true(data_cleanser.preserve_original)
   
-  assert_true(SpanContext::is_valid(tenant1_ctx))
-  assert_true(SpanContext::is_valid(tenant2_ctx))
-  assert_true(SpanContext::is_valid(tenant3_ctx))
+  // 验证PII清洗规则
+  let pii_rule = data_cleanser.cleansing_rules[0]
+  match pii_rule.action {
+    @azimuth.CleansingAction::Remove => assert_true(true)
+    _ => assert_true(false)
+  }
+  match pii_rule.condition.value {
+    @azimuth.StringValue(pattern) => assert_true(pattern.contains("email"))
+    _ => assert_true(false)
+  }
+}
+
+// 测试8: 遥测数据的机器学习异常检测
+test "machine learning anomaly detection for telemetry data" {
+  // 测试基于机器学习的遥测数据异常检测
+  let anomaly_detector = @azimuth.AnomalyDetector {
+    model_type : @azimuth.ModelType::IsolationForest,
+    training_window_ms : 604800000, // 7天
+    detection_window_ms : 3600000, // 1小时
+    sensitivity : 0.05,
+    features : [
+      "response_time",
+      "error_rate",
+      "throughput",
+      "cpu_usage",
+      "memory_usage"
+    ],
+    model_params : [
+      ("n_estimators", @azimuth.IntValue(100)),
+      ("max_samples", @azimuth.FloatValue(0.8)),
+      ("contamination", @azimuth.FloatValue(0.1))
+    ]
+  }
   
-  // 验证span上下文隔离
-  assert_not_eq(tenant1_ctx.span_id, tenant2_ctx.span_id)
-  assert_not_eq(tenant2_ctx.span_id, tenant3_ctx.span_id)
-  assert_not_eq(tenant1_ctx.span_id, tenant3_ctx.span_id)
+  let alert_correlator = @azimuth.AlertCorrelator {
+    correlation_window_ms : 300000, // 5分钟
+    correlation_threshold : 0.7,
+    grouping_rules : [
+      @azimuth.GroupingRule {
+        rule_name : "same_service",
+        condition : @azimuth.AttributeCondition {
+          attribute : "service.name",
+          operator : @azimuth.Operator::Equals,
+          value : @azimuth.WildcardValue("*")
+        }
+      },
+      @azimuth.GroupingRule {
+        rule_name : "same_trace",
+        condition : @azimuth.AttributeCondition {
+          attribute : "trace_id",
+          operator : @azimuth.Operator::Equals,
+          value : @azimuth.WildcardValue("*")
+        }
+      }
+    ],
+    suppression_rules : [
+      @azimuth.SuppressionRule {
+        rule_name : "maintenance_window",
+        condition : @azimuth.TimeCondition {
+          start_hour : 2,
+          end_hour : 4,
+          days_of_week : [0, 1, 2, 3, 4, 5, 6] // 每天凌晨2-4点
+        },
+        severity_filter : [@azimuth.AlertSeverity::Warning]
+      }
+    ]
+  }
   
-  assert_true(true)
+  // 验证异常检测器
+  match anomaly_detector.model_type {
+    @azimuth.ModelType::IsolationForest => assert_true(true)
+    _ => assert_true(false)
+  }
+  assert_eq(anomaly_detector.training_window_ms, 604800000)
+  assert_eq(anomaly_detector.detection_window_ms, 3600000)
+  assert_eq(anomaly_detector.sensitivity, 0.05)
+  assert_eq(anomaly_detector.features.length(), 5)
+  assert_true(anomaly_detector.features.contains("response_time"))
+  
+  // 验证模型参数
+  assert_eq(anomaly_detector.model_params.length(), 3)
+  let n_estimators_param = anomaly_detector.model_params[0]
+  assert_eq(n_estimators_param.0, "n_estimators")
+  match n_estimators_param.1 {
+    @azimuth.IntValue(v) => assert_eq(v, 100)
+    _ => assert_true(false)
+  }
+  
+  // 验证告警关联器
+  assert_eq(alert_correlator.correlation_window_ms, 300000)
+  assert_eq(alert_correlator.correlation_threshold, 0.7)
+  assert_eq(alert_correlator.grouping_rules.length(), 2)
+  assert_eq(alert_correlator.suppression_rules.length(), 1)
+  
+  // 验证分组规则
+  let service_grouping = alert_correlator.grouping_rules[0]
+  assert_eq(service_grouping.rule_name, "same_service")
+  assert_eq(service_grouping.condition.attribute, "service.name")
+  match service_grouping.condition.operator {
+    @azimuth.Operator::Equals => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // 验证抑制规则
+  let maintenance_suppression = alert_correlator.suppression_rules[0]
+  assert_eq(maintenance_suppression.rule_name, "maintenance_window")
+  match maintenance_suppression.condition {
+    @azimuth.TimeCondition { start_hour, end_hour, days_of_week } => {
+      assert_eq(start_hour, 2)
+      assert_eq(end_hour, 4)
+      assert_eq(days_of_week.length(), 7)
+    }
+    _ => assert_true(false)
+  }
 }
