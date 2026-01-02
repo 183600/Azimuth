@@ -1,13 +1,15 @@
 {
-  "name": "azimuth",
+  "name": "azimuth/test",
   "version": "0.1.0",
-  "description": "Azimuth telemetry system main package - New Tests Only",
+  "description": "Test configuration for new comprehensive tests",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["attributes_operations_comprehensive_tests.mbt", "span_context_lifecycle_tests.mbt", "metrics_instruments_comprehensive_tests.mbt", "log_record_severity_context_tests.mbt", "propagation_baggage_comprehensive_tests.mbt", "http_client_network_operations_tests.mbt", "resource_attributes_operations_tests.mbt", "realtime_dashboard_streaming_tests.mbt"]
+    "test": [
+        "azimuth_comprehensive_new_tests.mbt"
+    ]
   }
 }

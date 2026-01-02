@@ -9,6 +9,7 @@
   },
   "test": {
     "test": [
+        "azimuth_comprehensive_new_tests.mbt",
         "azimuth_high_quality_test_suite.mbt",
         "azimuth_high_quality_moonbit_tests.mbt",
         "azimuth_simple_additional_tests.mbt",
