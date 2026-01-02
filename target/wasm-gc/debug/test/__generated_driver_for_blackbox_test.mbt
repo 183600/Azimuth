@@ -148,6 +148,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_telemetry_aggregation_new_tests.mbt": {
   },
+  "azimuth_telemetry_aggregation_analysis_tests.mbt": {
+  },
   "azimuth_supplementary_comprehensive_tests.mbt": {
   },
   "azimuth_specialized_telemetry_tests.mbt": {
@@ -296,6 +298,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_network_telemetry_tests.mbt": {
   },
+  "azimuth_network_http_client_telemetry_tests.mbt": {
+  },
   "azimuth_multidimensional_attribute_query_tests.mbt": {
   },
   "azimuth_multidimensional_attribute_query_comprehensive_tests.mbt": {
@@ -440,6 +444,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_end_to_end_telemetry_tests.mbt": {
   },
+  "azimuth_edge_iot_telemetry_tests.mbt": {
+  },
   "azimuth_edge_computing_telemetry_tests.mbt": {
   },
   "azimuth_edge_computing_iot_tests.mbt": {
@@ -472,6 +478,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_distributed_tracing_consistency_enhanced_tests.mbt": {
   },
+  "azimuth_distributed_tracing_chain_tests.mbt": {
+  },
   "azimuth_deep_nested_attributes_tests.mbt": {
   },
   "azimuth_data_structures_operations_tests.mbt": {
@@ -495,6 +503,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_custom_telemetry_enhancement_tests.mbt": {
   },
   "azimuth_custom_telemetry_dashboard_tests.mbt": {
+  },
+  "azimuth_custom_metrics_dashboard_tests.mbt": {
   },
   "azimuth_cross_service_tracing_tests.mbt": {
   },
