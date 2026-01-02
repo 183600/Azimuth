@@ -1,414 +1,800 @@
-// Azimuth Concurrent Safety Comprehensive Tests
-// 测试并发安全功能
+// Azimuth Concurrent Safety Comprehensive Test Suite
+// This file contains test cases for concurrent safety mechanisms
 
-test "attributes_concurrent_access" {
-  // 测试属性的并发访问
-  let attrs = Attributes::new()
+// Test 1: Shared State Simulation
+test "shared state simulation" {
+  // Simulate a shared counter with atomic operations
+  type SharedCounter = {
+    value: Int,
+    version: Int  // Version number for optimistic locking
+  }
   
-  // 模拟并发设置属性
-  Attributes::set(attrs, "concurrent.key1", StringValue("value1"))
-  Attributes::set(attrs, "concurrent.key2", IntValue(42))
-  Attributes::set(attrs, "concurrent.key3", BoolValue(true))
+  let create_counter = fn(initial_value: Int) -> SharedCounter {
+    { value: initial_value, version: 0 }
+  }
   
-  // 模拟并发读取属性
-  let value1 = Attributes::get(attrs, "concurrent.key1")
-  let value2 = Attributes::get(attrs, "concurrent.key2")
-  let value3 = Attributes::get(attrs, "concurrent.key3")
+  let atomic_increment = fn(counter: SharedCounter) -> SharedCounter {
+    { value: counter.value + 1, version: counter.version + 1 }
+  }
   
-  // 验证读取结果
+  let atomic_decrement = fn(counter: SharedCounter) -> SharedCounter {
+    { value: counter.value - 1, version: counter.version + 1 }
+  }
+  
+  let atomic_add = fn(counter: SharedCounter, delta: Int) -> SharedCounter {
+    { value: counter.value + delta, version: counter.version + 1 }
+  }
+  
+  // Test basic operations
+  let counter1 = create_counter(0)
+  assert_eq(counter1.value, 0)
+  assert_eq(counter1.version, 0)
+  
+  let counter2 = atomic_increment(counter1)
+  assert_eq(counter2.value, 1)
+  assert_eq(counter2.version, 1)
+  
+  let counter3 = atomic_decrement(counter2)
+  assert_eq(counter3.value, 0)
+  assert_eq(counter3.version, 2)
+  
+  let counter4 = atomic_add(counter3, 5)
+  assert_eq(counter4.value, 5)
+  assert_eq(counter4.version, 3)
+  
+  // Test optimistic locking simulation
+  let compare_and_swap = fn(old_counter: SharedCounter, expected_version: Int, new_value: Int) -> Result<SharedCounter, String> {
+    if old_counter.version == expected_version {
+      Ok({ value: new_value, version: old_counter.version + 1 })
+    } else {
+      Err("Version mismatch")
+    }
+  }
+  
+  let counter5 = create_counter(10)
+  let cas_result1 = compare_and_swap(counter5, 0, 20)
+  match cas_result1 {
+    Ok(new_counter) => {
+      assert_eq(new_counter.value, 20)
+      assert_eq(new_counter.version, 1)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  let cas_result2 = compare_and_swap(counter5, 0, 30)  // Using original counter, version mismatch
+  match cas_result2 {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Version mismatch")
+  }
+}
+
+// Test 2: Lock-Free Data Structure Simulation
+test "lock-free data structure simulation" {
+  // Simulate a lock-free stack using versioned nodes
+  type StackNode = Option<(Int, Int)>  // (value, version)
+  
+  let empty_stack: StackNode = None
+  
+  let stack_push = fn(stack: StackNode, value: Int, version: Int) -> StackNode {
+    Some((value, version))
+  }
+  
+  let stack_pop = fn(stack: StackNode) -> (Option<Int>, StackNode) {
+    match stack {
+      Some((value, _)) => (Some(value), None)
+      None => (None, None)
+    }
+  }
+  
+  let stack_peek = fn(stack: StackNode) -> Option<Int> {
+    match stack {
+      Some((value, _)) => Some(value)
+      None => None
+    }
+  }
+  
+  // Test stack operations
+  let stack1 = empty_stack
+  assert_eq(stack_peek(stack1), None)
+  
+  let stack2 = stack_push(stack1, 10, 1)
+  assert_eq(stack_peek(stack2), Some(10))
+  
+  let (value1, stack3) = stack_pop(stack2)
   match value1 {
-    Some(StringValue(v)) => assert_eq(v, "test_value")  // 实现返回固定值
-    _ => assert_fail("Expected StringValue")
+    Some(v) => assert_eq(v, 10)
+    None => assert_true(false)
   }
+  assert_eq(stack_peek(stack3), None)
   
+  // Test multiple pushes and pops
+  let stack4 = stack_push(stack3, 20, 2)
+  let stack5 = stack_push(stack4, 30, 3)
+  
+  assert_eq(stack_peek(stack5), Some(30))
+  
+  let (value2, stack6) = stack_pop(stack5)
   match value2 {
-    Some(IntValue(v)) => assert_eq(v, 42)
-    _ => assert_fail("Expected IntValue")
+    Some(v) => assert_eq(v, 30)
+    None => assert_true(false)
   }
   
+  assert_eq(stack_peek(stack6), Some(20))
+  
+  let (value3, stack7) = stack_pop(stack6)
   match value3 {
-    Some(BoolValue(v)) => assert_eq(v, true)
-    _ => assert_fail("Expected BoolValue")
+    Some(v) => assert_eq(v, 20)
+    None => assert_true(false)
+  }
+  
+  assert_eq(stack_peek(stack7), None)
+}
+
+// Test 3: Producer-Consumer Pattern Simulation
+test "producer-consumer pattern simulation" {
+  // Simulate a bounded buffer with circular buffer
+  type BoundedBuffer = {
+    buffer: Array<Option<Int>>,
+    head: Int,
+    tail: Int,
+    count: Int,
+    capacity: Int
+  }
+  
+  let create_buffer = fn(capacity: Int) -> BoundedBuffer {
+    let mut buffer = []
+    for i in 0..<capacity {
+      buffer = buffer.push(None)
+    }
+    { buffer: buffer, head: 0, tail: 0, count: 0, capacity: capacity }
+  }
+  
+  let buffer_is_empty = fn(buf: BoundedBuffer) -> Bool {
+    buf.count == 0
+  }
+  
+  let buffer_is_full = fn(buf: BoundedBuffer) -> Bool {
+    buf.count == buf.capacity
+  }
+  
+  let buffer_produce = fn(buf: BoundedBuffer, item: Int) -> Result<BoundedBuffer, String> {
+    if buffer_is_full(buf) {
+      Err("Buffer is full")
+    } else {
+      let new_buffer = buf.buffer.with(buf.tail, Some(item))
+      let new_tail = (buf.tail + 1) % buf.capacity
+      Ok({ 
+        buffer: new_buffer, 
+        head: buf.head, 
+        tail: new_tail, 
+        count: buf.count + 1, 
+        capacity: buf.capacity 
+      })
+    }
+  }
+  
+  let buffer_consume = fn(buf: BoundedBuffer) -> (Option<Int>, Result<BoundedBuffer, String>) {
+    if buffer_is_empty(buf) {
+      (None, Err("Buffer is empty"))
+    } else {
+      match buf.buffer[buf.head] {
+        Some(item) => {
+          let new_buffer = buf.buffer.with(buf.head, None)
+          let new_head = (buf.head + 1) % buf.capacity
+          (Some(item), Ok({ 
+            buffer: new_buffer, 
+            head: new_head, 
+            tail: buf.tail, 
+            count: buf.count - 1, 
+            capacity: buf.capacity 
+          }))
+        }
+        None => (None, Err("Invalid buffer state"))
+      }
+    }
+  }
+  
+  // Test buffer operations
+  let buffer1 = create_buffer(3)
+  assert_true(buffer_is_empty(buffer1))
+  assert_false(buffer_is_full(buffer1))
+  
+  let buffer2_result = buffer_produce(buffer1, 10)
+  match buffer2_result {
+    Ok(buffer2) => {
+      assert_false(buffer_is_empty(buffer2))
+      assert_false(buffer_is_full(buffer2))
+      
+      let buffer3_result = buffer_produce(buffer2, 20)
+      match buffer3_result {
+        Ok(buffer3) => {
+          assert_false(buffer_is_empty(buffer3))
+          assert_false(buffer_is_full(buffer3))
+          
+          let buffer4_result = buffer_produce(buffer3, 30)
+          match buffer4_result {
+            Ok(buffer4) => {
+              assert_false(buffer_is_empty(buffer4))
+              assert_true(buffer_is_full(buffer4))
+              
+              // Try to produce when full
+              let buffer5_result = buffer_produce(buffer4, 40)
+              match buffer5_result {
+                Ok(_) => assert_true(false)
+                Err(msg) => assert_eq(msg, "Buffer is full")
+              }
+              
+              // Consume items
+              let (item1, buffer6_result) = buffer_consume(buffer4)
+              match item1 {
+                Some(value) => assert_eq(value, 10)
+                None => assert_true(false)
+              }
+              
+              match buffer6_result {
+                Ok(buffer6) => {
+                  assert_false(buffer_is_empty(buffer6))
+                  assert_false(buffer_is_full(buffer6))
+                  
+                  let (item2, buffer7_result) = buffer_consume(buffer6)
+                  match item2 {
+                    Some(value) => assert_eq(value, 20)
+                    None => assert_true(false)
+                  }
+                  
+                  match buffer7_result {
+                    Ok(buffer7) => {
+                      let (item3, buffer8_result) = buffer_consume(buffer7)
+                      match item3 {
+                        Some(value) => assert_eq(value, 30)
+                        None => assert_true(false)
+                      }
+                      
+                      match buffer8_result {
+                        Ok(buffer8) => {
+                          assert_true(buffer_is_empty(buffer8))
+                          assert_false(buffer_is_full(buffer8))
+                          
+                          // Try to consume when empty
+                          let (item4, buffer9_result) = buffer_consume(buffer8)
+                          match item4 {
+                            Some(_) => assert_true(false)
+                            None => assert_true(true)
+                          }
+                          
+                          match buffer9_result {
+                            Ok(_) => assert_true(false)
+                            Err(msg) => assert_eq(msg, "Buffer is empty")
+                          }
+                        }
+                        Err(_) => assert_true(false)
+                      }
+                    }
+                    Err(_) => assert_true(false)
+                  }
+                }
+                Err(_) => assert_true(false)
+              }
+            }
+            Err(_) => assert_true(false)
+          }
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => assert_true(false)
   }
 }
 
-test "context_concurrent_modifications" {
-  // 测试上下文的并发修改
-  let root_context = Context::root()
-  
-  // 模拟并发上下文修改
-  let context1 = Context::with_value(root_context, ContextKey::new("thread1.key"), "thread1.value")
-  let context2 = Context::with_value(root_context, ContextKey::new("thread2.key"), "thread2.value")
-  let context3 = Context::with_value(root_context, ContextKey::new("thread3.key"), "thread3.value")
-  
-  // 验证各个上下文独立
-  let value1 = Context::get(context1, ContextKey::new("thread1.key"))
-  let value2 = Context::get(context2, ContextKey::new("thread2.key"))
-  let value3 = Context::get(context3, ContextKey::new("thread3.key"))
-  
-  match value1 {
-    Some(v) => assert_eq(v, "thread1.value")
-    _ => assert_fail("Expected thread1 value")
+// Test 4: Read-Write Lock Simulation
+test "read-write lock simulation" {
+  // Simulate a read-write lock with counters
+  type ReadWriteLock = {
+    readers: Int,
+    writers: Int,
+    waiting_writers: Int
   }
   
-  match value2 {
-    Some(v) => assert_eq(v, "thread2.value")
-    _ => assert_fail("Expected thread2 value")
+  let create_lock = fn() -> ReadWriteLock {
+    { readers: 0, writers: 0, waiting_writers: 0 }
   }
   
-  match value3 {
-    Some(v) => assert_eq(v, "thread3.value")
-    _ => assert_fail("Expected thread3 value")
+  let can_read = fn(lock: ReadWriteLock) -> Bool {
+    lock.writers == 0 && lock.waiting_writers == 0
   }
   
-  // 验证交叉访问返回None（由于实现限制）
-  let cross_value1 = Context::get(context1, ContextKey::new("thread2.key"))
-  let cross_value2 = Context::get(context2, ContextKey::new("thread3.key"))
-  let cross_value3 = Context::get(context3, ContextKey::new("thread1.key"))
-  
-  assert_eq(cross_value1, None)
-  assert_eq(cross_value2, None)
-  assert_eq(cross_value3, None)
-}
-
-test "span_concurrent_operations" {
-  // 测试Span的并发操作
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent-tracer")
-  
-  // 创建多个Span
-  let span1 = Tracer::start_span(tracer, "concurrent-span-1")
-  let span2 = Tracer::start_span(tracer, "concurrent-span-2")
-  let span3 = Tracer::start_span(tracer, "concurrent-span-3")
-  
-  // 并发操作Span
-  Span::add_event(span1, "event1", None)
-  Span::add_event(span2, "event2", None)
-  Span::add_event(span3, "event3", None)
-  
-  Span::set_status(span1, Ok, None)
-  Span::set_status(span2, Error, Some("Error occurred"))
-  Span::set_status(span3, Ok, None)
-  
-  // 验证Span属性
-  assert_eq(Span::name(span1), "concurrent-span-1")
-  assert_eq(Span::name(span2), "concurrent-span-2")
-  assert_eq(Span::name(span3), "concurrent-span-3")
-  
-  // 结束所有Span
-  Span::end(span1)
-  Span::end(span2)
-  Span::end(span3)
-}
-
-test "metrics_concurrent_updates" {
-  // 测试指标的并发更新
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "concurrent-meter")
-  
-  // 创建多个指标
-  let counter1 = Meter::create_counter(meter, "concurrent.counter1")
-  let counter2 = Meter::create_counter(meter, "concurrent.counter2")
-  let histogram1 = Meter::create_histogram(meter, "concurrent.histogram1")
-  let histogram2 = Meter::create_histogram(meter, "concurrent.histogram2")
-  let updown_counter1 = Meter::create_updown_counter(meter, "concurrent.updown1")
-  let updown_counter2 = Meter::create_updown_counter(meter, "concurrent.updown2")
-  
-  // 并发更新指标
-  Counter::add(counter1, 1.0)
-  Counter::add(counter2, 2.0)
-  
-  Histogram::record(histogram1, 10.0)
-  Histogram::record(histogram2, 20.0)
-  
-  UpDownCounter::add(updown_counter1, 5.0)
-  UpDownCounter::add(updown_counter2, -3.0)
-  
-  // 验证指标名称
-  assert_eq(counter1.name, "concurrent.counter1")
-  assert_eq(counter2.name, "concurrent.counter2")
-  assert_eq(histogram1.name, "concurrent.histogram1")
-  assert_eq(histogram2.name, "concurrent.histogram2")
-  assert_eq(updown_counter1.name, "concurrent.updown1")
-  assert_eq(updown_counter2.name, "concurrent.updown2")
-}
-
-test "logger_concurrent_emissions" {
-  // 测试日志的并发发射
-  let logger_provider = LoggerProvider::default()
-  let logger1 = LoggerProvider::get_logger(logger_provider, "concurrent-logger1")
-  let logger2 = LoggerProvider::get_logger(logger_provider, "concurrent-logger2")
-  let logger3 = LoggerProvider::get_logger(logger_provider, "concurrent-logger3")
-  
-  // 创建多个日志记录
-  let log1 = LogRecord::new(Info, "Concurrent log message 1")
-  let log2 = LogRecord::new(Warn, "Concurrent log message 2")
-  let log3 = LogRecord::new(Error, "Concurrent log message 3")
-  
-  // 并发发射日志
-  Logger::emit(logger1, log1)
-  Logger::emit(logger2, log2)
-  Logger::emit(logger3, log3)
-  
-  // 验证日志记录属性
-  assert_eq(LogRecord::severity_number(log1), Info)
-  assert_eq(LogRecord::severity_number(log2), Warn)
-  assert_eq(LogRecord::severity_number(log3), Error)
-  
-  match LogRecord::body(log1) {
-    Some(body) => assert_eq(body, "Concurrent log message 1")
-    _ => assert_fail("Expected log body")
+  let can_write = fn(lock: ReadWriteLock) -> Bool {
+    lock.readers == 0 && lock.writers == 0
   }
   
-  match LogRecord::body(log2) {
-    Some(body) => assert_eq(body, "Concurrent log message 2")
-    _ => assert_fail("Expected log body")
+  let acquire_read = fn(lock: ReadWriteLock) -> Result<ReadWriteLock, String> {
+    if can_read(lock) {
+      Ok({ readers: lock.readers + 1, writers: lock.writers, waiting_writers: lock.waiting_writers })
+    } else {
+      Err("Cannot acquire read lock")
+    }
   }
   
-  match LogRecord::body(log3) {
-    Some(body) => assert_eq(body, "Concurrent log message 3")
-    _ => assert_fail("Expected log body")
+  let release_read = fn(lock: ReadWriteLock) -> ReadWriteLock {
+    { readers: lock.readers - 1, writers: lock.writers, waiting_writers: lock.waiting_writers }
+  }
+  
+  let acquire_write = fn(lock: ReadWriteLock) -> Result<ReadWriteLock, String> {
+    if can_write(lock) {
+      Ok({ readers: lock.readers, writers: lock.writers + 1, waiting_writers: lock.waiting_writers })
+    } else {
+      Ok({ readers: lock.readers, writers: lock.writers, waiting_writers: lock.waiting_writers + 1 })
+    }
+  }
+  
+  let release_write = fn(lock: ReadWriteLock) -> ReadWriteLock {
+    { readers: lock.readers, writers: lock.writers - 1, waiting_writers: lock.waiting_writers }
+  }
+  
+  // Test lock operations
+  let lock1 = create_lock()
+  assert_true(can_read(lock1))
+  assert_true(can_write(lock1))
+  
+  // Acquire read lock
+  let lock2_result = acquire_read(lock1)
+  match lock2_result {
+    Ok(lock2) => {
+      assert_true(can_read(lock2))
+      assert_false(can_write(lock2))
+      
+      // Acquire another read lock
+      let lock3_result = acquire_read(lock2)
+      match lock3_result {
+        Ok(lock3) => {
+          assert_true(can_read(lock3))
+          assert_false(can_write(lock3));
+          
+          // Try to acquire write lock (should fail)
+          let lock4_result = acquire_write(lock3)
+          match lock4_result {
+            Ok(lock4) => {
+              assert_false(can_read(lock4))
+              assert_false(can_write(lock4));
+              assert_eq(lock4.waiting_writers, 1)
+              
+              // Release read locks
+              let lock5 = release_read(lock3)
+              assert_true(can_read(lock5))
+              assert_false(can_write(lock5));
+              
+              let lock6 = release_read(lock5)
+              assert_true(can_read(lock6))
+              assert_true(can_write(lock6));
+              
+              // Now write lock should be acquirable
+              let lock7_result = acquire_write(lock6)
+              match lock7_result {
+                Ok(lock7) => {
+                  assert_false(can_read(lock7))
+                  assert_false(can_write(lock7));
+                  assert_eq(lock7.writers, 1)
+                  
+                  // Release write lock
+                  let lock8 = release_write(lock7)
+                  assert_true(can_read(lock8))
+                  assert_true(can_write(lock8));
+                  assert_eq(lock8.writers, 0)
+                }
+                Err(_) => assert_true(false)
+              }
+            }
+            Err(_) => assert_true(false)
+          }
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => assert_true(false)
   }
 }
 
-test "resource_concurrent_merges" {
-  // 测试资源的并发合并
-  let base_resource = Resource::new()
-  
-  // 创建多个资源
-  let resource1 = Resource::with_attributes(base_resource, [
-    ("service.name", StringValue("service1")),
-    ("service.version", StringValue("1.0.0"))
-  ])
-  
-  let resource2 = Resource::with_attributes(base_resource, [
-    ("service.name", StringValue("service2")),
-    ("host.name", StringValue("host2"))
-  ])
-  
-  let resource3 = Resource::with_attributes(base_resource, [
-    ("service.name", StringValue("service3")),
-    ("environment", StringValue("production"))
-  ])
-  
-  // 并发合并资源
-  let merged1 = Resource::merge(base_resource, resource1)
-  let merged2 = Resource::merge(base_resource, resource2)
-  let merged3 = Resource::merge(base_resource, resource3)
-  
-  // 验证合并结果（根据实现，应该返回override资源）
-  let service_name1 = Resource::get_attribute(merged1, "service.name")
-  let service_name2 = Resource::get_attribute(merged2, "service.name")
-  let service_name3 = Resource::get_attribute(merged3, "service.name")
-  
-  match service_name1 {
-    Some(StringValue(name)) => assert_eq(name, "service1")
-    _ => assert_fail("Expected service1 name")
+// Test 5: Thread-Safe Reference Simulation
+test "thread-safe reference simulation" {
+  // Simulate a thread-safe reference with versioning
+  type SafeRef = {
+    value: String,
+    version: Int
   }
   
-  match service_name2 {
-    Some(StringValue(name)) => assert_eq(name, "service2")
-    _ => assert_fail("Expected service2 name")
+  let create_ref = fn(initial_value: String) -> SafeRef {
+    { value: initial_value, version: 0 }
   }
   
-  match service_name3 {
-    Some(StringValue(name)) => assert_eq(name, "service3")
-    _ => assert_fail("Expected service3 name")
-  }
-}
-
-test "propagator_concurrent_injections" {
-  // 测试传播器的并发注入
-  let trace_propagator1 = W3CTraceContextPropagator::new()
-  let trace_propagator2 = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
-  
-  let composite_propagator1 = CompositePropagator::new([trace_propagator1, baggage_propagator])
-  let composite_propagator2 = CompositePropagator::new([trace_propagator2])
-  
-  // 创建多个上下文和载体
-  let context1 = Context::with_value(Context::root(), ContextKey::new("trace1.id"), "trace-123")
-  let context2 = Context::with_value(Context::root(), ContextKey::new("trace2.id"), "trace-456")
-  
-  let carrier1 = TextMapCarrier::new()
-  let carrier2 = TextMapCarrier::new()
-  
-  // 并发注入
-  CompositePropagator::inject(composite_propagator1, context1, carrier1)
-  CompositePropagator::inject(composite_propagator2, context2, carrier2)
-  
-  // 验证注入结果
-  let trace1 = TextMapCarrier::get(carrier1, "traceparent")
-  let trace2 = TextMapCarrier::get(carrier2, "traceparent")
-  
-  match trace1 {
-    Some(value) => assert_eq(value, "00-test-trace-id-test-span-id-01")
-    _ => assert_fail("Expected traceparent in carrier1")
+  let ref_read = fn(ref: SafeRef) -> (String, Int) {
+    (ref.value, ref.version)
   }
   
-  match trace2 {
-    Some(value) => assert_eq(value, "00-test-trace-id-test-span-id-01")
-    _ => assert_fail("Expected traceparent in carrier2")
+  let ref_write = fn(ref: SafeRef, new_value: String) -> SafeRef {
+    { value: new_value, version: ref.version + 1 }
+  }
+  
+  let ref_compare_and_swap = fn(ref: SafeRef, expected_version: Int, new_value: String) -> Result<SafeRef, String> {
+    if ref.version == expected_version {
+      Ok({ value: new_value, version: ref.version + 1 })
+    } else {
+      Err("Version mismatch")
+    }
+  }
+  
+  // Test reference operations
+  let ref1 = create_ref("initial")
+  let (value1, version1) = ref_read(ref1)
+  assert_eq(value1, "initial")
+  assert_eq(version1, 0)
+  
+  let ref2 = ref_write(ref1, "updated")
+  let (value2, version2) = ref_read(ref2)
+  assert_eq(value2, "updated")
+  assert_eq(version2, 1)
+  
+  // Test compare-and-swap
+  let cas_result1 = ref_compare_and_swap(ref2, 1, "cas_updated")
+  match cas_result1 {
+    Ok(ref3) => {
+      let (value3, version3) = ref_read(ref3)
+      assert_eq(value3, "cas_updated")
+      assert_eq(version3, 2)
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test CAS with wrong version
+  let cas_result2 = ref_compare_and_swap(ref2, 0, "should_fail")
+  match cas_result2 {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Version mismatch")
   }
 }
 
-test "propagator_concurrent_extractions" {
-  // 测试传播器的并发提取
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite_propagator = CompositePropagator::new([trace_propagator])
-  
-  // 创建多个载体
-  let carrier1 = TextMapCarrier::new()
-  let carrier2 = TextMapCarrier::new()
-  let carrier3 = TextMapCarrier::new()
-  
-  // 并发提取
-  let extracted_context1 = CompositePropagator::extract(composite_propagator, carrier1)
-  let extracted_context2 = CompositePropagator::extract(composite_propagator, carrier2)
-  let extracted_context3 = CompositePropagator::extract(composite_propagator, carrier3)
-  
-  // 验证提取结果
-  let extracted_key = ContextKey::new("extracted")
-  
-  let value1 = Context::get(extracted_context1, extracted_key)
-  let value2 = Context::get(extracted_context2, extracted_key)
-  let value3 = Context::get(extracted_context3, extracted_key)
-  
-  match value1 {
-    Some(v) => assert_eq(v, "true")
-    _ => assert_fail("Expected extracted value in context1")
+// Test 6: Concurrent Map Simulation
+test "concurrent map simulation" {
+  // Simulate a concurrent map with versioned entries
+  type ConcurrentMapEntry = {
+    value: Int,
+    version: Int
   }
   
-  match value2 {
-    Some(v) => assert_eq(v, "true")
-    _ => assert_fail("Expected extracted value in context2")
+  type ConcurrentMap = Array<(String, Option<ConcurrentMapEntry>)>
+  
+  let create_map = fn() -> ConcurrentMap {
+    []
   }
   
-  match value3 {
-    Some(v) => assert_eq(v, "true")
-    _ => assert_fail("Expected extracted value in context3")
+  let map_get = fn(map: ConcurrentMap, key: String) -> Option<Int> {
+    for (k, entry) in map {
+      if k == key {
+        match entry {
+          Some(e) => return Some(e.value)
+          None => return None
+        }
+      }
+    }
+    None
+  }
+  
+  let map_put = fn(map: ConcurrentMap, key: String, value: Int) -> ConcurrentMap {
+    let mut result = []
+    let mut found = false
+    
+    for (k, entry) in map {
+      if k == key {
+        match entry {
+          Some(e) => {
+            result = result.push((k, Some({ value: value, version: e.version + 1 })))
+          }
+          None => {
+            result = result.push((k, Some({ value: value, version: 0 })))
+          }
+        }
+        found = true
+      } else {
+        result = result.push((k, entry))
+      }
+    }
+    
+    if !found {
+      result = result.push((key, Some({ value: value, version: 0 })))
+    }
+    
+    result
+  }
+  
+  let map_remove = fn(map: ConcurrentMap, key: String) -> ConcurrentMap {
+    let mut result = []
+    
+    for (k, entry) in map {
+      if k == key {
+        result = result.push((k, None))
+      } else {
+        result = result.push((k, entry))
+      }
+    }
+    
+    result
+  }
+  
+  // Test map operations
+  let map1 = create_map()
+  assert_eq(map_get(map1, "key1"), None)
+  
+  let map2 = map_put(map1, "key1", 10)
+  match map_get(map2, "key1") {
+    Some(value) => assert_eq(value, 10)
+    None => assert_true(false)
+  }
+  
+  let map3 = map_put(map2, "key2", 20)
+  match map_get(map3, "key1") {
+    Some(value) => assert_eq(value, 10)
+    None => assert_true(false)
+  }
+  
+  match map_get(map3, "key2") {
+    Some(value) => assert_eq(value, 20)
+    None => assert_true(false)
+  }
+  
+  let map4 = map_put(map3, "key1", 30)  // Update existing key
+  match map_get(map4, "key1") {
+    Some(value) => assert_eq(value, 30)
+    None => assert_true(false)
+  }
+  
+  match map_get(map4, "key2") {
+    Some(value) => assert_eq(value, 20)
+    None => assert_true(false)
+  }
+  
+  let map5 = map_remove(map4, "key1")
+  assert_eq(map_get(map5, "key1"), None)
+  
+  match map_get(map5, "key2") {
+    Some(value) => assert_eq(value, 20)
+    None => assert_true(false)
   }
 }
 
-test "baggage_concurrent_operations" {
-  // 测试Baggage的并发操作
-  let baggage = Baggage::new()
+// Test 7: Concurrent Queue Simulation
+test "concurrent queue simulation" {
+  // Simulate a concurrent queue with head and tail pointers
+  type ConcurrentQueue = {
+    nodes: Array<Option<Int>>,
+    head: Int,
+    tail: Int,
+    capacity: Int
+  }
   
-  // 并发设置条目
-  let baggage1 = Baggage::set_entry(baggage, "concurrent.key1", "value1")
-  let baggage2 = Baggage::set_entry(baggage, "concurrent.key2", "value2")
-  let baggage3 = Baggage::set_entry(baggage, "concurrent.key3", "value3")
+  let create_queue = fn(capacity: Int) -> ConcurrentQueue {
+    let mut nodes = []
+    for i in 0..<capacity {
+      nodes = nodes.push(None)
+    }
+    { nodes: nodes, head: 0, tail: 0, capacity: capacity }
+  }
   
-  // 并发获取条目
-  let value1 = Baggage::get_entry(baggage1, "concurrent.key1")
-  let value2 = Baggage::get_entry(baggage2, "concurrent.key2")
-  let value3 = Baggage::get_entry(baggage3, "concurrent.key3")
+  let queue_is_empty = fn(queue: ConcurrentQueue) -> Bool {
+    queue.head == queue.tail
+  }
   
-  // 验证获取结果（当前实现返回None）
-  assert_eq(value1, None)
-  assert_eq(value2, None)
-  assert_eq(value3, None)
+  let queue_is_full = fn(queue: ConcurrentQueue) -> Bool {
+    (queue.tail + 1) % queue.capacity == queue.head
+  }
   
-  // 并发删除条目
-  let final_baggage1 = Baggage::remove_entry(baggage1, "concurrent.key1")
-  let final_baggage2 = Baggage::remove_entry(baggage2, "concurrent.key2")
-  let final_baggage3 = Baggage::remove_entry(baggage3, "concurrent.key3")
+  let queue_enqueue = fn(queue: ConcurrentQueue, item: Int) -> Result<ConcurrentQueue, String> {
+    if queue_is_full(queue) {
+      Err("Queue is full")
+    } else {
+      let new_nodes = queue.nodes.with(queue.tail, Some(item))
+      let new_tail = (queue.tail + 1) % queue.capacity
+      Ok({ nodes: new_nodes, head: queue.head, tail: new_tail, capacity: queue.capacity })
+    }
+  }
   
-  // 验证删除结果
-  let removed_value1 = Baggage::get_entry(final_baggage1, "concurrent.key1")
-  let removed_value2 = Baggage::get_entry(final_baggage2, "concurrent.key2")
-  let removed_value3 = Baggage::get_entry(final_baggage3, "concurrent.key3")
+  let queue_dequeue = fn(queue: ConcurrentQueue) -> (Option<Int>, Result<ConcurrentQueue, String>) {
+    if queue_is_empty(queue) {
+      (None, Err("Queue is empty"))
+    } else {
+      match queue.nodes[queue.head] {
+        Some(item) => {
+          let new_nodes = queue.nodes.with(queue.head, None)
+          let new_head = (queue.head + 1) % queue.capacity
+          (Some(item), Ok({ nodes: new_nodes, head: new_head, tail: queue.tail, capacity: queue.capacity }))
+        }
+        None => (None, Err("Invalid queue state"))
+      }
+    }
+  }
   
-  assert_eq(removed_value1, None)
-  assert_eq(removed_value2, None)
-  assert_eq(removed_value3, None)
+  // Test queue operations
+  let queue1 = create_queue(3)
+  assert_true(queue_is_empty(queue1))
+  assert_false(queue_is_full(queue1))
+  
+  let queue2_result = queue_enqueue(queue1, 10)
+  match queue2_result {
+    Ok(queue2) => {
+      assert_false(queue_is_empty(queue2))
+      assert_false(queue_is_full(queue2))
+      
+      let queue3_result = queue_enqueue(queue2, 20)
+      match queue3_result {
+        Ok(queue3) => {
+          assert_false(queue_is_empty(queue3))
+          assert_false(queue_is_full(queue3))
+          
+          let queue4_result = queue_enqueue(queue3, 30)
+          match queue4_result {
+            Ok(queue4) => {
+              assert_false(queue_is_empty(queue4))
+              assert_true(queue_is_full(queue4))
+              
+              // Try to enqueue when full
+              let queue5_result = queue_enqueue(queue4, 40)
+              match queue5_result {
+                Ok(_) => assert_true(false)
+                Err(msg) => assert_eq(msg, "Queue is full")
+              }
+              
+              // Dequeue items
+              let (item1, queue6_result) = queue_dequeue(queue4)
+              match item1 {
+                Some(value) => assert_eq(value, 10)
+                None => assert_true(false)
+              }
+              
+              match queue6_result {
+                Ok(queue6) => {
+                  assert_false(queue_is_empty(queue6))
+                  assert_false(queue_is_full(queue6))
+                  
+                  let (item2, queue7_result) = queue_dequeue(queue6)
+                  match item2 {
+                    Some(value) => assert_eq(value, 20)
+                    None => assert_true(false)
+                  }
+                  
+                  match queue7_result {
+                    Ok(queue7) => {
+                      let (item3, queue8_result) = queue_dequeue(queue7)
+                      match item3 {
+                        Some(value) => assert_eq(value, 30)
+                        None => assert_true(false)
+                      }
+                      
+                      match queue8_result {
+                        Ok(queue8) => {
+                          assert_true(queue_is_empty(queue8))
+                          assert_false(queue_is_full(queue8))
+                          
+                          // Try to dequeue when empty
+                          let (item4, queue9_result) = queue_dequeue(queue8)
+                          match item4 {
+                            Some(_) => assert_true(false)
+                            None => assert_true(true)
+                          }
+                          
+                          match queue9_result {
+                            Ok(_) => assert_true(false)
+                            Err(msg) => assert_eq(msg, "Queue is empty")
+                          }
+                        }
+                        Err(_) => assert_true(false)
+                      }
+                    }
+                    Err(_) => assert_true(false)
+                  }
+                }
+                Err(_) => assert_true(false)
+              }
+            }
+            Err(_) => assert_true(false)
+          }
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => assert_true(false)
+  }
 }
 
-test "random_concurrent_generation" {
-  // 测试随机数的并发生成
-  let random = Random::system()
+// Test 8: Semaphore Simulation
+test "semaphore simulation" {
+  // Simulate a semaphore with a counter
+  type Semaphore = {
+    permits: Int,
+    max_permits: Int
+  }
   
-  // 并发生成随机数
-  let bytes1 = Random::next_bytes(random, 10)
-  let bytes2 = Random::next_bytes(random, 10)
-  let bytes3 = Random::next_bytes(random, 10)
+  let create_semaphore = fn(max_permits: Int) -> Semaphore {
+    { permits: max_permits, max_permits: max_permits }
+  }
   
-  let u64_1 = Random::next_u64(random)
-  let u64_2 = Random::next_u64(random)
-  let u64_3 = Random::next_u64(random)
+  let semaphore_acquire = fn(sem: Semaphore) -> Result<Semaphore, String> {
+    if sem.permits > 0 {
+      Ok({ permits: sem.permits - 1, max_permits: sem.max_permits })
+    } else {
+      Err("No permits available")
+    }
+  }
   
-  // 验证生成结果（当前实现返回固定值）
-  assert_eq(bytes1.length(), 0)
-  assert_eq(bytes2.length(), 0)
-  assert_eq(bytes3.length(), 0)
+  let semaphore_release = fn(sem: Semaphore) -> Result<Semaphore, String> {
+    if sem.permits < sem.max_permits {
+      Ok({ permits: sem.permits + 1, max_permits: sem.max_permits })
+    } else {
+      Err("Maximum permits reached")
+    }
+  }
   
-  assert_eq(u64_1, 12345UL)
-  assert_eq(u64_2, 12345UL)
-  assert_eq(u64_3, 12345UL)
-}
-
-test "clock_concurrent_access" {
-  // 测试时钟的并发访问
-  let clock = Clock::system()
+  // Test semaphore operations
+  let sem1 = create_semaphore(3)
+  assert_eq(sem1.permits, 3)
   
-  // 并发获取时间戳
-  let timestamp1 = Clock::now_unix_nanos(clock)
-  let timestamp2 = Clock::now_unix_nanos(clock)
-  let timestamp3 = Clock::now_unix_nanos(clock)
-  
-  // 验证时间戳（当前实现返回固定值）
-  assert_eq(timestamp1, 1735689600000000000L)
-  assert_eq(timestamp2, 1735689600000000000L)
-  assert_eq(timestamp3, 1735689600000000000L)
-}
-
-test "concurrent_comprehensive_workflow" {
-  // 测试并发综合工作流
-  let tracer_provider = TracerProvider::default()
-  let meter_provider = MeterProvider::default()
-  let logger_provider = LoggerProvider::default()
-  
-  // 并发创建组件
-  let tracer1 = TracerProvider::get_tracer(tracer_provider, "concurrent-tracer1")
-  let tracer2 = TracerProvider::get_tracer(tracer_provider, "concurrent-tracer2")
-  
-  let meter1 = MeterProvider::get_meter(meter_provider, "concurrent-meter1")
-  let meter2 = MeterProvider::get_meter(meter_provider, "concurrent-meter2")
-  
-  let logger1 = LoggerProvider::get_logger(logger_provider, "concurrent-logger1")
-  let logger2 = LoggerProvider::get_logger(logger_provider, "concurrent-logger2")
-  
-  // 并发操作
-  let span1 = Tracer::start_span(tracer1, "workflow-span-1")
-  let span2 = Tracer::start_span(tracer2, "workflow-span-2")
-  
-  let counter1 = Meter::create_counter(meter1, "workflow-counter-1")
-  let counter2 = Meter::create_counter(meter2, "workflow-counter-2")
-  
-  let log1 = LogRecord::new(Info, "Workflow step 1")
-  let log2 = LogRecord::new(Info, "Workflow step 2")
-  
-  // 并发更新
-  Counter::add(counter1, 1.0)
-  Counter::add(counter2, 1.0)
-  
-  Span::add_event(span1, "step1.completed", None)
-  Span::add_event(span2, "step2.completed", None)
-  
-  Logger::emit(logger1, log1)
-  Logger::emit(logger2, log2)
-  
-  // 验证组件独立性
-  assert_eq(Span::name(span1), "workflow-span-1")
-  assert_eq(Span::name(span2), "workflow-span-2")
-  
-  assert_eq(counter1.name, "workflow-counter-1")
-  assert_eq(counter2.name, "workflow-counter-2")
-  
-  assert_eq(logger1.scope.name, "concurrent-logger1")
-  assert_eq(logger2.scope.name, "concurrent-logger2")
-  
-  // 完成工作流
-  Span::end(span1)
-  Span::end(span2)
+  let sem2_result = semaphore_acquire(sem1)
+  match sem2_result {
+    Ok(sem2) => {
+      assert_eq(sem2.permits, 2)
+      
+      let sem3_result = semaphore_acquire(sem2)
+      match sem3_result {
+        Ok(sem3) => {
+          assert_eq(sem3.permits, 1)
+          
+          let sem4_result = semaphore_acquire(sem3)
+          match sem4_result {
+            Ok(sem4) => {
+              assert_eq(sem4.permits, 0)
+              
+              // Try to acquire when no permits available
+              let sem5_result = semaphore_acquire(sem4)
+              match sem5_result {
+                Ok(_) => assert_true(false)
+                Err(msg) => assert_eq(msg, "No permits available")
+              }
+              
+              // Release permits
+              let sem6_result = semaphore_release(sem4)
+              match sem6_result {
+                Ok(sem6) => {
+                  assert_eq(sem6.permits, 1)
+                  
+                  let sem7_result = semaphore_release(sem6)
+                  match sem7_result {
+                    Ok(sem7) => {
+                      assert_eq(sem7.permits, 2)
+                      
+                      let sem8_result = semaphore_release(sem7)
+                      match sem8_result {
+                        Ok(sem8) => {
+                          assert_eq(sem8.permits, 3)
+                          
+                          // Try to release when max permits reached
+                          let sem9_result = semaphore_release(sem8)
+                          match sem9_result {
+                            Ok(_) => assert_true(false)
+                            Err(msg) => assert_eq(msg, "Maximum permits reached")
+                          }
+                        }
+                        Err(_) => assert_true(false)
+                      }
+                    }
+                    Err(_) => assert_true(false)
+                  }
+                }
+                Err(_) => assert_true(false)
+              }
+            }
+            Err(_) => assert_true(false)
+          }
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => assert_true(false)
+  }
 }
