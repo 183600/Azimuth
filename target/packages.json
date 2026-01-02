@@ -310,6 +310,21 @@
     {
       "is-main": false,
       "is-third-party": false,
+      "root-path": "/home/runner/work/Azimuth/Azimuth/core_tests",
+      "root": "azimuth/telemetry",
+      "rel": "core_tests",
+      "files": {},
+      "wbtest-files": {},
+      "test-files": {},
+      "mbt-md-files": {},
+      "deps": [],
+      "wbtest-deps": [],
+      "test-deps": [],
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/core_tests/core_tests.mi"
+    },
+    {
+      "is-main": false,
+      "is-third-party": false,
       "root-path": "/home/runner/work/Azimuth/Azimuth/new_test",
       "root": "azimuth/telemetry",
       "rel": "new_test",
