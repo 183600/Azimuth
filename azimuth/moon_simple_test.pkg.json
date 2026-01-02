@@ -1,0 +1,13 @@
+{
+  "name": "azimuth/telemetry",
+  "version": "0.1.0",
+  "description": "Azimuth telemetry system test package",
+  "target": "wasm-gc",
+  "source": ["azimuth.mbt"],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["azimuth_focused_integration_tests.mbt"]
+  }
+}
