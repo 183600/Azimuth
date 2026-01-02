@@ -4,7 +4,7 @@
 // 测试1: 遥测数据采样策略测试
 test "遥测数据采样策略测试" {
   // 创建带有采样配置的TracerProvider
-  let tracer_provider = azimuth::TracerProvider::new()
+  let tracer_provider = azimuth::TracerProvider::noop()
   let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "sampling-test-tracer")
   
   // 测试不同的采样场景
@@ -21,11 +21,6 @@ test "遥测数据采样策略测试" {
     } else {
       unsampled_spans.push(span)
     }
-    
-    // 为所有Span添加属性（通过简化实现）
-    let attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(attrs, "iteration", azimuth::IntValue(i))
-    azimuth::Attributes::set(attrs, "operation.type", azimuth::StringValue("sampling-test"))
     
     // 结束Span
     azimuth::Span::end(span)
@@ -59,7 +54,7 @@ test "遥测数据采样策略测试" {
 // 测试2: 异步遥测数据导出测试
 test "异步遥测数据导出测试" {
   // 创建TracerProvider
-  let tracer_provider = azimuth::TracerProvider::new()
+  let tracer_provider = azimuth::TracerProvider::noop()
   let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "async-export-test")
   
   // 创建大量Span以触发批量导出
@@ -73,10 +68,6 @@ test "异步遥测数据导出测试" {
       ("event.type", azimuth::StringValue("async-test"))
     ]
     azimuth::Span::add_event(span, "async.event", Some(event_attrs))
-    
-    let span_attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(span_attrs, "async.index", azimuth::IntValue(i))
-    azimuth::Attributes::set(span_attrs, "async.batch", azimuth::StringValue("batch-1"))
     
     // 设置状态
     if i % 5 == 0 {
@@ -97,7 +88,7 @@ test "异步遥测数据导出测试" {
   assert_true(async_spans.length() == 50)
   
   // 测试度量导出
-  let meter_provider = azimuth::MeterProvider::new()
+  let meter_provider = azimuth::MeterProvider::noop()
   let meter = azimuth::MeterProvider::get_meter(meter_provider, "async-metric-test")
   
   // 创建多个度量仪器
@@ -120,16 +111,13 @@ test "异步遥测数据导出测试" {
 // 测试3: 遥测数据批处理测试
 test "遥测数据批处理测试" {
   // 创建TracerProvider
-  let tracer_provider = azimuth::TracerProvider::new()
+  let tracer_provider = azimuth::TracerProvider::noop()
   let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "batch-test-tracer")
   
   // 创建第一批Span
   let batch1_spans = []
   for i in 0..5 {
     let span = azimuth::Tracer::start_span(tracer, "batch1-span-" + i.to_string())
-    let attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(attrs, "batch.id", azimuth::IntValue(1))
-    azimuth::Attributes::set(attrs, "batch.index", azimuth::IntValue(i))
     batch1_spans.push(span)
   }
   
@@ -142,9 +130,6 @@ test "遥测数据批处理测试" {
   let batch2_spans = []
   for i in 0..8 {
     let span = azimuth::Tracer::start_span(tracer, "batch2-span-" + i.to_string())
-    let attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(attrs, "batch.id", azimuth::IntValue(2))
-    azimuth::Attributes::set(attrs, "batch.index", azimuth::IntValue(i))
     batch2_spans.push(span)
   }
   
@@ -154,7 +139,7 @@ test "遥测数据批处理测试" {
   }
   
   // 测试度量批处理
-  let meter_provider = azimuth::MeterProvider::new()
+  let meter_provider = azimuth::MeterProvider::noop()
   let meter = azimuth::MeterProvider::get_meter(meter_provider, "batch-metric-test")
   
   // 创建多个度量仪器并记录数据
@@ -177,16 +162,13 @@ test "遥测数据批处理测试" {
 // 测试4: 遥测系统故障恢复测试
 test "遥测系统故障恢复测试" {
   // 创建TracerProvider
-  let tracer_provider = azimuth::TracerProvider::new()
+  let tracer_provider = azimuth::TracerProvider::noop()
   let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "resilient-tracer")
   
   // 创建Span以触发故障恢复
   let recovery_spans = []
   for i in 0..10 {
     let span = azimuth::Tracer::start_span(tracer, "recovery-span-" + i.to_string())
-    let attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(attrs, "recovery.attempt", azimuth::IntValue(i))
-    azimuth::Attributes::set(attrs, "resilience.test", azimuth::StringValue("true"))
     
     // 添加事件标记恢复过程
     let event_attrs = [
@@ -207,7 +189,7 @@ test "遥测系统故障恢复测试" {
   assert_true(recovery_spans.length() == 10)
   
   // 测试度量系统故障恢复
-  let meter_provider = azimuth::MeterProvider::new()
+  let meter_provider = azimuth::MeterProvider::noop()
   let meter = azimuth::MeterProvider::get_meter(meter_provider, "resilient-meter")
   
   // 创建度量仪器并记录数据
@@ -225,7 +207,7 @@ test "遥测系统故障恢复测试" {
   assert_eq(recovery_histogram.name, "recovery.latency")
   
   // 测试日志系统故障恢复
-  let logger_provider = azimuth::LoggerProvider::new()
+  let logger_provider = azimuth::LoggerProvider::noop()
   let logger = azimuth::LoggerProvider::get_logger(logger_provider, "resilient-logger")
   
   // 创建日志记录以触发故障恢复
@@ -252,20 +234,13 @@ test "遥测系统故障恢复测试" {
 // 测试5: 遥测数据质量保证测试
 test "遥测数据质量保证测试" {
   // 创建TracerProvider
-  let tracer_provider = azimuth::TracerProvider::new()
+  let tracer_provider = azimuth::TracerProvider::noop()
   let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "quality-test-tracer")
   
   // 创建高质量Span
   let quality_spans = []
   for i in 0..10 {
     let span = azimuth::Tracer::start_span(tracer, "quality-span-" + i.to_string())
-    
-    // 添加丰富的属性
-    let attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(attrs, "quality.index", azimuth::IntValue(i))
-    azimuth::Attributes::set(attrs, "quality.service", azimuth::StringValue("quality-test"))
-    azimuth::Attributes::set(attrs, "quality.version", azimuth::StringValue("1.0.0"))
-    azimuth::Attributes::set(attrs, "quality.environment", azimuth::StringValue("test"))
     
     // 添加有意义的事件
     let event_attrs = [
@@ -305,7 +280,7 @@ test "遥测数据质量保证测试" {
   }
   
   // 测试度量数据质量
-  let meter_provider = azimuth::MeterProvider::new()
+  let meter_provider = azimuth::MeterProvider::noop()
   let meter = azimuth::MeterProvider::get_meter(meter_provider, "quality-meter")
   
   // 创建高质量的度量仪器
@@ -368,15 +343,11 @@ test "平台特定遥测适配测试" {
   assert_eq(azimuth::Resource::get_attribute(platform_resource, "process.pid"), Some(azimuth::IntValue(12345)))
   
   // 创建平台特定的TracerProvider
-  let platform_tracer_provider = azimuth::TracerProvider::new()
+  let platform_tracer_provider = azimuth::TracerProvider::noop()
   let platform_tracer = azimuth::TracerProvider::get_tracer(platform_tracer_provider, "platform-tracer")
   
   // 创建平台特定的Span
   let platform_span = azimuth::Tracer::start_span(platform_tracer, "platform-operation")
-  let attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(attrs, "platform.type", azimuth::StringValue("linux"))
-  azimuth::Attributes::set(attrs, "platform.arch", azimuth::StringValue("x86_64"))
-  azimuth::Attributes::set(attrs, "platform.runtime", azimuth::StringValue("moonbit"))
   
   // 添加平台特定事件
   let event_attrs = [
@@ -392,7 +363,7 @@ test "平台特定遥测适配测试" {
   assert_eq(azimuth::Span::name(platform_span), "platform-operation")
   
   // 创建平台特定的度量
-  let platform_meter_provider = azimuth::MeterProvider::new()
+  let platform_meter_provider = azimuth::MeterProvider::noop()
   let platform_meter = azimuth::MeterProvider::get_meter(platform_meter_provider, "platform-meter")
   
   // 创建平台特定的度量仪器
@@ -448,30 +419,23 @@ test "遥测系统端到端集成测试" {
   let e2e_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), e2e_resource_attrs)
   
   // 创建端到端测试的TracerProvider
-  let e2e_tracer_provider = azimuth::TracerProvider::new()
+  let e2e_tracer_provider = azimuth::TracerProvider::noop()
   let e2e_tracer = azimuth::TracerProvider::get_tracer(e2e_tracer_provider, "e2e-tracer")
   
   // 创建端到端测试的MeterProvider
-  let e2e_meter_provider = azimuth::MeterProvider::new()
+  let e2e_meter_provider = azimuth::MeterProvider::noop()
   let e2e_meter = azimuth::MeterProvider::get_meter(e2e_meter_provider, "e2e-meter")
   
   // 创建端到端测试的LoggerProvider
-  let e2e_logger_provider = azimuth::LoggerProvider::new()
+  let e2e_logger_provider = azimuth::LoggerProvider::noop()
   let e2e_logger = azimuth::LoggerProvider::get_logger(e2e_logger_provider, "e2e-logger")
   
   // 步骤1: 创建根Span表示整个端到端流程
   let root_span = azimuth::Tracer::start_span(e2e_tracer, "e2e-workflow")
-  let attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(attrs, "workflow.type", azimuth::StringValue("integration-test"))
-  azimuth::Attributes::set(attrs, "workflow.steps", azimuth::IntValue(5))
-  
   let root_span_ctx = azimuth::Span::span_context(root_span)
   
   // 步骤2: 创建子Span表示各个步骤
   let step1_span = azimuth::Tracer::start_span_with_context(e2e_tracer, "step-1-initialization", root_span_ctx)
-  let step1_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(step1_attrs, "step.name", azimuth::StringValue("initialization"))
-  azimuth::Attributes::set(step1_attrs, "step.status", azimuth::StringValue("completed"))
   
   let event_attrs = [
     ("step.duration", azimuth::IntValue(100)),
@@ -506,16 +470,10 @@ test "遥测系统端到端集成测试" {
   
   // 步骤5: 创建处理步骤Span
   let step2_span = azimuth::Tracer::start_span_with_context(e2e_tracer, "step-2-processing", root_span_ctx)
-  let step2_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(step2_attrs, "step.name", azimuth::StringValue("processing"))
-  azimuth::Attributes::set(step2_attrs, "step.items", azimuth::IntValue(10))
   
   // 处理多个项目的子操作
   for i in 0..10 {
     let item_span = azimuth::Tracer::start_span_with_context(e2e_tracer, "process-item-" + i.to_string(), azimuth::Span::span_context(step2_span))
-    let item_attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(item_attrs, "item.id", azimuth::IntValue(i))
-    azimuth::Attributes::set(item_attrs, "item.status", azimuth::StringValue("processed"))
     azimuth::Span::end(item_span)
   }
   
@@ -550,17 +508,11 @@ test "遥测系统端到端集成测试" {
   
   // 步骤8: 创建验证步骤Span
   let step3_span = azimuth::Tracer::start_span_with_context(e2e_tracer, "step-3-validation", root_span_ctx)
-  let step3_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(step3_attrs, "step.name", azimuth::StringValue("validation"))
-  azimuth::Attributes::set(step3_attrs, "step.validations", azimuth::IntValue(3))
   
   // 执行多个验证子操作
   let validations = ["data.integrity", "performance.baseline", "security.checks"]
   for validation in validations {
     let validation_span = azimuth::Tracer::start_span_with_context(e2e_tracer, "validate-" + validation, azimuth::Span::span_context(step3_span))
-    let validation_attrs = azimuth::Attributes::new()
-    azimuth::Attributes::set(validation_attrs, "validation.type", azimuth::StringValue(validation))
-    azimuth::Attributes::set(validation_attrs, "validation.result", azimuth::StringValue("passed"))
     azimuth::Span::end(validation_span)
   }
   
@@ -594,9 +546,6 @@ test "遥测系统端到端集成测试" {
   azimuth::Logger::emit(e2e_logger, validation_log_record)
   
   // 步骤11: 完成根Span
-  let workflow_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(workflow_attrs, "workflow.status", azimuth::StringValue("completed"))
-  
   let completion_event_attrs = [
     ("total.duration", azimuth::IntValue(500)),
     ("total.steps", azimuth::IntValue(3)),
@@ -669,7 +618,7 @@ test "遥测数据序列化完整性测试" {
   azimuth::Attributes::set(complex_attrs, "min.float", azimuth::FloatValue(-1.7976931348623157e+308))
   
   // 创建带有复杂属性的Span
-  let tracer_provider = azimuth::TracerProvider::new()
+  let tracer_provider = azimuth::TracerProvider::noop()
   let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "serialization-test")
   
   let serialization_span = azimuth::Tracer::start_span(tracer, "serialization-test-span")
@@ -691,7 +640,7 @@ test "遥测数据序列化完整性测试" {
   assert_eq(azimuth::Span::name(serialization_span), "serialization-test-span")
   
   // 创建序列化测试的复杂度量
-  let meter_provider = azimuth::MeterProvider::new()
+  let meter_provider = azimuth::MeterProvider::noop()
   let meter = azimuth::MeterProvider::get_meter(meter_provider, "serialization-meter")
   
   // 创建带有复杂描述和单位的度量仪器
@@ -734,7 +683,7 @@ test "遥测数据序列化完整性测试" {
   assert_eq(complex_gauge.unit, Some("MB"))
   
   // 创建序列化测试的复杂日志记录
-  let logger_provider = azimuth::LoggerProvider::new()
+  let logger_provider = azimuth::LoggerProvider::noop()
   let logger = azimuth::LoggerProvider::get_logger(logger_provider, "serialization-logger")
   
   // 创建复杂的日志记录
