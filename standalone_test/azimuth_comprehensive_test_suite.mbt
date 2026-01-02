@@ -61,11 +61,11 @@ test "span lifecycle management" {
   assert_eq(SpanContext::span_id(Span::span_context(span)), SpanContext::span_id(span_ctx))
   
   // Set span status
-  Span::set_status(span, Ok, description? = Some("Operation completed successfully"))
+  Span::set_status(span, Ok)
   
   // Add events to span
-  Span::add_event(span, "event1", attributes? = Some([("key1", StringValue("value1"))]))
-  Span::add_event(span, "event2", attributes? = Some([("key2", IntValue(42))]))
+  Span::add_event(span, "event1")
+  Span::add_event(span, "event2")
   
   // End the span
   Span::end(span)
