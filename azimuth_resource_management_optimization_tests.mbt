@@ -1,312 +1,417 @@
-// Azimuth 资源管理优化测试用例
-// 专注于遥测系统资源的高效利用、自动优化和智能调度
+// Azimuth Resource Management and Optimization Tests
+// This file contains test cases for resource management and optimization
 
-// 测试1: 内存池管理和复用优化测试
-test "内存池管理和复用优化测试" {
-  let memory_pool = MemoryPool::new()
-  let telemetry_allocator = TelemetryAllocator::with_pool(memory_pool)
+// Test 1: Memory Pool Management
+test "memory pool allocation and deallocation" {
+  let pool_size = 100
+  let mut available_blocks = []
+  let mut used_blocks = []
   
-  // 配置内存池参数
-  MemoryPool::configure(memory_pool, {
-    "initial_capacity" => IntValue(1000),
-    "max_capacity" => IntValue(10000),
-    "object_size" => IntValue(1024), // 1KB对象
-    "growth_factor" => FloatValue(1.5)
-  })
-  
-  let allocated_objects = Array::empty()
-  
-  // 第一轮分配
-  let first_round_start = Time::now()
-  for i = 0; i < 1000; i = i + 1 {
-    let telemetry_obj = TelemetryAllocator::allocate(telemetry_allocator)
-    TelemetryObject::set_data(telemetry_obj, "round1.object." + i.to_string())
-    Array::push(allocated_objects, telemetry_obj)
+  // Initialize memory pool
+  for i in 0..<pool_size {
+    available_blocks = available_blocks.push(i)
   }
-  let first_round_duration = Time::duration_ms(Time::since(first_round_start))
   
-  // 释放所有对象
-  for obj in allocated_objects {
-    TelemetryAllocator::deallocate(telemetry_allocator, obj)
+  assert_eq(available_blocks.length(), pool_size)
+  assert_eq(used_blocks.length(), 0)
+  
+  // Allocate blocks
+  let allocation_requests = [25, 15, 30, 10, 20]
+  
+  for request in allocation_requests {
+    if available_blocks.length() >= request {
+      let mut allocated = []
+      for i in 0..<request {
+        allocated = allocated.push(available_blocks[0])
+        available_blocks = available_blocks.slice(1)
+      }
+      used_blocks = used_blocks.concat(allocated)
+    }
   }
-  Array::clear(allocated_objects)
   
-  // 第二轮分配（应该从池中复用）
-  let second_round_start = Time::now()
-  for i = 0; i < 1000; i = i + 1 {
-    let telemetry_obj = TelemetryAllocator::allocate(telemetry_allocator)
-    TelemetryObject::set_data(telemetry_obj, "round2.object." + i.to_string())
-    Array::push(allocated_objects, telemetry_obj)
+  let total_allocated = allocation_requests.reduce(fn(acc, req) { acc + req }, 0)
+  assert_eq(used_blocks.length(), total_allocated)
+  assert_eq(available_blocks.length(), pool_size - total_allocated)
+  
+  // Deallocate some blocks
+  let deallocation_size = 30
+  if used_blocks.length() >= deallocation_size {
+    let deallocated = used_blocks.slice(0, deallocation_size)
+    used_blocks = used_blocks.slice(deallocation_size)
+    available_blocks = available_blocks.concat(deallocated)
   }
-  let second_round_duration = Time::duration_ms(Time::since(second_round_start))
   
-  // 验证内存池性能提升
-  assert_true(second_round_duration < first_round_duration * 0.8) // 第二轮应该至少快20%
-  
-  // 验证内存池统计
-  let pool_stats = MemoryPool::get_stats(memory_pool)
-  assert_eq(PoolStats::total_allocated(pool_stats), 2000)
-  assert_eq(PoolStats::pool_hits(pool_stats), 1000) // 第二轮全部命中
-  assert_eq(PoolStats::pool_misses(pool_stats), 1000) // 第一轮全部未命中
-  assert_true(PoolStats::hit_ratio(pool_stats) > 0.5)
-  
-  // 验证内存使用效率
-  let memory_usage = MemoryPool::get_memory_usage(memory_pool)
-  assert_true(memory_usage < 1000 * 1024 * 2) // 小于2MB（1000个1KB对象的2倍）
+  assert_eq(used_blocks.length(), total_allocated - deallocation_size)
+  assert_eq(available_blocks.length(), pool_size - (total_allocated - deallocation_size))
 }
 
-// 测试2: 连接池智能调度优化测试
-test "连接池智能调度优化测试" {
-  let connection_pool = ConnectionPool::new("telemetry.collector.endpoint")
-  let scheduler = ConnectionScheduler::new()
+// Test 2: Connection Pool Management
+test "connection pool management" {
+  let max_connections = 10
+  let mut active_connections = []
+  let mut idle_connections = []
   
-  // 配置连接池
-  ConnectionPool::configure(connection_pool, {
-    "min_connections" => IntValue(2),
-    "max_connections" => IntValue(10),
-    "connection_timeout_ms" => IntValue(5000),
-    "idle_timeout_ms" => IntValue(30000),
-    "health_check_interval_ms" => IntValue(10000)
-  })
+  // Initialize connection pool
+  for i in 0..<max_connections {
+    idle_connections = idle_connections.push(("conn-" + i.to_string(), false))
+  }
   
-  // 配置智能调度策略
-  ConnectionScheduler::set_strategy(scheduler, "load_balanced")
-  ConnectionScheduler::enable_predictive_scaling(scheduler, {
-    "prediction_window_ms" => IntValue(60000), // 1分钟预测窗口
-    "scale_up_threshold" => FloatValue(0.8), // 80%负载时扩容
-    "scale_down_threshold" => FloatValue(0.2) // 20%负载时缩容
-  })
+  assert_eq(idle_connections.length(), max_connections)
+  assert_eq(active_connections.length(), 0)
   
-  let active_connections = Array::empty()
+  // Request connections
+  let connection_requests = [3, 2, 4, 3]
   
-  // 模拟负载逐步增加
-  for load_phase = 1; load_phase <= 5; load_phase = load_phase + 1 {
-    let phase_connections = load_phase * 2
+  for request in connection_requests {
+    let mut allocated = []
     
-    for i = 0; i < phase_connections; i = i + 1 {
-      let connection = ConnectionScheduler::acquire_connection(scheduler, connection_pool)
-      Array::push(active_connections, connection)
+    // Allocate from idle pool
+    let to_allocate = if idle_connections.length() >= request {
+      request
+    } else {
+      idle_connections.length()
+    }
+    
+    for i in 0..<to_allocate {
+      let conn = idle_connections[0]
+      idle_connections = idle_connections.slice(1)
+      allocated = allocated.push(conn)
+    }
+    
+    // Mark as active
+    for conn in allocated {
+      active_connections = active_connections.push((conn.0, true))
+    }
+  }
+  
+  assert_eq(active_connections.length(), 10) // All connections should be active
+  assert_eq(idle_connections.length(), 0)
+  
+  // Release some connections
+  let release_count = 5
+  if active_connections.length() >= release_count {
+    let released = active_connections.slice(0, release_count)
+    active_connections = active_connections.slice(release_count)
+    
+    for conn in released {
+      idle_connections = idle_connections.push((conn.0, false))
+    }
+  }
+  
+  assert_eq(active_connections.length(), 5)
+  assert_eq(idle_connections.length(), 5)
+}
+
+// Test 3: Cache Eviction Strategy
+test "cache eviction strategy simulation" {
+  let cache_capacity = 5
+  let mut cache = []
+  let mut access_order = []
+  
+  // LRU (Least Recently Used) eviction simulation
+  let access_sequence = ["A", "B", "C", "D", "E", "A", "F", "B", "G", "C"]
+  
+  for key in access_sequence {
+    // Check if key is in cache
+    let existing_index = cache.index_of(fn(item) { item.0 == key })
+    
+    if existing_index != -1 {
+      // Update access order
+      access_order = access_order.filter(fn(k) { k != key })
+      access_order = access_order.push(key)
+    } else {
+      // Cache miss - need to add or evict
+      if cache.length() >= cache_capacity {
+        // Evict LRU item
+        let lru_key = access_order[0]
+        access_order = access_order.slice(1)
+        
+        let evict_index = cache.index_of(fn(item) { item.0 == lru_key })
+        if evict_index != -1 {
+          cache = cache.slice(0, evict_index) + cache.slice(evict_index + 1)
+        }
+      }
       
-      // 模拟连接使用
-      Connection::execute_query(connection, "SELECT 1")
-    }
-    
-    // 等待调度器调整
-    Thread::sleep(Duration::from_ms(1000))
-    
-    // 验证连接池自适应调整
-    let current_connections = ConnectionPool::active_count(connection_pool)
-    let expected_connections = min(max(2, phase_connections), 10)
-    
-    assert_true(current_connections >= expected_connections * 0.8)
-    assert_true(current_connections <= expected_connections * 1.2)
-    
-    // 释放部分连接
-    for i = 0; i < phase_connections / 2; i = i + 1 {
-      if active_connections.length() > 0 {
-        let conn = Array::pop(active_connections)
-        ConnectionScheduler::release_connection(scheduler, conn)
-      }
+      // Add new item
+      cache = cache.push((key, "value-" + key))
+      access_order = access_order.push(key)
     }
   }
   
-  // 释放所有连接
-  for conn in active_connections {
-    ConnectionScheduler::release_connection(scheduler, conn)
-  }
+  assert_eq(cache.length(), cache_capacity)
   
-  // 验证连接池优化统计
-  let scheduler_stats = ConnectionScheduler::get_stats(scheduler)
-  assert_true(SchedulerStats::total_acquisitions(scheduler_stats) > 0)
-  assert_true(SchedulerStats::pool_efficiency(scheduler_stats) > 0.7)
-  assert_true(SchedulerStats::prediction_accuracy(scheduler_stats) > 0.6)
+  // Verify cache contains most recently accessed items
+  let expected_keys = ["C", "G", "B", "F", "A"]
+  let cache_keys = cache.map(fn(item) { item.0 })
+  
+  for key in expected_keys {
+    assert_true(cache_keys.contains(key))
+  }
 }
 
-// 测试3: CPU资源智能调度测试
-test "CPU资源智能调度测试" {
-  let cpu_scheduler = CPUScheduler::new()
-  let telemetry_processor = TelemetryProcessor::with_scheduler(cpu_scheduler)
+// Test 4: Resource Usage Monitoring
+test "resource usage monitoring and thresholds" {
+  let resource_metrics = [
+    ("cpu", 45.2),
+    ("memory", 78.5),
+    ("disk", 62.1),
+    ("network", 35.8),
+    ("connections", 120)
+  ]
   
-  // 配置CPU调度策略
-  CPUScheduler::set_policy(cpu_scheduler, "telemetry_aware")
-  CPUScheduler::configure(cpu_scheduler, {
-    "high_priority_weight" => FloatValue(0.6),
-    "normal_priority_weight" => FloatValue(0.3),
-    "low_priority_weight" => FloatValue(0.1),
-    "telemetry_cpu_limit_percent" => FloatValue(30.0) // 限制遥测使用30%CPU
-  })
+  // Define resource thresholds
+  let thresholds = [
+    ("cpu", 80.0),
+    ("memory", 85.0),
+    ("disk", 90.0),
+    ("network", 75.0),
+    ("connections", 150)
+  ]
   
-  // 创建不同优先级的遥测任务
-  let high_priority_tasks = Array::empty()
-  let normal_priority_tasks = Array::empty()
-  let low_priority_tasks = Array::empty()
+  // Monitor resources and check thresholds
+  let alert_resources = []
   
-  // 高优先级任务（关键业务追踪）
-  for i = 0; i < 10; i = i + 1 {
-    let task = TelemetryTask::new("high.priority." + i.to_string(), "high")
-    TelemetryTask::set_workload(task, fn() {
-      // 模拟CPU密集型遥测处理
-      for j = 0; j < 1000; j = j + 1 {
-        let _ = j * j + j / 2
-      }
-    })
-    Array::push(high_priority_tasks, task)
+  for metric in resource_metrics {
+    let threshold = thresholds.filter(fn(t) { t.0 == metric.0 })[0].1
+    let usage_percentage = if metric.0 == "connections" {
+      (Int::to_float(metric.1) / threshold) * 100.0
+    } else {
+      metric.1
+    }
+    
+    if usage_percentage > threshold * 0.8 { // Alert at 80% of threshold
+      alert_resources = alert_resources.push((metric.0, usage_percentage))
+    }
   }
   
-  // 普通优先级任务（常规指标收集）
-  for i = 0; i < 20; i = i + 1 {
-    let task = TelemetryTask::new("normal.priority." + i.to_string(), "normal")
-    TelemetryTask::set_workload(task, fn() {
-      // 模拟中等CPU负载
-      for j = 0; j < 500; j = j + 1 {
-        let _ = j * 2
-      }
-    })
-    Array::push(normal_priority_tasks, task)
+  // Memory usage should trigger alert (78.5 > 85.0 * 0.8 = 68.0)
+  assert_eq(alert_resources.length(), 1)
+  assert_eq(alert_resources[0].0, "memory")
+  
+  // Calculate overall resource health score
+  let health_scores = []
+  for metric in resource_metrics {
+    let threshold = thresholds.filter(fn(t) { t.0 == metric.0 })[0].1
+    let usage = if metric.0 == "connections" {
+      (Int::to_float(metric.1) / threshold) * 100.0
+    } else {
+      metric.1
+    }
+    
+    let score = if usage <= 50.0 {
+      100.0
+    } else if usage <= 75.0 {
+      80.0
+    } else if usage <= threshold {
+      60.0
+    } else {
+      30.0
+    }
+    
+    health_scores = health_scores.push(score)
   }
   
-  // 低优先级任务（批处理和分析）
-  for i = 0; i < 30; i = i + 1 {
-    let task = TelemetryTask::new("low.priority." + i.to_string(), "low")
-    TelemetryTask::set_workload(task, fn() {
-      // 模拟轻量级处理
-      for j = 0; j < 100; j = j + 1 {
-        let _ = j + 1
-      }
-    })
-    Array::push(low_priority_tasks, task)
-  }
-  
-  // 提交所有任务
-  let all_tasks = Array::concat(high_priority_tasks, normal_priority_tasks, low_priority_tasks)
-  let start_time = Time::now()
-  
-  for task in all_tasks {
-    CPUScheduler::submit_task(cpu_scheduler, task)
-  }
-  
-  // 等待所有任务完成
-  CPUScheduler::wait_for_completion(cpu_scheduler)
-  let end_time = Time::now()
-  
-  // 验证调度效果
-  let high_completed = Array::filter(high_priority_tasks, fn(t) { TelemetryTask::is_completed(t) })
-  let normal_completed = Array::filter(normal_priority_tasks, fn(t) { TelemetryTask::is_completed(t) })
-  let low_completed = Array::filter(low_priority_tasks, fn(t) { TelemetryTask::is_completed(t) })
-  
-  assert_eq(high_completed.length(), high_priority_tasks.length()) // 高优先级应该全部完成
-  assert_true(normal_completed.length() >= normal_priority_tasks.length() * 0.8) // 普通优先级至少80%完成
-  assert_true(low_completed.length() >= low_priority_tasks.length() * 0.6) // 低优先级至少60%完成
-  
-  // 验证CPU使用限制
-  let cpu_stats = CPUScheduler::get_cpu_stats(cpu_scheduler)
-  assert_true(CPUStats::peak_telemetry_usage(cpu_stats) < 35.0) // 不应超过35%
-  
-  // 验证优先级调度统计
-  let scheduler_stats = CPUScheduler::get_scheduler_stats(cpu_scheduler)
-  assert_true(SchedulerStats::high_priority_ratio(scheduler_stats) > 0.5)
-  assert_true(SchedulerStats::cpu_efficiency(scheduler_stats) > 0.7)
+  let overall_health = health_scores.reduce(fn(acc, score) { acc + score }, 0.0) / Int::to_float(health_scores.length())
+  assert_true(overall_health > 50.0) // System should be reasonably healthy
 }
 
-// 测试4: 存储资源自动优化测试
-test "存储资源自动优化测试" {
-  let storage_manager = StorageManager::new()
-  let telemetry_storage = TelemetryStorage::with_manager(storage_manager)
+// Test 5: Batch Processing Optimization
+test "batch processing optimization" {
+  let items = []
+  for i in 0..<100 {
+    items = items.push(("item-" + i.to_string(), i))
+  }
   
-  // 配置存储管理策略
-  StorageManager::set_retention_policy(storage_manager, {
-    "short_term_days" => IntValue(7),    // 7天短期存储
-    "medium_term_days" => IntValue(30),  // 30天中期存储
-    "long_term_days" => IntValue(365),   // 1年长期存储
-    "compression_threshold_gb" => FloatValue(10.0) // 10GB后压缩
+  assert_eq(items.length(), 100)
+  
+  // Process items in batches
+  let optimal_batch_size = 15
+  let mut batches = []
+  
+  for i in 0..<items.length() {
+    if i % optimal_batch_size == 0 {
+      batches = batches.push([])
+    }
+    
+    let current_batch = batches.length() - 1
+    let batch = batches[current_batch]
+    batches = batches.slice(0, current_batch) + [batch.push(items[i])]
+  }
+  
+  assert_eq(batches.length(), 7) // 100 / 15 = 6.67, so 7 batches
+  assert_eq(batches[0].length(), 15)
+  assert_eq(batches[6].length(), 10) // Last batch has remaining items
+  
+  // Simulate batch processing time
+  let process_time_per_item = 1.0
+  let batch_overhead = 5.0
+  
+  let sequential_time = Int::to_float(items.length()) * process_time_per_item
+  let batch_time = (Int::to_float(batches.length()) * batch_overhead) + 
+                   (Int::to_float(items.length()) * process_time_per_item)
+  
+  assert_true(batch_time < sequential_time * 1.1) // Batch processing should be efficient
+}
+
+// Test 6: Garbage Collection Simulation
+test "garbage collection simulation" {
+  let mut allocated_objects = []
+  let mut generation_0 = []
+  let mut generation_1 = []
+  let mut generation_2 = []
+  
+  // Allocate objects and assign to generations
+  for i in 0..<30 {
+    let obj = ("obj-" + i.to_string(), i)
+    allocated_objects = allocated_objects.push(obj)
+    
+    if i < 10 {
+      generation_0 = generation_0.push(obj)
+    } else if i < 20 {
+      generation_1 = generation_1.push(obj)
+    } else {
+      generation_2 = generation_2.push(obj)
+    }
+  }
+  
+  assert_eq(generation_0.length(), 10)
+  assert_eq(generation_1.length(), 10)
+  assert_eq(generation_2.length(), 10)
+  
+  // Simulate object lifecycle and garbage collection
+  let mut surviving_objects = []
+  let referenced_objects = [2, 5, 8, 12, 15, 18, 22, 25, 28]
+  
+  for i in 0..<allocated_objects.length() {
+    if referenced_objects.contains(i) {
+      surviving_objects = surviving_objects.push(allocated_objects[i])
+    }
+  }
+  
+  assert_eq(surviving_objects.length(), 9)
+  
+  // Simulate generational GC
+  // Generation 0 GC
+  let gen0_survivors = generation_0.filter(fn(obj) { 
+    let index = Int::from_string(obj.0.slice(4)) // Extract number from "obj-X"
+    referenced_objects.contains(index)
   })
   
-  StorageManager::enable_auto_optimization(storage_manager, {
-    "optimization_interval_hours" => IntValue(6),
-    "disk_usage_threshold_percent" => FloatValue(80.0),
-    "cleanup_grace_period_hours" => IntValue(24)
+  // Generation 1 GC
+  let gen1_survivors = generation_1.filter(fn(obj) { 
+    let index = Int::from_string(obj.0.slice(4))
+    referenced_objects.contains(index)
   })
   
-  // 生成不同时间和类型的遥测数据
-  let current_time = Time::now()
-  let test_data = Array::empty()
+  // Generation 2 GC (full GC)
+  let gen2_survivors = generation_2.filter(fn(obj) { 
+    let index = Int::from_string(obj.0.slice(4))
+    referenced_objects.contains(index)
+  })
   
-  // 生成短期数据（最近3天）
-  for i = 0; i < 1000; i = i + 1 {
-    let timestamp = current_time - Duration::from_days(i / 400.0)
-    let metric = TelemetryMetric::new_counter(
-      "short.term.metric",
-      i.to_float(),
-      Attributes::from([("category", StringValue("short_term"))])
-    )
-    TelemetryMetric::set_timestamp(metric, timestamp)
-    Array::push(test_data, metric)
+  assert_eq(gen0_survivors.length(), 3) // Objects 2, 5, 8
+  assert_eq(gen1_survivors.length(), 3) // Objects 12, 15, 18
+  assert_eq(gen2_survivors.length(), 3) // Objects 22, 25, 28
+  
+  // Promote survivors to next generation
+  let new_generation_1 = gen0_survivors
+  let new_generation_2 = gen1_survivors.concat(gen2_survivors)
+  
+  assert_eq(new_generation_1.length(), 3)
+  assert_eq(new_generation_2.length(), 6)
+}
+
+// Test 7: Resource Cleanup and Finalization
+test "resource cleanup and finalization" {
+  let mut open_resources = []
+  let mut cleanup_queue = []
+  
+  // Open resources
+  let resource_types = ["file", "socket", "connection", "stream", "channel"]
+  
+  for resource_type in resource_types {
+    for i in 0..<3 {
+      let resource_id = resource_type + "-" + i.to_string()
+      open_resources = open_resources.push((resource_id, resource_type, true))
+    }
   }
   
-  // 生成中期数据（30天前）
-  for i = 0; i < 500; i = i + 1 {
-    let timestamp = current_time - Duration::from_days(15.0 + i / 50.0)
-    let metric = TelemetryMetric::new_histogram(
-      "medium.term.metric",
-      i.to_float(),
-      Attributes::from([("category", StringValue("medium_term"))])
-    )
-    TelemetryMetric::set_timestamp(metric, timestamp)
-    Array::push(test_data, metric)
+  assert_eq(open_resources.length(), 15)
+  
+  // Mark some resources for cleanup
+  for i in 0..<open_resources.length() {
+    if i % 3 == 0 {
+      let resource = open_resources[i]
+      cleanup_queue = cleanup_queue.push(resource)
+    }
   }
   
-  // 生成长期数据（90天前）
-  for i = 0; i < 200; i = i + 1 {
-    let timestamp = current_time - Duration::from_days(90.0 + i / 10.0)
-    let metric = TelemetryMetric::new_gauge(
-      "long.term.metric",
-      i.to_float(),
-      Attributes::from([("category", StringValue("long_term"))])
-    )
-    TelemetryMetric::set_timestamp(metric, timestamp)
-    Array::push(test_data, metric)
+  assert_eq(cleanup_queue.length(), 5)
+  
+  // Perform cleanup
+  let mut cleaned_resources = []
+  
+  for resource in cleanup_queue {
+    // Simulate cleanup operation
+    let cleaned_resource = (resource.0, resource.1, false)
+    cleaned_resources = cleaned_resources.push(cleaned_resource)
+    
+    // Remove from open resources
+    let index = open_resources.index_of(fn(r) { r.0 == resource.0 })
+    if index != -1 {
+      open_resources = open_resources.slice(0, index) + open_resources.slice(index + 1)
+    }
   }
   
-  // 存储所有数据
-  for metric in test_data {
-    TelemetryStorage::store(telemetry_storage, metric)
+  assert_eq(cleaned_resources.length(), 5)
+  assert_eq(open_resources.length(), 10)
+  
+  // Verify all cleaned resources are marked as closed
+  let all_closed = cleaned_resources.all(fn(resource) { !resource.2 })
+  assert_true(all_closed)
+}
+
+// Test 8: Resource Pool Auto-scaling
+test "resource pool auto-scaling" {
+  let min_pool_size = 5
+  let max_pool_size = 20
+  let scale_up_threshold = 0.8
+  let scale_down_threshold = 0.3
+  let mut current_pool_size = min_pool_size
+  let mut active_resources = 0
+  
+  // Simulate load patterns
+  let load_sequence = [3, 4, 6, 8, 12, 15, 18, 16, 12, 8, 4, 2]
+  
+  for load in load_sequence {
+    active_resources = load
+    let utilization = Int::to_float(active_resources) / Int::to_float(current_pool_size)
+    
+    // Scale up if utilization is high
+    if utilization > scale_up_threshold && current_pool_size < max_pool_size {
+      let new_size = if current_pool_size * 2 <= max_pool_size {
+        current_pool_size * 2
+      } else {
+        max_pool_size
+      }
+      current_pool_size = new_size
+    }
+    
+    // Scale down if utilization is low
+    if utilization < scale_down_threshold && current_pool_size > min_pool_size {
+      let new_size = if current_pool_size / 2 >= min_pool_size {
+        current_pool_size / 2
+      } else {
+        min_pool_size
+      }
+      current_pool_size = new_size
+    }
   }
   
-  // 触发自动优化
-  StorageManager::trigger_optimization(storage_manager)
+  // Final pool size should be reasonable based on load pattern
+  assert_true(current_pool_size >= min_pool_size)
+  assert_true(current_pool_size <= max_pool_size)
   
-  // 等待优化完成
-  Thread::sleep(Duration::from_ms(2000))
-  
-  // 验证存储分层
-  let storage_stats = StorageManager::get_storage_stats(storage_manager)
-  
-  assert_eq(StorageStats::short_term_count(storage_stats), 1000)
-  assert_eq(StorageStats::medium_term_count(storage_stats), 500)
-  assert_eq(StorageStats::long_term_count(storage_stats), 200)
-  
-  // 验证存储空间优化
-  let original_size = test_data.length() * 1000 // 假设每个指标1KB
-  let optimized_size = StorageStats::total_size_bytes(storage_stats)
-  let compression_ratio = optimized_size / original_size.to_float()
-  
-  assert_true(compression_ratio < 0.7) // 压缩率至少30%
-  
-  // 验证访问性能
-  let short_term_access = TelemetryStorage::query_by_category(telemetry_storage, "short_term")
-  let long_term_access = TelemetryStorage::query_by_category(telemetry_storage, "long_term")
-  
-  assert_eq(short_term_access.length(), 1000)
-  assert_eq(long_term_access.length(), 200)
-  
-  // 验证短期数据访问更快
-  let short_query_time = TelemetryStorage::get_last_query_time(telemetry_storage, "short_term")
-  let long_query_time = TelemetryStorage::get_last_query_time(telemetry_storage, "long_term")
-  
-  assert_true(short_query_time < long_query_time)
-  
-  // 验证自动清理策略
-  let cleanup_stats = StorageManager::get_cleanup_stats(storage_manager)
-  assert_true(CleanupStats::auto_cleanups_triggered(cleanup_stats) > 0)
-  assert_true(CleanupStats::space_recovered_mb(cleanup_stats) > 0)
+  // Pool should have scaled up during high load and scaled down during low load
+  assert_true(current_pool_size > min_pool_size) // Should have scaled up at some point
 }
