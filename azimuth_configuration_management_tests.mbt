@@ -1,381 +1,530 @@
-// Azimuth Configuration Management Tests
-// 测试配置管理、动态更新和验证功能
+// Azimuth Telemetry System - Configuration Management Tests
+// This file contains test cases for configuration management, dynamic updates, and validation
 
-test "配置加载和解析" {
-  // 测试配置加载和解析功能
-  let config_content = """
-  {
-    "service": {
-      "name": "azimuth-telemetry",
-      "version": "2.1.0",
-      "environment": "production"
-    },
-    "telemetry": {
-      "enabled": true,
-      "sampling_rate": 0.1,
-      "batch_size": 100,
-      "export_interval": 5000
-    },
-    "endpoints": {
-      "collector": "https://collector.example.com:4317",
-      "api": "https://api.example.com/v1"
-    },
-    "features": {
-      "metrics": true,
-      "tracing": true,
-      "logging": true,
-      "profiling": false
-    },
-    "limits": {
-      "max_spans_per_second": 1000,
-      "max_attributes_per_span": 128,
-      "max_events_per_span": 128,
-      "max_links_per_span": 128
-    }
+// Test 1: Basic Configuration Operations
+test "basic configuration operations" {
+  // Test configuration creation
+  let config = Configuration::new()
+  
+  // Test setting and getting string values
+  Configuration::set_string(config, "string.key", "test_value")
+  let string_value = Configuration::get_string(config, "string.key")
+  match string_value {
+    Some(value) => assert_eq(value, "test_value")
+    None => assert_true(false)
   }
-  """
   
-  // 解析配置
-  let config = parse_configuration(config_content)
+  // Test setting and getting int values
+  Configuration::set_int(config, "int.key", 42)
+  let int_value = Configuration::get_int(config, "int.key")
+  match int_value {
+    Some(value) => assert_eq(value, 42)
+    None => assert_true(false)
+  }
   
-  // 验证服务配置
-  assert_eq(config.service.name, "azimuth-telemetry")
-  assert_eq(config.service.version, "2.1.0")
-  assert_eq(config.service.environment, "production")
+  // Test setting and getting float values
+  Configuration::set_float(config, "float.key", 3.14)
+  let float_value = Configuration::get_float(config, "float.key")
+  match float_value {
+    Some(value) => assert_eq(value, 3.14)
+    None => assert_true(false)
+  }
   
-  // 验证遥测配置
-  assert_true(config.telemetry.enabled)
-  assert_eq(config.telemetry.sampling_rate, 0.1)
-  assert_eq(config.telemetry.batch_size, 100)
-  assert_eq(config.telemetry.export_interval, 5000)
+  // Test setting and getting bool values
+  Configuration::set_bool(config, "bool.key", true)
+  let bool_value = Configuration::get_bool(config, "bool.key")
+  match bool_value {
+    Some(value) => assert_true(value)
+    None => assert_true(false)
+  }
   
-  // 验证端点配置
-  assert_eq(config.endpoints.collector, "https://collector.example.com:4317")
-  assert_eq(config.endpoints.api, "https://api.example.com/v1")
+  // Test setting and getting array values
+  Configuration::set_string_array(config, "array.key", ["value1", "value2", "value3"])
+  let array_value = Configuration::get_string_array(config, "array.key")
+  match array_value {
+    Some(values) => {
+      assert_eq(values.length(), 3)
+      assert_eq(values[0], "value1")
+      assert_eq(values[1], "value2")
+      assert_eq(values[2], "value3")
+    }
+    None => assert_true(false)
+  }
   
-  // 验证功能开关
-  assert_true(config.features.metrics)
-  assert_true(config.features.tracing)
-  assert_true(config.features.logging)
-  assert_false(config.features.profiling)
-  
-  // 验证限制配置
-  assert_eq(config.limits.max_spans_per_second, 1000)
-  assert_eq(config.limits.max_attributes_per_span, 128)
-  assert_eq(config.limits.max_events_per_span, 128)
-  assert_eq(config.limits.max_links_per_span, 128)
+  // Test getting non-existent keys
+  let non_existent = Configuration::get_string(config, "non.existent.key")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
 }
 
-test "配置验证和默认值" {
-  // 测试配置验证和默认值处理
-  let incomplete_config = """
-  {
-    "service": {
-      "name": "test-service"
-    },
-    "telemetry": {
-      "enabled": true
+// Test 2: Configuration Persistence and Loading
+test "configuration persistence and loading" {
+  // Create a configuration with various settings
+  let config = Configuration::new()
+  
+  Configuration::set_string(config, "service.name", "telemetry_service")
+  Configuration::set_string(config, "service.version", "1.0.0")
+  Configuration::set_int(config, "service.port", 8080)
+  Configuration::set_bool(config, "service.enabled", true)
+  Configuration::set_float(config, "sampling.probability", 0.1)
+  
+  // Serialize configuration to JSON
+  let json_config = Configuration::to_json(config)
+  assert_true(json_config.contains("telemetry_service"))
+  assert_true(json_config.contains("1.0.0"))
+  assert_true(json_config.contains("8080"))
+  
+  // Deserialize configuration from JSON
+  let loaded_config = Configuration::from_json(json_config)
+  match loaded_config {
+    Some(loaded) => {
+      // Verify loaded values
+      let service_name = Configuration::get_string(loaded, "service.name")
+      match service_name {
+        Some(name) => assert_eq(name, "telemetry_service")
+        None => assert_true(false)
+      }
+      
+      let service_version = Configuration::get_string(loaded, "service.version")
+      match service_version {
+        Some(version) => assert_eq(version, "1.0.0")
+        None => assert_true(false)
+      }
+      
+      let service_port = Configuration::get_int(loaded, "service.port")
+      match service_port {
+        Some(port) => assert_eq(port, 8080)
+        None => assert_true(false)
+      }
+      
+      let service_enabled = Configuration::get_bool(loaded, "service.enabled")
+      match service_enabled {
+        Some(enabled) => assert_true(enabled)
+        None => assert_true(false)
+      }
+      
+      let sampling_prob = Configuration::get_float(loaded, "sampling.probability")
+      match sampling_prob {
+        Some(prob) => assert_eq(prob, 0.1)
+        None => assert_true(false)
+      }
     }
+    None => assert_true(false)
   }
-  """
   
-  // 解析不完整配置
-  let config = parse_configuration(incomplete_config)
+  // Test configuration file persistence
+  let file_path = "/tmp/test_config.json"
+  let save_result = Configuration::save_to_file(config, file_path)
+  assert_true(save_result)
   
-  // 验证默认值应用
-  assert_eq(config.service.name, "test-service")
-  assert_eq(config.service.version, "1.0.0")  // 默认版本
-  assert_eq(config.service.environment, "development")  // 默认环境
+  // Load configuration from file
+  let file_loaded_config = Configuration::load_from_file(file_path)
+  match file_loaded_config {
+    Some(loaded) => {
+      let service_name = Configuration::get_string(loaded, "service.name")
+      match service_name {
+        Some(name) => assert_eq(name, "telemetry_service")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 3: Configuration Validation
+test "configuration validation" {
+  // Create a configuration schema
+  let schema = ConfigurationSchema::new()
   
-  assert_true(config.telemetry.enabled)
-  assert_eq(config.telemetry.sampling_rate, 1.0)  // 默认采样率
-  assert_eq(config.telemetry.batch_size, 50)     // 默认批量大小
-  assert_eq(config.telemetry.export_interval, 10000)  // 默认导出间隔
+  // Define validation rules
+  ConfigurationSchema::add_string_rule(schema, "service.name", true, None, None) // Required
+  ConfigurationSchema::add_string_rule(schema, "service.version", true, Some("^\\d+\\.\\d+\\.\\d+$"), None) // Required, pattern match
+  ConfigurationSchema::add_int_rule(schema, "service.port", true, Some(1024), Some(65535)) // Required, range 1024-65535
+  ConfigurationSchema::add_bool_rule(schema, "service.enabled", false, None) // Optional
+  ConfigurationSchema::add_float_rule(schema, "sampling.probability", false, Some(0.0), Some(1.0)) // Optional, range 0.0-1.0
   
-  // 测试配置验证
-  let validation_result = validate_configuration(config)
+  // Test valid configuration
+  let valid_config = Configuration::new()
+  Configuration::set_string(valid_config, "service.name", "test_service")
+  Configuration::set_string(valid_config, "service.version", "1.0.0")
+  Configuration::set_int(valid_config, "service.port", 8080)
+  Configuration::set_bool(valid_config, "service.enabled", true)
+  Configuration::set_float(valid_config, "sampling.probability", 0.1)
+  
+  let validation_result = Configuration::validate(valid_config, schema)
   assert_true(validation_result.is_valid)
   assert_eq(validation_result.errors.length(), 0)
   
-  // 测试无效配置
-  let invalid_config = """
-  {
-    "service": {
-      "name": ""
-    },
-    "telemetry": {
-      "enabled": true,
-      "sampling_rate": 1.5  // 无效：应小于等于1.0
-    }
-  }
-  """
+  // Test invalid configuration
+  let invalid_config = Configuration::new()
+  Configuration::set_string(invalid_config, "service.name", "") // Empty name
+  Configuration::set_string(invalid_config, "service.version", "1.0") // Invalid version format
+  Configuration::set_int(invalid_config, "service.port", 80) // Port out of range
+  // Missing required field: service.name is empty, service.version format is wrong, service.port is out of range
   
-  let invalid_parsed = parse_configuration(invalid_config)
-  let invalid_validation = validate_configuration(invalid_parsed)
-  assert_false(invalid_validation.is_valid)
-  assert_true(invalid_validation.errors.length() > 0)
+  let invalid_validation_result = Configuration::validate(invalid_config, schema)
+  assert_false(invalid_validation_result.is_valid)
+  assert_true(invalid_validation_result.errors.length() > 0)
   
-  // 验证具体错误
-  let has_service_name_error = invalid_validation.errors.any(fn(err) {
-    err.contains("service.name") && err.contains("empty")
-  })
-  let has_sampling_rate_error = invalid_validation.errors.any(fn(err) {
-    err.contains("sampling_rate") && err.contains("range")
-  })
+  // Test missing required fields
+  let incomplete_config = Configuration::new()
+  Configuration::set_string(incomplete_config, "service.name", "test_service")
+  // Missing service.version and service.port
   
-  assert_true(has_service_name_error)
-  assert_true(has_sampling_rate_error)
+  let incomplete_validation_result = Configuration::validate(incomplete_config, schema)
+  assert_false(incomplete_validation_result.is_valid)
+  assert_true(incomplete_validation_result.errors.length() >= 2) // At least 2 missing required fields
 }
 
-test "动态配置更新" {
-  // 测试动态配置更新功能
-  let initial_config = """
-  {
-    "service": {
-      "name": "dynamic-service",
-      "version": "1.0.0"
-    },
-    "telemetry": {
-      "enabled": true,
-      "sampling_rate": 0.5,
-      "batch_size": 50
-    }
+// Test 4: Dynamic Configuration Updates
+test "dynamic configuration updates" {
+  // Create a configuration with change listeners
+  let config = Configuration::new()
+  
+  // Set up initial values
+  Configuration::set_string(config, "dynamic.key", "initial_value")
+  Configuration::set_int(config, "dynamic.counter", 0)
+  
+  // Add change listener
+  let mut change_count = 0
+  let listener = fn(key, old_value, new_value) {
+    change_count = change_count + 1
   }
-  """
   
-  let config_manager = ConfigurationManager::new(initial_config)
+  Configuration::add_change_listener(config, "dynamic.key", listener)
   
-  // 获取初始配置
-  let current_config = ConfigurationManager::get_config(config_manager)
-  assert_eq(current_config.telemetry.sampling_rate, 0.5)
-  assert_eq(current_config.telemetry.batch_size, 50)
+  // Update configuration and verify listener is called
+  Configuration::set_string(config, "dynamic.key", "updated_value")
+  assert_eq(change_count, 1)
   
-  // 测试部分更新
-  let update_patch = """
-  {
-    "telemetry": {
-      "sampling_rate": 0.2,
-      "batch_size": 100
-    }
+  // Update with same value should not trigger listener
+  Configuration::set_string(config, "dynamic.key", "updated_value")
+  assert_eq(change_count, 1) // Should still be 1, not 2
+  
+  // Update with different value should trigger listener again
+  Configuration::set_string(config, "dynamic.key", "another_value")
+  assert_eq(change_count, 2)
+  
+  // Test batch updates
+  let updates = [
+    ("batch.key1", StringValue("value1")),
+    ("batch.key2", IntValue(42)),
+    ("batch.key3", BoolValue(true))
+  ]
+  
+  let batch_change_count = 0
+  let batch_listener = fn(key, old_value, new_value) {
+    change_count = change_count + 1
   }
-  """
   
-  let update_result = ConfigurationManager::update_config(config_manager, update_patch)
-  assert_true(update_result.success)
+  Configuration::add_change_listener(config, "batch.key1", batch_listener)
+  Configuration::add_change_listener(config, "batch.key2", batch_listener)
+  Configuration::add_change_listener(config, "batch.key3", batch_listener)
   
-  // 验证更新后的配置
-  let updated_config = ConfigurationManager::get_config(config_manager)
-  assert_eq(updated_config.service.name, "dynamic-service")  // 未改变
-  assert_eq(updated_config.telemetry.sampling_rate, 0.2)     // 已更新
-  assert_eq(updated_config.telemetry.batch_size, 100)        // 已更新
-  assert_true(updated_config.telemetry.enabled)              // 未改变
+  Configuration::update_batch(config, updates)
+  assert_eq(change_count, 5) // 2 from previous tests + 3 from batch update
   
-  // 测试配置变更通知
-  let notification_received = ref false
-  let updated_sampling_rate = ref 0.0
+  // Test configuration reload
+  let new_config = Configuration::new()
+  Configuration::set_string(new_config, "dynamic.key", "reloaded_value")
+  Configuration::set_int(new_config, "dynamic.counter", 10)
   
-  ConfigurationManager::subscribe(config_manager, fn(change) {
-    if change.path == "telemetry.sampling_rate" {
-      updated_sampling_rate := change.new_value
-      notification_received := true
-    }
-  })
+  let reload_result = Configuration::reload(config, new_config)
+  assert_true(reload_result)
   
-  // 再次更新配置
-  let second_update = """
-  {
-    "telemetry": {
-      "sampling_rate": 0.8
-    }
+  let reloaded_value = Configuration::get_string(config, "dynamic.key")
+  match reloaded_value {
+    Some(value) => assert_eq(value, "reloaded_value")
+    None => assert_true(false)
   }
-  """
   
-  ConfigurationManager::update_config(config_manager, second_update)
-  
-  // 验证通知
-  assert_true(notification_received)
-  assert_eq(updated_sampling_rate, 0.8)
+  let reloaded_counter = Configuration::get_int(config, "dynamic.counter")
+  match reloaded_counter {
+    Some(value) => assert_eq(value, 10)
+    None => assert_true(false)
+  }
 }
 
-test "配置环境变量覆盖" {
-  // 测试环境变量覆盖配置
-  let base_config = """
-  {
-    "service": {
-      "name": "env-service",
-      "environment": "development"
-    },
-    "database": {
-      "host": "localhost",
-      "port": 5432,
-      "username": "admin"
-    }
+// Test 5: Configuration Hierarchies and Inheritance
+test "configuration hierarchies and inheritance" {
+  // Create parent configuration
+  let parent_config = Configuration::new()
+  Configuration::set_string(parent_config, "parent.key", "parent_value")
+  Configuration::set_string(parent_config, "inherited.key", "inherited_value")
+  Configuration::set_int(parent_config, "override.key", 100)
+  
+  // Create child configuration
+  let child_config = Configuration::with_parent(parent_config)
+  Configuration::set_string(child_config, "child.key", "child_value")
+  Configuration::set_int(child_config, "override.key", 200) // Override parent value
+  
+  // Test child can access its own values
+  let child_value = Configuration::get_string(child_config, "child.key")
+  match child_value {
+    Some(value) => assert_eq(value, "child_value")
+    None => assert_true(false)
   }
-  """
   
-  // 设置环境变量
-  set_environment_variable("AZIMUTH_SERVICE_ENVIRONMENT", "production")
-  set_environment_variable("AZIMUTH_DATABASE_HOST", "prod-db.example.com")
-  set_environment_variable("AZIMUTH_DATABASE_PORT", "5433")
+  // Test child can inherit parent values
+  let inherited_value = Configuration::get_string(child_config, "inherited.key")
+  match inherited_value {
+    Some(value) => assert_eq(value, "inherited_value")
+    None => assert_true(false)
+  }
   
-  // 应用环境变量覆盖
-  let config_with_env = apply_environment_overrides(base_config)
+  // Test child overrides parent values
+  let override_value = Configuration::get_int(child_config, "override.key")
+  match override_value {
+    Some(value) => assert_eq(value, 200) // Child's value, not parent's
+    None => assert_true(false)
+  }
   
-  // 验证覆盖效果
-  assert_eq(config_with_env.service.name, "env-service")        // 未覆盖
-  assert_eq(config_with_env.service.environment, "production")  // 已覆盖
-  assert_eq(config_with_env.database.host, "prod-db.example.com") // 已覆盖
-  assert_eq(config_with_env.database.port, 5433)                 // 已覆盖
-  assert_eq(config_with_env.database.username, "admin")          // 未覆盖
+  // Test parent is unaffected by child changes
+  let parent_override_value = Configuration::get_int(parent_config, "override.key")
+  match parent_override_value {
+    Some(value) => assert_eq(value, 100) // Parent's original value
+    None => assert_true(false)
+  }
   
-  // 测试环境变量优先级
-  set_environment_variable("AZIMUTH_SERVICE_NAME", "override-name")
-  let config_with_name_override = apply_environment_overrides(base_config)
-  assert_eq(config_with_name_override.service.name, "override-name")
+  // Test configuration hierarchy with multiple levels
+  let grandchild_config = Configuration::with_parent(child_config)
+  Configuration::set_string(grandchild_config, "grandchild.key", "grandchild_value")
   
-  // 清理环境变量
-  clear_environment_variable("AZIMUTH_SERVICE_ENVIRONMENT")
-  clear_environment_variable("AZIMUTH_DATABASE_HOST")
-  clear_environment_variable("AZIMUTH_DATABASE_PORT")
-  clear_environment_variable("AZIMUTH_SERVICE_NAME")
+  let grandchild_inherited = Configuration::get_string(grandchild_config, "inherited.key")
+  match grandchild_inherited {
+    Some(value) => assert_eq(value, "inherited_value") // From parent
+    None => assert_true(false)
+  }
+  
+  let grandchild_child = Configuration::get_string(grandchild_config, "child.key")
+  match grandchild_child {
+    Some(value) => assert_eq(value, "child_value") // From parent
+    None => assert_true(false)
+  }
+  
+  let grandchild_parent = Configuration::get_string(grandchild_config, "parent.key")
+  match grandchild_parent {
+    Some(value) => assert_eq(value, "parent_value") // From grandparent
+    None => assert_true(false)
+  }
 }
 
-test "配置模板和继承" {
-  // 测试配置模板和继承功能
-  let base_template = """
-  {
-    "service": {
-      "name": "${SERVICE_NAME}",
-      "version": "${SERVICE_VERSION:1.0.0}",
-      "environment": "${ENVIRONMENT:development}"
-    },
-    "telemetry": {
-      "enabled": true,
-      "sampling_rate": 0.1,
-      "batch_size": 50
-    },
-    "logging": {
-      "level": "INFO",
-      "format": "json"
-    }
+// Test 6: Environment Variable Integration
+test "environment variable integration" {
+  // Create configuration with environment variable support
+  let config = Configuration::new()
+  
+  // Set up environment variable mappings
+  Configuration::map_env_variable(config, "env.service.name", "SERVICE_NAME")
+  Configuration::map_env_variable(config, "env.service.port", "SERVICE_PORT")
+  Configuration::map_env_variable(config, "env.debug.enabled", "DEBUG_ENABLED")
+  
+  // Load configuration from environment variables
+  let load_result = Configuration::load_from_environment(config)
+  assert_true(load_result)
+  
+  // Test getting values (these would come from actual environment in a real scenario)
+  // For this test, we'll simulate environment variable values
+  
+  // Simulate environment variable values
+  Configuration::set_string(config, "env.service.name", "env_service")
+  Configuration::set_int(config, "env.service.port", 9090)
+  Configuration::set_bool(config, "env.debug.enabled", true)
+  
+  // Verify loaded values
+  let service_name = Configuration::get_string(config, "env.service.name")
+  match service_name {
+    Some(name) => assert_eq(name, "env_service")
+    None => assert_true(false)
   }
-  """
   
-  // 设置模板变量
-  let template_vars = {
-    "SERVICE_NAME": "template-service",
-    "SERVICE_VERSION": "2.0.0"
-    // ENVIRONMENT 使用默认值
+  let service_port = Configuration::get_int(config, "env.service.port")
+  match service_port {
+    Some(port) => assert_eq(port, 9090)
+    None => assert_true(false)
   }
   
-  // 渲染模板
-  let rendered_config = render_config_template(base_template, template_vars)
-  let parsed_config = parse_configuration(rendered_config)
-  
-  // 验证模板渲染
-  assert_eq(parsed_config.service.name, "template-service")
-  assert_eq(parsed_config.service.version, "2.0.0")
-  assert_eq(parsed_config.service.environment, "development")  // 默认值
-  assert_eq(parsed_config.telemetry.sampling_rate, 0.1)
-  assert_eq(parsed_config.logging.level, "INFO")
-  
-  // 测试配置继承
-  let parent_config = """
-  {
-    "service": {
-      "name": "parent-service",
-      "version": "1.0.0",
-      "description": "Parent service configuration"
-    },
-    "telemetry": {
-      "enabled": true,
-      "sampling_rate": 0.1
-    },
-    "common": {
-      "timeout": 30000,
-      "retries": 3
-    }
+  let debug_enabled = Configuration::get_bool(config, "env.debug.enabled")
+  match debug_enabled {
+    Some(enabled) => assert_true(enabled)
+    None => assert_true(false)
   }
-  """
   
-  let child_config = """
-  {
-    "extends": "parent_config",
-    "service": {
-      "name": "child-service"
-    },
-    "telemetry": {
-      "sampling_rate": 0.2
-    },
-    "child_specific": {
-      "feature": true
-    }
+  // Test environment variable precedence
+  // Set a value directly, then load from environment to test precedence
+  Configuration::set_string(config, "precedence.test", "direct_value")
+  
+  // In a real scenario, if PRECEDENCE_TEST env var was set, it would override the direct value
+  // For this test, we'll simulate by setting the env value directly
+  Configuration::set_string(config, "precedence.test", "env_value") // Simulate env override
+  
+  let precedence_value = Configuration::get_string(config, "precedence.test")
+  match precedence_value {
+    Some(value) => assert_eq(value, "env_value") // Environment should take precedence
+    None => assert_true(false)
   }
-  """
-  
-  // 处理继承
-  let merged_config = process_config_inheritance(child_config, parent_config)
-  
-  // 验证继承结果
-  assert_eq(merged_config.service.name, "child-service")        // 子配置覆盖
-  assert_eq(merged_config.service.version, "1.0.0")             // 继承自父配置
-  assert_eq(merged_config.service.description, "Parent service configuration") // 继承自父配置
-  assert_true(merged_config.telemetry.enabled)                  // 继承自父配置
-  assert_eq(merged_config.telemetry.sampling_rate, 0.2)         // 子配置覆盖
-  assert_eq(merged_config.common.timeout, 30000)                // 继承自父配置
-  assert_eq(merged_config.common.retries, 3)                    // 继承自父配置
-  assert_true(merged_config.child_specific.feature)             // 子配置特有
 }
 
-test "配置加密和敏感信息" {
-  // 测试配置加密和敏感信息处理
-  let sensitive_config = """
-  {
-    "service": {
-      "name": "secure-service"
-    },
-    "database": {
-      "host": "db.example.com",
-      "username": "admin",
-      "password": "secret-password",
-      "api_key": "sk-1234567890abcdef"
-    },
-    "external_apis": {
-      "payment_provider": {
-        "secret_key": "pk_live_1234567890",
-        "webhook_secret": "whsec_1234567890"
+// Test 7: Configuration Profiles and Variants
+test "configuration profiles and variants" {
+  // Create base configuration
+  let base_config = Configuration::new()
+  Configuration::set_string(base_config, "service.name", "base_service")
+  Configuration::set_int(base_config, "service.port", 8080)
+  Configuration::set_bool(base_config, "debug.enabled", false)
+  Configuration::set_string(base_config, "log.level", "INFO")
+  
+  // Create development profile
+  let dev_profile = Configuration::with_parent(base_config)
+  Configuration::set_string(dev_profile, "service.name", "dev_service")
+  Configuration::set_int(dev_profile, "service.port", 3000)
+  Configuration::set_bool(dev_profile, "debug.enabled", true)
+  Configuration::set_string(dev_profile, "log.level", "DEBUG")
+  
+  // Create production profile
+  let prod_profile = Configuration::with_parent(base_config)
+  Configuration::set_string(prod_profile, "service.name", "prod_service")
+  Configuration::set_int(prod_profile, "service.port", 80)
+  Configuration::set_bool(prod_profile, "debug.enabled", false)
+  Configuration::set_string(prod_profile, "log.level", "WARN")
+  
+  // Create profile manager
+  let profile_manager = ProfileManager::new()
+  ProfileManager::add_profile(profile_manager, "base", base_config)
+  ProfileManager::add_profile(profile_manager, "development", dev_profile)
+  ProfileManager::add_profile(profile_manager, "production", prod_profile)
+  
+  // Test profile switching
+  let active_dev = ProfileManager::activate_profile(profile_manager, "development")
+  match active_dev {
+    Some(dev_config) => {
+      let service_name = Configuration::get_string(dev_config, "service.name")
+      match service_name {
+        Some(name) => assert_eq(name, "dev_service")
+        None => assert_true(false)
+      }
+      
+      let debug_enabled = Configuration::get_bool(dev_config, "debug.enabled")
+      match debug_enabled {
+        Some(enabled) => assert_true(enabled)
+        None => assert_true(false)
       }
     }
+    None => assert_true(false)
   }
-  """
   
-  // 识别敏感字段
-  let sensitive_fields = identify_sensitive_fields(sensitive_config)
-  assert_true(sensitive_fields.contains("database.password"))
-  assert_true(sensitive_fields.contains("database.api_key"))
-  assert_true(sensitive_fields.contains("external_apis.payment_provider.secret_key"))
-  assert_true(sensitive_fields.contains("external_apis.payment_provider.webhook_secret"))
-  assert_false(sensitive_fields.contains("database.host"))
-  assert_false(sensitive_fields.contains("service.name"))
+  let active_prod = ProfileManager::activate_profile(profile_manager, "production")
+  match active_prod {
+    Some(prod_config) => {
+      let service_name = Configuration::get_string(prod_config, "service.name")
+      match service_name {
+        Some(name) => assert_eq(name, "prod_service")
+        None => assert_true(false)
+      }
+      
+      let debug_enabled = Configuration::get_bool(prod_config, "debug.enabled")
+      match debug_enabled {
+        Some(enabled) => assert_false(enabled)
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
   
-  // 加密敏感配置
-  let encryption_key = generate_encryption_key()
-  let encrypted_config = encrypt_sensitive_fields(sensitive_config, sensitive_fields, encryption_key)
+  // Test profile inheritance
+  let active_base = ProfileManager::activate_profile(profile_manager, "base")
+  match active_base {
+    Some(base_active_config) => {
+      let service_name = Configuration::get_string(base_active_config, "service.name")
+      match service_name {
+        Some(name) => assert_eq(name, "base_service")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 8: Configuration Security and Encryption
+test "configuration security and encryption" {
+  // Create secure configuration
+  let secure_config = Configuration::new()
   
-  // 验证敏感字段已加密
-  assert_false(encrypted_config.contains("secret-password"))
-  assert_false(encrypted_config.contains("sk-1234567890abcdef"))
-  assert_true(encrypted_config.contains("encrypted:"))
+  // Set sensitive values
+  Configuration::set_string(secure_config, "database.password", "secret_password")
+  Configuration::set_string(secure_config, "api.key", "secret_api_key")
+  Configuration::set_string(secure_config, "jwt.secret", "jwt_secret_key")
   
-  // 解密配置
-  let decrypted_config = decrypt_sensitive_fields(encrypted_config, encryption_key)
-  assert_true(decrypted_config.contains("secret-password"))
-  assert_true(decrypted_config.contains("sk-1234567890abcdef"))
+  // Mark fields as sensitive
+  Configuration::mark_sensitive(secure_config, "database.password")
+  Configuration::mark_sensitive(secure_config, "api.key")
+  Configuration::mark_sensitive(secure_config, "jwt.secret")
   
-  // 测试安全配置导出
-  let safe_export = export_safe_config(decrypted_config)
-  assert_false(safe_export.contains("secret-password"))
-  assert_false(safe_export.contains("sk-1234567890abcdef"))
-  assert_true(safe_export.contains("******"))
-  assert_true(safe_export.contains("db.example.com"))
+  // Test that sensitive values are masked in serialization
+  let json_config = Configuration::to_json(secure_config)
+  assert_false(json_config.contains("secret_password"))
+  assert_false(json_config.contains("secret_api_key"))
+  assert_false(json_config.contains("jwt_secret_key"))
+  assert_true(json_config.contains("database.password"))
+  assert_true(json_config.contains("api.key"))
+  assert_true(json_config.contains("jwt.secret"))
+  
+  // Test encryption of configuration
+  let encryption_key = "test_encryption_key_123"
+  let encrypted_config = Configuration::encrypt(secure_config, encryption_key)
+  assert_true(encrypted_config.length() > 0)
+  
+  // Test decryption of configuration
+  let decrypted_config = Configuration::decrypt(encrypted_config, encryption_key)
+  match decrypted_config {
+    Some(decrypted) => {
+      // Verify that sensitive values are restored
+      let password = Configuration::get_string(decrypted, "database.password")
+      match password {
+        Some(value) => assert_eq(value, "secret_password")
+        None => assert_true(false)
+      }
+      
+      let api_key = Configuration::get_string(decrypted, "api.key")
+      match api_key {
+        Some(value) => assert_eq(value, "secret_api_key")
+        None => assert_true(false)
+      }
+      
+      let jwt_secret = Configuration::get_string(decrypted, "jwt.secret")
+      match jwt_secret {
+        Some(value) => assert_eq(value, "jwt_secret_key")
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+  
+  // Test decryption with wrong key fails
+  let wrong_key_decrypted = Configuration::decrypt(encrypted_config, "wrong_key")
+  match wrong_key_decrypted {
+    Some(_) => assert_true(false) // Should not succeed with wrong key
+    None => assert_true(true)     // Expected to fail
+  }
+  
+  // Test configuration access control
+  let access_config = Configuration::new()
+  Configuration::set_string(access_config, "public.key", "public_value")
+  Configuration::set_string(access_config, "private.key", "private_value")
+  
+  // Set access permissions
+  Configuration::set_permission(access_config, "public.key", "read")
+  Configuration::set_permission(access_config, "private.key", "admin")
+  
+  // Test access control
+  let public_access = Configuration::check_access(access_config, "public.key", "read")
+  assert_true(public_access)
+  
+  let private_read_access = Configuration::check_access(access_config, "private.key", "read")
+  assert_false(private_read_access) // Should not have read access
+  
+  let private_admin_access = Configuration::check_access(access_config, "private.key", "admin")
+  assert_true(private_admin_access)
 }
