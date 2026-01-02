@@ -1,0 +1,104 @@
+{
+  "packages": [
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth_enhanced_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/azimuth_enhanced_test/azimuth_enhanced_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "azimuth_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/azimuth_test/azimuth_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "core_tests",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/core_tests/core_tests.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "new_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/new_test/new_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "new_test_dir",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/new_test_dir/new_test_dir.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "practical_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/practical_test/practical_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "simple_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/simple_test/simple_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "simple_test_dir",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/simple_test_dir/simple_test_dir.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "src",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/src/src.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "standalone_simple_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/standalone_simple_test/standalone_simple_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/azimuth/telemetry/telemetry.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry/advanced",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/azimuth/telemetry/advanced/advanced.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry/basic-enhanced",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/azimuth/telemetry/basic-enhanced/basic-enhanced.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry/comprehensive",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/azimuth/telemetry/comprehensive/comprehensive.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry/enhanced",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/azimuth/telemetry/enhanced/enhanced.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry/extended",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/azimuth/telemetry/extended/extended.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/azimuth/telemetry/high_quality",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/azimuth/telemetry/high_quality/high_quality.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/enhanced_suite",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/enhanced_suite/enhanced_suite.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "tests/simple_test",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/tests/simple_test/simple_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "working_tests",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm/debug/test/working_tests/working_tests.mi"
+    }
+  ]
+}
