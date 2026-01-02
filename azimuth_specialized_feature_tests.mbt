@@ -1,721 +1,719 @@
 // Azimuth Specialized Feature Test Suite
-// This file contains specialized test cases focusing on advanced system features
+// This file contains specialized test cases for advanced features
 
-// Test 1: Cache System Performance
-test "cache system performance and eviction policies" {
-  // Test LRU cache implementation
-  let cache_size = 100
-  let cache_entries = []
-  
-  // Fill cache with entries
-  for i in 1..=cache_size {
-    cache_entries = cache_entries.push(("key-" + i.to_string(), "value-" + i.to_string()))
-  }
-  
-  assert_eq(cache_entries.length(), cache_size)
-  
-  // Test cache hit ratio
-  let total_requests = 1000
-  let cache_hits = 750
-  let cache_misses = total_requests - cache_hits
-  let hit_ratio = cache_hits.to_float() / total_requests.to_float()
-  
-  assert_eq(hit_ratio, 0.75)
-  assert_eq(cache_misses, 250)
-  
-  // Test eviction policy
-  let new_entries = 50
-  let eviction_count = new_entries
-  let expected_cache_size = cache_size
-  
-  assert_eq(eviction_count, 50)
-  assert_eq(expected_cache_size, 100)
-  
-  // Test cache TTL (Time To Live)
-  let ttl_seconds = 300 // 5 minutes
-  let current_time = 1000
-  let entry_time = 800
-  let is_expired = (current_time - entry_time) > ttl_seconds
-  
-  assert_false(is_expired) // Not expired yet
-  
-  let future_time = 1200
-  let will_be_expired = (future_time - entry_time) > ttl_seconds
-  assert_true(will_be_expired) // Will be expired
-}
-
-// Test 2: Time Series Data Processing
-test "time series data processing and analysis" {
-  // Test time series data points
-  let time_series_data = [
-    (1000, 10.5),  // (timestamp, value)
-    (2000, 12.3),
-    (3000, 11.8),
-    (4000, 13.2),
-    (5000, 14.1),
-    (6000, 13.9),
-    (7000, 15.0),
-    (8000, 14.8)
-  ]
-  
-  // Test time window aggregation
-  let window_start = 2000
-  let window_end = 6000
-  let window_data = time_series_data.filter(|(timestamp, _)| {
-    *timestamp >= window_start && *timestamp <= window_end
-  })
-  
-  assert_eq(window_data.length(), 4)
-  
-  // Test moving average calculation
-  let window_size = 3
-  let moving_averages = []
-  for i in window_size..=time_series_data.length() {
-    let window = time_series_data.slice(i - window_size, i)
-    let avg = window.reduce(|acc, (_, value)| acc + value, 0.0) / window_size.to_float()
-    moving_averages = moving_averages.push(avg)
-  }
-  
-  assert_eq(moving_averages.length(), 6)
-  assert_eq(moving_averages[0], 11.533333333333333) // Average of first 3 values
-  
-  // Test trend detection
-  let first_half = time_series_data.slice(0, 4)
-  let second_half = time_series_data.slice(4, 8)
-  
-  let first_avg = first_half.reduce(|acc, (_, value)| acc + value, 0.0) / first_half.length().to_float()
-  let second_avg = second_half.reduce(|acc, (_, value)| acc + value, 0.0) / second_half.length().to_float()
-  
-  assert_true(second_avg > first_avg) // Upward trend
-  assert_eq(first_avg, 11.95)
-  assert_eq(second_avg, 14.45)
-}
-
-// Test 3: Network Communication Protocol
-test "network communication protocol handling" {
-  // Test packet structure
-  let packet_header = [
-    ("version", 1),
-    ("type", "data"),
-    ("length", 1024),
-    ("checksum", "a1b2c3d4")
-  ]
-  
-  let packet_payload = "azimuth-telemetry-payload-data".repeat(10)
-  let packet_footer = [("end_marker", "PACKET_END")]
-  
-  // Test packet validation
-  let is_valid_version = packet_header.any(|(key, value)| {
-    key == "version" && value == 1
-  })
-  assert_true(is_valid_version)
-  
-  // Test packet serialization
-  let serialized_packet = packet_header.map(|(k, v)| k + ":" + v.to_string()).reduce(|acc, pair| acc + "," + pair, "")
-  assert_true(serialized_packet.contains("version:1"))
-  assert_true(serialized_packet.contains("type:data"))
-  
-  // Test protocol negotiation
-  let supported_versions = [1, 2, 3]
-  let client_version = 2
-  let server_version = 3
-  
-  let negotiated_version = if supported_versions.contains(client_version) && 
-                            supported_versions.contains(server_version) {
-    [client_version, server_version].min()
-  } else {
-    1 // Fallback to version 1
-  }
-  
-  assert_eq(negotiated_version, 2)
-  
-  // Test connection pooling
-  let max_connections = 100
-  let active_connections = 75
-  let available_connections = max_connections - active_connections
-  
-  assert_eq(available_connections, 25)
-  
-  let connection_utilization = active_connections.to_float() / max_connections.to_float()
-  assert_eq(connection_utilization, 0.75)
-}
-
-// Test 4: Configuration Management System
-test "configuration management system validation" {
-  // Test configuration hierarchy
-  let global_config = [
-    ("log.level", "info"),
-    ("server.port", 8080),
-    ("database.timeout", 30)
-  ]
-  
-  let service_config = [
-    ("service.name", "azimuth-telemetry"),
-    ("service.version", "1.0.0"),
-    ("service.replicas", 3)
-  ]
-  
-  let environment_config = [
-    ("env.name", "production"),
-    ("env.region", "us-west-2"),
-    ("env.cluster", "main")
-  ]
-  
-  // Test configuration merging
-  let merged_config = global_config + service_config + environment_config
-  assert_eq(merged_config.length(), 9)
-  
-  // Test configuration lookup
-  let get_config = fn(config: Array<(String, String)>, key: String) -> Option<String> {
-    config.find_map(|(k, v)| {
-      if k == key {
-        Some(v)
-      } else {
-        None
-      }
-    })
-  }
-  
-  let log_level = get_config(merged_config, "log.level")
-  let service_name = get_config(merged_config, "service.name")
-  let env_region = get_config(merged_config, "env.region")
-  
-  assert_eq(log_level, Some("info"))
-  assert_eq(service_name, Some("azimuth-telemetry"))
-  assert_eq(env_region, Some("us-west-2"))
-  
-  // Test configuration validation
-  let required_configs = ["log.level", "server.port", "service.name"]
-  let missing_configs = required_configs.filter_map(|key| {
-    if get_config(merged_config, key).is_none() {
-      Some(key)
-    } else {
-      None
+// Test 1: Cryptographic Hash Functions Simulation
+test "cryptographic hash function simulation" {
+  // Simple hash function simulation
+  let simple_hash = fn(input: String) -> Int {
+    let mut hash = 5381
+    for i in 0..input.length() {
+      hash = ((hash << 5) + hash) + input.char_code_at(i).to_int()
     }
-  })
-  
-  assert_eq(missing_configs.length(), 0) // All required configs present
-  
-  // Test configuration hot reload
-  let config_version = 1
-  let new_config_version = config_version + 1
-  let is_config_updated = new_config_version > config_version
-  
-  assert_true(is_config_updated)
-  assert_eq(new_config_version, 2)
-}
-
-// Test 5: Security Authentication and Authorization
-test "security authentication and authorization mechanisms" {
-  // Test JWT token structure
-  let jwt_header = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
-  let jwt_payload = "{\"sub\":\"user123\",\"role\":\"admin\",\"exp\":1640995200}"
-  let jwt_signature = "signature_hash"
-  
-  // Test token validation
-  let current_timestamp = 1640990000
-  let token_expiration = 1640995200
-  let is_token_expired = current_timestamp > token_expiration
-  
-  assert_false(is_token_expired) // Token is still valid
-  
-  // Test role-based access control
-  let user_roles = ["read", "write", "admin"]
-  let required_permissions = ["admin", "write"]
-  
-  let has_required_permissions = required_permissions.all(|permission| {
-    user_roles.contains(permission)
-  })
-  
-  assert_true(has_required_permissions)
-  
-  // Test permission hierarchy
-  let role_hierarchy = [
-    ("guest", 1),
-    ("user", 2),
-    ("admin", 3),
-    ("super_admin", 4)
-  ]
-  
-  let get_role_level = fn(role: String) -> Int {
-    role_hierarchy.find_map(|(r, level)| {
-      if r == role {
-        Some(level)
-      } else {
-        None
-      }
-    }).unwrap_or(0)
+    hash
   }
   
-  let user_role = "user"
-  let resource_role = "admin"
-  let can_access = get_role_level(user_role) >= get_role_level(resource_role)
+  let hash1 = simple_hash("azimuth")
+  let hash2 = simple_hash("telemetry")
+  let hash3 = simple_hash("azimuth")  // Same input should produce same hash
   
-  assert_false(can_access) // User cannot access admin resource
+  assert_eq(hash1, hash3)  // Deterministic
+  assert_not_eq(hash1, hash2)  // Different inputs produce different hashes
   
-  // Test API key validation
-  let api_keys = [
-    ("key123", "read_only"),
-    ("key456", "read_write"),
-    ("key789", "admin")
-  ]
+  // Test hash properties
+  assert_true(hash1 > 0)
+  assert_true(hash2 > 0)
   
-  let validate_api_key = fn(key: String) -> Option<String> {
-    api_keys.find_map(|(k, permission)| {
-      if k == key {
-        Some(permission)
-      } else {
-        None
-      }
-    })
-  }
-  
-  let valid_key = "key456"
-  let invalid_key = "key999"
-  
-  assert_eq(validate_api_key(valid_key), Some("read_write"))
-  assert_eq(validate_api_key(invalid_key), None)
+  // Test with empty string
+  let empty_hash = simple_hash("")
+  assert_true(empty_hash > 0)
 }
 
-// Test 6: Data Serialization and Deserialization
-test "data serialization and deserialization integrity" {
-  // Test JSON serialization
-  let data_structure = [
-    ("id", 123),
-    ("name", "azimuth-service"),
-    ("active", true),
-    ("tags", ["telemetry", "monitoring", "analytics"]),
-    ("metadata", [("version", "1.0.0"), ("created", "2023-01-01")])
-  ]
+// Test 2: Base64 Encoding/Decoding Simulation
+test "base64 encoding and decoding simulation" {
+  // Simplified base64 encoding simulation
+  let base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
   
-  // Test serialization to string
-  let serialized = data_structure.map(|(key, value)| {
-    match value {
-      Int(v) => "\"" + key + "\":" + v.to_string(),
-      String(v) => "\"" + key + "\":\"" + v + "\"",
-      Bool(v) => "\"" + key + "\":" + v.to_string(),
-      Array(_) => "\"" + key + "\":[...]", // Simplified
-      _ => "\"" + key + "\":null"
-    }
-  }).reduce(|acc, field| acc + "," + field, "")
-  
-  assert_true(serialized.contains("\"id\":123"))
-  assert_true(serialized.contains("\"name\":\"azimuth-service\""))
-  assert_true(serialized.contains("\"active\":true"))
-  
-  // Test data compression
-  let original_data = "azimuth-telemetry-data-".repeat(100)
-  let original_size = original_data.length()
-  
-  // Simulate compression
-  let compression_ratio = 0.6
-  let compressed_size = (original_size.to_float() * compression_ratio).to_int()
-  
-  assert_eq(original_size, 2600)
-  assert_eq(compressed_size, 1560)
-  
-  // Test schema validation
-  let schema_fields = ["id", "name", "active", "tags"]
-  let data_fields = ["id", "name", "active", "tags", "metadata"]
-  
-  let missing_fields = schema_fields.filter(|field| {
-    !data_fields.contains(field)
-  })
-  
-  assert_eq(missing_fields.length(), 0) // All required fields present
-  
-  // Test version compatibility
-  let data_version = "1.2.0"
-  let supported_versions = ["1.0.0", "1.1.0", "1.2.0", "1.3.0"]
-  
-  let is_version_supported = supported_versions.contains(data_version)
-  assert_true(is_version_supported)
-  
-  // Test backward compatibility
-  let older_version = "1.1.0"
-  let is_backward_compatible = {
-    let data_parts = data_version.split(".")
-    let older_parts = older_version.split(".")
+  let encode_base64 = fn(input: String) -> String {
+    let mut result = ""
+    let mut buffer = 0
+    let mut buffer_size = 0
     
-    // Major version should match, minor version should be >=
-    data_parts[0] == older_parts[0] && 
-    data_parts[1].to_int() >= older_parts[1].to_int()
-  }
-  
-  assert_true(is_backward_compatible)
-}
-
-// Test 7: Event-Driven Architecture
-test "event-driven architecture and message handling" {
-  // Test event structure
-  let event_types = ["user_created", "order_placed", "payment_processed", "shipment_sent"]
-  let event_priorities = ["low", "normal", "high", "critical"]
-  
-  // Test event creation
-  let create_event = fn(event_type: String, data: String, priority: String) -> (String, String, String) {
-    (event_type, data, priority)
-  }
-  
-  let user_event = create_event("user_created", "user123", "normal")
-  let payment_event = create_event("payment_processed", "order456", "high")
-  
-  assert_eq(user_event, ("user_created", "user123", "normal"))
-  assert_eq(payment_event, ("payment_processed", "order456", "high"))
-  
-  // Test event routing
-  let event_handlers = [
-    ("user_created", ["user_service", "notification_service"]),
-    ("order_placed", ["order_service", "inventory_service"]),
-    ("payment_processed", ["payment_service", "order_service", "notification_service"]),
-    ("shipment_sent", ["shipping_service", "order_service", "notification_service"])
-  ]
-  
-  let get_handlers = fn(event_type: String) -> Array<String> {
-    event_handlers.find_map(|(event_type_key, handlers)| {
-      if event_type_key == event_type {
-        Some(handlers)
-      } else {
-        None
+    for i in 0..input.length() {
+      buffer = (buffer << 8) + input.char_code_at(i).to_int()
+      buffer_size = buffer_size + 8
+      
+      while buffer_size >= 6 {
+        let index = (buffer >> (buffer_size - 6)) & 0x3F
+        result = result + base64_chars.substring(index, 1)
+        buffer_size = buffer_size - 6
       }
-    }).unwrap_or([])
+    }
+    
+    // Handle padding
+    if buffer_size > 0 {
+      let index = (buffer << (6 - buffer_size)) & 0x3F
+      result = result + base64_chars.substring(index, 1)
+    }
+    
+    result
   }
   
-  let payment_handlers = get_handlers("payment_processed")
-  assert_eq(payment_handlers.length(), 3)
-  assert_true(payment_handlers.contains("payment_service"))
+  let original = "test"
+  let encoded = encode_base64(original)
   
-  // Test event filtering
-  let events = [
-    ("user_created", "user123", "normal"),
-    ("order_placed", "order456", "high"),
-    ("payment_processed", "order456", "high"),
-    ("user_created", "user789", "low"),
-    ("shipment_sent", "order456", "normal")
-  ]
+  assert_not_eq(encoded, original)
+  assert_true(encoded.length() >= original.length())
   
-  let high_priority_events = events.filter(|(_, _, priority)| {
-    priority == "high"
-  })
+  // Test with different inputs
+  let encoded2 = encode_base64("azimuth")
+  let encoded3 = encode_base64("telemetry")
   
-  assert_eq(high_priority_events.length(), 2)
-  
-  let user_events = events.filter(|(event_type, _, _)| {
-    event_type == "user_created"
-  })
-  
-  assert_eq(user_events.length(), 2)
-  
-  // Test event replay
-  let event_sequence = [1, 2, 3, 4, 5]
-  let replay_from = 3
-  let replay_events = event_sequence.filter(|seq| {
-    *seq >= replay_from
-  })
-  
-  assert_eq(replay_events, [3, 4, 5])
+  assert_not_eq(encoded, encoded2)
+  assert_not_eq(encoded2, encoded3)
 }
 
-// Test 8: Resource Pool Management
-test "resource pool management and optimization" {
-  // Test connection pool
-  let max_connections = 50
-  let min_connections = 5
-  let current_connections = 25
-  
-  // Test pool expansion
-  let required_connections = 40
-  let needs_expansion = required_connections > current_connections
-  let expansion_amount = if needs_expansion {
-    [required_connections - current_connections, max_connections - current_connections].min()
-  } else {
-    0
+// Test 3: Rate Limiting Algorithm
+test "rate limiting algorithm implementation" {
+  // Token bucket rate limiter simulation
+  type RateLimiter {
+    capacity: Int
+    tokens: Int
+    refill_rate: Int
+    last_refill: Int
   }
   
-  assert_true(needs_expansion)
-  assert_eq(expansion_amount, 15)
-  
-  // Test pool contraction
-  let idle_timeout_seconds = 300
-  let idle_connections = 20
-  let can_contract = (current_connections - idle_connections) > min_connections
-  
-  assert_true(can_contract)
-  
-  let contraction_amount = if can_contract {
-    [idle_connections, current_connections - min_connections].min()
-  } else {
-    0
+  let create_limiter = fn(capacity, refill_rate) {
+    { capacity: capacity, tokens: capacity, refill_rate: refill_rate, last_refill: 0 }
   }
   
-  assert_eq(contraction_amount, 20)
+  let refill_tokens = fn(limiter, current_time) {
+    let time_passed = current_time - limiter.last_refill
+    let tokens_to_add = time_passed * limiter.refill_rate
+    let new_tokens = min(limiter.tokens + tokens_to_add, limiter.capacity)
+    
+    { 
+      capacity: limiter.capacity, 
+      tokens: new_tokens, 
+      refill_rate: limiter.refill_rate, 
+      last_refill: current_time 
+    }
+  }
   
-  // Test resource utilization
-  let active_resources = 15
-  let total_resources = current_connections
-  let utilization_rate = active_resources.to_float() / total_resources.to_float()
-  
-  assert_eq(utilization_rate, 0.6) // 60% utilization
-  
-  // Test health checking
-  let health_check_interval_seconds = 30
-  let last_health_check = 1000
-  let current_time = 1015
-  let health_check_due = (current_time - last_health_check) >= health_check_interval_seconds
-  
-  assert_false(health_check_due) // Not due yet
-  
-  let future_time = 1040
-  let will_be_due = (future_time - last_health_check) >= health_check_interval_seconds
-  assert_true(will_be_due) // Will be due
-  
-  // Test load balancing
-  let backend_servers = ["server1", "server2", "server3", "server4"]
-  let server_weights = [1, 2, 1, 2] // Relative weights
-  let total_weight = server_weights.reduce(|acc, weight| acc + weight, 0)
-  
-  assert_eq(total_weight, 6)
-  
-  // Simulate weighted selection
-  let request_count = 100
-  let expected_server2_requests = (request_count * 2) / 6
-  let expected_server4_requests = (request_count * 2) / 6
-  
-  assert_eq(expected_server2_requests, 33)
-  assert_eq(expected_server4_requests, 33)
-}
-
-// Test 9: Monitoring and Alerting System
-test "monitoring and alerting system functionality" {
-  // Test metric collection
-  let system_metrics = [
-    ("cpu_usage", 75.5),
-    ("memory_usage", 68.2),
-    ("disk_usage", 45.0),
-    ("network_io", 120.5),
-    ("response_time", 250.0)
-  ]
-  
-  // Test threshold checking
-  let alert_thresholds = [
-    ("cpu_usage", 80.0),
-    ("memory_usage", 85.0),
-    ("disk_usage", 90.0),
-    ("response_time", 500.0)
-  ]
-  
-  let check_thresholds = fn(metrics: Array<(String, Float)>, thresholds: Array<(String, Float)>) -> Array<String> {
-    thresholds.filter_map(|(metric, threshold)| {
-      metrics.find_map(|(m, value)| {
-        if m == metric && value > threshold {
-          Some(metric + " exceeded threshold: " + value.to_string())
-        } else {
-          None
-        }
+  let try_consume = fn(limiter, tokens_needed) -> (Bool, RateLimiter) {
+    if limiter.tokens >= tokens_needed {
+      (true, { 
+        capacity: limiter.capacity, 
+        tokens: limiter.tokens - tokens_needed, 
+        refill_rate: limiter.refill_rate, 
+        last_refill: limiter.last_refill 
       })
-    })
-  }
-  
-  let alerts = check_thresholds(system_metrics, alert_thresholds)
-  assert_eq(alerts.length(), 0) // No alerts triggered
-  
-  // Test with exceeded threshold
-  let high_cpu_metrics = [
-    ("cpu_usage", 85.0),
-    ("memory_usage", 68.2),
-    ("disk_usage", 45.0)
-  ]
-  
-  let high_cpu_alerts = check_thresholds(high_cpu_metrics, alert_thresholds)
-  assert_eq(high_cpu_alerts.length(), 1)
-  assert_true(high_cpu_alerts[0].contains("cpu_usage"))
-  
-  // Test alert aggregation
-  let alert_history = [
-    ("cpu_usage", 1000),
-    ("memory_usage", 1005),
-    ("cpu_usage", 1010),
-    ("disk_usage", 1015),
-    ("cpu_usage", 1020)
-  ]
-  
-  let aggregate_alerts = fn(alerts: Array<(String, Int)>, window_seconds: Int) -> Array<(String, Int)> {
-    let current_time = 1025
-    let window_start = current_time - window_seconds
-    
-    alerts.filter(|(_, timestamp)| {
-      *timestamp >= window_start
-    }).reduce(|acc, (metric, _)| {
-      let existing = acc.find(|(m, _)| m == metric)
-      if existing.is_some() {
-        acc.map(|(m, count)| {
-          if m == metric {
-            (m, count + 1)
-          } else {
-            (m, count)
-          }
-        })
-      } else {
-        acc.push((metric, 1))
-      }
-    }, [])
-  }
-  
-  let recent_alerts = aggregate_alerts(alert_history, 30) // Last 30 seconds
-  assert_eq(recent_alerts.length(), 3)
-  
-  let cpu_alert_count = recent_alerts.find_map(|(metric, count)| {
-    if metric == "cpu_usage" {
-      Some(count)
     } else {
-      None
+      (false, limiter)
     }
-  })
-  
-  assert_eq(cpu_alert_count, Some(3))
-  
-  // Test alert escalation
-  let alert_levels = ["info", "warning", "critical", "emergency"]
-  let escalation_rules = [
-    ("cpu_usage", [("warning", 80.0), ("critical", 90.0), ("emergency", 95.0)]),
-    ("memory_usage", [("warning", 75.0), ("critical", 85.0), ("emergency", 95.0)])
-  ]
-  
-  let determine_alert_level = fn(metric: String, value: Float) -> String {
-    escalation_rules.find_map(|(m, levels)| {
-      if m == metric {
-        let triggered_levels = levels.filter(|(_, threshold)| {
-          value > *threshold
-        })
-        
-        if triggered_levels.length() > 0 {
-          Some(triggered_levels[triggered_levels.length() - 1].0) // Highest level
-        } else {
-          Some("info")
-        }
-      } else {
-        None
-      }
-    }).unwrap_or("info")
   }
   
-  let cpu_alert_level = determine_alert_level("cpu_usage", 92.0)
-  let memory_alert_level = determine_alert_level("memory_usage", 78.0)
+  let limiter = create_limiter(10, 1)  // 10 tokens capacity, 1 token per second refill
   
-  assert_eq(cpu_alert_level, "emergency")
-  assert_eq(memory_alert_level, "warning")
+  // Test initial state
+  assert_eq(limiter.capacity, 10)
+  assert_eq(limiter.tokens, 10)
+  
+  // Test consumption
+  let (success1, limiter1) = try_consume(limiter, 5)
+  assert_true(success1)
+  assert_eq(limiter1.tokens, 5)
+  
+  let (success2, limiter2) = try_consume(limiter1, 6)
+  assert_false(success2)  // Not enough tokens
+  assert_eq(limiter2.tokens, 5)  // Unchanged
+  
+  // Test refill
+  let refilled = refill_tokens(limiter2, 3)  // 3 seconds passed
+  assert_eq(refilled.tokens, 8)  // 5 + 3 = 8
 }
 
-// Test 10: Advanced Pattern Matching and Data Validation
-test "advanced pattern matching and data validation" {
-  // Test complex enum patterns
-  enum TelemetryEvent {
-    Metric(String, Float, String)  // name, value, unit
-    Log(String, String, Int)       // level, message, timestamp
-    Trace(String, Array<String>)   // trace_id, span_ids
-    Alert(String, String, Int)     // severity, message, timestamp
+// Test 4: Circuit Breaker Pattern
+test "circuit breaker pattern implementation" {
+  enum CircuitState {
+    Closed
+    Open
+    HalfOpen
   }
   
-  let events = [
-    TelemetryEvent::Metric("cpu_usage", 75.5, "percent"),
-    TelemetryEvent::Log("info", "Service started", 1640995200),
-    TelemetryEvent::Trace("trace123", ["span1", "span2", "span3"]),
-    TelemetryEvent::Alert("warning", "High memory usage", 1640995300)
+  type CircuitBreaker {
+    state: CircuitState
+    failure_count: Int
+    failure_threshold: Int
+    success_threshold: Int
+    timeout: Int
+    last_failure_time: Int
+  }
+  
+  let create_breaker = fn(failure_threshold, success_threshold, timeout) {
+    {
+      state: CircuitState::Closed,
+      failure_count: 0,
+      failure_threshold: failure_threshold,
+      success_threshold: success_threshold,
+      timeout: timeout,
+      last_failure_time: 0
+    }
+  }
+  
+  let record_success = fn(breaker) {
+    match breaker.state {
+      CircuitState::Closed => breaker
+      CircuitState::HalfOpen => {
+        if breaker.failure_count + 1 >= breaker.success_threshold {
+          { 
+            state: CircuitState::Closed, 
+            failure_count: 0, 
+            failure_threshold: breaker.failure_threshold,
+            success_threshold: breaker.success_threshold,
+            timeout: breaker.timeout,
+            last_failure_time: breaker.last_failure_time 
+          }
+        } else {
+          { 
+            state: CircuitState::HalfOpen, 
+            failure_count: breaker.failure_count + 1, 
+            failure_threshold: breaker.failure_threshold,
+            success_threshold: breaker.success_threshold,
+            timeout: breaker.timeout,
+            last_failure_time: breaker.last_failure_time 
+          }
+        }
+      }
+      CircuitState::Open => breaker
+    }
+  }
+  
+  let record_failure = fn(breaker, current_time) {
+    let new_failure_count = breaker.failure_count + 1
+    if new_failure_count >= breaker.failure_threshold {
+      {
+        state: CircuitState::Open,
+        failure_count: 0,
+        failure_threshold: breaker.failure_threshold,
+        success_threshold: breaker.success_threshold,
+        timeout: breaker.timeout,
+        last_failure_time: current_time
+      }
+    } else {
+      {
+        state: breaker.state,
+        failure_count: new_failure_count,
+        failure_threshold: breaker.failure_threshold,
+        success_threshold: breaker.success_threshold,
+        timeout: breaker.timeout,
+        last_failure_time: current_time
+      }
+    }
+  }
+  
+  let breaker = create_breaker(3, 2, 60)  // 3 failures to open, 2 successes to close, 60s timeout
+  
+  // Test initial state
+  match breaker.state {
+    CircuitState::Closed => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  // Record failures
+  let breaker1 = record_failure(breaker, 10)
+  let breaker2 = record_failure(breaker1, 20)
+  let breaker3 = record_failure(breaker2, 30)
+  
+  // Should be open after 3 failures
+  match breaker3.state {
+    CircuitState::Open => assert_true(true)
+    _ => assert_true(false)
+  }
+  
+  assert_eq(breaker3.failure_count, 0)
+  assert_eq(breaker3.last_failure_time, 30)
+}
+
+// Test 5: Priority Queue Implementation
+test "priority queue implementation" {
+  type PriorityQueue {
+    items: Array[(Int, String)]  // (priority, value)
+  }
+  
+  let create_queue = fn() {
+    { items: [] }
+  }
+  
+  let enqueue = fn(queue, priority, value) {
+    let mut inserted = false
+    let mut new_items = []
+    
+    for (p, v) in queue.items {
+      if not inserted and priority < p {
+        new_items = new_items @ [(priority, value)]
+        inserted = true
+      }
+      new_items = new_items @ [(p, v)]
+    }
+    
+    if not inserted {
+      new_items = new_items @ [(priority, value)]
+    }
+    
+    { items: new_items }
+  }
+  
+  let dequeue = fn(queue) -> Option[(Int, String, PriorityQueue)] {
+    if queue.items.length() == 0 {
+      None
+    } else {
+      let (priority, value) = queue.items[0]
+      let remaining_items = queue.items[1:queue.items.length()]
+      Some((priority, value, { items: remaining_items }))
+    }
+  }
+  
+  let queue = create_queue()
+  
+  // Test enqueue
+  let queue1 = enqueue(queue, 5, "medium")
+  let queue2 = enqueue(queue1, 1, "high")
+  let queue3 = enqueue(queue2, 10, "low")
+  
+  assert_eq(queue3.items.length(), 3)
+  assert_eq(queue3.items[0], (1, "high"))  // Highest priority (lowest number)
+  assert_eq(queue3.items[1], (5, "medium"))
+  assert_eq(queue3.items[2], (10, "low"))
+  
+  // Test dequeue
+  match dequeue(queue3) {
+    Some((priority, value, new_queue)) => {
+      assert_eq(priority, 1)
+      assert_eq(value, "high")
+      assert_eq(new_queue.items.length(), 2)
+      
+      match dequeue(new_queue) {
+        Some((priority2, value2, _)) => {
+          assert_eq(priority2, 5)
+          assert_eq(value2, "medium")
+        }
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
+}
+
+// Test 6: Bloom Filter Simulation
+test "bloom filter simulation" {
+  type BloomFilter {
+    bit_array: Array[Bool]
+    hash_count: Int
+  }
+  
+  let create_filter = fn(size, hash_count) {
+    let mut bits = []
+    for i in 0..size {
+      bits = bits @ [false]
+    }
+    { bit_array: bits, hash_count: hash_count }
+  }
+  
+  let hash_functions = fn(input, hash_count, size) {
+    let mut hashes = []
+    let base_hash = 5381
+    
+    for i in 0..input.length() {
+      base_hash = ((base_hash << 5) + base_hash) + input.char_code_at(i).to_int()
+    }
+    
+    for i in 0..hash_count {
+      let hash = (base_hash + i * 31) % size
+      hashes = hashes @ [hash]
+    }
+    
+    hashes
+  }
+  
+  let add = fn(filter, item) {
+    let hashes = hash_functions(item, filter.hash_count, filter.bit_array.length())
+    let mut new_bits = filter.bit_array
+    
+    for hash in hashes {
+      new_bits[hash] = true
+    }
+    
+    { bit_array: new_bits, hash_count: filter.hash_count }
+  }
+  
+  let might_contain = fn(filter, item) {
+    let hashes = hash_functions(item, filter.hash_count, filter.bit_array.length())
+    
+    for hash in hashes {
+      if not filter.bit_array[hash] {
+        return false
+      }
+    }
+    
+    true
+  }
+  
+  let filter = create_filter(100, 3)
+  
+  // Test adding items
+  let filter1 = add(filter, "azimuth")
+  let filter2 = add(filter1, "telemetry")
+  
+  // Test checking for existing items
+  assert_true(might_contain(filter2, "azimuth"))
+  assert_true(might_contain(filter2, "telemetry"))
+  
+  // Test checking for non-existing items (may have false positives)
+  let maybe_contains = might_contain(filter2, "nonexistent")
+  
+  // Test with different hash counts
+  let filter3 = create_filter(100, 5)
+  let filter4 = add(filter3, "test")
+  assert_true(might_contain(filter4, "test"))
+}
+
+// Test 7: Event Sourcing Pattern
+test "event sourcing pattern implementation" {
+  type Event {
+    Created(String, Int)  // (id, timestamp)
+    Updated(String, String, Int)  // (id, new_value, timestamp)
+    Deleted(String, Int)  // (id, timestamp)
+  }
+  
+  type EventStore {
+    events: Array[Event]
+  }
+  
+  let create_store = fn() {
+    { events: [] }
+  }
+  
+  let add_event = fn(store, event) {
+    { events: store.events @ [event] }
+  }
+  
+  let get_events_for_id = fn(store, id) {
+    let mut result = []
+    for event in store.events {
+      match event {
+        Event::Created(event_id, _) if event_id == id => result = result @ [event]
+        Event::Updated(event_id, _, _) if event_id == id => result = result @ [event]
+        Event::Deleted(event_id, _) if event_id == id => result = result @ [event]
+        _ => ()
+      }
+    }
+    result
+  }
+  
+  let reconstruct_state = fn(events) {
+    let mut current_state = None
+    let mut deleted = false
+    
+    for event in events {
+      match event {
+        Event::Created(id, timestamp) => {
+          current_state = Some((id, timestamp))
+          deleted = false
+        }
+        Event::Updated(id, new_value, timestamp) => {
+          if not deleted {
+            current_state = Some((id + ":" + new_value, timestamp))
+          }
+        }
+        Event::Deleted(_, _) => {
+          deleted = true
+          current_state = None
+        }
+      }
+    }
+    
+    current_state
+  }
+  
+  let store = create_store()
+  
+  // Add events
+  let store1 = add_event(store, Event::Created("item1", 1000))
+  let store2 = add_event(store1, Event::Updated("item1", "value1", 1010))
+  let store3 = add_event(store2, Event::Updated("item1", "value2", 1020))
+  
+  // Get events for item1
+  let item1_events = get_events_for_id(store3, "item1")
+  assert_eq(item1_events.length(), 3)
+  
+  // Reconstruct state
+  let state = reconstruct_state(item1_events)
+  match state {
+    Some((value, timestamp)) => {
+      assert_eq(value, "item1:value2")
+      assert_eq(timestamp, 1020)
+    }
+    None => assert_true(false)
+  }
+  
+  // Test deletion
+  let store4 = add_event(store3, Event::Deleted("item1", 1030))
+  let item1_events2 = get_events_for_id(store4, "item1")
+  assert_eq(item1_events2.length(), 4)
+  
+  let state2 = reconstruct_state(item1_events2)
+  match state2 {
+    Some(_) => assert_true(false)  // Should be None after deletion
+    None => assert_true(true)
+  }
+}
+
+// Test 8: Exponential Backoff Algorithm
+test "exponential backoff algorithm" {
+  let calculate_backoff = fn(attempt, base_delay, max_delay, multiplier) {
+    let mut delay = base_delay
+    for i in 1..attempt {
+      delay = delay * multiplier
+      if delay > max_delay {
+        delay = max_delay
+        break
+      }
+    }
+    delay
+  }
+  
+  // Test basic exponential backoff
+  assert_eq(calculate_backoff(1, 100, 10000, 2), 100)
+  assert_eq(calculate_backoff(2, 100, 10000, 2), 200)
+  assert_eq(calculate_backoff(3, 100, 10000, 2), 400)
+  assert_eq(calculate_backoff(4, 100, 10000, 2), 800)
+  
+  // Test with max delay
+  assert_eq(calculate_backoff(10, 100, 1000, 2), 1000)  // Should hit max delay
+  
+  // Test with different multiplier
+  assert_eq(calculate_backoff(3, 50, 1000, 3), 450)  // 50 * 3 * 3
+  
+  // Test jitter calculation (simplified)
+  let calculate_jitter = fn(base_delay, jitter_factor) {
+    let jitter = base_delay / jitter_factor
+    base_delay + jitter
+  }
+  
+  let backoff = calculate_backoff(3, 100, 1000, 2)
+  let with_jitter = calculate_jitter(backoff, 10)
+  
+  assert_true(with_jitter > backoff)
+  assert_true(with_jitter < backoff + (backoff / 10))
+}
+
+// Test 9: Load Balancer Algorithm
+test "load balancer algorithm implementation" {
+  type Server {
+    id: String
+    weight: Int
+    current_connections: Int
+  }
+  
+  type LoadBalancer {
+    servers: Array[Server]
+    current_index: Int
+  }
+  
+  let create_balancer = fn(servers) {
+    { servers: servers, current_index: 0 }
+  }
+  
+  // Round Robin
+  let round_robin = fn(balancer) -> (String, LoadBalancer) {
+    let server = balancer.servers[balancer.current_index]
+    let next_index = (balancer.current_index + 1) % balancer.servers.length()
+    (server.id, { servers: balancer.servers, current_index: next_index })
+  }
+  
+  // Weighted Round Robin
+  let weighted_round_robin = fn(balancer) -> (String, LoadBalancer) {
+    let mut total_weight = 0
+    for server in balancer.servers {
+      total_weight = total_weight + server.weight
+    }
+    
+    let mut target = balancer.current_index % total_weight
+    let mut selected_server = balancer.servers[0]
+    
+    for server in balancer.servers {
+      if target < server.weight {
+        selected_server = server
+        break
+      }
+      target = target - server.weight
+    }
+    
+    (selected_server.id, { servers: balancer.servers, current_index: balancer.current_index + 1 })
+  }
+  
+  // Least Connections
+  let least_connections = fn(balancer) -> (String, LoadBalancer) {
+    let mut min_connections = balancer.servers[0].current_connections
+    let mut selected_server = balancer.servers[0]
+    
+    for server in balancer.servers {
+      if server.current_connections < min_connections {
+        min_connections = server.current_connections
+        selected_server = server
+      }
+    }
+    
+    // Update connections count
+    let mut updated_servers = []
+    for server in balancer.servers {
+      if server.id == selected_server.id {
+        updated_servers = updated_servers @ [{ 
+          id: server.id, 
+          weight: server.weight, 
+          current_connections: server.current_connections + 1 
+        }]
+      } else {
+        updated_servers = updated_servers @ [server]
+      }
+    }
+    
+    (selected_server.id, { servers: updated_servers, current_index: balancer.current_index })
+  }
+  
+  let servers = [
+    { id: "server1", weight: 1, current_connections: 5 },
+    { id: "server2", weight: 2, current_connections: 3 },
+    { id: "server3", weight: 1, current_connections: 7 }
   ]
   
-  // Test pattern matching with guards
-  let process_events = fn(events: Array<TelemetryEvent>) -> Array<String> {
-    events.map(|event| {
-      match event {
-        TelemetryEvent::Metric(name, value, unit) if value > 70.0 => {
-          "High " + name + ": " + value.to_string() + " " + unit
-        }
-        TelemetryEvent::Metric(name, value, unit) => {
-          name + ": " + value.to_string() + " " + unit
-        }
-        TelemetryEvent::Log(level, message, _) if level == "error" => {
-          "ERROR: " + message
-        }
-        TelemetryEvent::Log(level, message, _) => {
-          level.to_uppercase() + ": " + message
-        }
-        TelemetryEvent::Trace(trace_id, span_ids) => {
-          "Trace " + trace_id + " with " + span_ids.length().to_string() + " spans"
-        }
-        TelemetryEvent::Alert(severity, message, _) => {
-          severity.to_uppercase() + " ALERT: " + message
-        }
-      }
-    })
+  let balancer = create_balancer(servers)
+  
+  // Test round robin
+  let (server1, balancer1) = round_robin(balancer)
+  let (server2, balancer2) = round_robin(balancer1)
+  let (server3, balancer3) = round_robin(balancer2)
+  
+  assert_eq(server1, "server1")
+  assert_eq(server2, "server2")
+  assert_eq(server3, "server3")
+  
+  // Test weighted round robin
+  let (w_server1, _) = weighted_round_robin(balancer)
+  let (w_server2, _) = weighted_round_robin({ servers: servers, current_index: 1 })
+  let (w_server3, _) = weighted_round_robin({ servers: servers, current_index: 2 })
+  
+  // Should get server2 more often due to higher weight
+  assert_true(w_server1 == "server1" || w_server1 == "server2")
+  
+  // Test least connections
+  let (lc_server, new_balancer) = least_connections(balancer)
+  assert_eq(lc_server, "server2")  // Has least connections (3)
+  
+  // Verify connection count was updated
+  let updated_server2 = new_balancer.servers.find(fn(s) { s.id == "server2" })
+  match updated_server2 {
+    Some(server) => assert_eq(server.current_connections, 4)
+    None => assert_true(false)
+  }
+}
+
+// Test 10: Distributed Lock Implementation
+test "distributed lock implementation" {
+  type Lock {
+    resource: String
+    owner: String
+    expiry_time: Int
   }
   
-  let processed_events = process_events(events)
-  assert_eq(processed_events[0], "High cpu_usage: 75.5 percent")
-  assert_eq(processed_events[1], "INFO: Service started")
-  assert_eq(processed_events[2], "Trace trace123 with 3 spans")
-  assert_eq(processed_events[3], "WARNING ALERT: High memory usage")
-  
-  // Test nested pattern matching
-  enum ValidationResult {
-    Valid
-    Invalid(String)
-    Warning(String, ValidationResult)
+  type LockManager {
+    locks: Array[Lock]
   }
   
-  let validate_field = fn(field_name: String, value: String) -> ValidationResult {
-    match field_name {
-      "email" => {
-        if value.contains("@") {
-          ValidationResult::Valid
-        } else {
-          ValidationResult::Invalid("Invalid email format")
-        }
+  let create_manager = fn() {
+    { locks: [] }
+  }
+  
+  let acquire_lock = fn(manager, resource, owner, ttl, current_time) -> (Bool, LockManager) {
+    // Check if lock exists and is not expired
+    let mut existing_lock = None
+    for lock in manager.locks {
+      if lock.resource == resource and lock.expiry_time > current_time {
+        existing_lock = Some(lock)
+        break
       }
-      "age" => {
-        let age = value.to_int()
-        if age < 0 {
-          ValidationResult::Invalid("Age cannot be negative")
-        } else if age > 120 {
-          ValidationResult::Warning("Unusual age value", ValidationResult::Valid)
-        } else {
-          ValidationResult::Valid
+    }
+    
+    match existing_lock {
+      Some(_) => (false, manager)  // Lock already held
+      None => {
+        // Create new lock
+        let new_lock = { 
+          resource: resource, 
+          owner: owner, 
+          expiry_time: current_time + ttl 
         }
+        
+        // Remove expired locks for this resource
+        let mut active_locks = []
+        for lock in manager.locks {
+          if not (lock.resource == resource and lock.expiry_time <= current_time) {
+            active_locks = active_locks @ [lock]
+          }
+        }
+        
+        (true, { locks: active_locks @ [new_lock] })
       }
-      _ => ValidationResult::Warning("Unknown field", ValidationResult::Valid)
     }
   }
   
-  let email_result = validate_field("email", "user@example.com")
-  let invalid_email_result = validate_field("email", "invalid-email")
-  let age_result = validate_field("age", "25")
-  let unusual_age_result = validate_field("age", "130")
-  let unknown_field_result = validate_field("unknown", "value")
-  
-  match email_result {
-    ValidationResult::Valid => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match invalid_email_result {
-    ValidationResult::Invalid(msg) => assert_eq(msg, "Invalid email format")
-    _ => assert_true(false)
-  }
-  
-  match age_result {
-    ValidationResult::Valid => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  match unusual_age_result {
-    ValidationResult::Warning(msg, ValidationResult::Valid) => {
-      assert_eq(msg, "Unusual age value")
+  let release_lock = fn(manager, resource, owner) -> (Bool, LockManager) {
+    let mut removed = false
+    let mut remaining_locks = []
+    
+    for lock in manager.locks {
+      if lock.resource == resource and lock.owner == owner {
+        removed = true
+      } else {
+        remaining_locks = remaining_locks @ [lock]
+      }
     }
-    _ => assert_true(false)
+    
+    (removed, { locks: remaining_locks })
   }
   
-  match unknown_field_result {
-    ValidationResult::Warning(msg, ValidationResult::Valid) => {
-      assert_eq(msg, "Unknown field")
+  let is_lock_held = fn(manager, resource, current_time) -> Bool {
+    for lock in manager.locks {
+      if lock.resource == resource and lock.expiry_time > current_time {
+        return true
+      }
     }
-    _ => assert_true(false)
+    false
   }
+  
+  let manager = create_manager()
+  let current_time = 1000
+  
+  // Test acquiring lock
+  let (success1, manager1) = acquire_lock(manager, "resource1", "client1", 60, current_time)
+  assert_true(success1)
+  assert_true(is_lock_held(manager1, "resource1", current_time))
+  
+  // Test acquiring same lock (should fail)
+  let (success2, manager2) = acquire_lock(manager1, "resource1", "client2", 60, current_time)
+  assert_false(success2)
+  
+  // Test acquiring different resource (should succeed)
+  let (success3, manager3) = acquire_lock(manager2, "resource2", "client2", 60, current_time)
+  assert_true(success3)
+  assert_true(is_lock_held(manager3, "resource2", current_time))
+  
+  // Test releasing lock
+  let (released, manager4) = release_lock(manager3, "resource1", "client1")
+  assert_true(released)
+  assert_false(is_lock_held(manager4, "resource1", current_time))
+  
+  // Test acquiring expired lock
+  let (success4, manager5) = acquire_lock(manager4, "resource2", "client1", 60, current_time + 120)
+  assert_true(success4)  // Previous lock should have expired
 }
