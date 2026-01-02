@@ -175,6 +175,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     9: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f74657374732e6d6274_9, ["context propagation with complex values"]),
     10: (__test_617a696d7574685f656e68616e6365645f6d6f6f6e6269745f74657374732e6d6274_10, ["log record with attributes and context"]),
   },
+  "azimuth_enhanced_core_tests.mbt": {
+    0: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_0, ["Span上下文传播测试"]),
+    1: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_1, ["指标创建和记录功能测试"]),
+    2: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_2, ["分布式追踪基础功能测试"]),
+    3: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_3, ["日志级别和记录功能测试"]),
+    4: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_4, ["遥测数据批量创建功能测试"]),
+    5: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_5, ["时间相关功能测试"]),
+    6: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_6, ["资源和属性管理功能测试"]),
+    7: (__test_617a696d7574685f656e68616e6365645f636f72655f74657374732e6d6274_7, ["上下文传播和行李传递功能测试"]),
+  },
   "azimuth_comprehensive_enhanced_tests.mbt": {
     0: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_0, ["attributes operations with different value types"]),
     1: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_1, ["span lifecycle management"]),
