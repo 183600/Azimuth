@@ -81,5 +81,6 @@
         "azimuth_comprehensive_high_quality_tests.mbt",
         "azimuth_azimuth_advanced_comprehensive_tests.mbt",
         "../azimuth_enhanced_comprehensive_test_suite.mbt",
-        "azimuth_focused_telemetry_tests.mbt"
+        "azimuth_focused_telemetry_tests.mbt",
+        "azimuth_extended_tests.mbt"
             ]  }}
