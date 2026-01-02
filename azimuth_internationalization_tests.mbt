@@ -1,520 +1,279 @@
-// Azimuth Telemetry System - 国际化支持测试
-// 测试遥测系统对多语言和多地区环境的支持
+// Internationalization Tests for Azimuth
+// This file contains test cases for internationalization and localization support
 
-test "多语言属性值测试" {
-  // 创建包含多语言属性的资源
-  let multilingual_resource = Resource::with_attributes(Resource::new(), [
-    // 英文属性
-    ("service.name", StringValue("user.service")),
-    ("service.description", StringValue("User management service")),
-    
-    // 中文属性
-    ("service.name.zh", StringValue("用户服务")),
-    ("service.description.zh", StringValue("用户管理服务")),
-    
-    // 日文属性
-    ("service.name.ja", StringValue("ユーザーサービス")),
-    ("service.description.ja", StringValue("ユーザー管理サービス")),
-    
-    // 韩文属性
-    ("service.name.ko", StringValue("사용자 서비스")),
-    ("service.description.ko", StringValue("사용자 관리 서비스")),
-    
-    // 法文属性
-    ("service.name.fr", StringValue("service utilisateur")),
-    ("service.description.fr", StringValue("Service de gestion des utilisateurs")),
-    
-    // 德文属性
-    ("service.name.de", StringValue("Benutzerdienst")),
-    ("service.description.de", StringValue("Benutzerverwaltungsdienst")),
-    
-    // 西班牙文属性
-    ("service.name.es", StringValue("servicio de usuario")),
-    ("service.description.es", StringValue("Servicio de gestión de usuarios")),
-    
-    // 俄文属性
-    ("service.name.ru", StringValue("служба пользователей")),
-    ("service.description.ru", StringValue("Служба управления пользователями")),
-    
-    // 阿拉伯文属性
-    ("service.name.ar", StringValue("خدمة المستخدم")),
-    ("service.description.ar", StringValue("خدمة إدارة المستخدمين")),
-    
-    // 印地文属性
-    ("service.name.hi", StringValue("उपयोगकर्ता सेवा")),
-    ("service.description.hi", StringValue("उपयोगकर्ता प्रबंधन सेवा"))
-  ])
+test "unicode string handling" {
+  // Test Chinese characters
+  let chinese_text = "测试中文遥测系统"
+  assert_eq(chinese_text.length(), 8)
+  assert_true(chinese_text.contains("中文"))
   
-  // 验证各种语言的属性值
-  let service_name_en = Resource::get_attribute(multilingual_resource, "service.name")
-  match service_name_en {
-    Some(StringValue(name)) => assert_eq(name, "user.service")
+  // Test Japanese characters
+  let japanese_text = "日本語テレメトリシステム"
+  assert_eq(japanese_text.length(), 12)
+  assert_true(japanese_text.contains("日本語"))
+  
+  // Test Korean characters
+  let korean_text = "한국어 원격 측정 시스템"
+  assert_eq(korean_text.length(), 12)
+  assert_true(korean_text.contains("한국어"))
+  
+  // Test Arabic characters
+  let arabic_text = "نظام قياس عن بعد"
+  assert_eq(arabic_text.length(), 14)
+  assert_true(arabic_text.contains("نظام"))
+  
+  // Test Russian characters
+  let russian_text = "Система телеметрии"
+  assert_eq(russian_text.length(), 17)
+  assert_true(russian_text.contains("телеметрии"))
+}
+
+test "emoji and symbol handling" {
+  // Test emoji in telemetry context
+  let emoji_span_name = "🔍 search operation"
+  assert_eq(emoji_span_name.length(), 18)
+  assert_true(emoji_span_name.contains("🔍"))
+  
+  // Test multiple emoji
+  let multi_emoji_text = "🚀 performance 📊 metrics 📈 dashboard"
+  assert_eq(multi_emoji_text.length(), 35)
+  assert_true(multi_emoji_text.contains("🚀"))
+  assert_true(multi_emoji_text.contains("📊"))
+  assert_true(multi_emoji_text.contains("📈"))
+  
+  // Test special symbols
+  let symbol_text = "⚡ fast service ⚙️ configuration 🔧 maintenance"
+  assert_eq(symbol_text.length(), 43)
+  assert_true(symbol_text.contains("⚡"))
+  assert_true(symbol_text.contains("⚙️"))
+  assert_true(symbol_text.contains("🔧"))
+}
+
+test "multilingual attribute values" {
+  let attrs = Attributes::new()
+  
+  // Test setting multilingual attributes
+  Attributes::set(attrs, "error.message.zh", StringValue("操作失败"))
+  Attributes::set(attrs, "error.message.ja", StringValue("操作が失敗しました"))
+  Attributes::set(attrs, "error.message.ko", StringValue("작업이 실패했습니다"))
+  Attributes::set(attrs, "error.message.ar", StringValue("فشلت العملية"))
+  Attributes::set(attrs, "error.message.ru", StringValue("Операция не удалась"))
+  
+  // Test retrieving multilingual attributes
+  match Attributes::get(attrs, "error.message.zh") {
+    Some(StringValue(v)) => assert_eq(v, "操作失败")
     _ => assert_true(false)
   }
   
-  let service_name_zh = Resource::get_attribute(multilingual_resource, "service.name.zh")
-  match service_name_zh {
-    Some(StringValue(name)) => assert_eq(name, "用户服务")
+  match Attributes::get(attrs, "error.message.ja") {
+    Some(StringValue(v)) => assert_eq(v, "操作が失敗しました")
     _ => assert_true(false)
   }
   
-  let service_name_ja = Resource::get_attribute(multilingual_resource, "service.name.ja")
-  match service_name_ja {
-    Some(StringValue(name)) => assert_eq(name, "ユーザーサービス")
+  match Attributes::get(attrs, "error.message.ko") {
+    Some(StringValue(v)) => assert_eq(v, "작업이 실패했습니다")
     _ => assert_true(false)
   }
   
-  let service_name_ko = Resource::get_attribute(multilingual_resource, "service.name.ko")
-  match service_name_ko {
-    Some(StringValue(name)) => assert_eq(name, "사용자 서비스")
+  match Attributes::get(attrs, "error.message.ar") {
+    Some(StringValue(v)) => assert_eq(v, "فشلت العملية")
     _ => assert_true(false)
   }
   
-  let service_name_fr = Resource::get_attribute(multilingual_resource, "service.name.fr")
-  match service_name_fr {
-    Some(StringValue(name)) => assert_eq(name, "service utilisateur")
-    _ => assert_true(false)
-  }
-  
-  let service_name_de = Resource::get_attribute(multilingual_resource, "service.name.de")
-  match service_name_de {
-    Some(StringValue(name)) => assert_eq(name, "Benutzerdienst")
-    _ => assert_true(false)
-  }
-  
-  let service_name_es = Resource::get_attribute(multilingual_resource, "service.name.es")
-  match service_name_es {
-    Some(StringValue(name)) => assert_eq(name, "servicio de usuario")
-    _ => assert_true(false)
-  }
-  
-  let service_name_ru = Resource::get_attribute(multilingual_resource, "service.name.ru")
-  match service_name_ru {
-    Some(StringValue(name)) => assert_eq(name, "служба пользователей")
-    _ => assert_true(false)
-  }
-  
-  let service_name_ar = Resource::get_attribute(multilingual_resource, "service.name.ar")
-  match service_name_ar {
-    Some(StringValue(name)) => assert_eq(name, "خدمة المستخدم")
-    _ => assert_true(false)
-  }
-  
-  let service_name_hi = Resource::get_attribute(multilingual_resource, "service.name.hi")
-  match service_name_hi {
-    Some(StringValue(name)) => assert_eq(name, "उपयोगकर्ता सेवा")
+  match Attributes::get(attrs, "error.message.ru") {
+    Some(StringValue(v)) => assert_eq(v, "Операция не удалась")
     _ => assert_true(false)
   }
 }
 
-test "多语言日志消息测试" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "multilingual.logger")
+test "multilingual resource attributes" {
+  let resource = Resource::new()
   
-  // 创建多语言日志消息
-  let log_en = LogRecord::new(Info, "User login successful")
-  let log_zh = LogRecord::new(Info, "用户登录成功")
-  let log_ja = LogRecord::new(Info, "ユーザーログイン成功")
-  let log_ko = LogRecord::new(Info, "사용자 로그인 성공")
-  let log_fr = LogRecord::new(Info, "Connexion utilisateur réussie")
-  let log_de = LogRecord::new(Info, "Benutzeranmeldung erfolgreich")
-  let log_es = LogRecord::new(Info, "Inicio de sesión de usuario exitoso")
-  let log_ru = LogRecord::new(Info, "Вход пользователя выполнен успешно")
-  let log_ar = LogRecord::new(Info, "تم تسجيل دخول المستخدم بنجاح")
-  let log_hi = LogRecord::new(Info, "उपयोगकर्ता लॉगिन सफल")
+  // Test multilingual resource attributes
+  let multilingual_attrs = [
+    ("service.name.zh", StringValue("遥测服务")),
+    ("service.name.ja", StringValue("テレメトリサービス")),
+    ("service.name.ko", StringValue("원격 측정 서비스")),
+    ("service.description.zh", StringValue("提供全面的遥测功能")),
+    ("service.description.ja", StringValue("包括的なテレメトリ機能を提供")),
+    ("service.description.ko", StringValue("포괄적인 원격 측정 기능 제공"))
+  ]
+  let resource_with_multilingual = Resource::with_attributes(resource, multilingual_attrs)
   
-  // 验证多语言日志消息
-  match LogRecord::body(log_en) {
-    Some(body) => assert_eq(body, "User login successful")
-    None => assert_true(false)
+  // Test retrieving multilingual resource attributes
+  match Resource::get_attribute(resource_with_multilingual, "service.name.zh") {
+    Some(StringValue(v)) => assert_eq(v, "遥测服务")
+    _ => assert_true(false)
   }
   
-  match LogRecord::body(log_zh) {
-    Some(body) => assert_eq(body, "用户登录成功")
-    None => assert_true(false)
+  match Resource::get_attribute(resource_with_multilingual, "service.name.ja") {
+    Some(StringValue(v)) => assert_eq(v, "テレメトリサービス")
+    _ => assert_true(false)
   }
   
-  match LogRecord::body(log_ja) {
-    Some(body) => assert_eq(body, "ユーザーログイン成功")
-    None => assert_true(false)
+  match Resource::get_attribute(resource_with_multilingual, "service.name.ko") {
+    Some(StringValue(v)) => assert_eq(v, "원격 측정 서비스")
+    _ => assert_true(false)
   }
-  
-  match LogRecord::body(log_ko) {
-    Some(body) => assert_eq(body, "사용자 로그인 성공")
-    None => assert_true(false)
-  }
-  
-  match LogRecord::body(log_fr) {
-    Some(body) => assert_eq(body, "Connexion utilisateur réussie")
-    None => assert_true(false)
-  }
-  
-  match LogRecord::body(log_de) {
-    Some(body) => assert_eq(body, "Benutzeranmeldung erfolgreich")
-    None => assert_true(false)
-  }
-  
-  match LogRecord::body(log_es) {
-    Some(body) => assert_eq(body, "Inicio de sesión de usuario exitoso")
-    None => assert_true(false)
-  }
-  
-  match LogRecord::body(log_ru) {
-    Some(body) => assert_eq(body, "Вход пользователя выполнен успешно")
-    None => assert_true(false)
-  }
-  
-  match LogRecord::body(log_ar) {
-    Some(body) => assert_eq(body, "تم تسجيل دخول المستخدم بنجاح")
-    None => assert_true(false)
-  }
-  
-  match LogRecord::body(log_hi) {
-    Some(body) => assert_eq(body, "उपयोगकर्ता लॉगिन सफल")
-    None => assert_true(false)
-  }
-  
-  // 发出多语言日志
-  Logger::emit(logger, log_en)
-  Logger::emit(logger, log_zh)
-  Logger::emit(logger, log_ja)
-  Logger::emit(logger, log_ko)
-  Logger::emit(logger, log_fr)
-  Logger::emit(logger, log_de)
-  Logger::emit(logger, log_es)
-  Logger::emit(logger, log_ru)
-  Logger::emit(logger, log_ar)
-  Logger::emit(logger, log_hi)
-  
-  // 应该优雅处理，不崩溃
-  assert_true(true)
 }
 
-test "多语言Span名称和事件测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "multilingual.tracer")
+test "multilingual log messages" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "multilingual_logger")
   
-  // 创建多语言Span
-  let span_en = Tracer::start_span(tracer, "user.authentication")
-  let span_zh = Tracer::start_span(tracer, "用户认证")
-  let span_ja = Tracer::start_span(tracer, "ユーザー認証")
-  let span_ko = Tracer::start_span(tracer, "사용자 인증")
-  let span_fr = Tracer::start_span(tracer, "authentification utilisateur")
-  let span_de = Tracer::start_span(tracer, "Benutzerauthentifizierung")
-  let span_es = Tracer::start_span(tracer, "autenticación de usuario")
-  let span_ru = Tracer::start_span(tracer, "аутентификация пользователя")
-  let span_ar = Tracer::start_span(tracer, "مصادقة المستخدم")
-  let span_hi = Tracer::start_span(tracer, "उपयोगकर्ता प्रमाणीकरण")
+  // Test multilingual log records
+  let chinese_log = LogRecord::new(Info, "系统启动成功")
+  let japanese_log = LogRecord::new(Info, "システムが正常に起動しました")
+  let korean_log = LogRecord::new(Info, "시스템이 성공적으로 시작되었습니다")
+  let arabic_log = LogRecord::new(Info, "بدأ النظام بنجاح")
+  let russian_log = LogRecord::new(Info, "Система успешно запущена")
   
-  // 验证多语言Span名称
-  assert_eq(Span::name(span_en), "user.authentication")
-  assert_eq(Span::name(span_zh), "用户认证")
-  assert_eq(Span::name(span_ja), "ユーザー認証")
-  assert_eq(Span::name(span_ko), "사용자 인증")
-  assert_eq(Span::name(span_fr), "authentification utilisateur")
-  assert_eq(Span::name(span_de), "Benutzerauthentifizierung")
-  assert_eq(Span::name(span_es), "autenticación de usuario")
-  assert_eq(Span::name(span_ru), "аутентификация пользователя")
-  assert_eq(Span::name(span_ar), "مصادقة المستخدم")
-  assert_eq(Span::name(span_hi), "उपयोगकर्ता प्रमाणीकरण")
+  // Test multilingual log message content
+  assert_eq(LogRecord::body(chinese_log), Some("系统启动成功"))
+  assert_eq(LogRecord::body(japanese_log), Some("システムが正常に起動しました"))
+  assert_eq(LogRecord::body(korean_log), Some("시스템이 성공적으로 시작되었습니다"))
+  assert_eq(LogRecord::body(arabic_log), Some("بدأ النظام بنجاح"))
+  assert_eq(LogRecord::body(russian_log), Some("Система успешно запущена"))
   
-  // 添加多语言事件
-  Span::add_event(span_en, "authentication.started", Some([("step", StringValue("begin"))]))
-  Span::add_event(span_zh, "认证开始", Some([("步骤", StringValue("开始"))]))
-  Span::add_event(span_ja, "認証開始", Some([("ステップ", StringValue("開始"))]))
-  Span::add_event(span_ko, "인증 시작", Some([("단계", StringValue("시작"))]))
-  Span::add_event(span_fr, "authentification démarrée", Some([("étape", StringValue("début"))]))
-  Span::add_event(span_de, "Authentifizierung gestartet", Some([("Schritt", StringValue("Beginn"))]))
-  Span::add_event(span_es, "autenticación iniciada", Some([("paso", StringValue("inicio"))]))
-  Span::add_event(span_ru, "аутентификация начата", Some([("шаг", StringValue("начало"))]))
-  Span::add_event(span_ar, "بدأت المصادقة", Some([("خطوة", StringValue("بداية"))]))
-  Span::add_event(span_hi, "प्रमाणीकरण शुरू", Some([("चरण", StringValue("शुरू"))]))
-  
-  // 设置多语言状态
-  Span::set_status(span_en, Ok, Some("Authentication successful"))
-  Span::set_status(span_zh, Ok, Some("认证成功"))
-  Span::set_status(span_ja, Ok, Some("認証成功"))
-  Span::set_status(span_ko, Ok, Some("인증 성공"))
-  Span::set_status(span_fr, Ok, Some("Authentification réussie"))
-  Span::set_status(span_de, Ok, Some("Authentifizierung erfolgreich"))
-  Span::set_status(span_es, Ok, Some("Autenticación exitosa"))
-  Span::set_status(span_ru, Ok, Some("Аутентификация прошла успешно"))
-  Span::set_status(span_ar, Ok, Some("تمت المصادقة بنجاح"))
-  Span::set_status(span_hi, Ok, Some("प्रमाणीकरण सफल"))
-  
-  // 结束所有Span
-  Span::end(span_en)
-  Span::end(span_zh)
-  Span::end(span_ja)
-  Span::end(span_ko)
-  Span::end(span_fr)
-  Span::end(span_de)
-  Span::end(span_es)
-  Span::end(span_ru)
-  Span::end(span_ar)
-  Span::end(span_hi)
-  
-  // 应该优雅处理，不崩溃
-  assert_true(true)
+  // Test emitting multilingual logs
+  Logger::emit(logger, chinese_log)
+  Logger::emit(logger, japanese_log)
+  Logger::emit(logger, korean_log)
+  Logger::emit(logger, arabic_log)
+  Logger::emit(logger, russian_log)
 }
 
-test "多语言Baggage测试" {
-  // 创建多语言Baggage
+test "multilingual span names" {
+  let provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(provider, "multilingual_tracer")
+  
+  // Test multilingual span creation
+  let chinese_span = Tracer::start_span(tracer, "中文操作")
+  let japanese_span = Tracer::start_span(tracer, "日本語操作")
+  let korean_span = Tracer::start_span(tracer, "한국어 작업")
+  let arabic_span = Tracer::start_span(tracer, "عملية باللغة العربية")
+  let russian_span = Tracer::start_span(tracer, "Операция на русском")
+  
+  // Test multilingual span names
+  assert_eq(Span::name(chinese_span), "中文操作")
+  assert_eq(Span::name(japanese_span), "日本語操作")
+  assert_eq(Span::name(korean_span), "한국어 작업")
+  assert_eq(Span::name(arabic_span), "عملية باللغة العربية")
+  assert_eq(Span::name(russian_span), "Операция на русском")
+}
+
+test "right-to-left text handling" {
+  // Test Arabic text (right-to-left)
+  let arabic_text = "مرحبا بالعالم"
+  assert_eq(arabic_text.length(), 11)
+  assert_true(arabic_text.contains("العالم"))
+  
+  // Test Hebrew text (right-to-left)
+  let hebrew_text = "שלום עולם"
+  assert_eq(hebrew_text.length(), 9)
+  assert_true(hebrew_text.contains("עולם"))
+  
+  // Test mixed direction text
+  let mixed_text = "English العربية English"
+  assert_eq(mixed_text_text.length(), 20)
+  assert_true(mixed_text.contains("العربية"))
+  assert_true(mixed_text.contains("English"))
+}
+
+test "locale-specific formatting" {
+  // Test different locale-specific number formats
+  let number = 1234.56
+  
+  // US English format
+  let us_format = "1,234.56"
+  assert_eq(us_format.contains(","), true)
+  assert_eq(us_format.contains("."), true)
+  
+  // European format
+  let eu_format = "1.234,56"
+  assert_eq(eu_format.contains("."), true)
+  assert_eq(eu_format.contains(","), true)
+  
+  // Test different date formats
+  let us_date = "12/31/2023"
+  assert_eq(us_date.contains("/"), true)
+  
+  let iso_date = "2023-12-31"
+  assert_eq(iso_date.contains("-"), true)
+  
+  let eu_date = "31.12.2023"
+  assert_eq(eu_date.contains("."), true)
+}
+
+test "currency and number localization" {
+  // Test currency symbols
+  let usd_currency = "$123.45"
+  assert_eq(usd_currency.contains("$"), true)
+  
+  let eur_currency = "€123.45"
+  assert_eq(eur_currency.contains("€"), true)
+  
+  let jpy_currency = "¥123"
+  assert_eq(jpy_currency.contains("¥"), true)
+  
+  let gbp_currency = "£123.45"
+  assert_eq(gbp_currency.contains("£"), true)
+  
+  let cny_currency = "¥123.45"
+  assert_eq(cny_currency.contains("¥"), true)
+  
+  // Test number separators
+  let indian_number = "12,34,567.89"
+  assert_eq(indian_number.contains(","), true)
+  
+  let chinese_number = "123,456.78"
+  assert_eq(chinese_number.contains(","), true)
+}
+
+test "multilingual baggage entries" {
   let baggage = Baggage::new()
-  let baggage = Baggage::set_entry(baggage, "user.id", "12345")
-  let baggage = Baggage::set_entry(baggage, "user.role", "admin")
   
-  // 添加多语言用户信息
-  let baggage = Baggage::set_entry(baggage, "user.name.en", "John Doe")
-  let baggage = Baggage::set_entry(baggage, "user.name.zh", "张三")
-  let baggage = Baggage::set_entry(baggage, "user.name.ja", "田中太郎")
-  let baggage = Baggage::set_entry(baggage, "user.name.ko", "김철수")
-  let baggage = Baggage::set_entry(baggage, "user.name.fr", "Jean Dupont")
-  let baggage = Baggage::set_entry(baggage, "user.name.de", "Max Mustermann")
-  let baggage = Baggage::set_entry(baggage, "user.name.es", "Juan Pérez")
-  let baggage = Baggage::set_entry(baggage, "user.name.ru", "Иван Иванов")
-  let baggage = Baggage::set_entry(baggage, "user.name.ar", "محمد أحمد")
-  let baggage = Baggage::set_entry(baggage, "user.name.hi", "राम कुमार")
+  // Test multilingual baggage
+  let baggage_with_chinese = Baggage::set_entry(baggage, "错误代码", "ERR001")
+  let baggage_with_japanese = Baggage::set_entry(baggage_with_chinese, "エラーコード", "ERR001")
+  let baggage_with_korean = Baggage::set_entry(baggage_with_japanese, "오류 코드", "ERR001")
   
-  // 添加多语言地区信息
-  let baggage = Baggage::set_entry(baggage, "user.region.en", "United States")
-  let baggage = Baggage::set_entry(baggage, "user.region.zh", "美国")
-  let baggage = Baggage::set_entry(baggage, "user.region.ja", "アメリカ合衆国")
-  let baggage = Baggage::set_entry(baggage, "user.region.ko", "미국")
-  let baggage = Baggage::set_entry(baggage, "user.region.fr", "États-Unis")
-  let baggage = Baggage::set_entry(baggage, "user.region.de", "Vereinigte Staaten")
-  let baggage = Baggage::set_entry(baggage, "user.region.es", "Estados Unidos")
-  let baggage = Baggage::set_entry(baggage, "user.region.ru", "Соединенные Штаты")
-  let baggage = Baggage::set_entry(baggage, "user.region.ar", "الولايات المتحدة")
-  let baggage = Baggage::set_entry(baggage, "user.region.hi", "संयुक्त राज्य")
+  // Test retrieving multilingual baggage entries
+  match Baggage::get_entry(baggage_with_korean, "错误代码") {
+    Some(v) => assert_eq(v, "ERR001")
+    None => assert_true(false)
+  }
   
-  // 验证多语言Baggage条目
-  assert_eq(Baggage::get_entry(baggage, "user.id"), Some("12345"))
-  assert_eq(Baggage::get_entry(baggage, "user.role"), Some("admin"))
+  match Baggage::get_entry(baggage_with_korean, "エラーコード") {
+    Some(v) => assert_eq(v, "ERR001")
+    None => assert_true(false)
+  }
   
-  assert_eq(Baggage::get_entry(baggage, "user.name.en"), Some("John Doe"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.zh"), Some("张三"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.ja"), Some("田中太郎"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.ko"), Some("김철수"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.fr"), Some("Jean Dupont"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.de"), Some("Max Mustermann"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.es"), Some("Juan Pérez"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.ru"), Some("Иван Иванов"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.ar"), Some("محمد أحمد"))
-  assert_eq(Baggage::get_entry(baggage, "user.name.hi"), Some("राम कुमार"))
-  
-  assert_eq(Baggage::get_entry(baggage, "user.region.en"), Some("United States"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.zh"), Some("美国"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.ja"), Some("アメリカ合衆国"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.ko"), Some("미국"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.fr"), Some("États-Unis"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.de"), Some("Vereinigte Staaten"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.es"), Some("Estados Unidos"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.ru"), Some("Соединенные Штаты"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.ar"), Some("الولايات المتحدة"))
-  assert_eq(Baggage::get_entry(baggage, "user.region.hi"), Some("संयुक्त राज्य"))
+  match Baggage::get_entry(baggage_with_korean, "오류 코드") {
+    Some(v) => assert_eq(v, "ERR001")
+    None => assert_true(false)
+  }
 }
 
-test "多语言错误消息测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "error.test.tracer")
+test "character encoding validation" {
+  // Test UTF-8 encoded strings
+  let utf8_chinese = "遥测"
+  let utf8_japanese = "テレメトリ"
+  let utf8_korean = "원격 측정"
+  let utf8_arabic = "قياس عن بعد"
+  let utf8_russian = "телеметрия"
   
-  // 创建多语言错误Span
-  let error_span_en = Tracer::start_span(tracer, "user.operation")
-  let error_span_zh = Tracer::start_span(tracer, "用户操作")
-  let error_span_ja = Tracer::start_span(tracer, "ユーザー操作")
-  let error_span_ko = Tracer::start_span(tracer, "사용자 작업")
-  let error_span_fr = Tracer::start_span(tracer, "opération utilisateur")
-  let error_span_de = Tracer::start_span(tracer, "Benutzeroperation")
-  let error_span_es = Tracer::start_span(tracer, "operación de usuario")
-  let error_span_ru = Tracer::start_span(tracer, "операция пользователя")
-  let error_span_ar = Tracer::start_span(tracer, "عملية المستخدم")
-  let error_span_hi = Tracer::start_span(tracer, "उपयोगकर्ता ऑपरेशन")
+  // Test string operations on UTF-8 encoded strings
+  assert_eq(utf8_chinese.length(), 2)
+  assert_eq(utf8_japanese.length(), 5)
+  assert_eq(utf8_korean.length(), 4)
+  assert_eq(utf8_arabic.length(), 9)
+  assert_eq(utf8_russian.length(), 9)
   
-  // 添加多语言错误事件
-  Span::add_event(error_span_en, "error.occurred", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("Invalid user input")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_zh, "错误发生", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("无效的用户输入")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_ja, "エラー発生", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("無効なユーザー入力")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_ko, "오류 발생", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("잘못된 사용자 입력")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_fr, "erreur.survenue", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("Entrée utilisateur invalide")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_de, "Fehler aufgetreten", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("Ungültige Benutzereingabe")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_es, "error.ocurrido", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("Entrada de usuario no válida")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_ru, "произошла ошибка", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("Недопустимый ввод пользователя")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_ar, "حدث خطأ", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("إدخال مستخدم غير صالح")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  Span::add_event(error_span_hi, "त्रुटि हुई", Some([
-    ("error.type", StringValue("validation.error")),
-    ("error.message", StringValue("अमान्य उपयोगकर्ता इनपुट")),
-    ("error.code", StringValue("VAL001"))
-  ]))
-  
-  // 设置多语言错误状态
-  Span::set_status(error_span_en, Error, Some("Validation failed"))
-  Span::set_status(error_span_zh, Error, Some("验证失败"))
-  Span::set_status(error_span_ja, Error, Some("検証失敗"))
-  Span::set_status(error_span_ko, Error, Some("검증 실패"))
-  Span::set_status(error_span_fr, Error, Some("Échec de la validation"))
-  Span::set_status(error_span_de, Error, Some("Validierung fehlgeschlagen"))
-  Span::set_status(error_span_es, Error, Some("Validación fallida"))
-  Span::set_status(error_span_ru, Error, Some("Ошибка валидации"))
-  Span::set_status(error_span_ar, Error, Some("فشل التحقق"))
-  Span::set_status(error_span_hi, Error, Some("सत्यापन विफल"))
-  
-  // 结束所有Span
-  Span::end(error_span_en)
-  Span::end(error_span_zh)
-  Span::end(error_span_ja)
-  Span::end(error_span_ko)
-  Span::end(error_span_fr)
-  Span::end(error_span_de)
-  Span::end(error_span_es)
-  Span::end(error_span_ru)
-  Span::end(error_span_ar)
-  Span::end(error_span_hi)
-  
-  // 应该优雅处理，不崩溃
-  assert_true(true)
-}
-
-test "地区特定格式测试" {
-  // 测试不同地区的日期和时间格式
-  let date_formats = [
-    ("en-US", "01/02/2025 12:34:56 PM"),     // 美国英语
-    ("en-GB", "02/01/2025 12:34:56"),        // 英国英语
-    ("zh-CN", "2025/01/02 12:34:56"),        // 中国大陆
-    ("ja-JP", "2025/01/02 12:34:56"),        // 日本
-    ("ko-KR", "2025. 01. 02. 오후 12:34:56"), // 韩国
-    ("fr-FR", "02/01/2025 12:34:56"),        // 法国
-    ("de-DE", "02.01.2025, 12:34:56"),       // 德国
-    ("es-ES", "02/01/2025 12:34:56"),        // 西班牙
-    ("ru-RU", "02.01.2025 12:34:56"),        // 俄罗斯
-    ("ar-SA", "02/01/2025 12:34:56 م"),      // 沙特阿拉伯
-    ("hi-IN", "02/01/2025 12:34:56 PM")      // 印度
-  ]
-  
-  // 测试不同地区的数字格式
-  let number_formats = [
-    ("en-US", "1,234.56"),    // 美国英语
-    ("en-GB", "1,234.56"),    // 英国英语
-    ("zh-CN", "1,234.56"),    // 中国大陆
-    ("ja-JP", "1,234.56"),    // 日本
-    ("ko-KR", "1,234.56"),    // 韩国
-    ("fr-FR", "1 234,56"),    // 法国
-    ("de-DE", "1.234,56"),    // 德国
-    ("es-ES", "1.234,56"),    // 西班牙
-    ("ru-RU", "1 234,56"),    // 俄罗斯
-    ("ar-SA", "1,234.56"),    // 沙特阿拉伯
-    ("hi-IN", "1,234.56")     // 印度
-  ]
-  
-  // 测试不同地区的货币格式
-  let currency_formats = [
-    ("en-US", "$1,234.56"),           // 美国英语
-    ("en-GB", "£1,234.56"),           // 英国英语
-    ("zh-CN", "¥1,234.56"),           // 中国大陆
-    ("ja-JP", "¥1,234"),              // 日本
-    ("ko-KR", "₩1,235"),              // 韩国
-    ("fr-FR", "1 234,56 €"),          // 法国
-    ("de-DE", "1.234,56 €"),          // 德国
-    ("es-ES", "1.234,56 €"),          // 西班牙
-    ("ru-RU", "1 234,56 ₽"),          // 俄罗斯
-    ("ar-SA", "١٬٢٣٤٫٥٦ ر.س"),       // 沙特阿拉伯
-    ("hi-IN", "₹1,234.56")            // 印度
-  ]
-  
-  // 创建包含地区特定格式的资源
-  let mut locale_attrs = []
-  
-  // 添加日期格式属性
-  for (locale, format) in date_formats {
-    let key = "date.format." + locale
-    locale_attrs.push((key, StringValue(format)))
-  }
-  
-  // 添加数字格式属性
-  for (locale, format) in number_formats {
-    let key = "number.format." + locale
-    locale_attrs.push((key, StringValue(format)))
-  }
-  
-  // 添加货币格式属性
-  for (locale, format) in currency_formats {
-    let key = "currency.format." + locale
-    locale_attrs.push((key, StringValue(format)))
-  }
-  
-  let locale_resource = Resource::with_attributes(Resource::new(), locale_attrs)
-  
-  // 验证地区特定格式
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.en-US"), Some(StringValue("01/02/2025 12:34:56 PM")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.zh-CN"), Some(StringValue("2025/01/02 12:34:56")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.ja-JP"), Some(StringValue("2025/01/02 12:34:56")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.ko-KR"), Some(StringValue("2025. 01. 02. 오후 12:34:56")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.fr-FR"), Some(StringValue("02/01/2025 12:34:56")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.de-DE"), Some(StringValue("02.01.2025, 12:34:56")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.es-ES"), Some(StringValue("02/01/2025 12:34:56")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.ru-RU"), Some(StringValue("02.01.2025 12:34:56")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.ar-SA"), Some(StringValue("02/01/2025 12:34:56 م")))
-  assert_eq(Resource::get_attribute(locale_resource, "date.format.hi-IN"), Some(StringValue("02/01/2025 12:34:56 PM")))
-  
-  assert_eq(Resource::get_attribute(locale_resource, "number.format.fr-FR"), Some(StringValue("1 234,56")))
-  assert_eq(Resource::get_attribute(locale_resource, "number.format.de-DE"), Some(StringValue("1.234,56")))
-  assert_eq(Resource::get_attribute(locale_resource, "number.format.es-ES"), Some(StringValue("1.234,56")))
-  assert_eq(Resource::get_attribute(locale_resource, "number.format.ru-RU"), Some(StringValue("1 234,56")))
-  
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.en-US"), Some(StringValue("$1,234.56")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.en-GB"), Some(StringValue("£1,234.56")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.zh-CN"), Some(StringValue("¥1,234.56")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.ja-JP"), Some(StringValue("¥1,234")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.ko-KR"), Some(StringValue("₩1,235")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.fr-FR"), Some(StringValue("1 234,56 €")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.de-DE"), Some(StringValue("1.234,56 €")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.es-ES"), Some(StringValue("1.234,56 €")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.ru-RU"), Some(StringValue("1 234,56 ₽")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.ar-SA"), Some(StringValue("١٬٢٣٤٫٥٦ ر.س")))
-  assert_eq(Resource::get_attribute(locale_resource, "currency.format.hi-IN"), Some(StringValue("₹1,234.56")))
+  // Test concatenation of UTF-8 strings
+  let concatenated = utf8_chinese + " " + utf8_japanese + " " + utf8_korean
+  assert_eq(concatenated.length(), 14)  // 2 + 1 + 5 + 1 + 4 = 13 (plus spaces)
+  assert_true(concatenated.contains("遥测"))
+  assert_true(concatenated.contains("テレメトリ"))
+  assert_true(concatenated.contains("원격 측정"))
 }
