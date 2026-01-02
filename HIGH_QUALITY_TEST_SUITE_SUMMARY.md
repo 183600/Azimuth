@@ -1,141 +1,95 @@
-# 高质量综合测试套件总结
+# Azimuth 高质量测试套件总结
 
 ## 概述
+本文档总结了为 Azimuth 遥测系统创建的高质量测试套件。该测试套件包含 10 个全面的测试用例，覆盖了 OpenTelemetry 风格遥测系统的核心功能。
 
-本测试套件包含8个精心设计的MoonBit测试用例，专门为Azimuth遥测系统创建，覆盖了核心遥测功能的关键领域。
+## 测试用例列表
 
-## 测试用例详情
+### 1. attribute_operations_comprehensive
+**测试内容**: 基础属性操作
+- 测试创建和操作各种类型的属性（字符串、整数、浮点数、布尔值、数组）
+- 验证属性检索功能
+- 测试不存在的键的处理
 
-### 1. 综合性遥测上下文传播测试
-**测试名称**: `comprehensive telemetry context propagation across services`
+### 2. context_propagation_functionality
+**测试内容**: 上下文传播功能
+- 测试上下文创建和值传播
+- 验证上下文值的检索
+- 测试根上下文和不同键的处理
 
-**测试内容**:
-- 创建和管理遥测上下文
-- 测试上下文值的设置和获取
-- 验证W3C Trace Context和Baggage传播器的注入和提取功能
-- 确保跨服务上下文传播的一致性
+### 3. span_context_operations
+**测试内容**: Span 上下文操作
+- 测试 Span 上下文创建和验证
+- 验证 trace_id、span_id、有效性检查和采样状态
+- 测试无效 Span 上下文的处理
 
-**验证点**:
-- 上下文值正确存储和检索
-- 传播器正确注入和提取上下文信息
+### 4. span_lifecycle_management
+**测试内容**: Span 生命周期管理
+- 测试 Span 创建和生命周期
+- 验证 Span 属性（名称、类型、记录状态）
+- 测试 Span 状态设置、事件添加和结束操作
 
-### 2. 度量聚合操作测试
-**测试名称**: `metrics aggregation operations with multiple instruments`
+### 5. tracer_functionality
+**测试内容**: Tracer 功能
+- 测试 Tracer 提供者和 Tracer 创建
+- 验证 Tracer 的作用域属性
+- 测试 Span 创建操作
 
-**测试内容**:
-- 创建不同类型的度量仪器(Counter, Histogram, UpDownCounter, Gauge)
-- 测试度量操作和属性验证
-- 验证仪器类型转换和属性访问
+### 6. metrics_operations
+**测试内容**: 指标操作
+- 测试 Meter 提供者和 Meter 创建
+- 验证各种指标类型（计数器、直方图、上下计数器、仪表）
+- 测试指标操作（添加、记录）
 
-**验证点**:
-- 度量仪器正确创建
-- 度量操作正常执行
-- 仪器属性正确访问
+### 7. logging_operations
+**测试内容**: 日志记录操作
+- 测试 Logger 提供者和 Logger 创建
+- 验证日志记录创建和上下文关联
+- 测试日志发射操作
 
-### 3. 跨服务追踪一致性测试
-**测试名称**: `cross-service tracing consistency with span relationships`
+### 8. resource_management
+**测试内容**: 资源管理
+- 测试资源创建和属性操作
+- 验证属性检索
+- 测试资源合并功能
 
-**测试内容**:
-- 创建跨服务的span层次结构
-- 测试span上下文属性和状态
-- 验证span状态设置和事件添加
-- 确保span生命周期管理正确
+### 9. baggage_operations
+**测试内容**: Baggage 操作
+- 测试 Baggage 创建和条目操作
+- 验证条目设置、检索和删除
+- 测试不存在的条目处理
 
-**验证点**:
-- Span上下文正确创建和验证
-- Span状态和事件正确设置
-- Span生命周期正确管理
+### 10. propagation_operations
+**测试内容**: 传播操作
+- 测试复合传播器创建
+- 验证上下文注入和提取
+- 测试 traceparent 标头处理
 
-### 4. 日志记录与追踪关联测试
-**测试名称**: `log record correlation with trace context`
+## 测试特点
 
-**测试内容**:
-- 创建与追踪上下文关联的日志记录
-- 测试不同严重级别的日志记录
-- 验证日志记录的时间戳和追踪关联
+1. **全面性**: 覆盖了遥测系统的核心功能，包括跟踪、指标、日志和上下文传播
+2. **高质量**: 每个测试用例都包含多个断言，验证各种场景
+3. **边界条件**: 包含了对无效输入和边界条件的测试
+4. **一致性**: 遵循项目的测试风格和命名约定
+5. **可维护性**: 测试用例结构清晰，易于理解和维护
 
-**验证点**:
-- 日志记录正确创建
-- 日志与追踪上下文正确关联
-- 日志属性正确访问
+## 文件信息
 
-### 5. 资源属性合并策略测试
-**测试名称**: `resource attributes merge strategy with precedence`
+- **文件名**: `azimuth_high_quality_test_suite.mbt`
+- **位置**: `/home/runner/work/Azimuth/Azimuth/azimuth/`
+- **大小**: 12K
+- **测试用例数量**: 10
+- **已添加到测试配置**: 是
 
-**测试内容**:
-- 创建基础资源和覆盖资源
-- 测试资源属性的获取和合并
-- 验证合并策略的正确性
+## 运行测试
 
-**验证点**:
-- 资源属性正确设置和获取
-- 资源合并策略正确执行
-- 优先级规则正确应用
+要运行这些测试，可以使用以下命令：
 
-### 6. 并发安全性测试
-**测试名称**: `concurrent safety with shared telemetry resources`
-
-**测试内容**:
-- 创建共享的遥测提供者资源
-- 测试并发操作下的资源安全性
-- 验证多个组件同时使用共享资源的行为
-
-**验证点**:
-- 共享资源正确创建和使用
-- 并发操作不产生冲突
-- 资源状态保持一致
-
-### 7. 边界条件错误处理测试
-**测试名称**: `boundary condition error handling with edge cases`
-
-**测试内容**:
-- 测试空值和特殊值的处理
-- 验证边界条件下的度量操作
-- 测试错误输入的优雅处理
-
-**验证点**:
-- 边界条件正确识别
-- 错误输入正确处理
-- 系统稳定性保持
-
-### 8. 时间序列数据操作测试
-**测试名称**: `time series data operations with temporal consistency`
-
-**测试内容**:
-- 创建时间序列相关的度量数据
-- 测试时间戳顺序和一致性
-- 验证时间序列数据的正确性
-
-**验证点**:
-- 时间戳顺序正确
-- 时间序列数据一致性
-- 临时操作正确执行
-
-## 测试覆盖范围
-
-本测试套件覆盖了Azimuth遥测系统的以下核心功能：
-
-1. **上下文传播**: 跨服务的遥测上下文传递
-2. **度量收集**: 各种类型的度量仪器和操作
-3. **分布式追踪**: 跨服务的追踪一致性
-4. **日志记录**: 与追踪关联的日志功能
-5. **资源管理**: 资源属性和合并策略
-6. **并发安全**: 多线程环境下的安全性
-7. **错误处理**: 边界条件和异常情况
-8. **时间序列**: 时间相关数据的处理
-
-## 运行方式
-
-测试文件位于: `/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_high_quality_comprehensive_test_suite.mbt`
-
-验证脚本位于: `/home/runner/work/Azimuth/Azimuth/validate_high_quality_comprehensive_test_suite.sh`
-
-运行验证:
 ```bash
-cd /home/runner/work/Azimuth/Azimuth
-./validate_high_quality_comprehensive_test_suite.sh
+cd /home/runner/work/Azimuth/Azimuth/azimuth
+moon test --package azimuth/telemetry --file azimuth_high_quality_test_suite.mbt
 ```
 
 ## 结论
 
-这8个测试用例提供了对Azimuth遥测系统核心功能的全面测试覆盖，确保系统在各种场景下的正确性和可靠性。测试用例设计遵循最佳实践，包含清晰的验证点和全面的边界条件测试。
+这个高质量测试套件为 Azimuth 遥测系统提供了全面的测试覆盖，确保系统的核心功能能够正常工作。测试用例设计考虑了各种场景和边界条件，有助于提高系统的可靠性和稳定性。
