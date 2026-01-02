@@ -9,6 +9,6 @@
     "azimuth/telemetry": "*"
   },
   "test": {
-    "test": ["basic_tests.mbt", "../azimuth_basic_moonbit_tests.mbt"]
+    "test": ["basic_tests.mbt", "../azimuth_basic_moonbit_tests.mbt", "../azimuth_enhanced_telemetry_tests.mbt"]
   }
 }
