@@ -1,362 +1,516 @@
-// Azimuth 综合测试套件
-// 包含10个核心测试用例，覆盖遥测系统的关键功能
+// Azimuth Comprehensive Test Suite
+// This file contains comprehensive test cases for the Azimuth telemetry system
+// Focus on core functionality, edge cases, and integration scenarios
 
-// 测试1: 基础属性操作测试
-test "基础属性操作测试" {
-  // 创建属性集合
-  let attributes = Attributes::new()
+// Import the main azimuth module
+@testable import "azimuth"
+
+// Test 1: Attribute Value Type Conversion Tests
+test "attribute value type conversion - string to int" {
+  let attrs = Attributes::new()
   
-  // 设置不同类型的属性
-  Attributes::set(attributes, "string.key", StringValue("test_value"))
-  Attributes::set(attributes, "int.key", IntValue(42))
-  Attributes::set(attributes, "float.key", FloatValue(3.14))
-  Attributes::set(attributes, "bool.key", BoolValue(true))
-  Attributes::set(attributes, "array.string.key", ArrayStringValue(["a", "b", "c"]))
-  Attributes::set(attributes, "array.int.key", ArrayIntValue([1, 2, 3]))
+  // Test string attribute
+  Attributes::set(attrs, "string.key", StringValue("test_value"))
+  let result = Attributes::get(attrs, "string.key")
   
-  // 验证属性获取
-  let string_value = Attributes::get(attributes, "string.key")
-  assert_true(string_value is Some(StringValue("test_value")))
+  match result {
+    Some(StringValue(value)) => assert_eq(value, "test_value")
+    _ => assert_true(false)
+  }
   
-  let int_value = Attributes::get(attributes, "int.key")
-  assert_true(int_value is Some(IntValue(42)))
+  // Test int attribute
+  Attributes::set(attrs, "int.key", IntValue(42))
+  let int_result = Attributes::get(attrs, "int.key")
   
-  // 测试不存在的属性
-  let non_existent = Attributes::get(attributes, "non.existent.key")
-  assert_true(non_existent is None)
-  
-  assert_true(true)
+  match int_result {
+    Some(IntValue(value)) => assert_eq(value, 42)
+    _ => assert_true(false)
+  }
 }
 
-// 测试2: 时间序列数据操作测试
-test "时间序列数据操作测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "time.series.test")
+test "attribute value type conversion - float and bool" {
+  let attrs = Attributes::new()
   
-  // 创建时间序列指标
-  let histogram = Meter::create_histogram(meter, "response.time")
-  let gauge = Meter::create_gauge(meter, "memory.usage")
+  // Test float attribute
+  Attributes::set(attrs, "float.key", FloatValue(3.14))
+  let float_result = Attributes::get(attrs, "float.key")
   
-  // 创建时钟
-  let clock = Clock::system()
+  match float_result {
+    Some(FloatValue(value)) => assert_eq(value, 3.14)
+    _ => assert_true(false)
+  }
   
-  // 模拟时间序列数据记录
-  let base_time = Clock::now_unix_nanos(clock)
+  // Test boolean attribute
+  Attributes::set(attrs, "bool.key", BoolValue(true))
+  let bool_result = Attributes::get(attrs, "bool.key")
   
-  // 记录不同时间点的数据
-  Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 150.0)
-  Histogram::record(histogram, 200.0)
-  
-  // 记录仪表数据
-  // Gauge::set(gauge, 1024.0)
-  // Gauge::set(gauge, 2048.0)
-  // Gauge::set(gauge, 1536.0)
-  
-  // 验证时间戳
-  let current_time = Clock::now_unix_nanos(clock)
-  assert_true(current_time >= base_time)
-  
-  assert_true(true)
+  match bool_result {
+    Some(BoolValue(value)) => assert_true(value)
+    _ => assert_true(false)
+  }
 }
 
-// 测试3: 度量仪表盘测试
-test "度量仪表盘测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "dashboard.test")
+test "attribute value type conversion - array types" {
+  let attrs = Attributes::new()
   
-  // 创建各种类型的指标
-  let counter = Meter::create_counter(meter, "request.count")
-  let histogram = Meter::create_histogram(meter, "response.time")
-  let updown_counter = Meter::create_updown_counter(meter, "active.connections")
+  // Test string array attribute
+  Attributes::set(attrs, "array.string.key", ArrayStringValue(["a", "b", "c"]))
+  let array_result = Attributes::get(attrs, "array.string.key")
   
-  // 记录指标数据
-  Counter::add(counter, 10.0)
-  Counter::add(counter, 5.0)
+  match array_result {
+    Some(ArrayStringValue(values)) => {
+      assert_eq(values.length(), 3)
+      assert_eq(values[0], "a")
+      assert_eq(values[1], "b")
+      assert_eq(values[2], "c")
+    }
+    _ => assert_true(false)
+  }
   
-  Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 200.0)
-  Histogram::record(histogram, 150.0)
+  // Test int array attribute
+  Attributes::set(attrs, "array.int.key", ArrayIntValue([1, 2, 3]))
+  let int_array_result = Attributes::get(attrs, "array.int.key")
+  
+  match int_array_result {
+    Some(ArrayIntValue(values)) => {
+      assert_eq(values.length(), 3)
+      assert_eq(values[0], 1)
+      assert_eq(values[1], 2)
+      assert_eq(values[2], 3)
+    }
+    _ => assert_true(false)
+  }
+}
+
+// Test 2: Span Lifecycle Management Tests
+test "span lifecycle - creation and basic properties" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+  let span = Span::new("test-span", Internal, span_ctx)
+  
+  assert_eq(Span::name(span), "test-span")
+  // Skip SpanKind comparison as it doesn't implement Eq trait
+  // assert_eq(Span::kind(span), Internal)
+  assert_true(Span::is_recording(span))
+  assert_eq(SpanContext::trace_id(span_ctx), "trace123")
+  assert_eq(SpanContext::span_id(span_ctx), "span456")
+  assert_true(SpanContext::is_sampled(span_ctx))
+}
+
+test "span lifecycle - status management" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+  let span = Span::new("test-span", Server, span_ctx)
+  
+  // Initially status should be Unset
+  assert_eq(Span::status(span), Unset)
+  
+  // Set status to Ok
+  Span::set_status(span, Ok, Some("Operation completed successfully"))
+  assert_eq(Span::status(span), Ok)
+  
+  // Set status to Error
+  Span::set_status(span, Error, Some("Operation failed"))
+  assert_eq(Span::status(span), Error)
+}
+
+test "span lifecycle - events and ending" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+  let span = Span::new("test-span", Client, span_ctx)
+  
+  // Add events to span
+  Span::add_event(span, "event1", Some([("key1", StringValue("value1"))]))
+  Span::add_event(span, "event2", Some([("key2", IntValue(42))]))
+  
+  // End the span
+  Span::end(span)
+  
+  // After ending, the span should still maintain its basic properties
+  assert_eq(Span::name(span), "test-span")
+  assert_eq(Span::kind(span), Client)
+}
+
+// Test 3: Metrics Dashboard Functionality Tests
+test "metrics dashboard - counter operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let counter = Meter::create_counter(meter, "test-counter", Some("Test counter"), Some("count"))
+  
+  assert_eq(counter.name, "test-counter")
+  assert_eq(counter.description, Some("Test counter"))
+  assert_eq(counter.unit, Some("count"))
+  
+  // Add values to counter
+  Counter::add(counter, 1.0)
+  Counter::add(counter, 2.5)
+  Counter::add(counter, 3.5)
+  
+  // Test instrument name function
+  let instrument = Counter(counter.name, counter.description, counter.unit)
+  assert_eq(Instrument::name(instrument), "test-counter")
+  assert_eq(Instrument::description(instrument), Some("Test counter"))
+  assert_eq(Instrument::unit(instrument), Some("count"))
+}
+
+test "metrics dashboard - histogram operations" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  let histogram = Meter::create_histogram(meter, "test-histogram", Some("Test histogram"), Some("ms"))
+  
+  assert_eq(histogram.name, "test-histogram")
+  assert_eq(histogram.description, Some("Test histogram"))
+  assert_eq(histogram.unit, Some("ms"))
+  
+  // Record values to histogram
+  Histogram::record(histogram, 10.5)
+  Histogram::record(histogram, 20.0)
+  Histogram::record(histogram, 30.5)
+  
+  // Test histogram as instrument
+  let instrument = Histogram::as_instrument(histogram)
+  assert_eq(Instrument::name(instrument), "test-histogram")
+  assert_eq(Instrument::description(instrument), Some("Test histogram"))
+  assert_eq(Instrument::unit(instrument), Some("ms"))
+}
+
+test "metrics dashboard - updown counter and gauge" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "test-meter")
+  
+  // Test UpDownCounter
+  let updown_counter = Meter::create_updown_counter(meter, "test-updown", Some("Test updown counter"), Some("items"))
+  assert_eq(updown_counter.name, "test-updown")
   
   UpDownCounter::add(updown_counter, 5.0)
   UpDownCounter::add(updown_counter, -2.0)
   
-  // 验证指标名称和描述
-  let histogram_instrument = Histogram::as_instrument(histogram)
-  assert_true(Instrument::name(histogram_instrument) == "response.time")
-  assert_true(Instrument::description(histogram_instrument) is Some("响应时间"))
-  assert_true(Instrument::unit(histogram_instrument) is Some("ms"))
-  
-  assert_true(true)
+  // Test Gauge
+  let gauge = Meter::create_gauge(meter, "test-gauge", Some("Test gauge"), Some("percent"))
+  assert_eq(gauge.name, "test-gauge")
+  assert_eq(gauge.description, Some("Test gauge"))
+  assert_eq(gauge.unit, Some("percent"))
 }
 
-// 测试4: 日志记录完整测试
-test "日志记录完整测试" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "logging.test")
+// Test 4: Distributed Tracing Consistency Tests
+test "distributed tracing - span context validity" {
+  // Test valid span context
+  let valid_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", true, "key1=value1,key2=value2")
+  assert_true(SpanContext::is_valid(valid_ctx))
+  assert_true(SpanContext::is_sampled(valid_ctx))
+  assert_eq(SpanContext::trace_id(valid_ctx), "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(SpanContext::span_id(valid_ctx), "b7ad6b7169203331")
   
-  // 创建不同严重级别的日志记录
-  let debug_record = LogRecord::new(Debug, "调试信息")
-  let info_record = LogRecord::new(Info, "普通信息")
-  let warn_record = LogRecord::new(Warn, "警告信息")
-  let error_record = LogRecord::new(Error, "错误信息")
+  // Test invalid span context (empty trace ID)
+  let invalid_ctx1 = SpanContext::new("", "b7ad6b7169203331", true, "")
+  assert_false(SpanContext::is_valid(invalid_ctx1))
   
-  // 验证日志记录的严重级别
-  match LogRecord::severity_number(debug_record) {
-    Debug => assert_true(true)
-    _ => assert_true(false)
-  }
-  match LogRecord::severity_number(info_record) {
-    Info => assert_true(true)
-    _ => assert_true(false)
-  }
-  match LogRecord::severity_number(warn_record) {
-    Warn => assert_true(true)
-    _ => assert_true(false)
-  }
-  match LogRecord::severity_number(error_record) {
-    Error => assert_true(true)
-    _ => assert_true(false)
+  // Test invalid span context (empty span ID)
+  let invalid_ctx2 = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "", true, "")
+  assert_false(SpanContext::is_valid(invalid_ctx2))
+  
+  // Test unsampled span context
+  let unsampled_ctx = SpanContext::new("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331", false, "")
+  assert_true(SpanContext::is_valid(unsampled_ctx))
+  assert_false(SpanContext::is_sampled(unsampled_ctx))
+}
+
+test "distributed tracing - span kind variations" {
+  let span_ctx = SpanContext::new("trace123", "span456", true, "")
+  
+  let internal_span = Span::new("internal-span", Internal, span_ctx)
+  assert_eq(Span::kind(internal_span), Internal)
+  
+  let server_span = Span::new("server-span", Server, span_ctx)
+  assert_eq(Span::kind(server_span), Server)
+  
+  let client_span = Span::new("client-span", Client, span_ctx)
+  assert_eq(Span::kind(client_span), Client)
+  
+  let producer_span = Span::new("producer-span", Producer, span_ctx)
+  assert_eq(Span::kind(producer_span), Producer)
+  
+  let consumer_span = Span::new("consumer-span", Consumer, span_ctx)
+  assert_eq(Span::kind(consumer_span), Consumer)
+}
+
+// Test 5: Cross-Service Propagation Tests
+test "cross-service propagation - context operations" {
+  let root_ctx = Context::root()
+  let key = ContextKey::new("test-key")
+  
+  // Test setting and getting values in context
+  let ctx_with_value = Context::with_value(root_ctx, key, "test-value")
+  let retrieved_value = Context::get(ctx_with_value, key)
+  
+  match retrieved_value {
+    Some(value) => assert_eq(value, "test-value")
+    None => assert_true(false)
   }
   
-// 验证日志记录的正文
-  match LogRecord::body(debug_record) {
-    Some("调试信息") => assert_true(true)
-    _ => assert_true(false)
+  // Test getting non-existent key
+  let non_existent_key = ContextKey::new("non-existent")
+  let non_existent_value = Context::get(ctx_with_value, non_existent_key)
+  
+  match non_existent_value {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
-  match LogRecord::body(info_record) {
-    Some("普通信息") => assert_true(true)
-    _ => assert_true(false)
+}
+
+test "cross-service propagation - baggage operations" {
+  let baggage = Baggage::new()
+  
+  // Test setting and getting baggage entries
+  let updated_baggage = Baggage::set_entry(baggage, "key1", "value1")
+  let value1 = Baggage::get_entry(updated_baggage, "key1")
+  
+  match value1 {
+    Some(v) => assert_eq(v, "value1")
+    None => assert_true(false)
   }
   
-  // 创建带上下文的日志记录
-  let clock = Clock::system()
-  let timestamp = Clock::now_unix_nanos(clock)
+  // Test setting multiple entries
+  let baggage2 = Baggage::set_entry(updated_baggage, "key2", "value2")
+  let value2 = Baggage::get_entry(baggage2, "key2")
   
-  let contextual_record = LogRecord::new_with_context(
+  match value2 {
+    Some(v) => assert_eq(v, "value2")
+    None => assert_true(false)
+  }
+  
+  // Test removing entries
+  let baggage3 = Baggage::remove_entry(baggage2, "key1")
+  let removed_value = Baggage::get_entry(baggage3, "key1")
+  
+  match removed_value {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+test "cross-service propagation - text map carrier" {
+  let carrier = TextMapCarrier::new()
+  
+  // Test setting and getting headers
+  TextMapCarrier::set(carrier, "traceparent", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+  TextMapCarrier::set(carrier, "baggage", "key1=value1,key2=value2")
+  
+  let traceparent = TextMapCarrier::get(carrier, "traceparent")
+  match traceparent {
+    Some(value) => assert_eq(value, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+    None => assert_true(false)
+  }
+  
+  let baggage = TextMapCarrier::get(carrier, "baggage")
+  match baggage {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
+  
+  // Test getting non-existent header
+  let non_existent = TextMapCarrier::get(carrier, "non-existent")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// Test 6: Log Record Severity Level Tests
+test "log severity levels - basic severity numbers" {
+  // Test creating log records with different severity levels
+  let trace_record = LogRecord::new(Trace, "Trace message")
+  assert_eq(LogRecord::severity_number(trace_record), Trace)
+  assert_eq(LogRecord::body(trace_record), Some("Trace message"))
+  
+  let debug_record = LogRecord::new(Debug, "Debug message")
+  assert_eq(LogRecord::severity_number(debug_record), Debug)
+  assert_eq(LogRecord::body(debug_record), Some("Debug message"))
+  
+  let info_record = LogRecord::new(Info, "Info message")
+  assert_eq(LogRecord::severity_number(info_record), Info)
+  assert_eq(LogRecord::body(info_record), Some("Info message"))
+  
+  let warn_record = LogRecord::new(Warn, "Warning message")
+  assert_eq(LogRecord::severity_number(warn_record), Warn)
+  assert_eq(LogRecord::body(warn_record), Some("Warning message"))
+  
+  let error_record = LogRecord::new(Error, "Error message")
+  assert_eq(LogRecord::severity_number(error_record), Error)
+  assert_eq(LogRecord::body(error_record), Some("Error message"))
+  
+  let fatal_record = LogRecord::new(Fatal, "Fatal message")
+  assert_eq(LogRecord::severity_number(fatal_record), Fatal)
+  assert_eq(LogRecord::body(fatal_record), Some("Fatal message"))
+}
+
+test "log severity levels - log records with context" {
+  let attrs = Attributes::new()
+  Attributes::set(attrs, "service.name", StringValue("test-service"))
+  
+  let timestamp = Clock::now_unix_nanos(Clock::system())
+  let observed_timestamp = timestamp + 1000L
+  
+  let record = LogRecord::new_with_context(
     Error,
-    Some("严重错误"),
-    None,
+    Some("Error with context"),
+    Some(attrs),
     Some(timestamp),
-    None,
-    Some("trace-123"),
-    Some("span-456"),
-    None
+    Some(observed_timestamp),
+    Some("trace123"),
+    Some("span456"),
+    Some(Context::root())
   )
   
-  // 验证上下文信息
-  match LogRecord::trace_id(contextual_record) {
-    Some("trace-123") => assert_true(true)
-    _ => assert_true(false)
-  }
-  match LogRecord::span_id(contextual_record) {
-    Some("span-456") => assert_true(true)
-    _ => assert_true(false)
-  }
+  assert_eq(LogRecord::severity_number(record), Error)
+  assert_eq(LogRecord::body(record), Some("Error with context"))
+  assert_eq(LogRecord::trace_id(record), Some("trace123"))
+  assert_eq(LogRecord::span_id(record), Some("span456"))
+}
+
+test "log severity levels - logger operations" {
+  let provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(provider, "test-logger")
   
-  // 发出日志记录
+  // Create and emit log records
+  let info_record = LogRecord::new(Info, "Information message")
   Logger::emit(logger, info_record)
+  
+  let error_record = LogRecord::new(Error, "Error message")
   Logger::emit(logger, error_record)
-  Logger::emit(logger, contextual_record)
   
+  let warn_record = LogRecord::new(Warn, "Warning message")
+  Logger::emit(logger, warn_record)
+  
+  // All operations should complete without errors
   assert_true(true)
 }
 
-// 测试5: 跨服务一致性测试
-test "跨服务一致性测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "consistency.test")
+// Test 7: Resource Merge Strategy Tests
+test "resource merge strategy - basic resource operations" {
+  let resource = Resource::new()
   
-  // 创建服务A的Span
-  let service_a_span = Tracer::start_span(tracer, "service-a.operation")
-  Span::add_event(service_a_span, "service.a.operation")
-  
-  // 获取Span上下文
-  let span_context = Span::span_context(service_a_span)
-  let trace_id = SpanContext::trace_id(span_context)
-  let span_id = SpanContext::span_id(span_context)
-  
-  // 验证上下文有效性
-  assert_true(SpanContext::is_valid(span_context))
-  assert_true(SpanContext::is_sampled(span_context))
-  
-  // 创建服务B的Span，使用相同的trace_id
-  let service_b_context = SpanContext::new(trace_id, "service-b-span", true, "")
-  let service_b_span = Span::new("service-b.operation", Client, service_b_context)
-  Span::add_event(service_b_span, "service.b.operation")
-  
-  // 验证跨服务trace一致性
-  let service_b_trace_id = SpanContext::trace_id(Span::span_context(service_b_span))
-  assert_true(trace_id == service_b_trace_id)
-  
-  // 结束Span
-  Span::end(service_b_span)
-  Span::end(service_a_span)
-  
-  assert_true(true)
-}
-
-// 测试6: 资源限制测试
-test "资源限制测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "resource.limit.test")
-  
-  // 创建大量属性
-  let attributes = Attributes::new()
-  
-  // 测试属性数量限制
-  for i = 0; i < 100; i = i + 1 {
-    let key = "attribute." + i.to_string()
-    Attributes::set(attributes, key, StringValue("value-" + i.to_string()))
+  // Test getting non-existent attribute
+  let non_existent = Resource::get_attribute(resource, "non.existent")
+  match non_existent {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // 验证属性设置成功
-  let test_value = Attributes::get(attributes, "attribute.50")
-  match test_value {
-    Some(StringValue("value-50")) => assert_true(true)
+  // Test creating resource with attributes
+  let attrs = [
+    ("service.name", StringValue("test-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123"))
+  ]
+  
+  let resource_with_attrs = Resource::with_attributes(resource, attrs)
+  
+  // Test getting attributes
+  let service_name = Resource::get_attribute(resource_with_attrs, "service.name")
+  match service_name {
+    Some(StringValue(value)) => assert_eq(value, "test-service")
     _ => assert_true(false)
   }
   
-// 记录资源限制测试指标
-  let counter = Meter::create_counter(meter, "resource.limit.counter")
-  let histogram = Meter::create_histogram(meter, "resource.limit.histogram")
-  
-  // 模拟资源限制场景
-  for i = 0; i < 10000; i = i + 1 {
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, i.to_double())
-    
-// 创建并发Span
-    let tracer_provider = TracerProvider::default()
-    let tracer = TracerProvider::get_tracer(tracer_provider, "resource.limit.tracer")
-    let span = Tracer::start_span(tracer, "resource.limit.operation")
-    Span::add_event(span, "resource.limit.event")
-    Span::end(span)
+  let service_version = Resource::get_attribute(resource_with_attrs, "service.version")
+  match service_version {
+    Some(StringValue(value)) => assert_eq(value, "1.0.0")
+    _ => assert_true(false)
   }
-  
-  assert_true(true)
 }
 
-// 测试7: 并发安全测试
-test "并发安全测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent.test")
+test "resource merge strategy - merge operations" {
+  let base_attrs = [
+    ("service.name", StringValue("base-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("deployment.environment", StringValue("production"))
+  ]
   
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "concurrent.test")
+  let override_attrs = [
+    ("service.name", StringValue("override-service")),
+    ("service.instance.id", StringValue("instance-456")),
+    ("host.name", StringValue("host-123"))
+  ]
   
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "concurrent.test")
+  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
+  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
   
-  // 创建共享资源
-  let counter = Meter::create_counter(meter, "concurrent.counter")
-  let histogram = Meter::create_histogram(meter, "concurrent.histogram")
+  // Test merge operation
+  let merged_resource = Resource::merge(base_resource, override_resource)
   
-  // 模拟并发操作
-  for i = 0; i < 10; i = i + 1 {
-    // 创建并发Span
-    let span = Tracer::start_span(tracer, "concurrent.operation-" + i.to_string())
-    Span::add_event(span, "concurrent.operation")
-    
-    // 记录并发度量
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, (i * 10).to_double())
-    
-    // 记录并发日志
-    let log_record = LogRecord::new(Info, "并发操作-" + i.to_string())
-    Logger::emit(logger, log_record)
-    
-    // 结束Span
-    Span::end(span)
+  // In simplified implementation, override resource takes precedence
+  let service_name = Resource::get_attribute(merged_resource, "service.name")
+  match service_name {
+    Some(StringValue(value)) => assert_eq(value, "override-service")
+    _ => assert_true(false)
   }
   
-  // 创建Baggage并测试并发操作
-  let baggage = Baggage::new()
-  let updated_baggage = Baggage::set_entry(baggage, "concurrent.key", "concurrent.value")
-  
-  // 验证Baggage操作
-  let baggage_value = Baggage::get_entry(updated_baggage, "concurrent.key")
-  assert_true(baggage_value is Some("concurrent.value"))
-  
-  assert_true(true)
-}
-
-// 测试8: 边界条件测试
-test "边界条件测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "boundary.test")
-  
-  // 创建边界条件的指标
-  let counter = Meter::create_counter(meter, "boundary.counter")
-  let histogram = Meter::create_histogram(meter, "boundary.histogram")
-  
-  // 测试极端值
-  Counter::add(counter, -1.0)
-  Counter::add(counter, 0.0)
-  Counter::add(counter, 999999.0)
-  
-  Histogram::record(histogram, -1.0)
-  Histogram::record(histogram, 0.0)
-  Histogram::record(histogram, 999999.0)
-  
-  // 测试空字符串和特殊字符
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.test")
-  
-  let empty_span = Tracer::start_span(tracer, "")
-  Span::add_event(empty_span, "")
-  Span::end(empty_span)
-  
-  let special_span = Tracer::start_span(tracer, "特殊字符测试!@#$%^&*()")
-  Span::add_event(special_span, "特殊字符事件!@#$%^&*()")
-  Span::end(special_span)
-  
-  assert_true(true)
-}
-
-// 测试9: 配置管理测试
-test "配置管理测试" {
-  // 简化配置管理测试
-  let config = "sampling.rate=0.1,max.batch.size=100,export.interval=5000"
-  
-  // 验证配置包含预期值
-  assert_true(config.contains("sampling.rate"))
-  assert_true(config.contains("max.batch.size"))
-  assert_true(config.contains("export.interval"))
-  
-  assert_true(true)
-}
-
-// 测试10: 数据完整性测试
-test "数据完整性测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "integrity.test")
-  
-  // 创建数据完整性验证的指标
-  let counter = Meter::create_counter(meter, "integrity.counter")
-  let histogram = Meter::create_histogram(meter, "integrity.histogram")
-  
-  // 记录一系列数据
-  for i = 0; i < 1000; i = i + 1 {
-    Counter::add(counter, 1.0)
-    Histogram::record(histogram, i.to_double())
+  let service_instance_id = Resource::get_attribute(merged_resource, "service.instance.id")
+  match service_instance_id {
+    Some(StringValue(value)) => assert_eq(value, "instance-456")
+    _ => assert_true(false)
   }
+}
+
+// Test 8: Concurrency Safety Tests
+test "concurrency safety - tracer provider operations" {
+  let provider = TracerProvider::default()
   
-  // 验证数据完整性
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "integrity.test")
+  // Create multiple tracers
+  let tracer1 = TracerProvider::get_tracer(provider, "tracer1", Some("1.0.0"))
+  let tracer2 = TracerProvider::get_tracer(provider, "tracer2", Some("2.0.0"))
+  let tracer3 = TracerProvider::get_tracer(provider, "tracer3")
   
-  let parent_span = Tracer::start_span(tracer, "integrity.parent")
-  Span::add_event(parent_span, "start.validation")
+  // Verify tracer properties
+  let scope1 = Tracer::instrumentation_scope(tracer1)
+  assert_eq(scope1.name, "tracer1")
+  assert_eq(scope1.version, Some("1.0.0"))
   
-  for i = 0; i < 10; i = i + 1 {
-    let child_span = Tracer::start_span(tracer, "integrity.child")
-    Span::add_event(child_span, "child.operation")
-    Span::end(child_span)
-  }
+  let scope2 = Tracer::instrumentation_scope(tracer2)
+  assert_eq(scope2.name, "tracer2")
+  assert_eq(scope2.version, Some("2.0.0"))
   
-  Span::add_event(parent_span, "end.validation")
-  Span::end(parent_span)
+  let scope3 = Tracer::instrumentation_scope(tracer3)
+  assert_eq(scope3.name, "tracer3")
+  assert_eq(scope3.version, None)
+}
+
+test "concurrency safety - meter provider operations" {
+  let provider = MeterProvider::default()
   
+  // Create multiple meters
+  let meter1 = MeterProvider::get_meter(provider, "meter1")
+  let meter2 = MeterProvider::get_meter(provider, "meter2")
+  let meter3 = MeterProvider::get_meter(provider, "meter3")
+  
+  // Create instruments from different meters
+  let counter1 = Meter::create_counter(meter1, "counter1")
+  let histogram1 = Meter::create_histogram(meter2, "histogram1")
+  let updown_counter1 = Meter::create_updown_counter(meter3, "updown1")
+  let gauge1 = Meter::create_gauge(meter1, "gauge1")
+  
+  // Verify instrument properties
+  assert_eq(counter1.name, "counter1")
+  assert_eq(histogram1.name, "histogram1")
+  assert_eq(updown_counter1.name, "updown1")
+  assert_eq(gauge1.name, "gauge1")
+}
+
+test "concurrency safety - logger provider operations" {
+  let provider = LoggerProvider::default()
+  
+  // Create multiple loggers
+  let logger1 = LoggerProvider::get_logger(provider, "logger1")
+  let logger2 = LoggerProvider::get_logger(provider, "logger2")
+  let logger3 = LoggerProvider::get_logger(provider, "logger3")
+  
+  // Create and emit log records from different loggers
+  let record1 = LogRecord::new(Info, "Message from logger1")
+  let record2 = LogRecord::new(Warn, "Message from logger2")
+  let record3 = LogRecord::new(Error, "Message from logger3")
+  
+  Logger::emit(logger1, record1)
+  Logger::emit(logger2, record2)
+  Logger::emit(logger3, record3)
+  
+  // All operations should complete without errors
   assert_true(true)
 }

@@ -7,6 +7,7 @@
   "deps": {
     "moonbitlang/core/assertion": "*"
   },
+  "test-import": ["azimuth"],
 "test": {
     "test": ["new_enhanced_tests.mbt", "enhanced_quality_tests.mbt", "azimuth_comprehensive_enhanced_tests.mbt", "enhanced_test_suite.mbt", "azimuth_premium_comprehensive_tests.mbt", "azimuth_new_tests.mbt", "azimuth_advanced_lifecycle_tests.mbt", "azimuth_focused_moonbit_tests.mbt", "azimuth_new_focused_tests.mbt", "azimuth_comprehensive_test_suite.mbt"]
   }

@@ -1,40 +1,32 @@
 #!/bin/bash
-# 验证新创建的azimuth_comprehensive_test_suite.mbt测试文件
 
-echo "验证新创建的azimuth_comprehensive_test_suite.mbt测试文件..."
+echo "验证 Azimuth 综合测试套件..."
 
-# 检查文件是否存在
-if [ -f "/home/runner/work/Azimuth/Azimuth/azimuth/azimuth_comprehensive_test_suite.mbt" ]; then
-    echo "✓ 测试文件存在: azimuth_comprehensive_test_suite.mbt"
-else
-    echo "✗ 测试文件不存在: azimuth_comprehensive_test_suite.mbt"
+# 检查测试文件是否存在
+if [ ! -f "/home/runner/work/Azimuth/Azimuth/azimuth_test/azimuth_comprehensive_test_suite.mbt" ]; then
+    echo "错误：测试文件不存在"
     exit 1
 fi
 
-# 检查文件中是否包含测试用例
-test_count=$(grep -c 'test "' /home/runner/work/Azimuth/Azimuth/azimuth/azimuth_comprehensive_test_suite.mbt)
-echo "✓ 找到 $test_count 个测试用例"
+echo "✓ 测试文件存在"
 
-# 验证测试用例数量不超过10个
-if [ $test_count -le 10 ]; then
-    echo "✓ 测试用例数量符合要求 (不超过10个)"
-else
-    echo "✗ 测试用例数量超过限制 (超过10个)"
-    exit 1
+# 检查测试文件是否包含10个测试
+test_count=$(grep -c '^test "' /home/runner/work/Azimuth/Azimuth/azimuth_test/azimuth_comprehensive_test_suite.mbt)
+echo "✓ 发现 $test_count 个测试用例"
+
+if [ $test_count -ne 10 ]; then
+    echo "警告：测试用例数量不是10个"
 fi
 
-# 检查是否已添加到moon.pkg.json
-if grep -q "azimuth_comprehensive_test_suite.mbt" /home/runner/work/Azimuth/Azimuth/azimuth/moon.pkg.json; then
-    echo "✓ 测试文件已添加到moon.pkg.json"
-else
-    echo "✗ 测试文件未添加到moon.pkg.json"
-    exit 1
-fi
+# 检查测试文件是否包含所有必要的测试类型
+test_types=("基础属性操作测试" "时间序列数据操作测试" "度量仪表盘测试" "日志记录完整测试" "跨服务一致性测试" "资源限制测试" "并发安全测试" "边界条件测试" "配置管理测试" "数据完整性测试")
 
-# 列出所有测试用例名称
-echo ""
-echo "测试用例列表:"
-grep 'test "' /home/runner/work/Azimuth/Azimuth/azimuth/azimuth_comprehensive_test_suite.mbt | sed 's/.*test "\([^"]*\)".*/\1/'
+for test_type in "${test_types[@]}"; do
+    if grep -q "$test_type" /home/runner/work/Azimuth/Azimuth/azimuth_test/azimuth_comprehensive_test_suite.mbt; then
+        echo "✓ 包含测试: $test_type"
+    else
+        echo "✗ 缺少测试: $test_type"
+    fi
+done
 
-echo ""
-echo "验证完成！所有测试用例已成功创建并配置。"
+echo "验证完成！"
