@@ -1,13 +1,22 @@
 {
-  "name": "azimuth-new-tests",
+  "name": "azimuth",
   "version": "0.1.0",
-  "description": "Azimuth telemetry system - New tests only",
+  "description": "Azimuth telemetry system main package - New Tests Only",
   "target": "wasm-gc",
   "source": ["."],
   "deps": {
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["azimuth.mbt", "focused_enhancement_tests.mbt", "comprehensive_edge_case_tests.mbt"]
+    "test": [
+      "azimuth_new_resource_merge_tests.mbt",
+      "azimuth_new_memory_management_tests.mbt",
+      "azimuth_new_concurrency_tests.mbt",
+      "azimuth_new_security_tests.mbt",
+      "azimuth_new_timeseries_tests.mbt",
+      "azimuth_new_lifecycle_tests.mbt",
+      "azimuth_new_error_boundary_tests.mbt",
+      "azimuth_new_microservice_tests.mbt"
+    ]
   }
 }
