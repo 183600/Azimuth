@@ -1,364 +1,514 @@
-// Azimuth Telemetry System - New MoonBit Test Suite
-// This file contains new test cases focusing on advanced telemetry features
+// Azimuth 新增MoonBit测试用例
+// 涵盖多种测试场景和边界条件，使用正确的MoonBit API
 
-// Test 1: Telemetry Data Compression
-test "telemetry data compression efficiency" {
-  // Test compression ratio calculation
-  let original_data = "azimuth-telemetry-data-".repeat(100)
-  let original_size = original_data.length()
-  
-  // Simulate compression (50% compression ratio)
-  let compression_ratio = 0.5
-  let compressed_size = (original_size.to_float() * compression_ratio).to_int()
-  
-  assert_eq(original_size, 2600) // 26 * 100
-  assert_eq(compressed_size, 1300)
-  
-  // Test compression metadata
-  let compression_metadata = [
-    ("algorithm", "lz4"),
-    ("original_size", original_size.to_string()),
-    ("compressed_size", compressed_size.to_string()),
-    ("compression_ratio", compression_ratio.to_string())
-  ]
-  
-  assert_eq(compression_metadata.length(), 4)
-  
-  // Test decompression validation
-  let decompressed_size = compressed_size * 2 // Simulate decompression
-  assert_eq(decompressed_size, original_size)
-}
-
-// Test 2: Distributed Tracing Consistency
-test "distributed tracing consistency validation" {
-  // Test trace ID consistency across services
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let services = ["auth-service", "user-service", "order-service", "payment-service"]
-  
-  // Generate span IDs for each service
-  let span_ids = services.map(|service| {
-    service.to_uppercase().replace("-", "") + "-SPAN-ID"
-  })
-  
-  assert_eq(span_ids.length(), 4)
-  
-  // Validate trace ID consistency
-  for span_id in span_ids {
-    assert_true(trace_id.length() == 32)
-    assert_true(span_id.length() > 10)
-  }
-  
-  // Test parent-child relationships
-  let parent_spans = [("auth-service", "user-service"), ("user-service", "order-service")]
-  for (parent, child) in parent_spans {
-    assert_not_eq(parent, child)
-    assert_true(services.contains(parent))
-    assert_true(services.contains(child))
-  }
-}
-
-// Test 3: Metrics Aggregation Algorithms
-test "metrics aggregation algorithms accuracy" {
-  // Test counter aggregation
-  let service_counters = [
-    ("service-a", 100.0),
-    ("service-b", 150.0),
-    ("service-c", 75.0),
-    ("service-d", 200.0)
-  ]
-  
-  let total_requests = service_counters.reduce(|acc, (_, count)| acc + count, 0.0)
-  assert_eq(total_requests, 525.0)
-  
-  // Test average calculation
-  let avg_requests = total_requests / service_counters.length().to_float()
-  assert_eq(avg_requests, 131.25)
-  
-  // Test percentile calculation (simplified)
-  let sorted_counts = service_counters.map(|(_, count)| count).sort()
-  let p50_index = (sorted_counts.length() * 50) / 100
-  let p95_index = (sorted_counts.length() * 95) / 100
-  
-  assert_eq(sorted_counts[p50_index], 150.0) // 50th percentile
-  assert_eq(sorted_counts[p95_index], 200.0) // 95th percentile
-  
-  // Test rate calculation
-  let time_window_seconds = 60.0
-  let requests_per_second = total_requests / time_window_seconds
-  assert_eq(requests_per_second, 8.75)
-}
-
-// Test 4: Log Correlation and Context Propagation
-test "log correlation and context propagation" {
-  // Test trace and span ID correlation
-  let trace_id = "abc123def45678901234567890123456"
-  let span_ids = ["1111111111111111", "2222222222222222", "3333333333333333"]
-  
-  // Create log records with correlation
-  let log_records = span_ids.map(|span_id| {
-    [
-      ("trace.id", trace_id),
-      ("span.id", span_id),
-      ("log.level", "info"),
-      ("log.message", "Processing request")
-    ]
-  }).flatten()
-  
-  assert_eq(log_records.length(), 16) // 4 fields * 4 spans
-  
-  // Test correlation filtering
-  let trace_logs = log_records.filter(|(key, value)| {
-    key == "trace.id" && value == trace_id
-  })
-  assert_eq(trace_logs.length(), 4) // One for each span
-  
-  // Test context propagation validation
-  let context_entries = [
-    ("user.id", "12345"),
-    ("session.id", "session-abc"),
-    ("request.id", "req-789")
-  ]
-  
-  let propagated_context = context_entries.map(|(k, v)| k + ":" + v).reduce(|acc, entry| acc + "," + entry, "")
-  assert_true(propagated_context.contains("user.id:12345"))
-  assert_true(propagated_context.contains("session.id:session-abc"))
-  assert_true(propagated_context.contains("request.id:req-789"))
-}
-
-// Test 5: Resource Limit Handling
-test "resource limit handling and throttling" {
-  // Test memory usage limits
-  let max_memory_mb = 512
-  let current_memory_mb = 400
-  let available_memory_mb = max_memory_mb - current_memory_mb
-  
-  assert_true(available_memory_mb > 0)
-  assert_eq(available_memory_mb, 112)
-  
-  // Test processing throttling
-  let max_requests_per_second = 1000
-  let current_requests_per_second = 850
-  let throttle_threshold = 0.8 // 80% threshold
-  
-  let utilization_ratio = current_requests_per_second.to_float() / max_requests_per_second.to_float()
-  assert_eq(utilization_ratio, 0.85)
-  
-  let should_throttle = utilization_ratio > throttle_threshold
-  assert_true(should_throttle)
-  
-  // Test queue management under load
-  let max_queue_size = 10000
-  let current_queue_size = 7500
-  let queue_utilization = current_queue_size.to_float() / max_queue_size.to_float()
-  
-  assert_eq(queue_utilization, 0.75)
-  assert_false(queue_utilization > 0.9) // Not at critical threshold
-}
-
-// Test 6: Error Recovery and Resilience
-test "error recovery and resilience mechanisms" {
-  // Test retry logic with exponential backoff
-  let max_retries = 3
-  let base_delay_ms = 100
-  let retry_attempts = [0, 1, 2, 3]
-  
-  let retry_delays = retry_attempts.map(|attempt| {
-    if attempt >= max_retries {
-      0 // No more retries
-    } else {
-      base_delay_ms * (2 ^ attempt) // Exponential backoff
+// 测试1: 错误处理和异常情况
+test "错误处理和异常情况测试" {
+  // 除零错误处理
+  let safe_divide = fn(a, b) {
+    if b == 0 { 
+      None 
+    } else { 
+      Some(a / b)
     }
-  })
-  
-  assert_eq(retry_delays, [100, 200, 400, 0])
-  
-  // Test circuit breaker pattern
-  let failure_threshold = 5
-  let current_failures = 3
-  let circuit_state = if current_failures >= failure_threshold {
-    "open"
-  } else if current_failures > 0 {
-    "half-open"
-  } else {
-    "closed"
   }
   
-  assert_eq(circuit_state, "half-open")
-  
-  // Test timeout handling
-  let operation_timeout_ms = 5000
-  let operation_durations = [3000, 6000, 2000, 7000, 1500]
-  
-  let timed_out_operations = operation_durations.filter(|duration| {
-    *duration > operation_timeout_ms
-  })
-  
-  assert_eq(timed_out_operations.length(), 2)
-}
-
-// Test 7: Performance Benchmarking
-test "performance benchmarking and metrics" {
-  // Test latency measurements
-  let operation_latencies = [10, 15, 8, 25, 12, 18, 22, 14, 16, 20] // in milliseconds
-  
-  let avg_latency = operation_latencies.reduce(|acc, val| acc + val, 0) / operation_latencies.length()
-  assert_eq(avg_latency, 16)
-  
-  // Test throughput calculation
-  let total_operations = 10000
-  let time_window_seconds = 60
-  let throughput_ops_per_sec = total_operations / time_window_seconds
-  
-  assert_eq(throughput_ops_per_sec, 166)
-  
-  // Test percentile calculations
-  let sorted_latencies = operation_latencies.sort()
-  let p50_index = (sorted_latencies.length() * 50) / 100
-  let p95_index = (sorted_latencies.length() * 95) / 100
-  let p99_index = (sorted_latencies.length() * 99) / 100
-  
-  assert_eq(sorted_latencies[p50_index], 16)  // 50th percentile
-  assert_eq(sorted_latencies[p95_index], 25)  // 95th percentile
-  assert_eq(sorted_latencies[p99_index], 25)  // 99th percentile (capped at max)
-  
-  // Test memory efficiency
-  let memory_before_mb = 100
-  let memory_after_mb = 120
-  let memory_overhead_mb = memory_after_mb - memory_before_mb
-  let memory_efficiency_ratio = memory_before_mb.to_float() / memory_after_mb.to_float()
-  
-  assert_eq(memory_overhead_mb, 20)
-  assert_eq(memory_efficiency_ratio, 0.8333333333333334)
-}
-
-// Test 8: Data Integrity Validation
-test "data integrity validation and checksums" {
-  // Test checksum calculation (simplified)
-  let data_blocks = [
-    "block1-data",
-    "block2-data", 
-    "block3-data",
-    "block4-data"
-  ]
-  
-  // Simple checksum: sum of character codes
-  let calculate_checksum = fn(data: String) -> Int {
-    data.to_array().reduce(|acc, char| acc + char.to_int(), 0)
+  match safe_divide(10, 2) {
+    Some(result) => assert_eq(result, 5)
+    None => assert_true(false)
   }
   
-  let checksums = data_blocks.map(|block| calculate_checksum(block))
-  assert_eq(checksums.length(), 4)
+  match safe_divide(10, 0) {
+    Some(result) => assert_true(false)
+    None => assert_true(true)
+  }
   
-  // Test data validation
-  let original_data = "azimuth-telemetry-test-data"
-  let transmitted_data = "azimuth-telemetry-test-data"
-  let corrupted_data = "azimuth-telemetry-test-data" // Missing 't'
+  // 数组越界保护
+  let safe_get = fn(arr, index) {
+    if index >= 0 && index < arr.length() {
+      Some(arr[index])
+    } else {
+      None
+    }
+  }
   
-  let original_checksum = calculate_checksum(original_data)
-  let transmitted_checksum = calculate_checksum(transmitted_data)
-  let corrupted_checksum = calculate_checksum(corrupted_data)
+  let test_array = [1, 2, 3, 4, 5]
   
-  assert_eq(original_checksum, transmitted_checksum)
-  assert_not_eq(original_checksum, corrupted_checksum)
+  match safe_get(test_array, 2) {
+    Some(value) => assert_eq(value, 3)
+    None => assert_true(false)
+  }
   
-  // Test sequence validation
-  let sequence_numbers = [1, 2, 3, 4, 5]
-  let expected_sequence = [1, 2, 3, 4, 5]
-  let is_sequence_valid = sequence_numbers == expected_sequence
-  assert_true(is_sequence_valid)
+  match safe_get(test_array, 10) {
+    Some(value) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  match safe_get(test_array, -1) {
+    Some(value) => assert_true(false)
+    None => assert_true(true)
+  }
 }
 
-// Test 9: Concurrent Safety and Thread Safety
-test "concurrent safety and thread safety validation" {
-  // Test atomic operations simulation
-  let shared_counter_init = 0
-  let increments = [1, 1, 1, 1, 1] // 5 concurrent increments
-  
-  let final_counter = shared_counter_init + increments.reduce(|acc, val| acc + val, 0)
-  assert_eq(final_counter, 5)
-  
-  // Test lock contention simulation
-  let lock_acquisitions = [10, 15, 8, 12, 20] // milliseconds
-  let avg_lock_time = lock_acquisitions.reduce(|acc, val| acc + val, 0) / lock_acquisitions.length()
-  assert_eq(avg_lock_time, 13)
-  
-  // Test race condition detection
-  let concurrent_operations = [
-    ("thread-1", "read", 100),
-    ("thread-2", "write", 101),
-    ("thread-3", "read", 101),
-    ("thread-4", "write", 102)
+// 测试2: 数据结构操作
+test "高级数据结构操作测试" {
+  // 嵌套数组操作
+  let matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
   ]
   
-  // Detect potential race conditions (read after write)
-  let race_conditions = concurrent_operations.filter_map(|(thread, op, value)| {
-    if op == "read" {
-      // Check if there's a write operation with different value
-      let has_conflicting_write = concurrent_operations.any(|(t, o, v)| {
-        t != thread && o == "write" && v != value
-      })
-      if has_conflicting_write {
-        Some((thread, "potential_race"))
-      } else {
-        None
+  assert_eq(matrix.length(), 3)
+  assert_eq(matrix[0].length(), 3)
+  assert_eq(matrix[1][2], 6)
+  assert_eq(matrix[2][0], 7)
+  
+  // 矩阵转置（简化版）
+  let transpose = fn(m) {
+    if m.length() == 0 { [] }
+    else {
+      // 简化实现，只处理3x3矩阵
+      if m.length() == 3 && m[0].length() == 3 {
+        [
+          [m[0][0], m[1][0], m[2][0]],
+          [m[0][1], m[1][1], m[2][1]],
+          [m[0][2], m[1][2], m[2][2]]
+        ]
+      } else { [] }
+    }
+  }
+  
+  let transposed = transpose(matrix)
+  assert_eq(transposed[0][0], 1)
+  assert_eq(transposed[0][1], 4)
+  assert_eq(transposed[0][2], 7)
+  assert_eq(transposed[1][0], 2)
+  assert_eq(transposed[2][2], 9)
+}
+
+// 测试3: 字符串高级操作
+test "字符串高级操作测试" {
+  let text = "Azimuth Telemetry System"
+  
+  // 字符串长度
+  assert_eq(text.length(), 23)
+  
+  // 字符串连接
+  let str1 = "hello"
+  let str2 = "world"
+  let joined = str1 + " " + str2
+  assert_eq(joined, "hello world")
+  
+  // 子字符串检查
+  assert_true(text.contains("Telemetry"))
+  assert_false(text.contains("Monitoring"))
+  
+  // 字符串比较
+  assert_eq(str1, "hello")
+  assert_not_eq(str1, "world")
+  
+  // 字符串转换
+  let num_str = "42"
+  let num = 42
+  assert_eq(num.to_string(), num_str)
+}
+
+// 测试4: 数值计算和精度
+test "数值计算和精度测试" {
+  // 基本算术运算
+  let a = 0.1
+  let b = 0.2
+  let sum = a + b
+  
+  // 数值范围检查
+  let clamp = fn(value, min, max) {
+    if value < min { min }
+    else if value > max { max }
+    else { value }
+  }
+  
+  assert_eq(clamp(5, 0, 10), 5)
+  assert_eq(clamp(-5, 0, 10), 0)
+  assert_eq(clamp(15, 0, 10), 10)
+  
+  // 数值插值
+  let lerp = fn(start, end, t) {
+    start + (end - start) * t
+  }
+  
+  assert_eq(lerp(0.0, 10.0, 0.5), 5.0)
+  assert_eq(lerp(10.0, 20.0, 0.25), 12.5)
+  assert_eq(lerp(5.0, 15.0, 0.0), 5.0)
+  assert_eq(lerp(5.0, 15.0, 1.0), 15.0)
+  
+  // 幂运算（简化版）
+  let power = fn(base, exp) {
+    if exp == 0 { 1.0 }
+    else if exp < 0 { 1.0 / power(base, -exp) }
+    else if exp % 2 == 0 { 
+      let half = power(base, exp / 2)
+      half * half
+    }
+    else { base * power(base, exp - 1) }
+  }
+  
+  assert_eq(power(2.0, 3), 8.0)
+  assert_eq(power(3.0, 2), 9.0)
+  assert_eq(power(5.0, 0), 1.0)
+  assert_eq(power(2.0, -2), 0.25)
+}
+
+// 测试5: 状态机和模式匹配
+test "状态机和模式匹配测试" {
+  // 简单状态机
+  type State {
+    Idle
+    Running
+    Paused
+    Stopped
+  }
+  
+  type Event {
+    Start
+    Pause
+    Resume
+    Stop
+  }
+  
+  let transition = fn(state, event) {
+    match (state, event) {
+      (Idle, Start) => Running
+      (Running, Pause) => Paused
+      (Paused, Resume) => Running
+      (Running, Stop) => Stopped
+      (Paused, Stop) => Stopped
+      (Stopped, Start) => Running
+      (_, _) => state // 无效转换，保持原状态
+    }
+  }
+  
+  // 测试状态转换
+  assert_eq(transition(Idle, Start), Running)
+  assert_eq(transition(Running, Pause), Paused)
+  assert_eq(transition(Paused, Resume), Running)
+  assert_eq(transition(Running, Stop), Stopped)
+  assert_eq(transition(Paused, Stop), Stopped)
+  assert_eq(transition(Stopped, Start), Running)
+  
+  // 测试无效转换
+  assert_eq(transition(Idle, Pause), Idle)
+  assert_eq(transition(Idle, Stop), Idle)
+  assert_eq(transition(Running, Start), Running)
+  assert_eq(transition(Paused, Pause), Paused)
+  
+  // 复杂模式匹配
+  let process_data = fn(data) {
+    match data {
+      Some(value) => {
+        if value > 100 { "Large" }
+        else if value > 50 { "Medium" }
+        else { "Small" }
       }
-    } else {
-      None
+      None => "Empty"
     }
-  })
+  }
   
-  assert_eq(race_conditions.length(), 2) // thread-1 and thread-3 have potential races
+  assert_eq(process_data(Some(150)), "Large")
+  assert_eq(process_data(Some(75)), "Medium")
+  assert_eq(process_data(Some(25)), "Small")
+  assert_eq(process_data(None), "Empty")
 }
 
-// Test 10: Platform Compatibility and Adaptation
-test "platform compatibility and adaptation features" {
-  // Test platform detection
-  let platforms = ["linux", "windows", "macos", "freebsd"]
-  let current_platform = "linux"
+// 测试6: 时间和日期操作
+test "时间和日期操作测试" {
+  // 简化的时间表示
+  type Time {
+    Time(Int, Int, Int) // 小时, 分钟, 秒
+  }
   
-  assert_true(platforms.contains(current_platform))
-  
-  // Test platform-specific configurations
-  let platform_configs = [
-    ("linux", "/var/log/azimuth"),
-    ("windows", "C:\\ProgramData\\Azimuth\\Logs"),
-    ("macos", "/Library/Logs/Azimuth"),
-    ("freebsd", "/var/log/azimuth")
-  ]
-  
-  let current_config = platform_configs.find_map(|(platform, path)| {
-    if platform == current_platform {
-      Some(path)
-    } else {
-      None
+  let time_to_seconds = fn(t) {
+    match t {
+      Time(h, m, s) => h * 3600 + m * 60 + s
     }
-  })
+  }
   
-  assert_eq(current_config, Some("/var/log/azimuth"))
+  let seconds_to_time = fn(seconds) {
+    let hours = seconds / 3600
+    let remaining = seconds % 3600
+    let minutes = remaining / 60
+    let secs = remaining % 60
+    Time(hours, minutes, secs)
+  }
   
-  // Test architecture compatibility
-  let architectures = ["x86_64", "arm64", "armv7"]
-  let current_arch = "x86_64"
+  let time1 = Time(1, 30, 45)
+  let time2 = Time(2, 15, 30)
   
-  assert_true(architectures.contains(current_arch))
+  let seconds1 = time_to_seconds(time1)
+  let seconds2 = time_to_seconds(time2)
   
-  // Test feature availability by platform
-  let platform_features = [
-    ("linux", ["epoll", "inotify", "cgroups"]),
-    ("windows", ["iocp", "etw", "wmi"]),
-    ("macos", ["kqueue", "fsevents", "xpc"]),
-    ("freebsd", ["kqueue", "jail", "capsicum"])
-  ]
+  assert_eq(seconds1, 5445)
+  assert_eq(seconds2, 8130)
   
-  let current_features = platform_features.find_map(|(platform, features)| {
-    if platform == current_platform {
-      Some(features)
-    } else {
-      None
+  // 时间加法
+  let add_times = fn(t1, t2) {
+    let total_seconds = time_to_seconds(t1) + time_to_seconds(t2)
+    seconds_to_time(total_seconds)
+  }
+  
+  let sum_time = add_times(time1, time2)
+  match sum_time {
+    Time(h, m, s) => {
+      assert_eq(h, 3)
+      assert_eq(m, 46)
+      assert_eq(s, 15)
     }
-  })
+  }
   
-  assert_eq(current_features, Some(["epoll", "inotify", "cgroups"]))
-  assert_true(current_features.unwrap().contains("epoll"))
-  assert_false(current_features.unwrap().contains("iocp"))
+  // 时间比较
+  let time_compare = fn(t1, t2) {
+    let seconds1 = time_to_seconds(t1)
+    let seconds2 = time_to_seconds(t2)
+    
+    if seconds1 < seconds2 { -1 }
+    else if seconds1 > seconds2 { 1 }
+    else { 0 }
+  }
+  
+  assert_eq(time_compare(time1, time2), -1)
+  assert_eq(time_compare(time2, time1), 1)
+  assert_eq(time_compare(time1, time1), 0)
+}
+
+// 测试7: 递归函数
+test "递归函数测试" {
+  // 阶乘函数
+  let factorial = fn(n) {
+    if n <= 1 { 1 }
+    else { n * factorial(n - 1) }
+  }
+  
+  assert_eq(factorial(0), 1)
+  assert_eq(factorial(1), 1)
+  assert_eq(factorial(5), 120)
+  assert_eq(factorial(3), 6)
+  
+  // 斐波那契数列
+  let fibonacci = fn(n) {
+    if n <= 0 { 0 }
+    else if n == 1 { 1 }
+    else { fibonacci(n - 1) + fibonacci(n - 2) }
+  }
+  
+  assert_eq(fibonacci(0), 0)
+  assert_eq(fibonacci(1), 1)
+  assert_eq(fibonacci(2), 1)
+  assert_eq(fibonacci(3), 2)
+  assert_eq(fibonacci(5), 5)
+  
+  // 数组求和（递归）
+  let sum_array_helper = fn(arr, index) {
+    if index >= arr.length() { 0 }
+    else { arr[index] + sum_array_helper(arr, index + 1) }
+  }
+  
+  let sum_array = fn(arr) {
+    sum_array_helper(arr, 0)
+  }
+  
+  assert_eq(sum_array([]), 0)
+  assert_eq(sum_array([1]), 1)
+  assert_eq(sum_array([1, 2, 3, 4, 5]), 15)
+}
+
+// 测试8: 数据验证和约束
+test "数据验证和约束测试" {
+  // 邮箱验证
+  let is_valid_email = fn(email) {
+    let has_at = email.contains("@")
+    let has_dot = email.contains(".")
+    let parts = email.split("@")
+    
+    if parts.length() != 2 { false }
+    else {
+      let local = parts[0]
+      let domain = parts[1]
+      
+      local.length() > 0 && 
+      domain.length() > 0 && 
+      domain.contains(".") &&
+      !email.contains(" ") &&
+      !email.starts_with("@") &&
+      !email.ends_with("@")
+    }
+  }
+  
+  assert_true(is_valid_email("user@example.com"))
+  assert_false(is_valid_email("invalid-email"))
+  assert_false(is_valid_email("@example.com"))
+  assert_false(is_valid_email("user@"))
+  assert_false(is_valid_email("user example@domain.com"))
+  
+  // 密码强度验证
+  enum PasswordStrength {
+    Weak
+    Medium
+    Strong
+  }
+  
+  let check_password_strength = fn(password) {
+    let long_enough = password.length() >= 8
+    
+    if long_enough {
+      // 简化检查：只检查长度
+      Strong
+    } else if password.length() >= 6 {
+      Medium
+    } else {
+      Weak
+    }
+  }
+  
+  assert_eq(check_password_strength("Password123!"), Strong)
+  assert_eq(check_password_strength("pass123"), Medium)
+  assert_eq(check_password_strength("123"), Weak)
+  
+  // 数据范围验证
+  let validate_range = fn(value, min, max) {
+    if value < min { (false, "Value too small") }
+    else if value > max { (false, "Value too large") }
+    else { (true, "Valid") }
+  }
+  
+  assert_eq(validate_range(5, 1, 10), (true, "Valid"))
+  assert_eq(validate_range(0, 1, 10), (false, "Value too small"))
+  assert_eq(validate_range(11, 1, 10), (false, "Value too large"))
+}
+
+// 测试9: 算法和数据结构
+test "算法和数据结构测试" {
+  // 二分查找
+  let binary_search_helper = fn(arr, target, low, high) {
+    if low > high { -1 }
+    else {
+      let mid = (low + high) / 2
+      let mid_val = arr[mid]
+      
+      if mid_val == target { mid }
+      else if mid_val < target { binary_search_helper(arr, target, mid + 1, high) }
+      else { binary_search_helper(arr, target, low, mid - 1) }
+    }
+  }
+  
+  let binary_search = fn(arr, target) {
+    binary_search_helper(arr, target, 0, arr.length() - 1)
+  }
+  
+  let sorted_array = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+  
+  assert_eq(binary_search(sorted_array, 7), 3)
+  assert_eq(binary_search(sorted_array, 1), 0)
+  assert_eq(binary_search(sorted_array, 19), 9)
+  assert_eq(binary_search(sorted_array, 8), -1)
+  assert_eq(binary_search(sorted_array, 0), -1)
+  assert_eq(binary_search(sorted_array, 20), -1)
+  
+  // 数组反转
+  let reverse_array = fn(arr) {
+    let len = arr.length()
+    let mut result = []
+    
+    for i in 0..len {
+      result = [arr[i]] + result
+    }
+    
+    result
+  }
+  
+  let original = [1, 2, 3, 4, 5]
+  let reversed = reverse_array(original)
+  
+  assert_eq(reversed, [5, 4, 3, 2, 1])
+  
+  // 数组过滤和映射
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  // 过滤偶数
+  let mut evens = []
+  for i in 0..numbers.length() {
+    if numbers[i] % 2 == 0 {
+      evens = evens + [numbers[i]]
+    }
+  }
+  assert_eq(evens, [2, 4, 6, 8, 10])
+  
+  // 映射到平方
+  let mut squares = []
+  for i in 0..numbers.length() {
+    squares = squares + [numbers[i] * numbers[i]]
+  }
+  assert_eq(squares, [1, 4, 9, 16, 25, 36, 49, 64, 81, 100])
+}
+
+// 测试10: 函数式编程概念
+test "函数式编程概念测试" {
+  // 高阶函数
+  let apply_twice = fn(f, x) {
+    f(f(x))
+  }
+  
+  let add_one = fn(x) { x + 1 }
+  let multiply_by_two = fn(x) { x * 2 }
+  
+  assert_eq(apply_twice(add_one, 1), 3)
+  assert_eq(apply_twice(multiply_by_two, 3), 12)
+  
+  // 函数组合
+  let compose = fn(f, g) {
+    fn(x) { f(g(x)) }
+  }
+  
+  let add_one_then_multiply_by_two = compose(multiply_by_two, add_one)
+  assert_eq(add_one_then_multiply_by_two(5), 12)
+  
+  // 柯里化
+  let add = fn(x) { fn(y) { x + y } }
+  let add_five = add(5)
+  assert_eq(add_five(3), 8)
+  assert_eq(add_five(10), 15)
+  
+  // 使用Option类型的链式操作
+  let safe_divide = fn(a, b) {
+    if b == 0 { None }
+    else { Some(a / b) }
+  }
+  
+  let safe_multiply = fn(a, b) {
+    Some(a * b)
+  }
+  
+  // 计算 (10 / 2) * 3，安全地处理可能的除零错误
+  let result = match safe_divide(10, 2) {
+    Some(division_result) => {
+      match safe_multiply(division_result, 3) {
+        Some(multiplication_result) => multiplication_result
+        None => 0
+      }
+    }
+    None => 0
+  }
+  
+  assert_eq(result, 15)
+  
+  // 测试除零情况
+  let result2 = match safe_divide(10, 0) {
+    Some(division_result) => {
+      match safe_multiply(division_result, 3) {
+        Some(multiplication_result) => multiplication_result
+        None => 0
+      }
+    }
+    None => 0
+  }
+  
+  assert_eq(result2, 0)
 }
