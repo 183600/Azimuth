@@ -1,279 +1,523 @@
-// Internationalization Tests for Azimuth
-// This file contains test cases for internationalization and localization support
+// Azimuth Telemetry System - Internationalization Tests
+// This file contains comprehensive test cases for internationalization and multilingual support
 
-test "unicode string handling" {
-  // Test Chinese characters
-  let chinese_text = "测试中文遥测系统"
-  assert_eq(chinese_text.length(), 8)
-  assert_true(chinese_text.contains("中文"))
+// Test 1: Basic multilingual string handling
+test "basic multilingual string handling" {
+  // Create strings in different languages
+  let english_string = "Operation completed successfully"
+  let chinese_string = "操作成功完成"
+  let japanese_string = "操作が正常に完了しました"
+  let spanish_string = "Operación completada con éxito"
+  let french_string = "Opération terminée avec succès"
+  let german_string = "Operation erfolgreich abgeschlossen"
+  let russian_string = "Операция успешно завершена"
+  let arabic_string = "اكتملت العملية بنجاح"
+  let hindi_string = "ऑपरेशन सफलतापूर्वक पूरा हुआ"
+  let portuguese_string = "Operação concluída com sucesso"
   
-  // Test Japanese characters
-  let japanese_text = "日本語テレメトリシステム"
-  assert_eq(japanese_text.length(), 12)
-  assert_true(japanese_text.contains("日本語"))
+  // Verify string lengths
+  assert_eq(english_string.length(), 29)
+  assert_eq(chinese_string.length(), 6)
+  assert_eq(japanese_string.length(), 13)
+  assert_eq(spanish_string.length(), 30)
+  assert_eq(french_string.length(), 32)
+  assert_eq(german_string.length(), 30)
+  assert_eq(russian_string.length(), 25)
+  assert_eq(arabic_string.length(), 20)
+  assert_eq(hindi_string.length(), 23)
+  assert_eq(portuguese_string.length(), 30)
   
-  // Test Korean characters
-  let korean_text = "한국어 원격 측정 시스템"
-  assert_eq(korean_text.length(), 12)
-  assert_true(korean_text.contains("한국어"))
-  
-  // Test Arabic characters
-  let arabic_text = "نظام قياس عن بعد"
-  assert_eq(arabic_text.length(), 14)
-  assert_true(arabic_text.contains("نظام"))
-  
-  // Test Russian characters
-  let russian_text = "Система телеметрии"
-  assert_eq(russian_text.length(), 17)
-  assert_true(russian_text.contains("телеметрии"))
+  // Test string concatenation
+  let concatenated = english_string + " | " + chinese_string + " | " + japanese_string
+  assert_true(concatenated.length() > 0)
 }
 
-test "emoji and symbol handling" {
-  // Test emoji in telemetry context
-  let emoji_span_name = "🔍 search operation"
-  assert_eq(emoji_span_name.length(), 18)
-  assert_true(emoji_span_name.contains("🔍"))
+// Test 2: Multilingual log records
+test "multilingual log records" {
+  // Create a logger provider and logger
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "multilingual-logger")
   
-  // Test multiple emoji
-  let multi_emoji_text = "🚀 performance 📊 metrics 📈 dashboard"
-  assert_eq(multi_emoji_text.length(), 35)
-  assert_true(multi_emoji_text.contains("🚀"))
-  assert_true(multi_emoji_text.contains("📊"))
-  assert_true(multi_emoji_text.contains("📈"))
+  // Create log records with messages in different languages
+  let english_log = LogRecord::new(Info, "Request processed successfully")
+  let chinese_log = LogRecord::new(Info, "请求处理成功")
+  let japanese_log = LogRecord::new(Info, "リクエストが正常に処理されました")
+  let spanish_log = LogRecord::new(Info, "Solicitud procesada con éxito")
+  let french_log = LogRecord::new(Info, "Demande traitée avec succès")
   
-  // Test special symbols
-  let symbol_text = "⚡ fast service ⚙️ configuration 🔧 maintenance"
-  assert_eq(symbol_text.length(), 43)
-  assert_true(symbol_text.contains("⚡"))
-  assert_true(symbol_text.contains("⚙️"))
-  assert_true(symbol_text.contains("🔧"))
-}
-
-test "multilingual attribute values" {
-  let attrs = Attributes::new()
-  
-  // Test setting multilingual attributes
-  Attributes::set(attrs, "error.message.zh", StringValue("操作失败"))
-  Attributes::set(attrs, "error.message.ja", StringValue("操作が失敗しました"))
-  Attributes::set(attrs, "error.message.ko", StringValue("작업이 실패했습니다"))
-  Attributes::set(attrs, "error.message.ar", StringValue("فشلت العملية"))
-  Attributes::set(attrs, "error.message.ru", StringValue("Операция не удалась"))
-  
-  // Test retrieving multilingual attributes
-  match Attributes::get(attrs, "error.message.zh") {
-    Some(StringValue(v)) => assert_eq(v, "操作失败")
-    _ => assert_true(false)
+  // Verify log record bodies
+  match LogRecord::body(english_log) {
+    Some(body) => assert_eq(body, "Request processed successfully")
+    None => assert_true(false)
   }
   
-  match Attributes::get(attrs, "error.message.ja") {
-    Some(StringValue(v)) => assert_eq(v, "操作が失敗しました")
-    _ => assert_true(false)
+  match LogRecord::body(chinese_log) {
+    Some(body) => assert_eq(body, "请求处理成功")
+    None => assert_true(false)
   }
   
-  match Attributes::get(attrs, "error.message.ko") {
-    Some(StringValue(v)) => assert_eq(v, "작업이 실패했습니다")
-    _ => assert_true(false)
+  match LogRecord::body(japanese_log) {
+    Some(body) => assert_eq(body, "リクエストが正常に処理されました")
+    None => assert_true(false)
   }
   
-  match Attributes::get(attrs, "error.message.ar") {
-    Some(StringValue(v)) => assert_eq(v, "فشلت العملية")
-    _ => assert_true(false)
+  match LogRecord::body(spanish_log) {
+    Some(body) => assert_eq(body, "Solicitud procesada con éxito")
+    None => assert_true(false)
   }
   
-  match Attributes::get(attrs, "error.message.ru") {
-    Some(StringValue(v)) => assert_eq(v, "Операция не удалась")
-    _ => assert_true(false)
-  }
-}
-
-test "multilingual resource attributes" {
-  let resource = Resource::new()
-  
-  // Test multilingual resource attributes
-  let multilingual_attrs = [
-    ("service.name.zh", StringValue("遥测服务")),
-    ("service.name.ja", StringValue("テレメトリサービス")),
-    ("service.name.ko", StringValue("원격 측정 서비스")),
-    ("service.description.zh", StringValue("提供全面的遥测功能")),
-    ("service.description.ja", StringValue("包括的なテレメトリ機能を提供")),
-    ("service.description.ko", StringValue("포괄적인 원격 측정 기능 제공"))
-  ]
-  let resource_with_multilingual = Resource::with_attributes(resource, multilingual_attrs)
-  
-  // Test retrieving multilingual resource attributes
-  match Resource::get_attribute(resource_with_multilingual, "service.name.zh") {
-    Some(StringValue(v)) => assert_eq(v, "遥测服务")
-    _ => assert_true(false)
+  match LogRecord::body(french_log) {
+    Some(body) => assert_eq(body, "Demande traitée avec succès")
+    None => assert_true(false)
   }
   
-  match Resource::get_attribute(resource_with_multilingual, "service.name.ja") {
-    Some(StringValue(v)) => assert_eq(v, "テレメトリサービス")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(resource_with_multilingual, "service.name.ko") {
-    Some(StringValue(v)) => assert_eq(v, "원격 측정 서비스")
-    _ => assert_true(false)
-  }
-}
-
-test "multilingual log messages" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "multilingual_logger")
-  
-  // Test multilingual log records
-  let chinese_log = LogRecord::new(Info, "系统启动成功")
-  let japanese_log = LogRecord::new(Info, "システムが正常に起動しました")
-  let korean_log = LogRecord::new(Info, "시스템이 성공적으로 시작되었습니다")
-  let arabic_log = LogRecord::new(Info, "بدأ النظام بنجاح")
-  let russian_log = LogRecord::new(Info, "Система успешно запущена")
-  
-  // Test multilingual log message content
-  assert_eq(LogRecord::body(chinese_log), Some("系统启动成功"))
-  assert_eq(LogRecord::body(japanese_log), Some("システムが正常に起動しました"))
-  assert_eq(LogRecord::body(korean_log), Some("시스템이 성공적으로 시작되었습니다"))
-  assert_eq(LogRecord::body(arabic_log), Some("بدأ النظام بنجاح"))
-  assert_eq(LogRecord::body(russian_log), Some("Система успешно запущена"))
-  
-  // Test emitting multilingual logs
+  // Emit all log records
+  Logger::emit(logger, english_log)
   Logger::emit(logger, chinese_log)
   Logger::emit(logger, japanese_log)
-  Logger::emit(logger, korean_log)
-  Logger::emit(logger, arabic_log)
-  Logger::emit(logger, russian_log)
+  Logger::emit(logger, spanish_log)
+  Logger::emit(logger, french_log)
 }
 
-test "multilingual span names" {
-  let provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(provider, "multilingual_tracer")
+// Test 3: Multilingual attributes
+test "multilingual attributes" {
+  // Create attributes with multilingual values
+  let multilingual_attributes = Attributes {
+    values: [
+      ("error.message.en", AttributeValue::StringValue("File not found")),
+      ("error.message.zh", AttributeValue::StringValue("文件未找到")),
+      ("error.message.ja", AttributeValue::StringValue("ファイルが見つかりません")),
+      ("error.message.es", AttributeValue::StringValue("Archivo no encontrado")),
+      ("error.message.fr", AttributeValue::StringValue("Fichier introuvable")),
+      ("error.message.de", AttributeValue::StringValue("Datei nicht gefunden")),
+      ("error.message.ru", AttributeValue::StringValue("Файл не найден")),
+      ("error.message.ar", AttributeValue::StringValue("الملف غير موجود")),
+      ("error.message.hi", AttributeValue::StringValue("फ़ाइल नहीं मिली")),
+      ("error.message.pt", AttributeValue::StringValue("Arquivo não encontrado"))
+    ]
+  }
   
-  // Test multilingual span creation
-  let chinese_span = Tracer::start_span(tracer, "中文操作")
-  let japanese_span = Tracer::start_span(tracer, "日本語操作")
-  let korean_span = Tracer::start_span(tracer, "한국어 작업")
-  let arabic_span = Tracer::start_span(tracer, "عملية باللغة العربية")
-  let russian_span = Tracer::start_span(tracer, "Операция на русском")
+  // Verify attribute count
+  assert_eq(multilingual_attributes.values.length(), 10)
   
-  // Test multilingual span names
-  assert_eq(Span::name(chinese_span), "中文操作")
-  assert_eq(Span::name(japanese_span), "日本語操作")
-  assert_eq(Span::name(korean_span), "한국어 작업")
-  assert_eq(Span::name(arabic_span), "عملية باللغة العربية")
-  assert_eq(Span::name(russian_span), "Операция на русском")
+  // Verify specific attributes
+  let mut english_found = false
+  let mut chinese_found = false
+  let mut japanese_found = false
+  
+  for (key, value) in multilingual_attributes.values {
+    match key {
+      "error.message.en" => {
+        match value {
+          AttributeValue::StringValue(msg) => {
+            assert_eq(msg, "File not found")
+            english_found = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      "error.message.zh" => {
+        match value {
+          AttributeValue::StringValue(msg) => {
+            assert_eq(msg, "文件未找到")
+            chinese_found = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      "error.message.ja" => {
+        match value {
+          AttributeValue::StringValue(msg) => {
+            assert_eq(msg, "ファイルが見つかりません")
+            japanese_found = true
+          }
+          _ => assert_true(false)
+        }
+      }
+      _ => ()
+    }
+  }
+  
+  assert_true(english_found)
+  assert_true(chinese_found)
+  assert_true(japanese_found)
 }
 
-test "right-to-left text handling" {
-  // Test Arabic text (right-to-left)
-  let arabic_text = "مرحبا بالعالم"
-  assert_eq(arabic_text.length(), 11)
-  assert_true(arabic_text.contains("العالم"))
+// Test 4: Multilingual resource attributes
+test "multilingual resource attributes" {
+  // Create resource attributes with multilingual values
+  let resource_attributes = [
+    ("service.name.en", AttributeValue::StringValue("Authentication Service")),
+    ("service.name.zh", AttributeValue::StringValue("身份验证服务")),
+    ("service.name.ja", AttributeValue::StringValue("認証サービス")),
+    ("service.name.es", AttributeValue::StringValue("Servicio de Autenticación")),
+    ("service.name.fr", AttributeValue::StringValue("Service d'Authentification")),
+    ("service.description.en", AttributeValue::StringValue("Handles user authentication and authorization")),
+    ("service.description.zh", AttributeValue::StringValue("处理用户身份验证和授权")),
+    ("service.description.ja", AttributeValue::StringValue("ユーザー認証と認可を処理します")),
+    ("service.description.es", AttributeValue::StringValue("Maneja la autenticación y autorización de usuarios")),
+    ("service.description.fr", AttributeValue::StringValue("Gère l'authentification et l'autorisation des utilisateurs"))
+  ]
   
-  // Test Hebrew text (right-to-left)
-  let hebrew_text = "שלום עולם"
-  assert_eq(hebrew_text.length(), 9)
-  assert_true(hebrew_text.contains("עולם"))
+  // Create resource with multilingual attributes
+  let resource = Resource::with_attributes(Resource::new(), resource_attributes)
   
-  // Test mixed direction text
-  let mixed_text = "English العربية English"
-  assert_eq(mixed_text_text.length(), 20)
-  assert_true(mixed_text.contains("العربية"))
-  assert_true(mixed_text.contains("English"))
+  // Verify resource attributes
+  assert_eq(resource.attributes.length(), 10)
+  
+  // Check specific attributes
+  match Resource::get_attribute(resource, "service.name.en") {
+    Some(AttributeValue::StringValue(name)) => assert_eq(name, "Authentication Service")
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(resource, "service.name.zh") {
+    Some(AttributeValue::StringValue(name)) => assert_eq(name, "身份验证服务")
+    _ => assert_true(false)
+  }
+  
+  match Resource::get_attribute(resource, "service.description.ja") {
+    Some(AttributeValue::StringValue(desc)) => assert_eq(desc, "ユーザー認証と認可を処理します")
+    _ => assert_true(false)
+  }
 }
 
-test "locale-specific formatting" {
-  // Test different locale-specific number formats
-  let number = 1234.56
+// Test 5: Multilingual span names and events
+test "multilingual span names and events" {
+  // Create span contexts
+  let span_context1 = SpanContext::new("trace123", "span456", true, "")
+  let span_context2 = SpanContext::new("trace789", "span012", true, "")
   
-  // US English format
-  let us_format = "1,234.56"
-  assert_eq(us_format.contains(","), true)
-  assert_eq(us_format.contains("."), true)
+  // Create spans with multilingual names
+  let english_span = Span::new("database-query", Internal, span_context1)
+  let chinese_span = Span::new("数据库查询", Internal, span_context2)
   
-  // European format
-  let eu_format = "1.234,56"
-  assert_eq(eu_format.contains("."), true)
-  assert_eq(eu_format.contains(","), true)
+  // Verify span names
+  assert_eq(Span::name(english_span), "database-query")
+  assert_eq(Span::name(chinese_span), "数据库查询")
   
-  // Test different date formats
-  let us_date = "12/31/2023"
-  assert_eq(us_date.contains("/"), true)
+  // Add multilingual events to spans
+  let english_event_attrs = [
+    ("event.name", AttributeValue::StringValue("Query executed")),
+    ("query.type", AttributeValue::StringValue("SELECT")),
+    ("query.duration_ms", AttributeValue::IntValue(150))
+  ]
   
-  let iso_date = "2023-12-31"
-  assert_eq(iso_date.contains("-"), true)
+  let chinese_event_attrs = [
+    ("event.name", AttributeValue::StringValue("查询已执行")),
+    ("query.type", AttributeValue::StringValue("SELECT")),
+    ("query.duration_ms", AttributeValue::IntValue(200))
+  ]
   
-  let eu_date = "31.12.2023"
-  assert_eq(eu_date.contains("."), true)
+  // Add events
+  Span::add_event(english_span, "Database query completed", Some(english_event_attrs))
+  Span::add_event(chinese_span, "数据库查询完成", Some(chinese_event_attrs))
+  
+  // Set status with multilingual descriptions
+  Span::set_status(english_span, Ok, Some("Query completed successfully"))
+  Span::set_status(chinese_span, Ok, Some("查询成功完成"))
+  
+  // End spans
+  Span::end(english_span)
+  Span::end(chinese_span)
 }
 
-test "currency and number localization" {
-  // Test currency symbols
-  let usd_currency = "$123.45"
-  assert_eq(usd_currency.contains("$"), true)
+// Test 6: Multilingual HTTP requests and responses
+test "multilingual http requests and responses" {
+  // Create HTTP request with multilingual headers
+  let request_headers = [
+    ("Accept-Language", "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7"),
+    ("Content-Type", "application/json; charset=utf-8"),
+    ("User-Agent", "国际化测试客户端/1.0.0")
+  ]
   
-  let eur_currency = "€123.45"
-  assert_eq(eur_currency.contains("€"), true)
+  // Create request with multilingual body
+  let multilingual_body = "{\n    \"message\": {\n      \"en\": \"Hello, world!\",\n      \"zh\": \"你好，世界！\",\n      \"ja\": \"こんにちは、世界！\",\n      \"es\": \"¡Hola, mundo!\",\n      \"fr\": \"Bonjour, le monde!\",\n      \"de\": \"Hallo, Welt!\",\n      \"ru\": \"Привет, мир!\",\n      \"ar\": \"مرحبا بالعالم!\",\n      \"hi\": \"नमस्ते दुनिया!\",\n      \"pt\": \"Olá, mundo!\"\n    }\n  }"
   
-  let jpy_currency = "¥123"
-  assert_eq(jpy_currency.contains("¥"), true)
+  let request = HttpRequest::new(
+    "POST",
+    "https://api.example.com/internationalization",
+    request_headers,
+    Some(multilingual_body)
+  )
   
-  let gbp_currency = "£123.45"
-  assert_eq(gbp_currency.contains("£"), true)
+  // Create HTTP response with multilingual content
+  let response_headers = [
+    ("Content-Language", "en,zh,ja,es,fr,de,ru,ar,hi,pt"),
+    ("Content-Type", "application/json; charset=utf-8")
+  ]
   
-  let cny_currency = "¥123.45"
-  assert_eq(cny_currency.contains("¥"), true)
+  let response_body = "{\n    \"status\": {\n      \"en\": \"Success\",\n      \"zh\": \"成功\",\n      \"ja\": \"成功\",\n      \"es\": \"Éxito\",\n      \"fr\": \"Succès\",\n      \"de\": \"Erfolg\",\n      \"ru\": \"Успех\",\n      \"ar\": \"نجاح\",\n      \"hi\": \"सफलता\",\n      \"pt\": \"Sucesso\"\n    },\n    \"message\": {\n      \"en\": \"Request processed successfully\",\n      \"zh\": \"请求处理成功\",\n      \"ja\": \"リクエストが正常に処理されました\",\n      \"es\": \"Solicitud procesada con éxito\",\n      \"fr\": \"Demande traitée avec succès\",\n      \"de\": \"Anfrage erfolgreich verarbeitet\",\n      \"ru\": \"Запрос успешно обработан\",\n      \"ar\": \"تمت معالجة الطلب بنجاح\",\n      \"hi\": \"अनुरोध सफलतापूर्वक संसाधित हुआ\",\n      \"pt\": \"Solicitação processada com sucesso\"\n    }\n  }"
   
-  // Test number separators
-  let indian_number = "12,34,567.89"
-  assert_eq(indian_number.contains(","), true)
+  let response = HttpResponse::new(200, response_headers, Some(response_body))
   
-  let chinese_number = "123,456.78"
-  assert_eq(chinese_number.contains(","), true)
+  // Verify request and response properties
+  assert_eq(HttpRequest::http_method(request), "POST")
+  assert_eq(HttpRequest::url(request), "https://api.example.com/internationalization")
+  assert_eq(HttpResponse::status_code(response), 200)
+  
+  match HttpRequest::body(request) {
+    Some(body) => assert_eq(body, multilingual_body)
+    None => assert_true(false)
+  }
+  
+  match HttpResponse::body(response) {
+    Some(body) => assert_eq(body, response_body)
+    None => assert_true(false)
+  }
 }
 
+// Test 7: Multilingual baggage entries
 test "multilingual baggage entries" {
-  let baggage = Baggage::new()
+  // Create baggage with multilingual entries
+  let baggage = Baggage {
+    entries: [
+      ("user.locale.en", "en-US"),
+      ("user.locale.zh", "zh-CN"),
+      ("user.locale.ja", "ja-JP"),
+      ("user.locale.es", "es-ES"),
+      ("user.locale.fr", "fr-FR"),
+      ("error.message.en", "Connection timeout"),
+      ("error.message.zh", "连接超时"),
+      ("error.message.ja", "接続タイムアウト"),
+      ("error.message.es", "Tiempo de conexión agotado"),
+      ("error.message.fr", "Délai de connexion dépassé")
+    ]
+  }
   
-  // Test multilingual baggage
-  let baggage_with_chinese = Baggage::set_entry(baggage, "错误代码", "ERR001")
-  let baggage_with_japanese = Baggage::set_entry(baggage_with_chinese, "エラーコード", "ERR001")
-  let baggage_with_korean = Baggage::set_entry(baggage_with_japanese, "오류 코드", "ERR001")
+  // Verify baggage entries
+  assert_eq(baggage.entries.length(), 10)
   
-  // Test retrieving multilingual baggage entries
-  match Baggage::get_entry(baggage_with_korean, "错误代码") {
-    Some(v) => assert_eq(v, "ERR001")
+  // Check specific entries
+  match Baggage::get_entry(baggage, "user.locale.zh") {
+    Some(value) => assert_eq(value, "zh-CN")
     None => assert_true(false)
   }
   
-  match Baggage::get_entry(baggage_with_korean, "エラーコード") {
-    Some(v) => assert_eq(v, "ERR001")
+  match Baggage::get_entry(baggage, "error.message.ja") {
+    Some(value) => assert_eq(value, "接続タイムアウト")
     None => assert_true(false)
   }
   
-  match Baggage::get_entry(baggage_with_korean, "오류 코드") {
-    Some(v) => assert_eq(v, "ERR001")
+  match Baggage::get_entry(baggage, "error.message.es") {
+    Some(value) => assert_eq(value, "Tiempo de conexión agotado")
     None => assert_true(false)
   }
 }
 
-test "character encoding validation" {
-  // Test UTF-8 encoded strings
-  let utf8_chinese = "遥测"
-  let utf8_japanese = "テレメトリ"
-  let utf8_korean = "원격 측정"
-  let utf8_arabic = "قياس عن بعد"
-  let utf8_russian = "телеметрия"
+// Test 8: Multilingual instrumentation scope
+test "multilingual instrumentation scope" {
+  // Create instrumentation scopes with multilingual names and descriptions
+  let english_scope = InstrumentationScope {
+    name: "database-instrumentation",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/schema/v1")
+  }
   
-  // Test string operations on UTF-8 encoded strings
-  assert_eq(utf8_chinese.length(), 2)
-  assert_eq(utf8_japanese.length(), 5)
-  assert_eq(utf8_korean.length(), 4)
-  assert_eq(utf8_arabic.length(), 9)
-  assert_eq(utf8_russian.length(), 9)
+  let chinese_scope = InstrumentationScope {
+    name: "数据库 instrumentation",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/schema/v1")
+  }
   
-  // Test concatenation of UTF-8 strings
-  let concatenated = utf8_chinese + " " + utf8_japanese + " " + utf8_korean
-  assert_eq(concatenated.length(), 14)  // 2 + 1 + 5 + 1 + 4 = 13 (plus spaces)
-  assert_true(concatenated.contains("遥测"))
-  assert_true(concatenated.contains("テレメトリ"))
-  assert_true(concatenated.contains("원격 측정"))
+  let japanese_scope = InstrumentationScope {
+    name: "データベースインストルメンテーション",
+    version: Some("1.0.0"),
+    schema_url: Some("https://example.com/schema/v1")
+  }
+  
+  // Verify scope properties
+  assert_eq(english_scope.name, "database-instrumentation")
+  assert_eq(chinese_scope.name, "数据库 instrumentation")
+  assert_eq(japanese_scope.name, "データベースインストルメンテーション")
+  
+  match english_scope.version {
+    Some(v) => assert_eq(v, "1.0.0")
+    None => assert_true(false)
+  }
+  
+  match chinese_scope.version {
+    Some(v) => assert_eq(v, "1.0.0")
+    None => assert_true(false)
+  }
+  
+  match japanese_scope.version {
+    Some(v) => assert_eq(v, "1.0.0")
+    None => assert_true(false)
+  }
+}
+
+// Test 9: Multilingual metric instrument names
+test "multilingual metric instrument names" {
+  // Create meter provider and meter
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "multilingual-meter")
+  
+  // Create instruments with multilingual names
+  let english_counter = Meter::create_counter(meter, "http.requests.total")
+  let chinese_counter = Meter::create_counter(meter, "HTTP请求总数")
+  let japanese_counter = Meter::create_counter(meter, "HTTPリクエスト総数")
+  
+  let english_histogram = Meter::create_histogram(meter, "request.duration.ms")
+  let chinese_histogram = Meter::create_histogram(meter, "请求持续时间毫秒")
+  let japanese_histogram = Meter::create_histogram(meter, "リクエスト持続時間ミリ秒")
+  
+  // Verify instrument names
+  assert_eq(english_counter.name, "http.requests.total")
+  assert_eq(chinese_counter.name, "HTTP请求总数")
+  assert_eq(japanese_counter.name, "HTTPリクエスト総数")
+  
+  assert_eq(english_histogram.name, "request.duration.ms")
+  assert_eq(chinese_histogram.name, "请求持续时间毫秒")
+  assert_eq(japanese_histogram.name, "リクエスト持続時間ミリ秒")
+  
+  // Perform operations with instruments
+  Counter::add(english_counter, 1.0, None)
+  Counter::add(chinese_counter, 1.0, None)
+  Counter::add(japanese_counter, 1.0, None)
+  
+  Histogram::record(english_histogram, 100.5, None)
+  Histogram::record(chinese_histogram, 150.75, None)
+  Histogram::record(japanese_histogram, 125.25, None)
+}
+
+// Test 10: Multilingual text map carrier
+test "multilingual text map carrier" {
+  // Create a text map carrier with multilingual headers
+  let carrier = TextMapCarrier::new()
+  
+  // Set headers with multilingual values
+  TextMapCarrier::set(carrier, "accept-language", "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7")
+  TextMapCarrier::set(carrier, "content-language", "en,zh,ja")
+  TextMapCarrier::set(carrier, "x-error-message-en", "Invalid request parameters")
+  TextMapCarrier::set(carrier, "x-error-message-zh", "请求参数无效")
+  TextMapCarrier::set(carrier, "x-error-message-ja", "リクエストパラメータが無効です")
+  TextMapCarrier::set(carrier, "x-success-message-en", "Operation completed successfully")
+  TextMapCarrier::set(carrier, "x-success-message-zh", "操作成功完成")
+  TextMapCarrier::set(carrier, "x-success-message-ja", "操作が正常に完了しました")
+  
+  // Verify headers
+  match TextMapCarrier::get(carrier, "accept-language") {
+    Some(value) => assert_eq(value, "en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7")
+    None => assert_true(false)
+  }
+  
+  match TextMapCarrier::get(carrier, "x-error-message-zh") {
+    Some(value) => assert_eq(value, "请求参数无效")
+    None => assert_true(false)
+  }
+  
+  match TextMapCarrier::get(carrier, "x-success-message-ja") {
+    Some(value) => assert_eq(value, "操作が正常に完了しました")
+    None => assert_true(false)
+  }
+  
+  // Try to get non-existent header
+  match TextMapCarrier::get(carrier, "nonexistent") {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// Test 11: Multilingual context keys and values
+test "multilingual context keys and values" {
+  // Create context with multilingual keys and values
+  let root_context = Context::root()
+  
+  // Create keys with different languages
+  let english_key = ContextKey::new("user.message")
+  let chinese_key = ContextKey::new("用户消息")
+  let japanese_key = ContextKey::new("ユーザーメッセージ")
+  
+  // Create contexts with multilingual values
+  let english_context = Context::with_value(root_context, english_key, "Hello, world!")
+  let chinese_context = Context::with_value(root_context, chinese_key, "你好，世界！")
+  let japanese_context = Context::with_value(root_context, japanese_key, "こんにちは、世界！")
+  
+  // Verify values
+  match Context::get(english_context, english_key) {
+    Some(value) => assert_eq(value, "Hello, world!")
+    None => assert_true(false)
+  }
+  
+  match Context::get(chinese_context, chinese_key) {
+    Some(value) => assert_eq(value, "你好，世界！")
+    None => assert_true(false)
+  }
+  
+  match Context::get(japanese_context, japanese_key) {
+    Some(value) => assert_eq(value, "こんにちは、世界！")
+    None => assert_true(false)
+  }
+}
+
+// Test 12: Multilingual array attributes
+test "multilingual array attributes" {
+  // Create attributes with multilingual array values
+  let multilingual_array_attributes = Attributes {
+    values: [
+      ("error.messages.en", AttributeValue::ArrayStringValue([
+        "Invalid input",
+        "Connection timeout",
+        "Access denied"
+      ])),
+      ("error.messages.zh", AttributeValue::ArrayStringValue([
+        "输入无效",
+        "连接超时",
+        "访问被拒绝"
+      ])),
+      ("error.messages.ja", AttributeValue::ArrayStringValue([
+        "入力が無効です",
+        "接続タイムアウト",
+        "アクセスが拒否されました"
+      ])),
+      ("status.messages.en", AttributeValue::ArrayStringValue([
+        "Success",
+        "Processing",
+        "Failed"
+      ])),
+      ("status.messages.zh", AttributeValue::ArrayStringValue([
+        "成功",
+        "处理中",
+        "失败"
+      ])),
+      ("status.messages.ja", AttributeValue::ArrayStringValue([
+        "成功",
+        "処理中",
+        "失敗"
+      ]))
+    ]
+  }
+  
+  // Verify attribute count
+  assert_eq(multilingual_array_attributes.values.length(), 6)
+  
+  // Verify specific array attributes
+  for (key, value) in multilingual_array_attributes.values {
+    match key {
+      "error.messages.zh" => {
+        match value {
+          AttributeValue::ArrayStringValue(messages) => {
+            assert_eq(messages.length(), 3)
+            assert_eq(messages[0], "输入无效")
+            assert_eq(messages[1], "连接超时")
+            assert_eq(messages[2], "访问被拒绝")
+          }
+          _ => assert_true(false)
+        }
+      }
+      "status.messages.ja" => {
+        match value {
+          AttributeValue::ArrayStringValue(messages) => {
+            assert_eq(messages.length(), 3)
+            assert_eq(messages[0], "成功")
+            assert_eq(messages[1], "処理中")
+            assert_eq(messages[2], "失敗")
+          }
+          _ => assert_true(false)
+        }
+      }
+      _ => ()
+    }
+  }
 }
