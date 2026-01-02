@@ -1,355 +1,398 @@
-// Azimuth 遥测数据序列化和反序列化综合测试
-// 测试遥测数据的序列化和反序列化功能
+// Azimuth 序列化综合测试用例
+// 测试序列化和反序列化功能，包括多种格式、压缩和加密
 
-test "Span序列化和反序列化" {
-  // 创建测试用的span
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.test")
-  let span = Tracer::start_span(tracer, "serialization.test.span")
+// 测试1: JSON序列化基础功能
+test "JSON序列化基础功能" {
+  // 创建JSON序列化器
+  let json_serializer = JsonSerializer::new()
   
-  // 设置span属性
-  Span::set_attribute(span, "service.name", "auth-service")
-  Span::set_attribute(span, "operation.type", "authentication")
-  Span::set_attribute(span, "user.id", "user-12345")
-  Span::set_attribute(span, "request.duration", 245)
-  Span::set_attribute(span, "success", true)
-  
-  // 添加事件
-  Span::add_event(span, "auth.started", [("timestamp", "2025-01-02T10:00:00Z")])
-  Span::add_event(span, "auth.completed", [("result", "success"), ("duration", "245ms")])
-  
-  // 序列化span
-  let serialized = Span::serialize(span)
-  assert_true(serialized.length() > 0)
-  
-  // 反序列化span
-  let deserialized_span = Span::deserialize(serialized)
-  
-  // 验证反序列化的span属性
-  let original_name = Span::name(span)
-  let deserialized_name = Span::name(deserialized_span)
-  assert_eq(original_name, deserialized_name)
-  
-  // 验证span上下文
-  let original_ctx = Span::span_context(span)
-  let deserialized_ctx = Span::span_context(deserialized_span)
-  assert_true(SpanContext::is_valid(deserialized_ctx))
-  
-  Span::end(span)
-  Span::end(deserialized_span)
-}
-
-test "度量数据序列化和反序列化" {
-  // 创建测试用的度量数据
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "metrics.serialization.test")
-  
-  // 创建计数器
-  let counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
-  Counter::add(counter, 100.0)
-  Counter::add_with_attributes(counter, 25.0, [("method", "GET"), ("status", "200")])
-  Counter::add_with_attributes(counter, 5.0, [("method", "POST"), ("status", "201")])
-  
-  // 创建直方图
-  let histogram = Meter::create_histogram(meter, "http.request.duration", Some("HTTP request duration"), Some("ms"))
-  Histogram::record(histogram, 45.2)
-  Histogram::record(histogram, 123.7)
-  Histogram::record_with_attributes(histogram, 89.3, [("endpoint", "/api/users")])
-  
-  // 序列化度量数据
-  let serialized_metrics = Meter::serialize_metrics(meter)
-  assert_true(serialized_metrics.length() > 0)
-  
-  // 反序列化度量数据
-  let deserialized_meter = Meter::deserialize_metrics(serialized_metrics)
-  
-  // 验证反序列化的度量数据
-  let deserialized_counter = Meter::get_counter(deserialized_meter, "http.requests.total")
-  assert_eq(deserialized_counter.name, "http.requests.total")
-  assert_eq(deserialized_counter.description, Some("Total HTTP requests"))
-  assert_eq(deserialized_counter.unit, Some("count"))
-  
-  let deserialized_histogram = Meter::get_histogram(deserialized_meter, "http.request.duration")
-  assert_eq(deserialized_histogram.name, "http.request.duration")
-  assert_eq(deserialized_histogram.description, Some("HTTP request duration"))
-  assert_eq(deserialized_histogram.unit, Some("ms"))
-}
-
-test "日志记录序列化和反序列化" {
-  // 创建测试用的日志记录
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "log.serialization.test")
-  
-  // 创建不同严重性级别的日志记录
-  let info_log = LogRecord::new(Info, "User login successful")
-  LogRecord::add_attribute(info_log, "user.id", "user-12345")
-  LogRecord::add_attribute(info_log, "ip.address", "192.168.1.100")
-  LogRecord::add_attribute(info_log, "session.id", "sess-abc123")
-  
-  let warn_log = LogRecord::new(Warn, "Rate limit approaching")
-  LogRecord::add_attribute(warn_log, "current.rate", "95")
-  LogRecord::add_attribute(warn_log, "limit", "100")
-  LogRecord::add_attribute(warn_log, "time.window", "1m")
-  
-  let error_log = LogRecord::new(Error, "Database connection failed")
-  LogRecord::add_attribute(error_log, "error.code", "DB_CONN_001")
-  LogRecord::add_attribute(error_log, "retry.count", "3")
-  LogRecord::add_attribute(error_log, "database", "users")
-  
-  // 序列化日志记录
-  let serialized_info = LogRecord::serialize(info_log)
-  let serialized_warn = LogRecord::serialize(warn_log)
-  let serialized_error = LogRecord::serialize(error_log)
-  
-  assert_true(serialized_info.length() > 0)
-  assert_true(serialized_warn.length() > 0)
-  assert_true(serialized_error.length() > 0)
-  
-  // 反序列化日志记录
-  let deserialized_info = LogRecord::deserialize(serialized_info)
-  let deserialized_warn = LogRecord::deserialize(serialized_warn)
-  let deserialized_error = LogRecord::deserialize(serialized_error)
-  
-  // 验证反序列化的日志记录
-  assert_eq(LogRecord::severity_number(deserialized_info), Info)
-  assert_eq(LogRecord::severity_number(deserialized_warn), Warn)
-  assert_eq(LogRecord::severity_number(deserialized_error), Error)
-  
-  assert_eq(LogRecord::body(deserialized_info), Some("User login successful"))
-  assert_eq(LogRecord::body(deserialized_warn), Some("Rate limit approaching"))
-  assert_eq(LogRecord::body(deserialized_error), Some("Database connection failed"))
-}
-
-test "资源序列化和反序列化" {
-  // 创建测试用的资源
-  let resource = Resource::new()
-  let attributes = [
-    ("service.name", StringValue("payment-service")),
-    ("service.version", StringValue("2.1.0")),
-    ("deployment.environment", StringValue("production")),
-    ("host.name", StringValue("prod-server-01")),
-    ("host.ip", StringValue("10.0.1.100")),
-    ("cloud.provider", StringValue("aws")),
-    ("cloud.region", StringValue("us-west-2")),
-    ("cloud.availability_zone", StringValue("us-west-2a"))
-  ]
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
-  
-  // 序列化资源
-  let serialized_resource = Resource::serialize(resource_with_attrs)
-  assert_true(serialized_resource.length() > 0)
-  
-  // 反序列化资源
-  let deserialized_resource = Resource::deserialize(serialized_resource)
-  
-  // 验证反序列化的资源
-  let service_name = Resource::get_attribute(deserialized_resource, "service.name")
-  let service_version = Resource::get_attribute(deserialized_resource, "service.version")
-  let environment = Resource::get_attribute(deserialized_resource, "deployment.environment")
-  
-  match service_name {
-    None => assert_true(true)  // 简化实现
-    Some(_) => assert_true(false)
-  }
-}
-
-test "上下文序列化和反序列化" {
-  // 创建测试用的上下文
-  let ctx = Context::root()
-  
-  // 添加上下文值
-  let correlation_key = ContextKey::new("correlation.id")
-  let trace_key = ContextKey::new("trace.id")
-  let user_key = ContextKey::new("user.id")
-  let session_key = ContextKey::new("session.id")
-  let request_key = ContextKey::new("request.id")
-  
-  let ctx_with_values = Context::with_value(
-    Context::with_value(
-      Context::with_value(
-        Context::with_value(
-          Context::with_value(ctx, correlation_key, "corr-abc123"),
-          trace_key, "trace-def456"
-        ),
-        user_key, "user-789"
-      ),
-      session_key, "session-012"
-    ),
-    request_key, "req-345"
-  )
-  
-  // 序列化上下文
-  let serialized_context = Context::serialize(ctx_with_values)
-  assert_true(serialized_context.length() > 0)
-  
-  // 反序列化上下文
-  let deserialized_context = Context::deserialize(serialized_context)
-  
-  // 验证反序列化的上下文
-  let retrieved_correlation = Context::get(deserialized_context, correlation_key)
-  let retrieved_trace = Context::get(deserialized_context, trace_key)
-  let retrieved_user = Context::get(deserialized_context, user_key)
-  let retrieved_session = Context::get(deserialized_context, session_key)
-  let retrieved_request = Context::get(deserialized_context, request_key)
-  
-  assert_eq(retrieved_correlation, Some("corr-abc123"))
-  assert_eq(retrieved_trace, Some("trace-def456"))
-  assert_eq(retrieved_user, Some("user-789"))
-  assert_eq(retrieved_session, Some("session-012"))
-  assert_eq(retrieved_request, Some("req-345"))
-}
-
-test "批量遥测数据序列化和反序列化" {
-  // 创建多个span、度量、日志记录
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "batch.test")
-  
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "batch.test")
-  
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "batch.test")
-  
-  // 创建多个span
-  let spans = []
-  for i in 1..=5 {
-    let span = Tracer::start_span(tracer, "batch.span." + i.to_string())
-    Span::set_attribute(span, "batch.id", i.to_string())
-    Span::set_attribute(span, "operation.type", "batch.processing")
-    spans = spans.push(span)
-  }
-  
-  // 创建多个度量
-  let counter = Meter::create_counter(meter, "batch.operations", Some("Batch operations"), Some("count"))
-  for i in 1..=5 {
-    Counter::add_with_attributes(counter, i.to_float(), [("batch.id", i.to_string())])
-  }
-  
-  // 创建多个日志记录
-  let logs = []
-  for i in 1..=5 {
-    let log = LogRecord::new(Info, "Batch operation " + i.to_string() + " completed")
-    LogRecord::add_attribute(log, "batch.id", i.to_string())
-    logs = logs.push(log)
-  }
-  
-  // 批量序列化
-  let serialized_batch = TelemetryBatch::serialize(spans, meter, logs)
-  assert_true(serialized_batch.length() > 0)
-  
-  // 批量反序列化
-  let (deserialized_spans, deserialized_meter, deserialized_logs) = TelemetryBatch::deserialize(serialized_batch)
-  
-  // 验证反序列化的批量数据
-  assert_eq(deserialized_spans.length(), spans.length())
-  assert_eq(deserialized_logs.length(), logs.length())
-  
-  // 结束所有span
-  for span in spans {
-    Span::end(span)
-  }
-  
-  for span in deserialized_spans {
-    Span::end(span)
-  }
-}
-
-test "压缩序列化数据" {
-  // 创建大量遥测数据
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "compression.test")
-  
-  let span = Tracer::start_span(tracer, "compression.test.span")
-  
-  // 添加大量属性
-  for i in 1..=100 {
-    Span::set_attribute(span, "large.attr." + i.to_string(), "value." + i.to_string())
-  }
-  
-  // 添加大量事件
-  for i in 1..=50 {
-    Span::add_event(span, "event." + i.to_string(), [("index", i.to_string())])
-  }
+  // 创建测试数据
+  let span_data = SpanData::new("test.operation", 1000, 1100, [
+    ("service.name", "test.service"),
+    ("operation.type", "http.request"),
+    ("user.id", "12345")
+  ])
   
   // 序列化
-  let uncompressed = Span::serialize(span)
-  let compressed = Span::serialize_compressed(span)
+  let json_string = JsonSerializer::serialize_span(json_serializer, span_data)
+  assert_true(json_string.length() > 0)
+  assert_true(json_string.contains("test.operation"))
+  assert_true(json_string.contains("test.service"))
+  assert_true(json_string.contains("12345"))
+  
+  // 反序列化
+  let deserialized_span = JsonSerializer::deserialize_span(json_serializer, json_string)
+  assert_eq(SpanData::name(deserialized_span), SpanData::name(span_data))
+  assert_eq(SpanData::start_time(deserialized_span), SpanData::start_time(span_data))
+  assert_eq(SpanData::end_time(deserialized_span), SpanData::end_time(span_data))
+  
+  let deserialized_attributes = SpanData::attributes(deserialized_span)
+  assert_eq(deserialized_attributes.get("service.name"), "test.service")
+  assert_eq(deserialized_attributes.get("operation.type"), "http.request")
+  assert_eq(deserialized_attributes.get("user.id"), "12345")
+  
+  // 测试度量数据序列化
+  let metric_data = MetricData::counter("http.requests.total", 150.0, [
+    ("method", "GET"),
+    ("status", "200")
+  ])
+  
+  let metric_json = JsonSerializer::serialize_metric(json_serializer, metric_data)
+  assert_true(metric_json.contains("http.requests.total"))
+  assert_true(metric_json.contains("150.0"))
+  
+  let deserialized_metric = JsonSerializer::deserialize_metric(json_serializer, metric_json)
+  assert_eq(MetricData::name(deserialized_metric), MetricData::name(metric_data))
+  assert_eq(MetricData::value(deserialized_metric), MetricData::value(metric_data))
+  
+  // 测试日志数据序列化
+  let log_data = LogData::new(LogLevel::Info, "Test log message", 1005, [
+    ("logger.name", "test.logger"),
+    ("thread.id", "main")
+  ])
+  
+  let log_json = JsonSerializer::serialize_log(json_serializer, log_data)
+  assert_true(log_json.contains("Test log message"))
+  assert_true(log_json.contains("INFO"))
+  
+  let deserialized_log = JsonSerializer::deserialize_log(json_serializer, log_json)
+  assert_eq(LogData::message(deserialized_log), LogData::message(log_data))
+  assert_eq(LogData::level(deserialized_log), LogData::level(log_data))
+}
+
+// 测试2: 二进制序列化功能
+test "二进制序列化功能" {
+  // 创建二进制序列化器
+  let binary_serializer = BinarySerializer::new()
+  
+  // 创建测试数据
+  let span_data = SpanData::new("binary.test.operation", 1000, 1100, [
+    ("service.name", "binary.test.service"),
+    ("operation.type", "binary.request"),
+    ("binary.data", "x".repeat(1000)) // 大量二进制数据
+  ])
+  
+  // 序列化
+  let binary_data = BinarySerializer::serialize_span(binary_serializer, span_data)
+  assert_true(binary_data.length() > 0)
+  
+  // 反序列化
+  let deserialized_span = BinarySerializer::deserialize_span(binary_serializer, binary_data)
+  assert_eq(SpanData::name(deserialized_span), SpanData::name(span_data))
+  assert_eq(SpanData::start_time(deserialized_span), SpanData::start_time(span_data))
+  assert_eq(SpanData::end_time(deserialized_span), SpanData::end_time(span_data))
+  
+  let deserialized_attributes = SpanData::attributes(deserialized_span)
+  assert_eq(deserialized_attributes.get("service.name"), "binary.test.service")
+  assert_eq(deserialized_attributes.get("operation.type"), "binary.request")
+  assert_eq(deserialized_attributes.get("binary.data"), "x".repeat(1000))
+  
+  // 比较序列化大小
+  let json_serializer = JsonSerializer::new()
+  let json_data = JsonSerializer::serialize_span(json_serializer, span_data)
+  
+  // 二进制序列化应该更紧凑
+  assert_true(binary_data.length() < json_data.length())
+  
+  // 测试批量序列化
+  let spans = []
+  for i = 0; i < 10; i = i + 1 {
+    let span = SpanData::new("batch.operation." + i.to_string(), 1000 + i, 1100 + i, [
+      ("batch.id", i.to_string())
+    ])
+    spans.push(span)
+  }
+  
+  let batch_binary_data = BinarySerializer::serialize_span_batch(binary_serializer, spans)
+  let deserialized_spans = BinarySerializer::deserialize_span_batch(binary_serializer, batch_binary_data)
+  
+  assert_eq(deserialized_spans.length(), spans.length())
+  for i in 0..10 {
+    assert_eq(SpanData::name(deserialized_spans[i]), SpanData::name(spans[i]))
+  }
+}
+
+// 测试3: 压缩序列化功能
+test "压缩序列化功能" {
+  // 创建压缩序列化器
+  let compressed_serializer = CompressedSerializer::new(CompressionType::Gzip)
+  
+  // 创建大型测试数据
+  let large_attributes = []
+  for i = 0; i < 100; i = i + 1 {
+    large_attributes.push(("large.attr." + i.to_string(), "x".repeat(100)))
+  }
+  
+  let span_data = SpanData::new("compression.test.operation", 1000, 1100, large_attributes)
+  
+  // 普通序列化
+  let json_serializer = JsonSerializer::new()
+  let uncompressed_data = JsonSerializer::serialize_span(json_serializer, span_data)
+  
+  // 压缩序列化
+  let compressed_data = CompressedSerializer::serialize_span(compressed_serializer, span_data)
   
   // 验证压缩效果
-  assert_true(compressed.length() < uncompressed.length())
-  assert_true(compressed.length() > 0)
+  assert_true(compressed_data.length() < uncompressed_data.length())
+  let compression_ratio = compressed_data.length().to_float() / uncompressed_data.length().to_float()
+  assert_true(compression_ratio < 0.8) // 至少20%的压缩率
   
-  // 反序列化压缩数据
-  let decompressed_span = Span::deserialize_compressed(compressed)
+  // 解压缩和反序列化
+  let deserialized_span = CompressedSerializer::deserialize_span(compressed_serializer, compressed_data)
+  assert_eq(SpanData::name(deserialized_span), SpanData::name(span_data))
   
-  // 验证反序列化的数据
-  let original_name = Span::name(span)
-  let decompressed_name = Span::name(decompressed_span)
-  assert_eq(original_name, decompressed_name)
-  
-  Span::end(span)
-  Span::end(decompressed_span)
-}
-
-test "跨格式序列化兼容性" {
-  // 创建测试用的span
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "format.compatibility.test")
-  let span = Tracer::start_span(tracer, "format.compatibility.span")
-  
-  // 设置属性
-  Span::set_attribute(span, "service.name", "compatibility-test")
-  Span::set_attribute(span, "format.version", "1.0")
-  
-  // 序列化为不同格式
-  let json_format = Span::serialize_to_json(span)
-  let binary_format = Span::serialize_to_binary(span)
-  let protobuf_format = Span::serialize_to_protobuf(span)
-  
-  assert_true(json_format.length() > 0)
-  assert_true(binary_format.length() > 0)
-  assert_true(protobuf_format.length() > 0)
-  
-  // 从不同格式反序列化
-  let from_json = Span::deserialize_from_json(json_format)
-  let from_binary = Span::deserialize_from_binary(binary_format)
-  let from_protobuf = Span::deserialize_from_protobuf(protobuf_format)
-  
-  // 验证所有反序列化的span都有相同的名称
-  let original_name = Span::name(span)
-  assert_eq(Span::name(from_json), original_name)
-  assert_eq(Span::name(from_binary), original_name)
-  assert_eq(Span::name(from_protobuf), original_name)
-  
-  Span::end(span)
-  Span::end(from_json)
-  Span::end(from_binary)
-  Span::end(from_protobuf)
-}
-
-test "序列化错误处理" {
-  // 测试序列化错误处理
-  
-  // 测试空数据序列化
-  let empty_serialized = Span::serialize_to_json(None)
-  assert_eq(empty_serialized, "")
-  
-  // 测试损坏数据反序列化
-  let corrupted_data = "{corrupted json data"
-  let deserialized_span = Span::deserialize_from_json(corrupted_data)
-  
-  // 验证错误处理
-  match deserialized_span {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
+  let deserialized_attributes = SpanData::attributes(deserialized_span)
+  for i in 0..100 {
+    let key = "large.attr." + i.to_string()
+    assert_eq(deserialized_attributes.get(key), "x".repeat(100))
   }
   
-  // 测试不完整数据反序列化
-  let incomplete_data = "{\"name\":\"test\""
-  let incomplete_span = Span::deserialize_from_json(incomplete_data)
+  // 测试不同压缩算法
+  let lz4_serializer = CompressedSerializer::new(CompressionType::LZ4)
+  let deflate_serializer = CompressedSerializer::new(CompressionType::Deflate)
   
-  match incomplete_span {
-    None => assert_true(true)
-    Some(_) => assert_true(false)
+  let lz4_data = CompressedSerializer::serialize_span(lz4_serializer, span_data)
+  let deflate_data = CompressedSerializer::serialize_span(deflate_serializer, span_data)
+  
+  // 比较压缩效果
+  assert_true(lz4_data.length() < uncompressed_data.length())
+  assert_true(deflate_data.length() < uncompressed_data.length())
+  
+  // 测试压缩级别
+  let fast_serializer = CompressedSerializer::with_level(CompressionType::Gzip, 1) // 最快压缩
+  let best_serializer = CompressedSerializer::with_level(CompressionType::Gzip, 9) // 最佳压缩
+  
+  let fast_data = CompressedSerializer::serialize_span(fast_serializer, span_data)
+  let best_data = CompressedSerializer::serialize_span(best_serializer, span_data)
+  
+  // 最佳压缩应该产生更小的数据
+  assert_true(best_data.length() <= fast_data.length())
+}
+
+// 测试4: 加密序列化功能
+test "加密序列化功能" {
+  // 创建加密密钥
+  let encryption_key = EncryptionKey::generate("AES-256-GCM")
+  
+  // 创建加密序列化器
+  let encrypted_serializer = EncryptedSerializer::new(encryption_key)
+  
+  // 创建敏感测试数据
+  let sensitive_span = SpanData::new("sensitive.operation", 1000, 1100, [
+    ("user.id", "user12345"),
+    ("credit.card", "4111-1111-1111-1111"),
+    ("ssn", "123-45-6789"),
+    ("api.key", "sk-1234567890abcdef")
+  ])
+  
+  // 加密序列化
+  let encrypted_data = EncryptedSerializer::serialize_span(encrypted_serializer, sensitive_span)
+  assert_true(encrypted_data.length() > 0)
+  
+  // 验证数据已加密（不应包含明文敏感信息）
+  let encrypted_string = String::from_utf8(encrypted_data)
+  assert_false(encrypted_string.contains("user12345"))
+  assert_false(encrypted_string.contains("4111-1111-1111-1111"))
+  assert_false(encrypted_string.contains("123-45-6789"))
+  assert_false(encrypted_string.contains("sk-1234567890abcdef"))
+  
+  // 解密和反序列化
+  let deserialized_span = EncryptedSerializer::deserialize_span(encrypted_serializer, encrypted_data)
+  assert_eq(SpanData::name(deserialized_span), SpanData::name(sensitive_span))
+  
+  let deserialized_attributes = SpanData::attributes(deserialized_span)
+  assert_eq(deserialized_attributes.get("user.id"), "user12345")
+  assert_eq(deserialized_attributes.get("credit.card"), "4111-1111-1111-1111")
+  assert_eq(deserialized_attributes.get("ssn"), "123-45-6789")
+  assert_eq(deserialized_attributes.get("api.key"), "sk-1234567890abcdef")
+  
+  // 测试不同密钥无法解密
+  let wrong_key = EncryptionKey::generate("AES-256-GCM")
+  let wrong_serializer = EncryptedSerializer::new(wrong_key)
+  
+  let decryption_result = EncryptedSerializer::try_deserialize_span(wrong_serializer, encrypted_data)
+  assert_true(decryption_result.is_error())
+  assert_true(decryption_result.error_message().contains("decryption failed"))
+  
+  // 测试选择性字段加密
+  let selective_serializer = SelectiveEncryptionSerializer::new(encryption_key, [
+    "credit.card",
+    "ssn",
+    "api.key"
+  ])
+  
+  let selectively_encrypted_data = SelectiveEncryptionSerializer::serialize_span(
+    selective_serializer, sensitive_span)
+  
+  // 解密并验证
+  let selectively_decrypted_span = SelectiveEncryptionSerializer::deserialize_span(
+    selective_serializer, selectively_encrypted_data)
+  
+  let decrypted_attributes = SpanData::attributes(selectively_decrypted_span)
+  assert_eq(decrypted_attributes.get("user.id"), "user12345") // 未加密
+  assert_eq(decrypted_attributes.get("credit.card"), "4111-1111-1111-1111") // 加密后解密
+  assert_eq(decrypted_attributes.get("ssn"), "123-45-6789") // 加密后解密
+  assert_eq(decrypted_attributes.get("api.key"), "sk-1234567890abcdef") // 加密后解密
+}
+
+// 测试5: 流式序列化功能
+test "流式序列化功能" {
+  // 创建流式序列化器
+  let stream_serializer = StreamSerializer::new()
+  
+  // 创建大量数据
+  let large_span_count = 1000
+  let spans = []
+  for i = 0; i < large_span_count; i = i + 1 {
+    let span = SpanData::new("stream.operation." + i.to_string(), 1000 + i, 1100 + i, [
+      ("stream.id", i.to_string()),
+      ("batch.id", (i / 100).to_string())
+    ])
+    spans.push(span)
   }
+  
+  // 流式序列化
+  let stream = StreamSerializer::create_span_stream(stream_serializer)
+  for span in spans {
+    StreamSerializer::write_span(stream, span)
+  }
+  StreamSerializer::finalize_stream(stream)
+  
+  // 获取流式数据
+  let stream_data = StreamSerializer::get_stream_data(stream)
+  assert_true(stream_data.length() > 0)
+  
+  // 流式反序列化
+  let read_stream = StreamSerializer::create_span_read_stream(stream_serializer, stream_data)
+  let deserialized_spans = []
+  
+  while StreamSerializer::has_more_spans(read_stream) {
+    let span = StreamSerializer::read_span(read_stream)
+    deserialized_spans.push(span)
+  }
+  
+  // 验证数据完整性
+  assert_eq(deserialized_spans.length(), spans.length())
+  for i in 0..large_span_count {
+    assert_eq(SpanData::name(deserialized_spans[i]), SpanData::name(spans[i]))
+    assert_eq(SpanData::start_time(deserialized_spans[i]), SpanData::start_time(spans[i]))
+    assert_eq(SpanData::end_time(deserialized_spans[i]), SpanData::end_time(spans[i]))
+  }
+  
+  // 测试增量流式处理
+  let incremental_stream = StreamSerializer::create_incremental_stream(stream_serializer)
+  
+  // 分批写入数据
+  for batch in 0..10 {
+    for i in 0..100 {
+      let span_index = batch * 100 + i
+      let span = SpanData::new("incremental.operation." + span_index.to_string(), 
+        1000 + span_index, 1100 + span_index, [
+        ("batch.id", batch.to_string()),
+        ("item.id", i.to_string())
+      ])
+      StreamSerializer::write_span(incremental_stream, span)
+    }
+    
+    // 每批处理后获取部分数据
+    let partial_data = StreamSerializer::get_partial_stream_data(incremental_stream)
+    assert_true(partial_data.length() > 0)
+  }
+  
+  StreamSerializer::finalize_stream(incremental_stream)
+  
+  // 测试流式压缩
+  let compressed_stream = StreamSerializer::create_compressed_stream(stream_serializer, CompressionType::Gzip)
+  
+  for span in spans.take(100) { // 只处理前100个span以节省时间
+    StreamSerializer::write_span(compressed_stream, span)
+  }
+  StreamSerializer::finalize_stream(compressed_stream)
+  
+  let compressed_stream_data = StreamSerializer::get_stream_data(compressed_stream)
+  let uncompressed_stream_data = StreamSerializer::get_stream_data(stream)
+  
+  // 压缩流应该更小
+  assert_true(compressed_stream_data.length() < uncompressed_stream_data.length())
+}
+
+// 测试6: 跨格式序列化转换
+test "跨格式序列化转换功能" {
+  // 创建不同格式的序列化器
+  let json_serializer = JsonSerializer::new()
+  let binary_serializer = BinarySerializer::new()
+  let compressed_serializer = CompressedSerializer::new(CompressionType::Gzip)
+  let encrypted_serializer = EncryptedSerializer::new(EncryptionKey::generate("AES-256-GCM"))
+  
+  // 创建测试数据
+  let span_data = SpanData::new("conversion.test.operation", 1000, 1100, [
+    ("service.name", "conversion.test.service"),
+    ("operation.type", "conversion.request"),
+    ("conversion.data", "x".repeat(500))
+  ])
+  
+  // JSON -> 二进制
+  let json_data = JsonSerializer::serialize_span(json_serializer, span_data)
+  let binary_data = SerializationConverter::json_to_binary(json_data)
+  let converted_span = BinarySerializer::deserialize_span(binary_serializer, binary_data)
+  
+  assert_eq(SpanData::name(converted_span), SpanData::name(span_data))
+  assert_eq(SpanData::attributes(converted_span).get("service.name"), "conversion.test.service")
+  
+  // 二进制 -> JSON
+  let original_binary = BinarySerializer::serialize_span(binary_serializer, span_data)
+  let converted_json = SerializationConverter::binary_to_json(original_binary)
+  let reconverted_span = JsonSerializer::deserialize_span(json_serializer, converted_json)
+  
+  assert_eq(SpanData::name(reconverted_span), SpanData::name(span_data))
+  
+  // JSON -> 压缩
+  let compressed_json = SerializationConverter::compress_json(json_data, CompressionType::Gzip)
+  let decompressed_json = SerializationConverter::decompress_to_json(compressed_json, CompressionType::Gzip)
+  let decompressed_span = JsonSerializer::deserialize_span(json_serializer, decompressed_json)
+  
+  assert_eq(SpanData::name(decompressed_span), SpanData::name(span_data))
+  
+  // 二进制 -> 压缩
+  let compressed_binary = SerializationConverter::compress_binary(original_binary, CompressionType::LZ4)
+  let decompressed_binary = SerializationConverter::decompress_to_binary(compressed_binary, CompressionType::LZ4)
+  let decompressed_binary_span = BinarySerializer::deserialize_span(binary_serializer, decompressed_binary)
+  
+  assert_eq(SpanData::name(decompressed_binary_span), SpanData::name(span_data))
+  
+  // 测试批量转换
+  let spans = []
+  for i = 0; i < 10; i = i + 1 {
+    let span = SpanData::new("batch.conversion." + i.to_string(), 1000 + i, 1100 + i, [
+      ("batch.id", i.to_string())
+    ])
+    spans.push(span)
+  }
+  
+  let json_batch = JsonSerializer::serialize_span_batch(json_serializer, spans)
+  let binary_batch = SerializationConverter::json_batch_to_binary(json_batch)
+  let converted_spans = BinarySerializer::deserialize_span_batch(binary_serializer, binary_batch)
+  
+  assert_eq(converted_spans.length(), spans.length())
+  for i in 0..10 {
+    assert_eq(SpanData::name(converted_spans[i]), SpanData::name(spans[i]))
+  }
+  
+  // 测试格式检测
+  let json_sample = JsonSerializer::serialize_span(json_serializer, span_data)
+  let binary_sample = BinarySerializer::serialize_span(binary_serializer, span_data)
+  let compressed_sample = CompressedSerializer::serialize_span(compressed_serializer, span_data)
+  
+  assert_eq(SerializationFormatDetector::detect_format(json_sample), SerializationFormat::Json)
+  assert_eq(SerializationFormatDetector::detect_format(binary_sample), SerializationFormat::Binary)
+  assert_eq(SerializationFormatDetector::detect_format(compressed_sample), SerializationFormat::Compressed)
+  
+  // 测试自动反序列化
+  let auto_span1 = SerializationConverter::auto_deserialize_span(json_sample)
+  let auto_span2 = SerializationConverter::auto_deserialize_span(binary_sample)
+  let auto_span3 = SerializationConverter::auto_deserialize_span(compressed_sample)
+  
+  assert_eq(SpanData::name(auto_span1), SpanData::name(span_data))
+  assert_eq(SpanData::name(auto_span2), SpanData::name(span_data))
+  assert_eq(SpanData::name(auto_span3), SpanData::name(span_data))
 }

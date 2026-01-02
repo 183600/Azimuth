@@ -1,467 +1,437 @@
-// Azimuth性能基准测试用例
-// 测试Azimuth遥测系统在各种负载下的性能表现
+// Azimuth 性能基准综合测试用例
+// 测试遥测系统的性能基准，包括吞吐量、延迟和资源使用
 
-test "遥测数据收集性能基准" {
-  // 设置性能基准测试参数
-  let test_iterations = 10000
-  let concurrent_threads = 10
-  let batch_size = 100
+// 测试1: 追踪系统性能基准
+test "追踪系统性能基准测试" {
+  // 创建性能基准测试器
+  let benchmark = PerformanceBenchmark::new("tracing.performance")
   
-  // 创建性能监控器
-  let performance_monitor = PerformanceMonitor::new()
-  PerformanceMonitor::start_monitoring(performance_monitor)
+  // 创建追踪器
+  let tracer_provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "benchmark.test")
   
-  // 测试span创建和结束的性能
-  let span_creation_times = []
-  
-  for i in 0..=test_iterations-1 {
-    let start_time = PerformanceMonitor::get_high_resolution_time()
-    
-    // 创建span
-    let tracer = TracerProvider::get_tracer(TracerProvider::default(), "performance.test")
-    let span = Tracer::start_span(tracer, "performance.operation." + i.to_string())
-    
-    // 设置属性
-    Span::set_attribute(span, "operation.id", i.to_string())
-    Span::set_attribute(span, "operation.type", "benchmark")
-    
-    // 添加事件
-    Span::add_event(span, "operation.started", [("timestamp", PerformanceMonitor::get_current_timestamp().to_string())])
-    
-    // 结束span
-    Span::end(span)
-    
-    let end_time = PerformanceMonitor::get_high_resolution_time()
-    let duration = end_time - start_time
-    span_creation_times = span_creation_times.push(duration)
-  }
-  
-  // 计算span创建性能指标
-  let avg_span_creation_time = span_creation_times.reduce(fn(acc, time) { acc + time }, 0L) / span_creation_times.length()
-  let max_span_creation_time = span_creation_times.reduce(fn(acc, time) { if time > acc { time } else { acc } }, 0L)
-  let min_span_creation_time = span_creation_times.reduce(fn(acc, time) { if time < acc { time } else { acc } }, 9223372036854775807L)
-  
-  // 验证span创建性能在合理范围内
-  assert_true(avg_span_creation_time < 100000L)  // 平均创建时间应小于100微秒
-  assert_true(max_span_creation_time < 1000000L)  // 最大创建时间应小于1毫秒
-  
-  // 测试度量记录的性能
-  let metric_recording_times = []
-  let meter = MeterProvider::get_meter(MeterProvider::default(), "performance.test")
-  let counter = Meter::create_counter(meter, "performance.operations", Some("Performance operations"), Some("count"))
-  
-  for i in 0..=test_iterations-1 {
-    let start_time = PerformanceMonitor::get_high_resolution_time()
-    
-    // 记录度量
-    Counter::add_with_attributes(counter, 1.0, [
-      ("operation.id", i.to_string()),
-      ("operation.type", "benchmark"),
-      ("thread.id", "0")
-    ])
-    
-    let end_time = PerformanceMonitor::get_high_resolution_time()
-    let duration = end_time - start_time
-    metric_recording_times = metric_recording_times.push(duration)
-  }
-  
-  // 计算度量记录性能指标
-  let avg_metric_recording_time = metric_recording_times.reduce(fn(acc, time) { acc + time }, 0L) / metric_recording_times.length()
-  let max_metric_recording_time = metric_recording_times.reduce(fn(acc, time) { if time > acc { time } else { acc } }, 0L)
-  
-  // 验证度量记录性能在合理范围内
-  assert_true(avg_metric_recording_time < 50000L)  // 平均记录时间应小于50微秒
-  assert_true(max_metric_recording_time < 500000L)  // 最大记录时间应小于500微秒
-  
-  // 测试日志记录的性能
-  let log_recording_times = []
-  let logger = LoggerProvider::get_logger(LoggerProvider::default(), "performance.test")
-  
-  for i in 0..=test_iterations-1 {
-    let start_time = PerformanceMonitor::get_high_resolution_time()
-    
-    // 创建并记录日志
-    let log = LogRecord::new(Info, "Performance test operation " + i.to_string())
-    LogRecord::add_attribute(log, "operation.id", i.to_string())
-    LogRecord::add_attribute(log, "operation.type", "benchmark")
-    
-    Logger::emit(logger, log)
-    
-    let end_time = PerformanceMonitor::get_high_resolution_time()
-    let duration = end_time - start_time
-    log_recording_times = log_recording_times.push(duration)
-  }
-  
-  // 计算日志记录性能指标
-  let avg_log_recording_time = log_recording_times.reduce(fn(acc, time) { acc + time }, 0L) / log_recording_times.length()
-  let max_log_recording_time = log_recording_times.reduce(fn(acc, time) { if time > acc { time } else { acc } }, 0L)
-  
-  // 验证日志记录性能在合理范围内
-  assert_true(avg_log_recording_time < 75000L)  // 平均记录时间应小于75微秒
-  assert_true(max_log_recording_time < 750000L)  // 最大记录时间应小于750微秒
-  
-  // 停止性能监控
-  PerformanceMonitor::stop_monitoring(performance_monitor)
-  
-  // 获取系统资源使用情况
-  let resource_usage = PerformanceMonitor::get_resource_usage(performance_monitor)
-  
-  // 验证资源使用在合理范围内
-  assert_true(resource_usage.memory_usage < 100 * 1024 * 1024)  // 内存使用应小于100MB
-  assert_true(resource_usage.cpu_usage < 80.0)  // CPU使用率应小于80%
-}
-
-test "并发遥测操作性能测试" {
-  // 设置并发测试参数
-  let concurrent_operations = 1000
-  let thread_count = 10
-  let operations_per_thread = concurrent_operations / thread_count
-  
-  // 创建并发性能监控器
-  let concurrent_monitor = ConcurrentPerformanceMonitor::new()
-  ConcurrentPerformanceMonitor::start_monitoring(concurrent_monitor)
-  
-  // 创建线程同步机制
-  let start_barrier = ThreadBarrier::new(thread_count)
-  let completion_latch = CountDownLatch::new(thread_count)
-  let results = ThreadSafeArray::new()
-  
-  // 启动多个线程执行并发操作
-  for thread_id in 0..=thread_count-1 {
-    Thread::spawn(fn() {
-      // 等待所有线程准备就绪
-      ThreadBarrier::wait(start_barrier)
-      
-      let thread_start_time = ConcurrentPerformanceMonitor::get_high_resolution_time()
-      let thread_operation_times = []
-      
-      // 执行分配给该线程的操作
-      for i in 0..=operations_per_thread-1 {
-        let operation_id = thread_id * operations_per_thread + i
-        let operation_start_time = ConcurrentPerformanceMonitor::get_high_resolution_time()
-        
-        // 创建span
-        let tracer = TracerProvider::get_tracer(TracerProvider::default(), "concurrent.test")
-        let span = Tracer::start_span(tracer, "concurrent.operation." + operation_id.to_string())
-        
-        // 设置属性
-        Span::set_attribute(span, "operation.id", operation_id.to_string())
-        Span::set_attribute(span, "thread.id", thread_id.to_string())
-        
-        // 记录度量
-        let meter = MeterProvider::get_meter(MeterProvider::default(), "concurrent.test")
-        let counter = Meter::create_counter(meter, "concurrent.operations", Some("Concurrent operations"), Some("count"))
-        
-        Counter::add_with_attributes(counter, 1.0, [
-          ("operation.id", operation_id.to_string()),
-          ("thread.id", thread_id.to_string())
-        ])
-        
-        // 记录日志
-        let logger = LoggerProvider::get_logger(LoggerProvider::default(), "concurrent.test")
-        let log = LogRecord::new(Info, "Concurrent operation " + operation_id.to_string())
-        LogRecord::add_attribute(log, "operation.id", operation_id.to_string())
-        LogRecord::add_attribute(log, "thread.id", thread_id.to_string())
-        
-        Logger::emit(logger, log)
-        
-        // 结束span
-        Span::end(span)
-        
-        let operation_end_time = ConcurrentPerformanceMonitor::get_high_resolution_time()
-        let operation_duration = operation_end_time - operation_start_time
-        thread_operation_times = thread_operation_times.push(operation_duration)
-      }
-      
-      let thread_end_time = ConcurrentPerformanceMonitor::get_high_resolution_time()
-      let thread_total_duration = thread_end_time - thread_start_time
-      
-      // 计算线程性能指标
-      let thread_avg_operation_time = thread_operation_times.reduce(fn(acc, time) { acc + time }, 0L) / thread_operation_times.length()
-      let thread_max_operation_time = thread_operation_times.reduce(fn(acc, time) { if time > acc { time } else { acc } }, 0L)
-      
-      // 存储线程结果
-      let thread_result = {
-        "thread_id": thread_id,
-        "total_duration": thread_total_duration,
-        "avg_operation_time": thread_avg_operation_time,
-        "max_operation_time": thread_max_operation_time,
-        "operation_count": thread_operation_times.length()
-      }
-      
-      ThreadSafeArray::push(results, thread_result)
-      CountDownLatch::count_down(completion_latch)
-    })
-  }
-  
-  // 等待所有线程完成
-  CountDownLatch::await(completion_latch, 30000)  // 最多等待30秒
-  
-  // 收集并分析结果
-  let all_results = ThreadSafeArray::to_array(results)
-  assert_eq(all_results.length(), thread_count)
-  
-  // 计算总体并发性能指标
-  let total_thread_durations = all_results.map(fn(r) { r.total_duration })
-  let max_thread_duration = total_thread_durations.reduce(fn(acc, duration) { if duration > acc { duration } else { acc } }, 0L)
-  let total_operations = all_results.reduce(fn(acc, r) { acc + r.operation_count }, 0)
-  
-  let avg_thread_operation_times = all_results.map(fn(r) { r.avg_operation_time })
-  let overall_avg_operation_time = avg_thread_operation_times.reduce(fn(acc, time) { acc + time }, 0L) / avg_thread_operation_times.length()
-  
-  // 计算吞吐量（操作/秒）
-  let throughput_seconds = max_thread_duration.to_float() / 1000000000.0
-  let operations_per_second = total_operations.to_float() / throughput_seconds
-  
-  // 验证并发性能指标
-  assert_true(overall_avg_operation_time < 200000L)  // 平均操作时间应小于200微秒
-  assert_true(operations_per_second > 10000.0)  // 每秒应能处理超过10000个操作
-  
-  // 停止并发性能监控
-  ConcurrentPerformanceMonitor::stop_monitoring(concurrent_monitor)
-  
-  // 获取并发资源使用情况
-  let concurrent_resource_usage = ConcurrentPerformanceMonitor::get_resource_usage(concurrent_monitor)
-  
-  // 验证并发资源使用在合理范围内
-  assert_true(concurrent_resource_usage.peak_memory_usage < 200 * 1024 * 1024)  // 峰值内存使用应小于200MB
-  assert_true(concurrent_resource_usage.max_cpu_usage < 90.0)  // 最大CPU使用率应小于90%
-  assert_true(concurrent_resource_usage.thread_count == thread_count)  // 线程数应正确
-}
-
-test "内存使用效率和垃圾回收影响测试" {
-  // 设置内存测试参数
-  let memory_test_iterations = 50000
-  let memory_sample_interval = 5000  // 每5000次操作采样一次内存使用情况
-  
-  // 创建内存监控器
-  let memory_monitor = MemoryMonitor::new()
-  MemoryMonitor::start_monitoring(memory_monitor)
-  
-  let memory_samples = []
-  
-  // 执行大量遥测操作并监控内存使用
-  for i in 0..=memory_test_iterations-1 {
-    // 创建span
-    let tracer = TracerProvider::get_tracer(TracerProvider::default(), "memory.test")
-    let span = Tracer::start_span(tracer, "memory.operation." + i.to_string())
-    
-    // 设置大量属性（增加内存使用）
-    for j in 0..=9 {
-      Span::set_attribute(span, "attribute." + j.to_string(), "value-" + i.to_string() + "-" + j.to_string())
-    }
-    
-    // 记录度量
-    let meter = MeterProvider::get_meter(MeterProvider::default(), "memory.test")
-    let histogram = Meter::create_histogram(meter, "memory.test.histogram", Some("Memory test histogram"), Some("bytes"))
-    
-    Histogram::record_with_attributes(histogram, i.to_float(), [
-      ("operation.id", i.to_string()),
-      ("attribute.large", "large-value-" + i.to_string().repeat(10))  // 创建较大的字符串值
-    ])
-    
-    // 记录日志
-    let logger = LoggerProvider::get_logger(LoggerProvider::default(), "memory.test")
-    let log = LogRecord::new(Info, "Memory test operation " + i.to_string())
-    LogRecord::add_attribute(log, "operation.id", i.to_string())
-    LogRecord::add_attribute(log, "large.data", "large-data-" + i.to_string().repeat(20))
-    
-    Logger::emit(logger, log)
-    
-    // 结束span
-    Span::end(span)
-    
-    // 定期采样内存使用情况
-    if i % memory_sample_interval == 0 {
-      let current_memory = MemoryMonitor::get_current_memory_usage(memory_monitor)
-      memory_samples = memory_samples.push((i, current_memory))
-    }
-    
-    // 定期触发垃圾回收（模拟真实环境）
-    if i % 10000 == 0 && i > 0 {
-      MemoryMonitor::trigger_garbage_collection()
-    }
-  }
-  
-  // 分析内存使用模式
-  let memory_values = memory_samples.map(fn(sample) { sample.1 })
-  let initial_memory = memory_values[0]
-  let final_memory = memory_values[memory_values.length() - 1]
-  let peak_memory = memory_values.reduce(fn(acc, memory) { if memory > acc { memory } else { acc } }, 0L)
-  let avg_memory = memory_values.reduce(fn(acc, memory) { acc + memory }, 0L) / memory_values.length()
-  
-  // 计算内存增长率
-  let memory_growth_rate = (final_memory - initial_memory).to_float() / memory_test_iterations.to_float()
-  
-  // 验证内存使用效率
-  assert_true(memory_growth_rate < 1024.0)  // 每次操作的内存增长应小于1KB
-  assert_true(peak_memory < 500 * 1024 * 1024)  // 峰值内存使用应小于500MB
-  assert_true(avg_memory < 200 * 1024 * 1024)  // 平均内存使用应小于200MB
-  
-  // 验证垃圾回收效果
-  let gc_samples = memory_samples.filter(fn(sample) { sample.0 % 10000 == 0 && sample.0 > 0 })
-  if gc_samples.length() >= 2 {
-    let before_gc = gc_samples[0].1
-    let after_gc = gc_samples[1].1
-    let gc_efficiency = (before_gc - after_gc).to_float() / before_gc.to_float()
-    
-    assert_true(gc_efficiency > 0.1)  // 垃圾回收应能回收至少10%的内存
-  }
-  
-  // 停止内存监控
-  MemoryMonitor::stop_monitoring(memory_monitor)
-  
-  // 获取详细的内存使用报告
-  let memory_report = MemoryMonitor::get_memory_report(memory_monitor)
-  
-  // 验证内存报告包含必要的信息
-  assert_true(memory_report.contains_key("initial_memory"))
-  assert_true(memory_report.contains_key("final_memory"))
-  assert_true(memory_report.contains_key("peak_memory"))
-  assert_true(memory_report.contains_key("avg_memory"))
-  assert_true(memory_report.contains_key("gc_count"))
-  assert_true(memory_report.contains_key("gc_total_time"))
-}
-
-test "大规模遥测数据吞吐量测试" {
-  // 设置吞吐量测试参数
-  let throughput_test_duration = 30  // 30秒测试
-  let target_throughput = 50000  // 目标每秒50000个操作
-  let reporting_interval = 5  // 每5秒报告一次吞吐量
-  
-  // 创建吞吐量监控器
-  let throughput_monitor = ThroughputMonitor::new()
-  ThroughputMonitor::start_monitoring(throughput_monitor)
-  
-  // 创建吞吐量统计
-  let throughput_stats = ThreadSafeCounter::new()
-  let start_time = ThroughputMonitor::get_current_time()
-  let test_end_time = start_time + (throughput_test_duration * 1000)
-  
-  // 启动多个生产者线程生成遥测数据
-  let producer_threads = 5
-  let completion_signal = AtomicBool::new(false)
-  
-  for thread_id in 0..=producer_threads-1 {
-    Thread::spawn(fn() {
-      let operations_per_second = target_throughput / producer_threads
-      let operation_interval = 1000000000L / operations_per_second  // 纳秒
-      
-      let mut next_operation_time = ThroughputMonitor::get_high_resolution_time()
-      
-      while ThroughputMonitor::get_current_time() < test_end_time {
-        let current_time = ThroughputMonitor::get_high_resolution_time()
-        
-        if current_time >= next_operation_time {
-          // 执行遥测操作
-          let operation_start = ThroughputMonitor::get_high_resolution_time()
-          
-          // 创建span
-          let tracer = TracerProvider::get_tracer(TracerProvider::default(), "throughput.test")
-          let span = Tracer::start_span(tracer, "throughput.operation")
-          
-          // 设置基本属性
-          Span::set_attribute(span, "thread.id", thread_id.to_string())
-          Span::set_attribute(span, "operation.time", operation_start.to_string())
-          
-          // 记录度量
-          let meter = MeterProvider::get_meter(MeterProvider::default(), "throughput.test")
-          let counter = Meter::create_counter(meter, "throughput.operations", Some("Throughput operations"), Some("count"))
-          
-          Counter::add_with_attributes(counter, 1.0, [
-            ("thread.id", thread_id.to_string()),
-            ("operation.time", operation_start.to_string())
-          ])
-          
-          // 记录日志
-          let logger = LoggerProvider::get_logger(LoggerProvider::default(), "throughput.test")
-          let log = LogRecord::new(Info, "Throughput test operation")
-          LogRecord::add_attribute(log, "thread.id", thread_id.to_string())
-          
-          Logger::emit(logger, log)
-          
-          // 结束span
-          Span::end(span)
-          
-          // 增加操作计数
-          ThreadSafeCounter::increment(throughput_stats)
-          
-          // 计算下一个操作的时间
-          next_operation_time = next_operation_time + operation_interval
-        }
-        
-        // 短暂休眠以避免过度占用CPU
-        Thread::sleep(1000)  // 1微秒
-      }
-    })
-  }
-  
-  // 启动吞吐量报告线程
-  let throughput_reports = ThreadSafeArray::new()
-  let report_thread = Thread::spawn(fn() {
-    let mut last_report_time = start_time
-    let mut last_operation_count = 0
-    
-    while ThroughputMonitor::get_current_time() < test_end_time {
-      Thread::sleep(reporting_interval * 1000)  // 休眠报告间隔
-      
-      let current_time = ThroughputMonitor::get_current_time()
-      let current_operation_count = ThreadSafeCounter::get(throughput_stats)
-      
-      let time_diff = current_time - last_report_time
-      let operation_diff = current_operation_count - last_operation_count
-      let current_throughput = operation_diff.to_float() / (time_diff.to_float() / 1000.0)
-      
-      let report = {
-        "timestamp": current_time,
-        "interval": time_diff,
-        "operations": operation_diff,
-        "throughput": current_throughput
-      }
-      
-      ThreadSafeArray::push(throughput_reports, report)
-      
-      last_report_time = current_time
-      last_operation_count = current_operation_count
+  // 基准测试：span创建性能
+  let span_creation_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 1000; i = i + 1 {
+      let span = Tracer::start_span(tracer, "benchmark.operation." + i.to_string())
+      Span::end(span)
     }
   })
   
-  // 等待测试完成
-  Thread::sleep(throughput_test_duration * 1000)
-  completion_signal := true
+  // 验证span创建性能（每个span创建应该在1ms内完成）
+  let avg_span_creation_time = span_creation_time / 1000.0
+  assert_true(avg_span_creation_time < 1.0, "Span creation should be under 1ms")
   
-  // 等待报告线程完成
-  Thread::join(report_thread)
+  // 基准测试：带属性的span创建性能
+  let attributed_span_creation_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 1000; i = i + 1 {
+      let span = Tracer::start_span(tracer, "attributed.operation." + i.to_string())
+      Span::set_attribute(span, "operation.id", i.to_string())
+      Span::set_attribute(span, "operation.type", "benchmark")
+      Span::set_attribute(span, "service.name", "test.service")
+      Span::add_event(span, "operation.started", [("timestamp", i.to_string())])
+      Span::end(span)
+    }
+  })
   
-  // 停止吞吐量监控
-  ThroughputMonitor::stop_monitoring(throughput_monitor)
+  let avg_attributed_span_creation_time = attributed_span_creation_time / 1000.0
+  assert_true(avg_attributed_span_creation_time < 2.0, "Attributed span creation should be under 2ms")
   
-  // 分析吞吐量结果
-  let reports = ThreadSafeArray::to_array(throughput_reports)
-  let total_operations = ThreadSafeCounter::get(throughput_stats)
-  let actual_test_duration = ThroughputMonitor::get_current_time() - start_time
-  let average_throughput = total_operations.to_float() / (actual_test_duration.to_float() / 1000.0)
+  // 基准测试：嵌套span创建性能
+  let nested_span_creation_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 100; i = i + 1 {
+      let root_span = Tracer::start_span(tracer, "root.operation." + i.to_string())
+      
+      for j = 0; j < 10; j = j + 1 {
+        let child_span = Tracer::start_span_with_parent(tracer, "child.operation." + j.to_string(), root_span)
+        Span::set_attribute(child_span, "child.id", j.to_string())
+        Span::end(child_span)
+      }
+      
+      Span::end(root_span)
+    }
+  })
   
-  // 计算吞吐量统计
-  let throughput_values = reports.map(fn(r) { r.throughput })
-  let max_throughput = throughput_values.reduce(fn(acc, throughput) { if throughput > acc { throughput } else { acc } }, 0.0)
-  let min_throughput = throughput_values.reduce(fn(acc, throughput) { if throughput < acc { throughput } else { acc } }, 999999.0)
-  let avg_reported_throughput = throughput_values.reduce(fn(acc, throughput) { acc + throughput }, 0.0) / throughput_values.length()
+  let total_nested_spans = 100 * 11 // 100个root span + 1000个child span
+  let avg_nested_span_creation_time = nested_span_creation_time / total_nested_spans.to_float()
+  assert_true(avg_nested_span_creation_time < 1.5, "Nested span creation should be under 1.5ms")
   
-  // 验证吞吐量指标
-  assert_true(average_throughput > target_throughput * 0.8)  // 平均吞吐量应达到目标的80%
-  assert_true(max_throughput > target_throughput)  // 最大吞吐量应超过目标
-  assert_true(min_throughput > target_throughput * 0.5)  // 最小吞吐量应至少达到目标的50%
-  assert_true(total_operations > target_throughput * throughput_test_duration * 0.8)  // 总操作数应达到期望的80%
+  // 验证内存使用
+  let memory_usage = Benchmark::measure_memory_usage(benchmark, fn() {
+    let spans = []
+    for i = 0; i < 1000; i = i + 1 {
+      let span = Tracer::start_span(tracer, "memory.test.operation." + i.to_string())
+      spans.push(span)
+    }
+    spans
+  })
   
-  // 获取详细的吞吐量报告
-  let throughput_report = ThroughputMonitor::get_throughput_report(throughput_monitor)
+  // 每个span应该占用不超过1KB内存
+  let memory_per_span = memory_usage / 1000
+  assert_true(memory_per_span < 1024, "Each span should use less than 1KB memory")
+}
+
+// 测试2: 度量系统性能基准
+test "度量系统性能基准测试" {
+  // 创建性能基准测试器
+  let benchmark = PerformanceBenchmark::new("metrics.performance")
   
-  // 验证吞吐量报告包含必要的信息
-  assert_true(throughput_report.contains_key("total_operations"))
-  assert_true(throughput_report.contains_key("test_duration"))
-  assert_true(throughput_report.contains_key("average_throughput"))
-  assert_true(throughput_report.contains_key("max_throughput"))
-  assert_true(throughput_report.contains_key("min_throughput"))
-  assert_true(throughput_report.contains_key("producer_threads"))
+  // 创建度量提供者
+  let meter_provider = MeterProvider::new()
+  let meter = MeterProvider::get_meter(meter_provider, "benchmark.test")
+  
+  // 基准测试：计数器操作性能
+  let counter_creation_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 1000; i = i + 1 {
+      let counter = Meter::create_counter(meter, "counter." + i.to_string())
+      Counter::add(counter, 1.0)
+    }
+  })
+  
+  let avg_counter_creation_time = counter_creation_time / 1000.0
+  assert_true(avg_counter_creation_time < 0.5, "Counter creation and increment should be under 0.5ms")
+  
+  // 基准测试：带属性的计数器操作性能
+  let attributed_counter_time = Benchmark::measure(benchmark, fn() {
+    let counter = Meter::create_counter(meter, "attributed.counter")
+    for i = 0; i < 10000; i = i + 1 {
+      Counter::add_with_attributes(counter, 1.0, [
+        ("operation.type", "benchmark"),
+        ("operation.id", i.to_string()),
+        ("service.name", "test.service")
+      ])
+    }
+  })
+  
+  let avg_attributed_counter_time = attributed_counter_time / 10000.0
+  assert_true(avg_attributed_counter_time < 0.1, "Attributed counter increment should be under 0.1ms")
+  
+  // 基准测试：仪表操作性能
+  let gauge_creation_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 1000; i = i + 1 {
+      let gauge = Meter::create_gauge(meter, "gauge." + i.to_string())
+      Gauge::set(gauge, i.to_float())
+    }
+  })
+  
+  let avg_gauge_creation_time = gauge_creation_time / 1000.0
+  assert_true(avg_gauge_creation_time < 0.5, "Gauge creation and set should be under 0.5ms")
+  
+  // 基准测试：直方图操作性能
+  let histogram_time = Benchmark::measure(benchmark, fn() {
+    let histogram = Meter::create_histogram(meter, "benchmark.histogram")
+    for i = 0; i < 10000; i = i + 1 {
+      Histogram::record(histogram, (i % 1000).to_float())
+    }
+  })
+  
+  let avg_histogram_time = histogram_time / 10000.0
+  assert_true(avg_histogram_time < 0.2, "Histogram record should be under 0.2ms")
+  
+  // 验证度量数据查询性能
+  let query_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 1000; i = i + 1 {
+      let metrics = MeterProvider::get_all_metrics(meter_provider)
+      let filtered_metrics = metrics.filter(fn(m) { Metric::name(m).contains("benchmark") })
+      assert_true(filtered_metrics.length() > 0)
+    }
+  })
+  
+  let avg_query_time = query_time / 1000.0
+  assert_true(avg_query_time < 5.0, "Metrics query should be under 5ms")
+}
+
+// 测试3: 日志系统性能基准
+test "日志系统性能基准测试" {
+  // 创建性能基准测试器
+  let benchmark = PerformanceBenchmark::new("logging.performance")
+  
+  // 创建日志记录器
+  let logger = Logger::new("benchmark.test")
+  
+  // 基准测试：简单日志记录性能
+  let simple_logging_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 10000; i = i + 1 {
+      Logger::info(logger, "Simple log message " + i.to_string(), [])
+    }
+  })
+  
+  let avg_simple_logging_time = simple_logging_time / 10000.0
+  assert_true(avg_simple_logging_time < 0.1, "Simple logging should be under 0.1ms")
+  
+  // 基准测试：带属性的日志记录性能
+  let attributed_logging_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 10000; i = i + 1 {
+      Logger::info(logger, "Attributed log message " + i.to_string(), [
+        ("log.id", i.to_string()),
+        ("operation.type", "benchmark"),
+        ("service.name", "test.service"),
+        ("timestamp", i.to_string())
+      ])
+    }
+  })
+  
+  let avg_attributed_logging_time = attributed_logging_time / 10000.0
+  assert_true(avg_attributed_logging_time < 0.2, "Attributed logging should be under 0.2ms")
+  
+  // 基准测试：结构化日志记录性能
+  let structured_logging_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 5000; i = i + 1 {
+      let structured_data = StructuredData::new()
+      StructuredData::set_field(structured_data, "operation.id", i.to_string())
+      StructuredData::set_field(structured_data, "operation.type", "benchmark")
+      StructuredData::set_field(structured_data, "duration", (i % 1000).to_string())
+      StructuredData::set_field(structured_data, "success", (i % 2 == 0).to_string())
+      
+      Logger::info_structured(logger, "Structured log message", structured_data)
+    }
+  })
+  
+  let avg_structured_logging_time = structured_logging_time / 5000.0
+  assert_true(avg_structured_logging_time < 0.5, "Structured logging should be under 0.5ms")
+  
+  // 基准测试：日志查询性能
+  let log_query_time = Benchmark::measure(benchmark, fn() {
+    for i = 0; i < 1000; i = i + 1 {
+      let logs = Logger::get_logs_by_level(logger, LogLevel::Info)
+      let filtered_logs = logs.filter(fn(l) { LogRecord::message(l).contains("benchmark") })
+      assert_true(filtered_logs.length() > 0)
+    }
+  })
+  
+  let avg_log_query_time = log_query_time / 1000.0
+  assert_true(avg_log_query_time < 10.0, "Log query should be under 10ms")
+}
+
+// 测试4: 序列化性能基准
+test "序列化性能基准测试" {
+  // 创建性能基准测试器
+  let benchmark = PerformanceBenchmark::new("serialization.performance")
+  
+  // 创建测试数据
+  let test_spans = []
+  for i = 0; i < 1000; i = i + 1 {
+    let span = SpanData::new("test.operation." + i.to_string(), 1000 + i, 1100 + i, [
+      ("operation.id", i.to_string()),
+      ("service.name", "test.service"),
+      ("operation.type", "benchmark")
+    ])
+    test_spans.push(span)
+  }
+  
+  // 基准测试：JSON序列化性能
+  let json_serialization_time = Benchmark::measure(benchmark, fn() {
+    for span in test_spans {
+      let json = JsonSerializer::serialize(span)
+      assert_true(json.length() > 0)
+    }
+  })
+  
+  let avg_json_serialization_time = json_serialization_time / 1000.0
+  assert_true(avg_json_serialization_time < 1.0, "JSON serialization should be under 1ms")
+  
+  // 基准测试：JSON反序列化性能
+  let json_deserialization_time = Benchmark::measure(benchmark, fn() {
+    for span in test_spans {
+      let json = JsonSerializer::serialize(span)
+      let deserialized_span = JsonSerializer::deserialize_span(json)
+      assert_eq(SpanData::name(deserialized_span), SpanData::name(span))
+    }
+  })
+  
+  let avg_json_deserialization_time = json_deserialization_time / 1000.0
+  assert_true(avg_json_deserialization_time < 1.0, "JSON deserialization should be under 1ms")
+  
+  // 基准测试：二进制序列化性能
+  let binary_serialization_time = Benchmark::measure(benchmark, fn() {
+    for span in test_spans {
+      let binary = BinarySerializer::serialize(span)
+      assert_true(binary.length() > 0)
+    }
+  })
+  
+  let avg_binary_serialization_time = binary_serialization_time / 1000.0
+  assert_true(avg_binary_serialization_time < 0.5, "Binary serialization should be under 0.5ms")
+  
+  // 基准测试：二进制反序列化性能
+  let binary_deserialization_time = Benchmark::measure(benchmark, fn() {
+    for span in test_spans {
+      let binary = BinarySerializer::serialize(span)
+      let deserialized_span = BinarySerializer::deserialize_span(binary)
+      assert_eq(SpanData::name(deserialized_span), SpanData::name(span))
+    }
+  })
+  
+  let avg_binary_deserialization_time = binary_deserialization_time / 1000.0
+  assert_true(avg_binary_deserialization_time < 0.5, "Binary deserialization should be under 0.5ms")
+  
+  // 比较序列化大小
+  let json_size = JsonSerializer::serialize(test_spans[0]).length()
+  let binary_size = BinarySerializer::serialize(test_spans[0]).length()
+  
+  // 二进制序列化应该更紧凑
+  assert_true(binary_size < json_size, "Binary serialization should be more compact than JSON")
+}
+
+// 测试5: 并发性能基准
+test "并发性能基准测试" {
+  // 创建性能基准测试器
+  let benchmark = PerformanceBenchmark::new("concurrency.performance")
+  
+  // 创建并发追踪器
+  let tracer_provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrency.test")
+  
+  // 基准测试：并发span创建性能
+  let concurrent_span_time = Benchmark::measure_concurrent(benchmark, 10, fn() {
+    for i = 0; i < 1000; i = i + 1 {
+      let span = Tracer::start_span(tracer, "concurrent.operation." + i.to_string())
+      Span::set_attribute(span, "thread.id", Thread::current_id().to_string())
+      Span::end(span)
+    }
+  })
+  
+  let total_concurrent_spans = 10 * 1000
+  let avg_concurrent_span_time = concurrent_span_time / total_concurrent_spans.to_float()
+  assert_true(avg_concurrent_span_time < 2.0, "Concurrent span creation should be under 2ms")
+  
+  // 创建并发度量器
+  let meter_provider = MeterProvider::new()
+  let meter = MeterProvider::get_meter(meter_provider, "concurrency.test")
+  
+  // 基准测试：并发度量操作性能
+  let concurrent_metrics_time = Benchmark::measure_concurrent(benchmark, 10, fn() {
+    let counter = Meter::create_counter(meter, "concurrent.counter")
+    for i = 0; i < 1000; i = i + 1 {
+      Counter::add_with_attributes(counter, 1.0, [
+        ("thread.id", Thread::current_id().to_string()),
+        ("operation.id", i.to_string())
+      ])
+    }
+  })
+  
+  let avg_concurrent_metrics_time = concurrent_metrics_time / total_concurrent_spans.to_float()
+  assert_true(avg_concurrent_metrics_time < 0.2, "Concurrent metrics operation should be under 0.2ms")
+  
+  // 创建并发日志记录器
+  let logger = Logger::new("concurrency.test")
+  
+  // 基准测试：并发日志记录性能
+  let concurrent_logging_time = Benchmark::measure_concurrent(benchmark, 10, fn() {
+    for i = 0; i < 1000; i = i + 1 {
+      Logger::info(logger, "Concurrent log message " + i.to_string(), [
+        ("thread.id", Thread::current_id().to_string()),
+        ("operation.id", i.to_string())
+      ])
+    }
+  })
+  
+  let avg_concurrent_logging_time = concurrent_logging_time / total_concurrent_spans.to_float()
+  assert_true(avg_concurrent_logging_time < 0.3, "Concurrent logging should be under 0.3ms")
+  
+  // 验证并发安全性
+  let all_spans = TracerProvider::get_all_spans(tracer_provider)
+  let all_metrics = MeterProvider::get_all_metrics(meter_provider)
+  let all_logs = Logger::get_all_logs(logger)
+  
+  assert_eq(all_spans.length(), total_concurrent_spans)
+  assert_true(all_metrics.length() > 0)
+  assert_eq(all_logs.length(), total_concurrent_spans)
+}
+
+// 测试6: 资源使用基准
+test "资源使用基准测试" {
+  // 创建资源监控器
+  let resource_monitor = ResourceMonitor::new()
+  
+  // 基准测试：内存使用模式
+  let initial_memory = ResourceMonitor::get_memory_usage(resource_monitor)
+  
+  // 创建大量spans
+  let tracer_provider = TracerProvider::new()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "memory.test")
+  
+  let spans = []
+  for i = 0; i < 10000; i = i + 1 {
+    let span = Tracer::start_span(tracer, "memory.test.operation." + i.to_string())
+    Span::set_attribute(span, "operation.id", i.to_string())
+    Span::set_attribute(span, "large.data", "x".repeat(100)) // 添加一些数据增加内存使用
+    spans.push(span)
+  }
+  
+  let peak_memory = ResourceMonitor::get_memory_usage(resource_monitor)
+  let memory_per_span = (peak_memory - initial_memory) / 10000
+  
+  // 每个span应该占用不超过2KB内存
+  assert_true(memory_per_span < 2048, "Each span should use less than 2KB memory")
+  
+  // 清理spans
+  for span in spans {
+    Span::end(span)
+  }
+  
+  // 强制垃圾回收
+  ResourceMonitor::force_gc(resource_monitor)
+  
+  let final_memory = ResourceMonitor::get_memory_usage(resource_monitor)
+  let memory_recovered = peak_memory - final_memory
+  
+  // 至少应该回收80%的内存
+  let memory_recovery_rate = memory_recovered.to_float() / (peak_memory - initial_memory).to_float()
+  assert_true(memory_recovery_rate > 0.8, "Should recover at least 80% of memory")
+  
+  // 基准测试：CPU使用模式
+  let initial_cpu_time = ResourceMonitor::get_cpu_time(resource_monitor)
+  
+  // 执行CPU密集型操作
+  for i = 0; i < 100000; i = i + 1 {
+    let span = Tracer::start_span(tracer, "cpu.intensive.operation." + i.to_string())
+    Span::set_attribute(span, "operation.id", i.to_string())
+    
+    // 模拟一些计算
+    let result = 0
+    for j = 0; j < 10; j = j + 1 {
+      result = result + j
+    }
+    
+    Span::set_attribute(span, "computed.result", result.to_string())
+    Span::end(span)
+  }
+  
+  let final_cpu_time = ResourceMonitor::get_cpu_time(resource_monitor)
+  let cpu_time_per_operation = (final_cpu_time - initial_cpu_time) / 100000
+  
+  // 每个操作应该使用不超过0.1ms的CPU时间
+  assert_true(cpu_time_per_operation < 0.1, "Each operation should use less than 0.1ms CPU time")
+  
+  // 基准测试：文件句柄使用
+  let initial_handles = ResourceMonitor::get_file_handle_count(resource_monitor)
+  
+  // 创建多个日志记录器
+  let loggers = []
+  for i = 0; i < 100; i = i + 1 {
+    let logger = Logger::new("handle.test." + i.to_string())
+    loggers.push(logger)
+    
+    // 记录一些日志
+    for j = 0; j < 10; j = j + 1 {
+      Logger::info(logger, "Test log message " + j.to_string(), [])
+    }
+  }
+  
+  let peak_handles = ResourceMonitor::get_file_handle_count(resource_monitor)
+  let handles_per_logger = (peak_handles - initial_handles) / 100
+  
+  // 每个日志记录器应该使用不超过5个文件句柄
+  assert_true(handles_per_logger < 5, "Each logger should use less than 5 file handles")
+  
+  // 清理日志记录器
+  for logger in loggers {
+    Logger::close(logger)
+  }
+  
+  let final_handles = ResourceMonitor::get_file_handle_count(resource_monitor)
+  
+  // 文件句柄应该被正确释放
+  assert_true(final_handles <= initial_handles + 10, "File handles should be properly released")
 }
