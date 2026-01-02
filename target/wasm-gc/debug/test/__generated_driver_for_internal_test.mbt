@@ -560,6 +560,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     5: (__test_617a696d7574685f74656c656d657472795f6167677265676174696f6e5f616e616c797369735f74657374732e6d6274_5, ["predictive analysis and forecasting"]),
     6: (__test_617a696d7574685f74656c656d657472795f6167677265676174696f6e5f616e616c797369735f74657374732e6d6274_6, ["adaptive threshold analysis"]),
   },
+  "azimuth_system_integration_tests.mbt": {
+    0: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_0, ["end-to-end telemetry pipeline"]),
+    1: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_1, ["distributed tracing integration"]),
+    2: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_2, ["configuration and resource management integration"]),
+    3: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_3, ["network and telemetry integration"]),
+    4: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_4, ["time series and alerting integration"]),
+    5: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_5, ["serialization and network integration"]),
+    6: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_6, ["concurrent operations and resource management integration"]),
+    7: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_7, ["error handling and system integration"]),
+    8: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_8, ["performance monitoring and resource integration"]),
+    9: (__test_617a696d7574685f73797374656d5f696e746567726174696f6e5f74657374732e6d6274_9, ["full system integration test"]),
+  },
   "azimuth_supplementary_comprehensive_tests.mbt": {
     0: (__test_617a696d7574685f737570706c656d656e746172795f636f6d70726568656e736976655f74657374732e6d6274_0, ["度量仪表(Gauge)操作"]),
     1: (__test_617a696d7574685f737570706c656d656e746172795f636f6d70726568656e736976655f74657374732e6d6274_1, ["跨服务上下文传播"]),
