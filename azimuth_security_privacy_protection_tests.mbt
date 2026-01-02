@@ -1,1043 +1,665 @@
 // Azimuth Security and Privacy Protection Tests
-// 安全性和隐私保护测试用例 - 专注于数据安全和隐私保护功能
+// 安全和隐私保护测试用例 - 专注于数据安全、隐私保护和合规性
 
-// Test 1: 数据加密和解密
-test "data encryption and decryption" {
-  let crypto_manager = CryptoManager::new()
+// Test 1: 数据加密和密钥管理
+test "data encryption and key management" {
+  // 创建加密管理器
+  let encryption_manager = EncryptionManager::new()
   
-  // 生成加密密钥
-  let key_result = CryptoManager::generate_key(crypto_manager, Algorithm::AES256)
-  match key_result {
-    Ok(key) => {
-      assert_true(key.length() == 32) // AES-256需要32字节密钥
-      
-      // 测试数据加密
-      let plaintext = "Azimuth security test data with sensitive information"
-      let plaintext_bytes = String::to_bytes(plaintext)
-      
-      let encrypt_result = CryptoManager::encrypt(crypto_manager, plaintext_bytes, key)
-      match encrypt_result {
-        Ok(ciphertext) => {
-          // 验证密文与原文不同
-          assert_true(ciphertext.length() > 0)
-          assert_true(ciphertext != plaintext_bytes)
-          
-          // 测试数据解密
-          let decrypt_result = CryptoManager::decrypt(crypto_manager, ciphertext, key)
-          match decrypt_result {
-            Ok(decrypted) => {
-              let decrypted_text = String::from_bytes(decrypted)
-              assert_eq(decrypted_text, plaintext)
-            }
-            Err(_) => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试不同算法
-      let rsa_key_result = CryptoManager::generate_rsa_keypair(crypto_manager, 2048)
-      match rsa_key_result {
-        Ok((public_key, private_key)) => {
-          // 使用公钥加密
-          let rsa_encrypt_result = CryptoManager::rsa_encrypt(crypto_manager, plaintext_bytes, public_key)
-          match rsa_encrypt_result {
-            Ok(rsa_ciphertext) => {
-              // 使用私钥解密
-              let rsa_decrypt_result = CryptoManager::rsa_decrypt(crypto_manager, rsa_ciphertext, private_key)
-              match rsa_decrypt_result {
-                Ok(rsa_decrypted) => {
-                  let rsa_decrypted_text = String::from_bytes(rsa_decrypted)
-                  assert_eq(rsa_decrypted_text, plaintext)
-                }
-                Err(_) => assert_true(false)
-              }
-            }
-            Err(_) => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
+  // 配置加密参数
+  EncryptionManager::configure(encryption_manager, [
+    ("default.algorithm", StringValue("AES-256-GCM")),
+    ("key.derivation.iterations", IntValue(100000)),
+    ("key.rotation.interval", IntValue(86400000)), // 24小时
+    ("secure.random.source", StringValue("system"))
+  ])
+  
+  // 生成主密钥
+  let master_key = EncryptionManager::generate_master_key(encryption_manager, 256)
+  assert_true(master_key.length() == 32) // 256位 = 32字节
+  
+  // 创建密钥派生
+  let key_derivation_result = EncryptionManager::derive_key(
+    encryption_manager,
+    "telemetry_encryption_purpose",
+    master_key
+  )
+  
+  match key_derivation_result {
+    Ok(derived_key) => {
+      assert_true(derived_key.length() == 32)
+      assert_false(derived_key == master_key) // 派生密钥应与主密钥不同
     }
     Err(_) => assert_true(false)
   }
   
-  // 测试错误情况
-  let invalid_key = [0, 1, 2, 3] // 太短的密钥
-  let invalid_encrypt_result = CryptoManager::encrypt(crypto_manager, plaintext_bytes, invalid_key)
-  match invalid_encrypt_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(e) => assert_true(Error::is_crypto_error(e))
+  // 测试数据加密
+  let sensitive_data = TelemetryData::new_with_attributes([
+    ("user.id", StringValue("user_12345")),
+    ("session.token", StringValue("secret_token_abc123")),
+    ("personal.info", StringValue("personal_sensitive_data")),
+    ("performance.metrics", IntValue(95)),
+    ("location.data", StringValue("40.7128,-74.0060"))
+  ])
+  
+  let encryption_result = EncryptionManager::encrypt_data(
+    encryption_manager,
+    sensitive_data,
+    master_key
+  )
+  
+  match encryption_result {
+    Ok(encrypted_data) => {
+      // 验证加密数据不是原始数据
+      let serialized_original = TelemetryData::serialize(sensitive_data)
+      assert_false(encrypted_data == serialized_original)
+      
+      // 验证加密数据包含必要的元数据
+      assert_true(encrypted_data.contains("iv:")) // 初始化向量
+      assert_true(encrypted_data.contains("tag:")) // 认证标签
+      assert_true(encrypted_data.contains("algorithm:AES-256-GCM"))
+    }
+    Err(_) => assert_true(false)
   }
+  
+  // 测试数据解密
+  match encryption_result {
+    Ok(encrypted_data) => {
+      let decryption_result = EncryptionManager::decrypt_data(
+        encryption_manager,
+        encrypted_data,
+        master_key
+      )
+      
+      match decryption_result {
+        Ok(decrypted_data) => {
+          // 验证解密后的数据与原始数据相同
+          assert_true(TelemetryData::equals(sensitive_data, decrypted_data))
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    _ => assert_true(false)
+  }
+  
+  // 测试密钥轮换
+  let key_rotation_start = Time::now()
+  let key_rotation_result = EncryptionManager::rotate_master_key(encryption_manager)
+  let key_rotation_end = Time::now()
+  let key_rotation_duration = key_rotation_end - key_rotation_start
+  
+  assert_true(key_rotation_result)
+  assert_true(key_rotation_duration < 5000) // 密钥轮换应在5秒内完成
+  
+  // 验证新密钥生成
+  let new_master_key = EncryptionManager::get_current_master_key(encryption_manager)
+  assert_true(new_master_key.length() == 32)
+  assert_false(new_master_key == master_key) // 新密钥应与旧密钥不同
 }
 
-// Test 2: 数据脱敏和匿名化
-test "data masking and anonymization" {
-  let privacy_manager = PrivacyManager::new()
+// Test 2: 访问控制和权限管理
+test "access control and permission management" {
+  // 创建访问控制管理器
+  let access_manager = AccessControlManager::new()
   
-  // 测试个人身份信息脱敏
-  let pii_data = {
-    "name": "张三",
-    "email": "zhangsan@example.com",
-    "phone": "13812345678",
-    "id_card": "110101199001011234",
-    "address": "北京市朝阳区某某街道123号",
-    "credit_card": "4111111111111111"
-  }
+  // 配置访问控制策略
+  AccessControlManager::configure(access_manager, [
+    ("default.policy", StringValue("deny_all")),
+    ("session.timeout", IntValue(3600000)), // 1小时
+    ("max.failed.attempts", IntValue(3)),
+    ("lockout.duration", IntValue(900000) // 15分钟
+  ])
   
-  // 配置脱敏规则
-  PrivacyManager::add_masking_rule(privacy_manager, "name", MaskingType::Partial, 1, 1)
-  PrivacyManager::add_masking_rule(privacy_manager, "email", MaskingType::Email, 0, 0)
-  PrivacyManager::add_masking_rule(privacy_manager, "phone", MaskingType::Partial, 3, 4)
-  PrivacyManager::add_masking_rule(privacy_manager, "id_card", MaskingType::IDCard, 0, 0)
-  PrivacyManager::add_masking_rule(privacy_manager, "address", MaskingType::Partial, 6, 3)
-  PrivacyManager::add_masking_rule(privacy_manager, "credit_card", MaskingType::CreditCard, 0, 0)
+  // 创建用户和角色
+  let admin_user = User::new("admin", "admin@company.com", ["system_admin", "data_analyst"])
+  let analyst_user = User::new("analyst", "analyst@company.com", ["data_analyst"])
+  let viewer_user = User::new("viewer", "viewer@company.com", ["data_viewer"])
   
-  // 应用脱敏
-  let masked_data = PrivacyManager::apply_masking(privacy_manager, pii_data)
+  // 注册用户
+  assert_true(AccessControlManager::register_user(access_manager, admin_user))
+  assert_true(AccessControlManager::register_user(access_manager, analyst_user))
+  assert_true(AccessControlManager::register_user(access_manager, viewer_user))
   
-  // 验证脱敏结果
-  assert_eq(masked_data.name, "张*")
-  assert_eq(masked_data.email, "z****@example.com")
-  assert_eq(masked_data.phone, "138****5678")
-  assert_eq(masked_data.id_card, "110101********1234")
-  assert_eq(masked_data.address, "北京市朝阳区****123号")
-  assert_eq(masked_data.credit_card, "4111********1111")
-  
-  // 测试数据匿名化
-  let user_data = [
-    { "user_id": "user123", "age": 25, "city": "北京", "salary": 15000 },
-    { "user_id": "user456", "age": 30, "city": "上海", "salary": 20000 },
-    { "user_id": "user789", "age": 28, "city": "广州", "salary": 18000 }
+  // 定义权限
+  let permissions = [
+    ("telemetry.read", "读取遥测数据"),
+    ("telemetry.write", "写入遥测数据"),
+    ("telemetry.delete", "删除遥测数据"),
+    ("user.manage", "管理用户"),
+    ("system.config", "系统配置"),
+    ("sensitive.access", "访问敏感数据")
   ]
   
-  // 配置匿名化策略
-  PrivacyManager::set_anonymization_strategy(privacy_manager, {
-    "user_id": AnonymizationType::Hash,
-    "age": AnonymizationType::Range, // 年龄分组
-    "city": AnonymizationType::Generalization, // 城市泛化为区域
-    "salary": AnonymizationType::Noise // 添加噪声
-  })
-  
-  let anonymized_data = PrivacyManager::anonymize(privacy_manager, user_data)
-  
-  // 验证匿名化结果
-  assert_true(anonymized_data[0].user_id != "user123")
-  assert_true(anonymized_data[0].user_id.length() == 64) // 哈希长度
-  
-  assert_true(["20-30", "25-35"].contains(anonymized_data[0].age))
-  assert_true(["华北", "华东", "华南"].contains(anonymized_data[0].city))
-  assert_true(anonymized_data[0].salary != 15000) // 应该有噪声
-  
-  // 测试k-匿名性
-  let k_anonymity_result = PrivacyManager::check_k_anonymity(privacy_manager, anonymized_data, 2)
-  match k_anonymity_result {
-    Ok(k_value) => assert_true(k_value >= 2)
-    Err(_) => assert_true(false)
+  for (perm_id, perm_desc) in permissions {
+    let permission = Permission::new(perm_id, perm_desc)
+    assert_true(AccessControlManager::register_permission(access_manager, permission))
   }
-}
-
-// Test 3: 访问控制和权限管理
-test "access control and permission management" {
-  let access_manager = AccessManager::new()
   
-  // 创建角色和权限
-  AccessManager::create_role(access_manager, "admin")
-  AccessManager::create_role(access_manager, "user")
-  AccessManager::create_role(access_manager, "guest")
+  // 定义角色和权限映射
+  let role_permissions = [
+    ("system_admin", ["telemetry.read", "telemetry.write", "telemetry.delete", "user.manage", "system.config", "sensitive.access"]),
+    ("data_analyst", ["telemetry.read", "telemetry.write", "sensitive.access"]),
+    ("data_viewer", ["telemetry.read"])
+  ]
   
-  AccessManager::add_permission(access_manager, "admin", ["read", "write", "delete", "manage"])
-  AccessManager::add_permission(access_manager, "user", ["read", "write"])
-  AccessManager::add_permission(access_manager, "guest", ["read"])
-  
-  // 创建用户并分配角色
-  AccessManager::create_user(access_manager, "alice", "password123")
-  AccessManager::create_user(access_manager, "bob", "password456")
-  AccessManager::create_user(access_manager, "charlie", "password789")
-  
-  AccessManager::assign_role(access_manager, "alice", "admin")
-  AccessManager::assign_role(access_manager, "bob", "user")
-  AccessManager::assign_role(access_manager, "charlie", "guest")
+  for (role_id, perm_ids) in role_permissions {
+    let role = Role::new(role_id, role_id + " role")
+    assert_true(AccessControlManager::register_role(access_manager, role))
+    
+    for perm_id in perm_ids {
+      assert_true(AccessControlManager::assign_permission_to_role(access_manager, role_id, perm_id))
+    }
+  }
   
   // 测试权限检查
-  let admin_read = AccessManager::check_permission(access_manager, "alice", "read")
-  let admin_delete = AccessManager::check_permission(access_manager, "alice", "delete")
-  let user_read = AccessManager::check_permission(access_manager, "bob", "read")
-  let user_delete = AccessManager::check_permission(access_manager, "bob", "delete")
-  let guest_read = AccessManager::check_permission(access_manager, "charlie", "read")
-  let guest_write = AccessManager::check_permission(access_manager, "charlie", "write")
+  let admin_session = AccessControlManager::authenticate(access_manager, "admin", "secure_password")
+  let analyst_session = AccessControlManager::authenticate(access_manager, "analyst", "secure_password")
+  let viewer_session = AccessControlManager::authenticate(access_manager, "viewer", "secure_password")
   
-  assert_true(admin_read)
-  assert_true(admin_delete)
-  assert_true(user_read)
-  assert_false(user_delete)
-  assert_true(guest_read)
-  assert_false(guest_write)
+  // 管理员应该有所有权限
+  assert_true(AccessControlManager::check_permission(access_manager, admin_session, "telemetry.delete"))
+  assert_true(AccessControlManager::check_permission(access_manager, admin_session, "user.manage"))
+  assert_true(AccessControlManager::check_permission(access_manager, admin_session, "sensitive.access"))
+  
+  // 分析师应该有读取、写入和敏感数据访问权限
+  assert_true(AccessControlManager::check_permission(access_manager, analyst_session, "telemetry.read"))
+  assert_true(AccessControlManager::check_permission(access_manager, analyst_session, "telemetry.write"))
+  assert_true(AccessControlManager::check_permission(access_manager, analyst_session, "sensitive.access"))
+  assert_false(AccessControlManager::check_permission(access_manager, analyst_session, "telemetry.delete"))
+  assert_false(AccessControlManager::check_permission(access_manager, analyst_session, "user.manage"))
+  
+  // 查看者应该只有读取权限
+  assert_true(AccessControlManager::check_permission(access_manager, viewer_session, "telemetry.read"))
+  assert_false(AccessControlManager::check_permission(access_manager, viewer_session, "telemetry.write"))
+  assert_false(AccessControlManager::check_permission(access_manager, viewer_session, "sensitive.access"))
   
   // 测试资源级访问控制
-  AccessManager::create_resource(access_manager, "document1", ["admin", "user"])
-  AccessManager::create_resource(access_manager, "document2", ["admin"])
-  AccessManager::create_resource(access_manager, "public_doc", ["admin", "user", "guest"])
+  let sensitive_resource = Resource::new("sensitive_telemetry_data", ["sensitive.access"])
+  let public_resource = Resource::new("public_telemetry_data", ["telemetry.read"])
   
-  let alice_doc1 = AccessManager::check_resource_access(access_manager, "alice", "document1")
-  let alice_doc2 = AccessManager::check_resource_access(access_manager, "alice", "document2")
-  let bob_doc1 = AccessManager::check_resource_access(access_manager, "bob", "document1")
-  let bob_doc2 = AccessManager::check_resource_access(access_manager, "bob", "document2")
-  let charlie_public = AccessManager::check_resource_access(access_manager, "charlie", "public_doc")
+  assert_true(AccessControlManager::check_resource_access(access_manager, admin_session, sensitive_resource))
+  assert_true(AccessControlManager::check_resource_access(access_manager, analyst_session, sensitive_resource))
+  assert_false(AccessControlManager::check_resource_access(access_manager, viewer_session, sensitive_resource))
   
-  assert_true(alice_doc1)
-  assert_true(alice_doc2)
-  assert_true(bob_doc1)
-  assert_false(bob_doc2)
-  assert_true(charlie_public)
-  
-  // 测试基于时间的访问控制
-  AccessManager::set_time_constraint(access_manager, "bob", "09:00", "17:00") // 工作时间
-  
-  // 模拟工作时间内的访问
-  let work_time_access = AccessManager::check_time_based_access(access_manager, "bob")
-  // 模拟工作时间外的访问
-  let after_hours_access = AccessManager::check_time_based_access(access_manager, "bob", "20:00")
-  
-  // 注意：实际结果取决于当前时间，这里只验证方法调用
-  assert_true(true)
-  
-  // 测试访问日志
-  AccessManager::log_access_attempt(access_manager, "alice", "document1", true)
-  AccessManager::log_access_attempt(access_manager, "bob", "document2", false)
-  
-  let access_logs = AccessManager::get_access_logs(access_manager)
-  assert_true(access_logs.length() >= 2)
-  
-  let alice_logs = access_logs.filter(fn(log) { log.user == "alice" })
-  let bob_logs = access_logs.filter(fn(log) { log.user == "bob" })
-  
-  assert_true(alice_logs.length() >= 1)
-  assert_true(bob_logs.length() >= 1)
-  assert_true(alice_logs[0].success)
-  assert_false(bob_logs[0].success)
+  assert_true(AccessControlManager::check_resource_access(access_manager, viewer_session, public_resource))
 }
 
-// Test 4: 安全审计和日志记录
-test "security auditing and logging" {
-  let audit_manager = AuditManager::new()
+// Test 3: 数据脱敏和匿名化
+test "data masking and anonymization" {
+  // 创建数据脱敏管理器
+  let masking_manager = DataMaskingManager::new()
   
-  // 配置审计策略
-  AuditManager::configure_audit_policy(audit_manager, {
-    "log_all_access": true,
-    "log_data_changes": true,
-    "log_authentication": true,
-    "log_permission_changes": true,
-    "retention_days": 90
-  })
+  // 配置脱敏规则
+  MaskingManager::configure(masking_manager, [
+    ("email.masking", StringValue("partial")), // 部分遮蔽
+    ("phone.masking", StringValue("full")), // 完全遮蔽
+    ("credit_card.masking", StringValue("tokenization")), // 令牌化
+    ("ip.anonymization", StringValue("hash")), // 哈希匿名化
+    ("location.generalization", StringValue("city_level") // 城市级泛化
+  ])
   
-  // 模拟审计事件
-  AuditManager::log_event(audit_manager, AuditEvent::Login, {
-    "user": "alice",
-    "timestamp": Time::now(),
-    "ip_address": "192.168.1.100",
-    "user_agent": "Mozilla/5.0...",
-    "success": true
-  })
+  // 创建包含敏感信息的数据
+  let sensitive_data = TelemetryData::new_with_attributes([
+    ("user.email", StringValue("john.doe@company.com")),
+    ("user.phone", StringValue("+1-555-123-4567")),
+    ("payment.card", StringValue("4532-1234-5678-9012")),
+    ("client.ip", StringValue("192.168.1.100")),
+    ("user.location", StringValue("40.7128,-74.0060")), // 纽约市坐标
+    ("user.id", StringValue("user_12345")),
+    ("session.id", StringValue("sess_abcdef123456")),
+    ("timestamp", IntValue(Time::now()))
+  ])
   
-  AuditManager::log_event(audit_manager, AuditEvent::DataAccess, {
-    "user": "bob",
-    "resource": "customer_data",
-    "action": "read",
-    "timestamp": Time::now(),
-    "success": true
-  })
+  // 测试脱敏策略
+  let masking_policies = [
+    MaskingPolicy::new("email.policy", ["user.email"], "partial", {"show_first": 2, "show_last": 1}),
+    MaskingPolicy::new("phone.policy", ["user.phone"], "full", {}),
+    MaskingPolicy::new("payment.policy", ["payment.card"], "tokenization", {}),
+    MaskingPolicy::new("ip.policy", ["client.ip"], "hash", {"salt": "telemetry_salt"}),
+    MaskingPolicy::new("location.policy", ["user.location"], "generalize", {"level": "city"})
+  ]
   
-  AuditManager::log_event(audit_manager, AuditEvent::PermissionChange, {
-    "admin": "alice",
-    "target_user": "charlie",
-    "old_role": "guest",
-    "new_role": "user",
-    "timestamp": Time::now()
-  })
+  for policy in masking_policies {
+    assert_true(MaskingManager::add_policy(masking_manager, policy))
+  }
   
-  AuditManager::log_event(audit_manager, AuditEvent::DataModification, {
-    "user": "bob",
-    "resource": "customer_record_123",
-    "action": "update",
-    "old_values": { "status": "active" },
-    "new_values": { "status": "inactive" },
-    "timestamp": Time::now()
-  })
+  // 应用脱敏
+  let masked_data = MaskingManager::apply_masking(masking_manager, sensitive_data)
+  
+  // 验证脱敏结果
+  let masked_email = TelemetryData::get_attribute(masked_data, "user.email")
+  match masked_email {
+    Some(StringValue(email)) => {
+      assert_true(email.contains("jo***@********.com")) // 部分遮蔽
+      assert_false(email == "john.doe@company.com") // 不等于原始值
+    }
+    _ => assert_true(false)
+  }
+  
+  let masked_phone = TelemetryData::get_attribute(masked_data, "user.phone")
+  match masked_phone {
+    Some(StringValue(phone)) => {
+      assert_eq(phone, "***-***-****") // 完全遮蔽
+    }
+    _ => assert_true(false)
+  }
+  
+  let tokenized_card = TelemetryData::get_attribute(masked_data, "payment.card")
+  match tokenized_card {
+    Some(StringValue(card)) => {
+      assert_false(card == "4532-1234-5678-9012") // 不等于原始值
+      assert_true(card.length() >= 16) // 令牌长度合理
+    }
+    _ => assert_true(false)
+  }
+  
+  let anonymized_ip = TelemetryData::get_attribute(masked_data, "client.ip")
+  match anonymized_ip {
+    Some(StringValue(ip)) => {
+      assert_false(ip == "192.168.1.100") // 不等于原始值
+      assert_true(ip.length() >= 32) // 哈希长度合理
+    }
+    _ => assert_true(false)
+  }
+  
+  let generalized_location = TelemetryData::get_attribute(masked_data, "user.location")
+  match generalized_location {
+    Some(StringValue(location)) => {
+      assert_false(location == "40.7128,-74.0060") // 不等于原始坐标
+      assert_true(location.contains("New York") || location.contains("NYC")) // 包含城市信息
+    }
+    _ => assert_true(false)
+  }
+  
+  // 验证非敏感数据未被修改
+  let user_id = TelemetryData::get_attribute(masked_data, "user.id")
+  match user_id {
+    Some(StringValue(id)) => assert_eq(id, "user_12345") // 未被修改
+    _ => assert_true(false)
+  }
+  
+  // 测试可逆脱敏（令牌化）
+  let original_card = "4532-1234-5678-9012"
+  let tokenization_result = MaskingManager::tokenize(masking_manager, original_card)
+  match tokenization_result {
+    Ok(token) => {
+      let detokenization_result = MaskingManager::detokenize(masking_manager, token)
+      match detokenization_result {
+        Ok(detokenized) => assert_eq(detokenized, original_card)
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 4: 审计日志和合规性
+test "audit logging and compliance" {
+  // 创建审计日志管理器
+  let audit_manager = AuditLogManager::new()
+  
+  // 配置审计参数
+  AuditLogManager::configure(audit_manager, [
+    ("log.retention.days", IntValue(2555)), // 7年保留期
+    ("log.immutability", BoolValue(true)), // 日志不可变性
+    ("compliance.standards", StringValue("GDPR,SOX,PCI-DSS,HIPAA")),
+    ("sensitive.events", StringValue("data_access,authentication,privilege_escalation,data_export")
+  ])
+  
+  // 创建审计事件
+  let audit_events = [
+    AuditEvent::new(
+      "user_authentication",
+      "User john.doe authenticated successfully",
+      ["user_id:john.doe", "ip:192.168.1.100", "timestamp:" + Time::now().to_string()],
+      Info
+    ),
+    AuditEvent::new(
+      "sensitive_data_access",
+      "User john.doe accessed sensitive telemetry data",
+      ["user_id:john.doe", "resource:sensitive_telemetry", "timestamp:" + Time::now().to_string()],
+      Warning
+    ),
+    AuditEvent::new(
+      "privilege_escalation",
+      "User john.doe escalated to admin privileges",
+      ["user_id:john.doe", "old_role:analyst", "new_role:admin", "timestamp:" + Time::now().to_string()],
+      Critical
+    ),
+    AuditEvent::new(
+      "data_export",
+      "User john.doe exported telemetry data",
+      ["user_id:john.doe", "export_count:1000", "destination:external_system", "timestamp:" + Time::now().to_string()],
+      Warning
+    ),
+    AuditEvent::new(
+      "security_violation",
+      "Multiple failed login attempts detected",
+      ["ip:192.168.1.200", "attempts:5", "timestamp:" + Time::now().to_string()],
+      Critical
+    )
+  ]
+  
+  // 记录审计事件
+  for event in audit_events {
+    let log_result = AuditLogManager::log_event(audit_manager, event)
+    assert_true(log_result)
+  }
+  
+  // 验证审计日志记录
+  let log_count = AuditLogManager::get_log_count(audit_manager)
+  assert_eq(log_count, audit_events.length())
   
   // 测试审计日志查询
-  let all_events = AuditManager::get_all_events(audit_manager)
-  assert_true(all_events.length() >= 4)
+  let critical_events = AuditLogManager::query_events(audit_manager, [
+    ("severity", "Critical")
+  ])
+  assert_eq(critical_events.length(), 2) // 应该有2个关键事件
   
-  let login_events = AuditManager::get_events_by_type(audit_manager, AuditEvent::Login)
-  assert_true(login_events.length() >= 1)
-  assert_eq(login_events[0].user, "alice")
+  let user_events = AuditLogManager::query_events(audit_manager, [
+    ("user_id", "john.doe")
+  ])
+  assert_eq(user_events.length(), 4) // 应该有4个用户事件
   
-  let bob_events = AuditManager::get_events_by_user(audit_manager, "bob")
-  assert_true(bob_events.length() >= 2)
+  // 测试合规性报告生成
+  let compliance_report = AuditLogManager::generate_compliance_report(audit_manager, [
+    "GDPR", "SOX", "PCI-DSS"
+  ])
   
-  let recent_events = AuditManager::get_events_by_time_range(audit_manager, Time::now() - 3600, Time::now())
-  assert_true(recent_events.length() >= 4)
+  assert_true(ComplianceReport::has_summary(compliance_report))
+  assert_true(ComplianceReport::has_findings(compliance_report))
+  assert_true(ComplianceReport::has_recommendations(compliance_report))
   
-  // 测试审计报告生成
-  let audit_report = AuditManager::generate_report(audit_manager, {
-    "start_date": Time::now() - 86400, // 最近24小时
-    "end_date": Time::now(),
-    "include_summary": true,
-    "include_details": true
-  })
-  
-  assert_true(audit_report.contains("Audit Summary"))
-  assert_true(audit_report.contains("Total Events"))
-  assert_true(audit_report.contains("Login Events"))
-  assert_true(audit_report.contains("Data Access Events"))
-  
-  // 测试安全异常检测
-  let security_anomalies = AuditManager::detect_security_anomalies(audit_manager)
-  assert_true(security_anomalies.length() >= 0)
-  
-  // 测试日志完整性验证
-  let integrity_result = AuditManager::verify_log_integrity(audit_manager)
-  match integrity_result {
-    Ok(is_valid) => assert_true(is_valid)
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试日志导出
-  let export_result = AuditManager::export_logs(audit_manager, "/tmp/azimuth_audit_export.json")
-  match export_result {
-    Ok(_) => assert_true(true)
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 5: 安全通信和传输
-test "secure communication and transmission" {
-  let secure_comm = SecureCommunication::new()
-  
-  // 生成证书
-  let cert_result = SecureCommunication::generate_self_signed_certificate(secure_comm, {
-    "common_name": "azimuth-test",
-    "organization": "Azimuth Project",
-    "country": "CN",
-    "valid_days": 365
-  })
-  
-  match cert_result {
-    Ok((cert, private_key)) => {
-      // 验证证书
-      let cert_valid = SecureCommunication::verify_certificate(secure_comm, cert)
-      assert_true(cert_valid)
-      
-      // 测试TLS连接
-      let tls_server = SecureCommunication::create_tls_server(secure_comm, cert, private_key, 8443)
-      match tls_server {
-        Ok(server) => {
-          // 启动服务器
-          SecureCommunication::start_server(server)
-          
-          // 创建TLS客户端
-          let tls_client = SecureCommunication::create_tls_client(secure_comm)
-          match tls_client {
-            Ok(client) => {
-              // 连接到服务器
-              let connect_result = SecureCommunication::connect(client, "localhost:8443")
-              match connect_result {
-                Ok(_) => {
-                  // 发送安全数据
-                  let secure_data = "Secure telemetry data"
-                  let send_result = SecureCommunication::send_secure_data(client, String::to_bytes(secure_data))
-                  match send_result {
-                    Ok(_) => assert_true(true)
-                    Err(_) => assert_true(false)
-                  }
-                  
-                  // 接收数据
-                  let receive_result = SecureCommunication::receive_secure_data(client)
-                  match receive_result {
-                    Ok(data) => {
-                      let received_text = String::from_bytes(data)
-                      assert_eq(received_text, secure_data)
-                    }
-                    Err(_) => assert_true(false)
-                  }
-                  
-                  SecureCommunication::disconnect(client)
-                }
-                Err(_) => assert_true(true) // 连接可能失败，这是正常的
-              }
-            }
-            Err(_) => assert_true(false)
-          }
-          
-          SecureCommunication::stop_server(server)
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试消息签名和验证
-  let signing_key = SecureCommunication::generate_signing_key(secure_comm)
-  let message = "Important telemetry message"
-  
-  let signature_result = SecureCommunication::sign_message(secure_comm, message, signing_key)
-  match signature_result {
-    Ok(signature) => {
-      // 验证签名
-      let verify_result = SecureCommunication::verify_signature(secure_comm, message, signature, signing_key)
-      assert_true(verify_result)
-      
-      // 测试篡改检测
-      let tampered_message = message + " tampered"
-      let tampered_verify = SecureCommunication::verify_signature(secure_comm, tampered_message, signature, signing_key)
-      assert_false(tampered_verify)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试安全通道
-  let secure_channel = SecureCommunication::create_secure_channel(secure_comm)
-  SecureCommunication::initialize_channel(secure_channel)
-  
-  // 发送多条消息
-  let messages = ["msg1", "msg2", "msg3"]
-  for msg in messages {
-    let send_result = SecureCommunication::send_channel_message(secure_channel, msg)
-    match send_result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // 接收消息
-  let received_messages = []
-  for i in 0..<messages.length() {
-    let recv_result = SecureCommunication::receive_channel_message(secure_channel)
-    match recv_result {
-      Ok(msg) => received_messages = received_messages.push(msg)
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  assert_eq(received_messages, messages)
-  SecureCommunication::close_channel(secure_channel)
-}
-
-// Test 6: 安全配置管理
-test "secure configuration management" {
-  let secure_config = SecureConfigManager::new()
-  
-  // 创建安全配置
-  let config_values = {
-    "database.password": "secret_db_password",
-    "api.key": "secret_api_key_12345",
-    "encryption.key": "base64:encryption_key_data",
-    "jwt.secret": "jwt_signing_secret_key",
-    "admin.password": "admin_secure_password"
-  }
-  
-  // 加密存储配置
-  let master_key = SecureConfigManager::generate_master_key(secure_config)
-  let store_result = SecureConfigManager::store_encrypted_config(secure_config, config_values, master_key)
-  match store_result {
-    Ok(config_id) => {
-      // 验证配置已加密存储
-      let raw_config = SecureConfigManager::get_raw_config(secure_config, config_id)
-      assert_true(raw_config.contains("encrypted"))
-      assert_false(raw_config.contains("secret_db_password"))
-      
-      // 解密并读取配置
-      let load_result = SecureConfigManager::load_encrypted_config(secure_config, config_id, master_key)
-      match load_result {
-        Ok(loaded_values) => {
-          assert_eq(loaded_values["database.password"], "secret_db_password")
-          assert_eq(loaded_values["api.key"], "secret_api_key_12345")
-          assert_eq(loaded_values["encryption.key"], "base64:encryption_key_data")
-          assert_eq(loaded_values["jwt.secret"], "jwt_signing_secret_key")
-          assert_eq(loaded_values["admin.password"], "admin_secure_password")
-        }
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试配置版本控制
-      let updated_config = { ...config_values, "api.key": "updated_api_key_67890" }
-      let update_result = SecureConfigManager::update_encrypted_config(secure_config, config_id, updated_config, master_key)
-      match update_result {
-        Ok(new_version) => {
-          // 获取历史版本
-          let history = SecureConfigManager::get_config_history(secure_config, config_id)
-          assert_true(history.length() >= 2)
-          
-          // 恢复到之前版本
-          let rollback_result = SecureConfigManager::rollback_to_version(secure_config, config_id, history[0].version, master_key)
-          match rollback_result {
-            Ok(rollback_values) => {
-              assert_eq(rollback_values["api.key"], "secret_api_key_12345") // 应该是旧值
-            }
-            Err(_) => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-      
-      // 测试配置访问控制
-      SecureConfigManager::set_access_policy(secure_config, config_id, {
-        "allowed_users": ["admin", "config_manager"],
-        "require_authentication": true,
-        "audit_access": true
-      })
-      
-      // 测试访问验证
-      let admin_access = SecureConfigManager::check_config_access(secure_config, config_id, "admin")
-      let user_access = SecureConfigManager::check_config_access(secure_config, config_id, "regular_user")
-      
-      assert_true(admin_access)
-      assert_false(user_access)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试配置验证
-  let validation_rules = {
-    "database.password": { "required": true, "min_length": 8 },
-    "api.key": { "required": true, "pattern": "^[a-zA-Z0-9_]+$" },
-    "encryption.key": { "required": true, "format": "base64" }
-  }
-  
-  SecureConfigManager::set_validation_rules(secure_config, validation_rules)
-  
-  // 测试有效配置
-  let valid_config = {
-    "database.password": "valid_password_123",
-    "api.key": "valid_api_key_456",
-    "encryption.key": "base64:dGVzdF9rZXlfZGF0YQ==" // base64编码的"test_key_data"
-  }
-  
-  let valid_result = SecureConfigManager::validate_config(secure_config, valid_config)
-  match valid_result {
-    Ok(_) => assert_true(true)
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试无效配置
-  let invalid_config = {
-    "database.password": "short", // 太短
-    "api.key": "invalid-key!", // 包含无效字符
-    "encryption.key": "not_base64" // 不是base64格式
-  }
-  
-  let invalid_result = SecureConfigManager::validate_config(secure_config, invalid_config)
-  match invalid_result {
-    Ok(_) => assert_true(false) // 应该失败
-    Err(errors) => {
-      assert_true(errors.length() >= 3)
-      assert_true(errors.any(fn(err) { String::contains(err, "password") }))
-      assert_true(errors.any(fn(err) { String::contains(err, "api.key") }))
-      assert_true(errors.any(fn(err) { String::contains(err, "encryption.key") }))
-    }
-  }
-}
-
-// Test 7: 威胁检测和防护
-test "threat detection and protection" {
-  let threat_detector = ThreatDetector::new()
-  
-  // 配置威胁检测规则
-  ThreatDetector::add_detection_rule(threat_detector, {
-    "name": "brute_force_login",
-    "type": "pattern",
-    "condition": "failed_login_count > 5 in 5 minutes",
-    "severity": "high",
-    "action": "block_ip_temporarily"
-  })
-  
-  ThreatDetector::add_detection_rule(threat_detector, {
-    "name": "unusual_data_access",
-    "type": "anomaly",
-    "condition": "data_access_volume > 3 * average",
-    "severity": "medium",
-    "action": "require_additional_auth"
-  })
-  
-  ThreatDetector::add_detection_rule(threat_detector, {
-    "name": "sql_injection_attempt",
-    "type": "signature",
-    "condition": "query contains 'DROP TABLE' OR 'UNION SELECT'",
-    "severity": "critical",
-    "action": "block_request_and_alert"
-  })
-  
-  // 模拟正常活动
-  for i in 0..<10 {
-    ThreatDetector::record_event(threat_detector, {
-      "type": "login_success",
-      "user": "user" + i.to_string(),
-      "ip": "192.168.1." + (100 + i).to_string(),
-      "timestamp": Time::now() - i * 60
-    })
-  }
-  
-  // 模拟暴力破解攻击
-  let attacker_ip = "10.0.0.100"
-  for i in 0..<7 {
-    ThreatDetector::record_event(threat_detector, {
-      "type": "login_failure",
-      "user": "admin",
-      "ip": attacker_ip,
-      "timestamp": Time::now() - i * 30
-    })
-  }
-  
-  // 模拟SQL注入尝试
-  ThreatDetector::record_event(threat_detector, {
-    "type": "database_query",
-    "user": "malicious_user",
-    "query": "SELECT * FROM users WHERE id = 1; DROP TABLE users; --",
-    "ip": "10.0.0.101",
-    "timestamp": Time::now()
-  })
-  
-  // 模拟异常数据访问
-  for i in 0..<50 {
-    ThreatDetector::record_event(threat_detector, {
-      "type": "data_access",
-      "user": "suspicious_user",
-      "resource": "customer_data",
-      "volume": 1000,
-      "timestamp": Time::now() - i * 10
-    })
-  }
-  
-  // 运行威胁检测
-  let detection_result = ThreatDetector::analyze_threats(threat_detector)
-  
-  // 验证检测结果
-  assert_true(detection_result.threats_detected >= 2) // 至少检测到暴力破解和SQL注入
-  
-  // 检查具体威胁
-  let brute_force_threat = detection_result.threats.find(fn(threat) { threat.type == "brute_force_login" })
-  let sql_injection_threat = detection_result.threats.find(fn(threat) { threat.type == "sql_injection_attempt" })
-  let unusual_access_threat = detection_result.threats.find(fn(threat) { threat.type == "unusual_data_access" })
-  
-  assert_true(brute_force_threat !== None)
-  assert_true(sql_injection_threat !== None)
-  // 异常访问可能被检测到，但不保证
-  
-  // 测试自动响应
-  for threat in detection_result.threats {
-    let response_result = ThreatDetector::execute_response(threat_detector, threat)
-    match response_result {
-      Ok(action) => {
-        assert_true(action != "")
-        // 验证响应已执行
-        let response_log = ThreatDetector::get_response_log(threat_detector)
-        assert_true(response_log.any(fn(log) { log.threat_id == threat.id }))
-      }
-      Err(_) => assert_true(false)
-    }
-  }
-  
-  // 测试IP黑名单
-  let blacklist_result = ThreatDetector::add_to_blacklist(threat_detector, attacker_ip, 3600) // 1小时
-  match blacklist_result {
-    Ok(_) => {
-      // 验证IP已被列入黑名单
-      let is_blacklisted = ThreatDetector::is_ip_blacklisted(threat_detector, attacker_ip)
-      assert_true(is_blacklisted)
-      
-      // 测试黑名单中的IP访问被阻止
-      let access_result = ThreatDetector::check_ip_access(threat_detector, attacker_ip)
-      assert_false(access_result.allowed)
-      assert_eq(access_result.reason, "blacklisted")
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 生成威胁报告
-  let threat_report = ThreatDetector::generate_threat_report(threat_detector, {
-    "include_details": true,
-    "include_recommendations": true
-  })
-  
-  assert_true(threat_report.contains("Threat Detection Summary"))
-  assert_true(threat_report.contains("Detected Threats"))
-  assert_true(threat_report.contains("Security Recommendations"))
-}
-
-// Test 8: 数据完整性验证
-test "data integrity verification" {
-  let integrity_verifier = IntegrityVerifier::new()
-  
-  // 测试校验和计算
-  let test_data = "Azimuth telemetry data for integrity testing"
-  let data_bytes = String::to_bytes(test_data)
-  
-  let checksum_result = IntegrityVerifier::calculate_checksum(integrity_verifier, data_bytes, Algorithm::SHA256)
-  match checksum_result {
-    Ok(checksum) => {
-      assert_true(checksum.length() == 64) // SHA-256产生64字符的十六进制字符串
-      
-      // 验证数据完整性
-      let verify_result = IntegrityVerifier::verify_data(integrity_verifier, data_bytes, checksum, Algorithm::SHA256)
-      assert_true(verify_result)
-      
-      // 测试篡改检测
-      let tampered_data = test_data + " tampered"
-      let tampered_bytes = String::to_bytes(tampered_data)
-      let tampered_verify = IntegrityVerifier::verify_data(integrity_verifier, tampered_bytes, checksum, Algorithm::SHA256)
-      assert_false(tampered_verify)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试数字签名
-  let signing_key = IntegrityVerifier::generate_signing_key(integrity_verifier, Algorithm::RSA)
-  match signing_key {
-    Ok(key_pair) => {
-      // 签名数据
-      let sign_result = IntegrityVerifier::sign_data(integrity_verifier, data_bytes, key_pair.private_key)
-      match sign_result {
-        Ok(signature) => {
-          // 验证签名
-          let verify_result = IntegrityVerifier::verify_signature(integrity_verifier, data_bytes, signature, key_pair.public_key)
-          assert_true(verify_result)
-          
-          // 测试使用错误密钥验证
-          let wrong_key = IntegrityVerifier::generate_signing_key(integrity_verifier, Algorithm::RSA)
-          match wrong_key {
-            Ok(wrong_key_pair) => {
-              let wrong_verify = IntegrityVerifier::verify_signature(integrity_verifier, data_bytes, signature, wrong_key_pair.public_key)
-              assert_false(wrong_verify)
-            }
-            Err(_) => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试Merkle树构建和验证
-  let data_blocks = []
-  for i in 0..<100 {
-    let block_data = "block_" + i.to_string() + "_with_content"
-    data_blocks = data_blocks.push(String::to_bytes(block_data))
-  }
-  
-  let merkle_tree_result = IntegrityVerifier::build_merkle_tree(integrity_verifier, data_blocks)
-  match merkle_tree_result {
-    Ok(merkle_tree) => {
-      // 获取根哈希
-      let root_hash = IntegrityVerifier::get_merkle_root(merkle_tree)
-      assert_true(root_hash.length() == 64)
-      
-      // 验证特定数据块
-      let block_index = 42
-      let block_proof = IntegrityVerifier::get_merkle_proof(merkle_tree, block_index)
-      match block_proof {
-        Ok(proof) => {
-          let verify_result = IntegrityVerifier::verify_merkle_proof(integrity_verifier, data_blocks[block_index], proof, root_hash)
-          assert_true(verify_result)
-          
-          // 测试篡改数据块的验证
-          let tampered_block = String::to_bytes("tampered_block_content")
-          let tampered_verify = IntegrityVerifier::verify_merkle_proof(integrity_verifier, tampered_block, proof, root_hash)
-          assert_false(tampered_verify)
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试时间戳验证
-  let timestamp_result = IntegrityVerifier::create_timestamp(integrity_verifier, data_bytes)
-  match timestamp_result {
-    Ok(timestamp) => {
-      // 验证时间戳
-      let verify_result = IntegrityVerifier::verify_timestamp(integrity_verifier, data_bytes, timestamp)
-      assert_true(verify_result)
-      
-      // 验证时间戳在合理范围内
-      let timestamp_time = IntegrityVerifier::extract_timestamp_time(timestamp)
-      let current_time = Time::now()
-      assert_true(timestamp_time <= current_time)
-      assert_true(current_time - timestamp_time < 60) // 应该是最近的时间戳
-    }
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 9: 隐私影响评估
-test "privacy impact assessment" {
-  let privacy_assessor = PrivacyAssessor::new()
-  
-  // 定义数据处理活动
-  let data_processing = {
-    "name": "customer_analytics",
-    "description": "分析客户行为以改进服务",
-    "data_types": ["personal_name", "email_address", "phone_number", "location_data", "behavioral_data"],
-    "purpose": "service_improvement",
-    "retention_period": 365,
-    "data_subjects": ["customers"],
-    "third_parties": ["analytics_provider"],
-    "international_transfer": true,
-    "automated_decision_making": true
-  }
-  
-  // 执行隐私影响评估
-  let assessment_result = PrivacyAssessor::conduct_assessment(privacy_assessor, data_processing)
-  
-  // 验证评估结果
-  assert_true(assessment_result.risk_level != "")
-  assert_true(["low", "medium", "high", "critical"].contains(assessment_result.risk_level))
-  assert_true(assessment_result.identified_risks.length() > 0)
-  assert_true(assessment_result.recommendations.length() > 0)
-  
-  // 检查具体风险
-  let has_identifiability_risk = assessment_result.identified_risks.any(fn(risk) { 
-    String::contains(risk, "identifiability")
-  })
-  let has_retention_risk = assessment_result.identified_risks.any(fn(risk) { 
-    String::contains(risk, "retention")
-  })
-  let has_transfer_risk = assessment_result.identified_risks.any(fn(risk) { 
-    String::contains(risk, "international")
-  })
-  
-  assert_true(has_identifiability_risk)
-  assert_true(has_retention_risk)
-  assert_true(has_transfer_risk)
-  
-  // 测试缓解措施建议
-  let mitigation_result = PrivacyAssessor::suggest_mitigations(privacy_assessor, assessment_result)
-  assert_true(mitigation_result.mitigations.length() > 0)
-  
-  // 验证缓解措施与风险匹配
-  for risk in assessment_result.identified_risks {
-    let has_mitigation = mitigation_result.mitigations.any(fn(mitigation) { 
-      String::contains(mitigation.risk, risk)
-    })
-    assert_true(has_mitigation)
-  }
-  
-  // 测试数据保护影响评估模板
-  let template_result = PrivacyAssessor::generate_dpia_template(privacy_assessor, data_processing)
-  match template_result {
-    Ok(template) => {
-      assert_true(template.contains("Data Protection Impact Assessment"))
-      assert_true(template.contains("Processing Description"))
-      assert_true(template.contains("Necessity and Proportionality"))
-      assert_true(template.contains("Risks to Rights and Freedoms"))
-      assert_true(template.contains("Mitigation Measures"))
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 测试合规性检查
-  let compliance_result = PrivacyAssessor::check_compliance(privacy_assessor, data_processing, ["GDPR", "CCPA"])
-  assert_true(compliance_result.overall_score >= 0 && compliance_result.overall_score <= 100)
-  assert_true(compliance_result.framework_results.length() >= 2)
-  
-  // 检查GDPR合规性
-  let gdpr_result = compliance_result.framework_results.find(fn(result) { result.framework == "GDPR" })
-  match gdpr_result {
-    Some(result) => {
-      assert_true(result.score >= 0 && result.score <= 100)
-      assert_true(result.requirements_checked > 0)
-      assert_true(result.requirements_met >= 0)
+  // 验证GDPR合规性
+  let gdpr_compliance = ComplianceReport::get_standard_compliance(compliance_report, "GDPR")
+  match gdpr_compliance {
+    Some(compliance) => {
+      assert_true(Compliance::score(compliance) >= 80.0) // GDPR合规分数应至少80%
+      assert_true(Compliance::has_data_protection_measures(compliance))
+      assert_true(Compliance::has_user_rights_implementation(compliance))
     }
     None => assert_true(false)
   }
   
-  // 测试隐私政策生成
-  let policy_result = PrivacyAssessor::generate_privacy_policy(privacy_assessor, data_processing, mitigation_result)
-  match policy_result {
-    Ok(policy) => {
-      assert_true(policy.contains("Privacy Policy"))
-      assert_true(policy.contains("Data Collection"))
-      assert_true(policy.contains("Data Use"))
-      assert_true(policy.contains("Data Sharing"))
-      assert_true(policy.contains("Data Retention"))
-      assert_true(policy.contains("Your Rights"))
+  // 测试审计日志完整性验证
+  let integrity_result = AuditLogManager::verify_log_integrity(audit_manager)
+  assert_true(integrity_result)
+  
+  // 测试日志不可变性
+  let log_tampering_result = AuditLogManager::attempt_log_tampering(audit_manager, 0)
+  assert_false(log_tampering_result) // 不应允许篡改
+  
+  // 测试审计日志导出（用于合规性审计）
+  let export_result = AuditLogManager::export_logs(audit_manager, [
+    ("date_range", "last_30_days"),
+    ("format", "json"),
+    ("include_sensitive", BoolValue(false))
+  ])
+  
+  match export_result {
+    Ok(exported_logs) => {
+      assert_true(exported_logs.length() > 0)
+      assert_true(exported_logs.contains("audit_log"))
     }
     Err(_) => assert_true(false)
   }
 }
 
-// Test 10: 安全培训和意识测试
-test "security training and awareness testing" {
-  let training_manager = SecurityTrainingManager::new()
+// Test 5: 隐私保护和数据最小化
+test "privacy protection and data minimization" {
+  // 创建隐私保护管理器
+  let privacy_manager = PrivacyManager::new()
   
-  // 创建安全培训课程
-  let training_courses = [
-    {
-      "id": "sec101",
-      "title": "安全基础知识",
-      "description": "介绍基本的安全概念和最佳实践",
-      "duration": 60, // 分钟
-      "difficulty": "beginner",
-      "modules": ["密码安全", "网络威胁", "社会工程", "数据保护"]
-    },
-    {
-      "id": "sec201",
-      "title": "高级安全实践",
-      "description": "深入探讨高级安全技术和策略",
-      "duration": 120,
-      "difficulty": "advanced",
-      "modules": ["加密技术", "安全架构", "威胁检测", "事件响应"]
-    },
-    {
-      "id": "priv101",
-      "title": "隐私保护基础",
-      "description": "学习隐私法规和数据保护原则",
-      "duration": 90,
-      "difficulty": "intermediate",
-      "modules": ["隐私法规", "数据分类", "隐私影响评估", "用户权利"]
-    }
+  // 配置隐私保护策略
+  PrivacyManager::configure(privacy_manager, [
+    ("data.minimization", BoolValue(true)),
+    ("purpose.limitation", BoolValue(true)),
+    ("retention.policy", StringValue("automatic")),
+    ("consent.management", BoolValue(true)),
+    ("right.to.be.forgotten", BoolValue(true))
+  ])
+  
+  // 创建用户同意记录
+  let user_consent = UserConsent::new(
+    "user_67890",
+    ["telemetry_collection", "data_analysis", "personalization"],
+    Time::now(),
+    Time::now() + (365 * 24 * 60 * 60 * 1000) // 1年有效期
+  )
+  
+  assert_true(PrivacyManager::record_consent(privacy_manager, user_consent))
+  
+  // 测试数据收集的同意检查
+  let collection_purpose = "telemetry_collection"
+  let consent_check = PrivacyManager::check_consent(privacy_manager, "user_67890", collection_purpose)
+  assert_true(consent_check)
+  
+  // 测试数据最小化
+  let full_telemetry_data = TelemetryData::new_with_attributes([
+    ("user.id", StringValue("user_67890")),
+    ("user.email", StringValue("jane.smith@company.com")),
+    ("user.age", IntValue(32)),
+    ("user.location", StringValue("51.5074,-0.1278")), // 伦敦坐标
+    ("device.type", StringValue("mobile")),
+    ("app.version", StringValue("2.1.0")),
+    ("session.duration", IntValue(1800)), // 30分钟
+    ("screen.time", IntValue(1200)), // 20分钟
+    ("feature.usage", StringValue("dashboard,reports,analytics")),
+    ("performance.metrics", StringValue("cpu:45,memory:60,network:25")),
+    ("crash.reports", StringValue("none")),
+    ("error.logs", StringValue("timeout_error:2")),
+    ("timestamp", IntValue(Time::now()))
+  ])
+  
+  // 定义最小化数据集
+  let minimal_attributes = [
+    "user.id",
+    "device.type",
+    "app.version",
+    "session.duration",
+    "feature.usage",
+    "performance.metrics",
+    "timestamp"
   ]
   
-  // 添加培训课程
-  for course in training_courses {
-    let add_result = TrainingManager::add_course(training_manager, course)
-    match add_result {
-      Ok(_) => assert_true(true)
-      Err(_) => assert_true(false)
+  let minimized_data = PrivacyManager::minimize_data(privacy_manager, full_telemetry_data, minimal_attributes)
+  
+  // 验证数据最小化
+  assert_true(TelemetryData::has_attribute(minimized_data, "user.id"))
+  assert_true(TelemetryData::has_attribute(minimized_data, "device.type"))
+  assert_true(TelemetryData::has_attribute(minimized_data, "app.version"))
+  assert_true(TelemetryData::has_attribute(minimized_data, "session.duration"))
+  assert_true(TelemetryData::has_attribute(minimized_data, "feature.usage"))
+  assert_true(TelemetryData::has_attribute(minimized_data, "performance.metrics"))
+  assert_true(TelemetryData::has_attribute(minimized_data, "timestamp"))
+  
+  // 验证敏感数据已被移除
+  assert_false(TelemetryData::has_attribute(minimized_data, "user.email"))
+  assert_false(TelemetryData::has_attribute(minimized_data, "user.age"))
+  assert_false(TelemetryData::has_attribute(minimized_data, "user.location"))
+  assert_false(TelemetryData::has_attribute(minimized_data, "screen.time"))
+  assert_false(TelemetryData::has_attribute(minimized_data, "crash.reports"))
+  assert_false(TelemetryData::has_attribute(minimized_data, "error.logs"))
+  
+  // 测试目的限制
+  let purpose_limited_data = PrivacyManager::apply_purpose_limitation(
+    privacy_manager,
+    minimized_data,
+    "data_analysis"
+  )
+  
+  // 验证目的限制
+  assert_true(TelemetryData::has_attribute(purpose_limited_data, "feature.usage"))
+  assert_true(TelemetryData::has_attribute(purpose_limited_data, "performance.metrics"))
+  
+  // 测试数据保留策略
+  let old_timestamp = Time::now() - (400 * 24 * 60 * 60 * 1000) // 400天前
+  let old_data = TelemetryData::new_with_attributes([
+    ("user.id", StringValue("user_old_123")),
+    ("metric", StringValue("old_value")),
+    ("timestamp", IntValue(old_timestamp))
+  ])
+  
+  // 添加旧数据到存储
+  assert_true(PrivacyManager::store_data(privacy_manager, old_data))
+  
+  // 执行数据保留策略清理
+  let cleanup_result = PrivacyManager::apply_retention_policy(privacy_manager, 365) // 保留365天
+  assert_true(cleanup_result)
+  
+  // 验证旧数据已被清理
+  let old_data_exists = PrivacyManager::data_exists(privacy_manager, "user_old_123")
+  assert_false(old_data_exists)
+  
+  // 测试被遗忘权
+  let user_for_removal = "user_67890"
+  let removal_request = DataRemovalRequest::new(
+    user_for_removal,
+    "right_to_be_forgotten",
+    Time::now()
+  )
+  
+  let removal_result = PrivacyManager::process_removal_request(privacy_manager, removal_request)
+  assert_true(removal_result)
+  
+  // 验证用户数据已被删除
+  let user_data_exists = PrivacyManager::user_data_exists(privacy_manager, user_for_removal)
+  assert_false(user_data_exists)
+  
+  // 验证同意记录已被删除
+  let consent_exists = PrivacyManager::consent_exists(privacy_manager, user_for_removal)
+  assert_false(consent_exists)
+}
+
+// Test 6: 安全威胁检测和响应
+test "security threat detection and response" {
+  // 创建安全威胁检测器
+  let threat_detector = SecurityThreatDetector::new()
+  
+  // 配置威胁检测规则
+  ThreatDetector::configure(threat_detector, [
+    ("anomaly.detection.enabled", BoolValue(true)),
+    ("behavioral.analysis.enabled", BoolValue(true)),
+    ("threat.intelligence.enabled", BoolValue(true)),
+    ("automated.response.enabled", BoolValue(true)),
+    ("alert.threshold", IntValue(3) // 3个异常事件触发告警
+  ])
+  
+  // 创建威胁检测规则
+  let threat_rules = [
+    ThreatRule::new(
+      "brute_force_attack",
+      "Multiple failed login attempts from same IP",
+      ["login.failed"],
+      [("ip", "same"), ("count", ">5"), ("timeframe", "<300")], // 5分钟内超过5次失败
+      High
+    ),
+    ThreatRule::new(
+      "data_exfiltration",
+      "Unusual data export pattern detected",
+      ["data.export"],
+      [("user", "same"), ("volume", ">1000"), ("frequency", ">10")], // 单用户大量频繁导出
+      Critical
+    ),
+    ThreatRule::new(
+      "privilege_escalation",
+      "Unauthorized privilege escalation attempt",
+      ["privilege.change"],
+      [("approved", "false")],
+      High
+    ),
+    ThreatRule::new(
+      "unusual_access_pattern",
+      "Access from unusual location or time",
+      ["data.access"],
+      [("location.unusual", "true"), ("time.unusual", "true")],
+      Medium
+    )
+  ]
+  
+  for rule in threat_rules {
+    assert_true(ThreatDetector::add_rule(threat_detector, rule))
+  }
+  
+  // 生成安全事件
+  let security_events = [
+    SecurityEvent::new("login.failed", ["ip:192.168.1.100", "user:admin", "timestamp:" + Time::now().to_string()]),
+    SecurityEvent::new("login.failed", ["ip:192.168.1.100", "user:admin", "timestamp:" + (Time::now() + 60000).to_string()]),
+    SecurityEvent::new("login.failed", ["ip:192.168.1.100", "user:admin", "timestamp:" + (Time::now() + 120000).to_string()]),
+    SecurityEvent::new("login.failed", ["ip:192.168.1.100", "user:admin", "timestamp:" + (Time::now() + 180000).to_string()]),
+    SecurityEvent::new("login.failed", ["ip:192.168.1.100", "user:admin", "timestamp:" + (Time::now() + 240000).to_string()]),
+    SecurityEvent::new("login.failed", ["ip:192.168.1.100", "user:admin", "timestamp:" + (Time::now() + 300000).to_string()]),
+    SecurityEvent::new("data.export", ["user:analyst", "count:1200", "timestamp:" + Time::now().to_string()]),
+    SecurityEvent::new("data.export", ["user:analyst", "count:1300", "timestamp:" + (Time::now() + 300000).to_string()]),
+    SecurityEvent::new("privilege.change", ["user:analyst", "from:analyst", "to:admin", "approved:false", "timestamp:" + Time::now().to_string()]),
+    SecurityEvent::new("data.access", ["user:viewer", "location:unusual", "time:unusual", "timestamp:" + Time::now().to_string()])
+  ]
+  
+  // 处理安全事件
+  let mut detected_threats = []
+  for event in security_events {
+    let detection_result = ThreatDetector::analyze_event(threat_detector, event)
+    match detection_result {
+      Some(threat) => {
+        detected_threats = detected_threats.push(threat)
+      }
+      None => ()
     }
   }
   
-  // 创建培训用户
-  let users = ["alice", "bob", "charlie", "diana"]
-  for user in users {
-    TrainingManager::create_user(training_manager, user)
-  }
+  // 验证威胁检测
+  assert_true(detected_threats.length() >= 3) // 应该检测到至少3个威胁
   
-  // 分配培训课程
-  TrainingManager::assign_course(training_manager, "alice", "sec101")
-  TrainingManager::assign_course(training_manager, "alice", "sec201")
-  TrainingManager::assign_course(training_manager, "bob", "sec101")
-  TrainingManager::assign_course(training_manager, "bob", "priv101")
-  TrainingManager::assign_course(training_manager, "charlie", "sec101")
-  TrainingManager::assign_course(training_manager, "diana", "priv101")
-  
-  // 模拟培训完成
-  TrainingManager::mark_completed(training_manager, "alice", "sec101", 85) // 85分
-  TrainingManager::mark_completed(training_manager, "bob", "sec101", 92)
-  TrainingManager::mark_completed(training_manager, "charlie", "sec101", 78)
-  TrainingManager::mark_completed(training_manager, "diana", "priv101", 88)
-  
-  // 创建钓鱼模拟测试
-  let phishing_simulation = {
-    "id": "phishing_sim_001",
-    "name": "季度钓鱼模拟测试",
-    "description": "测试员工对钓鱼邮件的识别能力",
-    "template": "it_support_alert",
-    "target_users": users,
-    "scheduled_date": Time::now() + 86400 // 明天
-  }
-  
-  let sim_result = TrainingManager::create_phishing_simulation(training_manager, phishing_simulation)
-  match sim_result {
-    Ok(sim_id) => {
-      // 模拟钓鱼测试结果
-      TrainingManager::record_phishing_result(training_manager, sim_id, "alice", false) // 未上钩
-      TrainingManager::record_phishing_result(training_manager, sim_id, "bob", true)  // 上钩了
-      TrainingManager::record_phishing_result(training_manager, sim_id, "charlie", false)
-      TrainingManager::record_phishing_result(training_manager, sim_id, "diana", false)
-      
-      // 获取钓鱼测试报告
-      let phishing_report = TrainingManager::get_phishing_report(training_manager, sim_id)
-      assert_true(phishing_report.total_users == 4)
-      assert_true(phishing_report.caught_users == 1)
-      assert_eq(phishing_report.catch_rate, 25.0)
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 创建安全意识问卷
-  let awareness_quiz = {
-    "id": "awareness_quiz_001",
-    "title": "安全意识评估",
-    "description": "评估员工的安全意识和知识水平",
-    "questions": [
-      {
-        "id": "q1",
-        "text": "以下哪个是强密码的特征？",
-        "type": "multiple_choice",
-        "options": ["只包含字母", "包含大小写字母、数字和特殊字符", "少于8个字符", "使用个人信息"],
-        "correct_answer": 1
-      },
-      {
-        "id": "q2",
-        "text": "收到可疑邮件时应该怎么做？",
-        "type": "multiple_choice",
-        "options": ["立即点击链接", "回复邮件询问", "报告给IT部门", "转发给同事"],
-        "correct_answer": 2
-      },
-      {
-        "id": "q3",
-        "text": "以下哪项是保护数据安全的好做法？",
-        "type": "multiple_choice",
-        "options": ["在公共场所讨论敏感信息", "使用未经授权的软件", "定期备份重要数据", "共享登录凭证"],
-        "correct_answer": 2
-      }
-    ]
-  }
-  
-  let quiz_result = TrainingManager::create_awareness_quiz(training_manager, awareness_quiz)
-  match quiz_result {
-    Ok(quiz_id) => {
-      // 模拟问卷回答
-      TrainingManager::submit_quiz_answers(training_manager, quiz_id, "alice", [1, 2, 2])
-      TrainingManager::submit_quiz_answers(training_manager, quiz_id, "bob", [1, 0, 2])
-      TrainingManager::submit_quiz_answers(training_manager, quiz_id, "charlie", [1, 2, 3])
-      TrainingManager::submit_quiz_answers(training_manager, quiz_id, "diana", [1, 2, 2])
-      
-      // 获取问卷结果
-      let quiz_results = TrainingManager::get_quiz_results(training_manager, quiz_id)
-      assert_true(quiz_results.length() == 4)
-      
-      // 验证评分
-      let alice_result = quiz_results.find(fn(result) { result.user == "alice" })
-      match alice_result {
-        Some(result) => assert_eq(result.score, 100) // 3/3正确
-        None => assert_true(false)
-      }
-      
-      let bob_result = quiz_results.find(fn(result) { result.user == "bob" })
-      match bob_result {
-        Some(result) => assert_eq(result.score, 66) // 2/3正确
-        None => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // 生成培训报告
-  let training_report = TrainingManager::generate_training_report(training_manager, {
-    "include_completion_status": true,
-    "include_quiz_results": true,
-    "include_phishing_results": true,
-    "recommend_additional_training": true
+  // 验证特定威胁检测
+  let brute_force_detected = detected_threats.any(fn(threat) {
+    Threat::type(threat) == "brute_force_attack"
   })
+  assert_true(brute_force_detected)
   
-  assert_true(training_report.contains("Security Training Report"))
-  assert_true(training_report.contains("Course Completion Status"))
-  assert_true(training_report.contains("Quiz Results"))
-  assert_true(training_report.contains("Phishing Simulation Results"))
-  assert_true(training_report.contains("Training Recommendations"))
+  let data_exfiltration_detected = detected_threats.any(fn(threat) {
+    Threat::type(threat) == "data_exfiltration"
+  })
+  assert_true(data_exfiltration_detected)
   
-  // 测试培训效果评估
-  let effectiveness_result = TrainingManager::evaluate_training_effectiveness(training_manager, "sec101")
-  match effectiveness_result {
-    Ok(effectiveness) => {
-      assert_true(effectiveness.average_score >= 0 && effectiveness.average_score <= 100)
-      assert_true(effectiveness.completion_rate >= 0 && effectiveness.completion_rate <= 100)
-      assert_true(effectiveness.improvement_suggestions.length() > 0)
-    }
-    Err(_) => assert_true(false)
+  let privilege_escalation_detected = detected_threats.any(fn(threat) {
+    Threat::type(threat) == "privilege_escalation"
+  })
+  assert_true(privilege_escalation_detected)
+  
+  // 测试自动化威胁响应
+  let response_manager = ThreatResponseManager::new()
+  
+  for threat in detected_threats {
+    let response_result = ThreatResponseManager::execute_response(response_manager, threat)
+    assert_true(response_result)
+  }
+  
+  // 验证响应措施
+  let ip_block_active = ThreatResponseManager::is_ip_blocked(response_manager, "192.168.1.100")
+  assert_true(ip_block_active) // 暴力破解IP应被阻止
+  
+  let user_suspended = ThreatResponseManager::is_user_suspended(response_manager, "analyst")
+  assert_true(user_suspended) // 数据泄露用户应被暂停
+  
+  // 测试威胁情报集成
+  let threat_intelligence = ThreatIntelligenceManager::new()
+  let intel_update = ThreatIntelligenceManager::update_intelligence(threat_intelligence)
+  assert_true(intel_update)
+  
+  // 使用威胁情报增强检测
+  let enhanced_detection = ThreatDetector::enhance_with_intelligence(threat_detector, threat_intelligence)
+  assert_true(enhanced_detection)
+  
+  // 测试安全态势评估
+  let security_posture = ThreatDetector::assess_security_posture(threat_detector)
+  assert_true(SecurityPosture::has_risk_score(security_posture))
+  assert_true(SecurityPosture::has_recommendations(security_posture))
+  
+  let risk_score = SecurityPosture::risk_score(security_posture)
+  assert_true(risk_score >= 0.0 && risk_score <= 100.0)
+  
+  // 验证高风险状态
+  if (risk_score > 70.0) {
+    assert_true(SecurityPosture::is_high_risk(security_posture))
   }
 }

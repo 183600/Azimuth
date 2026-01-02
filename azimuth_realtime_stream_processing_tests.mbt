@@ -1,468 +1,431 @@
-// Azimuth 实时流处理测试用例
-// 专注于实时流处理场景下的遥测数据收集和分析
+// Azimuth Real-time Stream Processing Tests
+// 实时流处理测试用例 - 专注于实时数据处理和流式计算
 
-// 测试1: 实时指标流处理
-test "实时指标流处理测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "realtime.stream")
-  
+// Test 1: 实时数据流创建和基本操作
+test "real-time data stream creation and basic operations" {
   // 创建实时流处理器
-  let stream_processor = StreamProcessor::new(meter)
+  let stream_processor = RealTimeStreamProcessor::new()
   
-  // 创建实时指标
-  let realtime_counter = Meter::create_counter(meter, "realtime.events.total")
-  let realtime_gauge = Meter::create_gauge(meter, "realtime.active.users")
-  let realtime_histogram = Meter::create_histogram(meter, "realtime.response.time")
+  // 配置流处理参数
+  StreamProcessor::configure(stream_processor, [
+    ("buffer.size", IntValue(1000)),
+    ("processing.batch.size", IntValue(100)),
+    ("latency.threshold", IntValue(100)), // 100ms延迟阈值
+    ("throughput.target", IntValue(10000)) // 目标吞吐量
+  ])
   
-  // 模拟实时数据流
-  let mut event_stream = []
-  for timestamp in 0..=99 {
-    let event = StreamEvent::new(timestamp.to_string(), [
-      ("event.type", StringValue("user.action")),
-      ("user.id", StringValue("user-" + (timestamp % 10).to_string())),
-      ("action.value", FloatValue((timestamp * 0.1).to_float()))
-    ])
-    event_stream = event_stream.push(event)
+  // 创建数据流
+  let telemetry_stream = StreamProcessor::create_stream(stream_processor, "telemetry_metrics")
+  
+  // 验证流创建成功
+  assert_true(Stream::is_active(telemetry_stream))
+  assert_eq(Stream::name(telemetry_stream), "telemetry_metrics")
+  assert_eq(Stream::current_size(telemetry_stream), 0)
+  
+  // 测试数据推送
+  let test_data = [
+    ("cpu.usage", FloatValue(75.5)),
+    ("memory.usage", FloatValue(60.2)),
+    ("disk.io", IntValue(1024)),
+    ("network.latency", IntValue(25))
+  ]
+  
+  for (metric, value) in test_data {
+    let data_point = DataPoint::new(metric, value, Time::now())
+    let push_result = Stream::push(telemetry_stream, data_point)
+    assert_true(push_result)
   }
   
-  // 处理实时流
-  for event in event_stream {
-    StreamProcessor::process_event(stream_processor, event)
-    
-    // 更新实时指标
-    Counter::add(realtime_counter, 1.0)
-    Gauge::set(realtime_gauge, (event_stream.length() % 50).to_float())
-    Histogram::record(realtime_histogram, 0.001 + (event_stream.length() * 0.01).to_float())
-  }
+  // 验证数据推送
+  assert_eq(Stream::current_size(telemetry_stream), test_data.length())
   
-  // 验证流处理结果
-  let processed_count = StreamProcessor::get_processed_count(stream_processor)
-  assert_eq(processed_count, 100)
-  assert_eq(Counter::value(realtime_counter), 100.0)
+  // 测试数据消费
+  let consumed_data = Stream::consume_batch(telemetry_stream, test_data.length())
+  assert_eq(consumed_data.length(), test_data.length())
+  
+  // 验证消费后流状态
+  assert_eq(Stream::current_size(telemetry_stream), 0)
 }
 
-// 测试2: 实时span流分析
-test "实时span流分析测试" {
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "realtime.span.analyzer")
+// Test 2: 流式聚合和窗口操作
+test "streaming aggregation and window operations" {
+  // 创建流式聚合器
+  let stream_aggregator = StreamingAggregator::new()
   
-  // 创建实时span分析器
-  let span_analyzer = RealtimeSpanAnalyzer::new(tracer)
+  // 配置聚合参数
+  StreamingAggregator::configure(stream_aggregator, [
+    ("window.size", IntValue(5000)), // 5秒窗口
+    ("window.slide", IntValue(1000)), // 1秒滑动
+    ("aggregation.functions", StringValue("avg,min,max,count,sum"))
+  ])
   
-  // 模拟实时span流
-  let mut span_stream = []
-  for i in 0..=50 {
-    let span = Tracer::start_span(tracer, "realtime.operation." + i.to_string())
-    Span::set_attribute(span, "operation.id", IntValue(i))
-    Span::set_attribute(span, "operation.type", StringValue("realtime"))
-    Span::set_attribute(span, "latency.ms", FloatValue((i * 2.5).to_float()))
+  // 创建数据流
+  let metrics_stream = StreamingAggregator::create_stream(stream_aggregator, "performance_metrics")
+  
+  // 生成时间序列数据
+  let base_time = Time::now()
+  let time_series_data = []
+  
+  for i in 0..<100 {
+    let timestamp = base_time + (i * 100) // 每100ms一个数据点
+    let cpu_usage = 50.0 + (Math::sin(i.to_float() * 0.1) * 20.0) // 模拟CPU使用率波动
+    let memory_usage = 60.0 + (Math::cos(i.to_float() * 0.05) * 15.0) // 模拟内存使用率波动
     
-    // 添加实时事件
-    Span::add_event(span, "realtime.event." + i.to_string(), None)
+    let cpu_point = DataPoint::new_with_timestamp("cpu.usage", FloatValue(cpu_usage), timestamp)
+    let memory_point = DataPoint::new_with_timestamp("memory.usage", FloatValue(memory_usage), timestamp)
     
-    span_stream = span_stream.push(span)
-  }
-  
-  // 实时分析span流
-  for span in span_stream {
-    RealtimeSpanAnalyzer::analyze_span(span_analyzer, span)
-    Span::end(span)
-  }
-  
-  // 验证分析结果
-  let analysis_results = RealtimeSpanAnalyzer::get_results(span_analyzer)
-  assert_eq(analysis_results.total_spans, 51)
-  assert_true(analysis_results.average_latency > 0.0)
-  assert_true(analysis_results.event_count > 0)
-}
-
-// 测试3: 实时日志流聚合
-test "实时日志流聚合测试" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "realtime.log.aggregator")
-  
-  // 创建实时日志聚合器
-  let log_aggregator = RealtimeLogAggregator::new(logger)
-  
-  // 模拟实时日志流
-  let mut log_stream = []
-  for i in 0..=75 {
-    let log_record = Logger::create_log_record(logger)
-    LogRecord::set_severity(log_record, if i % 4 == 0 { Error } else if i % 2 == 0 { Warn } else { Info })
-    LogRecord::set_body(log_record, "Realtime log message " + i.to_string())
-    LogRecord::set_attribute(log_record, "log.source", StringValue("service-" + (i % 5).to_string()))
-    LogRecord::set_attribute(log_record, "log.level", StringValue(if i % 4 == 0 { "ERROR" } else if i % 2 == 0 { "WARN" } else { "INFO" }))
+    time_series_data = time_series_data.push([cpu_point, memory_point])
     
-    log_stream = log_stream.push(log_record)
+    // 推送到流
+    Stream::push(metrics_stream, cpu_point)
+    Stream::push(metrics_stream, memory_point)
   }
   
-  // 实时聚合日志流
-  for log in log_stream {
-    RealtimeLogAggregator::aggregate_log(log_aggregator, log)
-  }
+  // 执行窗口聚合
+  let aggregation_results = StreamingAggregator::aggregate_windows(stream_aggregator, metrics_stream)
   
   // 验证聚合结果
-  let aggregation_results = RealtimeLogAggregator::get_results(log_aggregator)
-  assert_eq(aggregation_results.total_logs, 76)
-  assert_true(aggregation_results.error_count > 0)
-  assert_true(aggregation_results.warn_count > 0)
-  assert_true(aggregation_results.info_count > 0)
-}
-
-// 测试4: 实时窗口统计
-test "实时窗口统计测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "realtime.window.stats")
+  assert_true(aggregation_results.length() > 0)
   
-  // 创建实时窗口统计器
-  let window_stats = RealtimeWindowStats::new(meter, 10) // 10秒窗口
+  // 检查第一个窗口的聚合结果
+  let first_window = aggregation_results[0]
+  assert_true(WindowAggregation::has_metric(first_window, "cpu.usage"))
+  assert_true(WindowAggregation::has_metric(first_window, "memory.usage"))
   
-  // 创建指标
-  let window_counter = Meter::create_counter(meter, "window.events")
-  let window_histogram = Meter::create_histogram(meter, "window.values")
-  
-  // 模拟实时时间序列数据
-  let mut time_series = []
-  for timestamp in 0..=119 {
-    let data_point = TimeSeriesPoint::new(timestamp.to_float(), [
-      ("metric.value", FloatValue((timestamp * 0.5).to_float())),
-      ("metric.type", StringValue("realtime")),
-      ("metric.source", StringValue("sensor-" + (timestamp % 3).to_string()))
-    ])
-    time_series = time_series.push(data_point)
-  }
-  
-  // 实时窗口统计
-  for point in time_series {
-    RealtimeWindowStats::add_point(window_stats, point)
-    
-    // 更新窗口指标
-    Counter::add(window_counter, 1.0)
-    let value = TimeSeriesPoint::get_value(point, "metric.value")
-    match value {
-      Some(FloatValue(v)) => Histogram::record(window_histogram, v)
-      _ => ()
+  // 验证聚合统计
+  let cpu_stats = WindowAggregation::get_metric_stats(first_window, "cpu.usage")
+  match cpu_stats {
+    Some(stats) => {
+      assert_true(Statistics::count(stats) > 0)
+      assert_true(Statistics::min(stats) >= 30.0) // CPU使用率最小值
+      assert_true(Statistics::max(stats) <= 70.0) // CPU使用率最大值
+      assert_true(Statistics::average(stats) >= 45.0 && Statistics::average(stats) <= 55.0) // 平均值
     }
+    None => assert_true(false)
   }
-  
-  // 验证窗口统计
-  let window_results = RealtimeWindowStats::get_results(window_stats)
-  assert_eq(window_results.total_points, 120)
-  assert_true(window_results.window_count > 0)
-  assert_true(window_results.average_value > 0.0)
 }
 
-// 测试5: 实时异常检测
-test "实时异常检测测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "realtime.anomaly")
+// Test 3: 实时异常检测和告警
+test "real-time anomaly detection and alerting" {
+  // 创建异常检测器
+  let anomaly_detector = RealTimeAnomalyDetector::new()
   
-  // 创建实时异常检测器
-  let anomaly_detector = RealtimeAnomalyDetector::new(meter)
+  // 配置检测参数
+  AnomalyDetector::configure(anomaly_detector, [
+    ("detection.algorithm", StringValue("statistical")),
+    ("threshold.sigma", FloatValue(2.5)), // 2.5倍标准差
+    ("min.samples", IntValue(20)), // 最少样本数
+    ("alert.cooldown", IntValue(5000) // 5秒告警冷却
+  ])
   
-  // 创建异常检测指标
-  let anomaly_counter = Meter::create_counter(meter, "anomalies.detected")
-  let anomaly_gauge = Meter::create_gauge(meter, "anomaly.score")
+  // 创建告警管理器
+  let alert_manager = AlertManager::new()
+  AlertManager::configure(alert_manager, [
+    ("max.alerts.per.minute", IntValue(10)),
+    ("escalation.threshold", IntValue(3)),
+    ("notification.channels", StringValue("email,slack,pagerduty"))
+  ])
   
-  // 模拟正常和异常数据
-  let mut data_points = []
-  for i in 0..=99 {
-    let is_anomaly = i > 80 // 最后20个点为异常
-    let value = if is_anomaly { 
-      100.0 + (i * 2.0) // 异常值
-    } else { 
-      10.0 + (i * 0.1) // 正常值
+  // 生成正常基线数据
+  let baseline_stream = AnomalyDetector::create_stream(anomaly_detector, "baseline_metrics")
+  let baseline_start = Time::now()
+  
+  for i in 0..<50 {
+    let timestamp = baseline_start + (i * 200)
+    let normal_value = 100.0 + (Math::random() * 10.0 - 5.0) // 正常范围内波动
+    let data_point = DataPoint::new_with_timestamp("response.time", FloatValue(normal_value), timestamp)
+    Stream::push(baseline_stream, data_point)
+  }
+  
+  // 训练异常检测模型
+  let training_result = AnomalyDetector::train_model(anomaly_detector, baseline_stream)
+  assert_true(training_result)
+  
+  // 生成包含异常的数据
+  let test_stream = AnomalyDetector::create_stream(anomaly_detector, "test_metrics")
+  let test_start = Time::now()
+  let anomaly_count = 0
+  
+  for i in 0..<30 {
+    let timestamp = test_start + (i * 200)
+    let value = if (i == 10 || i == 20) {
+      200.0 // 异常值
+    } else {
+      100.0 + (Math::random() * 10.0 - 5.0) // 正常值
     }
     
-    let point = DataPoint::new(i.to_float(), [
-      ("value", FloatValue(value)),
-      ("is_anomaly", BoolValue(is_anomaly)),
-      ("source", StringValue("sensor-1"))
-    ])
-    data_points = data_points.push(point)
-  }
-  
-  // 实时异常检测
-  for point in data_points {
-    let anomaly_score = RealtimeAnomalyDetector::detect(anomaly_detector, point)
+    let data_point = DataPoint::new_with_timestamp("response.time", FloatValue(value), timestamp)
+    Stream::push(test_stream, data_point)
     
-    if anomaly_score > 0.8 {
-      Counter::add(anomaly_counter, 1.0)
-      Gauge::set(anomaly_gauge, anomaly_score)
-    }
-  }
-  
-  // 验证异常检测结果
-  let detection_results = RealtimeAnomalyDetector::get_results(anomaly_detector)
-  assert_eq(detection_results.total_points, 100)
-  assert_true(detection_results.anomaly_count > 0)
-  assert_eq(Counter::value(anomaly_counter), detection_results.anomaly_count.to_float())
-}
-
-// 测试6: 实时数据压缩
-test "实时数据压缩测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "realtime.compression")
-  
-  // 创建实时数据压缩器
-  let compressor = RealtimeCompressor::new(meter)
-  
-  // 创建压缩指标
-  let compression_ratio = Meter::create_gauge(meter, "compression.ratio")
-  let compression_counter = Meter::create_counter(meter, "compression.operations")
-  
-  // 模拟高频实时数据
-  let mut raw_data = []
-  for i in 0..=199 {
-    let data_point = RawDataPoint::new(i.to_string(), [
-      ("timestamp", StringValue(i.to_string())),
-      ("value", FloatValue((i * 0.1).to_float())),
-      ("source", StringValue("stream-" + (i % 10).to_string())),
-      ("metadata", StringValue("extra-data-" + i.to_string()))
-    ])
-    raw_data = raw_data.push(data_point)
-  }
-  
-  // 实时压缩数据
-  let mut compressed_data = []
-  for data in raw_data {
-    let compressed = RealtimeCompressor::compress(compressor, data)
-    compressed_data = compressed_data.push(compressed)
-    Counter::add(compression_counter, 1.0)
-  }
-  
-  // 计算压缩比
-  let original_size = raw_data.map(fn(d) { RawDataPoint::size(d) }).reduce(fn(acc, size) { acc + size }, 0)
-  let compressed_size = compressed_data.map(fn(c) { CompressedData::size(c) }).reduce(fn(acc, size) { acc + size }, 0)
-  let ratio = compressed_size.to_float() / original_size.to_float()
-  Gauge::set(compression_ratio, ratio)
-  
-  // 验证压缩结果
-  assert_eq(compressed_data.length(), raw_data.length())
-  assert_true(ratio < 1.0) // 压缩后应该更小
-  assert_eq(Counter::value(compression_counter), 200.0)
-}
-
-// 测试7: 实时流连接
-test "实时流连接测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "realtime.stream.join")
-  
-  // 创建实时流连接器
-  let stream_joiner = RealtimeStreamJoiner::new(meter)
-  
-  // 创建流连接指标
-  let join_counter = Meter::create_counter(meter, "stream.joins")
-  let join_gauge = Meter::create_gauge(meter, "pending.joins")
-  
-  // 模拟两个实时流
-  let mut stream_a = []
-  let mut stream_b = []
-  
-  for i in 0..=49 {
-    let event_a = StreamEvent::new("stream-a-" + i.to_string(), [
-      ("user.id", StringValue("user-" + (i % 10).to_string())),
-      ("event.type", StringValue("click")),
-      ("timestamp", StringValue((i * 10).to_string()))
-    ])
-    stream_a = stream_a.push(event_a)
-    
-    let event_b = StreamEvent::new("stream-b-" + i.to_string(), [
-      ("user.id", StringValue("user-" + (i % 10).to_string())),
-      ("event.type", StringValue("purchase")),
-      ("timestamp", StringValue((i * 10 + 5).to_string()))
-    ])
-    stream_b = stream_b.push(event_b)
-  }
-  
-  // 实时流连接
-  for event_a in stream_a {
-    for event_b in stream_b {
-      if StreamEvent::get_attribute(event_a, "user.id") == StreamEvent::get_attribute(event_b, "user.id") {
-        let joined_event = RealtimeStreamJoiner::join(stream_joiner, event_a, event_b)
-        Counter::add(join_counter, 1.0)
+    // 检测异常
+    let anomaly_result = AnomalyDetector::detect_anomaly(anomaly_detector, data_point)
+    match anomaly_result {
+      Some(anomaly) => {
+        anomaly_count = anomaly_count + 1
         
-        // 更新待连接计数
-        let pending = RealtimeStreamJoiner::get_pending_count(stream_joiner)
-        Gauge::set(join_gauge, pending.to_float())
+        // 触发告警
+        let alert = Alert::new(
+          "performance.anomaly",
+          "Performance anomaly detected",
+          Anomaly::severity(anomaly),
+          Anomaly::details(anomaly)
+        )
+        
+        AlertManager::send_alert(alert_manager, alert)
       }
+      None => ()
     }
   }
+  
+  // 验证异常检测
+  assert_true(anomaly_count >= 2) // 应该检测到至少2个异常
+  
+  // 验证告警
+  let alert_count = AlertManager::get_alert_count(alert_manager)
+  assert_true(alert_count >= 2)
+}
+
+// Test 4: 流式连接和多流合并
+test "stream joins and multi-stream merging" {
+  // 创建流式连接处理器
+  let stream_joiner = StreamJoiner::new()
+  
+  // 创建多个数据流
+  let user_activity_stream = StreamJoiner::create_stream(stream_joiner, "user_activity")
+  let system_metrics_stream = StreamJoiner::create_stream(stream_joiner, "system_metrics")
+  let business_events_stream = StreamJoiner::create_stream(stream_joiner, "business_events")
+  
+  // 配置连接条件
+  StreamJoiner::configure_join(stream_joiner, [
+    ("join.type", StringValue("inner")),
+    ("join.key", StringValue("user_id")),
+    ("time.window", IntValue(5000)), // 5秒时间窗口
+    ("max.lag", IntValue(1000) // 最大1秒延迟
+  ])
+  
+  // 生成用户活动数据
+  let user_base_time = Time::now()
+  for i in 0..<20 {
+    let timestamp = user_base_time + (i * 300)
+    let user_id = "user_" + (i % 5).to_string()
+    let activity = DataPoint::new_with_attributes("user.activity", [
+      ("user_id", StringValue(user_id)),
+      ("action", StringValue("page_view")),
+      ("page", StringValue("/dashboard"))
+    ], timestamp)
+    
+    Stream::push(user_activity_stream, activity)
+  }
+  
+  // 生成系统指标数据
+  let system_base_time = Time::now()
+  for i in 0..<25 {
+    let timestamp = system_base_time + (i * 250)
+    let user_id = "user_" + (i % 5).to_string()
+    let metrics = DataPoint::new_with_attributes("system.performance", [
+      ("user_id", StringValue(user_id)),
+      ("cpu_usage", FloatValue(Math::random() * 100.0)),
+      ("memory_usage", FloatValue(Math::random() * 100.0))
+    ], timestamp)
+    
+    Stream::push(system_metrics_stream, metrics)
+  }
+  
+  // 生成业务事件数据
+  let business_base_time = Time::now()
+  for i in 0..<15 {
+    let timestamp = business_base_time + (i * 400)
+    let user_id = "user_" + (i % 5).to_string()
+    let event = DataPoint::new_with_attributes("business.event", [
+      ("user_id", StringValue(user_id)),
+      ("event_type", StringValue("purchase")),
+      ("amount", FloatValue(Math::random() * 1000.0))
+    ], timestamp)
+    
+    Stream::push(business_events_stream, event)
+  }
+  
+  // 执行流连接
+  let joined_stream = StreamJoiner::join_streams(stream_joiner, [
+    user_activity_stream,
+    system_metrics_stream,
+    business_events_stream
+  ])
   
   // 验证连接结果
-  let join_results = RealtimeStreamJoiner::get_results(stream_joiner)
-  assert_true(join_results.total_joins > 0)
-  assert_eq(Counter::value(join_counter), join_results.total_joins.to_float())
+  let joined_data = Stream::consume_all(joined_stream)
+  assert_true(joined_data.length() > 0)
+  
+  // 验证连接数据包含所有流的属性
+  for joined_record in joined_data {
+    let attrs = DataPoint::attributes(joined_record)
+    assert_true(Attributes::contains(attrs, "user_id"))
+    assert_true(Attributes::contains(attrs, "action"))
+    assert_true(Attributes::contains(attrs, "cpu_usage"))
+    assert_true(Attributes::contains(attrs, "event_type"))
+  }
 }
 
-// 测试8: 实时数据过滤
-test "实时数据过滤测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "realtime.filter")
+// Test 5: 流式机器学习模型推理
+test "streaming machine learning model inference" {
+  // 创建流式ML推理引擎
+  let ml_inference_engine = StreamingMLInference::new()
   
-  // 创建实时数据过滤器
-  let data_filter = RealtimeDataFilter::new(meter)
+  // 加载预训练模型（模拟）
+  let model = MLModel::load("performance_prediction_model")
+  assert_true(MLModel::is_loaded(model))
   
-  // 创建过滤指标
-  let filter_counter = Meter::create_counter(meter, "filtered.events")
-  let pass_counter = Meter::create_counter(meter, "passed.events")
+  // 配置推理参数
+  MLInference::configure(ml_inference_engine, [
+    ("model.name", StringValue("performance_prediction")),
+    ("inference.batch.size", IntValue(10)),
+    ("feature.window", IntValue(5000)), // 5秒特征窗口
+    ("prediction.threshold", FloatValue(0.8)
+  ])
   
-  // 设置过滤条件
-  RealtimeDataFilter::add_condition(data_filter, "value", GreaterThan, 50.0)
-  RealtimeDataFilter::add_condition(data_filter, "source", Equals, "critical-service")
+  // 创建推理流
+  let inference_stream = MLInference::create_stream(ml_inference_engine, "performance_inference")
   
-  // 模拟实时数据流
-  let mut data_stream = []
-  for i in 0..=99 {
-    let is_critical = i % 3 == 0
-    let value = if is_critical { 75.0 + (i * 0.5).to_float() } else { 25.0 + (i * 0.2).to_float() }
-    let source = if is_critical { "critical-service" } else { "normal-service" }
+  // 生成特征数据
+  let feature_base_time = Time::now()
+  let feature_data = []
+  
+  for i in 0..<50 {
+    let timestamp = feature_base_time + (i * 100)
+    let features = [
+      ("cpu_usage", FloatValue(50.0 + Math::random() * 30.0)),
+      ("memory_usage", FloatValue(60.0 + Math::random() * 20.0)),
+      ("disk_io", IntValue((Math::random() * 2000).to_int())),
+      ("network_latency", IntValue((Math::random() * 100).to_int())),
+      ("request_rate", IntValue((Math::random() * 1000).to_int()))
+    ]
     
-    let data_point = DataPoint::new(i.to_string(), [
-      ("value", FloatValue(value)),
-      ("source", StringValue(source)),
-      ("priority", StringValue(if is_critical { "high" } else { "normal" }))
-    ])
-    data_stream = data_stream.push(data_point)
+    let feature_point = DataPoint::new_with_attributes("system.features", features, timestamp)
+    feature_data = feature_data.push(feature_point)
+    
+    Stream::push(inference_stream, feature_point)
   }
   
-  // 实时过滤数据
-  for data in data_stream {
-    let should_pass = RealtimeDataFilter::filter(data_filter, data)
-    
-    if should_pass {
-      Counter::add(pass_counter, 1.0)
+  // 执行流式推理
+  let inference_results = MLInference::predict_batch(ml_inference_engine, inference_stream)
+  
+  // 验证推理结果
+  assert_true(inference_results.length() > 0)
+  
+  // 检查预测结果
+  let mut high_risk_count = 0
+  let mut normal_count = 0
+  
+  for result in inference_results {
+    match result {
+      Ok(prediction) => {
+        assert_true(MLPrediction::has_score(prediction))
+        assert_true(MLPrediction::has_label(prediction))
+        
+        let score = MLPrediction::score(prediction)
+        let label = MLPrediction::label(prediction)
+        
+        if (score > 0.8 && label == "high_risk") {
+          high_risk_count = high_risk_count + 1
+        } else if (label == "normal") {
+          normal_count = normal_count + 1
+        }
+      }
+      Err(_) => ()
+    }
+  }
+  
+  // 验证预测分布合理
+  assert_true(high_risk_count >= 0)
+  assert_true(normal_count >= 0)
+  assert_true(high_risk_count + normal_count > 0)
+  
+  // 测试模型性能
+  let inference_stats = MLInference::get_performance_stats(ml_inference_engine)
+  assert_true(InferenceStats::average_latency(inference_stats) < 100) // 平均延迟小于100ms
+  assert_true(InferenceStats::throughput(inference_stats) > 100) // 吞吐量大于100次/秒
+}
+
+// Test 6: 流式数据质量监控
+test "streaming data quality monitoring" {
+  // 创建数据质量监控器
+  let quality_monitor = StreamingDataQualityMonitor::new()
+  
+  // 配置质量检查规则
+  QualityMonitor::configure(quality_monitor, [
+    ("completeness.threshold", FloatValue(0.95)), // 95%完整性阈值
+    ("accuracy.threshold", FloatValue(0.98)), // 98%准确性阈值
+    ("timeliness.threshold", IntValue(5000)), // 5秒及时性阈值
+    ("consistency.check", BoolValue(true))
+  ])
+  
+  // 创建质量监控流
+  let monitored_stream = QualityMonitor::create_monitored_stream(quality_monitor, "quality_monitored_data")
+  
+  // 生成包含质量问题的数据
+  let quality_base_time = Time::now()
+  let total_records = 100
+  let mut incomplete_records = 0
+  let mut delayed_records = 0
+  let mut inaccurate_records = 0
+  
+  for i in 0..<total_records {
+    let timestamp = if (i % 10 == 0) {
+      // 10%的记录延迟
+      delayed_records = delayed_records + 1
+      quality_base_time - 10000 // 10秒前的时间戳
     } else {
-      Counter::add(filter_counter, 1.0)
+      quality_base_time + (i * 50)
     }
-  }
-  
-  // 验证过滤结果
-  let filter_results = RealtimeDataFilter::get_results(data_filter)
-  assert_eq(filter_results.total_events, 100)
-  assert_true(filter_results.passed_count > 0)
-  assert_true(filter_results.filtered_count > 0)
-  assert_eq(Counter::value(pass_counter), filter_results.passed_count.to_float())
-  assert_eq(Counter::value(filter_counter), filter_results.filtered_count.to_float())
-}
-
-// 测试9: 实时数据转换
-test "实时数据转换测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "realtime.transform")
-  
-  // 创建实时数据转换器
-  let data_transformer = RealtimeDataTransformer::new(meter)
-  
-  // 创建转换指标
-  let transform_counter = Meter::create_counter(meter, "transformed.events")
-  let transform_gauge = Meter::create_gauge(meter, "transform.rate")
-  
-  // 定义转换规则
-  RealtimeDataTransformer::add_rule(data_transformer, "temperature", fn(value) {
-    match value {
-      FloatValue(temp) => FloatValue(temp * 9.0 / 5.0 + 32.0) // 摄氏度转华氏度
-      _ => value
-    }
-  })
-  
-  RealtimeDataTransformer::add_rule(data_transformer, "status", fn(value) {
-    match value {
-      StringValue(status) => StringValue(status.to_uppercase()) // 状态转大写
-      _ => value
-    }
-  })
-  
-  // 模拟实时数据流
-  let mut raw_stream = []
-  for i in 0..=49 {
-    let data_point = DataPoint::new(i.to_string(), [
-      ("temperature", FloatValue(20.0 + (i * 0.5).to_float())),
-      ("status", StringValue(if i % 2 == 0 { "active" } else { "inactive" })),
-      ("sensor.id", StringValue("sensor-" + (i % 5).to_string()))
-    ])
-    raw_stream = raw_stream.push(data_point)
-  }
-  
-  // 实时转换数据
-  let mut transformed_stream = []
-  for data in raw_stream {
-    let transformed = RealtimeDataTransformer::transform(data_transformer, data)
-    transformed_stream = transformed_stream.push(transformed)
-    Counter::add(transform_counter, 1.0)
-  }
-  
-  // 计算转换速率
-  let transform_rate = transformed_stream.length().to_float() / raw_stream.length().to_float()
-  Gauge::set(transform_gauge, transform_rate)
-  
-  // 验证转换结果
-  assert_eq(transformed_stream.length(), raw_stream.length())
-  assert_eq(transform_rate, 1.0)
-  assert_eq(Counter::value(transform_counter), 50.0)
-  
-  // 验证具体转换
-  let first_transformed = transformed_stream[0]
-  let original_temp = DataPoint::get_value(raw_stream[0], "temperature")
-  let transformed_temp = DataPoint::get_value(first_transformed, "temperature")
-  
-  match (original_temp, transformed_temp) {
-    (Some(FloatValue(orig)), Some(FloatValue(trans))) => {
-      assert_eq(trans, orig * 9.0 / 5.0 + 32.0)
-    }
-    _ => assert_true(false)
-  }
-}
-
-// 测试10: 实时流性能监控
-test "实时流性能监控测试" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "realtime.performance")
-  
-  // 创建实时流性能监控器
-  let performance_monitor = RealtimePerformanceMonitor::new(meter)
-  
-  // 创建性能指标
-  let throughput_gauge = Meter::create_gauge(meter, "stream.throughput")
-  let latency_histogram = Meter::create_histogram(meter, "stream.latency")
-  let error_rate_gauge = Meter::create_gauge(meter, "stream.error.rate")
-  
-  // 模拟实时流处理
-  let start_time = Time::now()
-  let mut processed_events = 0
-  let mut error_count = 0
-  
-  for i in 0..=999 {
-    let event_start = Time::now()
     
-    // 模拟事件处理
-    let success = RealtimePerformanceMonitor::process_event(performance_monitor, i)
-    if success {
-      processed_events = processed_events + 1
+    let mut record_attrs = [
+      ("user_id", StringValue("user_" + i.to_string())),
+      ("timestamp", IntValue(timestamp))
+    ]
+    
+    if (i % 15 == 0) {
+      // 约7%的记录不完整
+      incomplete_records = incomplete_records + 1
+      // 故意缺少必要字段
     } else {
-      error_count = error_count + 1
+      record_attrs = record_attrs.push(("session_id", StringValue("session_" + i.to_string())))
     }
     
-    let event_end = Time::now()
-    let event_latency = Time::duration_between(event_start, event_end)
-    Histogram::record(latency_histogram, event_latency)
+    if (i % 20 == 0) {
+      // 5%的记录不准确
+      inaccurate_records = inaccurate_records + 1
+      record_attrs = record_attrs.push(("invalid_metric", FloatValue(-1.0))) // 负值指标
+    } else {
+      record_attrs = record_attrs.push(("valid_metric", FloatValue(Math::random() * 100.0)))
+    }
+    
+    let data_point = DataPoint::new_with_attributes("quality_test", record_attrs, timestamp)
+    Stream::push(monitored_stream, data_point)
   }
   
-  let end_time = Time::now()
-  let total_duration = Time::duration_between(start_time, end_time)
+  // 执行质量检查
+  let quality_report = QualityMonitor::generate_report(quality_monitor, monitored_stream)
   
-  // 计算性能指标
-  let throughput = processed_events.to_float() / total_duration
-  let error_rate = error_count.to_float() / 1000.0
+  // 验证质量报告
+  assert_true(QualityReport::has_completeness_score(quality_report))
+  assert_true(QualityReport::has_accuracy_score(quality_report))
+  assert_true(QualityReport::has_timeliness_score(quality_report))
   
-  Gauge::set(throughput_gauge, throughput)
-  Gauge::set(error_rate_gauge, error_rate)
+  // 检查质量分数
+  let completeness_score = QualityReport::completeness_score(quality_report)
+  let accuracy_score = QualityReport::accuracy_score(quality_report)
+  let timeliness_score = QualityReport::timeliness_score(quality_report)
   
-  // 验证性能监控结果
-  let performance_results = RealtimePerformanceMonitor::get_results(performance_monitor)
-  assert_eq(performance_results.total_events, 1000)
-  assert_eq(performance_results.processed_events, processed_events)
-  assert_eq(performance_results.error_events, error_count)
-  assert_true(throughput > 0.0)
-  assert_true(error_rate <= 0.1) // 错误率应该小于10%
+  // 验证质量分数反映实际数据质量
+  let expected_completeness = (total_records - incomplete_records).to_float() / total_records.to_float()
+  let expected_timeliness = (total_records - delayed_records).to_float() / total_records.to_float()
+  
+  assert_true(Math::abs(completeness_score - expected_completeness) < 0.1)
+  assert_true(Math::abs(timeliness_score - expected_timeliness) < 0.1)
+  
+  // 测试质量告警
+  let quality_alerts = QualityMonitor::get_quality_alerts(quality_monitor)
+  if (completeness_score < 0.95 || accuracy_score < 0.98 || timeliness_score < 1.0) {
+    assert_true(quality_alerts.length() > 0)
+  }
 }
