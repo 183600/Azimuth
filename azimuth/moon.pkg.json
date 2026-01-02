@@ -26,6 +26,7 @@
         "../azimuth_performance_benchmark_tests.mbt",
         "azimuth_enhanced_moonbit_tests.mbt",
         "azimuth_high_quality_focused_tests.mbt",
-        "../azimuth_high_quality_comprehensive_tests.mbt"
+        "../azimuth_high_quality_comprehensive_tests.mbt",
+        "azimuth_specialized_comprehensive_test_suite.mbt"
       ]  }
 }

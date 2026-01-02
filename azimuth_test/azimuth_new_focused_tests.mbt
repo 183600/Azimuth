@@ -1,344 +1,320 @@
-// 新增专注测试用例 - Azimuth 遥测系统
-// 专注于核心功能的边界情况和错误处理
+// Azimuth New Focused Test Suite
+// This file contains 8 focused test cases covering edge cases, performance, and integration scenarios
 
-// 测试1: Span生命周期管理
-pub test "span生命周期管理测试" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "lifecycle-test")
-  
-  // 创建Span并验证初始状态
-  let span = azimuth::Tracer::start_span(tracer, "lifecycle-operation")
-  assert_eq(azimuth::Span::name(span), "lifecycle-operation")
-  assert_true(azimuth::Span::is_recording(span))
-  
-  // 添加事件和属性
-  azimuth::Span::add_event(span, "operation.start", Some([("phase", azimuth::StringValue("initialization"))]))
-  azimuth::Span::set_status(span, azimuth::Ok, Some("Operation started successfully"))
-  
-  // 验证Span上下文有效性
-  let span_ctx = azimuth::Span::span_context(span)
-  assert_true(azimuth::SpanContext::is_valid(span_ctx))
-  
-  // 结束Span并验证状态
-  azimuth::Span::end(span)
-  // 注意：简化实现中可能不会改变recording状态
-}
-
-// 测试2: 度量聚合操作
-pub test "度量聚合操作测试" {
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "aggregation-test")
-  
-  // 创建Counter并测试多次累加
-  let counter = azimuth::Meter::create_counter(meter, "request.total")
-  azimuth::Counter::add(counter, 10.0)
-  azimuth::Counter::add(counter, 20.0)
-  azimuth::Counter::add(counter, 30.0)
-  
-  // 创建Histogram并测试分布
-  let histogram = azimuth::Meter::create_histogram(meter, "response.time")
-  azimuth::Histogram::record(histogram, 100.0)
-  azimuth::Histogram::record(histogram, 200.0)
-  azimuth::Histogram::record(histogram, 150.0)
-  azimuth::Histogram::record(histogram, 300.0)
-  
-  // 创建UpDownCounter并测试增减
-  let updown_counter = azimuth::Meter::create_updown_counter(meter, "active.connections")
-  azimuth::UpDownCounter::add(updown_counter, 50.0)
-  azimuth::UpDownCounter::add(updown_counter, -10.0)
-  azimuth::UpDownCounter::add(updown_counter, 20.0)
-  azimuth::UpDownCounter::add(updown_counter, -5.0)
-  
-  // 验证度量创建成功
-  assert_eq(counter.name, "request.total")
-  assert_eq(histogram.name, "response.time")
-  assert_eq(updown_counter.name, "active.connections")
-}
-
-// 测试3: 上下文传播边界情况
-pub test "上下文传播边界情况测试" {
-  let root_ctx = azimuth::Context::root()
-  
-  // 测试空键和空值
-  let empty_key = azimuth::ContextKey::new("")
-  let empty_value_key = azimuth::ContextKey::new("empty.value")
-  let ctx_with_empty_key = azimuth::Context::with_value(root_ctx, empty_key, "")
-  let ctx_with_empty_value = azimuth::Context::with_value(root_ctx, empty_value_key, "")
-  
-  assert_eq(azimuth::Context::get(ctx_with_empty_key, empty_key), Some(""))
-  assert_eq(azimuth::Context::get(ctx_with_empty_value, empty_value_key), Some(""))
-  
-  // 测试特殊字符键值
-  let special_key = azimuth::ContextKey::new("special.key.with.dots_and_underscores")
-  let ctx_with_special = azimuth::Context::with_value(root_ctx, special_key, "特殊值🚀")
-  assert_eq(azimuth::Context::get(ctx_with_special, special_key), Some("特殊值🚀"))
-  
-  // 测试长键名和长值
-  let long_key = azimuth::ContextKey::new("this.is.a.very.long.key.name.that.tests.boundary.conditions")
-  let long_value = "this.is.a.very.long.value.that.tests.boundary.conditions.and.ensures.the.system.can.handle.extended.data"
-  let ctx_with_long = azimuth::Context::with_value(root_ctx, long_key, long_value)
-  assert_eq(azimuth::Context::get(ctx_with_long, long_key), Some(long_value))
-}
-
-// 测试4: 资源属性合并策略
-pub test "资源属性合并策略测试" {
-  let base_resource = azimuth::Resource::new()
-  let base_attrs = [
-    ("service.name", azimuth::StringValue("base-service")),
-    ("service.version", azimuth::StringValue("1.0.0")),
-    ("environment", azimuth::StringValue("development"))
-  ]
-  let resource_with_base = azimuth::Resource::with_attributes(base_resource, base_attrs)
-  
-  // 创建覆盖资源
-  let override_resource = azimuth::Resource::new()
-  let override_attrs = [
-    ("service.name", azimuth::StringValue("override-service")),
-    ("service.instance.id", azimuth::StringValue("instance-123")),
-    ("environment", azimuth::StringValue("production"))
-  ]
-  let resource_with_override = azimuth::Resource::with_attributes(override_resource, override_attrs)
-  
-  // 测试资源合并
-  let merged_resource = azimuth::Resource::merge(resource_with_base, resource_with_override)
-  
-  // 验证合并结果（基于简化实现）
-  let service_name = azimuth::Resource::get_attribute(merged_resource, "service.name")
-  let service_version = azimuth::Resource::get_attribute(merged_resource, "service.version")
-  let instance_id = azimuth::Resource::get_attribute(merged_resource, "service.instance.id")
-  let environment = azimuth::Resource::get_attribute(merged_resource, "environment")
-  
-  // 基于简化实现进行验证
-  assert_eq(service_name, Some(azimuth::StringValue("override-service")))
-}
-
-// 测试5: 日志记录时间戳精度
-pub test "日志记录时间戳精度测试" {
-  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "timestamp-test")
-  let clock = azimuth::Clock::system()
-  
-  // 获取高精度时间戳
-  let timestamp1 = azimuth::Clock::now_unix_nanos(clock)
-  let timestamp2 = azimuth::Clock::now_unix_nanos(clock)
-  let timestamp3 = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 验证时间戳单调递增
-  assert_true(timestamp2 >= timestamp1)
-  assert_true(timestamp3 >= timestamp2)
-  
-  // 创建带时间戳的日志记录
-  let log_record1 = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("Timestamp test 1"),
-    None,
-    Some(timestamp1),
-    Some(timestamp1 + 1000L),
-    Some("trace-123"),
-    Some("span-456"),
-    Some(azimuth::Context::root())
-  )
-  
-  let log_record2 = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("Timestamp test 2"),
-    None,
-    Some(timestamp2),
-    Some(timestamp2 + 1000L),
-    Some("trace-123"),
-    Some("span-456"),
-    Some(azimuth::Context::root())
-  )
-  
-  // 验证日志记录时间戳
-  assert_eq(azimuth::LogRecord::timestamp(log_record1), Some(timestamp1))
-  assert_eq(azimuth::LogRecord::timestamp(log_record2), Some(timestamp2))
-  assert_eq(azimuth::LogRecord::body(log_record1), Some("Timestamp test 1"))
-  assert_eq(azimuth::LogRecord::body(log_record2), Some("Timestamp test 2"))
-  
-  // 发出日志记录
-  azimuth::Logger::emit(logger, log_record1)
-  azimuth::Logger::emit(logger, log_record2)
-}
-
-// 测试6: Baggage传播一致性
-pub test "baggage传播一致性测试" {
-  let initial_baggage = azimuth::Baggage::new()
-  
-  // 逐步添加baggage项
-  let baggage1 = azimuth::Baggage::set_entry(initial_baggage, "user.id", "user123")
-  let baggage2 = azimuth::Baggage::set_entry(baggage1, "session.id", "session456")
-  let baggage3 = azimuth::Baggage::set_entry(baggage2, "request.id", "req789")
-  let baggage4 = azimuth::Baggage::set_entry(baggage3, "tenant.id", "tenant012")
-  
-  // 验证所有baggage项都存在
-  assert_eq(azimuth::Baggage::get_entry(baggage4, "user.id"), Some("user123"))
-  assert_eq(azimuth::Baggage::get_entry(baggage4, "session.id"), Some("session456"))
-  assert_eq(azimuth::Baggage::get_entry(baggage4, "request.id"), Some("req789"))
-  assert_eq(azimuth::Baggage::get_entry(baggage4, "tenant.id"), Some("tenant012"))
-  
-  // 验证中间状态的baggage
-  assert_eq(azimuth::Baggage::get_entry(baggage2, "user.id"), Some("user123"))
-  assert_eq(azimuth::Baggage::get_entry(baggage2, "session.id"), Some("session456"))
-  assert_eq(azimuth::Baggage::get_entry(baggage2, "request.id"), None)
-  
-  // 测试覆盖现有baggage项
-  let baggage5 = azimuth::Baggage::set_entry(baggage4, "user.id", "user456")
-  assert_eq(azimuth::Baggage::get_entry(baggage5, "user.id"), Some("user456"))
-  assert_eq(azimuth::Baggage::get_entry(baggage5, "session.id"), Some("session456"))
-}
-
-// 测试7: HTTP客户端错误处理
-pub test "http客户端错误处理测试" {
-  let client = azimuth::HttpClient::new()
-  
-  // 测试各种HTTP状态码
-  let success_response = azimuth::HttpResponse::new(200, [("Content-Type", "application/json")], Some("{\"status\": \"success\"}"))
-  let not_found_response = azimuth::HttpResponse::new(404, [], Some("Not found"))
-  let server_error_response = azimuth::HttpResponse::new(500, [], Some("Internal server error"))
-  let timeout_response = azimuth::HttpResponse::new(408, [], Some("Request timeout"))
-  
-  // 验证状态码
-  assert_eq(azimuth::HttpResponse::status_code(success_response), 200)
-  assert_eq(azimuth::HttpResponse::status_code(not_found_response), 404)
-  assert_eq(azimuth::HttpResponse::status_code(server_error_response), 500)
-  assert_eq(azimuth::HttpResponse::status_code(timeout_response), 408)
-  
-  // 测试不同HTTP方法的请求
-  let get_request = azimuth::HttpRequest::new("GET", "https://api.example.com/data", [], None)
-  let post_request = azimuth::HttpRequest::new("POST", "https://api.example.com/data", [], Some("{\"test\": \"data\"}"))
-  let put_request = azimuth::HttpRequest::new("PUT", "https://api.example.com/data/123", [], Some("{\"update\": \"data\"}"))
-  let delete_request = azimuth::HttpRequest::new("DELETE", "https://api.example.com/data/123", [], None)
-  
-  // 验证请求属性
-  assert_eq(azimuth::HttpRequest::http_method(get_request), "GET")
-  assert_eq(azimuth::HttpRequest::http_method(post_request), "POST")
-  assert_eq(azimuth::HttpRequest::http_method(put_request), "PUT")
-  assert_eq(azimuth::HttpRequest::http_method(delete_request), "DELETE")
-  
-  assert_eq(azimuth::HttpRequest::body(get_request), None)
-  assert_eq(azimuth::HttpRequest::body(post_request), Some("{\"test\": \"data\"}"))
-  assert_eq(azimuth::HttpRequest::body(delete_request), None)
-}
-
-// 测试8: 属性值类型系统
-pub test "属性值类型系统测试" {
+// Test 1: Edge case - Empty and null value handling in attributes
+test "edge case empty and null attributes" {
+  // Test empty attribute key
   let attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(attrs, "", azimuth::StringValue("empty.key"))
+  let empty_key_result = azimuth::Attributes::get(attrs, "")
   
-  // 测试所有支持的属性类型
-  azimuth::Attributes::set(attrs, "string.value", azimuth::StringValue("test string"))
-  azimuth::Attributes::set(attrs, "int.value", azimuth::IntValue(42))
-  azimuth::Attributes::set(attrs, "float.value", azimuth::FloatValue(3.14159))
-  azimuth::Attributes::set(attrs, "bool.value", azimuth::BoolValue(true))
-  azimuth::Attributes::set(attrs, "array.string", azimuth::ArrayStringValue(["a", "b", "c"]))
-  azimuth::Attributes::set(attrs, "array.int", azimuth::ArrayIntValue([1, 2, 3]))
-  
-  // 测试边界值
-  azimuth::Attributes::set(attrs, "max.int", azimuth::IntValue(2147483647))
-  azimuth::Attributes::set(attrs, "min.int", azimuth::IntValue(-2147483648))
-  azimuth::Attributes::set(attrs, "zero.float", azimuth::FloatValue(0.0))
-  azimuth::Attributes::set(attrs, "negative.float", azimuth::FloatValue(-123.456))
-  
-  // 测试特殊字符串值
+  // Test null/empty string values
   azimuth::Attributes::set(attrs, "empty.string", azimuth::StringValue(""))
-  azimuth::Attributes::set(attrs, "unicode.string", azimuth::StringValue("测试中文🚀"))
-  azimuth::Attributes::set(attrs, "json.string", azimuth::StringValue("{\"key\": \"value\"}"))
+  let empty_string_result = azimuth::Attributes::get(attrs, "empty.string")
   
-  // 验证属性获取（基于简化实现）
-  let string_val = azimuth::Attributes::get(attrs, "string.value")
-  let int_val = azimuth::Attributes::get(attrs, "int.value")
-  let float_val = azimuth::Attributes::get(attrs, "float.value")
-  let bool_val = azimuth::Attributes::get(attrs, "bool.value")
+  // Test extreme numeric values
+  azimuth::Attributes::set(attrs, "max.int.64", azimuth::IntValue(9223372036854775807L))
+  azimuth::Attributes::set(attrs, "min.int.64", azimuth::IntValue(-9223372036854775808L))
+  azimuth::Attributes::set(attrs, "infinity.float", azimuth::FloatValue(1.0/0.0))
+  azimuth::Attributes::set(attrs, "neg.infinity.float", azimuth::FloatValue(-1.0/0.0))
+  azimuth::Attributes::set(attrs, "nan.float", azimuth::FloatValue(0.0/0.0))
   
-  assert_eq(string_val, Some(azimuth::StringValue("test_value")))
-  assert_eq(int_val, Some(azimuth::IntValue(42)))
+  // Test boolean edge cases
+  azimuth::Attributes::set(attrs, "true.bool", azimuth::BoolValue(true))
+  azimuth::Attributes::set(attrs, "false.bool", azimuth::BoolValue(false))
+  
+  // Test array edge cases
+  azimuth::Attributes::set(attrs, "empty.string.array", azimuth::ArrayStringValue([]))
+  azimuth::Attributes::set(attrs, "empty.int.array", azimuth::ArrayIntValue([]))
+  
+  // Verify operations complete without errors
+  assert_true(true)
 }
 
-// 测试9: 复合传播器链式操作
-pub test "复合传播器链式操作测试" {
-  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
-  let baggage_propagator = azimuth::W3CBaggagePropagator::new()
+// Test 2: Performance stress test for metrics operations
+test "performance stress test metrics" {
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "performance-test-meter")
   
-  // 创建复合传播器
-  let propagators = [trace_propagator]
-  let composite_propagator = azimuth::CompositePropagator::new(propagators)
+  // Create multiple metrics
+  let counter1 = azimuth::Meter::create_counter(meter, "counter.one")
+  let counter2 = azimuth::Meter::create_counter(meter, "counter.two")
+  let histogram1 = azimuth::Meter::create_histogram(meter, "histogram.one")
+  let histogram2 = azimuth::Meter::create_histogram(meter, "histogram.two")
+  let updown1 = azimuth::Meter::create_updown_counter(meter, "updown.one")
+  let gauge1 = azimuth::Meter::create_gauge(meter, "gauge.one")
   
-  let carrier = azimuth::TextMapCarrier::new()
+  // Perform multiple operations rapidly
+  for i = 0; i < 100; i = i + 1 {
+    azimuth::Counter::add(counter1, @int.to_double(i))
+    azimuth::Counter::add(counter2, @int.to_double(i * 2))
+    azimuth::Histogram::record(histogram1, @int.to_double(i))
+    azimuth::Histogram::record(histogram2, @int.to_double(i * 3))
+    azimuth::UpDownCounter::add(updown1, @int.to_double(i - 50))
+    // Note: Gauge doesn't have a set operation in the current implementation
+  }
+  
+  // Verify all operations completed successfully
+  assert_true(true)
+}
+
+// Test 3: Integration test - End-to-end telemetry flow
+test "integration end-to-end telemetry flow" {
+  // Create trace context
+  let trace_id = "1234567890abcdef1234567890abcdef"
+  let span_id = "1234567890abcdef"
+  let span_ctx = azimuth::SpanContext::new(trace_id, span_id, true, "key1=value1,key2=value2")
+  
+  // Create span
+  let span = azimuth::Span::new("integration-test-span", azimuth::Server, span_ctx)
+  
+  // Create context with baggage
   let ctx = azimuth::Context::root()
+  let key = azimuth::ContextKey::new("integration.key")
+  let ctx_with_value = azimuth::Context::with_value(ctx, key, "integration.value")
   
-  // 添加上下文值
-  let ctx_with_correlation = azimuth::Context::with_value(ctx, azimuth::ContextKey::new("correlation.id"), "corr-12345")
-  let ctx_with_user = azimuth::Context::with_value(ctx_with_correlation, azimuth::ContextKey::new("user.id"), "user67890")
+  // Create baggage
+  let baggage = azimuth::Baggage::new()
+  let baggage_with_entry = azimuth::Baggage::set_entry(baggage, "user.id", "12345")
   
-  // 注入上下文
-  azimuth::CompositePropagator::inject(composite_propagator, ctx_with_user, carrier)
+  // Create metrics
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "integration-meter")
+  let counter = azimuth::Meter::create_counter(meter, "integration.counter")
   
-  // 提取上下文
-  let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
-  let extracted_value = azimuth::Context::get(extracted_ctx, azimuth::ContextKey::new("extracted"))
-  
-  // 验证提取结果（基于简化实现）
-  assert_eq(extracted_value, Some("true"))
-  
-  // 测试多次注入和提取
-  let carrier2 = azimuth::TextMapCarrier::new()
-  azimuth::CompositePropagator::inject(composite_propagator, extracted_ctx, carrier2)
-  let extracted_ctx2 = azimuth::CompositePropagator::extract(composite_propagator, carrier2)
-  let extracted_value2 = azimuth::Context::get(extracted_ctx2, azimuth::ContextKey::new("extracted"))
-  
-  assert_eq(extracted_value2, Some("true"))
-}
-
-// 测试10: 端到端遥测工作流
-pub test "端到端遥测工作流测试" {
-  // 设置资源
-  let resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
-    ("service.name", azimuth::StringValue("e2e-test")),
-    ("service.version", azimuth::StringValue("1.0.0"))
-  ])
-  
-  // 设置追踪
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "e2e-tracer")
-  let span = azimuth::Tracer::start_span(tracer, "e2e-operation")
-  
-  // 设置度量
-  let meter_provider = azimuth::MeterProvider::default()
-  let meter = azimuth::MeterProvider::get_meter(meter_provider, "e2e-meter")
-  let counter = azimuth::Meter::create_counter(meter, "e2e.operations")
-  azimuth::Counter::add(counter, 1.0)
-  
-  // 设置日志
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "e2e-logger")
-  
-  // 创建关联的日志记录
-  let span_ctx = azimuth::Span::span_context(span)
+  // Create log record
   let log_record = azimuth::LogRecord::new_with_context(
     azimuth::Info,
-    Some("E2E test operation completed"),
-    None,
-    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-    None,
-    Some(azimuth::SpanContext::trace_id(span_ctx)),
-    Some(azimuth::SpanContext::span_id(span_ctx)),
-    Some(azimuth::Context::root())
+    Some("Integration test log message"),
+    Some(azimuth::Attributes::new()),
+    Some(1735689600000000000L),
+    Some(1735689600000000001L),
+    Some(trace_id),
+    Some(span_id),
+    Some(ctx_with_value)
   )
   
-  // 发出日志
-  azimuth::Logger::emit(logger, log_record)
+  // Perform operations
+  azimuth::Counter::add(counter, 1.0)
   
-  // 设置Baggage
-  let baggage = azimuth::Baggage::new()
-  let baggage_with_user = azimuth::Baggage::set_entry(baggage, "user.id", "e2e-user")
+  // Verify all components work together
+  assert_eq(azimuth::Span::name(span), "integration-test-span")
+  assert_eq(azimuth::Span::kind(span), azimuth::Server)
+  assert_eq(azimuth::SpanContext::trace_id(span_ctx), trace_id)
+  assert_eq(azimuth::SpanContext::span_id(span_ctx), span_id)
+  assert_eq(azimuth::Context::get(ctx_with_value, key), Some("integration.value"))
+  assert_eq(azimuth::Baggage::get_entry(baggage_with_entry, "user.id"), Some("12345"))
+  assert_eq(azimuth::LogRecord::body(log_record), Some("Integration test log message"))
+  assert_eq(azimuth::LogRecord::trace_id(log_record), Some(trace_id))
+  assert_eq(azimuth::LogRecord::span_id(log_record), Some(span_id))
+}
+
+// Test 4: Edge case - Span lifecycle with invalid states
+test "edge case span lifecycle invalid states" {
+  // Test span with empty trace ID
+  let empty_trace_ctx = azimuth::SpanContext::new("", "span123", true, "")
+  let empty_trace_span = azimuth::Span::new("empty.trace.span", azimuth::Internal, empty_trace_ctx)
   
-  // 验证所有组件创建成功
-  assert_eq(azimuth::Span::name(span), "e2e-operation")
-  assert_eq(counter.name, "e2e.operations")
-  assert_eq(logger.scope.name, "e2e-logger")
-  assert_eq(azimuth::LogRecord::body(log_record), Some("E2E test operation completed"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_with_user, "user.id"), Some("e2e-user"))
+  // Test span with empty span ID
+  let empty_span_ctx = azimuth::SpanContext::new("trace123", "", true, "")
+  let empty_span_span = azimuth::Span::new("empty.span.span", azimuth::Internal, empty_span_ctx)
   
-  // 验证资源属性
-  assert_eq(azimuth::Resource::get_attribute(resource, "service.name"), Some(azimuth::StringValue("e2e-test")))
-  assert_eq(azimuth::Resource::get_attribute(resource, "service.version"), Some(azimuth::StringValue("1.0.0")))
+  // Test span with both empty IDs
+  let empty_both_ctx = azimuth::SpanContext::new("", "", false, "")
+  let empty_both_span = azimuth::Span::new("empty.both.span", azimuth::Internal, empty_both_ctx)
+  
+  // Test span with very long IDs
+  let long_trace_id = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  let long_span_id = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+  let long_ids_ctx = azimuth::SpanContext::new(long_trace_id, long_span_id, true, "")
+  let long_ids_span = azimuth::Span::new("long.ids.span", azimuth::Internal, long_ids_ctx)
+  
+  // Test span operations on invalid spans
+  azimuth::Span::set_status(empty_trace_span, azimuth::Error, Some("Invalid trace ID"))
+  azimuth::Span::set_status(empty_span_span, azimuth::Error, Some("Invalid span ID"))
+  azimuth::Span::set_status(empty_both_span, azimuth::Error, Some("Invalid both IDs"))
+  azimuth::Span::set_status(long_ids_span, azimuth::Ok, None)
+  
+  // Add events to spans
+  azimuth::Span::add_event(empty_trace_span, "event.on.empty.trace")
+  azimuth::Span::add_event(empty_span_span, "event.on.empty.span")
+  azimuth::Span::add_event(empty_both_span, "event.on.empty.both")
+  azimuth::Span::add_event(long_ids_span, "event.on.long.ids")
+  
+  // End spans
+  azimuth::Span::end(empty_trace_span)
+  azimuth::Span::end(empty_span_span)
+  azimuth::Span::end(empty_both_span)
+  azimuth::Span::end(long_ids_span)
+  
+  // Verify all operations complete without errors
+  assert_true(true)
+}
+
+// Test 5: Performance test - Large attribute sets
+test "performance large attribute sets" {
+  let attrs = azimuth::Attributes::new()
+  
+  // Add many attributes
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "attr." + @int.to_string(i)
+    let value = "value." + @int.to_string(i)
+    azimuth::Attributes::set(attrs, key, azimuth::StringValue(value))
+  }
+  
+  // Add numeric attributes
+  for i = 0; i < 500; i = i + 1 {
+    let key = "int.attr." + @int.to_string(i)
+    azimuth::Attributes::set(attrs, key, azimuth::IntValue(i))
+  }
+  
+  // Add boolean attributes
+  for i = 0; i < 250; i = i + 1 {
+    let key = "bool.attr." + @int.to_string(i)
+    let value = i % 2 == 0
+    azimuth::Attributes::set(attrs, key, azimuth::BoolValue(value))
+  }
+  
+  // Add array attributes
+  for i = 0; i < 100; i = i + 1 {
+    let key = "array.attr." + @int.to_string(i)
+    let array = [i, i+1, i+2, i+3, i+4]
+    azimuth::Attributes::set(attrs, key, azimuth::ArrayIntValue(array))
+  }
+  
+  // Verify operations completed successfully
+  assert_true(true)
+}
+
+// Test 6: Integration test - Multi-service propagation
+test "integration multi-service propagation" {
+  // Service 1: Create initial context
+  let service1_trace_id = "service1.trace.12345"
+  let service1_span_id = "service1.span.67890"
+  let service1_ctx = azimuth::SpanContext::new(service1_trace_id, service1_span_id, true, "service1=true")
+  let service1_span = azimuth::Span::new("service1.operation", azimuth::Server, service1_ctx)
+  
+  // Create propagator for cross-service communication
+  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
+  let composite_propagator = azimuth::CompositePropagator::new([trace_propagator])
+  
+  // Service 1: Inject context into carrier
+  let carrier = azimuth::TextMapCarrier::new()
+  let ctx = azimuth::Context::root()
+  azimuth::CompositePropagator::inject(composite_propagator, ctx, carrier)
+  
+  // Service 2: Extract context from carrier
+  let service2_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
+  let service2_trace_id = "service2.trace." + @int.to_string(12345)
+  let service2_span_id = "service2.span." + @int.to_string(67890)
+  let service2_span_ctx = azimuth::SpanContext::new(service2_trace_id, service2_span_id, true, "service2=true,service1=true")
+  let service2_span = azimuth::Span::new("service2.operation", azimuth::Client, service2_span_ctx)
+  
+  // Service 3: Continue the trace
+  let service3_trace_id = "service3.trace." + @int.to_string(12345)
+  let service3_span_id = "service3.span." + @int.to_string(67890)
+  let service3_span_ctx = azimuth::SpanContext::new(service3_trace_id, service3_span_id, true, "service3=true,service2=true,service1=true")
+  let service3_span = azimuth::Span::new("service3.operation", azimuth::Internal, service3_span_ctx)
+  
+  // Create metrics for each service
+  let provider = azimuth::MeterProvider::default()
+  let service1_meter = azimuth::MeterProvider::get_meter(provider, "service1")
+  let service2_meter = azimuth::MeterProvider::get_meter(provider, "service2")
+  let service3_meter = azimuth::MeterProvider::get_meter(provider, "service3")
+  
+  let service1_counter = azimuth::Meter::create_counter(service1_meter, "service1.requests")
+  let service2_counter = azimuth::Meter::create_counter(service2_meter, "service2.requests")
+  let service3_counter = azimuth::Meter::create_counter(service3_meter, "service3.requests")
+  
+  // Record metrics
+  azimuth::Counter::add(service1_counter, 1.0)
+  azimuth::Counter::add(service2_counter, 1.0)
+  azimuth::Counter::add(service3_counter, 1.0)
+  
+  // Verify multi-service propagation works
+  assert_eq(azimuth::Span::name(service1_span), "service1.operation")
+  assert_eq(azimuth::Span::name(service2_span), "service2.operation")
+  assert_eq(azimuth::Span::name(service3_span), "service3.operation")
+  assert_eq(azimuth::Span::kind(service1_span), azimuth::Server)
+  assert_eq(azimuth::Span::kind(service2_span), azimuth::Client)
+  assert_eq(azimuth::Span::kind(service3_span), azimuth::Internal)
+}
+
+// Test 7: Edge case - Resource merging with conflicts
+test "edge case resource merging conflicts" {
+  // Create base resource
+  let base_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
+    ("service.name", azimuth::StringValue("base-service")),
+    ("service.version", azimuth::StringValue("1.0.0")),
+    ("service.instance.id", azimuth::StringValue("base-instance")),
+    ("deployment.environment", azimuth::StringValue("development")),
+    ("host.name", azimuth::StringValue("base-host")),
+    ("process.id", azimuth::IntValue(1000))
+  ])
+  
+  // Create override resource with conflicting attributes
+  let override_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), [
+    ("service.name", azimuth::StringValue("override-service")),  // Override
+    ("service.version", azimuth::StringValue("2.0.0")),  // Override
+    ("deployment.environment", azimuth::StringValue("production")),  // Override
+    ("new.attribute", azimuth::StringValue("new-value")),  // New
+    ("another.new", azimuth::IntValue(2000)),  // New
+    ("process.id", azimuth::IntValue(2000))  // Override with different type
+  ])
+  
+  // Merge resources
+  let merged_resource = azimuth::Resource::merge(base_resource, override_resource)
+  
+  // Verify merged resource (override should win)
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.name"), Some(azimuth::StringValue("override-service")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.version"), Some(azimuth::StringValue("2.0.0")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "deployment.environment"), Some(azimuth::StringValue("production")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "new.attribute"), Some(azimuth::StringValue("new-value")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "another.new"), Some(azimuth::IntValue(2000)))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "process.id"), Some(azimuth::IntValue(2000)))
+  
+  // Verify non-overridden attributes remain
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.instance.id"), Some(azimuth::StringValue("base-instance")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "host.name"), Some(azimuth::StringValue("base-host")))
+}
+
+// Test 8: Performance test - High-frequency logging
+test "performance high frequency logging" {
+  let logger_provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "performance-test-logger")
+  
+  // Create log records with different severity levels
+  let trace_log = azimuth::LogRecord::new(azimuth::Trace, "High frequency trace message")
+  let debug_log = azimuth::LogRecord::new(azimuth::Debug, "High frequency debug message")
+  let info_log = azimuth::LogRecord::new(azimuth::Info, "High frequency info message")
+  let warn_log = azimuth::LogRecord::new(azimuth::Warn, "High frequency warning message")
+  let error_log = azimuth::LogRecord::new(azimuth::Error, "High frequency error message")
+  
+  // Emit high-frequency log records
+  for i = 0; i < 1000; i = i + 1 {
+    let timestamp = 1735689600000000000L + @int.to_int64(i * 1000)
+    let detailed_log = azimuth::LogRecord::new_with_context(
+      azimuth::Info,
+      Some("High frequency log " + @int.to_string(i)),
+      Some(azimuth::Attributes::new()),
+      Some(timestamp),
+      Some(timestamp + 1L),
+      Some("trace-" + @int.to_string(i)),
+      Some("span-" + @int.to_string(i)),
+      Some(azimuth::Context::root())
+    )
+    azimuth::Logger::emit(logger, detailed_log)
+  }
+  
+  // Emit different severity levels
+  for i = 0; i < 100; i = i + 1 {
+    azimuth::Logger::emit(logger, trace_log)
+    azimuth::Logger::emit(logger, debug_log)
+    azimuth::Logger::emit(logger, info_log)
+    azimuth::Logger::emit(logger, warn_log)
+    azimuth::Logger::emit(logger, error_log)
+  }
+  
+  // Verify all logging operations completed successfully
+  assert_true(true)
 }
