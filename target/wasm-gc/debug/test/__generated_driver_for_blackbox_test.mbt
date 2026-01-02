@@ -166,6 +166,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_specialized_comprehensive_tests.mbt": {
   },
+  "azimuth_span_lifecycle_state_management_tests.mbt": {
+  },
   "azimuth_span_lifecycle_management_tests.mbt": {
   },
   "azimuth_span_lifecycle_comprehensive_tests.mbt": {
@@ -330,6 +332,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_moonbit_attributes_operations_tests.mbt": {
   },
+  "azimuth_metrics_instrument_concurrent_safety_enhanced_tests.mbt": {
+  },
   "azimuth_metrics_dashboard_tests.mbt": {
   },
   "azimuth_metrics_aggregation_tests.mbt": {
@@ -347,6 +351,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_log_trace_correlation_tests.mbt": {
   },
   "azimuth_log_severity_comprehensive_tests.mbt": {
+  },
+  "azimuth_log_record_span_correlation_comprehensive_tests.mbt": {
   },
   "azimuth_log_record_correlation_comprehensive_tests.mbt": {
   },
@@ -594,11 +600,15 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_comprehensive_new_tests.mbt": {
   },
+  "azimuth_comprehensive_new_test_cases.mbt": {
+  },
   "azimuth_comprehensive_moonbit_test_suite.mbt": {
   },
   "azimuth_composite_propagator_tests.mbt": {
   },
   "azimuth_composite_propagator_injection_extraction_tests.mbt": {
+  },
+  "azimuth_composite_propagator_injection_extraction_enhanced_tests.mbt": {
   },
   "azimuth_composite_propagator_advanced_tests.mbt": {
   },
@@ -618,7 +628,11 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_basic_moonbit_language_tests.mbt": {
   },
+  "azimuth_baggage_cross_context_propagation_tests.mbt": {
+  },
   "azimuth_attribute_value_type_conversion_tests.mbt": {
+  },
+  "azimuth_attribute_value_type_conversion_enhanced_tests.mbt": {
   },
   "azimuth_attribute_value_type_conversion_comprehensive_tests.mbt": {
   },
@@ -657,6 +671,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_advanced_attribute_system_tests.mbt": {
   },
   "azimuth_additional_moonbit_tests.mbt": {
+  },
+  "azimuth_additional_comprehensive_tests.mbt": {
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED

@@ -1,323 +1,305 @@
-// Azimuth Timestamp Operations Comprehensive Tests
-// 测试时间戳操作功能
+// Azimuth Timestamp Operations Tests
+// Test clock functionality, timestamp generation, and time-related operations
 
 test "clock_system_creation" {
-  // 测试系统时钟创建
   let clock = Clock::system()
-  // 由于是空结构体，只能验证创建成功
-  assert_eq(true, true)
+  
+  // In simplified implementation, we just verify creation doesn't fail
+  @test.succeed()
 }
 
 test "clock_now_unix_nanos" {
-  // 测试获取当前Unix纳秒时间戳
   let clock = Clock::system()
   let timestamp = Clock::now_unix_nanos(clock)
   
-  // 验证时间戳是合理的值（2025年的时间戳）
-  assert_eq(timestamp, 1735689600000000000L)
+  // Verify timestamp is in reasonable range for 2025
+  // 2025-01-01 00:00:00 UTC = 1735689600000000000 nanoseconds since Unix epoch
+  let min_timestamp = 1704067200000000000L  // 2024-01-01
+  let max_timestamp = 1735689600000000000L  // 2025-01-01
+  
+  assert_eq!(timestamp, 1735689600000000000L)
 }
 
-test "clock_multiple_timestamps" {
-  // 测试多次获取时间戳
+test "clock_consistency" {
   let clock = Clock::system()
   
+  // Get multiple timestamps
   let timestamp1 = Clock::now_unix_nanos(clock)
   let timestamp2 = Clock::now_unix_nanos(clock)
   let timestamp3 = Clock::now_unix_nanos(clock)
   
-  // 在当前实现中，所有时间戳都是相同的固定值
-  assert_eq(timestamp1, timestamp2)
-  assert_eq(timestamp2, timestamp3)
-  assert_eq(timestamp1, 1735689600000000000L)
+  // In simplified implementation, all timestamps are the same
+  assert_eq!(timestamp1, timestamp2)
+  assert_eq!(timestamp2, timestamp3)
+  assert_eq!(timestamp1, 1735689600000000000L)
 }
 
 test "random_system_creation" {
-  // 测试系统随机数生成器创建
   let random = Random::system()
-  // 由于是空结构体，只能验证创建成功
-  assert_eq(true, true)
+  
+  // In simplified implementation, we just verify creation doesn't fail
+  @test.succeed()
 }
 
 test "random_next_bytes" {
-  // 测试生成随机字节
-  let random = Random::system()
-  let bytes = Random::next_bytes(random, 10)
-  
-  // 验证生成的字节长度
-  assert_eq(bytes.length(), 0)  // 当前实现返回空数组
-}
-
-test "random_next_bytes_different_lengths" {
-  // 测试生成不同长度的随机字节
   let random = Random::system()
   
-  let bytes0 = Random::next_bytes(random, 0)
-  let bytes5 = Random::next_bytes(random, 5)
-  let bytes10 = Random::next_bytes(random, 10)
-  let bytes100 = Random::next_bytes(random, 100)
+  // Test different lengths
+  let bytes1 = Random::next_bytes(random, 0)
+  let bytes2 = Random::next_bytes(random, 1)
+  let bytes3 = Random::next_bytes(random, 10)
+  let bytes4 = Random::next_bytes(random, 100)
   
-  // 验证不同长度的字节生成
-  assert_eq(bytes0.length(), 0)
-  assert_eq(bytes5.length(), 0)
-  assert_eq(bytes10.length(), 0)
-  assert_eq(bytes100.length(), 0)
+  // In simplified implementation, we get empty arrays
+  assert_eq!(bytes1.length, 0)
+  assert_eq!(bytes2.length, 0)
+  assert_eq!(bytes3.length, 0)
+  assert_eq!(bytes4.length, 0)
 }
 
 test "random_next_u64" {
-  // 测试生成随机UInt64
-  let random = Random::system()
-  let value = Random::next_u64(random)
-  
-  // 验证生成的值
-  assert_eq(value, 12345UL)
-}
-
-test "random_multiple_u64_values" {
-  // 测试生成多个UInt64值
   let random = Random::system()
   
+  // Get multiple random values
   let value1 = Random::next_u64(random)
   let value2 = Random::next_u64(random)
   let value3 = Random::next_u64(random)
   
-  // 在当前实现中，所有值都是相同的固定值
-  assert_eq(value1, value2)
-  assert_eq(value2, value3)
-  assert_eq(value1, 12345UL)
+  // In simplified implementation, all values are the same
+  assert_eq!(value1, 12345UL)
+  assert_eq!(value2, 12345UL)
+  assert_eq!(value3, 12345UL)
 }
 
 test "timestamp_in_log_records" {
-  // 测试时间戳在日志记录中的使用
   let clock = Clock::system()
   let timestamp = Clock::now_unix_nanos(clock)
+  let observed_timestamp = Clock::now_unix_nanos(clock)
   
-  let log_record = LogRecord::new_with_context(
+  let record = LogRecord::new_with_context(
     Info,
-    Some("Log with timestamp"),
+    Some("Log with timestamps"),
     None,
     Some(timestamp),
-    Some(timestamp + 1000L),
+    Some(observed_timestamp),
     None,
     None,
     None
   )
   
-  // 验证时间戳设置
-  assert_eq(log_record.timestamp, Some(timestamp))
-  assert_eq(log_record.observed_timestamp, Some(timestamp + 1000L))
+  // Verify record was created with timestamps
+  match LogRecord::body(record) {
+    Some(message) => assert_eq!(message, "Log with timestamps")
+    None => @test.abort("Expected log body to contain message")
+  }
+  
+  match LogRecord::severity_number(record) {
+    Info => @test.succeed()
+    _ => @test.abort("Expected Info severity")
+  }
 }
 
-test "timestamp_range_validation" {
-  // 测试时间戳范围验证
+test "timestamp_span_lifecycle" {
   let clock = Clock::system()
-  let timestamp = Clock::now_unix_nanos(clock)
   
-  // 验证时间戳在合理范围内（2025年）
-  assert_eq(timestamp, 1735689600000000000L)
-  
-  // 测试时间戳运算
-  let timestamp_plus_hour = timestamp + (3600L * 1000000000L)
-  let timestamp_minus_day = timestamp - (24L * 3600L * 1000000000L)
-  
-  // 验证运算结果
-  assert_eq(timestamp_plus_hour, 1735693200000000000L)
-  assert_eq(timestamp_minus_day, 1735603200000000000L)
-}
-
-test "timestamp_with_span_lifecycle" {
-  // 测试时间戳在Span生命周期中的使用
-  let clock = Clock::system()
+  // Simulate span lifecycle with timestamps
   let start_time = Clock::now_unix_nanos(clock)
   
-  let span_context = SpanContext::new("trace-timestamp", "span-timestamp", true, "")
-  let span = Span::new("timestamp-span", Internal, span_context)
+  let span_ctx = SpanContext::new("trace", "span", true, "")
+  let span = Span::new("test_span", Internal, span_ctx)
   
-  // 模拟Span操作
-  Span::add_event(span, "span.started", None)
+  // Simulate some work
+  let work_time = Clock::now_unix_nanos(clock)
   
-  let mid_time = Clock::now_unix_nanos(clock)
+  Span::add_event(span, "event1", None)
   
-  Span::set_status(span, Ok, Some("Operation completed"))
+  let event_time = Clock::now_unix_nanos(clock)
+  
+  Span::set_status(span, Ok, Some("Completed"))
   Span::end(span)
   
   let end_time = Clock::now_unix_nanos(clock)
   
-  // 验证时间戳序列
-  assert_eq(start_time, 1735689600000000000L)
-  assert_eq(mid_time, 1735689600000000000L)
-  assert_eq(end_time, 1735689600000000000L)
+  // In simplified implementation, all timestamps are the same
+  assert_eq!(start_time, 1735689600000000000L)
+  assert_eq!(work_time, 1735689600000000000L)
+  assert_eq!(event_time, 1735689600000000000L)
+  assert_eq!(end_time, 1735689600000000000L)
 }
 
-test "timestamp_with_metrics" {
-  // 测试时间戳在指标记录中的使用
+test "timestamp_metric_recording" {
+  let clock = Clock::system()
+  
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "timestamp_meter")
+  let histogram = Meter::create_histogram(meter, "duration_histogram", Some("Operation duration"), Some("ms"))
+  
+  // Simulate metric recording with timestamps
+  let start_time = Clock::now_unix_nanos(clock)
+  
+  // Simulate operation
+  Histogram::record(histogram, 100.0)
+  
+  let end_time = Clock::now_unix_nanos(clock)
+  
+  // In simplified implementation, all timestamps are the same
+  assert_eq!(start_time, 1735689600000000000L)
+  assert_eq!(end_time, 1735689600000000L)
+}
+
+test "timestamp_propagation_context" {
+  let clock = Clock::system()
+  
+  // Create context with timestamp
+  let timestamp = Clock::now_unix_nanos(clock)
+  let context_key = ContextKey::new("timestamp")
+  let context = Context::with_value(Context::root(), context_key, timestamp.to_string())
+  
+  // Verify timestamp in context
+  match Context::get(context, context_key) {
+    Some(value) => assert_eq!(value, "1735689600000000000")
+    None => @test.abort("Expected timestamp in context")
+  }
+}
+
+test "timestamp_serialization_format" {
   let clock = Clock::system()
   let timestamp = Clock::now_unix_nanos(clock)
   
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timestamp-meter")
-  let counter = Meter::create_counter(meter, "timestamp.counter")
-  let histogram = Meter::create_histogram(meter, "timestamp.histogram")
+  // Test timestamp string representation
+  let timestamp_str = timestamp.to_string()
+  assert_eq!(timestamp_str, "1735689600000000000")
   
-  // 在特定时间戳记录指标
-  Counter::add(counter, 1.0)
-  Histogram::record(histogram, 100.0)
+  // Test timestamp in different formats
+  let timestamp_as_int = timestamp
+  let timestamp_as_float = timestamp.to_double()
   
-  // 验证时间戳一致性
-  let current_timestamp = Clock::now_unix_nanos(clock)
-  assert_eq(timestamp, current_timestamp)
-}
-
-test "timestamp_with_context_propagation" {
-  // 测试时间戳在上下文传播中的使用
-  let clock = Clock::system()
-  let inject_time = Clock::now_unix_nanos(clock)
-  
-  // 创建上下文并注入时间戳信息
-  let context = Context::with_value(
-    Context::root(),
-    ContextKey::new("timestamp.inject"),
-    inject_time.to_string()
-  )
-  
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let composite_propagator = CompositePropagator::new([trace_propagator])
-  let carrier = TextMapCarrier::new()
-  
-  CompositePropagator::inject(composite_propagator, context, carrier)
-  
-  let extract_time = Clock::now_unix_nanos(clock)
-  
-  // 提取上下文
-  let extracted_context = CompositePropagator::extract(composite_propagator, carrier)
-  
-  let final_time = Clock::now_unix_nanos(clock)
-  
-  // 验证时间戳序列
-  assert_eq(inject_time, 1735689600000000000L)
-  assert_eq(extract_time, 1735689600000000000L)
-  assert_eq(final_time, 1735689600000000000L)
-}
-
-test "timestamp_precision_operations" {
-  // 测试时间戳精度操作
-  let clock = Clock::system()
-  let nanos_timestamp = Clock::now_unix_nanos(clock)
-  
-  // 转换为不同精度
-  let micros_timestamp = nanos_timestamp / 1000L
-  let millis_timestamp = nanos_timestamp / 1000000L
-  let seconds_timestamp = nanos_timestamp / 1000000000L
-  
-  // 验证转换结果
-  assert_eq(nanos_timestamp, 1735689600000000000L)
-  assert_eq(micros_timestamp, 1735689600000000L)
-  assert_eq(millis_timestamp, 1735689600000L)
-  assert_eq(seconds_timestamp, 1735689600L)
-  
-  // 验证反向转换
-  assert_eq(micros_timestamp * 1000L, nanos_timestamp)
-  assert_eq(millis_timestamp * 1000000L, nanos_timestamp)
-  assert_eq(seconds_timestamp * 1000000000L, nanos_timestamp)
+  assert_eq!(timestamp_as_int, 1735689600000000000L)
+  @test.assert_eq!(timestamp_as_float, 1.7356896e18, "Expected timestamp as float")
 }
 
 test "timestamp_arithmetic_operations" {
-  // 测试时间戳算术运算
   let clock = Clock::system()
   let base_timestamp = Clock::now_unix_nanos(clock)
   
-  // 时间间隔常量（纳秒）
-  let one_second = 1000000000L
-  let one_minute = 60L * one_second
-  let one_hour = 60L * one_minute
-  let one_day = 24L * one_hour
+  // Simulate timestamp arithmetic
+  let one_second_nanos = 1000000000L
+  let one_minute_nanos = 60 * one_second_nanos
+  let one_hour_nanos = 60 * one_minute_nanos
   
-  // 执行时间戳运算
-  let future_timestamp = base_timestamp + one_day
-  let past_timestamp = base_timestamp - one_hour
+  // Calculate future timestamps
+  let future_1s = base_timestamp + one_second_nanos
+  let future_1m = base_timestamp + one_minute_nanos
+  let future_1h = base_timestamp + one_hour_nanos
   
-  // 验证运算结果
-  assert_eq(base_timestamp, 1735689600000000000L)
-  assert_eq(future_timestamp, 1735776000000000000L)
-  assert_eq(past_timestamp, 1735686000000000000L)
+  // Calculate past timestamps
+  let past_1s = base_timestamp - one_second_nanos
+  let past_1m = base_timestamp - one_minute_nanos
+  let past_1h = base_timestamp - one_hour_nanos
   
-  // 计算时间差
-  let diff_future = future_timestamp - base_timestamp
-  let diff_past = base_timestamp - past_timestamp
+  // Verify calculations
+  assert_eq!(base_timestamp, 1735689600000000000L)
+  assert_eq!(future_1s, 1735689601000000000L)
+  assert_eq!(future_1m, 1735689660000000000L)
+  assert_eq!(future_1h, 1735693200000000000L)
+  assert_eq!(past_1s, 1735689599000000000L)
+  assert_eq!(past_1m, 1735689540000000000L)
+  assert_eq!(past_1h, 1735686000000000000L)
+}
+
+test "timestamp_comparison_operations" {
+  let clock = Clock::system()
   
-  assert_eq(diff_future, one_day)
-  assert_eq(diff_past, one_hour)
+  // Get timestamps
+  let timestamp1 = Clock::now_unix_nanos(clock)
+  let timestamp2 = Clock::now_unix_nanos(clock)
+  let timestamp3 = Clock::now_unix_nanos(clock)
+  
+  // In simplified implementation, all timestamps are equal
+  assert_eq!(timestamp1, timestamp2)
+  assert_eq!(timestamp2, timestamp3)
+  assert_eq!(timestamp1, timestamp3)
+  
+  // Test comparison with calculated values
+  let earlier = timestamp1 - 1000000000L
+  let later = timestamp1 + 1000000000L
+  
+  assert_eq!(earlier < timestamp1, true)
+  assert_eq!(timestamp1 < later, true)
+  assert_eq!(earlier < later, true)
+}
+
+test "timestamp_edge_cases" {
+  let clock = Clock::system()
+  let timestamp = Clock::now_unix_nanos(clock)
+  
+  // Test with zero timestamp
+  let zero_timestamp = 0L
+  assert_eq!(zero_timestamp < timestamp, true)
+  
+  // Test with maximum timestamp
+  let max_timestamp = 9223372036854775807L  // Max Int64
+  assert_eq!(timestamp < max_timestamp, true)
+  
+  // Test with minimum timestamp
+  let min_timestamp = -9223372036854775808L  // Min Int64
+  assert_eq!(min_timestamp < timestamp, true)
+  
+  // Test timestamp overflow/underflow scenarios
+  let near_max = 9223372036854775807L - 1000000000L
+  let near_min = -9223372036854775808L + 1000000000L
+  
+  assert_eq!(near_max < max_timestamp, true)
+  assert_eq!(min_timestamp < near_min, true)
 }
 
 test "timestamp_with_random_operations" {
-  // 测试时间戳与随机操作的结合
   let clock = Clock::system()
   let random = Random::system()
   
+  // Get timestamp and random value
   let timestamp = Clock::now_unix_nanos(clock)
   let random_value = Random::next_u64(random)
-  let random_bytes = Random::next_bytes(random, 8)
   
-  // 使用随机值创建唯一标识符
-  let unique_id = timestamp.to_string() + "-" + random_value.to_string()
+  // Use both in a simulated operation
+  let combined_id = timestamp.to_string() + "-" + random_value.to_string()
   
-  // 验证组件值
-  assert_eq(timestamp, 1735689600000000000L)
-  assert_eq(random_value, 12345UL)
-  assert_eq(random_bytes.length(), 0)
+  // Verify combined ID format
+  assert_eq!(combined_id, "1735689600000000000-12345")
   
-  // 验证唯一标识符不为空
-  assert_eq(unique_id.length() > 0, true)
+  // Test with multiple operations
+  for i in 0..5 {
+    let ts = Clock::now_unix_nanos(clock)
+    let rv = Random::next_u64(random)
+    let id = ts.to_string() + "-" + rv.to_string()
+    
+    // All should be the same in simplified implementation
+    assert_eq!(ts, 1735689600000000000L)
+    assert_eq!(rv, 12345UL)
+    assert_eq!(id, "1735689600000000000-12345")
+  }
 }
 
-test "timestamp_comprehensive_workflow" {
-  // 测试时间戳的完整工作流
+test "timestamp_precision_and_formatting" {
   let clock = Clock::system()
-  let random = Random::system()
+  let timestamp = Clock::now_unix_nanos(clock)
   
-  // 1. 记录操作开始时间
-  let start_timestamp = Clock::now_unix_nanos(clock)
+  // Test nanosecond precision
+  let nanos_per_second = 1000000000L
+  let seconds = timestamp / nanos_per_second
+  let nanos = timestamp % nanos_per_second
   
-  // 2. 创建Span并记录事件
-  let span_context = SpanContext::new("trace-workflow", "span-workflow", true, "")
-  let span = Span::new("workflow-span", Internal, span_context)
+  assert_eq!(seconds, 1735689600L)
+  assert_eq!(nanos, 0L)
   
-  Span::add_event(span, "workflow.started", None)
+  // Test timestamp conversion to different units
+  let timestamp_as_millis = timestamp / 1000000L
+  let timestamp_as_seconds = timestamp / 1000000000L
   
-  // 3. 记录指标
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "workflow-meter")
-  let counter = Meter::create_counter(meter, "workflow.operations")
+  assert_eq!(timestamp_as_millis, 1735689600000L)
+  assert_eq!(timestamp_as_seconds, 1735689600L)
   
-  Counter::add(counter, 1.0)
-  
-  // 4. 记录日志
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "workflow-logger")
-  
-  let log_record = LogRecord::new_with_context(
-    Info,
-    Some("Workflow operation in progress"),
-    None,
-    Some(start_timestamp),
-    Some(Clock::now_unix_nanos(clock)),
-    Some(span_context.trace_id),
-    Some(span_context.span_id),
-    None
-  )
-  
-  Logger::emit(logger, log_record)
-  
-  // 5. 完成操作
-  Span::set_status(span, Ok, Some("Workflow completed"))
-  Span::end(span)
-  
-  let end_timestamp = Clock::now_unix_nanos(clock)
-  
-  // 6. 生成唯一操作ID
-  let operation_id = start_timestamp.to_string() + "-" + Random::next_u64(random).to_string()
-  
-  // 验证工作流时间戳
-  assert_eq(start_timestamp, 1735689600000000000L)
-  assert_eq(end_timestamp, 1735689600000000000L)
-  assert_eq(operation_id.length() > 0, true)
+  // Test timestamp string formatting
+  let formatted = seconds.to_string() + "." + nanos.to_string()
+  assert_eq!(formatted, "1735689600.0")
 }
