@@ -8,6 +8,6 @@
     "moonbitlang/core/assertion": "*"
   },
   "test": {
-    "test": ["azimuth_comprehensive_core_tests.mbt", "azimuth_enhanced_moonbit_tests.mbt", "../azimuth_new_focused_moonbit_tests.mbt", "azimuth_advanced_quality_test_suite.mbt", "azimuth_advanced_telemetry_features_tests.mbt", "azimuth_telemetry_integration_tests.mbt", "azimuth_premium_telemetry_tests.mbt", "azimuth_premium_quality_test_cases.mbt"]
+    "test": ["azimuth_comprehensive_core_tests.mbt", "azimuth_enhanced_moonbit_tests.mbt", "../azimuth_new_focused_moonbit_tests.mbt", "azimuth_advanced_quality_test_suite.mbt", "azimuth_advanced_telemetry_features_tests.mbt", "azimuth_telemetry_integration_tests.mbt", "azimuth_premium_telemetry_tests.mbt", "azimuth_premium_quality_test_cases.mbt", "../azimuth_new_moonbit_tests.mbt"]
   }
 }

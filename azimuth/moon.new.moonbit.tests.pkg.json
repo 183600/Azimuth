@@ -1,0 +1,13 @@
+{
+  "name": "azimuth-new-moonbit-tests",
+  "version": "0.1.0",
+  "description": "Test package for new MoonBit test cases",
+  "target": "wasm-gc",
+  "source": ["azimuth.mbt"],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["../azimuth_new_moonbit_tests.mbt"]
+  }
+}
