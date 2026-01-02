@@ -1,772 +1,398 @@
-// Advanced Telemetry Scenarios Test Suite for Azimuth
-// This file contains 8 comprehensive test cases covering advanced telemetry scenarios
+// Azimuth Advanced Telemetry Scenarios Test Suite
+// This file contains advanced test cases for complex telemetry scenarios
 
-// Test 1: Sampler Configuration and Testing
-test "sampler configuration and decision making" {
-  // Test AlwaysOnSampler
-  let always_on_sampler = AlwaysOnSampler::new()
-  let sampling_decision_on = Sampler::should_sample(always_on_sampler, "trace123", "span456", "operation.name", [])
-  assert_eq(sampling_decision_on.decision, SamplingDecision::RecordAndSample)
-  assert_true(sampling_decision_on.attributes.is_empty())
+// Test 1: Telemetry Data Compression and Optimization
+test "telemetry data compression and optimization" {
+  // Test compression of telemetry attributes
+  let large_attrs = Attributes::new()
   
-  // Test AlwaysOffSampler
-  let always_off_sampler = AlwaysOffSampler::new()
-  let sampling_decision_off = Sampler::should_sample(always_off_sampler, "trace789", "span012", "operation.name", [])
-  assert_eq(sampling_decision_off.decision, SamplingDecision::Drop)
-  assert_true(sampling_decision_off.attributes.is_empty())
+  // Add many attributes to test compression
+  for i = 0; i < 1000; i = i + 1 {
+    let key = "large.attribute.key." + Int::to_string(i)
+    let value = "large.attribute.value." + Int::to_string(i) + ".with.additional.data.to.compress"
+    Attributes::set(large_attrs, key, StringValue(value))
+  }
   
-  // Test TraceIdRatioBasedSampler
-  let ratio_sampler = TraceIdRatioBasedSampler::new(0.5) // 50% sampling
-  let ratio_decision_1 = Sampler::should_sample(ratio_sampler, "trace1111111111111111111111111111111", "span111", "operation.name", [])
-  let ratio_decision_2 = Sampler::should_sample(ratio_sampler, "trace2222222222222222222222222222222", "span222", "operation.name", [])
+  // Verify compression ratio
+  let original_size = Attributes::calculate_size(large_attrs)
+  let compressed_attrs = Attributes::compress(large_attrs)
+  let compressed_size = Attributes::calculate_size(compressed_attrs)
   
-  // Verify decisions are either RecordAndSample or Drop
-  match ratio_decision_1.decision {
-    SamplingDecision::RecordAndSample => assert_true(true)
-    SamplingDecision::Drop => assert_true(true)
+  // Compression should reduce size by at least 30%
+  let compression_ratio = (original_size - compressed_size) * 100 / original_size
+  assert_true(compression_ratio >= 30, "Compression ratio below threshold")
+  
+  // Verify data integrity after decompression
+  let decompressed_attrs = Attributes::decompress(compressed_attrs)
+  assert_eq(Attributes::count(decompressed_attrs), 1000)
+  
+  // Verify specific attributes are preserved
+  match Attributes::get(decompressed_attrs, "large.attribute.key.500") {
+    Some(StringValue(v)) => assert_eq(v, "large.attribute.value.500.with.additional.data.to.compress")
     _ => assert_true(false)
   }
-  
-  match ratio_decision_2.decision {
-    SamplingDecision::RecordAndSample => assert_true(true)
-    SamplingDecision::Drop => assert_true(true)
-    _ => assert_true(false)
-  }
-  
-  // Test ParentBasedSampler
-  let parent_based_sampler = ParentBasedSampler::new(always_on_sampler)
-  let parent_context = SpanContext {
-    trace_id: "parent1234567890abcdef1234567890ab",
-    span_id: "parent1234567890ab",
-    sampled: true,
-    trace_state: ""
-  }
-  
-  let parent_based_decision = Sampler::should_sample(parent_based_sampler, "trace123", "span456", "operation.name", [])
-  assert_eq(parent_based_decision.decision, SamplingDecision::RecordAndSample)
 }
 
-// Test 2: Telemetry Data Exporter Testing
-test "telemetry data export operations" {
-  // Create a span exporter
-  let span_exporter = SpanExporter::new()
+// Test 2: Telemetry Data Long-term Storage and Archive
+test "telemetry data long-term storage and archive" {
+  // Create telemetry data with timestamps
+  let telemetry_data = Array::empty()
+  let base_time = Time::now()
   
-  // Create spans for export
-  let span1 = SpanData {
-    name: "operation.one",
-    kind: SpanKind::Client,
-    start_time: 1735689600000000000L,
-    end_time: 1735689601000000000L,
-    status: SpanStatus::Ok,
-    attributes: [("http.method", AttributeValue::StringValue("GET"))],
-    events: [],
-    links: []
+  // Generate telemetry data over time
+  for i = 0; i < 100; i = i + 1 {
+    let timestamp = Time::add_hours(base_time, i)
+    let metric_value = Double::from(i) * 1.5
+    let data_point = TelemetryDataPoint::new(
+      "cpu.usage",
+      metric_value,
+      timestamp,
+      Attributes::with("host", StringValue("server-" + Int::to_string(i % 10)))
+    )
+    telemetry_data = telemetry_data.concat([data_point])
   }
   
-  let span2 = SpanData {
-    name: "operation.two",
-    kind: SpanKind::Server,
-    start_time: 1735689602000000000L,
-    end_time: 1735689603000000000L,
-    status: SpanStatus::Error,
-    attributes: [("http.method", AttributeValue::StringValue("POST"))],
-    events: [("error.occurred", 1735689602500000000L, [("error.type", AttributeValue::StringValue("Timeout"))])],
-    links: []
-  }
+  // Test archival functionality
+  let archive_config = ArchiveConfig::new(
+    Retention::Days(30),
+    Compression::LZ4,
+    Encryption::AES256
+  )
   
-  let spans = [span1, span2]
+  let archive_id = ArchiveManager::store(telemetry_data, archive_config)
+  assert_true(String::length(archive_id) > 0, "Archive ID should not be empty")
   
-  // Test export operation
-  let export_result = SpanExporter::export(span_exporter, spans)
-  match export_result {
-    ExportResult::Success => assert_true(true)
-    ExportResult::Failure(_) => assert_true(false) // For this test, expect success
-  }
+  // Test retrieval from archive
+  let retrieved_data = ArchiveManager::retrieve(archive_id)
+  assert_eq(Array::length(retrieved_data), 100)
   
-  // Test shutdown operation
-  let shutdown_result = SpanExporter::shutdown(span_exporter)
-  assert_true(shutdown_result) // Expect successful shutdown
+  // Verify data integrity
+  let first_point = Array::get(retrieved_data, 0)
+  let last_point = Array::get(retrieved_data, 99)
   
-  // Create a metric exporter
-  let metric_exporter = MetricExporter::new()
-  
-  // Create metrics for export
-  let metric1 = MetricData {
-    name: "http.requests.total",
-    description: Some("Total HTTP requests"),
-    unit: Some("count"),
-    aggregation: Aggregation::Sum(100.0),
-    attributes: [("http.method", AttributeValue::StringValue("GET"))]
-  }
-  
-  let metric2 = MetricData {
-    name: "http.request.duration",
-    description: Some("HTTP request duration"),
-    unit: Some("ms"),
-    aggregation: Aggregation::Histogram([10.0, 25.0, 50.0, 100.0, 200.0]),
-    attributes: [("http.method", AttributeValue::StringValue("POST"))]
-  }
-  
-  let metrics = [metric1, metric2]
-  
-  // Test metric export
-  let metric_export_result = MetricExporter::export(metric_exporter, metrics)
-  match metric_export_result {
-    ExportResult::Success => assert_true(true)
-    ExportResult::Failure(_) => assert_true(false) // For this test, expect success
-  }
-  
-  // Test metric exporter shutdown
-  let metric_shutdown_result = MetricExporter::shutdown(metric_exporter)
-  assert_true(metric_shutdown_result) // Expect successful shutdown
+  assert_eq(TelemetryDataPoint::metric_name(first_point), "cpu.usage")
+  assert_eq(TelemetryDataPoint::value(last_point), Double::from(99) * 1.5)
 }
 
-// Test 3: Trace Time Correlation Testing
-test "trace time correlation and temporal operations" {
-  // Create spans with specific timing relationships
-  let root_start = 1735689600000000000L // 2025-01-01 00:00:00 UTC
-  let child1_start = root_start + 1000000000L // +1 second
-  let child1_end = child1_start + 500000000L   // +0.5 seconds
-  let child2_start = root_start + 2000000000L // +2 seconds
-  let child2_end = child2_start + 300000000L   // +0.3 seconds
-  let root_end = root_start + 3000000000L      // +3 seconds
+// Test 3: Cross-service Consistency Validation
+test "cross-service consistency validation" {
+  // Simulate telemetry from multiple services
+  let service_a_traces = generate_trace_data("service-a", 50)
+  let service_b_traces = generate_trace_data("service-b", 50)
+  let service_c_traces = generate_trace_data("service-c", 50)
   
-  // Create root span
-  let root_span = SpanData {
-    name: "root.operation",
-    kind: SpanKind::Internal,
-    start_time: root_start,
-    end_time: root_end,
-    status: SpanStatus::Ok,
-    attributes: [],
-    events: [],
-    links: []
-  }
+  // Verify trace consistency across services
+  let trace_validator = TraceConsistencyValidator::new()
   
-  // Create child spans
-  let child1 = SpanData {
-    name: "child.operation.one",
-    kind: SpanKind::Client,
-    start_time: child1_start,
-    end_time: child1_end,
-    status: SpanStatus::Ok,
-    attributes: [],
-    events: [],
-    links: [("root.operation", root_span)]
-  }
+  // Add trace data from all services
+  TraceConsistencyValidator::add_traces(trace_validator, service_a_traces)
+  TraceConsistencyValidator::add_traces(trace_validator, service_b_traces)
+  TraceConsistencyValidator::add_traces(trace_validator, service_c_traces)
   
-  let child2 = SpanData {
-    name: "child.operation.two",
-    kind: SpanKind::Server,
-    start_time: child2_start,
-    end_time: child2_end,
-    status: SpanStatus::Ok,
-    attributes: [],
-    events: [],
-    links: [("root.operation", root_span)]
-  }
+  // Validate consistency
+  let consistency_report = TraceConsistencyValidator::validate(trace_validator)
   
-  // Verify temporal relationships
-  assert_true(child1.start_time > root_span.start_time)
-  assert_true(child1.end_time < root_span.end_time)
-  assert_true(child2.start_time > root_span.start_time)
-  assert_true(child2.end_time < root_span.end_time)
+  assert_true(ConsistencyReport::is_valid(consistency_report), "Cross-service trace consistency validation failed")
   
-  // Verify child spans don't overlap (in this test case)
-  assert_true(child1.end_time < child2.start_time)
+  // Check for specific consistency issues
+  let missing_spans = ConsistencyReport::missing_spans(consistency_report)
+  let orphan_spans = ConsistencyReport::orphan_spans(consistency_report)
   
-  // Calculate durations
-  let root_duration = root_span.end_time - root_span.start_time
-  let child1_duration = child1.end_time - child1.start_time
-  let child2_duration = child2.end_time - child2.start_time
-  
-  assert_eq(root_duration, 3000000000L) // 3 seconds
-  assert_eq(child1_duration, 500000000L)  // 0.5 seconds
-  assert_eq(child2_duration, 300000000L)  // 0.3 seconds
-  
-  // Verify root duration encompasses children
-  assert_true(root_duration > child1_duration)
-  assert_true(root_duration > child2_duration)
-  
-  // Test time-based event correlation
-  let event_time = root_start + 1500000000L // 1.5 seconds after root start
-  let correlated_event = SpanEvent {
-    name: "mid.operation.event",
-    timestamp: event_time,
-    attributes: [("event.type", AttributeValue::StringValue("checkpoint"))]
-  }
-  
-  // Verify event occurs within root span timeline
-  assert_true(correlated_event.timestamp > root_span.start_time)
-  assert_true(correlated_event.timestamp < root_span.end_time)
-  
-  // Test timestamp operations
-  let timestamp_ns = 1735689600123456789L
-  let timestamp_ms = timestamp_ns / 1000000
-  let timestamp_s = timestamp_ns / 1000000000
-  
-  assert_eq(timestamp_ms, 1735689600123L)
-  assert_eq(timestamp_s, 1735689600L)
-  
-  // Test timestamp difference calculations
-  let earlier = 1735689600000000000L
-  let later = 1735689600500000000L
-  let difference = later - earlier
-  
-  assert_eq(difference, 500000000L) // 0.5 seconds in nanoseconds
+  assert_eq(Array::length(missing_spans), 0, "There should be no missing spans")
+  assert_eq(Array::length(orphan_spans), 0, "There should be no orphan spans")
 }
 
-// Test 4: Metrics Aggregation and Statistics
-test "metrics aggregation and statistical operations" {
-  // Create a counter metric
-  let counter = CounterInstrument {
-    name: "api.requests.total",
-    description: Some("Total API requests"),
-    unit: Some("count")
+// Test 4: Real-time Dashboard Data Aggregation
+test "real-time dashboard data aggregation" {
+  // Create real-time telemetry stream
+  let telemetry_stream = TelemetryStream::new()
+  
+  // Start dashboard aggregation
+  let dashboard = RealtimeDashboard::new()
+  RealtimeDashboard::start_aggregation(dashboard, telemetry_stream)
+  
+  // Simulate real-time data flow
+  for i = 0; i < 1000; i = i + 1 {
+    let metric = Metric::new(
+      "response.time",
+      Double::from(i % 100) + 50.0,
+      Time::now(),
+      Attributes::with("endpoint", StringValue("/api/v" + Int::to_string(i % 5)))
+    )
+    TelemetryStream::push(telemetry_stream, metric)
+    
+    // Small delay to simulate real-time
+    Time::sleep_ms(1)
   }
   
-  // Record measurements
-  Counter::add(counter, 10.0, [("http.method", AttributeValue::StringValue("GET"))])
-  Counter::add(counter, 5.0, [("http.method", AttributeValue::StringValue("POST"))])
-  Counter::add(counter, 3.0, [("http.method", AttributeValue::StringValue("GET"))])
+  // Stop aggregation and get results
+  RealtimeDashboard::stop_aggregation(dashboard)
+  let aggregated_data = RealtimeDashboard::get_aggregated_data(dashboard)
   
-  // Create a histogram metric
-  let histogram = HistogramInstrument {
-    name: "api.request.duration",
-    description: Some("API request duration"),
-    unit: Some("ms")
-  }
+  // Verify aggregation results
+  assert_true(DashboardData::has_metric(aggregated_data, "response.time"), "Response time metric should be aggregated")
   
-  // Record measurements
-  Histogram::record(histogram, 100.0, [("http.method", AttributeValue::StringValue("GET"))])
-  Histogram::record(histogram, 150.0, [("http.method", AttributeValue::StringValue("GET"))])
-  Histogram::record(histogram, 200.0, [("http.method", AttributeValue::StringValue("POST"))])
-  Histogram::record(histogram, 75.0, [("http.method", AttributeValue::StringValue("GET"))])
-  Histogram::record(histogram, 300.0, [("http.method", AttributeValue::StringValue("POST"))])
+  let avg_response_time = DashboardData::average(aggregated_data, "response.time")
+  assert_true(avg_response_time > 50.0 && avg_response_time < 150.0, "Average response time should be within expected range")
   
-  // Create an up-down counter
-  let updown_counter = UpDownCounterInstrument {
-    name: "active.connections",
-    description: Some("Number of active connections"),
-    unit: Some("count")
-  }
-  
-  // Record measurements
-  UpDownCounter::add(updown_counter, 10.0)
-  UpDownCounter::add(updown_counter, -3.0)
-  UpDownCounter::add(updown_counter, 5.0)
-  UpDownCounter::add(updown_counter, -2.0)
-  
-  // Create a gauge metric
-  let gauge = GaugeInstrument {
-    name: "memory.usage",
-    description: Some("Current memory usage"),
-    unit: Some("bytes")
-  }
-  
-  // Record measurements
-  Gauge::record(gauge, 1024.0 * 1024.0 * 100.0) // 100MB
-  Gauge::record(gauge, 1024.0 * 1024.0 * 150.0) // 150MB
-  
-  // Test aggregation operations
-  let counter_sum = Aggregation::Sum(18.0) // 10 + 5 + 3
-  let histogram_values = [100.0, 150.0, 200.0, 75.0, 300.0]
-  let histogram_sum = 100.0 + 150.0 + 200.0 + 75.0 + 300.0
-  let histogram_avg = histogram_sum / 5.0
-  let histogram_min = 75.0
-  let histogram_max = 300.0
-  
-  assert_eq(histogram_sum, 825.0)
-  assert_eq(histogram_avg, 165.0)
-  assert_eq(histogram_min, 75.0)
-  assert_eq(histogram_max, 300.0)
-  
-  // Test percentile calculations (simplified)
-  let sorted_values = [75.0, 100.0, 150.0, 200.0, 300.0]
-  let p50_index = (5.0 * 0.5).ceil() - 1.0
-  let p95_index = (5.0 * 0.95).ceil() - 1.0
-  let p99_index = (5.0 * 0.99).ceil() - 1.0
-  
-  assert_eq(sorted_values[p50_index.to_int()], 100.0)  // 50th percentile
-  assert_eq(sorted_values[p95_index.to_int()], 300.0)  // 95th percentile
-  assert_eq(sorted_values[p99_index.to_int()], 300.0)  // 99th percentile
-  
-  // Test exponential histogram aggregation
-  let exponential_histogram = ExponentialHistogram {
-    sum: 825.0,
-    count: 5,
-    zero_count: 0,
-    positive_buckets: [(1, 2), (2, 2), (3, 1)], // (index, count)
-    negative_buckets: [],
-    scale: 20
-  }
-  
-  assert_eq(exponential_histogram.sum, 825.0)
-  assert_eq(exponential_histogram.count, 5)
-  assert_eq(exponential_histogram.zero_count, 0)
-  assert_eq(exponential_histogram.positive_buckets.length(), 3)
-  assert_eq(exponential_histogram.negative_buckets.length(), 0)
+  // Verify endpoint-specific aggregation
+  let endpoint_v1_avg = DashboardData::average_for_attribute(aggregated_data, "response.time", "endpoint", "/api/v1")
+  assert_true(endpoint_v1_avg > 0.0, "Should have aggregated data for endpoint /api/v1")
 }
 
-// Test 5: Log Filtering and Routing
-test "log filtering and routing operations" {
-  // Create a logger with different log levels
-  let logger = Logger {
-    name: "test.logger",
-    version: Some("1.0.0"),
-    schema_url: None
+// Test 5: Edge Computing Telemetry Scenarios
+test "edge computing telemetry scenarios" {
+  // Simulate edge device with limited resources
+  let edge_device = EdgeDevice::new(
+    "edge-device-001",
+    ResourceConstraints::new(
+      Memory::MB(512),
+      CPU::Cores(2),
+      Network::Bandwidth::Mbps(10)
+    )
+  )
+  
+  // Configure telemetry for edge scenarios
+  let edge_config = EdgeTelemetryConfig::new()
+    .with_batch_size(10)
+    .with_compression(true)
+    .with_offline_storage(true)
+    .with_adaptive_sampling(true)
+  
+  let edge_telemetry = EdgeTelemetry::new(edge_device, edge_config)
+  
+  // Generate telemetry data in edge environment
+  for i = 0; i < 100; i = i + 1 {
+    let sensor_data = SensorReading::new(
+      "temperature",
+      Double::from(20 + i % 20),
+      Time::now(),
+      Attributes::with("location", StringValue("sensor-" + Int::to_string(i % 5)))
+    )
+    
+    EdgeTelemetry::record(edge_telemetry, sensor_data)
+    
+    // Simulate intermittent connectivity
+    if i % 20 == 0 {
+      EdgeTelemetry::simulate_network_loss(edge_telemetry, Duration::Seconds(5))
+    }
   }
   
-  // Create log records with different severity levels
-  let trace_log = LogRecord {
-    timestamp: 1735689600000000000L,
-    observed_timestamp: Some(1735689600000001000L),
-    severity_number: Trace,
-    severity_text: Some("TRACE"),
-    body: Some("Trace level message"),
-    attributes: [],
-    trace_id: Some("trace1234567890abcdef1234567890ab"),
-    span_id: Some("span1234567890ab"),
-    trace_flags: Some(1),
-    resource: [],
-    scope: logger
-  }
+  // Verify edge telemetry behavior
+  let local_cache = EdgeTelemetry::get_local_cache(edge_telemetry)
+  assert_true(Array::length(local_cache) > 0, "Edge device should cache data during network loss")
   
-  let debug_log = LogRecord {
-    timestamp: 1735689600000000000L,
-    observed_timestamp: Some(1735689600000001000L),
-    severity_number: Debug,
-    severity_text: Some("DEBUG"),
-    body: Some("Debug level message"),
-    attributes: [],
-    trace_id: Some("trace1234567890abcdef1234567890ab"),
-    span_id: Some("span1234567890ab"),
-    trace_flags: Some(1),
-    resource: [],
-    scope: logger
-  }
+  // Restore connectivity and verify sync
+  EdgeTelemetry::restore_connectivity(edge_telemetry)
+  let sync_result = EdgeTelemetry::sync_to_cloud(edge_telemetry)
   
-  let info_log = LogRecord {
-    timestamp: 1735689600000000000L,
-    observed_timestamp: Some(1735689600000001000L),
-    severity_number: Info,
-    severity_text: Some("INFO"),
-    body: Some("Info level message"),
-    attributes: [],
-    trace_id: Some("trace1234567890abcdef1234567890ab"),
-    span_id: Some("span1234567890ab"),
-    trace_flags: Some(1),
-    resource: [],
-    scope: logger
-  }
-  
-  let warn_log = LogRecord {
-    timestamp: 1735689600000000000L,
-    observed_timestamp: Some(1735689600000001000L),
-    severity_number: Warn,
-    severity_text: Some("WARN"),
-    body: Some("Warning level message"),
-    attributes: [],
-    trace_id: Some("trace1234567890abcdef1234567890ab"),
-    span_id: Some("span1234567890ab"),
-    trace_flags: Some(1),
-    resource: [],
-    scope: logger
-  }
-  
-  let error_log = LogRecord {
-    timestamp: 1735689600000000000L,
-    observed_timestamp: Some(1735689600000001000L),
-    severity_number: Error,
-    severity_text: Some("ERROR"),
-    body: Some("Error level message"),
-    attributes: [("error.type", AttributeValue::StringValue("ValidationError"))],
-    trace_id: Some("trace1234567890abcdef1234567890ab"),
-    span_id: Some("span1234567890ab"),
-    trace_flags: Some(1),
-    resource: [],
-    scope: logger
-  }
-  
-  // Create a log processor
-  let log_processor = SimpleLogProcessor::new()
-  
-  // Test log filtering based on severity
-  let all_logs = [trace_log, debug_log, info_log, warn_log, error_log]
-  
-  // Filter logs with severity >= Info
-  let filtered_logs_info = LogProcessor::filter_by_severity(log_processor, all_logs, Info)
-  assert_eq(filtered_logs_info.length(), 3) // Info, Warn, Error
-  
-  // Filter logs with severity >= Error
-  let filtered_logs_error = LogProcessor::filter_by_severity(log_processor, all_logs, Error)
-  assert_eq(filtered_logs_error.length(), 1) // Error only
-  
-  // Test log routing based on attributes
-  let error_logs_with_type = LogProcessor::filter_by_attribute(log_processor, all_logs, "error.type")
-  assert_eq(error_logs_with_type.length(), 1) // Only error log has error.type attribute
-  
-  // Test log routing based on trace ID
-  let logs_with_trace = LogProcessor::filter_by_trace_id(log_processor, all_logs, "trace1234567890abcdef1234567890ab")
-  assert_eq(logs_with_trace.length(), 5) // All logs have the same trace ID
-  
-  // Test log routing based on logger name
-  let logs_by_logger = LogProcessor::filter_by_logger(log_processor, all_logs, "test.logger")
-  assert_eq(logs_by_logger.length(), 5) // All logs from the same logger
-  
-  // Create a batch log processor
-  let batch_processor = BatchLogProcessor::new(100) // Batch size of 100
-  
-  // Emit logs to batch processor
-  LogProcessor::emit(batch_processor, trace_log)
-  LogProcessor::emit(batch_processor, debug_log)
-  LogProcessor::emit(batch_processor, info_log)
-  LogProcessor::emit(batch_processor, warn_log)
-  LogProcessor::emit(batch_processor, error_log)
-  
-  // Force flush
-  let flush_result = LogProcessor::flush(batch_processor)
-  assert_true(flush_result) // Expect successful flush
-  
-  // Shutdown processor
-  let shutdown_result = LogProcessor::shutdown(batch_processor)
-  assert_true(shutdown_result) // Expect successful shutdown
+  assert_true(SyncResult::success(sync_result), "Data should sync successfully after connectivity restore")
+  assert_eq(SyncResult::synced_count(sync_result), Array::length(local_cache), "All cached data should be synced")
 }
 
-// Test 6: Resource Detection and Auto-Configuration
-test "resource detection and auto-configuration" {
-  // Create a resource detector
-  let resource_detector = CompositeResourceDetector::new([
-    EnvironmentResourceDetector::new(),
-    HostResourceDetector::new(),
-    ProcessResourceDetector::new(),
-    OperatingSystemResourceDetector::new()
+// Test 6: Telemetry Data Quality Assurance
+test "telemetry data quality assurance" {
+  // Create data quality validator
+  let quality_validator = DataQualityValidator::new()
+  
+  // Configure quality rules
+  DataQualityValidator::add_rule(quality_validator, QualityRule::required_attribute("service.name"))
+  DataQualityValidator::add_rule(quality_validator, QualityRule::valid_trace_id_format())
+  DataQualityValidator::add_rule(quality_validator, QualityRule::timestamp_range(Duration::Hours(24)))
+  DataQualityValidator::add_rule(quality_validator, QualityRule::metric_value_range("cpu.usage", 0.0, 100.0))
+  
+  // Generate test telemetry data with some quality issues
+  let telemetry_batch = Array::empty()
+  
+  // Add valid data
+  for i = 0; i < 90; i = i + 1 {
+    let valid_data = TelemetryData::with_attributes([
+      ("service.name", StringValue("test-service")),
+      ("trace.id", StringValue(generate_valid_trace_id())),
+      ("cpu.usage", FloatValue(Double::from(i % 100)))
+    ])
+    telemetry_batch = telemetry_batch.concat([valid_data])
+  }
+  
+  // Add invalid data (missing required attribute)
+  let invalid_data1 = TelemetryData::with_attributes([
+    ("trace.id", StringValue(generate_valid_trace_id())),
+    ("cpu.usage", FloatValue(50.0))
+  ])
+  telemetry_batch = telemetry_batch.concat([invalid_data1])
+  
+  // Add invalid data (invalid metric value)
+  let invalid_data2 = TelemetryData::with_attributes([
+    ("service.name", StringValue("test-service")),
+    ("trace.id", StringValue(generate_valid_trace_id())),
+    ("cpu.usage", FloatValue(150.0))  // Out of range
+  ])
+  telemetry_batch = telemetry_batch.concat([invalid_data2])
+  
+  // Run quality validation
+  let quality_report = DataQualityValidator::validate_batch(quality_validator, telemetry_batch)
+  
+  // Verify validation results
+  assert_eq(QualityReport::total_records(quality_report), 92)
+  assert_eq(QualityReport::valid_records(quality_report), 90)
+  assert_eq(QualityReport::invalid_records(quality_report), 2)
+  
+  // Check specific violations
+  let violations = QualityReport::violations(quality_report)
+  assert_eq(Array::length(violations), 2)
+  
+  // Verify violation types
+  let missing_attr_violations = QualityReport::violations_by_type(quality_report, ViolationType::MissingRequiredAttribute)
+  let out_of_range_violations = QualityReport::violations_by_type(quality_report, ViolationType::MetricValueOutOfRange)
+  
+  assert_eq(Array::length(missing_attr_violations), 1)
+  assert_eq(Array::length(out_of_range_violations), 1)
+}
+
+// Test 7: Composite Propagator Advanced Scenarios
+test "composite propagator advanced scenarios" {
+  // Create composite propagator with multiple propagators
+  let trace_context_propagator = TraceContextPropagator::new()
+  let baggage_propagator = BaggagePropagator::new()
+  let custom_propagator = CustomPropagator::new("x-custom-trace")
+  
+  let composite_propagator = CompositePropagator::new([
+    trace_context_propagator,
+    baggage_propagator,
+    custom_propagator
   ])
   
-  // Detect resources
-  let detected_resource = ResourceDetector::detect(resource_detector)
+  // Create context with rich data
+  let original_context = Context::root()
   
-  // Verify detected attributes (simplified implementation)
-  let resource_attributes = detected_resource.attributes
-  assert_true(resource_attributes.length() >= 0) // Should have at least some attributes
-  
-  // Test manual resource configuration
-  let manual_resource = Resource::builder()
-    .with_service_name("manual.service")
-    .with_service_version("2.0.0")
-    .with_service_instance_id("instance-manual-123")
-    .with_deployment_environment("staging")
-    .with_host_name("host-manual")
-    .with_process_pid(12345)
-    .with_process_executable_name("manual-service")
-    .with_os_type("linux")
-    .with_os_description("Ubuntu 20.04")
-    .build()
-  
-  // Verify manual resource attributes
-  let manual_attributes = manual_resource.attributes
-  assert_true(manual_attributes.length() >= 8) // Should have at least 8 attributes
-  
-  // Test resource merging with different strategies
-  let base_resource = Resource::builder()
-    .with_service_name("base.service")
-    .with_service_version("1.0.0")
-    .build()
-  
-  let override_resource = Resource::builder()
-    .with_service_name("override.service")
-    .with_service_instance_id("instance-override-456")
-    .build()
-  
-  // Test resource merge with override strategy
-  let merged_resource_override = Resource::merge_with_strategy(
-    base_resource, 
-    override_resource, 
-    ResourceMergeStrategy::Override
+  // Add trace context
+  let span_context = SpanContext::new(
+    "0af7651916cd43dd8448eb211c80319c",
+    "b7ad6b7169203331",
+    true,
+    "rojo=00f067aa0ba902b7"
   )
+  original_context = Context::with_span_context(original_context, span_context)
   
-  // Test resource merge with combine strategy
-  let merged_resource_combine = Resource::merge_with_strategy(
-    base_resource, 
-    override_resource, 
-    ResourceMergeStrategy::Combine
-  )
+  // Add baggage
+  original_context = Context::with_baggage(original_context, "user.id", "user-12345")
+  original_context = Context::with_baggage(original_context, "request.source", "mobile")
   
-  // Verify merge results
-  let override_attrs = merged_resource_override.attributes
-  let combine_attrs = merged_resource_combine.attributes
+  // Add custom context data
+  original_context = Context::with_value(original_context, "custom.correlation.id", "corr-abcdef")
   
-  assert_true(override_attrs.length() >= 2)
-  assert_true(combine_attrs.length() >= 3) // Should have more attributes with combine strategy
+  // Create carrier for injection
+  let carrier = TextMapCarrier::new()
   
-  // Test resource schema URL handling
-  let resource_with_schema = Resource::builder()
-    .with_schema_url("https://example.com/schema/v1")
-    .with_service_name("service.with.schema")
-    .build()
+  // Inject context into carrier
+  CompositePropagator::inject(composite_propagator, original_context, carrier)
   
-  assert_eq(resource_with_schema.schema_url, Some("https://example.com/schema/v1"))
+  // Verify all headers are present
+  let headers = TextMapCarrier::headers(carrier)
+  assert_true(Array::length(headers) >= 4, "Should have headers from all propagators")
   
-  // Test resource attribute validation
-  let valid_resource = Resource::builder()
-    .with_service_name("valid.service")
-    .with_attribute("custom.key", AttributeValue::StringValue("custom.value"))
-    .with_attribute("numeric.key", AttributeValue::IntValue(42))
-    .build()
+  // Extract context from carrier
+  let extracted_context = Context::root()
+  extracted_context = CompositePropagator::extract(composite_propagator, extracted_context, carrier)
   
-  let valid_attributes = valid_resource.attributes
-  assert_true(valid_attributes.length() >= 3) // service.name + two custom attributes
+  // Verify extracted context matches original
+  let extracted_span_context = Context::span_context(extracted_context)
+  assert_eq(SpanContext::trace_id(extracted_span_context), "0af7651916cd43dd8448eb211c80319c")
+  assert_eq(SpanContext::span_id(extracted_span_context), "b7ad6b7169203331")
+  
+  // Verify baggage extraction
+  let extracted_baggage = Context::baggage(extracted_context)
+  assert_true(Baggage::has_entry(extracted_baggage, "user.id"))
+  assert_true(Baggage::has_entry(extracted_baggage, "request.source"))
+  
+  match Baggage::get_entry(extracted_baggage, "user.id") {
+    Some(value) => assert_eq(value, "user-12345")
+    None => assert_true(false)
+  }
 }
 
-// Test 7: Cross-Process Context Propagation
-test "cross-process context propagation with different carriers" {
-  // Create a composite propagator
-  let trace_propagator = W3CTraceContextPropagator::new()
-  let baggage_propagator = W3CBaggagePropagator::new()
-  let composite_propagator = CompositePropagator::new([trace_propagator, baggage_propagator])
+// Test 8: Resource Limit Recovery Tests
+test "resource limit recovery tests" {
+  // Create resource monitor with limits
+  let resource_monitor = ResourceMonitor::new()
+  ResourceMonitor::set_memory_limit(resource_monitor, Memory::MB(100))
+  ResourceMonitor::set_cpu_limit(resource_monitor, CPU::Percent(80))
+  ResourceMonitor::set_network_limit(resource_monitor, Network::Bandwidth::Mbps(10))
   
-  // Create a context with span and baggage
-  let span_context = SpanContext {
-    trace_id: "1234567890abcdef1234567890abcdef",
-    span_id: "1234567890abcdef",
-    sampled: true,
-    trace_state: "key1=value1,key2=value2"
+  // Create telemetry system with resource monitoring
+  let telemetry_system = TelemetrySystem::new_with_monitoring(resource_monitor)
+  
+  // Generate load to approach resource limits
+  let telemetry_data_generator = TelemetryDataGenerator::new()
+  
+  // Phase 1: Normal operation
+  for i = 0; i < 1000; i = i + 1 {
+    let data = telemetry_data_generator.generate_complex_data(i)
+    TelemetrySystem::process(telemetry_system, data)
   }
   
-  let baggage = Baggage::new()
-    .set_entry("user.id", "user123")
-    .set_entry("request.id", "req456")
-    .set_entry("session.id", "sess789")
+  // Verify normal operation
+  let status1 = ResourceMonitor::get_status(resource_monitor)
+  assert_true(ResourceStatus::is_healthy(status1), "System should be healthy under normal load")
   
-  let ctx = Context::root()
-    .with_span_context(span_context)
-    .with_baggage(baggage)
+  // Phase 2: Simulate resource pressure
+  telemetry_system = TelemetrySystem::simulate_memory_pressure(telemetry_system, Memory::MB(120))
   
-  // Test HTTP headers carrier
-  let http_carrier = HttpHeadersCarrier::new()
-  CompositePropagator::inject(composite_propagator, ctx, http_carrier)
+  // Generate more data to trigger recovery mechanisms
+  for i = 0; i < 500; i = i + 1 {
+    let data = telemetry_data_generator.generate_large_data(i)
+    TelemetrySystem::process(telemetry_system, data)
+  }
   
-  // Verify injected headers
-  let traceparent = HttpHeadersCarrier::get(http_carrier, "traceparent")
-  let tracestate = HttpHeadersCarrier::get(http_carrier, "tracestate")
-  let baggage_header = HttpHeadersCarrier::get(http_carrier, "baggage")
+  // Verify recovery mechanisms are activated
+  let status2 = ResourceMonitor::get_status(resource_monitor)
+  assert_true(ResourceStatus::is_under_pressure(status2), "System should detect resource pressure")
   
-  assert_eq(traceparent, Some("00-1234567890abcdef1234567890abcdef-1234567890abcdef-01"))
-  assert_eq(tracestate, Some("key1=value1,key2=value2"))
-  assert_eq(baggage_header, Some("user.id=user123,request.id=req456,session.id=sess789"))
+  // Verify adaptive measures are taken
+  let adaptive_measures = TelemetrySystem::get_active_adaptive_measures(telemetry_system)
+  assert_true(Array::length(adaptive_measures) > 0, "Should have active adaptive measures")
   
-  // Test extraction from HTTP headers
-  let extracted_http_ctx = CompositePropagator::extract(composite_propagator, http_carrier)
-  let extracted_span_ctx = Context::get_span_context(extracted_http_ctx)
-  let extracted_baggage = Context::get_baggage(extracted_http_ctx)
+  // Verify critical functions still work
+  let critical_data = telemetry_data_generator.generate_critical_data()
+  let process_result = TelemetrySystem::process_critical(telemetry_system, critical_data)
+  assert_true(ProcessResult::success(process_result), "Critical data processing should still succeed")
   
-  assert_eq(extracted_span_ctx.trace_id, "1234567890abcdef1234567890abcdef")
-  assert_eq(extracted_span_ctx.span_id, "1234567890abcdef")
-  assert_true(extracted_span_ctx.sampled)
+  // Phase 3: Recovery
+  telemetry_system = TelemetrySystem::release_memory_pressure(telemetry_system)
   
-  // Test text map carrier
-  let text_carrier = TextMapCarrier::new()
-  CompositePropagator::inject(composite_propagator, ctx, text_carrier)
+  // Allow system to recover
+  Time::sleep_ms(100)
   
-  // Verify injected values
-  let text_traceparent = TextMapCarrier::get(text_carrier, "traceparent")
-  let text_tracestate = TextMapCarrier::get(text_carrier, "tracestate")
-  let text_baggage = TextMapCarrier::get(text_carrier, "baggage")
+  // Verify recovery
+  let status3 = ResourceMonitor::get_status(resource_monitor)
+  assert_true(ResourceStatus::is_recovering(status3) || ResourceStatus::is_healthy(status3), "System should be recovering")
   
-  assert_eq(text_traceparent, Some("00-1234567890abcdef1234567890abcdef-1234567890abcdef-01"))
-  assert_eq(text_tracestate, Some("key1=value1,key2=value2"))
-  assert_eq(text_baggage, Some("user.id=user123,request.id=req456,session.id=sess789"))
-  
-  // Test extraction from text map
-  let extracted_text_ctx = CompositePropagator::extract(composite_propagator, text_carrier)
-  let extracted_text_span_ctx = Context::get_span_context(extracted_text_ctx)
-  let extracted_text_baggage = Context::get_baggage(extracted_text_ctx)
-  
-  assert_eq(extracted_text_span_ctx.trace_id, "1234567890abcdef1234567890abcdef")
-  assert_eq(extracted_text_span_ctx.span_id, "1234567890abcdef")
-  assert_true(extracted_text_span_ctx.sampled)
-  
-  // Test message properties carrier (for messaging systems)
-  let message_carrier = MessagePropertiesCarrier::new()
-  CompositePropagator::inject(composite_propagator, ctx, message_carrier)
-  
-  // Verify injected properties
-  let msg_traceparent = MessagePropertiesCarrier::get(message_carrier, "traceparent")
-  let msg_tracestate = MessagePropertiesCarrier::get(message_carrier, "tracestate")
-  let msg_baggage = MessagePropertiesCarrier::get(message_carrier, "baggage")
-  
-  assert_eq(msg_traceparent, Some("00-1234567890abcdef1234567890abcdef-1234567890abcdef-01"))
-  assert_eq(msg_tracestate, Some("key1=value1,key2=value2"))
-  assert_eq(msg_baggage, Some("user.id=user123,request.id=req456,session.id=sess789"))
-  
-  // Test extraction from message properties
-  let extracted_msg_ctx = CompositePropagator::extract(composite_propagator, message_carrier)
-  let extracted_msg_span_ctx = Context::get_span_context(extracted_msg_ctx)
-  let extracted_msg_baggage = Context::get_baggage(extracted_msg_ctx)
-  
-  assert_eq(extracted_msg_span_ctx.trace_id, "1234567890abcdef1234567890abcdef")
-  assert_eq(extracted_msg_span_ctx.span_id, "1234567890abcdef")
-  assert_true(extracted_msg_span_ctx.sampled)
-  
-  // Test cross-process scenario with modified context
-  let modified_ctx = ctx
-    .with_baggage_entry("process.id", "process789")
-    .with_baggage_entry("correlation.id", "corr012")
-  
-  // Inject modified context
-  let modified_carrier = HttpHeadersCarrier::new()
-  CompositePropagator::inject(composite_propagator, modified_ctx, modified_carrier)
-  
-  // Verify modified baggage
-  let modified_baggage_header = HttpHeadersCarrier::get(modified_carrier, "baggage")
-  assert_eq(modified_baggage_header, Some("user.id=user123,request.id=req456,session.id=sess789,process.id=process789,correlation.id=corr012"))
-  
-  // Test context propagation with invalid/malformed headers
-  let malformed_carrier = HttpHeadersCarrier::new()
-  HttpHeadersCarrier::set(malformed_carrier, "traceparent", "invalid-format")
-  HttpHeadersCarrier::set(malformed_carrier, "baggage", "invalid=baggage=format")
-  
-  // Extract from malformed headers
-  let malformed_ctx = CompositePropagator::extract(composite_propagator, malformed_carrier)
-  let malformed_span_ctx = Context::get_span_context(malformed_ctx)
-  
-  // Should not crash and should provide a valid context
-  assert_true(true) // If we reach here, extraction handled malformed headers gracefully
+  // Verify normal operation resumes
+  for i = 0; i < 100; i = i + 1 {
+    let data = telemetry_data_generator.generate_normal_data(i)
+    let result = TelemetrySystem::process(telemetry_system, data)
+    assert_true(ProcessResult::success(result), "Normal processing should work after recovery")
+  }
 }
 
-// Test 8: Telemetry Data Batching and Processing
-test "telemetry data batching and processing operations" {
-  // Create a batch span processor
-  let span_exporter = SpanExporter::new()
-  let batch_span_processor = BatchSpanProcessor::builder(span_exporter)
-    .with_max_queue_size(512)
-    .with_max_export_batch_size(256)
-    .with_max_export_timeout(30000L) // 30 seconds
-    .build()
+// Helper functions
+fn generate_trace_data(service_name : String, count : Int) -> Array[TraceData] {
+  let traces = Array::empty()
+  let base_trace_id = "0af7651916cd43dd8448eb211c8031"
   
-  // Create multiple spans for batching
-  let spans = []
-  let mut i = 0
-  while i < 100 {
-    let span = SpanData {
-      name: "operation." + i.to_string(),
-      kind: SpanKind::Client,
-      start_time: 1735689600000000000L + (i * 1000000L),
-      end_time: 1735689600100000000L + (i * 1000000L),
-      status: SpanStatus::Ok,
-      attributes: [("operation.id", AttributeValue::IntValue(i))],
-      events: [],
-      links: []
-    }
-    spans = spans.push(span)
-    i = i + 1
+  for i = 0; i < count; i = i + 1 {
+    let trace_data = TraceData::new(
+      base_trace_id + Int::to_string(i),
+      service_name,
+      Time::now(),
+      Attributes::with("service.instance", StringValue("instance-" + Int::to_string(i % 5)))
+    )
+    traces = traces.concat([trace_data])
   }
   
-  // Test batch export
-  for span in spans {
-    BatchSpanProcessor::on_end(batch_span_processor, span)
-  }
-  
-  // Force flush
-  let flush_result = BatchSpanProcessor::force_flush(batch_span_processor)
-  assert_true(flush_result) // Expect successful flush
-  
-  // Create a batch metric processor
-  let metric_exporter = MetricExporter::new()
-  let batch_metric_processor = BatchMetricProcessor::builder(metric_exporter)
-    .with_max_queue_size(256)
-    .with_max_export_batch_size(128)
-    .with_max_export_timeout(30000L) // 30 seconds
-    .build()
-  
-  // Create multiple metrics for batching
-  let metrics = []
-  let mut j = 0
-  while j < 50 {
-    let metric = MetricData {
-      name: "metric." + j.to_string(),
-      description: Some("Test metric " + j.to_string()),
-      unit: Some("count"),
-      aggregation: Aggregation::Sum(j.to_float()),
-      attributes: [("metric.id", AttributeValue::IntValue(j))]
-    }
-    metrics = metrics.push(metric)
-    j = j + 1
-  }
-  
-  // Test batch metric export
-  for metric in metrics {
-    BatchMetricProcessor::record(batch_metric_processor, metric)
-  }
-  
-  // Force flush metrics
-  let metric_flush_result = BatchMetricProcessor::force_flush(batch_metric_processor)
-  assert_true(metric_flush_result) // Expect successful flush
-  
-  // Test batch processor shutdown
-  let span_shutdown_result = BatchSpanProcessor::shutdown(batch_span_processor)
-  let metric_shutdown_result = BatchMetricProcessor::shutdown(batch_metric_processor)
-  
-  assert_true(span_shutdown_result) // Expect successful shutdown
-  assert_true(metric_shutdown_result) // Expect successful shutdown
-  
-  // Test batch processor with custom delay
-  let delayed_exporter = SpanExporter::new()
-  let delayed_processor = BatchSpanProcessor::builder(delayed_exporter)
-    .with_schedule_delay(5000L) // 5 second delay
-    .with_max_export_batch_size(10)
-    .build()
-  
-  // Create and export spans
-  let mut k = 0
-  while k < 10 {
-    let span = SpanData {
-      name: "delayed.operation." + k.to_string(),
-      kind: SpanKind::Server,
-      start_time: 1735689600200000000L + (k * 1000000L),
-      end_time: 1735689600300000000L + (k * 1000000L),
-      status: SpanStatus::Ok,
-      attributes: [("delayed.id", AttributeValue::IntValue(k))],
-      events: [],
-      links: []
-    }
-    BatchSpanProcessor::on_end(delayed_processor, span)
-    k = k + 1
-  }
-  
-  // Shutdown delayed processor
-  let delayed_shutdown_result = BatchSpanProcessor::shutdown(delayed_processor)
-  assert_true(delayed_shutdown_result) // Expect successful shutdown
-  
-  // Test batch processor with queue overflow
-  let overflow_exporter = SpanExporter::new()
-  let overflow_processor = BatchSpanProcessor::builder(overflow_exporter)
-    .with_max_queue_size(5) // Small queue size
-    .with_max_export_batch_size(2) // Small batch size
-    .build()
-  
-  // Create more spans than queue can handle
-  let mut m = 0
-  while m < 10 {
-    let span = SpanData {
-      name: "overflow.operation." + m.to_string(),
-      kind: SpanKind::Internal,
-      start_time: 1735689600400000000L + (m * 1000000L),
-      end_time: 1735689600500000000L + (m * 1000000L),
-      status: SpanStatus::Ok,
-      attributes: [("overflow.id", AttributeValue::IntValue(m))],
-      events: [],
-      links: []
-    }
-    BatchSpanProcessor::on_end(overflow_processor, span)
-    m = m + 1
-  }
-  
-  // Force flush overflow processor
-  let overflow_flush_result = BatchSpanProcessor::force_flush(overflow_processor)
-  assert_true(overflow_flush_result) // Expect successful flush
-  
-  // Shutdown overflow processor
-  let overflow_shutdown_result = BatchSpanProcessor::shutdown(overflow_processor)
-  assert_true(overflow_shutdown_result) // Expect successful shutdown
+  traces
+}
+
+fn generate_valid_trace_id() -> String {
+  "0af7651916cd43dd8448eb211c80319c"
 }
