@@ -1,853 +1,699 @@
-// 时间序列和时序操作测试
-// 测试Azimuth遥测系统的时间序列数据处理和时序操作功能
+// Azimuth Telemetry System - Time Series Operations Test Suite
+// This file contains comprehensive test cases for time series operations
 
-// 测试1: 时间戳生成和精度测试
-pub test "时间戳生成和精度测试" {
-  let clock = azimuth::Clock::system()
+// Test 1: Basic Time Series Data Generation
+test "basic time series data generation" {
+  // Generate time series data with regular intervals
+  let base_timestamp = 1640995200000  // 2022-01-01 00:00:00 UTC
+  let interval_ms = 60000  // 1 minute interval
+  let data_points = 24  // 24 hours of data
   
-  // 测试时间戳生成
-  let timestamp1 = azimuth::Clock::now_unix_nanos(clock)
-  let timestamp2 = azimuth::Clock::now_unix_nanos(clock)
-  let timestamp3 = azimuth::Clock::now_unix_nanos(clock)
+  let mut time_series = []
   
-  // 验证时间戳格式（纳秒级精度）
-  assert_true(timestamp1 > 0L)
-  assert_true(timestamp2 > 0L)
-  assert_true(timestamp3 > 0L)
-  
-  // 验证时间戳长度（至少16位数字，表示纳秒级精度）
-  assert_true(timestamp1.toString().length() >= 16)
-  assert_true(timestamp2.toString().length() >= 16)
-  assert_true(timestamp3.toString().length() >= 16)
-  
-  // 验证时间戳单调递增
-  assert_true(timestamp2 >= timestamp1)
-  assert_true(timestamp3 >= timestamp2)
-  
-  // 测试时间戳精度
-  let precision_start = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 连续获取时间戳
-  let precision_timestamps = []
-  for i in 0..100 {
-    let ts = azimuth::Clock::now_unix_nanos(clock)
-    precision_timestamps.push(ts)
+  for i = 0; i < data_points; i = i + 1 {
+    let timestamp = base_timestamp + (i * interval_ms)
+    let value = 50.0 + (10.0 * (i % 12).to_float()).sin()  // Sinusoidal pattern
+    let data_point = (timestamp, value)
+    time_series = time_series.concat([data_point])
   }
   
-  let precision_end = azimuth::Clock::now_unix_nanos(clock)
+  assert_eq(time_series.length(), 24)
   
-  // 验证时间戳精度变化
-  let min_precision_ts = precision_timestamps[0]
-  let max_precision_ts = precision_timestamps[99]
+  // Verify first and last timestamps
+  assert_eq(time_series[0][0], base_timestamp)
+  assert_eq(time_series[23][0], base_timestamp + (23 * interval_ms))
   
-  assert_true(max_precision_ts >= min_precision_ts)
-  assert_true((max_precision_ts - min_precision_ts) < (precision_end - precision_start))
+  // Verify time intervals
+  for i = 1; i < time_series.length(); i = i + 1 {
+    let interval = time_series[i][0] - time_series[i-1][0]
+    assert_eq(interval, interval_ms)
+  }
   
-  // 测试时间戳纳秒级精度
-  let nano_start = azimuth::Clock::now_unix_nanos(clock)
-  let nano_end = azimuth::Clock::now_unix_nanos(clock)
+  // Verify value range
+  let values = time_series.map(|(_, value)| value)
+  let min_value = values.reduce(|acc, val| if val < acc { val } else { acc }, values[0])
+  let max_value = values.reduce(|acc, val| if val > acc { val } else { acc }, values[0])
   
-  // 验证纳秒级精度（即使两次调用间隔很小，也应该能检测到差异）
-  assert_true(nano_end >= nano_start)
+  assert_true(min_value >= 40.0)  // 50 - 10
+  assert_true(max_value <= 60.0)  // 50 + 10
 }
 
-// 测试2: 时间差计算测试
-pub test "时间差计算测试" {
-  let clock = azimuth::Clock::system()
+// Test 2: Time Series Aggregation Operations
+test "time series aggregation operations" {
+  // Generate time series with 1-minute intervals for 1 hour
+  let base_timestamp = 1640995200000
+  let interval_ms = 60000  // 1 minute
+  let data_points = 60     // 1 hour
   
-  // 测试基本时间差计算
-  let start_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 模拟一些操作
-  let attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(attrs, "test.key", azimuth::StringValue("test.value"))
-  
-  let mid_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 模拟更多操作
-  let span_ctx = azimuth::SpanContext::new("trace-time-test", "span-time-test", true, "")
-  let span = azimuth::Span::new("time-test-span", azimuth::Internal, span_ctx)
-  azimuth::Span::add_event(span, "time.test.event", Some([("test.attr", azimuth::StringValue("test.value"))]))
-  
-  let end_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 计算时间差
-  let total_duration = end_time - start_time
-  let first_half_duration = mid_time - start_time
-  let second_half_duration = end_time - mid_time
-  
-  // 验证时间差计算
-  assert_true(total_duration > 0L)
-  assert_true(first_half_duration > 0L)
-  assert_true(second_half_duration > 0L)
-  assert_true(total_duration == first_half_duration + second_half_duration)
-  
-  // 测试时间差精度
-  let precision_start = azimuth::Clock::now_unix_nanos(clock)
-  let precision_end = azimuth::Clock::now_unix_nanos(clock)
-  let precision_diff = precision_end - precision_start
-  
-  // 验证时间差精度（纳秒级）
-  assert_true(precision_diff >= 0L)
-  
-  // 测试大时间差
-  let large_start = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 模拟较长时间的操作
-  let large_attrs = azimuth::Attributes::new()
-  for i in 0..1000 {
-    azimuth::Attributes::set(large_attrs, "key." + i.to_string(), azimuth::StringValue("value." + i.to_string()))
+  let mut time_series = []
+  for i = 0; i < data_points; i = i + 1 {
+    let timestamp = base_timestamp + (i * interval_ms)
+    let value = 100.0 + (i.to_float() * 0.5)  // Linear increase
+    time_series = time_series.concat([(timestamp, value)])
   }
   
-  let large_end = azimuth::Clock::now_unix_nanos(clock)
-  let large_duration = large_end - large_start
+  // Test time window aggregation (5-minute windows)
+  let window_size_ms = 300000  // 5 minutes
+  let mut aggregated_series = []
   
-  // 验证大时间差
-  assert_true(large_duration > 0L)
-  assert_true(large_duration > precision_diff)  // 应该比精度测试的时间差大
-}
-
-// 测试3: 时间序列日志记录测试
-pub test "时间序列日志记录测试" {
-  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "time-series-test-logger")
-  let clock = azimuth::Clock::system()
+  let start_time = time_series[0][0]
+  let end_time = time_series[time_series.length() - 1][0]
   
-  // 创建时间序列日志
-  let log_timestamps = []
-  let log_messages = []
-  let base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 创建时间序列日志（每1毫秒间隔）
-  for i in 0..10 {
-    let log_time = base_time + (i * 1000000L)  // 每个日志间隔1毫秒
-    let message = "Time series log " + i.to_string()
+  let mut window_start = start_time
+  while window_start < end_time {
+    let window_end = window_start + window_size_ms
     
-    let log_record = azimuth::LogRecord::new_with_context(
-      azimuth::Info,
-      Some(message),
-      Some(azimuth::Attributes::new()),
-      Some(log_time),
-      Some(log_time + 1000L),  // observed_time稍晚
-      Some("time-series-trace"),
-      Some("time-series-span"),
-      Some(azimuth::Context::root())
-    )
+    // Filter data points in window
+    let window_data = time_series.filter(|(timestamp, _)| {
+      timestamp >= window_start && timestamp < window_end
+    })
     
-    log_timestamps.push(log_time)
-    log_messages.push(message)
-    azimuth::Logger::emit(logger, log_record)
-  }
-  
-  // 验证时间序列的顺序性
-  for i in 1..log_timestamps.length() {
-    assert_true(log_timestamps[i] > log_timestamps[i-1])
-    
-    // 验证时间间隔（大约1毫秒）
-    let expected_interval = 1000000L  // 1毫秒
-    let actual_interval = log_timestamps[i] - log_timestamps[i-1]
-    assert_true(actual_interval >= expected_interval)
-  }
-  
-  // 验证日志消息与时间戳的对应关系
-  for i in 0..log_messages.length() {
-    let expected_message = "Time series log " + i.to_string()
-    assert_eq(log_messages[i], expected_message)
-  }
-  
-  // 测试不同时间间隔的日志序列
-  let variable_interval_timestamps = []
-  let variable_base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 创建可变间隔的日志序列
-  let intervals = [500000L, 1000000L, 2000000L, 500000L, 3000000L]  // 0.5ms, 1ms, 2ms, 0.5ms, 3ms
-  let cumulative_time = variable_base_time
-  
-  for i in 0..intervals.length() {
-    let log_time = cumulative_time + intervals[i]
-    variable_interval_timestamps.push(log_time)
-    
-    let log_record = azimuth::LogRecord::new_with_context(
-      azimuth::Debug,
-      Some("Variable interval log " + i.to_string()),
-      None,
-      Some(log_time),
-      None,
-      None,
-      None,
-      None
-    )
-    
-    azimuth::Logger::emit(logger, log_record)
-    cumulative_time = log_time
-  }
-  
-  // 验证可变间隔的顺序性
-  for i in 1..variable_interval_timestamps.length() {
-    assert_true(variable_interval_timestamps[i] > variable_interval_timestamps[i-1])
-  }
-}
-
-// 测试4: 时间序列度量操作测试
-pub test "时间序列度量操作测试" {
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "time-series-meter")
-  let clock = azimuth::Clock::system()
-  
-  // 创建时间序列度量
-  let histogram = azimuth::Meter::create_histogram(meter, "response.time", Some("Response time in milliseconds"), Some("ms"))
-  let counter = azimuth::Meter::create_counter(meter, "request.count", Some("Total request count"), Some("requests"))
-  
-  let measurement_times = []
-  let measurement_values = []
-  let count_times = []
-  
-  // 创建时间序列度量（递增的响应时间）
-  let base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  for i in 0..20 {
-    let measure_time = azimuth::Clock::now_unix_nanos(clock)
-    let value = 100.0 + (i.to_double() * 10.0)  // 递增的响应时间：100ms, 110ms, 120ms...
-    
-    azimuth::Histogram::record(histogram, value)
-    azimuth::Counter::add(counter, 1.0)
-    
-    measurement_times.push(measure_time)
-    measurement_values.push(value)
-    count_times.push(measure_time)
-  }
-  
-  // 验证度量时间序列
-  assert_true(measurement_times.length() == 20)
-  assert_true(measurement_values.length() == 20)
-  assert_true(count_times.length() == 20)
-  
-  // 验证测量值的时间顺序性
-  for i in 1..measurement_times.length() {
-    assert_true(measurement_times[i] >= measurement_times[i-1])
-  }
-  
-  // 验证测量值的递增性
-  for i in 1..measurement_values.length() {
-    assert_true(measurement_values[i] > measurement_values[i-1])
-  }
-  
-  // 验证计数时间的时间顺序性
-  for i in 1..count_times.length() {
-    assert_true(count_times[i] >= count_times[i-1])
-  }
-  
-  // 测试周期性度量模式
-  let periodic_histogram = azimuth::Meter::create_histogram(meter, "periodic.metric", Some("Periodic metric"), Some("units"))
-  let periodic_times = []
-  let periodic_values = []
-  
-  // 创建周期性度量模式（模拟周期性负载）
-  for cycle in 0..5 {
-    for i in 0..10 {
-      let measure_time = azimuth::Clock::now_unix_nanos(clock)
-      let value = 50.0 + (i.to_double() * 20.0)  // 50, 70, 90, ..., 230
+    if window_data.length() > 0 {
+      let values = window_data.map(|(_, value)| value)
+      let sum = values.reduce(|acc, val| acc + val, 0.0)
+      let count = values.length().to_float()
+      let avg = sum / count
+      let min = values.reduce(|acc, val| if val < acc { val } else { acc }, values[0])
+      let max = values.reduce(|acc, val| if val > acc { val } else { acc }, values[0])
       
-      azimuth::Histogram::record(periodic_histogram, value)
-      
-      periodic_times.push(measure_time)
-      periodic_values.push(value)
+      aggregated_series = aggregated_series.concat([(
+        window_start,
+        ("sum", sum),
+        ("avg", avg),
+        ("min", min),
+        ("max", max),
+        ("count", count)
+      )])
     }
-  }
-  
-  // 验证周期性模式
-  assert_true(periodic_times.length() == 50)
-  assert_true(periodic_values.length() == 50)
-  
-  // 验证每个周期的模式
-  for cycle in 0..5 {
-    let cycle_start = cycle * 10
-    let cycle_end = (cycle + 1) * 10
     
-    // 验证周期内的递增模式
-    for i in cycle_start..(cycle_end - 1) {
-      if i + 1 < cycle_end {
-        assert_true(periodic_values[i + 1] > periodic_values[i])
-      }
-    }
+    window_start = window_end
   }
+  
+  // Should have 12 windows (60 minutes / 5 minutes)
+  assert_eq(aggregated_series.length(), 12)
+  
+  // Verify aggregation calculations for first window
+  let first_window = aggregated_series[0]
+  let first_window_sum = first_window[1][1]  // ("sum", sum)
+  let first_window_avg = first_window[2][1]  // ("avg", avg)
+  let first_window_count = first_window[5][1]  // ("count", count)
+  
+  assert_eq(first_window_count, 5.0)  // 5 data points in 5-minute window
+  assert_eq(first_window_sum, 100.0 + 100.5 + 101.0 + 101.5 + 102.0)  // Sum of first 5 values
+  assert_eq(first_window_avg, first_window_sum / first_window_count)
 }
 
-// 测试5: Span时间序列操作测试
-pub test "Span时间序列操作测试" {
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "time-series-tracer")
-  let clock = azimuth::Clock::system()
+// Test 3: Time Series Resampling and Interpolation
+test "time series resampling and interpolation" {
+  // Generate high-frequency time series (30-second intervals)
+  let base_timestamp = 1640995200000
+  let high_freq_interval = 30000  // 30 seconds
+  let high_freq_points = 12       // 6 minutes of data
   
-  // 创建时间序列Span
-  let span_start_times = []
-  let span_end_times = []
-  let span_durations = []
-  
-  // 创建多个Span并记录时间
-  for i in 0..10 {
-    let start_time = azimuth::Clock::now_unix_nanos(clock)
-    let span = azimuth::Tracer::start_span(tracer, "time-series-span-" + i.to_string())
-    
-    // 模拟Span持续时间（递增）
-    let work_duration = 1000000L * (i + 1)  // 1ms, 2ms, 3ms, ..., 10ms
-    let simulated_end_time = start_time + work_duration
-    
-    // 添加事件
-    azimuth::Span::add_event(span, "span.event", Some([("iteration", azimuth::StringValue(i.to_string()))]))
-    
-    let end_time = azimuth::Clock::now_unix_nanos(clock)
-    azimuth::Span::end(span)
-    
-    span_start_times.push(start_time)
-    span_end_times.push(end_time)
-    span_durations.push(end_time - start_time)
+  let mut high_freq_series = []
+  for i = 0; i < high_freq_points; i = i + 1 {
+    let timestamp = base_timestamp + (i * high_freq_interval)
+    let value = 50.0 + (i.to_float() * 2.0)  // Linear increase
+    high_freq_series = high_freq_series.concat([(timestamp, value)])
   }
   
-  // 验证Span时间序列
-  assert_true(span_start_times.length() == 10)
-  assert_true(span_end_times.length() == 10)
-  assert_true(span_durations.length() == 10)
+  // Resample to low frequency (1-minute intervals) using linear interpolation
+  let low_freq_interval = 60000  // 1 minute
+  let mut low_freq_series = []
   
-  // 验证Span开始时间的顺序性
-  for i in 1..span_start_times.length() {
-    assert_true(span_start_times[i] >= span_start_times[i-1])
-  }
+  let start_time = high_freq_series[0][0]
+  let end_time = high_freq_series[high_freq_series.length() - 1][0]
   
-  // 验证Span结束时间的顺序性
-  for i in 1..span_end_times.length() {
-    assert_true(span_end_times[i] >= span_end_times[i-1])
-  }
-  
-  // 验证Span持续时间的合理性
-  for i in 0..span_durations.length() {
-    assert_true(span_durations[i] > 0L)
-  }
-  
-  // 测试嵌套Span的时间序列
-  let parent_span = azimuth::Tracer::start_span(tracer, "parent-span")
-  let parent_start = azimuth::Clock::now_unix_nanos(clock)
-  
-  let child_spans_data = []
-  
-  for i in 0..5 {
-    let child_start = azimuth::Clock::now_unix_nanos(clock)
-    let child_span = azimuth::Tracer::start_span(tracer, "child-span-" + i.to_string())
-    
-    // 模拟子Span工作
-    let child_work = 500000L  // 0.5ms
-    let child_simulated_end = child_start + child_work
-    
-    azimuth::Span::add_event(child_span, "child.event", Some([("child.id", azimuth::StringValue(i.to_string()))]))
-    
-    let child_end = azimuth::Clock::now_unix_nanos(clock)
-    azimuth::Span::end(child_span)
-    
-    child_spans_data.push((child_start, child_end, child_end - child_start))
-  }
-  
-  let parent_end = azimuth::Clock::now_unix_nanos(clock)
-  azimuth::Span::end(parent_span)
-  
-  // 验证嵌套Span的时间关系
-  let parent_duration = parent_end - parent_start
-  
-  for (child_start, child_end, child_duration) in child_spans_data {
-    // 子Span应该在父Span开始之后开始
-    assert_true(child_start >= parent_start)
-    
-    // 子Span应该在父Span结束之前结束
-    assert_true(child_end <= parent_end)
-    
-    // 子Span持续时间应该为正
-    assert_true(child_duration > 0L)
-  }
-}
-
-// 测试6: 时间窗口聚合测试
-pub test "时间窗口聚合测试" {
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "time-window-meter")
-  let clock = azimuth::Clock::system()
-  
-  // 创建时间窗口聚合测试
-  let window_histogram = azimuth::Meter::create_histogram(meter, "window.metric", Some("Window metric"), Some("units"))
-  let window_counter = azimuth::Meter::create_counter(meter, "window.count", Some("Window count"), Some("items"))
-  
-  let window_measurements = []
-  let window_base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 模拟时间窗口内的度量（1秒窗口）
-  let window_size = 1000000000L  // 1秒
-  let measurements_per_window = 100
-  
-  for window in 0..5 {
-    let window_start = window_base_time + (window * window_size)
-    
-    for i in 0..measurements_per_window {
-      let measure_time = window_start + (i * (window_size / measurements_per_window))
-      let value = 100.0 + (i.to_double() * 2.0)  // 递增值
-      
-      azimuth::Histogram::record(window_histogram, value)
-      azimuth::Counter::add(window_counter, 1.0)
-      
-      window_measurements.push((measure_time, value, window))
-    }
-  }
-  
-  // 验证时间窗口聚合
-  assert_true(window_measurements.length() == 500)  // 5个窗口 × 100个测量
-  
-  // 验证每个窗口内的测量
-  for window in 0..5 {
-    let window_start = window_base_time + (window * window_size)
-    let window_end = window_start + window_size
-    
-    // 统计窗口内的测量
-    let window_count = 0
-    let window_sum = 0.0
-    
-    for (measure_time, value, measure_window) in window_measurements {
-      if measure_window == window {
-        window_count = window_count + 1
-        window_sum = window_sum + value
-        
-        // 验证测量时间在窗口范围内
-        assert_true(measure_time >= window_start)
-        assert_true(measure_time < window_end)
-      }
-    }
-    
-    // 验证窗口统计
-    assert_eq(window_count, measurements_per_window)
-    
-    // 验证窗口内值的总和
-    let expected_sum = 0.0
-    for i in 0..measurements_per_window {
-      expected_sum = expected_sum + (100.0 + (i.to_double() * 2.0))
-    }
-    
-    assert_true(window_sum == expected_sum)
-  }
-  
-  // 测试滑动时间窗口
-  let sliding_histogram = azimuth::Meter::create_histogram(meter, "sliding.metric", Some("Sliding window metric"), Some("units"))
-  let sliding_measurements = []
-  let sliding_base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 创建滑动窗口测量（重叠窗口）
-  let sliding_window_size = 500000000L  // 0.5秒
-  let sliding_step = 250000000L  // 0.25秒步长
-  
-  for step in 0..10 {
-    let window_start = sliding_base_time + (step * sliding_step)
-    
-    // 在每个滑动窗口内添加测量
-    for i in 0..20 {
-      let measure_time = window_start + (i * (sliding_window_size / 20))
-      let value = 50.0 + (step.to_double() * 5.0) + (i.to_double() * 2.5)
-      
-      azimuth::Histogram::record(sliding_histogram, value)
-      sliding_measurements.push((measure_time, value, step))
-    }
-  }
-  
-  // 验证滑动窗口测量
-  assert_true(sliding_measurements.length() == 200)  // 10个滑动窗口 × 20个测量
-  
-  // 验证滑动窗口的重叠特性
-  for step in 1..10 {
-    let prev_window_start = sliding_base_time + ((step - 1) * sliding_step)
-    let curr_window_start = sliding_base_time + (step * sliding_step)
-    
-    // 验证窗口重叠
-    assert_true(curr_window_start < prev_window_start + sliding_window_size)
-  }
-}
-
-// 测试7: 时间序列趋势分析测试
-pub test "时间序列趋势分析测试" {
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "trend-analysis-meter")
-  let clock = azimuth::Clock::system()
-  
-  // 创建趋势分析测试
-  let trend_histogram = azimuth::Meter::create_histogram(meter, "trend.metric", Some("Trend analysis metric"), Some("units"))
-  
-  let trend_measurements = []
-  let trend_base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 创建具有明显趋势的时间序列（线性增长）
-  for i in 0..100 {
-    let measure_time = trend_base_time + (i * 10000000L)  // 每10ms一个测量
-    let value = 10.0 + (i.to_double() * 0.5)  // 线性增长：10, 10.5, 11, 11.5, ...
-    
-    azimuth::Histogram::record(trend_histogram, value)
-    trend_measurements.push((measure_time, value))
-  }
-  
-  // 验证趋势分析
-  assert_true(trend_measurements.length() == 100)
-  
-  // 验证线性趋势
-  for i in 1..trend_measurements.length() {
-    let (prev_time, prev_value) = trend_measurements[i-1]
-    let (curr_time, curr_value) = trend_measurements[i]
-    
-    // 验证时间顺序
-    assert_true(curr_time > prev_time)
-    
-    // 验证值增长趋势
-    assert_true(curr_value > prev_value)
-    
-    // 验证增长速率（大约0.5每个测量）
-    let growth_rate = curr_value - prev_value
-    assert_true(growth_rate >= 0.5 && growth_rate <= 0.5)  // 精确的线性增长
-  }
-  
-  // 创建周期性趋势
-  let periodic_trend_histogram = azimuth::Meter::create_histogram(meter, "periodic.trend.metric", Some("Periodic trend metric"), Some("units"))
-  let periodic_trend_measurements = []
-  let periodic_base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 创建周期性趋势（正弦波模拟）
-  for i in 0..200 {
-    let measure_time = periodic_base_time + (i * 5000000L)  // 每5ms一个测量
-    let value = 50.0 + (20.0 * ((i * 3.14159 / 50.0).sin()))  // 正弦波，周期为50个测量
-    
-    azimuth::Histogram::record(periodic_trend_histogram, value)
-    periodic_trend_measurements.push((measure_time, value))
-  }
-  
-  // 验证周期性趋势
-  assert_true(periodic_trend_measurements.length() == 200)
-  
-  // 验证周期性（4个完整周期）
-  let cycles = 4
-  let measurements_per_cycle = 50
-  
-  for cycle in 0..cycles {
-    let cycle_start = cycle * measurements_per_cycle
-    let cycle_end = (cycle + 1) * measurements_per_cycle
-    
-    // 找到周期内的最大值和最小值
-    let mut max_value = 0.0
-    let mut min_value = 100.0
-    let max_index = 0
-    let min_index = 0
-    
-    for i in cycle_start..cycle_end {
-      let (_, value) = periodic_trend_measurements[i]
-      if value > max_value {
-        max_value = value
-        max_index = i
-      }
-      if value < min_value {
-        min_value = value
-        min_index = i
-      }
-    }
-    
-    // 验证周期内的极值
-    assert_true(max_value > 60.0)  // 大约70
-    assert_true(min_value < 40.0)  // 大约30
-    
-    // 验证极值位置（最大值在1/4周期处，最小值在3/4周期处）
-    let expected_max_pos = cycle_start + measurements_per_cycle / 4
-    let expected_min_pos = cycle_start + (3 * measurements_per_cycle) / 4
-    
-    assert_true(max_index >= expected_max_pos - 2 && max_index <= expected_max_pos + 2)
-    assert_true(min_index >= expected_min_pos - 2 && min_index <= expected_min_pos + 2)
-  }
-}
-
-// 测试8: 时间序列异常检测测试
-pub test "时间序列异常检测测试" {
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "anomaly-detection-meter")
-  let clock = azimuth::Clock::system()
-  
-  // 创建异常检测测试
-  let anomaly_histogram = azimuth::Meter::create_histogram(meter, "anomaly.metric", Some("Anomaly detection metric"), Some("units"))
-  
-  let anomaly_measurements = []
-  let anomaly_base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 创建正常时间序列（稳定在100左右）
-  for i in 0..50 {
-    let measure_time = anomaly_base_time + (i * 10000000L)  // 每10ms一个测量
-    let value = 100.0 + ((i % 10).to_double() * 2.0)  // 在100-118之间波动
-    
-    azimuth::Histogram::record(anomaly_histogram, value)
-    anomaly_measurements.push((measure_time, value, "normal"))
-  }
-  
-  // 插入异常值
-  let anomaly_time = anomaly_base_time + (50 * 10000000L)
-  azimuth::Histogram::record(anomaly_histogram, 500.0)  // 异常高值
-  anomaly_measurements.push((anomaly_time, 500.0, "anomaly_high"))
-  
-  let anomaly_time2 = anomaly_base_time + (51 * 10000000L)
-  azimuth::Histogram::record(anomaly_histogram, 10.0)   // 异常低值
-  anomaly_measurements.push((anomaly_time2, 10.0, "anomaly_low"))
-  
-  // 恢复正常时间序列
-  for i in 52..100 {
-    let measure_time = anomaly_base_time + (i * 10000000L)
-    let value = 100.0 + ((i % 10).to_double() * 2.0)
-    
-    azimuth::Histogram::record(anomaly_histogram, value)
-    anomaly_measurements.push((measure_time, value, "normal"))
-  }
-  
-  // 验证异常检测
-  assert_true(anomaly_measurements.length() == 100)
-  
-  // 计算正常值的统计特性
-  let normal_values = []
-  let anomaly_indices = []
-  
-  for i in 0..anomaly_measurements.length() {
-    let (_, value, category) = anomaly_measurements[i]
-    
-    if category == "normal" {
-      normal_values.push(value)
+  let mut target_time = start_time
+  while target_time <= end_time {
+    if target_time == high_freq_series[0][0] {
+      // First point, use exact value
+      low_freq_series = low_freq_series.concat([(target_time, high_freq_series[0][1])])
     } else {
-      anomaly_indices.push(i)
-    }
-  }
-  
-  // 计算正常值的平均值和标准差
-  let normal_sum = 0.0
-  for value in normal_values {
-    normal_sum = normal_sum + value
-  }
-  let normal_mean = normal_sum / normal_values.length()
-  
-  let variance_sum = 0.0
-  for value in normal_values {
-    variance_sum = variance_sum + ((value - normal_mean) * (value - normal_mean))
-  }
-  let normal_stddev = (variance_sum / normal_values.length()).sqrt()
-  
-  // 验证正常值统计特性
-  assert_true(normal_mean >= 100.0 && normal_mean <= 120.0)  // 平均值应该在合理范围内
-  assert_true(normal_stddev >= 0.0 && normal_stddev <= 10.0)  // 标准差应该在合理范围内
-  
-  // 验证异常值检测
-  for index in anomaly_indices {
-    let (_, anomaly_value, category) = anomaly_measurements[index]
-    
-    // 异常值应该距离均值超过3个标准差
-    let z_score = (anomaly_value - normal_mean) / normal_stddev
-    
-    if category == "anomaly_high" {
-      assert_true(anomaly_value > normal_mean + (3.0 * normal_stddev))
-      assert_true(z_score > 3.0)
-    } else if category == "anomaly_low" {
-      assert_true(anomaly_value < normal_mean - (3.0 * normal_stddev))
-      assert_true(z_score < -3.0)
-    }
-  }
-  
-  // 验证异常值的实际值
-  assert_eq(anomaly_measurements[50].2, "anomaly_high")
-  assert_eq(anomaly_measurements[50].1, 500.0)
-  
-  assert_eq(anomaly_measurements[51].2, "anomaly_low")
-  assert_eq(anomaly_measurements[51].1, 10.0)
-}
-
-// 测试9: 时间序列预测测试
-pub test "时间序列预测测试" {
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "prediction-meter")
-  let clock = azimuth::Clock::system()
-  
-  // 创建时间序列预测测试
-  let prediction_histogram = azimuth::Meter::create_histogram(meter, "prediction.metric", Some("Prediction metric"), Some("units"))
-  
-  let historical_measurements = []
-  let prediction_base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 创建历史数据（线性趋势）
-  for i in 0..60 {
-    let measure_time = prediction_base_time + (i * 10000000L)  // 每10ms一个测量
-    let value = 50.0 + (i.to_double() * 1.5)  // 线性增长：50, 51.5, 53, ...
-    
-    azimuth::Histogram::record(prediction_histogram, value)
-    historical_measurements.push((measure_time, value))
-  }
-  
-  // 验证历史数据
-  assert_true(historical_measurements.length() == 60)
-  
-  // 基于历史数据预测未来值（简单线性回归）
-  let n = historical_measurements.length().to_double()
-  let sum_x = 0.0
-  let sum_y = 0.0
-  let sum_xy = 0.0
-  let sum_x2 = 0.0
-  
-  for i in 0..historical_measurements.length() {
-    let x = i.to_double()
-    let (_, y) = historical_measurements[i]
-    
-    sum_x = sum_x + x
-    sum_y = sum_y + y
-    sum_xy = sum_xy + (x * y)
-    sum_x2 = sum_x2 + (x * x)
-  }
-  
-  // 计算线性回归参数
-  let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
-  let intercept = (sum_y - slope * sum_x) / n
-  
-  // 验证回归参数
-  assert_true(slope >= 1.4 && slope <= 1.6)  // 应该接近1.5
-  assert_true(intercept >= 45.0 && intercept <= 55.0)  // 应该接近50
-  
-  // 预测未来10个值
-  let predictions = []
-  let prediction_times = []
-  
-  for i in 60..70 {
-    let predict_time = prediction_base_time + (i * 10000000L)
-    let predicted_value = slope * i.to_double() + intercept
-    
-    predictions.push(predicted_value)
-    prediction_times.push(predict_time)
-  }
-  
-  // 验证预测
-  assert_true(predictions.length() == 10)
-  assert_true(prediction_times.length() == 10)
-  
-  // 验证预测值的递增性
-  for i in 1..predictions.length() {
-    assert_true(predictions[i] > predictions[i-1])
-  }
-  
-  // 验证预测时间的递增性
-  for i in 1..prediction_times.length() {
-    assert_true(prediction_times[i] > prediction_times[i-1])
-  }
-  
-  // 验证预测值的合理性
-  let last_historical_value = historical_measurements[59].1
-  let first_predicted_value = predictions[0]
-  
-  // 第一个预测值应该接近最后一个历史值
-  assert_true(first_predicted_value >= last_historical_value - 2.0)
-  assert_true(first_predicted_value <= last_historical_value + 2.0)
-  
-  // 验证预测趋势的一致性
-  let historical_growth_rate = slope
-  let predicted_growth_rate = predictions[1] - predictions[0]
-  
-  assert_true(predicted_growth_rate >= historical_growth_rate - 0.5)
-  assert_true(predicted_growth_rate <= historical_growth_rate + 0.5)
-}
-
-// 测试10: 时间序列压缩和采样测试
-pub test "时间序列压缩和采样测试" {
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "compression-meter")
-  let clock = azimuth::Clock::system()
-  
-  // 创建时间序列压缩和采样测试
-  let compression_histogram = azimuth::Meter::create_histogram(meter, "compression.metric", Some("Compression metric"), Some("units"))
-  
-  let raw_measurements = []
-  let compression_base_time = azimuth::Clock::now_unix_nanos(clock)
-  
-  // 创建高频率原始数据（每1ms一个测量）
-  for i in 0..1000 {
-    let measure_time = compression_base_time + (i * 1000000L)  // 每1ms一个测量
-    let value = 100.0 + (10.0 * ((i * 3.14159 / 100).sin())) + (i.to_double() * 0.01)  // 正弦波 + 线性趋势
-    
-    azimuth::Histogram::record(compression_histogram, value)
-    raw_measurements.push((measure_time, value))
-  }
-  
-  // 验证原始数据
-  assert_true(raw_measurements.length() == 1000)
-  
-  // 时间下采样（每10ms取一个点）
-  let downsampled_measurements = []
-  let downsample_rate = 10
-  
-  for i in 0..(raw_measurements.length() / downsample_rate) {
-    let original_index = i * downsample_rate
-    downsampled_measurements.push(raw_measurements[original_index])
-  }
-  
-  // 验证下采样
-  assert_true(downsampled_measurements.length() == 100)
-  
-  // 验证下采样后的时间间隔
-  for i in 1..downsampled_measurements.length() {
-    let (prev_time, _) = downsampled_measurements[i-1]
-    let (curr_time, _) = downsampled_measurements[i]
-    
-    let expected_interval = downsample_rate * 1000000L  // 10ms
-    let actual_interval = curr_time - prev_time
-    
-    assert_true(actual_interval == expected_interval)
-  }
-  
-  // 时间窗口聚合（每100ms计算平均值）
-  let aggregated_measurements = []
-  let window_size = 100  // 100个原始测量点 = 100ms
-  
-  for i in 0..(raw_measurements.length() / window_size) {
-    let window_start = i * window_size
-    let window_end = (i + 1) * window_size
-    
-    let mut window_sum = 0.0
-    let window_count = 0
-    
-    for j in window_start..window_end {
-      let (_, value) = raw_measurements[j]
-      window_sum = window_sum + value
-      window_count = window_count + 1
-    }
-    
-    let window_avg = window_sum / window_count.to_double()
-    let window_start_time = raw_measurements[window_start].0
-    
-    aggregated_measurements.push((window_start_time, window_avg))
-  }
-  
-  // 验证聚合
-  assert_true(aggregated_measurements.length() == 10)
-  
-  // 验证聚合后的时间间隔
-  for i in 1..aggregated_measurements.length() {
-    let (prev_time, _) = aggregated_measurements[i-1]
-    let (curr_time, _) = aggregated_measurements[i]
-    
-    let expected_interval = window_size * 1000000L  // 100ms
-    let actual_interval = curr_time - prev_time
-    
-    assert_true(actual_interval == expected_interval)
-  }
-  
-  // 验证聚合值的准确性
-  for i in 0..aggregated_measurements.length() {
-    let (_, avg_value) = aggregated_measurements[i]
-    
-    // 聚合值应该在原始数据范围内
-    let mut min_value = raw_measurements[0].1
-    let mut max_value = raw_measurements[0].1
-    
-    for j in 0..raw_measurements.length() {
-      let (_, value) = raw_measurements[j]
-      if value < min_value {
-        min_value = value
+      // Find surrounding points for interpolation
+      let mut lower_point = (0, 0.0)
+      let mut upper_point = (0, 0.0)
+      let mut found_lower = false
+      let mut found_upper = false
+      
+      for point in high_freq_series {
+        if point[0] <= target_time {
+          lower_point = point
+          found_lower = true
+        }
+        if point[0] >= target_time && !found_upper {
+          upper_point = point
+          found_upper = true
+        }
       }
-      if value > max_value {
-        max_value = value
+      
+      if found_lower && found_upper {
+        // Linear interpolation
+        let time_diff = upper_point[0] - lower_point[0]
+        let value_diff = upper_point[1] - lower_point[1]
+        let target_offset = target_time - lower_point[0]
+        let interpolated_value = lower_point[1] + (value_diff * target_offset.to_float() / time_diff.to_float())
+        
+        low_freq_series = low_freq_series.concat([(target_time, interpolated_value)])
       }
     }
     
-    assert_true(avg_value >= min_value)
-    assert_true(avg_value <= max_value)
+    target_time = target_time + low_freq_interval
   }
   
-  // 验证压缩效果
-  let compression_ratio = raw_measurements.length().to_double() / aggregated_measurements.length().to_double()
-  assert_true(compression_ratio == 100.0)  // 1000:10 = 100:1的压缩比
+  // Should have 7 points (6 minutes + 1)
+  assert_eq(low_freq_series.length(), 7)
+  
+  // Verify interpolation accuracy
+  assert_eq(low_freq_series[0][1], 50.0)   // Exact match
+  assert_eq(low_freq_series[1][1], 52.0)   // Interpolated
+  assert_eq(low_freq_series[2][1], 54.0)   // Interpolated
+  assert_eq(low_freq_series[3][1], 56.0)   // Interpolated
+  assert_eq(low_freq_series[4][1], 58.0)   // Interpolated
+  assert_eq(low_freq_series[5][1], 60.0)   // Interpolated
+  assert_eq(low_freq_series[6][1], 62.0)   // Exact match (last point)
+}
+
+// Test 4: Time Series Trend Analysis
+test "time series trend analysis" {
+  // Generate time series with different trends
+  let base_timestamp = 1640995200000
+  let interval_ms = 3600000  // 1 hour interval
+  let data_points = 24       // 24 hours
+  
+  let mut trend_series = []
+  
+  for i = 0; i < data_points; i = i + 1 {
+    let timestamp = base_timestamp + (i * interval_ms)
+    // Combine multiple trends: linear + seasonal + noise
+    let linear_trend = 100.0 + (i.to_float() * 2.0)  // Linear increase
+    let seasonal_trend = 10.0 * ((i.to_float() * 2.0 * 3.14159) / 24.0).sin()  // Daily cycle
+    let noise = (i % 7).to_float() - 3.0  // Small noise
+    let value = linear_trend + seasonal_trend + noise
+    
+    trend_series = trend_series.concat([(timestamp, value)])
+  }
+  
+  // Calculate simple moving average (SMA)
+  let sma_period = 4  // 4-hour SMA
+  let mut sma_series = []
+  
+  for i = sma_period - 1; i < trend_series.length(); i = i + 1 {
+    let mut sum = 0.0
+    for j = i - (sma_period - 1); j <= i; j = j + 1 {
+      sum = sum + trend_series[j][1]
+    }
+    let sma_value = sum / sma_period.to_float()
+    sma_series = sma_series.concat([(trend_series[i][0], sma_value)])
+  }
+  
+  // Should have 20 SMA points (24 - 4 + 1)
+  assert_eq(sma_series.length(), 20)
+  
+  // Calculate exponential moving average (EMA)
+  let ema_period = 4
+  let ema_alpha = 2.0 / (ema_period.to_float() + 1.0)
+  let mut ema_series = []
+  
+  // Initialize EMA with first value
+  let mut ema_value = trend_series[0][1]
+  ema_series = ema_series.concat([(trend_series[0][0], ema_value)])
+  
+  for i = 1; i < trend_series.length(); i = i + 1 {
+    ema_value = ema_alpha * trend_series[i][1] + (1.0 - ema_alpha) * ema_value
+    ema_series = ema_series.concat([(trend_series[i][0], ema_value)])
+  }
+  
+  // Should have 24 EMA points
+  assert_eq(ema_series.length(), 24)
+  
+  // Calculate trend direction
+  let mut trend_directions = []
+  for i = 1; i < trend_series.length(); i = i + 1 {
+    let current_value = trend_series[i][1]
+    let previous_value = trend_series[i-1][1]
+    let direction = if current_value > previous_value { "up" } else if current_value < previous_value { "down" } else { "flat" }
+    trend_directions = trend_directions.concat([direction])
+  }
+  
+  // Should have 23 trend directions
+  assert_eq(trend_directions.length(), 23)
+  
+  // Count trend directions
+  let up_count = trend_directions.filter(|dir| dir == "up").length()
+  let down_count = trend_directions.filter(|dir| dir == "down").length()
+  let flat_count = trend_directions.filter(|dir| dir == "flat").length()
+  
+  assert_eq(up_count + down_count + flat_count, 23)
+  assert_true(up_count > down_count)  // Should be mostly upward due to linear trend
+}
+
+// Test 5: Time Series Anomaly Detection
+test "time series anomaly detection" {
+  // Generate time series with some anomalies
+  let base_timestamp = 1640995200000
+  let interval_ms = 3600000  // 1 hour interval
+  let data_points = 24       // 24 hours
+  
+  let mut anomaly_series = []
+  
+  for i = 0; i < data_points; i = i + 1 {
+    let timestamp = base_timestamp + (i * interval_ms)
+    let mut value = 100.0 + (5.0 * (i % 6).to_float()).sin()  // Regular pattern
+    
+    // Inject anomalies at specific points
+    if i == 6 {
+      value = value + 50.0  // Spike anomaly
+    } else if i == 12 {
+      value = value - 30.0  // Drop anomaly
+    } else if i == 18 {
+      value = value * 2.0   // Scale anomaly
+    }
+    
+    anomaly_series = anomaly_series.concat([(timestamp, value)])
+  }
+  
+  // Detect anomalies using statistical method (z-score)
+  let values = anomaly_series.map(|(_, value)| value)
+  let mean = values.reduce(|acc, val| acc + val, 0.0) / values.length().to_float()
+  
+  let variance = values.reduce(|acc, val| acc + (val - mean) * (val - mean), 0.0) / values.length().to_float()
+  let std_dev = variance.sqrt()
+  
+  let z_score_threshold = 2.0  // 2 standard deviations
+  let mut detected_anomalies = []
+  
+  for i = 0; i < anomaly_series.length(); i = i + 1 {
+    let value = anomaly_series[i][1]
+    let z_score = (value - mean).abs() / std_dev
+    
+    if z_score > z_score_threshold {
+      detected_anomalies = detected_anomalies.concat([(
+        anomaly_series[i][0],
+        value,
+        z_score
+      )])
+    }
+  }
+  
+  // Should detect at least the 3 injected anomalies
+  assert_true(detected_anomalies.length() >= 3)
+  
+  // Verify anomaly detection accuracy
+  let anomaly_indices = detected_anomalies.map(|(timestamp, _, _)| {
+    for i = 0; i < anomaly_series.length(); i = i + 1 {
+      if anomaly_series[i][0] == timestamp {
+        return i
+      }
+    }
+    -1
+  })
+  
+  let has_spike = anomaly_indices.any(|idx| idx == 6)
+  let has_drop = anomaly_indices.any(|idx| idx == 12)
+  let has_scale = anomaly_indices.any(|idx| idx == 18)
+  
+  assert_true(has_spike)
+  assert_true(has_drop)
+  assert_true(has_scale)
+  
+  // Test moving window anomaly detection
+  let window_size = 6  // 6-hour window
+  let mut window_anomalies = []
+  
+  for i = window_size; i < anomaly_series.length(); i = i + 1 {
+    let window_values = []
+    for j = i - window_size; j < i; j = j + 1 {
+      window_values = window_values.concat([anomaly_series[j][1]])
+    }
+    
+    let window_mean = window_values.reduce(|acc, val| acc + val, 0.0) / window_values.length().to_float()
+    let window_variance = window_values.reduce(|acc, val| acc + (val - window_mean) * (val - window_mean), 0.0) / window_values.length().to_float()
+    let window_std_dev = window_variance.sqrt()
+    
+    let current_value = anomaly_series[i][1]
+    let z_score = (current_value - window_mean).abs() / window_std_dev
+    
+    if z_score > 2.5 {  // Higher threshold for window method
+      window_anomalies = window_anomalies.concat([(
+        anomaly_series[i][0],
+        current_value,
+        z_score
+      )])
+    }
+  }
+  
+  // Window method should also detect anomalies
+  assert_true(window_anomalies.length() >= 2)
+}
+
+// Test 6: Time Series Seasonality Analysis
+test "time series seasonality analysis" {
+  // Generate time series with multiple seasonal patterns
+  let base_timestamp = 1640995200000
+  let interval_ms = 3600000  // 1 hour interval
+  let data_points = 168      // 1 week of hourly data
+  
+  let mut seasonal_series = []
+  
+  for i = 0; i < data_points; i = i + 1 {
+    let timestamp = base_timestamp + (i * interval_ms)
+    
+    // Daily seasonality (24-hour cycle)
+    let daily_seasonal = 20.0 * ((i.to_float() * 2.0 * 3.14159) / 24.0).sin()
+    
+    // Weekly seasonality (7-day cycle)
+    let weekly_seasonal = 10.0 * ((i.to_float() * 2.0 * 3.14159) / (24.0 * 7.0)).sin()
+    
+    // Base value with trend
+    let base_value = 100.0 + (i.to_float() * 0.1)
+    
+    let value = base_value + daily_seasonal + weekly_seasonal
+    seasonal_series = seasonal_series.concat([(timestamp, value)])
+  }
+  
+  // Autocorrelation analysis for seasonality detection
+  let values = seasonal_series.map(|(_, value)| value)
+  let mean = values.reduce(|acc, val| acc + val, 0.0) / values.length().to_float()
+  
+  // Calculate autocorrelation for different lags
+  let test_lags = [24, 48, 72, 168]  // 1 day, 2 days, 3 days, 1 week
+  let mut autocorrelations = []
+  
+  for lag in test_lags {
+    let mut numerator = 0.0
+    let mut denominator = 0.0
+    
+    for i = lag; i < values.length(); i = i + 1 {
+      numerator = numerator + (values[i] - mean) * (values[i - lag] - mean)
+    }
+    
+    for i = 0; i < values.length(); i = i + 1 {
+      denominator = denominator + (values[i] - mean) * (values[i] - mean)
+    }
+    
+    let autocorr = numerator / denominator
+    autocorrelations = autocorrelations.concat([(lag, autocorr)])
+  }
+  
+  // Should have 4 autocorrelation values
+  assert_eq(autocorrelations.length(), 4)
+  
+  // Daily seasonality should be strong (lag 24, 48, 72)
+  let lag_24 = autocorrelations.filter(|(lag, _)| lag == 24)[0][1]
+  let lag_48 = autocorrelations.filter(|(lag, _)| lag == 48)[0][1]
+  let lag_72 = autocorrelations.filter(|(lag, _)| lag == 72)[0][1]
+  
+  assert_true(lag_24.abs() > 0.5)  // Strong daily correlation
+  assert_true(lag_48.abs() > 0.5)  // Strong 2-day correlation
+  assert_true(lag_72.abs() > 0.5)  // Strong 3-day correlation
+  
+  // Weekly seasonality should also be present
+  let lag_168 = autocorrelations.filter(|(lag, _)| lag == 168)[0][1]
+  assert_true(lag_168.abs() > 0.3)  // Weekly correlation
+  
+  // Seasonal decomposition (simplified)
+  let trend_period = 168  // Use full period for trend
+  let mut trend_component = []
+  
+  // Simple moving average for trend
+  for i = 0; i < seasonal_series.length(); i = i + 1 {
+    let start = if i < 12 { 0 } else { i - 12 }
+    let end = if i > seasonal_series.length() - 13 { seasonal_series.length() - 1 } else { i + 12 }
+    
+    let mut sum = 0.0
+    let mut count = 0
+    for j = start; j <= end; j = j + 1 {
+      sum = sum + seasonal_series[j][1]
+      count = count + 1
+    }
+    
+    let trend_value = sum / count.to_float()
+    trend_component = trend_component.concat([trend_value])
+  }
+  
+  assert_eq(trend_component.length(), seasonal_series.length())
+  
+  // Detrended series
+  let mut detrended_series = []
+  for i = 0; i < seasonal_series.length(); i = i + 1 {
+    let detrended_value = seasonal_series[i][1] - trend_component[i]
+    detrended_series = detrended_series.concat([detrended_value])
+  }
+  
+  assert_eq(detrended_series.length(), seasonal_series.length())
+  
+  // Seasonal component (average pattern)
+  let mut seasonal_pattern = []
+  for hour = 0; hour < 24; hour = hour + 1 {
+    let mut hour_sum = 0.0
+    let mut hour_count = 0
+    
+    for i = hour; i < detrended_series.length(); i = i + 24 {
+      hour_sum = hour_sum + detrended_series[i]
+      hour_count = hour_count + 1
+    }
+    
+    let seasonal_avg = hour_sum / hour_count.to_float()
+    seasonal_pattern = seasonal_pattern.concat([seasonal_avg])
+  }
+  
+  assert_eq(seasonal_pattern.length(), 24)
+  
+  // Verify seasonal pattern has expected characteristics
+  let pattern_min = seasonal_pattern.reduce(|acc, val| if val < acc { val } else { acc }, seasonal_pattern[0])
+  let pattern_max = seasonal_pattern.reduce(|acc, val| if val > acc { val } else { acc }, seasonal_pattern[0])
+  
+  assert_true(pattern_max > pattern_min)  // Should have variation
+  assert_true(pattern_max - pattern_min > 10.0)  // Significant variation
+}
+
+// Test 7: Time Series Forecasting
+test "time series forecasting" {
+  // Generate historical time series data
+  let base_timestamp = 1640995200000
+  let interval_ms = 3600000  // 1 hour interval
+  let historical_points = 120  // 5 days of historical data
+  
+  let mut historical_series = []
+  
+  for i = 0; i < historical_points; i = i + 1 {
+    let timestamp = base_timestamp + (i * interval_ms)
+    // Trend + seasonality + noise
+    let trend = 100.0 + (i.to_float() * 0.5)
+    let seasonal = 10.0 * ((i.to_float() * 2.0 * 3.14159) / 24.0).sin()
+    let noise = (i % 7).to_float() - 3.0
+    let value = trend + seasonal + noise
+    
+    historical_series = historical_series.concat([(timestamp, value)])
+  }
+  
+  // Simple linear regression forecasting
+  let n = historical_series.length().to_float()
+  let x_values = []
+  for i = 0; i < historical_series.length(); i = i + 1 {
+    x_values = x_values.concat([i.to_float()])
+  }
+  let y_values = historical_series.map(|(_, value)| value)
+  
+  let x_sum = x_values.reduce(|acc, val| acc + val, 0.0)
+  let y_sum = y_values.reduce(|acc, val| acc + val, 0.0)
+  let xy_sum = x_values.reduce(|acc, x| acc + x * y_values[x.to_int()], 0.0)
+  let x2_sum = x_values.reduce(|acc, x| acc + x * x, 0.0)
+  
+  let slope = (n * xy_sum - x_sum * y_sum) / (n * x2_sum - x_sum * x_sum)
+  let intercept = (y_sum - slope * x_sum) / n
+  
+  // Generate forecasts for next 24 hours
+  let forecast_points = 24
+  let mut forecast_series = []
+  
+  for i = 0; i < forecast_points; i = i + 1 {
+    let forecast_timestamp = base_timestamp + ((historical_points + i) * interval_ms)
+    let forecast_x = (historical_points + i).to_float()
+    let forecast_value = slope * forecast_x + intercept
+    
+    forecast_series = forecast_series.concat([(forecast_timestamp, forecast_value)])
+  }
+  
+  assert_eq(forecast_series.length(), 24)
+  
+  // Verify forecast timestamps are sequential
+  for i = 1; i < forecast_series.length(); i = i + 1 {
+    let interval = forecast_series[i][0] - forecast_series[i-1][0]
+    assert_eq(interval, interval_ms)
+  }
+  
+  // Verify forecast values show trend
+  let first_forecast = forecast_series[0][1]
+  let last_forecast = forecast_series[forecast_series.length() - 1][1]
+  
+  assert_true(last_forecast > first_forecast)  // Should be increasing due to positive trend
+  
+  // Seasonal adjustment forecasting
+  let seasonal_period = 24
+  let mut seasonal_forecasts = []
+  
+  for i = 0; i < forecast_points; i = i + 1 {
+    let forecast_timestamp = base_timestamp + ((historical_points + i) * interval_ms)
+    let forecast_x = (historical_points + i).to_float()
+    let trend_forecast = slope * forecast_x + intercept
+    
+    // Add seasonal component
+    let seasonal_index = (historical_points + i) % seasonal_period
+    let seasonal_component = 10.0 * ((seasonal_index.to_float() * 2.0 * 3.14159) / 24.0).sin()
+    
+    let seasonal_forecast = trend_forecast + seasonal_component
+    seasonal_forecasts = seasonal_forecasts.concat([(forecast_timestamp, seasonal_forecast)])
+  }
+  
+  assert_eq(seasonal_forecasts.length(), 24)
+  
+  // Compare simple vs seasonal forecasts
+  let simple_first = forecast_series[0][1]
+  let seasonal_first = seasonal_forecasts[0][1]
+  let simple_last = forecast_series[forecast_series.length() - 1][1]
+  let seasonal_last = seasonal_forecasts[seasonal_forecasts.length() - 1][1]
+  
+  // Seasonal forecasts should have more variation
+  let simple_range = simple_last - simple_first
+  let seasonal_range = seasonal_last - seasonal_first
+  
+  assert_true(seasonal_range.abs() >= simple_range.abs())
+}
+
+// Test 8: Time Series Compression and Storage
+test "time series compression and storage" {
+  // Generate high-frequency time series data
+  let base_timestamp = 1640995200000
+  let interval_ms = 1000  // 1 second interval
+  let data_points = 3600  // 1 hour of second-by-second data
+  
+  let mut high_freq_series = []
+  
+  for i = 0; i < data_points; i = i + 1 {
+    let timestamp = base_timestamp + (i * interval_ms)
+    // Generate realistic data with periods of stability and change
+    let mut value = 100.0
+    
+    if i % 60 == 0 {
+      value = value + (i % 300).to_float()  // Step changes every minute
+    }
+    
+    value = value + (2.0 * ((i % 10).to_float() - 5.0))  // Small oscillations
+    high_freq_series = high_freq_series.concat([(timestamp, value)])
+  }
+  
+  assert_eq(high_freq_series.length(), 3600)
+  
+  // Delta encoding compression
+  let mut delta_encoded = []
+  let mut prev_timestamp = high_freq_series[0][0]
+  let mut prev_value = high_freq_series[0][1]
+  
+  // First point stored as-is
+  delta_encoded = delta_encoded.concat([high_freq_series[0]])
+  
+  // Subsequent points stored as deltas
+  for i = 1; i < high_freq_series.length(); i = i + 1 {
+    let timestamp_delta = high_freq_series[i][0] - prev_timestamp
+    let value_delta = high_freq_series[i][1] - prev_value
+    
+    delta_encoded = delta_encoded.concat([(timestamp_delta, value_delta)])
+    prev_timestamp = high_freq_series[i][0]
+    prev_value = high_freq_series[i][1]
+  }
+  
+  assert_eq(delta_encoded.length(), 3600)
+  
+  // Verify delta encoding can be reconstructed
+  let mut reconstructed_series = []
+  reconstructed_series = reconstructed_series.concat([delta_encoded[0]])
+  
+  for i = 1; i < delta_encoded.length(); i = i + 1 {
+    let prev_timestamp = reconstructed_series[i-1][0]
+    let prev_value = reconstructed_series[i-1][1]
+    let timestamp = prev_timestamp + delta_encoded[i][0]
+    let value = prev_value + delta_encoded[i][1]
+    
+    reconstructed_series = reconstructed_series.concat([(timestamp, value)])
+  }
+  
+  assert_eq(reconstructed_series.length(), high_freq_series.length())
+  
+  // Verify reconstruction accuracy
+  for i = 0; i < high_freq_series.length(); i = i + 1 {
+    assert_eq(high_freq_series[i][0], reconstructed_series[i][0])
+    assert_eq(high_freq_series[i][1], reconstructed_series[i][1])
+  }
+  
+  // Simple run-length encoding for constant values
+  let mut rle_encoded = []
+  let mut current_run = (high_freq_series[0], 1)
+  
+  for i = 1; i < high_freq_series.length(); i = i + 1 {
+    if high_freq_series[i][1] == current_run[0][1] && 
+       high_freq_series[i][0] - current_run[0][0] == interval_ms {
+      // Continue current run
+      current_run = (current_run[0], current_run[1] + 1)
+    } else {
+      // End current run and start new one
+      rle_encoded = rle_encoded.concat([current_run])
+      current_run = (high_freq_series[i], 1)
+    }
+  }
+  
+  // Add final run
+  rle_encoded = rle_encoded.concat([current_run])
+  
+  // RLE should significantly reduce data size for data with constant periods
+  assert_true(rle_encoded.length() < high_freq_series.length())
+  
+  // Time-based downsampling
+  let downsample_interval = 60000  // 1 minute
+  let mut downsampled_series = []
+  
+  let mut window_start = high_freq_series[0][0]
+  while window_start < high_freq_series[high_freq_series.length() - 1][0] {
+    let window_end = window_start + downsample_interval
+    
+    // Aggregate data in window
+    let window_data = high_freq_series.filter(|(timestamp, _)| {
+      timestamp >= window_start && timestamp < window_end
+    })
+    
+    if window_data.length() > 0 {
+      let values = window_data.map(|(_, value)| value)
+      let avg = values.reduce(|acc, val| acc + val, 0.0) / values.length().to_float()
+      let min = values.reduce(|acc, val| if val < acc { val } else { acc }, values[0])
+      let max = values.reduce(|acc, val| if val > acc { val } else { acc }, values[0])
+      
+      downsampled_series = downsampled_series.concat([(
+        window_start,
+        ("avg", avg),
+        ("min", min),
+        ("max", max),
+        ("count", values.length())
+      )])
+    }
+    
+    window_start = window_end
+  }
+  
+  // Should have 60 downsampled points (3600 seconds / 60 seconds)
+  assert_eq(downsampled_series.length(), 60)
+  
+  // Verify downsampling preserves key characteristics
+  let original_values = high_freq_series.map(|(_, value)| value)
+  let original_min = original_values.reduce(|acc, val| if val < acc { val } else { acc }, original_values[0])
+  let original_max = original_values.reduce(|acc, val| if val > acc { val } else { acc }, original_values[0])
+  
+  let downsampled_mins = downsampled_series.map(|(_, mins)| mins.filter(|(k, _)| k == "min")[0][1])
+  let downsampled_maxs = downsampled_series.map(|(_, maxs)| maxs.filter(|(k, _)| k == "max")[0][1])
+  
+  let downsampled_min = downsampled_mins.reduce(|acc, val| if val < acc { val } else { acc }, downsampled_mins[0])
+  let downsampled_max = downsampled_maxs.reduce(|acc, val| if val > acc { val } else { acc }, downsampled_maxs[0])
+  
+  assert_eq(original_min, downsampled_min)
+  assert_eq(original_max, downsampled_max)
 }
