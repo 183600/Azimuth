@@ -63,5 +63,18 @@
         "azimuth_data_consistency_validation_tests.mbt",
         "azimuth_complex_aggregation_algorithms_tests.mbt",
         "azimuth_fault_recovery_mechanism_tests.mbt",
-        "azimuth_high_quality_comprehensive_test_suite.mbt"
+        "azimuth_high_quality_comprehensive_test_suite.mbt",
+        "azimuth_innovative_telemetry_tests.mbt",
+        "azimuth_advanced_edge_case_tests.mbt",
+        "azimuth_performance_optimization_tests.mbt",
+        "azimuth_internationalization_comprehensive_tests.mbt",
+        "azimuth_data_consistency_integrity_tests.mbt",
+        "azimuth_comprehensive_core_functionality_tests.mbt",
+        "azimuth_boundary_condition_tests.mbt",
+        "azimuth_performance_tests.mbt",
+        "azimuth_error_handling_tests.mbt",
+        "azimuth_concurrent_safety_tests.mbt",
+        "azimuth_internationalization_tests.mbt",
+        "azimuth_cross_service_consistency_tests.mbt",
+        "azimuth_resource_management_tests.mbt"
             ]  }}

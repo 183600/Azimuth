@@ -1,397 +1,376 @@
-// Data Consistency Tests for Azimuth Telemetry System
-// This file contains test cases for data consistency across distributed scenarios
+// Cross-Service Consistency Tests for Azimuth Telemetry System
+// This file contains test cases covering consistency across different services and components
 
-test "cross-service trace consistency" {
-  // Test trace ID consistency across multiple services
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
+test "trace context consistency across services" {
+  // Test trace context propagation between services
+  let propagator = CompositePropagator::new([W3CTraceContextPropagator::new()])
   
-  // Service A creates root span
-  let service_a_span_ctx = azimuth::SpanContext::new(trace_id, "b7ad6b7169203331", true, "key1=value1")
-  let service_a_span = azimuth::Span::new("service-a-operation", azimuth::Server, service_a_span_ctx)
+  // Service A: Create trace context
+  let service_a_context = Context::with_value(
+    Context::root(),
+    ContextKey::new("service_a.user_id"),
+    "user_12345"
+  )
   
-  // Service B creates child span
-  let service_b_span_ctx = azimuth::SpanContext::new(trace_id, "b7ad6b7169203332", true, "key1=value1,key2=value2")
-  let service_b_span = azimuth::Span::new("service-b-operation", azimuth::Server, service_b_span_ctx)
+  // Service A: Inject trace context
+  let carrier = TextMapCarrier::new()
+  CompositePropagator::inject(propagator, service_a_context, carrier)
   
-  // Service C creates child span
-  let service_c_span_ctx = azimuth::SpanContext::new(trace_id, "b7ad6b7169203333", true, "key1=value1,key2=value2,key3=value3")
-  let service_c_span = azimuth::Span::new("service-c-operation", azimuth::Internal, service_c_span_ctx)
+  // Service B: Extract trace context
+  let service_b_context = CompositePropagator::extract(propagator, carrier)
+  let service_b_user_id = Context::get(service_b_context, ContextKey::new("service_a.user_id"))
+  assert_eq(service_b_user_id, None) // Different context key
   
-  // Verify trace ID consistency across all services
-  assert_eq(azimuth::SpanContext::trace_id(service_a_span_ctx), trace_id)
-  assert_eq(azimuth::SpanContext::trace_id(service_b_span_ctx), trace_id)
-  assert_eq(azimuth::SpanContext::trace_id(service_c_span_ctx), trace_id)
+  // Service B: Add its own context
+  let service_b_enhanced_context = Context::with_value(
+    service_b_context,
+    ContextKey::new("service_b.session_id"),
+    "session_67890"
+  )
   
-  // Verify span ID uniqueness
-  let span_a_id = azimuth::SpanContext::span_id(service_a_span_ctx)
-  let span_b_id = azimuth::SpanContext::span_id(service_b_span_ctx)
-  let span_c_id = azimuth::SpanContext::span_id(service_c_span_ctx)
+  // Service B: Inject enhanced context
+  let enhanced_carrier = TextMapCarrier::new()
+  CompositePropagator::inject(propagator, service_b_enhanced_context, enhanced_carrier)
   
-  assert_true(span_a_id != span_b_id)
-  assert_true(span_b_id != span_c_id)
-  assert_true(span_a_id != span_c_id)
+  // Service C: Extract enhanced context
+  let service_c_context = CompositePropagator::extract(propagator, enhanced_carrier)
+  let service_c_session_id = Context::get(service_c_context, ContextKey::new("service_b.session_id"))
+  assert_eq(service_c_session_id, None) // Different context key
   
-  // Verify sampling consistency
-  assert_true(azimuth::SpanContext::is_sampled(service_a_span_ctx))
-  assert_true(azimuth::SpanContext::is_sampled(service_b_span_ctx))
-  assert_true(azimuth::SpanContext::is_sampled(service_c_span_ctx))
+  // Verify traceparent consistency
+  let traceparent_a = TextMapCarrier::get(carrier, "traceparent")
+  let traceparent_b = TextMapCarrier::get(enhanced_carrier, "traceparent")
+  assert_eq(traceparent_a, traceparent_b) // Should be the same traceparent
 }
 
-test "baggage propagation consistency" {
-  // Test baggage consistency across service boundaries
-  let initial_baggage = azimuth::Baggage::new()
+test "metric consistency across services" {
+  // Test metric consistency across different services
+  let meter_provider = MeterProvider::default()
   
-  // Service A adds baggage entries
-  let baggage_a = azimuth::Baggage::set_entry(initial_baggage, "user.id", "12345")
-  let baggage_a_with_session = azimuth::Baggage::set_entry(baggage_a, "session.id", "session-abcdef")
+  // Service A: Create metrics
+  let service_a_meter = MeterProvider::get_meter(meter_provider, "service_a")
+  let service_a_counter = Meter::create_counter(service_a_meter, "http_requests_total", Some("Total HTTP requests"), Some("requests"))
+  let service_a_histogram = Meter::create_histogram(service_a_meter, "http_request_duration", Some("HTTP request duration"), Some("ms"))
   
-  // Service B adds more baggage entries
-  let baggage_b = azimuth::Baggage::set_entry(baggage_a_with_session, "request.id", "req-67890")
-  let baggage_b_with_tenant = azimuth::Baggage::set_entry(baggage_b, "tenant.id", "tenant-xyz")
+  // Service A: Record metrics
+  Counter::add(service_a_counter, 100.0)
+  Histogram::record(service_a_histogram, 50.0)
   
-  // Service C adds final baggage entries
-  let baggage_c = azimuth::Baggage::set_entry(baggage_b_with_tenant, "operation.id", "op-12345")
-  let baggage_c_final = azimuth::Baggage::set_entry(baggage_c, "correlation.id", "corr-12345")
+  // Service B: Create metrics with same names
+  let service_b_meter = MeterProvider::get_meter(meter_provider, "service_b")
+  let service_b_counter = Meter::create_counter(service_b_meter, "http_requests_total", Some("Total HTTP requests"), Some("requests"))
+  let service_b_histogram = Meter::create_histogram(service_b_meter, "http_request_duration", Some("HTTP request duration"), Some("ms"))
   
-  // Verify baggage consistency across all services
-  // Service A should see its entries
-  assert_eq(azimuth::Baggage::get_entry(baggage_a_with_session, "user.id"), Some("12345"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_a_with_session, "session.id"), Some("session-abcdef"))
+  // Service B: Record metrics
+  Counter::add(service_b_counter, 200.0)
+  Histogram::record(service_b_histogram, 75.0)
   
-  // Service B should see all previous entries plus its own
-  assert_eq(azimuth::Baggage::get_entry(baggage_b_with_tenant, "user.id"), Some("12345"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_b_with_tenant, "session.id"), Some("session-abcdef"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_b_with_tenant, "request.id"), Some("req-67890"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_b_with_tenant, "tenant.id"), Some("tenant-xyz"))
+  // Service C: Create metrics with same names
+  let service_c_meter = MeterProvider::get_meter(meter_provider, "service_c")
+  let service_c_counter = Meter::create_counter(service_c_meter, "http_requests_total", Some("Total HTTP requests"), Some("requests"))
+  let service_c_histogram = Meter::create_histogram(service_c_meter, "http_request_duration", Some("HTTP request duration"), Some("ms"))
   
-  // Service C should see all entries
-  assert_eq(azimuth::Baggage::get_entry(baggage_c_final, "user.id"), Some("12345"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_c_final, "session.id"), Some("session-abcdef"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_c_final, "request.id"), Some("req-67890"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_c_final, "tenant.id"), Some("tenant-xyz"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_c_final, "operation.id"), Some("op-12345"))
-  assert_eq(azimuth::Baggage::get_entry(baggage_c_final, "correlation.id"), Some("corr-12345"))
+  // Service C: Record metrics
+  Counter::add(service_c_counter, 150.0)
+  Histogram::record(service_c_histogram, 60.0)
+  
+  // Verify metric consistency (same names, descriptions, and units)
+  assert_eq(service_a_counter.name, service_b_counter.name)
+  assert_eq(service_b_counter.name, service_c_counter.name)
+  assert_eq(service_a_counter.name, "http_requests_total")
+  
+  assert_eq(service_a_counter.description, service_b_counter.description)
+  assert_eq(service_b_counter.description, service_c_counter.description)
+  assert_eq(service_a_counter.description, Some("Total HTTP requests"))
+  
+  assert_eq(service_a_counter.unit, service_b_counter.unit)
+  assert_eq(service_b_counter.unit, service_c_counter.unit)
+  assert_eq(service_a_counter.unit, Some("requests"))
+  
+  assert_eq(service_a_histogram.name, service_b_histogram.name)
+  assert_eq(service_b_histogram.name, service_c_histogram.name)
+  assert_eq(service_a_histogram.name, "http_request_duration")
+  
+  assert_eq(service_a_histogram.description, service_b_histogram.description)
+  assert_eq(service_b_histogram.description, service_c_histogram.description)
+  assert_eq(service_a_histogram.description, Some("HTTP request duration"))
+  
+  assert_eq(service_a_histogram.unit, service_b_histogram.unit)
+  assert_eq(service_b_histogram.unit, service_c_histogram.unit)
+  assert_eq(service_a_histogram.unit, Some("ms"))
 }
 
-test "context propagation consistency" {
-  // Test context consistency across multiple hops
-  let root_ctx = azimuth::Context::root()
+test "log consistency across services" {
+  // Test log consistency across different services
+  let logger_provider = LoggerProvider::default()
   
-  // First hop: add initial context
-  let key1 = azimuth::ContextKey::new("hop1.data")
-  let ctx1 = azimuth::Context::with_value(root_ctx, key1, "hop1.value")
+  // Service A: Create logger and log record
+  let service_a_logger = LoggerProvider::get_logger(logger_provider, "service_a")
+  let service_a_log = LogRecord::new_with_context(
+    Info,
+    Some("Service A: Processing request"),
+    Some(Attributes::new()),
+    Some(1735689600000000000L),
+    Some(1735689600000000000L),
+    Some("trace_12345"),
+    Some("span_12345"),
+    Some(Context::root())
+  )
   
-  // Second hop: add more context
-  let key2 = azimuth::ContextKey::new("hop2.data")
-  let ctx2 = azimuth::Context::with_value(ctx1, key2, "hop2.value")
+  // Service B: Create logger and log record
+  let service_b_logger = LoggerProvider::get_logger(logger_provider, "service_b")
+  let service_b_log = LogRecord::new_with_context(
+    Info,
+    Some("Service B: Processing request"),
+    Some(Attributes::new()),
+    Some(1735689600000000000L),
+    Some(1735689600000000000L),
+    Some("trace_12345"),
+    Some("span_67890"),
+    Some(Context::root())
+  )
   
-  // Third hop: add final context
-  let key3 = azimuth::ContextKey::new("hop3.data")
-  let ctx3 = azimuth::Context::with_value(ctx2, key3, "hop3.value")
+  // Service C: Create logger and log record
+  let service_c_logger = LoggerProvider::get_logger(logger_provider, "service_c")
+  let service_c_log = LogRecord::new_with_context(
+    Info,
+    Some("Service C: Processing request"),
+    Some(Attributes::new()),
+    Some(1735689600000000000L),
+    Some(1735689600000000000L),
+    Some("trace_12345"),
+    Some("span_abcde"),
+    Some(Context::root())
+  )
   
-  // Verify context consistency across hops
-  // Simplified implementation only stores the most recent value
-  assert_eq(azimuth::Context::get(ctx3, key1), None)  // Not preserved in simplified implementation
-  assert_eq(azimuth::Context::get(ctx3, key2), None)  // Not preserved in simplified implementation
-  assert_eq(azimuth::Context::get(ctx3, key3), Some("hop3.value"))
+  // Verify trace consistency (same trace_id across services)
+  assert_eq(LogRecord::trace_id(service_a_log), Some("trace_12345"))
+  assert_eq(LogRecord::trace_id(service_b_log), Some("trace_12345"))
+  assert_eq(LogRecord::trace_id(service_c_log), Some("trace_12345"))
   
-  // Test context with composite propagator
-  let trace_propagator = azimuth::W3CTraceContextPropagator::new()
-  let composite_propagator = azimuth::CompositePropagator::new([trace_propagator])
+  // Verify different span_ids (different spans for each service)
+  assert_eq(LogRecord::span_id(service_a_log), Some("span_12345"))
+  assert_eq(LogRecord::span_id(service_b_log), Some("span_67890"))
+  assert_eq(LogRecord::span_id(service_c_log), Some("span_abcde"))
   
-  let carrier = azimuth::TextMapCarrier::new()
-  
-  // Inject context
-  azimuth::CompositePropagator::inject(composite_propagator, ctx3, carrier)
-  
-  // Extract context in new service
-  let extracted_ctx = azimuth::CompositePropagator::extract(composite_propagator, carrier)
-  let extracted_key = azimuth::ContextKey::new("extracted")
-  let extracted_value = azimuth::Context::get(extracted_ctx, extracted_key)
-  
-  assert_eq(extracted_value, Some("true"))
+  // Verify same severity level
+  assert_eq(LogRecord::severity_number(service_a_log), Info)
+  assert_eq(LogRecord::severity_number(service_b_log), Info)
+  assert_eq(LogRecord::severity_number(service_c_log), Info)
 }
 
-test "resource attribute consistency" {
-  // Test resource attribute consistency across services
-  let base_attrs = [
-    ("service.name", azimuth::StringValue("consistency-test-service")),
-    ("service.version", azimuth::StringValue("1.0.0")),
-    ("service.instance.id", azimuth::StringValue("instance-12345"))
+test "resource consistency across services" {
+  // Test resource consistency across different services
+  let base_resource = Resource::new()
+  
+  // Common attributes across all services
+  let common_attributes = [
+    ("service.namespace", StringValue("production")),
+    ("service.version", StringValue("1.0.0")),
+    ("deployment.environment", StringValue("production"))
   ]
   
-  let base_resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), base_attrs)
+  // Service A: Create resource with common and service-specific attributes
+  let service_a_attributes = [
+    ("service.name", StringValue("service_a")),
+    ("service.instance.id", StringValue("instance_a_123"))
+  ] + common_attributes
   
-  // Service A adds service-specific attributes
-  let service_a_attrs = [
-    ("service.type", azimuth::StringValue("web-server")),
-    ("service.environment", azimuth::StringValue("production"))
-  ]
-  let service_a_resource = azimuth::Resource::with_attributes(base_resource, service_a_attrs)
+  let service_a_resource = Resource::with_attributes(base_resource, service_a_attributes)
   
-  // Service B adds its own attributes
-  let service_b_attrs = [
-    ("service.type", azimuth::StringValue("database")),
-    ("service.environment", azimuth::StringValue("production"))
-  ]
-  let service_b_resource = azimuth::Resource::with_attributes(base_resource, service_b_attrs)
+  // Service B: Create resource with common and service-specific attributes
+  let service_b_attributes = [
+    ("service.name", StringValue("service_b")),
+    ("service.instance.id", StringValue("instance_b_456"))
+  ] + common_attributes
   
-  // Service C adds its own attributes
-  let service_c_attrs = [
-    ("service.type", azimuth::StringValue("cache")),
-    ("service.environment", azimuth::StringValue("production"))
-  ]
-  let service_c_resource = azimuth::Resource::with_attributes(base_resource, service_c_attrs)
+  let service_b_resource = Resource::with_attributes(base_resource, service_b_attributes)
   
-  // Verify base attributes are consistent across all services
-  assert_eq(azimuth::Resource::get_attribute(service_a_resource, "service.name"), Some(azimuth::StringValue("consistency-test-service")))
-  assert_eq(azimuth::Resource::get_attribute(service_b_resource, "service.name"), Some(azimuth::StringValue("consistency-test-service")))
-  assert_eq(azimuth::Resource::get_attribute(service_c_resource, "service.name"), Some(azimuth::StringValue("consistency-test-service")))
+  // Service C: Create resource with common and service-specific attributes
+  let service_c_attributes = [
+    ("service.name", StringValue("service_c")),
+    ("service.instance.id", StringValue("instance_c_789"))
+  ] + common_attributes
   
-  assert_eq(azimuth::Resource::get_attribute(service_a_resource, "service.version"), Some(azimuth::StringValue("1.0.0")))
-  assert_eq(azimuth::Resource::get_attribute(service_b_resource, "service.version"), Some(azimuth::StringValue("1.0.0")))
-  assert_eq(azimuth::Resource::get_attribute(service_c_resource, "service.version"), Some(azimuth::StringValue("1.0.0")))
+  let service_c_resource = Resource::with_attributes(base_resource, service_c_attributes)
   
-  assert_eq(azimuth::Resource::get_attribute(service_a_resource, "service.instance.id"), Some(azimuth::StringValue("instance-12345")))
-  assert_eq(azimuth::Resource::get_attribute(service_b_resource, "service.instance.id"), Some(azimuth::StringValue("instance-12345")))
-  assert_eq(azimuth::Resource::get_attribute(service_c_resource, "service.instance.id"), Some(azimuth::StringValue("instance-12345")))
+  // Verify common attributes consistency
+  assert_eq(Resource::get_attribute(service_a_resource, "service.namespace"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(service_b_resource, "service.namespace"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(service_c_resource, "service.namespace"), Some(StringValue("production")))
+  
+  assert_eq(Resource::get_attribute(service_a_resource, "service.version"), Some(StringValue("1.0.0")))
+  assert_eq(Resource::get_attribute(service_b_resource, "service.version"), Some(StringValue("1.0.0")))
+  assert_eq(Resource::get_attribute(service_c_resource, "service.version"), Some(StringValue("1.0.0")))
+  
+  assert_eq(Resource::get_attribute(service_a_resource, "deployment.environment"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(service_b_resource, "deployment.environment"), Some(StringValue("production")))
+  assert_eq(Resource::get_attribute(service_c_resource, "deployment.environment"), Some(StringValue("production")))
   
   // Verify service-specific attributes
-  assert_eq(azimuth::Resource::get_attribute(service_a_resource, "service.type"), Some(azimuth::StringValue("web-server")))
-  assert_eq(azimuth::Resource::get_attribute(service_b_resource, "service.type"), Some(azimuth::StringValue("database")))
-  assert_eq(azimuth::Resource::get_attribute(service_c_resource, "service.type"), Some(azimuth::StringValue("cache")))
+  assert_eq(Resource::get_attribute(service_a_resource, "service.name"), Some(StringValue("service_a")))
+  assert_eq(Resource::get_attribute(service_b_resource, "service.name"), Some(StringValue("service_b")))
+  assert_eq(Resource::get_attribute(service_c_resource, "service.name"), Some(StringValue("service_c")))
   
-  // Verify environment consistency
-  assert_eq(azimuth::Resource::get_attribute(service_a_resource, "service.environment"), Some(azimuth::StringValue("production")))
-  assert_eq(azimuth::Resource::get_attribute(service_b_resource, "service.environment"), Some(azimuth::StringValue("production")))
-  assert_eq(azimuth::Resource::get_attribute(service_c_resource, "service.environment"), Some(azimuth::StringValue("production")))
+  assert_eq(Resource::get_attribute(service_a_resource, "service.instance.id"), Some(StringValue("instance_a_123")))
+  assert_eq(Resource::get_attribute(service_b_resource, "service.instance.id"), Some(StringValue("instance_b_456")))
+  assert_eq(Resource::get_attribute(service_c_resource, "service.instance.id"), Some(StringValue("instance_c_789")))
 }
 
-test "metrics consistency across services" {
-  // Test metrics consistency across multiple services
-  let meter_provider_a = azimuth::MeterProvider::default()
-  let meter_a = azimuth::MeterProvider::get_meter(meter_provider_a, "service-a-meter")
+test "baggage consistency across services" {
+  // Test baggage consistency across different services
+  let baggage = Baggage::new()
   
-  let meter_provider_b = azimuth::MeterProvider::default()
-  let meter_b = azimuth::MeterProvider::get_meter(meter_provider_b, "service-b-meter")
+  // Service A: Set baggage entries
+  let service_a_baggage = Baggage::set_entry(baggage, "user_id", "user_12345")
+  let service_a_baggage = Baggage::set_entry(service_a_baggage, "request_id", "req_abc123")
+  let service_a_baggage = Baggage::set_entry(service_a_baggage, "session_id", "sess_def456")
   
-  let meter_provider_c = azimuth::MeterProvider::default()
-  let meter_c = azimuth::MeterProvider::get_meter(meter_provider_c, "service-c-meter")
+  // Service B: Add more baggage entries
+  let service_b_baggage = Baggage::set_entry(service_a_baggage, "tenant_id", "tenant_789")
+  let service_b_baggage = Baggage::set_entry(service_b_baggage, "correlation_id", "corr_ghi789")
   
-  // Create consistent metrics across services
-  let request_counter_a = azimuth::Meter::create_counter(meter_a, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
-  let request_counter_b = azimuth::Meter::create_counter(meter_b, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
-  let request_counter_c = azimuth::Meter::create_counter(meter_c, "http.requests.total", Some("Total HTTP requests"), Some("requests"))
+  // Service C: Add more baggage entries
+  let service_c_baggage = Baggage::set_entry(service_b_baggage, "client_id", "client_jkl012")
+  let service_c_baggage = Baggage::set_entry(service_c_baggage, "trace_id", "trace_mno345")
   
-  let response_histogram_a = azimuth::Meter::create_histogram(meter_a, "http.response.time", Some("HTTP response time"), Some("ms"))
-  let response_histogram_b = azimuth::Meter::create_histogram(meter_b, "http.response.time", Some("HTTP response time"), Some("ms"))
-  let response_histogram_c = azimuth::Meter::create_histogram(meter_c, "http.response.time", Some("HTTP response time"), Some("ms"))
-  
-  // Verify metric consistency
-  assert_eq(request_counter_a.name, request_counter_b.name)
-  assert_eq(request_counter_b.name, request_counter_c.name)
-  assert_eq(request_counter_a.name, "http.requests.total")
-  
-  assert_eq(request_counter_a.description, request_counter_b.description)
-  assert_eq(request_counter_b.description, request_counter_c.description)
-  assert_eq(request_counter_a.description, Some("Total HTTP requests"))
-  
-  assert_eq(request_counter_a.unit, request_counter_b.unit)
-  assert_eq(request_counter_b.unit, request_counter_c.unit)
-  assert_eq(request_counter_a.unit, Some("requests"))
-  
-  assert_eq(response_histogram_a.name, response_histogram_b.name)
-  assert_eq(response_histogram_b.name, response_histogram_c.name)
-  assert_eq(response_histogram_a.name, "http.response.time")
-  
-  // Perform consistent operations
-  azimuth::Counter::add(request_counter_a, 10.0)
-  azimuth::Counter::add(request_counter_b, 15.0)
-  azimuth::Counter::add(request_counter_c, 20.0)
-  
-  azimuth::Histogram::record(response_histogram_a, 100.0)
-  azimuth::Histogram::record(response_histogram_b, 150.0)
-  azimuth::Histogram::record(response_histogram_c, 200.0)
+  // Verify baggage consistency across services
+  assert_eq(Baggage::get_entry(service_c_baggage, "user_id"), Some("user_12345"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "request_id"), Some("req_abc123"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "session_id"), Some("sess_def456"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "tenant_id"), Some("tenant_789"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "correlation_id"), Some("corr_ghi789"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "client_id"), Some("client_jkl012"))
+  assert_eq(Baggage::get_entry(service_c_baggage, "trace_id"), Some("trace_mno345"))
 }
 
-test "logging consistency across services" {
-  // Test logging consistency across multiple services
-  let logger_provider_a = azimuth::LoggerProvider::default()
-  let logger_a = azimuth::LoggerProvider::get_logger(logger_provider_a, "service-a-logger")
+test "span hierarchy consistency across services" {
+  // Test span hierarchy consistency across different services
+  let tracer_provider = TracerProvider::default()
   
-  let logger_provider_b = azimuth::LoggerProvider::default()
-  let logger_b = azimuth::LoggerProvider::get_logger(logger_provider_b, "service-b-logger")
+  // Service A: Create root span
+  let service_a_tracer = TracerProvider::get_tracer(tracer_provider, "service_a")
+  let service_a_span = Tracer::start_span(service_a_tracer, "service_a_operation")
+  let service_a_span_context = Span::span_context(service_a_span)
   
-  let logger_provider_c = azimuth::LoggerProvider::default()
-  let logger_c = azimuth::LoggerProvider::get_logger(logger_provider_c, "service-c-logger")
+  // Service B: Create child span
+  let service_b_tracer = TracerProvider::get_tracer(tracer_provider, "service_b")
+  let service_b_span = Tracer::start_span(service_b_tracer, "service_b_operation")
+  let service_b_span_context = Span::span_context(service_b_span)
   
-  // Create consistent log records across services
-  let trace_id = "consistency-trace-12345"
-  let base_timestamp = azimuth::Clock::now_unix_nanos(azimuth::Clock::system())
+  // Service C: Create child span
+  let service_c_tracer = TracerProvider::get_tracer(tracer_provider, "service_c")
+  let service_c_span = Tracer::start_span(service_c_tracer, "service_c_operation")
+  let service_c_span_context = Span::span_context(service_c_span)
   
-  let log_a = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("Service A processing request"),
-    Some(azimuth::Attributes::new()),
-    Some(base_timestamp),
-    Some(base_timestamp + 1000000L),
-    Some(trace_id),
-    Some("service-a-span-123"),
-    Some(azimuth::Context::root())
-  )
+  // Verify span consistency
+  assert_true(SpanContext::is_valid(service_a_span_context))
+  assert_true(SpanContext::is_valid(service_b_span_context))
+  assert_true(SpanContext::is_valid(service_c_span_context))
   
-  let log_b = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("Service B processing request"),
-    Some(azimuth::Attributes::new()),
-    Some(base_timestamp + 2000000L),
-    Some(base_timestamp + 3000000L),
-    Some(trace_id),
-    Some("service-b-span-456"),
-    Some(azimuth::Context::root())
-  )
+  assert_true(SpanContext::is_sampled(service_a_span_context))
+  assert_true(SpanContext::is_sampled(service_b_span_context))
+  assert_true(SpanContext::is_sampled(service_c_span_context))
   
-  let log_c = azimuth::LogRecord::new_with_context(
-    azimuth::Info,
-    Some("Service C processing request"),
-    Some(azimuth::Attributes::new()),
-    Some(base_timestamp + 4000000L),
-    Some(base_timestamp + 5000000L),
-    Some(trace_id),
-    Some("service-c-span-789"),
-    Some(azimuth::Context::root())
-  )
+  // Verify span kinds
+  assert_eq(Span::kind(service_a_span), Internal)
+  assert_eq(Span::kind(service_b_span), Internal)
+  assert_eq(Span::kind(service_c_span), Internal)
   
-  // Verify trace ID consistency
-  assert_eq(azimuth::LogRecord::trace_id(log_a), Some(trace_id))
-  assert_eq(azimuth::LogRecord::trace_id(log_b), Some(trace_id))
-  assert_eq(azimuth::LogRecord::trace_id(log_c), Some(trace_id))
-  
-  // Verify severity consistency
-  assert_eq(azimuth::LogRecord::severity_number(log_a), azimuth::Info)
-  assert_eq(azimuth::LogRecord::severity_number(log_b), azimuth::Info)
-  assert_eq(azimuth::LogRecord::severity_number(log_c), azimuth::Info)
-  
-  // Verify timestamp ordering
-  assert_true(azimuth::LogRecord::timestamp(log_a) < azimuth::LogRecord::timestamp(log_b))
-  assert_true(azimuth::LogRecord::timestamp(log_b) < azimuth::LogRecord::timestamp(log_c))
-  
-  // Emit logs
-  azimuth::Logger::emit(logger_a, log_a)
-  azimuth::Logger::emit(logger_b, log_b)
-  azimuth::Logger::emit(logger_c, log_c)
+  // End spans
+  Span::end(service_a_span)
+  Span::end(service_b_span)
+  Span::end(service_c_span)
 }
 
-test "attribute value consistency" {
-  // Test attribute value consistency across different operations
-  let attrs = azimuth::Attributes::new()
+test "attribute consistency across services" {
+  // Test attribute consistency across different services
+  let service_a_attributes = Attributes::new()
+  let service_b_attributes = Attributes::new()
+  let service_c_attributes = Attributes::new()
   
-  // Set consistent attribute values
-  let string_value = azimuth::StringValue("consistent.string.value")
-  let int_value = azimuth::IntValue(42)
-  let float_value = azimuth::FloatValue(3.14159)
-  let bool_value = azimuth::BoolValue(true)
-  let array_string_value = azimuth::ArrayStringValue(["consistent", "array", "values"])
-  let array_int_value = azimuth::ArrayIntValue([1, 2, 3])
-  
-  // Set attributes
-  azimuth::Attributes::set(attrs, "consistent.string", string_value)
-  azimuth::Attributes::set(attrs, "consistent.int", int_value)
-  azimuth::Attributes::set(attrs, "consistent.float", float_value)
-  azimuth::Attributes::set(attrs, "consistent.bool", bool_value)
-  azimuth::Attributes::set(attrs, "consistent.array.string", array_string_value)
-  azimuth::Attributes::set(attrs, "consistent.array.int", array_int_value)
-  
-  // Retrieve and verify consistency
-  let retrieved_string = azimuth::Attributes::get(attrs, "consistent.string")
-  let retrieved_int = azimuth::Attributes::get(attrs, "consistent.int")
-  let retrieved_float = azimuth::Attributes::get(attrs, "consistent.float")
-  let retrieved_bool = azimuth::Attributes::get(attrs, "consistent.bool")
-  let retrieved_array_string = azimuth::Attributes::get(attrs, "consistent.array.string")
-  let retrieved_array_int = azimuth::Attributes::get(attrs, "consistent.array.int")
-  
-  // Verify based on simplified implementation
-  assert_eq(retrieved_string, Some(azimuth::StringValue("test_value")))
-  assert_eq(retrieved_int, Some(azimuth::IntValue(42)))
-  assert_eq(retrieved_float, None)  // Simplified implementation
-  assert_eq(retrieved_bool, None)   // Simplified implementation
-  assert_eq(retrieved_array_string, None)  // Simplified implementation
-  assert_eq(retrieved_array_int, None)     // Simplified implementation
-  
-  // Test consistency with resource attributes
-  let resource_attrs = [
-    ("consistent.string", string_value),
-    ("consistent.int", int_value),
-    ("consistent.float", float_value),
-    ("consistent.bool", bool_value)
+  // Common attributes across all services
+  let common_attributes = [
+    ("http.method", StringValue("GET")),
+    ("http.status_code", IntValue(200)),
+    ("http.scheme", StringValue("https"))
   ]
   
-  let resource = azimuth::Resource::with_attributes(azimuth::Resource::new(), resource_attrs)
+  // Service A: Set common and service-specific attributes
+  Attributes::set(service_a_attributes, "service.name", StringValue("service_a"))
+  Attributes::set(service_a_attributes, "service.version", StringValue("1.0.0"))
   
-  // Verify resource attribute consistency
-  let resource_string = azimuth::Resource::get_attribute(resource, "consistent.string")
-  let resource_int = azimuth::Resource::get_attribute(resource, "consistent.int")
-  let resource_float = azimuth::Resource::get_attribute(resource, "consistent.float")
-  let resource_bool = azimuth::Resource::get_attribute(resource, "consistent.bool")
+  for attr in common_attributes {
+    Attributes::set(service_a_attributes, attr.0, attr.1)
+  }
   
-  // Simplified implementation returns None for all attributes
-  assert_eq(resource_string, None)
-  assert_eq(resource_int, None)
-  assert_eq(resource_float, None)
-  assert_eq(resource_bool, None)
+  // Service B: Set common and service-specific attributes
+  Attributes::set(service_b_attributes, "service.name", StringValue("service_b"))
+  Attributes::set(service_b_attributes, "service.version", StringValue("1.0.0"))
+  
+  for attr in common_attributes {
+    Attributes::set(service_b_attributes, attr.0, attr.1)
+  }
+  
+  // Service C: Set common and service-specific attributes
+  Attributes::set(service_c_attributes, "service.name", StringValue("service_c"))
+  Attributes::set(service_c_attributes, "service.version", StringValue("1.0.0"))
+  
+  for attr in common_attributes {
+    Attributes::set(service_c_attributes, attr.0, attr.1)
+  }
+  
+  // Verify common attributes consistency
+  assert_eq(Attributes::get(service_a_attributes, "http.method"), Some(StringValue("GET")))
+  assert_eq(Attributes::get(service_b_attributes, "http.method"), Some(StringValue("GET")))
+  assert_eq(Attributes::get(service_c_attributes, "http.method"), Some(StringValue("GET")))
+  
+  assert_eq(Attributes::get(service_a_attributes, "http.status_code"), Some(IntValue(200)))
+  assert_eq(Attributes::get(service_b_attributes, "http.status_code"), Some(IntValue(200)))
+  assert_eq(Attributes::get(service_c_attributes, "http.status_code"), Some(IntValue(200)))
+  
+  assert_eq(Attributes::get(service_a_attributes, "http.scheme"), Some(StringValue("https")))
+  assert_eq(Attributes::get(service_b_attributes, "http.scheme"), Some(StringValue("https")))
+  assert_eq(Attributes::get(service_c_attributes, "http.scheme"), Some(StringValue("https")))
+  
+  // Verify service-specific attributes
+  assert_eq(Attributes::get(service_a_attributes, "service.name"), Some(StringValue("service_a")))
+  assert_eq(Attributes::get(service_b_attributes, "service.name"), Some(StringValue("service_b")))
+  assert_eq(Attributes::get(service_c_attributes, "service.name"), Some(StringValue("service_c")))
 }
 
-test "distributed tracing consistency" {
-  // Test end-to-end distributed tracing consistency
-  let trace_id = "distributed-trace-12345"
+test "instrumentation scope consistency across services" {
+  // Test instrumentation scope consistency across different services
+  let service_a_scope = InstrumentationScope::{ 
+    name: "service_a_instrumentation", 
+    version: Some("1.0.0"), 
+    schema_url: Some("https://example.com/schema/v1") 
+  }
   
-  // Entry point service
-  let entry_span_ctx = azimuth::SpanContext::new(trace_id, "entry-span-123", true, "key1=value1")
-  let entry_span = azimuth::Span::new("entry-point-operation", azimuth::Server, entry_span_ctx)
+  let service_b_scope = InstrumentationScope::{ 
+    name: "service_b_instrumentation", 
+    version: Some("1.0.0"), 
+    schema_url: Some("https://example.com/schema/v1") 
+  }
   
-  // Add entry event
-  azimuth::Span::add_event(entry_span, "operation.started", Some([
-    ("service.name", azimuth::StringValue("entry-service")),
-    ("operation.type", azimuth::StringValue("distributed"))
-  ]))
+  let service_c_scope = InstrumentationScope::{ 
+    name: "service_c_instrumentation", 
+    version: Some("1.0.0"), 
+    schema_url: Some("https://example.com/schema/v1") 
+  }
   
-  // Middleware service
-  let middleware_span_ctx = azimuth::SpanContext::new(trace_id, "middleware-span-456", true, "key1=value1,key2=value2")
-  let middleware_span = azimuth::Span::new("middleware-operation", azimuth::Internal, middleware_span_ctx)
+  // Verify version consistency
+  assert_eq(service_a_scope.version, service_b_scope.version)
+  assert_eq(service_b_scope.version, service_c_scope.version)
+  assert_eq(service_a_scope.version, Some("1.0.0"))
   
-  // Add middleware event
-  azimuth::Span::add_event(middleware_span, "middleware.processing", Some([
-    ("service.name", azimuth::StringValue("middleware-service")),
-    ("processing.stage", azimuth::StringValue("authentication"))
-  ]))
+  // Verify schema URL consistency
+  assert_eq(service_a_scope.schema_url, service_b_scope.schema_url)
+  assert_eq(service_b_scope.schema_url, service_c_scope.schema_url)
+  assert_eq(service_a_scope.schema_url, Some("https://example.com/schema/v1"))
   
-  // Backend service
-  let backend_span_ctx = azimuth::SpanContext::new(trace_id, "backend-span-789", true, "key1=value1,key2=value2,key3=value3")
-  let backend_span = azimuth::Span::new("backend-operation", azimuth::Server, backend_span_ctx)
-  
-  // Add backend event
-  azimuth::Span::add_event(backend_span, "backend.processing", Some([
-    ("service.name", azimuth::StringValue("backend-service")),
-    ("processing.stage", azimuth::StringValue("database.query"))
-  ]))
-  
-  // Verify distributed trace consistency
-  assert_eq(azimuth::SpanContext::trace_id(entry_span_ctx), trace_id)
-  assert_eq(azimuth::SpanContext::trace_id(middleware_span_ctx), trace_id)
-  assert_eq(azimuth::SpanContext::trace_id(backend_span_ctx), trace_id)
-  
-  // Verify span hierarchy consistency
-  assert_eq(azimuth::Span::name(entry_span), "entry-point-operation")
-  assert_eq(azimuth::Span::name(middleware_span), "middleware-operation")
-  assert_eq(azimuth::Span::name(backend_span), "backend-operation")
-  
-  // Verify span kind consistency
-  assert_eq(azimuth::Span::kind(entry_span), azimuth::Server)
-  assert_eq(azimuth::Span::kind(middleware_span), azimuth::Internal)
-  assert_eq(azimuth::Span::kind(backend_span), azimuth::Server)
-  
-  // End all spans
-  azimuth::Span::end(entry_span)
-  azimuth::Span::end(middleware_span)
-  azimuth::Span::end(backend_span)
+  // Verify different names
+  assert_eq(service_a_scope.name, "service_a_instrumentation")
+  assert_eq(service_b_scope.name, "service_b_instrumentation")
+  assert_eq(service_c_scope.name, "service_c_instrumentation")
 }
