@@ -1,1020 +1,424 @@
-// Azimuth Resource Management Comprehensive Test Suite
-// This file contains test cases for resource management mechanisms
+// Azimuth Resource Management and Optimization Test Suite
+// 测试遥测系统的资源管理和优化功能
 
-// Test 1: Memory Pool Simulation
-test "memory pool simulation" {
-  // Simulate a memory pool with fixed-size blocks
-  type MemoryPool = {
-    blocks: Array<Bool>,  // true = allocated, false = free
-    block_size: Int
+test "内存池管理和对象复用" {
+  // 创建具有内存池管理的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_memory_pool_management()
+  
+  // 配置内存池设置
+  let memory_pool_config = MemoryPoolConfig {
+    span_pool_size: 1000,
+    attribute_pool_size: 5000,
+    event_pool_size: 2000,
+    metric_pool_size: 3000,
+    gc_threshold: 0.8,
+    pool_expansion_factor: 1.5,
+    max_pool_size: 10000
   }
   
-  let create_pool = fn(num_blocks: Int, block_size: Int) -> MemoryPool {
-    let mut blocks = []
-    for i in 0..<num_blocks {
-      blocks = blocks.push(false)
-    }
-    { blocks: blocks, block_size: block_size }
+  MemoryPoolManagement::configure(telemetry_provider, memory_pool_config)
+  
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "memory.pool.test")
+  
+  // 记录初始内存使用
+  let initial_memory = MemoryPoolManagement::get_memory_usage(telemetry_provider)
+  
+  // 创建大量span，测试对象复用
+  let spans = []
+  for i = 0; i < 1500; i = i + 1 { // 超过初始池大小
+    let span = Tracer::start_span(tracer, "memory.pool.operation")
+    Span::set_attribute(span, "iteration", i)
+    Span::set_attribute(span, "data", "x".repeat(50)) // 添加一些数据
+    spans.push(span)
   }
   
-  let pool_allocate = fn(pool: MemoryPool) -> Result<(MemoryPool, Int), String> {
-    for i in 0..<pool.blocks.length() {
-      if !pool.blocks[i] {
-        let new_blocks = pool.blocks.with(i, true)
-        return Ok(({ blocks: new_blocks, block_size: pool.block_size }, i))
-      }
-    }
-    Err("No free blocks available")
+  // 检查内存池是否扩展
+  let expanded_memory = MemoryPoolManagement::get_memory_usage(telemetry_provider)
+  let pool_expanded = MemoryPoolManagement::is_pool_expanded(telemetry_provider)
+  assert_true(pool_expanded)
+  
+  // 结束所有span，对象应该返回池中
+  for span in spans {
+    Span::end(span)
   }
   
-  let pool_deallocate = fn(pool: MemoryPool, block_index: Int) -> Result<MemoryPool, String> {
-    if block_index >= 0 && block_index < pool.blocks.length() && pool.blocks[block_index] {
-      let new_blocks = pool.blocks.with(block_index, false)
-      Ok({ blocks: new_blocks, block_size: pool.block_size })
-    } else {
-      Err("Invalid block index")
-    }
-  }
+  // 强制垃圾回收
+  MemoryPoolManagement::force_gc(telemetry_provider)
   
-  let pool_get_usage = fn(pool: MemoryPool) -> (Int, Int) {
-    let mut allocated = 0
-    for block in pool.blocks {
-      if block {
-        allocated = allocated + 1
-      }
-    }
-    (allocated, pool.blocks.length())
-  }
+  // 检查内存使用是否减少
+  let final_memory = MemoryPoolManagement::get_memory_usage(telemetry_provider)
+  let memory_reclaimed = MemoryPoolManagement::calculate_memory_reclaimed(telemetry_provider, initial_memory, final_memory)
   
-  // Test pool operations
-  let pool1 = create_pool(5, 1024)
-  let (allocated1, total1) = pool_get_usage(pool1)
-  assert_eq(allocated1, 0)
-  assert_eq(total1, 5)
+  // 验证至少有50%的内存被回收
+  assert_true(memory_reclaimed >= 0.5)
   
-  // Allocate blocks
-  let pool2_result = pool_allocate(pool1)
-  match pool2_result {
-    Ok((pool2, index1)) => {
-      assert_eq(index1, 0)
-      let (allocated2, total2) = pool_get_usage(pool2)
-      assert_eq(allocated2, 1)
-      assert_eq(total2, 5)
-      
-      let pool3_result = pool_allocate(pool2)
-      match pool3_result {
-        Ok((pool3, index2)) => {
-          assert_eq(index2, 1)
-          let (allocated3, total3) = pool_get_usage(pool3)
-          assert_eq(allocated3, 2)
-          assert_eq(total3, 5)
-          
-          // Deallocate blocks
-          let pool4_result = pool_deallocate(pool3, index1)
-          match pool4_result {
-            Ok(pool4) => {
-              let (allocated4, total4) = pool_get_usage(pool4)
-              assert_eq(allocated4, 1)
-              assert_eq(total4, 5)
-              
-              // Allocate again - should reuse the freed block
-              let pool5_result = pool_allocate(pool4)
-              match pool5_result {
-                Ok((pool5, index3)) => {
-                  assert_eq(index3, 0)  // Should reuse the first freed block
-                  let (allocated5, total5) = pool_get_usage(pool5)
-                  assert_eq(allocated5, 2)
-                  assert_eq(total5, 5)
-                }
-                Err(_) => assert_true(false)
-              }
-            }
-            Err(_) => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
+  // 验证池统计信息
+  let pool_stats = MemoryPoolManagement::get_pool_statistics(telemetry_provider)
+  assert_true(PoolStats::total_allocations(pool_stats) > 0)
+  assert_true(PoolStats::pool_hits(pool_stats) > 0)
+  assert_true(PoolStats::pool_efficiency(pool_stats) > 0.8) // 至少80%的池命中率
   
-  // Test pool exhaustion
-  let pool_exhaust = create_pool(2, 512)
-  let pool_ex1_result = pool_allocate(pool_exhaust)
-  match pool_ex1_result {
-    Ok((pool_ex1, _)) => {
-      let pool_ex2_result = pool_allocate(pool_ex1)
-      match pool_ex2_result {
-        Ok((pool_ex2, _)) => {
-          // Pool should be full now
-          let pool_ex3_result = pool_allocate(pool_ex2)
-          match pool_ex3_result {
-            Ok(_) => assert_true(false)
-            Err(msg) => assert_eq(msg, "No free blocks available")
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
+  assert_true(true)
 }
 
-// Test 2: Resource Reference Counting
-test "resource reference counting" {
-  // Simulate reference counting for resources
-  type RefCountedResource = {
-    data: String,
-    ref_count: Int
+test "CPU使用优化和批处理" {
+  // 创建具有CPU优化功能的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_cpu_optimization()
+  
+  // 配置CPU优化设置
+  let cpu_config = CPUOptimizationConfig {
+    batch_processing_enabled: true,
+    batch_size: 100,
+    max_batch_delay_ms: 50,
+    cpu_threshold: 0.8,
+    adaptive_batching: true,
+    parallel_processing: true,
+    max_worker_threads: 4
   }
   
-  type ResourceManager = Array<(String, RefCountedResource)>
+  CPUOptimization::configure(telemetry_provider, cpu_config)
   
-  let create_manager = fn() -> ResourceManager {
-    []
-  }
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "cpu.optimization.test")
   
-  let manager_create_resource = fn(manager: ResourceManager, id: String, data: String) -> ResourceManager {
-    let resource = { data: data, ref_count: 1 }
-    manager.push((id, resource))
-  }
+  // 记录初始CPU使用
+  let initial_cpu = CPUOptimization::get_cpu_usage(telemetry_provider)
   
-  let manager_acquire = fn(manager: ResourceManager, id: String) -> Result<ResourceManager, String> {
-    let mut found = false
-    let mut result = manager
+  // 创建大量度量操作，测试批处理
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "cpu.optimization.test")
+  let counter = Meter::create_counter(meter, "batch.test.counter")
+  
+  // 在高CPU负载下测试自适应批处理
+  CPUOptimization::simulate_cpu_load(telemetry_provider, 0.85) // 85% CPU使用率
+  
+  let start_time = Time::now()
+  
+  // 执行大量度量操作
+  for i = 0; i < 1000; i = i + 1 {
+    Counter::add(counter, 1.0)
     
-    for i in 0..<manager.length() {
-      let (current_id, resource) = manager[i]
-      if current_id == id {
-        found = true
-        let updated_resource = { data: resource.data, ref_count: resource.ref_count + 1 }
-        result = result.with(i, (current_id, updated_resource))
-        break
-      }
-    }
-    
-    if found {
-      Ok(result)
-    } else {
-      Err("Resource not found")
-    }
+    // 添加一些属性
+    Counter::add_with_attributes(counter, 1.0, [
+      ("iteration", i.to_string()),
+      ("worker.id", (i % 4).to_string())
+    ])
   }
   
-  let manager_release = fn(manager: ResourceManager, id: String) -> Result<ResourceManager, String> {
-    let mut found = false
-    let mut result = manager
-    
-    for i in 0..<manager.length() {
-      let (current_id, resource) = manager[i]
-      if current_id == id {
-        found = true
-        if resource.ref_count > 1 {
-          let updated_resource = { data: resource.data, ref_count: resource.ref_count - 1 }
-          result = result.with(i, (current_id, updated_resource))
-        } else {
-          // Remove resource when ref count reaches 0
-          result = result.slice(0, i) + result.slice(i + 1, result.length())
-        }
-        break
-      }
-    }
-    
-    if found {
-      Ok(result)
-    } else {
-      Err("Resource not found")
-    }
+  let end_time = Time::now()
+  let duration = Time::duration_between(start_time, end_time)
+  
+  // 检查批处理是否生效
+  let batch_stats = CPUOptimization::get_batch_statistics(telemetry_provider)
+  assert_true(BatchStats::total_batches(batch_stats) > 0)
+  assert_true(BatchStats::average_batch_size(batch_stats) >= 50) // 平均批大小
+  
+  // 在低CPU负载下测试
+  CPUOptimization::simulate_cpu_load(telemetry_provider, 0.3) // 30% CPU使用率
+  
+  let start_time_low_cpu = Time::now()
+  
+  // 执行相同数量的度量操作
+  for i = 0; i < 1000; i = i + 1 {
+    Counter::add(counter, 1.0)
+    Counter::add_with_attributes(counter, 1.0, [
+      ("iteration", i.to_string()),
+      ("worker.id", (i % 4).to_string())
+    ])
   }
   
-  let manager_get_ref_count = fn(manager: ResourceManager, id: String) -> Option<Int> {
-    for (current_id, resource) in manager {
-      if current_id == id {
-        return Some(resource.ref_count)
-      }
-    }
-    None
-  }
+  let end_time_low_cpu = Time::now()
+  let duration_low_cpu = Time::duration_between(start_time_low_cpu, end_time_low_cpu)
   
-  // Test resource management
-  let manager1 = create_manager()
-  let manager2 = manager_create_resource(manager1, "resource1", "data1")
+  // 验证自适应批处理：低CPU负载时应该有更小的批大小
+  let batch_stats_low_cpu = CPUOptimization::get_batch_statistics(telemetry_provider)
+  assert_true(BatchStats::average_batch_size(batch_stats_low_cpu) < BatchStats::average_batch_size(batch_stats))
   
-  match manager_get_ref_count(manager2, "resource1") {
-    Some(count) => assert_eq(count, 1)
-    None => assert_true(false)
-  }
+  // 验证CPU优化统计
+  let cpu_stats = CPUOptimization::get_cpu_statistics(telemetry_provider)
+  assert_true(CPUStats::total_operations(cpu_stats) >= 2000)
+  assert_true(CPUStats::average_cpu_usage(cpu_stats) < 0.9) // 平均CPU使用应该低于90%
   
-  // Acquire resource
-  let manager3_result = manager_acquire(manager2, "resource1")
-  match manager3_result {
-    Ok(manager3) => {
-      match manager_get_ref_count(manager3, "resource1") {
-        Some(count) => assert_eq(count, 2)
-        None => assert_true(false)
-      }
-      
-      // Acquire again
-      let manager4_result = manager_acquire(manager3, "resource1")
-      match manager4_result {
-        Ok(manager4) => {
-          match manager_get_ref_count(manager4, "resource1") {
-            Some(count) => assert_eq(count, 3)
-            None => assert_true(false)
-          }
-          
-          // Release resource
-          let manager5_result = manager_release(manager4, "resource1")
-          match manager5_result {
-            Ok(manager5) => {
-              match manager_get_ref_count(manager5, "resource1") {
-                Some(count) => assert_eq(count, 2)
-                None => assert_true(false)
-              }
-              
-              // Release again
-              let manager6_result = manager_release(manager5, "resource1")
-              match manager6_result {
-                Ok(manager6) => {
-                  match manager_get_ref_count(manager6, "resource1") {
-                    Some(count) => assert_eq(count, 1)
-                    None => assert_true(false)
-                  }
-                  
-                  // Final release - resource should be removed
-                  let manager7_result = manager_release(manager6, "resource1")
-                  match manager7_result {
-                    Ok(manager7) => {
-                      match manager_get_ref_count(manager7, "resource1") {
-                        Some(_) => assert_true(false)
-                        None => assert_true(true)
-                      }
-                    }
-                    Err(_) => assert_true(false)
-                  }
-                }
-                Err(_) => assert_true(false)
-              }
-            }
-            Err(_) => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-  
-  // Test error cases
-  let manager_error = create_manager()
-  let acquire_error_result = manager_acquire(manager_error, "nonexistent")
-  match acquire_error_result {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "Resource not found")
-  }
-  
-  let release_error_result = manager_release(manager_error, "nonexistent")
-  match release_error_result {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "Resource not found")
-  }
+  assert_true(true)
 }
 
-// Test 3: Resource Cleanup Simulation
-test "resource cleanup simulation" {
-  // Simulate resource cleanup with finalizers
-  type Resource = {
-    id: String,
-    data: String,
-    cleanup_called: Bool
+test "磁盘I/O优化和数据压缩" {
+  // 创建具有磁盘I/O优化功能的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_disk_io_optimization()
+  
+  // 配置磁盘I/O优化设置
+  let disk_config = DiskIOOptimizationConfig {
+    compression_enabled: true,
+    compression_algorithm: "lz4",
+    compression_level: 6,
+    write_buffer_size: 64 * 1024, // 64KB
+    read_buffer_size: 64 * 1024,  // 64KB
+    file_rotation_enabled: true,
+    max_file_size: 100 * 1024 * 1024, // 100MB
+    async_writes: true,
+    write_ahead_log: true
   }
   
-  type ResourceTracker = Array<Resource>
+  DiskIOOptimization::configure(telemetry_provider, disk_config)
   
-  let create_tracker = fn() -> ResourceTracker {
-    []
-  }
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "disk.io.test")
   
-  let tracker_create_resource = fn(tracker: ResourceTracker, id: String, data: String) -> ResourceTracker {
-    let resource = { id: id, data: data, cleanup_called: false }
-    tracker.push(resource)
-  }
-  
-  let tracker_cleanup_resource = fn(tracker: ResourceTracker, id: String) -> ResourceTracker {
-    let mut result = tracker
+  // 创建大量遥测数据
+  let spans = []
+  for i = 0; i < 1000; i = i + 1 {
+    let span = Tracer::start_span(tracer, "disk.io.operation")
     
-    for i in 0..<tracker.length() {
-      let resource = tracker[i]
-      if resource.id == id && !resource.cleanup_called {
-        let cleaned_resource = { id: resource.id, data: resource.data, cleanup_called: true }
-        result = result.with(i, cleaned_resource)
-        break
-      }
+    // 添加大量属性，增加数据大小
+    Span::set_attribute(span, "iteration", i)
+    Span::set_attribute(span, "large.data", "x".repeat(500)) // 500字节的字符串
+    Span::set_attribute(span, "payload", "y".repeat(300))    // 300字节的字符串
+    
+    // 添加多个事件
+    for j = 0; j < 5; j = j + 1 {
+      Span::add_event(span, "event." + j.to_string(), [
+        ("data", "z".repeat(100)),
+        ("timestamp", Time::now().to_string())
+      ])
     }
     
-    result
+    spans.push(span)
   }
   
-  let tracker_remove_resource = fn(tracker: ResourceTracker, id: String) -> ResourceTracker {
-    let mut result = tracker
-    
-    for i in 0..<tracker.length() {
-      let resource = tracker[i]
-      if resource.id == id {
-        result = result.slice(0, i) + result.slice(i + 1, result.length())
-        break
-      }
-    }
-    
-    result
+  // 结束所有span
+  for span in spans {
+    Span::end(span)
   }
   
-  let tracker_is_cleanup_called = fn(tracker: ResourceTracker, id: String) -> Bool {
-    for resource in tracker {
-      if resource.id == id {
-        return resource.cleanup_called
-      }
-    }
-    false
-  }
+  // 强制刷新到磁盘
+  DiskIOOptimization::flush_to_disk(telemetry_provider)
   
-  let tracker_cleanup_all = fn(tracker: ResourceTracker) -> ResourceTracker {
-    let mut result = tracker
-    
-    for i in 0..<tracker.length() {
-      let resource = tracker[i]
-      if !resource.cleanup_called {
-        let cleaned_resource = { id: resource.id, data: resource.data, cleanup_called: true }
-        result = result.with(i, cleaned_resource)
-      }
-    }
-    
-    result
-  }
+  // 检查压缩统计
+  let compression_stats = DiskIOOptimization::get_compression_statistics(telemetry_provider)
+  assert_true(CompressionStats::original_size(compression_stats) > 0)
+  assert_true(CompressionStats::compressed_size(compression_stats) > 0)
+  assert_true(CompressionStats::compression_ratio(compression_stats) > 0.5) // 至少50%压缩率
   
-  // Test resource cleanup
-  let tracker1 = create_tracker()
-  let tracker2 = tracker_create_resource(tracker1, "res1", "data1")
-  let tracker3 = tracker_create_resource(tracker2, "res2", "data2")
+  // 检查I/O统计
+  let io_stats = DiskIOOptimization::get_io_statistics(telemetry_provider)
+  assert_true(IOStats::total_writes(io_stats) > 0)
+  assert_true(IOStats::total_bytes_written(io_stats) > 0)
+  assert_true(IOStats::average_write_size(io_stats) > 0)
+  assert_true(IOStats::async_write_efficiency(io_stats) > 0.8) // 至少80%的异步写入效率
   
-  assert_false(tracker_is_cleanup_called(tracker3, "res1"))
-  assert_false(tracker_is_cleanup_called(tracker3, "res2"))
+  // 测试数据读取和 decompression
+  let read_start_time = Time::now()
+  let read_data = DiskIOOptimization::read_from_disk(telemetry_provider)
+  let read_end_time = Time::now()
+  let read_duration = Time::duration_between(read_start_time, read_end_time)
   
-  // Cleanup individual resource
-  let tracker4 = tracker_cleanup_resource(tracker3, "res1")
-  assert_true(tracker_is_cleanup_called(tracker4, "res1"))
-  assert_false(tracker_is_cleanup_called(tracker4, "res2"))
+  // 验证读取的完整性
+  assert_true(read_data.length() > 0)
+  assert_true(read_data.length() <= 1000) // 应该有1000个span的记录
   
-  // Cleanup all resources
-  let tracker5 = tracker_cleanup_all(tracker4)
-  assert_true(tracker_is_cleanup_called(tracker5, "res1"))
-  assert_true(tracker_is_cleanup_called(tracker5, "res2"))
+  // 检查磁盘使用情况
+  let disk_usage = DiskIOOptimization::get_disk_usage(telemetry_provider)
+  assert_true(DiskUsage::total_space_used(disk_usage) > 0)
+  assert_true(DiskUsage::compression_space_saved(disk_usage) > 0)
   
-  // Remove resource
-  let tracker6 = tracker_remove_resource(tracker5, "res1")
-  assert_false(tracker_is_cleanup_called(tracker6, "res1"))
-  assert_true(tracker_is_cleanup_called(tracker6, "res2"))
+  assert_true(true)
 }
 
-// Test 4: Resource Pool with Timeout Simulation
-test "resource pool with timeout simulation" {
-  // Simulate a resource pool with timeout for acquiring resources
-  type PooledResource = {
-    id: String,
-    in_use: Bool
+test "网络带宽优化和数据传输" {
+  // 创建具有网络优化功能的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_network_optimization()
+  
+  // 配置网络优化设置
+  let network_config = NetworkOptimizationConfig {
+    compression_enabled: true,
+    compression_algorithm: "gzip",
+    batch_transmission: true,
+    max_batch_size: 1024 * 1024, // 1MB
+    transmission_timeout_ms: 5000,
+    retry_strategy: "exponential_backoff",
+    max_retry_attempts: 3,
+    connection_pooling: true,
+    keep_alive_enabled: true
   }
   
-  type ResourcePool = {
-    resources: Array<PooledResource>,
-    waiting_queue: Array<String>  // Requester IDs
-  }
+  NetworkOptimization::configure(telemetry_provider, network_config)
   
-  let create_pool = fn(resource_ids: Array<String>) -> ResourcePool {
-    let mut resources = []
-    for id in resource_ids {
-      resources = resources.push({ id: id, in_use: false })
-    }
-    { resources: resources, waiting_queue: [] }
-  }
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "network.optimization.test")
   
-  let pool_acquire = fn(pool: ResourcePool, requester_id: String, timeout: Int) -> Result<ResourcePool, String> {
-    // Find an available resource
-    let mut available_index = -1
-    for i in 0..<pool.resources.length() {
-      if !pool.resources[i].in_use {
-        available_index = i
-        break
-      }
-    }
+  // 创建大量遥测数据
+  let spans = []
+  for i = 0; i < 500; i = i + 1 {
+    let span = Tracer::start_span(tracer, "network.optimization.operation")
     
-    if available_index >= 0 {
-      // Resource available, allocate it
-      let updated_resource = { id: pool.resources[available_index].id, in_use: true }
-      let updated_resources = pool.resources.with(available_index, updated_resource)
-      Ok({ resources: updated_resources, waiting_queue: pool.waiting_queue })
-    } else if timeout > 0 {
-      // No resource available, add to waiting queue
-      let updated_queue = pool.waiting_queue.push(requester_id)
-      Ok({ resources: pool.resources, waiting_queue: updated_queue })
-    } else {
-      // Timeout reached
-      Err("Resource acquisition timeout")
-    }
-  }
-  
-  let pool_release = fn(pool: ResourcePool, resource_id: String) -> ResourcePool {
-    let mut result = pool
+    // 添加大量属性
+    Span::set_attribute(span, "iteration", i)
+    Span::set_attribute(span, "payload.data", "network_data_".repeat(50))
+    Span::set_attribute(span, "metadata", "metadata_".repeat(20))
     
-    // Mark resource as not in use
-    for i in 0..<pool.resources.length() {
-      let resource = pool.resources[i]
-      if resource.id == resource_id && resource.in_use {
-        let updated_resource = { id: resource.id, in_use: false }
-        result = { resources: result.resources.with(i, updated_resource), waiting_queue: result.waiting_queue }
-        break
-      }
-    }
+    // 添加事件
+    Span::add_event(span, "network.event", [
+      ("event.data", "event_payload_".repeat(10)),
+      ("event.size", "100")
+    ])
     
-    // Process waiting queue if not empty
-    if result.waiting_queue.length() > 0 {
-      let requester_id = result.waiting_queue[0]
-      let updated_queue = result.waiting_queue.slice(1, result.waiting_queue.length())
-      
-      // Find an available resource
-      for i in 0..<result.resources.length() {
-        if !result.resources[i].in_use {
-          let updated_resource = { id: result.resources[i].id, in_use: true }
-          result = { 
-            resources: result.resources.with(i, updated_resource), 
-            waiting_queue: updated_queue 
-          }
-          break
-        }
-      }
-    }
-    
-    result
+    spans.push(span)
   }
   
-  let pool_get_available_count = fn(pool: ResourcePool) -> Int {
-    let mut count = 0
-    for resource in pool.resources {
-      if !resource.in_use {
-        count = count + 1
-      }
-    }
-    count
+  // 结束所有span
+  for span in spans {
+    Span::end(span)
   }
   
-  let pool_get_waiting_count = fn(pool: ResourcePool) -> Int {
-    pool.waiting_queue.length()
-  }
+  // 配置模拟网络条件
+  NetworkOptimization::simulate_network_conditions(telemetry_provider, {
+    "bandwidth" => 1000000, // 1Mbps
+    "latency" => 100,       // 100ms
+    "packet_loss" => 0.01   // 1%
+  })
   
-  // Test pool operations
-  let pool1 = create_pool(["res1", "res2", "res3"])
-  assert_eq(pool_get_available_count(pool1), 3)
-  assert_eq(pool_get_waiting_count(pool1), 0)
+  // 传输数据
+  let transmission_start_time = Time::now()
+  let transmission_result = NetworkOptimization::transmit_data(telemetry_provider)
+  let transmission_end_time = Time::now()
+  let transmission_duration = Time::duration_between(transmission_start_time, transmission_end_time)
   
-  // Acquire resources
-  let pool2_result = pool_acquire(pool1, "requester1", 10)
-  match pool2_result {
-    Ok(pool2) => {
-      assert_eq(pool_get_available_count(pool2), 2)
-      assert_eq(pool_get_waiting_count(pool2), 0)
-      
-      let pool3_result = pool_acquire(pool2, "requester2", 10)
-      match pool3_result {
-        Ok(pool3) => {
-          assert_eq(pool_get_available_count(pool3), 1)
-          assert_eq(pool_get_waiting_count(pool3), 0)
-          
-          let pool4_result = pool_acquire(pool3, "requester3", 10)
-          match pool4_result {
-            Ok(pool4) => {
-              assert_eq(pool_get_available_count(pool4), 0)
-              assert_eq(pool_get_waiting_count(pool4), 0)
-              
-              // Try to acquire with no resources available
-              let pool5_result = pool_acquire(pool4, "requester4", 10)
-              match pool5_result {
-                Ok(pool5) => {
-                  assert_eq(pool_get_available_count(pool5), 0)
-                  assert_eq(pool_get_waiting_count(pool5), 1)
-                  
-                  // Try to acquire with timeout
-                  let pool6_result = pool_acquire(pool5, "requester5", 0)
-                  match pool6_result {
-                    Ok(_) => assert_true(false)
-                    Err(msg) => assert_eq(msg, "Resource acquisition timeout")
-                  }
-                  
-                  // Release a resource
-                  let pool7 = pool_release(pool5, "res1")
-                  assert_eq(pool_get_available_count(pool7), 0)  // Should be allocated to waiting requester
-                  assert_eq(pool_get_waiting_count(pool7), 0)
-                }
-                Err(_) => assert_true(false)
-              }
-            }
-            Err(_) => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
+  // 验证传输成功
+  assert_true(TransmissionResult::is_success(transmission_result))
+  
+  // 检查网络优化统计
+  let network_stats = NetworkOptimization::get_network_statistics(telemetry_provider)
+  assert_true(NetworkStats::total_bytes_sent(network_stats) > 0)
+  assert_true(NetworkStats::total_bytes_received(network_stats) >= 0)
+  assert_true(NetworkStats::compression_ratio(network_stats) > 0.5) // 至少50%压缩率
+  assert_true(NetworkStats::transmission_efficiency(network_stats) > 0.7) // 至少70%传输效率
+  
+  // 检查批传输统计
+  let batch_stats = NetworkOptimization::get_batch_transmission_statistics(telemetry_provider)
+  assert_true(BatchTransmissionStats::total_batches(batch_stats) > 0)
+  assert_true(BatchTransmissionStats::average_batch_size(batch_stats) > 0)
+  assert_true(BatchTransmissionStats::batch_transmission_ratio(batch_stats) > 0.8) // 至少80%的数据通过批传输
+  
+  // 测试不同的网络条件
+  NetworkOptimization::simulate_network_conditions(telemetry_provider, {
+    "bandwidth" => 500000,  // 500kbps
+    "latency" => 200,       // 200ms
+    "packet_loss" => 0.05   // 5%
+  })
+  
+  // 在较差网络条件下再次传输
+  let poor_network_result = NetworkOptimization::transmit_data(telemetry_provider)
+  
+  // 验证自适应优化
+  let adaptive_stats = NetworkOptimization::get_adaptive_optimization_statistics(telemetry_provider)
+  assert_true(AdaptiveStats::batch_size_adjusted(adaptive_stats))
+  assert_true(AdaptiveStats::compression_level_adjusted(adaptive_stats))
+  assert_true(AdaptiveStats::retry_attempts_increased(adaptive_stats))
+  
+  assert_true(true)
 }
 
-// Test 5: Resource Usage Limits
-test "resource usage limits" {
-  // Simulate resource usage limits and quotas
-  type ResourceUsage = {
-    resource_id: String,
-    usage_count: Int,
-    last_used: Int  // Simulated timestamp
+test "资源限制和优雅降级" {
+  // 创建具有资源限制功能的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_resource_limits()
+  
+  // 配置资源限制
+  let resource_limits = ResourceLimitsConfig {
+    max_memory_usage: 100 * 1024 * 1024,  // 100MB
+    max_cpu_usage: 0.8,                   // 80%
+    max_disk_usage: 500 * 1024 * 1024,    // 500MB
+    max_network_bandwidth: 10000000,       // 10Mbps
+    sampling_strategy: "adaptive",
+    degradation_strategy: "graceful",
+    recovery_strategy: "automatic"
   }
   
-  type UsageTracker = {
-    usages: Array<ResourceUsage>,
-    limits: Array<(String, Int)>  // (resource_id, max_usage)
-    current_time: Int
-  }
+  ResourceLimits::configure(telemetry_provider, resource_limits)
   
-  let create_tracker = fn(limits: Array<(String, Int)>) -> UsageTracker {
-    { usages: [], limits: limits, current_time: 0 }
-  }
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "resource.limits.test")
   
-  let tracker_advance_time = fn(tracker: UsageTracker, amount: Int) -> UsageTracker {
-    { usages: tracker.usages, limits: tracker.limits, current_time: tracker.current_time + amount }
-  }
+  // 测试内存限制
+  ResourceLimits::simulate_memory_pressure(telemetry_provider, 0.85) // 85%内存使用率
   
-  let tracker_get_limit = fn(tracker: UsageTracker, resource_id: String) -> Option<Int> {
-    for (id, limit) in tracker.limits {
-      if id == resource_id {
-        return Some(limit)
-      }
-    }
-    None
-  }
-  
-  let tracker_get_usage = fn(tracker: UsageTracker, resource_id: String) -> Int {
-    for usage in tracker.usages {
-      if usage.resource_id == resource_id {
-        return usage.usage_count
-      }
-    }
-    0
-  }
-  
-  let tracker_can_use = fn(tracker: UsageTracker, resource_id: String) -> Bool {
-    match tracker_get_limit(tracker, resource_id) {
-      Some(limit) => tracker_get_usage(tracker, resource_id) < limit
-      None => false
-    }
-  }
-  
-  let tracker_use_resource = fn(tracker: UsageTracker, resource_id: String) -> Result<UsageTracker, String> {
-    if !tracker_can_use(tracker, resource_id) {
-      return Err("Resource usage limit exceeded")
+  // 在内存压力下创建span
+  let memory_pressure_spans = []
+  for i = 0; i < 1000; i = i + 1 {
+    let span = Tracer::start_span(tracer, "memory.pressure.operation")
+    Span::set_attribute(span, "iteration", i)
+    Span::set_attribute(span, "data", "x".repeat(100))
+    
+    // 检查span是否被采样（应该降低采样率）
+    if SpanContext::sampled(Span::span_context(span)) {
+      memory_pressure_spans.push(span)
     }
     
-    let mut found = false
-    let mut result = tracker
-    
-    for i in 0..<tracker.usages.length() {
-      let usage = tracker.usages[i]
-      if usage.resource_id == resource_id {
-        let updated_usage = { 
-          resource_id: usage.resource_id, 
-          usage_count: usage.usage_count + 1, 
-          last_used: tracker.current_time 
-        }
-        result = { 
-          usages: result.usages.with(i, updated_usage), 
-          limits: result.limits, 
-          current_time: result.current_time 
-        }
-        found = true
-        break
-      }
+    Span::end(span)
+  }
+  
+  // 验证采样率降低
+  let sampling_rate = memory_pressure_spans.length().to_double() / 1000.0
+  assert_true(sampling_rate < 0.5) // 采样率应该低于50%
+  
+  // 测试CPU限制
+  ResourceLimits::simulate_cpu_pressure(telemetry_provider, 0.85) // 85% CPU使用率
+  
+  // 在CPU压力下执行度量操作
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "resource.limits.test")
+  let counter = Meter::create_counter(meter, "cpu.pressure.counter")
+  
+  let cpu_pressure_operations = 0
+  for i = 0; i < 1000; i = i + 1 {
+    // 检查是否应该跳过操作（由于CPU压力）
+    if ResourceLimits::should_allow_operation(telemetry_provider, "metric.recording") {
+      Counter::add(counter, 1.0)
+      cpu_pressure_operations = cpu_pressure_operations + 1
     }
-    
-    if !found {
-      let new_usage = { resource_id: resource_id, usage_count: 1, last_used: tracker.current_time }
-      result = { 
-        usages: result.usages.push(new_usage), 
-        limits: result.limits, 
-        current_time: result.current_time 
-      }
+  }
+  
+  // 验证操作被限制
+  assert_true(cpu_pressure_operations < 1000)
+  
+  // 测试磁盘限制
+  ResourceLimits::simulate_disk_pressure(telemetry_provider, 0.85) // 85%磁盘使用率
+  
+  // 在磁盘压力下记录日志
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "resource.limits.test")
+  
+  let disk_pressure_logs = 0
+  for i = 0; i < 1000; i = i + 1 {
+    // 检查是否应该记录日志（由于磁盘压力）
+    if ResourceLimits::should_allow_operation(telemetry_provider, "log.recording") {
+      Logger::emit_log(logger, "INFO", "Disk pressure test log " + i.to_string(), [])
+      disk_pressure_logs = disk_pressure_logs + 1
     }
-    
-    Ok(result)
   }
   
-  // Test usage limits
-  let limits = [("res1", 3), ("res2", 2)]
-  let tracker1 = create_tracker(limits)
+  // 验证日志记录被限制
+  assert_true(disk_pressure_logs < 1000)
   
-  assert_true(tracker_can_use(tracker1, "res1"))
-  assert_true(tracker_can_use(tracker1, "res2"))
-  assert_false(tracker_can_use(tracker1, "res3"))  // Not in limits
+  // 测试资源恢复
+  ResourceLimits::simulate_memory_pressure(telemetry_provider, 0.4) // 40%内存使用率
+  ResourceLimits::simulate_cpu_pressure(telemetry_provider, 0.4)    // 40% CPU使用率
+  ResourceLimits::simulate_disk_pressure(telemetry_provider, 0.4)   // 40%磁盘使用率
   
-  // Use resource1
-  let tracker2_result = tracker_use_resource(tracker1, "res1")
-  match tracker2_result {
-    Ok(tracker2) => {
-      assert_eq(tracker_get_usage(tracker2, "res1"), 1)
-      assert_true(tracker_can_use(tracker2, "res1"))
-      
-      // Use resource1 again
-      let tracker3_result = tracker_use_resource(tracker2, "res1")
-      match tracker3_result {
-        Ok(tracker3) => {
-          assert_eq(tracker_get_usage(tracker3, "res1"), 2)
-          assert_true(tracker_can_use(tracker3, "res1"))
-          
-          // Use resource1 third time
-          let tracker4_result = tracker_use_resource(tracker3, "res1")
-          match tracker4_result {
-            Ok(tracker4) => {
-              assert_eq(tracker_get_usage(tracker4, "res1"), 3)
-              assert_false(tracker_can_use(tracker4, "res1"))  // Limit reached
-              
-              // Try to use resource1 again - should fail
-              let tracker5_result = tracker_use_resource(tracker4, "res1")
-              match tracker5_result {
-                Ok(_) => assert_true(false)
-                Err(msg) => assert_eq(msg, "Resource usage limit exceeded")
-              }
-              
-              // Use resource2
-              let tracker6_result = tracker_use_resource(tracker4, "res2")
-              match tracker6_result {
-                Ok(tracker6) => {
-                  assert_eq(tracker_get_usage(tracker6, "res2"), 1)
-                  assert_true(tracker_can_use(tracker6, "res2"))
-                  
-                  // Use resource2 again
-                  let tracker7_result = tracker_use_resource(tracker6, "res2")
-                  match tracker7_result {
-                    Ok(tracker7) => {
-                      assert_eq(tracker_get_usage(tracker7, "res2"), 2)
-                      assert_false(tracker_can_use(tracker7, "res2"))  // Limit reached
-                    }
-                    Err(_) => assert_true(false)
-                  }
-                }
-                Err(_) => assert_true(false)
-              }
-            }
-            Err(_) => assert_true(false)
-          }
-        }
-        Err(_) => assert_true(false)
-      }
-    }
-    Err(_) => assert_true(false)
-  }
-}
-
-// Test 6: Resource Dependency Management
-test "resource dependency management" {
-  // Simulate resource dependencies and cleanup order
-  type ResourceDependency = {
-    resource_id: String,
-    dependencies: Array<String>  // IDs of resources this depends on
-  }
+  // 等待恢复策略生效
+  Time::sleep(5000)
   
-  type DependencyManager = {
-    resources: Array<ResourceDependency>,
-    cleanup_order: Array<String>
-  }
+  // 验证资源恢复
+  let recovered_sampling_rate = ResourceLimits::get_current_sampling_rate(telemetry_provider)
+  assert_true(recovered_sampling_rate > sampling_rate) // 采样率应该有所恢复
   
-  let create_manager = fn() -> DependencyManager {
-    { resources: [], cleanup_order: [] }
-  }
+  // 检查资源限制统计
+  let limit_stats = ResourceLimits::get_limit_statistics(telemetry_provider)
+  assert_true(LimitStats::memory_limit_hits(limit_stats) > 0)
+  assert_true(LimitStats::cpu_limit_hits(limit_stats) > 0)
+  assert_true(LimitStats::disk_limit_hits(limit_stats) > 0)
+  assert_true(LimitStats::total_operations_limited(limit_stats) > 0)
+  assert_true(LimitStats::graceful_degradations(limit_stats) > 0)
   
-  let manager_add_resource = fn(manager: DependencyManager, resource_id: String, dependencies: Array<String>) -> DependencyManager {
-    let resource = { resource_id: resource_id, dependencies: dependencies }
-    { resources: manager.resources.push(resource), cleanup_order: manager.cleanup_order }
-  }
-  
-  let manager_compute_cleanup_order = fn(manager: DependencyManager) -> Array<String> {
-    // Topological sort for cleanup order (resources with no dependents first)
-    let mut result = []
-    let mut remaining_resources = manager.resources
-    let mut processed = []
-    
-    while remaining_resources.length() > 0 {
-      let mut found = false
-      
-      for i in 0..<remaining_resources.length() {
-        let resource = remaining_resources[i]
-        
-        // Check if any other resource depends on this one
-        let mut has_dependents = false
-        for other in remaining_resources {
-          if other.resource_id != resource.resource_id && other.dependencies.contains(resource.resource_id) {
-            has_dependents = true
-            break
-          }
-        }
-        
-        if !has_dependents && !processed.contains(resource.resource_id) {
-          result = result.push(resource.resource_id)
-          processed = processed.push(resource.resource_id)
-          remaining_resources = remaining_resources.slice(0, i) + remaining_resources.slice(i + 1, remaining_resources.length())
-          found = true
-          break
-        }
-      }
-      
-      if !found {
-        // Circular dependency - add remaining resources in any order
-        for resource in remaining_resources {
-          if !processed.contains(resource.resource_id) {
-            result = result.push(resource.resource_id)
-            processed = processed.push(resource.resource_id)
-          }
-        }
-        break
-      }
-    }
-    
-    result
-  }
-  
-  // Test dependency management
-  let manager1 = create_manager()
-  let manager2 = manager_add_resource(manager1, "res1", [])
-  let manager3 = manager_add_resource(manager2, "res2", ["res1"])
-  let manager4 = manager_add_resource(manager3, "res3", ["res1", "res2"])
-  let manager5 = manager_add_resource(manager4, "res4", ["res3"])
-  
-  let cleanup_order = manager_compute_cleanup_order(manager5)
-  assert_eq(cleanup_order.length(), 4)
-  
-  // res4 should be first (no dependents)
-  assert_eq(cleanup_order[0], "res4")
-  
-  // res3 should be second (only res4 depends on it)
-  assert_eq(cleanup_order[1], "res3")
-  
-  // res2 should be third (res3 depends on it)
-  assert_eq(cleanup_order[2], "res2")
-  
-  // res1 should be last (res2 and res3 depend on it)
-  assert_eq(cleanup_order[3], "res1")
-  
-  // Test with more complex dependencies
-  let manager_complex = create_manager()
-  let manager_complex1 = manager_add_resource(manager_complex, "db", [])
-  let manager_complex2 = manager_add_resource(manager_complex1, "cache", ["db"])
-  let manager_complex3 = manager_add_resource(manager_complex2, "api", ["cache", "db"])
-  let manager_complex4 = manager_add_resource(manager_complex3, "ui", ["api"])
-  
-  let complex_cleanup_order = manager_compute_cleanup_order(manager_complex4)
-  assert_eq(complex_cleanup_order.length(), 4)
-  assert_eq(complex_cleanup_order[0], "ui")
-  assert_eq(complex_cleanup_order[1], "api")
-  assert_eq(complex_cleanup_order[2], "cache")
-  assert_eq(complex_cleanup_order[3], "db")
-}
-
-// Test 7: Resource Leaks Detection
-test "resource leaks detection" {
-  // Simulate resource leak detection
-  type ResourceLeak = {
-    resource_id: String,
-    allocated: Int,
-    freed: Int,
-    leak_detected: Bool
-  }
-  
-  type LeakDetector = Array<ResourceLeak>
-  
-  let create_detector = fn() -> LeakDetector {
-    []
-  }
-  
-  let detector_track_allocation = fn(detector: LeakDetector, resource_id: String) -> LeakDetector {
-    let mut found = false
-    let mut result = detector
-    
-    for i in 0..<detector.length() {
-      let leak = detector[i]
-      if leak.resource_id == resource_id {
-        let updated_leak = { 
-          resource_id: leak.resource_id, 
-          allocated: leak.allocated + 1, 
-          freed: leak.freed, 
-          leak_detected: leak.leak_detected 
-        }
-        result = result.with(i, updated_leak)
-        found = true
-        break
-      }
-    }
-    
-    if !found {
-      let new_leak = { resource_id: resource_id, allocated: 1, freed: 0, leak_detected: false }
-      result = result.push(new_leak)
-    }
-    
-    result
-  }
-  
-  let detector_track_free = fn(detector: LeakDetector, resource_id: String) -> LeakDetector {
-    let mut result = detector
-    
-    for i in 0..<detector.length() {
-      let leak = detector[i]
-      if leak.resource_id == resource_id {
-        let updated_leak = { 
-          resource_id: leak.resource_id, 
-          allocated: leak.allocated, 
-          freed: leak.freed + 1, 
-          leak_detected: leak.leak_detected 
-        }
-        result = result.with(i, updated_leak)
-        break
-      }
-    }
-    
-    result
-  }
-  
-  let detector_detect_leaks = fn(detector: LeakDetector) -> LeakDetector {
-    let mut result = detector
-    
-    for i in 0..<detector.length() {
-      let leak = detector[i]
-      if leak.allocated > leak.freed {
-        let updated_leak = { 
-          resource_id: leak.resource_id, 
-          allocated: leak.allocated, 
-          freed: leak.freed, 
-          leak_detected: true 
-        }
-        result = result.with(i, updated_leak)
-      }
-    }
-    
-    result
-  }
-  
-  let detector_has_leaks = fn(detector: LeakDetector) -> Bool {
-    for leak in detector {
-      if leak.leak_detected {
-        return true
-      }
-    }
-    false
-  }
-  
-  let detector_get_leaked_resources = fn(detector: LeakDetector) -> Array<String> {
-    let mut result = []
-    for leak in detector {
-      if leak.leak_detected {
-        result = result.push(leak.resource_id)
-      }
-    }
-    result
-  }
-  
-  // Test leak detection
-  let detector1 = create_detector()
-  let detector2 = detector_track_allocation(detector1, "res1")
-  let detector3 = detector_track_allocation(detector2, "res1")
-  let detector4 = detector_track_allocation(detector3, "res2")
-  
-  // Free some resources
-  let detector5 = detector_track_free(detector4, "res1")
-  
-  // Detect leaks
-  let detector6 = detector_detect_leaks(detector5)
-  
-  // res1 should have a leak (2 allocated, 1 freed)
-  // res2 should have a leak (1 allocated, 0 freed)
-  assert_true(detector_has_leaks(detector6))
-  
-  let leaked_resources = detector_get_leaked_resources(detector6)
-  assert_eq(leaked_resources.length(), 2)
-  assert_true(leaked_resources.contains("res1"))
-  assert_true(leaked_resources.contains("res2"))
-  
-  // Free remaining resources
-  let detector7 = detector_track_free(detector6, "res1")
-  let detector8 = detector_track_free(detector7, "res2")
-  
-  // Detect leaks again
-  let detector9 = detector_detect_leaks(detector8)
-  
-  // No leaks should be detected
-  assert_false(detector_has_leaks(detector9))
-  assert_eq(detector_get_leaked_resources(detector9).length(), 0)
-}
-
-// Test 8: Resource Priority Management
-test "resource priority management" {
-  // Simulate resource allocation based on priority
-  type PriorityResource = {
-    id: String,
-    priority: Int,
-    allocated: Bool
-  }
-  
-  type PriorityManager = {
-    resources: Array<PriorityResource>,
-    allocation_order: Array<String>
-  }
-  
-  let create_manager = fn() -> PriorityManager {
-    { resources: [], allocation_order: [] }
-  }
-  
-  let manager_add_resource = fn(manager: PriorityManager, id: String, priority: Int) -> PriorityManager {
-    let resource = { id: id, priority: priority, allocated: false }
-    { resources: manager.resources.push(resource), allocation_order: manager.allocation_order }
-  }
-  
-  let manager_allocate_by_priority = fn(manager: PriorityManager, count: Int) -> PriorityManager {
-    // Sort resources by priority (higher priority first)
-    let mut sorted_resources = manager.resources
-    // Simple bubble sort for demonstration
-    let n = sorted_resources.length()
-    for i in 0..<n {
-      for j in 0..<(n - i - 1) {
-        if sorted_resources[j].priority < sorted_resources[j + 1].priority {
-          let temp = sorted_resources[j]
-          sorted_resources = sorted_resources.with(j, sorted_resources[j + 1])
-          sorted_resources = sorted_resources.with(j + 1, temp)
-        }
-      }
-    }
-    
-    let mut result = manager
-    let mut allocation_order = []
-    let mut allocated = 0
-    
-    for resource in sorted_resources {
-      if allocated >= count {
-        break
-      }
-      
-      // Find and update the resource in the original array
-      for i in 0..<result.resources.length() {
-        let res = result.resources[i]
-        if res.id == resource.id && !res.allocated {
-          let updated_resource = { id: res.id, priority: res.priority, allocated: true }
-          result = { 
-            resources: result.resources.with(i, updated_resource), 
-            allocation_order: result.allocation_order 
-          }
-          allocation_order = allocation_order.push(res.id)
-          allocated = allocated + 1
-          break
-        }
-      }
-    }
-    
-    { resources: result.resources, allocation_order: allocation_order }
-  }
-  
-  let manager_get_allocated_resources = fn(manager: PriorityManager) -> Array<String> {
-    let mut result = []
-    for resource in manager.resources {
-      if resource.allocated {
-        result = result.push(resource.id)
-      }
-    }
-    result
-  }
-  
-  // Test priority-based allocation
-  let manager1 = create_manager()
-  let manager2 = manager_add_resource(manager1, "low1", 1)
-  let manager3 = manager_add_resource(manager2, "high1", 10)
-  let manager4 = manager_add_resource(manager3, "medium1", 5)
-  let manager5 = manager_add_resource(manager4, "high2", 10)
-  let manager6 = manager_add_resource(manager5, "low2", 1)
-  
-  // Allocate 3 resources with highest priority
-  let manager7 = manager_allocate_by_priority(manager6, 3)
-  let allocated_resources = manager_get_allocated_resources(manager7)
-  
-  assert_eq(allocated_resources.length(), 3)
-  
-  // Should allocate high1, high2 (both priority 10) and medium1 (priority 5)
-  assert_true(allocated_resources.contains("high1"))
-  assert_true(allocated_resources.contains("high2"))
-  assert_true(allocated_resources.contains("medium1"))
-  assert_false(allocated_resources.contains("low1"))
-  assert_false(allocated_resources.contains("low2"))
-  
-  // Check allocation order
-  assert_eq(manager7.allocation_order.length(), 3)
-  assert_eq(manager7.allocation_order[0], "high1")
-  assert_eq(manager7.allocation_order[1], "high2")
-  assert_eq(manager7.allocation_order[2], "medium1")
+  assert_true(true)
 }

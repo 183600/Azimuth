@@ -1,429 +1,329 @@
-// Comprehensive Internationalization Tests for Azimuth Telemetry System
-// This file contains internationalization and localization test cases
+// Azimuth Internationalization and Globalization Test Suite
+// 测试遥测系统的国际化和全球化支持
 
-test "telemetry multi-language string handling" {
-  // Test handling of strings in different languages
-  let multi_language_strings = [
-    ("en", "Request completed successfully"),
-    ("es", "Solicitud completada con éxito"),
-    ("fr", "Demande terminée avec succès"),
-    ("de", "Anfrage erfolgreich abgeschlossen"),
-    ("ja", "リクエストが正常に完了しました"),
-    ("zh", "请求成功完成"),
-    ("ar", "تم الطلب بنجاح"),
-    ("ru", "Запрос успешно выполнен")
-  ]
+test "多语言错误消息和日志" {
+  // 创建具有国际化支持的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_i18n_support()
   
-  // Validate string processing for different languages
-  for lang_string in multi_language_strings {
-    let lang_code = lang_string.0
-    let message = lang_string.1
-    
-    assert_true(lang_code.length() == 2) // ISO language codes
-    assert_true(message.length() > 0)
-    
-    // Test character encoding handling
-    let char_count = message.length()
-    assert_true(char_count > 5) // Minimum reasonable length
+  // 配置支持的语言
+  let i18n_config = I18nConfig {
+    default_locale: "en-US",
+    supported_locales: ["en-US", "zh-CN", "ja-JP", "es-ES", "fr-FR", "de-DE"],
+    fallback_strategy: "default_locale",
+    resource_bundle_path: "/locales/telemetry"
   }
   
-  assert_eq(multi_language_strings.length(), 8)
+  I18nSupport::configure(telemetry_provider, i18n_config)
+  
+  // 加载资源包
+  I18nSupport::load_resource_bundle(telemetry_provider, "en-US", {
+    "error.connection.failed" => "Connection to telemetry backend failed",
+    "error.invalid.metric" => "Invalid metric value: {0}",
+    "info.operation.started" => "Operation '{0}' started successfully",
+    "warning.rate.limit.exceeded" => "Rate limit exceeded: {0} requests per minute"
+  })
+  
+  I18nSupport::load_resource_bundle(telemetry_provider, "zh-CN", {
+    "error.connection.failed" => "遥测后端连接失败",
+    "error.invalid.metric" => "无效的度量值: {0}",
+    "info.operation.started" => "操作'{0}'成功启动",
+    "warning.rate.limit.exceeded" => "速率限制超出: 每分钟{0}个请求"
+  })
+  
+  I18nSupport::load_resource_bundle(telemetry_provider, "ja-JP", {
+    "error.connection.failed" => "テレメトリバックエンドへの接続に失敗しました",
+    "error.invalid.metric" => "無効なメトリック値: {0}",
+    "info.operation.started" => "操作'{0}'が正常に開始されました",
+    "warning.rate.limit.exceeded" => "レート制限を超過しました: 毎分{0}リクエスト"
+  })
+  
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "i18n.test")
+  
+  // 测试英文错误消息
+  I18nSupport::set_current_locale(telemetry_provider, "en-US")
+  let en_span = Tracer::start_span(tracer, "i18n.test.en")
+  Span::add_event(en_span, "error.occurred", [
+    ("error.message", I18nSupport::get_message(telemetry_provider, "error.connection.failed")),
+    ("locale", "en-US")
+  ])
+  Span::end(en_span)
+  
+  // 测试中文错误消息
+  I18nSupport::set_current_locale(telemetry_provider, "zh-CN")
+  let zh_span = Tracer::start_span(tracer, "i18n.test.zh")
+  Span::add_event(zh_span, "error.occurred", [
+    ("error.message", I18nSupport::get_message(telemetry_provider, "error.connection.failed")),
+    ("locale", "zh-CN")
+  ])
+  Span::end(zh_span)
+  
+  // 测试日文错误消息
+  I18nSupport::set_current_locale(telemetry_provider, "ja-JP")
+  let ja_span = Tracer::start_span(tracer, "i18n.test.ja")
+  Span::add_event(ja_span, "error.occurred", [
+    ("error.message", I18nSupport::get_message(telemetry_provider, "error.connection.failed")),
+    ("locale", "ja-JP")
+  ])
+  Span::end(ja_span)
+  
+  // 验证消息本地化
+  let en_message = I18nSupport::get_message(telemetry_provider, "error.connection.failed", "en-US")
+  assert_eq(en_message, "Connection to telemetry backend failed")
+  
+  let zh_message = I18nSupport::get_message(telemetry_provider, "error.connection.failed", "zh-CN")
+  assert_eq(zh_message, "遥测后端连接失败")
+  
+  let ja_message = I18nSupport::get_message(telemetry_provider, "error.connection.failed", "ja-JP")
+  assert_eq(ja_message, "テレメトリバックエンドへの接続に失敗しました")
+  
+  // 测试参数化消息
+  let zh_param_message = I18nSupport::get_parameterized_message(
+    telemetry_provider, 
+    "error.invalid.metric", 
+    "zh-CN", 
+    ["-1.5"]
+  )
+  assert_eq(zh_param_message, "无效的度量值: -1.5")
+  
+  // 测试回退机制
+  let unsupported_locale_message = I18nSupport::get_message(
+    telemetry_provider, 
+    "error.connection.failed", 
+    "ko-KR" // 不支持的locale
+  )
+  assert_eq(unsupported_locale_message, "Connection to telemetry backend failed") // 回退到默认
+  
+  assert_true(true)
 }
 
-test "telemetry timezone and datetime localization" {
-  // Test datetime formatting for different timezones
-  let timestamp = 1640995200000 // 2022-01-01 00:00:00 UTC
-  let timezones = [
-    ("UTC", 0),
-    ("EST", -5),
-    ("CST", -6),
-    ("MST", -7),
-    ("PST", -8),
-    ("CET", 1),
-    ("JST", 9),
-    ("AEST", 10)
-  ]
+test "时区、日期和时间格式本地化" {
+  // 创建具有时区支持的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_timezone_support()
   
-  // Test timezone offset calculations
-  for timezone in timezones {
-    let tz_name = timezone.0
-    let offset_hours = timezone.1
-    
-    // Calculate local hour
-    let utc_hour = 0
-    let local_hour = (utc_hour + offset_hours + 24) % 24
-    
-    assert_true(local_hour >= 0)
-    assert_true(local_hour <= 23)
-    
-    // Test timezone name format
-    assert_true(tz_name.length() >= 2)
-    assert_true(tz_name.length() <= 5)
+  // 配置时区设置
+  let timezone_config = TimezoneConfig {
+    default_timezone: "UTC",
+    supported_timezones: ["UTC", "America/New_York", "Asia/Shanghai", "Europe/London", "Asia/Tokyo"],
+    auto_detect_timezone: true,
+    preserve_original_timestamps: true
   }
   
-  // Test date format localization
+  TimezoneSupport::configure(telemetry_provider, timezone_config)
+  
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "timezone.test")
+  
+  // 创建测试时间戳 (2025-01-02 10:00:00 UTC)
+  let test_timestamp = Timestamp::from_string("2025-01-02T10:00:00Z")
+  
+  // 测试不同时区的时间转换
+  let utc_time = TimezoneSupport::convert_timezone(telemetry_provider, test_timestamp, "UTC")
+  assert_eq(Timestamp::to_string(utc_time), "2025-01-02T10:00:00Z")
+  
+  let ny_time = TimezoneSupport::convert_timezone(telemetry_provider, test_timestamp, "America/New_York")
+  assert_eq(Timestamp::to_string(ny_time), "2025-01-02T05:00:00-05:00") // UTC-5 in January
+  
+  let shanghai_time = TimezoneSupport::convert_timezone(telemetry_provider, test_timestamp, "Asia/Shanghai")
+  assert_eq(Timestamp::to_string(shanghai_time), "2025-01-02T18:00:00+08:00") // UTC+8
+  
+  let london_time = TimezoneSupport::convert_timezone(telemetry_provider, test_timestamp, "Europe/London")
+  assert_eq(Timestamp::to_string(london_time), "2025-01-02T10:00:00+00:00") // UTC+0 in January
+  
+  let tokyo_time = TimezoneSupport::convert_timezone(telemetry_provider, test_timestamp, "Asia/Tokyo")
+  assert_eq(Timestamp::to_string(tokyo_time), "2025-01-02T19:00:00+09:00") // UTC+9
+  
+  // 创建span并测试本地化时间戳
+  let span = Tracer::start_span(tracer, "timezone.test.operation")
+  
+  // 添加不同时区的时间戳事件
+  Span::add_event(span, "operation.started", [
+    ("timestamp.utc", Timestamp::to_string(utc_time)),
+    ("timestamp.ny", Timestamp::to_string(ny_time)),
+    ("timestamp.shanghai", Timestamp::to_string(shanghai_time)),
+    ("timestamp.london", Timestamp::to_string(london_time)),
+    ("timestamp.tokyo", Timestamp::to_string(tokyo_time))
+  ])
+  
+  Span::end(span)
+  
+  // 测试本地化日期格式
   let date_formats = [
-    ("en", "MM/DD/YYYY"),
-    ("en-GB", "DD/MM/YYYY"),
-    ("de", "DD.MM.YYYY"),
-    ("ja", "YYYY/MM/DD"),
-    ("zh", "YYYY年MM月DD日")
+    ("en-US", "01/02/2025"),
+    ("zh-CN", "2025/01/02"),
+    ("ja-JP", "2025/01/02"),
+    ("de-DE", "02.01.2025"),
+    ("fr-FR", "02/01/2025")
   ]
   
-  for format in date_formats {
-    let locale = format.0
-    let format_string = format.1
-    
-    assert_true(locale.length() >= 2)
-    assert_true(format_string.contains("YYYY"))
-    assert_true(format_string.contains("MM"))
-    assert_true(format_string.contains("DD"))
+  for (locale, expected_format) in date_formats {
+    let localized_date = TimezoneSupport::format_date(telemetry_provider, test_timestamp, locale)
+    assert_eq(localized_date, expected_format)
   }
+  
+  // 测试本地化时间格式
+  let time_formats = [
+    ("en-US", "10:00:00 AM"),
+    ("zh-CN", "上午10:00:00"),
+    ("ja-JP", "10:00:00"),
+    ("de-DE", "10:00:00"),
+    ("fr-FR", "10:00:00")
+  ]
+  
+  for (locale, expected_format) in time_formats {
+    let localized_time = TimezoneSupport::format_time(telemetry_provider, test_timestamp, locale)
+    assert_eq(localized_time, expected_format)
+  }
+  
+  assert_true(true)
 }
 
-test "telemetry number and currency formatting" {
-  // Test number formatting for different locales
-  let number_formats = [
-    ("en-US", "1,234.56"),
-    ("en-GB", "1,234.56"),
-    ("de-DE", "1.234,56"),
-    ("fr-FR", "1 234,56"),
-    ("ja-JP", "1,234.56"),
-    ("zh-CN", "1,234.56")
-  ]
+test "数字、货币和度量单位本地化" {
+  // 创建具有数字本地化支持的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_number_localization()
   
-  // Validate number format patterns
-  for format in number_formats {
-    let locale = format.0
-    let formatted = format.1
-    
-    assert_true(locale.length() >= 2)
-    assert_true(formatted.contains("1"))
-    assert_true(formatted.contains("2"))
-    assert_true(formatted.contains("3"))
-    assert_true(formatted.contains("4"))
+  // 配置数字本地化设置
+  let number_config = NumberLocalizationConfig {
+    default_locale: "en-US",
+    digit_grouping_symbol: ",",
+    decimal_symbol: ".",
+    currency_symbols: [
+      ("en-US", "$"),
+      ("zh-CN", "¥"),
+      ("ja-JP", "¥"),
+      ("de-DE", "€"),
+      ("fr-FR", "€")
+    ],
+    measurement_units: "metric"
   }
   
-  // Test currency formatting
-  let currency_formats = [
-    ("en-US", "$1,234.56"),
-    ("en-GB", "£1,234.56"),
-    ("de-DE", "1.234,56 €"),
-    ("fr-FR", "1 234,56 €"),
-    ("ja-JP", "¥1,235"),
-    ("zh-CN", "¥1,234.56")
-  ]
+  NumberLocalization::configure(telemetry_provider, number_config)
   
-  for currency in currency_formats {
-    let locale = currency.0
-    let formatted = currency.1
-    
-    assert_true(locale.length() >= 2)
-    assert_true(formatted.length() > 3)
-    
-    // Check for currency symbols
-    let has_currency_symbol = formatted.contains("$") || 
-                             formatted.contains("£") || 
-                             formatted.contains("€") || 
-                             formatted.contains("¥")
-    assert_true(has_currency_symbol)
-  }
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "number.localization.test")
+  
+  // 测试数字格式本地化
+  let test_number = 1234567.89
+  
+  let en_number = NumberLocalization::format_number(telemetry_provider, test_number, "en-US")
+  assert_eq(en_number, "1,234,567.89")
+  
+  let zh_number = NumberLocalization::format_number(telemetry_provider, test_number, "zh-CN")
+  assert_eq(zh_number, "1,234,567.89") // 中文也使用逗号作为千位分隔符
+  
+  let de_number = NumberLocalization::format_number(telemetry_provider, test_number, "de-DE")
+  assert_eq(de_number, "1.234.567,89") // 德语使用点作为千位分隔符，逗号作为小数点
+  
+  let fr_number = NumberLocalization::format_number(telemetry_provider, test_number, "fr-FR")
+  assert_eq(fr_number, "1 234 567,89") // 法语使用空格作为千位分隔符
+  
+  // 测试货币格式本地化
+  let test_currency = 1234.56
+  
+  let en_currency = NumberLocalization::format_currency(telemetry_provider, test_currency, "en-US", "USD")
+  assert_eq(en_currency, "$1,234.56")
+  
+  let zh_currency = NumberLocalization::format_currency(telemetry_provider, test_currency, "zh-CN", "CNY")
+  assert_eq(zh_currency, "¥1,234.56")
+  
+  let ja_currency = NumberLocalization::format_currency(telemetry_provider, test_currency, "ja-JP", "JPY")
+  assert_eq(ja_currency, "¥1,234.56")
+  
+  let de_currency = NumberLocalization::format_currency(telemetry_provider, test_currency, "de-DE", "EUR")
+  assert_eq(de_currency, "1.234,56 €")
+  
+  let fr_currency = NumberLocalization::format_currency(telemetry_provider, test_currency, "fr-FR", "EUR")
+  assert_eq(fr_currency, "1 234,56 €")
+  
+  // 测试百分比格式本地化
+  let test_percentage = 0.7542
+  
+  let en_percentage = NumberLocalization::format_percentage(telemetry_provider, test_percentage, "en-US")
+  assert_eq(en_percentage, "75.42%")
+  
+  let zh_percentage = NumberLocalization::format_percentage(telemetry_provider, test_percentage, "zh-CN")
+  assert_eq(zh_percentage, "75.42%")
+  
+  let de_percentage = NumberLocalization::format_percentage(telemetry_provider, test_percentage, "de-DE")
+  assert_eq(de_percentage, "75,42 %")
+  
+  // 创建span并测试本地化数字
+  let span = Tracer::start_span(tracer, "number.localization.operation")
+  
+  // 添加本地化数字属性
+  Span::set_attribute(span, "revenue.usd", en_currency)
+  Span::set_attribute(span, "revenue.cny", zh_currency)
+  Span::set_attribute(span, "revenue.eur", de_currency)
+  Span::set_attribute(span, "conversion.rate", en_percentage)
+  Span::set_attribute(span, "user.count", en_number)
+  
+  Span::end(span)
+  
+  assert_true(true)
 }
 
-test "telemetry RTL language support" {
-  // Test right-to-left language support
-  let rtl_languages = [
-    ("ar", "مرحبا بالعالم"),
-    ("he", "שלום עולם"),
-    ("fa", "سلام دنیا"),
-    ("ur", "ہیلو دنیا")
-  ]
+test "度量单位系统和转换" {
+  // 创建具有度量单位支持的遥测提供者
+  let telemetry_provider = TelemetryProvider::with_unit_system_support()
   
-  // Validate RTL language processing
-  for rtl_lang in rtl_languages {
-    let lang_code = rtl_lang.0
-    let text = rtl_lang.1
-    
-    assert_true(lang_code.length() == 2)
-    assert_true(text.length() > 0)
-    
-    // Test character direction detection
-    let rtl_chars = ["ا", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز", "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ", "ف", "ق", "ك", "ل", "م", "ن", "ه", "و", "ي"]
-    
-    let mut has_rtl_char = false
-    for char in rtl_chars {
-      if text.contains(char) {
-        has_rtl_char = true
-        break
-      }
-    }
-    
-    assert_true(has_rtl_char)
+  // 配置度量单位系统
+  let unit_config = UnitSystemConfig {
+    default_system: "metric",
+    supported_systems: ["metric", "imperial", "si"],
+    auto_convert_units: true,
+    precision: 4
   }
   
-  // Test mixed LTR/RTL content
-  let mixed_content = "Hello مرحبا World"
-  assert_true(mixed_content.contains("Hello"))
-  assert_true(mixed_content.contains("مرحبا"))
-  assert_true(mixed_content.contains("World"))
-}
-
-test "telemetry unicode character handling" {
-  // Test comprehensive Unicode support
-  let unicode_strings = [
-    ("emoji", "🚀 📊 📈 📉"),
-    ("math", "∑ ∏ ∫ ∂ ∇ ∆"),
-    ("currency", "€ £ ¥ ₽ ₩ ₹"),
-    ("arrows", "← → ↑ ↓ ↔ ↕"),
-    ("symbols", "© ® ™ § ¶ † ‡"),
-    ("greek", "α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π ρ σ τ υ φ χ ψ ω"),
-    ("cjk", "中文 日本語 한국어"),
-    ("special", "™ © ® § ¶ • … ‰ ′ ″ ‴ ※")
-  ]
+  UnitSystemSupport::configure(telemetry_provider, unit_config)
   
-  // Validate Unicode character processing
-  for unicode_set in unicode_strings {
-    let category = unicode_set.0
-    let characters = unicode_set.1
-    
-    assert_true(category.length() > 0)
-    assert_true(characters.length() > 0)
-    
-    // Test character count vs byte length
-    let char_count = characters.length()
-    assert_true(char_count > 0)
-  }
+  // 创建tracer
+  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "unit.system.test")
   
-  // Test normalization
-  let normalized_strings = [
-    ("café", "café"),
-    ("naïve", "naïve"),
-    ("résumé", "résumé"),
-    ("piñata", "piñata")
-  ]
+  // 测试长度单位转换
+  let metric_length = 100.0 // 100米
+  let imperial_length = UnitSystemSupport::convert_length(telemetry_provider, metric_length, "metric", "imperial")
+  assert_true(abs(imperial_length - 328.084) < 0.001) // 约328.084英尺
   
-  for normalized in normalized_strings {
-    let original = normalized.0
-    let expected = normalized.1
-    
-    assert_eq(original, expected)
-    assert_true(original.contains("é") || original.contains("ï") || original.contains("ñ"))
-  }
-}
-
-test "telemetry locale-specific error messages" {
-  // Test localized error messages
-  let error_codes = ["E001", "E002", "E003", "E004"]
-  let error_messages = [
-    ("en", ["Invalid input parameter", "Connection timeout", "Authentication failed", "Resource not found"]),
-    ("es", ["Parámetro de entrada inválido", "Tiempo de conexión agotado", "Autenticación fallida", "Recurso no encontrado"]),
-    ("fr", ["Paramètre d'entrée invalide", "Délai de connexion dépassé", "Échec de l'authentification", "Ressource non trouvée"]),
-    ("de", ["Ungültiger Eingabeparameter", "Verbindungstimeout", "Authentifizierung fehlgeschlagen", "Ressource nicht gefunden"]),
-    ("ja", ["入力パラメータが無効です", "接続タイムアウト", "認証に失敗しました", "リソースが見つかりません"]),
-    ("zh", ["输入参数无效", "连接超时", "身份验证失败", "未找到资源"])
-  ]
+  // 测试重量单位转换
+  let metric_weight = 70.0 // 70公斤
+  let imperial_weight = UnitSystemSupport::convert_weight(telemetry_provider, metric_weight, "metric", "imperial")
+  assert_true(abs(imperial_weight - 154.324) < 0.001) // 约154.324磅
   
-  // Validate error message localization
-  for locale_messages in error_messages {
-    let locale = locale_messages.0
-    let messages = locale_messages.1
-    
-    assert_true(locale.length() == 2)
-    assert_eq(messages.length(), error_codes.length())
-    
-    // Test message content
-    for message in messages {
-      assert_true(message.length() > 5) // Minimum reasonable error message length
-    }
-  }
+  // 测试温度单位转换
+  let celsius_temp = 25.0 // 25摄氏度
+  let fahrenheit_temp = UnitSystemSupport::convert_temperature(telemetry_provider, celsius_temp, "celsius", "fahrenheit")
+  assert_true(abs(fahrenheit_temp - 77.0) < 0.001) // 77华氏度
   
-  // Test error code and message mapping
-  for i = 0; i < error_codes.length(); i = i + 1 {
-    let error_code = error_codes[i]
-    assert_true(error_code.starts_with("E"))
-    assert_true(error_code.length() == 4)
-  }
-}
-
-test "telemetry measurement units localization" {
-  // Test localized measurement units
-  let measurement_types = [
-    ("temperature", [
-      ("en", "°C", "°F"),
-      ("en-US", "°F", "°C"),
-      ("de", "°C", "°F"),
-      ("ja", "°C", "°F")
-    ]),
-    ("distance", [
-      ("en", "km", "mi"),
-      ("en-US", "mi", "km"),
-      ("de", "km", "mi"),
-      ("ja", "km", "mi")
-    ]),
-    ("weight", [
-      ("en", "kg", "lb"),
-      ("en-US", "lb", "kg"),
-      ("de", "kg", "lb"),
-      ("ja", "kg", "lb")
-    ])
-  ]
+  // 测试速度单位转换
+  let metric_speed = 100.0 // 100公里/小时
+  let imperial_speed = UnitSystemSupport::convert_speed(telemetry_provider, metric_speed, "metric", "imperial")
+  assert_true(abs(imperial_speed - 62.137) < 0.001) // 约62.137英里/小时
   
-  // Validate measurement unit localization
-  for measurement in measurement_types {
-    let measurement_type = measurement.0
-    let locale_units = measurement.1
-    
-    assert_true(measurement_type.length() > 0)
-    
-    for locale_unit in locale_units {
-      let locale = locale_unit.0
-      let primary_unit = locale_unit.1
-      let secondary_unit = locale_unit.2
-      
-      assert_true(locale.length() >= 2)
-      assert_true(primary_unit.length() > 0)
-      assert_true(secondary_unit.length() > 0)
-      assert_true(primary_unit != secondary_unit)
-    }
-  }
+  // 创建span并测试单位转换
+  let span = Tracer::start_span(tracer, "unit.conversion.operation")
   
-  // Test unit conversion
-  let conversion_factors = [
-    ("celsius_to_fahrenheit", 1.8, 32.0),
-    ("km_to_miles", 0.621371, 0.0),
-    ("kg_to_pounds", 2.20462, 0.0)
-  ]
+  // 添加不同单位的度量值
+  Span::set_attribute(span, "distance.metric", "100.0 km")
+  Span::set_attribute(span, "distance.imperial", "62.137 mi")
+  Span::set_attribute(span, "temperature.celsius", "25.0 °C")
+  Span::set_attribute(span, "temperature.fahrenheit", "77.0 °F")
+  Span::set_attribute(span, "weight.metric", "70.0 kg")
+  Span::set_attribute(span, "weight.imperial", "154.324 lbs")
   
-  for conversion in conversion_factors {
-    let conversion_name = conversion.0
-    let factor = conversion.1
-    let offset = conversion.2
-    
-    assert_true(conversion_name.contains("_to_"))
-    assert_true(factor > 0.0)
-    assert_true(offset >= 0.0)
-  }
-}
-
-test "telemetry collation and sorting" {
-  // Test locale-specific sorting
-  let sorting_test_cases = [
-    ("en", ["apple", "banana", "cherry", "date"]),
-    ("es", ["árbol", "ñandú", "chocolate", "zapato"]),
-    ("de", ["äpfel", "österreich", "übel", "zürich"]),
-    ("fr", ["été", "hiver", "printemps", "automne"]),
-    ("sv", ["åland", "äpple", "öland", "zebra"]),
-    ("da", ["æble", "øresund", "århus", "zebra"])
-  ]
+  Span::end(span)
   
-  // Validate sorting behavior
-  for sort_case in sorting_test_cases {
-    let locale = sort_case.0
-    let words = sort_case.1
-    
-    assert_true(locale.length() == 2)
-    assert_true(words.length() == 4)
-    
-    // Test that words are in correct order (simplified check)
-    for i = 1; i < words.length(); i = i + 1 {
-      let prev_word = words[i-1]
-      let current_word = words[i]
-      
-      // Basic length check (not a true collation test)
-      assert_true(prev_word.length() > 0)
-      assert_true(current_word.length() > 0)
-    }
-  }
+  // 测试本地化单位格式
+  let localized_distance = UnitSystemSupport::format_distance(telemetry_provider, 100.0, "metric", "en-US")
+  assert_eq(localized_distance, "100 km")
   
-  // Test numeric sorting in different locales
-  let numeric_strings = ["10", "2", "1", "20"]
-  let expected_numeric_sort = ["1", "2", "10", "20"]
+  let localized_distance_imperial = UnitSystemSupport::format_distance(telemetry_provider, 62.137, "imperial", "en-US")
+  assert_eq(localized_distance_imperial, "62.137 mi")
   
-  // Verify numeric sorting
-  for i = 0; i < expected_numeric_sort.length(); i = i + 1 {
-    let expected = expected_numeric_sort[i]
-    assert_true(numeric_strings.contains(expected))
-  }
-}
-
-test "telemetry pluralization rules" {
-  // Test pluralization for different languages
-  let pluralization_rules = [
-    ("en", [
-      (1, "item"),
-      (2, "items"),
-      (5, "items"),
-      (0, "items")
-    ]),
-    ("fr", [
-      (1, "élément"),
-      (2, "éléments"),
-      (5, "éléments"),
-      (0, "élément")
-    ]),
-    ("ja", [
-      (1, "アイテム"),
-      (2, "アイテム"),
-      (5, "アイテム"),
-      (0, "アイテム")
-    ]),
-    ("zh", [
-      (1, "项目"),
-      (2, "项目"),
-      (5, "项目"),
-      (0, "项目")
-    ])
-  ]
+  let localized_temperature = UnitSystemSupport::format_temperature(telemetry_provider, 25.0, "celsius", "en-US")
+  assert_eq(localized_temperature, "25°C")
   
-  // Validate pluralization rules
-  for lang_rules in pluralization_rules {
-    let locale = lang_rules.0
-    let rules = lang_rules.1
-    
-    assert_true(locale.length() == 2)
-    assert_eq(rules.length(), 4)
-    
-    for rule in rules {
-      let count = rule.0
-      let word_form = rule.1
-      
-      assert_true(count >= 0)
-      assert_true(word_form.length() > 0)
-    }
-  }
+  let localized_temperature_fahrenheit = UnitSystemSupport::format_temperature(telemetry_provider, 77.0, "fahrenheit", "en-US")
+  assert_eq(localized_temperature_fahrenheit, "77°F")
   
-  // Test complex pluralization (Slavic languages)
-  let complex_plurals = [
-    ("ru", [
-      (1, "элемент"),
-      (2, "элемента"),
-      (5, "элементов"),
-      (0, "элементов")
-    ]),
-    ("pl", [
-      (1, "element"),
-      (2, "elementy"),
-      (5, "elementów"),
-      (0, "elementów")
-    ])
-  ]
-  
-  for complex_plural in complex_plurals {
-    let locale = complex_plural.0
-    let rules = complex_plural.1
-    
-    assert_true(locale.length() == 2)
-    assert_eq(rules.length(), 4)
-    
-    // Verify different forms for different counts
-    let forms = []
-    for rule in rules {
-      let word_form = rule.1
-      if not forms.contains(word_form) {
-        forms.push(word_form)
-      }
-    }
-    
-    assert_true(forms.length() >= 2) // Should have multiple forms
-  }
+  assert_true(true)
 }
