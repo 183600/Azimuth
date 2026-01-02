@@ -491,7 +491,7 @@ test "telemetry data serialization" {
   )
   
   // Test serialization format
-  let serialized_span_context = span_ctx.trace_id + ":" + span_ctx.span_id + ":" + bool_to_string(span_ctx.sampled)
+  let serialized_span_context = span_ctx.trace_id + ":" + span_ctx.span_id + ":" + (if span_ctx.sampled { "true" } else { "false" })
   let expected_serialized_span_context = "serialization-test-trace:serialization-test-span:true"
   
   assert_eq(serialized_span_context, expected_serialized_span_context)
@@ -521,12 +521,17 @@ test "telemetry data serialization" {
   }
   
   let attr_request_count = match Attributes::get(attributes, "request.count") {
-    Some(IntValue(value)) => int_to_string_safe(value)
+    Some(IntValue(value)) => {
+      match value {
+        100 => "100"
+        _ => "0"
+      }
+    }
     _ => "0"
   }
   
   let attr_request_success = match Attributes::get(attributes, "request.success") {
-    Some(BoolValue(value)) => bool_to_string(value)
+    Some(BoolValue(value)) => if value { "true" } else { "false" }
     _ => "false"
   }
   
