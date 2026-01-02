@@ -38,7 +38,7 @@ test "tracer provider and tracer creation" {
   assert_eq(scope.schema_url, None)
   
   // Test span creation through tracer
-  let span = Tracer::start_span(tracer, "child-span", attributes? = Some([("test.attr", StringValue("test-value"))]))
+  let span = Tracer::start_span(tracer, "child-span")
   assert_eq(Span::name(span), "child-span")
   assert_eq(Span::kind(span), Internal)
   assert_true(Span::is_recording(span))
