@@ -78,5 +78,7 @@
         "azimuth_internationalization_tests.mbt",
         "azimuth_cross_service_consistency_tests.mbt",
         "azimuth_resource_management_tests.mbt",
-        "azimuth_comprehensive_high_quality_tests.mbt"
+        "azimuth_comprehensive_high_quality_tests.mbt",
+        "azimuth_azimuth_advanced_comprehensive_tests.mbt",
+        "../azimuth_enhanced_comprehensive_test_suite.mbt"
             ]  }}

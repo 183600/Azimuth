@@ -1,0 +1,15 @@
+{
+  "name": "azimuth/enhanced/test",
+  "version": "0.1.0",
+  "description": "Enhanced test suite for Azimuth telemetry system",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": [
+      "azimuth_enhanced_comprehensive_test_suite.mbt"
+    ]
+  }
+}
