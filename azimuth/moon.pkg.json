@@ -9,6 +9,7 @@
   },
   "test": {
     "test": [
+        "azimuth_high_quality_moonbit_tests.mbt",
         "azimuth_simple_additional_tests.mbt",
         "azimuth_new_resource_merge_tests.mbt",
         "azimuth_new_memory_management_tests.mbt",
@@ -53,5 +54,13 @@
         "azimuth_specialized_comprehensive_tests.mbt",
         "azimuth_advanced_feature_comprehensive_tests.mbt",
         "azimuth_premium_integrated_tests.mbt",
-        "../azimuth_specialized_moonbit_tests.mbt"
+        "../azimuth_specialized_moonbit_tests.mbt",
+        "azimuth_recursive_data_structures_tests.mbt",
+        "azimuth_advanced_generic_programming_tests.mbt",
+        "azimuth_time_series_data_processing_tests.mbt",
+        "azimuth_realtime_stream_processing_tests.mbt",
+        "azimuth_memory_leak_protection_tests.mbt",
+        "azimuth_data_consistency_validation_tests.mbt",
+        "azimuth_complex_aggregation_algorithms_tests.mbt",
+        "azimuth_fault_recovery_mechanism_tests.mbt"
             ]  }}
