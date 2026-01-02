@@ -1,467 +1,443 @@
-// Azimuth Telemetry System - 跨服务一致性测试用例
-// 测试分布式系统中多个服务间的遥测数据一致性和传播
+// 跨服务一致性测试用例
+// 测试Azimuth遥测系统在跨多个服务环境中的一致性行为
 
-// 测试1: 跨服务Trace传播一致性
-test "跨服务Trace传播一致性测试" {
-  // 模拟微服务调用链：API Gateway -> Service A -> Service B -> Service C
-  let services = ["api-gateway", "service-a", "service-b", "service-c"]
-  let trace_id = "trace123456789012345678901234567890"
+test "跨服务追踪ID一致性" {
+  // 测试跨服务的追踪ID一致性
+  let service1_tracer = TracerProvider::with_service_name("service-1")
+  let service2_tracer = TracerProvider::with_service_name("service-2")
+  let service3_tracer = TracerProvider::with_service_name("service-3")
   
-  // 创建服务调用链
-  let service_spans = []
-  let mut parent_span_id = "0000000000000000"  // 根Span的父ID
+  let tracer1 = TracerProvider::get_tracer(service1_tracer, "service1.tracer")
+  let tracer2 = TracerProvider::get_tracer(service2_tracer, "service2.tracer")
+  let tracer3 = TracerProvider::get_tracer(service3_tracer, "service3.tracer")
   
-  for i = 0; i < services.length(); i = i + 1 {
-    let service_name = services[i]
-    let span_id = service_name + "-span-12345"
-    let span = (service_name, trace_id, span_id, parent_span_id)
-    service_spans.push(span)
-    parent_span_id = span_id  // 下一个服务使用当前Span作为父Span
-  }
+  // 在服务1中创建根span
+  let root_span = Tracer::start_span(tracer1, "cross.service.request")
+  Span::set_attribute(root_span, "service.name", "service-1")
+  Span::set_attribute(root_span, "request.id", "req-12345")
   
-  // 验证Trace ID在所有服务中保持一致
-  for (service_name, service_trace_id, span_id, parent_span_id) in service_spans {
-    assert_eq(service_trace_id, trace_id)
-    assert_true(service_name == "api-gateway" || service_name == "service-a" || 
-                service_name == "service-b" || service_name == "service-c")
-    assert_true(span_id.contains("-span-"))
-    assert_eq(span_id.length(), 24)  // service-name-span-12345
-  }
+  let root_ctx = Span::span_context(root_span)
+  let root_trace_id = SpanContext::trace_id(root_ctx)
   
-  // 验证Span层次关系一致性
-  for i = 1; i < service_spans.length(); i = i + 1 {
-    let current_parent = service_spans[i].3
-    let previous_span = service_spans[i-1].2
-    assert_eq(current_parent, previous_span)
-  }
+  // 模拟服务间调用，传播追踪上下文
+  let service1_to_service2_headers = ContextPropagator::inject(root_ctx)
   
-  // 验证根Span没有父Span
-  assert_eq(service_spans[0].3, "0000000000000000")
+  // 在服务2中提取上下文并创建子span
+  let service2_ctx = ContextPropagator::extract(service1_to_service2_headers)
+  let service2_span = Tracer::start_span_with_context(tracer2, "service2.processing", service2_ctx)
+  Span::set_attribute(service2_span, "service.name", "service-2")
+  Span::set_attribute(service2_span, "parent.service", "service-1")
   
-  // 验证Span ID唯一性
-  let span_ids = service_spans.map(|(_, _, span_id, _)| span_id)
-  for i = 0; i < span_ids.length(); i = i + 1 {
-    for j = i + 1; j < span_ids.length(); j = j + 1 {
-      assert_not_eq(span_ids[i], span_ids[j])
-    }
-  }
+  let service2_ctx_obj = Span::span_context(service2_span)
+  let service2_trace_id = SpanContext::trace_id(service2_ctx_obj)
+  
+  // 验证追踪ID一致性
+  assert_eq(root_trace_id, service2_trace_id, "Trace ID should be consistent across services")
+  
+  // 从服务2到服务3的调用
+  let service2_to_service3_headers = ContextPropagator::inject(service2_ctx_obj)
+  
+  // 在服务3中提取上下文并创建子span
+  let service3_ctx = ContextPropagator::extract(service2_to_service3_headers)
+  let service3_span = Tracer::start_span_with_context(tracer3, "service3.processing", service3_ctx)
+  Span::set_attribute(service3_span, "service.name", "service-3")
+  Span::set_attribute(service3_span, "parent.service", "service-2")
+  
+  let service3_ctx_obj = Span::span_context(service3_span)
+  let service3_trace_id = SpanContext::trace_id(service3_ctx_obj)
+  
+  // 验证追踪ID一致性
+  assert_eq(root_trace_id, service3_trace_id, "Trace ID should be consistent across all services")
+  
+  // 验证span父子关系
+  assert_eq(SpanContext::span_id(root_ctx), SpanContext::parent_span_id(service2_ctx_obj), 
+            "Service2 span should have Service1 span as parent")
+  assert_eq(SpanContext::span_id(service2_ctx_obj), SpanContext::parent_span_id(service3_ctx_obj), 
+            "Service3 span should have Service2 span as parent")
+  
+  Span::end(service3_span)
+  Span::end(service2_span)
+  Span::end(root_span)
+  
+  assert_true(true)
 }
 
-// 测试2: 跨服务Baggage传播一致性
-test "跨服务Baggage传播一致性测试" {
-  // 初始Baggage项
-  let initial_baggage = [
-    ("user.id", "user-12345"),
-    ("session.id", "session-abcdef"),
-    ("request.id", "req-789012"),
-    ("client.version", "2.1.0")
-  ]
+test "跨服务度量一致性" {
+  // 测试跨服务的度量一致性
+  let service1_meter = MeterProvider::with_service_name("service-1")
+  let service2_meter = MeterProvider::with_service_name("service-2")
+  let service3_meter = MeterProvider::with_service_name("service-3")
   
-  // 模拟服务链中的Baggage传播
-  let services = ["frontend", "api-gateway", "auth-service", "user-service", "data-service"]
-  let service_baggage = []
-  let mut current_baggage = initial_baggage
+  let meter1 = MeterProvider::get_meter(service1_meter, "service1.meter")
+  let meter2 = MeterProvider::get_meter(service2_meter, "service2.meter")
+  let meter3 = MeterProvider::get_meter(service3_meter, "service3.meter")
   
-  for i = 0; i < services.length(); i = i + 1 {
-    let service_name = services[i]
-    
-    // 每个服务可能添加新的Baggage项
-    let new_items = [
-      (service_name + ".timestamp", "164099520" + i.to_string()),
-      (service_name + ".duration", (100 + i * 10).to_string() + "ms")
-    ]
-    
-    // 合并Baggage项
-    let mut merged_baggage = current_baggage
-    for new_item in new_items {
-      merged_baggage.push(new_item)
-    }
-    
-    service_baggage.push((service_name, merged_baggage))
-    current_baggage = merged_baggage
-  }
+  // 在所有服务中创建相同名称的度量
+  let service1_counter = Meter::create_counter(meter1, "cross.service.requests", Some("Cross-service requests"), Some("count"))
+  let service2_counter = Meter::create_counter(meter2, "cross.service.requests", Some("Cross-service requests"), Some("count"))
+  let service3_counter = Meter::create_counter(meter3, "cross.service.requests", Some("Cross-service requests"), Some("count"))
   
-  // 验证初始Baggage项在所有服务中都存在
-  for (service_name, baggage) in service_baggage {
-    for (original_key, original_value) in initial_baggage {
-      let mut found = false
-      for (key, value) in baggage {
-        if key == original_key {
-          assert_eq(value, original_value)
-          found = true
-          break
-        }
-      }
-      assert_true(found, "原始Baggage项 " + original_key + " 在服务 " + service_name + " 中不存在")
-    }
-  }
+  // 记录一致的度量值
+  Counter::add_with_attributes(service1_counter, 1.0, [
+    ("service.name", "service-1"),
+    ("operation", "process_request"),
+    ("status", "success")
+  ])
   
-  // 验证服务特定的Baggage项
-  for i = 0; i < service_baggage.length(); i = i + 1 {
-    let (service_name, baggage) = service_baggage[i]
-    let expected_timestamp_key = service_name + ".timestamp"
-    let expected_duration_key = service_name + ".duration"
-    let expected_timestamp_value = "164099520" + i.to_string()
-    let expected_duration_value = (100 + i * 10).to_string() + "ms"
-    
-    let mut timestamp_found = false
-    let mut duration_found = false
-    
-    for (key, value) in baggage {
-      if key == expected_timestamp_key {
-        assert_eq(value, expected_timestamp_value)
-        timestamp_found = true
-      } else if key == expected_duration_key {
-        assert_eq(value, expected_duration_value)
-        duration_found = true
-      }
-    }
-    
-    assert_true(timestamp_found, "时间戳Baggage项在服务 " + service_name + " 中不存在")
-    assert_true(duration_found, "持续时间Baggage项在服务 " + service_name + " 中不存在")
-  }
+  Counter::add_with_attributes(service2_counter, 1.0, [
+    ("service.name", "service-2"),
+    ("operation", "process_request"),
+    ("status", "success")
+  ])
   
-  // 验证Baggage序列化一致性
-  let final_baggage = service_baggage[service_baggage.length() - 1].1
-  let serialized_baggage = final_baggage.map(|(key, value)| key + "=" + value).reduce(|acc, item| acc + "," + item, "")
+  Counter::add_with_attributes(service3_counter, 1.0, [
+    ("service.name", "service-3"),
+    ("operation", "process_request"),
+    ("status", "success")
+  ])
   
-  for (key, value) in final_baggage {
-    let expected_pair = key + "=" + value
-    assert_true(serialized_baggage.contains(expected_pair))
-  }
+  // 验证度量定义一致性
+  assert_eq(service1_counter.name, service2_counter.name, "Counter names should be consistent")
+  assert_eq(service2_counter.name, service3_counter.name, "Counter names should be consistent")
+  
+  assert_eq(service1_counter.description, service2_counter.description, "Counter descriptions should be consistent")
+  assert_eq(service2_counter.description, service3_counter.description, "Counter descriptions should be consistent")
+  
+  assert_eq(service1_counter.unit, service2_counter.unit, "Counter units should be consistent")
+  assert_eq(service2_counter.unit, service3_counter.unit, "Counter units should be consistent")
+  
+  // 创建直方图并测试一致性
+  let service1_histogram = Meter::create_histogram(meter1, "cross.service.duration", Some("Cross-service duration"), Some("ms"))
+  let service2_histogram = Meter::create_histogram(meter2, "cross.service.duration", Some("Cross-service duration"), Some("ms"))
+  let service3_histogram = Meter::create_histogram(meter3, "cross.service.duration", Some("Cross-service duration"), Some("ms"))
+  
+  // 记录一致的度量值
+  Histogram::record_with_attributes(service1_histogram, 100.5, [
+    ("service.name", "service-1"),
+    ("operation", "process_request")
+  ])
+  
+  Histogram::record_with_attributes(service2_histogram, 150.7, [
+    ("service.name", "service-2"),
+    ("operation", "process_request")
+  ])
+  
+  Histogram::record_with_attributes(service3_histogram, 125.3, [
+    ("service.name", "service-3"),
+    ("operation", "process_request")
+  ])
+  
+  // 验证直方图定义一致性
+  assert_eq(service1_histogram.name, service2_histogram.name, "Histogram names should be consistent")
+  assert_eq(service2_histogram.name, service3_histogram.name, "Histogram names should be consistent")
+  
+  assert_eq(service1_histogram.description, service2_histogram.description, "Histogram descriptions should be consistent")
+  assert_eq(service2_histogram.description, service3_histogram.description, "Histogram descriptions should be consistent")
+  
+  assert_eq(service1_histogram.unit, service2_histogram.unit, "Histogram units should be consistent")
+  assert_eq(service2_histogram.unit, service3_histogram.unit, "Histogram units should be consistent")
+  
+  assert_true(true)
 }
 
-// 测试3: 跨服务度量一致性
-test "跨服务度量一致性测试" {
-  // 定义服务列表
-  let services = ["web-server", "api-gateway", "auth-service", "user-service", "database"]
+test "跨服务日志一致性" {
+  // 测试跨服务的日志一致性
+  let service1_logger = LoggerProvider::with_service_name("service-1")
+  let service2_logger = LoggerProvider::with_service_name("service-2")
+  let service3_logger = LoggerProvider::with_service_name("service-3")
   
-  // 模拟每个服务的度量数据
-  let service_metrics = []
+  let logger1 = LoggerProvider::get_logger(service1_logger, "service1.logger")
+  let logger2 = LoggerProvider::get_logger(service2_logger, "service2.logger")
+  let logger3 = LoggerProvider::get_logger(service3_logger, "service3.logger")
   
-  for i = 0; i < services.length(); i = i + 1 {
-    let service_name = services[i]
-    
-    // 每个服务的度量
-    let metrics = [
-      (service_name + ".requests.total", (i + 1) * 100.0, "counter"),
-      (service_name + ".response.time", 50.0 + (i * 10.0), "histogram"),
-      (service_name + ".error.rate", 0.01 * (i + 1).to_float(), "gauge"),
-      (service_name + ".active.connections", (i + 1) * 10.0, "updowncounter")
-    ]
-    
-    service_metrics.push((service_name, metrics))
-  }
+  // 创建一致的日志记录
+  let service1_log = LogRecord::new(Info, "Cross-service operation started")
+  LogRecord::add_attribute(service1_log, "service.name", "service-1")
+  LogRecord::add_attribute(service1_log, "operation.id", "op-12345")
+  LogRecord::add_attribute(service1_log, "request.id", "req-67890")
+  LogRecord::add_attribute(service1_log, "correlation.id", "corr-abcde")
   
-  // 验证度量命名一致性
-  for (service_name, metrics) in service_metrics {
-    for (metric_name, value, metric_type) in metrics {
-      assert_true(metric_name.starts_with(service_name + "."))
-      assert_true(metric_name.contains("."))
-      assert_true(metric_type == "counter" || metric_type == "histogram" || 
-                  metric_type == "gauge" || metric_type == "updowncounter")
-      assert_true(value >= 0.0)
-    }
-  }
+  let service2_log = LogRecord::new(Info, "Cross-service operation started")
+  LogRecord::add_attribute(service2_log, "service.name", "service-2")
+  LogRecord::add_attribute(service2_log, "operation.id", "op-12345")
+  LogRecord::add_attribute(service2_log, "request.id", "req-67890")
+  LogRecord::add_attribute(service2_log, "correlation.id", "corr-abcde")
   
-  // 验证相同类型度量的命名模式一致性
-  let metric_types = ["requests.total", "response.time", "error.rate", "active.connections"]
+  let service3_log = LogRecord::new(Info, "Cross-service operation started")
+  LogRecord::add_attribute(service3_log, "service.name", "service-3")
+  LogRecord::add_attribute(service3_log, "operation.id", "op-12345")
+  LogRecord::add_attribute(service3_log, "request.id", "req-67890")
+  LogRecord::add_attribute(service3_log, "correlation.id", "corr-abcde")
   
-  for metric_type in metric_types {
-    let metrics_of_type = []
-    
-    for (service_name, metrics) in service_metrics {
-      for (metric_name, value, type_) in metrics {
-        if metric_name.contains(metric_type) {
-          metrics_of_type.push((service_name, metric_name, value, type_))
-        }
-      }
-    }
-    
-    // 验证所有服务都有相同类型的度量
-    assert_eq(metrics_of_type.length(), services.length())
-    
-    // 验证度量类型一致性
-    for i = 1; i < metrics_of_type.length(); i = i + 1 {
-      assert_eq(metrics_of_type[i].3, metrics_of_type[0].3)
-    }
-  }
+  // 验证日志严重性一致性
+  assert_eq(LogRecord::severity_number(service1_log), LogRecord::severity_number(service2_log), 
+            "Log severity should be consistent")
+  assert_eq(LogRecord::severity_number(service2_log), LogRecord::severity_number(service3_log), 
+            "Log severity should be consistent")
   
-  // 计算全局度量一致性
-  let global_requests_total = service_metrics.map(|(_, metrics)| {
-    for (metric_name, value, metric_type) in metrics {
-      if metric_name.contains(".requests.total") {
-        return value
-      }
-    }
-    return 0.0
-  }).reduce(|acc, val| acc + val, 0.0)
+  // 验证日志消息一致性
+  assert_eq(LogRecord::body(service1_log), LogRecord::body(service2_log), "Log messages should be consistent")
+  assert_eq(LogRecord::body(service2_log), LogRecord::body(service3_log), "Log messages should be consistent")
   
-  let expected_global_total = 100.0 + 200.0 + 300.0 + 400.0 + 500.0
-  assert_eq(global_requests_total, expected_global_total)
+  // 验证关键属性一致性
+  let service1_attrs = LogRecord::get_attributes(service1_log)
+  let service2_attrs = LogRecord::get_attributes(service2_log)
+  let service3_attrs = LogRecord::get_attributes(service3_log)
+  
+  // 验证操作ID一致性
+  assert_eq(Map::get(service1_attrs, "operation.id"), Map::get(service2_attrs, "operation.id"))
+  assert_eq(Map::get(service2_attrs, "operation.id"), Map::get(service3_attrs, "operation.id"))
+  
+  // 验证请求ID一致性
+  assert_eq(Map::get(service1_attrs, "request.id"), Map::get(service2_attrs, "request.id"))
+  assert_eq(Map::get(service2_attrs, "request.id"), Map::get(service3_attrs, "request.id"))
+  
+  // 验证关联ID一致性
+  assert_eq(Map::get(service1_attrs, "correlation.id"), Map::get(service2_attrs, "correlation.id"))
+  assert_eq(Map::get(service2_attrs, "correlation.id"), Map::get(service3_attrs, "correlation.id"))
+  
+  Logger::emit(logger1, service1_log)
+  Logger::emit(logger2, service2_log)
+  Logger::emit(logger3, service3_log)
+  
+  assert_true(true)
 }
 
-// 测试4: 跨服务日志关联一致性
-test "跨服务日志关联一致性测试" {
-  // 模拟分布式请求的日志链
-  let trace_id = "trace987654321098765432109876543210"
-  let services = ["load-balancer", "web-server", "api-gateway", "business-service", "data-service"]
+test "跨服务资源属性一致性" {
+  // 测试跨服务的资源属性一致性
+  let service1_resource = Resource::with_service_name("service-1")
+  let service2_resource = Resource::with_service_name("service-2")
+  let service3_resource = Resource::with_service_name("service-3")
   
-  // 为每个服务创建日志记录
-  let service_logs = []
-  
-  for i = 0; i < services.length(); i = i + 1 {
-    let service_name = services[i]
-    let span_id = service_name + "-span-" + i.to_string()
-    
-    // 每个服务的日志
-    let logs = [
-      (service_name, "info", "Request received", "1640995200" + i.to_string() + "000", trace_id, span_id),
-      (service_name, "debug", "Processing request", "1640995200" + i.to_string() + "100", trace_id, span_id),
-      (service_name, "info", "Request completed", "1640995200" + i.to_string() + "200", trace_id, span_id)
-    ]
-    
-    service_logs.push(logs)
-  }
-  
-  // 验证所有日志都有相同的Trace ID
-  for logs in service_logs {
-    for (service_name, level, message, timestamp, log_trace_id, span_id) in logs {
-      assert_eq(log_trace_id, trace_id)
-      assert_true(service_name == services[service_logs.index_of(logs)])
-      assert_true(level == "info" || level == "debug")
-      assert_true(message.length() > 0)
-      assert_true(timestamp.length() == 13)
-      assert_true(span_id.contains(service_name))
-    }
-  }
-  
-  // 验证时间戳单调性（每个服务内部）
-  for logs in service_logs {
-    for i = 1; i < logs.length(); i = i + 1 {
-      let prev_timestamp = logs[i-1].3.to_int()
-      let curr_timestamp = logs[i].3.to_int()
-      assert_true(curr_timestamp > prev_timestamp)
-    }
-  }
-  
-  // 验证服务间时间戳顺序
-  for i = 1; i < service_logs.length(); i = i + 1 {
-    let prev_service_last_log = service_logs[i-1][service_logs[i-1].length() - 1]
-    let curr_service_first_log = service_logs[i][0]
-    
-    let prev_timestamp = prev_service_last_log.3.to_int()
-    let curr_timestamp = curr_service_first_log.3.to_int()
-    
-    assert_true(curr_timestamp > prev_timestamp)
-  }
-  
-  // 验证日志关联一致性
-  let all_logs = []
-  for logs in service_logs {
-    for log in logs {
-      all_logs.push(log)
-    }
-  }
-  
-  // 验证所有日志都可以通过Trace ID关联
-  let logs_by_trace_id = all_logs.filter(|(_, _, _, _, log_trace_id, _)| log_trace_id == trace_id)
-  assert_eq(logs_by_trace_id.length(), all_logs.length())
-  
-  // 验证每个服务的日志可以通过Span ID区分
-  for i = 0; i < services.length(); i = i + 1 {
-    let service_name = services[i]
-    let expected_span_id = service_name + "-span-" + i.to_string()
-    
-    let service_specific_logs = all_logs.filter(|(log_service_name, _, _, _, _, span_id)| {
-      log_service_name == service_name && span_id == expected_span_id
-    })
-    
-    assert_eq(service_specific_logs.length(), 3)  // 每个服务有3条日志
-  }
-}
-
-// 测试5: 跨服务资源属性一致性
-test "跨服务资源属性一致性测试" {
-  // 定义通用资源属性
+  // 添加通用资源属性
   let common_attributes = [
-    ("service.instance.id", "instance-12345"),
-    ("deployment.environment", "production"),
-    ("telemetry.sdk.name", "azimuth"),
-    ("telemetry.sdk.version", "0.1.0")
+    ("deployment.environment", StringValue("production")),
+    ("service.version", StringValue("2.1.0")),
+    ("service.namespace", StringValue("azimuth")),
+    ("region", StringValue("us-west-2")),
+    ("availability.zone", StringValue("us-west-2a")),
+    ("cloud.provider", StringValue("aws")),
+    ("kubernetes.cluster.name", StringValue("prod-cluster")),
+    ("kubernetes.namespace", StringValue("azimuth-prod"))
   ]
   
-  // 定义服务特定资源属性
-  let service_specific_attributes = [
-    ("web-server", [
-      ("server.port", "8080"),
-      ("server.protocol", "http"),
-      ("server.host", "web.example.com")
-    ]),
-    ("api-gateway", [
-      ("gateway.type", "kong"),
-      ("gateway.version", "2.8.0"),
-      ("gateway.config", "high-availability")
-    ]),
-    ("database", [
-      ("db.type", "postgresql"),
-      ("db.version", "13.4"),
-      ("db.host", "db-primary.example.com")
-    ])
+  let service1_with_common = Resource::with_attributes(service1_resource, common_attributes)
+  let service2_with_common = Resource::with_attributes(service2_resource, common_attributes)
+  let service3_with_common = Resource::with_attributes(service3_resource, common_attributes)
+  
+  // 添加服务特定属性
+  let service1_specific = [
+    ("service.type", StringValue("frontend")),
+    ("container.image", StringValue("azimuth/frontend:2.1.0")),
+    ("port", StringValue("8080"))
   ]
   
-  // 创建每个服务的完整资源属性
-  let service_resources = []
+  let service2_specific = [
+    ("service.type", StringValue("backend")),
+    ("container.image", StringValue("azimuth/backend:2.1.0")),
+    ("port", StringValue("9090"))
+  ]
   
-  for (service_name, specific_attrs) in service_specific_attributes {
-    let mut all_attrs = common_attributes
-    for attr in specific_attrs {
-      all_attrs.push(attr)
-    }
-    service_resources.push((service_name, all_attrs))
-  }
+  let service3_specific = [
+    ("service.type", StringValue("database")),
+    ("container.image", StringValue("azimuth/database:2.1.0")),
+    ("port", StringValue("5432"))
+  ]
   
-  // 验证通用属性在所有服务中一致
-  for (service_name, attributes) in service_resources {
-    for (common_key, common_value) in common_attributes {
-      let mut found = false
-      for (attr_key, attr_value) in attributes {
-        if attr_key == common_key {
-          assert_eq(attr_value, common_value)
-          found = true
-          break
-        }
-      }
-      assert_true(found, "通用属性 " + common_key + " 在服务 " + service_name + " 中不存在")
-    }
-  }
+  let service1_final = Resource::with_attributes(service1_with_common, service1_specific)
+  let service2_final = Resource::with_attributes(service2_with_common, service2_specific)
+  let service3_final = Resource::with_attributes(service3_with_common, service3_specific)
   
-  // 验证服务特定属性的唯一性
-  for i = 0; i < service_resources.length(); i = i + 1 {
-    let (service_name_i, attributes_i) = service_resources[i]
-    let (service_specific_attrs_i) = service_specific_attributes[i]
-    
-    for (specific_key, specific_value) in service_specific_attrs_i {
-      let mut found = false
-      for (attr_key, attr_value) in attributes_i {
-        if attr_key == specific_key {
-          assert_eq(attr_value, specific_value)
-          found = true
-          break
-        }
-      }
-      assert_true(found, "服务特定属性 " + specific_key + " 在服务 " + service_name_i + " 中不存在")
-    }
-    
-    // 验证服务特定属性不在其他服务中
-    for j = 0; j < service_resources.length(); j = j + 1 {
-      if i != j {
-        let (service_name_j, attributes_j) = service_resources[j]
-        for (specific_key, _) in service_specific_attrs_i {
-          let mut found_in_other = false
-          for (attr_key, _) in attributes_j {
-            if attr_key == specific_key {
-              found_in_other = true
-              break
-            }
-          }
-          // 服务特定属性应该不在其他服务中（除非是通用属性）
-          if not common_attributes.map(|(key, _)| key).contains(specific_key) {
-            assert_false(found_in_other, "服务特定属性 " + specific_key + " 不应该在服务 " + service_name_j + " 中")
-          }
-        }
-      }
-    }
-  }
+  // 验证通用属性一致性
+  let service1_attrs = Resource::get_all_attributes(service1_final)
+  let service2_attrs = Resource::get_all_attributes(service2_final)
+  let service3_attrs = Resource::get_all_attributes(service3_final)
   
-  // 验证资源属性序列化一致性
-  for (service_name, attributes) in service_resources {
-    let serialized = attributes.map(|(key, value)| key + "=" + value).reduce(|acc, pair| acc + "," + pair, "")
-    
-    // 验证序列化结果包含所有属性
-    for (key, value) in attributes {
-      let expected_pair = key + "=" + value
-      assert_true(serialized.contains(expected_pair))
-    }
-    
-    // 验证序列化结果不为空
-    assert_true(serialized.length() > 0)
-  }
+  // 验证部署环境一致性
+  assert_eq(Map::get(service1_attrs, "deployment.environment"), 
+            Map::get(service2_attrs, "deployment.environment"))
+  assert_eq(Map::get(service2_attrs, "deployment.environment"), 
+            Map::get(service3_attrs, "deployment.environment"))
+  
+  // 验证服务版本一致性
+  assert_eq(Map::get(service1_attrs, "service.version"), 
+            Map::get(service2_attrs, "service.version"))
+  assert_eq(Map::get(service2_attrs, "service.version"), 
+            Map::get(service3_attrs, "service.version"))
+  
+  // 验证命名空间一致性
+  assert_eq(Map::get(service1_attrs, "service.namespace"), 
+            Map::get(service2_attrs, "service.namespace"))
+  assert_eq(Map::get(service2_attrs, "service.namespace"), 
+            Map::get(service3_attrs, "service.namespace"))
+  
+  // 验证区域一致性
+  assert_eq(Map::get(service1_attrs, "region"), 
+            Map::get(service2_attrs, "region"))
+  assert_eq(Map::get(service2_attrs, "region"), 
+            Map::get(service3_attrs, "region"))
+  
+  // 验证服务特定属性不同但符合预期
+  assert_eq(Map::get(service1_attrs, "service.type"), Some(StringValue("frontend")))
+  assert_eq(Map::get(service2_attrs, "service.type"), Some(StringValue("backend")))
+  assert_eq(Map::get(service3_attrs, "service.type"), Some(StringValue("database")))
+  
+  assert_true(true)
 }
 
-// 测试6: 跨服务采样决策一致性
-test "跨服务采样决策一致性测试" {
-  // 定义采样策略
-  let sampling_strategies = [
-    ("always-on", 1.0),
-    ("always-off", 0.0),
-    ("probabilistic-10%", 0.1),
-    ("probabilistic-50%", 0.5),
-    ("parent-based", 0.0)
-  ]
+test "跨服务采样一致性" {
+  // 测试跨服务的采样一致性
+  let sampling_config = SamplingConfiguration::new()
+  SamplingConfiguration::set_parent_based(sampling_config, true)
+  SamplingConfiguration::set_rate(sampling_config, 0.1)  // 10%采样率
   
-  // 模拟分布式请求的采样决策
-  let services = ["edge-service", "api-gateway", "auth-service", "user-service"]
-  let total_requests = 1000
+  let service1_tracer = TracerProvider::with_sampling(sampling_config)
+  let service2_tracer = TracerProvider::with_sampling(sampling_config)
+  let service3_tracer = TracerProvider::with_sampling(sampling_config)
   
-  for (strategy_name, sampling_rate) in sampling_strategies {
-    let service_sampling_results = []
-    let mut parent_sampled = true  // 初始父级采样决策
+  let tracer1 = TracerProvider::get_tracer(service1_tracer, "service1.tracer")
+  let tracer2 = TracerProvider::get_tracer(service2_tracer, "service2.tracer")
+  let tracer3 = TracerProvider::get_tracer(service3_tracer, "service3.tracer")
+  
+  // 测试采样决策一致性
+  let sampled_spans = []
+  let unsampled_spans = []
+  
+  for i = 0; i < 100; i = i + 1 {
+    let root_span = Tracer::start_span(tracer1, "sampling.test." + Int::to_string(i))
+    let root_ctx = Span::span_context(root_span)
+    let is_sampled = SpanContext::is_sampled(root_ctx)
     
-    for i = 0; i < services.length(); i = i + 1 {
-      let service_name = services[i]
-      let mut sampled_count = 0
+    if is_sampled {
+      Array::push(sampled_spans, root_span)
       
-      for j = 0; j < total_requests; j = j + 1 {
-        let sampled = if strategy_name == "always-on" {
-          true
-        } else if strategy_name == "always-off" {
-          false
-        } else if strategy_name == "parent-based" {
-          parent_sampled  // 跟随父级决策
-        } else {
-          // 概率采样
-          (j.to_float() / total_requests.to_float()) < sampling_rate
-        }
-        
-        if sampled {
-          sampled_count = sampled_count + 1
-        }
-      }
+      // 在服务2中创建子span，应该继承采样决策
+      let headers = ContextPropagator::inject(root_ctx)
+      let service2_ctx = ContextPropagator::extract(headers)
+      let service2_span = Tracer::start_span_with_context(tracer2, "service2.child", service2_ctx)
+      let service2_ctx_obj = Span::span_context(service2_span)
       
-      // 对于parent-based策略，子级服务的采样决策应该与父级一致
-      if strategy_name == "parent-based" && i > 0 {
-        let parent_result = service_sampling_results[i-1].2
-        assert_eq(sampled_count, parent_result)
-      }
+      // 验证子span继承采样决策
+      assert_true(SpanContext::is_sampled(service2_ctx_obj), "Child span should inherit sampling decision")
       
-      service_sampling_results.push((service_name, strategy_name, sampled_count))
-      parent_sampled = sampled_count > 0  // 更新父级采样决策
-    }
-    
-    // 验证采样结果一致性
-    if strategy_name == "always-on" {
-      for (_, _, sampled_count) in service_sampling_results {
-        assert_eq(sampled_count, total_requests)
-      }
-    } else if strategy_name == "always-off" {
-      for (_, _, sampled_count) in service_sampling_results {
-        assert_eq(sampled_count, 0)
-      }
-    } else if strategy_name == "parent-based" {
-      // 所有服务应该有相同的采样决策
-      for i = 1; i < service_sampling_results.length(); i = i + 1 {
-        assert_eq(service_sampling_results[i].2, service_sampling_results[0].2)
-      }
+      // 在服务3中创建子span，应该继承采样决策
+      let headers2 = ContextPropagator::inject(service2_ctx_obj)
+      let service3_ctx = ContextPropagator::extract(headers2)
+      let service3_span = Tracer::start_span_with_context(tracer3, "service3.child", service3_ctx)
+      let service3_ctx_obj = Span::span_context(service3_span)
+      
+      // 验证子span继承采样决策
+      assert_true(SpanContext::is_sampled(service3_ctx_obj), "Grandchild span should inherit sampling decision")
+      
+      Span::end(service3_span)
+      Span::end(service2_span)
     } else {
-      // 概率采样：所有服务应该有相似的采样率
-      let tolerance = total_requests / 50  // 2%容差
-      let expected_count = (total_requests.to_float() * sampling_rate).to_int()
+      Array::push(unsampled_spans, root_span)
       
-      for (_, _, sampled_count) in service_sampling_results {
-        assert_true(sampled_count >= expected_count - tolerance && 
-                    sampled_count <= expected_count + tolerance)
-      }
+      // 在服务2中创建子span，应该继承不采样决策
+      let headers = ContextPropagator::inject(root_ctx)
+      let service2_ctx = ContextPropagator::extract(headers)
+      let service2_span = Tracer::start_span_with_context(tracer2, "service2.child", service2_ctx)
+      let service2_ctx_obj = Span::span_context(service2_span)
+      
+      // 验证子span继承不采样决策
+      assert_false(SpanContext::is_sampled(service2_ctx_obj), "Child span should inherit not-sampled decision")
+      
+      Span::end(service2_span)
     }
+    
+    Span::end(root_span)
   }
+  
+  // 验证采样率大约为10%
+  let sampled_rate = Int::to_float(Array::length(sampled_spans)) / Int::to_float(100)
+  assert_true(sampled_rate >= 0.05 && sampled_rate <= 0.15, "Sampling rate should be approximately 10%")
+  
+  assert_true(true)
+}
+
+test "跨服务错误传播一致性" {
+  // 测试跨服务的错误传播一致性
+  let service1_tracer = TracerProvider::with_service_name("service-1")
+  let service2_tracer = TracerProvider::with_service_name("service-2")
+  let service3_tracer = TracerProvider::with_service_name("service-3")
+  
+  let tracer1 = TracerProvider::get_tracer(service1_tracer, "service1.tracer")
+  let tracer2 = TracerProvider::get_tracer(service2_tracer, "service2.tracer")
+  let tracer3 = TracerProvider::get_tracer(service3_tracer, "service3.tracer")
+  
+  // 在服务1中创建span并设置错误状态
+  let root_span = Tracer::start_span(tracer1, "error.propagation.test")
+  Span::set_status(root_span, Error, Some("Initial error in service-1"))
+  Span::add_event(root_span, "error.occurred", [
+    ("error.type", "ValidationError"),
+    ("error.code", "ERR_001"),
+    ("error.message", "Invalid input parameter")
+  ])
+  
+  let root_ctx = Span::span_context(root_span)
+  
+  // 传播到服务2
+  let headers = ContextPropagator::inject(root_ctx)
+  let service2_ctx = ContextPropagator::extract(headers)
+  let service2_span = Tracer::start_span_with_context(tracer2, "service2.error.handling", service2_ctx)
+  
+  // 在服务2中添加错误处理信息
+  Span::add_event(service2_span, "error.received", [
+    ("source.service", "service-1"),
+    ("error.type", "ValidationError"),
+    ("handling.strategy", "retry")
+  ])
+  
+  // 模拟重试失败
+  Span::add_event(service2_span, "retry.failed", [
+    ("retry.count", "3"),
+    ("final.error", "Max retries exceeded")
+  ])
+  
+  Span::set_status(service2_span, Error, Some("Error propagation from service-1"))
+  
+  let service2_ctx_obj = Span::span_context(service2_span)
+  
+  // 传播到服务3
+  let headers2 = ContextPropagator::inject(service2_ctx_obj)
+  let service3_ctx = ContextPropagator::extract(headers2)
+  let service3_span = Tracer::start_span_with_context(tracer3, "service3.error.handling", service3_ctx)
+  
+  // 在服务3中添加错误处理信息
+  Span::add_event(service3_span, "error.received", [
+    ("source.service", "service-2"),
+    ("original.service", "service-1"),
+    ("error.type", "ValidationError"),
+    ("handling.strategy", "fallback")
+  ])
+  
+  // 模拟降级处理
+  Span::add_event(service3_span, "fallback.activated", [
+    ("fallback.type", "default_response"),
+    ("fallback.reason", "Original service unavailable")
+  ])
+  
+  Span::set_status(service3_span, Ok, Some("Recovered with fallback"))
+  
+  Span::end(service3_span)
+  Span::end(service2_span)
+  Span::end(root_span)
+  
+  // 验证错误传播的一致性
+  let service1_status = Span::get_status(root_span)
+  let service2_status = Span::get_status(service2_span)
+  let service3_status = Span::get_status(service3_span)
+  
+  // 验证错误状态传播
+  assert_eq(Status::code(service1_status), Error)
+  assert_eq(Status::code(service2_status), Error)
+  assert_eq(Status::code(service3_status), Ok)  // 服务3成功恢复
+  
+  // 验证错误消息传播
+  assert_true(String::contains(Status::description(service1_status), "Initial error in service-1"))
+  assert_true(String::contains(Status::description(service2_status), "Error propagation from service-1"))
+  assert_true(String::contains(Status::description(service3_status), "Recovered with fallback"))
+  
+  assert_true(true)
 }
