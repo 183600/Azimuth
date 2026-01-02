@@ -164,6 +164,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     2: (__test_617a696d7574685f696e746567726174696f6e5f74657374732e6d6274_2, ["遥测数据序列化和传输集成测试"]),
     3: (__test_617a696d7574685f696e746567726174696f6e5f74657374732e6d6274_3, ["错误处理和恢复集成测试"]),
   },
+  "azimuth_focused_telemetry_tests.mbt": {
+    0: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_0, ["attribute value type validation"]),
+    1: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_1, ["attributes structure operations"]),
+    2: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_2, ["span context creation and validation"]),
+    3: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_3, ["baggage operations"]),
+    4: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_4, ["instrumentation scope configuration"]),
+    5: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_5, ["text map carrier operations"]),
+    6: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_6, ["context key operations"]),
+    7: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_7, ["resource attributes management"]),
+  },
   "azimuth_error_handling_tests.mbt": {
     0: (__test_617a696d7574685f6572726f725f68616e646c696e675f74657374732e6d6274_0, ["空值和None处理测试"]),
     1: (__test_617a696d7574685f6572726f725f68616e646c696e675f74657374732e6d6274_1, ["上下文None处理测试"]),
