@@ -286,3 +286,170 @@ pub fn CompositePropagator::extract(propagator : CompositePropagator, carrier : 
 pub fn Logger::emit(logger : Logger, record : LogRecord) -> Unit {
   // Placeholder implementation
 }
+
+// Additional functions for testing
+pub fn Meter::create_gauge(meter : Meter, name : String, description? : Option[String] = None, unit? : Option[String] = None) -> Gauge {
+  // Placeholder implementation
+  @azimuth.Gauge { name : name, description : description, unit : unit }
+}
+
+pub fn Gauge::record(gauge : Gauge, value : Double, attributes? : Option[Attributes] = None) -> Unit {
+  // Placeholder implementation
+}
+
+pub fn Meter::create_updown_counter(meter : Meter, name : String, description? : Option[String] = None, unit? : Option[String] = None) -> UpDownCounter {
+  // Placeholder implementation
+  @azimuth.UpDownCounter { name : name, description : description, unit : unit }
+}
+
+pub fn UpDownCounter::add(counter : UpDownCounter, value : Double, attributes? : Option[Attributes] = None) -> Unit {
+  // Placeholder implementation
+}
+
+pub fn Context::root() -> Context {
+  // Placeholder implementation
+  @azimuth.Context { data : None }
+}
+
+pub fn ContextKey::new(key : String) -> ContextKey[String] {
+  // Placeholder implementation
+  @azimuth.ContextKey { key : key }
+}
+
+pub fn Context::get(ctx : Context, key : ContextKey[String]) -> Option[String] {
+  // Placeholder implementation
+  None
+}
+
+pub fn Span::name(span : Span) -> String {
+  // Placeholder implementation
+  span.name
+}
+
+pub fn Span::span_context(span : Span) -> SpanContext {
+  // Placeholder implementation
+  span.span_context
+}
+
+pub fn SpanContext::is_valid(ctx : SpanContext) -> Bool {
+  // Placeholder implementation
+  ctx.trace_id != "" && ctx.span_id != ""
+}
+
+pub fn SpanContext::trace_id(ctx : SpanContext) -> String {
+  // Placeholder implementation
+  ctx.trace_id
+}
+
+pub fn SpanContext::span_id(ctx : SpanContext) -> String {
+  // Placeholder implementation
+  ctx.span_id
+}
+
+pub fn Span::set_parent(span : Span, parent_ctx : SpanContext) -> Unit {
+  // Placeholder implementation
+}
+
+pub fn Baggage::new() -> Baggage {
+  // Placeholder implementation
+  @azimuth.Baggage { entries : [] }
+}
+
+pub fn Baggage::get_entry(baggage : Baggage, key : String) -> Option[String] {
+  // Placeholder implementation
+  None
+}
+
+pub fn LogRecord::new(severity : LogSeverity, body : String) -> LogRecord {
+  // Placeholder implementation
+  @azimuth.LogRecord {
+    timestamp : 1640995200000000000L,
+    severity : severity,
+    body : Some(body),
+    attributes : [],
+    trace_id : None,
+    span_id : None
+  }
+}
+
+pub fn LogRecord::new_with_attributes(severity : LogSeverity, body : Option[String], attributes : Array[(String, AttributeValue)]) -> LogRecord {
+  // Placeholder implementation
+  @azimuth.LogRecord {
+    timestamp : 1640995200000000000L,
+    severity : severity,
+    body : body,
+    attributes : attributes,
+    trace_id : None,
+    span_id : None
+  }
+}
+
+pub fn LogRecord::severity_number(record : LogRecord) -> LogSeverity {
+  // Placeholder implementation
+  record.severity
+}
+
+pub fn LogRecord::body(record : LogRecord) -> Option[String] {
+  // Placeholder implementation
+  record.body
+}
+
+pub fn Resource::new() -> Resource {
+  // Placeholder implementation
+  @azimuth.Resource { attributes : [] }
+}
+
+pub fn Resource::with_attributes(resource : Resource, attributes : Array[(String, AttributeValue)]) -> Resource {
+  // Placeholder implementation
+  @azimuth.Resource { attributes : attributes }
+}
+
+pub fn Resource::get_attribute(resource : Resource, key : String) -> Option[AttributeValue] {
+  // Placeholder implementation
+  None
+}
+
+pub fn Resource::merge(base : Resource, override_ : Resource) -> Resource {
+  // Placeholder implementation
+  base
+}
+
+pub fn Span::new(name : String, kind : SpanKind, ctx : SpanContext) -> Span {
+  // Placeholder implementation
+  @azimuth.Span {
+    name : name,
+    kind : kind,
+    recording : true,
+    span_context : ctx
+  }
+}
+
+pub fn Span::get_attribute(span : Span, key : String) -> Option[AttributeValue] {
+  // Placeholder implementation
+  None
+}
+
+pub fn Span::serialize(span : Span) -> String {
+  // Placeholder implementation
+  span.name
+}
+
+pub fn Span::deserialize(data : String) -> Span {
+  // Placeholder implementation
+  @azimuth.Span {
+    name : data,
+    kind : @azimuth.SpanKind::Internal,
+    recording : true,
+    span_context : @azimuth.SpanContext {
+      trace_id : "1234567890abcdef1234567890abcdef",
+      span_id : "1234567890abcdef",
+      sampled : true,
+      trace_state : ""
+    }
+  }
+}
+
+pub fn Meter::serialize_metrics(meter : Meter) -> String {
+  // Placeholder implementation
+  meter.scope.name
+}
