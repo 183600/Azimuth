@@ -1,720 +1,1039 @@
-// Azimuth 序列化/反序列化测试
-// 专注于验证遥测数据的序列化和反序列化功能，确保数据完整性和跨平台兼容性
+// Azimuth Data Serialization and Deserialization Test Suite
+// This file contains comprehensive test cases for data serialization and deserialization
 
-// 测试1: JSON序列化/反序列化完整性
-test "JSON序列化/反序列化完整性" {
-  // 创建复杂的遥测数据结构
-  let complex_telemetry = {
-    "trace_id": "trace-001",
-    "span_id": "span-001",
-    "parent_span_id": "",
-    "operation_name": "user_authentication",
-    "start_time": 1640995200000,
-    "end_time": 1640995200250,
-    "duration_ms": 250,
-    "status": "success",
-    "service_name": "auth-service",
-    "tags": {
-      "http.method": "POST",
-      "http.url": "/api/auth/login",
-      "user.id": "12345",
-      "session.id": "sess-67890",
-      "client.version": "2.1.0"
-    },
-    "metrics": {
-      "cpu_usage": 45.5,
-      "memory_usage": 68.2,
-      "disk_io": 1024.5,
-      "network_io": 2048.3,
-      "response_time": 125.8
-    },
-    "logs": [
-      {
-        "timestamp": 1640995200050,
-        "level": "info",
-        "message": "Authentication request received",
-        "fields": {"user_id": "12345", "ip_address": "192.168.1.100"}
-      },
-      {
-        "timestamp": 1640995200150,
-        "level": "debug",
-        "message": "Validating user credentials",
-        "fields": {"validation_step": "password_check"}
-      },
-      {
-        "timestamp": 1640995200250,
-        "level": "info",
-        "message": "Authentication successful",
-        "fields": {"result": "success", "session_created": true}
+// Test 1: JSON-like Serialization
+test "json-like serialization" {
+  // Define data structures for serialization
+  type Person {
+    name : String
+    age : Int
+    email : String
+  }
+  
+  type Address {
+    street : String
+    city : String
+    country : String
+    postal_code : String
+  }
+  
+  type User {
+    id : Int
+    person : Person
+    address : Address
+    is_active : Bool
+    tags : Array[String]
+  }
+  
+  // Serialization functions
+  let serialize_person = fn(person) {
+    "{\"name\":\"" + person.name + "\",\"age\":" + person.age.to_string() + ",\"email\":\"" + person.email + "\"}"
+  }
+  
+  let serialize_address = fn(address) {
+    "{\"street\":\"" + address.street + "\",\"city\":\"" + address.city + "\",\"country\":\"" + address.country + "\",\"postal_code\":\"" + address.postal_code + "\"}"
+  }
+  
+  let serialize_user = fn(user) {
+    let person_json = serialize_person(user.person)
+    let address_json = serialize_address(user.address)
+    
+    let tags_json = "["
+    let mut first_tag = true
+    for tag in user.tags {
+      if not first_tag {
+        tags_json = tags_json + ","
       }
-    ],
-    "events": [
-      {
-        "timestamp": 1640995200100,
-        "name": "database_query",
-        "attributes": {"query_type": "select", "table": "users", "duration_ms": 45}
-      },
-      {
-        "timestamp": 1640995200200,
-        "name": "cache_update",
-        "attributes": {"cache_key": "user_12345", "ttl": 3600}
+      tags_json = tags_json + "\"" + tag + "\""
+      first_tag = false
+    }
+    tags_json = tags_json + "]"
+    
+    "{\"id\":" + user.id.to_string() + ",\"person\":" + person_json + ",\"address\":" + address_json + ",\"is_active\":" + (if user.is_active { "true" } else { "false" }) + ",\"tags\":" + tags_json + "}"
+  }
+  
+  // Create test data
+  let person = {
+    name: "John Doe",
+    age: 30,
+    email: "john@example.com"
+  }
+  
+  let address = {
+    street: "123 Main St",
+    city: "New York",
+    country: "USA",
+    postal_code: "10001"
+  }
+  
+  let user = {
+    id: 12345,
+    person: person,
+    address: address,
+    is_active: true,
+    tags: ["developer", "javascript", "react"]
+  }
+  
+  // Test serialization
+  let person_json = serialize_person(person)
+  let address_json = serialize_address(address)
+  let user_json = serialize_user(user)
+  
+  // Verify JSON structure
+  assert_true(person_json.contains("\"name\":\"John Doe\""))
+  assert_true(person_json.contains("\"age\":30"))
+  assert_true(person_json.contains("\"email\":\"john@example.com\""))
+  
+  assert_true(address_json.contains("\"street\":\"123 Main St\""))
+  assert_true(address_json.contains("\"city\":\"New York\""))
+  assert_true(address_json.contains("\"country\":\"USA\""))
+  assert_true(address_json.contains("\"postal_code\":\"10001\""))
+  
+  assert_true(user_json.contains("\"id\":12345"))
+  assert_true(user_json.contains("\"is_active\":true"))
+  assert_true(user_json.contains("\"tags\":[\"developer\",\"javascript\",\"react\"]"))
+}
+
+// Test 2: CSV Serialization
+test "csv serialization" {
+  // Define data structure for CSV
+  type SalesRecord {
+    id : Int
+    product : String
+    quantity : Int
+    price : Float
+    date : String
+    region : String
+  }
+  
+  // CSV serialization function
+  let serialize_sales_record = fn(record) {
+    record.id.to_string() + "," + 
+    record.product + "," + 
+    record.quantity.to_string() + "," + 
+    record.price.to_string() + "," + 
+    record.date + "," + 
+    record.region
+  }
+  
+  let serialize_sales_records = fn(records) {
+    let mut csv = "ID,Product,Quantity,Price,Date,Region\n"
+    
+    for record in records {
+      csv = csv + serialize_sales_record(record) + "\n"
+    }
+    
+    csv
+  }
+  
+  // Create test data
+  let records = [
+    {
+      id: 1,
+      product: "Laptop",
+      quantity: 5,
+      price: 999.99,
+      date: "2023-01-15",
+      region: "North"
+    },
+    {
+      id: 2,
+      product: "Mouse",
+      quantity: 20,
+      price: 25.50,
+      date: "2023-01-16",
+      region: "South"
+    },
+    {
+      id: 3,
+      product: "Keyboard",
+      quantity: 10,
+      price: 75.00,
+      date: "2023-01-17",
+      region: "East"
+    }
+  ]
+  
+  // Test serialization
+  let csv = serialize_sales_records(records)
+  
+  // Verify CSV structure
+  assert_true(csv.contains("ID,Product,Quantity,Price,Date,Region"))
+  assert_true(csv.contains("1,Laptop,5,999.99,2023-01-15,North"))
+  assert_true(csv.contains("2,Mouse,20,25.5,2023-01-16,South"))
+  assert_true(csv.contains("3,Keyboard,10,75.0,2023-01-17,East"))
+  
+  // Test CSV parsing simulation
+  let parse_csv_line = fn(line) {
+    let mut fields = []
+    let mut current_field = ""
+    let mut in_quotes = false
+    
+    for i in 0..line.length() {
+      let char = line[i]
+      
+      if char == '\"' {
+        in_quotes = not in_quotes
+      } else if char == ',' and not in_quotes {
+        fields = fields @ [current_field]
+        current_field = ""
+      } else {
+        current_field = current_field + char.to_string()
       }
+    }
+    
+    fields = fields @ [current_field]
+    fields
+  }
+  
+  let header_fields = parse_csv_line("ID,Product,Quantity,Price,Date,Region")
+  assert_eq(header_fields.length(), 6)
+  assert_eq(header_fields[0], "ID")
+  assert_eq(header_fields[1], "Product")
+  
+  let record_fields = parse_csv_line("1,Laptop,5,999.99,2023-01-15,North")
+  assert_eq(record_fields.length(), 6)
+  assert_eq(record_fields[0], "1")
+  assert_eq(record_fields[1], "Laptop")
+}
+
+// Test 3: Binary Serialization Simulation
+test "binary serialization simulation" {
+  // Simulate binary serialization using byte arrays (represented as integers)
+  
+  let int_to_bytes = fn(value) {
+    [
+      (value >> 24) & 0xFF,
+      (value >> 16) & 0xFF,
+      (value >> 8) & 0xFF,
+      value & 0xFF
     ]
   }
   
-  // 执行JSON序列化
-  let serialization_result = serialize_to_json(complex_telemetry)
-  assert_true(serialization_result["success"])
-  assert_true(serialization_result["json_string"].length() > 0)
+  let float_to_bytes = fn(value) {
+    // Simplified float to bytes conversion
+    let int_value = value.to_int()
+    [
+      (int_value >> 24) & 0xFF,
+      (int_value >> 16) & 0xFF,
+      (int_value >> 8) & 0xFF,
+      int_value & 0xFF
+    ]
+  }
   
-  // 验证序列化后的JSON结构
-  let json_string = serialization_result["json_string"]
-  assert_true(json_string.contains("\"trace_id\""))
-  assert_true(json_string.contains("\"span_id\""))
-  assert_true(json_string.contains("\"operation_name\""))
-  assert_true(json_string.contains("\"tags\""))
-  assert_true(json_string.contains("\"metrics\""))
-  assert_true(json_string.contains("\"logs\""))
-  assert_true(json_string.contains("\"events\""))
+  let string_to_bytes = fn(str) {
+    let mut bytes = [str.length() & 0xFF, (str.length() >> 8) & 0xFF]
+    for i in 0..str.length() {
+      bytes = bytes @ [str[i].to_int()]
+    }
+    bytes
+  }
   
-  // 执行JSON反序列化
-  let deserialization_result = deserialize_from_json(json_string)
-  assert_true(deserialization_result["success"])
+  let serialize_telemetry_data = fn(timestamp, sensor_id, value, unit) {
+    let mut bytes = []
+    
+    // Serialize timestamp (4 bytes)
+    bytes = bytes @ int_to_bytes(timestamp)
+    
+    // Serialize sensor_id (4 bytes)
+    bytes = bytes @ int_to_bytes(sensor_id)
+    
+    // Serialize value (4 bytes)
+    bytes = bytes @ float_to_bytes(value)
+    
+    // Serialize unit (variable length)
+    bytes = bytes @ string_to_bytes(unit)
+    
+    bytes
+  }
   
-  // 验证反序列化后的数据完整性
-  let deserialized_data = deserialization_result["data"]
-  assert_eq(deserialized_data["trace_id"], complex_telemetry["trace_id"])
-  assert_eq(deserialized_data["span_id"], complex_telemetry["span_id"])
-  assert_eq(deserialized_data["operation_name"], complex_telemetry["operation_name"])
-  assert_eq(deserialized_data["start_time"], complex_telemetry["start_time"])
-  assert_eq(deserialized_data["end_time"], complex_telemetry["end_time"])
+  // Test serialization
+  let timestamp = 1640995200  // 2022-01-01 00:00:00
+  let sensor_id = 42
+  let value = 23.5
+  let unit = "Celsius"
   
-  // 验证嵌套对象完整性
-  assert_eq(deserialized_data["tags"]["http.method"], complex_telemetry["tags"]["http.method"])
-  assert_eq(deserialized_data["metrics"]["cpu_usage"], complex_telemetry["metrics"]["cpu_usage"])
+  let bytes = serialize_telemetry_data(timestamp, sensor_id, value, unit)
   
-  // 验证数组完整性
-  assert_eq(deserialized_data["logs"].length(), complex_telemetry["logs"].length())
-  assert_eq(deserialized_data["events"].length(), complex_telemetry["events"].length())
+  // Verify byte array structure
+  assert_eq(bytes.length(), 4 + 4 + 4 + 2 + 7)  // timestamp + sensor_id + value + unit_length + unit_chars
   
-  // 验证数组元素完整性
-  assert_eq(deserialized_data["logs"][0]["message"], complex_telemetry["logs"][0]["message"])
-  assert_eq(deserialized_data["events"][0]["name"], complex_telemetry["events"][0]["name"])
+  // Verify timestamp bytes
+  assert_eq(bytes[0], (timestamp >> 24) & 0xFF)
+  assert_eq(bytes[1], (timestamp >> 16) & 0xFF)
+  assert_eq(bytes[2], (timestamp >> 8) & 0xFF)
+  assert_eq(bytes[3], timestamp & 0xFF)
+  
+  // Verify sensor_id bytes
+  assert_eq(bytes[4], (sensor_id >> 24) & 0xFF)
+  assert_eq(bytes[5], (sensor_id >> 16) & 0xFF)
+  assert_eq(bytes[6], (sensor_id >> 8) & 0xFF)
+  assert_eq(bytes[7], sensor_id & 0xFF)
+  
+  // Verify unit length bytes
+  assert_eq(bytes[16], 7)  // "Celsius" has 7 characters
+  assert_eq(bytes[17], 0)
+  
+  // Test deserialization simulation
+  let bytes_to_int = fn(bytes, offset) {
+    (bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]
+  }
+  
+  let bytes_to_string = fn(bytes, offset) {
+    let length = bytes[offset] | (bytes[offset + 1] << 8)
+    let mut result = ""
+    for i in 0..length {
+      result = result + bytes[offset + 2 + i].to_char().to_string()
+    }
+    result
+  }
+  
+  let deserialized_timestamp = bytes_to_int(bytes, 0)
+  let deserialized_sensor_id = bytes_to_int(bytes, 4)
+  let deserialized_unit = bytes_to_string(bytes, 16)
+  
+  assert_eq(deserialized_timestamp, timestamp)
+  assert_eq(deserialized_sensor_id, sensor_id)
+  assert_eq(deserialized_unit, "Celsius")
 }
 
-// 测试2: 二进制序列化/反序列化性能
-test "二进制序列化/反序列化性能" {
-  // 创建大量遥测数据用于性能测试
-  let telemetry_batch = []
-  for i = 0; i < 1000; i = i + 1 {
-    let telemetry = {
-      "trace_id": "trace-" + i.to_string(),
-      "span_id": "span-" + i.to_string(),
-      "operation_name": "operation_" + i.to_string(),
-      "start_time": 1640995200000 + i * 1000,
-      "duration_ms": 100 + (i % 500),
-      "status": i % 10 == 0 ? "error" : "success",
-      "metrics": {
-        "cpu": 50.0 + (i % 50).to_float(),
-        "memory": 60.0 + (i % 40).to_float(),
-        "network": 100.0 + (i % 200).to_float()
-      },
-      "tags": {
-        "service": "service-" + (i % 5).to_string(),
-        "version": "1.0." + (i % 10).to_string()
+// Test 4: XML-like Serialization
+test "xml-like serialization" {
+  // Define data structure for XML
+  type Product {
+    id : Int
+    name : String
+    price : Float
+    category : String
+    in_stock : Bool
+    description : String
+  }
+  
+  // XML serialization function
+  let escape_xml = fn(text) {
+    let mut result = ""
+    for i in 0..text.length() {
+      let char = text[i]
+      match char {
+        '<' => result = result + "&lt;"
+        '>' => result = result + "&gt;"
+        '&' => result = result + "&amp;"
+        '\"' => result = result + "&quot;"
+        '\'' => result = result + "&apos;"
+        _ => result = result + char.to_string()
       }
     }
-    telemetry_batch.push(telemetry)
+    result
   }
   
-  // 测试二进制序列化性能
-  let binary_serialization_start = get_current_timestamp()
-  let binary_serialization_result = serialize_to_binary(telemetry_batch)
-  let binary_serialization_end = get_current_timestamp()
-  let binary_serialization_duration = binary_serialization_end - binary_serialization_start
-  
-  // 验证二进制序列化性能
-  assert_true(binary_serialization_result["success"])
-  assert_true(binary_serialization_duration < 5000) // 应在5秒内完成
-  assert_true(binary_serialization_result["binary_data"].length() > 0)
-  
-  // 测试二进制反序列化性能
-  let binary_deserialization_start = get_current_timestamp()
-  let binary_deserialization_result = deserialize_from_binary(binary_serialization_result["binary_data"])
-  let binary_deserialization_end = get_current_timestamp()
-  let binary_deserialization_duration = binary_deserialization_end - binary_deserialization_start
-  
-  // 验证二进制反序列化性能
-  assert_true(binary_deserialization_result["success"])
-  assert_true(binary_deserialization_duration < 5000) // 应在5秒内完成
-  
-  // 验证数据完整性
-  let deserialized_batch = binary_deserialization_result["data"]
-  assert_eq(deserialized_batch.length(), telemetry_batch.length())
-  
-  for i = 0; i < deserialized_batch.length(); i = i + 1 {
-    assert_eq(deserialized_batch[i]["trace_id"], telemetry_batch[i]["trace_id"])
-    assert_eq(deserialized_batch[i]["span_id"], telemetry_batch[i]["span_id"])
-    assert_eq(deserialized_batch[i]["metrics"]["cpu"], telemetry_batch[i]["metrics"]["cpu"])
-  }
-  
-  // 计算压缩比
-  let original_size = calculate_json_size(telemetry_batch)
-  let binary_size = binary_serialization_result["binary_data"].length()
-  let compression_ratio = binary_size.to_float() / original_size.to_float()
-  assert_true(compression_ratio < 0.8) // 二进制应比JSON小至少20%
-  
-  // 计算吞吐量
-  let total_records = telemetry_batch.length()
-  let serialization_throughput = total_records.to_float() / binary_serialization_duration.to_float()
-  let deserialization_throughput = total_records.to_float() / binary_deserialization_duration.to_float()
-  
-  assert_true(serialization_throughput > 100) // 每秒至少序列化100条记录
-  assert_true(deserialization_throughput > 100) // 每秒至少反序列化100条记录
-}
-
-// 测试3: 跨格式序列化兼容性
-test "跨格式序列化兼容性" {
-  // 创建测试数据
-  let test_telemetry = {
-    "trace_id": "trace-compat-001",
-    "span_id": "span-compat-001",
-    "operation_name": "compatibility_test",
-    "start_time": 1640995200000,
-    "duration_ms": 150,
-    "status": "success",
-    "tags": {"env": "test", "version": "1.0.0"},
-    "metrics": {"cpu": 75.5, "memory": 68.2}
-  }
-  
-  // 支持的序列化格式
-  let serialization_formats = ["json", "binary", "protobuf", "msgpack", "cbor"]
-  let serialized_data = {}
-  let deserialization_results = {}
-  
-  // 测试每种格式的序列化
-  for i = 0; i < serialization_formats.length(); i = i + 1 {
-    let format = serialization_formats[i]
-    let serialization_result = serialize_to_format(test_telemetry, format)
+  let serialize_product = fn(product) {
+    let escaped_name = escape_xml(product.name)
+    let escaped_description = escape_xml(product.description)
+    let escaped_category = escape_xml(product.category)
     
-    // 验证序列化成功
-    assert_true(serialization_result["success"])
-    assert_true(serialization_result["data"].length() > 0)
-    serialized_data[format] = serialization_result["data"]
-    
-    // 测试反序列化
-    let deserialization_result = deserialize_from_format(serialization_result["data"], format)
-    assert_true(deserialization_result["success"])
-    deserialization_results[format] = deserialization_result["data"]
-    
-    // 验证数据完整性
-    assert_eq(deserialization_result["data"]["trace_id"], test_telemetry["trace_id"])
-    assert_eq(deserialization_result["data"]["span_id"], test_telemetry["span_id"])
-    assert_eq(deserialization_result["data"]["operation_name"], test_telemetry["operation_name"])
-    assert_eq(deserialization_result["data"]["metrics"]["cpu"], test_telemetry["metrics"]["cpu"])
+    "<product id=\"" + product.id.to_string() + "\">\n" +
+    "  <name>" + escaped_name + "</name>\n" +
+    "  <price>" + product.price.to_string() + "</price>\n" +
+    "  <category>" + escaped_category + "</category>\n" +
+    "  <in_stock>" + (if product.in_stock { "true" } else { "false" }) + "</in_stock>\n" +
+    "  <description>" + escaped_description + "</description>\n" +
+    "</product>"
   }
   
-  // 验证跨格式数据一致性
-  let reference_data = deserialization_results["json"]
-  for i = 1; i < serialization_formats.length(); i = i + 1 {
-    let format = serialization_formats[i]
-    let format_data = deserialization_results[format]
+  let serialize_products = fn(products) {
+    let mut xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<products>\n"
     
-    assert_eq(format_data["trace_id"], reference_data["trace_id"])
-    assert_eq(format_data["span_id"], reference_data["span_id"])
-    assert_eq(format_data["operation_name"], reference_data["operation_name"])
-    assert_eq(format_data["start_time"], reference_data["start_time"])
-    assert_eq(format_data["duration_ms"], reference_data["duration_ms"])
-    assert_eq(format_data["status"], reference_data["status"])
+    for product in products {
+      xml = xml + serialize_product(product) + "\n"
+    }
     
-    // 验证嵌套对象
-    assert_eq(format_data["tags"]["env"], reference_data["tags"]["env"])
-    assert_eq(format_data["tags"]["version"], reference_data["tags"]["version"])
-    assert_eq(format_data["metrics"]["cpu"], reference_data["metrics"]["cpu"])
-    assert_eq(format_data["metrics"]["memory"], reference_data["metrics"]["memory"])
+    xml = xml + "</products>"
+    xml
   }
   
-  // 比较不同格式的效率
-  let efficiency_comparison = compare_format_efficiency(serialized_data)
-  assert_true(efficiency_comparison["size_comparison_valid"])
-  assert_true(efficiency_comparison["performance_comparison_valid"])
-  
-  // 验证格式特定特性
-  let format_features = verify_format_features(serialization_formats)
-  for i = 0; i < serialization_formats.length(); i = i + 1 {
-    let format = serialization_formats[i]
-    assert_true(format_features[format]["schema_validation"])
-    assert_true(format_features[format]["error_handling"])
-    assert_true(format_features[format]["version_compatibility"])
-  }
-}
-
-// 测试4: 序列化错误处理和恢复
-test "序列化错误处理和恢复" {
-  // 测试各种错误场景
-  let error_scenarios = [
+  // Create test data
+  let products = [
     {
-      "scenario": "circular_reference",
-      "data": create_circular_reference_data(),
-      "expected_error": "circular_reference_detected",
-      "expected_recovery": "reference_replacement"
+      id: 101,
+      name: "Smartphone",
+      price: 699.99,
+      category: "Electronics",
+      in_stock: true,
+      description: "Latest model with advanced features"
     },
     {
-      "scenario": "unsupported_data_type",
-      "data": {"function": fn() { "unsupported" }, "normal": "data"},
-      "expected_error": "unsupported_type",
-      "expected_recovery": "type_conversion_or_omission"
-    },
-    {
-      "scenario": "data_too_large",
-      "data": create_large_data_object(100 * 1024 * 1024), // 100MB
-      "expected_error": "size_limit_exceeded",
-      "expected_recovery": "data_truncation_or_compression"
-    },
-    {
-      "scenario": "malformed_input",
-      "data": "{\"invalid\": json structure}",
-      "expected_error": "parse_error",
-      "expected_recovery": "error_correction_or_rejection"
+      id: 102,
+      name: "Laptop <Pro>",
+      price: 1299.99,
+      category: "Computers",
+      in_stock: false,
+      description: "High-performance laptop for professionals"
     }
   ]
   
-  for i = 0; i < error_scenarios.length(); i = i + 1 {
-    let scenario = error_scenarios[i]
-    
-    // 测试序列化错误检测
-    let serialization_result = serialize_with_error_handling(scenario["data"])
-    if (scenario["scenario"] != "malformed_input") {
-      // 对于序列化操作
-      assert_false(serialization_result["success"])
-      assert_eq(serialization_result["error_type"], scenario["expected_error"])
-      
-      // 测试错误恢复
-      let recovery_result = apply_serialization_recovery(scenario["data"], serialization_result)
-      assert_eq(recovery_result["recovery_strategy"], scenario["expected_recovery"])
-      
-      if (recovery_result["recovery_successful"]) {
-        // 验证恢复后的序列化成功
-        assert_true(recovery_result["recovered_serialization"]["success"])
-        assert_true(recovery_result["recovered_serialization"]["data"].length() > 0)
-      }
-    }
-    
-    // 测试反序列化错误检测（对于格式错误的数据）
-    if (scenario["scenario"] == "malformed_input") {
-      let deserialization_result = deserialize_with_error_handling(scenario["data"])
-      assert_false(deserialization_result["success"])
-      assert_eq(deserialization_result["error_type"], scenario["expected_error"])
-      
-      // 测试反序列化错误恢复
-      let recovery_result = apply_deserialization_recovery(scenario["data"], deserialization_result)
-      assert_eq(recovery_result["recovery_strategy"], scenario["expected_recovery"])
-    }
-  }
+  // Test serialization
+  let xml = serialize_products(products)
   
-  // 验证错误处理统计
-  let error_statistics = get_error_handling_statistics()
-  assert_true(error_statistics["error_detection_rate"] > 0.95)
-  assert_true(error_statistics["recovery_success_rate"] > 0.8)
-  assert_true(error_statistics["data_corruption_prevented"])
+  // Verify XML structure
+  assert_true(xml.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"))
+  assert_true(xml.contains("<products>"))
+  assert_true(xml.contains("</products>"))
+  assert_true(xml.contains("<product id=\"101\">"))
+  assert_true(xml.contains("<name>Smartphone</name>"))
+  assert_true(xml.contains("<price>699.99</price>"))
+  assert_true(xml.contains("<category>Electronics</category>"))
+  assert_true(xml.contains("<in_stock>true</in_stock>"))
+  assert_true(xml.contains("<description>Latest model with advanced features</description>"))
+  
+  // Test XML escaping
+  assert_true(xml.contains("<name>Laptop &lt;Pro&gt;</name>"))
 }
 
-// 测试5: 序列化版本兼容性
-test "序列化版本兼容性" {
-  // 定义不同版本的数据格式
-  let version_formats = [
-    {
-      "version": "1.0",
-      "schema": {
-        "trace_id": "string",
-        "span_id": "string",
-        "operation_name": "string",
-        "start_time": "int",
-        "duration_ms": "int",
-        "status": "string"
-      },
-      "sample_data": {
-        "trace_id": "trace-v1-001",
-        "span_id": "span-v1-001",
-        "operation_name": "operation_v1",
-        "start_time": 1640995200000,
-        "duration_ms": 100,
-        "status": "success"
-      }
-    },
-    {
-      "version": "2.0",
-      "schema": {
-        "trace_id": "string",
-        "span_id": "string",
-        "operation_name": "string",
-        "start_time": "int",
-        "end_time": "int",
-        "duration_ms": "int",
-        "status": "string",
-        "service_name": "string",
-        "tags": "object"
-      },
-      "sample_data": {
-        "trace_id": "trace-v2-001",
-        "span_id": "span-v2-001",
-        "operation_name": "operation_v2",
-        "start_time": 1640995200000,
-        "end_time": 1640995200100,
-        "duration_ms": 100,
-        "status": "success",
-        "service_name": "test-service",
-        "tags": {"env": "test"}
-      }
-    },
-    {
-      "version": "3.0",
-      "schema": {
-        "trace_id": "string",
-        "span_id": "string",
-        "parent_span_id": "string",
-        "operation_name": "string",
-        "start_time": "int",
-        "end_time": "int",
-        "duration_ms": "int",
-        "status": "string",
-        "service_name": "string",
-        "tags": "object",
-        "metrics": "object",
-        "logs": "array"
-      },
-      "sample_data": {
-        "trace_id": "trace-v3-001",
-        "span_id": "span-v3-001",
-        "parent_span_id": "span-v3-000",
-        "operation_name": "operation_v3",
-        "start_time": 1640995200000,
-        "end_time": 1640995200150,
-        "duration_ms": 150,
-        "status": "success",
-        "service_name": "test-service",
-        "tags": {"env": "test", "version": "3.0"},
-        "metrics": {"cpu": 75.5, "memory": 68.2},
-        "logs": [{"timestamp": 1640995200050, "message": "test log"}]
-      }
-    }
-  ]
+// Test 5: Protocol Buffers-like Serialization
+test "protocol buffers-like serialization" {
+  // Simulate Protocol Buffers serialization with field numbers and wire types
   
-  // 测试向前兼容性（旧版本读取新版本数据）
-  for i = 0; i < version_formats.length(); i = i + 1 {
-    let current_version = version_formats[i]
+  let write_varint = fn(value, bytes) {
+    let mut result = bytes
+    let mut v = value
     
-    for j = i + 1; j < version_formats.length(); j = j + 1 {
-      let newer_version = version_formats[j]
-      
-      // 使用新版本格式序列化数据
-      let serialization_result = serialize_with_version(newer_version["sample_data"], newer_version["version"])
-      assert_true(serialization_result["success"])
-      
-      // 尝试使用旧版本格式反序列化
-      let deserialization_result = deserialize_with_version_compatibility(
-        serialization_result["data"],
-        current_version["version"],
-        newer_version["version"]
-      )
-      
-      // 验证向前兼容性
-      assert_true(deserialization_result["success"])
-      assert_true(deserialization_result["compatibility_mode"])
-      
-      // 验证核心字段保持完整
-      let deserialized_data = deserialization_result["data"]
-      assert_eq(deserialized_data["trace_id"], newer_version["sample_data"]["trace_id"])
-      assert_eq(deserialized_data["span_id"], newer_version["sample_data"]["span_id"])
-      assert_eq(deserialized_data["operation_name"], newer_version["sample_data"]["operation_name"])
+    while v >= 128 {
+      result = result @ [(v & 0x7F) | 0x80]
+      v = v >> 7
     }
-  }
-  
-  // 测试向后兼容性（新版本读取旧版本数据）
-  for i = 0; i < version_formats.length(); i = i + 1 {
-    let current_version = version_formats[i]
     
-    for j = 0; j < i; j = j + 1 {
-      let older_version = version_formats[j]
-      
-      // 使用旧版本格式序列化数据
-      let serialization_result = serialize_with_version(older_version["sample_data"], older_version["version"])
-      assert_true(serialization_result["success"])
-      
-      // 尝试使用新版本格式反序列化
-      let deserialization_result = deserialize_with_version_compatibility(
-        serialization_result["data"],
-        current_version["version"],
-        older_version["version"]
-      )
-      
-      // 验证向后兼容性
-      assert_true(deserialization_result["success"])
-      assert_true(deserialization_result["compatibility_mode"])
-      
-      // 验证数据完整性
-      let deserialized_data = deserialization_result["data"]
-      assert_eq(deserialized_data["trace_id"], older_version["sample_data"]["trace_id"])
-      assert_eq(deserialized_data["span_id"], older_version["sample_data"]["span_id"])
-      
-      // 验证缺失字段的默认值处理
-      if (current_version["version"] == "3.0" && older_version["version"] == "1.0") {
-        assert_eq(deserialized_data["parent_span_id"], "") // 默认值
-        assert_true(deserialized_data["tags"].length() == 0) // 默认空对象
-      }
-    }
+    result = result @ [v]
+    result
   }
   
-  // 验证版本迁移策略
-  let migration_result = test_version_migration_strategy(version_formats)
-  assert_true(migration_result["migration_paths_valid"])
-  assert_true(migration_result["data_loss_prevented"])
-  assert_true(migration_result["schema_evolution_supported"])
-}
-
-// 辅助函数（模拟实现）
-fn get_current_timestamp() -> Int {
-  1640995300000
-}
-
-fn serialize_to_json(data: Map[String, Any]) -> Map[String, Any] {
-  {
-    "success": true,
-    "json_string": "{\"trace_id\":\"trace-001\",\"span_id\":\"span-001\",\"operation_name\":\"user_authentication\"}",
-    "size": 1024
-  }
-}
-
-fn deserialize_from_json(json_string: String) -> Map[String, Any] {
-  {
-    "success": true,
-    "data": {
-      "trace_id": "trace-001",
-      "span_id": "span-001",
-      "operation_name": "user_authentication",
-      "start_time": 1640995200000,
-      "end_time": 1640995200250,
-      "duration_ms": 250,
-      "status": "success",
-      "service_name": "auth-service",
-      "tags": {
-        "http.method": "POST",
-        "http.url": "/api/auth/login",
-        "user.id": "12345",
-        "session.id": "sess-67890",
-        "client.version": "2.1.0"
-      },
-      "metrics": {
-        "cpu_usage": 45.5,
-        "memory_usage": 68.2,
-        "disk_io": 1024.5,
-        "network_io": 2048.3,
-        "response_time": 125.8
-      },
-      "logs": [
-        {
-          "timestamp": 1640995200050,
-          "level": "info",
-          "message": "Authentication request received",
-          "fields": {"user_id": "12345", "ip_address": "192.168.1.100"}
-        },
-        {
-          "timestamp": 1640995200150,
-          "level": "debug",
-          "message": "Validating user credentials",
-          "fields": {"validation_step": "password_check"}
-        },
-        {
-          "timestamp": 1640995200250,
-          "level": "info",
-          "message": "Authentication successful",
-          "fields": {"result": "success", "session_created": true}
+  let serialize_field = fn(field_number, wire_type, value) {
+    let mut bytes = []
+    let key = (field_number << 3) | wire_type
+    bytes = write_varint(key, bytes)
+    
+    match wire_type {
+      0 => {  // Varint
+        bytes = write_varint(value, bytes)
+      }
+      1 => {  // 64-bit
+        // Simplified: just add 8 bytes
+        for i in 0..8 {
+          bytes = bytes @ [0]
         }
-      ],
-      "events": [
-        {
-          "timestamp": 1640995200100,
-          "name": "database_query",
-          "attributes": {"query_type": "select", "table": "users", "duration_ms": 45}
-        },
-        {
-          "timestamp": 1640995200200,
-          "name": "cache_update",
-          "attributes": {"cache_key": "user_12345", "ttl": 3600}
+      }
+      2 => {  // Length-delimited
+        let str_value = value
+        bytes = write_varint(str_value.length(), bytes)
+        for i in 0..str_value.length() {
+          bytes = bytes @ [str_value[i].to_int()]
         }
+      }
+      5 => {  // 32-bit
+        // Simplified: just add 4 bytes
+        for i in 0..4 {
+          bytes = bytes @ [0]
+        }
+      }
+      _ => ()
+    }
+    
+    bytes
+  }
+  
+  // Simulate a message with different field types
+  let serialize_person_message = fn(id, name, email, age) {
+    let mut bytes = []
+    
+    // Field 1: id (int32, varint)
+    bytes = serialize_field(1, 0, id)
+    
+    // Field 2: name (string, length-delimited)
+    bytes = serialize_field(2, 2, name)
+    
+    // Field 3: email (string, length-delimited)
+    bytes = serialize_field(3, 2, email)
+    
+    // Field 4: age (int32, varint)
+    bytes = serialize_field(4, 0, age)
+    
+    bytes
+  }
+  
+  // Test serialization
+  let id = 12345
+  let name = "John Doe"
+  let email = "john@example.com"
+  let age = 30
+  
+  let bytes = serialize_person_message(id, name, email, age)
+  
+  // Verify byte array is not empty
+  assert_true(bytes.length() > 0)
+  
+  // Verify structure by checking field markers
+  // Field 1 (id): key = (1 << 3) | 0 = 8
+  assert_eq(bytes[0], 8)
+  
+  // Find and verify name field
+  let mut found_name_field = false
+  for i in 0..bytes.length() - 1 {
+    if bytes[i] == 18 {  // Field 2 key: (2 << 3) | 2 = 18
+      found_name_field = true
+      break
+    }
+  }
+  assert_true(found_name_field)
+}
+
+// Test 6: Custom Binary Format
+test "custom binary format" {
+  // Define a custom binary format for telemetry data
+  
+  type TelemetryPacket {
+    header : Array[Int]
+    payload : Array[Float]
+    checksum : Int
+  }
+  
+  let calculate_checksum = fn(data) {
+    let mut sum = 0
+    for byte in data {
+      sum = sum + byte
+    }
+    sum & 0xFF  // Keep only the lowest 8 bits
+  }
+  
+  let serialize_telemetry_packet = fn(packet_type, sequence_number, timestamp, sensor_data) {
+    let mut bytes = []
+    
+    // Header (8 bytes)
+    // Packet type (1 byte)
+    bytes = bytes @ [packet_type & 0xFF]
+    
+    // Sequence number (4 bytes)
+    bytes = bytes @ [
+      (sequence_number >> 24) & 0xFF,
+      (sequence_number >> 16) & 0xFF,
+      (sequence_number >> 8) & 0xFF,
+      sequence_number & 0xFF
+    ]
+    
+    // Timestamp (4 bytes)
+    bytes = bytes @ [
+      (timestamp >> 24) & 0xFF,
+      (timestamp >> 16) & 0xFF,
+      (timestamp >> 8) & 0xFF,
+      timestamp & 0xFF
+    ]
+    
+    // Payload length (2 bytes)
+    let payload_length = sensor_data.length()
+    bytes = bytes @ [
+      (payload_length >> 8) & 0xFF,
+      payload_length & 0xFF
+    ]
+    
+    // Payload (4 bytes per float)
+    for value in sensor_data {
+      let int_value = value.to_int()
+      bytes = bytes @ [
+        (int_value >> 24) & 0xFF,
+        (int_value >> 16) & 0xFF,
+        (int_value >> 8) & 0xFF,
+        int_value & 0xFF
       ]
     }
+    
+    // Checksum (1 byte)
+    let checksum = calculate_checksum(bytes)
+    bytes = bytes @ [checksum]
+    
+    bytes
   }
+  
+  // Test serialization
+  let packet_type = 1
+  let sequence_number = 12345
+  let timestamp = 1640995200
+  let sensor_data = [23.5, 24.0, 23.8, 24.2]
+  
+  let bytes = serialize_telemetry_packet(packet_type, sequence_number, timestamp, sensor_data)
+  
+  // Verify header
+  assert_eq(bytes[0], packet_type)
+  assert_eq(bytes[1], (sequence_number >> 24) & 0xFF)
+  assert_eq(bytes[5], timestamp & 0xFF)
+  
+  // Verify payload length
+  assert_eq(bytes[9], 0)
+  assert_eq(bytes[10], sensor_data.length())
+  
+  // Verify payload
+  let payload_start = 11
+  for i in 0..sensor_data.length() {
+    let value_start = payload_start + i * 4
+    let int_value = sensor_data[i].to_int()
+    assert_eq(bytes[value_start], (int_value >> 24) & 0xFF)
+  }
+  
+  // Verify checksum
+  let expected_checksum = calculate_checksum(bytes[0:bytes.length() - 1])
+  assert_eq(bytes[bytes.length() - 1], expected_checksum)
 }
 
-fn serialize_to_binary(data: Array[Map[String, Any]]) -> Map[String, Any] {
-  {
-    "success": true,
-    "binary_data": [0x01, 0x02, 0x03, 0x04, 0x05],
-    "size": 512
+// Test 7: MessagePack-like Serialization
+test "messagepack-like serialization" {
+  // Simulate MessagePack serialization
+  
+  let serialize_str = fn(str) {
+    let mut bytes = []
+    let length = str.length()
+    
+    if length < 32 {
+      // FixStr
+      bytes = bytes @ [0xA0 | length]
+    } else if length < 256 {
+      // Str 8
+      bytes = bytes @ [0xD9, length]
+    } else {
+      // Simplified: just use Str 8 for this test
+      bytes = bytes @ [0xD9, length]
+    }
+    
+    for i in 0..length {
+      bytes = bytes @ [str[i].to_int()]
+    }
+    
+    bytes
   }
-}
-
-fn deserialize_from_binary(binary_data: Array[Byte]) -> Map[String, Any] {
-  {
-    "success": true,
-    "data": [
-      {
-        "trace_id": "trace-0",
-        "span_id": "span-0",
-        "operation_name": "operation_0",
-        "start_time": 1640995200000,
-        "duration_ms": 100,
-        "status": "success",
-        "metrics": {"cpu": 50.0, "memory": 60.0, "network": 100.0},
-        "tags": {"service": "service-0", "version": "1.0.0"}
+  
+  let serialize_int = fn(value) {
+    let mut bytes = []
+    
+    if value >= 0 {
+      if value < 128 {
+        // Positive FixInt
+        bytes = bytes @ [value]
+      } else if value < 256 {
+        // Uint 8
+        bytes = bytes @ [0xCC, value]
+      } else if value < 65536 {
+        // Uint 16
+        bytes = bytes @ [0xCD, (value >> 8) & 0xFF, value & 0xFF]
+      } else {
+        // Simplified: just use Uint 16 for this test
+        bytes = bytes @ [0xCD, (value >> 8) & 0xFF, value & 0xFF]
       }
-    ]
-  }
-}
-
-fn calculate_json_size(data: Array[Map[String, Any]]) -> Int {
-  1024 * 10 // 10KB
-}
-
-fn serialize_to_format(data: Map[String, Any], format: String) -> Map[String, Any] {
-  {
-    "success": true,
-    "data": "serialized_data_for_" + format,
-    "size": 256
-  }
-}
-
-fn deserialize_from_format(data: String, format: String) -> Map[String, Any] {
-  {
-    "success": true,
-    "data": {
-      "trace_id": "trace-compat-001",
-      "span_id": "span-compat-001",
-      "operation_name": "compatibility_test",
-      "start_time": 1640995200000,
-      "duration_ms": 150,
-      "status": "success",
-      "tags": {"env": "test", "version": "1.0.0"},
-      "metrics": {"cpu": 75.5, "memory": 68.2}
+    } else {
+      // Simplified: just handle positive values for this test
+      bytes = bytes @ [0]
     }
+    
+    bytes
   }
-}
-
-fn compare_format_efficiency(serialized_data: Map[String, String]) -> Map[String, Any] {
-  {
-    "size_comparison_valid": true,
-    "performance_comparison_valid": true,
-    "efficiency_ranking": ["binary", "protobuf", "msgpack", "cbor", "json"]
-  }
-}
-
-fn verify_format_features(formats: Array[String]) -> Map[String, Map[String, Bool]] {
-  let features = {}
-  for i = 0; i < formats.length(); i = i + 1 {
-    let format = formats[i]
-    features[format] = {
-      "schema_validation": true,
-      "error_handling": true,
-      "version_compatibility": true
+  
+  let serialize_array = fn(array) {
+    let mut bytes = []
+    let length = array.length()
+    
+    if length < 16 {
+      // FixArray
+      bytes = bytes @ [0x90 | length]
+    } else {
+      // Simplified: just use FixArray for this test
+      bytes = bytes @ [0x90 | (length & 0x0F)]
     }
-  }
-  features
-}
-
-fn create_circular_reference_data() -> Map[String, Any] {
-  let obj = {"name": "circular"}
-  obj["self"] = obj
-  obj
-}
-
-fn create_large_data_object(size_mb: Int) -> Map[String, Any] {
-  {
-    "large_data": "x".repeat(size_mb * 1024 * 1024),
-    "metadata": {"size": size_mb}
-  }
-}
-
-fn serialize_with_error_handling(data: Any) -> Map[String, Any] {
-  {
-    "success": false,
-    "error_type": "circular_reference_detected",
-    "error_message": "Circular reference detected in data structure"
-  }
-}
-
-fn apply_serialization_recovery(data: Any, error_result: Map[String, Any]) -> Map[String, Any] {
-  {
-    "recovery_strategy": "reference_replacement",
-    "recovery_successful": true,
-    "recovered_serialization": {
-      "success": true,
-      "data": "recovered_serialized_data",
-      "size": 128
+    
+    for element in array {
+      bytes = bytes @ serialize_int(element)
     }
+    
+    bytes
   }
+  
+  let serialize_map = fn(map) {
+    let mut bytes = []
+    let length = map.length()
+    
+    if length < 16 {
+      // FixMap
+      bytes = bytes @ [0x80 | length]
+    } else {
+      // Simplified: just use FixMap for this test
+      bytes = bytes @ [0x80 | (length & 0x0F)]
+    }
+    
+    for (key, value) in map {
+      bytes = bytes @ serialize_str(key)
+      bytes = bytes @ serialize_int(value)
+    }
+    
+    bytes
+  }
+  
+  // Test serialization
+  let name = "Alice"
+  let age = 30
+  let scores = [85, 90, 78, 92]
+  let attributes = [("height", 165), ("weight", 60)]
+  
+  let name_bytes = serialize_str(name)
+  let age_bytes = serialize_int(age)
+  let scores_bytes = serialize_array(scores)
+  let attributes_bytes = serialize_map(attributes)
+  
+  // Verify string serialization
+  assert_eq(name_bytes[0], 0xA5 | name.length())  // FixStr format byte
+  assert_eq(name_bytes[1], 'A'.to_int())
+  assert_eq(name_bytes[name_bytes.length() - 1], 'e'.to_int())
+  
+  // Verify integer serialization
+  assert_eq(age_bytes[0], age)  // Positive FixInt
+  
+  // Verify array serialization
+  assert_eq(scores_bytes[0], 0x90 | scores.length())  // FixArray format byte
+  
+  // Verify map serialization
+  assert_eq(attributes_bytes[0], 0x80 | attributes.length())  // FixMap format byte
 }
 
-fn deserialize_with_error_handling(data: String) -> Map[String, Any] {
-  {
-    "success": false,
-    "error_type": "parse_error",
-    "error_message": "Malformed JSON input"
+// Test 8: YAML-like Serialization
+test "yaml-like serialization" {
+  // Simulate YAML serialization
+  
+  type Config {
+    database : DatabaseConfig
+    server : ServerConfig
+    logging : LoggingConfig
   }
-}
-
-fn apply_deserialization_recovery(data: String, error_result: Map[String, Any]) -> Map[String, Any] {
-  {
-    "recovery_strategy": "error_correction_or_rejection",
-    "recovery_successful": true,
-    "recovered_data": {"corrected": "data"}
+  
+  type DatabaseConfig {
+    host : String
+    port : Int
+    username : String
+    password : String
+    name : String
   }
-}
-
-fn get_error_handling_statistics() -> Map[String, Any] {
-  {
-    "error_detection_rate": 0.98,
-    "recovery_success_rate": 0.85,
-    "data_corruption_prevented": true
+  
+  type ServerConfig {
+    host : String
+    port : Int
+    ssl_enabled : Bool
+    max_connections : Int
   }
-}
-
-fn serialize_with_version(data: Map[String, Any], version: String) -> Map[String, Any] {
-  {
-    "success": true,
-    "data": "serialized_data_version_" + version,
-    "version": version
+  
+  type LoggingConfig {
+    level : String
+    file : String
+    max_size : String
+    backup_count : Int
   }
-}
-
-fn deserialize_with_version_compatibility(data: String, target_version: String, source_version: String) -> Map[String, Any] {
-  {
-    "success": true,
-    "data": {
-      "trace_id": "trace-001",
-      "span_id": "span-001",
-      "operation_name": "operation",
-      "start_time": 1640995200000,
-      "end_time": 1640995200100,
-      "duration_ms": 100,
-      "status": "success",
-      "service_name": "test-service",
-      "parent_span_id": "",
-      "tags": {},
-      "metrics": {},
-      "logs": []
+  
+  let indent = fn(level) {
+    let mut result = ""
+    for i in 0..level {
+      result = result + "  "
+    }
+    result
+  }
+  
+  let serialize_database_config = fn(config, level) {
+    let ind = indent(level)
+    ind + "host: " + config.host + "\n" +
+    ind + "port: " + config.port.to_string() + "\n" +
+    ind + "username: " + config.username + "\n" +
+    ind + "password: " + config.password + "\n" +
+    ind + "name: " + config.name
+  }
+  
+  let serialize_server_config = fn(config, level) {
+    let ind = indent(level)
+    ind + "host: " + config.host + "\n" +
+    ind + "port: " + config.port.to_string() + "\n" +
+    ind + "ssl_enabled: " + (if config.ssl_enabled { "true" } else { "false" }) + "\n" +
+    ind + "max_connections: " + config.max_connections.to_string()
+  }
+  
+  let serialize_logging_config = fn(config, level) {
+    let ind = indent(level)
+    ind + "level: " + config.level + "\n" +
+    ind + "file: " + config.file + "\n" +
+    ind + "max_size: " + config.max_size + "\n" +
+    ind + "backup_count: " + config.backup_count.to_string()
+  }
+  
+  let serialize_config = fn(config) {
+    "database:\n" +
+    serialize_database_config(config.database, 1) + "\n" +
+    "server:\n" +
+    serialize_server_config(config.server, 1) + "\n" +
+    "logging:\n" +
+    serialize_logging_config(config.logging, 1)
+  }
+  
+  // Create test data
+  let config = {
+    database: {
+      host: "localhost",
+      port: 5432,
+      username: "admin",
+      password: "secret123",
+      name: "azimuth_db"
     },
-    "compatibility_mode": true,
-    "target_version": target_version,
-    "source_version": source_version
+    server: {
+      host: "0.0.0.0",
+      port: 8080,
+      ssl_enabled: true,
+      max_connections: 100
+    },
+    logging: {
+      level: "info",
+      file: "/var/log/azimuth.log",
+      max_size: "10MB",
+      backup_count: 5
+    }
   }
+  
+  // Test serialization
+  let yaml = serialize_config(config)
+  
+  // Verify YAML structure
+  assert_true(yaml.contains("database:"))
+  assert_true(yaml.contains("server:"))
+  assert_true(yaml.contains("logging:"))
+  assert_true(yaml.contains("host: localhost"))
+  assert_true(yaml.contains("port: 5432"))
+  assert_true(yaml.contains("ssl_enabled: true"))
+  assert_true(yaml.contains("level: info"))
+  assert_true(yaml.contains("max_size: 10MB"))
+  
+  // Verify indentation
+  assert_true(yaml.contains("  host: localhost"))
+  assert_true(yaml.contains("    username: admin"))
 }
 
-fn test_version_migration_strategy(formats: Array[Map[String, Any]]) -> Map[String, Any] {
-  {
-    "migration_paths_valid": true,
-    "data_loss_prevented": true,
-    "schema_evolution_supported": true,
-    "migration_complexity": "medium"
+// Test 9: URL-encoded Serialization
+test "url-encoded serialization" {
+  // Simulate URL-encoded form data serialization
+  
+  let url_encode = fn(text) {
+    let mut result = ""
+    for i in 0..text.length() {
+      let char = text[i]
+      match char {
+        ' ' => result = result + "+"
+        'a'..'z' | 'A'..'Z' | '0'..'9' | '-' | '_' | '.' | '~' => result = result + char.to_string()
+        _ => {
+          // URL encode as %XX
+          let hex_chars = "0123456789ABCDEF"
+          let char_code = char.to_int()
+          result = result + "%" + hex_chars[char_code >> 4].to_string() + hex_chars[char_code & 0x0F].to_string()
+        }
+      }
+    }
+    result
   }
+  
+  let serialize_form_data = fn(data) {
+    let mut result = ""
+    let mut first = true
+    
+    for (key, value) in data {
+      if not first {
+        result = result + "&"
+      }
+      result = result + url_encode(key) + "=" + url_encode(value)
+      first = false
+    }
+    
+    result
+  }
+  
+  // Test serialization
+  let form_data = [
+    ("name", "John Doe"),
+    ("email", "john@example.com"),
+    ("age", "30"),
+    ("city", "New York"),
+    ("message", "Hello, world!")
+  ]
+  
+  let encoded = serialize_form_data(form_data)
+  
+  // Verify URL encoding
+  assert_true(encoded.contains("name=John+Doe"))
+  assert_true(encoded.contains("email=john%40example.com"))  // @ becomes %40
+  assert_true(encoded.contains("age=30"))
+  assert_true(encoded.contains("city=New+York"))
+  assert_true(encoded.contains("message=Hello%2C+world%21"))  // , becomes %2C and ! becomes %21
+  
+  // Verify field separators
+  assert_true(encoded.contains("&"))
+  
+  // Test decoding simulation
+  let url_decode = fn(encoded_text) {
+    let mut result = ""
+    let i = 0
+    
+    while i < encoded_text.length() {
+      let char = encoded_text[i]
+      match char {
+        '+' => result = result + " "
+        '%' => {
+          if i + 2 < encoded_text.length() {
+            let hex1 = encoded_text[i + 1]
+            let hex2 = encoded_text[i + 2]
+            
+            let hex_to_int = fn(hex_char) {
+              match hex_char {
+                '0'..'9' => hex_char.to_int() - '0'.to_int()
+                'A'..'F' => hex_char.to_int() - 'A'.to_int() + 10
+                'a'..'f' => hex_char.to_int() - 'a'.to_int() + 10
+                _ => 0
+              }
+            }
+            
+            let char_code = (hex_to_int(hex1) << 4) | hex_to_int(hex2)
+            result = result + char_code.to_char().to_string()
+            i = i + 2
+          }
+        }
+        _ => result = result + char.to_string()
+      }
+      i = i + 1
+    }
+    
+    result
+  }
+  
+  let decoded_name = url_decode("John+Doe")
+  let decoded_email = url_decode("john%40example.com")
+  let decoded_message = url_decode("Hello%2C+world%21")
+  
+  assert_eq(decoded_name, "John Doe")
+  assert_eq(decoded_email, "john@example.com")
+  assert_eq(decoded_message, "Hello, world!")
+}
+
+// Test 10: Base64 Serialization
+test "base64 serialization" {
+  // Simulate Base64 encoding and decoding
+  
+  let base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+  
+  let encode_base64 = fn(data) {
+    let mut result = ""
+    let i = 0
+    
+    while i < data.length() {
+      let b1 = if i < data.length() { data[i] } else { 0 }
+      let b2 = if i + 1 < data.length() { data[i + 1] } else { 0 }
+      let b3 = if i + 2 < data.length() { data[i + 2] } else { 0 }
+      
+      let combined = (b1 << 16) | (b2 << 8) | b3
+      
+      let index1 = (combined >> 18) & 0x3F
+      let index2 = (combined >> 12) & 0x3F
+      let index3 = (combined >> 6) & 0x3F
+      let index4 = combined & 0x3F
+      
+      result = result + base64_chars[index1].to_string()
+      result = result + base64_chars[index2].to_string()
+      
+      if i + 1 < data.length() {
+        result = result + base64_chars[index3].to_string()
+      } else {
+        result = result + "="
+      }
+      
+      if i + 2 < data.length() {
+        result = result + base64_chars[index4].to_string()
+      } else {
+        result = result + "="
+      }
+      
+      i = i + 3
+    }
+    
+    result
+  }
+  
+  let decode_base64 = fn(encoded) {
+    let mut result = []
+    let i = 0
+    
+    while i < encoded.length() {
+      if i + 3 < encoded.length() {
+        let char_to_value = fn(c) {
+          if c >= 'A' and c <= 'Z' {
+            c.to_int() - 'A'.to_int()
+          } else if c >= 'a' and c <= 'z' {
+            c.to_int() - 'a'.to_int() + 26
+          } else if c >= '0' and c <= '9' {
+            c.to_int() - '0'.to_int() + 52
+          } else if c == '+' {
+            62
+          } else if c == '/' {
+            63
+          } else {
+            0  // For '=' padding
+          }
+        }
+        
+        let c1 = char_to_value(encoded[i])
+        let c2 = char_to_value(encoded[i + 1])
+        let c3 = char_to_value(encoded[i + 2])
+        let c4 = char_to_value(encoded[i + 3])
+        
+        let combined = (c1 << 18) | (c2 << 12) | (c3 << 6) | c4
+        
+        let b1 = (combined >> 16) & 0xFF
+        let b2 = (combined >> 8) & 0xFF
+        let b3 = combined & 0xFF
+        
+        result = result @ [b1]
+        
+        if encoded[i + 2] != '=' {
+          result = result @ [b2]
+        }
+        
+        if encoded[i + 3] != '=' {
+          result = result @ [b3]
+        }
+      }
+      
+      i = i + 4
+    }
+    
+    result
+  }
+  
+  // Test encoding and decoding
+  let original_data = []
+  for i in 0..26 {
+    original_data = original_data @ ['A'.to_int() + i]
+  }
+  
+  let encoded = encode_base64(original_data)
+  let decoded = decode_base64(encoded)
+  
+  // Verify encoding
+  assert_eq(encoded, "QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=")
+  
+  // Verify decoding
+  assert_eq(decoded.length(), original_data.length())
+  for i in 0..original_data.length() {
+    assert_eq(decoded[i], original_data[i])
+  }
+  
+  // Test with shorter data (not divisible by 3)
+  let short_data = ['M'.to_int(), 'a'.to_int(), 'n'.to_int()]
+  let short_encoded = encode_base64(short_data)
+  let short_decoded = decode_base64(short_encoded)
+  
+  assert_eq(short_encoded, "TWFu")
+  assert_eq(short_decoded.length(), 3)
+  assert_eq(short_decoded[0], 'M'.to_int())
+  assert_eq(short_decoded[1], 'a'.to_int())
+  assert_eq(short_decoded[2], 'n'.to_int())
 }
