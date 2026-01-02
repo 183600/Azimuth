@@ -456,7 +456,31 @@ test "多格式数据导出测试" {
   assert_true(prometheus_format.contains("http_request_duration_seconds_sum 1.0"))
   
   // 测试OpenTelemetry协议格式
-  let otlp_format = "{\n  \"resourceSpans\": [{\n    \"resource\": {\n      \"attributes\": [{\n        \"key\": \"service.name\",\n        \"value\": {\"stringValue\": \"azimuth-service\"}\n      }]\n    },\n    \"scopeSpans\": [{\n      \"scope\": {\n        \"name\": \"azimuth.telemetry\",\n        \"version\": \"0.1.0\"\n      },\n      \"spans\": [{\n        \"traceId\": \"" + telemetry_data["trace.id"] + "\",\n        \"spanId\": \"" + telemetry_data["span.id"] + "\",\n        \"name\": \"" + telemetry_data["span.name"] + "\",\n        \"kind\": " + (if telemetry_data["span.kind"] == "client" { "3" } else { "1" }) + ",\n        \"startTimeUnixNano\": \"" + telemetry_data["start.time"] + "000000\",\n        \"endTimeUnixNano\": \"" + telemetry_data["end.time"] + "000000\",\n        \"status\": {\"code\": \"OK\"}\n      }]\n    }]\n  }]\n}"
+  let otlp_format = "{
+  \"resourceSpans\": [{
+    \"resource\": {
+      \"attributes\": [{
+        \"key\": \"service.name\",
+        \"value\": {\"stringValue\": \"azimuth-service\"}
+      }]
+    },
+    \"scopeSpans\": [{
+      \"scope\": {
+        \"name\": \"azimuth.telemetry\",
+        \"version\": \"0.1.0\"
+      },
+      \"spans\": [{
+        \"traceId\": \"" + telemetry_data["trace.id"] + "\",
+        \"spanId\": \"" + telemetry_data["span.id"] + "\",
+        \"name\": \"" + telemetry_data["span.name"] + "\",
+        \"kind\": " + (if telemetry_data["span.kind"] == "client" { "3" } else { "1" }) + ",
+        \"startTimeUnixNano\": \"" + telemetry_data["start.time"] + "000000\",
+        \"endTimeUnixNano\": \"" + telemetry_data["end.time"] + "000000\",
+        \"status\": {\"code\": \"OK\"}
+      }]
+    }]
+  }]
+}"
   
   // 验证OTLP格式
   assert_true(otlp_format.contains("\"resourceSpans\""))
