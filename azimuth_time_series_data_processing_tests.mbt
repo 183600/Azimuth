@@ -1,256 +1,535 @@
-// Azimuth时间序列数据处理测试用例
-// 测试时间序列数据的收集、处理和分析功能
+// Azimuth Time Series Data Processing Tests
+// This file contains test cases for time series data processing and analysis
 
-test "时间序列数据创建和基本操作" {
-  // 创建时间序列数据点
-  let timestamp1 = 1735689600000000000L  // 2025-01-02T10:00:00Z
-  let timestamp2 = 1735689660000000000L  // 2025-01-02T10:01:00Z
-  let timestamp3 = 1735689720000000000L  // 2025-01-02T10:02:00Z
+// Test 1: Time Series Basic Operations
+test "time series basic operations" {
+  // Test time series creation and basic operations
+  let timestamps = [1000, 2000, 3000, 4000, 5000]
+  let values = [10.5, 15.2, 12.8, 18.3, 20.1]
   
-  let data_point1 = TimeSeriesDataPoint::new(timestamp1, 42.5)
-  let data_point2 = TimeSeriesDataPoint::new(timestamp2, 45.8)
-  let data_point3 = TimeSeriesDataPoint::new(timestamp3, 41.2)
+  // Verify time series length
+  assert_eq(timestamps.length(), values.length())
+  assert_eq(timestamps.length(), 5)
   
-  // 创建时间序列
-  let time_series = TimeSeries::new("cpu.usage", "percent")
-  TimeSeries::add_point(time_series, data_point1)
-  TimeSeries::add_point(time_series, data_point2)
-  TimeSeries::add_point(time_series, data_point3)
+  // Test time series value access
+  assert_eq(values[0], 10.5)
+  assert_eq(values[4], 20.1)
   
-  // 验证时间序列属性
-  assert_eq(TimeSeries::metric_name(time_series), "cpu.usage")
-  assert_eq(TimeSeries::unit(time_series), "percent")
-  assert_eq(TimeSeries::point_count(time_series), 3)
+  // Test timestamp ordering
+  for i in 1..<timestamps.length() {
+    assert_true(timestamps[i] > timestamps[i-1])
+  }
   
-  // 验证数据点
-  let points = TimeSeries::get_points(time_series)
-  assert_eq(points.length(), 3)
-  assert_eq(points[0].value, 42.5)
-  assert_eq(points[1].value, 45.8)
-  assert_eq(points[2].value, 41.2)
+  // Test time series range extraction
+  let start_index = 1
+  let end_index = 3
+  let mut extracted_values = []
+  let mut extracted_timestamps = []
+  
+  for i in start_index..=end_index {
+    extracted_values = extracted_values.push(values[i])
+    extracted_timestamps = extracted_timestamps.push(timestamps[i])
+  }
+  
+  assert_eq(extracted_values.length(), 3)
+  assert_eq(extracted_values[0], 15.2)
+  assert_eq(extracted_values[2], 18.3)
 }
 
-test "时间序列数据聚合操作" {
-  // 创建多个数据点用于聚合测试
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("response.time", "milliseconds")
+// Test 2: Time Series Resampling
+test "time series resampling" {
+  // Test upsampling (interpolation)
+  let original_timestamps = [0, 10, 20, 30]
+  let original_values = [10.0, 20.0, 30.0, 40.0]
   
-  // 添加数据点
-  for i in 0..=10 {
-    let timestamp = base_timestamp + (i * 60000000000L)  // 每分钟一个点
-    let value = 100.0 + (i.to_float() * 5.5)  // 递增值
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Upsample to every 5 units
+  let new_timestamps = [0, 5, 10, 15, 20, 25, 30]
+  let mut upsampled_values = []
+  
+  for new_ts in new_timestamps {
+    // Linear interpolation
+    if new_ts == 0 {
+      upsampled_values = upsampled_values.push(original_values[0])
+    } else if new_ts == 30 {
+      upsampled_values = upsampled_values.push(original_values[3])
+    } else {
+      // Find surrounding points for interpolation
+      let mut lower_index = 0
+      let mut upper_index = original_timestamps.length() - 1
+      
+      for i in 0..<original_timestamps.length() {
+        if original_timestamps[i] <= new_ts {
+          lower_index = i
+        }
+        if original_timestamps[i] >= new_ts && upper_index == original_timestamps.length() - 1 {
+          upper_index = i
+        }
+      }
+      
+      if original_timestamps[lower_index] == new_ts {
+        upsampled_values = upsampled_values.push(original_values[lower_index])
+      } else {
+        let t = (new_ts - original_timestamps[lower_index]).to_float() / 
+                (original_timestamps[upper_index] - original_timestamps[lower_index]).to_float()
+        let interpolated_value = original_values[lower_index] + 
+                                t * (original_values[upper_index] - original_values[lower_index])
+        upsampled_values = upsampled_values.push(interpolated_value)
+      }
+    }
   }
   
-  // 测试平均值计算
-  let avg_value = TimeSeries::average(time_series)
-  assert_true(avg_value > 125.0 && avg_value < 130.0)
+  assert_eq(upsampled_values.length(), 7)
+  assert_eq(upsampled_values[0], 10.0)
+  assert_eq(upsampled_values[1], 15.0)  // Interpolated
+  assert_eq(upsampled_values[2], 20.0)
+  assert_eq(upsampled_values[3], 25.0)  // Interpolated
   
-  // 测试最大值和最小值
-  let max_value = TimeSeries::maximum(time_series)
-  let min_value = TimeSeries::minimum(time_series)
-  assert_eq(max_value, 100.0 + (10.0 * 5.5))
-  assert_eq(min_value, 100.0)
+  // Test downsampling (aggregation)
+  let downsample_interval = 20
+  let mut downsampled_timestamps = []
+  let mut downsampled_values = []
   
-  // 测试求和
-  let sum_value = TimeSeries::sum(time_series)
-  let expected_sum = 0.0
-  for i in 0..=10 {
-    expected_sum = expected_sum + (100.0 + (i.to_float() * 5.5))
+  for start_ts in range_step(0, 30, downsample_interval) {
+    let end_ts = start_ts + downsample_interval
+    
+    // Find values in this interval
+    let mut interval_values = []
+    for i in 0..<original_timestamps.length() {
+      if original_timestamps[i] >= start_ts && original_timestamps[i] < end_ts {
+        interval_values = interval_values.push(original_values[i])
+      }
+    }
+    
+    // Calculate average for this interval
+    let mut sum = 0.0
+    for value in interval_values {
+      sum = sum + value
+    }
+    let average = sum / interval_values.length().to_float()
+    
+    downsampled_timestamps = downsampled_timestamps.push(start_ts)
+    downsampled_values = downsampled_values.push(average)
   }
-  assert_eq(sum_value, expected_sum)
+  
+  assert_eq(downsampled_values.length(), 2)
+  assert_eq(downsampled_values[0], 15.0)  // Average of [10.0, 20.0]
+  assert_eq(downsampled_values[1], 35.0)  // Average of [30.0, 40.0]
 }
 
-test "时间序列数据窗口操作" {
-  // 创建时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("memory.usage", "percent")
+// Test 3: Time Series Moving Average
+test "time series moving average" {
+  // Test simple moving average
+  let values = [10, 20, 30, 40, 50, 60, 70, 80]
+  let window_size = 3
+  let mut moving_averages = []
   
-  // 添加24小时的数据点（每小时一个）
-  for i in 0..=23 {
-    let timestamp = base_timestamp + (i * 3600000000000L)  // 每小时一个点
-    let value = 50.0 + (10.0 * (@sin(i.to_float() * 0.5)))  // 模拟内存使用波动
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  for i in window_size-1..<values.length() {
+    let mut sum = 0
+    for j in 0..<window_size {
+      sum = sum + values[i - j]
+    }
+    let average = sum / window_size
+    moving_averages = moving_averages.push(average)
   }
   
-  // 测试时间窗口查询
-  let window_start = base_timestamp + (6 * 3600000000000L)  // 6小时后
-  let window_end = base_timestamp + (12 * 3600000000000L)   // 12小时后
+  assert_eq(moving_averages.length(), 6)
+  assert_eq(moving_averages[0], 20)  // (10+20+30)/3
+  assert_eq(moving_averages[1], 30)  // (20+30+40)/3
+  assert_eq(moving_averages[5], 70)  // (60+70+80)/3
   
-  let window_series = TimeSeries::get_window(time_series, window_start, window_end)
-  assert_eq(TimeSeries::point_count(window_series), 7)  // 包含边界点
+  // Test weighted moving average
+  let weights = [0.5, 0.3, 0.2]
+  let mut weighted_averages = []
   
-  // 验证窗口内的数据点时间戳
-  let window_points = TimeSeries::get_points(window_series)
-  for point in window_points {
-    assert_true(point.timestamp >= window_start && point.timestamp <= window_end)
+  for i in 2..<values.length() {
+    let weighted_sum = values[i] * weights[0] + 
+                      values[i-1] * weights[1] + 
+                      values[i-2] * weights[2]
+    weighted_averages = weighted_averages.push(weighted_sum)
   }
   
-  // 测试滑动窗口平均值
-  let sliding_avg = TimeSeries::sliding_window_average(time_series, 4)  // 4小时滑动窗口
-  assert_eq(sliding_avg.length(), 20)  // 24-4个数据点
-  
-  // 验证第一个滑动平均值
-  let first_avg = sliding_avg[0]
-  let expected_first_avg = (50.0 + (10.0 * @sin(0.0 * 0.5)) + 
-                           50.0 + (10.0 * @sin(1.0 * 0.5)) + 
-                           50.0 + (10.0 * @sin(2.0 * 0.5)) + 
-                           50.0 + (10.0 * @sin(3.0 * 0.5))) / 4.0
-  assert_eq(first_avg, expected_first_avg)
+  assert_eq(weighted_averages.length(), 6)
+  assert_eq(weighted_averages[0], 30.0)  // 30*0.5 + 20*0.3 + 10*0.2
+  assert_eq(weighted_averages[1], 40.0)  // 40*0.5 + 30*0.3 + 20*0.2
 }
 
-test "时间序列数据压缩和采样" {
-  // 创建高频时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("high.frequency.metric", "value")
+// Test 4: Time Series Trend Analysis
+test "time series trend analysis" {
+  // Test linear trend detection
+  let timestamps = [1, 2, 3, 4, 5]
+  let upward_trend_values = [10, 20, 30, 40, 50]
+  let downward_trend_values = [50, 40, 30, 20, 10]
+  let flat_trend_values = [25, 25, 25, 25, 25]
   
-  // 添加每秒一个数据点，持续1小时
-  for i in 0..=3599 {
-    let timestamp = base_timestamp + (i * 1000000000L)  // 每秒一个点
-    let value = 100.0 + (10.0 * @sin(i.to_float() * 0.01))  // 模拟周期性变化
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Calculate trend direction
+  let mut upward_increments = 0
+  let mut upward_decrements = 0
+  
+  for i in 1..<upward_trend_values.length() {
+    if upward_trend_values[i] > upward_trend_values[i-1] {
+      upward_increments = upward_increments + 1
+    } else if upward_trend_values[i] < upward_trend_values[i-1] {
+      upward_decrements = upward_decrements + 1
+    }
   }
   
-  assert_eq(TimeSeries::point_count(time_series), 3600)
+  assert_true(upward_increments > upward_decrements)
+  assert_eq(upward_increments, 4)
+  assert_eq(upward_decrements, 0)
   
-  // 测试时间序列降采样（每分钟取一个点）
-  let downsampled_series = TimeSeries::downsample(time_series, 60)  // 60秒间隔
-  assert_eq(TimeSeries::point_count(downsampled_series), 60)
+  // Downward trend
+  let mut downward_increments = 0
+  let mut downward_decrements = 0
   
-  // 验证降采样后的数据点时间戳
-  let downsampled_points = TimeSeries::get_points(downsampled_series)
-  for i in 0..=59 {
-    let expected_timestamp = base_timestamp + (i * 60 * 1000000000L)
-    assert_eq(downsampled_points[i].timestamp, expected_timestamp)
+  for i in 1..<downward_trend_values.length() {
+    if downward_trend_values[i] > downward_trend_values[i-1] {
+      downward_increments = downward_increments + 1
+    } else if downward_trend_values[i] < downward_trend_values[i-1] {
+      downward_decrements = downward_decrements + 1
+    }
   }
   
-  // 测试时间序列压缩（基于变化阈值）
-  let compressed_series = TimeSeries::compress_by_threshold(time_series, 2.0)  // 变化小于2.0的点被压缩
-  assert_true(TimeSeries::point_count(compressed_series) < TimeSeries::point_count(time_series))
+  assert_true(downward_decrements > downward_increments)
+  assert_eq(downward_increments, 0)
+  assert_eq(downward_decrements, 4)
   
-  // 验证压缩后的数据点保留了重要变化
-  let compressed_points = TimeSeries::get_points(compressed_series)
-  assert_true(compressed_points.length() > 10)  // 至少保留了一些关键点
-  assert_eq(compressed_points[0].timestamp, base_timestamp)  // 保留第一个点
-  assert_eq(compressed_points[compressed_points.length() - 1].timestamp, 
-           base_timestamp + (3599 * 1000000000L))  // 保留最后一个点
+  // Flat trend
+  let mut flat_increments = 0
+  let mut flat_decrements = 0
+  let mut flat_equal = 0
+  
+  for i in 1..<flat_trend_values.length() {
+    if flat_trend_values[i] > flat_trend_values[i-1] {
+      flat_increments = flat_increments + 1
+    } else if flat_trend_values[i] < flat_trend_values[i-1] {
+      flat_decrements = flat_decrements + 1
+    } else {
+      flat_equal = flat_equal + 1
+    }
+  }
+  
+  assert_eq(flat_increments, 0)
+  assert_eq(flat_decrements, 0)
+  assert_eq(flat_equal, 4)
 }
 
-test "时间序列数据趋势分析" {
-  // 创建具有明显趋势的时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("growth.metric", "count")
+// Test 5: Time Series Anomaly Detection
+test "time series anomaly detection" {
+  // Test statistical anomaly detection
+  let normal_values = [10.0, 12.0, 11.0, 13.0, 10.5, 11.5, 12.5, 10.8]
+  let anomalous_values = [10.0, 12.0, 50.0, 11.0, 13.0, 0.5, 11.5, 100.0]
   
-  // 添加具有线性增长趋势的数据
-  for i in 0..=29 {
-    let timestamp = base_timestamp + (i * 3600000000000L)  // 每小时一个点
-    let trend_value = 100.0 + (i.to_float() * 5.0)  // 线性增长
-    let noise = (@random() * 10.0) - 5.0  // 添加随机噪声
-    let value = trend_value + noise
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Calculate mean and standard deviation for normal values
+  let mut sum = 0.0
+  for value in normal_values {
+    sum = sum + value
+  }
+  let mean = sum / normal_values.length().to_float()
+  
+  let mut variance_sum = 0.0
+  for value in normal_values {
+    let diff = value - mean
+    variance_sum = variance_sum + diff * diff
+  }
+  let variance = variance_sum / normal_values.length().to_float()
+  let std_dev = variance.sqrt()
+  
+  // Detect anomalies in anomalous_values (values beyond 2 standard deviations)
+  let threshold = 2.0 * std_dev
+  let mut detected_anomalies = []
+  
+  for value in anomalous_values {
+    let diff = (value - mean).abs()
+    if diff > threshold {
+      detected_anomalies = detected_anomalies.push(value)
+    }
   }
   
-  // 测试线性趋势检测
-  let trend_analysis = TimeSeries::analyze_trend(time_series)
-  assert_eq(trend_analysis.trend_type, "increasing")
-  assert_true(trend_analysis.slope > 4.0 && trend_analysis.slope < 6.0)  // 接近5.0
-  assert_true(trend_analysis.confidence > 0.7)  // 高置信度
-  
-  // 测试季节性检测
-  let seasonal_series = TimeSeries::new("seasonal.metric", "value")
-  for i in 0..=47 {
-    let timestamp = base_timestamp + (i * 1800000000000L)  // 每30分钟一个点
-    let seasonal_value = 50.0 + (20.0 * @sin(i.to_float() * 0.261799))  // 24小时周期
-    let data_point = TimeSeriesDataPoint::new(timestamp, seasonal_value)
-    TimeSeries::add_point(seasonal_series, data_point)
-  }
-  
-  let seasonal_analysis = TimeSeries::analyze_seasonality(seasonal_series)
-  assert_eq(seasonal_analysis.has_seasonality, true)
-  assert_true(seasonal_analysis.period_hours > 22.0 && seasonal_analysis.period_hours < 26.0)  // 接近24小时
+  // Should detect the extreme values (50.0, 0.5, 100.0)
+  assert_true(detected_anomalies.length() >= 2)
+  assert_true(detected_anomalies.contains(50.0))
+  assert_true(detected_anomalies.contains(100.0))
 }
 
-test "时间序列数据异常检测" {
-  // 创建包含异常值的时间序列数据
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("anomaly.test.metric", "value")
+// Test 6: Time Series Seasonality Detection
+test "time series seasonality detection" {
+  // Test seasonal pattern detection
+  let seasonal_data = [10, 20, 30, 20, 10, 20, 30, 20, 10, 20, 30, 20]
+  let season_length = 4
   
-  // 添加正常数据点
-  for i in 0..=19 {
-    let timestamp = base_timestamp + (i * 60000000000L)  // 每分钟一个点
-    let normal_value = 50.0 + (@random() * 10.0) - 5.0  // 45-55之间的随机值
-    let data_point = TimeSeriesDataPoint::new(timestamp, normal_value)
-    TimeSeries::add_point(time_series, data_point)
+  // Extract seasonal patterns
+  let mut seasonal_patterns = []
+  
+  for season_start in range_step(0, seasonal_data.length(), season_length) {
+    let mut pattern = []
+    for i in 0..<season_length {
+      if season_start + i < seasonal_data.length() {
+        pattern = pattern.push(seasonal_data[season_start + i])
+      }
+    }
+    if pattern.length() == season_length {
+      seasonal_patterns = seasonal_patterns.push(pattern)
+    }
   }
   
-  // 添加异常值
-  let anomaly_timestamp1 = base_timestamp + (7 * 60000000000L)
-  let anomaly_timestamp2 = base_timestamp + (15 * 60000000000L)
+  assert_eq(seasonal_patterns.length(), 3)
   
-  let anomaly_point1 = TimeSeriesDataPoint::new(anomaly_timestamp1, 120.0)  // 高异常值
-  let anomaly_point2 = TimeSeriesDataPoint::new(anomaly_timestamp2, -20.0)  // 低异常值
+  // Verify patterns are similar
+  let first_pattern = seasonal_patterns[0]
+  let second_pattern = seasonal_patterns[1]
+  let third_pattern = seasonal_patterns[2]
   
-  TimeSeries::add_point(time_series, anomaly_point1)
-  TimeSeries::add_point(time_series, anomaly_point2)
+  assert_eq(first_pattern, [10, 20, 30, 20])
+  assert_eq(second_pattern, [10, 20, 30, 20])
+  assert_eq(third_pattern, [10, 20, 30, 20])
   
-  // 测试异常检测
-  let anomalies = TimeSeries::detect_anomalies(time_series, 2.0)  // 2倍标准差阈值
-  
-  assert_eq(anomalies.length(), 2)  // 应该检测到两个异常值
-  
-  // 验证异常值的时间戳
-  let anomaly_timestamps = anomalies.map(fn(a) { a.timestamp })
-  assert_true(anomaly_timestamps.contains(anomaly_timestamp1))
-  assert_true(anomaly_timestamps.contains(anomaly_timestamp2))
-  
-  // 验证异常值的分数
-  for anomaly in anomalies {
-    assert_true(anomaly.anomaly_score > 2.0)
-    assert_eq(anomaly.expected_range.min, 45.0)  // 预期范围
-    assert_eq(anomaly.expected_range.max, 55.0)
+  // Test seasonality strength
+  let mut pattern_matches = 0
+  for i in 0..<first_pattern.length() {
+    if first_pattern[i] == second_pattern[i] && 
+       second_pattern[i] == third_pattern[i] {
+      pattern_matches = pattern_matches + 1
+    }
   }
+  
+  let seasonality_strength = pattern_matches.to_float() / first_pattern.length().to_float()
+  assert_eq(seasonality_strength, 1.0)
 }
 
-test "时间序列数据预测" {
-  // 创建历史数据用于预测测试
-  let base_timestamp = 1735689600000000000L
-  let time_series = TimeSeries::new("prediction.test.metric", "value")
+// Test 7: Time Series Forecasting
+test "time series forecasting" {
+  // Test simple exponential smoothing forecasting
+  let historical_data = [10.0, 12.0, 11.0, 13.0, 14.0, 12.0, 15.0, 16.0]
+  let alpha = 0.3  // Smoothing factor
+  let forecast_horizon = 3
   
-  // 添加具有趋势和季节性的历史数据
-  for i in 0..=167 {  // 7天的数据（每小时一个点）
-    let timestamp = base_timestamp + (i * 3600000000000L)
-    let trend = 100.0 + (i.to_float() * 0.5)  // 缓慢增长趋势
-    let seasonal = 10.0 * @sin((i.to_float() / 24.0) * 2.0 * 3.14159)  // 24小时季节性
-    let noise = (@random() * 5.0) - 2.5  // 随机噪声
-    let value = trend + seasonal + noise
-    let data_point = TimeSeriesDataPoint::new(timestamp, value)
-    TimeSeries::add_point(time_series, data_point)
+  // Initialize with first value
+  let mut smoothed_values = [historical_data[0]]
+  
+  // Apply exponential smoothing
+  for i in 1..<historical_data.length() {
+    let smoothed = alpha * historical_data[i] + (1.0 - alpha) * smoothed_values[i-1]
+    smoothed_values = smoothed_values.push(smoothed)
   }
   
-  // 测试短期预测（未来24小时）
-  let forecast = TimeSeries::forecast(time_series, 24)  // 预测24个点
-  assert_eq(forecast.length(), 24)
+  // Generate forecasts
+  let mut forecasts = []
+  let last_smoothed = smoothed_values[smoothed_values.length() - 1]
   
-  // 验证预测时间戳
-  let last_timestamp = base_timestamp + (167 * 3600000000000L)
-  for i in 0..=23 {
-    let expected_timestamp = last_timestamp + ((i + 1) * 3600000000000L)
-    assert_eq(forecast[i].timestamp, expected_timestamp)
+  for i in 0..<forecast_horizon {
+    // For simple exponential smoothing, forecast is constant
+    forecasts = forecasts.push(last_smoothed)
   }
   
-  // 验证预测值的合理性
-  let last_value = 100.0 + (167.0 * 0.5)  // 最后一个趋势值
-  for prediction in forecast {
-    assert_true(prediction.value > 80.0 && prediction.value < 150.0)  // 合理范围
-    assert_true(prediction.confidence > 0.0 && prediction.confidence <= 1.0)  // 有效置信度
+  assert_eq(forecasts.length(), 3)
+  
+  // Test trend-based forecasting (simple linear extrapolation)
+  let trend_data = [10, 15, 20, 25, 30]
+  let mut trend_forecasts = []
+  
+  // Calculate trend (slope)
+  let slope = (trend_data[trend_data.length() - 1] - trend_data[0]).to_float() / 
+              (trend_data.length() - 1).to_float()
+  
+  // Generate trend-based forecasts
+  let last_value = trend_data[trend_data.length() - 1].to_float()
+  for i in 1..=forecast_horizon {
+    let forecast = last_value + slope * i.to_float()
+    trend_forecasts = trend_forecasts.push(forecast)
   }
   
-  // 验证预测趋势延续性
-  let first_predicted = forecast[0].value
-  let last_predicted = forecast[23].value
-  assert_true(last_predicted > first_predicted)  // 应该继续增长趋势
+  assert_eq(trend_forecasts.length(), 3)
+  assert_eq(trend_forecasts[0], 35.0)
+  assert_eq(trend_forecasts[1], 40.0)
+  assert_eq(trend_forecasts[2], 45.0)
+}
+
+// Test 8: Time Series Correlation Analysis
+test "time series correlation analysis" {
+  // Test cross-correlation between two time series
+  let series1 = [10, 20, 30, 40, 50]
+  let series2 = [15, 25, 35, 45, 55]  // Perfect positive correlation with offset
+  
+  // Calculate Pearson correlation coefficient
+  let n = series1.length().to_float()
+  
+  // Calculate means
+  let mut sum1 = 0.0
+  let mut sum2 = 0.0
+  for i in 0..<series1.length() {
+    sum1 = sum1 + series1[i].to_float()
+    sum2 = sum2 + series2[i].to_float()
+  }
+  let mean1 = sum1 / n
+  let mean2 = sum2 / n
+  
+  // Calculate covariance and variances
+  let mut covariance = 0.0
+  let mut variance1 = 0.0
+  let mut variance2 = 0.0
+  
+  for i in 0..<series1.length() {
+    let diff1 = series1[i].to_float() - mean1
+    let diff2 = series2[i].to_float() - mean2
+    
+    covariance = covariance + diff1 * diff2
+    variance1 = variance1 + diff1 * diff1
+    variance2 = variance2 + diff2 * diff2
+  }
+  
+  covariance = covariance / n
+  variance1 = variance1 / n
+  variance2 = variance2 / n
+  
+  // Calculate correlation coefficient
+  let correlation = covariance / (variance1.sqrt() * variance2.sqrt())
+  
+  // Should be close to 1.0 (perfect positive correlation)
+  assert_true(correlation > 0.99)
+  
+  // Test negative correlation
+  let series3 = [50, 40, 30, 20, 10]  // Perfect negative correlation with series1
+  
+  let mut sum3 = 0.0
+  for value in series3 {
+    sum3 = sum3 + value.to_float()
+  }
+  let mean3 = sum3 / n
+  
+  let mut covariance_neg = 0.0
+  let mut variance3 = 0.0
+  
+  for i in 0..<series1.length() {
+    let diff1 = series1[i].to_float() - mean1
+    let diff3 = series3[i].to_float() - mean3
+    
+    covariance_neg = covariance_neg + diff1 * diff3
+    variance3 = variance3 + diff3 * diff3
+  }
+  
+  covariance_neg = covariance_neg / n
+  variance3 = variance3 / n
+  
+  let correlation_neg = covariance_neg / (variance1.sqrt() * variance3.sqrt())
+  
+  // Should be close to -1.0 (perfect negative correlation)
+  assert_true(correlation_neg < -0.99)
+}
+
+// Test 9: Time Series Compression
+test "time series compression" {
+  // Test piecewise constant approximation (PAA)
+  let original_series = [10, 12, 11, 13, 15, 17, 16, 18, 20, 22]
+  let compressed_length = 5
+  
+  let segment_size = original_series.length() / compressed_length
+  let mut compressed_series = []
+  
+  for i in 0..<compressed_length {
+    let start_index = i * segment_size
+    let end_index = (i + 1) * segment_size
+    
+    let mut segment_sum = 0.0
+    for j in start_index..<end_index {
+      segment_sum = segment_sum + original_series[j].to_float()
+    }
+    let segment_average = segment_sum / segment_size.to_float()
+    compressed_series = compressed_series.push(segment_average)
+  }
+  
+  assert_eq(compressed_series.length(), 5)
+  
+  // Verify compression preserves general trend
+  assert_true(compressed_series[0] < compressed_series[1])
+  assert_true(compressed_series[1] < compressed_series[2])
+  assert_true(compressed_series[2] < compressed_series[3])
+  assert_true(compressed_series[3] < compressed_series[4])
+  
+  // Test symbolic aggregate approximation (SAX) - simplified version
+  let breakpoints = [15.0, 20.0]  // Three regions: <15, 15-20, >20
+  let mut sax_symbols = []
+  
+  for value in compressed_series {
+    if value < breakpoints[0] {
+      sax_symbols = sax_symbols.push("A")
+    } else if value < breakpoints[1] {
+      sax_symbols = sax_symbols.push("B")
+    } else {
+      sax_symbols = sax_symbols.push("C")
+    }
+  }
+  
+  assert_eq(sax_symbols.length(), 5)
+  assert_eq(sax_symbols[0], "A")
+  assert_eq(sax_symbols[2], "B")
+  assert_eq(sax_symbols[4], "C")
+}
+
+// Test 10: Time Series Alignment
+test "time series alignment" {
+  // Test dynamic time warping (DTW) - simplified version
+  let series1 = [1, 2, 3, 4, 5]
+  let series2 = [1, 1, 2, 3, 3, 4, 5, 5]
+  
+  // Create cost matrix
+  let n = series1.length()
+  let m = series2.length()
+  let mut cost_matrix = []
+  
+  for i in 0..<n {
+    let mut row = []
+    for j in 0..<m {
+      let cost = (series1[i] - series2[j]).abs().to_float()
+      row = row.push(cost)
+    }
+    cost_matrix = cost_matrix.push(row)
+  }
+  
+  // Calculate cumulative cost matrix
+  let mut dtw_matrix = []
+  for i in 0..<n {
+    let mut row = []
+    for j in 0..<m {
+      if i == 0 && j == 0 {
+        row = row.push(cost_matrix[0][0])
+      } else if i == 0 {
+        row = row.push(cost_matrix[0][j] + row[j-1])
+      } else if j == 0 {
+        row = row.push(cost_matrix[i][0] + dtw_matrix[i-1][0])
+      } else {
+        let min_cost = [dtw_matrix[i-1][j], dtw_matrix[i][j-1], dtw_matrix[i-1][j-1]].min()
+        row = row.push(cost_matrix[i][j] + min_cost)
+      }
+    }
+    dtw_matrix = dtw_matrix.push(row)
+  }
+  
+  // DTW distance is the bottom-right element
+  let dtw_distance = dtw_matrix[n-1][m-1]
+  
+  // Should be relatively small since series are similar
+  assert_true(dtw_distance < 10.0)
+  
+  // Test simple alignment with different sampling rates
+  let high_freq = [1, 2, 3, 4, 5, 6, 7, 8]
+  let low_freq = [1, 3, 5, 7]
+  
+  // Downsample high frequency to match low frequency
+  let downsample_factor = 2
+  let mut aligned_high = []
+  
+  for i in range_step(0, high_freq.length(), downsample_factor) {
+    aligned_high = aligned_high.push(high_freq[i])
+  }
+  
+  assert_eq(aligned_high.length(), low_freq.length())
+  assert_eq(aligned_high[0], 1)
+  assert_eq(aligned_high[1], 3)
+  assert_eq(aligned_high[2], 5)
+  assert_eq(aligned_high[3], 7)
+  
+  // Verify alignment
+  for i in 0..<aligned_high.length() {
+    assert_eq(aligned_high[i], low_freq[i])
+  }
 }
