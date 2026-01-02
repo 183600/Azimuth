@@ -1,656 +1,379 @@
-// Azimuth Time Series Data Aggregation Tests
-// 时间序列数据聚合测试用例，专注于各种时间窗口和聚合函数
+// 时间序列数据处理测试
+// 测试Azimuth遥测系统的时间序列数据处理功能
 
-test "时间窗口聚合函数测试" {
-  // 创建24小时的时间序列数据（每分钟一个数据点）
-  let time_series_data = []
-  let base_timestamp = 1640995200000L // 2022-01-01 00:00:00 UTC
+test "时间序列数据创建和基本操作" {
+  // 创建时间序列数据点
+  let base_timestamp = 1735689600000000000L  // 2025-01-02T10:00:00Z in nanoseconds
   
-  for i = 0; i < 1440; i = i + 1 { // 24小时 * 60分钟
-    let hour = i / 60
-    let minute = i % 60
-    
-    // 模拟CPU使用率，白天高，夜晚低
-    let base_cpu = if hour >= 8 && hour <= 20 { 60.0 } else { 20.0 }
-    let cpu_variation = (minute % 20).to_double() * 2.0
-    let cpu_usage = base_cpu + cpu_variation
-    
-    // 模拟内存使用率，逐渐增长
-    let memory_usage = 40.0 + (i.to_double() / 1440.0) * 20.0 + (minute % 15).to_double()
-    
-    // 模拟请求率，高峰期高
-    let base_requests = if hour >= 9 && hour <= 17 && hour != 12 { 500.0 } else { 100.0 }
-    let request_variation = (minute % 10).to_double() * 50.0
-    let request_rate = base_requests + request_variation
-    
-    let data_point = {
-      "timestamp": base_timestamp + i.to_long() * 60000L, // 每分钟
-      "cpu_usage": cpu_usage,
-      "memory_usage": memory_usage,
-      "request_rate": request_rate,
-      "error_rate": if minute % 30 == 0 { 5.0 } else { 0.5 },
-      "response_time": 100.0 + (minute % 25).to_double() * 10.0,
-      "host": "server_" + (i % 5).to_string(),
-      "region": "us-east-1"
-    }
-    time_series_data.push(data_point)
-  }
+  let data_points = [
+    TimeSeriesDataPoint::new(base_timestamp, 100.0, [("metric.name", "cpu.usage")]),
+    TimeSeriesDataPoint::new(base_timestamp + 60000000000L, 105.5, [("metric.name", "cpu.usage")]),
+    TimeSeriesDataPoint::new(base_timestamp + 120000000000L, 98.2, [("metric.name", "cpu.usage")]),
+    TimeSeriesDataPoint::new(base_timestamp + 180000000000L, 112.3, [("metric.name", "cpu.usage")]),
+    TimeSeriesDataPoint::new(base_timestamp + 240000000000L, 107.8, [("metric.name", "cpu.usage")])
+  ]
   
-  // 1. 按小时聚合
-  let hourly_aggregates = {}
+  // 创建时间序列
+  let time_series = TimeSeries::new("system.cpu.usage", "percent", data_points)
   
-  for point in time_series_data {
-    let timestamp = point["timestamp"]
-    let hour_offset = ((timestamp - base_timestamp) / 3600000L).to_int() // 小时偏移
-    let hour_key = "hour_" + hour_offset.to_string()
-    
-    if hourly_aggregates[hour_key] is None {
-      hourly_aggregates[hour_key] = {
-        "cpu_values": [],
-        "memory_values": [],
-        "request_values": [],
-        "error_values": [],
-        "response_values": [],
-        "count": 0
-      }
-    }
-    
-    let aggregate = hourly_aggregates[hour_key]
-    aggregate["cpu_values"].push(point["cpu_usage"])
-    aggregate["memory_values"].push(point["memory_usage"])
-    aggregate["request_values"].push(point["request_rate"])
-    aggregate["error_values"].push(point["error_rate"])
-    aggregate["response_values"].push(point["response_time"])
-    aggregate["count"] = aggregate["count"] + 1
-  }
+  // 验证时间序列基本属性
+  assert_eq(time_series.get_name(), "system.cpu.usage")
+  assert_eq(time_series.get_unit(), "percent")
+  assert_eq(time_series.get_length(), 5)
   
-  // 计算每小时的平均值
-  let hourly_averages = {}
-  for (hour_key, aggregate) in hourly_aggregates {
-    let cpu_avg = aggregate["cpu_values"].reduce(|acc, val| acc + val, 0.0) / aggregate["count"].to_double()
-    let memory_avg = aggregate["memory_values"].reduce(|acc, val| acc + val, 0.0) / aggregate["count"].to_double()
-    let request_avg = aggregate["request_values"].reduce(|acc, val| acc + val, 0.0) / aggregate["count"].to_double()
-    let error_avg = aggregate["error_values"].reduce(|acc, val| acc + val, 0.0) / aggregate["count"].to_double()
-    let response_avg = aggregate["response_values"].reduce(|acc, val| acc + val, 0.0) / aggregate["count"].to_double()
-    
-    hourly_averages[hour_key] = {
-      "cpu_avg": cpu_avg,
-      "memory_avg": memory_avg,
-      "request_avg": request_avg,
-      "error_avg": error_avg,
-      "response_avg": response_avg,
-      "count": aggregate["count"]
-    }
-  }
+  // 验证时间范围
+  let start_time = time_series.get_start_time()
+  let end_time = time_series.get_end_time()
   
-  // 验证每小时聚合结果
-  assert_eq(hourly_averages.length(), 24) // 24小时
+  assert_eq(start_time, base_timestamp)
+  assert_eq(end_time, base_timestamp + 240000000000L)
   
-  // 验证工作时间（8-20点）的CPU使用率更高
-  let work_hours_avg_cpu = 0.0
-  let work_hours_count = 0
-  let non_work_hours_avg_cpu = 0.0
-  let non_work_hours_count = 0
+  // 验证数据点值
+  let first_point = time_series.get_point(0)
+  let last_point = time_series.get_point(4)
   
-  for (hour_key, avg) in hourly_averages {
-    let hour = hour_key.split("_")[1].to_int()
-    if hour >= 8 && hour <= 20 {
-      work_hours_avg_cpu = work_hours_avg_cpu + avg["cpu_avg"]
-      work_hours_count = work_hours_count + 1
-    } else {
-      non_work_hours_avg_cpu = non_work_hours_avg_cpu + avg["cpu_avg"]
-      non_work_hours_count = non_work_hours_count + 1
-    }
-  }
+  assert_eq(first_point.get_timestamp(), base_timestamp)
+  assert_eq(first_point.get_value(), 100.0)
+  assert_eq(last_point.get_timestamp(), base_timestamp + 240000000000L)
+  assert_eq(last_point.get_value(), 107.8)
   
-  work_hours_avg_cpu = work_hours_avg_cpu / work_hours_count.to_double()
-  non_work_hours_avg_cpu = non_work_hours_avg_cpu / non_work_hours_count.to_double()
+  // 测试数据点查询
+  let point_at_2min = time_series.get_point_at_or_before(base_timestamp + 120000000000L)
+  assert_true(point_at_2min.is_some())
+  assert_eq(point_at_2min.some().get_value(), 98.2)
   
-  assert_true(work_hours_avg_cpu > non_work_hours_avg_cpu)
-  
-  // 2. 计算最大值和最小值
-  let daily_max_cpu = 0.0
-  let daily_min_cpu = 100.0
-  let daily_max_memory = 0.0
-  let daily_min_memory = 100.0
-  
-  for point in time_series_data {
-    let cpu = point["cpu_usage"]
-    let memory = point["memory_usage"]
-    
-    if cpu > daily_max_cpu {
-      daily_max_cpu = cpu
-    }
-    if cpu < daily_min_cpu {
-      daily_min_cpu = cpu
-    }
-    
-    if memory > daily_max_memory {
-      daily_max_memory = memory
-    }
-    if memory < daily_min_memory {
-      daily_min_memory = memory
-    }
-  }
-  
-  assert_true(daily_max_cpu > daily_min_cpu)
-  assert_true(daily_max_memory > daily_min_memory)
-  assert_true(daily_max_cpu >= 60.0) // 工作时间应该有较高的CPU使用率
-  assert_true(daily_min_cpu <= 40.0) // 非工作时间应该有较低的CPU使用率
-  
-  assert_true(true)
+  let point_before_90sec = time_series.get_point_at_or_before(base_timestamp + 90000000000L)
+  assert_true(point_before_90sec.is_some())
+  assert_eq(point_before_90sec.some().get_value(), 105.5)
 }
 
-test "多维度时间序列聚合测试" {
-  // 创建多维度时间序列数据（多个主机、多个指标）
-  let multi_dimensional_data = []
-  let base_timestamp = 1640995200000L
+test "时间序列数据插值和外推" {
+  // 创建不规则间隔的时间序列数据
+  let base_timestamp = 1735689600000000000L
   
-  let hosts = ["web-server-01", "web-server-02", "db-server-01", "db-server-02", "cache-server-01"]
-  let regions = ["us-east-1", "us-west-2", "eu-west-1"]
-  let services = ["web-service", "db-service", "cache-service"]
+  let irregular_points = [
+    TimeSeriesDataPoint::new(base_timestamp, 50.0, [("metric.name", "memory.usage")]),
+    TimeSeriesDataPoint::new(base_timestamp + 180000000000L, 80.0, [("metric.name", "memory.usage")]),  // 3分钟后
+    TimeSeriesDataPoint::new(base_timestamp + 420000000000L, 65.0, [("metric.name", "memory.usage")]),  // 7分钟后
+    TimeSeriesDataPoint::new(base_timestamp + 600000000000L, 90.0, [("metric.name", "memory.usage")])   // 10分钟后
+  ]
   
-  // 生成7天的数据，每小时一个点
-  for day = 0; day < 7; day = day + 1 {
-    for hour = 0; hour < 24; hour = hour + 1 {
-      for host_idx = 0; host_idx < hosts.length(); host_idx = host_idx + 1 {
-        let host = hosts[host_idx]
-        let region = regions[host_idx % regions.length()]
-        let service = services[host_idx % services.length()]
-        
-        // 根据服务类型生成不同的指标模式
-        let (cpu_usage, memory_usage, request_rate, disk_io) = match service {
-          "web-service" => (
-            50.0 + (hour % 12).to_double() * 5.0, // 白天高
-            60.0 + (day % 3).to_double() * 5.0, // 逐渐增长
-            100.0 + (hour % 8).to_double() * 50.0, // 波动较大
-            20.0 + (hour % 24).to_double() * 2.0 // 相对稳定
-          ),
-          "db-service" => (
-            70.0 + (hour % 6).to_double() * 3.0, // 持续较高
-            80.0 + (day % 2).to_double() * 5.0, // 逐渐增长
-            200.0 + (hour % 4).to_double() * 30.0, // 高且波动
-            50.0 + (hour % 12).to_double() * 10.0 // 中等波动
-          ),
-          "cache-service" => (
-            30.0 + (hour % 24).to_double() * 1.5, // 相对稳定
-            40.0 + (day % 4).to_double() * 3.0, // 缓慢增长
-            500.0 + (hour % 3).to_double() * 100.0, // 高频访问
-            10.0 + (hour % 24).to_double() * 1.0 // 很低且稳定
-          ),
-          _ => (50.0, 50.0, 100.0, 20.0)
-        }
-        
-        let timestamp = base_timestamp + (day * 24 + hour).to_long() * 3600000L
-        let data_point = {
-          "timestamp": timestamp,
-          "host": host,
-          "region": region,
-          "service": service,
-          "cpu_usage": cpu_usage,
-          "memory_usage": memory_usage,
-          "request_rate": request_rate,
-          "disk_io": disk_io,
-          "network_io": 30.0 + (hour % 10).to_double() * 5.0,
-          "error_rate": if hour % 8 == 0 { 2.0 } else { 0.1 }
-        }
-        multi_dimensional_data.push(data_point)
-      }
-    }
-  }
+  let time_series = TimeSeries::new("system.memory.usage", "percent", irregular_points)
+  let interpolator = TimeSeriesInterpolator::new(time_series)
   
-  // 按服务聚合
-  let service_aggregates = {}
+  // 测试线性插值
+  let interpolated_at_1min = interpolator.interpolate_linear(base_timestamp + 60000000000L)  // 1分钟后
+  let interpolated_at_5min = interpolator.interpolate_linear(base_timestamp + 300000000000L)  // 5分钟后
+  let interpolated_at_8min = interpolator.interpolate_linear(base_timestamp + 480000000000L)  // 8分钟后
   
-  for point in multi_dimensional_data {
-    let service = point["service"]
-    
-    if service_aggregates[service] is None {
-      service_aggregates[service] = {
-        "cpu_values": [],
-        "memory_values": [],
-        "request_values": [],
-        "disk_io_values": [],
-        "network_io_values": [],
-        "error_values": [],
-        "count": 0
-      }
-    }
-    
-    let aggregate = service_aggregates[service]
-    aggregate["cpu_values"].push(point["cpu_usage"])
-    aggregate["memory_values"].push(point["memory_usage"])
-    aggregate["request_values"].push(point["request_rate"])
-    aggregate["disk_io_values"].push(point["disk_io"])
-    aggregate["network_io_values"].push(point["network_io"])
-    aggregate["error_values"].push(point["error_rate"])
-    aggregate["count"] = aggregate["count"] + 1
-  }
+  // 验证插值结果
+  assert_true(interpolated_at_1min.is_some())
+  assert_true(interpolated_at_5min.is_some())
+  assert_true(interpolated_at_8min.is_some())
   
-  // 计算每个服务的平均指标
-  let service_averages = {}
-  for (service, aggregate) in service_aggregates {
-    let count = aggregate["count"].to_double()
-    let cpu_avg = aggregate["cpu_values"].reduce(|acc, val| acc + val, 0.0) / count
-    let memory_avg = aggregate["memory_values"].reduce(|acc, val| acc + val, 0.0) / count
-    let request_avg = aggregate["request_values"].reduce(|acc, val| acc + val, 0.0) / count
-    let disk_io_avg = aggregate["disk_io_values"].reduce(|acc, val| acc + val, 0.0) / count
-    let network_io_avg = aggregate["network_io_values"].reduce(|acc, val| acc + val, 0.0) / count
-    let error_avg = aggregate["error_values"].reduce(|acc, val| acc + val, 0.0) / count
-    
-    service_averages[service] = {
-      "cpu_avg": cpu_avg,
-      "memory_avg": memory_avg,
-      "request_avg": request_avg,
-      "disk_io_avg": disk_io_avg,
-      "network_io_avg": network_io_avg,
-      "error_avg": error_avg
-    }
-  }
+  // 1分钟后的值应该在50和80之间 (线性插值: 50 + (80-50)*(1/3) = 60)
+  let val_1min = interpolated_at_1min.some()
+  assert_true(val_1min > 50.0 && val_1min < 80.0)
   
-  // 验证服务间差异
-  let web_service = service_averages["web-service"]
-  let db_service = service_averages["db-service"]
-  let cache_service = service_averages["cache-service"]
+  // 5分钟后的值应该在80和65之间 (线性插值: 80 + (65-80)*(2/4) = 72.5)
+  let val_5min = interpolated_at_5min.some()
+  assert_true(val_5min > 65.0 && val_5min < 80.0)
   
-  // DB服务应该有更高的CPU和内存使用率
-  assert_true(db_service["cpu_avg"] > web_service["cpu_avg"])
-  assert_true(db_service["memory_avg"] > web_service["memory_avg"])
+  // 测试样条插值
+  let spline_interpolated = interpolator.interpolate_spline(base_timestamp + 90000000000L)  // 1.5分钟后
+  assert_true(spline_interpolated.is_some())
   
-  // 缓存服务应该有更高的请求率
-  assert_true(cache_service["request_avg"] > web_service["request_avg"])
-  assert_true(cache_service["request_avg"] > db_service["request_avg"])
+  // 测试外推
+  let extrapolated_before = interpolator.extrapolate_linear(base_timestamp - 60000000000L)  // 前1分钟
+  let extrapolated_after = interpolator.extrapolate_linear(base_timestamp + 720000000000L)  // 12分钟后
   
-  // 按区域聚合
-  let region_aggregates = {}
+  assert_true(extrapolated_before.is_some())
+  assert_true(extrapolated_after.is_some())
   
-  for point in multi_dimensional_data {
-    let region = point["region"]
-    
-    if region_aggregates[region] is None {
-      region_aggregates[region] = {
-        "cpu_values": [],
-        "memory_values": [],
-        "request_values": [],
-        "count": 0
-      }
-    }
-    
-    let aggregate = region_aggregates[region]
-    aggregate["cpu_values"].push(point["cpu_usage"])
-    aggregate["memory_values"].push(point["memory_usage"])
-    aggregate["request_values"].push(point["request_rate"])
-    aggregate["count"] = aggregate["count"] + 1
-  }
-  
-  // 计算每个区域的平均指标
-  let region_averages = {}
-  for (region, aggregate) in region_aggregates {
-    let count = aggregate["count"].to_double()
-    let cpu_avg = aggregate["cpu_values"].reduce(|acc, val| acc + val, 0.0) / count
-    let memory_avg = aggregate["memory_values"].reduce(|acc, val| acc + val, 0.0) / count
-    let request_avg = aggregate["request_values"].reduce(|acc, val| acc + val, 0.0) / count
-    
-    region_averages[region] = {
-      "cpu_avg": cpu_avg,
-      "memory_avg": memory_avg,
-      "request_avg": request_avg
-    }
-  }
-  
-  // 验证区域数据完整性
-  assert_eq(region_averages.length(), 3)
-  for (region, avg) in region_averages {
-    assert_true(avg["cpu_avg"] > 0.0)
-    assert_true(avg["memory_avg"] > 0.0)
-    assert_true(avg["request_avg"] > 0.0)
-  }
-  
-  assert_true(true)
+  // 外推值应该基于趋势进行计算
+  let val_before = extrapolated_before.some()
+  let val_after = extrapolated_after.some()
+  assert_true(val_before < 50.0)  // 前推应该小于第一个值
+  assert_true(val_after > 90.0)   // 后推应该大于最后一个值
 }
 
-test "时间序列降采样和上采样测试" {
-  // 创建高频时间序列数据（每秒一个点，持续1小时）
-  let high_frequency_data = []
-  let base_timestamp = 1640995200000L
+test "时间序列数据聚合和降采样" {
+  // 创建高频率时间序列数据
+  let base_timestamp = 1735689600000000000L
+  let high_freq_points = []
   
-  for i = 0; i < 3600; i = i + 1 { // 1小时 = 3600秒
-    // 模拟一个有趋势和季节性的指标
-    let trend = i.to_double() * 0.01 // 线性增长趋势
-    let seasonal = 10.0 * (i.to_double() / 300.0 * 3.14159).sin() // 5分钟周期的季节性
-    let noise = (i % 7).to_double() * 2.0 // 随机噪声
-    
-    let value = 50.0 + trend + seasonal + noise
-    
-    let data_point = {
-      "timestamp": base_timestamp + i.to_long() * 1000L, // 每秒
-      "value": value,
-      "metric_name": "cpu_usage",
-      "host": "server-01"
-    }
-    high_frequency_data.push(data_point)
+  // 每分钟一个数据点，持续1小时
+  for i in 0..60 {
+    let timestamp = base_timestamp + (i * 60000000000L)  // 每分钟
+    let value = 100.0 + (i.to_float() * 0.5) + (Math::random() * 10.0 - 5.0)  // 基础值 + 趋势 + 噪声
+    let point = TimeSeriesDataPoint::new(timestamp, value, [("metric.name", "high.freq.metric")])
+    high_freq_points = high_freq_points.push(point)
   }
   
-  // 1. 降采样：从每秒到每分钟
-  let minute_downsampled = {}
+  let high_freq_series = TimeSeries::new("high.frequency.metric", "units", high_freq_points)
+  let aggregator = TimeSeriesAggregator::new(high_freq_series)
   
-  for point in high_frequency_data {
-    let timestamp = point["timestamp"]
-    let minute_bucket = ((timestamp - base_timestamp) / 60000L).to_int() // 分钟桶
-    let minute_key = "minute_" + minute_bucket.to_string()
+  // 测试5分钟聚合
+  let aggregated_5min = aggregator.aggregate_by_interval(300000000000L)  // 5分钟
+  assert_eq(aggregated_5min.get_length(), 12)  // 60分钟 / 5分钟 = 12个点
+  
+  // 验证聚合类型
+  let avg_aggregated = aggregator.aggregate_by_interval_with_method(300000000000L, "average")
+  let max_aggregated = aggregator.aggregate_by_interval_with_method(300000000000L, "maximum")
+  let min_aggregated = aggregator.aggregate_by_interval_with_method(300000000000L, "minimum")
+  let sum_aggregated = aggregator.aggregate_by_interval_with_method(300000000000L, "sum")
+  
+  // 验证聚合结果
+  for i in 0..avg_aggregated.get_length() {
+    let avg_point = avg_aggregated.get_point(i)
+    let max_point = max_aggregated.get_point(i)
+    let min_point = min_aggregated.get_point(i)
+    let sum_point = sum_aggregated.get_point(i)
     
-    if minute_downsampled[minute_key] is None {
-      minute_downsampled[minute_key] = {
-        "values": [],
-        "timestamps": [],
-        "count": 0
+    // 最大值应该大于等于平均值，平均值应该大于等于最小值
+    assert_true(max_point.get_value() >= avg_point.get_value())
+    assert_true(avg_point.get_value() >= min_point.get_value())
+    
+    // 总和应该是平均值乘以数据点数量（5个点）
+    assert_true(Math::abs(sum_point.get_value() - (avg_point.get_value() * 5.0)) < 0.001)
+  }
+  
+  // 测试10分钟聚合
+  let aggregated_10min = aggregator.aggregate_by_interval(600000000000L)  // 10分钟
+  assert_eq(aggregated_10min.get_length(), 6)  // 60分钟 / 10分钟 = 6个点
+  
+  // 测试自定义聚合函数
+  let custom_aggregated = aggregator.aggregate_by_interval_with_function(
+    300000000000L,  // 5分钟间隔
+    fn(points) {
+      // 计算中位数
+      let sorted_values = points.map(fn(p) { p.get_value() }).sort()
+      let len = sorted_values.length()
+      if len % 2 == 0 {
+        (sorted_values.get(len / 2 - 1) + sorted_values.get(len / 2)) / 2.0
+      } else {
+        sorted_values.get(len / 2)
       }
     }
-    
-    let bucket = minute_downsampled[minute_key]
-    bucket["values"].push(point["value"])
-    bucket["timestamps"].push(timestamp)
-    bucket["count"] = bucket["count"] + 1
-  }
+  )
   
-  // 计算每分钟的平均值
-  let minute_averages = []
-  for i = 0; i < 60; i = i + 1 { // 60分钟
-    let minute_key = "minute_" + i.to_string()
-    match minute_downsampled[minute_key] {
-      Some(bucket) => {
-        let avg_value = bucket["values"].reduce(|acc, val| acc + val, 0.0) / bucket["count"].to_double()
-        let timestamp = base_timestamp + i.to_long() * 60000L
-        minute_averages.push({
-          "timestamp": timestamp,
-          "value": avg_value
-        })
-      }
-      None => () // 忽略空桶
-    }
-  }
+  assert_eq(custom_aggregated.get_length(), 12)
+}
+
+test "时间序列数据模式识别和异常检测" {
+  // 创建包含模式的时间序列数据
+  let base_timestamp = 1735689600000000000L
+  let pattern_points = []
   
-  // 验证降采样结果
-  assert_eq(minute_averages.length(), 60)
-  
-  // 验证每分钟的值在合理范围内
-  for avg_point in minute_averages {
-    assert_true(avg_point["value"] >= 30.0) // 最小值应该大于30
-    assert_true(avg_point["value"] <= 80.0) // 最大值应该小于80
-  }
-  
-  // 2. 进一步降采样：从每分钟到每10分钟
-  let ten_minute_downsampled = {}
-  
-  for point in minute_averages {
-    let timestamp = point["timestamp"]
-    let ten_minute_bucket = ((timestamp - base_timestamp) / 600000L).to_int() // 10分钟桶
-    let ten_minute_key = "ten_minute_" + ten_minute_bucket.to_string()
-    
-    if ten_minute_downsampled[ten_minute_key] is None {
-      ten_minute_downsampled[ten_minute_key] = {
-        "values": [],
-        "timestamps": [],
-        "count": 0
-      }
-    }
-    
-    let bucket = ten_minute_downsampled[ten_minute_key]
-    bucket["values"].push(point["value"])
-    bucket["timestamps"].push(timestamp)
-    bucket["count"] = bucket["count"] + 1
-  }
-  
-  // 计算每10分钟的平均值
-  let ten_minute_averages = []
-  for i = 0; i < 6; i = i + 1 { // 6个10分钟段
-    let ten_minute_key = "ten_minute_" + i.to_string()
-    match ten_minute_downsampled[ten_minute_key] {
-      Some(bucket) => {
-        let avg_value = bucket["values"].reduce(|acc, val| acc + val, 0.0) / bucket["count"].to_double()
-        let timestamp = base_timestamp + i.to_long() * 600000L
-        ten_minute_averages.push({
-          "timestamp": timestamp,
-          "value": avg_value
-        })
-      }
-      None => () // 忽略空桶
-    }
-  }
-  
-  // 验证10分钟降采样结果
-  assert_eq(ten_minute_averages.length(), 6)
-  
-  // 3. 上采样：从每10分钟到每分钟（使用线性插值）
-  let minute_upsampled = []
-  
-  for i = 0; i < ten_minute_averages.length() - 1; i = i + 1 {
-    let current_point = ten_minute_averages[i]
-    let next_point = ten_minute_averages[i + 1]
-    
-    let current_timestamp = current_point["timestamp"]
-    let next_timestamp = next_point["timestamp"]
-    let current_value = current_point["value"]
-    let next_value = next_point["value"]
-    
-    // 在两个10分钟点之间进行线性插值，生成每分钟的数据
-    for j = 0; j < 10; j = j + 1 {
-      let interpolated_timestamp = current_timestamp + j.to_long() * 60000L
-      let ratio = j.to_double() / 10.0
-      let interpolated_value = current_value + (next_value - current_value) * ratio
+  // 创建周期性模式（每日模式）
+  for day in 0..7 {  // 7天数据
+    for hour in 0..24 {  // 每天24小时
+      let timestamp = base_timestamp + (day * 86400000000000L) + (hour * 3600000000000L)
       
-      minute_upsampled.push({
-        "timestamp": interpolated_timestamp,
-        "value": interpolated_value
-      })
+      // 模拟日模式：白天高，夜晚低
+      let base_value = if hour >= 8 && hour <= 20 {
+        80.0 + (Math::sin((hour - 8).to_float() * Math::PI() / 12.0) * 20.0)
+      } else {
+        30.0 + (Math::random() * 10.0)
+      }
+      
+      // 在第3天添加一些异常值
+      let value = if day == 3 && hour == 14 {
+        base_value + 100.0  // 异常高峰
+      } else if day == 5 && hour == 3 {
+        base_value - 20.0   // 异常低谷
+      } else {
+        base_value + (Math::random() * 5.0 - 2.5)  // 正常噪声
+      }
+      
+      let point = TimeSeriesDataPoint::new(timestamp, value, [("metric.name", "daily.pattern")])
+      pattern_points = pattern_points.push(point)
     }
   }
   
-  // 添加最后一个10分钟段
-  let last_point = ten_minute_averages[ten_minute_averages.length() - 1]
-  for j = 0; j < 10; j = j + 1 {
-    let interpolated_timestamp = last_point["timestamp"] + j.to_long() * 60000L
-    minute_upsampled.push({
-      "timestamp": interpolated_timestamp,
-      "value": last_point["value"]
-    })
-  }
+  let pattern_series = TimeSeries::new("daily.pattern.metric", "units", pattern_points)
+  let pattern_detector = TimeSeriesPatternDetector::new(pattern_series)
   
-  // 验证上采样结果
-  assert_eq(minute_upsampled.length(), 60)
+  // 检测周期性模式
+  let daily_pattern = pattern_detector.detect_periodicity(86400000000000L)  // 24小时周期
+  assert_true(daily_pattern.is_some())
   
-  // 验证上采样数据的平滑性（相邻点之间的差异应该较小）
-  for i = 1; i < minute_upsampled.length(); i = i + 1 {
-    let current_value = minute_upsampled[i]["value"]
-    let prev_value = minute_upsampled[i-1]["value"]
-    let diff = (current_value - prev_value).abs()
-    
-    // 由于是线性插值，相邻点之间的差异应该相对较小
-    assert_true(diff < 5.0)
-  }
+  let pattern_strength = daily_pattern.some().get_strength()
+  assert_true(pattern_strength > 0.5)  // 应该有较强的周期性
   
-  assert_true(true)
+  // 检测趋势
+  let trend = pattern_detector.detect_trend()
+  assert_true(trend == "stable" || trend == "increasing" || trend == "decreasing")
+  
+  // 异常检测
+  let anomaly_detector = TimeSeriesAnomalyDetector::new(pattern_series)
+  let anomalies = anomaly_detector.detect_statistical_outliers(2.0)  // 2个标准差
+  
+  // 应该检测到我们植入的异常
+  assert_true(anomalies.length() >= 2)
+  
+  // 验证异常点的时间戳
+  let anomaly_times = anomalies.map(fn(a) { a.get_timestamp() })
+  let day_3_14 = base_timestamp + (3 * 86400000000000L) + (14 * 3600000000000L)
+  let day_5_3 = base_timestamp + (5 * 86400000000000L) + (3 * 3600000000000L)
+  
+  assert_true(anomaly_times.contains(day_3_14))
+  assert_true(anomaly_times.contains(day_5_3))
+  
+  // 测试季节性分解
+  let decomposition = pattern_detector.decompose_seasonal(86400000000000L)  // 日季节性
+  let trend_component = decomposition.get_trend()
+  let seasonal_component = decomposition.get_seasonal()
+  let residual_component = decomposition.get_residual()
+  
+  assert_eq(trend_component.get_length(), pattern_series.get_length())
+  assert_eq(seasonal_component.get_length(), pattern_series.get_length())
+  assert_eq(residual_component.get_length(), pattern_series.get_length())
 }
 
-test "时间序列异常检测和标记测试" {
-  // 创建包含异常的时间序列数据
-  let time_series_with_anomalies = []
-  let base_timestamp = 1640995200000L
+test "时间序列数据压缩和存储优化" {
+  // 创建大量时间序列数据用于压缩测试
+  let base_timestamp = 1735689600000000000L
+  let large_dataset = []
   
-  for i = 0; i < 1440; i = i + 1 { // 24小时，每分钟一个点
-    let hour = i / 60
-    let minute = i % 60
-    
-    // 基础模式：白天高，夜晚低
-    let base_value = if hour >= 8 && hour <= 20 { 60.0 } else { 20.0 }
-    let normal_variation = (minute % 10).to_double() * 2.0
-    let value = base_value + normal_variation
-    
-    // 插入异常值
-    let is_anomaly = false
-    let anomaly_type = ""
-    
-    if i == 360 { // 6:00 AM - 突然峰值
-      value = 95.0
-      is_anomaly = true
-      anomaly_type = "spike"
-    } else if i == 720 { // 12:00 PM - 突然下降
-      value = 5.0
-      is_anomaly = true
-      anomaly_type = "drop"
-    } else if i >= 1080 && i < 1090 { // 6:00-6:10 PM - 持续异常
-      value = 90.0
-      is_anomaly = true
-      anomaly_type = "sustained"
-    } else if i % 100 == 0 && i > 0 { // 随机异常
-      value = if value > 50.0 { value - 40.0 } else { value + 40.0 }
-      is_anomaly = true
-      anomaly_type = "random"
-    }
-    
-    let data_point = {
-      "timestamp": base_timestamp + i.to_long() * 60000L,
-      "value": value,
-      "is_anomaly": is_anomaly,
-      "anomaly_type": anomaly_type,
-      "metric_name": "cpu_usage",
-      "host": "server-01"
-    }
-    time_series_with_anomalies.push(data_point)
+  // 生成1000个数据点
+  for i in 0..1000 {
+    let timestamp = base_timestamp + (i * 60000000000L)  // 每分钟
+    let value = 100.0 + Math::sin(i.to_float() * 0.1) * 10.0 + (Math::random() * 2.0 - 1.0)
+    let point = TimeSeriesDataPoint::new(timestamp, value, [("metric.name", "large.dataset")])
+    large_dataset = large_dataset.push(point)
   }
   
-  // 1. 使用移动平均检测异常
-  let window_size = 30 // 30分钟窗口
-  let detected_anomalies = []
+  let large_series = TimeSeries::new("large.dataset.metric", "units", large_dataset)
+  let compressor = TimeSeriesCompressor::new(large_series)
   
-  for i = window_size; i < time_series_with_anomalies.length() - window_size; i = i + 1 {
-    let current_value = time_series_with_anomalies[i]["value"]
+  // 测试不同压缩算法
+  let delta_compressed = compressor.compress_delta()
+  let gorilla_compressed = compressor.compress_gorilla()
+  let lttb_compressed = compressor.compress_lttb(100)  // 降采样到100个点
+  
+  // 验证压缩效果
+  let original_size = large_series.get_size_bytes()
+  let delta_size = delta_compressed.get_size_bytes()
+  let gorilla_size = gorilla_compressed.get_size_bytes()
+  let lttb_size = lttb_compressed.get_size_bytes()
+  
+  assert_true(delta_size < original_size)
+  assert_true(gorilla_size < original_size)
+  assert_true(lttb_size < original_size)
+  
+  // Gorilla压缩通常比Delta压缩更好
+  assert_true(gorilla_size <= delta_size)
+  
+  // 验证解压缩后的数据完整性
+  let delta_decompressed = delta_compressed.decompress()
+  let gorilla_decompressed = gorilla_compressed.decompress()
+  
+  assert_eq(delta_decompressed.get_length(), large_series.get_length())
+  assert_eq(gorilla_decompressed.get_length(), large_series.get_length())
+  
+  // 验证解压缩后的数据精度（允许小的浮点误差）
+  for i in 0..10 {  // 检查前10个点
+    let original_val = large_series.get_point(i).get_value()
+    let delta_val = delta_decompressed.get_point(i).get_value()
+    let gorilla_val = gorilla_decompressed.get_point(i).get_value()
     
-    // 计算前后窗口的平均值和标准差
-    let window_values = []
-    for j = i - window_size; j < i + window_size + 1; j = j + 1 {
-      if j != i { // 排除当前点
-        window_values.push(time_series_with_anomalies[j]["value"])
-      }
-    }
-    
-    let window_avg = window_values.reduce(|acc, val| acc + val, 0.0) / window_values.length().to_double()
-    
-    // 计算标准差
-    let variance = window_values.reduce(|acc, val| acc + (val - window_avg) * (val - window_avg), 0.0) / window_values.length().to_double()
-    let std_dev = variance.sqrt()
-    
-    // 如果当前值偏离平均值超过3个标准差，则认为是异常
-    let threshold = 3.0 * std_dev
-    if (current_value - window_avg).abs() > threshold {
-      detected_anomalies.push({
-        "index": i,
-        "timestamp": time_series_with_anomalies[i]["timestamp"],
-        "value": current_value,
-        "window_avg": window_avg,
-        "std_dev": std_dev,
-        "deviation": (current_value - window_avg).abs()
-      })
-    }
+    assert_true(Math::abs(original_val - delta_val) < 0.001)
+    assert_true(Math::abs(original_val - gorilla_val) < 0.001)
   }
   
-  // 验证检测到的异常数量
-  assert_true(detected_anomalies.length() >= 4) // 至少应该检测到4个主要异常
+  // 测试LTTB降采样的可视化效果
+  assert_eq(lttb_compressed.get_length(), 100)
   
-  // 验证检测到的异常包含已知的异常点
-  let detected_indices = detected_anomalies.map(|anomaly| anomaly["index"])
-  assert_true(detected_indices.contains(360)) // 6:00 AM 峰值
-  assert_true(detected_indices.contains(720)) // 12:00 PM 下降
+  // 验证降采样保留了关键特征
+  let lttb_max = lttb_compressed.get_max_value()
+  let lttb_min = lttb_compressed.get_min_value()
+  let original_max = large_series.get_max_value()
+  let original_min = large_series.get_min_value()
   
-  // 2. 使用Z-score检测异常
-  let z_score_anomalies = []
+  assert_true(Math::abs(lttb_max - original_max) < 5.0)  // 允许一定误差
+  assert_true(Math::abs(lttb_min - original_min) < 5.0)
+}
+
+test "时间序列数据查询和分析" {
+  // 创建测试时间序列数据
+  let base_timestamp = 1735689600000000000L
+  let query_points = []
   
-  // 计算全局平均值和标准差
-  let all_values = time_series_with_anomalies.map(|point| point["value"])
-  let global_avg = all_values.reduce(|acc, val| acc + val, 0.0) / all_values.length().to_double()
-  let global_variance = all_values.reduce(|acc, val| acc + (val - global_avg) * (val - global_avg), 0.0) / all_values.length().to_double()
-  let global_std_dev = global_variance.sqrt()
-  
-  for i = 0; i < time_series_with_anomalies.length(); i = i + 1 {
-    let value = time_series_with_anomalies[i]["value"]
-    let z_score = (value - global_avg) / global_std_dev
+  for i in 0..72 {  // 3天，每小时一个点
+    let timestamp = base_timestamp + (i * 3600000000000L)
+    let hour_of_day = i % 24
     
-    // Z-score绝对值大于3认为是异常
-    if z_score.abs() > 3.0 {
-      z_score_anomalies.push({
-        "index": i,
-        "timestamp": time_series_with_anomalies[i]["timestamp"],
-        "value": value,
-        "z_score": z_score
-      })
-    }
-  }
-  
-  // 验证Z-score方法检测到的异常
-  assert_true(z_score_anomalies.length() >= 3)
-  
-  // 3. 标记和分类异常
-  let anomaly_classifications = {}
-  
-  for anomaly in detected_anomalies {
-    let index = anomaly["index"]
-    let value = anomaly["value"]
-    let window_avg = anomaly["window_avg"]
-    
-    let classification = if value > window_avg * 1.5 {
-      "spike"
-    } else if value < window_avg * 0.5 {
-      "drop"
+    // 模拟业务指标：工作时间高，非工作时间低
+    let base_value = if hour_of_day >= 9 && hour_of_day <= 17 {
+      150.0 + Math::sin((hour_of_day - 9).to_float() * Math::PI() / 8.0) * 50.0
     } else {
-      "moderate"
+      20.0 + Math::random() * 10.0
     }
     
-    if anomaly_classifications[classification] is None {
-      anomaly_classifications[classification] = []
-    }
-    anomaly_classifications[classification].push(anomaly)
+    let value = base_value + (Math::random() * 10.0 - 5.0)
+    let point = TimeSeriesDataPoint::new(timestamp, value, [
+      ("metric.name", "business.metric"),
+      ("hour.of.day", hour_of_day.to_string()),
+      ("day.of.week", ((i / 24) % 7).to_string())
+    ])
+    query_points = query_points.push(point)
   }
   
-  // 验证异常分类
-  assert_true(anomaly_classifications.contains("spike"))
-  assert_true(anomaly_classifications.contains("drop"))
+  let query_series = TimeSeries::new("business.metric", "units", query_points)
+  let query_engine = TimeSeriesQueryEngine::new(query_series)
   
-  // 4. 验证检测到的异常与实际异常的一致性
-  let true_positives = 0
-  let false_positives = 0
-  let false_negatives = 0
+  // 测试时间范围查询
+  let first_day_data = query_engine.query_by_time_range(
+    base_timestamp, 
+    base_timestamp + 86400000000000L
+  )
+  assert_eq(first_day_data.get_length(), 24)
   
-  let detected_set = detected_anomalies.map(|anomaly| anomaly["index"])
-  let actual_anomaly_indices = []
+  let business_hours_data = query_engine.query_by_time_range(
+    base_timestamp + 3600000000000L * 9,  // 第1天9点
+    base_timestamp + 3600000000000L * 18  // 第1天18点
+  )
+  assert_eq(business_hours_data.get_length(), 10)  // 9点到17点
   
-  for i = 0; i < time_series_with_anomalies.length(); i = i + 1 {
-    if time_series_with_anomalies[i]["is_anomaly"] {
-      actual_anomaly_indices.push(i)
+  // 测试值范围查询
+  let high_value_data = query_engine.query_by_value_range(100.0, 200.0)
+  let low_value_data = query_engine.query_by_value_range(0.0, 50.0)
+  
+  assert_true(high_value_data.length() > 0)
+  assert_true(low_value_data.length() > 0)
+  assert_true(high_value_data.length() > low_value_data.length())  // 高值应该更多
+  
+  // 测试属性查询
+  let business_hours_query = query_engine.query_by_attribute("hour.of.day", "9")
+  assert_eq(business_hours_query.get_length(), 3)  // 3天中每天的9点
+  
+  // 测试复合查询
+  let complex_query = query_engine.query_complex(
+    fn(point) {
+      let hour = point.get_attribute("hour.of.day").parse_int().unwrap_or(0)
+      let value = point.get_value()
+      hour >= 9 && hour <= 17 && value > 100.0
     }
-  }
+  )
   
-  // 计算真正例、假正例和假负例
-  for idx in detected_set {
-    if actual_anomaly_indices.contains(idx) {
-      true_positives = true_positives + 1
-    } else {
-      false_positives = false_positives + 1
-    }
-  }
+  assert_true(complex_query.get_length() > 0)
   
-  for idx in actual_anomaly_indices {
-    if !detected_set.contains(idx) {
-      false_negatives = false_negatives + 1
-    }
-  }
+  // 测试统计分析
+  let stats = query_engine.calculate_statistics()
+  let mean = stats.get_mean()
+  let median = stats.get_median()
+  let std_dev = stats.get_standard_deviation()
+  let percentiles = stats.get_percentiles([25.0, 50.0, 75.0, 90.0, 95.0])
   
-  // 计算精确率和召回率
-  let precision = true_positives.to_double() / (true_positives + false_positives).to_double()
-  let recall = true_positives.to_double() / (true_positives + false_negatives).to_double()
+  assert_true(mean > 0.0)
+  assert_true(median > 0.0)
+  assert_true(std_dev > 0.0)
+  assert_eq(percentiles.length(), 5)
   
-  // 验证检测质量
-  assert_true(precision > 0.5) // 至少50%的精确率
-  assert_true(recall > 0.3) // 至少30%的召回率
-  
-  assert_true(true)
+  // 验证百分位数顺序
+  assert_true(percentiles.get(0) <= percentiles.get(1))  // 25% <= 50%
+  assert_true(percentiles.get(1) <= percentiles.get(2))  // 50% <= 75%
+  assert_true(percentiles.get(2) <= percentiles.get(3))  // 75% <= 90%
+  assert_true(percentiles.get(3) <= percentiles.get(4))  // 90% <= 95%
 }

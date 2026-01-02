@@ -1,315 +1,615 @@
-// Azimuth Performance Boundary Tests
-// 测试性能边界和资源限制
+// 性能边界测试
+// 测试Azimuth遥测系统在各种极端条件下的性能表现
 
-test "large attribute collection performance" {
-  // 创建大量属性的性能测试
-  let mut large_attrs = []
+test "高并发span创建和结束性能" {
+  // 测试在高并发情况下创建和结束大量span的性能
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrency.test")
   
-  // 添加100个属性
-  for i = 0; i < 100; i = i + 1 {
-    let attr = ("attr." + i.to_string(), @azimuth.StringValue("value." + i.to_string()))
-    large_attrs = large_attrs + [attr]
-  }
+  let num_spans = 10000
+  let num_threads = 50
+  let spans_per_thread = num_spans / num_threads
   
-  let large_resource = @azimuth.Resource { attributes : large_attrs }
+  let performance_monitor = PerformanceMonitor::new()
   
-  // 验证所有属性都被正确存储
-  assert_eq(large_resource.attributes.length(), 100)
+  // 开始性能监控
+  performance_monitor.start_monitoring()
   
-  // 验证第一个和最后一个属性
-  assert_eq(large_resource.attributes[0].0, "attr.0")
-  assert_eq(large_resource.attributes[99].0, "attr.99")
+  let mut threads = []
   
-  match large_resource.attributes[0].1 {
-    @azimuth.StringValue(v) => assert_eq(v, "value.0")
-    _ => assert_true(false)
-  }
-  
-  match large_resource.attributes[99].1 {
-    @azimuth.StringValue(v) => assert_eq(v, "value.99")
-    _ => assert_true(false)
-  }
-}
-
-test "large baggage entries performance" {
-  // 创建大量baggage条目的性能测试
-  let mut large_baggage_entries = []
-  
-  // 添加50个baggage条目
-  for i = 0; i < 50; i = i + 1 {
-    let entry = ("baggage.key." + i.to_string(), "baggage.value." + i.to_string())
-    large_baggage_entries = large_baggage_entries + [entry]
-  }
-  
-  let large_baggage = @azimuth.Baggage { entries : large_baggage_entries }
-  
-  // 验证所有baggage条目都被正确存储
-  assert_eq(large_baggage.entries.length(), 50)
-  
-  // 验证第一个和最后一个条目
-  assert_eq(large_baggage.entries[0].0, "baggage.key.0")
-  assert_eq(large_baggage.entries[49].0, "baggage.key.49")
-  assert_eq(large_baggage.entries[0].1, "baggage.value.0")
-  assert_eq(large_baggage.entries[49].1, "baggage.value.49")
-}
-
-test "large string array performance" {
-  // 创建大量字符串数组的性能测试
-  let mut large_string_array = []
-  
-  // 添加100个字符串
-  for i = 0; i < 100; i = i + 1 {
-    large_string_array = large_string_array + ["string.item." + i.to_string()]
-  }
-  
-  let large_array_attr = @azimuth.ArrayStringValue(large_string_array)
-  
-  match large_array_attr {
-    @azimuth.ArrayStringValue(arr) => {
-      // 验证所有字符串都被正确存储
-      assert_eq(arr.length(), 100)
+  // 创建多个线程并发创建span
+  for i in 0..num_threads {
+    let thread = Thread::spawn(fn() {
+      let thread_spans = []
       
-      // 验证第一个和最后一个字符串
-      assert_eq(arr[0], "string.item.0")
-      assert_eq(arr[99], "string.item.99")
-    }
-    _ => assert_true(false)
-  }
-}
-
-test "large integer array performance" {
-  // 创建大量整数数组的性能测试
-  let mut large_int_array = []
-  
-  // 添加100个整数
-  for i = 0; i < 100; i = i + 1 {
-    large_int_array = large_int_array + [i]
-  }
-  
-  let large_int_attr = @azimuth.ArrayIntValue(large_int_array)
-  
-  match large_int_attr {
-    @azimuth.ArrayIntValue(arr) => {
-      // 验证所有整数都被正确存储
-      assert_eq(arr.length(), 100)
+      for j in 0..spans_per_thread {
+        let span_name = "concurrent.operation." + j.to_string()
+        let span = Tracer::start_span(tracer, span_name)
+        
+        // 设置属性
+        Span::set_attribute(span, "thread.id", i.to_string())
+        Span::set_attribute(span, "operation.index", j.to_string())
+        Span::set_attribute(span, "payload.size", (1024 + j % 1024).to_string())
+        
+        // 添加事件
+        if j % 10 == 0 {
+          Span::add_event(span, "milestone.reached", [
+            ("milestone.index", (j / 10).to_string()),
+            ("thread.id", i.to_string())
+          ])
+        }
+        
+        thread_spans = thread_spans.push(span)
+      }
       
-      // 验证第一个和最后一个整数
-      assert_eq(arr[0], 0)
-      assert_eq(arr[99], 99)
-    }
-    _ => assert_true(false)
-  }
-}
-
-test "complex nested attributes performance" {
-  // 创建复杂嵌套属性的性能测试
-  let mut complex_attrs = []
-  
-  // 添加混合类型的复杂属性
-  for i = 0; i < 50; i = i + 1 {
-    let string_attr = ("string.attr." + i.to_string(), @azimuth.StringValue("complex.value." + i.to_string()))
-    let int_attr = ("int.attr." + i.to_string(), @azimuth.IntValue(i * 10))
-    let float_attr = ("float.attr." + i.to_string(), @azimuth.FloatValue(i.to_double() * 3.14))
-    let bool_attr = ("bool.attr." + i.to_string(), @azimuth.BoolValue(i % 2 == 0))
+      // 结束所有span
+      for span in thread_spans {
+        Span::end(span)
+      }
+      
+      return thread_spans.length()
+    })
     
-    complex_attrs = complex_attrs + [string_attr, int_attr, float_attr, bool_attr]
+    threads = threads.push(thread)
   }
   
-  let complex_resource = @azimuth.Resource { attributes : complex_attrs }
+  // 等待所有线程完成
+  let total_spans_created = 0
+  for thread in threads {
+    let spans_in_thread = thread.join()
+    total_spans_created = total_spans_created + spans_in_thread
+  }
   
-  // 验证所有属性都被正确存储
-  assert_eq(complex_resource.attributes.length(), 200)
+  // 停止性能监控
+  let performance_metrics = performance_monitor.stop_monitoring()
   
-  // 验证特定类型的属性
-  assert_eq(complex_resource.attributes[0].0, "string.attr.0")
-  assert_eq(complex_resource.attributes[1].0, "int.attr.0")
-  assert_eq(complex_resource.attributes[2].0, "float.attr.0")
-  assert_eq(complex_resource.attributes[3].0, "bool.attr.0")
+  // 验证结果
+  assert_eq(total_spans_created, num_spans)
   
-  assert_eq(complex_resource.attributes[196].0, "string.attr.49")
-  assert_eq(complex_resource.attributes[197].0, "int.attr.49")
-  assert_eq(complex_resource.attributes[198].0, "float.attr.49")
-  assert_eq(complex_resource.attributes[199].0, "bool.attr.49")
+  // 验证性能指标
+  let execution_time = performance_metrics.get_execution_time_ms()
+  let memory_usage = performance_metrics.get_peak_memory_usage_mb()
+  let cpu_usage = performance_metrics.get_average_cpu_usage_percent()
+  
+  assert_true(execution_time < 5000)  // 应该在5秒内完成
+  assert_true(memory_usage < 500)    // 内存使用应该少于500MB
+  assert_true(cpu_usage < 95.0)      // CPU使用率应该合理
+  
+  // 验证吞吐量
+  let spans_per_second = (num_spans.to_float() / execution_time.to_float()) * 1000.0
+  assert_true(spans_per_second > 1000.0)  // 应该至少每秒处理1000个span
+  
+  // 验证span创建和结束的时间分布
+  let time_distribution = performance_metrics.get_operation_time_distribution()
+  let p95 = time_distribution.get_percentile(95.0)
+  let p99 = time_distribution.get_percentile(99.0)
+  
+  assert_true(p95 < 10.0)   // 95%的操作应该在10ms内完成
+  assert_true(p99 < 50.0)   // 99%的操作应该在50ms内完成
 }
 
-test "long string value performance" {
-  // 创建长字符串值的性能测试
-  let mut long_string = ""
+test "大量度量化性能测试" {
+  // 测试处理大量度量数据的性能
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "metrics.performance.test")
   
-  // 创建1000个字符的长字符串
-  for i = 0; i < 100; i = i + 1 {
-    long_string = long_string + "this is a very long string segment number " + i.to_string() + " "
+  let performance_monitor = PerformanceMonitor::new()
+  performance_monitor.start_monitoring()
+  
+  // 创建多种类型的度量
+  let counters = []
+  let histograms = []
+  let gauges = []
+  
+  // 创建100个计数器
+  for i in 0..100 {
+    let counter = Meter::create_counter(
+      meter, 
+      "counter." + i.to_string(), 
+      Some("Test counter " + i.to_string()), 
+      Some("count")
+    )
+    counters = counters.push(counter)
   }
   
-  let long_string_attr = @azimuth.StringValue(long_string)
+  // 创建100个直方图
+  for i in 0..100 {
+    let histogram = Meter::create_histogram(
+      meter, 
+      "histogram." + i.to_string(), 
+      Some("Test histogram " + i.to_string()), 
+      Some("ms")
+    )
+    histograms = histograms.push(histogram)
+  }
   
-  match long_string_attr {
-    @azimuth.StringValue(v) => {
-      // 验证字符串长度
-      assert_true(v.length() > 1000)
+  // 创建100个仪表
+  for i in 0..100 {
+    let gauge = Meter::create_gauge(
+      meter, 
+      "gauge." + i.to_string(), 
+      Some("Test gauge " + i.to_string()), 
+      Some("value")
+    )
+    gauges = gauges.push(gauge)
+  }
+  
+  // 并发更新所有度量
+  let mut threads = []
+  
+  // 计数器更新线程
+  let counter_thread = Thread::spawn(fn() {
+    for round in 0..1000 {
+      for i in 0..counters.length() {
+        let counter = counters.get(i)
+        Counter::add_with_attributes(counter, 1.0, [
+          ("round", round.to_string()),
+          ("counter.id", i.to_string()),
+          ("update.type", "incremental")
+        ])
+      }
+    }
+  })
+  
+  // 直方图更新线程
+  let histogram_thread = Thread::spawn(fn() {
+    for round in 0..1000 {
+      for i in 0..histograms.length() {
+        let histogram = histograms.get(i)
+        let value = 50.0 + (Math::random() * 100.0)
+        Histogram::record_with_attributes(histogram, value, [
+          ("round", round.to_string()),
+          ("histogram.id", i.to_string()),
+          ("value.range", if value < 75.0 { "low" } else { "high" })
+        ])
+      }
+    }
+  })
+  
+  // 仪表更新线程
+  let gauge_thread = Thread::spawn(fn() {
+    for round in 0..1000 {
+      for i in 0..gauges.length() {
+        let gauge = gauges.get(i)
+        let value = 100.0 + Math::sin(round.to_float() * 0.1) * 50.0
+        Gauge::set_with_attributes(gauge, value, [
+          ("round", round.to_string()),
+          ("gauge.id", i.to_string()),
+          ("value.category", "performance")
+        ])
+      }
+    }
+  })
+  
+  threads = threads.push(counter_thread)
+  threads = threads.push(histogram_thread)
+  threads = threads.push(gauge_thread)
+  
+  // 等待所有线程完成
+  for thread in threads {
+    thread.join()
+  }
+  
+  let performance_metrics = performance_monitor.stop_monitoring()
+  
+  // 验证性能指标
+  let execution_time = performance_metrics.get_execution_time_ms()
+  let memory_usage = performance_metrics.get_peak_memory_usage_mb()
+  let throughput = performance_metrics.get_metrics_throughput_per_second()
+  
+  assert_true(execution_time < 10000)  // 应该在10秒内完成
+  assert_true(memory_usage < 1000)    // 内存使用应该少于1GB
+  assert_true(throughput > 50000.0)   // 每秒应该处理超过50000个度量更新
+  
+  // 验证度量聚合性能
+  let aggregation_start = Time::now()
+  
+  for counter in counters {
+    let aggregated = Counter::aggregate(counter)
+    assert_true(aggregated.get_total() > 0.0)
+  }
+  
+  for histogram in histograms {
+    let aggregated = Histogram::aggregate(histogram)
+    assert_true(aggregated.get_count() > 0)
+  }
+  
+  let aggregation_time = Time::since(aggregation_start).as_millis()
+  assert_true(aggregation_time < 5000)  // 聚合应该在5秒内完成
+}
+
+test "内存压力和垃圾回收测试" {
+  // 测试在内存压力下的遥测系统性能
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "memory.stress.test")
+  
+  let memory_monitor = MemoryMonitor::new()
+  memory_monitor.start_monitoring()
+  
+  // 创建大量span但不立即结束，模拟内存压力
+  let active_spans = []
+  let span_count = 50000
+  
+  for i in 0..span_count {
+    let span = Tracer::start_span(tracer, "memory.stress.span." + i.to_string())
+    
+    // 添加大量属性和事件增加内存使用
+    Span::set_attribute(span, "span.index", i.to_string())
+    Span::set_attribute(span, "large.payload", "x" * 1000)  // 1KB payload
+    
+    for j in 0..10 {
+      Span::add_event(span, "stress.event." + j.to_string(), [
+        ("event.index", j.to_string()),
+        ("payload.data", "y" * 500)  // 500 bytes per event
+      ])
+    }
+    
+    active_spans = active_spans.push(span)
+    
+    // 每10000个span检查一次内存使用
+    if i % 10000 == 0 {
+      let current_memory = memory_monitor.get_current_memory_usage_mb()
+      assert_true(current_memory < 2000)  // 内存使用应该在合理范围内
+    }
+  }
+  
+  // 检查峰值内存使用
+  let peak_memory = memory_monitor.get_peak_memory_usage_mb()
+  assert_true(peak_memory < 3000)  // 峰值内存使用应该少于3GB
+  
+  // 逐步结束span，测试内存释放
+  let batches_to_end = 10
+  let spans_per_batch = span_count / batches_to_end
+  
+  for batch in 0..batches_to_end {
+    let start_index = batch * spans_per_batch
+    let end_index = start_index + spans_per_batch
+    
+    for i in start_index..end_index {
+      Span::end(active_spans.get(i))
+    }
+    
+    // 每批结束后检查内存释放
+    let memory_after_batch = memory_monitor.get_current_memory_usage_mb()
+    let expected_memory_reduction = (spans_per_batch.to_float() / span_count.to_float()) * peak_memory
+    
+    // 内存应该有明显释放（允许一些延迟）
+    assert_true(memory_after_batch < peak_memory - (expected_memory_reduction * 0.5))
+    
+    // 触发垃圾回收
+    System::gc()
+    
+    // 再次检查内存
+    let memory_after_gc = memory_monitor.get_current_memory_usage_mb()
+    assert_true(memory_after_gc <= memory_after_batch)
+  }
+  
+  memory_monitor.stop_monitoring()
+  
+  // 验证内存泄漏
+  let final_memory = memory_monitor.get_current_memory_usage_mb()
+  let baseline_memory = memory_monitor.get_baseline_memory_usage_mb()
+  
+  assert_true(final_memory - baseline_memory < 100)  // 最终内存增长应该少于100MB
+}
+
+test "长时间运行稳定性测试" {
+  // 测试遥测系统长时间运行的稳定性
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "stability.test")
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "stability.test")
+  
+  let stability_monitor = StabilityMonitor::new()
+  stability_monitor.start_monitoring()
+  
+  let test_duration_minutes = 10  // 运行10分钟
+  let end_time = Time::now() + Duration::minutes(test_duration_minutes)
+  let operation_counter = AtomicCounter::new(0)
+  
+  // 创建长期运行的度量
+  let long_term_counter = Meter::create_counter(meter, "long_term.operations", Some("Long term operations"), Some("count"))
+  let long_term_histogram = Meter::create_histogram(meter, "operation.duration", Some("Operation duration"), Some("ms"))
+  let memory_gauge = Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("MB"))
+  
+  // 模拟长期运行的工作负载
+  let worker_thread = Thread::spawn(fn() {
+    while Time::now() < end_time {
+      let operation_start = Time::now()
       
-      // 验证字符串内容
-      assert_true(v.contains("this is a very long string segment number 0"))
-      assert_true(v.contains("this is a very long string segment number 99"))
+      // 创建span
+      let span = Tracer::start_span(tracer, "long.term.operation")
+      Span::set_attribute(span, "operation.id", operation_counter.increment().to_string())
+      
+      // 模拟工作
+      Thread::sleep(Duration::milliseconds(10 + (Math::random() * 40).to_int()))  // 10-50ms工作
+      
+      // 更新度量
+      Counter::add(long_term_counter, 1.0)
+      
+      let operation_duration = Time::since(operation_start).as_millis().to_float()
+      Histogram::record(long_term_histogram, operation_duration)
+      
+      let current_memory = Process::get_memory_usage_mb()
+      Gauge::set(memory_gauge, current_memory.to_float())
+      
+      Span::end(span)
+      
+      // 短暂休息
+      Thread::sleep(Duration::milliseconds(5))
     }
-    _ => assert_true(false)
-  }
+  })
+  
+  // 监控系统健康状况
+  let monitor_thread = Thread::spawn(fn() {
+    while Time::now() < end_time {
+      let current_memory = Process::get_memory_usage_mb()
+      let cpu_usage = Process::get_cpu_usage_percent()
+      let thread_count = Process::get_thread_count()
+      
+      stability_monitor.record_system_metrics(current_memory, cpu_usage, thread_count)
+      
+      // 检查系统健康状况
+      if current_memory > 1000 {
+        stability_monitor.record_health_issue("high_memory_usage", current_memory.to_string())
+      }
+      
+      if cpu_usage > 90.0 {
+        stability_monitor.record_health_issue("high_cpu_usage", cpu_usage.to_string())
+      }
+      
+      if thread_count > 100 {
+        stability_monitor.record_health_issue("high_thread_count", thread_count.to_string())
+      }
+      
+      Thread::sleep(Duration::seconds(1))
+    }
+  })
+  
+  // 等待测试完成
+  worker_thread.join()
+  monitor_thread.join()
+  
+  stability_monitor.stop_monitoring()
+  
+  // 分析稳定性结果
+  let stability_report = stability_monitor.generate_report()
+  
+  // 验证系统稳定性
+  assert_true(stability_report.get_uptime_minutes() >= test_duration_minutes * 0.95)  // 至少运行95%的时间
+  assert_true(stability_report.get_health_issues().length() < 5)  // 健康问题应该很少
+  assert_true(stability_report.get_average_memory_usage() < 500)  // 平均内存使用应该合理
+  assert_true(stability_report.get_average_cpu_usage() < 80.0)   // 平均CPU使用应该合理
+  
+  // 验证度量数据完整性
+  let final_counter_value = Counter::get_value(long_term_counter)
+  let histogram_data = Histogram::get_data(long_term_histogram)
+  
+  assert_true(final_counter_value > 0.0)
+  assert_true(histogram_data.get_count() > 0)
+  assert_eq(histogram_data.get_count(), final_counter_value.to_int())  // 计数和直方图应该一致
+  
+  // 验证性能没有显著退化
+  let performance_degradation = stability_report.get_performance_degradation_percent()
+  assert_true(performance_degradation < 20.0)  // 性能退化应该少于20%
 }
 
-test "many text map headers performance" {
-  // 创建大量HTTP headers的性能测试
-  let mut large_headers = []
+test "极端数据量边界测试" {
+  // 测试处理极端数据量的边界情况
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.test")
   
-  // 添加100个headers
-  for i = 0; i < 100; i = i + 1 {
-    let header = ("header.name." + i.to_string(), "header.value." + i.to_string())
-    large_headers = large_headers + [header]
+  // 测试极长span名称
+  let very_long_name = "a" * 10000
+  let long_name_span = Tracer::start_span(tracer, very_long_name)
+  assert_true(Span::is_valid(long_name_span))
+  Span::end(long_name_span)
+  
+  // 测试极多属性
+  let many_attributes_span = Tracer::start_span(tracer, "many.attributes.span")
+  
+  let max_attributes = 1000
+  for i in 0..max_attributes {
+    Span::set_attribute(many_attributes_span, "attr." + i.to_string(), "value." + i.to_string())
   }
   
-  let large_carrier = @azimuth.TextMapCarrier { headers : large_headers }
+  assert_true(Span::is_valid(many_attributes_span))
+  Span::end(many_attributes_span)
   
-  // 验证所有headers都被正确存储
-  assert_eq(large_carrier.headers.length(), 100)
+  // 测试极多事件
+  let many_events_span = Tracer::start_span(tracer, "many.events.span")
   
-  // 验证第一个和最后一个header
-  assert_eq(large_carrier.headers[0].0, "header.name.0")
-  assert_eq(large_carrier.headers[0].1, "header.value.0")
-  assert_eq(large_carrier.headers[99].0, "header.name.99")
-  assert_eq(large_carrier.headers[99].1, "header.value.99")
+  let max_events = 5000
+  for i in 0..max_events {
+    Span::add_event(many_events_span, "event." + i.to_string(), [
+      ("event.index", i.to_string()),
+      ("event.data", "x" * 100)  // 每个事件100字节
+    ])
+  }
+  
+  assert_true(Span::is_valid(many_events_span))
+  Span::end(many_events_span)
+  
+  // 测试极深层嵌套span
+  let nested_spans = []
+  let max_depth = 1000
+  
+  let current_span = Tracer::start_span(tracer, "root.span")
+  nested_spans = nested_spans.push(current_span)
+  
+  for i in 0..max_depth {
+    let parent_span = nested_spans.last()
+    let child_span = Tracer::start_span_with_context(tracer, "nested.span." + i.to_string(), Span::span_context(parent_span))
+    nested_spans = nested_spans.push(child_span)
+  }
+  
+  // 验证最深层span仍然有效
+  let deepest_span = nested_spans.last()
+  assert_true(Span::is_valid(deepest_span))
+  
+  // 从最深层开始结束span
+  for i in (0..nested_spans.length()).reverse() {
+    Span::end(nested_spans.get(i))
+  }
+  
+  // 测试极大量度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "boundary.metrics.test")
+  
+  // 创建大量度量
+  let metrics_count = 10000
+  let metrics = []
+  
+  for i in 0..metrics_count {
+    let counter = Meter::create_counter(
+      meter,
+      "metric." + i.to_string(),
+      Some("Metric " + i.to_string()),
+      Some("count")
+    )
+    metrics = metrics.push(counter)
+    
+    // 立即更新
+    Counter::add(counter, i.to_float())
+  }
+  
+  // 验证所有度量都有效
+  for metric in metrics {
+    let value = Counter::get_value(metric)
+    assert_true(value >= 0.0)
+  }
+  
+  // 测试极值度量
+  let extreme_counter = Meter::create_counter(meter, "extreme.values", Some("Extreme values"), Some("count"))
+  
+  // 测试极大值
+  Counter::add(extreme_counter, Float::MAX / 2.0)
+  Counter::add(extreme_counter, Float::MIN / 2.0)
+  
+  let extreme_value = Counter::get_value(extreme_counter)
+  assert_true(extreme_value.is_finite())
+  
+  // 测试极小值
+  let tiny_counter = Meter::create_counter(meter, "tiny.values", Some("Tiny values"), Some("count"))
+  
+  Counter::add(tiny_counter, Float::MIN_POSITIVE)
+  Counter::add(tiny_counter, Float::EPSILON)
+  
+  let tiny_value = Counter::get_value(tiny_counter)
+  assert_true(tiny_value > 0.0)
+  
+  // 测试直方图极值
+  let extreme_histogram = Meter::create_histogram(meter, "extreme.histogram", Some("Extreme histogram"), Some("units"))
+  
+  Histogram::record(extreme_histogram, Float::MAX / 1000.0)
+  Histogram::record(extreme_histogram, Float::MIN_POSITIVE * 1000.0)
+  Histogram::record(extreme_histogram, Float::INFINITY)
+  Histogram::record(extreme_histogram, Float::NEG_INFINITY)
+  Histogram::record(extreme_histogram, Float::NAN)
+  
+  let extreme_histogram_data = Histogram::get_data(extreme_histogram)
+  assert_true(extreme_histogram_data.get_count() >= 5)
+  
+  // 验证系统能够处理极端情况而不崩溃
+  assert true  // 如果能执行到这里说明系统没有崩溃
 }
 
-test "deep context chain performance" {
-  // 创建深度上下文链的性能测试
-  let mut context_chain = []
+test "资源耗尽恢复测试" {
+  // 测试在资源耗尽情况下的恢复能力
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.exhaustion.test")
   
-  // 创建50个上下文的链
-  for i = 0; i < 50; i = i + 1 {
-    let context = @azimuth.Context { 
-      data : Some(("context.key." + i.to_string(), "context.value." + i.to_string())) 
+  let resource_monitor = ResourceMonitor::new()
+  resource_monitor.start_monitoring()
+  
+  // 模拟内存耗尽
+  let memory_exhaustion_detected = AtomicBool::new(false)
+  let recovery_triggered = AtomicBool::new(false)
+  
+  let memory_stress_thread = Thread::spawn(fn() {
+    let large_objects = []
+    
+    // 分配大量内存直到接近限制
+    while !memory_exhaustion_detected.get() {
+      let large_object = String::repeat("x", 1024 * 1024)  // 1MB对象
+      large_objects = large_objects.push(large_object)
+      
+      let current_memory = Process::get_memory_usage_mb()
+      if current_memory > Process::get_available_memory_mb() * 0.9 {
+        memory_exhaustion_detected.set(true)
+      }
     }
-    context_chain = context_chain + [context]
-  }
-  
-  // 验证所有上下文都被正确创建
-  assert_eq(context_chain.length(), 50)
-  
-  // 验证第一个和最后一个上下文
-  match context_chain[0].data {
-    Some((key, value)) => {
-      assert_eq(key, "context.key.0")
-      assert_eq(value, "context.value.0")
+    
+    // 释放部分内存
+    for i in 0..large_objects.length() / 2 {
+      // 让对象超出作用域
     }
-    None => assert_true(false)
-  }
+    
+    recovery_triggered.set(true)
+  })
   
-  match context_chain[49].data {
-    Some((key, value)) => {
-      assert_eq(key, "context.key.49")
-      assert_eq(value, "context.value.49")
+  // 在内存压力下继续使用遥测系统
+  let telemetry_thread = Thread::spawn(fn() {
+    let operations_completed = 0
+    
+    while !recovery_triggered.get() {
+      let span = Tracer::start_span(tracer, "resource.stress.operation")
+      
+      Span::set_attribute(span, "operation.index", operations_completed.to_string())
+      Span::set_attribute(span, "memory.pressure", "true")
+      
+      // 尝试正常操作
+      try {
+        Span::add_event(span, "operation.started", [])
+        Thread::sleep(Duration::milliseconds(1))
+        Span::add_event(span, "operation.completed", [])
+      } catch {
+        // 在资源压力下可能会失败，这是可以接受的
+      }
+      
+      Span::end(span)
+      operations_completed = operations_completed + 1
+      
+      Thread::sleep(Duration::milliseconds(10))
     }
-    None => assert_true(false)
-  }
-}
-
-test "span context trace state performance" {
-  // 创建大量trace state条目的性能测试
-  let mut large_trace_state = ""
+    
+    return operations_completed
+  })
   
-  // 添加50个trace state条目
-  for i = 0; i < 50; i = i + 1 {
-    if i == 0 {
-      large_trace_state = "key" + i.to_string() + "=value" + i.to_string()
-    } else {
-      large_trace_state = large_trace_state + ",key" + i.to_string() + "=value" + i.to_string()
-    }
-  }
+  // 等待内存压力测试完成
+  memory_stress_thread.join()
+  let operations_under_stress = telemetry_thread.join()
   
-  let span_context = @azimuth.SpanContext {
-    trace_id : "1234567890abcdef1234567890abcdef",
-    span_id : "1234567890abcdef",
-    sampled : true,
-    trace_state : large_trace_state
-  }
+  // 验证系统恢复能力
+  assert_true(recovery_triggered.get())
+  assert_true(operations_under_stress > 0)  // 即使在压力下也应该完成一些操作
   
-  // 验证trace state包含所有条目
-  assert_true(span_context.trace_state.contains("key0=value0"))
-  assert_true(span_context.trace_state.contains("key49=value49"))
+  // 等待系统稳定
+  Thread::sleep(Duration::seconds(5))
   
-  // 验证trace state长度合理
-  assert_true(span_context.trace_state.length() > 500)
-}
-
-test "memory efficiency with repeated values" {
-  // 测试重复值的内存效率
-  let repeated_string = "repeated.value.that.should.be.interned"
-  let mut repeated_attrs = []
+  // 测试恢复后的正常操作
+  let recovery_test_start = Time::now()
+  let recovery_operations = 1000
   
-  // 添加100个相同字符串值的属性
-  for i = 0; i < 100; i = i + 1 {
-    let attr = ("repeated.attr." + i.to_string(), @azimuth.StringValue(repeated_string))
-    repeated_attrs = repeated_attrs + [attr]
+  for i in 0..recovery_operations {
+    let span = Tracer::start_span(tracer, "recovery.test.operation")
+    Span::set_attribute(span, "operation.index", i.to_string())
+    Span::end(span)
   }
   
-  let repeated_resource = @azimuth.Resource { attributes : repeated_attrs }
+  let recovery_test_time = Time::since(recovery_test_start).as_millis()
   
-  // 验证所有属性都被正确存储
-  assert_eq(repeated_resource.attributes.length(), 100)
+  // 验证恢复后性能
+  assert_true(recovery_test_time < 10000)  // 1000个操作应该在10秒内完成
+  assert_true(recovery_test_time / recovery_operations < 10)  // 平均每个操作少于10ms
   
-  // 验证所有属性的值都是相同的
-  for i = 0; i < 100; i = i + 1 {
-    match repeated_resource.attributes[i].1 {
-      @azimuth.StringValue(v) => assert_eq(v, repeated_string)
-      _ => assert_true(false)
-    }
-  }
-}
-
-test "boundary condition performance" {
-  // 测试边界条件的性能
-  let boundary_attrs = [
-    ("empty.string", @azimuth.StringValue("")),
-    ("max.int", @azimuth.IntValue(2147483647)),
-    ("min.int", @azimuth.IntValue(-2147483648)),
-    ("max.float", @azimuth.FloatValue(1.7976931348623157e+308)),
-    ("min.float", @azimuth.FloatValue(2.2250738585072014e-308)),
-    ("zero.float", @azimuth.FloatValue(0.0)),
-    ("true.value", @azimuth.BoolValue(true)),
-    ("false.value", @azimuth.BoolValue(false)),
-    ("empty.array", @azimuth.ArrayStringValue([])),
-    ("single.item.array", @azimuth.ArrayStringValue(["single"]))
-  ]
+  resource_monitor.stop_monitoring()
   
-  let boundary_resource = @azimuth.Resource { attributes : boundary_attrs }
+  // 分析资源使用情况
+  let resource_report = resource_monitor.generate_report()
   
-  // 验证所有边界条件属性都被正确存储
-  assert_eq(boundary_resource.attributes.length(), 10)
-  
-  // 验证每个边界条件
-  match boundary_resource.attributes[0].1 {
-    @azimuth.StringValue(v) => assert_eq(v, "")
-    _ => assert_true(false)
-  }
-  
-  match boundary_resource.attributes[1].1 {
-    @azimuth.IntValue(v) => assert_eq(v, 2147483647)
-    _ => assert_true(false)
-  }
-  
-  match boundary_resource.attributes[2].1 {
-    @azimuth.IntValue(v) => assert_eq(v, -2147483648)
-    _ => assert_true(false)
-  }
-  
-  match boundary_resource.attributes[8].1 {
-    @azimuth.ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => assert_true(false)
-  }
-  
-  match boundary_resource.attributes[9].1 {
-    @azimuth.ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 1)
-      assert_eq(arr[0], "single")
-    }
-    _ => assert_true(false)
-  }
+  assert_true(resource_report.get_peak_memory_usage() > 0)
+  assert_true(resource_report.get_memory_recovery_time_ms() > 0)
+  assert_true(resource_report.get_operations_under_pressure() > 0)
+  assert_true(resource_report.get_recovery_success_rate() > 0.8)  // 恢复成功率应该高于80%
 }

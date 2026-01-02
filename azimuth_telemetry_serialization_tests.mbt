@@ -1,276 +1,275 @@
-// 遥测数据序列化和反序列化测试用例
-// 测试Azimuth遥测系统的数据序列化和反序列化功能
+// 遥测数据序列化测试
+// 测试Azimuth遥测数据的序列化和反序列化功能
 
-test "span序列化和反序列化" {
-  // 测试span的序列化和反序列化
+test "span序列化到JSON格式" {
+  // 创建测试span
   let tracer_provider = TracerProvider::default()
   let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.test")
   
-  // 创建带有完整属性的span
-  let span = Tracer::start_span(tracer, "serializable.operation")
-  Span::set_attribute(span, "service.name", "auth-service")
-  Span::set_attribute(span, "operation.type", "authentication")
+  let span = Tracer::start_span(tracer, "serialization.test.operation")
+  
+  // 设置span属性
+  Span::set_attribute(span, "http.method", "GET")
+  Span::set_attribute(span, "http.url", "https://api.example.com/users")
+  Span::set_attribute(span, "http.status_code", 200)
   Span::set_attribute(span, "user.id", "user-12345")
-  Span::set_attribute(span, "request.id", "req-67890")
-  Span::set_attribute(span, "duration.ms", 250)
   
   // 添加事件
-  Span::add_event(span, "authentication.started", [
+  Span::add_event(span, "http.request.started", [
     ("timestamp", "2025-01-02T10:00:00Z"),
-    ("method", "OAuth2")
-  ])
-  Span::add_event(span, "authentication.completed", [
-    ("timestamp", "2025-01-02T10:00:00.250Z"),
-    ("result", "success")
+    ("request.size", "1024")
   ])
   
-  // 设置状态
-  Span::set_status(span, Ok, Some("Authentication successful"))
+  Span::add_event(span, "http.response.completed", [
+    ("timestamp", "2025-01-02T10:00:05Z"),
+    ("response.size", "2048"),
+    ("duration", "5000")
+  ])
   
-  // 序列化span
-  let serialized_span = SpanSerializer::serialize(span)
-  assert_true(String::length(serialized_span) > 0)
+  // 序列化span到JSON
+  let serialized = SpanSerializer::to_json(span)
   
-  // 反序列化span
-  let deserialized_span = SpanDeserializer::deserialize(serialized_span)
-  
-  // 验证反序列化的span属性
-  assert_eq(Span::name(deserialized_span), "serializable.operation")
-  
-  let span_ctx = Span::span_context(deserialized_span)
-  assert_true(SpanContext::is_valid(span_ctx))
+  // 验证JSON包含必要字段
+  assert_true(serialized.contains("\"name\":\"serialization.test.operation\""))
+  assert_true(serialized.contains("\"http.method\":\"GET\""))
+  assert_true(serialized.contains("\"http.url\":\"https://api.example.com/users\""))
+  assert_true(serialized.contains("\"http.status_code\":200"))
+  assert_true(serialized.contains("\"user.id\":\"user-12345\""))
+  assert_true(serialized.contains("\"http.request.started\""))
+  assert_true(serialized.contains("\"http.response.completed\""))
   
   Span::end(span)
-  assert_true(true)
 }
 
-test "度量数据序列化" {
-  // 测试度量数据的序列化
+test "度量数据序列化到二进制格式" {
+  // 创建测试度量
   let meter_provider = MeterProvider::default()
   let meter = MeterProvider::get_meter(meter_provider, "metrics.serialization.test")
   
-  // 创建并配置计数器
-  let counter = Meter::create_counter(meter, "api.requests.total", Some("Total API requests"), Some("count"))
-  Counter::add_with_attributes(counter, 15.0, [
-    ("endpoint", "/api/users"),
+  // 创建计数器
+  let counter = Meter::create_counter(meter, "requests.total", Some("Total requests"), Some("count"))
+  
+  // 添加度量数据
+  Counter::add_with_attributes(counter, 1.0, [
     ("method", "GET"),
-    ("status.code", "200")
+    ("endpoint", "/api/users"),
+    ("status", "200")
   ])
-  Counter::add_with_attributes(counter, 3.0, [
-    ("endpoint", "/api/orders"),
+  
+  Counter::add_with_attributes(counter, 1.0, [
     ("method", "POST"),
-    ("status.code", "201")
+    ("endpoint", "/api/orders"),
+    ("status", "201")
   ])
   
-  // 序列化计数器
-  let serialized_counter = MetricSerializer::serialize_counter(counter)
-  assert_true(String::length(serialized_counter) > 0)
-  
-  // 反序列化计数器
-  let deserialized_counter = MetricDeserializer::deserialize_counter(serialized_counter)
-  assert_eq(deserialized_counter.name, "api.requests.total")
-  assert_eq(deserialized_counter.description, Some("Total API requests"))
-  assert_eq(deserialized_counter.unit, Some("count"))
-  
-  // 创建并配置直方图
+  // 创建直方图
   let histogram = Meter::create_histogram(meter, "response.time", Some("Response time"), Some("ms"))
-  Histogram::record_with_attributes(histogram, 120.5, [("endpoint", "/api/users")])
-  Histogram::record_with_attributes(histogram, 250.7, [("endpoint", "/api/orders")])
-  Histogram::record_with_attributes(histogram, 85.3, [("endpoint", "/api/products")])
   
-  // 序列化直方图
-  let serialized_histogram = MetricSerializer::serialize_histogram(histogram)
-  assert_true(String::length(serialized_histogram) > 0)
+  Histogram::record_with_attributes(histogram, 123.5, [
+    ("endpoint", "/api/users"),
+    ("method", "GET")
+  ])
   
-  // 反序列化直方图
-  let deserialized_histogram = MetricDeserializer::deserialize_histogram(serialized_histogram)
-  assert_eq(deserialized_histogram.name, "response.time")
-  assert_eq(deserialized_histogram.unit, Some("ms"))
+  Histogram::record_with_attributes(histogram, 456.7, [
+    ("endpoint", "/api/orders"),
+    ("method", "POST")
+  ])
   
-  assert_true(true)
+  // 序列化到二进制格式
+  let binary_data = MetricsSerializer::to_binary(counter, histogram)
+  
+  // 验证二进制数据不为空
+  assert_true(binary_data.length() > 0)
+  
+  // 反序列化并验证
+  let deserialized_metrics = MetricsSerializer::from_binary(binary_data)
+  assert_true(deserialized_metrics.is_valid())
+  
+  // 验证反序列化的数据
+  let counter_data = deserialized_metrics.get_counter("requests.total")
+  assert_true(counter_data.is_some())
+  
+  let histogram_data = deserialized_metrics.get_histogram("response.time")
+  assert_true(histogram_data.is_some())
 }
 
-test "日志记录序列化" {
-  // 测试日志记录的序列化
+test "日志记录序列化到结构化格式" {
+  // 创建测试日志
   let logger_provider = LoggerProvider::default()
   let logger = LoggerProvider::get_logger(logger_provider, "log.serialization.test")
   
-  // 创建不同严重性级别的日志记录
+  // 创建不同级别的日志记录
   let info_log = LogRecord::new(Info, "User login successful")
   LogRecord::add_attribute(info_log, "user.id", "user-12345")
-  LogRecord::add_attribute(info_log, "session.id", "session-abcde")
   LogRecord::add_attribute(info_log, "ip.address", "192.168.1.100")
   LogRecord::add_attribute(info_log, "user.agent", "Mozilla/5.0")
+  LogRecord::add_attribute(info_log, "session.id", "sess-abcdef")
   
   let warn_log = LogRecord::new(Warn, "Rate limit approaching")
-  LogRecord::add_attribute(warn_log, "current.rate", "950")
-  LogRecord::add_attribute(warn_log, "limit", "1000")
-  LogRecord::add_attribute(warn_log, "window", "1min")
+  LogRecord::add_attribute(warn_log, "current.rate", "95")
+  LogRecord::add_attribute(warn_log, "limit", "100")
+  LogRecord::add_attribute(warn_log, "window", "1m")
+  LogRecord::add_attribute(warn_log, "client.id", "client-67890")
   
   let error_log = LogRecord::new(Error, "Database connection failed")
-  LogRecord::add_attribute(error_log, "error.type", "ConnectionError")
+  LogRecord::add_attribute(error_log, "error.code", "DB_CONN_ERROR")
   LogRecord::add_attribute(error_log, "retry.attempt", "3")
   LogRecord::add_attribute(error_log, "max.retries", "5")
   LogRecord::add_attribute(error_log, "connection.pool", "primary")
   
-  // 序列化日志记录
-  let serialized_info = LogSerializer::serialize(info_log)
-  let serialized_warn = LogSerializer::serialize(warn_log)
-  let serialized_error = LogSerializer::serialize(error_log)
+  // 序列化日志到结构化格式
+  let structured_logs = LogSerializer::to_structured([info_log, warn_log, error_log])
   
-  assert_true(String::length(serialized_info) > 0)
-  assert_true(String::length(serialized_warn) > 0)
-  assert_true(String::length(serialized_error) > 0)
+  // 验证结构化日志
+  assert_eq(structured_logs.length(), 3)
   
-  // 反序列化日志记录
-  let deserialized_info = LogDeserializer::deserialize(serialized_info)
-  let deserialized_warn = LogDeserializer::deserialize(serialized_warn)
-  let deserialized_error = LogDeserializer::deserialize(serialized_error)
+  let info_serialized = structured_logs.get(0)
+  assert_true(info_serialized.contains("\"severity\":\"INFO\""))
+  assert_true(info_serialized.contains("\"message\":\"User login successful\""))
+  assert_true(info_serialized.contains("\"user.id\":\"user-12345\""))
   
-  // 验证反序列化的日志记录
-  assert_eq(LogRecord::severity_number(deserialized_info), Info)
-  assert_eq(LogRecord::severity_number(deserialized_warn), Warn)
-  assert_eq(LogRecord::severity_number(deserialized_error), Error)
+  let warn_serialized = structured_logs.get(1)
+  assert_true(warn_serialized.contains("\"severity\":\"WARN\""))
+  assert_true(warn_serialized.contains("\"message\":\"Rate limit approaching\""))
+  assert_true(warn_serialized.contains("\"current.rate\":\"95\""))
   
-  assert_eq(LogRecord::body(deserialized_info), Some("User login successful"))
-  assert_eq(LogRecord::body(deserialized_warn), Some("Rate limit approaching"))
-  assert_eq(LogRecord::body(deserialized_error), Some("Database connection failed"))
-  
-  assert_true(true)
+  let error_serialized = structured_logs.get(2)
+  assert_true(error_serialized.contains("\"severity\":\"ERROR\""))
+  assert_true(error_serialized.contains("\"message\":\"Database connection failed\""))
+  assert_true(error_serialized.contains("\"error.code\":\"DB_CONN_ERROR\""))
 }
 
-test "资源序列化" {
-  // 测试资源的序列化
-  let resource = Resource::new()
-  let attributes = [
-    ("service.name", StringValue("payment-service")),
-    ("service.version", StringValue("2.1.0")),
-    ("service.instance.id", StringValue("instance-987")),
-    ("deployment.environment", StringValue("production")),
-    ("host.name", StringValue("prod-server-01")),
-    ("host.ip", StringValue("10.0.1.100")),
-    ("region", StringValue("us-west-2")),
-    ("availability.zone", StringValue("us-west-2a")),
-    ("cloud.provider", StringValue("aws")),
-    ("cloud.region", StringValue("us-west-2"))
-  ]
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
-  
-  // 序列化资源
-  let serialized_resource = ResourceSerializer::serialize(resource_with_attrs)
-  assert_true(String::length(serialized_resource) > 0)
-  
-  // 反序列化资源
-  let deserialized_resource = ResourceDeserializer::deserialize(serialized_resource)
-  
-  // 验证反序列化的资源属性
-  let service_name = Resource::get_attribute(deserialized_resource, "service.name")
-  let service_version = Resource::get_attribute(deserialized_resource, "service.version")
-  let environment = Resource::get_attribute(deserialized_resource, "deployment.environment")
-  
-  match service_name {
-    None => assert_true(true)  // 简化实现
-    Some(_) => assert_true(false)
-  }
-  
-  assert_true(true)
-}
-
-test "上下文序列化" {
-  // 测试上下文的序列化
-  let ctx = Context::root()
-  
-  // 添加多个上下文值
-  let correlation_key = ContextKey::new("correlation.id")
-  let user_key = ContextKey::new("user.id")
-  let session_key = ContextKey::new("session.id")
-  let request_key = ContextKey::new("request.id")
-  let trace_key = ContextKey::new("trace.id")
-  
-  let ctx_with_values = Context::with_value(
-    Context::with_value(
-      Context::with_value(
-        Context::with_value(
-          Context::with_value(ctx, correlation_key, "corr-abc123"),
-          user_key, "user-456"
-        ),
-        session_key, "session-789"
-      ),
-      request_key, "req-12345"
-    ),
-    trace_key, "trace-defgh"
-  )
-  
-  // 序列化上下文
-  let serialized_context = ContextSerializer::serialize(ctx_with_values)
-  assert_true(String::length(serialized_context) > 0)
-  
-  // 反序列化上下文
-  let deserialized_context = ContextDeserializer::deserialize(serialized_context)
-  
-  // 验证反序列化的上下文值
-  let retrieved_correlation = Context::get(deserialized_context, correlation_key)
-  let retrieved_user = Context::get(deserialized_context, user_key)
-  let retrieved_session = Context::get(deserialized_context, session_key)
-  let retrieved_request = Context::get(deserialized_context, request_key)
-  let retrieved_trace = Context::get(deserialized_context, trace_key)
-  
-  assert_eq(retrieved_correlation, Some("corr-abc123"))
-  assert_eq(retrieved_user, Some("user-456"))
-  assert_eq(retrieved_session, Some("session-789"))
-  assert_eq(retrieved_request, Some("req-12345"))
-  assert_eq(retrieved_trace, Some("trace-defgh"))
-  
-  assert_true(true)
-}
-
-test "批量序列化" {
-  // 测试批量序列化多个遥测数据项
+test "批量遥测数据序列化" {
+  // 创建多个span用于批量测试
   let tracer_provider = TracerProvider::default()
   let tracer = TracerProvider::get_tracer(tracer_provider, "batch.serialization.test")
   
-  // 创建多个span
-  let span1 = Tracer::start_span(tracer, "operation.1")
-  let span2 = Tracer::start_span(tracer, "operation.2")
-  let span3 = Tracer::start_span(tracer, "operation.3")
+  let spans = []
+  for i in 1..=5 {
+    let span = Tracer::start_span(tracer, "batch.operation." + i.to_string())
+    Span::set_attribute(span, "batch.id", "batch-123")
+    Span::set_attribute(span, "operation.index", i)
+    Span::set_attribute(span, "operation.type", "batch.process")
+    
+    spans = spans.push(span)
+  }
   
-  Span::set_attribute(span1, "operation.type", "query")
-  Span::set_attribute(span2, "operation.type", "update")
-  Span::set_attribute(span3, "operation.type", "delete")
+  // 创建多个度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "batch.metrics.test")
   
-  // 创建多个日志记录
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "batch.logger")
-  
-  let log1 = LogRecord::new(Info, "Operation 1 completed")
-  let log2 = LogRecord::new(Warn, "Operation 2 slow")
-  let log3 = LogRecord::new(Error, "Operation 3 failed")
+  let batch_counter = Meter::create_counter(meter, "batch.operations", Some("Batch operations"), Some("count"))
+  for i in 1..=5 {
+    Counter::add_with_attributes(batch_counter, 1.0, [
+      ("batch.id", "batch-123"),
+      "operation.index", i,
+      ("operation.status", "completed")
+    ])
+  }
   
   // 批量序列化
-  let telemetry_batch = TelemetryBatch::new()
-  TelemetryBatch::add_span(telemetry_batch, span1)
-  TelemetryBatch::add_span(telemetry_batch, span2)
-  TelemetryBatch::add_span(telemetry_batch, span3)
-  TelemetryBatch::add_log(telemetry_batch, log1)
-  TelemetryBatch::add_log(telemetry_batch, log2)
-  TelemetryBatch::add_log(telemetry_batch, log3)
+  let batch_serializer = BatchSerializer::new()
+  let serialized_data = batch_serializer.serialize_spans(spans)
+  let serialized_metrics = batch_serializer.serialize_metrics(batch_counter)
   
-  let serialized_batch = TelemetryBatchSerializer::serialize(telemetry_batch)
-  assert_true(String::length(serialized_batch) > 0)
+  // 验证批量序列化结果
+  assert_true(serialized_data.contains("\"batch.id\":\"batch-123\""))
+  assert_true(serialized_data.contains("\"operation.type\":\"batch.process\""))
   
-  // 批量反序列化
-  let deserialized_batch = TelemetryBatchDeserializer::deserialize(serialized_batch)
+  // 验证压缩功能
+  let compressed_data = batch_serializer.compress(serialized_data)
+  assert_true(compressed_data.length() < serialized_data.length())
   
-  // 验证反序列化的批次
-  let spans = TelemetryBatch::get_spans(deserialized_batch)
-  let logs = TelemetryBatch::get_logs(deserialized_batch)
+  // 验证解压缩功能
+  let decompressed_data = batch_serializer.decompress(compressed_data)
+  assert_eq(decompressed_data, serialized_data)
   
-  assert_eq(Array::length(spans), 3)
-  assert_eq(Array::length(logs), 3)
+  // 结束所有spans
+  for span in spans {
+    Span::end(span)
+  }
+}
+
+test "序列化错误处理和恢复" {
+  // 测试序列化过程中的错误处理
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "error.serialization.test")
   
-  Span::end(span1)
-  Span::end(span2)
-  Span::end(span3)
+  let span = Tracer::start_span(tracer, "error.test.operation")
   
-  assert_true(true)
+  // 添加可能导致序列化问题的特殊字符
+  Span::set_attribute(span, "special.chars", "特殊字符: \"quotes\", 'apostrophes', \n\t\r")
+  Span::set_attribute(span, "unicode.chars", "🚀 emoji and üñíçødé")
+  Span::set_attribute(span, "null.value", "")
+  Span::set_attribute(span, "large.data", "x" * 10000)  // 大数据
+  
+  // 测试序列化错误处理
+  match SpanSerializer::to_json_safe(span) {
+    Ok(serialized) => {
+      // 验证特殊字符被正确处理
+      assert_true(serialized.contains("特殊字符"))
+      assert_true(serialized.contains("🚀"))
+      assert_true(serialized.contains("üñíçødé"))
+    }
+    Err(error) => {
+      // 如果序列化失败，验证错误信息
+      assert_true(error.contains("serialization") || error.contains("encoding"))
+    }
+  }
+  
+  // 测试损坏数据的反序列化
+  let corrupted_data = "{\"invalid\": json data"
+  match SpanSerializer::from_json(corrupted_data) {
+    Ok(_) => assert_true(false)  // 不应该成功
+    Err(error) => assert_true(error.contains("parse") || error.contains("invalid"))
+  }
+  
+  // 测试空数据处理
+  let empty_data = ""
+  match SpanSerializer::from_json(empty_data) {
+    Ok(_) => assert_true(false)  // 不应该成功
+    Err(error) => assert_true(error.contains("empty") || error.contains("parse"))
+  }
+  
+  Span::end(span)
+}
+
+test "跨格式序列化兼容性" {
+  // 测试不同序列化格式之间的兼容性
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "compatibility.test")
+  
+  let span = Tracer::start_span(tracer, "compatibility.test.operation")
+  
+  // 设置测试属性
+  Span::set_attribute(span, "service.name", "test-service")
+  Span::set_attribute(span, "service.version", "1.0.0")
+  Span::set_attribute(span, "environment", "test")
+  Span::set_attribute(span, "trace.id", "trace-123456")
+  Span::set_attribute(span, "span.id", "span-789012")
+  
+  // 序列化到JSON
+  let json_data = SpanSerializer::to_json(span)
+  
+  // 从JSON转换为其他格式
+  let xml_data = FormatConverter::json_to_xml(json_data)
+  let yaml_data = FormatConverter::json_to_yaml(json_data)
+  let protobuf_data = FormatConverter::json_to_protobuf(json_data)
+  
+  // 验证格式转换
+  assert_true(xml_data.contains("<service.name>test-service</service.name>"))
+  assert_true(yaml_data.contains("service.name: test-service"))
+  assert_true(protobuf_data.length() > 0)
+  
+  // 验证往返转换的一致性
+  let json_from_xml = FormatConverter::xml_to_json(xml_data)
+  let json_from_yaml = FormatConverter::yaml_to_json(yaml_data)
+  let json_from_protobuf = FormatConverter::protobuf_to_json(protobuf_data)
+  
+  // 验证关键数据在所有格式中都保持一致
+  assert_true(json_from_xml.contains("test-service"))
+  assert_true(json_from_yaml.contains("test-service"))
+  assert_true(json_from_protobuf.contains("test-service"))
+  
+  Span::end(span)
 }
