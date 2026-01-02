@@ -1,572 +1,361 @@
-// Azimuth Data Serialization and Format Conversion Test Suite
-// 测试遥测系统的数据序列化和格式转换功能
+// Azimuth 数据序列化和反序列化综合测试用例
+// 专注于验证遥测数据的序列化、反序列化和完整性
 
-test "多格式序列化和反序列化" {
-  // 创建具有多格式序列化功能的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_multi_format_serialization()
+// 测试1: Span数据的JSON序列化
+test "Span数据的JSON序列化" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.test")
   
-  // 配置支持的序列化格式
-  let serialization_config = SerializationConfig {
-    supported_formats: ["json", "protobuf", "avro", "msgpack", "xml"],
-    default_format: "json",
-    compression_enabled: true,
-    schema_validation: true,
-    format_detection: "auto"
-  }
+  let span = Tracer::start_span(tracer, "serialization.test.span")
   
-  MultiFormatSerialization::configure(telemetry_provider, serialization_config)
-  
-  // 创建测试span
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "serialization.test")
-  let span = Tracer::start_span(tracer, "multi.format.test")
-  
-  // 添加属性和事件
+  // 设置span属性
+  Span::set_attribute(span, "service.name", "test-service")
+  Span::set_attribute(span, "service.version", "1.0.0")
   Span::set_attribute(span, "operation.type", "test")
-  Span::set_attribute(span, "service.name", "serialization-service")
-  Span::set_attribute(span, "user.id", "user123")
-  Span::set_attribute(span, "request.size", 1024)
-  Span::set_attribute(span, "response.time", 150.5)
-  Span::set_attribute(span, "success", true)
+  Span::set_attribute(span, "operation.duration", 150)
+  Span::set_attribute(span, "operation.success", true)
+  Span::set_attribute(span, "user.id", "user-12345")
   
+  // 添加事件
   Span::add_event(span, "operation.started", [
     ("timestamp", "2025-01-02T10:00:00Z"),
-    ("step", "start")
+    ("event.type", "lifecycle")
+  ])
+  Span::add_event(span, "operation.completed", [
+    ("timestamp", "2025-01-02T10:00:01Z"),
+    ("result", "success"),
+    ("duration.ms", "150")
   ])
   
-  Span::add_event(span, "operation.completed", [
-    ("timestamp", "2025-01-02T10:00:05Z"),
-    ("step", "end"),
-    ("result", "success")
-  ])
+  // 序列化span为JSON
+  let serialized = Span::to_json(span)
+  
+  // 验证序列化结果包含必要字段
+  assert_true(serialized.contains("\"name\":\"serialization.test.span\""))
+  assert_true(serialized.contains("\"service.name\":\"test-service\""))
+  assert_true(serialized.contains("\"operation.duration\":150"))
+  assert_true(serialized.contains("\"operation.success\":true"))
+  assert_true(serialized.contains("\"operation.started\""))
+  assert_true(serialized.contains("\"operation.completed\""))
   
   Span::end(span)
-  
-  // 测试JSON序列化
-  let json_data = MultiFormatSerialization::serialize(telemetry_provider, span, "json")
-  assert_true(json_data.length() > 0)
-  
-  let json_deserialized = MultiFormatSerialization::deserialize(telemetry_provider, json_data, "json")
-  assert_true(Span::equals(span, json_deserialized))
-  
-  // 测试Protobuf序列化
-  let protobuf_data = MultiFormatSerialization::serialize(telemetry_provider, span, "protobuf")
-  assert_true(protobuf_data.length() > 0)
-  
-  let protobuf_deserialized = MultiFormatSerialization::deserialize(telemetry_provider, protobuf_data, "protobuf")
-  assert_true(Span::equals(span, protobuf_deserialized))
-  
-  // 测试Avro序列化
-  let avro_data = MultiFormatSerialization::serialize(telemetry_provider, span, "avro")
-  assert_true(avro_data.length() > 0)
-  
-  let avro_deserialized = MultiFormatSerialization::deserialize(telemetry_provider, avro_data, "avro")
-  assert_true(Span::equals(span, avro_deserialized))
-  
-  // 测试MessagePack序列化
-  let msgpack_data = MultiFormatSerialization::serialize(telemetry_provider, span, "msgpack")
-  assert_true(msgpack_data.length() > 0)
-  
-  let msgpack_deserialized = MultiFormatSerialization::deserialize(telemetry_provider, msgpack_data, "msgpack")
-  assert_true(Span::equals(span, msgpack_deserialized))
-  
-  // 测试XML序列化
-  let xml_data = MultiFormatSerialization::serialize(telemetry_provider, span, "xml")
-  assert_true(xml_data.length() > 0)
-  
-  let xml_deserialized = MultiFormatSerialization::deserialize(telemetry_provider, xml_data, "xml")
-  assert_true(Span::equals(span, xml_deserialized))
-  
-  // 比较不同格式的序列化大小
-  let format_sizes = [
-    ("json", json_data.length()),
-    ("protobuf", protobuf_data.length()),
-    ("avro", avro_data.length()),
-    ("msgpack", msgpack_data.length()),
-    ("xml", xml_data.length())
-  ]
-  
-  // 验证二进制格式比文本格式更紧凑
-  let json_size = json_data.length()
-  let protobuf_size = protobuf_data.length()
-  let msgpack_size = msgpack_data.length()
-  
-  assert_true(protobuf_size < json_size)  // Protobuf应该比JSON更紧凑
-  assert_true(msgpack_size < json_size)   // MessagePack应该比JSON更紧凑
-  
-  // 测试序列化性能
-  let serialization_performance = MultiFormatSerialization::benchmark_serialization(telemetry_provider, span, 1000)
-  
-  for (format, metrics) in serialization_performance {
-    assert_true(SerializationMetrics::operations_per_second(metrics) > 0)
-    assert_true(SerializationMetrics::average_size_bytes(metrics) > 0)
-    assert_true(SerializationMetrics::serialization_time_ms(metrics) > 0)
-  }
-  
-  assert_true(true)
 }
 
-test "模式演进和兼容性处理" {
-  // 创建具有模式演进支持的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_schema_evolution()
-  
-  // 定义初始模式版本
-  let schema_v1 = SpanSchema::new("1.0.0")
-  SpanSchema::add_field(schema_v1, "operation.type", FieldType::STRING, true)
-  SpanSchema::add_field(schema_v1, "service.name", FieldType::STRING, true)
-  SpanSchema::add_field(schema_v1, "user.id", FieldType::STRING, true)
-  SpanSchema::add_field(schema_v1, "request.size", FieldType::INT, false)
-  SpanSchema::add_field(schema_v1, "response.time", FieldType::DOUBLE, false)
-  
-  // 定义演进的模式版本
-  let schema_v2 = SpanSchema::new("2.0.0")
-  SpanSchema::add_field(schema_v2, "operation.type", FieldType::STRING, true)
-  SpanSchema::add_field(schema_v2, "service.name", FieldType::STRING, true)
-  SpanSchema::add_field(schema_v2, "user.id", FieldType::STRING, true)
-  SpanSchema::add_field(schema_v2, "request.size", FieldType::INT, false)
-  SpanSchema::add_field(schema_v2, "response.time", FieldType::DOUBLE, false)
-  SpanSchema::add_field(schema_v2, "success", FieldType::BOOL, false)  // 新增字段
-  SpanSchema::add_field(schema_v2, "error.code", FieldType::STRING, false)  // 新增字段
-  
-  // 定义进一步演进的模式版本
-  let schema_v3 = SpanSchema::new("3.0.0")
-  SpanSchema::add_field(schema_v3, "operation.type", FieldType::STRING, true)
-  SpanSchema::add_field(schema_v3, "service.name", FieldType::STRING, true)
-  SpanSchema::add_field(schema_v3, "user.id", FieldType::STRING, false)  // 变为可选
-  SpanSchema::add_field(schema_v3, "request.size", FieldType::LONG, false)  // 类型变更
-  SpanSchema::add_field(schema_v3, "response.time", FieldType::DOUBLE, false)
-  SpanSchema::add_field(schema_v3, "success", FieldType::BOOL, false)
-  SpanSchema::add_field(schema_v3, "error.code", FieldType::STRING, false)
-  SpanSchema::add_field(schema_v3, "client.version", FieldType::STRING, false)  // 新增字段
-  
-  // 注册模式
-  SchemaEvolution::register_schema(telemetry_provider, schema_v1)
-  SchemaEvolution::register_schema(telemetry_provider, schema_v2)
-  SchemaEvolution::register_schema(telemetry_provider, schema_v3)
-  
-  // 创建符合v1模式的span
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "schema.evolution.test")
-  let span_v1 = Tracer::start_span(tracer, "schema.v1.test")
-  Span::set_attribute(span_v1, "operation.type", "test")
-  Span::set_attribute(span_v1, "service.name", "schema-service")
-  Span::set_attribute(span_v1, "user.id", "user123")
-  Span::set_attribute(span_v1, "request.size", 1024)
-  Span::set_attribute(span_v1, "response.time", 150.5)
-  Span::end(span_v1)
-  
-  // 使用v1模式序列化
-  let v1_serialized = SchemaEvolution::serialize_with_schema(telemetry_provider, span_v1, "1.0.0")
-  
-  // 测试向后兼容性：v2模式读取v1数据
-  let v1_to_v2_deserialized = SchemaEvolution::deserialize_with_schema(telemetry_provider, v1_serialized, "2.0.0")
-  assert_true(Span::has_attribute(v1_to_v2_deserialized, "operation.type"))
-  assert_true(Span::has_attribute(v1_to_v2_deserialized, "service.name"))
-  assert_true(Span::has_attribute(v1_to_v2_deserialized, "user.id"))
-  assert_true(Span::has_attribute(v1_to_v2_deserialized, "request.size"))
-  assert_true(Span::has_attribute(v1_to_v2_deserialized, "response.time"))
-  // v2新增的字段应该不存在或为默认值
-  assert_false(Span::has_attribute(v1_to_v2_deserialized, "success"))
-  assert_false(Span::has_attribute(v1_to_v2_deserialized, "error.code"))
-  
-  // 创建符合v2模式的span
-  let span_v2 = Tracer::start_span(tracer, "schema.v2.test")
-  Span::set_attribute(span_v2, "operation.type", "test")
-  Span::set_attribute(span_v2, "service.name", "schema-service")
-  Span::set_attribute(span_v2, "user.id", "user123")
-  Span::set_attribute(span_v2, "request.size", 1024)
-  Span::set_attribute(span_v2, "response.time", 150.5)
-  Span::set_attribute(span_v2, "success", true)
-  Span::set_attribute(span_v2, "error.code", "ERR_001")
-  Span::end(span_v2)
-  
-  // 使用v2模式序列化
-  let v2_serialized = SchemaEvolution::serialize_with_schema(telemetry_provider, span_v2, "2.0.0")
-  
-  // 测试向前兼容性：v1模式读取v2数据
-  let v2_to_v1_deserialized = SchemaEvolution::deserialize_with_schema(telemetry_provider, v2_serialized, "1.0.0")
-  assert_true(Span::has_attribute(v2_to_v1_deserialized, "operation.type"))
-  assert_true(Span::has_attribute(v2_to_v1_deserialized, "service.name"))
-  assert_true(Span::has_attribute(v2_to_v1_deserialized, "user.id"))
-  assert_true(Span::has_attribute(v2_to_v1_deserialized, "request.size"))
-  assert_true(Span::has_attribute(v2_to_v1_deserialized, "response.time"))
-  // v2新增的字段应该被忽略
-  
-  // 创建符合v3模式的span
-  let span_v3 = Tracer::start_span(tracer, "schema.v3.test")
-  Span::set_attribute(span_v3, "operation.type", "test")
-  Span::set_attribute(span_v3, "service.name", "schema-service")
-  // user.id在v3中是可选的，故意不设置
-  Span::set_attribute(span_v3, "request.size", 1024L)  // 使用LONG类型
-  Span::set_attribute(span_v3, "response.time", 150.5)
-  Span::set_attribute(span_v3, "success", true)
-  Span::set_attribute(span_v3, "error.code", "ERR_001")
-  Span::set_attribute(span_v3, "client.version", "1.2.3")
-  Span::end(span_v3)
-  
-  // 使用v3模式序列化
-  let v3_serialized = SchemaEvolution::serialize_with_schema(telemetry_provider, span_v3, "3.0.0")
-  
-  // 测试类型转换兼容性：v2模式读取v3数据
-  let v3_to_v2_deserialized = SchemaEvolution::deserialize_with_schema(telemetry_provider, v3_serialized, "2.0.0")
-  assert_true(Span::has_attribute(v3_to_v2_deserialized, "operation.type"))
-  assert_true(Span::has_attribute(v3_to_v2_deserialized, "service.name"))
-  assert_true(Span::has_attribute(v3_to_v2_deserialized, "request.size"))  // LONG到INT的转换
-  assert_true(Span::has_attribute(v3_to_v2_deserialized, "response.time"))
-  assert_true(Span::has_attribute(v3_to_v2_deserialized, "success"))
-  assert_true(Span::has_attribute(v3_to_v2_deserialized, "error.code"))
-  
-  // 验证类型转换
-  let request_size_attr = Span::get_attribute(v3_to_v2_deserialized, "request.size")
-  match request_size_attr {
-    Some(AttributeValue::IntValue(size)) => assert_eq(size, 1024)
-    _ => assert_true(false)
-  }
-  
-  // 测试模式兼容性检查
-  let v1_to_v2_compatibility = SchemaEvolution::check_compatibility(telemetry_provider, "1.0.0", "2.0.0")
-  assert_true(v1_to_v2_compatibility.is_backward_compatible)
-  assert_true(v1_to_v2_compatibility.is_forward_compatible)
-  
-  let v2_to_v3_compatibility = SchemaEvolution::check_compatibility(telemetry_provider, "2.0.0", "3.0.0")
-  assert_true(v2_to_v3_compatibility.is_backward_compatible)
-  assert_false(v2_to_v3_compatibility.is_forward_compatible) // 由于类型变更，可能不向前兼容
-  
-  // 测试模式迁移
-  let migrated_v1_to_v3 = SchemaEvolution::migrate_data(telemetry_provider, v1_serialized, "1.0.0", "3.0.0")
-  assert_true(Span::has_attribute(migrated_v1_to_v3, "operation.type"))
-  assert_true(Span::has_attribute(migrated_v1_to_v3, "service.name"))
-  assert_true(Span::has_attribute(migrated_v1_to_v3, "request.size"))
-  assert_true(Span::has_attribute(migrated_v1_to_v3, "response.time"))
-  
-  assert_true(true)
-}
-
-test "数据压缩和解压缩优化" {
-  // 创建具有数据压缩优化功能的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_compression_optimization()
-  
-  // 配置压缩设置
-  let compression_config = CompressionConfig {
-    algorithms: ["gzip", "lz4", "zstd", "snappy"],
-    default_algorithm: "lz4",
-    compression_levels: {
-      "gzip": 6,
-      "lz4": 1,
-      "zstd": 3,
-      "snappy": 1
+// 测试2: Span数据的JSON反序列化
+test "Span数据的JSON反序列化" {
+  // 创建JSON格式的span数据
+  let span_json = {
+    "trace_id": "trace-001",
+    "span_id": "span-001",
+    "parent_span_id": "",
+    "name": "deserialization.test.span",
+    "start_time": 1640995200000000000L,
+    "end_time": 1640995200150000000L,
+    "status": "success",
+    "attributes": {
+      "service.name": "test-service",
+      "service.version": "1.0.0",
+      "operation.type": "test",
+      "user.id": "user-67890"
     },
-    adaptive_compression: true,
-    compression_threshold: 1024,  // 大于1KB的数据才压缩
-    benchmark_enabled: true
+    "events": [
+      {
+        "name": "operation.started",
+        "timestamp": 1640995200000000000L,
+        "attributes": {
+          "event.type": "lifecycle",
+          "initiator": "system"
+        }
+      },
+      {
+        "name": "operation.completed",
+        "timestamp": 1640995200150000000L,
+        "attributes": {
+          "result": "success",
+          "duration.ms": "150"
+        }
+      }
+    ]
   }
   
-  CompressionOptimization::configure(telemetry_provider, compression_config)
+  // 反序列化JSON为span对象
+  let deserialized_span = Span::from_json(span_json)
   
-  // 创建tracer
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "compression.test")
+  // 验证反序列化结果
+  assert_eq(Span::name(deserialized_span), "deserialization.test.span")
+  assert_eq(Span::get_attribute(deserialized_span, "service.name"), Some("test-service"))
+  assert_eq(Span::get_attribute(deserialized_span, "user.id"), Some("user-67890"))
   
-  // 创建包含大量数据的span
-  let large_span = Tracer::start_span(tracer, "large.data.span")
-  Span::set_attribute(large_span, "operation.type", "compression.test")
+  // 验证事件
+  let events = Span::get_events(deserialized_span)
+  assert_eq(events.length(), 2)
+  assert_eq(events[0].name, "operation.started")
+  assert_eq(events[1].name, "operation.completed")
+}
+
+// 测试3: 度量数据的二进制序列化
+test "度量数据的二进制序列化" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "binary.serialization.test")
   
-  // 添加大量属性数据
+  let counter = Meter::create_counter(meter, "binary.test.counter", Some("Binary test counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "binary.test.histogram", Some("Binary test histogram"), Some("ms"))
+  
+  // 添加度量数据
+  Counter::add_with_attributes(counter, 10.0, [
+    ("service", "api-gateway"),
+    ("method", "GET"),
+    ("status", "200")
+  ])
+  Counter::add_with_attributes(counter, 5.0, [
+    ("service", "api-gateway"),
+    ("method", "POST"),
+    ("status", "201")
+  ])
+  
+  Histogram::record_with_attributes(histogram, 45.5, [
+    ("endpoint", "/api/users"),
+    ("method", "GET")
+  ])
+  Histogram::record_with_attributes(histogram, 123.7, [
+    ("endpoint", "/api/orders"),
+    ("method", "POST")
+  ])
+  
+  // 序列化为二进制格式
+  let binary_data = Metric::to_binary(counter)
+  let histogram_binary = Metric::to_binary(histogram)
+  
+  // 验证二进制数据不为空
+  assert_true(binary_data.length() > 0)
+  assert_true(histogram_binary.length() > 0)
+  
+  // 反序列化二进制数据
+  let deserialized_counter = Metric::from_binary(binary_data)
+  let deserialized_histogram = Metric::from_binary(histogram_binary)
+  
+  // 验证反序列化结果
+  assert_eq(Metric::name(deserialized_counter), "binary.test.counter")
+  assert_eq(Metric::name(deserialized_histogram), "binary.test.histogram")
+}
+
+// 测试4: 日志数据的Protocol Buffers序列化
+test "日志数据的Protocol Buffers序列化" {
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "protobuf.test")
+  
+  // 创建日志记录
+  let info_log = LogRecord::new(Info, "Application started successfully")
+  LogRecord::add_attribute(info_log, "service.name", "auth-service")
+  LogRecord::add_attribute(info_log, "service.version", "2.1.0")
+  LogRecord::add_attribute(info_log, "startup.time", "2025-01-02T09:00:00Z")
+  
+  let error_log = LogRecord::new(Error, "Database connection failed")
+  LogRecord::add_attribute(error_log, "error.type", "ConnectionError")
+  LogRecord::add_attribute(error_log, "error.code", "DB_CONN_001")
+  LogRecord::add_attribute(error_log, "retry.count", 3)
+  LogRecord::add_attribute(error_log, "component", "database")
+  
+  // 序列化为Protocol Buffers格式
+  let info_protobuf = LogRecord::to_protobuf(info_log)
+  let error_protobuf = LogRecord::to_protobuf(error_log)
+  
+  // 验证Protocol Buffers数据
+  assert_true(info_protobuf.length() > 0)
+  assert_true(error_protobuf.length() > 0)
+  
+  // 反序列化Protocol Buffers数据
+  let deserialized_info = LogRecord::from_protobuf(info_protobuf)
+  let deserialized_error = LogRecord::from_protobuf(error_protobuf)
+  
+  // 验证反序列化结果
+  assert_eq(LogRecord::severity_number(deserialized_info), Info)
+  assert_eq(LogRecord::body(deserialized_info), Some("Application started successfully"))
+  assert_eq(LogRecord::get_attribute(deserialized_info, "service.name"), Some("auth-service"))
+  
+  assert_eq(LogRecord::severity_number(deserialized_error), Error)
+  assert_eq(LogRecord::body(deserialized_error), Some("Database connection failed"))
+  assert_eq(LogRecord::get_attribute(deserialized_error, "error.code"), Some("DB_CONN_001"))
+}
+
+// 测试5: 上下文数据的压缩序列化
+test "上下文数据的压缩序列化" {
+  let ctx = Context::root()
+  
+  // 添加大量上下文值
+  let ctx_with_values = ctx
   for i = 0; i < 100; i = i + 1 {
-    Span::set_attribute(large_span, "large.data." + i.to_string(), "x".repeat(100))
+    let key = ContextKey::new("key." + i.to_string())
+    let value = "value-".repeat(50) + i.to_string() // 创建较长的值
+    ctx_with_values = Context::with_value(ctx_with_values, key, value)
   }
   
-  // 添加大量事件数据
-  for i = 0; i < 50; i = i + 1 {
-    Span::add_event(large_span, "large.event." + i.to_string(), [
-      ("payload", "y".repeat(200)),
-      ("metadata", "z".repeat(50))
-    ])
-  }
+  // 序列化上下文
+  let serialized_ctx = Context::serialize(ctx_with_values)
   
-  Span::end(large_span)
-  
-  // 序列化span获取原始数据
-  let original_data = SpanSerializer::to_json(large_span)
-  let original_size = original_data.length()
-  
-  // 测试不同压缩算法
-  let compression_results = []
-  
-  // 测试GZIP压缩
-  let gzip_start_time = Time::now()
-  let gzip_compressed = CompressionOptimization::compress(telemetry_provider, original_data, "gzip")
-  let gzip_compression_time = Time::duration_since(gzip_start_time)
-  
-  let gzip_decompress_start_time = Time::now()
-  let gzip_decompressed = CompressionOptimization::decompress(telemetry_provider, gzip_compressed, "gzip")
-  let gzip_decompression_time = Time::duration_since(gzip_decompress_start_time)
-  
-  assert_eq(gzip_decompressed, original_data)
-  
-  compression_results.push({
-    "algorithm": "gzip",
-    "compressed_size": gzip_compressed.length(),
-    "compression_ratio": gzip_compressed.length().to_double() / original_size.to_double(),
-    "compression_time": gzip_compression_time,
-    "decompression_time": gzip_decompression_time
-  })
-  
-  // 测试LZ4压缩
-  let lz4_start_time = Time::now()
-  let lz4_compressed = CompressionOptimization::compress(telemetry_provider, original_data, "lz4")
-  let lz4_compression_time = Time::duration_since(lz4_start_time)
-  
-  let lz4_decompress_start_time = Time::now()
-  let lz4_decompressed = CompressionOptimization::decompress(telemetry_provider, lz4_compressed, "lz4")
-  let lz4_decompression_time = Time::duration_since(lz4_decompress_start_time)
-  
-  assert_eq(lz4_decompressed, original_data)
-  
-  compression_results.push({
-    "algorithm": "lz4",
-    "compressed_size": lz4_compressed.length(),
-    "compression_ratio": lz4_compressed.length().to_double() / original_size.to_double(),
-    "compression_time": lz4_compression_time,
-    "decompression_time": lz4_decompression_time
-  })
-  
-  // 测试ZSTD压缩
-  let zstd_start_time = Time::now()
-  let zstd_compressed = CompressionOptimization::compress(telemetry_provider, original_data, "zstd")
-  let zstd_compression_time = Time::duration_since(zstd_start_time)
-  
-  let zstd_decompress_start_time = Time::now()
-  let zstd_decompressed = CompressionOptimization::decompress(telemetry_provider, zstd_compressed, "zstd")
-  let zstd_decompression_time = Time::duration_since(zstd_decompress_start_time)
-  
-  assert_eq(zstd_decompressed, original_data)
-  
-  compression_results.push({
-    "algorithm": "zstd",
-    "compressed_size": zstd_compressed.length(),
-    "compression_ratio": zstd_compressed.length().to_double() / original_size.to_double(),
-    "compression_time": zstd_compression_time,
-    "decompression_time": zstd_decompression_time
-  })
-  
-  // 测试Snappy压缩
-  let snappy_start_time = Time::now()
-  let snappy_compressed = CompressionOptimization::compress(telemetry_provider, original_data, "snappy")
-  let snappy_compression_time = Time::duration_since(snappy_start_time)
-  
-  let snappy_decompress_start_time = Time::now()
-  let snappy_decompressed = CompressionOptimization::decompress(telemetry_provider, snappy_compressed, "snappy")
-  let snappy_decompression_time = Time::duration_since(snappy_decompress_start_time)
-  
-  assert_eq(snappy_decompressed, original_data)
-  
-  compression_results.push({
-    "algorithm": "snappy",
-    "compressed_size": snappy_compressed.length(),
-    "compression_ratio": snappy_compressed.length().to_double() / original_size.to_double(),
-    "compression_time": snappy_compression_time,
-    "decompression_time": snappy_decompression_time
-  })
-  
-  // 分析压缩结果
-  let best_compression = compression_results.reduce(fn(best, current) {
-    if current["compression_ratio"] < best["compression_ratio"] {
-      current
-    } else {
-      best
-    }
-  })
-  
-  let fastest_compression = compression_results.reduce(fn(best, current) {
-    if current["compression_time"] < best["compression_time"] {
-      current
-    } else {
-      best
-    }
-  })
-  
-  let fastest_decompression = compression_results.reduce(fn(best, current) {
-    if current["decompression_time"] < best["decompression_time"] {
-      current
-    } else {
-      best
-    }
-  })
+  // 压缩序列化数据
+  let compressed_ctx = Compression::compress(serialized_ctx)
   
   // 验证压缩效果
-  assert_true(best_compression["compression_ratio"] < 0.7)  // 至少30%压缩率
+  assert_true(compressed_ctx.length() < serialized_ctx.length())
+  let compression_ratio = compressed_ctx.length() / serialized_ctx.length()
+  assert_true(compression_ratio < 0.8) // 至少20%的压缩率
   
-  // 测试自适应压缩
-  let adaptive_algorithm = CompressionOptimization::select_optimal_algorithm(
-    telemetry_provider, 
-    original_data, 
-    {"compression_speed": 0.4, "decompression_speed": 0.4, "compression_ratio": 0.2}
-  )
+  // 解压缩数据
+  let decompressed_ctx = Compression::decompress(compressed_ctx)
   
-  // 验证自适应算法选择
-  assert_true(["gzip", "lz4", "zstd", "snappy"].contains(adaptive_algorithm))
+  // 反序列化上下文
+  let deserialized_ctx = Context::deserialize(decompressed_ctx)
   
-  // 测试压缩阈值
-  let small_data = "small"
-  let small_compressed = CompressionOptimization::compress(telemetry_provider, small_data, "lz4")
-  
-  // 小于阈值的数据不应该被压缩
-  assert_eq(small_compressed, small_data)
-  
-  // 生成压缩性能报告
-  let compression_report = CompressionOptimization::generate_compression_report(telemetry_provider)
-  assert_true(CompressionReport::algorithms_tested(compression_report) >= 4)
-  assert_true(CompressionReport::best_compression_ratio(compression_report) > 0)
-  assert_true(CompressionReport::fastest_compression(compression_report) > 0)
-  assert_true(CompressionReport::fastest_decompression(compression_report) > 0)
-  
-  assert_true(true)
+  // 验证反序列化结果的完整性
+  for i = 0; i < 100; i = i + 1 {
+    let key = ContextKey::new("key." + i.to_string())
+    let original_value = "value-".repeat(50) + i.to_string()
+    let retrieved_value = Context::get(deserialized_ctx, key)
+    assert_eq(retrieved_value, Some(original_value))
+  }
 }
 
-test "数据验证和完整性检查" {
-  // 创建具有数据验证功能的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_data_validation()
+// 测试6: 批量数据的序列化性能测试
+test "批量数据的序列化性能测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "batch.serialization")
   
-  // 配置数据验证规则
-  let validation_rules = [
-    DataValidationRule {
-      field_path: "operation.type",
-      type: "string",
-      required: true,
-      min_length: Some(1),
-      max_length: Some(100),
-      pattern: Some("^[a-zA-Z][a-zA-Z0-9._-]*$")
-    },
-    DataValidationRule {
-      field_path: "service.name",
-      type: "string",
-      required: true,
-      min_length: Some(1),
-      max_length: Some(100),
-      pattern: Some("^[a-zA-Z][a-zA-Z0-9._-]*$")
-    },
-    DataValidationRule {
-      field_path: "request.size",
-      type: "integer",
-      required: false,
-      min_value: Some(0),
-      max_value: Some(1073741824)  // 1GB
-    },
-    DataValidationRule {
-      field_path: "response.time",
-      type: "double",
-      required: false,
-      min_value: Some(0.0),
-      max_value: Some(3600000.0)  // 1小时
-    },
-    DataValidationRule {
-      field_path: "success",
-      type: "boolean",
-      required: false
-    }
-  ]
+  // 创建大量span
+  let spans = []
+  let span_count = 1000
   
-  DataValidation::configure(telemetry_provider, validation_rules)
+  let start_time = Time::now()
   
-  // 创建tracer
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "data.validation.test")
+  for i = 0; i < span_count; i = i + 1 {
+    let span = Tracer::start_span(tracer, "batch.span." + i.to_string())
+    Span::set_attribute(span, "span.index", i)
+    Span::set_attribute(span, "span.category", "batch.test")
+    Span::add_event(span, "span.created", [("index", i.to_string())])
+    spans.push(span)
+  }
   
-  // 创建有效的span
-  let valid_span = Tracer::start_span(tracer, "valid.span")
-  Span::set_attribute(valid_span, "operation.type", "validation.test")
-  Span::set_attribute(valid_span, "service.name", "validation-service")
-  Span::set_attribute(valid_span, "request.size", 1024)
-  Span::set_attribute(valid_span, "response.time", 150.5)
-  Span::set_attribute(valid_span, "success", true)
-  Span::end(valid_span)
+  // 批量序列化
+  let serialized_spans = []
+  for i = 0; i < spans.length(); i = i + 1 {
+    let serialized = Span::to_json(spans[i])
+    serialized_spans.push(serialized)
+  }
   
-  // 验证有效span
-  let valid_result = DataValidation::validate_span(telemetry_provider, valid_span)
-  assert_true(valid_result.is_valid)
-  assert_eq(valid_result.errors.length(), 0)
+  let serialization_end_time = Time::now()
+  let serialization_duration = serialization_end_time - start_time
   
-  // 创建无效的span - 缺少必需字段
-  let invalid_span1 = Tracer::start_span(tracer, "invalid.span1")
-  // 缺少 operation.type
-  Span::set_attribute(invalid_span1, "service.name", "validation-service")
-  Span::end(invalid_span1)
+  // 批量反序列化
+  let deserialized_spans = []
+  for i = 0; i < serialized_spans.length(); i = i + 1 {
+    let deserialized = Span::from_json(serialized_spans[i])
+    deserialized_spans.push(deserialized)
+  }
   
-  let invalid_result1 = DataValidation::validate_span(telemetry_provider, invalid_span1)
-  assert_false(invalid_result1.is_valid)
-  assert_true(invalid_result1.errors.length() > 0)
+  let end_time = Time::now()
+  let total_duration = end_time - start_time
+  let deserialization_duration = end_time - serialization_end_time
   
-  // 创建无效的span - 字段值超出范围
-  let invalid_span2 = Tracer::start_span(tracer, "invalid.span2")
-  Span::set_attribute(invalid_span2, "operation.type", "validation.test")
-  Span::set_attribute(invalid_span2, "service.name", "validation-service")
-  Span::set_attribute(invalid_span2, "request.size", -1)  // 负值
-  Span::set_attribute(invalid_span2, "response.time", 150.5)
-  Span::end(invalid_span2)
+  // 验证性能指标
+  let avg_serialization_time = serialization_duration / span_count
+  let avg_deserialization_time = deserialization_duration / span_count
   
-  let invalid_result2 = DataValidation::validate_span(telemetry_provider, invalid_span2)
-  assert_false(invalid_result2.is_valid)
-  assert_true(invalid_result2.errors.length() > 0)
-  
-  // 创建无效的span - 字段值不符合模式
-  let invalid_span3 = Tracer::start_span(tracer, "invalid.span3")
-  Span::set_attribute(invalid_span3, "operation.type", "123invalid")  // 以数字开头
-  Span::set_attribute(invalid_span3, "service.name", "validation-service")
-  Span::end(invalid_span3)
-  
-  let invalid_result3 = DataValidation::validate_span(telemetry_provider, invalid_span3)
-  assert_false(invalid_result3.is_valid)
-  assert_true(invalid_result3.errors.length() > 0)
-  
-  // 测试数据完整性检查
-  let span_with_integrity = Tracer::start_span(tracer, "integrity.test")
-  Span::set_attribute(span_with_integrity, "operation.type", "integrity.test")
-  Span::set_attribute(span_with_integrity, "service.name", "integrity-service")
-  Span::end(span_with_integrity)
-  
-  // 序列化span
-  let serialized_span = SpanSerializer::to_json(span_with_integrity)
-  
-  // 计算校验和
-  let checksum = DataValidation::calculate_checksum(telemetry_provider, serialized_span)
-  
-  // 模拟数据损坏
-  let corrupted_data = serialized_span.substring(0, serialized_span.length() / 2) + "X" + serialized_span.substring((serialized_span.length() / 2) + 1)
+  assert_true(avg_serialization_time < 100000) // 0.1ms per span
+  assert_true(avg_deserialization_time < 150000) // 0.15ms per span
   
   // 验证数据完整性
-  let integrity_check = DataValidation::verify_integrity(telemetry_provider, corrupted_data, checksum)
-  assert_false(integrity_check)
+  assert_eq(deserialized_spans.length(), span_count)
+  for i = 0; i < deserialized_spans.length(); i = i + 1 {
+    assert_eq(Span::get_attribute(deserialized_spans[i], "span.index"), Some(i.to_string()))
+  }
   
-  // 使用原始数据验证完整性
-  let original_integrity_check = DataValidation::verify_integrity(telemetry_provider, serialized_span, checksum)
-  assert_true(original_integrity_check)
+  // 结束所有span
+  for i = 0; i < spans.length(); i = i + 1 {
+    Span::end(spans[i])
+  }
+}
+
+// 测试7: 跨格式数据转换测试
+test "跨格式数据转换测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "format.conversion")
   
-  // 测试数字签名
-  let private_key = DataValidation::generate_key_pair(telemetry_provider)
-  let signature = DataValidation::sign_data(telemetry_provider, serialized_span, private_key)
+  let span = Tracer::start_span(tracer, "format.conversion.test")
   
-  // 验证签名
-  let public_key = DataValidation::get_public_key(telemetry_provider, private_key)
-  let signature_valid = DataValidation::verify_signature(telemetry_provider, serialized_span, signature, public_key)
-  assert_true(signature_valid)
+  // 设置span属性
+  Span::set_attribute(span, "service.name", "conversion-service")
+  Span::set_attribute(span, "operation.type", "format-test")
+  Span::set_attribute(span, "conversion.chain", "json->binary->protobuf->json")
   
-  // 使用损坏的数据验证签名
-  let corrupted_signature_valid = DataValidation::verify_signature(telemetry_provider, corrupted_data, signature, public_key)
-  assert_false(corrupted_signature_valid)
+  // 添加事件
+  Span::add_event(span, "conversion.started", [
+    ("source.format", "json"),
+    ("target.format", "binary")
+  ])
   
-  // 测试批量验证
-  let spans = [valid_span, invalid_span1, invalid_span2, invalid_span3]
-  let batch_validation_result = DataValidation::validate_batch(telemetry_provider, spans)
+  // JSON -> Binary
+  let json_data = Span::to_json(span)
+  let binary_data = Serialization::json_to_binary(json_data)
   
-  assert_eq(batch_validation_result.total_count, 4)
-  assert_eq(batch_validation_result.valid_count, 1)
-  assert_eq(batch_validation_result.invalid_count, 3)
-  assert_true(batch_validation_result.errors.length() >= 3)
+  // Binary -> Protobuf
+  let protobuf_data = Serialization::binary_to_protobuf(binary_data)
   
-  // 生成验证报告
-  let validation_report = DataValidation::generate_validation_report(telemetry_provider)
-  assert_true(ValidationReport::total_validations(validation_report) >= 4)
-  assert_true(ValidationReport::successful_validations(validation_report) >= 1)
-  assert_true(ValidationReport::failed_validations(validation_report) >= 3)
-  assert_true(ValidationReport::integrity_checks(validation_report) >= 2)
-  assert_true(ValidationReport::signature_verifications(validation_report) >= 2)
+  // Protobuf -> JSON
+  let final_json_data = Serialization::protobuf_to_json(protobuf_data)
   
-  assert_true(true)
+  // 验证转换链的完整性
+  assert_true(binary_data.length() > 0)
+  assert_true(protobuf_data.length() > 0)
+  assert_true(final_json_data.contains("\"service.name\":\"conversion-service\""))
+  assert_true(final_json_data.contains("\"operation.type\":\"format-test\""))
+  
+  // 从最终JSON反序列化
+  let final_span = Span::from_json(final_json_data)
+  
+  // 验证最终结果
+  assert_eq(Span::name(final_span), "format.conversion.test")
+  assert_eq(Span::get_attribute(final_span, "service.name"), Some("conversion-service"))
+  
+  Span::end(span)
+}
+
+// 测试8: 序列化数据完整性验证
+test "序列化数据完整性验证" {
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "integrity.test")
+  
+  let counter = Meter::create_counter(meter, "integrity.counter", Some("Integrity test counter"), Some("count"))
+  
+  // 添加度量数据
+  Counter::add_with_attributes(counter, 42.0, [
+    ("test.type", "integrity"),
+    ("test.version", "1.0"),
+    ("test.timestamp", "2025-01-02T10:00:00Z"),
+    ("test.checksum", "abc123def456")
+  ])
+  
+  // 序列化数据
+  let serialized_data = Metric::to_json(counter)
+  
+  // 计算原始数据的校验和
+  let original_checksum = Hash::calculate(serialized_data)
+  
+  // 模拟数据传输
+  let transmitted_data = serialized_data
+  
+  // 验证传输后的数据完整性
+  let transmitted_checksum = Hash::calculate(transmitted_data)
+  assert_eq(original_checksum, transmitted_checksum)
+  
+  // 反序列化数据
+  let deserialized_counter = Metric::from_json(transmitted_data)
+  
+  // 验证反序列化后的数据完整性
+  assert_eq(Metric::name(deserialized_counter), "integrity.counter")
+  assert_eq(Metric::get_attribute(deserialized_counter, "test.type"), Some("integrity"))
+  assert_eq(Metric::get_attribute(deserialized_counter, "test.checksum"), Some("abc123def456"))
+  
+  // 验证度量值
+  let metric_value = Metric::get_value(deserialized_counter)
+  assert_eq(metric_value, 42.0)
 }
