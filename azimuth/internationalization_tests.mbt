@@ -1,267 +1,230 @@
-// Internationalization Tests
-// This file contains test cases for internationalization and localization support
+// Internationalization Support Tests
+// 验证遥测系统的国际化支持能力
 
-// Test 1: Unicode and multilingual attribute handling
-pub test "unicode_multilingual_attributes" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "i18n-test-service")
+test "unicode attribute handling" {
+  // 测试Unicode属性处理
+  let attributes = azimuth::Attributes::new()
   
-  let span = azimuth::Tracer::start_span(tracer, "多语言操作测试")
+  // 设置各种语言的Unicode属性
+  azimuth::Attributes::set(attributes, "chinese.name", azimuth::StringValue("张三"))
+  azimuth::Attributes::set(attributes, "japanese.name", azimuth::StringValue("田中太郎"))
+  azimuth::Attributes::set(attributes, "korean.name", azimuth::StringValue("김철수"))
+  azimuth::Attributes::set(attributes, "arabic.name", azimuth::StringValue("أحمد محمد"))
+  azimuth::Attributes::set(attributes, "russian.name", azimuth::StringValue("Иван Петров"))
+  azimuth::Attributes::set(attributes, "hebrew.name", azimuth::StringValue("דוד כהן"))
+  azimuth::Attributes::set(attributes, "thai.name", azimuth::StringValue("สมชาย ใจดี"))
   
-  // Test Unicode characters from different languages
-  azimuth::Span::set_attribute(span, "user.name.cn", azimuth::StringValue("张三"))
-  azimuth::Span::set_attribute(span, "user.name.jp", azimuth::StringValue("田中太郎"))
-  azimuth::Span::set_attribute(span, "user.name.kr", azimuth::StringValue("김철수"))
-  azimuth::Span::set_attribute(span, "user.name.ar", azimuth::StringValue("أحمد محمد"))
-  azimuth::Span::set_attribute(span, "user.name.ru", azimuth::StringValue("Иван Петров"))
-  azimuth::Span::set_attribute(span, "user.name.th", azimuth::StringValue("สมชาย ใจดี"))
-  azimuth::Span::set_attribute(span, "user.name.he", azimuth::StringValue("דוד כהן"))
-  azimuth::Span::set_attribute(span, "user.name.hi", azimuth::StringValue("राम कुमार"))
+  // 测试表情符号
+  azimuth::Attributes::set(attributes, "emoji.test", azimuth::StringValue("😀🎉🔥🚀💯"))
   
-  // Test emoji and special symbols
-  azimuth::Span::set_attribute(span, "message.emoji", azimuth::StringValue("🚀🌍💻📱"))
-  azimuth::Span::set_attribute(span, "currency.symbols", azimuth::StringValue("$€£¥₹₽₩"))
-  azimuth::Span::set_attribute(span, "math.symbols", azimuth::StringValue("∑∏∫∆∇∂"))
+  // 测试特殊Unicode字符
+  azimuth::Attributes::set(attributes, "special.chars", azimuth::StringValue("™®©€£¥§¶†‡•…‰‹›""''–—"))
   
-  // Test mixed language content
-  azimuth::Span::set_attribute(span, "mixed.content", azimuth::StringValue("Hello 世界 こんにちは 안녕하세요 مرحبا"))
+  // 验证属性正确存储和检索
+  let chinese_name = azimuth::Attributes::get(attributes, "chinese.name")
+  let japanese_name = azimuth::Attributes::get(attributes, "japanese.name")
+  let korean_name = azimuth::Attributes::get(attributes, "korean.name")
+  let arabic_name = azimuth::Attributes::get(attributes, "arabic.name")
+  let russian_name = azimuth::Attributes::get(attributes, "russian.name")
+  let hebrew_name = azimuth::Attributes::get(attributes, "hebrew.name")
+  let thai_name = azimuth::Attributes::get(attributes, "thai.name")
+  let emoji_test = azimuth::Attributes::get(attributes, "emoji.test")
+  let special_chars = azimuth::Attributes::get(attributes, "special.chars")
   
-  // Test right-to-left languages
-  azimuth::Span::set_attribute(span, "rtl.content", azimuth::StringValue("مرحبا بالعالم"))
-  azimuth::Span::set_attribute(span, "rtl.mixed", azimuth::StringValue("Hello مرحبا World"))
-  
-  // Verify Unicode attributes are correctly stored
-  assert_eq(azimuth::Span::get_attribute(span, "user.name.cn"), Some(azimuth::StringValue("张三")))
-  assert_eq(azimuth::Span::get_attribute(span, "user.name.jp"), Some(azimuth::StringValue("田中太郎")))
-  assert_eq(azimuth::Span::get_attribute(span, "message.emoji"), Some(azimuth::StringValue("🚀🌍💻📱")))
-  assert_eq(azimuth::Span::get_attribute(span, "mixed.content"), Some(azimuth::StringValue("Hello 世界 こんにちは 안녕하세요 مرحبا")))
-  
-  azimuth::Span::set_status_code(span, azimuth::Ok)
-  azimuth::Span::end(span)
+  assert_eq(chinese_name, Some(azimuth::StringValue("张三")))
+  assert_eq(japanese_name, Some(azimuth::StringValue("田中太郎")))
+  assert_eq(korean_name, Some(azimuth::StringValue("김철수")))
+  assert_eq(arabic_name, Some(azimuth::StringValue("أحمد محمد")))
+  assert_eq(russian_name, Some(azimuth::StringValue("Иван Петров")))
+  assert_eq(hebrew_name, Some(azimuth::StringValue("דוד כהן")))
+  assert_eq(thai_name, Some(azimuth::StringValue("สมชาย ใจดี")))
+  assert_eq(emoji_test, Some(azimuth::StringValue("😀🎉🔥🚀💯")))
+  assert_eq(special_chars, Some(azimuth::StringValue("™®©€£¥§¶†‡•…‰‹›""''–—")))
 }
 
-// Test 2: Multilingual logging and error messages
-pub test "multilingual_logging_error_messages" {
-  let logger_provider = azimuth::LoggerProvider::default()
-  let logger = azimuth::LoggerProvider::get_logger(logger_provider, "i18n-logger")
+test "localized log messages" {
+  // 测试本地化日志消息
+  let provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(provider, "internationalization-test-logger")
   
-  // Create log records in different languages
-  let chinese_log = azimuth::LogRecord::new(azimuth::Info, "用户登录成功")
-  let chinese_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(chinese_attrs, "用户名", azimuth::StringValue("张三"))
-  azimuth::Attributes::set(chinese_attrs, "登录时间", azimuth::StringValue("2023-01-01 10:30:00"))
-  let chinese_enriched = azimuth::LogRecord::with_attributes(chinese_log, chinese_attrs)
-  azimuth::Logger::emit(logger, chinese_enriched)
+  // 创建不同语言的日志记录
+  let chinese_log = azimuth::Logger::create_log_record(logger)
+  azimuth::LogRecord::set_body(chinese_log, "用户登录成功，用户ID: 12345")
+  azimuth::LogRecord::set_severity(chinese_log, azimuth::INFO)
+  azimuth::LogRecord::set_attribute(chinese_log, "locale", azimuth::StringValue("zh-CN"))
   
-  let japanese_log = azimuth::LogRecord::new(azimuth::Warn, "データベース接続がタイムアウトしました")
-  let japanese_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(japanese_attrs, "データベース", azimuth::StringValue("production_db"))
-  azimuth::Attributes::set(japanese_attrs, "タイムアウト時間", azimuth::IntValue(30))
-  let japanese_enriched = azimuth::LogRecord::with_attributes(japanese_log, japanese_attrs)
-  azimuth::Logger::emit(logger, japanese_enriched)
+  let japanese_log = azimuth::Logger::create_log_record(logger)
+  azimuth::LogRecord::set_body(japanese_log, "ユーザーログイン成功、ユーザーID: 12345")
+  azimuth::LogRecord::set_severity(japanese_log, azimuth::INFO)
+  azimuth::LogRecord::set_attribute(japanese_log, "locale", azimuth::StringValue("ja-JP"))
   
-  let korean_log = azimuth::LogRecord::new(azimuth::Error, "사용자 인증에 실패했습니다")
-  let korean_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(korean_attrs, "사용자 ID", azimuth::StringValue("user123"))
-  azimuth::Attributes::set(korean_attrs, "실패 사유", azimuth::StringValue("잘못된 비밀번호"))
-  let korean_enriched = azimuth::LogRecord::with_attributes(korean_log, korean_attrs)
-  azimuth::Logger::emit(logger, korean_enriched)
+  let korean_log = azimuth::Logger::create_log_record(logger)
+  azimuth::LogRecord::set_body(korean_log, "사용자 로그인 성공, 사용자 ID: 12345")
+  azimuth::LogRecord::set_severity(korean_log, azimuth::INFO)
+  azimuth::LogRecord::set_attribute(korean_log, "locale", azimuth::StringValue("ko-KR"))
   
-  let arabic_log = azimuth::LogRecord::new(azimuth::Fatal, "نفاد الذاكرة في النظام")
-  let arabic_attrs = azimuth::Attributes::new()
-  azimuth::Attributes::set(arabic_attrs, "الذاكرة المتاحة", azimuth::IntValue(128))
-  azimuth::Attributes::set(arabic_attrs, "الذاكرة المطلوبة", azimuth::IntValue(1024))
-  let arabic_enriched = azimuth::LogRecord::with_attributes(arabic_log, arabic_attrs)
-  azimuth::Logger::emit(logger, arabic_enriched)
+  let english_log = azimuth::Logger::create_log_record(logger)
+  azimuth::LogRecord::set_body(english_log, "User login successful, user ID: 12345")
+  azimuth::LogRecord::set_severity(english_log, azimuth::INFO)
+  azimuth::LogRecord::set_attribute(english_log, "locale", azimuth::StringValue("en-US"))
   
-  // Create error messages in different languages
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "i18n-error-service")
+  // 验证本地化消息正确存储
+  assert_eq(azimuth::LogRecord::body(chinese_log), "用户登录成功，用户ID: 12345")
+  assert_eq(azimuth::LogRecord::body(japanese_log), "ユーザーログイン成功、ユーザーID: 12345")
+  assert_eq(azimuth::LogRecord::body(korean_log), "사용자 로그인 성공, 사용자 ID: 12345")
+  assert_eq(azimuth::LogRecord::body(english_log), "User login successful, user ID: 12345")
   
-  let error_span = azimuth::Tracer::start_span(tracer, "多语言错误处理")
+  // 验证locale属性
+  let chinese_locale = azimuth::LogRecord::get_attribute(chinese_log, "locale")
+  let japanese_locale = azimuth::LogRecord::get_attribute(japanese_log, "locale")
+  let korean_locale = azimuth::LogRecord::get_attribute(korean_log, "locale")
+  let english_locale = azimuth::LogRecord::get_attribute(english_log, "locale")
   
-  // Chinese error
-  azimuth::Span::set_attribute(error_span, "错误.类型", azimuth::StringValue("验证错误"))
-  azimuth::Span::set_attribute(error_span, "错误.消息", azimuth::StringValue("输入的邮箱格式不正确"))
-  
-  // Japanese error
-  azimuth::Span::set_attribute(error_span, "エラー.タイプ", azimuth::StringValue("検証エラー"))
-  azimuth::Span::set_attribute(error_span, "エラー.メッセージ", azimuth::StringValue("入力されたメールアドレスの形式が正しくありません"))
-  
-  // Korean error
-  azimuth::Span::set_attribute(error_span, "오류.유형", azimuth::StringValue("검증 오류"))
-  azimuth::Span::set_attribute(error_span, "오류.메시지", azimuth::StringValue("입력된 이메일 형식이 올바르지 않습니다"))
-  
-  azimuth::Span::set_status_code(error_span, azimuth::Error)
-  azimuth::Span::end(error_span)
-  
-  // Verify logger functionality
-  assert_eq(logger.scope.name, "i18n-logger")
+  assert_eq(chinese_locale, Some(azimuth::StringValue("zh-CN")))
+  assert_eq(japanese_locale, Some(azimuth::StringValue("ja-JP")))
+  assert_eq(korean_locale, Some(azimuth::StringValue("ko-KR")))
+  assert_eq(english_locale, Some(azimuth::StringValue("en-US")))
 }
 
-// Test 3: Locale-specific formatting and data
-pub test "locale_specific_formatting" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "locale-test-service")
+test "localized span names and descriptions" {
+  // 测试本地化span名称和描述
+  let span_ctx = azimuth::SpanContext::new("i18n-trace", "i18n-span", true, "")
   
-  let span = azimuth::Tracer::start_span(tracer, "Locale-specific Operations")
+  // 创建不同语言的span
+  let chinese_span = azimuth::Span::new("用户认证", azimuth::Server, span_ctx)
+  azimuth::Span::set_attribute(chinese_span, "span.description", azimuth::StringValue("验证用户身份和权限"))
+  azimuth::Span::set_attribute(chinese_span, "locale", azimuth::StringValue("zh-CN"))
   
-  // Test different locale-specific number formats
-  azimuth::Span::set_attribute(span, "number.us", azimuth::StringValue("1,234,567.89"))
-  azimuth::Span::set_attribute(span, "number.eu", azimuth::StringValue("1.234.567,89"))
-  azimuth::Span::set_attribute(span, "number.in", azimuth::StringValue("12,34,567.89"))
-  azimuth::Span::set_attribute(span, "number.cn", azimuth::StringValue("1,234,567.89"))
+  let japanese_span = azimuth::Span::new("ユーザー認証", azimuth::Server, span_ctx)
+  azimuth::Span::set_attribute(japanese_span, "span.description", azimuth::StringValue("ユーザーの身元と権限を検証"))
+  azimuth::Span::set_attribute(japanese_span, "locale", azimuth::StringValue("ja-JP"))
   
-  // Test different date formats
-  azimuth::Span::set_attribute(span, "date.us", azimuth::StringValue("01/31/2023"))
-  azimuth::Span::set_attribute(span, "date.eu", azimuth::StringValue("31/01/2023"))
-  azimuth::Span::set_attribute(span, "date.iso", azimuth::StringValue("2023-01-31"))
-  azimuth::Span::set_attribute(span, "date.jp", azimuth::StringValue("2023年01月31日"))
-  azimuth::Span::set_attribute(span, "date.cn", azimuth::StringValue("2023年01月31日"))
+  let spanish_span = azimuth::Span::new("Autenticación de usuario", azimuth::Server, span_ctx)
+  azimuth::Span::set_attribute(spanish_span, "span.description", azimuth::StringValue("Verificar identidad y permisos del usuario"))
+  azimuth::Span::set_attribute(spanish_span, "locale", azimuth::StringValue("es-ES"))
   
-  // Test different time formats
-  azimuth::Span::set_attribute(span, "time.us", azimuth::StringValue("2:30:45 PM"))
-  azimuth::Span::set_attribute(span, "time.eu", azimuth::StringValue("14:30:45"))
-  azimuth::Span::set_attribute(span, "time.military", azimuth::StringValue("14:30:45"))
+  // 验证本地化span名称和描述
+  assert_eq(azimuth::Span::name(chinese_span), "用户认证")
+  assert_eq(azimuth::Span::name(japanese_span), "ユーザー認証")
+  assert_eq(azimuth::Span::name(spanish_span), "Autenticación de usuario")
   
-  // Test currency formats
-  azimuth::Span::set_attribute(span, "currency.usd", azimuth::StringValue("$1,234.56"))
-  azimuth::Span::set_attribute(span, "currency.eur", azimuth::StringValue("€1.234,56"))
-  azimuth::Span::set_attribute(span, "currency.jpy", azimuth::StringValue("¥1,235"))
-  azimuth::Span::set_attribute(span, "currency.cny", azimuth::StringValue("¥1,234.56"))
-  azimuth::Span::set_attribute(span, "currency.inr", azimuth::StringValue("₹1,234.56"))
+  let chinese_desc = azimuth::Span::get_attribute(chinese_span, "span.description")
+  let japanese_desc = azimuth::Span::get_attribute(japanese_span, "span.description")
+  let spanish_desc = azimuth::Span::get_attribute(spanish_span, "span.description")
   
-  // Test address formats
-  azimuth::Span::set_attribute(span, "address.us", azimuth::StringValue("123 Main St, New York, NY 10001"))
-  azimuth::Span::set_attribute(span, "address.jp", azimuth::StringValue("〒100-0001 東京都千代田区千代田1-1"))
-  azimuth::Span::set_attribute(span, "address.cn", azimuth::StringValue("中国北京市朝阳区建国门外大街1号"))
-  azimuth::Span::set_attribute(span, "address.kr", azimuth::StringValue("서울특별시 종로구 종로1가"))
-  
-  // Verify locale-specific attributes
-  assert_eq(azimuth::Span::get_attribute(span, "number.us"), Some(azimuth::StringValue("1,234,567.89")))
-  assert_eq(azimuth::Span::get_attribute(span, "date.jp"), Some(azimuth::StringValue("2023年01月31日")))
-  assert_eq(azimuth::Span::get_attribute(span, "currency.eur"), Some(azimuth::StringValue("€1.234,56")))
-  
-  azimuth::Span::set_status_code(span, azimuth::Ok)
-  azimuth::Span::end(span)
+  assert_eq(chinese_desc, Some(azimuth::StringValue("验证用户身份和权限")))
+  assert_eq(japanese_desc, Some(azimuth::StringValue("ユーザーの身元と権限を検証")))
+  assert_eq(spanish_desc, Some(azimuth::StringValue("Verificar identidad y permisos del usuario")))
 }
 
-// Test 4: International resource and service names
-pub test "international_resource_service_names" {
-  // Create resources with international names
-  let chinese_resource = azimuth::Resource::new()
-  let chinese_resource_with_attrs = azimuth::Resource::with_attributes(chinese_resource, [
-    ("服务.名称", azimuth::StringValue("用户服务")),
-    ("服务.版本", azimuth::StringValue("1.0.0")),
-    ("部署.环境", azimuth::StringValue("生产环境")),
-    ("主机.名称", azimuth::StringValue("生产服务器-01"))
-  ])
+test "right-to-left text handling" {
+  // 测试从右到左的文本处理
+  let attributes = azimuth::Attributes::new()
   
-  let japanese_resource = azimuth::Resource::new()
-  let japanese_resource_with_attrs = azimuth::Resource::with_attributes(japanese_resource, [
-    ("サービス.名前", azimuth::StringValue("ユーザーサービス")),
-    ("サービス.バージョン", azimuth::StringValue("1.0.0")),
-    ("デプロイ環境", azimuth::StringValue("本番環境")),
-    ("ホスト名", azimuth::StringValue("本番サーバー-01"))
-  ])
+  // 阿拉伯语（从右到左）
+  azimuth::Attributes::set(attributes, "arabic.message", azimuth::StringValue("مرحبا بالعالم"))
+  azimuth::Attributes::set(attributes, "hebrew.message", azimuth::StringValue("שלום עולם"))
   
-  let korean_resource = azimuth::Resource::new()
-  let korean_resource_with_attrs = azimuth::Resource::with_attributes(korean_resource, [
-    ("서비스.이름", azimuth::StringValue("사용자 서비스")),
-    ("서비스.버전", azimuth::StringValue("1.0.0")),
-    ("배포.환경", azimuth::StringValue("프로덕션 환경")),
-    ("호스트.이름", azimuth::StringValue("프로덕션-서버-01"))
-  ])
+  // 混合方向文本
+  azimuth::Attributes::set(attributes, "mixed.direction", azimuth::StringValue("Hello مرحبا World"))
   
-  // Merge international resources
-  let merged_resource = azimuth::Resource::merge(chinese_resource_with_attrs, japanese_resource_with_attrs)
-  let final_resource = azimuth::Resource::merge(merged_resource, korean_resource_with_attrs)
+  // 验证RTL文本正确存储
+  let arabic_message = azimuth::Attributes::get(attributes, "arabic.message")
+  let hebrew_message = azimuth::Attributes::get(attributes, "hebrew.message")
+  let mixed_direction = azimuth::Attributes::get(attributes, "mixed.direction")
   
-  // Verify merged resource contains international attributes
-  assert_eq(azimuth::Resource::get_attribute(final_resource, "服务.名称"), Some(azimuth::StringValue("用户服务")))
-  assert_eq(azimuth::Resource::get_attribute(final_resource, "サービス.名前"), Some(azimuth::StringValue("ユーザーサービス")))
-  assert_eq(azimuth::Resource::get_attribute(final_resource, "서비스.이름"), Some(azimuth::StringValue("사용자 서비스")))
+  assert_eq(arabic_message, Some(azimuth::StringValue("مرحبا بالعالم")))
+  assert_eq(hebrew_message, Some(azimuth::StringValue("שלום עולם")))
+  assert_eq(mixed_direction, Some(azimuth::StringValue("Hello مرحبا World")))
   
-  // Test international service names in spans
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "国际服务")
+  // 测试RTL文本在日志中的处理
+  let provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(provider, "rtl-test-logger")
   
-  let chinese_span = azimuth::Tracer::start_span(tracer, "用户认证操作")
-  azimuth::Span::set_attribute(chinese_span, "操作.类型", azimuth::StringValue("用户登录"))
-  azimuth::Span::set_attribute(chinese_span, "用户.地区", azimuth::StringValue("中国"))
+  let rtl_log = azimuth::Logger::create_log_record(logger)
+  azimuth::LogRecord::set_body(rtl_log, "خطأ: فشل الاتصال بقاعدة البيانات")
+  azimuth::LogRecord::set_severity(rtl_log, azimuth::ERROR)
+  azimuth::LogRecord::set_attribute(rtl_log, "text.direction", azimuth::StringValue("rtl"))
   
-  let japanese_span = azimuth::Tracer::start_span(tracer, "ユーザー認証操作")
-  azimuth::Span::set_attribute(japanese_span, "操作.タイプ", azimuth::StringValue("ユーザーログイン"))
-  azimuth::Span::set_attribute(japanese_span, "ユーザー.地域", azimuth::StringValue("日本"))
-  
-  let korean_span = azimuth::Tracer::start_span(tracer, "사용자 인증 작업")
-  azimuth::Span::set_attribute(korean_span, "작업.유형", azimuth::StringValue("사용자 로그인"))
-  azimuth::Span::set_attribute(korean_span, "사용자.지역", azimuth::StringValue("한국"))
-  
-  // Verify international span attributes
-  assert_eq(azimuth::Span::get_attribute(chinese_span, "操作.类型"), Some(azimuth::StringValue("用户登录")))
-  assert_eq(azimuth::Span::get_attribute(japanese_span, "操作.タイプ"), Some(azimuth::StringValue("ユーザーログイン")))
-  assert_eq(azimuth::Span::get_attribute(korean_span, "작업.유형"), Some(azimuth::StringValue("사용자 로그인")))
-  
-  // End spans
-  azimuth::Span::set_status_code(chinese_span, azimuth::Ok)
-  azimuth::Span::set_status_code(japanese_span, azimuth::Ok)
-  azimuth::Span::set_status_code(korean_span, azimuth::Ok)
-  azimuth::Span::end(chinese_span)
-  azimuth::Span::end(japanese_span)
-  azimuth::Span::end(korean_span)
+  assert_eq(azimuth::LogRecord::body(rtl_log), "خطأ: فشل الاتصال بقاعدة البيانات")
 }
 
-// Test 5: International baggage and context propagation
-pub test "international_baggage_context_propagation" {
-  let tracer_provider = azimuth::TracerProvider::default()
-  let tracer = azimuth::TracerProvider::get_tracer(tracer_provider, "国际化传播服务")
+test "locale-specific formatting" {
+  // 测试特定区域设置的格式化
+  let attributes = azimuth::Attributes::new()
   
-  // Create context with international baggage
-  let root_ctx = azimuth::Context::root()
+  // 日期和时间格式
+  azimuth::Attributes::set(attributes, "date.us", azimuth::StringValue("12/31/2023"))
+  azimuth::Attributes::set(attributes, "date.eu", azimuth::StringValue("31/12/2023"))
+  azimuth::Attributes::set(attributes, "date.iso", azimuth::StringValue("2023-12-31"))
+  
+  // 数字格式
+  azimuth::Attributes::set(attributes, "number.us", azimuth::StringValue("1,234.56"))
+  azimuth::Attributes::set(attributes, "number.eu", azimuth::StringValue("1.234,56"))
+  azimuth::Attributes::set(attributes, "number.in", azimuth::StringValue("1,23,456.78"))
+  
+  // 货币格式
+  azimuth::Attributes::set(attributes, "currency.us", azimuth::StringValue("$1,234.56"))
+  azimuth::Attributes::set(attributes, "currency.eu", azimuth::StringValue("€1.234,56"))
+  azimuth::Attributes::set(attributes, "currency.jp", azimuth::StringValue("¥1,235"))
+  
+  // 验证格式化数据正确存储
+  let date_us = azimuth::Attributes::get(attributes, "date.us")
+  let date_eu = azimuth::Attributes::get(attributes, "date.eu")
+  let date_iso = azimuth::Attributes::get(attributes, "date.iso")
+  
+  let number_us = azimuth::Attributes::get(attributes, "number.us")
+  let number_eu = azimuth::Attributes::get(attributes, "number.eu")
+  let number_in = azimuth::Attributes::get(attributes, "number.in")
+  
+  let currency_us = azimuth::Attributes::get(attributes, "currency.us")
+  let currency_eu = azimuth::Attributes::get(attributes, "currency.eu")
+  let currency_jp = azimuth::Attributes::get(attributes, "currency.jp")
+  
+  assert_eq(date_us, Some(azimuth::StringValue("12/31/2023")))
+  assert_eq(date_eu, Some(azimuth::StringValue("31/12/2023")))
+  assert_eq(date_iso, Some(azimuth::StringValue("2023-12-31")))
+  
+  assert_eq(number_us, Some(azimuth::StringValue("1,234.56")))
+  assert_eq(number_eu, Some(azimuth::StringValue("1.234,56")))
+  assert_eq(number_in, Some(azimuth::StringValue("1,23,456.78")))
+  
+  assert_eq(currency_us, Some(azimuth::StringValue("$1,234.56")))
+  assert_eq(currency_eu, Some(azimuth::StringValue("€1.234,56")))
+  assert_eq(currency_jp, Some(azimuth::StringValue("¥1,235")))
+}
+
+test "internationalization in context propagation" {
+  // 测试国际化在上下文传播中的处理
   let baggage = azimuth::Baggage::new()
   
-  // Add baggage entries in different languages
-  let baggage_with_cn = azimuth::Baggage::set_entry(baggage, "用户.标识", "用户123")
-  let baggage_with_jp = azimuth::Baggage::set_entry(baggage_with_cn, "ユーザー.ID", "ユーザー456")
-  let baggage_with_kr = azimuth::Baggage::set_entry(baggage_with_jp, "사용자.ID", "사용자789")
-  let baggage_with_ar = azimuth::Baggage::set_entry(baggage_with_kr, "معرف.المستخدم", "مستخدم101")
+  // 设置多语言baggage条目
+  azimuth::Baggage::set_entry(baggage, "user.name.zh", "张三")
+  azimuth::Baggage::set_entry(baggage, "user.name.ja", "田中太郎")
+  azimuth::Baggage::set_entry(baggage, "user.name.en", "John Doe")
+  azimuth::Baggage::set_entry(baggage, "error.message.ar", "فشل في المصادقة")
+  azimuth::Baggage::set_entry(baggage, "error.message.es", "Fallo en la autenticación")
   
-  let ctx_with_baggage = azimuth::Context::with_value(root_ctx, azimuth::ContextKey::new("国际化.baggage"), baggage_with_ar)
+  // 创建传播载体
+  let carrier = azimuth::TextMapCarrier::new()
+  let baggage_propagator = azimuth::W3CBaggagePropagator::new()
   
-  // Create spans with international context
-  let service_span = azimuth::Tracer::start_span_with_context(tracer, "国际化服务操作", ctx_with_baggage)
-  azimuth::Span::set_attribute(service_span, "服务.名称", azimuth::StringValue("多语言用户服务"))
+  // 注入多语言baggage
+  azimuth::W3CBaggagePropagator::inject(baggage_propagator, baggage, carrier)
   
-  // Extract and verify baggage
-  let propagated_baggage = azimuth::Context::get(azimuth::Span::context(service_span), azimuth::ContextKey::new("国际化.baggage"))
-  assert_eq(azimuth::Baggage::get_entry(propagated_baggage, "用户.标识"), Some("用户123"))
-  assert_eq(azimuth::Baggage::get_entry(propagated_baggage, "ユーザー.ID"), Some("ユーザー456"))
-  assert_eq(azimuth::Baggage::get_entry(propagated_baggage, "사용자.ID"), Some("사용자789"))
-  assert_eq(azimuth::Baggage::get_entry(propagated_baggage, "معرف.المستخدم"), Some("مستخدم101"))
+  // 提取baggage
+  let extracted_baggage = azimuth::W3CBaggagePropagator::extract(baggage_propagator, carrier)
   
-  // Add more international context
-  let cn_key = azimuth::ContextKey::new("中文.键")
-  let jp_key = azimuth::ContextKey::new("日本語.キー")
-  let kr_key = azimuth::ContextKey::new("한국어.키")
+  // 验证多语言baggage条目正确传播
+  let user_name_zh = azimuth::Baggage::get_entry(extracted_baggage, "user.name.zh")
+  let user_name_ja = azimuth::Baggage::get_entry(extracted_baggage, "user.name.ja")
+  let user_name_en = azimuth::Baggage::get_entry(extracted_baggage, "user.name.en")
+  let error_message_ar = azimuth::Baggage::get_entry(extracted_baggage, "error.message.ar")
+  let error_message_es = azimuth::Baggage::get_entry(extracted_baggage, "error.message.es")
   
-  let ctx_with_cn = azimuth::Context::with_value(azimuth::Span::context(service_span), cn_key, "中文值")
-  let ctx_with_jp = azimuth::Context::with_value(ctx_with_cn, jp_key, "日本語値")
-  let ctx_with_kr = azimuth::Context::with_value(ctx_with_jp, kr_key, "한국어 값")
-  
-  // Create child span with international context
-  let child_span = azimuth::Tracer::start_span_with_context(tracer, "国际化子操作", ctx_with_kr)
-  azimuth::Span::set_attribute(child_span, "子操作.类型", azimuth::StringValue("多语言数据处理"))
-  
-  // Verify international context propagation
-  let child_ctx = azimuth::Span::context(child_span)
-  assert_eq(azimuth::Context::get(child_ctx, cn_key), Some("中文值"))
-  assert_eq(azimuth::Context::get(child_ctx, jp_key), Some("日本語値"))
-  assert_eq(azimuth::Context::get(child_ctx, kr_key), Some("한국어 값"))
-  
-  // End spans
-  azimuth::Span::set_status_code(child_span, azimuth::Ok)
-  azimuth::Span::set_status_code(service_span, azimuth::Ok)
-  azimuth::Span::end(child_span)
-  azimuth::Span::end(service_span)
+  assert_eq(user_name_zh, Some("张三"))
+  assert_eq(user_name_ja, Some("田中太郎"))
+  assert_eq(user_name_en, Some("John Doe"))
+  assert_eq(error_message_ar, Some("فشل في المصادقة"))
+  assert_eq(error_message_es, Some("Fallo en la autenticación"))
 }

@@ -1,264 +1,273 @@
-// Azimuth Telemetry System - Real-time Data Processing Tests
-// 实时数据处理和流式测试用例
+// Real-time Streaming Tests
+// 验证遥测系统的实时流处理能力
 
-test "realtime_streaming_metrics" {
-  // Test real-time streaming metrics collection
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "realtime-metrics")
+test "real-time metrics streaming" {
+  // 创建实时指标流处理器
+  let stream_processor = azimuth::RealtimeStreamProcessor::new()
+  let provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(provider, "realtime-meter")
+  let counter = azimuth::Meter::create_counter(meter, "realtime.requests")
   
-  // Create streaming metrics
-  let request_counter = Meter::create_counter(meter, "stream.requests.total")
-  let latency_histogram = Meter::create_histogram(meter, "stream.latency.ms")
-  let active_connections = Meter::create_updown_counter(meter, "stream.connections.active")
-  let throughput_gauge = Meter::create_gauge(meter, "stream.throughput.rate")
+  // 设置实时流处理
+  let metrics_stream = azimuth::RealtimeStreamProcessor::create_metrics_stream(stream_processor, counter)
   
-  // Simulate real-time data stream
-  for i = 0; i < 100; i = i + 1 {
-    // Simulate incoming requests
-    Counter::add(request_counter, 1.0)
+  // 模拟实时指标数据流
+  let metrics_generated = 0
+  let metrics_processed = 0
+  let start_time = azimuth::Clock::now()
+  let duration_ms = 1000 // 1秒的测试
+  
+  while (azimuth::Clock::now() - start_time < duration_ms * 1000000) {
+    // 生成指标数据
+    azimuth::Counter::add(counter, 1, [{"endpoint", azimuth::StringValue("/api/realtime")}])
+    metrics_generated += 1
     
-    // Simulate latency measurements
-    let latency = (i % 100).to_double() + 10.0 // 10-110ms latency
-    Histogram::record(latency_histogram, latency)
+    // 处理流数据
+    let processed = azimuth::RealtimeStreamProcessor::process_metrics_batch(stream_processor, metrics_stream)
+    metrics_processed += processed
     
-    // Simulate connection management
-    if i % 10 == 0 {
-      UpDownCounter::add(active_connections, 1.0) // New connection
-    } else if i % 15 == 0 {
-      UpDownCounter::add(active_connections, -1.0) // Connection closed
-    }
-    
-    // Simulate throughput calculation
-    let throughput = 1000.0 + (i % 500).to_double()
-    // Note: In real implementation, Gauge would have a set method
+    // 模拟实时延迟
+    azimuth::Clock::sleep(10) // 10ms延迟
   }
   
-  // Verify metrics are still functional
-  assert_eq(request_counter.name, "stream.requests.total")
-  assert_eq(latency_histogram.name, "stream.latency.ms")
-  assert_eq(active_connections.name, "stream.connections.active")
-  assert_eq(throughput_gauge.name, "stream.throughput.rate")
+  // 验证实时流处理
+  assert_true(metrics_generated > 0)
+  assert_true(metrics_processed > 0)
+  assert_true(metrics_processed <= metrics_generated)
+  
+  // 获取实时统计
+  let stats = azimuth::RealtimeStreamProcessor::get_stream_stats(stream_processor)
+  assert_true(azimuth::StreamStats::throughput(stats) > 0)
+  assert_true(azimuth::StreamStats::latency_avg(stats) >= 0)
 }
 
-test "realtime_trace_streaming" {
-  // Test real-time trace streaming
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "realtime-tracer")
+test "real-time log streaming" {
+  // 创建实时日志流处理器
+  let stream_processor = azimuth::RealtimeStreamProcessor::new()
+  let provider = azimuth::LoggerProvider::default()
+  let logger = azimuth::LoggerProvider::get_logger(provider, "realtime-logger")
   
-  // Create parent span for streaming operation
-  let stream_span = Tracer::start_span(tracer, "realtime.data.stream")
-  Span::add_event(stream_span, "stream.started")
+  // 设置实时日志流处理
+  let log_stream = azimuth::RealtimeStreamProcessor::create_log_stream(stream_processor, logger)
   
-  // Simulate streaming data processing
-  for batch_id = 0; batch_id < 10; batch_id = batch_id + 1 {
-    // Create span for each batch
-    let batch_span = Tracer::start_span(tracer, "batch.processing")
-    Span::add_event(batch_span, "batch." + batch_id.to_string() + ".started")
+  // 模拟实时日志数据流
+  let logs_generated = 0
+  let logs_processed = 0
+  let start_time = azimuth::Clock::now()
+  let duration_ms = 1000 // 1秒的测试
+  
+  while (azimuth::Clock::now() - start_time < duration_ms * 1000000) {
+    // 生成日志数据
+    let log_record = azimuth::Logger::create_log_record(logger)
+    azimuth::LogRecord::set_body(log_record, "Real-time log message " + logs_generated.to_string())
+    azimuth::LogRecord::set_severity(log_record, azimuth::INFO)
+    azimuth::LogRecord::set_attribute(log_record, "timestamp", azimuth::IntValue(azimuth::Clock::now()))
+    logs_generated += 1
     
-    // Add processing metadata
-    Span::set_status(batch_span, Ok)
+    // 处理流数据
+    let processed = azimuth::RealtimeStreamProcessor::process_log_batch(stream_processor, log_stream)
+    logs_processed += processed
     
-    // Simulate processing time
-    if batch_id % 10 == 0 {
-      Span::add_event(stream_span, "milestone.reached")
-    }
-    
-    Span::end(batch_span)
+    // 模拟实时延迟
+    azimuth::Clock::sleep(5) // 5ms延迟
   }
   
-  Span::add_event(stream_span, "stream.completed")
-  Span::end(stream_span)
+  // 验证实时日志流处理
+  assert_true(logs_generated > 0)
+  assert_true(logs_processed > 0)
+  assert_true(logs_processed <= logs_generated)
   
-  assert_true(true) // Test passes if all streaming operations complete
+  // 获取实时统计
+  let stats = azimuth::RealtimeStreamProcessor::get_log_stream_stats(stream_processor)
+  assert_true(azimuth::LogStreamStats::messages_per_second(stats) > 0)
 }
 
-test "realtime_log_streaming" {
-  // Test real-time log streaming
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "realtime-logger")
+test "real-time trace streaming" {
+  // 创建实时追踪流处理器
+  let stream_processor = azimuth::RealtimeStreamProcessor::new()
+  let provider = azimuth::TracerProvider::default()
+  let tracer = azimuth::TracerProvider::get_tracer(provider, "realtime-tracer")
   
-  // Simulate real-time log stream
-  for i = 0; i < 50; i = i + 1 {
-    let severity = match i % 6 {
-      0 => Fatal
-      1 => Error
-      2 => Info
-      3 => Warn
-      4 => Debug
-      _ => Trace
-    }
+  // 设置实时追踪流处理
+  let trace_stream = azimuth::RealtimeStreamProcessor::create_trace_stream(stream_processor, tracer)
+  
+  // 模拟实时追踪数据流
+  let spans_generated = 0
+  let spans_processed = 0
+  let start_time = azimuth::Clock::now()
+  let duration_ms = 1000 // 1秒的测试
+  
+  while (azimuth::Clock::now() - start_time < duration_ms * 1000000) {
+    // 生成span数据
+    let span_ctx = azimuth::SpanContext::new("realtime-trace", "span-" + spans_generated.to_string(), true, "")
+    let span = azimuth::Tracer::start_span(tracer, "realtime-operation", span_ctx)
+    azimuth::Span::set_attribute(span, "operation.id", azimuth::IntValue(spans_generated))
+    azimuth::Span::set_attribute(span, "start.time", azimuth::IntValue(azimuth::Clock::now()))
+    spans_generated += 1
     
-    let log_message = match severity {
-      Fatal => "Critical system failure at event " + i.to_string()
-      Error => "Error processing event " + i.to_string()
-      Warn => "Warning: slow processing for event " + i.to_string()
-      Info => "Processed event " + i.to_string() + " successfully"
-      Debug => "Debug info for event " + i.to_string()
-      Trace => "Trace log for event " + i.to_string()
-    }
+    // 处理流数据
+    let processed = azimuth::RealtimeStreamProcessor::process_trace_batch(stream_processor, trace_stream)
+    spans_processed += processed
     
-    let log_record = LogRecord::new(severity, log_message)
-    Logger::emit(logger, log_record)
-    
-    // Verify log record properties
-    match LogRecord::severity_number(log_record) {
-      Trace => assert_true(severity is Trace)
-      Debug => assert_true(severity is Debug)
-      Info => assert_true(severity is Info)
-      Warn => assert_true(severity is Warn)
-      Error => assert_true(severity is Error)
-      Fatal => assert_true(severity is Fatal)
-    }
-    
-    match LogRecord::body(log_record) {
-      Some(body) => assert_true(body.contains(i.to_string()))
-      None => assert_true(false)
-    }
+    // 模拟实时延迟
+    azimuth::Clock::sleep(15) // 15ms延迟
   }
   
-  assert_true(true)
+  // 验证实时追踪流处理
+  assert_true(spans_generated > 0)
+  assert_true(spans_processed > 0)
+  assert_true(spans_processed <= spans_generated)
+  
+  // 获取实时统计
+  let stats = azimuth::RealtimeStreamProcessor::get_trace_stream_stats(stream_processor)
+  assert_true(azimuth::TraceStreamStats::spans_per_second(stats) > 0)
 }
 
-test "realtime_dashboard_data_aggregation" {
-  // Test real-time dashboard data aggregation
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "dashboard-metrics")
+test "real-time data aggregation" {
+  // 创建实时数据聚合器
+  let aggregator = azimuth::RealtimeAggregator::new()
   
-  // Create dashboard-specific metrics
-  let api_requests = Meter::create_counter(meter, "dashboard.api.requests")
-  let error_rate = Meter::create_histogram(meter, "dashboard.error.rate")
-  let response_time = Meter::create_histogram(meter, "dashboard.response.time")
-  let active_users = Meter::create_gauge(meter, "dashboard.active.users")
+  // 设置聚合窗口（1秒窗口）
+  azimuth::RealtimeAggregator::set_window_size(aggregator, 1000) // 1秒
   
-  // Simulate real-time dashboard data updates
-  for minute = 0; minute < 6; minute = minute + 1 { // Reduced for testing
-    for second = 0; second < 10; second = second + 1 { // Reduced for testing
-      // Simulate API request patterns
-      let requests_per_second = 10 + (minute % 20) + (second % 5)
-      Counter::add(api_requests, requests_per_second.to_double())
-      
-      // Simulate error patterns
-      if second % 30 == 0 {
-        // Error spike every 30 seconds
-        Histogram::record(error_rate, 5.0 + (minute % 3).to_double())
-      } else {
-        // Normal error rate
-        Histogram::record(error_rate, 0.1 + (second % 10).to_double() * 0.01)
-      }
-      
-      // Simulate response time patterns
-      let base_response_time = 50.0
-      let variation = (second % 20).to_double() * 2.5
-      Histogram::record(response_time, base_response_time + variation)
-    }
+  // 模拟实时数据流
+  let data_points = []
+  let start_time = azimuth::Clock::now()
+  let duration_ms = 3000 // 3秒的测试
+  
+  while (azimuth::Clock::now() - start_time < duration_ms * 1000000) {
+    // 生成数据点
+    let timestamp = azimuth::Clock::now()
+    let value = (timestamp % 1000).to_double() // 0-999的值
+    data_points.push((timestamp, value))
     
-    // Simulate user activity patterns
-    let user_count = 100 + (minute * 2) + ((minute * minute) % 50)
-    // Note: In real implementation, Gauge would have a set method
+    // 添加到聚合器
+    azimuth::RealtimeAggregator::add_data_point(aggregator, timestamp, value)
+    
+    // 模拟实时延迟
+    azimuth::Clock::sleep(50) // 50ms延迟
   }
   
-  // Verify dashboard metrics are functional
-  assert_eq(api_requests.name, "dashboard.api.requests")
-  assert_eq(error_rate.name, "dashboard.error.rate")
-  assert_eq(response_time.name, "dashboard.response.time")
-  assert_eq(active_users.name, "dashboard.active.users")
+  // 获取聚合结果
+  let aggregations = azimuth::RealtimeAggregator::get_aggregations(aggregator)
+  assert_true(aggregations.length > 0)
+  
+  // 验证聚合结果
+  for aggregation in aggregations {
+    let window_start = azimuth::Aggregation::window_start(aggregation)
+    let window_end = azimuth::Aggregation::window_end(aggregation)
+    let count = azimuth::Aggregation::count(aggregation)
+    let sum = azimuth::Aggregation::sum(aggregation)
+    let avg = azimuth::Aggregation::average(aggregation)
+    let min = azimuth::Aggregation::min(aggregation)
+    let max = azimuth::Aggregation::max(aggregation)
+    
+    assert_true(window_end > window_start)
+    assert_true(count > 0)
+    assert_true(sum >= 0.0)
+    assert_true(avg >= 0.0)
+    assert_true(min >= 0.0)
+    assert_true(max >= min)
+  }
 }
 
-test "realtime_alert_processing" {
-  // Test real-time alert processing
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "alert-tracer")
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "alert-logger")
+test "real-time alerting" {
+  // 创建实时警报系统
+  let alerting_system = azimuth::RealtimeAlerting::new()
   
-  // Create alert monitoring span
-  let alert_span = Tracer::start_span(tracer, "realtime.alert.monitoring")
+  // 设置警报规则
+  let error_rate_rule = azimuth::AlertRule::new("error.rate", ">", 0.1) // 错误率超过10%
+  let latency_rule = azimuth::AlertRule::new("latency.p95", ">", 1000) // P95延迟超过1秒
+  let throughput_rule = azimuth::AlertRule::new("throughput", "<", 100) // 吞吐量低于100/秒
   
-  // Simulate alert conditions
-  for event_id = 0; event_id < 10; event_id = event_id + 1 { // Reduced for testing
-    let metric_value = (event_id % 100).to_double()
+  azimuth::RealtimeAlerting::add_rule(alerting_system, error_rate_rule)
+  azimuth::RealtimeAlerting::add_rule(alerting_system, latency_rule)
+  azimuth::RealtimeAlerting::add_rule(alerting_system, throughput_rule)
+  
+  // 模拟实时监控数据
+  let alerts_triggered = 0
+  let start_time = azimuth::Clock::now()
+  let duration_ms = 2000 // 2秒的测试
+  
+  while (azimuth::Clock::now() - start_time < duration_ms * 1000000) {
+    // 生成监控指标
+    let error_rate = 0.15 // 高错误率
+    let latency_p95 = 1200.0 // 高延迟
+    let throughput = 80 // 低吞吐量
     
-    // Check alert conditions
-    if metric_value > 80.0 {
-      // High value alert
-      let alert_log = LogRecord::new(
-        Error,
-        "High value alert: metric value " + metric_value.to_string() + " exceeds threshold"
-      )
-      Logger::emit(logger, alert_log)
-      
-      Span::add_event(alert_span, "alert.triggered")
-    } else if metric_value < 10.0 {
-      // Low value alert
-      let alert_log = LogRecord::new(
-        Warn,
-        "Low value alert: metric value " + metric_value.to_string() + " below threshold"
-      )
-      Logger::emit(logger, alert_log)
-      
-      Span::add_event(alert_span, "alert.triggered")
-    }
+    // 检查警报条件
+    let alerts = azimuth::RealtimeAlerting::check_rules(alerting_system, [
+      ("error.rate", error_rate),
+      ("latency.p95", latency_p95),
+      ("throughput", throughput)
+    ])
+    
+    alerts_triggered += alerts.length
+    
+    // 模拟实时延迟
+    azimuth::Clock::sleep(100) // 100ms延迟
   }
   
-  Span::end(alert_span)
-  assert_true(true)
+  // 验证警报触发
+  assert_true(alerts_triggered > 0)
+  
+  // 获取警报统计
+  let alert_stats = azimuth::RealtimeAlerting::get_stats(alerting_system)
+  assert_true(azimuth::AlertStats::total_alerts(alert_stats) > 0)
+  assert_true(azimuth::AlertStats::unique_rules_triggered(alert_stats) > 0)
 }
 
-test "realtime_data_pipeline_monitoring" {
-  // Test real-time data pipeline monitoring
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "pipeline-monitor")
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "pipeline-tracer")
+test "real-time dashboard data" {
+  // 创建实时仪表板数据提供者
+  let dashboard_provider = azimuth::RealtimeDashboardProvider::new()
   
-  // Create pipeline metrics
-  let throughput_counter = Meter::create_counter(meter, "pipeline.throughput")
-  let latency_histogram = Meter::create_histogram(meter, "pipeline.latency")
-  let error_counter = Meter::create_counter(meter, "pipeline.errors")
-  let backlog_gauge = Meter::create_gauge(meter, "pipeline.backlog.size")
+  // 设置仪表板组件
+  azimuth::RealtimeDashboardProvider::add_timeseries_chart(dashboard_provider, "request.rate")
+  azimuth::RealtimeDashboardProvider::add_gauge(dashboard_provider, "cpu.usage")
+  azimuth::RealtimeDashboardProvider::add_heatmap(dashboard_provider, "response.latency")
   
-  // Monitor pipeline stages
-  let pipeline_span = Tracer::start_span(tracer, "data.pipeline.execution")
+  // 模拟实时数据更新
+  let updates_generated = 0
+  let start_time = azimuth::Clock::now()
+  let duration_ms = 1500 // 1.5秒的测试
   
-  for stage = 0; stage < 5; stage = stage + 1 {
-    let stage_span = Tracer::start_span(tracer, "pipeline.stage." + stage.to_string())
-    Span::add_event(stage_span, "stage.started")
+  while (azimuth::Clock::now() - start_time < duration_ms * 1000000) {
+    let timestamp = azimuth::Clock::now()
     
-    // Simulate stage processing
-    for item = 0; item < 10; item = item + 1 { // Reduced for testing
-      // Track throughput
-      Counter::add(throughput_counter, 1.0)
-      
-      // Track latency
-      let processing_time = (stage * 10 + item % 20).to_double()
-      Histogram::record(latency_histogram, processing_time)
-      
-      // Simulate occasional errors
-      if item % 25 == 0 {
-        Counter::add(error_counter, 1.0)
-        
-        let error_log = LogRecord::new(
-          Error,
-          "Processing error in stage " + stage.to_string() + " for item " + item.to_string()
-        )
-        let logger = LoggerProvider::get_logger(LoggerProvider::default(), "pipeline-logger")
-        Logger::emit(logger, error_log)
-      }
-    }
+    // 更新时间序列数据
+    let request_rate = 100.0 + (timestamp % 1000).to_double() / 10.0
+    azimuth::RealtimeDashboardProvider::update_timeseries(dashboard_provider, "request.rate", timestamp, request_rate)
     
-    // Update backlog (simulated)
-    let backlog_size = (stage * 50 + 100).to_double()
-    // Note: In real implementation, Gauge would have a set method
+    // 更新仪表数据
+    let cpu_usage = 50.0 + (timestamp % 1000).to_double() / 20.0
+    azimuth::RealtimeDashboardProvider::update_gauge(dashboard_provider, "cpu.usage", cpu_usage)
     
-    Span::add_event(stage_span, "stage.completed")
-    Span::end(stage_span)
+    // 更新热图数据
+    let latency = 100.0 + (timestamp % 1000).to_double() / 5.0
+    let endpoint = "/api/endpoint" + ((timestamp % 5) + 1).to_string()
+    azimuth::RealtimeDashboardProvider::update_heatmap(dashboard_provider, "response.latency", endpoint, latency)
+    
+    updates_generated += 1
+    
+    // 模拟实时延迟
+    azimuth::Clock::sleep(75) // 75ms延迟
   }
   
-  Span::end(pipeline_span)
+  // 验证仪表板数据
+  let timeseries_data = azimuth::RealtimeDashboardProvider::get_timeseries_data(dashboard_provider, "request.rate")
+  let gauge_data = azimuth::RealtimeDashboardProvider::get_gauge_data(dashboard_provider, "cpu.usage")
+  let heatmap_data = azimuth::RealtimeDashboardProvider::get_heatmap_data(dashboard_provider, "response.latency")
   
-  // Verify pipeline metrics
-  assert_eq(throughput_counter.name, "pipeline.throughput")
-  assert_eq(latency_histogram.name, "pipeline.latency")
-  assert_eq(error_counter.name, "pipeline.errors")
-  assert_eq(backlog_gauge.name, "pipeline.backlog.size")
+  assert_true(timeseries_data.length > 0)
+  assert_true(gauge_data.length > 0)
+  assert_true(heatmap_data.length > 0)
+  
+  // 验证数据点数量
+  assert_true(timeseries_data.length <= updates_generated)
+  assert_true(gauge_data.length <= updates_generated)
+  
+  // 获取仪表板快照
+  let snapshot = azimuth::RealtimeDashboardProvider::create_snapshot(dashboard_provider)
+  assert_true(azimuth::DashboardSnapshot::component_count(snapshot) > 0)
+  assert_true(azimuth::DashboardSnapshot::data_point_count(snapshot) > 0)
 }
