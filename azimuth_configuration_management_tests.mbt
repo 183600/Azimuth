@@ -1,568 +1,338 @@
-// Azimuth Telemetry System - Configuration Management Test Suite
-// This file contains comprehensive test cases for configuration management
+// 配置管理测试用例
+// 测试Azimuth遥测系统的配置管理功能
 
-// Test 1: Basic Configuration Loading and Validation
-test "basic configuration loading and validation" {
-  // Test configuration structure
-  let default_config = [
-    ("service.name", "azimuth-service"),
-    ("service.version", "1.0.0"),
-    ("telemetry.sdk.name", "azimuth"),
-    ("telemetry.sdk.version", "0.1.0"),
-    ("exporter.type", "otlp"),
-    ("exporter.endpoint", "http://localhost:4318"),
-    ("sampling.probability", "1.0"),
-    ("batch.size", "512"),
-    ("batch.timeout", "5000"),
-    ("resource.attributes", "service.name,service.version,host.name")
-  ]
+test "基本配置加载和验证" {
+  // 测试基本配置的加载和验证
+  let config_manager = ConfigurationManager::new()
   
-  // Validate required configuration keys
-  let required_keys = ["service.name", "telemetry.sdk.name", "exporter.type"]
+  // 测试默认配置
+  let default_config = ConfigurationManager::get_default_config(config_manager)
+  assert_true(ConfigurationManager::is_valid(default_config))
   
-  for key in required_keys {
-    let mut found = false
-    for (config_key, _) in default_config {
-      if config_key == key {
-        found = true
-        break
-      }
-    }
-    assert_true(found, "Required configuration key missing: " + key)
-  }
+  // 验证默认配置值
+  assert_eq(ConfigurationManager::get_service_name(default_config), "azimuth-service")
+  assert_eq(ConfigurationManager::get_service_version(default_config), "1.0.0")
+  assert_eq(ConfigurationManager::get_sampling_rate(default_config), 1.0)
+  assert_eq(ConfigurationManager::get_export_timeout(default_config), 30000)
   
-  // Test configuration value validation
-  for (key, value) in default_config {
-    match key {
-      "sampling.probability" => {
-        let prob = value.to_float()
-        assert_true(prob >= 0.0 && prob <= 1.0)
-      },
-      "batch.size" => {
-        let size = value.to_int()
-        assert_true(size > 0)
-      },
-      "batch.timeout" => {
-        let timeout = value.to_int()
-        assert_true(timeout > 0)
-      },
-      _ => {}
-    }
-  }
+  // 测试配置覆盖
+  let custom_config = ConfigurationManager::with_overrides(default_config, [
+    ("service.name", "custom-service"),
+    ("service.version", "2.0.0"),
+    ("sampling.rate", "0.5"),
+    ("export.timeout", "60000")
+  ])
   
-  assert_eq(default_config.length(), 10)
+  // 验证配置覆盖
+  assert_eq(ConfigurationManager::get_service_name(custom_config), "custom-service")
+  assert_eq(ConfigurationManager::get_service_version(custom_config), "2.0.0")
+  assert_eq(ConfigurationManager::get_sampling_rate(custom_config), 0.5)
+  assert_eq(ConfigurationManager::get_export_timeout(custom_config), 60000)
+  
+  // 测试配置应用
+  let tracer_provider = TracerProvider::with_config(custom_config)
+  let tracer = TracerProvider::get_tracer(tracer_provider, "config.test")
+  
+  let span = Tracer::start_span(tracer, "config.test.operation")
+  Span::set_attribute(span, "config.test", "basic.config")
+  Span::end(span)
+  
+  assert_true(true)
 }
 
-// Test 2: Configuration Override and Merging
-test "configuration override and merging" {
-  // Base configuration
-  let base_config = [
-    ("service.name", "azimuth-service"),
-    ("service.version", "1.0.0"),
-    ("exporter.type", "otlp"),
-    ("exporter.endpoint", "http://localhost:4318"),
-    ("sampling.probability", "1.0"),
-    ("batch.size", "512"),
-    ("resource.attributes", "service.name,service.version")
-  ]
+test "环境变量配置" {
+  // 测试从环境变量加载配置
+  let config_manager = ConfigurationManager::new()
   
-  // Override configuration
-  let override_config = [
-    ("service.version", "2.0.0"),  // Override
-    ("exporter.endpoint", "http://production:4318"),  // Override
-    ("sampling.probability", "0.1"),  // Override
-    ("new.feature.enabled", "true"),  // New key
-    ("custom.attribute", "custom_value")  // New key
-  ]
+  // 模拟环境变量
+  let env_config = ConfigurationManager::from_environment([
+    ("AZIMUTH_SERVICE_NAME", "env-service"),
+    ("AZIMUTH_SERVICE_VERSION", "3.0.0"),
+    ("AZIMUTH_SAMPLING_RATE", "0.1"),
+    ("AZIMUTH_EXPORT_ENDPOINT", "http://localhost:4317"),
+    ("AZIMUTH_EXPORT_TIMEOUT", "45000"),
+    ("AZIMUTH_BATCH_SIZE", "512"),
+    ("AZIMUTH_MAX_QUEUE_SIZE", "2048")
+  ])
   
-  // Simulate configuration merging
-  let mut merged_config = base_config
+  // 验证环境变量配置
+  assert_eq(ConfigurationManager::get_service_name(env_config), "env-service")
+  assert_eq(ConfigurationManager::get_service_version(env_config), "3.0.0")
+  assert_eq(ConfigurationManager::get_sampling_rate(env_config), 0.1)
+  assert_eq(ConfigurationManager::get_export_endpoint(env_config), Some("http://localhost:4317"))
+  assert_eq(ConfigurationManager::get_export_timeout(env_config), 45000)
+  assert_eq(ConfigurationManager::get_batch_size(env_config), 512)
+  assert_eq(ConfigurationManager::get_max_queue_size(env_config), 2048)
   
-  // Remove overridden keys
-  merged_config = merged_config.filter(|(key, _)| {
-    for (override_key, _) in override_config {
-      if key == override_key {
-        return false
-      }
-    }
-    true
+  // 测试配置合并
+  let merged_config = ConfigurationManager::merge([
+    default_config,
+    env_config
+  ])
+  
+  // 验证配置合并优先级（环境变量优先）
+  assert_eq(ConfigurationManager::get_service_name(merged_config), "env-service")
+  assert_eq(ConfigurationManager::get_service_version(merged_config), "3.0.0")
+  assert_eq(ConfigurationManager::get_sampling_rate(merged_config), 0.1)
+  
+  assert_true(true)
+}
+
+test "文件配置加载" {
+  // 测试从文件加载配置
+  let config_manager = ConfigurationManager::new()
+  
+  // 模拟JSON配置文件内容
+  let json_config_content = "{\n    \"service\": {\n      \"name\": \"file-service\",\n      \"version\": \"4.0.0\"\n    },\n    \"sampling\": {\n      \"rate\": 0.8,\n      \"parent_based\": true\n    },\n    \"exporter\": {\n      \"endpoint\": \"http://otel-collector:4317\",\n      \"timeout\": 60000,\n      \"protocol\": \"grpc\"\n    },\n    \"batch\": {\n      \"size\": 1024,\n      \"timeout\": 5000\n    },\n    \"resource\": {\n      \"attributes\": {\n        \"deployment.environment\": \"production\",\n        \"host.name\": \"prod-server-01\",\n        \"region\": \"us-west-2\"\n      }\n    }\n  }"
+  
+  // 从JSON内容加载配置
+  let file_config = ConfigurationManager::from_json(json_config_content)
+  assert_true(ConfigurationManager::is_valid(file_config))
+  
+  // 验证文件配置
+  assert_eq(ConfigurationManager::get_service_name(file_config), "file-service")
+  assert_eq(ConfigurationManager::get_service_version(file_config), "4.0.0")
+  assert_eq(ConfigurationManager::get_sampling_rate(file_config), 0.8)
+  assert_eq(ConfigurationManager::is_parent_based_sampling(file_config), true)
+  assert_eq(ConfigurationManager::get_export_endpoint(file_config), Some("http://otel-collector:4317"))
+  assert_eq(ConfigurationManager::get_export_protocol(file_config), Some("grpc"))
+  assert_eq(ConfigurationManager::get_batch_size(file_config), 1024)
+  assert_eq(ConfigurationManager::get_batch_timeout(file_config), 5000)
+  
+  // 测试YAML配置文件内容
+  let yaml_config_content = "\nservice:\n  name: yaml-service\n  version: 5.0.0\nsampling:\n  rate: 0.3\n  parent_based: false\nexporter:\n  endpoint: http://otel-collector:4318\n  timeout: 90000\n  protocol: http\nbatch:\n  size: 256\n  timeout: 10000\nresource:\n  attributes:\n    deployment.environment: staging\n    host.name: staging-server-01\n    region: us-east-1\n"
+  
+  // 从YAML内容加载配置
+  let yaml_config = ConfigurationManager::from_yaml(yaml_config_content)
+  assert_true(ConfigurationManager::is_valid(yaml_config))
+  
+  // 验证YAML配置
+  assert_eq(ConfigurationManager::get_service_name(yaml_config), "yaml-service")
+  assert_eq(ConfigurationManager::get_service_version(yaml_config), "5.0.0")
+  assert_eq(ConfigurationManager::get_sampling_rate(yaml_config), 0.3)
+  assert_eq(ConfigurationManager::is_parent_based_sampling(yaml_config), false)
+  assert_eq(ConfigurationManager::get_export_endpoint(yaml_config), Some("http://otel-collector:4318"))
+  assert_eq(ConfigurationManager::get_export_protocol(yaml_config), Some("http"))
+  assert_eq(ConfigurationManager::get_batch_size(yaml_config), 256)
+  assert_eq(ConfigurationManager::get_batch_timeout(yaml_config), 10000)
+  
+  assert_true(true)
+}
+
+test "动态配置更新" {
+  // 测试动态配置更新
+  let config_manager = ConfigurationManager::new()
+  let initial_config = ConfigurationManager::get_default_config(config_manager)
+  
+  // 创建可更新的配置
+  let dynamic_config = ConfigurationManager::make_dynamic(initial_config)
+  
+  // 应用初始配置
+  let tracer_provider = TracerProvider::with_config(dynamic_config)
+  let tracer = TracerProvider::get_tracer(tracer_provider, "dynamic.config.test")
+  
+  // 创建span使用初始配置
+  let span1 = Tracer::start_span(tracer, "initial.config.span")
+  Span::set_attribute(span1, "sampling.rate", Float::to_string(ConfigurationManager::get_sampling_rate(dynamic_config)))
+  Span::end(span1)
+  
+  // 动态更新配置
+  ConfigurationManager::update_dynamic(dynamic_config, [
+    ("sampling.rate", "0.2"),
+    ("batch.size", "2048"),
+    ("export.timeout", "120000")
+  ])
+  
+  // 创建span使用更新后的配置
+  let span2 = Tracer::start_span(tracer, "updated.config.span")
+  Span::set_attribute(span2, "sampling.rate", Float::to_string(ConfigurationManager::get_sampling_rate(dynamic_config)))
+  Span::end(span2)
+  
+  // 验证配置已更新
+  assert_eq(ConfigurationManager::get_sampling_rate(dynamic_config), 0.2)
+  assert_eq(ConfigurationManager::get_batch_size(dynamic_config), 2048)
+  assert_eq(ConfigurationManager::get_export_timeout(dynamic_config), 120000)
+  
+  // 测试配置变更通知
+  let notification_received = ref false
+  ConfigurationManager::on_config_change(dynamic_config, fn(old_config, new_config) {
+    notification_received := true
+    assert_eq(ConfigurationManager::get_sampling_rate(old_config), 1.0)
+    assert_eq(ConfigurationManager::get_sampling_rate(new_config), 0.2)
   })
   
-  // Add override keys
-  merged_config = merged_config.concat(override_config)
+  // 再次更新配置
+  ConfigurationManager::update_dynamic(dynamic_config, [
+    ("sampling.rate", "0.7")
+  ])
   
-  assert_eq(merged_config.length(), 9)  // 6 base + 3 new (3 overridden)
+  // 验证通知被触发
+  assert_true(notification_received)
   
-  // Verify overrides
-  for (key, value) in merged_config {
-    match key {
-      "service.version" => assert_eq(value, "2.0.0"),
-      "exporter.endpoint" => assert_eq(value, "http://production:4318"),
-      "sampling.probability" => assert_eq(value, "0.1"),
-      "new.feature.enabled" => assert_eq(value, "true"),
-      "custom.attribute" => assert_eq(value, "custom_value"),
-      _ => {}
-    }
-  }
+  assert_true(true)
 }
 
-// Test 3: Environment Variable Configuration
-test "environment variable configuration" {
-  // Simulate environment variable mappings
-  let env_mappings = [
-    ("AZIMUTH_SERVICE_NAME", "service.name"),
-    ("AZIMUTH_SERVICE_VERSION", "service.version"),
-    ("AZIMUTH_EXPORTER_TYPE", "exporter.type"),
-    ("AZIMUTH_EXPORTER_ENDPOINT", "exporter.endpoint"),
-    ("AZIMUTH_SAMPLING_PROBABILITY", "sampling.probability"),
-    ("AZIMUTH_BATCH_SIZE", "batch.size"),
-    ("AZIMUTH_RESOURCE_ATTRIBUTES", "resource.attributes")
-  ]
+test "配置验证和错误处理" {
+  // 测试配置验证和错误处理
+  let config_manager = ConfigurationManager::new()
   
-  // Simulate environment variable values
-  let env_values = [
-    ("AZIMUTH_SERVICE_NAME", "production-service"),
-    ("AZIMUTH_SERVICE_VERSION", "1.2.3"),
-    ("AZIMUTH_EXPORTER_TYPE", "jaeger"),
-    ("AZIMUTH_EXPORTER_ENDPOINT", "http://jaeger:14268"),
-    ("AZIMUTH_SAMPLING_PROBABILITY", "0.05"),
-    ("AZIMUTH_BATCH_SIZE", "1024"),
-    ("AZIMUTH_RESOURCE_ATTRIBUTES", "service.name,service.version,deployment.environment")
-  ]
+  // 测试无效配置
+  let invalid_config = ConfigurationManager::with_overrides(
+    ConfigurationManager::get_default_config(config_manager),
+    [
+      ("sampling.rate", "-0.1"),  // 负数采样率
+      ("batch.size", "0"),       // 零批次大小
+      ("export.timeout", "-1000") // 负超时
+    ]
+  )
   
-  // Convert environment variables to configuration
-  let mut env_config = []
+  // 验证配置失败
+  assert_false(ConfigurationManager::is_valid(invalid_config))
   
-  for (env_key, env_value) in env_values {
-    for (env_var, config_key) in env_mappings {
-      if env_key == env_var {
-        env_config = env_config.concat([(config_key, env_value)])
-        break
-      }
-    }
-  }
+  // 测试配置验证错误
+  let validation_errors = ConfigurationManager::validate(invalid_config)
+  assert_true(Array::length(validation_errors) > 0)
   
-  assert_eq(env_config.length(), 7)
-  
-  // Validate environment-based configuration
-  for (key, value) in env_config {
-    match key {
-      "service.name" => assert_eq(value, "production-service"),
-      "service.version" => assert_eq(value, "1.2.3"),
-      "exporter.type" => assert_eq(value, "jaeger"),
-      "exporter.endpoint" => assert_eq(value, "http://jaeger:14268"),
-      "sampling.probability" => assert_eq(value, "0.05"),
-      "batch.size" => assert_eq(value, "1024"),
-      "resource.attributes" => assert_eq(value, "service.name,service.version,deployment.environment"),
-      _ => {}
-    }
-  }
-}
-
-// Test 4: Configuration Validation and Error Handling
-test "configuration validation and error handling" {
-  // Test invalid configuration values
-  let invalid_configs = [
-    ("sampling.probability", "-0.1"),  // Negative probability
-    ("sampling.probability", "1.5"),   // Probability > 1
-    ("batch.size", "0"),               // Zero batch size
-    ("batch.size", "-100"),            // Negative batch size
-    ("batch.timeout", "0"),            // Zero timeout
-    ("batch.timeout", "-5000"),        // Negative timeout
-    ("exporter.type", ""),             // Empty exporter type
-    ("service.name", ""),              // Empty service name
-    ("telemetry.sdk.name", ""),        // Empty SDK name
-    ("invalid.format", "value")        // Invalid key format
-  ]
-  
-  // Validate each invalid configuration
-  for (key, value) in invalid_configs {
-    match key {
-      "sampling.probability" => {
-        let prob = value.to_float()
-        assert_true(prob < 0.0 || prob > 1.0)
-      },
-      "batch.size" => {
-        let size = value.to_int()
-        assert_true(size <= 0)
-      },
-      "batch.timeout" => {
-        let timeout = value.to_int()
-        assert_true(timeout <= 0)
-      },
-      "exporter.type" | "service.name" | "telemetry.sdk.name" => {
-        assert_eq(value.length(), 0)
-      },
-      _ => {
-        // Invalid key format should be detected
-        assert_true(key.contains(".") || key.length() == 0)
-      }
-    }
-  }
-  
-  // Test configuration with missing required keys
-  let incomplete_configs = [
-    [],  // Empty configuration
-    [("optional.key", "value")],  // Only optional keys
-    [("service.name", "test")],  // Missing other required keys
-    [("exporter.type", "otlp")]  // Missing service name
-  ]
-  
-  for config in incomplete_configs {
-    // Check for required keys
-    let has_service_name = config.any(|(key, _)| key == "service.name")
-    let has_sdk_name = config.any(|(key, _)| key == "telemetry.sdk.name")
-    let has_exporter_type = config.any(|(key, _)| key == "exporter.type")
-    
-    if config.length() == 0 {
-      assert_eq(config.length(), 0)
-    } else if !has_service_name || !has_sdk_name || !has_exporter_type {
-      assert_true(!has_service_name || !has_sdk_name || !has_exporter_type)
-    }
-  }
-}
-
-// Test 5: Dynamic Configuration Updates
-test "dynamic configuration updates" {
-  // Initial configuration
-  let mut current_config = [
-    ("service.name", "azimuth-service"),
-    ("service.version", "1.0.0"),
-    ("exporter.type", "otlp"),
-    ("sampling.probability", "1.0"),
-    ("batch.size", "512"),
-    ("feature.flags", "featureA=false,featureB=true")
-  ]
-  
-  // Configuration update 1
-  let update1 = [
-    ("service.version", "1.1.0"),
-    ("sampling.probability", "0.5"),
-    ("feature.flags", "featureA=true,featureB=true,featureC=false")
-  ]
-  
-  // Apply update 1
-  for (key, new_value) in update1 {
-    current_config = current_config.map(|(config_key, config_value)| {
-      if config_key == key {
-        (config_key, new_value)
-      } else {
-        (config_key, config_value)
-      }
-    })
-  }
-  
-  // Verify update 1
-  for (key, value) in current_config {
-    match key {
-      "service.version" => assert_eq(value, "1.1.0"),
-      "sampling.probability" => assert_eq(value, "0.5"),
-      "feature.flags" => assert_eq(value, "featureA=true,featureB=true,featureC=false"),
-      _ => {}
-    }
-  }
-  
-  // Configuration update 2 (add new key)
-  current_config = current_config.concat([("new.metric.enabled", "true")])
-  
-  // Configuration update 3 (remove key simulation)
-  current_config = current_config.filter(|(key, _)| key != "feature.flags")
-  
-  // Verify final state
-  assert_eq(current_config.length(), 6)  // 5 original - 1 removed + 1 added
-  
-  let has_new_metric = current_config.any(|(key, _)| key == "new.metric.enabled")
-  let has_feature_flags = current_config.any(|(key, _)| key == "feature.flags")
-  
-  assert_true(has_new_metric)
-  assert_false(has_feature_flags)
-}
-
-// Test 6: Configuration Profiles and Environments
-test "configuration profiles and environments" {
-  // Development profile
-  let dev_profile = [
-    ("service.name", "azimuth-service-dev"),
-    ("service.version", "1.0.0-dev"),
-    ("exporter.type", "console"),
-    ("sampling.probability", "1.0"),
-    ("batch.size", "32"),
-    ("log.level", "debug"),
-    ("environment", "development")
-  ]
-  
-  // Production profile
-  let prod_profile = [
-    ("service.name", "azimuth-service-prod"),
-    ("service.version", "1.0.0"),
-    ("exporter.type", "otlp"),
-    ("exporter.endpoint", "https://otel-collector.production:4318"),
-    ("sampling.probability", "0.1"),
-    ("batch.size", "1024"),
-    ("log.level", "info"),
-    ("environment", "production")
-  ]
-  
-  // Testing profile
-  let test_profile = [
-    ("service.name", "azimuth-service-test"),
-    ("service.version", "1.0.0-test"),
-    ("exporter.type", "in-memory"),
-    ("sampling.probability", "1.0"),
-    ("batch.size", "128"),
-    ("log.level", "debug"),
-    ("environment", "testing")
-  ]
-  
-  // Validate development profile
-  for (key, value) in dev_profile {
-    match key {
-      "environment" => assert_eq(value, "development"),
-      "exporter.type" => assert_eq(value, "console"),
-      "log.level" => assert_eq(value, "debug"),
-      "sampling.probability" => assert_eq(value, "1.0"),
-      _ => {}
-    }
-  }
-  
-  // Validate production profile
-  for (key, value) in prod_profile {
-    match key {
-      "environment" => assert_eq(value, "production"),
-      "exporter.type" => assert_eq(value, "otlp"),
-      "log.level" => assert_eq(value, "info"),
-      "sampling.probability" => assert_eq(value, "0.1"),
-      _ => {}
-    }
-  }
-  
-  // Validate testing profile
-  for (key, value) in test_profile {
-    match key {
-      "environment" => assert_eq(value, "testing"),
-      "exporter.type" => assert_eq(value, "in-memory"),
-      "log.level" => assert_eq(value, "debug"),
-      "sampling.probability" => assert_eq(value, "1.0"),
-      _ => {}
-    }
-  }
-  
-  // Test profile selection
-  let profiles = [
-    ("development", dev_profile),
-    ("production", prod_profile),
-    ("testing", test_profile)
-  ]
-  
-  let active_environment = "production"
-  let mut active_profile = []
-  
-  for (env, profile) in profiles {
-    if env == active_environment {
-      active_profile = profile
-      break
-    }
-  }
-  
-  assert_eq(active_profile.length(), 8)
-  assert_eq(active_profile.filter(|(key, _)| key == "environment")[0][1], "production")
-}
-
-// Test 7: Configuration Security and Sensitive Data
-test "configuration security and sensitive data" {
-  // Configuration with sensitive data
-  let config_with_secrets = [
-    ("service.name", "azimuth-service"),
-    ("exporter.type", "otlp"),
-    ("exporter.endpoint", "https://otel-collector.example.com:4318"),
-    ("exporter.auth.token", "secret-token-12345"),  // Sensitive
-    ("exporter.auth.api_key", "api-key-67890"),     // Sensitive
-    ("database.password", "db-password-abcde"),      // Sensitive
-    ("tls.certificate.path", "/path/to/cert.pem"),   // Sensitive path
-    ("tls.private.key.path", "/path/to/key.pem"),   // Sensitive path
-    ("batch.size", "512"),
-    ("sampling.probability", "0.1")
-  ]
-  
-  // Define sensitive keys
-  let sensitive_keys = [
-    "exporter.auth.token",
-    "exporter.auth.api_key",
-    "database.password",
-    "tls.certificate.path",
-    "tls.private.key.path"
-  ]
-  
-  // Test sensitive data masking
-  let masked_config = config_with_secrets.map(|(key, value)| {
-    let mut is_sensitive = false
-    for sensitive_key in sensitive_keys {
-      if key == sensitive_key {
-        is_sensitive = true
-        break
-      }
-    }
-    
-    if is_sensitive {
-      (key, "***MASKED***")
-    } else {
-      (key, value)
-    }
+  // 检查特定错误
+  let has_sampling_error = Array::any(validation_errors, fn(error) {
+    String::contains(error, "sampling.rate")
+  })
+  let has_batch_size_error = Array::any(validation_errors, fn(error) {
+    String::contains(error, "batch.size")
+  })
+  let has_timeout_error = Array::any(validation_errors, fn(error) {
+    String::contains(error, "export.timeout")
   })
   
-  // Verify masking
-  for (key, value) in masked_config {
-    let mut is_sensitive = false
-    for sensitive_key in sensitive_keys {
-      if key == sensitive_key {
-        is_sensitive = true
-        break
-      }
-    }
-    
-    if is_sensitive {
-      assert_eq(value, "***MASKED***")
-    } else {
-      assert_true(value != "***MASKED***")
-    }
-  }
+  assert_true(has_sampling_error)
+  assert_true(has_batch_size_error)
+  assert_true(has_timeout_error)
   
-  // Test configuration encryption simulation
-  let encrypted_config = config_with_secrets.map(|(key, value)| {
-    let mut is_sensitive = false
-    for sensitive_key in sensitive_keys {
-      if key == sensitive_key {
-        is_sensitive = true
-        break
-      }
-    }
-    
-    if is_sensitive {
-      (key, "encrypted:" + value.length().to_string() + "bytes")
-    } else {
-      (key, value)
-    }
-  })
+  // 测试配置修复
+  let fixed_config = ConfigurationManager::auto_fix(invalid_config)
+  assert_true(ConfigurationManager::is_valid(fixed_config))
   
-  // Verify encryption simulation
-  for (key, value) in encrypted_config {
-    if key.contains("password") || key.contains("token") || key.contains("api_key") || key.contains("tls.") {
-      assert_true(value.starts_with("encrypted:"))
-    }
-  }
+  // 验证修复后的值
+  assert_eq(ConfigurationManager::get_sampling_rate(fixed_config), 0.0)  // 修复为0
+  assert_eq(ConfigurationManager::get_batch_size(fixed_config), 1)      // 修复为1
+  assert_eq(ConfigurationManager::get_export_timeout(fixed_config), 1000) // 修复为1000
+  
+  // 测试配置回退
+  let fallback_config = ConfigurationManager::with_fallback(
+    invalid_config,
+    ConfigurationManager::get_default_config(config_manager)
+  )
+  
+  assert_true(ConfigurationManager::is_valid(fallback_config))
+  assert_eq(ConfigurationManager::get_service_name(fallback_config), "azimuth-service")
+  
+  assert_true(true)
 }
 
-// Test 8: Configuration Schema Validation
-test "configuration schema validation" {
-  // Define configuration schema
-  let config_schema = [
-    ("service.name", "string", "required"),
-    ("service.version", "string", "required"),
-    ("telemetry.sdk.name", "string", "required"),
-    ("telemetry.sdk.version", "string", "required"),
-    ("exporter.type", "string", "required", ["otlp", "jaeger", "zipkin", "console", "in-memory"]),
-    ("exporter.endpoint", "url", "optional"),
-    ("sampling.probability", "float", "optional", "0.0-1.0"),
-    ("batch.size", "integer", "optional", "1-10000"),
-    ("batch.timeout", "integer", "optional", "100-60000"),
-    ("resource.attributes", "string", "optional"),
-    ("log.level", "string", "optional", ["trace", "debug", "info", "warn", "error", "fatal"])
-  ]
+test "配置继承和层次结构" {
+  // 测试配置继承和层次结构
+  let config_manager = ConfigurationManager::new()
   
-  // Valid configuration according to schema
-  let valid_config = [
-    ("service.name", "azimuth-service"),
-    ("service.version", "1.0.0"),
-    ("telemetry.sdk.name", "azimuth"),
-    ("telemetry.sdk.version", "0.1.0"),
-    ("exporter.type", "otlp"),
-    ("exporter.endpoint", "http://localhost:4318"),
-    ("sampling.probability", "0.1"),
-    ("batch.size", "512"),
-    ("batch.timeout", "5000"),
-    ("log.level", "info")
-  ]
+  // 创建基础配置
+  let base_config = ConfigurationManager::with_overrides(
+    ConfigurationManager::get_default_config(config_manager),
+    [
+      ("service.name", "base-service"),
+      ("service.version", "1.0.0"),
+      ("sampling.rate", "0.5"),
+      ("export.endpoint", "http://base-collector:4317")
+    ]
+  )
   
-  // Invalid configuration according to schema
-  let invalid_config = [
-    ("service.name", "azimuth-service"),
-    ("service.version", "1.0.0"),
-    ("telemetry.sdk.name", "azimuth"),
-    ("telemetry.sdk.version", "0.1.0"),
-    ("exporter.type", "invalid_exporter"),  // Invalid enum value
-    ("exporter.endpoint", "not-a-url"),     // Invalid URL format
-    ("sampling.probability", "1.5"),        // Out of range
-    ("batch.size", "0"),                    // Out of range
-    ("batch.timeout", "-1000"),             // Out of range
-    ("log.level", "invalid_level")          // Invalid enum value
-  ]
+  // 创建环境配置（继承基础配置）
+  let prod_config = ConfigurationManager::inherit(base_config, [
+    ("service.name", "prod-service"),
+    ("deployment.environment", "production"),
+    ("export.endpoint", "http://prod-collector:4317")
+  ])
   
-  // Validate valid configuration
-  for (key, value) in valid_config {
-    match key {
-      "exporter.type" => {
-        let valid_types = ["otlp", "jaeger", "zipkin", "console", "in-memory"]
-        assert_true(valid_types.any(|valid_type| valid_type == value))
-      },
-      "sampling.probability" => {
-        let prob = value.to_float()
-        assert_true(prob >= 0.0 && prob <= 1.0)
-      },
-      "batch.size" => {
-        let size = value.to_int()
-        assert_true(size >= 1 && size <= 10000)
-      },
-      "batch.timeout" => {
-        let timeout = value.to_int()
-        assert_true(timeout >= 100 && timeout <= 60000)
-      },
-      "log.level" => {
-        let valid_levels = ["trace", "debug", "info", "warn", "error", "fatal"]
-        assert_true(valid_levels.any(|valid_level| valid_level == value))
-      },
-      _ => {}
-    }
-  }
+  // 验证环境配置
+  assert_eq(ConfigurationManager::get_service_name(prod_config), "prod-service")  // 覆盖
+  assert_eq(ConfigurationManager::get_service_version(prod_config), "1.0.0")     // 继承
+  assert_eq(ConfigurationManager::get_sampling_rate(prod_config), 0.5)           // 继承
+  assert_eq(ConfigurationManager::get_export_endpoint(prod_config), Some("http://prod-collector:4317")) // 覆盖
+  assert_eq(ConfigurationManager::get_deployment_environment(prod_config), Some("production")) // 新增
   
-  // Validate invalid configuration (should detect errors)
-  let mut validation_errors = []
+  // 创建服务特定配置
+  let auth_service_config = ConfigurationManager::inherit(prod_config, [
+    ("service.name", "auth-service"),
+    ("service.type", "authentication"),
+    ("sampling.rate", "1.0")  // 认证服务100%采样
+  ])
   
-  for (key, value) in invalid_config {
-    match key {
-      "exporter.type" => {
-        let valid_types = ["otlp", "jaeger", "zipkin", "console", "in-memory"]
-        if !valid_types.any(|valid_type| valid_type == value) {
-          validation_errors = validation_errors.concat([("Invalid exporter type: " + value)])
-        }
-      },
-      "sampling.probability" => {
-        let prob = value.to_float()
-        if prob < 0.0 || prob > 1.0 {
-          validation_errors = validation_errors.concat([("Sampling probability out of range: " + value)])
-        }
-      },
-      "batch.size" => {
-        let size = value.to_int()
-        if size < 1 || size > 10000 {
-          validation_errors = validation_errors.concat([("Batch size out of range: " + value)])
-        }
-      },
-      "batch.timeout" => {
-        let timeout = value.to_int()
-        if timeout < 100 || timeout > 60000 {
-          validation_errors = validation_errors.concat([("Batch timeout out of range: " + value)])
-        }
-      },
-      "log.level" => {
-        let valid_levels = ["trace", "debug", "info", "warn", "error", "fatal"]
-        if !valid_levels.any(|valid_level| valid_level == value) {
-          validation_errors = validation_errors.concat([("Invalid log level: " + value)])
-        }
-      },
-      _ => {}
-    }
-  }
+  // 验证服务配置
+  assert_eq(ConfigurationManager::get_service_name(auth_service_config), "auth-service")
+  assert_eq(ConfigurationManager::get_service_version(auth_service_config), "1.0.0")
+  assert_eq(ConfigurationManager::get_sampling_rate(auth_service_config), 1.0)
+  assert_eq(ConfigurationManager::get_deployment_environment(auth_service_config), Some("production"))
+  assert_eq(ConfigurationManager::get_service_type(auth_service_config), Some("authentication"))
   
-  // Should have detected all validation errors
-  assert_eq(validation_errors.length(), 6)
+  // 测试配置层次查询
+  let config_hierarchy = ConfigurationManager::get_hierarchy(auth_service_config)
+  assert_eq(Array::length(config_hierarchy), 3)  // base -> prod -> auth
+  
+  let base_layer = Array::get(config_hierarchy, 0)
+  let prod_layer = Array::get(config_hierarchy, 1)
+  let auth_layer = Array::get(config_hierarchy, 2)
+  
+  assert_eq(ConfigurationManager::get_service_name(base_layer), "base-service")
+  assert_eq(ConfigurationManager::get_service_name(prod_layer), "prod-service")
+  assert_eq(ConfigurationManager::get_service_name(auth_layer), "auth-service")
+  
+  assert_true(true)
+}
+
+test "配置模板和预设" {
+  // 测试配置模板和预设
+  let config_manager = ConfigurationManager::new()
+  
+  // 测试开发环境预设
+  let dev_config = ConfigurationManager::use_preset("development")
+  assert_eq(ConfigurationManager::get_deployment_environment(dev_config), Some("development"))
+  assert_eq(ConfigurationManager::get_sampling_rate(dev_config), 1.0)  // 开发环境100%采样
+  assert_eq(ConfigurationManager::get_debug_enabled(dev_config), true)
+  
+  // 测试生产环境预设
+  let prod_config = ConfigurationManager::use_preset("production")
+  assert_eq(ConfigurationManager::get_deployment_environment(prod_config), Some("production"))
+  assert_eq(ConfigurationManager::get_sampling_rate(prod_config), 0.1)  // 生产环境10%采样
+  assert_eq(ConfigurationManager::get_debug_enabled(prod_config), false)
+  
+  // 测试测试环境预设
+  let test_config = ConfigurationManager::use_preset("testing")
+  assert_eq(ConfigurationManager::get_deployment_environment(test_config), Some("testing"))
+  assert_eq(ConfigurationManager::get_sampling_rate(test_config), 1.0)  // 测试环境100%采样
+  assert_eq(ConfigurationManager::get_debug_enabled(test_config), true)
+  
+  // 创建自定义模板
+  let custom_template = ConfigurationManager::create_template("custom", [
+    ("service.name", "{{SERVICE_NAME}}"),
+    ("service.version", "{{SERVICE_VERSION}}"),
+    ("deployment.environment", "{{ENVIRONMENT}}"),
+    ("sampling.rate", "{{SAMPLING_RATE}}"),
+    ("export.endpoint", "{{EXPORT_ENDPOINT}}")
+  ])
+  
+  // 应用模板并替换变量
+  let template_config = ConfigurationManager::apply_template(custom_template, [
+    ("SERVICE_NAME", "template-service"),
+    ("SERVICE_VERSION", "2.0.0"),
+    ("ENVIRONMENT", "staging"),
+    ("SAMPLING_RATE", "0.3"),
+    ("EXPORT_ENDPOINT", "http://staging-collector:4317")
+  ])
+  
+  // 验证模板应用
+  assert_eq(ConfigurationManager::get_service_name(template_config), "template-service")
+  assert_eq(ConfigurationManager::get_service_version(template_config), "2.0.0")
+  assert_eq(ConfigurationManager::get_deployment_environment(template_config), Some("staging"))
+  assert_eq(ConfigurationManager::get_sampling_rate(template_config), 0.3)
+  assert_eq(ConfigurationManager::get_export_endpoint(template_config), Some("http://staging-collector:4317"))
+  
+  assert_true(true)
 }
