@@ -292,6 +292,26 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_multidimensional_attribute_query_comprehensive_tests.mbt": {
   },
+  "azimuth_moonbit_span_lifecycle_tests.mbt": {
+  },
+  "azimuth_moonbit_serialization_tests.mbt": {
+  },
+  "azimuth_moonbit_resource_management_tests.mbt": {
+  },
+  "azimuth_moonbit_performance_benchmark_tests.mbt": {
+  },
+  "azimuth_moonbit_integration_tests.mbt": {
+  },
+  "azimuth_moonbit_error_boundary_tests.mbt": {
+  },
+  "azimuth_moonbit_data_types_tests.mbt": {
+  },
+  "azimuth_moonbit_context_propagation_tests.mbt": {
+  },
+  "azimuth_moonbit_concurrent_safety_tests.mbt": {
+  },
+  "azimuth_moonbit_attributes_operations_tests.mbt": {
+  },
   "azimuth_metrics_dashboard_tests.mbt": {
   },
   "azimuth_metrics_aggregation_tests.mbt": {
