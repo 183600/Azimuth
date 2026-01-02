@@ -17,7 +17,12 @@
       "azimuth_new_lifecycle_tests.mbt",
       "azimuth_new_error_boundary_tests.mbt",
       "azimuth_new_microservice_tests.mbt",
-      "../azimuth_new_moonbit_tests.mbt"
+      "../azimuth_new_moonbit_tests.mbt",
+      "../azimuth_telemetry_data_quality_assurance_tests.mbt",
+      "../azimuth_platform_specific_telemetry_adaptation_tests.mbt",
+      "../azimuth_telemetry_system_end_to_end_integration_tests.mbt",
+      "../azimuth_telemetry_system_fault_recovery_tests.mbt",
+      "../azimuth_performance_benchmark_tests.mbt"
     ]
   }
 }

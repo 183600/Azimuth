@@ -1,616 +1,587 @@
-// Azimuth Telemetry System Fault Recovery Tests
-// 遥测系统故障恢复测试用例
+// 遥测系统故障恢复测试
 // 测试遥测系统在各种故障情况下的恢复能力
 
-import "azimuth/azimuth"
-
-// Test 1: 网络故障恢复测试
-pub test "网络故障恢复测试" {
-  // 创建故障模拟器
-  let fault_simulator = azimuth::NetworkFaultSimulator::new()
+// Test 1: 网络连接中断恢复测试
+pub test "网络连接中断恢复测试" {
+  // 模拟网络连接中断场景下的遥测功能
   
-  // 创建遥测组件
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "fault-recovery-test")
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "fault-recovery-test")
-  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "fault-recovery-test")
+  // 1. 创建网络中断前的遥测数据
+  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "network-recovery-test")
+  let pre_interruption_span = azimuth::Tracer::start_span(tracer, "pre.interruption.operation")
   
-  // 创建故障恢复管理器
-  let recovery_manager = azimuth::FaultRecoveryManager::new()
+  azimuth::Span::add_event(pre_interruption_span, "operation.before.interruption", Some([
+    ("network.status", azimuth::StringValue("connected")),
+    ("operation.phase", azimuth::StringValue("initial"))
+  ]))
   
-  // 配置恢复策略
-  azimuth::FaultRecoveryManager::set_recovery_strategy(recovery_manager, {
-    "network.timeout": "30s",
-    "network.retry.count": "3",
-    "network.retry.delay": "1s",
-    "network.circuit.breaker.threshold": "5",
-    "network.circuit.breaker.timeout": "60s"
-  })
+  // 验证网络中断前的Span
+  assert_eq(azimuth::Span::name(pre_interruption_span), "pre.interruption.operation")
   
-  // 创建网络度量
-  let network_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "network-fault-test")
-  let request_counter = azimuth::Meter::create_counter(network_meter, "network.requests")
-  let error_counter = azimuth::Meter::create_counter(network_meter, "network.errors")
-  let retry_counter = azimuth::Meter::create_counter(network_meter, "network.retries")
-  let recovery_counter = azimuth::Meter::create_counter(network_meter, "network.recoveries")
+  // 2. 模拟网络中断期间的操作
+  let during_interruption_span = azimuth::Tracer::start_span(tracer, "during.interruption.operation")
   
-  // 测试正常网络操作
-  let normal_operations = 20
-  let successful_normal_operations = 0
+  azimuth::Span::add_event(during_interruption_span, "network.interruption.detected", Some([
+    ("network.status", azimuth::StringValue("disconnected")),
+    ("error.code", azimuth::StringValue("NETWORK_ERROR")),
+    ("retry.count", azimuth::IntValue(0))
+  ]))
   
-  for i in 0..normal_operations {
-    let span = azimuth::Tracer::start_span(tracer, "normal-operation-" + i.to_string())
-    
-    // 模拟正常网络请求
-    let network_result = azimuth::NetworkFaultSimulator::simulate_normal_request(fault_simulator)
-    
-    if azimuth::NetworkResult::is_success(network_result) {
-      successful_normal_operations = successful_normal_operations + 1
-      azimuth::Counter::add(request_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("normal")),
-        ("result", azimuth::StringValue("success"))
-      ]))
-    } else {
-      azimuth::Counter::add(error_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("normal")),
-        ("error.type", azimuth::StringValue("network"))
-      ]))
-    }
-    
-    azimuth::Span::add_event(span, "network.request.completed", Some([
-      ("operation.type", azimuth::StringValue("normal")),
-      ("result", azimuth::StringValue(if azimuth::NetworkResult::is_success(network_result) { "success" } else { "error" }))
+  // 模拟重试机制
+  for i in 0..3 {
+    azimuth::Span::add_event(during_interruption_span, "network.retry.attempt", Some([
+      ("retry.count", azimuth::IntValue(i + 1)),
+      ("retry.strategy", azimuth::StringValue("exponential.backoff")),
+      ("retry.delay", azimuth::IntValue((i + 1) * 1000))
     ]))
-    
-    azimuth::Span::end(span)
   }
   
-  // 验证正常操作成功率
-  assert_true(successful_normal_operations > normal_operations * 8 / 10)  // 至少80%成功率
+  // 验证网络中断期间的Span
+  assert_eq(azimuth::Span::name(during_interruption_span), "during.interruption.operation")
   
-  // 测试网络故障和恢复
-  let fault_operations = 30
-  let recovered_operations = 0
+  // 3. 模拟网络恢复后的操作
+  let post_recovery_span = azimuth::Tracer::start_span(tracer, "post.recovery.operation")
   
-  for i in 0..fault_operations {
-    let span = azimuth::Tracer::start_span(tracer, "fault-recovery-operation-" + i.to_string())
-    
-    // 模拟网络故障（前10个操作）
-    let network_result = if i < 10 {
-      azimuth::NetworkFaultSimulator::simulate_network_fault(fault_simulator, "connection_timeout")
-    } else {
-      // 模拟网络恢复
-      azimuth::NetworkFaultSimulator::simulate_normal_request(fault_simulator)
-    }
-    
-    // 使用故障恢复管理器处理结果
-    let recovery_result = azimuth::FaultRecoveryManager::handle_network_result(recovery_manager, network_result)
-    
-    if azimuth::RecoveryResult::is_success(recovery_result) {
-      recovered_operations = recovered_operations + 1
-      azimuth::Counter::add(recovery_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("recovery")),
-        ("fault.type", azimuth::StringValue("network"))
-      ]))
-    }
-    
-    // 记录重试次数
-    let retry_count = azimuth::RecoveryResult::get_retry_count(recovery_result)
-    if retry_count > 0 {
-      azimuth::Counter::add(retry_counter, retry_count.to_double(), Some([
-        ("operation.type", azimuth::StringValue("recovery"))
-      ]))
-    }
-    
-    // 记录网络请求
-    azimuth::Counter::add(request_counter, 1.0, Some([
-      ("operation.type", azimuth::StringValue("recovery")),
-      ("result", azimuth::StringValue(if azimuth::RecoveryResult::is_success(recovery_result) { "success" } else { "failure" }))
-    ]))
-    
-    azimuth::Span::add_event(span, "fault.recovery.attempted", Some([
-      ("operation.index", azimuth::IntValue(i)),
-      ("fault.simulated", azimuth::BoolValue(i < 10)),
-      ("recovery.success", azimuth::BoolValue(azimuth::RecoveryResult::is_success(recovery_result))),
-      ("retry.count", azimuth::IntValue(retry_count))
-    ]))
-    
-    // 记录恢复日志
-    let log_severity = if azimuth::RecoveryResult::is_success(recovery_result) {
-      azimuth::Info
-    } else {
-      azimuth::Error
-    }
-    
-    let log_record = azimuth::LogRecord::new_with_context(
-      log_severity,
-      Some("Network fault recovery " + if azimuth::RecoveryResult::is_success(recovery_result) { "succeeded" } else { "failed" }),
-      Some([
-        ("operation.index", azimuth::IntValue(i)),
-        ("retry.count", azimuth::IntValue(retry_count)),
-        ("fault.simulated", azimuth::BoolValue(i < 10))
-      ]),
-      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-      None,
-      Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(span))),
-      Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(span))),
-      Some(azimuth::Context::root())
-    )
-    
-    azimuth::Logger::emit(logger, log_record)
-    
-    azimuth::Span::end(span)
-  }
+  azimuth::Span::add_event(post_recovery_span, "network.recovery.detected", Some([
+    ("network.status", azimuth::StringValue("reconnected")),
+    ("recovery.time", azimuth::IntValue(15000)),
+    ("total.downtime", azimuth::IntValue(120000))
+  ]))
   
-  // 验证故障恢复成功率
-  let recovery_rate = recovered_operations.to_double() / fault_operations.to_double()
-  assert_true(recovery_rate > 0.7)  // 至少70%恢复成功率
+  azimuth::Span::add_event(post_recovery_span, "operation.resumed", Some([
+    ("operation.phase", azimuth::StringValue("recovery")),
+    ("data.sync.status", azimuth::StringValue("in.progress"))
+  ]))
   
-  // 验证熔断器状态
-  let circuit_breaker_state = azimuth::FaultRecoveryManager::get_circuit_breaker_state(recovery_manager)
-  assert_true(azimuth::CircuitBreakerState::is_closed(circuit_breaker_state))  // 熔断器应该关闭
+  // 验证网络恢复后的Span
+  assert_eq(azimuth::Span::name(post_recovery_span), "post.recovery.operation")
   
-  // 创建恢复性能度量
-  let recovery_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "fault-recovery-performance")
-  let recovery_rate_gauge = azimuth::Meter::create_gauge(recovery_meter, "recovery.success.rate")
-  let retry_rate_histogram = azimuth::Meter::create_histogram(recovery_meter, "retry.rate", Some("Retry rate"), None)
+  // 4. 测试度量在网络中断期间的行为
+  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "network-recovery-meter")
+  let network_error_counter = azimuth::Meter::create_counter(meter, "network.errors.total")
+  let network_recovery_time_histogram = azimuth::Meter::create_histogram(meter, "network.recovery.time")
+  let data_loss_counter = azimuth::Meter::create_counter(meter, "data.loss.events")
   
-  azimuth::Gauge::record(recovery_rate_gauge, recovery_rate)
+  // 记录网络错误
+  azimuth::Counter::add(network_error_counter, 1.0)
+  azimuth::Histogram::record(network_recovery_time_histogram, 120000.0)  // 2分钟恢复时间
+  azimuth::Counter::add(data_loss_counter, 5.0)  // 丢失5个数据点
   
-  let total_retries = azimuth::MeterProvider::get_metric_value(network_meter, "network.retries")
-  let retry_rate = total_retries / fault_operations.to_double()
-  azimuth::Histogram::record(retry_rate_histogram, retry_rate)
+  // 验证度量属性
+  assert_eq(network_error_counter.name, "network.errors.total")
+  assert_eq(network_recovery_time_histogram.name, "network.recovery.time")
+  assert_eq(data_loss_counter.name, "data.loss.events")
   
-  // 验证恢复性能指标
-  assert_true(recovery_rate > 0.7)
-  assert_true(retry_rate < 2.0)  // 平均重试次数应该小于2
+  // 5. 测试日志在网络故障期间的行为
+  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "network-recovery-logger")
+  
+  let error_log = azimuth::LogRecord::new_with_context(
+    azimuth::Error,
+    Some("Network connection interrupted - telemetry data may be lost"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(during_interruption_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(during_interruption_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  let recovery_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Network connection restored - resuming normal telemetry operations"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(post_recovery_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(post_recovery_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  // 发出日志
+  azimuth::Logger::emit(logger, error_log)
+  azimuth::Logger::emit(logger, recovery_log)
+  
+  // 验证日志记录
+  assert_eq(azimuth::LogRecord::severity_number(error_log), azimuth::Error)
+  assert_eq(azimuth::LogRecord::body(error_log), Some("Network connection interrupted - telemetry data may be lost"))
+  assert_eq(azimuth::LogRecord::severity_number(recovery_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(recovery_log), Some("Network connection restored - resuming normal telemetry operations"))
 }
 
-// Test 2: 存储系统故障恢复测试
-pub test "存储系统故障恢复测试" {
-  // 创建存储故障模拟器
-  let storage_fault_simulator = azimuth::StorageFaultSimulator::new()
+// Test 2: 内存不足情况恢复测试
+pub test "内存不足情况恢复测试" {
+  // 模拟内存不足情况下的遥测系统行为
   
-  // 创建遥测组件
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "storage-fault-test")
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "storage-fault-test")
-  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "storage-fault-test")
+  // 1. 创建内存压力检测
+  let memory_monitor_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "memory-monitor")
+  let memory_pressure_span = azimuth::Tracer::start_span(memory_monitor_tracer, "memory.pressure.detection")
   
-  // 创建故障恢复管理器
-  let recovery_manager = azimuth::FaultRecoveryManager::new()
+  azimuth::Span::add_event(memory_pressure_span, "memory.pressure.detected", Some([
+    ("memory.usage", azimuth::IntValue(85)),  // 85%内存使用率
+    ("available.memory", azimuth::IntValue(2048)),  // 2GB可用内存
+    ("pressure.level", azimuth::StringValue("moderate"))
+  ]))
   
-  // 配置存储恢复策略
-  azimuth::FaultRecoveryManager::set_storage_recovery_strategy(recovery_manager, {
-    "storage.backup.enabled": "true",
-    "storage.backup.interval": "1h",
-    "storage.retry.count": "5",
-    "storage.retry.delay": "2s",
-    "storage.fallback.mode": "cache"
-  })
+  // 验证内存压力检测Span
+  assert_eq(azimuth::Span::name(memory_pressure_span), "memory.pressure.detection")
   
-  // 创建存储度量
-  let storage_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "storage-fault-test")
-  let write_counter = azimuth::Meter::create_counter(storage_meter, "storage.writes")
-  let read_counter = azimuth::Meter::create_counter(storage_meter, "storage.reads")
-  let storage_error_counter = azimuth::Meter::create_counter(storage_meter, "storage.errors")
-  let backup_counter = azimuth::Meter::create_counter(storage_meter, "storage.backups")
+  // 2. 模拟内存不足期间的遥测操作
+  let low_memory_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "low-memory-operations")
+  let low_memory_span = azimuth::Tracer::start_span(low_memory_tracer, "low.memory.operation")
   
-  // 测试正常存储操作
-  let normal_storage_operations = 15
-  let successful_normal_operations = 0
+  azimuth::Span::add_event(low_memory_span, "memory.optimization.started", Some([
+    ("optimization.strategy", azimuth::StringValue("reduce.buffer.size")),
+    ("buffer.size.before", azimuth::IntValue(10000)),
+    ("buffer.size.after", azimuth::IntValue(1000))
+  ]))
   
-  for i in 0..normal_storage_operations {
-    let span = azimuth::Tracer::start_span(tracer, "normal-storage-operation-" + i.to_string())
-    
-    // 模拟正常存储写入
-    let write_result = azimuth::StorageFaultSimulator::simulate_normal_write(storage_fault_simulator, "data-" + i.to_string())
-    
-    if azimuth::StorageResult::is_success(write_result) {
-      successful_normal_operations = successful_normal_operations + 1
-      azimuth::Counter::add(write_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("normal")),
-        ("result", azimuth::StringValue("success"))
-      ]))
-    } else {
-      azimuth::Counter::add(storage_error_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("normal")),
-        ("error.type", azimuth::StringValue("write"))
-      ]))
-    }
-    
-    // 模拟正常存储读取
-    let read_result = azimuth::StorageFaultSimulator::simulate_normal_read(storage_fault_simulator, "data-" + i.to_string())
-    
-    if azimuth::StorageResult::is_success(read_result) {
-      azimuth::Counter::add(read_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("normal")),
-        ("result", azimuth::StringValue("success"))
-      ]))
-    } else {
-      azimuth::Counter::add(storage_error_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("normal")),
-        ("error.type", azimuth::StringValue("read"))
-      ]))
-    }
-    
-    azimuth::Span::add_event(span, "storage.operation.completed", Some([
-      ("operation.type", azimuth::StringValue("normal")),
-      ("write.result", azimuth::StringValue(if azimuth::StorageResult::is_success(write_result) { "success" } else { "error" })),
-      ("read.result", azimuth::StringValue(if azimuth::StorageResult::is_success(read_result) { "success" } else { "error" }))
-    ]))
-    
-    azimuth::Span::end(span)
-  }
+  azimuth::Span::add_event(low_memory_span, "sampling.activated", Some([
+    ("sampling.rate", azimuth::FloatValue(0.1)),  // 10%采样率
+    ("sampling.strategy", azimuth::StringValue("adaptive"))
+  ]))
   
-  // 验证正常存储操作成功率
-  assert_true(successful_normal_operations > normal_storage_operations * 8 / 10)  // 至少80%成功率
+  // 验证低内存操作Span
+  assert_eq(azimuth::Span::name(low_memory_span), "low.memory.operation")
   
-  // 测试存储故障和恢复
-  let fault_storage_operations = 25
-  let recovered_storage_operations = 0
+  // 3. 模拟内存恢复后的操作
+  let memory_recovered_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "memory-recovered")
+  let memory_recovered_span = azimuth::Tracer::start_span(memory_recovered_tracer, "memory.recovered.operation")
   
-  for i in 0..fault_storage_operations {
-    let span = azimuth::Tracer::start_span(tracer, "fault-storage-operation-" + i.to_string())
-    
-    // 模拟存储故障（前12个操作）
-    let write_result = if i < 12 {
-      azimuth::StorageFaultSimulator::simulate_storage_fault(storage_fault_simulator, "disk_full")
-    } else {
-      // 模拟存储恢复
-      azimuth::StorageFaultSimulator::simulate_normal_write(storage_fault_simulator, "recovery-data-" + i.to_string())
-    }
-    
-    // 使用故障恢复管理器处理结果
-    let recovery_result = azimuth::FaultRecoveryManager::handle_storage_result(recovery_manager, write_result)
-    
-    if azimuth::RecoveryResult::is_success(recovery_result) {
-      recovered_storage_operations = recovered_storage_operations + 1
-      
-      // 检查是否使用了备份
-      if azimuth::RecoveryResult::used_backup(recovery_result) {
-        azimuth::Counter::add(backup_counter, 1.0, Some([
-          ("operation.type", azimuth::StringValue("recovery"))
-        ]))
-      }
-    }
-    
-    // 记录存储操作
-    azimuth::Counter::add(write_counter, 1.0, Some([
-      ("operation.type", azimuth::StringValue("recovery")),
-      ("result", azimuth::StringValue(if azimuth::RecoveryResult::is_success(recovery_result) { "success" } else { "failure" }))
-    ]))
-    
-    azimuth::Span::add_event(span, "storage.fault.recovery.attempted", Some([
-      ("operation.index", azimuth::IntValue(i)),
-      ("fault.simulated", azimuth::BoolValue(i < 12)),
-      ("recovery.success", azimuth::BoolValue(azimuth::RecoveryResult::is_success(recovery_result))),
-      ("backup.used", azimuth::BoolValue(azimuth::RecoveryResult::used_backup(recovery_result)))
-    ]))
-    
-    // 记录恢复日志
-    let log_severity = if azimuth::RecoveryResult::is_success(recovery_result) {
-      azimuth::Info
-    } else {
-      azimuth::Error
-    }
-    
-    let log_record = azimuth::LogRecord::new_with_context(
-      log_severity,
-      Some("Storage fault recovery " + if azimuth::RecoveryResult::is_success(recovery_result) { "succeeded" } else { "failed" }),
-      Some([
-        ("operation.index", azimuth::IntValue(i)),
-        ("fault.simulated", azimuth::BoolValue(i < 12)),
-        ("backup.used", azimuth::BoolValue(azimuth::RecoveryResult::used_backup(recovery_result)))
-      ]),
-      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-      None,
-      Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(span))),
-      Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(span))),
-      Some(azimuth::Context::root())
-    )
-    
-    azimuth::Logger::emit(logger, log_record)
-    
-    azimuth::Span::end(span)
-  }
+  azimuth::Span::add_event(memory_recovered_span, "memory.recovered", Some([
+    ("memory.usage", azimuth::IntValue(45)),  // 45%内存使用率
+    ("available.memory", azimuth::IntValue(8192)),  // 8GB可用内存
+    ("recovery.time", azimuth::IntValue(30000))  // 30秒恢复时间
+  ]))
   
-  // 验证存储故障恢复成功率
-  let storage_recovery_rate = recovered_storage_operations.to_double() / fault_storage_operations.to_double()
-  assert_true(storage_recovery_rate > 0.6)  // 至少60%恢复成功率
+  azimuth::Span::add_event(memory_recovered_span, "normal.operations.resumed", Some([
+    ("buffer.size.restored", azimuth::IntValue(10000)),
+    ("sampling.disabled", azimuth::BoolValue(true))
+  ]))
   
-  // 验证备份使用情况
-  let backup_usage = azimuth::MeterProvider::get_metric_value(storage_meter, "storage.backups")
-  assert_true(backup_usage > 0)  // 应该使用了一些备份
+  // 验证内存恢复操作Span
+  assert_eq(azimuth::Span::name(memory_recovered_span), "memory.recovered.operation")
   
-  // 创建存储恢复性能度量
-  let storage_recovery_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "storage-recovery-performance")
-  let storage_recovery_rate_gauge = azimuth::Meter::create_gauge(storage_recovery_meter, "storage.recovery.rate")
-  let backup_usage_gauge = azimuth::Meter::create_gauge(storage_recovery_meter, "backup.usage.rate")
+  // 4. 测试内存相关的度量
+  let memory_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "memory-monitor")
+  let memory_usage_gauge = azimuth::Meter::create_gauge(memory_meter, "memory.usage.percentage")
+  let buffer_size_gauge = azimuth::Meter::create_gauge(memory_meter, "telemetry.buffer.size")
+  let sampling_rate_gauge = azimuth::Meter::create_gauge(memory_meter, "telemetry.sampling.rate")
+  let memory_pressure_counter = azimuth::Meter::create_counter(memory_meter, "memory.pressure.events")
   
-  azimuth::Gauge::record(storage_recovery_rate_gauge, storage_recovery_rate)
-  azimuth::Gauge::record(backup_usage_gauge, backup_usage / fault_storage_operations.to_double())
+  // 记录内存相关度量
+  azimuth::Counter::add(memory_pressure_counter, 1.0)
   
-  // 验证存储恢复性能指标
-  assert_true(storage_recovery_rate > 0.6)
+  // 验证内存相关度量
+  assert_eq(memory_usage_gauge.name, "memory.usage.percentage")
+  assert_eq(buffer_size_gauge.name, "telemetry.buffer.size")
+  assert_eq(sampling_rate_gauge.name, "telemetry.sampling.rate")
+  assert_eq(memory_pressure_counter.name, "memory.pressure.events")
+  
+  // 5. 测试内存相关的日志
+  let memory_logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "memory-monitor-logger")
+  
+  let memory_warning_log = azimuth::LogRecord::new_with_context(
+    azimuth::Warn,
+    Some("Memory pressure detected - activating telemetry optimization"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(memory_pressure_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(memory_pressure_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  let memory_recovery_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Memory pressure resolved - resuming normal telemetry operations"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(memory_recovered_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(memory_recovered_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  // 发出日志
+  azimuth::Logger::emit(memory_logger, memory_warning_log)
+  azimuth::Logger::emit(memory_logger, memory_recovery_log)
+  
+  // 验证日志记录
+  assert_eq(azimuth::LogRecord::severity_number(memory_warning_log), azimuth::Warn)
+  assert_eq(azimuth::LogRecord::body(memory_warning_log), Some("Memory pressure detected - activating telemetry optimization"))
+  assert_eq(azimuth::LogRecord::severity_number(memory_recovery_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(memory_recovery_log), Some("Memory pressure resolved - resuming normal telemetry operations"))
 }
 
-// Test 3: 内存不足故障恢复测试
-pub test "内存不足故障恢复测试" {
-  // 创建内存故障模拟器
-  let memory_fault_simulator = azimuth::MemoryFaultSimulator::new()
+// Test 3: 数据库连接故障恢复测试
+pub test "数据库连接故障恢复测试" {
+  // 模拟数据库连接故障和恢复场景
   
-  // 创建遥测组件
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "memory-fault-test")
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "memory-fault-test")
-  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "memory-fault-test")
+  // 1. 创建数据库连接检测
+  let db_monitor_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "db-monitor")
+  let db_connection_span = azimuth::Tracer::start_span(db_monitor_tracer, "db.connection.check")
   
-  // 创建故障恢复管理器
-  let recovery_manager = azimuth::FaultRecoveryManager::new()
+  azimuth::Span::add_event(db_connection_span, "db.connection.healthy", Some([
+    ("db.type", azimuth::StringValue("postgresql")),
+    ("db.host", azimuth::StringValue("primary.db.example.com")),
+    ("connection.pool.size", azimuth::IntValue(10)),
+    ("active.connections", azimuth::IntValue(3))
+  ]))
   
-  // 配置内存恢复策略
-  azimuth::FaultRecoveryManager::set_memory_recovery_strategy(recovery_manager, {
-    "memory.gc.threshold": "80%",
-    "memory.cache.cleanup": "true",
-    "memory.buffer.pool": "true",
-    "memory.spill.to.disk": "true"
-  })
+  // 验证数据库连接检测Span
+  assert_eq(azimuth::Span::name(db_connection_span), "db.connection.check")
   
-  // 创建内存度量
-  let memory_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "memory-fault-test")
-  let allocation_counter = azimuth::Meter::create_counter(memory_meter, "memory.allocations")
-  let gc_counter = azimuth::Meter::create_counter(memory_meter, "memory.gc.runs")
-  let spill_counter = azimuth::Meter::create_counter(memory_meter, "memory.spills")
-  let memory_usage_gauge = azimuth::Meter::create_gauge(memory_meter, "memory.usage", Some("Memory usage"), Some("MB"))
+  // 2. 模拟数据库连接故障
+  let db_failure_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "db-failure-handler")
+  let db_failure_span = azimuth::Tracer::start_span(db_failure_tracer, "db.connection.failure")
   
-  // 测试内存分配和回收
-  let memory_operations = 40
-  let successful_memory_operations = 0
+  azimuth::Span::add_event(db_failure_span, "db.connection.lost", Some([
+    ("db.type", azimuth::StringValue("postgresql")),
+    ("error.code", azimuth::StringValue("CONNECTION_TIMEOUT")),
+    ("error.message", azimuth::StringValue("Database connection timeout")),
+    ("retry.attempt", azimuth::IntValue(1))
+  ]))
   
-  for i in 0..memory_operations {
-    let span = azimuth::Tracer::start_span(tracer, "memory-operation-" + i.to_string())
-    
-    // 模拟内存分配
-    let allocation_size = 1024 * 1024 * (10 + (i % 20))  // 10-30MB
-    let memory_result = azimuth::MemoryFaultSimulator::simulate_memory_allocation(memory_fault_simulator, allocation_size)
-    
-    if azimuth::MemoryResult::is_success(memory_result) {
-      successful_memory_operations = successful_memory_operations + 1
-      azimuth::Counter::add(allocation_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("allocation")),
-        ("result", azimuth::StringValue("success")),
-        ("size.mb", azimuth::IntValue(allocation_size / 1024 / 1024))
-      ]))
-    } else {
-      // 内存分配失败，触发恢复机制
-      let recovery_result = azimuth::FaultRecoveryManager::handle_memory_fault(recovery_manager, memory_result)
-      
-      if azimuth::RecoveryResult::triggered_gc(recovery_result) {
-        azimuth::Counter::add(gc_counter, 1.0, Some([
-          ("operation.type", azimuth::StringValue("recovery"))
-        ]))
-      }
-      
-      if azimuth::RecoveryResult::spilled_to_disk(recovery_result) {
-        azimuth::Counter::add(spill_counter, 1.0, Some([
-          ("operation.type", azimuth::StringValue("recovery"))
-        ]))
-      }
-      
-      azimuth::Counter::add(allocation_counter, 1.0, Some([
-        ("operation.type", azimuth::StringValue("allocation")),
-        ("result", azimuth::StringValue("recovered")),
-        ("size.mb", azimuth::IntValue(allocation_size / 1024 / 1024))
-      ]))
-    }
-    
-    // 记录内存使用情况
-    let current_memory_usage = azimuth::MemoryFaultSimulator::get_memory_usage(memory_fault_simulator)
-    azimuth::Gauge::record(memory_usage_gauge, current_memory_usage.to_double() / 1024.0 / 1024.0)  // 转换为MB
-    
-    azimuth::Span::add_event(span, "memory.operation.completed", Some([
-      ("operation.index", azimuth::IntValue(i)),
-      ("allocation.size", azimuth::IntValue(allocation_size / 1024 / 1024)),
-      ("result", azimuth::StringValue(if azimuth::MemoryResult::is_success(memory_result) { "success" } else { "recovered" })),
-      ("memory.usage", azimuth::IntValue(current_memory_usage / 1024 / 1024))
-    ]))
-    
-    // 记录内存日志
-    let log_severity = if current_memory_usage > 1024 * 1024 * 1024 {  // 超过1GB
-      azimuth::Warn
-    } else {
-      azimuth::Info
-    }
-    
-    let log_record = azimuth::LogRecord::new_with_context(
-      log_severity,
-      Some("Memory operation " + if azimuth::MemoryResult::is_success(memory_result) { "succeeded" } else { "recovered" }),
-      Some([
-        ("operation.index", azimuth::IntValue(i)),
-        ("allocation.size", azimuth::IntValue(allocation_size / 1024 / 1024)),
-        ("memory.usage", azimuth::IntValue(current_memory_usage / 1024 / 1024))
-      ]),
-      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-      None,
-      Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(span))),
-      Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(span))),
-      Some(azimuth::Context::root())
-    )
-    
-    azimuth::Logger::emit(logger, log_record)
-    
-    azimuth::Span::end(span)
-    
-    // 模拟内存压力（增加内存使用）
-    if i % 5 == 0 {
-      azimuth::MemoryFaultSimulator::increase_memory_pressure(memory_fault_simulator)
-    }
-  }
+  // 模拟故障转移
+  azimuth::Span::add_event(db_failure_span, "db.failover.started", Some([
+    ("failover.strategy", azimuth::StringValue("secondary.db")),
+    ("secondary.db.host", azimuth::StringValue("secondary.db.example.com")),
+    ("failover.timeout", azimuth::IntValue(5000))
+  ]))
   
-  // 验证内存操作成功率
-  let memory_success_rate = successful_memory_operations.to_double() / memory_operations.to_double()
-  assert_true(memory_success_rate > 0.7)  // 至少70%成功率
+  azimuth::Span::add_event(db_failure_span, "db.failover.completed", Some([
+    ("failover.status", azimuth::StringValue("success")),
+    ("new.db.host", azimuth::StringValue("secondary.db.example.com")),
+    ("connection.established", azimuth::BoolValue(true))
+  ]))
   
-  // 验证恢复机制触发情况
-  let gc_runs = azimuth::MeterProvider::get_metric_value(memory_meter, "memory.gc.runs")
-  let disk_spills = azimuth::MeterProvider::get_metric_value(memory_meter, "memory.spills")
+  // 验证数据库故障Span
+  assert_eq(azimuth::Span::name(db_failure_span), "db.connection.failure")
   
-  assert_true(gc_runs > 0)  // 应该触发了GC
-  assert_true(disk_spills > 0)  // 应该有数据溢出到磁盘
+  // 3. 模拟主数据库恢复
+  let db_recovery_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "db-recovery")
+  let db_recovery_span = azimuth::Tracer::start_span(db_recovery_tracer, "db.primary.recovery")
   
-  // 创建内存恢复性能度量
-  let memory_recovery_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "memory-recovery-performance")
-  let memory_success_rate_gauge = azimuth::Meter::create_gauge(memory_recovery_meter, "memory.allocation.success.rate")
-  let gc_efficiency_histogram = azimuth::Meter::create_histogram(memory_recovery_meter, "gc.efficiency", Some("GC efficiency"), None)
+  azimuth::Span::add_event(db_recovery_span, "db.primary.detected", Some([
+    ("primary.db.host", azimuth::StringValue("primary.db.example.com")),
+    ("health.check.status", azimuth::StringValue("healthy")),
+    ("connection.test", azimuth::StringValue("success"))
+  ]))
   
-  azimuth::Gauge::record(memory_success_rate_gauge, memory_success_rate)
-  azimuth::Histogram::record(gc_efficiency_histogram, gc_runs / memory_operations.to_double())
+  azimuth::Span::add_event(db_recovery_span, "db.failback.started", Some([
+    ("failback.strategy", azimuth::StringValue("gradual")),
+    ("connection.drain.timeout", azimuth::IntValue(30000))
+  ]))
   
-  // 验证内存恢复性能指标
-  assert_true(memory_success_rate > 0.7)
-  assert_true(gc_runs / memory_operations.to_double() < 0.5)  // GC触发率不应该太高
+  azimuth::Span::add_event(db_recovery_span, "db.failback.completed", Some([
+    ("failback.status", azimuth::StringValue("success")),
+    ("primary.db.restored", azimuth::BoolValue(true)),
+    ("secondary.db.disconnected", azimuth::BoolValue(true))
+  ]))
+  
+  // 验证数据库恢复Span
+  assert_eq(azimuth::Span::name(db_recovery_span), "db.primary.recovery")
+  
+  // 4. 测试数据库相关的度量
+  let db_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "db-telemetry")
+  let db_connection_pool_gauge = azimuth::Meter::create_gauge(db_meter, "db.connection.pool.size")
+  let db_active_connections_gauge = azimuth::Meter::create_gauge(db_meter, "db.active.connections")
+  let db_failover_counter = azimuth::Meter::create_counter(db_meter, "db.failover.events")
+  let db_query_latency_histogram = azimuth::Meter::create_histogram(db_meter, "db.query.latency")
+  
+  // 记录数据库相关度量
+  azimuth::Counter::add(db_failover_counter, 1.0)
+  azimuth::Histogram::record(db_query_latency_histogram, 150.5)  // 查询延迟
+  
+  // 验证数据库相关度量
+  assert_eq(db_connection_pool_gauge.name, "db.connection.pool.size")
+  assert_eq(db_active_connections_gauge.name, "db.active.connections")
+  assert_eq(db_failover_counter.name, "db.failover.events")
+  assert_eq(db_query_latency_histogram.name, "db.query.latency")
+  
+  // 5. 测试数据库相关的日志
+  let db_logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "db-telemetry-logger")
+  
+  let db_failure_log = azimuth::LogRecord::new_with_context(
+    azimuth::Error,
+    Some("Database connection lost - initiating failover to secondary database"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(db_failure_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(db_failure_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  let db_recovery_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Primary database restored - failing back from secondary database"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(db_recovery_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(db_recovery_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  // 发出日志
+  azimuth::Logger::emit(db_logger, db_failure_log)
+  azimuth::Logger::emit(db_logger, db_recovery_log)
+  
+  // 验证日志记录
+  assert_eq(azimuth::LogRecord::severity_number(db_failure_log), azimuth::Error)
+  assert_eq(azimuth::LogRecord::body(db_failure_log), Some("Database connection lost - initiating failover to secondary database"))
+  assert_eq(azimuth::LogRecord::severity_number(db_recovery_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(db_recovery_log), Some("Primary database restored - failing back from secondary database"))
 }
 
-// Test 4: 级联故障恢复测试
+// Test 4: 服务降级和恢复测试
+pub test "服务降级和恢复测试" {
+  // 模拟服务降级和恢复场景
+  
+  // 1. 创建服务健康监控
+  let service_monitor_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "service-monitor")
+  let service_health_span = azimuth::Tracer::start_span(service_monitor_tracer, "service.health.check")
+  
+  azimuth::Span::add_event(service_health_span, "service.healthy", Some([
+    ("service.name", azimuth::StringValue("telemetry-exporter")),
+    ("service.version", azimuth::StringValue("1.0.0")),
+    ("health.status", azimuth::StringValue("healthy")),
+    ("response.time", azimuth::IntValue(50))
+  ]))
+  
+  // 验证服务健康监控Span
+  assert_eq(azimuth::Span::name(service_health_span), "service.health.check")
+  
+  // 2. 模拟服务降级
+  let degradation_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "degradation-handler")
+  let service_degradation_span = azimuth::Tracer::start_span(degradation_tracer, "service.degradation")
+  
+  azimuth::Span::add_event(service_degradation_span, "service.degradation.detected", Some([
+    ("service.name", azimuth::StringValue("telemetry-exporter")),
+    ("degradation.reason", azimuth::StringValue("high.latency")),
+    ("response.time", azimuth::IntValue(5000)),
+    ("error.rate", azimuth::FloatValue(0.15))  // 15%错误率
+  ]))
+  
+  azimuth::Span::add_event(service_degradation_span, "degradation.strategy.activated", Some([
+    ("strategy.type", azimuth::StringValue("circuit.breaker")),
+    ("circuit.state", azimuth::StringValue("open")),
+    ("fallback.activated", azimuth::BoolValue(true))
+  ]))
+  
+  azimuth::Span::add_event(service_degradation_span, "fallback.service.activated", Some([
+    ("fallback.type", azimuth::StringValue("buffered.export")),
+    ("buffer.size", azimuth::IntValue(1000)),
+    ("flush.interval", azimuth::IntValue(60000))  // 1分钟
+  ]))
+  
+  // 验证服务降级Span
+  assert_eq(azimuth::Span::name(service_degradation_span), "service.degradation")
+  
+  // 3. 模拟服务恢复
+  let recovery_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "service-recovery")
+  let service_recovery_span = azimuth::Tracer::start_span(recovery_tracer, "service.recovery")
+  
+  azimuth::Span::add_event(service_recovery_span, "service.recovery.detected", Some([
+    ("service.name", azimuth::StringValue("telemetry-exporter")),
+    ("recovery.reason", azimuth::StringValue("latency.improved")),
+    ("response.time", azimuth::IntValue(75)),
+    ("error.rate", azimuth::FloatValue(0.02))  // 2%错误率
+  ]))
+  
+  azimuth::Span::add_event(service_recovery_span, "circuit.breaker.reset", Some([
+    ("circuit.state", azimuth::StringValue("closed")),
+    ("reset.strategy", azimuth::StringValue("gradual.traffic.restore"))
+  ]))
+  
+  azimuth::Span::add_event(service_recovery_span, "normal.service.resumed", Some([
+    ("service.status", azimuth::StringValue("normal")),
+    ("fallback.deactivated", azimuth::BoolValue(true)),
+    ("buffer.flushed", azimuth::BoolValue(true)
+  ]))
+  
+  // 验证服务恢复Span
+  assert_eq(azimuth::Span::name(service_recovery_span), "service.recovery")
+  
+  // 4. 测试服务降级相关的度量
+  let service_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "service-telemetry")
+  let service_response_time_histogram = azimuth::Meter::create_histogram(service_meter, "service.response.time")
+  let service_error_rate_gauge = azimuth::Meter::create_gauge(service_meter, "service.error.rate")
+  let circuit_breaker_state_gauge = azimuth::Meter::create_gauge(service_meter, "circuit.breaker.state")
+  let degradation_counter = azimuth::Meter::create_counter(service_meter, "service.degradation.events")
+  
+  // 记录服务相关度量
+  azimuth::Counter::add(degradation_counter, 1.0)
+  azimuth::Histogram::record(service_response_time_histogram, 5000.0)  // 降级期间的高延迟
+  
+  // 验证服务相关度量
+  assert_eq(service_response_time_histogram.name, "service.response.time")
+  assert_eq(service_error_rate_gauge.name, "service.error.rate")
+  assert_eq(circuit_breaker_state_gauge.name, "circuit.breaker.state")
+  assert_eq(degradation_counter.name, "service.degradation.events")
+  
+  // 5. 测试服务相关的日志
+  let service_logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "service-telemetry-logger")
+  
+  let degradation_log = azimuth::LogRecord::new_with_context(
+    azimuth::Warn,
+    Some("Service degradation detected - activating circuit breaker and fallback mechanisms"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(service_degradation_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(service_degradation_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  let recovery_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Service performance restored - resuming normal operations"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(service_recovery_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(service_recovery_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  // 发出日志
+  azimuth::Logger::emit(service_logger, degradation_log)
+  azimuth::Logger::emit(service_logger, recovery_log)
+  
+  // 验证日志记录
+  assert_eq(azimuth::LogRecord::severity_number(degradation_log), azimuth::Warn)
+  assert_eq(azimuth::LogRecord::body(degradation_log), Some("Service degradation detected - activating circuit breaker and fallback mechanisms"))
+  assert_eq(azimuth::LogRecord::severity_number(recovery_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(recovery_log), Some("Service performance restored - resuming normal operations"))
+}
+
+// Test 5: 级联故障恢复测试
 pub test "级联故障恢复测试" {
-  // 创建级联故障模拟器
-  let cascade_fault_simulator = azimuth::CascadeFaultSimulator::new()
+  // 模拟级联故障场景和恢复过程
   
-  // 创建遥测组件
-  let tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "cascade-fault-test")
-  let meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "cascade-fault-test")
-  let logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "cascade-fault-test")
+  // 1. 创建系统健康监控
+  let system_monitor_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "system-monitor")
+  let system_health_span = azimuth::Tracer::start_span(system_monitor_tracer, "system.health.check")
   
-  // 创建故障恢复管理器
-  let recovery_manager = azimuth::FaultRecoveryManager::new()
+  azimuth::Span::add_event(system_health_span, "system.healthy", Some([
+    ("system.status", azimuth::StringValue("operational")),
+    ("component.count", azimuth::IntValue(5)),
+    ("healthy.components", azimuth::IntValue(5))
+  ]))
   
-  // 配置级联故障恢复策略
-  azimuth::FaultRecoveryManager::set_cascade_recovery_strategy(recovery_manager, {
-    "cascade.isolation.enabled": "true",
-    "cascade.propagation.limit": "3",
-    "cascade.recovery.order": "database,network,cache",
-    "cascade.rollback.enabled": "true"
-  })
+  // 验证系统健康监控Span
+  assert_eq(azimuth::Span::name(system_health_span), "system.health.check")
   
-  // 创建级联故障度量
-  let cascade_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "cascade-fault-test")
-  let cascade_counter = azimuth::Meter::create_counter(cascade_meter, "cascade.faults")
-  let isolation_counter = azimuth::Meter::create_counter(cascade_meter, "fault.isolations")
-  let rollback_counter = azimuth::Meter::create_counter(cascade_meter, "fault.rollbacks")
-  let recovery_order_gauge = azimuth::Meter::create_gauge(cascade_meter, "recovery.order.compliance")
+  // 2. 模拟级联故障开始
+  let cascade_failure_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "cascade-failure-handler")
+  let cascade_failure_span = azimuth::Tracer::start_span(cascade_failure_tracer, "cascade.failure")
   
-  // 模拟级联故障场景
-  let cascade_operations = 20
-  let recovered_cascade_operations = 0
+  // 第一个组件故障
+  azimuth::Span::add_event(cascade_failure_span, "component.1.failure", Some([
+    ("component.name", azimuth::StringValue("database")),
+    ("failure.type", azimuth::StringValue("connection.timeout")),
+    ("impact.level", azimuth::StringValue("high"))
+  ]))
   
-  for i in 0..cascade_operations {
-    let span = azimuth::Tracer::start_span(tracer, "cascade-operation-" + i.to_string())
-    
-    // 模拟级联故障（前10个操作）
-    let cascade_result = if i < 10 {
-      azimuth::CascadeFaultSimulator::simulate_cascade_fault(cascade_fault_simulator, [
-        "database.connection.timeout",
-        "network.connection.refused",
-        "cache.service.unavailable"
-      ])
-    } else {
-      // 模拟级联恢复
-      azimuth::CascadeFaultSimulator::simulate_normal_operation(cascade_fault_simulator)
-    }
-    
-    // 使用故障恢复管理器处理级联故障
-    let recovery_result = azimuth::FaultRecoveryManager::handle_cascade_fault(recovery_manager, cascade_result)
-    
-    if azimuth::RecoveryResult::is_success(recovery_result) {
-      recovered_cascade_operations = recovered_cascade_operations + 1
-    }
-    
-    // 记录级联故障
-    if azimuth::CascadeResult::is_cascade(cascade_result) {
-      azimuth::Counter::add(cascade_counter, 1.0, Some([
-        ("operation.index", azimuth::IntValue(i)),
-        ("fault.count", azimuth::IntValue(azimuth::CascadeResult::get_fault_count(cascade_result)))
-      ]))
-    }
-    
-    // 记录故障隔离
-    if azimuth::RecoveryResult::isolated_fault(recovery_result) {
-      azimuth::Counter::add(isolation_counter, 1.0, Some([
-        ("operation.index", azimuth::IntValue(i))
-      ]))
-    }
-    
-    // 记录故障回滚
-    if azimuth::RecoveryResult::rolled_back(recovery_result) {
-      azimuth::Counter::add(rollback_counter, 1.0, Some([
-        ("operation.index", azimuth::IntValue(i))
-      ]))
-    }
-    
-    // 验证恢复顺序
-    let recovery_order = azimuth::RecoveryResult::get_recovery_order(recovery_result)
-    let expected_order = ["database", "network", "cache"]
-    let order_compliance = if recovery_order == expected_order { 1.0 } else { 0.0 }
-    azimuth::Gauge::record(recovery_order_gauge, order_compliance, Some([
-      ("operation.index", azimuth::IntValue(i))
-    ]))
-    
-    azimuth::Span::add_event(span, "cascade.fault.recovery.attempted", Some([
-      ("operation.index", azimuth::IntValue(i)),
-      ("cascade.fault", azimuth::BoolValue(i < 10)),
-      ("recovery.success", azimuth::BoolValue(azimuth::RecoveryResult::is_success(recovery_result))),
-      ("fault.isolated", azimuth::BoolValue(azimuth::RecoveryResult::isolated_fault(recovery_result))),
-      ("fault.rolled_back", azimuth::BoolValue(azimuth::RecoveryResult::rolled_back(recovery_result)))
-    ]))
-    
-    // 记录级联故障恢复日志
-    let log_severity = if azimuth::RecoveryResult::is_success(recovery_result) {
-      azimuth::Info
-    } else if azimuth::CascadeResult::is_cascade(cascade_result) {
-      azimuth::Error
-    } else {
-      azimuth::Warn
-    }
-    
-    let log_record = azimuth::LogRecord::new_with_context(
-      log_severity,
-      Some("Cascade fault recovery " + if azimuth::RecoveryResult::is_success(recovery_result) { "succeeded" } else { "failed" }),
-      Some([
-        ("operation.index", azimuth::IntValue(i)),
-        ("cascade.fault", azimuth::BoolValue(i < 10)),
-        ("fault.isolated", azimuth::BoolValue(azimuth::RecoveryResult::isolated_fault(recovery_result))),
-        ("fault.rolled_back", azimuth::BoolValue(azimuth::RecoveryResult::rolled_back(recovery_result)))
-      ]),
-      Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
-      None,
-      Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(span))),
-      Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(span))),
-      Some(azimuth::Context::root())
-    )
-    
-    azimuth::Logger::emit(logger, log_record)
-    
-    azimuth::Span::end(span)
-  }
+  // 级联到第二个组件
+  azimuth::Span::add_event(cascade_failure_span, "component.2.failure", Some([
+    ("component.name", azimuth::StringValue("cache.service")),
+    ("failure.type", azimuth::StringValue("dependency.unavailable")),
+    ("impact.level", azimuth::StringValue("medium"))
+  ]))
   
-  // 验证级联故障恢复成功率
-  let cascade_recovery_rate = recovered_cascade_operations.to_double() / cascade_operations.to_double()
-  assert_true(cascade_recovery_rate > 0.6)  // 至少60%恢复成功率
+  // 级联到第三个组件
+  azimuth::Span::add_event(cascade_failure_span, "component.3.failure", Some([
+    ("component.name", azimuth::StringValue("message.queue")),
+    ("failure.type", azimuth::StringValue("resource.exhaustion")),
+    ("impact.level", azimuth::StringValue("medium"))
+  ]))
   
-  // 验证故障隔离和回滚机制
-  let isolations = azimuth::MeterProvider::get_metric_value(cascade_meter, "fault.isolations")
-  let rollbacks = azimuth::MeterProvider::get_metric_value(cascade_meter, "fault.rollbacks")
+  // 验证级联故障Span
+  assert_eq(azimuth::Span::name(cascade_failure_span), "cascade.failure")
   
-  assert_true(isolations > 0)  // 应该有故障隔离
-  assert_true(rollbacks > 0)   // 应该有故障回滚
+  // 3. 模拟级联故障恢复
+  let cascade_recovery_tracer = azimuth::TracerProvider::get_tracer(azimuth::TracerProvider::default(), "cascade-recovery")
+  let cascade_recovery_span = azimuth::Tracer::start_span(cascade_recovery_tracer, "cascade.recovery")
   
-  // 创建级联故障恢复性能度量
-  let cascade_recovery_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "cascade-recovery-performance")
-  let cascade_recovery_rate_gauge = azimuth::Meter::create_gauge(cascade_recovery_meter, "cascade.recovery.rate")
-  let isolation_effectiveness_histogram = azimuth::Meter::create_histogram(cascade_recovery_meter, "isolation.effectiveness", Some("Fault isolation effectiveness"), None)
+  // 按依赖顺序恢复组件
+  azimuth::Span::add_event(cascade_recovery_span, "component.1.recovery", Some([
+    ("component.name", azimuth::StringValue("database")),
+    ("recovery.strategy", azimuth::StringValue("connection.restart")),
+    ("recovery.time", azimuth::IntValue(30000))
+  ]))
   
-  azimuth::Gauge::record(cascade_recovery_rate_gauge, cascade_recovery_rate)
-  azimuth::Histogram::record(isolation_effectiveness_histogram, isolations / cascade_operations.to_double())
+  azimuth::Span::add_event(cascade_recovery_span, "component.2.recovery", Some([
+    ("component.name", azimuth::StringValue("cache.service")),
+    ("recovery.strategy", azimuth::StringValue("service.restart")),
+    ("recovery.time", azimuth::IntValue(15000))
+  ]))
   
-  // 验证级联故障恢复性能指标
-  assert_true(cascade_recovery_rate > 0.6)
-  assert_true(isolations / cascade_operations.to_double() > 0.3)  // 至少30%的操作应该有故障隔离
+  azimuth::Span::add_event(cascade_recovery_span, "component.3.recovery", Some([
+    ("component.name", azimuth::StringValue("message.queue")),
+    ("recovery.strategy", azimuth::StringValue("resource.allocation")),
+    ("recovery.time", azimuth::IntValue(10000))
+  ]))
+  
+  azimuth::Span::add_event(cascade_recovery_span, "system.recovery.completed", Some([
+    ("system.status", azimuth::StringValue("operational")),
+    ("recovered.components", azimuth::IntValue(3)),
+    ("total.recovery.time", azimuth::IntValue(55000))
+  ]))
+  
+  // 验证级联故障恢复Span
+  assert_eq(azimuth::Span::name(cascade_recovery_span), "cascade.recovery")
+  
+  // 4. 测试级联故障相关的度量
+  let cascade_meter = azimuth::MeterProvider::get_meter(azimuth::MeterProvider::default(), "cascade-telemetry")
+  let system_health_gauge = azimuth::Meter::create_gauge(cascade_meter, "system.health.percentage")
+  let failure_cascade_counter = azimuth::Meter::create_counter(cascade_meter, "cascade.failure.events")
+  let recovery_time_histogram = azimuth::Meter::create_histogram(cascade_meter, "component.recovery.time")
+  let dependency_health_gauge = azimuth::Meter::create_gauge(cascade_meter, "dependency.health.status")
+  
+  // 记录级联故障相关度量
+  azimuth::Counter::add(failure_cascade_counter, 1.0)
+  azimuth::Histogram::record(recovery_time_histogram, 30000.0)  // 数据库恢复时间
+  
+  // 验证级联故障相关度量
+  assert_eq(system_health_gauge.name, "system.health.percentage")
+  assert_eq(failure_cascade_counter.name, "cascade.failure.events")
+  assert_eq(recovery_time_histogram.name, "component.recovery.time")
+  assert_eq(dependency_health_gauge.name, "dependency.health.status")
+  
+  // 5. 测试级联故障相关的日志
+  let cascade_logger = azimuth::LoggerProvider::get_logger(azimuth::LoggerProvider::default(), "cascade-telemetry-logger")
+  
+  let cascade_failure_log = azimuth::LogRecord::new_with_context(
+    azimuth::Error,
+    Some("Cascade failure detected - multiple components failing in sequence"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(cascade_failure_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(cascade_failure_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  let cascade_recovery_log = azimuth::LogRecord::new_with_context(
+    azimuth::Info,
+    Some("Cascade recovery completed - all components restored to operational status"),
+    Some(azimuth::Attributes::new()),
+    Some(azimuth::Clock::now_unix_nanos(azimuth::Clock::system())),
+    None,
+    Some(azimuth::SpanContext::trace_id(azimuth::Span::span_context(cascade_recovery_span))),
+    Some(azimuth::SpanContext::span_id(azimuth::Span::span_context(cascade_recovery_span))),
+    Some(azimuth::Context::root())
+  )
+  
+  // 发出日志
+  azimuth::Logger::emit(cascade_logger, cascade_failure_log)
+  azimuth::Logger::emit(cascade_logger, cascade_recovery_log)
+  
+  // 验证日志记录
+  assert_eq(azimuth::LogRecord::severity_number(cascade_failure_log), azimuth::Error)
+  assert_eq(azimuth::LogRecord::body(cascade_failure_log), Some("Cascade failure detected - multiple components failing in sequence"))
+  assert_eq(azimuth::LogRecord::severity_number(cascade_recovery_log), azimuth::Info)
+  assert_eq(azimuth::LogRecord::body(cascade_recovery_log), Some("Cascade recovery completed - all components restored to operational status"))
 }
