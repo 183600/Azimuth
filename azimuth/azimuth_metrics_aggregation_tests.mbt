@@ -1,482 +1,400 @@
-// Azimuth Metrics Aggregation Tests
-// 指标聚合测试
+// Metrics Aggregation Operations Tests for Azimuth
+// This file contains test cases for metrics aggregation operations
 
-test "基础metrics聚合测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "aggregation.test")
+test "counter aggregation" {
+  // Test counter metric aggregation
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "counter-aggregation-test")
   
-  // 创建counter并测试聚合
-  let counter = Meter::create_counter(meter, "test.counter", Some("Test counter"), Some("count"))
+  // Create counters with different attributes
+  let base_counter = azimuth::Meter::create_counter(meter, "requests.total", Some("Total number of requests"), Some("count"))
+  let error_counter = azimuth::Meter::create_counter(meter, "errors.total", Some("Total number of errors"), Some("count"))
   
-  // 添加多个值
-  Counter::add(counter, 10.0)
-  Counter::add(counter, 20.0)
-  Counter::add(counter, 30.0)
-  Counter::add(counter, 40.0)
-  Counter::add(counter, 50.0)
+  // Create attributes for different request types
+  let success_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(success_attrs, "status", azimuth::StringValue("success"))
+  azimuth::Attributes::set(success_attrs, "endpoint", azimuth::StringValue("/api/users"))
   
-  // 验证counter属性
-  assert_eq(counter.name, "test.counter")
-  assert_eq(counter.description, Some("Test counter"))
-  assert_eq(counter.unit, Some("count"))
+  let error_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(error_attrs, "status", azimuth::StringValue("error"))
+  azimuth::Attributes::set(error_attrs, "endpoint", azimuth::StringValue("/api/users"))
+  azimuth::Attributes::set(error_attrs, "error.type", azimuth::StringValue("validation"))
   
-  // 创建histogram并测试聚合
-  let histogram = Meter::create_histogram(meter, "test.histogram", Some("Test histogram"), Some("ms"))
+  // Record counter values
+  azimuth::Counter::add(base_counter, 100.0, Some(success_attrs))
+  azimuth::Counter::add(base_counter, 25.0, Some(error_attrs))
+  azimuth::Counter::add(error_counter, 25.0, Some(error_attrs))
   
-  // 记录多个值
-  Histogram::record(histogram, 100.0)
-  Histogram::record(histogram, 200.0)
-  Histogram::record(histogram, 150.0)
-  Histogram::record(histogram, 300.0)
-  Histogram::record(histogram, 250.0)
+  // Simulate aggregation calculation
+  let total_requests = 100.0 + 25.0  // 125.0
+  let success_rate = (100.0 / total_requests) * 100.0  // 80.0%
+  let error_rate = (25.0 / total_requests) * 100.0  // 20.0%
   
-  // 验证histogram属性
-  assert_eq(histogram.name, "test.histogram")
-  assert_eq(histogram.description, Some("Test histogram"))
-  assert_eq(histogram.unit, Some("ms"))
+  // Verify aggregation results
+  assert_eq(total_requests, 125.0)
+  assert_eq(success_rate, 80.0)
+  assert_eq(error_rate, 20.0)
   
-  // 创建updown counter并测试聚合
-  let updown_counter = Meter::create_updown_counter(meter, "test.updown", Some("Test up-down"), Some("value"))
-  
-  // 添加正值和负值
-  UpDownCounter::add(updown_counter, 100.0)
-  UpDownCounter::add(updown_counter, -25.0)
-  UpDownCounter::add(updown_counter, 50.0)
-  UpDownCounter::add(updown_counter, -75.0)
-  UpDownCounter::add(updown_counter, 25.0)
-  
-  // 验证updown counter属性
-  assert_eq(updown_counter.name, "test.updown")
-  assert_eq(updown_counter.description, Some("Test up-down"))
-  assert_eq(updown_counter.unit, Some("value"))
-  
-  assert_true(true)
+  // Verify counter properties
+  assert_eq(base_counter.name, "requests.total")
+  assert_eq(error_counter.name, "errors.total")
 }
 
-test "多维度metrics聚合测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "multidimensional.aggregation.test")
+test "histogram aggregation" {
+  // Test histogram metric aggregation
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "histogram-aggregation-test")
   
-  // 创建带有属性的metrics
-  let base_attrs = Attributes::new()
-  Attributes::set(base_attrs, "service.name", StringValue("test.service"))
-  Attributes::set(base_attrs, "service.version", StringValue("1.0.0"))
+  // Create histogram for response times
+  let response_histogram = azimuth::Meter::create_histogram(meter, "response.time", Some("Response time in milliseconds"), Some("ms"))
   
-  // 创建多个counter
-  let request_counter = Meter::create_counter(meter, "http.requests.total")
-  let error_counter = Meter::create_counter(meter, "http.errors.total")
-  let duration_counter = Meter::create_counter(meter, "http.duration.total")
+  // Record response time measurements
+  let response_times = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
+  let attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(attrs, "endpoint", azimuth::StringValue("/api/data"))
   
-  // 模拟不同维度的请求
-  let endpoints = ["/api/users", "/api/orders", "/api/products"]
+  for time in response_times {
+    azimuth::Histogram::record(response_histogram, time, Some(attrs))
+  }
+  
+  // Simulate histogram aggregation calculations
+  let count = response_times.length().to_double()
+  let sum = 0.0
+  for time in response_times {
+    sum = sum + time
+  }
+  let mean = sum / count
+  
+  // Calculate percentiles (simplified)
+  let sorted_times = response_times.sort()
+  let p50 = sorted_times[sorted_times.length() / 2]  // Median
+  let p90 = sorted_times[(sorted_times.length() * 9) / 10]  // 90th percentile
+  let p95 = sorted_times[(sorted_times.length() * 95) / 100]  // 95th percentile
+  let p99 = sorted_times[(sorted_times.length() * 99) / 100]  // 99th percentile
+  
+  // Verify aggregation results
+  assert_eq(count, 10.0)
+  assert_eq(sum, 550.0)
+  assert_eq(mean, 55.0)
+  assert_eq(p50, 55.0)  // Median of 10, 20, ..., 100
+  assert_eq(p90, 90.0)
+  assert_eq(p95, 95.0)
+  assert_eq(p99, 99.0)
+  
+  // Verify histogram properties
+  assert_eq(response_histogram.name, "response.time")
+}
+
+test "gauge aggregation" {
+  // Test gauge metric aggregation
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "gauge-aggregation-test")
+  
+  // Create gauges for system metrics
+  let cpu_gauge = azimuth::Meter::create_gauge(meter, "system.cpu.usage", Some("CPU usage percentage"), Some("percent"))
+  let memory_gauge = azimuth::Meter::create_gauge(meter, "system.memory.usage", Some("Memory usage percentage"), Some("percent"))
+  
+  // Create attributes for different instances
+  let instance1_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(instance1_attrs, "instance.id", azimuth::StringValue("instance-1"))
+  
+  let instance2_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(instance2_attrs, "instance.id", azimuth::StringValue("instance-2"))
+  
+  // Simulate gauge values over time
+  let cpu_values_instance1 = [25.0, 30.0, 35.0, 40.0, 45.0]
+  let cpu_values_instance2 = [20.0, 25.0, 30.0, 35.0, 40.0]
+  
+  let memory_values_instance1 = [60.0, 62.0, 64.0, 66.0, 68.0]
+  let memory_values_instance2 = [55.0, 57.0, 59.0, 61.0, 63.0]
+  
+  // Record gauge values (simplified - in real implementation, gauges would be set, not added)
+  for i in 0..cpu_values_instance1.length() {
+    // Record CPU values
+    azimuth::Counter::add(azimuth::Counter::as_instrument(cpu_gauge), cpu_values_instance1[i], Some(instance1_attrs))
+    azimuth::Counter::add(azimuth::Counter::as_instrument(cpu_gauge), cpu_values_instance2[i], Some(instance2_attrs))
+    
+    // Record memory values
+    azimuth::Counter::add(azimuth::Counter::as_instrument(memory_gauge), memory_values_instance1[i], Some(instance1_attrs))
+    azimuth::Counter::add(azimuth::Counter::as_instrument(memory_gauge), memory_values_instance2[i], Some(instance2_attrs))
+  }
+  
+  // Simulate gauge aggregation calculations
+  let avg_cpu_instance1 = cpu_values_instance1.reduce(0.0, fn(acc, x) { acc + x }) / cpu_values_instance1.length().to_double()
+  let avg_cpu_instance2 = cpu_values_instance2.reduce(0.0, fn(acc, x) { acc + x }) / cpu_values_instance2.length().to_double()
+  let avg_cpu_total = (avg_cpu_instance1 + avg_cpu_instance2) / 2.0
+  
+  let avg_memory_instance1 = memory_values_instance1.reduce(0.0, fn(acc, x) { acc + x }) / memory_values_instance1.length().to_double()
+  let avg_memory_instance2 = memory_values_instance2.reduce(0.0, fn(acc, x) { acc + x }) / memory_values_instance2.length().to_double()
+  let avg_memory_total = (avg_memory_instance1 + avg_memory_instance2) / 2.0
+  
+  // Verify aggregation results
+  assert_eq(avg_cpu_instance1, 35.0)
+  assert_eq(avg_cpu_instance2, 30.0)
+  assert_eq(avg_cpu_total, 32.5)
+  
+  assert_eq(avg_memory_instance1, 64.0)
+  assert_eq(avg_memory_instance2, 59.0)
+  assert_eq(avg_memory_total, 61.5)
+  
+  // Verify gauge properties
+  assert_eq(cpu_gauge.name, "system.cpu.usage")
+  assert_eq(memory_gauge.name, "system.memory.usage")
+}
+
+test "updown_counter aggregation" {
+  // Test up-down counter aggregation
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "updown-aggregation-test")
+  
+  // Create up-down counters for queue sizes
+  let queue_counter = azimuth::Meter::create_updown_counter(meter, "queue.size", Some("Current queue size"), Some("items"))
+  
+  // Create attributes for different queues
+  let high_priority_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(high_priority_attrs, "queue.name", azimuth::StringValue("high-priority"))
+  
+  let normal_priority_attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(normal_priority_attrs, "queue.name", azimuth::StringValue("normal-priority"))
+  
+  // Simulate queue operations (add and remove)
+  let high_priority_operations = [10, -5, 15, -8, 12, -10]  // Positive = enqueue, Negative = dequeue
+  let normal_priority_operations = [20, -15, 25, -20, 30, -25]
+  
+  // Record up-down counter operations
+  for op in high_priority_operations {
+    azimuth::UpDownCounter::add(queue_counter, op.to_double(), Some(high_priority_attrs))
+  }
+  
+  for op in normal_priority_operations {
+    azimuth::UpDownCounter::add(queue_counter, op.to_double(), Some(normal_priority_attrs))
+  }
+  
+  // Simulate up-down counter aggregation calculations
+  let high_priority_final_size = high_priority_operations.reduce(0, fn(acc, x) { acc + x })
+  let normal_priority_final_size = normal_priority_operations.reduce(0, fn(acc, x) { acc + x })
+  let total_queue_size = high_priority_final_size + normal_priority_final_size
+  
+  // Verify aggregation results
+  assert_eq(high_priority_final_size, 14)  // 10 - 5 + 15 - 8 + 12 - 10 = 14
+  assert_eq(normal_priority_final_size, 15)  // 20 - 15 + 25 - 20 + 30 - 25 = 15
+  assert_eq(total_queue_size, 29)
+  
+  // Verify up-down counter properties
+  assert_eq(queue_counter.name, "queue.size")
+}
+
+test "multi-dimensional aggregation" {
+  // Test multi-dimensional metrics aggregation
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "multi-dimensional-test")
+  
+  // Create counter for requests with multiple dimensions
+  let request_counter = azimuth::Meter::create_counter(meter, "http.requests", Some("HTTP requests count"), Some("count"))
+  
+  // Define dimensions
   let methods = ["GET", "POST", "PUT", "DELETE"]
-  let status_codes = [200, 400, 404, 500]
+  let endpoints = ["/api/users", "/api/orders", "/api/products"]
+  let status_codes = ["200", "400", "404", "500"]
   
-  for endpoint in endpoints {
-    for method in methods {
+  // Record requests with different dimension combinations
+  for method in methods {
+    for endpoint in endpoints {
       for status_code in status_codes {
-        // 创建特定于请求的属性
-        let request_attrs = Attributes::new()
-        Attributes::set(request_attrs, "endpoint", StringValue(endpoint))
-        Attributes::set(request_attrs, "method", StringValue(method))
-        Attributes::set(request_attrs, "status_code", IntValue(status_code))
+        let attrs = azimuth::Attributes::new()
+        azimuth::Attributes::set(attrs, "method", azimuth::StringValue(method))
+        azimuth::Attributes::set(attrs, "endpoint", azimuth::StringValue(endpoint))
+        azimuth::Attributes::set(attrs, "status_code", azimuth::StringValue(status_code))
         
-        // 记录请求
-        Counter::add(request_counter, 1.0, Some(request_attrs))
+        // Simulate different request counts based on dimensions
+        let count = match (method, status_code) {
+          ("GET", "200") => 100
+          ("GET", "404") => 20
+          ("POST", "200") => 50
+          ("POST", "400") => 10
+          ("PUT", "200") => 30
+          ("PUT", "400") => 5
+          ("DELETE", "200") => 15
+          ("DELETE", "404") => 3
+          _ => 2
+        }.to_double()
         
-        // 如果是错误状态，记录错误
-        if status_code >= 400 {
-          Counter::add(error_counter, 1.0, Some(request_attrs))
-        }
-        
-        // 记录持续时间（模拟）
-        let duration = 50.0 + status_code.to_double() * 0.1
-        Counter::add(duration_counter, duration, Some(request_attrs))
+        azimuth::Counter::add(request_counter, count, Some(attrs))
       }
     }
   }
   
-  // 验证metrics属性
-  assert_eq(request_counter.name, "http.requests.total")
-  assert_eq(error_counter.name, "http.errors.total")
-  assert_eq(duration_counter.name, "http.duration.total")
+  // Simulate multi-dimensional aggregation
+  let total_requests = methods.length() * endpoints.length() * status_codes.length()
   
-  // 创建histogram并记录不同维度的值
-  let response_histogram = Meter::create_histogram(meter, "http.response.duration")
+  // Aggregate by method
+  let get_requests = 3 * 100 + 3 * 20 + 3 * 2 + 3 * 2  // GET requests across all endpoints and status codes
+  let post_requests = 3 * 50 + 3 * 10 + 3 * 2 + 3 * 2  // POST requests
+  let put_requests = 3 * 30 + 3 * 5 + 3 * 2 + 3 * 2  // PUT requests
+  let delete_requests = 3 * 15 + 3 * 3 + 3 * 2 + 3 * 2  // DELETE requests
   
-  for endpoint in endpoints {
-    for method in methods {
-      // 模拟不同响应时间
-      for i = 0; i < 100; i = i + 1 {
-        let response_time = 50.0 + i.to_double() * 2.0
-        
-        let histogram_attrs = Attributes::new()
-        Attributes::set(histogram_attrs, "endpoint", StringValue(endpoint))
-        Attributes::set(histogram_attrs, "method", StringValue(method))
-        
-        Histogram::record(response_histogram, response_time, Some(histogram_attrs))
-      }
-    }
-  }
+  // Aggregate by status code
+  let success_requests = 4 * 100 + 4 * 50 + 4 * 30 + 4 * 15  // 200 status codes
+  let client_errors = 4 * 20 + 4 * 10 + 4 * 5 + 4 * 3  // 404 status codes
+  let bad_requests = 4 * 2 + 4 * 2 + 4 * 2 + 4 * 2  // 400 status codes
+  let server_errors = 4 * 2 + 4 * 2 + 4 * 2 + 4 * 2  // 500 status codes
   
-  assert_true(true)
+  // Verify aggregation results
+  assert_eq(get_requests, 366.0)  // 300 + 60 + 6 + 6
+  assert_eq(post_requests, 186.0)  // 150 + 30 + 6 + 6
+  assert_eq(put_requests, 117.0)  // 90 + 15 + 6 + 6
+  assert_eq(delete_requests, 66.0)  // 45 + 9 + 6 + 6
+  
+  assert_eq(success_requests, 780.0)  // 400 + 200 + 120 + 60
+  assert_eq(client_errors, 152.0)  // 80 + 40 + 20 + 12
+  assert_eq(bad_requests, 32.0)  // 8 + 8 + 8 + 8
+  assert_eq(server_errors, 32.0)  // 8 + 8 + 8 + 8
+  
+  // Verify counter properties
+  assert_eq(request_counter.name, "http.requests")
 }
 
-test "时间序列metrics聚合测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "timeseries.aggregation.test")
+test "time window aggregation" {
+  // Test time window based aggregation
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "time-window-test")
   
-  // 创建时间序列相关的metrics
-  let cpu_usage = Meter::create_gauge(meter, "system.cpu.usage")
-  let memory_usage = Meter::create_gauge(meter, "system.memory.usage")
-  let disk_io = Meter::create_counter(meter, "system.disk.io")
-  let network_io = Meter::create_counter(meter, "system.network.io")
+  // Create counter for time-based aggregation
+  let time_counter = azimuth::Meter::create_counter(meter, "events.over.time", Some("Events over time"), Some("count"))
   
-  // 模拟时间序列数据
-  for time_point = 0; time_point < 100; time_point = time_point + 1 {
-    // 模拟CPU使用率变化
-    let cpu_value = 0.3 + (time_point.to_double() / 100.0) * 0.4
-    // 注意：Gauge可能没有set方法，这里仅作测试
+  let clock = azimuth::Clock::system()
+  let base_timestamp = azimuth::Clock::now_unix_nanos(clock)
+  
+  // Simulate events over time (1 event per second for 60 seconds)
+  for i in 0..60 {
+    let timestamp = base_timestamp + (i.to_int64() * 1000000000L)  // +i seconds
     
-    // 模拟内存使用率变化
-    let memory_value = 0.5 + (time_point.to_double() / 100.0) * 0.3
+    let attrs = azimuth::Attributes::new()
+    azimuth::Attributes::set(attrs, "timestamp", azimuth::IntValue(timestamp.to_int()))
+    azimuth::Attributes::set(attrs, "second", azimuth::IntValue(i))
     
-    // 模拟磁盘IO累积
-    let disk_io_value = 1024.0 * time_point.to_double()
-    Counter::add(disk_io, disk_io_value)
-    
-    // 模拟网络IO累积
-    let network_io_value = 2048.0 * time_point.to_double()
-    Counter::add(network_io, network_io_value)
-    
-    // 创建时间点属性
-    let time_attrs = Attributes::new()
-    Attributes::set(time_attrs, "timestamp", StringValue("2025-01-01T00:00:" + time_point.to_string() + "Z"))
-    Attributes::set(time_attrs, "time_point", IntValue(time_point))
-    
-    // 记录带有时间属性的指标
-    Counter::add(disk_io, disk_io_value, Some(time_attrs))
-    Counter::add(network_io, network_io_value, Some(time_attrs))
+    azimuth::Counter::add(time_counter, 1.0, Some(attrs))
   }
   
-  // 验证metrics属性
-  assert_eq(cpu_usage.name, "system.cpu.usage")
-  assert_eq(memory_usage.name, "system.memory.usage")
-  assert_eq(disk_io.name, "system.disk.io")
-  assert_eq(network_io.name, "system.network.io")
+  // Simulate time window aggregation
+  let minute_windows = 6  // 6 windows of 10 seconds each
+  let window_size = 10  // 10 seconds per window
   
-  // 创建时间窗口聚合测试
-  let window_counter = Meter::create_counter(meter, "window.aggregated.counter")
+  let window_counts = []
+  for window in 0..minute_windows {
+    let count = 0
+    for second in window * window_size..(window + 1) * window_size {
+      count = count + 1
+    }
+    window_counts.push(count)
+  }
   
-  // 模拟5分钟窗口的数据
-  for window = 0; window < 5; window = window + 1 {
-    for second = 0; second < 60; second = second + 1 {
-      let window_attrs = Attributes::new()
-      Attributes::set(window_attrs, "window", IntValue(window))
-      Attributes::set(window_attrs, "second", IntValue(second))
+  // Verify time window aggregation results
+  for count in window_counts {
+    assert_eq(count, 10)  // Each window should have 10 events
+  }
+  
+  // Verify counter properties
+  assert_eq(time_counter.name, "events.over.time")
+}
+
+test "percentile aggregation" {
+  // Test percentile-based aggregation
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "percentile-test")
+  
+  // Create histogram for percentile calculation
+  let latency_histogram = azimuth::Meter::create_histogram(meter, "request.latency", Some("Request latency"), Some("ms"))
+  
+  // Generate latency data with normal distribution-like pattern
+  let latencies = []
+  for i in 0..1000 {
+    // Simulate latency with some distribution
+    let base_latency = 50.0
+    let variation = (i % 100).to_double() * 2.0
+    let latency = base_latency + variation
+    
+    latencies.push(latency)
+  }
+  
+  let attrs = azimuth::Attributes::new()
+  azimuth::Attributes::set(attrs, "service", azimuth::StringValue("api-service"))
+  
+  // Record latency measurements
+  for latency in latencies {
+    azimuth::Histogram::record(latency_histogram, latency, Some(attrs))
+  }
+  
+  // Simulate percentile calculation
+  let sorted_latencies = latencies.sort()
+  
+  let p50_index = sorted_latencies.length() / 2
+  let p90_index = (sorted_latencies.length() * 9) / 10
+  let p95_index = (sorted_latencies.length() * 95) / 100
+  let p99_index = (sorted_latencies.length() * 99) / 100
+  
+  let p50 = sorted_latencies[p50_index]
+  let p90 = sorted_latencies[p90_index]
+  let p95 = sorted_latencies[p95_index]
+  let p99 = sorted_latencies[p99_index]
+  
+  // Verify percentile results (approximate values based on our data generation)
+  assert_true(p50 >= 100.0 && p50 <= 150.0)  // 50th percentile
+  assert_true(p90 >= 180.0 && p90 <= 230.0)  // 90th percentile
+  assert_true(p95 >= 190.0 && p95 <= 240.0)  // 95th percentile
+  assert_true(p99 >= 198.0 && p99 <= 248.0)  // 99th percentile
+  
+  // Verify histogram properties
+  assert_eq(latency_histogram.name, "request.latency")
+}
+
+test "rate aggregation" {
+  // Test rate-based aggregation
+  let meter_provider = azimuth::MeterProvider::default()
+  let meter = azimuth::MeterProvider::get_meter(meter_provider, "rate-test")
+  
+  // Create counter for rate calculation
+  let rate_counter = azimuth::Meter::create_counter(meter, "events.count", Some("Event count for rate calculation"), Some("count"))
+  
+  let clock = azimuth::Clock::system()
+  let base_timestamp = azimuth::Clock::now_unix_nanos(clock)
+  
+  // Simulate events over time with varying frequency
+  let events_per_second = [5, 10, 15, 20, 25, 30, 25, 20, 15, 10, 5]  // Events per second over 11 seconds
+  
+  for i in 0..events_per_second.length() {
+    let second = i
+    let event_count = events_per_second[i]
+    
+    for j in 0..event_count {
+      let attrs = azimuth::Attributes::new()
+      azimuth::Attributes::set(attrs, "second", azimuth::IntValue(second))
+      azimuth::Attributes::set(attrs, "event_index", azimuth::IntValue(j))
       
-      // 每秒记录一些数据
-      Counter::add(window_counter, 1.0, Some(window_attrs))
+      azimuth::Counter::add(rate_counter, 1.0, Some(attrs))
     }
   }
   
-  assert_true(true)
-}
-
-test "百分比和分位数聚合测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "percentile.aggregation.test")
+  // Simulate rate calculation
+  let total_events = events_per_second.reduce(0, fn(acc, x) { acc + x })
+  let total_duration = events_per_second.length()  // 11 seconds
+  let average_rate = total_events.to_double() / total_duration.to_double()
   
-  // 创建histogram用于分位数计算
-  let response_histogram = Meter::create_histogram(meter, "http.response.time.percentiles")
-  
-  // 生成一组响应时间数据
-  let response_times = [
-    10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0,
-    110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0, 180.0, 190.0, 200.0,
-    210.0, 220.0, 230.0, 240.0, 250.0, 260.0, 270.0, 280.0, 290.0, 300.0,
-    310.0, 320.0, 330.0, 340.0, 350.0, 360.0, 370.0, 380.0, 390.0, 400.0,
-    410.0, 420.0, 430.0, 440.0, 450.0, 460.0, 470.0, 480.0, 490.0, 500.0
-  ]
-  
-  // 记录响应时间
-  for response_time in response_times {
-    Histogram::record(response_histogram, response_time)
+  // Calculate rate for each second
+  let rates = []
+  for count in events_per_second {
+    rates.push(count.to_double())  // Events per second
   }
   
-  // 创建带有属性的histogram
-  let endpoint_histogram = Meter::create_histogram(meter, "endpoint.response.time")
+  // Find peak rate
+  let peak_rate = rates.reduce(0.0, fn(acc, x) { if x > acc { x } else { acc })
   
-  let endpoints = ["/api/fast", "/api/medium", "/api/slow"]
-  let fast_times = [10.0, 15.0, 20.0, 25.0, 30.0]
-  let medium_times = [100.0, 150.0, 200.0, 250.0, 300.0]
-  let slow_times = [500.0, 600.0, 700.0, 800.0, 900.0]
+  // Verify rate aggregation results
+  assert_eq(total_events, 180)  // Sum of all events
+  assert_eq(total_duration, 11)  // 11 seconds
+  assert_eq(average_rate, 16.363636363636363)  // 180 / 11
+  assert_eq(peak_rate, 30.0)  // Maximum events per second
   
-  // 记录不同端点的响应时间
-  for time in fast_times {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "endpoint", StringValue("/api/fast"))
-    Histogram::record(endpoint_histogram, time, Some(attrs))
-  }
-  
-  for time in medium_times {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "endpoint", StringValue("/api/medium"))
-    Histogram::record(endpoint_histogram, time, Some(attrs))
-  }
-  
-  for time in slow_times {
-    let attrs = Attributes::new()
-    Attributes::set(attrs, "endpoint", StringValue("/api/slow"))
-    Histogram::record(endpoint_histogram, time, Some(attrs))
-  }
-  
-  // 验证histogram属性
-  assert_eq(response_histogram.name, "http.response.time.percentiles")
-  assert_eq(endpoint_histogram.name, "endpoint.response.time")
-  
-  assert_true(true)
-}
-
-test "metrics速率和导数聚合测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "rate.aggregation.test")
-  
-  // 创建用于速率计算的counter
-  let request_counter = Meter::create_counter(meter, "requests.rate")
-  let error_counter = Meter::create_counter(meter, "errors.rate")
-  
-  // 模拟时间序列请求数据
-  let time_intervals = [10, 20, 30, 40, 50, 60]
-  let requests_per_interval = [100, 150, 120, 180, 200, 170]
-  let errors_per_interval = [5, 10, 8, 15, 12, 9]
-  
-  for i = 0; i < time_intervals.length(); i = i + 1 {
-    let interval = time_intervals[i]
-    let requests = requests_per_interval[i]
-    let errors = errors_per_interval[i]
-    
-    // 创建时间间隔属性
-    let interval_attrs = Attributes::new()
-    Attributes::set(interval_attrs, "time_interval", IntValue(interval))
-    Attributes::set(interval_attrs, "interval_index", IntValue(i))
-    
-    // 记录请求数
-    Counter::add(request_counter, requests.to_double(), Some(interval_attrs))
-    
-    // 记录错误数
-    Counter::add(error_counter, errors.to_double(), Some(interval_attrs))
-  }
-  
-  // 创建用于计算速率的histogram
-  let response_histogram = Meter::create_histogram(meter, "response.time.rate")
-  
-  // 模拟响应时间数据
-  for i = 0; i < 100; i = i + 1 {
-    let response_time = 50.0 + (i.to_double() * 2.0)
-    
-    let time_attrs = Attributes::new()
-    Attributes::set(time_attrs, "time_index", IntValue(i))
-    
-    Histogram::record(response_histogram, response_time, Some(time_attrs))
-  }
-  
-  // 验证metrics属性
-  assert_eq(request_counter.name, "requests.rate")
-  assert_eq(error_counter.name, "errors.rate")
-  assert_eq(response_histogram.name, "response.time.rate")
-  
-  assert_true(true)
-}
-
-test "metrics分组和过滤聚合测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "grouping.aggregation.test")
-  
-  // 创建用于分组测试的metrics
-  let grouped_counter = Meter::create_counter(meter, "grouped.requests")
-  let grouped_histogram = Meter::create_histogram(meter, "grouped.response.time")
-  
-  // 定义分组维度
-  let services = ["user.service", "order.service", "payment.service"]
-  let regions = ["us-east", "us-west", "eu-west", "ap-southeast"]
-  let environments = ["production", "staging", "development"]
-  
-  for service in services {
-    for region in regions {
-      for environment in environments {
-        // 创建分组属性
-        let group_attrs = Attributes::new()
-        Attributes::set(group_attrs, "service", StringValue(service))
-        Attributes::set(group_attrs, "region", StringValue(region))
-        Attributes::set(group_attrs, "environment", StringValue(environment))
-        
-        // 记录请求数
-        let request_count = 100.0 + (service.length() + region.length() + environment.length()).to_double()
-        Counter::add(grouped_counter, request_count, Some(group_attrs))
-        
-        // 记录响应时间
-        for i = 0; i < 10; i = i + 1 {
-          let response_time = 50.0 + i.to_double() * 10.0
-          Histogram::record(grouped_histogram, response_time, Some(group_attrs))
-        }
-      }
-    }
-  }
-  
-  // 测试过滤功能（通过属性选择特定子集）
-  let prod_attrs = Attributes::new()
-  Attributes::set(prod_attrs, "environment", StringValue("production"))
-  
-  // 记录生产环境的特定指标
-  for service in services {
-    for region in regions {
-      let specific_attrs = Attributes::new()
-      Attributes::set(specific_attrs, "service", StringValue(service))
-      Attributes::set(specific_attrs, "region", StringValue(region))
-      Attributes::set(specific_attrs, "environment", StringValue("production"))
-      
-      Counter::add(grouped_counter, 200.0, Some(specific_attrs))
-      
-      for i = 0; i < 5; i = i + 1 {
-        let response_time = 30.0 + i.to_double() * 5.0
-        Histogram::record(grouped_histogram, response_time, Some(specific_attrs))
-      }
-    }
-  }
-  
-  // 验证metrics属性
-  assert_eq(grouped_counter.name, "grouped.requests")
-  assert_eq(grouped_histogram.name, "grouped.response.time")
-  
-  assert_true(true)
-}
-
-test "metrics聚合性能测试" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.aggregation.test")
-  
-  // 创建大量metrics用于性能测试
-  let counters = []
-  let histograms = []
-  let updown_counters = []
-  
-  // 创建100个不同类型的metrics
-  for i = 0; i < 100; i = i + 1 {
-    counters.push(Meter::create_counter(meter, "perf.counter." + i.to_string()))
-    histograms.push(Meter::create_histogram(meter, "perf.histogram." + i.to_string()))
-    updown_counters.push(Meter::create_updown_counter(meter, "perf.updown." + i.to_string()))
-  }
-  
-  // 高频记录metrics数据
-  let record_count = 1000
-  
-  for i = 0; i < record_count; i = i + 1 {
-    let counter_index = i % counters.length()
-    let histogram_index = i % histograms.length()
-    let updown_index = i % updown_counters.length()
-    
-    // 记录counter
-    Counter::add(counters[counter_index], i.to_double())
-    
-    // 记录histogram
-    Histogram::record(histograms[histogram_index], i.to_double() * 0.1)
-    
-    // 记录updown counter
-    UpDownCounter::add(updown_counters[updown_index], (i % 100).to_double() - 50.0)
-    
-    // 每100次记录带有属性的metrics
-    if i % 100 == 0 {
-      let attrs = Attributes::new()
-      Attributes::set(attrs, "performance.test", StringValue("true"))
-      Attributes::set(attrs, "record.index", IntValue(i))
-      
-      Counter::add(counters[counter_index], 1.0, Some(attrs))
-      Histogram::record(histograms[histogram_index], 50.0 + i.to_double() * 0.01, Some(attrs))
-    }
-  }
-  
-  // 验证所有metrics都成功创建
-  assert_eq(counters.length(), 100)
-  assert_eq(histograms.length(), 100)
-  assert_eq(updown_counters.length(), 100)
-  
-  // 测试大量属性组合的聚合
-  let complex_counter = Meter::create_counter(meter, "complex.aggregation.counter")
-  
-  for i = 0; i < 500; i = i + 1 {
-    let complex_attrs = Attributes::new()
-    Attributes::set(complex_attrs, "attr1", StringValue("value1." + (i % 10).to_string()))
-    Attributes::set(complex_attrs, "attr2", IntValue(i % 20))
-    Attributes::set(complex_attrs, "attr3", FloatValue(i.to_double() * 0.1))
-    Attributes::set(complex_attrs, "attr4", BoolValue(i % 2 == 0))
-    
-    Counter::add(complex_counter, 1.0, Some(complex_attrs))
-  }
-  
-  assert_true(true)
-}
-
-test "跨instrument aggregation测试" {
-  let meter_provider = MeterProvider::default()
-  
-  // 创建多个meter
-  let meter1 = MeterProvider::get_meter(meter_provider, "service1")
-  let meter2 = MeterProvider::get_meter(meter_provider, "service2")
-  let meter3 = MeterProvider::get_meter(meter_provider, "service3")
-  
-  // 在不同meter中创建相同名称的metrics
-  let counter1 = Meter::create_counter(meter1, "requests.total")
-  let counter2 = Meter::create_counter(meter2, "requests.total")
-  let counter3 = Meter::create_counter(meter3, "requests.total")
-  
-  let histogram1 = Meter::create_histogram(meter1, "response.time")
-  let histogram2 = Meter::create_histogram(meter2, "response.time")
-  let histogram3 = Meter::create_histogram(meter3, "response.time")
-  
-  // 为每个服务的metrics添加数据
-  let service1_attrs = Attributes::new()
-  Attributes::set(service1_attrs, "service", StringValue("service1"))
-  Attributes::set(service1_attrs, "version", StringValue("1.0.0"))
-  
-  let service2_attrs = Attributes::new()
-  Attributes::set(service2_attrs, "service", StringValue("service2"))
-  Attributes::set(service2_attrs, "version", StringValue("2.0.0"))
-  
-  let service3_attrs = Attributes::new()
-  Attributes::set(service3_attrs, "service", StringValue("service3"))
-  Attributes::set(service3_attrs, "version", StringValue("3.0.0"))
-  
-  // 记录不同服务的请求数
-  Counter::add(counter1, 1000.0, Some(service1_attrs))
-  Counter::add(counter2, 1500.0, Some(service2_attrs))
-  Counter::add(counter3, 800.0, Some(service3_attrs))
-  
-  // 记录不同服务的响应时间
-  for i = 0; i < 100; i = i + 1 {
-    Histogram::record(histogram1, 50.0 + i.to_double(), Some(service1_attrs))
-    Histogram::record(histogram2, 70.0 + i.to_double(), Some(service2_attrs))
-    Histogram::record(histogram3, 30.0 + i.to_double(), Some(service3_attrs))
-  }
-  
-  // 验证metrics属性
-  assert_eq(counter1.name, "requests.total")
-  assert_eq(counter2.name, "requests.total")
-  assert_eq(counter3.name, "requests.total")
-  
-  assert_eq(histogram1.name, "response.time")
-  assert_eq(histogram2.name, "response.time")
-  assert_eq(histogram3.name, "response.time")
-  
-  // 测试跨服务的聚合指标
-  let total_requests = Meter::create_counter(meter1, "all.services.requests.total")
-  
-  // 模拟聚合所有服务的请求数
-  Counter::add(total_requests, 1000.0, Some(service1_attrs))
-  Counter::add(total_requests, 1500.0, Some(service2_attrs))
-  Counter::add(total_requests, 800.0, Some(service3_attrs))
-  
-  assert_eq(total_requests.name, "all.services.requests.total")
-  
-  assert_true(true)
+  // Verify counter properties
+  assert_eq(rate_counter.name, "events.count")
 }
