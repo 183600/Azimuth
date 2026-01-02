@@ -1,356 +1,566 @@
-// Azimuth Telemetry System - Real-time Stream Processing Integrity Tests
-// This file contains test cases for real-time stream processing data integrity
+// Azimuth Real-time Stream Integrity Tests
+// 实时流处理完整性测试用例 - 专注于流处理、数据完整性和故障恢复
 
-test "real-time telemetry stream ordering and sequence validation" {
-  // Test ordering and sequence validation in real-time streams
-  let stream_id = "stream-1234567890abcdef"
-  let base_timestamp = 1700000000000000000 // Nanosecond timestamp
+// Test 1: 实时流数据处理管道
+test "real-time stream data processing pipeline" {
+  // 创建流处理管道
+  let pipeline = StreamProcessingPipeline::new("telemetry_pipeline")
   
-  // Generate ordered sequence of telemetry events (simplified to 10 events)
-  let event1 = (stream_id, base_timestamp, "event-0", 0)
-  let event2 = (stream_id, base_timestamp + 1000000, "event-1", 1)
-  let event3 = (stream_id, base_timestamp + 2000000, "event-2", 2)
-  let event4 = (stream_id, base_timestamp + 3000000, "event-3", 3)
-  let event5 = (stream_id, base_timestamp + 4000000, "event-4", 4)
-  let event6 = (stream_id, base_timestamp + 5000000, "event-5", 5)
-  let event7 = (stream_id, base_timestamp + 6000000, "event-6", 6)
-  let event8 = (stream_id, base_timestamp + 7000000, "event-7", 7)
-  let event9 = (stream_id, base_timestamp + 8000000, "event-8", 8)
-  let event10 = (stream_id, base_timestamp + 9000000, "event-9", 9)
+  // 配置数据源
+  let kafka_source = KafkaStreamSource::new("telemetry_topic")
+  KafkaSource::set_brokers(kafka_source, ["localhost:9092"])
+  KafkaSource::set_consumer_group(kafka_source, "telemetry_processors")
+  KafkaSource::set_batch_size(kafka_source, 100)
+  KafkaSource::set_timeout_ms(kafka_source, 1000)
   
-  // Simulate stream processing with potential reordering
-  let processed_events = [event1, event2, event3, event5, event4, event6, event7, event8, event9, event10]
+  // 添加数据源到管道
+  Pipeline::add_source(pipeline, kafka_source)
   
-  // Test sequence validation
-  let mut expected_sequence = 0
-  let sequence_errors = 0
+  // 配置处理阶段
+  let validation_stage = ValidationStage::new()
+  ValidationStage::add_schema_validator(validation_stage, "telemetry_schema", TelemetrySchema::new())
+  ValidationStage::add_data_quality_checker(validation_stage, DataQualityChecker::new())
   
-  for (stream, timestamp, event_id, sequence_num) in processed_events {
-    assert_eq(stream, stream_id)
-    assert_true(timestamp >= base_timestamp)
+  let enrichment_stage = EnrichmentStage::new()
+  EnrichmentStage::add_geo_enricher(enrichment_stage, GeoEnricher::new())
+  EnrichmentStage::add_service_metadata_enricher(enrichment_stage, ServiceMetadataEnricher::new())
+  
+  let aggregation_stage = AggregationStage::new()
+  AggregationStage::add_time_window_aggregator(aggregation_stage, TimeWindowAggregator::new(60000)) // 1分钟窗口
+  AggregationStage::add_group_by_aggregator(aggregation_stage, GroupByAggregator::new(["service", "instance"]))
+  
+  let alerting_stage = AlertingStage::new()
+  AlertingStage::add_threshold_alert_rule(alerting_stage, "high_cpu", "cpu_usage", 80.0)
+  AlertingStage::add_anomaly_detector(alerting_stage, AnomalyDetector::new())
+  
+  // 添加处理阶段到管道
+  Pipeline::add_stage(pipeline, validation_stage)
+  Pipeline::add_stage(pipeline, enrichment_stage)
+  Pipeline::add_stage(pipeline, aggregation_stage)
+  Pipeline::add_stage(pipeline, alerting_stage)
+  
+  // 配置输出目标
+  let elasticsearch_sink = ElasticsearchSink::new("telemetry_index")
+  ElasticsearchSink::set_hosts(elasticsearch_sink, ["localhost:9200"])
+  ElasticsearchSink::set_batch_size(elasticsearch_sink, 500)
+  ElasticsearchSink::set_flush_interval_ms(elasticsearch_sink, 5000)
+  
+  let metrics_sink = PrometheusSink::new("telemetry_metrics")
+  MetricsSink::set_port(metrics_sink, 9090)
+  
+  // 添加输出目标到管道
+  Pipeline::add_sink(pipeline, elasticsearch_sink)
+  Pipeline::add_sink(pipeline, metrics_sink)
+  
+  // 启动管道
+  let start_result = Pipeline::start(pipeline)
+  match start_result {
+    Ok(pipeline_id) => {
+      assert_true(pipeline_id.length() > 0)
+      
+      // 验证管道状态
+      let pipeline_status = Pipeline::get_status(pipeline, pipeline_id)
+      assert_eq(pipeline_status.state, PipelineState::Running)
+      assert_true(pipeline_status.uptime_ms > 0)
+      
+      // 模拟数据流
+      let test_data = generate_test_telemetry_data(1000)
+      let producer = KafkaProducer::new("telemetry_topic")
+      
+      for data in test_data {
+        let serialized_data = TelemetrySerializer::serialize(data)
+        Producer::send(producer, serialized_data)
+      }
+      
+      // 等待处理完成
+      Thread::sleep(5000) // 等待5秒
+      
+      // 验证处理结果
+      let metrics = Pipeline::get_metrics(pipeline, pipeline_id)
+      assert_true(metrics.records_processed > 0)
+      assert_true(metrics.records_failed == 0)
+      assert_true(metrics.processing_rate > 0)
+      
+      // 停止管道
+      Pipeline::stop(pipeline, pipeline_id)
+      
+      // 验证管道已停止
+      let final_status = Pipeline::get_status(pipeline, pipeline_id)
+      assert_eq(final_status.state, PipelineState::Stopped)
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 2: 流处理数据完整性验证
+test "stream processing data integrity verification" {
+  // 创建数据完整性验证器
+  let integrity_verifier = StreamIntegrityVerifier::new()
+  
+  // 配置验证规则
+  let checksum_validator = ChecksumValidator::new()
+  ChecksumValidator::set_algorithm(checksum_validator, ChecksumAlgorithm::SHA256)
+  
+  let sequence_validator = SequenceValidator::new()
+  SequenceValidator::set_max_gap(sequence_validator, 10)
+  SequenceValidator::set_out_of_order_tolerance(sequence_validator, 5)
+  
+  let duplicate_detector = DuplicateDetector::new()
+  DuplicateDetector::set_window_size(duplicate_detector, 1000)
+  
+  IntegrityVerifier::add_validator(integrity_verifier, checksum_validator)
+  IntegrityVerifier::add_validator(integrity_verifier, sequence_validator)
+  IntegrityVerifier::add_validator(integrity_verifier, duplicate_detector)
+  
+  // 生成测试数据流
+  let data_stream = []
+  let base_time = Time::now()
+  
+  for i in 0..<1000 {
+    let data_point = TelemetryDataPoint::new(base_time + i * 100)
+    TelemetryDataPoint::add_field(data_point, "sequence_id", i.to_int())
+    TelemetryDataPoint::add_field(data_point, "value", Math::random() * 100.0)
+    TelemetryDataPoint::add_tag(data_point, "source", "test_source")
     
-    if sequence_num != expected_sequence {
-      // Simulate sequence error detection
-      // In real implementation, would track errors
+    // 添加校验和
+    let checksum = ChecksumCalculator::calculate(data_point, ChecksumAlgorithm::SHA256)
+    TelemetryDataPoint::add_metadata(data_point, "checksum", checksum)
+    
+    // 插入一些异常数据
+    if i == 100 {
+      // 乱序数据
+      let out_of_order = TelemetryDataPoint::clone(data_point)
+      out_of_order.timestamp = base_time + (i + 50) * 100
+      data_stream = data_stream.push(out_of_order)
     }
     
-    expected_sequence = expected_sequence + 1
+    if i == 200 {
+      // 重复数据
+      data_stream = data_stream.push(data_point)
+    }
+    
+    if i == 300 {
+      // 缺失数据
+      // 跳过序列号300
+      continue
+    }
+    
+    data_stream = data_stream.push(data_point)
   }
   
-  // Verify sequence integrity
-  assert_true(processed_events.length() > 0)
-  assert_true(sequence_errors < processed_events.length() * 20 / 100) // Less than 20% sequence errors
-}
-
-test "real-time stream data integrity under high throughput" {
-  // Test data integrity under high-throughput conditions
-  let medium_load = (1000, 100)    // 1000 events/sec, 100KB each
-  let high_load = (10000, 50)     // 10000 events/sec, 50KB each
-  let very_high_load = (100000, 10) // 100000 events/sec, 10KB each
+  // 处理数据流并验证完整性
+  let verification_results = []
   
-  let test_duration = 10 // 10 seconds
-  
-  // Test medium load scenario
-  let event_rate1 = medium_load.0
-  let event_size1 = medium_load.1
-  let expected_total_events1 = event_rate1 * test_duration
-  let expected_total_data1 = expected_total_events1 * event_size1
-  
-  // Simulate processing statistics
-  let processed_events1 = 950 // 95% success rate
-  let lost_events1 = 50 // 5% loss rate
-  let corrupted_events1 = 1 // 0.1% corruption rate
-  let processing_latency1 = 80 // 80ms latency
-  
-  // Calculate integrity metrics
-  let data_loss_rate1 = lost_events1.to_double() / expected_total_events1.to_double()
-  let data_corruption_rate1 = corrupted_events1.to_double() / processed_events1.to_double()
-  
-  // Verify integrity thresholds for medium load
-  assert_true(processed_events1 > 0)
-  assert_true(processed_events1 <= expected_total_events1)
-  assert_true(data_loss_rate1 < 0.01) // Less than 1% data loss
-  assert_true(data_corruption_rate1 < 0.001) // Less than 0.1% data corruption
-  assert_true(processing_latency1 < 100) // Less than 100ms latency
-  
-  // Test high load scenario
-  let event_rate2 = high_load.0
-  let event_size2 = high_load.1
-  let expected_total_events2 = event_rate2 * test_duration
-  let expected_total_data2 = expected_total_events2 * event_size2
-  
-  let processed_events2 = 9000 // 90% success rate
-  let lost_events2 = 1000 // 10% loss rate
-  let corrupted_events2 = 45 // 0.5% corruption rate
-  let processing_latency2 = 400 // 400ms latency
-  
-  let data_loss_rate2 = lost_events2.to_double() / expected_total_events2.to_double()
-  let data_corruption_rate2 = corrupted_events2.to_double() / processed_events2.to_double()
-  
-  // Verify integrity thresholds for high load
-  assert_true(data_loss_rate2 < 0.05) // Less than 5% data loss
-  assert_true(data_corruption_rate2 < 0.005) // Less than 0.5% data corruption
-  assert_true(processing_latency2 < 500) // Less than 500ms latency
-  
-  // Test backpressure handling
-  if data_loss_rate2 > 0.05 {
-    let backpressure_activated = true
-    assert_true(backpressure_activated)
+  for data_point in data_stream {
+    let result = IntegrityVerifier::verify(integrity_verifier, data_point)
+    verification_results = verification_results.push(result)
   }
+  
+  // 验证结果统计
+  let total_verified = verification_results.length()
+  let passed_verification = ArrayUtils::count(verification_results, fn(r) { r.passed })
+  let failed_verification = total_verified - passed_verification
+  
+  assert_true(total_verified > 0)
+  assert_true(passed_verification > 0)
+  
+  // 验证特定问题检测
+  let checksum_failures = ArrayUtils::count(verification_results, fn(r) { 
+    r.checksum_passed == false 
+  })
+  
+  let sequence_issues = ArrayUtils::count(verification_results, fn(r) { 
+    r.sequence_valid == false 
+  })
+  
+  let duplicates_detected = ArrayUtils::count(verification_results, fn(r) { 
+    r.is_duplicate == true 
+  })
+  
+  assert_true(duplicates_detected > 0) // 应该检测到重复数据
+  assert_true(sequence_issues > 0) // 应该检测到序列问题
+  
+  // 测试数据修复
+  let repair_results = []
+  
+  for result in verification_results {
+    if not result.passed {
+      let repair_result = IntegrityVerifier::attempt_repair(integrity_verifier, result.data_point)
+      repair_results = repair_results.push(repair_result)
+    }
+  }
+  
+  let successful_repairs = ArrayUtils::count(repair_results, fn(r) { r.success })
+  assert_true(successful_repairs >= 0)
+  
+  // 测试完整性报告生成
+  let integrity_report = IntegrityVerifier::generate_report(integrity_verifier)
+  
+  assert_true(integrity_report.total_records > 0)
+  assert_true(integrity_report.verified_records > 0)
+  assert_true(integrity_report.failed_records >= 0)
+  assert_true(integrity_report.repaired_records >= 0)
+  assert_true(integrity_report.data_loss_detected == true) // 应该检测到数据丢失
 }
 
-test "real-time stream aggregation accuracy and consistency" {
-  // Test accuracy of real-time aggregations
-  let base_timestamp = 1700000000000000000 // Nanosecond timestamp
-  let time_window = 60000 // 1 minute window
-  let aggregation_interval = 5000 // 5 second aggregation
+// Test 3: 流处理故障恢复机制
+test "stream processing failure recovery mechanisms" {
+  // 创建故障恢复管理器
+  let recovery_manager = StreamRecoveryManager::new()
   
-  // Generate test data with known patterns (simplified to 10 data points)
-  let data1 = (base_timestamp, 100.0)
-  let data2 = (base_timestamp + 1000000000, 101.0)
-  let data3 = (base_timestamp + 2000000000, 102.0)
-  let data4 = (base_timestamp + 3000000000, 103.0)
-  let data5 = (base_timestamp + 4000000000, 104.0)
-  let data6 = (base_timestamp + 5000000000, 105.0)
-  let data7 = (base_timestamp + 6000000000, 106.0)
-  let data8 = (base_timestamp + 7000000000, 107.0)
-  let data9 = (base_timestamp + 8000000000, 108.0)
-  let data10 = (base_timestamp + 9000000000, 109.0)
+  // 配置恢复策略
+  let checkpoint_recovery = CheckpointRecoveryStrategy::new()
+  CheckpointRecovery::set_checkpoint_interval(checkpoint_recovery, 10000) // 10秒
+  CheckpointRecovery::set_max_checkpoints(checkpoint_recovery, 10)
   
-  // Perform real-time aggregation (simplified to 2 aggregation points)
-  // First window (data1-data5): 100.0, 101.0, 102.0, 103.0, 104.0
-  let window1_start = base_timestamp
-  let window1_sum = data1.1 + data2.1 + data3.1 + data4.1 + data5.1
-  let window1_avg = window1_sum / 5.0
-  let window1_min = min(min(min(min(data1.1, data2.1), data3.1), data4.1), data5.1)
-  let window1_max = max(max(max(max(data1.1, data2.1), data3.1), data4.1), data5.1)
-  let window1_count = 5
+  let replay_recovery = ReplayRecoveryStrategy::new()
+  ReplayRecovery::set_replay_window(replay_recovery, 300000) // 5分钟
+  ReplayRecovery::set_max_replay_attempts(replay_recovery, 3)
   
-  // Second window (data6-data10): 105.0, 106.0, 107.0, 108.0, 109.0
-  let window2_start = base_timestamp + 5000000000
-  let window2_sum = data6.1 + data7.1 + data8.1 + data9.1 + data10.1
-  let window2_avg = window2_sum / 5.0
-  let window2_min = min(min(min(min(data6.1, data7.1), data8.1), data9.1), data10.1)
-  let window2_max = max(max(max(max(data6.1, data7.1), data8.1), data9.1), data10.1)
-  let window2_count = 5
+  let state_recovery = StateRecoveryStrategy::new()
+  StateRecovery::set_state_store(state_recovery, "redis://localhost:6379")
+  StateRecovery::set_backup_interval(state_recovery, 60000) // 1分钟
   
-  // Verify aggregation accuracy
-  assert_eq(window1_start, base_timestamp)
-  assert_eq(window1_avg, 102.0) // (100+101+102+103+104)/5 = 102.0
-  assert_eq(window1_min, 100.0)
-  assert_eq(window1_max, 104.0)
-  assert_eq(window1_count, 5)
+  RecoveryManager::add_strategy(recovery_manager, checkpoint_recovery)
+  RecoveryManager::add_strategy(recovery_manager, replay_recovery)
+  RecoveryManager::add_strategy(recovery_manager, state_recovery)
   
-  assert_eq(window2_start, base_timestamp + 5000000000)
-  assert_eq(window2_avg, 107.0) // (105+106+107+108+109)/5 = 107.0
-  assert_eq(window2_min, 105.0)
-  assert_eq(window2_max, 109.0)
-  assert_eq(window2_count, 5)
+  // 创建测试流处理器
+  let stream_processor = TestStreamProcessor::new()
+  StreamProcessor::set_recovery_manager(stream_processor, recovery_manager)
   
-  // Verify value ranges
-  assert_true(window1_min <= window1_avg)
-  assert_true(window1_avg <= window1_max)
-  assert_true(window2_min <= window2_avg)
-  assert_true(window2_avg <= window2_max)
-}
-
-test "real-time stream fault tolerance and recovery" {
-  // Test fault tolerance and recovery mechanisms
-  let network_partition = (5000, 0.1)     // 5 seconds, 10% packet loss
-  let processing_delay = (2000, 0.0)     // 2 seconds, no packet loss but high latency
-  let memory_pressure = (3000, 0.2)     // 3 seconds, 20% data drops
-  let connection_lost = (1000, 1.0)     // 1 second, complete connection loss
+  // 启动处理器
+  StreamProcessor::start(stream_processor)
   
-  // Test network partition scenario
-  let fault_duration1 = network_partition.0
-  let data_loss_rate1 = network_partition.1
+  // 生成测试数据
+  let test_data = generate_test_telemetry_data(500)
   
-  let data_before_fault1 = 100 // 100 events before fault
-  let data_during_fault1 = 50  // 50 events during fault
-  let data_after_fault1 = 100  // 100 events after fault
+  // 模拟处理过程中的故障
+  let processed_count = AtomicInt::new(0)
+  let failure_injected = AtomicBool::new(false)
   
-  let expected_total_data1 = data_before_fault1 + data_during_fault1 + data_after_fault1
-  let processed_data1 = data_before_fault1 + (data_during_fault1.to_double() * (1.0 - data_loss_rate1)).to_int() + data_after_fault1
-  let recovery_time1 = fault_duration1 + 1000 // Recovery takes a bit longer than fault
-  
-  let actual_loss_rate1 = (expected_total_data1 - processed_data1).to_double() / expected_total_data1.to_double()
-  
-  // Verify fault tolerance
-  assert_true(actual_loss_rate1 <= data_loss_rate1 + 0.05) // Allow 5% tolerance
-  assert_true(recovery_time1 > 0)
-  assert_true(recovery_time1 <= fault_duration1 * 2) // Should recover within 2x fault duration
-  
-  // Test connection lost scenario
-  let fault_duration4 = connection_lost.0
-  let data_loss_rate4 = connection_lost.1
-  
-  let data_before_fault4 = 100
-  let data_during_fault4 = 50
-  let data_after_fault4 = 100
-  
-  let expected_total_data4 = data_before_fault4 + data_during_fault4 + data_after_fault4
-  let processed_data4 = data_before_fault4 + 0 + data_after_fault4 // All data lost during fault
-  let recovery_time4 = fault_duration4 + 500 // Recovery time
-  
-  let actual_loss_rate4 = (expected_total_data4 - processed_data4).to_double() / expected_total_data4.to_double()
-  
-  // Verify connection lost scenario
-  assert_true(actual_loss_rate4 <= data_loss_rate4 + 0.05)
-  assert_true(recovery_time4 > 0)
-  assert_true(recovery_time4 <= fault_duration4 * 2)
-}
-
-test "real-time stream watermark and late data handling" {
-  // Test watermark mechanism and late data handling
-  let event_time_window = 60000 // 1 minute event time window
-  let watermark_delay = 10000    // 10 second watermark delay
-  let allowed_lateness = 5000     // 5 second allowed lateness
-  
-  // Generate events with varying event time vs processing time (simplified)
-  let event1 = (1700000000000000000, 1700000000000000000, "normal", 0) // On time
-  let event2 = (1700000001000000000, 1700000001000000000, "normal", 1000000000) // On time
-  let event3 = (1700000002000000000, 1700000002000000000, "normal", 2000000000) // On time
-  let event4 = (1700000003000000000, 1700000003000000000, "normal", 3000000000) // On time
-  let event5 = (1700000004000000000, 1700000004000000000, "normal", 4000000000) // On time
-  let event6 = (1700000005000000000, 1700000005000000000, "normal", 5000000000) // On time
-  let event7 = (1700000006000000000, 1700000006000000000, "normal", 6000000000) // On time
-  let event8 = (1700000007000000000, 1700000007000000000, "normal", 7000000000) // On time
-  let event9 = (1700000008000000000, 1700000008000000000, "late", 12000000000) // 12 seconds late
-  let event10 = (1700000009000000000, 1700000009000000000, "late", 8000000000) // 8 seconds late
-  
-  // Sort by processing time
-  let events_by_processing_time = [event1, event2, event3, event4, event5, event6, event7, event8, event10, event9]
-  
-  // Process with watermark mechanism (simplified)
-  let mut on_time_events = 0
-  let mut late_events = 0
-  let mut dropped_events = 0
-  
-  for (event_time, processing_time, event_type, lateness) in events_by_processing_time {
-    if event_type == "normal" {
-      on_time_events = on_time_events + 1
-    } else if event_type == "late" {
-      if lateness <= allowed_lateness {
-        late_events = late_events + 1
-      } else {
-        dropped_events = dropped_events + 1
+  for i in 0..<test_data.length() {
+    let data = test_data[i]
+    
+    // 在处理一半数据时注入故障
+    if i == test_data.length() / 2 && not AtomicBool::get(failure_injected) {
+      AtomicBool::set(failure_injected, true)
+      
+      // 模拟处理器故障
+      StreamProcessor::simulate_failure(stream_processor, FailureType::ProcessCrash)
+      
+      // 等待恢复过程
+      Thread::sleep(2000)
+      
+      // 验证处理器已恢复
+      let processor_status = StreamProcessor::get_status(stream_processor)
+      assert_eq(processor_status.state, ProcessorState::Running)
+      assert_true(processor_status.recovery_count > 0)
+    }
+    
+    // 处理数据
+    let process_result = StreamProcessor::process(stream_processor, data)
+    match process_result {
+      Ok(_) => {
+        AtomicInt::increment(processed_count)
+      }
+      Err(_) => {
+        // 处理失败，可能由于故障
       }
     }
   }
   
-  // Verify watermark effectiveness
-  assert_true(on_time_events > 0)
-  assert_true(late_events >= 0)
-  assert_true(dropped_events >= 0)
+  // 停止处理器
+  StreamProcessor::stop(stream_processor)
   
-  // Calculate processing statistics
-  let total_events = events_by_processing_time.length()
-  let on_time_rate = on_time_events.to_double() / total_events.to_double()
-  let late_rate = late_events.to_double() / total_events.to_double()
-  let drop_rate = dropped_events.to_double() / total_events.to_double()
+  // 验证恢复效果
+  let final_processed = AtomicInt::get(processed_count)
+  let processor_metrics = StreamProcessor::get_metrics(stream_processor)
   
-  // Verify reasonable processing distribution
-  assert_true(on_time_rate >= 0.7) // At least 70% should be on-time
-  assert_true(late_rate >= 0.1) // Some late events should be handled
-  assert_true(drop_rate <= 0.2) // Less than 20% should be dropped
+  assert_true(final_processed > 0)
+  assert_true(processor_metrics.total_processed > 0)
+  assert_true(processor_metrics.recovery_count > 0)
+  assert_true(processor_metrics.data_loss_count == 0) // 不应该有数据丢失
   
-  // Verify specific counts
-  assert_eq(on_time_events, 8) // 8 normal events
-  assert_eq(late_events, 1) // 1 late event within allowed lateness
-  assert_eq(dropped_events, 1) // 1 late event beyond allowed lateness
+  // 测试检查点恢复
+  let checkpoint_data = RecoveryManager::get_latest_checkpoint(recovery_manager)
+  match checkpoint_data {
+    Some(checkpoint) => {
+      assert_true(checkpoint.timestamp > 0)
+      assert_true(checkpoint.processed_count > 0)
+      assert_true(checkpoint.state_data.length() > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 测试重放恢复
+  let replay_data = RecoveryManager::get_replay_data(recovery_manager, 
+    Time::now() - 300000, // 5分钟前
+    Time::now() // 现在
+  )
+  
+  assert_true(replay_data.length() > 0)
+  
+  // 测试状态恢复
+  let recovered_state = RecoveryManager::recover_state(recovery_manager)
+  match recovered_state {
+    Some(state) => {
+      assert_true(state.contains("processed_count"))
+      assert_true(state.contains("last_timestamp"))
+    }
+    None => assert_true(false)
+  }
 }
 
-test "real-time stream schema evolution and compatibility" {
-  // Test handling of schema evolution in real-time streams
-  let v1_fields = ["timestamp", "trace_id", "span_id", "duration_ms"]
-  let v1_types = ["int64", "string", "string", "int32"]
+// Test 4: 流处理背压和流量控制
+test "stream processing backpressure and flow control" {
+  // 创建流量控制管理器
+  let flow_controller = StreamFlowController::new()
   
-  let v1_1_fields = ["timestamp", "trace_id", "span_id", "duration_ms", "service_name"] // New field
-  let v1_1_types = ["int64", "string", "string", "int32", "string"]
+  // 配置流量控制策略
+  let rate_limiter = RateLimiter::new()
+  RateLimiter::set_max_rate(rate_limiter, 1000) // 每秒1000条记录
+  RateLimiter::set_burst_capacity(rate_limiter, 2000)
   
-  let v1_2_fields = ["timestamp", "trace_id", "span_id", "duration_ms", "service_name", "status_code"] // New field
-  let v1_2_types = ["int64", "string", "string", "int64", "string", "int32"] // Changed type for duration_ms
+  let buffer_manager = BufferManager::new()
+  BufferManager::set_max_buffer_size(buffer_manager, 10000)
+  BufferManager::set_high_watermark(buffer_manager, 8000)
+  BufferManager::set_low_watermark(buffer_manager, 2000)
   
-  let v2_fields = ["timestamp", "trace_id", "span_id", "duration_ms", "service_name", "status_code", "tags"] // New complex field
-  let v2_types = ["int64", "string", "string", "int64", "string", "int32", "map<string,string>"]
+  let backpressure_handler = BackpressureHandler::new()
+  BackpressureHandler::set_strategy(backpressure_handler, BackpressureStrategy::Dynamic)
+  BackpressureHandler::set_threshold(backpressure_handler, 0.8) // 80%缓冲区使用率
   
-  // Test forward compatibility (old consumers, new producers)
-  let old_consumer_version = "v1.0"
+  FlowController::set_rate_limiter(flow_controller, rate_limiter)
+  FlowController::set_buffer_manager(flow_controller, buffer_manager)
+  FlowController::set_backpressure_handler(flow_controller, backpressure_handler)
   
-  // v1.0 -> v1.0: Same version should be 100% compatible
-  let v1_to_v1_success_rate = 1.0
-  let v1_to_v1_field_loss = 0.0
-  let v1_to_v1_type_errors = 0.0
+  // 创建测试流处理器
+  let processor = BackpressureTestProcessor::new()
+  Processor::set_flow_controller(processor, flow_controller)
   
-  // v1.0 -> v1.1: Should handle new fields gracefully
-  let v1_to_v1_1_success_rate = 0.95
-  let v1_to_v1_1_field_loss = 0.0
-  let v1_to_v1_1_type_errors = 0.0
+  // 启动处理器
+  Processor::start(processor)
   
-  // v1.0 -> v1.2: Should handle type changes
-  let v1_to_v1_2_success_rate = 0.85
-  let v1_to_v1_2_field_loss = 0.0
-  let v1_to_v1_2_type_errors = 0.1
+  // 生成高速数据流
+  let high_rate_data = generate_test_telemetry_data(20000)
+  let start_time = Time::now()
   
-  // v1.0 -> v2.0: Should handle complex new fields
-  let v1_to_v2_success_rate = 0.75
-  let v1_to_v2_field_loss = 0.0
-  let v1_to_v2_type_errors = 0.2
+  let processed_records = AtomicInt::new(0)
+  let rejected_records = AtomicInt::new(0)
+  let backpressure_events = AtomicInt::new(0)
   
-  // Verify forward compatibility
-  assert_eq(v1_to_v1_success_rate, 1.0)
-  assert_eq(v1_to_v1_field_loss, 0.0)
-  assert_eq(v1_to_v1_type_errors, 0.0)
+  for data in high_rate_data {
+    let process_result = Processor::process_with_flow_control(processor, data)
+    
+    match process_result {
+      Ok(ProcessResult::Accepted) => {
+        AtomicInt::increment(processed_records)
+      }
+      Ok(ProcessResult::Rejected) => {
+        AtomicInt::increment(rejected_records)
+      }
+      Ok(ProcessResult::BackpressureApplied) => {
+        AtomicInt::increment(backpressure_events)
+        AtomicInt::increment(processed_records)
+      }
+      Err(_) => {
+        // 处理错误
+      }
+    }
+  }
   
-  assert_true(v1_to_v1_1_success_rate >= 0.9)
-  assert_eq(v1_to_v1_1_field_loss, 0.0)
-  assert_eq(v1_to_v1_1_type_errors, 0.0)
+  let processing_time = Time::now() - start_time
   
-  assert_true(v1_to_v1_2_success_rate >= 0.8)
-  assert_eq(v1_to_v1_2_field_loss, 0.0)
-  assert_true(v1_to_v1_2_type_errors <= 0.1)
+  // 停止处理器
+  Processor::stop(processor)
   
-  assert_true(v1_to_v2_success_rate >= 0.7)
-  assert_eq(v1_to_v2_field_loss, 0.0)
-  assert_true(v1_to_v2_type_errors <= 0.2)
+  // 验证流量控制效果
+  let final_processed = AtomicInt::get(processed_records)
+  let final_rejected = AtomicInt::get(rejected_records)
+  let final_backpressure = AtomicInt::get(backpressure_events)
   
-  // Test backward compatibility (new consumers, old producers)
-  let new_consumer_version = "v2.0"
+  assert_true(final_processed > 0)
+  assert_true(final_processed + final_rejected == high_rate_data.length())
   
-  // v2.0 -> v2.0: Same version should be 100% compatible
-  let v2_to_v2_success_rate = 1.0
-  let v2_to_v2_default_usage = 0.0
-  let v2_to_v2_enhancement = 0.0
+  // 计算实际处理速率
+  let actual_rate = final_processed.to_float() / (processing_time.to_float() / 1000.0)
+  assert_true(actual_rate <= rate_limiter.max_rate * 1.1) // 允许10%误差
   
-  // v2.0 -> v1.2: Should handle missing fields
-  let v2_to_v1_2_success_rate = 1.0
-  let v2_to_v1_2_default_usage = 0.2
-  let v2_to_v1_2_enhancement = 0.1
+  // 验证背压处理
+  let flow_metrics = FlowController::get_metrics(flow_controller)
+  assert_true(flow_metrics.buffer_utilization > 0.0)
+  assert_true(flow_metrics.buffer_utilization <= 1.0)
+  assert_true(flow_metrics.backpressure_events > 0)
   
-  // v2.0 -> v1.1: Should handle missing fields
-  let v2_to_v1_1_success_rate = 1.0
-  let v2_to_v1_1_default_usage = 0.4
-  let v2_to_v1_1_enhancement = 0.2
+  // 测试动态背压调整
+  let adjustment_history = BackpressureHandler::get_adjustment_history(backpressure_handler)
+  assert_true(adjustment_history.length() > 0)
   
-  // v2.0 -> v1.0: Should handle missing fields
-  let v2_to_v1_0_success_rate = 1.0
-  let v2_to_v1_0_default_usage = 0.6
-  let v2_to_v1_0_enhancement = 0.3
+  for adjustment in adjustment_history {
+    assert_true(adjustment.old_rate > 0)
+    assert_true(adjustment.new_rate > 0)
+    assert_true(adjustment.reason != "")
+  }
+}
+
+// Test 5: 流处理监控和可观测性
+test "stream processing monitoring and observability" {
+  // 创建流处理监控器
+  let stream_monitor = StreamProcessingMonitor::new()
   
-  // Verify backward compatibility
-  assert_eq(v2_to_v2_success_rate, 1.0)
-  assert_eq(v2_to_v2_default_usage, 0.0)
-  assert_eq(v2_to_v2_enhancement, 0.0)
+  // 配置监控指标
+  Monitor::add_metric(stream_monitor, "throughput", MetricType::Counter)
+  Monitor::add_metric(stream_monitor, "latency", MetricType::Histogram)
+  Monitor::add_metric(stream_monitor, "error_rate", MetricType::Gauge)
+  Monitor::add_metric(stream_monitor, "buffer_utilization", MetricType::Gauge)
+  Monitor::add_metric(stream_monitor, "processing_time", MetricType::Timer)
   
-  assert_eq(v2_to_v1_2_success_rate, 1.0)
-  assert_true(v2_to_v1_2_default_usage > 0.0)
-  assert_true(v2_to_v1_2_enhancement >= 0.0)
+  // 配置告警规则
+  Monitor::add_alert_rule(stream_monitor, AlertRule::new("high_latency", "High Processing Latency")
+    .with_metric("latency")
+    .with_condition(Condition::GreaterThan(1000.0)) // 1秒
+    .with_severity(AlertSeverity::Warning))
   
-  assert_eq(v2_to_v1_1_success_rate, 1.0)
-  assert_true(v2_to_v1_1_default_usage > 0.0)
-  assert_true(v2_to_v1_1_enhancement > 0.0)
+  Monitor::add_alert_rule(stream_monitor, AlertRule::new("high_error_rate", "High Error Rate")
+    .with_metric("error_rate")
+    .with_condition(Condition::GreaterThan(0.05)) // 5%
+    .with_severity(AlertSeverity::Critical))
   
-  assert_eq(v2_to_v1_0_success_rate, 1.0)
-  assert_true(v2_to_v1_0_default_usage > 0.0)
-  assert_true(v2_to_v1_0_enhancement > 0.0)
+  Monitor::add_alert_rule(stream_monitor, AlertRule::new("buffer_full", "Buffer Near Full")
+    .with_metric("buffer_utilization")
+    .with_condition(Condition::GreaterThan(0.9)) // 90%
+    .with_severity(AlertSeverity::Warning))
+  
+  // 创建可观测的流处理器
+  let observable_processor = ObservableStreamProcessor::new()
+  Processor::set_monitor(observable_processor, stream_monitor)
+  
+  // 启动处理器
+  Processor::start(observable_processor)
+  
+  // 生成测试数据并监控
+  let test_data = generate_test_telemetry_data(5000)
+  
+  for i in 0..<test_data.length() {
+    let data = test_data[i]
+    let start_time = Time::now()
+    
+    // 模拟不同的处理时间
+    if i % 100 == 0 {
+      Thread::sleep(10) // 偶尔增加处理时间
+    }
+    
+    let process_result = Processor::process(observable_processor, data)
+    let processing_time = Time::now() - start_time
+    
+    // 记录指标
+    Monitor::record_counter(stream_monitor, "throughput", 1)
+    Monitor::record_histogram(stream_monitor, "latency", processing_time.to_float())
+    Monitor::record_timer(stream_monitor, "processing_time", processing_time)
+    
+    match process_result {
+      Ok(_) => {
+        // 成功处理
+      }
+      Err(_) => {
+        // 记录错误
+        Monitor::increment_gauge(stream_monitor, "error_rate", 0.01) // 增加1%错误率
+      }
+    }
+    
+    // 模拟缓冲区使用率变化
+    let buffer_utilization = 0.5 + 0.4 * Math::sin(i.to_float() * 0.01)
+    Monitor::set_gauge(stream_monitor, "buffer_utilization", buffer_utilization)
+    
+    // 每1000条记录检查一次告警
+    if i % 1000 == 0 {
+      let alerts = Monitor::check_alerts(stream_monitor)
+      for alert in alerts {
+        assert_true(alert.severity != AlertSeverity::None)
+        assert_true(alert.message.length() > 0)
+      }
+    }
+  }
+  
+  // 停止处理器
+  Processor::stop(observable_processor)
+  
+  // 验证监控指标
+  let metrics = Monitor::get_metrics(stream_monitor)
+  
+  let throughput_metric = Metrics::get_metric(metrics, "throughput")
+  match throughput_metric {
+    Some(counter) => {
+      assert_true(counter.value > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  let latency_metric = Metrics::get_metric(metrics, "latency")
+  match latency_metric {
+    Some(histogram) => {
+      assert_true(histogram.count > 0)
+      assert_true(histogram.sum > 0)
+      assert_true(histogram.average > 0)
+    }
+    None => assert_true(false)
+  }
+  
+  let error_rate_metric = Metrics::get_metric(metrics, "error_rate")
+  match error_rate_metric {
+    Some(gauge) => {
+      assert_true(gauge.value >= 0.0)
+    }
+    None => assert_true(false)
+  }
+  
+  let buffer_utilization_metric = Metrics::get_metric(metrics, "buffer_utilization")
+  match buffer_utilization_metric {
+    Some(gauge) => {
+      assert_true(gauge.value >= 0.0 && gauge.value <= 1.0)
+    }
+    None => assert_true(false)
+  }
+  
+  // 验证告警历史
+  let alert_history = Monitor::get_alert_history(stream_monitor)
+  assert_true(alert_history.length() >= 0)
+  
+  // 测试监控仪表盘
+  let dashboard = Monitor::create_dashboard(stream_monitor)
+  assert_true(dashboard.panels.length() > 0)
+  
+  // 测试监控数据导出
+  let exported_metrics = Monitor::export_metrics(stream_monitor, ExportFormat::Prometheus)
+  assert_true(exported_metrics.length() > 0)
+  assert_true(exported_metrics.contains("throughput"))
+  assert_true(exported_metrics.contains("latency"))
+  
+  let json_export = Monitor::export_metrics(stream_monitor, ExportFormat::JSON)
+  assert_true(json_export.length() > 0)
+}
+
+// 辅助函数：生成测试遥测数据
+fn generate_test_telemetry_data(count : Int) -> Array[TelemetryDataPoint] {
+  let data = []
+  let base_time = Time::now()
+  
+  for i in 0..<count {
+    let timestamp = base_time + i * 1000
+    let data_point = TelemetryDataPoint::new(timestamp)
+    
+    TelemetryDataPoint::add_field(data_point, "cpu_usage", 50.0 + Math::random() * 30.0)
+    TelemetryDataPoint::add_field(data_point, "memory_usage", 60.0 + Math::random() * 20.0)
+    TelemetryDataPoint::add_field(data_point, "request_count", 100 + Math::random() * 500.0)
+    TelemetryDataPoint::add_field(data_point, "error_count", Math::random() * 10.0)
+    
+    TelemetryDataPoint::add_tag(data_point, "service", ["web", "api", "database"][i % 3])
+    TelemetryDataPoint::add_tag(data_point, "instance", ["server-01", "server-02", "server-03"][i % 3])
+    TelemetryDataPoint::add_tag(data_point, "environment", ["prod", "staging", "dev"][i % 3])
+    
+    data = data.push(data_point)
+  }
+  
+  data
 }
