@@ -1,0 +1,13 @@
+{
+  "name": "azimuth-basic-tests",
+  "version": "0.1.0",
+  "description": "Basic MoonBit language tests for Azimuth",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["../azimuth_basic_moonbit_language_tests.mbt"]
+  }
+}

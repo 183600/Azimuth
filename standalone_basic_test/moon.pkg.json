@@ -1,0 +1,13 @@
+{
+  "name": "basic-test",
+  "version": "0.1.0",
+  "description": "Basic MoonBit language tests",
+  "target": "wasm-gc",
+  "source": ["."],
+  "deps": {
+    "moonbitlang/core/assertion": "*"
+  },
+  "test": {
+    "test": ["basic_language_tests.mbt"]
+  }
+}

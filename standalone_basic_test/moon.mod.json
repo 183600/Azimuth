@@ -1,0 +1,9 @@
+{
+  "name": "azimuth/basic-test",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "license": "MIT",
+  "description": "Basic MoonBit language tests for Azimuth",
+  "keywords": ["test", "moonbit", "azimuth"],
+  "authors": ["Azimuth Team"]
+}

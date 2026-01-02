@@ -2,6 +2,11 @@
   "packages": [
     {
       "root": "azimuth/telemetry",
+      "rel": "",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/telemetry.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "azimuth_enhanced_test",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/azimuth_enhanced_test/azimuth_enhanced_test.mi"
     },
@@ -14,6 +19,11 @@
       "root": "azimuth/telemetry",
       "rel": "azimuth_test",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/azimuth_test/azimuth_test.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
+      "rel": "basic_test_only",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/debug/test/basic_test_only/basic_test_only.mi"
     },
     {
       "root": "azimuth/telemetry",
