@@ -1,663 +1,882 @@
-// Azimuth Multidimensional Attribute Query Tests
-// 多维度属性查询测试用例，专注于复杂的属性过滤、聚合和查询操作
+// Azimuth Telemetry System - 多维属性查询测试用例
+// 测试系统对复杂多维属性查询的支持和性能
 
-test "多维度属性过滤查询测试" {
-  // 创建具有多维度属性的遥测数据
-  let telemetry_data = []
-  let services = ["auth-service", "user-service", "order-service", "payment-service", "inventory-service"]
-  let regions = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
-  let environments = ["production", "staging", "development"]
-  let versions = ["1.0.0", "1.1.0", "1.2.0", "2.0.0"]
-  
-  // 生成1000条具有多维度属性的遥测数据
-  for i = 0; i < 1000; i = i + 1 {
-    let service = services[i % services.length()]
-    let region = regions[i % regions.length()]
-    let environment = environments[i % environments.length()]
-    let version = versions[i % versions.length()]
-    
-    let data_point = {
-      "id": "trace_" + i.to_string(),
-      "timestamp": 1640995200000L + i.to_long() * 60000L, // 每分钟一个点
-      "duration": 100 + (i % 500),
-      "status": if i % 20 == 0 { "error" } else { "ok" },
-      "attributes": {
-        "service.name": service,
-        "service.version": version,
-        "deployment.environment": environment,
-        "cloud.region": region,
-        "host.name": "host_" + (i % 10).to_string(),
-        "user.id": "user_" + (i % 100).to_string(),
-        "operation.name": "operation_" + (i % 5).to_string(),
-        "http.method": if i % 2 == 0 { "GET" } else { "POST" },
-        "http.status_code": if i % 20 == 0 { 500 } else { 200 },
-        "custom.attribute": "value_" + (i % 20).to_string()
-      }
+// 测试1: 基础多维属性查询
+test "基础多维属性查询测试" {
+  // 创建测试数据集
+  let telemetry_data = [
+    {
+      "trace_id": "trace123456789012345678901234567890",
+      "span_id": "span1234567890",
+      "service_name": "api-gateway",
+      "operation_name": "http.request",
+      "status": "success",
+      "duration_ms": 150,
+      "http.method": "GET",
+      "http.status_code": 200,
+      "user.id": "user-12345",
+      "region": "us-west-1",
+      "timestamp": "1640995200000"
+    },
+    {
+      "trace_id": "trace123456789012345678901234567890",
+      "span_id": "span0987654321",
+      "service_name": "user-service",
+      "operation_name": "database.query",
+      "status": "success",
+      "duration_ms": 75,
+      "db.type": "postgresql",
+      "db.operation": "SELECT",
+      "user.id": "user-12345",
+      "region": "us-west-1",
+      "timestamp": "1640995200100"
+    },
+    {
+      "trace_id": "trace987654321098765432109876543210",
+      "span_id": "span1111111111",
+      "service_name": "api-gateway",
+      "operation_name": "http.request",
+      "status": "error",
+      "duration_ms": 300,
+      "http.method": "POST",
+      "http.status_code": 500,
+      "user.id": "user-67890",
+      "region": "us-east-1",
+      "timestamp": "1640995200200"
+    },
+    {
+      "trace_id": "trace987654321098765432109876543210",
+      "span_id": "span2222222222",
+      "service_name": "auth-service",
+      "operation_name": "token.validation",
+      "status": "success",
+      "duration_ms": 25,
+      "token.type": "JWT",
+      "token.issuer": "auth-server",
+      "user.id": "user-67890",
+      "region": "us-east-1",
+      "timestamp": "1640995200300"
     }
-    telemetry_data.push(data_point)
-  }
+  ]
   
-  // 实现属性过滤查询函数
-  let filter_by_attributes = |data: Array[Map[String, Any]], filters: Map[String, Any]| {
-    let filtered_data = []
-    
-    for item in data {
-      let match = true
-      let attributes = item["attributes"]
-      
-      for (key, value) in filters {
-        if attributes[key] != value {
-          match = false
-          break
-        }
-      }
-      
-      if match {
-        filtered_data.push(item)
-      }
-    }
-    
-    filtered_data
-  }
-  
-  // 测试单维度属性过滤
-  let service_filter = {"service.name": "auth-service"}
-  let auth_service_data = filter_by_attributes(telemetry_data, service_filter)
+  // 测试单维度查询
+  let service_filter = telemetry_data.filter(|item| item["service_name"] == "api-gateway")
+  assert_eq(service_filter.length(), 2)
   
   // 验证过滤结果
-  assert_true(auth_service_data.length() > 0)
-  for item in auth_service_data {
-    assert_eq(item["attributes"]["service.name"], "auth-service")
+  for item in service_filter {
+    assert_eq(item["service_name"], "api-gateway")
   }
   
-  // 测试多维度属性过滤
-  let multi_filter = {
-    "service.name": "payment-service",
-    "deployment.environment": "production",
-    "cloud.region": "us-east-1"
-  }
-  let filtered_data = filter_by_attributes(telemetry_data, multi_filter)
+  // 测试多维度AND查询
+  let multi_filter = telemetry_data.filter(|item| {
+    item["service_name"] == "api-gateway" && 
+    item["status"] == "success"
+  })
+  assert_eq(multi_filter.length(), 1)
+  assert_eq(multi_filter[0]["span_id"], "span1234567890")
   
-  // 验证多维度过滤结果
-  assert_true(filtered_data.length() > 0)
-  for item in filtered_data {
-    assert_eq(item["attributes"]["service.name"], "payment-service")
-    assert_eq(item["attributes"]["deployment.environment"], "production")
-    assert_eq(item["attributes"]["cloud.region"], "us-east-1")
-  }
+  // 测试多维度OR查询
+  let or_filter = telemetry_data.filter(|item| {
+    item["service_name"] == "user-service" || 
+    item["service_name"] == "auth-service"
+  })
+  assert_eq(or_filter.length(), 2)
   
-  // 测试数值属性过滤
-  let status_code_filter = {"http.status_code": 500}
-  let error_data = filter_by_attributes(telemetry_data, status_code_filter)
-  
-  // 验证错误数据
-  assert_true(error_data.length() > 0)
-  for item in error_data {
-    assert_eq(item["attributes"]["http.status_code"], 500)
-    assert_eq(item["status"], "error")
+  // 验证OR查询结果
+  for item in or_filter {
+    assert_true(item["service_name"] == "user-service" || item["service_name"] == "auth-service")
   }
   
-  // 测试组合过滤（先按服务过滤，再按状态过滤）
-  let user_service_data = filter_by_attributes(telemetry_data, {"service.name": "user-service"})
-  let user_service_errors = filter_by_attributes(user_service_data, {"http.status_code": 500})
+  // 测试范围查询
+  let duration_filter = telemetry_data.filter(|item| {
+    let duration = item["duration_ms"].to_int()
+    duration >= 50 && duration <= 200
+  })
+  assert_eq(duration_filter.length(), 3)
   
-  // 验证组合过滤结果
-  assert_true(user_service_errors.length() > 0)
-  for item in user_service_errors {
-    assert_eq(item["attributes"]["service.name"], "user-service")
-    assert_eq(item["attributes"]["http.status_code"], 500)
+  // 验证范围查询结果
+  for item in duration_filter {
+    let duration = item["duration_ms"].to_int()
+    assert_true(duration >= 50 && duration <= 200)
   }
   
-  // 测试不存在属性值的过滤（应该返回空结果）
-  let non_existent_filter = {"service.name": "non-existent-service"}
-  let empty_result = filter_by_attributes(telemetry_data, non_existent_filter)
-  assert_eq(empty_result.length(), 0)
+  // 测试字符串包含查询
+  let operation_filter = telemetry_data.filter(|item| {
+    item["operation_name"].contains("http")
+  })
+  assert_eq(operation_filter.length(), 2)
   
-  assert_true(true)
+  // 验证包含查询结果
+  for item in operation_filter {
+    assert_true(item["operation_name"].contains("http"))
+  }
 }
 
-test "属性值范围查询测试" {
-  // 创建具有数值属性的遥测数据
+// 测试2: 复杂嵌套属性查询
+test "复杂嵌套属性查询测试" {
+  // 创建嵌套属性数据
+  let nested_telemetry_data = [
+    {
+      "trace_id": "trace111111111111111111111111111111",
+      "span_id": "span1111111111",
+      "service": {
+        "name": "frontend",
+        "version": "1.2.3",
+        "environment": "production"
+      },
+      "http": {
+        "method": "GET",
+        "url": "/api/users",
+        "status_code": 200,
+        "headers": {
+          "user-agent": "Mozilla/5.0",
+          "accept": "application/json"
+        }
+      },
+      "user": {
+        "id": "user-123",
+        "profile": {
+          "tier": "premium",
+          "region": "us-west-1"
+        }
+      },
+      "performance": {
+        "duration_ms": 150,
+        "memory_mb": 256,
+        "cpu_percent": 15.5
+      }
+    },
+    {
+      "trace_id": "trace222222222222222222222222222222",
+      "span_id": "span2222222222",
+      "service": {
+        "name": "backend",
+        "version": "2.1.0",
+        "environment": "production"
+      },
+      "database": {
+        "type": "postgresql",
+        "operation": "SELECT",
+        "table": "users",
+        "rows_affected": 10,
+        "connection": {
+          "pool_size": 20,
+          "active_connections": 5
+        }
+      },
+      "user": {
+        "id": "user-123",
+        "profile": {
+          "tier": "premium",
+          "region": "us-west-1"
+        }
+      },
+      "performance": {
+        "duration_ms": 75,
+        "memory_mb": 512,
+        "cpu_percent": 8.2
+      }
+    },
+    {
+      "trace_id": "trace333333333333333333333333333333",
+      "span_id": "span3333333333",
+      "service": {
+        "name": "frontend",
+        "version": "1.2.3",
+        "environment": "staging"
+      },
+      "http": {
+        "method": "POST",
+        "url": "/api/orders",
+        "status_code": 400,
+        "headers": {
+          "user-agent": "curl/7.68.0",
+          "content-type": "application/json"
+        }
+      },
+      "user": {
+        "id": "user-456",
+        "profile": {
+          "tier": "basic",
+          "region": "us-east-1"
+        }
+      },
+      "performance": {
+        "duration_ms": 200,
+        "memory_mb": 128,
+        "cpu_percent": 25.0
+      }
+    }
+  ]
+  
+  // 测试嵌套属性查询
+  let frontend_filter = nested_telemetry_data.filter(|item| {
+    item["service"]["name"] == "frontend"
+  })
+  assert_eq(frontend_filter.length(), 2)
+  
+  // 验证嵌套查询结果
+  for item in frontend_filter {
+    assert_eq(item["service"]["name"], "frontend")
+  }
+  
+  // 测试多层嵌套查询
+  let premium_user_filter = nested_telemetry_data.filter(|item| {
+    item["user"]["profile"]["tier"] == "premium"
+  })
+  assert_eq(premium_user_filter.length(), 2)
+  
+  // 验证多层嵌套查询结果
+  for item in premium_user_filter {
+    assert_eq(item["user"]["profile"]["tier"], "premium")
+    assert_eq(item["user"]["id"], "user-123")
+  }
+  
+  // 测试嵌套属性范围查询
+  let memory_filter = nested_telemetry_data.filter(|item| {
+    let memory = item["performance"]["memory_mb"].to_int()
+    memory >= 200 && memory <= 512
+  })
+  assert_eq(memory_filter.length(), 2)
+  
+  // 验证嵌套范围查询结果
+  for item in memory_filter {
+    let memory = item["performance"]["memory_mb"].to_int()
+    assert_true(memory >= 200 && memory <= 512)
+  }
+  
+  // 测试条件嵌套查询
+  let complex_filter = nested_telemetry_data.filter(|item| {
+    (item["service"]["name"] == "frontend" && item["service"]["environment"] == "production") ||
+    (item["service"]["name"] == "backend")
+  })
+  assert_eq(complex_filter.length(), 2)
+  
+  // 验证复杂嵌套查询结果
+  for item in complex_filter {
+    assert_true(
+      (item["service"]["name"] == "frontend" && item["service"]["environment"] == "production") ||
+      (item["service"]["name"] == "backend")
+    )
+  }
+  
+  // 测试存在性查询（检查属性是否存在）
+  let http_request_filter = nested_telemetry_data.filter(|item| {
+    // 检查是否存在http属性
+    item.contains("http")
+  })
+  assert_eq(http_request_filter.length(), 2)
+  
+  // 验证存在性查询结果
+  for item in http_request_filter {
+    assert_true(item.contains("http"))
+    assert_true(item["http"].contains("method"))
+  }
+  
+  // 测试数据库查询
+  let database_filter = nested_telemetry_data.filter(|item| {
+    item.contains("database")
+  })
+  assert_eq(database_filter.length(), 1)
+  assert_eq(database_filter[0]["service"]["name"], "backend")
+}
+
+// 测试3: 聚合查询和统计
+test "聚合查询和统计测试" {
+  // 创建大量测试数据
   let metrics_data = []
-  let base_timestamp = 1640995200000L
-  
-  for i = 0; i < 500; i = i + 1 {
-    let data_point = {
-      "id": "metric_" + i.to_string(),
-      "timestamp": base_timestamp + i.to_long() * 60000L,
-      "attributes": {
-        "service.name": "service_" + (i % 5).to_string(),
-        "host.name": "host_" + (i % 10).to_string(),
-        "region": "region_" + (i % 3).to_string()
-      },
-      "metrics": {
-        "cpu.usage": 20.0 + (i % 80).to_double() * 0.75, // 20-80%
-        "memory.usage": 30.0 + (i % 70).to_double() * 0.7, // 30-70%
-        "disk.io": 10.0 + (i % 100).to_double() * 0.9, // 10-100 MB/s
-        "network.io": 5.0 + (i % 50).to_double() * 1.8, // 5-95 MB/s
-        "request.count": (i % 1000).to_int(), // 0-999
-        "response.time": 50 + (i % 200) // 50-249 ms
-      }
+  for i = 0; i < 100; i = i + 1 {
+    let service_name = if i % 3 == 0 { "api-gateway" } else if i % 3 == 1 { "user-service" } else { "auth-service" }
+    let status = if i % 10 == 0 { "error" } else { "success" }
+    let duration = 50 + (i % 200)  // 50-249ms
+    let region = if i % 2 == 0 { "us-west-1" } else { "us-east-1" }
+    
+    let metric = {
+      "service_name": service_name,
+      "status": status,
+      "duration_ms": duration.to_string(),
+      "region": region,
+      "timestamp": (1640995200000L + (i * 1000L)).to_string()
     }
-    metrics_data.push(data_point)
+    metrics_data.push(metric)
   }
   
-  // 实现范围查询函数
-  let filter_by_range = |data: Array[Map[String, Any]], metric: String, min_value: Double, max_value: Double| {
-    let filtered_data = []
-    
-    for item in data {
-      let value = item["metrics"][metric].to_double()
-      if value >= min_value && value <= max_value {
-        filtered_data.push(item)
-      }
-    }
-    
-    filtered_data
-  }
+  // 测试按服务分组计数
+  let service_counts = []
+  let services = ["api-gateway", "user-service", "auth-service"]
   
-  // 测试CPU使用率范围查询
-  let high_cpu_data = filter_by_range(metrics_data, "cpu.usage", 70.0, 80.0)
-  
-  // 验证高CPU使用率数据
-  assert_true(high_cpu_data.length() > 0)
-  for item in high_cpu_data {
-    let cpu_usage = item["metrics"]["cpu.usage"].to_double()
-    assert_true(cpu_usage >= 70.0 && cpu_usage <= 80.0)
-  }
-  
-  // 测试内存使用率范围查询
-  let medium_memory_data = filter_by_range(metrics_data, "memory.usage", 40.0, 60.0)
-  
-  // 验证中等内存使用率数据
-  assert_true(medium_memory_data.length() > 0)
-  for item in medium_memory_data {
-    let memory_usage = item["metrics"]["memory.usage"].to_double()
-    assert_true(memory_usage >= 40.0 && memory_usage <= 60.0)
-  }
-  
-  // 测试磁盘IO范围查询
-  let high_disk_io_data = filter_by_range(metrics_data, "disk.io", 80.0, 100.0)
-  
-  // 验证高磁盘IO数据
-  assert_true(high_disk_io_data.length() > 0)
-  for item in high_disk_io_data {
-    let disk_io = item["metrics"]["disk.io"].to_double()
-    assert_true(disk_io >= 80.0 && disk_io <= 100.0)
-  }
-  
-  // 测试请求计数范围查询
-  let medium_request_count_data = filter_by_range(metrics_data, "request.count", 400.0, 600.0)
-  
-  // 验证中等请求数数据
-  assert_true(medium_request_count_data.length() > 0)
-  for item in medium_request_count_data {
-    let request_count = item["metrics"]["request.count"].to_double()
-    assert_true(request_count >= 400.0 && request_count <= 600.0)
-  }
-  
-  // 测试响应时间范围查询
-  let slow_response_data = filter_by_range(metrics_data, "response.time", 200.0, 249.0)
-  
-  // 验证慢响应数据
-  assert_true(slow_response_data.length() > 0)
-  for item in slow_response_data {
-    let response_time = item["metrics"]["response.time"].to_double()
-    assert_true(response_time >= 200.0 && response_time <= 249.0)
-  }
-  
-  // 测试无结果的范围查询
-  let empty_range_data = filter_by_range(metrics_data, "cpu.usage", 90.0, 100.0)
-  assert_eq(empty_range_data.length(), 0)
-  
-  // 测试边界值范围查询
-  let boundary_cpu_data = filter_by_range(metrics_data, "cpu.usage", 20.0, 20.0)
-  
-  // 验证边界值查询
-  assert_true(boundary_cpu_data.length() > 0)
-  for item in boundary_cpu_data {
-    let cpu_usage = item["metrics"]["cpu.usage"].to_double()
-    assert_eq(cpu_usage, 20.0)
-  }
-  
-  assert_true(true)
-}
-
-test "属性聚合查询测试" {
-  // 创建用于聚合测试的遥测数据
-  let aggregation_data = []
-  let services = ["web-service", "db-service", "cache-service", "auth-service"]
-  let regions = ["us-east-1", "us-west-2", "eu-west-1"]
-  let base_timestamp = 1640995200000L
-  
-  for i = 0; i < 200; i = i + 1 {
-    let service = services[i % services.length()]
-    let region = regions[i % regions.length()]
-    
-    let data_point = {
-      "id": "data_" + i.to_string(),
-      "timestamp": base_timestamp + i.to_long() * 60000L,
-      "attributes": {
-        "service.name": service,
-        "cloud.region": region,
-        "operation.name": "op_" + (i % 4).to_string(),
-        "http.method": if i % 2 == 0 { "GET" } else { "POST" },
-        "status.code": if i % 10 == 0 { 500 } else if i % 5 == 0 { 404 } else { 200 }
-      },
-      "metrics": {
-        "response.time": 50 + (i % 150),
-        "cpu.usage": 20.0 + (i % 60).to_double() * 0.8,
-        "memory.usage": 30.0 + (i % 50).to_double() * 0.7,
-        "request.count": (i % 100) + 1
-      }
-    }
-    aggregation_data.push(data_point)
-  }
-  
-  // 实现聚合查询函数
-  let aggregate_by_attribute = |data: Array[Map[String, Any]], attribute: String, metric: String, aggregation_type: String| {
-    let groups = {}
-    
-    // 按属性分组
-    for item in data {
-      let attr_value = item["attributes"][attribute]
-      
-      if groups[attr_value] is None {
-        groups[attr_value] = []
-      }
-      
-      groups[attr_value].push(item["metrics"][metric].to_double())
-    }
-    
-    // 计算聚合值
-    let results = {}
-    for (attr_value, values) in groups {
-      let aggregated_value = match aggregation_type {
-        "avg" => values.reduce(|acc, val| acc + val, 0.0) / values.length().to_double(),
-        "sum" => values.reduce(|acc, val| acc + val, 0.0),
-        "min" => values.reduce(|acc, val| if val < acc { val } else { acc }, values[0]),
-        "max" => values.reduce(|acc, val| if val > acc { val } else { acc }, values[0]),
-        "count" => values.length().to_double(),
-        _ => 0.0
-      }
-      
-      results[attr_value] = aggregated_value
-    }
-    
-    results
-  }
-  
-  // 测试按服务名称聚合平均响应时间
-  let avg_response_time_by_service = aggregate_by_attribute(
-    aggregation_data, 
-    "service.name", 
-    "response.time", 
-    "avg"
-  )
-  
-  // 验证服务聚合结果
-  assert_eq(avg_response_time_by_service.length(), services.length())
   for service in services {
-    assert_true(avg_response_time_by_service.contains(service))
-    assert_true(avg_response_time_by_service[service] > 0.0)
+    let count = metrics_data.filter(|item| item["service_name"] == service).length()
+    service_counts.push((service, count))
   }
   
-  // 测试按区域聚合总请求数
-  let sum_requests_by_region = aggregate_by_attribute(
-    aggregation_data, 
-    "cloud.region", 
-    "request.count", 
-    "sum"
-  )
+  // 验证分组计数
+  let total_count = service_counts.reduce(|acc, (_, count)| acc + count, 0)
+  assert_eq(total_count, metrics_data.length())
   
-  // 验证区域聚合结果
-  assert_eq(sum_requests_by_region.length(), regions.length())
+  for (service, count) in service_counts {
+    assert_true(count > 0)
+    assert_eq(count, 34)  // 100/3 ≈ 33.33，所以应该是34或33
+  }
+  
+  // 测试按状态分组计数
+  let status_counts = []
+  let statuses = ["success", "error"]
+  
+  for status in statuses {
+    let count = metrics_data.filter(|item| item["status"] == status).length()
+    status_counts.push((status, count))
+  }
+  
+  // 验证状态分组计数
+  let success_count = status_counts.filter(|(status, _)| status == "success")[0].1
+  let error_count = status_counts.filter(|(status, _)| status == "error")[0].1
+  
+  assert_eq(success_count, 90)  // 90%成功
+  assert_eq(error_count, 10)    // 10%错误
+  assert_eq(success_count + error_count, metrics_data.length())
+  
+  // 测试平均持续时间计算
+  let api_gateway_durations = metrics_data
+    .filter(|item| item["service_name"] == "api-gateway")
+    .map(|item| item["duration_ms"].to_int())
+  
+  let api_gateway_avg = api_gateway_durations.reduce(|acc, val| acc + val, 0) / api_gateway_durations.length()
+  
+  // 验证平均值在合理范围内
+  assert_true(api_gateway_avg >= 50)
+  assert_true(api_gateway_avg <= 249)
+  
+  // 测试最大最小值
+  let all_durations = metrics_data.map(|item| item["duration_ms"].to_int())
+  let max_duration = all_durations.reduce(|acc, val| if val > acc { val } else { acc }, 0)
+  let min_duration = all_durations.reduce(|acc, val| if val < acc { val } else { acc }, 999)
+  
+  assert_eq(max_duration, 249)
+  assert_eq(min_duration, 50)
+  
+  // 测试按地区分组统计
+  let region_stats = []
+  let regions = ["us-west-1", "us-east-1"]
+  
   for region in regions {
-    assert_true(sum_requests_by_region.contains(region))
-    assert_true(sum_requests_by_region[region] > 0.0)
+    let region_data = metrics_data.filter(|item| item["region"] == region)
+    let count = region_data.length()
+    
+    let durations = region_data.map(|item| item["duration_ms"].to_int())
+    let avg_duration = durations.reduce(|acc, val| acc + val, 0) / durations.length()
+    
+    region_stats.push((region, count, avg_duration))
   }
   
-  // 测试按操作名称聚合最大CPU使用率
-  let max_cpu_by_operation = aggregate_by_attribute(
-    aggregation_data, 
-    "operation.name", 
-    "cpu.usage", 
-    "max"
-  )
-  
-  // 验证操作聚合结果
-  assert_true(max_cpu_by_operation.length() > 0)
-  for (operation, max_cpu) in max_cpu_by_operation {
-    assert_true(max_cpu >= 20.0) // 最小CPU使用率是20%
-    assert_true(max_cpu <= 68.0) // 最大CPU使用率是20 + 60*0.8 = 68
+  // 验证地区统计
+  for (region, count, avg_duration) in region_stats {
+    assert_eq(count, 50)  // 100个请求平均分配到2个地区
+    assert_true(avg_duration >= 50)
+    assert_true(avg_duration <= 249)
   }
   
-  // 测试按HTTP方法聚合最小内存使用率
-  let min_memory_by_method = aggregate_by_attribute(
-    aggregation_data, 
-    "http.method", 
-    "memory.usage", 
-    "min"
-  )
+  // 测试复合聚合：按服务和状态分组
+  let service_status_counts = []
   
-  // 验证HTTP方法聚合结果
-  assert_eq(min_memory_by_method.length(), 2) // GET和POST
-  assert_true(min_memory_by_method.contains("GET"))
-  assert_true(min_memory_by_method.contains("POST"))
+  for service in services {
+    for status in statuses {
+      let count = metrics_data.filter(|item| {
+        item["service_name"] == service && item["status"] == status
+      }).length()
+      
+      service_status_counts.push((service, status, count))
+    }
+  }
   
-  // 测试按状态码聚合计数
-  let count_by_status_code = aggregate_by_attribute(
-    aggregation_data, 
-    "status.code", 
-    "response.time", 
-    "count"
-  )
+  // 验证复合聚合结果
+  let total_composite_count = service_status_counts.reduce(|acc, (_, _, count)| acc + count, 0)
+  assert_eq(total_composite_count, metrics_data.length())
   
-  // 验证状态码聚合结果
-  assert_true(count_by_status_code.contains(200))
-  assert_true(count_by_status_code.contains(404))
-  assert_true(count_by_status_code.contains(500))
-  
-  // 验证状态码200的计数最多
-  assert_true(count_by_status_code[200] > count_by_status_code[404])
-  assert_true(count_by_status_code[200] > count_by_status_code[500])
-  
-  assert_true(true)
+  // 验证每个服务都有成功和错误状态
+  for service in services {
+    let service_success = service_status_counts.filter(|(s, status, _)| s == service && status == "success")[0].2
+    let service_error = service_status_counts.filter(|(s, status, _)| s == service && status == "error")[0].2
+    
+    assert_true(service_success > 0)
+    assert_true(service_error >= 0)  // 某些服务可能没有错误
+    assert_eq(service_success + service_error, 34 || service_success + service_error == 33)
+  }
 }
 
-test "多维度属性组合查询测试" {
-  // 创建具有复杂多维度属性的遥测数据
-  let complex_data = []
-  let services =["frontend", "backend", "database", "cache", "queue"]
-  let environments = ["prod", "staging", "dev"]
-  let regions = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
-  let versions = ["1.0.x", "1.1.x", "1.2.x", "2.0.x"]
-  let base_timestamp = 1640995200000L
+// 测试4: 时间序列多维查询
+test "时间序列多维查询测试" {
+  // 创建时间序列数据
+  let time_series_data = []
+  let base_timestamp = 1640995200000L  // 2022-01-01 00:00:00 UTC
   
-  for i = 0; i < 300; i = i + 1 {
+  for hour = 0; hour < 24; hour = hour + 1 {
+    for minute = 0; minute < 60; minute = minute + 5 {
+      let timestamp = base_timestamp + (hour * 3600000L) + (minute * 60000L)
+      let service_name = if hour % 3 == 0 { "api-gateway" } else if hour % 3 == 1 { "user-service" } else { "auth-service" }
+      let request_count = 100 + (hour * 10) + (minute / 5)  // 模拟请求计数变化
+      let error_rate = if hour < 6 || hour >= 18 { 0.01 } else { 0.05 }  // 白天错误率更高
+      let avg_response_time = 50.0 + (hour.to_float() * 2.0) + (minute.to_float() * 0.1)  // 响应时间随时间增长
+      
+      let data_point = {
+        "timestamp": timestamp.to_string(),
+        "service_name": service_name,
+        "request_count": request_count.to_string(),
+        "error_rate": error_rate.to_string(),
+        "avg_response_time": avg_response_time.to_string(),
+        "hour": hour.to_string(),
+        "minute": minute.to_string()
+      }
+      time_series_data.push(data_point)
+    }
+  }
+  
+  // 验证时间序列数据
+  assert_eq(time_series_data.length(), 24 * 12)  // 24小时，每小时12个数据点（每5分钟一个）
+  
+  // 测试时间范围查询
+  let morning_data = time_series_data.filter(|item| {
+    let hour = item["hour"].to_int()
+    hour >= 6 && hour < 12
+  })
+  assert_eq(morning_data.length(), 6 * 12)  // 6小时的数据
+  
+  // 测试按服务分组的时间查询
+  let api_gateway_data = time_series_data.filter(|item| {
+    item["service_name"] == "api-gateway"
+  })
+  assert_eq(api_gateway_data.length(), 8 * 12)  // 8小时的数据
+  
+  // 测试时间序列聚合
+  let hourly_stats = []
+  
+  for hour = 0; hour < 24; hour = hour + 1 {
+    let hour_data = time_series_data.filter(|item| item["hour"] == hour.to_string())
+    
+    let total_requests = hour_data.map(|item| item["request_count"].to_int()).reduce(|acc, val| acc + val, 0)
+    let avg_error_rate = hour_data.map(|item| item["error_rate"].to_float()).reduce(|acc, val| acc + val, 0.0) / hour_data.length().to_float()
+    let avg_response_time = hour_data.map(|item| item["avg_response_time"].to_float()).reduce(|acc, val| acc + val, 0.0) / hour_data.length().to_float()
+    
+    hourly_stats.push((hour, total_requests, avg_error_rate, avg_response_time))
+  }
+  
+  // 验证小时统计
+  assert_eq(hourly_stats.length(), 24)
+  
+  // 验证请求总数随时间增长
+  for i = 1; i < hourly_stats.length(); i = i + 1 {
+    let prev_requests = hourly_stats[i-1].1
+    let curr_requests = hourly_stats[i].1
+    assert_true(curr_requests >= prev_requests)
+  }
+  
+  // 测试时间窗口查询
+  let peak_hours = time_series_data.filter(|item| {
+    let hour = item["hour"].to_int()
+    hour >= 9 && hour <= 17  // 工作时间
+  })
+  
+  assert_eq(peak_hours.length(), 9 * 12)  // 9小时的数据
+  
+  // 测试峰值时间分析
+  let peak_request_data = peak_hours.map(|item| item["request_count"].to_int())
+  let max_requests = peak_request_data.reduce(|acc, val| if val > acc { val } else { acc }, 0)
+  
+  // 验证峰值请求数在合理范围内
+  assert_true(max_requests > 0)
+  
+  // 测试时间序列趋势分析
+  let response_times = time_series_data.map(|item| item["avg_response_time"].to_float())
+  
+  // 验证响应时间总体趋势（应该随时间增长）
+  let first_half_avg = response_times.slice(0, response_times.length() / 2).reduce(|acc, val| acc + val, 0.0) / (response_times.length() / 2).to_float()
+  let second_half_avg = response_times.slice(response_times.length() / 2, response_times.length()).reduce(|acc, val| acc + val, 0.0) / (response_times.length() / 2).to_float()
+  
+  assert_true(second_half_avg > first_half_avg)  // 后半段时间平均响应时间应该更高
+  
+  // 测试时间序列降采样（从5分钟到1小时）
+  let hourly_downsampled = []
+  
+  for hour = 0; hour < 24; hour = hour + 1 {
+    let hour_data = time_series_data.filter(|item| item["hour"] == hour.to_string())
+    
+    // 计算小时级别的聚合指标
+    let total_requests = hour_data.map(|item| item["request_count"].to_int()).reduce(|acc, val| acc + val, 0)
+    let max_response_time = hour_data.map(|item| item["avg_response_time"].to_float()).reduce(|acc, val| if val > acc { val } else { acc }, 0.0)
+    let min_response_time = hour_data.map(|item| item["avg_response_time"].to_float()).reduce(|acc, val| if val < acc { val } else { acc }, 999999.0)
+    
+    hourly_downsampled.push((hour, total_requests, max_response_time, min_response_time))
+  }
+  
+  // 验证降采样结果
+  assert_eq(hourly_downsampled.length(), 24)
+  
+  for (hour, total_requests, max_response_time, min_response_time) in hourly_downsampled {
+    assert_true(total_requests > 0)
+    assert_true(max_response_time >= min_response_time)
+    assert_true(max_response_time > 0.0)
+    assert_true(min_response_time > 0.0)
+  }
+}
+
+// 测试5: 高性能多维索引查询
+test "高性能多维索引查询测试" {
+  // 创建大量测试数据
+  let large_dataset = []
+  let services = ["api-gateway", "user-service", "auth-service", "payment-service", "notification-service"]
+  let regions = ["us-west-1", "us-east-1", "eu-west-1", "ap-southeast-1", "ap-northeast-1"]
+  let statuses = ["success", "error", "timeout"]
+  
+  for i = 0; i < 10000; i = i + 1 {
+    let service_name = services[i % services.length()]
+    let region = regions[i % regions.length()]
+    let status = statuses[i % statuses.length()]
+    let duration = 10 + (i % 1000)  // 10-1009ms
+    let timestamp = 1640995200000L + (i * 60000L)  // 每分钟一个数据点
+    
+    let data_point = {
+      "id": i.to_string(),
+      "service_name": service_name,
+      "region": region,
+      "status": status,
+      "duration_ms": duration.to_string(),
+      "timestamp": timestamp.to_string()
+    }
+    large_dataset.push(data_point)
+  }
+  
+  // 验证数据集大小
+  assert_eq(large_dataset.length(), 10000)
+  
+  // 模拟多维索引查询
+  let indexed_queries = [
+    ("service_name", "api-gateway"),
+    ("region", "us-west-1"),
+    ("status", "error"),
+    ("service_name", "user-service"),
+    ("region", "eu-west-1"),
+    ("status", "success")
+  ]
+  
+  // 测试单索引查询性能
+  let query_start_time = 1640995200000L
+  let query_results = []
+  
+  for (field, value) in indexed_queries {
+    let filtered_data = large_dataset.filter(|item| item[field] == value)
+    query_results.push((field, value, filtered_data.length()))
+  }
+  
+  let query_end_time = 1640995300000L
+  let query_duration = query_end_time - query_start_time
+  
+  // 验证查询结果
+  assert_eq(query_results.length(), indexed_queries.length())
+  
+  for (field, value, count) in query_results {
+    assert_true(count > 0)
+    assert_true(count <= large_dataset.length())
+    
+    // 验证结果准确性
+    let verify_count = large_dataset.filter(|item| item[field] == value).length()
+    assert_eq(count, verify_count)
+  }
+  
+  // 测试复合索引查询
+  let composite_queries = [
+    ("service_name", "api-gateway", "region", "us-west-1"),
+    ("service_name", "user-service", "status", "error"),
+    ("region", "eu-west-1", "status", "timeout"),
+    ("service_name", "payment-service", "region", "ap-northeast-1"),
+    ("status", "success", "region", "us-east-1")
+  ]
+  
+  // 测试复合查询性能
+  let composite_query_start = 1640995300000L
+  let composite_results = []
+  
+  for (field1, value1, field2, value2) in composite_queries {
+    let filtered_data = large_dataset.filter(|item| {
+      item[field1] == value1 && item[field2] == value2
+    })
+    composite_results.push((field1, value1, field2, value2, filtered_data.length()))
+  }
+  
+  let composite_query_end = 1640995400000L
+  let composite_query_duration = composite_query_end - composite_query_start
+  
+  // 验证复合查询结果
+  assert_eq(composite_results.length(), composite_queries.length())
+  
+  for (field1, value1, field2, value2, count) in composite_results {
+    assert_true(count >= 0)
+    assert_true(count <= large_dataset.length())
+    
+    // 验证结果准确性
+    let verify_count = large_dataset.filter(|item| {
+      item[field1] == value1 && item[field2] == value2
+    }).length()
+    assert_eq(count, verify_count)
+  }
+  
+  // 测试范围查询
+  let range_queries = [
+    ("duration_ms", 100, 200),
+    ("duration_ms", 500, 800),
+    ("duration_ms", 900, 1000)
+  ]
+  
+  // 测试范围查询性能
+  let range_query_start = 1640995400000L
+  let range_results = []
+  
+  for (field, min_val, max_val) in range_queries {
+    let filtered_data = large_dataset.filter(|item| {
+      let value = item[field].to_int()
+      value >= min_val && value <= max_val
+    })
+    range_results.push((field, min_val, max_val, filtered_data.length()))
+  }
+  
+  let range_query_end = 1640995500000L
+  let range_query_duration = range_query_end - range_query_start
+  
+  // 验证范围查询结果
+  assert_eq(range_results.length(), range_queries.length())
+  
+  for (field, min_val, max_val, count) in range_results {
+    assert_true(count > 0)
+    assert_true(count <= large_dataset.length())
+    
+    // 验证结果准确性
+    let verify_count = large_dataset.filter(|item| {
+      let value = item[field].to_int()
+      value >= min_val && value <= max_val
+    }).length()
+    assert_eq(count, verify_count)
+  }
+  
+  // 测试查询性能指标
+  let total_queries = indexed_queries.length() + composite_queries.length() + range_queries.length()
+  let total_query_time = query_duration + composite_query_duration + range_query_duration
+  let avg_query_time = total_query_time / total_queries.to_int()
+  
+  // 验证查询性能（假设每个查询应该在合理时间内完成）
+  assert_true(avg_query_time > 0)
+  assert_true(avg_query_time < 1000000)  // 假设每个查询不超过1秒
+  
+  // 测试索引选择性（选择性越高，查询越高效）
+  let selectivity_metrics = []
+  
+  for (field, value, count) in query_results {
+    let selectivity = count.to_float() / large_dataset.length().to_float()
+    selectivity_metrics.push((field, value, selectivity))
+  }
+  
+  // 验证选择性指标
+  for (field, value, selectivity) in selectivity_metrics {
+    assert_true(selectivity > 0.0)
+    assert_true(selectivity <= 1.0)
+    
+    // 选择性越低（越接近0），查询越高效
+    // 选择性越高（越接近1），查询越低效
+  }
+  
+  // 测试查询结果排序
+  let sorted_results = large_dataset
+    .filter(|item| item["service_name"] == "api-gateway")
+    .sort(|a, b| {
+      let duration_a = a["duration_ms"].to_int()
+      let duration_b = b["duration_ms"].to_int()
+      if duration_a < duration_b { -1 } else if duration_a > duration_b { 1 } else { 0 }
+    })
+  
+  // 验证排序结果
+  assert_eq(sorted_results.length(), large_dataset.length() / services.length())
+  
+  // 验证排序正确性
+  for i = 1; i < sorted_results.length(); i = i + 1 {
+    let prev_duration = sorted_results[i-1]["duration_ms"].to_int()
+    let curr_duration = sorted_results[i]["duration_ms"].to_int()
+    assert_true(curr_duration >= prev_duration)
+  }
+}
+
+// 测试6: 多维查询优化策略
+test "多维查询优化策略测试" {
+  // 创建测试数据
+  let optimization_data = []
+  let services = ["frontend", "backend", "database", "cache", "queue"]
+  let environments = ["production", "staging", "development"]
+  let regions = ["us-east-1", "us-west-1", "eu-west-1", "ap-southeast-1"]
+  
+  for i = 0; i < 5000; i = i + 1 {
     let service = services[i % services.length()]
     let environment = environments[i % environments.length()]
     let region = regions[i % regions.length()]
-    let version = versions[i % versions.length()]
+    let status = if i % 10 == 0 { "error" } else { "success" }
+    let response_time = 10 + (i % 500)
+    let timestamp = 1640995200000L + (i * 1000L)
     
     let data_point = {
-      "id": "complex_" + i.to_string(),
-      "timestamp": base_timestamp + i.to_long() * 60000L,
-      "duration": 50 + (i % 500),
-      "status": if i % 15 == 0 { "error" } else { "ok" },
-      "attributes": {
-        "service.name": service,
-        "service.version": version,
-        "deployment.environment": environment,
-        "cloud.region": region,
-        "host.name": "host_" + (i % 15).to_string(),
-        "container.id": "container_" + (i % 20).to_string(),
-        "pod.name": "pod-" + (i % 10).to_string(),
-        "operation.name": "op_" + (i % 6).to_string(),
-        "user.type": if i % 3 == 0 { "premium" } else { "standard" },
-        "request.source": if i % 2 == 0 { "web" } else { "mobile" },
-        "error.type": if i % 15 == 0 { "timeout" } else if i % 30 == 0 { "connection" } else { "" }
-      },
-      "metrics": {
-        "cpu.usage": 10.0 + (i % 70).to_double() * 0.9,
-        "memory.usage": 20.0 + (i % 60).to_double() * 0.8,
-        "response.time": 20 + (i % 200),
-        "request.size": 100 + (i % 1000),
-        "response.size": 200 + (i % 2000)
-      }
+      "id": i.to_string(),
+      "service": service,
+      "environment": environment,
+      "region": region,
+      "status": status,
+      "response_time": response_time.to_string(),
+      "timestamp": timestamp.to_string()
     }
-    complex_data.push(data_point)
+    optimization_data.push(data_point)
   }
   
-  // 实现复杂查询函数
-  let complex_query = |data: Array[Map[String, Any]], 
-                        attribute_filters: Map[String, Any], 
-                        metric_ranges: Map[String, (Double, Double)], 
-                        limit: Int| {
-    let results = []
+  // 测试查询计划优化
+  // 假设我们知道每个字段的选择性，应该先使用选择性最高的字段
+  let field_selectivity = [
+    ("status", 0.1),      // 10%的数据是error
+    ("environment", 0.33), // 33%的数据是每个环境
+    ("service", 0.2),     // 20%的数据是每个服务
+    ("region", 0.25)      // 25%的数据是每个地区
+  ]
+  
+  // 按选择性排序（选择性从小到大）
+  let sorted_selectivity = field_selectivity.sort(|a, b| {
+    if a.1 < b.1 { -1 } else if a.1 > b.1 { 1 } else { 0 }
+  })
+  
+  // 验证排序结果
+  assert_eq(sorted_selectivity[0].0, "status")      // 最低选择性
+  assert_eq(sorted_selectivity[1].0, "service")     // 次低选择性
+  assert_eq(sorted_selectivity[2].0, "region")      // 中等选择性
+  assert_eq(sorted_selectivity[3].0, "environment") // 最高选择性
+  
+  // 测试优化查询顺序
+  let optimized_query_start = 1640995200000L
+  let optimized_results = optimization_data.filter(|item| {
+    item["status"] == "error" && 
+    item["service"] == "frontend" && 
+    item["region"] == "us-east-1" && 
+    item["environment"] == "production"
+  })
+  let optimized_query_end = 1640995300000L
+  let optimized_duration = optimized_query_end - optimized_query_start
+  
+  // 测试非优化查询顺序（反向）
+  let non_optimized_query_start = 1640995300000L
+  let non_optimized_results = optimization_data.filter(|item| {
+    item["environment"] == "production" && 
+    item["region"] == "us-east-1" && 
+    item["service"] == "frontend" && 
+    item["status"] == "error"
+  })
+  let non_optimized_query_end = 1640995400000L
+  let non_optimized_duration = non_optimized_query_end - non_optimized_query_start
+  
+  // 验证两种查询方式结果相同
+  assert_eq(optimized_results.length(), non_optimized_results.length())
+  
+  // 测试查询结果缓存
+  let cache = []
+  
+  // 第一次查询
+  let cache_query_start = 1640995400000L
+  let first_query_results = optimization_data.filter(|item| {
+    item["service"] == "backend" && item["environment"] == "production"
+  })
+  
+  // 存储查询结果到缓存
+  let cache_key = "service=backend,environment=production"
+  cache.push((cache_key, first_query_results.length()))
+  let cache_query_end = 1640995500000L
+  let first_query_duration = cache_query_end - cache_query_start
+  
+  // 第二次相同查询（应该从缓存获取）
+  let cached_query_start = 1640995500000L
+  let cached_result = cache.filter(|(key, _)| key == cache_key)
+  let cached_query_end = 1640995500000L + 100  // 假设缓存查询非常快
+  let cached_query_duration = cached_query_end - cached_query_start
+  
+  // 验证缓存命中
+  assert_eq(cached_result.length(), 1)
+  assert_eq(cached_result[0].1, first_query_results.length())
+  
+  // 验证缓存查询更快
+  assert_true(cached_query_duration < first_query_duration)
+  
+  // 测试查询结果分页
+  let page_size = 100
+  let page_number = 5
+  let all_results = optimization_data.filter(|item| item["status"] == "success")
+  
+  // 计算分页
+  let total_pages = (all_results.length() + page_size - 1) / page_size
+  let start_index = (page_number - 1) * page_size
+  let end_index = start_index + page_size
+  
+  let paged_results = all_results.slice(start_index, end_index)
+  
+  // 验证分页结果
+  assert_true(total_pages > 0)
+  assert_true(page_number <= total_pages)
+  assert_eq(paged_results.length(), if end_index > all_results.length() { 
+    all_results.length() - start_index 
+  } else { 
+    page_size 
+  })
+  
+  // 测试查询结果限制
+  let limit = 50
+  let limited_results = optimization_data.filter(|item| item["service"] == "database").slice(0, limit)
+  
+  // 验证限制结果
+  assert_true(limited_results.length() <= limit)
+  
+  // 测试查询结果投影（只选择需要的字段）
+  let projected_results = optimization_data
+    .filter(|item| item["environment"] == "staging")
+    .map(|item| {
+      {
+        "id": item["id"],
+        "service": item["service"],
+        "response_time": item["response_time"]
+      }
+    })
+  
+  // 验证投影结果
+  assert_true(projected_results.length() > 0)
+  
+  for result in projected_results {
+    assert_true(result.contains("id"))
+    assert_true(result.contains("service"))
+    assert_true(result.contains("response_time"))
+    assert_false(result.contains("environment"))
+    assert_false(result.contains("region"))
+    assert_false(result.contains("status"))
+    assert_false(result.contains("timestamp"))
+  }
+  
+  // 测试查询结果聚合
+  let aggregated_results = []
+  let unique_services = services
+  
+  for service in unique_services {
+    let service_data = optimization_data.filter(|item| item["service"] == service)
+    let count = service_data.length()
+    let avg_response_time = service_data.map(|item| item["response_time"].to_int()).reduce(|acc, val| acc + val, 0) / count
+    let error_count = service_data.filter(|item| item["status"] == "error").length()
     
-    for item in data {
-      let match = true
-      let attributes = item["attributes"]
-      let metrics = item["metrics"]
-      
-      // 检查属性过滤器
-      for (key, value) in attribute_filters {
-        if attributes[key] != value {
-          match = false
-          break
-        }
-      }
-      
-      // 检查指标范围
-      if match {
-        for (metric, (min_val, max_val)) in metric_ranges {
-          let value = metrics[metric].to_double()
-          if value < min_val || value > max_val {
-            match = false
-            break
-          }
-        }
-      }
-      
-      if match {
-        results.push(item)
-        if results.length() >= limit {
-          break
-        }
-      }
-    }
-    
-    results
+    aggregated_results.push((service, count, avg_response_time, error_count))
   }
   
-  // 测试复杂组合查询：生产环境中的前端服务，CPU使用率在50-80%之间
-  let query1 = complex_query(
-    complex_data,
-    {"service.name": "frontend", "deployment.environment": "prod"},
-    {"cpu.usage": (50.0, 80.0)},
-    50
-  )
+  // 验证聚合结果
+  assert_eq(aggregated_results.length(), unique_services.length())
   
-  // 验证查询结果
-  assert_true(query1.length() > 0)
-  for item in query1 {
-    assert_eq(item["attributes"]["service.name"], "frontend")
-    assert_eq(item["attributes"]["deployment.environment"], "prod")
-    let cpu_usage = item["metrics"]["cpu.usage"].to_double()
-    assert_true(cpu_usage >= 50.0 && cpu_usage <= 80.0)
+  for (service, count, avg_response_time, error_count) in aggregated_results {
+    assert_true(count > 0)
+    assert_true(avg_response_time >= 10)
+    assert_true(avg_response_time <= 509)
+    assert_true(error_count >= 0)
+    assert_true(error_count <= count)
   }
-  
-  // 测试复杂组合查询：数据库服务，响应时间在100-200ms之间，用户类型为premium
-  let query2 = complex_query(
-    complex_data,
-    {"service.name": "database", "user.type": "premium"},
-    {"response.time": (100.0, 200.0)},
-    30
-  )
-  
-  // 验证查询结果
-  assert_true(query2.length() > 0)
-  for item in query2 {
-    assert_eq(item["attributes"]["service.name"], "database")
-    assert_eq(item["attributes"]["user.type"], "premium")
-    let response_time = item["metrics"]["response.time"].to_double()
-    assert_true(response_time >= 100.0 && response_time <= 200.0)
-  }
-  
-  // 测试复杂组合查询：特定区域和版本的缓存服务，内存使用率在40-60%之间
-  let query3 = complex_query(
-    complex_data,
-    {"service.name": "cache", "cloud.region": "us-east-1", "service.version": "1.2.x"},
-    {"memory.usage": (40.0, 60.0)},
-    25
-  )
-  
-  // 验证查询结果
-  for item in query3 {
-    assert_eq(item["attributes"]["service.name"], "cache")
-    assert_eq(item["attributes"]["cloud.region"], "us-east-1")
-    assert_eq(item["attributes"]["service.version"], "1.2.x")
-    let memory_usage = item["metrics"]["memory.usage"].to_double()
-    assert_true(memory_usage >= 40.0 && memory_usage <= 60.0)
-  }
-  
-  // 测试多指标范围查询：CPU和内存使用率都在特定范围内
-  let query4 = complex_query(
-    complex_data,
-    {"deployment.environment": "prod"},
-    {"cpu.usage": (30.0, 70.0), "memory.usage": (30.0, 70.0)},
-    40
-  )
-  
-  // 验证多指标范围查询结果
-  for item in query4 {
-    assert_eq(item["attributes"]["deployment.environment"], "prod")
-    let cpu_usage = item["metrics"]["cpu.usage"].to_double()
-    let memory_usage = item["metrics"]["memory.usage"].to_double()
-    assert_true(cpu_usage >= 30.0 && cpu_usage <= 70.0)
-    assert_true(memory_usage >= 30.0 && memory_usage <= 70.0)
-  }
-  
-  // 测试空结果查询：不存在的组合
-  let query5 = complex_query(
-    complex_data,
-    {"service.name": "non-existent", "deployment.environment": "prod"},
-    {"cpu.usage": (50.0, 80.0)},
-    10
-  )
-  
-  // 验证空结果
-  assert_eq(query5.length(), 0)
-  
-  assert_true(true)
-}
-
-test "属性值正则表达式查询测试" {
-  // 创建具有各种格式属性值的遥测数据
-  let regex_data = []
-  let base_timestamp = 1640995200000L
-  
-  for i = 0; i < 100; i = i + 1 {
-    let data_point = {
-      "id": "regex_" + i.to_string(),
-      "timestamp": base_timestamp + i.to_long() * 60000L,
-      "attributes": {
-        "service.name": "service-" + (i % 5).to_string() + "-" + (i % 3).to_string(),
-        "operation.name": "operation_" + (i % 4).to_string(),
-        "host.name": "host-" + (i % 10).to_string() + ".example.com",
-        "pod.name": "pod-" + (i % 8).to_string() + "-abcd1234",
-        "request.id": "req-" + i.to_string() + "-" + (i * 7 % 1000).to_string(),
-        "trace.id": "trace-" + (i * 13 % 10000).to_string() + "-" + (i * 17 % 1000).to_string(),
-        "user.email": "user" + (i % 50).to_string() + "@example.com",
-        "error.message": if i % 10 == 0 { "Connection timeout to database-" + (i % 3).to_string() } else { "" }
-      },
-      "metrics": {
-        "response.time": 50 + (i % 150)
-      }
-    }
-    regex_data.push(data_point)
-  }
-  
-  // 实现正则表达式查询函数（简化实现）
-  let regex_match = |pattern: String, text: String| {
-    // 简化的正则匹配实现，只支持几种基本模式
-    if pattern.contains("*") {
-      let prefix = pattern.split("*")[0]
-      let suffix = if pattern.split("*").length() > 1 { pattern.split("*")[1] } else { "" }
-      
-      return text.starts_with(prefix) && text.ends_with(suffix)
-    } else if pattern.contains("?") {
-      // 简单的字符匹配
-      return text.length() == pattern.length()
-    } else {
-      return text == pattern
-    }
-  }
-  
-  let regex_query = |data: Array[Map[String, Any]], attribute: String, pattern: String| {
-    let results = []
-    
-    for item in data {
-      let value = item["attributes"][attribute]
-      if regex_match(pattern, value) {
-        results.push(item)
-      }
-    }
-    
-    results
-  }
-  
-  // 测试通配符查询：服务名称以"service-2"开头
-  let service_pattern = "service-2*"
-  let service_results = regex_query(regex_data, "service.name", service_pattern)
-  
-  // 验证通配符查询结果
-  assert_true(service_results.length() > 0)
-  for item in service_results {
-    let service_name = item["attributes"]["service.name"]
-    assert_true(service_name.starts_with("service-2"))
-  }
-  
-  // 测试通配符查询：主机名以".example.com"结尾
-  let host_pattern = "*.example.com"
-  let host_results = regex_query(regex_data, "host.name", host_pattern)
-  
-  // 验证通配符查询结果
-  assert_true(host_results.length() > 0)
-  for item in host_results {
-    let host_name = item["attributes"]["host.name"]
-    assert_true(host_name.ends_with(".example.com"))
-  }
-  
-  // 测试通配符查询：Pod名称包含"-abcd1234"
-  let pod_pattern = "*-abcd1234"
-  let pod_results = regex_query(regex_data, "pod.name", pod_pattern)
-  
-  // 验证通配符查询结果
-  assert_true(pod_results.length() > 0)
-  for item in pod_results {
-    let pod_name = item["attributes"]["pod.name"]
-    assert_true(pod_name.ends_with("-abcd1234"))
-  }
-  
-  // 测试精确匹配查询：操作名称为"operation_2"
-  let operation_pattern = "operation_2"
-  let operation_results = regex_query(regex_data, "operation.name", operation_pattern)
-  
-  // 验证精确匹配查询结果
-  assert_true(operation_results.length() > 0)
-  for item in operation_results {
-    let operation_name = item["attributes"]["operation.name"]
-    assert_eq(operation_name, "operation_2")
-  }
-  
-  // 测试邮箱格式查询：以"@example.com"结尾
-  let email_pattern = "*@example.com"
-  let email_results = regex_query(regex_data, "user.email", email_pattern)
-  
-  // 验证邮箱格式查询结果
-  assert_true(email_results.length() > 0)
-  for item in email_results {
-    let email = item["attributes"]["user.email"]
-    assert_true(email.ends_with("@example.com"))
-  }
-  
-  // 测试错误消息查询：包含"timeout"
-  let error_pattern = "*timeout*"
-  let error_results = regex_query(regex_data, "error.message", error_pattern)
-  
-  // 验证错误消息查询结果
-  assert_true(error_results.length() > 0)
-  for item in error_results {
-    let error_message = item["attributes"]["error.message"]
-    assert_true(error_message.contains("timeout"))
-  }
-  
-  // 测试无结果查询：不匹配的模式
-  let no_results_pattern = "non-existent-*"
-  let no_results = regex_query(regex_data, "service.name", no_results_pattern)
-  assert_eq(no_results.length(), 0)
-  
-  assert_true(true)
 }

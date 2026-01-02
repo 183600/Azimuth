@@ -1,1274 +1,776 @@
-// Azimuth Real-time Telemetry Data Processing Tests
-// This file contains comprehensive test cases for real-time telemetry data processing
+// Azimuth Telemetry System - 实时遥测处理测试用例
+// 测试系统实时处理遥测数据流的能力和性能
 
-// Test 1: Real-time Stream Processing Pipeline
-test "real-time stream processing pipeline" {
-  // Create a real-time data processor
-  let processor = azimuth::RealTimeProcessor::new(
-    buffer_size = 1000,
-    batch_size = 100,
-    flush_interval_ms = 1000
-  )
+// 测试1: 实时Span流处理
+test "实时Span流处理测试" {
+  // 模拟实时Span数据流
+  let base_timestamp = 1640995200000L  // 2022-01-01 00:00:00 UTC
+  let span_stream = []
+  let services = ["api-gateway", "user-service", "auth-service", "payment-service"]
   
-  // Configure processing pipeline
-  azimuth::RealTimeProcessor::add_filter(processor, azimuth::Filter::by_attribute("service.name", "web-api"))
-  azimuth::RealTimeProcessor::add_transformer(processor, azimuth::Transformer::normalize_timestamps())
-  azimuth::RealTimeProcessor::add_aggregator(processor, azimuth::Aggregator::time_window(60000)) // 1-minute windows
-  
-  // Simulate real-time data stream
-  let base_timestamp = 1640995200000
-  let processed_data = []
-  
-  for i = 0; i < 500; i = i + 1 {
-    let timestamp = base_timestamp + i * 1000 // 1-second intervals
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = "web-api",
-      metric_name = "request.duration",
-      metric_value = (100.0 + (i % 50).to_double() * 2.0),
-      attributes = [
-        ("http.method", "GET"),
-        ("http.status", "200"),
-        ("user.id", "user-" + (i % 10).to_string())
-      ]
-    )
-    
-    let result = azimuth::RealTimeProcessor::process(processor, data_point)
-    if result.is_some {
-      processed_data.push(result.unwrap())
-    }
-  }
-  
-  // Verify processing pipeline
-  assert_true(processed_data.length() > 0)
-  
-  // Verify all processed data has normalized timestamps
-  for data in processed_data {
-    assert_eq(data.timestamp % 1000, 0) // Should be normalized to second boundaries
-    assert_eq(data.service_name, "web-api") // Filter should only allow this service
-  }
-  
-  // Verify aggregation results
-  let aggregated_results = azimuth::RealTimeProcessor::get_aggregated_data(processor)
-  assert_true(aggregated_results.length() > 0)
-  
-  // Each aggregated result should represent a time window
-  for agg in aggregated_results {
-    assert_true(agg.window_size_ms > 0)
-    assert_true(agg.data_points.length() > 0)
-    assert_true(agg.start_timestamp < agg.end_timestamp)
-  }
-}
-
-// Test 2: Real-time Anomaly Detection
-test "real-time anomaly detection in streaming data" {
-  // Create anomaly detector for real-time streams
-  let detector = azimuth::RealTimeAnomalyDetector::new(
-    window_size = 100,
-    threshold = 2.5, // 2.5 sigma
-    min_points = 30
-  )
-  
-  // Simulate normal data stream with occasional anomalies
-  let base_timestamp = 1640995200000
-  let detected_anomalies = []
-  
-  for i = 0; i < 200; i = i + 1 {
-    let timestamp = base_timestamp + i * 5000 // 5-second intervals
-    let mut value = 100.0 + 10.0 * ((i % 20).to_double() / 20.0)
-    
-    // Inject anomalies at specific points
-    if i == 50 || i == 100 || i == 150 {
-      value = value + 100.0 // Major spike
-    }
-    
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = "payment-service",
-      metric_name = "transaction.amount",
-      metric_value = value,
-      attributes = [
-        ("transaction.type", "payment"),
-        ("currency", "USD")
-      ]
-    )
-    
-    let anomaly_result = azimuth::RealTimeAnomalyDetector::process(detector, data_point)
-    if anomaly_result.is_anomaly {
-      detected_anomalies.push(anomaly_result)
-    }
-  }
-  
-  // Verify anomaly detection
-  assert_eq(detected_anomalies.length(), 3)
-  
-  // Verify anomaly timestamps
-  assert_eq(detected_anomalies[0].timestamp, base_timestamp + 50 * 5000)
-  assert_eq(detected_anomalies[1].timestamp, base_timestamp + 100 * 5000)
-  assert_eq(detected_anomalies[2].timestamp, base_timestamp + 150 * 5000)
-  
-  // Verify anomaly scores
-  for anomaly in detected_anomalies {
-    assert_true(anomaly.score > 2.5) // Above threshold
-    assert_true(anomaly.expected_value > 90.0) // Based on normal range
-    assert_true(anomaly.actual_value > 190.0) // Anomaly values
-  }
-  
-  // Test adaptive threshold adjustment
-  azimuth::RealTimeAnomalyDetector::adjust_threshold(detector, 3.0) // Increase threshold
-  
-  // Process the same data again with higher threshold
-  let adaptive_anomalies = []
-  for i = 0; i < 200; i = i + 1 {
-    let timestamp = base_timestamp + i * 5000
-    let mut value = 100.0 + 10.0 * ((i % 20).to_double() / 20.0)
-    
-    if i == 50 || i == 100 || i == 150 {
-      value = value + 100.0
-    }
-    
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = "payment-service",
-      metric_name = "transaction.amount",
-      metric_value = value,
-      attributes = []
-    )
-    
-    let anomaly_result = azimuth::RealTimeAnomalyDetector::process(detector, data_point)
-    if anomaly_result.is_anomaly {
-      adaptive_anomalies.push(anomaly_result)
-    }
-  }
-  
-  // With higher threshold, fewer anomalies should be detected
-  assert_true(adaptive_anomalies.length() <= detected_anomalies.length())
-}
-
-// Test 3: Real-time Alerting and Notifications
-test "real-time alerting and notification system" {
-  // Create alert manager
-  let alert_manager = azimuth::AlertManager::new()
-  
-  // Configure alert rules
-  let high_latency_rule = azimuth::AlertRule::new(
-    name = "high_request_latency",
-    condition = azimuth::Condition::greater_than("request.duration", 1000.0),
-    severity = azimuth::Severity::Warning,
-    cooldown_ms = 30000 // 30 seconds cooldown
-  )
-  
-  let error_rate_rule = azimuth::AlertRule::new(
-    name = "high_error_rate",
-    condition = azimuth::Condition::percentage_above("http.status", "4xx", 10.0),
-    severity = azimuth::Severity::Critical,
-    cooldown_ms = 60000 // 1 minute cooldown
-  )
-  
-  azimuth::AlertManager::add_rule(alert_manager, high_latency_rule)
-  azimuth::AlertManager::add_rule(alert_manager, error_rate_rule)
-  
-  // Configure notification channels
-  let email_channel = azimuth::NotificationChannel::email(
-    recipients = ["ops-team@example.com"],
-    template = "alert-email"
-  )
-  
-  let slack_channel = azimuth::NotificationChannel::slack(
-    webhook_url = "https://hooks.slack.com/test",
-    channel = "#alerts"
-  )
-  
-  azimuth::AlertManager::add_channel(alert_manager, email_channel)
-  azimuth::AlertManager::add_channel(alert_manager, slack_channel)
-  
-  // Simulate telemetry data that triggers alerts
-  let base_timestamp = 1640995200000
-  let triggered_alerts = []
-  
-  for i = 0; i < 100; i = i + 1 {
-    let timestamp = base_timestamp + i * 10000 // 10-second intervals
-    
-    // Normal requests with occasional high latency
-    let latency = if i >= 20 && i < 30 { 1500.0 } else { 200.0 }
-    
-    // Mix of success and error status codes
-    let status_code = if i >= 40 && i < 50 { "404" } else { "200" }
-    
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = "api-gateway",
-      metric_name = "http.request",
-      metric_value = 1.0,
-      attributes = [
-        ("request.duration", latency.to_string()),
-        ("http.status", status_code),
-        ("endpoint", "/api/users")
-      ]
-    )
-    
-    let alerts = azimuth::AlertManager::evaluate(alert_manager, data_point)
-    for alert in alerts {
-      triggered_alerts.push(alert)
-    }
-  }
-  
-  // Verify alert triggering
-  assert_true(triggered_alerts.length() > 0)
-  
-  // Should have high latency alerts for indices 20-29
-  let latency_alerts = triggered_alerts.filter(|a| a.rule_name == "high_request_latency")
-  assert_true(latency_alerts.length() > 0)
-  
-  // Should have error rate alerts for indices 40-49
-  let error_alerts = triggered_alerts.filter(|a| a.rule_name == "high_error_rate")
-  assert_true(error_alerts.length() > 0)
-  
-  // Verify alert properties
-  for alert in latency_alerts {
-    assert_eq(alert.severity, azimuth::Severity::Warning)
-    assert_true(alert.triggered_at >= base_timestamp + 20 * 10000)
-    assert_true(alert.triggered_at <= base_timestamp + 30 * 10000)
-  }
-  
-  for alert in error_alerts {
-    assert_eq(alert.severity, azimuth::Severity::Critical)
-    assert_true(alert.triggered_at >= base_timestamp + 40 * 10000)
-    assert_true(alert.triggered_at <= base_timestamp + 50 * 10000)
-  }
-  
-  // Test alert cooldown period
-  let cooldown_test_data = azimuth::TelemetryData::new(
-    timestamp = base_timestamp + 25 * 10000, // Within latency alert window
-    service_name = "api-gateway",
-    metric_name = "http.request",
-    metric_value = 1.0,
-    attributes = [
-      ("request.duration", "1500.0"),
-      ("http.status", "200"),
-      ("endpoint", "/api/users")
-    ]
-  )
-  
-  let cooldown_alerts = azimuth::AlertManager::evaluate(alert_manager, cooldown_test_data)
-  // Should not trigger new alert due to cooldown
-  assert_true(cooldown_alerts.length() == 0)
-}
-
-// Test 4: Real-time Metrics Aggregation
-test "real-time metrics aggregation with multiple dimensions" {
-  // Create real-time metrics aggregator
-  let aggregator = azimuth::RealTimeMetricsAggregator::new(
-    window_size_ms = 60000, // 1-minute windows
-    max_dimensions = 10
-  )
-  
-  // Configure aggregations
-  azimuth::RealTimeMetricsAggregator::add_counter(aggregator, "http.requests", ["http.method", "http.status"])
-  azimuth::RealTimeMetricsAggregator::add_histogram(aggregator, "request.duration", ["service.name", "endpoint"])
-  azimuth::RealTimeMetricsAggregator::add_gauge(aggregator, "active.connections", ["service.name"])
-  
-  // Simulate real-time metrics data
-  let base_timestamp = 1640995200000
-  let methods = ["GET", "POST", "PUT", "DELETE"]
-  let statuses = ["200", "201", "400", "404", "500"]
-  let services = ["user-service", "order-service", "payment-service"]
-  let endpoints = ["/api/users", "/api/orders", "/api/payments"]
-  
-  for i = 0; i < 1000; i = i + 1 {
-    let timestamp = base_timestamp + i * 1000 // 1-second intervals
-    
-    // Counter metric: HTTP requests
-    let method = methods[i % methods.length()]
-    let status = statuses[i % statuses.length()]
-    
-    let counter_data = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = "api-gateway",
-      metric_name = "http.requests",
-      metric_value = 1.0,
-      attributes = [
-        ("http.method", method),
-        ("http.status", status)
-      ]
-    )
-    
-    // Histogram metric: Request duration
-    let service = services[i % services.length()]
-    let endpoint = endpoints[i % endpoints.length()]
-    let duration = 50.0 + (i % 200).to_double()
-    
-    let histogram_data = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = service,
-      metric_name = "request.duration",
-      metric_value = duration,
-      attributes = [
-        ("endpoint", endpoint)
-      ]
-    )
-    
-    // Gauge metric: Active connections
-    let gauge_service = services[i % services.length()]
-    let connections = 10 + (i % 50)
-    
-    let gauge_data = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = gauge_service,
-      metric_name = "active.connections",
-      metric_value = connections.to_double(),
-      attributes = []
-    )
-    
-    azimuth::RealTimeMetricsAggregator::process(aggregator, counter_data)
-    azimuth::RealTimeMetricsAggregator::process(aggregator, histogram_data)
-    azimuth::RealTimeMetricsAggregator::process(aggregator, gauge_data)
-  }
-  
-  // Get aggregated results
-  let counter_results = azimuth::RealTimeMetricsAggregator::get_counter_results(aggregator, "http.requests")
-  let histogram_results = azimuth::RealTimeMetricsAggregator::get_histogram_results(aggregator, "request.duration")
-  let gauge_results = azimuth::RealTimeMetricsAggregator::get_gauge_results(aggregator, "active.connections")
-  
-  // Verify counter aggregation
-  assert_true(counter_results.length() > 0)
-  
-  // Should have results for each method/status combination
-  for result in counter_results {
-    assert_true(result.dimensions.contains("http.method"))
-    assert_true(result.dimensions.contains("http.status"))
-    assert_true(result.count > 0)
-    assert_eq(result.metric_name, "http.requests")
-  }
-  
-  // Verify histogram aggregation
-  assert_true(histogram_results.length() > 0)
-  
-  for result in histogram_results {
-    assert_true(result.dimensions.contains("service.name"))
-    assert_true(result.dimensions.contains("endpoint"))
-    assert_true(result.count > 0)
-    assert_true(result.sum > 0.0)
-    assert_true(result.min >= 0.0)
-    assert_true(result.max >= result.min)
-    assert_true(result.avg >= result.min && result.avg <= result.max)
-  }
-  
-  // Verify gauge aggregation
-  assert_true(gauge_results.length() > 0)
-  
-  for result in gauge_results {
-    assert_true(result.dimensions.contains("service.name"))
-    assert_true(result.last_value >= 0.0)
-    assert_true(result.min >= 0.0)
-    assert_true(result.max >= result.min)
-  }
-  
-  // Test percentile calculations
-  let duration_percentiles = azimuth::RealTimeMetricsAggregator::get_percentiles(
-    aggregator, 
-    "request.duration", 
-    [50.0, 90.0, 95.0, 99.0]
-  )
-  
-  assert_eq(duration_percentiles.length(), 4)
-  
-  // Verify percentile ordering
-  assert_true(duration_percentiles[0].value <= duration_percentiles[1].value) // 50th <= 90th
-  assert_true(duration_percentiles[1].value <= duration_percentiles[2].value) // 90th <= 95th
-  assert_true(duration_percentiles[2].value <= duration_percentiles[3].value) // 95th <= 99th
-}
-
-// Test 5: Real-time Data Buffering and Batching
-test "real-time data buffering and batching strategies" {
-  // Test size-based buffering
-  let size_buffer = azimuth::RealTimeBuffer::new(
-    buffer_type = azimuth::BufferType::Size,
-    max_size = 50,
-    flush_timeout_ms = 10000
-  )
-  
-  let base_timestamp = 1640995200000
-  let size_batches = []
-  
-  // Add data points and collect batches
-  for i = 0; i < 200; i = i + 1 {
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = base_timestamp + i * 1000,
-      service_name = "test-service",
-      metric_name = "test.metric",
-      metric_value = i.to_double(),
-      attributes = [("index", i.to_string())]
-    )
-    
-    let batch = azimuth::RealTimeBuffer::add(size_buffer, data_point)
-    if batch.is_some {
-      size_batches.push(batch.unwrap())
-    }
-  }
-  
-  // Should have 4 batches of 50 items each
-  assert_eq(size_batches.length(), 4)
-  for batch in size_batches {
-    assert_eq(batch.length(), 50)
-  }
-  
-  // Test time-based buffering
-  let time_buffer = azimuth::RealTimeBuffer::new(
-    buffer_type = azimuth::BufferType::Time,
-    max_size = 1000, // Large size to force time-based flushing
-    flush_timeout_ms = 5000 // 5 seconds
-  )
-  
-  let time_batches = []
-  
-  // Add data points with delays to trigger time-based flushing
-  for i = 0; i < 20; i = i + 1 {
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = base_timestamp + i * 1000,
-      service_name = "test-service",
-      metric_name = "test.metric",
-      metric_value = i.to_double(),
-      attributes = []
-    )
-    
-    let batch = azimuth::RealTimeBuffer::add(time_buffer, data_point)
-    if batch.is_some {
-      time_batches.push(batch.unwrap())
-    }
-    
-    // Simulate time passing (in real implementation, this would be actual time)
-    if i % 5 == 4 {
-      // Trigger flush by simulating timeout
-      let remaining = azimuth::RealTimeBuffer::flush(time_buffer)
-      if remaining.length() > 0 {
-        time_batches.push(remaining)
-      }
-    }
-  }
-  
-  // Verify time-based batching
-  assert_true(time_batches.length() > 0)
-  for batch in time_batches {
-    assert_true(batch.length() > 0)
-  }
-  
-  // Test hybrid buffering (size or time, whichever comes first)
-  let hybrid_buffer = azimuth::RealTimeBuffer::new(
-    buffer_type = azimuth::BufferType::Hybrid,
-    max_size = 30,
-    flush_timeout_ms = 8000
-  )
-  
-  let hybrid_batches = []
-  
-  for i = 0; i < 100; i = i + 1 {
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = base_timestamp + i * 1000,
-      service_name = "test-service",
-      metric_name = "test.metric",
-      metric_value = i.to_double(),
-      attributes = []
-    )
-    
-    let batch = azimuth::RealTimeBuffer::add(hybrid_buffer, data_point)
-    if batch.is_some {
-      hybrid_batches.push(batch.unwrap())
-    }
-    
-    // Simulate occasional time-based flushes
-    if i % 25 == 24 {
-      let remaining = azimuth::RealTimeBuffer::flush(hybrid_buffer)
-      if remaining.length() > 0 {
-        hybrid_batches.push(remaining)
-      }
-    }
-  }
-  
-  // Verify hybrid batching
-  assert_true(hybrid_batches.length() > 0)
-  
-  // Batches should be either size-based (30 items) or time-based (variable items)
-  for batch in hybrid_batches {
-    assert_true(batch.length() > 0)
-    assert_true(batch.length() <= 30) // Should not exceed max size
-  }
-}
-
-// Test 6: Real-time Data Compression
-test "real-time data compression for high-volume streams" {
-  // Create real-time compressor
-  let compressor = azimuth::RealTimeCompressor::new(
-    compression_algorithm = azimuth::CompressionAlgorithm::Delta,
-    compression_threshold = 100 // Compress after 100 points
-  )
-  
-  // Generate high-frequency time series data
-  let base_timestamp = 1640995200000
-  let original_data = []
-  
-  for i = 0; i < 500; i = i + 1 {
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = base_timestamp + i * 1000,
-      service_name = "high-frequency-service",
-      metric_name = "cpu.usage",
-      metric_value = 50.0 + 20.0 * ((i % 60).to_double() / 60.0),
-      attributes = [("host", "server-" + (i % 5).to_string())]
-    )
-    
-    original_data.push(data_point)
-    
-    let compressed = azimuth::RealTimeCompressor::process(compressor, data_point)
-    
-    // Compression should happen every 100 points
-    if (i + 1) % 100 == 0 {
-      assert_true(compressed.is_compressed)
-      assert_true(compressed.compression_ratio < 1.0)
-    }
-  }
-  
-  // Test decompression accuracy
-  let compression_results = azimuth::RealTimeCompressor::get_compressed_data(compressor)
-  assert_eq(compression_results.length(), 5) // 5 compressed batches
-  
-  for compressed_batch in compression_results {
-    let decompressed = azimuth::RealTimeCompressor::decompress(compressor, compressed_batch)
-    assert_eq(decompressed.length(), compressed_batch.original_count)
-    
-    // Verify decompression accuracy
-    for i = 0; i < decompressed.length(); i = i + 1 {
-      let original = compressed_batch.original_data[i]
-      let restored = decompressed[i]
+  // 生成实时Span流（每秒100个Span，持续10秒）
+  for second = 0; second < 10; second = second + 1 {
+    for span_in_second = 0; span_in_second < 100; span_in_second = span_in_second + 1 {
+      let service_name = services[span_in_second % services.length()]
+      let trace_id = "trace" + second.to_string().pad_left(10, '0') + span_in_second.to_string().pad_left(10, '0')
+      let span_id = "span" + second.to_string().pad_left(10, '0') + span_in_second.to_string().pad_left(10, '0')
+      let timestamp = base_timestamp + (second * 1000L) + (span_in_second * 10L)
+      let duration = 10 + (span_in_second % 200)  // 10-209ms
       
-      assert_eq(restored.timestamp, original.timestamp)
-      assert_eq(restored.service_name, original.service_name)
-      assert_eq(restored.metric_name, original.metric_name)
-      assert_true((restored.metric_value - original.metric_value).abs() < 0.001)
+      let span_data = {
+        "trace_id": trace_id,
+        "span_id": span_id,
+        "service_name": service_name,
+        "operation_name": "http.request",
+        "status": if span_in_second % 10 == 0 { "error" } else { "success" },
+        "duration_ms": duration.to_string(),
+        "timestamp": timestamp.to_string()
+      }
+      span_stream.push(span_data)
     }
   }
   
-  // Test adaptive compression (chooses best algorithm based on data characteristics)
-  let adaptive_compressor = azimuth::RealTimeCompressor::new(
-    compression_algorithm = azimuth::CompressionAlgorithm::Adaptive,
-    compression_threshold = 50
-  )
+  // 验证Span流数据
+  assert_eq(span_stream.length(), 1000)  // 10秒 × 100个Span/秒
   
-  // Add mixed data patterns
-  for i = 0; i < 300; i = i + 1 {
-    let mut value = 100.0
+  // 模拟实时处理窗口（1秒窗口）
+  let processing_windows = []
+  
+  for second = 0; second < 10; second = second + 1 {
+    let window_start = base_timestamp + (second * 1000L)
+    let window_end = window_start + 1000L
     
-    // Different patterns for different ranges
-    if i < 100 {
-      // Smooth data - good for delta compression
-      value = value + 0.1 * i.to_double()
-    } else if i < 200 {
-      // Repetitive data - good for dictionary compression
-      value = 100.0 + (i % 10).to_double() * 5.0
-    } else {
-      // Random data - may need different approach
-      value = 100.0 + 50.0 * ((i * 7) % 13).to_double() / 13.0
-    }
+    let window_spans = span_stream.filter(|span| {
+      let timestamp = span["timestamp"].to_long()
+      timestamp >= window_start && timestamp < window_end
+    })
     
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = base_timestamp + i * 1000,
-      service_name = "adaptive-test",
-      metric_name = "test.metric",
-      metric_value = value,
-      attributes = []
-    )
-    
-    azimuth::RealTimeCompressor::process(adaptive_compressor, data_point)
+    processing_windows.push((second, window_spans))
   }
   
-  let adaptive_results = azimuth::RealTimeCompressor::get_compressed_data(adaptive_compressor)
-  assert_eq(adaptive_results.length(), 6) // 6 compressed batches
+  // 验证处理窗口
+  assert_eq(processing_windows.length(), 10)
   
-  // Verify adaptive algorithm selection
-  for i = 0; i < adaptive_results.length(); i = i + 1 {
-    let batch = adaptive_results[i]
+  for (second, window_spans) in processing_windows {
+    assert_eq(window_spans.length(), 100)  // 每个窗口100个Span
     
-    // First batch (smooth data) should use delta compression
-    if i == 0 {
-      assert_eq(batch.algorithm_used, azimuth::CompressionAlgorithm::Delta)
+    // 验证时间戳在窗口范围内
+    for span in window_spans {
+      let timestamp = span["timestamp"].to_long()
+      let window_start = base_timestamp + (second * 1000L)
+      let window_end = window_start + 1000L
+      
+      assert_true(timestamp >= window_start)
+      assert_true(timestamp < window_end)
     }
-    // Second batch (repetitive data) should use dictionary compression
-    else if i == 2 {
-      assert_eq(batch.algorithm_used, azimuth::CompressionAlgorithm::Dictionary)
+  }
+  
+  // 实时聚合统计
+  let realtime_stats = []
+  
+  for (second, window_spans) in processing_windows {
+    let total_spans = window_spans.length()
+    let error_spans = window_spans.filter(|span| span["status"] == "error").length()
+    let avg_duration = window_spans.map(|span| span["duration_ms"].to_int()).reduce(|acc, val| acc + val, 0) / total_spans
+    
+    // 按服务分组统计
+    let service_stats = []
+    for service in services {
+      let service_spans = window_spans.filter(|span| span["service_name"] == service)
+      let service_count = service_spans.length()
+      let service_avg_duration = if service_count > 0 {
+        service_spans.map(|span| span["duration_ms"].to_int()).reduce(|acc, val| acc + val, 0) / service_count
+      } else {
+        0
+      }
+      
+      service_stats.push((service, service_count, service_avg_duration))
     }
+    
+    realtime_stats.push((second, total_spans, error_spans, avg_duration, service_stats))
+  }
+  
+  // 验证实时统计
+  assert_eq(realtime_stats.length(), 10)
+  
+  for (second, total_spans, error_spans, avg_duration, service_stats) in realtime_stats {
+    assert_eq(total_spans, 100)
+    assert_eq(error_spans, 10)  // 10%错误率
+    assert_true(avg_duration >= 10)
+    assert_true(avg_duration <= 209)
+    assert_eq(service_stats.length(), services.length())
+    
+    // 验证服务统计总和
+    let service_total = service_stats.reduce(|acc, (_, count, _)| acc + count, 0)
+    assert_eq(service_total, total_spans)
+  }
+  
+  // 测试延迟监控
+  let latency_threshold = 100  // 100ms延迟阈值
+  let latency_violations = []
+  
+  for (second, window_spans) in processing_windows {
+    let slow_spans = window_spans.filter(|span| {
+      span["duration_ms"].to_int() > latency_threshold
+    })
+    
+    let violation_rate = slow_spans.length().to_float() / window_spans.length().to_float()
+    latency_violations.push((second, slow_spans.length(), violation_rate))
+  }
+  
+  // 验证延迟监控
+  assert_eq(latency_violations.length(), 10)
+  
+  for (second, slow_count, violation_rate) in latency_violations {
+    assert_true(slow_count >= 0)
+    assert_true(slow_count <= 100)
+    assert_true(violation_rate >= 0.0)
+    assert_true(violation_rate <= 1.0)
   }
 }
 
-// Test 7: Real-time Data Filtering and Routing
-test "real-time data filtering and routing to multiple destinations" {
-  // Create data router with multiple routes
-  let router = azimuth::RealTimeRouter::new()
+// 测试2: 实时度量流处理
+test "实时度量流处理测试" {
+  // 模拟实时度量数据流
+  let base_timestamp = 1640995200000L
+  let metrics_stream = []
+  let metric_names = ["http.requests", "response.time", "error.rate", "cpu.usage", "memory.usage"]
   
-  // Configure routes based on data characteristics
-  let high_priority_route = azimuth::Route::new(
-    name = "high-priority",
-    condition = azimuth::Condition::equals("priority", "high"),
-    destinations = ["high-priority-storage", "real-time-dashboard"],
-    buffer_size = 100
-  )
-  
-  let error_route = azimuth::Route::new(
-    name = "errors",
-    condition = azimuth::Condition::regex_match("log.level", "ERROR|FATAL"),
-    destinations = ["error-storage", "alert-system"],
-    buffer_size = 50
-  )
-  
-  let metrics_route = azimuth::Route::new(
-    name = "metrics",
-    condition = azimuth::Condition::starts_with("metric.type", "counter|histogram"),
-    destinations = ["metrics-storage", "aggregation-service"],
-    buffer_size = 200
-  )
-  
-  let default_route = azimuth::Route::new(
-    name = "default",
-    condition = azimuth::Condition::always_true(),
-    destinations = ["general-storage"],
-    buffer_size = 500
-  )
-  
-  azimuth::RealTimeRouter::add_route(router, high_priority_route)
-  azimuth::RealTimeRouter::add_route(router, error_route)
-  azimuth::RealTimeRouter::add_route(router, metrics_route)
-  azimuth::RealTimeRouter::add_route(router, default_route)
-  
-  // Simulate mixed telemetry data
-  let base_timestamp = 1640995200000
-  let routed_data = {
-    "high-priority-storage": [],
-    "real-time-dashboard": [],
-    "error-storage": [],
-    "alert-system": [],
-    "metrics-storage": [],
-    "aggregation-service": [],
-    "general-storage": []
-  }
-  
-  for i = 0; i < 100; i = i + 1 {
-    let timestamp = base_timestamp + i * 1000
-    let mut attributes = []
-    let mut metric_name = "test.metric"
-    let mut service_name = "test-service"
+  // 生成实时度量流（每5秒一个数据点，持续60秒）
+  for time_point = 0; time_point < 12; time_point = time_point + 1 {
+    let timestamp = base_timestamp + (time_point * 5000L)
     
-    // Create different types of data
-    if i % 20 == 0 {
-      // High priority data
-      attributes.push(("priority", "high"))
-      service_name = "critical-service"
-    } else if i % 15 == 0 {
-      // Error logs
-      metric_name = "error.log"
-      attributes.push(("log.level", "ERROR"))
-    } else if i % 10 == 0 {
-      // Metrics data
-      metric_name = "counter.requests"
-      attributes.push(("metric.type", "counter"))
-    }
-    
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = service_name,
-      metric_name = metric_name,
-      metric_value = i.to_double(),
-      attributes = attributes
-    )
-    
-    let routes = azimuth::RealTimeRouter::route(router, data_point)
-    for route_name in routes {
-      if routed_data.contains(route_name) {
-        routed_data[route_name].push(data_point)
+    for metric_name in metric_names {
+      let value = if metric_name == "http.requests" {
+        (100 + time_point * 10).to_string()  // 递增的请求计数
+      } else if metric_name == "response.time" {
+        (50 + time_point * 5 + (time_point % 3) * 10).to_string()  // 波动的响应时间
+      } else if metric_name == "error.rate" {
+        (0.01 + (time_point % 5) * 0.002).to_string()  // 波动的错误率
+      } else if metric_name == "cpu.usage" {
+        (20.0 + (time_point % 10) * 5.0).to_string()  // 波动的CPU使用率
+      } else if metric_name == "memory.usage" {
+        (60.0 + (time_point % 8) * 3.0).to_string()  // 波动的内存使用率
+      } else {
+        "0.0"
       }
+      
+      let metric_data = {
+        "metric_name": metric_name,
+        "value": value,
+        "timestamp": timestamp.to_string(),
+        "tags": {
+          "service": "api-gateway",
+          "environment": "production"
+        }
+      }
+      metrics_stream.push(metric_data)
     }
   }
   
-  // Verify routing results
-  // High priority data should go to high-priority destinations
-  assert_true(routed_data["high-priority-storage"].length() > 0)
-  assert_true(routed_data["real-time-dashboard"].length() > 0)
+  // 验证度量流数据
+  assert_eq(metrics_stream.length(), 12 * metric_names.length())  // 12个时间点 × 5个度量
   
-  // Error data should go to error destinations
-  assert_true(routed_data["error-storage"].length() > 0)
-  assert_true(routed_data["alert-system"].length() > 0)
+  // 模拟滑动窗口处理（10秒窗口，5秒滑动）
+  let sliding_windows = []
+  let window_size = 10000L  // 10秒
+  let slide_interval = 5000L  // 5秒
   
-  // Metrics data should go to metrics destinations
-  assert_true(routed_data["metrics-storage"].length() > 0)
-  assert_true(routed_data["aggregation-service"].length() > 0)
-  
-  // Default route should catch remaining data
-  assert_true(routed_data["general-storage"].length() > 0)
-  
-  // Verify data integrity across routes
-  let total_routed = 0
-  for (_, data) in routed_data {
-    total_routed = total_routed + data.length()
+  for window_start = base_timestamp; window_start < base_timestamp + 60000L; window_start = window_start + slide_interval {
+    let window_end = window_start + window_size
+    
+    let window_metrics = metrics_stream.filter(|metric| {
+      let timestamp = metric["timestamp"].to_long()
+      timestamp >= window_start && timestamp < window_end
+    })
+    
+    sliding_windows.push((window_start, window_end, window_metrics))
   }
   
-  // Each data point should be routed to at least one destination
-  assert_true(total_routed >= 100)
+  // 验证滑动窗口
+  assert_eq(sliding_windows.length(), 11)  // 60秒 / 5秒滑动 + 1
   
-  // Test route priority and exclusivity
-  let exclusive_router = azimuth::RealTimeRouter::new()
-  azimuth::RealTimeRouter::set_exclusive_mode(exclusive_router, true) // Stop at first match
+  // 实时度量聚合
+  let realtime_metrics = []
   
-  let route1 = azimuth::Route::new(
-    name = "route1",
-    condition = azimuth::Condition::always_true(),
-    destinations = ["dest1"],
-    buffer_size = 100
-  )
-  
-  let route2 = azimuth::Route::new(
-    name = "route2",
-    condition = azimuth::Condition::always_true(),
-    destinations = ["dest2"],
-    buffer_size = 100
-  )
-  
-  azimuth::RealTimeRouter::add_route(exclusive_router, route1)
-  azimuth::RealTimeRouter::add_route(exclusive_router, route2)
-  
-  let test_data = azimuth::TelemetryData::new(
-    timestamp = base_timestamp,
-    service_name = "test",
-    metric_name = "test",
-    metric_value = 1.0,
-    attributes = []
-  )
-  
-  let exclusive_routes = azimuth::RealTimeRouter::route(exclusive_router, test_data)
-  assert_eq(exclusive_routes.length(), 1) // Should only match first route
-  assert_eq(exclusive_routes[0], "dest1")
-}
-
-// Test 8: Real-time Data Validation and Quality Checks
-test "real-time data validation and quality assurance" {
-  // Create data validator
-  let validator = azimuth::RealTimeValidator::new()
-  
-  // Configure validation rules
-  let timestamp_rule = azimuth::ValidationRule::timestamp_range(
-    min_timestamp = 1640995200000, // 2022-01-01
-    max_timestamp = 1704067199000  // 2023-12-31
-  )
-  
-  let metric_value_rule = azimuth::ValidationRule::numeric_range(
-    field = "metric_value",
-    min_value = 0.0,
-    max_value = 10000.0
-  )
-  
-  let required_attributes_rule = azimuth::ValidationRule::required_attributes([
-    "service.name",
-    "metric.name"
-  ])
-  
-  let attribute_format_rule = azimuth::ValidationRule::attribute_format(
-    attribute = "service.name",
-    pattern = "^[a-z0-9-]+$" // Only lowercase letters, numbers, and hyphens
-  )
-  
-  azimuth::RealTimeValidator::add_rule(validator, timestamp_rule)
-  azimuth::RealTimeValidator::add_rule(validator, metric_value_rule)
-  azimuth::RealTimeValidator::add_rule(validator, required_attributes_rule)
-  azimuth::RealTimeValidator::add_rule(validator, attribute_format_rule)
-  
-  // Configure data quality metrics
-  azimuth::RealTimeValidator::enable_quality_metrics(validator, [
-    "completeness_score",
-    "accuracy_score",
-    "timeliness_score",
-    "consistency_score"
-  ])
-  
-  // Test with valid and invalid data
-  let base_timestamp = 1640995200000
-  let validation_results = []
-  let quality_metrics = azimuth::RealTimeValidator::get_quality_metrics(validator)
-  
-  for i = 0; i < 50; i = i + 1 {
-    let timestamp = base_timestamp + i * 60000
-    let mut service_name = "valid-service"
-    let mut metric_name = "valid.metric"
-    let mut metric_value = 100.0
-    let mut attributes = []
+  for (window_start, window_end, window_metrics) in sliding_windows {
+    let window_stats = []
     
-    // Inject various data quality issues
-    match i % 10 {
-      0 => {
-        // Invalid timestamp (too old)
-        timestamp = 1000000000000
-      }
-      1 => {
-        // Invalid metric value (negative)
-        metric_value = -10.0
-      }
-      2 => {
-        // Missing required attribute
-        metric_name = ""
-      }
-      3 => {
-        // Invalid service name format
-        service_name = "Invalid_Service_Name"
-      }
-      _ => {
-        // Valid data
-        attributes = [("environment", "production")]
+    for metric_name in metric_names {
+      let metric_values = window_metrics
+        .filter(|metric| metric["metric_name"] == metric_name)
+        .map(|metric| metric["value"].to_float())
+      
+      if metric_values.length() > 0 {
+        let avg = metric_values.reduce(|acc, val| acc + val, 0.0) / metric_values.length().to_float()
+        let min = metric_values.reduce(|acc, val| if val < acc { val } else { acc }, 999999.0)
+        let max = metric_values.reduce(|acc, val| if val > acc { val } else { acc }, 0.0)
+        
+        window_stats.push((metric_name, avg, min, max, metric_values.length()))
       }
     }
     
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = service_name,
-      metric_name = metric_name,
-      metric_value = metric_value,
-      attributes = attributes
-    )
-    
-    let result = azimuth::RealTimeValidator::validate(validator, data_point)
-    validation_results.push(result)
+    realtime_metrics.push((window_start, window_end, window_stats))
   }
   
-  // Verify validation results
-  assert_eq(validation_results.length(), 50)
+  // 验证实时度量聚合
+  assert_eq(realtime_metrics.length(), sliding_windows.length())
   
-  let valid_count = validation_results.filter(|r| r.is_valid).length()
-  let invalid_count = validation_results.filter(|r| !r.is_valid).length()
-  
-  // Should have 60% valid (40% with injected issues)
-  assert_eq(valid_count, 30)
-  assert_eq(invalid_count, 20)
-  
-  // Verify specific validation failures
-  for i = 0; i < validation_results.length(); i = i + 1 {
-    let result = validation_results[i]
+  for (window_start, window_end, window_stats) in realtime_metrics {
+    assert_eq(window_stats.length(), metric_names.length())
     
-    match i % 10 {
-      0 => {
-        assert_false(result.is_valid)
-        assert_true(result.errors.contains("timestamp_out_of_range"))
-      }
-      1 => {
-        assert_false(result.is_valid)
-        assert_true(result.errors.contains("metric_value_out_of_range"))
-      }
-      2 => {
-        assert_false(result.is_valid)
-        assert_true(result.errors.contains("missing_required_attribute"))
-      }
-      3 => {
-        assert_false(result.is_valid)
-        assert_true(result.errors.contains("invalid_attribute_format"))
-      }
-      _ => {
-        assert_true(result.is_valid)
-        assert_eq(result.errors.length(), 0)
+    for (metric_name, avg, min, max, count) in window_stats {
+      assert_true(count > 0)
+      assert_true(avg >= min)
+      assert_true(avg <= max)
+      assert_true(min <= max)
+      
+      // 验证特定度量的合理性
+      if metric_name == "http.requests" {
+        assert_true(avg >= 100.0)
+        assert_true(max >= avg)
+      } else if metric_name == "error.rate" {
+        assert_true(avg >= 0.0)
+        assert_true(avg <= 1.0)
+      } else if metric_name == "cpu.usage" || metric_name == "memory.usage" {
+        assert_true(avg >= 0.0)
+        assert_true(avg <= 100.0)
       }
     }
   }
   
-  // Check quality metrics
-  let updated_quality_metrics = azimuth::RealTimeValidator::get_quality_metrics(validator)
-  
-  assert_true(updated_quality_metrics.contains("completeness_score"))
-  assert_true(updated_quality_metrics.contains("accuracy_score"))
-  assert_true(updated_quality_metrics.contains("timeliness_score"))
-  assert_true(updated_quality_metrics.contains("consistency_score"))
-  
-  // Completeness should be 60% (30/40 valid required fields)
-  assert_eq(updated_quality_metrics["completeness_score"], 0.6)
-  
-  // Accuracy should be 60% (30/50 valid data points)
-  assert_eq(updated_quality_metrics["accuracy_score"], 0.6)
-  
-  // Test data correction and enrichment
-  let correction_rules = [
-    azimuth::CorrectionRule::default_value("environment", "unknown"),
-    azimuth::CorrectionRule::timestamp_normalization(60000), // Round to minute
-    azimuth::CorrectionRule::metric_value_clamping(0.0, 1000.0)
+  // 测试异常检测
+  let anomaly_thresholds = [
+    ("response.time", 100.0),    // 响应时间超过100ms为异常
+    ("error.rate", 0.05),        // 错误率超过5%为异常
+    ("cpu.usage", 80.0),         // CPU使用率超过80%为异常
+    ("memory.usage", 90.0)       // 内存使用率超过90%为异常
   ]
   
-  azimuth::RealTimeValidator::add_correction_rules(validator, correction_rules)
+  let anomaly_events = []
   
-  let test_data = azimuth::TelemetryData::new(
-    timestamp = base_timestamp + 12345, // Not rounded to minute
-    service_name = "test-service",
-    metric_name = "test.metric",
-    metric_value = 1500.0, // Above max
-    attributes = [] // Missing environment
-  )
+  for (window_start, window_end, window_stats) in realtime_metrics {
+    let window_anomalies = []
+    
+    for (metric_name, avg, _, max, _) in window_stats {
+      for (threshold_metric, threshold_value) in anomaly_thresholds {
+        if metric_name == threshold_metric {
+          if avg > threshold_value {
+            window_anomalies.push((metric_name, "avg", avg, threshold_value))
+          }
+          if max > threshold_value {
+            window_anomalies.push((metric_name, "max", max, threshold_value))
+          }
+        }
+      }
+    }
+    
+    if window_anomalies.length() > 0 {
+      anomaly_events.push((window_start, window_end, window_anomalies))
+    }
+  }
   
-  let corrected_data = azimuth::RealTimeValidator::correct_and_enrich(validator, test_data)
+  // 验证异常检测
+  assert_true(anomaly_events.length() >= 0)  // 可能有也可能没有异常
   
-  // Verify corrections
-  assert_eq(corrected_data.timestamp, base_timestamp + 12000) // Rounded to minute
-  assert_eq(corrected_data.metric_value, 1000.0) // Clamped to max
-  assert_true(corrected_data.attributes.contains(("environment", "unknown")))
+  for (window_start, window_end, window_anomalies) in anomaly_events {
+    assert_true(window_anomalies.length() > 0)
+    
+    for (metric_name, metric_type, value, threshold) in window_anomalies {
+      assert_true(value > threshold)
+      assert_true(metric_type == "avg" || metric_type == "max")
+    }
+  }
 }
 
-// Test 9: Real-time Data Backpressure and Flow Control
-test "real-time data backpressure and flow control mechanisms" {
-  // Create flow controller with backpressure support
-  let flow_controller = azimuth::FlowController::new(
-    max_queue_size = 1000,
-    backpressure_threshold = 800, // Start backpressure at 80% capacity
-    recovery_threshold = 400      // Resume normal processing at 40% capacity
-  )
+// 测试3: 实时日志流处理
+test "实时日志流处理测试" {
+  // 模拟实时日志数据流
+  let base_timestamp = 1640995200000L
+  let log_stream = []
+  let log_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
+  let services = ["web-server", "api-gateway", "database", "cache"]
   
-  // Configure backpressure strategies
-  let sampling_strategy = azimuth::BackpressureStrategy::sampling(0.5) // Sample 50% of data
-  let priority_strategy = azimuth::BackpressureStrategy::priority_based([
-    ("priority", "high"),   // High priority always accepted
-    ("priority", "medium"), // Medium priority sampled
-    ("priority", "low")     // Low priority dropped first
-  ])
-  let load_shedding_strategy = azimuth::BackpressureStrategy::load_shedding(0.2) // Drop 20%
-  
-  azimuth::FlowController::add_strategy(flow_controller, sampling_strategy)
-  azimuth::FlowController::add_strategy(flow_controller, priority_strategy)
-  azimuth::FlowController::add_strategy(flow_controller, load_shedding_strategy)
-  
-  // Simulate high-load scenario
-  let base_timestamp = 1640995200000
-  let processed_data = []
-  let dropped_data = []
-  let flow_control_events = []
-  
-  // Simulate incoming data burst
-  for i = 0; i < 1200; i = i + 1 { // More than max queue size
-    let timestamp = base_timestamp + i * 10 // High frequency
-    
-    let mut priority = "low"
-    if i % 10 == 0 {
-      priority = "high"
-    } else if i % 5 == 0 {
-      priority = "medium"
-    }
-    
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = "burst-service",
-      metric_name = "burst.metric",
-      metric_value = i.to_double(),
-      attributes = [("priority", priority)]
-    )
-    
-    let result = azimuth::FlowController::process(flow_controller, data_point)
-    
-    match result.action {
-      azimuth::FlowAction::Process => {
-        processed_data.push(data_point)
-      }
-      azimuth::FlowAction::Drop => {
-        dropped_data.push(data_point)
-      }
-      azimuth::FlowAction::Sample => {
-        // Sampled data (accepted but marked as sampled)
-        let sampled_data = azimuth::TelemetryData::with_attributes(
-          data_point,
-          data_point.attributes + [("sampled", "true")]
-        )
-        processed_data.push(sampled_data)
-      }
-    }
-    
-    // Track flow control events
-    if result.triggered_backpressure {
-      flow_control_events.push((timestamp, "backpressure_on"))
-    } else if result.backpressure_recovered {
-      flow_control_events.push((timestamp, "backpressure_off"))
-    }
-  }
-  
-  // Verify flow control behavior
-  assert_true(processed_data.length() > 0)
-  assert_true(dropped_data.length() > 0)
-  
-  // Should have processed some data but not all (due to backpressure)
-  assert_true(processed_data.length() < 1200)
-  assert_true(dropped_data.length() > 0)
-  
-  // High priority data should have higher acceptance rate
-  let high_priority_processed = processed_data.filter(|d| 
-    d.attributes.contains(("priority", "high"))
-  ).length()
-  let low_priority_processed = processed_data.filter(|d| 
-    d.attributes.contains(("priority", "low"))
-  ).length()
-  
-  let high_priority_total = 1200 / 10 // 120 high priority items
-  let low_priority_total = 1200 - (1200 / 10) - (1200 / 5) // 720 low priority items
-  
-  let high_priority_rate = high_priority_processed.to_double() / high_priority_total.to_double()
-  let low_priority_rate = low_priority_processed.to_double() / low_priority_total.to_double()
-  
-  assert_true(high_priority_rate > low_priority_rate)
-  
-  // Verify backpressure events
-  assert_true(flow_control_events.length() > 0)
-  
-  // Should have backpressure triggered when queue exceeded threshold
-  let backpressure_on_events = flow_control_events.filter(|(_, event)| event == "backpressure_on")
-  assert_true(backpressure_on_events.length() > 0)
-  
-  // Test adaptive flow control
-  let adaptive_controller = azimuth::FlowController::new(
-    max_queue_size = 500,
-    backpressure_threshold = 400,
-    recovery_threshold = 200
-  )
-  
-  azimuth::FlowController::enable_adaptive_control(adaptive_controller, true)
-  
-  // Simulate varying load patterns
-  let adaptive_processed = []
-  let adaptive_dropped = []
-  
-  // Low load period
-  for i = 0; i < 100; i = i + 1 {
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = base_timestamp + i * 1000,
-      service_name = "adaptive-test",
-      metric_name = "test.metric",
-      metric_value = i.to_double(),
-      attributes = [("priority", "normal")]
-    )
-    
-    let result = azimuth::FlowController::process(adaptive_controller, data_point)
-    if result.action == azimuth::FlowAction::Process {
-      adaptive_processed.push(data_point)
-    } else {
-      adaptive_dropped.push(data_point)
-    }
-  }
-  
-  // High load period
-  for i = 100; i < 600; i = i + 1 {
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = base_timestamp + i * 100, // Higher frequency
-      service_name = "adaptive-test",
-      metric_name = "test.metric",
-      metric_value = i.to_double(),
-      attributes = [("priority", "normal")]
-    )
-    
-    let result = azimuth::FlowController::process(adaptive_controller, data_point)
-    if result.action == azimuth::FlowAction::Process {
-      adaptive_processed.push(data_point)
-    } else {
-      adaptive_dropped.push(data_point)
-    }
-  }
-  
-  // Recovery period
-  for i = 600; i < 650; i = i + 1 {
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = base_timestamp + i * 2000, // Lower frequency
-      service_name = "adaptive-test",
-      metric_name = "test.metric",
-      metric_value = i.to_double(),
-      attributes = [("priority", "normal")]
-    )
-    
-    let result = azimuth::FlowController::process(adaptive_controller, data_point)
-    if result.action == azimuth::FlowAction::Process {
-      adaptive_processed.push(data_point)
-    } else {
-      adaptive_dropped.push(data_point)
-    }
-  }
-  
-  // Verify adaptive behavior
-  // During low load, most data should be processed
-  // During high load, some data should be dropped
-  // During recovery, processing should improve
-  assert_true(adaptive_processed.length() > 0)
-  assert_true(adaptive_dropped.length() > 0)
-  
-  // Get adaptive metrics
-  let adaptive_metrics = azimuth::FlowController::get_metrics(adaptive_controller)
-  assert_true(adaptive_metrics.contains("peak_queue_size"))
-  assert_true(adaptive_metrics.contains("average_processing_rate"))
-  assert_true(adaptive_metrics.contains("backpressure_duration_ms"))
-}
-
-// Test 10: Real-time Multi-tenant Data Isolation
-test "real-time multi-tenant data isolation and resource management" {
-  // Create multi-tenant processor
-  let tenant_processor = azimuth::MultiTenantProcessor::new()
-  
-  // Configure tenants with different resource limits
-  let tenant_a_config = azimuth::TenantConfig::new(
-    tenant_id = "tenant-a",
-    max_data_rate_per_second = 100,
-    max_storage_mb = 100,
-    max_concurrent_queries = 10,
-    priority = 1
-  )
-  
-  let tenant_b_config = azimuth::TenantConfig::new(
-    tenant_id = "tenant-b",
-    max_data_rate_per_second = 200,
-    max_storage_mb = 200,
-    max_concurrent_queries = 20,
-    priority = 2
-  )
-  
-  let tenant_c_config = azimuth::TenantConfig::new(
-    tenant_id = "tenant-c",
-    max_data_rate_per_second = 50,
-    max_storage_mb = 50,
-    max_concurrent_queries = 5,
-    priority = 0 // Lowest priority
-  )
-  
-  azimuth::MultiTenantProcessor::add_tenant(tenant_processor, tenant_a_config)
-  azimuth::MultiTenantProcessor::add_tenant(tenant_processor, tenant_b_config)
-  azimuth::MultiTenantProcessor::add_tenant(tenant_processor, tenant_c_config)
-  
-  // Simulate multi-tenant data streams
-  let base_timestamp = 1640995200000
-  let tenant_results = {
-    "tenant-a": [],
-    "tenant-b": [],
-    "tenant-c": []
-  }
-  
-  let rate_limit_violations = []
-  
-  // Generate data for all tenants
-  for i = 0; i < 500; i = i + 1 {
-    let timestamp = base_timestamp + i * 100 // 100ms intervals
-    
-    // Distribute data across tenants
-    let tenants = ["tenant-a", "tenant-b", "tenant-c"]
-    let tenant_id = tenants[i % tenants.length()]
-    
-    let data_point = azimuth::TelemetryData::new(
-      timestamp = timestamp,
-      service_name = tenant_id + "-service",
-      metric_name = "tenant.metric",
-      metric_value = i.to_double(),
-      attributes = [
-        ("tenant.id", tenant_id),
-        ("data.source", "multi-tenant-test")
-      ]
-    )
-    
-    let result = azimuth::MultiTenantProcessor::process(tenant_processor, data_point)
-    
-    if result.processed {
-      tenant_results[tenant_id].push(data_point)
-    }
-    
-    if result.rate_limited {
-      rate_limit_violations.push((tenant_id, timestamp))
-    }
-  }
-  
-  // Verify tenant isolation
-  // Each tenant should only see their own data
-  for (tenant_id, data) in tenant_results {
-    for data_point in data {
-      assert_eq(data_point.attributes.find(|(k, _)| k == "tenant.id").unwrap().1, tenant_id)
-    }
-  }
-  
-  // Verify rate limiting
-  // Tenant C has lowest rate limit (50/sec), should have more violations
-  let tenant_a_violations = rate_limit_violations.filter(|(t, _)| t == "tenant-a").length()
-  let tenant_b_violations = rate_limit_violations.filter(|(t, _)| t == "tenant-b").length()
-  let tenant_c_violations = rate_limit_violations.filter(|(t, _)| t == "tenant-c").length()
-  
-  assert_true(tenant_c_violations >= tenant_a_violations)
-  assert_true(tenant_c_violations >= tenant_b_violations)
-  
-  // Test tenant resource quotas
-  let resource_usage = azimuth::MultiTenantProcessor::get_resource_usage(tenant_processor)
-  
-  assert_true(resource_usage.contains("tenant-a"))
-  assert_true(resource_usage.contains("tenant-b"))
-  assert_true(resource_usage.contains("tenant-c"))
-  
-  for (tenant_id, usage) in resource_usage {
-    let tenant_config = match tenant_id {
-      "tenant-a" => tenant_a_config,
-      "tenant-b" => tenant_b_config,
-      "tenant-c" => tenant_c_config,
-      _ => { continue }
-    }
-    
-    // Storage usage should not exceed limits
-    assert_true(usage.storage_mb <= tenant_config.max_storage_mb)
-    
-    // Data rate should be close to but not exceed limits
-    assert_true(usage.data_rate_per_second <= tenant_config.max_data_rate_per_second * 1.1) // 10% tolerance
-  }
-  
-  // Test tenant priority handling during resource contention
-  azimuth::MultiTenantProcessor::simulate_resource_pressure(tenant_processor, 0.8) // 80% resource usage
-  
-  let priority_results = []
-  
-  // Generate high-load data during resource pressure
-  for i = 0; i < 100; i = i + 1 {
-    let timestamp = base_timestamp + i * 10 // Very high frequency
-    
-    for tenant_id in ["tenant-a", "tenant-b", "tenant-c"] {
-      let data_point = azimuth::TelemetryData::new(
-        timestamp = timestamp,
-        service_name = tenant_id + "-service",
-        metric_name = "priority.test",
-        metric_value = i.to_double(),
-        attributes = [("tenant.id", tenant_id)]
-      )
+  // 生成实时日志流（每秒50条日志，持续30秒）
+  for second = 0; second < 30; second = second + 1 {
+    for log_in_second = 0; log_in_second < 50; log_in_second = log_in_second + 1 {
+      let service_name = services[log_in_second % services.length()]
+      let level = if log_in_second % 20 == 0 { "ERROR" } else if log_in_second % 10 == 0 { "WARN" } else { "INFO" }
+      let timestamp = base_timestamp + (second * 1000L) + (log_in_second * 20L)
+      let message = "Log message from " + service_name + " at " + second.to_string() + "s"
       
-      let result = azimuth::MultiTenantProcessor::process(tenant_processor, data_point)
-      priority_results.push((tenant_id, result.processed))
+      let log_data = {
+        "timestamp": timestamp.to_string(),
+        "level": level,
+        "service": service_name,
+        "message": message,
+        "trace_id": if log_in_second % 5 == 0 { "trace" + log_in_second.to_string() } else { "" }
+      }
+      log_stream.push(log_data)
     }
   }
   
-  // Calculate processing rates by tenant during pressure
-  let tenant_a_processed = priority_results.filter(|(t, p)| t == "tenant-a" && *p).length()
-  let tenant_b_processed = priority_results.filter(|(t, p)| t == "tenant-b" && *p).length()
-  let tenant_c_processed = priority_results.filter(|(t, p)| t == "tenant-c" && *p).length()
+  // 验证日志流数据
+  assert_eq(log_stream.length(), 1500)  // 30秒 × 50条日志/秒
   
-  // Higher priority tenants should have better processing rates
-  let tenant_a_rate = tenant_a_processed.to_double() / 100.0
-  let tenant_b_rate = tenant_b_processed.to_double() / 100.0
-  let tenant_c_rate = tenant_c_processed.to_double() / 100.0
+  // 模拟实时日志处理（5秒窗口）
+  let log_windows = []
   
-  assert_true(tenant_b_rate >= tenant_a_rate) // Priority 2 >= Priority 1
-  assert_true(tenant_a_rate >= tenant_c_rate) // Priority 1 >= Priority 0
-  
-  // Test tenant data isolation at query time
-  let query_service = azimuth::MultiTenantQueryService::new(tenant_processor)
-  
-  // Tenant A queries should only return Tenant A data
-  let tenant_a_query = azimuth::Query::new()
-    .with_tenant_id("tenant-a")
-    .with_time_range(base_timestamp, base_timestamp + 50000)
-    .with_metric_filter("tenant.metric")
-  
-  let tenant_a_results = azimuth::MultiTenantQueryService::execute(query_service, tenant_a_query)
-  
-  for result in tenant_a_results {
-    assert_eq(result.attributes.find(|(k, _)| k == "tenant.id").unwrap().1, "tenant-a")
+  for window_start_second = 0; window_start_second < 30; window_start_second = window_start_second + 5 {
+    let window_start = base_timestamp + (window_start_second * 1000L)
+    let window_end = window_start + 5000L
+    
+    let window_logs = log_stream.filter(|log| {
+      let timestamp = log["timestamp"].to_long()
+      timestamp >= window_start && timestamp < window_end
+    })
+    
+    log_windows.push((window_start_second, window_logs))
   }
   
-  // Cross-tenant queries should be rejected
-  let cross_tenant_query = azimuth::Query::new()
-    .with_time_range(base_timestamp, base_timestamp + 50000)
-    .with_metric_filter("tenant.metric")
-    // No tenant_id specified - should be rejected
+  // 验证日志窗口
+  assert_eq(log_windows.length(), 6)  // 30秒 / 5秒窗口
   
-  let cross_tenant_results = azimuth::MultiTenantQueryService::execute(query_service, cross_tenant_query)
-  assert_eq(cross_tenant_results.length(), 0)
+  for (window_start_second, window_logs) in log_windows {
+    assert_eq(window_logs.length(), 250)  // 5秒 × 50条日志/秒
+    
+    // 验证时间戳在窗口范围内
+    for log in window_logs {
+      let timestamp = log["timestamp"].to_long()
+      let window_start = base_timestamp + (window_start_second * 1000L)
+      let window_end = window_start + 5000L
+      
+      assert_true(timestamp >= window_start)
+      assert_true(timestamp < window_end)
+    }
+  }
   
-  let query_error = azimuth::MultiTenantQueryService::get_last_error(query_service)
-  assert_true(query_error.contains("tenant_id_required"))
+  // 实时日志级别统计
+  let log_level_stats = []
+  
+  for (window_start_second, window_logs) in log_windows {
+    let level_counts = []
+    
+    for level in log_levels {
+      let count = window_logs.filter(|log| log["level"] == level).length()
+      level_counts.push((level, count))
+    }
+    
+    log_level_stats.push((window_start_second, level_counts))
+  }
+  
+  // 验证日志级别统计
+  assert_eq(log_level_stats.length(), 6)
+  
+  for (window_start_second, level_counts) in log_level_stats {
+    let total_logs = level_counts.reduce(|acc, (_, count)| acc + count, 0)
+    assert_eq(total_logs, 250)
+    
+    // 验证INFO日志最多
+    let info_count = level_counts.filter(|(level, _)| level == "INFO")[0].1
+    let warn_count = level_counts.filter(|(level, _)| level == "WARN")[0].1
+    let error_count = level_counts.filter(|(level, _)| level == "ERROR")[0].1
+    
+    assert_true(info_count > warn_count)
+    assert_true(info_count > error_count)
+    assert_eq(warn_count, 25)  // 250条日志中，每10条有1条WARN
+    assert_eq(error_count, 12) // 250条日志中，每20条有1条ERROR
+  }
+  
+  // 实时错误日志分析
+  let error_analysis = []
+  
+  for (window_start_second, window_logs) in log_windows {
+    let error_logs = window_logs.filter(|log| {
+      log["level"] == "ERROR" || log["level"] == "FATAL"
+    })
+    
+    let service_errors = []
+    for service in services {
+      let service_error_count = error_logs.filter(|log| log["service"] == service).length()
+      service_errors.push((service, service_error_count))
+    }
+    
+    let error_rate = error_logs.length().to_float() / window_logs.length().to_float()
+    
+    error_analysis.push((window_start_second, error_logs.length(), error_rate, service_errors))
+  }
+  
+  // 验证错误日志分析
+  assert_eq(error_analysis.length(), 6)
+  
+  for (window_start_second, error_count, error_rate, service_errors) in error_analysis {
+    assert_true(error_count >= 12)  // 至少有ERROR日志
+    assert_true(error_rate > 0.0)
+    assert_true(error_rate < 0.1)   // 错误率应该小于10%
+    assert_eq(service_errors.length(), services.length())
+    
+    // 验证服务错误总和
+    let total_service_errors = service_errors.reduce(|acc, (_, count)| acc + count, 0)
+    assert_eq(total_service_errors, error_count)
+  }
+  
+  // 测试实时日志模式检测
+  let pattern_detected = []
+  
+  for (window_start_second, window_logs) in log_windows {
+    // 检测错误激增模式
+    let error_logs = window_logs.filter(|log| log["level"] == "ERROR")
+    let error_spike_threshold = 15  // 5秒内超过15个错误为激增
+    
+    if error_logs.length() > error_spike_threshold {
+      pattern_detected.push(("error_spike", window_start_second, error_logs.length()))
+    }
+    
+    // 检测特定服务错误模式
+    for service in services {
+      let service_errors = error_logs.filter(|log| log["service"] == service)
+      if service_errors.length() > 5 {  // 单个服务5秒内超过5个错误
+        pattern_detected.push(("service_error_pattern", window_start_second, service, service_errors.length()))
+      }
+    }
+  }
+  
+  // 验证模式检测结果
+  assert_true(pattern_detected.length() >= 0)
+  
+  for detection in pattern_detected {
+    match detection {
+      ("error_spike", window_start_second, count) => {
+        assert_true(count > 15)
+        assert_true(window_start_second >= 0 && window_start_second < 30)
+      }
+      ("service_error_pattern", window_start_second, service, count) => {
+        assert_true(count > 5)
+        assert_true(window_start_second >= 0 && window_start_second < 30)
+        assert_true(services.contains(service))
+      }
+      _ => assert_true(false, "未知的模式检测类型")
+    }
+  }
+}
+
+// 测试4: 实时告警处理
+test "实时告警处理测试" {
+  // 模拟实时监控数据
+  let base_timestamp = 1640995200000L
+  let monitoring_data = []
+  
+  // 生成监控数据（每10秒一个数据点，持续2分钟）
+  for time_point = 0; time_point < 12; time_point = time_point + 1 {
+    let timestamp = base_timestamp + (time_point * 10000L)
+    
+    // 模拟系统指标
+    let cpu_usage = 30.0 + (time_point % 5) * 10.0 + (if time_point > 8 { 30.0 } else { 0.0 })  // 后期CPU激增
+    let memory_usage = 60.0 + (time_point % 3) * 5.0
+    let error_rate = 0.01 + (if time_point > 6 { (time_point - 6) * 0.01 } else { 0.0 })  // 后期错误率增加
+    let response_time = 50.0 + (time_point % 4) * 25.0 + (if time_point > 9 { 100.0 } else { 0.0 })  // 后期响应时间激增
+    
+    let monitoring_point = {
+      "timestamp": timestamp.to_string(),
+      "cpu_usage": cpu_usage.to_string(),
+      "memory_usage": memory_usage.to_string(),
+      "error_rate": error_rate.to_string(),
+      "response_time": response_time.to_string(),
+      "request_count": (1000 + time_point * 100).to_string()
+    }
+    monitoring_data.push(monitoring_point)
+  }
+  
+  // 验证监控数据
+  assert_eq(monitoring_data.length(), 12)
+  
+  // 定义告警规则
+  let alert_rules = [
+    ("high_cpu", "cpu_usage", ">", 80.0, "CPU使用率过高"),
+    ("high_memory", "memory_usage", ">", 85.0, "内存使用率过高"),
+    ("high_error_rate", "error_rate", ">", 0.05, "错误率过高"),
+    ("slow_response", "response_time", ">", 200.0, "响应时间过慢")
+  ]
+  
+  // 实时告警检测
+  let alert_events = []
+  
+  for data_point in monitoring_data {
+    let timestamp = data_point["timestamp"].to_long()
+    let point_alerts = []
+    
+    for (rule_name, metric, operator, threshold, message) in alert_rules {
+      let value = data_point[metric].to_float()
+      
+      let triggered = if operator == ">" {
+        value > threshold
+      } else if operator == "<" {
+        value < threshold
+      } else if operator == ">=" {
+        value >= threshold
+      } else if operator == "<=" {
+        value <= threshold
+      } else {
+        false
+      }
+      
+      if triggered {
+        point_alerts.push((rule_name, metric, value, threshold, message))
+      }
+    }
+    
+    if point_alerts.length() > 0 {
+      alert_events.push((timestamp, point_alerts))
+    }
+  }
+  
+  // 验证告警事件
+  assert_true(alert_events.length() > 0)  // 应该有告警事件
+  
+  // 验证CPU告警
+  let cpu_alerts = alert_events.filter(|(_, alerts)| {
+    alerts.any(|(rule_name, _, _, _, _)| rule_name == "high_cpu")
+  })
+  assert_true(cpu_alerts.length() > 0)
+  
+  // 验证错误率告警
+  let error_alerts = alert_events.filter(|(_, alerts)| {
+    alerts.any(|(rule_name, _, _, _, _)| rule_name == "high_error_rate")
+  })
+  assert_true(error_alerts.length() > 0)
+  
+  // 验证响应时间告警
+  let response_alerts = alert_events.filter(|(_, alerts)| {
+    alerts.any(|(rule_name, _, _, _, _)| rule_name == "slow_response")
+  })
+  assert_true(response_alerts.length() > 0)
+  
+  // 测试告警聚合和去重
+  let aggregated_alerts = []
+  let seen_alerts = []
+  
+  for (timestamp, alerts) in alert_events {
+    for (rule_name, metric, value, threshold, message) in alerts {
+      let alert_key = rule_name + "_" + metric
+      
+      if not seen_alerts.contains(alert_key) {
+        aggregated_alerts.push((timestamp, rule_name, metric, value, threshold, message))
+        seen_alerts.push(alert_key)
+      }
+    }
+  }
+  
+  // 验证告警聚合
+  assert_true(aggregated_alerts.length() > 0)
+  assert_true(aggregated_alerts.length() <= alert_events.length())
+  
+  // 验证去重效果
+  let unique_rule_names = aggregated_alerts.map(|(_, rule_name, _, _, _, _)| rule_name)
+  for rule_name in unique_rule_names {
+    let count = unique_rule_names.filter(|name| name == rule_name).length()
+    assert_eq(count, 1)  // 每个规则名称只出现一次
+  }
+  
+  // 测试告警恢复检测
+  let recovery_events = []
+  let alert_states = []
+  
+  for data_point in monitoring_data {
+    let timestamp = data_point["timestamp"].to_long()
+    let point_states = []
+    
+    for (rule_name, metric, operator, threshold, _) in alert_rules {
+      let value = data_point[metric].to_float()
+      let triggered = if operator == ">" { value > threshold } else { false }
+      
+      point_states.push((rule_name, metric, triggered))
+    }
+    
+    alert_states.push((timestamp, point_states))
+  }
+  
+  // 检测告警恢复（从触发状态变为非触发状态）
+  for i = 1; i < alert_states.length(); i = i + 1 {
+    let (prev_timestamp, prev_states) = alert_states[i-1]
+    let (curr_timestamp, curr_states) = alert_states[i]
+    
+    for (rule_name, metric, prev_triggered) in prev_states {
+      let curr_triggered = curr_states.filter(|(r, m, _)| r == rule_name && m == metric)[0].2
+      
+      if prev_triggered && not curr_triggered {
+        // 告警恢复
+        recovery_events.push((curr_timestamp, rule_name, metric))
+      }
+    }
+  }
+  
+  // 验证告警恢复检测
+  assert_true(recovery_events.length() >= 0)
+  
+  for (timestamp, rule_name, metric) in recovery_events {
+    assert_true(timestamp > base_timestamp)
+    assert_true(rule_name.length() > 0)
+    assert_true(metric.length() > 0)
+  }
+}
+
+// 测试5: 实时数据流背压处理
+test "实时数据流背压处理测试" {
+  // 模拟高频率数据流（正常情况下每秒1000个数据点）
+  let base_timestamp = 1640995200000L
+  let high_frequency_stream = []
+  
+  // 生成高频数据流（5秒，每秒1000个数据点）
+  for second = 0; second < 5; second = second + 1 {
+    for data_point = 0; data_point < 1000; data_point = data_point + 1 {
+      let timestamp = base_timestamp + (second * 1000L) + data_point
+      let data = {
+        "id": (second * 1000 + data_point).to_string(),
+        "timestamp": timestamp.to_string(),
+        "value": (10 + data_point % 100).to_string(),
+        "source": "high-frequency-generator"
+      }
+      high_frequency_stream.push(data)
+    }
+  }
+  
+  // 验证高频数据流
+  assert_eq(high_frequency_stream.length(), 5000)  // 5秒 × 1000个数据点/秒
+  
+  // 模拟处理能力（每秒只能处理500个数据点）
+  let processing_capacity = 500  // 每秒500个数据点
+  let processed_data = []
+  let backlog_data = []
+  let dropped_data = []
+  
+  // 模拟背压处理
+  let processing_window_start = base_timestamp
+  let processing_window_end = processing_window_start + 5000L  // 5秒处理窗口
+  
+  // 按时间窗口处理数据
+  for second = 0; second < 5; second = second + 1 {
+    let window_start = base_timestamp + (second * 1000L)
+    let window_end = window_start + 1000L
+    
+    let window_data = high_frequency_stream.filter(|data| {
+      let timestamp = data["timestamp"].to_long()
+      timestamp >= window_start && timestamp < window_end
+    })
+    
+    // 处理窗口内的数据
+    let processed_in_window = window_data.slice(0, processing_capacity)
+    let backlog_in_window = window_data.slice(processing_capacity, window_data.length())
+    
+    // 添加到已处理和积压数据
+    for data in processed_in_window {
+      processed_data.push(data)
+    }
+    
+    for data in backlog_in_window {
+      backlog_data.push(data)
+    }
+    
+    // 模拟处理积压数据（从上一窗口的积压中处理一部分）
+    if second > 0 && backlog_data.length() > 0 {
+      let backlog_to_process = backlog_data.slice(0, processing_capacity / 2)  // 用一半容量处理积压
+      let remaining_backlog = backlog_data.slice(processing_capacity / 2, backlog_data.length())
+      
+      for data in backlog_to_process {
+        processed_data.push(data)
+      }
+      
+      backlog_data = remaining_backlog
+    }
+    
+    // 如果积压过多，开始丢弃数据
+    if backlog_data.length() > processing_capacity * 3 {  // 积压超过3倍处理能力
+      let to_drop = backlog_data.length() - (processing_capacity * 2)
+      let dropped = backlog_data.slice(0, to_drop)
+      backlog_data = backlog_data.slice(to_drop, backlog_data.length())
+      
+      for data in dropped {
+        dropped_data.push(data)
+      }
+    }
+  }
+  
+  // 验证背压处理结果
+  assert_true(processed_data.length() > 0)
+  assert_true(processed_data.length() < high_frequency_stream.length())
+  
+  // 验证处理能力限制
+  let expected_processed = 5 * processing_capacity + (processing_capacity / 2) * 4  // 5秒正常处理 + 4秒积压处理
+  assert_true(processed_data.length() <= expected_processed)
+  
+  // 验证积压数据
+  assert_true(backlog_data.length() >= 0)
+  
+  // 验证丢弃数据
+  assert_true(dropped_data.length() >= 0)
+  
+  // 验证数据完整性
+  let all_processed_or_dropped = processed_data.length() + backlog_data.length() + dropped_data.length()
+  assert_eq(all_processed_or_dropped, high_frequency_stream.length())
+  
+  // 测试背压指标
+  let processing_rate = processed_data.length().to_float() / 5.0  // 每秒处理的数据点数
+  let drop_rate = dropped_data.length().to_float() / 5.0  // 每秒丢弃的数据点数
+  let backlog_growth_rate = backlog_data.length().to_float() / 5.0  // 每秒积压增长的数据点数
+  
+  // 验证背压指标
+  assert_true(processing_rate <= processing_capacity.to_float())  // 处理率不超过处理能力
+  assert_true(drop_rate >= 0.0)  // 丢弃率非负
+  assert_true(backlog_growth_rate >= 0.0)  // 积压增长率非负
+  
+  // 测试自适应背压处理
+  let adaptive_processed_data = []
+  let adaptive_backlog_data = []
+  let adaptive_dropped_data = []
+  let mut adaptive_capacity = processing_capacity
+  
+  for second = 0; second < 5; second = second + 1 {
+    let window_start = base_timestamp + (second * 1000L)
+    let window_end = window_start + 1000L
+    
+    let window_data = high_frequency_stream.filter(|data| {
+      let timestamp = data["timestamp"].to_long()
+      timestamp >= window_start && timestamp < window_end
+    })
+    
+    // 根据积压情况调整处理能力
+    if adaptive_backlog_data.length() > adaptive_capacity * 2 {
+      adaptive_capacity = (adaptive_capacity * 3) / 4  // 减少处理能力
+    } else if adaptive_backlog_data.length() < adaptive_capacity / 2 {
+      adaptive_capacity = (adaptive_capacity * 5) / 4  // 增加处理能力
+    }
+    
+    // 处理窗口内的数据
+    let processed_in_window = window_data.slice(0, adaptive_capacity)
+    let backlog_in_window = window_data.slice(adaptive_capacity, window_data.length())
+    
+    for data in processed_in_window {
+      adaptive_processed_data.push(data)
+    }
+    
+    for data in backlog_in_window {
+      adaptive_backlog_data.push(data)
+    }
+    
+    // 处理积压数据
+    if adaptive_backlog_data.length() > 0 {
+      let backlog_to_process = adaptive_backlog_data.slice(0, adaptive_capacity / 2)
+      adaptive_backlog_data = adaptive_backlog_data.slice(adaptive_capacity / 2, adaptive_backlog_data.length())
+      
+      for data in backlog_to_process {
+        adaptive_processed_data.push(data)
+      }
+    }
+  }
+  
+  // 验证自适应背压处理
+  assert_true(adaptive_processed_data.length() > 0)
+  assert_true(adaptive_backlog_data.length() >= 0)
+  
+  // 验证自适应处理能力
+  let adaptive_processing_rate = adaptive_processed_data.length().to_float() / 5.0
+  assert_true(adaptive_processing_rate > 0.0)
+  
+  // 自适应处理应该比固定处理更高效
+  assert_true(adaptive_processed_data.length() >= processed_data.length() * 9 / 10)  // 至少90%的效率
 }

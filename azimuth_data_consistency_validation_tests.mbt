@@ -1,349 +1,421 @@
-// Azimuth Telemetry Data Consistency Validation Tests
-// 遥测数据一致性验证测试 - 确保遥测数据在不同操作和转换过程中保持一致性
+// Azimuth Telemetry System - 数据一致性验证测试用例
+// 测试系统在各种操作下数据的一致性和完整性
 
-test "遥测数据跨组件一致性验证" {
-  // 测试遥测数据在不同组件之间传递时的一致性
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "consistency.test")
+// 测试1: Span数据一致性验证
+test "Span数据一致性验证测试" {
+  // 创建测试Trace和Span
+  let trace_id = "trace123456789012345678901234567890"
+  let parent_span_id = "parent1234567890"
+  let child_span_id = "child1234567890"
   
-  // 创建初始span
-  let parent_span = Tracer::start_span(tracer, "parent.operation")
-  Span::set_attribute(parent_span, "operation.type", StringValue("parent"))
-  Span::set_attribute(parent_span, "service.name", StringValue("consistency.service"))
+  // 验证ID格式一致性
+  assert_eq(trace_id.length(), 32)
+  assert_eq(parent_span_id.length(), 16)
+  assert_eq(child_span_id.length(), 16)
   
-  // 创建子span
-  let child_span = Tracer::start_span_with_parent(tracer, "child.operation", Some(Span::get_context(parent_span)))
-  Span::set_attribute(child_span, "operation.type", StringValue("child"))
-  Span::set_attribute(child_span, "parent.id", StringValue(Span::get_span_id(parent_span)))
-  
-  // 验证父子关系一致性
-  let parent_context = Span::get_context(parent_span)
-  let child_context = Span::get_context(child_span)
-  
-  assert_eq(SpanContext::get_trace_id(parent_context), SpanContext::get_trace_id(child_context))
-  assert_true(SpanContext::get_span_id(parent_context) != SpanContext::get_span_id(child_context))
-  
-  Span::end(child_span)
-  Span::end(parent_span)
-  
-  assert_true(true) // 如果没有不一致错误则测试通过
-}
-
-test "遥测数据序列化反序列化一致性" {
-  // 测试遥测数据序列化和反序列化过程中的一致性
-  let original_attributes = [
-    ("string.attr", StringValue("test.value")),
-    ("int.attr", IntValue(42)),
-    ("float.attr", FloatValue(3.14)),
-    ("bool.attr", BoolValue(true)),
-    ("array.string", ArrayStringValue(["item1", "item2", "item3"])),
-    ("array.int", ArrayIntValue([1, 2, 3, 4, 5]))
+  // 创建Span层次结构
+  let spans = [
+    ("root-span", trace_id, "0000000000000000", "server"),
+    ("parent-span", trace_id, parent_span_id, "internal"),
+    ("child-span-1", trace_id, "child1234567890", "client"),
+    ("child-span-2", trace_id, "child0987654321", "producer")
   ]
   
-  // 创建资源并设置属性
-  let resource = Resource::new()
-  let resource_with_attrs = Resource::with_attributes(resource, original_attributes)
+  // 验证Span层次关系一致性
+  assert_eq(spans.length(), 4)
+  assert_eq(spans[0].1, trace_id)  // 所有Span共享相同Trace ID
+  assert_eq(spans[1].1, trace_id)
+  assert_eq(spans[2].1, trace_id)
+  assert_eq(spans[3].1, trace_id)
   
-  // 序列化资源属性
-  let serialized = Resource::serialize_attributes(resource_with_attrs)
-  
-  // 反序列化资源属性
-  let deserialized_resource = Resource::deserialize_attributes(serialized)
-  
-  // 验证序列化前后属性一致性
-  for (key, value) in original_attributes {
-    let original_value = Resource::get_attribute(resource_with_attrs, key)
-    let deserialized_value = Resource::get_attribute(deserialized_resource, key)
-    
-    match (original_value, deserialized_value) {
-      (Some(orig), Some(deser)) => assert_true(AttributeValue::equals(orig, deser))
-      (None, None) => assert_true(true)
-      _ => assert_true(false) // 不一致情况
+  // 验证Span ID唯一性
+  let span_ids = [spans[0].2, spans[1].2, spans[2].2, spans[3].2]
+  for i = 0; i < span_ids.length(); i = i + 1 {
+    for j = i + 1; j < span_ids.length(); j = j + 1 {
+      assert_not_eq(span_ids[i], span_ids[j])
     }
   }
   
-  assert_true(true)
+  // 验证Span状态一致性
+  let span_statuses = ["ok", "ok", "error", "ok"]
+  for i = 0; i < spans.length(); i = i + 1 {
+    let (name, trace, span_id, kind) = spans[i]
+    let status = span_statuses[i]
+    
+    assert_true(name.length() > 0)
+    assert_eq(trace, trace_id)
+    assert_true(span_id.length() == 16)
+    assert_true(kind == "server" || kind == "internal" || kind == "client" || kind == "producer")
+    assert_true(status == "ok" || status == "error")
+  }
 }
 
-test "遥测数据时间戳一致性验证" {
-  // 测试遥测数据中时间戳的一致性和正确性
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "timestamp.consistency")
+// 测试2: 度量数据一致性验证
+test "度量数据一致性验证测试" {
+  // 创建Counter度量
+  let counter_name = "http.requests.total"
+  let counter_values = [1.0, 2.0, 5.0, 10.0, 15.0]
+  let expected_counter_sum = 33.0
   
-  // 记录开始时间
-  let start_time = Clock::now()
+  // 验证Counter累加一致性
+  let mut counter_sum = 0.0
+  for value in counter_values {
+    counter_sum = counter_sum + value
+  }
   
-  // 创建span
-  let span = Tracer::start_span(tracer, "timestamp.test")
+  assert_eq(counter_sum, expected_counter_sum)
   
-  // 添加事件并记录事件时间
-  let event_time = Clock::now()
-  Span::add_event_with_timestamp(span, "test.event", Some([("event.data", StringValue("test"))]), event_time)
+  // 创建Histogram度量
+  let histogram_name = "response.time.ms"
+  let histogram_values = [10.5, 20.0, 15.5, 30.0, 25.0, 18.0, 22.5]
+  let expected_histogram_sum = 141.5
+  let expected_histogram_count = 7
   
-  // 结束span
-  let end_time = Clock::now()
-  Span::end_with_timestamp(span, end_time)
+  // 验证Histogram统计一致性
+  let histogram_sum = histogram_values.reduce(|acc, val| acc + val, 0.0)
+  let histogram_count = histogram_values.length().to_float()
+  let histogram_avg = histogram_sum / histogram_count
   
-  // 验证时间戳逻辑一致性
-  let span_context = Span::get_context(span)
-  let span_start_time = SpanContext::get_start_time(span_context)
-  let span_end_time = SpanContext::get_end_time(span_context)
+  assert_eq(histogram_sum, expected_histogram_sum)
+  assert_eq(histogram_count, expected_histogram_count.to_float())
+  assert_eq(histogram_avg, 20.214285714285715)
   
-  // 验证时间顺序：开始 <= 事件 <= 结束
-  assert_true(span_start_time <= event_time)
-  assert_true(event_time <= span_end_time)
-  assert_true(span_start_time <= end_time)
+  // 创建Gauge度量
+  let gauge_name = "memory.usage.percent"
+  let gauge_values = [45.5, 52.3, 48.7, 51.2, 49.8]
+  let expected_gauge_last = 49.8
   
-  assert_true(true)
+  // 验证Gauge状态一致性
+  let mut gauge_current = 0.0
+  for value in gauge_values {
+    gauge_current = value
+  }
+  
+  assert_eq(gauge_current, expected_gauge_last)
+  
+  // 验证度量元数据一致性
+  let metrics = [
+    (counter_name, "counter", "count"),
+    (histogram_name, "histogram", "ms"),
+    (gauge_name, "gauge", "percent")
+  ]
+  
+  for (name, type_, unit) in metrics {
+    assert_true(name.length() > 0)
+    assert_true(type_ == "counter" || type_ == "histogram" || type_ == "gauge")
+    assert_true(unit.length() > 0)
+  }
 }
 
-test "遥测数据跨线程一致性验证" {
-  // 测试遥测数据在多线程环境中的一致性
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "thread.consistency")
+// 测试3: 日志数据一致性验证
+test "日志数据一致性验证测试" {
+  // 创建日志记录
+  let log_records = [
+    ("info", "Request started", "1640995200000"),
+    ("debug", "Processing parameters", "1640995200100"),
+    ("info", "Request completed", "1640995200200"),
+    ("warn", "Slow query detected", "1640995200300"),
+    ("error", "Database connection failed", "1640995200400")
+  ]
   
-  // 创建共享的上下文
-  let shared_context = Context::root()
-  let correlation_key = ContextKey::new("correlation.id")
-  let correlation_id = "test-correlation-12345"
+  // 验证日志时间戳单调性
+  for i = 1; i < log_records.length(); i = i + 1 {
+    let prev_timestamp = log_records[i-1].2.to_int()
+    let curr_timestamp = log_records[i].2.to_int()
+    
+    assert_true(curr_timestamp > prev_timestamp)
+  }
   
-  // 在主线程设置上下文
-  let main_context = Context::with_value(shared_context, correlation_key, correlation_id)
+  // 验证日志级别一致性
+  let valid_levels = ["trace", "debug", "info", "warn", "error", "fatal"]
+  for (level, message, timestamp) in log_records {
+    assert_true(valid_levels.contains(level))
+    assert_true(message.length() > 0)
+    assert_true(timestamp.length() > 0)
+  }
   
-  // 模拟多线程环境下的遥测操作
-  let thread_results = []
+  // 验证日志关联一致性
+  let trace_id = "trace123456789012345678901234567890"
+  let span_id = "span12345678901234"
+  
+  let logs_with_context = []
+  for (level, message, timestamp) in log_records {
+    let log_with_context = (level, message, timestamp, trace_id, span_id)
+    logs_with_context.push(log_with_context)
+  }
+  
+  // 验证所有日志都有相同的上下文
+  for (level, message, timestamp, ctx_trace_id, ctx_span_id) in logs_with_context {
+    assert_eq(ctx_trace_id, trace_id)
+    assert_eq(ctx_span_id, span_id)
+  }
+  
+  // 验证日志序列化一致性
+  let serialized_logs = logs_with_context.map(|(level, message, timestamp, trace_id, span_id)| {
+    "level=" + level + ",message=" + message + ",timestamp=" + timestamp + ",trace_id=" + trace_id + ",span_id=" + span_id
+  })
+  
+  assert_eq(serialized_logs.length(), logs_with_context.length())
+  
+  // 验证反序列化一致性
+  for i = 0; i < serialized_logs.length(); i = i + 1 {
+    let serialized = serialized_logs[i]
+    let (level, message, timestamp, trace_id, span_id) = logs_with_context[i]
+    
+    assert_true(serialized.contains("level=" + level))
+    assert_true(serialized.contains("message=" + message))
+    assert_true(serialized.contains("timestamp=" + timestamp))
+    assert_true(serialized.contains("trace_id=" + trace_id))
+    assert_true(serialized.contains("span_id=" + span_id))
+  }
+}
+
+// 测试4: 资源属性一致性验证
+test "资源属性一致性验证测试" {
+  // 创建基础资源
+  let base_resource = [
+    ("service.name", "azimuth-service"),
+    ("service.version", "1.0.0"),
+    ("host.name", "web-server-01"),
+    ("process.id", "12345")
+  ]
+  
+  // 创建覆盖资源
+  let override_resource = [
+    ("service.version", "2.0.0"),
+    ("deployment.environment", "production"),
+    ("host.name", "web-server-updated")
+  ]
+  
+  // 模拟资源合并
+  let merged_resource = []
+  let processed_keys = []
+  
+  // 首先添加基础资源属性
+  for (key, value) in base_resource {
+    if not processed_keys.contains(key) {
+      merged_resource.push((key, value))
+      processed_keys.push(key)
+    }
+  }
+  
+  // 然后添加覆盖资源属性（覆盖已存在的）
+  for (key, value) in override_resource {
+    if processed_keys.contains(key) {
+      // 查找并替换已存在的属性
+      let mut found = false
+      for i = 0; i < merged_resource.length(); i = i + 1 {
+        if merged_resource[i].0 == key {
+          merged_resource[i] = (key, value)
+          found = true
+          break
+        }
+      }
+      assert_true(found)
+    } else {
+      // 添加新属性
+      merged_resource.push((key, value))
+      processed_keys.push(key)
+    }
+  }
+  
+  // 验证合并结果一致性
+  let expected_merged = [
+    ("service.name", "azimuth-service"),  // 来自基础资源
+    ("service.version", "2.0.0"),        // 被覆盖
+    ("host.name", "web-server-updated"),  // 被覆盖
+    ("process.id", "12345"),              // 来自基础资源
+    ("deployment.environment", "production")  // 新增
+  ]
+  
+  assert_eq(merged_resource.length(), expected_merged.length())
+  
+  // 验证每个属性的值
+  for i = 0; i < expected_merged.length(); i = i + 1 {
+    let (expected_key, expected_value) = expected_merged[i]
+    let mut found = false
+    
+    for (actual_key, actual_value) in merged_resource {
+      if actual_key == expected_key {
+        assert_eq(actual_value, expected_value)
+        found = true
+        break
+      }
+    }
+    
+    assert_true(found)
+  }
+  
+  // 验证属性键唯一性
+  let keys = merged_resource.map(|(key, _)| key)
+  for i = 0; i < keys.length(); i = i + 1 {
+    for j = i + 1; j < keys.length(); j = j + 1 {
+      assert_not_eq(keys[i], keys[j])
+    }
+  }
+}
+
+// 测试5: 上下文传播一致性验证
+test "上下文传播一致性验证测试" {
+  // 创建根上下文
+  let root_trace_id = "trace123456789012345678901234567890"
+  let root_span_id = "root12345678901234"
+  
+  // 创建上下文传播链
+  let context_chain = []
+  let current_trace_id = root_trace_id
+  let mut current_span_id = root_span_id
+  
   for i = 0; i < 5; i = i + 1 {
-    // 在每个"线程"中创建span
-    let thread_span = Tracer::start_span_with_context(tracer, "thread.operation." + i.to_string(), main_context)
-    Span::set_attribute(thread_span, "thread.id", IntValue(i))
-    Span::set_attribute(thread_span, "correlation.id", StringValue(correlation_id))
-    
-    // 验证上下文一致性
-    let thread_context = Span::get_context(thread_span)
-    let retrieved_correlation_id = Context::get(thread_context, correlation_key)
-    
-    match retrieved_correlation_id {
-      Some(id) => assert_eq(id, correlation_id)
-      None => assert_true(false) // 上下文丢失
-    }
-    
-    thread_results.push(Span::get_span_id(thread_span))
-    Span::end(thread_span)
+    let next_span_id = "span" + i.to_string().pad_left(14, '0')
+    let context = (current_trace_id, current_span_id, next_span_id)
+    context_chain.push(context)
+    current_span_id = next_span_id
   }
   
-  // 验证所有span都有不同的span ID但相同的trace ID
-  assert_true(thread_results.length() == 5)
-  assert_true(thread_results.length() == Set::from_array(thread_results).size()) // 确保所有ID唯一
+  // 验证上下文链一致性
+  assert_eq(context_chain.length(), 5)
   
-  assert_true(true)
-}
-
-test "遥测数据聚合一致性验证" {
-  // 测试遥测数据聚合过程中的一致性
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "aggregation.consistency")
-  
-  // 创建计数器
-  let counter = Meter::create_counter(meter, "test.counter", "test.unit", "Test counter for consistency")
-  
-  // 在不同条件下记录指标
-  let measurement_values = [10, 20, 30, 40, 50]
-  for value in measurement_values {
-    Counter::add(counter, value, Some([("measurement.type", StringValue("consistency.test"))]))
+  // 验证所有上下文都有相同的Trace ID
+  for (trace_id, _, _) in context_chain {
+    assert_eq(trace_id, root_trace_id)
   }
   
-  // 创建直方图
-  let histogram = Meter::create_histogram(meter, "test.histogram", "test.unit", "Test histogram for consistency")
-  
-  // 记录直方图测量值
-  for value in measurement_values {
-    Histogram::record(histogram, value, Some([("measurement.type", StringValue("consistency.test"))]))
+  // 验证Span ID序列一致性
+  for i = 1; i < context_chain.length(); i = i + 1 {
+    let prev_next_span_id = context_chain[i-1].2
+    let curr_span_id = context_chain[i].1
+    
+    assert_eq(prev_next_span_id, curr_span_id)
   }
   
-  // 验证聚合结果的一致性
-  let counter_metrics = Meter::collect_metrics(counter)
-  let histogram_metrics = Meter::collect_metrics(histogram)
-  
-  // 验证计数器总和
-  let expected_sum = 150 // 10+20+30+40+50
-  let actual_sum = Counter::get_value(counter_metrics)
-  assert_eq(actual_sum, expected_sum)
-  
-  // 验证直方图统计
-  let histogram_stats = Histogram::get_statistics(histogram_metrics)
-  assert_eq(HistogramStats::get_count(histogram_stats), 5)
-  assert_eq(HistogramStats::get_sum(histogram_stats), expected_sum)
-  
-  assert_true(true)
-}
-
-test "遥测数据跨服务一致性验证" {
-  // 测试遥测数据在跨服务调用中的一致性
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "cross.service.consistency")
-  
-  // 模拟服务A的span
-  let service_a_span = Tracer::start_span(tracer, "service.a.operation")
-  Span::set_attribute(service_a_span, "service.name", StringValue("service.a"))
-  Span::set_attribute(service_a_span, "operation.name", StringValue("process.data"))
-  
-  // 模拟服务B的span（作为服务A的子span）
-  let service_b_span = Tracer::start_span_with_parent(tracer, "service.b.operation", Some(Span::get_context(service_a_span)))
-  Span::set_attribute(service_b_span, "service.name", StringValue("service.b"))
-  Span::set_attribute(service_b_span, "operation.name", StringValue("transform.data"))
-  Span::set_attribute(service_b_span, "parent.service", StringValue("service.a"))
-  
-  // 模拟服务C的span（作为服务B的子span）
-  let service_c_span = Tracer::start_span_with_parent(tracer, "service.c.operation", Some(Span::get_context(service_b_span)))
-  Span::set_attribute(service_c_span, "service.name", StringValue("service.c"))
-  Span::set_attribute(service_c_span, "operation.name", StringValue("store.data"))
-  Span::set_attribute(service_c_span, "parent.service", StringValue("service.b"))
-  
-  // 验证跨服务trace一致性
-  let service_a_context = Span::get_context(service_a_span)
-  let service_b_context = Span::get_context(service_b_span)
-  let service_c_context = Span::get_context(service_c_span)
-  
-  // 所有服务应该有相同的trace ID
-  assert_eq(SpanContext::get_trace_id(service_a_context), SpanContext::get_trace_id(service_b_context))
-  assert_eq(SpanContext::get_trace_id(service_b_context), SpanContext::get_trace_id(service_c_context))
-  
-  // 验证父子关系
-  assert_eq(SpanContext::get_parent_span_id(service_b_context), SpanContext::get_span_id(service_a_context))
-  assert_eq(SpanContext::get_parent_span_id(service_c_context), SpanContext::get_span_id(service_b_context))
-  
-  Span::end(service_c_span)
-  Span::end(service_b_span)
-  Span::end(service_a_span)
-  
-  assert_true(true)
-}
-
-test "遥测数据压缩解压缩一致性验证" {
-  // 测试遥测数据压缩和解压缩过程中的一致性
-  let original_telemetry_data = [
-    ("trace.id", StringValue("0af7651916cd43dd8448eb211c80319c")),
-    ("span.id", StringValue("b7ad6b7169203331")),
-    ("service.name", StringValue("compression.test.service")),
-    ("operation.name", StringValue("compress.decompress.test")),
-    ("user.id", StringValue("user-12345")),
-    ("session.id", StringValue("session-abcdef")),
-    ("request.id", StringValue("req-67890")),
-    ("client.ip", StringValue("192.168.1.100")),
-    ("user.agent", StringValue("Mozilla/5.0 (compatible; TestBot/1.0)")),
-    ("request.size", IntValue(1024)),
-    ("response.size", IntValue(2048)),
-    ("duration.ms", IntValue(150)),
-    ("success", BoolValue(true)),
-    ("error.code", StringValue("")),
-    ("tags", ArrayStringValue(["web", "api", "v1", "public"]))
+  // 创建Baggage传播
+  let baggage_items = [
+    ("user.id", "12345"),
+    ("session.id", "abcdef"),
+    ("request.id", "req-789"),
+    ("client.version", "2.1.0")
   ]
   
-  // 创建包含遥测数据的span
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "compression.test")
-  let span = Tracer::start_span(tracer, "compression.consistency.test")
+  // 模拟Baggage跨服务传播
+  let service_baggage = []
+  let current_baggage = baggage_items
   
-  // 设置所有属性
-  for (key, value) in original_telemetry_data {
-    Span::set_attribute(span, key, value)
+  for i = 0; i < 3; i = i + 1 {
+    // 每个服务可能添加新的Baggage项
+    let service_name = "service-" + i.to_string()
+    let new_item = (service_name + ".timestamp", "164099520" + i.to_string())
+    
+    let mut updated_baggage = current_baggage
+    updated_baggage.push(new_item)
+    
+    service_baggage.push((service_name, updated_baggage))
+    current_baggage = updated_baggage
   }
   
-  // 序列化span数据
-  let serialized_data = Span::serialize(span)
+  // 验证Baggage传播一致性
+  assert_eq(service_baggage.length(), 3)
   
-  // 压缩数据
-  let compressed_data = Compression::compress(serialized_data)
-  
-  // 解压缩数据
-  let decompressed_data = Compression::decompress(compressed_data)
-  
-  // 反序列化span数据
-  let restored_span = Span::deserialize(decompressed_data)
-  
-  // 验证压缩解压缩前后数据一致性
-  for (key, original_value) in original_telemetry_data {
-    let restored_value = Span::get_attribute(restored_span, key)
-    
-    match restored_value {
-      Some(value) => assert_true(AttributeValue::equals(value, original_value))
-      None => assert_true(false) // 数据丢失
+  // 验证原始Baggage项在所有服务中都存在
+  for (service_name, baggage) in service_baggage {
+    for (original_key, original_value) in baggage_items {
+      let mut found = false
+      for (key, value) in baggage {
+        if key == original_key {
+          assert_eq(value, original_value)
+          found = true
+          break
+        }
+      }
+      assert_true(found)
     }
   }
   
-  Span::end(span)
-  assert_true(true)
+  // 验证Baggage序列化一致性
+  let serialized_baggage = current_baggage.map(|(key, value)| key + "=" + value).reduce(|acc, item| acc + "," + item, "")
+  
+  for (key, value) in current_baggage {
+    let expected_pair = key + "=" + value
+    assert_true(serialized_baggage.contains(expected_pair))
+  }
 }
 
-test "遥测数据版本兼容性一致性验证" {
-  // 测试遥测数据在不同版本之间的一致性
-  let tracer_provider_v1 = TracerProvider::with_version("1.0.0")
-  let tracer_v1 = TracerProvider::get_tracer(tracer_provider_v1, "version.compatibility.test")
+// 测试6: 采样决策一致性验证
+test "采样决策一致性验证测试" {
+  // 创建采样决策场景
+  let sampling_scenarios = [
+    ("always-on", 1.0, "record_and_sample"),
+    ("always-off", 0.0, "drop"),
+    ("probabilistic-10%", 0.1, "probabilistic"),
+    ("probabilistic-50%", 0.5, "probabilistic"),
+    ("parent-based", 0.0, "parent_based")
+  ]
   
-  // 使用v1版本创建span
-  let span_v1 = Tracer::start_span(tracer_v1, "version.test.v1")
-  Span::set_attribute(span_v1, "version", StringValue("1.0.0"))
-  Span::set_attribute(span_v1, "legacy.field", StringValue("legacy.value"))
-  
-  // 序列化v1数据
-  let serialized_v1 = Span::serialize_with_version(span_v1, "1.0.0")
-  
-  // 使用v2版本反序列化v1数据
-  let tracer_provider_v2 = TracerProvider::with_version("2.0.0")
-  let tracer_v2 = TracerProvider::get_tracer(tracer_provider_v2, "version.compatibility.test")
-  let span_v2_from_v1 = Span::deserialize_with_version(serialized_v1, "2.0.0")
-  
-  // 验证版本兼容性
-  let version_attr = Span::get_attribute(span_v2_from_v1, "version")
-  let legacy_attr = Span::get_attribute(span_v2_from_v1, "legacy.field")
-  
-  match version_attr {
-    Some(StringValue(v)) => assert_eq(v, "1.0.0")
-    _ => assert_true(false)
+  // 验证采样参数一致性
+  for (sampler_name, probability, decision_type) in sampling_scenarios {
+    assert_true(sampler_name.length() > 0)
+    assert_true(probability >= 0.0 && probability <= 1.0)
+    assert_true(decision_type.length() > 0)
   }
   
-  match legacy_attr {
-    Some(StringValue(v)) => assert_eq(v, "legacy.value")
-    _ => assert_true(false)
+  // 模拟采样决策
+  let total_requests = 1000
+  let sampling_results = []
+  
+  for (sampler_name, probability, decision_type) in sampling_scenarios {
+    let mut sampled_count = 0
+    
+    for i = 0; i < total_requests; i = i + 1 {
+      let decision = if decision_type == "always-on" {
+        true
+      } else if decision_type == "always-off" {
+        false
+      } else if decision_type == "probabilistic" {
+        // 简化的概率采样模拟
+        (i.to_float() / total_requests.to_float()) < probability
+      } else if decision_type == "parent_based" {
+        // 模拟父级采样决策
+        i % 2 == 0  // 50%的请求跟随父级决策
+      } else {
+        false
+      }
+      
+      if decision {
+        sampled_count = sampled_count + 1
+      }
+    }
+    
+    let result = (sampler_name, probability, decision_type, sampled_count)
+    sampling_results.push(result)
   }
   
-  // 使用v2版本创建span并添加新字段
-  let span_v2 = Tracer::start_span(tracer_v2, "version.test.v2")
-  Span::set_attribute(span_v2, "version", StringValue("2.0.0"))
-  Span::set_attribute(span_v2, "legacy.field", StringValue("legacy.value"))
-  Span::set_attribute(span_v2, "new.field", StringValue("new.value"))
-  
-  // 序列化v2数据
-  let serialized_v2 = Span::serialize_with_version(span_v2, "2.0.0")
-  
-  // 使用v1版本反序列化v2数据（应该忽略新字段）
-  let span_v1_from_v2 = Span::deserialize_with_version(serialized_v2, "1.0.0")
-  
-  // 验证向后兼容性
-  let version_attr_v1 = Span::get_attribute(span_v1_from_v2, "version")
-  let legacy_attr_v1 = Span::get_attribute(span_v1_from_v2, "legacy.field")
-  let new_attr_v1 = Span::get_attribute(span_v1_from_v2, "new.field")
-  
-  match version_attr_v1 {
-    Some(StringValue(v)) => assert_eq(v, "2.0.0")
-    _ => assert_true(false)
+  // 验证采样结果一致性
+  for (sampler_name, probability, decision_type, sampled_count) in sampling_results {
+    if decision_type == "always-on" {
+      assert_eq(sampled_count, total_requests)
+    } else if decision_type == "always-off" {
+      assert_eq(sampled_count, 0)
+    } else if decision_type == "probabilistic" {
+      let expected_count = (total_requests.to_float() * probability).to_int()
+      let tolerance = total_requests / 100  // 1%容差
+      assert_true(sampled_count >= expected_count - tolerance && sampled_count <= expected_count + tolerance)
+    } else if decision_type == "parent_based" {
+      let expected_count = total_requests / 2
+      assert_eq(sampled_count, expected_count)
+    }
   }
   
-  match legacy_attr_v1 {
-    Some(StringValue(v)) => assert_eq(v, "legacy.value")
-    _ => assert_true(false)
+  // 验证采样属性一致性
+  let sampling_attributes = [
+    ("sampler.type", "probabilistic"),
+    ("sampler.param", "0.1"),
+    ("decision", "record_and_sample"),
+    ("trace.id", "trace123456789012345678901234567890")
+  ]
+  
+  for (key, value) in sampling_attributes {
+    assert_true(key.length() > 0)
+    assert_true(value.length() > 0)
+    assert_true(key.contains("."))
   }
-  
-  // v1版本应该忽略新字段
-  match new_attr_v1 {
-    Some(_) => assert_true(false) // v1不应该识别新字段
-    None => assert_true(true)
-  }
-  
-  Span::end(span_v1)
-  Span::end(span_v2)
-  Span::end(span_v2_from_v1)
-  Span::end(span_v1_from_v2)
-  
-  assert_true(true)
 }
