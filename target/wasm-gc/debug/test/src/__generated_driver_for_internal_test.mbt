@@ -69,6 +69,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_62617369635f74657374732e6d6274_8, ["type conversion tests"]),
     9: (__test_62617369635f74657374732e6d6274_9, ["error handling and edge cases"]),
   },
+  "azimuth_specialized_test_cases.mbt": {
+    0: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_0, ["composite propagator with multiple contexts"]),
+    1: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_1, ["span lifecycle with events and status transitions"]),
+    2: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_2, ["metrics operations with different instrument types"]),
+    3: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_3, ["log record with full context and attributes"]),
+    4: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_4, ["resource operations with complex attributes"]),
+    5: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_5, ["http client with complex request and response handling"]),
+    6: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_6, ["baggage operations with complex data"]),
+    7: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_7, ["context operations with nested values"]),
+    8: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_8, ["span context with trace state operations"]),
+    9: (__test_617a696d7574685f7370656369616c697a65645f746573745f63617365732e6d6274_9, ["clock and random system operations"]),
+  },
   "azimuth_enhanced_test_suite.mbt": {
     0: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_0, ["span events and status management"]),
     1: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_1, ["baggage propagation edge cases"]),
