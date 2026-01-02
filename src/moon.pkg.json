@@ -9,6 +9,6 @@
     "azimuth/telemetry": "*"
   },
   "test": {
-    "test": ["basic_tests.mbt", "azimuth_core_functionality_tests.mbt", "azimuth_simple_additional_tests.mbt", "../azimuth_innovative_telemetry_tests.mbt", "../azimuth_enhanced_telemetry_tests.mbt", "../azimuth_simple_enhanced_tests.mbt"]
+    "test": ["basic_tests.mbt", "azimuth_core_functionality_tests.mbt", "azimuth_simple_additional_tests.mbt", "../azimuth_enhanced_quality_tests.mbt", "../azimuth_innovative_telemetry_tests.mbt", "../azimuth_enhanced_telemetry_tests.mbt", "../azimuth_simple_enhanced_tests.mbt"]
   }
 }
