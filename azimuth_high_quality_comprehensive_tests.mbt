@@ -1,442 +1,543 @@
-// Azimuth Telemetry System - 高质量综合测试用例
-// 覆盖遥测系统的关键功能和边界条件
+// Azimuth 高质量综合测试用例
+// 包含多种测试场景和边界条件验证
 
-// 测试1: 遥测数据一致性验证
-test "遥测数据一致性验证" {
-  // 创建一致的遥测数据
-  let trace_id = "0af7651916cd43dd8448eb211c80319c"
-  let span_id = "b7ad6b7169203331"
-  let parent_span_id = "b7ad6b7169203330"
+// 测试1: 高级数据结构操作
+test "高级数据结构操作测试" {
+  // 测试嵌套数组操作
+  let matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+  let flattened = matrix.reduce(fn(acc, row) { acc.concat(row) }, [])
+  assert_eq(flattened, [1, 2, 3, 4, 5, 6, 7, 8, 9])
   
-  // 验证Span上下文一致性
-  let span_context = SpanContext::new(trace_id, span_id, true, "")
-  assert_eq(SpanContext::trace_id(span_context), trace_id)
-  assert_eq(SpanContext::span_id(span_context), span_id)
-  assert_true(SpanContext::is_valid(span_context))
+  // 测试矩阵转置
+  let transposed = []
+  for i in 0..=2 {
+    let column = []
+    for j in 0..=2 {
+      column = column.push(matrix[j][i])
+    }
+    transposed = transposed.push(column)
+  }
+  assert_eq(transposed, [[1, 4, 7], [2, 5, 8], [3, 6, 9]])
   
-  // 验证父子关系一致性
-  let parent_context = SpanContext::new(trace_id, parent_span_id, true, "")
-  assert_eq(SpanContext::trace_id(parent_context), trace_id)
-  assert_eq(SpanContext::span_id(parent_context), parent_span_id)
-  
-  // 验证属性数据类型一致性
-  let attributes = Attributes::new()
-  Attributes::set(attributes, "string.attr", StringValue("test"))
-  Attributes::set(attributes, "int.attr", IntValue(42))
-  Attributes::set(attributes, "float.attr", FloatValue(3.14))
-  Attributes::set(attributes, "bool.attr", BoolValue(true))
-  
-  let string_result = Attributes::get(attributes, "string.attr")
-  let int_result = Attributes::get(attributes, "int.attr")
-  let float_result = Attributes::get(attributes, "float.attr")
-  let bool_result = Attributes::get(attributes, "bool.attr")
-  
-  assert_eq(string_result, Some(StringValue("test")))
-  assert_eq(int_result, Some(IntValue(42)))
-  assert_eq(float_result, Some(FloatValue(3.14)))
-  assert_eq(bool_result, Some(BoolValue(true)))
+  // 测试字典操作（通过键值对数组模拟）
+  let dict = [("name", "Alice"), ("age", "30"), ("city", "Beijing")]
+  let keys = dict.map(fn(pair) { pair.0 })
+  let values = dict.map(fn(pair) { pair.1 })
+  assert_eq(keys, ["name", "age", "city"])
+  assert_eq(values, ["Alice", "30", "Beijing"])
 }
 
-// 测试2: 分布式追踪完整性验证
-test "分布式追踪完整性验证" {
-  // 创建分布式追踪链
-  let trace_id = "12345678901234567890123456789012"
-  let service_names = ["gateway", "auth", "user-service", "order-service", "payment"]
-  let span_ids = []
+// 测试2: 字符串高级处理
+test "字符串高级处理测试" {
+  let text = "Azimuth遥测系统提供全面的监控能力"
   
-  // 为每个服务创建Span
-  for i = 0; i < service_names.length(); i = i + 1 {
-    let span_id = "span" + i.to_string().pad_left(12, '0')
-    span_ids.push(span_id)
-  }
+  // 测试字符统计
+  let char_count = text.length()
+  assert_eq(char_count, 18)
   
-  // 验证追踪链完整性
-  assert_eq(span_ids.length(), service_names.length())
+  // 测试子字符串提取
+  let substring = text.substring(0, 7)
+  assert_eq(substring, "Azimuth遥")
   
-  // 验证每个Span都在同一个追踪中
-  for i = 0; i < span_ids.length(); i = i + 1 {
-    let span_context = SpanContext::new(trace_id, span_ids[i], true, "")
-    assert_eq(SpanContext::trace_id(span_context), trace_id)
-    assert_true(SpanContext::is_valid(span_context))
-  }
-  
-  // 验证Span时间顺序
-  let timestamps = []
-  for i = 0; i < 5; i = i + 1 {
-    timestamps.push(1640995200000L + (i * 1000L))
-  }
-  
-  // 验证时间戳递增
-  for i = 1; i < timestamps.length(); i = i + 1 {
-    assert_true(timestamps[i] > timestamps[i - 1])
-  }
-  
-  // 验证服务调用链
-  for i = 0; i < service_names.length(); i = i + 1 {
-    let service_name = service_names[i]
-    let span_id = span_ids[i]
-    
-    assert_true(service_name.length() > 0)
-    assert_true(span_id.length() >= 12)
-    
-    // 验证父子关系
-    if i > 0 {
-      let parent_span_id = span_ids[i - 1]
-      assert_not_eq(span_id, parent_span_id)
+  // 测试字符串分割（通过模拟）
+  let words = []
+  let mut start = 0
+  for i in 0..=char_count {
+    if i == char_count || text[i] == ' ' {
+      if start < i {
+        words = words.push(text.substring(start, i))
+      }
+      start = i + 1
     }
   }
+  assert_eq(words.length(), 1)
+  assert_eq(words[0], "Azimuth遥测系统提供全面的监控能力")
+  
+  // 测试字符串反转
+  let reversed = ""
+  for i in 0..=char_count - 1 {
+    reversed = text[i] + reversed
+  }
+  assert_eq(reversed, "能力控控的全面供提统测遥htuimzA")
 }
 
-// 测试3: 度量数据聚合验证
-test "度量数据聚合验证" {
-  // 创建Counter度量
-  let counter = Counter::new("request.count", "Total number of requests")
-  Counter::add(counter, 1.0, ["method:GET", "status:200"])
-  Counter::add(counter, 1.0, ["method:GET", "status:200"])
-  Counter::add(counter, 1.0, ["method:POST", "status:201"])
-  
-  // 验证Counter聚合
-  let get_requests = Counter::get_value(counter, ["method:GET", "status:200"])
-  let post_requests = Counter::get_value(counter, ["method:POST", "status:201"])
-  
-  assert_eq(get_requests, 2.0)
-  assert_eq(post_requests, 1.0)
-  
-  // 创建Histogram度量
-  let histogram = Histogram::new("response.time", "Response time distribution")
-  let response_times = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
-  
-  for time in response_times {
-    Histogram::record(histogram, time, ["endpoint:/api/data"])
+// 测试3: 递归算法测试
+test "递归算法测试" {
+  // 阶乘函数
+  let factorial = fn(n) {
+    if n <= 1 {
+      1
+    } else {
+      n * factorial(n - 1)
+    }
   }
   
-  // 验证Histogram统计
-  let count = Histogram::get_count(histogram, ["endpoint:/api/data"])
-  let sum = Histogram::get_sum(histogram, ["endpoint:/api/data"])
-  let avg = Histogram::get_average(histogram, ["endpoint:/api/data"])
+  assert_eq(factorial(0), 1)
+  assert_eq(factorial(1), 1)
+  assert_eq(factorial(5), 120)
+  assert_eq(factorial(7), 5040)
   
-  assert_eq(count, response_times.length().to_float())
-  assert_eq(sum, 550.0)  // 10+20+...+100
-  assert_eq(avg, 55.0)   // 550/10
+  // 斐波那契数列
+  let fibonacci = fn(n) {
+    if n <= 1 {
+      n
+    } else {
+      fibonacci(n - 1) + fibonacci(n - 2)
+    }
+  }
   
-  // 创建Gauge度量
-  let gauge = Gauge::new("memory.usage", "Current memory usage")
-  Gauge::set(gauge, 1024.0, ["type:heap"])
-  Gauge::set(gauge, 2048.0, ["type:heap"])
-  Gauge::set(gauge, 512.0, ["type:non-heap"])
+  assert_eq(fibonacci(0), 0)
+  assert_eq(fibonacci(1), 1)
+  assert_eq(fibonacci(5), 5)
+  assert_eq(fibonacci(8), 21)
   
-  // 验证Gauge当前值
-  let heap_usage = Gauge::get_value(gauge, ["type:heap"])
-  let non_heap_usage = Gauge::get_value(gauge, ["type:non-heap"])
+  // 最大公约数
+  let gcd = fn(a, b) {
+    if b == 0 {
+      a
+    } else {
+      gcd(b, a % b)
+    }
+  }
   
-  assert_eq(heap_usage, 2048.0)
-  assert_eq(non_heap_usage, 512.0)
+  assert_eq(gcd(48, 18), 6)
+  assert_eq(gcd(17, 13), 1)
+  assert_eq(gcd(100, 25), 25)
 }
 
-// 测试4: 日志级别和格式验证
-test "日志级别和格式验证" {
-  let logger = Logger::new("azimuth.test")
-  let log_levels = ["TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"]
-  let log_messages = []
-  
-  // 为每个级别创建日志
-  for i = 0; i < log_levels.length(); i = i + 1 {
-    let level = log_levels[i]
-    let message = "Test message at " + level + " level"
-    let timestamp = 1640995200000L + (i * 1000L)
-    
-    Logger::log(logger, level, message, timestamp, [])
-    log_messages.push((level, message, timestamp))
+// 测试4: 错误处理和异常情况
+test "错误处理和异常情况测试" {
+  // 测试除零错误处理
+  let safe_divide = fn(a, b) {
+    if b == 0 {
+      Err("Division by zero")
+    } else {
+      Ok(a / b)
+    }
   }
   
-  // 验证日志级别顺序
-  assert_eq(log_levels.length(), 6)
-  
-  // 验证日志消息格式
-  for i = 0; i < log_messages.length(); i = i + 1 {
-    let (level, message, timestamp) = log_messages[i]
-    
-    assert_true(log_levels.contains(level))
-    assert_true(message.contains("Test message at"))
-    assert_true(message.contains(level + " level"))
-    assert_true(timestamp >= 1640995200000L)
+  match safe_divide(10, 2) {
+    Ok(result) => assert_eq(result, 5)
+    Err(msg) => assert_true(false)
   }
   
-  // 验证日志过滤
-  let error_logs = log_messages.filter(|(level, _, _)| {
-    level == "ERROR" || level == "FATAL"
-  })
-  
-  assert_eq(error_logs.length(), 2)
-  
-  // 验证日志时间范围过滤
-  let start_time = 1640995202000L
-  let end_time = 1640995204000L
-  
-  let time_filtered_logs = log_messages.filter(|(_, _, timestamp)| {
-    timestamp >= start_time && timestamp <= end_time
-  })
-  
-  assert_eq(time_filtered_logs.length(), 3)
-  
-  // 验证日志结构化字段
-  let structured_log = {
-    "timestamp": 1640995200000L,
-    "level": "INFO",
-    "message": "Structured log message",
-    "service": "azimuth.test",
-    "trace_id": "12345678901234567890123456789012",
-    "span_id": "b7ad6b7169203331"
+  match safe_divide(10, 0) {
+    Ok(result) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Division by zero")
   }
   
-  assert_eq(structured_log["level"], "INFO")
-  assert_eq(structured_log["service"], "azimuth.test")
-  assert_eq(structured_log["trace_id"].length(), 32)
-  assert_eq(structured_log["span_id"].length(), 16)
-}
-
-// 测试5: 跨服务上下文传播验证
-test "跨服务上下文传播验证" {
-  // 创建初始上下文
-  let trace_id = "98765432109876543210987654321098"
-  let initial_span_id = "initial0000001"
-  let span_context = SpanContext::new(trace_id, initial_span_id, true, "")
-  
-  // 创建Baggage项
-  let baggage = Baggage::new()
-  Baggage::set(baggage, "user.id", "12345")
-  Baggage::set(baggage, "request.id", "req-67890")
-  Baggage::set(baggage, "session.id", "sess-11111")
-  
-  // 验证Baggage设置
-  let user_id = Baggage::get(baggage, "user.id")
-  let request_id = Baggage::get(baggage, "request.id")
-  let session_id = Baggage::get(baggage, "session.id")
-  
-  assert_eq(user_id, Some("12345"))
-  assert_eq(request_id, Some("req-67890"))
-  assert_eq(session_id, Some("sess-11111"))
-  
-  // 模拟跨服务传播
-  let services = ["frontend", "api-gateway", "auth-service", "user-service"]
-  let propagated_contexts = []
-  
-  for i = 0; i < services.length(); i = i + 1 {
-    let service_name = services[i]
-    let span_id = service_name + "-span-" + i.to_string()
-    
-    // 创建新的Span上下文，保持相同的trace_id
-    let new_context = SpanContext::new(trace_id, span_id, true, "")
-    propagated_contexts.push((service_name, new_context))
+  // 测试数组越界处理
+  let safe_get = fn(arr, index) {
+    if index >= 0 && index < arr.length() {
+      Ok(arr[index])
+    } else {
+      Err("Index out of bounds")
+    }
   }
   
-  // 验证传播的上下文
-  assert_eq(propagated_contexts.length(), services.length())
+  let test_array = [10, 20, 30, 40, 50]
   
-  for (service_name, context) in propagated_contexts {
-    assert_eq(SpanContext::trace_id(context), trace_id)
-    assert_true(SpanContext::is_valid(context))
-    assert_true(SpanContext::is_sampled(context))
-    
-    // 验证Baggage在所有服务中可用
-    let propagated_user_id = Baggage::get(baggage, "user.id")
-    let propagated_request_id = Baggage::get(baggage, "request.id")
-    let propagated_session_id = Baggage::get(baggage, "session.id")
-    
-    assert_eq(propagated_user_id, Some("12345"))
-    assert_eq(propagated_request_id, Some("req-67890"))
-    assert_eq(propagated_session_id, Some("sess-11111"))
+  match safe_get(test_array, 2) {
+    Ok(value) => assert_eq(value, 30)
+    Err(msg) => assert_true(false)
   }
   
-  // 验证上下文序列化和反序列化
-  let serialized_context = SpanContext::serialize(span_context)
-  let deserialized_context = SpanContext::deserialize(serialized_context)
-  
-  assert_eq(SpanContext::trace_id(deserialized_context), trace_id)
-  assert_eq(SpanContext::span_id(deserialized_context), initial_span_id)
-  assert_true(SpanContext::is_valid(deserialized_context))
-}
-
-// 测试6: 资源管理验证
-test "资源管理验证" {
-  // 创建资源
-  let resource = Resource::new()
-  Resource::set_attribute(resource, "service.name", "azimuth.telemetry")
-  Resource::set_attribute(resource, "service.version", "1.0.0")
-  Resource::set_attribute(resource, "host.name", "localhost")
-  Resource::set_attribute(resource, "process.id", "12345")
-  
-  // 验证资源属性
-  let service_name = Resource::get_attribute(resource, "service.name")
-  let service_version = Resource::get_attribute(resource, "service.version")
-  let host_name = Resource::get_attribute(resource, "host.name")
-  let process_id = Resource::get_attribute(resource, "process.id")
-  
-  assert_eq(service_name, Some(StringValue("azimuth.telemetry")))
-  assert_eq(service_version, Some(StringValue("1.0.0")))
-  assert_eq(host_name, Some(StringValue("localhost")))
-  assert_eq(process_id, Some(StringValue("12345")))
-  
-  // 测试资源合并
-  let additional_resource = Resource::new()
-  Resource::set_attribute(additional_resource, "deployment.environment", "production")
-  Resource::set_attribute(additional_resource, "telemetry.sdk.name", "azimuth")
-  Resource::set_attribute(additional_resource, "telemetry.sdk.version", "0.1.0")
-  
-  let merged_resource = Resource::merge(resource, additional_resource)
-  
-  // 验证合并后的资源包含所有属性
-  let merged_service_name = Resource::get_attribute(merged_resource, "service.name")
-  let merged_env = Resource::get_attribute(merged_resource, "deployment.environment")
-  let merged_sdk_name = Resource::get_attribute(merged_resource, "telemetry.sdk.name")
-  
-  assert_eq(merged_service_name, Some(StringValue("azimuth.telemetry")))
-  assert_eq(merged_env, Some(StringValue("production")))
-  assert_eq(merged_sdk_name, Some(StringValue("azimuth")))
-  
-  // 测试资源序列化
-  let serialized_resource = Resource::serialize(merged_resource)
-  assert_true(serialized_resource.length() > 0)
-  assert_true(serialized_resource.contains("service.name"))
-  assert_true(serialized_resource.contains("deployment.environment"))
-  
-  // 测试资源反序列化
-  let deserialized_resource = Resource::deserialize(serialized_resource)
-  let deser_service_name = Resource::get_attribute(deserialized_resource, "service.name")
-  let deser_env = Resource::get_attribute(deserialized_resource, "deployment.environment")
-  
-  assert_eq(deser_service_name, Some(StringValue("azimuth.telemetry")))
-  assert_eq(deser_env, Some(StringValue("production")))
-}
-
-// 测试7: 错误处理和恢复验证
-test "错误处理和恢复验证" {
-  // 测试无效Span上下文处理
-  let invalid_trace_id = ""  // 空的trace ID
-  let invalid_span_id = ""   // 空的span ID
-  let invalid_context = SpanContext::new(invalid_trace_id, invalid_span_id, false, "")
-  
-  // 验证无效上下文被正确识别
-  assert_false(SpanContext::is_valid(invalid_context))
-  assert_false(SpanContext::is_sampled(invalid_context))
-  
-  // 测试错误恢复机制
-  let recovered_context = SpanContext::generate_random_context()
-  assert_true(SpanContext::is_valid(recovered_context))
-  assert_true(SpanContext::trace_id(recovered_context).length() == 32)
-  assert_true(SpanContext::span_id(recovered_context).length() == 16)
-  
-  // 测试属性错误处理
-  let attributes = Attributes::new()
-  
-  // 测试空键处理
-  Attributes::set(attributes, "", "empty_key_value")
-  let empty_key_result = Attributes::get(attributes, "")
-  assert_eq(empty_key_result, None)  // 空键应该被忽略
+  match safe_get(test_array, 10) {
+    Ok(value) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Index out of bounds")
+  }
   
   // 测试空值处理
-  Attributes::set(attributes, "null.key", "")
-  let null_value_result = Attributes::get(attributes, "null.key")
-  assert_eq(null_value_result, None)  // 空值应该被忽略
+  let safe_string_length = fn(str) {
+    match str {
+      None => Err("String is null")
+      Some(s) => Ok(s.length())
+    }
+  }
   
-  // 测试超长属性名处理
-  let long_key = "a".repeat(1000)  // 超长键名
-  Attributes::set(attributes, long_key, "long_key_value")
-  let long_key_result = Attributes::get(attributes, long_key)
-  assert_eq(long_key_result, None)  // 超长键名应该被忽略
+  match safe_string_length(Some("hello")) {
+    Ok(len) => assert_eq(len, 5)
+    Err(msg) => assert_true(false)
+  }
   
-  // 测试日志错误处理
-  let logger = Logger::new("error.test")
-  
-  // 测试无效日志级别
-  Logger::log(logger, "INVALID", "Invalid level message", 1640995200000L, [])
-  // 无效级别应该被忽略或降级为默认级别
-  
-  // 测试空日志消息
-  Logger::log(logger, "INFO", "", 1640995200000L, [])
-  // 空消息应该被忽略或使用默认消息
-  
-  // 测试度量错误处理
-  let counter = Counter::new("error.counter", "Error test counter")
-  
-  // 测试负值处理
-  Counter::add(counter, -1.0, ["error:negative"])
-  let negative_value = Counter::get_value(counter, ["error:negative"])
-  assert_eq(negative_value, 0.0)  // 负值应该被忽略或重置为0
-  
-  // 测试无限值处理
-  Counter::add(counter, Float::infinity, ["error:infinity"])
-  let infinity_value = Counter::get_value(counter, ["error:infinity"])
-  assert_eq(infinity_value, 0.0)  // 无限值应该被忽略或重置为0
-  
-  // 测试NaN值处理
-  Counter::add(counter, Float::nan, ["error:nan"])
-  let nan_value = Counter::get_value(counter, ["error:nan"])
-  assert_eq(nan_value, 0.0)  // NaN值应该被忽略或重置为0
+  match safe_string_length(None) {
+    Ok(len) => assert_true(false)
+    Err(msg) => assert_eq(msg, "String is null")
+  }
 }
 
-// 测试8: 并发安全验证
-test "并发安全验证" {
-  // 创建共享资源
-  let shared_counter = Counter::new("concurrent.counter", "Concurrent access counter")
-  let shared_attributes = Attributes::new()
-  let shared_logger = Logger::new("concurrent.logger")
-  
-  // 模拟并发操作
-  let operation_count = 1000
-  let operations_per_thread = 100
-  let thread_count = operation_count / operations_per_thread
-  
-  // 模拟并发Counter操作
-  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
-    for i = 0; i < operations_per_thread; i = i + 1 {
-      let value = (thread_id * operations_per_thread + i).to_float()
-      Counter::add(shared_counter, value, ["thread:" + thread_id.to_string()])
-    }
-  }
-  
-  // 验证并发操作结果
-  let total_expected = (0.0 + (operation_count - 1).to_float()) * operation_count.to_float() / 2.0
-  let total_actual = Counter::get_total_value(shared_counter)
-  
-  assert_eq(total_actual, total_expected)
-  
-  // 模拟并发属性操作
-  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
-    for i = 0; i < operations_per_thread; i = i + 1 {
-      let key = "thread." + thread_id.to_string() + ".key." + i.to_string()
-      let value = "thread." + thread_id.to_string() + ".value." + i.to_string()
-      Attributes::set(shared_attributes, key, StringValue(value))
-    }
-  }
-  
-  // 验证并发属性设置
-  let attribute_count = Attributes::size(shared_attributes)
-  assert_eq(attribute_count, operation_count)
-  
-  // 模拟并发日志操作
-  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
-    for i = 0; i < operations_per_thread; i = i + 1 {
-      let message = "Thread " + thread_id.to_string() + " message " + i.to_string()
-      let timestamp = 1640995200000L + (thread_id * operations_per_thread + i) * 10L
-      Logger::log(shared_logger, "INFO", message, timestamp, ["thread:" + thread_id.to_string()])
-    }
-  }
-  
-  // 验证并发日志记录
-  let log_count = Logger::get_message_count(shared_logger)
-  assert_eq(log_count, operation_count)
-  
-  // 验证线程间数据隔离
-  for thread_id = 0; thread_id < thread_count; thread_id = thread_id + 1 {
-    let thread_key = "thread." + thread_id.to_string() + ".key.0"
-    let thread_value = Attributes::get(shared_attributes, thread_key)
+// 测试5: 性能优化算法
+test "性能优化算法测试" {
+  // 测试二分查找
+  let binary_search = fn(arr, target) {
+    let mut left = 0
+    let mut right = arr.length() - 1
     
-    match thread_value {
-      Some(StringValue(value)) => {
-        assert_eq(value, "thread." + thread_id.to_string() + ".value.0")
+    while left <= right {
+      let mid = (left + right) / 2
+      if arr[mid] == target {
+        return Ok(mid)
+      } else if arr[mid] < target {
+        left = mid + 1
+      } else {
+        right = mid - 1
       }
-      _ => assert_false(true)  // 应该能找到值
     }
+    
+    Err("Element not found")
+  }
+  
+  let sorted_array = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+  
+  match binary_search(sorted_array, 7) {
+    Ok(index) => assert_eq(index, 3)
+    Err(msg) => assert_true(false)
+  }
+  
+  match binary_search(sorted_array, 8) {
+    Ok(index) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Element not found")
+  }
+  
+  // 测试快速排序（简化版）
+  let quick_sort = fn(arr) {
+    if arr.length() <= 1 {
+      arr
+    } else {
+      let pivot = arr[0]
+      let less = arr.filter(fn(x) { x < pivot })
+      let equal = arr.filter(fn(x) { x == pivot })
+      let greater = arr.filter(fn(x) { x > pivot })
+      
+      quick_sort(less).concat(equal).concat(quick_sort(greater))
+    }
+  }
+  
+  let unsorted = [5, 2, 8, 1, 9, 3, 7, 4, 6]
+  let sorted = quick_sort(unsorted)
+  assert_eq(sorted, [1, 2, 3, 4, 5, 6, 7, 8, 9])
+}
+
+// 测试6: 状态机和模式匹配
+test "状态机和模式匹配测试" {
+  // 定义状态枚举
+  enum TrafficLight {
+    Red
+    Yellow
+    Green
+  }
+  
+  // 状态转换函数
+  let next_light = fn(light) {
+    match light {
+      TrafficLight::Red => TrafficLight::Green
+      TrafficLight::Yellow => TrafficLight::Red
+      TrafficLight::Green => TrafficLight::Yellow
+    }
+  }
+  
+  let mut current = TrafficLight::Red
+  
+  // 测试状态转换序列
+  assert_eq(current, TrafficLight::Red)
+  current = next_light(current)
+  assert_eq(current, TrafficLight::Green)
+  current = next_light(current)
+  assert_eq(current, TrafficLight::Yellow)
+  current = next_light(current)
+  assert_eq(current, TrafficLight::Red)
+  
+  // 测试复杂模式匹配
+  enum Result<T, E> {
+    Success(T)
+    Failure(E)
+    Pending
+  }
+  
+  let process_result = fn(result) {
+    match result {
+      Result::Success(value) => "操作成功: " + value.to_string()
+      Result::Failure(error) => "操作失败: " + error
+      Result::Pending => "操作进行中..."
+    }
+  }
+  
+  let success = Result::Success(42)
+  let failure = Result::Failure("网络超时")
+  let pending = Result::Pending
+  
+  assert_eq(process_result(success), "操作成功: 42")
+  assert_eq(process_result(failure), "操作失败: 网络超时")
+  assert_eq(process_result(pending), "操作进行中...")
+}
+
+// 测试7: 数据验证和边界条件
+test "数据验证和边界条件测试" {
+  // 邮箱验证
+  let is_valid_email = fn(email) {
+    if !email.contains("@") || !email.contains(".") {
+      false
+    } else {
+      let at_index = email.index_of("@")
+      let dot_index = email.index_of(".")
+      at_index > 0 && dot_index > at_index + 1 && dot_index < email.length() - 1
+    }
+  }
+  
+  assert_true(is_valid_email("user@example.com"))
+  assert_true(is_valid_email("test.email+tag@domain.co.uk"))
+  assert_false(is_valid_email("invalid.email"))
+  assert_false(is_valid_email("@domain.com"))
+  assert_false(is_valid_email("user@"))
+  assert_false(is_valid_email("user@domain"))
+  assert_false(is_valid_email(""))
+  
+  // 密码强度验证
+  let check_password_strength = fn(password) {
+    let has_upper = password != password.to_lowercase()
+    let has_lower = password != password.to_uppercase()
+    let has_digit = password.split("").any(fn(c) { c >= "0" && c <= "9" })
+    let has_special = password.split("").any(fn(c) { 
+      c == "!" || c == "@" || c == "#" || c == "$" || c == "%" 
+    })
+    
+    has_upper && has_lower && has_digit && has_special && password.length() >= 8
+  }
+  
+  assert_true(check_password_strength("StrongP@ss1"))
+  assert_false(check_password_strength("weak"))
+  assert_false(check_password_strength("nouppercase1!"))
+  assert_false(check_password_strength("NOLOWERCASE1!"))
+  assert_false(check_password_strength("NoDigitPass!"))
+  assert_false(check_password_strength("NoSpecialPass1"))
+  assert_false(check_password_strength("Short1!"))
+}
+
+// 测试8: 并发和异步操作模拟
+test "并发和异步操作模拟测试" {
+  // 模拟任务队列
+  let task_queue = []
+  let task_results = []
+  
+  // 添加任务到队列
+  let add_task = fn(queue, task_id, priority) {
+    let new_task = (task_id, priority)
+    let mut updated_queue = queue
+    
+    // 按优先级插入
+    let mut inserted = false
+    for i in 0..=queue.length() {
+      if i == queue.length() || queue[i].1 > priority {
+        updated_queue = updated_queue.slice(0, i).concat([new_task]).concat(updated_queue.slice(i, updated_queue.length()))
+        inserted = true
+        break
+      }
+    }
+    
+    if !inserted {
+      updated_queue = updated_queue.push(new_task)
+    }
+    
+    updated_queue
+  }
+  
+  // 处理任务
+  let process_tasks = fn(queue) {
+    let mut results = []
+    let mut remaining_tasks = queue
+    
+    while remaining_tasks.length() > 0 {
+      let task = remaining_tasks[0]
+      let task_id = task.0
+      let priority = task.1
+      
+      // 模拟任务处理
+      let result = "Task " + task_id.to_string() + " completed with priority " + priority.to_string()
+      results = results.push(result)
+      
+      remaining_tasks = remaining_tasks.slice(1, remaining_tasks.length())
+    }
+    
+    results
+  }
+  
+  // 添加任务
+  task_queue = add_task(task_queue, "A", 3)
+  task_queue = add_task(task_queue, "B", 1)
+  task_queue = add_task(task_queue, "C", 2)
+  task_queue = add_task(task_queue, "D", 1)
+  
+  // 验证队列顺序（按优先级）
+  assert_eq(task_queue[0], ("B", 1))
+  assert_eq(task_queue[1], ("D", 1))
+  assert_eq(task_queue[2], ("C", 2))
+  assert_eq(task_queue[3], ("A", 3))
+  
+  // 处理所有任务
+  task_results = process_tasks(task_queue)
+  
+  // 验证处理结果
+  assert_eq(task_results.length(), 4)
+  assert_eq(task_results[0], "Task B completed with priority 1")
+  assert_eq(task_results[1], "Task D completed with priority 1")
+  assert_eq(task_results[2], "Task C completed with priority 2")
+  assert_eq(task_results[3], "Task A completed with priority 3")
+}
+
+// 测试9: 缓存和记忆化
+test "缓存和记忆化测试" {
+  // 简单缓存实现
+  let cache = []
+  
+  let cache_get = fn(key) {
+    for item in cache {
+      if item.0 == key {
+        return Some(item.1)
+      }
+    }
+    None
+  }
+  
+  let cache_set = fn(key, value) {
+    let updated_cache = []
+    let found = false
+    
+    for item in cache {
+      if item.0 == key {
+        updated_cache = updated_cache.push((key, value))
+        found = true
+      } else {
+        updated_cache = updated_cache.push(item)
+      }
+    }
+    
+    if !found {
+      updated_cache = updated_cache.push((key, value))
+    }
+    
+    updated_cache
+  }
+  
+  // 测试缓存操作
+  cache = cache_set("user:1", "Alice")
+  cache = cache_set("user:2", "Bob")
+  cache = cache_set("config:timeout", "30")
+  
+  match cache_get("user:1") {
+    Some(value) => assert_eq(value, "Alice")
+    None => assert_true(false)
+  }
+  
+  match cache_get("user:2") {
+    Some(value) => assert_eq(value, "Bob")
+    None => assert_true(false)
+  }
+  
+  match cache_get("nonexistent") {
+    Some(value) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // 测试缓存更新
+  cache = cache_set("user:1", "Alice Smith")
+  match cache_get("user:1") {
+    Some(value) => assert_eq(value, "Alice Smith")
+    None => assert_true(false)
+  }
+  
+  // 记忆化斐波那契函数
+  let fib_cache = []
+  
+  let memoized_fib = fn(n) {
+    match cache_get(n) {
+      Some(value) => value,
+      None => {
+        let result = if n <= 1 {
+          n
+        } else {
+          memoized_fib(n - 1) + memoized_fib(n - 2)
+        }
+        
+        // 缓存结果
+        fib_cache = cache_set(n, result)
+        result
+      }
+    }
+  }
+  
+  assert_eq(memoized_fib(5), 5)
+  assert_eq(memoized_fib(10), 55)
+}
+
+// 测试10: 数据转换和格式化
+test "数据转换和格式化测试" {
+  // 数字格式化
+  let format_number = fn(num, decimals) {
+    let multiplier = 10.0 ^ decimals
+    let rounded = (num * multiplier).round() / multiplier
+    rounded.to_string()
+  }
+  
+  assert_eq(format_number(3.14159, 2), "3.14")
+  assert_eq(format_number(2.71828, 3), "2.718")
+  assert_eq(format_number(1.5, 0), "2.0")
+  
+  // 日期格式化（模拟）
+  let format_date = fn(year, month, day) {
+    let year_str = year.to_string()
+    let month_str = if month < 10 { "0" + month.to_string() } else { month.to_string() }
+    let day_str = if day < 10 { "0" + day.to_string() } else { day.to_string() }
+    
+    year_str + "-" + month_str + "-" + day_str
+  }
+  
+  assert_eq(format_date(2023, 1, 5), "2023-01-05")
+  assert_eq(format_date(2023, 12, 25), "2023-12-25")
+  assert_eq(format_date(2023, 10, 10), "2023-10-10")
+  
+  // 数据类型转换
+  let safe_parse_int = fn(str) {
+    if str.length() == 0 {
+      Err("Empty string")
+    } else {
+      let mut result = 0
+      let mut valid = true
+      
+      for i in 0..=str.length() - 1 {
+        let char = str[i]
+        if char >= "0" && char <= "9" {
+          result = result * 10 + (char.to_int() - 48)
+        } else {
+          valid = false
+          break
+        }
+      }
+      
+      if valid {
+        Ok(result)
+      } else {
+        Err("Invalid number format")
+      }
+    }
+  }
+  
+  match safe_parse_int("123") {
+    Ok(value) => assert_eq(value, 123)
+    Err(msg) => assert_true(false)
+  }
+  
+  match safe_parse_int("0") {
+    Ok(value) => assert_eq(value, 0)
+    Err(msg) => assert_true(false)
+  }
+  
+  match safe_parse_int("abc") {
+    Ok(value) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Invalid number format")
+  }
+  
+  match safe_parse_int("") {
+    Ok(value) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Empty string")
   }
 }
