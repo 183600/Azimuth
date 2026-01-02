@@ -69,28 +69,6 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_62617369635f74657374732e6d6274_8, ["type conversion tests"]),
     9: (__test_62617369635f74657374732e6d6274_9, ["error handling and edge cases"]),
   },
-  "azimuth_simple_additional_tests.mbt": {
-    0: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_0, ["basic arithmetic and boundary conditions"]),
-    1: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_1, ["boolean logic and conditional operations"]),
-    2: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_2, ["string operations and unicode support"]),
-    3: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_3, ["array operations and edge cases"]),
-    4: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_4, ["option type handling and pattern matching"]),
-    5: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_5, ["loop and iteration operations"]),
-    6: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_6, ["type conversion and edge cases"]),
-    7: (__test_617a696d7574685f73696d706c655f6164646974696f6e616c5f74657374732e6d6274_7, ["error handling and edge cases"]),
-  },
-  "azimuth_core_functionality_tests.mbt": {
-    0: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_0, ["attribute value type operations"]),
-    1: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_1, ["attributes struct operations"]),
-    2: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_2, ["resource struct operations"]),
-    3: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_3, ["context operations"]),
-    4: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_4, ["context key operations"]),
-    5: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_5, ["baggage operations"]),
-    6: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_6, ["span context operations"]),
-    7: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_7, ["text map carrier operations"]),
-    8: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_8, ["instrumentation scope operations"]),
-    9: (__test_617a696d7574685f636f72655f66756e6374696f6e616c6974795f74657374732e6d6274_9, ["array attribute values operations"]),
-  },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED
 let moonbit_test_driver_internal_async_tests : Moonbit_Test_Driver_Internal_TestDriver_Async_Map = { }  // WILL BE REPLACED
