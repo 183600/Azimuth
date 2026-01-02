@@ -64,6 +64,10 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     3: (__test_62617369635f74657374732e6d6274_3, ["array operations"]),
     4: (__test_62617369635f74657374732e6d6274_4, ["numeric boundary tests"]),
     5: (__test_62617369635f74657374732e6d6274_5, ["option type handling"]),
+    6: (__test_62617369635f74657374732e6d6274_6, ["loop and iteration tests"]),
+    7: (__test_62617369635f74657374732e6d6274_7, ["conditional logic tests"]),
+    8: (__test_62617369635f74657374732e6d6274_8, ["type conversion tests"]),
+    9: (__test_62617369635f74657374732e6d6274_9, ["error handling and edge cases"]),
   },
 }
 let moonbit_test_driver_internal_with_args_tests : Moonbit_Test_Driver_Internal_TestDriver_With_Args_Map = { }  // WILL BE REPLACED

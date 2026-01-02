@@ -59,3 +59,68 @@ test "option type handling" {
     None => assert_true(true)
   }
 }
+
+test "loop and iteration tests" {
+  let mut sum = 0
+  for i in 0..=5 {
+    sum = sum + i
+  }
+  assert_eq(sum, 15)
+  
+  let mut product = 1
+  for i in 1..=4 {
+    product = product * i
+  }
+  assert_eq(product, 24)
+}
+
+test "conditional logic tests" {
+  let x = 10
+  let y = 20
+  
+  if x < y {
+    assert_true(true)
+  } else {
+    assert_true(false)
+  }
+  
+  let result = if x > 5 { "greater" } else { "less" }
+  assert_eq(result, "greater")
+}
+
+test "type conversion tests" {
+  let int_val = 42
+  let float_val = 3.14
+  let bool_val = true
+  
+  // Test string conversion
+  let int_str = int_val.to_string()
+  assert_eq(int_str, "42")
+  
+  // Test boolean operations
+  assert_true(bool_val && true)
+  assert_false(bool_val && false)
+  assert_true(!false)
+}
+
+test "error handling and edge cases" {
+  // Test division by zero handling
+  let numerator = 10
+  let denominator = 0
+  
+  // In MoonBit, we need to handle this case
+  if denominator != 0 {
+    let result = numerator / denominator
+    assert_eq(result, 5)
+  } else {
+    assert_true(true) // Expected case for denominator = 0
+  }
+  
+  // Test array bounds
+  let arr = [1, 2, 3]
+  if arr.length() > 2 {
+    assert_eq(arr[2], 3)
+  } else {
+    assert_true(false)
+  }
+}
