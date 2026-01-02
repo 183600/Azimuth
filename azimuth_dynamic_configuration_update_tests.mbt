@@ -1,544 +1,491 @@
-// Azimuth Telemetry System - 动态配置更新测试用例
-// 测试系统在运行时动态更新配置时的行为和一致性
+// 动态配置管理测试用例
+// 测试Azimuth遥测系统的动态配置管理能力
 
-// 测试1: 采样配置动态更新
-test "采样配置动态更新测试" {
-  // 初始采样配置
-  let initial_sampling_config = {
-    "sampler.type": "probabilistic",
-    "sampler.param": "0.1",
-    "sampler.parent_based": "false"
+test "运行时配置更新测试" {
+  // 测试运行时配置更新
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "config.runtime.test")
+  
+  // 创建配置管理器
+  let config_manager = ConfigManager::new()
+  
+  // 初始化配置
+  let initial_config = {
+    "sampling.probability": 1.0,
+    "batch.size": 512,
+    "export.interval": 5000,
+    "max.spans.per.second": 1000,
+    "log.level": "INFO",
+    "metrics.enabled": true,
+    "tracing.enabled": true
   }
+  
+  ConfigManager::load_config(config_manager, initial_config)
   
   // 验证初始配置
-  assert_eq(initial_sampling_config["sampler.type"], "probabilistic")
-  assert_eq(initial_sampling_config["sampler.param"], "0.1")
-  assert_eq(initial_sampling_config["sampler.parent_based"], "false")
+  assert_eq(ConfigManager::get(config_manager, "sampling.probability"), 1.0)
+  assert_eq(ConfigManager::get(config_manager, "batch.size"), 512)
+  assert_eq(ConfigManager::get(config_manager, "export.interval"), 5000)
+  assert_eq(ConfigManager::get(config_manager, "log.level"), "INFO")
   
-  // 模拟采样决策
-  let total_requests = 1000
-  let initial_sampling_rate = initial_sampling_config["sampler.param"].to_float()
-  let mut initial_sampled_count = 0
+  // 创建span验证配置应用
+  let span1 = Tracer::start_span(tracer, "config.test.initial")
+  Span::set_attribute(span1, "config.sampling", ConfigManager::get(config_manager, "sampling.probability").to_string())
+  Span::set_attribute(span1, "config.batch_size", ConfigManager::get(config_manager, "batch.size").to_string())
+  Span::end(span1)
   
-  for i = 0; i < total_requests; i = i + 1 {
-    let sampled = (i.to_float() / total_requests.to_float()) < initial_sampling_rate
-    if sampled {
-      initial_sampled_count = initial_sampled_count + 1
-    }
+  // 动态更新配置
+  let updated_config = {
+    "sampling.probability": 0.5,
+    "batch.size": 1024,
+    "export.interval": 3000,
+    "max.spans.per.second": 2000,
+    "log.level": "DEBUG",
+    "metrics.enabled": true,
+    "tracing.enabled": true
   }
   
-  // 验证初始采样结果
-  let expected_initial_count = (total_requests.to_float() * initial_sampling_rate).to_int()
-  let tolerance = total_requests / 100  // 1%容差
-  assert_true(initial_sampled_count >= expected_initial_count - tolerance && 
-              initial_sampled_count <= expected_initial_count + tolerance)
-  
-  // 动态更新采样配置
-  let updated_sampling_config = {
-    "sampler.type": "probabilistic",
-    "sampler.param": "0.5",  // 更新采样率从10%到50%
-    "sampler.parent_based": "true"  // 启用基于父级的采样
-  }
+  ConfigManager::update_config(config_manager, updated_config)
   
   // 验证配置更新
-  assert_eq(updated_sampling_config["sampler.type"], "probabilistic")
-  assert_eq(updated_sampling_config["sampler.param"], "0.5")
-  assert_eq(updated_sampling_config["sampler.parent_based"], "true")
+  assert_eq(ConfigManager::get(config_manager, "sampling.probability"), 0.5)
+  assert_eq(ConfigManager::get(config_manager, "batch.size"), 1024)
+  assert_eq(ConfigManager::get(config_manager, "export.interval"), 3000)
+  assert_eq(ConfigManager::get(config_manager, "log.level"), "DEBUG")
   
-  // 模拟更新后的采样决策
-  let updated_sampling_rate = updated_sampling_config["sampler.param"].to_float()
-  let mut updated_sampled_count = 0
+  // 创建span验证更新后的配置
+  let span2 = Tracer::start_span(tracer, "config.test.updated")
+  Span::set_attribute(span2, "config.sampling", ConfigManager::get(config_manager, "sampling.probability").to_string())
+  Span::set_attribute(span2, "config.batch_size", ConfigManager::get(config_manager, "batch.size").to_string())
+  Span::end(span2)
   
-  for i = 0; i < total_requests; i = i + 1 {
-    let sampled = (i.to_float() / total_requests.to_float()) < updated_sampling_rate
-    if sampled {
-      updated_sampled_count = updated_sampled_count + 1
-    }
-  }
+  // 记录配置变更事件
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "config.manager")
   
-  // 验证更新后的采样结果
-  let expected_updated_count = (total_requests.to_float() * updated_sampling_rate).to_int()
-  assert_true(updated_sampled_count >= expected_updated_count - tolerance && 
-              updated_sampled_count <= expected_updated_count + tolerance)
+  let config_log = LogRecord::new(Info, "Configuration updated dynamically")
+  LogRecord::add_attribute(config_log, "config.change", "runtime_update")
+  LogRecord::add_attribute(config_log, "sampling.probability.old", "1.0")
+  LogRecord::add_attribute(config_log, "sampling.probability.new", "0.5")
+  LogRecord::add_attribute(config_log, "batch.size.old", "512")
+  LogRecord::add_attribute(config_log, "batch.size.new", "1024")
   
-  // 验证采样率确实增加了
-  assert_true(updated_sampled_count > initial_sampled_count)
+  Logger::emit(logger, config_log)
   
-  // 再次更新采样配置为always-on
-  let always_on_config = {
-    "sampler.type": "always-on",
-    "sampler.param": "1.0",
-    "sampler.parent_based": "false"
-  }
-  
-  // 验证always-on配置
-  assert_eq(always_on_config["sampler.type"], "always-on")
-  assert_eq(always_on_config["sampler.param"], "1.0")
-  
-  // 验证always-on采样结果
-  let mut always_on_sampled_count = 0
-  for i = 0; i < total_requests; i = i + 1 {
-    always_on_sampled_count = always_on_sampled_count + 1  // 所有请求都应该被采样
-  }
-  
-  assert_eq(always_on_sampled_count, total_requests)
-  assert_true(always_on_sampled_count > updated_sampled_count)
+  assert_true(true)
 }
 
-// 测试2: 度量配置动态更新
-test "度量配置动态更新测试" {
-  // 初始度量配置
-  let initial_metrics_config = {
-    "metrics.export.interval": "60000",  // 60秒
-    "metrics.export.timeout": "30000",   // 30秒
-    "metrics.aggregation.temporality": "cumulative",
-    "metrics.histogram.default.buckets": "10,25,50,100,250,500,1000"
-  }
+test "配置热重载测试" {
+  // 测试配置热重载功能
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "config.hotreload.test")
+  
+  // 创建配置热重载管理器
+  let hotreload_manager = HotReloadConfigManager::new("/etc/azimuth/config.yaml")
+  
+  // 初始配置加载
+  HotReloadConfigManager::load_initial_config(hotreload_manager)
   
   // 验证初始配置
-  assert_eq(initial_metrics_config["metrics.export.interval"], "60000")
-  assert_eq(initial_metrics_config["metrics.export.timeout"], "30000")
-  assert_eq(initial_metrics_config["metrics.aggregation.temporality"], "cumulative")
-  assert_eq(initial_metrics_config["metrics.histogram.default.buckets"], "10,25,50,100,250,500,1000")
+  assert_eq(HotReloadConfigManager::get(hotreload_manager, "service.name"), "azimuth-telemetry")
+  assert_eq(HotReloadConfigManager::get(hotreload_manager, "service.version"), "1.0.0")
+  assert_eq(HotReloadConfigManager::get(hotreload_manager, "telemetry.enabled"), true)
   
-  // 模拟度量导出
-  let export_interval_ms = initial_metrics_config["metrics.export.interval"].to_int()
-  let export_timeout_ms = initial_metrics_config["metrics.export.timeout"].to_int()
+  // 创建配置监控span
+  let monitor_span = Tracer::start_span(tracer, "config.monitoring")
+  Span::set_attribute(monitor_span, "config.file", "/etc/azimuth/config.yaml")
+  Span::set_attribute(monitor_span, "monitoring.enabled", "true")
   
-  assert_true(export_interval_ms > 0)
-  assert_true(export_timeout_ms > 0)
-  assert_true(export_interval_ms > export_timeout_ms)
+  // 模拟配置文件变更
+  Span::add_event(monitor_span, "config.file.changed", [
+    ("file.path", "/etc/azimuth/config.yaml"),
+    ("change.timestamp", "2025-01-02T10:30:00Z"),
+    ("change.type", "file_modification")
+  ])
   
-  // 模拟直方图桶配置
-  let initial_buckets_str = initial_metrics_config["metrics.histogram.default.buckets"]
-  let initial_buckets = initial_buckets_str.split(",").map(|s| s.to_float())
+  // 触发热重载
+  HotReloadConfigManager::trigger_reload(hotreload_manager)
   
-  assert_eq(initial_buckets.length(), 7)
-  assert_eq(initial_buckets[0], 10.0)
-  assert_eq(initial_buckets[6], 1000.0)
+  // 验证热重载后的配置
+  assert_eq(HotReloadConfigManager::get(hotreload_manager, "service.name"), "azimuth-telemetry")
+  assert_eq(HotReloadConfigManager::get(hotreload_manager, "service.version"), "1.1.0")  // 版本更新
+  assert_eq(HotReloadConfigManager::get(hotreload_manager, "telemetry.enabled"), true)
+  assert_eq(HotReloadConfigManager::get(hotreload_manager, "new.feature.enabled"), true)  // 新增配置项
   
-  // 验证桶边界是递增的
-  for i = 1; i < initial_buckets.length(); i = i + 1 {
-    assert_true(initial_buckets[i] > initial_buckets[i-1])
-  }
+  // 记录热重载事件
+  Span::add_event(monitor_span, "config.hotreload.completed", [
+    ("reload.timestamp", "2025-01-02T10:30:05Z"),
+    ("reload.duration", "500ms"),
+    ("config.items.changed", "2")
+  ])
   
-  // 动态更新度量配置
-  let updated_metrics_config = {
-    "metrics.export.interval": "30000",  // 减少到30秒
-    "metrics.export.timeout": "15000",   // 减少到15秒
-    "metrics.aggregation.temporality": "delta",  // 改为delta聚合
-    "metrics.histogram.default.buckets": "5,10,20,40,80,160,320,640,1280"  // 更多桶
-  }
+  // 测试配置验证
+  let validation_result = HotReloadConfigManager::validate_config(hotreload_manager)
+  assert_true(validation_result.is_valid)
   
-  // 验证配置更新
-  assert_eq(updated_metrics_config["metrics.export.interval"], "30000")
-  assert_eq(updated_metrics_config["metrics.export.timeout"], "15000")
-  assert_eq(updated_metrics_config["metrics.aggregation.temporality"], "delta")
-  assert_eq(updated_metrics_config["metrics.histogram.default.buckets"], "5,10,20,40,80,160,320,640,1280")
+  Span::add_event(monitor_span, "config.validation.completed", [
+    ("validation.result", "success"),
+    ("validation.timestamp", "2025-01-02T10:30:06Z")
+  ])
   
-  // 验证更新后的度量导出配置
-  let updated_export_interval_ms = updated_metrics_config["metrics.export.interval"].to_int()
-  let updated_export_timeout_ms = updated_metrics_config["metrics.export.timeout"].to_int()
+  Span::end(monitor_span)
   
-  assert_true(updated_export_interval_ms < export_interval_ms)  // 导出间隔减少
-  assert_true(updated_export_timeout_ms < export_timeout_ms)    // 超时时间减少
-  assert_true(updated_export_interval_ms > updated_export_timeout_ms)
+  // 记录热重载度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "config.hotreload.metrics")
   
-  // 验证更新后的直方图桶配置
-  let updated_buckets_str = updated_metrics_config["metrics.histogram.default.buckets"]
-  let updated_buckets = updated_buckets_str.split(",").map(|s| s.to_float())
+  let reload_counter = Meter::create_counter(meter, "config.hotreload.total", Some("Total config hot reloads"), Some("count"))
+  let reload_histogram = Meter::create_histogram(meter, "config.hotreload.duration", Some("Config hot reload duration"), Some("ms"))
   
-  assert_eq(updated_buckets.length(), 9)  // 更多桶
-  assert_eq(updated_buckets[0], 5.0)      // 更小的起始桶
-  assert_eq(updated_buckets[8], 1280.0)   // 更大的结束桶
+  Counter::add(reload_counter, 1.0)
+  Histogram::record(reload_histogram, 500.0)
   
-  // 验证更新后的桶边界是递增的
-  for i = 1; i < updated_buckets.length(); i = i + 1 {
-    assert_true(updated_buckets[i] > updated_buckets[i-1])
-  }
-  
-  // 验证聚合类型从cumulative变为delta
-  assert_not_eq(initial_metrics_config["metrics.aggregation.temporality"], 
-                updated_metrics_config["metrics.aggregation.temporality"])
+  assert_true(true)
 }
 
-// 测试3: 日志配置动态更新
-test "日志配置动态更新测试" {
-  // 初始日志配置
-  let initial_logging_config = {
-    "log.level": "info",
-    "log.export.interval": "10000",  // 10秒
-    "log.export.max.batch.size": "512",
-    "log.export.max.queue.size": "2048",
-    "log.include.trace.id": "true",
-    "log.include.span.id": "true",
-    "log.include.resource.attrs": "true"
+test "分布式配置同步测试" {
+  // 测试分布式配置同步
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "config.distributed.test")
+  
+  // 创建分布式配置管理器
+  let distributed_config = DistributedConfigManager::new()
+  
+  // 配置中心连接
+  let config_center_span = Tracer::start_span(tracer, "config.center.connection")
+  Span::set_attribute(config_center_span, "config.center.url", "https://config-center.example.com")
+  Span::set_attribute(config_center_span, "connection.timeout", "5000ms")
+  
+  Span::add_event(config_center_span, "connection.started", [
+    ("timestamp", "2025-01-02T10:35:00Z"),
+    ("client.id", "azimuth-node-001")
+  ])
+  
+  // 模拟连接到配置中心
+  DistributedConfigManager::connect_to_center(distributed_config, "https://config-center.example.com")
+  
+  Span::add_event(config_center_span, "connection.established", [
+    ("timestamp", "2025-01-02T10:35:02Z"),
+    ("connection.duration", "2000ms")
+  ])
+  
+  Span::end(config_center_span)
+  
+  // 订阅配置变更
+  let subscription_span = Tracer::start_span(tracer, "config.subscription")
+  Span::set_attribute(subscription_span, "subscription.type", "config_changes")
+  
+  // 订阅特定配置项
+  DistributedConfigManager::subscribe(distributed_config, "telemetry.sampling.rate")
+  DistributedConfigManager::subscribe(distributed_config, "metrics.export.interval")
+  DistributedConfigManager::subscribe(distributed_config, "tracing.batch.size")
+  
+  Span::add_event(subscription_span, "subscriptions.created", [
+    ("subscriptions.count", "3"),
+    ("subscription.timestamp", "2025-01-02T10:35:05Z")
+  ])
+  
+  // 模拟配置中心推送配置变更
+  let push_span = Tracer::start_span(tracer, "config.push.received")
+  Span::set_attribute(push_span, "push.source", "config-center")
+  Span::set_attribute(push_span, "push.id", "push-12345")
+  
+  Span::add_event(push_span, "config.change.received", [
+    ("config.key", "telemetry.sampling.rate"),
+    ("old.value", "1.0"),
+    ("new.value", "0.8"),
+    ("change.timestamp", "2025-01-02T10:36:00Z")
+  ])
+  
+  // 应用配置变更
+  DistributedConfigManager::apply_remote_change(distributed_config, "telemetry.sampling.rate", 0.8)
+  
+  // 验证配置变更
+  assert_eq(DistributedConfigManager::get(distributed_config, "telemetry.sampling.rate"), 0.8)
+  
+  Span::add_event(push_span, "config.change.applied", [
+    ("config.key", "telemetry.sampling.rate"),
+    ("applied.timestamp", "2025-01-02T10:36:01Z"),
+    ("application.duration", "10ms")
+  ])
+  
+  Span::end(push_span)
+  Span::end(subscription_span)
+  
+  // 测试配置冲突解决
+  let conflict_span = Tracer::start_span(tracer, "config.conflict.resolution")
+  Span::set_attribute(conflict_span, "conflict.type", "concurrent_update")
+  
+  // 模拟本地配置与远程配置冲突
+  DistributedConfigManager::set_local(distributed_config, "metrics.export.interval", 10000)
+  let remote_value = 8000
+  
+  Span::add_event(conflict_span, "conflict.detected", [
+    ("config.key", "metrics.export.interval"),
+    ("local.value", "10000"),
+    ("remote.value", "8000"),
+    ("conflict.timestamp", "2025-01-02T10:37:00Z")
+  ])
+  
+  // 解决冲突（使用远程优先策略）
+  DistributedConfigManager::resolve_conflict(distributed_config, "metrics.export.interval", "remote_priority")
+  
+  // 验证冲突解决结果
+  assert_eq(DistributedConfigManager::get(distributed_config, "metrics.export.interval"), 8000)
+  
+  Span::add_event(conflict_span, "conflict.resolved", [
+    ("config.key", "metrics.export.interval"),
+    ("resolution.strategy", "remote_priority"),
+    ("final.value", "8000"),
+    ("resolution.timestamp", "2025-01-02T10:37:01Z")
+  ])
+  
+  Span::end(conflict_span)
+  
+  assert_true(true)
+}
+
+test "配置版本管理和回滚测试" {
+  // 测试配置版本管理和回滚
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "config.versioning.test")
+  
+  // 创建配置版本管理器
+  let version_manager = ConfigVersionManager::new()
+  
+  // 初始配置版本
+  let v1_config = {
+    "sampling.probability": 1.0,
+    "batch.size": 512,
+    "export.interval": 5000,
+    "log.level": "INFO",
+    "features.experimental": false
   }
   
-  // 验证初始配置
-  assert_eq(initial_logging_config["log.level"], "info")
-  assert_eq(initial_logging_config["log.export.interval"], "10000")
-  assert_eq(initial_logging_config["log.export.max.batch.size"], "512")
-  assert_eq(initial_logging_config["log.export.max.queue.size"], "2048")
-  assert_eq(initial_logging_config["log.include.trace.id"], "true")
-  assert_eq(initial_logging_config["log.include.span.id"], "true")
-  assert_eq(initial_logging_config["log.include.resource.attrs"], "true")
+  ConfigVersionManager::save_version(version_manager, v1_config, "v1.0.0", "Initial configuration")
   
-  // 验证日志级别层级
-  let log_levels = ["trace", "debug", "info", "warn", "error", "fatal"]
-  let current_level_index = log_levels.index_of(initial_logging_config["log.level"])
-  assert_eq(current_level_index, 2)  // info是第3个级别（从0开始）
+  // 验证版本保存
+  let v1_retrieved = ConfigVersionManager::get_version(version_manager, "v1.0.0")
+  assert_eq(v1_retrieved.config["sampling.probability"], 1.0)
+  assert_eq(v1_retrieved.config["batch.size"], 512)
   
-  // 模拟日志记录
-  let log_records = [
-    ("trace", "Trace message"),
-    ("debug", "Debug message"),
-    ("info", "Info message"),
-    ("warn", "Warning message"),
-    ("error", "Error message"),
-    ("fatal", "Fatal message")
-  ]
+  // 创建版本变更span
+  let version_span = Tracer::start_span(tracer, "config.version.change")
+  Span::set_attribute(version_span, "operation.type", "config_versioning")
   
-  // 根据初始配置过滤日志
-  let filtered_logs = log_records.filter(|(level, _)| {
-    let level_index = log_levels.index_of(level)
-    level_index >= current_level_index
+  // 版本2 - 添加实验性功能
+  let v2_config = {
+    "sampling.probability": 0.8,
+    "batch.size": 1024,
+    "export.interval": 3000,
+    "log.level": "DEBUG",
+    "features.experimental": true
+  }
+  
+  ConfigVersionManager::save_version(version_manager, v2_config, "v1.1.0", "Enable experimental features")
+  
+  Span::add_event(version_span, "version.created", [
+    ("version", "v1.1.0"),
+    ("description", "Enable experimental features"),
+    ("timestamp", "2025-01-02T10:40:00Z")
+  ])
+  
+  // 版本3 - 性能优化
+  let v3_config = {
+    "sampling.probability": 0.5,
+    "batch.size": 2048,
+    "export.interval": 2000,
+    "log.level": "INFO",
+    "features.experimental": true,
+    "performance.optimization": true
+  }
+  
+  ConfigVersionManager::save_version(version_manager, v3_config, "v1.2.0", "Performance optimization")
+  
+  Span::add_event(version_span, "version.created", [
+    ("version", "v1.2.0"),
+    ("description", "Performance optimization"),
+    ("timestamp", "2025-01-02T10:41:00Z")
+  ])
+  
+  // 应用最新版本
+  ConfigVersionManager::apply_version(version_manager, "v1.2.0")
+  
+  // 验证当前配置
+  let current_config = ConfigVersionManager::get_current(version_manager)
+  assert_eq(current_config["sampling.probability"], 0.5)
+  assert_eq(current_config["batch.size"], 2048)
+  assert_eq(current_config["performance.optimization"], true)
+  
+  Span::add_event(version_span, "version.applied", [
+    ("version", "v1.2.0"),
+    ("applied.timestamp", "2025-01-02T10:41:30Z")
+  ])
+  
+  // 模拟配置问题，需要回滚
+  let rollback_span = Tracer::start_span(tracer, "config.rollback")
+  Span::set_attribute(rollback_span, "rollback.reason", "performance_degradation")
+  
+  Span::add_event(rollback_span, "rollback.initiated", [
+    ("from.version", "v1.2.0"),
+    ("to.version", "v1.1.0"),
+    ("reason", "Performance degradation detected"),
+    ("timestamp", "2025-01-02T10:45:00Z")
+  ])
+  
+  // 执行回滚
+  ConfigVersionManager::rollback_to(version_manager, "v1.1.0")
+  
+  // 验证回滚结果
+  let rollback_config = ConfigVersionManager::get_current(version_manager)
+  assert_eq(rollback_config["sampling.probability"], 0.8)
+  assert_eq(rollback_config["batch.size"], 1024)
+  assert_eq(rollback_config["performance.optimization"], None)  // 该项在v1.1.0中不存在
+  
+  Span::add_event(rollback_span, "rollback.completed", [
+    ("rollback.timestamp", "2025-01-02T10:45:05Z"),
+    ("rollback.duration", "5000ms")
+  ])
+  
+  Span::end(rollback_span)
+  Span::end(version_span)
+  
+  // 记录版本管理度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "config.versioning.metrics")
+  
+  let version_counter = Meter::create_counter(meter, "config.versions.total", Some("Total config versions"), Some("count"))
+  let rollback_counter = Meter::create_counter(meter, "config.rollbacks.total", Some("Total config rollbacks"), Some("count"))
+  
+  Counter::add(version_counter, 3.0)  // 3个版本
+  Counter::add(rollback_counter, 1.0)  // 1次回滚
+  
+  assert_true(true)
+}
+
+test "配置模板和继承测试" {
+  // 测试配置模板和继承
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "config.template.test")
+  
+  // 创建配置模板管理器
+  let template_manager = ConfigTemplateManager::new()
+  
+  // 定义基础模板
+  let base_template = {
+    "sampling.probability": 1.0,
+    "batch.size": 512,
+    "export.interval": 5000,
+    "log.level": "INFO",
+    "metrics.enabled": true,
+    "tracing.enabled": true
+  }
+  
+  ConfigTemplateManager::create_template(template_manager, "base", base_template)
+  
+  // 定义生产环境模板（继承基础模板）
+  let production_overrides = {
+    "sampling.probability": 0.1,
+    "batch.size": 1024,
+    "export.interval": 3000,
+    "log.level": "WARN"
+  }
+  
+  ConfigTemplateManager::create_template_with_inheritance(
+    template_manager, 
+    "production", 
+    production_overrides, 
+    "base"
+  )
+  
+  // 定义开发环境模板（继承基础模板）
+  let development_overrides = {
+    "sampling.probability": 1.0,
+    "log.level": "DEBUG",
+    "debug.enabled": true
+  }
+  
+  ConfigTemplateManager::create_template_with_inheritance(
+    template_manager, 
+    "development", 
+    development_overrides, 
+    "base"
+  )
+  
+  // 创建模板应用span
+  let template_span = Tracer::start_span(tracer, "config.template.application")
+  
+  // 应用生产环境配置
+  let prod_config = ConfigTemplateManager::instantiate_template(template_manager, "production", {
+    "service.name": "payment-service",
+    "service.version": "2.1.0"
   })
   
-  assert_eq(filtered_logs.length(), 4)  // info, warn, error, fatal
+  // 验证生产环境配置
+  assert_eq(prod_config["sampling.probability"], 0.1)  // 覆盖值
+  assert_eq(prod_config["batch.size"], 1024)  // 覆盖值
+  assert_eq(prod_config["export.interval"], 3000)  // 覆盖值
+  assert_eq(prod_config["log.level"], "WARN")  // 覆盖值
+  assert_eq(prod_config["metrics.enabled"], true)  // 继承值
+  assert_eq(prod_config["tracing.enabled"], true)  // 继承值
+  assert_eq(prod_config["service.name"], "payment-service")  // 实例化值
   
-  // 动态更新日志配置
-  let updated_logging_config = {
-    "log.level": "debug",  // 降低日志级别
-    "log.export.interval": "5000",   // 减少到5秒
-    "log.export.max.batch.size": "1024",  // 增加批处理大小
-    "log.export.max.queue.size": "4096",  // 增加队列大小
-    "log.include.trace.id": "false",  // 不包含Trace ID
-    "log.include.span.id": "true",
-    "log.include.resource.attrs": "false"  // 不包含资源属性
-  }
+  Span::add_event(template_span, "template.instantiated", [
+    ("template", "production"),
+    "instance.id", "prod-instance-001",
+    ("timestamp", "2025-01-02T10:50:00Z")
+  ])
   
-  // 验证配置更新
-  assert_eq(updated_logging_config["log.level"], "debug")
-  assert_eq(updated_logging_config["log.export.interval"], "5000")
-  assert_eq(updated_logging_config["log.export.max.batch.size"], "1024")
-  assert_eq(updated_logging_config["log.export.max.queue.size"], "4096")
-  assert_eq(updated_logging_config["log.include.trace.id"], "false")
-  assert_eq(updated_logging_config["log.include.span.id"], "true")
-  assert_eq(updated_logging_config["log.include.resource.attrs"], "false")
-  
-  // 验证更新后的日志级别
-  let updated_level_index = log_levels.index_of(updated_logging_config["log.level"])
-  assert_eq(updated_level_index, 1)  // debug是第2个级别
-  
-  // 根据更新后的配置过滤日志
-  let updated_filtered_logs = log_records.filter(|(level, _)| {
-    let level_index = log_levels.index_of(level)
-    level_index >= updated_level_index
+  // 应用开发环境配置
+  let dev_config = ConfigTemplateManager::instantiate_template(template_manager, "development", {
+    "service.name", "auth-service",
+    "service.version", "3.0.0-dev"
   })
   
-  assert_eq(updated_filtered_logs.length(), 5)  // debug, info, warn, error, fatal
-  assert_true(updated_filtered_logs.length() > filtered_logs.length())
+  // 验证开发环境配置
+  assert_eq(dev_config["sampling.probability"], 1.0)  // 覆盖值
+  assert_eq(dev_config["batch.size"], 512)  // 继承值
+  assert_eq(dev_config["log.level"], "DEBUG")  // 覆盖值
+  assert_eq(dev_config["debug.enabled"], true)  // 覆盖值
+  assert_eq(dev_config["metrics.enabled"], true)  // 继承值
+  assert_eq(dev_config["service.name"], "auth-service")  // 实例化值
   
-  // 验证导出配置更新
-  let initial_interval = initial_logging_config["log.export.interval"].to_int()
-  let updated_interval = updated_logging_config["log.export.interval"].to_int()
-  assert_true(updated_interval < initial_interval)
+  Span::add_event(template_span, "template.instantiated", [
+    ("template", "development"),
+    ("instance.id", "dev-instance-001"),
+    ("timestamp", "2025-01-02T10:50:30Z")
+  ])
   
-  let initial_batch_size = initial_logging_config["log.export.max.batch.size"].to_int()
-  let updated_batch_size = updated_logging_config["log.export.max.batch.size"].to_int()
-  assert_true(updated_batch_size > initial_batch_size)
-  
-  // 验证日志包含配置更新
-  assert_not_eq(initial_logging_config["log.include.trace.id"], 
-                updated_logging_config["log.include.trace.id"])
-  assert_eq(initial_logging_config["log.include.span.id"], 
-            updated_logging_config["log.include.span.id"])
-  assert_not_eq(initial_logging_config["log.include.resource.attrs"], 
-                updated_logging_config["log.include.resource.attrs"])
-}
-
-// 测试4: 资源配置动态更新
-test "资源配置动态更新测试" {
-  // 初始资源配置
-  let initial_resource_config = {
-    "resource.attributes": [
-      "service.name=azimuth-service",
-      "service.version=1.0.0",
-      "service.namespace=production",
-      "host.name=web-server-01",
-      "deployment.environment=production"
-    ],
-    "resource.detectors.enabled": "env,host,os,process",
-    "resource.merge.strategy": "override"
+  // 测试多层继承
+  let microservice_overrides = {
+    "batch.size": 2048,
+    "service.type": "microservice"
   }
   
-  // 验证初始配置
-  assert_eq(initial_resource_config["resource.attributes"].length(), 5)
-  assert_eq(initial_resource_config["resource.detectors.enabled"], "env,host,os,process")
-  assert_eq(initial_resource_config["resource.merge.strategy"], "override")
+  ConfigTemplateManager::create_template_with_inheritance(
+    template_manager, 
+    "microservice", 
+    microservice_overrides, 
+    "production"
+  )
   
-  // 解析资源属性
-  let initial_attrs = initial_resource_config["resource.attributes"].map(|attr| {
-    let parts = attr.split("=")
-    (parts[0], parts[1])
+  let micro_config = ConfigTemplateManager::instantiate_template(template_manager, "microservice", {
+    "service.name", "user-service",
+    "service.version", "1.5.0"
   })
   
-  assert_eq(initial_attrs.length(), 5)
-  assert_eq(initial_attrs[0], ("service.name", "azimuth-service"))
-  assert_eq(initial_attrs[1], ("service.version", "1.0.0"))
+  // 验证多层继承
+  assert_eq(micro_config["sampling.probability"], 0.1)  // 从production继承
+  assert_eq(micro_config["batch.size"], 2048)  // microservice覆盖
+  assert_eq(micro_config["log.level"], "WARN")  // 从production继承
+  assert_eq(micro_config["service.type"], "microservice")  // microservice定义
   
-  // 动态更新资源配置
-  let updated_resource_config = {
-    "resource.attributes": [
-      "service.name=azimuth-service",  // 保持不变
-      "service.version=2.0.0",         // 更新版本
-      "service.namespace=staging",      // 更新命名空间
-      "host.name=web-server-02",        // 更新主机名
-      "deployment.environment=staging", // 更新环境
-      "service.instance.id=new-instance-12345"  // 新增属性
-    ],
-    "resource.detectors.enabled": "env,host",  // 减少检测器
-    "resource.merge.strategy": "merge"         // 改为合并策略
-  }
+  Span::add_event(template_span, "multi.level.inheritance.tested", [
+    ("inheritance.chain", "base -> production -> microservice"),
+    ("timestamp", "2025-01-02T10:51:00Z")
+  ])
   
-  // 验证配置更新
-  assert_eq(updated_resource_config["resource.attributes"].length(), 6)
-  assert_eq(updated_resource_config["resource.detectors.enabled"], "env,host")
-  assert_eq(updated_resource_config["resource.merge.strategy"], "merge")
+  Span::end(template_span)
   
-  // 解析更新后的资源属性
-  let updated_attrs = updated_resource_config["resource.attributes"].map(|attr| {
-    let parts = attr.split("=")
-    (parts[0], parts[1])
-  })
-  
-  assert_eq(updated_attrs.length(), 6)
-  
-  // 验证属性更新
-  assert_eq(updated_attrs[0], ("service.name", "azimuth-service"))  // 保持不变
-  assert_eq(updated_attrs[1], ("service.version", "2.0.0"))         // 更新版本
-  assert_eq(updated_attrs[2], ("service.namespace", "staging"))      // 更新命名空间
-  assert_eq(updated_attrs[3], ("host.name", "web-server-02"))        // 更新主机名
-  assert_eq(updated_attrs[4], ("deployment.environment", "staging")) // 更新环境
-  assert_eq(updated_attrs[5], ("service.instance.id", "new-instance-12345"))  // 新增属性
-  
-  // 验证合并策略更新
-  assert_not_eq(initial_resource_config["resource.merge.strategy"], 
-                updated_resource_config["resource.merge.strategy"])
-  
-  // 验证检测器配置更新
-  let initial_detectors = initial_resource_config["resource.detectors.enabled"].split(",")
-  let updated_detectors = updated_resource_config["resource.detectors.enabled"].split(",")
-  
-  assert_eq(initial_detectors.length(), 4)
-  assert_eq(updated_detectors.length(), 2)
-  assert_true(updated_detectors.length() < initial_detectors.length())
-  
-  // 验证检测器内容
-  assert_eq(updated_detectors[0], "env")
-  assert_eq(updated_detectors[1], "host")
-}
-
-// 测试5: 批处理配置动态更新
-test "批处理配置动态更新测试" {
-  // 初始批处理配置
-  let initial_batch_config = {
-    "batch.export.max.size": "512",
-    "batch.export.max.timeout": "5000",  // 5秒
-    "batch.export.schedule.delay": "100",  // 100ms
-    "batch.export.enabled": "true"
-  }
-  
-  // 验证初始配置
-  assert_eq(initial_batch_config["batch.export.max.size"], "512")
-  assert_eq(initial_batch_config["batch.export.max.timeout"], "5000")
-  assert_eq(initial_batch_config["batch.export.schedule.delay"], "100")
-  assert_eq(initial_batch_config["batch.export.enabled"], "true")
-  
-  // 验证配置合理性
-  let max_size = initial_batch_config["batch.export.max.size"].to_int()
-  let max_timeout = initial_batch_config["batch.export.max.timeout"].to_int()
-  let schedule_delay = initial_batch_config["batch.export.schedule.delay"].to_int()
-  
-  assert_true(max_size > 0)
-  assert_true(max_timeout > 0)
-  assert_true(schedule_delay > 0)
-  assert_true(max_timeout > schedule_delay)
-  
-  // 模拟批处理操作
-  let items = []
-  for i = 0; i < 1000; i = i + 1 {
-    items.push("item-" + i.to_string())
-  }
-  
-  // 根据初始批处理配置处理项目
-  let mut processed_batches = []
-  let mut current_batch = []
-  
-  for item in items {
-    current_batch.push(item)
-    
-    if current_batch.length() >= max_size {
-      processed_batches.push(current_batch)
-      current_batch = []
-    }
-  }
-  
-  // 处理剩余项目
-  if current_batch.length() > 0 {
-    processed_batches.push(current_batch)
-  }
-  
-  // 验证批处理结果
-  let total_processed = processed_batches.reduce(|acc, batch| acc + batch.length(), 0)
-  assert_eq(total_processed, items.length())
-  
-  // 动态更新批处理配置
-  let updated_batch_config = {
-    "batch.export.max.size": "1024",  // 增加批处理大小
-    "batch.export.max.timeout": "10000",  // 增加超时时间
-    "batch.export.schedule.delay": "50",   // 减少调度延迟
-    "batch.export.enabled": "false"       // 禁用批处理
-  }
-  
-  // 验证配置更新
-  assert_eq(updated_batch_config["batch.export.max.size"], "1024")
-  assert_eq(updated_batch_config["batch.export.max.timeout"], "10000")
-  assert_eq(updated_batch_config["batch.export.schedule.delay"], "50")
-  assert_eq(updated_batch_config["batch.export.enabled"], "false")
-  
-  // 验证更新后的配置
-  let updated_max_size = updated_batch_config["batch.export.max.size"].to_int()
-  let updated_max_timeout = updated_batch_config["batch.export.max.timeout"].to_int()
-  let updated_schedule_delay = updated_batch_config["batch.export.schedule.delay"].to_int()
-  
-  assert_true(updated_max_size > max_size)
-  assert_true(updated_max_timeout > max_timeout)
-  assert_true(updated_schedule_delay < schedule_delay)
-  assert_true(updated_max_timeout > updated_schedule_delay)
-  
-  // 根据更新后的批处理配置处理项目
-  if updated_batch_config["batch.export.enabled"] == "true" {
-    let mut updated_processed_batches = []
-    let mut updated_current_batch = []
-    
-    for item in items {
-      updated_current_batch.push(item)
-      
-      if updated_current_batch.length() >= updated_max_size {
-        updated_processed_batches.push(updated_current_batch)
-        updated_current_batch = []
-      }
-    }
-    
-    // 处理剩余项目
-    if updated_current_batch.length() > 0 {
-      updated_processed_batches.push(updated_current_batch)
-    }
-    
-    // 验证批处理结果
-    let updated_total_processed = updated_processed_batches.reduce(|acc, batch| acc + batch.length(), 0)
-    assert_eq(updated_total_processed, items.length())
-    
-    // 验证批处理数量减少（因为批处理大小增加）
-    assert_true(updated_processed_batches.length() <= processed_batches.length())
-  } else {
-    // 批处理被禁用，每个项目单独处理
-    let individual_items = items.map(|item| [item])
-    assert_eq(individual_items.length(), items.length())
-  }
-}
-
-// 测试6: 服务端点配置动态更新
-test "服务端点配置动态更新测试" {
-  // 初始服务端点配置
-  let initial_endpoint_config = {
-    "otel.collector.endpoint": "http://otel-collector:4317",
-    "otel.collector.protocol": "grpc",
-    "otel.collector.timeout": "30000",  // 30秒
-    "otel.collector.compression": "gzip",
-    "otel.collector.headers": "x-api-key=initial-key"
-  }
-  
-  // 验证初始配置
-  assert_eq(initial_endpoint_config["otel.collector.endpoint"], "http://otel-collector:4317")
-  assert_eq(initial_endpoint_config["otel.collector.protocol"], "grpc")
-  assert_eq(initial_endpoint_config["otel.collector.timeout"], "30000")
-  assert_eq(initial_endpoint_config["otel.collector.compression"], "gzip")
-  assert_eq(initial_endpoint_config["otel.collector.headers"], "x-api-key=initial-key")
-  
-  // 验证端点URL格式
-  let endpoint_url = initial_endpoint_config["otel.collector.endpoint"]
-  assert_true(endpoint_url.starts_with("http://") || endpoint_url.starts_with("https://"))
-  assert_true(endpoint_url.contains(":"))
-  
-  // 验证协议类型
-  let protocol = initial_endpoint_config["otel.collector.protocol"]
-  assert_true(protocol == "grpc" || protocol == "http")
-  
-  // 验证超时配置
-  let timeout = initial_endpoint_config["otel.collector.timeout"].to_int()
-  assert_true(timeout > 0)
-  
-  // 验证压缩类型
-  let compression = initial_endpoint_config["otel.collector.compression"]
-  assert_true(compression == "none" || compression == "gzip")
-  
-  // 验证头部配置
-  let headers = initial_endpoint_config["otel.collector.headers"]
-  assert_true(headers.contains("="))
-  
-  // 动态更新服务端点配置
-  let updated_endpoint_config = {
-    "otel.collector.endpoint": "https://otel-collector-new.example.com:4318",
-    "otel.collector.protocol": "http",  // 改为HTTP协议
-    "otel.collector.timeout": "60000",  // 增加超时时间
-    "otel.collector.compression": "none",  // 禁用压缩
-    "otel.collector.headers": "x-api-key=updated-key,authorization=Bearer token123"  // 更新头部
-  }
-  
-  // 验证配置更新
-  assert_eq(updated_endpoint_config["otel.collector.endpoint"], "https://otel-collector-new.example.com:4318")
-  assert_eq(updated_endpoint_config["otel.collector.protocol"], "http")
-  assert_eq(updated_endpoint_config["otel.collector.timeout"], "60000")
-  assert_eq(updated_endpoint_config["otel.collector.compression"], "none")
-  assert_eq(updated_endpoint_config["otel.collector.headers"], "x-api-key=updated-key,authorization=Bearer token123")
-  
-  // 验证更新后的端点URL
-  let updated_endpoint_url = updated_endpoint_config["otel.collector.endpoint"]
-  assert_true(updated_endpoint_url.starts_with("https://"))
-  assert_not_eq(endpoint_url, updated_endpoint_url)
-  
-  // 验证协议更新
-  let updated_protocol = updated_endpoint_config["otel.collector.protocol"]
-  assert_not_eq(protocol, updated_protocol)
-  assert_eq(updated_protocol, "http")
-  
-  // 验证超时更新
-  let updated_timeout = updated_endpoint_config["otel.collector.timeout"].to_int()
-  assert_true(updated_timeout > timeout)
-  
-  // 验证压缩更新
-  let updated_compression = updated_endpoint_config["otel.collector.compression"]
-  assert_not_eq(compression, updated_compression)
-  assert_eq(updated_compression, "none")
-  
-  // 验证头部更新
-  let updated_headers = updated_endpoint_config["otel.collector.headers"]
-  assert_not_eq(headers, updated_headers)
-  assert_true(updated_headers.contains("x-api-key=updated-key"))
-  assert_true(updated_headers.contains("authorization=Bearer token123"))
-  
-  // 解析更新后的头部
-  let header_pairs = updated_headers.split(",")
-  assert_eq(header_pairs.length(), 2)
-  
-  for header in header_pairs {
-    assert_true(header.contains("="))
-    let parts = header.split("=")
-    assert_eq(parts.length(), 2)
-    assert_true(parts[0].length() > 0)
-    assert_true(parts[1].length() > 0)
-  }
+  assert_true(true)
 }

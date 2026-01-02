@@ -1,417 +1,585 @@
-// Azimuth Resource Management and Optimization Tests
-// This file contains test cases for resource management and optimization
+// 资源管理和优化测试用例
+// 测试Azimuth遥测系统的资源管理和优化能力
 
-// Test 1: Memory Pool Management
-test "memory pool allocation and deallocation" {
-  let pool_size = 100
-  let mut available_blocks = []
-  let mut used_blocks = []
+test "内存池管理测试" {
+  // 测试内存池管理
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "memory.pool.test")
   
-  // Initialize memory pool
-  for i in 0..<pool_size {
-    available_blocks = available_blocks.push(i)
-  }
+  // 创建内存池管理器
+  let memory_pool = MemoryPoolManager::new()
   
-  assert_eq(available_blocks.length(), pool_size)
-  assert_eq(used_blocks.length(), 0)
+  // 配置内存池
+  MemoryPoolManager::configure_pool(memory_pool, "span_pool", 1000, 1024)  // 1000个对象，每个1KB
+  MemoryPoolManager::configure_pool(memory_pool, "event_pool", 5000, 256)   // 5000个对象，每个256B
+  MemoryPoolManager::configure_pool(memory_pool, "attribute_pool", 10000, 128) // 10000个对象，每个128B
   
-  // Allocate blocks
-  let allocation_requests = [25, 15, 30, 10, 20]
+  // 创建内存池监控span
+  let pool_span = Tracer::start_span(tracer, "memory.pool.management")
+  Span::set_attribute(pool_span, "operation.type", "memory_pool_management")
   
-  for request in allocation_requests {
-    if available_blocks.length() >= request {
-      let mut allocated = []
-      for i in 0..<request {
-        allocated = allocated.push(available_blocks[0])
-        available_blocks = available_blocks.slice(1)
+  // 测试对象分配和释放
+  let allocated_objects = []
+  
+  for i in 0..=2000 {
+    // 从span池分配对象
+    let span_obj = MemoryPoolManager::allocate(memory_pool, "span_pool")
+    if span_obj != None {
+      allocated_objects = allocated_objects.push(("span", span_obj))
+    }
+    
+    // 从event池分配对象
+    if i % 2 == 0 {
+      let event_obj = MemoryPoolManager::allocate(memory_pool, "event_pool")
+      if event_obj != None {
+        allocated_objects = allocated_objects.push(("event", event_obj))
       }
-      used_blocks = used_blocks.concat(allocated)
-    }
-  }
-  
-  let total_allocated = allocation_requests.reduce(fn(acc, req) { acc + req }, 0)
-  assert_eq(used_blocks.length(), total_allocated)
-  assert_eq(available_blocks.length(), pool_size - total_allocated)
-  
-  // Deallocate some blocks
-  let deallocation_size = 30
-  if used_blocks.length() >= deallocation_size {
-    let deallocated = used_blocks.slice(0, deallocation_size)
-    used_blocks = used_blocks.slice(deallocation_size)
-    available_blocks = available_blocks.concat(deallocated)
-  }
-  
-  assert_eq(used_blocks.length(), total_allocated - deallocation_size)
-  assert_eq(available_blocks.length(), pool_size - (total_allocated - deallocation_size))
-}
-
-// Test 2: Connection Pool Management
-test "connection pool management" {
-  let max_connections = 10
-  let mut active_connections = []
-  let mut idle_connections = []
-  
-  // Initialize connection pool
-  for i in 0..<max_connections {
-    idle_connections = idle_connections.push(("conn-" + i.to_string(), false))
-  }
-  
-  assert_eq(idle_connections.length(), max_connections)
-  assert_eq(active_connections.length(), 0)
-  
-  // Request connections
-  let connection_requests = [3, 2, 4, 3]
-  
-  for request in connection_requests {
-    let mut allocated = []
-    
-    // Allocate from idle pool
-    let to_allocate = if idle_connections.length() >= request {
-      request
-    } else {
-      idle_connections.length()
     }
     
-    for i in 0..<to_allocate {
-      let conn = idle_connections[0]
-      idle_connections = idle_connections.slice(1)
-      allocated = allocated.push(conn)
-    }
-    
-    // Mark as active
-    for conn in allocated {
-      active_connections = active_connections.push((conn.0, true))
-    }
-  }
-  
-  assert_eq(active_connections.length(), 10) // All connections should be active
-  assert_eq(idle_connections.length(), 0)
-  
-  // Release some connections
-  let release_count = 5
-  if active_connections.length() >= release_count {
-    let released = active_connections.slice(0, release_count)
-    active_connections = active_connections.slice(release_count)
-    
-    for conn in released {
-      idle_connections = idle_connections.push((conn.0, false))
-    }
-  }
-  
-  assert_eq(active_connections.length(), 5)
-  assert_eq(idle_connections.length(), 5)
-}
-
-// Test 3: Cache Eviction Strategy
-test "cache eviction strategy simulation" {
-  let cache_capacity = 5
-  let mut cache = []
-  let mut access_order = []
-  
-  // LRU (Least Recently Used) eviction simulation
-  let access_sequence = ["A", "B", "C", "D", "E", "A", "F", "B", "G", "C"]
-  
-  for key in access_sequence {
-    // Check if key is in cache
-    let existing_index = cache.index_of(fn(item) { item.0 == key })
-    
-    if existing_index != -1 {
-      // Update access order
-      access_order = access_order.filter(fn(k) { k != key })
-      access_order = access_order.push(key)
-    } else {
-      // Cache miss - need to add or evict
-      if cache.length() >= cache_capacity {
-        // Evict LRU item
-        let lru_key = access_order[0]
-        access_order = access_order.slice(1)
-        
-        let evict_index = cache.index_of(fn(item) { item.0 == lru_key })
-        if evict_index != -1 {
-          cache = cache.slice(0, evict_index) + cache.slice(evict_index + 1)
-        }
-      }
-      
-      // Add new item
-      cache = cache.push((key, "value-" + key))
-      access_order = access_order.push(key)
-    }
-  }
-  
-  assert_eq(cache.length(), cache_capacity)
-  
-  // Verify cache contains most recently accessed items
-  let expected_keys = ["C", "G", "B", "F", "A"]
-  let cache_keys = cache.map(fn(item) { item.0 })
-  
-  for key in expected_keys {
-    assert_true(cache_keys.contains(key))
-  }
-}
-
-// Test 4: Resource Usage Monitoring
-test "resource usage monitoring and thresholds" {
-  let resource_metrics = [
-    ("cpu", 45.2),
-    ("memory", 78.5),
-    ("disk", 62.1),
-    ("network", 35.8),
-    ("connections", 120)
-  ]
-  
-  // Define resource thresholds
-  let thresholds = [
-    ("cpu", 80.0),
-    ("memory", 85.0),
-    ("disk", 90.0),
-    ("network", 75.0),
-    ("connections", 150)
-  ]
-  
-  // Monitor resources and check thresholds
-  let alert_resources = []
-  
-  for metric in resource_metrics {
-    let threshold = thresholds.filter(fn(t) { t.0 == metric.0 })[0].1
-    let usage_percentage = if metric.0 == "connections" {
-      (Int::to_float(metric.1) / threshold) * 100.0
-    } else {
-      metric.1
-    }
-    
-    if usage_percentage > threshold * 0.8 { // Alert at 80% of threshold
-      alert_resources = alert_resources.push((metric.0, usage_percentage))
-    }
-  }
-  
-  // Memory usage should trigger alert (78.5 > 85.0 * 0.8 = 68.0)
-  assert_eq(alert_resources.length(), 1)
-  assert_eq(alert_resources[0].0, "memory")
-  
-  // Calculate overall resource health score
-  let health_scores = []
-  for metric in resource_metrics {
-    let threshold = thresholds.filter(fn(t) { t.0 == metric.0 })[0].1
-    let usage = if metric.0 == "connections" {
-      (Int::to_float(metric.1) / threshold) * 100.0
-    } else {
-      metric.1
-    }
-    
-    let score = if usage <= 50.0 {
-      100.0
-    } else if usage <= 75.0 {
-      80.0
-    } else if usage <= threshold {
-      60.0
-    } else {
-      30.0
-    }
-    
-    health_scores = health_scores.push(score)
-  }
-  
-  let overall_health = health_scores.reduce(fn(acc, score) { acc + score }, 0.0) / Int::to_float(health_scores.length())
-  assert_true(overall_health > 50.0) // System should be reasonably healthy
-}
-
-// Test 5: Batch Processing Optimization
-test "batch processing optimization" {
-  let items = []
-  for i in 0..<100 {
-    items = items.push(("item-" + i.to_string(), i))
-  }
-  
-  assert_eq(items.length(), 100)
-  
-  // Process items in batches
-  let optimal_batch_size = 15
-  let mut batches = []
-  
-  for i in 0..<items.length() {
-    if i % optimal_batch_size == 0 {
-      batches = batches.push([])
-    }
-    
-    let current_batch = batches.length() - 1
-    let batch = batches[current_batch]
-    batches = batches.slice(0, current_batch) + [batch.push(items[i])]
-  }
-  
-  assert_eq(batches.length(), 7) // 100 / 15 = 6.67, so 7 batches
-  assert_eq(batches[0].length(), 15)
-  assert_eq(batches[6].length(), 10) // Last batch has remaining items
-  
-  // Simulate batch processing time
-  let process_time_per_item = 1.0
-  let batch_overhead = 5.0
-  
-  let sequential_time = Int::to_float(items.length()) * process_time_per_item
-  let batch_time = (Int::to_float(batches.length()) * batch_overhead) + 
-                   (Int::to_float(items.length()) * process_time_per_item)
-  
-  assert_true(batch_time < sequential_time * 1.1) // Batch processing should be efficient
-}
-
-// Test 6: Garbage Collection Simulation
-test "garbage collection simulation" {
-  let mut allocated_objects = []
-  let mut generation_0 = []
-  let mut generation_1 = []
-  let mut generation_2 = []
-  
-  // Allocate objects and assign to generations
-  for i in 0..<30 {
-    let obj = ("obj-" + i.to_string(), i)
-    allocated_objects = allocated_objects.push(obj)
-    
-    if i < 10 {
-      generation_0 = generation_0.push(obj)
-    } else if i < 20 {
-      generation_1 = generation_1.push(obj)
-    } else {
-      generation_2 = generation_2.push(obj)
-    }
-  }
-  
-  assert_eq(generation_0.length(), 10)
-  assert_eq(generation_1.length(), 10)
-  assert_eq(generation_2.length(), 10)
-  
-  // Simulate object lifecycle and garbage collection
-  let mut surviving_objects = []
-  let referenced_objects = [2, 5, 8, 12, 15, 18, 22, 25, 28]
-  
-  for i in 0..<allocated_objects.length() {
-    if referenced_objects.contains(i) {
-      surviving_objects = surviving_objects.push(allocated_objects[i])
-    }
-  }
-  
-  assert_eq(surviving_objects.length(), 9)
-  
-  // Simulate generational GC
-  // Generation 0 GC
-  let gen0_survivors = generation_0.filter(fn(obj) { 
-    let index = Int::from_string(obj.0.slice(4)) // Extract number from "obj-X"
-    referenced_objects.contains(index)
-  })
-  
-  // Generation 1 GC
-  let gen1_survivors = generation_1.filter(fn(obj) { 
-    let index = Int::from_string(obj.0.slice(4))
-    referenced_objects.contains(index)
-  })
-  
-  // Generation 2 GC (full GC)
-  let gen2_survivors = generation_2.filter(fn(obj) { 
-    let index = Int::from_string(obj.0.slice(4))
-    referenced_objects.contains(index)
-  })
-  
-  assert_eq(gen0_survivors.length(), 3) // Objects 2, 5, 8
-  assert_eq(gen1_survivors.length(), 3) // Objects 12, 15, 18
-  assert_eq(gen2_survivors.length(), 3) // Objects 22, 25, 28
-  
-  // Promote survivors to next generation
-  let new_generation_1 = gen0_survivors
-  let new_generation_2 = gen1_survivors.concat(gen2_survivors)
-  
-  assert_eq(new_generation_1.length(), 3)
-  assert_eq(new_generation_2.length(), 6)
-}
-
-// Test 7: Resource Cleanup and Finalization
-test "resource cleanup and finalization" {
-  let mut open_resources = []
-  let mut cleanup_queue = []
-  
-  // Open resources
-  let resource_types = ["file", "socket", "connection", "stream", "channel"]
-  
-  for resource_type in resource_types {
-    for i in 0..<3 {
-      let resource_id = resource_type + "-" + i.to_string()
-      open_resources = open_resources.push((resource_id, resource_type, true))
-    }
-  }
-  
-  assert_eq(open_resources.length(), 15)
-  
-  // Mark some resources for cleanup
-  for i in 0..<open_resources.length() {
+    // 从attribute池分配对象
     if i % 3 == 0 {
-      let resource = open_resources[i]
-      cleanup_queue = cleanup_queue.push(resource)
+      let attr_obj = MemoryPoolManager::allocate(memory_pool, "attribute_pool")
+      if attr_obj != None {
+        allocated_objects = allocated_objects.push(("attribute", attr_obj))
+      }
     }
   }
   
-  assert_eq(cleanup_queue.length(), 5)
+  Span::add_event(pool_span, "objects.allocated", [
+    ("total.objects", allocated_objects.length().to_string()),
+    ("allocation.timestamp", "2025-01-02T11:00:00Z")
+  ])
   
-  // Perform cleanup
-  let mut cleaned_resources = []
-  
-  for resource in cleanup_queue {
-    // Simulate cleanup operation
-    let cleaned_resource = (resource.0, resource.1, false)
-    cleaned_resources = cleaned_resources.push(cleaned_resource)
-    
-    // Remove from open resources
-    let index = open_resources.index_of(fn(r) { r.0 == resource.0 })
-    if index != -1 {
-      open_resources = open_resources.slice(0, index) + open_resources.slice(index + 1)
+  // 测试对象释放
+  let released_count = 0
+  for (obj_type, obj) in allocated_objects {
+    if MemoryPoolManager::deallocate(memory_pool, obj_type, obj) {
+      released_count = released_count + 1
     }
   }
   
-  assert_eq(cleaned_resources.length(), 5)
-  assert_eq(open_resources.length(), 10)
+  Span::add_event(pool_span, "objects.released", [
+    ("released.count", released_count.to_string()),
+    ("release.timestamp", "2025-01-02T11:00:05Z")
+  ])
   
-  // Verify all cleaned resources are marked as closed
-  let all_closed = cleaned_resources.all(fn(resource) { !resource.2 })
-  assert_true(all_closed)
+  // 验证内存池状态
+  let span_pool_stats = MemoryPoolManager::get_pool_stats(memory_pool, "span_pool")
+  let event_pool_stats = MemoryPoolManager::get_pool_stats(memory_pool, "event_pool")
+  let attr_pool_stats = MemoryPoolManager::get_pool_stats(memory_pool, "attribute_pool")
+  
+  assert_eq(span_pool_stats.total_objects, 1000)
+  assert_eq(event_pool_stats.total_objects, 5000)
+  assert_eq(attr_pool_stats.total_objects, 10000)
+  
+  // 验证对象归还
+  assert_true(span_pool_stats.available_objects > 900)
+  assert_true(event_pool_stats.available_objects > 4500)
+  assert_true(attr_pool_stats.available_objects > 9000)
+  
+  // 记录内存池度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "memory.pool.metrics")
+  
+  let pool_gauge = Meter::create_gauge(meter, "memory.pool.utilization", Some("Memory pool utilization"), Some("percent"))
+  let allocation_counter = Meter::create_counter(meter, "memory.pool.allocations", Some("Memory pool allocations"), Some("count"))
+  
+  Gauge::record_with_attributes(pool_gauge, ((span_pool_stats.total_objects - span_pool_stats.available_objects) * 100 / span_pool_stats.total_objects).to_float(), [("pool.type", "span")])
+  Gauge::record_with_attributes(pool_gauge, ((event_pool_stats.total_objects - event_pool_stats.available_objects) * 100 / event_pool_stats.total_objects).to_float(), [("pool.type", "event")])
+  Gauge::record_with_attributes(pool_gauge, ((attr_pool_stats.total_objects - attr_pool_stats.available_objects) * 100 / attr_pool_stats.total_objects).to_float(), [("pool.type", "attribute")])
+  
+  Counter::add_with_attributes(allocation_counter, allocated_objects.length().to_float(), [("operation", "allocate")])
+  Counter::add_with_attributes(allocation_counter, released_count.to_float(), [("operation", "deallocate")])
+  
+  Span::end(pool_span)
+  
+  assert_true(true)
 }
 
-// Test 8: Resource Pool Auto-scaling
-test "resource pool auto-scaling" {
-  let min_pool_size = 5
-  let max_pool_size = 20
-  let scale_up_threshold = 0.8
-  let scale_down_threshold = 0.3
-  let mut current_pool_size = min_pool_size
-  let mut active_resources = 0
+test "连接池管理测试" {
+  // 测试连接池管理
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "connection.pool.test")
   
-  // Simulate load patterns
-  let load_sequence = [3, 4, 6, 8, 12, 15, 18, 16, 12, 8, 4, 2]
+  // 创建连接池管理器
+  let connection_pool = ConnectionPoolManager::new()
   
-  for load in load_sequence {
-    active_resources = load
-    let utilization = Int::to_float(active_resources) / Int::to_float(current_pool_size)
-    
-    // Scale up if utilization is high
-    if utilization > scale_up_threshold && current_pool_size < max_pool_size {
-      let new_size = if current_pool_size * 2 <= max_pool_size {
-        current_pool_size * 2
-      } else {
-        max_pool_size
-      }
-      current_pool_size = new_size
-    }
-    
-    // Scale down if utilization is low
-    if utilization < scale_down_threshold && current_pool_size > min_pool_size {
-      let new_size = if current_pool_size / 2 >= min_pool_size {
-        current_pool_size / 2
-      } else {
-        min_pool_size
-      }
-      current_pool_size = new_size
+  // 配置数据库连接池
+  ConnectionPoolManager::configure_pool(connection_pool, "database", {
+    "max_connections": 20,
+    "min_connections": 5,
+    "connection_timeout": 5000,
+    "idle_timeout": 30000,
+    "max_lifetime": 3600000
+  })
+  
+  // 配置HTTP连接池
+  ConnectionPoolManager::configure_pool(connection_pool, "http", {
+    "max_connections": 100,
+    "min_connections": 10,
+    "connection_timeout": 3000,
+    "idle_timeout": 60000,
+    "max_lifetime": 1800000
+  })
+  
+  // 创建连接池监控span
+  let conn_span = Tracer::start_span(tracer, "connection.pool.management")
+  Span::set_attribute(conn_span, "operation.type", "connection_pool_management")
+  
+  // 测试连接获取和释放
+  let db_connections = []
+  let http_connections = []
+  
+  // 获取数据库连接
+  for i in 0..=15 {
+    let conn = ConnectionPoolManager::get_connection(connection_pool, "database")
+    if conn != None {
+      db_connections = db_connections.push(conn)
+      Span::add_event(conn_span, "db.connection.acquired", [
+        ("connection.id", ("db_conn_" + i.to_string())),
+        ("timestamp", "2025-01-02T11:05:00Z")
+      ])
     }
   }
   
-  // Final pool size should be reasonable based on load pattern
-  assert_true(current_pool_size >= min_pool_size)
-  assert_true(current_pool_size <= max_pool_size)
+  // 获取HTTP连接
+  for i in 0..=50 {
+    let conn = ConnectionPoolManager::get_connection(connection_pool, "http")
+    if conn != None {
+      http_connections = http_connections.push(conn)
+      Span::add_event(conn_span, "http.connection.acquired", [
+        ("connection.id", ("http_conn_" + i.to_string())),
+        ("timestamp", "2025-01-02T11:05:01Z")
+      ])
+    }
+  }
   
-  // Pool should have scaled up during high load and scaled down during low load
-  assert_true(current_pool_size > min_pool_size) // Should have scaled up at some point
+  // 模拟连接使用
+  for (i, conn) in db_connections.enumerate() {
+    // 模拟数据库操作
+    simulate_database_operation(conn, 100 + i * 10)  // 100ms + 10ms * i
+  }
+  
+  for (i, conn) in http_connections.enumerate() {
+    // 模拟HTTP请求
+    simulate_http_request(conn, 50 + i * 5)  // 50ms + 5ms * i
+  }
+  
+  // 释放连接
+  for conn in db_connections {
+    ConnectionPoolManager::release_connection(connection_pool, "database", conn)
+  }
+  
+  for conn in http_connections {
+    ConnectionPoolManager::release_connection(connection_pool, "http", conn)
+  }
+  
+  Span::add_event(conn_span, "connections.released", [
+    ("db.connections", db_connections.length().to_string()),
+    ("http.connections", http_connections.length().to_string()),
+    ("timestamp", "2025-01-02T11:05:30Z")
+  ])
+  
+  // 验证连接池状态
+  let db_pool_stats = ConnectionPoolManager::get_pool_stats(connection_pool, "database")
+  let http_pool_stats = ConnectionPoolManager::get_pool_stats(connection_pool, "http")
+  
+  assert_eq(db_pool_stats.active_connections, 0)  // 所有连接已释放
+  assert_eq(http_pool_stats.active_connections, 0)  // 所有连接已释放
+  assert_true(db_pool_stats.idle_connections >= 5)  // 至少保持最小连接数
+  assert_true(http_pool_stats.idle_connections >= 10)  // 至少保持最小连接数
+  
+  // 记录连接池度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "connection.pool.metrics")
+  
+  let conn_gauge = Meter::create_gauge(meter, "connection.pool.active", Some("Active connections"), Some("count"))
+  let wait_histogram = Meter::create_histogram(meter, "connection.wait.time", Some("Connection wait time"), Some("ms"))
+  
+  Gauge::record_with_attributes(conn_gauge, db_pool_stats.active_connections.to_float(), [("pool.type", "database")])
+  Gauge::record_with_attributes(conn_gauge, http_pool_stats.active_connections.to_float(), [("pool.type", "http")])
+  
+  // 模拟等待时间分布
+  for wait_time in 1..=100 {
+    Histogram::record(wait_histogram, wait_time.to_float())
+  }
+  
+  Span::end(conn_span)
+  
+  assert_true(true)
+}
+
+test "缓存管理测试" {
+  // 测试缓存管理
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "cache.management.test")
+  
+  // 创建缓存管理器
+  let cache_manager = CacheManager::new()
+  
+  // 配置不同类型的缓存
+  CacheManager::configure_cache(cache_manager, "trace_cache", {
+    "max_size": 10000,
+    "ttl": 3600000,  // 1小时
+    "eviction_policy": "lru"
+  })
+  
+  CacheManager::configure_cache(cache_manager, "metric_cache", {
+    "max_size": 50000,
+    "ttl": 300000,   // 5分钟
+    "eviction_policy": "lfu"
+  })
+  
+  CacheManager::configure_cache(cache_manager, "config_cache", {
+    "max_size": 1000,
+    "ttl": 86400000, // 24小时
+    "eviction_policy": "fifo"
+  })
+  
+  // 创建缓存管理span
+  let cache_span = Tracer::start_span(tracer, "cache.management")
+  Span::set_attribute(cache_span, "operation.type", "cache_management")
+  
+  // 测试缓存写入和读取
+  let trace_cache_keys = []
+  let metric_cache_keys = []
+  let config_cache_keys = []
+  
+  // 写入trace缓存
+  for i in 0..=5000 {
+    let key = "trace_" + i.to_string()
+    let value = {
+      "trace_id": "trace_" + i.to_string(),
+      "span_count": i % 10 + 1,
+      "duration": i * 10,
+      "status": i % 5 == 0 ? "error" : "success"
+    }
+    
+    CacheManager::put(cache_manager, "trace_cache", key, value)
+    trace_cache_keys = trace_cache_keys.push(key)
+  }
+  
+  // 写入metric缓存
+  for i in 0..=20000 {
+    let key = "metric_" + i.to_string()
+    let value = {
+      "metric_name": "response_time",
+      "value": i % 1000,
+      "timestamp": 1735689600000 + i,
+      "tags": ["service:api", "endpoint:/users"]
+    }
+    
+    CacheManager::put(cache_manager, "metric_cache", key, value)
+    metric_cache_keys = metric_cache_keys.push(key)
+  }
+  
+  // 写入config缓存
+  for i in 0..=500 {
+    let key = "config_" + i.to_string()
+    let value = {
+      "service_name": "service_" + (i % 10).to_string(),
+      "sampling_rate": i % 100 / 100.0,
+      "batch_size": 512 + i % 512,
+      "export_interval": 5000 + i % 5000
+    }
+    
+    CacheManager::put(cache_manager, "config_cache", key, value)
+    config_cache_keys = config_cache_keys.push(key)
+  }
+  
+  Span::add_event(cache_span, "cache.populated", [
+    ("trace.cache.size", trace_cache_keys.length().to_string()),
+    ("metric.cache.size", metric_cache_keys.length().to_string()),
+    ("config.cache.size", config_cache_keys.length().to_string()),
+    ("timestamp", "2025-01-02T11:10:00Z")
+  ])
+  
+  // 测试缓存读取
+  let trace_hits = 0
+  let metric_hits = 0
+  let config_hits = 0
+  
+  // 读取trace缓存
+  for key in trace_cache_keys {
+    if CacheManager::get(cache_manager, "trace_cache", key) != None {
+      trace_hits = trace_hits + 1
+    }
+  }
+  
+  // 读取metric缓存
+  for key in metric_cache_keys {
+    if CacheManager::get(cache_manager, "metric_cache", key) != None {
+      metric_hits = metric_hits + 1
+    }
+  }
+  
+  // 读取config缓存
+  for key in config_cache_keys {
+    if CacheManager::get(cache_manager, "config_cache", key) != None {
+      config_hits = config_hits + 1
+    }
+  }
+  
+  Span::add_event(cache_span, "cache.accessed", [
+    ("trace.cache.hits", trace_hits.to_string()),
+    ("metric.cache.hits", metric_hits.to_string()),
+    ("config.cache.hits", config_hits.to_string()),
+    ("timestamp", "2025-01-02T11:10:30Z")
+  ])
+  
+  // 验证缓存命中率
+  let trace_stats = CacheManager::get_cache_stats(cache_manager, "trace_cache")
+  let metric_stats = CacheManager::get_cache_stats(cache_manager, "metric_cache")
+  let config_stats = CacheManager::get_cache_stats(cache_manager, "config_cache")
+  
+  assert_true(trace_stats.hit_rate > 0.95)  // 高命中率
+  assert_true(metric_stats.hit_rate > 0.95)  // 高命中率
+  assert_true(config_stats.hit_rate > 0.95)  // 高命中率
+  
+  // 测试缓存过期和清理
+  CacheManager::expire_entries(cache_manager, "trace_cache", 1735689600000L)
+  CacheManager::cleanup_expired(cache_manager, "metric_cache")
+  
+  Span::add_event(cache_span, "cache.cleaned", [
+    ("cleanup.timestamp", "2025-01-02T11:11:00Z")
+  ])
+  
+  // 记录缓存度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "cache.metrics")
+  
+  let hit_rate_gauge = Meter::create_gauge(meter, "cache.hit.rate", Some("Cache hit rate"), Some("percent"))
+  let size_gauge = Meter::create_gauge(meter, "cache.size", Some("Cache size"), Some("entries"))
+  
+  Gauge::record_with_attributes(hit_rate_gauge, trace_stats.hit_rate * 100, [("cache.type", "trace")])
+  Gauge::record_with_attributes(hit_rate_gauge, metric_stats.hit_rate * 100, [("cache.type", "metric")])
+  Gauge::record_with_attributes(hit_rate_gauge, config_stats.hit_rate * 100, [("cache.type", "config")])
+  
+  Gauge::record_with_attributes(size_gauge, trace_stats.size.to_float(), [("cache.type", "trace")])
+  Gauge::record_with_attributes(size_gauge, metric_stats.size.to_float(), [("cache.type", "metric")])
+  Gauge::record_with_attributes(size_gauge, config_stats.size.to_float(), [("cache.type", "config")])
+  
+  Span::end(cache_span)
+  
+  assert_true(true)
+}
+
+test "资源限制和节流测试" {
+  // 测试资源限制和节流
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.limiting.test")
+  
+  // 创建资源限制管理器
+  let limiter = ResourceLimiter::new()
+  
+  // 配置资源限制
+  ResourceLimiter::configure_limit(limiter, "spans_per_second", 1000, "sliding_window")
+  ResourceLimiter::configure_limit(limiter, "memory_usage_mb", 500, "hard_limit")
+  ResourceLimiter::configure_limit(limiter, "concurrent_operations", 50, "semaphore")
+  ResourceLimiter::configure_limit(limiter, "cpu_usage_percent", 80, "adaptive")
+  
+  // 创建资源限制监控span
+  let limit_span = Tracer::start_span(tracer, "resource.limiting")
+  Span::set_attribute(limit_span, "operation.type", "resource_limiting")
+  
+  // 测试span生成节流
+  let span_creation_results = []
+  let spans_created = 0
+  
+  for i in 0..=1500 {  // 超过限制
+    if ResourceLimiter::check_limit(limiter, "spans_per_second") {
+      let span = Tracer::start_span(tracer, "throttled.test.span." + i.to_string())
+      spans_created = spans_created + 1
+      span_creation_results = span_creation_results.push(("allowed", i))
+      Span::end(span)
+    } else {
+      span_creation_results = span_creation_results.push(("throttled", i))
+    }
+  }
+  
+  Span::add_event(limit_span, "span.throttling.completed", [
+    ("total.attempts", "1500"),
+    ("spans.created", spans_created.to_string()),
+    ("spans.throttled", (1500 - spans_created).to_string()),
+    ("timestamp", "2025-01-02T11:15:00Z")
+  ])
+  
+  // 验证节流效果
+  assert_true(spans_created <= 1000)  // 不应超过限制
+  
+  // 测试内存使用限制
+  let memory_allocation_results = []
+  let memory_allocated_mb = 0
+  
+  for i in 0..=10 {
+    let allocation_size_mb = 50 + i * 10  // 50MB到140MB
+    if ResourceLimiter::check_limit(limiter, "memory_usage_mb", allocation_size_mb) {
+      memory_allocated_mb = memory_allocated_mb + allocation_size_mb
+      memory_allocation_results = memory_allocation_results.push(("allocated", allocation_size_mb))
+    } else {
+      memory_allocation_results = memory_allocation_results.push(("rejected", allocation_size_mb))
+    }
+  }
+  
+  Span::add_event(limit_span, "memory.limiting.completed", [
+    ("memory.allocated.mb", memory_allocated_mb.to_string()),
+    ("timestamp", "2025-01-02T11:15:30Z")
+  ])
+  
+  // 验证内存限制
+  assert_true(memory_allocated_mb <= 500)  // 不应超过限制
+  
+  // 测试并发操作限制
+  let concurrent_operations = []
+  let successful_operations = 0
+  
+  for i in 0..=100 {  // 超过并发限制
+    if ResourceLimiter::acquire_semaphore(limiter, "concurrent_operations") {
+      concurrent_operations = concurrent_operations.push(i)
+      successful_operations = successful_operations + 1
+      
+      // 模拟操作执行
+      simulate_operation(100)  // 100ms操作
+      
+      ResourceLimiter::release_semaphore(limiter, "concurrent_operations")
+    }
+  }
+  
+  Span::add_event(limit_span, "concurrency.limiting.completed", [
+    ("total.attempts", "100"),
+    ("successful.operations", successful_operations.to_string()),
+    ("timestamp", "2025-01-02T11:16:00Z")
+  ])
+  
+  // 验证并发限制
+  assert_true(successful_operations <= 50)  // 不应超过限制
+  
+  // 记录资源限制度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "resource.limiting.metrics")
+  
+  let throttle_counter = Meter::create_counter(meter, "resource.throttled.total", Some("Total throttled requests"), Some("count"))
+  let limit_gauge = Meter::create_gauge(meter, "resource.utilization", Some("Resource utilization"), Some("percent"))
+  
+  Counter::add_with_attributes(throttle_counter, (1500 - spans_created).to_float(), [("resource.type", "spans")])
+  Counter::add_with_attributes(throttle_counter, (10 - memory_allocation_results.filter(fn(r) { r.0 == "allocated" }).length()).to_float(), [("resource.type", "memory")])
+  
+  Gauge::record_with_attributes(limit_gauge, (spans_created * 100 / 1000).to_float(), [("resource.type", "spans")])
+  Gauge::record_with_attributes(limit_gauge, (memory_allocated_mb * 100 / 500).to_float(), [("resource.type", "memory")])
+  
+  Span::end(limit_span)
+  
+  assert_true(true)
+}
+
+test "资源自动回收测试" {
+  // 测试资源自动回收
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.reclamation.test")
+  
+  // 创建资源回收管理器
+  let reclamation_manager = ResourceReclamationManager::new()
+  
+  // 配置自动回收策略
+  ResourceReclamationManager::configure_reclamation(reclamation_manager, {
+    "gc_interval": 60000,        // 1分钟
+    "memory_threshold": 0.8,     // 80%内存使用率触发GC
+    "object_age_threshold": 300000, // 5分钟未使用的对象
+    "force_gc_threshold": 0.9    // 90%内存使用率强制GC
+  })
+  
+  // 创建资源回收监控span
+  let reclamation_span = Tracer::start_span(tracer, "resource.reclamation")
+  Span::set_attribute(reclamation_span, "operation.type", "resource_reclamation")
+  
+  // 创建大量资源对象
+  let resource_objects = []
+  for i in 0..=10000 {
+    let obj = {
+      "id": i,
+      "type": i % 3 == 0 ? "span" : i % 3 == 1 ? "metric" : "log",
+      "size": 1024 * (i % 10 + 1),  // 1KB到10KB
+      "created_at": 1735689600000L + i * 1000,
+      "last_accessed": 1735689600000L + i * 1000
+    }
+    resource_objects = resource_objects.push(obj)
+  }
+  
+  Span::add_event(reclamation_span, "resources.created", [
+    ("total.objects", resource_objects.length().to_string()),
+    ("estimated.memory.mb", (resource_objects.length() * 5).to_string()),  // 假设平均5KB每个
+    ("timestamp", "2025-01-02T11:20:00Z")
+  ])
+  
+  // 模拟部分资源被访问
+  for i in 0..=2000 {
+    if i % 2 == 0 {
+      resource_objects[i].last_accessed = 1735689600000L + 300000L  // 5分钟后访问
+    }
+  }
+  
+  // 触发自动回收
+  let reclamation_result = ResourceReclamationManager::trigger_reclamation(reclamation_manager, resource_objects)
+  
+  Span::add_event(reclamation_span, "reclamation.completed", [
+    ("objects.before", resource_objects.length().to_string()),
+    ("objects.after", reclamation_result.remaining_objects.to_string()),
+    ("objects.reclaimed", reclamation_result.reclaimed_objects.to_string()),
+    ("memory.freed.mb", reclamation_result.memory_freed_mb.to_string()),
+    ("reclamation.duration.ms", reclamation_result.duration_ms.to_string()),
+    ("timestamp", "2025-01-02T11:21:00Z")
+  ])
+  
+  // 验证回收效果
+  assert_true(reclamation_result.reclaimed_objects > 0)  // 有对象被回收
+  assert_true(reclamation_result.memory_freed_mb > 0)   // 有内存被释放
+  
+  // 测试内存压力下的强制回收
+  let high_memory_objects = []
+  for i in 0..=5000 {
+    let obj = {
+      "id": i,
+      "type": "large_buffer",
+      "size": 1024 * 100,  // 100KB每个
+      "created_at": 1735689600000L,
+      "last_accessed": 1735689600000L
+    }
+    high_memory_objects = high_memory_objects.push(obj)
+  }
+  
+  // 模拟高内存压力
+  let memory_pressure = 0.92  // 92%内存使用率
+  let force_reclamation_result = ResourceReclamationManager::trigger_force_reclamation(
+    reclamation_manager, 
+    high_memory_objects, 
+    memory_pressure
+  )
+  
+  Span::add_event(reclamation_span, "force.reclamation.completed", [
+    ("memory.pressure", memory_pressure.to_string()),
+    ("objects.reclaimed", force_reclamation_result.reclaimed_objects.to_string()),
+    ("memory.freed.mb", force_reclamation_result.memory_freed_mb.to_string()),
+    ("timestamp", "2025-01-02T11:22:00Z")
+  ])
+  
+  // 验证强制回收效果
+  assert_true(force_reclamation_result.reclaimed_objects > 0)
+  assert_true(force_reclamation_result.memory_freed_mb > 0)
+  
+  // 记录资源回收度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "resource.reclamation.metrics")
+  
+  let reclamation_counter = Meter::create_counter(meter, "resource.reclamation.cycles", Some("Reclamation cycles"), Some("count"))
+  let memory_histogram = Meter::create_histogram(meter, "memory.freed.mb", Some("Memory freed per cycle"), Some("MB"))
+  
+  Counter::add(reclamation_counter, 1.0)  // 正常回收
+  Counter::add(reclamation_counter, 1.0)  // 强制回收
+  
+  Histogram::record(memory_histogram, reclamation_result.memory_freed_mb.to_float())
+  Histogram::record(memory_histogram, force_reclamation_result.memory_freed_mb.to_float())
+  
+  Span::end(reclamation_span)
+  
+  assert_true(true)
 }

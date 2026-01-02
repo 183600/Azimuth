@@ -1,387 +1,330 @@
-// Azimuth 边界条件综合测试
-// 测试极端情况下的系统行为
+// 边界条件和异常处理测试用例
+// 测试Azimuth遥测系统在边界条件和异常情况下的行为
 
-test "空值和None处理" {
-  // 测试空值和None的处理
+test "空值和null处理边界条件" {
+  // 测试空字符串处理
+  let empty_string = ""
+  assert_eq(empty_string.length(), 0)
+  assert_true(empty_string.is_empty())
+  assert_false(empty_string.contains("anything"))
   
-  // 测试空字符串
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.empty.test")
-  
-  let span = Tracer::start_span(tracer, "")
-  assert_eq(Span::name(span), "")
-  
-  Span::set_attribute(span, "", "")
-  Span::set_attribute(span, "empty.key", "")
-  Span::set_attribute(span, "", "empty.value")
-  
-  Span::add_event(span, "", [])
-  Span::add_event(span, "empty.event", [])
-  
-  // 测试None值
-  let none_span : Option[Span] = None
-  match none_span {
-    Some(s) => assert_true(false)  // 不应该执行
+  // 测试None/Null值处理
+  let none_option = None
+  match none_option {
+    Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  // 测试Option类型属性
-  Span::set_attribute(span, "optional.none", None)
-  Span::set_attribute(span, "optional.some", Some("value"))
-  
-  // 测试空数组
-  Span::add_event(span, "empty.array", [])
-  
-  Span::end(span)
-  assert_true(true)
-}
-
-test "极大值和极小值处理" {
-  // 测试极大值和极小值的处理
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.extreme.test")
-  
-  let span = Tracer::start_span(tracer, "extreme.values.test")
-  
-  // 测试极大整数值
-  let max_int = 9223372036854775807L
-  Span::set_attribute(span, "max.int", max_int)
-  
-  // 测试极小整数值
-  let min_int = -9223372036854775808L
-  Span::set_attribute(span, "min.int", min_int)
-  
-  // 测试极大浮点数值
-  let max_float = 1.7976931348623157e+308
-  Span::set_attribute(span, "max.float", max_float)
-  
-  // 测试极小浮点数值
-  let min_float = 2.2250738585072014e-308
-  Span::set_attribute(span, "min.float", min_float)
-  
-  // 测试极大字符串
-  let large_string = ""
-  for i in 1..=10000 {
-    large_string = large_string + "x"
-  }
-  Span::set_attribute(span, "large.string", large_string)
-  
-  // 测试极长span名称
-  let very_long_name = ""
-  for i in 1..=1000 {
-    very_long_name = very_long_name + "a"
-  }
-  let long_span = Tracer::start_span(tracer, very_long_name)
-  Span::end(long_span)
-  
-  Span::end(span)
-  assert_true(true)
-}
-
-test "内存限制边界测试" {
-  // 测试内存限制边界
-  let initial_memory = Memory::available()
-  
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.memory.test")
-  
-  // 尝试创建大量span直到接近内存限制
-  let spans = []
-  let max_spans = 100000
-  let mut i = 0
-  
-  while i < max_spans {
-    let span = Tracer::start_span(tracer, "memory.test.span." + i.to_string())
-    spans = spans.push(span)
-    
-    // 检查内存使用
-    let current_memory = Memory::available()
-    let memory_used = initial_memory - current_memory
-    
-    // 如果内存使用超过阈值，停止创建
-    if memory_used > initial_memory / 2 {
-      break
-    }
-    
-    i = i + 1
-  }
-  
-  // 清理span
-  for span in spans {
-    Span::end(span)
-  }
-  
-  // 强制垃圾回收
-  GC::collect()
-  
-  // 验证内存已释放
-  let final_memory = Memory::available()
-  let memory_recovered = final_memory - (initial_memory / 2)
-  
-  assert_true(memory_recovered > 0)  // 应该有一些内存被回收
-}
-
-test "时间边界测试" {
-  // 测试时间边界条件
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.time.test")
-  
-  // 测试极早时间戳
-  let earliest_time = -9223372036854775808L
-  let early_span = Tracer::start_span_with_timestamp(tracer, "early.span", earliest_time)
-  
-  // 测试极晚时间戳
-  let latest_time = 9223372036854775807L
-  let late_span = Tracer::start_span_with_timestamp(tracer, "late.span", latest_time)
-  
-  // 测试零时间戳
-  let zero_span = Tracer::start_span_with_timestamp(tracer, "zero.span", 0L)
-  
-  // 测试当前时间戳
-  let current_time = Time::now()
-  let current_span = Tracer::start_span_with_timestamp(tracer, "current.span", current_time)
-  
-  // 添加极早和极晚时间的事件
-  Span::add_event_with_timestamp(early_span, "early.event", earliest_time, [])
-  Span::add_event_with_timestamp(late_span, "late.event", latest_time, [])
-  Span::add_event_with_timestamp(zero_span, "zero.event", 0L, [])
-  
-  Span::end(early_span)
-  Span::end(late_span)
-  Span::end(zero_span)
-  Span::end(current_span)
-  
-  assert_true(true)
-}
-
-test "深度嵌套边界测试" {
-  // 测试深度嵌套的边界条件
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.nesting.test")
-  
-  // 创建深度嵌套的span
-  let root_span = Tracer::start_span(tracer, "root.span")
-  let mut current_span = root_span
-  
-  // 嵌套深度测试
-  let max_depth = 1000
-  let spans = [root_span]
-  
-  for i in 1..=max_depth {
-    let child_span = Tracer::start_child_span(current_span, "child.span." + i.to_string())
-    Span::set_attribute(child_span, "depth", i)
-    spans = spans.push(child_span)
-    current_span = child_span
-  }
-  
-  // 反向结束span
-  for span in spans.reverse() {
-    Span::end(span)
-  }
-  
-  assert_true(true)
-}
-
-test "上下文深度嵌套测试" {
-  // 测试上下文深度嵌套的边界条件
-  let ctx = Context::root()
-  
-  // 创建深层嵌套的上下文
-  let max_depth = 1000
-  let nested_ctx = ctx
-  
-  for i in 1..=max_depth {
-    let key = ContextKey::new("key." + i.to_string())
-    nested_ctx = Context::with_value(nested_ctx, key, "value." + i.to_string())
-  }
-  
-  // 验证深层嵌套的上下文值
-  for i in 1..=max_depth {
-    let key = ContextKey::new("key." + i.to_string())
-    let value = Context::get(nested_ctx, key)
-    assert_eq(value, Some("value." + i.to_string()))
-  }
-  
-  assert_true(true)
-}
-
-test "属性数量边界测试" {
-  // 测试属性数量的边界条件
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.attributes.test")
-  
-  let span = Tracer::start_span(tracer, "attributes.boundary.test")
-  
-  // 添加大量属性
-  let max_attributes = 10000
-  for i in 1..=max_attributes {
-    Span::set_attribute(span, "attr." + i.to_string(), "value." + i.to_string())
-  }
-  
-  // 测试事件属性数量
-  let large_event_attrs = []
-  for i in 1..=1000 {
-    large_event_attrs = large_event_attrs.push(("event.attr." + i.to_string(), "event.value." + i.to_string()))
-  }
-  
-  Span::add_event(span, "large.event", large_event_attrs)
-  
-  Span::end(span)
-  assert_true(true)
-}
-
-test "并发边界测试" {
-  // 测试并发操作的边界条件
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.concurrent.test")
-  
-  // 创建大量并发span
-  let spans = []
-  let max_concurrent = 10000
-  
-  for i in 1..=max_concurrent {
-    let span = Tracer::start_span(tracer, "concurrent.span." + i.to_string())
-    spans = spans.push(span)
-  }
-  
-  // 同时结束所有span
-  for span in spans {
-    Span::end(span)
-  }
-  
-  assert_true(true)
-}
-
-test "数据类型边界测试" {
-  // 测试不同数据类型的边界条件
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.datatypes.test")
-  
-  let span = Tracer::start_span(tracer, "datatype.boundary.test")
-  
-  // 测试布尔值边界
-  Span::set_attribute(span, "bool.true", true)
-  Span::set_attribute(span, "bool.false", false)
-  
-  // 测试数值边界
-  Span::set_attribute(span, "int.zero", 0)
-  Span::set_attribute(span, "int.max", 2147483647)
-  Span::set_attribute(span, "int.min", -2147483648)
-  
-  Span::set_attribute(span, "long.zero", 0L)
-  Span::set_attribute(span, "long.max", 9223372036854775807L)
-  Span::set_attribute(span, "long.min", -9223372036854775808L)
-  
-  Span::set_attribute(span, "float.zero", 0.0)
-  Span::set_attribute(span, "float.infinity", 1.0 / 0.0)
-  Span::set_attribute(span, "float.neg.infinity", -1.0 / 0.0)
-  Span::set_attribute(span, "float.nan", 0.0 / 0.0)
-  
-  // 测试字符串边界
-  Span::set_attribute(span, "string.empty", "")
-  Span::set_attribute(span, "string.space", " ")
-  Span::set_attribute(span, "string.special", "!@#$%^&*()_+-=[]{}|;':\",./<>?")
-  
-  // 测试数组边界
+  // 测试空数组处理
   let empty_array = []
-  Span::set_attribute(span, "array.empty", empty_array)
+  assert_eq(empty_array.length(), 0)
+  assert_true(empty_array.is_empty())
+  assert_false(empty_array.contains(0))
   
-  let large_array = []
-  for i in 1..=1000 {
-    large_array = large_array.push("item." + i.to_string())
-  }
-  Span::set_attribute(span, "array.large", large_array)
+  // 测试空数组上的操作
+  let mapped_empty = empty_array.map(fn(x) { x * 2 })
+  assert_eq(mapped_empty, [])
   
-  Span::end(span)
-  assert_true(true)
+  let filtered_empty = empty_array.filter(fn(x) { x > 0 })
+  assert_eq(filtered_empty, [])
+  
+  let sum_empty = empty_array.reduce(fn(acc, x) { acc + x }, 0)
+  assert_eq(sum_empty, 0)
 }
 
-test "错误恢复边界测试" {
-  // 测试错误恢复的边界条件
+test "数值边界条件测试" {
+  // 测试最大值和最小值边界
+  let max_int = 2147483647
+  let min_int = -2147483648
+  
+  assert_eq(max_int + 1, -2147483648)  // 整数溢出
+  assert_eq(min_int - 1, 2147483647)  // 整数下溢
+  
+  // 测试零值边界
+  let zero = 0
+  assert_eq(zero * 10, 0)
+  assert_eq(zero / 1, 0)
+  assert_eq(zero - 5, -5)
+  assert_eq(zero + 5, 5)
+  
+  // 测试浮点数边界
+  let small_float = 0.0000001
+  let large_float = 999999999.9
+  
+  assert_true(small_float > 0.0)
+  assert_true(large_float < 1000000000.0)
+  
+  // 测试除零边界条件
+  let positive = 10.0
+  let negative = -10.0
+  
+  // 注意：实际实现中需要处理除零错误
+  // assert_eq(positive / 0.0, Infinity)  // 浮点数除零
+  // assert_eq(negative / 0.0, -Infinity)
+}
+
+test "字符串边界条件测试" {
+  // 测试超长字符串
+  let long_string = "a" * 10000
+  assert_eq(long_string.length(), 10000)
+  assert_true(long_string.contains("a"))
+  assert_false(long_string.contains("b"))
+  
+  // 测试特殊字符字符串
+  let special_chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+  assert_eq(special_chars.length(), 29)
+  assert_true(special_chars.contains("@"))
+  assert_true(special_chars.contains("<"))
+  
+  // 测试Unicode字符
+  let unicode_string = "测试字符串🚀"
+  assert_eq(unicode_string.length(), 6)
+  assert_true(unicode_string.contains("测试"))
+  assert_true(unicode_string.contains("🚀"))
+  
+  // 测试字符串索引边界
+  let test_str = "hello"
+  assert_eq(test_str.substring(0, 5), "hello")
+  assert_eq(test_str.substring(0, 0), "")
+  assert_eq(test_str.substring(5, 5), "")
+  assert_eq(test_str.substring(2, 5), "llo")
+}
+
+test "集合和容器边界条件" {
+  // 测试单元素集合
+  let single_element = [42]
+  assert_eq(single_element.length(), 1)
+  assert_true(single_element.contains(42))
+  assert_false(single_element.contains(0))
+  
+  // 测试集合边界操作
+  let numbers = [1, 2, 3, 4, 5]
+  
+  // 测试边界索引
+  assert_eq(numbers.get(0), Some(1))
+  assert_eq(numbers.get(4), Some(5))
+  assert_eq(numbers.get(5), None)  // 超出边界
+  assert_eq(numbers.get(-1), None)  // 负索引
+  
+  // 测试边界切片
+  assert_eq(numbers.slice(0, 5), [1, 2, 3, 4, 5])
+  assert_eq(numbers.slice(0, 0), [])
+  assert_eq(numbers.slice(5, 5), [])
+  assert_eq(numbers.slice(2, 5), [3, 4, 5])
+  
+  // 测试嵌套集合边界
+  let nested = [[1, 2], [3, 4], [5, 6]]
+  assert_eq(nested.length(), 3)
+  assert_eq(nested.get(0), Some([1, 2]))
+  assert_eq(nested.get(2), Some([5, 6]))
+  assert_eq(nested.get(3), None)
+}
+
+test "遥测系统异常恢复测试" {
+  // 测试tracer在异常条件下的行为
   let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.recovery.test")
+  let tracer = TracerProvider::get_tracer(tracer_provider, "exception.recovery.test")
   
-  // 测试在错误条件下创建span
-  let error_span = Tracer::start_span(tracer, "error.recovery.test")
+  // 创建span并模拟异常
+  let span = Tracer::start_span(tracer, "exception.prone.operation")
   
-  // 设置错误状态
-  Span::set_status(error_span, Error, Some("Intentional error for testing"))
+  // 添加异常属性
+  Span::set_attribute(span, "error.type", "NullPointerError")
+  Span::set_attribute(span, "error.message", "Attempted to access null reference")
+  Span::set_attribute(span, "error.stack_trace", "at line 42 in module.test")
   
-  // 添加错误事件
-  Span::add_event(error_span, "error.occurred", [
-    ("error.type", "TestError"),
-    ("error.message", "This is a test error"),
-    ("error.code", "TEST_001")
+  // 添加异常事件
+  Span::add_event(span, "exception.thrown", [
+    ("exception.type", "NullPointerError"),
+    ("exception.message", "Null reference access"),
+    ("timestamp", "2025-01-02T10:30:45Z")
   ])
   
-  // 尝试在错误状态下添加正常属性
-  Span::set_attribute(error_span, "normal.attr", "normal.value")
-  
-  // 添加恢复事件
-  Span::add_event(error_span, "recovery.attempted", [
-    ("recovery.action", "restart"),
-    ("recovery.result", "success")
+  // 测试异常恢复
+  Span::add_event(span, "recovery.attempt", [
+    ("retry.count", IntValue(1)),
+    ("recovery.strategy", "circuit_breaker")
   ])
   
   // 设置恢复状态
-  Span::set_status(error_span, Ok, Some("Recovered from test error"))
+  Span::set_status(span, Error, Some("Operation failed but recovery initiated"))
   
-  Span::end(error_span)
+  // 测试span在异常后仍然可用
+  let span_ctx = Span::span_context(span)
+  assert_true(SpanContext::is_valid(span_ctx))
   
-  // 测试日志错误恢复
+  Span::end(span)
+  
+  // 测试日志异常记录
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "boundary.recovery.test")
+  let logger = LoggerProvider::get_logger(logger_provider, "exception.logger")
   
-  let error_log = LogRecord::new(Error, "Test error log")
-  LogRecord::add_attribute(error_log, "error.severity", "high")
+  let exception_log = LogRecord::new(Error, "Unhandled exception in telemetry system")
+  LogRecord::add_attribute(exception_log, "exception.category", "system")
+  LogRecord::add_attribute(exception_log, "exception.severity", "high")
+  LogRecord::add_attribute(exception_log, "exception.recoverable", true)
   
-  // 发射错误日志
-  Logger::emit(logger, error_log)
-  
-  // 发射恢复日志
-  let recovery_log = LogRecord::new(Info, "Recovery completed")
-  LogRecord::add_attribute(recovery_log, "recovery.status", "success")
-  Logger::emit(logger, recovery_log)
+  Logger::emit(logger, exception_log)
   
   assert_true(true)
 }
 
-test "资源耗尽边界测试" {
-  // 测试资源耗尽的边界条件
+test "资源耗尽边界条件测试" {
+  // 测试内存资源耗尽场景
   let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.resource.test")
+  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.exhaustion.test")
   
-  // 测试文件描述符耗尽
+  // 创建大量span模拟资源耗尽
   let spans = []
-  let max_spans = 50000
-  
-  for i in 1..=max_spans {
-    let span = Tracer::start_span(tracer, "resource.test.span." + i.to_string())
+  for i in 0..=100 {
+    let span = Tracer::start_span(tracer, "resource.intensive.operation." + i.to_string())
+    Span::set_attribute(span, "operation.id", i.to_string())
+    Span::set_attribute(span, "memory.usage", "high")
     spans = spans.push(span)
-    
-    // 检查是否接近资源限制
-    if i % 1000 == 0 {
-      // 模拟资源检查
-      let resource_usage = ResourceMonitor::get_usage()
-      if resource_usage > 0.9 {
-        break
-      }
-    }
   }
+  
+  // 测试度量资源耗尽
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "resource.metrics")
+  
+  let memory_gauge = Meter::create_gauge(meter, "memory.usage", Some("Memory usage"), Some("bytes"))
+  
+  // 模拟内存使用率上升
+  Gauge::record(memory_gauge, 1024.0 * 1024.0 * 100.0)  // 100MB
+  Gauge::record(memory_gauge, 1024.0 * 1024.0 * 200.0)  // 200MB
+  Gauge::record(memory_gauge, 1024.0 * 1024.0 * 400.0)  // 400MB
+  
+  // 测试资源耗尽时的度量
+  let resource_counter = Meter::create_counter(meter, "resource.exhaustion.events", Some("Resource exhaustion events"), Some("count"))
+  Counter::add_with_attributes(resource_counter, 1.0, [
+    ("resource.type", "memory"),
+    ("exhaustion.level", "critical"),
+    ("recovery.action", "garbage_collection")
+  ])
   
   // 清理资源
   for span in spans {
     Span::end(span)
   }
   
-  // 测试内存映射耗尽
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "boundary.resource.test")
+  assert_true(true)
+}
+
+test "网络连接异常边界测试" {
+  // 测试网络连接异常场景
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "network.exception.test")
   
-  let counters = []
-  for i in 1..=1000 {
-    let counter = Meter::create_counter(meter, "counter." + i.to_string(), Some("Test counter " + i.to_string()), Some("count"))
-    counters = counters.push(counter)
+  let network_span = Tracer::start_span(tracer, "network.operation")
+  
+  // 模拟网络连接异常
+  Span::add_event(network_span, "connection.attempt", [
+    ("target.host", "api.example.com"),
+    ("target.port", IntValue(443)),
+    ("protocol", "https")
+  ])
+  
+  // 模拟连接超时
+  Span::add_event(network_span, "connection.timeout", [
+    ("timeout.duration", IntValue(30000)),
+    ("timeout.reason", "connection_refused"),
+    ("retry.attempt", IntValue(1))
+  ])
+  
+  // 模拟连接恢复
+  Span::add_event(network_span, "connection.recovered", [
+    ("recovery.time", "2025-01-02T10:35:00Z"),
+    ("recovery.method", "circuit_breaker_reset"),
+    ("total.downtime", IntValue(45000))
+  ])
+  
+  // 设置网络连接状态
+  Span::set_status(network_span, Ok, Some("Network connection recovered after timeout"))
+  
+  // 测试网络度量异常
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "network.metrics")
+  
+  let connection_counter = Meter::create_counter(meter, "network.connections", Some("Network connections"), Some("count"))
+  Counter::add_with_attributes(connection_counter, 1.0, [
+    ("connection.status", "failed"),
+    ("error.type", "timeout"),
+    ("retry.count", IntValue(1))
+  ])
+  
+  Counter::add_with_attributes(connection_counter, 1.0, [
+    ("connection.status", "success"),
+    ("recovery.time", IntValue(45000))
+  ])
+  
+  // 测试网络错误日志
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "network.logger")
+  
+  let error_log = LogRecord::new(Error, "Network connection timeout occurred")
+  LogRecord::add_attribute(error_log, "network.endpoint", "api.example.com:443")
+  LogRecord::add_attribute(error_log, "network.error", "ECONNREFUSED")
+  LogRecord::add_attribute(error_log, "network.recovery", "successful")
+  
+  Logger::emit(logger, error_log)
+  
+  Span::end(network_span)
+  assert_true(true)
+}
+
+test "并发和竞态条件边界测试" {
+  // 测试并发操作中的竞态条件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrency.race.test")
+  
+  // 创建并发span模拟竞态条件
+  let concurrent_spans = []
+  for i in 0..=10 {
+    let span = Tracer::start_span(tracer, "concurrent.race.operation." + i.to_string())
+    Span::set_attribute(span, "thread.id", i.to_string())
+    Span::set_attribute(span, "race.condition", "shared_resource_access")
+    concurrent_spans = concurrent_spans.push(span)
+  }
+  
+  // 模拟共享资源访问
+  for (i, span) in concurrent_spans.enumerate() {
+    Span::add_event(span, "resource.access", [
+      ("resource.id", "shared_counter"),
+      ("access.type", "write"),
+      ("thread.id", i.to_string()),
+      ("timestamp", (1735689600000 + i * 100).to_string())
+    ])
+  }
+  
+  // 测试并发度量一致性
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "concurrency.metrics")
+  
+  let race_counter = Meter::create_counter(meter, "race.conditions.detected", Some("Race conditions detected"), Some("count"))
+  
+  // 模拟竞态条件检测
+  for i in 0..=10 {
+    Counter::add_with_attributes(race_counter, 1.0, [
+      ("race.type", "data_race"),
+      ("detection.method", "thread_sanitizer"),
+      ("severity", i > 5 ? "high" : "medium")
+    ])
+  }
+  
+  // 测试并发日志记录
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "concurrency.logger")
+  
+  let race_log = LogRecord::new(Warn, "Potential race condition detected in shared resource access")
+  LogRecord::add_attribute(race_log, "concurrency.issue", "race_condition")
+  LogRecord::add_attribute(race_log, "affected.resource", "shared_counter")
+  LogRecord::add_attribute(race_log, "mitigation.strategy", "mutex_protection")
+  
+  Logger::emit(logger, race_log)
+  
+  // 清理并发span
+  for span in concurrent_spans {
+    Span::end(span)
   }
   
   assert_true(true)

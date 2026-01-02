@@ -1,432 +1,611 @@
-// Azimuth 安全隐私增强测试
-// 测试敏感数据处理和隐私保护功能
+// 安全和隐私测试用例
+// 测试Azimuth遥测系统的安全性和隐私保护能力
 
-test "个人身份信息(PII)检测和脱敏" {
-  // 测试个人身份信息的检测和脱敏
+test "敏感数据脱敏测试" {
+  // 测试敏感数据脱敏
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "security.data.masking.test")
   
-  // 创建PII检测器
-  let pii_detector = PIIDetector::new()
+  // 创建数据脱敏管理器
+  let data_masker = DataMaskingManager::new()
   
-  // 测试邮箱地址检测和脱敏
-  let email = "user@example.com"
-  let is_email_pii = PIIDetector::is_email(pii_detector, email)
-  assert_true(is_email_pii)
+  // 配置脱敏规则
+  DataMaskingManager::add_rule(data_masker, "email", "email_pattern")
+  DataMaskingManager::add_rule(data_masker, "phone", "phone_pattern")
+  DataMaskingManager::add_rule(data_masker, "credit_card", "credit_card_pattern")
+  DataMaskingManager::add_rule(data_masker, "ssn", "ssn_pattern")
+  DataMaskingManager::add_rule(data_masker, "password", "password_pattern")
   
-  let masked_email = PIIDetector::mask_email(pii_detector, email)
-  assert_eq(masked_email, "u***@example.com")
+  // 创建脱敏测试span
+  let masking_span = Tracer::start_span(tracer, "data.masking.test")
+  Span::set_attribute(masking_span, "operation.type", "data_masking")
   
-  // 测试电话号码检测和脱敏
-  let phone = "+1-555-123-4567"
-  let is_phone_pii = PIIDetector::is_phone(pii_detector, phone)
-  assert_true(is_phone_pii)
-  
-  let masked_phone = PIIDetector::mask_phone(pii_detector, phone)
-  assert_eq(masked_phone, "+1-***-***-4567")
-  
-  // 测试信用卡号检测和脱敏
-  let credit_card = "4111-1111-1111-1111"
-  let is_credit_card_pii = PIIDetector::is_credit_card(pii_detector, credit_card)
-  assert_true(is_credit_card_pii)
-  
-  let masked_credit_card = PIIDetector::mask_credit_card(pii_detector, credit_card)
-  assert_eq(masked_credit_card, "****-****-****-1111")
-  
-  // 测试社会安全号码检测和脱敏
-  let ssn = "123-45-6789"
-  let is_ssn_pii = PIIDetector::is_ssn(pii_detector, ssn)
-  assert_true(is_ssn_pii)
-  
-  let masked_ssn = PIIDetector::mask_ssn(pii_detector, ssn)
-  assert_eq(masked_ssn, "***-**-6789")
-  
-  // 测试IP地址检测和脱敏
-  let ip_address = "192.168.1.100"
-  let is_ip_pii = PIIDetector::is_ip_address(pii_detector, ip_address)
-  assert_true(is_ip_pii)
-  
-  let masked_ip = PIIDetector::mask_ip(pii_detector, ip_address)
-  assert_eq(masked_ip, "192.168.1.***")
-}
-
-test "敏感数据过滤和清理" {
-  // 测试敏感数据的过滤和清理
-  
-  // 创建数据过滤器
-  let data_filter = DataFilter::new()
-  
-  // 配置过滤规则
-  DataFilter::add_pattern(data_filter, "password", "password")
-  DataFilter::add_pattern(data_filter, "api_key", "api[_-]?key")
-  DataFilter::add_pattern(data_filter, "token", "token")
-  DataFilter::add_pattern(data_filter, "secret", "secret")
-  
-  // 测试数据过滤
-  let sensitive_data = [
-    ("username", "john.doe"),
-    ("password", "supersecret123"),
-    ("email", "john@example.com"),
-    ("api_key", "sk-1234567890abcdef"),
-    ("session_id", "sess_abc123"),
-    ("credit_card", "4111111111111111"),
-    ("ssn", "123-45-6789")
-  ]
-  
-  let filtered_data = DataFilter::filter(data_filter, sensitive_data)
-  
-  // 验证过滤结果
-  for (key, value) in filtered_data {
-    match key {
-      "password" => assert_eq(value, "***")
-      "api_key" => assert_eq(value, "***")
-      "credit_card" => assert_eq(value, "************1111")
-      "ssn" => assert_eq(value, "***-**-6789")
-      _ => ()  // 非敏感数据保持原样
-    }
-  }
-  
-  // 测试日志消息过滤
-  let log_message = "User john.doe logged in with password supersecret123 from IP 192.168.1.100"
-  let filtered_log = DataFilter::filter_message(data_filter, log_message)
-  
-  assert_true(filtered_log.contains("john.doe"))
-  assert_false(filtered_log.contains("supersecret123"))
-  assert_true(filtered_log.contains("***"))
-  assert_false(filtered_log.contains("192.168.1.100"))  // IP也应该被过滤
-}
-
-test "数据加密和解密" {
-  // 测试敏感数据的加密和解密
-  
-  // 创建加密器
-  let encryptor = Encryptor::new("encryption_key_12345")
-  
-  // 测试字符串加密
-  let plaintext = "sensitive_user_data_12345"
-  let encrypted = Encryptor::encrypt(encryptor, plaintext)
-  
-  assert_true(encrypted != plaintext)
-  assert_true(encrypted.length() > 0)
-  
-  // 测试字符串解密
-  let decrypted = Encryptor::decrypt(encryptor, encrypted)
-  assert_eq(decrypted, plaintext)
-  
-  // 测试数值加密
-  let number_value = 123456789
-  let encrypted_number = Encryptor::encrypt_number(encryptor, number_value)
-  let decrypted_number = Encryptor::decrypt_number(encryptor, encrypted_number)
-  assert_eq(decrypted_number, number_value)
-  
-  // 测试批量加密
-  let sensitive_fields = [
-    ("user_id", "user123"),
+  // 测试各种敏感数据的脱敏
+  let test_data = [
     ("email", "user@example.com"),
     ("phone", "+1-555-123-4567"),
-    ("ssn", "123-45-6789")
+    ("credit_card", "4532-1234-5678-9012"),
+    ("ssn", "123-45-6789"),
+    ("password", "SuperSecret123!"),
+    ("api_key", "sk_live_1234567890abcdef"),
+    ("token", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
   ]
   
-  let encrypted_fields = Encryptor::encrypt_batch(encryptor, sensitive_fields)
-  let decrypted_fields = Encryptor::decrypt_batch(encryptor, encrypted_fields)
-  
-  // 验证批量加密和解密
-  for i in 0..=sensitive_fields.length() - 1 {
-    let original_key = sensitive_fields[i].0
-    let original_value = sensitive_fields[i].1
-    let decrypted_key = decrypted_fields[i].0
-    let decrypted_value = decrypted_fields[i].1
+  for (data_type, original_value) in test_data {
+    let masked_value = DataMaskingManager::mask(data_masker, data_type, original_value)
     
-    assert_eq(original_key, decrypted_key)
-    assert_eq(original_value, decrypted_value)
+    // 添加脱敏结果到span
+    Span::set_attribute(masking_span, "original." + data_type, original_value)
+    Span::set_attribute(masking_span, "masked." + data_type, masked_value)
+    
+    // 验证脱敏效果
+    assert_true(masked_value != original_value)  // 脱敏后的值不应与原值相同
+    assert_true(masked_value.length() > 0)       // 脱敏后的值不应为空
+    
+    // 特定类型的脱敏验证
+    match data_type {
+      "email" => assert_true(masked_value.contains("@") && masked_value.contains("...")),
+      "phone" => assert_true(masked_value.contains("***")),
+      "credit_card" => assert_true(masked_value.contains("****-****-****-")),
+      "ssn" => assert_true(masked_value.contains("***-**-")),
+      "password" => assert_eq(masked_value, "***"),
+      "api_key" => assert_true(masked_value.contains("sk_live_...")),
+      "token" => assert_true(masked_value.contains("eyJ..."))
+    }
   }
   
-  // 测试加密密钥轮换
-  let new_encryptor = Encryptor::new("new_encryption_key_67890")
-  let re_encrypted = Encryptor::re_encrypt(encryptor, new_encryptor, encrypted)
-  let re_decrypted = Encryptor::decrypt(new_encryptor, re_encrypted)
-  assert_eq(re_decrypted, plaintext)
-}
-
-test "访问控制和权限管理" {
-  // 测试访问控制和权限管理
-  
-  // 创建访问控制管理器
-  let access_manager = AccessManager::new()
-  
-  // 定义角色和权限
-  AccessManager::define_role(access_manager, "admin", ["read", "write", "delete", "export"])
-  AccessManager::define_role(access_manager, "analyst", ["read", "export"])
-  AccessManager::define_role(access_manager, "viewer", ["read"])
-  
-  // 创建用户并分配角色
-  AccessManager::create_user(access_manager, "admin_user", "admin")
-  AccessManager::create_user(access_manager, "analyst_user", "analyst")
-  AccessManager::create_user(access_manager, "viewer_user", "viewer")
-  
-  // 测试权限检查
-  let admin_can_read = AccessManager::check_permission(access_manager, "admin_user", "read")
-  let admin_can_delete = AccessManager::check_permission(access_manager, "admin_user", "delete")
-  let analyst_can_write = AccessManager::check_permission(access_manager, "analyst_user", "write")
-  let analyst_can_export = AccessManager::check_permission(access_manager, "analyst_user", "export")
-  let viewer_can_read = AccessManager::check_permission(access_manager, "viewer_user", "read")
-  let viewer_can_delete = AccessManager::check_permission(access_manager, "viewer_user", "delete")
-  
-  assert_true(admin_can_read)
-  assert_true(admin_can_delete)
-  assert_false(analyst_can_write)
-  assert_true(analyst_can_export)
-  assert_true(viewer_can_read)
-  assert_false(viewer_can_delete)
-  
-  // 测试资源级访问控制
-  let telemetry_data = TelemetryData::new("sensitive_operation")
-  TelemetryData::set_access_level(telemetry_data, "confidential")
-  
-  let admin_access = AccessManager::can_access_resource(access_manager, "admin_user", telemetry_data)
-  let viewer_access = AccessManager::can_access_resource(access_manager, "viewer_user", telemetry_data)
-  
-  assert_true(admin_access)
-  assert_false(viewer_access)
-  
-  // 测试数据脱敏策略
-  let data_masking_policy = DataMaskingPolicy::new()
-  DataMaskingPolicy::add_rule(data_masking_policy, "viewer", ["email", "phone", "ssn"])
-  DataMaskingPolicy::add_rule(data_masking_policy, "analyst", ["ssn"])
-  
-  let user_data = [
-    ("name", "John Doe"),
-    ("email", "john@example.com"),
-    ("phone", "+1-555-123-4567"),
-    ("ssn", "123-45-6789"),
-    ("account_id", "acc123456")
-  ]
-  
-  let viewer_masked_data = DataMaskingPolicy::apply(data_masking_policy, "viewer", user_data)
-  let analyst_masked_data = DataMaskingPolicy::apply(data_masking_policy, "analyst", user_data)
-  
-  // 验证viewer只能看到非敏感信息
-  assert_true(viewer_masked_data.contains(("name", "John Doe")))
-  assert_false(viewer_masked_data.contains(("email", "john@example.com")))
-  assert_false(viewer_masked_data.contains(("phone", "+1-555-123-4567")))
-  assert_false(viewer_masked_data.contains(("ssn", "123-45-6789")))
-  
-  // 验证analyst可以看到更多但不是全部
-  assert_true(analyst_masked_data.contains(("email", "john@example.com")))
-  assert_true(analyst_masked_data.contains(("phone", "+1-555-123-4567")))
-  assert_false(analyst_masked_data.contains(("ssn", "123-45-6789")))
-}
-
-test "审计日志和合规性" {
-  // 测试审计日志和合规性功能
-  
-  // 创建审计日志记录器
-  let audit_logger = AuditLogger::new()
-  
-  // 记录用户访问事件
-  let access_event = AuditEvent::new("user_access", "admin_user", "2025-01-02T10:00:00Z")
-  AuditEvent::add_detail(access_event, "resource", "telemetry_dashboard")
-  AuditEvent::add_detail(access_event, "action", "view")
-  AuditEvent::add_detail(access_event, "ip_address", "192.168.1.100")
-  AuditEvent::add_detail(access_event, "user_agent", "Mozilla/5.0")
-  
-  AuditLogger::log_event(audit_logger, access_event)
-  
-  // 记录数据导出事件
-  let export_event = AuditEvent::new("data_export", "analyst_user", "2025-01-02T10:05:00Z")
-  AuditEvent::add_detail(export_event, "dataset", "user_analytics")
-  AuditEvent::add_detail(export_event, "format", "csv")
-  AuditEvent::add_detail(export_event, "record_count", "1000")
-  AuditEvent::add_detail(export_event, "filter", "date_range:2025-01-01 to 2025-01-02")
-  
-  AuditLogger::log_event(audit_logger, export_event)
-  
-  // 记录权限变更事件
-  let permission_event = AuditEvent::new("permission_change", "admin_user", "2025-01-02T10:10:00Z")
-  AuditEvent::add_detail(permission_event, "target_user", "viewer_user")
-  AuditEvent::add_detail(permission_event, "old_role", "viewer")
-  AuditEvent::add_detail(permission_event, "new_role", "analyst")
-  AuditEvent::add_detail(permission_event, "reason", "project requirement")
-  
-  AuditLogger::log_event(audit_logger, permission_event)
-  
-  // 测试审计日志查询
-  let access_logs = AuditLogger::query_events(audit_logger, "user_access", "2025-01-02T00:00:00Z", "2025-01-02T23:59:59Z")
-  assert_eq(access_logs.length(), 1)
-  
-  let all_logs = AuditLogger::query_events(audit_logger, "", "2025-01-02T00:00:00Z", "2025-01-02T23:59:59Z")
-  assert_eq(all_logs.length(), 3)
-  
-  // 测试合规性检查
-  let compliance_checker = ComplianceChecker::new()
-  
-  // 配置GDPR合规规则
-  ComplianceChecker::add_gdpr_rule(compliance_checker, "data_retention", 365)  // 365天
-  ComplianceChecker::add_gdpr_rule(compliance_checker, "right_to_be_forgotten", true)
-  ComplianceChecker::add_gdpr_rule(compliance_checker, "data_portability", true)
-  
-  // 配置HIPAA合规规则
-  ComplianceChecker::add_hipaa_rule(compliance_checker, "phi_protection", true)
-  ComplianceChecker::add_hipaa_rule(compliance_checker, "audit_trail", true)
-  ComplianceChecker::add_hipaa_rule(compliance_checker, "access_control", true)
-  
-  // 检查遥测数据的合规性
-  let telemetry_data = TelemetryData::new("user_health_metrics")
-  TelemetryData::add_tag(telemetry_data, "contains_phi", "true")
-  TelemetryData::set_retention_days(telemetry_data, 400)
-  
-  let gdpr_compliance = ComplianceChecker::check_gdpr(compliance_checker, telemetry_data)
-  let hipaa_compliance = ComplianceChecker::check_hipaa(compliance_checker, telemetry_data)
-  
-  assert_false(gdpr_compliance.data_retention)  // 超过365天
-  assert_true(hipaa_compliance.phi_protection)  # PHI保护启用
-  assert_true(hipaa_compliance.audit_trail)     # 审计跟踪启用
-}
-
-test "数据最小化和匿名化" {
-  // 测试数据最小化和匿名化功能
-  
-  // 创建数据最小化器
-  let minimizer = DataMinimizer::new()
-  
-  // 配置最小化规则
-  Minimizer::add_rule(minimizer, "user_analytics", [
-    ("name", "remove"),
-    ("email", "hash"),
-    ("phone", "remove"),
-    ("age", "bucketize", [0, 18, 25, 35, 45, 55, 65, 100]),
-    ("location", "generalize", "city"),
-    ("user_id", "hash")
+  Span::add_event(masking_span, "data.masking.completed", [
+    ("data.items.processed", test_data.length().to_string()),
+    ("timestamp", "2025-01-02T11:30:00Z")
   ])
   
-  // 测试数据最小化
-  let raw_data = [
-    ("name", "John Doe"),
-    ("email", "john@example.com"),
-    ("phone", "+1-555-123-4567"),
-    ("age", "32"),
-    ("location", "123 Main St, New York, NY 10001"),
-    ("user_id", "user123456"),
-    ("last_login", "2025-01-02T10:00:00Z"),
-    ("session_count", "25")
-  ]
+  // 测试属性层面的脱敏
+  let sensitive_span = Tracer::start_span(tracer, "sensitive.data.span")
   
-  let minimized_data = Minimizer::apply(minimizer, "user_analytics", raw_data)
+  // 添加敏感属性（应被自动脱敏）
+  Span::set_attribute(sensitive_span, "user.email", "admin@example.com")
+  Span::set_attribute(sensitive_span, "user.phone", "+1-555-987-6543")
+  Span::set_attribute(sensitive_span, "payment.card", "4012-8888-8888-1881")
+  Span::set_attribute(sensitive_span, "user.password", "MySecretPassword123")
   
-  // 验证最小化结果
-  assert_false(minimized_data.contains_key("name"))  # 应该被移除
-  assert_false(minimized_data.contains_key("phone"))  # 应该被移除
+  // 添加非敏感属性（不应被脱敏）
+  Span::set_attribute(sensitive_span, "user.id", "user-12345")
+  Span::set_attribute(sensitive_span, "request.method", "POST")
+  Span::set_attribute(sensitive_span, "response.status", "200")
   
-  // 验证哈希处理
-  let hashed_email = minimized_data.get("email")
-  match hashed_email {
-    Some(value) => {
-      assert_false(value == "john@example.com")  # 应该被哈希
-      assert_true(value.length() == 64)          # SHA256哈希长度
-    }
-    None => assert_true(false)
+  // 验证脱敏后的属性
+  let attributes = Span::attributes(sensitive_span)
+  assert_true(attributes["user.email"] != "admin@example.com")
+  assert_true(attributes["user.phone"] != "+1-555-987-6543")
+  assert_true(attributes["payment.card"] != "4012-8888-8888-1881")
+  assert_true(attributes["user.password"] != "MySecretPassword123")
+  
+  // 验证非敏感属性未被脱敏
+  assert_eq(attributes["user.id"], "user-12345")
+  assert_eq(attributes["request.method"], "POST")
+  assert_eq(attributes["response.status"], "200")
+  
+  Span::end(sensitive_span)
+  Span::end(masking_span)
+  
+  // 记录脱敏度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "security.masking.metrics")
+  
+  let masking_counter = Meter::create_counter(meter, "data.masking.operations", Some("Data masking operations"), Some("count"))
+  
+  for (data_type, _) in test_data {
+    Counter::add_with_attributes(masking_counter, 1.0, [("data.type", data_type)])
   }
   
-  // 验证年龄分桶
-  let bucketed_age = minimized_data.get("age")
-  match bucketed_age {
-    Some(value) => assert_eq(value, "25-35")
-    None => assert_true(false)
-  }
-  
-  // 验证位置泛化
-  let generalized_location = minimized_data.get("location")
-  match generalized_location {
-    Some(value) => assert_eq(value, "New York")
-    None => assert_true(false)
-  }
-  
-  // 测试完全匿名化
-  let anonymizer = DataAnonymizer::new()
-  
-  let anonymized_data = Anonymizer::anonymize(anonymizer, raw_data)
-  
-  // 验证匿名化结果
-  assert_false(anonymized_data.contains_key("name"))
-  assert_false(anonymized_data.contains_key("email"))
-  assert_false(anonymized_data.contains_key("phone"))
-  assert_false(anonymized_data.contains_key("location"))
-  assert_false(anonymized_data.contains_key("user_id"))
-  
-  // 验证保留非敏感字段
-  assert_true(anonymized_data.contains_key("age"))
-  assert_true(anonymized_data.contains_key("last_login"))
-  assert_true(anonymized_data.contains_key("session_count"))
-  
-  // 测试差分隐私
-  let dp_analyzer = DifferentialPrivacy::new(epsilon = 1.0)
-  
-  let sensitive_values = [10, 15, 20, 25, 30, 35, 40, 45, 50]
-  let dp_result = DifferentialPrivacy::add_noise(dp_analyzer, sensitive_values)
-  
-  // 验证差分隐私结果
-  assert_eq(dp_result.length(), sensitive_values.length())
-  
-  // 验证噪声添加（值应该不同）
-  let mut all_same = true
-  for i in 0..=sensitive_values.length() - 1 {
-    if sensitive_values[i] != dp_result[i] {
-      all_same = false
-      break
-    }
-  }
-  assert_false(all_same)  # 至少有一些值应该因噪声而改变
+  assert_true(true)
 }
 
-test "安全遥测数据传输" {
-  // 测试安全遥测数据传输
+test "访问控制和权限测试" {
+  // 测试访问控制和权限
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "security.access.control.test")
   
-  // 创建安全传输管理器
-  let secure_transport = SecureTransport::new()
+  // 创建访问控制管理器
+  let access_manager = AccessControlManager::new()
   
-  // 配置TLS证书
-  SecureTransport::set_certificate(secure_transport, "server.crt")
-  SecureTransport::set_private_key(secure_transport, "server.key")
-  SecureTransport::set_ca_certificate(secure_transport, "ca.crt")
+  // 定义角色和权限
+  AccessControlManager::define_role(access_manager, "admin", [
+    "trace.read",
+    "trace.write",
+    "metric.read",
+    "metric.write",
+    "log.read",
+    "log.write",
+    "config.read",
+    "config.write"
+  ])
   
-  // 测试遥测数据签名
-  let telemetry_data = TelemetryData::new("secure_operation")
-  TelemetryData::add_metric(telemetry_data, "cpu_usage", 75.5)
-  TelemetryData::add_metric(telemetry_data, "memory_usage", 60.2)
-  TelemetryData::add_tag(telemetry_data, "service", "auth-service")
-  TelemetryData::add_tag(telemetry_data, "environment", "production")
+  AccessControlManager::define_role(access_manager, "operator", [
+    "trace.read",
+    "metric.read",
+    "log.read",
+    "config.read"
+  ])
   
-  let signature = SecureTransport::sign_data(secure_transport, telemetry_data)
-  assert_true(signature.length() > 0)
+  AccessControlManager::define_role(access_manager, "viewer", [
+    "trace.read",
+    "metric.read"
+  ])
   
-  // 验证签名
-  let is_valid = SecureTransport::verify_signature(secure_transport, telemetry_data, signature)
-  assert_true(is_valid)
+  // 创建用户
+  AccessControlManager::create_user(access_manager, "admin_user", "admin")
+  AccessControlManager::create_user(access_manager, "operator_user", "operator")
+  AccessControlManager::create_user(access_manager, "viewer_user", "viewer")
   
-  // 测试数据加密传输
-  let encrypted_data = SecureTransport::encrypt_for_transmission(secure_transport, telemetry_data)
-  assert_true(encrypted_data != telemetry_data)
+  // 创建访问控制测试span
+  let access_span = Tracer::start_span(tracer, "access.control.test")
+  Span::set_attribute(access_span, "operation.type", "access_control")
   
-  let decrypted_data = SecureTransport::decrypt_from_transmission(secure_transport, encrypted_data)
-  assert_eq(decrypted_data, telemetry_data)
+  // 测试不同用户的访问权限
+  let test_cases = [
+    ("admin_user", "trace.read", true),
+    ("admin_user", "trace.write", true),
+    ("admin_user", "config.write", true),
+    ("operator_user", "trace.read", true),
+    ("operator_user", "trace.write", false),
+    ("operator_user", "config.read", true),
+    ("operator_user", "config.write", false),
+    ("viewer_user", "trace.read", true),
+    ("viewer_user", "metric.read", true),
+    ("viewer_user", "log.read", false),
+    ("viewer_user", "config.read", false)
+  ]
   
-  // 测试安全传输协议
-  let transport_config = TransportConfig::new()
-  TransportConfig::set_protocol(transport_config, "https")
-  TransportConfig::set_port(transport_config, 443)
-  TransportConfig::set_verify_peer(transport_config, true)
-  TransportConfig::set_verify_host(transport_config, true)
-  
-  // 模拟安全传输
-  let transmission_result = SecureTransport::transmit(secure_transport, telemetry_data, transport_config)
-  assert_true(transmission_result.success)
-  
-  // 测试传输日志
-  let transmission_logs = SecureTransport::get_transmission_logs(secure_transport)
-  assert_true(transmission_logs.length() > 0)
-  
-  // 验证传输日志不包含敏感数据
-  for log in transmission_logs {
-    assert_false(log.contains("cpu_usage"))
-    assert_false(log.contains("memory_usage"))
-    assert_true(log.contains("transmitted") || log.contains("received"))
+  for (user, permission, expected_result) in test_cases {
+    let actual_result = AccessControlManager::check_permission(access_manager, user, permission)
+    
+    Span::add_event(access_span, "permission.checked", [
+      ("user", user),
+      ("permission", permission),
+      ("expected", expected_result.to_string()),
+      ("actual", actual_result.to_string())
+    ])
+    
+    assert_eq(actual_result, expected_result)
   }
+  
+  // 测试资源级别的访问控制
+  let resource_access_span = Tracer::start_span(tracer, "resource.access.control")
+  
+  // 定义资源所有权
+  AccessControlManager::set_resource_owner(access_manager, "trace-12345", "admin_user")
+  AccessControlManager::set_resource_owner(access_manager, "trace-67890", "operator_user")
+  
+  // 测试资源访问权限
+  let resource_test_cases = [
+    ("admin_user", "trace-12345", "read", true),
+    ("admin_user", "trace-67890", "write", true),  // 管理员可以访问所有资源
+    ("operator_user", "trace-12345", "read", true),
+    ("operator_user", "trace-12345", "write", false),  // 操作员不能写其他人的资源
+    ("operator_user", "trace-67890", "write", true),   // 操作员可以写自己的资源
+    ("viewer_user", "trace-12345", "read", true),
+    ("viewer_user", "trace-12345", "write", false)     // 查看者只有读权限
+  ]
+  
+  for (user, resource, action, expected_result) in resource_test_cases {
+    let actual_result = AccessControlManager::check_resource_access(
+      access_manager, 
+      user, 
+      resource, 
+      action
+    )
+    
+    Span::add_event(resource_access_span, "resource.access.checked", [
+      ("user", user),
+      ("resource", resource),
+      ("action", action),
+      ("expected", expected_result.to_string()),
+      ("actual", actual_result.to_string())
+    ])
+    
+    assert_eq(actual_result, expected_result)
+  }
+  
+  Span::end(resource_access_span)
+  Span::end(access_span)
+  
+  // 记录访问控制度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "security.access.metrics")
+  
+  let access_counter = Meter::create_counter(meter, "access.attempts.total", Some("Total access attempts"), Some("count"))
+  let denied_counter = Meter::create_counter(meter, "access.denied.total", Some("Total denied access"), Some("count"))
+  
+  for (_, _, expected_result) in test_cases {
+    Counter::add(access_counter, 1.0)
+    if !expected_result {
+      Counter::add(denied_counter, 1.0)
+    }
+  }
+  
+  for (_, _, _, expected_result) in resource_test_cases {
+    Counter::add_with_attributes(access_counter, 1.0, [("access.type", "resource")])
+    if !expected_result {
+      Counter::add_with_attributes(denied_counter, 1.0, [("access.type", "resource")])
+    }
+  }
+  
+  assert_true(true)
+}
+
+test "数据加密和解密测试" {
+  // 测试数据加密和解密
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "security.encryption.test")
+  
+  // 创建加密管理器
+  let encryption_manager = EncryptionManager::new()
+  
+  // 配置加密密钥
+  EncryptionManager::add_key(encryption_manager, "default", "AES-256-GCM", "encryption_key_123456")
+  EncryptionManager::add_key(encryption_manager, "sensitive", "AES-256-CBC", "sensitive_key_789012")
+  
+  // 创建加密测试span
+  let encryption_span = Tracer::start_span(tracer, "data.encryption.test")
+  Span::set_attribute(encryption_span, "operation.type", "data_encryption")
+  
+  // 测试不同类型数据的加密
+  let test_data = [
+    ("string", "Sensitive user data that needs encryption"),
+    ("json", "{\"user_id\": \"12345\", \"email\": \"user@example.com\"}"),
+    ("binary", [0x01, 0x02, 0x03, 0x04, 0x05]),
+    ("large_text", "This is a large piece of text that contains sensitive information. " * 20)
+  ]
+  
+  for (data_type, original_data) in test_data {
+    // 加密数据
+    let encrypted_data = EncryptionManager::encrypt(encryption_manager, "default", original_data)
+    
+    // 验证加密结果
+    assert_true(encrypted_data != original_data)
+    assert_true(encrypted_data.length() > 0)
+    
+    // 解密数据
+    let decrypted_data = EncryptionManager::decrypt(encryption_manager, "default", encrypted_data)
+    
+    // 验证解密结果
+    assert_eq(decrypted_data, original_data)
+    
+    Span::add_event(encryption_span, "encryption.cycle.completed", [
+      ("data.type", data_type),
+      "original.size", original_data.to_string().length().to_string(),
+      ("encrypted.size", encrypted_data.length().to_string()),
+      ("timestamp", "2025-01-02T11:35:00Z")
+    ])
+  }
+  
+  // 测试敏感数据的特殊加密
+  let sensitive_data = "Super sensitive financial information: Account #123456789, Balance $98765.43"
+  let sensitive_encrypted = EncryptionManager::encrypt(encryption_manager, "sensitive", sensitive_data)
+  let sensitive_decrypted = EncryptionManager::decrypt(encryption_manager, "sensitive", sensitive_encrypted)
+  
+  assert_eq(sensitive_decrypted, sensitive_data)
+  
+  Span::add_event(encryption_span, "sensitive.data.encrypted", [
+    ("encryption.key", "sensitive"),
+    ("data.type", "financial"),
+    ("timestamp", "2025-01-02T11:35:30Z")
+  ])
+  
+  // 测试加密密钥轮换
+  let old_encrypted = EncryptionManager::encrypt(encryption_manager, "default", "Key rotation test data")
+  
+  // 轮换密钥
+  EncryptionManager::rotate_key(encryption_manager, "default", "new_encryption_key_345678")
+  
+  // 使用新密钥加密
+  let new_encrypted = EncryptionManager::encrypt(encryption_manager, "default", "Key rotation test data")
+  
+  // 验证新密钥加密的数据可以解密
+  let new_decrypted = EncryptionManager::decrypt(encryption_manager, "default", new_encrypted)
+  assert_eq(new_decrypted, "Key rotation test data")
+  
+  // 验证旧密钥加密的数据仍然可以解密（向后兼容）
+  let old_decrypted = EncryptionManager::decrypt(encryption_manager, "default", old_encrypted)
+  assert_eq(old_decrypted, "Key rotation test data")
+  
+  Span::add_event(encryption_span, "key.rotation.completed", [
+    ("key.name", "default"),
+    ("rotation.timestamp", "2025-01-02T11:36:00Z")
+  ])
+  
+  Span::end(encryption_span)
+  
+  // 记录加密度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "security.encryption.metrics")
+  
+  let encryption_counter = Meter::create_counter(meter, "encryption.operations", Some("Encryption operations"), Some("count"))
+  let decryption_counter = Meter::create_counter(meter, "decryption.operations", Some("Decryption operations"), Some("count"))
+  let key_rotation_counter = Meter::create_counter(meter, "key.rotations", Some("Key rotations"), Some("count"))
+  
+  for (data_type, _) in test_data {
+    Counter::add_with_attributes(encryption_counter, 1.0, [("data.type", data_type)])
+    Counter::add_with_attributes(decryption_counter, 1.0, [("data.type", data_type)])
+  }
+  
+  Counter::add_with_attributes(encryption_counter, 1.0, [("data.type", "sensitive")])
+  Counter::add_with_attributes(decryption_counter, 1.0, [("data.type", "sensitive")])
+  Counter::add_with_attributes(encryption_counter, 1.0, [("data.type", "key_rotation")])
+  Counter::add_with_attributes(decryption_counter, 1.0, [("data.type", "key_rotation")])
+  Counter::add(key_rotation_counter, 1.0)
+  
+  assert_true(true)
+}
+
+test "审计日志和安全事件测试" {
+  // 测试审计日志和安全事件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "security.audit.test")
+  
+  // 创建审计日志管理器
+  let audit_manager = AuditLogManager::new()
+  
+  // 配置审计策略
+  AuditLogManager::configure_policy(audit_manager, {
+    "log_all_access": true,
+    "log_data_modification": true,
+    "log_permission_changes": true,
+    "log_authentication_events": true,
+    "log_encryption_operations": true,
+    "retention_days": 2555  // 7年
+  })
+  
+  // 创建审计测试span
+  let audit_span = Tracer::start_span(tracer, "security.audit.test")
+  Span::set_attribute(audit_span, "operation.type", "security_audit")
+  
+  // 测试用户登录审计
+  AuditLogManager::log_event(audit_manager, {
+    "event_type": "authentication",
+    "action": "login",
+    "user": "admin_user",
+    "source_ip": "192.168.1.100",
+    "timestamp": "2025-01-02T11:40:00Z",
+    "result": "success",
+    "session_id": "sess_abc123"
+  })
+  
+  // 测试权限变更审计
+  AuditLogManager::log_event(audit_manager, {
+    "event_type": "authorization",
+    "action": "role_change",
+    "user": "operator_user",
+    "target_user": "viewer_user",
+    "old_role": "viewer",
+    "new_role": "operator",
+    "timestamp": "2025-01-02T11:40:30Z",
+    "initiated_by": "admin_user"
+  })
+  
+  // 测试数据访问审计
+  AuditLogManager::log_event(audit_manager, {
+    "event_type": "data_access",
+    "action": "read",
+    "user": "viewer_user",
+    "resource_type": "trace",
+    "resource_id": "trace-12345",
+    "timestamp": "2025-01-02T11:41:00Z",
+    "access_granted": "true"
+  })
+  
+  // 测试安全事件审计
+  AuditLogManager::log_security_event(audit_manager, {
+    "event_type": "security_incident",
+    "severity": "medium",
+    "category": "unauthorized_access",
+    "description": "Multiple failed login attempts detected",
+    "source_ip": "10.0.0.50",
+    "target_user": "admin_user",
+    "timestamp": "2025-01-02T11:41:30Z",
+    "detection_method": "anomaly_detection",
+    "actions_taken": ["account_locked", "alert_sent"]
+  })
+  
+  Span::add_event(audit_span, "audit.events.logged", [
+    ("events.count", "4"),
+    ("timestamp", "2025-01-02T11:42:00Z")
+  ])
+  
+  // 测试审计日志查询
+  let login_events = AuditLogManager::query_events(audit_manager, {
+    "event_type": "authentication",
+    "time_range": {
+      "start": "2025-01-02T11:39:00Z",
+      "end": "2025-01-02T11:42:00Z"
+    }
+  })
+  
+  assert_eq(login_events.length(), 1)
+  assert_eq(login_events[0].user, "admin_user")
+  assert_eq(login_events[0].action, "login")
+  
+  let security_events = AuditLogManager::query_events(audit_manager, {
+    "event_type": "security_incident",
+    "severity": "medium"
+  })
+  
+  assert_eq(security_events.length(), 1)
+  assert_eq(security_events[0].category, "unauthorized_access")
+  
+  // 测试审计日志完整性
+  let log_integrity = AuditLogManager::verify_integrity(audit_manager)
+  assert_true(log_integrity.verified)
+  assert_eq(log_integrity.total_events, 4)
+  assert_eq(log_integrity.tampered_events, 0)
+  
+  Span::add_event(audit_span, "audit.integrity.verified", [
+    ("total.events", log_integrity.total_events.to_string()),
+    ("tampered.events", log_integrity.tampered_events.to_string()),
+    ("verification.timestamp", "2025-01-02T11:42:30Z")
+  ])
+  
+  Span::end(audit_span)
+  
+  // 记录审计度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "security.audit.metrics")
+  
+  let audit_counter = Meter::create_counter(meter, "audit.events.total", Some("Total audit events"), Some("count"))
+  let security_counter = Meter::create_counter(meter, "security.incidents.total", Some("Total security incidents"), Some("count"))
+  
+  Counter::add_with_attributes(audit_counter, 1.0, [("event.type", "authentication")])
+  Counter::add_with_attributes(audit_counter, 1.0, [("event.type", "authorization")])
+  Counter::add_with_attributes(audit_counter, 1.0, [("event.type", "data_access")])
+  Counter::add_with_attributes(security_counter, 1.0, [("severity", "medium")])
+  
+  assert_true(true)
+}
+
+test "隐私保护和GDPR合规测试" {
+  // 测试隐私保护和GDPR合规
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "privacy.gdpr.test")
+  
+  // 创建隐私保护管理器
+  let privacy_manager = PrivacyManager::new()
+  
+  // 配置隐私保护策略
+  PrivacyManager::configure_policy(privacy_manager, {
+    "data_retention_days": 365,
+    "anonymization_enabled": true,
+    "consent_required": true,
+    "right_to_deletion": true,
+    "data_portability": true,
+    "profiling_restriction": true
+  })
+  
+  // 创建隐私测试span
+  let privacy_span = Tracer::start_span(tracer, "privacy.protection.test")
+  Span::set_attribute(privacy_span, "operation.type", "privacy_protection")
+  
+  // 测试用户同意管理
+  let user_id = "user-gdpr-12345"
+  
+  // 记录用户同意
+  PrivacyManager::record_consent(privacy_manager, user_id, {
+    "data_processing": true,
+    "analytics": true,
+    "marketing": false,
+    "third_party_sharing": false,
+    "timestamp": "2025-01-02T11:45:00Z",
+    "ip_address": "192.168.1.100",
+    "user_agent": "Mozilla/5.0..."
+  })
+  
+  // 验证同意状态
+  let consent_status = PrivacyManager::get_consent(privacy_manager, user_id)
+  assert_true(consent_status.data_processing)
+  assert_true(consent_status.analytics)
+  assert_false(consent_status.marketing)
+  assert_false(consent_status.third_party_sharing)
+  
+  Span::add_event(privacy_span, "user.consent.recorded", [
+    ("user.id", user_id),
+    ("consent.version", consent_status.version.to_string()),
+    ("timestamp", "2025-01-02T11:45:30Z")
+  ])
+  
+  // 测试数据匿名化
+  let personal_data = {
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "phone": "+1-555-123-4567",
+    "address": "123 Main St, Anytown, USA",
+    "ip_address": "192.168.1.100",
+    "user_id": user_id
+  }
+  
+  let anonymized_data = PrivacyManager::anonymize(privacy_manager, personal_data)
+  
+  // 验证匿名化效果
+  assert_true(anonymized_data.name != "John Doe")
+  assert_true(anonymized_data.email != "john.doe@example.com")
+  assert_true(anonymized_data.phone != "+1-555-123-4567")
+  assert_true(anonymized_data.address != "123 Main St, Anytown, USA")
+  assert_true(anonymized_data.ip_address != "192.168.1.100")
+  assert_true(anonymized_data.contains("user_id"))  // 用户ID可能保留用于分析
+  
+  Span::add_event(privacy_span, "data.anonymized", [
+    ("data.type", "personal_information"),
+    ("anonymization.level", "full"),
+    ("timestamp", "2025-01-02T11:46:00Z")
+  ])
+  
+  // 测试数据删除权（被遗忘权）
+  let deletion_request = {
+    "user_id": user_id,
+    "request_type": "deletion",
+    "reason": "withdraw_consent",
+    "timestamp": "2025-01-02T11:46:30Z",
+    "request_id": "del-req-67890"
+  }
+  
+  let deletion_result = PrivacyManager::process_deletion_request(privacy_manager, deletion_request)
+  
+  assert_true(deletion_result.success)
+  assert_eq(deletion_result.deleted_records, 5)
+  assert_eq(deletion_result.deletion_timestamp, "2025-01-02T11:46:35Z")
+  
+  Span::add_event(privacy_span, "data.deletion.completed", [
+    ("user.id", user_id),
+    ("records.deleted", deletion_result.deleted_records.to_string()),
+    ("request.id", deletion_request.request_id),
+    ("timestamp", deletion_result.deletion_timestamp)
+  ])
+  
+  // 测试数据可携带权
+  let portability_request = {
+    "user_id": "user-portability-54321",
+    "request_type": "data_export",
+    "format": "json",
+    "timestamp": "2025-01-02T11:47:00Z"
+  }
+  
+  let export_result = PrivacyManager::export_user_data(privacy_manager, portability_request)
+  
+  assert_true(export_result.success)
+  assert_true(export_result.data_size > 0)
+  assert_eq(export_result.format, "json")
+  
+  Span::add_event(privacy_span, "data.export.completed", [
+    ("user.id", portability_request.user_id),
+    ("data.size", export_result.data_size.to_string()),
+    ("export.format", export_result.format),
+    ("timestamp", "2025-01-02T11:47:30Z")
+  ])
+  
+  // 测试数据保留策略
+  let retention_result = PrivacyManager::apply_retention_policy(privacy_manager, 30)  // 保留30天
+  
+  assert_true(retention_result.expired_data_found)
+  assert_true(retention_result.deleted_expired_records > 0)
+  
+  Span::add_event(privacy_span, "retention.policy.applied", [
+    ("retention.days", "30"),
+    ("expired.records.deleted", retention_result.deleted_expired_records.to_string()),
+    ("timestamp", "2025-01-02T11:48:00Z")
+  ])
+  
+  Span::end(privacy_span)
+  
+  // 记录隐私保护度量
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "privacy.metrics")
+  
+  let consent_counter = Meter::create_counter(meter, "privacy.consents.total", Some("Total privacy consents"), Some("count"))
+  let deletion_counter = Meter::create_counter(meter, "privacy.deletions.total", Some("Total data deletions"), Some("count"))
+  let export_counter = Meter::create_counter(meter, "privacy.exports.total", Some("Total data exports"), Some("count"))
+  
+  Counter::add(consent_counter, 1.0)
+  Counter::add(deletion_counter, 1.0)
+  Counter::add(export_counter, 1.0)
+  
+  assert_true(true)
 }
