@@ -1,337 +1,539 @@
-// Performance Optimization Tests for Azimuth Telemetry System
-// This file contains performance-focused test cases and optimization scenarios
+// Azimuth Performance Optimization Tests
+// 性能优化测试用例
 
-test "telemetry batch processing efficiency" {
-  // Test batch size optimization
-  let batch_sizes = [10, 50, 100, 500, 1000, 5000]
-  let processing_times = [15.5, 45.2, 78.3, 320.1, 580.7, 2450.3] // milliseconds
+test "telemetry data compression efficiency" {
+  // 测试遥测数据压缩效率
+  let compression_strategies = [
+    @azimuth.CompressionStrategy {
+      name : "gzip",
+      algorithm : "gzip",
+      level : 6,
+      window_size : 32768
+    },
+    @azimuth.CompressionStrategy {
+      name : "lz4",
+      algorithm : "lz4",
+      level : 1,
+      window_size : 65536
+    },
+    @azimuth.CompressionStrategy {
+      name : "zstd",
+      algorithm : "zstd",
+      level : 3,
+      window_size : 131072
+    }
+  ]
   
-  // Calculate throughput (items per second)
-  let mut max_throughput = 0.0
-  let mut optimal_batch_size = 0
+  // 生成大量测试数据
+  let test_data = @azimuth.generate_test_telemetry_data(
+    1000, // 数据点数量
+    50,   // 每个数据点的属性数量
+    10    // 每个数据点的事件数量
+  )
   
-  for i = 0; i < batch_sizes.length(); i = i + 1 {
-    let batch_size = batch_sizes[i]
-    let processing_time = processing_times[i]
-    let throughput = batch_size.to_double() / (processing_time / 1000.0)
+  // 测试不同压缩策略
+  let compression_results = []
+  for strategy in compression_strategies {
+    let result = @azimuth.compress_telemetry_data(test_data, strategy)
+    compression_results = compression_results.push(result)
+  }
+  
+  // 验证压缩结果
+  assert_eq(compression_results.length(), 3)
+  
+  let original_size = @azimuth.calculate_data_size(test_data)
+  
+  // 验证所有压缩策略都有效
+  for result in compression_results {
+    assert_true(result.compressed_size > 0)
+    assert_true(result.compressed_size < original_size)
+    assert_true(result.compression_ratio > 1.0)
+    assert_true(result.compression_time_ms > 0)
+    assert_true(result.decompression_time_ms > 0)
+  }
+  
+  // 找出最佳压缩策略
+  let best_compression = compression_results
+    .sort_by(fn(a, b) { a.compression_ratio - b.compression_ratio })
+    .reverse()[0]
+  
+  // 验证最佳压缩策略
+  assert_true(best_compression.compression_ratio >= 2.0) // 至少2倍压缩率
+  
+  // 验证压缩后数据的完整性
+  for result in compression_results {
+    let decompressed_data = @azimuth.decompress_telemetry_data(
+      result.compressed_data,
+      result.strategy
+    )
     
-    if throughput > max_throughput {
-      max_throughput = throughput
-      optimal_batch_size = batch_size
+    // 验证解压后数据与原始数据一致
+    assert_eq(decompressed_data.data_points.length(), test_data.data_points.length())
+    
+    for i in 0..test_data.data_points.length() {
+      let original = test_data.data_points[i]
+      let decompressed = decompressed_data.data_points[i]
+      
+      assert_eq(original.timestamp, decompressed.timestamp)
+      assert_eq(original.trace_id, decompressed.trace_id)
+      assert_eq(original.span_id, decompressed.span_id)
+      assert_eq(original.operation_name, decompressed.operation_name)
+      assert_eq(original.duration_ms, decompressed.duration_ms)
     }
   }
   
-  assert_eq(optimal_batch_size, 1000)
-  assert_true(max_throughput > 1000.0) // items per second
+  // 测试增量压缩
+  let incremental_data = @azimuth.generate_incremental_telemetry_data(
+    test_data,
+    100, // 增量数据点数量
+    10   // 时间间隔(ms)
+  )
+  
+  let incremental_compression = @azimuth.compress_incremental_data(
+    test_data,
+    incremental_data,
+    compression_strategies[0] // 使用gzip
+  )
+  
+  // 验证增量压缩效率
+  assert_true(incremental_compression.compressed_size > 0)
+  assert_true(incremental_compression.compression_ratio > 1.0)
+  
+  // 增量压缩应该比全量压缩更高效
+  let full_compression = compression_results[0]
+  assert_true(incremental_compression.compressed_size < full_compression.compressed_size)
 }
 
-test "telemetry memory pool performance" {
-  // Test memory pool allocation patterns
-  let pool_sizes = [100, 500, 1000, 2000, 5000]
-  let allocation_times = [0.5, 1.2, 2.1, 3.8, 8.5] // microseconds
-  
-  // Calculate allocation efficiency
-  let mut best_efficiency = 0.0
-  let mut best_pool_size = 0
-  
-  for i = 0; i < pool_sizes.length(); i = i + 1 {
-    let pool_size = pool_sizes[i]
-    let alloc_time = allocation_times[i]
-    let efficiency = pool_size.to_double() / alloc_time
-    
-    if efficiency > best_efficiency {
-      best_efficiency = efficiency
-      best_pool_size = pool_size
+test "batch processing optimization" {
+  // 测试批处理优化
+  let batch_configs = [
+    @azimuth.BatchConfig {
+      batch_size : 10,
+      max_wait_time_ms : 100,
+      compression_enabled : true,
+      parallel_processing : false
+    },
+    @azimuth.BatchConfig {
+      batch_size : 50,
+      max_wait_time_ms : 500,
+      compression_enabled : true,
+      parallel_processing : true
+    },
+    @azimuth.BatchConfig {
+      batch_size : 100,
+      max_wait_time_ms : 1000,
+      compression_enabled : false,
+      parallel_processing : true
+    },
+    @azimuth.BatchConfig {
+      batch_size : 200,
+      max_wait_time_ms : 2000,
+      compression_enabled : true,
+      parallel_processing : true
     }
+  ]
+  
+  // 生成测试数据
+  let test_data = @azimuth.generate_test_telemetry_data(
+    1000, // 数据点数量
+    20,   // 每个数据点的属性数量
+    5     // 每个数据点的事件数量
+  )
+  
+  // 测试不同批处理配置
+  let batch_results = []
+  for config in batch_configs {
+    let result = @azimuth.process_batch_telemetry_data(test_data, config)
+    batch_results = batch_results.push(result)
   }
   
-  assert_eq(best_pool_size, 5000)
-  assert_true(best_efficiency > 500.0)
+  // 验证批处理结果
+  assert_eq(batch_results.length(), 4)
   
-  // Test pool reuse rate
-  let total_allocations = 10000
-  let pool_reuse_rate = 0.85
-  let reused_allocations = (total_allocations.to_double() * pool_reuse_rate).to_int()
+  // 验证所有批处理配置都有效
+  for result in batch_results {
+    assert_true(result.total_batches > 0)
+    assert_true(result.processed_items == test_data.data_points.length())
+    assert_true(result.total_processing_time_ms > 0)
+    assert_true(result.avg_batch_processing_time_ms > 0)
+    assert_true(result.throughput_items_per_sec > 0)
+  }
   
-  assert_eq(reused_allocations, 8500)
-  assert_true(reused_allocations < total_allocations)
+  // 找出最高吞吐量的配置
+  let best_throughput = batch_results
+    .sort_by(fn(a, b) { a.throughput_items_per_sec - b.throughput_items_per_sec })
+    .reverse()[0]
+  
+  // 验证最佳吞吐量
+  assert_true(best_throughput.throughput_items_per_sec >= 1000) // 至少1000项/秒
+  
+  // 找出最低延迟的配置
+  let lowest_latency = batch_results
+    .sort_by(fn(a, b) { a.avg_batch_processing_time_ms - b.avg_batch_processing_time_ms })[0]
+  
+  // 验证最低延迟
+  assert_true(lowest_latency.avg_batch_processing_time_ms <= 100) // 平均批处理时间<=100ms
+  
+  // 测试自适应批处理
+  let adaptive_config = @azimuth.AdaptiveBatchConfig {
+    initial_batch_size : 50,
+    min_batch_size : 10,
+    max_batch_size : 500,
+    target_latency_ms : 100,
+    adjustment_factor : 0.1,
+    evaluation_interval_ms : 5000
+  }
+  
+  let adaptive_result = @azimuth.process_adaptive_batch_telemetry_data(
+    test_data,
+    adaptive_config,
+    30000 // 测试持续时间30秒
+  )
+  
+  // 验证自适应批处理结果
+  assert_true(adaptive_result.total_batches > 0)
+  assert_true(adaptive_result.processed_items == test_data.data_points.length())
+  assert_true(adaptive_result.batch_size_adjustments > 0)
+  assert_true(adaptive_result.final_batch_size >= adaptive_config.min_batch_size)
+  assert_true(adaptive_result.final_batch_size <= adaptive_config.max_batch_size)
+  
+  // 验证自适应效果
+  assert_true(abs(adaptive_result.final_avg_latency_ms - adaptive_config.target_latency_ms) <= 
+              adaptive_config.target_latency_ms * 0.2) // 最终延迟与目标延迟差异<=20%
 }
 
-test "telemetry compression algorithm comparison" {
-  // Test different compression algorithms
-  let algorithms = ["gzip", "lz4", "snappy", "zstd"]
-  let compression_ratios = [0.35, 0.55, 0.65, 0.30]
-  let compression_speeds = [50, 200, 150, 80] // MB/s
-  
-  // Find best balance between ratio and speed
-  let mut best_score = 0.0
-  let mut best_algorithm = ""
-  
-  for i = 0; i < algorithms.length(); i = i + 1 {
-    let ratio = compression_ratios[i]
-    let speed = compression_speeds[i]
-    let score = speed * (1.0 - ratio) // Higher speed and lower ratio is better
-    
-    if score > best_score {
-      best_score = score
-      best_algorithm = algorithms[i]
+test "memory usage optimization" {
+  // 测试内存使用优化
+  let memory_optimization_strategies = [
+    @azimuth.MemoryOptimizationStrategy {
+      name : "object_pooling",
+      pooling_enabled : true,
+      pool_size : 1000,
+      preallocation_enabled : true
+    },
+    @azimuth.MemoryOptimizationStrategy {
+      name : "lazy_loading",
+      pooling_enabled : false,
+      pool_size : 0,
+      preallocation_enabled : false
+    },
+    @azimuth.MemoryOptimizationStrategy {
+      name : "flyweight_pattern",
+      pooling_enabled : true,
+      pool_size : 500,
+      preallocation_enabled : true
+    },
+    @azimuth.MemoryOptimizationStrategy {
+      name : "compression",
+      pooling_enabled : false,
+      pool_size : 0,
+      preallocation_enabled : false
     }
+  ]
+  
+  // 生成大量测试数据
+  let large_test_data = @azimuth.generate_test_telemetry_data(
+    10000, // 数据点数量
+    100,   // 每个数据点的属性数量
+    20     // 每个数据点的事件数量
+  )
+  
+  // 测试不同内存优化策略
+  let memory_results = []
+  for strategy in memory_optimization_strategies {
+    let result = @azimuth.process_telemetry_with_memory_optimization(
+      large_test_data,
+      strategy
+    )
+    memory_results = memory_results.push(result)
   }
   
-  assert_eq(best_algorithm, "lz4")
-  assert_true(best_score > 80.0)
+  // 验证内存优化结果
+  assert_eq(memory_results.length(), 4)
+  
+  // 验证所有策略都有效
+  for result in memory_results {
+    assert_true(result.peak_memory_usage_mb > 0)
+    assert_true(result.avg_memory_usage_mb > 0)
+    assert_true(result.processing_time_ms > 0)
+    assert_true(result.memory_efficiency_score > 0.0)
+    assert_true(result.memory_efficiency_score <= 1.0)
+  }
+  
+  // 找出内存效率最高的策略
+  let most_efficient = memory_results
+    .sort_by(fn(a, b) { a.memory_efficiency_score - b.memory_efficiency_score })
+    .reverse()[0]
+  
+  // 验证最高内存效率
+  assert_true(most_efficient.memory_efficiency_score >= 0.7) // 至少70%效率
+  
+  // 找出内存使用最少的策略
+  let lowest_memory = memory_results
+    .sort_by(fn(a, b) { a.peak_memory_usage_mb - b.peak_memory_usage_mb })[0]
+  
+  // 验证最低内存使用
+  assert_true(lowest_memory.peak_memory_usage_mb <= memory_results[0].peak_memory_usage_mb * 0.8)
+  
+  // 测试内存泄漏检测
+  let memory_leak_test = @azimuth.test_memory_leaks(
+    memory_optimization_strategies[0], // 使用对象池策略
+    1000, // 迭代次数
+    100   // 每次迭代的数据量
+  )
+  
+  // 验证内存泄漏检测结果
+  assert_eq(memory_leak_test.total_iterations, 1000)
+  assert_true(memory_leak_test.initial_memory_mb > 0)
+  assert_true(memory_leak_test.final_memory_mb > 0)
+  
+  // 验证没有显著的内存泄漏
+  let memory_growth = memory_leak_test.final_memory_mb - memory_leak_test.initial_memory_mb
+  let memory_growth_rate = memory_growth / memory_leak_test.initial_memory_mb
+  assert_true(memory_growth_rate <= 0.1) // 内存增长率<=10%
+  
+  // 测试内存压力下的性能
+  let memory_pressure_test = @azimuth.test_memory_pressure_performance(
+    memory_optimization_strategies,
+    5000, // 数据点数量
+    80    // 目标内存使用率(%)
+  )
+  
+  // 验证内存压力测试结果
+  assert_eq(memory_pressure_test.total_strategies_tested, 4)
+  assert_true(memory_pressure_test.pressure_detected)
+  assert_true(memory_pressure_test.garbage_collection_triggered)
+  assert_true(memory_pressure_test.memory_reclaimed > 0)
+  
+  // 验证压力下的稳定性
+  assert_true(memory_pressure_test.system_stability_maintained)
+  assert_true(memory_pressure_test.data_integrity_preserved)
 }
 
-test "telemetry concurrent processing scalability" {
-  // Test scalability with concurrent workers
-  let worker_counts = [1, 2, 4, 8, 16, 32]
-  let throughput_values = [1000, 1900, 3600, 6800, 12000, 18000] // ops/sec
-  
-  // Calculate scalability efficiency
-  let base_throughput = throughput_values[0]
-  let mut best_efficiency = 0.0
-  let mut optimal_workers = 0
-  
-  for i = 1; i < worker_counts.length(); i = i + 1 {
-    let workers = worker_counts[i]
-    let throughput = throughput_values[i]
-    let expected_throughput = base_throughput * workers
-    let efficiency = throughput.to_double() / expected_throughput.to_double()
-    
-    if efficiency > best_efficiency {
-      best_efficiency = efficiency
-      optimal_workers = workers
+test "cpu utilization optimization" {
+  // 测试CPU利用率优化
+  let cpu_optimization_strategies = [
+    @azimuth.CPUOptimizationStrategy {
+      name : "thread_pool_optimization",
+      max_threads : 4,
+      work_stealing_enabled : true,
+      affinity_enabled : false
+    },
+    @azimuth.CPUOptimizationStrategy {
+      name : "parallel_processing",
+      max_threads : 8,
+      work_stealing_enabled : false,
+      affinity_enabled : true
+    },
+    @azimuth.CPUOptimizationStrategy {
+      name : "async_processing",
+      max_threads : 2,
+      work_stealing_enabled : true,
+      affinity_enabled : false
+    },
+    @azimuth.CPUOptimizationStrategy {
+      name : "batch_processing",
+      max_threads : 16,
+      work_stealing_enabled : true,
+      affinity_enabled : true
     }
+  ]
+  
+  // 生成CPU密集型测试数据
+  let cpu_intensive_data = @azimuth.generate_cpu_intensive_telemetry_data(
+    5000,  // 数据点数量
+    50,    // 每个数据点的属性数量
+    10,    // 每个数据点的事件数量
+    100    // 每个属性的复杂度
+  )
+  
+  // 测试不同CPU优化策略
+  let cpu_results = []
+  for strategy in cpu_optimization_strategies {
+    let result = @azimuth.process_telemetry_with_cpu_optimization(
+      cpu_intensive_data,
+      strategy
+    )
+    cpu_results = cpu_results.push(result)
   }
   
-  assert_eq(optimal_workers, 8)
-  assert_true(best_efficiency > 0.8)
+  // 验证CPU优化结果
+  assert_eq(cpu_results.length(), 4)
   
-  // Test diminishing returns
-  let last_workers = worker_counts[worker_counts.length() - 1]
-  let second_last_workers = worker_counts[worker_counts.length() - 2]
-  let last_throughput = throughput_values[throughput_values.length() - 1]
-  let second_last_throughput = throughput_values[throughput_values.length() - 2]
+  // 验证所有策略都有效
+  for result in cpu_results {
+    assert_true(result.processing_time_ms > 0)
+    assert_true(result.cpu_utilization_percent >= 0.0)
+    assert_true(result.cpu_utilization_percent <= 100.0)
+    assert_true(result.context_switches > 0)
+    assert_true(result.cpu_efficiency_score > 0.0)
+    assert_true(result.cpu_efficiency_score <= 1.0)
+  }
   
-  let last_efficiency = last_throughput.to_double() / (base_throughput * last_workers).to_double()
-  let second_last_efficiency = second_last_throughput.to_double() / (base_throughput * second_last_workers).to_double()
+  // 找出CPU效率最高的策略
+  let most_cpu_efficient = cpu_results
+    .sort_by(fn(a, b) { a.cpu_efficiency_score - b.cpu_efficiency_score })
+    .reverse()[0]
   
-  assert_true(last_efficiency < second_last_efficiency) // Diminishing returns
+  // 验证最高CPU效率
+  assert_true(most_cpu_efficient.cpu_efficiency_score >= 0.7) // 至少70%效率
+  
+  // 找出处理时间最短的策略
+  let fastest_processing = cpu_results
+    .sort_by(fn(a, b) { a.processing_time_ms - b.processing_time_ms })[0]
+  
+  // 验证最短处理时间
+  assert_true(fastest_processing.processing_time_ms <= cpu_results[0].processing_time_ms * 0.8)
+  
+  // 测试CPU亲和性优化
+  let affinity_test = @azimuth.test_cpu_affinity_optimization(
+    cpu_intensive_data,
+    8, // 可用CPU核心数
+    4  // 使用的核心数
+  )
+  
+  // 验证CPU亲和性优化结果
+  assert_true(affinity_test.affinity_configured)
+  assert_true(affinity_test.cache_misses_reduced)
+  assert_true(affinity_test.context_switches_reduced)
+  assert_true(affinity_test.performance_improvement_percent > 0)
+  
+  // 测试CPU负载均衡
+  let load_balancing_test = @azimuth.test_cpu_load_balancing(
+    cpu_optimization_strategies,
+    10000, // 数据点数量
+    100    // 并发任务数
+  )
+  
+  // 验证CPU负载均衡结果
+  assert_eq(load_balancing_test.total_tasks, 100)
+  assert_true(load_balancing_test.load_balanced)
+  assert_true(load_balancing_test.cpu_utilization_evenness >= 0.8) // CPU利用率均匀性>=80%
+  assert_true(load_balancing_test.task_distribution_variance <= 0.1) // 任务分布方差<=10%
+  
+  // 验证负载均衡效果
+  assert_true(load_balancing_test.overall_throughput_improved)
+  assert_true(load_balancing_test.bottleneck_eliminated)
 }
 
-test "telemetry cache hit rate optimization" {
-  // Test cache performance with different strategies
-  let cache_strategies = ["lru", "lfu", "fifo", "random"]
-  let hit_rates = [0.85, 0.88, 0.75, 0.60]
-  let memory_usage = [1024, 1024, 1024, 1024] // MB
-  
-  // Calculate cost-benefit ratio
-  let mut best_strategy = ""
-  let mut best_score = 0.0
-  
-  for i = 0; i < cache_strategies.length(); i = i + 1 {
-    let hit_rate = hit_rates[i]
-    let memory = memory_usage[i]
-    let score = hit_rate * 1000.0 / memory.to_double() // Hit rate per MB
-    
-    if score > best_score {
-      best_score = score
-      best_strategy = cache_strategies[i]
+test "io optimization techniques" {
+  // 测试IO优化技术
+  let io_optimization_strategies = [
+    @azimuth.IOOptimizationStrategy {
+      name : "buffered_io",
+      buffer_size : 8192,
+      async_enabled : false,
+      mmap_enabled : false
+    },
+    @azimuth.IOOptimizationStrategy {
+      name : "async_io",
+      buffer_size : 4096,
+      async_enabled : true,
+      mmap_enabled : false
+    },
+    @azimuth.IOOptimizationStrategy {
+      name : "memory_mapped_io",
+      buffer_size : 16384,
+      async_enabled : false,
+      mmap_enabled : true
+    },
+    @azimuth.IOOptimizationStrategy {
+      name : "direct_io",
+      buffer_size : 32768,
+      async_enabled : true,
+      mmap_enabled : false
     }
+  ]
+  
+  // 生成IO密集型测试数据
+  let io_intensive_data = @azimuth.generate_io_intensive_telemetry_data(
+    10000, // 数据点数量
+    1000,  // 每个数据点的大小(bytes)
+    50     // 每个数据点的IO操作数
+  )
+  
+  // 测试不同IO优化策略
+  let io_results = []
+  for strategy in io_optimization_strategies {
+    let result = @azimuth.process_telemetry_with_io_optimization(
+      io_intensive_data,
+      strategy
+    )
+    io_results = io_results.push(result)
   }
   
-  assert_eq(best_strategy, "lfu")
-  assert_true(best_score > 0.08)
+  // 验证IO优化结果
+  assert_eq(io_results.length(), 4)
   
-  // Test cache warming strategies
-  let warmup_sizes = [100, 500, 1000, 2000]
-  let warmup_times = [5, 20, 35, 55] // seconds
-  
-  let mut best_warmup_efficiency = 0.0
-  let mut best_warmup_size = 0
-  
-  for i = 0; i < warmup_sizes.length(); i = i + 1 {
-    let size = warmup_sizes[i]
-    let time = warmup_times[i]
-    let efficiency = size.to_double() / time.to_double()
-    
-    if efficiency > best_warmup_efficiency {
-      best_warmup_efficiency = efficiency
-      best_warmup_size = size
-    }
+  // 验证所有策略都有效
+  for result in io_results {
+    assert_true(result.total_io_time_ms > 0)
+    assert_true.result.read_throughput_mbps > 0.0
+    assert_true(result.write_throughput_mbps > 0.0)
+    assert_true(result.io_operations_count > 0)
+    assert_true(result.io_efficiency_score > 0.0)
+    assert_true(result.io_efficiency_score <= 1.0)
   }
   
-  assert_eq(best_warmup_size, 1000)
-}
-
-test "telemetry network transmission optimization" {
-  // Test network optimization techniques
-  let packet_sizes = [64, 128, 256, 512, 1024, 1500] // bytes
-  let transmission_times = [0.1, 0.15, 0.22, 0.35, 0.55, 0.75] // ms
-  let overhead_ratios = [0.8, 0.75, 0.65, 0.5, 0.4, 0.35]
+  // 找出IO效率最高的策略
+  let most_io_efficient = io_results
+    .sort_by(fn(a, b) { a.io_efficiency_score - b.io_efficiency_score })
+    .reverse()[0]
   
-  // Calculate effective throughput
-  let mut max_effective_throughput = 0.0
-  let mut optimal_packet_size = 0
+  // 验证最高IO效率
+  assert_true(most_io_efficient.io_efficiency_score >= 0.7) // 至少70%效率
   
-  for i = 0; i < packet_sizes.length(); i = i + 1 {
-    let packet_size = packet_sizes[i]
-    let trans_time = transmission_times[i]
-    let overhead = overhead_ratios[i]
-    let effective_size = packet_size.to_double() * overhead
-    let throughput = effective_size / trans_time
-    
-    if throughput > max_effective_throughput {
-      max_effective_throughput = throughput
-      optimal_packet_size = packet_size
-    }
-  }
+  // 找出读取吞吐量最高的策略
+  let highest_read_throughput = io_results
+    .sort_by(fn(a, b) { a.read_throughput_mbps - b.read_throughput_mbps })
+    .reverse()[0]
   
-  assert_eq(optimal_packet_size, 1500)
-  assert_true(max_effective_throughput > 500.0)
+  // 验证最高读取吞吐量
+  assert_true(highest_read_throughput.read_throughput_mbps >= 100.0) // 至少100MB/s
   
-  // Test compression before transmission
-  let original_sizes = [1024, 2048, 4096, 8192]
-  let compressed_sizes = [512, 980, 1843, 3276]
+  // 找出写入吞吐量最高的策略
+  let highest_write_throughput = io_results
+    .sort_by(fn(a, b) { a.write_throughput_mbps - b.write_throughput_mbps })
+    .reverse()[0]
   
-  let mut total_compression_ratio = 0.0
-  for i = 0; i < original_sizes.length(); i = i + 1 {
-    let original = original_sizes[i]
-    let compressed = compressed_sizes[i]
-    let ratio = compressed.to_double() / original.to_double()
-    total_compression_ratio = total_compression_ratio + ratio
-  }
+  // 验证最高写入吞吐量
+  assert_true(highest_write_throughput.write_throughput_mbps >= 50.0) // 至少50MB/s
   
-  let avg_compression_ratio = total_compression_ratio / original_sizes.length().to_double()
-  assert_true(avg_compression_ratio < 0.5) // Average compression ratio < 50%
-}
-
-test "telemetry database query optimization" {
-  // Test query optimization strategies
-  let query_types = ["simple_select", "complex_join", "aggregation", "full_text_search"]
-  let execution_times = [10, 150, 80, 200] // ms
-  let index_benefits = [0.1, 0.8, 0.6, 0.9]
+  // 测试IO缓存优化
+  let cache_optimization_test = @azimuth.test_io_cache_optimization(
+    io_intensive_data,
+    100,  // 缓存大小(MB)
+    1000  // 缓存条目数
+  )
   
-  // Calculate optimization potential
-  let mut highest_optimization_potential = 0.0
-  let mut target_query_type = ""
+  // 验证IO缓存优化结果
+  assert_true(cache_optimization_test.cache_configured)
+  assert_true(cache_optimization_test.cache_hit_rate > 0.0)
+  assert_true(cache_optimization_test.cache_hit_rate <= 1.0)
+  assert_true(cache_optimization_test.io_operations_reduced > 0)
   
-  for i = 0; i < query_types.length(); i = i + 1 {
-    let exec_time = execution_times[i]
-    let index_benefit = index_benefits[i]
-    let optimization_potential = exec_time.to_double() * index_benefit
-    
-    if optimization_potential > highest_optimization_potential {
-      highest_optimization_potential = optimization_potential
-      target_query_type = query_types[i]
-    }
-  }
+  // 验证缓存效果
+  assert_true(cache_optimization_test.performance_improvement_percent > 0)
+  assert_true(cache_optimization_test.latency_reduction_percent > 0)
   
-  assert_eq(target_query_type, "full_text_search")
-  assert_true(highest_optimization_potential > 150.0)
+  // 测试IO批处理优化
+  let batch_io_test = @azimuth.test_io_batch_optimization(
+    io_intensive_data,
+    [
+      10,   // 批大小10
+      50,   // 批大小50
+      100,  // 批大小100
+      500   // 批大小500
+    ]
+  )
   
-  // Test connection pool sizing
-  let pool_sizes = [5, 10, 20, 50, 100]
-  let wait_times = [50, 20, 10, 5, 3] // ms
-  let resource_utilization = [0.3, 0.5, 0.7, 0.85, 0.95]
+  // 验证IO批处理优化结果
+  assert_eq(batch_io_test.batch_sizes_tested, 4)
+  assert_true(batch_io_test.optimal_batch_size > 0)
+  assert_true(batch_io_test.io_operations_reduced > 0)
+  assert_true(batch_io_test.throughput_improvement_percent > 0)
   
-  // Find optimal balance between wait time and utilization
-  let mut best_balance_score = 0.0
-  let mut optimal_pool_size = 0
-  
-  for i = 0; i < pool_sizes.length(); i = i + 1 {
-    let wait_time = wait_times[i]
-    let utilization = resource_utilization[i]
-    let balance_score = utilization * 100.0 / wait_time.to_double()
-    
-    if balance_score > best_balance_score {
-      best_balance_score = balance_score
-      optimal_pool_size = pool_sizes[i]
-    }
-  }
-  
-  assert_eq(optimal_pool_size, 50)
-}
-
-test "telemetry real-time processing latency" {
-  // Test real-time processing requirements
-  let latency_requirements = [1, 5, 10, 50, 100] // ms
-  let actual_latencies = [0.8, 4.2, 9.5, 48.3, 95.7] // ms
-  
-  // Verify SLA compliance
-  let mut sla_violations = 0
-  
-  for i = 0; i < latency_requirements.length(); i = i + 1 {
-    let required = latency_requirements[i]
-    let actual = actual_latencies[i]
-    
-    if actual > required {
-      sla_violations = sla_violations + 1
-    }
-  }
-  
-  assert_eq(sla_violations, 0) // All SLAs met
-  
-  // Test processing pipeline stages
-  let pipeline_stages = ["ingest", "parse", "enrich", "aggregate", "store"]
-  let stage_latencies = [0.5, 1.2, 2.8, 3.5, 1.7] // ms
-  
-  let mut total_pipeline_latency = 0.0
-  for latency in stage_latencies {
-    total_pipeline_latency = total_pipeline_latency + latency
-  }
-  
-  assert_eq(total_pipeline_latency, 9.7)
-  assert_true(total_pipeline_latency < 10.0) // Under 10ms threshold
-  
-  // Identify bottleneck stage
-  let mut max_stage_latency = 0.0
-  let mut bottleneck_stage = ""
-  
-  for i = 0; i < pipeline_stages.length(); i = i + 1 {
-    let stage = pipeline_stages[i]
-    let latency = stage_latencies[i]
-    
-    if latency > max_stage_latency {
-      max_stage_latency = latency
-      bottleneck_stage = stage
-    }
-  }
-  
-  assert_eq(bottleneck_stage, "aggregate")
-  assert_eq(max_stage_latency, 3.5)
-}
-
-test "telemetry auto-scaling performance metrics" {
-  // Test auto-scaling decision making
-  let cpu_utilizations = [0.3, 0.5, 0.7, 0.85, 0.95]
-  let memory_utilizations = [0.4, 0.6, 0.75, 0.9, 0.98]
-  let scaling_decisions = [false, false, true, true, true]
-  
-  // Verify scaling logic
-  let mut correct_decisions = 0
-  
-  for i = 0; i < cpu_utilizations.length(); i = i + 1 {
-    let cpu = cpu_utilizations[i]
-    let memory = memory_utilizations[i]
-    let decision = scaling_decisions[i]
-    
-    let should_scale = cpu > 0.7 || memory > 0.8
-    if should_scale == decision {
-      correct_decisions = correct_decisions + 1
-    }
-  }
-  
-  assert_eq(correct_decisions, 5) // All decisions correct
-  
-  // Test scaling efficiency
-  let scale_up_times = [30, 45, 60, 90, 120] // seconds
-  let scale_down_times = [60, 90, 120, 150, 180] // seconds
-  
-  let avg_scale_up_time = scale_up_times.fold(0, (acc, x) => acc + x) / scale_up_times.length()
-  let avg_scale_down_time = scale_down_times.fold(0, (acc, x) => acc + x) / scale_down_times.length()
-  
-  assert_true(avg_scale_up_time < avg_scale_down_time) // Scale up should be faster
-  assert_eq(avg_scale_up_time, 69)
-  assert_eq(avg_scale_down_time, 120)
+  // 验证批处理效果
+  assert_true(batch_io_test.latency_improvement_percent > 0)
+  assert_true(batch_io_test.cpu_utilization_optimized)
 }

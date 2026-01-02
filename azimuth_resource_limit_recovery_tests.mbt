@@ -1,517 +1,592 @@
+// Azimuth Resource Limit and Recovery Tests
 // 资源限制和恢复测试用例
-// 测试Azimuth遥测系统在资源限制条件下的行为和恢复能力
 
-test "内存限制下的优雅降级" {
-  // 测试内存限制下的优雅降级行为
-  let tracer_provider = TracerProvider::with_resource_limits([
-    ("max.memory.usage", "50MB"),
-    ("memory.check.interval", "1000"),
-    ("graceful.degradation.enabled", "true")
-  ])
+test "memory usage monitoring and limiting" {
+  // 测试内存使用监控和限制
+  let memory_monitor = @azimuth.MemoryMonitor {
+    max_heap_size : 1073741824, // 1GB
+    warning_threshold : 0.8,     // 80%警告阈值
+    critical_threshold : 0.9,    // 90%严重阈值
+    sampling_interval_ms : 5000, // 5秒采样间隔
+    gc_strategy : @azimuth.GCStrategy::Adaptive
+  }
   
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.memory.test")
-  
-  // 记录初始内存使用
-  let initial_memory = Memory::used()
-  
-  // 创建大量span直到接近内存限制
-  let spans = []
-  let span_count = 0
-  
-  while Memory::used() < initial_memory + 50 * 1024 * 1024 {  // 50MB限制
-    let span = Tracer::start_span(tracer, "memory.test.span." + Int::to_string(span_count))
-    Span::set_attribute(span, "index", Int::to_string(span_count))
-    Span::set_attribute(span, "data", String::repeat("x", 1000))  // 每个span约1KB数据
-    
-    Array::push(spans, span)
-    span_count := span_count + 1
-    
-    // 防止无限循环
-    if span_count > 100000 {
-      break
+  // 模拟内存使用情况
+  let memory_usage_samples = [
+    @azimuth.MemorySample {
+      timestamp : 1640995200000L,
+      heap_used : 536870912,    // 512MB (50%)
+      heap_max : 1073741824,    // 1GB
+      non_heap_used : 134217728, // 128MB
+      gc_count : 15,
+      gc_time_ms : 250
+    },
+    @azimuth.MemorySample {
+      timestamp : 1640995205000L,
+      heap_used : 805306368,    // 768MB (71.5%)
+      heap_max : 1073741824,    // 1GB
+      non_heap_used : 146800640, // 140MB
+      gc_count : 18,
+      gc_time_ms : 320
+    },
+    @azimuth.MemorySample {
+      timestamp : 1640995210000L,
+      heap_used : 966367641,    // 921.6MB (85.8%)
+      heap_max : 1073741824,    // 1GB
+      non_heap_used : 159383552, // 152MB
+      gc_count : 22,
+      gc_time_ms : 450
+    },
+    @azimuth.MemorySample {
+      timestamp : 1640995215000L,
+      heap_used : 1019215872,   // 972MB (90.5%)
+      heap_max : 1073741824,    // 1GB
+      non_heap_used : 167772160, // 160MB
+      gc_count : 28,
+      gc_time_ms : 680
+    },
+    @azimuth.MemorySample {
+      timestamp : 1640995220000L,
+      heap_used : 637534208,    // 608MB (56.6%)
+      heap_max : 1073741824,    // 1GB
+      non_heap_used : 140928614, // 134.4MB
+      gc_count : 35,
+      gc_time_ms : 890
     }
+  ]
+  
+  // 分析内存使用情况
+  let memory_analysis = @azimuth.analyze_memory_usage(memory_monitor, memory_usage_samples)
+  
+  // 验证内存分析结果
+  assert_eq(memory_analysis.sample_count, 5)
+  assert_true(memory_analysis.avg_heap_usage_ratio > 0.5)
+  assert_true(memory_analysis.max_heap_usage_ratio > 0.9)
+  
+  // 验证内存警告和严重事件
+  assert_eq(memory_analysis.warning_events.length(), 1) // 85.8%时触发警告
+  assert_eq(memory_analysis.critical_events.length(), 1) // 90.5%时触发严重事件
+  
+  // 验证内存恢复事件
+  assert_eq(memory_analysis.recovery_events.length(), 1) // 从90.5%恢复到56.6%
+  
+  // 验证GC效率分析
+  assert_true(memory_analysis.gc_efficiency > 0.0)
+  assert_true(memory_analysis.gc_frequency > 0.0)
+  
+  // 测试内存限制策略
+  let memory_limit_strategy = @azimuth.MemoryLimitStrategy {
+    strategy_type : @azimuth.LimitStrategyType::Gradual,
+    backpressure_threshold : 0.8,
+    rejection_threshold : 0.95,
+    recovery_threshold : 0.7,
+    adaptive_sizing : true
   }
   
-  // 验证内存限制触发
-  let current_memory = Memory::used()
-  let memory_increase = current_memory - initial_memory
-  
-  // 在内存限制下，系统应该启用采样或减少数据收集
-  let is_sampling_active = TracerProvider::is_sampling_active(tracer_provider)
-  let sampling_rate = TracerProvider::get_effective_sampling_rate(tracer_provider)
-  
-  if memory_increase > 40 * 1024 * 1024 {  // 超过40MB
-    assert_true(is_sampling_active || sampling_rate < 1.0, "Memory limit should trigger sampling")
+  // 测试不同内存使用级别下的行为
+  let normal_usage = @azimuth.MemorySample {
+    timestamp : 1640995225000L,
+    heap_used : 637534208,    // 608MB (56.6%)
+    heap_max : 1073741824,    // 1GB
+    non_heap_used : 140928614,
+    gc_count : 36,
+    gc_time_ms : 910
   }
   
-  // 测试在内存压力下的新span创建
-  let memory_pressure_span = Tracer::start_span(tracer, "memory.pressure.test")
-  Span::set_attribute(memory_pressure_span, "memory.usage", Int::to_string(current_memory))
+  let normal_action = @azimuth.determine_memory_action(memory_limit_strategy, normal_usage)
+  assert_eq(normal_action.action_type, @azimuth.MemoryActionType::Continue)
   
-  // 验证span仍然可以创建，但可能有更少的属性
-  let span_ctx = Span::span_context(memory_pressure_span)
-  assert_true(SpanContext::is_valid(span_ctx))
-  
-  Span::end(memory_pressure_span)
-  
-  // 清理一半的span以释放内存
-  for i = 0; i < Array::length(spans) / 2; i = i + 1 {
-    let span = Array::get(spans, i)
-    Span::end(span)
+  let warning_usage = @azimuth.MemorySample {
+    timestamp : 1640995230000L,
+    heap_used : 966367641,    // 921.6MB (85.8%)
+    heap_max : 1073741824,    // 1GB
+    non_heap_used : 159383552,
+    gc_count : 40,
+    gc_time_ms : 1200
   }
   
-  // 强制垃圾回收
-  Memory::gc()
+  let warning_action = @azimuth.determine_memory_action(memory_limit_strategy, warning_usage)
+  assert_eq(warning_action.action_type, @azimuth.MemoryActionType::ApplyBackpressure)
   
-  // 等待内存释放
-  Time::sleep(100)
-  
-  // 验证内存恢复
-  let recovered_memory = Memory::used()
-  let memory_recovered = current_memory - recovered_memory
-  
-  // 验证系统恢复正常采样率
-  let recovered_sampling_rate = TracerProvider::get_effective_sampling_rate(tracer_provider)
-  
-  if memory_recovered > 20 * 1024 * 1024 {  // 恢复超过20MB
-    assert_true(recovered_sampling_rate >= sampling_rate, "Sampling rate should recover after memory pressure")
+  let critical_usage = @azimuth.MemorySample {
+    timestamp : 1640995235000L,
+    heap_used : 1020054733,   // 972.8MB (90.5%)
+    heap_max : 1073741824,    // 1GB
+    non_heap_used : 167772160,
+    gc_count : 45,
+    gc_time_ms : 1500
   }
   
-  // 清理剩余的span
-  for i = Array::length(spans) / 2; i < Array::length(spans); i = i + 1 {
-    let span = Array::get(spans, i)
-    Span::end(span)
+  let critical_action = @azimuth.determine_memory_action(memory_limit_strategy, critical_usage)
+  assert_eq(critical_action.action_type, @azimuth.MemoryActionType::ForceGC)
+  
+  let rejection_usage = @azimuth.MemorySample {
+    timestamp : 1640995240000L,
+    heap_used : 1040187393,   // 992MB (92.4%)
+    heap_max : 1073741824,    // 1GB
+    non_heap_used : 171966464,
+    gc_count : 50,
+    gc_time_ms : 1800
   }
   
-  assert_true(true)
+  let rejection_action = @azimuth.determine_memory_action(memory_limit_strategy, rejection_usage)
+  assert_eq(rejection_action.action_type, @azimuth.MemoryActionType::RejectRequests)
 }
 
-test "CPU限制下的自适应处理" {
-  // 测试CPU限制下的自适应处理
-  let tracer_provider = TracerProvider::with_resource_limits([
-    ("max.cpu.usage", "80%"),
-    ("cpu.monitoring.enabled", "true"),
-    ("adaptive.processing.enabled", "true")
-  ])
+test "thread pool management and overload protection" {
+  // 测试线程池管理和过载保护
+  let thread_pool_config = @azimuth.ThreadPoolConfig {
+    core_pool_size : 10,
+    max_pool_size : 50,
+    keep_alive_time_ms : 60000,     // 1分钟
+    queue_capacity : 1000,
+    rejection_policy : @azimuth.RejectionPolicy::CallerRuns,
+    monitoring_enabled : true
+  }
   
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.cpu.test")
+  let thread_pool_monitor = @azimuth.ThreadPoolMonitor {
+    config : thread_pool_config,
+    overload_threshold : 0.8,       // 80%负载阈值
+    starvation_threshold_ms : 5000, // 5秒饥饿阈值
+    sampling_interval_ms : 1000    // 1秒采样间隔
+  }
   
-  // 记录初始CPU使用率
-  let initial_cpu = Cpu::usage()
-  
-  // 创建CPU密集型操作
-  let cpu_intensive_spans = []
-  
-  for i = 0; i < 1000; i = i + 1 {
-    let span = Tracer::start_span(tracer, "cpu.intensive.span." + Int::to_string(i))
-    
-    // 添加复杂属性计算
-    let complex_value = "computed." + Int::to_string(i * i * i)
-    Span::set_attribute(span, "complex.computation", complex_value)
-    
-    // 添加多个事件
-    for j = 0; j < 10; j = j + 1 {
-      Span::add_event(span, "cpu.intensive.event", [
-        ("iteration", Int::to_string(j)),
-        ("computation", "hash_" + Int::to_string(i * j))
-      ])
+  // 模拟线程池状态变化
+  let thread_pool_samples = [
+    @azimuth.ThreadPoolSample {
+      timestamp : 1640995200000L,
+      active_count : 5,
+      pool_size : 10,
+      queue_size : 50,
+      completed_task_count : 1000,
+      rejected_task_count : 0,
+      avg_task_time_ms : 120
+    },
+    @azimuth.ThreadPoolSample {
+      timestamp : 1640995201000L,
+      active_count : 15,
+      pool_size : 20,
+      queue_size : 200,
+      completed_task_count : 1200,
+      rejected_task_count : 0,
+      avg_task_time_ms : 150
+    },
+    @azimuth.ThreadPoolSample {
+      timestamp : 1640995202000L,
+      active_count : 35,
+      pool_size : 40,
+      queue_size : 600,
+      completed_task_count : 1400,
+      rejected_task_count : 5,
+      avg_task_time_ms : 250
+    },
+    @azimuth.ThreadPoolSample {
+      timestamp : 1640995203000L,
+      active_count : 45,
+      pool_size : 50,
+      queue_size : 900,
+      completed_task_count : 1600,
+      rejected_task_count : 20,
+      avg_task_time_ms : 450
+    },
+    @azimuth.ThreadPoolSample {
+      timestamp : 1640995204000L,
+      active_count : 25,
+      pool_size : 30,
+      queue_size : 300,
+      completed_task_count : 1800,
+      rejected_task_count : 25,
+      avg_task_time_ms : 180
     }
-    
-    Array::push(cpu_intensive_spans, span)
-    
-    // 检查CPU使用率
-    let current_cpu = Cpu::usage()
-    if current_cpu - initial_cpu > 80 {  // CPU使用率超过80%
-      break
-    }
+  ]
+  
+  // 分析线程池状态
+  let pool_analysis = @azimuth.analyze_thread_pool_state(thread_pool_monitor, thread_pool_samples)
+  
+  // 验证线程池分析结果
+  assert_eq(pool_analysis.sample_count, 5)
+  assert_true(pool_analysis.max_load_ratio > 0.8)
+  assert_true(pool_analysis.avg_load_ratio > 0.5)
+  
+  // 验证过载事件
+  assert_eq(pool_analysis.overload_events.length(), 1) // 45/50活跃线程时触发过载
+  
+  // 验证拒绝事件
+  assert_true(pool_analysis.total_rejected_tasks > 0)
+  
+  // 验证恢复事件
+  assert_eq(pool_analysis.recovery_events.length(), 1) // 从过载状态恢复
+  
+  // 测试线程池自适应调整
+  let adaptive_strategy = @azimuth.AdaptiveThreadPoolStrategy {
+    scaling_threshold : 0.7,      // 70%负载触发扩容
+    shrink_threshold : 0.3,       // 30%负载触发缩容
+    max_scale_up_step : 5,        // 每次最多扩容5个线程
+    max_scale_down_step : 3,      // 每次最多缩容3个线程
+    scale_up_cooldown_ms : 5000,  // 扩容冷却时间5秒
+    scale_down_cooldown_ms : 10000 // 缩容冷却时间10秒
   }
   
-  // 验证CPU限制下的自适应行为
-  let current_cpu = Cpu::usage()
-  let cpu_increase = current_cpu - initial_cpu
-  
-  // 在CPU压力下，系统应该减少处理复杂度
-  let is_batching_enabled = TracerProvider::is_batching_enabled(tracer_provider)
-  let batch_size = TracerProvider::get_adaptive_batch_size(tracer_provider)
-  
-  if cpu_increase > 60 {  // CPU使用率增加超过60%
-    assert_true(is_batching_enabled, "CPU pressure should enable batching")
-    assert_true(batch_size > 0, "Batch size should be positive under CPU pressure")
+  // 测试线程池扩容决策
+  let high_load_sample = @azimuth.ThreadPoolSample {
+    timestamp : 1640995205000L,
+    active_count : 35,
+    pool_size : 40,
+    queue_size : 600,
+    completed_task_count : 2000,
+    rejected_task_count : 10,
+    avg_task_time_ms : 250
   }
   
-  // 测试在CPU压力下的度量操作
-  let meter_provider = MeterProvider::with_resource_limits([
-    ("max.cpu.usage", "80%"),
-    ("adaptive.aggregation.enabled", "true")
-  ])
+  let scale_up_decision = @azimuth.determine_pool_scaling_action(adaptive_strategy, high_load_sample)
+  assert_eq(scale_up_decision.action_type, @azimuth.ScalingActionType::ScaleUp)
+  assert_true(scale_up_decision.new_size > high_load_sample.pool_size)
   
-  let meter = MeterProvider::get_meter(meter_provider, "resource.cpu.metrics")
-  let cpu_counter = Meter::create_counter(meter, "cpu.intensive.operations", Some("CPU intensive operations"), Some("count"))
-  
-  // 执行大量度量操作
-  for i = 0; i < 10000; i = i + 1 {
-    Counter::add_with_attributes(cpu_counter, 1.0, [
-      ("operation.type", "cpu_intensive"),
-      ("worker.id", Int::to_string(i % 10)),
-      ("complexity", "high")
-    ])
-    
-    // 定期检查CPU使用率
-    if i % 1000 == 0 {
-      let current_cpu = Cpu::usage()
-      if current_cpu - initial_cpu > 80 {
-        break
-      }
-    }
+  // 测试线程池缩容决策
+  let low_load_sample = @azimuth.ThreadPoolSample {
+    timestamp : 1640995206000L,
+    active_count : 8,
+    pool_size : 25,
+    queue_size : 50,
+    completed_task_count : 2100,
+    rejected_task_count : 10,
+    avg_task_time_ms : 100
   }
   
-  // 清理span
-  for span in cpu_intensive_spans {
-    Span::end(span)
-  }
-  
-  assert_true(true)
+  let scale_down_decision = @azimuth.determine_pool_scaling_action(adaptive_strategy, low_load_sample)
+  assert_eq(scale_down_decision.action_type, @azimuth.ScalingActionType::ScaleDown)
+  assert_true(scale_down_decision.new_size < low_load_sample.pool_size)
 }
 
-test "网络限制下的重试和缓存" {
-  // 测试网络限制下的重试和缓存行为
-  let tracer_provider = TracerProvider::with_resource_limits([
-    ("network.timeout", "5000"),
-    ("network.retry.attempts", "3"),
-    ("network.retry.backoff", "exponential"),
-    ("offline.cache.enabled", "true"),
-    ("offline.cache.size", "10MB")
-  ])
-  
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.network.test")
-  
-  // 模拟网络限制环境
-  Network::simulate_throttling(100)  // 限制为100KB/s
-  Network::simulate_latency(500)     // 添加500ms延迟
-  Network::simulate_packet_loss(5)   // 5%丢包率
-  
-  let network_spans = []
-  
-  // 创建需要网络传输的span
-  for i = 0; i < 100; i = i + 1 {
-    let span = Tracer::start_span(tracer, "network.test.span." + Int::to_string(i))
-    Span::set_attribute(span, "requires.export", "true")
-    Span::set_attribute(span, "payload.size", Int::to_string(1024 * (i % 10 + 1)))
-    
-    Array::push(network_spans, span)
+test "connection pool exhaustion and recovery" {
+  // 测试连接池耗尽和恢复
+  let connection_pool_config = @azimuth.ConnectionPoolConfig {
+    initial_size : 5,
+    max_size : 20,
+    min_idle : 2,
+    max_idle : 10,
+    validation_query : "SELECT 1",
+    validation_interval_ms : 30000,  // 30秒验证间隔
+    idle_timeout_ms : 300000,        // 5分钟空闲超时
+    max_lifetime_ms : 1800000,       // 30分钟最大生命周期
+    leak_detection_threshold_ms : 60000 // 1分钟泄漏检测阈值
   }
   
-  // 测试网络限制下的导出行为
-  let export_start_time = Time::now()
-  
-  for span in network_spans {
-    Span::end(span)
+  let connection_pool_monitor = @azimuth.ConnectionPoolMonitor {
+    config : connection_pool_config,
+    exhaustion_threshold : 0.9,      // 90%连接使用率阈值
+    recovery_check_interval_ms : 5000, // 5秒恢复检查间隔
+    health_check_enabled : true
   }
   
-  // 等待导出完成或超时
-  Time::sleep(10000)
-  
-  let export_end_time = Time::now()
-  let export_duration = Time::duration_millis(export_start_time, export_end_time)
-  
-  // 验证网络限制下的行为
-  let successful_exports = TracerProvider::get_successful_export_count(tracer_provider)
-  let failed_exports = TracerProvider::get_failed_export_count(tracer_provider)
-  let cached_items = TracerProvider::get_cached_item_count(tracer_provider)
-  
-  // 在网络限制下，应该有失败的导出和缓存的项目
-  assert_true(failed_exports > 0 || cached_items > 0, "Network limits should cause failures or caching")
-  
-  // 测试网络恢复后的行为
-  Network::remove_throttling()
-  Network::remove_latency()
-  Network::remove_packet_loss()
-  
-  // 等待网络恢复
-  Time::sleep(2000)
-  
-  // 触发缓存重试
-  TracerProvider::retry_cached_exports(tracer_provider)
-  
-  // 等待重试完成
-  Time::sleep(5000)
-  
-  // 验证恢复后的导出
-  let recovered_exports = TracerProvider::get_successful_export_count(tracer_provider) - successful_exports
-  let remaining_cached = TracerProvider::get_cached_item_count(tracer_provider)
-  
-  // 网络恢复后，应该有更多的成功导出和更少的缓存项目
-  assert_true(recovered_exports > 0 || remaining_cached < cached_items, "Network recovery should improve exports")
-  
-  assert_true(true)
-}
-
-test "磁盘空间限制下的本地存储" {
-  // 测试磁盘空间限制下的本地存储行为
-  let tracer_provider = TracerProvider::with_resource_limits([
-    ("local.storage.enabled", "true"),
-    ("local.storage.max.size", "20MB"),
-    ("local.storage.path", "/tmp/azimuth_test"),
-    ("storage.cleanup.policy", "lru")
-  ])
-  
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.disk.test")
-  
-  // 检查可用磁盘空间
-  let available_disk = Disk::available_space("/tmp")
-  let initial_usage = Disk::usage("/tmp/azimuth_test")
-  
-  // 创建需要本地存储的span
-  let storage_spans = []
-  
-  for i = 0; i < 1000; i = i + 1 {
-    let span = Tracer::start_span(tracer, "storage.test.span." + Int::to_string(i))
-    
-    // 添加大量属性以增加存储需求
-    for j = 0; j < 50; j = j + 1 {
-      Span::set_attribute(span, "large.attr." + Int::to_string(j), String::repeat("data", 100))
+  // 模拟连接池状态变化
+  let connection_pool_samples = [
+    @azimuth.ConnectionPoolSample {
+      timestamp : 1640995200000L,
+      active_connections : 5,
+      idle_connections : 10,
+      total_connections : 15,
+      pending_requests : 0,
+      created_count : 15,
+      destroyed_count : 0,
+      leak_suspects : 0,
+      avg_checkout_time_ms : 5
+    },
+    @azimuth.ConnectionPoolSample {
+      timestamp : 1640995203000L,
+      active_connections : 12,
+      idle_connections : 3,
+      total_connections : 15,
+      pending_requests : 5,
+      created_count : 15,
+      destroyed_count : 0,
+      leak_suspects : 0,
+      avg_checkout_time_ms : 15
+    },
+    @azimuth.ConnectionPoolSample {
+      timestamp : 1640995206000L,
+      active_connections : 18,
+      idle_connections : 2,
+      total_connections : 20,
+      pending_requests : 15,
+      created_count : 20,
+      destroyed_count : 0,
+      leak_suspects : 2,
+      avg_checkout_time_ms : 45
+    },
+    @azimuth.ConnectionPoolSample {
+      timestamp : 1640995209000L,
+      active_connections : 19,
+      idle_connections : 1,
+      total_connections : 20,
+      pending_requests : 25,
+      created_count : 20,
+      destroyed_count : 0,
+      leak_suspects : 3,
+      avg_checkout_time_ms : 120
+    },
+    @azimuth.ConnectionPoolSample {
+      timestamp : 1640995212000L,
+      active_connections : 8,
+      idle_connections : 7,
+      total_connections : 15,
+      pending_requests : 2,
+      created_count : 20,
+      destroyed_count : 5,
+      leak_suspects : 1,
+      avg_checkout_time_ms : 20
     }
-    
-    // 添加大量事件
-    for k = 0; k < 20; k = k + 1 {
-      Span::add_event(span, "storage.test.event", [
-        ("event.data", String::repeat("event", 50)),
-        ("event.index", Int::to_string(k))
-      ])
-    }
-    
-    Array::push(storage_spans, span)
-    
-    // 检查磁盘使用情况
-    let current_usage = Disk::usage("/tmp/azimuth_test")
-    if current_usage - initial_usage > 20 * 1024 * 1024 {  // 超过20MB
-      break
-    }
+  ]
+  
+  // 分析连接池状态
+  let pool_analysis = @azimuth.analyze_connection_pool_state(
+    connection_pool_monitor,
+    connection_pool_samples
+  )
+  
+  // 验证连接池分析结果
+  assert_eq(pool_analysis.sample_count, 5)
+  assert_true(pool_analysis.max_utilization_ratio > 0.9)
+  
+  // 验证耗尽事件
+  assert_eq(pool_analysis.exhaustion_events.length(), 1) // 19/20连接使用时触发耗尽
+  
+  // 验证泄漏检测
+  assert_true(pool_analysis.max_leak_suspects > 0)
+  
+  // 验证恢复事件
+  assert_eq(pool_analysis.recovery_events.length(), 1) // 从耗尽状态恢复
+  
+  // 测试连接池恢复策略
+  let recovery_strategy = @azimuth.ConnectionPoolRecoveryStrategy {
+    validation_on_borrow : true,
+    test_while_idle : true,
+    eviction_on_return : false,
+    leak_detection_enabled : true,
+    auto_recovery : true,
+    recovery_batch_size : 3
   }
   
-  // 结束所有span以触发存储
-  for span in storage_spans {
-    Span::end(span)
+  // 测试连接池恢复操作
+  let exhausted_pool_state = @azimuth.ConnectionPoolSample {
+    timestamp : 1640995215000L,
+    active_connections : 19,
+    idle_connections : 1,
+    total_connections : 20,
+    pending_requests : 30,
+    created_count : 20,
+    destroyed_count : 0,
+    leak_suspects : 5,
+    avg_checkout_time_ms : 200
   }
   
-  // 等待存储操作完成
-  Time::sleep(5000)
+  let recovery_actions = @azimuth.determine_recovery_actions(
+    recovery_strategy,
+    exhausted_pool_state
+  )
   
-  // 验证磁盘限制下的行为
-  let final_usage = Disk::usage("/tmp/azimuth_test")
-  let usage_increase = final_usage - initial_usage
+  // 验证恢复操作
+  assert_true(recovery_actions.length() > 0)
   
-  // 验证存储限制被遵守
-  assert_true(usage_increase <= 25 * 1024 * 1024, "Disk usage should not exceed limit significantly")
-  
-  // 测试存储清理策略
-  let stored_files = Disk::list_files("/tmp/azimuth_test")
-  let cleanup_triggered = TracerProvider::was_cleanup_triggered(tracer_provider)
-  
-  if usage_increase > 15 * 1024 * 1024 {  // 接近限制
-    assert_true(cleanup_triggered, "Cleanup should be triggered when approaching storage limit")
-  }
-  
-  // 测试存储恢复
-  TracerProvider::force_cleanup(tracer_provider)
-  
-  // 等待清理完成
-  Time::sleep(2000)
-  
-  let post_cleanup_usage = Disk::usage("/tmp/azimuth_test")
-  let cleanup_recovered = final_usage - post_cleanup_usage
-  
-  // 验证清理效果
-  assert_true(cleanup_recovered > 0, "Cleanup should recover some disk space")
-  
-  // 清理测试文件
-  Disk::remove_directory("/tmp/azimuth_test")
-  
-  assert_true(true)
-}
-
-test "并发资源限制处理" {
-  // 测试并发情况下的资源限制处理
-  let tracer_provider = TracerProvider::with_resource_limits([
-    ("max.concurrent.spans", "1000"),
-    ("max.concurrent.operations", "500"),
-    ("resource.pool.size", "50"),
-    ("queue.max.size", "10000")
-  ])
-  
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.concurrent.test")
-  
-  // 创建并发操作
-  let concurrent_spans = []
-  let concurrent_operations = 2000
-  
-  for i = 0; i < concurrent_operations; i = i + 1 {
-    let span = Tracer::start_span(tracer, "concurrent.test.span." + Int::to_string(i))
-    Span::set_attribute(span, "operation.id", Int::to_string(i))
-    Span::set_attribute(span, "worker.id", Int::to_string(i % 20))
-    
-    Array::push(concurrent_spans, span)
-  }
-  
-  // 验证并发限制
-  let active_spans = TracerProvider::get_active_span_count(tracer_provider)
-  let queued_operations = TracerProvider::get_queued_operation_count(tracer_provider)
-  
-  // 应该有活跃的span和排队的操作
-  assert_true(active_spans > 0, "Should have active spans")
-  assert_true(queued_operations >= 0, "Should have queued operations count")
-  
-  // 测试资源池管理
-  let resource_pool_usage = TracerProvider::get_resource_pool_usage(tracer_provider)
-  assert_true(resource_pool_usage <= 100, "Resource pool usage should be reasonable")
-  
-  // 逐步结束span以测试资源释放
-  let half_count = Array::length(concurrent_spans) / 2
-  
-  for i = 0; i < half_count; i = i + 1 {
-    let span = Array::get(concurrent_spans, i)
-    Span::end(span)
-  }
-  
-  // 等待资源释放
-  Time::sleep(1000)
-  
-  // 验证资源释放
-  let released_spans = TracerProvider::get_active_span_count(tracer_provider)
-  let released_operations = TracerProvider::get_queued_operation_count(tracer_provider)
-  
-  // 应该有更少的活跃span和排队的操作
-  assert_true(released_spans <= active_spans, "Active spans should decrease after ending some")
-  
-  // 结束剩余的span
-  for i = half_count; i < Array::length(concurrent_spans); i = i + 1 {
-    let span = Array::get(concurrent_spans, i)
-    Span::end(span)
-  }
-  
-  // 等待所有资源释放
-  Time::sleep(2000)
-  
-  // 验证完全释放
-  let final_spans = TracerProvider::get_active_span_count(tracer_provider)
-  let final_operations = TracerProvider::get_queued_operation_count(tracer_provider)
-  
-  assert_true(final_spans == 0, "All spans should be ended")
-  assert_true(final_operations == 0, "All operations should be processed")
-  
-  assert_true(true)
-}
-
-test "资源监控和告警" {
-  // 测试资源监控和告警功能
-  let tracer_provider = TracerProvider::with_monitoring([
-    ("monitoring.enabled", "true"),
-    ("alert.thresholds.memory", "80%"),
-    ("alert.thresholds.cpu", "70%"),
-    ("alert.thresholds.disk", "90%"),
-    ("alert.cooldown", "30000")
-  ])
-  
-  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.monitoring.test")
-  
-  // 创建资源监控监听器
-  let alerts_received = ref []
-  
-  ResourceMonitor::on_alert(fn(alert) {
-    alerts_received := Array::push(alerts_received@, alert)
+  // 验证包含泄漏检测
+  let leak_detection = recovery_actions.filter(fn(action) {
+    action.action_type == @azimuth.RecoveryActionType::DetectLeaks
   })
+  assert_eq(leak_detection.length(), 1)
   
-  // 触发内存警告
-  let memory_alert_span = Tracer::start_span(tracer, "memory.alert.test")
+  // 验证包含连接验证
+  let connection_validation = recovery_actions.filter(fn(action) {
+    action.action_type == @azimuth.RecoveryActionType::ValidateConnections
+  })
+  assert_eq(connection_validation.length(), 1)
   
-  // 模拟高内存使用
-  for i = 0; i < 100; i = i + 1 {
-    Span::set_attribute(memory_alert_span, "memory.test.data." + Int::to_string(i), String::repeat("x", 10000))
+  // 验证包含强制回收
+  let force_eviction = recovery_actions.filter(fn(action) {
+    action.action_type == @azimuth.RecoveryActionType::ForceEviction
+  })
+  assert_eq(force_eviction.length(), 1)
+}
+
+test "circuit breaker pattern implementation" {
+  // 测试断路器模式实现
+  let circuit_breaker_config = @azimuth.CircuitBreakerConfig {
+    failure_threshold : 5,           // 5次失败后触发断路
+    success_threshold : 3,           // 3次成功后恢复
+    timeout_ms : 60000,              // 60秒超时
+    reset_timeout_ms : 30000,        // 30秒重置超时
+    half_open_max_calls : 5,         // 半开状态最大调用数
+    failure_rate_threshold : 0.5,    // 50%失败率阈值
+    slow_call_duration_threshold_ms : 5000 // 5秒慢调用阈值
   }
   
-  Span::end(memory_alert_span)
+  let circuit_breaker_state = @azimuth.CircuitBreakerState {
+    state : @azimuth.CircuitBreakerStateType::Closed,
+    failure_count : 0,
+    success_count : 0,
+    last_failure_time : None,
+    last_success_time : None,
+    state_changed_time : 1640995200000L,
+    slow_call_count : 0,
+    fast_call_count : 0
+  }
   
-  // 等待监控检测
-  Time::sleep(2000)
-  
-  // 触发CPU警告
-  let cpu_alert_spans = []
-  
-  for i = 0; i < 1000; i = i + 1 {
-    let span = Tracer::start_span(tracer, "cpu.alert.test." + Int::to_string(i))
-    
-    // 执行CPU密集型操作
-    let result = 0
-    for j = 0; j < 1000; j = j + 1 {
-      result := result + (i * j)
+  // 模拟断路器状态变化
+  let state_transitions = [
+    @azimuth.StateTransition {
+      timestamp : 1640995200000L,
+      from_state : @azimuth.CircuitBreakerStateType::Closed,
+      to_state : @azimuth.CircuitBreakerStateType::Closed,
+      call_result : @azimuth.CallResult::Success,
+      call_duration_ms : 120
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995201000L,
+      from_state : @azimuth.CircuitBreakerStateType::Closed,
+      to_state : @azimuth.CircuitBreakerStateType::Closed,
+      call_result : @azimuth.CallResult::Success,
+      call_duration_ms : 150
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995202000L,
+      from_state : @azimuth.CircuitBreakerStateType::Closed,
+      to_state : @azimuth.CircuitBreakerStateType::Closed,
+      call_result : @azimuth.CallResult::Failure,
+      call_duration_ms : 3000
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995203000L,
+      from_state : @azimuth.CircuitBreakerStateType::Closed,
+      to_state : @azimuth.CircuitBreakerStateType::Closed,
+      call_result : @azimuth.CallResult::Failure,
+      call_duration_ms : 4000
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995204000L,
+      from_state : @azimuth.CircuitBreakerStateType::Closed,
+      to_state : @azimuth.CircuitBreakerStateType::Closed,
+      call_result : @azimuth.CallResult::Failure,
+      call_duration_ms : 2000
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995205000L,
+      from_state : @azimuth.CircuitBreakerStateType::Closed,
+      to_state : @azimuth.CircuitBreakerStateType::Closed,
+      call_result : @azimuth.CallResult::Failure,
+      call_duration_ms : 3500
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995206000L,
+      from_state : @azimuth.CircuitBreakerStateType::Closed,
+      to_state : @azimuth.CircuitBreakerStateType::Open,
+      call_result : @azimuth.CallResult::Failure,
+      call_duration_ms : 2500
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995216000L, // 1分钟后
+      from_state : @azimuth.CircuitBreakerStateType::Open,
+      to_state : @azimuth.CircuitBreakerStateType::HalfOpen,
+      call_result : @azimuth.CallResult::NotCalled,
+      call_duration_ms : 0
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995217000L,
+      from_state : @azimuth.CircuitBreakerStateType::HalfOpen,
+      to_state : @azimuth.CircuitBreakerStateType::HalfOpen,
+      call_result : @azimuth.CallResult::Success,
+      call_duration_ms : 100
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995218000L,
+      from_state : @azimuth.CircuitBreakerStateType::HalfOpen,
+      to_state : @azimuth.CircuitBreakerStateType::HalfOpen,
+      call_result : @azimuth.CallResult::Success,
+      call_duration_ms : 120
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995219000L,
+      from_state : @azimuth.CircuitBreakerStateType::HalfOpen,
+      to_state : @azimuth.CircuitBreakerStateType::HalfOpen,
+      call_result : @azimuth.CallResult::Success,
+      call_duration_ms : 110
+    },
+    @azimuth.StateTransition {
+      timestamp : 1640995220000L,
+      from_state : @azimuth.CircuitBreakerStateType::HalfOpen,
+      to_state : @azimuth.CircuitBreakerStateType::Closed,
+      call_result : @azimuth.CallResult::Success,
+      call_duration_ms : 130
     }
-    
-    Span::set_attribute(span, "cpu.computation.result", Int::to_string(result))
-    Array::push(cpu_alert_spans, span)
+  ]
+  
+  // 分析断路器状态转换
+  let breaker_analysis = @azimuth.analyze_circuit_breaker_behavior(
+    circuit_breaker_config,
+    circuit_breaker_state,
+    state_transitions
+  )
+  
+  // 验证断路器分析结果
+  assert_eq(breaker_analysis.total_calls, 11)
+  assert_eq(breaker_analysis.successful_calls, 5)
+  assert_eq(breaker_analysis.failed_calls, 5)
+  assert_eq(breaker_analysis.not_called_calls, 1)
+  
+  // 验证状态转换
+  assert_eq(breaker_analysis.state_changes.length(), 3) // Closed->Open, Open->HalfOpen, HalfOpen->Closed
+  
+  // 验证断路器打开事件
+  let open_event = breaker_analysis.state_changes.filter(fn(change) {
+    change.to_state == @azimuth.CircuitBreakerStateType::Open
+  })[0]
+  assert_eq(open_event.transition_index, 6) // 第7次转换
+  
+  // 验证断路器恢复事件
+  let recovery_event = breaker_analysis.state_changes.filter(fn(change) {
+    change.to_state == @azimuth.CircuitBreakerStateType::Closed
+  })[0]
+  assert_eq(recovery_event.transition_index, 11) // 第12次转换
+  
+  // 验证断路器决策逻辑
+  let closed_state = @azimuth.CircuitBreakerState {
+    state : @azimuth.CircuitBreakerStateType::Closed,
+    failure_count : 3,
+    success_count : 0,
+    last_failure_time : None,
+    last_success_time : None,
+    state_changed_time : 1640995200000L,
+    slow_call_count : 0,
+    fast_call_count : 3
   }
   
-  for span in cpu_alert_spans {
-    Span::end(span)
+  let closed_decision = @azimuth.evaluate_circuit_breaker_decision(
+    circuit_breaker_config,
+    closed_state,
+    1640995207000L
+  )
+  assert_eq(closed_decision.decision_type, @azimuth.CircuitBreakerDecisionType::AllowCall)
+  
+  let open_state = @azimuth.CircuitBreakerState {
+    state : @azimuth.CircuitBreakerStateType::Open,
+    failure_count : 5,
+    success_count : 0,
+    last_failure_time : Some(1640995206000L),
+    last_success_time : None,
+    state_changed_time : 1640995206000L,
+    slow_call_count : 0,
+    fast_call_count : 3
   }
   
-  // 等待监控检测
-  Time::sleep(3000)
+  let open_decision = @azimuth.evaluate_circuit_breaker_decision(
+    circuit_breaker_config,
+    open_state,
+    1640995207000L // 未超时
+  )
+  assert_eq(open_decision.decision_type, @azimuth.CircuitBreakerDecisionType::RejectCall)
   
-  // 触发磁盘警告
-  let disk_alert_span = Tracer::start_span(tracer, "disk.alert.test")
-  
-  // 创建大量事件以增加磁盘使用
-  for i = 0; i < 500; i = i + 1 {
-    Span::add_event(disk_alert_span, "disk.test.event", [
-      ("large.data", String::repeat("disk", 1000)),
-      ("event.index", Int::to_string(i))
-    ])
-  }
-  
-  Span::end(disk_alert_span)
-  
-  // 等待监控检测
-  Time::sleep(2000)
-  
-  // 验证告警
-  let memory_alerts = Array::filter(alerts_received@, fn(alert) {
-    ResourceAlert::get_type(alert) == "memory"
-  })
-  
-  let cpu_alerts = Array::filter(alerts_received@, fn(alert) {
-    ResourceAlert::get_type(alert) == "cpu"
-  })
-  
-  let disk_alerts = Array::filter(alerts_received@, fn(alert) {
-    ResourceAlert::get_type(alert) == "disk"
-  })
-  
-  // 应该至少有一种类型的告警
-  assert_true(Array::length(memory_alerts) > 0 || Array::length(cpu_alerts) > 0 || Array::length(disk_alerts) > 0, 
-              "Should receive at least one type of resource alert")
-  
-  // 验证告警内容
-  if Array::length(memory_alerts) > 0 {
-    let memory_alert = Array::get(memory_alerts, 0)
-    assert_true(ResourceAlert::get_severity(memory_alert) >= Warning, "Memory alert should have appropriate severity")
-    assert_true(String::contains(ResourceAlert::get_message(memory_alert), "memory"), "Memory alert should mention memory")
-  }
-  
-  // 测试告警冷却
-  let initial_alert_count = Array::length(alerts_received@)
-  
-  // 再次触发相同类型的资源压力
-  let cooldown_span = Tracer::start_span(tracer, "cooldown.test")
-  Span::set_attribute(cooldown_span, "cooldown.test.data", String::repeat("x", 50000))
-  Span::end(cooldown_span)
-  
-  // 等待潜在的新告警
-  Time::sleep(2000)
-  
-  let final_alert_count = Array::length(alerts_received@)
-  
-  // 由于冷却期，不应该立即收到新的相同类型告警
-  assert_true(final_alert_count - initial_alert_count <= 1, "Alert cooldown should prevent spam")
-  
-  assert_true(true)
+  let timed_out_open_decision = @azimuth.evaluate_circuit_breaker_decision(
+    circuit_breaker_config,
+    open_state,
+    1640995217000L // 已超时
+  )
+  assert_eq(timed_out_open_decision.decision_type, @azimuth.CircuitBreakerDecisionType::TransitionToHalfOpen)
 }
