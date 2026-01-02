@@ -141,6 +141,16 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_617a696d7574685f6e65775f74657374732e6d6274_8, ["属性值类型转换测试"]),
     9: (__test_617a696d7574685f6e65775f74657374732e6d6274_9, ["复合场景测试"]),
   },
+  "azimuth_new_test_suites.mbt": {
+    0: (__test_617a696d7574685f6e65775f746573745f7375697465732e6d6274_0, ["error handling and boundary conditions"]),
+    1: (__test_617a696d7574685f6e65775f746573745f7375697465732e6d6274_1, ["performance benchmarks"]),
+    2: (__test_617a696d7574685f6e65775f746573745f7375697465732e6d6274_2, ["concurrent safety operations"]),
+    3: (__test_617a696d7574685f6e65775f746573745f7375697465732e6d6274_3, ["data serialization and integrity"]),
+    4: (__test_617a696d7574685f6e65775f746573745f7375697465732e6d6274_4, ["configuration management and dynamic updates"]),
+    5: (__test_617a696d7574685f6e65775f746573745f7375697465732e6d6274_5, ["time series operations"]),
+    6: (__test_617a696d7574685f6e65775f746573745f7375697465732e6d6274_6, ["resource management and merge strategies"]),
+    7: (__test_617a696d7574685f6e65775f746573745f7375697465732e6d6274_7, ["cross-service propagation and consistency"]),
+  },
   "azimuth_new_focused_tests.mbt": {
     0: (__test_617a696d7574685f6e65775f666f63757365645f74657374732e6d6274_0, ["edge case empty and null attributes"]),
     1: (__test_617a696d7574685f6e65775f666f63757365645f74657374732e6d6274_1, ["performance stress test metrics"]),

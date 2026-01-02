@@ -22,6 +22,11 @@
     },
     {
       "root": "azimuth/telemetry",
+      "rel": "new_test_dir",
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/new_test_dir/new_test_dir.mi"
+    },
+    {
+      "root": "azimuth/telemetry",
       "rel": "practical_test",
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/practical_test/practical_test.mi"
     },
