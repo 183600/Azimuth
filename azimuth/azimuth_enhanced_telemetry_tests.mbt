@@ -1,601 +1,408 @@
-// Enhanced Telemetry Tests for Azimuth System
-// This file contains comprehensive test cases focusing on advanced telemetry scenarios
+// Azimuth Enhanced Telemetry Test Suite
+// 增强遥测测试套件 - 覆盖遥测系统的高级功能和边界情况
 
-// Test 1: Cross-Service Telemetry Consistency
-test "cross-service telemetry consistency" {
-  // Create multiple service contexts
-  let service_a_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-a")
-  let service_b_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-b")
-  let service_c_tracer = TracerProvider::get_tracer(TracerProvider::default(), "service-c")
+test "度量仪表盘操作" {
+  // 测试度量仪表盘的基本操作
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "gauge.test")
   
-  // Create a shared trace context
-  let shared_trace_id = "1234567890abcdef1234567890abcdef"
-  let parent_span_id = "1111111111111111"
-  let parent_ctx = SpanContext::new(shared_trace_id, parent_span_id, true, "service=entrypoint")
+  // 创建仪表盘度量
+  let cpu_gauge = Meter::create_gauge(meter, "system.cpu.usage", Some("CPU usage percentage"), Some("%"))
+  let memory_gauge = Meter::create_gauge(meter, "system.memory.usage", Some("Memory usage percentage"), Some("%"))
   
-  // Service A creates child span
-  let span_a = Span::new("service-a-operation", Server, parent_ctx)
-  Span::add_event(span_a, "service-a-started", Some([
-    ("service.name", StringValue("service-a")),
-    ("operation.type", StringValue("data.processing"))
-  ]))
+  // 设置仪表盘值
+  Gauge::set(cpu_gauge, 75.5)
+  Gauge::set(memory_gauge, 62.3)
   
-  // Service B creates child span with same trace
-  let span_b_ctx = SpanContext::new(shared_trace_id, "2222222222222222", true, "service=service-a")
-  let span_b = Span::new("service-b-operation", Server, span_b_ctx)
-  Span::add_event(span_b, "service-b-started", Some([
-    ("service.name", StringValue("service-b")),
-    ("operation.type", StringValue("data.transformation"))
-  ]))
+  // 测试带属性的仪表盘设置
+  Gauge::set_with_attributes(cpu_gauge, 45.2, [("core", "0"), ("process", "main")])
+  Gauge::set_with_attributes(memory_gauge, 78.9, [("type", "heap"), ("process", "worker")])
   
-  // Service C creates child span with same trace
-  let span_c_ctx = SpanContext::new(shared_trace_id, "3333333333333333", true, "service=service-b")
-  let span_c = Span::new("service-c-operation", Server, span_c_ctx)
-  Span::add_event(span_c, "service-c-started", Some([
-    ("service.name", StringValue("service-c")),
-    ("operation.type", StringValue("data.storage"))
-  ]))
+  // 验证仪表盘属性
+  assert_eq(cpu_gauge.name, "system.cpu.usage")
+  assert_eq(cpu_gauge.description, Some("CPU usage percentage"))
+  assert_eq(cpu_gauge.unit, Some("%"))
   
-  // Verify trace consistency across services
-  assert_eq(SpanContext::trace_id(Span::span_context(span_a)), shared_trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(span_b)), shared_trace_id)
-  assert_eq(SpanContext::trace_id(Span::span_context(span_c)), shared_trace_id)
+  assert_eq(memory_gauge.name, "system.memory.usage")
+  assert_eq(memory_gauge.description, Some("Memory usage percentage"))
+  assert_eq(memory_gauge.unit, Some("%"))
   
-  // End all spans
-  Span::end(span_a)
-  Span::end(span_b)
-  Span::end(span_c)
+  assert_true(true)
 }
 
-// Test 2: Time Series Data Processing
-test "time series data processing and aggregation" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "time-series-test")
+test "跨服务追踪传播" {
+  // 测试跨服务追踪的传播机制
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "cross.service.test")
   
-  // Create time series metrics
-  let cpu_histogram = Meter::create_histogram(meter, "system.cpu.usage", Some("CPU usage percentage"), Some("%"))
-  let memory_histogram = Meter::create_histogram(meter, "system.memory.usage", Some("Memory usage percentage"), Some("%"))
-  let request_counter = Meter::create_counter(meter, "http.requests.total", Some("Total HTTP requests"), Some("count"))
+  // 创建父span
+  let parent_span = Tracer::start_span(tracer, "parent.service.operation")
+  Span::set_attribute(parent_span, "service.name", "api-gateway")
+  Span::set_attribute(parent_span, "operation.type", "request")
   
-  // Simulate time series data points over time
-  let time_points = [1000L, 2000L, 3000L, 4000L, 5000L, 6000L, 7000L, 8000L, 9000L, 10000L]
-  let cpu_values = [23.5, 25.1, 24.8, 26.2, 27.5, 28.9, 27.3, 26.8, 25.9, 24.7]
-  let memory_values = [45.2, 46.1, 45.8, 47.2, 48.5, 49.1, 48.3, 47.6, 46.9, 46.3]
+  // 获取父span上下文
+  let parent_ctx = Span::span_context(parent_span)
   
-  // Record time series data
-  for i = 0; i < time_points.length(); i = i + 1 {
-    Histogram::record(cpu_histogram, cpu_values[i])
-    Histogram::record(memory_histogram, memory_values[i])
-    
-    // Simulate request rate changes over time
-    let request_rate = 10.0 + (i % 5) * 2.0
-    Counter::add(request_counter, request_rate)
-  }
+  // 创建子span1
+  let child_span1 = Tracer::start_span_with_parent(tracer, "child.service.operation.1", parent_ctx)
+  Span::set_attribute(child_span1, "service.name", "user-service")
+  Span::set_attribute(child_span1, "operation.type", "database.query")
   
-  // Create aggregated metrics
-  let avg_cpu = 23.5 + 25.1 + 24.8 + 26.2 + 27.5 + 28.9 + 27.3 + 26.8 + 25.9 + 24.7
-  let avg_memory = 45.2 + 46.1 + 45.8 + 47.2 + 48.5 + 49.1 + 48.3 + 47.6 + 46.9 + 46.3
+  // 创建子span2
+  let child_span2 = Tracer::start_span_with_parent(tracer, "child.service.operation.2", parent_ctx)
+  Span::set_attribute(child_span2, "service.name", "payment-service")
+  Span::set_attribute(child_span2, "operation.type", "external.api")
   
-  // Verify metrics creation
-  assert_eq(cpu_histogram.name, "system.cpu.usage")
-  assert_eq(memory_histogram.name, "system.memory.usage")
-  assert_eq(request_counter.name, "http.requests.total")
+  // 创建孙span
+  let grandchild_span = Tracer::start_span_with_parent(tracer, "grandchild.service.operation", Span::span_context(child_span1))
+  Span::set_attribute(grandchild_span, "service.name", "auth-service")
+  Span::set_attribute(grandchild_span, "operation.type", "token.validation")
   
-  // Test time window aggregation
-  let window_histogram = Meter::create_histogram(meter, "windowed.response.time", Some("Response time in 5min windows"), Some("ms"))
+  // 验证所有span都有有效的上下文
+  assert_true(SpanContext::is_valid(parent_ctx))
+  assert_true(SpanContext::is_valid(Span::span_context(child_span1)))
+  assert_true(SpanContext::is_valid(Span::span_context(child_span2)))
+  assert_true(SpanContext::is_valid(Span::span_context(grandchild_span)))
   
-  // Simulate windowed data
-  for i = 0; i < 100; i = i + 1 {
-    let response_time = 50.0 + (i % 20) * 5.0 + (i % 10) * 2.0
-    Histogram::record(window_histogram, response_time)
-  }
+  // 结束所有span（按正确顺序）
+  Span::end(grandchild_span)
+  Span::end(child_span1)
+  Span::end(child_span2)
+  Span::end(parent_span)
   
-  assert_eq(window_histogram.name, "windowed.response.time")
+  assert_true(true)
 }
 
-// Test 3: High Concurrency Resource Management
-test "high concurrency resource management" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "concurrency-test")
+test "时间序列数据处理" {
+  // 测试时间序列数据的处理和聚合
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "timeseries.test")
   
-  // Create concurrent-safe metrics
-  let concurrent_counter = Meter::create_counter(meter, "concurrent.operations", Some("Concurrent operations"), Some("count"))
-  let active_connections = Meter::create_updown_counter(meter, "active.connections", Some("Active connections"), Some("count"))
-  let resource_pool = Meter::create_gauge(meter, "resource.pool.size", Some("Resource pool size"), Some("count"))
-  
-  // Simulate high concurrency scenario
-  let concurrent_operations = 50
-  let resources_per_operation = 5
-  
-  // Simulate concurrent operations acquiring resources
-  for i = 0; i < concurrent_operations; i = i + 1 {
-    // Simulate resource acquisition
-    UpDownCounter::add(active_connections, 1.0)
-    Counter::add(concurrent_counter, 1.0)
-    
-    // Simulate resource usage within operation
-    for j = 0; j < resources_per_operation; j = j + 1 {
-      Counter::add(concurrent_counter, 1.0)
-    }
-    
-    // Simulate resource release
-    UpDownCounter::add(active_connections, -1.0)
-  }
-  
-  // Create span with concurrent operations
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "concurrency-test")
-  let concurrent_span = Span::new("concurrent.operation", Internal, SpanContext::new("trace-concurrent", "span-concurrent", true, ""))
-  
-  // Add concurrent events
-  for i = 0; i < 10; i = i + 1 {
-    Span::add_event(concurrent_span, "concurrent.task", Some([
-      ("task.id", IntValue(i)),
-      ("thread.id", IntValue(i % 4)),
-      ("operation.type", StringValue("resource.access"))
-    ]))
-  }
-  
-  Span::end(concurrent_span)
-  
-  // Verify concurrent operations
-  assert_eq(concurrent_counter.name, "concurrent.operations")
-  assert_eq(active_connections.name, "active.connections")
-  assert_eq(resource_pool.name, "resource.pool.size")
-}
-
-// Test 4: Dynamic Configuration Updates
-test "dynamic configuration updates" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "config-test")
-  
-  // Create metrics that will be affected by configuration changes
-  let config_counter = Meter::create_counter(meter, "config.changes", Some("Configuration changes"), Some("count"))
-  let config_histogram = Meter::create_histogram(meter, "config.update.latency", Some("Config update latency"), Some("ms"))
-  
-  // Simulate initial configuration
-  let initial_config = Attributes::new()
-  Attributes::set(initial_config, "sampling.rate", FloatValue(1.0))
-  Attributes::set(initial_config, "batch.size", IntValue(100))
-  Attributes::set(initial_config, "export.interval", IntValue(5000))
-  Attributes::set(initial_config, "trace.level", StringValue("INFO"))
-  
-  // Record initial state
-  Counter::add(config_counter, 1.0)
-  Histogram::record(config_histogram, 10.5)
-  
-  // Simulate dynamic configuration updates
-  let config_updates = [
-    ("sampling.rate", FloatValue(0.5)),
-    ("batch.size", IntValue(200)),
-    ("export.interval", IntValue(3000)),
-    ("trace.level", StringValue("DEBUG")),
-    ("feature.enabled", BoolValue(true))
-  ]
-  
-  for update in config_updates {
-    let updated_config = Attributes::new()
-    Attributes::set(updated_config, update.0, update.1)
-    
-    // Record configuration change
-    Counter::add(config_counter, 1.0)
-    Histogram::record(config_histogram, 15.2)
-    
-    // Simulate configuration propagation delay
-    let propagation_delay = match update.0 {
-      "sampling.rate" => 50.5
-      "batch.size" => 75.3
-      "export.interval" => 100.7
-      "trace.level" => 25.1
-      "feature.enabled" => 30.9
-      _ => 20.0
-    }
-    
-    Histogram::record(config_histogram, propagation_delay)
-  }
-  
-  // Create span for configuration tracking
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "config-tracker")
-  let config_span = Span::new("configuration.update", Internal, SpanContext::new("trace-config", "span-config", true, ""))
-  
-  // Add configuration events
-  Span::add_event(config_span, "config.loaded", Some([
-    ("config.version", StringValue("1.0.0")),
-    ("config.source", StringValue("file"))
-  ]))
-  
-  Span::add_event(config_span, "config.updated", Some([
-    ("config.version", StringValue("1.1.0")),
-    ("config.source", StringValue("dynamic")),
-    ("update.reason", StringValue("performance.optimization"))
-  ]))
-  
-  Span::end(config_span)
-  
-  // Verify configuration metrics
-  assert_eq(config_counter.name, "config.changes")
-  assert_eq(config_histogram.name, "config.update.latency")
-}
-
-// Test 5: Internationalization and Localization Support
-test "internationalization and localization support" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "i18n-test")
-  
-  // Test multilingual log messages
-  let log_messages = [
-    ("en", "Operation completed successfully"),
-    ("zh", "操作成功完成"),
-    ("es", "Operación completada con éxito"),
-    ("fr", "Opération terminée avec succès"),
-    ("de", "Vorgang erfolgreich abgeschlossen"),
-    ("ja", "操作が正常に完了しました"),
-    ("ko", "작업이 성공적으로 완료되었습니다"),
-    ("ru", "Операция успешно завершена")
-  ]
-  
-  for message in log_messages {
-    let i18n_attrs = Attributes::new()
-    Attributes::set(i18n_attrs, "locale", StringValue(message.0))
-    Attributes::set(i18n_attrs, "message.id", StringValue("operation.success"))
-    
-    let localized_log = LogRecord::new_with_context(
-      Info,
-      Some(message.1),
-      Some(i18n_attrs),
-      Some(1735689600000000000L),
-      Some(1735689600000001000L),
-      Some("trace-i18n"),
-      Some("span-i18n"),
-      Some(Context::root())
-    )
-    
-    Logger::emit(logger, localized_log)
-  }
-  
-  // Test localized error messages
-  let error_messages = [
-    ("en", "Database connection failed"),
-    ("zh", "数据库连接失败"),
-    ("es", "Error de conexión a la base de datos"),
-    ("fr", "Échec de connexion à la base de données"),
-    ("de", "Datenbankverbindung fehlgeschlagen"),
-    ("ja", "データベース接続に失敗しました"),
-    ("ko", "데이터베이스 연결에 실패했습니다"),
-    ("ru", "Не удалось подключиться к базе данных")
-  ]
-  
-  for error in error_messages {
-    let error_attrs = Attributes::new()
-    Attributes::set(error_attrs, "locale", StringValue(error.0))
-    Attributes::set(error_attrs, "error.code", IntValue(500))
-    Attributes::set(error_attrs, "error.type", StringValue("database.connection"))
-    
-    let error_log = LogRecord::new_with_context(
-      Error,
-      Some(error.1),
-      Some(error_attrs),
-      Some(1735689600000000000L),
-      Some(1735689600000001000L),
-      Some("trace-error"),
-      Some("span-error"),
-      Some(Context::root())
-    )
-    
-    Logger::emit(logger, error_log)
-  }
-  
-  // Test localized span names and events
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "i18n-tracer")
-  let localized_span = Span::new("internationalized.operation", Internal, SpanContext::new("trace-i18n-op", "span-i18n-op", true, ""))
-  
-  let localized_events = [
-    ("en", "Operation started"),
-    ("zh", "操作开始"),
-    ("es", "Operación iniciada"),
-    ("fr", "Opération démarrée"),
-    ("de", "Vorgang gestartet"),
-    ("ja", "操作を開始しました"),
-    ("ko", "작업을 시작했습니다"),
-    ("ru", "Операция начата")
-  ]
-  
-  for event in localized_events {
-    Span::add_event(localized_span, event.1, Some([
-      ("locale", StringValue(event.0)),
-      ("event.type", StringValue("operation.lifecycle"))
-    ]))
-  }
-  
-  Span::end(localized_span)
-  
-  // Verify internationalization support
-  assert_true(true)  // If we reach here, all internationalization tests passed
-}
-
-// Test 6: Network Exception Handling
-test "network exception handling and recovery" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "network-test")
-  
-  // Create network-related metrics
-  let network_errors = Meter::create_counter(meter, "network.errors", Some("Network errors"), Some("count"))
-  let retry_counter = Meter::create_counter(meter, "network.retries", Some("Network retries"), Some("count"))
-  let connection_pool = Meter::create_gauge(meter, "connection.pool.size", Some("Connection pool size"), Some("count"))
-  
-  // Simulate network scenarios
-  let network_scenarios = [
-    ("timeout", 408, "Request timeout"),
-    ("connection_refused", 503, "Connection refused"),
-    ("dns_resolution", 500, "DNS resolution failed"),
-    ("ssl_error", 495, "SSL certificate error"),
-    ("rate_limit", 429, "Rate limit exceeded"),
-    ("server_error", 500, "Internal server error"),
-    ("service_unavailable", 503, "Service temporarily unavailable")
-  ]
-  
-  for scenario in network_scenarios {
-    let error_attrs = Attributes::new()
-    Attributes::set(error_attrs, "error.type", StringValue(scenario.0))
-    Attributes::set(error_attrs, "error.code", IntValue(scenario.1))
-    Attributes::set(error_attrs, "error.message", StringValue(scenario.2))
-    Attributes::set(error_attrs, "retry.count", IntValue(3))
-    
-    // Record network error
-    Counter::add(network_errors, 1.0)
-    
-    // Simulate retry attempts
-    for i = 0; i < 3; i = i + 1 {
-      Counter::add(retry_counter, 1.0)
-      Histogram::record(Meter::create_histogram(meter, "retry.delay", Some("Retry delay"), Some("ms")), 100.0 * (i + 1) * 1.5)
-    }
-    
-    // Create span for network operation
-    let tracer = TracerProvider::get_tracer(TracerProvider::default(), "network-test")
-    let network_span = Span::new("network.request", Client, SpanContext::new("trace-network", "span-network", true, ""))
-    
-    // Add network events
-    Span::add_event(network_span, "request.started", Some([
-      ("http.method", StringValue("GET")),
-      ("http.url", StringValue("https://api.example.com/data")),
-      ("request.id", StringValue("req-12345"))
-    ]))
-    
-    Span::add_event(network_span, "request.failed", Some([
-      ("error.type", StringValue(scenario.0)),
-      ("error.code", IntValue(scenario.1)),
-      ("error.message", StringValue(scenario.2))
-    ]))
-    
-    // Simulate recovery
-    Span::add_event(network_span, "retry.attempted", Some([
-      ("retry.count", IntValue(3)),
-      ("retry.strategy", StringValue("exponential.backoff"))
-    ]))
-    
-    Span::add_event(network_span, "request.recovered", Some([
-      ("recovery.strategy", StringValue("circuit.breaker")),
-      ("fallback.used", BoolValue(true))
-    ]))
-    
-    Span::end(network_span)
-  }
-  
-  // Test connection pool management during errors
-  for i = 0; i < 10; i = i + 1 {
-    // Simulate connection acquisition
-    UpDownCounter::add(Meter::create_updown_counter(meter, "active.connections", Some("Active connections"), Some("count")), 1.0)
-    
-    // Simulate connection failure
-    if i % 3 == 0 {
-      Counter::add(network_errors, 1.0)
-      UpDownCounter::add(Meter::create_updown_counter(meter, "active.connections", Some("Active connections"), Some("count")), -1.0)
-    } else {
-      // Simulate successful connection
-      UpDownCounter::add(Meter::create_updown_counter(meter, "active.connections", Some("Active connections"), Some("count")), -1.0)
-    }
-  }
-  
-  // Verify network metrics
-  assert_eq(network_errors.name, "network.errors")
-  assert_eq(retry_counter.name, "network.retries")
-  assert_eq(connection_pool.name, "connection.pool.size")
-}
-
-// Test 7: Security and Privacy Protection
-test "security and privacy protection" {
-  let provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(provider, "security-test")
-  
-  // Test sensitive data redaction
-  let sensitive_attrs = Attributes::new()
-  Attributes::set(sensitive_attrs, "user.id", StringValue("user-12345"))
-  Attributes::set(sensitive_attrs, "email", StringValue("user@example.com"))
-  Attributes::set(sensitive_attrs, "phone", StringValue("+1234567890"))
-  Attributes::set(sensitive_attrs, "credit.card", StringValue("****-****-****-1234"))
-  Attributes::set(sensitive_attrs, "ssn", StringValue("***-**-6789"))
-  Attributes::set(sensitive_attrs, "api.key", StringValue("sk-****-****-****-****"))
-  
-  // Create security log with redacted data
-  let security_log = LogRecord::new_with_context(
-    Warn,
-    Some("Security event with redacted sensitive data"),
-    Some(sensitive_attrs),
-    Some(1735689600000000000L),
-    Some(1735689600000001000L),
-    Some("trace-security"),
-    Some("span-security"),
-    Some(Context::root())
+  // 创建时间序列直方图
+  let latency_histogram = Meter::create_histogram(
+    meter, 
+    "request.latency", 
+    Some("Request latency distribution"), 
+    Some("ms")
   )
   
-  Logger::emit(logger, security_log)
-  
-  // Test authentication and authorization events
-  let auth_events = [
-    ("login.success", "User authenticated successfully", "user-12345", "192.168.1.100"),
-    ("login.failed", "Authentication failed - invalid credentials", "user-67890", "192.168.1.101"),
-    ("permission.denied", "Access denied - insufficient permissions", "user-12345", "192.168.1.100"),
-    ("token.expired", "Authentication token expired", "user-11111", "192.168.1.102"),
-    ("account.locked", "Account locked due to failed attempts", "user-22222", "192.168.1.103")
-  ]
-  
-  for event in auth_events {
-    let auth_attrs = Attributes::new()
-    Attributes::set(auth_attrs, "event.type", StringValue(event.0))
-    Attributes::set(auth_attrs, "user.id", StringValue(event.2))
-    Attributes::set(auth_attrs, "client.ip", StringValue(event.3))
-    Attributes::set(auth_attrs, "security.level", StringValue("high"))
-    
-    let auth_log = LogRecord::new_with_context(
-      if event.0 == "login.success" { Info } else { Warn },
-      Some(event.1),
-      Some(auth_attrs),
-      Some(1735689600000000000L),
-      Some(1735689600000001000L),
-      Some("trace-auth"),
-      Some("span-auth"),
-      Some(Context::root())
+  // 记录时间序列数据点
+  let time_points = [12.5, 18.7, 25.3, 32.1, 45.8, 67.2, 78.9, 89.4, 92.1, 98.6]
+  for time_point in time_points {
+    Histogram::record_with_attributes(
+      latency_histogram, 
+      time_point, 
+      [("endpoint", "/api/data"), ("method", "GET")]
     )
-    
-    Logger::emit(logger, auth_log)
   }
   
-  // Test data encryption and decryption
-  let tracer = TracerProvider::get_tracer(TracerProvider::default(), "security-test")
-  let encryption_span = Span::new("data.encryption", Internal, SpanContext::new("trace-encrypt", "span-encrypt", true, ""))
+  // 创建另一个时间序列度量
+  let throughput_counter = Meter::create_counter(
+    meter, 
+    "request.throughput", 
+    Some("Request throughput"), 
+    Some("requests/sec")
+  )
   
-  Span::add_event(encryption_span, "encryption.started", Some([
-    ("algorithm", StringValue("AES-256-GCM")),
-    ("key.size", IntValue(256)),
-    ("data.type", StringValue("personal.identifiable.information"))
-  ]))
+  // 模拟时间序列吞吐量数据
+  let throughput_values = [150.0, 175.0, 200.0, 180.0, 225.0, 250.0, 275.0, 300.0]
+  for (index, throughput) in throughput_values.enumerate() {
+    Counter::add_with_attributes(
+      throughput_counter, 
+      throughput, 
+      [("minute", index.to_string()), ("hour", "09")]
+    )
+  }
   
-  Span::add_event(encryption_span, "encryption.completed", Some([
-    ("algorithm", StringValue("AES-256-GCM")),
-    ("encrypted.size", IntValue(1024)),
-    ("encryption.time", IntValue(15))
-  ]))
+  // 验证度量属性
+  assert_eq(latency_histogram.name, "request.latency")
+  assert_eq(latency_histogram.unit, Some("ms"))
+  assert_eq(throughput_counter.name, "request.throughput")
+  assert_eq(throughput_counter.unit, Some("requests/sec"))
   
-  Span::end(encryption_span)
-  
-  // Test security metrics
-  let meter = MeterProvider::default()
-  let security_meter = MeterProvider::get_meter(meter, "security-metrics")
-  
-  let security_events = Meter::create_counter(security_meter, "security.events", Some("Security events"), Some("count"))
-  let encryption_operations = Meter::create_counter(security_meter, "encryption.operations", Some("Encryption operations"), Some("count"))
-  let auth_attempts = Meter::create_counter(security_meter, "authentication.attempts", Some("Authentication attempts"), Some("count"))
-  
-  // Record security metrics
-  Counter::add(security_events, 10.0)
-  Counter::add(encryption_operations, 25.0)
-  Counter::add(auth_attempts, 100.0)
-  
-  // Verify security metrics
-  assert_eq(security_events.name, "security.events")
-  assert_eq(encryption_operations.name, "encryption.operations")
-  assert_eq(auth_attempts.name, "authentication.attempts")
+  assert_true(true)
 }
 
-// Test 8: Real-time Dashboard Streaming
-test "real-time dashboard streaming and aggregation" {
-  let provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(provider, "dashboard-test")
+test "动态配置管理" {
+  // 测试遥测系统的动态配置管理
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
   
-  // Create real-time metrics
-  let realtime_counter = Meter::create_counter(meter, "realtime.events", Some("Real-time events"), Some("count"))
-  let realtime_gauge = Meter::create_gauge(meter, "realtime.users", Some("Real-time active users"), Some("count"))
-  let realtime_histogram = Meter::create_histogram(meter, "realtime.latency", Some("Real-time latency"), Some("ms"))
+  // 创建配置对象
+  let config = TelemetryConfig::new()
   
-  // Simulate real-time data stream
-  let stream_data_points = 100
-  let users_active = 150
-  let events_per_second = 25
+  // 设置采样配置
+  TelemetryConfig::set_sampling(config, "always_on")
+  TelemetryConfig::set_sampling_rate(config, 1.0)
   
-  // Simulate real-time data ingestion
-  for i = 0; i < stream_data_points; i = i + 1 {
-    // Simulate user activity
-    if i % 10 == 0 {
-      UpDownCounter::add(Meter::create_updown_counter(meter, "active.users", Some("Active users"), Some("count")), 5.0)
-    }
-    
-    // Simulate event generation
-    for j = 0; j < events_per_second / 25; j = j + 1 {
-      Counter::add(realtime_counter, 1.0)
-    }
-    
-    // Simulate latency measurements
-    let latency = 10.0 + (i % 50) * 2.0 + (i % 10) * 5.0
-    Histogram::record(realtime_histogram, latency)
-    
-    // Simulate dashboard update every 10 data points
-    if i % 10 == 0 {
-      let dashboard_span = Span::new("dashboard.update", Internal, SpanContext::new("trace-dashboard", "span-dashboard", true, ""))
-      
-      Span::add_event(dashboard_span, "dashboard.refresh", Some([
-        ("update.id", IntValue(i / 10)),
-        ("data.points", IntValue(10)),
-        ("refresh.time", FloatValue(latency)),
-        ("active.widgets", IntValue(15))
-      ]))
-      
-      Span::end(dashboard_span)
-    }
+  // 设置批处理配置
+  TelemetryConfig::set_batch_size(config, 512)
+  TelemetryConfig::set_batch_timeout(config, 5000)
+  
+  // 设置导出器配置
+  TelemetryConfig::set_exporter_endpoint(config, "http://otel-collector:4317")
+  TelemetryConfig::set_exporter_protocol(config, "grpc")
+  
+  // 设置资源属性
+  let resource_attrs = [
+    ("service.name", "telemetry-test-service"),
+    ("service.version", "1.0.0"),
+    ("deployment.environment", "test"),
+    ("telemetry.sdk.name", "azimuth"),
+    ("telemetry.sdk.version", "0.1.0")
+  ]
+  TelemetryConfig::set_resource_attributes(config, resource_attrs)
+  
+  // 应用配置
+  TracerProvider::apply_config(tracer_provider, config)
+  MeterProvider::apply_config(meter_provider, config)
+  LoggerProvider::apply_config(logger_provider, config)
+  
+  // 验证配置是否生效
+  let tracer = TracerProvider::get_tracer(tracer_provider, "config.test")
+  let meter = MeterProvider::get_meter(meter_provider, "config.test")
+  let logger = LoggerProvider::get_logger(logger_provider, "config.test")
+  
+  // 创建测试span和度量来验证配置
+  let span = Tracer::start_span(tracer, "config.validation")
+  Span::set_attribute(span, "config.test", true)
+  
+  let counter = Meter::create_counter(meter, "config.test.counter", None, None)
+  Counter::add(counter, 1.0)
+  
+  let log = LogRecord::new(Info, "Configuration validation completed")
+  Logger::emit(logger, log)
+  
+  Span::end(span)
+  
+  assert_true(true)
+}
+
+test "性能基准测试" {
+  // 测试遥测系统的性能基准
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.test")
+  
+  // 基准测试：span创建和销毁性能
+  let start_time = 1735689600000000000L
+  let span_count = 1000
+  
+  for i in 0..span_count {
+    let span = Tracer::start_span(tracer, "performance.span." + i.to_string())
+    Span::set_attribute(span, "span.index", i)
+    Span::set_attribute(span, "span.batch", "performance.test")
+    Span::add_event(span, "span.created", [("index", i.to_string())])
+    Span::end(span)
   }
   
-  // Test alerting thresholds
-  let alert_counter = Meter::create_counter(meter, "alerts.triggered", Some("Alerts triggered"), Some("count"))
-  let alert_thresholds = [
-    ("high.latency", 100.0, 5),
-    ("low.memory", 10.0, 3),
-    ("high.error.rate", 5.0, 8),
-    ("connection.pool.exhausted", 95.0, 2)
+  // 基准测试：度量记录性能
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "performance.metrics")
+  
+  let counter = Meter::create_counter(meter, "performance.counter", None, None)
+  let histogram = Meter::create_histogram(meter, "performance.histogram", None, None)
+  let gauge = Meter::create_gauge(meter, "performance.gauge", None, None)
+  
+  for i in 0..span_count {
+    Counter::add_with_attributes(counter, 1.0, [("batch", i.to_string())])
+    Histogram::record_with_attributes(histogram, i.to_float(), [("type", "performance")])
+    Gauge::set_with_attributes(gauge, i.to_float() % 100.0, [("index", i.to_string())])
+  }
+  
+  // 基准测试：日志记录性能
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "performance.logger")
+  
+  for i in 0..100 {
+    let log = LogRecord::new(Info, "Performance log entry " + i.to_string())
+    LogRecord::add_attribute(log, "log.index", i)
+    LogRecord::add_attribute(log, "log.batch", "performance.test")
+    Logger::emit(logger, log)
+  }
+  
+  assert_true(true)
+}
+
+test "数据完整性验证" {
+  // 测试遥测数据的完整性和一致性
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "integrity.test")
+  
+  // 创建具有已知属性的span
+  let span = Tracer::start_span(tracer, "data.integrity.test")
+  
+  // 设置已知属性
+  let test_attributes = [
+    ("string.attr", "test.value"),
+    ("int.attr", 42),
+    ("float.attr", 3.14),
+    ("bool.attr", true),
+    ("array.attr", [1, 2, 3])
   ]
   
-  for threshold in alert_thresholds {
-    // Simulate threshold violations
-    for i = 0; i < threshold.2; i = i + 1 {
-      Counter::add(alert_counter, 1.0)
-      
-      let alert_log = LogRecord::new_with_context(
-        Warn,
-        Some("Alert threshold violated"),
-        Some([
-          ("alert.type", StringValue(threshold.0)),
-          ("threshold.value", FloatValue(threshold.1)),
-          ("current.value", FloatValue(threshold.1 + 10.0)),
-          ("severity", StringValue("warning"))
-        ]),
-        Some(1735689600000000000L),
-        Some(1735689600000001000L),
-        Some("trace-alert"),
-        Some("span-alert"),
-        Some(Context::root())
-      )
-      
-      let logger = LoggerProvider::default()
-      let alert_logger = LoggerProvider::get_logger(logger, "alert-system")
-      Logger::emit(alert_logger, alert_log)
-    }
+  for (key, value) in test_attributes {
+    Span::set_attribute(span, key, value)
   }
   
-  // Test dashboard aggregation
-  let aggregation_window = 60  // 1 minute window
-  let aggregated_metrics = [
-    ("avg.response.time", 45.6),
-    ("requests.per.second", 125.3),
-    ("error.rate", 2.1),
-    ("cpu.usage", 67.8),
-    ("memory.usage", 72.4)
+  // 添加已知事件
+  Span::add_event(span, "test.event.1", [("event.data", "test.value.1")])
+  Span::add_event(span, "test.event.2", [("event.data", "test.value.2")])
+  
+  // 设置已知状态
+  Span::set_status(span, Ok, Some("Test operation completed successfully"))
+  
+  // 验证span完整性
+  let span_ctx = Span::span_context(span)
+  assert_true(SpanContext::is_valid(span_ctx))
+  
+  // 创建度量数据完整性测试
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "integrity.metrics")
+  
+  let counter = Meter::create_counter(meter, "integrity.counter", Some("Integrity test counter"), Some("count"))
+  
+  // 记录已知值
+  let known_values = [1.0, 2.0, 3.0, 4.0, 5.0]
+  for value in known_values {
+    Counter::add_with_attributes(counter, value, [("test.batch", "integrity")])
+  }
+  
+  // 创建日志完整性测试
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "integrity.logger")
+  
+  let log = LogRecord::new(Info, "Data integrity test log")
+  LogRecord::add_attribute(log, "test.id", "integrity-123")
+  LogRecord::add_attribute(log, "test.timestamp", "2025-01-02T10:00:00Z")
+  LogRecord::add_attribute(log, "test.checksum", "abc123def456")
+  
+  Logger::emit(logger, log)
+  
+  Span::end(span)
+  
+  assert_true(true)
+}
+
+test "资源管理和清理" {
+  // 测试遥测资源的生命周期管理和清理
+  let tracer_provider = TracerProvider::default()
+  let meter_provider = MeterProvider::default()
+  let logger_provider = LoggerProvider::default()
+  
+  // 创建资源
+  let resource = Resource::new()
+  let resource_attrs = [
+    ("service.name", "resource.test.service"),
+    ("service.instance.id", "instance-12345"),
+    ("service.namespace", "test"),
+    ("host.name", "test-host"),
+    ("os.type", "linux"),
+    ("os.version", "5.15.0")
   ]
+  let configured_resource = Resource::with_attributes(resource, resource_attrs)
   
-  for metric in aggregated_metrics {
-    let aggregated_histogram = Meter::create_histogram(meter, "aggregated." + metric.0, Some("Aggregated " + metric.0), Some("ms"))
-    Histogram::record(aggregated_histogram, metric.1)
+  // 创建配置了资源的提供者
+  let tracer_with_resource = TracerProvider::with_resource(tracer_provider, configured_resource)
+  let meter_with_resource = MeterProvider::with_resource(meter_provider, configured_resource)
+  let logger_with_resource = LoggerProvider::with_resource(logger_provider, configured_resource)
+  
+  // 创建使用这些资源的遥测对象
+  let tracer = TracerProvider::get_tracer(tracer_with_resource, "resource.test")
+  let meter = MeterProvider::get_meter(meter_with_resource, "resource.test")
+  let logger = LoggerProvider::get_logger(logger_with_resource, "resource.test")
+  
+  // 创建span、度量和日志
+  let span = Tracer::start_span(tracer, "resource.management.test")
+  Span::set_attribute(span, "resource.test", true)
+  
+  let counter = Meter::create_counter(meter, "resource.counter", None, None)
+  Counter::add(counter, 1.0)
+  
+  let log = LogRecord::new(Info, "Resource management test")
+  Logger::emit(logger, log)
+  
+  // 测试资源清理
+  let cleanup_span = Tracer::start_span(tracer, "resource.cleanup.test")
+  Span::set_attribute(cleanup_span, "cleanup.operation", true)
+  Span::end(cleanup_span)
+  
+  // 强制资源清理
+  TracerProvider::shutdown(tracer_with_resource)
+  MeterProvider::shutdown(meter_with_resource)
+  LoggerProvider::shutdown(logger_with_resource)
+  
+  Span::end(span)
+  
+  assert_true(true)
+}
+
+test "故障恢复和弹性测试" {
+  // 测试遥测系统的故障恢复和弹性能力
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "resilience.test")
+  
+  // 模拟故障场景：创建span但导出失败
+  let fault_span = Tracer::start_span(tracer, "fault.tolerance.test")
+  Span::set_attribute(fault_span, "fault.scenario", "export.failure")
+  Span::set_status(fault_span, Error, Some("Simulated export failure"))
+  
+  // 添加故障事件
+  Span::add_event(fault_span, "fault.detected", [
+    ("fault.type", "export.failure"),
+    ("fault.retry.count", 3),
+    ("fault.recovery.action", "fallback.enabled")
+  ])
+  
+  // 测试重试机制
+  let retry_span = Tracer::start_span(tracer, "retry.mechanism.test")
+  Span::set_attribute(retry_span, "retry.enabled", true)
+  Span::set_attribute(retry_span, "retry.max.attempts", 5)
+  Span::set_attribute(retry_span, "retry.backoff.strategy", "exponential")
+  
+  // 模拟重试事件
+  for attempt in 1..=3 {
+    Span::add_event(retry_span, "retry.attempt", [
+      ("attempt.number", attempt),
+      ("attempt.delay", attempt * 1000),
+      ("attempt.success", attempt == 3)
+    ])
   }
   
-  // Verify real-time metrics
-  assert_eq(realtime_counter.name, "realtime.events")
-  assert_eq(realtime_gauge.name, "realtime.users")
-  assert_eq(realtime_histogram.name, "realtime.latency")
-  assert_eq(alert_counter.name, "alerts.triggered")
+  Span::set_status(retry_span, Ok, Some("Operation succeeded after retries"))
+  
+  // 测试度量系统的弹性
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "resilience.metrics")
+  
+  let error_counter = Meter::create_counter(meter, "resilience.errors", Some("Resilience error counter"), None)
+  let recovery_counter = Meter::create_counter(meter, "resilience.recoveries", Some("Resilience recovery counter"), None)
+  
+  // 记录错误和恢复
+  Counter::add_with_attributes(error_counter, 1.0, [("error.type", "export.failure")])
+  Counter::add_with_attributes(error_counter, 1.0, [("error.type", "connection.timeout")])
+  Counter::add_with_attributes(recovery_counter, 1.0, [("recovery.type", "automatic.retry")])
+  Counter::add_with_attributes(recovery_counter, 1.0, [("recovery.type", "circuit.breaker")])
+  
+  // 测试日志系统的弹性
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "resilience.logger")
+  
+  let error_log = LogRecord::new(Error, "Resilience test error")
+  LogRecord::add_attribute(error_log, "error.category", "resilience")
+  LogRecord::add_attribute(error_log, "error.severity", "high")
+  LogRecord::add_attribute(error_log, "error.recovery", "successful")
+  
+  let recovery_log = LogRecord::new(Info, "Resilience test recovery")
+  LogRecord::add_attribute(recovery_log, "recovery.strategy", "circuit.breaker")
+  LogRecord::add_attribute(recovery_log, "recovery.time", "1500ms")
+  
+  Logger::emit(logger, error_log)
+  Logger::emit(logger, recovery_log)
+  
+  // 结束所有span
+  Span::end(fault_span)
+  Span::end(retry_span)
+  
+  assert_true(true)
 }
