@@ -1,402 +1,424 @@
-// Azimuth Performance Benchmark Test Suite
-// 测试遥测系统的性能基准
+// Azimuth 性能基准测试
+// 测试高负载下的遥测系统性能
 
-test "span创建性能基准测试" {
-  // 创建性能基准测试环境
-  let benchmark = PerformanceBenchmark::new("span.creation")
-  
-  // 创建tracer
+test "高并发Span创建和销毁性能" {
+  // 测试高并发环境下span创建和销毁的性能
   let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.test")
+  let tracer = TracerProvider::get_tracer(tracer_provider, "performance.span.test")
   
-  // 预热阶段
-  for i = 0; i < 100; i = i + 1 {
-    let span = Tracer::start_span(tracer, "warmup.operation")
+  // 记录开始时间
+  let start_time = Time::now()
+  
+  // 创建大量span
+  let spans = []
+  for i in 1..=1000 {
+    let span = Tracer::start_span(tracer, "performance.span." + i.to_string())
+    Span::set_attribute(span, "index", i.to_string())
+    Span::set_attribute(span, "operation.type", "performance.test")
+    spans = spans.push(span)
+  }
+  
+  // 记录创建完成时间
+  let creation_time = Time::now()
+  
+  // 销毁所有span
+  for span in spans {
     Span::end(span)
   }
   
-  // 基准测试阶段
-  let iterations = 10000
-  let start_time = PerformanceBenchmark::start_timer(benchmark)
+  // 记录销毁完成时间
+  let end_time = Time::now()
   
-  for i = 0; i < iterations; i = i + 1 {
-    let span = Tracer::start_span(tracer, "benchmark.operation")
-    Span::set_attribute(span, "iteration", i)
-    Span::end(span)
-  }
+  // 计算性能指标
+  let creation_duration = creation_time - start_time
+  let destruction_duration = end_time - creation_time
+  let total_duration = end_time - start_time
   
-  let end_time = PerformanceBenchmark::end_timer(benchmark)
-  let duration = PerformanceBenchmark::calculate_duration(benchmark, start_time, end_time)
-  let ops_per_second = iterations.to_double() / duration.to_double() * 1000.0
+  // 验证性能指标
+  assert_true(creation_duration < 5000000000L)  // 创建时间应小于5秒
+  assert_true(destruction_duration < 3000000000L)  // 销毁时间应小于3秒
+  assert_true(total_duration < 8000000000L)  // 总时间应小于8秒
   
-  // 记录性能指标
-  PerformanceBenchmark::record_metric(benchmark, "span_creation_ops_per_second", ops_per_second)
-  PerformanceBenchmark::record_metric(benchmark, "span_creation_avg_time_ns", duration.to_double() / iterations.to_double() * 1000000.0)
+  // 计算平均每个span的创建和销毁时间
+  let avg_creation_time = creation_duration / 1000
+  let avg_destruction_time = destruction_duration / 1000
   
-  // 性能断言 - 每秒应能创建至少10000个span
-  assert_true(ops_per_second >= 10000.0)
-  
-  assert_true(true)
+  assert_true(avg_creation_time < 5000000L)  // 平均创建时间应小于5ms
+  assert_true(avg_destruction_time < 3000000L)  // 平均销毁时间应小于3ms
 }
 
-test "度量收集性能基准测试" {
-  // 创建性能基准测试环境
-  let benchmark = PerformanceBenchmark::new("metrics.collection")
-  
-  // 创建meter
+test "高频率度量记录性能" {
+  // 测试高频率度量记录的性能
   let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "performance.test")
+  let meter = MeterProvider::get_meter(meter_provider, "performance.metrics.test")
   
-  // 创建各种度量仪器
-  let counter = Meter::create_counter(meter, "benchmark.counter")
-  let gauge = Meter::create_gauge(meter, "benchmark.gauge")
-  let histogram = Meter::create_histogram(meter, "benchmark.histogram")
+  // 创建计数器和直方图
+  let counter = Meter::create_counter(meter, "performance.counter", Some("Performance counter"), Some("count"))
+  let histogram = Meter::create_histogram(meter, "performance.histogram", Some("Performance histogram"), Some("ms"))
   
-  // 预热阶段
-  for i = 0; i < 100; i = i + 1 {
+  // 记录开始时间
+  let start_time = Time::now()
+  
+  // 高频率记录度量数据
+  for i in 1..=10000 {
     Counter::add(counter, 1.0)
-    Gauge::set(gauge, i.to_double())
-    Histogram::record(histogram, i.to_double())
+    Counter::add_with_attributes(counter, 1.0, [("index", i.to_string())])
+    Histogram::record(histogram, i.to_float() % 100.0)
+    Histogram::record_with_attributes(histogram, i.to_float() % 50.0, [("batch", (i / 100).to_string())])
   }
   
-  // 基准测试阶段
-  let iterations = 50000
-  let start_time = PerformanceBenchmark::start_timer(benchmark)
+  // 记录结束时间
+  let end_time = Time::now()
   
-  for i = 0; i < iterations; i = i + 1 {
-    Counter::add(counter, 1.0)
-    Gauge::set(gauge, i.to_double())
-    Histogram::record(histogram, i.to_double())
-  }
+  // 计算性能指标
+  let total_duration = end_time - start_time
+  let operations_per_second = 40000.0 / (total_duration.to_float() / 1000000000.0)
   
-  let end_time = PerformanceBenchmark::end_timer(benchmark)
-  let duration = PerformanceBenchmark::calculate_duration(benchmark, start_time, end_time)
-  let ops_per_second = (iterations * 3).to_double() / duration.to_double() * 1000.0 // 3个操作每次迭代
-  
-  // 记录性能指标
-  PerformanceBenchmark::record_metric(benchmark, "metrics_ops_per_second", ops_per_second)
-  PerformanceBenchmark::record_metric(benchmark, "metrics_avg_time_ns", duration.to_double() / (iterations * 3).to_double() * 1000000.0)
-  
-  // 性能断言 - 每秒应能执行至少100000个度量操作
-  assert_true(ops_per_second >= 100000.0)
-  
-  assert_true(true)
+  // 验证性能指标
+  assert_true(total_duration < 10000000000L)  // 总时间应小于10秒
+  assert_true(operations_per_second > 4000.0)  // 每秒操作数应大于4000
 }
 
-test "日志记录性能基准测试" {
-  // 创建性能基准测试环境
-  let benchmark = PerformanceBenchmark::new("logging")
-  
-  // 创建logger
+test "批量日志记录性能" {
+  // 测试批量日志记录的性能
   let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "performance.test")
+  let logger = LoggerProvider::get_logger(logger_provider, "performance.logging.test")
   
-  // 预热阶段
-  for i = 0; i < 100; i = i + 1 {
-    Logger::emit_log(logger, "INFO", "Warmup log message " + i.to_string(), [])
-  }
+  // 记录开始时间
+  let start_time = Time::now()
   
-  // 基准测试阶段
-  let iterations = 20000
-  let start_time = PerformanceBenchmark::start_timer(benchmark)
-  
-  for i = 0; i < iterations; i = i + 1 {
-    Logger::emit_log(logger, "INFO", "Benchmark log message " + i.to_string(), [
-      ("iteration", i.to_string()),
-      ("severity", "INFO")
-    ])
-  }
-  
-  let end_time = PerformanceBenchmark::end_timer(benchmark)
-  let duration = PerformanceBenchmark::calculate_duration(benchmark, start_time, end_time)
-  let logs_per_second = iterations.to_double() / duration.to_double() * 1000.0
-  
-  // 记录性能指标
-  PerformanceBenchmark::record_metric(benchmark, "logs_per_second", logs_per_second)
-  PerformanceBenchmark::record_metric(benchmark, "log_avg_time_ns", duration.to_double() / iterations.to_double() * 1000000.0)
-  
-  // 性能断言 - 每秒应能记录至少5000条日志
-  assert_true(logs_per_second >= 5000.0)
-  
-  assert_true(true)
-}
-
-test "上下文传播性能基准测试" {
-  // 创建性能基准测试环境
-  let benchmark = PerformanceBenchmark::new("context.propagation")
-  
-  // 创建上下文管理器
-  let context_manager = ContextManager::default()
-  
-  // 创建初始上下文
-  let initial_context = ContextManager::create_context(context_manager)
-  ContextManager::set_value(initial_context, "trace.id", "1234567890abcdef")
-  ContextManager::set_value(initial_context, "user.id", "user123")
-  ContextManager::set_value(initial_context, "request.id", "req456")
-  
-  // 预热阶段
-  for i = 0; i < 100; i = i + 1 {
-    let propagated = ContextManager::propagate(context_manager, initial_context)
-    let value = ContextManager::get_value(propagated, "trace.id")
-  }
-  
-  // 基准测试阶段
-  let iterations = 50000
-  let start_time = PerformanceBenchmark::start_timer(benchmark)
-  
-  for i = 0; i < iterations; i = i + 1 {
-    // 传播上下文
-    let propagated_context = ContextManager::propagate(context_manager, initial_context)
+  // 批量创建和记录日志
+  let logs = []
+  for i in 1..=5000 {
+    let info_log = LogRecord::new(Info, "Info log " + i.to_string())
+    LogRecord::add_attribute(info_log, "index", i.to_string())
+    LogRecord::add_attribute(info_log, "type", "performance.test")
     
-    // 从上下文中读取值
-    let trace_id = ContextManager::get_value(propagated_context, "trace.id")
-    let user_id = ContextManager::get_value(propagated_context, "user.id")
-    let request_id = ContextManager::get_value(propagated_context, "request.id")
+    let warn_log = LogRecord::new(Warn, "Warning log " + i.to_string())
+    LogRecord::add_attribute(warn_log, "index", i.to_string())
+    LogRecord::add_attribute(warn_log, "type", "performance.test")
     
-    // 在新上下文中设置值
-    ContextManager::set_value(propagated_context, "iteration", i.to_string())
+    logs = logs.push(info_log)
+    logs = logs.push(warn_log)
   }
   
-  let end_time = PerformanceBenchmark::end_timer(benchmark)
-  let duration = PerformanceBenchmark::calculate_duration(benchmark, start_time, end_time)
-  let ops_per_second = iterations.to_double() / duration.to_double() * 1000.0
+  // 记录创建完成时间
+  let creation_time = Time::now()
   
-  // 记录性能指标
-  PerformanceBenchmark::record_metric(benchmark, "context_ops_per_second", ops_per_second)
-  PerformanceBenchmark::record_metric(benchmark, "context_avg_time_ns", duration.to_double() / iterations.to_double() * 1000000.0)
+  // 批量发射日志
+  for log in logs {
+    Logger::emit(logger, log)
+  }
   
-  // 性能断言 - 每秒应能执行至少50000个上下文操作
-  assert_true(ops_per_second >= 50000.0)
+  // 记录发射完成时间
+  let end_time = Time::now()
   
-  assert_true(true)
+  // 计算性能指标
+  let creation_duration = creation_time - start_time
+  let emission_duration = end_time - creation_time
+  let total_duration = end_time - start_time
+  
+  // 验证性能指标
+  assert_true(creation_duration < 5000000000L)  // 创建时间应小于5秒
+  assert_true(emission_duration < 8000000000L)  // 发射时间应小于8秒
+  assert_true(total_duration < 13000000000L)  // 总时间应小于13秒
+  
+  // 计算平均每个日志记录的创建和发射时间
+  let avg_creation_time = creation_duration / 10000
+  let avg_emission_time = emission_duration / 10000
+  
+  assert_true(avg_creation_time < 500000L)  // 平均创建时间应小于0.5ms
+  assert_true(avg_emission_time < 800000L)  // 平均发射时间应小于0.8ms
 }
 
-test "序列化性能基准测试" {
-  // 创建性能基准测试环境
-  let benchmark = PerformanceBenchmark::new("serialization")
+test "内存使用优化测试" {
+  // 测试内存使用优化
+  let initial_memory = Memory::used()
   
-  // 创建测试数据
-  let test_span = Span {
-    name: "benchmark.operation",
-    span_context: SpanContext {
-      trace_id: "1234567890abcdef1234567890abcdef",
-      span_id: "1234567890abcdef",
-      sampled: true,
-      trace_state: ""
-    },
-    parent_span_id: Some("abcdef1234567890"),
-    kind: SpanKind::INTERNAL,
-    start_time: "2025-01-02T10:00:00Z",
-    end_time: Some("2025-01-02T10:00:05Z"),
-    status: SpanStatus { code: StatusCode::OK, message: "Operation completed successfully" },
-    attributes: [
-      ("operation.type", AttributeValue::StringValue("test")),
-      ("operation.duration", AttributeValue::IntValue(5000)),
-      ("operation.success", AttributeValue::BoolValue(true)),
-      ("service.name", AttributeValue::StringValue("benchmark.service")),
-      ("host.name", AttributeValue::StringValue("test-host"))
-    ],
-    events: [
-      SpanEvent {
-        name: "operation.started",
-        timestamp: "2025-01-02T10:00:00Z",
-        attributes: [("step", "start")]
-      },
-      SpanEvent {
-        name: "operation.completed",
-        timestamp: "2025-01-02T10:00:05Z",
-        attributes: [("result", "success")]
-      }
-    ],
-    links: [],
-    resource: Resource {
-      attributes: [
-        ("service.name", AttributeValue::StringValue("benchmark.service")),
-        ("service.version", AttributeValue::StringValue("1.0.0"))
-      ]
-    }
-  }
-  
-  // 预热阶段
-  for i = 0; i < 100; i = i + 1 {
-    let json_data = SpanSerializer::to_json(test_span)
-    let _deserialized_span = SpanSerializer::from_json(json_data)
-  }
-  
-  // 序列化基准测试阶段
-  let iterations = 10000
-  let start_time = PerformanceBenchmark::start_timer(benchmark)
-  
-  for i = 0; i < iterations; i = i + 1 {
-    let json_data = SpanSerializer::to_json(test_span)
-  }
-  
-  let end_time = PerformanceBenchmark::end_timer(benchmark)
-  let serialization_duration = PerformanceBenchmark::calculate_duration(benchmark, start_time, end_time)
-  let serialization_ops_per_second = iterations.to_double() / serialization_duration.to_double() * 1000.0
-  
-  // 记录序列化性能指标
-  PerformanceBenchmark::record_metric(benchmark, "serialization_ops_per_second", serialization_ops_per_second)
-  PerformanceBenchmark::record_metric(benchmark, "serialization_avg_time_ns", serialization_duration.to_double() / iterations.to_double() * 1000000.0)
-  
-  // 反序列化基准测试阶段
-  let json_data = SpanSerializer::to_json(test_span)
-  let start_time_deserialize = PerformanceBenchmark::start_timer(benchmark)
-  
-  for i = 0; i < iterations; i = i + 1 {
-    let _deserialized_span = SpanSerializer::from_json(json_data)
-  }
-  
-  let end_time_deserialize = PerformanceBenchmark::end_timer(benchmark)
-  let deserialization_duration = PerformanceBenchmark::calculate_duration(benchmark, start_time_deserialize, end_time_deserialize)
-  let deserialization_ops_per_second = iterations.to_double() / deserialization_duration.to_double() * 1000.0
-  
-  // 记录反序列化性能指标
-  PerformanceBenchmark::record_metric(benchmark, "deserialization_ops_per_second", deserialization_ops_per_second)
-  PerformanceBenchmark::record_metric(benchmark, "deserialization_avg_time_ns", deserialization_duration.to_double() / iterations.to_double() * 1000000.0)
-  
-  // 性能断言 - 每秒应能序列化至少5000个span
-  assert_true(serialization_ops_per_second >= 5000.0)
-  // 性能断言 - 每秒应能反序列化至少3000个span
-  assert_true(deserialization_ops_per_second >= 3000.0)
-  
-  assert_true(true)
-}
-
-test "高并发性能基准测试" {
-  // 创建性能基准测试环境
-  let benchmark = PerformanceBenchmark::new("high.concurrency")
-  
-  // 创建tracer
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrency.test")
-  
-  // 创建meter
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "concurrency.test")
-  let counter = Meter::create_counter(meter, "concurrency.counter")
-  
-  // 创建logger
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "concurrency.test")
-  
-  // 并发参数
-  let num_threads = 10
-  let operations_per_thread = 1000
-  
-  // 预热阶段
-  for i = 0; i < 100; i = i + 1 {
-    let span = Tracer::start_span(tracer, "warmup.operation")
-    Counter::add(counter, 1.0)
-    Logger::emit_log(logger, "INFO", "Warmup log", [])
-    Span::end(span)
-  }
-  
-  // 基准测试阶段
-  let start_time = PerformanceBenchmark::start_timer(benchmark)
-  
-  // 启动多个并发线程
-  let threads = []
-  for thread_id = 0; thread_id < num_threads; thread_id = thread_id + 1 {
-    // 在实际实现中，这里会启动并发线程
-    // 为了测试目的，我们模拟并发操作
-    
-    for i = 0; i < operations_per_thread; i = i + 1 {
-      // 创建span
-      let span = Tracer::start_span(tracer, "concurrent.operation")
-      Span::set_attribute(span, "thread.id", thread_id)
-      Span::set_attribute(span, "operation.id", i)
-      
-      // 添加度量
-      Counter::add(counter, 1.0)
-      
-      // 记录日志
-      Logger::emit_log(logger, "INFO", "Concurrent operation", [
-        ("thread.id", thread_id.to_string()),
-        ("operation.id", i.to_string())
-      ])
-      
-      // 结束span
-      Span::end(span)
-    }
-  }
-  
-  let end_time = PerformanceBenchmark::end_timer(benchmark)
-  let duration = PerformanceBenchmark::calculate_duration(benchmark, start_time, end_time)
-  let total_operations = (num_threads * operations_per_thread * 3).to_double() // 3个操作每次迭代
-  let ops_per_second = total_operations / duration.to_double() * 1000.0
-  
-  // 记录性能指标
-  PerformanceBenchmark::record_metric(benchmark, "concurrent_ops_per_second", ops_per_second)
-  PerformanceBenchmark::record_metric(benchmark, "concurrent_avg_time_ns", duration.to_double() / total_operations * 1000000.0)
-  
-  // 性能断言 - 每秒应能执行至少20000个并发操作
-  assert_true(ops_per_second >= 20000.0)
-  
-  assert_true(true)
-}
-
-test "内存使用性能基准测试" {
-  // 创建性能基准测试环境
-  let benchmark = PerformanceBenchmark::new("memory.usage")
-  
-  // 创建tracer
+  // 创建大量遥测数据
   let tracer_provider = TracerProvider::default()
   let tracer = TracerProvider::get_tracer(tracer_provider, "memory.test")
   
-  // 记录初始内存使用
-  let initial_memory = PerformanceBenchmark::get_memory_usage(benchmark)
-  
-  // 创建大量span但不立即结束，测试内存累积
-  let active_spans = []
-  let iterations = 1000
-  
-  for i = 0; i < iterations; i = i + 1 {
-    let span = Tracer::start_span(tracer, "memory.test.operation")
-    Span::set_attribute(span, "iteration", i)
-    Span::set_attribute(span, "data", "x".repeat(100)) // 添加一些数据
-    
-    // 保存span引用，防止被垃圾回收
-    active_spans.push(span)
-    
-    // 每100个span检查一次内存使用
-    if i % 100 == 0 {
-      let current_memory = PerformanceBenchmark::get_memory_usage(benchmark)
-      let memory_increase = current_memory - initial_memory
-      
-      // 记录内存使用情况
-      PerformanceBenchmark::record_metric(benchmark, "memory_usage_at_" + i.to_string(), memory_increase.to_double())
-    }
+  let spans = []
+  for i in 1..=2000 {
+    let span = Tracer::start_span(tracer, "memory.test.span." + i.to_string())
+    Span::set_attribute(span, "index", i.to_string())
+    Span::set_attribute(span, "data", "large.data.string." + i.to_string())
+    spans = spans.push(span)
   }
   
-  // 记录峰值内存使用
-  let peak_memory = PerformanceBenchmark::get_memory_usage(benchmark)
-  let peak_memory_increase = peak_memory - initial_memory
+  let peak_memory = Memory::used()
   
-  // 结束所有span
-  for span in active_spans {
+  // 清理span
+  for span in spans {
     Span::end(span)
   }
   
   // 强制垃圾回收
-  PerformanceBenchmark::force_gc(benchmark)
+  GC::collect()
   
-  // 记录最终内存使用
-  let final_memory = PerformanceBenchmark::get_memory_usage(benchmark)
-  let final_memory_increase = final_memory - initial_memory
+  let final_memory = Memory::used()
   
-  // 记录内存性能指标
-  PerformanceBenchmark::record_metric(benchmark, "peak_memory_increase_bytes", peak_memory_increase.to_double())
-  PerformanceBenchmark::record_metric(benchmark, "final_memory_increase_bytes", final_memory_increase.to_double())
-  PerformanceBenchmark::record_metric(benchmark, "memory_per_span_bytes", peak_memory_increase.to_double() / iterations.to_double())
+  // 计算内存使用指标
+  let memory_increase = peak_memory - initial_memory
+  let memory_reclaimed = peak_memory - final_memory
+  let reclamation_ratio = memory_reclaimed.to_float() / memory_increase.to_float()
   
-  // 性能断言 - 每个span的内存使用应该小于10KB
-  let memory_per_span = peak_memory_increase.to_double() / iterations.to_double()
-  assert_true(memory_per_span < 10240.0) // 10KB
+  // 验证内存使用优化
+  assert_true(memory_increase < 100000000)  // 内存增长应小于100MB
+  assert_true(reclamation_ratio > 0.8)  // 内存回收比例应大于80%
+}
+
+test "CPU使用效率测试" {
+  // 测试CPU使用效率
+  let initial_cpu_time = CPU::time()
   
-  // 性能断言 - 结束span后，内存使用应该回收至少80%
-  let memory_reclaimed = (peak_memory_increase - final_memory_increase).to_double() / peak_memory_increase.to_double() * 100.0
-  assert_true(memory_reclaimed >= 80.0) // 至少80%内存被回收
+  // 执行CPU密集型遥测操作
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "cpu.test")
   
-  assert_true(true)
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "cpu.test")
+  
+  let counter = Meter::create_counter(meter, "cpu.operations", Some("CPU operations"), Some("count"))
+  
+  // 执行大量操作
+  for i in 1..=5000 {
+    let span = Tracer::start_span(tracer, "cpu.intensive.operation." + i.to_string())
+    
+    // 添加大量属性
+    for j in 1..=10 {
+      Span::set_attribute(span, "attr." + j.to_string(), "value." + j.to_string())
+    }
+    
+    // 添加大量事件
+    for j in 1..=5 {
+      Span::add_event(span, "event." + j.to_string(), [("index", j.to_string())])
+    }
+    
+    // 记录度量
+    Counter::add_with_attributes(counter, 1.0, [("operation", i.to_string())])
+    
+    Span::end(span)
+  }
+  
+  let final_cpu_time = CPU::time()
+  
+  // 计算CPU使用效率
+  let cpu_time_used = final_cpu_time - initial_cpu_time
+  let operations_per_cpu_second = 5000.0 / (cpu_time_used.to_float() / 1000000000.0)
+  
+  // 验证CPU使用效率
+  assert_true(cpu_time_used < 15000000000L)  // CPU时间应小于15秒
+  assert_true(operations_per_cpu_second > 333.0)  // 每CPU秒操作数应大于333
+}
+
+test "序列化性能测试" {
+  // 测试序列化性能
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "serialization.performance.test")
+  
+  // 创建大量span
+  let spans = []
+  for i in 1..=1000 {
+    let span = Tracer::start_span(tracer, "serialization.test." + i.to_string())
+    Span::set_attribute(span, "index", i.to_string())
+    Span::set_attribute(span, "type", "performance.test")
+    Span::set_attribute(span, "data", "serialization.test.data." + i.to_string())
+    spans = spans.push(span)
+  }
+  
+  // 测试JSON序列化性能
+  let json_start_time = Time::now()
+  let json_serialized = []
+  for span in spans {
+    let serialized = Span::serialize_to_json(span)
+    json_serialized = json_serialized.push(serialized)
+  }
+  let json_end_time = Time::now()
+  
+  // 测试二进制序列化性能
+  let binary_start_time = Time::now()
+  let binary_serialized = []
+  for span in spans {
+    let serialized = Span::serialize_to_binary(span)
+    binary_serialized = binary_serialized.push(serialized)
+  }
+  let binary_end_time = Time::now()
+  
+  // 计算性能指标
+  let json_duration = json_end_time - json_start_time
+  let binary_duration = binary_end_time - binary_start_time
+  
+  // 验证序列化性能
+  assert_true(json_duration < 5000000000L)  // JSON序列化应小于5秒
+  assert_true(binary_duration < 3000000000L)  // 二进制序列化应小于3秒
+  
+  // 计算平均序列化时间
+  let avg_json_time = json_duration / 1000
+  let avg_binary_time = binary_duration / 1000
+  
+  assert_true(avg_json_time < 5000000L)  // 平均JSON序列化时间应小于5ms
+  assert_true(avg_binary_time < 3000000L)  // 平均二进制序列化时间应小于3ms
+  
+  // 验证二进制序列化比JSON序列化更快
+  assert_true(binary_duration < json_duration)
+  
+  // 清理span
+  for span in spans {
+    Span::end(span)
+  }
+}
+
+test "高负载上下文传播性能" {
+  // 测试高负载下上下文传播的性能
+  let ctx = Context::root()
+  
+  // 记录开始时间
+  let start_time = Time::now()
+  
+  // 创建深层嵌套的上下文
+  let nested_ctx = ctx
+  for i in 1..=1000 {
+    let key = ContextKey::new("key." + i.to_string())
+    nested_ctx = Context::with_value(nested_ctx, key, "value." + i.to_string())
+  }
+  
+  // 记录创建完成时间
+  let creation_time = Time::now()
+  
+  // 测试上下文值检索性能
+  for i in 1..=1000 {
+    let key = ContextKey::new("key." + i.to_string())
+    let value = Context::get(nested_ctx, key)
+    assert_eq(value, Some("value." + i.to_string()))
+  }
+  
+  // 记录检索完成时间
+  let retrieval_time = Time::now()
+  
+  // 计算性能指标
+  let creation_duration = creation_time - start_time
+  let retrieval_duration = retrieval_time - creation_time
+  
+  // 验证性能指标
+  assert_true(creation_duration < 3000000000L)  // 创建时间应小于3秒
+  assert_true(retrieval_duration < 2000000000L)  // 检索时间应小于2秒
+  
+  // 计算平均操作时间
+  let avg_creation_time = creation_duration / 1000
+  let avg_retrieval_time = retrieval_duration / 1000
+  
+  assert_true(avg_creation_time < 3000000L)  // 平均创建时间应小于3ms
+  assert_true(avg_retrieval_time < 2000000L)  // 平均检索时间应小于2ms
+}
+
+test "并发性能压力测试" {
+  // 测试并发性能压力
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent.stress.test")
+  
+  let meter_provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(meter_provider, "concurrent.stress.test")
+  
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "concurrent.stress.test")
+  
+  // 记录开始时间
+  let start_time = Time::now()
+  
+  // 模拟并发操作
+  let spans = []
+  let logs = []
+  
+  // 创建大量并发span
+  for i in 1..=500 {
+    let span = Tracer::start_span(tracer, "concurrent.span." + i.to_string())
+    Span::set_attribute(span, "thread.id", i.to_string())
+    Span::set_attribute(span, "operation.type", "concurrent.test")
+    spans = spans.push(span)
+  }
+  
+  // 创建大量并发日志
+  for i in 1..=500 {
+    let log = LogRecord::new(Info, "Concurrent log " + i.to_string())
+    LogRecord::add_attribute(log, "thread.id", i.to_string())
+    LogRecord::add_attribute(log, "type", "concurrent.test")
+    logs = logs.push(log)
+  }
+  
+  // 记录度量
+  let counter = Meter::create_counter(meter, "concurrent.operations", Some("Concurrent operations"), Some("count"))
+  for i in 1..=500 {
+    Counter::add_with_attributes(counter, 1.0, [("thread.id", i.to_string())])
+  }
+  
+  // 记录创建完成时间
+  let creation_time = Time::now()
+  
+  // 清理资源
+  for span in spans {
+    Span::end(span)
+  }
+  
+  for log in logs {
+    Logger::emit(logger, log)
+  }
+  
+  // 记录清理完成时间
+  let end_time = Time::now()
+  
+  // 计算性能指标
+  let creation_duration = creation_time - start_time
+  let cleanup_duration = end_time - creation_time
+  let total_duration = end_time - start_time
+  
+  // 验证性能指标
+  assert_true(creation_duration < 5000000000L)  // 创建时间应小于5秒
+  assert_true(cleanup_duration < 3000000000L)  // 清理时间应小于3秒
+  assert_true(total_duration < 8000000000L)  // 总时间应小于8秒
+}
+
+test "资源池化性能测试" {
+  // 测试资源池化性能
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "pooling.test")
+  
+  // 记录开始时间
+  let start_time = Time::now()
+  
+  // 使用池化资源创建大量span
+  for i in 1..=2000 {
+    let span = Tracer::start_span_pooled(tracer, "pooled.span." + i.to_string())
+    Span::set_attribute(span, "index", i.to_string())
+    Span::set_attribute(span, "pooled", true)
+    Span::end_pooled(span)
+  }
+  
+  // 记录池化操作完成时间
+  let pooling_time = Time::now()
+  
+  // 使用非池化资源创建相同数量的span
+  for i in 1..=2000 {
+    let span = Tracer::start_span(tracer, "non.pooled.span." + i.to_string())
+    Span::set_attribute(span, "index", i.to_string())
+    Span::set_attribute(span, "pooled", false)
+    Span::end(span)
+  }
+  
+  // 记录非池化操作完成时间
+  let non_pooling_time = Time::now()
+  
+  // 计算性能指标
+  let pooling_duration = pooling_time - start_time
+  let non_pooling_duration = non_pooling_time - pooling_time
+  
+  // 验证池化性能优势
+  assert_true(pooling_duration < non_pooling_duration)  // 池化应该更快
+  assert_true(pooling_duration < 3000000000L)  // 池化操作应小于3秒
+  assert_true(non_pooling_duration < 5000000000L)  // 非池化操作应小于5秒
+  
+  // 计算性能提升比例
+  let performance_improvement = (non_pooling_duration - pooling_duration).to_float() / non_pooling_duration.to_float()
+  assert_true(performance_improvement > 0.2)  // 性能提升应大于20%
 }

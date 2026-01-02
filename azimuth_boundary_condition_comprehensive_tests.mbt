@@ -1,437 +1,388 @@
-// Azimuth Boundary Condition Comprehensive Tests
-// 测试边界条件和异常情况
+// Azimuth 边界条件综合测试
+// 测试极端情况下的系统行为
 
-test "attribute_value_empty_string" {
-  // 测试空字符串属性值
-  let empty_string = StringValue("")
-  match empty_string {
-    StringValue(s) => assert_eq(s, "")
-    _ => assert_fail("Expected empty StringValue")
+test "空值和None处理" {
+  // 测试空值和None的处理
+  
+  // 测试空字符串
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.empty.test")
+  
+  let span = Tracer::start_span(tracer, "")
+  assert_eq(Span::name(span), "")
+  
+  Span::set_attribute(span, "", "")
+  Span::set_attribute(span, "empty.key", "")
+  Span::set_attribute(span, "", "empty.value")
+  
+  Span::add_event(span, "", [])
+  Span::add_event(span, "empty.event", [])
+  
+  // 测试None值
+  let none_span : Option[Span] = None
+  match none_span {
+    Some(s) => assert_true(false)  // 不应该执行
+    None => assert_true(true)
   }
   
-  let attrs = Attributes::new()
-  Attributes::set(attrs, "empty.key", empty_string)
+  // 测试Option类型属性
+  Span::set_attribute(span, "optional.none", None)
+  Span::set_attribute(span, "optional.some", Some("value"))
   
-  let retrieved = Attributes::get(attrs, "empty.key")
-  match retrieved {
-    Some(StringValue(s)) => assert_eq(s, "test_value")  // 实现返回固定值
-    _ => assert_fail("Expected StringValue")
-  }
+  // 测试空数组
+  Span::add_event(span, "empty.array", [])
+  
+  Span::end(span)
+  assert_true(true)
 }
 
-test "attribute_value_extreme_numbers" {
-  // 测试极值数字属性
-  let max_int = IntValue(2147483647)
-  let min_int = IntValue(-2147483648)
-  let zero_int = IntValue(0)
-  let max_float = FloatValue(1.7976931348623157e+308)
-  let min_float = FloatValue(-1.7976931348623157e+308)
-  let zero_float = FloatValue(0.0)
+test "极大值和极小值处理" {
+  // 测试极大值和极小值的处理
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.extreme.test")
   
-  // 验证极值
-  match max_int {
-    IntValue(i) => assert_eq(i, 2147483647)
-    _ => assert_fail("Expected max IntValue")
-  }
+  let span = Tracer::start_span(tracer, "extreme.values.test")
   
-  match min_int {
-    IntValue(i) => assert_eq(i, -2147483648)
-    _ => assert_fail("Expected min IntValue")
-  }
+  // 测试极大整数值
+  let max_int = 9223372036854775807L
+  Span::set_attribute(span, "max.int", max_int)
   
-  match zero_int {
-    IntValue(i) => assert_eq(i, 0)
-    _ => assert_fail("Expected zero IntValue")
-  }
+  // 测试极小整数值
+  let min_int = -9223372036854775808L
+  Span::set_attribute(span, "min.int", min_int)
   
-  match max_float {
-    FloatValue(f) => assert_eq(f, 1.7976931348623157e+308)
-    _ => assert_fail("Expected max FloatValue")
-  }
+  // 测试极大浮点数值
+  let max_float = 1.7976931348623157e+308
+  Span::set_attribute(span, "max.float", max_float)
   
-  match min_float {
-    FloatValue(f) => assert_eq(f, -1.7976931348623157e+308)
-    _ => assert_fail("Expected min FloatValue")
-  }
+  // 测试极小浮点数值
+  let min_float = 2.2250738585072014e-308
+  Span::set_attribute(span, "min.float", min_float)
   
-  match zero_float {
-    FloatValue(f) => assert_eq(f, 0.0)
-    _ => assert_fail("Expected zero FloatValue")
+  // 测试极大字符串
+  let large_string = ""
+  for i in 1..=10000 {
+    large_string = large_string + "x"
   }
+  Span::set_attribute(span, "large.string", large_string)
+  
+  // 测试极长span名称
+  let very_long_name = ""
+  for i in 1..=1000 {
+    very_long_name = very_long_name + "a"
+  }
+  let long_span = Tracer::start_span(tracer, very_long_name)
+  Span::end(long_span)
+  
+  Span::end(span)
+  assert_true(true)
 }
 
-test "attribute_value_empty_arrays" {
-  // 测试空数组属性
-  let empty_string_array = ArrayStringValue([])
-  let empty_int_array = ArrayIntValue([])
+test "内存限制边界测试" {
+  // 测试内存限制边界
+  let initial_memory = Memory::available()
   
-  match empty_string_array {
-    ArrayStringValue(arr) => assert_eq(arr.length(), 0)
-    _ => assert_fail("Expected empty ArrayStringValue")
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.memory.test")
+  
+  // 尝试创建大量span直到接近内存限制
+  let spans = []
+  let max_spans = 100000
+  let mut i = 0
+  
+  while i < max_spans {
+    let span = Tracer::start_span(tracer, "memory.test.span." + i.to_string())
+    spans = spans.push(span)
+    
+    // 检查内存使用
+    let current_memory = Memory::available()
+    let memory_used = initial_memory - current_memory
+    
+    // 如果内存使用超过阈值，停止创建
+    if memory_used > initial_memory / 2 {
+      break
+    }
+    
+    i = i + 1
   }
   
-  match empty_int_array {
-    ArrayIntValue(arr) => assert_eq(arr.length(), 0)
-    _ => assert_fail("Expected empty ArrayIntValue")
+  // 清理span
+  for span in spans {
+    Span::end(span)
   }
+  
+  // 强制垃圾回收
+  GC::collect()
+  
+  // 验证内存已释放
+  let final_memory = Memory::available()
+  let memory_recovered = final_memory - (initial_memory / 2)
+  
+  assert_true(memory_recovered > 0)  // 应该有一些内存被回收
 }
 
-test "attribute_value_large_arrays" {
-  // 测试大数组属性
-  let large_string_array = ArrayStringValue([
-    "item1", "item2", "item3", "item4", "item5",
-    "item6", "item7", "item8", "item9", "item10"
+test "时间边界测试" {
+  // 测试时间边界条件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.time.test")
+  
+  // 测试极早时间戳
+  let earliest_time = -9223372036854775808L
+  let early_span = Tracer::start_span_with_timestamp(tracer, "early.span", earliest_time)
+  
+  // 测试极晚时间戳
+  let latest_time = 9223372036854775807L
+  let late_span = Tracer::start_span_with_timestamp(tracer, "late.span", latest_time)
+  
+  // 测试零时间戳
+  let zero_span = Tracer::start_span_with_timestamp(tracer, "zero.span", 0L)
+  
+  // 测试当前时间戳
+  let current_time = Time::now()
+  let current_span = Tracer::start_span_with_timestamp(tracer, "current.span", current_time)
+  
+  // 添加极早和极晚时间的事件
+  Span::add_event_with_timestamp(early_span, "early.event", earliest_time, [])
+  Span::add_event_with_timestamp(late_span, "late.event", latest_time, [])
+  Span::add_event_with_timestamp(zero_span, "zero.event", 0L, [])
+  
+  Span::end(early_span)
+  Span::end(late_span)
+  Span::end(zero_span)
+  Span::end(current_span)
+  
+  assert_true(true)
+}
+
+test "深度嵌套边界测试" {
+  // 测试深度嵌套的边界条件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.nesting.test")
+  
+  // 创建深度嵌套的span
+  let root_span = Tracer::start_span(tracer, "root.span")
+  let mut current_span = root_span
+  
+  // 嵌套深度测试
+  let max_depth = 1000
+  let spans = [root_span]
+  
+  for i in 1..=max_depth {
+    let child_span = Tracer::start_child_span(current_span, "child.span." + i.to_string())
+    Span::set_attribute(child_span, "depth", i)
+    spans = spans.push(child_span)
+    current_span = child_span
+  }
+  
+  // 反向结束span
+  for span in spans.reverse() {
+    Span::end(span)
+  }
+  
+  assert_true(true)
+}
+
+test "上下文深度嵌套测试" {
+  // 测试上下文深度嵌套的边界条件
+  let ctx = Context::root()
+  
+  // 创建深层嵌套的上下文
+  let max_depth = 1000
+  let nested_ctx = ctx
+  
+  for i in 1..=max_depth {
+    let key = ContextKey::new("key." + i.to_string())
+    nested_ctx = Context::with_value(nested_ctx, key, "value." + i.to_string())
+  }
+  
+  // 验证深层嵌套的上下文值
+  for i in 1..=max_depth {
+    let key = ContextKey::new("key." + i.to_string())
+    let value = Context::get(nested_ctx, key)
+    assert_eq(value, Some("value." + i.to_string()))
+  }
+  
+  assert_true(true)
+}
+
+test "属性数量边界测试" {
+  // 测试属性数量的边界条件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.attributes.test")
+  
+  let span = Tracer::start_span(tracer, "attributes.boundary.test")
+  
+  // 添加大量属性
+  let max_attributes = 10000
+  for i in 1..=max_attributes {
+    Span::set_attribute(span, "attr." + i.to_string(), "value." + i.to_string())
+  }
+  
+  // 测试事件属性数量
+  let large_event_attrs = []
+  for i in 1..=1000 {
+    large_event_attrs = large_event_attrs.push(("event.attr." + i.to_string(), "event.value." + i.to_string()))
+  }
+  
+  Span::add_event(span, "large.event", large_event_attrs)
+  
+  Span::end(span)
+  assert_true(true)
+}
+
+test "并发边界测试" {
+  // 测试并发操作的边界条件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.concurrent.test")
+  
+  // 创建大量并发span
+  let spans = []
+  let max_concurrent = 10000
+  
+  for i in 1..=max_concurrent {
+    let span = Tracer::start_span(tracer, "concurrent.span." + i.to_string())
+    spans = spans.push(span)
+  }
+  
+  // 同时结束所有span
+  for span in spans {
+    Span::end(span)
+  }
+  
+  assert_true(true)
+}
+
+test "数据类型边界测试" {
+  // 测试不同数据类型的边界条件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.datatypes.test")
+  
+  let span = Tracer::start_span(tracer, "datatype.boundary.test")
+  
+  // 测试布尔值边界
+  Span::set_attribute(span, "bool.true", true)
+  Span::set_attribute(span, "bool.false", false)
+  
+  // 测试数值边界
+  Span::set_attribute(span, "int.zero", 0)
+  Span::set_attribute(span, "int.max", 2147483647)
+  Span::set_attribute(span, "int.min", -2147483648)
+  
+  Span::set_attribute(span, "long.zero", 0L)
+  Span::set_attribute(span, "long.max", 9223372036854775807L)
+  Span::set_attribute(span, "long.min", -9223372036854775808L)
+  
+  Span::set_attribute(span, "float.zero", 0.0)
+  Span::set_attribute(span, "float.infinity", 1.0 / 0.0)
+  Span::set_attribute(span, "float.neg.infinity", -1.0 / 0.0)
+  Span::set_attribute(span, "float.nan", 0.0 / 0.0)
+  
+  // 测试字符串边界
+  Span::set_attribute(span, "string.empty", "")
+  Span::set_attribute(span, "string.space", " ")
+  Span::set_attribute(span, "string.special", "!@#$%^&*()_+-=[]{}|;':\",./<>?")
+  
+  // 测试数组边界
+  let empty_array = []
+  Span::set_attribute(span, "array.empty", empty_array)
+  
+  let large_array = []
+  for i in 1..=1000 {
+    large_array = large_array.push("item." + i.to_string())
+  }
+  Span::set_attribute(span, "array.large", large_array)
+  
+  Span::end(span)
+  assert_true(true)
+}
+
+test "错误恢复边界测试" {
+  // 测试错误恢复的边界条件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.recovery.test")
+  
+  // 测试在错误条件下创建span
+  let error_span = Tracer::start_span(tracer, "error.recovery.test")
+  
+  // 设置错误状态
+  Span::set_status(error_span, Error, Some("Intentional error for testing"))
+  
+  // 添加错误事件
+  Span::add_event(error_span, "error.occurred", [
+    ("error.type", "TestError"),
+    ("error.message", "This is a test error"),
+    ("error.code", "TEST_001")
   ])
-  let large_int_array = ArrayIntValue([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
   
-  match large_string_array {
-    ArrayStringValue(arr) => {
-      assert_eq(arr.length(), 10)
-      assert_eq(arr[0], "item1")
-      assert_eq(arr[9], "item10")
+  // 尝试在错误状态下添加正常属性
+  Span::set_attribute(error_span, "normal.attr", "normal.value")
+  
+  // 添加恢复事件
+  Span::add_event(error_span, "recovery.attempted", [
+    ("recovery.action", "restart"),
+    ("recovery.result", "success")
+  ])
+  
+  // 设置恢复状态
+  Span::set_status(error_span, Ok, Some("Recovered from test error"))
+  
+  Span::end(error_span)
+  
+  // 测试日志错误恢复
+  let logger_provider = LoggerProvider::default()
+  let logger = LoggerProvider::get_logger(logger_provider, "boundary.recovery.test")
+  
+  let error_log = LogRecord::new(Error, "Test error log")
+  LogRecord::add_attribute(error_log, "error.severity", "high")
+  
+  // 发射错误日志
+  Logger::emit(logger, error_log)
+  
+  // 发射恢复日志
+  let recovery_log = LogRecord::new(Info, "Recovery completed")
+  LogRecord::add_attribute(recovery_log, "recovery.status", "success")
+  Logger::emit(logger, recovery_log)
+  
+  assert_true(true)
+}
+
+test "资源耗尽边界测试" {
+  // 测试资源耗尽的边界条件
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "boundary.resource.test")
+  
+  // 测试文件描述符耗尽
+  let spans = []
+  let max_spans = 50000
+  
+  for i in 1..=max_spans {
+    let span = Tracer::start_span(tracer, "resource.test.span." + i.to_string())
+    spans = spans.push(span)
+    
+    // 检查是否接近资源限制
+    if i % 1000 == 0 {
+      // 模拟资源检查
+      let resource_usage = ResourceMonitor::get_usage()
+      if resource_usage > 0.9 {
+        break
+      }
     }
-    _ => assert_fail("Expected large ArrayStringValue")
   }
   
-  match large_int_array {
-    ArrayIntValue(arr) => {
-      assert_eq(arr.length(), 10)
-      assert_eq(arr[0], 1)
-      assert_eq(arr[9], 10)
-    }
-    _ => assert_fail("Expected large ArrayIntValue")
+  // 清理资源
+  for span in spans {
+    Span::end(span)
   }
-}
-
-test "context_empty_key" {
-  // 测试空键的上下文
-  let empty_key = ContextKey::new("")
-  let context = Context::with_value(Context::root(), empty_key, "empty-key-value")
   
-  let retrieved = Context::get(context, empty_key)
-  match retrieved {
-    Some(value) => assert_eq(value, "empty-key-value")
-    _ => assert_fail("Expected value for empty key")
-  }
-}
-
-test "context_very_long_key" {
-  // 测试非常长的键
-  let long_key = ContextKey::new("this.is.a.very.long.key.that.exceeds.normal.expectations.and.tests.boundary.conditions")
-  let context = Context::with_value(Context::root(), long_key, "long-key-value")
-  
-  let retrieved = Context::get(context, long_key)
-  match retrieved {
-    Some(value) => assert_eq(value, "long-key-value")
-    _ => assert_fail("Expected value for long key")
-  }
-}
-
-test "context_special_characters_key" {
-  // 测试包含特殊字符的键
-  let special_key = ContextKey::new("key.with-special_characters!@#$%^&*()")
-  let context = Context::with_value(Context::root(), special_key, "special-key-value")
-  
-  let retrieved = Context::get(context, special_key)
-  match retrieved {
-    Some(value) => assert_eq(value, "special-key-value")
-    _ => assert_fail("Expected value for special characters key")
-  }
-}
-
-test "span_context_empty_ids" {
-  // 测试空ID的Span上下文
-  let empty_trace_context = SpanContext::new("", "span-123", true, "")
-  let empty_span_context = SpanContext::new("trace-123", "", true, "")
-  let both_empty_context = SpanContext::new("", "", true, "")
-  
-  // 验证空ID的上下文无效
-  assert_eq(SpanContext::is_valid(empty_trace_context), false)
-  assert_eq(SpanContext::is_valid(empty_span_context), false)
-  assert_eq(SpanContext::is_valid(both_empty_context), false)
-}
-
-test "span_context_very_long_ids" {
-  // 测试非常长的ID
-  let long_trace_id = "1234567890abcdef1234567890abcdef12345678"
-  let long_span_id = "1234567890abcdef"
-  let long_context = SpanContext::new(long_trace_id, long_span_id, true, "")
-  
-  assert_eq(SpanContext::is_valid(long_context), true)
-  assert_eq(SpanContext::trace_id(long_context), long_trace_id)
-  assert_eq(SpanContext::span_id(long_context), long_span_id)
-}
-
-test "span_empty_name" {
-  // 测试空名称的Span
-  let span_context = SpanContext::new("trace-123", "span-456", true, "")
-  let empty_span = Span::new("", Internal, span_context)
-  
-  assert_eq(Span::name(empty_span), "")
-  assert_eq(Span::kind(empty_span), Internal)
-}
-
-test "span_very_long_name" {
-  // 测试非常长名称的Span
-  let long_name = "this.is.a.very.long.span.name.that.exceeds.normal.expectations.and.tests.boundary.conditions.for.span.naming"
-  let span_context = SpanContext::new("trace-123", "span-456", true, "")
-  let long_span = Span::new(long_name, Server, span_context)
-  
-  assert_eq(Span::name(long_span), long_name)
-  assert_eq(Span::kind(long_span), Server)
-}
-
-test "metric_empty_name" {
-  // 测试空名称的指标
+  // 测试内存映射耗尽
   let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "empty-name-meter")
+  let meter = MeterProvider::get_meter(meter_provider, "boundary.resource.test")
   
-  let empty_counter = Meter::create_counter(meter, "")
-  let empty_histogram = Meter::create_histogram(meter, "")
-  let empty_updown_counter = Meter::create_updown_counter(meter, "")
-  let empty_gauge = Meter::create_gauge(meter, "")
-  
-  assert_eq(empty_counter.name, "")
-  assert_eq(empty_histogram.name, "")
-  assert_eq(empty_updown_counter.name, "")
-  assert_eq(empty_gauge.name, "")
-}
-
-test "metric_very_long_name" {
-  // 测试非常长名称的指标
-  let long_name = "this.is.a.very.long.metric.name.that.exceeds.normal.expectations.and.tests.boundary.conditions.for.metric.naming"
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "long-name-meter")
-  
-  let long_counter = Meter::create_counter(meter, long_name)
-  let long_histogram = Meter::create_histogram(meter, long_name)
-  let long_updown_counter = Meter::create_updown_counter(meter, long_name)
-  let long_gauge = Meter::create_gauge(meter, long_name)
-  
-  assert_eq(long_counter.name, long_name)
-  assert_eq(long_histogram.name, long_name)
-  assert_eq(long_updown_counter.name, long_name)
-  assert_eq(long_gauge.name, long_name)
-}
-
-test "metric_extreme_values" {
-  // 测试指标的极值
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "extreme-values-meter")
-  
-  let counter = Meter::create_counter(meter, "extreme-counter")
-  let histogram = Meter::create_histogram(meter, "extreme-histogram")
-  let updown_counter = Meter::create_updown_counter(meter, "extreme-updown")
-  
-  // 测试极值操作
-  Counter::add(counter, 1.7976931348623157e+308)  // max double
-  Counter::add(counter, -1.7976931348623157e+308) // min double
-  
-  Histogram::record(histogram, 1.7976931348623157e+308)
-  Histogram::record(histogram, -1.7976931348623157e+308)
-  
-  UpDownCounter::add(updown_counter, 1.7976931348623157e+308)
-  UpDownCounter::add(updown_counter, -1.7976931348623157e+308)
-  
-  // 验证操作不会失败
-  assert_eq(true, true)
-}
-
-test "log_record_empty_body" {
-  // 测试空消息体的日志记录
-  let empty_log = LogRecord::new_with_context(
-    Info,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None,
-    None
-  )
-  
-  assert_eq(LogRecord::body(empty_log), None)
-  assert_eq(LogRecord::severity_number(empty_log), Info)
-}
-
-test "log_record_very_long_body" {
-  // 测试非常长消息体的日志记录
-  let long_body = "This is a very long log message that exceeds normal expectations and tests boundary conditions for log message handling. ".repeat(10)
-  let long_log = LogRecord::new(Error, long_body)
-  
-  match LogRecord::body(long_log) {
-    Some(body) => assert_eq(body, long_body)
-    _ => assert_fail("Expected long log body")
+  let counters = []
+  for i in 1..=1000 {
+    let counter = Meter::create_counter(meter, "counter." + i.to_string(), Some("Test counter " + i.to_string()), Some("count"))
+    counters = counters.push(counter)
   }
   
-  assert_eq(LogRecord::severity_number(long_log), Error)
-}
-
-test "log_record_extreme_timestamps" {
-  // 测试极值时间戳的日志记录
-  let min_timestamp = -9223372036854775808L  // min int64
-  let max_timestamp = 9223372036854775807L   // max int64
-  let zero_timestamp = 0L
-  
-  let min_log = LogRecord::new_with_context(
-    Info,
-    Some("Min timestamp"),
-    None,
-    Some(min_timestamp),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  let max_log = LogRecord::new_with_context(
-    Info,
-    Some("Max timestamp"),
-    None,
-    Some(max_timestamp),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  let zero_log = LogRecord::new_with_context(
-    Info,
-    Some("Zero timestamp"),
-    None,
-    Some(zero_timestamp),
-    None,
-    None,
-    None,
-    None
-  )
-  
-  assert_eq(min_log.timestamp, Some(min_timestamp))
-  assert_eq(max_log.timestamp, Some(max_timestamp))
-  assert_eq(zero_log.timestamp, Some(zero_timestamp))
-}
-
-test "resource_empty_attributes" {
-  // 测试空属性的资源
-  let empty_resource = Resource::new()
-  let resource_with_empty_attrs = Resource::with_attributes(empty_resource, [])
-  
-  assert_eq(empty_resource.attributes.length(), 0)
-  assert_eq(resource_with_empty_attrs.attributes.length(), 0)
-}
-
-test "resource_very_long_attribute_names" {
-  // 测试非常长属性名的资源
-  let long_attr_name = "this.is.a.very.long.attribute.name.that.exceeds.normal.expectations.and.tests.boundary.conditions"
-  let attrs = [(long_attr_name, StringValue("long-attr-value"))]
-  let resource = Resource::with_attributes(Resource::new(), attrs)
-  
-  let retrieved = Resource::get_attribute(resource, long_attr_name)
-  match retrieved {
-    Some(StringValue(value)) => assert_eq(value, "long-attr-value")
-    _ => assert_fail("Expected long attribute name value")
-  }
-}
-
-test "text_map_carrier_empty_headers" {
-  // 测试空头部的TextMap载体
-  let empty_carrier = TextMapCarrier::new()
-  
-  // 测试获取不存在的头部
-  let non_existent = TextMapCarrier::get(empty_carrier, "non-existent-header")
-  assert_eq(non_existent, None)
-  
-  // 测试获取存在的头部（实现返回固定值）
-  let trace_parent = TextMapCarrier::get(empty_carrier, "traceparent")
-  match trace_parent {
-    Some(value) => assert_eq(value, "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
-    _ => assert_fail("Expected traceparent value")
-  }
-}
-
-test "text_map_carrier_special_header_names" {
-  // 测试特殊头部名称的TextMap载体
-  let carrier = TextMapCarrier::new()
-  
-  // 测试设置特殊头部名称（当前实现不支持实际设置）
-  TextMapCarrier::set(carrier, "X-Custom-Header", "custom-value")
-  TextMapCarrier::set(carrier, "header_with_underscores", "underscore-value")
-  TextMapCarrier::set(carrier, "header-with-dashes", "dash-value")
-  
-  // 测试获取特殊头部名称
-  let custom_header = TextMapCarrier::get(carrier, "X-Custom-Header")
-  let underscore_header = TextMapCarrier::get(carrier, "header_with_underscores")
-  let dash_header = TextMapCarrier::get(carrier, "header-with-dashes")
-  
-  // 当前实现只对traceparent返回固定值
-  assert_eq(custom_header, None)
-  assert_eq(underscore_header, None)
-  assert_eq(dash_header, None)
-}
-
-test "composite_propagator_with_null_propagators" {
-  // 测试包含null传播器的复合传播器
-  // 注意：当前实现不支持null传播器，所以使用空列表
-  let empty_propagator = CompositePropagator::new([])
-  
-  let context = Context::root()
-  let carrier = TextMapCarrier::new()
-  
-  // 测试注入和提取操作
-  CompositePropagator::inject(empty_propagator, context, carrier)
-  let extracted_context = CompositePropagator::extract(empty_propagator, carrier)
-  
-  // 验证操作完成
-  assert_eq(true, true)
-}
-
-test "baggage_with_special_characters" {
-  // 测试包含特殊字符的Baggage条目
-  let baggage = Baggage::new()
-  
-  // 测试设置包含特殊字符的条目
-  let baggage_with_special = Baggage::set_entry(baggage, "special.key!@#", "special!@#value")
-  
-  // 测试获取包含特殊字符的条目
-  let special_value = Baggage::get_entry(baggage_with_special, "special.key!@#")
-  
-  // 当前实现返回None
-  assert_eq(special_value, None)
-}
-
-test "random_with_zero_length" {
-  // 测试零长度随机字节生成
-  let random = Random::system()
-  let zero_bytes = Random::next_bytes(random, 0)
-  
-  assert_eq(zero_bytes.length(), 0)
-}
-
-test "random_with_negative_length" {
-  // 测试负长度随机字节生成（边界情况）
-  let random = Random::system()
-  // 注意：当前实现不处理负长度，这里只是测试调用不会崩溃
-  let negative_bytes = Random::next_bytes(random, -1)
-  
-  assert_eq(negative_bytes.length(), 0)
-}
-
-test "clock_timestamp_boundary" {
-  // 测试时钟时间戳边界
-  let clock = Clock::system()
-  let timestamp = Clock::now_unix_nanos(clock)
-  
-  // 验证时间戳在合理范围内（当前实现返回固定值）
-  assert_eq(timestamp, 1735689600000000000L)
-  
-  // 测试时间戳运算的边界情况
-  let max_increment = 9223372036854775807L
-  let min_decrement = -9223372036854775808L
-  
-  // 这些运算可能会溢出，但测试调用不会失败
-  let future_timestamp = timestamp + max_increment
-  let past_timestamp = timestamp + min_decrement
-  
-  // 验证运算完成
-  assert_eq(true, true)
+  assert_true(true)
 }

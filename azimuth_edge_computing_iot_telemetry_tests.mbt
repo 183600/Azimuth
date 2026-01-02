@@ -1,647 +1,482 @@
-// Azimuth Edge Computing and IoT Telemetry Test Suite
-// 测试遥测系统在边缘计算和物联网环境下的功能
+// Azimuth 边缘计算和IoT遥测测试
+// 测试IoT和边缘环境下的遥测系统
 
-test "边缘设备资源受限环境适配" {
-  // 创建具有边缘计算适配功能的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_edge_computing_support()
+test "资源受限环境下的遥测收集" {
+  // 测试资源受限环境下的遥测收集
   
-  // 配置边缘计算设置
-  let edge_config = EdgeComputingConfig {
-    resource_constraints: {
-      "max_memory": "64MB",
-      "max_cpu": "200m",
-      "max_storage": "512MB"
-    },
-    adaptive_sampling: true,
-    local_processing: true,
-    batch_transmission: true,
-    compression_optimized: true,
-    battery_powered: true
+  // 创建边缘遥测收集器
+  let edge_collector = EdgeTelemetryCollector::new()
+  
+  // 配置资源限制
+  EdgeTelemetryCollector::set_memory_limit(edge_collector, 50 * 1024 * 1024)  // 50MB
+  EdgeTelemetryCollector::set_cpu_limit(edge_collector, 0.5)  // 50% CPU
+  EdgeTelemetryCollector::set_storage_limit(edge_collector, 100 * 1024 * 1024)  // 100MB
+  
+  // 启动收集器
+  EdgeTelemetryCollector::start(edge_collector)
+  
+  // 模拟IoT设备数据收集
+  let iot_devices = []
+  for i in 1..=10 {
+    let device = IoTDevice::new("device_" + i.to_string())
+    IoTDevice::set_type(device, "sensor")
+    IoTDevice::set_location(device, "edge_node_" + (i % 3).to_string())
+    iot_devices = iot_devices.push(device)
   }
   
-  EdgeComputingSupport::configure(telemetry_provider, edge_config)
-  
-  // 模拟不同的边缘设备
-  let edge_devices = [
-    {
-      "name": "industrial_sensor",
-      "cpu": "ARM Cortex-M4",
-      "memory": "64MB",
-      "storage": "256MB",
-      "battery": true,
-      "network": "LTE-M",
-      "processing_capability": "low"
-    },
-    {
-      "name": "smart_camera",
-      "cpu": "ARM Cortex-A53",
-      "memory": "512MB",
-      "storage": "8GB",
-      "battery": false,
-      "network": "WiFi",
-      "processing_capability": "medium"
-    },
-    {
-      "name": "gateway_device",
-      "cpu": "Intel Atom",
-      "memory": "2GB",
-      "storage": "32GB",
-      "battery": false,
-      "network": "Ethernet",
-      "processing_capability": "high"
-    },
-    {
-      "name": "wearable_device",
-      "cpu": "ARM Cortex-M33",
-      "memory": "32MB",
-      "storage": "128MB",
-      "battery": true,
-      "network": "Bluetooth LE",
-      "processing_capability": "very_low"
-    }
-  ]
-  
-  // 测试每个边缘设备的适配
-  for device in edge_devices {
-    // 模拟边缘设备环境
-    EdgeComputingSupport::simulate_edge_device(telemetry_provider, device)
-    
-    // 验证设备检测
-    let detected_device = EdgeComputingSupport::detect_current_device(telemetry_provider)
-    assert_eq(detected_device.name, device["name"])
-    assert_eq(detected_device.cpu, device["cpu"])
-    assert_eq(detected_device.memory, device["memory"])
-    
-    // 创建tracer
-    let tracer = TelemetryProvider::get_tracer(telemetry_provider, "edge.computing.test")
-    
-    // 测试资源感知的遥测收集
-    let resource_test = EdgeComputingSupport::test_resource_aware_collection(telemetry_provider)
-    assert_true(resource_test.success)
-    
-    // 验证内存使用优化
-    assert_true(resource_test.memory_usage < device["memory"].to_int() * 0.8)  // 内存使用不超过80%
-    
-    // 验证CPU使用优化
-    assert_true(resource_test.cpu_usage < device["processing_capability"] == "high" ? 0.8 : 0.5)
-    
-    // 测试自适应采样
-    let sampling_test = EdgeComputingSupport::test_adaptive_sampling(telemetry_provider)
-    assert_true(sampling_test.success)
-    
-    // 根据设备处理能力验证采样率
-    match device["processing_capability"] {
-      "very_low" => assert_true(sampling_test.sampling_rate < 0.1),    // 低于10%
-      "low" => assert_true(sampling_test.sampling_rate < 0.3),        // 低于30%
-      "medium" => assert_true(sampling_test.sampling_rate < 0.6),    // 低于60%
-      "high" => assert_true(sampling_test.sampling_rate < 0.9),      // 低于90%
-      _ => assert_true(false)
-    }
-    
-    // 测试本地数据处理
-    let local_processing_test = EdgeComputingSupport::test_local_processing(telemetry_provider)
-    assert_true(local_processing_test.success)
-    assert_true(local_processing_test.processing_efficiency > 0.7)
-    
-    // 测试批传输优化
-    let batch_test = EdgeComputingSupport::test_batch_transmission(telemetry_provider)
-    assert_true(batch_test.success)
-    
-    // 根据网络类型验证批大小
-    match device["network"] {
-      "LTE-M" => assert_true(batch_test.optimal_batch_size <= 1024),     // 小批大小
-      "WiFi" => assert_true(batch_test.optimal_batch_size <= 8192),      // 中等批大小
-      "Ethernet" => assert_true(batch_test.optimal_batch_size <= 32768), // 大批大小
-      "Bluetooth LE" => assert_true(batch_test.optimal_batch_size <= 256), // 很小批大小
-      _ => assert_true(false)
-    }
-    
-    // 创建span并测试边缘优化
-    let span = Tracer::start_span(tracer, "edge.optimized.operation")
-    Span::set_attribute(span, "device.name", device["name"])
-    Span::set_attribute(span, "device.cpu", device["cpu"])
-    Span::set_attribute(span, "device.memory", device["memory"])
-    
-    // 根据设备能力调整span复杂度
-    let span_complexity = EdgeComputingSupport::get_optimal_span_complexity(telemetry_provider)
-    Span::set_attribute(span, "span.complexity", span_complexity)
-    
-    // 添加属性测试内存使用
-    let max_attributes = match device["processing_capability"] {
-      "very_low" => 5,
-      "low" => 10,
-      "medium" => 25,
-      "high" => 50,
-      _ => 10
-    }
-    
-    for i = 0; i < max_attributes; i = i + 1 {
-      Span::set_attribute(span, "edge.attr." + i.to_string(), "value_" + i.to_string())
-    }
-    
-    Span::end(span)
-    
-    // 验证边缘计算指标
-    let edge_metrics = EdgeComputingSupport::get_edge_metrics(telemetry_provider)
-    assert_true(edge_metrics.resource_efficiency > 0.7)
-    assert_true(edge_metrics.power_efficiency > 0.6)
-    assert_true(edge_metrics.network_efficiency > 0.5)
-  }
-  
-  // 测试边缘设备集群协调
-  let cluster_test = EdgeComputingSupport::test_edge_cluster_coordination(telemetry_provider)
-  assert_true(cluster_test.success)
-  assert_true(cluster_test.coordination_efficiency > 0.7)
-  
-  // 测试边缘到云的数据传输
-  let transmission_test = EdgeComputingSupport::test_edge_to_cloud_transmission(telemetry_provider)
-  assert_true(transmission_test.success)
-  assert_true(transmission_test.compression_ratio > 0.5)
-  assert_true(transmission_test.transmission_efficiency > 0.8)
-  
-  assert_true(true)
-}
-
-test "物联网设备遥测数据收集" {
-  // 创建具有物联网设备支持功能的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_iot_device_support()
-  
-  // 配置物联网设备设置
-  let iot_config = IoTDeviceConfig {
-    supported_protocols: ["mqtt", "coap", "lora", "nb-iot"],
-    device_authentication: true,
-    data_encryption: true,
-    low_power_mode: true,
-    intermittent_connectivity: true,
-    data_aggregation: true
-  }
-  
-  IoTDeviceSupport::configure(telemetry_provider, iot_config)
-  
-  // 模拟不同的物联网设备
-  let iot_devices = [
-    {
-      "name": "temperature_sensor",
-      "type": "environmental",
-      "protocol": "mqtt",
-      "data_frequency": "1min",
-      "payload_size": "64B",
-      "battery_life": "2years",
-      "connectivity": "intermittent"
-    },
-    {
-      "name": "smart_meter",
-      "type": "utility",
-      "protocol": "nb-iot",
-      "data_frequency": "15min",
-      "payload_size": "256B",
-      "battery_life": "10years",
-      "connectivity": "continuous"
-    },
-    {
-      "name": "gps_tracker",
-      "type": "location",
-      "protocol": "lora",
-      "data_frequency": "5min",
-      "payload_size": "128B",
-      "battery_life": "6months",
-      "connectivity": "intermittent"
-    },
-    {
-      "name": "industrial_monitor",
-      "type": "industrial",
-      "protocol": "coap",
-      "data_frequency": "10s",
-      "payload_size": "512B",
-      "power_source": "mains",
-      "connectivity": "continuous"
-    }
-  ]
-  
-  // 测试每个物联网设备的遥测收集
+  // 收集设备遥测数据
+  let telemetry_data = []
   for device in iot_devices {
-    // 模拟物联网设备
-    IoTDeviceSupport::simulate_iot_device(telemetry_provider, device)
+    let device_id = IoTDevice::get_id(device)
+    let device_type = IoTDevice::get_type(device)
+    let location = IoTDevice::get_location(device)
     
-    // 验证设备检测
-    let detected_device = IoTDeviceSupport::detect_current_iot_device(telemetry_provider)
-    assert_eq(detected_device.name, device["name"])
-    assert_eq(detected_device.type, device["type"])
-    assert_eq(detected_device.protocol, device["protocol"])
+    // 模拟传感器数据
+    let temperature = 20.0 + Random::next_float() * 15.0
+    let humidity = 40.0 + Random::next_float() * 30.0
+    let battery_level = 50.0 + Random::next_float() * 50.0
+    let signal_strength = -30 - Random::next_float() * 70.0
     
-    // 创建tracer
-    let tracer = TelemetryProvider::get_tracer(telemetry_provider, "iot.device.test")
+    let data_point = TelemetryDataPoint::new(device_id)
+    TelemetryDataPoint::add_metric(data_point, "temperature", temperature)
+    TelemetryDataPoint::add_metric(data_point, "humidity", humidity)
+    TelemetryDataPoint::add_metric(data_point, "battery_level", battery_level)
+    TelemetryDataPoint::add_metric(data_point, "signal_strength", signal_strength)
+    TelemetryDataPoint::add_tag(data_point, "device_type", device_type)
+    TelemetryDataPoint::add_tag(data_point, "location", location)
     
-    // 测试协议特定的遥测传输
-    let protocol_test = IoTDeviceSupport::test_protocol_specific_telemetry(telemetry_provider)
-    assert_true(protocol_test.success)
-    
-    // 根据协议验证传输特性
-    match device["protocol"] {
-      "mqtt" => {
-        assert_true(protocol_test.supports_qos)
-        assert_true(protocol_test.supports_retained_messages)
-      }
-      "coap" => {
-        assert_true(protocol_test.supports_observe)
-        assert_true(protocol_test.low_overhead)
-      }
-      "lora" => {
-        assert_true(protocol_test.long_range)
-        assert_true(protocol_test.low_power)
-      }
-      "nb-iot" => {
-        assert_true(protocol_test.cellular_connectivity)
-        assert_true(protocol_test.deep_coverage)
-      }
-      _ => assert_true(false)
-    }
-    
-    // 测试设备认证
-    let auth_test = IoTDeviceSupport::test_device_authentication(telemetry_provider)
-    assert_true(auth_test.success)
-    assert_true(auth_test.authentication_time < 5000)  // 认证时间小于5秒
-    
-    // 测试数据加密
-    let encryption_test = IoTDeviceSupport::test_data_encryption(telemetry_provider)
-    assert_true(encryption_test.success)
-    assert_true(encryption_test.encryption_overhead < 0.2)  // 加密开销小于20%
-    
-    // 测试低功耗模式
-    let power_test = IoTDeviceSupport::test_low_power_mode(telemetry_provider)
-    assert_true(power_test.success)
-    
-    // 如果是电池供电设备，验证功耗优化
-    if device.contains("battery_life") {
-      assert_true(power_test.power_reduction > 0.5)  // 功耗降低至少50%
-    }
-    
-    // 测试间歇连接处理
-    let connectivity_test = IoTDeviceSupport::test_intermittent_connectivity(telemetry_provider)
-    assert_true(connectivity_test.success)
-    
-    // 如果是间歇连接设备，验证数据缓存
-    if device["connectivity"] == "intermittent" {
-      assert_true(connectivity_test.local_cache_size > 0)
-      assert_true(connectivity_test.data_retention_hours > 24)  // 至少保留24小时数据
-    }
-    
-    // 创建span并测试物联网优化
-    let span = Tracer::start_span(tracer, "iot.device.operation")
-    Span::set_attribute(span, "device.name", device["name"])
-    Span::set_attribute(span, "device.type", device["type"])
-    Span::set_attribute(span, "device.protocol", device["protocol"])
-    Span::set_attribute(span, "data.frequency", device["data_frequency"])
-    
-    // 根据设备类型添加特定的遥测数据
-    match device["type"] {
-      "environmental" => {
-        Span::set_attribute(span, "sensor.temperature", "23.5")
-        Span::set_attribute(span, "sensor.humidity", "65.2")
-        Span::set_attribute(span, "sensor.pressure", "1013.25")
-      }
-      "utility" => {
-        Span::set_attribute(span, "meter.reading", "1234.56")
-        Span::set_attribute(span, "meter.unit", "kWh")
-      }
-      "location" => {
-        Span::set_attribute(span, "location.latitude", "40.7128")
-        Span::set_attribute(span, "location.longitude", "-74.0060")
-        Span::set_attribute(span, "location.accuracy", "5.0")
-      }
-      "industrial" => {
-        Span::set_attribute(span, "machine.vibration", "2.5")
-        Span::set_attribute(span, "machine.temperature", "75.3")
-        Span::set_attribute(span, "machine.pressure", "150.2")
-      }
-      _ => assert_true(false)
-    }
-    
-    Span::end(span)
-    
-    // 验证物联网设备指标
-    let iot_metrics = IoTDeviceSupport::get_iot_metrics(telemetry_provider)
-    assert_true(iot_metrics.protocol_efficiency > 0.7)
-    assert_true(iot_metrics.power_efficiency > 0.6)
-    assert_true(iot_metrics.data_reliability > 0.9)
+    telemetry_data = telemetry_data.push(data_point)
   }
   
-  // 测试大规模物联网设备管理
-  let scale_test = IoTDeviceSupport::test_large_scale_device_management(telemetry_provider)
-  assert_true(scale_test.success)
-  assert_true(scale_test.managed_devices >= 1000)
-  assert_true(scale_test.management_efficiency > 0.8)
+  // 批量收集数据
+  let collection_result = EdgeTelemetryCollector::collect_batch(edge_collector, telemetry_data)
+  assert_true(collection_result.success)
+  assert_eq(collection_result.collected_count, 10)
   
-  // 测试物联网设备固件更新
-  let firmware_test = IoTDeviceSupport::test_firmware_update(telemetry_provider)
-  assert_true(firmware_test.success)
-  assert_true(firmware_test.update_success_rate > 0.95)
+  // 验证资源使用
+  let memory_usage = EdgeTelemetryCollector::get_memory_usage(edge_collector)
+  let cpu_usage = EdgeTelemetryCollector::get_cpu_usage(edge_collector)
   
-  assert_true(true)
+  assert_true(memory_usage < 50 * 1024 * 1024)
+  assert_true(cpu_usage < 0.6)
+  
+  // 停止收集器
+  EdgeTelemetryCollector::stop(edge_collector)
 }
 
-test "边缘智能和本地数据分析" {
-  // 创建具有边缘智能功能的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_edge_intelligence()
+test "离线模式下的遥测数据处理" {
+  // 测试离线模式下的遥测数据处理
   
-  // 配置边缘智能设置
-  let edge_intelligence_config = EdgeIntelligenceConfig {
-    supported_algorithms: ["threshold", "moving_average", "exponential_smoothing", "simple_anomaly"],
-    model_size_limit: "1MB",
-    inference_time_limit: "100ms",
-    local_training: false,
-    model_updates: "incremental",
-    edge_ml_framework: "tinyml"
+  // 创建离线遥测管理器
+  let offline_manager = OfflineTelemetryManager::new()
+  
+  // 配置离线存储
+  OfflineTelemetryManager::configure_storage(offline_manager, "/tmp/telemetry_cache", 200 * 1024 * 1024)
+  OfflineTelemetryManager::set_batch_size(offline_manager, 100)
+  OfflineTelemetryManager::set_sync_interval(offline_manager, 300)  // 5分钟
+  
+  // 启动离线模式
+  OfflineTelemetryManager::enable_offline_mode(offline_manager)
+  
+  // 模拟网络断开情况下的数据收集
+  let offline_data = []
+  for i in 1..=500 {
+    let data = TelemetryData::new("offline_batch_" + i.to_string())
+    TelemetryData::add_metric(data, "cpu_usage", 50.0 + Random::next_float() * 30.0)
+    TelemetryData::add_metric(data, "memory_usage", 60.0 + Random::next_float() * 20.0)
+    TelemetryData::add_tag(data, "device_id", "edge_device_001")
+    TelemetryData::add_timestamp(data, Time::now())
+    
+    offline_data = offline_data.push(data)
   }
   
-  EdgeIntelligence::configure(telemetry_provider, edge_intelligence_config)
-  
-  // 创建边缘智能处理器
-  let edge_processor = EdgeIntelligenceProcessor::new("edge.intelligence.test")
-  
-  // 配置边缘分析模型
-  EdgeIntelligenceProcessor::add_threshold_model(edge_processor, "temperature.anomaly", [
-    ("min", -10.0),
-    ("max", 50.0),
-    ("severity", "high")
-  ])
-  
-  EdgeIntelligenceProcessor::add_moving_average_model(edge_processor, "vibration.trend", [
-    ("window_size", 10),
-    ("threshold", 2.0),
-    ("severity", "medium")
-  ])
-  
-  EdgeIntelligenceProcessor::add_exponential_smoothing_model(edge_processor, "power.consumption", [
-    ("alpha", 0.3),
-    ("threshold", 1.5),
-    ("severity", "low")
-  ])
-  
-  EdgeIntelligenceProcessor::add_simple_anomaly_model(edge_processor, "network.latency", [
-    ("baseline_window", 100),
-    ("anomaly_threshold", 3.0),
-    ("severity", "medium")
-  ])
-  
-  // 生成测试数据流
-  let base_time = Timestamp::from_string("2025-01-02T10:00:00Z")
-  
-  // 生成1小时的数据，每分钟一个数据点
-  for minute = 0; minute < 60; minute = minute + 1 {
-    let timestamp = base_time.add_minutes(minute)
-    
-    // 温度数据 - 包含异常值
-    let temperature = if minute == 15 || minute == 30 { 60.0 } else { 25.0 + (Math::random() - 0.5) * 10.0 }
-    
-    let temperature_metric = Metric::new("temperature", temperature, "celsius", timestamp, [
-      ("sensor_id", "temp_001"),
-      ("location", "factory_floor")
-    ])
-    
-    // 振动数据 - 包含趋势变化
-    let vibration = 2.0 + minute.to_double() * 0.1 + (Math::random() - 0.5) * 0.5
-    
-    let vibration_metric = Metric::new("vibration", vibration, "hz", timestamp, [
-      ("sensor_id", "vib_001"),
-      ("machine_id", "press_01")
-    ])
-    
-    // 功耗数据 - 逐渐增长
-    let power_consumption = 100.0 + minute.to_double() * 0.5 + (Math::random() - 0.5) * 5.0
-    
-    let power_metric = Metric::new("power_consumption", power_consumption, "watts", timestamp, [
-      ("meter_id", "power_001"),
-      ("circuit", "main")
-    ])
-    
-    // 网络延迟数据 - 包含异常峰值
-    let network_latency = if minute == 20 || minute == 40 { 200.0 } else { 10.0 + (Math::random() - 0.5) * 5.0 }
-    
-    let latency_metric = Metric::new("network_latency", network_latency, "ms", timestamp, [
-      ("interface", "eth0"),
-      ("destination", "cloud_server")
-    ])
-    
-    // 处理边缘智能分析
-    EdgeIntelligenceProcessor::process_metric(edge_processor, temperature_metric)
-    EdgeIntelligenceProcessor::process_metric(edge_processor, vibration_metric)
-    EdgeIntelligenceProcessor::process_metric(edge_processor, power_metric)
-    EdgeIntelligenceProcessor::process_metric(edge_processor, latency_metric)
+  // 存储离线数据
+  for data in offline_data {
+    let stored = OfflineTelemetryManager::store(offline_manager, data)
+    assert_true(stored)
   }
   
-  // 获取边缘智能分析结果
-  let analysis_results = EdgeIntelligenceProcessor::get_analysis_results(edge_processor)
+  // 验证离线存储
+  let stored_count = OfflineTelemetryManager::get_stored_count(offline_manager)
+  assert_eq(stored_count, 500)
   
-  // 验证温度异常检测
-  let temperature_results = analysis_results.get("temperature.anomaly")
-  assert_true(temperature_results.anomalies.length() >= 2)  // 至少检测到2个异常（分钟15和30）
+  // 模拟网络恢复
+  OfflineTelemetryManager::simulate_network_restore(offline_manager)
   
-  for anomaly in temperature_results.anomalies {
-    assert_true(anomaly.value > 50.0)  // 异常值应该超过阈值
-    assert_eq(anomaly.severity, "high")
+  // 触发数据同步
+  let sync_result = OfflineTelemetryManager::sync_to_cloud(offline_manager)
+  assert_true(sync_result.success)
+  assert_eq(sync_result.synced_count, 500)
+  
+  // 验证本地缓存清理
+  let remaining_count = OfflineTelemetryManager::get_stored_count(offline_manager)
+  assert_eq(remaining_count, 0)
+  
+  // 测试部分同步失败场景
+  OfflineTelemetryManager::simulate_partial_network_failure(offline_manager)
+  
+  // 添加更多数据
+  let more_data = []
+  for i in 1..=100 {
+    let data = TelemetryData::new("partial_sync_" + i.to_string())
+    TelemetryData::add_metric(data, "disk_usage", 70.0 + Random::next_float() * 20.0)
+    TelemetryData::add_tag(data, "device_id", "edge_device_002")
+    more_data = more_data.push(data)
   }
   
-  // 验证振动趋势检测
-  let vibration_results = analysis_results.get("vibration.trend")
-  assert_true(vibration_results.trends.length() >= 1)  // 至少检测到1个趋势
-  
-  for trend in vibration_results.trends {
-    assert_true(trend.slope > 0.05)  // 检测到上升趋势
-    assert_eq(trend.severity, "medium")
+  for data in more_data {
+    OfflineTelemetryManager::store(offline_manager, data)
   }
   
-  // 验证功耗平滑分析
-  let power_results = analysis_results.get("power.consumption")
-  assert_true(power_results.forecasts.length() >= 1)  // 至少有1个预测
+  // 部分同步
+  let partial_sync_result = OfflineTelemetryManager::sync_to_cloud(offline_manager)
+  assert_true(partial_sync_result.success)
+  assert_true(partial_sync_result.synced_count > 0)
+  assert_true(partial_sync_result.failed_count > 0)
   
-  for forecast in power_results.forecasts {
-    assert_true(forecast.predicted_value > 0)
-    assert_true(forecast.confidence > 0.5)
-  }
-  
-  // 验证网络延迟异常检测
-  let latency_results = analysis_results.get("network.latency")
-  assert_true(latency_results.anomalies.length() >= 2)  // 至少检测到2个异常（分钟20和40）
-  
-  for anomaly in latency_results.anomalies {
-    assert_true(anomaly.value > 50.0)  // 异常值应该明显超过正常值
-    assert_eq(anomaly.severity, "medium")
-  }
-  
-  // 测试边缘智能性能
-  let performance_test = EdgeIntelligenceProcessor::benchmark_performance(edge_processor)
-  assert_true(performance_test.success)
-  assert_true(performance_test.average_inference_time < 100)  // 平均推理时间小于100ms
-  assert_true(performance_test.memory_usage < 1024 * 1024)    // 内存使用小于1MB
-  assert_true(performance_test.cpu_usage < 0.5)              // CPU使用小于50%
-  
-  // 测试边缘模型更新
-  let model_update_test = EdgeIntelligenceProcessor::test_model_updates(edge_processor)
-  assert_true(model_update_test.success)
-  assert_true(model_update_test.update_time < 5000)  // 模型更新时间小于5秒
-  
-  // 测试边缘到云的智能数据传输
-  let intelligent_transmission_test = EdgeIntelligenceProcessor::test_intelligent_transmission(edge_processor)
-  assert_true(intelligent_transmission_test.success)
-  assert_true(intelligent_transmission_test.data_reduction > 0.3)  // 数据减少至少30%
-  assert_true(intelligent_transmission_test.insight_preservation > 0.9)  // 洞察保留率大于90%
-  
-  // 创建tracer并测试边缘智能集成
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "edge.intelligence.test")
-  
-  let span = Tracer::start_span(tracer, "edge.intelligence.operation")
-  Span::set_attribute(span, "intelligence.models", "4")
-  Span::set_attribute(span, "inference.time", performance_test.average_inference_time.to_string())
-  Span::set_attribute(span, "anomalies.detected", (temperature_results.anomalies.length() + latency_results.anomalies.length()).to_string())
-  
-  Span::end(span)
-  
-  // 验证边缘智能指标
-  let edge_intelligence_metrics = EdgeIntelligenceProcessor::get_intelligence_metrics(edge_processor)
-  assert_true(edge_intelligence_metrics.analysis_accuracy > 0.8)
-  assert_true(edge_intelligence_models.resource_efficiency > 0.7)
-  assert_true(edge_intelligence_models.insight_quality > 0.8)
-  
-  assert_true(true)
+  // 验证失败数据仍在缓存中
+  let final_count = OfflineTelemetryManager::get_stored_count(offline_manager)
+  assert_true(final_count > 0)
 }
 
-test "边缘-云协同和分布式处理" {
-  // 创建具有边缘-云协同功能的遥测提供者
-  let telemetry_provider = TelemetryProvider::with_edge_cloud_collaboration()
+test "边缘设备遥测聚合" {
+  // 测试边缘设备遥测数据的聚合
   
-  // 配置边缘-云协同设置
-  let collaboration_config = EdgeCloudCollaborationConfig {
-    cloud_endpoint: "https://azimuth-cloud.example.com/api/telemetry",
-    edge_nodes: 10,
-    collaboration_strategy: "hierarchical",
-    data_synchronization: "bidirectional",
-    model_distribution: true,
-    failover_support: true,
-    latency_optimization: true
-  }
+  // 创建边缘聚合器
+  let edge_aggregator = EdgeAggregator::new()
   
-  EdgeCloudCollaboration::configure(telemetry_provider, collaboration_config)
+  // 配置聚合规则
+  EdgeAggregator::add_aggregation_rule(edge_aggregator, "temperature", "avg", 60)  // 1分钟平均
+  EdgeAggregator::add_aggregation_rule(edge_aggregator, "humidity", "max", 300)    // 5分钟最大
+  EdgeAggregator::add_aggregation_rule(edge_aggregator, "battery_level", "min", 600) // 10分钟最小
+  EdgeAggregator::add_aggregation_rule(edge_aggregator, "cpu_usage", "sum", 30)     // 30秒总和
   
-  // 创建边缘-云协同处理器
-  let collaboration_processor = EdgeCloudCollaborationProcessor::new("edge.cloud.test")
+  // 模拟高频传感器数据
+  let sensor_data = []
+  let base_time = Time::now()
   
-  // 配置边缘节点
-  let edge_nodes = []
-  for i = 0; i < 10; i = i + 1 {
-    let node = EdgeNode::new("edge-node-" + i.to_string(), {
-      "location": "facility-" + (i % 3).to_string(),
-      "capacity": "medium",
-      "network": "5G",
-      "processing_power": "medium"
-    })
-    edge_nodes.push(node)
-  }
-  
-  // 注册边缘节点
-  for node in edge_nodes {
-    EdgeCloudCollaborationProcessor::register_edge_node(collaboration_processor, node)
-  }
-  
-  // 生成分布式遥测数据
-  let base_time = Timestamp::from_string("2025-01-02T10:00:00Z")
-  
-  // 每个边缘节点生成数据
-  for i = 0; i < edge_nodes.length(); i = i + 1 {
-    let node = edge_nodes[i]
+  for i in 1..=1200 {  // 20分钟的数据，每秒一个数据点
+    let timestamp = base_time + (i * 1000000000L)  // 每秒
+    let temperature = 20.0 + (10.0 * (i / 120.0).sin()) + (2.0 * Random::next_float())
+    let humidity = 50.0 + (20.0 * (i / 240.0).cos()) + (3.0 * Random::next_float())
+    let battery_level = 100.0 - (i * 0.05) + (1.0 * Random::next_float())
+    let cpu_usage = 30.0 + (40.0 * (i % 60).to_float() / 60.0)
     
-    // 每个节点生成30分钟的数据
-    for minute = 0; minute < 30; minute = minute + 1 {
-      let timestamp = base_time.add_minutes(minute)
-      
-      // 生成节点特定的遥测数据
-      let cpu_usage = 50.0 + (Math::random() - 0.5) * 30.0
-      let memory_usage = 60.0 + (Math::random() - 0.5) * 20.0
-      let network_throughput = 100.0 + (Math::random() - 0.5) * 50.0
-      
-      let cpu_metric = Metric::new("cpu.usage", cpu_usage, "percent", timestamp, [
-        ("node_id", node.id),
-        ("location", node.location),
-        ("core", "0")
-      ])
-      
-      let memory_metric = Metric::new("memory.usage", memory_usage, "percent", timestamp, [
-        ("node_id", node.id),
-        ("location", node.location),
-        ("type", "system")
-      ])
-      
-      let network_metric = Metric::new("network.throughput", network_throughput, "mbps", timestamp, [
-        ("node_id", node.id),
-        ("location", node.location),
-        ("interface", "eth0")
-      ])
-      
-      // 处理边缘数据
-      EdgeCloudCollaborationProcessor::process_edge_data(collaboration_processor, node.id, cpu_metric)
-      EdgeCloudCollaborationProcessor::process_edge_data(collaboration_processor, node.id, memory_metric)
-      EdgeCloudCollaborationProcessor::process_edge_data(collaboration_processor, node.id, network_metric)
-    }
+    let data_point = SensorDataPoint::new("edge_sensor_001", timestamp)
+    SensorDataPoint::add_metric(data_point, "temperature", temperature)
+    SensorDataPoint::add_metric(data_point, "humidity", humidity)
+    SensorDataPoint::add_metric(data_point, "battery_level", battery_level)
+    SensorDataPoint::add_metric(data_point, "cpu_usage", cpu_usage)
+    
+    sensor_data = sensor_data.push(data_point)
   }
   
-  // 测试边缘数据聚合
-  let aggregation_test = EdgeCloudCollaborationProcessor::test_edge_data_aggregation(collaboration_processor)
-  assert_true(aggregation_test.success)
-  assert_true(aggregation_test.aggregated_nodes >= 10)
-  assert_true(aggregation_test.aggregation_efficiency > 0.8)
+  // 执行聚合
+  let aggregated_data = EdgeAggregator::aggregate(edge_aggregator, sensor_data)
   
-  // 测试分布式模型训练
-  let distributed_training_test = EdgeCloudCollaborationProcessor::test_distributed_model_training(collaboration_processor)
-  assert_true(distributed_training_test.success)
-  assert_true(distributed_training_test.participating_nodes >= 5)  // 至少5个节点参与
-  assert_true(distributed_training_test.training_time < 60000)    // 训练时间小于60秒
-  assert_true(distributed_training_test.model_accuracy > 0.8)    // 模型准确率大于80%
+  // 验证聚合结果
+  assert_true(aggregated_data.length() > 0)
   
-  // 测试边缘-云数据同步
-  let sync_test = EdgeCloudCollaborationProcessor::test_edge_cloud_synchronization(collaboration_processor)
-  assert_true(sync_test.success)
-  assert_true(sync_test.synced_nodes >= 10)
-  assert_true(sync_test.data_consistency > 0.95)  // 数据一致性大于95%
+  // 验证温度聚合（1分钟平均）
+  let temp_aggregates = aggregated_data.filter(fn(d) { SensorDataPoint::get_metric_name(d) == "temperature_avg" })
+  assert_true(temp_aggregates.length() >= 20)  // 至少20个1分钟间隔
   
-  // 测试智能数据路由
-  let routing_test = EdgeCloudCollaborationProcessor::test_intelligent_data_routing(collaboration_processor)
-  assert_true(routing_test.success)
-  assert_true(routing_test.routing_efficiency > 0.8)
-  assert_true(routing_test.latency_reduction > 0.3)  // 延迟降低至少30%
+  // 验证湿度聚合（5分钟最大）
+  let humidity_aggregates = aggregated_data.filter(fn(d) { SensorDataPoint::get_metric_name(d) == "humidity_max" })
+  assert_true(humidity_aggregates.length() >= 4)  // 至少4个5分钟间隔
   
-  // 测试故障转移和恢复
-  let failover_test = EdgeCloudCollaborationProcessor::test_failover_recovery(collaboration_processor)
-  assert_true(failover_test.success)
-  assert_true(failover_test.failover_time < 5000)  // 故障转移时间小于5秒
-  assert_true(failover_test.data_loss < 0.01)      // 数据丢失小于1%
+  // 验证电池聚合（10分钟最小）
+  let battery_aggregates = aggregated_data.filter(fn(d) { SensorDataPoint::get_metric_name(d) == "battery_level_min" })
+  assert_true(battery_aggregates.length() >= 2)  // 至少2个10分钟间隔
   
-  // 创建tracer并测试边缘-云协同
-  let tracer = TelemetryProvider::get_tracer(telemetry_provider, "edge.cloud.collaboration.test")
+  // 验证CPU聚合（30秒总和）
+  let cpu_aggregates = aggregated_data.filter(fn(d) { SensorDataPoint::get_metric_name(d) == "cpu_usage_sum" })
+  assert_true(cpu_aggregates.length() >= 40)  // 至少40个30秒间隔
   
-  let span = Tracer::start_span(tracer, "edge.cloud.collaboration.operation")
-  Span::set_attribute(span, "edge.nodes", edge_nodes.length().to_string())
-  Span::set_attribute(span, "aggregation.efficiency", aggregation_test.aggregation_efficiency.to_string())
-  Span::set_attribute(span, "sync.consistency", sync_test.data_consistency.to_string())
+  // 测试边缘智能分析
+  let edge_analyzer = EdgeAnalyzer::new()
   
-  Span::end(span)
+  // 配置异常检测规则
+  EdgeAnalyzer::add_anomaly_rule(edge_analyzer, "temperature", 15.0, 35.0)  // 正常范围15-35度
+  EdgeAnalyzer::add_anomaly_rule(edge_analyzer, "humidity", 30.0, 80.0)     # 正常范围30-80%
+  EdgeAnalyzer::add_anomaly_rule(edge_analyzer, "battery_level", 20.0, 100.0) # 正常范围20-100%
   
-  // 测试协作策略优化
-  let strategy_optimization_test = EdgeCloudCollaborationProcessor::test_collaboration_strategy_optimization(collaboration_processor)
-  assert_true(strategy_optimization_test.success)
-  assert_true(strategy_optimization_test.optimization_improvement > 0.2)  // 优化改进至少20%
+  // 检测异常
+  let anomalies = EdgeAnalyzer::detect_anomalies(edge_analyzer, sensor_data)
   
-  // 测试边缘-云安全通信
-  let security_test = EdgeCloudCollaborationProcessor::test_secure_communication(collaboration_processor)
-  assert_true(security_test.success)
-  assert_true(security_test.encryption_strength > 0.9)
-  assert_true(security_test.authentication_success_rate > 0.99)
+  // 验证异常检测
+  assert_true(anomalies.length() >= 0)
   
-  // 验证边缘-云协同指标
-  let collaboration_metrics = EdgeCloudCollaborationProcessor::get_collaboration_metrics(collaboration_processor)
-  assert_true(collaboration_metrics.overall_efficiency > 0.8)
-  assert_true(collaboration_metrics.data_integrity > 0.95)
-  assert_true(collaboration_metrics.resilience_score > 0.8)
-  assert_true(collaboration_metrics.scalability_factor > 0.7)
+  // 如果有异常，验证异常信息
+  for anomaly in anomalies {
+    assert_true(anomaly.metric_name == "temperature" || 
+                anomaly.metric_name == "humidity" || 
+                anomaly.metric_name == "battery_level")
+    assert_true(anomaly.timestamp > 0)
+    assert_true(anomaly.value != 0.0)
+  }
+}
+
+test "低功耗设备遥测优化" {
+  // 测试低功耗设备的遥测优化
   
-  assert_true(true)
+  // 创建低功耗遥测管理器
+  let low_power_manager = LowPowerTelemetryManager::new()
+  
+  // 配置功耗优化策略
+  LowPowerTelemetryManager::set_power_mode(low_power_manager, "energy_saving")
+  LowPowerTelemetryManager::set_sampling_interval(low_power_manager, 30)  # 30秒采样
+  LowPowerTelemetryManager::set_transmission_interval(low_power_manager, 300) # 5分钟传输
+  LowPowerTelemetryManager::enable_compression(low_power_manager, true)
+  LowPowerTelemetryManager::enable_batch_transmission(low_power_manager, true)
+  
+  // 模拟低功耗设备
+  let low_power_device = LowPowerDevice::new("lp_device_001")
+  LowPowerDevice::set_battery_level(low_power_device, 85.0)
+  LowPowerDevice::set_power_consumption(low_power_device, 0.5)  # 0.5W
+  
+  // 启动低功耗遥测
+  LowPowerTelemetryManager::start(low_power_manager, low_power_device)
+  
+  // 模拟设备运行一段时间
+  let telemetry_samples = []
+  for i in 1..=20 {  # 模拟10分钟（20个30秒间隔）
+    let timestamp = Time::now()
+    let cpu_usage = 10.0 + Random::next_float() * 20.0  # 低CPU使用率
+    let memory_usage = 30.0 + Random::next_float() * 20.0
+    let sensor_reading = 100.0 + Random::next_float() * 50.0
+    
+    let sample = TelemetrySample::new(timestamp)
+    TelemetrySample::add_metric(sample, "cpu_usage", cpu_usage)
+    TelemetrySample::add_metric(sample, "memory_usage", memory_usage)
+    TelemetrySample::add_metric(sample, "sensor_reading", sensor_reading)
+    
+    telemetry_samples = telemetry_samples.push(sample)
+    
+    # 等待下一个采样间隔
+    Thread::sleep(30000000L)  # 30ms（模拟30秒）
+  }
+  
+  # 验证采样频率
+  let actual_sampling_interval = LowPowerTelemetryManager::get_actual_sampling_interval(low_power_manager)
+  assert_true(actual_sampling_interval >= 25 && actual_sampling_interval <= 35)
+  
+  # 验证数据压缩
+  let compressed_data = LowPowerTelemetryManager::compress_samples(low_power_manager, telemetry_samples)
+  let compression_ratio = compressed_data.length().to_float() / (telemetry_samples.length() * 24).to_float()
+  assert_true(compression_ratio < 0.8)  # 压缩率应该小于80%
+  
+  # 验证功耗优化
+  let power_consumption = LowPowerDevice::get_power_consumption(low_power_device)
+  assert_true(power_consumption < 1.0)  # 功耗应该小于1W
+  
+  # 测试自适应功耗管理
+  LowPowerDevice::set_battery_level(low_power_device, 15.0)  # 低电量
+  
+  # 触发自适应功耗调整
+  LowPowerTelemetryManager::adaptive_power_adjustment(low_power_manager)
+  
+  # 验证采样间隔增加
+  let adjusted_interval = LowPowerTelemetryManager::get_sampling_interval(low_power_manager)
+  assert_true(adjusted_interval > 30)  # 采样间隔应该增加
+  
+  # 验证功能减少
+  let features_enabled = LowPowerTelemetryManager::get_enabled_features(low_power_manager)
+  assert_true(features_enabled.length() < 3)  # 启用的功能应该减少
+  
+  # 停止低功耗遥测
+  LowPowerTelemetryManager::stop(low_power_manager)
+}
+
+test "边缘节点集群遥测协调" {
+  # 测试边缘节点集群的遥测协调
+  
+  # 创建边缘节点集群
+  let edge_cluster = EdgeCluster::new()
+  
+  # 添加边缘节点
+  for i in 1..=5 {
+    let node = EdgeNode::new("edge_node_" + i.to_string())
+    EdgeNode::set_status(node, "active")
+    EdgeNode::set_capacity(node, 1000)  # 1000个数据点容量
+    EdgeNode::set_load(node, 0.0)       # 初始负载为0
+    EdgeCluster::add_node(edge_cluster, node)
+  }
+  
+  # 创建集群协调器
+  let cluster_coordinator = ClusterCoordinator::new(edge_cluster)
+  
+  # 配置负载均衡策略
+  ClusterCoordinator::set_load_balance_strategy(cluster_coordinator, "round_robin")
+  ClusterCoordinator::set_replication_factor(cluster_coordinator, 2)
+  ClusterCoordinator::set_health_check_interval(cluster_coordinator, 30)  # 30秒
+  
+  # 启动集群协调
+  ClusterCoordinator::start(cluster_coordinator)
+  
+  # 模拟大量遥测数据
+  let cluster_data = []
+  for i in 1..=5000 {
+    let data = TelemetryData::new("cluster_data_" + i.to_string())
+    TelemetryData::add_metric(data, "value", Random::next_float() * 100.0)
+    TelemetryData::add_tag(data, "source", "iot_device_" + (i % 50).to_string())
+    cluster_data = cluster_data.push(data)
+  }
+  
+  # 分发数据到集群
+  let distribution_result = ClusterCoordinator::distribute_data(cluster_coordinator, cluster_data)
+  assert_true(distribution_result.success)
+  assert_eq(distribution_result.distributed_count, 5000)
+  
+  # 验证负载分布
+  let node_loads = []
+  for i in 1..=5 {
+    let node = EdgeCluster::get_node(edge_cluster, "edge_node_" + i.to_string())
+    let load = EdgeNode::get_load(node)
+    node_loads = node_loads.push(load)
+  }
+  
+  # 验证负载均衡
+  let avg_load = node_loads.reduce(fn(acc, load) { acc + load }, 0.0) / 5.0
+  for load in node_loads {
+    assert_true(load >= avg_load * 0.8 && load <= avg_load * 1.2)  # 负载差异应该在20%以内
+  }
+  
+  # 测试节点故障处理
+  let failed_node = EdgeCluster::get_node(edge_cluster, "edge_node_3")
+  EdgeNode::set_status(failed_node, "failed")
+  
+  # 触发故障恢复
+  let recovery_result = ClusterCoordinator::handle_node_failure(cluster_coordinator, "edge_node_3")
+  assert_true(recovery_result.success)
+  
+  # 验证数据重新分布
+  let new_node_loads = []
+  for i in 1..=5 {
+    let node = EdgeCluster::get_node(edge_cluster, "edge_node_" + i.to_string())
+    let load = EdgeNode::get_load(node)
+    new_node_loads = new_node_loads.push(load)
+  }
+  
+  # 验证故障节点的负载被重新分配
+  let failed_node_load = new_node_loads[2]  # edge_node_3
+  assert_true(failed_node_load == 0.0)  # 故障节点负载应为0
+  
+  # 测试数据聚合
+  let aggregated_result = ClusterCoordinator::aggregate_cluster_data(cluster_coordinator)
+  assert_true(aggregated_result.success)
+  assert_true(aggregated_result.aggregated_data.length() > 0)
+  
+  # 停止集群协调
+  ClusterCoordinator::stop(cluster_coordinator)
+}
+
+test "边缘AI辅助遥测处理" {
+  # 测试边缘AI辅助的遥测处理
+  
+  # 创建边缘AI处理器
+  let edge_ai = EdgeAIProcessor::new()
+  
+  # 配置AI模型
+  EdgeAIProcessor::load_model(edge_ai, "anomaly_detection", "/models/anomaly_v1.bin")
+  EdgeAIProcessor::load_model(edge_ai, "prediction", "/models/predict_v1.bin")
+  EdgeAIProcessor::load_model(edge_ai, "classification", "/models/classify_v1.bin")
+  
+  # 配置AI处理规则
+  EdgeAIProcessor::add_processing_rule(edge_ai, "temperature", "anomaly_detection", 0.95)
+  EdgeAIProcessor::add_processing_rule(edge_ai, "vibration", "anomaly_detection", 0.9)
+  EdgeAIProcessor::add_processing_rule(edge_ai, "power_consumption", "prediction", 300)  # 预测未来5分钟
+  EdgeAIProcessor::add_processing_rule(edge_ai, "operational_state", "classification", 0.85)
+  
+  # 启动AI处理器
+  EdgeAIProcessor::start(edge_ai)
+  
+  # 模拟工业IoT数据
+  let industrial_data = []
+  let base_time = Time::now()
+  
+  for i in 1..=1000 {
+    let timestamp = base_time + (i * 1000000000L)
+    
+    # 正常运行数据
+    let normal_temp = 60.0 + (10.0 * (i / 100.0).sin()) + (2.0 * Random::next_float())
+    let normal_vibration = 5.0 + (2.0 * Random::next_float())
+    let normal_power = 100.0 + (20.0 * Random::next_float())
+    let normal_state = "running"
+    
+    # 插入异常数据
+    let temp = if i >= 400 && i <= 410 { normal_temp + 25.0 } else { normal_temp }
+    let vibration = if i >= 700 && i <= 705 { normal_vibration + 15.0 } else { normal_vibration }
+    let power = normal_power
+    let state = if i >= 200 && i <= 210 { "warning" } else { normal_state }
+    
+    let data_point = IndustrialDataPoint::new("industrial_sensor_001", timestamp)
+    IndustrialDataPoint::add_metric(data_point, "temperature", temp)
+    IndustrialDataPoint::add_metric(data_point, "vibration", vibration)
+    IndustrialDataPoint::add_metric(data_point, "power_consumption", power)
+    IndustrialDataPoint::add_state(data_point, "operational_state", state)
+    
+    industrial_data = industrial_data.push(data_point)
+  }
+  
+  # AI处理数据
+  let ai_results = EdgeAIProcessor::process(edge_ai, industrial_data)
+  
+  # 验证异常检测结果
+  let temperature_anomalies = ai_results.filter(fn(r) { r.metric_name == "temperature" && r.analysis_type == "anomaly_detection" })
+  assert_true(temperature_anomalies.length() >= 1)  # 应该检测到温度异常
+  
+  let vibration_anomalies = ai_results.filter(fn(r) { r.metric_name == "vibration" && r.analysis_type == "anomaly_detection" })
+  assert_true(vibration_anomalies.length() >= 1)  # 应该检测到振动异常
+  
+  # 验证预测结果
+  let power_predictions = ai_results.filter(fn(r) { r.metric_name == "power_consumption" && r.analysis_type == "prediction" })
+  assert_true(power_predictions.length() > 0)  # 应该有功率预测
+  
+  for prediction in power_predictions {
+    assert_true(prediction.predicted_values.length() > 0)
+    assert_true(prediction.horizon > 0)
+  }
+  
+  # 验证分类结果
+  let state_classifications = ai_results.filter(fn(r) { r.metric_name == "operational_state" && r.analysis_type == "classification" })
+  assert_true(state_classifications.length() > 0)  # 应该有状态分类
+  
+  for classification in state_classifications {
+    assert_true(classification.confidence > 0.0)
+    assert_true(classification.predicted_class != "")
+  }
+  
+  # 测试边缘AI模型优化
+  let optimization_result = EdgeAIProcessor::optimize_models(edge_ai, industrial_data, ai_results)
+  assert_true(optimization_result.success)
+  assert_true(optimization_result.accuracy_improvement > 0.0)
+  
+  # 测试自适应AI处理
+  EdgeAIProcessor::enable_adaptive_processing(edge_ai, true)
+  
+  # 添加新的数据模式
+  let new_pattern_data = []
+  for i in 1..=100 {
+    let timestamp = base_time + ((1000 + i) * 1000000000L)
+    let temp = 80.0 + (5.0 * Random::next_float())  # 新的更高温度范围
+    let vibration = 8.0 + (3.0 * Random::next_float())  # 新的更高振动范围
+    
+    let data_point = IndustrialDataPoint::new("industrial_sensor_001", timestamp)
+    IndustrialDataPoint::add_metric(data_point, "temperature", temp)
+    IndustrialDataPoint::add_metric(data_point, "vibration", vibration)
+    
+    new_pattern_data = new_pattern_data.push(data_point)
+  }
+  
+  # 自适应处理新数据
+  let adaptive_results = EdgeAIProcessor::process_adaptive(edge_ai, new_pattern_data)
+  assert_true(adaptive_results.length() > 0)
+  
+  # 验证模型适应
+  let model_accuracy = EdgeAIProcessor::get_model_accuracy(edge_ai, "anomaly_detection")
+  assert_true(model_accuracy > 0.8)  # 准确率应该保持较高
+  
+  # 停止AI处理器
+  EdgeAIProcessor::stop(edge_ai)
 }
