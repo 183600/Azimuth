@@ -23,7 +23,8 @@
       "../azimuth_telemetry_system_end_to_end_integration_tests.mbt",
       "../azimuth_telemetry_system_fault_recovery_tests.mbt",
       "../azimuth_performance_benchmark_tests.mbt",
-      "azimuth_enhanced_moonbit_tests.mbt"
+      "azimuth_enhanced_moonbit_tests.mbt",
+      "azimuth_high_quality_focused_tests.mbt"
     ]
   }
 }
