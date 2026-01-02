@@ -92,6 +92,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   },
   "azimuth_telemetry_system_tests.mbt": {
   },
+  "azimuth_telemetry_system_initialization_tests.mbt": {
+  },
   "azimuth_telemetry_system_fault_recovery_tests.mbt": {
   },
   "azimuth_telemetry_system_end_to_end_integration_tests.mbt": {
@@ -207,6 +209,8 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
   "azimuth_simple_additional_tests.mbt": {
   },
   "azimuth_serialization_tests.mbt": {
+  },
+  "azimuth_serialization_performance_tests.mbt": {
   },
   "azimuth_serialization_focused_tests.mbt": {
   },

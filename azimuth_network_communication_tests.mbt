@@ -1,1385 +1,365 @@
-// Azimuth Network Communication Test Suite
-// This file contains comprehensive test cases for network communication
+// Azimuth Network Communication Tests
+// 测试网络通信、HTTP客户端和遥测数据传输
 
-// Test 1: HTTP Request/Response Simulation
-test "http request response simulation" {
-  type HTTPRequest {
-    method : String
-    url : String
-    headers : Array[(String, String)]
-    body : String
-  }
+test "HTTP客户端基本操作" {
+  // 测试HTTP客户端基本操作
+  let http_client = HttpClient::new()
   
-  type HTTPResponse {
-    status_code : Int
-    status_message : String
-    headers : Array[(String, String)]
-    body : String
-  }
+  // 配置HTTP客户端
+  HttpClient::set_timeout(http_client, 5000)  // 5秒超时
+  HttpClient::set_user_agent(http_client, "Azimuth-Telemetry/2.1.0")
+  HttpClient::add_header(http_client, "Accept", "application/json")
+  HttpClient::add_header(http_client, "Content-Type", "application/json")
   
-  let create_request = fn(method, url) {
-    { method: method, url: url, headers: [], body: "" }
-  }
-  
-  let add_header = fn(request, key, value) {
-    let new_headers = request.headers @ [(key, value)]
-    { method: request.method, url: request.url, headers: new_headers, body: request.body }
-  }
-  
-  let set_body = fn(request, body) {
-    { method: request.method, url: request.url, headers: request.headers, body: body }
-  }
-  
-  let create_response = fn(status_code, status_message, body) {
-    { 
-      status_code: status_code, 
-      status_message: status_message, 
-      headers: [], 
-      body: body 
-    }
-  }
-  
-  let add_response_header = fn(response, key, value) {
-    let new_headers = response.headers @ [(key, value)]
-    { 
-      status_code: response.status_code, 
-      status_message: response.status_message, 
-      headers: new_headers, 
-      body: response.body 
-    }
-  }
-  
-  let simulate_http_request = fn(request) {
-    // Simulate different responses based on request
-    if request.method == "GET" and request.url == "/api/users" {
-      let response = create_response(200, "OK", "[{\"id\": 1, \"name\": \"John\"}]")
-      add_response_header(response, "Content-Type", "application/json")
-    } else if request.method == "POST" and request.url == "/api/users" {
-      let response = create_response(201, "Created", "{\"id\": 2, \"name\": \"Jane\"}")
-      add_response_header(response, "Content-Type", "application/json")
-    } else if request.url == "/api/notfound" {
-      let response = create_response(404, "Not Found", "{\"error\": \"Resource not found\"}")
-      add_response_header(response, "Content-Type", "application/json")
-    } else {
-      let response = create_response(500, "Internal Server Error", "{\"error\": \"Server error\"}")
-      add_response_header(response, "Content-Type", "application/json")
-    }
-  }
-  
-  // Test HTTP request creation
-  let request = create_request("GET", "/api/users")
-  let request_with_headers = add_header(add_header(request, "Accept", "application/json"), "User-Agent", "Azimuth/1.0")
-  
-  assert_eq(request_with_headers.method, "GET")
-  assert_eq(request_with_headers.url, "/api/users")
-  assert_eq(request_with_headers.headers.length(), 2)
-  assert_eq(request_with_headers.headers[0], ("Accept", "application/json"))
-  assert_eq(request_with_headers.headers[1], ("User-Agent", "Azimuth/1.0"))
-  
-  // Test POST request with body
-  let post_request = set_body(create_request("POST", "/api/users"), "{\"name\": \"Jane\"}")
-  assert_eq(post_request.method, "POST")
-  assert_eq(post_request.body, "{\"name\": \"Jane\"}")
-  
-  // Test HTTP response simulation
-  let get_response = simulate_http_request(request_with_headers)
+  // 测试GET请求
+  let get_response = HttpClient::get(http_client, "https://httpbin.org/get")
   assert_eq(get_response.status_code, 200)
-  assert_eq(get_response.status_message, "OK")
-  assert_eq(get_response.body, "[{\"id\": 1, \"name\": \"John\"}]")
+  assert_true(get_response.body.contains("httpbin.org"))
+  assert_true(get_response.headers.contains("content-type"))
   
-  // Find Content-Type header
-  let mut content_type = ""
-  for (key, value) in get_response.headers {
-    if key == "Content-Type" {
-      content_type = value
-      break
+  // 测试POST请求
+  let post_data = """
+  {
+    "trace_id": "abc123def456",
+    "span_data": {
+      "name": "test.operation",
+      "duration": 125000000,
+      "status": "OK"
     }
   }
-  assert_eq(content_type, "application/json")
-  
-  // Test POST response
-  let post_response = simulate_http_request(post_request)
-  assert_eq(post_response.status_code, 201)
-  assert_eq(post_response.status_message, "Created")
-  
-  // Test 404 response
-  let not_found_request = create_request("GET", "/api/notfound")
-  let not_found_response = simulate_http_request(not_found_request)
-  assert_eq(not_found_response.status_code, 404)
-  assert_eq(not_found_response.status_message, "Not Found")
-}
-
-// Test 2: WebSocket Communication Simulation
-test "websocket communication simulation" {
-  type WebSocketMessage {
-    type : String  // "text", "binary", "ping", "pong", "close"
-    data : String
-    timestamp : Int
-  }
-  
-  type WebSocketConnection {
-    id : String
-    state : String  // "connecting", "open", "closing", "closed"
-    messages_sent : Array[WebSocketMessage]
-    messages_received : Array[WebSocketMessage]
-  }
-  
-  let create_connection = fn(id) {
-    { 
-      id: id, 
-      state: "connecting", 
-      messages_sent: [], 
-      messages_received: [] 
-    }
-  }
-  
-  let open_connection = fn(connection) {
-    { 
-      id: connection.id, 
-      state: "open", 
-      messages_sent: connection.messages_sent, 
-      messages_received: connection.messages_received 
-    }
-  }
-  
-  let close_connection = fn(connection) {
-    { 
-      id: connection.id, 
-      state: "closed", 
-      messages_sent: connection.messages_sent, 
-      messages_received: connection.messages_received 
-    }
-  }
-  
-  let send_message = fn(connection, message_type, data) {
-    let message = {
-      type: message_type,
-      data: data,
-      timestamp: 1000  // Simulated timestamp
-    }
-    
-    { 
-      id: connection.id, 
-      state: connection.state, 
-      messages_sent: connection.messages_sent @ [message], 
-      messages_received: connection.messages_received 
-    }
-  }
-  
-  let receive_message = fn(connection, message_type, data) {
-    let message = {
-      type: message_type,
-      data: data,
-      timestamp: 1000  // Simulated timestamp
-    }
-    
-    { 
-      id: connection.id, 
-      state: connection.state, 
-      messages_sent: connection.messages_sent, 
-      messages_received: connection.messages_received @ [message] 
-    }
-  }
-  
-  let simulate_echo_server = fn(connection, message) {
-    // Echo server responds with the same message
-    if connection.state == "open" and message.type == "text" {
-      receive_message(connection, "text", "Echo: " + message.data)
-    } else {
-      connection
-    }
-  }
-  
-  // Test WebSocket connection lifecycle
-  let connection = create_connection("conn-123")
-  assert_eq(connection.state, "connecting")
-  
-  let open_conn = open_connection(connection)
-  assert_eq(open_conn.state, "open")
-  
-  // Send messages
-  let conn_with_msg1 = send_message(open_conn, "text", "Hello, server!")
-  let conn_with_msg2 = send_message(conn_with_msg1, "text", "How are you?")
-  
-  assert_eq(conn_with_msg2.messages_sent.length(), 2)
-  assert_eq(conn_with_msg2.messages_sent[0].data, "Hello, server!")
-  assert_eq(conn_with_msg2.messages_sent[1].data, "How are you?")
-  
-  // Simulate server responses
-  let conn_with_resp1 = simulate_echo_server(conn_with_msg2, conn_with_msg2.messages_sent[0])
-  let conn_with_resp2 = simulate_echo_server(conn_with_resp1, conn_with_resp1.messages_sent[1])
-  
-  assert_eq(conn_with_resp2.messages_received.length(), 2)
-  assert_eq(conn_with_resp2.messages_received[0].data, "Echo: Hello, server!")
-  assert_eq(conn_with_resp2.messages_received[1].data, "Echo: How are you?")
-  
-  // Close connection
-  let closed_conn = close_connection(conn_with_resp2)
-  assert_eq(closed_conn.state, "closed")
-  
-  // Test ping/pong
-  let ping_conn = send_message(open_conn, "ping", "")
-  assert_eq(ping_conn.messages_sent[2].type, "ping")
-  
-  let pong_conn = receive_message(ping_conn, "pong", "")
-  assert_eq(pong_conn.messages_received[2].type, "pong")
-}
-
-// Test 3: TCP Connection Simulation
-test "tcp connection simulation" {
-  type TCPPacket {
-    source_port : Int
-    dest_port : Int
-    sequence_number : Int
-    ack_number : Int
-    flags : Array[String]  // "SYN", "ACK", "FIN", "RST"
-    data : String
-  }
-  
-  type TCPConnection {
-    local_port : Int
-    remote_port : Int
-    state : String  // "CLOSED", "SYN_SENT", "ESTABLISHED", "FIN_WAIT_1", "CLOSE_WAIT"
-    local_sequence : Int
-    remote_sequence : Int
-    packets_sent : Array[TCPPacket]
-    packets_received : Array[TCPPacket]
-  }
-  
-  let create_tcp_connection = fn(local_port, remote_port) {
-    { 
-      local_port: local_port, 
-      remote_port: remote_port, 
-      state: "CLOSED", 
-      local_sequence: 1000, 
-      remote_sequence: 0, 
-      packets_sent: [], 
-      packets_received: [] 
-    }
-  }
-  
-  let create_packet = fn(source_port, dest_port, seq, ack, flags, data) {
-    { 
-      source_port: source_port, 
-      dest_port: dest_port, 
-      sequence_number: seq, 
-      ack_number: ack, 
-      flags: flags, 
-      data: data 
-    }
-  }
-  
-  let send_packet = fn(connection, flags, data) {
-    let packet = create_packet(
-      connection.local_port, 
-      connection.remote_port, 
-      connection.local_sequence, 
-      connection.remote_sequence, 
-      flags, 
-      data
-    )
-    
-    let new_sequence = connection.local_sequence + data.length()
-    if flags.contains("SYN") {
-      new_sequence = new_sequence + 1
-    }
-    
-    { 
-      local_port: connection.local_port, 
-      remote_port: connection.remote_port, 
-      state: connection.state, 
-      local_sequence: new_sequence, 
-      remote_sequence: connection.remote_sequence, 
-      packets_sent: connection.packets_sent @ [packet], 
-      packets_received: connection.packets_received 
-    }
-  }
-  
-  let receive_packet = fn(connection, packet) {
-    let new_remote_sequence = packet.sequence_number + packet.data.length()
-    if packet.flags.contains("SYN") {
-      new_remote_sequence = new_remote_sequence + 1
-    }
-    
-    { 
-      local_port: connection.local_port, 
-      remote_port: connection.remote_port, 
-      state: connection.state, 
-      local_sequence: connection.local_sequence, 
-      remote_sequence: new_remote_sequence, 
-      packets_sent: connection.packets_sent, 
-      packets_received: connection.packets_received @ [packet] 
-    }
-  }
-  
-  // Test TCP three-way handshake
-  let client_conn = create_tcp_connection(12345, 80)
-  assert_eq(client_conn.state, "CLOSED")
-  
-  // Client sends SYN
-  let client_syn = send_packet(client_conn, ["SYN"], "")
-  assert_eq(client_syn.state, "CLOSED")  // State doesn't change until SYN-ACK received
-  assert_eq(client_syn.packets_sent.length(), 1)
-  assert_true(client_syn.packets_sent[0].flags.contains("SYN"))
-  
-  // Simulate server SYN-ACK
-  let server_syn_ack = create_packet(80, 12345, 2000, 1001, ["SYN", "ACK"], "")
-  let client_with_syn_ack = receive_packet(client_syn, server_syn_ack)
-  assert_eq(client_with_syn_ack.remote_sequence, 2001)
-  
-  // Client sends ACK
-  let client_ack = send_packet(client_with_syn_ack, ["ACK"], "")
-  assert_eq(client_ack.local_sequence, 1001)
-  
-  // Connection is now established
-  let established_conn = { 
-    local_port: client_ack.local_port, 
-    remote_port: client_ack.remote_port, 
-    state: "ESTABLISHED", 
-    local_sequence: client_ack.local_sequence, 
-    remote_sequence: client_ack.remote_sequence, 
-    packets_sent: client_ack.packets_sent, 
-    packets_received: client_ack.packets_received 
-  }
-  
-  // Test data transmission
-  let data_conn = send_packet(established_conn, ["ACK"], "Hello, server!")
-  assert_eq(data_conn.packets_sent.length(), 4)
-  assert_eq(data_conn.packets_sent[3].data, "Hello, server!")
-  
-  // Simulate server response
-  let server_response = create_packet(80, 12345, 2001, 1018, ["ACK"], "Hello, client!")
-  let client_with_response = receive_packet(data_conn, server_response)
-  assert_eq(client_with_response.packets_received.length(), 3)
-  assert_eq(client_with_response.packets_received[2].data, "Hello, client!")
-}
-
-// Test 4: DNS Resolution Simulation
-test "dns resolution simulation" {
-  type DNSRecord {
-    name : String
-    type : String  // "A", "AAAA", "CNAME", "MX", "NS"
-    value : String
-    ttl : Int
-  }
-  
-  type DNSServer {
-    records : Array[DNSRecord]
-  }
-  
-  let create_dns_server = fn() {
-    { records: [] }
-  }
-  
-  let add_record = fn(server, name, record_type, value, ttl) {
-    let record = { name: name, type: record_type, value: value, ttl: ttl }
-    { records: server.records @ [record] }
-  }
-  
-  let query_dns = fn(server, name, record_type) {
-    let mut results = []
-    
-    for record in server.records {
-      if record.name == name and record.type == record_type {
-        results = results @ [record]
-      }
-    }
-    
-    results
-  }
-  
-  let resolve_domain = fn(server, domain) {
-    // First try to find A record
-    let a_records = query_dns(server, domain, "A")
-    
-    if a_records.length() > 0 {
-      return a_records
-    }
-    
-    // If no A record, look for CNAME
-    let cname_records = query_dns(server, domain, "CNAME")
-    
-    if cname_records.length() > 0 {
-      let cname = cname_records[0].value
-      // Recursively resolve the CNAME
-      resolve_domain(server, cname)
-    } else {
-      []
-    }
-  }
-  
-  // Create DNS server with records
-  let dns_server = create_dns_server()
-  let dns_server1 = add_record(dns_server, "example.com", "A", "93.184.216.34", 3600)
-  let dns_server2 = add_record(dns_server1, "www.example.com", "CNAME", "example.com", 3600)
-  let dns_server3 = add_record(dns_server2, "mail.example.com", "A", "192.0.2.1", 3600)
-  let dns_server4 = add_record(dns_server3, "example.com", "MX", "mail.example.com", 3600)
-  let dns_server5 = add_record(dns_server4, "example.com", "NS", "ns1.example.com", 3600)
-  
-  // Test DNS queries
-  let a_records = query_dns(dns_server5, "example.com", "A")
-  assert_eq(a_records.length(), 1)
-  assert_eq(a_records[0].value, "93.184.216.34")
-  assert_eq(a_records[0].ttl, 3600)
-  
-  let cname_records = query_dns(dns_server5, "www.example.com", "CNAME")
-  assert_eq(cname_records.length(), 1)
-  assert_eq(cname_records[0].value, "example.com")
-  
-  let mx_records = query_dns(dns_server5, "example.com", "MX")
-  assert_eq(mx_records.length(), 1)
-  assert_eq(mx_records[0].value, "mail.example.com")
-  
-  // Test domain resolution with CNAME
-  let www_records = resolve_domain(dns_server5, "www.example.com")
-  assert_eq(www_records.length(), 1)
-  assert_eq(www_records[0].value, "93.184.216.34")  // Resolved through CNAME
-  
-  // Test non-existent domain
-  let nonexistent_records = query_dns(dns_server5, "nonexistent.com", "A")
-  assert_eq(nonexistent_records.length(), 0)
-}
-
-// Test 5: Network Packet Routing Simulation
-test "network packet routing simulation" {
-  type IPPacket {
-    source_ip : String
-    dest_ip : String
-    ttl : Int
-    protocol : String
-    data : String
-  }
-  
-  type RoutingTable {
-    entries : Array[(String, String, Int)]  // (destination, next_hop, metric)
-  }
-  
-  type Router {
-    ip : String
-    routing_table : RoutingTable
-    packets_received : Array[IPPacket]
-    packets_forwarded : Array[IPPacket]
-    packets_dropped : Array[IPPacket]
-  }
-  
-  let create_router = fn(ip) {
-    { 
-      ip: ip, 
-      routing_table: { entries: [] }, 
-      packets_received: [], 
-      packets_forwarded: [], 
-      packets_dropped: [] 
-    }
-  }
-  
-  let add_route = fn(router, destination, next_hop, metric) {
-    let new_entries = router.routing_table.entries @ [(destination, next_hop, metric)]
-    let new_routing_table = { entries: new_entries }
-    
-    { 
-      ip: router.ip, 
-      routing_table: new_routing_table, 
-      packets_received: router.packets_received, 
-      packets_forwarded: router.packets_forwarded, 
-      packets_dropped: router.packets_dropped 
-    }
-  }
-  
-  let create_packet = fn(source_ip, dest_ip, protocol, data) {
-    { source_ip: source_ip, dest_ip: dest_ip, ttl: 64, protocol: protocol, data: data }
-  }
-  
-  let find_route = fn(router, destination) {
-    let mut best_route = None
-    let mut best_metric = 999999
-    
-    for (dest, next_hop, metric) in router.routing_table.entries {
-      if destination.starts_with(dest) and metric < best_metric {
-        best_route = Some(next_hop)
-        best_metric = metric
-      }
-    }
-    
-    best_route
-  }
-  
-  let process_packet = fn(router, packet) {
-    let updated_router = { 
-      ip: router.ip, 
-      routing_table: router.routing_table, 
-      packets_received: router.packets_received @ [packet], 
-      packets_forwarded: router.packets_forwarded, 
-      packets_dropped: router.packets_dropped 
-    }
-    
-    // Check TTL
-    if packet.ttl <= 1 {
-      // Drop packet
-      { 
-        ip: updated_router.ip, 
-        routing_table: updated_router.routing_table, 
-        packets_received: updated_router.packets_received, 
-        packets_forwarded: updated_router.packets_forwarded, 
-        packets_dropped: updated_router.packets_dropped @ [packet] 
-      }
-    } else if packet.dest_ip == router.ip {
-      // Packet is for this router
-      updated_router
-    } else {
-      // Forward packet
-      match find_route(updated_router, packet.dest_ip) {
-        Some(next_hop) => {
-          let forwarded_packet = { 
-            source_ip: packet.source_ip, 
-            dest_ip: packet.dest_ip, 
-            ttl: packet.ttl - 1, 
-            protocol: packet.protocol, 
-            data: packet.data 
-          }
-          
-          { 
-            ip: updated_router.ip, 
-            routing_table: updated_router.routing_table, 
-            packets_received: updated_router.packets_received, 
-            packets_forwarded: updated_router.packets_forwarded @ [forwarded_packet], 
-            packets_dropped: updated_router.packets_dropped 
-          }
-        }
-        None => {
-          // No route found, drop packet
-          { 
-            ip: updated_router.ip, 
-            routing_table: updated_router.routing_table, 
-            packets_received: updated_router.packets_received, 
-            packets_forwarded: updated_router.packets_forwarded, 
-            packets_dropped: updated_router.packets_dropped @ [packet] 
-          }
-        }
-      }
-    }
-  }
-  
-  // Create routers
-  let router1 = create_router("192.168.1.1")
-  let router2 = create_router("10.0.0.1")
-  let router3 = create_router("172.16.0.1")
-  
-  // Configure routing tables
-  let router1_with_routes = add_route(add_route(router1, "10.0.0.0", "10.0.0.1", 1), "172.16.0.0", "10.0.0.1", 2)
-  let router2_with_routes = add_route(add_route(router2, "192.168.1.0", "192.168.1.1", 1), "172.16.0.0", "172.16.0.1", 1)
-  let router3_with_routes = add_route(add_route(router3, "192.168.1.0", "10.0.0.1", 2), "10.0.0.0", "10.0.0.1", 1)
-  
-  // Test packet routing
-  let packet1 = create_packet("192.168.1.100", "10.0.0.100", "TCP", "Hello from 192.168.1.100")
-  let router1_after_packet1 = process_packet(router1_with_routes, packet1)
-  
-  assert_eq(router1_after_packet1.packets_received.length(), 1)
-  assert_eq(router1_after_packet1.packets_forwarded.length(), 1)
-  assert_eq(router1_after_packet1.packets_forwarded[0].dest_ip, "10.0.0.100")
-  assert_eq(router1_after_packet1.packets_forwarded[0].ttl, 63)
-  
-  // Test packet for router
-  let packet2 = create_packet("10.0.0.100", "192.168.1.1", "ICMP", "Ping")
-  let router1_after_packet2 = process_packet(router1_after_packet1, packet2)
-  
-  assert_eq(router1_after_packet2.packets_received.length(), 2)
-  assert_eq(router1_after_packet2.packets_forwarded.length(), 1)  // No new forwarded packet
-  
-  // Test packet with no route
-  let packet3 = create_packet("192.168.1.100", "203.0.113.100", "TCP", "Hello from 192.168.1.100")
-  let router1_after_packet3 = process_packet(router1_after_packet2, packet3)
-  
-  assert_eq(router1_after_packet3.packets_received.length(), 3)
-  assert_eq(router1_after_packet3.packets_dropped.length(), 1)
-  
-  // Test TTL expiration
-  let packet4 = create_packet("192.168.1.100", "10.0.0.100", "TCP", "Hello from 192.168.1.100")
-  let packet4_with_low_ttl = { source_ip: packet4.source_ip, dest_ip: packet4.dest_ip, ttl: 1, protocol: packet4.protocol, data: packet4.data }
-  let router1_after_packet4 = process_packet(router1_after_packet3, packet4_with_low_ttl)
-  
-  assert_eq(router1_after_packet4.packets_received.length(), 4)
-  assert_eq(router1_after_packet4.packets_dropped.length(), 2)
-}
-
-// Test 6: Network Protocol Stack Simulation
-test "network protocol stack simulation" {
-  type EthernetFrame {
-    source_mac : String
-    dest_mac : String
-    ether_type : Int
-    payload : String
-  }
-  
-  type IPPacket {
-    source_ip : String
-    dest_ip : String
-    protocol : Int
-    payload : String
-  }
-  
-  type TCPSegment {
-    source_port : Int
-    dest_port : Int
-    sequence_number : Int
-    ack_number : Int
-    flags : Array[String]
-    payload : String
-  }
-  
-  type ProtocolStack {
-    ethernet_frames : Array[EthernetFrame]
-    ip_packets : Array[IPPacket]
-    tcp_segments : Array[TCPSegment]
-    application_data : String
-  }
-  
-  let create_stack = fn() {
-    { 
-      ethernet_frames: [], 
-      ip_packets: [], 
-      tcp_segments: [], 
-      application_data: "" 
-    }
-  }
-  
-  let create_ethernet_frame = fn(source_mac, dest_mac, ether_type, payload) {
-    { source_mac: source_mac, dest_mac: dest_mac, ether_type: ether_type, payload: payload }
-  }
-  
-  let create_ip_packet = fn(source_ip, dest_ip, protocol, payload) {
-    { source_ip: source_ip, dest_ip: dest_ip, protocol: protocol, payload: payload }
-  }
-  
-  let create_tcp_segment = fn(source_port, dest_port, seq, ack, flags, payload) {
-    { source_port: source_port, dest_port: dest_port, sequence_number: seq, ack_number: ack, flags: flags, payload: payload }
-  }
-  
-  let encapsulate_tcp = fn(stack, segment) {
-    // Create IP packet with TCP segment as payload
-    let ip_packet = create_ip_packet("192.168.1.100", "10.0.0.100", 6, segment.payload)
-    
-    // Create Ethernet frame with IP packet as payload
-    let ethernet_frame = create_ethernet_frame("00:11:22:33:44:55", "AA:BB:CC:DD:EE:FF", 0x0800, ip_packet.payload)
-    
-    { 
-      ethernet_frames: stack.ethernet_frames @ [ethernet_frame], 
-      ip_packets: stack.ip_packets @ [ip_packet], 
-      tcp_segments: stack.tcp_segments @ [segment], 
-      application_data: stack.application_data 
-    }
-  }
-  
-  let decapsulate_ethernet = fn(stack, frame) {
-    // Extract IP packet from Ethernet frame
-    let ip_packet = create_ip_packet("192.168.1.100", "10.0.0.100", 6, frame.payload)
-    
-    // Extract TCP segment from IP packet
-    let tcp_segment = create_tcp_segment(12345, 80, 1000, 0, ["SYN"], ip_packet.payload)
-    
-    { 
-      ethernet_frames: stack.ethernet_frames @ [frame], 
-      ip_packets: stack.ip_packets @ [ip_packet], 
-      tcp_segments: stack.tcp_segments @ [tcp_segment], 
-      application_data: tcp_segment.payload 
-    }
-  }
-  
-  // Test protocol encapsulation
-  let stack = create_stack()
-  
-  // Create application data
-  let app_data = "Hello, world!"
-  let tcp_segment = create_tcp_segment(12345, 80, 1000, 0, ["PSH", "ACK"], app_data)
-  
-  // Encapsulate TCP segment
-  let stack_with_data = encapsulate_tcp(stack, tcp_segment)
-  
-  assert_eq(stack_with_data.tcp_segments.length(), 1)
-  assert_eq(stack_with_data.tcp_segments[0].payload, "Hello, world!")
-  assert_eq(stack_with_data.ip_packets.length(), 1)
-  assert_eq(stack_with_data.ethernet_frames.length(), 1)
-  
-  // Test protocol decapsulation
-  let frame = create_ethernet_frame("AA:BB:CC:DD:EE:FF", "00:11:22:33:44:55", 0x0800, "Hello, world!")
-  let stack_with_frame = decapsulate_ethernet(stack_with_data, frame)
-  
-  assert_eq(stack_with_frame.ethernet_frames.length(), 2)
-  assert_eq(stack_with_frame.ip_packets.length(), 2)
-  assert_eq(stack_with_frame.tcp_segments.length(), 2)
-  assert_eq(stack_with_frame.application_data, "Hello, world!")
-}
-
-// Test 7: Network Security Simulation
-test "network security simulation" {
-  type FirewallRule {
-    id : Int
-    action : String  // "allow", "deny"
-    source_ip : String
-    dest_ip : String
-    source_port : Int
-    dest_port : Int
-    protocol : String
-  }
-  
-  type Firewall {
-    rules : Array[FirewallRule]
-    default_action : String
-    packets_allowed : Int
-    packets_denied : Int
-  }
-  
-  type IPSPacket {
-    source_ip : String
-    dest_ip : String
-    source_port : Int
-    dest_port : Int
-    protocol : String
-    payload : String
-    is_suspicious : Bool
-  }
-  
-  let create_firewall = fn(default_action) {
-    { 
-      rules: [], 
-      default_action: default_action, 
-      packets_allowed: 0, 
-      packets_denied: 0 
-    }
-  }
-  
-  let add_rule = fn(firewall, id, action, source_ip, dest_ip, source_port, dest_port, protocol) {
-    let rule = { 
-      id: id, 
-      action: action, 
-      source_ip: source_ip, 
-      dest_ip: dest_ip, 
-      source_port: source_port, 
-      dest_port: dest_port, 
-      protocol: protocol 
-    }
-    
-    { 
-      rules: firewall.rules @ [rule], 
-      default_action: firewall.default_action, 
-      packets_allowed: firewall.packets_allowed, 
-      packets_denied: firewall.packets_denied 
-    }
-  }
-  
-  let create_packet = fn(source_ip, dest_ip, source_port, dest_port, protocol, payload) {
-    { 
-      source_ip: source_ip, 
-      dest_ip: dest_ip, 
-      source_port: source_port, 
-      dest_port: dest_port, 
-      protocol: protocol, 
-      payload: payload, 
-      is_suspicious: false 
-    }
-  }
-  
-  let matches_rule = fn(packet, rule) {
-    let ip_matches = (rule.source_ip == "any" or packet.source_ip == rule.source_ip) and
-                     (rule.dest_ip == "any" or packet.dest_ip == rule.dest_ip)
-    
-    let port_matches = (rule.source_port == 0 or packet.source_port == rule.source_port) and
-                       (rule.dest_port == 0 or packet.dest_port == rule.dest_port)
-    
-    let protocol_matches = rule.protocol == "any" or packet.protocol == rule.protocol
-    
-    ip_matches and port_matches and protocol_matches
-  }
-  
-  let process_packet = fn(firewall, packet) {
-    let mut action = firewall.default_action
-    
-    // Check rules in order
-    for rule in firewall.rules {
-      if matches_rule(packet, rule) {
-        action = rule.action
-        break
-      }
-    }
-    
-    if action == "allow" {
-      { 
-        rules: firewall.rules, 
-        default_action: firewall.default_action, 
-        packets_allowed: firewall.packets_allowed + 1, 
-        packets_denied: firewall.packets_denied 
-      }
-    } else {
-      { 
-        rules: firewall.rules, 
-        default_action: firewall.default_action, 
-        packets_allowed: firewall.packets_allowed, 
-        packets_denied: firewall.packets_denied + 1 
-      }
-    }
-  }
-  
-  let detect_intrusion = fn(packet) {
-    // Simple intrusion detection
-    let mut suspicious = false
-    
-    // Check for port scanning (connection to many different ports)
-    if packet.dest_port >= 1 and packet.dest_port <= 1024 and packet.payload == "" {
-      suspicious = true
-    }
-    
-    // Check for suspicious payload
-    if packet.payload.contains("../") or packet.payload.contains("<script>") {
-      suspicious = true
-    }
-    
-    { 
-      source_ip: packet.source_ip, 
-      dest_ip: packet.dest_ip, 
-      source_port: packet.source_port, 
-      dest_port: packet.dest_port, 
-      protocol: packet.protocol, 
-      payload: packet.payload, 
-      is_suspicious: suspicious 
-    }
-  }
-  
-  // Create firewall
-  let firewall = create_firewall("deny")
-  
-  // Add rules
-  let firewall_with_rules = add_rule(
-    add_rule(
-      add_rule(firewall, 1, "allow", "192.168.1.0", "any", 0, 0, "any"),  // Allow internal network
-      2, "allow", "any", "any", 0, 80, "TCP"  // Allow HTTP
-    ),
-    3, "allow", "any", "any", 0, 443, "TCP"  // Allow HTTPS
+  """
+  
+  let post_response = HttpClient::post(
+    http_client, 
+    "https://httpbin.org/post", 
+    post_data
   )
+  assert_eq(post_response.status_code, 200)
+  assert_true(post_response.body.contains("trace_id"))
+  assert_true(post_response.body.contains("test.operation"))
   
-  // Test packet processing
-  let internal_packet = create_packet("192.168.1.100", "10.0.0.100", 12345, 80, "TCP", "GET /index.html")
-  let firewall_after_internal = process_packet(firewall_with_rules, internal_packet)
+  // 测试PUT请求
+  let put_data = """
+  {
+    "config": {
+      "sampling_rate": 0.1,
+      "batch_size": 100
+    }
+  }
+  """
   
-  assert_eq(firewall_after_internal.packets_allowed, 1)
-  assert_eq(firewall_after_internal.packets_denied, 0)
+  let put_response = HttpClient::put(
+    http_client,
+    "https://httpbin.org/put",
+    put_data
+  )
+  assert_eq(put_response.status_code, 200)
+  assert_true(put_response.body.contains("sampling_rate"))
   
-  let external_packet = create_packet("203.0.113.100", "192.168.1.100", 12345, 22, "TCP", "SSH connection")
-  let firewall_after_external = process_packet(firewall_after_internal, external_packet)
-  
-  assert_eq(firewall_after_external.packets_allowed, 1)
-  assert_eq(firewall_after_external.packets_denied, 1)
-  
-  let http_packet = create_packet("203.0.113.100", "192.168.1.100", 12345, 80, "TCP", "GET /index.html")
-  let firewall_after_http = process_packet(firewall_after_external, http_packet)
-  
-  assert_eq(firewall_after_http.packets_allowed, 2)
-  assert_eq(firewall_after_http.packets_denied, 1)
-  
-  // Test intrusion detection
-  let suspicious_packet = create_packet("203.0.113.100", "192.168.1.100", 12345, 22, "TCP", "")
-  let detected_packet = detect_intrusion(suspicious_packet)
-  
-  assert_true(detected_packet.is_suspicious)
-  
-  let malicious_packet = create_packet("203.0.113.100", "192.168.1.100", 12345, 80, "TCP", "GET /../../etc/passwd")
-  let detected_malicious = detect_intrusion(malicious_packet)
-  
-  assert_true(detected_malicious.is_suspicious)
-  
-  let normal_packet = create_packet("203.0.113.100", "192.168.1.100", 12345, 80, "TCP", "GET /index.html")
-  let detected_normal = detect_intrusion(normal_packet)
-  
-  assert_false(detected_normal.is_suspicious)
+  // 测试DELETE请求
+  let delete_response = HttpClient::delete(http_client, "https://httpbin.org/delete")
+  assert_eq(delete_response.status_code, 200)
 }
 
-// Test 8: Network Load Balancing Simulation
-test "network load balancing simulation" {
-  type Server {
-    id : String
-    ip : String
-    port : Int
-    weight : Int
-    current_connections : Int
-    total_requests : Int
-    is_healthy : Bool
-  }
+test "遥测数据批量传输" {
+  // 测试遥测数据批量传输
+  let telemetry_client = TelemetryClient::new("https://collector.example.com:4317")
   
-  type LoadBalancer {
-    algorithm : String  // "round_robin", "weighted", "least_connections"
-    servers : Array[Server]
-    current_index : Int
-    total_requests : Int
-  }
+  // 生成批量遥测数据
+  let telemetry_batch = []
+  let base_timestamp = 1735689600000000000L
   
-  let create_server = fn(id, ip, port, weight) {
-    { 
-      id: id, 
-      ip: ip, 
-      port: port, 
-      weight: weight, 
-      current_connections: 0, 
-      total_requests: 0, 
-      is_healthy: true 
-    }
-  }
-  
-  let create_load_balancer = fn(algorithm) {
-    { 
-      algorithm: algorithm, 
-      servers: [], 
-      current_index: 0, 
-      total_requests: 0 
-    }
-  }
-  
-  let add_server = fn(lb, server) {
-    { 
-      algorithm: lb.algorithm, 
-      servers: lb.servers @ [server], 
-      current_index: lb.current_index, 
-      total_requests: lb.total_requests 
-    }
-  }
-  
-  let select_server_round_robin = fn(lb) {
-    if lb.servers.length() == 0 {
-      None
-    } else {
-      let server = lb.servers[lb.current_index]
-      let next_index = (lb.current_index + 1) % lb.servers.length()
-      
-      Some((server, next_index))
-    }
-  }
-  
-  let select_server_weighted = fn(lb) {
-    if lb.servers.length() == 0 {
-      None
-    } else {
-      // Calculate total weight
-      let mut total_weight = 0
-      for server in lb.servers {
-        if server.is_healthy {
-          total_weight = total_weight + server.weight
-        }
-      }
-      
-      if total_weight == 0 {
-        None
-      } else {
-        // Simple weighted selection (simplified)
-        let mut weighted_servers = []
-        for server in lb.servers {
-          if server.is_healthy {
-            let mut i = 0
-            while i < server.weight {
-              weighted_servers = weighted_servers @ [server]
-              i = i + 1
+  for i in 0..=49 {
+    let span_data = {
+      "trace_id": "trace-" + (i % 10).to_string(),
+      "span_id": "span-" + i.to_string(),
+      "parent_span_id": if i > 0 { "span-" + (i - 1).to_string() } else { "" },
+      "operation_name": "operation." + (i % 5).to_string(),
+      "start_time": base_timestamp + (i * 1000000L),
+      "duration": (i + 1) * 1000,
+      "status": if i % 20 == 0 { "ERROR" } else { "OK" },
+      "attributes": {
+        "service.name": "test-service",
+        "service.version": "1.0.0",
+        "host.name": "host-" + (i % 3).to_string(),
+        "region": ["us-west-2", "us-east-1", "eu-west-1"][i % 3]
+      },
+      "events": if i % 10 == 0 {
+        [
+          {
+            "name": "custom.event",
+            "timestamp": base_timestamp + (i * 1000000L) + 500000L,
+            "attributes": {
+              "event.type": "checkpoint",
+              "event.data": "checkpoint-" + i.to_string()
             }
           }
-        }
-        
-        let index = lb.total_requests % weighted_servers.length()
-        Some((weighted_servers[index], lb.current_index))
-      }
-    }
-  }
-  
-  let select_server_least_connections = fn(lb) {
-    if lb.servers.length() == 0 {
-      None
-    } else {
-      let mut selected_server = lb.servers[0]
-      let mut min_connections = selected_server.current_connections
-      
-      for server in lb.servers {
-        if server.is_healthy and server.current_connections < min_connections {
-          selected_server = server
-          min_connections = server.current_connections
-        }
-      }
-      
-      Some((selected_server, lb.current_index))
-    }
-  }
-  
-  let select_server = fn(lb) {
-    match lb.algorithm {
-      "round_robin" => select_server_round_robin(lb)
-      "weighted" => select_server_weighted(lb)
-      "least_connections" => select_server_least_connections(lb)
-      _ => None
-    }
-  }
-  
-  let process_request = fn(lb) {
-    match select_server(lb) {
-      Some((server, next_index)) => {
-        // Update server stats
-        let mut updated_servers = []
-        for s in lb.servers {
-          if s.id == server.id {
-            updated_servers = updated_servers @ [{
-              id: s.id, 
-              ip: s.ip, 
-              port: s.port, 
-              weight: s.weight, 
-              current_connections: s.current_connections + 1, 
-              total_requests: s.total_requests + 1, 
-              is_healthy: s.is_healthy 
-            }]
-          } else {
-            updated_servers = updated_servers @ [s]
-          }
-        }
-        
-        { 
-          algorithm: lb.algorithm, 
-          servers: updated_servers, 
-          current_index: next_index, 
-          total_requests: lb.total_requests + 1 
-        }
-      }
-      None => lb
-    }
-  }
-  
-  let release_connection = fn(lb, server_id) {
-    let mut updated_servers = []
-    
-    for server in lb.servers {
-      if server.id == server_id {
-        updated_servers = updated_servers @ [{
-          id: server.id, 
-          ip: server.ip, 
-          port: server.port, 
-          weight: server.weight, 
-          current_connections: server.current_connections - 1, 
-          total_requests: server.total_requests, 
-          is_healthy: server.is_healthy 
-        }]
+        ]
       } else {
-        updated_servers = updated_servers @ [server]
+        []
       }
     }
-    
-    { 
-      algorithm: lb.algorithm, 
-      servers: updated_servers, 
-      current_index: lb.current_index, 
-      total_requests: lb.total_requests 
-    }
+    telemetry_batch = telemetry_batch.push(span_data)
   }
   
-  // Create servers
-  let server1 = create_server("server1", "192.168.1.10", 8080, 1)
-  let server2 = create_server("server2", "192.168.1.11", 8080, 2)
-  let server3 = create_server("server3", "192.168.1.12", 8080, 3)
+  // 测试批量发送
+  let batch_result = TelemetryClient::send_batch(telemetry_client, telemetry_batch)
+  assert_true(batch_result.success)
+  assert_eq(batch_result.sent_count, 50)
+  assert_eq(batch_result.failed_count, 0)
   
-  // Create load balancer with round-robin algorithm
-  let lb = create_load_balancer("round_robin")
-  let lb_with_servers = add_server(add_server(add_server(lb, server1), server2), server3)
+  // 测试部分失败的批量发送
+  let partial_batch = telemetry_batch.slice(0, 25)
+  TelemetryClient::simulate_network_errors(telemetry_client, 0.2)  // 20%错误率
   
-  // Test round-robin load balancing
-  let lb1 = process_request(lb_with_servers)
-  let lb2 = process_request(lb1)
-  let lb3 = process_request(lb2)
-  let lb4 = process_request(lb3)
+  let partial_result = TelemetryClient::send_batch(telemetry_client, partial_batch)
+  assert_true(partial_result.success || partial_result.failed_count > 0)
+  assert_eq(partial_result.sent_count + partial_result.failed_count, 25)
   
-  assert_eq(lb1.servers[0].current_connections, 1)  // server1
-  assert_eq(lb2.servers[1].current_connections, 1)  // server2
-  assert_eq(lb3.servers[2].current_connections, 1)  // server3
-  assert_eq(lb4.servers[0].current_connections, 2)  // back to server1
-  
-  // Test weighted load balancing
-  let weighted_lb = create_load_balancer("weighted")
-  let weighted_lb_with_servers = add_server(add_server(add_server(weighted_lb, server1), server2), server3)
-  
-  let weighted_lb1 = process_request(weighted_lb_with_servers)
-  let weighted_lb2 = process_request(weighted_lb1)
-  let weighted_lb3 = process_request(weighted_lb2)
-  let weighted_lb4 = process_request(weighted_lb3)
-  let weighted_lb5 = process_request(weighted_lb4)
-  let weighted_lb6 = process_request(weighted_lb5)
-  
-  // With weights 1, 2, 3, server3 should get more requests
-  assert_eq(weighted_lb1.servers[2].total_requests, 1)  // server3 (weight 3)
-  assert_eq(weighted_lb2.servers[2].total_requests, 2)  // server3 (weight 3)
-  assert_eq(weighted_lb3.servers[1].total_requests, 1)  // server2 (weight 2)
-  assert_eq(weighted_lb4.servers[2].total_requests, 3)  // server3 (weight 3)
-  assert_eq(weighted_lb5.servers[1].total_requests, 2)  // server2 (weight 2)
-  assert_eq(weighted_lb6.servers[0].total_requests, 1)  // server1 (weight 1)
-  
-  // Test least connections load balancing
-  let lc_lb = create_load_balancer("least_connections")
-  let lc_lb_with_servers = add_server(add_server(add_server(lc_lb, server1), server2), server3)
-  
-  // Simulate existing connections
-  let lc_lb_with_connections = { 
-    algorithm: "least_connections", 
-    servers: [
-      { id: "server1", ip: "192.168.1.10", port: 8080, weight: 1, current_connections: 5, total_requests: 10, is_healthy: true },
-      { id: "server2", ip: "192.168.1.11", port: 8080, weight: 2, current_connections: 3, total_requests: 8, is_healthy: true },
-      { id: "server3", ip: "192.168.1.12", port: 8080, weight: 3, current_connections: 1, total_requests: 5, is_healthy: true }
-    ], 
-    current_index: 0, 
-    total_requests: 23 
-  }
-  
-  let lc_lb1 = process_request(lc_lb_with_connections)
-  
-  // Should select server3 (least connections)
-  assert_eq(lc_lb1.servers[2].current_connections, 2)
-  
-  // Release connections
-  let lc_lb_released = release_connection(lc_lb1, "server3")
-  assert_eq(lc_lb_released.servers[2].current_connections, 1)
+  TelemetryClient::simulate_network_errors(telemetry_client, 0.0)  // 重置错误率
 }
 
-// Test 9: Network Latency Simulation
-test "network latency simulation" {
-  type NetworkPath {
-    source : String
-    destination : String
-    hops : Array[String]
-    latencies : Array[Int]  // Latency for each hop in ms
+test "网络重试和错误处理" {
+  // 测试网络重试和错误处理
+  let resilient_client = ResilientHttpClient::new()
+  
+  // 配置重试策略
+  let retry_config = {
+    "max_retries": 3,
+    "base_delay": 1000,  // 1秒
+    "max_delay": 10000,  // 10秒
+    "backoff_multiplier": 2.0,
+    "retryable_status_codes": [408, 429, 500, 502, 503, 504],
+    "retryable_errors": ["timeout", "connection_error", "dns_error"]
   }
   
-  type NetworkMeasurement {
-    path : NetworkPath
-    total_latency : Int
-    jitter : Int
-    packet_loss : Float
+  ResilientHttpClient::configure_retry(resilient_client, retry_config)
+  
+  // 测试临时网络错误重试
+  ResilientHttpClient::simulate_errors(resilient_client, {
+    "error_type": "timeout",
+    "error_count": 2,  // 前2次请求失败
+    "then_succeed": true
+  })
+  
+  let retry_result = ResilientHttpClient::get(
+    resilient_client, 
+    "https://httpbin.org/delay/1"
+  )
+  
+  assert_true(retry_result.success)
+  assert_eq(retry_result.attempt_count, 3)  // 初始请求 + 2次重试
+  
+  // 测试不可重试错误
+  ResilientHttpClient::simulate_errors(resilient_client, {
+    "error_type": "authentication_error",
+    "error_count": 1,
+    "then_succeed": false
+  })
+  
+  let auth_result = ResilientHttpClient::get(
+    resilient_client,
+    "https://httpbin.org/status/401"
+  )
+  
+  assert_false(auth_result.success)
+  assert_eq(auth_result.attempt_count, 1)  // 不应重试认证错误
+  
+  // 测试熔断器
+  let circuit_breaker = CircuitBreaker::new({
+    "failure_threshold": 5,
+    "recovery_timeout": 30000,  // 30秒
+    "monitoring_period": 60000  // 60秒
+  })
+  
+  // 触发熔断器
+  ResilientHttpClient::simulate_errors(resilient_client, {
+    "error_type": "server_error",
+    "error_count": 6,  // 超过失败阈值
+    "then_succeed": true
+  })
+  
+  for i in 0..=5 {
+    ResilientHttpClient::get(resilient_client, "https://httpbin.org/status/500")
   }
   
-  let create_path = fn(source, destination, hops) {
-    let mut latencies = []
-    for i in 0..hops.length() {
-      latencies = latencies @ [(i + 1) * 10]  // Simulate increasing latency
+  // 验证熔断器状态
+  assert_true(CircuitBreaker::is_open(circuit_breaker))
+  
+  // 测试熔断器下的请求
+  let circuit_breaker_result = ResilientHttpClient::get(
+    resilient_client,
+    "https://httpbin.org/get"
+  )
+  
+  assert_false(circuit_breaker_result.success)
+  assert_true(circuit_breaker_result.error.contains("circuit breaker"))
+}
+
+test "遥测协议支持" {
+  // 测试多种遥测协议支持
+  let protocol_client = MultiProtocolTelemetryClient::new()
+  
+  // 生成测试数据
+  let test_span = {
+    "trace_id": "trace-protocol-test",
+    "span_id": "span-protocol-test",
+    "operation_name": "protocol.test.operation",
+    "start_time": 1735689600000000000L,
+    "duration": 150000000L,
+    "status": "OK",
+    "attributes": {
+      "service.name": "protocol-test-service",
+      "protocol": "test"
     }
-    
-    { 
-      source: source, 
-      destination: destination, 
-      hops: hops, 
-      latencies: latencies 
-    }
   }
   
-  let measure_latency = fn(path, sample_size) {
-    // Simulate latency measurements with jitter
-    let mut measurements = []
-    
-    for i in 0..sample_size {
-      let mut total_latency = 0
-      
-      for base_latency in path.latencies {
-        // Add random jitter (-5ms to +5ms)
-        let jitter = (i * 7) % 11 - 5  // Simplified pseudo-random jitter
-        total_latency = total_latency + (base_latency + jitter)
+  // 测试OTLP协议
+  let otlp_result = MultiProtocolTelemetryClient::send_otlp(
+    protocol_client,
+    [test_span],
+    {
+      "endpoint": "https://collector.example.com:4317/v1/traces",
+      "headers": {
+        "Content-Type": "application/x-protobuf"
       }
-      
-      measurements = measurements @ [total_latency]
     }
-    
-    // Calculate statistics
-    let mut sum = 0
-    let mut min = measurements[0]
-    let mut max = measurements[0]
-    
-    for measurement in measurements {
-      sum = sum + measurement
-      if measurement < min { min = measurement }
-      if measurement > max { max = measurement }
+  )
+  assert_true(otlp_result.success)
+  
+  // 测试Jaeger协议
+  let jaeger_result = MultiProtocolTelemetryClient::send_jaeger(
+    protocol_client,
+    [test_span],
+    {
+      "endpoint": "https://jaeger.example.com:14268/api/traces",
+      "headers": {
+        "Content-Type": "application/json"
+      }
     }
-    
-    let avg = sum / measurements.length()
-    let jitter = max - min
-    
-    // Simulate packet loss (1% for this example)
-    let packet_loss = 0.01
-    
-    { 
-      path: path, 
-      total_latency: avg, 
-      jitter: jitter, 
-      packet_loss: packet_loss 
+  )
+  assert_true(jaeger_result.success)
+  
+  // 测试Zipkin协议
+  let zipkin_result = MultiProtocolTelemetryClient::send_zipkin(
+    protocol_client,
+    [test_span],
+    {
+      "endpoint": "https://zipkin.example.com:9411/api/v2/spans",
+      "headers": {
+        "Content-Type": "application/json"
+      }
     }
-  }
+  )
+  assert_true(zipkin_result.success)
   
-  let simulate_congestion = fn(path, congestion_factor) {
-    let mut new_latencies = []
-    
-    for latency in path.latencies {
-      // Increase latency based on congestion factor
-      let new_latency = latency + (latency * congestion_factor / 100)
-      new_latencies = new_latencies @ [new_latency.to_int()]
+  // 测试OpenTelemetry指标协议
+  let test_metrics = [
+    {
+      "name": "test.counter",
+      "type": "counter",
+      "value": 42.0,
+      "attributes": {
+        "service": "protocol-test"
+      }
+    },
+    {
+      "name": "test.histogram",
+      "type": "histogram",
+      "buckets": [10.0, 25.0, 50.0, 100.0],
+      "counts": [5, 10, 3, 2],
+      "sum": 825.0,
+      "count": 20,
+      "attributes": {
+        "service": "protocol-test"
+      }
     }
-    
-    { 
-      source: path.source, 
-      destination: path.destination, 
-      hops: path.hops, 
-      latencies: new_latencies 
+  ]
+  
+  let metrics_result = MultiProtocolTelemetryClient::send_metrics_otlp(
+    protocol_client,
+    test_metrics,
+    {
+      "endpoint": "https://collector.example.com:4317/v1/metrics",
+      "headers": {
+        "Content-Type": "application/x-protobuf"
+      }
     }
-  }
-  
-  // Create network paths
-  let path1 = create_path("Client", "Server", ["Router1", "Router2", "Router3"])
-  let path2 = create_path("Client", "Server", ["RouterA", "RouterB"])
-  
-  // Measure latency
-  let measurement1 = measure_latency(path1, 10)
-  let measurement2 = measure_latency(path2, 10)
-  
-  // Verify measurements
-  assert_eq(measurement1.path.hops.length(), 3)
-  assert_eq(measurement1.path.latencies.length(), 3)
-  assert_true(measurement1.total_latency > 0)
-  assert_true(measurement1.jitter >= 0)
-  assert_eq(measurement1.packet_loss, 0.01)
-  
-  assert_eq(measurement2.path.hops.length(), 2)
-  assert_eq(measurement2.path.latencies.length(), 2)
-  assert_true(measurement2.total_latency > 0)
-  assert_true(measurement2.jitter >= 0)
-  
-  // Path with fewer hops should have lower latency
-  assert_true(measurement2.total_latency < measurement1.total_latency)
-  
-  // Simulate network congestion
-  let congested_path1 = simulate_congestion(path1, 50)  // 50% increase
-  let congested_measurement1 = measure_latency(congested_path1, 10)
-  
-  // Congested path should have higher latency
-  assert_true(congested_measurement1.total_latency > measurement1.total_latency)
-  
-  // Verify congestion effect
-  for i in 0..path1.latencies.length() {
-    assert_true(congested_path1.latencies[i] > path1.latencies[i])
-  }
+  )
+  assert_true(metrics_result.success)
 }
 
-// Test 10: Network Bandwidth Simulation
-test "network bandwidth simulation" {
-  type NetworkLink {
-    source : String
-    destination : String
-    bandwidth : Int  // in Mbps
-    latency : Int    // in ms
-    utilization : Float  // 0.0 to 1.0
+test "网络性能和优化" {
+  // 测试网络性能和优化功能
+  let performance_client = OptimizedHttpClient::new()
+  
+  // 配置连接池
+  let pool_config = {
+    "max_connections": 20,
+    "max_idle_connections": 5,
+    "idle_timeout": 30000,  // 30秒
+    "max_lifetime": 300000  // 5分钟
   }
   
-  type DataTransfer {
-    size : Int        // in MB
-    start_time : Int  // in ms
-    end_time : Int    // in ms
-    throughput : Float  // in Mbps
+  OptimizedHttpClient::configure_connection_pool(performance_client, pool_config)
+  
+  // 配置压缩
+  OptimizedHttpClient::enable_compression(performance_client, "gzip")
+  
+  // 测试并发请求性能
+  let concurrent_requests = []
+  let start_time = get_current_timestamp()
+  
+  for i in 0..=9 {
+    let request_future = OptimizedHttpClient::get_async(
+      performance_client,
+      "https://httpbin.org/delay/" + ((i % 3) + 1).to_string()
+    )
+    concurrent_requests = concurrent_requests.push(request_future)
   }
   
-  let create_link = fn(source, destination, bandwidth, latency) {
-    { 
-      source: source, 
-      destination: destination, 
-      bandwidth: bandwidth, 
-      latency: latency, 
-      utilization: 0.0 
-    }
+  // 等待所有请求完成
+  let results = []
+  for request in concurrent_requests {
+    let result = wait_for_future(request)
+    results = results.push(result)
   }
   
-  let calculate_transfer_time = fn(link, data_size) {
-    // Calculate effective bandwidth considering utilization
-    let effective_bandwidth = link.bandwidth * (1.0 - link.utilization)
-    
-    // Transfer time = (data size * 8) / (bandwidth in Mbps) + latency
-    // Convert MB to Mb: data_size * 8
-    let transfer_time = ((data_size * 8).to_float() / effective_bandwidth).to_int() + link.latency
-    
-    transfer_time
-  }
+  let end_time = get_current_timestamp()
+  let total_duration = end_time - start_time
   
-  let simulate_transfer = fn(link, data_size, start_time) {
-    let transfer_time = calculate_transfer_time(link, data_size)
-    let end_time = start_time + transfer_time
-    
-    // Calculate throughput: (data size * 8) / transfer time
-    let throughput = (data_size * 8).to_float() / transfer_time.to_float()
-    
-    { 
-      size: data_size, 
-      start_time: start_time, 
-      end_time: end_time, 
-      throughput: throughput 
-    }
-  }
+  // 验证并发性能
+  assert_eq(results.length(), 10)
+  assert_true(results.all(fn(r) { r.success }))
+  assert_true(total_duration < 5000000000L)  // 应该在5秒内完成（并发执行）
   
-  let update_utilization = fn(link, utilization) {
-    { 
-      source: link.source, 
-      destination: link.destination, 
-      bandwidth: link.bandwidth, 
-      latency: link.latency, 
-      utilization: utilization 
-    }
-  }
+  // 测试压缩效果
+  let large_data = "x" * 10000  // 10KB数据
+  let compressed_request = OptimizedHttpClient::post(
+    performance_client,
+    "https://httpbin.org/post",
+    large_data
+  )
   
-  let simulate_multiple_transfers = fn(link, data_sizes) {
-    let mut transfers = []
-    let mut current_time = 0
-    let mut current_link = link
-    
-    for data_size in data_sizes {
-      let transfer = simulate_transfer(current_link, data_size, current_time)
-      transfers = transfers @ [transfer]
-      
-      // Update utilization based on this transfer
-      let transfer_duration = transfer.end_time - transfer.start_time
-      let utilization = (data_size * 8).to_float() / (link.bandwidth * transfer_duration.to_float())
-      current_link = update_utilization(current_link, utilization)
-      
-      current_time = transfer.end_time
-    }
-    
-    transfers
-  }
+  assert_true(compressed_request.success)
+  assert_true(compressed_request.request_size < large_data.length())  // 压缩后应该更小
   
-  // Create network links
-  let fast_link = create_link("Client", "Server", 100, 10)  // 100 Mbps, 10ms latency
-  let slow_link = create_link("Client", "Server", 10, 50)   // 10 Mbps, 50ms latency
+  // 测试连接复用
+  let reuse_result = OptimizedHttpClient::get(
+    performance_client,
+    "https://httpbin.org/get"
+  )
   
-  // Test single data transfer
-  let transfer1 = simulate_transfer(fast_link, 100, 0)  // 100 MB
-  let transfer2 = simulate_transfer(slow_link, 100, 0)  // 100 MB
+  assert_true(reuse_result.success)
+  assert_true(reuse_result.connection_reused)  // 应该复用连接
   
-  // Verify transfer calculations
-  assert_eq(transfer1.size, 100)
-  assert_eq(transfer1.start_time, 0)
-  assert_true(transfer1.end_time > 0)
-  assert_true(transfer1.throughput > 0)
+  // 测试HTTP/2支持
+  let http2_result = OptimizedHttpClient::get(
+    performance_client,
+    "https://httpbin.org/get",
+    {"protocol": "h2"}
+  )
   
-  assert_eq(transfer2.size, 100)
-  assert_eq(transfer2.start_time, 0)
-  assert_true(transfer2.end_time > transfer1.end_time)  // Slower link takes longer
-  assert_true(transfer2.throughput < transfer1.throughput)  // Lower throughput
-  
-  // Test multiple transfers
-  let data_sizes = [10, 20, 50, 100]  // MB
-  let transfers = simulate_multiple_transfers(fast_link, data_sizes)
-  
-  assert_eq(transfers.length(), 4)
-  
-  // Verify sequential transfers
-  for i in 0..transfers.length() - 1 {
-    assert_eq(transfers[i].end_time, transfers[i + 1].start_time)
-  }
-  
-  // Later transfers should be affected by increased utilization
-  assert_true(transfers[3].throughput <= transfers[0].throughput)
-  
-  // Test with different utilization levels
-  let busy_link = update_utilization(fast_link, 0.5)  // 50% utilization
-  let busy_transfer = simulate_transfer(busy_link, 100, 0)
-  
-  // Busy link should have lower throughput
-  assert_true(busy_transfer.throughput < transfer1.throughput)
-  assert_true(busy_transfer.end_time > transfer1.end_time)
+  assert_true(http2_result.success)
+  assert_eq(http2_result.protocol, "HTTP/2")
 }
