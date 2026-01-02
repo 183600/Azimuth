@@ -399,6 +399,19 @@
             "Debug"
           ]
         },
+        "/home/runner/work/Azimuth/Azimuth/azimuth_comprehensive_moonbit_test_suite.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
         "/home/runner/work/Azimuth/Azimuth/azimuth_comprehensive_new_tests.mbt": {
           "backend": [
             "Wasm",
@@ -4267,6 +4280,48 @@
       "wbtest-deps": [],
       "test-deps": [],
       "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/practical_test/practical_test.mi"
+    },
+    {
+      "is-main": false,
+      "is-third-party": false,
+      "root-path": "/home/runner/work/Azimuth/Azimuth/simple_azimuth_test",
+      "root": "azimuth/telemetry",
+      "rel": "simple_azimuth_test",
+      "files": {
+        "/home/runner/work/Azimuth/Azimuth/simple_azimuth_test/azimuth.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        },
+        "/home/runner/work/Azimuth/Azimuth/simple_azimuth_test/azimuth_comprehensive_moonbit_test_suite.mbt": {
+          "backend": [
+            "Wasm",
+            "WasmGC",
+            "Js",
+            "Native",
+            "LLVM"
+          ],
+          "optlevel": [
+            "Release",
+            "Debug"
+          ]
+        }
+      },
+      "wbtest-files": {},
+      "test-files": {},
+      "mbt-md-files": {},
+      "deps": [],
+      "wbtest-deps": [],
+      "test-deps": [],
+      "artifact": "/home/runner/work/Azimuth/Azimuth/target/wasm-gc/release/check/simple_azimuth_test/simple_azimuth_test.mi"
     },
     {
       "is-main": false,
