@@ -9,6 +9,7 @@
   },
   "test": {
     "test": [
+        "azimuth_high_quality_test_suite.mbt",
         "azimuth_high_quality_moonbit_tests.mbt",
         "azimuth_simple_additional_tests.mbt",
         "azimuth_new_resource_merge_tests.mbt",
@@ -76,5 +77,6 @@
         "azimuth_concurrent_safety_tests.mbt",
         "azimuth_internationalization_tests.mbt",
         "azimuth_cross_service_consistency_tests.mbt",
-        "azimuth_resource_management_tests.mbt"
+        "azimuth_resource_management_tests.mbt",
+        "azimuth_comprehensive_high_quality_tests.mbt"
             ]  }}
