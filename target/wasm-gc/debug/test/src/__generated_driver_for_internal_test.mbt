@@ -215,6 +215,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f617474726962757465735f6f7065726174696f6e735f74657374732e6d6274_7, ["属性数组操作测试"]),
     8: (__test_617a696d7574685f617474726962757465735f6f7065726174696f6e735f74657374732e6d6274_8, ["属性边界条件测试"]),
   },
+  "azimuth_advanced_feature_tests.mbt": {
+    0: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_0, ["distributed tracing with complex context propagation"]),
+    1: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_1, ["advanced metrics with multi-dimensional attributes"]),
+    2: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_2, ["complex log correlation with structured data"]),
+    3: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_3, ["resource management with hierarchical attributes"]),
+    4: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_4, ["advanced span event handling with rich metadata"]),
+    5: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_5, ["baggage propagation across service boundaries"]),
+    6: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_6, ["context operations with complex value types"]),
+    7: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_7, ["advanced http client with request/response correlation"]),
+    8: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_8, ["telemetry configuration with dynamic updates"]),
+    9: (__test_617a696d7574685f616476616e6365645f666561747572655f74657374732e6d6274_9, ["end-to-end telemetry workflow integration"]),
+  },
   "azimuth_additional_tests.mbt": {
     0: (__test_617a696d7574685f6164646974696f6e616c5f74657374732e6d6274_0, ["basic string operations"]),
     1: (__test_617a696d7574685f6164646974696f6e616c5f74657374732e6d6274_1, ["array operations"]),

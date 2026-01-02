@@ -1,519 +1,335 @@
-// Azimuth Telemetry System - Resource Merge Strategy Tests
-// This file contains comprehensive test cases for resource attribute merge strategies
+// Azimuth Resource Merge Strategy Test Suite
+// 资源合并策略测试用例，专注于资源属性的合并策略，包括冲突解决、优先级处理和边界条件
 
-// Test 1: Basic resource creation and attribute access
-test "basic resource creation and attribute access" {
-  // Create a new resource
-  let resource = Resource::new()
+test "基本资源属性合并测试" {
+  // 创建基础资源
+  let base_resource = azimuth::Resource::new()
   
-  // Verify resource is empty initially
-  assert_eq(resource.attributes.length(), 0)
-  
-  // Create attributes
-  let attributes = [
-    ("service.name", AttributeValue::StringValue("test-service")),
-    ("service.version", AttributeValue::StringValue("1.0.0")),
-    ("service.instance.id", AttributeValue::StringValue("instance-123"))
+  // 创建带有属性的资源
+  let base_attrs = [
+    ("service.name", StringValue("azimuth-service")),
+    ("service.version", StringValue("1.0.0")),
+    ("service.instance.id", StringValue("instance-123")),
+    ("host.name", StringValue("server-01")),
+    ("os.type", StringValue("linux"))
   ]
   
-  // Create resource with attributes
-  let resource_with_attrs = Resource::with_attributes(resource, attributes)
+  let base_resource_with_attrs = azimuth::Resource::with_attributes(base_resource, base_attrs)
   
-  // Verify attributes are set
-  assert_eq(resource_with_attrs.attributes.length(), 3)
+  // 创建覆盖资源
+  let override_resource = azimuth::Resource::new()
   
-  // Test attribute access
-  match Resource::get_attribute(resource_with_attrs, "service.name") {
-    Some(AttributeValue::StringValue(name)) => assert_eq(name, "test-service")
-    _ => assert_true(false)
-  }
+  let override_attrs = [
+    ("service.name", StringValue("azimuth-service-updated")),  // 覆盖现有属性
+    ("service.version", StringValue("1.1.0")),                 // 覆盖现有属性
+    ("deployment.environment", StringValue("production")),    // 新属性
+    ("host.name", StringValue("server-01-updated")),          // 覆盖现有属性
+    ("custom.attribute", StringValue("custom-value"))         // 新属性
+  ]
   
-  match Resource::get_attribute(resource_with_attrs, "service.version") {
-    Some(AttributeValue::StringValue(version)) => assert_eq(version, "1.0.0")
-    _ => assert_true(false)
-  }
+  let override_resource_with_attrs = azimuth::Resource::with_attributes(override_resource, override_attrs)
   
-  match Resource::get_attribute(resource_with_attrs, "service.instance.id") {
-    Some(AttributeValue::StringValue(instance_id)) => assert_eq(instance_id, "instance-123")
-    _ => assert_true(false)
-  }
+  // 合并资源
+  let merged_resource = azimuth::Resource::merge(base_resource_with_attrs, override_resource_with_attrs)
   
-  // Test accessing non-existent attribute
-  match Resource::get_attribute(resource_with_attrs, "non.existent") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
+  // 验证合并结果（根据实现，覆盖资源应该优先）
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.name"), Some(StringValue("azimuth-service-updated")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.version"), Some(StringValue("1.1.0")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "deployment.environment"), Some(StringValue("production")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "host.name"), Some(StringValue("server-01-updated")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "custom.attribute"), Some(StringValue("custom-value")))
+  
+  // 验证未被覆盖的属性
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "service.instance.id"), Some(StringValue("instance-123")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "os.type"), Some(StringValue("linux")))
+  
+  // 验证不存在的属性
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "non.existent.attribute"), None)
 }
 
-// Test 2: Resource merge with non-overlapping attributes
-test "resource merge with non-overlapping attributes" {
-  // Create base resource
-  let base_attributes = [
-    ("service.name", AttributeValue::StringValue("base-service")),
-    ("service.version", AttributeValue::StringValue("1.0.0")),
-    ("environment", AttributeValue::StringValue("production"))
+test "多级资源合并和优先级测试" {
+  // 创建三级资源：系统级 -> 应用级 -> 实例级
+  
+  // 系统级资源
+  let system_resource = azimuth::Resource::new()
+  let system_attrs = [
+    ("os.type", StringValue("linux")),
+    ("os.version", StringValue("ubuntu-20.04")),
+    ("host.name", StringValue("prod-server-01")),
+    ("cloud.provider", StringValue("aws")),
+    ("cloud.region", StringValue("us-west-2"))
   ]
-  let base_resource = Resource::with_attributes(Resource::new(), base_attributes)
   
-  // Create override resource with different attributes
-  let override_attributes = [
-    ("host.name", AttributeValue::StringValue("host-123")),
-    ("host.ip", AttributeValue::StringValue("192.168.1.1")),
-    ("region", AttributeValue::StringValue("us-west-2"))
+  let system_resource_with_attrs = azimuth::Resource::with_attributes(system_resource, system_attrs)
+  
+  // 应用级资源
+  let app_resource = azimuth::Resource::new()
+  let app_attrs = [
+    ("service.name", StringValue("user-service")),
+    ("service.version", StringValue("2.0.0")),
+    ("service.namespace", StringValue("production")),
+    ("host.name", StringValue("container-001")),  // 覆盖系统级host.name
+    ("service.language", StringValue("moonbit"))
   ]
-  let override_resource = Resource::with_attributes(Resource::new(), override_attributes)
   
-  // Merge resources
-  let merged_resource = Resource::merge(base_resource, override_resource)
+  let app_resource_with_attrs = azimuth::Resource::with_attributes(app_resource, app_attrs)
   
-  // Verify merged resource contains only override attributes (simplified implementation)
-  // In a real implementation, it would contain both base and override attributes
-  assert_eq(merged_resource.attributes.length(), 3)
+  // 实例级资源
+  let instance_resource = azimuth::Resource::new()
+  let instance_attrs = [
+    ("service.instance.id", StringValue("pod-xyz-123")),
+    ("service.version", StringValue("2.0.1")),  // 覆盖应用级版本
+    ("deployment.environment", StringValue("prod")),
+    ("host.name", StringValue("pod-xyz-123")),  // 再次覆盖host.name
+    ("custom.pod.ip", StringValue("10.0.1.100"))
+  ]
   
-  match Resource::get_attribute(merged_resource, "host.name") {
-    Some(AttributeValue::StringValue(host_name)) => assert_eq(host_name, "host-123")
-    _ => assert_true(false)
-  }
+  let instance_resource_with_attrs = azimuth::Resource::with_attributes(instance_resource, instance_attrs)
   
-  match Resource::get_attribute(merged_resource, "host.ip") {
-    Some(AttributeValue::StringValue(host_ip)) => assert_eq(host_ip, "192.168.1.1")
-    _ => assert_true(false)
-  }
+  // 多级合并：系统 -> 应用 -> 实例
+  let system_app_merged = azimuth::Resource::merge(system_resource_with_attrs, app_resource_with_attrs)
+  let final_merged = azimuth::Resource::merge(system_app_merged, instance_resource_with_attrs)
   
-  match Resource::get_attribute(merged_resource, "region") {
-    Some(AttributeValue::StringValue(region)) => assert_eq(region, "us-west-2")
-    _ => assert_true(false)
-  }
+  // 验证最终合并结果（实例级优先级最高）
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "service.name"), Some(StringValue("user-service")))
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "service.version"), Some(StringValue("2.0.1")))  // 实例级覆盖
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "service.instance.id"), Some(StringValue("pod-xyz-123")))
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "service.namespace"), Some(StringValue("production")))
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "service.language"), Some(StringValue("moonbit")))
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "deployment.environment"), Some(StringValue("prod")))
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "host.name"), Some(StringValue("pod-xyz-123")))  // 实例级覆盖
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "custom.pod.ip"), Some(StringValue("10.0.1.100")))
   
-  // Verify base attributes are not present (simplified implementation)
-  match Resource::get_attribute(merged_resource, "service.name") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
+  // 验证系统级属性（未被覆盖的）
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "os.type"), Some(StringValue("linux")))
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "os.version"), Some(StringValue("ubuntu-20.04")))
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "cloud.provider"), Some(StringValue("aws")))
+  assert_eq(azimuth::Resource::get_attribute(final_merged, "cloud.region"), Some(StringValue("us-west-2")))
 }
 
-// Test 3: Resource merge with overlapping attributes
-test "resource merge with overlapping attributes" {
-  // Create base resource
-  let base_attributes = [
-    ("service.name", AttributeValue::StringValue("original-service")),
-    ("service.version", AttributeValue::StringValue("1.0.0")),
-    ("environment", AttributeValue::StringValue("production"))
+test "不同类型属性值的合并测试" {
+  // 创建包含不同类型属性值的资源
+  let base_resource = azimuth::Resource::new()
+  
+  let base_attrs = [
+    ("string.attr", StringValue("base_string")),
+    ("int.attr", IntValue(42)),
+    ("float.attr", FloatValue(3.14)),
+    ("bool.attr", BoolValue(true)),
+    ("string.array.attr", ArrayStringValue(["base1", "base2", "base3"])),
+    ("int.array.attr", ArrayIntValue([1, 2, 3]))
   ]
-  let base_resource = Resource::with_attributes(Resource::new(), base_attributes)
   
-  // Create override resource with some overlapping attributes
-  let override_attributes = [
-    ("service.name", AttributeValue::StringValue("updated-service")),
-    ("service.version", AttributeValue::StringValue("2.0.0")),
-    ("host.name", AttributeValue::StringValue("new-host"))
+  let base_resource_with_attrs = azimuth::Resource::with_attributes(base_resource, base_attrs)
+  
+  // 创建覆盖资源，包含不同类型的值
+  let override_resource = azimuth::Resource::new()
+  
+  let override_attrs = [
+    ("string.attr", StringValue("override_string")),
+    ("int.attr", IntValue(100)),
+    ("float.attr", FloatValue(2.71)),
+    ("bool.attr", BoolValue(false)),
+    ("string.array.attr", ArrayStringValue(["override1", "override2"])),
+    ("int.array.attr", ArrayIntValue([10, 20, 30, 40]))
   ]
-  let override_resource = Resource::with_attributes(Resource::new(), override_attributes)
   
-  // Merge resources
-  let merged_resource = Resource::merge(base_resource, override_resource)
+  let override_resource_with_attrs = azimuth::Resource::with_attributes(override_resource, override_attrs)
   
-  // In the simplified implementation, merged resource contains only override attributes
-  // In a real implementation, overlapping keys would be overridden by the second resource
-  assert_eq(merged_resource.attributes.length(), 3)
+  // 合并资源
+  let merged_resource = azimuth::Resource::merge(base_resource_with_attrs, override_resource_with_attrs)
   
-  // Verify override attributes are present
-  match Resource::get_attribute(merged_resource, "service.name") {
-    Some(AttributeValue::StringValue(service_name)) => assert_eq(service_name, "updated-service")
-    _ => assert_true(false)
-  }
+  // 验证合并结果
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "string.attr"), Some(StringValue("override_string")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "int.attr"), Some(IntValue(100)))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "float.attr"), Some(FloatValue(2.71)))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "bool.attr"), Some(BoolValue(false)))
   
-  match Resource::get_attribute(merged_resource, "service.version") {
-    Some(AttributeValue::StringValue(service_version)) => assert_eq(service_version, "2.0.0")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "host.name") {
-    Some(AttributeValue::StringValue(host_name)) => assert_eq(host_name, "new-host")
-    _ => assert_true(false)
-  }
-  
-  // Verify base environment attribute is not present (simplified implementation)
-  match Resource::get_attribute(merged_resource, "environment") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 4: Resource merge with different attribute types
-test "resource merge with different attribute types" {
-  // Create base resource with various attribute types
-  let base_attributes = [
-    ("string.attr", AttributeValue::StringValue("string-value")),
-    ("int.attr", AttributeValue::IntValue(42)),
-    ("float.attr", AttributeValue::FloatValue(3.14)),
-    ("bool.attr", AttributeValue::BoolValue(true)),
-    ("string.array", AttributeValue::ArrayStringValue(["item1", "item2"])),
-    ("int.array", AttributeValue::ArrayIntValue([1, 2, 3]))
-  ]
-  let base_resource = Resource::with_attributes(Resource::new(), base_attributes)
-  
-  // Create override resource with same keys but different values
-  let override_attributes = [
-    ("string.attr", AttributeValue::StringValue("updated-string")),
-    ("int.attr", AttributeValue::IntValue(100)),
-    ("float.attr", AttributeValue::FloatValue(2.71)),
-    ("bool.attr", AttributeValue::BoolValue(false)),
-    ("string.array", AttributeValue::ArrayStringValue(["new-item1", "new-item2"])),
-    ("int.array", AttributeValue::ArrayIntValue([4, 5, 6]))
-  ]
-  let override_resource = Resource::with_attributes(Resource::new(), override_attributes)
-  
-  // Merge resources
-  let merged_resource = Resource::merge(base_resource, override_resource)
-  
-  // Verify all override attributes are present with correct types
-  match Resource::get_attribute(merged_resource, "string.attr") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "updated-string")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "int.attr") {
-    Some(AttributeValue::IntValue(value)) => assert_eq(value, 100)
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "float.attr") {
-    Some(AttributeValue::FloatValue(value)) => assert_eq(value, 2.71)
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "bool.attr") {
-    Some(AttributeValue::BoolValue(value)) => assert_false(value)
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "string.array") {
-    Some(AttributeValue::ArrayStringValue(values)) => {
-      assert_eq(values.length(), 2)
-      assert_eq(values[0], "new-item1")
-      assert_eq(values[1], "new-item2")
+  match azimuth::Resource::get_attribute(merged_resource, "string.array.attr") {
+    Some(ArrayStringValue(arr)) => {
+      assert_eq(arr.length(), 2)
+      assert_eq(arr[0], "override1")
+      assert_eq(arr[1], "override2")
     }
     _ => assert_true(false)
   }
   
-  match Resource::get_attribute(merged_resource, "int.array") {
-    Some(AttributeValue::ArrayIntValue(values)) => {
-      assert_eq(values.length(), 3)
-      assert_eq(values[0], 4)
-      assert_eq(values[1], 5)
-      assert_eq(values[2], 6)
+  match azimuth::Resource::get_attribute(merged_resource, "int.array.attr") {
+    Some(ArrayIntValue(arr)) => {
+      assert_eq(arr.length(), 4)
+      assert_eq(arr[0], 10)
+      assert_eq(arr[1], 20)
+      assert_eq(arr[2], 30)
+      assert_eq(arr[3], 40)
     }
     _ => assert_true(false)
   }
 }
 
-// Test 5: Resource merge with empty resources
-test "resource merge with empty resources" {
-  // Create base resource with attributes
-  let base_attributes = [
-    ("service.name", AttributeValue::StringValue("test-service")),
-    ("environment", AttributeValue::StringValue("test"))
+test "边界条件和特殊属性值合并测试" {
+  // 创建包含边界值的资源
+  let base_resource = azimuth::Resource::new()
+  
+  let base_attrs = [
+    ("empty.string", StringValue("")),
+    ("unicode.string", StringValue("Unicode测试_🚀_🌟")),
+    ("special.chars", StringValue("!@#$%^&*()_+-=[]{}|;':\",./<>?")),
+    ("long.string", StringValue("这是一个很长的字符串，用于测试长字符串的合并处理能力。" + 
+      "重复内容：测试长字符串处理。重复内容：测试长字符串处理。" +
+      "重复内容：测试长字符串处理。重复内容：测试长字符串处理。")),
+    ("max.int", IntValue(2147483647)),
+    ("min.int", IntValue(-2147483648)),
+    ("zero.float", FloatValue(0.0)),
+    ("negative.float", FloatValue(-3.14159)),
+    ("true.bool", BoolValue(true)),
+    ("false.bool", BoolValue(false)),
+    ("empty.string.array", ArrayStringValue([])),
+    ("empty.int.array", ArrayIntValue([])),
+    ("single.string.array", ArrayStringValue(["single"])),
+    ("single.int.array", ArrayIntValue([42]))
   ]
-  let base_resource = Resource::with_attributes(Resource::new(), base_attributes)
   
-  // Create empty override resource
-  let empty_resource = Resource::new()
+  let base_resource_with_attrs = azimuth::Resource::with_attributes(base_resource, base_attrs)
   
-  // Merge base with empty
-  let merged1 = Resource::merge(base_resource, empty_resource)
+  // 创建覆盖资源
+  let override_resource = azimuth::Resource::new()
   
-  // In the simplified implementation, merging with empty returns empty
-  assert_eq(merged1.attributes.length(), 0)
-  
-  // Merge empty with base
-  let merged2 = Resource::merge(empty_resource, base_resource)
-  
-  // In the simplified implementation, merging with empty returns base
-  assert_eq(merged2.attributes.length(), 2)
-  
-  // Merge empty with empty
-  let merged3 = Resource::merge(empty_resource, empty_resource)
-  
-  // Result should be empty
-  assert_eq(merged3.attributes.length(), 0)
-}
-
-// Test 6: Multiple resource merges in sequence
-test "multiple resource merges in sequence" {
-  // Create first resource
-  let resource1_attrs = [
-    ("service.name", AttributeValue::StringValue("service1")),
-    ("version", AttributeValue::StringValue("1.0.0"))
+  let override_attrs = [
+    ("empty.string", StringValue("not_empty")),
+    ("unicode.string", StringValue("Unicode覆盖_🔥_💡")),
+    ("special.chars", StringValue("覆盖特殊字符")),
+    ("long.string", StringValue("覆盖的长字符串")),
+    ("max.int", IntValue(0)),
+    ("min.int", IntValue(0)),
+    ("zero.float", FloatValue(1.0)),
+    ("negative.float", FloatValue(0.0)),
+    ("true.bool", BoolValue(false)),
+    ("false.bool", BoolValue(true)),
+    ("empty.string.array", ArrayStringValue(["not_empty"])),
+    ("empty.int.array", ArrayIntValue([1])),
+    ("single.string.array", ArrayStringValue([])),
+    ("single.int.array", ArrayIntValue([]))
   ]
-  let resource1 = Resource::with_attributes(Resource::new(), resource1_attrs)
   
-  // Create second resource
-  let resource2_attrs = [
-    ("host.name", AttributeValue::StringValue("host1")),
-    ("environment", AttributeValue::StringValue("dev"))
-  ]
-  let resource2 = Resource::with_attributes(Resource::new(), resource2_attrs)
+  let override_resource_with_attrs = azimuth::Resource::with_attributes(override_resource, override_attrs)
   
-  // Create third resource
-  let resource3_attrs = [
-    ("service.name", AttributeValue::StringValue("service3")),
-    ("region", AttributeValue::StringValue("us-east"))
-  ]
-  let resource3 = Resource::with_attributes(Resource::new(), resource3_attrs)
+  // 合并资源
+  let merged_resource = azimuth::Resource::merge(base_resource_with_attrs, override_resource_with_attrs)
   
-  // Merge resources in sequence
-  let merged12 = Resource::merge(resource1, resource2)
-  let merged123 = Resource::merge(merged12, resource3)
+  // 验证边界值合并结果
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "empty.string"), Some(StringValue("not_empty")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "unicode.string"), Some(StringValue("Unicode覆盖_🔥_💡")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "special.chars"), Some(StringValue("覆盖特殊字符")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "long.string"), Some(StringValue("覆盖的长字符串")))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "max.int"), Some(IntValue(0)))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "min.int"), Some(IntValue(0)))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "zero.float"), Some(FloatValue(1.0)))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "negative.float"), Some(FloatValue(0.0)))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "true.bool"), Some(BoolValue(false)))
+  assert_eq(azimuth::Resource::get_attribute(merged_resource, "false.bool"), Some(BoolValue(true)))
   
-  // In the simplified implementation, final result contains only resource3 attributes
-  assert_eq(merged123.attributes.length(), 2)
-  
-  match Resource::get_attribute(merged123, "service.name") {
-    Some(AttributeValue::StringValue(service_name)) => assert_eq(service_name, "service3")
+  match azimuth::Resource::get_attribute(merged_resource, "empty.string.array") {
+    Some(ArrayStringValue(arr)) => {
+      assert_eq(arr.length(), 1)
+      assert_eq(arr[0], "not_empty")
+    }
     _ => assert_true(false)
   }
   
-  match Resource::get_attribute(merged123, "region") {
-    Some(AttributeValue::StringValue(region)) => assert_eq(region, "us-east")
+  match azimuth::Resource::get_attribute(merged_resource, "empty.int.array") {
+    Some(ArrayIntValue(arr)) => {
+      assert_eq(arr.length(), 1)
+      assert_eq(arr[0], 1)
+    }
     _ => assert_true(false)
   }
   
-  // Verify attributes from resource1 and resource2 are not present
-  match Resource::get_attribute(merged123, "version") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  match Resource::get_attribute(merged123, "host.name") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  match Resource::get_attribute(merged123, "environment") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 7: Resource merge with special attribute keys
-test "resource merge with special attribute keys" {
-  // Create base resource with special keys
-  let base_attributes = [
-    ("", AttributeValue::StringValue("empty-key")),
-    ("special.key/with/symbols", AttributeValue::StringValue("special1")),
-    ("key with spaces", AttributeValue::StringValue("spaces")),
-    ("key.with.dots", AttributeValue::StringValue("dots"))
-  ]
-  let base_resource = Resource::with_attributes(Resource::new(), base_attributes)
-  
-  // Create override resource with same special keys
-  let override_attributes = [
-    ("", AttributeValue::StringValue("updated-empty")),
-    ("special.key/with/symbols", AttributeValue::StringValue("special2")),
-    ("key with spaces", AttributeValue::StringValue("updated-spaces")),
-    ("key.with.dots", AttributeValue::StringValue("updated-dots"))
-  ]
-  let override_resource = Resource::with_attributes(Resource::new(), override_attributes)
-  
-  // Merge resources
-  let merged_resource = Resource::merge(base_resource, override_resource)
-  
-  // Verify all special keys are handled correctly
-  match Resource::get_attribute(merged_resource, "") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "updated-empty")
+  match azimuth::Resource::get_attribute(merged_resource, "single.string.array") {
+    Some(ArrayStringValue(arr)) => assert_eq(arr.length(), 0)
     _ => assert_true(false)
   }
   
-  match Resource::get_attribute(merged_resource, "special.key/with/symbols") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "special2")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "key with spaces") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "updated-spaces")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "key.with.dots") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "updated-dots")
+  match azimuth::Resource::get_attribute(merged_resource, "single.int.array") {
+    Some(ArrayIntValue(arr)) => assert_eq(arr.length(), 0)
     _ => assert_true(false)
   }
 }
 
-// Test 8: Resource merge with large number of attributes
-test "resource merge with large number of attributes" {
-  // Create base resource with many attributes
-  let mut base_attrs = []
-  for i in 0..=50 {
-    let key = "base.key." + i.to_string()
-    let value = "base.value." + i.to_string()
-    base_attrs = base_attrs.push((key, AttributeValue::StringValue(value)))
-  }
-  let base_resource = Resource::with_attributes(Resource::new(), base_attrs)
+test "空资源和大规模属性合并测试" {
+  // 测试空资源合并
+  let empty_resource1 = azimuth::Resource::new()
+  let empty_resource2 = azimuth::Resource::new()
   
-  // Create override resource with many attributes
-  let mut override_attrs = []
-  for i in 0..=50 {
-    let key = "override.key." + i.to_string()
-    let value = "override.value." + i.to_string()
-    override_attrs = override_attrs.push((key, AttributeValue::StringValue(value)))
-  }
-  let override_resource = Resource::with_attributes(Resource::new(), override_attrs)
+  let empty_attrs1: Array[(String, AttributeValue)] = []
+  let empty_attrs2: Array[(String, AttributeValue)] = []
   
-  // Merge resources
-  let merged_resource = Resource::merge(base_resource, override_resource)
+  let empty_resource1_with_attrs = azimuth::Resource::with_attributes(empty_resource1, empty_attrs1)
+  let empty_resource2_with_attrs = azimuth::Resource::with_attributes(empty_resource2, empty_attrs2)
   
-  // In the simplified implementation, result contains only override attributes
-  assert_eq(merged_resource.attributes.length(), 51)
+  let merged_empty = azimuth::Resource::merge(empty_resource1_with_attrs, empty_resource2_with_attrs)
   
-  // Verify some override attributes
-  match Resource::get_attribute(merged_resource, "override.key.0") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "override.value.0")
-    _ => assert_true(false)
-  }
+  // 验证空资源合并
+  assert_eq(azimuth::Resource::get_attribute(merged_empty, "any.key"), None)
   
-  match Resource::get_attribute(merged_resource, "override.key.25") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "override.value.25")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "override.key.50") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "override.value.50")
-    _ => assert_true(false)
-  }
-  
-  // Verify base attributes are not present
-  match Resource::get_attribute(merged_resource, "base.key.0") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-}
-
-// Test 9: Resource merge with complex attribute values
-test "resource merge with complex attribute values" {
-  // Create base resource with complex values
-  let base_attributes = [
-    ("json.object", AttributeValue::StringValue("{\"key\":\"value\",\"number\":42}")),
-    ("xml.data", AttributeValue::StringValue("<root><item>value</item></root>")),
-    ("base64.data", AttributeValue::StringValue("SGVsbG8gV29ybGQ=")),
-    ("url.value", AttributeValue::StringValue("https://example.com/path?param=value")),
-    ("uuid.value", AttributeValue::StringValue("550e8400-e29b-41d4-a716-446655440000"))
+  // 测试空资源与非空资源合并
+  let non_empty_resource = azimuth::Resource::new()
+  let non_empty_attrs = [
+    ("key1", StringValue("value1")),
+    ("key2", IntValue(42)),
+    ("key3", FloatValue(3.14))
   ]
-  let base_resource = Resource::with_attributes(Resource::new(), base_attributes)
   
-  // Create override resource with updated complex values
-  let override_attributes = [
-    ("json.object", AttributeValue::StringValue("{\"updated\":\"value\",\"number\":100}")),
-    ("xml.data", AttributeValue::StringValue("<root><updated>value</updated></root>")),
-    ("base64.data", AttributeValue::StringValue("VXBkYXRlZCBkYXRh")),
-    ("url.value", AttributeValue::StringValue("https://updated.com/path?param=new")),
-    ("uuid.value", AttributeValue::StringValue("660e8400-e29b-41d4-a716-446655440001"))
+  let non_empty_resource_with_attrs = azimuth::Resource::with_attributes(non_empty_resource, non_empty_attrs)
+  
+  let merged_empty_nonempty = azimuth::Resource::merge(empty_resource1_with_attrs, non_empty_resource_with_attrs)
+  let merged_nonempty_empty = azimuth::Resource::merge(non_empty_resource_with_attrs, empty_resource1_with_attrs)
+  
+  // 验证空资源与非空资源合并
+  assert_eq(azimuth::Resource::get_attribute(merged_empty_nonempty, "key1"), Some(StringValue("value1")))
+  assert_eq(azimuth::Resource::get_attribute(merged_empty_nonempty, "key2"), Some(IntValue(42)))
+  assert_eq(azimuth::Resource::get_attribute(merged_empty_nonempty, "key3"), Some(FloatValue(3.14)))
+  
+  assert_eq(azimuth::Resource::get_attribute(merged_nonempty_empty, "key1"), Some(StringValue("value1")))
+  assert_eq(azimuth::Resource::get_attribute(merged_nonempty_empty, "key2"), Some(IntValue(42)))
+  assert_eq(azimuth::Resource::get_attribute(merged_nonempty_empty, "key3"), Some(FloatValue(3.14)))
+  
+  // 测试大规模属性合并
+  let large_resource1 = azimuth::Resource::new()
+  let large_resource2 = azimuth::Resource::new()
+  
+  let large_attrs1 = [
+    for i in range(0, 100) {
+      ("large_key_" + i.to_string(), StringValue("large_value_" + i.to_string()))
+    }
   ]
-  let override_resource = Resource::with_attributes(Resource::new(), override_attributes)
   
-  // Merge resources
-  let merged_resource = Resource::merge(base_resource, override_resource)
-  
-  // Verify all complex values are updated
-  match Resource::get_attribute(merged_resource, "json.object") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "{\"updated\":\"value\",\"number\":100}")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "xml.data") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "<root><updated>value</updated></root>")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "base64.data") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "VXBkYXRlZCBkYXRh")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "url.value") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "https://updated.com/path?param=new")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merged_resource, "uuid.value") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "660e8400-e29b-41d4-a716-446655440001")
-    _ => assert_true(false)
-  }
-}
-
-// Test 10: Resource merge strategy consistency
-test "resource merge strategy consistency" {
-  // Create three resources with overlapping attributes
-  let resource1_attrs = [
-    ("common.key", AttributeValue::StringValue("value1")),
-    ("unique1.key", AttributeValue::StringValue("unique1"))
+  let large_attrs2 = [
+    for i in range(50, 150) {
+      ("large_key_" + i.to_string(), StringValue("override_value_" + i.to_string()))
+    }
   ]
-  let resource1 = Resource::with_attributes(Resource::new(), resource1_attrs)
   
-  let resource2_attrs = [
-    ("common.key", AttributeValue::StringValue("value2")),
-    ("unique2.key", AttributeValue::StringValue("unique2"))
-  ]
-  let resource2 = Resource::with_attributes(Resource::new(), resource2_attrs)
+  let large_resource1_with_attrs = azimuth::Resource::with_attributes(large_resource1, large_attrs1)
+  let large_resource2_with_attrs = azimuth::Resource::with_attributes(large_resource2, large_attrs2)
   
-  let resource3_attrs = [
-    ("common.key", AttributeValue::StringValue("value3")),
-    ("unique3.key", AttributeValue::StringValue("unique3"))
-  ]
-  let resource3 = Resource::with_attributes(Resource::new(), resource3_attrs)
+  let merged_large = azimuth::Resource::merge(large_resource1_with_attrs, large_resource2_with_attrs)
   
-  // Test different merge orders
-  let merge12 = Resource::merge(resource1, resource2)
-  let merge21 = Resource::merge(resource2, resource1)
-  let merge123 = Resource::merge(Resource::merge(resource1, resource2), resource3)
-  let merge132 = Resource::merge(Resource::merge(resource1, resource3), resource2)
-  let merge213 = Resource::merge(Resource::merge(resource2, resource1), resource3)
-  let merge231 = Resource::merge(Resource::merge(resource2, resource3), resource1)
-  let merge312 = Resource::merge(Resource::merge(resource3, resource1), resource2)
-  let merge321 = Resource::merge(Resource::merge(resource3, resource2), resource1)
-  
-  // In the simplified implementation, all merges should result in the last resource's attributes
-  // Verify merge12 contains resource2 attributes
-  match Resource::get_attribute(merge12, "common.key") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "value2")
-    _ => assert_true(false)
+  // 验证大规模合并结果
+  // 前50个键应该保持原值
+  for i in range(0, 50) {
+    let key = "large_key_" + i.to_string()
+    let expected_value = "large_value_" + i.to_string()
+    assert_eq(azimuth::Resource::get_attribute(merged_large, key), Some(StringValue(expected_value)))
   }
   
-  // Verify merge21 contains resource1 attributes
-  match Resource::get_attribute(merge21, "common.key") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "value1")
-    _ => assert_true(false)
+  // 50-149的键应该被覆盖
+  for i in range(50, 150) {
+    let key = "large_key_" + i.to_string()
+    let expected_value = "override_value_" + i.to_string()
+    assert_eq(azimuth::Resource::get_attribute(merged_large, key), Some(StringValue(expected_value)))
   }
   
-  // Verify all 3-way merges contain resource3 attributes (last in sequence)
-  match Resource::get_attribute(merge123, "common.key") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "value3")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merge132, "common.key") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "value2")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merge213, "common.key") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "value3")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merge231, "common.key") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "value1")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merge312, "common.key") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "value2")
-    _ => assert_true(false)
-  }
-  
-  match Resource::get_attribute(merge321, "common.key") {
-    Some(AttributeValue::StringValue(value)) => assert_eq(value, "value1")
-    _ => assert_true(false)
-  }
+  // 验证数组长度
+  assert_eq(large_attrs1.length(), 100)
+  assert_eq(large_attrs2.length(), 100)
 }
