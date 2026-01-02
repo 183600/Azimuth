@@ -16,7 +16,8 @@
       "azimuth_new_timeseries_tests.mbt",
       "azimuth_new_lifecycle_tests.mbt",
       "azimuth_new_error_boundary_tests.mbt",
-      "azimuth_new_microservice_tests.mbt"
+      "azimuth_new_microservice_tests.mbt",
+      "../azimuth_new_moonbit_tests.mbt"
     ]
   }
 }
