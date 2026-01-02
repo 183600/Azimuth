@@ -1,421 +1,886 @@
-// Azimuth Telemetry System - 数据一致性验证测试用例
-// 测试系统在各种操作下数据的一致性和完整性
+// Azimuth Data Consistency Validation Test Suite
+// 数据一致性验证测试用例
 
-// 测试1: Span数据一致性验证
-test "Span数据一致性验证测试" {
-  // 创建测试Trace和Span
-  let trace_id = "trace123456789012345678901234567890"
-  let parent_span_id = "parent1234567890"
-  let child_span_id = "child1234567890"
+// 测试1: 数据完整性校验
+test "数据完整性校验测试" {
+  // 校验和计算器
+  struct ChecksumCalculator {
+    algorithm : String
+  }
   
-  // 验证ID格式一致性
-  assert_eq(trace_id.length(), 32)
-  assert_eq(parent_span_id.length(), 16)
-  assert_eq(child_span_id.length(), 16)
+  fn ChecksumCalculator::new(algorithm : String) -> ChecksumCalculator {
+    ChecksumCalculator::{ algorithm }
+  }
   
-  // 创建Span层次结构
-  let spans = [
-    ("root-span", trace_id, "0000000000000000", "server"),
-    ("parent-span", trace_id, parent_span_id, "internal"),
-    ("child-span-1", trace_id, "child1234567890", "client"),
-    ("child-span-2", trace_id, "child0987654321", "producer")
-  ]
-  
-  // 验证Span层次关系一致性
-  assert_eq(spans.length(), 4)
-  assert_eq(spans[0].1, trace_id)  // 所有Span共享相同Trace ID
-  assert_eq(spans[1].1, trace_id)
-  assert_eq(spans[2].1, trace_id)
-  assert_eq(spans[3].1, trace_id)
-  
-  // 验证Span ID唯一性
-  let span_ids = [spans[0].2, spans[1].2, spans[2].2, spans[3].2]
-  for i = 0; i < span_ids.length(); i = i + 1 {
-    for j = i + 1; j < span_ids.length(); j = j + 1 {
-      assert_not_eq(span_ids[i], span_ids[j])
+  fn ChecksumCalculator::calculate(calculator : ChecksumCalculator, data : Array[Byte]) -> Int {
+    match calculator.algorithm {
+      "simple" => {
+        // 简单校验和：所有字节的总和
+        let mut sum = 0
+        for byte in data {
+          sum = sum + byte.to_int()
+        }
+        sum % 256  // 限制在0-255范围内
+      }
+      "weighted" => {
+        // 加权校验和：位置加权
+        let mut sum = 0
+        for i in 0..data.length() {
+          sum = sum + (data[i].to_int() * (i + 1))
+        }
+        sum % 256
+      }
+      "xor" => {
+        // XOR校验和
+        let mut result = 0
+        for byte in data {
+          result = result ^ byte.to_int()
+        }
+        result
+      }
+      _ => 0
     }
   }
   
-  // 验证Span状态一致性
-  let span_statuses = ["ok", "ok", "error", "ok"]
-  for i = 0; i < spans.length(); i = i + 1 {
-    let (name, trace, span_id, kind) = spans[i]
-    let status = span_statuses[i]
-    
-    assert_true(name.length() > 0)
-    assert_eq(trace, trace_id)
-    assert_true(span_id.length() == 16)
-    assert_true(kind == "server" || kind == "internal" || kind == "client" || kind == "producer")
-    assert_true(status == "ok" || status == "error")
+  // 数据块
+  struct DataBlock {
+    id : String
+    data : Array[Byte]
+    checksum : Int
+    timestamp : Int64
   }
+  
+  fn DataBlock::new(id : String, data : Array[Byte], calculator : ChecksumCalculator) -> DataBlock {
+    let checksum = ChecksumCalculator::calculate(calculator, data)
+    DataBlock::{ id, data, checksum, timestamp: 1640995200000000000L }
+  }
+  
+  fn DataBlock::verify(block : DataBlock, calculator : ChecksumCalculator) -> Bool {
+    let calculated_checksum = ChecksumCalculator::calculate(calculator, block.data)
+    calculated_checksum == block.checksum
+  }
+  
+  // 测试校验和计算
+  let simple_calc = ChecksumCalculator::new("simple")
+  let weighted_calc = ChecksumCalculator::new("weighted")
+  let xor_calc = ChecksumCalculator::new("xor")
+  
+  let test_data = [1, 2, 3, 4, 5]
+  
+  // 简单校验和：1+2+3+4+5 = 15
+  assert_eq(ChecksumCalculator::calculate(simple_calc, test_data), 15)
+  
+  // 加权校验和：1*1 + 2*2 + 3*3 + 4*4 + 5*5 = 55
+  assert_eq(ChecksumCalculator::calculate(weighted_calc, test_data), 55)
+  
+  // XOR校验和：1^2^3^4^5
+  let xor_result = ChecksumCalculator::calculate(xor_calc, test_data)
+  assert_true(xor_result >= 0 && xor_result <= 255)
+  
+  // 测试数据块创建和验证
+  let block1 = DataBlock::new("block-1", test_data, simple_calc)
+  assert_eq(block1.id, "block-1")
+  assert_eq(block1.data, test_data)
+  assert_eq(block1.checksum, 15)
+  assert_true(DataBlock::verify(block1, simple_calc))
+  
+  // 测试数据损坏检测
+  let corrupted_data = [1, 2, 3, 4, 6]  // 最后一个字节被修改
+  let corrupted_block = DataBlock::{ 
+    id: "block-1", 
+    data: corrupted_data, 
+    checksum: 15,  // 原始校验和
+    timestamp: 1640995200000000000L 
+  }
+  
+  assert_false(DataBlock::verify(corrupted_block, simple_calc))
+  
+  // 测试不同算法的验证
+  let block2 = DataBlock::new("block-2", test_data, weighted_calc)
+  assert_true(DataBlock::verify(block2, weighted_calc))
+  assert_false(DataBlock::verify(block2, simple_calc))  // 使用错误的算法应该失败
+  
+  let block3 = DataBlock::new("block-3", test_data, xor_calc)
+  assert_true(DataBlock::verify(block3, xor_calc))
+  assert_false(DataBlock::verify(block3, weighted_calc))  // 使用错误的算法应该失败
 }
 
-// 测试2: 度量数据一致性验证
-test "度量数据一致性验证测试" {
-  // 创建Counter度量
-  let counter_name = "http.requests.total"
-  let counter_values = [1.0, 2.0, 5.0, 10.0, 15.0]
-  let expected_counter_sum = 33.0
-  
-  // 验证Counter累加一致性
-  let mut counter_sum = 0.0
-  for value in counter_values {
-    counter_sum = counter_sum + value
+// 测试2: 数据版本控制
+test "数据版本控制测试" {
+  // 版本信息
+  struct Version {
+    major : Int
+    minor : Int
+    patch : Int
   }
   
-  assert_eq(counter_sum, expected_counter_sum)
-  
-  // 创建Histogram度量
-  let histogram_name = "response.time.ms"
-  let histogram_values = [10.5, 20.0, 15.5, 30.0, 25.0, 18.0, 22.5]
-  let expected_histogram_sum = 141.5
-  let expected_histogram_count = 7
-  
-  // 验证Histogram统计一致性
-  let histogram_sum = histogram_values.reduce(|acc, val| acc + val, 0.0)
-  let histogram_count = histogram_values.length().to_float()
-  let histogram_avg = histogram_sum / histogram_count
-  
-  assert_eq(histogram_sum, expected_histogram_sum)
-  assert_eq(histogram_count, expected_histogram_count.to_float())
-  assert_eq(histogram_avg, 20.214285714285715)
-  
-  // 创建Gauge度量
-  let gauge_name = "memory.usage.percent"
-  let gauge_values = [45.5, 52.3, 48.7, 51.2, 49.8]
-  let expected_gauge_last = 49.8
-  
-  // 验证Gauge状态一致性
-  let mut gauge_current = 0.0
-  for value in gauge_values {
-    gauge_current = value
+  fn Version::new(major : Int, minor : Int, patch : Int) -> Version {
+    Version::{ major, minor, patch }
   }
   
-  assert_eq(gauge_current, expected_gauge_last)
-  
-  // 验证度量元数据一致性
-  let metrics = [
-    (counter_name, "counter", "count"),
-    (histogram_name, "histogram", "ms"),
-    (gauge_name, "gauge", "percent")
-  ]
-  
-  for (name, type_, unit) in metrics {
-    assert_true(name.length() > 0)
-    assert_true(type_ == "counter" || type_ == "histogram" || type_ == "gauge")
-    assert_true(unit.length() > 0)
-  }
-}
-
-// 测试3: 日志数据一致性验证
-test "日志数据一致性验证测试" {
-  // 创建日志记录
-  let log_records = [
-    ("info", "Request started", "1640995200000"),
-    ("debug", "Processing parameters", "1640995200100"),
-    ("info", "Request completed", "1640995200200"),
-    ("warn", "Slow query detected", "1640995200300"),
-    ("error", "Database connection failed", "1640995200400")
-  ]
-  
-  // 验证日志时间戳单调性
-  for i = 1; i < log_records.length(); i = i + 1 {
-    let prev_timestamp = log_records[i-1].2.to_int()
-    let curr_timestamp = log_records[i].2.to_int()
-    
-    assert_true(curr_timestamp > prev_timestamp)
+  fn Version::to_string(version : Version) -> String {
+    version.major.to_string() + "." + version.minor.to_string() + "." + version.patch.to_string()
   }
   
-  // 验证日志级别一致性
-  let valid_levels = ["trace", "debug", "info", "warn", "error", "fatal"]
-  for (level, message, timestamp) in log_records {
-    assert_true(valid_levels.contains(level))
-    assert_true(message.length() > 0)
-    assert_true(timestamp.length() > 0)
-  }
-  
-  // 验证日志关联一致性
-  let trace_id = "trace123456789012345678901234567890"
-  let span_id = "span12345678901234"
-  
-  let logs_with_context = []
-  for (level, message, timestamp) in log_records {
-    let log_with_context = (level, message, timestamp, trace_id, span_id)
-    logs_with_context.push(log_with_context)
-  }
-  
-  // 验证所有日志都有相同的上下文
-  for (level, message, timestamp, ctx_trace_id, ctx_span_id) in logs_with_context {
-    assert_eq(ctx_trace_id, trace_id)
-    assert_eq(ctx_span_id, span_id)
-  }
-  
-  // 验证日志序列化一致性
-  let serialized_logs = logs_with_context.map(|(level, message, timestamp, trace_id, span_id)| {
-    "level=" + level + ",message=" + message + ",timestamp=" + timestamp + ",trace_id=" + trace_id + ",span_id=" + span_id
-  })
-  
-  assert_eq(serialized_logs.length(), logs_with_context.length())
-  
-  // 验证反序列化一致性
-  for i = 0; i < serialized_logs.length(); i = i + 1 {
-    let serialized = serialized_logs[i]
-    let (level, message, timestamp, trace_id, span_id) = logs_with_context[i]
-    
-    assert_true(serialized.contains("level=" + level))
-    assert_true(serialized.contains("message=" + message))
-    assert_true(serialized.contains("timestamp=" + timestamp))
-    assert_true(serialized.contains("trace_id=" + trace_id))
-    assert_true(serialized.contains("span_id=" + span_id))
-  }
-}
-
-// 测试4: 资源属性一致性验证
-test "资源属性一致性验证测试" {
-  // 创建基础资源
-  let base_resource = [
-    ("service.name", "azimuth-service"),
-    ("service.version", "1.0.0"),
-    ("host.name", "web-server-01"),
-    ("process.id", "12345")
-  ]
-  
-  // 创建覆盖资源
-  let override_resource = [
-    ("service.version", "2.0.0"),
-    ("deployment.environment", "production"),
-    ("host.name", "web-server-updated")
-  ]
-  
-  // 模拟资源合并
-  let merged_resource = []
-  let processed_keys = []
-  
-  // 首先添加基础资源属性
-  for (key, value) in base_resource {
-    if not processed_keys.contains(key) {
-      merged_resource.push((key, value))
-      processed_keys.push(key)
+  fn Version::compare(v1 : Version, v2 : Version) -> Int {
+    if v1.major != v2.major {
+      if v1.major > v2.major { 1 } else { -1 }
+    } else if v1.minor != v2.minor {
+      if v1.minor > v2.minor { 1 } else { -1 }
+    } else if v1.patch != v2.patch {
+      if v1.patch > v2.patch { 1 } else { -1 }
+    } else {
+      0
     }
   }
   
-  // 然后添加覆盖资源属性（覆盖已存在的）
-  for (key, value) in override_resource {
-    if processed_keys.contains(key) {
-      // 查找并替换已存在的属性
-      let mut found = false
-      for i = 0; i < merged_resource.length(); i = i + 1 {
-        if merged_resource[i].0 == key {
-          merged_resource[i] = (key, value)
-          found = true
-          break
+  // 版本化数据
+  struct VersionedData[T] {
+    data : T
+    version : Version
+    timestamp : Int64
+    metadata : Array[(String, String)]
+  }
+  
+  fn VersionedData::new[T](data : T, version : Version) -> VersionedData[T] {
+    VersionedData::{ data, version, timestamp: 1640995200000000000L, metadata: [] }
+  }
+  
+  fn VersionedData::with_metadata[T](data : T, version : Version, metadata : Array[(String, String)]) -> VersionedData[T] {
+    VersionedData::{ data, version, timestamp: 1640995200000000000L, metadata }
+  }
+  
+  // 版本兼容性检查器
+  struct CompatibilityChecker {
+    current_version : Version
+    min_compatible_version : Version
+  }
+  
+  fn CompatibilityChecker::new(current : Version, min_compatible : Version) -> CompatibilityChecker {
+    CompatibilityChecker::{ current_version: current, min_compatible_version: min_compatible }
+  }
+  
+  fn CompatibilityChecker::is_compatible(checker : CompatibilityChecker, version : Version) -> Bool {
+    Version::compare(version, checker.min_compatible_version) >= 0 && 
+    Version::compare(version, checker.current_version) <= 0
+  }
+  
+  // 测试版本操作
+  let v1 = Version::new(1, 0, 0)
+  let v2 = Version::new(1, 2, 3)
+  let v3 = Version::new(2, 0, 0)
+  
+  assert_eq(Version::to_string(v1), "1.0.0")
+  assert_eq(Version::to_string(v2), "1.2.3")
+  assert_eq(Version::to_string(v3), "2.0.0")
+  
+  assert_eq(Version::compare(v1, v2), -1)  // v1 < v2
+  assert_eq(Version::compare(v2, v1), 1)   // v2 > v1
+  assert_eq(Version::compare(v1, v1), 0)   // v1 == v1
+  assert_eq(Version::compare(v3, v2), 1)   // v3 > v2
+  
+  // 测试版本化数据
+  let data_v1 = VersionedData::new("old-data", v1)
+  assert_eq(data_v1.data, "old-data")
+  assert_eq(data_v1.version, v1)
+  
+  let data_v2 = VersionedData::with_metadata("new-data", v2, [("feature", "advanced")])
+  assert_eq(data_v2.data, "new-data")
+  assert_eq(data_v2.version, v2)
+  assert_eq(data_v2.metadata.length(), 1)
+  
+  // 测试兼容性检查
+  let checker = CompatibilityChecker::new(v3, v1)  // 当前版本2.0.0，最小兼容1.0.0
+  
+  assert_true(CompatibilityChecker::is_compatible(checker, v1))  // 1.0.0 >= 1.0.0
+  assert_true(CompatibilityChecker::is_compatible(checker, v2))  // 1.2.3 >= 1.0.0
+  assert_true(CompatibilityChecker::is_compatible(checker, v3))  // 2.0.0 <= 2.0.0
+  
+  let v0 = Version::new(0, 9, 0)
+  assert_false(CompatibilityChecker::is_compatible(checker, v0))  // 0.9.0 < 1.0.0
+  
+  let v4 = Version::new(2, 1, 0)
+  assert_false(CompatibilityChecker::is_compatible(checker, v4))  // 2.1.0 > 2.0.0
+}
+
+// 测试3: 事务一致性
+test "事务一致性测试" {
+  // 事务状态
+  enum TransactionState {
+    Active
+    Committed
+    Aborted
+  }
+  
+  // 操作类型
+  enum OperationType {
+    Create
+    Update
+    Delete
+  }
+  
+  // 操作记录
+  struct Operation {
+    op_type : OperationType
+    target : String
+    old_value : Option[String]
+    new_value : Option[String]
+  }
+  
+  // 事务
+  struct Transaction {
+    id : String
+    state : TransactionState
+    operations : Array[Operation]
+    start_time : Int64
+  }
+  
+  fn Transaction::new(id : String) -> Transaction {
+    Transaction::{
+      id,
+      state: TransactionState::Active,
+      operations: [],
+      start_time: 1640995200000000000L
+    }
+  }
+  
+  fn Transaction::add_operation(transaction : Transaction, op_type : OperationType, target : String, old_value : Option[String], new_value : Option[String]) -> Transaction {
+    if transaction.state != TransactionState::Active {
+      return transaction  // 只能为活动事务添加操作
+    }
+    
+    let operation = Operation::{ op_type, target, old_value, new_value }
+    Transaction::{
+      id: transaction.id,
+      state: transaction.state,
+      operations: transaction.operations.push(operation),
+      start_time: transaction.start_time
+    }
+  }
+  
+  fn Transaction::commit(transaction : Transaction) -> Transaction {
+    if transaction.state != TransactionState::Active {
+      return transaction
+    }
+    
+    Transaction::{ 
+      id: transaction.id, 
+      state: TransactionState::Committed, 
+      operations: transaction.operations, 
+      start_time: transaction.start_time 
+    }
+  }
+  
+  fn Transaction::abort(transaction : Transaction) -> Transaction {
+    if transaction.state != TransactionState::Active {
+      return transaction
+    }
+    
+    Transaction::{ 
+      id: transaction.id, 
+      state: TransactionState::Aborted, 
+      operations: transaction.operations, 
+      start_time: transaction.start_time 
+    }
+  }
+  
+  // 事务管理器
+  struct TransactionManager {
+    active_transactions : Array[Transaction]
+    committed_transactions : Array[Transaction]
+    data : Array[(String, String)]  // 简化的数据存储
+  }
+  
+  fn TransactionManager::new() -> TransactionManager {
+    TransactionManager::{
+      active_transactions: [],
+      committed_transactions: [],
+      data: []
+    }
+  }
+  
+  fn TransactionManager::begin_transaction(manager : TransactionManager, id : String) -> TransactionManager {
+    let transaction = Transaction::new(id)
+    TransactionManager::{
+      active_transactions: manager.active_transactions.push(transaction),
+      committed_transactions: manager.committed_transactions,
+      data: manager.data
+    }
+  }
+  
+  fn TransactionManager::commit_transaction(manager : TransactionManager, id : String) -> TransactionManager {
+    // 找到指定的事务
+    match manager.active_transactions.find_index(fn(t) { t.id == id }) {
+      None => manager
+      Some(index) => {
+        let transaction = manager.active_transactions[index]
+        let committed_transaction = Transaction::commit(transaction)
+        
+        // 应用事务操作到数据存储
+        let mut updated_data = manager.data
+        for operation in committed_transaction.operations {
+          match operation.op_type {
+            OperationType::Create => {
+              match operation.new_value {
+                Some(value) => updated_data = updated_data.push((operation.target, value))
+                None => ()
+              }
+            }
+            OperationType::Update => {
+              match operation.new_value {
+                Some(value) => {
+                  let mut found = false
+                  let mut temp_data = []
+                  for (key, val) in updated_data {
+                    if key == operation.target {
+                      temp_data = temp_data.push((key, value))
+                      found = true
+                    } else {
+                      temp_data = temp_data.push((key, val))
+                    }
+                  }
+                  if found {
+                    updated_data = temp_data
+                  }
+                }
+                None => ()
+              }
+            }
+            OperationType::Delete => {
+              updated_data = updated_data.filter(fn(pair) { pair.0 != operation.target })
+            }
+          }
+        }
+        
+        // 更新事务列表
+        let mut updated_active = manager.active_transactions
+        updated_active.remove(index)
+        
+        TransactionManager::{
+          active_transactions: updated_active,
+          committed_transactions: manager.committed_transactions.push(committed_transaction),
+          data: updated_data
         }
       }
-      assert_true(found)
-    } else {
-      // 添加新属性
-      merged_resource.push((key, value))
-      processed_keys.push(key)
     }
   }
   
-  // 验证合并结果一致性
-  let expected_merged = [
-    ("service.name", "azimuth-service"),  // 来自基础资源
-    ("service.version", "2.0.0"),        // 被覆盖
-    ("host.name", "web-server-updated"),  // 被覆盖
-    ("process.id", "12345"),              // 来自基础资源
-    ("deployment.environment", "production")  // 新增
-  ]
+  fn TransactionManager::abort_transaction(manager : TransactionManager, id : String) -> TransactionManager {
+    match manager.active_transactions.find_index(fn(t) { t.id == id }) {
+      None => manager
+      Some(index) => {
+        let transaction = manager.active_transactions[index]
+        let aborted_transaction = Transaction::abort(transaction)
+        
+        // 更新事务列表（不应用操作）
+        let mut updated_active = manager.active_transactions
+        updated_active.remove(index)
+        
+        TransactionManager::{
+          active_transactions: updated_active,
+          committed_transactions: manager.committed_transactions.push(aborted_transaction),
+          data: manager.data
+        }
+      }
+    }
+  }
   
-  assert_eq(merged_resource.length(), expected_merged.length())
+  fn TransactionManager::get_data(manager : TransactionManager, key : String) -> Option[String] {
+    for (k, v) in manager.data {
+      if k == key {
+        return Some(v)
+      }
+    }
+    None
+  }
   
-  // 验证每个属性的值
-  for i = 0; i < expected_merged.length(); i = i + 1 {
-    let (expected_key, expected_value) = expected_merged[i]
+  // 测试事务管理
+  let manager = TransactionManager::new()
+  assert_eq(manager.active_transactions.length(), 0)
+  assert_eq(manager.committed_transactions.length(), 0)
+  assert_eq(manager.data.length(), 0)
+  
+  // 开始事务
+  let manager1 = TransactionManager::begin_transaction(manager, "tx-1")
+  assert_eq(manager1.active_transactions.length(), 1)
+  
+  // 获取事务并添加操作
+  let transaction = manager1.active_transactions[0]
+  let tx_with_ops = Transaction::add_operation(transaction, OperationType::Create, "key-1", None, Some("value-1"))
+  
+  // 更新管理器中的事务
+  let mut updated_active = manager1.active_transactions
+  updated_active[0] = tx_with_ops
+  let manager2 = TransactionManager::{ 
+    active_transactions: updated_active, 
+    committed_transactions: manager1.committed_transactions, 
+    data: manager1.data 
+  }
+  
+  // 提交事务
+  let manager3 = TransactionManager::commit_transaction(manager2, "tx-1")
+  assert_eq(manager3.active_transactions.length(), 0)
+  assert_eq(manager3.committed_transactions.length(), 1)
+  assert_eq(manager3.data.length(), 1)
+  assert_eq(TransactionManager::get_data(manager3, "key-1"), Some("value-1"))
+  
+  // 开始另一个事务
+  let manager4 = TransactionManager::begin_transaction(manager3, "tx-2");
+  let manager5 = TransactionManager::begin_transaction(manager4, "tx-3")
+  
+  assert_eq(manager5.active_transactions.length(), 2)
+  
+  // 为tx-2添加操作
+  let tx2 = manager5.active_transactions[0]
+  let tx2_with_ops = Transaction::add_operation(tx2, OperationType::Update, "key-1", Some("value-1"), Some("value-2"))
+  
+  // 为tx-3添加操作
+  let tx3 = manager5.active_transactions[1]
+  let tx3_with_ops = Transaction::add_operation(tx3, OperationType::Create, "key-2", None, Some("value-3"))
+  
+  // 更新管理器
+  let mut updated_active2 = manager5.active_transactions
+  updated_active2[0] = tx2_with_ops
+  updated_active2[1] = tx3_with_ops
+  let manager6 = TransactionManager::{ 
+    active_transactions: updated_active2, 
+    committed_transactions: manager5.committed_transactions, 
+    data: manager5.data 
+  }
+  
+  // 提交tx-2
+  let manager7 = TransactionManager::commit_transaction(manager6, "tx-2")
+  assert_eq(manager7.active_transactions.length(), 1)
+  assert_eq(manager7.data.length(), 1)
+  assert_eq(TransactionManager::get_data(manager7, "key-1"), Some("value-2"))  // 值已更新
+  
+  // 中止tx-3
+  let manager8 = TransactionManager::abort_transaction(manager7, "tx-3")
+  assert_eq(manager8.active_transactions.length(), 0)
+  assert_eq(manager8.committed_transactions.length(), 3)
+  assert_eq(manager8.data.length(), 1)  // tx-3的操作没有应用
+  assert_eq(TransactionManager::get_data(manager8, "key-2"), None)  // key-2不存在
+}
+
+// 测试4: 数据同步验证
+test "数据同步验证测试" {
+  // 同步状态
+  enum SyncStatus {
+    InSync
+    OutOfSync
+    Syncing
+    Error
+  }
+  
+  // 数据副本
+  struct DataReplica {
+    id : String
+    data : Array[(String, String)]
+    version : Int
+    last_sync : Int64
+    status : SyncStatus
+  }
+  
+  fn DataReplica::new(id : String) -> DataReplica {
+    DataReplica::{
+      id,
+      data: [],
+      version: 0,
+      last_sync: 0L,
+      status: SyncStatus::InSync
+    }
+  }
+  
+  fn DataReplica::update_data(replica : DataReplica, key : String, value : String) -> DataReplica {
+    let mut updated_data = []
     let mut found = false
     
-    for (actual_key, actual_value) in merged_resource {
-      if actual_key == expected_key {
-        assert_eq(actual_value, expected_value)
+    for (k, v) in replica.data {
+      if k == key {
+        updated_data = updated_data.push((key, value))
         found = true
-        break
+      } else {
+        updated_data = updated_data.push((k, v))
       }
     }
     
-    assert_true(found)
-  }
-  
-  // 验证属性键唯一性
-  let keys = merged_resource.map(|(key, _)| key)
-  for i = 0; i < keys.length(); i = i + 1 {
-    for j = i + 1; j < keys.length(); j = j + 1 {
-      assert_not_eq(keys[i], keys[j])
+    if !found {
+      updated_data = updated_data.push((key, value))
+    }
+    
+    DataReplica::{
+      id: replica.id,
+      data: updated_data,
+      version: replica.version + 1,
+      last_sync: replica.last_sync,
+      status: SyncStatus::OutOfSync
     }
   }
-}
-
-// 测试5: 上下文传播一致性验证
-test "上下文传播一致性验证测试" {
-  // 创建根上下文
-  let root_trace_id = "trace123456789012345678901234567890"
-  let root_span_id = "root12345678901234"
   
-  // 创建上下文传播链
-  let context_chain = []
-  let current_trace_id = root_trace_id
-  let mut current_span_id = root_span_id
-  
-  for i = 0; i < 5; i = i + 1 {
-    let next_span_id = "span" + i.to_string().pad_left(14, '0')
-    let context = (current_trace_id, current_span_id, next_span_id)
-    context_chain.push(context)
-    current_span_id = next_span_id
+  fn DataReplica::get_value(replica : DataReplica, key : String) -> Option[String] {
+    for (k, v) in replica.data {
+      if k == key {
+        return Some(v)
+      }
+    }
+    None
   }
   
-  // 验证上下文链一致性
-  assert_eq(context_chain.length(), 5)
-  
-  // 验证所有上下文都有相同的Trace ID
-  for (trace_id, _, _) in context_chain {
-    assert_eq(trace_id, root_trace_id)
+  // 同步管理器
+  struct SyncManager {
+    primary : DataReplica
+    replicas : Array[DataReplica]
+    sync_history : Array[(String, Int64, Bool)]  // (replica_id, timestamp, success)
   }
   
-  // 验证Span ID序列一致性
-  for i = 1; i < context_chain.length(); i = i + 1 {
-    let prev_next_span_id = context_chain[i-1].2
-    let curr_span_id = context_chain[i].1
+  fn SyncManager::new(primary_id : String) -> SyncManager {
+    SyncManager::{
+      primary: DataReplica::new(primary_id),
+      replicas: [],
+      sync_history: []
+    }
+  }
+  
+  fn SyncManager::add_replica(manager : SyncManager, replica_id : String) -> SyncManager {
+    let replica = DataReplica::new(replica_id)
+    SyncManager::{
+      primary: manager.primary,
+      replicas: manager.replicas.push(replica),
+      sync_history: manager.sync_history
+    }
+  }
+  
+  fn SyncManager::update_primary(manager : SyncManager, key : String, value : String) -> SyncManager {
+    let updated_primary = DataReplica::update_data(manager.primary, key, value)
     
-    assert_eq(prev_next_span_id, curr_span_id)
+    // 将所有副本标记为不同步
+    let mut updated_replicas = []
+    for replica in manager.replicas {
+      updated_replicas = updated_replicas.push(DataReplica::{
+        id: replica.id,
+        data: replica.data,
+        version: replica.version,
+        last_sync: replica.last_sync,
+        status: SyncStatus::OutOfSync
+      })
+    }
+    
+    SyncManager::{
+      primary: updated_primary,
+      replicas: updated_replicas,
+      sync_history: manager.sync_history
+    }
   }
   
-  // 创建Baggage传播
-  let baggage_items = [
-    ("user.id", "12345"),
-    ("session.id", "abcdef"),
-    ("request.id", "req-789"),
-    ("client.version", "2.1.0")
-  ]
-  
-  // 模拟Baggage跨服务传播
-  let service_baggage = []
-  let current_baggage = baggage_items
-  
-  for i = 0; i < 3; i = i + 1 {
-    // 每个服务可能添加新的Baggage项
-    let service_name = "service-" + i.to_string()
-    let new_item = (service_name + ".timestamp", "164099520" + i.to_string())
-    
-    let mut updated_baggage = current_baggage
-    updated_baggage.push(new_item)
-    
-    service_baggage.push((service_name, updated_baggage))
-    current_baggage = updated_baggage
-  }
-  
-  // 验证Baggage传播一致性
-  assert_eq(service_baggage.length(), 3)
-  
-  // 验证原始Baggage项在所有服务中都存在
-  for (service_name, baggage) in service_baggage {
-    for (original_key, original_value) in baggage_items {
-      let mut found = false
-      for (key, value) in baggage {
-        if key == original_key {
-          assert_eq(value, original_value)
-          found = true
-          break
+  fn SyncManager::sync_replica(manager : SyncManager, replica_id : String, timestamp : Int64) -> SyncManager {
+    // 查找副本
+    match manager.replicas.find_index(fn(r) { r.id == replica_id }) {
+      None => manager
+      Some(index) => {
+        let replica = manager.replicas[index]
+        
+        // 执行同步（简单复制主副本的数据）
+        let synced_replica = DataReplica::{
+          id: replica.id,
+          data: manager.primary.data,
+          version: manager.primary.version,
+          last_sync: timestamp,
+          status: SyncStatus::InSync
+        }
+        
+        // 更新副本列表
+        let mut updated_replicas = manager.replicas
+        updated_replicas[index] = synced_replica
+        
+        // 记录同步历史
+        let updated_history = manager.sync_history.push((replica_id, timestamp, true))
+        
+        SyncManager::{
+          primary: manager.primary,
+          replicas: updated_replicas,
+          sync_history: updated_history
         }
       }
-      assert_true(found)
     }
   }
   
-  // 验证Baggage序列化一致性
-  let serialized_baggage = current_baggage.map(|(key, value)| key + "=" + value).reduce(|acc, item| acc + "," + item, "")
-  
-  for (key, value) in current_baggage {
-    let expected_pair = key + "=" + value
-    assert_true(serialized_baggage.contains(expected_pair))
-  }
-}
-
-// 测试6: 采样决策一致性验证
-test "采样决策一致性验证测试" {
-  // 创建采样决策场景
-  let sampling_scenarios = [
-    ("always-on", 1.0, "record_and_sample"),
-    ("always-off", 0.0, "drop"),
-    ("probabilistic-10%", 0.1, "probabilistic"),
-    ("probabilistic-50%", 0.5, "probabilistic"),
-    ("parent-based", 0.0, "parent_based")
-  ]
-  
-  // 验证采样参数一致性
-  for (sampler_name, probability, decision_type) in sampling_scenarios {
-    assert_true(sampler_name.length() > 0)
-    assert_true(probability >= 0.0 && probability <= 1.0)
-    assert_true(decision_type.length() > 0)
-  }
-  
-  // 模拟采样决策
-  let total_requests = 1000
-  let sampling_results = []
-  
-  for (sampler_name, probability, decision_type) in sampling_scenarios {
-    let mut sampled_count = 0
+  fn SyncManager::verify_consistency(manager : SyncManager) -> Array[String] {
+    let mut inconsistent_replicas = []
     
-    for i = 0; i < total_requests; i = i + 1 {
-      let decision = if decision_type == "always-on" {
-        true
-      } else if decision_type == "always-off" {
-        false
-      } else if decision_type == "probabilistic" {
-        // 简化的概率采样模拟
-        (i.to_float() / total_requests.to_float()) < probability
-      } else if decision_type == "parent_based" {
-        // 模拟父级采样决策
-        i % 2 == 0  // 50%的请求跟随父级决策
-      } else {
-        false
+    for replica in manager.replicas {
+      // 检查版本
+      if replica.version != manager.primary.version {
+        inconsistent_replicas = inconsistent_replicas.push(replica.id)
+        continue
       }
       
-      if decision {
-        sampled_count = sampled_count + 1
+      // 检查数据内容
+      if replica.data.length() != manager.primary.data.length() {
+        inconsistent_replicas = inconsistent_replicas.push(replica.id)
+        continue
+      }
+      
+      // 检查每个键值对
+      let mut data_match = true
+      for (key, value) in manager.primary.data {
+        match DataReplica::get_value(replica, key) {
+          Some(replica_value) => {
+            if replica_value != value {
+              data_match = false
+              break
+            }
+          }
+          None => {
+            data_match = false
+            break
+          }
+        }
+      }
+      
+      if !data_match {
+        inconsistent_replicas = inconsistent_replicas.push(replica.id)
       }
     }
     
-    let result = (sampler_name, probability, decision_type, sampled_count)
-    sampling_results.push(result)
+    inconsistent_replicas
   }
   
-  // 验证采样结果一致性
-  for (sampler_name, probability, decision_type, sampled_count) in sampling_results {
-    if decision_type == "always-on" {
-      assert_eq(sampled_count, total_requests)
-    } else if decision_type == "always-off" {
-      assert_eq(sampled_count, 0)
-    } else if decision_type == "probabilistic" {
-      let expected_count = (total_requests.to_float() * probability).to_int()
-      let tolerance = total_requests / 100  // 1%容差
-      assert_true(sampled_count >= expected_count - tolerance && sampled_count <= expected_count + tolerance)
-    } else if decision_type == "parent_based" {
-      let expected_count = total_requests / 2
-      assert_eq(sampled_count, expected_count)
+  // 测试同步管理
+  let manager = SyncManager::new("primary")
+  let manager1 = SyncManager::add_replica(manager, "replica-1")
+  let manager2 = SyncManager::add_replica(manager1, "replica-2")
+  
+  assert_eq(manager2.replicas.length(), 2)
+  assert_eq(manager2.primary.version, 0)
+  assert_eq(manager2.replicas[0].version, 0)
+  assert_eq(manager2.replicas[1].version, 0)
+  
+  // 验证初始一致性
+  let inconsistent1 = SyncManager::verify_consistency(manager2)
+  assert_eq(inconsistent1.length(), 0)
+  
+  // 更新主副本
+  let manager3 = SyncManager::update_primary(manager2, "key-1", "value-1")
+  assert_eq(manager3.primary.version, 1)
+  assert_eq(manager3.primary.data.length(), 1)
+  
+  // 副本应该被标记为不同步
+  assert_eq(manager3.replicas[0].status, SyncStatus::OutOfSync)
+  assert_eq(manager3.replicas[1].status, SyncStatus::OutOfSync)
+  
+  // 验证不一致性
+  let inconsistent2 = SyncManager::verify_consistency(manager3)
+  assert_eq(inconsistent2.length(), 2)  // 两个副本都不同步
+  
+  // 同步第一个副本
+  let manager4 = SyncManager::sync_replica(manager3, "replica-1", 1640995200000000000L)
+  assert_eq(manager4.replicas[0].version, 1)
+  assert_eq(manager4.replicas[0].status, SyncStatus::InSync)
+  assert_eq(manager4.replicas[0].data.length(), 1)
+  assert_eq(DataReplica::get_value(manager4.replicas[0], "key-1"), Some("value-1"))
+  
+  // 验证部分一致性
+  let inconsistent3 = SyncManager::verify_consistency(manager4)
+  assert_eq(inconsistent3.length(), 1)  // 只有replica-2不同步
+  
+  // 同步第二个副本
+  let manager5 = SyncManager::sync_replica(manager4, "replica-2", 1640995200000001000L)
+  assert_eq(manager5.replicas[1].version, 1)
+  assert_eq(manager5.replicas[1].status, SyncStatus::InSync)
+  
+  // 验证完全一致性
+  let inconsistent4 = SyncManager::verify_consistency(manager5)
+  assert_eq(inconsistent4.length(), 0)
+  
+  // 再次更新主副本
+  let manager6 = SyncManager::update_primary(manager5, "key-2", "value-2")
+  assert_eq(manager6.primary.version, 2)
+  assert_eq(manager6.primary.data.length(), 2)
+  
+  // 验证再次不一致
+  let inconsistent5 = SyncManager::verify_consistency(manager6)
+  assert_eq(inconsistent5.length(), 2)
+}
+
+// 测试5: 数据约束验证
+test "数据约束验证测试" {
+  // 约束类型
+  enum ConstraintType {
+    NotNull
+    Unique
+    MinLength(Int)
+    MaxLength(Int)
+    Range(Int, Int)
+    Pattern(String)  // 简化的正则表达式
+    Custom((String) -> Bool)
+  }
+  
+  // 约束定义
+  struct Constraint {
+    name : String
+    constraint_type : ConstraintType
+    error_message : String
+  }
+  
+  fn Constraint::new(name : String, constraint_type : ConstraintType, error_message : String) -> Constraint {
+    Constraint::{ name, constraint_type, error_message }
+  }
+  
+  // 验证结果
+  struct ValidationResult {
+    is_valid : Bool
+    errors : Array[String]
+  }
+  
+  fn ValidationResult::new() -> ValidationResult {
+    ValidationResult::{ is_valid: true, errors: [] }
+  }
+  
+  fn ValidationResult::add_error(result : ValidationResult, error : String) -> ValidationResult {
+    ValidationResult::{
+      is_valid: false,
+      errors: result.errors.push(error)
     }
   }
   
-  // 验证采样属性一致性
-  let sampling_attributes = [
-    ("sampler.type", "probabilistic"),
-    ("sampler.param", "0.1"),
-    ("decision", "record_and_sample"),
-    ("trace.id", "trace123456789012345678901234567890")
-  ]
-  
-  for (key, value) in sampling_attributes {
-    assert_true(key.length() > 0)
-    assert_true(value.length() > 0)
-    assert_true(key.contains("."))
+  // 约束验证器
+  struct ConstraintValidator {
+    constraints : Array[Constraint]
   }
+  
+  fn ConstraintValidator::new() -> ConstraintValidator {
+    ConstraintValidator::{ constraints: [] }
+  }
+  
+  fn ConstraintValidator::add_constraint(validator : ConstraintValidator, constraint : Constraint) -> ConstraintValidator {
+    ConstraintValidator::{
+      constraints: validator.constraints.push(constraint)
+    }
+  }
+  
+  fn ConstraintValidator::validate_string(validator : ConstraintValidator, value : String) -> ValidationResult {
+    let mut result = ValidationResult::new()
+    
+    for constraint in validator.constraints {
+      let is_valid = match constraint.constraint_type {
+        ConstraintType::NotNull => value.length() > 0
+        ConstraintType::MinLength(min) => value.length() >= min
+        ConstraintType::MaxLength(max) => value.length() <= max
+        ConstraintType::Pattern(pattern) => {
+          // 简化的模式匹配
+          if pattern == "email" {
+            value.contains("@") && value.contains(".")
+          } else if pattern == "phone" {
+            value.length() >= 10 && value.chars().all(fn(c) { c.is_digit() || c == '-' })
+          } else {
+            true  // 未知模式，总是通过
+          }
+        }
+        ConstraintType::Custom(validator_fn) => validator_fn(value)
+        _ => true  // 不适用于字符串的约束
+      }
+      
+      if !is_valid {
+        result = ValidationResult::add_error(result, constraint.error_message)
+      }
+    }
+    
+    result
+  }
+  
+  fn ConstraintValidator::validate_int(validator : ConstraintValidator, value : Int) -> ValidationResult {
+    let mut result = ValidationResult::new()
+    
+    for constraint in validator.constraints {
+      let is_valid = match constraint.constraint_type {
+        ConstraintType::Range(min, max) => value >= min && value <= max
+        ConstraintType::Custom(validator_fn) => validator_fn(value.to_string())
+        _ => true  // 不适用于整数的约束
+      }
+      
+      if !is_valid {
+        result = ValidationResult::add_error(result, constraint.error_message)
+      }
+    }
+    
+    result
+  }
+  
+  // 测试约束验证
+  let validator = ConstraintValidator::new()
+  
+  // 添加字符串约束
+  let not_null_constraint = Constraint::new("not_null", ConstraintType::NotNull, "值不能为空")
+  let min_length_constraint = Constraint::new("min_length", ConstraintType::MinLength(5), "长度不能少于5个字符")
+  let max_length_constraint = Constraint::new("max_length", ConstraintType::MaxLength(20), "长度不能超过20个字符")
+  let email_constraint = Constraint::new("email", ConstraintType::Pattern("email"), "必须是有效的邮箱地址")
+  
+  let string_validator = ConstraintValidator::add_constraint(
+    ConstraintValidator::add_constraint(
+      ConstraintValidator::add_constraint(
+        ConstraintValidator::add_constraint(validator, not_null_constraint),
+        min_length_constraint
+      ),
+      max_length_constraint
+    ),
+    email_constraint
+  )
+  
+  // 测试有效字符串
+  let valid_email = "user@example.com"
+  let result1 = ConstraintValidator::validate_string(string_validator, valid_email)
+  assert_true(result1.is_valid)
+  assert_eq(result1.errors.length(), 0)
+  
+  // 测试无效字符串（太短）
+  let short_email = "a@b.c"
+  let result2 = ConstraintValidator::validate_string(string_validator, short_email)
+  assert_false(result2.is_valid)
+  assert_true(result2.errors.length() > 0)
+  assert_true(result2.errors.any(fn(err) { err.contains("长度不能少于5个字符") }))
+  
+  // 测试无效字符串（不是邮箱）
+  let not_email = "not-an-email"
+  let result3 = ConstraintValidator::validate_string(string_validator, not_email)
+  assert_false(result3.is_valid)
+  assert_true(result3.errors.any(fn(err) { err.contains("必须是有效的邮箱地址") }))
+  
+  // 测试无效字符串（空字符串）
+  let empty_string = ""
+  let result4 = ConstraintValidator::validate_string(string_validator, empty_string)
+  assert_false(result4.is_valid)
+  assert_true(result4.errors.any(fn(err) { err.contains("值不能为空") }))
+  
+  // 添加整数约束
+  let range_constraint = Constraint::new("range", ConstraintType::Range(1, 100), "值必须在1到100之间")
+  
+  let int_validator = ConstraintValidator::add_constraint(ConstraintValidator::new(), range_constraint)
+  
+  // 测试有效整数
+  let valid_int = 50
+  let result5 = ConstraintValidator::validate_int(int_validator, valid_int)
+  assert_true(result5.is_valid)
+  assert_eq(result5.errors.length(), 0)
+  
+  // 测试无效整数（超出范围）
+  let invalid_int = 150
+  let result6 = ConstraintValidator::validate_int(int_validator, invalid_int)
+  assert_false(result6.is_valid)
+  assert_true(result6.errors.any(fn(err) { err.contains("值必须在1到100之间") }))
+  
+  // 测试自定义约束
+  let custom_constraint = Constraint::new("custom", ConstraintType::Custom(fn(s) { s.starts_with("prefix") }), "必须以'prefix'开头")
+  
+  let custom_validator = ConstraintValidator::add_constraint(ConstraintValidator::new(), custom_constraint)
+  
+  // 测试自定义约束（有效）
+  let valid_custom = "prefix-value"
+  let result7 = ConstraintValidator::validate_string(custom_validator, valid_custom)
+  assert_true(result7.is_valid)
+  
+  // 测试自定义约束（无效）
+  let invalid_custom = "value-without-prefix"
+  let result8 = ConstraintValidator::validate_string(custom_validator, invalid_custom)
+  assert_false(result8.is_valid)
+  assert_true(result8.errors.any(fn(err) { err.contains("必须以'prefix'开头") }))
 }
