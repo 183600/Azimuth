@@ -69,6 +69,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     8: (__test_62617369635f74657374732e6d6274_8, ["type conversion tests"]),
     9: (__test_62617369635f74657374732e6d6274_9, ["error handling and edge cases"]),
   },
+  "azimuth_enhanced_test_suite.mbt": {
+    0: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_0, ["span events and status management"]),
+    1: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_1, ["baggage propagation edge cases"]),
+    2: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_2, ["metrics aggregation and high-frequency operations"]),
+    3: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_3, ["log recording and context correlation"]),
+    4: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_4, ["resource merge strategies"]),
+    5: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_5, ["propagator injection and extraction"]),
+    6: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_6, ["attribute value deep nesting operations"]),
+    7: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_7, ["concurrent safety scenarios"]),
+    8: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_8, ["time series data operations"]),
+    9: (__test_617a696d7574685f656e68616e6365645f746573745f73756974652e6d6274_9, ["error recovery and boundary handling"]),
+  },
   "azimuth_additional_tests.mbt": {
     0: (__test_617a696d7574685f6164646974696f6e616c5f74657374732e6d6274_0, ["basic string operations"]),
     1: (__test_617a696d7574685f6164646974696f6e616c5f74657374732e6d6274_1, ["array operations"]),
