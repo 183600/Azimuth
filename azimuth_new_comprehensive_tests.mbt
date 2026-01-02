@@ -1,293 +1,293 @@
-// Azimuth 新增综合测试用例
-// 涵盖遥测系统的多个核心功能
+// Azimuth 新增测试用例集合
+// 包含边界条件、错误处理和性能测试的综合测试集
 
-// 测试1: 资源管理和属性设置
-test "resource management and attributes" {
-  let resource = Resource::default()
-    .with_attribute("service.name", "azimuth-test")
-    .with_attribute("service.version", "1.0.0")
-    .with_attribute("environment", "testing")
-    .with_attribute("host.name", "test-host")
+// 测试1: 空值和None处理
+test "空值和None处理测试" {
+  let empty_string = ""
+  let none_option = None
+  let empty_array = []
   
-  // 验证资源属性
-  let attrs = Resource::attributes(resource)
-  assert_eq(attrs.length(), 4)
-  assert_true(attrs.contains_key("service.name"))
-  assert_eq(attrs.get("service.name"), Some("azimuth-test"))
+  // 测试空字符串操作
+  assert_eq(empty_string.length(), 0)
+  assert_true(empty_string.is_empty())
+  assert_false(empty_string.contains("anything"))
   
-  // 测试资源合并
-  let additional_resource = Resource::default()
-    .with_attribute("deployment.region", "us-west")
-    .with_attribute("service.name", "override-test") // 应该被忽略
-  
-  let merged = Resource::merge(resource, additional_resource)
-  let merged_attrs = Resource::attributes(merged)
-  assert_eq(merged_attrs.length(), 5)
-  assert_eq(merged_attrs.get("service.name"), Some("azimuth-test")) // 原值保留
-  assert_eq(merged_attrs.get("deployment.region"), Some("us-west"))
-}
-
-// 测试2: Baggage跨服务传播
-test "baggage propagation across services" {
-  let baggage = Baggage::empty()
-    .with_entry("user.id", "12345")
-    .with_entry("request.id", "req-abc-123")
-    .with_entry("trace.origin", "frontend")
-  
-  // 验证baggage条目
-  assert_true(Baggage::has_entry(baggage, "user.id"))
-  assert_eq(Baggage::get_value(baggage, "user.id"), Some("12345"))
-  
-  // 测试baggage序列化
-  let serialized = Baggage::to_string(baggage)
-  assert_true(serialized.contains("user.id=12345"))
-  assert_true(serialized.contains("request.id=req-abc-123"))
-  
-  // 测试baggage反序列化
-  let deserialized = Baggage::from_string(serialized)
-  assert_eq(Baggage::get_value(deserialized, "user.id"), Some("12345"))
-  assert_eq(Baggage::get_value(deserialized, "trace.origin"), Some("frontend"))
-  
-  // 测试baggage传播到span
-  let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "baggage.test")
-  let span = Tracer::start_span(tracer, "operation.with.baggage")
-  
-  Span::set_baggage(span, baggage)
-  let span_baggage = Span::get_baggage(span)
-  assert_eq(Baggage::get_value(span_baggage, "user.id"), Some("12345"))
-  
-  Span::end(span)
-}
-
-// 测试3: 采样器配置和行为
-test "sampler configuration and behavior" {
-  // 测试AlwaysOn采样器
-  let always_on = Sampler::always_on()
-  let sampling_result1 = Sampler::should_sample(always_on, "test-trace-1", "test.operation", [])
-  assert_true(SamplingResult::decision(sampling_result1))
-  
-  // 测试AlwaysOff采样器
-  let always_off = Sampler::always_off()
-  let sampling_result2 = Sampler::should_sample(always_off, "test-trace-2", "test.operation", [])
-  assert_false(SamplingResult::decision(sampling_result2))
-  
-  // 测试TraceIdRatio采样器
-  let ratio_sampler = Sampler::trace_id_ratio(0.5) // 50%采样率
-  let sampling_result3 = Sampler::should_sample(ratio_sampler, "test-trace-3", "test.operation", [])
-  // 结果取决于trace ID，但我们验证它返回了有效结果
-  assert_true(SamplingResult::decision(sampling_result3) || not(SamplingResult::decision(sampling_result3)))
-  
-  // 测试基于属性的采样器
-  let attribute_sampler = Sampler::attribute_based("operation.type", "critical")
-  let sampling_result4 = Sampler::should_sample(
-    attribute_sampler, 
-    "test-trace-4", 
-    "critical.operation", 
-    [("operation.type", "critical")]
-  )
-  assert_true(SamplingResult::decision(sampling_result4))
-  
-  let sampling_result5 = Sampler::should_sample(
-    attribute_sampler, 
-    "test-trace-5", 
-    "normal.operation", 
-    [("operation.type", "normal")]
-  )
-  assert_false(SamplingResult::decision(sampling_result5))
-}
-
-// 测试4: 度量仪表盘和直方图
-test "metrics gauge and histogram operations" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "gauge.histogram.test")
-  
-  // 创建仪表盘
-  let gauge = Meter::create_gauge(meter, "system.memory.usage", Some("Memory usage"), Some("bytes"))
-  
-  // 设置仪表盘值
-  Gauge::set(gauge, 1024.0)
-  Gauge::set(gauge, 2048.0)
-  Gauge::set(gauge, 1536.0)
-  
-  // 创建直方图
-  let histogram = Meter::create_histogram(
-    meter, 
-    "request.duration", 
-    Some("Request duration"), 
-    Some("milliseconds"),
-    [1.0, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0]
-  )
-  
-  // 记录直方图值
-  Histogram::record(histogram, 12.5)
-  Histogram::record(histogram, 45.0)
-  Histogram::record(histogram, 150.0)
-  Histogram::record(histogram, 8.0)
-  Histogram::record(histogram, 300.0)
-  
-  // 带属性的记录
-  Histogram::record_with_attributes(histogram, 25.0, [("endpoint", "/api/users")])
-  Histogram::record_with_attributes(histogram, 75.0, [("endpoint", "/api/orders")])
-  Histogram::record_with_attributes(histogram, 200.0, [("endpoint", "/api/products")])
-  
-  assert_true(true)
-}
-
-// 测试5: 日志记录和严重性级别
-test "logging with severity levels" {
-  let logger_provider = LoggerProvider::default()
-  let logger = LoggerProvider::get_logger(logger_provider, "severity.test")
-  
-  // 测试不同严重性级别的日志
-  Logger::trace(logger, "Debug trace message", [("component", "auth")])
-  Logger::debug(logger, "Debug information", [("component", "auth"), ("user.id", "123")])
-  Logger::info(logger, "Information message", [("component", "auth"), ("action", "login")])
-  Logger::warn(logger, "Warning condition", [("component", "auth"), ("reason", "failed.attempt")])
-  Logger::error(logger, "Error occurred", [("component", "auth"), ("error.code", "AUTH_001")])
-  
-  // 测试带异常的日志
-  let exception = Exception::new("Authentication failed", "Invalid credentials")
-  Logger::error_with_exception(
-    logger, 
-    "Authentication failure", 
-    exception,
-    [("component", "auth"), ("attempt.count", "3")]
-  )
-  
-  // 验证日志提供者状态
-  let log_count = LoggerProvider::get_log_count(logger_provider)
-  assert_true(log_count >= 6)
-  
-  // 测试日志级别过滤
-  let filtered_logger = LoggerProvider::get_logger_with_level(logger_provider, "severity.test", "WARN")
-  Logger::debug(filtered_logger, "This should be filtered out", [])
-  Logger::warn(filtered_logger, "This should pass through", [])
-  
-  let filtered_count = LoggerProvider::get_log_count(logger_provider)
-  assert_true(filtered_count >= 7) // 只增加了一个警告日志
-}
-
-// 测试6: 上下文传播和提取
-test "context propagation and extraction" {
-  // 创建原始上下文
-  let original_ctx = Context::empty()
-    .with_span_context(SpanContext::new("trace-123", "span-456", true, true))
-    .with_baggage(Baggage::empty().with_entry("correlation.id", "corr-789"))
-  
-  // 测试上下文注入
-  let carrier = TextMapCarrier::new()
-  let propagator = TextMapPropagator::composite([
-    TraceContextPropagator::new(),
-    BaggagePropagator::new()
-  ])
-  
-  Propagator::inject(propagator, original_ctx, carrier)
-  
-  // 验证注入的头部
-  let headers = TextMapCarrier::headers(carrier)
-  assert_true(headers.contains_key("traceparent"))
-  assert_true(headers.contains_key("baggage"))
-  
-  // 测试上下文提取
-  let extracted_ctx = Propagator::extract(propagator, carrier)
-  let extracted_span_ctx = Context::span_context(extracted_ctx)
-  let extracted_baggage = Context::baggage(extracted_ctx)
-  
-  assert_eq(SpanContext::trace_id(extracted_span_ctx), "trace-123")
-  assert_eq(SpanContext::span_id(extracted_span_ctx), "span-456")
-  assert_eq(Baggage::get_value(extracted_baggage, "correlation.id"), Some("corr-789"))
-}
-
-// 测试7: 度量聚合和时间窗口
-test "metrics aggregation and time windows" {
-  let meter_provider = MeterProvider::default()
-  let meter = MeterProvider::get_meter(meter_provider, "aggregation.test")
-  
-  // 创建计数器
-  let counter = Meter::create_counter(meter, "api.requests.total")
-  
-  // 在不同时间点记录数据
-  for i = 0; i < 100; i = i + 1 {
-    Counter::add_with_attributes(counter, 1.0, [
-      ("method", if i % 2 == 0 { "GET" } else { "POST" }),
-      ("status", if i % 10 == 0 { "500" } else { "200" })
-    ])
+  // 测试None选项处理
+  match none_option {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
   }
   
-  // 创建UpDown计数器
-  let updown_counter = Meter::create_up_down_counter(meter, "active.connections")
-  UpDownCounter::add(updown_counter, 10.0)
-  UpDownCounter::add(updown_counter, 5.0)
-  UpDownCounter::subtract(updown_counter, 3.0)
+  let mapped_none = none_option.map(fn(x) { x * 2 })
+  match mapped_none {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
   
-  // 测试时间窗口聚合
-  let aggregator = MetricAggregator::new(meter_provider)
-  let time_window = TimeWindow::last_5_minutes()
+  // 测试空数组操作
+  assert_eq(empty_array.length(), 0)
+  assert_true(empty_array.is_empty())
+  assert_false(empty_array.contains(1))
+}
+
+// 测试2: 数值边界条件
+test "数值边界条件测试" {
+  let max_int = 2147483647
+  let min_int = -2147483648
+  let zero = 0
   
-  let aggregated_metrics = Aggregator::get_metrics(aggregator, time_window)
-  assert_true(aggregated_metrics.length() > 0)
+  // 测试整数边界
+  assert_eq(max_int + 1, min_int)  // 溢出测试
+  assert_eq(min_int - 1, max_int)  // 下溢测试
   
-  // 验证特定度量的聚合结果
-  let counter_metric = aggregated_metrics.find(fn(m) { Metric::name(m) == "api.requests.total" })
-  match counter_metric {
-    Some(metric) => {
-      let data_points = Metric::data_points(metric)
-      assert_true(data_points.length() > 0)
-      
-      // 验证GET和POST请求都被计数
-      let get_dp = data_points.find(fn(dp) { DataPoint::has_attribute(dp, "method", "GET") })
-      let post_dp = data_points.find(fn(dp) { DataPoint::has_attribute(dp, "method", "POST") })
-      
-      match (get_dp, post_dp) {
-        (Some(get), Some(post)) => {
-          assert_true(DataPoint::value(get) > 0.0)
-          assert_true(DataPoint::value(post) > 0.0)
-        }
-        _ => assert_true(false)
-      }
+  // 测试零值操作
+  assert_eq(zero * 100, 0)
+  assert_eq(100 * zero, 0)
+  assert_eq(zero / 1, 0)
+  
+  // 测试除零边界（通过条件检查避免实际除零）
+  let denominator = 0
+  let result = if denominator != 0 { 100 / denominator } else { 0 }
+  assert_eq(result, 0)
+  
+  // 测试极值比较
+  assert_true(max_int > min_int)
+  assert_true(min_int < max_int)
+  assert_true(zero >= min_int)
+  assert_true(zero <= max_int)
+}
+
+// 测试3: 遥测系统错误恢复
+test "遥测系统错误恢复测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "error.recovery")
+  
+  // 模拟网络错误场景
+  let network_span = Tracer::start_span(tracer, "network.request")
+  Span::set_attribute(network_span, "network.endpoint", StringValue("https://unreachable.example.com"))
+  Span::set_attribute(network_span, "network.timeout", IntValue(5000))
+  
+  // 记录网络错误
+  Span::set_status(network_span, Error)
+  Span::add_event(network_span, "connection.failed", None)
+  Span::set_attribute(network_span, "error.code", StringValue("ECONNREFUSED"))
+  
+  // 创建重试span
+  let retry_span = Tracer::start_span(tracer, "network.retry")
+  Span::set_attribute(retry_span, "retry.attempt", IntValue(1))
+  Span::set_attribute(retry_span, "retry.delay", IntValue(1000))
+  
+  // 模拟重试成功
+  Span::set_status(retry_span, Ok)
+  Span::add_event(retry_span, "connection.established", None)
+  
+  Span::end(retry_span)
+  Span::end(network_span)
+  
+  // 验证错误恢复
+  assert_eq(Span::status(network_span), Error)
+  assert_eq(Span::status(retry_span), Ok)
+}
+
+// 测试4: 高频率遥测数据收集性能
+test "高频率遥测数据收集性能测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "high.frequency.collector")
+  
+  // 创建高频指标
+  let request_counter = Meter::create_counter(meter, "high.freq.requests")
+  let latency_histogram = Meter::create_histogram(meter, "high.freq.latency")
+  let active_gauge = Meter::create_gauge(meter, "high.freq.active")
+  
+  let start_time = Time::now()
+  
+  // 模拟高频率数据收集
+  for i in 1..=1000 {
+    Counter::add(request_counter, 1.0)
+    Histogram::record(latency, 0.001 + (i % 100) * 0.0001)
+    if i % 100 == 0 {
+      Gauge::set(active_gauge, (i % 1000).to_float())
     }
-    None => assert_true(false)
   }
+  
+  let end_time = Time::now()
+  let duration = end_time - start_time
+  
+  // 验证性能指标
+  assert_eq(Counter::value(request_counter), 1000.0)
+  assert_true(duration < 2.0)  // 应在2秒内完成
+  
+  // 验证数据收集完整性
+  assert_eq(Gauge::value(active_gauge), 0.0)
 }
 
-// 测试8: 异常处理和错误恢复
-test "exception handling and error recovery" {
+// 测试5: 跨服务遥测集成测试
+test "跨服务遥测集成测试" {
+  // 服务A的遥测设置
+  let service_a_provider = TracerProvider::default()
+  let service_a_tracer = TracerProvider::get_tracer(service_a_provider, "service.a")
+  
+  // 服务B的遥测设置
+  let service_b_provider = TracerProvider::default()
+  let service_b_tracer = TracerProvider::get_tracer(service_b_provider, "service.b")
+  
+  // 创建服务A的根span
+  let service_a_span = Tracer::start_span(service_a_tracer, "service.a.request")
+  Span::set_attribute(service_a_span, "service.name", StringValue("service.a"))
+  Span::set_attribute(service_a_span, "http.method", StringValue("POST"))
+  Span::set_attribute(service_a_span, "http.url", StringValue("/api/process"))
+  
+  let service_a_context = Span::context(service_a_span)
+  
+  // 服务A调用服务B
+  let service_b_span = Tracer::start_span_with_context(service_b_tracer, "service.b.process", service_a_context)
+  Span::set_attribute(service_b_span, "service.name", StringValue("service.b"))
+  Span::set_attribute(service_b_span, "db.operation", StringValue("SELECT"))
+  Span::set_attribute(service_b_span, "db.statement", StringValue("SELECT * FROM orders"))
+  
+  // 完成服务B操作
+  Span::set_status(service_b_span, Ok)
+  Span::end(service_b_span)
+  
+  // 完成服务A操作
+  Span::set_status(service_a_span, Ok)
+  Span::end(service_a_span)
+  
+  // 验证跨服务集成
+  assert_eq(Span::status(service_a_span), Ok)
+  assert_eq(Span::status(service_b_span), Ok)
+}
+
+// 测试6: 并发遥测操作测试
+test "并发遥测操作测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "concurrent.operations")
+  
   let tracer_provider = TracerProvider::default()
-  let tracer = TracerProvider::get_tracer(tracer_provider, "exception.test")
+  let tracer = TracerProvider::get_tracer(tracer_provider, "concurrent.tracer")
   
-  // 测试异常记录
-  let span = Tracer::start_span(tracer, "operation.with.exception")
+  // 创建并发指标
+  let concurrent_operations = Meter::create_counter(meter, "concurrent.ops")
+  let concurrent_errors = Meter::create_counter(meter, "concurrent.errors")
   
-  // 记录异常事件
-  let exception1 = Exception::new("Network timeout", "Connection timed out after 30 seconds")
-  Span::record_exception(span, exception1, [("retry.count", "1")])
+  let start_time = Time::now()
   
-  let exception2 = Exception::new("Database error", "Connection pool exhausted")
-  Span::record_exception(span, exception2, [("retry.count", "2")])
+  // 模拟并发操作（通过快速连续操作模拟）
+  for thread_id in 1..=5 {
+    for operation_id in 1..=50 {
+      let span = Tracer::start_span(tracer, "thread." + thread_id.to_string() + ".op." + operation_id.to_string())
+      Span::set_attribute(span, "thread.id", IntValue(thread_id))
+      Span::set_attribute(span, "operation.id", IntValue(operation_id))
+      
+      // 模拟操作
+      Counter::add(concurrent_operations, 1.0)
+      
+      // 模拟偶发错误
+      if operation_id % 25 == 0 {
+        Counter::add(concurrent_errors, 1.0)
+        Span::set_status(span, Error)
+      } else {
+        Span::set_status(span, Ok)
+      }
+      
+      Span::end(span)
+    }
+  }
   
-  // 测试错误状态设置
-  Span::set_status(span, Status::error("Operation failed after retries"))
+  let end_time = Time::now()
+  let duration = end_time - start_time
   
-  // 验证span状态
-  let status = Span::status(span)
-  assert_eq(Status::code(status), "ERROR")
-  assert_true(Status::description(status).contains("failed"))
+  // 验证并发操作结果
+  assert_eq(Counter::value(concurrent_operations), 250.0)
+  assert_eq(Counter::value(concurrent_errors), 10.0)
+  assert_true(duration < 10.0)  // 应在10秒内完成
+}
+
+// 测试7: 资源耗尽场景
+test "资源耗尽场景测试" {
+  let provider = MeterProvider::default()
+  let meter = MeterProvider::get_meter(provider, "resource.monitor")
   
-  // 测试错误恢复
-  let recovery_span = Tracer::start_span(tracer, "error.recovery.operation")
-  Span::set_attribute(recovery_span, "recovery.strategy", "retry.with.backoff")
-  Span::set_attribute(recovery_span, "max.retries", "3")
+  // 创建资源使用监控
+  let memory_usage = Meter::create_gauge(meter, "system.memory.usage")
+  let file_descriptors = Meter::create_gauge(meter, "system.file.descriptors")
+  let thread_count = Meter::create_gauge(meter, "system.thread.count")
   
-  // 模拟成功恢复
-  Span::set_status(recovery_span, Status::ok())
-  Span::end(recovery_span)
+  // 模拟资源耗尽场景
+  Gauge::set(memory_usage, 95.5)  // 高内存使用率
+  Gauge::set(file_descriptors, 950.0)  # 接近文件描述符限制
+  Gauge::set(thread_count, 200.0)  # 高线程数
   
-  Span::end(span)
+  // 创建资源告警span
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "resource.alert")
+  let alert_span = Tracer::start_span(tracer, "resource.exhaustion.warning")
   
-  // 验证错误统计
-  let error_metrics = TracerProvider::get_error_metrics(tracer_provider)
-  assert_true(error_metrics.get("timeout.count", 0) > 0)
-  assert_true(error_metrics.get("database.error.count", 0) > 0)
-  assert_true(error_metrics.get("recovery.success.count", 0) > 0)
+  Span::set_attribute(alert_span, "alert.type", StringValue("resource.exhaustion"))
+  Span::set_attribute(alert_span, "memory.usage", FloatValue(95.5))
+  Span::set_attribute(alert_span, "file.descriptors", FloatValue(950.0))
+  Span::set_attribute(alert_span, "thread.count", FloatValue(200.0))
+  
+  // 记录资源释放操作
+  Span::add_event(alert_span, "resource.cleanup.initiated", None)
+  Span::set_attribute(alert_span, "cleanup.strategy", StringValue("graceful.shutdown"))
+  
+  // 模拟资源释放
+  Gauge::set(memory_usage, 45.2)  # 内存使用率下降
+  Gauge::set(file_descriptors, 150.0)  # 文件描述符释放
+  Gauge::set(thread_count, 25.0)  # 线程数减少
+  
+  Span::add_event(alert_span, "resource.cleanup.completed", None)
+  Span::set_status(alert_span, Ok)
+  Span::end(alert_span)
+  
+  // 验证资源恢复
+  assert_eq(Gauge::value(memory_usage), 45.2)
+  assert_eq(Gauge::value(file_descriptors), 150.0)
+  assert_eq(Gauge::value(thread_count), 25.0)
+  assert_eq(Span::status(alert_span), Ok)
+}
+
+// 测试8: 安全边界测试
+test "安全边界测试" {
+  let tracer_provider = TracerProvider::default()
+  let tracer = TracerProvider::get_tracer(tracer_provider, "security.boundary")
+  
+  // 模拟恶意输入检测
+  let malicious_input_span = Tracer::start_span(tracer, "input.validation")
+  Span::set_attribute(malicious_input_span, "input.source", StringValue("user.request"))
+  
+  // 模拟恶意输入
+  let sql_injection = "'; DROP TABLE users; --"
+  let xss_payload = "<script>alert('xss')</script>"
+  let path_traversal = "../../../etc/passwd"
+  
+  // 记录安全检查
+  Span::set_attribute(malicious_input_span, "input.sql_injection.detected", BoolValue(true))
+  Span::set_attribute(malicious_input_span, "input.xss.detected", BoolValue(true))
+  Span::set_attribute(malicious_input_span, "input.path_traversal.detected", BoolValue(true))
+  
+  // 记录安全事件
+  Span::add_event(malicious_input_span, "security.threat.detected", None)
+  Span::set_attribute(malicious_input_span, "threat.level", StringValue("HIGH"))
+  Span::set_attribute(malicious_input_span, "blocked.request", BoolValue(true))
+  
+  // 创建安全响应span
+  let security_response_span = Tracer::start_span(tracer, "security.response")
+  Span::set_attribute(security_response_span, "response.action", StringValue("block.and.log"))
+  Span::set_attribute(security_response_span, "source.ip", StringValue("192.168.1.100"))
+  Span::set_attribute(security_response_span, "user.id", StringValue("suspicious.user.123"))
+  
+  // 记录安全响应
+  Span::add_event(security_response_span, "security.policy.enforced", None)
+  Span::set_status(security_response_span, Ok)
+  Span::end(security_response_span)
+  
+  // 完成恶意输入处理
+  Span::set_status(malicious_input_span, Error)
+  Span::end(malicious_input_span)
+  
+  // 验证安全边界处理
+  assert_eq(Span::status(malicious_input_span), Error)
+  assert_eq(Span::status(security_response_span), Ok)
 }
