@@ -1,292 +1,649 @@
-// Azimuth Telemetry System - Error Handling and Boundary Conditions Test Suite
+// Azimuth Error Handling and Boundary Conditions Test Suite
 // This file contains comprehensive test cases for error handling and boundary conditions
 
-// Test 1: Invalid Trace ID Handling
-test "invalid trace id handling" {
-  // Test with null/empty trace ID
-  let empty_trace_id = ""
-  assert_eq(empty_trace_id.length(), 0)
-  
-  // Test with invalid length trace ID
-  let short_trace_id = "abc123"
-  assert_true(short_trace_id.length() < 32)
-  
-  let long_trace_id = "0123456789012345678901234567890123456789"
-  assert_true(long_trace_id.length() > 32)
-  
-  // Test with invalid characters in trace ID
-  let invalid_char_trace_id = "ghijklmnopqrstuvwxyz0123456789012345"
-  assert_eq(invalid_char_trace_id.length(), 32)
-  
-  // Test valid trace ID format
-  let valid_trace_id = "0af7651916cd43dd8448eb211c80319c"
-  assert_eq(valid_trace_id.length(), 32)
-  assert_true(valid_trace_id.chars().all(|c| c.is_ascii_hexdigit()))
-}
-
-// Test 2: Invalid Span ID Handling
-test "invalid span id handling" {
-  // Test with null/empty span ID
-  let empty_span_id = ""
-  assert_eq(empty_span_id.length(), 0)
-  
-  // Test with invalid length span ID
-  let short_span_id = "1234"
-  assert_true(short_span_id.length() < 16)
-  
-  let long_span_id = "01234567890123456"
-  assert_true(long_span_id.length() > 16)
-  
-  // Test with invalid characters in span ID
-  let invalid_char_span_id = "ghijklmnopqrstu"
-  assert_eq(invalid_char_span_id.length(), 16)
-  
-  // Test valid span ID format
-  let valid_span_id = "b7ad6b7169203331"
-  assert_eq(valid_span_id.length(), 16)
-  assert_true(valid_span_id.chars().all(|c| c.is_ascii_hexdigit()))
-}
-
-// Test 3: Attribute Value Boundary Conditions
-test "attribute value boundary conditions" {
-  // Test empty string attribute
-  let empty_string_attr = ""
-  assert_eq(empty_string_attr.length(), 0)
-  
-  // Test very long string attribute
-  let long_string_attr = "a".repeat(10000)
-  assert_eq(long_string_attr.length(), 10000)
-  
-  // Test numeric boundary conditions
+// Test 1: Numeric Boundary Conditions
+test "numeric boundary conditions" {
+  // Test integer boundaries
   let max_int = 2147483647
   let min_int = -2147483648
-  let max_float = 3.4028235e38
-  let min_float = -3.4028235e38
   
-  assert_true(max_int > 0)
-  assert_true(min_int < 0)
-  assert_true(max_float > 0.0)
-  assert_true(min_float < 0.0)
-  
-  // Test zero values
-  let zero_int = 0
-  let zero_float = 0.0
-  let empty_array = []
-  
-  assert_eq(zero_int, 0)
-  assert_eq(zero_float, 0.0)
-  assert_eq(empty_array.length(), 0)
-  
-  // Test boolean boundary conditions
-  let true_value = true
-  let false_value = false
-  
-  assert_true(true_value)
-  assert_false(false_value)
-  assert_true(true_value != false_value)
-}
-
-// Test 4: Metric Aggregation Edge Cases
-test "metric aggregation edge cases" {
-  // Test counter with overflow conditions
-  let mut counter = 2147483640  // Near max int
-  for i = 0; i < 10; i = i + 1 {
-    counter = counter + 1
+  // Test overflow detection
+  let safe_add = fn(a, b) {
+    if a > 0 and b > max_int - a {
+      None  // Would overflow
+    } else if a < 0 and b < min_int - a {
+      None  // Would underflow
+    } else {
+      Some(a + b)
+    }
   }
-  assert_true(counter > 2147483640)
   
-  // Test gauge with extreme values
-  let extreme_positive = 1.7976931348623157e308  // Max double
-  let extreme_negative = -1.7976931348623157e308  // Min double
-  let nan_value = 0.0 / 0.0
-  let infinity_value = 1.0 / 0.0
+  // Test normal addition
+  match safe_add(100, 200) {
+    Some(result) => assert_eq(result, 300)
+    None => assert_true(false)
+  }
   
-  assert_true(extreme_positive > 0.0)
-  assert_true(extreme_negative < 0.0)
+  // Test overflow case
+  match safe_add(max_int, 1) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
   
-  // Test histogram with empty data
-  let empty_measurements = []
-  let empty_sum = empty_measurements.reduce(|acc, val| acc + val, 0.0)
-  let empty_count = empty_measurements.length().to_float()
+  // Test underflow case
+  match safe_add(min_int, -1) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
   
-  assert_eq(empty_sum, 0.0)
-  assert_eq(empty_count, 0.0)
+  // Test division by zero handling
+  let safe_divide = fn(numerator, denominator) {
+    if denominator == 0 {
+      None
+    } else {
+      Some(numerator / denominator)
+    }
+  }
   
-  // Test histogram with single value
-  let single_measurement = [42.0]
-  let single_sum = single_measurement.reduce(|acc, val| acc + val, 0.0)
-  let single_count = single_measurement.length().to_float()
-  let single_avg = single_sum / single_count
+  match safe_divide(10, 2) {
+    Some(result) => assert_eq(result, 5)
+    None => assert_true(false)
+  }
   
-  assert_eq(single_sum, 42.0)
-  assert_eq(single_count, 1.0)
-  assert_eq(single_avg, 42.0)
+  match safe_divide(10, 0) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
 }
 
-// Test 5: Context Propagation Error Cases
-test "context propagation error cases" {
-  // Test malformed traceparent header
-  let malformed_traceparents = [
-    "",  // Empty
-    "malformed-format",  // Wrong format
-    "00-0af7651916cd43dd8448eb211c80319c",  // Missing parts
-    "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331",  // Missing flags
-    "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01-extra",  // Too many parts
-    "invalid-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",  // Invalid version
-    "00-invalid_trace_id-b7ad6b7169203331-01",  // Invalid trace ID
-    "00-0af7651916cd43dd8448eb211c80319c-invalid_span_id-01",  // Invalid span ID
-    "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-invalid"  // Invalid flags
-  ]
+// Test 2: Array Boundary Conditions
+test "array boundary conditions" {
+  let arr = [1, 2, 3, 4, 5]
   
-  for malformed in malformed_traceparents {
-    let parts = malformed.split("-")
-    if parts.length() == 4 {
-      // Even if split succeeds, validation should fail
-      if parts[0] == "00" && parts[1].length() == 32 && parts[2].length() == 16 {
-        // This would be valid, but malformed cases should not reach here
-        assert_true(false, "Should not reach valid validation for malformed input")
+  // Test safe array access
+  let safe_get = fn(array, index) {
+    if index >= 0 and index < array.length() {
+      Some(array[index])
+    } else {
+      None
+    }
+  }
+  
+  // Test valid access
+  match safe_get(arr, 0) {
+    Some(value) => assert_eq(value, 1)
+    None => assert_true(false)
+  }
+  
+  match safe_get(arr, 4) {
+    Some(value) => assert_eq(value, 5)
+    None => assert_true(false)
+  }
+  
+  // Test invalid access
+  match safe_get(arr, -1) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  match safe_get(arr, 5) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test empty array
+  let empty_arr = []
+  match safe_get(empty_arr, 0) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test safe array slice
+  let safe_slice = fn(array, start, end) {
+    if start >= 0 and end <= array.length() and start <= end {
+      Some(array[start:end])
+    } else {
+      None
+    }
+  }
+  
+  match safe_slice(arr, 1, 4) {
+    Some(slice) => assert_eq(slice, [2, 3, 4])
+    None => assert_true(false)
+  }
+  
+  match safe_slice(arr, -1, 3) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  match safe_slice(arr, 1, 6) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// Test 3: String Boundary Conditions
+test "string boundary conditions" {
+  let str = "hello"
+  
+  // Test safe string indexing
+  let safe_char_at = fn(string, index) {
+    if index >= 0 and index < string.length() {
+      Some(string[index])
+    } else {
+      None
+    }
+  }
+  
+  // Test valid access
+  match safe_char_at(str, 0) {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
+  
+  match safe_char_at(str, 4) {
+    Some(_) => assert_true(true)
+    None => assert_true(false)
+  }
+  
+  // Test invalid access
+  match safe_char_at(str, -1) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  match safe_char_at(str, 5) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test empty string
+  let empty_str = ""
+  match safe_char_at(empty_str, 0) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  // Test safe substring
+  let safe_substring = fn(string, start, length) {
+    if start >= 0 and length >= 0 and start + length <= string.length() {
+      Some(string.substring(start, start + length))
+    } else {
+      None
+    }
+  }
+  
+  match safe_substring(str, 1, 3) {
+    Some(sub) => assert_eq(sub, "ell")
+    None => assert_true(false)
+  }
+  
+  match safe_substring(str, -1, 2) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+  
+  match safe_substring(str, 1, 5) {
+    Some(_) => assert_true(false)
+    None => assert_true(true)
+  }
+}
+
+// Test 4: Option Type Error Handling
+test "option type error handling" {
+  // Test safe operations on option types
+  let safe_option_add = fn(opt1, opt2) {
+    match (opt1, opt2) {
+      (Some(a), Some(b)) => Some(a + b)
+      _ => None
+    }
+  }
+  
+  assert_eq(safe_option_add(Some(5), Some(3)), Some(8))
+  assert_eq(safe_option_add(Some(5), None), None)
+  assert_eq(safe_option_add(None, Some(3)), None)
+  assert_eq(safe_option_add(None, None), None)
+  
+  // Test option chaining
+  let safe_option_chain = fn(opt) {
+    match opt {
+      Some(value) => {
+        if value > 0 {
+          Some(value * 2)
+        } else {
+          None
+        }
+      }
+      None => None
+    }
+  }
+  
+  assert_eq(safe_option_chain(Some(5)), Some(10))
+  assert_eq(safe_option_chain(Some(0)), None)
+  assert_eq(safe_option_chain(None), None)
+  
+  // Test option with default value
+  let option_with_default = fn(opt, default_value) {
+    match opt {
+      Some(value) => value
+      None => default_value
+    }
+  }
+  
+  assert_eq(option_with_default(Some(10), 0), 10)
+  assert_eq(option_with_default(None, 0), 0)
+}
+
+// Test 5: Result Type Error Handling
+test "result type error handling" {
+  // Test safe operations that might fail
+  let safe_parse_int = fn(str) {
+    if str.length() == 0 {
+      Err("Empty string")
+    } else {
+      let mut valid = true
+      let mut result = 0
+      
+      for i in 0..str.length() {
+        let char = str[i]
+        if char >= '0' and char <= '9' {
+          result = result * 10 + (char.to_int() - '0'.to_int())
+        } else {
+          valid = false
+          break
+        }
+      }
+      
+      if valid {
+        Ok(result)
+      } else {
+        Err("Invalid character")
       }
     }
   }
   
-  // Test baggage with invalid characters
-  let invalid_baggage_items = [
-    ("user.id", "123,456"),  // Comma in value
-    ("session=id", "abcdef"),  // Equals in key
-    ("", "empty_key"),  // Empty key
-    ("valid.key", ""),  // Empty value
-    ("space key", "value"),  // Space in key
-    ("valid.key", "space value")  // Space in value
-  ]
+  // Test valid parsing
+  match safe_parse_int("123") {
+    Ok(value) => assert_eq(value, 123)
+    Err(msg) => assert_true(false)
+  }
   
-  for (key, value) in invalid_baggage_items {
-    if key.contains(",") || key.contains("=") || key.length() == 0 {
-      assert_true(true, "Invalid baggage key detected")
-    }
-    if value.contains(",") || value.contains(" ") {
-      assert_true(true, "Invalid baggage value detected")
+  // Test invalid parsing
+  match safe_parse_int("12a3") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Invalid character")
+  }
+  
+  match safe_parse_int("") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Empty string")
+  }
+  
+  // Test result chaining
+  let safe_result_chain = fn(result) {
+    match result {
+      Ok(value) => {
+        if value > 100 {
+          Ok(value / 10)
+        } else {
+          Err("Value too small")
+        }
+      }
+      Err(msg) => Err("Chain error: " + msg)
     }
   }
+  
+  assert_eq(safe_result_chain(Ok(150)), Ok(15))
+  assert_eq(safe_result_chain(Ok(50)), Err("Value too small"))
+  assert_eq(safe_result_chain(Err("Original error")), Err("Chain error: Original error"))
 }
 
-// Test 6: Resource Attribute Validation Errors
-test "resource attribute validation errors" {
-  // Test resource with invalid attribute keys
-  let invalid_attribute_keys = [
-    "",  // Empty key
-    ".invalid",  // Starts with dot
-    "invalid.",  // Ends with dot
-    "invalid..key",  // Double dot
-    "invalid key",  // Space in key
-    "invalid/key",  // Slash in key
-    "invalid\\key",  // Backslash in key
-    "a".repeat(256)  // Too long key
-  ]
-  
-  for key in invalid_attribute_keys {
-    if key.length() == 0 {
-      assert_eq(key.length(), 0)
-    } else if key.contains(" ") || key.contains("/") || key.contains("\\") {
-      assert_true(true, "Invalid characters in key")
-    } else if key.starts_with(".") || key.ends_with(".") || key.contains("..") {
-      assert_true(true, "Invalid dot usage in key")
-    } else if key.length() > 255 {
-      assert_true(key.length() > 255)
-    }
+// Test 6: Resource Management Error Handling
+test "resource management error handling" {
+  // Simulate resource with state
+  type Resource {
+    id : Int
+    is_open : Bool
   }
   
-  // Test resource with too many attributes
-  let mut many_attributes = []
-  for i = 0; i < 1000; i = i + 1 {
-    many_attributes = many_attributes.concat([("attr." + i.to_string(), "value" + i.to_string())])
-  }
-  assert_true(many_attributes.length() > 100)
-  
-  // Test resource with very long attribute values
-  let very_long_value = "a".repeat(10000)
-  assert_eq(very_long_value.length(), 10000)
-}
-
-// Test 7: Logging Error Conditions
-test "logging error conditions" {
-  // Test invalid log severity levels
-  let invalid_severity_levels = [-1, 0, 7, 100, -100]
-  
-  for level in invalid_severity_levels {
-    if level < 1 || level > 6 {
-      assert_true(level < 1 || level > 6)
-    }
+  let create_resource = fn(id) {
+    { id: id, is_open: true }
   }
   
-  // Test log with empty message
-  let empty_message = ""
-  assert_eq(empty_message.length(), 0)
+  let close_resource = fn(resource) {
+    { id: resource.id, is_open: false }
+  }
   
-  // Test log with extremely long message
-  let long_message = "x".repeat(100000)
-  assert_eq(long_message.length(), 100000)
-  
-  // Test log with invalid timestamp
-  let invalid_timestamps = [-1, 0, 18446744073709551615]  // Negative, zero, max uint64
-  
-  for timestamp in invalid_timestamps {
-    if timestamp < 0 {
-      assert_true(timestamp < 0)
-    } else if timestamp == 0 {
-      assert_eq(timestamp, 0)
+  let use_resource = fn(resource) {
+    if resource.is_open {
+      Ok("Resource " + resource.id.to_string() + " used successfully")
     } else {
-      assert_true(timestamp > 0)
+      Err("Resource " + resource.id.to_string() + " is closed")
     }
   }
   
-  // Test log with special characters in message
-  let special_char_messages = [
-    "Message with\nnewlines",
-    "Message with\ttabs",
-    "Message with\rcarriage returns",
-    "Message with \"quotes\"",
-    "Message with 'apostrophes'",
-    "Message with \\backslashes\\",
-    "Message with <html>tags</html>",
-    "Message with emojis 🚀",
-    "Message with unicode: 中文测试"
-  ]
+  // Test normal resource usage
+  let resource1 = create_resource(1)
+  match use_resource(resource1) {
+    Ok(msg) => assert_eq(msg, "Resource 1 used successfully")
+    Err(_) => assert_true(false)
+  }
   
-  for message in special_char_messages {
-    assert_true(message.length() > 0)
+  // Test closed resource
+  let closed_resource = close_resource(resource1)
+  match use_resource(closed_resource) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Resource 1 is closed")
+  }
+  
+  // Test resource cleanup simulation
+  let with_resource = fn(id, operation) {
+    let resource = create_resource(id)
+    let result = operation(resource)
+    let _ = close_resource(resource)
+    result
+  }
+  
+  let final_result = with_resource(2, use_resource)
+  match final_result {
+    Ok(msg) => assert_eq(msg, "Resource 2 used successfully")
+    Err(_) => assert_true(false)
   }
 }
 
-// Test 8: Sampling Strategy Error Handling
-test "sampling strategy error handling" {
-  // Test invalid sampling probabilities
-  let invalid_probabilities = [-0.1, 1.5, 2.0, -1.0, 100.0]
-  
-  for prob in invalid_probabilities {
-    if prob < 0.0 || prob > 1.0 {
-      assert_true(prob < 0.0 || prob > 1.0)
+// Test 7: Input Validation Error Handling
+test "input validation error handling" {
+  // Test email validation
+  let validate_email = fn(email) {
+    if email.length() == 0 {
+      Err("Email cannot be empty")
+    } else if not email.contains("@") {
+      Err("Email must contain @ symbol")
+    } else if not email.contains(".") {
+      Err("Email must contain . symbol")
+    } else {
+      Ok(email)
     }
   }
   
-  // Test valid sampling probabilities
-  let valid_probabilities = [0.0, 0.1, 0.5, 0.9, 1.0]
-  
-  for prob in valid_probabilities {
-    assert_true(prob >= 0.0 && prob <= 1.0)
+  // Test valid email
+  match validate_email("user@example.com") {
+    Ok(valid_email) => assert_eq(valid_email, "user@example.com")
+    Err(_) => assert_true(false)
   }
   
-  // Test sampling with invalid parent context
-  let invalid_parent_contexts = [
-    ("", ""),  // Empty trace and span
-    ("valid_trace_id", ""),  // Empty span
-    ("", "valid_span_id"),  // Empty trace
-    ("short", "1234"),  // Too short IDs
-    ("0af7651916cd43dd8448eb211c80319c", "b7ad6b7169203331")  // Valid
-  ]
+  // Test invalid emails
+  match validate_email("") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Email cannot be empty")
+  }
   
-  for (trace_id, span_id) in invalid_parent_contexts {
-    if trace_id.length() != 32 || span_id.length() != 16 {
-      assert_true(trace_id.length() != 32 || span_id.length() != 16)
+  match validate_email("userexample.com") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Email must contain @ symbol")
+  }
+  
+  match validate_email("user@examplecom") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Email must contain . symbol")
+  }
+  
+  // Test phone number validation
+  let validate_phone = fn(phone) {
+    if phone.length() == 0 {
+      Err("Phone number cannot be empty")
+    } else if phone.length() < 10 {
+      Err("Phone number too short")
+    } else if phone.length() > 15 {
+      Err("Phone number too long")
+    } else {
+      let mut valid = true
+      for i in 0..phone.length() {
+        let char = phone[i]
+        if not ((char >= '0' and char <= '9') or char == '-' or char == '+') {
+          valid = false
+          break
+        }
+      }
+      
+      if valid {
+        Ok(phone)
+      } else {
+        Err("Phone number contains invalid characters")
+      }
     }
+  }
+  
+  // Test valid phone
+  match validate_phone("+1-555-123-4567") {
+    Ok(valid_phone) => assert_eq(valid_phone, "+1-555-123-4567")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test invalid phones
+  match validate_phone("123") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Phone number too short")
+  }
+  
+  match validate_phone("123-456-7890-12345") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Phone number too long")
+  }
+  
+  match validate_phone("123-abc-4567") {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Phone number contains invalid characters")
+  }
+}
+
+// Test 8: Concurrency Error Handling Simulation
+test "concurrency error handling simulation" {
+  // Simulate shared resource with access control
+  type SharedResource {
+    value : Int
+    lock_acquired : Bool
+  }
+  
+  let create_shared_resource = fn(initial_value) {
+    { value: initial_value, lock_acquired: false }
+  }
+  
+  let acquire_lock = fn(resource) {
+    if resource.lock_acquired {
+      Err("Resource already locked")
+    } else {
+      Ok({ value: resource.value, lock_acquired: true })
+    }
+  }
+  
+  let release_lock = fn(resource) {
+    if resource.lock_acquired {
+      { value: resource.value, lock_acquired: false }
+    } else {
+      resource  // Already unlocked
+    }
+  }
+  
+  let safe_update = fn(resource, new_value) {
+    if resource.lock_acquired {
+      Ok({ value: new_value, lock_acquired: true })
+    } else {
+      Err("Resource not locked")
+    }
+  }
+  
+  // Test normal lock/unlock cycle
+  let resource = create_shared_resource(10)
+  
+  match acquire_lock(resource) {
+    Ok(locked_resource) => {
+      match safe_update(locked_resource, 20) {
+        Ok(updated_resource) => {
+          let unlocked_resource = release_lock(updated_resource)
+          assert_eq(unlocked_resource.value, 20)
+          assert_false(unlocked_resource.lock_acquired)
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test double lock attempt
+  let resource2 = create_shared_resource(30)
+  
+  match acquire_lock(resource2) {
+    Ok(locked_resource) => {
+      match acquire_lock(locked_resource) {
+        Ok(_) => assert_true(false)
+        Err(msg) => assert_eq(msg, "Resource already locked")
+      }
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test update without lock
+  let resource3 = create_shared_resource(40)
+  match safe_update(resource3, 50) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Resource not locked")
+  }
+}
+
+// Test 9: Memory and Resource Limit Error Handling
+test "memory and resource limit error handling" {
+  // Simulate memory pool with limited capacity
+  type MemoryPool {
+    capacity : Int
+    used : Int
+  }
+  
+  let create_memory_pool = fn(capacity) {
+    { capacity: capacity, used: 0 }
+  }
+  
+  let allocate = fn(pool, size) {
+    if pool.used + size > pool.capacity {
+      Err("Insufficient memory")
+    } else {
+      Ok({ capacity: pool.capacity, used: pool.used + size })
+    }
+  }
+  
+  let deallocate = fn(pool, size) {
+    if size > pool.used {
+      Err("Deallocation size exceeds used memory")
+    } else {
+      { capacity: pool.capacity, used: pool.used - size }
+    }
+  }
+  
+  // Test normal allocation/deallocation
+  let pool = create_memory_pool(100)
+  
+  match allocate(pool, 30) {
+    Ok(new_pool) => {
+      assert_eq(new_pool.used, 30)
+      
+      match allocate(new_pool, 40) {
+        Ok(newer_pool) => {
+          assert_eq(newer_pool.used, 70)
+          
+          match deallocate(newer_pool, 20) {
+            Ok(final_pool) => {
+              assert_eq(final_pool.used, 50)
+            }
+            Err(_) => assert_true(false)
+          }
+        }
+        Err(_) => assert_true(false)
+      }
+    }
+    Err(_) => assert_true(false)
+  }
+  
+  // Test over-allocation
+  let pool2 = create_memory_pool(50)
+  match allocate(pool2, 60) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Insufficient memory")
+  }
+  
+  // Test over-deallocation
+  let pool3 = create_memory_pool(100)
+  match allocate(pool3, 30) {
+    Ok(used_pool) => {
+      match deallocate(used_pool, 40) {
+        Ok(_) => assert_true(false)
+        Err(msg) => assert_eq(msg, "Deallocation size exceeds used memory")
+      }
+    }
+    Err(_) => assert_true(false)
+  }
+}
+
+// Test 10: Network Error Handling Simulation
+test "network error handling simulation" {
+  // Simulate network response with status codes
+  type NetworkResponse {
+    status_code : Int
+    data : String
+  }
+  
+  let make_request = fn(url) {
+    // Simulate different responses based on URL
+    if url.contains("invalid") {
+      NetworkResponse({ status_code: 404, data: "Not Found" })
+    } else if url.contains("error") {
+      NetworkResponse({ status_code: 500, data: "Internal Server Error" })
+    } else if url.contains("timeout") {
+      NetworkResponse({ status_code: 408, data: "Request Timeout" })
+    } else {
+      NetworkResponse({ status_code: 200, data: "Success" })
+    }
+  }
+  
+  let handle_response = fn(response) {
+    if response.status_code >= 200 and response.status_code < 300 {
+      Ok(response.data)
+    } else if response.status_code == 404 {
+      Err("Resource not found: " + response.data)
+    } else if response.status_code == 500 {
+      Err("Server error: " + response.data)
+    } else if response.status_code == 408 {
+      Err("Request timeout: " + response.data)
+    } else {
+      Err("Unknown error: " + response.status_code.to_string())
+    }
+  }
+  
+  // Test successful request
+  let response1 = make_request("https://api.example.com/data")
+  match handle_response(response1) {
+    Ok(data) => assert_eq(data, "Success")
+    Err(_) => assert_true(false)
+  }
+  
+  // Test 404 error
+  let response2 = make_request("https://api.example.com/invalid")
+  match handle_response(response2) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Resource not found: Not Found")
+  }
+  
+  // Test 500 error
+  let response3 = make_request("https://api.example.com/error")
+  match handle_response(response3) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Server error: Internal Server Error")
+  }
+  
+  // Test timeout error
+  let response4 = make_request("https://api.example.com/timeout")
+  match handle_response(response4) {
+    Ok(_) => assert_true(false)
+    Err(msg) => assert_eq(msg, "Request timeout: Request Timeout")
   }
 }

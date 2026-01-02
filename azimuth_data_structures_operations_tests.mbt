@@ -1,457 +1,453 @@
 // Azimuth Data Structures Operations Test Suite
-// This file contains test cases for various data structure operations
+// This file contains comprehensive test cases for data structure operations
 
-// Test 1: Stack Operations
-test "stack operations" {
+// Test 1: Advanced Array Operations
+test "advanced array operations" {
+  let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  
+  // Test array slicing
+  let slice = numbers[2:6]  // Should contain [3, 4, 5, 6]
+  assert_eq(slice.length(), 4)
+  assert_eq(slice[0], 3)
+  assert_eq(slice[3], 6)
+  
+  // Test array concatenation
+  let first_half = numbers[0:5]
+  let second_half = numbers[5:10]
+  let concatenated = first_half @ second_half
+  assert_eq(concatenated.length(), 10)
+  assert_eq(concatenated, numbers)
+  
+  // Test array reversal
+  let mut reversed = []
+  for i in 0..numbers.length() {
+    reversed = reversed @ [numbers[numbers.length() - 1 - i]]
+  }
+  assert_eq(reversed[0], 10)
+  assert_eq(reversed[9], 1)
+  
+  // Test array filtering with complex condition
+  let even_numbers = numbers.filter(fn(x) { x % 2 == 0 })
+  let odd_numbers = numbers.filter(fn(x) { x % 2 != 0 })
+  assert_eq(even_numbers.length(), 5)
+  assert_eq(odd_numbers.length(), 5)
+  
+  // Test array transformation
+  let squared = numbers.map(fn(x) { x * x })
+  assert_eq(squared[0], 1)
+  assert_eq(squared[3], 16)
+  assert_eq(squared[9], 100)
+}
+
+// Test 2: Stack Operations
+test "stack operations implementation" {
+  // Implement stack using array
   let mut stack = []
   
-  // Push operations
-  stack = stack.push(1)
-  stack = stack.push(2)
-  stack = stack.push(3)
+  // Test push operations
+  stack = stack.push(10)
+  stack = stack.push(20)
+  stack = stack.push(30)
   
   assert_eq(stack.length(), 3)
   
-  // Pop operations
-  let (popped1, new_stack1) = stack.pop()
-  match popped1 {
-    Some(value) => assert_eq(value, 3)
-    None => assert_true(false)
-  }
-  stack = new_stack1
+  // Test pop operations
+  let (popped_value, new_stack) = (stack[stack.length() - 1], stack[0:stack.length() - 1])
+  stack = new_stack
+  assert_eq(popped_value, 30)
+  assert_eq(stack.length(), 2)
   
-  let (popped2, new_stack2) = stack.pop()
-  match popped2 {
-    Some(value) => assert_eq(value, 2)
-    None => assert_true(false)
-  }
-  stack = new_stack2
+  // Test peek operation
+  let top_value = stack[stack.length() - 1]
+  assert_eq(top_value, 20)
   
-  assert_eq(stack.length(), 1)
-  assert_eq(stack[0], 1)
+  // Test empty stack
+  stack = stack[0:stack.length() - 1]  // Pop 20
+  stack = stack[0:stack.length() - 1]  // Pop 10
+  assert_eq(stack.length(), 0)
 }
 
-// Test 2: Queue Operations
-test "queue operations" {
+// Test 3: Queue Operations
+test "queue operations implementation" {
+  // Implement queue using array
   let mut queue = []
   
-  // Enqueue operations
-  queue = queue.push(1)
-  queue = queue.push(2)
-  queue = queue.push(3)
+  // Test enqueue operations
+  queue = queue @ [10]
+  queue = queue @ [20]
+  queue = queue @ [30]
   
   assert_eq(queue.length(), 3)
   
-  // Dequeue operations (simulated with array operations)
-  if queue.length() > 0 {
-    let dequeued = queue[0]
-    assert_eq(dequeued, 1)
-    queue = queue.slice(1, queue.length())
-  }
+  // Test dequeue operations
+  let (dequeued_value, new_queue) = (queue[0], queue[1:queue.length()])
+  queue = new_queue
+  assert_eq(dequeued_value, 10)
+  assert_eq(queue.length(), 2)
   
-  if queue.length() > 0 {
-    let dequeued = queue[0]
-    assert_eq(dequeued, 2)
-    queue = queue.slice(1, queue.length())
-  }
+  // Test front operation
+  let front_value = queue[0]
+  assert_eq(front_value, 20)
   
-  assert_eq(queue.length(), 1)
-  assert_eq(queue[0], 3)
+  // Test empty queue
+  queue = queue[1:queue.length()]  // Dequeue 20
+  queue = queue[1:queue.length()]  // Dequeue 30
+  assert_eq(queue.length(), 0)
 }
 
-// Test 3: Tree-like Structure Operations
-test "tree-like structure operations" {
-  // Simulate a simple tree structure using nested tuples
-  type TreeNode = (Int, Array<TreeNode>)
-  
-  let leaf1 = (1, [])
-  let leaf2 = (2, [])
-  let leaf3 = (3, [])
-  let leaf4 = (4, [])
-  
-  let subtree = (5, [leaf1, leaf2])
-  let root = (6, [subtree, leaf3, leaf4])
-  
-  // Test tree traversal (sum all values)
-  let sum_tree_values = fn(node: TreeNode) -> Int {
-    let (value, children) = node
-    let mut sum = value
-    for child in children {
-      sum = sum + sum_tree_values(child)
-    }
-    sum
-  }
-  
-  assert_eq(sum_tree_values(root), 21)
-  
-  // Test tree depth calculation
-  let tree_depth = fn(node: TreeNode) -> Int {
-    let (_, children) = node
-    if children.length() == 0 {
-      1
-    } else {
-      let mut max_depth = 0
-      for child in children {
-        let child_depth = tree_depth(child)
-        if child_depth > max_depth {
-          max_depth = child_depth
-        }
-      }
-      max_depth + 1
-    }
-  }
-  
-  assert_eq(tree_depth(root), 3)
-}
-
-// Test 4: Graph-like Structure Operations
-test "graph-like structure operations" {
-  // Simulate a simple graph using adjacency lists
-  type Graph = Array<(Int, Array<Int>)>
-  
-  let graph = [
-    (1, [2, 3]),
-    (2, [1, 4]),
-    (3, [1, 4]),
-    (4, [2, 3, 5]),
-    (5, [4])
+// Test 4: Dictionary/Map Operations
+test "dictionary map operations" {
+  // Implement map using array of key-value pairs
+  let mut map = [
+    ("apple", 5),
+    ("banana", 3),
+    ("cherry", 8)
   ]
   
-  // Test graph traversal (BFS simulation)
-  let find_neighbors = fn(g: Graph, node: Int) -> Array<Int> {
-    for (n, neighbors) in g {
-      if n == node {
-        return neighbors
-      }
-    }
-    []
-  }
-  
-  let neighbors1 = find_neighbors(graph, 1)
-  assert_eq(neighbors1, [2, 3])
-  
-  let neighbors5 = find_neighbors(graph, 5)
-  assert_eq(neighbors5, [4])
-  
-  // Test path existence (simplified)
-  let path_exists = fn(g: Graph, from: Int, to: Int) -> Bool {
-    if from == to {
-      return true
-    }
-    
-    let visited = []
-    let queue = [from]
-    
-    while queue.length() > 0 {
-      let current = queue[0]
-      queue = queue.slice(1, queue.length())
-      
-      if visited.contains(current) {
-        continue
-      }
-      
-      visited = visited.push(current)
-      let neighbors = find_neighbors(g, current)
-      
-      for neighbor in neighbors {
-        if neighbor == to {
-          return true
-        }
-        if !visited.contains(neighbor) {
-          queue = queue.push(neighbor)
-        }
-      }
-    }
-    
-    false
-  }
-  
-  assert_true(path_exists(graph, 1, 5))
-  assert_true(path_exists(graph, 2, 3))
-  assert_false(path_exists(graph, 5, 1))  // In our simple test, this might fail depending on implementation
-}
-
-// Test 5: Hash Map-like Operations
-test "hash map-like operations" {
-  // Simulate a hash map using an array of key-value pairs
-  type HashMap = Array<(String, Int)>
-  
-  let empty_map: HashMap = []
-  
-  let insert = fn(map: HashMap, key: String, value: Int) -> HashMap {
-    // Remove existing key if present
-    let filtered = map.filter(fn(pair) { pair.0 != key })
-    // Add new key-value pair
-    filtered.push((key, value))
-  }
-  
-  let get = fn(map: HashMap, key: String) -> Option<Int> {
-    for (k, v) in map {
+  // Test lookup
+  let find_value = fn(key, map_data) {
+    let mut found = None
+    for (k, v) in map_data {
       if k == key {
-        return Some(v)
+        found = Some(v)
+        break
       }
     }
-    None
+    found
   }
   
-  let remove = fn(map: HashMap, key: String) -> HashMap {
-    map.filter(fn(pair) { pair.0 != key })
-  }
-  
-  let map1 = insert(empty_map, "one", 1)
-  let map2 = insert(map1, "two", 2)
-  let map3 = insert(map2, "three", 3)
-  
-  match get(map3, "one") {
-    Some(value) => assert_eq(value, 1)
+  match find_value("apple", map) {
+    Some(v) => assert_eq(v, 5)
     None => assert_true(false)
   }
   
-  match get(map3, "two") {
-    Some(value) => assert_eq(value, 2)
-    None => assert_true(false)
-  }
-  
-  match get(map3, "four") {
+  match find_value("orange", map) {
     Some(_) => assert_true(false)
     None => assert_true(true)
   }
   
-  let map4 = insert(map3, "one", 10)  // Update existing key
-  match get(map4, "one") {
-    Some(value) => assert_eq(value, 10)
+  // Test insert/update
+  let update_map = fn(key, value, map_data) {
+    let mut updated = false
+    let mut result = []
+    
+    for (k, v) in map_data {
+      if k == key {
+        result = result @ [(k, value)]
+        updated = true
+      } else {
+        result = result @ [(k, v)]
+      }
+    }
+    
+    if not updated {
+      result = result @ [(key, value)]
+    }
+    
+    result
+  }
+  
+  map = update_map("banana", 4, map)
+  match find_value("banana", map) {
+    Some(v) => assert_eq(v, 4)
     None => assert_true(false)
   }
   
-  let map5 = remove(map4, "two")
-  match get(map5, "two") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  match get(map5, "one") {
-    Some(value) => assert_eq(value, 10)
+  map = update_map("orange", 6, map)
+  match find_value("orange", map) {
+    Some(v) => assert_eq(v, 6)
     None => assert_true(false)
   }
   
-  match get(map5, "three") {
-    Some(value) => assert_eq(value, 3)
-    None => assert_true(false)
-  }
+  assert_eq(map.length(), 4)
 }
 
-// Test 6: Set Operations
-test "set operations" {
-  // Simulate a set using an array
-  type Set = Array<String>
+// Test 5: Set Operations
+test "set operations implementation" {
+  // Implement set using array
+  let set1 = [1, 2, 3, 4, 5]
+  let set2 = [4, 5, 6, 7, 8]
   
-  let empty_set: Set = []
-  
-  let add = fn(set: Set, item: String) -> Set {
-    if set.contains(item) {
-      set
-    } else {
-      set.push(item)
-    }
-  }
-  
-  let remove = fn(set: Set, item: String) -> Set {
-    set.filter(fn(x) { x != item })
-  }
-  
-  let union = fn(set1: Set, set2: Set) -> Set {
-    let mut result = set1
-    for item in set2 {
-      result = add(result, item)
+  // Test union
+  let union = fn(s1, s2) {
+    let mut result = s1
+    for elem in s2 {
+      let mut found = false
+      for e in s1 {
+        if e == elem {
+          found = true
+          break
+        }
+      }
+      if not found {
+        result = result @ [elem]
+      }
     }
     result
   }
   
-  let intersection = fn(set1: Set, set2: Set) -> Set {
-    set1.filter(fn(x) { set2.contains(x) })
-  }
-  
-  let difference = fn(set1: Set, set2: Set) -> Set {
-    set1.filter(fn(x) { !set2.contains(x) })
-  }
-  
-  let set1 = add(add(add(empty_set, "a"), "b"), "c")
-  let set2 = add(add(add(empty_set, "b"), "c"), "d")
-  
-  assert_eq(set1.length(), 3)
-  assert_true(set1.contains("a"))
-  assert_true(set1.contains("b"))
-  assert_true(set1.contains("c"))
-  assert_false(set1.contains("d"))
-  
-  let set3 = remove(set1, "b")
-  assert_eq(set3.length(), 2)
-  assert_true(set3.contains("a"))
-  assert_false(set3.contains("b"))
-  assert_true(set3.contains("c"))
-  
   let union_set = union(set1, set2)
-  assert_eq(union_set.length(), 4)
-  assert_true(union_set.contains("a"))
-  assert_true(union_set.contains("b"))
-  assert_true(union_set.contains("c"))
-  assert_true(union_set.contains("d"))
+  assert_eq(union_set.length(), 8)
+  
+  // Test intersection
+  let intersection = fn(s1, s2) {
+    let mut result = []
+    for elem in s1 {
+      for e in s2 {
+        if e == elem {
+          result = result @ [elem]
+          break
+        }
+      }
+    }
+    result
+  }
   
   let intersection_set = intersection(set1, set2)
   assert_eq(intersection_set.length(), 2)
-  assert_false(intersection_set.contains("a"))
-  assert_true(intersection_set.contains("b"))
-  assert_true(intersection_set.contains("c"))
-  assert_false(intersection_set.contains("d"))
   
-  let difference_set = difference(set1, set2)
-  assert_eq(difference_set.length(), 1)
-  assert_true(difference_set.contains("a"))
-  assert_false(difference_set.contains("b"))
-  assert_false(difference_set.contains("c"))
-  assert_false(difference_set.contains("d"))
-}
-
-// Test 7: Priority Queue Operations
-test "priority queue operations" {
-  // Simulate a priority queue using a sorted array
-  type PriorityQueue = Array<(Int, String)>  // (priority, value)
-  
-  let empty_pq: PriorityQueue = []
-  
-  let enqueue = fn(pq: PriorityQueue, priority: Int, value: String) -> PriorityQueue {
-    let new_item = (priority, value)
+  // Test difference
+  let difference = fn(s1, s2) {
     let mut result = []
-    let mut inserted = false
-    
-    for item in pq {
-      if !inserted && priority < item.0 {
-        result = result.push(new_item)
-        inserted = true
+    for elem in s1 {
+      let mut found = false
+      for e in s2 {
+        if e == elem {
+          found = true
+          break
+        }
       }
-      result = result.push(item)
+      if not found {
+        result = result @ [elem]
+      }
     }
-    
-    if !inserted {
-      result = result.push(new_item)
-    }
-    
     result
   }
   
-  let dequeue = fn(pq: PriorityQueue) -> (Option<(Int, String)>, PriorityQueue) {
-    if pq.length() == 0 {
-      (None, pq)
-    } else {
-      let item = pq[0]
-      let remaining = pq.slice(1, pq.length())
-      (Some(item), remaining)
-    }
-  }
+  let diff_set = difference(set1, set2)
+  assert_eq(diff_set.length(), 3)
   
-  let pq1 = enqueue(empty_pq, 3, "low")
-  let pq2 = enqueue(pq1, 1, "high")
-  let pq3 = enqueue(pq2, 2, "medium")
-  
-  assert_eq(pq3.length(), 3)
-  assert_eq(pq3[0], (1, "high"))
-  assert_eq(pq3[1], (2, "medium"))
-  assert_eq(pq3[2], (3, "low"))
-  
-  let (item1, pq4) = dequeue(pq3)
-  match item1 {
-    Some((priority, value)) => {
-      assert_eq(priority, 1)
-      assert_eq(value, "high")
-    }
-    None => assert_true(false)
-  }
-  
-  let (item2, pq5) = dequeue(pq4)
-  match item2 {
-    Some((priority, value)) => {
-      assert_eq(priority, 2)
-      assert_eq(value, "medium")
-    }
-    None => assert_true(false)
-  }
-  
-  let (item3, pq6) = dequeue(pq5)
-  match item3 {
-    Some((priority, value)) => {
-      assert_eq(priority, 3)
-      assert_eq(value, "low")
-    }
-    None => assert_true(false)
-  }
-  
-  assert_eq(pq6.length(), 0)
-}
-
-// Test 8: Linked List Operations
-test "linked list operations" {
-  // Simulate a linked list using a recursive structure
-  type LinkedList = Option<(Int, LinkedList)>
-  
-  let empty_list: LinkedList = None
-  
-  let cons = fn(head: Int, tail: LinkedList) -> LinkedList {
-    Some((head, tail))
-  }
-  
-  let length = fn(list: LinkedList) -> Int {
-    match list {
-      None => 0
-      Some((_, tail)) => 1 + length(tail)
-    }
-  }
-  
-  let sum = fn(list: LinkedList) -> Int {
-    match list {
-      None => 0
-      Some((head, tail)) => head + sum(tail)
-    }
-  }
-  
-  let reverse = fn(list: LinkedList) -> LinkedList {
-    let helper = fn(src: LinkedList, acc: LinkedList) -> LinkedList {
-      match src {
-        None => acc
-        Some((head, tail)) => helper(tail, cons(head, acc))
-      }
-    }
-    helper(list, None)
-  }
-  
-  let list1 = cons(1, empty_list)
-  let list2 = cons(2, list1)
-  let list3 = cons(3, list2)
-  
-  assert_eq(length(list3), 3)
-  assert_eq(sum(list3), 6)
-  
-  let reversed = reverse(list3)
-  assert_eq(length(reversed), 3)
-  assert_eq(sum(reversed), 6)
-  
-  // Check if reversed correctly
-  match reversed {
-    None => assert_true(false)
-    Some((head1, tail1)) => {
-      assert_eq(head1, 1)
-      match tail1 {
-        None => assert_true(false)
-        Some((head2, tail2)) => {
-          assert_eq(head2, 2)
-          match tail2 {
-            None => assert_true(false)
-            Some((head3, tail3)) => {
-              assert_eq(head3, 3)
-              assert_eq(tail3, None)
-            }
-          }
+  // Test subset
+  let is_subset = fn(s1, s2) {
+    for elem in s1 {
+      let mut found = false
+      for e in s2 {
+        if e == elem {
+          found = true
+          break
         }
       }
+      if not found {
+        return false
+      }
+    }
+    true
+  }
+  
+  assert_true(is_subset([1, 2], set1))
+  assert_false(is_subset([1, 6], set1))
+}
+
+// Test 6: Tree Operations
+test "tree operations implementation" {
+  // Implement binary tree node
+  type TreeNode {
+    value : Int
+    left : Option[TreeNode]
+    right : Option[TreeNode]
+  }
+  
+  // Create a simple tree
+  let leaf1 = { value: 1, left: None, right: None }
+  let leaf2 = { value: 3, left: None, right: None }
+  let leaf3 = { value: 5, left: None, right: None }
+  let leaf4 = { value: 7, left: None, right: None }
+  
+  let node2 = { value: 2, left: Some(leaf1), right: Some(leaf2) }
+  let node3 = { value: 6, left: Some(leaf3), right: Some(leaf4) }
+  let root = { value: 4, left: Some(node2), right: Some(node3) }
+  
+  // Test tree traversal (in-order)
+  let inorder_traversal = fn(node, acc) {
+    match node {
+      Some(n) => {
+        let left_result = inorder_traversal(n.left, acc)
+        let with_current = left_result @ [n.value]
+        let right_result = inorder_traversal(n.right, with_current)
+        right_result
+      }
+      None => acc
     }
   }
+  
+  let result = inorder_traversal(Some(root), [])
+  assert_eq(result, [1, 2, 3, 4, 5, 6, 7])
+  
+  // Test tree search
+  let tree_search = fn(node, target) {
+    match node {
+      Some(n) => {
+        if n.value == target {
+          true
+        } else if target < n.value {
+          tree_search(n.left, target)
+        } else {
+          tree_search(n.right, target)
+        }
+      }
+      None => false
+    }
+  }
+  
+  assert_true(tree_search(Some(root), 5))
+  assert_false(tree_search(Some(root), 8))
+}
+
+// Test 7: Linked List Operations
+test "linked list operations implementation" {
+  // Implement linked list node
+  type ListNode {
+    value : Int
+    next : Option[ListNode]
+  }
+  
+  // Create a linked list: 1 -> 2 -> 3 -> 4 -> 5
+  let node5 = { value: 5, next: None }
+  let node4 = { value: 4, next: Some(node5) }
+  let node3 = { value: 3, next: Some(node4) }
+  let node2 = { value: 2, next: Some(node3) }
+  let node1 = { value: 1, next: Some(node2) }
+  
+  // Test linked list traversal
+  let list_to_array = fn(node) {
+    let mut result = []
+    let mut current = node
+    while true {
+      match current {
+        Some(n) => {
+          result = result @ [n.value]
+          current = n.next
+        }
+        None => break
+      }
+    }
+    result
+  }
+  
+  let array_result = list_to_array(Some(node1))
+  assert_eq(array_result, [1, 2, 3, 4, 5])
+  
+  // Test linked list search
+  let list_search = fn(node, target) {
+    let mut current = node
+    let mut found = false
+    while true {
+      match current {
+        Some(n) => {
+          if n.value == target {
+            found = true
+            break
+          }
+          current = n.next
+        }
+        None => break
+      }
+    }
+    found
+  }
+  
+  assert_true(list_search(Some(node1), 3))
+  assert_false(list_search(Some(node1), 6))
+  
+  // Test linked list length
+  let list_length = fn(node) {
+    let mut count = 0
+    let mut current = node
+    while true {
+      match current {
+        Some(_) => {
+          count = count + 1
+          match current {
+            Some(n) => current = n.next
+            None => break
+          }
+        }
+        None => break
+      }
+    }
+    count
+  }
+  
+  assert_eq(list_length(Some(node1)), 5)
+  assert_eq(list_length(None), 0)
+}
+
+// Test 8: Graph Operations
+test "graph operations implementation" {
+  // Implement graph using adjacency list
+  type Graph {
+    vertices : Array[String]
+    edges : Array[(String, String)]
+  }
+  
+  let graph = {
+    vertices: ["A", "B", "C", "D", "E"],
+    edges: [
+      ("A", "B"), ("A", "C"),
+      ("B", "D"), ("C", "D"),
+      ("D", "E")
+    ]
+  }
+  
+  // Test get neighbors
+  let get_neighbors = fn(vertex, g) {
+    let mut neighbors = []
+    for (from, to) in g.edges {
+      if from == vertex {
+        neighbors = neighbors @ [to]
+      }
+    }
+    neighbors
+  }
+  
+  let a_neighbors = get_neighbors("A", graph)
+  assert_eq(a_neighbors.length(), 2)
+  assert_true(a_neighbors.contains("B"))
+  assert_true(a_neighbors.contains("C"))
+  
+  let d_neighbors = get_neighbors("D", graph)
+  assert_eq(d_neighbors.length(), 1)
+  assert_eq(d_neighbors[0], "E")
+  
+  // Test has edge
+  let has_edge = fn(from, to, g) {
+    let mut found = false
+    for (f, t) in g.edges {
+      if f == from and t == to {
+        found = true
+        break
+      }
+    }
+    found
+  }
+  
+  assert_true(has_edge("A", "B", graph))
+  assert_true(has_edge("D", "E", graph))
+  assert_false(has_edge("B", "A", graph))
+  assert_false(has_edge("E", "A", graph))
+  
+  // Test vertex degree
+  let vertex_degree = fn(vertex, g) {
+    let mut degree = 0
+    for (from, _) in g.edges {
+      if from == vertex {
+        degree = degree + 1
+      }
+    }
+    degree
+  }
+  
+  assert_eq(vertex_degree("A", graph), 2)
+  assert_eq(vertex_degree("B", graph), 1)
+  assert_eq(vertex_degree("E", graph), 0)
 }
