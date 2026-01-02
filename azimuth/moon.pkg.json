@@ -37,5 +37,6 @@
         "azimuth_additional_comprehensive_tests.mbt",
         "../azimuth_focused_edge_case_tests.mbt",
         "../azimuth_telemetry_integration_tests.mbt",
-        "../azimuth_performance_stress_tests.mbt"
+        "../azimuth_performance_stress_tests.mbt",
+        "../azimuth_specialized_comprehensive_tests.mbt"
             ]  }}
