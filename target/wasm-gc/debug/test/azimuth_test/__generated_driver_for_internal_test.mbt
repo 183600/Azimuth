@@ -152,6 +152,18 @@ let moonbit_test_driver_internal_no_args_tests : Moonbit_Test_Driver_Internal_No
     7: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_7, ["attribute operations"]),
     8: (__test_617a696d7574685f666f63757365645f74656c656d657472795f74657374732e6d6274_8, ["log record severity levels"]),
   },
+  "azimuth_focused_moonbit_tests.mbt": {
+    0: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_0, ["basic span creation with attributes"]),
+    1: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_1, ["metric counter with various value types"]),
+    2: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_2, ["logger with severity levels"]),
+    3: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_3, ["resource with environment attributes"]),
+    4: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_4, ["histogram metric with buckets"]),
+    5: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_5, ["baggage propagation"]),
+    6: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_6, ["span events"]),
+    7: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_7, ["gauge metric operations"]),
+    8: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_8, ["context propagation"]),
+    9: (__test_617a696d7574685f666f63757365645f6d6f6f6e6269745f74657374732e6d6274_9, ["attribute type conversion"]),
+  },
   "azimuth_comprehensive_enhanced_tests.mbt": {
     0: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_0, ["attributes operations with different value types"]),
     1: (__test_617a696d7574685f636f6d70726568656e736976655f656e68616e6365645f74657374732e6d6274_1, ["span lifecycle management"]),
