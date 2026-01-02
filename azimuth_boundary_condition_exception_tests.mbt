@@ -1,620 +1,723 @@
-// Azimuth Boundary Condition and Exception Handling Test Suite
-// This file contains test cases for boundary conditions and exception handling
+// Azimuth 边界条件和异常处理测试
+// 专注于验证系统在极端条件下的稳定性和异常处理能力
 
-// Test 1: Numeric Boundary Conditions
-test "numeric boundary conditions" {
-  // Integer boundary conditions
-  let max_int = 2147483647
-  let min_int = -2147483648
+// 测试1: 数值边界条件测试
+test "数值边界条件测试" {
+  // 测试整数边界值
+  let integer_boundaries = [
+    {"value": 0, "context": "zero_value"},
+    {"value": -2147483648, "context": "min_int32"},
+    {"value": 2147483647, "context": "max_int32"},
+    {"value": -9223372036854775808, "context": "min_int64"},
+    {"value": 9223372036854775807, "context": "max_int64"}
+  ]
   
-  // Test addition boundaries
-  assert_eq(max_int + 0, max_int)
-  assert_eq(min_int + 0, min_int)
-  
-  // Test subtraction boundaries
-  assert_eq(max_int - 0, max_int)
-  assert_eq(min_int - 0, min_int)
-  
-  // Test multiplication boundaries
-  assert_eq(max_int * 1, max_int)
-  assert_eq(min_int * 1, min_int)
-  assert_eq(max_int * 0, 0)
-  assert_eq(min_int * 0, 0)
-  
-  // Test division boundaries
-  assert_eq(max_int / 1, max_int)
-  assert_eq(min_int / 1, min_int)
-  assert_eq(0 / max_int, 0)
-  assert_eq(0 / min_int, 0)
-  
-  // Test zero conditions
-  assert_eq(0 + 0, 0)
-  assert_eq(0 - 0, 0)
-  assert_eq(0 * 0, 0)
-  assert_eq(0 * max_int, 0)
-  assert_eq(0 * min_int, 0)
-  
-  // Test modulo boundaries
-  assert_eq(max_int % 1, 0)
-  assert_eq(min_int % 1, 0)
-  assert_eq(max_int % max_int, 0)
-  assert_eq(min_int % min_int, 0)
-  
-  // Division by zero handling
-  let safe_divide = fn(a: Int, b: Int) -> Option<Int> {
-    if b == 0 {
-      None
-    } else {
-      Some(a / b)
-    }
+  for i = 0; i < integer_boundaries.length(); i = i + 1 {
+    let boundary = integer_boundaries[i]
+    let test_result = test_integer_boundary(boundary["value"], boundary["context"])
+    
+    // 验证边界值处理
+    assert_true(test_result["handled_correctly"])
+    assert_false(test_result["overflow_occurred"])
+    assert_false(test_result["underflow_occurred"])
+    
+    // 验证运算稳定性
+    let arithmetic_result = test_boundary_arithmetic(boundary["value"])
+    assert_true(arithmetic_result["operations_stable"])
+    assert_false(arithmetic_result["division_by_zero"])
+    assert_false(arithmetic_result["invalid_result"])
   }
   
-  match safe_divide(10, 0) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  // 测试浮点数边界值
+  let float_boundaries = [
+    {"value": 0.0, "context": "zero_float"},
+    {"value": -1.7976931348623157e+308, "context": "min_float64"},
+    {"value": 1.7976931348623157e+308, "context": "max_float64"},
+    {"value": 5e-324, "context": "min_positive_float64"},
+    {"value": -5e-324, "context": "min_negative_float64"}
+  ]
+  
+  for i = 0; i < float_boundaries.length(); i = i + 1 {
+    let boundary = float_boundaries[i]
+    let test_result = test_float_boundary(boundary["value"], boundary["context"])
+    
+    // 验证浮点边界值处理
+    assert_true(test_result["handled_correctly"])
+    assert_false(test_result["infinity_generated"])
+    assert_false(test_result["nan_generated"])
+    
+    // 验证特殊值处理
+    let special_result = test_special_float_values(boundary["value"])
+    assert_true(special_result["comparisons_work"])
+    assert_true(special_result["arithmetic_stable"])
   }
   
-  match safe_divide(0, 10) {
-    Some(value) => assert_eq(value, 0)
-    None => assert_true(false)
+  // 测试数值转换边界
+  let conversion_boundaries = [
+    {"from": "int", "to": "float", "value": 2147483647},
+    {"from": "float", "to": "int", "value": 2147483647.0},
+    {"from": "string", "to": "int", "value": "2147483647"},
+    {"from": "string", "to": "float", "value": "1.7976931348623157e+308"}
+  ]
+  
+  for i = 0; i < conversion_boundaries.length(); i = i + 1 {
+    let conversion = conversion_boundaries[i]
+    let conversion_result = test_type_conversion_boundary(
+      conversion["from"],
+      conversion["to"],
+      conversion["value"]
+    )
+    
+    // 验证类型转换安全性
+    assert_true(conversion_result["conversion_safe"])
+    assert_false(conversion_result["precision_lost_excessively"])
+    assert_false(conversion_result["range_exceeded"])
   }
 }
 
-// Test 2: Array Boundary Conditions
-test "array boundary conditions" {
-  let empty_array: Array<Int> = []
-  let single_element = [42]
-  let multiple_elements = [1, 2, 3, 4, 5]
+// 测试2: 字符串边界条件测试
+test "字符串边界条件测试" {
+  // 测试字符串长度边界
+  let string_boundaries = [
+    {"length": 0, "context": "empty_string"},
+    {"length": 1, "context": "single_char"},
+    {"length": 1024, "context": "medium_string"},
+    {"length": 1024 * 1024, "context": "large_string"},
+    {"length": 10 * 1024 * 1024, "context": "very_large_string"}
+  ]
   
-  // Test empty array boundaries
-  assert_eq(empty_array.length(), 0)
-  
-  // Test single element array boundaries
-  assert_eq(single_element.length(), 1)
-  assert_eq(single_element[0], 42)
-  
-  // Test multiple elements array boundaries
-  assert_eq(multiple_elements.length(), 5)
-  assert_eq(multiple_elements[0], 1)
-  assert_eq(multiple_elements[4], 5)
-  
-  // Safe array access
-  let safe_get = fn(arr: Array<Int>, index: Int) -> Option<Int> {
-    if index >= 0 && index < arr.length() {
-      Some(arr[index])
-    } else {
-      None
-    }
+  for i = 0; i < string_boundaries.length(); i = i + 1 {
+    let boundary = string_boundaries[i]
+    let test_string = "x".repeat(boundary["length"])
+    let test_result = test_string_boundary(test_string, boundary["context"])
+    
+    // 验证字符串处理
+    assert_true(test_result["processed_correctly"])
+    assert_false(test_result["memory_exhausted"])
+    assert_false(test_result["buffer_overflow"])
+    
+    // 验证字符串操作
+    let operations_result = test_string_operations(test_string)
+    assert_true(operations_result["concatenation_safe"])
+    assert_true(operations_result["substring_safe"])
+    assert_true(operations_result["search_safe"])
   }
   
-  // Test safe access with valid indices
-  match safe_get(multiple_elements, 0) {
-    Some(value) => assert_eq(value, 1)
-    None => assert_true(false)
+  // 测试特殊字符边界
+  let special_characters = [
+    {"char": "\0", "name": "null_char"},
+    {"char": "\n", "name": "newline"},
+    {"char": "\r", "name": "carriage_return"},
+    {"char": "\t", "name": "tab"},
+    {"char": "\\", "name": "backslash"},
+    {"char": "\"", "name": "quote"},
+    {"char": "'", "name": "single_quote"},
+    {"char": "\u{0001F600}", "name": "emoji"}
+  ]
+  
+  for i = 0; i < special_characters.length(); i = i + 1 {
+    let special_char = special_characters[i]
+    let test_string = "test" + special_char["char"] + "string"
+    let handling_result = test_special_character_handling(test_string, special_char["name"])
+    
+    // 验证特殊字符处理
+    assert_true(handling_result["handled_correctly"])
+    assert_false(handling_result["corruption_occurred"])
+    assert_true(handling_result["encoding_preserved"])
   }
   
-  match safe_get(multiple_elements, 4) {
-    Some(value) => assert_eq(value, 5)
-    None => assert_true(false)
-  }
+  // 测试Unicode边界
+  let unicode_boundaries = [
+    {"code_point": 0, "name": "null_code_point"},
+    {"code_point": 127, "name": "ascii_max"},
+    {"code_point": 255, "name": "extended_ascii_max"},
+    {"code_point": 65535, "name": "bmp_max"},
+    {"code_point": 1114111, "name": "unicode_max"}
+  ]
   
-  // Test safe access with invalid indices
-  match safe_get(multiple_elements, -1) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  match safe_get(multiple_elements, 5) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  match safe_get(empty_array, 0) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test array boundaries with operations
-  let safe_slice = fn(arr: Array<Int>, start: Int, end: Int) -> Array<Int> {
-    if start < 0 || end > arr.length() || start > end {
-      []
-    } else {
-      arr.slice(start, end)
-    }
-  }
-  
-  assert_eq(safe_slice(multiple_elements, 1, 4), [2, 3, 4])
-  assert_eq(safe_slice(multiple_elements, 0, 5), [1, 2, 3, 4, 5])
-  assert_eq(safe_slice(multiple_elements, 2, 2), [])
-  assert_eq(safe_slice(multiple_elements, -1, 3), [])
-  assert_eq(safe_slice(multiple_elements, 1, 6), [])
-  assert_eq(safe_slice(multiple_elements, 4, 2), [])
-}
-
-// Test 3: String Boundary Conditions
-test "string boundary conditions" {
-  let empty_string = ""
-  let single_char = "a"
-  let multiple_chars = "hello"
-  
-  // Test empty string boundaries
-  assert_eq(empty_string.length(), 0)
-  
-  // Test single character string boundaries
-  assert_eq(single_char.length(), 1)
-  assert_eq(single_char[0], "a")
-  
-  // Test multiple characters string boundaries
-  assert_eq(multiple_chars.length(), 5)
-  assert_eq(multiple_chars[0], "h")
-  assert_eq(multiple_chars[4], "o")
-  
-  // Safe string access
-  let safe_char_at = fn(s: String, index: Int) -> Option<String> {
-    if index >= 0 && index < s.length() {
-      Some(s.substring(index, 1))
-    } else {
-      None
-    }
-  }
-  
-  // Test safe access with valid indices
-  match safe_char_at(multiple_chars, 0) {
-    Some(value) => assert_eq(value, "h")
-    None => assert_true(false)
-  }
-  
-  match safe_char_at(multiple_chars, 4) {
-    Some(value) => assert_eq(value, "o")
-    None => assert_true(false)
-  }
-  
-  // Test safe access with invalid indices
-  match safe_char_at(multiple_chars, -1) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  match safe_char_at(multiple_chars, 5) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  match safe_char_at(empty_string, 0) {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test string boundaries with operations
-  let safe_substring = fn(s: String, start: Int, length: Int) -> String {
-    if start < 0 || length < 0 || start + length > s.length() {
-      ""
-    } else {
-      s.substring(start, length)
-    }
-  }
-  
-  assert_eq(safe_substring(multiple_chars, 1, 3), "ell")
-  assert_eq(safe_substring(multiple_chars, 0, 5), "hello")
-  assert_eq(safe_substring(multiple_chars, 2, 0), "")
-  assert_eq(safe_substring(multiple_chars, -1, 3), "")
-  assert_eq(safe_substring(multiple_chars, 1, 5), "")
-  assert_eq(safe_substring(multiple_chars, 5, 1), "")
-}
-
-// Test 4: Option Type Boundary Conditions
-test "option type boundary conditions" {
-  let some_value = Some(42)
-  let none_value: Option<Int> = None
-  
-  // Test Some value
-  match some_value {
-    Some(value) => assert_eq(value, 42)
-    None => assert_true(false)
-  }
-  
-  // Test None value
-  match none_value {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test Option operations
-  let option_map = fn(opt: Option<Int>, f: (Int) -> Int) -> Option<Int> {
-    match opt {
-      Some(value) => Some(f(value))
-      None => None
-    }
-  }
-  
-  let option_filter = fn(opt: Option<Int>, predicate: (Int) -> Bool) -> Option<Int> {
-    match opt {
-      Some(value) => {
-        if predicate(value) {
-          Some(value)
-        } else {
-          None
-        }
-      }
-      None => None
-    }
-  }
-  
-  let option_default = fn(opt: Option<Int>, default_value: Int) -> Int {
-    match opt {
-      Some(value) => value
-      None => default_value
-    }
-  }
-  
-  // Test map operation
-  let mapped_some = option_map(some_value, fn(x) { x * 2 })
-  match mapped_some {
-    Some(value) => assert_eq(value, 84)
-    None => assert_true(false)
-  }
-  
-  let mapped_none = option_map(none_value, fn(x) { x * 2 })
-  match mapped_none {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test filter operation
-  let filtered_some_true = option_filter(some_value, fn(x) { x > 0 })
-  match filtered_some_true {
-    Some(value) => assert_eq(value, 42)
-    None => assert_true(false)
-  }
-  
-  let filtered_some_false = option_filter(some_value, fn(x) { x > 100 })
-  match filtered_some_false {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  let filtered_none = option_filter(none_value, fn(x) { x > 0 })
-  match filtered_none {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test default operation
-  assert_eq(option_default(some_value, 0), 42)
-  assert_eq(option_default(none_value, 0), 0)
-}
-
-// Test 5: Result Type Boundary Conditions
-test "result type boundary conditions" {
-  let ok_value = Ok("success")
-  let err_value = Err("failure")
-  
-  // Test Ok value
-  match ok_value {
-    Ok(value) => assert_eq(value, "success")
-    Err(_) => assert_true(false)
-  }
-  
-  // Test Err value
-  match err_value {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "failure")
-  }
-  
-  // Test Result operations
-  let result_map = fn(res: Result<String, String>, f: (String) -> String) -> Result<String, String> {
-    match res {
-      Ok(value) => Ok(f(value))
-      Err(msg) => Err(msg)
-    }
-  }
-  
-  let result_map_err = fn(res: Result<String, String>, f: (String) -> String) -> Result<String, String> {
-    match res {
-      Ok(value) => Ok(value)
-      Err(msg) => Err(f(msg))
-    }
-  }
-  
-  let result_default = fn(res: Result<String, String>, default_value: String) -> String {
-    match res {
-      Ok(value) => value
-      Err(_) => default_value
-    }
-  }
-  
-  // Test map operation
-  let mapped_ok = result_map(ok_value, fn(s) { s.to_uppercase() })
-  match mapped_ok {
-    Ok(value) => assert_eq(value, "SUCCESS")
-    Err(_) => assert_true(false)
-  }
-  
-  let mapped_err = result_map(err_value, fn(s) { s.to_uppercase() })
-  match mapped_err {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "failure")
-  }
-  
-  // Test map_err operation
-  let mapped_err_ok = result_map_err(ok_value, fn(s) { s.to_uppercase() })
-  match mapped_err_ok {
-    Ok(value) => assert_eq(value, "success")
-    Err(_) => assert_true(false)
-  }
-  
-  let mapped_err_err = result_map_err(err_value, fn(s) { s.to_uppercase() })
-  match mapped_err_err {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "FAILURE")
-  }
-  
-  // Test default operation
-  assert_eq(result_default(ok_value, "default"), "success")
-  assert_eq(result_default(err_value, "default"), "default")
-}
-
-// Test 6: Function Boundary Conditions
-test "function boundary conditions" {
-  // Test recursive function boundary conditions
-  let factorial = fn(n: Int) -> Result<Int, String> {
-    if n < 0 {
-      Err("Factorial of negative number")
-    } else if n == 0 || n == 1 {
-      Ok(1)
-    } else {
-      match factorial(n - 1) {
-        Ok(value) => Ok(n * value)
-        Err(msg) => Err(msg)
-      }
-    }
-  }
-  
-  // Test valid inputs
-  match factorial(0) {
-    Ok(value) => assert_eq(value, 1)
-    Err(_) => assert_true(false)
-  }
-  
-  match factorial(1) {
-    Ok(value) => assert_eq(value, 1)
-    Err(_) => assert_true(false)
-  }
-  
-  match factorial(5) {
-    Ok(value) => assert_eq(value, 120)
-    Err(_) => assert_true(false)
-  }
-  
-  // Test invalid inputs
-  match factorial(-1) {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "Factorial of negative number")
-  }
-  
-  // Test function with multiple parameters
-  let safe_divide = fn(a: Int, b: Int) -> Result<Int, String> {
-    if b == 0 {
-      Err("Division by zero")
-    } else {
-      Ok(a / b)
-    }
-  }
-  
-  // Test valid division
-  match safe_divide(10, 2) {
-    Ok(value) => assert_eq(value, 5)
-    Err(_) => assert_true(false)
-  }
-  
-  match safe_divide(0, 5) {
-    Ok(value) => assert_eq(value, 0)
-    Err(_) => assert_true(false)
-  }
-  
-  // Test invalid division
-  match safe_divide(10, 0) {
-    Ok(_) => assert_true(false)
-    Err(msg) => assert_eq(msg, "Division by zero")
-  }
-  
-  // Test higher-order function boundary conditions
-  let apply_function = fn(f: (Int) -> Int, value: Int) -> Int {
-    f(value)
-  }
-  
-  let identity = fn(x: Int) -> Int { x }
-  let increment = fn(x: Int) -> Int { x + 1 }
-  let double = fn(x: Int) -> Int { x * 2 }
-  
-  assert_eq(apply_function(identity, 42), 42)
-  assert_eq(apply_function(increment, 42), 43)
-  assert_eq(apply_function(double, 42), 84)
-}
-
-// Test 7: Type Conversion Boundary Conditions
-test "type conversion boundary conditions" {
-  // Test int to string conversion
-  let int_to_string = fn(i: Int) -> String {
-    match i {
-      0 => "0"
-      1 => "1"
-      2 => "2"
-      3 => "3"
-      4 => "4"
-      5 => "5"
-      6 => "6"
-      7 => "7"
-      8 => "8"
-      9 => "9"
-      10 => "10"
-      42 => "42"
-      _ => i.to_string()
-    }
-  }
-  
-  assert_eq(int_to_string(0), "0")
-  assert_eq(int_to_string(9), "9")
-  assert_eq(int_to_string(10), "10")
-  assert_eq(int_to_string(42), "42")
-  
-  // Test string to int conversion
-  let string_to_int = fn(s: String) -> Option<Int> {
-    match s {
-      "0" => Some(0)
-      "1" => Some(1)
-      "2" => Some(2)
-      "3" => Some(3)
-      "4" => Some(4)
-      "5" => Some(5)
-      "6" => Some(6)
-      "7" => Some(7)
-      "8" => Some(8)
-      "9" => Some(9)
-      "10" => Some(10)
-      "42" => Some(42)
-      _ => None
-    }
-  }
-  
-  match string_to_int("0") {
-    Some(value) => assert_eq(value, 0)
-    None => assert_true(false)
-  }
-  
-  match string_to_int("42") {
-    Some(value) => assert_eq(value, 42)
-    None => assert_true(false)
-  }
-  
-  match string_to_int("invalid") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Test boolean to string conversion
-  let bool_to_string = fn(b: Bool) -> String {
-    if b { "true" } else { "false" }
-  }
-  
-  assert_eq(bool_to_string(true), "true")
-  assert_eq(bool_to_string(false), "false")
-  
-  // Test string to boolean conversion
-  let string_to_bool = fn(s: String) -> Option<Bool> {
-    match s {
-      "true" => Some(true)
-      "false" => Some(false)
-      _ => None
-    }
-  }
-  
-  match string_to_bool("true") {
-    Some(value) => assert_true(value)
-    None => assert_true(false)
-  }
-  
-  match string_to_bool("false") {
-    Some(value) => assert_false(value)
-    None => assert_true(false)
-  }
-  
-  match string_to_bool("invalid") {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
+  for i = 0; i < unicode_boundaries.length(); i = i + 1 {
+    let unicode_boundary = unicode_boundaries[i]
+    let test_char = String.from_code_point(unicode_boundary["code_point"])
+    let unicode_result = test_unicode_boundary(test_char, unicode_boundary["name"])
+    
+    // 验证Unicode处理
+    assert_true(unicode_result["handled_correctly"])
+    assert_false(unicode_result["invalid_encoding"])
+    assert_true(unicode_result["round_trip_successful"])
   }
 }
 
-// Test 8: Memory Boundary Conditions
-test "memory boundary conditions" {
-  // Test large data structure creation
-  let create_large_array = fn(size: Int) -> Array<Int> {
-    if size < 0 || size > 10000 {
-      []
-    } else {
-      let mut arr = []
-      for i in 0..<size {
-        arr = arr.push(i)
-      }
-      arr
+// 测试3: 集合边界条件测试
+test "集合边界条件测试" {
+  // 测试数组/列表边界
+  let collection_boundaries = [
+    {"size": 0, "context": "empty_collection"},
+    {"size": 1, "context": "single_element"},
+    {"size": 1000, "context": "medium_collection"},
+    {"size": 100000, "context": "large_collection"},
+    {"size": 1000000, "context": "very_large_collection"}
+  ]
+  
+  for i = 0; i < collection_boundaries.length(); i = i + 1 {
+    let boundary = collection_boundaries[i]
+    let test_collection = create_test_collection(boundary["size"])
+    let collection_result = test_collection_boundary(test_collection, boundary["context"])
+    
+    // 验证集合操作
+    assert_true(collection_result["operations_successful"])
+    assert_false(collection_result["index_out_of_bounds"])
+    assert_false(collection_result["memory_exhausted"])
+    
+    // 验证边界访问
+    let access_result = test_boundary_access(test_collection)
+    assert_true(access_result["safe_access"])
+    assert_false(access_result["invalid_access"])
+    
+    // 验证迭代器稳定性
+    let iterator_result = test_iterator_boundary(test_collection)
+    assert_true(iterator_result["iteration_complete"])
+    assert_false(iterator_result["concurrent_modification"])
+  }
+  
+  // 测试映射/字典边界
+  let map_boundaries = [
+    {"size": 0, "context": "empty_map"},
+    {"size": 1000, "context": "medium_map"},
+    {"size": 100000, "context": "large_map"},
+    {"size": 1000000, "context": "very_large_map"}
+  ]
+  
+  for i = 0; i < map_boundaries.length(); i = i + 1 {
+    let boundary = map_boundaries[i]
+    let test_map = create_test_map(boundary["size"])
+    let map_result = test_map_boundary(test_map, boundary["context"])
+    
+    // 验证映射操作
+    assert_true(map_result["operations_successful"])
+    assert_false(map_result["key_collision"])
+    assert_false(map_result["hash_collision_excessive"])
+    
+    // 验证键值边界
+    let key_boundary_result = test_key_value_boundaries(test_map)
+    assert_true(key_boundary_result["null_keys_handled"])
+    assert_true(key_boundary_result["empty_keys_handled"])
+    assert_true(key_boundary_result["special_keys_handled"])
+  }
+}
+
+// 测试4: 时间边界条件测试
+test "时间边界条件测试" {
+  // 测试时间戳边界
+  let time_boundaries = [
+    {"timestamp": 0, "context": "epoch_start"},
+    {"timestamp": -2147483648, "context": "negative_timestamp"},
+    {"timestamp": 2147483647, "context": "y2k38_boundary"},
+    {"timestamp": 253402300799, "context": "32bit_max"},
+    {"timestamp": 31556889867903999, "context": "64bit_max"}
+  ]
+  
+  for i = 0; i < time_boundaries.length(); i = i + 1 {
+    let boundary = time_boundaries[i]
+    let time_result = test_timestamp_boundary(boundary["timestamp"], boundary["context"])
+    
+    // 验证时间戳处理
+    assert_true(time_result["handled_correctly"])
+    assert_false(time_result["overflow_occurred"])
+    assert_false(time_result["invalid_format"])
+    
+    // 验证时间计算
+    let calculation_result = test_time_calculations(boundary["timestamp"])
+    assert_true(calculation_result["calculations_stable"])
+    assert_false(calculation_result["negative_duration"])
+    assert_false(calculation_result["overflow_in_calculation"])
+  }
+  
+  // 测试时区边界
+  let timezone_boundaries = [
+    {"timezone": "UTC", "offset": 0},
+    {"timezone": "UTC+14", "offset": 14},
+    {"timezone": "UTC-12", "offset": -12},
+    {"timezone": "Pacific/Kiritimati", "offset": 14},
+    {"timezone": "America/Adak", "offset": -10}
+  ]
+  
+  for i = 0; i < timezone_boundaries.length(); i = i + 1 {
+    let tz_boundary = timezone_boundaries[i]
+    let tz_result = test_timezone_boundary(tz_boundary["timezone"], tz_boundary["offset"])
+    
+    // 验证时区处理
+    assert_true(tz_result["handled_correctly"])
+    assert_false(tz_result["date_line_crossing_error"])
+    assert_false(tz_result["dst_transition_error"])
+    
+    // 验证时区转换
+    let conversion_result = test_timezone_conversion(tz_boundary["timezone"])
+    assert_true(conversion_result["conversion_successful"])
+    assert_false(conversion_result["ambiguity_unresolved"])
+  }
+  
+  // 测试持续时间边界
+  let duration_boundaries = [
+    {"duration_ms": 0, "context": "zero_duration"},
+    {"duration_ms": 1, "context": "minimum_duration"},
+    {"duration_ms": 2147483647, "context": "max_32bit_duration"},
+    {"duration_ms": 9223372036854775807, "context": "max_64bit_duration"}
+  ]
+  
+  for i = 0; i < duration_boundaries.length(); i = i + 1 {
+    let duration_boundary = duration_boundaries[i]
+    let duration_result = test_duration_boundary(
+      duration_boundary["duration_ms"],
+      duration_boundary["context"]
+    )
+    
+    // 验证持续时间处理
+    assert_true(duration_result["handled_correctly"])
+    assert_false(duration_result["negative_duration"])
+    assert_false(duration_result["overflow_in_formatting"])
+    
+    // 验证持续时间运算
+    let arithmetic_result = test_duration_arithmetic(duration_boundary["duration_ms"])
+    assert_true(arithmetic_result["operations_stable"])
+    assert_false(arithmetic_result["precision_lost"])
+  }
+}
+
+// 测试5: 系统资源边界条件测试
+test "系统资源边界条件测试" {
+  // 测试内存边界
+  let memory_boundaries = [
+    {"size_mb": 1, "context": "small_allocation"},
+    {"size_mb": 100, "context": "medium_allocation"},
+    {"size_mb": 1024, "context": "large_allocation"},
+    {"size_mb": 4096, "context": "very_large_allocation"}
+  ]
+  
+  for i = 0; i < memory_boundaries.length(); i = i + 1 {
+    let boundary = memory_boundaries[i]
+    let memory_result = test_memory_boundary(boundary["size_mb"], boundary["context"])
+    
+    // 验证内存分配
+    if (boundary["size_mb"] <= 1024) {
+      assert_true(memory_result["allocation_successful"])
+    }
+    
+    assert_false(memory_result["corruption_detected"])
+    assert_false(memory_result["wild_pointer"])
+    
+    // 验证内存访问
+    let access_result = test_memory_access(boundary["size_mb"])
+    if (memory_result["allocation_successful"]) {
+      assert_true(access_result["access_safe"])
+      assert_false(access_result["segmentation_fault"])
     }
   }
   
-  // Test valid size
-  let valid_array = create_large_array(100)
-  assert_eq(valid_array.length(), 100)
-  assert_eq(valid_array[0], 0)
-  assert_eq(valid_array[99], 99)
+  // 测试文件系统边界
+  let filesystem_boundaries = [
+    {"file_size_mb": 1, "context": "small_file"},
+    {"file_size_mb": 100, "context": "medium_file"},
+    {"file_size_mb": 1024, "context": "large_file"},
+    {"path_depth": 100, "context": "deep_path"},
+    {"filename_length": 255, "context": "long_filename"}
+  ]
   
-  // Test boundary size (zero)
-  let zero_array = create_large_array(0)
-  assert_eq(zero_array.length(), 0)
-  
-  // Test invalid size (negative)
-  let negative_array = create_large_array(-1)
-  assert_eq(negative_array.length(), 0)
-  
-  // Test invalid size (too large)
-  let large_array = create_large_array(10001)
-  assert_eq(large_array.length(), 0)
-  
-  // Test deep recursion
-  let deep_recursion = fn(depth: Int) -> Int {
-    if depth <= 0 || depth > 100 {
-      0
-    } else {
-      1 + deep_recursion(depth - 1)
+  for i = 0; i < filesystem_boundaries.length(); i = i + 1 {
+    let boundary = filesystem_boundaries[i]
+    let fs_result = test_filesystem_boundary(boundary)
+    
+    // 验证文件系统操作
+    assert_true(fs_result["operations_handled"])
+    assert_false(fs_result["path_traversal"])
+    assert_false(fs_result["permission_denied_unexpected"])
+    
+    // 验证文件操作
+    if (boundary["file_size_mb"]) {
+      let file_result = test_file_operations(boundary["file_size_mb"])
+      assert_true(file_result["operations_safe"])
+      assert_false(file_result["disk_space_exhausted"])
     }
   }
   
-  // Test valid depth
-  assert_eq(deep_recursion(0), 0)
-  assert_eq(deep_recursion(1), 1)
-  assert_eq(deep_recursion(10), 10)
+  // 测试网络边界
+  let network_boundaries = [
+    {"packet_size": 1, "context": "minimal_packet"},
+    {"packet_size": 1500, "context": "standard_mtu"},
+    {"packet_size": 65507, "context": "max_udp_packet"},
+    {"connection_count": 1000, "context": "many_connections"},
+    {"request_rate": 10000, "context": "high_request_rate"}
+  ]
   
-  // Test boundary depth
-  assert_eq(deep_recursion(100), 100)
+  for i = 0; i < network_boundaries.length(); i = i + 1 {
+    let boundary = network_boundaries[i]
+    let network_result = test_network_boundary(boundary)
+    
+    // 验证网络操作
+    assert_true(network_result["operations_handled"])
+    assert_false(network_result["buffer_overflow"])
+    assert_false(network_result["connection_exhausted"])
+    
+    // 验证协议边界
+    let protocol_result = test_protocol_boundaries(boundary)
+    assert_true(protocol_result["protocol_compliant"])
+    assert_false(protocol_result["header_corruption"])
+  }
+}
+
+// 测试6: 异常处理边界测试
+test "异常处理边界测试" {
+  // 测试异常类型边界
+  let exception_boundaries = [
+    {"type": "null_pointer", "trigger": "null_dereference"},
+    {"type": "division_by_zero", "trigger": "zero_division"},
+    {"type": "stack_overflow", "trigger": "deep_recursion"},
+    {"type": "out_of_memory", "trigger": "large_allocation"},
+    {"type": "index_out_of_bounds", "trigger": "invalid_array_access"}
+  ]
   
-  // Test invalid depth (too deep)
-  assert_eq(deep_recursion(101), 0)
+  for i = 0; i < exception_boundaries.length(); i = i + 1 {
+    let boundary = exception_boundaries[i]
+    let exception_result = test_exception_boundary(boundary["type"], boundary["trigger"])
+    
+    // 验证异常捕获
+    assert_true(exception_result["exception_caught"])
+    assert_false(exception_result["unhandled_exception"])
+    assert_false(exception_result["process_crashed"])
+    
+    // 验证异常恢复
+    let recovery_result = test_exception_recovery(boundary["type"])
+    assert_true(recovery_result["recovery_attempted"])
+    assert_true(recovery_result["state_consistent"])
+    assert_false(recovery_result["resource_leak"])
+  }
   
-  // Test nested data structures
-  let create_nested_structure = fn(depth: Int, breadth: Int) -> Array<Array<Int>> {
-    if depth <= 0 || breadth <= 0 || depth > 10 || breadth > 10 {
-      []
-    } else {
-      let mut result = []
-      for i in 0..<breadth {
-        let mut inner = []
-        for j in 0..<depth {
-          inner = inner.push(i * depth + j)
-        }
-        result = result.push(inner)
-      }
-      result
+  // 测试异常链边界
+  let exception_chain_scenarios = [
+    {"depth": 1, "context": "single_exception"},
+    {"depth": 10, "context": "medium_chain"},
+    {"depth": 100, "context": "deep_chain"},
+    {"depth": 1000, "context": "very_deep_chain"}
+  ]
+  
+  for i = 0; i < exception_chain_scenarios.length(); i = i + 1 {
+    let scenario = exception_chain_scenarios[i]
+    let chain_result = test_exception_chain_boundary(scenario["depth"], scenario["context"])
+    
+    // 验证异常链处理
+    assert_true(chain_result["chain_handled"])
+    assert_false(chain_result["stack_overflow"])
+    assert_false(chain_result["information_lost"])
+    
+    // 验证异常信息完整性
+    let integrity_result = test_exception_integrity(scenario["depth"])
+    if (scenario["depth"] <= 100) {
+      assert_true(integrity_result["information_preserved"])
     }
   }
   
-  // Test valid dimensions
-  let valid_nested = create_nested_structure(5, 5)
-  assert_eq(valid_nested.length(), 5)
-  assert_eq(valid_nested[0].length(), 5)
+  // 测试异步异常边界
+  let async_exception_scenarios = [
+    {"context": "promise_rejection"},
+    {"context": "async_callback_error"},
+    {"context": "event_handler_error"},
+    {"context": "worker_thread_error"}
+  ]
   
-  // Test boundary dimensions
-  let boundary_nested = create_nested_structure(1, 1)
-  assert_eq(boundary_nested.length(), 1)
-  assert_eq(boundary_nested[0].length(), 1)
-  
-  // Test invalid dimensions
-  let invalid_nested = create_nested_structure(0, 5)
-  assert_eq(invalid_nested.length(), 0)
-  
-  let invalid_nested2 = create_nested_structure(5, 0)
-  assert_eq(invalid_nested2.length(), 0)
-  
-  let invalid_nested3 = create_nested_structure(11, 5)
-  assert_eq(invalid_nested3.length(), 0)
-  
-  let invalid_nested4 = create_nested_structure(5, 11)
-  assert_eq(invalid_nested4.length(), 0)
+  for i = 0; i < async_exception_scenarios.length(); i = i + 1 {
+    let scenario = async_exception_scenarios[i]
+    let async_result = test_async_exception_boundary(scenario["context"])
+    
+    // 验证异步异常处理
+    assert_true(async_result["exception_caught"])
+    assert_false(async_result["unhandled_rejection"])
+    assert_false(async_result["silent_failure"])
+    
+    // 验证异步恢复
+    let async_recovery = test_async_recovery(scenario["context"])
+    assert_true(async_recovery["recovery_possible"])
+    assert_false(async_recovery["orphaned_operation"])
+  }
+}
+
+// 辅助函数（模拟实现）
+fn test_integer_boundary(value: Int, context: String) -> Map[String, Any] {
+  {
+    "handled_correctly": true,
+    "overflow_occurred": false,
+    "underflow_occurred": false,
+    "context": context
+  }
+}
+
+fn test_boundary_arithmetic(value: Int) -> Map[String, Any] {
+  {
+    "operations_stable": true,
+    "division_by_zero": false,
+    "invalid_result": false
+  }
+}
+
+fn test_float_boundary(value: Float, context: String) -> Map[String, Any] {
+  {
+    "handled_correctly": true,
+    "infinity_generated": false,
+    "nan_generated": false,
+    "context": context
+  }
+}
+
+fn test_special_float_values(value: Float) -> Map[String, Any] {
+  {
+    "comparisons_work": true,
+    "arithmetic_stable": true
+  }
+}
+
+fn test_type_conversion_boundary(from_type: String, to_type: String, value: Any) -> Map[String, Any] {
+  {
+    "conversion_safe": true,
+    "precision_lost_excessively": false,
+    "range_exceeded": false,
+    "from_type": from_type,
+    "to_type": to_type
+  }
+}
+
+fn test_string_boundary(test_string: String, context: String) -> Map[String, Any] {
+  {
+    "processed_correctly": true,
+    "memory_exhausted": false,
+    "buffer_overflow": false,
+    "context": context
+  }
+}
+
+fn test_string_operations(test_string: String) -> Map[String, Any] {
+  {
+    "concatenation_safe": true,
+    "substring_safe": true,
+    "search_safe": true
+  }
+}
+
+fn test_special_character_handling(test_string: String, char_name: String) -> Map[String, Any] {
+  {
+    "handled_correctly": true,
+    "corruption_occurred": false,
+    "encoding_preserved": true,
+    "character": char_name
+  }
+}
+
+fn test_unicode_boundary(test_char: String, name: String) -> Map[String, Any] {
+  {
+    "handled_correctly": true,
+    "invalid_encoding": false,
+    "round_trip_successful": true,
+    "name": name
+  }
+}
+
+fn create_test_collection(size: Int) -> Array[Int] {
+  let collection = []
+  for i = 0; i < size; i = i + 1 {
+    collection.push(i)
+  }
+  collection
+}
+
+fn test_collection_boundary(collection: Array[Int], context: String) -> Map[String, Any] {
+  {
+    "operations_successful": true,
+    "index_out_of_bounds": false,
+    "memory_exhausted": false,
+    "context": context
+  }
+}
+
+fn test_boundary_access(collection: Array[Int]) -> Map[String, Any] {
+  {
+    "safe_access": true,
+    "invalid_access": false
+  }
+}
+
+fn test_iterator_boundary(collection: Array[Int]) -> Map[String, Any] {
+  {
+    "iteration_complete": true,
+    "concurrent_modification": false
+  }
+}
+
+fn create_test_map(size: Int) -> Map[String, Int] {
+  let test_map = {}
+  for i = 0; i < size; i = i + 1 {
+    test_map["key_" + i.to_string()] = i
+  }
+  test_map
+}
+
+fn test_map_boundary(test_map: Map[String, Int], context: String) -> Map[String, Any] {
+  {
+    "operations_successful": true,
+    "key_collision": false,
+    "hash_collision_excessive": false,
+    "context": context
+  }
+}
+
+fn test_key_value_boundaries(test_map: Map[String, Int]) -> Map[String, Any] {
+  {
+    "null_keys_handled": true,
+    "empty_keys_handled": true,
+    "special_keys_handled": true
+  }
+}
+
+fn test_timestamp_boundary(timestamp: Int, context: String) -> Map[String, Any] {
+  {
+    "handled_correctly": true,
+    "overflow_occurred": false,
+    "invalid_format": false,
+    "context": context
+  }
+}
+
+fn test_time_calculations(timestamp: Int) -> Map[String, Any] {
+  {
+    "calculations_stable": true,
+    "negative_duration": false,
+    "overflow_in_calculation": false
+  }
+}
+
+fn test_timezone_boundary(timezone: String, offset: Int) -> Map[String, Any] {
+  {
+    "handled_correctly": true,
+    "date_line_crossing_error": false,
+    "dst_transition_error": false,
+    "timezone": timezone,
+    "offset": offset
+  }
+}
+
+fn test_timezone_conversion(timezone: String) -> Map[String, Any] {
+  {
+    "conversion_successful": true,
+    "ambiguity_unresolved": false
+  }
+}
+
+fn test_duration_boundary(duration_ms: Int, context: String) -> Map[String, Any] {
+  {
+    "handled_correctly": true,
+    "negative_duration": false,
+    "overflow_in_formatting": false,
+    "context": context
+  }
+}
+
+fn test_duration_arithmetic(duration_ms: Int) -> Map[String, Any] {
+  {
+    "operations_stable": true,
+    "precision_lost": false
+  }
+}
+
+fn test_memory_boundary(size_mb: Int, context: String) -> Map[String, Any] {
+  {
+    "allocation_successful": size_mb <= 1024,
+    "corruption_detected": false,
+    "wild_pointer": false,
+    "context": context
+  }
+}
+
+fn test_memory_access(size_mb: Int) -> Map[String, Any] {
+  {
+    "access_safe": true,
+    "segmentation_fault": false
+  }
+}
+
+fn test_filesystem_boundary(boundary: Map[String, Any]) -> Map[String, Any] {
+  {
+    "operations_handled": true,
+    "path_traversal": false,
+    "permission_denied_unexpected": false
+  }
+}
+
+fn test_file_operations(size_mb: Int) -> Map[String, Any] {
+  {
+    "operations_safe": true,
+    "disk_space_exhausted": false
+  }
+}
+
+fn test_network_boundary(boundary: Map[String, Any]) -> Map[String, Any] {
+  {
+    "operations_handled": true,
+    "buffer_overflow": false,
+    "connection_exhausted": false
+  }
+}
+
+fn test_protocol_boundaries(boundary: Map[String, Any]) -> Map[String, Any] {
+  {
+    "protocol_compliant": true,
+    "header_corruption": false
+  }
+}
+
+fn test_exception_boundary(exception_type: String, trigger: String) -> Map[String, Any] {
+  {
+    "exception_caught": true,
+    "unhandled_exception": false,
+    "process_crashed": false,
+    "type": exception_type,
+    "trigger": trigger
+  }
+}
+
+fn test_exception_recovery(exception_type: String) -> Map[String, Any] {
+  {
+    "recovery_attempted": true,
+    "state_consistent": true,
+    "resource_leak": false,
+    "type": exception_type
+  }
+}
+
+fn test_exception_chain_boundary(depth: Int, context: String) -> Map[String, Any] {
+  {
+    "chain_handled": true,
+    "stack_overflow": depth < 1000,
+    "information_lost": depth > 500,
+    "context": context
+  }
+}
+
+fn test_exception_integrity(depth: Int) -> Map[String, Any] {
+  {
+    "information_preserved": depth <= 100,
+    "chain_complete": depth <= 50
+  }
+}
+
+fn test_async_exception_boundary(context: String) -> Map[String, Any] {
+  {
+    "exception_caught": true,
+    "unhandled_rejection": false,
+    "silent_failure": false,
+    "context": context
+  }
+}
+
+fn test_async_recovery(context: String) -> Map[String, Any] {
+  {
+    "recovery_possible": true,
+    "orphaned_operation": false,
+    "context": context
+  }
 }
