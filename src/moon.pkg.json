@@ -75,6 +75,7 @@
         "../azimuth_caching_mechanism_tests.mbt",
         "../azimuth_internationalization_support_tests.mbt",
         "../azimuth_high_quality_advanced_tests.mbt",
-        "../azimuth_premium_resource_optimization_tests.mbt"]
+        "../azimuth_premium_resource_optimization_tests.mbt",
+        "../azimuth_new_enhanced_test_cases.mbt"]
   }
 }
