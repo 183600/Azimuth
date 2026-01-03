@@ -1,398 +1,470 @@
-// Azimuth Advanced Telemetry Scenarios Test Suite
-// This file contains advanced test cases for complex telemetry scenarios
+// Azimuth 高级遥测场景测试用例
+// 专注于复杂遥测场景和边界情况测试
 
-// Test 1: Telemetry Data Compression and Optimization
-test "telemetry data compression and optimization" {
-  // Test compression of telemetry attributes
-  let large_attrs = Attributes::new()
+// 测试1: 实时流式数据处理
+test "实时流式数据处理测试" {
+  let stream_processor = StreamProcessor::new()
+  let telemetry_sink = TelemetrySink::create("stream.processor")
   
-  // Add many attributes to test compression
-  for i = 0; i < 1000; i = i + 1 {
-    let key = "large.attribute.key." + Int::to_string(i)
-    let value = "large.attribute.value." + Int::to_string(i) + ".with.additional.data.to.compress"
-    Attributes::set(large_attrs, key, StringValue(value))
-  }
+  // 配置流式处理管道
+  let pipeline = StreamProcessor::create_pipeline(stream_processor, [
+    ("filter", "event.type == 'metric'"),
+    ("transform", "convert_units()"),
+    ("aggregate", "window_size=5s")
+  ])
   
-  // Verify compression ratio
-  let original_size = Attributes::calculate_size(large_attrs)
-  let compressed_attrs = Attributes::compress(large_attrs)
-  let compressed_size = Attributes::calculate_size(compressed_attrs)
+  // 模拟流式数据输入
+  let stream_events = [
+    MetricEvent::new("cpu.usage", 75.5, Time::now()),
+    MetricEvent::new("memory.usage", 60.2, Time::now()),
+    MetricEvent::new("network.throughput", 1024.0, Time::now()),
+    MetricEvent::new("disk.io", 256.0, Time::now()),
+    LogEvent::new("system.info", "System startup completed", Time::now())
+  ]
   
-  // Compression should reduce size by at least 30%
-  let compression_ratio = (original_size - compressed_size) * 100 / original_size
-  assert_true(compression_ratio >= 30, "Compression ratio below threshold")
+  // 处理流式数据
+  let processed_events = StreamProcessor::process_batch(pipeline, stream_events)
   
-  // Verify data integrity after decompression
-  let decompressed_attrs = Attributes::decompress(compressed_attrs)
-  assert_eq(Attributes::count(decompressed_attrs), 1000)
+  // 验证处理结果
+  assert_eq(processed_events.length(), 4) // 过滤掉日志事件
+  assert_true(StreamProcessor::is_pipeline_healthy(pipeline))
   
-  // Verify specific attributes are preserved
-  match Attributes::get(decompressed_attrs, "large.attribute.key.500") {
-    Some(StringValue(v)) => assert_eq(v, "large.attribute.value.500.with.additional.data.to.compress")
-    _ => assert_true(false)
-  }
+  // 验证聚合结果
+  let aggregated_metrics = StreamProcessor::get_aggregated_metrics(pipeline)
+  assert_true(aggregated_metrics.contains_key("cpu.usage"))
+  assert_true(aggregated_metrics.contains_key("memory.usage"))
 }
 
-// Test 2: Telemetry Data Long-term Storage and Archive
-test "telemetry data long-term storage and archive" {
-  // Create telemetry data with timestamps
-  let telemetry_data = Array::empty()
-  let base_time = Time::now()
+// 测试2: 自适应采样策略
+test "自适应采样策略测试" {
+  let sampling_manager = AdaptiveSamplingManager::new()
   
-  // Generate telemetry data over time
-  for i = 0; i < 100; i = i + 1 {
-    let timestamp = Time::add_hours(base_time, i)
-    let metric_value = Double::from(i) * 1.5
-    let data_point = TelemetryDataPoint::new(
-      "cpu.usage",
-      metric_value,
-      timestamp,
-      Attributes::with("host", StringValue("server-" + Int::to_string(i % 10)))
-    )
-    telemetry_data = telemetry_data.concat([data_point])
-  }
+  // 配置自适应采样策略
+  let strategy = AdaptiveSamplingStrategy::new()
+    .with_error_rate_threshold(0.05)
+    .with_latency_threshold(100.0)
+    .with_throughput_threshold(1000.0)
+    .with_adjustment_factor(0.1)
   
-  // Test archival functionality
-  let archive_config = ArchiveConfig::new(
-    Retention::Days(30),
-    Compression::LZ4,
-    Encryption::AES256
-  )
+  // 初始化采样率
+  AdaptiveSamplingManager::set_strategy(sampling_manager, strategy)
+  assert_eq(AdaptiveSamplingManager::get_current_rate(sampling_manager), 0.1)
   
-  let archive_id = ArchiveManager::store(telemetry_data, archive_config)
-  assert_true(String::length(archive_id) > 0, "Archive ID should not be empty")
+  // 模拟高错误率场景
+  let error_metrics = [
+    ErrorMetric::new("database.timeout", 0.08),
+    ErrorMetric::new("api.gateway.5xx", 0.12),
+    ErrorMetric::new("cache.miss", 0.03)
+  ]
   
-  // Test retrieval from archive
-  let retrieved_data = ArchiveManager::retrieve(archive_id)
-  assert_eq(Array::length(retrieved_data), 100)
+  AdaptiveSamplingManager::update_error_metrics(sampling_manager, error_metrics)
+  let adjusted_rate = AdaptiveSamplingManager::adjust_sampling_rate(sampling_manager)
   
-  // Verify data integrity
-  let first_point = Array::get(retrieved_data, 0)
-  let last_point = Array::get(retrieved_data, 99)
+  // 验证采样率调整
+  assert_true(adjusted_rate > 0.1) // 错误率高，增加采样率
+  assert_true(adjusted_rate <= 1.0)
   
-  assert_eq(TelemetryDataPoint::metric_name(first_point), "cpu.usage")
-  assert_eq(TelemetryDataPoint::value(last_point), Double::from(99) * 1.5)
+  // 模拟低延迟高吞吐场景
+  let performance_metrics = [
+    LatencyMetric::new("api.response", 45.0),
+    ThroughputMetric::new("requests.per.second", 1500.0)
+  ]
+  
+  AdaptiveSamplingManager::update_performance_metrics(sampling_manager, performance_metrics)
+  let optimized_rate = AdaptiveSamplingManager::optimize_sampling_rate(sampling_manager)
+  
+  // 验证优化后的采样率
+  assert_true(optimized_rate < adjusted_rate) // 性能好，可以降低采样率
 }
 
-// Test 3: Cross-service Consistency Validation
-test "cross-service consistency validation" {
-  // Simulate telemetry from multiple services
-  let service_a_traces = generate_trace_data("service-a", 50)
-  let service_b_traces = generate_trace_data("service-b", 50)
-  let service_c_traces = generate_trace_data("service-c", 50)
+// 测试3: 异常检测和自动恢复
+test "异常检测和自动恢复测试" {
+  let anomaly_detector = AnomalyDetector::new()
+  let recovery_manager = RecoveryManager::new()
   
-  // Verify trace consistency across services
-  let trace_validator = TraceConsistencyValidator::new()
+  // 配置异常检测规则
+  let detection_rules = [
+    AnomalyRule::spike_detection("cpu.usage", 2.0, 5), // 2倍标准差，5个窗口
+    AnomalyRule::trend_analysis("memory.leak", 0.1, 10), // 10%增长率，10个窗口
+    AnomalyRule::pattern_matching("error.pattern", ".*timeout.*")
+  ]
   
-  // Add trace data from all services
-  TraceConsistencyValidator::add_traces(trace_validator, service_a_traces)
-  TraceConsistencyValidator::add_traces(trace_validator, service_b_traces)
-  TraceConsistencyValidator::add_traces(trace_validator, service_c_traces)
+  AnomalyDetector::configure_rules(anomaly_detector, detection_rules)
   
-  // Validate consistency
-  let consistency_report = TraceConsistencyValidator::validate(trace_validator)
+  // 模拟正常时间序列数据
+  let normal_metrics = TimeSeries::generate("cpu.usage", 50.0, 5.0, 100)
+  let normal_result = AnomalyDetector::analyze(anomaly_detector, normal_metrics)
+  assert_eq(normal_result.anomaly_detected, false)
   
-  assert_true(ConsistencyReport::is_valid(consistency_report), "Cross-service trace consistency validation failed")
+  // 模拟异常时间序列数据
+  let anomaly_metrics = TimeSeries::with_spike("cpu.usage", 50.0, 5.0, 95, 150.0, 5)
+  let anomaly_result = AnomalyDetector::analyze(anomaly_detector, anomaly_metrics)
+  assert_eq(anomaly_result.anomaly_detected, true)
+  assert_eq(anomaly_result.anomaly_type, Spike)
   
-  // Check for specific consistency issues
-  let missing_spans = ConsistencyReport::missing_spans(consistency_report)
-  let orphan_spans = ConsistencyReport::orphan_spans(consistency_report)
-  
-  assert_eq(Array::length(missing_spans), 0, "There should be no missing spans")
-  assert_eq(Array::length(orphan_spans), 0, "There should be no orphan spans")
-}
-
-// Test 4: Real-time Dashboard Data Aggregation
-test "real-time dashboard data aggregation" {
-  // Create real-time telemetry stream
-  let telemetry_stream = TelemetryStream::new()
-  
-  // Start dashboard aggregation
-  let dashboard = RealtimeDashboard::new()
-  RealtimeDashboard::start_aggregation(dashboard, telemetry_stream)
-  
-  // Simulate real-time data flow
-  for i = 0; i < 1000; i = i + 1 {
-    let metric = Metric::new(
-      "response.time",
-      Double::from(i % 100) + 50.0,
-      Time::now(),
-      Attributes::with("endpoint", StringValue("/api/v" + Int::to_string(i % 5)))
-    )
-    TelemetryStream::push(telemetry_stream, metric)
+  // 触发自动恢复
+  if anomaly_result.anomaly_detected {
+    let recovery_strategy = RecoveryManager::select_strategy(recovery_manager, anomaly_result)
+    assert_eq(recovery_strategy.type, CircuitBreaker)
     
-    // Small delay to simulate real-time
-    Time::sleep_ms(1)
+    let recovery_result = RecoveryManager::execute_recovery(recovery_manager, recovery_strategy)
+    assert_eq(recovery_result.status, Success)
+    assert_true(recovery_result.recovery_time_ms < 5000)
   }
-  
-  // Stop aggregation and get results
-  RealtimeDashboard::stop_aggregation(dashboard)
-  let aggregated_data = RealtimeDashboard::get_aggregated_data(dashboard)
-  
-  // Verify aggregation results
-  assert_true(DashboardData::has_metric(aggregated_data, "response.time"), "Response time metric should be aggregated")
-  
-  let avg_response_time = DashboardData::average(aggregated_data, "response.time")
-  assert_true(avg_response_time > 50.0 && avg_response_time < 150.0, "Average response time should be within expected range")
-  
-  // Verify endpoint-specific aggregation
-  let endpoint_v1_avg = DashboardData::average_for_attribute(aggregated_data, "response.time", "endpoint", "/api/v1")
-  assert_true(endpoint_v1_avg > 0.0, "Should have aggregated data for endpoint /api/v1")
 }
 
-// Test 5: Edge Computing Telemetry Scenarios
-test "edge computing telemetry scenarios" {
-  // Simulate edge device with limited resources
-  let edge_device = EdgeDevice::new(
-    "edge-device-001",
-    ResourceConstraints::new(
-      Memory::MB(512),
-      CPU::Cores(2),
-      Network::Bandwidth::Mbps(10)
-    )
-  )
+// 测试4: 分布式链路追踪一致性
+test "分布式链路追踪一致性测试" {
+  let trace_consistency_validator = TraceConsistencyValidator::new()
   
-  // Configure telemetry for edge scenarios
-  let edge_config = EdgeTelemetryConfig::new()
-    .with_batch_size(10)
-    .with_compression(true)
-    .with_offline_storage(true)
-    .with_adaptive_sampling(true)
+  // 创建分布式追踪场景
+  let trace_id = TraceId::generate()
+  let root_span = Span::create_root(trace_id, "api.gateway.request")
   
-  let edge_telemetry = EdgeTelemetry::new(edge_device, edge_config)
+  // 模拟微服务调用链
+  let service_spans = [
+    Span::create_child(trace_id, root_span.id, "auth.service.validate"),
+    Span::create_child(trace_id, root_span.id, "user.service.profile"),
+    Span::create_child(trace_id, root_span.id, "order.service.create"),
+    Span::create_child(trace_id, root_span.id, "payment.service.process"),
+    Span::create_child(trace_id, root_span.id, "notification.service.send")
+  ]
   
-  // Generate telemetry data in edge environment
-  for i = 0; i < 100; i = i + 1 {
-    let sensor_data = SensorReading::new(
-      "temperature",
-      Double::from(20 + i % 20),
-      Time::now(),
-      Attributes::with("location", StringValue("sensor-" + Int::to_string(i % 5)))
-    )
-    
-    EdgeTelemetry::record(edge_telemetry, sensor_data)
-    
-    // Simulate intermittent connectivity
-    if i % 20 == 0 {
-      EdgeTelemetry::simulate_network_loss(edge_telemetry, Duration::Seconds(5))
-    }
+  // 添加跨服务上下文传播
+  for span in service_spans {
+    Span::add_tag(span, "service.name", span.name.split(".")[0])
+    Span::add_tag(span, "operation.name", span.name.split(".")[1])
+    Span::add_tag(span, "trace.parent", root_span.id)
   }
   
-  // Verify edge telemetry behavior
-  let local_cache = EdgeTelemetry::get_local_cache(edge_telemetry)
-  assert_true(Array::length(local_cache) > 0, "Edge device should cache data during network loss")
+  // 验证追踪一致性
+  let consistency_result = TraceConsistencyValidator::validate(trace_consistency_validator, trace_id, [root_span] + service_spans)
   
-  // Restore connectivity and verify sync
-  EdgeTelemetry::restore_connectivity(edge_telemetry)
-  let sync_result = EdgeTelemetry::sync_to_cloud(edge_telemetry)
+  assert_eq(consistency_result.is_consistent, true)
+  assert_eq(consistency_result.total_spans, 6)
+  assert_eq(consistency_result.max_depth, 2)
+  assert_eq(consistency_result.gaps.length(), 0)
   
-  assert_true(SyncResult::success(sync_result), "Data should sync successfully after connectivity restore")
-  assert_eq(SyncResult::synced_count(sync_result), Array::length(local_cache), "All cached data should be synced")
+  // 验证时间顺序
+  let time_ordered_spans = TraceConsistencyValidator::order_by_time(consistency_result.spans)
+  assert_true(time_ordered_spans[0].start_time <= time_ordered_spans[1].start_time)
 }
 
-// Test 6: Telemetry Data Quality Assurance
-test "telemetry data quality assurance" {
-  // Create data quality validator
-  let quality_validator = DataQualityValidator::new()
+// 测试5: 多维度指标聚合
+test "多维度指标聚合测试" {
+  let aggregator = MultiDimensionalAggregator::new()
   
-  // Configure quality rules
-  DataQualityValidator::add_rule(quality_validator, QualityRule::required_attribute("service.name"))
-  DataQualityValidator::add_rule(quality_validator, QualityRule::valid_trace_id_format())
-  DataQualityValidator::add_rule(quality_validator, QualityRule::timestamp_range(Duration::Hours(24)))
-  DataQualityValidator::add_rule(quality_validator, QualityRule::metric_value_range("cpu.usage", 0.0, 100.0))
-  
-  // Generate test telemetry data with some quality issues
-  let telemetry_batch = Array::empty()
-  
-  // Add valid data
-  for i = 0; i < 90; i = i + 1 {
-    let valid_data = TelemetryData::with_attributes([
-      ("service.name", StringValue("test-service")),
-      ("trace.id", StringValue(generate_valid_trace_id())),
-      ("cpu.usage", FloatValue(Double::from(i % 100)))
+  // 创建多维度指标数据
+  let metrics = [
+    Metric::with_dimensions("response.time", 120.0, [
+      ("service", "api.gateway"),
+      ("endpoint", "/users"),
+      ("method", "GET"),
+      ("status.code", "200")
+    ]),
+    Metric::with_dimensions("response.time", 250.0, [
+      ("service", "api.gateway"),
+      ("endpoint", "/users"),
+      ("method", "POST"),
+      ("status.code", "201")
+    ]),
+    Metric::with_dimensions("response.time", 5000.0, [
+      ("service", "database"),
+      ("operation", "query"),
+      ("table", "users"),
+      ("status", "timeout")
+    ]),
+    Metric::with_dimensions("response.time", 80.0, [
+      ("service", "cache"),
+      ("operation", "get"),
+      ("key", "user:123"),
+      ("hit", "true")
     ])
-    telemetry_batch = telemetry_batch.concat([valid_data])
-  }
+  ]
   
-  // Add invalid data (missing required attribute)
-  let invalid_data1 = TelemetryData::with_attributes([
-    ("trace.id", StringValue(generate_valid_trace_id())),
-    ("cpu.usage", FloatValue(50.0))
+  // 配置聚合规则
+  let aggregation_rules = [
+    AggregationRule::average("service"),
+    AggregationRule::percentile("endpoint", [50.0, 95.0, 99.0]),
+    AggregationRule::rate("status.code", "200"),
+    AggregationRule::group_by("service", "method")
+  ]
+  
+  MultiDimensionalAggregator::configure_rules(aggregator, aggregation_rules)
+  
+  // 执行聚合
+  let aggregation_result = MultiDimensionalAggregator::aggregate(aggregator, metrics)
+  
+  // 验证聚合结果
+  assert_true(aggregation_result.contains_key("service.average"))
+  assert_true(aggregation_result.contains_key("endpoint.percentile"))
+  
+  let api_gateway_avg = aggregation_result.get("service.average").get("api.gateway")
+  assert_true(api_gateway_avg > 100.0 && api_gateway_avg < 300.0)
+  
+  let get_percentiles = aggregation_result.get("endpoint.percentile").get("/users")
+  assert_true(get_percentiles.contains_key("p50"))
+  assert_true(get_percentiles.contains_key("p95"))
+  assert_true(get_percentiles.contains_key("p99"))
+}
+
+// 测试6: 智能告警和降噪
+test "智能告警和降噪测试" {
+  let alerting_system = IntelligentAlertingSystem::new()
+  
+  // 配置告警规则
+  let alert_rules = [
+    AlertRule::threshold("error.rate", 0.05, GreaterThan, 300),
+    AlertRule::anomaly("latency.spike", 2.0, 5),
+    AlertRule::pattern("log.error", ".*critical.*", 60),
+    AlertRule::composite("service.degradation", [
+      ("error.rate", ">", 0.03),
+      ("latency.p95", ">", 1000.0)
+    ], "AND")
+  ]
+  
+  IntelligentAlertingSystem::configure_rules(alerting_system, alert_rules)
+  
+  // 配置降噪策略
+  let noise_reduction_strategies = [
+    NoiseReductionStrategy::frequency_limiting("same.alert", 300),
+    NoiseReductionStrategy::correlation_grouping("related.services"),
+    NoiseReductionStrategy::severity_escalation("gradual.increase"),
+    NoiseReductionStrategy::maintenance_window("scheduled.downtime")
+  ]
+  
+  IntelligentAlertingSystem::configure_noise_reduction(alerting_system, noise_reduction_strategies)
+  
+  // 模拟告警触发
+  let alert_events = [
+    AlertEvent::new("error.rate", 0.08, Time::now()),
+    AlertEvent::new("error.rate", 0.09, Time::now().add_seconds(60)),
+    AlertEvent::new("error.rate", 0.07, Time::now().add_seconds(120)),
+    AlertEvent::new("latency.spike", 3.5, Time::now().add_seconds(180))
+  ]
+  
+  // 处理告警事件
+  let processed_alerts = IntelligentAlertingSystem::process_events(alerting_system, alert_events)
+  
+  // 验证降噪效果
+  assert_true(processed_alerts.length() < alert_events.length()) // 应该有降噪效果
+  
+  let deduplicated_alerts = IntelligentAlertingSystem::get_deduplicated_alerts(alerting_system)
+  assert_eq(deduplicated_alerts.length(), 1) // error.rate应该被去重
+  
+  let escalated_alerts = IntelligentAlertingSystem::get_escalated_alerts(alerting_system)
+  assert_true(escalated_alerts.length() > 0) // 应该有升级的告警
+}
+
+// 测试7: 遥测数据生命周期管理
+test "遥测数据生命周期管理测试" {
+  let lifecycle_manager = TelemetryDataLifecycleManager::new()
+  
+  // 配置生命周期策略
+  let lifecycle_policies = [
+    LifecyclePolicy::retention("metrics", 30, "days"),
+    LifecyclePolicy::retention("traces", 7, "days"),
+    LifecyclePolicy::retention("logs", 90, "days"),
+    LifecyclePolicy::compression("old.data", 30, "days"),
+    LifecyclePolicy::archival("historical.data", 365, "days"),
+    LifecyclePolicy::deletion("expired.data", 400, "days")
+  ]
+  
+  TelemetryDataLifecycleManager::configure_policies(lifecycle_manager, lifecycle_policies)
+  
+  // 创建不同年龄的测试数据
+  let current_time = Time::now()
+  let test_data = [
+    TelemetryData::new("metrics", current_time.add_days(-5)), // 5天前
+    TelemetryData::new("traces", current_time.add_days(-10)), // 10天前
+    TelemetryData::new("logs", current_time.add_days(-30)), // 30天前
+    TelemetryData::new("metrics", current_time.add_days(-60)), // 60天前
+    TelemetryData::new("traces", current_time.add_days(-400)) // 400天前
+  ]
+  
+  // 执行生命周期管理
+  let lifecycle_result = TelemetryDataLifecycleManager::process(lifecycle_manager, test_data)
+  
+  // 验证处理结果
+  assert_eq(lifecycle_result.to_keep.length(), 3) // 5天前metrics, 10天前traces, 30天前logs
+  assert_eq(lifecycle_result.to_compress.length(), 1) // 60天前metrics
+  assert_eq(lifecycle_result.to_archive.length(), 0) // 没有365天的数据
+  assert_eq(lifecycle_result.to_delete.length(), 1) // 400天前traces
+  
+  // 验证存储空间优化
+  let space_saved = TelemetryDataLifecycleManager::calculate_space_saved(lifecycle_manager)
+  assert_true(space_saved.compression_ratio > 0.5)
+  assert_true(space_saved.deletion_freed_mb > 0)
+}
+
+// 测试8: 跨云环境遥测同步
+test "跨云环境遥测同步测试" {
+  let cross_cloud_sync = CrossCloudTelemetrySync::new()
+  
+  // 配置云环境
+  let cloud_environments = [
+    CloudEnvironment::new("aws.prod", "us-east-1", "otel-collector.aws.example.com"),
+    CloudEnvironment::new("gcp.prod", "us-central1", "otel-collector.gcp.example.com"),
+    CloudEnvironment::new("azure.prod", "eastus", "otel-collector.azure.example.com")
+  ]
+  
+  CrossCloudTelemetrySync::configure_environments(cross_cloud_sync, cloud_environments)
+  
+  // 配置同步策略
+  let sync_strategies = [
+    SyncStrategy::real_time("critical.alerts"),
+    SyncStrategy::batch("metrics", 60),
+    SyncStrategy::selective("traces", "error.rate > 0.01"),
+    SyncStrategy::compressed("logs", "gzip")
+  ]
+  
+  CrossCloudTelemetrySync::configure_strategies(cross_cloud_sync, sync_strategies)
+  
+  // 模拟跨云数据
+  let aws_data = TelemetryData::with_source("aws.prod", [
+    Metric::new("cpu.usage", 65.5),
+    Trace::new("api.request", "trace-aws-123"),
+    Log::new("system.startup", "AWS service started")
   ])
-  telemetry_batch = telemetry_batch.concat([invalid_data1])
   
-  // Add invalid data (invalid metric value)
-  let invalid_data2 = TelemetryData::with_attributes([
-    ("service.name", StringValue("test-service")),
-    ("trace.id", StringValue(generate_valid_trace_id())),
-    ("cpu.usage", FloatValue(150.0))  // Out of range
-  ])
-  telemetry_batch = telemetry_batch.concat([invalid_data2])
-  
-  // Run quality validation
-  let quality_report = DataQualityValidator::validate_batch(quality_validator, telemetry_batch)
-  
-  // Verify validation results
-  assert_eq(QualityReport::total_records(quality_report), 92)
-  assert_eq(QualityReport::valid_records(quality_report), 90)
-  assert_eq(QualityReport::invalid_records(quality_report), 2)
-  
-  // Check specific violations
-  let violations = QualityReport::violations(quality_report)
-  assert_eq(Array::length(violations), 2)
-  
-  // Verify violation types
-  let missing_attr_violations = QualityReport::violations_by_type(quality_report, ViolationType::MissingRequiredAttribute)
-  let out_of_range_violations = QualityReport::violations_by_type(quality_report, ViolationType::MetricValueOutOfRange)
-  
-  assert_eq(Array::length(missing_attr_violations), 1)
-  assert_eq(Array::length(out_of_range_violations), 1)
-}
-
-// Test 7: Composite Propagator Advanced Scenarios
-test "composite propagator advanced scenarios" {
-  // Create composite propagator with multiple propagators
-  let trace_context_propagator = TraceContextPropagator::new()
-  let baggage_propagator = BaggagePropagator::new()
-  let custom_propagator = CustomPropagator::new("x-custom-trace")
-  
-  let composite_propagator = CompositePropagator::new([
-    trace_context_propagator,
-    baggage_propagator,
-    custom_propagator
+  let gcp_data = TelemetryData::with_source("gcp.prod", [
+    Metric::new("memory.usage", 72.3),
+    Trace::new("api.request", "trace-gcp-456"),
+    Log::new("system.startup", "GCP service started")
   ])
   
-  // Create context with rich data
-  let original_context = Context::root()
+  // 执行同步
+  let sync_result = CrossCloudTelemetrySync::sync(cross_cloud_sync, [aws_data, gcp_data])
   
-  // Add trace context
-  let span_context = SpanContext::new(
-    "0af7651916cd43dd8448eb211c80319c",
-    "b7ad6b7169203331",
-    true,
-    "rojo=00f067aa0ba902b7"
-  )
-  original_context = Context::with_span_context(original_context, span_context)
+  // 验证同步结果
+  assert_eq(sync_result.successful_syncs, 2)
+  assert_eq(sync_result.failed_syncs, 0)
+  assert_true(sync_result.total_bytes_transferred > 0)
   
-  // Add baggage
-  original_context = Context::with_baggage(original_context, "user.id", "user-12345")
-  original_context = Context::with_baggage(original_context, "request.source", "mobile")
-  
-  // Add custom context data
-  original_context = Context::with_value(original_context, "custom.correlation.id", "corr-abcdef")
-  
-  // Create carrier for injection
-  let carrier = TextMapCarrier::new()
-  
-  // Inject context into carrier
-  CompositePropagator::inject(composite_propagator, original_context, carrier)
-  
-  // Verify all headers are present
-  let headers = TextMapCarrier::headers(carrier)
-  assert_true(Array::length(headers) >= 4, "Should have headers from all propagators")
-  
-  // Extract context from carrier
-  let extracted_context = Context::root()
-  extracted_context = CompositePropagator::extract(composite_propagator, extracted_context, carrier)
-  
-  // Verify extracted context matches original
-  let extracted_span_context = Context::span_context(extracted_context)
-  assert_eq(SpanContext::trace_id(extracted_span_context), "0af7651916cd43dd8448eb211c80319c")
-  assert_eq(SpanContext::span_id(extracted_span_context), "b7ad6b7169203331")
-  
-  // Verify baggage extraction
-  let extracted_baggage = Context::baggage(extracted_context)
-  assert_true(Baggage::has_entry(extracted_baggage, "user.id"))
-  assert_true(Baggage::has_entry(extracted_baggage, "request.source"))
-  
-  match Baggage::get_entry(extracted_baggage, "user.id") {
-    Some(value) => assert_eq(value, "user-12345")
-    None => assert_true(false)
-  }
+  // 验证数据一致性
+  let consistency_check = CrossCloudTelemetrySync::verify_consistency(cross_cloud_sync)
+  assert_eq(consistency_check.is_consistent, true)
+  assert_eq(consistency_check.inconsistencies.length(), 0)
 }
 
-// Test 8: Resource Limit Recovery Tests
-test "resource limit recovery tests" {
-  // Create resource monitor with limits
-  let resource_monitor = ResourceMonitor::new()
-  ResourceMonitor::set_memory_limit(resource_monitor, Memory::MB(100))
-  ResourceMonitor::set_cpu_limit(resource_monitor, CPU::Percent(80))
-  ResourceMonitor::set_network_limit(resource_monitor, Network::Bandwidth::Mbps(10))
+// 测试9: 遥测数据质量评估
+test "遥测数据质量评估测试" {
+  let quality_assessor = TelemetryDataQualityAssessor::new()
   
-  // Create telemetry system with resource monitoring
-  let telemetry_system = TelemetrySystem::new_with_monitoring(resource_monitor)
+  // 配置质量评估规则
+  let quality_rules = [
+    QualityRule::completeness("required.fields", ["trace.id", "timestamp", "service.name"]),
+    QualityRule::accuracy("numeric.ranges", [
+      ("cpu.usage", 0.0, 100.0),
+      ("memory.usage", 0.0, 100.0),
+      ("response.time", 0.0, 300000.0)
+    ]),
+    QualityRule::consistency("timestamp.order", "ascending"),
+    QualityRule::validity("enum.values", [
+      ("span.kind", ["server", "client", "producer", "consumer"]),
+      ("status.code", ["ok", "error"])
+    ])
+  ]
   
-  // Generate load to approach resource limits
-  let telemetry_data_generator = TelemetryDataGenerator::new()
+  TelemetryDataQualityAssessor::configure_rules(quality_assessor, quality_rules)
   
-  // Phase 1: Normal operation
-  for i = 0; i < 1000; i = i + 1 {
-    let data = telemetry_data_generator.generate_complex_data(i)
-    TelemetrySystem::process(telemetry_system, data)
-  }
+  // 创建测试数据集
+  let test_datasets = [
+    // 高质量数据集
+    TelemetryDataset::new("high.quality", [
+      Metric::with_attributes("cpu.usage", 65.5, [
+        ("trace.id", "trace-123"),
+        ("timestamp", "2023-01-01T12:00:00Z"),
+        ("service.name", "api.service")
+      ])
+    ]),
+    
+    // 低质量数据集 - 缺少必需字段
+    TelemetryDataset::new("low.quality", [
+      Metric::with_attributes("cpu.usage", 65.5, [
+        ("timestamp", "2023-01-01T12:00:00Z")
+        // 缺少trace.id和service.name
+      ])
+    ]),
+    
+    // 异常数据集 - 数值超出范围
+    TelemetryDataset::new("anomalous.data", [
+      Metric::with_attributes("cpu.usage", 150.0, [ // 超出0-100范围
+        ("trace.id", "trace-456"),
+        ("timestamp", "2023-01-01T12:00:00Z"),
+        ("service.name", "api.service")
+      ])
+    ])
+  ]
   
-  // Verify normal operation
-  let status1 = ResourceMonitor::get_status(resource_monitor)
-  assert_true(ResourceStatus::is_healthy(status1), "System should be healthy under normal load")
+  // 执行质量评估
+  let quality_results = TelemetryDataQualityAssessor::assess(quality_assessor, test_datasets)
   
-  // Phase 2: Simulate resource pressure
-  telemetry_system = TelemetrySystem::simulate_memory_pressure(telemetry_system, Memory::MB(120))
+  // 验证评估结果
+  assert_eq(quality_results.length(), 3)
   
-  // Generate more data to trigger recovery mechanisms
-  for i = 0; i < 500; i = i + 1 {
-    let data = telemetry_data_generator.generate_large_data(i)
-    TelemetrySystem::process(telemetry_system, data)
-  }
+  let high_quality_score = quality_results[0].overall_score
+  assert_true(high_quality_score > 0.9) // 高质量数据集应该得分很高
   
-  // Verify recovery mechanisms are activated
-  let status2 = ResourceMonitor::get_status(resource_monitor)
-  assert_true(ResourceStatus::is_under_pressure(status2), "System should detect resource pressure")
+  let low_quality_score = quality_results[1].overall_score
+  assert_true(low_quality_score < 0.7) // 低质量数据集应该得分较低
   
-  // Verify adaptive measures are taken
-  let adaptive_measures = TelemetrySystem::get_active_adaptive_measures(telemetry_system)
-  assert_true(Array::length(adaptive_measures) > 0, "Should have active adaptive measures")
+  let anomalous_score = quality_results[2].overall_score
+  assert_true(anomalous_score < 0.8) // 异常数据集应该得分中等偏低
   
-  // Verify critical functions still work
-  let critical_data = telemetry_data_generator.generate_critical_data()
-  let process_result = TelemetrySystem::process_critical(telemetry_system, critical_data)
-  assert_true(ProcessResult::success(process_result), "Critical data processing should still succeed")
+  // 验证具体质量问题
+  let low_quality_issues = quality_results[1].issues
+  assert_true(low_quality_issues.contains(CompletenessIssue))
   
-  // Phase 3: Recovery
-  telemetry_system = TelemetrySystem::release_memory_pressure(telemetry_system)
-  
-  // Allow system to recover
-  Time::sleep_ms(100)
-  
-  // Verify recovery
-  let status3 = ResourceMonitor::get_status(resource_monitor)
-  assert_true(ResourceStatus::is_recovering(status3) || ResourceStatus::is_healthy(status3), "System should be recovering")
-  
-  // Verify normal operation resumes
-  for i = 0; i < 100; i = i + 1 {
-    let data = telemetry_data_generator.generate_normal_data(i)
-    let result = TelemetrySystem::process(telemetry_system, data)
-    assert_true(ProcessResult::success(result), "Normal processing should work after recovery")
-  }
+  let anomalous_issues = quality_results[2].issues
+  assert_true(anomalous_issues.contains(AccuracyIssue))
 }
 
-// Helper functions
-fn generate_trace_data(service_name : String, count : Int) -> Array[TraceData] {
-  let traces = Array::empty()
-  let base_trace_id = "0af7651916cd43dd8448eb211c8031"
+// 测试10: 遥测系统自监控
+test "遥测系统自监控测试" {
+  let self_monitoring = TelemetrySystemSelfMonitoring::new()
   
-  for i = 0; i < count; i = i + 1 {
-    let trace_data = TraceData::new(
-      base_trace_id + Int::to_string(i),
-      service_name,
-      Time::now(),
-      Attributes::with("service.instance", StringValue("instance-" + Int::to_string(i % 5)))
-    )
-    traces = traces.concat([trace_data])
-  }
+  // 配置自监控指标
+  let monitoring_metrics = [
+    SelfMonitoringMetric::component_health("otel.collector"),
+    SelfMonitoringMetric::throughput("data.processing"),
+    SelfMonitoringMetric::latency("alert.generation"),
+    SelfMonitoringMetric::resource_usage("memory", "cpu", "disk"),
+    SelfMonitoringMetric::error_rate("data.serialization", "network.transmission")
+  ]
   
-  traces
-}
-
-fn generate_valid_trace_id() -> String {
-  "0af7651916cd43dd8448eb211c80319c"
+  TelemetrySystemSelfMonitoring::configure_metrics(self_monitoring, monitoring_metrics)
+  
+  // 模拟系统运行状态
+  let system_status = SystemStatus::new()
+  SystemStatus::set_component_health(system_status, "otel.collector", Healthy)
+  SystemStatus::set_component_health(system_status, "data.processor", Healthy)
+  SystemStatus::set_component_health(system_status, "alert.manager", Degraded)
+  
+  SystemStatus::set_throughput(system_status, "data.processing", 5000.0)
+  SystemStatus::set_latency(system_status, "alert.generation", 150.0)
+  SystemStatus::set_resource_usage(system_status, "memory", 75.5)
+  SystemStatus::set_resource_usage(system_status, "cpu", 60.2)
+  SystemStatus::set_error_rate(system_status, "data.serialization", 0.001)
+  
+  // 执行自监控检查
+  let monitoring_result = TelemetrySystemSelfMonitoring::check(self_monitoring, system_status)
+  
+  // 验证监控结果
+  assert_eq(monitoring_result.overall_health, Degraded) // 有一个组件降级
+  assert_eq(monitoring_result.healthy_components, 2)
+  assert_eq(monitoring_result.degraded_components, 1)
+  assert_eq(monitoring_result.failed_components, 0)
+  
+  // 验证性能指标
+  assert_true(monitoring_result.throughput_metrics.get("data.processing") > 4000.0)
+  assert_true(monitoring_result.latency_metrics.get("alert.generation") < 200.0)
+  assert_true(monitoring_result.resource_usage.get("memory") < 80.0)
+  assert_true(monitoring_result.error_rates.get("data.serialization") < 0.01)
+  
+  // 生成健康报告
+  let health_report = TelemetrySystemSelfMonitoring::generate_health_report(self_monitoring, monitoring_result)
+  assert_true(health_report.contains("Overall Health: Degraded"))
+  assert_true(health_report.contains("Healthy Components: 2"))
+  assert_true(health_report.contains("Degraded Components: 1"))
 }
