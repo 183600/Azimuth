@@ -1,1297 +1,638 @@
-// Azimuth Concurrent Safety Test Suite
-// This file contains comprehensive test cases for concurrent safety and thread safety
+// Azimuth 并发安全测试用例
+// 测试系统在高并发环境下的线程安全性和数据一致性
 
-// Test 1: Mutex-like Lock Implementation
-test "mutex-like lock implementation" {
-  // Simulate a mutex lock with atomic operations
+test "并发数据结构安全性" {
+  // 创建并发安全的测试环境
+  let concurrent_test_env = azimuth::ConcurrentTestEnvironment::new("data-structures")
   
-  type Mutex {
-    locked : Bool
-    owner : Option[Int]
-    wait_queue : Array[Int]
+  // 测试并发安全的计数器
+  let atomic_counter = azimuth::AtomicCounter::new(0)
+  
+  // 创建多个线程并发递增计数器
+  let threads = []
+  let increments_per_thread = 10000
+  
+  for i in 0..=9 {
+    let thread = concurrent_test_env.spawn_thread("counter-thread-" + i.to_string(), fn() {
+      for j in 0..=increments_per_thread - 1 {
+        atomic_counter.increment()
+        // 添加随机延迟增加竞争条件
+        if j % 1000 == 0 {
+          azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 10)
+        }
+      }
+    })
+    threads.push(thread)
   }
   
-  let create_mutex = fn() {
-    { locked: false, owner: None, wait_queue: [] }
+  // 等待所有线程完成
+  for thread in threads {
+    thread.join()
   }
   
-  let try_lock = fn(mutex, thread_id) {
-    if not mutex.locked {
-      ({ locked: true, owner: Some(thread_id), wait_queue: mutex.wait_queue }, true)
-    } else {
-      (mutex, false)
+  // 验证最终结果
+  let expected_value = 10 * increments_per_thread
+  assert_eq(atomic_counter.get(), expected_value)
+  
+  // 测试并发安全的哈希表
+  let concurrent_map = azimuth::ConcurrentHashMap::new()
+  
+  // 创建多个线程并发插入数据
+  let map_threads = []
+  let items_per_thread = 1000
+  
+  for i in 0..=9 {
+    let thread = concurrent_test_env.spawn_thread("map-thread-" + i.to_string(), fn() {
+      for j in 0..=items_per_thread - 1 {
+        let key = "key-" + i.to_string() + "-" + j.to_string()
+        let value = "value-" + i.to_string() + "-" + j.to_string()
+        concurrent_map.put(key, value)
+      }
+    })
+    map_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in map_threads {
+    thread.join()
+  }
+  
+  // 验证数据完整性
+  let expected_map_size = 10 * items_per_thread
+  assert_eq(concurrent_map.size(), expected_map_size)
+  
+  // 验证所有键值对都存在
+  for i in 0..=9 {
+    for j in 0..=items_per_thread - 1 {
+      let key = "key-" + i.to_string() + "-" + j.to_string()
+      let expected_value = "value-" + i.to_string() + "-" + j.to_string()
+      assert_eq(concurrent_map.get(key), Some(expected_value))
+    }
+  }
+}
+
+test "并发资源管理安全性" {
+  // 创建并发资源管理器
+  let resource_manager = azimuth::ConcurrentResourceManager::new()
+  
+  // 创建共享资源池
+  let resource_pool = resource_manager.create_pool("connection-pool", 10)
+  
+  // 测试并发资源获取和释放
+  let acquire_release_threads = []
+  let operations_per_thread = 1000
+  
+  for i in 0..=19 {
+    let thread = resource_manager.spawn_thread("resource-thread-" + i.to_string(), fn() {
+      for j in 0..=operations_per_thread - 1 {
+        // 获取资源
+        let resource = resource_pool.acquire()
+        assert_true(resource.is_some())
+        
+        // 模拟资源使用
+        azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 100)
+        
+        // 释放资源
+        resource_pool.release(resource.unwrap())
+      }
+    })
+    acquire_release_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in acquire_release_threads {
+    thread.join()
+  }
+  
+  // 验证资源池状态
+  assert_eq(resource_pool.available_count(), 10) // 所有资源应该都已释放
+  assert_eq(resource_pool.acquired_count(), 0)
+  
+  // 测试并发资源创建和销毁
+  let create_destroy_threads = []
+  
+  for i in 0..=4 {
+    let thread = resource_manager.spawn_thread("create-destroy-thread-" + i.to_string(), fn() {
+      for j in 0..=99 {
+        // 创建资源
+        let resource_id = resource_manager.create_resource("temp-resource-" + j.to_string())
+        assert_true(resource_id.length() > 0)
+        
+        // 模拟资源使用
+        azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 50)
+        
+        // 销毁资源
+        let destroy_result = resource_manager.destroy_resource(resource_id)
+        assert_true(destroy_result)
+      }
+    })
+    create_destroy_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in create_destroy_threads {
+    thread.join()
+  }
+  
+  // 验证资源管理器状态
+  assert_eq(resource_manager.active_resources_count(), 0)
+}
+
+test "并发追踪上下文传播安全性" {
+  // 创建并发追踪管理器
+  let tracing_manager = azimuth::ConcurrentTracingManager::new()
+  
+  // 测试并发Span创建和管理
+  let span_threads = []
+  let spans_per_thread = 100
+  
+  for i in 0..=9 {
+    let thread = tracing_manager.spawn_thread("span-thread-" + i.to_string(), fn() {
+      let tracer = tracing_manager.get_tracer("service-" + i.to_string())
+      let root_span = tracer.start_span("concurrent-operation", azimuth::SpanKind::Server)
+      
+      // 创建子Span
+      let child_spans = []
+      for j in 0..=spans_per_thread - 1 {
+        let child_span = tracer.start_span("child-operation-" + j.to_string(), azimuth::SpanKind::Internal)
+        child_span.set_parent_span(root_span.get_context())
+        
+        // 添加事件和属性
+        child_span.add_event("operation_started", [("thread", i.to_string()), ("iteration", j.to_string())])
+        child_span.set_attribute("thread_id", i.to_string())
+        child_span.set_attribute("iteration", j.to_string())
+        
+        child_spans.push(child_span)
+      }
+      
+      // 并发结束子Span
+      let end_threads = []
+      for span in child_spans {
+        let end_thread = tracing_manager.spawn_thread("end-span-thread", fn() {
+          azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 100)
+          span.end()
+        })
+        end_threads.push(end_thread)
+      }
+      
+      // 等待所有结束线程完成
+      for end_thread in end_threads {
+        end_thread.join()
+      }
+      
+      // 结束根Span
+      root_span.end()
+    })
+    span_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in span_threads {
+    thread.join()
+  }
+  
+  // 验证Span数据完整性
+  let all_spans = tracing_manager.get_all_spans()
+  let expected_span_count = 10 * (spans_per_thread + 1) // 每个线程1个根Span + 100个子Span
+  assert_eq(all_spans.length(), expected_span_count)
+  
+  // 验证父子关系
+  let root_spans = all_spans.filter(fn(span) { span.parent_span_id.is_none() })
+  let child_spans = all_spans.filter(fn(span) { span.parent_span_id.is_some() })
+  
+  assert_eq(root_spans.length(), 10)
+  assert_eq(child_spans.length(), 10 * spans_per_thread)
+  
+  // 验证每个子Span都有有效的父Span
+  for child_span in child_spans {
+    let parent_id = child_span.parent_span_id.unwrap()
+    let parent_exists = root_spans.any(fn(span) { span.span_id == parent_id })
+    assert_true(parent_exists)
+  }
+}
+
+test "并发遥测数据收集安全性" {
+  // 创建并发遥测收集器
+  let telemetry_collector = azimuth::ConcurrentTelemetryCollector::new()
+  
+  // 测试并发指标收集
+  let metrics_threads = []
+  let metrics_per_thread = 1000
+  
+  for i in 0..=9 {
+    let thread = telemetry_collector.spawn_thread("metrics-thread-" + i.to_string(), fn() {
+      let meter = telemetry_collector.get_meter("meter-" + i.to_string())
+      
+      // 创建各种类型的指标
+      let counter = meter.create_counter("operations_total", "Total operations", "count")
+      let histogram = meter.create_histogram("request_duration", "Request duration", "ms")
+      let gauge = meter.create_gauge("active_connections", "Active connections", "connections")
+      
+      for j in 0..=metrics_per_thread - 1 {
+        // 记录指标
+        counter.add(1.0, [("thread", i.to_string()), ("operation", "test")])
+        histogram.record(50.0 + (azimuth::Random::next_float() * 100.0), [("thread", i.to_string())])
+        gauge.set(10.0 + (azimuth::Random::next_float() * 40.0), [("thread", i.to_string())])
+        
+        // 添加随机延迟
+        if j % 100 == 0 {
+          azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 10)
+        }
+      }
+    })
+    metrics_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in metrics_threads {
+    thread.join()
+  }
+  
+  // 验证指标数据完整性
+  let all_metrics = telemetry_collector.get_all_metrics()
+  
+  // 验证计数器指标
+  let counter_metrics = all_metrics.filter(fn(metric) { metric.name == "operations_total" })
+  assert_true(counter_metrics.length() > 0)
+  
+  let total_operations = counter_metrics.fold(0.0, fn(acc, metric) {
+    match metric.value {
+      azimuth::MetricValue::Double(value) => acc + value,
+      _ => acc
+    }
+  })
+  assert_eq(total_operations, 10.0 * metrics_per_thread)
+  
+  // 验证直方图指标
+  let histogram_metrics = all_metrics.filter(fn(metric) { metric.name == "request_duration" })
+  assert_true(histogram_metrics.length() > 0)
+  
+  // 验证仪表指标
+  let gauge_metrics = all_metrics.filter(fn(metric) { metric.name == "active_connections" })
+  assert_true(gauge_metrics.length() > 0)
+}
+
+test "并发时序数据处理安全性" {
+  // 创建并发时序数据处理器
+  let timeseries_processor = azimuth::ConcurrentTimeSeriesProcessor::new()
+  
+  // 测试并发数据插入和查询
+  let timeseries_threads = []
+  let data_points_per_thread = 1000
+  
+  for i in 0..=9 {
+    let thread = timeseries_processor.spawn_thread("timeseries-thread-" + i.to_string(), fn() {
+      let series_name = "metric-" + i.to_string()
+      
+      // 插入数据点
+      for j in 0..=data_points_per_thread - 1 {
+        let timestamp = azimuth::TimeUtil::current_time_millis() + (j * 1000L)
+        let value = 100.0 + (azimuth::Random::next_float() * 900.0)
+        let tags = [("thread", i.to_string()), ("iteration", j.to_string())]
+        
+        timeseries_processor.insert_data_point(series_name, timestamp, value, tags)
+        
+        // 随机查询
+        if j % 100 == 0 {
+          let query_start = timestamp - 50000L
+          let query_end = timestamp
+          let results = timeseries_processor.query_data(series_name, query_start, query_end)
+          assert_true(results.length() >= 0)
+        }
+      }
+    })
+    timeseries_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in timeseries_threads {
+    thread.join()
+  }
+  
+  // 验证数据完整性
+  for i in 0..=9 {
+    let series_name = "metric-" + i.to_string()
+    let data_points = timeseries_processor.get_all_data_points(series_name)
+    assert_eq(data_points.length(), data_points_per_thread)
+    
+    // 验证数据点顺序
+    for j in 1..data_points.length() - 1 {
+      assert_true(data_points[j].timestamp >= data_points[j-1].timestamp)
     }
   }
   
-  let lock = fn(mutex, thread_id) {
-    if not mutex.locked {
-      ({ locked: true, owner: Some(thread_id), wait_queue: mutex.wait_queue }, true)
-    } else {
-      // Add to wait queue
-      let updated_wait_queue = mutex.wait_queue @ [thread_id]
-      ({ locked: true, owner: mutex.owner, wait_queue: updated_wait_queue }, false)
-    }
+  // 测试并发聚合操作
+  let aggregation_threads = []
+  
+  for i in 0..=4 {
+    let thread = timeseries_processor.spawn_thread("aggregation-thread-" + i.to_string(), fn() {
+      let series_names = ["metric-0", "metric-1", "metric-2", "metric-3", "metric-4"]
+      
+      for series_name in series_names {
+        let aggregation_result = timeseries_processor.aggregate_data(
+          series_name,
+          azimuth::AggregationType::Average,
+          azimuth::TimeUtil::current_time_millis() - 600000L, // 最近10分钟
+          azimuth::TimeUtil::current_time_millis()
+        )
+        assert_true(aggregation_result.is_some())
+      }
+    })
+    aggregation_threads.push(thread)
   }
   
-  let unlock = fn(mutex, thread_id) {
-    match mutex.owner {
-      Some(owner_id) => {
-        if owner_id == thread_id {
-          if mutex.wait_queue.length() > 0 {
-            // Transfer lock to next waiting thread
-            let next_owner = mutex.wait_queue[0]
-            let remaining_queue = mutex.wait_queue[1:mutex.wait_queue.length()]
-            ({ locked: true, owner: Some(next_owner), wait_queue: remaining_queue }, true)
-          } else {
-            // No waiting threads, release lock
-            ({ locked: false, owner: None, wait_queue: mutex.wait_queue }, true)
+  // 等待所有聚合线程完成
+  for thread in aggregation_threads {
+    thread.join()
+  }
+}
+
+test "并发缓存安全性" {
+  // 创建并发缓存管理器
+  let cache_manager = azimuth::ConcurrentCacheManager::new()
+  
+  // 创建缓存实例
+  let cache = cache_manager.create_cache("test-cache", 1000) // 最大1000个条目
+  
+  // 测试并发缓存操作
+  let cache_threads = []
+  let operations_per_thread = 500
+  
+  for i in 0..=9 {
+    let thread = cache_manager.spawn_thread("cache-thread-" + i.to_string(), fn() {
+      for j in 0..=operations_per_thread - 1 {
+        let key = "key-" + i.to_string() + "-" + j.to_string()
+        let value = "value-" + i.to_string() + "-" + j.to_string()
+        
+        // 随机执行不同操作
+        let operation = azimuth::Random::next_int() % 4
+        
+        match operation {
+          0 => {
+            // 插入操作
+            cache.put(key, value)
           }
-        } else {
-          // Not the owner, cannot unlock
-          (mutex, false)
-        }
-      }
-      None => (mutex, false)  // Not locked
-    }
-  }
-  
-  // Test basic lock/unlock
-  let mutex = create_mutex()
-  assert_false(mutex.locked)
-  assert_eq(mutex.owner, None)
-  
-  let (locked_mutex, acquired) = try_lock(mutex, 1)
-  assert_true(acquired)
-  assert_true(locked_mutex.locked)
-  assert_eq(locked_mutex.owner, Some(1))
-  
-  let (unlocked_mutex, unlocked) = unlock(locked_mutex, 1)
-  assert_true(unlocked)
-  assert_false(unlocked_mutex.locked)
-  assert_eq(unlocked_mutex.owner, None)
-  
-  // Test failed unlock (not owner)
-  let (locked_mutex2, _) = try_lock(unlocked_mutex, 2)
-  let (_, failed_unlock) = unlock(locked_mutex2, 1)
-  assert_false(failed_unlock)
-  
-  // Test successful unlock (owner)
-  let (_, success_unlock) = unlock(locked_mutex2, 2)
-  assert_true(success_unlock)
-  
-  // Test wait queue
-  let (locked_mutex3, _) = try_lock(unlocked_mutex, 3)
-  let (queued_mutex, _) = lock(locked_mutex3, 4)
-  let (queued_mutex2, _) = lock(queued_mutex, 5)
-  
-  assert_eq(queued_mutex2.wait_queue.length(), 2)
-  assert_eq(queued_mutex2.wait_queue[0], 4)
-  assert_eq(queued_mutex2.wait_queue[1], 5)
-  
-  // Unlock should transfer to next waiting thread
-  let (transferred_mutex, _) = unlock(queued_mutex2, 3)
-  assert_eq(transferred_mutex.owner, Some(4))
-  assert_eq(transferred_mutex.wait_queue.length(), 1)
-  assert_eq(transferred_mutex.wait_queue[0], 5)
-}
-
-// Test 2: Atomic Counter Implementation
-test "atomic counter implementation" {
-  // Simulate atomic operations on a counter
-  
-  type AtomicCounter {
-    value : Int
-    pending_operations : Array[(Int, String)]  // (thread_id, operation)
-  }
-  
-  let create_counter = fn(initial_value) {
-    { value: initial_value, pending_operations: [] }
-  }
-  
-  let atomic_increment = fn(counter, thread_id) {
-    // Simulate atomic increment
-    { value: counter.value + 1, pending_operations: counter.pending_operations @ [(thread_id, "increment")] }
-  }
-  
-  let atomic_decrement = fn(counter, thread_id) {
-    // Simulate atomic decrement
-    { value: counter.value - 1, pending_operations: counter.pending_operations @ [(thread_id, "decrement")] }
-  }
-  
-  let atomic_add = fn(counter, thread_id, amount) {
-    // Simulate atomic add
-    { value: counter.value + amount, pending_operations: counter.pending_operations @ [(thread_id, "add:" + amount.to_string())] }
-  }
-  
-  let atomic_get = fn(counter) {
-    counter.value
-  }
-  
-  // Test atomic operations
-  let counter = create_counter(10)
-  assert_eq(atomic_get(counter), 10)
-  
-  let counter1 = atomic_increment(counter, 1)
-  assert_eq(atomic_get(counter1), 11)
-  
-  let counter2 = atomic_decrement(counter1, 2)
-  assert_eq(atomic_get(counter2), 10)
-  
-  let counter3 = atomic_add(counter2, 3, 5)
-  assert_eq(atomic_get(counter3), 15)
-  
-  // Verify operation history
-  assert_eq(counter3.pending_operations.length(), 3)
-  assert_eq(counter3.pending_operations[0], (1, "increment"))
-  assert_eq(counter3.pending_operations[1], (2, "decrement"))
-  assert_eq(counter3.pending_operations[2], (3, "add:5"))
-  
-  // Test concurrent operations simulation
-  let simulate_concurrent_operations = fn(initial_counter, operations) {
-    let mut result_counter = initial_counter
-    
-    for (thread_id, op_type, value) in operations {
-      match op_type {
-        "increment" => result_counter = atomic_increment(result_counter, thread_id)
-        "decrement" => result_counter = atomic_decrement(result_counter, thread_id)
-        "add" => result_counter = atomic_add(result_counter, thread_id, value)
-        _ => ()
-      }
-    }
-    
-    result_counter
-  }
-  
-  let concurrent_ops = [
-    (1, "increment", 0),
-    (2, "add", 3),
-    (3, "increment", 0),
-    (4, "decrement", 0),
-    (5, "add", 10)
-  ]
-  
-  let final_counter = simulate_concurrent_operations(counter3, concurrent_ops)
-  assert_eq(atomic_get(final_counter), 28)  // 15 + 1 + 3 + 1 - 1 + 10 = 29
-}
-
-// Test 3: Thread-Safe Queue Implementation
-test "thread-safe queue implementation" {
-  // Simulate a thread-safe queue with proper synchronization
-  
-  type ThreadSafeQueue {
-    items : Array[Int]
-    head : Int
-    tail : Int
-    size : Int
-    capacity : Int
-    pending_enqueues : Array[(Int, Int)]  // (thread_id, value)
-    pending_dequeues : Array[Int]         // thread_id
-  }
-  
-  let create_queue = fn(capacity) {
-    let items = []
-    for i in 0..capacity {
-      items = items @ [0]
-    }
-    { items: items, head: 0, tail: 0, size: 0, capacity: capacity, pending_enqueues: [], pending_dequeues: [] }
-  }
-  
-  let enqueue = fn(queue, thread_id, value) {
-    if queue.size < queue.capacity {
-      let mut new_items = queue.items
-      new_items[queue.tail] = value
-      let new_tail = (queue.tail + 1) % queue.capacity
-      
-      ({
-        items: new_items,
-        head: queue.head,
-        tail: new_tail,
-        size: queue.size + 1,
-        capacity: queue.capacity,
-        pending_enqueues: queue.pending_enqueues,
-        pending_dequeues: queue.pending_dequeues
-      }, true)
-    } else {
-      // Queue is full, add to pending operations
-      ({
-        items: queue.items,
-        head: queue.head,
-        tail: queue.tail,
-        size: queue.size,
-        capacity: queue.capacity,
-        pending_enqueues: queue.pending_enqueues @ [(thread_id, value)],
-        pending_dequeues: queue.pending_dequeues
-      }, false)
-    }
-  }
-  
-  let dequeue = fn(queue, thread_id) {
-    if queue.size > 0 {
-      let value = queue.items[queue.head]
-      let new_head = (queue.head + 1) % queue.capacity
-      
-      ({
-        items: queue.items,
-        head: new_head,
-        tail: queue.tail,
-        size: queue.size - 1,
-        capacity: queue.capacity,
-        pending_enqueues: queue.pending_enqueues,
-        pending_dequeues: queue.pending_dequeues
-      }, Some(value))
-    } else {
-      // Queue is empty, add to pending operations
-      ({
-        items: queue.items,
-        head: queue.head,
-        tail: queue.tail,
-        size: queue.size,
-        capacity: queue.capacity,
-        pending_enqueues: queue.pending_enqueues,
-        pending_dequeues: queue.pending_dequeues @ [thread_id]
-      }, None)
-    }
-  }
-  
-  // Test queue operations
-  let queue = create_queue(3)
-  assert_eq(queue.size, 0)
-  
-  // Enqueue items
-  let (queue1, success1) = enqueue(queue, 1, 10)
-  assert_true(success1)
-  assert_eq(queue1.size, 1)
-  
-  let (queue2, success2) = enqueue(queue1, 2, 20)
-  assert_true(success2)
-  assert_eq(queue2.size, 2)
-  
-  let (queue3, success3) = enqueue(queue2, 3, 30)
-  assert_true(success3)
-  assert_eq(queue3.size, 3)
-  
-  // Queue is now full
-  let (queue4, success4) = enqueue(queue3, 4, 40)
-  assert_false(success4)
-  assert_eq(queue4.size, 3)
-  assert_eq(queue4.pending_enqueues.length(), 1)
-  assert_eq(queue4.pending_enqueues[0], (4, 40))
-  
-  // Dequeue items
-  let (queue5, value1) = dequeue(queue4, 5)
-  match value1 {
-    Some(v) => assert_eq(v, 10)
-    None => assert_true(false)
-  }
-  assert_eq(queue5.size, 2)
-  
-  let (queue6, value2) = dequeue(queue5, 6)
-  match value2 {
-    Some(v) => assert_eq(v, 20)
-    None => assert_true(false)
-  }
-  assert_eq(queue6.size, 1)
-  
-  // Queue has space now, pending enqueue should be processed
-  let (queue7, success5) = enqueue(queue6, 7, 50)
-  assert_true(success5)
-  assert_eq(queue7.size, 2)
-  
-  // Dequeue remaining items
-  let (queue8, value3) = dequeue(queue7, 8)
-  match value3 {
-    Some(v) => assert_eq(v, 30)
-    None => assert_true(false)
-  }
-  
-  let (queue9, value4) = dequeue(queue8, 9)
-  match value4 {
-    Some(v) => assert_eq(v, 50)
-    None => assert_true(false)
-  }
-  
-  // Queue is empty now
-  assert_eq(queue9.size, 0)
-  
-  // Dequeue from empty queue
-  let (queue10, value5) = dequeue(queue9, 10)
-  match value5 {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  assert_eq(queue10.pending_dequeues.length(), 1)
-  assert_eq(queue10.pending_dequeues[0], 10)
-}
-
-// Test 4: Read-Write Lock Implementation
-test "read-write lock implementation" {
-  // Simulate a read-write lock with multiple readers and exclusive writers
-  
-  type ReadWriteLock {
-    state : String  // "unlocked", "reading", "writing"
-    readers : Int
-    writer : Option[Int]
-    waiting_readers : Array[Int]
-    waiting_writers : Array[Int]
-  }
-  
-  let create_rwlock = fn() {
-    { state: "unlocked", readers: 0, writer: None, waiting_readers: [], waiting_writers: [] }
-  }
-  
-  let acquire_read_lock = fn(rwlock, thread_id) {
-    match rwlock.state {
-      "unlocked" => {
-        ({ state: "reading", readers: 1, writer: None, waiting_readers: [], waiting_writers: rwlock.waiting_writers }, true)
-      }
-      "reading" => {
-        ({ state: "reading", readers: rwlock.readers + 1, writer: None, waiting_readers: [], waiting_writers: rwlock.waiting_writers }, true)
-      }
-      "writing" => {
-        // Add to waiting readers
-        ({ state: "writing", readers: rwlock.readers, writer: rwlock.writer, waiting_readers: rwlock.waiting_readers @ [thread_id], waiting_writers: rwlock.waiting_writers }, false)
-      }
-      _ => (rwlock, false)
-    }
-  }
-  
-  let acquire_write_lock = fn(rwlock, thread_id) {
-    match rwlock.state {
-      "unlocked" => {
-        ({ state: "writing", readers: 0, writer: Some(thread_id), waiting_readers: rwlock.waiting_readers, waiting_writers: [] }, true)
-      }
-      "reading" | "writing" => {
-        // Add to waiting writers
-        ({ state: rwlock.state, readers: rwlock.readers, writer: rwlock.writer, waiting_readers: rwlock.waiting_readers, waiting_writers: rwlock.waiting_writers @ [thread_id] }, false)
-      }
-      _ => (rwlock, false)
-    }
-  }
-  
-  let release_read_lock = fn(rwlock, thread_id) {
-    if rwlock.state == "reading" and rwlock.readers > 0 {
-      let new_readers = rwlock.readers - 1
-      
-      if new_readers == 0 {
-        // No more readers, check if there are waiting writers
-        if rwlock.waiting_writers.length() > 0 {
-          let next_writer = rwlock.waiting_writers[0]
-          let remaining_writers = rwlock.waiting_writers[1:rwlock.waiting_writers.length()]
-          ({ state: "writing", readers: 0, writer: Some(next_writer), waiting_readers: rwlock.waiting_readers, waiting_writers: remaining_writers }, true)
-        } else {
-          ({ state: "unlocked", readers: 0, writer: None, waiting_readers: rwlock.waiting_readers, waiting_writers: rwlock.waiting_writers }, true)
-        }
-      } else {
-        ({ state: "reading", readers: new_readers, writer: None, waiting_readers: rwlock.waiting_readers, waiting_writers: rwlock.waiting_writers }, true)
-      }
-    } else {
-      (rwlock, false)
-    }
-  }
-  
-  let release_write_lock = fn(rwlock, thread_id) {
-    if rwlock.state == "writing" and rwlock.writer == Some(thread_id) {
-      // Check if there are waiting readers or writers
-      if rwlock.waiting_readers.length() > 0 {
-        // Grant read locks to all waiting readers
-        let new_state = "reading"
-        let new_readers = rwlock.waiting_readers.length()
-        ({ state: new_state, readers: new_readers, writer: None, waiting_readers: [], waiting_writers: rwlock.waiting_writers }, true)
-      } else if rwlock.waiting_writers.length() > 0 {
-        // Grant write lock to next waiting writer
-        let next_writer = rwlock.waiting_writers[0]
-        let remaining_writers = rwlock.waiting_writers[1:rwlock.waiting_writers.length()]
-        ({ state: "writing", readers: 0, writer: Some(next_writer), waiting_readers: rwlock.waiting_readers, waiting_writers: remaining_writers }, true)
-      } else {
-        ({ state: "unlocked", readers: 0, writer: None, waiting_readers: rwlock.waiting_readers, waiting_writers: rwlock.waiting_writers }, true)
-      }
-    } else {
-      (rwlock, false)
-    }
-  }
-  
-  // Test read-write lock
-  let rwlock = create_rwlock()
-  assert_eq(rwlock.state, "unlocked")
-  
-  // Acquire read locks
-  let (rwlock1, acquired1) = acquire_read_lock(rwlock, 1)
-  assert_true(acquired1)
-  assert_eq(rwlock1.state, "reading")
-  assert_eq(rwlock1.readers, 1)
-  
-  let (rwlock2, acquired2) = acquire_read_lock(rwlock1, 2)
-  assert_true(acquired2)
-  assert_eq(rwlock2.state, "reading")
-  assert_eq(rwlock2.readers, 2)
-  
-  // Try to acquire write lock (should fail)
-  let (rwlock3, acquired3) = acquire_write_lock(rwlock2, 3)
-  assert_false(acquired3)
-  assert_eq(rwlock3.waiting_writers.length(), 1)
-  assert_eq(rwlock3.waiting_writers[0], 3)
-  
-  // Release read locks
-  let (rwlock4, released1) = release_read_lock(rwlock3, 1)
-  assert_true(released1)
-  assert_eq(rwlock4.state, "reading")
-  assert_eq(rwlock4.readers, 1)
-  
-  let (rwlock5, released2) = release_read_lock(rwlock4, 2)
-  assert_true(released2)
-  // Should transition to writing state for waiting writer
-  assert_eq(rwlock5.state, "writing")
-  assert_eq(rwlock5.writer, Some(3))
-  
-  // Release write lock
-  let (rwlock6, released3) = release_write_lock(rwlock5, 3)
-  assert_true(released3)
-  assert_eq(rwlock6.state, "unlocked")
-  assert_eq(rwlock6.writer, None)
-}
-
-// Test 5: Thread-Safe Cache Implementation
-test "thread-safe cache implementation" {
-  // Simulate a thread-safe cache with proper synchronization
-  
-  type CacheEntry {
-    key : String
-    value : Int
-    last_accessed : Int
-    access_count : Int
-  }
-  
-  type ThreadSafeCache {
-    entries : Array[CacheEntry]
-    capacity : Int
-    lock : Bool
-    pending_operations : Array[(Int, String, String)]  // (thread_id, operation, key)
-  }
-  
-  let create_cache = fn(capacity) {
-    { entries: [], capacity: capacity, lock: false, pending_operations: [] }
-  }
-  
-  let cache_lock = fn(cache, thread_id) {
-    if not cache.lock {
-      ({ entries: cache.entries, capacity: cache.capacity, lock: true, pending_operations: cache.pending_operations }, true)
-    } else {
-      ({ entries: cache.entries, capacity: cache.capacity, lock: true, pending_operations: cache.pending_operations @ [(thread_id, "lock", "")] }, false)
-    }
-  }
-  
-  let cache_unlock = fn(cache, thread_id) {
-    if cache.lock {
-      ({ entries: cache.entries, capacity: cache.capacity, lock: false, pending_operations: cache.pending_operations }, true)
-    } else {
-      (cache, false)
-    }
-  }
-  
-  let cache_get = fn(cache, thread_id, key) {
-    if cache.lock {
-      let mut found_value = None
-      let mut found_index = -1
-      
-      for i in 0..cache.entries.length() {
-        if cache.entries[i].key == key {
-          found_value = Some(cache.entries[i].value)
-          found_index = i
-          break
-        }
-      }
-      
-      // Update access information
-      if found_index >= 0 {
-        let mut updated_entries = cache.entries
-        updated_entries[found_index] = {
-          key: key,
-          value: found_value.unwrap(),
-          last_accessed: 1000,  // Simulated timestamp
-          access_count: cache.entries[found_index].access_count + 1
+          1 => {
+            // 获取操作
+            cache.get(key)
+          }
+          2 => {
+            // 删除操作
+            cache.remove(key)
+          }
+          3 => {
+            // 批量操作
+            let batch_data = [
+              ("batch-key-1-" + j.to_string(), "batch-value-1"),
+              ("batch-key-2-" + j.to_string(), "batch-value-2"),
+              ("batch-key-3-" + j.to_string(), "batch-value-3")
+            ]
+            cache.put_all(batch_data)
+          }
+          _ => ()
         }
         
-        ({
-          entries: updated_entries,
-          capacity: cache.capacity,
-          lock: cache.lock,
-          pending_operations: cache.pending_operations
-        }, found_value)
-      } else {
-        (cache, found_value)
-      }
-    } else {
-      (cache, None)
-    }
-  }
-  
-  let cache_put = fn(cache, thread_id, key, value) {
-    if cache.lock {
-      let mut existing_index = -1
-      
-      for i in 0..cache.entries.length() {
-        if cache.entries[i].key == key {
-          existing_index = i
-          break
+        // 添加随机延迟
+        if j % 50 == 0 {
+          azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 10)
         }
       }
+    })
+    cache_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in cache_threads {
+    thread.join()
+  }
+  
+  // 验证缓存状态
+  let cache_stats = cache.get_statistics()
+  assert_true(cache_stats.size <= 1000) // 不超过最大容量
+  assert_true(cache_stats.hit_rate >= 0.0) // 命中率应该有效
+  assert_true(cache_stats.miss_rate >= 0.0) // 未命中率应该有效
+  
+  // 测试并发缓存清理
+  let cleanup_threads = []
+  
+  for i in 0..=2 {
+    let thread = cache_manager.spawn_thread("cleanup-thread-" + i.to_string(), fn() {
+      // 清理过期条目
+      cache.cleanup_expired()
       
-      if existing_index >= 0 {
-        // Update existing entry
-        let mut updated_entries = cache.entries
-        updated_entries[existing_index] = {
-          key: key,
-          value: value,
-          last_accessed: 1000,  // Simulated timestamp
-          access_count: cache.entries[existing_index].access_count + 1
+      // 基于LRU策略清理
+      cache.evict_lru(100)
+      
+      // 清理所有条目
+      if i == 2 {
+        cache.clear()
+      }
+    })
+    cleanup_threads.push(thread)
+  }
+  
+  // 等待所有清理线程完成
+  for thread in cleanup_threads {
+    thread.join()
+  }
+  
+  // 验证缓存已清空
+  assert_eq(cache.size(), 0)
+}
+
+test "并发锁和同步机制安全性" {
+  // 创建并发锁管理器
+  let lock_manager = azimuth::ConcurrentLockManager::new()
+  
+  // 测试分布式锁
+  let distributed_lock = lock_manager.create_distributed_lock("test-resource")
+  
+  // 测试并发锁获取和释放
+  let lock_threads = []
+  let lock_operations_per_thread = 100
+  
+  for i in 0..=9 {
+    let thread = lock_manager.spawn_thread("lock-thread-" + i.to_string(), fn() {
+      for j in 0..=lock_operations_per_thread - 1 {
+        // 获取锁
+        let lock_acquired = distributed_lock.try_acquire(1000) // 1秒超时
+        assert_true(lock_acquired)
+        
+        // 临界区操作
+        let shared_resource = lock_manager.get_shared_resource("test-resource")
+        let current_value = shared_resource.get()
+        shared_resource.set(current_value + 1)
+        
+        // 模拟临界区操作时间
+        azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 100)
+        
+        // 释放锁
+        distributed_lock.release()
+      }
+    })
+    lock_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in lock_threads {
+    thread.join()
+  }
+  
+  // 验证共享资源最终值
+  let shared_resource = lock_manager.get_shared_resource("test-resource")
+  let expected_value = 10 * lock_operations_per_thread
+  assert_eq(shared_resource.get(), expected_value)
+  
+  // 测试读写锁
+  let read_write_lock = lock_manager.create_read_write_lock("rw-test-resource")
+  
+  // 创建读线程
+  let read_threads = []
+  for i in 0..=4 {
+    let thread = lock_manager.spawn_thread("read-thread-" + i.to_string(), fn() {
+      for j in 0..=49 {
+        // 获取读锁
+        read_write_lock.acquire_read_lock()
+        
+        // 读取共享资源
+        let rw_resource = lock_manager.get_rw_shared_resource("rw-test-resource")
+        let value = rw_resource.read()
+        assert_true(value >= 0)
+        
+        // 模拟读取时间
+        azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 50)
+        
+        // 释放读锁
+        read_write_lock.release_read_lock()
+      }
+    })
+    read_threads.push(thread)
+  }
+  
+  // 创建写线程
+  let write_threads = []
+  for i in 0..=1 {
+    let thread = lock_manager.spawn_thread("write-thread-" + i.to_string(), fn() {
+      for j in 0..=24 {
+        // 获取写锁
+        read_write_lock.acquire_write_lock()
+        
+        // 写入共享资源
+        let rw_resource = lock_manager.get_rw_shared_resource("rw-test-resource")
+        let current_value = rw_resource.read()
+        rw_resource.write(current_value + 1)
+        
+        // 模拟写入时间
+        azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 100)
+        
+        // 释放写锁
+        read_write_lock.release_write_lock()
+      }
+    })
+    write_threads.push(thread)
+  }
+  
+  // 等待所有线程完成
+  for thread in read_threads {
+    thread.join()
+  }
+  for thread in write_threads {
+    thread.join()
+  }
+  
+  // 验证读写锁的最终状态
+  let rw_resource = lock_manager.get_rw_shared_resource("rw-test-resource")
+  let final_value = rw_resource.read()
+  assert_eq(final_value, 50) // 2个写线程，每个写25次
+}
+
+test "并发异常处理和恢复安全性" {
+  // 创建并发异常处理管理器
+  let exception_handler = azimuth::ConcurrentExceptionHandler::new()
+  
+  // 测试并发异常处理
+  let exception_threads = []
+  let exceptions_per_thread = 100
+  
+  for i in 0..=9 {
+    let thread = exception_handler.spawn_thread("exception-thread-" + i.to_string(), fn() {
+      for j in 0..=exceptions_per_thread - 1 {
+        // 随机产生不同类型的异常
+        let exception_type = azimuth::Random::next_int() % 4
+        let exception = match exception_type {
+          0 => azimuth::Exception::new("NetworkException", "Network connection failed"),
+          1 => azimuth::Exception::new("DatabaseException", "Database query failed"),
+          2 => azimuth::Exception::new("ValidationException", "Input validation failed"),
+          3 => azimuth::Exception::new("SystemException", "System resource unavailable"),
+          _ => azimuth::Exception::new("UnknownException", "Unknown error occurred")
         }
         
-        ({ entries: updated_entries, capacity: cache.capacity, lock: cache.lock, pending_operations: cache.pending_operations }, true)
-      } else {
-        // Add new entry
-        let new_entry = { key: key, value: value, last_accessed: 1000, access_count: 1 }
+        // 处理异常
+        let handled = exception_handler.handle_exception(exception, [
+          ("thread_id", i.to_string()),
+          ("iteration", j.to_string())
+        ])
+        assert_true(handled)
         
-        if cache.entries.length() < cache.capacity {
-          // Space available
-          ({ entries: cache.entries @ [new_entry], capacity: cache.capacity, lock: cache.lock, pending_operations: cache.pending_operations }, true)
-        } else {
-          // Find least recently used entry
-          let mut lru_index = 0
-          let mut lru_time = cache.entries[0].last_accessed
-          
-          for i in 1..cache.entries.length() {
-            if cache.entries[i].last_accessed < lru_time {
-              lru_index = i
-              lru_time = cache.entries[i].last_accessed
-            }
-          }
-          
-          // Replace LRU entry
-          let mut updated_entries = cache.entries
-          updated_entries[lru_index] = new_entry
-          
-          ({ entries: updated_entries, capacity: cache.capacity, lock: cache.lock, pending_operations: cache.pending_operations }, true)
+        // 添加随机延迟
+        if j % 20 == 0 {
+          azimuth::TimeUtil::sleep_micros(azimuth::Random::next_int() % 10)
         }
       }
-    } else {
-      (cache, false)
-    }
+    })
+    exception_threads.push(thread)
   }
   
-  // Test thread-safe cache
-  let cache = create_cache(2)
-  
-  // Acquire lock
-  let (locked_cache, acquired) = cache_lock(cache, 1)
-  assert_true(acquired)
-  assert_true(locked_cache.lock)
-  
-  // Try to acquire lock again (should fail)
-  let (_, failed_acquire) = cache_lock(locked_cache, 2)
-  assert_false(failed_acquire)
-  
-  // Put values
-  let (cache1, put1) = cache_put(locked_cache, 1, "key1", 100)
-  assert_true(put1)
-  assert_eq(cache1.entries.length(), 1)
-  
-  let (cache2, put2) = cache_put(cache1, 1, "key2", 200)
-  assert_true(put2)
-  assert_eq(cache2.entries.length(), 2)
-  
-  // Get values
-  let (cache3, get1) = cache_get(cache2, 1, "key1")
-  match get1 {
-    Some(v) => assert_eq(v, 100)
-    None => assert_true(false)
+  // 等待所有线程完成
+  for thread in exception_threads {
+    thread.join()
   }
   
-  // Add third value (should evict LRU)
-  let (cache4, put3) = cache_put(cache3, 1, "key3", 300)
-  assert_true(put3)
-  assert_eq(cache4.entries.length(), 2)
+  // 验证异常处理统计
+  let exception_stats = exception_handler.get_statistics()
+  assert_eq(exception_stats.total_exceptions, 10 * exceptions_per_thread)
+  assert_eq(exception_stats.handled_exceptions, 10 * exceptions_per_thread)
+  assert_eq(exception_stats.handling_success_rate, 1.0)
   
-  // key1 should still be in cache (recently accessed)
-  let (cache5, get2) = cache_get(cache4, 1, "key1")
-  match get2 {
-    Some(v) => assert_eq(v, 100)
-    None => assert_true(false)
-  }
+  // 验证异常分类统计
+  let network_exceptions = exception_stats.get_exception_count("NetworkException")
+  let database_exceptions = exception_stats.get_exception_count("DatabaseException")
+  let validation_exceptions = exception_stats.get_exception_count("ValidationException")
+  let system_exceptions = exception_stats.get_exception_count("SystemException")
   
-  // key2 should be evicted
-  let (_, get3) = cache_get(cache5, 1, "key2")
-  match get3 {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
+  assert_true(network_exceptions > 0)
+  assert_true(database_exceptions > 0)
+  assert_true(validation_exceptions > 0)
+  assert_true(system_exceptions > 0)
   
-  // Release lock
-  let (unlocked_cache, released) = cache_unlock(cache5, 1)
-  assert_true(released)
-  assert_false(unlocked_cache.lock)
-}
-
-// Test 6: Deadlock Detection
-test "deadlock detection" {
-  // Simulate deadlock detection in a resource allocation system
+  // 测试并发恢复机制
+  let recovery_threads = []
   
-  type ResourceRequest {
-    thread_id : Int
-    resource_id : Int
-    timestamp : Int
-  }
-  
-  type DeadlockDetector {
-    resources : Array[Int]  // Available resources
-    allocated : Array[(Int, Int)]  // (thread_id, resource_id)
-    waiting : Array[ResourceRequest]
-    timestamp : Int
-  }
-  
-  let create_detector = fn(resources) {
-    { resources: resources, allocated: [], waiting: [], timestamp: 0 }
-  }
-  
-  let request_resource = fn(detector, thread_id, resource_id) {
-    // Check if resource is available
-    let mut resource_available = true
-    for (_, allocated_resource) in detector.allocated {
-      if allocated_resource == resource_id {
-        resource_available = false
-        break
-      }
-    }
-    
-    if resource_available {
-      // Allocate resource
-      let new_allocated = detector.allocated @ [(thread_id, resource_id)]
-      ({ resources: detector.resources, allocated: new_allocated, waiting: detector.waiting, timestamp: detector.timestamp + 1 }, true)
-    } else {
-      // Add to waiting queue
-      let request = { thread_id: thread_id, resource_id: resource_id, timestamp: detector.timestamp }
-      let new_waiting = detector.waiting @ [request]
-      ({ resources: detector.resources, allocated: detector.allocated, waiting: new_waiting, timestamp: detector.timestamp + 1 }, false)
-    }
-  }
-  
-  let release_resource = fn(detector, thread_id, resource_id) {
-    // Remove from allocated
-    let mut new_allocated = []
-    let mut found = false
-    
-    for (tid, rid) in detector.allocated {
-      if tid == thread_id and rid == resource_id {
-        found = true
-      } else {
-        new_allocated = new_allocated @ [(tid, rid)]
-      }
-    }
-    
-    if found {
-      // Check if any waiting threads can now be served
-      let mut new_waiting = detector.waiting
-      let mut updated_waiting = []
+  for i in 0..=4 {
+    let thread = exception_handler.spawn_thread("recovery-thread-" + i.to_string(), fn() {
+      // 模拟故障
+      let failure = azimuth::SystemFailure::new("service-" + i.to_string(), "Simulated failure")
+      exception_handler.report_failure(failure)
       
-      for request in new_waiting {
-        if request.resource_id == resource_id {
-          // Allocate to this waiting thread
-          new_allocated = new_allocated @ [(request.thread_id, request.resource_id)]
-        } else {
-          updated_waiting = updated_waiting @ [request]
-        }
-      }
+      // 尝试恢复
+      let recovery_result = exception_handler.attempt_recovery("service-" + i.to_string())
+      assert_true(recovery_result)
       
-      ({ resources: detector.resources, allocated: new_allocated, waiting: updated_waiting, timestamp: detector.timestamp + 1 }, true)
-    } else {
-      (detector, false)
-    }
+      // 验证恢复状态
+      let service_status = exception_handler.get_service_status("service-" + i.to_string())
+      assert_eq(service_status, azimuth::ServiceStatus::Healthy)
+    })
+    recovery_threads.push(thread)
   }
   
-  let detect_deadlock = fn(detector) {
-    // Simplified deadlock detection: check for circular wait
-    let mut deadlocked_threads = []
-    
-    // Build wait graph
-    let mut wait_graph = []  // Array of (waiting_thread, holding_thread)
-    
-    for waiting_request in detector.waiting {
-      let waiting_thread = waiting_request.thread_id
-      let wanted_resource = waiting_request.resource_id
-      
-      // Find which thread holds this resource
-      for (holding_thread, held_resource) in detector.allocated {
-        if held_resource == wanted_resource {
-          wait_graph = wait_graph @ [(waiting_thread, holding_thread)]
-          break
-        }
-      }
-    }
-    
-    // Check for cycles (simplified)
-    for (waiting, holding) in wait_graph {
-      for (waiting2, holding2) in wait_graph {
-        if holding == waiting2 and holding2 == waiting {
-          deadlocked_threads = deadlocked_threads @ [waiting, waiting2]
-        }
-      }
-    }
-    
-    deadlocked_threads
+  // 等待所有恢复线程完成
+  for thread in recovery_threads {
+    thread.join()
   }
   
-  // Test deadlock detection
-  let detector = create_detector([1, 2])
-  
-  // Allocate resources
-  let (detector1, allocated1) = request_resource(detector, 1, 1)
-  assert_true(allocated1)
-  
-  let (detector2, allocated2) = request_resource(detector1, 2, 2)
-  assert_true(allocated2)
-  
-  // Create deadlock situation
-  let (detector3, waiting1) = request_resource(detector2, 1, 2)
-  assert_false(waiting1)  // Thread 1 waits for resource 2
-  
-  let (detector4, waiting2) = request_resource(detector3, 2, 1)
-  assert_false(waiting2)  // Thread 2 waits for resource 1
-  
-  // Detect deadlock
-  let deadlocked_threads = detect_deadlock(detector4)
-  assert_eq(deadlocked_threads.length(), 2)
-  assert_true(deadlocked_threads.contains(1))
-  assert_true(deadlocked_threads.contains(2))
-  
-  // Resolve deadlock by having thread 1 release resource 1
-  let (detector5, released1) = release_resource(detector4, 1, 1)
-  assert_true(released1)
-  
-  // Now thread 2 should get resource 1
-  assert_eq(detector5.allocated.length(), 2)
-  
-  // Check if deadlock is resolved
-  let deadlocked_threads2 = detect_deadlock(detector5)
-  assert_eq(deadlocked_threads2.length(), 0)
-}
-
-// Test 7: Race Condition Detection
-test "race condition detection" {
-  // Simulate race condition detection in shared data access
-  
-  type SharedData {
-    value : Int
-    access_log : Array[(Int, String, Int)]  // (thread_id, operation, timestamp)
+  // 验证所有服务都已恢复
+  for i in 0..=4 {
+    let service_status = exception_handler.get_service_status("service-" + i.to_string())
+    assert_eq(service_status, azimuth::ServiceStatus::Healthy)
   }
-  
-  type RaceConditionDetector {
-    shared_data : SharedData
-    operations : Array[(Int, String, Int, Int)]  // (thread_id, operation, old_value, new_value)
-  }
-  
-  let create_detector = fn(initial_value) {
-    { 
-      shared_data: { value: initial_value, access_log: [] },
-      operations: []
-    }
-  }
-  
-  let read_shared_data = fn(detector, thread_id) {
-    let value = detector.shared_data.value
-    let new_log = detector.shared_data.access_log @ [(thread_id, "read", 1000)]
-    let updated_shared_data = { value: value, access_log: new_log }
-    
-    ({
-      shared_data: updated_shared_data,
-      operations: detector.operations @ [(thread_id, "read", value, value)]
-    }, value)
-  }
-  
-  let write_shared_data = fn(detector, thread_id, new_value) {
-    let old_value = detector.shared_data.value
-    let new_log = detector.shared_data.access_log @ [(thread_id, "write", 1000)]
-    let updated_shared_data = { value: new_value, access_log: new_log }
-    
-    ({
-      shared_data: updated_shared_data,
-      operations: detector.operations @ [(thread_id, "write", old_value, new_value)]
-    }, true)
-  }
-  
-  let detect_race_conditions = fn(detector) {
-    let mut race_conditions = []
-    
-    // Look for read-modify-write patterns without proper synchronization
-    for i in 0..detector.operations.length() {
-      for j in i + 1..detector.operations.length() {
-        let op1 = detector.operations[i]
-        let op2 = detector.operations[j]
-        
-        // Check if different threads accessed the same data
-        if op1.0 != op2.0 {
-          // Check for read-write race
-          if op1.1 == "read" and op2.1 == "write" and op1.2 == op2.2 {
-            race_conditions = race_conditions @ ["Read-write race between thread " + op1.0.to_string() + " and thread " + op2.0.to_string()]
-          }
-          
-          // Check for write-write race
-          if op1.1 == "write" and op2.1 == "write" and op1.2 != op2.2 {
-            race_conditions = race_conditions @ ["Write-write race between thread " + op1.0.to_string() + " and thread " + op2.0.to_string()]
-          }
-        }
-      }
-    }
-    
-    race_conditions
-  }
-  
-  // Test race condition detection
-  let detector = create_detector(10)
-  
-  // Simulate concurrent operations
-  let (detector1, read1) = read_shared_data(detector, 1)
-  assert_eq(read1, 10)
-  
-  let (detector2, read2) = read_shared_data(detector1, 2)
-  assert_eq(read2, 10)
-  
-  // Both threads read the same value, now both try to write
-  let (detector3, write1) = write_shared_data(detector2, 1, 20)
-  assert_true(write1)
-  
-  let (detector4, write2) = write_shared_data(detector3, 2, 30)
-  assert_true(write2)
-  
-  // Detect race conditions
-  let race_conditions = detect_race_conditions(detector4)
-  assert_eq(race_conditions.length(), 2)  // Two race conditions detected
-  
-  // Test with proper synchronization simulation
-  let synchronized_operations = fn(initial_detector) {
-    let mut result_detector = initial_detector
-    
-    // Simulate proper synchronized access
-    let (temp_detector, _) = read_shared_data(result_detector, 1)
-    let (temp_detector2, _) = write_shared_data(temp_detector, 1, 20)
-    result_detector = temp_detector2
-    
-    let (temp_detector3, _) = read_shared_data(result_detector, 2)
-    let (temp_detector4, _) = write_shared_data(temp_detector3, 2, 30)
-    result_detector = temp_detector4
-    
-    result_detector
-  }
-  
-  let sync_detector = synchronized_operations(create_detector(10))
-  let sync_race_conditions = detect_race_conditions(sync_detector)
-  assert_eq(sync_race_conditions.length(), 0)  // No race conditions with proper synchronization
-}
-
-// Test 8: Concurrent Data Structure Integrity
-test "concurrent data structure integrity" {
-  // Test data structure integrity under concurrent operations
-  
-  type ConcurrentCounter {
-    value : Int
-    operations : Array[(Int, String, Int, Int)]  // (thread_id, operation, old_value, new_value)
-  }
-  
-  let create_concurrent_counter = fn(initial_value) {
-    { value: initial_value, operations: [] }
-  }
-  
-  let concurrent_increment = fn(counter, thread_id) {
-    let old_value = counter.value
-    let new_value = old_value + 1
-    let new_operations = counter.operations @ [(thread_id, "increment", old_value, new_value)]
-    
-    ({ value: new_value, operations: new_operations }, new_value)
-  }
-  
-  let concurrent_decrement = fn(counter, thread_id) {
-    let old_value = counter.value
-    let new_value = old_value - 1
-    let new_operations = counter.operations @ [(thread_id, "decrement", old_value, new_value)]
-    
-    ({ value: new_value, operations: new_operations }, new_value)
-  }
-  
-  let verify_integrity = fn(counter) {
-    let mut expected_value = 0
-    let mut integrity_issues = []
-    
-    // Calculate expected value based on operations
-    for (thread_id, operation, old_value, new_value) in counter.operations {
-      match operation {
-        "increment" => {
-          if new_value != old_value + 1 {
-            integrity_issues = integrity_issues @ ["Increment operation integrity issue: " + old_value.to_string() + " -> " + new_value.to_string()]
-          }
-          expected_value = expected_value + 1
-        }
-        "decrement" => {
-          if new_value != old_value - 1 {
-            integrity_issues = integrity_issues @ ["Decrement operation integrity issue: " + old_value.to_string() + " -> " + new_value.to_string()]
-          }
-          expected_value = expected_value - 1
-        }
-        _ => ()
-      }
-    }
-    
-    // Check if final value matches expected
-    if counter.value != expected_value {
-      integrity_issues = integrity_issues @ ["Final value mismatch: expected " + expected_value.to_string() + ", got " + counter.value.to_string()]
-    }
-    
-    integrity_issues
-  }
-  
-  // Test concurrent operations
-  let counter = create_concurrent_counter(0)
-  
-  // Simulate concurrent operations
-  let (counter1, _) = concurrent_increment(counter, 1)
-  let (counter2, _) = concurrent_increment(counter1, 2)
-  let (counter3, _) = concurrent_decrement(counter2, 3)
-  let (counter4, _) = concurrent_increment(counter3, 1)
-  let (counter5, _) = concurrent_decrement(counter4, 2)
-  
-  // Verify integrity
-  let integrity_issues = verify_integrity(counter5)
-  assert_eq(integrity_issues.length(), 0)
-  assert_eq(counter5.value, 0)  // +1 +1 -1 +1 -1 = 1
-  
-  // Test with corrupted operations (simulating race conditions)
-  let corrupted_operations = [
-    (1, "increment", 0, 1),
-    (2, "increment", 1, 3),  // Skipped value 2 (race condition)
-    (3, "decrement", 3, 1),  // Decrement from wrong value
-    (1, "increment", 1, 2)
-  ]
-  
-  let corrupted_counter = {
-    value: 2,
-    operations: corrupted_operations
-  }
-  
-  let corrupted_issues = verify_integrity(corrupted_counter)
-  assert_eq(corrupted_issues.length(), 2)  // Two integrity issues detected
-}
-
-// Test 9: Memory Consistency Model
-test "memory consistency model" {
-  // Test memory consistency in concurrent operations
-  
-  type MemoryCell {
-    value : Int
-    version : Int
-    access_history : Array[(Int, String, Int, Int)]  // (thread_id, operation, value, version)
-  }
-  
-  type MemoryModel {
-    cells : Array[MemoryCell]
-    global_version : Int
-  }
-  
-  let create_memory_model = fn(num_cells) {
-    let mut cells = []
-    for i in 0..num_cells {
-      cells = cells @ [{ value: 0, version: 0, access_history: [] }]
-    }
-    { cells: cells, global_version: 0 }
-  }
-  
-  let memory_write = fn(model, thread_id, cell_index, value) {
-    if cell_index < model.cells.length() {
-      let new_version = model.global_version + 1
-      let old_cell = model.cells[cell_index]
-      let new_history = old_cell.access_history @ [(thread_id, "write", value, new_version)]
-      let new_cell = { value: value, version: new_version, access_history: new_history }
-      
-      let mut new_cells = model.cells
-      new_cells[cell_index] = new_cell
-      
-      ({ cells: new_cells, global_version: new_version }, true)
-    } else {
-      (model, false)
-    }
-  }
-  
-  let memory_read = fn(model, thread_id, cell_index) {
-    if cell_index < model.cells.length() {
-      let cell = model.cells[cell_index]
-      let new_history = cell.access_history @ [(thread_id, "read", cell.value, cell.version)]
-      let updated_cell = { value: cell.value, version: cell.version, access_history: new_history }
-      
-      let mut new_cells = model.cells
-      new_cells[cell_index] = updated_cell
-      
-      ({ cells: new_cells, global_version: model.global_version }, Some(cell.value))
-    } else {
-      (model, None)
-    }
-  }
-  
-  let verify_memory_consistency = fn(model) {
-    let mut consistency_issues = []
-    
-    // Check for stale reads
-    for i in 0..model.cells.length() {
-      let cell = model.cells[i]
-      let mut write_versions = []
-      
-      // Collect all write versions
-      for (thread_id, operation, value, version) in cell.access_history {
-        if operation == "write" {
-          write_versions = write_versions @ [(thread_id, version)]
-        }
-      }
-      
-      // Check for reads that see older versions
-      for (thread_id, operation, value, version) in cell.access_history {
-        if operation == "read" {
-          for (writer_thread, write_version) in write_versions {
-            if write_version > version {
-              consistency_issues = consistency_issues @ ["Stale read detected: thread " + thread_id.to_string() + " read version " + version.to_string() + " after thread " + writer_thread.to_string() + " wrote version " + write_version.to_string()]
-            }
-          }
-        }
-      }
-    }
-    
-    consistency_issues
-  }
-  
-  // Test memory consistency
-  let model = create_memory_model(2)
-  
-  // Perform operations
-  let (model1, wrote1) = memory_write(model, 1, 0, 10)
-  assert_true(wrote1)
-  
-  let (model2, wrote2) = memory_write(model1, 2, 1, 20)
-  assert_true(wrote2)
-  
-  let (model3, read1) = memory_read(model2, 3, 0)
-  match read1 {
-    Some(value) => assert_eq(value, 10)
-    None => assert_true(false)
-  }
-  
-  let (model4, read2) = memory_read(model3, 4, 1)
-  match read2 {
-    Some(value) => assert_eq(value, 20)
-    None => assert_true(false)
-  }
-  
-  // Verify consistency
-  let consistency_issues = verify_memory_consistency(model4)
-  assert_eq(consistency_issues.length(), 0)
-  
-  // Test with inconsistent operations
-  let inconsistent_operations = [
-    (1, "write", 10, 1),
-    (2, "write", 15, 2),
-    (3, "read", 10, 1)  // Read sees older version after newer write
-  ]
-  
-  let inconsistent_cell = {
-    value: 15,
-    version: 2,
-    access_history: inconsistent_operations
-  }
-  
-  let inconsistent_model = {
-    cells: [inconsistent_cell],
-    global_version: 2
-  }
-  
-  let inconsistent_issues = verify_memory_consistency(inconsistent_model)
-  assert_eq(inconsistent_issues.length(), 1)  // One consistency issue detected
-}
-
-// Test 10: Concurrent Map Operations
-test "concurrent map operations" {
-  // Test thread-safe map operations
-  
-  type MapEntry {
-    key : String
-    value : Int
-    version : Int
-  }
-  
-  type ConcurrentMap {
-    entries : Array[MapEntry]
-    lock : Bool
-    operations : Array[(Int, String, String, Int)]  // (thread_id, operation, key, version)
-  }
-  
-  let create_concurrent_map = fn() {
-    { entries: [], lock: false, operations: [] }
-  }
-  
-  let map_lock = fn(map, thread_id) {
-    if not map.lock {
-      ({ entries: map.entries, lock: true, operations: map.operations @ [(thread_id, "lock", "", 0)] }, true)
-    } else {
-      (map, false)
-    }
-  }
-  
-  let map_unlock = fn(map, thread_id) {
-    if map.lock {
-      ({ entries: map.entries, lock: false, operations: map.operations @ [(thread_id, "unlock", "", 0)] }, true)
-    } else {
-      (map, false)
-    }
-  }
-  
-  let map_put = fn(map, thread_id, key, value) {
-    if map.lock {
-      let mut existing_index = -1
-      
-      for i in 0..map.entries.length() {
-        if map.entries[i].key == key {
-          existing_index = i
-          break
-        }
-      }
-      
-      let new_version = if existing_index >= 0 {
-        map.entries[existing_index].version + 1
-      } else {
-        1
-      }
-      
-      let new_entry = { key: key, value: value, version: new_version }
-      
-      if existing_index >= 0 {
-        // Update existing entry
-        let mut new_entries = map.entries
-        new_entries[existing_index] = new_entry
-        
-        ({
-          entries: new_entries,
-          lock: map.lock,
-          operations: map.operations @ [(thread_id, "put", key, new_version)]
-        }, true)
-      } else {
-        // Add new entry
-        ({
-          entries: map.entries @ [new_entry],
-          lock: map.lock,
-          operations: map.operations @ [(thread_id, "put", key, new_version)]
-        }, true)
-      }
-    } else {
-      (map, false)
-    }
-  }
-  
-  let map_get = fn(map, thread_id, key) {
-    let mut found_value = None
-    let mut found_version = 0
-    
-    for entry in map.entries {
-      if entry.key == key {
-        found_value = Some(entry.value)
-        found_version = entry.version
-        break
-      }
-    }
-    
-    let updated_operations = map.operations @ [(thread_id, "get", key, found_version)]
-    
-    ({
-      entries: map.entries,
-      lock: map.lock,
-      operations: updated_operations
-    }, found_value)
-  }
-  
-  let map_remove = fn(map, thread_id, key) {
-    if map.lock {
-      let mut new_entries = []
-      let mut found = false
-      
-      for entry in map.entries {
-        if entry.key == key {
-          found = true
-        } else {
-          new_entries = new_entries @ [entry]
-        }
-      }
-      
-      if found {
-        ({
-          entries: new_entries,
-          lock: map.lock,
-          operations: map.operations @ [(thread_id, "remove", key, 0)]
-        }, true)
-      } else {
-        (map, false)
-      }
-    } else {
-      (map, false)
-    }
-  }
-  
-  // Test concurrent map operations
-  let map = create_concurrent_map()
-  
-  // Acquire lock
-  let (locked_map, acquired) = map_lock(map, 1)
-  assert_true(acquired)
-  assert_true(locked_map.lock)
-  
-  // Put values
-  let (map1, put1) = map_put(locked_map, 1, "key1", 100)
-  assert_true(put1)
-  assert_eq(map1.entries.length(), 1)
-  
-  let (map2, put2) = map_put(map1, 1, "key2", 200)
-  assert_true(put2)
-  assert_eq(map2.entries.length(), 2)
-  
-  // Get values
-  let (map3, get1) = map_get(map2, 1, "key1")
-  match get1 {
-    Some(v) => assert_eq(v, 100)
-    None => assert_true(false)
-  }
-  
-  // Update existing key
-  let (map4, put3) = map_put(map3, 1, "key1", 150)
-  assert_true(put3)
-  assert_eq(map4.entries.length(), 2)
-  
-  // Verify updated value
-  let (map5, get2) = map_get(map4, 1, "key1")
-  match get2 {
-    Some(v) => assert_eq(v, 150)
-    None => assert_true(false)
-  }
-  
-  // Remove key
-  let (map6, removed) = map_remove(map5, 1, "key2")
-  assert_true(removed)
-  assert_eq(map6.entries.length(), 1)
-  
-  // Verify removal
-  let (map7, get3) = map_get(map6, 1, "key2")
-  match get3 {
-    Some(_) => assert_true(false)
-    None => assert_true(true)
-  }
-  
-  // Release lock
-  let (unlocked_map, released) = map_unlock(map7, 1)
-  assert_true(released)
-  assert_false(unlocked_map.lock)
-  
-  // Verify operation history
-  assert_eq(unlocked_map.operations.length(), 8)  // lock, put, put, get, put, get, remove, unlock
-  assert_eq(unlocked_map.operations[0], (1, "lock", "", 0))
-  assert_eq(unlocked_map.operations[1], (1, "put", "key1", 1))
-  assert_eq(unlocked_map.operations[7], (1, "unlock", "", 0))
 }

@@ -1,479 +1,508 @@
-// Azimuth Cross-Service Tracing Consistency Tests
-// 跨服务追踪一致性测试用例
+// Azimuth 跨服务追踪一致性测试用例
+// 测试跨多个服务的分布式追踪的一致性和完整性
 
-test "cross-service trace context propagation" {
-  // 测试跨服务追踪上下文传播
-  let initial_context = @azimuth.TraceContext {
-    trace_id : "1234567890abcdef1234567890abcdef",
-    span_id : "root1234567890",
-    sampled : true,
-    trace_state : "sampling.decision=true;foo=bar",
-    baggage : [
-      ("user.id", "user123"),
-      ("request.id", "req-456"),
-      ("client.version", "1.2.3")
-    ]
-  }
+test "跨服务Trace上下文传播" {
+  // 创建分布式追踪器
+  let tracer = azimuth::DistributedTracer::new("order-service")
   
-  // 模拟服务A处理请求
-  let service_a_context = @azimuth.create_child_context(initial_context, "service-a")
-  let service_a_span = @azimuth.Span {
-    context : service_a_context,
-    parent_span_id : Some(initial_context.span_id),
-    operation_name : "service-a.process",
-    start_time : 1640995200000L,
-    end_time : Some(1640995200100L),
-    status : @azimuth.SpanStatus::Ok,
-    attributes : [
-      ("service.name", @azimuth.StringValue("service-a")),
-      ("service.version", @azimuth.StringValue("2.1.0"))
-    ],
-    events : []
-  }
+  // 创建根Span
+  let root_span = tracer.start_span("process_order", azimuth::SpanKind::Server)
+  let trace_context = root_span.get_context()
   
-  // 模拟服务B处理请求
-  let service_b_context = @azimuth.create_child_context(service_a_context, "service-b")
-  let service_b_span = @azimuth.Span {
-    context : service_b_context,
-    parent_span_id : Some(service_a_context.span_id),
-    operation_name : "service-b.process",
-    start_time : 1640995200050L,
-    end_time : Some(1640995200150L),
-    status : @azimuth.SpanStatus::Ok,
-    attributes : [
-      ("service.name", @azimuth.StringValue("service-b")),
-      ("service.version", @azimuth.StringValue("1.5.2"))
-    ],
-    events : []
-  }
+  // 验证Trace上下文
+  assert_true(trace_context.trace_id.length() > 0)
+  assert_true(trace_context.span_id.length() > 0)
+  assert_true(trace_context.is_valid())
   
-  // 验证追踪上下文一致性
-  assert_eq(initial_context.trace_id, service_a_context.trace_id)
-  assert_eq(service_a_context.trace_id, service_b_context.trace_id)
+  // 模拟调用库存服务
+  let inventory_tracer = azimuth::DistributedTracer::new("inventory-service")
+  let inventory_context = trace_context.with_span_name("check_inventory")
+  let inventory_span = inventory_tracer.start_span_from_context("check_inventory", inventory_context)
   
-  // 验证span ID唯一性
-  assert_not_eq(initial_context.span_id, service_a_context.span_id)
-  assert_not_eq(service_a_context.span_id, service_b_context.span_id)
-  assert_not_eq(initial_context.span_id, service_b_context.span_id)
+  // 验证Trace ID一致性
+  assert_eq(inventory_span.get_context().trace_id, trace_context.trace_id)
+  assert_eq(inventory_span.get_context().is_sampled(), trace_context.is_sampled())
   
-  // 验证采样决策传播
-  assert_true(initial_context.sampled)
-  assert_true(service_a_context.sampled)
-  assert_true(service_b_context.sampled)
+  // 模拟调用支付服务
+  let payment_tracer = azimuth::DistributedTracer::new("payment-service")
+  let payment_context = trace_context.with_span_name("process_payment")
+  let payment_span = payment_tracer.start_span_from_context("process_payment", payment_context)
   
-  // 验证baggage传播
-  assert_eq(initial_context.baggage.length(), service_a_context.baggage.length())
-  assert_eq(service_a_context.baggage.length(), service_b_context.baggage.length())
+  // 验证Trace ID一致性
+  assert_eq(payment_span.get_context().trace_id, trace_context.trace_id)
+  assert_eq(payment_span.get_context().is_sampled(), trace_context.is_sampled())
   
-  // 验证时间顺序
-  assert_true(service_a_span.start_time <= service_b_span.start_time)
-  assert_true(service_a_context.span_id == service_b_span.parent_span_id.unwrap())
+  // 结束所有Span
+  inventory_span.end()
+  payment_span.end()
+  root_span.end()
+  
+  // 验证Span关系
+  assert_eq(inventory_span.get_parent_span_id(), Some(root_span.get_context().span_id))
+  assert_eq(payment_span.get_parent_span_id(), Some(root_span.get_context().span_id))
 }
 
-test "distributed trace timeline consistency" {
-  // 测试分布式追踪时间线一致性
-  let trace_timeline = @azimuth.TraceTimeline {
-    trace_id : "fedcba0987654321fedcba0987654321",
-    spans : [
-      @azimuth.Span {
-        context : @azimuth.SpanContext {
-          trace_id : "fedcba0987654321fedcba0987654321",
-          span_id : "gateway12345678",
-          sampled : true,
-          trace_state : ""
-        },
-        parent_span_id : None,
-        operation_name : "api-gateway.request",
-        start_time : 1640995200000L,
-        end_time : Some(1640995200050L),
-        status : @azimuth.SpanStatus::Ok,
-        attributes : [
-          ("service.name", @azimuth.StringValue("api-gateway")),
-          ("http.method", @azimuth.StringValue("POST")),
-          ("http.path", @azimuth.StringValue("/api/orders"))
-        ],
-        events : []
-      },
-      @azimuth.Span {
-        context : @azimuth.SpanContext {
-          trace_id : "fedcba0987654321fedcba0987654321",
-          span_id : "auth1234567890",
-          sampled : true,
-          trace_state : ""
-        },
-        parent_span_id : Some("gateway12345678"),
-        operation_name : "auth-service.validate",
-        start_time : 1640995200010L,
-        end_time : Some(1640995200040L),
-        status : @azimuth.SpanStatus::Ok,
-        attributes : [
-          ("service.name", @azimuth.StringValue("auth-service")),
-          ("auth.method", @azimuth.StringValue("jwt"))
-        ],
-        events : []
-      },
-      @azimuth.Span {
-        context : @azimuth.SpanContext {
-          trace_id : "fedcba0987654321fedcba0987654321",
-          span_id : "order1234567890",
-          sampled : true,
-          trace_state : ""
-        },
-        parent_span_id : Some("gateway12345678"),
-        operation_name : "order-service.create",
-        start_time : 1640995200055L,
-        end_time : Some(1640995200120L),
-        status : @azimuth.SpanStatus::Ok,
-        attributes : [
-          ("service.name", @azimuth.StringValue("order-service")),
-          ("order.id", @azimuth.StringValue("order-12345"))
-        ],
-        events : []
-      },
-      @azimuth.Span {
-        context : @azimuth.SpanContext {
-          trace_id : "fedcba0987654321fedcba0987654321",
-          span_id : "payment12345678",
-          sampled : true,
-          trace_state : ""
-        },
-        parent_span_id : Some("order1234567890"),
-        operation_name : "payment-service.process",
-        start_time : 1640995200080L,
-        end_time : Some(1640995200110L),
-        status : @azimuth.SpanStatus::Ok,
-        attributes : [
-          ("service.name", @azimuth.StringValue("payment-service")),
-          ("payment.amount", @azimuth.FloatValue(99.99)),
-          ("payment.currency", @azimuth.StringValue("USD"))
-        ],
-        events : []
-      }
-    ]
-  }
+test "Baggage跨服务传播" {
+  // 创建Baggage
+  let baggage = azimuth::Baggage::new()
+  baggage.set_entry("user.id", "12345")
+  baggage.set_entry("request.id", "req-67890")
+  baggage.set_entry("tenant.id", "tenant-abc")
   
-  // 验证时间线一致性
-  let sorted_spans = trace_timeline.spans.sort_by(fn(a, b) { a.start_time - b.start_time })
+  // 创建第一个服务并设置Baggage
+  let user_service = azimuth::DistributedTracer::new("user-service")
+  let user_span = user_service.start_span("authenticate_user", azimuth::SpanKind::Server)
+  user_span.set_baggage(baggage)
   
-  // 验证时间顺序
-  for i in 1..sorted_spans.length() {
-    assert_true(sorted_spans[i-1].start_time <= sorted_spans[i].start_time)
-  }
+  // 获取传播用的Headers
+  let headers = user_span.inject_context_to_headers()
   
-  // 验证父子关系
-  let gateway_span = sorted_spans.filter(fn(s) { s.context.span_id == "gateway12345678" })[0]
-  let auth_span = sorted_spans.filter(fn(s) { s.context.span_id == "auth1234567890" })[0]
-  let order_span = sorted_spans.filter(fn(s) { s.context.span_id == "order1234567890" })[0]
-  let payment_span = sorted_spans.filter(fn(s) { s.context.span_id == "payment12345678" })[0]
+  // 验证Headers包含Baggage信息
+  assert_true(headers.contains_key("traceparent"))
+  assert_true(headers.contains_key("baggage"))
   
-  // 验证auth和order是gateway的子span
-  match auth_span.parent_span_id {
-    Some(id) => assert_eq(id, gateway_span.context.span_id)
-    None => assert_true(false)
-  }
+  // 在第二个服务中提取Baggage
+  let order_service = azimuth::DistributedTracer::new("order-service")
+  let extracted_context = order_service.extract_context_from_headers(headers)
+  let order_span = order_service.start_span_from_context("create_order", extracted_context)
   
-  match order_span.parent_span_id {
-    Some(id) => assert_eq(id, gateway_span.context.span_id)
-    None => assert_true(false)
-  }
+  // 验证Baggage传播
+  let extracted_baggage = order_span.get_baggage()
+  assert_eq(extracted_baggage.get_entry("user.id"), Some("12345"))
+  assert_eq(extracted_baggage.get_entry("request.id"), Some("req-67890"))
+  assert_eq(extracted_baggage.get_entry("tenant.id"), Some("tenant-abc"))
   
-  // 验证payment是order的子span
-  match payment_span.parent_span_id {
-    Some(id) => assert_eq(id, order_span.context.span_id)
-    None => assert_true(false)
-  }
+  // 添加新的Baggage项
+  let updated_baggage = extracted_baggage.set_entry("order.id", "order-11111")
+  order_span.set_baggage(updated_baggage)
   
-  // 验证时间重叠关系
-  assert_true(auth_span.start_time >= gateway_span.start_time)
-  assert_true(auth_span.end_time.unwrap() <= gateway_span.end_time.unwrap())
+  // 验证Baggage更新
+  let final_baggage = order_span.get_baggage()
+  assert_eq(final_baggage.get_entry("order.id"), Some("order-11111"))
+  assert_eq(final_baggage.get_entry("user.id"), Some("12345")) // 原有项保持不变
   
-  assert_true(order_span.start_time >= gateway_span.start_time)
-  assert_true(order_span.end_time.unwrap() <= gateway_span.end_time.unwrap())
-  
-  assert_true(payment_span.start_time >= order_span.start_time)
-  assert_true(payment_span.end_time.unwrap() <= order_span.end_time.unwrap())
+  user_span.end()
+  order_span.end()
 }
 
-test "cross-service error propagation and correlation" {
-  // 测试跨服务错误传播和关联
-  let error_trace = @azimuth.TraceWithErrors {
-    trace_id : "deadbeefdeadbeefdeadbeefdeadbeef",
-    spans : [
-      @azimuth.Span {
-        context : @azimuth.SpanContext {
-          trace_id : "deadbeefdeadbeefdeadbeefdeadbeef",
-          span_id : "frontend12345678",
-          sampled : true,
-          trace_state : ""
-        },
-        parent_span_id : None,
-        operation_name : "frontend.submit_order",
-        start_time : 1640995200000L,
-        end_time : Some(1640995200300L),
-        status : @azimuth.SpanStatus::Error,
-        attributes : [
-          ("service.name", @azimuth.StringValue("frontend")),
-          ("error.code", @azimuth.StringValue("ORDER_SUBMISSION_FAILED"))
-        ],
-        events : [
-          @azimuth.SpanEvent {
-            name : "exception",
-            timestamp : 1640995200250L,
-            attributes : [
-              ("exception.type", @azimuth.StringValue("OrderSubmissionException")),
-              ("exception.message", @azimuth.StringValue("Failed to submit order: Payment declined"))
-            ]
-          }
-        ]
-      },
-      @azimuth.Span {
-        context : @azimuth.SpanContext {
-          trace_id : "deadbeefdeadbeefdeadbeefdeadbeef",
-          span_id : "api1234567890",
-          sampled : true,
-          trace_state : ""
-        },
-        parent_span_id : Some("frontend12345678"),
-        operation_name : "api-service.process_order",
-        start_time : 1640995200050L,
-        end_time : Some(1640995200280L),
-        status : @azimuth.SpanStatus::Error,
-        attributes : [
-          ("service.name", @azimuth.StringValue("api-service")),
-          ("error.code", @azimuth.StringValue("PAYMENT_PROCESSING_ERROR"))
-        ],
-        events : [
-          @azimuth.SpanEvent {
-            name : "exception",
-            timestamp : 1640995200230L,
-            attributes : [
-              ("exception.type", @azimuth.StringValue("PaymentProcessingException")),
-              ("exception.message", @azimuth.StringValue("Payment gateway returned error: Insufficient funds"))
-            ]
-          }
-        ]
-      },
-      @azimuth.Span {
-        context : @azimuth.SpanContext {
-          trace_id : "deadbeefdeadbeefdeadbeefdeadbeef",
-          span_id : "payment12345678",
-          sampled : true,
-          trace_state : ""
-        },
-        parent_span_id : Some("api1234567890"),
-        operation_name : "payment-service.charge",
-        start_time : 1640995200100L,
-        end_time : Some(1640995200220L),
-        status : @azimuth.SpanStatus::Error,
-        attributes : [
-          ("service.name", @azimuth.StringValue("payment-service")),
-          ("error.code", @azimuth.StringValue("INSUFFICIENT_FUNDS")),
-          ("payment.gateway", @azimuth.StringValue("stripe")),
-          ("gateway.error.code", @azimuth.StringValue("card_declined"))
-        ],
-        events : [
-          @azimuth.SpanEvent {
-            name : "gateway.response",
-            timestamp : 1640995200200L,
-            attributes : [
-              ("response.code", @azimuth.StringValue("card_declined")),
-              ("response.message", @azimuth.StringValue("Your card has insufficient funds."))
-            ]
-          }
-        ]
-      }
-    ]
-  }
+test "跨服务Span链接" {
+  // 创建第一个服务
+  let api_gateway = azimuth::DistributedTracer::new("api-gateway")
+  let gateway_span = api_gateway.start_span("handle_request", azimuth::SpanKind::Server)
   
-  // 验证错误传播链
-  let frontend_span = error_trace.spans.filter(fn(s) { s.context.span_id == "frontend12345678" })[0]
-  let api_span = error_trace.spans.filter(fn(s) { s.context.span_id == "api1234567890" })[0]
-  let payment_span = error_trace.spans.filter(fn(s) { s.context.span_id == "payment12345678" })[0]
+  // 创建第二个服务的Span（异步调用）
+  let notification_service = azimuth::DistributedTracer::new("notification-service")
+  let notification_context = gateway_span.get_context().with_span_name("send_notification")
+  let notification_span = notification_service.start_span_from_context("send_notification", notification_context)
   
-  // 验证所有span都有错误状态
-  match frontend_span.status {
-    @azimuth.SpanStatus::Error => assert_true(true)
-    _ => assert_true(false)
-  }
+  // 创建第三个服务的Span（同步调用）
+  let user_service = azimuth::DistributedTracer::new("user-service")
+  let user_context = gateway_span.get_context().with_span_name("get_user_profile")
+  let user_span = user_service.start_span_from_context("get_user_profile", user_context)
   
-  match api_span.status {
-    @azimuth.SpanStatus::Error => assert_true(true)
-    _ => assert_true(false)
-  }
+  // 在用户服务中创建子Span
+  let db_span = user_service.start_span("query_database", azimuth::SpanKind::Client)
+  db_span.set_parent_span(user_span.get_context())
   
-  match payment_span.status {
-    @azimuth.SpanStatus::Error => assert_true(true)
-    _ => assert_true(false)
-  }
+  // 设置Span关系
+  notification_span.add_link(gateway_span.get_context())
+  user_span.add_link(gateway_span.get_context())
+  db_span.set_parent_span(user_span.get_context())
   
-  // 验证错误代码传播
-  let frontend_error_code = frontend_span.attributes.filter(fn(a) { a.0 == "error.code" })
-  let api_error_code = api_span.attributes.filter(fn(a) { a.0 == "error.code" })
-  let payment_error_code = payment_span.attributes.filter(fn(a) { a.0 == "error.code" })
+  // 验证Span链接关系
+  assert_eq(notification_span.get_links().length(), 1)
+  assert_eq(user_span.get_links().length(), 1)
+  assert_eq(db_span.get_parent_span_id(), Some(user_span.get_context().span_id))
   
-  match frontend_error_code[0].1 {
-    @azimuth.StringValue(code) => assert_eq(code, "ORDER_SUBMISSION_FAILED")
-    _ => assert_true(false)
-  }
+  // 结束所有Span
+  db_span.end()
+  user_span.end()
+  notification_span.end()
+  gateway_span.end()
   
-  match api_error_code[0].1 {
-    @azimuth.StringValue(code) => assert_eq(code, "PAYMENT_PROCESSING_ERROR")
-    _ => assert_true(false)
-  }
+  // 验证Span树结构
+  let trace_tree = api_gateway.get_trace_tree(gateway_span.get_context().trace_id)
+  assert_eq(trace_tree.root_span.span_id, gateway_span.get_context().span_id)
+  assert_eq(trace_tree.child_spans.length(), 2)
   
-  match payment_error_code[0].1 {
-    @azimuth.StringValue(code) => assert_eq(code, "INSUFFICIENT_FUNDS")
-    _ => assert_true(false)
-  }
+  // 验证子Span
+  let notification_child = trace_tree.child_spans.find(fn(span) { span.span_name == "send_notification" })
+  let user_child = trace_tree.child_spans.find(fn(span) { span.span_name == "get_user_profile" })
   
-  // 验证错误事件时间顺序
-  let payment_error_time = payment_span.events[0].timestamp
-  let api_error_time = api_span.events[0].timestamp
-  let frontend_error_time = frontend_span.events[0].timestamp
+  assert_true(notification_child.is_some())
+  assert_true(user_child.is_some())
   
-  assert_true(payment_error_time <= api_error_time)
-  assert_true(api_error_time <= frontend_error_time)
-  
-  // 验证根本原因在payment服务
-  match payment_span.events[0].attributes.filter(fn(a) { a.0 == "response.code" })[0].1 {
-    @azimuth.StringValue(code) => assert_eq(code, "card_declined")
-    _ => assert_true(false)
+  // 验证用户服务的子Span
+  match user_child {
+    Some(user_span_info) => {
+      assert_eq(user_span_info.child_spans.length(), 1)
+      assert_eq(user_span_info.child_spans[0].span_name, "query_database")
+    }
+    None => assert_true(false)
   }
 }
 
-test "cross-service baggage consistency" {
-  // 测试跨服务baggage一致性
-  let initial_baggage = [
-    ("user.id", "user123"),
-    ("request.id", "req-456"),
-    ("client.version", "1.2.3"),
-    ("trace.sampled", "true"),
-    ("debug.enabled", "false")
+test "跨服务事件一致性" {
+  // 创建多个服务的追踪器
+  let services = [
+    ("api-gateway", azimuth::DistributedTracer::new("api-gateway")),
+    ("auth-service", azimuth::DistributedTracer::new("auth-service")),
+    ("user-service", azimuth::DistributedTracer::new("user-service")),
+    ("order-service", azimuth::DistributedTracer::new("order-service"))
   ]
   
-  // 模拟多个服务处理请求
-  let service_a_baggage = @azimuth.propagate_baggage(initial_baggage, "service-a")
-  let service_b_baggage = @azimuth.propagate_baggage(service_a_baggage, "service-b")
-  let service_c_baggage = @azimuth.propagate_baggage(service_b_baggage, "service-c")
+  // 创建根Span
+  let root_span = services[0].1.start_span("process_user_request", azimuth::SpanKind::Server)
+  let trace_id = root_span.get_context().trace_id
   
-  // 验证初始baggage项在所有服务中保持一致
-  for baggage_item in initial_baggage {
-    let key = baggage_item.0
-    let value = baggage_item.1
+  // 在每个服务中创建Span和事件
+  let all_spans = []
+  
+  for (service_name, tracer) in services {
+    let span_name = "service_operation_" + service_name
+    let context = root_span.get_context().with_span_name(span_name)
+    let span = tracer.start_span_from_context(span_name, context)
     
-    // 验证service-a中的baggage
-    let service_a_item = service_a_baggage.filter(fn(item) { item.0 == key })
-    assert_eq(service_a_item.length(), 1)
-    assert_eq(service_a_item[0].1, value)
+    // 添加事件
+    span.add_event("service_started", [("service", service_name)])
+    span.add_event("processing_request", [("trace_id", trace_id)])
+    span.add_event("service_completed", [("service", service_name)])
     
-    // 验证service-b中的baggage
-    let service_b_item = service_b_baggage.filter(fn(item) { item.0 == key })
-    assert_eq(service_b_item.length(), 1)
-    assert_eq(service_b_item[0].1, value)
-    
-    // 验证service-c中的baggage
-    let service_c_item = service_c_baggage.filter(fn(item) { item.0 == key })
-    assert_eq(service_c_item.length(), 1)
-    assert_eq(service_c_item[0].1, value)
+    all_spans.push(span)
   }
   
-  // 验证服务特定的baggage项添加
-  let service_a_specific = service_a_baggage.filter(fn(item) { 
-    item.0 == "service.a.processing.time" 
-  })
-  assert_eq(service_a_specific.length(), 1)
-  assert_eq(service_a_specific[0].0, "service.a.processing.time")
+  // 结束所有Span
+  for span in all_spans {
+    span.end()
+  }
+  root_span.end()
   
-  let service_b_specific = service_b_baggage.filter(fn(item) { 
-    item.0 == "service.b.cache.hit" 
-  })
-  assert_eq(service_b_specific.length(), 1)
-  assert_eq(service_b_specific[0].0, "service.b.cache.hit")
+  // 验证事件一致性
+  let trace_events = services[0].1.get_trace_events(trace_id)
   
-  let service_c_specific = service_c_baggage.filter(fn(item) { 
-    item.0 == "service.c.db.connection" 
-  })
-  assert_eq(service_c_specific.length(), 1)
-  assert_eq(service_c_specific[0].0, "service.c.db.connection")
-  
-  // 验证baggage不会无限增长
-  assert_true(service_c_baggage.length() <= initial_baggage.length() + 3) // 每个服务添加一项
-  
-  // 验证baggage合并策略
-  let merged_baggage = @azimuth.merge_baggage(service_a_baggage, service_c_baggage)
-  assert_true(merged_baggage.length() >= service_a_baggage.length())
-  assert_true(merged_baggage.length() >= service_c_baggage.length())
-  
-  // 验证合并后原始值保持不变
-  for baggage_item in initial_baggage {
-    let key = baggage_item.0
-    let value = baggage_item.1
+  // 验证每个服务都有3个事件
+  for (service_name, _) in services {
+    let service_events = trace_events.filter(fn(event) { event.attributes.contains("service", service_name) })
+    assert_eq(service_events.length(), 3)
     
-    let merged_item = merged_baggage.filter(fn(item) { item.0 == key })
-    assert_eq(merged_item.length(), 1)
-    assert_eq(merged_item[0].1, value)
+    // 验证事件顺序
+    assert_eq(service_events[0].name, "service_started")
+    assert_eq(service_events[1].name, "processing_request")
+    assert_eq(service_events[2].name, "service_completed")
+  }
+  
+  // 验证所有事件都有相同的Trace ID
+  for event in trace_events {
+    assert_eq(event.attributes.get("trace_id"), Some(trace_id))
   }
 }
 
-test "cross-service sampling decision consistency" {
-  // 测试跨服务采样决策一致性
-  let trace_id = "1234567890abcdef1234567890abcdef"
+test "跨服务错误传播" {
+  // 创建服务链
+  let api_gateway = azimuth::DistributedTracer::new("api-gateway")
+  let auth_service = azimuth::DistributedTracer::new("auth-service")
+  let user_service = azimuth::DistributedTracer::new("user-service")
   
-  // 测试基于概率的采样决策
-  let sampling_config = @azimuth.SamplingConfig {
-    sampling_type : @azimuth.SamplingType::Probability,
-    probability : 0.1, // 10%采样率
-    rate_limit : Some(1000)
+  // 创建根Span
+  let gateway_span = api_gateway.start_span("authenticate_and_get_user", azimuth::SpanKind::Server)
+  
+  // 在认证服务中模拟错误
+  let auth_context = gateway_span.get_context().with_span_name("authenticate")
+  let auth_span = auth_service.start_span_from_context("authenticate", auth_context)
+  
+  // 记录错误
+  auth_span.set_status(azimuth::StatusCode::Error, Some("Invalid credentials"))
+  auth_span.add_event("authentication_failed", [
+    ("error.type", "authentication_error"),
+    ("error.message", "Invalid username or password"),
+    ("user.id", "unknown")
+  ])
+  auth_span.record_exception(azimuth::Exception::new("AuthenticationException", "Invalid credentials"))
+  
+  // 在用户服务中模拟超时
+  let user_context = gateway_span.get_context().with_span_name("get_user_profile")
+  let user_span = user_service.start_span_from_context("get_user_profile", user_context)
+  
+  // 记录超时错误
+  user_span.set_status(azimuth::StatusCode::Error, Some("Request timeout"))
+  user_span.add_event("request_timeout", [
+    ("error.type", "timeout_error"),
+    ("timeout.ms", "5000"),
+    ("service", "user-service")
+  ])
+  
+  // 结束Span
+  auth_span.end()
+  user_span.end()
+  gateway_span.set_status(azimuth::StatusCode::Error, Some("Authentication failed"))
+  gateway_span.end()
+  
+  // 验证错误传播
+  let trace_summary = api_gateway.get_trace_summary(gateway_span.get_context().trace_id)
+  
+  // 验证错误统计
+  assert_eq(trace_summary.total_spans, 3)
+  assert_eq(trace_summary.error_spans, 3)
+  assert_eq(trace_summary.root_span_status, azimuth::StatusCode::Error)
+  
+  // 验证错误类型
+  let auth_errors = trace_summary.errors.filter(fn(error) { error.span_name == "authenticate" })
+  let user_errors = trace_summary.errors.filter(fn(error) { error.span_name == "get_user_profile" })
+  
+  assert_eq(auth_errors.length(), 1)
+  assert_eq(user_errors.length(), 1)
+  
+  // 验证错误详情
+  assert_eq(auth_errors[0].error_type, "AuthenticationException")
+  assert_eq(auth_errors[0].message, "Invalid credentials")
+  
+  assert_eq(user_errors[0].error_type, "timeout_error")
+  assert_true(user_errors[0].message.contains("timeout"))
+}
+
+test "跨服务性能一致性" {
+  // 创建性能追踪器
+  let services = [
+    ("frontend", azimuth::DistributedTracer::new("frontend-service")),
+    ("backend", azimuth::DistributedTracer::new("backend-service")),
+    ("database", azimuth::DistributedTracer::new("database-service"))
+  ]
+  
+  // 创建根Span
+  let root_span = services[0].1.start_span("user_request_flow", azimuth::SpanKind::Server)
+  let start_time = azimuth::TimeUtil::current_time_micros()
+  
+  // 在每个服务中创建Span并模拟处理时间
+  let all_spans = []
+  let expected_durations = [100, 200, 150] // 微秒
+  
+  for i in 0..services.length() - 1 {
+    let (service_name, tracer) = services[i]
+    let span_name = "process_" + service_name
+    let context = root_span.get_context().with_span_name(span_name)
+    let span = tracer.start_span_from_context(span_name, context)
+    
+    // 模拟处理时间
+    azimuth::TimeUtil::sleep_micros(expected_durations[i])
+    
+    // 设置性能指标
+    span.set_attribute("processing_time_us", expected_durations[i].to_string())
+    span.set_attribute("service_name", service_name)
+    
+    all_spans.push(span)
   }
   
-  let initial_decision = @azimuth.make_sampling_decision(trace_id, sampling_config)
-  let service_a_decision = @azimuth.make_sampling_decision(trace_id, sampling_config)
-  let service_b_decision = @azimuth.make_sampling_decision(trace_id, sampling_config)
-  let service_c_decision = @azimuth.make_sampling_decision(trace_id, sampling_config)
+  // 结束所有Span
+  for span in all_spans {
+    span.end()
+  }
+  root_span.end()
   
-  // 验证相同trace_id的采样决策一致
-  assert_eq(initial_decision, service_a_decision)
-  assert_eq(service_a_decision, service_b_decision)
-  assert_eq(service_b_decision, service_c_decision)
+  let total_duration = azimuth::TimeUtil::current_time_micros() - start_time
   
-  // 测试基于速率限制的采样决策
-  let rate_limit_config = @azimuth.SamplingConfig {
-    sampling_type : @azimuth.SamplingType::RateLimit,
-    probability : 1.0,
-    rate_limit : Some(100) // 每秒100个采样
+  // 验证性能一致性
+  let performance_metrics = services[0].1.get_performance_metrics(root_span.get_context().trace_id)
+  
+  // 验证总时间
+  assert_eq(performance_metrics.total_duration_us, total_duration)
+  
+  // 验证各服务的处理时间
+  for i in 0..services.length() - 1 {
+    let (service_name, _) = services[i]
+    let service_metrics = performance_metrics.service_metrics.get(service_name)
+    
+    match service_metrics {
+      Some(metrics) => {
+        assert_eq(metrics.duration_us, expected_durations[i])
+        assert_eq(metrics.service_name, service_name)
+      }
+      None => assert_true(false)
+    }
   }
   
-  let rate_limit_decision_1 = @azimuth.make_sampling_decision(trace_id, rate_limit_config)
-  let rate_limit_decision_2 = @azimuth.make_sampling_decision(trace_id, rate_limit_config)
-  
-  // 验证速率限制采样决策在短时间内一致
-  assert_eq(rate_limit_decision_1, rate_limit_decision_2)
-  
-  // 测试基于父span的采样决策
-  let parent_sampled = true
-  let child_decision_1 = @azimuth.make_child_sampling_decision(parent_sampled)
-  let child_decision_2 = @azimuth.make_child_sampling_decision(parent_sampled)
-  let child_decision_3 = @azimuth.make_child_sampling_decision(false)
-  
-  // 验证子span继承父span的采样决策
-  assert_true(child_decision_1)
-  assert_true(child_decision_2)
-  assert_false(child_decision_3)
-  
-  // 测试采样决策传播
-  let sampling_context = @azimuth.SamplingContext {
-    trace_id : "abcdef1234567890abcdef1234567890",
-    parent_sampled : true,
-    sampling_config : sampling_config,
-    service_name : "order-service"
+  // 验证时间顺序
+  let sorted_spans = performance_metrics.spans.sort_by(fn(a, b) { a.start_time_us - b.start_time_us })
+  for i in 1..sorted_spans.length() - 1 {
+    assert_true(sorted_spans[i].start_time_us >= sorted_spans[i-1].start_time_us)
+  }
+}
+
+test "跨服务采样一致性" {
+  // 创建采样配置
+  let sampling_config = azimuth::SamplingConfig {
+    sampling_type: azimuth::SamplingType::TraceIdRatio,
+    sampling_rate: 0.5, // 50%采样率
+    parent_based: true
   }
   
-  let propagated_context = @azimuth.propagate_sampling_context(sampling_context, "payment-service")
+  // 创建多个服务的追踪器（使用相同的采样配置）
+  let services = []
+  let service_names = ["service-a", "service-b", "service-c", "service-d"]
   
-  // 验证采样决策传播
-  assert_eq(propagated_context.trace_id, sampling_context.trace_id)
-  assert_eq(propagated_context.parent_sampled, sampling_context.parent_sampled)
-  assert_eq(propagated_context.sampling_config, sampling_context.sampling_config)
-  assert_not_eq(propagated_context.service_name, sampling_context.service_name)
-  assert_eq(propagated_context.service_name, "payment-service")
+  for name in service_names {
+    let tracer = azimuth::DistributedTracer::new_with_sampling(name, sampling_config)
+    services.push((name, tracer))
+  }
+  
+  // 创建多个Trace并验证采样一致性
+  let sampled_traces = []
+  let not_sampled_traces = []
+  
+  for i in 0..=19 {
+    // 创建根Span
+    let root_span = services[0].1.start_span("trace_" + i.to_string(), azimuth::SpanKind::Server)
+    let is_sampled = root_span.get_context().is_sampled()
+    
+    // 在所有服务中创建Span
+    let all_spans = [root_span]
+    
+    for j in 1..services.length() - 1 {
+      let (service_name, tracer) = services[j]
+      let span_name = "operation_" + service_name
+      let context = root_span.get_context().with_span_name(span_name)
+      let span = tracer.start_span_from_context(span_name, context)
+      all_spans.push(span)
+    }
+    
+    // 验证采样一致性
+    for span in all_spans {
+      assert_eq(span.get_context().is_sampled(), is_sampled)
+    }
+    
+    // 记录采样结果
+    if is_sampled {
+      sampled_traces.push(root_span.get_context().trace_id)
+    } else {
+      not_sampled_traces.push(root_span.get_context().trace_id)
+    }
+    
+    // 结束所有Span
+    for span in all_spans {
+      span.end()
+    }
+  }
+  
+  // 验证采样率（允许一定误差）
+  let total_traces = sampled_traces.length() + not_sampled_traces.length()
+  let actual_sampling_rate = sampled_traces.length().to_float() / total_traces.to_float()
+  
+  assert_true(actual_sampling_rate >= 0.3 && actual_sampling_rate <= 0.7) // 允许20%误差
+  
+  // 验证采样的Trace在所有服务中都被记录
+  for trace_id in sampled_traces {
+    for (service_name, tracer) in services {
+      let trace_data = tracer.get_trace_data(trace_id)
+      assert_true(trace_data.is_some())
+      
+      match trace_data {
+        Some(data) => {
+          assert_eq(data.trace_id, trace_id)
+          assert_eq(data.spans.length(), services.length())
+        }
+        None => assert_true(false)
+      }
+    }
+  }
+  
+  // 验证未采样的Trace在所有服务中都不被记录
+  for trace_id in not_sampled_traces {
+    for (service_name, tracer) in services {
+      let trace_data = tracer.get_trace_data(trace_id)
+      assert_true(trace_data.is_none())
+    }
+  }
+}
+
+test "跨服务标签一致性" {
+  // 创建标签策略
+  let label_policy = azimuth::LabelPolicy {
+    required_labels: ["service.name", "service.version", "environment"],
+    optional_labels: ["region", "zone", "instance.id"],
+    label_format: azimuth::LabelFormat::SnakeCase
+  }
+  
+  // 创建多个服务的追踪器
+  let services = []
+  let service_configs = [
+    ("api-gateway", "1.2.0", "production", "us-east-1", "us-east-1a", "gw-001"),
+    ("auth-service", "2.1.3", "production", "us-east-1", "us-east-1b", "auth-001"),
+    ("user-service", "3.0.1", "production", "us-west-2", "us-west-2a", "user-001")
+  ]
+  
+  for (name, version, env, region, zone, instance) in service_configs {
+    let tracer = azimuth::DistributedTracer::new_with_labels(name, label_policy)
+    tracer.set_default_labels([
+      ("service.name", name),
+      ("service.version", version),
+      ("environment", env),
+      ("region", region),
+      ("zone", zone),
+      ("instance.id", instance)
+    ])
+    services.push((name, tracer))
+  }
+  
+  // 创建根Span
+  let root_span = services[0].1.start_span("user_request", azimuth::SpanKind::Server)
+  
+  // 在每个服务中创建Span
+  let all_spans = [root_span]
+  
+  for i in 1..services.length() - 1 {
+    let (service_name, tracer) = services[i]
+    let span_name = "process_" + service_name
+    let context = root_span.get_context().with_span_name(span_name)
+    let span = tracer.start_span_from_context(span_name, context)
+    
+    // 添加特定于服务的标签
+    span.set_attribute("operation.type", "business_logic")
+    span.set_attribute("trace.type", "user_flow")
+    
+    all_spans.push(span)
+  }
+  
+  // 结束所有Span
+  for span in all_spans {
+    span.end()
+  }
+  
+  // 验证标签一致性
+  let trace_data = services[0].1.get_trace_data(root_span.get_context().trace_id)
+  
+  match trace_data {
+    Some(data) => {
+      // 验证每个Span都有必需的标签
+      for span in data.spans {
+        assert_true(span.attributes.contains_key("service.name"))
+        assert_true(span.attributes.contains_key("service.version"))
+        assert_true(span.attributes.contains_key("environment"))
+        
+        // 验证标签格式
+        for (key, _) in span.attributes {
+          assert_true(key.contains("_")) // SnakeCase格式
+        }
+      }
+      
+      // 验证服务特定的标签
+      let api_gateway_span = data.spans.find(fn(span) { 
+        match span.attributes.get("service.name") {
+          Some(azimuth::AttributeValue::StringValue(name)) => name == "api-gateway"
+          _ => false
+        }
+      })
+      
+      match api_gateway_span {
+        Some(span) => {
+          match span.attributes.get("instance.id") {
+            Some(azimuth::AttributeValue::StringValue(instance_id)) => {
+              assert_eq(instance_id, "gw-001")
+            }
+            _ => assert_true(false)
+          }
+        }
+        None => assert_true(false)
+      }
+    }
+    None => assert_true(false)
+  }
 }
